@@ -55,7 +55,7 @@
   </command_laws>
 
   <section name="SUPERVISION" prefix="SUPERVISION_">
-    <define name="STOP_MOTOR" value="1060"/>
+    <define name="STOP_MOTOR" value="800"/>
     <define name="MIN_MOTOR"  value="1120"/>
     <define name="MAX_MOTOR"  value="1860"/>
     <define name="TRIM_A" value="0"/>
@@ -64,9 +64,9 @@
     <define name="NB_MOTOR" value="4"/>
     <define name="SCALE" value="256"/>
     <!-- front/back turning CW, right/left CCW -->
-    <define name="ROLL_COEF"   value="{    0,    0, -256,  256 }"/>
-    <define name="PITCH_COEF"  value="{  256, -256,    0,    0 }"/>
-    <define name="YAW_COEF"    value="{ -256, -256,  256,  256 }"/>
+    <define name="ROLL_COEF"   value="{ -256, -256,  256,  256 }"/>
+    <define name="PITCH_COEF"  value="{  -256, 256,  256, -256 }"/>
+    <define name="YAW_COEF"    value="{ 256,  -256, 256,  -256 }"/>
     <define name="THRUST_COEF" value="{  256,  256,  256,  256 }"/>
   </section>
 
@@ -150,22 +150,22 @@
     <define name="REF_MAX_RDOT" value="RadOfDeg(1800.)"/>
 
     <!-- feedback -->
-    <define name="PHI_PGAIN"  value="1000"/>
-    <define name="PHI_DGAIN"  value="400"/>
-    <define name="PHI_IGAIN"  value="200"/>
+    <define name="PHI_PGAIN"  value="400"/>
+    <define name="PHI_DGAIN"  value="120"/>
+    <define name="PHI_IGAIN"  value="70"/>
 
-    <define name="THETA_PGAIN"  value="1000"/>
-    <define name="THETA_DGAIN"  value="400"/>
-    <define name="THETA_IGAIN"  value="200"/>
+    <define name="THETA_PGAIN"  value="400"/>
+    <define name="THETA_DGAIN"  value="120"/>
+    <define name="THETA_IGAIN"  value="70"/>
 
-    <define name="PSI_PGAIN"  value="500"/>
-    <define name="PSI_DGAIN"  value="300"/>
-    <define name="PSI_IGAIN"  value="10"/>
+    <define name="PSI_PGAIN"  value="300"/>
+    <define name="PSI_DGAIN"  value="150"/>
+    <define name="PSI_IGAIN"  value="2"/>
 
     <!-- feedforward -->
-    <define name="PHI_DDGAIN"   value="300"/>
-    <define name="THETA_DDGAIN" value="300"/>
-    <define name="PSI_DDGAIN"   value="300"/>
+    <define name="PHI_DDGAIN"   value="60"/>
+    <define name="THETA_DDGAIN" value="60"/>
+    <define name="PSI_DDGAIN"   value="60"/>
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
