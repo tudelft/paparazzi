@@ -45,6 +45,8 @@
 
 #include "state.h"
 
+#include <stdio.h>
+
 #ifndef GUIDANCE_H_AGAIN
 #define GUIDANCE_H_AGAIN 0
 #endif
@@ -415,9 +417,9 @@ void guidance_h_run(bool  in_flight)
       }
 
       if (horizontal_mode == HORIZONTAL_MODE_MANUAL) {
-        stabilization_cmd[COMMAND_ROLL]  = nav_roll;
-        stabilization_cmd[COMMAND_PITCH] = nav_pitch;
-        stabilization_cmd[COMMAND_YAW]   = nav_heading;
+        stabilization_cmd[COMMAND_ROLL]  = nav_cmd_roll;
+        stabilization_cmd[COMMAND_PITCH] = nav_cmd_pitch;
+        stabilization_cmd[COMMAND_YAW]   = nav_cmd_yaw;
       } else if (horizontal_mode == HORIZONTAL_MODE_ATTITUDE) {
         struct Int32Eulers sp_cmd_i;
         sp_cmd_i.phi = nav_roll;
@@ -474,6 +476,10 @@ void guidance_h_run(bool  in_flight)
   }
 }
 
+static void propagate_rate(uint16_t update_frequency){
+  guidance_h.sp.heading += (guidance_h.sp.heading_rate >> (INT32_ANGLE_FRAC - INT32_RATE_FRAC)) / update_frequency;
+}
+
 
 static void guidance_h_update_reference(void)
 {
@@ -506,7 +512,7 @@ static void guidance_h_update_reference(void)
 
   /* update heading setpoint from rate */
   if (bit_is_set(guidance_h.sp.mask, 7)) {
-    guidance_h.sp.heading += (guidance_h.sp.heading_rate >> (INT32_ANGLE_FRAC - INT32_RATE_FRAC)) / PERIODIC_FREQUENCY;
+    RunOnceEvery(16, propagate_rate(32)); //512/16 = 32
     INT32_ANGLE_NORMALIZE(guidance_h.sp.heading);
   }
 }
@@ -595,6 +601,10 @@ static void guidance_h_traj_run(bool in_flight)
 
 static void guidance_h_hover_enter(void)
 {
+  /* reset speed setting */
+  guidance_h.sp.speed.x = 0;
+  guidance_h.sp.speed.y = 0;
+
   /* disable horizontal velocity setpoints,
    * might still be activated in guidance_h_read_rc if GUIDANCE_H_USE_SPEED_REF
    */
@@ -610,9 +620,6 @@ static void guidance_h_hover_enter(void)
   /* set guidance to current heading and position */
   guidance_h.rc_sp.psi = stateGetNedToBodyEulers_i()->psi;
   guidance_h.sp.heading = guidance_h.rc_sp.psi;
-
-  /* reset speed setting */
-  guidance_h_set_guided_vel(0., 0.);
 }
 
 static void guidance_h_nav_enter(void)

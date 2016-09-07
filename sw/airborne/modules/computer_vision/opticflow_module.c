@@ -72,14 +72,14 @@ static void opticflow_agl_cb(uint8_t sender_id, float distance);    ///< Callbac
 static void opticflow_telem_send(struct transport_tx *trans, struct link_device *dev)
 {
   pthread_mutex_lock(&opticflow_mutex);
-  if (opticflow_result.noise_measurement > 0.8) {
-  pprz_msg_send_OPTIC_FLOW_EST(trans, dev, AC_ID,
-                               &opticflow_result.fps, &opticflow_result.corner_cnt,
-                               &opticflow_result.tracked_cnt, &opticflow_result.flow_x,
-                               &opticflow_result.flow_y, &opticflow_result.flow_der_x,
-                               &opticflow_result.flow_der_y, &opticflow_result.vel_x,
-                               &opticflow_result.vel_y, &opticflow_result.div_size,
-                               &opticflow_result.surface_roughness, &opticflow_result.divergence); // TODO: no noise measurement here...
+  if (opticflow_result.noise_measurement < 0.8) {
+    pprz_msg_send_OPTIC_FLOW_EST(trans, dev, AC_ID,
+                                 &opticflow_result.fps, &opticflow_result.corner_cnt,
+                                 &opticflow_result.tracked_cnt, &opticflow_result.flow_x,
+                                 &opticflow_result.flow_y, &opticflow_result.flow_der_x,
+                                 &opticflow_result.flow_der_y, &opticflow_result.vel_x,
+                                 &opticflow_result.vel_y, &opticflow_result.div_size,
+                                 &opticflow_result.surface_roughness, &opticflow_result.divergence); // TODO: no noise measurement here...
   }
   pthread_mutex_unlock(&opticflow_mutex);
 }
@@ -118,17 +118,16 @@ void opticflow_module_run(void)
   // Update the stabilization loops on the current calculation
   if (opticflow_got_result) {
     uint32_t now_ts = get_sys_time_usec();
-    uint8_t quality = opticflow_result.noise_measurement; // FIXME, scale to some quality measure 0-255
     AbiSendMsgOPTICAL_FLOW(OPTICFLOW_SENDER_ID, now_ts,
                            opticflow_result.flow_x,
                            opticflow_result.flow_y,
                            opticflow_result.flow_der_x,
                            opticflow_result.flow_der_y,
-                           quality,
+                           opticflow_result.noise_measurement,// FIXME, scale to some quality measure 0-255
                            opticflow_result.div_size,
                            opticflow_state.agl);
     //TODO Find an appropiate quality measure for the noise model in the state filter, for now it is tracked_cnt
-    if (quality > 0.8) {
+    if (opticflow_result.noise_measurement < 0.8) {
       AbiSendMsgVELOCITY_ESTIMATE(OPTICFLOW_SENDER_ID, now_ts,
                                   opticflow_result.vel_body_x,
                                   opticflow_result.vel_body_y,
@@ -150,7 +149,6 @@ void opticflow_module_run(void)
  */
 struct image_t *opticflow_module_calc(struct image_t *img)
 {
-
   // Copy the state
   struct pose_t pose = get_rotation_at_timestamp(img->pprz_ts);
   struct opticflow_state_t temp_state;
@@ -165,23 +163,17 @@ struct image_t *opticflow_module_calc(struct image_t *img)
   pthread_mutex_lock(&opticflow_mutex);
   memcpy(&opticflow_result, &temp_result, sizeof(struct opticflow_result_t));
   opticflow_got_result = true;
-  pthread_mutex_unlock(&opticflow_mutex);
-
-  // TODO: why is there a mutex above and not below when changing opticflow_result?
 
   /* Rotate velocities from camera frame coordinates to body coordinates for control
   * IMPORTANT!!! This frame to body orientation should be the case for the Parrot
   * ARdrone and Bebop, however this can be different for other quadcopters
   * ALWAYS double check!
   */
-#if CAMERA_ROTATED_180 == 0 //Case for ARDrone 2.0
   opticflow_result.vel_body_x = opticflow_result.vel_y;
   opticflow_result.vel_body_y = - opticflow_result.vel_x;
-#else   // Case for Bebop 2
-  opticflow_result.vel_body_x = - opticflow_result.vel_y;
-  opticflow_result.vel_body_y = opticflow_result.vel_x;
-#endif
 
+  // release the mutex as we are done with editing the opticflow result
+  pthread_mutex_unlock(&opticflow_mutex);
   return img;
 }
 

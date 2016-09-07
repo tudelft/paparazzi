@@ -146,18 +146,25 @@ PRINT_CONFIG_VAR(OPTICFLOW_METHOD)
 #endif
 
 #ifndef OPTICFLOW_DEROTATION
-#define OPTICFLOW_DEROTATION 1
+#define OPTICFLOW_DEROTATION TRUE
 #endif
 PRINT_CONFIG_VAR(OPTICFLOW_DEROTATION)
 
-#ifndef CAMERA_ROTATED_180
-#define CAMERA_ROTATED 0
+#ifndef OPTICFLOW_MEDIAN_FILTER
+#define OPTICFLOW_MEDIAN_FILTER TRUE
 #endif
-PRINT_CONFIG_VAR(CAMERA_ROTATED_180)
+PRINT_CONFIG_VAR(OPTICFLOW_MEDIAN_FILTER)
+
+//Include median filter
+#include "filters/median_filter.h"
+struct MedianFilterInt vel_x_filt, vel_y_filt;
+
 
 /* Functions only used here */
 static uint32_t timeval_diff(struct timeval *starttime, struct timeval *finishtime);
 static int cmp_flow(const void *a, const void *b);
+
+
 
 /**
  * Initialize the opticflow calculator
@@ -167,6 +174,10 @@ static int cmp_flow(const void *a, const void *b);
  */
 void opticflow_calc_init(struct opticflow_t *opticflow, uint16_t w, uint16_t h)
 {
+
+  init_median_filter(&vel_x_filt);
+  init_median_filter(&vel_y_filt);
+
   /* Create the image buffers */
   image_create(&opticflow->img_gray, w, h, IMAGE_GRAYSCALE);
   image_create(&opticflow->prev_img_gray, w, h, IMAGE_GRAYSCALE);
@@ -186,11 +197,15 @@ void opticflow_calc_init(struct opticflow_t *opticflow, uint16_t w, uint16_t h)
   opticflow->max_iterations = OPTICFLOW_MAX_ITERATIONS;
   opticflow->threshold_vec = OPTICFLOW_THRESHOLD_VEC;
   opticflow->pyramid_level = OPTICFLOW_PYRAMID_LEVEL;
+  opticflow->median_filter = OPTICFLOW_MEDIAN_FILTER;
+
 
   opticflow->fast9_adaptive = OPTICFLOW_FAST9_ADAPTIVE;
   opticflow->fast9_threshold = OPTICFLOW_FAST9_THRESHOLD;
   opticflow->fast9_min_distance = OPTICFLOW_FAST9_MIN_DISTANCE;
   opticflow->fast9_padding = OPTICFLOW_FAST9_PADDING;
+  opticflow->fast9_rsize = 512;
+  opticflow->fast9_ret_corners = malloc(sizeof(struct point_t) * opticflow->fast9_rsize);
 
 }
 /**
@@ -211,7 +226,9 @@ void calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct opticflow_sta
   float size_divergence; int n_samples;
 
   // variables for linear flow fit:
-  float error_threshold; int n_iterations_RANSAC, n_samples_RANSAC, success_fit; struct linear_flow_fit_info fit_info;
+  float error_threshold;
+  int n_iterations_RANSAC, n_samples_RANSAC, success_fit;
+  struct linear_flow_fit_info fit_info;
 
   // Update FPS for information
   result->fps = 1 / (timeval_diff(&opticflow->prev_timestamp, &img->ts) / 1000.);
@@ -226,7 +243,6 @@ void calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct opticflow_sta
     opticflow->got_first_img = true;
   }
 
-
   // *************************************************************************************
   // Corner detection
   // *************************************************************************************
@@ -234,13 +250,16 @@ void calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct opticflow_sta
   // FAST corner detection
   // TODO: There is something wrong with fast9_detect destabilizing FPS. This problem is reduced with putting min_distance
   // to 0 (see defines), however a more permanent solution should be considered
-  struct point_t *corners = fast9_detect(img, opticflow->fast9_threshold, opticflow->fast9_min_distance,
-                                         opticflow->fast9_padding, opticflow->fast9_padding, &result->corner_cnt);
+  fast9_detect(img, opticflow->fast9_threshold, opticflow->fast9_min_distance,
+               opticflow->fast9_padding, opticflow->fast9_padding, &result->corner_cnt,
+               &opticflow->fast9_rsize,
+               opticflow->fast9_ret_corners);
 
   // Adaptive threshold
   if (opticflow->fast9_adaptive) {
     // Decrease and increase the threshold based on previous values
-    if (result->corner_cnt < 40 && opticflow->fast9_threshold > FAST9_LOW_THRESHOLD) { // TODO: Replace 40 with OPTICFLOW_MAX_TRACK_CORNERS / 2
+    if (result->corner_cnt < 40
+        && opticflow->fast9_threshold > FAST9_LOW_THRESHOLD) { // TODO: Replace 40 with OPTICFLOW_MAX_TRACK_CORNERS / 2
       opticflow->fast9_threshold--;
     } else if (result->corner_cnt > OPTICFLOW_MAX_TRACK_CORNERS * 2 && opticflow->fast9_threshold < FAST9_HIGH_THRESHOLD) {
       opticflow->fast9_threshold++;
@@ -248,12 +267,11 @@ void calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct opticflow_sta
   }
 
 #if OPTICFLOW_SHOW_CORNERS
-  image_show_points(img, corners, result->corner_cnt);
+  image_show_points(img, opticflow->fast9_ret_corners, result->corner_cnt);
 #endif
 
   // Check if we found some corners to track
   if (result->corner_cnt < 1) {
-    free(corners);
     image_copy(&opticflow->img_gray, &opticflow->prev_img_gray);
     return;
   }
@@ -264,7 +282,8 @@ void calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct opticflow_sta
 
   // Execute a Lucas Kanade optical flow
   result->tracked_cnt = result->corner_cnt;
-  struct flow_t *vectors = opticFlowLK(&opticflow->img_gray, &opticflow->prev_img_gray, corners, &result->tracked_cnt,
+  struct flow_t *vectors = opticFlowLK(&opticflow->img_gray, &opticflow->prev_img_gray, opticflow->fast9_ret_corners,
+                                       &result->tracked_cnt,
                                        opticflow->window_size / 2, opticflow->subpixel_factor, opticflow->max_iterations,
                                        opticflow->threshold_vec, opticflow->max_track_corners, opticflow->pyramid_level);
 
@@ -333,8 +352,10 @@ void calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct opticflow_sta
   float diff_flow_y = (state->theta - opticflow->prev_theta) * img->h / OPTICFLOW_FOV_H;*/
 
   if (opticflow->derotation && result->tracked_cnt > 5) {
-    diff_flow_x = (state->rates.p + opticflow->prev_rates.p) / 2.0f / result->fps * img->w / OPTICFLOW_FOV_W;// * img->w / OPTICFLOW_FOV_W;
-    diff_flow_y = (state->rates.q + opticflow->prev_rates.q) / 2.0f / result->fps * img->h / OPTICFLOW_FOV_H;// * img->h / OPTICFLOW_FOV_H;
+    diff_flow_x = (state->rates.p + opticflow->prev_rates.p) / 2.0f / result->fps * img->w /
+                  OPTICFLOW_FOV_W;// * img->w / OPTICFLOW_FOV_W;
+    diff_flow_y = (state->rates.q + opticflow->prev_rates.q) / 2.0f / result->fps * img->h /
+                  OPTICFLOW_FOV_H;// * img->h / OPTICFLOW_FOV_H;
   }
 
   result->flow_der_x = result->flow_x - diff_flow_x * opticflow->subpixel_factor;
@@ -346,22 +367,29 @@ void calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct opticflow_sta
   // TODO Calculate the velocity more sophisticated, taking into account the drone's angle and the slope of the ground plane.
   float vel_x = result->flow_der_x * result->fps * state->agl / opticflow->subpixel_factor  / OPTICFLOW_FX;
   float vel_y = result->flow_der_y * result->fps * state->agl / opticflow->subpixel_factor  / OPTICFLOW_FY;
-  result->vel_x = vel_x;
-  result->vel_y = vel_y;
 
+  //Apply a  median filter to the velocity if wanted
+  if (opticflow->median_filter == true) {
+    result->vel_x = (float)update_median_filter(&vel_x_filt, (int32_t)(vel_x * 1000)) / 1000;
+    result->vel_y = (float)update_median_filter(&vel_y_filt, (int32_t)(vel_y * 1000)) / 1000;
+  } else {
+    result->vel_x = vel_x;
+    result->vel_y = vel_y;
+  }
   // Velocity calculation: uncomment if focal length of the camera is not known or incorrect.
   //  result->vel_x =  - result->flow_der_x * result->fps * state->agl / opticflow->subpixel_factor * OPTICFLOW_FOV_W / img->w
   //  result->vel_y =  result->flow_der_y * result->fps * state->agl / opticflow->subpixel_factor * OPTICFLOW_FOV_H / img->h
 
 
   // Determine quality of noise measurement for state filter
-  //TODO Experiment with multiple noise measurement models
-  result->noise_measurement = (float)result->tracked_cnt / (float)opticflow->max_track_corners;
+  //TODO develop a noise model based on groundtruth
+
+  float noise_measurement_temp = (1 - ((float)result->tracked_cnt / ((float)opticflow->max_track_corners * 1.25)));
+  result->noise_measurement = noise_measurement_temp;
 
   // *************************************************************************************
   // Next Loop Preparation
   // *************************************************************************************
-  free(corners);
   free(vectors);
   image_switch(&opticflow->img_gray, &opticflow->prev_img_gray);
 }
@@ -441,10 +469,12 @@ void calc_edgeflow_tot(struct opticflow_t *opticflow, struct opticflow_state_t *
   int16_t der_shift_y = 0;
 
   if (opticflow->derotation) {
-    der_shift_x = -(int16_t)((edge_hist[previous_frame_nr[0]].rates.p + edge_hist[current_frame_nr].rates.p) / 2.0f *
-                             (float)img->w / (OPTICFLOW_FOV_W));
-    der_shift_y = -(int16_t)((edge_hist[previous_frame_nr[1]].rates.q + edge_hist[current_frame_nr].rates.q) / 2.0f *
-                             (float)img->h / (OPTICFLOW_FOV_H));
+    der_shift_x = (int16_t)((edge_hist[previous_frame_nr[0]].rates.p + edge_hist[current_frame_nr].rates.p) / 2.0f /
+                            result->fps *
+                            (float)img->w / (OPTICFLOW_FOV_W));
+    der_shift_y = (int16_t)((edge_hist[previous_frame_nr[1]].rates.q + edge_hist[current_frame_nr].rates.q) / 2.0f /
+                            result->fps *
+                            (float)img->h / (OPTICFLOW_FOV_H));
   }
 
   // Estimate pixel wise displacement of the edge histograms for x and y direction
@@ -505,8 +535,19 @@ void calc_edgeflow_tot(struct opticflow_t *opticflow, struct opticflow_state_t *
   // Calculate velocity
   float vel_x = edgeflow.flow_x * fps_x * state->agl * OPTICFLOW_FOV_W / (img->w * RES);
   float vel_y = edgeflow.flow_y * fps_y * state->agl * OPTICFLOW_FOV_H / (img->h * RES);
-  result->vel_x = vel_x;
-  result->vel_y = vel_y;
+
+  //Apply a  median filter to the velocity if wanted
+  if (opticflow->median_filter == true) {
+    result->vel_x = (float)update_median_filter(&vel_x_filt, (int32_t)(vel_x * 1000)) / 1000;
+    result->vel_y = (float)update_median_filter(&vel_y_filt, (int32_t)(vel_y * 1000)) / 1000;
+  } else {
+    result->vel_x = vel_x;
+    result->vel_y = vel_y;
+  }
+
+  result->noise_measurement = 0.2;
+
+
 
 #if OPTICFLOW_SHOW_FLOW
   draw_edgeflow_img(img, edgeflow, prev_edge_histogram_x, edge_hist_x);

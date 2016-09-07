@@ -401,6 +401,25 @@ void autopilot_periodic(void)
 
 }
 
+/** AP mode setting handler
+ *
+ * Checks RC status before calling autopilot_set_mode function
+ */
+void autopilot_SetModeHandler(float mode)
+{
+  if (mode == AP_MODE_KILL || mode == AP_MODE_FAILSAFE || mode == AP_MODE_HOME) {
+    // safety modes are always accessible via settings
+    autopilot_set_mode(mode);
+  } else {
+    if (radio_control.status != RC_OK &&
+        (mode == AP_MODE_NAV || mode == AP_MODE_GUIDED || mode == AP_MODE_FLIP || mode == AP_MODE_MODULE)) {
+      // without RC, only nav-like modes are accessible
+      autopilot_set_mode(mode);
+    }
+  }
+  // with RC, other modes can only be changed from the RC
+}
+
 
 void autopilot_set_mode(uint8_t new_autopilot_mode)
 {
@@ -600,8 +619,9 @@ void autopilot_guided_update(uint8_t flags, float x, float y, float z, float yaw
   if (bit_is_set(flags, 5)) { // velocity setpoint
     if (bit_is_set(flags, 1)) { // set velocity in body frame
       guidance_h_set_guided_body_vel(setpoint.x, setpoint.y);
+    } else {
+      guidance_h_set_guided_vel(setpoint.x, setpoint.y);
     }
-    guidance_h_set_guided_vel(setpoint.x, setpoint.y);
   } else {  // position setpoint
     if (!bit_is_set(flags, 0) && !bit_is_set(flags, 1)) {   // set absolute position setpoint
       guidance_h_set_guided_pos(setpoint.x, setpoint.y);
@@ -637,7 +657,7 @@ void autopilot_guided_update(uint8_t flags, float x, float y, float z, float yaw
 
   //handle yaw
   if (bit_is_set(flags, 7)) { // speed set-point
-    guidance_h_set_guided_heading_rate(z);
+    guidance_h_set_guided_heading_rate(yaw);
   } else {    // position set-point
     if (bit_is_set(flags, 3)) { // set yaw as offset
       yaw += stateGetNedToBodyEulers_f()->psi;  // will be wrapped to [-pi,pi] later
