@@ -54,6 +54,7 @@
     </block>
 
     <block name="Range Avoid">
+      <call fun="Hover(1.0)"/>
       <call fun="range_sensors_avoid()"/>
     </block>
 

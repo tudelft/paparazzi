@@ -304,11 +304,15 @@ bool range_sensors_avoid(void)
   int16_t min_avoid_distance = 2000; // 2 meters
   int16_t max_avoid_distance = 1000; // 2 meters
 
+  // velocity commands for close and mid range (no velocity command behond max_avoid_distance
   float max_vel_command = 0.5;
   float min_vel_command = 0.2;
+
+  // Velocity commands
   float avoid_y_command = 0.0f;
   float avoid_x_command = 0.0f;
 
+  // Balance avoidance command for y direction (sideways)
 
   if (range_finders.right < min_avoid_distance) {
     if (range_finders.right > max_avoid_distance) {
@@ -324,12 +328,15 @@ bool range_sensors_avoid(void)
       avoid_y_command += max_vel_command;
     }
   }
+
+  // balance avoidance command for x direction (forward/backward)
   if (range_finders.front < min_avoid_distance) {
+// from stereo camera TODO: add this once the stereocamera is attached
 //    if(range_finders.front > max_avoid_distance)
 //    avoid_y_command += min_vel_command;
 //    else
 //      avoid_y_command += max_vel_command;
-    avoid_x_command -= 0.2;
+    avoid_x_command -= 0.05;
   }
   if (range_finders.back < min_avoid_distance) {
     if (range_finders.back > max_avoid_distance) {
@@ -339,9 +346,8 @@ bool range_sensors_avoid(void)
     }
   }
 
-  printf("avoid command  %f %f \n", avoid_x_command, avoid_y_command);
+  // Send wall avoidance
   guidance_h_set_guided_body_vel(avoid_x_command, avoid_y_command);
-
 
   return true;
 }
