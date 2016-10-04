@@ -53,6 +53,10 @@
       <call fun="WaitUntilAltitude(1)"/>
     </block>
 
+    <block name="Range Avoid">
+      <call fun="range_sensors_avoid()"/>
+    </block>
+
     <block name="Hover 2 sec">
       <call_once fun="sonar_obstacle_detect_on()"/>
       <call fun="Hover(1.5)"/>

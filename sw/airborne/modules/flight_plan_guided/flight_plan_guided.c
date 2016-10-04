@@ -42,25 +42,40 @@
 #include "modules/stereocam/stereoprotocol.h"
 
 bool marker_lost;
+struct range_finders_ range_finders;
 
-void flight_plan_guided_init(void) {
+#include "subsystems/abi.h"
+#ifndef RANGE_SENSORS_ABI_ID
+#define RANGE_SENSORS_ABI_ID ABI_BROADCAST
+#endif
+static abi_event range_sensors_ev;
+static void range_sensors_cb(uint8_t sender_id __attribute__((unused)),
+                             int16_t range_front, int16_t range_right, int16_t range_back, int16_t range_left);
+
+
+void flight_plan_guided_init(void)
+{
   marker_lost = true;
+
+  AbiBindMsgRANGE_SENSORS(RANGE_SENSORS_ABI_ID, &range_sensors_ev, range_sensors_cb);
 } // Dummy
 
 
 /* Kill throttle */
-uint8_t KillEngines(void) {
-    autopilot_set_motors_on(FALSE);
+uint8_t KillEngines(void)
+{
+  autopilot_set_motors_on(FALSE);
 
-    return false;
+  return false;
 }
 
 
 /* Start throttle */
-uint8_t StartEngines(void) {
-    autopilot_set_motors_on(TRUE);
+uint8_t StartEngines(void)
+{
+  autopilot_set_motors_on(TRUE);
 
-    return false;
+  return false;
 }
 
 
@@ -68,24 +83,27 @@ uint8_t StartEngines(void) {
 uint8_t ResetAlt(void) {if (autopilot_mode == AP_MODE_GUIDED) { ins_reset_altitude_ref(); } return false;}
 
 
-bool TakeOff(float climb_rate) {
-    if (autopilot_mode != AP_MODE_GUIDED) { return true; }
+bool TakeOff(float climb_rate)
+{
+  if (autopilot_mode != AP_MODE_GUIDED) { return true; }
 
-    guidance_v_set_guided_vz(-climb_rate);
-    guidance_h_set_guided_body_vel(0, 0);
+  guidance_v_set_guided_vz(-climb_rate);
+  guidance_h_set_guided_body_vel(0, 0);
 
-    return false;
+  return false;
 }
 
-bool WaitUntilAltitude(float altitude) {
-    if (autopilot_mode != AP_MODE_GUIDED) { return true; }
+bool WaitUntilAltitude(float altitude)
+{
+  if (autopilot_mode != AP_MODE_GUIDED) { return true; }
 
-    if (stateGetPositionEnu_f()->z < altitude) { return true; }
+  if (stateGetPositionEnu_f()->z < altitude) { return true; }
 
-    return false;
+  return false;
 }
 
-bool RotateToHeading(float heading) {
+bool RotateToHeading(float heading)
+{
   if (autopilot_mode != AP_MODE_GUIDED) { return true; }
 
   guidance_h_set_guided_heading(heading);
@@ -93,60 +111,65 @@ bool RotateToHeading(float heading) {
   return false;
 }
 
-uint8_t Hover(float altitude) {
-    if (autopilot_mode != AP_MODE_GUIDED) { return true; }
-    // Horizontal velocities are set to zero
-    guidance_h_set_guided_body_vel(0, 0);
-    guidance_v_set_guided_z(-altitude);
+uint8_t Hover(float altitude)
+{
+  if (autopilot_mode != AP_MODE_GUIDED) { return true; }
+  // Horizontal velocities are set to zero
+  guidance_h_set_guided_body_vel(0, 0);
+  guidance_v_set_guided_z(-altitude);
 
-    return false;
+  return false;
 }
 
 /* Move forward */
-uint8_t MoveForward(float vx) {
-    if (autopilot_mode != AP_MODE_GUIDED) { return true; }
+uint8_t MoveForward(float vx)
+{
+  if (autopilot_mode != AP_MODE_GUIDED) { return true; }
 
-    if (autopilot_mode == AP_MODE_GUIDED) {
-        guidance_h_set_guided_body_vel(vx, 0);
-    }
-    return false;
+  if (autopilot_mode == AP_MODE_GUIDED) {
+    guidance_h_set_guided_body_vel(vx, 0);
+  }
+  return false;
 }
 
 /* Move Right */
-uint8_t MoveRight(float vy) {
-    if (autopilot_mode != AP_MODE_GUIDED) { return true; }
+uint8_t MoveRight(float vy)
+{
+  if (autopilot_mode != AP_MODE_GUIDED) { return true; }
 
-    if (autopilot_mode == AP_MODE_GUIDED) {
-        guidance_h_set_guided_body_vel(0, vy);
-    }
-    return false;
+  if (autopilot_mode == AP_MODE_GUIDED) {
+    guidance_h_set_guided_body_vel(0, vy);
+  }
+  return false;
 }
 
 
 
-bool Land(float end_altitude) {
+bool Land(float end_altitude)
+{
   if (autopilot_mode != AP_MODE_GUIDED) { return true; }
 
-    // return true if not completed
+  // return true if not completed
 
-    //For bucket
+  //For bucket
 //    guidance_v_set_guided_vz(0.2);
-    //For landing pad
-    guidance_v_set_guided_vz(1.5);
-    guidance_h_set_guided_body_vel(0, 0);
+  //For landing pad
+  guidance_v_set_guided_vz(1.5);
+  guidance_h_set_guided_body_vel(0, 0);
 
 
-    if (stateGetPositionEnu_f()->z > end_altitude) {
-        return true;
-    }
+  if (stateGetPositionEnu_f()->z > end_altitude) {
+    return true;
+  }
 
-    return false;
+  return false;
 }
 
 static int BUCKET_HEADING_MARGIN = 60;  // px
 static float BUCKET_HEADING_RATE = 0.5; // rad/s
 
-bool bucket_heading_change(void) {
+bool bucket_heading_change(void)
+{
   if (autopilot_mode != AP_MODE_GUIDED) { return true; }
 
   guidance_h_set_guided_body_vel(0., 0.);
@@ -187,7 +210,8 @@ static float BUCKET_DRIFT_CORRECTION_RATE = 0.1;
 static float BUCKET_APPROACH_SPEED_HIGH = 0.1;
 static float BUCKET_APPROACH_SPEED_LOW = 0.05;
 
-bool bucket_approach(void) {
+bool bucket_approach(void)
+{
   if (autopilot_mode != AP_MODE_GUIDED) { return true; }
 
   if (marker1.detected) {
@@ -233,7 +257,8 @@ bool bucket_approach(void) {
   return true;
 }
 
-bool bucket_center(void) {
+bool bucket_center(void)
+{
   if (autopilot_mode != AP_MODE_GUIDED) { return true; }
 
   if (marker1.detected) {
@@ -256,14 +281,80 @@ bool bucket_center(void) {
   return true;
 }
 
-bool open_gripper(void) {
+bool open_gripper(void)
+{
   uint8_t msg[1]; msg[0] = 0;
   stereoprot_sendArray(&((UART_LINK).device), msg, 1, 1);
   return false;
 }
 
-bool close_gripper(void) {
+bool close_gripper(void)
+{
   uint8_t msg[1]; msg[0] = 1;
   stereoprot_sendArray(&((UART_LINK).device), msg, 1, 1);
   return false;
+}
+
+
+bool range_sensors_avoid(void)
+{
+
+  // forward backward
+
+  int16_t min_avoid_distance = 2000; // 2 meters
+  int16_t max_avoid_distance = 1000; // 2 meters
+
+  float max_vel_command = 0.5;
+  float min_vel_command = 0.2;
+  float avoid_y_command = 0.0f;
+  float avoid_x_command = 0.0f;
+
+
+  if (range_finders.right < min_avoid_distance) {
+    if (range_finders.right > max_avoid_distance) {
+      avoid_y_command -= min_vel_command;
+    } else {
+      avoid_y_command -= max_vel_command;
+    }
+  }
+  if (range_finders.left < min_avoid_distance) {
+    if (range_finders.left > max_avoid_distance) {
+      avoid_y_command += min_vel_command;
+    } else {
+      avoid_y_command += max_vel_command;
+    }
+  }
+  if (range_finders.front < min_avoid_distance) {
+//    if(range_finders.front > max_avoid_distance)
+//    avoid_y_command += min_vel_command;
+//    else
+//      avoid_y_command += max_vel_command;
+    avoid_x_command -= 0.2;
+  }
+  if (range_finders.back < min_avoid_distance) {
+    if (range_finders.back > max_avoid_distance) {
+      avoid_x_command += min_vel_command;
+    } else {
+      avoid_x_command += max_vel_command;
+    }
+  }
+
+  printf("avoid command  %f %f \n", avoid_x_command, avoid_y_command);
+  guidance_h_set_guided_body_vel(avoid_x_command, avoid_y_command);
+
+
+  return true;
+}
+
+
+
+static void range_sensors_cb(uint8_t sender_id __attribute__((unused)),
+                             int16_t range_front, int16_t range_right, int16_t range_back, int16_t range_left)
+{
+
+  range_finders.front = range_front;
+  range_finders.right = range_right;
+  range_finders.left = range_left;
+  range_finders.back = range_back;
+
 }
