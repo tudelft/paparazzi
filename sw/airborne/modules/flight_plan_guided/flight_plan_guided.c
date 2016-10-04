@@ -330,7 +330,7 @@ bool range_sensors_avoid(void)
   }
 
   // balance avoidance command for x direction (forward/backward)
-  if (range_finders.front < min_avoid_distance) {
+  if (range_finders.front < max_avoid_distance) {
 // from stereo camera TODO: add this once the stereocamera is attached
 //    if(range_finders.front > max_avoid_distance)
 //    avoid_y_command += min_vel_command;
@@ -343,6 +343,51 @@ bool range_sensors_avoid(void)
       avoid_x_command += min_vel_command;
     } else {
       avoid_x_command += max_vel_command;
+    }
+  }
+
+  // Send wall avoidance
+  guidance_h_set_guided_body_vel(avoid_x_command, avoid_y_command);
+
+  return true;
+}
+
+bool range_sensors_wall_following(uint8_t direction)
+{
+
+  // forward backward
+
+
+  // balance avoidance command for x direction (forward/backward)
+
+  float avoid_x_command = 0.0f;
+  float avoid_y_command = 0.0f;
+
+
+  if (direction == 1) {
+    avoid_y_command += (1500 - (float)range_finders.left) / 1000;
+  }
+
+
+  if (direction == 2) {
+    avoid_y_command += ((float)range_finders.right - 1500) / 1000;
+  }
+
+  if (avoid_y_command > 0.1f) {
+    avoid_y_command = 0.1f;
+  }
+  if (avoid_y_command < -0.1f) {
+    avoid_y_command = -0.1f;
+  }
+
+
+  avoid_x_command -= 0.05;
+
+  if (range_finders.back < 2000) {
+    if (range_finders.back > 1000) {
+      avoid_x_command += 0.2f;
+    } else {
+      avoid_x_command += 0.3f;
     }
   }
 

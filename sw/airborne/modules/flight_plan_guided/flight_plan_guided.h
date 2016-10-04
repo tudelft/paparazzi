@@ -61,4 +61,7 @@ bool bucket_heading_change(void);
 bool bucket_approach(void);
 bool bucket_center(void);
 
+extern bool range_sensors_avoid(void);
+extern bool range_sensors_wall_following(uint8_t direction);
+
 #endif
