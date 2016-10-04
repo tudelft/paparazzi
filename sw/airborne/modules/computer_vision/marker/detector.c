@@ -301,12 +301,12 @@ static struct image_t *draw_target_marker1(struct image_t* img)
         image_draw_line(img, &l, &r);
     }
 
-    DOWNLINK_SEND_DETECTOR(DefaultChannel, DefaultDevice,
-                           &marker1.detected,
-                           &marker1.pixel.x,
-                           &marker1.pixel.y,
-                           &marker1.found_time,
-                           &marker1.mid_time);
+//    DOWNLINK_SEND_DETECTOR(DefaultChannel, DefaultDevice,
+//                           &marker1.detected,
+//                           &marker1.pixel.x,
+//                           &marker1.pixel.y,
+//                           &marker1.found_time,
+//                           &marker1.mid_time);
 
     return img;
 }

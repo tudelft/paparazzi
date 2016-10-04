@@ -39,7 +39,7 @@
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
     <module name="sonar_bebop">
-      <define name="SENSOR_SYNC_SEND_SONAR" value="TRUE"/>
+      <!--define name="SENSOR_SYNC_SEND_SONAR" value="TRUE"/-->
     </module>
     <module name="pose_history"/>
     <module name="video_thread"/>
