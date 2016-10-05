@@ -298,78 +298,22 @@ bool close_gripper(void)
 
 bool range_sensors_avoid(void)
 {
+  float vel_command_body_x = 0.05f;
+  float vel_command_body_y =  0.0f;
 
-  // forward backward
-printf("range %d %d %d %d\n", range_finders.right, range_finders.back, range_finders.left, range_finders.front);
+  //add extra velocity command to avoid walls based on range sensors
+  range_sensor_force_field(&vel_command_body_x, &vel_command_body_y, range_finders, 800, 1200, 0.0f, 0.3f);
 
-  int16_t avoid_inner_border = 800; // 2 meters
-  int16_t avoid_outer_border = 1200; // 1 meters
-  int16_t difference_inner_outer = avoid_outer_border - avoid_inner_border;
-  // velocity commands for close and mid range (no velocity command behond max_avoid_distance
-  float max_vel_command = 0.3;//
-  float min_vel_command = 0.0;
-
-  // Velocity commands
-  float avoid_y_command = 0.0f;
-  float avoid_x_command = 0.0f;
-
-  // Balance avoidance command for y direction (sideways)
-
-  if (range_finders.right < avoid_outer_border) {
-    if (range_finders.right > avoid_inner_border) {
-      avoid_y_command -= (max_vel_command - min_vel_command)*
-    		  ((float)avoid_outer_border - (float)range_finders.right)
-    		  /(float)difference_inner_outer;
-
-
-    } else {
-      avoid_y_command -= max_vel_command;
-    }
-  }
-  if (range_finders.left < avoid_outer_border) {
-    if (range_finders.left > avoid_inner_border) {
-      avoid_y_command += (max_vel_command - min_vel_command)*
-    		  ((float)avoid_outer_border - (float)range_finders.left)
-    		  /(float)difference_inner_outer;
-    } else {
-      avoid_y_command += max_vel_command;
-    }
-  }
-
-  // balance avoidance command for x direction (forward/backward)
-  //if (range_finders.front < max_avoid_distance) {
-// from stereo camera TODO: add this once the stereocamera is attached
-//    if(range_finders.front > max_avoid_distance)
-//    avoid_y_command += min_vel_command;
-//    else
-//      avoid_y_command += max_vel_command;
- // }
-
-  avoid_x_command -= 0.05;
-
-  if (range_finders.back < avoid_outer_border) {
-    if (range_finders.back > avoid_inner_border) {
-      avoid_x_command += (max_vel_command - min_vel_command)*
-    		  ((float)avoid_outer_border - (float)range_finders.back)
-    		  /(float)difference_inner_outer;
-    } else {
-      avoid_x_command += max_vel_command;
-    }
-  }
-  printf("commands %f %f\n", avoid_x_command, avoid_y_command);
-
-  // Send wall avoidance
-  guidance_h_set_guided_body_vel(avoid_x_command, avoid_y_command);
-
+  //send to horizontal guidance
+  guidance_h_set_guided_body_vel(vel_command_body_x, vel_command_body_y);
   return true;
+
 }
 
 bool range_sensors_wall_following(uint8_t direction)
 {
 
   // forward backward
-
-
   // balance avoidance command for x direction (forward/backward)
 
   float avoid_x_command = 0.0f;
@@ -409,7 +353,63 @@ bool range_sensors_wall_following(uint8_t direction)
   return true;
 }
 
+void range_sensor_force_field(float *vel_body_x, float *vel_body_y, struct range_finders_ range_finders,
+                              int16_t avoid_inner_border, int16_t avoid_outer_border, float min_vel_command, float max_vel_command)
+{
 
+  int16_t difference_inner_outer = avoid_outer_border - avoid_inner_border;
+
+
+  // Velocity commands
+  float avoid_x_command = *vel_body_x;
+  float avoid_y_command = *vel_body_y;
+
+  // Balance avoidance command for y direction (sideways)
+
+  if (range_finders.right < avoid_outer_border) {
+    if (range_finders.right > avoid_inner_border) {
+      avoid_y_command -= (max_vel_command - min_vel_command) *
+                         ((float)avoid_outer_border - (float)range_finders.right)
+                         / (float)difference_inner_outer;
+    } else {
+      avoid_y_command -= max_vel_command;
+    }
+  }
+  if (range_finders.left < avoid_outer_border) {
+    if (range_finders.left > avoid_inner_border) {
+      avoid_y_command += (max_vel_command - min_vel_command) *
+                         ((float)avoid_outer_border - (float)range_finders.left)
+                         / (float)difference_inner_outer;
+    } else {
+      avoid_y_command += max_vel_command;
+    }
+  }
+
+  // balance avoidance command for x direction (forward/backward)
+  if (range_finders.front < avoid_outer_border) {
+    //from stereo camera TODO: add this once the stereocamera is attached
+    if (range_finders.front > avoid_inner_border)
+      avoid_y_command += (max_vel_command - min_vel_command) *
+                         ((float)avoid_outer_border - (float)range_finders.front)
+                         / (float)difference_inner_outer;
+  } else {
+    avoid_y_command += max_vel_command;
+  }
+
+
+  if (range_finders.back < avoid_outer_border) {
+    if (range_finders.back > avoid_inner_border) {
+      avoid_x_command += (max_vel_command - min_vel_command) *
+                         ((float)avoid_outer_border - (float)range_finders.back)
+                         / (float)difference_inner_outer;
+    } else {
+      avoid_x_command += max_vel_command;
+    }
+  }
+
+  *vel_body_x = avoid_x_command;
+  *vel_body_y = avoid_y_command;
+}
 
 static void range_sensors_cb(uint8_t sender_id __attribute__((unused)),
                              int16_t range_front, int16_t range_right, int16_t range_back, int16_t range_left)
