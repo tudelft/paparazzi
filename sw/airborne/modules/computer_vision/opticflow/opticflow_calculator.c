@@ -33,6 +33,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <state.h>
 // Own Header
 #include "opticflow_calculator.h"
 
@@ -113,7 +114,7 @@ PRINT_CONFIG_VAR(OPTICFLOW_MAX_ITERATIONS)
 PRINT_CONFIG_VAR(OPTICFLOW_THRESHOLD_VEC)
 
 #ifndef OPTICFLOW_PYRAMID_LEVEL
-#define OPTICFLOW_PYRAMID_LEVEL 0
+#define OPTICFLOW_PYRAMID_LEVEL 3
 #endif
 PRINT_CONFIG_VAR(OPTICFLOW_PYRAMID_LEVEL)
 
@@ -641,14 +642,28 @@ void opticflow_calc_frame(struct opticflow_t *opticflow, struct opticflow_state_
 
       // Get accelerometer values rotated to body axis
       // TODO: use acceleration from the state ?
-      struct FloatVect3 accel_imu_f;
-      ACCELS_FLOAT_OF_BFP(accel_imu_f, state->accel_imu_meas);
-      struct FloatVect3 accel_meas_body;
-      float_quat_vmult(&accel_meas_body, &state->imu_to_body_quat, &accel_imu_f);
+//      struct FloatVect3 accel_imu_f;
+//      ACCELS_FLOAT_OF_BFP(accel_imu_f, state->accel_imu_meas);
+//      struct FloatVect3 accel_meas_body;
+//      float_quat_vmult(&accel_meas_body, &state->imu_to_body_quat, &accel_imu_f);
+//
+//      float acceleration_measurement[2];
+//      acceleration_measurement[0] = accel_meas_body.x;
+//      acceleration_measurement[1] = accel_meas_body.y;
+
+      // new accelorometer measurement now from INS!!!!
+
+
+      float psi = stateGetNedToBodyEulers_f()->psi;
+      float newaccelx =  cosf(-psi) * stateGetAccelNed_f()->x - sinf(-psi) * stateGetAccelNed_f()->y;
+      float newaccely = sinf(-psi) * stateGetAccelNed_f()->x + cosf(-psi) * stateGetAccelNed_f()->y;
+
 
       float acceleration_measurement[2];
-      acceleration_measurement[0] = accel_meas_body.x;
-      acceleration_measurement[1] = accel_meas_body.y;
+
+      acceleration_measurement[0] = newaccelx;
+      acceleration_measurement[1] = newaccely;
+
 
       kalman_filter_opticflow_velocity(&result->vel_body_x, &result->vel_body_y, acceleration_measurement, result->fps,
                                        measurement_noise, opticflow->kalman_filter_process_noise, reinitialize_kalman);
