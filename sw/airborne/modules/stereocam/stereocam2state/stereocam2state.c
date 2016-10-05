@@ -87,7 +87,6 @@ void stereo_to_state_periodic(void)
     range_finder[1] = int16Arrray[1];
     range_finder[2] = int16Arrray[2];
     range_finder[3] = int16Arrray[3];
-
     AbiSendMsgRANGE_SENSORS(STEREOCAM2STATE_SENDER_ID, range_finder[0], range_finder[1], range_finder[2], range_finder[3]);
     stereocam_data.fresh = 0;
   } else if (stereocam_data.fresh && stereocam_data.len == 9) {  // length of WINDOW message
