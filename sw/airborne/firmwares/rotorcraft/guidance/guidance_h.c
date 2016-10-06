@@ -91,6 +91,9 @@ struct Int32Vect2 guidance_h_pos_err;
 struct Int32Vect2 guidance_h_speed_err;
 struct Int32Vect2 guidance_h_trim_att_integrator;
 
+
+struct Int32Vect2 guidance_h_speed_offset;
+
 /** horizontal guidance command.
  * In north/east with #INT32_ANGLE_FRAC
  * @todo convert to real force command
@@ -476,7 +479,8 @@ void guidance_h_run(bool  in_flight)
   }
 }
 
-static void propagate_rate(uint16_t update_frequency){
+static void propagate_rate(uint16_t update_frequency)
+{
   guidance_h.sp.heading += (guidance_h.sp.heading_rate >> (INT32_ANGLE_FRAC - INT32_RATE_FRAC)) / update_frequency;
 }
 
@@ -485,6 +489,11 @@ static void guidance_h_update_reference(void)
 {
   /* compute reference even if usage temporarily disabled via guidance_h_use_ref */
 #if GUIDANCE_H_USE_REF
+
+// add offset to speed (Range sensors)
+  guidance_h.sp.speed.x += guidance_h_speed_offset.x;
+  guidance_h.sp.speed.y += guidance_h_speed_offset.y;
+
   if (bit_is_set(guidance_h.sp.mask, 5)) {
     gh_update_ref_from_speed_sp(guidance_h.sp.speed);
   } else {
@@ -738,4 +747,24 @@ bool guidance_h_set_guided_heading_rate(float rate)
 const struct Int32Vect2 *guidance_h_get_pos_err(void)
 {
   return &guidance_h_pos_err;
+}
+
+
+void guidance_h_set_speed_offset(float vx, float vy)
+{
+  if (guidance_h.mode == GUIDANCE_H_MODE_GUIDED) {
+
+    // update offset velocity based on range sensors
+    float vel_offset_body_x = 0.0f;
+    float vel_offset_body_y =  0.0f;
+    float psi = stateGetNedToBodyEulers_f()->psi;
+    float vel_offset_NED_x_f =  cosf(-psi) * vel_offset_body_x + sinf(-psi) * vel_offset_body_y;
+    float vel_offset_NED_y_f = - sinf(-psi) * vel_offset_body_x + cosf(-psi) * vel_offset_body_y;
+    // add speed offset (by range sensors)
+    guidance_h_speed_offset.x = SPEED_BFP_OF_REAL(vel_offset_NED_x_f);
+    guidance_h_speed_offset.y = SPEED_BFP_OF_REAL(vel_offset_NED_y_f);
+  } else {
+    guidance_h_speed_offset.x = SPEED_BFP_OF_REAL(0.0f);
+    guidance_h_speed_offset.y = SPEED_BFP_OF_REAL(0.0f);
+  }
 }

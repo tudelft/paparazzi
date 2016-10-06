@@ -42,7 +42,6 @@
 #include "modules/stereocam/stereoprotocol.h"
 
 bool marker_lost;
-struct range_finders_ range_finders;
 
 #include "subsystems/abi.h"
 #ifndef RANGE_SENSORS_ABI_ID
@@ -57,7 +56,7 @@ void flight_plan_guided_init(void)
 {
   marker_lost = true;
 
-  AbiBindMsgRANGE_SENSORS(RANGE_SENSORS_ABI_ID, &range_sensors_ev, range_sensors_cb);
+  AbiBindMsgRANGE_SENSORS(RANGE_SENSORS_ABI_ID, &range_sensors_ev, &range_sensors_cb);
 } // Dummy
 
 
@@ -296,63 +295,6 @@ bool close_gripper(void)
 }
 
 
-bool range_sensors_avoid(void)
-{
-  float vel_command_body_x = 0.05f;
-  float vel_command_body_y =  0.0f;
-
-  //add extra velocity command to avoid walls based on range sensors
-  range_sensor_force_field(&vel_command_body_x, &vel_command_body_y, range_finders, 800, 1200, 0.0f, 0.3f);
-
-  //send to horizontal guidance
-  guidance_h_set_guided_body_vel(vel_command_body_x, vel_command_body_y);
-  return true;
-
-}
-
-bool range_sensors_wall_following(uint8_t direction)
-{
-
-  // forward backward
-  // balance avoidance command for x direction (forward/backward)
-
-  float avoid_x_command = 0.0f;
-  float avoid_y_command = 0.0f;
-
-
-  if (direction == 1) {
-    avoid_y_command += (1500 - (float)range_finders.left) / 1000;
-  }
-
-
-  if (direction == 2) {
-    avoid_y_command += ((float)range_finders.right - 1500) / 1000;
-  }
-
-  if (avoid_y_command > 0.1f) {
-    avoid_y_command = 0.1f;
-  }
-  if (avoid_y_command < -0.1f) {
-    avoid_y_command = -0.1f;
-  }
-
-
-  avoid_x_command -= 0.05;
-
-  if (range_finders.back < 2000) {
-    if (range_finders.back > 1000) {
-      avoid_x_command += 0.2f;
-    } else {
-      avoid_x_command += 0.3f;
-    }
-  }
-
-  // Send wall avoidance
-  guidance_h_set_guided_body_vel(avoid_x_command, avoid_y_command);
-
-  return true;
-}
-
 void range_sensor_force_field(float *vel_body_x, float *vel_body_y, struct range_finders_ range_finders,
                               int16_t avoid_inner_border, int16_t avoid_outer_border, float min_vel_command, float max_vel_command)
 {
@@ -415,9 +357,21 @@ static void range_sensors_cb(uint8_t sender_id __attribute__((unused)),
                              int16_t range_front, int16_t range_right, int16_t range_back, int16_t range_left)
 {
 
+  struct range_finders_ range_finders;
+// save range finders values
   range_finders.front = range_front;
   range_finders.right = range_right;
   range_finders.left = range_left;
   range_finders.back = range_back;
+
+
+//add extra velocity command to avoid walls based on range sensors
+  float vel_offset_body_x = 0.0f;
+  float vel_offset_body_y = 0.0f;
+
+  range_sensor_force_field(&vel_offset_body_x, &vel_offset_body_y, range_finders, 800, 1200, 0.0f, 0.3f);
+
+// calculate velocity offset for guidance
+  guidance_h_set_speed_offset(vel_offset_body_x, vel_offset_body_y);
 
 }

@@ -60,16 +60,6 @@
       <while cond="2 > block_time"/>
     </block>
 
-   <block name="Range Avoid">
-      <call fun="Hover(1.0)"/>
-      <call fun="range_sensors_avoid()"/>
-    </block>
-
-   <block name="Range Wall Follow Right">
-      <call fun="Hover(1.0)"/>
-      <call fun="range_sensors_wall_following(2)"/>
-    </block>
-
     <block name="Find bucket">
       <call fun="bucket_heading_change()"/>
     </block>
