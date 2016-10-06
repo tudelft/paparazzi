@@ -28,6 +28,13 @@
 
 #include <std.h>
 
+struct range_finders_ {
+  int16_t front;
+  int16_t right;
+  int16_t left;
+  int16_t back;
+};
+
 extern bool marker_lost;
 
 // Module functions
@@ -53,5 +60,9 @@ extern bool open_gripper(void);
 bool bucket_heading_change(void);
 bool bucket_approach(void);
 bool bucket_center(void);
+
+extern bool range_sensors_wall_following(uint8_t direction);
+extern void range_sensor_force_field(float *vel_body_x, float *vel_body_y, struct range_finders_ range_finders,
+                                     int16_t avoid_inner_border, int16_t avoid_outer_border, float min_vel_command, float max_vel_command);
 
 #endif

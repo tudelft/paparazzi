@@ -45,14 +45,15 @@ uint16_t range_finder[4]; // distance from range finder in mm clockwise starting
 void stereocam_to_state(void);
 
 #if PERIODIC_TELEMETRY
-static void stereocam_telem_send(struct transport_tx *trans, struct link_device *dev){
+static void stereocam_telem_send(struct transport_tx *trans, struct link_device *dev)
+{
   int8_t foe_x = stereo_motion.foe.x;
   int8_t foe_y =  stereo_motion.foe.y;
   pprz_msg_send_STEREOCAM_OPTIC_FLOW(trans, dev, AC_ID,
-      &fps, &agl, &vel_pixel_i.x, &vel_pixel_i.z,
-      &vel_global_i.x, &vel_global_i.y, &vel_global_i.z,
-      &tracked_x, &tracked_y, &win_x, &win_y, &win_cert, &win_size, &win_dist,
-      &foe_x, &foe_y);
+                                     &fps, &agl, &vel_pixel_i.x, &vel_pixel_i.z,
+                                     &vel_global_i.x, &vel_global_i.y, &vel_global_i.z,
+                                     &tracked_x, &tracked_y, &win_x, &win_y, &win_cert, &win_size, &win_dist,
+                                     &foe_x, &foe_y);
 
   //  DOWNLINK_SEND_OPTIC_FLOW_EST(DefaultChannel, DefaultDevice, &fps, &dummy_uint16, &dummy_uint16, &flow_x, &flow_y, &foe_x, &foe_y,
   //    &vel_x, &vel_y,&dummy_float, &dummy_float, &dummy_float);
@@ -61,8 +62,8 @@ static void stereocam_telem_send(struct transport_tx *trans, struct link_device 
 
 void stereo_to_state_init(void)
 {
-	InitMedianFilterVect3Int(global_filter);
-	InitMedianFilterVect3Int(pixelwise_filter);
+  InitMedianFilterVect3Int(global_filter);
+  InitMedianFilterVect3Int(pixelwise_filter);
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STEREOCAM_OPTIC_FLOW, stereocam_telem_send);
@@ -74,18 +75,19 @@ void stereo_to_state_init(void)
 void stereo_to_state_periodic(void)
 {
   if (stereocam_data.fresh && stereocam_data.len == 28) { // length of SEND_EDGEFLOW message
-	stereocam_to_state();
+    stereocam_to_state();
     stereocam_data.fresh = 0;
   } else if (stereocam_data.fresh && stereocam_data.len == 2) {  // length of Lucas Kanade point tracker message
     tracked_x = stereocam_data.data[0];
     tracked_y = stereocam_data.data[1];
     stereocam_data.fresh = 0;
   } else if (stereocam_data.fresh && stereocam_data.len == 8) {  // array from range finders
-    uint16_t *int16Arrray = (uint16_t*)stereocam_data.data;
+    uint16_t *int16Arrray = (uint16_t *)stereocam_data.data;
     range_finder[0] = int16Arrray[0];
     range_finder[1] = int16Arrray[1];
     range_finder[2] = int16Arrray[2];
     range_finder[3] = int16Arrray[3];
+    AbiSendMsgRANGE_SENSORS(STEREOCAM2STATE_SENDER_ID, range_finder[0], range_finder[1], range_finder[2], range_finder[3]);
     stereocam_data.fresh = 0;
   } else if (stereocam_data.fresh && stereocam_data.len == 9) {  // length of WINDOW message
     win_x = stereocam_data.data[0];
@@ -155,13 +157,12 @@ void stereocam_to_state(void)
   //TODO:: Make variance dependable on line fit error, after new horizontal filter is made
   uint32_t now_ts = get_sys_time_usec();
 
-  if (abs(vel_body_f.x) < 1.5 && abs(vel_body_f.y) < 1.5)
-  {
+  if (abs(vel_body_f.x) < 1.5 && abs(vel_body_f.y) < 1.5) {
     AbiSendMsgVELOCITY_ESTIMATE(STEREOCAM2STATE_SENDER_ID, now_ts,
-                              vel_body_f.x,
-                              vel_body_f.y,
-                              vel_body_f.z,
-                              0.3f
-                             );
+                                vel_body_f.x,
+                                vel_body_f.y,
+                                vel_body_f.z,
+                                0.3f
+                               );
   }
 }
