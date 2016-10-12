@@ -103,6 +103,14 @@
 #define AGL_SONAR_NPS_ID 3
 #endif
 
+#ifndef AGL_SONAR_PX4FLOW_ID
+#define AGL_SONAR_PX4FLOW_ID 4
+#endif
+
+#ifndef AGL_TERARANGER_ONE_ID
+#define AGL_TERARANGER_ONE_ID 5
+#endif
+
 /*
  * IDs of magnetometer sensors (including IMUs with mag)
  */

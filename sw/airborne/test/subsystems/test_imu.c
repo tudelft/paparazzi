@@ -35,6 +35,7 @@
 #include "mcu_periph/i2c.h"
 #include "pprzlink/messages.h"
 #include "subsystems/datalink/downlink.h"
+#include "modules/datalink/pprz_dl.h"
 
 #include "subsystems/imu.h"
 #include "subsystems/abi.h"
@@ -82,6 +83,7 @@ static inline void main_init(void)
   mcu_int_enable();
 
   downlink_init();
+  pprz_dl_init();
 
   AbiBindMsgIMU_GYRO_INT32(ABI_BROADCAST, &gyro_ev, gyro_cb);
   AbiBindMsgIMU_ACCEL_INT32(ABI_BROADCAST, &accel_ev, accel_cb);
@@ -239,4 +241,10 @@ static void mag_cb(uint8_t sender_id __attribute__((unused)),
                               &imu.mag_unscaled.y,
                               &imu.mag_unscaled.z);
   }
+}
+
+void dl_parse_msg(struct link_device *dev __attribute__((unused)),
+                  struct transport_tx *trans __attribute__((unused)),
+                  uint8_t *buf __attribute__((unused)))
+{
 }
