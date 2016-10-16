@@ -260,14 +260,15 @@ static struct image_t *detect_bottom_bucket(struct image_t *img) {
   return NULL;
 }
 
-
+int SQRS = 2;
+int BIN_THRESH_MARKER = 210;
 static struct image_t *detect_helipad_marker(struct image_t *img) {
   struct results helipad_marker = opencv_imav_landing(
           (char *) img->buf,
           img->w,
           img->h,
-          2, //squares
-          210, //binary threshold
+          SQRS, //squares
+          BIN_THRESH_MARKER, //binary threshold
           0, img->dt); //modify image, time taken
 
   if (helipad_marker.marker) {

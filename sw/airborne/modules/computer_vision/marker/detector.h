@@ -46,7 +46,8 @@ struct Marker {
     struct FloatVect3 geo_relative;
     float found_time;
 };
-
+extern uint8_t SQRS;
+extern uint8_t BIN_THRESH_MARKER;
 extern struct Marker marker1;
 extern struct Marker marker2;
 
