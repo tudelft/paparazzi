@@ -35,12 +35,7 @@ struct results {
     int marker;
 };
 
-extern uint8_t CENTROID_THRESH;
-extern float ZSCORE;
-extern uint8_t AREA_THRESH;
-
-
-struct results opencv_imav_landing(char *img, int width, int height, int v_squares, int binary_threshold, int mod, int dt);
+struct results opencv_imav_landing(char *img, int width, int height, int v_squares, int binary_threshold, float z_score, int area_threshold, int mod, int dt);
 
 #ifdef __cplusplus
 }

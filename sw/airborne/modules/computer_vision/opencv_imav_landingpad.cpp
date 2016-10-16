@@ -39,10 +39,10 @@ bool lexico_compare(const cv::Point2f& p1, const cv::Point2f& p2) {
 
 
 // Predicate for unique
-int CENTROID_THRESH = 10; //10 pixels away from centroid is considered duplicate
+int centroid_thresh = 10;
 bool points_are_equal(const cv::Point2f& p1, const cv::Point2f& p2) {
 //    return ((p1.x == p2.x) && (p1.y == p2.y));
-    return ((p1.x < p2.x+CENTROID_THRESH) && (p1.x > p2.x-CENTROID_THRESH) && (p1.y < p2.y+CENTROID_THRESH) && (p1.y > p2.y-CENTROID_THRESH));
+    return ((p1.x < p2.x+centroid_thresh) && (p1.x > p2.x-centroid_thresh) && (p1.y < p2.y+centroid_thresh) && (p1.y > p2.y-centroid_thresh));
 }
 
 // Output
@@ -51,11 +51,7 @@ struct results landing;
 float detector2_fps = 30; // initial estimate of fps
 float detector2_fps_epsilon = 0.2; // used to smoothen fps
 
-// Z-score for squares
-int ZSCORE = 2;
-int AREA_THRESH = 100;
-
-struct results opencv_imav_landing(char *img, int width, int height, int v_squares, int binary_threshold, int mod, int dt)
+struct results opencv_imav_landing(char *img, int width, int height, int v_squares, int binary_threshold, float z_score, int area_threshold, int mod, int dt)
 {
     Mat M(height, width, CV_8UC2, img);
     Mat image;
@@ -93,7 +89,7 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
     for( int i = 0; (unsigned)i < contours.size(); i++ )
     {
         double Area = contourArea(contours[i]);
-        if (Area > AREA_THRESH)
+        if (Area > area_threshold)
         {
             convexHull(Mat(contours[i]), hull[i], false );
             approxPolyDP(Mat(hull[i]), approx[i], arcLength(Mat(hull[i]), true)*0.12, true);
@@ -172,7 +168,7 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
     for(int i = 0; (unsigned)i < centroidsx.size(); i++)
     {
         zx = fabs((centroidsx[i]-avgx)/stdx);
-        if (zx <= ZSCORE)
+        if (zx <= z_score)
         {
             filt_centroidx.push_back (centroidsx[i]);
             filt_centroidy.push_back (centroidsy[i]);
@@ -185,7 +181,7 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
     for(int i = 0; (unsigned)i < filt_centroidy.size(); i++)
     {
         zy = fabs((filt_centroidy[i]-avgy)/stdy);
-        if (zy <= ZSCORE)
+        if (zy <= z_score)
         {
             n_filtcentroids += 1;
             ffilt_centroidx.push_back (filt_centroidx[i]);

@@ -35,12 +35,18 @@
     <!--module name="logger_file">
       <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
     </module-->
+      <module name="pose_history"/>
     <module name="video_thread"/>
 
     <module name="cv_blob_locator">
       <define name="BLOB_LOCATOR_CAMERA" value="bottom_camera"/>
     </module>
 
+      <module name="cv_marker_detection">
+          <define name="DETECTOR_CAMERA1" value="bottom_camera"/>
+          <define name="DETECTOR_CAMERA2" value="front_camera"/>
+      </module>
+    
     <module name="video_rtp_stream">
       <define name="VIEWVIDEO_CAMERA" value="bottom_camera"/>
       <define name="VIEWVIDEO_QUALITY_FACTOR" value="80"/>
