@@ -8,6 +8,18 @@
         </description>
     </doc>
 
+    <settings>
+        <dl_settings>
+            <dl_settings NAME="MarkerDetector">
+                <dl_setting var="CENTROID_TRESH" min="0" step="1" max="30" shortname="centroid_thresh" />
+                <dl_setting var="ZSCORE" min="0" step="0.1" max="5" shortname="zscore" />
+                <dl_setting var="AREA_THRESH"  min="0" step="1" max="1000" shortname="area_thresh" />
+                <dl_setting var="SQRS"  min="0" step="1" max="4" shortname="squares" />
+                <dl_setting var="BIN_THRESH_MARKER"  min="0" step="1" max="255" shortname="bin_thresh" />
+            </dl_settings>
+        </dl_settings>
+    </settings>
+
     <depends>video_thread</depends>
 
     <header>
