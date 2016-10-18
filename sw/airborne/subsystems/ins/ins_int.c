@@ -323,7 +323,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
   static uint8_t num_points = 0;
   static const float min_pressure_points = 20.;
   static float low_pass_pressure = 0.;
-  static float alpha = 0.85;
+  static float alpha = 0.7;
 
   if (pressure > 1e-7){
     if (low_pass_pressure < 1e-7){
