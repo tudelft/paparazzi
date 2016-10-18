@@ -113,7 +113,7 @@ static void geo_locate_marker(struct Marker *marker, struct image_t *img) {
 
   // Scale the parameters based on distance to ground and focal point
   struct NedCoor_f *pos = stateGetPositionNed_f();
-  float agl = sonar_bebop.distance; // -pos->z
+  float agl = -pos->z; //sonar_bebop.distance;
 
   marker->geo_relative.x *= agl / zi;
   marker->geo_relative.y *= agl / zi;
@@ -260,14 +260,20 @@ static struct image_t *detect_bottom_bucket(struct image_t *img) {
   return NULL;
 }
 
+int SQRS = 2;
+int BIN_THRESH = 210;
+float ZSCORE = 2;
+int AREA_THRESH = 100;
 
 static struct image_t *detect_helipad_marker(struct image_t *img) {
   struct results helipad_marker = opencv_imav_landing(
           (char *) img->buf,
           img->w,
           img->h,
-          2, //squares
-          210, //binary threshold
+          SQRS, //squares
+          BIN_THRESH, //binary threshold
+          ZSCORE,
+          AREA_THRESH,
           0, img->dt); //modify image, time taken
 
   if (helipad_marker.marker) {
@@ -291,13 +297,13 @@ static struct image_t *draw_target_marker1(struct image_t *img) {
     image_draw_line(img, &l, &r);
   }
 
-  DOWNLINK_SEND_DETECTOR(DefaultChannel, DefaultDevice,
-                         &marker1.detected,
-                         &marker1.pixel.x,
-                         &marker1.pixel.y,
-                         &marker1.geo_relative.x,
-                         &marker1.geo_relative.y,
-                         &marker1.found_time);
+//  DOWNLINK_SEND_DETECTOR(DefaultChannel, DefaultDevice,
+//                         &marker1.detected,
+//                         &marker1.pixel.x,
+//                         &marker1.pixel.y,
+//                         &marker1.geo_relative.x,
+//                         &marker1.geo_relative.y,
+//                         &marker1.found_time);
 
   return img;
 }

@@ -51,15 +51,12 @@ struct results landing;
 float detector2_fps = 30; // initial estimate of fps
 float detector2_fps_epsilon = 0.2; // used to smoothen fps
 
-struct results opencv_imav_landing(char *img, int width, int height, int v_squares, int binary_threshold, int mod, int dt)
+struct results opencv_imav_landing(char *img, int width, int height, int v_squares, int binary_threshold, float z_score, int area_threshold, int mod, int dt)
 {
     Mat M(height, width, CV_8UC2, img);
     Mat image;
     Mat binim;
     Mat imcopy;
-
-    // Z-score for squares
-    int z = 2;
 
     // Grayscale image
     cvtColor(M, image, CV_YUV2GRAY_Y422);
@@ -92,7 +89,7 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
     for( int i = 0; (unsigned)i < contours.size(); i++ )
     {
         double Area = contourArea(contours[i]);
-        if (Area > 100)
+        if (Area > area_threshold)
         {
             convexHull(Mat(contours[i]), hull[i], false );
             approxPolyDP(Mat(hull[i]), approx[i], arcLength(Mat(hull[i]), true)*0.12, true);
@@ -171,7 +168,7 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
     for(int i = 0; (unsigned)i < centroidsx.size(); i++)
     {
         zx = fabs((centroidsx[i]-avgx)/stdx);
-        if (zx <= z)
+        if (zx <= z_score)
         {
             filt_centroidx.push_back (centroidsx[i]);
             filt_centroidy.push_back (centroidsy[i]);
@@ -184,7 +181,7 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
     for(int i = 0; (unsigned)i < filt_centroidy.size(); i++)
     {
         zy = fabs((filt_centroidy[i]-avgy)/stdy);
-        if (zy <= z)
+        if (zy <= z_score)
         {
             n_filtcentroids += 1;
             ffilt_centroidx.push_back (filt_centroidx[i]);
