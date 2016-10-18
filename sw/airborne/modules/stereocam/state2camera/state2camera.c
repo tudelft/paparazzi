@@ -89,7 +89,7 @@ void write_serial_rot()
   for (int indexRot = 0; indexRot < 9; indexRot++) {
     pointer[indexRot] = ltp_to_body_mat->m[indexRot];
   }
-  pointer[9] = (int32_t)(state.alt_agl_f * 100);  //height above ground level in CM.
+  pointer[9] = (int32_t)(*stateGetAltAgl_f() * 100);  //height above ground level in CM.
   pointer[10] = frame_number_sending++;
   stereoprot_sendArray(&((UART_LINK).device), ar, lengthArrayInformation, 1);
 #endif
@@ -104,9 +104,7 @@ void write_serial_rot()
   struct FloatVect3 cam_angles;
   float_rmat_vmult(&cam_angles, &body_to_stereocam, &body_state);
 
-  static int16_t lengthArrayInformation = 9 * sizeof(int16_t);
-  uint8_t ar[lengthArrayInformation];
-  int16_t *pointer = (int16_t *) ar;
+  int16_t pointer[9];
   pointer[0] =   (int16_t)(cam_angles.x*1000);
   pointer[1] =   (int16_t)(cam_angles.y*1000);
   pointer[2] =   (int16_t)(edgeflow.derotation);
@@ -117,7 +115,7 @@ void write_serial_rot()
   pointer[7] =   (int16_t)(edgeflow.kalman);
   pointer[8] =   (int16_t)(autopilot_mode);
 
-  stereoprot_sendArray(&((UART_LINK).device), ar, lengthArrayInformation, 1);
+  stereoprot_sendArray(&((UART_LINK).device), (uint8_t*)pointer, 9 * sizeof(int16_t), 1);
 #endif
 
 }

@@ -30,8 +30,9 @@
       <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
     </module>
     <module name="ins" type="extended">
+      <define name="USE_VFF_EXTENDED"/>
       <define name="VFF_EXTENDED_NON_FLAT_FLOOR"/>
-      <define name="VFF_EXTENDED_R_BARO" value="3"/>
+      <define name="VFF_EXTENDED_R_BARO" value="2.5"/>
       <define name="VFF_EXTENDED_ACCEL_NOISE" value=".2"/>
     </module>
   </firmware>

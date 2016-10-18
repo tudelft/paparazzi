@@ -64,7 +64,7 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 
 #define Qbiasbias 1e-6
 #ifdef VFF_EXTENDED_NON_FLAT_FLOOR
-#define Qoffoff 0.0007
+#define Qoffoff 0.0008
 #else
 #define Qoffoff 1e-4
 #endif

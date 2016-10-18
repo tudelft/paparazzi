@@ -74,6 +74,7 @@
 #define POS_ENU_F  7
 #define POS_LLA_F  8
 #define POS_UTM_F  9
+#define ALT_AGL_F 10
 #define POS_LOCAL_COORD ((1<<POS_NED_I)|(1<<POS_NED_F)|(1<<POS_ENU_I)|(1<<POS_ENU_F))
 #define POS_GLOBAL_COORD ((1<<POS_ECEF_I)|(1<<POS_ECEF_F)|(1<<POS_LLA_I)|(1<<POS_LLA_F)|(1<<POS_UTM_I)|(1<<POS_UTM_F))
 /**@}*/
@@ -491,6 +492,7 @@ extern void stateCalcPositionNed_i(void);
 extern void stateCalcPositionEnu_i(void);
 extern void stateCalcPositionLla_i(void);
 extern void stateCalcPositionUtm_f(void);
+extern void stateCalcAltAgl_f(void);
 extern void stateCalcPositionEcef_f(void);
 extern void stateCalcPositionNed_f(void);
 extern void stateCalcPositionEnu_f(void);
@@ -578,6 +580,14 @@ static inline void stateSetPositionUtm_f(struct UtmCoor_f *utm_pos)
   state.utm_pos_f = *utm_pos;
   /* clear bits for all position representations and only set the new one */
   state.pos_status = (1 << POS_UTM_F);
+}
+
+/// Set altitude above ground level (float).
+static inline void stateSetAltAgl_f(float agl)
+{
+  state.alt_agl_f = agl;
+  /* clear bits for all position representations and only set the new one */
+  state.pos_status = (1 << ALT_AGL_F);
 }
 
 /// Set position from ECEF coordinates (float).
@@ -689,6 +699,15 @@ static inline struct UtmCoor_f *stateGetPositionUtm_f(void)
     stateCalcPositionUtm_f();
   }
   return &state.utm_pos_f;
+}
+
+/// Get altitude above ground level (float).
+static inline float *stateGetAltAgl_f(void)
+{
+  if (!bit_is_set(state.pos_status, ALT_AGL_F)) {
+    stateCalcAltAgl_f();
+  }
+  return &state.alt_agl_f;
 }
 
 /// Get position in ECEF coordinates (float).

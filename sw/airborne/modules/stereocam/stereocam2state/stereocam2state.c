@@ -95,7 +95,8 @@ void stereo_to_state_periodic(void)
     tracked_y = stereocam_data.data[1];
     stereocam_data.fresh = 0;
   } else if (stereocam_data.fresh && stereocam_data.len == 10) {  // array from range finders
-    uint16_t *int16Arrray = (uint16_t*)stereocam_data.data;
+    int16_t int16Arrray[100];
+    memcpy(int16Arrray, stereocam_data.data, stereocam_data.len);    // fix me, this was to remove the -Wcast-align warning
     range_finder[0] = int16Arrray[0];
     range_finder[1] = int16Arrray[1];
     range_finder[2] = int16Arrray[2];
@@ -128,7 +129,8 @@ void stereo_to_state_periodic(void)
 void stereocam_to_state(void)
 {
   // Get info from stereocam data
-  const int16_t *buffer = (int16_t *)stereocam_data.data;
+  int16_t buffer[100];
+  memcpy(buffer, stereocam_data.data, stereocam_data.len);    // fix me, this was to remove the -Wcast-align warning
   int16_t div_x = buffer[0];
   int16_t flow_x = buffer[1];
   int16_t div_y = buffer[2];

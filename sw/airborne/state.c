@@ -349,6 +349,21 @@ void stateCalcPositionUtm_f(void)
   SetBit(state.pos_status, POS_UTM_F);
 }
 
+#include "math/pprz_geodetic_wgs84.h"
+void stateCalcAltAgl_f(void)
+{
+  if (bit_is_set(state.pos_status, ALT_AGL_F)) {
+    return;
+  }
+  // if agl not available return best estimate
+  if (bit_is_set(state.pos_status, POS_LLA_F)){
+    state.alt_agl_f = state.lla_pos_f.alt - wgs84_ellipsoid_to_geoid_f(state.lla_pos_f.lat, state.lla_pos_f.lon);
+  } else { // todo add more cases here
+    state.alt_agl_f = stateGetPositionEnu_f()->z;
+  }
+}
+
+
 void stateCalcPositionEcef_f(void)
 {
   if (bit_is_set(state.pos_status, POS_ECEF_F)) {

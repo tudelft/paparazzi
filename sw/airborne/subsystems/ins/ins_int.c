@@ -323,18 +323,21 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
   static uint8_t num_points = 0;
   static const float min_pressure_points = 20.;
   static float low_pass_pressure = 0.;
-  static float alpha = 0.7;
+  static float running_mean_pressure = 0.;
+  static float alpha = 0.6;
 
   if (pressure > 1e-7){
     if (low_pass_pressure < 1e-7){
       low_pass_pressure = pressure;
+      running_mean_pressure = pressure;
     } else {
       low_pass_pressure = low_pass_pressure * alpha + pressure * (1-alpha);
+      running_mean_pressure = running_mean_pressure + (pressure - running_mean_pressure) / min_pressure_points;
     }
 
     if (!ins_int.baro_initialized && num_points >= min_pressure_points) {
       // wait for a first positive value
-      ins_int.qfe = low_pass_pressure;
+      ins_int.qfe = running_mean_pressure;
       vff_realign(INS_BARO_AGL_OFFSET);
       ins_update_from_vff();
       ins_int.baro_initialized = true;
@@ -343,7 +346,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
     if (ins_int.baro_initialized) {
       if (ins_int.vf_reset) {
         ins_int.vf_reset = false;
-        ins_int.qfe = low_pass_pressure;
+        ins_int.qfe = running_mean_pressure;
         ins_int.baro_z = -pprz_isa_height_of_pressure(low_pass_pressure, ins_int.qfe) - INS_BARO_AGL_OFFSET;
         vff_realign(ins_int.baro_z);
         ins_update_from_vff();
@@ -445,6 +448,7 @@ void ins_int_update_gps(struct GpsState *gps_s __attribute__((unused))) {}
 #endif /* USE_GPS */
 
 static void agl_cb(uint8_t __attribute__((unused)) sender_id, float distance) {
+#if USE_VFF_EXTENDED
 #if USE_SONAR
   static float last_offset = 0.;
 #endif
@@ -471,8 +475,11 @@ static void agl_cb(uint8_t __attribute__((unused)) sender_id, float distance) {
     vff_update_agl(-distance, 0.2);
   }
 
+  stateSetAltAgl_f(vff.offset - vff.z);   // convert from NED to ENU
+
   /* reset the counter to indicate we just had a measurement update */
   ins_int.propagation_cnt = 0;
+#endif
 }
 
 /** copy position and speed to state interface */
