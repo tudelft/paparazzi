@@ -64,7 +64,7 @@ PRINT_CONFIG_VAR(DEBUG_VFF_EXTENDED)
 
 #define Qbiasbias 1e-6
 #ifdef VFF_EXTENDED_NON_FLAT_FLOOR
-#define Qoffoff 0.0006
+#define Qoffoff 0.0005
 #else
 #define Qoffoff 1e-4
 #endif
@@ -279,7 +279,7 @@ void vff_update_z(float z_meas)
   vff_update_z_conf(z_meas, R_ALT);
 }
 
-void vff_update_sonar(float z_meas, float conf)
+void vff_update_agl(float z_meas, float conf)
 {
 #ifdef VFF_EXTENDED_NON_FLAT_FLOOR
   vff.z_meas = z_meas;

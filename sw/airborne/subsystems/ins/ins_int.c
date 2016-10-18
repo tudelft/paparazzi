@@ -54,22 +54,15 @@
 #include "math/pprz_geodetic_int.h"
 #include "math/pprz_isa.h"
 
-
 #ifndef INS_BARO_AGL_OFFSET
 #define INS_BARO_AGL_OFFSET 0.
 #endif
 
+// TODO change use sonar to use agl
 #if USE_SONAR
 #if !USE_VFF_EXTENDED
 #error USE_SONAR needs USE_VFF_EXTENDED
 #endif
-
-/** default sonar to use in INS */
-#ifndef INS_INT_SONAR_ID
-#define INS_INT_SONAR_ID ABI_BROADCAST
-#endif
-abi_event sonar_ev;
-static void sonar_cb(uint8_t sender_id, float distance);
 
 #ifdef INS_SONAR_THROTTLE_THRESHOLD
 #include "firmwares/rotorcraft/stabilization.h"
@@ -149,6 +142,15 @@ static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
 static abi_event vel_est_ev;
 static void vel_est_cb(uint8_t sender_id, uint32_t stamp, float x, float y, float z, float noise);
 
+/** ABI binding for AGL.
+ * Usually this is coming from opticflow.
+ */
+#ifndef INS_INT_AGL_ID
+#define INS_INT_AGL_ID ABI_BROADCAST
+#endif
+static abi_event agl_ev;                 ///< The agl ABI event
+static void agl_cb(uint8_t sender_id, float distance);
+
 struct InsInt ins_int;
 
 #if PERIODIC_TELEMETRY
@@ -205,8 +207,6 @@ void ins_int_init(void)
 
 #if USE_SONAR
   ins_int.update_on_agl = INS_SONAR_UPDATE_ON_AGL;
-  // Bind to AGL message
-  AbiBindMsgAGL(INS_INT_SONAR_ID, &sonar_ev, sonar_cb);
 #endif
 
   ins_int.vf_reset = false;
@@ -234,6 +234,7 @@ void ins_int_init(void)
   AbiBindMsgIMU_ACCEL_INT32(INS_INT_IMU_ID, &accel_ev, accel_cb);
   AbiBindMsgGPS(INS_INT_GPS_ID, &gps_ev, gps_cb);
   AbiBindMsgVELOCITY_ESTIMATE(INS_INT_VEL_ID, &vel_est_ev, vel_est_cb);
+  AbiBindMsgAGL(INS_INT_AGL_ID, &agl_ev, agl_cb); // ABI to the altitude above ground level
 }
 
 void ins_reset_local_origin(void)
@@ -443,33 +444,36 @@ void ins_int_update_gps(struct GpsState *gps_s)
 void ins_int_update_gps(struct GpsState *gps_s __attribute__((unused))) {}
 #endif /* USE_GPS */
 
-
+static void agl_cb(uint8_t __attribute__((unused)) sender_id, float distance) {
 #if USE_SONAR
-static void sonar_cb(uint8_t __attribute__((unused)) sender_id, float distance)
-{
   static float last_offset = 0.;
+#endif
 
-  /* update filter assuming a flat ground */
-  if (distance < INS_SONAR_MAX_RANGE && distance > INS_SONAR_MIN_RANGE
-#ifdef INS_SONAR_THROTTLE_THRESHOLD
-      && stabilization_cmd[COMMAND_THRUST] < INS_SONAR_THROTTLE_THRESHOLD
+  if (sender_id == AGL_SONAR_ADC_ID){
+#if USE_SONAR
+    if (distance < INS_SONAR_MAX_RANGE && distance > INS_SONAR_MIN_RANGE
+  #ifdef INS_SONAR_THROTTLE_THRESHOLD
+        && stabilization_cmd[COMMAND_THRUST] < INS_SONAR_THROTTLE_THRESHOLD
+  #endif
+  #ifdef INS_SONAR_BARO_THRESHOLD
+        && ins_int.baro_z > -INS_SONAR_BARO_THRESHOLD /* z down */
+  #endif
+        && ins_int.update_on_agl
+        && ins_int.baro_initialized) {
+      vff_update_agl(-distance, VFF_R_SONAR_0 + VFF_R_SONAR_OF_M * fabsf(distance));
+      last_offset = vff.offset;
+    } else {
+      /* update offset with last value to avoid divergence */
+      //vff_update_offset(last_offset);
+    }
 #endif
-#ifdef INS_SONAR_BARO_THRESHOLD
-      && ins_int.baro_z > -INS_SONAR_BARO_THRESHOLD /* z down */
-#endif
-      && ins_int.update_on_agl
-      && ins_int.baro_initialized) {
-    vff_update_sonar(-distance, VFF_R_SONAR_0 + VFF_R_SONAR_OF_M * fabsf(distance));
-    last_offset = vff.offset;
   } else {
-    /* update offset with last value to avoid divergence */
-    //vff_update_offset(last_offset);
+    vff_update_agl(-distance, 0.2);
   }
 
   /* reset the counter to indicate we just had a measurement update */
   ins_int.propagation_cnt = 0;
 }
-#endif // USE_SONAR
 
 /** copy position and speed to state interface */
 static void ins_ned_to_state(void)

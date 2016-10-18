@@ -41,7 +41,9 @@ struct Int16Vect3 vel_pixel_i, vel_global_i;
 uint8_t stereo_agl; // in dm
 uint8_t fps;
 
-uint16_t range_finder[4]; // distance from range finder in mm clockwise starting with front
+int16_t range_finder[4]; // distance from range finder in mm clockwise starting with front
+
+#define AGL_OUTLIER_GRAD 8000 // mm/s
 
 void stereocam_to_state(void);
 
@@ -82,6 +84,9 @@ void stereo_to_state_init(void)
 
 void stereo_to_state_periodic(void)
 {
+  static int16_t previous_agl = 0;
+  static float previous_agl_time = 0;
+
   if (stereocam_data.fresh && stereocam_data.len == 30) { // length of SEND_EDGEFLOW message
     stereocam_to_state();
     stereocam_data.fresh = 0;
@@ -89,14 +94,23 @@ void stereo_to_state_periodic(void)
     tracked_x = stereocam_data.data[0];
     tracked_y = stereocam_data.data[1];
     stereocam_data.fresh = 0;
-  } else if (stereocam_data.fresh && stereocam_data.len == 8) {  // array from range finders
+  } else if (stereocam_data.fresh && stereocam_data.len == 10) {  // array from range finders
     uint16_t *int16Arrray = (uint16_t*)stereocam_data.data;
     range_finder[0] = int16Arrray[0];
     range_finder[1] = int16Arrray[1];
     range_finder[2] = int16Arrray[2];
     range_finder[3] = int16Arrray[3];
+    range_finder[4] = int16Arrray[4];
     //send abi messages (from the body axis of the drone, front, right, back, left)
     AbiSendMsgRANGE_SENSORS(STEREOCAM2STATE_SENDER_ID, range_finder[0], range_finder[3], range_finder[2], range_finder[1]);
+    if (range_finder[5] > 0 && range_finder[5] < 2000 && abs(range_finder[4] - previous_agl) / (get_sys_time_float() - previous_agl_time) < AGL_OUTLIER_GRAD) {
+      AbiSendMsgAGL(STEREOCAM2STATE_SENDER_ID, ((float)range_finder[4])/1000.);
+      previous_agl_time = get_sys_time_float();
+    } else if (previous_agl_time == 0) {
+      previous_agl_time = get_sys_time_float();
+    }
+    printf("measurement %d %d %d %d %d\n", range_finder[0],range_finder[1], range_finder[2], range_finder[3], range_finder[4]);
+    printf("measurement %f %d\n",((float)range_finder[4])/1000., range_finder[4]);
     stereocam_data.fresh = 0;
   } else if (stereocam_data.fresh && stereocam_data.len == 12) {  // length of WINDOW message
     win_x = stereocam_data.data[0];

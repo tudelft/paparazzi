@@ -182,8 +182,6 @@ struct image_t *opticflow_module_calc(struct image_t *img)
   temp_state = opticflow_state;
   temp_state.rates = pose.rates;
 
-  opticflow_state.agl = -stateGetPositionNed_f()->z;
-
   // Do the optical flow calculation
   struct opticflow_result_t temp_result = {}; // new initialization
   opticflow_calc_frame(&opticflow, &temp_state, img, &temp_result);
