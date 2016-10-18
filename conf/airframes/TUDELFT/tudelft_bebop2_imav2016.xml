@@ -118,10 +118,6 @@
   <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
   <section name="AHRS" prefix="AHRS_">
     <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
-    <!-- Toulouse -->
-    <!--define name="H_X" value="0.513081"/>
-    <define name="H_Y" value="-0.00242783"/>
-    <define name="H_Z" value="0.858336"/-->
     <!-- Delft -->
     <define name="H_X" value="0.3892503"/>
     <define name="H_Y" value="0.0017972"/>
@@ -133,6 +129,12 @@
     <define name="SONAR_UPDATE_ON_AGL" value="TRUE"/>
   </section>
 
+  <section name="IMAV">
+    <define name="DropLifeVest()" value="switch_uart_SwitchUartChannel(1)"/>
+    <define name="DropWater()" value="switch_uart_SwitchUartChannel(3)"/>
+    <define name="DropContainer()" value="switch_uart_SwitchUartChannel(4)"/>
+    <define name="DetectWater()" value="(switch_uart_status==64)"/>
+  </section>
 
   <section name="RC_SETPOINT" prefix="STABILIZATION_ATTITUDE_">
     <!-- setpoint limits for attitude stabilization rc flight -->

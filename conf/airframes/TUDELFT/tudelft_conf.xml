@@ -374,6 +374,17 @@
    gui_color="#baa3d698b729"
   />
   <aircraft
+   name="bebop2_39"
+   ac_id="39"
+   airframe="airframes/TUDELFT/tudelft_bebop2_imav2016.xml"
+   radio="radios/dummy.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/TUDELFT/tudelft_rotorcraft_survey_imav2016_competition.xml"
+   settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/estimation/ahrs_secondary.xml settings/control/stabilization_indi.xml [settings/control/stabilization_att_int_quat.xml]"
+   settings_modules="modules/imu_common.xml modules/gps.xml modules/ahrs_int_cmpl_quat.xml modules/gps_ubx_ucenter.xml modules/geo_mag.xml modules/air_data.xml modules/cv_blob_locator.xml modules/video_rtp_stream.xml modules/nav_survey_rectangle_rotorcraft.xml modules/nav_survey_poly_rotorcraft.xml modules/video_capture.xml modules/digital_cam_video.xml modules/switch_uart.xml"
+   gui_color="#baa3d698b729"
+  />
+  <aircraft
    name="bebop2_no_dampers"
    ac_id="26"
    airframe="airframes/TUDELFT/tudelft_bebop2_no_damping.xml"
