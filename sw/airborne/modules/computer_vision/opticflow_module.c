@@ -183,7 +183,6 @@ struct image_t *opticflow_module_calc(struct image_t *img)
   temp_state.rates = pose.rates;
 
   opticflow_state.agl = *stateGetAltAgl_f();
-  printf("%f\n", opticflow_state.agl);
 
   // Do the optical flow calculation
   struct opticflow_result_t temp_result = {}; // new initialization
