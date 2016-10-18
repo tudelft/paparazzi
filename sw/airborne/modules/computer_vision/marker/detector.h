@@ -60,6 +60,11 @@ struct Marker {
 extern struct Marker marker1;
 extern struct Marker marker2;
 
+extern int SQRS;
+extern int BIN_THRESH;
+extern float ZSCORE;
+extern int AREA_THRESH;
+
 void detector_init(void);
 
 void detector_disable_all(void);

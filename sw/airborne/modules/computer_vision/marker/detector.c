@@ -64,17 +64,17 @@ static struct Marker single_blob_finder(struct image_t *img, struct image_filter
   // Find largest
   for (int i = 0; i < labels_count; i++) {
     // Only consider large blobs
-    if (labels[i].pixel_cnt > largest_size) {
-      largest_size = labels[i].pixel_cnt;
-      largest_id = i;
+    if (labels[i].pixel_cnt > threshold) {
+      if (labels[i].pixel_cnt > largest_size) {
+        largest_size = labels[i].pixel_cnt;
+        largest_id = i;
+      }
     }
   }
 
-  fprintf(stderr, "[detector %i] largest blob size %i.\n", img->w, largest_size);
-
   struct Marker marker;
 
-  if (largest_id >= 0 && largest_size > threshold) {
+  if (largest_id >= 0) {
     marker.pixel.x = labels[largest_id].x_sum / labels[largest_id].pixel_cnt * 2;
     marker.pixel.y = labels[largest_id].y_sum / labels[largest_id].pixel_cnt;
     marker.detected = true;
@@ -442,14 +442,20 @@ static struct image_t *detect_bottom_bucket(struct image_t *img) {
   return NULL;
 }
 
+int SQRS = 2;
+int BIN_THRESH = 210;
+float ZSCORE = 2;
+int AREA_THRESH = 100;
 
 static struct image_t *detect_helipad_marker(struct image_t *img) {
   struct results helipad_marker = opencv_imav_landing(
           (char *) img->buf,
           img->w,
           img->h,
-          2, //squares
-          210, //binary threshold
+          SQRS, //squares
+          BIN_THRESH, //binary threshold
+          ZSCORE,
+          AREA_THRESH,
           0, img->dt); //modify image, time taken
 
   if (helipad_marker.marker) {

@@ -51,15 +51,12 @@ struct results landing;
 float detector2_fps = 30; // initial estimate of fps
 float detector2_fps_epsilon = 0.2; // used to smoothen fps
 
-struct results opencv_imav_landing(char *img, int width, int height, int v_squares, int binary_threshold, int mod, int dt)
+struct results opencv_imav_landing(char *img, int width, int height, int v_squares, int binary_threshold, float z_score, int area_threshold, int mod, int dt)
 {
     Mat M(height, width, CV_8UC2, img);
     Mat image;
     Mat binim;
     Mat imcopy;
-
-    // Z-score for squares
-    int z = 2;
 
     // Grayscale image
     cvtColor(M, image, CV_YUV2GRAY_Y422);
@@ -89,10 +86,10 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
     vector<Point2f> mc( contours.size() );
 
     // For contours that are above a certain size, check if it has four sides(square), then obtain centroids
-    for( int i = 0; (unsigned)i < contours.size(); i++ )
+    for( uint32_t i = 0; i < contours.size(); i++ )
     {
         double Area = contourArea(contours[i]);
-        if (Area > 100)
+        if (Area > area_threshold)
         {
             convexHull(Mat(contours[i]), hull[i], false );
             approxPolyDP(Mat(hull[i]), approx[i], arcLength(Mat(hull[i]), true)*0.12, true);
@@ -114,7 +111,7 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
     vector<float> centroidsx;
     vector<float> centroidsy;
 
-    for( int i = 0; i < mc.size(); i++ )
+    for(uint32_t i = 0; i < mc.size(); i++ )
     {
         if (mc[i].x != 0 && mc[i].y != 0)
         {
@@ -131,7 +128,7 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
     float avgy = 0;
 
     // Find average position of detected centroids
-    for(int i = 0; (unsigned)i < centroidsx.size(); i++)
+    for(uint32_t i = 0; i < centroidsx.size(); i++)
     {
         sumx += centroidsx[i];
         sumy += centroidsy[i];
@@ -147,7 +144,7 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
     float stdy = 0;
 
     // Find standard deviation of detected centroids
-    for(int i = 0; (unsigned)i < centroidsx.size(); i++)
+    for(uint32_t i = 0; i < centroidsx.size(); i++)
     {
         innerx += pow((centroidsx[i] - avgx),2);
         innery += pow((centroidsy[i] - avgy),2);
@@ -168,10 +165,10 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
     vector<float> ffilt_zy;
 
     // Filter out outlier centroids using z-score
-    for(int i = 0; (unsigned)i < centroidsx.size(); i++)
+    for(uint32_t i = 0; i < centroidsx.size(); i++)
     {
         zx = fabs((centroidsx[i]-avgx)/stdx);
-        if (zx <= z)
+        if (zx <= z_score)
         {
             filt_centroidx.push_back (centroidsx[i]);
             filt_centroidy.push_back (centroidsy[i]);
@@ -181,10 +178,10 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
 
 
     int n_filtcentroids = 0;
-    for(int i = 0; (unsigned)i < filt_centroidy.size(); i++)
+    for(uint32_t i = 0; i < filt_centroidy.size(); i++)
     {
         zy = fabs((filt_centroidy[i]-avgy)/stdy);
-        if (zy <= z)
+        if (zy <= z_score)
         {
             n_filtcentroids += 1;
             ffilt_centroidx.push_back (filt_centroidx[i]);
@@ -201,7 +198,7 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
 
     // Find the mean of filtered centroids and assume it to be the center of the marker
     // We only use this for the case when we have 2 detected squares
-    for(int i = 0; (unsigned)i < ffilt_centroidx.size(); i++)
+    for(uint32_t i = 0; i < ffilt_centroidx.size(); i++)
     {
         xsum += ffilt_centroidx[i];
         ysum += ffilt_centroidy[i];
@@ -214,7 +211,7 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
     // Convert separate centroids to Point
     vector<Point2f> ffilt_centroids(ffilt_centroidx.size());
 
-    for(int i = 0; i < ffilt_centroidx.size(); i++)
+    for(uint32_t i = 0; i < ffilt_centroidx.size(); i++)
     {
         ffilt_centroids[i] = Point2f (ffilt_centroidx[i], ffilt_centroidy[i]);
     }
@@ -226,13 +223,13 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
     vector<float> fffilt_centroidx;
     vector<float> fffilt_centroidy;
 
-    for( int i = 0; i < ffilt_centroids.size(); i++ )
+    for(uint32_t i = 0; i < ffilt_centroids.size(); i++ )
     {
         fffilt_centroidx.push_back (ffilt_centroids[i].x);
         fffilt_centroidy.push_back (ffilt_centroids[i].y);
     }
 
-    for(int i = 0; (unsigned)i < fffilt_centroidx.size(); i++)
+    for(uint32_t i = 0; i < fffilt_centroidx.size(); i++)
     {
         if (fffilt_centroidx.size() % 2== 0)
         {
@@ -244,7 +241,7 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
         }
     }
 
-    for(int i = 0; (unsigned)i < fffilt_centroidy.size(); i++)
+    for(uint32_t i = 0; i < fffilt_centroidy.size(); i++)
     {
         if (fffilt_centroidy.size() % 2== 0)
         {
@@ -258,7 +255,7 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
 
     vector<float> distance_medx;
     vector<float> distance_medy;
-    for(int i = 0; i < fffilt_centroidx.size(); i++)
+    for(uint32_t i = 0; i < fffilt_centroidx.size(); i++)
     {
         distance_medx.push_back ( fffilt_centroidx[i]-fmedx );
         distance_medy.push_back ( fffilt_centroidy[i]-fmedy );
@@ -276,7 +273,7 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
         if (fffilt_centroidx.size() > 2)
         {
             vector<float> distance_xy;
-            for(int i = 0; i < distance_medx.size(); i++)
+            for(uint32_t i = 0; i < distance_medx.size(); i++)
             {
                 distance_xy.push_back (sqrt( pow(distance_medx[i],2) + pow(distance_medy[i],2)));
             }
@@ -296,7 +293,7 @@ struct results opencv_imav_landing(char *img, int width, int height, int v_squar
                 second_index = temp_index;
             }
 
-            for(int i = 2; i < distance_xy.size(); i++)
+            for(uint32_t i = 2; i < distance_xy.size(); i++)
             {
                 if (distance_xy[i] < first)
                 {
