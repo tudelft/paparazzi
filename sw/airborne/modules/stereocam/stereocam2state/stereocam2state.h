@@ -26,7 +26,6 @@ extern uint8_t tracked_x, tracked_y;
 extern uint8_t win_x, win_y, win_cert, disp_sum, win_processed;
 extern int8_t disp_diff;
 extern uint16_t win_dist, win_size;
-extern uint16_t range_finder[]; // distance from range finder in mm clockwise starting with front
 
 extern uint8_t stereo_agl; // in dm
 
