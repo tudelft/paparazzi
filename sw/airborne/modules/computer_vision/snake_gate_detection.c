@@ -919,8 +919,8 @@ void snake_gate_detection_periodic(void)
     float dy_gate = dt * body_vy; //(velocity_gate - sin(current_angle_gate) * gate_turn_rate * current_distance);
 
     // If the drone keeps incrementing the setpoint, than remove dx and dy gate
-    predicted_x_gate = previous_x_gate + dx_gate;
-    predicted_y_gate = previous_y_gate + dy_gate;
+    predicted_x_gate = previous_x_gate; // + dx_gate;
+    predicted_y_gate = previous_y_gate; // + dy_gate;
     predicted_z_gate = previous_z_gate;
 
     if (gate_detected == 1) {
@@ -959,7 +959,8 @@ void snake_gate_detection_periodic(void)
     printf("gate at %f %d %f %f %f %f\n", time_gate_detected - time_tracked, gate_detected, filtered_x_gate, filtered_y_gate, body_vx, body_vy);
     if (gate_detected && fabs(filtered_x_gate - INITIAL_X) < X_POS_MARGIN && fabs(filtered_y_gate - INITIAL_Y) < Y_POS_MARGIN
         && fabs(body_vx) < X_SPEED_MARGIN && fabs(body_vy) < Y_SPEED_MARGIN) {
-      if (time_gate_detected - time_tracked > 1.5) {
+      // if the drone does not want to pass, reduce the time here:
+      if (time_gate_detected - time_tracked > 1.5) { //time when deciding to go to window
         ready_pass_through = 1;
       }
     } else {
