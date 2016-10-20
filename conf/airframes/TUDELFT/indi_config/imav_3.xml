@@ -1,0 +1,17 @@
+<!DOCTYPE airframe SYSTEM "../../airframe.dtd">
+
+<!--
+
+extra broken stupid bebop
+
+-->
+
+<airframe>
+  <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
+    <!-- bebop (no legs, no bumpers) -->
+    <define name="G1_P" value="0.063"/>
+    <define name="G1_Q" value="0.044"/>
+    <define name="G1_R" value="0.0022"/>
+    <define name="G2_R" value="0.14"/>
+  </section>
+</airframe>

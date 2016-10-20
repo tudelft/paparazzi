@@ -1,0 +1,20 @@
+<!DOCTYPE airframe SYSTEM "../../airframe.dtd">
+
+<!--
+
+FROG: Pick up and drop drone
+
+-->
+
+<airframe>
+  <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
+    <!-- bebop TUBB05 (plastic legs and gripper) -->
+    <define name="G1_P" value="0.032"/>
+    <define name="G1_Q" value="0.016"/>
+    <define name="G1_R" value="0.002"/>
+    <define name="G2_R" value="0.12"/>
+  </section>
+  <section name="INS" prefix="INS_">
+    <define name="BARO_AGL_OFFSET" value="0.23"/>
+  </section>
+</airframe>

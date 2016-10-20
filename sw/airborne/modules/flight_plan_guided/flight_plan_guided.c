@@ -396,7 +396,7 @@ bool go_to_object(bool descent) {
         break;
       }
 
-      marker_center_descent(0.05, 0, 0);
+      marker_center_descent(0.1, 0, 0);
 
       if (marker1.found_time < 4) {
         break;
@@ -414,14 +414,13 @@ bool go_to_object(bool descent) {
         break;
       }
 
-      marker_center_descent(0.05, 0.4, 0);
+      marker_center_descent(0.1, 0.4, 0);
 
       if (marker1.found_time < 1) {
         object_state = 0;
         break;
       }
 
-      return false;
   }
 
   return true;

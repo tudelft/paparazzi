@@ -56,6 +56,18 @@
       <arg flag="4252" />
     </program>
     <program name="SVInfo" command="sw/ground_segment/python/svinfo/svinfo.py"/>
+    <program name="VLC-Bottom" command="../../../usr/bin/vlc">
+      <arg flag="~/paparazzi/sw/tools/rtp_viewer/rtp_bottom.sdp &"/>
+    </program>
+    <program name="VLC-Front" command="../../../usr/bin/vlc">
+      <arg flag="~/paparazzi/sw/tools/rtp_viewer/rtp_front.sdp &"/>
+    </program>
+    <program name="RTP.py-Bottom" command="sw/tools/rtp_viewer/rtp_viewer.py">
+      <arg flag="~/paparazzi/sw/tools/rtp_viewer/rtp_bottom.sdp"/>
+    </program>
+    <program name="RTP.py-Front" command="sw/tools/rtp_viewer/rtp_viewer.py">
+      <arg flag="~/paparazzi/sw/tools/rtp_viewer/rtp_front.sdp"/>
+    </program>
   </section>
 
   <section name="sessions">

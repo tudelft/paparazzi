@@ -5,7 +5,7 @@
 
   <firmware name="rotorcraft">
     <target name="ap" board="bebop"/>
-
+    
     <define name="MT9F002_OUTPUT_HEIGHT" value="640"/>  <!-- full height 4608 -->
     <define name="MT9F002_OUTPUT_WIDTH" value="640"/>  <!-- full width 2592 (3288) -->
     <define name="MT9F002_INITIAL_OFFSET_Y" value="384"/>
@@ -52,6 +52,7 @@
     <!--</module>-->
     <module name="pose_history"/>
     <module name="video_thread"/>
+    <!--<module name="video_exif"/>-->
     <module name="flight_plan_guided"/>
 
     <module name="cv_opticflow">
@@ -76,6 +77,11 @@
 
     <module name="cv_snake_gate_detection.xml">
       <define name="SGD_CAMERA" value="front_camera"/>
+    </module>
+
+    <module name="video_capture">
+      <define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>
+      <define name="VIDEO_CAPTURE_PATH" value="/data/ftp/internal_000/images"/>
     </module>
 
     <module name="video_rtp_stream">
@@ -132,6 +138,9 @@
     <servo name="BOTTOM_LEFT" no="3" min="3000" neutral="3000" max="12000"/>
   </servos>
 
+  <!-- all differences for the imav bebops are in the includes -->
+  <include href="conf/airframes/TUDELFT/indi_config/imav_$AC_ID.xml"/>
+
   <section name="MIXING" prefix="MOTOR_MIXING_">
     <!-- Time cross layout (X), with order NW (CW), NE (CCW), SE (CW), SW (CCW) -->
     <define name="TYPE" value="QUAD_X"/>
@@ -175,7 +184,8 @@
     <define name="SONAR_UPDATE_ON_AGL" value="TRUE"/>
     <define name="VFF_R_SONAR_OF_M" value="0."/>
     <define name="VFF_R_SONAR_0" value="0.1"/>
-    <define name="BARO_AGL_OFFSET" value="0.23"/><!--This should be set the the length of the legs, positive-->
+    <!-- =========== AIRFRAME SPECIFIC GAINS MOVED TO INCLUDE =========== -->
+    <!--define name="BARO_AGL_OFFSET" value="0.23"/--><!--This should be set the the length of the legs, positive-->
   </section>
 
   <section name="RC_SETPOINT" prefix="STABILIZATION_ATTITUDE_">
@@ -208,18 +218,7 @@
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
 
-    <!-- bebop TUBB05 (no legs, no bumpers) -->
-    <!--<define name="G1_P" value="0.063"/>-->
-    <!--<define name="G1_Q" value="0.044"/>-->
-    <!--<define name="G1_R" value="0.0022"/>-->
-    <!--<define name="G2_R" value="0.14"/>-->
-
-    <!-- bebop TUBB05 (no legs, with bumpers) -->
-    <!--define name="G1_P" value="0.057"/>
-    <define name="G1_Q" value="0.042"/>
-    <define name="G1_R" value="0.0020"/>
-    <define name="G2_R" value="0.12"/-->
-
+    <!-- =========== AIRFRAME SPECIFIC GAINS MOVED TO INCLUDE =========== -->
     <!-- bebop TUBB04 (steel legs) -->
     <!--<define name="G1_P" value="0.01304"/>-->
     <!--<define name="G1_Q" value="0.00976"/>-->
@@ -231,12 +230,6 @@
     <!--<define name="G1_Q" value="0.023722"/>-->
     <!--<define name="G1_R" value="0.002219"/>-->
     <!--<define name="G2_R" value="0.124241"/>-->
-
-    <!-- bebop TUBB05 (plastic legs and gripper) -->
-    <define name="G1_P" value="0.032"/>
-    <define name="G1_Q" value="0.016"/>
-    <define name="G1_R" value="0.002"/>
-    <define name="G2_R" value="0.12"/>
 
     <!-- bebop TUBB05 (plastic legs, gripper and bucket) -->
     <!--<define name="G1_P" value="0.0"/>-->
