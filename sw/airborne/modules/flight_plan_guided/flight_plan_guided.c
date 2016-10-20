@@ -113,6 +113,7 @@ bool LiftOff(float throttle) {
     return false;
 }
 
+
 bool WaitUntilAltitude(float altitude) {
     if (autopilot_mode != AP_MODE_GUIDED) { return true; }
 
@@ -120,6 +121,35 @@ bool WaitUntilAltitude(float altitude) {
 
     return false;
 }
+
+bool WaitUntilSpeedOrAltitude(float speed, float fail_altitude) {
+    if (autopilot_mode != AP_MODE_GUIDED) { return true; }
+
+    if (stateGetPositionEnu_f()->z > fail_altitude) { return false; }
+    if (stateGetSpeedEnu_f()->z < speed) { return true; }
+
+    return false;
+}
+
+float specialtimer = 0;
+
+bool ResetSpecialTimer(void) {
+    specialtimer = 0;
+    return false;
+}
+
+bool WaitUntilTimerOrAltitude(float sec, float fail_altitude) {
+    if (autopilot_mode != AP_MODE_GUIDED) { return true; }
+
+    if (stateGetPositionEnu_f()->z > fail_altitude) { return false; }
+    specialtimer += 1.0f / ((float)NAV_FREQ);
+    if (specialtimer < sec) { return true; }
+
+    return false;
+}
+
+
+
 
 bool RotateToHeading(float heading) {
   if (autopilot_mode != AP_MODE_GUIDED) { return true; }

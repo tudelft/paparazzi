@@ -35,12 +35,20 @@
     </block>
 
     <block name="Take-off">
-      <call fun="StartEngines()"/>
       <call_once fun="ResetAlt()"/>
-      <call fun="LiftOff(0.9)"/>
-      <call fun="WaitUntilAltitude(0.3)"/>
-      <call fun="TakeOff(0.2)"/>
+      <call fun="StartEngines()"/>
+      <call fun="TakeOff(1.0)"/>
       <call fun="WaitUntilAltitude(NOM_FLIGHT_ALT - 0.2)"/>
+      <deroute block="Hover after take-off"/>
+    </block>
+
+    <block name="TakeOffEnthusiastically">
+      <call_once fun="ResetAlt()"/>
+      <call_once fun="ResetSpecialTimer()"/>
+      <call fun="StartEngines()"/>
+      <call fun="LiftOff(0.85)"/>
+      <call fun="WaitUntilTimerOrAltitude(0.9f,6.0f)"/><!-- sec, meter(failsafe) -->
+      <deroute block="Hover after take-off"/>
     </block>
 
     <block name="Hover after take-off">

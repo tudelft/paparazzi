@@ -506,7 +506,7 @@ bool guidance_v_set_guided_z(float z)
 
     /* reset guidance reference */
     guidance_v_z_sum_err = 0;
-    GuidanceVSetRef(stateGetPositionNed_i()->z, guidance_v_zd_sp, 0);
+    GuidanceVSetRef(stateGetPositionNed_i()->z, stateGetSpeedNed_i()->z, 0);
     return true;
   }
   return false;
@@ -522,7 +522,7 @@ bool guidance_v_set_guided_vz(float vz)
     guidance_v_zd_sp = SPEED_BFP_OF_REAL(vz);
 
     /* reset guidance reference */
-    GuidanceVSetRef(stateGetPositionNed_i()->z, guidance_v_zd_sp, 0);
+    GuidanceVSetRef(stateGetPositionNed_i()->z, stateGetSpeedNed_i()->z, 0);
     return true;
   }
   return false;
@@ -535,8 +535,8 @@ bool guidance_v_set_guided_th(float th)
     guidance_v_guided_vel_mode = GUIDANCE_V_GUIDED_VEL_MODE_THROTTLE;
 
     /* reset guidance reference */
-    GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0);
-    guidance_v_th_sp = MAX_PPRZ * th;
+    GuidanceVSetRef(stateGetPositionNed_i()->z, stateGetSpeedNed_i()->z, 0);
+    guidance_v_th_sp = ((float)MAX_PPRZ) * th;
     Bound(guidance_v_th_sp, 0, MAX_PPRZ);
     return true;
   }
