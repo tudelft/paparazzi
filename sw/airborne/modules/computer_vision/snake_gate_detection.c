@@ -63,11 +63,14 @@ uint8_t good_color[4] = {0, 127, 0, 127};
 #define INITIAL_Z 0
 
 //initial position and speed safety margins
-#define X_POS_MARGIN 0.15 //m
-#define Y_POS_MARGIN 0.5 //m
-#define Z_POS_MARGIN 0.15 //m
-#define X_SPEED_MARGIN 0.15 //m/s
-#define Y_SPEED_MARGIN 0.15 //m/s
+//#define X_POS_MARGIN 0.15 //m
+//#define Y_POS_MARGIN 0.5 //m
+//#define Z_POS_MARGIN 0.15 //m
+//#define X_SPEED_MARGIN 0.15 //m/s
+//#define Y_SPEED_MARGIN 0.15 //m/s
+
+float gate_speed_margin = 0.15;
+float gate_pos_margin = 0.15;
 
 struct video_listener *listener = NULL;
 
@@ -157,6 +160,7 @@ int ready_pass_through;
 // these two things can be set to false to return to the last successfully tried pass-through:
 bool use_previous_gate = false;
 bool search_whole_image = false;
+float decide_time_to_go_through_window = 1.5;
 
 // timers
 float last_processed, time_gate_detected, time_tracked;
@@ -957,10 +961,12 @@ void snake_gate_detection_periodic(void)
 
     //SAFETY ready_pass_trough
     printf("gate at %f %d %f %f %f %f\n", time_gate_detected - time_tracked, gate_detected, filtered_x_gate, filtered_y_gate, body_vx, body_vy);
-    if (gate_detected && fabs(filtered_x_gate - INITIAL_X) < X_POS_MARGIN && fabs(filtered_y_gate - INITIAL_Y) < Y_POS_MARGIN
-        && fabs(body_vx) < X_SPEED_MARGIN && fabs(body_vy) < Y_SPEED_MARGIN) {
+    //    if (gate_detected && fabs(filtered_x_gate - INITIAL_X) < X_POS_MARGIN && fabs(filtered_y_gate - INITIAL_Y) < Y_POS_MARGIN
+    //        && fabs(body_vx) < X_SPEED_MARGIN && fabs(body_vy) < Y_SPEED_MARGIN) {
+    if (gate_detected && fabs(filtered_x_gate - INITIAL_X) < gate_pos_margin && fabs(filtered_y_gate - INITIAL_Y) < gate_pos_margin
+        && fabs(body_vx) < gate_speed_margin && fabs(body_vy) < gate_speed_margin) {
       // if the drone does not want to pass, reduce the time here:
-      if (time_gate_detected - time_tracked > 1.5) { //time when deciding to go to window
+      if (time_gate_detected - time_tracked > decide_time_to_go_through_window) { //time when deciding to go to window
         ready_pass_through = 1;
       }
     } else {

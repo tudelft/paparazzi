@@ -52,6 +52,9 @@ extern int gate_detected;
 extern int gate_processed;
 extern int ready_pass_through;
 extern int init_pos_filter;
+extern float decide_time_to_go_through_window;
+extern float gate_pos_margin;
+extern float gate_speed_margin;
 
 extern void set_snake_gate_color_filter(uint8_t color);
 
