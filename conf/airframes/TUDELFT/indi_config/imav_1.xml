@@ -9,9 +9,9 @@ BEBOP with bumpers, passing through the window
 <airframe>
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- bebop (no legs, with bumpers) -->
-    <define name="G1_P" value="0.057"/>
-    <define name="G1_Q" value="0.042"/>
-    <define name="G1_R" value="0.0020"/>
-    <define name="G2_R" value="0.12"/>
+    <define name="G1_P" value="0.066554"/>
+    <define name="G1_Q" value="0.034597"/>
+    <define name="G1_R" value="0.002595"/>
+    <define name="G2_R" value="0.136735"/>
   </section>
 </airframe>
