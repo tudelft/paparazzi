@@ -104,6 +104,15 @@ bool TakeOff(float climb_rate) {
     return false;
 }
 
+bool LiftOff(float throttle) {
+    if (autopilot_mode != AP_MODE_GUIDED) { return true; }
+
+    guidance_v_set_guided_th(throttle);
+    guidance_h_set_guided_body_vel(0, 0);
+
+    return false;
+}
+
 bool WaitUntilAltitude(float altitude) {
     if (autopilot_mode != AP_MODE_GUIDED) { return true; }
 

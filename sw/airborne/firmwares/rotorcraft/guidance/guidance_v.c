@@ -103,7 +103,13 @@ int32_t guidance_v_delta_t;
 
 float guidance_v_nominal_throttle;
 bool guidance_v_adapt_throttle_enabled;
-bool guidance_v_guided_vel_enabled;
+
+
+#define GUIDANCE_V_GUIDED_VEL_MODE_ZHOLD      0
+#define GUIDANCE_V_GUIDED_VEL_MODE_CLIMB      1
+#define GUIDANCE_V_GUIDED_VEL_MODE_THROTTLE   2
+
+int guidance_v_guided_vel_mode;
 
 /** Direct throttle from radio control.
  *  range 0:#MAX_PPRZ
@@ -118,6 +124,7 @@ int32_t guidance_v_rc_zd_sp;
 
 int32_t guidance_v_z_sp;
 int32_t guidance_v_zd_sp;
+int32_t guidance_v_th_sp;
 int32_t guidance_v_z_ref;
 int32_t guidance_v_zd_ref;
 int32_t guidance_v_zdd_ref;
@@ -185,7 +192,7 @@ void guidance_v_init(void)
 
   guidance_v_nominal_throttle = GUIDANCE_V_NOMINAL_HOVER_THROTTLE;
   guidance_v_adapt_throttle_enabled = GUIDANCE_V_ADAPT_THROTTLE_ENABLED;
-  guidance_v_guided_vel_enabled = false;
+  guidance_v_guided_vel_mode = GUIDANCE_V_GUIDED_VEL_MODE_ZHOLD;
 
   gv_adapt_init();
 
@@ -233,7 +240,7 @@ void guidance_v_mode_changed(uint8_t new_mode)
     case GUIDANCE_V_MODE_GUIDED:
     case GUIDANCE_V_MODE_HOVER:
       /* disable vertical velocity setpoints */
-      guidance_v_guided_vel_enabled = false;
+      guidance_v_guided_vel_mode = GUIDANCE_V_GUIDED_VEL_MODE_ZHOLD;
 
       /* set current altitude as setpoint and reset speed setpoint */
       guidance_v_z_sp = stateGetPositionNed_i()->z;
@@ -319,15 +326,26 @@ void guidance_v_run(bool in_flight)
       break;
 
     case GUIDANCE_V_MODE_HOVER:
-      guidance_v_guided_vel_enabled = false;
+      guidance_v_guided_vel_mode = GUIDANCE_V_GUIDED_VEL_MODE_ZHOLD;
     case GUIDANCE_V_MODE_GUIDED:
-      if (guidance_v_guided_vel_enabled) {
-        gv_update_ref_from_zd_sp(guidance_v_zd_sp, stateGetPositionNed_i()->z);
-        run_hover_loop(in_flight);
-      } else {
-        guidance_v_zd_sp = 0;
-        gv_update_ref_from_z_sp(guidance_v_z_sp);
-        run_hover_loop(in_flight);
+      switch(guidance_v_guided_vel_mode)
+      {
+        case GUIDANCE_V_GUIDED_VEL_MODE_ZHOLD:
+          // Altitude Hold
+          guidance_v_zd_sp = 0;
+          gv_update_ref_from_z_sp(guidance_v_z_sp);
+          run_hover_loop(in_flight);
+          break;
+        case GUIDANCE_V_GUIDED_VEL_MODE_CLIMB:
+          // Climb
+          gv_update_ref_from_zd_sp(guidance_v_zd_sp, stateGetPositionNed_i()->z);
+          run_hover_loop(in_flight);
+          break;
+        case GUIDANCE_V_GUIDED_VEL_MODE_THROTTLE:
+          // Throttle
+          guidance_v_z_sp = stateGetPositionNed_i()->z; // for display only
+          stabilization_cmd[COMMAND_THRUST] = guidance_v_th_sp;
+          break;
       }
 #if !NO_RC_THRUST_LIMIT
       /* use rc limitation if available */
@@ -478,7 +496,7 @@ bool guidance_v_set_guided_z(float z)
 {
   if (guidance_v_mode == GUIDANCE_V_MODE_GUIDED) {
     /* disable vertical velocity setpoints */
-    guidance_v_guided_vel_enabled = false;
+    guidance_v_guided_vel_mode = GUIDANCE_V_GUIDED_VEL_MODE_ZHOLD;
 
     /* set altitude setpoint */
     guidance_v_z_sp = POS_BFP_OF_REAL(z);
@@ -498,7 +516,7 @@ bool guidance_v_set_guided_vz(float vz)
 {
   if (guidance_v_mode == GUIDANCE_V_MODE_GUIDED) {
     /* enable vertical velocity setpoints */
-    guidance_v_guided_vel_enabled = true;
+    guidance_v_guided_vel_mode = GUIDANCE_V_GUIDED_VEL_MODE_CLIMB;
 
     /* set speed setting */
     guidance_v_zd_sp = SPEED_BFP_OF_REAL(vz);
@@ -509,3 +527,20 @@ bool guidance_v_set_guided_vz(float vz)
   }
   return false;
 }
+
+bool guidance_v_set_guided_th(float th)
+{
+  if (guidance_v_mode == GUIDANCE_V_MODE_GUIDED) {
+    /* enable vertical velocity setpoints */
+    guidance_v_guided_vel_mode = GUIDANCE_V_GUIDED_VEL_MODE_THROTTLE;
+
+    /* reset guidance reference */
+    GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0);
+    guidance_v_th_sp = MAX_PPRZ * th;
+    Bound(guidance_v_th_sp, 0, MAX_PPRZ);
+    return true;
+  }
+  return false;
+}
+
+
