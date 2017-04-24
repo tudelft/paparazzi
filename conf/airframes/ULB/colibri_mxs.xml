@@ -231,7 +231,7 @@
 	</section>
 	
 	<section name="MISC">
-		<define name="ARRIVED_AT_WAYPOINT" value="0.2"/>
+		<define name="VoltageOfAdc(adc)" value="(adc)*0.00162f" />
 	</section>
 	
 	<section name="BAT">
