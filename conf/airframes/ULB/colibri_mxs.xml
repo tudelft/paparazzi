@@ -47,7 +47,8 @@
 		
 					
 		<module name="actuators" type="pwm">
-			<define name="SERVO_HZ" value="200"/>
+		    <define name="TIM5_SERVO_HZ" value="20000"/>
+		    <define name="SERVO_HZ" value="100"/>
 			<define name="USE_SERVOS_1AND2"/>
 		</module>
 		
@@ -83,9 +84,9 @@
 	
 	<!-- ACTUATORS & COMMANDS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 	<servos driver="Pwm">
-    	<servo name="MOTOR" no="4" min="1100" neutral="1100" max="1900"/> 
-    	<servo name="PITCH_SERVO" no="0" min="1200" neutral="1500" max="1800"/>
-		<servo name="ROLL_SERVO" no="1" min="1200" neutral="1500" max="1800"/>
+    	<servo name="MOTOR" no="4" min="0" neutral="1" max="50"/> 
+    	<servo name="PITCH_SERVO" no="1" min="2200" neutral="1450" max="800"/>
+		<servo name="ROLL_SERVO" no="0" min="1800" neutral="1500" max="1200"/>
 	</servos>
 	
 	<commands>
@@ -106,9 +107,9 @@
 	<!-- SETTINGS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 	
 	<section name="IMU" prefix="IMU_">
-		<define name="BODY_TO_IMU_PHI"   value="0" unit="deg"/>
+		<define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
     	<define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
-		<define name="BODY_TO_IMU_PSI" value="0." unit="deg"/>
+		<define name="BODY_TO_IMU_PSI" value="45." unit="deg"/>
 		
 		<!-- MAGNETO CALIBRATION DELFT - calibration still needs to be done !!! -->
 		<define name="MAG_X_NEUTRAL" value="10"/>
