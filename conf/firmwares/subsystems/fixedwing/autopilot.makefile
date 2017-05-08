@@ -26,7 +26,6 @@
 ## COMMON FIXEDWING ALL TARGETS (SIM + AP + FBW ...)
 ##
 
-
 #
 # Board config + Include paths
 #
