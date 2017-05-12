@@ -1,0 +1,128 @@
+
+
+<airframe name="mini_delftacopter">
+
+	<firmware name="rotorcraft">
+
+		<target name="ap" board="lisa_s_1.0">
+
+			<module name="radio_control" type="datalink">
+				<!-- should be by default already<configure name="RADIO_CONTROL_LED" 
+					value="3"/> -->
+			</module>
+
+		</target>
+
+		<module name="actuators" type="pwm">
+			<define name="TIM5_SERVO_HZ" value="300" />
+			<define name="SERVO_HZ" value="300" />
+			<!-- <define name="USE_SERVOS_1AND2" /> -->
+		</module>
+
+		<module name="imu" type="lisa_s_v1.0" />
+		<module name="gps" type="ublox" />
+		<module name="stabilization" type="heli_indi" />
+
+
+		<configure name="USE_MAGNETOMETER" value="1" />
+		<module name="telemetry" type="transparent">
+			<configure name="MODEM_BAUD" value="B115200" />
+			<configure name="MODEM_PORT" value="UART1" />
+		</module>
+
+	</firmware>
+
+
+	<modules main_freq="512">
+		<!--<load name="geo_mag.xml"/> -->
+		<load name="air_data.xml" />
+		<load name="gps_ubx_ucenter.xml" />
+		<load name="heli_swashplate_mixing.xml" />
+		<load name="heli_throttle_curve.xml" />
+	</modules>
+
+
+	<section name="IMU" prefix="IMU_">
+		<!-- Put 0 everywhere for now, change for final installation -->
+		<define name="BODY_TO_IMU_PHI" value="0.0" unit="deg" />
+		<define name="BODY_TO_IMU_THETA" value="0.0" unit="deg" />
+		<define name="BODY_TO_IMU_PSI" value="0.0" unit="deg" />
+	</section>
+
+	<section name="BAT">
+		<define name="MILLIAMP_AT_FULL_THROTTLE" value="3700" />
+		<define name="CATASTROPHIC_BAT_LEVEL" value="3.0" unit="V" />
+		<define name="CRITIC_BAT_LEVEL" value="3.2" unit="V" />
+		<define name="LOW_BAT_LEVEL" value="3.5" unit="V" />
+		<define name="MAX_BAT_LEVEL" value="4.2" unit="V" />
+	</section>
+
+
+	<!-- Gains for the INDI stabilization -->
+	<section name="STABILIZATION_RATE" prefix="STABILIZATION_RATE_">
+		<define name="SP_MAX_P" value="360" unit="deg/s" />
+		<define name="SP_MAX_Q" value="360" unit="deg/s" />
+		<define name="SP_MAX_R" value="360" unit="deg/s" />
+
+		<define name="GAIN_P" value="400" />
+		<define name="GAIN_Q" value="400" />
+		<define name="GAIN_R" value="350" />
+	</section>
+
+	<section name="STABILIZATION_ATTITUDE_HELI_INDI" prefix="STABILIZATION_ATTITUDE_HELI_INDI_">
+		<define name="ROLL_P" value="12" /><!--20 3052 -->
+		<define name="PITCH_P" value="8" /><!--20 3052 -->
+		<define name="YAW_P" value="10" />
+		<define name="YAW_D" value="30" />
+		<define name="USE_FAST_DYN_FILTERS" value="1" />
+		<define name="FAST_DYN_ROLL_BW" value="68" />
+		<define name="FAST_DYN_PITCH_BW" value="17" />
+	</section>
+
+	<section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
+		<!-- setpoints -->
+		<define name="SP_MAX_PHI" value="45." unit="deg" />
+		<define name="SP_MAX_THETA" value="45." unit="deg" />
+		<define name="SP_MAX_R" value="270." unit="deg/s" />
+	</section>
+
+
+	<heli_curves>
+		<curve throttle="0,4800,7200,8400,9600" collective="-1500,-1500,0,3000,3000" />
+	</heli_curves>
+
+	<servos driver="Pwm">
+		<servo name="THROTTLE" no="1" min="1890" neutral="1890" max="1430" />
+		<servo name="FRONT" no="5" min="1700" neutral="1300" max="1000" />
+		<servo name="RIGHTBACK" no="4" min="1850" neutral="1450" max="1150" />
+		<servo name="LEFTBACK" no="0" min="1900" neutral="1550" max="1200" />
+		<servo name="TAIL" no="2" min="0" neutral="0" max="3500" />
+	</servos>
+
+	<commands>
+		<axis name="ROLL" failsafe_value="0" />
+		<axis name="PITCH" failsafe_value="0" />
+		<axis name="YAW" failsafe_value="0" />
+		<axis name="THRUST" failsafe_value="0" />
+		<axis name="FMODE" failsafe_value="-9600" />
+	</commands>
+
+	<section name="MIXING" prefix="SW_MIXING_">
+		<!-- front left (CW), front right (CCW), back right (CW), back left (CCW) -->
+		<define name="TYPE" value="H120" />
+		<define name="TRIM_ROLL" value="0" />
+		<define name="TRIM_PITCH" value="0" />
+		<define name="TRIM_COLL" value="0" />
+	</section>
+
+	<command_laws>
+		<call fun="throttle_curve_run(autopilot_get_motors_on(), values)" />
+		<call fun="swashplate_mixing_run(values)" />
+		<set servo="THROTTLE" value="throttle_curve.throttle" />
+		<set servo="FRONT" value="swashplate_mixing.commands[SW_FRONT]" />
+		<set servo="RIGHTBACK" value="swashplate_mixing.commands[SW_RIGHTBACK]" />
+		<set servo="LEFTBACK" value="swashplate_mixing.commands[SW_LEFTBACK]" />
+		<set servo="TAIL" value="@YAW + throttle_curve.throttle*2800/7000" />
+	</command_laws>
+
+</airframe>
