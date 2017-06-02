@@ -16,24 +16,9 @@
     <waypoint name="TD" x="5.6" y="-10.9"/>
   </waypoints>
   <blocks>
-    <block name="Wait GPS">
-      <call_once fun="NavKillThrottle()"/>
-      <while cond="!GpsFixValid()"/>
-    </block>
-    <block name="Geo init">
-      <while cond="LessThan(NavBlockTime(), 10)"/>
-      <call_once fun="NavSetGroundReferenceHere()"/>
-      <!--<call_once fun="NavSetAltitudeReferenceHere()"/>-->
-    </block>
-    <block name="Holding point">
-      <call_once fun="NavKillThrottle()"/>
-      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
-    </block>
-    <block name="Start Engine">
-      <call_once fun="NavResurrect()"/>
-      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
-    </block>
+
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+      <call_once fun="NavResurrect()"/>
       <exception cond="stateGetPositionEnu_f()->z > 2.0" deroute="Standby"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay vmode="climb" climb="nav_climb_vspeed" wp="CLIMB"/>
@@ -81,7 +66,6 @@
       <go wp="TD"/>
     </block>
     <block name="flare">
-      <exception cond="NavDetectGround()" deroute="Holding point"/>
       <exception cond="!nav_is_in_flight()" deroute="landed"/>
       <call_once fun="NavStartDetectGround()"/>
       <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
