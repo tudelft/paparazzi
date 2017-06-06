@@ -29,12 +29,12 @@ the order of the functon in the list
 
 <!DOCTYPE radio SYSTEM "radio.dtd">
 <radio name="Walkera Devo 10" data_min="1000" data_max="2000" sync_min="5000" sync_max="15000" pulse_type="NEGATIVE">
-  <channel ctl="LeftStickVertical"    function="THROTTLE"      min="1070" neutral="1110" max="1900" average="0"/>
+  <channel ctl="LeftStickVertical"    function="THROTTLE"      min="1090" neutral="1090" max="1864" average="0"/>
   <channel ctl="RightStickHorizontal" function="ROLL"          min="1089" neutral="1473" max="1859" average="0"/>
   <channel ctl="RightStickVertical"   function="PITCH"         min="1090" neutral="1473" max="1863" average="0"/>
   <channel ctl="LeftStickHorizontal"  function="YAW"           min="1986" neutral="1473" max="1050" average="0"/>
   <channel ctl="FMODE"                function="MODE"          min="1000" neutral="1500" max="2000" average="1"/>
   <channel ctl="RuddDR"               function="AUX1"          min="1000" neutral="1000" max="2000" average="1"/>
-  <channel ctl="MIX"            	  function="AUX2"          min="1000" neutral="1500" max="1900" average="0"/>
+  <channel ctl="MIX"                  function="AUX2"          min="1000" neutral="1500" max="1900" average="0"/>
 </radio>
 

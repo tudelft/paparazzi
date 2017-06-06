@@ -1,11 +1,14 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
-<airframe name="heli450">
+<airframe name="mini_delftacopter">
 
 	<firmware name="rotorcraft">
 		<target name="ap" board="lisa_s_1.0">
+
+
 			<module name="radio_control" type="ppm">
 				<configure name="RADIO_CONTROL_PPM_PIN" value="SERVO6" />
+				<define name="RADIO_CONTROL_NB_CHANNEL" value="7" />
 			</module>
 		</target>
 
@@ -33,17 +36,17 @@
 		<!--<load name="geo_mag.xml"/> -->
 		<load name="air_data.xml" />
 		<load name="gps_ubx_ucenter.xml" />
-		<load name="heli_swashplate_mixing.xml" /> 
-		<load name="heli_throttle_curve.xml" /> 
+		<load name="heli_swashplate_mixing.xml" />
+		<load name="heli_throttle_curve.xml" />
 	</modules>
 
 	<servos driver="Pwm">
 		<!-- Throttle range OK -->
-		<servo name="S_THROTTLE" no="1" min="1000" neutral="1130" max="1900" />
+		<servo name="S_THROTTLE" no="2" min="1000" neutral="1010" max="1930" />
 		<servo name="BACK" no="5" min="2090" neutral="1500" max="1000" />
 		<servo name="RIGHTFRONT" no="4" min="2040" neutral="1550" max="1270" />
 		<servo name="LEFTFRONT" no="0" min="2010" neutral="1450" max="880" />
-		<servo name="TAIL" no="2" min="0" neutral="0" max="3500" />
+		<servo name="TAIL" no="1" min="0" neutral="0" max="3500" />
 	</servos>
 
 	<commands>
@@ -71,17 +74,19 @@
 	</section>
 
 	<command_laws>
-		<call fun="throttle_curve_run(autopilot_get_motors_on(), values)" />
+		<call fun="throttle_curve_run(TRUE, values)" />
 		<call fun="swashplate_mixing_run(values)" />
-		<set servo="S_THROTTLE" value="throttle_curve.throttle" />
+		<set servo="S_THROTTLE" value="throttle_curve.throttle" /><!--  todo correct offset nd range-->
 		<set servo="BACK" value="swashplate_mixing.commands[SW_BACK]" />
 		<set servo="LEFTFRONT" value="swashplate_mixing.commands[SW_LEFTFRONT]" />
 		<set servo="RIGHTFRONT" value="swashplate_mixing.commands[SW_RIGHTFRONT]" />
-		<set servo="TAIL" value="@YAW + throttle_curve.throttle*2800/7000" />
+		<set servo="TAIL" value="@YAW + throttle_curve.throttle*2800/7000" /> <!-- Not working, but reacts to yaw -->
 	</command_laws>
-
+	
+	
+	
 	<heli_curves>
-		<curve throttle="0,9600" collective="1500,6000" />
+		<curve throttle="0,9600" collective="0,6000" />
 	</heli_curves>
 
 	<section name="MISC">
@@ -129,7 +134,7 @@
 		<define name="DEADBAND_R" value="200" />
 
 		<!-- feedback -->
-		<define name="GAIN_P" value="800" /> 
+		<define name="GAIN_P" value="800" />
 		<define name="GAIN_Q" value="800" />
 		<define name="GAIN_R" value="700" />
 
