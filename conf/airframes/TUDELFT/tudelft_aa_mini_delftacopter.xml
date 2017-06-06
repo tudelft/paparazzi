@@ -17,8 +17,11 @@
 		</target>
 
 		<module name="actuators" type="pwm">
+			<!-- 40 40 works for main rotor -->
+			<!-- 40 300 works for main rotor -->
+			<!-- 2000 300 works for tail rotor -->
 			<define name="TIM5_SERVO_HZ" value="40" />
-			<define name="SERVO_HZ" value="40" />
+			<define name="SERVO_HZ" value="300" />
 			<define name="USE_SERVOS_1AND2" />
 		</module>
 
@@ -46,11 +49,11 @@
 
 	<servos driver="Pwm">
 		<!-- Throttle range OK -->
-		<servo name="S_THROTTLE" no="2" min="1000" neutral="1010" max="1930" />
+		<servo name="S_THROTTLE" no="1" min="1890" neutral="1890" max="1430" />
 		<servo name="BACK" no="5" min="2090" neutral="1500" max="1000" />
 		<servo name="RIGHTFRONT" no="4" min="2040" neutral="1550" max="1270" />
 		<servo name="LEFTFRONT" no="0" min="2010" neutral="1450" max="880" />
-		<servo name="TAIL" no="1" min="0" neutral="0" max="3500" />
+		<servo name="TAIL" no="2" min="1100" neutral="1100" max="1700" />
 	</servos>
 
 	<commands>
@@ -80,11 +83,11 @@
 	<command_laws>
 		<call fun="throttle_curve_run(TRUE, values)" />
 		<call fun="swashplate_mixing_run(values)" />
-		<set servo="S_THROTTLE" value="throttle_curve.throttle" /><!--  todo correct offset nd range-->
+		<set servo="S_THROTTLE" value="@YAW + throttle_curve.throttle*2800/7000" /><!--  todo correct offset nd range-->
 		<set servo="BACK" value="swashplate_mixing.commands[SW_BACK]" />
 		<set servo="LEFTFRONT" value="swashplate_mixing.commands[SW_LEFTFRONT]" />
 		<set servo="RIGHTFRONT" value="swashplate_mixing.commands[SW_RIGHTFRONT]" />
-		<set servo="TAIL" value="@YAW + throttle_curve.throttle*2800/7000" /> <!-- Not working, but reacts to yaw -->
+		<set servo="TAIL" value="throttle_curve.throttle" /> <!-- Not working, but reacts to yaw -->
 	</command_laws>
 	
 	
