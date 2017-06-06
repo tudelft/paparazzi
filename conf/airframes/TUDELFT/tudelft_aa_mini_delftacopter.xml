@@ -1,5 +1,9 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
+
+<!-- Current status: Main motor working, stabilization working, tail motor not working -->
+
+
 <airframe name="mini_delftacopter">
 
 	<firmware name="rotorcraft">
