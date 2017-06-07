@@ -1,15 +1,16 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
 
-<!-- Current status: Main motor working, stabilization working, tail motor not working -->
+<!-- Current status: Main motor working, stabilization working, tail motor 
+	working. SW movements ok. Rotation main motor OK. -->
+	<!-- Range servos not ok (SW not staying horizontal -->
+	<!-- RC commands not OK (missing TH, flight modes, autopilote switches  -->
 
 
 <airframe name="mini_delftacopter">
 
 	<firmware name="rotorcraft">
 		<target name="ap" board="lisa_s_1.0">
-
-
 			<module name="radio_control" type="ppm">
 				<configure name="RADIO_CONTROL_PPM_PIN" value="SERVO6" />
 				<define name="RADIO_CONTROL_NB_CHANNEL" value="7" />
@@ -20,13 +21,17 @@
 			<!-- 40 40 works for main rotor -->
 			<!-- 40 300 works for main rotor -->
 			<!-- 2000 300 works for tail rotor -->
+			<!-- Works but not sure it really ok, should change it to see if better results -->
 			<define name="TIM5_SERVO_HZ" value="40" />
 			<define name="SERVO_HZ" value="300" />
 			<define name="USE_SERVOS_1AND2" />
 		</module>
 
+		<!--Need to put it back to 1 and include right commands afterwards  -->
 		<configure name="USE_MAGNETOMETER" value="0" />
 
+
+		<!-- WIFI module used for telemetry -->
 		<module name="telemetry" type="transparent">
 			<configure name="MODEM_BAUD" value="B115200" />
 			<configure name="MODEM_PORT" value="UART1" />
@@ -40,22 +45,23 @@
 	</firmware>
 
 	<modules main_freq="512">
-		<!--<load name="geo_mag.xml"/> -->
 		<load name="air_data.xml" />
 		<load name="gps_ubx_ucenter.xml" />
 		<load name="heli_swashplate_mixing.xml" />
 		<load name="heli_throttle_curve.xml" />
 	</modules>
 
+
+	<!-- Maybe need to change PPM ranges on servos and main rotor? -->
 	<servos driver="Pwm">
-		<!-- Throttle range OK -->
-		<servo name="S_THROTTLE" no="1" min="1890" neutral="1890" max="1430" />
+		<servo name="TAIL" no="1" min="0" neutral="500" max="2500" />
 		<servo name="BACK" no="5" min="2090" neutral="1500" max="1000" />
 		<servo name="RIGHTFRONT" no="4" min="2040" neutral="1550" max="1270" />
 		<servo name="LEFTFRONT" no="0" min="2010" neutral="1450" max="880" />
-		<servo name="TAIL" no="2" min="1100" neutral="1100" max="1700" />
+		<servo name="S_THROTTLE" no="2" min="1000" neutral="1010" max="2000" />
 	</servos>
 
+	<!-- Not sure what value I should use for failsave of FMODE -->
 	<commands>
 		<axis name="THRUST" failsafe_value="0" />
 		<axis name="ROLL" failsafe_value="0" />
@@ -73,7 +79,6 @@
 	</rc_commands>
 
 	<section name="MIXING" prefix="SW_MIXING_">
-		<!-- front left (CW), front right (CCW), back right (CW), back left (CCW) -->
 		<define name="TYPE" value="HR120" />
 		<define name="TRIM_ROLL" value="0" />
 		<define name="TRIM_PITCH" value="0" />
@@ -83,17 +88,18 @@
 	<command_laws>
 		<call fun="throttle_curve_run(TRUE, values)" />
 		<call fun="swashplate_mixing_run(values)" />
-		<set servo="S_THROTTLE" value="@YAW + throttle_curve.throttle*2800/7000" /><!--  todo correct offset nd range-->
+		
+		<!-- ATM tail motor on even if no throttle... not good? -->
+		<set servo="TAIL" value="@YAW + throttle_curve.throttle*2800/7000" />
 		<set servo="BACK" value="swashplate_mixing.commands[SW_BACK]" />
 		<set servo="LEFTFRONT" value="swashplate_mixing.commands[SW_LEFTFRONT]" />
 		<set servo="RIGHTFRONT" value="swashplate_mixing.commands[SW_RIGHTFRONT]" />
-		<set servo="TAIL" value="throttle_curve.throttle" /> <!-- Not working, but reacts to yaw -->
+		<set servo="S_THROTTLE" value="throttle_curve.throttle" />
 	</command_laws>
-	
-	
-	
+
 	<heli_curves>
-		<curve throttle="0,9600" collective="0,6000" />
+		<!-- Throttle range ok, collective range could be higher. Make sure nothing blocks w/ servos -->
+		<curve throttle="0,9600" collective="-1000,7000" />
 	</heli_curves>
 
 	<section name="MISC">
@@ -208,10 +214,11 @@
 
 	<section name="AUTOPILOT">
 		<define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT" />
-		<define name="MODE_AUTO1" value="AP_MODE_RC_DIRECT" />
-		<define name="MODE_AUTO2" value="AP_MODE_RC_DIRECT" />
+		<define name="MODE_AUTO1" value="AP_MODE_HOVER_Z_HOLD" />
+		<define name="MODE_AUTO2" value="AP_MODE_NAV" />
 	</section>
 
+	<!-- Battery still doesn't work -->
 	<section name="BAT">
 		<define name="CATASTROPHIC_BAT_LEVEL" value="2.8" unit="V" />
 		<define name="CRITIC_BAT_LEVEL" value="3.0" unit="V" />
