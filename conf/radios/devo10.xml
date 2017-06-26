@@ -28,13 +28,30 @@ the order of the functon in the list
 -->
 
 <!DOCTYPE radio SYSTEM "radio.dtd">
-<radio name="Walkera Devo 10" data_min="1000" data_max="2000" sync_min="5000" sync_max="20000" pulse_type="NEGATIVE">
-  <channel ctl="LeftStickVertical"    function="THROTTLE"      min="1090" neutral="1090" max="1864" average="0"/>
-  <channel ctl="RightStickHorizontal" function="ROLL"          min="1089" neutral="1473" max="1859" average="0"/>
-  <channel ctl="RightStickVertical"   function="PITCH"         min="1090" neutral="1473" max="1863" average="0"/>
-  <channel ctl="LeftStickHorizontal"  function="YAW"           min="1986" neutral="1473" max="1050" average="0"/>
+
+<!-- <radio name="Walkera Devo 10" data_min="1000" data_max="2000" sync_min="5000" sync_max="20000" pulse_type="NEGATIVE">
+  <channel ctl="LeftStickVertical"    function="THROTTLE"      min="1200" neutral="1200" max="1900" average="0"/>
+  <channel ctl="RightStickHorizontal" function="ROLL"          min="1095" neutral="1475" max="1859" average="0"/>
+  <channel ctl="RightStickVertical"   function="PITCH"         min="1863" neutral="1475" max="1092" average="0"/>
+  <channel ctl="LeftStickHorizontal"  function="YAW"           min="1863" neutral="1475" max="1092" average="0"/>
   <channel ctl="FMODE"                function="MODE"          min="1000" neutral="1500" max="2000" average="1"/>
   <channel ctl="RuddDR"               function="AUX1"          min="1000" neutral="1000" max="2000" average="1"/>
   <channel ctl="MIX"                  function="AUX2"          min="1000" neutral="1500" max="1900" average="0"/>
+</radio>  -->
+
+<radio name="Walkera Devo 10" data_min="1000" data_max="2000" sync_min="5000" sync_max="20000" pulse_type="NEGATIVE">
+  <channel ctl="LeftStickVertical"    function="THROTTLE"      min="1200" neutral="1200" max="1900" average="0"/>
+  <channel ctl="RightStickHorizontal" function="ROLL"          min="1900" neutral="1520" max="1200" average="0"/>
+  <channel ctl="RightStickVertical"   function="PITCH"         min="1200" neutral="1520" max="1900" average="0"/>
+  <channel ctl="LeftStickHorizontal"  function="YAW"           min="1200" neutral="1520" max="1900" average="0"/>
+  <channel ctl="FMODE"                function="MODE"          min="1200" neutral="1520" max="1900" average="1"/>
+  <channel ctl="RuddDR"               function="AUX1"          min="1200" neutral="1520" max="1900" average="1"/>
+  <channel ctl="MIX"                  function="AUX2"          min="1200" neutral="1520" max="1900" average="0"/>
 </radio>
+
+
+
+
+
+
 

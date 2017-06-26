@@ -1,12 +1,5 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
-
-<!-- Current status: Main motor working, stabilization working, tail motor 
-	working. SW movements ok. Rotation main motor OK. -->
-	<!-- Range servos not ok (SW not staying horizontal -->
-	<!-- RC commands not OK (missing TH, flight modes, autopilote switches  -->
-
-
 <airframe name="mini_delftacopter">
 
 	<firmware name="rotorcraft">
@@ -18,17 +11,13 @@
 		</target>
 
 		<module name="actuators" type="pwm">
-			<!-- 40 40 works for main rotor -->
-			<!-- 40 300 works for main rotor -->
-			<!-- 2000 300 works for tail rotor -->
-			<!-- Works but not sure it really ok, should change it to see if better results -->
-			<define name="TIM5_SERVO_HZ" value="40" />
+			<!-- <define name="TIM5_SERVO_HZ" value="300" /> -->
 			<define name="SERVO_HZ" value="300" />
 			<define name="USE_SERVOS_1AND2" />
 		</module>
 
-		<!--Need to put it back to 1 and include right commands afterwards  -->
-		<configure name="USE_MAGNETOMETER" value="0" />
+		<!--Need to put it back to 1 and include right commands afterwards -->
+		<configure name="USE_MAGNETOMETER" value="1" />
 
 
 		<!-- WIFI module used for telemetry -->
@@ -39,7 +28,7 @@
 
 		<module name="imu" type="lisa_s_v1.0" />
 		<module name="gps" type="ublox" />
-		<module name="stabilization" type="int_quat" />
+		<module name="stabilization" type="heli_indi" />
 		<module name="ahrs" type="int_cmpl_quat" />
 		<module name="ins" />
 	</firmware>
@@ -51,24 +40,27 @@
 		<load name="heli_throttle_curve.xml" />
 	</modules>
 
-
-	<!-- Maybe need to change PPM ranges on servos and main rotor? -->
 	<servos driver="Pwm">
-		<servo name="TAIL" no="1" min="0" neutral="500" max="2500" />
-		<servo name="BACK" no="5" min="2090" neutral="1500" max="1000" />
-		<servo name="RIGHTFRONT" no="4" min="2040" neutral="1550" max="1270" />
-		<servo name="LEFTFRONT" no="0" min="2010" neutral="1450" max="880" />
-		<servo name="S_THROTTLE" no="2" min="1000" neutral="1010" max="2000" />
+		<servo name="S_THROTTLE" 	no="2" min="1000" 	neutral="1000" 	max="1900" />
+		<servo name="TAIL" 			no="1" min="0" 		neutral="0" 	max="3500" />
+		
+		<servo name="BACK" 			no="5" min="1900" 	neutral="1500" 	max="1100" />
+		<servo name="LEFTFRONT" 	no="4" min="1900" 	neutral="1500" 	max="1100" />
+		<servo name="RIGHTFRONT" 	no="0" min="1900" 	neutral="1500" 	max="1100" />
 	</servos>
 
-	<!-- Not sure what value I should use for failsave of FMODE -->
 	<commands>
 		<axis name="THRUST" failsafe_value="0" />
 		<axis name="ROLL" failsafe_value="0" />
 		<axis name="PITCH" failsafe_value="0" />
 		<axis name="YAW" failsafe_value="0" />
-		<axis name="FMODE" failsafe_value="0" />
+		<axis name="TH_HOLD" failsafe_value="-9600" />
+		<axis name="FMODE" failsafe_value="-9600" />
 	</commands>
+
+	<section name="RADIO">
+		<define name="RADIO_TH_HOLD" value="RADIO_AUX1" />
+	</section>
 
 	<rc_commands>
 		<set command="THRUST" value="@THROTTLE" />
@@ -76,6 +68,7 @@
 		<set command="PITCH" value="@PITCH" />
 		<set command="YAW" value="@YAW" />
 		<set command="FMODE" value="@MODE" />
+		<set command="TH_HOLD" value="@AUX1" />
 	</rc_commands>
 
 	<section name="MIXING" prefix="SW_MIXING_">
@@ -85,21 +78,33 @@
 		<define name="TRIM_COLL" value="0" />
 	</section>
 
+	<!--  <command_laws>
+		<call fun="throttle_curve_run(TRUE, values)" />
+		<call fun="swashplate_mixing_run(values)" />
+		<let var="th_hold" value="LessThan(RadioControlValues(RADIO_TH_HOLD), 1500)" />
+
+		<set servo="TAIL"		value="($th_hold? 0 :@YAW + throttle_curve.throttle*2800/7000)" />
+		<set servo="BACK" 		value="swashplate_mixing.commands[SW_BACK]" />
+		<set servo="LEFTFRONT" 	value="swashplate_mixing.commands[SW_LEFTFRONT]" />
+		<set servo="RIGHTFRONT" value="swashplate_mixing.commands[SW_RIGHTFRONT]" />
+		<set servo="S_THROTTLE" value="($th_hold? 0 : throttle_curve.throttle)" />
+	</command_laws>  -->
+
+
 	<command_laws>
 		<call fun="throttle_curve_run(TRUE, values)" />
 		<call fun="swashplate_mixing_run(values)" />
-		
-		<!-- ATM tail motor on even if no throttle... not good? -->
-		<set servo="TAIL" value="@YAW + throttle_curve.throttle*2800/7000" />
-		<set servo="BACK" value="swashplate_mixing.commands[SW_BACK]" />
-		<set servo="LEFTFRONT" value="swashplate_mixing.commands[SW_LEFTFRONT]" />
+		<let var="th_hold" value="LessThan(RadioControlValues(RADIO_TH_HOLD), 1500)" />
+
+		<set servo="TAIL"		value="($th_hold? 0 :@YAW + throttle_curve.throttle*2800/7000)" />
+		<set servo="BACK" 		value="swashplate_mixing.commands[SW_BACK]" />
+		<set servo="LEFTFRONT" 	value="swashplate_mixing.commands[SW_LEFTFRONT]" />
 		<set servo="RIGHTFRONT" value="swashplate_mixing.commands[SW_RIGHTFRONT]" />
-		<set servo="S_THROTTLE" value="throttle_curve.throttle" />
-	</command_laws>
+		<set servo="S_THROTTLE" value="($th_hold? 0 : throttle_curve.throttle)" />
+	</command_laws> 
 
 	<heli_curves>
-		<!-- Throttle range ok, collective range could be higher. Make sure nothing blocks w/ servos -->
-		<curve throttle="0,9600" collective="-1000,7000" />
+		<curve throttle="0,4800,7200,8400,9600" collective="-5500,-3750,-1500,250,5000" />
 	</heli_curves>
 
 	<section name="MISC">
@@ -109,9 +114,6 @@
 	</section>
 
 	<section name="IMU" prefix="IMU_">
-		<define name="ACCEL_X_NEUTRAL" value="11" />
-		<define name="ACCEL_Y_NEUTRAL" value="11" />
-		<define name="ACCEL_Z_NEUTRAL" value="-25" />
 
 		<!-- replace this with your own calibration -->
 		<define name="MAG_X_NEUTRAL" value="14" />
@@ -121,9 +123,11 @@
 		<define name="MAG_Y_SENS" value="5.29702744632" integer="16" />
 		<define name="MAG_Z_SENS" value="5.65287938992" integer="16" />
 
-		<define name="BODY_TO_IMU_PHI" value="0." unit="deg" />
-		<define name="BODY_TO_IMU_THETA" value="90.0" unit="deg" />
-		<define name="BODY_TO_IMU_PSI" value="0." unit="deg" />
+		<define name="BODY_TO_IMU_PHI" value="90.0" unit="deg" />
+		<define name="BODY_TO_IMU_THETA" value="0.0" unit="deg" />
+		<define name="BODY_TO_IMU_PSI" value="90.0" unit="deg" />
+
+
 	</section>
 
 	<section name="AHRS" prefix="AHRS_">
@@ -159,8 +163,8 @@
 
 	<section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
 		<!-- setpoints -->
-		<define name="SP_MAX_PHI" value="65." unit="deg" />
-		<define name="SP_MAX_THETA" value="65." unit="deg" />
+		<define name="SP_MAX_PHI" value="15." unit="deg" />
+		<define name="SP_MAX_THETA" value="15." unit="deg" />
 		<define name="SP_MAX_R" value="250." unit="deg/s" />
 		<define name="DEADBAND_R" value="200" />
 
@@ -214,16 +218,18 @@
 
 	<section name="AUTOPILOT">
 		<define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT" />
-		<define name="MODE_AUTO1" value="AP_MODE_HOVER_Z_HOLD" />
+		<define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT" />
 		<define name="MODE_AUTO2" value="AP_MODE_NAV" />
 	</section>
 
-	<!-- Battery still doesn't work -->
+
 	<section name="BAT">
+		<define name="VoltageOfAdc(adc)" value="(0.0020 * adc)" />
+		<define name="MILLIAMP_AT_FULL_THROTTLE" value="7000" />
 		<define name="CATASTROPHIC_BAT_LEVEL" value="2.8" unit="V" />
 		<define name="CRITIC_BAT_LEVEL" value="3.0" unit="V" />
 		<define name="LOW_BAT_LEVEL" value="3.2" unit="V" />
-		<define name="MAX_BAT_LEVEL" value="4.2" unit="V" />
+		<define name="MAX_BAT_LEVEL" value="4.1" unit="V" />
 	</section>
 
 </airframe>
