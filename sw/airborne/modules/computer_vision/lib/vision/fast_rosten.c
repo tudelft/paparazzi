@@ -46,14 +46,16 @@ static void fast_make_offsets(int32_t *pixel, uint16_t row_stride, uint8_t pixel
  * @param[in] y_padding The padding in the y direction to not scan for corners
  * @param[in] *num_corners reference to the amount of corners found, set by this function
  * @param[in] *ret_corners_length the length of the array *ret_corners.
- * @param[in] *ret_corners array which contains the corners that were detected.
+ * @param[in] **ret_corners pointer to the array which contains the corners that were detected.
+ * @param[in] *roi array of format [x0 y0 x1 y1] describing the region of interest in the image where the corners will be detected. If null, the whole image is used.
 */
-void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uint16_t x_padding, uint16_t y_padding, uint16_t *num_corners, uint16_t *ret_corners_length,struct point_t *ret_corners) {
-  uint32_t corner_cnt = 0;
+void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uint16_t x_padding, uint16_t y_padding, uint16_t *num_corners, uint16_t *ret_corners_length, struct point_t **ret_corners, uint16_t *roi)
+{
 
+  uint16_t corner_cnt = *num_corners;
   int pixel[16];
   int16_t i;
-  uint16_t x, y, x_min, x_max, y_min;
+  uint16_t x, y, x_min, x_max, y_min, x_start, x_end, y_start, y_end;
   uint8_t need_skip;
   // Set the pixel size
   uint8_t pixel_size = 1;
@@ -61,15 +63,38 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
     pixel_size = 2;
   }
 
+  // Padding less than min_dist could cause overflow on some comparisons below.
+  if (x_padding < min_dist) {
+    x_padding = min_dist;
+  }
+  if (y_padding < min_dist) {
+    y_padding = min_dist;
+  }
+
+  if (!roi) {
+    x_start = 3 + x_padding;
+    y_start = 3 + y_padding;
+    x_end = img->w - 3 - x_padding;
+    y_end = img->h - 3 - y_padding;
+  } else {
+    x_start = roi[0] > 0 ? roi[0] : 3 + x_padding;
+    y_start = roi[1] > 0 ? roi[1] : 3 + y_padding;
+    x_end = roi[2] < (img->w - 3 - x_padding) ? roi[2] : img->w - 3 - x_padding;
+    y_end = roi[3] < (img->h - 3 - y_padding) ? roi[3] : img->h - 3 - y_padding;
+
+  }
+
   // Calculate the pixel offsets
   fast_make_offsets(pixel, img->w, pixel_size);
 
-  // Go trough all the pixels (minus the borders)
-  for (y = 3 + y_padding; y < img->h - 3 - y_padding; y++) {
+  // Go trough all the pixels (minus the borders and inside the requested roi)
+  for (y = y_start; y < y_end; y++) {
 
-    if (min_dist > 0) y_min = y - min_dist;
+    if (min_dist > 0) {
+      y_min = y - min_dist;
+    }
 
-    for (x = 3 + x_padding; x < img->w - 3 - x_padding; x++) {
+    for (x = x_start; x < x_end; x++) {
       // First check if we aren't in range vertical (TODO: fix less intensive way)
       if (min_dist > 0) {
 
@@ -80,15 +105,25 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
 
 
         // Go through the previous corners until y goes out of range
-        i = corner_cnt-1;
-        while( i >= 0) {
+        i = corner_cnt - 1;
+        while (i >= 0) {
 
           // corners are stored with increasing y,
           // so if we go from the last to the first, then their y-coordinate will go out of range
-          if(ret_corners[i].y < y_min)
+          if ((*ret_corners)[i].y < y_min) {
             break;
+          }
+          /*
+                    // If detecting with already existing corners gives too much overlap uncomment this comparison instead of the one above.
+                    // But, it will make the detection more time consuming
+                    // TODO: maybe sort the corners before calling...
+                    if(ret_corners[i].y < y_min || ret_corners[i].y > y_max){
+                      i--;
+                      continue;
+                    }
+          */
 
-          if (x_min < ret_corners[i].x && ret_corners[i].x < x_max) {
+          if (x_min < (*ret_corners)[i].x && (*ret_corners)[i].x < x_max) {
             need_skip = 1;
             break;
           }
@@ -118,16 +153,16 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[6]] > cb)
                     if (p[pixel[7]] > cb)
                       if (p[pixel[8]] > cb)
-                        {}
+                      {}
                       else if (p[pixel[15]] > cb)
-                        {}
+                      {}
                       else {
                         continue;
                       }
                     else if (p[pixel[7]] < c_b)
                       if (p[pixel[14]] > cb)
                         if (p[pixel[15]] > cb)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -139,7 +174,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                                 if (p[pixel[12]] < c_b)
                                   if (p[pixel[13]] < c_b)
                                     if (p[pixel[15]] < c_b)
-                                      {}
+                                    {}
                                     else {
                                       continue;
                                     }
@@ -166,7 +201,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       }
                     else if (p[pixel[14]] > cb)
                       if (p[pixel[15]] > cb)
-                        {}
+                      {}
                       else {
                         continue;
                       }
@@ -177,7 +212,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[15]] > cb)
                       if (p[pixel[13]] > cb)
                         if (p[pixel[14]] > cb)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -189,7 +224,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                                 if (p[pixel[11]] < c_b)
                                   if (p[pixel[12]] < c_b)
                                     if (p[pixel[14]] < c_b)
-                                      {}
+                                    {}
                                     else {
                                       continue;
                                     }
@@ -222,7 +257,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                               if (p[pixel[12]] < c_b)
                                 if (p[pixel[13]] < c_b)
                                   if (p[pixel[14]] < c_b)
-                                    {}
+                                  {}
                                   else {
                                     continue;
                                   }
@@ -250,7 +285,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   else if (p[pixel[13]] > cb)
                     if (p[pixel[14]] > cb)
                       if (p[pixel[15]] > cb)
-                        {}
+                      {}
                       else {
                         continue;
                       }
@@ -266,7 +301,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                               if (p[pixel[12]] < c_b)
                                 if (p[pixel[14]] < c_b)
                                   if (p[pixel[15]] < c_b)
-                                    {}
+                                  {}
                                   else {
                                     continue;
                                   }
@@ -299,14 +334,14 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[12]] > cb)
                       if (p[pixel[13]] > cb)
                         if (p[pixel[15]] > cb)
-                          {}
+                        {}
                         else if (p[pixel[6]] > cb)
                           if (p[pixel[7]] > cb)
                             if (p[pixel[8]] > cb)
                               if (p[pixel[9]] > cb)
                                 if (p[pixel[10]] > cb)
                                   if (p[pixel[11]] > cb)
-                                    {}
+                                  {}
                                   else {
                                     continue;
                                   }
@@ -336,7 +371,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                               if (p[pixel[10]] < c_b)
                                 if (p[pixel[11]] < c_b)
                                   if (p[pixel[13]] < c_b)
-                                    {}
+                                  {}
                                   else {
                                     continue;
                                   }
@@ -370,9 +405,9 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                               if (p[pixel[12]] < c_b)
                                 if (p[pixel[13]] < c_b)
                                   if (p[pixel[6]] < c_b)
-                                    {}
+                                  {}
                                   else if (p[pixel[15]] < c_b)
-                                    {}
+                                  {}
                                   else {
                                     continue;
                                   }
@@ -405,7 +440,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                             if (p[pixel[11]] < c_b)
                               if (p[pixel[12]] < c_b)
                                 if (p[pixel[13]] < c_b)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
@@ -434,14 +469,14 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[13]] > cb)
                     if (p[pixel[14]] > cb)
                       if (p[pixel[15]] > cb)
-                        {}
+                      {}
                       else if (p[pixel[6]] > cb)
                         if (p[pixel[7]] > cb)
                           if (p[pixel[8]] > cb)
                             if (p[pixel[9]] > cb)
                               if (p[pixel[10]] > cb)
                                 if (p[pixel[11]] > cb)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
@@ -475,9 +510,9 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                             if (p[pixel[13]] < c_b)
                               if (p[pixel[14]] < c_b)
                                 if (p[pixel[6]] < c_b)
-                                  {}
+                                {}
                                 else if (p[pixel[15]] < c_b)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
@@ -511,13 +546,13 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[12]] > cb)
                       if (p[pixel[14]] > cb)
                         if (p[pixel[15]] > cb)
-                          {}
+                        {}
                         else if (p[pixel[6]] > cb)
                           if (p[pixel[7]] > cb)
                             if (p[pixel[8]] > cb)
                               if (p[pixel[9]] > cb)
                                 if (p[pixel[10]] > cb)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
@@ -539,7 +574,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                             if (p[pixel[8]] > cb)
                               if (p[pixel[9]] > cb)
                                 if (p[pixel[10]] > cb)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
@@ -569,7 +604,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                             if (p[pixel[9]] < c_b)
                               if (p[pixel[10]] < c_b)
                                 if (p[pixel[12]] < c_b)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
@@ -603,15 +638,15 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                             if (p[pixel[12]] < c_b)
                               if (p[pixel[6]] < c_b)
                                 if (p[pixel[5]] < c_b)
-                                  {}
+                                {}
                                 else if (p[pixel[14]] < c_b)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
                               else if (p[pixel[14]] < c_b)
                                 if (p[pixel[15]] < c_b)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
@@ -644,7 +679,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                           if (p[pixel[10]] < c_b)
                             if (p[pixel[11]] < c_b)
                               if (p[pixel[12]] < c_b)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -674,13 +709,13 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[13]] > cb)
                     if (p[pixel[14]] > cb)
                       if (p[pixel[15]] > cb)
-                        {}
+                      {}
                       else if (p[pixel[6]] > cb)
                         if (p[pixel[7]] > cb)
                           if (p[pixel[8]] > cb)
                             if (p[pixel[9]] > cb)
                               if (p[pixel[10]] > cb)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -702,7 +737,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                           if (p[pixel[8]] > cb)
                             if (p[pixel[9]] > cb)
                               if (p[pixel[10]] > cb)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -736,15 +771,15 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                           if (p[pixel[13]] < c_b)
                             if (p[pixel[6]] < c_b)
                               if (p[pixel[5]] < c_b)
-                                {}
+                              {}
                               else if (p[pixel[14]] < c_b)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
                             else if (p[pixel[14]] < c_b)
                               if (p[pixel[15]] < c_b)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -779,12 +814,12 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[13]] > cb)
                       if (p[pixel[14]] > cb)
                         if (p[pixel[15]] > cb)
-                          {}
+                        {}
                         else if (p[pixel[6]] > cb)
                           if (p[pixel[7]] > cb)
                             if (p[pixel[8]] > cb)
                               if (p[pixel[9]] > cb)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -802,7 +837,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                           if (p[pixel[7]] > cb)
                             if (p[pixel[8]] > cb)
                               if (p[pixel[9]] > cb)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -824,7 +859,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                           if (p[pixel[7]] > cb)
                             if (p[pixel[8]] > cb)
                               if (p[pixel[9]] > cb)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -857,10 +892,10 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[6]] < c_b)
                           if (p[pixel[5]] < c_b)
                             if (p[pixel[4]] < c_b)
-                              {}
+                            {}
                             else if (p[pixel[12]] < c_b)
                               if (p[pixel[13]] < c_b)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -870,7 +905,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                           else if (p[pixel[12]] < c_b)
                             if (p[pixel[13]] < c_b)
                               if (p[pixel[14]] < c_b)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -884,7 +919,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                           if (p[pixel[13]] < c_b)
                             if (p[pixel[14]] < c_b)
                               if (p[pixel[15]] < c_b)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -918,12 +953,12 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[13]] > cb)
                     if (p[pixel[14]] > cb)
                       if (p[pixel[15]] > cb)
-                        {}
+                      {}
                       else if (p[pixel[6]] > cb)
                         if (p[pixel[7]] > cb)
                           if (p[pixel[8]] > cb)
                             if (p[pixel[9]] > cb)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -941,7 +976,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[7]] > cb)
                           if (p[pixel[8]] > cb)
                             if (p[pixel[9]] > cb)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -963,7 +998,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[7]] > cb)
                           if (p[pixel[8]] > cb)
                             if (p[pixel[9]] > cb)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -997,15 +1032,15 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[6]] < c_b)
                           if (p[pixel[5]] < c_b)
                             if (p[pixel[4]] < c_b)
-                              {}
+                            {}
                             else if (p[pixel[13]] < c_b)
-                              {}
+                            {}
                             else {
                               continue;
                             }
                           else if (p[pixel[13]] < c_b)
                             if (p[pixel[14]] < c_b)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -1015,7 +1050,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         else if (p[pixel[13]] < c_b)
                           if (p[pixel[14]] < c_b)
                             if (p[pixel[15]] < c_b)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -1051,11 +1086,11 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[13]] > cb)
                       if (p[pixel[14]] > cb)
                         if (p[pixel[15]] > cb)
-                          {}
+                        {}
                         else if (p[pixel[6]] > cb)
                           if (p[pixel[7]] > cb)
                             if (p[pixel[8]] > cb)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -1069,7 +1104,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[6]] > cb)
                           if (p[pixel[7]] > cb)
                             if (p[pixel[8]] > cb)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -1087,7 +1122,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[6]] > cb)
                           if (p[pixel[7]] > cb)
                             if (p[pixel[8]] > cb)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -1109,7 +1144,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[6]] > cb)
                           if (p[pixel[7]] > cb)
                             if (p[pixel[8]] > cb)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -1142,10 +1177,10 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[5]] < c_b)
                         if (p[pixel[4]] < c_b)
                           if (p[pixel[3]] < c_b)
-                            {}
+                          {}
                           else if (p[pixel[11]] < c_b)
                             if (p[pixel[12]] < c_b)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -1155,7 +1190,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         else if (p[pixel[11]] < c_b)
                           if (p[pixel[12]] < c_b)
                             if (p[pixel[13]] < c_b)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -1169,7 +1204,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[12]] < c_b)
                           if (p[pixel[13]] < c_b)
                             if (p[pixel[14]] < c_b)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -1187,7 +1222,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[13]] < c_b)
                           if (p[pixel[14]] < c_b)
                             if (p[pixel[15]] < c_b)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -1222,11 +1257,11 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[13]] > cb)
                     if (p[pixel[14]] > cb)
                       if (p[pixel[15]] > cb)
-                        {}
+                      {}
                       else if (p[pixel[6]] > cb)
                         if (p[pixel[7]] > cb)
                           if (p[pixel[8]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1240,7 +1275,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[6]] > cb)
                         if (p[pixel[7]] > cb)
                           if (p[pixel[8]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1258,7 +1293,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[6]] > cb)
                         if (p[pixel[7]] > cb)
                           if (p[pixel[8]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1280,7 +1315,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[6]] > cb)
                         if (p[pixel[7]] > cb)
                           if (p[pixel[8]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1314,15 +1349,15 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[5]] < c_b)
                         if (p[pixel[4]] < c_b)
                           if (p[pixel[3]] < c_b)
-                            {}
+                          {}
                           else if (p[pixel[12]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
                         else if (p[pixel[12]] < c_b)
                           if (p[pixel[13]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1332,7 +1367,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       else if (p[pixel[12]] < c_b)
                         if (p[pixel[13]] < c_b)
                           if (p[pixel[14]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1346,7 +1381,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[13]] < c_b)
                         if (p[pixel[14]] < c_b)
                           if (p[pixel[15]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1383,10 +1418,10 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[13]] > cb)
                       if (p[pixel[14]] > cb)
                         if (p[pixel[15]] > cb)
-                          {}
+                        {}
                         else if (p[pixel[6]] > cb)
                           if (p[pixel[7]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1396,7 +1431,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       else if (p[pixel[5]] > cb)
                         if (p[pixel[6]] > cb)
                           if (p[pixel[7]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1410,7 +1445,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[5]] > cb)
                         if (p[pixel[6]] > cb)
                           if (p[pixel[7]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1428,7 +1463,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[5]] > cb)
                         if (p[pixel[6]] > cb)
                           if (p[pixel[7]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1450,7 +1485,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[5]] > cb)
                         if (p[pixel[6]] > cb)
                           if (p[pixel[7]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1483,10 +1518,10 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[4]] < c_b)
                       if (p[pixel[3]] < c_b)
                         if (p[pixel[2]] < c_b)
-                          {}
+                        {}
                         else if (p[pixel[10]] < c_b)
                           if (p[pixel[11]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1496,7 +1531,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       else if (p[pixel[10]] < c_b)
                         if (p[pixel[11]] < c_b)
                           if (p[pixel[12]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1510,7 +1545,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[11]] < c_b)
                         if (p[pixel[12]] < c_b)
                           if (p[pixel[13]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1528,7 +1563,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[12]] < c_b)
                         if (p[pixel[13]] < c_b)
                           if (p[pixel[14]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1550,7 +1585,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[13]] < c_b)
                         if (p[pixel[14]] < c_b)
                           if (p[pixel[15]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1586,10 +1621,10 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[13]] > cb)
                     if (p[pixel[14]] > cb)
                       if (p[pixel[15]] > cb)
-                        {}
+                      {}
                       else if (p[pixel[6]] > cb)
                         if (p[pixel[7]] > cb)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -1599,7 +1634,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     else if (p[pixel[5]] > cb)
                       if (p[pixel[6]] > cb)
                         if (p[pixel[7]] > cb)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -1613,7 +1648,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[5]] > cb)
                       if (p[pixel[6]] > cb)
                         if (p[pixel[7]] > cb)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -1631,7 +1666,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[5]] > cb)
                       if (p[pixel[6]] > cb)
                         if (p[pixel[7]] > cb)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -1653,7 +1688,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[5]] > cb)
                       if (p[pixel[6]] > cb)
                         if (p[pixel[7]] > cb)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -1687,15 +1722,15 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[4]] < c_b)
                       if (p[pixel[3]] < c_b)
                         if (p[pixel[2]] < c_b)
-                          {}
+                        {}
                         else if (p[pixel[11]] < c_b)
-                          {}
+                        {}
                         else {
                           continue;
                         }
                       else if (p[pixel[11]] < c_b)
                         if (p[pixel[12]] < c_b)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -1705,7 +1740,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     else if (p[pixel[11]] < c_b)
                       if (p[pixel[12]] < c_b)
                         if (p[pixel[13]] < c_b)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -1719,7 +1754,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[12]] < c_b)
                       if (p[pixel[13]] < c_b)
                         if (p[pixel[14]] < c_b)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -1737,7 +1772,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[13]] < c_b)
                       if (p[pixel[14]] < c_b)
                         if (p[pixel[15]] < c_b)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -1775,10 +1810,10 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[4]] > cb)
                       if (p[pixel[3]] > cb)
                         if (p[pixel[2]] > cb)
-                          {}
+                        {}
                         else if (p[pixel[10]] > cb)
                           if (p[pixel[11]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1788,7 +1823,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       else if (p[pixel[10]] > cb)
                         if (p[pixel[11]] > cb)
                           if (p[pixel[12]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1802,7 +1837,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[11]] > cb)
                         if (p[pixel[12]] > cb)
                           if (p[pixel[13]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1820,7 +1855,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[12]] > cb)
                         if (p[pixel[13]] > cb)
                           if (p[pixel[14]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1842,7 +1877,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[13]] > cb)
                         if (p[pixel[14]] > cb)
                           if (p[pixel[15]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1875,10 +1910,10 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[13]] < c_b)
                       if (p[pixel[14]] < c_b)
                         if (p[pixel[15]] < c_b)
-                          {}
+                        {}
                         else if (p[pixel[6]] < c_b)
                           if (p[pixel[7]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1888,7 +1923,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       else if (p[pixel[5]] < c_b)
                         if (p[pixel[6]] < c_b)
                           if (p[pixel[7]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1902,7 +1937,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[5]] < c_b)
                         if (p[pixel[6]] < c_b)
                           if (p[pixel[7]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1920,7 +1955,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[5]] < c_b)
                         if (p[pixel[6]] < c_b)
                           if (p[pixel[7]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1942,7 +1977,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[5]] < c_b)
                         if (p[pixel[6]] < c_b)
                           if (p[pixel[7]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -1980,10 +2015,10 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[5]] > cb)
                         if (p[pixel[4]] > cb)
                           if (p[pixel[3]] > cb)
-                            {}
+                          {}
                           else if (p[pixel[11]] > cb)
                             if (p[pixel[12]] > cb)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -1993,7 +2028,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         else if (p[pixel[11]] > cb)
                           if (p[pixel[12]] > cb)
                             if (p[pixel[13]] > cb)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -2007,7 +2042,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[12]] > cb)
                           if (p[pixel[13]] > cb)
                             if (p[pixel[14]] > cb)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -2025,7 +2060,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[13]] > cb)
                           if (p[pixel[14]] > cb)
                             if (p[pixel[15]] > cb)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -2057,11 +2092,11 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[13]] < c_b)
                       if (p[pixel[14]] < c_b)
                         if (p[pixel[15]] < c_b)
-                          {}
+                        {}
                         else if (p[pixel[6]] < c_b)
                           if (p[pixel[7]] < c_b)
                             if (p[pixel[8]] < c_b)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -2075,7 +2110,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[6]] < c_b)
                           if (p[pixel[7]] < c_b)
                             if (p[pixel[8]] < c_b)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -2093,7 +2128,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[6]] < c_b)
                           if (p[pixel[7]] < c_b)
                             if (p[pixel[8]] < c_b)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -2115,7 +2150,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[6]] < c_b)
                           if (p[pixel[7]] < c_b)
                             if (p[pixel[8]] < c_b)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -2153,10 +2188,10 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[6]] > cb)
                           if (p[pixel[5]] > cb)
                             if (p[pixel[4]] > cb)
-                              {}
+                            {}
                             else if (p[pixel[12]] > cb)
                               if (p[pixel[13]] > cb)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -2166,7 +2201,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                           else if (p[pixel[12]] > cb)
                             if (p[pixel[13]] > cb)
                               if (p[pixel[14]] > cb)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -2180,7 +2215,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                           if (p[pixel[13]] > cb)
                             if (p[pixel[14]] > cb)
                               if (p[pixel[15]] > cb)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -2211,12 +2246,12 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[13]] < c_b)
                       if (p[pixel[14]] < c_b)
                         if (p[pixel[15]] < c_b)
-                          {}
+                        {}
                         else if (p[pixel[6]] < c_b)
                           if (p[pixel[7]] < c_b)
                             if (p[pixel[8]] < c_b)
                               if (p[pixel[9]] < c_b)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -2234,7 +2269,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                           if (p[pixel[7]] < c_b)
                             if (p[pixel[8]] < c_b)
                               if (p[pixel[9]] < c_b)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -2256,7 +2291,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                           if (p[pixel[7]] < c_b)
                             if (p[pixel[8]] < c_b)
                               if (p[pixel[9]] < c_b)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -2295,15 +2330,15 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                             if (p[pixel[12]] > cb)
                               if (p[pixel[6]] > cb)
                                 if (p[pixel[5]] > cb)
-                                  {}
+                                {}
                                 else if (p[pixel[14]] > cb)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
                               else if (p[pixel[14]] > cb)
                                 if (p[pixel[15]] > cb)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
@@ -2337,7 +2372,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                             if (p[pixel[9]] > cb)
                               if (p[pixel[10]] > cb)
                                 if (p[pixel[12]] > cb)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
@@ -2363,13 +2398,13 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[12]] < c_b)
                       if (p[pixel[14]] < c_b)
                         if (p[pixel[15]] < c_b)
-                          {}
+                        {}
                         else if (p[pixel[6]] < c_b)
                           if (p[pixel[7]] < c_b)
                             if (p[pixel[8]] < c_b)
                               if (p[pixel[9]] < c_b)
                                 if (p[pixel[10]] < c_b)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
@@ -2391,7 +2426,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                             if (p[pixel[8]] < c_b)
                               if (p[pixel[9]] < c_b)
                                 if (p[pixel[10]] < c_b)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
@@ -2424,7 +2459,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                           if (p[pixel[10]] > cb)
                             if (p[pixel[11]] > cb)
                               if (p[pixel[12]] > cb)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -2460,9 +2495,9 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                               if (p[pixel[12]] > cb)
                                 if (p[pixel[13]] > cb)
                                   if (p[pixel[6]] > cb)
-                                    {}
+                                  {}
                                   else if (p[pixel[15]] > cb)
-                                    {}
+                                  {}
                                   else {
                                     continue;
                                   }
@@ -2496,7 +2531,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                               if (p[pixel[10]] > cb)
                                 if (p[pixel[11]] > cb)
                                   if (p[pixel[13]] > cb)
-                                    {}
+                                  {}
                                   else {
                                     continue;
                                   }
@@ -2521,14 +2556,14 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     else if (p[pixel[12]] < c_b)
                       if (p[pixel[13]] < c_b)
                         if (p[pixel[15]] < c_b)
-                          {}
+                        {}
                         else if (p[pixel[6]] < c_b)
                           if (p[pixel[7]] < c_b)
                             if (p[pixel[8]] < c_b)
                               if (p[pixel[9]] < c_b)
                                 if (p[pixel[10]] < c_b)
                                   if (p[pixel[11]] < c_b)
-                                    {}
+                                  {}
                                   else {
                                     continue;
                                   }
@@ -2561,7 +2596,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                             if (p[pixel[11]] > cb)
                               if (p[pixel[12]] > cb)
                                 if (p[pixel[13]] > cb)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
@@ -2597,7 +2632,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                                 if (p[pixel[11]] > cb)
                                   if (p[pixel[12]] > cb)
                                     if (p[pixel[14]] > cb)
-                                      {}
+                                    {}
                                     else {
                                       continue;
                                     }
@@ -2621,7 +2656,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         }
                       else if (p[pixel[13]] < c_b)
                         if (p[pixel[14]] < c_b)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -2636,7 +2671,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                               if (p[pixel[12]] > cb)
                                 if (p[pixel[13]] > cb)
                                   if (p[pixel[14]] > cb)
-                                    {}
+                                  {}
                                   else {
                                     continue;
                                   }
@@ -2671,7 +2706,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                                 if (p[pixel[12]] > cb)
                                   if (p[pixel[13]] > cb)
                                     if (p[pixel[15]] > cb)
-                                      {}
+                                    {}
                                     else {
                                       continue;
                                     }
@@ -2695,7 +2730,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         }
                       else if (p[pixel[14]] < c_b)
                         if (p[pixel[15]] < c_b)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -2704,15 +2739,15 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       }
                     else if (p[pixel[7]] < c_b)
                       if (p[pixel[8]] < c_b)
-                        {}
+                      {}
                       else if (p[pixel[15]] < c_b)
-                        {}
+                      {}
                       else {
                         continue;
                       }
                     else if (p[pixel[14]] < c_b)
                       if (p[pixel[15]] < c_b)
-                        {}
+                      {}
                       else {
                         continue;
                       }
@@ -2728,7 +2763,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                               if (p[pixel[12]] > cb)
                                 if (p[pixel[14]] > cb)
                                   if (p[pixel[15]] > cb)
-                                    {}
+                                  {}
                                   else {
                                     continue;
                                   }
@@ -2756,7 +2791,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   else if (p[pixel[13]] < c_b)
                     if (p[pixel[14]] < c_b)
                       if (p[pixel[15]] < c_b)
-                        {}
+                      {}
                       else {
                         continue;
                       }
@@ -2775,9 +2810,9 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                             if (p[pixel[13]] > cb)
                               if (p[pixel[14]] > cb)
                                 if (p[pixel[6]] > cb)
-                                  {}
+                                {}
                                 else if (p[pixel[15]] > cb)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
@@ -2806,14 +2841,14 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[13]] < c_b)
                     if (p[pixel[14]] < c_b)
                       if (p[pixel[15]] < c_b)
-                        {}
+                      {}
                       else if (p[pixel[6]] < c_b)
                         if (p[pixel[7]] < c_b)
                           if (p[pixel[8]] < c_b)
                             if (p[pixel[9]] < c_b)
                               if (p[pixel[10]] < c_b)
                                 if (p[pixel[11]] < c_b)
-                                  {}
+                                {}
                                 else {
                                   continue;
                                 }
@@ -2850,15 +2885,15 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                           if (p[pixel[13]] > cb)
                             if (p[pixel[6]] > cb)
                               if (p[pixel[5]] > cb)
-                                {}
+                              {}
                               else if (p[pixel[14]] > cb)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
                             else if (p[pixel[14]] > cb)
                               if (p[pixel[15]] > cb)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -2888,13 +2923,13 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[13]] < c_b)
                     if (p[pixel[14]] < c_b)
                       if (p[pixel[15]] < c_b)
-                        {}
+                      {}
                       else if (p[pixel[6]] < c_b)
                         if (p[pixel[7]] < c_b)
                           if (p[pixel[8]] < c_b)
                             if (p[pixel[9]] < c_b)
                               if (p[pixel[10]] < c_b)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -2916,7 +2951,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                           if (p[pixel[8]] < c_b)
                             if (p[pixel[9]] < c_b)
                               if (p[pixel[10]] < c_b)
-                                {}
+                              {}
                               else {
                                 continue;
                               }
@@ -2953,15 +2988,15 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[6]] > cb)
                           if (p[pixel[5]] > cb)
                             if (p[pixel[4]] > cb)
-                              {}
+                            {}
                             else if (p[pixel[13]] > cb)
-                              {}
+                            {}
                             else {
                               continue;
                             }
                           else if (p[pixel[13]] > cb)
                             if (p[pixel[14]] > cb)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -2971,7 +3006,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         else if (p[pixel[13]] > cb)
                           if (p[pixel[14]] > cb)
                             if (p[pixel[15]] > cb)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -3002,12 +3037,12 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[13]] < c_b)
                     if (p[pixel[14]] < c_b)
                       if (p[pixel[15]] < c_b)
-                        {}
+                      {}
                       else if (p[pixel[6]] < c_b)
                         if (p[pixel[7]] < c_b)
                           if (p[pixel[8]] < c_b)
                             if (p[pixel[9]] < c_b)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -3025,7 +3060,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[7]] < c_b)
                           if (p[pixel[8]] < c_b)
                             if (p[pixel[9]] < c_b)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -3047,7 +3082,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                         if (p[pixel[7]] < c_b)
                           if (p[pixel[8]] < c_b)
                             if (p[pixel[9]] < c_b)
-                              {}
+                            {}
                             else {
                               continue;
                             }
@@ -3084,15 +3119,15 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[5]] > cb)
                         if (p[pixel[4]] > cb)
                           if (p[pixel[3]] > cb)
-                            {}
+                          {}
                           else if (p[pixel[12]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
                         else if (p[pixel[12]] > cb)
                           if (p[pixel[13]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -3102,7 +3137,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       else if (p[pixel[12]] > cb)
                         if (p[pixel[13]] > cb)
                           if (p[pixel[14]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -3116,7 +3151,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[13]] > cb)
                         if (p[pixel[14]] > cb)
                           if (p[pixel[15]] > cb)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -3148,11 +3183,11 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[13]] < c_b)
                     if (p[pixel[14]] < c_b)
                       if (p[pixel[15]] < c_b)
-                        {}
+                      {}
                       else if (p[pixel[6]] < c_b)
                         if (p[pixel[7]] < c_b)
                           if (p[pixel[8]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -3166,7 +3201,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[6]] < c_b)
                         if (p[pixel[7]] < c_b)
                           if (p[pixel[8]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -3184,7 +3219,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[6]] < c_b)
                         if (p[pixel[7]] < c_b)
                           if (p[pixel[8]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -3206,7 +3241,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                       if (p[pixel[6]] < c_b)
                         if (p[pixel[7]] < c_b)
                           if (p[pixel[8]] < c_b)
-                            {}
+                          {}
                           else {
                             continue;
                           }
@@ -3243,15 +3278,15 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[4]] > cb)
                       if (p[pixel[3]] > cb)
                         if (p[pixel[2]] > cb)
-                          {}
+                        {}
                         else if (p[pixel[11]] > cb)
-                          {}
+                        {}
                         else {
                           continue;
                         }
                       else if (p[pixel[11]] > cb)
                         if (p[pixel[12]] > cb)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -3261,7 +3296,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     else if (p[pixel[11]] > cb)
                       if (p[pixel[12]] > cb)
                         if (p[pixel[13]] > cb)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -3275,7 +3310,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[12]] > cb)
                       if (p[pixel[13]] > cb)
                         if (p[pixel[14]] > cb)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -3293,7 +3328,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[13]] > cb)
                       if (p[pixel[14]] > cb)
                         if (p[pixel[15]] > cb)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -3326,10 +3361,10 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[13]] < c_b)
                     if (p[pixel[14]] < c_b)
                       if (p[pixel[15]] < c_b)
-                        {}
+                      {}
                       else if (p[pixel[6]] < c_b)
                         if (p[pixel[7]] < c_b)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -3339,7 +3374,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     else if (p[pixel[5]] < c_b)
                       if (p[pixel[6]] < c_b)
                         if (p[pixel[7]] < c_b)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -3353,7 +3388,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[5]] < c_b)
                       if (p[pixel[6]] < c_b)
                         if (p[pixel[7]] < c_b)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -3371,7 +3406,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[5]] < c_b)
                       if (p[pixel[6]] < c_b)
                         if (p[pixel[7]] < c_b)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -3393,7 +3428,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                     if (p[pixel[5]] < c_b)
                       if (p[pixel[6]] < c_b)
                         if (p[pixel[7]] < c_b)
-                          {}
+                        {}
                         else {
                           continue;
                         }
@@ -3430,15 +3465,15 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[3]] > cb)
                     if (p[pixel[2]] > cb)
                       if (p[pixel[1]] > cb)
-                        {}
+                      {}
                       else if (p[pixel[10]] > cb)
-                        {}
+                      {}
                       else {
                         continue;
                       }
                     else if (p[pixel[10]] > cb)
                       if (p[pixel[11]] > cb)
-                        {}
+                      {}
                       else {
                         continue;
                       }
@@ -3448,7 +3483,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   else if (p[pixel[10]] > cb)
                     if (p[pixel[11]] > cb)
                       if (p[pixel[12]] > cb)
-                        {}
+                      {}
                       else {
                         continue;
                       }
@@ -3462,7 +3497,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[11]] > cb)
                     if (p[pixel[12]] > cb)
                       if (p[pixel[13]] > cb)
-                        {}
+                      {}
                       else {
                         continue;
                       }
@@ -3480,7 +3515,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[12]] > cb)
                     if (p[pixel[13]] > cb)
                       if (p[pixel[14]] > cb)
-                        {}
+                      {}
                       else {
                         continue;
                       }
@@ -3502,7 +3537,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[13]] > cb)
                     if (p[pixel[14]] > cb)
                       if (p[pixel[15]] > cb)
-                        {}
+                      {}
                       else {
                         continue;
                       }
@@ -3536,15 +3571,15 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[3]] < c_b)
                     if (p[pixel[2]] < c_b)
                       if (p[pixel[1]] < c_b)
-                        {}
+                      {}
                       else if (p[pixel[10]] < c_b)
-                        {}
+                      {}
                       else {
                         continue;
                       }
                     else if (p[pixel[10]] < c_b)
                       if (p[pixel[11]] < c_b)
-                        {}
+                      {}
                       else {
                         continue;
                       }
@@ -3554,7 +3589,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   else if (p[pixel[10]] < c_b)
                     if (p[pixel[11]] < c_b)
                       if (p[pixel[12]] < c_b)
-                        {}
+                      {}
                       else {
                         continue;
                       }
@@ -3568,7 +3603,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[11]] < c_b)
                     if (p[pixel[12]] < c_b)
                       if (p[pixel[13]] < c_b)
-                        {}
+                      {}
                       else {
                         continue;
                       }
@@ -3586,7 +3621,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[12]] < c_b)
                     if (p[pixel[13]] < c_b)
                       if (p[pixel[14]] < c_b)
-                        {}
+                      {}
                       else {
                         continue;
                       }
@@ -3608,7 +3643,7 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
                   if (p[pixel[13]] < c_b)
                     if (p[pixel[14]] < c_b)
                       if (p[pixel[15]] < c_b)
-                        {}
+                      {}
                       else {
                         continue;
                       }
@@ -3640,11 +3675,11 @@ void fast9_detect(struct image_t *img, uint8_t threshold, uint16_t min_dist, uin
       // When we have more corner than allocted space reallocate
       if (corner_cnt >= *ret_corners_length) {
         *ret_corners_length *= 2;
-        ret_corners = realloc(ret_corners, sizeof(struct point_t) * (*ret_corners_length));
+        *ret_corners = realloc(*ret_corners, sizeof(struct point_t) * (*ret_corners_length));
       }
 
-      ret_corners[corner_cnt].x = x;
-      ret_corners[corner_cnt].y = y;
+      (*ret_corners)[corner_cnt].x = x;
+      (*ret_corners)[corner_cnt].y = y;
       corner_cnt++;
 
       // Skip some in the width direction
@@ -3678,3 +3713,4 @@ static void fast_make_offsets(int32_t *pixel, uint16_t row_stride, uint8_t pixel
   pixel[14] = -2 * pixel_size + row_stride * 2 * pixel_size;
   pixel[15] = -1 * pixel_size + row_stride * 3 * pixel_size;
 }
+
