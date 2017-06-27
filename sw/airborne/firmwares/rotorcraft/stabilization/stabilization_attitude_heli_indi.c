@@ -162,6 +162,19 @@ void indi_apply_measurement_butterworth_filters(int32_t _out[], int32_t _in[]);
 
 /* Telemetry messages here, at the moment there are none */
 
+static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *dev)
+{
+  struct Int32Quat *quat = stateGetNedToBodyQuat_i();
+  pprz_msg_send_AHRS_REF_QUAT(trans, dev, AC_ID,
+                              &stab_att_sp_quat.qi,
+                              &stab_att_sp_quat.qx,
+                              &stab_att_sp_quat.qy,
+                              &stab_att_sp_quat.qz,
+                              &(quat->qi),
+                              &(quat->qx),
+                              &(quat->qy),
+                              &(quat->qz));
+}
 #endif // PERIODIC_TELEMETRY
 
 static inline void indi_apply_actuator_models(int32_t _out[], int32_t _in[])
@@ -428,6 +441,7 @@ void stabilization_attitude_init(void)
 
 #if PERIODIC_TELEMETRY
   //register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_<<MSG>>, function);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
 #endif
 }
 

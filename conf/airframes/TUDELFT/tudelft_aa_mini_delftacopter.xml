@@ -5,30 +5,30 @@
 	<firmware name="rotorcraft">
 		<target name="ap" board="lisa_s_1.0">
 			<module name="radio_control" type="ppm">
-				<configure name="RADIO_CONTROL_PPM_PIN" value="SERVO6" />
-				<define name="RADIO_CONTROL_NB_CHANNEL" value="7" />
+				<configure 	name="RADIO_CONTROL_PPM_PIN" 	value="SERVO6" />
+				<define 	name="RADIO_CONTROL_NB_CHANNEL" value="7" />
+				<define 	name="RADIO_KILL_SWITCH" 		value="5"/>
 			</module>
 		</target>
 
 		<module name="actuators" type="pwm">
-			<!-- <define name="TIM5_SERVO_HZ" value="300" /> -->
-			<define name="SERVO_HZ" value="300" />
+			<define name="TIM5_SERVO_HZ" 	value="300" /> 
+			<define name="SERVO_HZ" 		value="300" />
 			<define name="USE_SERVOS_1AND2" />
 		</module>
 
 		<configure name="USE_MAGNETOMETER" value="1" />
 
 
-		<!-- WIFI module used for telemetry -->
 		<module name="telemetry" type="transparent">
 			<configure name="MODEM_BAUD" value="B115200" />
 			<configure name="MODEM_PORT" value="UART1" />
 		</module>
 
-		<module name="imu" type="lisa_s_v1.0" />
-		<module name="gps" type="ublox" />
-		<module name="stabilization" type="heli_indi" /> <!-- <module name="stabilization" type="int_quat" /> -->		
-		<module name="ahrs" type="int_cmpl_quat" />
+		<module name="imu" 				type="lisa_s_v1.0" />
+		<module name="gps" 				type="ublox" />
+		<module name="stabilization" 	type="heli_indi" /> 		
+		<module name="ahrs" 			type="int_cmpl_quat" />
 		<module name="ins" />
 	</firmware>
 
@@ -70,56 +70,50 @@
 	</rc_commands>
 
 	<section name="MIXING" prefix="SW_MIXING_">
-		<define name="TYPE" value="HR120" />
-		<define name="TRIM_ROLL" value="0" />
-		<define name="TRIM_PITCH" value="0" />
-		<define name="TRIM_COLL" value="0" />
+		<define name="TYPE" 		value="HR120" />
+		<define name="TRIM_ROLL" 	value="0" />
+		<define name="TRIM_PITCH" 	value="0" />
+		<define name="TRIM_COLL" 	value="0" />
 	</section>
 	
 	<command_laws>
-		<call fun="throttle_curve_run(TRUE, values)" />
+		<call fun="throttle_curve_run(autopilot_get_motors_on(), values)" />
 		<call fun="swashplate_mixing_run(values)" />
-		<let var="th_hold" value="LessThan(RadioControlValues(RADIO_TH_HOLD), 1500)" />
-
-		<set servo="TAIL"		value="($th_hold? 0 :@YAW + throttle_curve.throttle*2800/7000)" />
+		
+		<set servo="S_THROTTLE" value="throttle_curve.throttle" />
 		<set servo="BACK" 		value="swashplate_mixing.commands[SW_BACK]" />
 		<set servo="LEFTFRONT" 	value="swashplate_mixing.commands[SW_LEFTFRONT]" />
 		<set servo="RIGHTFRONT" value="swashplate_mixing.commands[SW_RIGHTFRONT]" />
-		<set servo="S_THROTTLE" value="($th_hold? 0 : throttle_curve.throttle)" />
+		<set servo="TAIL" 		value="autopilot_get_motors_on() ? @YAW + throttle_curve.throttle*2800/7000 : 0" />
 	</command_laws> 
 
 	<heli_curves>
-		<!-- <curve throttle="0,4800,7200,8400,9600" collective="-5500,-3750,-1500,250,5000" /> -->
 		<curve throttle='0,4800,7200,8400,9600'		collective='2400,0,-2400,-3800,-7200'/>
 	</heli_curves>
 
 	<section name="MISC">
-		<define name="NAV_CLIMB_VSPEED" value="2.5" />
-		<define name="NAV_DESCEND_VSPEED" value="-1.0" />
-		<define name="NO_RC_THRUST_LIMIT" value="TRUE" />
+		<define name="NAV_CLIMB_VSPEED" 	value="2.5" />
+		<define name="NAV_DESCEND_VSPEED" 	value="-1.0" />
+		<define name="NO_RC_THRUST_LIMIT" 	value="TRUE" />
 	</section>
 
 	<section name="IMU" prefix="IMU_">
 
 		<!-- replace this with your own calibration -->
-		<define name="MAG_X_NEUTRAL" value="14" />
-		<define name="MAG_Y_NEUTRAL" value="116" />
-		<define name="MAG_Z_NEUTRAL" value="119" />
-		<define name="MAG_X_SENS" value="5.09245681612" integer="16" />
-		<define name="MAG_Y_SENS" value="5.29702744632" integer="16" />
-		<define name="MAG_Z_SENS" value="5.65287938992" integer="16" />
+		<define name="MAG_X_NEUTRAL" 	value="14" />
+		<define name="MAG_Y_NEUTRAL" 	value="116" />
+		<define name="MAG_Z_NEUTRAL" 	value="119" />
+		<define name="MAG_X_SENS" 	value="5.09245681612" integer="16" />
+		<define name="MAG_Y_SENS" 	value="5.29702744632" integer="16" />
+		<define name="MAG_Z_SENS" 	value="5.65287938992" integer="16" />
 
-		<define name="BODY_TO_IMU_PHI" value="5.0" unit="deg" />
-		<define name="BODY_TO_IMU_THETA" value="-87.0" unit="deg" />
-		<define name="BODY_TO_IMU_PSI" value="180.0" unit="deg" />
+		<define name="BODY_TO_IMU_PHI" 		value="5.0" 	unit="deg" />
+		<define name="BODY_TO_IMU_THETA" 	value="-87.0" 	unit="deg" />
+		<define name="BODY_TO_IMU_PSI" 		value="180.0" 	unit="deg" />
 	</section>
 
 	<section name="AHRS" prefix="AHRS_">
-		<!--This airframe vibrates a lot, which causes accel measurements in excess 
-			of 1g continuously -->
 		<define name="GRAVITY_HEURISTIC_FACTOR" value="0" />
-
-		<!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
 		<define name="H_X" value="0.3770441" />
 		<define name="H_Y" value="0.0193986" />
 		<define name="H_Z" value="0.9259921" />
@@ -204,10 +198,13 @@
 		<define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT" />
 		<define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT" />
 		<define name="MODE_AUTO2" value="AP_MODE_NAV" />
+		
+		<define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE" />
+		<define name="NO_RC_THRUST_LIMIT" value="TRUE" />
 	</section>
 
 	<section name="BAT">
-		<define name="VoltageOfAdc(adc)" value="(0.0020 * adc)" />
+		<define name="VoltageOfAdc(adc)" value="(1 * adc)" />
 		<define name="MILLIAMP_AT_FULL_THROTTLE" value="7000" />
 		<define name="CATASTROPHIC_BAT_LEVEL" value="2.8" unit="V" />
 		<define name="CRITIC_BAT_LEVEL" value="3.0" unit="V" />
