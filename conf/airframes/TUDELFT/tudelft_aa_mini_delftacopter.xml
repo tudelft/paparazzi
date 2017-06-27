@@ -29,6 +29,7 @@
 		<module name="imu" type="lisa_s_v1.0" />
 		<module name="gps" type="ublox" />
 		<module name="stabilization" type="heli_indi" />
+		<!-- <module name="stabilization" type="int_quat" /> -->
 		<module name="ahrs" type="int_cmpl_quat" />
 		<module name="ins" />
 	</firmware>
@@ -77,20 +78,7 @@
 		<define name="TRIM_PITCH" value="0" />
 		<define name="TRIM_COLL" value="0" />
 	</section>
-
-	<!--  <command_laws>
-		<call fun="throttle_curve_run(TRUE, values)" />
-		<call fun="swashplate_mixing_run(values)" />
-		<let var="th_hold" value="LessThan(RadioControlValues(RADIO_TH_HOLD), 1500)" />
-
-		<set servo="TAIL"		value="($th_hold? 0 :@YAW + throttle_curve.throttle*2800/7000)" />
-		<set servo="BACK" 		value="swashplate_mixing.commands[SW_BACK]" />
-		<set servo="LEFTFRONT" 	value="swashplate_mixing.commands[SW_LEFTFRONT]" />
-		<set servo="RIGHTFRONT" value="swashplate_mixing.commands[SW_RIGHTFRONT]" />
-		<set servo="S_THROTTLE" value="($th_hold? 0 : throttle_curve.throttle)" />
-	</command_laws>  -->
-
-
+	
 	<command_laws>
 		<call fun="throttle_curve_run(TRUE, values)" />
 		<call fun="swashplate_mixing_run(values)" />
@@ -163,8 +151,8 @@
 
 	<section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
 		<!-- setpoints -->
-		<define name="SP_MAX_PHI" value="15." unit="deg" />
-		<define name="SP_MAX_THETA" value="15." unit="deg" />
+		<define name="SP_MAX_PHI" value="10.0" unit="deg" />
+		<define name="SP_MAX_THETA" value="10.0" unit="deg" />
 		<define name="SP_MAX_R" value="250." unit="deg/s" />
 		<define name="DEADBAND_R" value="200" />
 
