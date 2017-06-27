@@ -16,7 +16,6 @@
 			<define name="USE_SERVOS_1AND2" />
 		</module>
 
-		<!--Need to put it back to 1 and include right commands afterwards -->
 		<configure name="USE_MAGNETOMETER" value="1" />
 
 
@@ -28,8 +27,7 @@
 
 		<module name="imu" type="lisa_s_v1.0" />
 		<module name="gps" type="ublox" />
-		<module name="stabilization" type="heli_indi" />
-		<!-- <module name="stabilization" type="int_quat" /> -->
+		<module name="stabilization" type="heli_indi" /> <!-- <module name="stabilization" type="int_quat" /> -->		
 		<module name="ahrs" type="int_cmpl_quat" />
 		<module name="ins" />
 	</firmware>
@@ -42,21 +40,20 @@
 	</modules>
 
 	<servos driver="Pwm">
-		<servo name="S_THROTTLE" 	no="2" min="1000" 	neutral="1000" 	max="1900" />
+		<servo name="S_THROTTLE" 	no="2" min="1000" 	neutral="1000" 	max="2000" />
 		<servo name="TAIL" 			no="1" min="0" 		neutral="0" 	max="3500" />
-		
-		<servo name="BACK" 			no="5" min="1900" 	neutral="1500" 	max="1100" />
-		<servo name="LEFTFRONT" 	no="4" min="1900" 	neutral="1500" 	max="1100" />
-		<servo name="RIGHTFRONT" 	no="0" min="1900" 	neutral="1500" 	max="1100" />
+		<servo name="BACK" 			no="5" min="1100" 	neutral="1500" 	max="1900" />
+		<servo name="LEFTFRONT" 	no="0" min="1100" 	neutral="1500" 	max="1900" />
+		<servo name="RIGHTFRONT" 	no="4" min="1100" 	neutral="1500" 	max="1900" />
 	</servos>
 
 	<commands>
-		<axis name="THRUST" failsafe_value="0" />
-		<axis name="ROLL" failsafe_value="0" />
-		<axis name="PITCH" failsafe_value="0" />
-		<axis name="YAW" failsafe_value="0" />
-		<axis name="TH_HOLD" failsafe_value="-9600" />
-		<axis name="FMODE" failsafe_value="-9600" />
+		<axis name="THRUST" 	failsafe_value="0" />
+		<axis name="ROLL" 		failsafe_value="0" />
+		<axis name="PITCH" 		failsafe_value="0" />
+		<axis name="YAW" 		failsafe_value="0" />
+		<axis name="TH_HOLD" 	failsafe_value="-9600" />
+		<axis name="FMODE" 		failsafe_value="-9600" />
 	</commands>
 
 	<section name="RADIO">
@@ -64,12 +61,12 @@
 	</section>
 
 	<rc_commands>
-		<set command="THRUST" value="@THROTTLE" />
-		<set command="ROLL" value="@ROLL" />
-		<set command="PITCH" value="@PITCH" />
-		<set command="YAW" value="@YAW" />
-		<set command="FMODE" value="@MODE" />
-		<set command="TH_HOLD" value="@AUX1" />
+		<set command="THRUST" 	value="@THROTTLE" />
+		<set command="ROLL" 	value="@ROLL" />
+		<set command="PITCH" 	value="@PITCH" />
+		<set command="YAW" 		value="@YAW" />
+		<set command="FMODE" 	value="@MODE" />
+		<set command="TH_HOLD" 	value="@AUX1" />
 	</rc_commands>
 
 	<section name="MIXING" prefix="SW_MIXING_">
@@ -92,7 +89,8 @@
 	</command_laws> 
 
 	<heli_curves>
-		<curve throttle="0,4800,7200,8400,9600" collective="-5500,-3750,-1500,250,5000" />
+		<!-- <curve throttle="0,4800,7200,8400,9600" collective="-5500,-3750,-1500,250,5000" /> -->
+		<curve throttle='0,4800,7200,8400,9600'		collective='2400,0,-2400,-3800,-7200'/>
 	</heli_curves>
 
 	<section name="MISC">
@@ -111,11 +109,9 @@
 		<define name="MAG_Y_SENS" value="5.29702744632" integer="16" />
 		<define name="MAG_Z_SENS" value="5.65287938992" integer="16" />
 
-		<define name="BODY_TO_IMU_PHI" value="90.0" unit="deg" />
-		<define name="BODY_TO_IMU_THETA" value="0.0" unit="deg" />
-		<define name="BODY_TO_IMU_PSI" value="90.0" unit="deg" />
-
-
+		<define name="BODY_TO_IMU_PHI" value="5.0" unit="deg" />
+		<define name="BODY_TO_IMU_THETA" value="-87.0" unit="deg" />
+		<define name="BODY_TO_IMU_PSI" value="180.0" unit="deg" />
 	</section>
 
 	<section name="AHRS" prefix="AHRS_">
@@ -210,14 +206,13 @@
 		<define name="MODE_AUTO2" value="AP_MODE_NAV" />
 	</section>
 
-
 	<section name="BAT">
 		<define name="VoltageOfAdc(adc)" value="(0.0020 * adc)" />
 		<define name="MILLIAMP_AT_FULL_THROTTLE" value="7000" />
 		<define name="CATASTROPHIC_BAT_LEVEL" value="2.8" unit="V" />
 		<define name="CRITIC_BAT_LEVEL" value="3.0" unit="V" />
 		<define name="LOW_BAT_LEVEL" value="3.2" unit="V" />
-		<define name="MAX_BAT_LEVEL" value="4.1" unit="V" />
+		<define name="MAX_BAT_LEVEL" value="4.2" unit="V" />
 	</section>
 
 </airframe>
