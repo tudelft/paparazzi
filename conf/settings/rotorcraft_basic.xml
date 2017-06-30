@@ -12,6 +12,13 @@
       </dl_setting>
       <dl_setting var="autopilot.mode" min="0" step="1" max="19" module="autopilot" shortname="mode" values="KILL|Fail|HOME|Rate|Att|Rate_rcC|Att_rcC|Att_C|Rate_Z|Att_Z|Hover|Hover_C|Hover_Z|Nav|RC_D|CareFree|Forward|Module|Flip|Guided" handler="SetModeHandler"/>
     </dl_settings>
+    
+    
+<!--     New tab for INDI gain tunning
+	<dl_settings NAME="INDI">
+		<dl_setting var="STABILIZATION_ATTITUDE_HELI_INDI_YAW_P" min="0.1" step="0.1" max="100" module="stabilization_attitude_heli_indi" shortname="YAW P"/>
+	</dl_settings>
+ -->
 
   </dl_settings>
 </settings>
