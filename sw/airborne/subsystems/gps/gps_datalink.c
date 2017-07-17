@@ -182,9 +182,9 @@ static void parse_gps_datalink_local(int32_t enu_x, int32_t enu_y, int32_t enu_z
   struct EnuCoor_i enu_pos, enu_speed;
 
   // Position in ENU coordinates
-  enu_pos.x = enu_x
-  enu_pos.y = enu_y
-  enu_pos.z = enu_z
+  enu_pos.x = enu_x;
+  enu_pos.y = enu_y;
+  enu_pos.z = enu_z;
 
   // Convert the ENU coordinates to ECEF
 	ecef_of_enu_point_i(&gps_datalink.ecef_pos, &ltp_def, &enu_pos);
@@ -193,9 +193,9 @@ static void parse_gps_datalink_local(int32_t enu_x, int32_t enu_y, int32_t enu_z
 	lla_of_ecef_i(&gps_datalink.lla_pos, &gps_datalink.ecef_pos);
 	SetBit(gps_datalink.valid_fields, GPS_VALID_POS_LLA_BIT);
 
-	enu_speed.x = enu.xd
-	enu_speed.y = enu.yd
-	enu_speed.z = enu.zd
+	enu_speed.x = enu_xd;
+	enu_speed.y = enu_yd;
+	enu_speed.z = enu_zd;
 
 	VECT3_NED_OF_ENU(gps_datalink.ned_vel, enu_speed);
 	SetBit(gps_datalink.valid_fields, GPS_VALID_VEL_NED_BIT);

@@ -214,7 +214,7 @@ class ParrotUtils:
     # Get the version of the drone
     def check_version(self):
         if self.version_file is not None:
-            return ParrotVersion(execute_command('cat ' + self.version_file).strip())
+            return ParrotVersion(self.execute_command('cat ' + self.version_file).strip())
         else:
             return "Unknown version"
 
@@ -249,7 +249,7 @@ class ParrotUtils:
 
     # Remove a directory
     def remove_directory(self, name):
-        self.sexecute_command('rm -r ' + name)
+        self.execute_command('rm -r ' + name)
         print('Removed directory "' + name + '"')
 
     # Upload a new file
@@ -274,9 +274,9 @@ class ParrotUtils:
         if self.check_version_before_run and min_ver is not None and max_ver is not None:
             v = self.check_version()
             print("Checking " + self.uav_name + " firmware version... " + str(v) )
-            if ((v < self.ParrotVersion(min_ver)) or (v > self.ParrotVersion(max_ver))):
-                print("Error: please upgrade your " + self.uav_name + " firmware to version between " + min_ver + " and " + max_ver + "!")
-                return
+            # if ((v < self.ParrotVersion(min_ver)) or (v > self.ParrotVersion(max_ver))):
+            #     print("Error: please upgrade your " + self.uav_name + " firmware to version between " + min_ver + " and " + max_ver + "!")
+            #     return
             
         f = self.split_into_path_and_file(name)
 
