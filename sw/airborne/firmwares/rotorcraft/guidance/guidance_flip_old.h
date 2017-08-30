@@ -32,12 +32,6 @@
 #ifndef GUIDANCE_FLIP_H
 #define GUIDANCE_FLIP_H
 
-#include "math/pprz_algebra_int.h"
-
-extern int32_t dblt_angle;
-extern float pulse_duration;
-extern uint8_t maneuver_type;
-
 void guidance_flip_enter(void);
 void guidance_flip_run(void);
 

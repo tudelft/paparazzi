@@ -77,6 +77,16 @@ PRINT_CONFIG_VAR(GUIDANCE_H_USE_SPEED_REF)
 #define GUIDANCE_INDI FALSE
 #endif
 
+#ifndef DEFAULT_MAN_ANGLE
+#define DEFAULT_MAN_ANGLE 10
+#endif
+#ifndef DEFAULT_PULSE_DUR
+#define DEFAULT_PULSE_DUR 1.0
+#endif
+#ifndef DEFAULT_MAN_TYPE
+#define DEFAULT_MAN_TYPE 1
+#endif
+
 struct HorizontalGuidance guidance_h;
 
 int32_t transition_percentage;
@@ -182,6 +192,10 @@ void guidance_h_init(void)
   guidance_h.gains.v = GUIDANCE_H_VGAIN;
   transition_percentage = 0;
   transition_theta_offset = 0;
+
+  dblt_angle = DEFAULT_MAN_ANGLE;
+  pulse_duration = DEFAULT_PULSE_DUR;
+  maneuver_type = DEFAULT_MAN_TYPE;
 
   gh_ref_init();
 

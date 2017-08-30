@@ -5,8 +5,10 @@
     <description>RPM sensor based on time difference between pulses
       It uses an PWM input to measure the period between pulses.
     </description>
-    <configure name="RPM_PWM_CHANNEL" value="PWM_INPUTX" description="Select PWM input channel for RPM sensor"/>
-    <define name="RPM_PULSE_PER_RND" value="14" description="Amount of pulses per round"/>
+    <!--configure name="RPM_PWM_CHANNEL" value="PWM_INPUTX" description="Select PWM input channel for RPM sensor"/-->
+    <configure name="RPM_PWM_CHANNEL_LEFT" value="PWM_INPUTX" description="Select PWM input channel for RPM left sensor"/>
+    <configure name="RPM_PWM_CHANNEL_RIGHT" value="PWM_INPUTX" description="Select PWM input channel for RPM right sensor"/>
+    <define name="RPM_PULSE_PER_RND" value="5" description="Amount of pulses per round"/>
     <define name="RPM_FILTER_TAU" value="0.3" description="1/cut-off-frequency = filter time"/>
   </doc>
   <depends>pwm_meas</depends>
@@ -18,10 +20,18 @@
   <makefile>
     <file name="rpm_sensor.c"/>
 
-    <configure name="RPM_PWM_CHANNEL" default="PWM_INPUT1"/>
-    <define name="RPM_PWM_CHANNEL" value="$(RPM_PWM_CHANNEL)"/>
-    <define name="$(RPM_PWM_CHANNEL)_TICKS_PER_USEC" value="1" />
-    <define name="USE_$(RPM_PWM_CHANNEL)" value="PWM_PULSE_TYPE_ACTIVE_HIGH" />
+    <!--configure name="RPM_PWM_CHANNEL" default="PWM_INPUT1"/-->
+    <configure name="RPM_PWM_CHANNEL_LEFT" default="PWM_INPUT1"/>
+    <configure name="RPM_PWM_CHANNEL_RIGHT" default="PWM_INPUT2"/>
+    <!--define name="RPM_PWM_CHANNEL" value="$(RPM_PWM_CHANNEL)"/-->
+    <define name="RPM_PWM_CHANNEL_LEFT" value="$(RPM_PWM_CHANNEL_LEFT)"/>
+    <define name="RPM_PWM_CHANNEL_RIGHT" value="$(RPM_PWM_CHANNEL_RIGHT)"/>
+    <!--define name="$(RPM_PWM_CHANNEL)_TICKS_PER_USEC" value="1" /-->
+    <define name="$(RPM_PWM_CHANNEL_LEFT)_TICKS_PER_USEC" value="1" />
+    <define name="$(RPM_PWM_CHANNEL_RIGHT)_TICKS_PER_USEC" value="1" />
+    <!--define name="USE_$(RPM_PWM_CHANNEL)" value="PWM_PULSE_TYPE_ACTIVE_HIGH" /-->
+    <define name="USE_$(RPM_PWM_CHANNEL_LEFT)" value="PWM_PULSE_TYPE_ACTIVE_HIGH" />
+    <define name="USE_$(RPM_PWM_CHANNEL_RIGHT)" value="PWM_PULSE_TYPE_ACTIVE_HIGH" />
   </makefile>
 </module>
 

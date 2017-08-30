@@ -35,7 +35,8 @@
 
 extern void rpm_sensor_init(void);
 extern void rpm_sensor_periodic(void);
-extern uint16_t rpm_sensor_get_rpm(void);
+extern uint16_t rpm_sensor_get_rpm_left(void);
+extern uint16_t rpm_sensor_get_rpm_right(void);
 
 #endif
 

@@ -29,8 +29,10 @@
 #include "subsystems/abi.h"
 #include "filters/low_pass_filter.h"
 
-static struct FirstOrderLowPass rpm_lp;
-uint16_t rpm;
+static struct FirstOrderLowPass rpm_lp_left;
+uint16_t rpm_left;
+static struct FirstOrderLowPass rpm_lp_right;
+uint16_t rpm_right;
 
 #ifndef RPM_FILTER_TAU
 #define RPM_FILTER_TAU RPM_SENSOR_PERIODIC_PERIOD
@@ -42,15 +44,17 @@ uint16_t rpm;
 
 static void rpm_sensor_send_motor(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_MOTOR(trans, dev, AC_ID, &rpm, &electrical.current);
+  pprz_msg_send_MOTOR(trans, dev, AC_ID, &rpm_left, &rpm_right, &electrical.current);
 }
 #endif
 
 /* Initialize the RPM measurement by configuring the telemetry */
 void rpm_sensor_init(void)
 {
-  rpm = 0;
-  init_first_order_low_pass(&rpm_lp, RPM_FILTER_TAU, RPM_SENSOR_PERIODIC_PERIOD, 0);
+  rpm_left = 0;
+  init_first_order_low_pass(&rpm_lp_left, RPM_FILTER_TAU, RPM_SENSOR_PERIODIC_PERIOD, 0);
+  rpm_right = 0;
+  init_first_order_low_pass(&rpm_lp_right, RPM_FILTER_TAU, RPM_SENSOR_PERIODIC_PERIOD, 0);
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MOTOR, rpm_sensor_send_motor);
@@ -60,18 +64,30 @@ void rpm_sensor_init(void)
 /* RPM periodic */
 void rpm_sensor_periodic(void)
 {
-  rpm = update_first_order_low_pass(&rpm_lp, rpm_sensor_get_rpm());
-  AbiSendMsgRPM(RPM_SENSOR_ID, &rpm, 1);
+  rpm_left = update_first_order_low_pass(&rpm_lp_left, rpm_sensor_get_rpm_left());
+  rpm_right = update_first_order_low_pass(&rpm_lp_right, rpm_sensor_get_rpm_right());
+  AbiSendMsgRPM(RPM_SENSOR_ID, &rpm_left, 1);
 }
 
 /* Get the RPM sensor */
-uint16_t rpm_sensor_get_rpm(void)
+uint16_t rpm_sensor_get_rpm_left(void)
 {
-  uint16_t rpm_meas = 0;
-  uint32_t period_us = get_pwm_input_period_in_usec(RPM_PWM_CHANNEL) * RPM_PULSE_PER_RND;
-  if (period_us > 0) {
-    rpm_meas = ((uint32_t)1000000 * 60) / period_us;
+  uint16_t rpm_meas_left = 0;
+  uint32_t period_us_left = get_pwm_input_period_in_usec(RPM_PWM_CHANNEL_LEFT) * RPM_PULSE_PER_RND;
+  if (period_us_left > 0) {
+    rpm_meas_left = ((uint32_t)1000000 * 60) / period_us_left;
   }
 
-  return rpm_meas;
+  return rpm_meas_left;
+}
+
+uint16_t rpm_sensor_get_rpm_right(void)
+{
+  uint16_t rpm_meas_right = 0;
+  uint32_t period_us_right = get_pwm_input_period_in_usec(RPM_PWM_CHANNEL_RIGHT) * RPM_PULSE_PER_RND;
+  if (period_us_right > 0) {
+    rpm_meas_right = ((uint32_t)1000000 * 60) / period_us_right;
+  }
+
+  return rpm_meas_right;
 }

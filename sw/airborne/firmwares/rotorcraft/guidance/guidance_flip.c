@@ -30,112 +30,135 @@
  */
 
 #include "guidance_flip.h"
+#include "paparazzi.h"
+#include "math/pprz_algebra_int.h"
 
 #include "autopilot.h"
 #include "guidance_h.h"
 #include "stabilization/stabilization_attitude_rc_setpoint.h"
 #include "stabilization/stabilization_attitude.h"
+#include "stabilization/stabilization_attitude_quat_int.h"
 
-#ifndef STOP_ROLL_CMD_ANGLE
-#define STOP_ROLL_CMD_ANGLE 25.0
+#include "subsystems/radio_control.h"
+
+#ifndef MANEUVER_PITCH_DOUBLET
+#define MANEUVER_PITCH_DOUBLET 1
 #endif
-#ifndef FIRST_THRUST_DURATION
-#define FIRST_THRUST_DURATION 0.3
+#ifndef MANEUVER_PITCH_PULSE
+#define MANEUVER_PITCH_PULSE 2
 #endif
-#ifndef FINAL_THRUST_LEVEL
-#define FINAL_THRUST_LEVEL 6000
+#ifndef INITIAL_IDLE_TIME
+#define INITIAL_IDLE_TIME 1.0
+#endif
+#ifndef FINAL_IDLE_TIME
+#define FINAL_IDLE_TIME 1.0
 #endif
 
-uint32_t flip_counter;
+
+
+uint32_t maneuver_counter;
 uint8_t flip_state;
-bool flip_rollout;
-int32_t heading_save;
-uint8_t autopilot_mode_old;
-struct Int32Vect2 flip_cmd_earth;
+struct Int32Quat nominal_quaternion_cmd;
+int32_t dblt_angle;
+float pulse_duration;
+uint8_t maneuver_type;
+uint32_t timer;
+static uint32_t timer_save;
+int32_t nominal_thrust_cmd;
+struct Int32Quat deviation_quaternion;
+struct Int32Vect3 rot_axis;
+//struct Int32Quat new_stab_att_quat_sp;
 
 void guidance_flip_enter(void)
-{
-  flip_counter = 0;
+{ 
+  maneuver_counter = 0;
   flip_state = 0;
-  flip_rollout = false;
-  heading_save = stabilization_attitude_get_heading_i();
-  autopilot_mode_old = autopilot_get_mode();
+  stabilization_attitude_read_rc(autopilot_in_flight, FALSE, FALSE);
+  QUAT_COPY(nominal_quaternion_cmd,stab_att_sp_quat);
+  nominal_thrust_cmd = stabilization_cmd[COMMAND_THRUST];
+  timer_save = 0;
+
 }
 
 void guidance_flip_run(void)
 {
-  uint32_t timer;
-  int32_t phi;
-  static uint32_t timer_save = 0;
-
-  timer = (flip_counter++ << 12) / PERIODIC_FREQUENCY;
-  phi = stateGetNedToBodyEulers_i()->phi;
-
+  timer = (maneuver_counter++ << 12) / PERIODIC_FREQUENCY;
+  
   switch (flip_state) {
     case 0:
-      flip_cmd_earth.x = 0;
-      flip_cmd_earth.y = 0;
-      stabilization_attitude_set_earth_cmd_i(&flip_cmd_earth,
-                                             heading_save);
+      // trimmed flight before maneuver
       stabilization_attitude_run(autopilot_in_flight());
-      stabilization_cmd[COMMAND_THRUST] = 8000; //Thrust to go up first
+      stabilization_cmd[COMMAND_THRUST] = nominal_thrust_cmd; //Thrust to go up first
       timer_save = 0;
-
-      if (timer > BFP_OF_REAL(FIRST_THRUST_DURATION, 12)) {
+      //FIXME make pulse_duration a setting
+      if (timer > BFP_OF_REAL(INITIAL_IDLE_TIME, 12)) {
         flip_state++;
       }
       break;
 
     case 1:
-      stabilization_cmd[COMMAND_ROLL]   = 9000; // Rolling command
-      stabilization_cmd[COMMAND_PITCH]  = 0;
-      stabilization_cmd[COMMAND_YAW]    = 0;
-      stabilization_cmd[COMMAND_THRUST] = 1000; //Min thrust?
-
-      if (phi > ANGLE_BFP_OF_REAL(RadOfDeg(STOP_ROLL_CMD_ANGLE))) {
-        flip_state++;
+      
+      // Beginning of doublet or positive part of pulse
+      // Select pitch axis
+      rot_axis.x = 0;
+      rot_axis.y = 1;
+      rot_axis.z = 0;
+      //FIXME make angle and axis a setting
+      int32_quat_of_axis_angle(&deviation_quaternion, &rot_axis, &dblt_angle);
+      int32_quat_comp(&stab_att_sp_quat, &nominal_quaternion_cmd, &deviation_quaternion);
+      //stab_att_quat_sp = new_stab_att_quat_sp;
+      stabilization_attitude_run(autopilot_in_flight);
+      stabilization_cmd[COMMAND_THRUST] = nominal_thrust_cmd; 
+      
+      if (timer > BFP_OF_REAL(pulse_duration, 12)) {
+	switch (maneuver_type) {
+	  case MANEUVER_PITCH_DOUBLET:
+	     flip_state++;
+             break;
+	  case MANEUVER_PITCH_PULSE:
+	     flip_state = 3;
+             break;
+          default:
+             flip_state = 99;
+    	     break;
+	}
       }
       break;
 
     case 2:
-      stabilization_cmd[COMMAND_ROLL]   = 0;
-      stabilization_cmd[COMMAND_PITCH]  = 0;
-      stabilization_cmd[COMMAND_YAW]    = 0;
-      stabilization_cmd[COMMAND_THRUST] = 1000; //Min thrust?
+      rot_axis.x = 0;
+      rot_axis.y = -1;
+      rot_axis.z = 0;
+      
+      int32_quat_of_axis_angle(&deviation_quaternion, &rot_axis, &dblt_angle);
+      int32_quat_comp(&stab_att_sp_quat, &nominal_quaternion_cmd, &deviation_quaternion);
+      //stab_att_quat_sp = new_stab_att_quat_sp;
+      stabilization_attitude_run(autopilot_in_flight);
+      stabilization_cmd[COMMAND_THRUST] = nominal_thrust_cmd; 
 
-      if (phi > ANGLE_BFP_OF_REAL(RadOfDeg(-110.0)) && phi < ANGLE_BFP_OF_REAL(RadOfDeg(STOP_ROLL_CMD_ANGLE))) {
+      if (timer > BFP_OF_REAL(pulse_duration, 12)) {
         timer_save = timer;
         flip_state++;
       }
       break;
 
     case 3:
-      flip_cmd_earth.x = 0;
-      flip_cmd_earth.y = 0;
-      stabilization_attitude_set_earth_cmd_i(&flip_cmd_earth,
-                                             heading_save);
-      stabilization_attitude_run(autopilot_in_flight());
-
-      stabilization_cmd[COMMAND_THRUST] = FINAL_THRUST_LEVEL; //Thrust to stop falling
-
-      if ((timer - timer_save) > BFP_OF_REAL(0.5, 12)) {
+      stab_att_sp_quat = nominal_quaternion_cmd;
+      stabilization_attitude_run(autopilot_in_flight);
+      stabilization_cmd[COMMAND_THRUST] = nominal_thrust_cmd; 
+      
+      if ((timer - timer_save) > BFP_OF_REAL(FINAL_IDLE_TIME, 12)) {
         flip_state++;
       }
       break;
 
     default:
-      autopilot_mode_auto2 = autopilot_mode_old;
-      autopilot_set_mode(autopilot_mode_old);
-      stab_att_sp_euler.psi = heading_save;
-      flip_rollout = false;
-      flip_counter = 0;
-      timer_save = 0;
-      flip_state = 0;
 
-      stabilization_cmd[COMMAND_ROLL]   = 0;
-      stabilization_cmd[COMMAND_PITCH]  = 0;
-      stabilization_cmd[COMMAND_YAW]    = 0;
-      stabilization_cmd[COMMAND_THRUST] = 8000; //Some thrust to come out of the roll?
+      maneuver_counter = 0;
+      timer_save = 0;
+      stabilization_attitude_read_rc(autopilot_in_flight, FALSE, FALSE);
+      stabilization_attitude_run(autopilot_in_flight);
+      stabilization_cmd[COMMAND_THRUST] = radio_control.values[RADIO_THROTTLE];
       break;
   }
 }

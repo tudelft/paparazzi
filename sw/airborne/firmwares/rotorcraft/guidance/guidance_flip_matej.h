@@ -28,15 +28,15 @@
  * the previous mode after finishing the flip.
  * Use it with caution!
  */
+#include "std.h"
+#include "paparazzi.h"
+
+extern uint8_t in_flip;
+extern pprz_t auto_pitch;
+extern pprz_t auto_roll;
 
 #ifndef GUIDANCE_FLIP_H
 #define GUIDANCE_FLIP_H
-
-#include "math/pprz_algebra_int.h"
-
-extern int32_t dblt_angle;
-extern float pulse_duration;
-extern uint8_t maneuver_type;
 
 void guidance_flip_enter(void);
 void guidance_flip_run(void);

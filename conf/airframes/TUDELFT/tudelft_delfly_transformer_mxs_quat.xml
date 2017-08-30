@@ -15,7 +15,7 @@
   settings_modules="modules/gps_ubx_ucenter.xml"git
 -->
 
-<airframe name="DelFly_Transformer_MXS">
+<airframe name="DelFly_Transformer_MXS_quat">
 	
 	<!-- FIRMWARE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
 	
@@ -32,25 +32,15 @@
 			<configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
 			
 			<define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>
-			
+			<!--define name="USE_EARTH_BOUND_RC_SETPOINT" value="TRUE"/-->
 			<define name="USE_BARO_BOARD" value="1"/>
 			<define name="BARO_PERIODIC_FREQUENCY" value="100"/>			
 		</target>
 		
 		<!-- Necessary to build succesfully, but not used -->
 		<module name="motor_mixing"/>
-		<!--module name="rpm_sensor">
-			<define name="RPM_PULSE_PER_RND" value="5"/>
-		</module>
-		<module name="pwm_meas"/-->
-
-		<!-- !!! Rpm sensing still needs to be implemented in the MXS board file !!! -->
-
-		<!-- Rpm sensing settings start - cannot be pushed to master -->
-		<!--subsystem name="rpm_sensor" type="eagletree">
- 			<define name="PULSES_PER_ROTATION" value="5"/>
- 		</subsystem-->	
-		<!-- Rpm sensing settings end -->
+		
+		<!--rpm sensing-->
 		<module name="pwm_meas"/>
                 <module name="rpm_sensor">
 			<define name="RPM_PULSE_PER_RND" value='5'/>
@@ -69,7 +59,7 @@
 		
 		<module name="imu" type="lisa_mx_v2.1"/>
 		<module name="gps" type="ublox"/>
-		<module name="stabilization" type="int_euler">
+		<module name="stabilization" type="int_quat">
 	  		<define name="STABILIZATION_ATTITUDE_SP_PSI_DELTA_LIMIT" value="0.5"/>
 	  	</module>
 <!--		<module name="stabilization" type="int_quat"/-->
@@ -153,7 +143,7 @@
 		<define name="MODE_STARTUP" value="AP_MODE_RC_DIRECT"/>
    		<define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
 		<define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
-		<define name="MODE_AUTO2" value="AP_MODE_FLIP"/>
+		<define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/>
 				
 		<define name="USE_THROTTLE_FOR_MOTOR_ARMING" value="TRUE"/>
 <!--		<define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/-->
@@ -164,7 +154,7 @@
 		
 		<!-- setpoints -->
 		<define name="SP_MAX_PHI" value="60." unit="deg"/>
-		<define name="SP_MAX_THETA" value="60." unit="deg"/>
+		<define name="SP_MAX_THETA" value="75." unit="deg"/>
 		<define name="SP_MAX_PSI" value="45." unit="deg"/>
 		<define name="SP_MAX_R" value="90." unit="deg/s"/>
 		<define name="SP_MAX_P" value="90." unit="deg/s"/>

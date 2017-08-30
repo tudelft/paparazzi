@@ -290,7 +290,8 @@
     </message>
 
     <message name="MOTOR" id="34">
-      <field name="rpm" type="uint16" unit="Hz"/>
+      <field name="rpm_left" type="uint16" unit="RPM"/>
+      <field name="rpm_right" type="uint16" unit="RPM"/>
       <field name="current" type="int32" unit="mA"/>
     </message>
 
@@ -1729,7 +1730,10 @@
       <field name="imageBuffer" type="uint8[]"/>
     </message>
 
-    <!-- 230 is free -->
+    <message name="RPM" id="230">
+      <field name="pulse_cnt" type="uint16" unit='-'/>
+      <field name="rpm_left" type="float" unit="Hz"/>
+    </message>
 
     <message name="ROTORCRAFT_STATUS" id="231">
       <field name="link_imu_nb_err" type="uint32"/>
