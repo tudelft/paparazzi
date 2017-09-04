@@ -338,6 +338,7 @@ void guidance_v_run(bool in_flight)
 
     case GUIDANCE_V_MODE_NAV: {
       guidance_v_from_nav(in_flight);
+      // stabilization_cmd[COMMAND_THRUST] = guidance_v_rc_delta_t;
       break;
     }
 
