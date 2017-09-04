@@ -1,0 +1,92 @@
+<?xml version='1.0'?>
+<sdf version='1.4'>
+	<model name="stereo_camera">
+
+
+		<link name="base">
+			<inertial><!-- Taken from Paparazzi's ARDrone model for JSBsim -->
+				<mass>0.001</mass>
+				<inertia>
+					<ixx> 0.005 </ixx>
+					<iyy> 0.005 </iyy>
+					<izz> 0.010 </izz>
+					<ixy> 0. </ixy>
+					<ixz> 0. </ixz>
+					<iyz> 0. </iyz>
+				</inertia>
+			</inertial>
+
+			<collision name="collision">
+				<geometry>
+					<box>
+						<size>.4 .4 .05</size>
+					</box>
+				</geometry>
+			</collision>
+
+		</link>
+
+
+<!-- STEREO CAMERA -->
+		<link name="stereo_camera">
+			<pose>0.15 0 0 0 0 0</pose>
+			<inertial>
+				<mass>0.001</mass>
+				<inertia>
+					<ixx>.0001</ixx>
+					<iyy>.0001</iyy>
+					<izz>.0001</izz>
+					<ixy>0</ixy>
+					<iyz>0</iyz>
+					<ixz>0</ixz>
+				</inertia>
+			</inertial>
+     <sensor type="multicamera" name="stereo_camera">
+      <update_rate>25.0</update_rate>
+      <camera name="left">
+        <pose>0 0.03 0 0 0 0</pose>
+        <horizontal_fov>1.001819 </horizontal_fov>
+        <image>
+						<width>128</width>
+						<height>96</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>300</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.02</stddev>
+        </noise>
+      </camera>
+      <camera name="right">
+        <pose>0 -0.03 0 0 0 0</pose>
+        <horizontal_fov>1.001819 </horizontal_fov>
+        <image>
+						<width>128</width>
+						<height>96</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>300</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.02</stddev>
+        </noise>
+      </camera>
+			</sensor>
+		</link>
+		
+		<joint name="stereo_camera_joint" type="fixed">
+			<parent>base</parent>
+			<child>stereo_camera</child>
+		</joint>
+
+
+	</model>
+</sdf>

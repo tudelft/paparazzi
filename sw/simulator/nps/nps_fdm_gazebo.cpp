@@ -60,6 +60,7 @@ extern "C" {
 #include "math/pprz_isa.h"
 #include "math/pprz_algebra_double.h"
 }
+/******************************************************/
 
 using namespace std;
 
@@ -91,6 +92,46 @@ struct gazebocam_t {
 static struct gazebocam_t gazebo_cams[VIDEO_THREAD_MAX_CAMERAS] =
 { { NULL, 0 } };
 #endif
+
+#ifdef NPS_SIMULATE_RANGE_SENSORS
+static void gazebo_init_range_sensors(void);
+static void gazebo_read_range_sensors(void);
+struct gazebo_range_sensors_t {
+  gazebo::sensors::RaySensorPtr ray_front;
+  gazebo::sensors::RaySensorPtr ray_right;
+  gazebo::sensors::RaySensorPtr ray_back;
+  gazebo::sensors::RaySensorPtr ray_left;
+  gazebo::sensors::RaySensorPtr ray_down;
+  gazebo::sensors::RaySensorPtr ray_up;
+  gazebo::common::Time last_measurement_time;
+};
+
+static struct gazebo_range_sensors_t gazebo_range_sensors;
+
+#endif
+
+#ifdef NPS_SIMULATE_EXTERNAL_STEREO_CAMERA
+extern "C" {
+#include "stereoboard/stereo_image.h"
+#include "stereoboard/math/stereo_math.h"
+#include "stereoboard/camera_type.h"
+#include "stereoboard/edgeflow.h"
+#include "stereoboard/gate_detection.h"
+}
+
+static void gazebo_init_stereo_camera(void);
+static void gazebo_read_stereo_camera(void);
+static void read_stereoimage(
+  struct image_t *img,
+  gazebo::sensors::MultiCameraSensorPtr  cam);
+struct gazebostereocam_t {
+  gazebo::sensors::MultiCameraSensorPtr stereocam;
+  gazebo::common::Time last_measurement_time;
+};
+static struct gazebostereocam_t gazebo_stereocam;
+
+#endif
+
 
 /// Holds all necessary NPS FDM state information
 struct NpsFdm fdm;
@@ -206,6 +247,15 @@ void nps_fdm_run_step(
     gazebo_read();
 #ifdef NPS_SIMULATE_VIDEO
     init_gazebo_video();
+    cout << "video initiated" << endl;
+#endif
+#ifdef NPS_SIMULATE_RANGE_SENSORS
+    gazebo_init_range_sensors();
+    cout << "laser range sensor ring initiated" << endl;
+#endif
+#ifdef NPS_SIMULATE_EXTERNAL_STEREO_CAMERA
+    gazebo_init_stereo_camera();
+    cout << "stereo camera initiated" << endl;
 #endif
     gazebo_initialized = true;
   }
@@ -218,6 +268,13 @@ void nps_fdm_run_step(
 #ifdef NPS_SIMULATE_VIDEO
   gazebo_read_video();
 #endif
+#ifdef NPS_SIMULATE_RANGE_SENSORS
+  gazebo_read_range_sensors();
+#endif
+#ifdef NPS_SIMULATE_EXTERNAL_STEREO_CAMERA
+  gazebo_read_stereo_camera();
+#endif
+
 }
 
 // TODO Atmosphere functions have not been implemented yet.
@@ -613,6 +670,296 @@ static void read_image(
   img->pprz_ts = ts.Double() * 1e6;
   img->buf_idx = 0; // unused
 }
+#endif
+
+#ifdef NPS_SIMULATE_RANGE_SENSORS
+static void gazebo_init_range_sensors(void)
+{
+  gazebo::sensors::SensorManager *mgr =
+    gazebo::sensors::SensorManager::Instance();
+
+  gazebo_range_sensors.ray_front = static_pointer_cast<gazebo::sensors::RaySensor>(mgr->GetSensor("range_sensors::front_range_sensor"));
+  gazebo_range_sensors.ray_right = static_pointer_cast<gazebo::sensors::RaySensor>(mgr->GetSensor("range_sensors::right_range_sensor"));
+  gazebo_range_sensors.ray_back = static_pointer_cast<gazebo::sensors::RaySensor>(mgr->GetSensor("range_sensors::back_range_sensor"));
+  gazebo_range_sensors.ray_left = static_pointer_cast<gazebo::sensors::RaySensor>(mgr->GetSensor("range_sensors::left_range_sensor"));
+  gazebo_range_sensors.ray_up = static_pointer_cast<gazebo::sensors::RaySensor>(mgr->GetSensor("range_sensors::up_range_sensor"));
+  gazebo_range_sensors.ray_down = static_pointer_cast<gazebo::sensors::RaySensor>(mgr->GetSensor("range_sensors::down_range_sensor"));
+
+  if (!gazebo_range_sensors.ray_left || !gazebo_range_sensors.ray_right || !gazebo_range_sensors.ray_up ||
+      !gazebo_range_sensors.ray_down || !gazebo_range_sensors.ray_front || !gazebo_range_sensors.ray_back) {
+    cout << "ERROR: Could not get pointer to raysensor!" << gazebo_range_sensors.ray_left << gazebo_range_sensors.ray_right << gazebo_range_sensors.ray_up <<
+         gazebo_range_sensors.ray_down << gazebo_range_sensors.ray_front << gazebo_range_sensors.ray_back << endl;
+  }
+
+  gazebo_range_sensors.ray_left->SetActive(true);
+  gazebo_range_sensors.ray_right->SetActive(true);
+  gazebo_range_sensors.ray_up->SetActive(true);
+  gazebo_range_sensors.ray_down->SetActive(true);
+  gazebo_range_sensors.ray_front->SetActive(true);
+  gazebo_range_sensors.ray_back->SetActive(true);
+
+}
+static void gazebo_read_range_sensors(void)
+{
+  int16_t range_sensors_int16[6];
+  range_sensors_int16[0] = (int16_t)(gazebo_range_sensors.ray_front->Range(0) * 1000);
+  range_sensors_int16[1] = (int16_t)(gazebo_range_sensors.ray_right->Range(0) * 1000);
+  range_sensors_int16[2] = (int16_t)(gazebo_range_sensors.ray_back->Range(0) * 1000);
+  range_sensors_int16[3] = (int16_t)(gazebo_range_sensors.ray_left->Range(0) * 1000);
+  range_sensors_int16[4] = (int16_t)(gazebo_range_sensors.ray_up->Range(0) * 1000);
+  range_sensors_int16[5] = (int16_t)(gazebo_range_sensors.ray_down->Range(0) * 1000);
+
+  int i;
+  for(i=0;i<6;i++)
+  {
+	  if(range_sensors_int16[i] == 0)
+		  range_sensors_int16[i] = 32767;
+
+  }
+
+  //SEND ABI MESSAGES
+  // Standard range sensor message
+  AbiSendMsgRANGE_SENSORS(RANGE_SENSORS_GAZEBO_ID, range_sensors_int16[0], range_sensors_int16[1], range_sensors_int16[2],
+                          range_sensors_int16[3], range_sensors_int16[4], range_sensors_int16[5]);
+  // Down range sensor as "Sonar"
+  AbiSendMsgAGL(AGL_RANGE_SENSORS_GAZEBO_ID, gazebo_range_sensors.ray_down->Range(0));
+}
+#endif
+
+#ifdef NPS_SIMULATE_EXTERNAL_STEREO_CAMERA
+/******************************EDGEFLOW****************************/
+
+struct FloatRMat body_to_cam;
+struct FloatEulers cam_angles;
+
+/******************************************************************/
+
+///////PLOTTING FUNCTION/////
+static void plot_matlab(int32_t *array, uint16_t size, double scale,char* name )
+{
+  std::vector<double> X;
+  std::vector<double> Y;
+
+  int x;
+  for (x = 0; x < size; x++) {
+    X.push_back((double)x);
+    Y.push_back((double)array[x]*scale);
+  }
+
+  plt::plot(X,Y);
+	plt::named_plot(name, X, Y);
+}
+////////////////////////////////////
+
+static void gazebo_init_stereo_camera(void)
+{
+  gazebo::sensors::SensorManager *mgr =
+    gazebo::sensors::SensorManager::Instance();
+
+  gazebo_stereocam.stereocam = static_pointer_cast
+                               < gazebo::sensors::MultiCameraSensor > (mgr->GetSensor("stereo_camera::stereo_camera"));
+
+  if (!gazebo_stereocam.stereocam) {
+    cout << "ERROR: Could not get pointer to stereocam!" << endl;
+  }
+  gazebo_stereocam.stereocam->SetActive(true);
+
+  gazebo_stereocam.last_measurement_time = gazebo_stereocam.stereocam->LastMeasurementTime();
+
+  /******************************EDGEFLOW  INIT****************************/
+  edgeflow_init(gazebo_stereocam.stereocam->ImageWidth(0), gazebo_stereocam.stereocam->ImageHeight(0), 0);
+
+#ifdef STEREO_BODY_TO_STEREO_PHI
+  struct FloatEulers euler = {STEREO_BODY_TO_STEREO_PHI, STEREO_BODY_TO_STEREO_THETA, STEREO_BODY_TO_STEREO_PSI};
+#else
+  struct FloatEulers euler = {0, 0, 0};
+#endif
+  float_rmat_of_eulers(&body_to_cam, &euler);
+
+  /******************************************************************/
+}
+
+static void gazebo_read_stereo_camera(void)
+{
+  gazebo::sensors::MultiCameraSensorPtr &stereocam = gazebo_stereocam.stereocam;
+  if ((stereocam->LastMeasurementTime() - gazebo_stereocam.last_measurement_time).Float() < 0.005
+      || stereocam->LastMeasurementTime() == 0) { return; }
+
+  static struct image_t img;
+  read_stereoimage(&img, stereocam);
+
+#ifdef NPS_DEBUG_STEREOCAM
+  cv::Mat RGB_left(stereocam->ImageHeight(0),stereocam->ImageWidth(0),CV_8UC3,(uint8_t *)stereocam->ImageData(0));
+  cv::Mat RGB_right(stereocam->ImageHeight(1),stereocam->ImageWidth(1),CV_8UC3,(uint8_t *)stereocam->ImageData(1));
+
+  cv::cvtColor(RGB_left, RGB_left, cv::COLOR_RGB2BGR);
+  cv::cvtColor(RGB_right, RGB_right, cv::COLOR_RGB2BGR);
+
+  cv::namedWindow("left", cv::WINDOW_AUTOSIZE);  // Create a window for display.
+  cv::imshow("left", RGB_left);
+  cv::namedWindow("right", cv::WINDOW_AUTOSIZE);  // Create a window for display.
+  cv::imshow("right", RGB_right);
+  cv::waitKey(1);
+#endif
+
+  /******************************************EDGEFLOW*******************************/
+  // set angles for derotation
+  float_rmat_mult(&cam_angles, &body_to_cam, stateGetNedToBodyEulers_f());
+  img.eulers = cam_angles;
+
+  edgeflow_total(&img, 0);
+
+  static struct FloatVect3 vel, dist;
+
+  float res = (float)(edgeflow_params.RES);
+
+  vel.x = edgeflow.vel.x / res;
+  vel.y = edgeflow.vel.y / res;
+  vel.z = edgeflow.vel.z / res;
+
+  float R2 = (float)edgeflow.flow_quality / res;
+
+  stereocam_parse_vel(vel, R2);
+
+  dist.x = (float)edgeflow_snapshot.dist.x / res;
+  dist.y = (float)edgeflow_snapshot.dist.y / res;
+  dist.z = (float)edgeflow_snapshot.dist.z / res;
+
+  R2 = (float)edgeflow_snapshot.quality / res;
+
+  stereocam_parse_pos(dist, R2, edgeflow_snapshot.new_keyframe);
+
+  //////Gate Detector//////
+  struct image_t left_img, gradient;
+  image_create(&left_img, img.w, img.h, IMAGE_GRAYSCALE);
+  image_create(&gradient, img.w, img.h, IMAGE_GRAYSCALE);
+
+  getLeftFromStereo(&left_img, &img);
+  image_2d_gradients(&left_img, &gradient);
+  //image_2d_sobel(&left_img, &gradient);
+
+  gate_set_intensity(50,250);
+  static struct gate_t gate;
+  bool gate_detected = false;
+
+  //For debugging gate detection
+  gate_detected = snake_gate_detection(&gradient, &gate, false, NULL, NULL, NULL);
+
+#ifdef NPS_DEBUG_STEREOCAM
+  cv::Mat gradient_cv(stereocam->ImageHeight(0),stereocam->ImageWidth(0),CV_8UC1,(uint8_t *)gradient.buf);
+  cv::imshow("gradient", gradient_cv);
+  cv::waitKey(1);
+#endif
+
+  if (gate.q > 15)
+  {
+    float w = 2.f * gate.sz * FOVX / IMAGE_WIDTH;
+    float h = 2.f * (float)(gate.sz_left > gate.sz_right ? gate.sz_left : gate.sz_right)
+        * FOVY / IMAGE_HEIGHT;
+
+    static struct FloatEulers camera_bearing;
+    camera_bearing.theta = pix2angle((gate.x - IMAGE_WIDTH/2), 0);
+    camera_bearing.phi = -pix2angle((gate.y - IMAGE_HEIGHT/2), 1); // positive y, causes negative phi
+    camera_bearing.psi = 0;
+
+    static struct FloatEulers body_bearing;
+    float_rmat_transp_mult(&body_bearing, &body_to_cam, &camera_bearing);
+
+    imav2017_set_gate(gate.q, w, h, body_bearing.psi, body_bearing.theta, 0,(uint8_t)gate_detected);
+  }
+
+  image_free(&left_img);
+  image_free(&gradient);
+
+  // GET obstacle
+  /////////////////////////////////
+  uint8_t stereo_distance_per_column_uint8[IMAGE_WIDTH] = {0};
+  for(int x=0;x<img.w;x++)stereo_distance_per_column_uint8[x]= bounduint8(edgeflow.stereo_distance_per_column[x]);
+
+  const uint8_t width = img.w;
+  uint8_t stereo_distance_filtered[width];
+  memset( stereo_distance_filtered, 0, width*sizeof(uint8_t) );
+  uint8_t closest_average_distance = 255;
+  uint8_t pixel_location_of_closest_object = 0;
+
+  //TODO: do this for each stereo image column
+  imav2017_histogram_obstacle_detection(stereo_distance_per_column_uint8, stereo_distance_filtered,
+      &closest_average_distance, &pixel_location_of_closest_object, img.w);
+
+  /*Copied from stereocam.c*/
+
+  //TODO: automatically get FOV
+  float pxtorad=(float)RadOfDeg(59) / 128;
+
+  float heading = (float)(pixel_location_of_closest_object-49)*pxtorad;
+  float distance = (float)(closest_average_distance)/100;
+
+// DOWNLINK_SEND_SETTINGS(DOWNLINK_TRANSPORT, DOWNLINK_DEVICE, &distance, &heading);
+
+  //float x_offset_collision = tanf(heading)*distance;
+
+  //AbiSendMsgSTEREO_FORCEFIELD(ABI_BROADCAST, 0, 0,0);
+
+  AbiSendMsgOBSTACLE_DETECTION(AGL_RANGE_SENSORS_GAZEBO_ID, distance, heading);
+  /////////////////////////////////
+/*
+  int32_t stereo_distance_filtered_int32[128];
+  for(int x=0;x<img.w;x++)stereo_distance_filtered_int32[x]= (int32_t)stereo_distance_filtered[x];
+*/
+
+
+  ///PLOT STUFF
+  /*   plt::clf();
+  plot_matlab(edgeflow.stereo_distance_per_column,128,1, "edge_histogram");
+  plot_matlab(edgeflow.edge_hist[edgeflow.prev_frame_x].x,128,1, "edge_histogram");
+  plot_matlab(edgeflow.disp.x,128,10, "edge_histogram");
+  plot_matlab((int32_t*)stereo_distance_filtered_int32,128,100, "edge_histogram");
+  plt::pause(0.0001);*/
+  /////
+
+/*********************************************************************************/
+
+  image_free(&img);
+  gazebo_stereocam.last_measurement_time = stereocam->LastMeasurementTime();
+}
+
+
+static void read_stereoimage(
+  struct image_t *img,
+  gazebo::sensors::MultiCameraSensorPtr cam)
+{
+  image_create(img, cam->ImageWidth(0), cam->ImageHeight(0), IMAGE_YUV422);
+
+  // Convert Gazebo's *RGB888* image to stereo pixel muxtexed image
+  const uint8_t *data_rgb_left = cam->ImageData(0);
+  const uint8_t *data_rgb_right = cam->ImageData(1);
+
+  uint8_t *data = (uint8_t *)(img->buf);
+
+  for (int x = 0; x < img->w; ++x) {
+    for (int y = 0; y < img->h; ++y) {
+      int idx_rgb = 3 * (img->w * y + x);
+      int idx_pix_mux = 2 * (img->w * y + x);
+
+      data[idx_pix_mux] =  0.257 * data_rgb_left[idx_rgb]
+                           + 0.504 * data_rgb_left[idx_rgb + 1]
+                           + 0.098 * data_rgb_left[idx_rgb + 2] + 16; // Y
+
+      data[idx_pix_mux + 1] = 0.257 * data_rgb_right[idx_rgb]
+                              + 0.504 * data_rgb_right[idx_rgb + 1]
+                              + 0.098 * data_rgb_right[idx_rgb + 2] + 16; // Y
+
+    }
+  }
+
+  // Fill miscellaneous fields
+  gazebo::common::Time ts = cam->LastMeasurementTime();
+  img->ts.tv_sec = ts.sec;
+  img->ts.tv_usec = ts.nsec / 1000.0;
+  img->pprz_ts = ts.Double() * 1e6;
+  img->buf_idx = 0; // unused*/
+}
+
 #endif
 
 #pragma GCC diagnostic pop // Ignore -Wdeprecated-declarations

@@ -3,6 +3,7 @@
 <flight_plan alt="152" ground_alt="147" lat0="43 33 50.83" lon0="1 28 52.61" max_dist_from_home="150" name="Rotorcraft Basic (Enac)" security_height="2">
   <header>
 #include "autopilot.h"
+ #include "subsystems/datalink/datalink.h"
   </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
@@ -15,6 +16,12 @@
     <waypoint name="CAM" x="-20" y="-50" height="2."/>
     <waypoint name="TD" x="5.6" y="-10.9"/>
   </waypoints>
+  <exceptions>
+    <!--uncomment when flying for real-->
+    <exception cond="datalink_time > 3" deroute="landed"/>
+    <!--exception cond="radio_control.status == RC_REALLY_LOST" deroute="kill"/-->
+    <!--exception cond="autopilot.mode == AP_MODE_ATTITUDE_DIRECT" deroute="CL Start"/-->
+</exceptions>
   <blocks>
     <block name="Wait GPS">
       <call_once fun="NavKillThrottle()"/>

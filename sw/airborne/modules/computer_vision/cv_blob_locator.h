@@ -43,6 +43,8 @@ extern uint8_t cv_blob_locator_type;
 extern int marker_size;
 extern int geofilter_length;
 extern int record_video;
+extern int min_blob_size;
+extern int blob_found;
 
 extern void cv_blob_locator_init(void);
 extern void cv_blob_locator_periodic(void);

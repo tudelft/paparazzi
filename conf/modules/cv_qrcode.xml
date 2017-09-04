@@ -36,7 +36,6 @@
     <file name="qr_finder.c" dir="$(LIBZBAR)/zbar/decoder"/>
     <file name="ean.c" dir="$(LIBZBAR)/zbar/decoder"/>
 
-
     <file name="error.c" dir="$(LIBZBAR)/zbar"/>
     <file name="image.c" dir="$(LIBZBAR)/zbar"/>
     <file name="scanner.c" dir="$(LIBZBAR)/zbar"/>
@@ -53,6 +52,7 @@
 
     <flag name="CFLAGS" value="Wno-cast-qual"/>
     <flag name="CFLAGS" value="Wno-parentheses"/>
+    <flag name="CFLAGS" value="Wno-logical-not-parentheses"/>
     <flag name="CFLAGS" value="Wno-pointer-arith"/>
     <flag name="CFLAGS" value="Wno-missing-prototypes"/>
     <flag name="CFLAGS" value="Wno-shadow"/>

@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<sdf version='1.6'>
+  
+  
+  <world name="imav_world" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    
+    
+    <xacro:property name="width" value="10" />
+    <xacro:property name="length1" value="10" />
+    <xacro:property name="length2" value="10" />
+    <xacro:property name="length3" value="7" />
+    
+    <xacro:include filename="$(find imav_2017)/worlds/xacro/macros.urdf.xacro" />
+    
+    
+    <xacro:light_source/>
+    <xacro:phys/>
+    <xacro:gui_/>
+    
+    <xacro:scn amb="0.4 0.4 0.4 1" backg="0.7 0.7 0.7 1"/>
+    <!--
+    <xacro:scn amb="0.4 0.4 0.4 1" backg="${53/255} ${147/255} ${37/255} 1"/>
+    -->
+    <!--xacro:zone name="takoff_landing" x="0"                              y="0.0" width="${width}" length="${length1}" color="${22/255}  ${176/255} ${37/255}"/>
+    <xacro:zone name="obstacle"       x="${length1/2+length2/2}"         y="0.0" width="${width}" length="${length2}" color="${188/255} ${53/255}  ${53/255}"/>
+    <xacro:zone name="target"         x="${length1/2+length2+length3/2}" y="0.0" width="${width}" length="${length3}" color="${78/255}  ${83/255}  ${199/255}"/-->
+    <xacro:zone_texture name="takoff_landing" x="0"                              y="0.0" width="${width}" length="${length1}" texture="Kitchen/WoodFloor"/>
+    <xacro:zone_texture name="obstacle"       x="${length1/2+length2/2}"         y="0.0" width="${width}" length="${length2}" texture="Kitchen/Grass"/>
+    <xacro:zone_texture name="target"         x="${length1/2+length2+length3/2}" y="0.0" width="${width}" length="${length3}" texture="Kitchen/CounterTop"/>
+    
+    <!--
+    <xacro:wall_obstacle w_s="1.0" w_b="1.5" w_t="1.0" l_p="2.0" offset="${length1/4}" width="${width}" height="3"/>
+    -->
+    <xacro:wall_obstacle2 x="2.5" y="0.5"/>
+    
+    <xacro:wall_brand w="${length1+length2+length3}" h="${width/2}" l="0.2" x="${length1/2+length2/2-length3/4}" y="${width}" z="${width/4}"/>
+    <xacro:wall_imav w="${width}" h="${width/2}" l="0.2" x="${length1/2+length2+length3}" y="0" z="${width/4}"/>
+    
+    <xacro:poles2 w="${width*3/4}" l="${length2/2}" x="${length1/2+length2/4}"   y="${width/8}" num="10" dist="uniform" h="3" r="0.25"/>
+    <xacro:trees  w="${width*3/4}" l="${length2/2}" x="${length1/2+3*length2/4}" y="${width/8}" num="10" dist="uniform"/>
+    <xacro:bushes w="${width*3/4}" l="${length2/2}" x="${length1/2+3*length2/4}" y="${width/8}" num="6"  dist="uniform"/>
+    
+    <xacro:helipad_static size="1 1 0.01" x="-2.5" y="2.5"  z="0.1"/>
+    <xacro:helipad_mobile size="1 1 0.01" x="-2.5" y="-2.5" z="0.1" r="1" v="1"/>
+    
+    <xacro:QR1 size="0.5 0.5 0.01" x="${length1/2+length2+length3/2}" y="${width/4}"  z="0.1"/>
+    <!--
+    <xacro:X1  size="2 2 0.01"     x="${length1/2+length2+length3/2}" y="${-width/4}" z="0.1"/>
+    -->
+    
+  </world>
+</sdf>

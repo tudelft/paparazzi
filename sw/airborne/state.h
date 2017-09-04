@@ -133,6 +133,10 @@
  */
 struct State {
 
+	  struct FloatVect3 body_pos_f;
+	  struct FloatVect3 body_speed_f;
+
+
   /** @addtogroup state_position
    *  @{ */
 
@@ -248,6 +252,8 @@ struct State {
    * Units: meters
    */
   struct EnuCoor_f enu_pos_f;
+
+
   /** @}*/
 
 
@@ -714,6 +720,20 @@ static inline struct NedCoor_f *stateGetPositionNed_f(void)
   }
   return &state.ned_pos_f;
 }
+
+/// Get position in local NED coordinates (float).
+//FloatVect3
+static inline struct FloatVect3 *stateGetPositionBody_f(void)
+{
+    stateCalcPositionNed_f();
+    float psi = state.ned_to_body_orientation.eulers_f.psi;
+
+    state.body_pos_f.x = -sinf(psi)*state.ned_pos_f.x + cosf(psi)*state.ned_pos_f.y;
+    state.body_pos_f.y = -cosf(psi)*state.ned_pos_f.x - sinf(psi)*state.ned_pos_f.y;
+
+  return &state.body_pos_f;
+}
+
 
 /// Get position in local ENU coordinates (float).
 static inline struct EnuCoor_f *stateGetPositionEnu_f(void)

@@ -19,6 +19,7 @@
         <dl_setting var="marker_size"  min="1" step="1" max="20" shortname="marker" />
         <dl_setting var="geofilter_length"  min="1" step="1" max="100" shortname="filter" />
         <dl_setting var="record_video"  min="0" step="1" max="1" shortname="record"  values="OFF|ON" />
+        <dl_setting var="min_blob_size"  min="1" step="10" max="500" shortname="min_blob_size" />
         <dl_setting var="cv_blob_locator_reset" max="1" min="0" step="1" module="computer_vision/cv_blob_locator"  handler="GeoReset">
           <strip_button name="Reset Geoprojection Filter" value="1" icon="resurrect.png" group="cv"/>
         </dl_setting>
@@ -44,8 +45,8 @@
     <file name="cv_blob_locator.c"/>
     <file name="imavmarker.c" dir="modules/computer_vision/blob" />
     <file name="blob_finder.c" dir="modules/computer_vision/blob" />
-    <file name="detect_window.c" dir="modules/computer_vision/" />
-    <file name="cv_georeference.c" dir="modules/computer_vision/" />
+    <file name="detect_window.c" dir="modules/computer_vision" />
+    <file name="cv_georeference.c" dir="modules/computer_vision" />
   </makefile>
 </module>
 

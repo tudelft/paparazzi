@@ -99,8 +99,8 @@ static void parse_gps_datalink_small(int16_t heading, uint32_t pos_xyz, uint32_t
   ecef_of_enu_vect_i(&gps_datalink.ecef_vel , &ltp_def , &enu_speed);
   SetBit(gps_datalink.valid_fields, GPS_VALID_VEL_ECEF_BIT);
 
-  gps_datalink.gspeed = (int16_t)FLOAT_VECT2_NORM(enu_speed);
-  gps_datalink.speed_3d = (int16_t)FLOAT_VECT3_NORM(enu_speed);
+  gps_datalink.gspeed = (uint16_t)FLOAT_VECT2_NORM(enu_speed);
+  gps_datalink.speed_3d = (uint16_t)FLOAT_VECT3_NORM(enu_speed);
 
   gps_datalink.hmsl = ltp_def.hmsl + enu_pos.z * 10;
   SetBit(gps_datalink.valid_fields, GPS_VALID_HMSL_BIT);
@@ -151,8 +151,8 @@ static void parse_gps_datalink(uint8_t numsv, int32_t ecef_x, int32_t ecef_y, in
   ned_of_ecef_vect_i(&gps_datalink.ned_vel, &ltp_def , &gps_datalink.ecef_vel);
   SetBit(gps_datalink.valid_fields, GPS_VALID_VEL_NED_BIT);
 
-  gps_datalink.gspeed = (int16_t)FLOAT_VECT2_NORM(gps_datalink.ned_vel);
-  gps_datalink.speed_3d = (int16_t)FLOAT_VECT3_NORM(gps_datalink.ned_vel);
+  gps_datalink.gspeed = (uint16_t)FLOAT_VECT2_NORM(gps_datalink.ned_vel);
+  gps_datalink.speed_3d = (uint16_t)FLOAT_VECT3_NORM(gps_datalink.ned_vel);
 
   gps_datalink.course = course;
   SetBit(gps_datalink.valid_fields, GPS_VALID_COURSE_BIT);
@@ -173,6 +173,60 @@ static void parse_gps_datalink(uint8_t numsv, int32_t ecef_x, int32_t ecef_y, in
   AbiSendMsgGPS(GPS_DATALINK_ID, now_ts, &gps_datalink);
 }
 
+/** Parse the REMOTE_GPS_LOCAL datalink packet */
+static void parse_gps_datalink_local(int32_t enu_x, int32_t enu_y, int32_t enu_z,
+                                     int32_t enu_xd, int32_t enu_yd, int32_t enu_zd,
+                                     uint32_t tow, int32_t course)
+{
+
+  struct EnuCoor_i enu_pos, enu_speed;
+
+  // Position in ENU coordinates in cm
+  enu_pos.x = enu_x;
+  enu_pos.y = enu_y;
+  enu_pos.z = enu_z;
+
+  // Convert the ENU coordinates to ECEF
+  ecef_of_enu_point_i(&gps_datalink.ecef_pos, &ltp_def, &enu_pos);
+  SetBit(gps_datalink.valid_fields, GPS_VALID_POS_ECEF_BIT);
+
+  lla_of_ecef_i(&gps_datalink.lla_pos, &gps_datalink.ecef_pos);
+  SetBit(gps_datalink.valid_fields, GPS_VALID_POS_LLA_BIT);
+
+  enu_speed.x = enu_xd;
+  enu_speed.y = enu_yd;
+  enu_speed.z = enu_zd;
+
+  VECT3_NED_OF_ENU(gps_datalink.ned_vel, enu_speed);
+  SetBit(gps_datalink.valid_fields, GPS_VALID_VEL_NED_BIT);
+
+  ecef_of_enu_vect_i(&gps_datalink.ecef_vel , &ltp_def , &enu_speed);
+  SetBit(gps_datalink.valid_fields, GPS_VALID_VEL_ECEF_BIT);
+
+  gps_datalink.gspeed = (uint16_t)FLOAT_VECT2_NORM(enu_speed);
+  gps_datalink.speed_3d = (uint16_t)FLOAT_VECT3_NORM(enu_speed);
+
+  gps_datalink.hmsl = ltp_def.hmsl + enu_pos.z * 10;
+  SetBit(gps_datalink.valid_fields, GPS_VALID_HMSL_BIT);
+
+  gps_datalink.course = course;
+  SetBit(gps_datalink.valid_fields, GPS_VALID_COURSE_BIT);
+
+  gps_datalink.num_sv = 7;
+  gps_datalink.tow = tow;
+  gps_datalink.fix = GPS_FIX_3D; // set 3D fix to true
+
+  // set gps msg time
+  gps_datalink.last_msg_ticks = sys_time.nb_sec_rem;
+  gps_datalink.last_msg_time = sys_time.nb_sec;
+
+  gps_datalink.last_3dfix_ticks = sys_time.nb_sec_rem;
+  gps_datalink.last_3dfix_time = sys_time.nb_sec;
+
+  // publish new GPS data
+  uint32_t now_ts = get_sys_time_usec();
+  AbiSendMsgGPS(GPS_DATALINK_ID, now_ts, &gps_datalink);
+}
 
 void gps_datalink_parse_REMOTE_GPS(void)
 {
@@ -201,4 +255,18 @@ void gps_datalink_parse_REMOTE_GPS_SMALL(void)
                            DL_REMOTE_GPS_SMALL_pos_xyz(dl_buffer),
                            DL_REMOTE_GPS_SMALL_speed_xyz(dl_buffer),
                            DL_REMOTE_GPS_SMALL_tow(dl_buffer));
+}
+
+void gps_datalink_parse_REMOTE_GPS_LOCAL(void)
+{
+  if (DL_REMOTE_GPS_LOCAL_ac_id(dl_buffer) != AC_ID) { return; } // not for this aircraft
+
+  parse_gps_datalink_local(DL_REMOTE_GPS_LOCAL_enu_x(dl_buffer),
+                           DL_REMOTE_GPS_LOCAL_enu_y(dl_buffer),
+                           DL_REMOTE_GPS_LOCAL_enu_z(dl_buffer),
+                           DL_REMOTE_GPS_LOCAL_enu_xd(dl_buffer),
+                           DL_REMOTE_GPS_LOCAL_enu_yd(dl_buffer),
+                           DL_REMOTE_GPS_LOCAL_enu_zd(dl_buffer),
+                           DL_REMOTE_GPS_LOCAL_tow(dl_buffer),
+                           DL_REMOTE_GPS_LOCAL_course(dl_buffer));
 }

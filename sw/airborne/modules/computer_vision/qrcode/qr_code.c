@@ -24,8 +24,8 @@
  */
 
 #include "qr_code.h"
-#include "cv.h"
 
+#include "cv.h"
 #include "zbar.h"
 #include <stdio.h>
 
@@ -39,36 +39,38 @@ bool drawRectangleAroundQRCode = QRCODE_DRAW_RECTANGLE;
 #endif
 PRINT_CONFIG_VAR(QRCODE_FPS)
 
+int qrcode = 0;
+char data[255] = "Not Found";
+zbar_image_scanner_t *scanner = NULL;
+
+#if PERIODIC_TELEMETRY
+#include "subsystems/datalink/telemetry.h"
+
+static void send_qr_code(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_INFO_MSG(trans, dev, AC_ID, strlen(data), data);
+}
+#endif
+
 void qrcode_init(void)
 {
   // Add qrscan to the list of image processing tasks in video_thread
   cv_add_to_device(&QRCODE_CAMERA, qrscan, QRCODE_FPS);
+
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INFO_MSG, send_qr_code);
+#endif
 }
 
-// Telemetry
-#include "subsystems/datalink/telemetry.h"
-
-
-zbar_image_scanner_t *scanner = 0;
 
 struct image_t *qrscan(struct image_t *img)
 {
-  int i, j;
-
-  // Create the JPEG encoded image
+  // Create the grayscale image
   struct image_t gray;
-  image_create(&gray, img->w, img->h, IMAGE_GRAYSCALE);
+  image_create(&gray, img->w, img->h, IMAGE_GRAYSCALE); // this is freed by the zbar_image_set_data
+  image_to_grayscale(img, &gray);
 
-  uint8_t *ii = (uint8_t *) img->buf;
-  uint8_t *oi = (uint8_t *) gray.buf;
-
-  for (j = 0; j < img->h; j++) {
-    for (i = 0; i < img->w; i++) {
-      oi[j * img->w + i] = ii[(j * img->w + i) * 2 + 1];
-    }
-  }
-
-  if (scanner == 0) {
+  if (scanner == NULL) {
     // create a reader
     scanner = zbar_image_scanner_create();
 
@@ -95,7 +97,7 @@ struct image_t *qrscan(struct image_t *img)
   for (; symbol; symbol = zbar_symbol_next(symbol)) {
     // do something useful with results
     zbar_symbol_type_t typ = zbar_symbol_get_type(symbol);
-    char *data = (char *)zbar_symbol_get_data(symbol);
+    strcpy(data,(char*)zbar_symbol_get_data(symbol));
     printf("decoded %s symbol \"%s\" at %d %d\n",
            zbar_get_symbol_name(typ), data, zbar_symbol_get_loc_x(symbol, 0), zbar_symbol_get_loc_y(symbol, 0));
 
@@ -117,15 +119,11 @@ struct image_t *qrscan(struct image_t *img)
         // Draw a line between these two corners
         image_draw_line(img, &to, &from);
       }
-
     }
-    // TODO: not allowed to access telemetry from vision thread
-#if DOWNLINK
-    DOWNLINK_SEND_INFO_MSG(DefaultChannel, DefaultDevice, strlen(data), data);
-#endif
+    qrcode++;
   }
 
-// clean up
+  // clean up
   zbar_image_destroy(image);
   //zbar_image_scanner_destroy(scanner);
 

@@ -1,0 +1,88 @@
+<!DOCTYPE flight_plan SYSTEM "flight_plan.dtd">
+
+<flight_plan alt="1.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="20" name="Rotorcraft Optitrack (Delft)" security_height="0.3">
+  <header>
+  	#include "autopilot_guided.h"
+
+		// Useful Combination of the flags fir the autopilot_guided_update
+		#define GUIDED_FLAG_XY_VEL_BODY GUIDED_FLAG_XY_BODY|GUIDED_FLAG_XY_VEL
+		#define GUIDED_FLAG_XY_VEL_BODY_YAW_OFFSET GUIDED_FLAG_XY_BODY|GUIDED_FLAG_XY_VEL|GUIDED_FLAG_YAW_OFFSET
+		#define GUIDED_FLAG_XY_VEL_BODY_YAW_RATE GUIDED_FLAG_XY_BODY|GUIDED_FLAG_XY_VEL|GUIDED_FLAG_YAW_RATE
+		#define GUIDED_FLAG_XY_OFFSET_Z_VEL_YAW_OFFSET GUIDED_FLAG_XY_OFFSET|GUIDED_FLAG_Z_VEL|GUIDED_FLAG_YAW_OFFSET
+		#define GUIDED_FLAG_XY_OFFSET_YAW_OFFSET GUIDED_FLAG_XY_OFFSET|GUIDED_FLAG_YAW_OFFSET
+		
+		#include "modules/imav2017/imav2017.h"
+  </header>
+  <waypoints>
+    <waypoint name="HOME" x="0.0" y="0.0"/>
+    <waypoint name="STDBY" x="0.0" y="0.0"/>
+  </waypoints>
+  <variables>
+	  <variable var="desired_heading" init="0.0f" type="float" min="0." max="10." step="0.1"/>
+	  <variable var="turn_angle" init="90.0f" type="float" min="-180" max="180" step="1"/>
+	  <variable var="turn_rate" init="0.5f" type="float" min="0." max="10." step="0.1"/>
+    <variable var="climb_descent_vel" init="0.3f" type="float" min="0." max="1" step="0.1"/>
+    <variable var="forward_vel" init="0.5f" type="float" min="0." max="2" step="0.1"/>
+	  <variable var="nominal_alt" init="NAV_DEFAULT_ALT" type="float" min="0." max="10." step="0.1"/>
+    <abi_binding name="OBSTACLE_DETECTION" vars="distance_obstacle_FP, _"/>
+	</variables>
+
+<!--Example Guided flight plan:
+
+1. Flies in a small square, just based on guided flight commands (no waypoints)
+2. If it detects an obstacle (example shows only from color detector), it will turn the 90 degrees more quickly
+
+Remember to choose AP_MODE_GUIDED or else it won't work!!!
+-->
+  <blocks>
+    <block name="FPInit">
+      <while cond="!GpsFixValid()"/>
+      <set var = "distance_obstacle_FP" value="10.0"/><!--Or else it will turn everytime if the abi message is not received-->
+      <call_once fun="ins_reset_altitude_ref()"/>
+      <while cond="1"/>
+    </block>
+
+    <block name="Start Engine">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_Z_VEL_YAW_OFFSET,0.,0.,1,0.)"/>
+      <call_once fun="autopilot_set_motors_on(TRUE)"/>
+      <while cond="1"/>
+    </block>
+    
+    <block name="Take off">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_Z_VEL_YAW_OFFSET,0.,0.,-climb_descent_vel,0.)"/>
+      <while cond="LessThan(stateGetPositionEnu_f()->z,nominal_alt)"/>
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_YAW_OFFSET,0.,0.,-nominal_alt,0.)"/>    
+    </block>
+
+    <block name="Hover Here">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_YAW_OFFSET,0.,0.,-nominal_alt,0.)"/>
+      <while cond="1" />
+    </block>
+
+    <block name="Hover 2m from window">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_YAW_OFFSET,gate_distance-2,gate_y_offset,-nominal_alt,0.)"/>
+      <while cond="0.2>block_time"/>
+      <deroute block="Hover 2m from window"/>
+    </block>
+    
+    <block name="Fly through window">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_YAW_OFFSET,1,gate_y_offset,-nominal_alt,0.)"/>
+      <while cond="LessThan(block_time,5)" />
+      <deroute block="Hover Here"/>
+    </block>
+
+    <block name="Land">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_Z_VEL_YAW_OFFSET,0.,0.,climb_descent_vel,0.)"/>
+      <while cond="MoreThan(stateGetPositionEnu_f()->z,0.1)"/>
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_YAW_OFFSET,0.,0.,0.,0.)"/>  
+      <while cond="LessThan(block_time,5)"/>
+      <deroute block="Kill Engines"/>
+    </block>
+
+    <block name="Kill Engines">
+      <call_once fun="autopilot_set_motors_on(FALSE)"/>
+      <while cond="1"/>
+    </block>
+  </blocks>
+</flight_plan>
+

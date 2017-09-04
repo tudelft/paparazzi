@@ -108,6 +108,7 @@ extern bool exception_flag[10];
     while (x >= 360) x -= 360; \
   }
 
+
 extern void nav_init(void);
 extern void nav_run(void);
 

@@ -106,4 +106,7 @@ void image_draw_line_color(struct image_t *img, struct point_t *from, struct poi
 void pyramid_next_level(struct image_t *input, struct image_t *output, uint8_t border_size);
 void pyramid_build(struct image_t *input, struct image_t *output_array, uint8_t pyr_level, uint16_t border_size);
 
+void image_2d_gradients(struct image_t *input, struct image_t *d);
+void image_2d_sobel(struct image_t *input, struct image_t *d);
+
 #endif

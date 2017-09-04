@@ -25,6 +25,7 @@
  */
 
 #include "math/pprz_stat.h"
+#include <stdlib.h>
 
 /*********
  * Integer implementations
@@ -87,6 +88,40 @@ int32_t covariance_i(int32_t *array1, int32_t *array2, uint32_t n_elements)
   return (int32_t)(sumXY / n_elements - sumX * sumY / (n_elements * n_elements));
 }
 
+static int int_compare(const void *a, const void *b)
+{
+  int fa = *((const int*)a);
+  int fb = *((const int*)b);
+
+  return fa - fb;
+}
+
+/* Compute mean value of arr with n_element values
+ *  @param[in] *arr The array
+ *  @param[in] n_elements Number of elements in arr
+ *  @return median of arr
+ */
+float median_i(int32_t *arr, uint32_t n_elements)
+{
+  int32_t result = 0;
+  if (n_elements == 0)
+  {
+    return result;
+  }
+
+  // Get the median flow
+  qsort(arr, n_elements, sizeof(int), int_compare);
+  if (n_elements % 2)
+  {
+    result = arr[n_elements / 2];
+  } else
+  {
+    // Take the average of the 2 median points
+    result = (arr[n_elements / 2 - 1] + arr[n_elements / 2]) / 2;
+  }
+  return result;
+}
+
 /*********
  * Float implementations
  *********/
@@ -143,4 +178,40 @@ float covariance_f(float *arr1, float *arr2, uint32_t n_elements)
   }
 
   return (sumXY / n_elements - sumX * sumY / (n_elements * n_elements));
+}
+
+static int float_compare(const void *a, const void *b)
+{
+  float fa = *((const float*)a);
+  float fb = *((const float*)b);
+  if( fabs(fa - fb) <= 1e-7 )
+    return 0;
+  else
+    return fa < fb ? -1 : 1;
+}
+
+/* Compute mean value of arr with n_element values
+ *  @param[in] *arr The array
+ *  @param[in] n_elements Number of elements in arr
+ *  @return median of arr
+ */
+float median_f(float *arr, uint32_t n_elements)
+{
+  float result = 0.f;
+  if (n_elements == 0)
+  {
+    return result;
+  }
+
+  // Get the median flow
+  qsort(arr, n_elements, sizeof(float), float_compare);
+  if (n_elements % 2)
+  {
+    result = arr[n_elements / 2];
+  } else
+  {
+    // Take the average of the 2 median points
+    result = (arr[n_elements / 2 - 1] + arr[n_elements / 2]) / 2;
+  }
+  return result;
 }

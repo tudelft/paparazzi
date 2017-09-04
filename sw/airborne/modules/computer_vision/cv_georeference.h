@@ -42,8 +42,8 @@ struct camera_frame_t {
   int32_t py;    ///< Target pixel coordinate (top = 0)
 };
 
-void georeference_project(struct camera_frame_t *tar, int wp);
-void georeference_filter(bool kalman, int wp, int length);
+extern void georeference_project(struct camera_frame_t *tar, int wp);
+extern void georeference_filter(bool kalman, int wp, int length);
 
 
 #endif

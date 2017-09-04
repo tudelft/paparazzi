@@ -112,7 +112,6 @@ void georeference_project(struct camera_frame_t *tar, int wp)
     uint8_t wp_id = wp;
     DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id, &(geo.x_t.y),
                                    &(geo.x_t.x), &(h));
-
   }
 }
 
@@ -155,16 +154,16 @@ int32_t focus_length;
 void georeference_run(void)
 {
   struct camera_frame_t target;
-  target.w = 320;
+  target.w = 240;//320;
   target.h = 240;
   target.f = focus_length;
   target.px = 0;
   target.py = 0;
   georeference_project(&target,WP_p1);
-  target.px = 320;
+  target.px = 240;//320;
   target.py = 0;
   georeference_project(&target,WP_p2);
-  target.px = 320;
+  target.px = 240;//320;
   target.py = 240;
   georeference_project(&target,WP_p3);
   target.px = 0;
@@ -173,8 +172,8 @@ void georeference_run(void)
 
   target.px = 0;
   target.py = 120;
-  georeference_project(&target,0);
-  georeference_filter(FALSE, WP_CAM,50);
+  //georeference_project(&target,0);
+  //georeference_filter(FALSE, WP_CAM, 50);
 }
 
 void georeference_init(void)
@@ -187,7 +186,7 @@ void georeference_init(void)
   INT32_VECT3_ZERO(geo.filter.v);
   INT32_VECT3_ZERO(geo.filter.x);
   geo.filter.P = 0;
-  focus_length = 400;
+  focus_length = 347.22;//400;
 }
 
 

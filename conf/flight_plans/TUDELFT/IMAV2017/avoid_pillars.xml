@@ -1,0 +1,59 @@
+<!DOCTYPE procedure SYSTEM "flight_plan.dtd">
+
+<procedure>
+  <blocks>
+<!-- VERSION 1 -->
+    <block name="Go_Forward">
+         <set var="save_heading" value="0"/>
+        <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_VEL_BODY_YAW_RATE,0,0,-nominal_alt,0)"/>
+      <while cond="LessThan(stage_time,1)"/> 
+
+      <while cond="1">
+        <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_VEL_BODY_YAW_RATE,forward_vel,vel_body_y_FF_stereo,-nominal_alt,0)"/>
+
+      </while>
+     
+      <exception cond="1.5>distance_obstacle_FP" deroute="Hover_before_Turning"/> 
+    </block>
+
+   <block name="Hover_before_Turning">
+  <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_VEL_BODY_YAW_RATE,-0.1,0,-nominal_alt,0)"/>
+      <while cond="1.0>distance_obstacle_FP"/>
+     <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_BODY_YAW_OFFSET,0,0,-nominal_alt,0)"/>
+      <while cond="fabs(stateGetSpeedNed_f()->x)>0.05||fabs(stateGetSpeedNed_f()->y)>0.05||fabs(stateGetBodyRates_f()->p)>0.05||fabs(stateGetBodyRates_f()->q)>0.05"/> 
+       <while cond="turned_left">
+         <deroute block="Turn_Right"/>
+       </while>
+       <while cond="turned_right">
+         <deroute block="Turn_Left"/>
+       </while>
+   </block>
+
+   <block name="Turn_Left">
+      <while cond="2>distance_obstacle_FP">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_VEL_BODY_YAW_RATE,0,0,-nominal_alt,0.3)"/>
+     </while>
+      <while cond="fabs(stateGetBodyRates_f()->r)>0.05"> 
+        <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_VEL_BODY_YAW_RATE,0,0,-nominal_alt,0)"/>
+      </while>
+       <while cond="LessThan(stage_time,1)"/>
+      <set var="turned_left" value="TRUE"/>
+      <set var="turned_right" value="FALSE"/>
+      <deroute block="Go_Forward"/>
+    </block>
+
+   <block name="Turn_Right">
+      <while cond="2>distance_obstacle_FP">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_VEL_BODY_YAW_RATE,0,0,-nominal_alt,-0.3)"/>
+     </while>
+      <while cond="fabs(stateGetBodyRates_f()->r)>0.05"> 
+        <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_VEL_BODY_YAW_RATE,0,0,-nominal_alt,0)"/>
+      </while>
+      <set var="turned_right" value="TRUE"/>
+      <set var="turned_left" value="FALSE"/>
+      <deroute block="Go_Forward"/>
+    </block>
+
+
+  </blocks>
+</procedure>

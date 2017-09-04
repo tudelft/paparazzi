@@ -28,6 +28,7 @@
 #include <stdio.h>
 
 #include "modules/computer_vision/lib/vision/image.h"
+#include "subsystems/abi.h"
 
 #ifndef COLORFILTER_FPS
 #define COLORFILTER_FPS 0       ///< Default FPS (zero means run at camera fps)
@@ -53,13 +54,8 @@ uint8_t color_cr_max  = 255;
 // Result
 int color_count = 0;
 
-#include "subsystems/abi.h"
-
-
-
 // Function
-struct image_t *colorfilter_func(struct image_t *img);
-struct image_t *colorfilter_func(struct image_t *img)
+static struct image_t *colorfilter_func(struct image_t *img)
 {
   // Filter
   color_count = image_yuv422_colorfilt(img, img,
@@ -67,16 +63,15 @@ struct image_t *colorfilter_func(struct image_t *img)
                                        color_cb_min, color_cb_max,
                                        color_cr_min, color_cr_max
                                       );
-
-
   if (COLORFILTER_SEND_OBSTACLE) {
     if (color_count > 20)
-      AbiSendMsgOBSTACLE_DETECTION(CV_COLORDETECTION, 1,
-                                   0);
+    {
+      AbiSendMsgOBSTACLE_DETECTION(0, 1, 0);
+    }
     else
-      AbiSendMsgOBSTACLE_DETECTION(CV_COLORDETECTION, 10,
-                                   0);
-
+    {
+      AbiSendMsgOBSTACLE_DETECTION(0, 10, 0);
+    }
   }
 
   return img; // Colorfilter did not make a new image

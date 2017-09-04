@@ -16,15 +16,15 @@
   <event fun="navdata_update()"/>
 
   <makefile target="!sim|nps|fbw">
-    <!-- set fixed AHRS propegation frequencies -->
+  	<!-- set fixed AHRS propegation frequencies -->
     <configure name="AHRS_PROPAGATE_FREQUENCY" default="200"/>
     <define name="AHRS_PROPAGATE_FREQUENCY" value="$(AHRS_PROPAGATE_FREQUENCY)"/>
     <configure name="AHRS_CORRECT_FREQUENCY" default="200"/>
     <define name="AHRS_CORRECT_FREQUENCY" value="$(AHRS_CORRECT_FREQUENCY)"/>
-
-    <define name="IMU_TYPE_H" value="subsystems/imu/imu_ardrone2.h" type="string"/>
-
-    <file name="imu_ardrone2.c" dir="subsystems/imu"/>
+	 
+	<define name="IMU_TYPE_H" value="subsystems/imu/imu_ardrone2.h" type="string"/>
+	    
+  	<file name="imu_ardrone2.c" dir="subsystems/imu"/>
     <file name="navdata.c" dir="boards/ardrone"/>
   </makefile>
 </module>

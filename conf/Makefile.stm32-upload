@@ -23,6 +23,7 @@
 # This is the common Makefile for STM32 upload rules
 #
 
+GDB_LOCAL = $(PAPARAZZI_SRC)/sw/tools/flash_scripts/arm-none-eabi-gdb
 
 # default: assume the luftboot bootloader is not used
 # if luftboot is used define HAS_LUFTBOOT to a value != 0
@@ -99,7 +100,7 @@ OOCD_OPTIONS = -c "ft2232_serial $(BOARD_SERIAL)"
 endif
 
 ifndef $(TARGET).OOCD_INTERFACE
-OOCD_INTERFACE = ftdi/lisa-l
+OOCD_INTERFACE = lisa-l
 else
 OOCD_INTERFACE =  $($(TARGET).OOCD_INTERFACE)
 endif
@@ -131,9 +132,9 @@ BMP_UPLOAD_SCRIPT ?= $(PAPARAZZI_SRC)/sw/tools/flash_scripts/bmp_jtag_flash.scr
 upload: $(OBJDIR)/$(TARGET).elf
 	@echo "Assuming luftboot bootloader: $(ASSUMING_LUFTBOOT)"
 	@echo "Using Black Magic Probe with JTAG on BMP_PORT $(BMP_PORT)"
-	@echo "Using GDB = $(GDB)"
+	@echo "Using GDB = $(GDB_LOCAL)"
 	@echo "  BMP\t$<"
-	$(Q)$(GDB) --batch \
+	$(Q)$(GDB_LOCAL) --batch \
 		   -ex 'target extended-remote $(BMP_PORT)' \
 		   -x $(BMP_UPLOAD_SCRIPT) \
 		   $<
@@ -144,6 +145,22 @@ else ifeq ($(FLASH_MODE),SWD)
 # only works if BMP_PORT is defined
 BMP_PORT ?= $(shell ls /dev/bmp-gdb 2>/dev/null || echo /dev/ttyACM0)
 BMP_UPLOAD_SCRIPT ?= $(PAPARAZZI_SRC)/sw/tools/flash_scripts/bmp_swd_flash.scr
+upload: $(OBJDIR)/$(TARGET).elf
+	@echo "Assuming luftboot bootloader: $(ASSUMING_LUFTBOOT)"
+	@echo "Using Black Magic Probe with SWD on BMP_PORT $(BMP_PORT)"
+	@echo "Using GDB = $(GDB_LOCAL)"
+	@echo "  BMP\t$<"
+	$(Q)$(GDB_LOCAL) --batch \
+		   -ex 'target extended-remote $(BMP_PORT)' \
+		   -x $(BMP_UPLOAD_SCRIPT) \
+		   $<
+
+#
+# SWD flash mode (with Black Magic Probe)
+else ifeq ($(FLASH_MODE),SWD_NOPWR)
+# only works if BMP_PORT is defined
+BMP_PORT ?= $(shell ls /dev/bmp-gdb 2>/dev/null || echo /dev/ttyACM0)
+BMP_UPLOAD_SCRIPT ?= $(PAPARAZZI_SRC)/sw/tools/flash_scripts/bmp_swd_nopwr_flash.scr
 upload: $(OBJDIR)/$(TARGET).elf
 	@echo "Assuming luftboot bootloader: $(ASSUMING_LUFTBOOT)"
 	@echo "Using Black Magic Probe with SWD on BMP_PORT $(BMP_PORT)"

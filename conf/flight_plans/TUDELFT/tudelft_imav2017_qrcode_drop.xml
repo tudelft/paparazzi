@@ -1,0 +1,101 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="20" name="Rotorcraft Optitrack (Delft)" security_height="0.3">
+  <header>
+  	#include "autopilot_guided.h"
+    #include "autopilot.h"
+    #include "subsystems/datalink/datalink.h"
+    #include "modules/computer_vision/cv_blob_locator.h"
+    #include "modules/computer_vision/qrcode/qr_code.h"
+
+		// Useful Combination of the flags fir the autopilot_guided_update
+		#define GUIDED_FLAG_XY_VEL_BODY GUIDED_FLAG_XY_BODY|GUIDED_FLAG_XY_VEL
+		#define GUIDED_FLAG_XY_VEL_BODY_YAW_OFFSET GUIDED_FLAG_XY_BODY|GUIDED_FLAG_XY_VEL|GUIDED_FLAG_YAW_OFFSET
+		#define GUIDED_FLAG_XY_VEL_BODY_YAW_RATE GUIDED_FLAG_XY_BODY|GUIDED_FLAG_XY_VEL|GUIDED_FLAG_YAW_RATE
+		#define GUIDED_FLAG_XY_OFFSET_Z_VEL_YAW_OFFSET GUIDED_FLAG_XY_OFFSET|GUIDED_FLAG_Z_VEL|GUIDED_FLAG_YAW_OFFSET
+		#define GUIDED_FLAG_XY_OFFSET_YAW_OFFSET GUIDED_FLAG_XY_OFFSET|GUIDED_FLAG_YAW_OFFSET
+		#define GUIDED_FLAG_XY_VEL_YAW_RATE GUIDED_FLAG_XY_OFFSET|GUIDED_FLAG_YAW_RATE
+    #define GUIDED_FLAG_XY_OFFSET_BODY_YAW_OFFSET GUIDED_FLAG_XY_OFFSET|GUIDED_FLAG_XY_BODY|GUIDED_FLAG_YAW_OFFSET
+
+  </header>
+  <waypoints>
+    <waypoint name="HOME" x="0.0" y="0.0"/>
+    <waypoint name="STDBY" x="0.0" y="0.0"/>
+    <waypoint name="CLIMB" x="0" y="0"/>
+    <waypoint x="-1.0" y="-1.0" name="p1"/>
+    <waypoint x="1.0" y="-1.0" name="p2"/>
+    <waypoint x="1.0" y="1.0" name="p3"/>
+    <waypoint x="-1.0" y="1.0" name="p4"/>
+    <waypoint x="2.0" y="1.0" name="CAM"/>
+  </waypoints>
+  <variables>
+    <variable var="forward_vel" init="0.3f" type="float" min="0." max="2" step="0.1"/>
+	  <variable var="nominal_alt" init="NAV_DEFAULT_ALT" type="float" min="0." max="10." step="0.1"/>
+    <abi_binding name="OBSTACLE_DETECTION" vars="distance_obstacle_FP, heading_obstacle_FP"/>
+    <abi_binding name="RANGE_FORCEFIELD" vars="vel_body_x_FF, vel_body_y_FF, vel_body_z_FF"/>
+    <abi_binding name="RANGE_WALLFOLLOWING" vars="heading_leftturn_WF,heading_rightturn_WF,range_sensor_detect_WF"/>
+	</variables>
+
+  <blocks>
+    <block name="FPInit">
+      <while cond="!GpsFixValid()"/>
+      <set var = "distance_obstacle_FP" value="10.0"/><!--Or else it will turn everytime if the abi message is not received-->
+      <call_once fun="ins_reset_altitude_ref()"/>
+      <while cond="1"/>
+    </block>
+
+    <block name="Start Engine">
+			<call_once fun="guidance_v_set_guided_th(0.15)"/>
+      <call_once fun="autopilot_set_motors_on(TRUE)"/>
+      <while cond="1"/>
+    </block>
+
+    <block name="Take off">
+      <call_once fun="guidance_v_set_guided_th(0.75)"/>
+      <while cond="LessThan(stateGetPositionEnu_f()->z,nominal_alt)"/>
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_YAW_OFFSET,0.,0.,-nominal_alt,DegOfRad(0))"/> 
+      <while cond="LessThan(stage_time,1)"/>
+    </block>
+    
+    <block name="Hover here">
+      <while cond="!(autopilot_get_mode() == AP_MODE_GUIDED)"/>
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_YAW_OFFSET,0.,0.,-nominal_alt,DegOfRad(0))"/> 
+      <while cond="1"/>
+    </block>
+
+    <block name="Go Forward QR Code">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_VEL_BODY_YAW_RATE,forward_vel,0,-nominal_alt,0)"/>
+      <while cond="1"/>
+      <exception cond="qrcode > 2" deroute="Land"/> 
+    </block>
+    
+    <block name="Go Forward Drop Zone">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_VEL_BODY_YAW_RATE,forward_vel,0,-nominal_alt,0)"/>
+      <while cond="1"/>
+      <exception cond="blob_found > 5" deroute="drop_medicine"/>
+    </block>
+    
+    <block name="reset_drop_pin">
+      <call fun="drop_ball(3)"/>
+      <while cond="1"/>
+    </block>
+
+    <block name="drop_medicine">
+      <call fun="drop_ball(4)"/>
+      <deroute block="Land"/>
+    </block>
+
+    <block name="Land">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_Z_VEL_YAW_OFFSET,0.,0.,0.5,0.)"/>
+      <while cond="MoreThan(stateGetPositionEnu_f()->z,0.1)"/>
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_YAW_OFFSET,0.,0.,0.,0.)"/>  
+      <while cond="LessThan(block_time,5)"/>
+      <deroute block="Kill Engines"/>
+    </block>
+
+    <block name="Kill Engines">
+      <call_once fun="autopilot_set_motors_on(FALSE)"/>
+      <while cond="1"/>
+    </block>
+  </blocks>
+</flight_plan>

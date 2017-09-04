@@ -1,0 +1,15 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="imav2017">
+  <doc>
+    <description></description>
+  </doc>
+  <header>
+    <file name="imav2017.h"/>
+  </header>
+  <init fun="imav2017_init()"/>
+  <makefile>
+    <file name="imav2017.c"/>
+  </makefile>
+</module>
+

@@ -1,0 +1,35 @@
+<!DOCTYPE procedure SYSTEM "flight_plan.dtd">
+
+<procedure>
+  <blocks>
+<!--
+           Go through window
+ -->
+<!--Find window (maybe turning is better than moving sideways?) -->
+    <block name="Find_Window">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_VEL_BODY_YAW_OFFSET,0,0.3,-nominal_alt,0)"/>
+      <while cond="!(gate_detected)"/>
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_VEL_BODY_YAW_OFFSET,0,0,-nominal_alt,0)"/>
+      <while cond="LessThan(stage_time,1)"/>
+    </block>
+
+    <block name="Align_with_window">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_BODY_YAW_OFFSET,0,gate_y_offset,-nominal_alt,0)"/>
+      <while cond="LessThan(stage_time,1)"/>
+      <exception cond="!(gate_detected)" deroute="Find_Window"/> 
+    </block>
+
+    <block name="Go_Through_Window">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_BODY_YAW_OFFSET,gate_distance,0,-nominal_alt,0)"/>
+      <while cond="LessThan(stage_time,1)"/>
+    </block>
+
+    <block name="Check_Window">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_BODY_YAW_OFFSET,0,0,-nominal_alt,0)"/>
+      <while cond="LessThan(stage_time,1)"/>
+      <exception cond="(gate_detected)" deroute="Align_with_window"/> 
+    </block>
+
+
+  </blocks>
+</procedure>

@@ -28,14 +28,13 @@
 #ifndef QR_CODE_MODULE
 #define QR_CODE_MODULE
 
-
 #include <stdint.h>
-
-#include "../lib/vision/image.h"
+#include "modules/computer_vision/lib/vision/image.h"
 
 extern bool drawRectangleAroundQRCode;
+extern int qrcode;
+
 extern void qrcode_init(void);
 extern struct image_t *qrscan(struct image_t *img);
-
 
 #endif

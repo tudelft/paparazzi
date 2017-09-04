@@ -4,7 +4,7 @@
 
   <firmware name="rotorcraft">
     <target name="ap" board="bebop2"/>
-    <define name="USE_SONAR"/>
+    <!--define name="USE_SONAR"/-->
 
     <module name="telemetry" type="transparent_udp"/>
     <module name="radio_control" type="datalink"/>

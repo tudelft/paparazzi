@@ -1,0 +1,17 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="range_sensor">
+  <doc>
+    <description>This module contains functions to accomendate the use of single point range sensors. </description>
+  </doc>
+
+  <header>
+    <file name="range_sensor_forcefield.h"/>
+  </header>
+  <init fun="range_sensor_wall_following_init()"/>
+  <periodic fun="range_sensor_wall_following_run()" freq="30" autorun="TRUE"/>
+  <makefile>
+    <file name="range_sensor_wall_following.c"/>
+  </makefile>
+</module>
+

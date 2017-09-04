@@ -241,5 +241,31 @@
 			<parent>chassis</parent>
 			<child>bottom_camera</child>
 		</joint>
+
+<!-- RANGE SENSORS -->
+
+    <include>
+      <uri>model://range_sensors</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+
+		<joint name="range_sensor_joint" type="fixed">
+			<parent>chassis</parent>
+			<child>range_sensors::base</child>
+		</joint>
+
+<!-- STEREOCAMERA -->
+
+    <include>
+      <uri>model://stereo_camera</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+
+		<joint name="stereo_camera_joint" type="fixed">
+			<parent>chassis</parent>
+			<child>stereo_camera::base</child>
+		</joint>
+
+
 	</model>
 </sdf>

@@ -63,6 +63,13 @@ extern int32_t variance_i(int32_t *array, uint32_t n_elements);
  */
 extern int32_t covariance_i(int32_t *array1, int32_t *array2, uint32_t n_elements);
 
+/* Compute mean value of arr with n_element values
+ *  @param[in] *arr The array
+ *  @param[in] n_elements Number of elements in arr
+ *  @return median of arr
+ */
+extern float median_i(int32_t *arr, uint32_t n_elements);
+
 /** Compute the mean value of an array (float)
  *  @param[in] *array The array
  *  @param[in] n_elements Number of elements in the array
@@ -89,6 +96,13 @@ extern float variance_f(float *array, uint32_t n_elements);
  *  @return covariance
  */
 extern float covariance_f(float *array1, float *array2, uint32_t n_elements);
+
+/* Compute mean value of arr with n_element values
+ *  @param[in] *arr The array
+ *  @param[in] n_elements Number of elements in arr
+ *  @return median of arr
+ */
+extern float median_f(float *arr, uint32_t n_elements);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -1,0 +1,730 @@
+<?xml version="1.0"?>
+
+
+<my_macros xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="zone" params="name width length color x y">
+    <model name="${name}_zone">
+      <static>1</static>
+      <pose>${x} ${y} 0 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>${length} ${width}</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>100</mu>
+                <mu2>50</mu2>
+              </ode>
+            </friction>
+            <bounce/>
+            <contact>
+              <ode/>
+            </contact>
+          </surface>
+          <max_contacts>10</max_contacts>
+        </collision>
+        <visual name='visual'>
+          <cast_shadows>0</cast_shadows>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>${length} ${width}</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>${color} 0.5</ambient>
+          </material>
+        </visual>
+        <velocity_decay>
+          <linear>0</linear>
+          <angular>0</angular>
+        </velocity_decay>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+      </link>
+    </model>
+  </xacro:macro>
+
+  <xacro:macro name="zone_texture" params="name width length texture x y">
+    <model name="${name}_zone">
+      <static>1</static>
+      <pose>${x} ${y} 0 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>${length} ${width}</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>100</mu>
+                <mu2>50</mu2>
+              </ode>
+            </friction>
+            <bounce/>
+            <contact>
+              <ode/>
+            </contact>
+          </surface>
+          <max_contacts>10</max_contacts>
+        </collision>
+        <visual name='visual'>
+          <cast_shadows>0</cast_shadows>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>${length} ${width}</size>
+            </plane>
+          </geometry>
+          <material>
+            <script>
+              <name>${texture}</name>
+            </script>
+          </material>
+        </visual>
+        <velocity_decay>
+          <linear>0</linear>
+          <angular>0</angular>
+        </velocity_decay>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+        <gravity>1</gravity>
+      </link>
+    </model>
+  </xacro:macro>
+
+  <xacro:macro name="light_source">
+
+    <light name="sun" type="directional">
+      <cast_shadows>1</cast_shadows>
+      <pose>0 10 0 0 0 -${pi/2}</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+  </xacro:macro>
+
+  <xacro:macro name="phys">    
+    <physics type='ode'>
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+    <gravity>0 0 -9.8</gravity>
+  </xacro:macro>
+
+  <xacro:macro name="scn" params="amb backg"> 
+    <scene>
+      <ambient>${amb}</ambient>
+      <background>${backg}</background>
+      <sky>
+        <clouds>
+          <speed>12</speed>
+        </clouds>
+      </sky>
+      <shadows>1</shadows>
+      <grid>0</grid>
+    </scene>  
+  </xacro:macro>
+
+  <xacro:macro name="gui_">
+    <gui fullscreen='0'>
+      <camera name='user_camera'>
+        <pose>1.49016 -3.72367 3.62379 -2.88294e-17 0.273797 1.4042</pose>
+        <view_controller>orbit</view_controller>
+      </camera>
+    </gui>
+  </xacro:macro>
+
+  <xacro:macro name="wall_part" params="id w h l x y z">
+
+    <collision name="wall_p${id}_collision">
+      <pose>${x} ${y} ${z} 0 0 0</pose> 
+      <geometry>
+        <box>
+          <size>${w} ${l} ${h}</size>
+        </box>
+      </geometry>
+      <surface>
+        <contact>
+          <collide_bitmask>0x02</collide_bitmask>
+        </contact>
+      </surface>
+    </collision>
+    <visual name="wall_p${id}_visual">
+      <pose>${x} ${y} ${z} 0 0 0</pose> 
+      <geometry>
+        <box>
+          <size>${w} ${l} ${h}</size>
+        </box>
+      </geometry>
+      <material>
+        <script>
+          <name>Gazebo/Wood</name>
+        </script>
+      </material>
+    </visual>
+
+  </xacro:macro>
+
+  <xacro:macro name="wall_brand" params="w h l x y z">
+    <model name="branded_wall">
+      <static>true</static>
+      <pose>${x} ${y} ${z} 0 0 0</pose> 
+      <link name="wall_link">
+        <inertial>
+          <mass>10000</mass>
+        </inertial>
+
+        <collision name="wall_brand_collision">	  
+          <geometry>
+            <box>
+              <size>${w} ${l} ${h}</size>
+            </box>
+          </geometry>
+          <surface>
+            <contact>
+              <collide_bitmask>0x02</collide_bitmask>
+            </contact>
+          </surface>
+        </collision>
+        <visual name="wall_brand_visual">
+          <geometry>
+            <box>
+              <size>${w} ${l} ${h}</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://$(find imav_2017)/worlds/xacro/custom.material</uri>
+              <name>MathWorks_branding</name>
+            </script>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </xacro:macro>
+
+  <xacro:macro name="wall_imav" params="w h l x y z">
+    <model name="branded_wall">
+      <static>true</static>
+      <pose>${x} ${y} ${z} 0 0 -1.5708</pose> 
+      <link name="wall_link">
+        <inertial>
+          <mass>10000</mass>
+        </inertial>
+
+        <collision name="wall_imav_collision">	  
+          <geometry>
+            <box>
+              <size>${w} ${l} ${h}</size>
+            </box>
+          </geometry>
+          <surface>
+            <contact>
+              <collide_bitmask>0x02</collide_bitmask>
+            </contact>
+          </surface>
+        </collision>
+        <visual name="wall_imav_visual">
+          <geometry>
+            <box>
+              <size>${w} ${l} ${h}</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://$(find imav_2017)/worlds/xacro/custom.material</uri>
+              <name>imav_branding</name>
+            </script>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </xacro:macro>
+
+  <xacro:macro name="wall_obstacle" params="w_s w_b w_t l_p offset width height">
+
+    <model name="wall">
+      <static>1</static>
+      <pose>${offset} 0 ${height/2} 0 0 0</pose>
+
+      <link name="wall_link">
+
+        <inertial>
+          <mass>10000</mass>
+        </inertial>
+
+        <xacro:wall_part id="1"  w="0.2" h="${height}" 		l="${(5-w_b)/2}" 	x="0" y="${ (w_b/2+(5-w_b)/4)}"	z="0"/>
+        <xacro:wall_part id="2"  w="0.2" h="${height}" 		l="2" 			x="0" y="${ (2.5+w_s+1)}" 	z="0"/>
+        <xacro:wall_part id="3"  w="0.2" h="${height}" 		l="${(5-w_b)/2}" 	x="0" y="${-(w_b/2+(5-w_b)/4)}"	z="0"/>
+        <xacro:wall_part id="4"  w="0.2" h="${height}" 		l="2" 			x="0" y="${-(2.5+w_s+1)}" 	z="0"/>
+
+        <xacro:wall_part id="5"  w="0.2" h="${(height-w_b)/2}"	l="${w_b}"   		x="0" y="0" 			z="${-((height-w_b)/4+w_b/2)}"/>
+        <xacro:wall_part id="6"  w="0.2" h="${(height-w_s)/2}"	l="${w_s}" 		x="0" y="${ (2.5+w_s/2)}"	z="${-((height-w_s)/4+w_s/2)}"/>
+        <xacro:wall_part id="7"  w="0.2" h="${(height-w_s)/2}"	l="${w_s}" 		x="0" y="${-(2.5+w_s/2)}"	z="${-((height-w_s)/4+w_s/2)}"/>
+
+        <xacro:wall_part id="8"  w="0.2" h="${(height-w_b)/2}"	l="${w_b}"   		x="0" y="0" 			z="${ ((height-w_b)/4+w_b/2)}"/>
+        <xacro:wall_part id="9"  w="0.2" h="${(height-w_s)/2}"	l="${w_s}" 		x="0" y="${ (2.5+w_s/2)}"	z="${ ((height-w_s)/4+w_s/2)}"/>
+        <xacro:wall_part id="10" w="0.2" h="${(height-w_s)/2}"	l="${w_s}" 		x="0" y="${-(2.5+w_s/2)}"	z="${ ((height-w_s)/4+w_s/2)}"/>
+
+        <xacro:wall_part id="11" w="${l_p}" h="0.2"		l="${w_s+0.3998}" 		x="0" y="${ (2.5+w_s/2)}"		z="${-(w_s/2+0.099)}"/>
+        <xacro:wall_part id="12" w="${l_p}" h="0.2"		l="${w_s+0.3998}" 		x="0" y="${ (2.5+w_s/2)}"		z="${ (w_s/2+0.099)}"/>
+        <xacro:wall_part id="13" w="${l_p}" h="${w_s-0.001}"	l="0.2" 		x="0" y="${ (2.5+w_s/2)-(w_s/2)-0.099}"	z="0.0"/>
+        <xacro:wall_part id="14" w="${l_p}" h="${w_s-0.001}"	l="0.2" 		x="0" y="${ (2.5+w_s/2)+(w_s/2)+0.099}"	z="0.0"/>
+      </link>
+    </model>
+
+  </xacro:macro>
+
+  <xacro:macro name="wall_obstacle2" params="x y">
+
+    <model name="wall2">
+      <static>1</static>
+      <pose>${x} ${y} 0 0 0 -1.5708</pose>
+        <link name="wall2_link">
+        <inertial>
+          <mass>10000</mass>
+        </inertial>
+
+          <visual name="visual">
+            <pose>0 0 0 0 0 0</pose>
+            <geometry>
+              <mesh>
+                <uri>file://$(find imav_2017)/worlds/xacro/wall.dae</uri>
+                <scale>0.1 0.1 0.1</scale>
+              </mesh>
+            </geometry>
+            <material>
+              <script>
+                <name>Gazebo/Wood</name>
+              </script>
+            </material>
+          </visual>
+
+          <collision name="collision">
+            <pose>0 0 0 0 0 0</pose>
+            <geometry>
+              <mesh>
+                <uri>file://$(find imav_2017)/worlds/xacro/wall.dae</uri>
+                <scale>0.1 0.1 0.1</scale>
+              </mesh>
+            </geometry>
+          </collision>
+
+        </link>
+    </model>
+
+  </xacro:macro>
+
+  <xacro:macro name="box_" params="name x y z size">
+    <link name='${name}'>
+      <pose>${x} ${y} ${z} 0 0 0</pose>
+
+      <collision name='collision'>
+        <geometry>
+          <box>
+            <size>${size}</size>
+          </box>
+        </geometry>
+      </collision>
+
+      <visual name='visual'>
+        <geometry>
+          <box>
+            <size>${size}</size>
+          </box>
+        </geometry>
+      </visual>
+    </link>
+  </xacro:macro>
+
+  <xacro:macro name="pole" params="id h r x y z">
+
+    <collision name="pole_p${id}_collision">
+      <pose>${x} ${y} ${z} 0 0 0</pose> 
+      <geometry>
+        <cylinder>
+          <radius>${r}</radius>
+          <length>${h}</length>
+        </cylinder>
+      </geometry>
+      <surface>
+        <contact>
+          <collide_bitmask>0x02</collide_bitmask>
+        </contact>
+      </surface>
+    </collision>
+    <visual name="pole_p${id}_visual">
+      <pose>${x} ${y} ${z} 0 0 0</pose> 
+      <geometry>
+        <cylinder>
+          <radius>${r}</radius>
+          <length>${h}</length>
+        </cylinder>
+      </geometry>
+      <material>
+        <script>
+          <name>Gazebo/Bricks</name>
+        </script>
+      </material>
+    </visual>
+
+  </xacro:macro>
+
+  <xacro:macro name="pole2" params="h r">
+    <static>true</static>
+    <link name="pole_link">
+      <collision name="pole_collision">
+
+        <geometry>
+          <cylinder>
+            <radius>${r}</radius>
+            <length>${h}</length>
+          </cylinder>
+        </geometry>
+        <surface>
+          <contact>
+            <collide_bitmask>0x02</collide_bitmask>
+          </contact>
+        </surface>
+      </collision>
+      <visual name="pole_visual">
+
+        <geometry>
+          <cylinder>
+            <radius>${r}</radius>
+            <length>${h}</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/Bricks</name>
+          </script>
+        </material>
+      </visual>
+    </link>
+  </xacro:macro>
+
+  <xacro:macro name="poles2" params="h r w l x y num dist">
+    <population name="pole_population">
+      <model name="pole">
+        <xacro:pole2 h="${h}" r="${r}"/>
+      </model>
+
+      <pose>${x} ${y} ${h/2} 0 0 0</pose>
+      <box>
+        <size>${l} ${w} 0.1</size>
+      </box>
+      <model_count>${num}</model_count>
+      <distribution>
+        <type>${dist}</type>
+      </distribution>
+    </population>
+  </xacro:macro>
+
+  <xacro:macro name="poles" params="h r w l x y">
+
+
+    <model name="poles">
+      <static>1</static>
+      <pose>${x} ${y} ${h/2} 0 0 0</pose>
+
+      <link name="poles_link">
+
+        <inertial>
+          <mass>10000</mass>
+        </inertial>
+
+        <xacro:pole id="1" h="${h}" r="${r}" x="0" 		y="${w/4}" z="0"/>
+        <xacro:pole id="2" h="${h}" r="${r}" x="${ 2*l/6}" 	y="${w/4}" z="0"/>
+        <xacro:pole id="3" h="${h}" r="${r}" x="${-2*l/6}" 	y="${w/4}" z="0"/>
+
+        <xacro:pole id="4" h="${h}" r="${r}" x="${ l/6}" 	y="0" z="0"/>
+        <xacro:pole id="5" h="${h}" r="${r}" x="${-l/6}" 	y="0" z="0"/>
+
+        <xacro:pole id="6" h="${h}" r="${r}" x="0"	 	y="${-w/4}" z="0"/>
+        <xacro:pole id="7" h="${h}" r="${r}" x="${ 2*l/6}" 	y="${-w/4}" z="0"/>
+        <xacro:pole id="8" h="${h}" r="${r}" x="${-2*l/6}" 	y="${-w/4}" z="0"/>
+
+      </link>
+    </model>  
+
+
+  </xacro:macro>
+
+  <xacro:macro name="trees" params="w l x y num dist">
+
+    <population name="tree_population">
+      <model name="tree">
+
+        <static>true</static>
+        <link name="body">
+          <visual name="visual">
+            <pose>0 0 0 1.5708 0 0</pose>
+            <geometry>
+              <mesh>
+                <uri>file://$(find imav_2017)/worlds/xacro/tree1.dae</uri>
+                <scale>0.01 0.01 0.01</scale>
+              </mesh>
+            </geometry>
+          </visual>
+
+          <collision name="collision">
+            <pose>0 0 0 1.5708 0 0</pose>
+            <geometry>
+              <mesh>
+                <uri>file://$(find imav_2017)/worlds/xacro/tree1.dae</uri>
+                <scale>0.01 0.01 0.01</scale>
+              </mesh>
+            </geometry>
+          </collision>
+
+        </link>
+      </model>
+
+      <pose>${x} ${y} 0 0 0 0</pose>
+      <box>
+        <size>${l} ${w} 0.1</size>
+      </box>
+      <model_count>${num}</model_count>
+      <distribution>
+        <type>${dist}</type>
+      </distribution>
+    </population>
+
+  </xacro:macro>
+
+  <xacro:macro name="bushes" params="w l x y num dist">
+
+    <population name="bush_population">
+      <model name="bush">
+
+        <static>true</static>
+        <link name="body">
+          <visual name="visual">
+            <pose>0 0 0 1.5708 0 0</pose>
+            <geometry>
+              <mesh>
+                <uri>file://$(find imav_2017)/worlds/xacro/tree1.dae</uri>
+                <scale>0.01 0.004 0.01</scale>
+              </mesh>
+            </geometry>
+          </visual>
+
+          <collision name="collision">
+            <pose>0 0 0 1.5708 0 0</pose>
+            <geometry>
+              <mesh>
+                <uri>file://$(find imav_2017)/worlds/xacro/tree1.dae</uri>
+                <scale>0.01 0.004 0.01</scale>
+              </mesh>
+            </geometry>
+          </collision>
+
+        </link>
+      </model>
+
+      <pose>${x} ${y} -0.5 0 0 0</pose>
+      <box>
+        <size>${l} ${w} 0.1</size>
+      </box>
+      <model_count>${num}</model_count>
+      <distribution>
+        <type>${dist}</type>
+      </distribution>
+    </population>
+
+  </xacro:macro>
+
+  <xacro:macro name="helipad" params="size x y z">
+
+    <link name="helipad_link">
+      <pose>${x} ${y} ${z} 0 0 0</pose> 
+      <inertial>
+        <mass>10</mass>
+      </inertial>
+
+      <collision name="wall_brand_collision">	  
+        <geometry>
+          <box>
+            <size>${size}</size>
+          </box>
+        </geometry>
+        <surface>
+          <contact>
+            <collide_bitmask>0x02</collide_bitmask>
+          </contact>
+        </surface>
+      </collision>
+      <visual name="helipad_visual">
+        <geometry>
+          <box>
+            <size>${size}</size>
+          </box>
+        </geometry>
+        <material>
+          <script>
+            <uri>file://$(find imav_2017)/worlds/xacro/custom.material</uri>
+            <name>Helipad</name>
+          </script>
+        </material>
+      </visual>
+    </link>
+  </xacro:macro>
+
+  <xacro:macro name="helipad_static" params="size x y z">
+    <model name="helipad_static">
+      <static>true</static>
+      <xacro:helipad size="${size}" x="${x}" y="${y}" z="${z}"/>
+    </model>
+  </xacro:macro>
+
+  <xacro:macro name="helipad_mobile" params="size x y z r v">    
+
+    <model name="helipad_mobile">
+
+      <pose>${x} ${y} ${z} 0 0 0</pose>
+
+      <self_collide>false</self_collide>
+
+
+      <joint name="helipad_fix0" type="fixed">
+        <pose>0 0 0 0 0 0</pose>
+        <parent>world</parent>
+        <child>base</child>
+      </joint>
+
+      <xacro:box_ name='base' size="0.2 0.2 0.2" x="0" y="0" z="0"/>
+
+      <joint name="helipad_joint" type="revolute">
+        <pose>-${r/2} 0 0 0 0 0</pose>
+        <parent>base</parent>
+        <child>arm</child>
+        <axis>
+          <xyz>0 0 1</xyz>
+        </axis>
+
+        <physics>
+          <ode>
+            <velocity>${v}</velocity>
+            <max_force>1000</max_force>
+          </ode>
+        </physics>
+
+      </joint>
+
+      <xacro:box_ name='arm' size="${r} 0.2 0.01" x="${r/2}" y="0" z="0.095"/>
+
+
+      <joint name="helipad_fix1" type="fixed">
+        <pose>0 0 0 0 0 0</pose>
+        <parent>arm</parent>
+        <child>helipad_link</child>
+      </joint>
+
+      <xacro:helipad size="${size}" x="${r}" y="0" z="0.1"/>
+
+    </model>
+  </xacro:macro>
+
+  <xacro:macro name="QR1" params="size x y z">
+    <model name="QR">
+      <static>true</static>
+      <link name="QR1_link">
+        <pose>${x} ${y} ${z} 0 0 0</pose> 
+        <inertial>
+          <mass>10</mass>
+        </inertial>
+
+        <collision name="qr_collision">	  
+          <geometry>
+            <box>
+              <size>${size}</size>
+            </box>
+          </geometry>
+          <surface>
+            <contact>
+              <collide_bitmask>0x02</collide_bitmask>
+            </contact>
+          </surface>
+        </collision>
+        <visual name="qr_visual">
+          <geometry>
+            <box>
+              <size>${size}</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://$(find imav_2017)/worlds/xacro/custom.material</uri>
+              <name>QR1</name>
+            </script>
+          </material>
+        </visual>
+      </link>
+    </model>
+  </xacro:macro>
+
+
+  <xacro:macro name="X1" params="size x y z">
+    <model name="X">
+      <static>true</static>
+      <link name="X_link">
+        <pose>${x} ${y} ${z} 0 0 0</pose> 
+        <inertial>
+          <mass>10</mass>
+        </inertial>
+
+        <collision name="x_collision">	  
+          <geometry>
+            <box>
+              <size>${size}</size>
+            </box>
+          </geometry>
+          <surface>
+            <contact>
+              <collide_bitmask>0x02</collide_bitmask>
+            </contact>
+          </surface>
+        </collision>
+        <visual name="x_visual">
+          <geometry>
+            <box>
+              <size>${size}</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://$(find imav_2017)/worlds/xacro/custom.material</uri>
+              <name>X1</name>
+            </script>
+          </material>
+        </visual>
+      </link>
+    </model>
+  </xacro:macro>
+
+
+
+</my_macros>
+

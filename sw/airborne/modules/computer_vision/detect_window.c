@@ -24,6 +24,10 @@
  */
 
 
+#include "cv.h"
+#include "detect_window.h"
+#include <stdio.h>
+
 #define RES 100
 #define N_WINDOW_SIZES 1
 
@@ -32,20 +36,15 @@
 #endif
 PRINT_CONFIG_VAR(DETECT_WINDOW_FPS)
 
-#include "cv.h"
-#include "detect_window.h"
-#include <stdio.h>
 
 void detect_window_init(void)
 {
-  cv_add_to_device(&DETECT_WINDOW_CAMERA, detect_window, DETECT_WINDOW_FPS);
+  //cv_add_to_device(&DETECT_WINDOW_CAMERA, detect_window, DETECT_WINDOW_FPS);
 }
 
 struct image_t *detect_window(struct image_t *img)
 {
-
-  uint16_t coordinate[2];
-  coordinate[0] = 0; coordinate[1] = 0;
+  uint16_t coordinate[2] = {0};
   uint16_t response = 0;
   uint32_t integral_image[img->w * img->h];
   struct image_t gray;

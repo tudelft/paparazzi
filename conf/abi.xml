@@ -97,7 +97,41 @@
       <field name="relative_heading" type="float" unit="rad"/>
     </message>
 
-    <message name="POSITION_ESTIMATE" id="18">
+    <message name="RANGE_SENSORS" id="18">
+      <field name="front_range_sensor" type="int16_t" unit="mm"/>
+      <field name="right_range_sensor" type="int16_t" unit="mm"/>
+      <field name="back_range_sensor" type="int16_t" unit="mm"/>
+      <field name="left_range_sensor" type="int16_t" unit="mm"/>
+      <field name="bottom_range_sensor" type="int16_t" unit="mm"/>
+      <field name="top_range_sensor" type="int16_t" unit="mm"/>
+    </message>
+
+    <message name="RANGE_FORCEFIELD" id="19">
+      <field name="vel_body_x_FF" type="float" unit="m/s"/>
+      <field name="vel_body_y_FF" type="float" unit="m/s"/>
+      <field name="vel_body_z_FF" type="float" unit="m/s"/>
+    </message>
+
+    <message name="RANGE_WALLFOLLOWING" id="20">
+      <field name="heading_leftturn_WF" type="float" unit="rad"/>
+      <field name="heading_rightturn_WF" type="float" unit="rad"/>
+      <field name="range_sensors_detect" type="bool" />
+    </message>
+
+    <message name="GATE_DETECTION" id="21">
+      <field name="gate_detected" type="uint8_t"/>
+      <field name="gate_x_offset" type="float" unit="m"/>
+      <field name="gate_y_offset" type="float" unit="m"/>
+      <field name="gate_distance" type="float" unit="m"/>
+    </message>
+
+    <message name="STEREO_FORCEFIELD" id="22">
+      <field name="vel_body_x_FF_stereo" type="float" unit="m/s"/>
+      <field name="vel_body_y_FF_stereo" type="float" unit="m/s"/>
+      <field name="vel_body_z_FF_stereo" type="float" unit="m/s"/>
+    </message>
+    
+    <message name="POSITION_ESTIMATE" id="23">
       <field name="stamp" type="uint32_t" unit="us"/>
       <field name="x" type="float" unit="m"/>
       <field name="y" type="float" unit="m"/>

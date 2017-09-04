@@ -1,0 +1,119 @@
+<!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
+
+<flight_plan alt="1.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="20" name="Rotorcraft Optitrack (Delft)" security_height="0.3">
+  <header>
+  	#include "autopilot_guided.h"
+		#include "autopilot.h"
+ 		#include "subsystems/datalink/datalink.h"
+		#include "subsystems/datalink/telemetry.h"
+		#include "firmwares/rotorcraft/guidance/guidance_h.h"
+
+		// Useful Combination of the flags fir the autopilot_guided_update
+		#define GUIDED_FLAG_XY_VEL_BODY GUIDED_FLAG_XY_BODY|GUIDED_FLAG_XY_VEL
+		#define GUIDED_FLAG_XY_VEL_BODY_YAW_OFFSET GUIDED_FLAG_XY_BODY|GUIDED_FLAG_XY_VEL|GUIDED_FLAG_YAW_OFFSET
+		#define GUIDED_FLAG_XY_VEL_BODY_YAW_RATE GUIDED_FLAG_XY_BODY|GUIDED_FLAG_XY_VEL|GUIDED_FLAG_YAW_RATE
+		#define GUIDED_FLAG_XY_OFFSET_Z_VEL_YAW_OFFSET GUIDED_FLAG_XY_OFFSET|GUIDED_FLAG_Z_VEL|GUIDED_FLAG_YAW_OFFSET
+		#define GUIDED_FLAG_XY_OFFSET_YAW_OFFSET GUIDED_FLAG_XY_OFFSET|GUIDED_FLAG_YAW_OFFSET
+		#define GUIDED_FLAG_XY_VEL_YAW_RATE GUIDED_FLAG_XY_OFFSET|GUIDED_FLAG_YAW_RATE
+    #define GUIDED_FLAG_XY_OFFSET_BODY_YAW_OFFSET GUIDED_FLAG_XY_OFFSET|GUIDED_FLAG_XY_BODY|GUIDED_FLAG_YAW_OFFSET
+    #define GUIDED_FLAG_XY_OFFSET_BODY_YAW_RATE GUIDED_FLAG_XY_OFFSET|GUIDED_FLAG_XY_BODY|GUIDED_FLAG_YAW_RATE
+
+  </header>
+  <waypoints>
+    <waypoint name="HOME" x="0.0" y="0.0"/>
+    <waypoint name="STDBY" x="0.0" y="0.0"/>
+    <waypoint name="CLIMB" x="0" y="0"/>
+  </waypoints>
+
+  <variables>
+	  <variable var="desired_heading" init="0.0f" type="float"/>
+	  <variable var="save_heading" init="0.0f" type="float"/>
+	  <variable var="save_heading_2" init="0.0f" type="float"/>
+	  <variable var="save_distance" init="0.0f" type="float"/>
+	  <variable var="diff_heading" init="0.0f" type="float"/>
+	  <variable var="counter" init="0" type="uint8_t"/>
+	  <variable var="offset_heading" init="0.0f" type="float"/>
+	  <variable var="vel_x_NED_heading_offset" init="0.0f" type="float"/>
+	  <variable var="vel_y_NED_heading_offset" init="0.0f" type="float"/>
+	  <variable var="turn_angle" init="10.0f" type="float" min="-180" max="180" step="1"/>
+	  <variable var="turn_rate" init="0.5f" type="float" min="0." max="10." step="0.1"/>
+    <variable var="climb_descent_vel" init="0.3f" type="float" min="0." max="1" step="0.1"/>
+    <variable var="forward_vel" init="0.2f" type="float" min="0." max="2" step="0.1"/>
+	  <variable var="nominal_alt" init="NAV_DEFAULT_ALT" type="float" min="0." max="10." step="0.1"/>
+	  <variable var="gain_heading" init="40" type="float" min="0." max="100." step="1"/>
+	  <variable var="gain_wall" init="0.1" type="float" min="0." max="1." step="0.01"/>
+    <variable var="turned_left" init="FALSE" type="bool"/>
+    <variable var="turned_right" init="TRUE" type="bool"/>
+    <variable var="x_offset_collision" init="0.45" type="float"/>
+    <variable var="save_offset" init="0.5" type="float" min=" 0.1" max="2.5" step="0.1"/>
+
+    <abi_binding name="OBSTACLE_DETECTION" vars="distance_obstacle_FP, heading_obstacle_FP"/>
+    <abi_binding name="RANGE_FORCEFIELD" vars="vel_body_x_FF, vel_body_y_FF, vel_body_z_FF"/>
+    <abi_binding name="RANGE_WALLFOLLOWING" vars="heading_leftturn_WF,heading_rightturn_WF,range_sensor_detect_WF"/>
+    <abi_binding name="GATE_DETECTION" vars="gate_detected,gate_x_offset,gate_y_offset,gate_distance"/>
+    <abi_binding name="STEREO_FORCEFIELD" vars="vel_body_x_FF_stereo, vel_body_y_FF_stereo, vel_body_z_FF_stereo"/>
+	</variables>
+  <includes>
+     <include name="avoid_pillars" procedure="avoid_pillars_v2.xml"/>
+     <include name="go_through_gate" procedure="go_through_gate.xml"/>
+  </includes>
+  <exceptions>
+      <!--exception cond="datalink_time>3" deroute="Land"/--> 
+      <!--exception cond="autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT" deroute="Wait for Guided"/--> 
+  </exceptions>
+
+  <blocks>
+    <block name="FPInit">
+      <while cond="!GpsFixValid()"/>
+      <set var = "distance_obstacle_FP" value="10.0"/><!--Or else it will turn everytime if the abi message is not received-->
+      <call_once fun="ins_reset_altitude_ref()"/>
+      <set var="desired_heading" value="stateGetNedToBodyEulers_f()->psi"/>
+      <while cond="1"/>
+    </block>
+
+<!--For Autonomous Take-off -->
+    <block name="Start Engine">
+			<call_once fun="guidance_v_set_guided_th(0.2)"/>
+      <call_once fun="autopilot_set_motors_on(TRUE)"/>
+      <while cond="LessThan(stage_time,1)"/>
+    </block>
+
+    <block name="Take off">
+      <call_once fun="guidance_v_set_guided_th(0.75)"/>
+      <while cond="LessThan(stateGetPositionEnu_f()->z,nominal_alt)"/>
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_YAW_OFFSET,0.,0.,-nominal_alt,DegOfRad(0))"/> 
+      <while cond="LessThan(stage_time,1)"/>
+     <!--deroute block="Go Forward"/-->   
+    </block>
+
+    <block name="Hover">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_YAW_OFFSET,0.,0.,-nominal_alt,DegOfRad(0))"/> 
+      <while cond="1"/>
+    </block>
+
+
+<!--For Manual Take-off -->
+    <!--block name="Wait for Guided">
+      <while cond="!(autopilot_get_mode() == AP_MODE_GUIDED)"/>
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_YAW_OFFSET,0.,0.,-nominal_alt,DegOfRad(0))"/>
+     <while cond="LessThan(stage_time,1)"/>
+     <deroute block="Go Forward"/>   
+    </block-->
+
+
+
+
+    <block name="Land">
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_Z_VEL_YAW_OFFSET,0.,0.,climb_descent_vel,0.)"/>
+      <while cond="MoreThan(stateGetPositionEnu_f()->z,0.1)"/>
+      <call_once fun="autopilot_guided_update(GUIDED_FLAG_XY_OFFSET_YAW_OFFSET,0.,0.,0.,0.)"/>  
+      <while cond="LessThan(block_time,5)"/>
+      <deroute block="Kill Engines"/>
+    </block>
+
+    <block name="Kill Engines">
+      <call_once fun="autopilot_set_motors_on(FALSE)"/>
+      <while cond="1"/>
+    </block>
+  </blocks>
+</flight_plan>
