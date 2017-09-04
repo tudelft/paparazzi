@@ -46,9 +46,11 @@ void image_create(struct image_t *img, uint16_t width, uint16_t height, enum ima
   if (type == IMAGE_YUV422) {
     img->buf_size = sizeof(uint8_t) * 2 * width * height;
   } else if (type == IMAGE_JPEG) {
-    img->buf_size = sizeof(uint8_t) * 2 * width * height;  // At maximum quality this is enough
+    img->buf_size = sizeof(uint8_t) * 1.5 * width * height;  // At maximum quality this is enough
   } else if (type == IMAGE_GRADIENT) {
     img->buf_size = sizeof(int16_t) * width * height;
+  } else if (type == IMAGE_LABELS) {
+    img->buf_size = sizeof(uint16_t) * width * height;
   } else {
     img->buf_size = sizeof(uint8_t) * width * height;
   }
@@ -129,7 +131,11 @@ void image_to_grayscale(struct image_t *input, struct image_t *output)
         *dest++ = 127;  // U / V
       }
       *dest++ = *source;    // Y
-      source += 2;
+
+      if(input->type == IMAGE_YUV422)
+        source += 2;
+      else if(input->type == IMAGE_LABELS && x%2 == 1)
+        source += 2;
     }
   }
 }
@@ -614,7 +620,7 @@ void image_draw_line_color(struct image_t *img, struct point_t *from, struct poi
 {
   int xerr = 0, yerr = 0;
   uint8_t *img_buf = (uint8_t *)img->buf;
-  uint8_t pixel_width = (img->type == IMAGE_YUV422) ? 2 : 1;
+  uint8_t pixel_width = (img->type == IMAGE_YUV422 || img->type == IMAGE_LABELS) ? 2 : 1;
   uint16_t startx = from->x;
   uint16_t starty = from->y;
 
@@ -668,4 +674,441 @@ void image_draw_line_color(struct image_t *img, struct point_t *from, struct poi
       starty += incy;
     }
   }
+}
+
+void image_labeling(struct image_t *input, struct image_t *output, struct image_filter_t *filters, uint8_t filters_cnt,
+  struct image_label_t *labels, uint16_t *labels_count)
+{
+  uint8_t *input_buf = (uint8_t *)input->buf;
+  uint16_t *output_buf = (uint16_t *)output->buf;
+
+  // Initialize labels
+  uint16_t labels_size = *labels_count;
+  uint16_t labels_cnt = 0;
+
+  // Do steps of 2 for YUV image
+  for (uint16_t y = 0; y < input->h; y++) {
+    for (uint16_t x = 0; x < input->w/2; x++) {
+      uint8_t p_y = (input_buf[y*input->w*2 + x*4 + 1] + input_buf[y*input->w*2 + x*4 + 3]) / 2;
+      uint8_t p_u = input_buf[y*input->w*2 + x*4];
+      uint8_t p_v = input_buf[y*input->w*2 + x*4 + 2];
+
+      // Go trough the filters
+      uint8_t f = 0;
+      for(; f < filters_cnt; f++) {
+        if(p_y > filters[f].y_min && p_y < filters[f].y_max &&
+           p_u > filters[f].u_min && p_u < filters[f].u_max &&
+           p_v > filters[f].v_min && p_v < filters[f].v_max) {
+          break;
+        }
+      }
+
+      // Check if this pixel belongs to a filter else goto next
+      if(f >= filters_cnt) {
+        output_buf[y*output->w + x] = 0xFFFF;
+        continue;
+      }
+
+      // Check pixel above (if the same filter then take same group)
+      uint16_t lid = output_buf[(y-1)*output->w + x];
+      if(y > 0 && lid != 0xFFFF && labels[lid].filter == f) {
+        output_buf[y*output->w + x] = lid;
+        labels[lid].pixel_cnt++;
+        continue;
+      }
+
+      // Check pixel top right (check for merging)
+      lid = output_buf[(y-1)*output->w + x + 1];
+      if(y > 0 && x < output->w-1 && lid != 0xFFFF && labels[lid].filter == f) {
+
+        // Merging labels if needed
+        uint16_t lid_tl = output_buf[(y-1)*output->w + x - 1]; // Top left
+        uint16_t lid_l = output_buf[y*output->w + x - 1]; // Left
+        uint16_t m = labels[lid].id, n = labels[lid].id;
+        if(x > 0 && lid_tl != 0xFFFF && labels[lid_tl].filter == f) {
+          // Merge with top left
+          m = labels[lid].id;
+          n = labels[lid_tl].id;
+        }
+        else if(x > 0 && lid_l != 0xFFFF && labels[lid_l].filter == f) {
+          // Merge with left
+          m = labels[lid].id;
+          n = labels[lid_l].id;
+        }
+
+        // Change the id of the highest id label
+        if(m != n){
+          if(m > n) {
+            m = n;
+            n = labels[lid].id;
+          }
+
+          for(uint16_t i = 0; i < labels_cnt; i++) {
+            if(labels[i].id == n)
+              labels[i].id = m;
+          }
+        }
+
+        // Update the label
+        output_buf[y*output->w + x] = lid;
+        labels[lid].pixel_cnt++;
+        continue;
+      }
+
+      // Take top left
+      lid = output_buf[(y-1)*output->w + x - 1];
+      if(y > 0 && x > 0 && lid != 0xFFFF && labels[lid].filter == f) {
+        output_buf[y*output->w + x] = lid;
+        labels[lid].pixel_cnt++;
+        continue;
+      }
+
+      // Take left
+      lid = output_buf[y*output->w + x - 1];
+      if(x > 0 && lid != 0xFFFF && labels[lid].filter == f) {
+        output_buf[y*output->w + x] = lid;
+        labels[lid].pixel_cnt++;
+        continue;
+      }
+
+      // Check if there is enough space
+      if(labels_cnt >= labels_size-1) {
+        break;
+      }
+
+      // Create new group
+      lid = labels_cnt;
+      output_buf[y*output->w + x] = lid;
+      labels[lid].id = lid;
+      labels[lid].filter = f;
+      labels[lid].pixel_cnt = 1;
+      labels[lid].x_min = x;
+      labels[lid].y_min = y;
+      labels_cnt++;
+    }
+  }
+
+  // Merge connected labels
+  for(uint16_t i = 0; i < labels_cnt; i++) {
+    if(labels[i].id != i) {
+      uint16_t new_id = labels[i].id;
+      labels[new_id].pixel_cnt += labels[i].pixel_cnt;
+
+      if(labels[i].x_min < labels[new_id].x_min) labels[new_id].x_min = labels[i].x_min;
+      if(labels[i].y_min < labels[new_id].y_min) labels[new_id].y_min = labels[i].y_min;
+    }
+  }
+
+  *labels_count = labels_cnt;
+}
+
+void image_contour(struct image_t *input, struct image_label_t *labels, struct image_label_t *label) {
+  uint16_t *input_buf = (uint16_t *)input->buf;
+
+  static int8_t dx[8] = { 0,  1, 1, 1, 0, -1, -1, -1};
+  static int8_t dy[8] = {-1, -1, 0, 1, 1,  1,  0, -1};
+
+  // Find top left pixel (pStart)
+  uint16_t x = label->x_min;
+  uint16_t y = label->y_min;
+  while(input_buf[y * input->w + x] == 0xFFFF || labels[input_buf[y * input->w + x]].id != label->id) {
+    x++;
+    if(x > input->w) {
+      label->contour_cnt = 0;
+      return;
+    }
+  }
+
+  uint8_t d = 2; // 0 is top
+  label->contour[0].x = x;
+  label->contour[0].y = y;
+
+  uint16_t c_idx = 1;
+  while(c_idx < 512) {
+    // Turn right until label is found
+    while(y+dy[d] < 0 || y+dy[d] >= input->h || x+dx[d] < 0 || x+dx[d] >= input->w ||
+      input_buf[(y+dy[d]) * input->w + x + dx[d]] == 0xFFFF ||
+      labels[input_buf[(y+dy[d]) * input->w + x + dx[d]]].id != label->id) {
+      d = (d+1) % 8;
+    }
+
+    x += dx[d];
+    y += dy[d];
+    if(x == label->contour[0].x && y == label->contour[0].y)
+      break;
+
+    // Since we are going to search for corners ignore straight lines
+    if(label->contour[c_idx-1].x != x && label->contour[c_idx-1].y != y) {
+      label->contour[c_idx].x = x - dx[d];
+      label->contour[c_idx].y = y - dy[d];
+      c_idx++;
+    }
+
+    d  = (d+5) %8;
+  }
+
+  label->contour_cnt = c_idx;
+}
+
+bool_t image_square(struct image_label_t *label) {
+  uint16_t sx = label->contour[0].x;
+  uint16_t sy = label->contour[0].y;
+  uint16_t thresh = label->pixel_cnt*0.75;
+
+  // Find the first corner
+  uint32_t dmax = 0;
+  uint16_t cid1 = 0;
+  for(uint16_t i = 0; i < label->contour_cnt; i++) {
+    uint32_t d = (label->contour[i].x-sx) * (label->contour[i].x-sx) +
+                 (label->contour[i].y-sy) * (label->contour[i].y-sy);
+    if(d > dmax) {
+      dmax = d;
+      cid1 = i;
+    }
+  }
+  sx = label->contour[cid1].x;
+  sy = label->contour[cid1].y;
+
+  // Find the second corner
+  dmax = 0;
+  uint16_t cid2 = 0;
+  for(uint16_t i = 0; i < label->contour_cnt; i++) {
+    uint32_t d = (label->contour[i].x-sx) * (label->contour[i].x-sx) +
+                 (label->contour[i].y-sy) * (label->contour[i].y-sy);
+    if(d > dmax) {
+      dmax = d;
+      cid2 = i;
+    }
+  }
+
+  // Find corners first part
+  uint16_t fcorner_cnt = 0, scorner_cnt = 0;
+  uint16_t corners[8];
+  image_vertex(label, cid1, cid2, thresh, corners, &fcorner_cnt, 4);
+
+  /*printf("First two corners(%d): %3d, %3d\n", label->id, cid1, cid2);
+  printf("Found corners between first 2 corners: %3d; ", fcorner_cnt);
+  for(uint16_t i = 0; i < fcorner_cnt; i++)
+    printf("%3d, ", corners[i]);
+  printf("\n");*/
+
+  /* For sure not a rectangle */
+  if(fcorner_cnt > 3)
+    return FALSE;
+
+  /* Find more corners */
+  if(fcorner_cnt == 0) {
+    image_vertex(label, cid2, cid1, thresh, corners, &scorner_cnt, 4);
+
+    if(scorner_cnt > 3)
+      return FALSE;
+
+    // Find middle point and try again
+    uint16_t half = (cid1 - cid2 + label->contour_cnt) % label->contour_cnt;
+    image_vertex(label, cid2, half, thresh, corners, &scorner_cnt, 2);
+
+    if(scorner_cnt > 1)
+      return FALSE;
+
+    image_vertex(label, half, cid1, thresh, &corners[1], &scorner_cnt, 2);
+
+    if(scorner_cnt > 1)
+      return FALSE;
+
+    // Set the corners
+    label->corners[0] = cid1;
+    label->corners[1] = cid2;
+    label->corners[2] = corners[0];
+    label->corners[3] = corners[1];
+  }
+  else if(fcorner_cnt == 1) {
+    image_vertex(label, cid2, cid1, thresh, &corners[1], &scorner_cnt, 2);
+
+    if(scorner_cnt > 1)
+      return FALSE;
+
+    // Set the corners
+    label->corners[0] = cid1;
+    label->corners[1] = corners[0];
+    label->corners[2] = cid2;
+    label->corners[3] = corners[1];
+  }
+  else if(fcorner_cnt > 1) {
+    image_vertex(label, cid2, cid1, thresh, &corners[fcorner_cnt], &scorner_cnt, 1);
+
+    if(scorner_cnt > 0)
+      return FALSE;
+
+    // Find middle point and try again
+    uint16_t half = (cid2 - cid1 + label->contour_cnt) % label->contour_cnt;
+    image_vertex(label, cid1, half, thresh, corners, &scorner_cnt, 2);
+
+    if(scorner_cnt > 1)
+      return FALSE;
+
+    image_vertex(label, half, cid2, thresh, &corners[1], &scorner_cnt, 2);
+
+    if(scorner_cnt > 1)
+      return FALSE;
+
+    // Set the corners
+    label->corners[0] = cid1;
+    label->corners[1] = corners[0];
+    label->corners[2] = corners[1];
+    label->corners[3] = cid2;
+  }
+
+  return TRUE;
+}
+
+void image_vertex(struct image_label_t *label, uint16_t start, uint16_t end, uint16_t thresh, uint16_t *corners, uint16_t *corner_cnt, uint8_t max_corners) {
+
+  struct point_t *points = label->contour;
+  uint16_t points_cnt = label->contour_cnt;
+
+  int32_t a = points[end].y - points[start].y;
+  int32_t b = points[start].x - points[end].x;
+  int32_t c = points[end].x*points[start].y - points[end].y*points[start].x;
+
+  int32_t dmax = 0;
+  uint16_t cid = 0;
+  for(uint16_t i = start+1; i != end; i = (i+1)%points_cnt) {
+    int32_t d = a*points[i].x + b*points[i].y + c;
+    if(d*d > dmax) {
+      dmax = d*d;
+      cid = i;
+    }
+  }
+
+  // If we exceed threshold we identify this as a corner
+  if(dmax/(a*a+b*b+1)*100 > thresh) {
+    // Search at the first part
+    if(max_corners-1 > *corner_cnt) {
+      image_vertex(label, start, cid, thresh, corners, corner_cnt, max_corners-1);
+    }
+
+    // Add the corner
+    corners[*corner_cnt] = cid;
+    (*corner_cnt)++;
+
+    // Search the second part
+    if(max_corners > *corner_cnt) {
+      image_vertex(label, cid, end, thresh, corners, corner_cnt, max_corners);
+    }
+  }
+}
+
+float image_code(struct image_t *img, struct image_label_t *label, uint16_t *code) {
+  uint64_t enc_code = 0;
+
+  uint16_t *img_buf = (uint16_t *)img->buf;
+  struct point_t line1_s = label->contour[label->corners[0]];
+  struct point_t line1_e = label->contour[label->corners[1]];
+  int16_t line1_d = (line1_e.x-line1_s.x);
+  float line1_c = (float)(line1_e.y-line1_s.y) / line1_d;
+
+  struct point_t line2_s = label->contour[label->corners[3]];
+  struct point_t line2_e = label->contour[label->corners[2]];
+  int16_t line2_d = (line2_e.x-line2_s.x);
+  float line2_c = (float)(line2_e.y-line2_s.y) / line2_d;
+
+  for(uint8_t x = 0; x < 6; x++) {
+    float a_x = line1_s.x + (0.29+x*0.084)*line1_d;
+    float b_x = line2_s.x + (0.29+x*0.084)*line2_d;
+    float a_y = (line1_s.y - line1_s.x*line1_c) + a_x*line1_c;
+    float b_y = (line2_s.y - line2_s.x*line2_c) + b_x*line2_c;
+
+    float coef = (b_y - a_y) / (b_x - a_x);
+    for(uint8_t y = 0; y < 6; y++) {
+      float x_pos = a_x + (0.29+y*0.084)*(b_x-a_x);
+      float y_pos = (a_y - a_x*coef) + x_pos*coef;
+
+      if(img_buf[(int)y_pos*img->w + (int)x_pos] == 0xFFFF) {
+        enc_code += (uint64_t)0x1 << ((30-x*6)+y);
+        img_buf[(int)y_pos*img->w + (int)x_pos] = 600+((30-x*6)+y);
+      }
+      else
+        img_buf[(int)y_pos*img->w + (int)x_pos] = 700+((30-x*6)+y);
+    }
+    img_buf[(int)a_y*img->w + (int)a_x] = 400+x;
+    img_buf[(int)b_y*img->w + (int)b_x] = 500+x;
+  }
+
+  // Get code:
+  uint16_t c1, c2, c3, c4;
+  float a1 = get_code(enc_code, &c1);
+  rotate90(&enc_code);
+  float a2 = get_code(enc_code, &c2);
+  rotate90(&enc_code);
+  float a3 = get_code(enc_code, &c3);
+  rotate90(&enc_code);
+  float a4 = get_code(enc_code, &c4);
+
+  if(a1 > a2 && a1 > a3 && a1 > a4) {
+    *code = c1;
+    return a1;
+  }
+  else if(a2 > a1 && a2 > a3 && a2 > a4) {
+    *code = c2;
+    return a2;
+  }
+  else if(a3 > a1 && a3 > a2 && a3 > a4) {
+    *code = c3;
+    return a3;
+  }
+  else {
+    *code = c4;
+    return a4;
+  }
+}
+
+const int rotate90_mat[] = {
+    30, 24, 18, 12,  6,  0,
+    31, 25, 19, 13,  7,  1,
+    32, 26, 20, 14,  8,  2,
+    33, 27, 21, 15,  9,  3,
+    34, 28, 22, 16, 10,  4,
+    35, 29, 23, 17, 11,  5
+  };
+
+void rotate90(uint64_t *enc_code) {
+  uint64_t rot_code = 0;
+
+  for(uint8_t i = 0; i < 6*6; i++) {
+    if((*enc_code) & ((uint64_t)0x1 << rotate90_mat[i]))
+      rot_code += (0x1 << i);
+  }
+
+  *enc_code = rot_code;
+}
+
+float get_code(uint64_t enc_code, uint16_t *code) {
+  enc_code ^= 0x0027 | (0x014e << 9) | (0x0109 << 18) | ((uint64_t)0x00db << 27);
+
+  float acc = 0;
+  *code = 0;
+  for(uint8_t i = 0; i < 9; i++) {
+    uint8_t bits = ((enc_code >> i) & 0b01) + ((enc_code >> (i+9)) & 0b01) + ((enc_code >> (i+18)) & 0b01) + ((enc_code >> (i+27)) & 0b01);
+
+    switch(bits) {
+      case 4:
+        *code += (uint16_t)0x1 << i;
+        acc += 1.0;
+        break;
+      case 3:
+        *code += (uint16_t)0x1 << i;
+        acc += 0.5;
+        break;
+      case 1:
+        acc += 0.5;
+        break;
+      case 0:
+        acc += 1.0;
+        break;
+      default:
+        break;
+    }
+  }
+
+  return acc/9;
 }

@@ -36,7 +36,8 @@ enum image_type {
   IMAGE_YUV422,     ///< UYVY format (uint16 per pixel)
   IMAGE_GRAYSCALE,  ///< Grayscale image with only the Y part (uint8 per pixel)
   IMAGE_JPEG,       ///< An JPEG encoded image (not per pixel encoded)
-  IMAGE_GRADIENT    ///< An image gradient (int16 per pixel)
+  IMAGE_GRADIENT,   ///< An image gradient (int16 per pixel)
+  IMAGE_LABELS      ///< Labeled blobs (uint16 per pixel)
 };
 
 /* Main image structure */
@@ -69,18 +70,27 @@ struct flow_t {
   int16_t flow_y;             ///< The y direction flow in subpixels
 };
 
-/* Image size structure */
-struct img_size_t {
-  uint16_t w;     ///< The width
-  uint16_t h;     ///< The height
+struct image_filter_t {
+  uint8_t y_min;
+  uint8_t y_max;
+  uint8_t u_min;
+  uint8_t u_max;
+  uint8_t v_min;
+  uint8_t v_max;
 };
 
-/* Image crop structure */
-struct crop_t {
-  uint16_t x;    ///< Start position x (horizontal)
-  uint16_t y;    ///< Start position y (vertical)
-  uint16_t w;    ///< Width of the cropped area
-  uint16_t h;    ///< height of the cropped area
+struct image_label_t {
+  uint16_t id;
+  uint8_t filter;
+
+  uint16_t pixel_cnt;
+  uint16_t x_min;
+  uint16_t y_min;
+
+  struct point_t contour[512];
+  uint16_t contour_cnt;
+
+  uint16_t corners[4];
 };
 
 /* Usefull image functions */
@@ -102,8 +112,13 @@ int32_t image_multiply(struct image_t *img_a, struct image_t *img_b, struct imag
 void image_show_points(struct image_t *img, struct point_t *points, uint16_t points_cnt);
 void image_show_flow(struct image_t *img, struct flow_t *vectors, uint16_t points_cnt, uint8_t subpixel_factor);
 void image_draw_line(struct image_t *img, struct point_t *from, struct point_t *to);
-void image_draw_line_color(struct image_t *img, struct point_t *from, struct point_t *to, uint8_t *color);
-void pyramid_next_level(struct image_t *input, struct image_t *output, uint8_t border_size);
-void pyramid_build(struct image_t *input, struct image_t *output_array, uint8_t pyr_level, uint8_t border_size);
+void image_labeling(struct image_t *input, struct image_t *output, struct image_filter_t *filters, uint8_t filters_cnt,
+  struct image_label_t *labels, uint16_t *labels_count);
+void image_contour(struct image_t *input, struct image_label_t *labels, struct image_label_t *label);
+bool_t image_square(struct image_label_t *label);
+void image_vertex(struct image_label_t *label, uint16_t start, uint16_t end, uint16_t thresh, uint16_t *corners, uint16_t *corner_cnt, uint8_t max_corners);
+float image_code(struct image_t *img, struct image_label_t *label, uint16_t *code);
+float get_code(uint64_t enc_code, uint16_t *code);
+void rotate90(uint64_t *enc_code);
 
 #endif
