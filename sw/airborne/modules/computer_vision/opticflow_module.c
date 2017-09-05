@@ -186,15 +186,9 @@ struct image_t *opticflow_module_calc(struct image_t *img)
   temp_state = opticflow_state;
   temp_state.rates = pose.rates;
 
-#if OPTICFLOW_DEBUG
-  // Create a new JPEG image
-  struct image_t img_jpeg;
-  image_create(&img_jpeg, opticflow_dev->w, opticflow_dev->h, IMAGE_JPEG);
-
-  // Create the socket connection
-  struct UdpSocket video_sock;
-  udp_socket_create(&video_sock, STRINGIFY(VIEWVIDEO_HOST), VIEWVIDEO_PORT_OUT, -1, VIEWVIDEO_BROADCAST);
-#endif
+  // Do the optical flow calculation
+  static struct opticflow_result_t temp_result = {}; // static so that the number of corners is kept between frames
+  opticflow_calc_frame(&opticflow, &temp_state, img, &temp_result);
 
   // Copy the result if finished
   pthread_mutex_lock(&opticflow_mutex);
@@ -202,35 +196,9 @@ struct image_t *opticflow_module_calc(struct image_t *img)
   opticflow_got_result = true;
 
 
-    // Do the optical flow calculation
-    struct opticflow_result_t temp_result;
-    opticflow_calc_frame(&opticflow, &temp_state, &img, &temp_result);
-
-    // Copy the result if finished
-    pthread_mutex_lock(&opticflow_mutex);
-    memcpy(&opticflow_result, &temp_result, sizeof(struct opticflow_result_t));
-    opticflow_got_result = TRUE;
-    pthread_mutex_unlock(&opticflow_mutex);
-
-#if OPTICFLOW_DEBUG
-    jpeg_encode_image(&img, &img_jpeg, 70, FALSE);
-    rtp_frame_send(
-      &video_sock,              // UDP socket
-      &img_jpeg,
-      0,                        // Format 422
-      70, // Jpeg-Quality
-      0,                        // DRI Header
-      0                         // 90kHz time increment
-    );
-#endif
-
-    // Free the image
-    v4l2_image_free(opticflow_dev, &img);
-  }
-
-#if OPTICFLOW_DEBUG
-  image_free(&img_jpeg);
-#endif
+  // release the mutex as we are done with editing the opticflow result
+  pthread_mutex_unlock(&opticflow_mutex);
+  return img;
 }
 
 /**
