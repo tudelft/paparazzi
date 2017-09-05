@@ -1,0 +1,14 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="slamdunk">
+  <doc>
+    <description>Uses the information from the slamdunk&apos;s depth map to move forward without hitting walls</description>
+  </doc>
+  <header>
+    <file name="slamdunk.h"/>
+  </header>
+  <event fun="slamdunk_parse_IMCU_LR_MEAN_DIST()"/>
+  <makefile>
+    <file name="slamdunk.c"/>
+  </makefile>
+</module>
