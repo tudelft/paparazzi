@@ -33,14 +33,14 @@ class Bebop(ParrotUtils):
     update_time_before_run = True
 
     def uav_status(self):
-        print('Parrot version:\t\t' + self.check_version())
+        print('Parrot version:\t\t' + str(self.check_version()))
 
     def init_extra_parser(self):
 
         # Parse the extra arguments
         self.parser.add_argument('--min_version', metavar='MIN', default='3.3.0',
                 help='force minimum version allowed')
-        self.parser.add_argument('--max_version', metavar='MAX', default='4.0.5',
+        self.parser.add_argument('--max_version', metavar='MAX', default='4.0.6',
                 help='force maximum version allowed')
 
     def parse_extra_args(self, args):

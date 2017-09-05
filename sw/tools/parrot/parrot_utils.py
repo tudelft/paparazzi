@@ -274,9 +274,9 @@ class ParrotUtils:
         if self.check_version_before_run and min_ver is not None and max_ver is not None:
             v = self.check_version()
             print("Checking " + self.uav_name + " firmware version... " + str(v) )
-            # if ((v < self.ParrotVersion(min_ver)) or (v > self.ParrotVersion(max_ver))):
-            #     print("Error: please upgrade your " + self.uav_name + " firmware to version between " + min_ver + " and " + max_ver + "!")
-            #     return
+            if ((v < ParrotVersion(min_ver)) or (v > ParrotVersion(max_ver))):
+                print("Error: please upgrade your " + self.uav_name + " firmware to version between " + min_ver + " and " + max_ver + "!")
+                return
             
         f = self.split_into_path_and_file(name)
 

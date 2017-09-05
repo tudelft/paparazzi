@@ -11,7 +11,13 @@
 <airframe name="TeensyFly Quad Elle0 v1_2">
 
   <firmware name="rotorcraft">
+
+    <configure name="RADIO_CONTROL_LED" value="none"/>
+    <configure name="GPS_LED" value="3"/>
+
     <target name="ap" board="elle0_1.2">
+      <define name="LOW_NOISE_THRESHOLD" value="3500"/>
+      <define name="LOW_NOISE_TIME"      value="10"/>
     </target>
 
     <target name="nps" board="pc">

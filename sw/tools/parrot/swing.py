@@ -30,7 +30,7 @@ class Swing(ParrotUtils):
     prompt = '$ '
 
     def uav_status(self):
-        print('Parrot version:\t\t' + self.check_version())
+        print('Parrot version:\t\t' + str(self.check_version()))
 
     def init_extra_parser(self):
         # nothing here
