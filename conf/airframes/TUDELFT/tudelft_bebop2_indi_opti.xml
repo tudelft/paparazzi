@@ -31,6 +31,10 @@
     <module name="logger_file">
       <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
     </module>
+    <module name="slamdunk">
+        <configure name="STEREO_UART" value="UART1"/>
+        <configure name="STEREO_BAUD" value="B1000000"/>
+    </module>
   </modules>
 
   <commands>
@@ -192,7 +196,7 @@
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
-    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+    <define name="MODE_AUTO2" value="AP_MODE_GUIDED"/>
 
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>

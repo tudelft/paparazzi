@@ -28,14 +28,14 @@
 
 #include "pprzlink/pprz_transport.h"
 
-/* Main magneto pitot strcuture */
+/* Main slamdunk strcuture */
 struct slamdunk_t {
   struct link_device *device;           ///< The device which is uses for communication
   struct pprz_transport transport;      ///< The transport layer (PPRZ)
   bool msg_available;                   ///< If we received a message
 };
 
-extern void avoid_walls(void);
+extern void slamdunk_init(void);
 extern void slamdunk_parse_IMCU_LR_MEAN_DIST(void);
 
 #endif
