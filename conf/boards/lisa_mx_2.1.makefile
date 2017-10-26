@@ -26,3 +26,13 @@ DFU_PRODUCT = Lisa/Lia
 endif
 
 include $(PAPARAZZI_SRC)/conf/boards/lisa_m_defaults.makefile
+
+# Added by Karl on 25/10/17 to try to fix the SD logging on Transformer
+
+ASPIRIN_2_SPI_DEV ?= spi2
+ASPIRIN_2_SPI_SLAVE_IDX ?= SPI_SLAVE2
+
+SDLOGGER_DIRECT_SPI ?= spi1
+SDLOGGER_DIRECT_SPI_SLAVE ?= SPI_SLAVE1
+HS_LOG_SPI_DEV ?= spi1
+HS_LOG_SPI_SLAVE_IDX ?= SPI_SLAVE1

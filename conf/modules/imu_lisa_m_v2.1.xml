@@ -24,7 +24,7 @@
     <define name="USE_SPI_SLAVE2"/>
     <!-- SLAVE3 is on PC13, which is the baro CS -->
     <define name="USE_SPI_SLAVE3"/>
-    <define name="USE_SPI1"/>
+    <define name="USE_SPI2"/>
     <define name="LISA_M_OR_MX_21"/>
   </makefile>
 </module>

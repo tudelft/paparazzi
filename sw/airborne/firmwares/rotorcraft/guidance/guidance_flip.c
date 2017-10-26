@@ -74,7 +74,7 @@ void guidance_flip_enter(void)
   maneuver_counter = 0;
   flip_state = 0;
   stabilization_attitude_read_rc(autopilot_in_flight, FALSE, FALSE);
-  QUAT_COPY(nominal_quaternion_cmd,stab_att_sp_quat);
+  //QUAT_COPY(nominal_quaternion_cmd,stab_att_sp_quat);
   nominal_thrust_cmd = stabilization_cmd[COMMAND_THRUST];
   timer_save = 0;
 
@@ -105,7 +105,7 @@ void guidance_flip_run(void)
       rot_axis.z = 0;
       //FIXME make angle and axis a setting
       int32_quat_of_axis_angle(&deviation_quaternion, &rot_axis, &dblt_angle);
-      int32_quat_comp(&stab_att_sp_quat, &nominal_quaternion_cmd, &deviation_quaternion);
+      //int32_quat_comp(&stab_att_sp_quat, &nominal_quaternion_cmd, &deviation_quaternion);
       //stab_att_quat_sp = new_stab_att_quat_sp;
       stabilization_attitude_run(autopilot_in_flight);
       stabilization_cmd[COMMAND_THRUST] = nominal_thrust_cmd; 
@@ -131,7 +131,7 @@ void guidance_flip_run(void)
       rot_axis.z = 0;
       
       int32_quat_of_axis_angle(&deviation_quaternion, &rot_axis, &dblt_angle);
-      int32_quat_comp(&stab_att_sp_quat, &nominal_quaternion_cmd, &deviation_quaternion);
+      //int32_quat_comp(&stab_att_sp_quat, &nominal_quaternion_cmd, &deviation_quaternion);
       //stab_att_quat_sp = new_stab_att_quat_sp;
       stabilization_attitude_run(autopilot_in_flight);
       stabilization_cmd[COMMAND_THRUST] = nominal_thrust_cmd; 
@@ -143,7 +143,7 @@ void guidance_flip_run(void)
       break;
 
     case 3:
-      stab_att_sp_quat = nominal_quaternion_cmd;
+      //stab_att_sp_quat = nominal_quaternion_cmd;
       stabilization_attitude_run(autopilot_in_flight);
       stabilization_cmd[COMMAND_THRUST] = nominal_thrust_cmd; 
       

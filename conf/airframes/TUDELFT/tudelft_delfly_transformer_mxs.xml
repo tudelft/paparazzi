@@ -24,7 +24,7 @@
 			<module name="radio_control" type="ppm">
 				<configure name="RADIO_CONTROL_PPM_PIN" value="SERVO6"/>
 <!--				<define name="RADIO_KILL_SWITCH" value="RADIO_GEAR"/-->
-        	</module>
+        		</module>
 			
 			<configure name="USE_MAGNETOMETER" value="0"/>
 			
@@ -86,8 +86,11 @@
    
 		<!-- !!! SD card logger is not working out of the box, MXS board file may need to be updated? !!! -->  		
 		<module name="logger_sd_spi_direct.xml">
-      		<define name="SDLOGGER_CONTROL_SWITCH" value="RADIO_GEAR"/>
-	  		<define name="LOGGER_LED" value="2"/> <!-- Other LED numbers get overwritten by the respective default LED functions. This may need to be changed with MXS-->
+			<!--define name="SDLOGGER_DIRECT_SPI" value="SPI1"/-->
+			<!--define name="SDLOGGER_DIRECT_SPI_SLAVE" value="SPI_SLAVE1"/-->
+      			<define name="SDLOGGER_CONTROL_SWITCH" value="RADIO_GEAR"/>
+	  		<define name="LOGGER_LED" value="2"/> 
+<!-- Other LED numbers get overwritten by the respective default LED functions. This may need to be changed with MXS-->
 		</module>
 	</modules>
 	
@@ -95,7 +98,8 @@
 	<servos driver="Pwm">
 		<servo name="MOTOR_LEFT" no="3" min="1100" neutral="1100" max="1900"/> 
     	<servo name="MOTOR_RIGHT" no="2" min="1100" neutral="1100" max="1900"/>
-    	<servo name="DIHEDRAL" no="1" min="1250" neutral="1500" max="1750"/>
+	<!-- increased dihedral numbers by 100 compared to previous-->
+    	<servo name="DIHEDRAL" no="1" min="1300" neutral="1550" max="1800"/>
 		<servo name="WING_DEF" no="0" min="900" neutral="1500" max="2100"/>
 	</servos>
 

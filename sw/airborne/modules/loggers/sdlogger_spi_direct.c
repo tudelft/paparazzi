@@ -62,6 +62,30 @@
 #warning This module can only be used with uart downlink for now.
 #endif
 
+PRINT_CONFIG_VAR(SDLOGGER_SPI_LINK_DEVICE)
+PRINT_CONFIG_VAR(SDLOGGER_SPI_LINK_SLAVE_NUMBER)
+#ifdef USE_SPI1
+PRINT_CONFIG_VAR(USE_SPI1)
+#endif
+#ifdef USE_SPI2
+PRINT_CONFIG_VAR(USE_SPI2)
+#endif
+#ifdef USE_SPI3
+PRINT_CONFIG_VAR(USE_SPI3)
+#endif
+#ifdef USE_SPI_SLAVE1
+PRINT_CONFIG_VAR(USE_SPI_SLAVE1)
+#endif
+#ifdef USE_SPI_SLAVE2
+PRINT_CONFIG_VAR(USE_SPI_SLAVE2)
+#endif
+#ifdef USE_SPI_SLAVE3
+PRINT_CONFIG_VAR(USE_SPI_SLAVE3)
+#endif
+
+
+
+
 struct sdlogger_spi_periph sdlogger_spi;
 
 /**

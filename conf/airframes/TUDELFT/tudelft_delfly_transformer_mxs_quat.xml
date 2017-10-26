@@ -142,7 +142,7 @@
 	<section name="AUTOPILOT">
 		<define name="MODE_STARTUP" value="AP_MODE_RC_DIRECT"/>
    		<define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
-		<define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
+		<define name="MODE_AUTO1" value="AP_MODE_FLIP"/>
 		<define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/>
 				
 		<define name="USE_THROTTLE_FOR_MOTOR_ARMING" value="TRUE"/>
@@ -154,7 +154,7 @@
 		
 		<!-- setpoints -->
 		<define name="SP_MAX_PHI" value="60." unit="deg"/>
-		<define name="SP_MAX_THETA" value="75." unit="deg"/>
+		<define name="SP_MAX_THETA" value="60." unit="deg"/>
 		<define name="SP_MAX_PSI" value="45." unit="deg"/>
 		<define name="SP_MAX_R" value="90." unit="deg/s"/>
 		<define name="SP_MAX_P" value="90." unit="deg/s"/>
@@ -183,7 +183,7 @@
 		<define name="PHI_IGAIN" value="0"/>
 		
 		<define name="THETA_PGAIN" value="7800"/>
-		<define name="THETA_DGAIN" value="1000"/>
+		<define name="THETA_DGAIN" value="800"/>
 		<define name="THETA_IGAIN" value="0"/>
 		
 		<define name="PSI_PGAIN" value="4000"/>
