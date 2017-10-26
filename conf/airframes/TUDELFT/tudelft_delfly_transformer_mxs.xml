@@ -51,10 +51,10 @@
  			<define name="PULSES_PER_ROTATION" value="5"/>
  		</subsystem-->	
 		<!-- Rpm sensing settings end -->
-		<module name="pwm_meas"/>
+		<!--module name="pwm_meas"/>
                 <module name="rpm_sensor">
 			<define name="RPM_PULSE_PER_RND" value='5'/>
-		</module>
+		</module-->
 					
 		<module name="actuators" type="pwm">
 		    <define name="SERVO_HZ" value="200"/>
