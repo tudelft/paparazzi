@@ -48,11 +48,6 @@
         <dl_setting var="guidance_h.sp.pos.x" MIN="-10" MAX="10" STEP="1" shortname="sp_x_ned" unit="1/2^8m" alt_unit="m" alt_unit_coef="0.00390625"/>
         <dl_setting var="guidance_h.sp.pos.y" MIN="-10" MAX="10" STEP="1" shortname="sp_y_ned" unit="1/2^8m" alt_unit="m" alt_unit_coef="0.00390625"/>
       </dl_settings>
-      <dl_settings NAME="SysId">
-        <dl_setting var="maneuver_type" min="0" step="1" max="2" param="DEFAULT_MAN_TYPE" module="guidance/guidance_flip"/>
-        <dl_setting var="dblt_angle" min="0" step="1" max="15" param="DEFAULT_MAN_ANGLE" module="guidance/guidance_flip"/>
-        <dl_setting var="pulse_duration" min="0" step="0.1" max="5.0" param="DEFAULT_PULSE_DUR" module="guidance/guidance_flip"/>
-      </dl_settings>
     </dl_settings>
   </settings>
   <header>

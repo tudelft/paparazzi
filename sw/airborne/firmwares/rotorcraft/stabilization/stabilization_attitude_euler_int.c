@@ -297,7 +297,7 @@ void stabilization_attitude_run(bool  in_flight)
   BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_YAW], MAX_PPRZ);
-  
+
   /* Filtering the commands */
 
   /* Second order Butterworth */

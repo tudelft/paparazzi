@@ -193,10 +193,6 @@ void guidance_h_init(void)
   transition_percentage = 0;
   transition_theta_offset = 0;
 
-  dblt_angle = DEFAULT_MAN_ANGLE;
-  pulse_duration = DEFAULT_PULSE_DUR;
-  maneuver_type = DEFAULT_MAN_TYPE;
-
   gh_ref_init();
 
 #if GUIDANCE_H_MODE_MODULE_SETTING == GUIDANCE_H_MODE_MODULE

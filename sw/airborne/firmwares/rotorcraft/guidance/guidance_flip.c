@@ -70,7 +70,7 @@ struct Int32Vect3 rot_axis;
 //struct Int32Quat new_stab_att_quat_sp;
 
 void guidance_flip_enter(void)
-{ 
+{
   maneuver_counter = 0;
   flip_state = 0;
   stabilization_attitude_read_rc(autopilot_in_flight, FALSE, FALSE);
@@ -83,7 +83,7 @@ void guidance_flip_enter(void)
 void guidance_flip_run(void)
 {
   timer = (maneuver_counter++ << 12) / PERIODIC_FREQUENCY;
-  
+
   switch (flip_state) {
     case 0:
       // trimmed flight before maneuver
@@ -97,7 +97,7 @@ void guidance_flip_run(void)
       break;
 
     case 1:
-      
+
       // Beginning of doublet or positive part of pulse
       // Select pitch axis
       rot_axis.x = 0;
@@ -108,8 +108,8 @@ void guidance_flip_run(void)
       //int32_quat_comp(&stab_att_sp_quat, &nominal_quaternion_cmd, &deviation_quaternion);
       //stab_att_quat_sp = new_stab_att_quat_sp;
       stabilization_attitude_run(autopilot_in_flight);
-      stabilization_cmd[COMMAND_THRUST] = nominal_thrust_cmd; 
-      
+      stabilization_cmd[COMMAND_THRUST] = nominal_thrust_cmd;
+
       if (timer > BFP_OF_REAL(pulse_duration, 12)) {
 	switch (maneuver_type) {
 	  case MANEUVER_PITCH_DOUBLET:
@@ -129,12 +129,12 @@ void guidance_flip_run(void)
       rot_axis.x = 0;
       rot_axis.y = -1;
       rot_axis.z = 0;
-      
+
       int32_quat_of_axis_angle(&deviation_quaternion, &rot_axis, &dblt_angle);
       //int32_quat_comp(&stab_att_sp_quat, &nominal_quaternion_cmd, &deviation_quaternion);
       //stab_att_quat_sp = new_stab_att_quat_sp;
       stabilization_attitude_run(autopilot_in_flight);
-      stabilization_cmd[COMMAND_THRUST] = nominal_thrust_cmd; 
+      stabilization_cmd[COMMAND_THRUST] = nominal_thrust_cmd;
 
       if (timer > BFP_OF_REAL(pulse_duration, 12)) {
         timer_save = timer;
@@ -145,8 +145,8 @@ void guidance_flip_run(void)
     case 3:
       //stab_att_sp_quat = nominal_quaternion_cmd;
       stabilization_attitude_run(autopilot_in_flight);
-      stabilization_cmd[COMMAND_THRUST] = nominal_thrust_cmd; 
-      
+      stabilization_cmd[COMMAND_THRUST] = nominal_thrust_cmd;
+
       if ((timer - timer_save) > BFP_OF_REAL(FINAL_IDLE_TIME, 12)) {
         flip_state++;
       }
