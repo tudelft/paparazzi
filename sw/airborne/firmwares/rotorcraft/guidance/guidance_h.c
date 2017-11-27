@@ -45,6 +45,9 @@
 
 #include "state.h"
 
+#include "firmwares/rotorcraft/guidance/guidance_flip.h"
+
+
 #ifndef GUIDANCE_H_AGAIN
 #define GUIDANCE_H_AGAIN 0
 #endif
@@ -97,6 +100,9 @@ int32_t transition_percentage;
 struct Int32Vect2 guidance_h_pos_err;
 struct Int32Vect2 guidance_h_speed_err;
 struct Int32Vect2 guidance_h_trim_att_integrator;
+
+int16_t rc_pitch_auto;
+int16_t rc_roll_auto;
 
 /** horizontal guidance command.
  * In north/east with #INT32_ANGLE_FRAC
@@ -158,9 +164,14 @@ static void send_href(struct transport_tx *trans, struct link_device *dev)
 
 static void send_tune_hover(struct transport_tx *trans, struct link_device *dev)
 {
+  rc_roll_auto = radio_control.values[RADIO_ROLL] + auto_roll;
+  rc_pitch_auto = radio_control.values[RADIO_PITCH] + auto_pitch;
+
   pprz_msg_send_ROTORCRAFT_TUNE_HOVER(trans, dev, AC_ID,
-                                      &radio_control.values[RADIO_ROLL],
-                                      &radio_control.values[RADIO_PITCH],
+//                                      &radio_control.values[RADIO_ROLL] + auto_roll,
+//                                      &radio_control.values[RADIO_PITCH] + auto_pitch,
+                                      &rc_roll_auto,
+                                      &rc_pitch_auto,
                                       &radio_control.values[RADIO_YAW],
                                       &stabilization_cmd[COMMAND_ROLL],
                                       &stabilization_cmd[COMMAND_PITCH],

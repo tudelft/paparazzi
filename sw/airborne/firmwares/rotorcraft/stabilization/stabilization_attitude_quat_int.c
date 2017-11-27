@@ -29,13 +29,14 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_quat_transformations.h"
 
-#include "subsystems/radio_control.h"
-
 #include "std.h"
 #include "paparazzi.h"
 #include "math/pprz_algebra_float.h"
 #include "math/pprz_algebra_int.h"
 #include "state.h"
+
+#include "subsystems/radio_control.h"
+#include "filters/low_pass_filter.h"
 
 struct Int32AttitudeGains stabilization_gains = {
   {STABILIZATION_ATTITUDE_PHI_PGAIN, STABILIZATION_ATTITUDE_THETA_PGAIN, STABILIZATION_ATTITUDE_PSI_PGAIN },
@@ -61,6 +62,10 @@ struct Int32Quat stabilization_att_sum_err_quat;
 
 int32_t stabilization_att_fb_cmd[COMMANDS_NB];
 int32_t stabilization_att_ff_cmd[COMMANDS_NB];
+
+struct SecondOrderLowPass_int filter_roll;
+struct SecondOrderLowPass_int filter_pitch;
+struct SecondOrderLowPass_int filter_yaw;
 
 struct Int32Quat   stab_att_sp_quat;
 struct Int32Eulers stab_att_sp_euler;
@@ -147,6 +152,14 @@ void stabilization_attitude_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_REF_INT, send_att_ref);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
 #endif
+
+  // Initialize filters
+
+  /* Second order Butterworth */
+  // void init_second_order_low_pass_int(struct SecondOrderLowPass_int *filter, float cut_off, float Q, float sample_time, int32_t value)
+  init_second_order_low_pass_int(&filter_roll, 15.0, 0.7071, 1.0/PERIODIC_FREQUENCY, 0.0);
+  init_second_order_low_pass_int(&filter_pitch, 15.0, 0.7071, 1.0/PERIODIC_FREQUENCY, 0.0);
+  init_second_order_low_pass_int(&filter_yaw, 10, 0.7071, 1.0/PERIODIC_FREQUENCY, 0.0);
 }
 
 void stabilization_attitude_enter(void)
@@ -291,6 +304,10 @@ void stabilization_attitude_run(bool enable_integrator)
   BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_YAW], MAX_PPRZ);
+
+  stabilization_cmd[COMMAND_ROLL]=update_second_order_low_pass_int(&filter_roll, stabilization_cmd[COMMAND_ROLL]);
+  stabilization_cmd[COMMAND_PITCH]=update_second_order_low_pass_int(&filter_pitch, stabilization_cmd[COMMAND_PITCH]);
+  stabilization_cmd[COMMAND_YAW]=update_second_order_low_pass_int(&filter_yaw, stabilization_cmd[COMMAND_YAW]);
 }
 
 void stabilization_attitude_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn)

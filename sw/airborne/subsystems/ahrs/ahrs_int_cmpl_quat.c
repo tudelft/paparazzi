@@ -33,6 +33,8 @@
 #include "subsystems/ahrs/ahrs_int_cmpl_quat.h"
 #include "subsystems/ahrs/ahrs_int_utils.h"
 
+//#include "firmwares/rotorcraft/guidance/guidance_flip.h"
+
 #if USE_GPS
 #include "subsystems/gps.h"
 #endif
@@ -321,6 +323,9 @@ void ahrs_icq_update_accel(struct Int32Vect3 *accel, float dt)
     const float g_meas_norm = FLOAT_VECT3_NORM(g_meas_f) / 9.81;
     ahrs_icq.weight = 1.0 - ahrs_icq.gravity_heuristic_factor * fabs(1.0 - g_meas_norm) / 10;
     Bound(ahrs_icq.weight, 0.15, 1.0);
+//  } else if (in_flip)
+//  {
+//    ahrs_icq.weight = 0;
   } else {
     ahrs_icq.weight = 1.0;
   }

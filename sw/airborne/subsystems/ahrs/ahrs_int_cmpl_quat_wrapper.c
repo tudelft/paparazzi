@@ -41,6 +41,8 @@ static uint8_t ahrs_icq_id = AHRS_COMP_ID_ICQ;
 
 static void set_body_state_from_quat(void);
 
+int32_t phiq, thetaq;
+
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 #include "mcu_periph/sys_time.h"
@@ -48,13 +50,20 @@ static void set_body_state_from_quat(void);
 
 static void send_quat(struct transport_tx *trans, struct link_device *dev)
 {
+
   struct Int32Quat *quat = stateGetNedToBodyQuat_i();
+
+  phiq=2*int32_atan2(stateGetNedToBodyQuat_i()->qx, stateGetNedToBodyQuat_i()->qi);
+  thetaq=2*int32_atan2(stateGetNedToBodyQuat_i()->qy, stateGetNedToBodyQuat_i()->qi);
+
   pprz_msg_send_AHRS_QUAT_INT(trans, dev, AC_ID,
                               &ahrs_icq.weight,
                               &ahrs_icq.ltp_to_imu_quat.qi,
                               &ahrs_icq.ltp_to_imu_quat.qx,
-                              &ahrs_icq.ltp_to_imu_quat.qy,
-                              &ahrs_icq.ltp_to_imu_quat.qz,
+                              //&ahrs_icq.ltp_to_imu_quat.qy,
+                              //&ahrs_icq.ltp_to_imu_quat.qz,
+                              &phiq,
+                              &thetaq,
                               &(quat->qi),
                               &(quat->qx),
                               &(quat->qy),

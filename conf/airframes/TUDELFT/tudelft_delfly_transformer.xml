@@ -29,7 +29,7 @@
 			<configure name="USE_MAGNETOMETER" value="0"/>
 			<configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
 			<define name="LOW_NOISE_TIME" value="50"/> <!--Set the time of the ahrs alignement, 1 = 100 samples = 0.2s at 500 Hz -->
-			<define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>
+			<define name="USE_PERSISTENT_SETTINGS" value="FALSE"/>
 			
 			<define name="USE_BARO_BOARD" value="1"/>
 			<define name="BARO_PERIODIC_FREQUENCY" value="100"/>			
@@ -75,7 +75,7 @@
    
    		<module name="logger_sd_spi_direct.xml">
       		<!--define name="SDLOGGER_ON_ARM" value="TRUE"/-->
-      		<define name="SDLOGGER_ERASE_AFTER_RESTART" value="TRUE"/>
+      		<define name="SDLOGGER_ERASE_AFTER_RESTART" value="TRUE"/> <!-- not working...-->
       		<define name="SDLOGGER_CONTROL_SWITCH" value="RADIO_GEAR"/>
 	  		<define name="LOGGER_LED" value="2"/> <!-- Other LED numbers get overwritten by the respective default LED functions-->
 		</module>	
@@ -148,8 +148,8 @@
 		<define name="MODE_STARTUP" value="AP_MODE_RC_DIRECT"/>
    		<define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
 		<define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
-		<define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/>
-<!--		<define name="MODE_AUTO2" value="AP_MODE_FLIP"/-->
+		<!--define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/-->
+		<define name="MODE_AUTO2" value="AP_MODE_FLIP"/>
 				
 		<define name="USE_THROTTLE_FOR_MOTOR_ARMING" value="TRUE"/>
 <!--		<define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/-->
@@ -185,11 +185,11 @@
 		
 		<!-- feedback -->
 		<define name="PHI_PGAIN" value="3000"/>
-		<define name="PHI_DGAIN" value="750"/>
+		<define name="PHI_DGAIN" value="750"/><!--750 agressive, 500 with FPV-->
 		<define name="PHI_IGAIN" value="0"/>
 		
 		<define name="THETA_PGAIN" value="7800"/>
-		<define name="THETA_DGAIN" value="1000"/>
+		<define name="THETA_DGAIN" value="1000"/><!--1000 agressive, 700 with FPV-->
 		<define name="THETA_IGAIN" value="0"/>
 		
 		<define name="PSI_PGAIN" value="4000"/>

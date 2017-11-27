@@ -37,6 +37,11 @@
 
 #if SDLOGGER_ON_ARM
 #include "autopilot.h"
+#else
+#include "subsystems/radio_control.h"
+#ifndef SDLOGGER_CONTROL_SWITCH
+	#define SDLOGGER_CONTROL_SWITCH RADIO_GEAR
+#endif
 #endif
 
 #ifdef LOGGER_LED
@@ -64,26 +69,6 @@
 
 PRINT_CONFIG_VAR(SDLOGGER_SPI_LINK_DEVICE)
 PRINT_CONFIG_VAR(SDLOGGER_SPI_LINK_SLAVE_NUMBER)
-#ifdef USE_SPI1
-PRINT_CONFIG_VAR(USE_SPI1)
-#endif
-#ifdef USE_SPI2
-PRINT_CONFIG_VAR(USE_SPI2)
-#endif
-#ifdef USE_SPI3
-PRINT_CONFIG_VAR(USE_SPI3)
-#endif
-#ifdef USE_SPI_SLAVE1
-PRINT_CONFIG_VAR(USE_SPI_SLAVE1)
-#endif
-#ifdef USE_SPI_SLAVE2
-PRINT_CONFIG_VAR(USE_SPI_SLAVE2)
-#endif
-#ifdef USE_SPI_SLAVE3
-PRINT_CONFIG_VAR(USE_SPI_SLAVE3)
-#endif
-
-
 
 
 struct sdlogger_spi_periph sdlogger_spi;
@@ -136,11 +121,28 @@ void sdlogger_spi_direct_periodic(void)
   sdcard_spi_periodic(&sdcard1);
 
 #if SDLOGGER_ON_ARM
-  if(autopilot_get_motors_on()) {
-    sdlogger_spi.do_log = 1;
-  } else {
-    sdlogger_spi.do_log = 0;
-  }
+  	  if(autopilot_motors_on) {
+  		  sdlogger_spi.do_log = 1;
+  	  } else {
+  		  sdlogger_spi.do_log = 0;
+  	  }
+  #else
+
+  	  static uint8_t sdlogger_control_switch = 0;
+  	  // if (radio_control.values[SDLOGGER_CONTROL_SWITCH] > 1000) {
+      if (radio_control.values[SDLOGGER_CONTROL_SWITCH] < 0) {
+      	  if (sdlogger_control_switch < 100)
+      		  sdlogger_control_switch++;
+      } else {
+      	  if (sdlogger_control_switch > 0)
+      		  sdlogger_control_switch--;
+      	  }
+      if (sdlogger_control_switch>50) {
+    	  sdlogger_spi.do_log = 1;
+      }
+      else if(sdlogger_control_switch<20) {
+    	  sdlogger_spi.do_log = 0;
+      }
 #endif
 
   switch (sdlogger_spi.status) {

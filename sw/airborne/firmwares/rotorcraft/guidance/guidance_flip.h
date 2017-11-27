@@ -28,6 +28,12 @@
  * the previous mode after finishing the flip.
  * Use it with caution!
  */
+#include "std.h"
+#include "paparazzi.h"
+
+extern uint8_t in_flip;
+extern pprz_t auto_pitch;
+extern pprz_t auto_roll;
 
 #ifndef GUIDANCE_FLIP_H
 #define GUIDANCE_FLIP_H
