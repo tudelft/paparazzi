@@ -334,9 +334,9 @@ void stabilization_attitude_run(bool  in_flight)
     autopilot_set_mode(AP_MODE_FLIP);
     switch_prev_state = 1;
   }
-  else if (in_flip == 0 || autopilot_mode == AP_MODE_RC_DIRECT) {
+  else if (in_flip == 0 || autopilot.mode == AP_MODE_RC_DIRECT) {
     // reset if is finished or if it was incomplete
-    autopilot_mode_auto2 = AP_MODE_ATTITUDE_DIRECT;
+    autopilot.mode_auto2 = AP_MODE_ATTITUDE_DIRECT;
   }
 
   if (radio_control.values[RADIO_FLAP] < 5000) {

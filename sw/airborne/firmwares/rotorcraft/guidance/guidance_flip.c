@@ -253,7 +253,7 @@ void guidance_flip_enter(void)
   doublet_cnt = 0;
   flip_state = 0;
   heading_save = stabilization_attitude_get_heading_i();
-  autopilot_mode_old = autopilot_mode;
+  autopilot_mode_old = autopilot.mode;
   phi_gyr = 0;
   theta_gyr = 0;
   in_flip = 0;
@@ -677,7 +677,7 @@ void guidance_flip_run(void)
 //      autopilot_mode_auto2 = autopilot_mode_old;
 //      autopilot_set_mode(autopilot_mode_old);
 
-      autopilot_mode_auto2 = AP_MODE_ATTITUDE_DIRECT;
+      autopilot.mode_auto2 = AP_MODE_ATTITUDE_DIRECT;
       autopilot_set_mode(AP_MODE_ATTITUDE_DIRECT);
 
       in_flip = 0;
