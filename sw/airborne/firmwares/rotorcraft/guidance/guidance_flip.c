@@ -31,7 +31,7 @@
 
 #include "guidance_flip.h"
 
-#include "autopilot.h"
+#include "firmwares/rotorcraft/autopilot_firmware.h"
 #include "guidance_h.h"
 #include "stabilization/stabilization_attitude_rc_setpoint.h"
 #include "stabilization/stabilization_attitude.h"
@@ -41,16 +41,16 @@
 #include "subsystems/radio_control.h"
 
 
-// Single pitch/roll flip - reliable
-
-#define STOP_ACCELERATE_CMD_ANGLE 90
-#define START_DECELERATE_CMD_ANGLE 255.0
-#define START_RECOVER_CMD_ANGLE 255.0
-#define FIRST_THRUST_LEVEL 9000
-#define FIRST_THRUST_DURATION 0.6
-#define FINAL_THRUST_LEVEL 9000
-#define FINAL_THRUST_DURATION 0.8
-#define FLIP_ROLL 1
+//// Single pitch/roll flip - reliable (light MXS Transformer)
+//
+//#define STOP_ACCELERATE_CMD_ANGLE 90
+//#define START_DECELERATE_CMD_ANGLE 255.0
+//#define START_RECOVER_CMD_ANGLE 255.0
+//#define FIRST_THRUST_LEVEL 9000
+//#define FIRST_THRUST_DURATION 0.4
+//#define FINAL_THRUST_LEVEL 9000
+//#define FINAL_THRUST_DURATION 0.5
+//#define FLIP_PITCH 1
 
 //// Single pitch/roll flip - for heavy FPV Transformer
 //
@@ -107,17 +107,17 @@
 //#define FINAL_THRUST_LEVEL 9000
 //#define FINAL_THRUST_DURATION 0.1
 
-//// Evasive maneuver - roll & pitch, angular limit
-//#define FIRST_THRUST_LEVEL 6500
-//#define FIRST_THRUST_DURATION 0.0
-//#define STRAIGHT_FLIGHT_DURATION 1.0
-//#define STOP_EVADE_ANGLE 30.0
-//#define FINAL_THRUST_LEVEL 6500
-//#define FINAL_THRUST_DURATION 0.8
-//#define EVADE_ROLL 1
-//#define ROLL_DELAY 0.0
-//#define PITCH_CMD_FINAL -MAX_PPRZ*1/3
-//#define PITCH_CMD_NOMINAL -MAX_PPRZ*2/3
+// Evasive maneuver - roll & pitch, angular limit
+#define FIRST_THRUST_LEVEL 6500
+#define FIRST_THRUST_DURATION 0.0
+#define STRAIGHT_FLIGHT_DURATION 1.0
+#define STOP_EVADE_ANGLE 30.0
+#define FINAL_THRUST_LEVEL 6500
+#define FINAL_THRUST_DURATION 0.8
+#define EVADE_ROLL 1
+#define ROLL_DELAY 0.0
+#define PITCH_CMD_FINAL 0
+#define PITCH_CMD_NOMINAL -MAX_PPRZ*2/3
 
 //// Evasive maneuver - roll & pitch, time limit
 //#define FIRST_THRUST_LEVEL 6500
@@ -128,8 +128,8 @@
 //#define FINAL_THRUST_DURATION 0.8
 //#define EVADE_ROLL_PITCH 1
 //#define ROLL_DELAY 0.0
-//#define PITCH_CMD_FINAL -MAX_PPRZ*1/4 //-MAX_PPRZ*1/3 // max pitch set to 60 deg!!!
-//#define PITCH_CMD_NOMINAL -MAX_PPRZ*1/2 // -MAX_PPRZ*2/3
+//#define PITCH_CMD_FINAL 0 //-MAX_PPRZ*1/4 //-MAX_PPRZ*1/3 // max pitch set to 60 deg!!!
+//#define PITCH_CMD_NOMINAL -MAX_PPRZ*2/3 //-MAX_PPRZ*1/2 // -MAX_PPRZ*2/3
 
 
 //// Pitch doublets
@@ -167,7 +167,7 @@
 #endif
 
 #ifndef FINAL_THRUST_LEVEL
-#define FINAL_THRUST_LEVEL 9000
+#define FINAL_THRUST_LEVEL 2000
 #endif
 #ifndef FINAL_THRUST_DURATION
 #define FINAL_THRUST_DURATION 0.8
@@ -253,7 +253,7 @@ void guidance_flip_enter(void)
   doublet_cnt = 0;
   flip_state = 0;
   heading_save = stabilization_attitude_get_heading_i();
-  autopilot_mode_old = autopilot_get_mode();
+//  autopilot_mode_old = autopilot_get_mode();
   phi_gyr = 0;
   theta_gyr = 0;
   in_flip = 0;
@@ -447,12 +447,14 @@ void guidance_flip_run(void)
 
     case 22:
          // Open loop manoeuver
+
+    	 // Science video: R7000, P2000 ~ 90deg, more pitch/less roll for sharper turns
          if (timer >= BFP_OF_REAL(ROLL_DELAY, 12)) {
-             stabilization_cmd[COMMAND_ROLL]   = 1000; // Rolling command (max 7100 with 6050 thrust cmd)
+             stabilization_cmd[COMMAND_ROLL]   = 7000; // Rolling command (max 7100 with 6050 thrust cmd)
          } else {
          	 stabilization_cmd[COMMAND_ROLL]   = 0;
 		 }
-         stabilization_cmd[COMMAND_PITCH]  = 9600;
+         stabilization_cmd[COMMAND_PITCH]  = 2000; //4000; //9600;
          stabilization_cmd[COMMAND_YAW]    = 0;
          stabilization_cmd[COMMAND_THRUST] = 6050; // 5600 // --> Left (5600-8000/2) = 1600, right --> (5600+8000/2) = 9600
 
@@ -677,7 +679,7 @@ void guidance_flip_run(void)
 //      autopilot_mode_auto2 = autopilot_mode_old;
 //      autopilot_set_mode(autopilot_mode_old);
 
-      autopilot.mode_auto2 = AP_MODE_ATTITUDE_DIRECT;
+      autopilot_mode_auto2 = AP_MODE_ATTITUDE_DIRECT;
       autopilot_set_mode(AP_MODE_ATTITUDE_DIRECT);
 
       in_flip = 0;

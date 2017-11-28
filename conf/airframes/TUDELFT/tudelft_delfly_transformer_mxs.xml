@@ -89,7 +89,7 @@
 			<!--define name="SDLOGGER_DIRECT_SPI" value="SPI1"/-->
 			<!--define name="SDLOGGER_DIRECT_SPI_SLAVE" value="SPI_SLAVE1"/-->
       			<define name="SDLOGGER_CONTROL_SWITCH" value="RADIO_GEAR"/>
-	  		<define name="LOGGER_LED" value="2"/> 
+	  		<define name="LOGGER_LED" value="3"/> 
 <!-- Other LED numbers get overwritten by the respective default LED functions. This may need to be changed with MXS-->
 		</module>
 	</modules>
@@ -155,7 +155,7 @@
 	
 	<section name="AUTOPILOT">
 		<define name="MODE_STARTUP" value="AP_MODE_RC_DIRECT"/>
-   		<define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
+   		<define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
 		<define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
 		<define name="MODE_AUTO2" value="AP_MODE_FLIP"/>
 				
@@ -193,7 +193,8 @@
 		
 		<!-- feedback -->
 		<define name="PHI_PGAIN" value="3000"/>
-		<define name="PHI_DGAIN" value="750"/>
+		<define name="PHI_DGAIN" value="800"/>
+		<!--define name="PHI_DGAIN" value="750"/-->
 		<define name="PHI_IGAIN" value="0"/>
 		
 		<define name="THETA_PGAIN" value="7800"/>

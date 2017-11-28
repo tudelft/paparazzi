@@ -25,7 +25,7 @@ DFU_ADDR = 0x8004000
 DFU_PRODUCT = Lisa/Lia
 endif
 
-include $(PAPARAZZI_SRC)/conf/boards/lisa_m_defaults.makefile
+include $(PAPARAZZI_SRC)/conf/boards/lisa_mx_defaults.makefile
 
 # Added by Karl on 25/10/17 to try to fix the SD logging on Transformer
 

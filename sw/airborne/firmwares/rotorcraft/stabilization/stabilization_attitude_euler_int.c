@@ -39,7 +39,8 @@
 #include "math/pprz_algebra_int.h"
 #include "state.h"
 
-#include "autopilot.h"
+//#include "autopilot.h"
+#include "firmwares/rotorcraft/autopilot_firmware.h"
 
 #include "firmwares/rotorcraft/guidance/guidance_flip.h"
 
@@ -330,18 +331,38 @@ void stabilization_attitude_run(bool  in_flight)
 
   // If switch is flipped, set mode2 to FLIP
   if (radio_control.values[RADIO_FLAP] > 5000 && switch_prev_state == 0) {
-    autopilot.mode_auto2 = AP_MODE_FLIP;
+    autopilot_mode_auto2 = AP_MODE_FLIP;
     autopilot_set_mode(AP_MODE_FLIP);
     switch_prev_state = 1;
   }
-  else if (in_flip == 0 || autopilot_get_mode() == AP_MODE_RC_DIRECT) {
-    // reset if is finished or if it was incomplete
-    autopilot.mode_auto2 = AP_MODE_ATTITUDE_DIRECT;
+  else if (autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) {
+  // reset AUTO2 to ATT if the flip is finished or if it was incomplete
+    autopilot_mode_auto2 = AP_MODE_ATTITUDE_DIRECT;
+    autopilot_set_mode(AP_MODE_ATTITUDE_DIRECT);
+
+    in_flip=0;
+    auto_pitch=0;
+    auto_roll=0;
   }
 
   if (radio_control.values[RADIO_FLAP] < 5000) {
       switch_prev_state = 0;
   }
+
+//  // If switch is flipped, set mode2 to FLIP
+//    if (radio_control.values[RADIO_FLAP] > 5000 && switch_prev_state == 0) {
+//      autopilot_mode_auto2 = AP_MODE_FLIP;
+//      autopilot_set_mode(AP_MODE_FLIP);
+//      switch_prev_state = 1;
+//    }
+//    else if (in_flip == 0 || autopilot_mode == AP_MODE_RC_DIRECT) {
+//      // reset if is finished or if it was incomplete
+//      autopilot_mode_auto2 = AP_MODE_ATTITUDE_DIRECT;
+//    }
+//
+//    if (radio_control.values[RADIO_FLAP] < 5000) {
+//        switch_prev_state = 0;
+//    }
 
 
 
