@@ -24,7 +24,7 @@
 
 
 		<module name="telemetry" type="transparent">
-			<configure name="MODEM_BAUD" value="B115200" />
+			<configure name="MODEM_BAUD" value="B921600" />
 			<configure name="MODEM_PORT" value="UART1" />
 		</module>
 
