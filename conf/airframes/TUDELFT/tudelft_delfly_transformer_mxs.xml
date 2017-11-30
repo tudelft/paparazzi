@@ -193,7 +193,7 @@
 		
 		<!-- feedback -->
 		<define name="PHI_PGAIN" value="3000"/>
-		<define name="PHI_DGAIN" value="800"/>
+		<define name="PHI_DGAIN" value="500"/>
 		<!--define name="PHI_DGAIN" value="750"/-->
 		<define name="PHI_IGAIN" value="0"/>
 		

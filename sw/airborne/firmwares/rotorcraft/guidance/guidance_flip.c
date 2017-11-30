@@ -110,7 +110,7 @@
 // Evasive maneuver - roll & pitch, angular limit
 #define FIRST_THRUST_LEVEL 6500
 #define FIRST_THRUST_DURATION 0.0
-#define STRAIGHT_FLIGHT_DURATION 1.0
+#define STRAIGHT_FLIGHT_DURATION 2.0
 #define STOP_EVADE_ANGLE 30.0
 #define FINAL_THRUST_LEVEL 6500
 #define FINAL_THRUST_DURATION 0.8
