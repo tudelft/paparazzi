@@ -35,7 +35,7 @@
     <module name="gps"           type="ublox"/>
     <module name="stabilization" type="int_quat"/>
     <module name="ahrs"          type="int_cmpl_quat">
-      <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="30"/>
+      <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="20"/>
     </module>
     <module name="ins"/>
 
