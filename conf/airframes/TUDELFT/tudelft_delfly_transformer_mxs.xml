@@ -167,8 +167,8 @@
 	<section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
 		
 		<!-- setpoints -->
-		<define name="SP_MAX_PHI" value="60." unit="deg"/>
-		<define name="SP_MAX_THETA" value="60." unit="deg"/>
+		<define name="SP_MAX_PHI" value="1." unit="deg"/>
+		<define name="SP_MAX_THETA" value="75." unit="deg"/>
 		<define name="SP_MAX_PSI" value="45." unit="deg"/>
 		<define name="SP_MAX_R" value="90." unit="deg/s"/>
 		<define name="SP_MAX_P" value="90." unit="deg/s"/>
@@ -193,12 +193,12 @@
 		
 		<!-- feedback -->
 		<define name="PHI_PGAIN" value="3000"/>
-		<define name="PHI_DGAIN" value="500"/>
+		<define name="PHI_DGAIN" value="750"/>
 		<!--define name="PHI_DGAIN" value="750"/-->
 		<define name="PHI_IGAIN" value="0"/>
 		
 		<define name="THETA_PGAIN" value="7800"/>
-		<define name="THETA_DGAIN" value="1000"/>
+		<define name="THETA_DGAIN" value="2000"/>
 		<define name="THETA_IGAIN" value="0"/>
 		
 		<define name="PSI_PGAIN" value="4000"/>
