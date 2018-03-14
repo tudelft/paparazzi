@@ -28,8 +28,6 @@
 #include "generated/airframe.h"
 
 #include "subsystems/radio_control.h"
-#include "filters/low_pass_filter.h"
-
 
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
@@ -39,8 +37,7 @@
 #include "math/pprz_algebra_int.h"
 #include "state.h"
 
-//#include "autopilot.h"
-#include "firmwares/rotorcraft/autopilot_firmware.h"
+//#include "firmwares/rotorcraft/autopilot_firmware.h"
 
 #include "firmwares/rotorcraft/guidance/guidance_flip.h"
 
@@ -63,10 +60,6 @@ struct Int32AttitudeGains  stabilization_gains;
   (STABILIZATION_ATTITUDE_PSI_IGAIN  < 0)
 #error "ALL control gains have to be positive!!!"
 #endif
-
-struct SecondOrderLowPass_int filter_roll;
-struct SecondOrderLowPass_int filter_pitch;
-struct SecondOrderLowPass_int filter_yaw;
 
 struct Int32Eulers stabilization_att_sum_err;
 
@@ -166,20 +159,6 @@ void stabilization_attitude_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_INT, send_att);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_REF_INT, send_att_ref);
 #endif
-
-  // Initialize filters
-
-  	/* Second order Butterworth */
-  	// void init_second_order_low_pass_int(struct SecondOrderLowPass_int *filter, float cut_off, float Q, float sample_time, int32_t value)
-    init_second_order_low_pass_int(&filter_roll, 20.0, 0.7071, 1.0/PERIODIC_FREQUENCY, 0.0);
-    init_second_order_low_pass_int(&filter_pitch, 15.0, 0.7071, 1.0/PERIODIC_FREQUENCY, 0.0);
-    init_second_order_low_pass_int(&filter_yaw, 10, 0.7071, 1.0/PERIODIC_FREQUENCY, 0.0);
-
-    /* Fourth order Butterworth */
-    // init_butterworth_4_low_pass_int(Butterworth4LowPass_int *filter, float cut_off, float sample_time, int32_t value)
-//    init_butterworth_4_low_pass_int(&filter_roll, 15.0, 1.0/PERIODIC_FREQUENCY, 0.0);
-//    init_butterworth_4_low_pass_int(&filter_pitch, 15.0, 1.0/PERIODIC_FREQUENCY, 0.0);
-//    init_butterworth_4_low_pass_int(&filter_yaw, 10, 1.0/PERIODIC_FREQUENCY, 0.0);
 
     switch_prev_state = 0;
 
@@ -315,20 +294,6 @@ void stabilization_attitude_run(bool  in_flight)
   BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_YAW], MAX_PPRZ);
 
-  /* Filtering the commands */
-
-  /* Second order Butterworth */
-  // int32_t update_second_order_low_pass_int(struct SecondOrderLowPass_int *filter, int32_t value)
-  stabilization_cmd[COMMAND_ROLL]=update_second_order_low_pass_int(&filter_roll, stabilization_cmd[COMMAND_ROLL]);
-  stabilization_cmd[COMMAND_PITCH]=update_second_order_low_pass_int(&filter_pitch, stabilization_cmd[COMMAND_PITCH]);
-  stabilization_cmd[COMMAND_YAW]=update_second_order_low_pass_int(&filter_yaw, stabilization_cmd[COMMAND_YAW]);
-
-  /* Fourth order Butterworth - may be too much for Lisa/S */
-  // update_butterworth_4_low_pass_int(Butterworth4LowPass_int *filter, int32_t value)
-  //  stabilization_cmd[COMMAND_ROLL]=update_butterworth_4_low_pass_int(&filter_roll, stabilization_cmd[COMMAND_ROLL]);
-  //  stabilization_cmd[COMMAND_PITCH]=update_butterworth_4_low_pass_int(&filter_pitch, stabilization_cmd[COMMAND_PITCH]);
-  //  stabilization_cmd[COMMAND_YAW]=update_butterworth_4_low_pass_int(&filter_yaw, stabilization_cmd[COMMAND_YAW]);
-
   // If switch is flipped, set mode2 to FLIP
   if (radio_control.values[RADIO_FLAP] > 5000 && switch_prev_state == 0) {
     autopilot_mode_auto2 = AP_MODE_FLIP;
@@ -348,24 +313,4 @@ void stabilization_attitude_run(bool  in_flight)
   if (radio_control.values[RADIO_FLAP] < 5000) {
       switch_prev_state = 0;
   }
-
-//  // If switch is flipped, set mode2 to FLIP
-//    if (radio_control.values[RADIO_FLAP] > 5000 && switch_prev_state == 0) {
-//      autopilot_mode_auto2 = AP_MODE_FLIP;
-//      autopilot_set_mode(AP_MODE_FLIP);
-//      switch_prev_state = 1;
-//    }
-//    else if (in_flip == 0 || autopilot_mode == AP_MODE_RC_DIRECT) {
-//      // reset if is finished or if it was incomplete
-//      autopilot_mode_auto2 = AP_MODE_ATTITUDE_DIRECT;
-//    }
-//
-//    if (radio_control.values[RADIO_FLAP] < 5000) {
-//        switch_prev_state = 0;
-//    }
-
-
-
-
-
 }

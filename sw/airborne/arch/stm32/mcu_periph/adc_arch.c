@@ -193,17 +193,21 @@ static uint8_t nb_adc1_channels = 0;
 static uint8_t nb_adc2_channels = 0;
 static uint8_t nb_adc3_channels = 0;
 
+#if USE_AD1 || USE_AD2 || USE_AD3
+#define ADC_NUM_CHANNELS 4
+#endif
+
 #if USE_AD1
 /// List of buffers, one for each active channel.
-static struct adc_buf *adc1_buffers[4];
+static struct adc_buf *adc1_buffers[ADC_NUM_CHANNELS];
 #endif
 #if USE_AD2
 /// List of buffers, one for each active channel.
-static struct adc_buf *adc2_buffers[4];
+static struct adc_buf *adc2_buffers[ADC_NUM_CHANNELS];
 #endif
 #if USE_AD3
 /// List of buffers, one for each active channel.
-static struct adc_buf *adc3_buffers[4];
+static struct adc_buf *adc3_buffers[ADC_NUM_CHANNELS];
 #endif
 
 #if USE_ADC_WATCHDOG
@@ -498,11 +502,7 @@ static inline void adc_init_single(uint32_t adc, uint8_t nb_channels, uint8_t *c
 
   /* Set CR2 register. */
   /* Clear TSVREFE */
-#if defined(STM32F1)
-  adc_disable_temperature_sensor(adc);
-#elif defined(STM32F4)
   adc_disable_temperature_sensor();
-#endif
   /* Clear EXTTRIG */
   adc_disable_external_trigger_regular(adc);
   /* Clear ALIGN */
