@@ -51,10 +51,10 @@
  			<define name="PULSES_PER_ROTATION" value="5"/>
  		</subsystem-->	
 		<!-- Rpm sensing settings end -->
-		<!--module name="pwm_meas"/>
+		<module name="pwm_meas"/>
                 <module name="rpm_sensor">
 			<define name="RPM_PULSE_PER_RND" value='5'/>
-		</module-->
+		</module>
 					
 		<module name="actuators" type="pwm">
 		    <define name="SERVO_HZ" value="200"/>
@@ -89,7 +89,7 @@
 			<!--define name="SDLOGGER_DIRECT_SPI" value="SPI1"/-->
 			<!--define name="SDLOGGER_DIRECT_SPI_SLAVE" value="SPI_SLAVE1"/-->
       			<define name="SDLOGGER_CONTROL_SWITCH" value="RADIO_GEAR"/>
-	  		<define name="LOGGER_LED" value="3"/> 
+	  		<define name="LOGGER_LED" value="2"/> 
 <!-- Other LED numbers get overwritten by the respective default LED functions. This may need to be changed with MXS-->
 		</module>
 	</modules>
@@ -148,8 +148,7 @@
 		<define name="H_Z" value="0.92060036"/>
 		<define name="USE_GPS_HEADING" value="1"/>
 		
-		<!-- For vibrating />
-			<define name="BARO_PERIODIC_FREQUENCY" vairfames -->
+		<!-- For vibrating airfames -->
 		<define name="GRAVITY_HEURISTIC_FACTOR" value="0"/>
 	</section>
 	
@@ -167,7 +166,7 @@
 	<section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
 		
 		<!-- setpoints -->
-		<define name="SP_MAX_PHI" value="1." unit="deg"/>
+		<define name="SP_MAX_PHI" value="60." unit="deg"/>
 		<define name="SP_MAX_THETA" value="75." unit="deg"/>
 		<define name="SP_MAX_PSI" value="45." unit="deg"/>
 		<define name="SP_MAX_R" value="90." unit="deg/s"/>
