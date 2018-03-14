@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!DOCTYPE protocol SYSTEM "messages.dtd">
 <protocol>
-  <!-- messages from modem or sim to server -->
-  <msg_class name="telemetry">
+ <!-- messages from modem or sim to server -->
+ <msg_class name="telemetry" id="1">
 
     <message name="AUTOPILOT_VERSION" id="1">
       <field name="version" type="uint32">version encoded as: MAJOR * 10000 + MINOR * 100 + PATCH</field>
@@ -169,8 +169,8 @@
     </message>
 
     <message name="CAM" id="20">
-      <field name="phi" type="int16" unit="deg"/>
-      <field name="theta" type="int16" unit="deg"/>
+      <field name="pan" type="int16" unit="deg"/>
+      <field name="tilt" type="int16" unit="deg"/>
       <field name="target_x" type="int16" unit="m"/>
       <field name="target_y" type="int16" unit="m"/>
     </message>
@@ -320,9 +320,30 @@
       <field name="power"   type="float" unit="W"/>
     </message>
 
-    <!-- 38 is free -->
-    <!-- 39 is free -->
-    <!-- 40 is free -->
+    <message name="DRAGSPEED" id="38">
+      <description>
+        Velocities in body axes (assuming small pitch/roll angles) as measured
+        by the dragspeed module and by the INS.
+      </description>
+      <field name="u_est" type="float" unit="m/s">Estimated velocity along body +x axis</field>
+      <field name="v_est" type="float" unit="m/s">Estimated velocity along body +y axis</field>
+      <field name="u_ins" type="float" unit="m/s">INS velocity along body +x axis</field>
+      <field name="v_ins" type="float" unit="m/s">INS velocity along body +y axis</field>
+    </message>
+
+    <message name="RSSI_COMBINED" id="39">
+      <field name="remote_rssi" type="uint8"/>
+      <field name="tx_power" type="uint8"/>
+      <field name="local_rssi" type="uint8"/>
+      <field name="local_noise" type="uint8"/>
+      <field name="remote_noise" type="uint8"/>
+    </message>
+
+    <message name="DCF" id="40">
+      <description>Telemetry message for monitoring the status of the Distributed Circular Formation.</description>
+      <field name="table" type="int16[]"> The size of the array is 4 x (maximum number of possible neighbors). The elements per each neighbor are: 1. ID of the neighbor, 2. Theta of the neighbor (degrees x 100), 3. Desired inter-vehicle angle (degrees x 100), 4. Last time in ms we received a msg from the neighbor</field>
+      <field name="errors" type="int16[]"> The size of the array is the maximum number of possible neighbors. Errors w.r.t. desired inter-vehicle angles (degrees x 100)</field>
+    </message>
 
     <message name="ALT_KALMAN" id="41">
       <field name="p00" type="float"/>
@@ -537,12 +558,13 @@
     </message>
 
     <message name="GVF" id="71">
-    <description>
-    Information about the trajectory followed by the Guidance Vector Field algorithm.
-    </description>
+      <description>
+      Information about the trajectory followed by the Guidance Vector Field algorithm.
+      </description>
       <field name="error" type="float">Error index e, i.e. 'distance' to the trajectory</field>
       <field name="traj" type="uint8">Kind of trajectory</field>
       <field name="s" type="int8" values="1|-1">Direction to be followed</field>
+      <field name="ke" type="float">Gain for the vector field convergence</field>
       <field name="p" type="float[]">Parameters describing the trajectory</field>
     </message>
 
@@ -1168,7 +1190,7 @@
       <field name="err_sum_y" type="int32"/>
       <field name="cmd_x"     type="int32"/>
       <field name="cmd_y"     type="int32"/>
-      <field name="cmd_heading" type="int32"/>
+      <field name="cmd_heading" type="float" unit="rad" alt_unit="deg"/>
     </message>
 
     <message name="ROTORCRAFT_FP" id="147">
@@ -1351,6 +1373,8 @@
       <field name="yd"             type="float"/>
       <field name="xdd"            type="float"/>
       <field name="ydd"            type="float"/>
+      <field name="xbias"          type="float"/>
+      <field name="ybias"          type="float"/>
     </message>
 
     <message name="HFF_DBG" id="165">
@@ -1362,6 +1386,8 @@
       <field name="Pyy"            type="float"/>
       <field name="Pxdxd"          type="float"/>
       <field name="Pydyd"          type="float"/>
+      <field name="Pxbiasxbias"    type="float"/>
+      <field name="Pybiasybias"    type="float"/>
     </message>
 
     <message name="HFF_GPS" id="166">
@@ -1719,21 +1745,21 @@
       <field name="flow_der_y"  type="int16" unit="subpixels"/>
       <field name="vel_x"       type="float" unit="m/s"/>
       <field name="vel_y"       type="float" unit="m/s"/>
+      <field name="vel_z"       type="float" unit="m/s"/>
       <field name="div_size"    type="float" unit="1/s"/>
       <field name="surface_roughness"    type="float" unit="1/s"/>
       <field name="divergence"    type="float" unit="1/s"/>
     </message>
 
     <message name="STEREO_IMG" id="229">
-      <field name="frequency" type="uint8"/>
-      <field name="data_size" type="uint8"/>
-      <field name="imageBuffer" type="uint8[]"/>
+      <field name="type"       type="uint8" values="DIST_MATRIX|HISTOGRAM|DISPARITY_MAP|RAW"/>
+      <field name="width"      type="uint8"/>
+      <field name="height"     type="uint8"/>
+      <field name="package_nb" type="uint8"/>
+      <field name="image_data" type="uint8[]"/>
     </message>
 
-    <message name="RPM" id="230">
-      <field name="pulse_cnt" type="uint16" unit='-'/>
-      <field name="rpm_left" type="float" unit="Hz"/>
-    </message>
+    <!-- 230 is free -->
 
     <message name="ROTORCRAFT_STATUS" id="231">
       <field name="link_imu_nb_err" type="uint32"/>
@@ -1744,6 +1770,7 @@
       <field name="ap_mode"      type="uint8" values="KILL|FAILSAFE|HOME|RATE_DIRECT|ATTITUDE_DIRECT|RATE_RC_CLIMB|ATTITUDE_RC_CLIMB|ATTITUDE_CLIMB|RATE_Z_HOLD|ATTITUDE_Z_HOLD|HOVER_DIRECT|HOVER_CLIMB|HOVER_Z_HOLD|NAV|RC_DIRECT|CARE_FREE|FORWARD|MODULE|FLIP|GUIDED"/>
       <field name="ap_in_flight" type="uint8" values="ON_GROUND|IN_FLIGHT"/>
       <field name="ap_motors_on" type="uint8" values="MOTORS_OFF|MOTORS_ON"/>
+      <field name="arming_status" type="uint8" values="NO_RC|WAITING|ARMING|ARMED|DISARMING|KILLED|YAW_CENTERED|THROTTLE_DOWN|NOT_MODE_MANUAL|UNARMED_IN_AUTO|THROTTLE_NOT_DOWN|STICKS_NOT_CENTERED|PITCH_NOT_CENTERED|ROLL_NOT_CENTERED|YAW_NOT_CENTERED|AHRS_NOT_ALLIGNED|OUT_OF_GEOFENCE|LOW_BATTERY"/>
       <field name="ap_h_mode"    type="uint8" values="KILL|RATE|ATTITUDE|HOVER|NAV|RC_DIRECT|CF|FORWARD|MODULE|FLIP|GUIDED"/>
       <field name="ap_v_mode"    type="uint8" values="KILL|RC_DIRECT|RC_CLIMB|CLIMB|HOVER|NAV|MODULE|FLIP|GUIDED"/>
       <field name="vsupply"      type="uint16" unit="decivolt"/>
@@ -1799,7 +1826,11 @@
       <field name="asl"        type="float" unit="m"/>
     </message>
 
-    <!-- 239 is free -->
+    <message name="KEY_EXCHANGE_UAV" id="239">
+      <description>Message for key exchange during crypto initialization</description>
+      <field name="msg_type" type="uint8" values="P_AE|P_BE|SIG"/>
+      <field name="msg_data" type="uint8[]"/>
+    </message>
 
     <message name="NPS_SPEED_POS" id="240">
       <field name="ltpp_xdd" type="float" unit="m/s2"/>
@@ -1828,7 +1859,26 @@
       <field name="br"     type="float" unit="deg/s"/>
     </message>
 
-    <!-- 243 is free -->
+    <message name="OPTICAL_FLOW_HOVER" id="243">
+      <description>
+        This messages includes the messages send by the Optical Flow Hover module, providing data for all three axes.
+      </description>
+      <field name="flowX" type="float"> Filtered Horizontal velocity in X / height used in Optical Flow Hover</field>
+      <field name="flowY" type="float"> Filtered Horizontal velocity in X / height used in Optical Flow Hover</field>
+      <field name="Divergence" type="float"> Filtered vertical velocity / height used in Optical Flow Hover</field>
+      <field name="cov_flowX" type="float"> covariance of Ventral flow in X and past ventral flow in X</field>
+      <field name="cov_flowY" type="float"> covariance of Ventral flow in Y and past ventral flow in Y</field>
+      <field name="cov_divZ" type="float"> covariance of divergence and past divergence or thrust history</field>
+      <field name="pusedX" type="float"> Gain used in the X feedback</field>
+      <field name="pusedY" type="float"> Gain used in the Y feedback</field>
+      <field name="pusedZ" type="float"> Gain used in the Z feedback</field>
+      <field name="sum_errX" type="float"> Sum of errors in X</field>
+      <field name="sum_errY" type="float"> Sum of errors in Y</field>
+      <field name="sum_errZ" type="float"> Sum of errors in Z</field>
+      <field name="thrust" type="int32"> The thrust</field>
+      <field name="phi_des" type="float" alt_unit="deg" alt_unit_coef="0.0139882"> The desired phi angle in degrees</field>
+      <field name="theta_des" type="float" alt_unit="deg" alt_unit_coef="0.0139882"> The desired theta angle in degrees</field>
+    </message>
 
     <message name="NPS_WIND" id="244">
       <field name="vx"   type="float" unit="m/s"/>
@@ -1881,7 +1931,14 @@
       <field name="safety_plug"   type="uint16" values="mV">Safety plug voltage</field>
     </message>
 
-  <!-- 249 is free -->
+    <message name="GPS_RXMRTCM" id="249">
+      <field name="Msg1005"      type="uint32" />
+      <field name="Msg1077"  	 type="uint32" />
+      <field name="Msg1087"      type="uint32" />
+      <field name="Crc1005"      type="uint32" />
+      <field name="Crc1077"      type="uint32" />
+      <field name="Crc1087"      type="uint32"  />
+    </message>
 
     <message name="INDI_G" id="250">
       <field name="G1_roll" type="float[]" unit="none"/>
@@ -1909,17 +1966,6 @@
       <field name="gnssFixOK"           type="uint8" values="NONE|3D"/>
     </message>
 
-    <message name="GPS_RXMRTCM" id="249">
-      <field name="Msg1005"      type="uint32" />
-      <field name="Msg1077"  	 type="uint32" />
-      <field name="Msg1087"      type="uint32" />
-      <field name="Crc1005"      type="uint32" />
-      <field name="Crc1077"      type="uint32" />
-      <field name="Crc1087"      type="uint32"  />
-    </message>
-
-  <!-- 250 is free -->
-
     <message name="GPS_SMALL" id="252">
       <field name="multiplex_speed"  type="uint32">bits 31-21 course in decideg : bits 20-10 ground speed in cm/s : bits 9-0 climb speed in cm/s</field>
       <field name="lat"  type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"></field>
@@ -1942,12 +1988,24 @@
       <field name="bus_number"                  type="uint8"/>
     </message>
 
-  <!-- 254 is free -->
-  <!-- 255 is free -->
+    <message name="DCF_THETA" id="254">
+      <description>Air-to-air message for the Distributed Circular Formation algorithm. It transmits the ac's theta to its neighbor
+      </description>
+      <field name="theta" type="float"/>
+    </message>
+
+    <message name="SECURE_LINK_STATUS" id="255">
+      <description>Message for monitoring key exchange status</description>
+      <field name="sts_stage" type="uint8" values="INIT|WAIT_MSG1|WAIT_MSG2|WAIT_MSG3|CRYPTO_OK"/>
+      <field name="sts_error" type="uint8" values="NONE|MSG1_TIMEOUT|MSG1_ENCRYPT|MSG3_TIMEOUT|MSG3_DECRYPT|MSG3_SIGNVERIFY|MSG2_TIMEOUT|MSG2_DECRYPT|MSG2_SIGNVERIFY|MSG3_ENCRYPT|UNEXPECTED_TYPE|UNEXPECTED_STAGE|UNEXPECTED_MSG"/>
+      <field name="counter_err"      type="uint32"/>
+      <field name="decrypt_err"      type="uint32"/>
+      <field name="encrypt_err"      type="uint32"/>
+    </message>
 
   </msg_class>
 
-  <msg_class name="datalink">
+  <msg_class name="datalink" id="2">
     <message name="ACINFO" id="1" link="broadcasted">
       <field name="course"    type="int16"  unit="decideg" alt_unit="deg"/>
       <field name="utm_east"  type="int32"  unit="cm"      alt_unit="m"/>
@@ -2055,6 +2113,20 @@
       <field name="speed"  type="uint16" unit="cm/s"    alt_unit="m/s">ground speed</field>
       <field name="climb"  type="int16"  unit="cm/s"    alt_unit="m/s"></field>
       <field name="ac_id"  type="uint8"/>
+    </message>
+
+    <message name="DESIRED_SETPOINT" id="15" link="forwarded">
+      <description>
+        This message is used to set 3D desired vehicle's states such as accelerations or velocities.
+        The 'flag' field can be used at the user convenience to provide indication about the type of
+        value to track (like  position, speed, acceleration, ...) or the reference frame (ENU / NED,
+        LTP / body frame, ...)
+      </description>
+      <field name="ac_id" type="uint8">AC_ID of the vehicle</field>
+      <field name="flag"  type="uint8">Up to the user, for example to distinguish between ENU or NED</field>
+      <field name="ux"    type="float">Quantity to be tracked in the X axis</field>
+      <field name="uy"    type="float">Quantity to be tracked in the Y axis</field>
+      <field name="uz"    type="float">Quantity to be tracked in the Z axis</field>
     </message>
 
     <message name="GET_SETTING" id="16" link="forwarded">
@@ -2211,8 +2283,8 @@
 
     <message name="COPILOT_STATUS_DL" id="33" link="forwarded">
       <field name="ac_id" type="uint8"/>
-      <field name="timestamp" type="float" unit="s">Mission computer seconds since startup</field>
       <field name="used_memory" type="uint8" unit="%">Percentage of used memory (RAM) of the mission computer rounded up to whole percent</field>
+      <field name="timestamp" type="float" unit="s">Mission computer seconds since startup</field>
       <field name="used_disk" type="uint8" unit="%">Percentage of used disk of the mission computer rounded up to whole percent</field>
       <field name="status" type="uint8" values="UNKNOWN|INIT|LOGGING|FAULT">Mission computer status</field>
       <field name="error_code" type="uint8" values="NONE|IO_ERROR">Error codes of the mission computer</field>
@@ -2220,21 +2292,21 @@
 
     <message name="CAMERA_PAYLOAD_DL" id="34" link="forwarded">
       <field name="ac_id" type="uint8"/>
+      <field name="error_code" type="uint8" values="NONE|CAMERA_ERR|DOOR_ERR">Error codes of the payload</field>
       <field name="timestamp" type="float" unit="s">Payload computer seconds sice startup</field>
       <field name="used_memory" type="uint8" unit="%">Percentage of used memory (RAM) of the payload computer rounded up to whole percent</field>
       <field name="used_disk" type="uint8" unit="%">Percentage of used disk of the payload computer rounded up to whole percent</field>
       <field name="door_status" type="uint8" values="UNKNOWN|CLOSE|OPEN">Payload door open/close</field>
-      <field name="error_code" type="uint8" values="NONE|CAMERA_ERR|DOOR_ERR">Error codes of the payload</field>
     </message>
 
     <message name="CAMERA_SNAPSHOT_DL" id="35" link="forwarded">
-      <field name="ac_id" type="uint8"/>
       <field name="camera_id" type="uint16">Unique camera ID - consists of make,model and camera index</field>
-      <field name="camera_state" type="uint8" values="UNKNOWN|OK|ERROR">State of the given camera</field>
       <field name="snapshot_image_number" type="uint16">Snapshot number in sequence</field>
+      <field name="camera_state" type="uint8" values="UNKNOWN|OK|ERROR">State of the given camera</field>
       <field name="snapshot_valid" type="uint8" unit="bool">Flag checking whether the last snapshot was valid</field>
-      <field name="lens_temp" type="float" unit="deg_celsius" format="%.2f">Lens temperature, NaN if not measured</field>
       <field name="array_temp" type="float" unit="deg_celsius" format="%.2f">Imager sensor temperature, NaN if not measured</field>
+      <field name="lens_temp" type="float" unit="deg_celsius" format="%.2f">Lens temperature, NaN if not measured</field>
+      <field name="ac_id" type="uint8"/>
     </message>
 
     <message name="GUIDED_SETPOINT_NED" id="40" link="forwarded">
@@ -2316,6 +2388,24 @@
       <field name="tow"     type="uint32"/>
       <field name="course"  type="int32"  alt_unit="deg" alt_unit_coef="0.0000057296"/>
     </message>
+
+    <message name="REMOTE_GPS_LOCAL" id="56" link="forwarded">
+      <description>
+        Position and speed in local frame from a remote GPS or motion capture system
+        Global position transformations are handled onboard if needed
+      </description>
+      <field name="ac_id"   type="uint8"/>
+      <field name="pad"     type="uint8"/>
+      <field name="enu_x"   type="float" unit="m"/>
+      <field name="enu_y"   type="float" unit="m"/>
+      <field name="enu_z"   type="float" unit="m"/>
+      <field name="enu_xd"  type="float" unit="m/s"/>
+      <field name="enu_yd"  type="float" unit="m/s"/>
+      <field name="enu_zd"  type="float" unit="m/s"/>
+      <field name="tow"     type="uint32"/>
+      <field name="course"  type="float" unit="deg"/>
+    </message>
+
 
     <message name="KITE_COMMAND" id="96">
       <field name="POWER"     type="uint16"/>
@@ -2405,10 +2495,24 @@
       <field name="data" type="uint8[]"/>
     </message>
 
+    <message name="DCF_REG_TABLE" id="158" link="forwarded">
+      <description>Init the table of an aircraft for the Distributed Circular Formation algorithm. If the nei_id is equal to zero, then you wipe out (clean) the whole table of the aircraft.</description>
+      <field name="ac_id" type="uint8">ID of the table's aircraft to be updated</field>
+      <field name="nei_id" type="uint8">ID of the neighbor for the table</field>
+      <field name="desired_sigma" type="int16">Desired angle to have w.r.t. the neighbor</field>
+    </message>
+
+    <message name="KEY_EXCHANGE_GCS" id="159" link="forwarded">
+      <description>Message for key exchange during crypto initialization</description>
+      <field name="ac_id" type="uint8">ID of the table's aircraft to be updated</field>
+      <field name="msg_type" type="uint8" values="P_AE|P_BE|SIG"/>
+      <field name="msg_data" type="uint8[]"/>
+    </message>
+
   </msg_class>
 
 
-  <msg_class name="ground">
+  <msg_class name="ground" id="3">
     <message name="NEW_AIRCRAFT" id="1">
       <field name="ac_id" type="string"/>
     </message>
@@ -2502,8 +2606,8 @@
 
     <message name="CAM_STATUS" id="14">
       <field name="ac_id" type="string"/>
-      <field name="cam_lat" type="float" unit="deg"/>
-      <field name="cam_long" type="float" unit="deg"/>
+      <field name="lats" type="string" format="csv"/>
+      <field name="longs" type="string" format="csv"/>
       <field name="cam_target_lat" type="float" unit="deg"/>
       <field name="cam_target_long" type="float" unit="deg"/>
     </message>
@@ -2747,6 +2851,37 @@
       <field name="cmd" type="uint8" values="KILL|STANDBY|LAND"/>
     </message>
 
+    <message name="GROUND_REF" id="40">
+      <description>
+        Ground reference provided by an external positioning system for instance
+      </description>
+      <field name="ac_id" type="string">Aircraft ID</field>
+      <field name="frame" type="string" values="LLA|ECEF|UTM|LTP_NED|LTP_ENU">position reference frame</field>
+      <field name="pos" type="float[3]" unit="SI (m or deg)">position in selected frame</field>
+      <field name="speed" type="float[3]" unit="m/s">speed in selected frame (LTP_NED in case of LLA frame)</field>
+      <field name="quat" type="float[4]">Unitary quaternion representing LTP to BODY orientation (qi, qx, qy, qz)</field>
+      <field name="rate" type="float[3]" unit="rad/s" alt_unit="deg/s">Rotation speeds in body frame</field>
+      <field name="timestamp" type="float" unit="s">Timestamp</field>
+    </message>
+
+    <message name="JOYSTICK" id="41">
+      <description>
+        Generic 4 axis and 4 buttons joystick or joypad.
+        This message can be provided by the 'input2ivy' tool for other ground agents.
+        Standard joystick axis values are on 16 bits signed integers, but tools like 'input2ivy' may
+        scale them on int8 type.
+      </description>
+      <field name="id" type="uint8">Joystick ID</field>
+      <field name="axis1" type="int16">axis 1 position</field>
+      <field name="axis2" type="int16">axis 2 position</field>
+      <field name="axis3" type="int16">axis 3 position</field>
+      <field name="axis4" type="int16">axis 4 position</field>
+      <field name="button1" type="uint8" unit="bool">button 1 status</field>
+      <field name="button2" type="uint8" unit="bool">button 2 status</field>
+      <field name="button3" type="uint8" unit="bool">button 3 status</field>
+      <field name="button4" type="uint8" unit="bool">button 4 status</field>
+    </message>
+
     <message name="PLUMES" id="100">
       <field name="ids" type="string" format="csv"/>
       <field name="lats" type="string" format="csv"/>
@@ -2755,7 +2890,7 @@
     </message>
   </msg_class>
 
-  <msg_class name="alert">
+  <msg_class name="alert" id="4">
     <message name="BAT_LOW" id="1">
       <field name="ac_id" type="string"/>
       <field name="level" type="string" values="CATASTROPHIC|CRITIC|WARNING"/>
@@ -2767,10 +2902,10 @@
     </message>
   </msg_class>
 
-  <msg_class name="intermcu">
+  <msg_class name="intermcu" id="5">
 
-	<!-- KEEP INTERMCU MESSAGES BELOW 8 BYTES PER MESSAGES
-		 TO ALLOW TRANSFER OVER CAN BUS -->
+  <!-- KEEP INTERMCU MESSAGES BELOW 8 BYTES PER MESSAGES
+     TO ALLOW TRANSFER OVER CAN BUS -->
 
     <message name="IMCU_COMMANDS" id="1">
       <field name="status" type="uint8"/>
@@ -2828,6 +2963,46 @@
       <field name="sacc"    type="uint32" unit="cm/s" alt_unit="m/s"/>
       <field name="numsv"   type="uint8"/>
       <field name="fix"     type="uint8" values="NONE|NA|2D|3D|DGPS|RTK"/>
+    </message>
+
+
+    <message name="STEREOCAM_ARRAY" id="80">
+      <description>Raw data fromt the stereocamera. Type defines what kind of data it is. This can be raw image, disparity map, obstacle histogram, ect.</description>
+      <field name="type" type="uint8" values="DIST_MATRIX|HISTOGRAM|DISPARITY_MAP|RAW"/>
+      <field name="width" type="uint8">array size parameters</field>
+      <field name="height" type="uint8"/>
+      <field name="package_nb" type="uint8">If the data being sent is too large for one message (e.g when sending a full image) this will indicate which package of the total data is contained in this message</field>
+      <field name="image_data" type="uint8[]"/>
+    </message>
+
+    <message name="STEREOCAM_VELOCITY" id="81">
+      <description>Velocity measured using optical flow and stereovision. All parameters are in the camera frame</description>
+      <field name="resolution" type="uint8">Resolution of the vel and pos messages</field>
+      <field name="dt_frame"   type="uint8">Time difference to previous frame</field>
+      <field name="dt"         type="uint8">Time difference to previous message, not strictly required</field>
+      <field name="velx"       type="int16" unit="m/s">Velocity estimaed using stereo edgeflow</field>
+      <field name="vely"       type="int16" unit="m/s"/>
+      <field name="velz"       type="int16" unit="m/s"/>
+      <field name="dposx"      type="int16" unit="m">Distance traveled since the last message</field>
+      <field name="dposy"      type="int16" unit="m"/>
+      <field name="dposz"      type="int16" unit="m"/>
+      <field name="vRMS"       type="uint8">RMS of the velocity estimate</field>
+      <field name="posRMS"     type="uint8">RMS of the position</field>
+      <field name="avg_dist"   type="uint16">Average distance to scene</field>
+    </message>
+
+    <message name="STEREOCAM_STATE" id="82">
+      <description>Estimated state of the camera. As the stereocamera has no inertial sensors, this data should be sent to the stereocamera to enable onboard derotation of the optical flow</description>
+      <field name="phi" 	type="float" unit="rad">Pitch, roll and yaw angles of the camera</field>
+      <field name="theta"   type="float" unit="rad"/>
+      <field name="psi"     type="float" unit="rad"/>
+      <field name="agl"     type="float" unit="m">Altitude above the ground. If not looking down, set to 0</field>
+    </message>
+
+    <message name="STEREOCAM_FOLLOW_ME" id="83">
+      <field name="headingToFollow" 	type="uint8"/>
+      <field name="heightObject"   		type="uint8"/>
+      <field name="distanceToObject"    type="uint8"/>
     </message>
 
     <message name="IMCU_DATALINK" id="113">
