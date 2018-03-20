@@ -136,10 +136,11 @@
 #define FIRST_THRUST_LEVEL 6500
 #define FIRST_THRUST_DURATION 0.0
 #define STRAIGHT_FLIGHT_DURATION 10.0
+#define THROTTLE_FACTOR 0.8
 #define DOUBLET_DURATION 1.0
 #define FINAL_THRUST_LEVEL 6500
 #define FINAL_THRUST_DURATION 0
-#define PITCH_CMD_NOMINAL -MAX_PPRZ*30/75
+#define PITCH_CMD_NOMINAL -MAX_PPRZ*15/75
 #define PITCH_CMD_DELTA -MAX_PPRZ*15/75
 #define PITCH_DOUBLET 1
 #define DOUBLET_REPETITIONS 1
@@ -147,11 +148,12 @@
 //// Roll doublets
 //#define FIRST_THRUST_LEVEL 6500
 //#define FIRST_THRUST_DURATION 0.0
-//#define STRAIGHT_FLIGHT_DURATION 0.6
+//#define STRAIGHT_FLIGHT_DURATION 10.0
+//#define THROTTLE_FACTOR 1.0
 //#define DOUBLET_DURATION 1.0
 //#define FINAL_THRUST_LEVEL 6500
 //#define FINAL_THRUST_DURATION 0
-//#define ROLL_CMD_NOMINAL -MAX_PPRZ*15/60
+//#define ROLL_CMD_NOMINAL -MAX_PPRZ*30/60
 //#define ROLL_CMD_DELTA -MAX_PPRZ/4
 //#define ROLL_DOUBLET 1
 //#define DOUBLET_REPETITIONS 10
@@ -258,9 +260,15 @@
 #define ROLL_DELAY 0.0
 #endif
 
+#ifndef THROTTLE FACTOR
+#define THROTTLE_FACTOR 1.0
+#endif
+
 uint8_t in_flip;
 pprz_t auto_pitch = 0;
 pprz_t auto_roll = 0;
+
+pprz_t hover_throttle = 6500;
 
 uint32_t flip_counter;
 uint32_t doublet_cnt;
@@ -329,6 +337,7 @@ void guidance_flip_run(void)
       stabilization_attitude_set_earth_cmd_i(&flip_cmd_earth,
                                              heading_save);
       stabilization_attitude_run(autopilot_in_flight());
+      hover_throttle=radio_control.values[RADIO_THROTTLE];
       stabilization_cmd[COMMAND_THRUST] = FIRST_THRUST_LEVEL; //Thrust to go up first
       timer_save = 0;
 
@@ -604,7 +613,8 @@ void guidance_flip_run(void)
       // straight flight
       auto_pitch = PITCH_CMD_NOMINAL; //-MAX_PPRZ*2/3;
       stabilization_attitude_run(autopilot_in_flight());
-      stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+      //      stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+            stabilization_cmd[COMMAND_THRUST]=THROTTLE_FACTOR*hover_throttle;
 
       if ((timer - timer_save) > BFP_OF_REAL(STRAIGHT_FLIGHT_DURATION, 12)) {
         flip_state++;
@@ -615,7 +625,8 @@ void guidance_flip_run(void)
       // doublet
       auto_pitch = PITCH_CMD_NOMINAL + PITCH_CMD_DELTA; //-MAX_PPRZ*2/3;
       stabilization_attitude_run(autopilot_in_flight());
-      stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+//      stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+      stabilization_cmd[COMMAND_THRUST]=THROTTLE_FACTOR*hover_throttle;
 
       if ((timer - timer_save) > BFP_OF_REAL(DOUBLET_DURATION/doublet_cnt, 12)) {
         flip_state++;
@@ -628,7 +639,8 @@ void guidance_flip_run(void)
       // doublet
       auto_pitch = PITCH_CMD_NOMINAL - PITCH_CMD_DELTA; //-MAX_PPRZ*2/3;
       stabilization_attitude_run(autopilot_in_flight());
-      stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+      //      stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+            stabilization_cmd[COMMAND_THRUST]=THROTTLE_FACTOR*hover_throttle;
 
       if ((timer - timer_save) > BFP_OF_REAL(DOUBLET_DURATION/doublet_cnt, 12)) {
         if (doublet_cnt > DOUBLET_REPETITIONS) {
@@ -653,7 +665,8 @@ void guidance_flip_run(void)
       // doublet
       auto_pitch = PITCH_CMD_NOMINAL; //-MAX_PPRZ*2/3;
       stabilization_attitude_run(autopilot_in_flight());
-      stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+      //      stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+            stabilization_cmd[COMMAND_THRUST]=THROTTLE_FACTOR*hover_throttle;
 
       if ((timer - timer_save) > BFP_OF_REAL(STRAIGHT_FLIGHT_DURATION, 12)) {
         flip_state = 100;
@@ -685,7 +698,8 @@ void guidance_flip_run(void)
         // straight flight
         auto_roll = ROLL_CMD_NOMINAL; //-MAX_PPRZ*2/3;
         stabilization_attitude_run(autopilot_in_flight());
-        stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+        //      stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+              stabilization_cmd[COMMAND_THRUST]=THROTTLE_FACTOR*hover_throttle;
 
         if ((timer - timer_save) > BFP_OF_REAL(STRAIGHT_FLIGHT_DURATION, 12)) {
           flip_state++;
@@ -696,7 +710,8 @@ void guidance_flip_run(void)
         // doublet
         auto_roll = ROLL_CMD_NOMINAL + ROLL_CMD_DELTA; //-MAX_PPRZ*2/3;
         stabilization_attitude_run(autopilot_in_flight());
-        stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+        //      stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+              stabilization_cmd[COMMAND_THRUST]=THROTTLE_FACTOR*hover_throttle;
 
         if ((timer - timer_save) > BFP_OF_REAL(DOUBLET_DURATION/doublet_cnt, 12)) {
           flip_state++;
@@ -709,7 +724,8 @@ void guidance_flip_run(void)
         // doublet
         auto_roll = ROLL_CMD_NOMINAL - ROLL_CMD_DELTA; //-MAX_PPRZ*2/3;
         stabilization_attitude_run(autopilot_in_flight());
-        stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+        //      stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+              stabilization_cmd[COMMAND_THRUST]=THROTTLE_FACTOR*hover_throttle;
 
         if ((timer - timer_save) > BFP_OF_REAL(DOUBLET_DURATION/doublet_cnt, 12)) {
           if (doublet_cnt > DOUBLET_REPETITIONS) {
@@ -734,7 +750,8 @@ void guidance_flip_run(void)
         // doublet
         auto_roll = ROLL_CMD_NOMINAL; //-MAX_PPRZ*2/3;
         stabilization_attitude_run(autopilot_in_flight());
-        stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+        //      stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+              stabilization_cmd[COMMAND_THRUST]=THROTTLE_FACTOR*hover_throttle;
 
         if ((timer - timer_save) > BFP_OF_REAL(STRAIGHT_FLIGHT_DURATION, 12)) {
           flip_state = 100;

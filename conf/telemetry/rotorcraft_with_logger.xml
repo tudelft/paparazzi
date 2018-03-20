@@ -168,7 +168,8 @@
       <message name="IMU_GYRO_SCALED"        period=".002"/>
       <message name="STAB_ATTITUDE_REF_INT"  period=".01"/>
       <message name="MOTOR"                  period=".01"/>
-      <!--message name="IMU_ACCEL_SCALED"       period=".002"/-->
+      <message name="IMU_ACCEL_SCALED"       period=".002"/>
+      <message name="ENERGY"                 period=".2"/>
       <!--message name="IMU_MAG_SCALED"         period=".1"/-->
     </mode>
   </process>
