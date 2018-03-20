@@ -179,7 +179,7 @@
     <define name="PHI_IGAIN" value="0"/>
     
     <define name="THETA_PGAIN" value="7800"/>
-    <define name="THETA_DGAIN" value="2000"/>
+    <define name="THETA_DGAIN" value="1000"/>
     <define name="THETA_IGAIN" value="0"/>
     
     <define name="PSI_PGAIN" value="4000"/>
