@@ -119,30 +119,30 @@
 //#define PITCH_CMD_FINAL 0
 //#define PITCH_CMD_NOMINAL -MAX_PPRZ*2/3
 
-// Evasive maneuver - roll & pitch, time limit
-#define FIRST_THRUST_LEVEL 6500
-#define FIRST_THRUST_DURATION 0.0
-#define STRAIGHT_FLIGHT_DURATION 1.0
-#define STOP_EVADE_TIME 0.25
-#define FINAL_THRUST_LEVEL 6500
-#define FINAL_THRUST_DURATION 0.8
-#define EVADE_ROLL_PITCH 1
-#define ROLL_DELAY 0.0
-#define PITCH_CMD_FINAL 0 //-MAX_PPRZ*1/4 //-MAX_PPRZ*1/3 // max pitch set to 60 deg!!!
-#define PITCH_CMD_NOMINAL -MAX_PPRZ*2/3 //-MAX_PPRZ*1/2 // -MAX_PPRZ*2/3
-
-
-//// Pitch doublets
+//// Evasive maneuver - roll & pitch, time limit
 //#define FIRST_THRUST_LEVEL 6500
 //#define FIRST_THRUST_DURATION 0.0
 //#define STRAIGHT_FLIGHT_DURATION 1.0
-//#define DOUBLET_DURATION 1.0
+//#define STOP_EVADE_TIME 0.25
 //#define FINAL_THRUST_LEVEL 6500
-//#define FINAL_THRUST_DURATION 0
-//#define PITCH_CMD_NOMINAL -MAX_PPRZ*30/75
-//#define PITCH_CMD_DELTA -MAX_PPRZ*15/75
-//#define PITCH_DOUBLET 1
-//#define DOUBLET_REPETITIONS 1
+//#define FINAL_THRUST_DURATION 0.8
+//#define EVADE_ROLL_PITCH 1
+//#define ROLL_DELAY 0.0
+//#define PITCH_CMD_FINAL 0 //-MAX_PPRZ*1/4 //-MAX_PPRZ*1/3 // max pitch set to 60 deg!!!
+//#define PITCH_CMD_NOMINAL -MAX_PPRZ*2/3 //-MAX_PPRZ*1/2 // -MAX_PPRZ*2/3
+
+
+// Pitch doublets
+#define FIRST_THRUST_LEVEL 6500
+#define FIRST_THRUST_DURATION 0.0
+#define STRAIGHT_FLIGHT_DURATION 10.0
+#define DOUBLET_DURATION 1.0
+#define FINAL_THRUST_LEVEL 6500
+#define FINAL_THRUST_DURATION 0
+#define PITCH_CMD_NOMINAL -MAX_PPRZ*30/75
+#define PITCH_CMD_DELTA -MAX_PPRZ*15/75
+#define PITCH_DOUBLET 1
+#define DOUBLET_REPETITIONS 1
 
 //// Roll doublets
 //#define FIRST_THRUST_LEVEL 6500
