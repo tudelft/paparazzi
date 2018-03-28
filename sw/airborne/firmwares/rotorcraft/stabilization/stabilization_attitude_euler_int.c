@@ -46,6 +46,10 @@
 #define USE_ATTITUDE_REF 1
 #endif
 
+#ifndef USE_FLIP_MODE
+#define USE_FLIP_MODE 0
+#endif
+
 struct Int32AttitudeGains  stabilization_gains;
 
 /* warn if some gains are still negative */
@@ -294,6 +298,7 @@ void stabilization_attitude_run(bool  in_flight)
   BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_YAW], MAX_PPRZ);
 
+#if USE_FLIP_MODE
   // If switch is flipped, set mode2 to FLIP
   if (radio_control.values[RADIO_FLAP] > 5000 && switch_prev_state == 0) {
     autopilot_mode_auto2 = AP_MODE_FLIP;
@@ -301,7 +306,7 @@ void stabilization_attitude_run(bool  in_flight)
     switch_prev_state = 1;
   }
   else if (autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) {
-  // reset AUTO2 to ATT if the flip is finished or if it was incomplete
+    // reset AUTO2 to ATT if the flip is finished or if it was incomplete
     autopilot_mode_auto2 = AP_MODE_ATTITUDE_DIRECT;
     autopilot_set_mode(AP_MODE_ATTITUDE_DIRECT);
 
@@ -311,6 +316,7 @@ void stabilization_attitude_run(bool  in_flight)
   }
 
   if (radio_control.values[RADIO_FLAP] < 5000) {
-      switch_prev_state = 0;
+    switch_prev_state = 0;
   }
+#endif
 }

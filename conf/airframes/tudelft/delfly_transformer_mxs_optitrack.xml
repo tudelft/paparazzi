@@ -15,7 +15,7 @@
   settings_modules="modules/gps_ubx_ucenter.xml"git
 -->
 
-<airframe name="DelFly_Transformer_MXS">
+<airframe name="DelFly_Transformer_MXS_optitrack">
   
   <!-- FIRMWARE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
   
@@ -33,7 +33,7 @@
       
       <define name="USE_PERSISTENT_SETTINGS" value="FALSE"/>
       
-      <define name="USE_BARO_BOARD" value="1"/>
+      <define name="USE_BARO_BOARD" value="0"/>
       <define name="BARO_PERIODIC_FREQUENCY" value="100"/>      
     </target>
     
@@ -57,7 +57,7 @@
     </module>
     
     <module name="imu" type="lisa_mx_v2.1"/>
-    <module name="gps" type="ublox"/>
+    <module name="gps" type="datalink"/>
     <module name="stabilization" type="int_euler">
       <define name="FILTER_CMD_ROLL_PITCH" value="1"/>
       <define name="FILTER_CMD_YAW" value="1"/>
@@ -65,7 +65,7 @@
       <define name="FILTER_CMD_PITCH_CUTOFF" value="15.0"/>
       <define name="FILTER_CMD_YAW_CUTOFF" value="10.0"/>
       <define name="STABILIZATION_ATTITUDE_SP_PSI_DELTA_LIMIT" value="0.5"/>
-      <define name="USE_FLIP_MODE" value="1"/>
+      <define name="USE_FLIP_MODE" value="0"/>      
     </module>
     <module name="ahrs" type="int_cmpl_quat">
       <define name="AHRS_PROPAGATE_LOW_PASS_RATES" value="FALSE"/>
@@ -135,20 +135,23 @@
     <define name="H_Y" value="0.00278894"/>
     <define name="H_Z" value="0.92060036"/>
     <define name="USE_GPS_HEADING" value="1"/>
-    
+    <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>    
     <!-- For vibrating airfames -->
     <define name="GRAVITY_HEURISTIC_FACTOR" value="0"/>
   </section>
   
   <section name="AUTOPILOT">
     <define name="MODE_STARTUP" value="AP_MODE_RC_DIRECT"/>
-       <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
+    <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO2" value="AP_MODE_FLIP"/>
-        
+    <!--define name="MODE_AUTO2" value="AP_MODE_FLIP"/-->
+    <!--define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_Z_HOLD"/-->
+    <!--define name="MODE_AUTO2" value="AP_MODE_NAV"/-->
+    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+    
     <define name="USE_THROTTLE_FOR_MOTOR_ARMING" value="TRUE"/>
 <!--    <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/-->
-        <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
+    <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>
   
   <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
@@ -189,8 +192,8 @@
     <define name="THETA_IGAIN" value="0"/>
     
     <define name="PSI_PGAIN" value="4000"/>
-    <define name="PSI_DGAIN" value="0"/>
-    <define name="PSI_IGAIN" value="0"/>
+    <define name="PSI_DGAIN" value="800"/>
+    <define name="PSI_IGAIN" value="200"/>
     
     <!-- feedforward -->
     <define name="PHI_DDGAIN" value="0"/>
@@ -203,8 +206,10 @@
   </section>
   
   <section name="INS" prefix="INS_">
-    <define name="USE_GPS_ALT" value="0"/>
-    <define name="USE_GPS_ALT_SPEED" value="0"/>
+    <define name="USE_GPS_ALT" value="1"/>
+    <define name="USE_GPS_ALT_SPEED" value="1"/>
+    <define name="VFF_R_GPS" value="0.01"/>
+    <define name="VFF_VZ_R_GPS" value="0.01"/>
   </section>
   
 <!--  <section name="GPS" prefix="GPS_"-->
@@ -215,24 +220,24 @@
 <!--  </section-->
   
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
-    <define name="HOVER_KP" value="276"/>
-    <define name="HOVER_KD" value="300"/>
+    <define name="HOVER_KP" value="400"/>
+    <define name="HOVER_KD" value="200"/>
     <define name="HOVER_KI" value="100"/>
-    <define name="NOMINAL_HOVER_THROTTLE" value="0.77"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value="0.75"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>
   </section>
   
-  
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="PGAIN" value="120"/>
-    <define name="DGAIN" value="40"/>
+    <define name="PGAIN" value="400"/>
+    <define name="DGAIN" value="50"/>
     <define name="IGAIN" value="0"/>
-    <define name="REF_MAX_SPEED" value="0.5"/>
+    <define name="REF_MAX_SPEED" value="1.0"/>
     <define name="USE_REF" value="FALSE"/>
+    <define name="MAX_BANK" value="30" unit="deg"/>
   </section>
   
   <section name="NAVIGATION" prefix="NAV_">
-    <define name="CLIMB_VSPEED" value="1.0"/>
+    <define name="CLIMB_VSPEED" value="0.5"/>
     <define name="DESCEND_VSPEED" value="-0.5"/>
   </section>
   
