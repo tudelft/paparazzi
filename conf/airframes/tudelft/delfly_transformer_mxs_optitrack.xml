@@ -228,12 +228,13 @@
   </section>
   
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="PGAIN" value="400"/>
-    <define name="DGAIN" value="50"/>
+    <define name="PGAIN" value="100"/>
+    <define name="DGAIN" value="12"/>
     <define name="IGAIN" value="0"/>
     <define name="REF_MAX_SPEED" value="1.0"/>
     <define name="USE_REF" value="FALSE"/>
-    <define name="MAX_BANK" value="30" unit="deg"/>
+    <define name="MAX_BANK" value="45" unit="deg"/>
+    <define name="GAIN_SCALE" value="4"/>
   </section>
   
   <section name="NAVIGATION" prefix="NAV_">

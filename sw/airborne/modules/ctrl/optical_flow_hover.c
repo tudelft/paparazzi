@@ -229,8 +229,8 @@ void horizontal_ctrl_module_run(bool in_flight);
 
 // Compute OptiTrack stabilization for 1/2 axes
 void computeOptiTrack(bool phi, bool theta, struct Int32Eulers *opti_sp_eu);
-#ifndef GH_GAIN_SCALE
-#define GH_GAIN_SCALE 2
+#ifndef GUIDANCE_H_GAIN_SCALE
+#define GUIDANCE_H_GAIN_SCALE 2
 #endif
 #ifndef MAX_POS_ERR
 #define MAX_POS_ERR POS_BFP_OF_REAL(16.)
@@ -721,11 +721,11 @@ void computeOptiTrack(bool phi, bool theta, struct Int32Eulers *opti_sp_eu)
 
   /* run PID */
   of_hover_cmd_earth.x =
-    ((GUIDANCE_H_PGAIN * of_hover_pos_err.x) >> (INT32_POS_FRAC - GH_GAIN_SCALE)) +
-    ((GUIDANCE_H_DGAIN * (of_hover_speed_err.x >> 2)) >> (INT32_SPEED_FRAC - GH_GAIN_SCALE - 2));
+    ((GUIDANCE_H_PGAIN * of_hover_pos_err.x) >> (INT32_POS_FRAC - GUIDANCE_H_GAIN_SCALE)) +
+    ((GUIDANCE_H_DGAIN * (of_hover_speed_err.x >> 2)) >> (INT32_SPEED_FRAC - GUIDANCE_H_GAIN_SCALE - 2));
   of_hover_cmd_earth.y =
-    ((GUIDANCE_H_PGAIN * of_hover_pos_err.y) >> (INT32_POS_FRAC - GH_GAIN_SCALE)) +
-    ((GUIDANCE_H_DGAIN * (of_hover_speed_err.y >> 2)) >> (INT32_SPEED_FRAC - GH_GAIN_SCALE - 2));
+    ((GUIDANCE_H_PGAIN * of_hover_pos_err.y) >> (INT32_POS_FRAC - GUIDANCE_H_GAIN_SCALE)) +
+    ((GUIDANCE_H_DGAIN * (of_hover_speed_err.y >> 2)) >> (INT32_SPEED_FRAC - GUIDANCE_H_GAIN_SCALE - 2));
 
   /* trim max bank angle from PD */
   VECT2_STRIM(of_hover_cmd_earth, -traj_max_bank, traj_max_bank);
@@ -733,12 +733,12 @@ void computeOptiTrack(bool phi, bool theta, struct Int32Eulers *opti_sp_eu)
   of_hover_trim_att_integrator.x += (GUIDANCE_H_IGAIN * of_hover_cmd_earth.x);
   of_hover_trim_att_integrator.y += (GUIDANCE_H_IGAIN * of_hover_cmd_earth.y);
   /* saturate it  */
-  VECT2_STRIM(of_hover_trim_att_integrator, -(traj_max_bank << (INT32_ANGLE_FRAC + GH_GAIN_SCALE * 2)),
-              (traj_max_bank << (INT32_ANGLE_FRAC + GH_GAIN_SCALE * 2)));
+  VECT2_STRIM(of_hover_trim_att_integrator, -(traj_max_bank << (INT32_ANGLE_FRAC + GUIDANCE_H_GAIN_SCALE * 2)),
+              (traj_max_bank << (INT32_ANGLE_FRAC + GUIDANCE_H_GAIN_SCALE * 2)));
 
   /* add it to the command */
-  of_hover_cmd_earth.x += (of_hover_trim_att_integrator.x >> (INT32_ANGLE_FRAC + GH_GAIN_SCALE * 2));
-  of_hover_cmd_earth.y += (of_hover_trim_att_integrator.y >> (INT32_ANGLE_FRAC + GH_GAIN_SCALE * 2));
+  of_hover_cmd_earth.x += (of_hover_trim_att_integrator.x >> (INT32_ANGLE_FRAC + GUIDANCE_H_GAIN_SCALE * 2));
+  of_hover_cmd_earth.y += (of_hover_trim_att_integrator.y >> (INT32_ANGLE_FRAC + GUIDANCE_H_GAIN_SCALE * 2));
 
   VECT2_STRIM(of_hover_cmd_earth, -total_max_bank, total_max_bank);
 

@@ -477,7 +477,10 @@ static void guidance_h_update_reference(void)
 
 /* with a pgain of 100 and a scale of 2,
  * you get an angle of 5.6 degrees for 1m pos error */
-#define GH_GAIN_SCALE 2
+#ifndef GUIDANCE_H_GAIN_SCALE
+#define GUIDANCE_H_GAIN_SCALE 2
+#endif
+
 
 #if !GUIDANCE_INDI
 static void guidance_h_traj_run(bool in_flight)
@@ -499,19 +502,19 @@ static void guidance_h_traj_run(bool in_flight)
 
   /* run PID */
   int32_t pd_x =
-    ((guidance_h.gains.p * guidance_h_pos_err.x) >> (INT32_POS_FRAC - GH_GAIN_SCALE)) +
-    ((guidance_h.gains.d * (guidance_h_speed_err.x >> 2)) >> (INT32_SPEED_FRAC - GH_GAIN_SCALE - 2));
+    ((guidance_h.gains.p * guidance_h_pos_err.x) >> (INT32_POS_FRAC - GUIDANCE_H_GAIN_SCALE)) +
+    ((guidance_h.gains.d * (guidance_h_speed_err.x >> 2)) >> (INT32_SPEED_FRAC - GUIDANCE_H_GAIN_SCALE - 2));
   int32_t pd_y =
-    ((guidance_h.gains.p * guidance_h_pos_err.y) >> (INT32_POS_FRAC - GH_GAIN_SCALE)) +
-    ((guidance_h.gains.d * (guidance_h_speed_err.y >> 2)) >> (INT32_SPEED_FRAC - GH_GAIN_SCALE - 2));
+    ((guidance_h.gains.p * guidance_h_pos_err.y) >> (INT32_POS_FRAC - GUIDANCE_H_GAIN_SCALE)) +
+    ((guidance_h.gains.d * (guidance_h_speed_err.y >> 2)) >> (INT32_SPEED_FRAC - GUIDANCE_H_GAIN_SCALE - 2));
   guidance_h_cmd_earth.x = pd_x +
-                           ((guidance_h.gains.v * guidance_h.ref.speed.x) >> (INT32_SPEED_FRAC - GH_GAIN_SCALE)) + /* speed feedforward gain */
+                           ((guidance_h.gains.v * guidance_h.ref.speed.x) >> (INT32_SPEED_FRAC - GUIDANCE_H_GAIN_SCALE)) + /* speed feedforward gain */
                            ((guidance_h.gains.a * guidance_h.ref.accel.x) >> (INT32_ACCEL_FRAC -
-                               GH_GAIN_SCALE));   /* acceleration feedforward gain */
+                               GUIDANCE_H_GAIN_SCALE));   /* acceleration feedforward gain */
   guidance_h_cmd_earth.y = pd_y +
-                           ((guidance_h.gains.v * guidance_h.ref.speed.y) >> (INT32_SPEED_FRAC - GH_GAIN_SCALE)) + /* speed feedforward gain */
+                           ((guidance_h.gains.v * guidance_h.ref.speed.y) >> (INT32_SPEED_FRAC - GUIDANCE_H_GAIN_SCALE)) + /* speed feedforward gain */
                            ((guidance_h.gains.a * guidance_h.ref.accel.y) >> (INT32_ACCEL_FRAC -
-                               GH_GAIN_SCALE));   /* acceleration feedforward gain */
+                               GUIDANCE_H_GAIN_SCALE));   /* acceleration feedforward gain */
 
   /* trim max bank angle from PD */
   VECT2_STRIM(guidance_h_cmd_earth, -traj_max_bank, traj_max_bank);
@@ -525,11 +528,11 @@ static void guidance_h_traj_run(bool in_flight)
     guidance_h_trim_att_integrator.x += (guidance_h.gains.i * pd_x);
     guidance_h_trim_att_integrator.y += (guidance_h.gains.i * pd_y);
     /* saturate it  */
-    VECT2_STRIM(guidance_h_trim_att_integrator, -(traj_max_bank << (INT32_ANGLE_FRAC + GH_GAIN_SCALE * 2)),
-                (traj_max_bank << (INT32_ANGLE_FRAC + GH_GAIN_SCALE * 2)));
+    VECT2_STRIM(guidance_h_trim_att_integrator, -(traj_max_bank << (INT32_ANGLE_FRAC + GUIDANCE_H_GAIN_SCALE * 2)),
+                (traj_max_bank << (INT32_ANGLE_FRAC + GUIDANCE_H_GAIN_SCALE * 2)));
     /* add it to the command */
-    guidance_h_cmd_earth.x += (guidance_h_trim_att_integrator.x >> (INT32_ANGLE_FRAC + GH_GAIN_SCALE * 2));
-    guidance_h_cmd_earth.y += (guidance_h_trim_att_integrator.y >> (INT32_ANGLE_FRAC + GH_GAIN_SCALE * 2));
+    guidance_h_cmd_earth.x += (guidance_h_trim_att_integrator.x >> (INT32_ANGLE_FRAC + GUIDANCE_H_GAIN_SCALE * 2));
+    guidance_h_cmd_earth.y += (guidance_h_trim_att_integrator.y >> (INT32_ANGLE_FRAC + GUIDANCE_H_GAIN_SCALE * 2));
   } else {
     INT_VECT2_ZERO(guidance_h_trim_att_integrator);
   }
