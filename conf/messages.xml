@@ -155,8 +155,9 @@
     </message>
 
     <message name="ADC_GENERIC" id="18">
-      <field name="val1" type="uint16"/>
-      <field name="val2" type="uint16"/>
+      <field name="servo1" type="uint16"/>
+      <field name="servo2" type="uint16"/>
+      <field name="vbat" type="uint16" alt_unit="V" alt_unit_coef="0.00162"/>
     </message>
 
     <message name="ECU" id="19">

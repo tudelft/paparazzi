@@ -37,12 +37,18 @@
 
 uint16_t adc_generic_val1;
 uint16_t adc_generic_val2;
+uint16_t adc_generic_val3;
 
 #ifndef ADC_CHANNEL_GENERIC1
 #ifndef ADC_CHANNEL_GENERIC2
 #error "at least one ADC_CHANNEL_GENERIC1/2 needs to be defined to use the generic_adc module"
 #endif
 #endif
+
+#ifndef ADC_CHANNEL_VBAT
+#define ADC_CHANNEL_VBAT ADC_5
+#endif
+
 
 #ifndef ADC_CHANNEL_GENERIC_NB_SAMPLES
 #define ADC_CHANNEL_GENERIC_NB_SAMPLES DEFAULT_AV_NB_SAMPLE
@@ -64,20 +70,30 @@ static struct adc_buf buf_generic1;
 static struct adc_buf buf_generic2;
 #endif
 
+//// adc for battery voltage - works, but screws up the battery voltage elsewhere
+//static struct adc_buf buf_generic3;
+
+
 static void adc_msg_send(struct transport_tx *trans, struct link_device *dev) {
+//  adc_generic_val3 = buf_generic3.sum / buf_generic3.av_nb_sample;
+  adc_generic_val3=0;
+
 #ifdef ADC_CHANNEL_GENERIC1
+//  adc_generic_val1 = buf_generic1.sum / buf_generic1.av_nb_sample * 1000 / adc_generic_val3;
   adc_generic_val1 = buf_generic1.sum / buf_generic1.av_nb_sample;
 #endif
 #ifdef ADC_CHANNEL_GENERIC2
+//  adc_generic_val2 = buf_generic2.sum / buf_generic2.av_nb_sample * 1000 / adc_generic_val3;
   adc_generic_val2 = buf_generic2.sum / buf_generic2.av_nb_sample;
 #endif
-  pprz_msg_send_ADC_GENERIC(trans, dev, AC_ID, &adc_generic_val1, &adc_generic_val2);
+  pprz_msg_send_ADC_GENERIC(trans, dev, AC_ID, &adc_generic_val1, &adc_generic_val2, &adc_generic_val3);
 }
 
 void adc_generic_init(void)
 {
   adc_generic_val1 = 0;
   adc_generic_val2 = 0;
+  adc_generic_val3 = 0;
 
 #ifdef ADC_CHANNEL_GENERIC1
   adc_buf_channel(ADC_CHANNEL_GENERIC1, &buf_generic1, ADC_CHANNEL_GENERIC_NB_SAMPLES);
@@ -85,6 +101,7 @@ void adc_generic_init(void)
 #ifdef ADC_CHANNEL_GENERIC2
   adc_buf_channel(ADC_CHANNEL_GENERIC2, &buf_generic2, ADC_CHANNEL_GENERIC_NB_SAMPLES);
 #endif
+//  adc_buf_channel(ADC_CHANNEL_VBAT, &buf_generic3, ADC_CHANNEL_GENERIC_NB_SAMPLES);
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ADC_GENERIC, adc_msg_send);
 #endif

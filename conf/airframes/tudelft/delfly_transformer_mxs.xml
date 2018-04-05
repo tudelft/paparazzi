@@ -78,7 +78,7 @@
     <module name="adc_generic">
       <configure name="ADC_CHANNEL_GENERIC_NB_SAMPLES" value="1"/>
        <configure name="ADC_CHANNEL_GENERIC1" value="ADC_2"/>
-       <configure name="ADC_CHANNEL_GENERIC2" value="ADC_3"/>
+       <configure name="ADC_CHANNEL_GENERIC2" value="ADC_5"/>
     </module>
   </firmware>
   
@@ -189,8 +189,8 @@
     <define name="THETA_IGAIN" value="0"/>
     
     <define name="PSI_PGAIN" value="4000"/>
-    <define name="PSI_DGAIN" value="0"/>
-    <define name="PSI_IGAIN" value="0"/>
+    <define name="PSI_DGAIN" value="800"/>
+    <define name="PSI_IGAIN" value="200"/>
     
     <!-- feedforward -->
     <define name="PHI_DDGAIN" value="0"/>

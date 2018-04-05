@@ -79,6 +79,7 @@
       <configure name="ADC_CHANNEL_GENERIC_NB_SAMPLES" value="1"/>
        <configure name="ADC_CHANNEL_GENERIC1" value="ADC_2"/>
        <configure name="ADC_CHANNEL_GENERIC2" value="ADC_3"/>
+       <configure name="ADC_CHANNEL_VBAT" value="ADC_5"/> 
     </module>
   </firmware>
   
@@ -220,7 +221,7 @@
 <!--  </section-->
   
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
-    <define name="HOVER_KP" value="400"/>
+    <define name="HOVER_KP" value="600"/>
     <define name="HOVER_KD" value="200"/>
     <define name="HOVER_KI" value="100"/>
     <define name="NOMINAL_HOVER_THROTTLE" value="0.75"/>
@@ -228,13 +229,13 @@
   </section>
   
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="PGAIN" value="100"/>
-    <define name="DGAIN" value="12"/>
-    <define name="IGAIN" value="0"/>
+    <define name="PGAIN" value="250"/>
+    <define name="DGAIN" value="30"/>
+    <define name="IGAIN" value="100"/>
     <define name="REF_MAX_SPEED" value="1.0"/>
     <define name="USE_REF" value="FALSE"/>
-    <define name="MAX_BANK" value="45" unit="deg"/>
-    <define name="GAIN_SCALE" value="4"/>
+    <define name="MAX_BANK" value="60" unit="deg"/>
+    <define name="GAIN_SCALE" value="5"/>
   </section>
   
   <section name="NAVIGATION" prefix="NAV_">

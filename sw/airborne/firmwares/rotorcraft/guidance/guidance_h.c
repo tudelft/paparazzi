@@ -485,10 +485,10 @@ static void guidance_h_update_reference(void)
 #if !GUIDANCE_INDI
 static void guidance_h_traj_run(bool in_flight)
 {
-  /* maximum bank angle: default 20 deg, max 40 deg*/
+  /* maximum bank angle: default 20 deg, max 40 deg, MATEJ: I changed this to 60 deg*/
   static const int32_t traj_max_bank = Min(BFP_OF_REAL(GUIDANCE_H_MAX_BANK, INT32_ANGLE_FRAC),
-                                       BFP_OF_REAL(RadOfDeg(40), INT32_ANGLE_FRAC));
-  static const int32_t total_max_bank = BFP_OF_REAL(RadOfDeg(45), INT32_ANGLE_FRAC);
+                                       BFP_OF_REAL(RadOfDeg(60), INT32_ANGLE_FRAC));
+  static const int32_t total_max_bank = BFP_OF_REAL(RadOfDeg(60), INT32_ANGLE_FRAC);
 
   /* compute position error    */
   VECT2_DIFF(guidance_h_pos_err, guidance_h.ref.pos, *stateGetPositionNed_i());
