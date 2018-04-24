@@ -1,0 +1,41 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="odroid_outback" dir="odroid_outback">
+  <doc>
+    <description>Odroid uart (RS232) communication</description>
+    <configure name="ODROID_OUTBACK_PORT" value="UART8" description="select which uart it is connected to"/>
+    <configure name="ODROID_OUTBACK_BAUD" value="B115200" description="set the baudrate of the uart"/>
+  </doc>
+    <settings>
+    <dl_settings>
+      <dl_settings NAME="odroid_outback">
+        <dl_setting var="odroid_outback_enable_landing" min="0" max="1" step="1" values="off|on" shortname="landing"/>
+        <dl_setting var="odroid_outback_enable_spotsearch" min="0" max="1" step="1" values="off|on" shortname="spotsearch"/>
+        <dl_setting var="odroid_outback_enable_findjoe" min="0" max="1" step="1" values="off|on" shortname="findjoe"/>
+        <dl_setting var="odroid_outback_enable_opticflow" min="0" max="1" step="1" values="off|on" shortname="opticflow"/>
+        <dl_setting var="odroid_outback_enable_videorecord" min="0" max="1" step="1" values="off|on" shortname="record"/>        
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <header>
+    <file name="odroid_outback.h"/>
+  </header>
+  <init fun="odroid_outback_init()"/>
+  <periodic fun="odroid_outback_periodic()" freq="60." autorun="TRUE"/>
+  <event fun="odroid_outback_event()"/>
+  <makefile>
+    <!-- Configure default UART port and baudrate -->
+    <configure name="ODROID_OUTBACK_PORT" default="UART8" case="upper|lower"/>
+    <configure name="ODROID_OUTBACK_BAUD" default="B115200"/>
+
+    <!-- Enable UART and set baudrate -->
+    <define name="USE_$(ODROID_OUTBACK_PORT_UPPER)"/>
+    <define name="$(ODROID_OUTBACK_PORT_UPPER)_BAUD" value="$(ODROID_OUTBACK_BAUD)"/>
+    <define name="ODROID_OUTBACK_PORT" value="$(ODROID_OUTBACK_PORT_LOWER)"/>
+
+    <!-- Sources and PPRZLink for transport -->
+    <file name="odroid_outback.c"/>
+    <file name="pprz_transport.c" dir="pprzlink/src"/>
+  </makefile>
+</module>
+
