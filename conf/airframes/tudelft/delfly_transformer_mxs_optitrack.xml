@@ -145,9 +145,9 @@
     <define name="MODE_STARTUP" value="AP_MODE_RC_DIRECT"/>
     <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
+	<!--define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/-->
     <!--define name="MODE_AUTO2" value="AP_MODE_FLIP"/-->
     <!--define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_Z_HOLD"/-->
-    <!--define name="MODE_AUTO2" value="AP_MODE_NAV"/-->
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
     
     <define name="USE_THROTTLE_FOR_MOTOR_ARMING" value="TRUE"/>
@@ -185,7 +185,6 @@
     <!-- feedback -->
     <define name="PHI_PGAIN" value="3000"/>
     <define name="PHI_DGAIN" value="750"/>
-    <!--define name="PHI_DGAIN" value="750"/-->
     <define name="PHI_IGAIN" value="0"/>
     
     <define name="THETA_PGAIN" value="7800"/>

@@ -87,7 +87,7 @@
     <servo name="MOTOR_LEFT" no="1" min="1100" neutral="1100" max="1900"/> 
       <servo name="MOTOR_RIGHT" no="0" min="1100" neutral="1100" max="1900"/>
   <!-- increased dihedral numbers by 100 compared to previous-->
-      <servo name="DIHEDRAL" no="3" min="1300" neutral="1550" max="1800"/>
+      <servo name="DIHEDRAL" no="3" min="1345" neutral="1595" max="1845"/>
     <servo name="WING_DEF" no="2" min="980" neutral="1580" max="2180"/>
   </servos>
 
@@ -101,7 +101,7 @@
   
   <command_laws>
     <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/> <!-- Not used, but necessary for a succesful build -->
-    <set servo="MOTOR_LEFT" value="@THRUST+0.5*@ROLL+0.1*ABS(@ROLL)"/>
+    <set servo="MOTOR_LEFT" value="@THRUST+0.5*@ROLL+0.1*ABS(@ROLL)"/> 
       <set servo="MOTOR_RIGHT" value="@THRUST-0.5*@ROLL+0.1*ABS(@ROLL)"/>
       <set servo="DIHEDRAL" value="@PITCH"/>
     <set servo="WING_DEF" value="@YAW"/>
@@ -144,7 +144,8 @@
     <define name="MODE_STARTUP" value="AP_MODE_RC_DIRECT"/>
        <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO2" value="AP_MODE_FLIP"/>
+    <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/>
+    <!--define name="MODE_AUTO2" value="AP_MODE_FLIP"/-->
         
     <define name="USE_THROTTLE_FOR_MOTOR_ARMING" value="TRUE"/>
 <!--    <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/-->
@@ -181,7 +182,6 @@
     <!-- feedback -->
     <define name="PHI_PGAIN" value="3000"/>
     <define name="PHI_DGAIN" value="750"/>
-    <!--define name="PHI_DGAIN" value="750"/-->
     <define name="PHI_IGAIN" value="0"/>
     
     <define name="THETA_PGAIN" value="7800"/>
@@ -189,8 +189,10 @@
     <define name="THETA_IGAIN" value="0"/>
     
     <define name="PSI_PGAIN" value="4000"/>
-    <define name="PSI_DGAIN" value="800"/>
-    <define name="PSI_IGAIN" value="200"/>
+    <define name="PSI_DGAIN" value="0"/>
+    <define name="PSI_IGAIN" value="0"/>
+    <!--define name="PSI_DGAIN" value="800"/-->
+    <!--define name="PSI_IGAIN" value="200"/-->
     
     <!-- feedforward -->
     <define name="PHI_DDGAIN" value="0"/>
