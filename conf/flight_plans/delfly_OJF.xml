@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "flight_plan.dtd">
 
-<flight_plan alt="1.75" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="20" name="Rotorcraft Optitrack (Delft)" security_height="0.3">
+<flight_plan alt="1.25" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="20" name="Rotorcraft Optitrack (Delft)" security_height="0.3">
   <header>
 #include "autopilot.h"
 </header>
@@ -12,6 +12,12 @@
     <waypoint name="TD" x="0.0" y="0.0"/>
     <waypoint name="p1" x="0.5" y="0.0"/>
     <waypoint name="p2" x="0.5" y="0.5"/>
+    <waypoint name="p1m1" x="0.6" y="0.0"/>
+    <waypoint name="p1m2" x="0.7" y="0.0"/>
+    <waypoint name="p1m3" x="0.8" y="0.0"/>
+    <waypoint name="p1p1" x="0.4" y="0.0"/>
+    <waypoint name="p1p2" x="0.3" y="0.0"/>
+    <waypoint name="p1p3" x="0.2" y="0.0"/>
     <waypoint name="FA1" x="0.0" y="1.5"/>
     <waypoint name="FA2" x="0.0" y="-1.5"/>
     <waypoint name="FA3" x="3.0" y="-1.5"/>
@@ -49,6 +55,24 @@
     </block>
     <block name="stay_p1">
       <stay wp="p1"/>
+    </block>
+    <block name="m 10 cm">
+      <stay wp="p1m1"/>
+    </block>
+    <block name="m 20 cm">
+      <stay wp="p1m2"/>
+    </block>
+    <block name="m 30 cm">
+      <stay wp="p1m3"/>
+    </block>
+    <block name="p 10 cm">
+      <stay wp="p1p1"/>
+    </block>
+    <block name="p 20 cm">
+      <stay wp="p1p2"/>
+    </block>
+    <block name="p 30 cm">
+      <stay wp="p1p3"/>
     </block>
     <block name="go_p2">
       <call_once fun="nav_set_heading_deg(90)"/>
