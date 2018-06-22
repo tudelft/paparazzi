@@ -94,8 +94,8 @@
      <servo name="SW_BACK"        no="1" min="1900" neutral="1500" max="1100"/>
      <servo name="SW_LEFTFRONT"   no="2" min="1100" neutral="1500" max="1900"/>
      <servo name="SW_RIGHTFRONT"  no="3" min="1900" neutral="1500" max="1100"/>
-     <servo name="TAIL_LEFT"      no="4" min="1100" neutral="1500" max="1900"/>
-     <servo name="TAIL_RIGHT"     no="5" min="1100" neutral="1500" max="1900"/>
+     <servo name="TAIL_LEFT"      no="4" min="1900" neutral="1500" max="1100"/>
+     <servo name="TAIL_RIGHT"     no="5" min="1900" neutral="1500" max="1100"/>
      <servo name="AIL_LEFTLOW"    no="6" min="1100" neutral="1500" max="1900"/>
      <servo name="AIL_RIGHTLOW"   no="7" min="1090" neutral="1490" max="1890"/>
      <servo name="AIL_LEFTUP"     no="8" min="1100" neutral="1500" max="1900"/>
