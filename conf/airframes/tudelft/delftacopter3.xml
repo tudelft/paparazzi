@@ -341,7 +341,7 @@
   </section>
 
   <!-- Gains for forward mode -->
-  <section name="DC_GAINS" prefix="DC_FORWARD_">
+  <section name="DC_FORWARD" prefix="DC_FORWARD_">
     <define name="MAX_AIRSPEED" value="18.0"/>
     <define name="NOMINAL_THRUST" value="7300"/>
     <define name="VERTICAL_PGAIN" value="0.1"/>
@@ -353,6 +353,8 @@
     <define name="PITCH_OF_ROLL" value="0.02"/>
     <define name="THROTTLE_FROM_PITCH_UP" value="50.0"/>
     <define name="TRANSITION_MAX_OFFSET" value="-83.0" unit="deg"/>
+    <define name="MIN_PITCH" value="-15.0"/>
+    <define name="MAX_PITCH" value="10.0"/>
   </section>
 
   <!-- Radio control specific switches -->

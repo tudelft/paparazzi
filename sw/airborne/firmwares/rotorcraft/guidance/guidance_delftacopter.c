@@ -50,9 +50,6 @@
 
 // Variables used for settings
 int32_t guidance_hybrid_norm_ref_airspeed;
-float alt_pitch_gain = 0.3;
-int32_t wind_gain;
-int32_t horizontal_speed_gain;
 
 // Vertical gains
 float vertical_pgain = DC_FORWARD_VERTICAL_PGAIN;
@@ -89,17 +86,13 @@ static bool reset_wind_heading = false;
 struct Int32Eulers guidance_hybrid_ypr_sp;
 static struct Int32Vect2 guidance_hybrid_airspeed_sp;
 static struct Int32Vect2 guidance_h_pos_err;
-static struct Int32Vect2 guidance_hybrid_airspeed_ref;
 static struct Int32Vect2 wind_estimate;
-static struct Int32Vect2 wind_estimate_high_res;
 static struct Int32Vect2 guidance_hybrid_ref_airspeed;
 
 static int32_t norm_sp_airspeed_disp;
 static int32_t heading_diff_disp;
 static int32_t omega_disp;
 static int32_t high_res_psi;
-static bool guidance_hovering;
-static bool force_forward_flight;
 int32_t v_control_pitch = 0;
 struct NedCoor_i ned_gps_vel;
 float dperpendicular = 0.0;
@@ -131,23 +124,18 @@ static void send_hybrid_guidance(struct transport_tx *trans, struct link_device 
 
 #endif
 
+/**
+ * Initialization of the variables and registering of telemetry
+ */
 void guidance_hybrid_init(void)
 {
-
   INT_EULERS_ZERO(guidance_hybrid_ypr_sp);
   INT_VECT2_ZERO(guidance_hybrid_airspeed_sp);
-  INT_VECT2_ZERO(guidance_hybrid_airspeed_ref);
+  INT_VECT2_ZERO(guidance_hybrid_ref_airspeed);
+  INT_VECT2_ZERO(wind_estimate);
 
   high_res_psi = 0;
-  guidance_hovering = true;
-  horizontal_speed_gain = 8;
   guidance_hybrid_norm_ref_airspeed = 0;
-  wind_gain = 64;
-  force_forward_flight = 0;
-  INT_VECT2_ZERO(wind_estimate);
-  INT_VECT2_ZERO(guidance_hybrid_ref_airspeed);
-  INT_VECT2_ZERO(wind_estimate_high_res);
-
   dperpendicular = 0.0;
   perpendicular_prev = 0.0;
 
@@ -161,6 +149,9 @@ void guidance_hybrid_init(void)
     while ((_a) < (-(INT32_ANGLE_PI << (INT32_ANGLE_HIGH_RES_FRAC - INT32_ANGLE_FRAC)))) (_a) += (INT32_ANGLE_2_PI << (INT32_ANGLE_HIGH_RES_FRAC - INT32_ANGLE_FRAC));    \
   }
 
+/**
+ * Guidance running in NAV mode only
+ */
 void guidance_hybrid_run(void)
 {
   // Set the correct throttle curve
@@ -258,9 +249,7 @@ static void guidance_hybrid_hover(void) {
   has_transitioned = false;
 
   INT32_VECT2_NED_OF_ENU(guidance_h.sp.pos, navigation_carrot);
-
   guidance_h_update_reference();
-
   change_heading_in_wind();
 
   // Set psi command
@@ -349,6 +338,10 @@ static void set_wind_heading_to_current90(void) {
   wind_heading_deg = DegOfRad(wind_heading);
 }
 
+/**
+ * Reset the heading to the given heading
+ * @param sp_cmd The heading (psi) to change to
+ */
 void guidance_hybrid_reset_heading(struct Int32Eulers *sp_cmd)
 {
   guidance_hybrid_ypr_sp.psi = sp_cmd->psi;
@@ -358,19 +351,16 @@ void guidance_hybrid_reset_heading(struct Int32Eulers *sp_cmd)
 /// Convert a required airspeed to a certain attitude for the Quadshot
 static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp)
 {
-  //struct NedCoor_i ned_gps_vel;
+  // Get speed NED in m/s
   ned_of_ecef_vect_i(&ned_gps_vel, &state.ned_origin_i, &gps.ecef_vel);
-  //speed NED in cm/s to m/s
   float north = ((float)ned_gps_vel.x) / 100.0f;
   float east =  ((float)ned_gps_vel.y) / 100.0f;
 
   // e.g. NN-E  n=4, e=3
-
   float cosh = cosf(ANGLE_FLOAT_OF_BFP(nav_heading));
   float sinh = sinf(ANGLE_FLOAT_OF_BFP(nav_heading));
 
   // e.g. good cos = 4/5 sin = 3/5
-
   float to_wp         =   north * cosh + east * sinh;
   perpendicular = - north * sinh + east * cosh;
 
@@ -489,22 +479,19 @@ void guidance_hybrid_set_cmd_i(struct Int32Eulers *sp_cmd)
   int32_eulers_of_quat(&stab_att_sp_euler, &stab_att_sp_quat);
 }
 
-#define OUTBACK_MIN_FWD_PITCH -15.0
-#define OUTBACK_MAX_FWD_PITCH 10.0
-
 void guidance_hybrid_vertical(void)
 {
   int32_t vertical_err = -(guidance_v_z_ref - stateGetPositionNed_i()->z);
   v_control_pitch = ANGLE_BFP_OF_REAL( POS_FLOAT_OF_BFP(vertical_err) * vertical_pgain + stateGetSpeedNed_f()->z * vertical_dgain);
 
-  Bound(v_control_pitch, ANGLE_BFP_OF_REAL(RadOfDeg(OUTBACK_MIN_FWD_PITCH)), ANGLE_BFP_OF_REAL(RadOfDeg(OUTBACK_MAX_FWD_PITCH)));
+  Bound(v_control_pitch, ANGLE_BFP_OF_REAL(RadOfDeg(DC_FORWARD_MIN_PITCH)), ANGLE_BFP_OF_REAL(RadOfDeg(DC_FORWARD_MAX_PITCH)));
 
   float airspeed = stateGetAirspeed_f();
   if(airspeed < DC_FORWARD_VERTICAL_LOW_AIRSPEED) {
     v_control_pitch -= ANGLE_BFP_OF_REAL((DC_FORWARD_VERTICAL_LOW_AIRSPEED - airspeed)*RadOfDeg(low_airspeed_pitch_gain));
   }
 
-  Bound(v_control_pitch, ANGLE_BFP_OF_REAL(RadOfDeg(OUTBACK_MIN_FWD_PITCH)), ANGLE_BFP_OF_REAL(RadOfDeg(OUTBACK_MAX_FWD_PITCH)));
+  Bound(v_control_pitch, ANGLE_BFP_OF_REAL(RadOfDeg(DC_FORWARD_MIN_PITCH)), ANGLE_BFP_OF_REAL(RadOfDeg(DC_FORWARD_MAX_PITCH)));
 
   stabilization_cmd[COMMAND_THRUST] = nominal_forward_thrust;
   // Extra thrust when pitching up
