@@ -94,11 +94,9 @@ struct Int32Vect2 guidance_h_trim_att_integrator;
  */
 struct Int32Vect2  guidance_h_cmd_earth;
 
-static void guidance_h_update_reference(void);
 #if !GUIDANCE_INDI
 static void guidance_h_traj_run(bool in_flight);
 #endif
-static inline void transition_run(bool to_forward);
 static void read_rc_setpoint_speed_i(struct Int32Vect2 *speed_sp, bool in_flight);
 
 #if PERIODIC_TELEMETRY
@@ -199,7 +197,7 @@ void guidance_h_init(void)
 }
 
 
-static inline void reset_guidance_reference_from_current_position(void)
+void guidance_h_reset_reference_from_current_position(void)
 {
   VECT2_COPY(guidance_h.ref.pos, *stateGetPositionNed_i());
   VECT2_COPY(guidance_h.ref.speed, *stateGetSpeedNed_i());
@@ -364,13 +362,13 @@ void guidance_h_run(bool  in_flight)
 
     case GUIDANCE_H_MODE_FORWARD:
       if (transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
-        transition_run(true);
+        guidance_h_transition_run(true);
       }
       /* Falls through. */
     case GUIDANCE_H_MODE_CARE_FREE:
     case GUIDANCE_H_MODE_ATTITUDE:
       if ((!(guidance_h.mode == GUIDANCE_H_MODE_FORWARD)) && transition_percentage > 0) {
-        transition_run(false);
+        guidance_h_transition_run(false);
       }
       stabilization_attitude_run(in_flight);
 #if (STABILIZATION_FILTER_CMD_ROLL_PITCH || STABILIZATION_FILTER_CMD_YAW)
@@ -411,7 +409,7 @@ void guidance_h_run(bool  in_flight)
 }
 
 
-static void guidance_h_update_reference(void)
+void guidance_h_update_reference(void)
 {
   /* compute reference even if usage temporarily disabled via guidance_h_use_ref */
 #if GUIDANCE_H_USE_REF
@@ -545,7 +543,7 @@ void guidance_h_hover_enter(void)
   VECT2_COPY(guidance_h.sp.pos, *stateGetPositionNed_i());
 
   /* reset guidance reference */
-  reset_guidance_reference_from_current_position();
+  guidance_h_reset_reference_from_current_position();
 
   /* set guidance to current heading and position */
   guidance_h.rc_sp.psi = stateGetNedToBodyEulers_f()->psi;
@@ -560,7 +558,7 @@ void guidance_h_nav_enter(void)
   /* horizontal position setpoint from navigation/flightplan */
   INT32_VECT2_NED_OF_ENU(guidance_h.sp.pos, navigation_carrot);
 
-  reset_guidance_reference_from_current_position();
+  guidance_h_reset_reference_from_current_position();
 
   nav_heading = stateGetNedToBodyEulers_i()->psi;
   guidance_h.sp.heading = stateGetNedToBodyEulers_f()->psi;
@@ -611,14 +609,14 @@ void guidance_h_from_nav(bool in_flight)
     int32_t heading_sp_i = ANGLE_BFP_OF_REAL(guidance_h.sp.heading);
     stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth,
                                            heading_sp_i);
-#endif
+#endif //GUIDANCE_INDI
 
-#endif
+#endif //HYBRID_NAVIGATION
     stabilization_attitude_run(in_flight);
   }
 }
 
-static inline void transition_run(bool to_forward)
+void guidance_h_transition_run(bool to_forward)
 {
   if (to_forward) {
     //Add 0.00625%

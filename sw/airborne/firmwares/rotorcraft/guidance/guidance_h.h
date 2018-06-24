@@ -164,6 +164,19 @@ extern bool guidance_h_set_guided_heading_rate(float rate);
  */
 extern const struct Int32Vect2 *guidance_h_get_pos_err(void);
 
+/** Run the transition to forward or hover mode for hybrid vehicles
+ * @param to_forward If the transition is to forward (false is to hover)
+ */
+extern void guidance_h_transition_run(bool to_forward);
+
+/** Update the guidance reference model
+ */
+extern void guidance_h_update_reference(void);
+
+/** Reset the guidance reference using the current position
+ */
+extern void guidance_h_reset_reference_from_current_position(void);
+
 /* Make sure that ref can only be temporarily disabled for testing,
  * but not enabled if GUIDANCE_H_USE_REF was defined to FALSE.
  */
