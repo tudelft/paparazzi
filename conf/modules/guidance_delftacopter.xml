@@ -1,0 +1,52 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="guidance_delftacopter" dir="guidance">
+  <doc>
+    <description>
+      Guidance controller for the Delftacopter hybrid vehicle
+    </description>
+    <define name="DC_HOVER_THROTTLE_CURVE" value="1" description="Throttle curve to use for hover flights"/>
+    <define name="DC_FORWARD_THROTTLE_CURVE" value="2" description="Throttle curve to use for forward flights"/>
+    <define name="DC_FORWARD_MAX_AIRSPEED" description="Forward maximum airspeed the platform can reach"/>
+    <define name="DC_FORWARD_NOMINAL_THRUST" description="Forward nominal thrust value"/>
+    <define name="DC_FORWARD_VERTICAL_PGAIN" description="Forward flight vertical P gain"/>
+    <define name="DC_FORWARD_VERTICAL_DGAIN" description="Forward flight vertical D gain"/>
+    <define name="DC_FORWARD_VERTICAL_LOW_AIRSPEED" description="Forward flight vertical patch low airspeed"/>
+    <define name="DC_FORWARD_VERTICAL_LOW_AIRSPEED_PITCH_GAIN" description="Forward flight vertical pitch gain when in lowe airspeeds"/>
+    <define name="DC_FORWARD_MAX_TURN_BANK" description="Forward flight maximum turn banking"/>
+    <define name="DC_FORWARD_TURN_BANK_GAIN" description="Forward flight turn bank gain"/>
+    <define name="DC_FORWARD_PITCH_OF_ROLL" description="Forward pitch up from roll gain"/>
+    <define name="DC_FORWARD_THROTTLE_FROM_PITCH_UP" description="Forward throttle from pitch up gain"/>
+    <define name="DC_FORWARD_TRANSITION_MAX_OFFSET" description="Forward transitioning max offset"/>
+  </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="Hybrid Guidance">
+        <dl_setting var="max_airspeed" min="5" step="0.5" max="45" param="DC_FORWARD_MAX_AIRSPEED"/>
+        <dl_setting var="nominal_forward_thrust" min="0" step="50" max="9600" param="DC_FORWARD_NOMINAL_THRUST"/>
+        <dl_setting var="vertical_pgain" min="0.0" step="0.01" max="3.0" param="DC_FORWARD_VERTICAL_PGAIN"/>
+        <dl_setting var="vertical_dgain" min="0.0" step="0.01" max="3.0" param="DC_FORWARD_VERTICAL_DGAIN"/>
+        <dl_setting var="low_airspeed_pitch_gain" min="0.0" step="0.1" max="5.0" param="DC_FORWARD_VERTICAL_LOW_AIRSPEED_PITCH_GAIN"/>
+        <dl_setting var="max_turn_bank" min="10.0" step="1.0" max="60.0" param="DC_FORWARD_MAX_TURN_BANK"/>
+        <dl_setting var="turn_bank_gain" min="0.1" step="0.01" max="3.0" param="DC_FORWARD_TURN_BANK_GAIN"/>
+        <dl_setting var="vertical_pitch_of_roll" min="0.0" step="0.01" max="0.25" param="DC_FORWARD_PITCH_OF_ROLL"/>
+        <dl_setting var="throttle_from_pitch_up" min="0.0" step="1.0" max="500.0" param="DC_FORWARD_THROTTLE_FROM_PITCH_UP"/>
+        <dl_setting var="wind_heading_deg" min="0.0" step="0.1" max="360.0"/>
+
+        <!-- Unknown... -->
+        <dl_setting var="wind_gain" min="1" step="1" max="256"/>
+        <dl_setting var="horizontal_speed_gain" min="1" step="1" max="15" shortname="hor_speed_div"/>
+        <dl_setting var="alt_pitch_gain" min="0" step="0.01" max="5.0" shortname="alt_pitch_gain"/> 
+        <dl_setting var="perpen_dgain" min="0.0" step="0.01" max="360.0" shortname="perpen_dgain"/>       
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <header>
+    <file name="guidance_delftacopter.h"/>
+  </header>
+  <init fun="guidance_hybrid_init()"/>
+  <makefile target="ap|nps" firmware="rotorcraft">
+    <file name="guidance_delftacopter.c" dir="$(SRC_FIRMWARE)/guidance"/>
+    <define name="HYBRID_NAVIGATION" value="TRUE"/>
+  </makefile>
+</module>
