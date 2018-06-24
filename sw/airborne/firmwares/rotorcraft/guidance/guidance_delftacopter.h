@@ -32,6 +32,8 @@
 #include "math/pprz_algebra_int.h"
 #include "guidance_hybrid.h"
 
+extern void set_wind_heading_to_current90(void);
+
 extern int32_t v_control_pitch;
 extern float vertical_setpont_outback;
 extern int32_t nominal_forward_thrust;
@@ -40,10 +42,11 @@ extern float vertical_dgain;
 extern float vertical_pitch_of_roll;
 extern float low_airspeed_pitch_gain;
 enum hybrid_mode_t {HB_HOVER, HB_FORWARD};
-extern enum hybrid_mode outback_hybrid_mode;
+extern enum hybrid_mode_t dc_hybrid_mode;
 extern struct Int32Eulers guidance_hybrid_ypr_sp;
 extern float perpen_dgain;
 extern float throttle_from_pitch_up;
 extern float wind_heading_deg;
+extern bool has_transitioned;
 
 #endif /* GUIDANCE_DELFTACOPTER_H */

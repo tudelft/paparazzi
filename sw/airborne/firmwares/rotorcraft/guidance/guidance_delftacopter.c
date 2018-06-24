@@ -49,6 +49,7 @@
 #define INT32_ANGLE_HIGH_RES_FRAC 18
 
 // Variables used for settings
+enum hybrid_mode_t dc_hybrid_mode = HB_HOVER;
 int32_t guidance_hybrid_norm_ref_airspeed;
 
 // Vertical gains
@@ -72,14 +73,12 @@ static void guidance_hybrid_forward(void);
 static void guidance_hybrid_hover(void);
 static void guidance_hybrid_set_nav_throttle_curve(void);
 static void change_heading_in_wind(void);
-static void set_wind_heading_to_current90(void);
 
 // Private variables
-static enum hybrid_mode_t hybrid_mode = HB_HOVER;
 static int32_t last_hover_heading;
 static int32_t last_forward_heading;
 static int32_t transition_time = 0;
-static bool has_transitioned = false;
+bool has_transitioned = false;
 float wind_heading_deg = 0.0;
 static bool reset_wind_heading = false;
 
@@ -159,15 +158,15 @@ void guidance_hybrid_run(void)
 
   /* Verify in which flight mode the delftacopter is flying */
   // Transition to forward flight
-  if((hybrid_mode == HB_FORWARD) && (transition_percentage < (100 << INT32_PERCENTAGE_FRAC))) {
+  if((dc_hybrid_mode == HB_FORWARD) && (transition_percentage < (100 << INT32_PERCENTAGE_FRAC))) {
     guidance_hybrid_transition_forward();
   }
   // Transition to hover
-  else if((hybrid_mode == HB_HOVER) && (transition_percentage > 0)) {
+  else if((dc_hybrid_mode == HB_HOVER) && (transition_percentage > 0)) {
     guidance_hybrid_transition_hover();
   }
   // Forward flight
-  else if(hybrid_mode == HB_FORWARD) {
+  else if(dc_hybrid_mode == HB_FORWARD) {
     guidance_hybrid_forward();
   }
   // Hover flight
@@ -271,7 +270,7 @@ static void guidance_hybrid_hover(void) {
  */
 static void guidance_hybrid_set_nav_throttle_curve(void) {
   // When hovering
-  if(hybrid_mode == HB_HOVER) {
+  if(dc_hybrid_mode == HB_HOVER) {
     // Check the transition percentage
     if(transition_percentage < (50 << INT32_PERCENTAGE_FRAC)) {
       nav_throttle_curve_set(DC_HOVER_THROTTLE_CURVE);
@@ -332,7 +331,7 @@ static void change_heading_in_wind(void) {
 }
 
 /** Set wind heading to current heading */
-static void set_wind_heading_to_current90(void) {
+void set_wind_heading_to_current90(void) {
   float wind_heading = stateGetNedToBodyEulers_f()->psi + M_PI_2;
   FLOAT_ANGLE_NORMALIZE(wind_heading);
   wind_heading_deg = DegOfRad(wind_heading);
