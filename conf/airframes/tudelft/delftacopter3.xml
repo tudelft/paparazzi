@@ -182,6 +182,8 @@
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
     <define name="MilliAmpereOfAdc(_adc)" value="(DefaultMilliAmpereOfAdc(_adc) + 417 - 100)"/>
     <define name="VoltageOfAdc(adc)" value="(adc*0.0061456 + 0.321688)"/>
+    <define name="TRANSITION_MAX_OFFSET" value="-83.0" unit="deg"/>
+    <define name="USE_EARTH_BOUND_RC_SETPOINT" value="TRUE"/>
   </section>
 
   <section name="IMU" prefix="IMU_">
@@ -319,15 +321,15 @@
     <define name="HOVER_KP"    value="75"/>
     <define name="HOVER_KD"    value="40"/>
     <define name="HOVER_KI"    value="12"/>
-    <define name="NOMINAL_HOVER_THROTTLE" value="0.65"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value="0.71"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>
     <define name="REF_MAX_ZD" value="1.5"/>
   </section>
 
   <!-- INDI guidance controller for hover mode -->
   <section name="GUIDANCE_INDI" prefix="GUIDANCE_INDI_">
-    <define name="POS_GAIN" value="0.5"/>
-    <define name="SPEED_GAIN" value="1.8"/>
+    <define name="POS_GAIN" value="0.3"/>
+    <define name="SPEED_GAIN" value="1.0"/>
   </section>
 
   <!-- Horizontal gains in hover mode -->
@@ -344,7 +346,7 @@
   <!-- Gains for forward mode -->
   <section name="DC_FORWARD" prefix="DC_FORWARD_">
     <define name="MAX_AIRSPEED" value="18.0"/>
-    <define name="NOMINAL_THRUST" value="7300"/>
+    <define name="NOMINAL_THRUST" value="5900"/>
     <define name="VERTICAL_PGAIN" value="0.1"/>
     <define name="VERTICAL_DGAIN" value="0.015"/>
     <define name="VERTICAL_LOW_AIRSPEED" value="17.0"/>
@@ -353,7 +355,6 @@
     <define name="TURN_BANK_GAIN" value="0.5"/>
     <define name="PITCH_OF_ROLL" value="0.02"/>
     <define name="THROTTLE_FROM_PITCH_UP" value="50.0"/>
-    <define name="TRANSITION_MAX_OFFSET" value="-83.0" unit="deg"/>
     <define name="MIN_PITCH" value="-15.0"/>
     <define name="MAX_PITCH" value="10.0"/>
   </section>

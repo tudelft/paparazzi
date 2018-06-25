@@ -252,8 +252,8 @@ static void guidance_hybrid_hover(void) {
   change_heading_in_wind();
 
   // Set psi command
-  guidance_h.sp.heading = nav_heading;
-  INT32_ANGLE_NORMALIZE(guidance_h.sp.heading);
+  guidance_h.sp.heading = ANGLE_FLOAT_OF_BFP(nav_heading);
+  FLOAT_ANGLE_NORMALIZE(guidance_h.sp.heading);
 
   // Make sure the heading is right before leaving horizontal_mode attitude
   struct Int32Eulers sp_cmd_i;
@@ -419,7 +419,7 @@ static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp)
   guidance_hybrid_ref_airspeed.x = (guidance_hybrid_norm_ref_airspeed * c_psi) >> INT32_TRIG_FRAC;
   guidance_hybrid_ref_airspeed.y = (guidance_hybrid_norm_ref_airspeed * s_psi) >> INT32_TRIG_FRAC;
 
-  ypr_sp->theta = ANGLE_BFP_OF_REAL(DC_FORWARD_TRANSITION_MAX_OFFSET);
+  ypr_sp->theta = ANGLE_BFP_OF_REAL(TRANSITION_MAX_OFFSET);
 
   ypr_sp->phi = ANGLE_BFP_OF_REAL(heading_diff * turn_bank_gain);
   if (ypr_sp->phi > ANGLE_BFP_OF_REAL(max_turn_bank / 180.0 * M_PI)) { ypr_sp->phi = ANGLE_BFP_OF_REAL(max_turn_bank / 180.0 * M_PI); }
@@ -480,6 +480,11 @@ void guidance_hybrid_set_cmd_i(struct Int32Eulers *sp_cmd)
 
 void guidance_hybrid_vertical(void)
 {
+  // Only run vertical loop in forward mode
+  if(transition_percentage <= 0) {
+    return;
+  }
+  
   int32_t vertical_err = -(guidance_v_z_ref - stateGetPositionNed_i()->z);
   v_control_pitch = ANGLE_BFP_OF_REAL( POS_FLOAT_OF_BFP(vertical_err) * vertical_pgain + stateGetSpeedNed_f()->z * vertical_dgain);
 

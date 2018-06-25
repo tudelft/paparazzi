@@ -195,6 +195,13 @@ void throttle_curve_run(pprz_t cmds[], uint8_t ap_mode)
   cmds[COMMAND_THRUST] = throttle_curve.throttle; //Reuse for now
   cmds[COMMAND_COLLECTIVE] = throttle_curve.collective;
 
+  // disable the tip propellers when in curve 2
+  if (throttle_curve.mode == 2) {
+    INTERMCU_SET_CMD_STATUS(INTERMCU_CMD_TIPPROPS);
+  } else {
+    INTERMCU_CLR_CMD_STATUS(INTERMCU_CMD_TIPPROPS);
+  }
+
   // Only set throttle if motors are on
   if (!autopilot_get_motors_on()) {
     cmds[COMMAND_THRUST] = 0;

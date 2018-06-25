@@ -82,6 +82,7 @@
       <set value="true" var="opa_controller_vision_power"/> <!-- Power on the Vision PC -->
       <call_once fun="NavKillThrottle()"/>
       <call_once fun="nav_throttle_curve_set(0)"/>
+      <manual pitch="0" roll="0" throttle="0" until="TRUE" vmode="throttle" yaw="0"/>
       <while cond="!GpsFixValid()"/>
     </block>
     <block group="init" name="Geo_init">

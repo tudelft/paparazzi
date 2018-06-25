@@ -17,7 +17,6 @@
     <define name="DC_FORWARD_TURN_BANK_GAIN" description="Forward flight turn bank gain"/>
     <define name="DC_FORWARD_PITCH_OF_ROLL" description="Forward pitch up from roll gain"/>
     <define name="DC_FORWARD_THROTTLE_FROM_PITCH_UP" description="Forward throttle from pitch up gain"/>
-    <define name="DC_FORWARD_TRANSITION_MAX_OFFSET" description="Forward transitioning max offset"/>
     <define name="DC_FORWARD_MIN_PITCH" description="Forward minimum pitch value"/>
     <define name="DC_FORWARD_MAX_PITCH" description="Forward minimum pitch value"/>
   </doc>
