@@ -181,6 +181,7 @@
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
     <define name="MilliAmpereOfAdc(_adc)" value="(DefaultMilliAmpereOfAdc(_adc) + 417 - 100)"/>
+    <define name="VoltageOfAdc(adc)" value="(adc*0.0061456 + 0.321688)"/>
   </section>
 
   <section name="IMU" prefix="IMU_">
