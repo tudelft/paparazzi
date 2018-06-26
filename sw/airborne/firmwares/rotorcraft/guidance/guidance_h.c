@@ -94,9 +94,6 @@ struct Int32Vect2 guidance_h_trim_att_integrator;
  */
 struct Int32Vect2  guidance_h_cmd_earth;
 
-#if !GUIDANCE_INDI
-static void guidance_h_traj_run(bool in_flight);
-#endif
 static void read_rc_setpoint_speed_i(struct Int32Vect2 *speed_sp, bool in_flight);
 
 #if PERIODIC_TELEMETRY
@@ -457,7 +454,7 @@ void guidance_h_update_reference(void)
 #define GH_GAIN_SCALE 2
 
 #if !GUIDANCE_INDI
-static void guidance_h_traj_run(bool in_flight)
+void guidance_h_traj_run(bool in_flight)
 {
   /* maximum bank angle: default 20 deg, max 40 deg*/
   static const int32_t traj_max_bank = Min(BFP_OF_REAL(GUIDANCE_H_MAX_BANK, INT32_ANGLE_FRAC),
@@ -590,7 +587,7 @@ void guidance_h_from_nav(bool in_flight)
 
 #if HYBRID_NAVIGATION
     INT32_VECT2_NED_OF_ENU(guidance_h.sp.pos, navigation_target);
-    guidance_hybrid_run();
+    guidance_hybrid_run(in_flight);
 #else
     INT32_VECT2_NED_OF_ENU(guidance_h.sp.pos, navigation_carrot);
 

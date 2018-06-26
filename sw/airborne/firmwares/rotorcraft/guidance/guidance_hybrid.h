@@ -42,7 +42,7 @@ extern float turn_bank_gain;
 
 /** Runs the Hybrid Guidance main functions.
  */
-extern void guidance_hybrid_run(void);
+extern void guidance_hybrid_run(bool in_flight);
 
 /** Hybrid Guidance Initialization function.
  * @param

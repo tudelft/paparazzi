@@ -104,6 +104,7 @@ struct HorizontalGuidance {
 };
 
 extern struct HorizontalGuidance guidance_h;
+extern struct Int32Vect2  guidance_h_cmd_earth;
 
 extern int32_t transition_percentage;
 
@@ -114,6 +115,10 @@ extern void guidance_h_run(bool in_flight);
 
 extern void guidance_h_hover_enter(void);
 extern void guidance_h_nav_enter(void);
+
+#if !GUIDANCE_INDI
+void guidance_h_traj_run(bool in_flight);
+#endif
 
 /** Set horizontal guidance from NAV and run control loop
  */

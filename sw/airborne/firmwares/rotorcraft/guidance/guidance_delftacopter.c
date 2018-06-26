@@ -70,7 +70,7 @@ static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp);
 static void guidance_hybrid_transition_forward(void);
 static void guidance_hybrid_transition_hover(void);
 static void guidance_hybrid_forward(void);
-static void guidance_hybrid_hover(void);
+static void guidance_hybrid_hover(bool in_flight);
 static void guidance_hybrid_set_nav_throttle_curve(void);
 static void change_heading_in_wind(void);
 
@@ -151,7 +151,7 @@ void guidance_hybrid_init(void)
 /**
  * Guidance running in NAV mode only
  */
-void guidance_hybrid_run(void)
+void guidance_hybrid_run(bool in_flight)
 {
   // Set the correct throttle curve
   guidance_hybrid_set_nav_throttle_curve();
@@ -171,7 +171,7 @@ void guidance_hybrid_run(void)
   }
   // Hover flight
   else {
-    guidance_hybrid_hover();
+    guidance_hybrid_hover(in_flight);
   }
 }
 
@@ -242,7 +242,7 @@ static void guidance_hybrid_forward(void) {
 /**
  * Hover flight guidance loop
  */
-static void guidance_hybrid_hover(void) {
+static void guidance_hybrid_hover(bool in_flight) {
   // Reset just transitioned timer
   transition_time = 0;
   has_transitioned = false;
@@ -261,8 +261,15 @@ static void guidance_hybrid_hover(void) {
   guidance_hybrid_reset_heading(&sp_cmd_i);
   last_hover_heading = sp_cmd_i.psi;
 
-  // Run INDI guidance for hover
+#if GUIDANCE_INDI
   guidance_indi_run(guidance_h.sp.heading);
+#else
+  /* compute x,y earth commands */
+  guidance_h_traj_run(in_flight);
+  /* set final attitude setpoint */
+  int32_t heading_sp_i = ANGLE_BFP_OF_REAL(guidance_h.sp.heading);
+  stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth, heading_sp_i);
+#endif
 }
 
 /**
@@ -482,6 +489,7 @@ void guidance_hybrid_vertical(void)
 {
   // Only run vertical loop in forward mode
   if(transition_percentage <= 0) {
+    stabilization_cmd[COMMAND_THRUST] = guidance_v_delta_t;
     return;
   }
   

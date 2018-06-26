@@ -69,11 +69,11 @@
       !(nav_block == IndexOfBlock('inert')) &&
       !(nav_block == IndexOfBlock('failsafe')) &&
       (autopilot_in_flight() == true) )" deroute="DatalinkLoss"/>
-    <exception cond="((dc_hybrid_mode == HB_FORWARD) &&
+    <!--exception cond="((dc_hybrid_mode == HB_FORWARD) &&
       (12.0 > stateGetAirspeed_f()) &&
       has_transitioned &&
       (autopilot_in_flight() == true) &&
-      !(nav_block == IndexOfBlock('Hover_here')) )" deroute="Hover_here"/>
+      !(nav_block == IndexOfBlock('Hover_here')) )" deroute="Hover_here"/-->
   </exceptions>
   <blocks>
 
@@ -122,18 +122,18 @@
       <exception cond="stateGetPositionEnu_f()->z > 50.0" deroute="route_1234"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <call_once fun="nav_set_heading_current()"/>
-      <set value="RadOfDeg(35)" var="guidance_indi_max_bank"/>
+      <!--set value="RadOfDeg(35)" var="guidance_indi_max_bank"/-->
       <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z - POS_BFP_OF_REAL(5.0), -SPEED_BFP_OF_REAL(3.0), 0)"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB" until="stateGetPositionEnu_f()->z > 20.0"/>
       
-      <set value="GUIDANCE_H_MAX_BANK" var="guidance_indi_max_bank"/>
+      <!--set value="GUIDANCE_H_MAX_BANK" var="guidance_indi_max_bank"/-->
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
 
     <!-- Safety blocks -->
     <block group="safe" name="Standby" strip_button="Standby" >
       <set var="dc_hybrid_mode" value="HB_HOVER"/>
-      <set value="GUIDANCE_H_MAX_BANK" var="guidance_indi_max_bank"/>
+      <!--set value="GUIDANCE_H_MAX_BANK" var="guidance_indi_max_bank"/-->
       <stay wp="STDBY"/>
     </block>
     <block group="safe" name="Hover_here"  strip_button="Hover_Here">

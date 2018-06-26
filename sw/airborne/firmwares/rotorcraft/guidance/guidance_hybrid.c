@@ -126,7 +126,7 @@ void guidance_hybrid_init(void)
     while ((_a) < (-INT32_ANGLE_PI << (INT32_ANGLE_HIGH_RES_FRAC - INT32_ANGLE_FRAC))) (_a) += (INT32_ANGLE_2_PI << (INT32_ANGLE_HIGH_RES_FRAC - INT32_ANGLE_FRAC));    \
   }
 
-void guidance_hybrid_run(void)
+void guidance_hybrid_run(bool in_flight __attribue__((unused)))
 {
   guidance_hybrid_determine_wind_estimate();
   guidance_hybrid_position_to_airspeed();
