@@ -103,7 +103,7 @@ static inline void odroid_outback_parse_msg(void)
 {
 
   /* Parse the odroid_outback message */
-  uint8_t msg_id = mp_msg_buf[1];
+  uint8_t msg_id = pprzlink_get_msg_id(mp_msg_buf);
 
   switch (msg_id) {
 
