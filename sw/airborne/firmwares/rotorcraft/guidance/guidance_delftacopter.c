@@ -249,7 +249,7 @@ static void guidance_hybrid_hover(bool in_flight) {
 
   INT32_VECT2_NED_OF_ENU(guidance_h.sp.pos, navigation_carrot);
   guidance_h_update_reference();
-  change_heading_in_wind();
+  //change_heading_in_wind();
 
   // Set psi command
   guidance_h.sp.heading = ANGLE_FLOAT_OF_BFP(nav_heading);
@@ -363,6 +363,7 @@ static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp)
   float east =  ((float)ned_gps_vel.y) / 100.0f;
 
   // e.g. NN-E  n=4, e=3
+  nav_set_heading_towards_target();
   float cosh = cosf(ANGLE_FLOAT_OF_BFP(nav_heading));
   float sinh = sinf(ANGLE_FLOAT_OF_BFP(nav_heading));
 

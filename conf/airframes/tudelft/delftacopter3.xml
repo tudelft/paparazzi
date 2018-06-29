@@ -218,6 +218,8 @@
   </section>
 
   <section name="AHRS" prefix="AHRS_">
+    <define name="GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="true"/>
+
     <!--This airframe vibrates a lot, which causes accel measurements in excess of 1g continuously-->
     <define name="GRAVITY_HEURISTIC_FACTOR" value="0"/>
     <define name="PROPAGATE_LOW_PASS_RATES" value="TRUE"/>
@@ -333,6 +335,7 @@
   <section name="GUIDANCE_INDI" prefix="GUIDANCE_INDI_">
     <define name="POS_GAIN" value="0.3"/>
     <define name="SPEED_GAIN" value="1.0"/>
+    <define name="FILTER_CUTOFF" value="0.8"/>
   </section>
 
   <!-- Horizontal gains in hover mode -->
@@ -353,7 +356,7 @@
     <define name="VERTICAL_PGAIN" value="0.1"/>
     <define name="VERTICAL_DGAIN" value="0.015"/>
     <define name="VERTICAL_LOW_AIRSPEED" value="17.0"/>
-    <define name="VERTICAL_LOW_AIRSPEED_PITCH_GAIN" value="2.0"/>
+    <define name="VERTICAL_LOW_AIRSPEED_PITCH_GAIN" value="0.0"/>
     <define name="MAX_TURN_BANK" value="25.0"/>
     <define name="TURN_BANK_GAIN" value="0.5"/>
     <define name="PITCH_OF_ROLL" value="0.02"/>
