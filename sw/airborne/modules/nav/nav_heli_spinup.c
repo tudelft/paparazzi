@@ -62,7 +62,7 @@ bool nav_heli_spinup_run(void)
   nav_cmd_roll = 0;
   nav_cmd_pitch = 0;
   nav_cmd_yaw = 0;
-  horizontal_mode = HORIZONTAL_MODE_MANUAL;
+  horizontal_mode = HORIZONTAL_MODE_ATTITUDE;
   vertical_mode = VERTICAL_MODE_MANUAL;
   nav_throttle = stage_time * nav_heli_spinup.throttle / nav_heli_spinup.duration;
   return true;
