@@ -58,6 +58,7 @@ float vertical_dgain = DC_FORWARD_VERTICAL_DGAIN;
 float low_airspeed_pitch_gain = DC_FORWARD_VERTICAL_LOW_AIRSPEED_PITCH_GAIN;
 
 // Horizontal gains
+int16_t transition_throttle = DC_FORWARD_TRANSITION_THROTTLE;
 int32_t max_airspeed = DC_FORWARD_MAX_AIRSPEED;
 float max_turn_bank = DC_FORWARD_MAX_TURN_BANK;
 float turn_bank_gain = DC_FORWARD_TURN_BANK_GAIN;
@@ -491,6 +492,10 @@ void guidance_hybrid_vertical(void)
   // Only run vertical loop in forward mode
   if(transition_percentage <= 0) {
     stabilization_cmd[COMMAND_THRUST] = guidance_v_delta_t;
+    return;
+  }
+  else if (transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
+    stabilization_cmd[COMMAND_THRUST] = transition_throttle;
     return;
   }
   

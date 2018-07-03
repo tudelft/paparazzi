@@ -48,5 +48,6 @@ extern float perpen_dgain;
 extern float throttle_from_pitch_up;
 extern float wind_heading_deg;
 extern bool has_transitioned;
+extern int16_t transition_throttle;
 
 #endif /* GUIDANCE_DELFTACOPTER_H */

@@ -183,8 +183,8 @@
     <define name="ARRIVED_AT_WAYPOINT" value="50"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
+    <define name="APVoltageOfAdc(adc)" value="(adc*0.0061456 + 0.321688)"/>
     <define name="MilliAmpereOfAdc(_adc)" value="(DefaultMilliAmpereOfAdc(_adc) + 417 - 100)"/>
-    <define name="VoltageOfAdc(adc)" value="(adc*0.0061456 + 0.321688)"/>
     <define name="TRANSITION_MAX_OFFSET" value="-83.0" unit="deg"/>
     <define name="USE_EARTH_BOUND_RC_SETPOINT" value="TRUE"/>
   </section>
@@ -363,6 +363,7 @@
     <define name="THROTTLE_FROM_PITCH_UP" value="50.0"/>
     <define name="MIN_PITCH" value="-15.0"/>
     <define name="MAX_PITCH" value="10.0"/>
+    <define name="TRANSITION_THROTTLE" value="8500"/>
   </section>
 
   <!-- Radio control specific switches -->

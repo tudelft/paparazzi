@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
 
-<flight_plan alt="50" ground_alt="0" home_mode_height="50" lat0="52.168141" lon0="4.412520" max_dist_from_home="1400" name="VALK2018" qfu="20" security_height="10">
+<flight_plan alt="80" ground_alt="0" home_mode_height="80" lat0="52.168141" lon0="4.412520" max_dist_from_home="1400" name="VALK2018" qfu="20" security_height="10">
   <header>
 #include "autopilot.h"
 #include "guidance/guidance_delftacopter.h"
@@ -21,17 +21,17 @@
 
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
-    <waypoint name="TD" x="-10" y="10"/>
+    <waypoint name="TD" x="7" y="4"/>
     <waypoint name="MB1" x="211.8" y="-1198.3"/>
     <waypoint name="MB2" x="-1296.0" y="-213.2"/>
     <waypoint name="MB3" x="363.8" y="1258.5"/>
     <waypoint name="MB4" x="961.6" y="-484.0"/>
-    <waypoint name="p1" x="458.6" y="199.3"/>
-    <waypoint name="p2" x="490.4" y="24.5"/>
-    <waypoint name="p3" x="168.3" y="-45.3"/>
-    <waypoint name="p4" x="133.7" y="121.9"/>
+    <waypoint name="p1" x="408" y="-36"/>
+    <waypoint name="p2" x="401" y="71"/>
+    <waypoint name="p3" x="23" y="98"/>
+    <waypoint name="p4" x="50" y="201"/>
     <waypoint name="CLIMB" x="-119.7" y="114.9"/>
-    <waypoint name="STDBY" x="280.3" y="56.9"/>
+    <waypoint name="STDBY" x="36" y="31"/>
     <waypoint name="AVOID" x="69.7" y="-214.3"/>
     <waypoint name="HOVER" x="-155.1" y="-275.9"/>
   </waypoints>
@@ -79,7 +79,7 @@
 
     <!-- Initialization (No Geofence check, No datalink check, No RPM check, No stall check) -->
     <block group="init" name="Wait_GPS">
-      <set value="true" var="opa_controller_vision_power"/> <!-- Power on the Vision PC -->
+      <!--set value="true" var="opa_controller_vision_power"/--> <!-- Power on the Vision PC -->
       <set var="dc_hybrid_mode" value="HB_HOVER"/>      
       <call_once fun="NavKillThrottle()"/>
       <call_once fun="nav_throttle_curve_set(0)"/>

@@ -78,6 +78,10 @@ static struct {
 } electrical_priv;
 #endif
 
+#if defined APVoltageOfAdc && !defined FBW
+#define VoltageOfAdc(adc) APVoltageOfAdc(adc)
+#endif
+
 #ifndef VoltageOfAdc
 #define VoltageOfAdc(adc) DefaultVoltageOfAdc(adc)
 #endif
