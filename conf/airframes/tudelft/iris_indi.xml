@@ -48,6 +48,9 @@
   <firmware name="rotorcraft">
     <target name="fbw" board="px4io_2.4" />
     <module name="motor_mixing" />
+    <module name="guidance" type="indi">
+      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500"/>
+    </module>
     <module name="radio_control" type="ppm">
       <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="1" />
       <define name="RADIO_KILL_SWITCH" value="RADIO_KILL" />
