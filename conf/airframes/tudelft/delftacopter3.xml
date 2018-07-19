@@ -32,7 +32,9 @@
       <module name="guidance"      type="delftacopter"/>
       <!--module name="guidance"      type="indi"/-->
       <module name="gain_scheduling"/>
-      <module name="intermcu"      type="uart"/>
+      <module name="intermcu"      type="uart">
+        <configure name="SECONDARY_GPS" value="imcu"/>
+      </module>
       <module name="telemetry"     type="intermcu"/>
       <module name="current_sensor"/>
       <module name="opa_controller"/>
@@ -71,7 +73,9 @@
       <module name="actuators"     type="pwm">
         <define name="SERVO_HZ"    value="300"/>
       </module>
-      <module name="intermcu"      type="uart"/>
+      <module name="intermcu"      type="uart">
+        <define name="IMCU_GPS_ID" value="GPS_UBX_ID"/>
+      </module>
       <module name="telemetry"     type="intermcu"/>
       <module name="opa_controller"/>
       <module name="heli_swashplate_mixing"/>
