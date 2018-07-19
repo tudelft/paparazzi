@@ -22,10 +22,10 @@
     <waypoint name="MB2" x="-1296.0" y="-213.2"/>
     <waypoint name="MB3" x="363.8" y="1258.5"/>
     <waypoint name="MB4" x="1324.6" y="-212.7"/>
-    <waypoint name="p1" x="-312.8" y="-7.3"/>
-    <waypoint name="p2" x="-330.6" y="109.7"/>
-    <waypoint name="p3" x="208.9" y="99.9"/>
-    <waypoint name="p4" x="198.7" y="196.6"/>
+    <waypoint name="p1" x="-477.2" y="-117.5"/>
+    <waypoint name="p2" x="-512.7" y="1.2"/>
+    <waypoint name="p3" x="130.7" y="128.6"/>
+    <waypoint name="p4" x="74.4" y="237.1"/>
     <waypoint name="CLIMB" x="-36.3" y="36.3"/>
     <waypoint name="STDBY" x="-58.5" y="64.3"/>
     <waypoint name="AVOID" x="69.7" y="-214.3"/>
@@ -95,20 +95,20 @@
       <call_once fun="NavResurrect()"/>
       <call fun="nav_heli_spinup_run()"/>
       <call_once fun="nav_throttle_curve_set(1)"/>
-      <attitude pitch="0" roll="0" throttle="0" until="stage_time>4" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0" until="stage_time>1" vmode="throttle"/>
     </block>
     <block group="takeoff" name="Hold_Attitude">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <exception cond="1200 > throttle_curve.rpm_meas" deroute="Start_Engine"/>
       <call_once fun="nav_throttle_curve_set(1)"/>
       <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="stage_time>1" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0" until="stage_time>0" vmode="throttle"/>
     </block>
     <block group="takeoff" name="Takeoff">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <exception cond="stateGetPositionEnu_f()->z > 4.0" deroute="Climb"/>
       <call_once fun="nav_throttle_curve_set(1)"/>
-      <attitude pitch="0" roll="0" throttle="0.83" until="stage_time>2" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0.78" until="stage_time>2" vmode="throttle"/>
     </block>
     <block group="takeoff" name="Climb">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -170,7 +170,7 @@
     <block group="land" name="landing_moment" strip_button="Moment">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_throttle_curve_set(1)"/>
-      <attitude pitch="0" roll="0" throttle="0.5" until="stage_time>2" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0.5" until="stage_time>0" vmode="throttle"/>
       <deroute block="landed"/>
     </block>
     <block group="safe" name="Descent_noGPS">
@@ -190,7 +190,7 @@
     <block name="landing_moment_noGPS">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_throttle_curve_set(1)"/>
-      <attitude pitch="0" roll="0" throttle="0.5" until="stage_time>2" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0.5" until="stage_time>0" vmode="throttle"/>
       <deroute block="landed"/>
     </block>
     <block group="land" name="landed">
