@@ -77,7 +77,7 @@ struct PPRZ2VisionPackage {
 
 extern float odroid_outback_search_height;
 extern bool odroid_outback_enable_landing ;
-extern bool odroid_outback_enable_spotsearch;
+extern bool odroid_outback_enable_take_foto;
 extern bool odroid_outback_enable_findjoe;
 extern bool odroid_outback_enable_opticflow;
 extern bool odroid_outback_enable_attcalib;

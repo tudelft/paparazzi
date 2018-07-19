@@ -47,7 +47,7 @@ static uint8_t mp_msg_buf[128]  __attribute__((aligned));   ///< The message buf
 
 struct  Vision2PPRZPackage v2p_package;
 bool odroid_outback_enable_landing = false;
-bool odroid_outback_enable_spotsearch = false;
+bool odroid_outback_enable_take_foto = false;
 bool odroid_outback_enable_findjoe = false;
 bool odroid_outback_enable_opticflow = false;
 bool odroid_outback_enable_attcalib = false;
@@ -144,9 +144,9 @@ static inline void odroid_outback_parse_msg(void)
 
         //float diff_search = (odroid_outback_search_height - k2p_package.height)*odroid_outback_height_gain;
 
-        if (odroid_outback_enable_spotsearch) {
+        if (odroid_outback_enable_take_foto) {
             // WP_ODROID_OUTBACK_LANDSPOT
-            waypoint_set_xy_i(WP_dummy, POS_BFP_OF_REAL(v2p_package.land_enu_x), POS_BFP_OF_REAL(v2p_package.land_enu_y));
+           // waypoint_set_xy_i(WP_dummy, POS_BFP_OF_REAL(v2p_package.land_enu_x), POS_BFP_OF_REAL(v2p_package.land_enu_y));
           }
 
         if (odroid_outback_enable_landing) {
@@ -225,8 +225,10 @@ void odroid_outback_periodic() {
   p2k_package.enables = 0;
   if (odroid_outback_enable_landing)
     p2k_package.enables |= 0b1;
-  if (odroid_outback_enable_spotsearch)
+  if (odroid_outback_enable_take_foto) {
     p2k_package.enables |= 0b10;
+    odroid_outback_enable_take_foto = false;
+  }
   if (odroid_outback_enable_findjoe)
     p2k_package.enables |= 0b100;
   if (odroid_outback_enable_opticflow)
@@ -250,7 +252,7 @@ void odroid_outback_periodic() {
 }
 
 void enableOdroidLandingspotSearch(bool b) {
-  odroid_outback_enable_spotsearch = b;
+  odroid_outback_enable_take_foto = b;
 }
 
 void enableOdroidDescent(bool b) {
