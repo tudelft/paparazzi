@@ -110,3 +110,24 @@ void sys_id_chirp_run(void) {
     }
 }
 
+void sys_id_chirp_add_values(pprz_t in_cmd[])
+{
+
+  // Add chirp system identification values
+  #if USE_SYS_ID_CHIRP
+  in_cmd[COMMAND_ROLL] += current_chirp_values[0];
+  in_cmd[COMMAND_PITCH] += current_chirp_values[1];
+  in_cmd[COMMAND_YAW] += current_chirp_values[2];
+  in_cmd[COMMAND_ELEVATOR] += current_chirp_values[3];
+  in_cmd[COMMAND_AILERON] += current_chirp_values[4];
+  #endif
+
+  /* bound the result */
+  BoundAbs(in_cmd[COMMAND_ROLL], MAX_PPRZ);
+  BoundAbs(in_cmd[COMMAND_PITCH], MAX_PPRZ);
+  BoundAbs(in_cmd[COMMAND_YAW], MAX_PPRZ);
+  BoundAbs(in_cmd[COMMAND_ELEVATOR], MAX_PPRZ);
+  BoundAbs(in_cmd[COMMAND_AILERON], MAX_PPRZ);
+
+}
+

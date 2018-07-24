@@ -28,6 +28,7 @@
 
 #include <std.h>
 #include <stdbool.h>
+#include "paparazzi.h"
 #include "modules/system_identification/pprz_chirp.h"
 #include "generated/airframe.h"
 #include "mcu_periph/sys_time.h"
@@ -57,5 +58,9 @@ extern void sys_id_chirp_run(void);
 
 // Handler for chaning the chirp_active variable in the GCS
 extern void sys_id_chirp_chirp_activate_handler(uint8_t activate);
+
+// Call this function in command_laws to add the control values
+extern void sys_id_chirp_add_values(pprz_t in_cmd[]);
+
 
 #endif // SYS_ID_CHIRP_H
