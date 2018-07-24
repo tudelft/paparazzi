@@ -1,0 +1,41 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="sys_id_chirp" dir="system_identification">
+  <doc>
+    <description>System identification chirp</description>
+  </doc>
+
+  <settings>
+    <dl_settings name="System identification">
+      <dl_settings name="System chirp">
+        <dl_setting min="0" max="1" step="1" values="Inactive|Active" shortname="Activate chirp" var="chirp_active" handler="chirp_activate_handler" type="uint8_t" module="system_identification/sys_id_chirp">
+          <strip_button icon="sine.png" name="Chirp active" value="1" group="System identification"/>
+          <strip_button icon="flat_line.png" name="Chirp inactive" value="0" group="System identification"/>
+        </dl_setting>
+        <dl_setting min="0" max="4" step="1" values="Roll|Pitch|Yaw|Elevator|Aileron" shortname="Chirp axis" var="chirp_axis" type="uint8_t" module="system_identification/sys_id_chirp"/>
+        <dl_setting min="0" max="9600" step="100" shortname="Amplitude" var="chirp_amplitude" type="int32_t" module="system_identification/sys_id_chirp"/>
+        <dl_setting min="0" max="1" step="0.01" shortname="on-axis noise" var="chirp_noise_stdv_onaxis_ratio" type="float" module="system_identification/sys_id_chirp"/>
+        <dl_setting min="0" max="1" step="0.01" shortname="off-axis noise" var="chirp_noise_stdv_offaxis_ratio" type="float" module="system_identification/sys_id_chirp"/>
+        <dl_setting min="0" max="3" step="0.01" shortname="Fstart_hz" var="chirp_f0_hz" type="float" module="system_identification/sys_id_chirp"/>
+        <dl_setting min="3" max="10" step="0.1" shortname="Fend_hz" var="chirp_f1_hz" type="float" module="system_identification/sys_id_chirp"/>
+        <dl_setting min="0" max="100" step="0.5" shortname="Length_s" var="chirp_length_s" type="float" module="system_identification/sys_id_chirp"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <header>
+    <file name="sys_id_chirp.h"/>
+  </header>
+
+  <init fun="sys_id_chirp_init()"/>
+  <periodic fun="sys_id_chirp_run()" freq="60" autorun="TRUE"/>
+
+  <makefile>
+    <define name="USE_SYS_ID_CHIRP" value="true"/>
+    <define name="CHIRP_EXPONENTIAL" value="true"/>
+    <define name="CHIRP_FADEIN" value="true"/>
+    <file name="random.c"/>
+    <file name="pprz_chirp.c"/>
+    <file name="sys_id_chirp.c"/>
+  </makefile>
+</module>
