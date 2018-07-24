@@ -46,6 +46,7 @@
       <module name="odroid_outback">
         <configure name="ODROID_OUTBACK_PORT" value="UART4"/>
       </module>
+      <module name="sys_id_chirp"/>
 
       <module name="geo_mag"/>
       <module name="air_data">
@@ -153,6 +154,9 @@
 
   <!-- Convert commands to PWM -->
   <command_laws>
+    <!-- Add chirp values to control signal -->
+    <call fun="sys_id_chirp_add_values(values)"/>
+
     <!-- Run swashplate mixing and define variables -->
     <call fun="swashplate_mixing_run(values)"/>
     <let var="th_hold"          value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
