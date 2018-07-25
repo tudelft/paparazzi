@@ -77,6 +77,10 @@
     </module>
     <module name="adc_generic">
       <configure name="ADC_CHANNEL_GENERIC_NB_SAMPLES" value="1"/>
+      <configure name="ADC_CHANNEL_GENERIC1" value="ADC_2"/>
+      <configure name="ADC_CHANNEL_GENERIC2" value="ADC_3"/>
+      <configure name="ADC_CHANNEL_GENERIC3" value="ADC_4"/>
+      <configure name="ADC_CHANNEL_GENERIC4" value="ADC_6"/>
     </module>
   </firmware>
   
