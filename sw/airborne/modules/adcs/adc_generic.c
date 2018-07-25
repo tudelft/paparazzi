@@ -35,20 +35,12 @@
 #include "pprzlink/messages.h"
 #include "subsystems/datalink/downlink.h"
 
-uint16_t adc_generic_val1;
-uint16_t adc_generic_val2;
-uint16_t adc_generic_val3;
-
-#ifndef ADC_CHANNEL_GENERIC1
-#ifndef ADC_CHANNEL_GENERIC2
-#error "at least one ADC_CHANNEL_GENERIC1/2 needs to be defined to use the generic_adc module"
-#endif
-#endif
-
-#ifndef ADC_CHANNEL_VBAT
-#define ADC_CHANNEL_VBAT ADC_5
-#endif
-
+uint16_t adc_val1;
+uint16_t adc_val2;
+uint16_t adc_val3;
+uint16_t adc_val4;
+uint16_t servo_pitch;
+uint16_t servo_yaw;
 
 #ifndef ADC_CHANNEL_GENERIC_NB_SAMPLES
 #define ADC_CHANNEL_GENERIC_NB_SAMPLES DEFAULT_AV_NB_SAMPLE
@@ -62,46 +54,36 @@ uint16_t adc_generic_val3;
 #define ADC_GENERIC_PERIODIC_SEND TRUE
 #endif
 
-#ifdef ADC_CHANNEL_GENERIC1
-static struct adc_buf buf_generic1;
-#endif
-
-#ifdef ADC_CHANNEL_GENERIC2
-static struct adc_buf buf_generic2;
-#endif
-
-//// adc for battery voltage - works, but screws up the battery voltage elsewhere
-//static struct adc_buf buf_generic3;
-
+static struct adc_buf buf1;
+static struct adc_buf buf2;
+static struct adc_buf buf3;
+static struct adc_buf buf4;
 
 static void adc_msg_send(struct transport_tx *trans, struct link_device *dev) {
-//  adc_generic_val3 = buf_generic3.sum / buf_generic3.av_nb_sample;
-  adc_generic_val3=0;
+  adc_val1 = buf1.sum / buf1.av_nb_sample;
+  adc_val2 = buf2.sum / buf2.av_nb_sample;
+  adc_val3 = buf3.sum / buf3.av_nb_sample;
+  adc_val4 = buf4.sum / buf4.av_nb_sample;
+  servo_pitch = 10000*adc_val1/adc_val3;
+  servo_yaw = 10000*adc_val2/adc_val4;
 
-#ifdef ADC_CHANNEL_GENERIC1
-//  adc_generic_val1 = buf_generic1.sum / buf_generic1.av_nb_sample * 1000 / adc_generic_val3;
-  adc_generic_val1 = buf_generic1.sum / buf_generic1.av_nb_sample;
-#endif
-#ifdef ADC_CHANNEL_GENERIC2
-//  adc_generic_val2 = buf_generic2.sum / buf_generic2.av_nb_sample * 1000 / adc_generic_val3;
-  adc_generic_val2 = buf_generic2.sum / buf_generic2.av_nb_sample;
-#endif
-  pprz_msg_send_ADC_GENERIC(trans, dev, AC_ID, &adc_generic_val1, &adc_generic_val2, &adc_generic_val3);
+  pprz_msg_send_ADC_GENERIC(trans, dev, AC_ID, &adc_val1, &adc_val2, &adc_val3, &adc_val4, &servo_pitch, &servo_yaw);
 }
 
 void adc_generic_init(void)
 {
-  adc_generic_val1 = 0;
-  adc_generic_val2 = 0;
-  adc_generic_val3 = 0;
+  adc_val1 = 0;
+  adc_val2 = 0;
+  adc_val3 = 0;
+  adc_val4 = 0;
+  servo_pitch = 0;
+  servo_yaw = 0;
 
-#ifdef ADC_CHANNEL_GENERIC1
-  adc_buf_channel(ADC_CHANNEL_GENERIC1, &buf_generic1, ADC_CHANNEL_GENERIC_NB_SAMPLES);
-#endif
-#ifdef ADC_CHANNEL_GENERIC2
-  adc_buf_channel(ADC_CHANNEL_GENERIC2, &buf_generic2, ADC_CHANNEL_GENERIC_NB_SAMPLES);
-#endif
-//  adc_buf_channel(ADC_CHANNEL_VBAT, &buf_generic3, ADC_CHANNEL_GENERIC_NB_SAMPLES);
+  adc_buf_channel(ADC_2, &buf1, ADC_CHANNEL_GENERIC_NB_SAMPLES);
+  adc_buf_channel(ADC_3, &buf2, ADC_CHANNEL_GENERIC_NB_SAMPLES);
+  adc_buf_channel(ADC_4, &buf3, ADC_CHANNEL_GENERIC_NB_SAMPLES);
+  adc_buf_channel(ADC_6, &buf4, ADC_CHANNEL_GENERIC_NB_SAMPLES);
+
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ADC_GENERIC, adc_msg_send);
 #endif

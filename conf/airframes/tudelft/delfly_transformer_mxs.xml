@@ -65,7 +65,7 @@
       <define name="FILTER_CMD_PITCH_CUTOFF" value="15.0"/>
       <define name="FILTER_CMD_YAW_CUTOFF" value="10.0"/>
       <define name="STABILIZATION_ATTITUDE_SP_PSI_DELTA_LIMIT" value="0.5"/>
-      <define name="USE_FLIP_MODE" value="1"/>
+      <define name="USE_FLIP_MODE" value="0"/>
     </module>
     <module name="ahrs" type="int_cmpl_quat">
       <define name="AHRS_PROPAGATE_LOW_PASS_RATES" value="FALSE"/>
@@ -77,8 +77,6 @@
     </module>
     <module name="adc_generic">
       <configure name="ADC_CHANNEL_GENERIC_NB_SAMPLES" value="1"/>
-       <configure name="ADC_CHANNEL_GENERIC1" value="ADC_2"/>
-       <configure name="ADC_CHANNEL_GENERIC2" value="ADC_5"/>
     </module>
   </firmware>
   
@@ -87,8 +85,8 @@
     <servo name="MOTOR_LEFT" no="1" min="1100" neutral="1100" max="1900"/> 
       <servo name="MOTOR_RIGHT" no="0" min="1100" neutral="1100" max="1900"/>
   <!-- increased dihedral numbers by 100 compared to previous-->
-      <servo name="DIHEDRAL" no="3" min="1345" neutral="1595" max="1845"/>
-    <servo name="WING_DEF" no="2" min="980" neutral="1580" max="2180"/>
+      <servo name="DIHEDRAL" no="3" min="1200" neutral="1450" max="1700"/>
+    <servo name="WING_DEF" no="2" min="900" neutral="1500" max="2100"/>
   </servos>
 
 

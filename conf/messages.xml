@@ -155,9 +155,12 @@
     </message>
 
     <message name="ADC_GENERIC" id="18">
-      <field name="servo1" type="uint16"/>
-      <field name="servo2" type="uint16"/>
-      <field name="vbat" type="uint16" alt_unit="V" alt_unit_coef="0.00162"/>
+      <field name="adc1" type="uint16"/>
+      <field name="adc2" type="uint16"/>
+      <field name="adc3" type="uint16"/>
+      <field name="adc4" type="uint16"/>
+      <field name="servo_pitch" type="uint16" alt_unit="%" alt_unit_coef="0.01"/>
+      <field name="servo_yaw" type="uint16" alt_unit="%" alt_unit_coef="0.01"/>
     </message>
 
     <message name="ECU" id="19">

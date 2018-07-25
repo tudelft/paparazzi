@@ -36,6 +36,8 @@
 
 extern uint16_t adc_generic_val1;
 extern uint16_t adc_generic_val2;
+extern uint16_t adc_generic_val3;
+extern uint16_t adc_generic_val4;
 void adc_generic_init(void);
 void adc_generic_periodic(void);
 
