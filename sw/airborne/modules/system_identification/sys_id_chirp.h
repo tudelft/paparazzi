@@ -60,7 +60,7 @@ extern void sys_id_chirp_run(void);
 extern void sys_id_chirp_chirp_activate_handler(uint8_t activate);
 
 // Call this function in command_laws to add the control values
-extern void sys_id_chirp_add_values(pprz_t in_cmd[]);
+extern void sys_id_chirp_add_values(int32_t in_cmd[]);
 
 
 #endif // SYS_ID_CHIRP_H

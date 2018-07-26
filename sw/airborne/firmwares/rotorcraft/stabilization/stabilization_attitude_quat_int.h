@@ -27,6 +27,8 @@
 
 #include "math/pprz_algebra_int.h"
 
+#include "system_identification/sys_id_chirp.h"
+
 extern struct Int32Quat   stab_att_sp_quat;  ///< with #INT32_QUAT_FRAC
 extern struct Int32Eulers stab_att_sp_euler; ///< with #INT32_ANGLE_FRAC
 

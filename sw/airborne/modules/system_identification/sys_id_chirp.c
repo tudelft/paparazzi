@@ -110,7 +110,7 @@ void sys_id_chirp_run(void) {
     }
 }
 
-void sys_id_chirp_add_values(pprz_t in_cmd[])
+void sys_id_chirp_add_values(int32_t in_cmd[])
 {
 
   // Add chirp system identification values

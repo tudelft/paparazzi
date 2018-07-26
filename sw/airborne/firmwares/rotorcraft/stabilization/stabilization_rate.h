@@ -29,6 +29,7 @@
 #define STABILIZATION_RATE
 
 #include "math/pprz_algebra_float.h"
+#include "system_identification/sys_id_chirp.h"
 
 extern void stabilization_rate_init(void);
 extern void stabilization_rate_read_rc(void);
