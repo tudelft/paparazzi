@@ -150,7 +150,7 @@ static inline void odroid_outback_parse_msg(void)
           }
 
         if (odroid_outback_enable_landing) {
-            if ((v2p_package.out_of_range_since > 0 && v2p_package.out_of_range_since < 1.f) || (v2p_package.out_of_range_since < 0 && v2p_package.height < 0.3 )) {
+            if ((v2p_package.out_of_range_since > 0 && v2p_package.out_of_range_since < 1.f) || (v2p_package.out_of_range_since < 0 && v2p_package.height < 0.35 )) {
                 het_moment = true;
               } else {
                 het_moment = false;
