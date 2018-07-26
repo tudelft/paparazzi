@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="4" ground_alt="0" lat0="51 59 27.6" lon0="4 22 42.0" max_dist_from_home="120" name="Delft Basic" security_height="2">
+<flight_plan alt="4" ground_alt="0" lat0="52.1682020" lon0="4.4130950" max_dist_from_home="120" name="Delft Basic" security_height="2">
   <header>
     #include "autopilot.h"
     #include "subsystems/datalink/datalink.h"
@@ -10,12 +10,12 @@
 </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
-    <waypoint name="CLIMB" x="0.0" y="5.0"/>
-    <waypoint alt="10.0" name="STDBY" x="-2.0" y="-5.0"/>
-    <waypoint alt="50.0" name="p1" x="-19.9" y="14.3"/>
-    <waypoint alt="50.0" name="p2" x="-0.6" y="21.6"/>
-    <waypoint alt="50.0" name="p3" x="22.2" y="-26.5"/>
-    <waypoint alt="50.0" name="p4" x="4.9" y="-34.4"/>
+    <waypoint name="CLIMB" x="17.7" y="1.8"/>
+    <waypoint alt="20.0" name="STDBY" x="1.8" y="-4.9"/>
+    <waypoint alt="50.0" name="p1" x="-8.2" y="24.1"/>
+    <waypoint alt="50.0" name="p2" x="26.4" y="33.6"/>
+    <waypoint alt="50.0" name="p3" x="38.8" y="-6.7"/>
+    <waypoint alt="50.0" name="p4" x="8.8" y="-18.3"/>
     <waypoint name="CAM" x="17.7" y="-44.2"/>
     <waypoint name="TD" x="5.6" y="-10.9"/>
   </waypoints>
@@ -45,7 +45,7 @@
     </block>
     <block name="Geo init">
       <while cond="LessThan(NavBlockTime(), 10)"/>
-      <call_once fun="NavSetGroundReferenceHere()"/>
+      <call_once fun="NavSetAltitudeReferenceHere()"/>
     </block>
     <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
@@ -92,13 +92,13 @@
     <block name="descent">
       <exception cond="8.0 > stateGetPositionEnu_f()->z" deroute="descent_slow"/>
       <exception cond="vision_timeout " deroute="Standby"/>
-      <exception cond="!odroid_outback_enable_landing " deroute="Standby"/>      
+      <exception cond="!odroid_outback_enable_landing " deroute="Standby"/>
       <stay climb="-1" vmode="climb" wp="TD"/>
     </block>
     <block name="descent_slow">
       <exception cond="het_moment" deroute="flare"/>
       <exception cond="vision_timeout " deroute="Standby"/>
-      <exception cond="!odroid_outback_enable_landing " deroute="Standby"/>      
+      <exception cond="!odroid_outback_enable_landing " deroute="Standby"/>
       <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
     <block name="flare">
