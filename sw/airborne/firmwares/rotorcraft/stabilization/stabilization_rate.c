@@ -228,7 +228,7 @@ void stabilization_rate_run(bool in_flight)
   stabilization_cmd[COMMAND_PITCH] = cmd_pitch;
 #endif
 
-  sys_id_chirp_add_values(stabilization_cmd);
+  sys_id_chirp_add_values_and_log(stabilization_cmd);
 
   /* bound the result */
   BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PPRZ);

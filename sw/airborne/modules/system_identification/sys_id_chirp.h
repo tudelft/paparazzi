@@ -32,6 +32,8 @@
 #include "modules/system_identification/pprz_chirp.h"
 #include "generated/airframe.h"
 #include "mcu_periph/sys_time.h"
+#include "math/pprz_algebra_float.h"
+#include "state.h"
 
 // Number of axes for which the chirp will generate a signal
 #define CHIRP_NO_AXES 5
@@ -60,7 +62,7 @@ extern void sys_id_chirp_run(void);
 extern void sys_id_chirp_chirp_activate_handler(uint8_t activate);
 
 // Call this function in command_laws to add the control values
-extern void sys_id_chirp_add_values(int32_t in_cmd[]);
+extern void sys_id_chirp_add_values_and_log(int32_t in_cmd[]);
 
 
 #endif // SYS_ID_CHIRP_H

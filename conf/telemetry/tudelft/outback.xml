@@ -34,6 +34,7 @@
       <message name="AHRS_REF_QUAT"          period="0.2"/>
       <message name="VISION_OUTBACK"         period="0.2"/>
       <message name="CHIRP"                  period="1"/>
+      <message name="DELFTACOPTER_FILTER_LOGGING" period="0.5"/>
     </mode>
 
     <mode name="ppm">
@@ -158,14 +159,15 @@
       <!--message name="GPS"                    period="20"/-->
       <message name="ROTORCRAFT_STATUS"      period="1.2"/>
       <message name="DL_VALUE"               period="0.5"/>
-      <message name="IMU_GYRO_SCALED"        period=".002"/>
-      <message name="IMU_ACCEL_SCALED"       period=".002"/>
+      <message name="IMU_GYRO_SCALED"        period=".005"/>
+      <message name="IMU_ACCEL_SCALED"       period=".005"/>
       <message name="IMU_MAG_SCALED"         period=".2"/>
       <message name="ROTORCRAFT_CMD"         period=".002"/>
       <message name="HYBRID_GUIDANCE"        period=".1"/>
       <message name="AHRS_REF_QUAT"          period="0.05"/>
       <message name="CHIRP"                  period="0.2"/>
       <message name="AIR_DATA"               period="0.01"/>
+      <message name="DELFTACOPTER_FILTER_LOGGING" period="0.005"/>
     </mode>
   </process>
 

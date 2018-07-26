@@ -1114,7 +1114,15 @@
       <field name="airspeed" type="float" unit="m/s"/>
     </message>
 
-    <!-- 139 is free -->
+    <message name="DELFTACOPTER_FILTER_LOGGING" id="139">
+      <field name="qi"   type="float"/>
+      <field name="qx" type="float"/>
+      <field name="qy"   type="float"/>
+      <field name="qz"   type="float"/>
+      <field name="p"     type="float" unit="rad/s"/>
+      <field name="q"     type="float" unit="rad/s"/>
+      <field name="r"     type="float" unit="rad/s"/>
+    </message>
 
     <message name="STAB_ATTITUDE_INT" id="140">
       <field name="est_p"         type="int32" alt_unit="deg/s" alt_unit_coef="0.0139882"/>
