@@ -107,17 +107,17 @@
 //#define FINAL_THRUST_LEVEL 9000
 //#define FINAL_THRUST_DURATION 0.1
 
-//// Evasive maneuver - roll & pitch, angular limit
-//#define FIRST_THRUST_LEVEL 6500
-//#define FIRST_THRUST_DURATION 0.0
-//#define STRAIGHT_FLIGHT_DURATION 2.0
-//#define STOP_EVADE_ANGLE 30.0
-//#define FINAL_THRUST_LEVEL 6500
-//#define FINAL_THRUST_DURATION 0.8
-//#define EVADE_ROLL 1
-//#define ROLL_DELAY 0.0
-//#define PITCH_CMD_FINAL 0
-//#define PITCH_CMD_NOMINAL -MAX_PPRZ*2/3
+// Evasive maneuver - roll & pitch, angular limit
+#define FIRST_THRUST_LEVEL 6500
+#define FIRST_THRUST_DURATION 0.0
+#define STRAIGHT_FLIGHT_DURATION 1.0
+#define STOP_EVADE_ANGLE 30.0
+#define FINAL_THRUST_LEVEL 6500
+#define FINAL_THRUST_DURATION 0.8
+#define EVADE_ROLL 1
+#define ROLL_DELAY 0.0
+#define PITCH_CMD_FINAL -MAX_PPRZ/4
+#define PITCH_CMD_NOMINAL -MAX_PPRZ*2/3
 
 //// Evasive maneuver - roll & pitch, time limit
 //#define FIRST_THRUST_LEVEL 6500
@@ -132,18 +132,18 @@
 //#define PITCH_CMD_NOMINAL -MAX_PPRZ*2/3 //-MAX_PPRZ*1/2 // -MAX_PPRZ*2/3
 
 
-// Pitch doublets
-#define FIRST_THRUST_LEVEL 6500
-#define FIRST_THRUST_DURATION 0.0
-#define STRAIGHT_FLIGHT_DURATION 10.0
-#define THROTTLE_FACTOR 1
-#define DOUBLET_DURATION 1.0
-#define FINAL_THRUST_LEVEL 6500
-#define FINAL_THRUST_DURATION 0
-#define PITCH_CMD_NOMINAL -MAX_PPRZ*75/75
-#define PITCH_CMD_DELTA -MAX_PPRZ*15/75
-#define PITCH_DOUBLET 1
-#define DOUBLET_REPETITIONS 1
+//// Pitch doublets
+//#define FIRST_THRUST_LEVEL 6500
+//#define FIRST_THRUST_DURATION 0.0
+//#define STRAIGHT_FLIGHT_DURATION 10.0
+//#define THROTTLE_FACTOR 1
+//#define DOUBLET_DURATION 1.0
+//#define FINAL_THRUST_LEVEL 6500
+//#define FINAL_THRUST_DURATION 0
+//#define PITCH_CMD_NOMINAL -MAX_PPRZ*75/75
+//#define PITCH_CMD_DELTA -MAX_PPRZ*15/75
+//#define PITCH_DOUBLET 1
+//#define DOUBLET_REPETITIONS 1
 
 //// Roll doublets
 //#define FIRST_THRUST_LEVEL 6500
@@ -341,6 +341,9 @@ void guidance_flip_run(void)
       stabilization_cmd[COMMAND_THRUST] = FIRST_THRUST_LEVEL; //Thrust to go up first
       timer_save = 0;
 
+      LED_ON(1);
+      LED_ON(2);
+
       if (timer >= BFP_OF_REAL(FIRST_THRUST_DURATION, 12)) {
         if (FLIP_ROLL && ~FLIP_PITCH) {
           phi_gyr = phi; // initialize the phi estimate with the current phi
@@ -495,7 +498,7 @@ void guidance_flip_run(void)
          } else {
          	 stabilization_cmd[COMMAND_ROLL]   = 0;
 		 }
-         stabilization_cmd[COMMAND_PITCH]  = 2000; //4000; //9600;
+         stabilization_cmd[COMMAND_PITCH]  = 1000; //4000; //9600;
          stabilization_cmd[COMMAND_YAW]    = 0;
          stabilization_cmd[COMMAND_THRUST] = 6050; // 5600 // --> Left (5600-8000/2) = 1600, right --> (5600+8000/2) = 9600
 
@@ -810,6 +813,10 @@ void guidance_flip_run(void)
       } else {
         stab_att_sp_euler.psi = heading_save;
       }
+
+      LED_OFF(1);
+      LED_OFF(2);
+
 
       flip_counter = 0;
       timer_save = 0;

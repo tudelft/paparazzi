@@ -86,11 +86,10 @@
   
   <!-- ACTUATORS & COMMANDS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
   <servos driver="Pwm">
-    <servo name="MOTOR_LEFT" no="1" min="1100" neutral="1100" max="1900"/> 
-      <servo name="MOTOR_RIGHT" no="0" min="1100" neutral="1100" max="1900"/>
-  <!-- increased dihedral numbers by 100 compared to previous-->
-      <servo name="DIHEDRAL" no="3" min="1200" neutral="1450" max="1700"/>
-    <servo name="WING_DEF" no="2" min="900" neutral="1500" max="2100"/>
+    <servo name="MOTOR_LEFT" no="0" min="1100" neutral="1100" max="1900"/> 
+    <servo name="MOTOR_RIGHT" no="1" min="1100" neutral="1100" max="1900"/>
+	<servo name="DIHEDRAL" no="3" min="1780" neutral="1530" max="1280"/>
+	<servo name="WING_DEF" no="2" min="900" neutral="1500" max="2100"/>
   </servos>
 
 
