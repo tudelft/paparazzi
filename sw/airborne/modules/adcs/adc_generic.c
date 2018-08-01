@@ -42,8 +42,24 @@ uint16_t adc_val4;
 uint16_t servo_pitch;
 uint16_t servo_yaw;
 
-#ifndef ADC_CHANNEL_GENERIC_NB_SAMPLES
-#define ADC_CHANNEL_GENERIC_NB_SAMPLES DEFAULT_AV_NB_SAMPLE
+#ifndef ADC_GENERIC_NB_SAMPLES
+#define ADC_GENERIC_NB_SAMPLES DEFAULT_AV_NB_SAMPLE
+#endif
+
+#ifndef ADC_GENERIC_PITCH_SERVO_SIGNAL
+#define ADC_GENERIC_PITCH_SERVO_SIGNAL ADC_2
+#endif
+
+#ifndef ADC_GENERIC_PITCH_SERVO_VOLTAGE
+#define ADC_GENERIC_PITCH_SERVO_VOLTAGE ADC_4
+#endif
+
+#ifndef ADC_GENERIC_YAW_SERVO_SIGNAL
+#define ADC_GENERIC_YAW_SERVO_SIGNAL ADC_3
+#endif
+
+#ifndef ADC_GENERIC_YAW_SERVO_VOLTAGE
+#define ADC_GENERIC_YAW_SERVO_VOLTAGE ADC_6
 #endif
 
 #if PERIODIC_TELEMETRY
@@ -64,8 +80,8 @@ static void adc_msg_send(struct transport_tx *trans, struct link_device *dev) {
   adc_val2 = buf2.sum / buf2.av_nb_sample;
   adc_val3 = buf3.sum / buf3.av_nb_sample;
   adc_val4 = buf4.sum / buf4.av_nb_sample;
-  servo_pitch = 10000*adc_val1/adc_val3;
-  servo_yaw = 10000*adc_val2/adc_val4;
+  servo_pitch = 10000*adc_val1/adc_val2;
+  servo_yaw = 10000*adc_val3/adc_val4;
 
   pprz_msg_send_ADC_GENERIC(trans, dev, AC_ID, &adc_val1, &adc_val2, &adc_val3, &adc_val4, &servo_pitch, &servo_yaw);
 }
@@ -79,10 +95,10 @@ void adc_generic_init(void)
   servo_pitch = 0;
   servo_yaw = 0;
 
-  adc_buf_channel(ADC_2, &buf1, ADC_CHANNEL_GENERIC_NB_SAMPLES);
-  adc_buf_channel(ADC_3, &buf2, ADC_CHANNEL_GENERIC_NB_SAMPLES);
-  adc_buf_channel(ADC_4, &buf3, ADC_CHANNEL_GENERIC_NB_SAMPLES);
-  adc_buf_channel(ADC_6, &buf4, ADC_CHANNEL_GENERIC_NB_SAMPLES);
+  adc_buf_channel(ADC_GENERIC_PITCH_SERVO_SIGNAL, &buf1, ADC_GENERIC_NB_SAMPLES);
+  adc_buf_channel(ADC_GENERIC_PITCH_SERVO_VOLTAGE, &buf2, ADC_GENERIC_NB_SAMPLES);
+  adc_buf_channel(ADC_GENERIC_YAW_SERVO_SIGNAL, &buf3, ADC_GENERIC_NB_SAMPLES);
+  adc_buf_channel(ADC_GENERIC_YAW_SERVO_VOLTAGE, &buf4, ADC_GENERIC_NB_SAMPLES);
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ADC_GENERIC, adc_msg_send);
@@ -92,7 +108,7 @@ void adc_generic_init(void)
 
 void adc_generic_periodic(void)
 {
-#if ADC_GENERIC_PERIODIC_SEND
+#if PERIODIC_SEND
   adc_msg_send(&(DefaultChannel).trans_tx, &(DefaultDevice).device);
 #endif
 }

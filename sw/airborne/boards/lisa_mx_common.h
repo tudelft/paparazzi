@@ -364,11 +364,12 @@
 //#endif
 
 // assigning ADC_4 to pin PA3 (ADC123_IN3)
-#define USE_ADC_4 1
+#if USE_ADC_4
 #define AD2_1_CHANNEL 3
 #define ADC_4 AD2_1
 #define ADC_4_GPIO_PORT GPIOA
 #define ADC_4_GPIO_PIN GPIO3
+#endif
 
 
 // Internal ADC for battery enabled by default
@@ -390,11 +391,12 @@
 //#endif
 
 // assigning ADC_6 to pin PA0 (ADC123_IN0)
-#define USE_ADC_6 1
+#if USE_ADC_6
 #define AD2_2_CHANNEL 0
 #define ADC_6 AD2_2
 #define ADC_6_GPIO_PORT GPIOA
 #define ADC_6_GPIO_PIN GPIO0
+#endif
 
 /* allow to define ADC_CHANNEL_VSUPPLY in the airframe file*/
 #ifndef ADC_CHANNEL_VSUPPLY

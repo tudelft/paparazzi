@@ -76,11 +76,15 @@
       <define name="LOGGER_LED" value="2"/> 
     </module>
     <module name="adc_generic">
-      <configure name="ADC_CHANNEL_GENERIC_NB_SAMPLES" value="1"/>
-      <configure name="ADC_CHANNEL_GENERIC1" value="ADC_2"/>
-      <configure name="ADC_CHANNEL_GENERIC2" value="ADC_3"/>
-      <configure name="ADC_CHANNEL_GENERIC3" value="ADC_4"/>
-      <configure name="ADC_CHANNEL_GENERIC4" value="ADC_6"/>
+      <define name="USE_ADC_2" value="1"/>
+      <define name="USE_ADC_3" value="1"/>
+      <define name="USE_ADC_4" value="1"/>
+      <define name="USE_ADC_6" value="1"/>
+      <configure name="ADC_GENERIC_NB_SAMPLES" value="1"/>
+      <configure name="ADC_GENERIC_PITCH_SERVO_SIGNAL" value="ADC_2"/>
+      <configure name="ADC_GENERIC_PITCH_SERVO_VOLTAGE" value="ADC_4"/>
+      <configure name="ADC_GENERIC_YAW_SERVO_SIGNAL" value="ADC_3"/>
+      <configure name="ADC_GENERIC_YAW_SERVO_VOLTAGE" value="ADC_6"/>
     </module>
   </firmware>
   
