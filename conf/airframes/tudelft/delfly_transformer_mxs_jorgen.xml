@@ -28,6 +28,9 @@
       
       <configure name="USE_MAGNETOMETER" value="0"/>
       
+      <!-- for flashing with Black Magic Probe v2.0 or newer -->
+      <configure name="FLASH_MODE" value="SWD_NOPWR"/>
+      
       <!--define name="REMAP_UART3" value="TRUE" /-->
       <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
       

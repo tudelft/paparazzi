@@ -26,6 +26,9 @@
 <!--        <define name="RADIO_KILL_SWITCH" value="RADIO_GEAR"/-->
             </module>
       
+      <!-- for flashing with Black Magic Probe v2.0 or newer -->
+      <configure name="FLASH_MODE" value="SWD_NOPWR"/>
+      
       <configure name="USE_MAGNETOMETER" value="0"/>
       
       <!--define name="REMAP_UART3" value="TRUE" /-->
