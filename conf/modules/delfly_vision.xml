@@ -1,0 +1,35 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="delfly_vision">
+  <doc>
+    <description>Vision module for (tail less) DelFlies that reads the data from a stereoboard mady by Christophe de Wagter of TU Delft and sends commands to the DelFly.</description>
+    <configure name="STEREO_UART" value="UARTX" description="Sets the UART port number of the connected camera (required)"/>
+    <configure name="STEREO_BAUD" value="BXXXXX" description="Sets the BAUD rate of the connected camera (required: must be same as camera)"/>
+  </doc>
+  <header>
+    <file name="delfly_vision.h"/>
+  </header>
+  <init fun="delfly_vision_init()"/>
+  <periodic fun="delfly_vision_periodic()" freq="20" autorun="TRUE"/>
+  <event fun="delfly_vision_event()"/>
+  <makefile>
+    <!-- Configure default UART port and baudrate -->
+    <configure name="STEREO_UART" default="UART4" case="upper|lower"/>
+    <configure name="STEREO_BAUD" default="B921600"/>
+    
+    <!-- Enable UART and set baudrate -->
+    <define name="USE_$(STEREO_UART_UPPER)"/>
+    <define name="UART_LINK" value="$(STEREO_UART_LOWER)"/>
+    <define name="$(STEREO_UART_UPPER)_BAUD" value="$(STEREO_BAUD)"/>
+    
+    <!-- Sources and PPRZLink for transport -->
+    <file name="delfly_vision.c"/>
+    <file name="pprz_transport.c" dir="pprzlink/src"/>
+    <configure name="PPRZLINK_LIB_VERSION" value="1.0"/>
+   	<raw>
+      ap.CFLAGS += -DGUIDANCE_V_MODE_MODULE_SETTING=GUIDANCE_V_MODE_RC_CLIMB
+      ap.CFLAGS += -DGUIDANCE_H_MODE_MODULE_SETTING=GUIDANCE_H_MODE_MODULE
+    </raw>
+  </makefile>
+</module>
+
