@@ -34,9 +34,24 @@
 /** U-Center Variables */
 #define GPS_UBX_UCENTER_CONFIG_STEPS    19
 
+enum gps_ubx_ucenter_status_t {
+  GPS_UBX_UCENTER_STATUS_WAIT = 0,
+  GPS_UBX_UCENTER_STATUS_AUTOBAUD,
+  GPS_UBX_UCENTER_STATUS_CONFIG,
+  GPS_UBX_UCENTER_STATUS_FINISHED
+};
+
+enum gps_ubx_ucenter_reply_t {
+  GPS_UBX_UCENTER_REPLY_NONE = 0,
+  GPS_UBX_UCENTER_REPLY_ACK,
+  GPS_UBX_UCENTER_REPLY_NACK,
+  GPS_UBX_UCENTER_REPLY_VERSION,
+  GPS_UBX_UCENTER_REPLY_CFG_PRT
+};
+
 struct gps_ubx_ucenter_struct {
-  uint8_t status;
-  uint8_t reply;
+  enum gps_ubx_ucenter_status_t status;
+  enum gps_ubx_ucenter_reply_t reply;
   uint8_t cnt;
 
   uint32_t baud_init;   // Initial baudrate of the ublox module
