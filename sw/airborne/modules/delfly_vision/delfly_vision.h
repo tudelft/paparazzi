@@ -37,6 +37,16 @@ struct stereocam_t {
   bool msg_available;                   ///< If we received a message
 };
 
+/* gate structure */
+struct gate_t {
+  uint8_t quality;
+  float width;
+  float height;
+  float phi;
+  float theta;
+  float depth;
+};
+
 extern void delfly_vision_init(void);
 extern void delfly_vision_periodic(void);
 extern void delfly_vision_event(void);

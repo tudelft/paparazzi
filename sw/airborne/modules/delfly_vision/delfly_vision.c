@@ -61,6 +61,22 @@ static void delfly_vision_parse_msg(void)
   switch (msg_id) {
 
   case DL_STEREOCAM_VELOCITY: {
+//    <message name="STEREOCAM_VELOCITY" id="81">
+//      <description>Velocity measured using optical flow and stereovision. All parameters are in the camera frame</description>
+//      <field name="resolution" type="uint8">Resolution of the vel and pos messages</field>
+//      <field name="dt_frame"   type="uint8">Time difference to previous frame</field>
+//      <field name="dt"         type="uint8">Time difference to previous message, not strictly required</field>
+//      <field name="velx"       type="int16" unit="m/s">Velocity estimaed using stereo edgeflow</field>
+//      <field name="vely"       type="int16" unit="m/s"/>
+//      <field name="velz"       type="int16" unit="m/s"/>
+//      <field name="dposx"      type="int16" unit="m">Distance traveled since the last message</field>
+//      <field name="dposy"      type="int16" unit="m"/>
+//      <field name="dposz"      type="int16" unit="m"/>
+//      <field name="vRMS"       type="uint8">RMS of the velocity estimate</field>
+//      <field name="posRMS"     type="uint8">RMS of the position</field>
+//      <field name="avg_dist"   type="uint16">Average distance to scene</field>
+//    </message>
+
     static struct FloatVect3 camera_vel;
 
     float res = (float)DL_STEREOCAM_VELOCITY_resolution(stereocam_msg_buf);
@@ -93,15 +109,29 @@ static void delfly_vision_parse_msg(void)
     break;
   }
 
-//#ifdef STEREOCAM_FOLLOWME
-//  // todo is follow me still used?
-//  case DL_STEREOCAM_FOLLOW_ME: {
-//    follow_me( DL_STEREOCAM_FOLLOW_ME_headingToFollow(stereocam_msg_buf),
-//               DL_STEREOCAM_FOLLOW_ME_heightObject(stereocam_msg_buf),
-//               DL_STEREOCAM_FOLLOW_ME_distanceToObject(stereocam_msg_buf));
-//    break;
-//  }
-//#endif
+  case DL_STEREOCAM_GATE: {
+
+    static gate_t gate;
+
+//    <message name="STEREOCAM_GATE" id="84">
+//          <description>Result of the gate detection algorithm on the stereocamera</description>
+//          <field name="quality" type="uint8">Measure of how certainty of gate identificaiton, min 15, max 100</field>
+//          <field name="width"   type="float" unit="rad"/>
+//          <field name="hieght"  type="float" unit="rad"/>
+//          <field name="phi"     type="float" unit="rad">Bearing of the gate in the camera frame</field>
+//          <field name="theta"   type="float" unit="rad"/>
+//          <field name="depth"   type="float" unit="m">Set to 0 is not known</field>
+//        </message>
+
+      gate.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
+      gate.width = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
+      gate.height = DL_STEREOCAM_GATE_hieght(stereocam_msg_buf);
+      gate.phi = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
+      gate.theta = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
+      gate.depth = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
+
+       break;
+    }
 
     default:
       break;
