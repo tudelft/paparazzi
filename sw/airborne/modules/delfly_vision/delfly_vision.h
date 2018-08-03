@@ -42,10 +42,12 @@ struct gate_t {
   uint8_t quality;
   float width;
   float height;
-  float phi;
+  float psi;
   float theta;
   float depth;
 };
+
+extern struct gate_t gate;
 
 extern void delfly_vision_init(void);
 extern void delfly_vision_periodic(void);

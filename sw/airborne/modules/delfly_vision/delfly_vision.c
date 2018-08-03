@@ -47,6 +47,8 @@ static uint8_t stereocam_msg_buf[256]  __attribute__((aligned));   ///< The mess
 static struct Int32Eulers stab_cmd;   ///< The commands that are send to the satbilization loop
 static struct Int32Eulers rc_sp;   ///< Euler setpoints given by the rc
 
+struct gate_t gate;
+
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
@@ -60,8 +62,8 @@ static void send_delfly_vision_msg(struct transport_tx *trans, struct link_devic
 //        <field name="depth"   type="float" unit="m"/>
 
   pprz_msg_send_DELFLY_VISION(trans, dev, AC_ID,
-                                  &(gate->quality), &(gate->width), &(gate->height),
-                                  &(gate->psi), &(gate->theta), &(gate->depth));
+                                  &gate.quality, &gate.width, &gate.height,
+                                  &gate.psi, &gate.theta, &gate.depth);
 }
 
 #endif
@@ -71,6 +73,13 @@ void delfly_vision_init(void)
 {
   // Initialize transport protocol
   pprz_transport_init(&stereocam.transport);
+
+  gate.quality = 0;
+  gate.width = 0;
+  gate.height = 0;
+  gate.psi = 0;
+  gate.theta = 0;
+  gate.depth = 0;
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DELFLY_VISION, send_delfly_vision_msg);
@@ -138,13 +147,11 @@ static void delfly_vision_parse_msg(void)
 
   case DL_STEREOCAM_GATE: {
 
-    static gate_t gate;
-
 //    <message name="STEREOCAM_GATE" id="84">
 //          <description>Result of the gate detection algorithm on the stereocamera</description>
 //          <field name="quality" type="uint8">Measure of how certainty of gate identificaiton, min 15, max 100</field>
 //          <field name="width"   type="float" unit="rad"/>
-//          <field name="hieght"  type="float" unit="rad"/>
+//          <field name="height"  type="float" unit="rad"/>
 //          <field name="phi"     type="float" unit="rad">Bearing of the gate in the camera frame</field>
 //          <field name="theta"   type="float" unit="rad"/>
 //          <field name="depth"   type="float" unit="m">Set to 0 is not known</field>
@@ -152,7 +159,7 @@ static void delfly_vision_parse_msg(void)
 
       gate.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
       gate.width = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
-      gate.height = DL_STEREOCAM_GATE_hieght(stereocam_msg_buf);
+      gate.height = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
       gate.psi = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
       gate.theta = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
       gate.depth = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
