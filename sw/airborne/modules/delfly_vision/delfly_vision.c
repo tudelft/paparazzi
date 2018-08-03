@@ -35,6 +35,7 @@
 #include "mcu_periph/sys_time.h"
 //#include "subsystems/abi.h"
 
+#include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 
 
 struct stereocam_t stereocam = {
@@ -43,7 +44,8 @@ struct stereocam_t stereocam = {
 };
 static uint8_t stereocam_msg_buf[256]  __attribute__((aligned));   ///< The message buffer for the stereocamera
 
-
+static struct Int32Eulers stab_cmd;   ///< The commands that are send to the satbilization loop
+static struct Int32Eulers rc_sp;   ///< Euler setpoints given by the rc
 
 void delfly_vision_init(void)
 {
@@ -126,7 +128,7 @@ static void delfly_vision_parse_msg(void)
       gate.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
       gate.width = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
       gate.height = DL_STEREOCAM_GATE_hieght(stereocam_msg_buf);
-      gate.phi = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
+      gate.psi = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
       gate.theta = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
       gate.depth = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
 
@@ -139,7 +141,23 @@ static void delfly_vision_parse_msg(void)
 }
 
 
-void delfly_vision_periodic(void) {}
+void delfly_vision_periodic(void) {
+#if PERIODIC_TELEMETRY
+#include "subsystems/datalink/telemetry.h"
+
+//  <field name="quality" type="uint8"/>
+//        <field name="width"   type="float" unit="rad"/>
+//        <field name="hieght"  type="float" unit="rad"/>
+//        <field name="phi"     type="float" unit="rad"/>
+//        <field name="theta"   type="float" unit="rad"/>
+//        <field name="depth"   type="float" unit="m"/>
+
+  pprz_msg_send_DELFLY_VISION(trans, dev, AC_ID,
+                                  &(gate->quality), &(gate->width), &(gate->height),
+                                  &(gate->psi), &(gate->theta), &(gate->depth));
+#endif
+
+}
 
 
 void delfly_vision_event(void)
@@ -171,10 +189,10 @@ void guidance_h_module_enter(void)
 //  opticflow_stab.err_vx_int = 0;
 //  opticflow_stab.err_vy_int = 0;
 //
-//  /* Set rool/pitch to 0 degrees and psi to current heading */
-//  opticflow_stab.cmd.phi = 0;
-//  opticflow_stab.cmd.theta = 0;
-//  opticflow_stab.cmd.psi = stateGetNedToBodyEulers_i()->psi;
+  /* Set rool/pitch to 0 degrees and psi to current heading */
+  stab_cmd.phi = 0;
+  stab_cmd.theta = 0;
+  stab_cmd.psi = stateGetNedToBodyEulers_i()->psi;
 }
 
 /**
@@ -191,8 +209,19 @@ void guidance_h_module_read_rc(void)
  */
 void guidance_h_module_run(bool in_flight)
 {
-//  /* Update the setpoint */
-//  stabilization_attitude_set_rpy_setpoint_i(&opticflow_stab.cmd);
+  stabilization_attitude_read_rc_setpoint_eulers(&rc_sp, false, false, false)
+
+  // IF vision switch is on
+//  stab_cmd.phi=rc_sp.phi;
+//  stab_cmd.theta=rc_sp.theta;
+//  stab_cmd.psi=rc_sp.psi+gate.psi;
+  // ELSE
+  stab_cmd.phi=rc_sp.phi;
+  stab_cmd.theta=rc_sp.theta;
+  stab_cmd.psi=rc_sp.psi;
+
+  /* Update the setpoint */
+  stabilization_attitude_set_rpy_setpoint_i(&stab_cmd);
 
   /* Run the default attitude stabilization */
   stabilization_attitude_run(in_flight);
