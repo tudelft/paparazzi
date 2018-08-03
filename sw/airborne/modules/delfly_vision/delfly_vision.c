@@ -93,7 +93,7 @@ static void delfly_vision_parse_msg(void)
   uint32_t now_ts = get_sys_time_usec();
 
   /* Parse the stereocam message */
-  uint8_t msg_id = stereocam_msg_buf[1];
+  uint8_t msg_id = pprzlink_get_msg_id(stereocam_msg_buf);
   switch (msg_id) {
 
 //  case DL_STEREOCAM_VELOCITY: {
@@ -157,17 +157,25 @@ static void delfly_vision_parse_msg(void)
 //          <field name="depth"   type="float" unit="m">Set to 0 is not known</field>
 //        </message>
 
-      gate.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
-      gate.width = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
-      gate.height = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
-      gate.psi = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
-      gate.theta = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
-      gate.depth = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
+//      gate.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
+//      gate.width = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
+//      gate.height = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
+//      gate.psi = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
+//      gate.theta = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
+//      gate.depth = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
+    gate.quality = 4;
+    gate.width = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
+    gate.height = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
+    gate.psi = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
+    gate.theta = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
+    gate.depth = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
 
        break;
     }
 
     default:
+      gate.quality = 3;
+
       break;
   }
 }
@@ -180,9 +188,12 @@ void delfly_vision_event(void)
 {
    // Check if we got some message from the stereocam
    pprz_check_and_parse(stereocam.device, &stereocam.transport, stereocam_msg_buf, &stereocam.msg_available);
+//   gate.quality = 1;
+
 
    // If we have a message we should parse it
    if (stereocam.msg_available) {
+     gate.quality = 2;
      delfly_vision_parse_msg();
      stereocam.msg_available = false;
    }
