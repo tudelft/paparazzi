@@ -225,7 +225,7 @@ void guidance_h_module_read_rc(void)
  */
 void guidance_h_module_run(bool in_flight)
 {
-  stabilization_attitude_read_rc_setpoint_eulers(&rc_sp, false, false, false)
+  stabilization_attitude_read_rc_setpoint_eulers(&rc_sp, false, false, false);
 
   // IF vision switch is on
 //  stab_cmd.phi=rc_sp.phi;
