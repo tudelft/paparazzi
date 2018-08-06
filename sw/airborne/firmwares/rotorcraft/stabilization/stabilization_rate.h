@@ -30,6 +30,8 @@
 
 #include "math/pprz_algebra_float.h"
 
+#include "modules/system_identification/pprz_chirp.h"
+
 extern void stabilization_rate_init(void);
 extern void stabilization_rate_read_rc(void);
 extern void stabilization_rate_read_rc_switched_sticks(void);

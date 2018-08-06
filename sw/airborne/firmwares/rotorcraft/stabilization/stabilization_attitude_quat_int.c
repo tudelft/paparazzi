@@ -298,6 +298,8 @@ void stabilization_attitude_run(bool enable_integrator)
   stabilization_cmd[COMMAND_PITCH] = cmd_pitch;
 #endif
 
+  sys_id_chirp_add_values(stabilization_cmd);
+
   /* bound the result */
   BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PPRZ);
