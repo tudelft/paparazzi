@@ -1,0 +1,32 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="delftacopter_controller" dir="delftacopter_controller">
+  <doc>
+    <description>Controller for the Delftacopter</description>
+  </doc>
+
+  <settings>
+    <dl_settings name="Delftacopter controller">
+      <dl_settings name="Controller settings">
+        <dl_setting min="0" max="70" step="0.05" shortname="Aggressiveness" var="controller_g_factor" type="float" module="delftacopter_controller/delftacopter_controller"/>
+        <dl_setting min="0" max="10" step="0.01" shortname="k_phi" var="k_phi_dc" type="float" module="delftacopter_controller/delftacopter_controller"/>
+        <dl_setting min="0" max="10" step="0.01" shortname="k_theta" var="k_theta_dc" type="float" module="delftacopter_controller/delftacopter_controller"/>      
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <header>
+    <file name="delftacopter_controller.h"/>
+  </header>
+
+  <init fun="delftacopter_controller_init()"/>
+  <makefile>
+      <define name="observer_DC2_6S1P_cmsg_m50"/> <!--Delftacopter 2 4500mAh observer poles -50 -->
+      <define name="controller_DC2_6S1P_cmsg_lqr_5"/> <!--Delftacopter 2 4500mAh controller poles -0.1 -->
+      <define name="DC_STATE_FEEDBACK"/>
+      <file name="system_matrix.c"/>
+      <file name="state_space.c"/>
+      <file name="delftacopter_observer.c"/>
+      <file name="delftacopter_controller.c"/>
+  </makefile>
+</module>
