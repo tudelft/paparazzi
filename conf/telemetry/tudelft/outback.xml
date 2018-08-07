@@ -33,6 +33,9 @@
       <message name="THROTTLE_CURVE"         period="0.5"/>
       <message name="AHRS_REF_QUAT"          period="0.2"/>
       <message name="VISION_OUTBACK"         period="0.2"/>
+      <message name="DC_CONTROLLER"          period="0.5"/>
+      <message name="DC_OBSERVER"            period="0.5"/>
+      <message name="DC_CONT_SETTINGS"       period="0.5"/>      
     </mode>
 
     <mode name="ppm">
@@ -154,15 +157,19 @@
 
   <process name="Logger">
     <mode name="default">
-      <!--message name="GPS"                    period="20"/-->
+      <message name="GPS"                    period="20"/>
       <message name="ROTORCRAFT_STATUS"      period="1.2"/>
       <message name="DL_VALUE"               period="0.5"/>
       <message name="IMU_GYRO_SCALED"        period=".2"/>
-      <message name="IMU_ACCEL_SCALED"       period=".002"/>
+      <message name="IMU_ACCEL_SCALED"       period=".005"/>
       <message name="IMU_MAG_SCALED"         period=".2"/>
-      <message name="ROTORCRAFT_CMD"         period=".002"/>
+      <message name="ROTORCRAFT_CMD"         period=".005"/>
       <message name="HYBRID_GUIDANCE"        period=".1"/>
-      <message name="AHRS_REF_QUAT" period="0.05"/>
+      <message name="AHRS_REF_QUAT"          period="0.05"/>
+      <message name="DC_CONTROLLER"          period="0.005"/>
+      <message name="DC_OBSERVER"            period="0.005"/>
+      <message name="DC_CONT_SETTINGS"       period="0.5"/>
+      <message name="AUTOPILOT_VERSION"      period="20.0"/>
     </mode>
   </process>
 

@@ -34,6 +34,10 @@
 #include "math/pprz_algebra_float.h"
 #include "math/pprz_algebra_int.h"
 #include "state.h"
+#include "subsystems/radio_control.h"
+
+#include "delftacopter_controller/delftacopter_controller.h"
+#include "delftacopter_controller/delftacopter_observer.h"
 
 struct Int32AttitudeGains stabilization_gains = {
   {STABILIZATION_ATTITUDE_PHI_PGAIN, STABILIZATION_ATTITUDE_THETA_PGAIN, STABILIZATION_ATTITUDE_PSI_PGAIN },
@@ -229,6 +233,7 @@ static void attitude_run_fb(int32_t fb_commands[], struct Int32AttitudeGains *ga
 
 void stabilization_attitude_run(bool enable_integrator)
 {
+  bool state_feedback_active = false; // radio_control.values[4] > -4500 && radio_control.values[4] < 4500; // ap mode center position
 
   /*
    * Update reference
@@ -298,12 +303,34 @@ void stabilization_attitude_run(bool enable_integrator)
   stabilization_cmd[COMMAND_PITCH] = cmd_pitch;
 #endif
 
+  float err_x = QUAT1_FLOAT_OF_BFP(att_err.qx);
+  float err_y = QUAT1_FLOAT_OF_BFP(att_err.qy);
+  float err_z = QUAT1_FLOAT_OF_BFP(att_err.qz);
+  set_attitude_controller_error(err_x, err_y, err_z);
+
+  // gains are defined in delftacopter_controller.h
+  float ref_p_newcontroller = k_phi_dc * err_x;
+  float ref_q_newcontroller = k_theta_dc * err_y;
+  int32_t** controller_output = get_controller_output(ref_p_newcontroller, ref_q_newcontroller);
+
+  if (state_feedback_active)
+  {
+    set_active_controller(DELFTACOPTER_CONTROLLER_NEW_ATT);
+    stabilization_cmd[COMMAND_ROLL] = controller_output[0][0];
+    stabilization_cmd[COMMAND_PITCH] = controller_output[1][0];
+    stabilization_cmd[COMMAND_ELEVATOR] = controller_output[2][0];
+  }
+  else {
+    set_active_controller(DELFTACOPTER_CONTROLLER_OLD_ATT);
+  }
   sys_id_chirp_add_values(stabilization_cmd);
 
   /* bound the result */
   BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_YAW], MAX_PPRZ);
+
+  propagate_observer(stabilization_cmd[COMMAND_ROLL], stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_ELEVATOR]);
 }
 
 void stabilization_attitude_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn)

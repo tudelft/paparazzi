@@ -37,6 +37,9 @@
 #include "subsystems/radio_control.h"
 #include "firmwares/rotorcraft/autopilot_rc_helpers.h"
 
+#include "delftacopter_controller/delftacopter_controller.h"
+#include "delftacopter_controller/delftacopter_observer.h"
+
 #define MAX_SUM_ERR 40000
 
 #ifndef STABILIZATION_RATE_IGAIN_P
@@ -186,11 +189,13 @@ void stabilization_rate_enter(void)
 
 void stabilization_rate_run(bool in_flight)
 {
+  bool state_feedback_active = false; //radio_control.values[4] < -4500; // ap mode center position
+
   /* compute feed-back command */
   struct FloatRates _error;
   struct FloatRates *body_rate = stateGetBodyRates_f();
   RATES_DIFF(_error, stabilization_rate_sp, (*body_rate));
-  if (in_flight) {
+  if (in_flight && !state_feedback_active) {
     /* update integrator */
     //divide the sum_err_increment to make sure it doesn't accumulate to the max too fast
     struct FloatRates sum_err_increment;
@@ -228,6 +233,18 @@ void stabilization_rate_run(bool in_flight)
   stabilization_cmd[COMMAND_PITCH] = cmd_pitch;
 #endif
 
+  int32_t** controller_output = get_controller_output(stabilization_rate_sp.p, stabilization_rate_sp.q);
+  if (state_feedback_active)
+  {
+    set_active_controller(DELFTACOPTER_CONTROLLER_NEW_RATE);
+    stabilization_cmd[COMMAND_ROLL] = controller_output[0][0];
+    stabilization_cmd[COMMAND_PITCH] = controller_output[1][0];
+    stabilization_cmd[COMMAND_ELEVATOR] = controller_output[2][0];
+  }
+  else {
+    set_active_controller(DELFTACOPTER_CONTROLLER_OLD_RATE);
+  }
+
   sys_id_chirp_add_values(stabilization_cmd);
 
   /* bound the result */
@@ -235,4 +252,5 @@ void stabilization_rate_run(bool in_flight)
   BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_YAW], MAX_PPRZ);
 
+  propagate_observer(stabilization_cmd[COMMAND_ROLL], stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_ELEVATOR]);
 }

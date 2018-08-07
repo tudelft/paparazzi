@@ -25,6 +25,7 @@
         <define name="GPS_TIMEOUT" value="2"/>
       </module>
       <module name="sys_id_chirp"/>
+      <module name="delftacopter_controller"/>
       <module name="stabilization" type="int_quat"/>
       <module name="stabilization" type="rate"/>
       <module name="ahrs"          type="int_cmpl_quat">
