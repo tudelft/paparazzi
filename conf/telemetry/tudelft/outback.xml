@@ -35,7 +35,8 @@
       <message name="VISION_OUTBACK"         period="0.2"/>
       <message name="DC_CONTROLLER"          period="0.5"/>
       <message name="DC_OBSERVER"            period="0.5"/>
-      <message name="DC_CONT_SETTINGS"       period="0.5"/>      
+      <message name="DC_CONT_SETTINGS"       period="0.5"/>     
+      <message name="CHIRP"                  period="0.5"/> 
     </mode>
 
     <mode name="ppm">
