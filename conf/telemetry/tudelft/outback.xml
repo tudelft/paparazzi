@@ -159,6 +159,7 @@
   <process name="Logger">
     <mode name="default">
       <message name="GPS"                    period="20"/>
+      <message name="CHIRP"                  period="0.2"/>
       <message name="ROTORCRAFT_STATUS"      period="1.2"/>
       <message name="DL_VALUE"               period="0.5"/>
       <message name="IMU_GYRO_SCALED"        period=".2"/>
@@ -171,6 +172,7 @@
       <message name="DC_OBSERVER"            period="0.005"/>
       <message name="DC_CONT_SETTINGS"       period="0.5"/>
       <message name="AUTOPILOT_VERSION"      period="20.0"/>
+      <message name="MOTOR"                  period="0.05"/>
     </mode>
   </process>
 
