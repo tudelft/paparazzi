@@ -176,10 +176,10 @@
     <set servo="AIL_RIGHTUP"    value="-1*@ELEVATOR + 1.5*@AILERON"/>
   </command_laws>
 
-  <!-- T-Motor 190kv with 24.2 inch prop -->
+  <!-- T-Motor 190kv with 26 inch prop -->
   <heli_curves>
     <curve throttle="0,6000,0,0,0" collective="-9600,-8150,-6700,-5250,-3800"/> <!-- Spinup curve -->
-    <curve throttle="7300,7800,8300" rpm="2800,2800,2800" collective="-9600,-6500,-2300"/><!-- Hover curve RPM controlled -->
+    <curve throttle="7300,7800,8300" rpm="2600,2600,2600" collective="-9600,-6500,-2300"/><!-- Hover curve RPM controlled -->
     <curve throttle="8600,8600,8600,8600,9600" collective="-9600,-6300,-3000,700,4500"/><!-- Forward curve -->
   </heli_curves>
 
