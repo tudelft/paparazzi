@@ -84,10 +84,10 @@
       <define name="USE_ADC_3" value="1"/>
       <define name="USE_ADC_4" value="1"/>
       <define name="ADC_GENERIC_NB_SAMPLES" value="1"/>
-      <define name="ADC_GENERIC_PITCH_SERVO_SIGNAL" value="ADC_1"/>
-      <define name="ADC_GENERIC_PITCH_SERVO_VOLTAGE" value="ADC_2"/>
-      <define name="ADC_GENERIC_YAW_SERVO_SIGNAL" value="ADC_3"/>
-      <define name="ADC_GENERIC_YAW_SERVO_VOLTAGE" value="ADC_4"/>
+      <define name="ADC_GENERIC_PITCH_SERVO_SIGNAL" value="ADC_2"/>
+      <define name="ADC_GENERIC_PITCH_SERVO_VOLTAGE" value="ADC_3"/>
+      <define name="ADC_GENERIC_YAW_SERVO_SIGNAL" value="ADC_4"/>
+      <define name="ADC_GENERIC_YAW_SERVO_VOLTAGE" value="ADC_1"/>
     </module>
   </firmware>
   

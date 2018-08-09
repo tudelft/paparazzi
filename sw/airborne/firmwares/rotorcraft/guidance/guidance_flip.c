@@ -341,9 +341,6 @@ void guidance_flip_run(void)
       stabilization_cmd[COMMAND_THRUST] = FIRST_THRUST_LEVEL; //Thrust to go up first
       timer_save = 0;
 
-      LED_ON(1);
-      LED_ON(2);
-
       if (timer >= BFP_OF_REAL(FIRST_THRUST_DURATION, 12)) {
         if (FLIP_ROLL && ~FLIP_PITCH) {
           phi_gyr = phi; // initialize the phi estimate with the current phi
@@ -814,10 +811,7 @@ void guidance_flip_run(void)
         stab_att_sp_euler.psi = heading_save;
       }
 
-      LED_OFF(1);
-      LED_OFF(2);
-
-
+      
       flip_counter = 0;
       timer_save = 0;
       flip_state = 0;
