@@ -26,21 +26,21 @@
 
 #include "system_matrix.h"
 
-#ifdef observer_DC2_6S1P_cmsg_m50
+#ifdef observer_DC3_6S6P_2600RPM_dccmsg_m50
 #define OBSERVER_MATRIX_PICKED
 uint16_t observer_matrix_id = 0;
-// -50.00, -50.00, -51.00, -51.00
+// -10.00, -10.00, -11.00, -11.00
 float _A_obsv_hover[OBSERVER_N_STATES][OBSERVER_N_STATES] = {
-	{  0.831053,  -0.006039,   0.000000,   0.189114},
-	{  0.053578,   0.831053,   0.801209,   0.000000},
-	{  0.010034,  -0.006620,   0.981099,  -0.012646},
-	{ -0.028047,  -0.004791,   0.025583,   0.981099}
+	{  0.967043,   0.008501,   0.000000,   0.027498},
+	{ -0.055998,   0.967043,   0.222399,   0.000000},
+	{ -0.006375,   0.001424,   0.992360,   0.006924},
+	{  0.011517,   0.007826,  -0.068751,   0.992360}
 };
 float _B_obsv_hover[OBSERVER_N_STATES][OBSERVER_N_INPUTS] = {
-	{  0.000683,  -0.000055,   0.000000,   0.168756,   0.006039},
-	{ -0.000786,   0.001738,   0.000000,  -0.053578,   0.168139},
-	{ -0.001928,   0.004163,   0.000000,  -0.010021,   0.004685},
-	{  0.006898,  -0.000498,   0.000000,   0.026112,   0.004765}
+	{  0.000149,   0.000026,   0.000000,   0.032930,  -0.008501},
+	{ -0.001725,  -0.000199,   0.000000,   0.055998,   0.032738},
+	{ -0.015307,  -0.001763,   0.000000,   0.006368,  -0.003370},
+	{  0.011288,   0.001935,   0.000000,  -0.013463,  -0.007759}
 };
 float _C_obsv_hover[OBSERVER_N_OUTPUTS][OBSERVER_N_STATES] = {
 	{  1.000000,   0.000000,   0.000000,   0.000000},
@@ -50,21 +50,21 @@ float _C_obsv_hover[OBSERVER_N_OUTPUTS][OBSERVER_N_STATES] = {
 };
 #endif
 
-#ifdef observer_DC2_6S1P_m50
+#ifdef observer_DC3_6S6P_2600RPM_dccmsg_m50
 #define OBSERVER_MATRIX_PICKED
 uint16_t observer_matrix_id = 1;
 // -50.00, -50.00, -51.00, -51.00
 float _A_obsv_hover[OBSERVER_N_STATES][OBSERVER_N_STATES] = {
-	{  0.834891,  -0.005481,  -0.000000,   0.253820},
-	{  0.117308,   0.834891,   1.232365,  -0.000000},
-	{  0.013552,  -0.003589,   0.977260,  -0.024161},
-	{ -0.017428,  -0.003074,   0.026611,   0.977260}
+	{  0.823582,   0.007862,   0.000000,   0.025432},
+	{ -0.051790,   0.823582,   0.205685,  -0.000000},
+	{ -0.041543,  -0.031103,   0.988570,   0.006404},
+	{ -0.251551,   0.051004,  -0.063584,   0.988570}
 };
 float _B_obsv_hover[OBSERVER_N_STATES][OBSERVER_N_INPUTS] = {
-	{  0.000944,  -0.000092,   0.000000,   0.164853,   0.005481},
-	{ -0.000629,   0.003834,   0.000000,  -0.117308,   0.163865},
-	{ -0.001066,   0.005962,   0.000000,  -0.013528,   0.001658},
-	{  0.007101,  -0.000612,   0.000000,   0.015496,   0.003047}
+	{  0.000142,   0.000025,   0.000000,   0.176393,  -0.007862},
+	{ -0.001638,  -0.000189,   0.000000,   0.051790,   0.176211},
+	{ -0.015289,  -0.001761,   0.000000,   0.041536,   0.029159},
+	{  0.011247,   0.001929,   0.000000,   0.249608,  -0.050939}
 };
 float _C_obsv_hover[OBSERVER_N_OUTPUTS][OBSERVER_N_STATES] = {
 	{  1.000000,   0.000000,   0.000000,   0.000000},
@@ -74,7 +74,31 @@ float _C_obsv_hover[OBSERVER_N_OUTPUTS][OBSERVER_N_STATES] = {
 };
 #endif
 
-#ifdef controller_DC2_6S1P_cmsg_lqr_500
+#ifdef observer_DC3_6S6P_2600RPM_dccmsg_m50
+#define OBSERVER_MATRIX_PICKED
+uint16_t observer_matrix_id = 2;
+// -100.00, -100.00, -101.00, -101.00
+float _A_obsv_hover[OBSERVER_N_STATES][OBSERVER_N_STATES] = {
+	{  0.666705,   0.007130,   0.000000,   0.023065},
+	{ -0.046972,   0.666705,   0.186548,   0.000000},
+	{ -0.078091,  -0.127105,   0.976845,   0.005808},
+	{ -1.027999,   0.095875,  -0.057669,   0.976845}
+};
+float _B_obsv_hover[OBSERVER_N_STATES][OBSERVER_N_INPUTS] = {
+	{  0.000133,   0.000023,   0.000000,   0.333271,  -0.007130},
+	{ -0.001536,  -0.000177,   0.000000,   0.046972,   0.333101},
+	{ -0.015229,  -0.001754,   0.000000,   0.078085,   0.125170},
+	{  0.011172,   0.001918,   0.000000,   1.026064,  -0.095815}
+};
+float _C_obsv_hover[OBSERVER_N_OUTPUTS][OBSERVER_N_STATES] = {
+	{  1.000000,   0.000000,   0.000000,   0.000000},
+	{  0.000000,   1.000000,   0.000000,   0.000000},
+	{  0.000000,   0.000000,   1.000000,   0.000000},
+	{  0.000000,   0.000000,   0.000000,   1.000000}
+};
+#endif
+
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_500
 #define CONTROLLER_MATRIX_PICKED
 #ifdef DC_OUTPUT_FEEDBACK
 #error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
@@ -83,18 +107,18 @@ float _C_obsv_hover[OBSERVER_N_OUTPUTS][OBSERVER_N_STATES] = {
 uint16_t controller_matrix_id = 0;
 // 500.00, 0.00, 0.00, 500.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.003080,   0.002349,   0.067637,  -0.079211},
-	{ -0.000623,  -0.002166,  -0.088741,   0.023550},
+	{ -0.015396,   0.000355,   0.094967,  -0.013197},
+	{ -0.002059,  -0.000396,   0.010409,  -0.003090},
 	{  0.000000,   0.000000,   0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.293140,   0.036240},
-	{  0.131853,   0.484953},
+	{ -0.338920,  -0.375492},
+	{  3.075288,   2.154409},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_cmsg_lqr_200
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_200
 #define CONTROLLER_MATRIX_PICKED
 #ifdef DC_OUTPUT_FEEDBACK
 #error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
@@ -103,18 +127,18 @@ float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
 uint16_t controller_matrix_id = 1;
 // 200.00, 0.00, 0.00, 200.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.007639,   0.005774,   0.163736,  -0.188496},
-	{ -0.001562,  -0.005367,  -0.217029,   0.056125},
+	{ -0.033556,   0.002790,   0.216757,  -0.027346},
+	{ -0.004491,  -0.000658,   0.023662,  -0.006708},
 	{  0.000000,   0.000000,   0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.297699,   0.032815},
-	{  0.132792,   0.488155},
+	{ -0.320760,  -0.377927},
+	{  3.077720,   2.154671},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_cmsg_lqr_100
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_100
 #define CONTROLLER_MATRIX_PICKED
 #ifdef DC_OUTPUT_FEEDBACK
 #error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
@@ -123,18 +147,18 @@ float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
 uint16_t controller_matrix_id = 2;
 // 100.00, 0.00, 0.00, 100.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.015072,   0.011269,   0.311500,  -0.350258},
-	{ -0.003152,  -0.010590,  -0.419555,   0.104227},
+	{ -0.056811,   0.008797,   0.383778,  -0.044479},
+	{ -0.007631,  -0.000743,   0.041641,  -0.011557},
 	{  0.000000,   0.000000,   0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.305132,   0.027319},
-	{  0.134382,   0.493377},
+	{ -0.297505,  -0.383934},
+	{  3.080860,   2.154756},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_cmsg_lqr_50
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_50
 #define CONTROLLER_MATRIX_PICKED
 #ifdef DC_OUTPUT_FEEDBACK
 #error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
@@ -143,18 +167,18 @@ float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
 uint16_t controller_matrix_id = 3;
 // 50.00, 0.00, 0.00, 50.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.029348,   0.021641,   0.569791,  -0.619038},
-	{ -0.006463,  -0.020662,  -0.790096,   0.182561},
+	{ -0.090842,   0.022482,   0.639320,  -0.070163},
+	{ -0.012329,  -0.000553,   0.068630,  -0.019634},
 	{  0.000000,   0.000000,   0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.319408,   0.016947},
-	{  0.137693,   0.503449},
+	{ -0.263474,  -0.397619},
+	{  3.085558,   2.154566},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_cmsg_lqr_20
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_20
 #define CONTROLLER_MATRIX_PICKED
 #ifdef DC_OUTPUT_FEEDBACK
 #error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
@@ -163,18 +187,18 @@ float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
 uint16_t controller_matrix_id = 4;
 // 20.00, 0.00, 0.00, 20.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.068248,   0.049268,   1.151776,  -1.186491},
-	{ -0.017247,  -0.048523,  -1.715120,   0.331013},
+	{ -0.157350,   0.060722,   1.130371,  -0.129508},
+	{ -0.022050,  -0.000018,   0.118014,  -0.040458},
 	{  0.000000,   0.000000,   0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.358308,  -0.010680},
-	{  0.148477,   0.531310},
+	{ -0.196966,  -0.435859},
+	{  3.095279,   2.154030},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_cmsg_lqr_10
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_10
 #define CONTROLLER_MATRIX_PICKED
 #ifdef DC_OUTPUT_FEEDBACK
 #error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
@@ -183,18 +207,18 @@ float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
 uint16_t controller_matrix_id = 5;
 // 10.00, 0.00, 0.00, 10.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.123898,   0.087510,   1.786300,  -1.787245},
-	{ -0.036368,  -0.089509,  -2.902952,   0.442218},
+	{ -0.230263,   0.112027,   1.612166,  -0.209229},
+	{ -0.033679,  -0.000423,   0.161411,  -0.071892},
 	{  0.000000,   0.000000,   0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.413958,  -0.048922},
-	{  0.167598,   0.572296},
+	{ -0.124053,  -0.487164},
+	{  3.106908,   2.154436},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_cmsg_lqr_5
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_5
 #define CONTROLLER_MATRIX_PICKED
 #ifdef DC_OUTPUT_FEEDBACK
 #error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
@@ -203,18 +227,18 @@ float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
 uint16_t controller_matrix_id = 6;
 // 5.00, 0.00, 0.00, 5.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.215134,   0.146855,   2.541696,  -2.532940},
-	{ -0.073734,  -0.159485,  -4.642659,   0.488519},
+	{ -0.331485,   0.190057,   2.175581,  -0.334920},
+	{ -0.051570,  -0.004057,   0.201322,  -0.129851},
 	{  0.000000,   0.000000,   0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.505194,  -0.108266},
-	{  0.204964,   0.642272},
+	{ -0.022831,  -0.565194},
+	{  3.124798,   2.158070},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_cmsg_lqr_2
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_2
 #define CONTROLLER_MATRIX_PICKED
 #ifdef DC_OUTPUT_FEEDBACK
 #error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
@@ -223,18 +247,18 @@ float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
 uint16_t controller_matrix_id = 7;
 // 2.00, 0.00, 0.00, 2.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.416867,   0.265281,   3.615447,  -3.754682},
-	{ -0.167367,  -0.324776,  -7.936346,   0.345989},
+	{ -0.529041,   0.350749,   3.029498,  -0.596595},
+	{ -0.092344,  -0.023437,   0.221894,  -0.287298},
 	{  0.000000,   0.000000,   0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.706927,  -0.226693},
-	{  0.298597,   0.807563},
+	{  0.174725,  -0.725886},
+	{  3.165573,   2.177450},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_cmsg_lqr_1
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_1
 #define CONTROLLER_MATRIX_PICKED
 #ifdef DC_OUTPUT_FEEDBACK
 #error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
@@ -243,513 +267,173 @@ float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
 uint16_t controller_matrix_id = 8;
 // 1.00, 0.00, 0.00, 1.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.658413,   0.391007,   4.433542,  -4.890072},
-	{ -0.282856,  -0.535657, -11.232757,   0.043097},
+	{ -0.747598,   0.534642,   3.754837,  -0.887007},
+	{ -0.146751,  -0.064738,   0.174067,  -0.526423},
 	{  0.000000,   0.000000,   0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.948473,  -0.352418},
-	{  0.414085,   1.018445},
+	{  0.393282,  -0.909779},
+	{  3.219980,   2.218751},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_lqr_500
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_output_500
 #define CONTROLLER_MATRIX_PICKED
-#ifdef DC_OUTPUT_FEEDBACK
-#error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
+#ifdef DC_STATE_FEEDBACK
+#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
 #endif
 
 uint16_t controller_matrix_id = 9;
 // 500.00, 0.00, 0.00, 500.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.003347,   0.001777,   0.075266,  -0.127314},
-	{ -0.000842,  -0.003052,  -0.142141,   0.058234},
-	{  0.000000,   0.000000,   0.000000,   0.000000}
+	{  0.006050,   0.002606},
+	{ -0.003207,  -0.001713},
+	{  0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.279271,   0.030409},
-	{  0.046087,   0.332804},
+	{ -0.360366,  -0.377743},
+	{  3.076436,   2.155726},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_lqr_200
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_output_200
 #define CONTROLLER_MATRIX_PICKED
-#ifdef DC_OUTPUT_FEEDBACK
-#error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
+#ifdef DC_STATE_FEEDBACK
+#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
 #endif
 
 uint16_t controller_matrix_id = 10;
 // 200.00, 0.00, 0.00, 200.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.008303,   0.004340,   0.180115,  -0.297148},
-	{ -0.002074,  -0.007550,  -0.344284,   0.137981},
-	{  0.000000,   0.000000,   0.000000,   0.000000}
+	{  0.015265,   0.006088},
+	{ -0.004334,  -0.001173},
+	{  0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.284227,   0.027846},
-	{  0.047319,   0.337302},
+	{ -0.369581,  -0.381225},
+	{  3.077563,   2.155185},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_lqr_100
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_output_100
 #define CONTROLLER_MATRIX_PICKED
-#ifdef DC_OUTPUT_FEEDBACK
-#error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
+#ifdef DC_STATE_FEEDBACK
+#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
 #endif
 
 uint16_t controller_matrix_id = 11;
 // 100.00, 0.00, 0.00, 100.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.016390,   0.008407,   0.336902,  -0.537979},
-	{ -0.004087,  -0.014852,  -0.656424,   0.254455},
-	{  0.000000,   0.000000,   0.000000,   0.000000}
+	{  0.031402,   0.011423},
+	{ -0.014169,  -0.000984},
+	{  0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.292314,   0.023779},
-	{  0.049332,   0.344605},
+	{ -0.385718,  -0.386559},
+	{  3.087398,   2.154997},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_lqr_50
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_output_50
 #define CONTROLLER_MATRIX_PICKED
-#ifdef DC_OUTPUT_FEEDBACK
-#error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
+#ifdef DC_STATE_FEEDBACK
+#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
 #endif
 
 uint16_t controller_matrix_id = 12;
 // 50.00, 0.00, 0.00, 50.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.031933,   0.015976,   0.599357,  -0.915798},
-	{ -0.008058,  -0.028821,  -1.209366,   0.442499},
-	{  0.000000,   0.000000,   0.000000,   0.000000}
+	{  0.238981,   0.017211},
+	{ -1.390556,  -0.025285},
+	{  0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.307857,   0.016210},
-	{  0.053303,   0.358573},
+	{ -0.593297,  -0.392348},
+	{  4.463785,   2.179297},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_lqr_20
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_output_10
 #define CONTROLLER_MATRIX_PICKED
-#ifdef DC_OUTPUT_FEEDBACK
-#error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 13;
-// 20.00, 0.00, 0.00, 20.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.074304,   0.035577,   1.145178,  -1.649699},
-	{ -0.019697,  -0.066772,  -2.514764,   0.806646},
-	{  0.000000,   0.000000,   0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.350228,  -0.003392},
-	{  0.064941,   0.396524},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_lqr_10
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_OUTPUT_FEEDBACK
-#error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
+#ifdef DC_STATE_FEEDBACK
+#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
 #endif
 
 uint16_t controller_matrix_id = 14;
 // 10.00, 0.00, 0.00, 10.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.134867,   0.061547,   1.681768,  -2.370297},
-	{ -0.037664,  -0.121121,  -4.082428,   1.125912},
-	{  0.000000,   0.000000,   0.000000,   0.000000}
+	{ -0.009283,   0.064748},
+	{ -0.037289,  -0.000412},
+	{  0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.410791,  -0.029361},
-	{  0.082908,   0.450873},
+	{ -0.345033,  -0.439884},
+	{  3.110518,   2.154425},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_lqr_5
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_output_5
 #define CONTROLLER_MATRIX_PICKED
-#ifdef DC_OUTPUT_FEEDBACK
-#error "Controller state size should be DC_STATE_FEEDBACK in delftacopter_controller.xml"
+#ifdef DC_STATE_FEEDBACK
+#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
 #endif
 
 uint16_t controller_matrix_id = 15;
 // 5.00, 0.00, 0.00, 5.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.233944,   0.099872,   2.254732,  -3.227472},
-	{ -0.068146,  -0.210794,  -6.231245,   1.412453},
-	{  0.000000,   0.000000,   0.000000,   0.000000}
+	{ -0.017384,   0.124133},
+	{ -0.062132,  -0.006437},
+	{  0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.509868,  -0.067687},
-	{  0.113391,   0.540546},
+	{ -0.336932,  -0.499270},
+	{  3.135361,   2.160450},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_cmsg_lqr_output_500
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_output_2
 #define CONTROLLER_MATRIX_PICKED
 #ifdef DC_STATE_FEEDBACK
 #error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
 #endif
 
 uint16_t controller_matrix_id = 16;
-// 500.00, 0.00, 0.00, 500.00
+// 2.00, 0.00, 0.00, 2.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.000144,  -0.000266},
-	{ -0.001313,  -0.002266},
+	{ -0.021914,   0.244130},
+	{ -0.107181,  -0.034660},
 	{  0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.290204,   0.038855},
-	{  0.132542,   0.485054},
+	{ -0.332402,  -0.619266},
+	{  3.180410,   2.188673},
 	{  0.000000,   0.000000}
 };
 #endif
 
-#ifdef controller_DC2_6S1P_cmsg_lqr_output_200
+#ifdef controller_DC3_6S6P_2600RPM_dccmsg_lqr_output_1
 #define CONTROLLER_MATRIX_PICKED
 #ifdef DC_STATE_FEEDBACK
 #error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
 #endif
 
 uint16_t controller_matrix_id = 17;
-// 200.00, 0.00, 0.00, 200.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.000374,  -0.000926},
-	{ -0.003406,  -0.005676},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.290434,   0.039514},
-	{  0.134635,   0.488464},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_output_100
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 18;
-// 100.00, 0.00, 0.00, 100.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.000707,  -0.002373},
-	{ -0.005960,  -0.011301},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.290768,   0.040961},
-	{  0.137189,   0.494089},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_output_50
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 19;
-// 50.00, 0.00, 0.00, 50.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.002012,  -0.007249},
-	{ -0.013688,  -0.022779},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.292072,   0.045837},
-	{  0.144917,   0.505566},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_output_20
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 20;
-// 20.00, 0.00, 0.00, 20.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.008743,  -0.026086},
-	{ -0.039029,  -0.055142},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.298804,   0.064675},
-	{  0.170259,   0.537929},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_output_10
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 21;
-// 10.00, 0.00, 0.00, 10.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.025835,  -0.057960},
-	{ -0.076729,  -0.100331},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.315896,   0.096548},
-	{  0.207959,   0.583118},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_output_5
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 22;
-// 5.00, 0.00, 0.00, 5.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.075855,  -0.119723},
-	{ -0.160497,  -0.171157},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.365916,   0.158311},
-	{  0.291727,   0.653945},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_output_2
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 23;
-// 2.00, 0.00, 0.00, 2.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.192864,  -0.240672},
-	{ -0.250519,  -0.317813},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.482924,   0.279261},
-	{  0.381748,   0.800601},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_output_1
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 24;
 // 1.00, 0.00, 0.00, 1.00
 float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.439584,  -0.416935},
-	{ -0.470936,  -0.472553},
+	{  0.002237,   0.418964},
+	{ -0.216538,  -0.112848},
 	{  0.000000,   0.000000}
 };
 float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.729644,   0.455524},
-	{  0.602166,   0.955340},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_cyl_500
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 25;
-// 500.00, 0.00, 0.00, 500.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.001285,   0.010065},
-	{ -0.002641,  -0.001806},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.302052,   0.071216},
-	{  0.222665,   0.964224},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_cyl_200
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 26;
-// 200.00, 0.00, 0.00, 200.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.003362,   0.024038},
-	{ -0.006340,  -0.004247},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.304130,   0.057243},
-	{  0.226364,   0.966664},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_cyl_100
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 27;
-// 100.00, 0.00, 0.00, 100.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.007094,   0.045004},
-	{ -0.011990,  -0.007769},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.307861,   0.036278},
-	{  0.232014,   0.970186},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_cyl_50
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 28;
-// 50.00, 0.00, 0.00, 50.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.015084,   0.080883},
-	{ -0.022063,  -0.013434},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.315851,   0.000398},
-	{  0.242087,   0.975851},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_cyl_20
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 29;
-// 20.00, 0.00, 0.00, 20.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.039725,   0.162359},
-	{ -0.047795,  -0.024853},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.340492,  -0.081078},
-	{  0.267818,   0.987271},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_cyl_10
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 30;
-// 10.00, 0.00, 0.00, 10.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.077678,   0.258653},
-	{ -0.085245,  -0.036449},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.378446,  -0.177371},
-	{  0.305269,   0.998866},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_cyl_5
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 31;
-// 5.00, 0.00, 0.00, 5.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.140187,   0.393247},
-	{ -0.152997,  -0.050776},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.440954,  -0.311965},
-	{  0.373021,   1.013194},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_cyl_2
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 32;
-// 2.00, 0.00, 0.00, 2.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.265948,   0.648028},
-	{ -0.329851,  -0.077143},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.566715,  -0.566746},
-	{  0.549875,   1.039561},
-	{  0.000000,   0.000000}
-};
-#endif
-
-#ifdef controller_DC2_6S1P_cmsg_lqr_cyl_1
-#define CONTROLLER_MATRIX_PICKED
-#ifdef DC_STATE_FEEDBACK
-#error "Controller state size should be DC_OUTPUT_FEEDBACK in delftacopter_controller.xml"
-#endif
-
-uint16_t controller_matrix_id = 33;
-// 1.00, 0.00, 0.00, 1.00
-float _controller_K[SYSTEM_N_INPUTS][CONTROLLER_N_STATES] = {
-	{ -0.389175,   0.920334},
-	{ -0.572562,  -0.108983},
-	{  0.000000,   0.000000}
-};
-float _controller_g[SYSTEM_N_INPUTS][SYSTEM_N_OUTPUTS] = {
-	{  0.689942,  -0.839052},
-	{  0.792586,   1.071401},
+	{ -0.356553,  -0.794101},
+	{  3.289767,   2.266861},
 	{  0.000000,   0.000000}
 };
 #endif
