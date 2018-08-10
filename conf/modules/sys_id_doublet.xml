@@ -1,0 +1,30 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="sys_id_doublet" dir="system_identification">
+  <doc>
+    <description>System identification doublet. Add a doublet to the controller setpoint to measure controller response.</description>
+  </doc>
+
+  <settings>
+    <dl_settings name="System identification">
+      <dl_settings name="System doublet">
+        <dl_setting min="0" max="1" step="1" values="Inactive|Active" shortname="Activate doublet" var="doublet_active" handler="doublet_activate_handler" type="bool" module="system_identification/sys_id_doublet">
+          <strip_button name="Doublet active" value="1" group="System identification"/>
+          <strip_button name="Doublet inactive" value="0" group="System identification"/>
+        </dl_setting>
+        <dl_setting min="0" max="2" step="1" values="Roll|Pitch|Yaw" shortname="Doublet axis" var="doublet_axis" type="uint8_t" module="system_identification/sys_id_doublet"/>
+        <dl_setting min="0" max="50" step="1" shortname="Amplitude_deg" var="doublet_amplitude_deg" type="float" module="system_identification/sys_id_doublet"/>
+        <dl_setting min="0" max="10" step="0.1" shortname="Length_s" var="doublet_length_s" type="float" module="system_identification/sys_id_doublet"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <header>
+    <file name="sys_id_doublet.h"/>
+  </header>
+  <init fun="sys_id_doublet_init()"/>
+
+  <makefile>
+    <file name="sys_id_doublet.c"/>
+  </makefile>
+</module>

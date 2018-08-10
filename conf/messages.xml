@@ -1437,7 +1437,12 @@
       <field name="save_cnt"    type="int16"/>
     </message>
 
-    <!-- 167 is free -->
+    <message name="DOUBLET"  id="167">
+      <field name="active"  type="uint8"/>
+      <field name="start_time" type="float"/>
+      <field name="time_since_start" type="float"/>
+      <field name="current_value" type="float"/>
+    </message>
 
     <message name="ROTORCRAFT_CAM" id="168">
       <field name="tilt" type="int16" unit="2^12rad" alt_unit="deg" alt_unit_coef="0.0139882"/>
