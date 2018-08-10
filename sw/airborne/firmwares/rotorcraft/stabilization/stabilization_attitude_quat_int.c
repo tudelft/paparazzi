@@ -229,6 +229,7 @@ static void attitude_run_fb(int32_t fb_commands[], struct Int32AttitudeGains *ga
 
 void stabilization_attitude_run(bool enable_integrator)
 {
+  sys_id_doublet_add_attitude(&stab_att_sp_quat);
 
   /*
    * Update reference
