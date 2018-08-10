@@ -13,7 +13,8 @@
         <dl_setting var="odroid_outback_enable_take_foto" min="0" max="1" step="1" values="off|on" shortname="foto"/>
         <dl_setting var="odroid_outback_enable_findjoe" min="0" max="1" step="1" values="off|on" shortname="findjoe"/>
         <dl_setting var="odroid_outback_enable_opticflow" min="0" max="1" step="1" values="off|on" shortname="opticflow"/>
-        <dl_setting var="odroid_outback_enable_videorecord" min="0" max="1" step="1" values="off|on" shortname="record"/>        
+        <dl_setting var="odroid_outback_enable_videorecord" min="0" max="1" step="1" values="off|on" shortname="record"/>
+        <dl_setting var="odroid_outback_shutdown" min="0" max="1" step="1" values="off|on" shortname="shutdown"/>
       </dl_settings>
     </dl_settings>
   </settings>

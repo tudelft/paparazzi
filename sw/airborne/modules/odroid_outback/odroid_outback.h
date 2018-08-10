@@ -82,6 +82,7 @@ extern bool odroid_outback_enable_findjoe;
 extern bool odroid_outback_enable_opticflow;
 extern bool odroid_outback_enable_attcalib;
 extern bool odroid_outback_enable_videorecord;
+extern bool odroid_outback_shutdown;
 extern struct FloatVect3 land_cmd;
 extern bool het_moment;
 extern bool vision_timeout;
@@ -96,6 +97,7 @@ extern void enableOdroidOpticFlow(bool b);
 extern void enableOdroidFindJoe(bool b);
 extern bool enableOdroidAttCalib(bool b);
 extern bool enableOdroidVideoRecord(bool b);
+extern bool enableOdroidShutdown(bool b);
 
 extern bool getOdroidReady(void);
 

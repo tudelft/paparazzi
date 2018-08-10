@@ -52,6 +52,7 @@ bool odroid_outback_enable_findjoe = false;
 bool odroid_outback_enable_opticflow = false;
 bool odroid_outback_enable_attcalib = false;
 bool odroid_outback_enable_videorecord = false;
+bool odroid_outback_shutdown = false;
 bool het_moment = false;
 bool vision_timeout = false;
 
@@ -59,6 +60,7 @@ bool vision_timeout = false;
 #include "subsystems/datalink/telemetry.h"
 
 uint8_t timeoutcount = 0;
+void enable_wp_joe_telemetry_updates(void);
 
 static void send_odroid_outback( struct transport_tx *trans, struct link_device *dev)
 {
@@ -160,11 +162,8 @@ static inline void odroid_outback_parse_msg(void)
           }
 
         if (odroid_outback_enable_findjoe) {
-            waypoint_set_xy_i(WP_dummy, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y)); // WP_ODROID_OUTBACK_JOE
-
-            uint8_t wp_id = WP_dummy; //WP_ODROID_OUTBACK_JOE;
-            RunOnceEvery(60, DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,&(waypoints[wp_id].enu_i.x),
-                                                        &(waypoints[wp_id].enu_i.y), &(waypoints[wp_id].enu_i.z)));
+            waypoint_set_xy_i(WP_JOE, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
+            enable_wp_joe_telemetry_updates();
           }
 
         // Send ABI message
@@ -176,6 +175,16 @@ static inline void odroid_outback_parse_msg(void)
       }
     default:
       break;
+    }
+}
+
+void enable_wp_joe_telemetry_updates(void) {
+  static bool enabled = false;
+  if (!enabled) {
+      uint8_t wp_id = WP_JOE; //WP_ODROID_OUTBACK_JOE;
+      RunOnceEvery(60, DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,&(waypoints[wp_id].enu_i.x),
+                                                  &(waypoints[wp_id].enu_i.y), &(waypoints[wp_id].enu_i.z)));
+      enabled = true;
     }
 }
 
@@ -220,8 +229,6 @@ void odroid_outback_periodic() {
       p2k_package.geo_init_gpsz = 0;
     }
 
-
-
   p2k_package.enables = 0;
   if (odroid_outback_enable_landing)
     p2k_package.enables |= 0b1;
@@ -237,6 +244,8 @@ void odroid_outback_periodic() {
     p2k_package.enables |= 0b10000;
   if (odroid_outback_enable_videorecord)
     p2k_package.enables |= 0b100000;
+  if (odroid_outback_shutdown)
+    p2k_package.enables |= 0b1000000;
 
   if (timeoutcount > 0) {
       timeoutcount--;
@@ -275,6 +284,11 @@ bool enableOdroidAttCalib(bool b) {
 
 bool enableOdroidVideoRecord(bool b) {
   odroid_outback_enable_videorecord = b;
+  return true; // klote pprz flight plan
+}
+
+bool enableOdroidShutdown(bool b) {
+  odroid_outback_shutdown = b;
   return true; // klote pprz flight plan
 }
 

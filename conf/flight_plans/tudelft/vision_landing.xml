@@ -15,9 +15,9 @@
     <waypoint alt="50.0" name="p1" x="-8.2" y="24.1"/>
     <waypoint alt="50.0" name="p2" x="26.4" y="33.6"/>
     <waypoint alt="50.0" name="p3" x="38.8" y="-6.7"/>
-    <waypoint alt="50.0" name="p4" x="8.8" y="-18.3"/>
-    <waypoint name="CAM" x="17.7" y="-44.2"/>
+    <waypoint alt="50.0" name="p4" x="8.8" y="-18.3"/>    
     <waypoint name="TD" x="5.6" y="-10.9"/>
+    <waypoint name="JOE" x="5" y="5"/>
   </waypoints>
   <exceptions>
     <exception cond="((radio_control.status == RC_REALLY_LOST) &&
@@ -85,6 +85,20 @@
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <deroute block="land"/>
+    </block>
+    <block name="route_findjoe">
+      <call fun="enableOdroidFindJoe(true)" loop="false"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p3"/>
+      <go from="p3" hmode="route" wp="p4"/>
+      <go from="p4" hmode="route" wp="p1"/>
+      <deroute block="stay_p1"/>
+    </block>
+    <block name="goto_joe">
+      <call fun="enableOdroidFindJoe(false)" loop="false"/>
+      <call_once fun="NavCopyWaypoint(WP_TD,WP_JOE)"/>
+      <stay wp="JOE"/>
     </block>
     <block name="land">
       <go wp="TD"/>
