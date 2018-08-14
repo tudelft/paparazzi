@@ -113,7 +113,7 @@ static void send_energy(struct transport_tx *trans, struct link_device *dev)
   if (fabs(electrical.energy) >= INT16_MAX) {
     e = INT16_MAX;
   }
-  float vsup = ((float)electrical.vsupply) / 10.0f;
+  float vsup = ((float)electrical.vsupply) / 1000.0f;
   float curs = ((float)electrical.current) / 1000.0f;
   float power = vsup * curs;
   pprz_msg_send_ENERGY(trans, dev, AC_ID, &vsup, &curs, &e, &power);

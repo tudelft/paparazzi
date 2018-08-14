@@ -125,7 +125,7 @@ void electrical_periodic(void)
   static bool vsupply_check_started = false;
 
 #if defined(ADC_CHANNEL_VSUPPLY) && !defined(SITL) && !USE_BATTERY_MONITOR
-  electrical.vsupply = 10 * VoltageOfAdc((electrical_priv.vsupply_adc_buf.sum /
+  electrical.vsupply = 1000 * VoltageOfAdc((electrical_priv.vsupply_adc_buf.sum /
                                           electrical_priv.vsupply_adc_buf.av_nb_sample));
 #endif
 
@@ -182,12 +182,12 @@ void electrical_periodic(void)
   electrical.energy += ((float)electrical.current) / 3600.0f / ELECTRICAL_PERIODIC_FREQ;
 
   /*if valid voltage is seen then start checking. Set min level to 0 to always start*/
-  if (electrical.vsupply >= MIN_BAT_LEVEL * 10) {
+  if (electrical.vsupply >= MIN_BAT_LEVEL * 1000) {
     vsupply_check_started = true;
   }
 
   if (vsupply_check_started) {
-    if (electrical.vsupply < LOW_BAT_LEVEL * 10) {
+    if (electrical.vsupply < LOW_BAT_LEVEL * 1000) {
       if (bat_low_counter > 0) {
         bat_low_counter--;
       }
@@ -200,7 +200,7 @@ void electrical_periodic(void)
       electrical.bat_low = false;
     }
 
-    if (electrical.vsupply < CRITIC_BAT_LEVEL * 10) {
+    if (electrical.vsupply < CRITIC_BAT_LEVEL * 1000) {
       if (bat_critical_counter > 0) {
         bat_critical_counter--;
       }
