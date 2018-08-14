@@ -68,12 +68,13 @@
       <define name="FILTER_CMD_PITCH_CUTOFF" value="15.0"/>
       <define name="FILTER_CMD_YAW_CUTOFF" value="10.0"/>
       <define name="STABILIZATION_ATTITUDE_SP_PSI_DELTA_LIMIT" value="0.5"/>
-      <define name="USE_FLIP_MODE" value="1"/>
+      <define name="USE_FLIP_MODE" value="0"/>
     </module>
     <module name="ahrs" type="int_cmpl_quat">
       <define name="AHRS_PROPAGATE_LOW_PASS_RATES" value="FALSE"/>
     </module>
     <module name="ins"/>
+    <module name="air_data"/>
     <module name="logger_sd_spi_direct.xml">
       <define name="SDLOGGER_CONTROL_SWITCH" value="RADIO_GEAR"/>
       <define name="LOGGER_LED" value="2"/> 
@@ -152,7 +153,7 @@
     <define name="MODE_STARTUP" value="AP_MODE_RC_DIRECT"/>
        <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO2" value="AP_MODE_FLIP"/>
+    <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_Z_HOLD"/>
     <!--define name="MODE_AUTO2" value="AP_MODE_FLIP"/-->
         
     <define name="USE_THROTTLE_FOR_MOTOR_ARMING" value="TRUE"/>
