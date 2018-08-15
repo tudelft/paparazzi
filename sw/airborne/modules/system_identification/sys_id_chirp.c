@@ -38,6 +38,9 @@ float chirp_f0_hz = 0.05;
 float chirp_f1_hz = 3.2;
 float chirp_length_s = 80;
 
+struct FloatRates* chirp_rates;
+struct FloatQuat* chirp_quat;
+
 // Filters used to cut-off the gaussian noise fed into the identification channels
 static struct FirstOrderLowPass filters[CHIRP_NO_AXES];
 
@@ -62,6 +65,17 @@ static void set_current_chirp_values(void) {
 static void send_chirp(struct transport_tx *trans, struct link_device *dev) {
     pprz_msg_send_CHIRP(trans, dev, AC_ID, &chirp_active, &chirp.percentage_done, &chirp.current_frequency_hz, 
         &chirp_axis, &chirp_amplitude, &chirp_f0_hz, &chirp_f1_hz, &chirp_noise_stdv_onaxis_ratio, &chirp_noise_stdv_offaxis_ratio);
+}
+
+static void send_filter_logging(struct transport_tx *trans, struct link_device *dev) {
+    pprz_msg_send_DELFTACOPTER_FILTER_LOGGING(trans, dev, AC_ID, 
+        &chirp_quat->qi,
+        &chirp_quat->qx,
+        &chirp_quat->qy,
+        &chirp_quat->qz,
+        &chirp_rates->p,
+        &chirp_rates->q,
+        &chirp_rates->r);
 }
 
 static void start_chirp(void) {
@@ -90,6 +104,7 @@ void sys_id_chirp_init(void) {
     chirp_init(&chirp, chirp_f0_hz, chirp_f1_hz, chirp_length_s, get_sys_time_float(), CHIRP_EXPONENTIAL, CHIRP_FADEIN);
     set_current_chirp_values();
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_CHIRP, send_chirp);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DELFTACOPTER_FILTER_LOGGING, send_filter_logging);
 
     // Filter cutoff frequency is the chirp maximum frequency
     float tau = 1 / (chirp_f1_hz * 2 * M_PI);
@@ -110,9 +125,8 @@ void sys_id_chirp_run(void) {
     }
 }
 
-void sys_id_chirp_add_values(int32_t in_cmd[])
+void sys_id_chirp_add_values_and_log(int32_t in_cmd[])
 {
-
   // Add chirp system identification values
   #if USE_SYS_ID_CHIRP
   in_cmd[COMMAND_ROLL] += current_chirp_values[0];
@@ -128,5 +142,9 @@ void sys_id_chirp_add_values(int32_t in_cmd[])
   BoundAbs(in_cmd[COMMAND_YAW], MAX_PPRZ);
   BoundAbs(in_cmd[COMMAND_ELEVATOR], MAX_PPRZ);
   BoundAbs(in_cmd[COMMAND_AILERON], MAX_PPRZ);
+
+  chirp_rates = stateGetBodyRates_f();
+  chirp_quat = stateGetNedToBodyQuat_f();
+
 
 }
