@@ -45,6 +45,8 @@
         <configure name="ODROID_OUTBACK_PORT" value="UART4"/>
       </module>
 
+      <module name="nav_hybrid_heading"/>
+
       <module name="geo_mag"/>
       <module name="air_data">
         <!--define name="AIR_DATA_BARO_ABS_ID" value="IMU_MAG_PITOT_ID"/>

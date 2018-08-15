@@ -1,0 +1,24 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="nav_hybrid_heading" dir="nav">
+  <doc>
+    <description>Move heading into the wind when hybrids are hovering.</description>
+  </doc>
+  <settings>
+    <dl_settings NAME="hybrid">
+      <dl_settings NAME="heading">
+        <dl_setting module="nav/nav_hybrid_heading" var="nav_hybrid_heading_max_yaw_rate" min="0" max="6.0" step="0.001"/>
+        <dl_setting module="nav/nav_hybrid_heading" var="nav_hybrid_heading_pitch_deadband" min="0" max="6.0" step="0.001"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <header>
+    <file name="nav_hybrid_heading.h"/>
+  </header>
+  <init fun="nav_hybrid_heading_init()"/>
+  <periodic fun="nav_hybrid_heading_periodic()" freq="512"/>
+  <makefile>
+    <file name="nav_hybrid_heading.c"/>
+  </makefile>
+</module>
+

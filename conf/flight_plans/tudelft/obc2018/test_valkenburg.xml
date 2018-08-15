@@ -47,6 +47,7 @@
   </sectors>
   <modules>
     <module name="nav" type="heli_spinup"/>
+    <module name="nav" type="hybrid_heading"/>
   </modules>
   <exceptions>
     <exception cond="(!InsideMissionBoundary(GetPosX(), GetPosY()) &&
@@ -129,7 +130,7 @@
       <set var="dc_hybrid_mode" value="HB_HOVER"/>
       <exception cond="stateGetPositionEnu_f()->z > 50.0" deroute="route_1234"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
-      <call_once fun="nav_set_heading_current()"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
       <!--set value="RadOfDeg(35)" var="guidance_indi_max_bank"/-->
       <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z - POS_BFP_OF_REAL(5.0), -SPEED_BFP_OF_REAL(3.0), 0)"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB" until="stateGetPositionEnu_f()->z > 20.0"/>
@@ -143,6 +144,12 @@
       <set var="dc_hybrid_mode" value="HB_HOVER"/>
       <!--set value="GUIDANCE_H_MAX_BANK" var="guidance_indi_max_bank"/-->
       <stay wp="STDBY"/>
+    </block>
+    <block group="safe" name="StandbyAutoHeading" strip_button="Standby90" >
+      <set var="dc_hybrid_mode" value="HB_HOVER"/>
+      <!--set value="GUIDANCE_H_MAX_BANK" var="guidance_indi_max_bank"/-->
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay wp="STDBY" pre_call="nav_hybrid_heading_set()"/>
     </block>
     <block group="safe" name="Hover_here"  strip_button="Hover_Here">
       <set var="dc_hybrid_mode" value="HB_HOVER"/>

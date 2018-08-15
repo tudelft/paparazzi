@@ -42,6 +42,7 @@
   </sectors>
   <modules>
     <module name="nav" type="heli_spinup"/>
+    <module name="nav" type="hybrid_heading"/>
   </modules>
   <exceptions>
     <exception cond="(!InsideMissionBoundary(GetPosX(), GetPosY()) &&
@@ -123,6 +124,12 @@
     <block group="safe" name="Standby" strip_button="Standby">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <stay wp="STDBY"/>
+    </block>
+    <block group="safe" name="StandbyAutoHeading" strip_button="Standby90" >
+      <set var="dc_hybrid_mode" value="HB_HOVER"/>
+      <!--set value="GUIDANCE_H_MAX_BANK" var="guidance_indi_max_bank"/-->
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay wp="STDBY" pre_call="nav_hybrid_heading_set()"/>
     </block>
     <block group="safe" name="Hover_here" strip_button="Hover_Here">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
