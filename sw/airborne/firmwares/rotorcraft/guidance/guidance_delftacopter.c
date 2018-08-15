@@ -494,7 +494,7 @@ void guidance_hybrid_vertical(void)
     stabilization_cmd[COMMAND_THRUST] = guidance_v_delta_t;
     return;
   }
-  else if (transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
+  else if (transition_percentage < (90 << INT32_PERCENTAGE_FRAC)) {
     stabilization_cmd[COMMAND_THRUST] = transition_throttle;
     return;
   }
