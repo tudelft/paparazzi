@@ -170,6 +170,7 @@
       <message name="AIR_DATA"               period="0.01"/>
       <message name="MOTOR"                  period="0.02"/>
       <message name="DELFTACOPTER_FILTER_LOGGING" period="0.005"/>
+      <message name="INS"                    period="0.1"/>
     </mode>
   </process>
 
