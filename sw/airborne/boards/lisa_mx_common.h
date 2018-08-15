@@ -175,6 +175,7 @@
 #define UART3_GPIO_RX GPIO11
 #define UART3_GPIO_PORT_TX GPIOC
 #define UART3_GPIO_TX GPIO10
+
 #endif
 
 

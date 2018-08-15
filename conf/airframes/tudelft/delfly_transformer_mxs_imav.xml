@@ -50,7 +50,7 @@
     </module>
     
     <module name="delfly_vision">
-      <configure name="STEREO_UART" value="UART4"/>
+      <configure name="STEREO_UART" value="UART3"/>
       <configure name="STEREO_BAUD" value="B921600"/>
     </module>
           
@@ -66,7 +66,7 @@
     </module>
     
     <module name="imu" type="lisa_mx_v2.1"/>
-    <module name="gps" type="ublox"/>
+    <module name="gps" type="datalink"/>
     <module name="stabilization" type="int_euler">
       <define name="FILTER_CMD_ROLL_PITCH" value="1"/>
       <define name="FILTER_CMD_YAW" value="1"/>

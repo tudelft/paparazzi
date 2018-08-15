@@ -96,85 +96,19 @@ static void delfly_vision_parse_msg(void)
   uint8_t msg_id = pprzlink_get_msg_id(stereocam_msg_buf);
   switch (msg_id) {
 
-//  case DL_STEREOCAM_VELOCITY: {
-////    <message name="STEREOCAM_VELOCITY" id="81">
-////      <description>Velocity measured using optical flow and stereovision. All parameters are in the camera frame</description>
-////      <field name="resolution" type="uint8">Resolution of the vel and pos messages</field>
-////      <field name="dt_frame"   type="uint8">Time difference to previous frame</field>
-////      <field name="dt"         type="uint8">Time difference to previous message, not strictly required</field>
-////      <field name="velx"       type="int16" unit="m/s">Velocity estimaed using stereo edgeflow</field>
-////      <field name="vely"       type="int16" unit="m/s"/>
-////      <field name="velz"       type="int16" unit="m/s"/>
-////      <field name="dposx"      type="int16" unit="m">Distance traveled since the last message</field>
-////      <field name="dposy"      type="int16" unit="m"/>
-////      <field name="dposz"      type="int16" unit="m"/>
-////      <field name="vRMS"       type="uint8">RMS of the velocity estimate</field>
-////      <field name="posRMS"     type="uint8">RMS of the position</field>
-////      <field name="avg_dist"   type="uint16">Average distance to scene</field>
-////    </message>
-//
-//    static struct FloatVect3 camera_vel;
-//
-//    float res = (float)DL_STEREOCAM_VELOCITY_resolution(stereocam_msg_buf);
-//
-//    camera_vel.x = (float)DL_STEREOCAM_VELOCITY_velx(stereocam_msg_buf)/res;
-//    camera_vel.y = (float)DL_STEREOCAM_VELOCITY_vely(stereocam_msg_buf)/res;
-//    camera_vel.z = (float)DL_STEREOCAM_VELOCITY_velz(stereocam_msg_buf)/res;
-//
-//    float noise = 1-(float)DL_STEREOCAM_VELOCITY_vRMS(stereocam_msg_buf)/res;
-//
-//    // Rotate camera frame to body frame
-//    struct FloatVect3 body_vel;
-//    float_rmat_transp_vmult(&body_vel, &stereocam.body_to_cam, &camera_vel);
-//
-////    //todo make setting
-////    if (STEREOCAM_USE_MEDIAN_FILTER) {
-////      // Use a slight median filter to filter out the large outliers before sending it to state
-////      UpdateMedianFilterVect3Float(medianfilter, body_vel);
-////    }
-////
-////    //Send velocities to state
-////    AbiSendMsgVELOCITY_ESTIMATE(VEL_STEREOCAM_ID, now_ts,
-////                                body_vel.x,
-////                                body_vel.y,
-////                                body_vel.z,
-////                                noise,
-////                                noise,
-////                                noise
-////                               );
-//    break;
-//  }
+    case DL_STEREOCAM_GATE: {
 
-  case DL_STEREOCAM_GATE: {
+      gate.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
+      gate.width = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
+      gate.height = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
+      gate.psi = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
+      gate.theta = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
+      gate.depth = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
 
-//    <message name="STEREOCAM_GATE" id="84">
-//          <description>Result of the gate detection algorithm on the stereocamera</description>
-//          <field name="quality" type="uint8">Measure of how certainty of gate identificaiton, min 15, max 100</field>
-//          <field name="width"   type="float" unit="rad"/>
-//          <field name="height"  type="float" unit="rad"/>
-//          <field name="phi"     type="float" unit="rad">Bearing of the gate in the camera frame</field>
-//          <field name="theta"   type="float" unit="rad"/>
-//          <field name="depth"   type="float" unit="m">Set to 0 is not known</field>
-//        </message>
-
-//      gate.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
-//      gate.width = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
-//      gate.height = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
-//      gate.psi = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
-//      gate.theta = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
-//      gate.depth = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
-    gate.quality = 4;
-    gate.width = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
-    gate.height = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
-    gate.psi = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
-    gate.theta = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
-    gate.depth = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
-
-       break;
+      break;
     }
 
     default:
-      gate.quality = 3;
 
       break;
   }
@@ -188,12 +122,9 @@ void delfly_vision_event(void)
 {
    // Check if we got some message from the stereocam
    pprz_check_and_parse(stereocam.device, &stereocam.transport, stereocam_msg_buf, &stereocam.msg_available);
-//   gate.quality = 1;
-
 
    // If we have a message we should parse it
    if (stereocam.msg_available) {
-     gate.quality = 2;
      delfly_vision_parse_msg();
      stereocam.msg_available = false;
    }
