@@ -36,6 +36,7 @@
 //#include "subsystems/abi.h"
 
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
+#include "subsystems/radio_control.h"
 
 
 struct stereocam_t stereocam = {
@@ -169,14 +170,17 @@ void guidance_h_module_run(bool in_flight)
 {
   stabilization_attitude_read_rc_setpoint_eulers(&rc_sp, false, false, false);
 
-  // IF vision switch is on
-//  stab_cmd.phi=rc_sp.phi;
-//  stab_cmd.theta=rc_sp.theta;
-//  stab_cmd.psi=rc_sp.psi+gate.psi;
-  // ELSE
-  stab_cmd.phi=rc_sp.phi;
-  stab_cmd.theta=rc_sp.theta;
-  stab_cmd.psi=rc_sp.psi;
+  if (radio_control.values[RADIO_FLAP] > 5000) {
+    stab_cmd.phi=rc_sp.phi;
+    stab_cmd.theta=rc_sp.theta;
+    stab_cmd.psi=stateGetNedToBodyEulers_i()->psi+gate.psi;
+  }
+  else
+  {
+    stab_cmd.phi=rc_sp.phi;
+    stab_cmd.theta=rc_sp.theta;
+    stab_cmd.psi=rc_sp.psi;
+  }
 
   /* Update the setpoint */
   stabilization_attitude_set_rpy_setpoint_i(&stab_cmd);
