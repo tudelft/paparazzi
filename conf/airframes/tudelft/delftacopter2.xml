@@ -19,11 +19,14 @@
         <subsystem name="fdm" type="jsbsim"/>
       </target-->
 
-      <module name="telemetry"     type="transparent"/>
+      <module name="telemetry"     type="transparent">
+        <configure name="MODEM_BAUD" value="B9600"/>
+      </module>
       <module name="imu"           type="mpu6000"/>
       <module name="gps"           type="ublox">
         <define name="GPS_TIMEOUT" value="2"/>
       </module>
+      <module name="sys_id_chirp"/>
       <module name="stabilization" type="int_quat"/>
       <module name="stabilization" type="rate"/>
       <module name="ahrs"          type="int_cmpl_quat">
