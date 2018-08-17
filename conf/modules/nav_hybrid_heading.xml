@@ -17,7 +17,7 @@
   </header>
   <init fun="nav_hybrid_heading_init()"/>
   <periodic fun="nav_hybrid_heading_periodic()" freq="512"/>
-  <makefile>
+  <makefile target="ap|nps" firmware="rotorcraft">
     <file name="nav_hybrid_heading.c"/>
   </makefile>
 </module>
