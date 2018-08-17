@@ -29,6 +29,7 @@
 #include "autopilot.h"
 #include "subsystems/radio_control.h"
 #include "subsystems/abi.h"
+#include "subsystems/electrical.h"
 
 /* The switching values for the Throttle Curve Mode switch */
 #define THROTTLE_CURVE_SWITCH_VAL (MAX_PPRZ*2/THROTTLE_CURVES_NB)
@@ -188,6 +189,9 @@ void throttle_curve_run(pprz_t cmds[], uint8_t ap_mode)
     throttle_curve.throttle = new_throttle;
     throttle_curve.rpm_measured = false;
   } else if (curve.rpm[0] == 0xFFFF) {
+    // Compensate Battery Voltage
+    int32_t new_throttle = throttle_curve.throttle * 231 / electrical.vsupply;
+    throttle_curve.throttle = new_throttle;
     throttle_curve.rpm_err_sum = 0;
   }
 
