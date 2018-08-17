@@ -28,8 +28,8 @@
 #include "state.h"
 
 
-#define NAV_HYBRID_MAX_YAW_RATE_RAD     RadOfDeg(90.0f/10.0f)   // rad/sec
-#define NAV_HYBRID_PITCH_DEADBAND_RAD   RadOfDeg(10.0f)          // rad
+#define NAV_HYBRID_MAX_YAW_RATE_RAD     RadOfDeg(90.0f/5.0f)   // rad/sec
+#define NAV_HYBRID_PITCH_DEADBAND_RAD   RadOfDeg(8.0f)          // rad
 
 // setpoint
 float nav_hybrid_heading_setpoint = 0;
@@ -45,10 +45,10 @@ void nav_hybrid_heading_init(void) {
 void nav_hybrid_heading_periodic(void) {
   // if pitch is down, yaw right
   if (stateGetNedToBodyEulers_f()->theta < -nav_hybrid_heading_pitch_deadband) {
-    nav_hybrid_heading_setpoint += nav_hybrid_heading_max_yaw_rate;
+    nav_hybrid_heading_setpoint += nav_hybrid_heading_max_yaw_rate / 512.0f;
   // if pitch is up, yaw left
   } else if (stateGetNedToBodyEulers_f()->theta > nav_hybrid_heading_pitch_deadband) {
-    nav_hybrid_heading_setpoint -= nav_hybrid_heading_max_yaw_rate;
+    nav_hybrid_heading_setpoint -= nav_hybrid_heading_max_yaw_rate / 512.0f;
   }
 }
 
