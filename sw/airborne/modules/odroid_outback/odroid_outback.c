@@ -250,7 +250,8 @@ void odroid_outback_periodic() {
   if (timeoutcount > 0) {
       timeoutcount--;
     } else {
-      v2p_package.status = 1;      
+      v2p_package.status = 1;
+      odroid_outback_shutdown = false;
     }
   if (v2p_package.status != 0) {
       vision_timeout = true;
