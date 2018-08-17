@@ -315,9 +315,9 @@
     <define name="PHI_I" value="{180, 0}"/>
     <define name="PHI_DD" value="{0, 0}"/>
 
-    <define name="THETA_P" value="{1605, 950}"/>
-    <define name="THETA_D" value="{293, 293}"/>
-    <define name="THETA_I" value="{180, 220}"/>
+    <define name="THETA_P" value="{1605, 850}"/>
+    <define name="THETA_D" value="{293, 160}"/>
+    <define name="THETA_I" value="{180, 200}"/>
     <define name="THETA_DD" value="{0, 0}"/>
 
     <define name="PSI_P" value="{500, 800}"/>
@@ -357,7 +357,7 @@
   <!-- Gains for forward mode -->
   <section name="DC_FORWARD" prefix="DC_FORWARD_">
     <define name="MAX_AIRSPEED" value="18.0"/>
-    <define name="NOMINAL_THRUST" value="7200"/>
+    <define name="NOMINAL_THRUST" value="6100"/>
     <define name="VERTICAL_PGAIN" value="0.1"/>
     <define name="VERTICAL_DGAIN" value="0.015"/>
     <define name="VERTICAL_LOW_AIRSPEED" value="17.0"/>
