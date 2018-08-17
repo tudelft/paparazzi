@@ -261,6 +261,7 @@ void odroid_outback_periodic() {
   if (shutdown_count>0 && v2p_package.status == 1 &&  odroid_outback_shutdown) {
     shutdown_count--;
     if (shutdown_count == 0) {
+        odroid_outback_shutdown = false;
 #ifdef VISION_PWR_OFF
       VISION_PWR_OFF(VISION_PWR, VISION_PWR_PIN);
 #endif
