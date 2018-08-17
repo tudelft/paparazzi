@@ -24,6 +24,7 @@
  */
 
 #include "modules/odroid_outback/odroid_outback.h"
+#include "modules/boards/opa_controller_ap.h"
 
 //#include "modules/telemetry/telemetry_intermcu_ap.h"
 #include "pprzlink/pprz_transport.h"
@@ -44,6 +45,7 @@ static struct odroid_outback_t odroid_outback = {
   .msg_available = false
 };
 static uint8_t mp_msg_buf[128]  __attribute__((aligned));   ///< The message buffer for the Odroid
+int shutdown_count;
 
 struct  Vision2PPRZPackage v2p_package;
 bool odroid_outback_enable_landing = false;
@@ -248,13 +250,22 @@ void odroid_outback_periodic() {
     p2k_package.enables |= 0b1000000;
 
   if (timeoutcount > 0) {
-      timeoutcount--;
-    } else {
-      v2p_package.status = 1;
-      odroid_outback_shutdown = false;
-    }
+    timeoutcount--;
+  } else {
+    v2p_package.status = 1;
+  }
   if (v2p_package.status != 0) {
-      vision_timeout = true;
+    vision_timeout = true;
+    shutdown_count = 30*PERIODIC_FREQUENCY;
+  }
+  if (shutdown_count>0 && v2p_package.status == 1 &&  odroid_outback_shutdown) {
+    shutdown_count--;
+    if (shutdown_count == 0) {
+#ifdef VISION_PWR_OFF
+      VISION_PWR_OFF(VISION_PWR, VISION_PWR_PIN);
+#endif
+    }
+
   }
 
   pprz_msg_send_IMCU_DEBUG(&(odroid_outback.transport.trans_tx), odroid_outback.device,
