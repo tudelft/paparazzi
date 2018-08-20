@@ -44,8 +44,8 @@
       <module name="rpm_sensor">
         <define name="RPM_PULSE_PER_RND" value="21"/>
       </module>      
-      <module name="odroid_outback">
-        <configure name="ODROID_OUTBACK_PORT" value="UART4"/>
+      <module name="vision_outback">
+        <configure name="VISION_OUTBACK_PORT" value="UART4"/>
       </module>
 
       <module name="geo_mag"/>
@@ -199,7 +199,7 @@
     <define name="ACCEL_Y_NEUTRAL" value="11"/>
     <define name="ACCEL_Z_NEUTRAL" value="-25"/>
 
-    <!-- Calibration 18-07-2018 Valkenburg 4.5kg 190 KV 26inch with odroid + 6s6p LiIo -->
+    <!-- Calibration 18-07-2018 Valkenburg 4.5kg 190 KV 26inch with vision + 6s6p LiIo -->
     <define name="MAG_X_NEUTRAL" value="5"/>
     <define name="MAG_Y_NEUTRAL" value="-16"/>
     <define name="MAG_Z_NEUTRAL" value="16"/>
