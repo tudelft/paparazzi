@@ -255,11 +255,13 @@ void vision_outback_periodic() {
   } else {
     v2p_package.status = 1;
   }
-  if (v2p_package.status != 0) {
+  static char status_prev = 0;
+  if (v2p_package.status != 0 && status_prev == 0) {
     vision_timeout = true;
-    shutdown_count = 30*PERIODIC_FREQUENCY;
+    shutdown_count = 20*60; // 60 = periodic frequency of this module, 20s is ok timeout.
   }
-  if (shutdown_count>0 && v2p_package.status == 1 &&  vision_outback_shutdown) {
+  status_prev = v2p_package.status;
+  if (shutdown_count>0 && v2p_package.status != 0 && vision_outback_shutdown) {
     shutdown_count--;
     if (shutdown_count == 0) {
         vision_outback_shutdown = false;
