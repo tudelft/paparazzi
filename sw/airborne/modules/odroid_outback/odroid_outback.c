@@ -48,6 +48,7 @@ static uint8_t mp_msg_buf[128]  __attribute__((aligned));   ///< The message buf
 int shutdown_count;
 
 struct  Vision2PPRZPackage v2p_package;
+float odroid_outback_moment_height = 0.35;
 bool odroid_outback_enable_landing = false;
 bool odroid_outback_enable_take_foto = false;
 bool odroid_outback_enable_findjoe = false;
@@ -154,7 +155,7 @@ static inline void odroid_outback_parse_msg(void)
           }
 
         if (odroid_outback_enable_landing) {
-            if ((v2p_package.out_of_range_since > 0 && v2p_package.out_of_range_since < 1.f) || (v2p_package.out_of_range_since < 0 && v2p_package.height < 0.35 )) {
+            if ((v2p_package.out_of_range_since > 0 && v2p_package.out_of_range_since < 1.f) || (v2p_package.out_of_range_since < 0 && v2p_package.height < odroid_outback_moment_height )) {
                 het_moment = true;
               } else {
                 het_moment = false;
