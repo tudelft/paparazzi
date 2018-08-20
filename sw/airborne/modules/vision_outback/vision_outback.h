@@ -18,13 +18,13 @@
  * <http://www.gnu.org/licenses/>.
  */
 /**
- * @file "modules/odroid_outback/odroid_outback.h"
+ * @file "modules/vision_outback/vision_outback.h"
  * @author Kevin van Hecke
- * Odroid uart (RS232) communication
+ * Vision uart (RS232) communication
  */
 
-#ifndef ODROID_OUTBACK_H
-#define ODROID_OUTBACK_H
+#ifndef VISION_OUTBACK_H
+#define VISION_OUTBACK_H
 
 #include "std.h"
 #include "generated/airframe.h"
@@ -33,8 +33,8 @@
 #include "math/pprz_algebra_float.h"
 
 
-/* Main odroid_outback structure */
-struct odroid_outback_t {
+/* Main vision_outback structure */
+struct vision_outback_t {
   struct link_device *device;           ///< The device which is uses for communication
   struct pprz_transport transport;      ///< The transport layer (PPRZ)
   struct OrientationReps imu_to_mag;    ///< IMU to magneto translation
@@ -75,32 +75,32 @@ struct PPRZ2VisionPackage {
     unsigned char enables;
 }__attribute__((__packed__));
 
-extern float odroid_outback_search_height;
-extern float odroid_outback_moment_height;
-extern bool odroid_outback_enable_landing ;
-extern bool odroid_outback_enable_take_foto;
-extern bool odroid_outback_enable_findjoe;
-extern bool odroid_outback_enable_opticflow;
-extern bool odroid_outback_enable_attcalib;
-extern bool odroid_outback_enable_videorecord;
-extern bool odroid_outback_shutdown;
+extern float vision_outback_search_height;
+extern float vision_outback_moment_height;
+extern bool vision_outback_enable_landing ;
+extern bool vision_outback_enable_take_foto;
+extern bool vision_outback_enable_findjoe;
+extern bool vision_outback_enable_opticflow;
+extern bool vision_outback_enable_attcalib;
+extern bool vision_outback_enable_videorecord;
+extern bool vision_outback_shutdown;
 extern struct FloatVect3 land_cmd;
 extern bool het_moment;
 extern bool vision_timeout;
 
-extern void odroid_outback_init(void);
-extern void odroid_outback_event(void);
-extern void odroid_outback_periodic(void);
+extern void vision_outback_init(void);
+extern void vision_outback_event(void);
+extern void vision_outback_periodic(void);
 
-extern void enableOdroidLandingspotSearch(bool b);
-extern void enableOdroidDescent(bool b);
-extern void enableOdroidOpticFlow(bool b);
-extern void enableOdroidFindJoe(bool b);
-extern bool enableOdroidAttCalib(bool b);
-extern bool enableOdroidVideoRecord(bool b);
-extern bool enableOdroidShutdown(bool b);
+extern void enableVisionLandingspotSearch(bool b);
+extern void enableVisionDescent(bool b);
+extern void enableVisionOpticFlow(bool b);
+extern void enableVisionFindJoe(bool b);
+extern bool enableVisionAttCalib(bool b);
+extern bool enableVisionVideoRecord(bool b);
+extern bool enableVisionShutdown(bool b);
 
-extern bool getOdroidReady(void);
+extern bool getVisionReady(void);
 
 #endif
 

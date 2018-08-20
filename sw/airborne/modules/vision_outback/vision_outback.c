@@ -18,12 +18,12 @@
  * <http://www.gnu.org/licenses/>.
  */
 /**
- * @file "modules/odroid_outback/odroid_outback.c"
+ * @file "modules/vision_outback/vision_outback.c"
  * @author Kevin van Hecke
- * Odroid uart (RS232) communication
+ * Vision uart (RS232) communication
  */
 
-#include "modules/odroid_outback/odroid_outback.h"
+#include "modules/vision_outback/vision_outback.h"
 #include "modules/boards/opa_controller_ap.h"
 
 //#include "modules/telemetry/telemetry_intermcu_ap.h"
@@ -40,22 +40,22 @@
 #include "generated/flight_plan.h"
 
 /* Main magneto structure */
-static struct odroid_outback_t odroid_outback = {
-  .device = (&((ODROID_OUTBACK_PORT).device)),
+static struct vision_outback_t vision_outback = {
+  .device = (&((VISION_OUTBACK_PORT).device)),
   .msg_available = false
 };
-static uint8_t mp_msg_buf[128]  __attribute__((aligned));   ///< The message buffer for the Odroid
+static uint8_t mp_msg_buf[128]  __attribute__((aligned));   ///< The message buffer for the Vision
 int shutdown_count;
 
 struct  Vision2PPRZPackage v2p_package;
-float odroid_outback_moment_height = 0.35;
-bool odroid_outback_enable_landing = false;
-bool odroid_outback_enable_take_foto = false;
-bool odroid_outback_enable_findjoe = false;
-bool odroid_outback_enable_opticflow = false;
-bool odroid_outback_enable_attcalib = false;
-bool odroid_outback_enable_videorecord = false;
-bool odroid_outback_shutdown = false;
+float vision_outback_moment_height = 0.35;
+bool vision_outback_enable_landing = false;
+bool vision_outback_enable_take_foto = false;
+bool vision_outback_enable_findjoe = false;
+bool vision_outback_enable_opticflow = false;
+bool vision_outback_enable_attcalib = false;
+bool vision_outback_enable_videorecord = false;
+bool vision_outback_shutdown = false;
 bool het_moment = false;
 bool vision_timeout = false;
 
@@ -65,7 +65,7 @@ bool vision_timeout = false;
 uint8_t timeoutcount = 0;
 void enable_wp_joe_telemetry_updates(void);
 
-static void send_odroid_outback( struct transport_tx *trans, struct link_device *dev)
+static void send_vision_outback( struct transport_tx *trans, struct link_device *dev)
 {
 
   //  //fix rotated orientation of camera in DelftaCopter
@@ -85,29 +85,29 @@ static void send_odroid_outback( struct transport_tx *trans, struct link_device 
 
 
 
-/* Initialize the Odroid */
-void odroid_outback_init() {
+/* Initialize the Vision */
+void vision_outback_init() {
   // Initialize transport protocol
-  pprz_transport_init(&odroid_outback.transport);
+  pprz_transport_init(&vision_outback.transport);
 
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VISION_OUTBACK, send_odroid_outback);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VISION_OUTBACK, send_vision_outback);
 #endif
 
-  NavSetWaypointHere(WP_dummy); //WP_ODROID_OUTBACK_LANDING
+  NavSetWaypointHere(WP_dummy); //WP_VISION_OUTBACK_LANDING
   v2p_package.height = -0.01;
   v2p_package.status = 1;
   vision_timeout = false;
-  timeoutcount = ODROID_OUTBACK_PERIODIC_FREQ / 2;
+  timeoutcount = VISION_OUTBACK_PERIODIC_FREQ / 2;
 
 }
 
 /* Parse the InterMCU message */
-static inline void odroid_outback_parse_msg(void)
+static inline void vision_outback_parse_msg(void)
 {
 
-  /* Parse the odroid_outback message */
+  /* Parse the vision_outback message */
   uint8_t msg_id = pprzlink_get_msg_id(mp_msg_buf);
 
   switch (msg_id) {
@@ -128,7 +128,7 @@ static inline void odroid_outback_parse_msg(void)
 
       break;
 
-      /* Got a odroid_outback message */
+      /* Got a vision_outback message */
     case DL_IMCU_DEBUG: {
         uint8_t size = DL_IMCU_DEBUG_msg_length(mp_msg_buf);
         uint8_t *msg = DL_IMCU_DEBUG_msg(mp_msg_buf);
@@ -137,7 +137,7 @@ static inline void odroid_outback_parse_msg(void)
         for(uint8_t i = 0; i < size; i++) {
             tmp[i] = msg[i];
           }
-        timeoutcount = ODROID_OUTBACK_PERIODIC_FREQ / 2;
+        timeoutcount = VISION_OUTBACK_PERIODIC_FREQ / 2;
         vision_timeout = false;
         static int32_t frame_id_prev = 0;
         if (frame_id_prev >= v2p_package.frame_id) {
@@ -147,15 +147,15 @@ static inline void odroid_outback_parse_msg(void)
 
         //struct EnuCoor_f *pos = stateGetPositionEnu_f();
 
-        //float diff_search = (odroid_outback_search_height - k2p_package.height)*odroid_outback_height_gain;
+        //float diff_search = (vision_outback_search_height - k2p_package.height)*vision_outback_height_gain;
 
-        if (odroid_outback_enable_take_foto) {
-            // WP_ODROID_OUTBACK_LANDSPOT
+        if (vision_outback_enable_take_foto) {
+            // WP_VISION_OUTBACK_LANDSPOT
            // waypoint_set_xy_i(WP_dummy, POS_BFP_OF_REAL(v2p_package.land_enu_x), POS_BFP_OF_REAL(v2p_package.land_enu_y));
           }
 
-        if (odroid_outback_enable_landing) {
-            if ((v2p_package.out_of_range_since > 0 && v2p_package.out_of_range_since < 1.f) || (v2p_package.out_of_range_since < 0 && v2p_package.height < odroid_outback_moment_height )) {
+        if (vision_outback_enable_landing) {
+            if ((v2p_package.out_of_range_since > 0 && v2p_package.out_of_range_since < 1.f) || (v2p_package.out_of_range_since < 0 && v2p_package.height < vision_outback_moment_height )) {
                 het_moment = true;
               } else {
                 het_moment = false;
@@ -164,7 +164,7 @@ static inline void odroid_outback_parse_msg(void)
             het_moment = false;
           }
 
-        if (odroid_outback_enable_findjoe) {
+        if (vision_outback_enable_findjoe) {
             waypoint_set_xy_i(WP_JOE, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
             enable_wp_joe_telemetry_updates();
           }
@@ -184,7 +184,7 @@ static inline void odroid_outback_parse_msg(void)
 void enable_wp_joe_telemetry_updates(void) {
   static bool enabled = false;
   if (!enabled) {
-      uint8_t wp_id = WP_JOE; //WP_ODROID_OUTBACK_JOE;
+      uint8_t wp_id = WP_JOE; //WP_VISION_OUTBACK_JOE;
       RunOnceEvery(60, DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,&(waypoints[wp_id].enu_i.x),
                                                   &(waypoints[wp_id].enu_i.y), &(waypoints[wp_id].enu_i.z)));
       enabled = true;
@@ -192,18 +192,18 @@ void enable_wp_joe_telemetry_updates(void) {
 }
 
 /* We need to wait for incomming messages */
-void odroid_outback_event() {
-  // Check if we got some message from the Odroid
-  pprz_check_and_parse(odroid_outback.device, &odroid_outback.transport, mp_msg_buf, &odroid_outback.msg_available);
+void vision_outback_event() {
+  // Check if we got some message from the Vision
+  pprz_check_and_parse(vision_outback.device, &vision_outback.transport, mp_msg_buf, &vision_outback.msg_available);
 
   // If we have a message we should parse it
-  if (odroid_outback.msg_available) {
-      odroid_outback_parse_msg();
-      odroid_outback.msg_available = false;
+  if (vision_outback.msg_available) {
+      vision_outback_parse_msg();
+      vision_outback.msg_available = false;
     }
 }
 
-void odroid_outback_periodic() {
+void vision_outback_periodic() {
 
   struct FloatEulers *attE = stateGetNedToBodyEulers_f();
   struct FloatQuat *att = stateGetNedToBodyQuat_f();
@@ -233,21 +233,21 @@ void odroid_outback_periodic() {
     }
 
   p2k_package.enables = 0;
-  if (odroid_outback_enable_landing)
+  if (vision_outback_enable_landing)
     p2k_package.enables |= 0b1;
-  if (odroid_outback_enable_take_foto) {
+  if (vision_outback_enable_take_foto) {
     p2k_package.enables |= 0b10;
-    odroid_outback_enable_take_foto = false;
+    vision_outback_enable_take_foto = false;
   }
-  if (odroid_outback_enable_findjoe)
+  if (vision_outback_enable_findjoe)
     p2k_package.enables |= 0b100;
-  if (odroid_outback_enable_opticflow)
+  if (vision_outback_enable_opticflow)
     p2k_package.enables |= 0b1000;
-  if (odroid_outback_enable_attcalib)
+  if (vision_outback_enable_attcalib)
     p2k_package.enables |= 0b10000;
-  if (odroid_outback_enable_videorecord)
+  if (vision_outback_enable_videorecord)
     p2k_package.enables |= 0b100000;
-  if (odroid_outback_shutdown)
+  if (vision_outback_shutdown)
     p2k_package.enables |= 0b1000000;
 
   if (timeoutcount > 0) {
@@ -259,10 +259,10 @@ void odroid_outback_periodic() {
     vision_timeout = true;
     shutdown_count = 30*PERIODIC_FREQUENCY;
   }
-  if (shutdown_count>0 && v2p_package.status == 1 &&  odroid_outback_shutdown) {
+  if (shutdown_count>0 && v2p_package.status == 1 &&  vision_outback_shutdown) {
     shutdown_count--;
     if (shutdown_count == 0) {
-        odroid_outback_shutdown = false;
+        vision_outback_shutdown = false;
 #ifdef VISION_PWR_OFF
       VISION_PWR_OFF(VISION_PWR, VISION_PWR_PIN);
 #endif
@@ -270,42 +270,42 @@ void odroid_outback_periodic() {
 
   }
 
-  pprz_msg_send_IMCU_DEBUG(&(odroid_outback.transport.trans_tx), odroid_outback.device,
+  pprz_msg_send_IMCU_DEBUG(&(vision_outback.transport.trans_tx), vision_outback.device,
                            1, sizeof(struct PPRZ2VisionPackage), (unsigned char *)(&p2k_package));
 }
 
-void enableOdroidLandingspotSearch(bool b) {
-  odroid_outback_enable_take_foto = b;
+void enableVisionLandingspotSearch(bool b) {
+  vision_outback_enable_take_foto = b;
 }
 
-void enableOdroidDescent(bool b) {
-  odroid_outback_enable_landing = b;
+void enableVisionDescent(bool b) {
+  vision_outback_enable_landing = b;
 }
 
-void enableOdroidFindJoe(bool b) {
-  odroid_outback_enable_findjoe = b;
+void enableVisionFindJoe(bool b) {
+  vision_outback_enable_findjoe = b;
 }
 
-void enableOdroidOpticFlow(bool b) {
-  odroid_outback_enable_opticflow = b;
+void enableVisionOpticFlow(bool b) {
+  vision_outback_enable_opticflow = b;
 }
 
-bool enableOdroidAttCalib(bool b) {
+bool enableVisionAttCalib(bool b) {
   //http://mariotapilouw.blogspot.com/2011/05/plane-fitting-using-opencv.html
-  odroid_outback_enable_attcalib = b;
+  vision_outback_enable_attcalib = b;
   return true; // klote pprz flight plan
 }
 
-bool enableOdroidVideoRecord(bool b) {
-  odroid_outback_enable_videorecord = b;
+bool enableVisionVideoRecord(bool b) {
+  vision_outback_enable_videorecord = b;
   return true; // klote pprz flight plan
 }
 
-bool enableOdroidShutdown(bool b) {
-  odroid_outback_shutdown = b;
+bool enableVisionShutdown(bool b) {
+  vision_outback_shutdown = b;
   return true; // klote pprz flight plan
 }
 
-bool getOdroidReady(void) {
+bool getVisionReady(void) {
   return v2p_package.status == 0;
 }

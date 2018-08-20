@@ -6,7 +6,7 @@
     #include "subsystems/datalink/datalink.h"
     #include "subsystems/electrical.h"
     #include "subsystems/radio_control.h"
-    #include "modules/odroid_outback/odroid_outback.h"
+    #include "modules/vision_outback/vision_outback.h"
 </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
@@ -88,7 +88,7 @@
       <deroute block="land"/>
     </block>
     <block name="route_findjoe">
-      <call fun="enableOdroidFindJoe(true)" loop="false"/>
+      <call fun="enableVisionFindJoe(true)" loop="false"/>
       <go from="p1" hmode="route" wp="p2"/>
       <go from="p2" hmode="route" wp="p3"/>
       <go from="p3" hmode="route" wp="p4"/>
@@ -96,7 +96,7 @@
       <deroute block="stay_p1"/>
     </block>
     <block name="goto_joe">
-      <call fun="enableOdroidFindJoe(false)" loop="false"/>
+      <call fun="enableVisionFindJoe(false)" loop="false"/>
       <call_once fun="NavCopyWaypoint(WP_TD,WP_JOE)"/>
       <stay wp="JOE"/>
     </block>
@@ -106,13 +106,13 @@
     <block name="descent">
       <exception cond="8.0 > stateGetPositionEnu_f()->z" deroute="descent_slow"/>
       <exception cond="vision_timeout " deroute="Standby"/>
-      <exception cond="!odroid_outback_enable_landing " deroute="Standby"/>
+      <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
       <stay climb="-1" vmode="climb" wp="TD"/>
     </block>
     <block name="descent_slow">
       <exception cond="het_moment" deroute="flare"/>
       <exception cond="vision_timeout " deroute="Standby"/>
-      <exception cond="!odroid_outback_enable_landing " deroute="Standby"/>
+      <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
       <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
     <block name="flare">

@@ -95,7 +95,7 @@
       <define name="HMC58XX_CHAN_Y_SIGN" value="+"/>
       <define name="HMC58XX_CHAN_Z_SIGN" value="+"/>
     </module>
-    <module name="odroid_outback"/>
+    <module name="vision_outback"/>
     <!--  <module name="spektrum_soft_bind"/>-->
   </modules>
 
