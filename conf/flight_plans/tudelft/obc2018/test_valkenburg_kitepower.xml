@@ -12,7 +12,7 @@
 #include "subsystems/datalink/datalink.h"
 #include "modules/sensors/temp_adc.h"
 #include "subsystems/radio_control.h"
-#include "modules/odroid_outback/odroid_outback.h"
+#include "modules/vision_outback/vision_outback.h"
 // States
 #define AircraftIsBooting()  LessThan(nav_block,4)
 </header>
@@ -150,7 +150,7 @@
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <exception cond="het_moment" deroute="landing_moment"/>
       <exception cond="vision_timeout " deroute="Standby"/>
-      <exception cond="!odroid_outback_enable_landing " deroute="Standby"/>
+      <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
       <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
     <block group="movement" name="route_1234">
@@ -179,7 +179,7 @@
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <exception cond="het_moment" deroute="landing_moment"/>
       <exception cond="vision_timeout " deroute="Standby"/>
-      <exception cond="!odroid_outback_enable_landing " deroute="Standby"/>
+      <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
       <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
     <block group="land" name="landing_moment" strip_button="Moment">

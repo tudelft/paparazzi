@@ -44,8 +44,8 @@
       <module name="rpm_sensor">
         <define name="RPM_PULSE_PER_RND" value="21"/>
       </module>      
-      <module name="odroid_outback">
-        <configure name="ODROID_OUTBACK_PORT" value="UART4"/>
+      <module name="vision_outback">
+        <configure name="VISION_OUTBACK_PORT" value="UART4"/>
       </module>
 
       <module name="nav_hybrid_heading"/>
