@@ -100,7 +100,7 @@ type aircraft = {
   notebook_label : GMisc.label;
   strip : Strip.t;
   rc_max_rate: float;
-  mutable first_pos : bool;
+  mutable first_pos : int;
   mutable last_block_name : string;
   mutable in_kill_mode : bool;
   mutable speed : float;
@@ -722,7 +722,7 @@ let create_ac = fun ?(confirm_kill=true) alert (geomap:G.widget) (acs_notebook:G
              misc_page = misc_page;
              dl_settings_page = dl_settings_page;
              rc_settings_page = rc_settings_page;
-             strip = strip; first_pos = true;
+             strip = strip; first_pos = 0;
              rc_max_rate = rc_max_rate;
              last_block_name = ""; alt = 0.; target_alt = 0.;
              in_kill_mode = false; speed = 0.;
@@ -1187,14 +1187,14 @@ let listen_flight_params = fun geomap auto_center_new_ac auto_center_ac fit_to_w
         ac.last_unix_time <- unix_time
       end;
 
-      if ac.first_pos then begin
+      if ac.first_pos < 10 then begin
         if auto_center_new_ac then begin
           center geomap ac.track ();
         end;
         if fit_to_window then begin
           geomap#fit_to_window ();
         end;
-        ac.first_pos <- false
+        ac.first_pos <- ac.first_pos +1
       end;
       if auto_center_ac = ac_id then begin
         center geomap ac.track ();
