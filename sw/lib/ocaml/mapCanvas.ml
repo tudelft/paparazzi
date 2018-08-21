@@ -261,7 +261,7 @@ object (self)
     and nw_xw, nw_yw = self#world_of (LL.make_geo max_lat min_long)
     and se_xw, se_yw = self#world_of (LL.make_geo min_lat max_long) in
     let width, height = Gdk.Drawable.get_size canvas#misc#window in
-    let margin = 10 in
+    let margin = 30 in
     let width = width - 2*margin and height = height - 2*margin in
     let zoom = min (float width/.(se_xw-.nw_xw)) (float height/.(se_yw-.nw_yw)) in
     self#zoom zoom;

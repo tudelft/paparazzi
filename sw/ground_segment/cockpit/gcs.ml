@@ -337,6 +337,7 @@ and auto_ortho = ref false
 and mplayer = ref ""
 and plugin_window = ref ""
 and layout_file = ref "large_left_col.xml"
+and fit_to_window = ref false
 and edit = ref false
 and display_particules = ref false
 and wid = ref None
@@ -351,7 +352,8 @@ let options =
     "-b", Arg.String (fun x -> ivy_bus := x),(sprintf "<ivy bus> Default is %s" !ivy_bus);
     "-center", Arg.Set_string center, "Initial map center (e.g. 'WGS84 43.605 1.443')";
     "-center_ac", Arg.Set auto_center_new_ac, "Centers the map on any new A/C";
-    "-center_ac_id", Arg.Set_string auto_center_ac, "continuously centers the map on the AC id";
+    "-center_ac_id", Arg.Set_string auto_center_ac, "Continuously centers the map on the AC id";
+    "-fit_to_window", Arg.Set fit_to_window, "Automatically fit to window when AC connects";
     "-edit", Arg.Unit (fun () -> edit := true; layout_file := "editor.xml"), "Flight plan editor";
     "-fullscreen", Arg.Set fullscreen, "Fullscreen window";
     "-maps_fill", Arg.Set GM.auto, "Automatically start loading background maps";
@@ -634,7 +636,9 @@ let () =
 
   let layout_file = layout_path // !layout_file in
   let layout = ExtXml.parse_file layout_file in
-  let width = ExtXml.int_attrib layout "width"
+  let x = ExtXml.int_attrib_or_default layout "x" 0
+  and y = ExtXml.int_attrib_or_default layout "y" 0
+  and width = ExtXml.int_attrib layout "width"
   and height = ExtXml.int_attrib layout "height" in
 
   let pid_plugin = ref None in
@@ -660,6 +664,7 @@ let () =
             window#maximize ();
           if !fullscreen then
             window#fullscreen ();
+          window#move ~x ~y;
           ignore (window#connect#destroy ~callback:destroy);
           let switch_fullscreen = fun () ->
             fullscreen := not !fullscreen;
@@ -733,8 +738,9 @@ let () =
     in
     let the_new_layout = replace_widget_children "map2d" (Papgets.dump_store save_acid) the_layout in
     let width, height = Gdk.Drawable.get_size window#misc#window in
+    let x, y = Gdk.Window.get_position window#misc#window in
     let the_new_layout = update_widget_size `HORIZONTAL widgets the_new_layout in
-    let new_layout = Xml.Element ("layout", ["width", soi width; "height", soi height], [the_new_layout]) in
+    let new_layout = Xml.Element ("layout", ["width", soi width; "height", soi height; "x", soi x; "y", soi y], [the_new_layout]) in
     save_layout layout_file (Xml.to_string_fmt new_layout)
   in
   ignore (menu_fact#add_item "Save layout" ~key:GdkKeysyms._S ~callback:save_layout);
@@ -793,7 +799,7 @@ let () =
     begin
       my_alert#add "Waiting for telemetry...";
       Speech.say "Waiting for telemetry...";
-      Live.listen_acs_and_msgs geomap ac_notebook strips_table !confirm_kill my_alert !auto_center_new_ac !auto_center_ac alt_graph !timestamp
+      Live.listen_acs_and_msgs geomap ac_notebook strips_table !confirm_kill my_alert !auto_center_new_ac !auto_center_ac !fit_to_window alt_graph !timestamp
     end;
 
   (** Display the window *)
