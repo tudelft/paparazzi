@@ -37,6 +37,7 @@ val get_attrib : Xml.xml -> string -> string -> string
 
 val attrib : Xml.xml -> string -> string
 val int_attrib : Xml.xml -> string -> int
+val int_attrib_or_default : Xml.xml -> string -> int -> int
 val float_attrib : Xml.xml -> string -> float
 (** [get xml attribute_name] May raise [Error] *)
 
@@ -86,7 +87,7 @@ val digest : Xml.xml -> Digest.t
 (** Returns the MD5 digest of an XML tree (c.f. Digest module of std library) *)
 val display_entities : string -> string
 
-(** Conf à gconf handling *)
+(** Conf ï¿½ gconf handling *)
 module Gconf : sig
   val get_value : Xml.xml -> string -> string
   val entry : string -> string -> string -> Xml.xml

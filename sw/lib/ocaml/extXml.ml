@@ -215,6 +215,13 @@ let int_attrib = fun xml a ->
   try int_of_string v
   with _ -> failwith (Printf.sprintf "Error: integer expected in '%s'" v)
 
+let int_attrib_or_default = fun xml a default ->
+  try
+    let v = Xml.attrib xml a in
+    try int_of_string v
+    with _ -> failwith (Printf.sprintf "Error: integer expected in '%s'" v)
+  with Xml.No_attribute _ | Xml.Not_element _ -> default
+
 let iter_tag = fun tag f xml -> Xml.iter (fun x -> if tag_is x tag then f x) xml
 
 let filter_tag = fun tag xml ->

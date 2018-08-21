@@ -8,6 +8,8 @@
 <!ATTLIST layout
 width CDATA #IMPLIED
 height CDATA #IMPLIED
+x CDATA #IMPLIED
+y CDATA #IMPLIED
 >
 
 <!ATTLIST rows
