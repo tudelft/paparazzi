@@ -182,7 +182,9 @@ static void send_rotorcraft_cmd(struct transport_tx *trans, struct link_device *
                                &stabilization_cmd[COMMAND_ROLL],
                                &stabilization_cmd[COMMAND_PITCH],
                                &stabilization_cmd[COMMAND_YAW],
-                               &stabilization_cmd[COMMAND_THRUST]);
+                               &stabilization_cmd[COMMAND_THRUST],
+                               &stabilization_cmd[COMMAND_ELEVATOR],
+                               &stabilization_cmd[COMMAND_AILERON]);
 }
 
 

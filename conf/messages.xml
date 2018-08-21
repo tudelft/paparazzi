@@ -1183,6 +1183,8 @@
       <field name="cmd_pitch"  type="int32"/>
       <field name="cmd_yaw"    type="int32"/>
       <field name="cmd_thrust" type="int32"/>
+      <field name="cmd_elevator" type="int32"/>
+      <field name="cmd_aileron" type="int32"/>
     </message>
 
     <message name="GUIDANCE_H_INT" id="144">
