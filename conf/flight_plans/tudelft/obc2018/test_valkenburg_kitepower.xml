@@ -19,14 +19,14 @@
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
     <waypoint alt="40.0" name="TD" x="-33.9" y="-1.0"/>
-    <waypoint name="MB1" x="211.8" y="-1198.3"/>
-    <waypoint name="MB2" x="-1296.0" y="-213.2"/>
+    <waypoint name="MB1" x="1.2" y="-1342.1"/>
+    <waypoint name="MB2" x="-1392.4" y="-55.5"/>
     <waypoint name="MB3" x="363.8" y="1258.5"/>
-    <waypoint name="MB4" x="1324.6" y="-212.7"/>
-    <waypoint name="p1" x="-477.2" y="-117.5"/>
-    <waypoint name="p2" x="-512.7" y="1.2"/>
-    <waypoint name="p3" x="130.7" y="128.6"/>
-    <waypoint name="p4" x="74.4" y="237.1"/>
+    <waypoint name="MB4" x="1401.8" y="-71.5"/>
+    <waypoint name="p1" x="-492.2" y="-158.9"/>
+    <waypoint name="p2" x="-546.4" y="-25.7"/>
+    <waypoint name="p3" x="54.3" y="85.1"/>
+    <waypoint name="p4" x="20.4" y="213.3"/>
     <waypoint name="CLIMB" x="-36.3" y="36.3"/>
     <waypoint name="STDBY" x="-58.5" y="64.3"/>
     <waypoint name="AVOID" x="69.7" y="-214.3"/>
@@ -126,11 +126,10 @@
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <stay wp="STDBY"/>
     </block>
-    <block group="safe" name="StandbyAutoHeading" strip_button="Standby90" >
-      <set var="dc_hybrid_mode" value="HB_HOVER"/>
-      <!--set value="GUIDANCE_H_MAX_BANK" var="guidance_indi_max_bank"/-->
+    <block group="safe" name="StandbyAutoHeading" strip_button="Standby90">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_hybrid_heading_init()"/>
-      <stay wp="STDBY" pre_call="nav_hybrid_heading_set()"/>
+      <stay pre_call="nav_hybrid_heading_set()" wp="STDBY"/>
     </block>
     <block group="safe" name="Hover_here" strip_button="Hover_Here">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
