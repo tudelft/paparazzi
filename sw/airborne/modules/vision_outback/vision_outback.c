@@ -144,8 +144,10 @@ static inline void vision_outback_parse_msg(void)
   uint8_t msg_id = pprzlink_get_msg_id(mp_msg_buf);
   uint8_t sender_id = pprzlink_get_msg_sender_id(mp_msg_buf);
 
-  if (sender_id == 3)
+  if (sender_id != 3) {
+    turbosize = sender_id;
     return;
+  }
   switch (msg_id) {
 
     /* Received a part of a thumbnail: forward to 900MHz and irridium... */
