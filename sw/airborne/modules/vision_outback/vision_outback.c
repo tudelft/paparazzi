@@ -255,9 +255,6 @@ void vision_outback_periodic() {
 
 
   struct PPRZ2VisionPackage p2k_package;
-  p2k_package.phi = attE->theta;
-  p2k_package.theta = -attE->phi;
-  p2k_package.psi = attE->psi;
   p2k_package.qi = att->qi;
   p2k_package.qx = att->qx;
   p2k_package.qy = att->qy;
@@ -302,7 +299,7 @@ void vision_outback_periodic() {
   static char status_prev = 0;
   if (v2p_package.status != 0 && status_prev == 0) {
     vision_timeout = true;
-    shutdown_count = 20*60; // 60 = periodic frequency of this module, 20s is ok timeout.
+    shutdown_count = 20*VISION_OUTBACK_PERIODIC_FREQ;
   }
   status_prev = v2p_package.status;
   if (shutdown_count>0 && v2p_package.status != 0 && vision_outback_shutdown) {
