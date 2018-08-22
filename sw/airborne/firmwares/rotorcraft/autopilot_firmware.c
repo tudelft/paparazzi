@@ -178,13 +178,23 @@ static void send_rotorcraft_rc(struct transport_tx *trans, struct link_device *d
 
 static void send_rotorcraft_cmd(struct transport_tx *trans, struct link_device *dev)
 {
+  __attribute__((unused)) int32_t zero = 0;
   pprz_msg_send_ROTORCRAFT_CMD(trans, dev, AC_ID,
                                &stabilization_cmd[COMMAND_ROLL],
                                &stabilization_cmd[COMMAND_PITCH],
                                &stabilization_cmd[COMMAND_YAW],
                                &stabilization_cmd[COMMAND_THRUST],
+                             #ifdef COMMAND_ELEVATOR
                                &stabilization_cmd[COMMAND_ELEVATOR],
+                             #else
+                               &zero,
+                             #endif
+                             #ifdef COMMAND_AILERON
                                &stabilization_cmd[COMMAND_AILERON]);
+                             #else
+                               &zero);
+                             #endif
+
 }
 
 
