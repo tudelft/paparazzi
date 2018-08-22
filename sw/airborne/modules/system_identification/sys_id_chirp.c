@@ -32,11 +32,11 @@ static struct chirp_t chirp;
 uint8_t chirp_active = false;
 uint8_t chirp_axis = 0;
 int32_t chirp_amplitude = 0;
-float chirp_noise_stdv_onaxis_ratio = 0.1;
+float chirp_noise_stdv_onaxis_ratio = 0.2;
 float chirp_noise_stdv_offaxis_ratio = 0.2;
-float chirp_f0_hz = 0.05;
-float chirp_f1_hz = 3.2;
-float chirp_length_s = 80;
+float chirp_f0_hz = 0.5;
+float chirp_f1_hz = 10;
+float chirp_length_s = 20;
 
 struct FloatRates* chirp_rates;
 struct FloatQuat* chirp_quat;
