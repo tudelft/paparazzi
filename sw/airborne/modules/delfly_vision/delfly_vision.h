@@ -42,12 +42,18 @@ struct gate_t {
   uint8_t quality;
   float width;
   float height;
-  float psi;
+  float phi;
   float theta;
   float depth;
 };
 
 extern struct gate_t gate;
+
+struct pid_t {
+  int32_t p;
+  int32_t i;
+  int32_t d;
+};
 
 extern void delfly_vision_init(void);
 extern void delfly_vision_periodic(void);
@@ -58,6 +64,14 @@ extern void guidance_h_module_init(void);
 extern void guidance_h_module_enter(void);
 extern void guidance_h_module_read_rc(void);
 extern void guidance_h_module_run(bool in_flight);
+
+// settings
+extern float filt_tc;  // gate filter time constant
+extern int gate_target_size; // target gate size for distance keeping
+
+extern struct pid_t phi_gains;
+extern struct pid_t theta_gains;
+extern struct pid_t thrust_gains;
 
 #endif
 
