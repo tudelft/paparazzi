@@ -39,6 +39,12 @@
 
 #include "generated/flight_plan.h"
 
+#include <inttypes.h>
+#include <stdbool.h>
+#include "pprzlink/pprzlink_transport.h"
+#include "pprzlink/pprzlink_device.h"
+
+
 /* Main magneto structure */
 static struct vision_outback_t vision_outback = {
   .device = (&((VISION_OUTBACK_PORT).device)),
@@ -59,15 +65,42 @@ bool vision_outback_shutdown = false;
 bool het_moment = false;
 bool vision_timeout = false;
 
+
+int turbocnt = 0;
+int turbosize = 0;
+
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
 uint8_t timeoutcount = 0;
 void enable_wp_joe_telemetry_updates(void);
 
+
+/** Parsing a frame data and copy the payload to the datalink buffer */
+void pprz_check_and_parse2(struct link_device *dev, struct pprz_transport *trans, uint8_t *buf, bool *msg_available)
+{
+  uint8_t i;
+  if (dev->char_available(dev->periph)) {
+    while (dev->char_available(dev->periph) && !trans->trans_rx.msg_received) {
+      parse_pprz(trans, dev->get_byte(dev->periph));
+    }
+    if (trans->trans_rx.msg_received) {
+      for (i = 0; i < trans->trans_rx.payload_len; i++) {
+        buf[i] = trans->trans_rx.payload[i];
+      }
+      *msg_available = true;
+      trans->trans_rx.msg_received = false;
+    }
+  }
+}
+
+
 static void send_vision_outback( struct transport_tx *trans, struct link_device *dev)
 {
 
+
+  v2p_package.flow_x = turbocnt;
+  v2p_package.flow_y = turbosize;
   //  //fix rotated orientation of camera in DelftaCopter
   pprz_msg_send_VISION_OUTBACK(trans, dev, AC_ID,
                           &v2p_package.status,
@@ -109,7 +142,10 @@ static inline void vision_outback_parse_msg(void)
 
   /* Parse the vision_outback message */
   uint8_t msg_id = pprzlink_get_msg_id(mp_msg_buf);
+  uint8_t sender_id = pprzlink_get_msg_sender_id(mp_msg_buf);
 
+  if (sender_id == 3)
+    return;
   switch (msg_id) {
 
     /* Received a part of a thumbnail: forward to 900MHz and irridium... */
@@ -130,10 +166,18 @@ static inline void vision_outback_parse_msg(void)
 
       /* Got a vision_outback message */
     case DL_IMCU_DEBUG: {
+
+        turbocnt++;
         uint8_t size = DL_IMCU_DEBUG_msg_length(mp_msg_buf);
         uint8_t *msg = DL_IMCU_DEBUG_msg(mp_msg_buf);
 
+        turbosize = size;
         unsigned char * tmp = (unsigned char*)&v2p_package;
+
+        //impossible case, but seems to happen:
+        if (size > sizeof(struct Vision2PPRZPackage))
+            break;
+
         for(uint8_t i = 0; i < size; i++) {
             tmp[i] = msg[i];
           }
@@ -194,7 +238,7 @@ void enable_wp_joe_telemetry_updates(void) {
 /* We need to wait for incomming messages */
 void vision_outback_event() {
   // Check if we got some message from the Vision
-  pprz_check_and_parse(vision_outback.device, &vision_outback.transport, mp_msg_buf, &vision_outback.msg_available);
+  pprz_check_and_parse2(vision_outback.device, &vision_outback.transport, mp_msg_buf, &vision_outback.msg_available);
 
   // If we have a message we should parse it
   if (vision_outback.msg_available) {
