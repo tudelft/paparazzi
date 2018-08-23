@@ -41,7 +41,7 @@
     <file name="pprz_transport.c" dir="pprzlink/src"/>
     <!-- configure name="PPRZLINK_LIB_VERSION" value="1.0"/-->
    	<raw>
-      ap.CFLAGS += -DGUIDANCE_V_MODE_MODULE_SETTING=GUIDANCE_V_MODE_RC_CLIMB
+      ap.CFLAGS += -DGUIDANCE_V_MODE_MODULE_SETTING=GUIDANCE_V_MODE_MODULE
       ap.CFLAGS += -DGUIDANCE_H_MODE_MODULE_SETTING=GUIDANCE_H_MODE_MODULE
     </raw>
   </makefile>

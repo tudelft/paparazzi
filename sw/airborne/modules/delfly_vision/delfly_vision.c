@@ -38,6 +38,7 @@
 
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "subsystems/radio_control.h"
+#include "firmwares/rotorcraft/stabilization.h"
 //#include "guidance/guidance_v.c"
 
 #include "generated/airframe.h"
@@ -102,8 +103,8 @@ float thrust_sp;
 struct FloatRMat body_to_cam;
 struct FloatEulers angle_to_gate = {.phi=0, .theta=0, .psi=0};
 
-float filt_tc;  // gate filter time constant
-int gate_target_size; // target gate size for distance keeping
+float filt_tc=0.1;  // gate filter time constant, in seconds
+int gate_target_size=0.5; // target gate size for distance keeping, in rad
 
 struct pid_t phi_gains = {DELFLY_VISION_PHI_GAINS_P, DELFLY_VISION_PHI_GAINS_I, 0.f};
 struct pid_t theta_gains = {DELFLY_VISION_THETA_GAINS_P, DELFLY_VISION_THETA_GAINS_I, 0.f};
@@ -275,10 +276,10 @@ void delfly_vision_event(void)
 
 
 /**
- * Initialization of horizontal guidance module.
+ * Initialization of horizontal & vertical guidance modules
  */
 void guidance_h_module_init(void) {}
-
+void guidance_v_module_init(void) {}
 
 /**
  * Horizontal guidance mode enter resets the errors
@@ -290,7 +291,16 @@ void guidance_h_module_enter(void)
   stab_cmd.phi = 0;
   stab_cmd.theta = 0;
   stab_cmd.psi = stateGetNedToBodyEulers_i()->psi;
+
+  // reset integrator of rc_yaw_setpoint
+  stabilization_attitude_read_rc_setpoint_eulers(&rc_sp, false, false, false);
+
+  stab_cmd.phi = rc_sp.phi;
+  stab_cmd.theta = rc_sp.theta;
+  stab_cmd.psi = rc_sp.psi;
 }
+
+void guidance_v_module_enter(void) {}
 
 /**
  * Read the RC commands
@@ -306,12 +316,12 @@ void guidance_h_module_read_rc(void)
  */
 void guidance_h_module_run(bool in_flight)
 {
-  stabilization_attitude_read_rc_setpoint_eulers(&rc_sp, false, false, false);
+  stabilization_attitude_read_rc_setpoint_eulers(&rc_sp, in_flight, false, false);
 
   if (radio_control.values[RADIO_FLAP] > 5000) {
-    stab_cmd.phi = rc_sp.phi + att_sp.phi;
-    stab_cmd.theta = rc_sp.theta + att_sp.theta;
-    stab_cmd.psi = att_sp.psi;  //stateGetNedToBodyEulers_i()->psi +
+    stab_cmd.phi = rc_sp.phi; // + att_sp.phi;
+    stab_cmd.theta = rc_sp.theta; // + att_sp.theta;
+    stab_cmd.psi = stateGetNedToBodyEulers_i()->psi + att_sp.psi;
   }
   else
   {
@@ -325,4 +335,9 @@ void guidance_h_module_run(bool in_flight)
 
   /* Run the default attitude stabilization */
   stabilization_attitude_run(in_flight);
+}
+
+void guidance_v_module_run(bool in_flight)
+{
+  stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
 }
