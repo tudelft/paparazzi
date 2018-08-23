@@ -57,6 +57,8 @@
 static abi_event rpm_ev;
 static void rpm_cb(uint8_t sender_id, uint16_t *rpm, uint8_t num_act);
 
+uint16_t rpm_setpoint_mode_1;
+
 /* Initialize the throttle curves from the airframe file */
 struct throttle_curve_t throttle_curve = {
   .nb_curves = THROTTLE_CURVES_NB,
@@ -89,6 +91,8 @@ void throttle_curve_init(void)
   throttle_curve.rpm_measured = false;
   throttle_curve.throttle_trim = 0;
   throttle_curve.coll_trim = 0;
+
+  rpm_setpoint_mode_1 = throttle_curve.curves[1].throttle[0];
 
   AbiBindMsgRPM(THROTTLE_CURVE_RPM_ID, &rpm_ev, rpm_cb);
 
@@ -221,4 +225,11 @@ void nav_throttle_curve_set(uint8_t mode)
   int16_t new_mode = mode;
   Bound(new_mode, 0, THROTTLE_CURVES_NB - 1);
   throttle_curve.nav_mode = new_mode;
+}
+
+void throttle_curve_rpm_setpoint_handler(uint16_t rpm_setpoint) {
+  static uint8_t curve_no = 1;
+  for (uint8_t i = 0; i < throttle_curve.curves[curve_no].nb_points; i++) {
+    throttle_curve.curves[curve_no].rpm[i] = rpm_setpoint;
+  }
 }

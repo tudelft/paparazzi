@@ -61,9 +61,12 @@ struct throttle_curve_t {
 };
 extern struct throttle_curve_t throttle_curve;
 
+extern uint16_t rpm_setpoint_mode_1;
+
 /* External functions */
 extern void throttle_curve_init(void);
 void throttle_curve_run(pprz_t in_cmd[], uint8_t autopilot_mode);
 void nav_throttle_curve_set(uint8_t mode);
+extern void throttle_curve_rpm_setpoint_handler(uint16_t rpm_setpoint);
 
 #endif
