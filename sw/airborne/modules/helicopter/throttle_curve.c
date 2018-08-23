@@ -92,7 +92,7 @@ void throttle_curve_init(void)
   throttle_curve.throttle_trim = 0;
   throttle_curve.coll_trim = 0;
 
-  rpm_setpoint_mode_1 = throttle_curve.curves[1].throttle[0];
+  rpm_setpoint_mode_1 = throttle_curve.curves[1].rpm[0];
 
   AbiBindMsgRPM(THROTTLE_CURVE_RPM_ID, &rpm_ev, rpm_cb);
 
