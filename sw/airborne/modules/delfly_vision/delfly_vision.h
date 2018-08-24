@@ -50,9 +50,9 @@ struct gate_t {
 extern struct gate_t gate;
 
 struct pid_t {
-  int32_t p;
-  int32_t i;
-  int32_t d;
+  float p;
+  float i;
+  float d;
 };
 
 extern void delfly_vision_init(void);

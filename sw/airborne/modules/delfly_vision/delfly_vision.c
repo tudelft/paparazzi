@@ -73,7 +73,7 @@
 #endif
 
 #ifndef DELFLY_VISION_THETA_GAINS_P
-#define DELFLY_VISION_THETA_GAINS_P 0
+#define DELFLY_VISION_THETA_GAINS_P 0.5
 #endif
 
 #ifndef DELFLY_VISION_THETA_GAINS_I
@@ -100,11 +100,16 @@ static struct Int32Eulers rc_sp;   ///< Euler setpoints given by the rc
 struct gate_t gate;
 struct Int32Eulers att_sp = {.phi=0, .theta=0, .psi=0};
 float thrust_sp;
-struct FloatRMat body_to_cam;
+struct FloatRMat RM_body_to_cam;
+struct FloatRMat RM_body_to_gate;
+struct FloatRMat RM_cam_to_gate;
+struct FloatRMat RM_earth_to_gate;
+struct FloatRMat RM_earth_to_body;
 struct FloatEulers angle_to_gate = {.phi=0, .theta=0, .psi=0};
 
-float filt_tc=0.1;  // gate filter time constant, in seconds
-int gate_target_size=0.5; // target gate size for distance keeping, in rad
+bool filt_on=false;
+float filt_tc=3;  // gate filter time constant, in seconds
+int gate_target_size=0.4; // target gate size for distance keeping, in rad
 
 struct pid_t phi_gains = {DELFLY_VISION_PHI_GAINS_P, DELFLY_VISION_PHI_GAINS_I, 0.f};
 struct pid_t theta_gains = {DELFLY_VISION_THETA_GAINS_P, DELFLY_VISION_THETA_GAINS_I, 0.f};
@@ -145,74 +150,95 @@ void delfly_vision_init(void)
 #endif
 
   struct FloatEulers euler = {STEREO_BODY_TO_STEREO_PHI, STEREO_BODY_TO_STEREO_THETA, STEREO_BODY_TO_STEREO_PSI};
-  float_rmat_of_eulers(&body_to_cam, &euler);
+  float_rmat_of_eulers(&RM_body_to_cam, &euler);
 }
 
-static float alignment_error_sum = 0.f, dist_error_sum = 0.f, alt_error_sum = 0.f;
+static float alignment_error_sum = 0.f, dist_error_sum = 0.f, alt_error_sum = 0.f, lat_error_sum = 0.f;
 static float last_time = 0.f;
 /*
  * Compute attitude set-point given gate position
  */
-static void att_sp_align_3d(void){
-  static float filt_w, filt_h, filt_theta, filt_psi;
+static void att_sp_align_3d(void)
+{
+  static float gate_w, gate_h, gate_theta, gate_psi;
 
-  // rotate camera angles to body reference frame
+  // rotate angles from camera to body reference frame
   // we apply a convenience rotation here to align the camera x and y with the y and -z body frame
-  struct FloatEulers cam_angles = {.phi=0., .theta=gate.phi, .psi=gate.theta}, body_angles;
-  float_rmat_transp_mult(&body_angles, &body_to_cam, &cam_angles);
+  struct FloatEulers cam_angles = {.phi=0., .theta=gate.phi, .psi=gate.theta}, body_angles, attitude;
 
-  // rotate body reference frame to earth
-  float_rmat_transp_mult(&angle_to_gate, stateGetNedToBodyRMat_f(), &body_angles); // todo check these angles
+  // for debugging
+//  cam_angles.phi = 0.;
+//  cam_angles.theta = 0.5;
+//  cam_angles.psi = 0.3;
+
+  float_rmat_of_eulers_321(&RM_cam_to_gate, &cam_angles); // rotation matrix cam to gate
+  float_rmat_comp(&RM_body_to_gate, &RM_body_to_cam, &RM_cam_to_gate); // rotation matrix body to gate
+  float_eulers_of_rmat(&body_angles, &RM_body_to_gate); // Eulers of gate in body frame
+
+  // the following three lines might be wrapped in a function float_rmat_transp_mult(&angle_to_gate, stateGetNedToBodyRMat_f(), &body_angles); its current implementation is incorrect
+  float_rmat_of_eulers_321(&RM_body_to_gate, &body_angles); // rotation matrix body to gate
+
+  /* true earth axes */
+  //float_rmat_comp(&RM_earth_to_gate, stateGetNedToBodyRMat_f(), &RM_body_to_gate); // rotation matrix earth to gate
+
+  /* earth axes, but x always aligned with current heading */
+  attitude.psi = 0.;
+  attitude.phi = stateGetNedToBodyEulers_f()->phi;
+  attitude.theta = stateGetNedToBodyEulers_f()->theta;
+  float_rmat_of_eulers_321(&RM_earth_to_body, &attitude); // rotation matrix earth to body
+  float_rmat_comp(&RM_earth_to_gate, &RM_earth_to_body, &RM_body_to_gate); // rotation matrix earth to gate
+
+  float_eulers_of_rmat(&angle_to_gate, &RM_earth_to_gate); // Eulers of gate in earth frame
 
   // update filters
   float dt = get_sys_time_float() - last_time;
   if (dt <= 0) return;
   last_time = get_sys_time_float();
-  if (dt > 1.f){
-    // reset filter if last update too long ago
-    filt_w = gate.width;
-    filt_h = gate.height;
-    filt_theta = angle_to_gate.theta;
-    filt_psi = angle_to_gate.psi;
-
-    // reset sum of errors
-    // todo check if this is a good place reset all of these parameters, particularly the alt
-    alignment_error_sum = 0.f;
-    dist_error_sum = 0.f;
-    alt_error_sum = 0.f;
-  } else {
+  if (dt < 1.f && filt_on)
+  {
     // propagate low-pass filter
     float scaler = 1.f / (filt_tc + dt);
-    filt_w = (gate.width*dt + filt_w*filt_tc) * scaler;
-    filt_h = (gate.height*dt + filt_h*filt_tc) * scaler;
-    filt_theta = (angle_to_gate.theta*dt + filt_theta*filt_tc) * scaler;
-    filt_psi = (angle_to_gate.psi*dt + filt_psi*filt_tc) * scaler;
+    gate_w = (gate.width*dt + gate_w*filt_tc) * scaler;
+    gate_h = (gate.height*dt + gate_h*filt_tc) * scaler;
+    gate_theta = (angle_to_gate.theta*dt + gate_theta*filt_tc) * scaler;
+    gate_psi = (angle_to_gate.psi*dt + gate_psi*filt_tc) * scaler;
+  }
+  else
+  {
+    // reset filter if last update too long ago
+    gate_w = gate.width;
+    gate_h = gate.height;
+    gate_theta = angle_to_gate.theta;
+    gate_psi = angle_to_gate.psi;
   }
 
   // compute errors
-  float alignment_error = gate.height / gate.width - 1.f; // [-]
+  float alignment_error = gate_h / gate_w - 1.f; // [-]
   BoundLower(alignment_error, 0.f);
   // sign of the alignment error is ambiguous so set it based on the long term derivative of the error
   // alignment_gain_sign = -(derivative of the error)
   float alignment_gain_sign = 1.f; // TODO implement
   alignment_error *= alignment_gain_sign;
 
-  float dist_error = (gate_target_size - gate.height);  // rad
-  float alt_error = -angle_to_gate.theta; // rad
+  float dist_error = (gate_target_size - gate_h);  // rad
+  float alt_error = -gate_theta; // rad
+  float lat_error = gate_psi; // rad
 
   // Increment integrated errors
   alignment_error_sum += alignment_error*dt;
   dist_error_sum += dist_error*dt;
   alt_error_sum += alt_error*dt;
+  lat_error_sum += lat_error*dt;
 
-  // apply pid gains for roll, pitch and thrust
+  // apply pid gains for yaw, pitch and thrust
   struct FloatEulers sp;
   sp.phi = phi_gains.p*alignment_error + phi_gains.i*alignment_error_sum;
-  sp.theta = theta_gains.p*dist_error + theta_gains.i*dist_error_sum;
+  sp.theta = -theta_gains.p*dist_error + theta_gains.i*dist_error_sum;
   thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
 
   // simply set angle for yaw
-  sp.psi = angle_to_gate.psi;
+  sp.psi = gate_psi + stateGetNedToBodyEulers_f()->psi;
+  //sp.psi = 0;
 
   // bound result to max values
   BoundAbs(sp.phi, STABILIZATION_ATTITUDE_SP_MAX_PHI);
@@ -259,7 +285,10 @@ static void delfly_vision_parse_msg(void)
   }
 }
 
-void delfly_vision_periodic(void) {
+void delfly_vision_periodic(void)
+{
+  // for debugging
+  //  evaluate_state_machine();
 }
 
 void delfly_vision_event(void)
@@ -287,17 +316,18 @@ void guidance_v_module_init(void) {}
  */
 void guidance_h_module_enter(void)
 {
-  /* Set roll/pitch to 0 degrees and psi to current heading */
-  stab_cmd.phi = 0;
-  stab_cmd.theta = 0;
-  stab_cmd.psi = stateGetNedToBodyEulers_i()->psi;
-
+//  /* Set roll/pitch to 0 degrees and psi to current heading */
+//  stab_cmd.phi = 0;
+//  stab_cmd.theta = 0;
+//  stab_cmd.psi = stateGetNedToBodyEulers_i()->psi;
+//
   // reset integrator of rc_yaw_setpoint
   stabilization_attitude_read_rc_setpoint_eulers(&rc_sp, false, false, false);
 
   stab_cmd.phi = rc_sp.phi;
   stab_cmd.theta = rc_sp.theta;
   stab_cmd.psi = rc_sp.psi;
+
 }
 
 void guidance_v_module_enter(void) {}
@@ -318,16 +348,34 @@ void guidance_h_module_run(bool in_flight)
 {
   stabilization_attitude_read_rc_setpoint_eulers(&rc_sp, in_flight, false, false);
 
-  if (radio_control.values[RADIO_FLAP] > 5000) {
-    stab_cmd.phi = rc_sp.phi; // + att_sp.phi;
-    stab_cmd.theta = rc_sp.theta; // + att_sp.theta;
-    stab_cmd.psi = stateGetNedToBodyEulers_i()->psi + att_sp.psi;
-  }
-  else
+  static uint8_t prev = 0;
+
+  if (radio_control.values[RADIO_FLAP] > 5000) // Vision switch ON
   {
+
+    stab_cmd.phi = rc_sp.phi + att_sp.phi;
+    stab_cmd.theta = rc_sp.theta + att_sp.theta;
+    stab_cmd.psi = att_sp.psi;
+
+    prev = 0;
+  }
+  else // Vision switch OFF
+  {
+    if (prev == 0)
+    {
+      stabilization_attitude_read_rc_setpoint_eulers(&rc_sp, false, false, false);
+      prev = 1;
+    }
+
     stab_cmd.phi = rc_sp.phi;
     stab_cmd.theta = rc_sp.theta;
     stab_cmd.psi = rc_sp.psi;
+
+    // reset vision code integrators
+    alignment_error_sum = 0.f;
+    dist_error_sum = 0.f;
+    alt_error_sum = 0.f;
+    lat_error_sum = 0.f;
   }
 
   /* Update the setpoint */
@@ -337,7 +385,7 @@ void guidance_h_module_run(bool in_flight)
   stabilization_attitude_run(in_flight);
 }
 
-void guidance_v_module_run(bool in_flight)
+void guidance_v_module_run(UNUSED bool in_flight)
 {
   stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
 }
