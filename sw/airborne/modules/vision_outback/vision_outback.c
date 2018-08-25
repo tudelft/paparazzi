@@ -66,6 +66,7 @@ bool het_moment = false;
 bool vision_timeout = false;
 
 
+//TMP for debugging weird uart crossover talk shizzle
 int turbocnt = 0;
 int turbosize = 0;
 
@@ -75,33 +76,11 @@ int turbosize = 0;
 uint8_t timeoutcount = 0;
 void enable_wp_joe_telemetry_updates(void);
 
-
-/** Parsing a frame data and copy the payload to the datalink buffer */
-void pprz_check_and_parse2(struct link_device *dev, struct pprz_transport *trans, uint8_t *buf, bool *msg_available)
-{
-  uint8_t i;
-  if (dev->char_available(dev->periph)) {
-    while (dev->char_available(dev->periph) && !trans->trans_rx.msg_received) {
-      parse_pprz(trans, dev->get_byte(dev->periph));
-    }
-    if (trans->trans_rx.msg_received) {
-      for (i = 0; i < trans->trans_rx.payload_len; i++) {
-        buf[i] = trans->trans_rx.payload[i];
-      }
-      *msg_available = true;
-      trans->trans_rx.msg_received = false;
-    }
-  }
-}
-
-
 static void send_vision_outback( struct transport_tx *trans, struct link_device *dev)
 {
-
-
   v2p_package.flow_x = turbocnt;
   v2p_package.flow_y = turbosize;
-  //  //fix rotated orientation of camera in DelftaCopter
+
   pprz_msg_send_VISION_OUTBACK(trans, dev, AC_ID,
                           &v2p_package.status,
                           (uint8_t *)&het_moment,
@@ -123,7 +102,6 @@ void vision_outback_init() {
   // Initialize transport protocol
   pprz_transport_init(&vision_outback.transport);
 
-
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VISION_OUTBACK, send_vision_outback);
 #endif
@@ -132,7 +110,7 @@ void vision_outback_init() {
   v2p_package.height = -0.01;
   v2p_package.status = 1;
   vision_timeout = false;
-  timeoutcount = VISION_OUTBACK_PERIODIC_FREQ / 2;
+  timeoutcount = VISION_OUTBACK_PERIODIC_FREQ;
 
 }
 
@@ -169,21 +147,24 @@ static inline void vision_outback_parse_msg(void)
       /* Got a vision_outback message */
     case DL_IMCU_DEBUG: {
 
-        turbocnt++;
+
         uint8_t size = DL_IMCU_DEBUG_msg_length(mp_msg_buf);
         uint8_t *msg = DL_IMCU_DEBUG_msg(mp_msg_buf);
 
+        //TMP for debugging:
         turbosize = size;
+        turbocnt++;
+
         unsigned char * tmp = (unsigned char*)&v2p_package;
 
         //impossible case, but seems to happen:
-        if (size > sizeof(struct Vision2PPRZPackage))
+        if (size != sizeof(struct Vision2PPRZPackage))
             break;
 
         for(uint8_t i = 0; i < size; i++) {
             tmp[i] = msg[i];
           }
-        timeoutcount = VISION_OUTBACK_PERIODIC_FREQ / 2;
+        timeoutcount = VISION_OUTBACK_PERIODIC_FREQ;
         vision_timeout = false;
         static int32_t frame_id_prev = 0;
         if (frame_id_prev >= v2p_package.frame_id) {
@@ -191,9 +172,6 @@ static inline void vision_outback_parse_msg(void)
           }
         frame_id_prev = v2p_package.frame_id;
 
-        //struct EnuCoor_f *pos = stateGetPositionEnu_f();
-
-        //float diff_search = (vision_outback_search_height - k2p_package.height)*vision_outback_height_gain;
 
         if (vision_outback_enable_take_foto) {
             // WP_VISION_OUTBACK_LANDSPOT
@@ -240,7 +218,7 @@ void enable_wp_joe_telemetry_updates(void) {
 /* We need to wait for incomming messages */
 void vision_outback_event() {
   // Check if we got some message from the Vision
-  pprz_check_and_parse2(vision_outback.device, &vision_outback.transport, mp_msg_buf, &vision_outback.msg_available);
+  pprz_check_and_parse(vision_outback.device, &vision_outback.transport, mp_msg_buf, &vision_outback.msg_available);
 
   // If we have a message we should parse it
   if (vision_outback.msg_available) {
@@ -251,7 +229,6 @@ void vision_outback_event() {
 
 void vision_outback_periodic() {
 
-  struct FloatEulers *attE = stateGetNedToBodyEulers_f();
   struct FloatQuat *att = stateGetNedToBodyQuat_f();
   struct EnuCoor_f *pos = stateGetPositionEnu_f();
 
