@@ -253,6 +253,10 @@ void vision_outback_periodic() {
       p2k_package.geo_init_gpsz = 0;
     }
 
+  p2k_package.reported_joe_gpsx = waypoint_get_x(WP_JOE_reported);
+  p2k_package.reported_joe_gpsy = waypoint_get_y(WP_JOE_reported);
+  p2k_package.reported_joe_gpsz = waypoint_get_alt(WP_JOE_reported);
+
   p2k_package.enables = 0;
   if (vision_outback_enable_landing)
     p2k_package.enables |= 0b1;
