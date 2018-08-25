@@ -61,10 +61,9 @@ bool vision_outback_enable_findjoe = false;
 bool vision_outback_enable_opticflow = false;
 bool vision_outback_enable_attcalib = false;
 bool vision_outback_enable_videorecord = false;
-bool vision_outback_shutdown = false;
+uint8_t vision_outback_power = 0; // 0 = power off, 1 = soft off, 2 = power on
 bool het_moment = false;
-bool vision_timeout = false;
-
+bool vision_timeout = false; // TODO: remove
 
 float msg_marker_x = 0;
 float msg_marker_y = 0;
@@ -78,6 +77,7 @@ int turbosize = 0;
 
 uint8_t timeoutcount = 0;
 void enable_wp_telemetry_updates(void);
+void do_power_state_machine(void);
 
 static void send_vision_outback( struct transport_tx *trans, struct link_device *dev)
 {
@@ -85,16 +85,16 @@ static void send_vision_outback( struct transport_tx *trans, struct link_device 
   v2p_package.flow_y = turbosize;
 
   pprz_msg_send_VISION_OUTBACK(trans, dev, AC_ID,
-                          &v2p_package.status,
-                          (uint8_t *)&het_moment,
-                          &timeoutcount,
-                          (uint8_t *)&vision_timeout,
-                          &v2p_package.height,
-                          &v2p_package.out_of_range_since,
-                          &msg_marker_x,
-                          &msg_marker_y,
-                          &v2p_package.flow_x,
-                          &v2p_package.flow_y);
+                               &v2p_package.status,
+                               (uint8_t *)&het_moment,
+                               &timeoutcount,
+                               (uint8_t *)&vision_timeout,
+                               &v2p_package.height,
+                               &v2p_package.out_of_range_since,
+                               &msg_marker_x,
+                               &msg_marker_y,
+                               &v2p_package.flow_x,
+                               &v2p_package.flow_y);
 }
 #endif
 
@@ -112,8 +112,7 @@ void vision_outback_init() {
   NavSetWaypointHere(WP_dummy); //WP_VISION_OUTBACK_LANDING
   v2p_package.height = -0.01;
   v2p_package.status = 1;
-  vision_timeout = false;
-  timeoutcount = VISION_OUTBACK_PERIODIC_FREQ;
+  timeoutcount = 0;
   enable_wp_telemetry_updates();
 
 }
@@ -127,9 +126,9 @@ static inline void vision_outback_parse_msg(void)
   uint8_t sender_id = pprzlink_get_msg_sender_id(mp_msg_buf);
 
   if (sender_id != 3) {
-    turbosize = sender_id;
-    return;
-  }
+      turbosize = sender_id;
+      return;
+    }
   switch (msg_id) {
 
     /* Received a part of a thumbnail: forward to 900MHz and irridium... */
@@ -137,10 +136,10 @@ static inline void vision_outback_parse_msg(void)
 
       ////////////////////////////////////
       // Forward to 900MHz (or XBee)
-//      uint8_t size = DL_IMCU_PAYLOAD_data_length(mp_msg_buf);
-//      uint8_t *data = DL_IMCU_PAYLOAD_data(mp_msg_buf);
+      //      uint8_t size = DL_IMCU_PAYLOAD_data_length(mp_msg_buf);
+      //      uint8_t *data = DL_IMCU_PAYLOAD_data(mp_msg_buf);
 
-//      DOWNLINK_SEND_PAYLOAD(DefaultChannel, DefaultDevice, size, data);
+      //      DOWNLINK_SEND_PAYLOAD(DefaultChannel, DefaultDevice, size, data);
 
       ////////////////////////////////////
       // Forward to FBW with IRRIDIUM
@@ -163,13 +162,12 @@ static inline void vision_outback_parse_msg(void)
 
         //impossible case, but seems to happen:
         if (size != sizeof(struct Vision2PPRZPackage))
-            break;
+          break;
 
         for(uint8_t i = 0; i < size; i++) {
             tmp[i] = msg[i];
           }
         timeoutcount = VISION_OUTBACK_PERIODIC_FREQ;
-        vision_timeout = false;
         static int32_t frame_id_prev = 0;
         if (frame_id_prev >= v2p_package.frame_id) {
             timeoutcount = 0;
@@ -185,21 +183,17 @@ static inline void vision_outback_parse_msg(void)
             waypoint_set_xy_i(WP_TD_mrk, POS_BFP_OF_REAL(v2p_package.land_enu_x), POS_BFP_OF_REAL(v2p_package.land_enu_y));
             msg_marker_x = v2p_package.land_enu_x;
             msg_marker_y = v2p_package.land_enu_y;
+
+            AbiSendMsgAGL(AGL_SONAR_ADC_ID, v2p_package.height);
           } else {
             het_moment = false;
           }
 
         if (vision_outback_enable_findjoe) {
-          waypoint_set_xy_i(WP_JOE_found, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
-          msg_marker_x = v2p_package.marker_enu_x;
-          msg_marker_y = v2p_package.marker_enu_y;
-        }
-
-        // Send ABI message
-        if (timeoutcount > 0) {
-          AbiSendMsgAGL(AGL_SONAR_ADC_ID, v2p_package.height);
-        }
-
+            waypoint_set_xy_i(WP_JOE_found, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
+            msg_marker_x = v2p_package.marker_enu_x;
+            msg_marker_y = v2p_package.marker_enu_y;
+          }
         break;
       }
     default:
@@ -208,12 +202,12 @@ static inline void vision_outback_parse_msg(void)
 }
 
 void enable_wp_telemetry_updates(void) {
-      uint8_t wp_joe_id = WP_JOE_found;
-      RunOnceEvery(10, DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_joe_id,&(waypoints[wp_joe_id].enu_i.x),
-                                                  &(waypoints[wp_joe_id].enu_i.y), &(waypoints[wp_joe_id].enu_i.z)));
-      uint8_t wp_TD_mkr_id = WP_TD_mrk;
-      RunOnceEvery(10, DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_TD_mkr_id,&(waypoints[wp_TD_mkr_id].enu_i.x),
-                                                  &(waypoints[wp_TD_mkr_id].enu_i.y), &(waypoints[wp_TD_mkr_id].enu_i.z)));
+  uint8_t wp_joe_id = WP_JOE_found;
+  RunOnceEvery(10, DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_joe_id,&(waypoints[wp_joe_id].enu_i.x),
+                                              &(waypoints[wp_joe_id].enu_i.y), &(waypoints[wp_joe_id].enu_i.z)));
+  uint8_t wp_TD_mkr_id = WP_TD_mrk;
+  RunOnceEvery(10, DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_TD_mkr_id,&(waypoints[wp_TD_mkr_id].enu_i.x),
+                                              &(waypoints[wp_TD_mkr_id].enu_i.y), &(waypoints[wp_TD_mkr_id].enu_i.z)));
 }
 
 /* We need to wait for incomming messages */
@@ -261,9 +255,9 @@ void vision_outback_periodic() {
   if (vision_outback_enable_landing)
     p2k_package.enables |= 0b1;
   if (vision_outback_enable_take_foto) {
-    p2k_package.enables |= 0b10;
-    vision_outback_enable_take_foto = false;
-  }
+      p2k_package.enables |= 0b10;
+      vision_outback_enable_take_foto = false;
+    }
   if (vision_outback_enable_findjoe)
     p2k_package.enables |= 0b100;
   if (vision_outback_enable_opticflow)
@@ -272,50 +266,101 @@ void vision_outback_periodic() {
     p2k_package.enables |= 0b10000;
   if (vision_outback_enable_videorecord)
     p2k_package.enables |= 0b100000;
-  if (vision_outback_shutdown)
+  if (vision_outback_power != VISION_SETTING_STATUS_REQUEST_POWER_ON)
     p2k_package.enables |= 0b1000000;
 
   if (timeoutcount > 0) {
-    timeoutcount--;
-  } else {
-    v2p_package.status = 1;
-  }
-  static char status_prev = 0;
-  if (v2p_package.status != 0 && status_prev == 0) {
-    vision_timeout = true;
-    shutdown_count = 20*VISION_OUTBACK_PERIODIC_FREQ;
-  }
-  status_prev = v2p_package.status;
-  if (shutdown_count>0 && v2p_package.status != 0 && vision_outback_shutdown) {
-    shutdown_count--;
-    if (shutdown_count == 0) {
-        vision_outback_shutdown = false;
-#ifdef VISION_PWR_OFF
-      VISION_PWR_OFF(VISION_PWR, VISION_PWR_PIN);
-#endif
+      timeoutcount--;
+    } else {
+      v2p_package.status = 1;
     }
 
-  }
+  do_power_state_machine();
 
   pprz_msg_send_IMCU_DEBUG(&(vision_outback.transport.trans_tx), vision_outback.device,
                            1, sizeof(struct PPRZ2VisionPackage), (unsigned char *)(&p2k_package));
 }
 
-void enableVisionLandingspotSearch(bool b) {
-  vision_outback_enable_take_foto = b;
+enum vision_power_status power_state = VISION_POWER_STATUS_INIT;
+void do_power_state_machine(void) {
+  switch(power_state){
+    case VISION_POWER_STATUS_INIT:
+      if (v2p_package.status == 0) {
+          power_state = VISION_POWER_STATUS_READY;
+        } else {
+#ifdef VISION_PWR_OFF
+          VISION_PWR_OFF(VISION_PWR, VISION_PWR_PIN);
+#endif
+          power_state = VISION_POWER_STATUS_POWERED_OFF;
+        }
+      break;
+    case VISION_POWER_STATUS_POWERED_OFF:
+      if (v2p_package.status == 0) {
+          power_state = VISION_POWER_STATUS_READY;
+        }
+      if (vision_outback_power == VISION_SETTING_STATUS_REQUEST_POWER_ON) {
+          power_state = VISION_POWER_STATUS_POWER_ON;
+        }
+      vision_outback_power = VISION_SETTING_STATUS_REQUEST_POWER_OFF;
+      break;
+    case VISION_POWER_STATUS_POWER_ON:
+#ifdef VISION_PWR_ON
+      VISION_PWR_ON(VISION_PWR, VISION_PWR_PIN);
+#endif
+      power_state = VISION_POWER_STATUS_BOOTING;
+      break;
+    case VISION_POWER_STATUS_BOOTING:
+      if (v2p_package.status == 0) {
+          power_state = VISION_POWER_STATUS_READY;
+        }
+      break;
+    case VISION_POWER_STATUS_READY:
+      if (vision_outback_power  == VISION_SETTING_STATUS_REQUEST_HALT)
+        power_state = VISION_POWER_STATUS_HALTING;
+      else if (vision_outback_power  == VISION_SETTING_STATUS_REQUEST_POWER_OFF)
+        power_state = VISION_POWER_STATUS_POWER_OFF;
+      break;
+    case VISION_POWER_STATUS_HALTING:
+      if (v2p_package.status > 0) {
+          shutdown_count = 20*VISION_OUTBACK_PERIODIC_FREQ;
+          power_state = VISION_POWER_STATUS_HALT_WAIT;
+        }
+      break;
+    case VISION_POWER_STATUS_HALT_WAIT:
+      shutdown_count--;
+      if (shutdown_count == 0 )
+        power_state = VISION_POWER_STATUS_POWER_OFF;
+      break;
+    case VISION_POWER_STATUS_POWER_OFF:
+#ifdef VISION_PWR_OFF
+      VISION_PWR_OFF(VISION_PWR, VISION_PWR_PIN);
+#endif
+      power_state = VISION_POWER_STATUS_POWER_OFF_WAIT;
+      break;
+    case VISION_POWER_STATUS_POWER_OFF_WAIT:
+      if (v2p_package.status > 0) {
+          power_state = VISION_POWER_STATUS_POWERED_OFF;
+        }
+      if (vision_outback_power == VISION_SETTING_STATUS_REQUEST_POWER_ON) {
+          power_state = VISION_POWER_STATUS_POWER_ON;
+        }
+      break;
+    default:
+      break;
+    }
 }
 
 void enableVisionDescent(bool b) {
   if (b) {
       vision_outback_enable_findjoe  = false;
-  }
+    }
   vision_outback_enable_landing = b;
 }
 
 void enableVisionFindJoe(bool b) {
   if (b) {
       vision_outback_enable_landing  = false;
-  }
+    }
   vision_outback_enable_findjoe = b;
 }
 
@@ -335,7 +380,8 @@ bool enableVisionVideoRecord(bool b) {
 }
 
 bool enableVisionShutdown(bool b) {
-  vision_outback_shutdown = b;
+  if (b)
+    vision_outback_power= 1;
   return true; // klote pprz flight plan
 }
 

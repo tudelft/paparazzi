@@ -75,6 +75,13 @@ struct PPRZ2VisionPackage {
     unsigned char enables;
 }__attribute__((__packed__));
 
+enum vision_power_status {VISION_POWER_STATUS_INIT,VISION_POWER_STATUS_POWERED_OFF,VISION_POWER_STATUS_POWER_ON,VISION_POWER_STATUS_BOOTING,VISION_POWER_STATUS_READY,VISION_POWER_STATUS_HALTING,VISION_POWER_STATUS_HALT_WAIT,VISION_POWER_STATUS_POWER_OFF,VISION_POWER_STATUS_POWER_OFF_WAIT };
+enum vision_power_status_setting {
+  VISION_SETTING_STATUS_REQUEST_POWER_OFF = 0,
+  VISION_SETTING_STATUS_REQUEST_HALT = 1,
+  VISION_SETTING_STATUS_REQUEST_POWER_ON = 2
+};
+
 extern float vision_outback_search_height;
 extern float vision_outback_moment_height;
 extern bool vision_outback_enable_landing ;
@@ -83,7 +90,7 @@ extern bool vision_outback_enable_findjoe;
 extern bool vision_outback_enable_opticflow;
 extern bool vision_outback_enable_attcalib;
 extern bool vision_outback_enable_videorecord;
-extern bool vision_outback_shutdown;
+extern uint8_t vision_outback_power;
 extern struct FloatVect3 land_cmd;
 extern bool het_moment;
 extern bool vision_timeout;
@@ -92,7 +99,6 @@ extern void vision_outback_init(void);
 extern void vision_outback_event(void);
 extern void vision_outback_periodic(void);
 
-extern void enableVisionLandingspotSearch(bool b);
 extern void enableVisionDescent(bool b);
 extern void enableVisionOpticFlow(bool b);
 extern void enableVisionFindJoe(bool b);
