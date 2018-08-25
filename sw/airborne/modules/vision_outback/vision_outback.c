@@ -66,6 +66,9 @@ bool het_moment = false;
 bool vision_timeout = false;
 
 
+float msg_marker_x = 0;
+float msg_marker_y = 0;
+
 //TMP for debugging weird uart crossover talk shizzle
 int turbocnt = 0;
 int turbosize = 0;
@@ -74,7 +77,7 @@ int turbosize = 0;
 #include "subsystems/datalink/telemetry.h"
 
 uint8_t timeoutcount = 0;
-void enable_wp_joe_telemetry_updates(void);
+void enable_wp_telemetry_updates(void);
 
 static void send_vision_outback( struct transport_tx *trans, struct link_device *dev)
 {
@@ -88,8 +91,8 @@ static void send_vision_outback( struct transport_tx *trans, struct link_device 
                           (uint8_t *)&vision_timeout,
                           &v2p_package.height,
                           &v2p_package.out_of_range_since,
-                          &v2p_package.marker_enu_x,
-                          &v2p_package.marker_enu_y,
+                          &msg_marker_x,
+                          &msg_marker_y,
                           &v2p_package.flow_x,
                           &v2p_package.flow_y);
 }
@@ -111,6 +114,7 @@ void vision_outback_init() {
   v2p_package.status = 1;
   vision_timeout = false;
   timeoutcount = VISION_OUTBACK_PERIODIC_FREQ;
+  enable_wp_telemetry_updates();
 
 }
 
@@ -172,26 +176,24 @@ static inline void vision_outback_parse_msg(void)
           }
         frame_id_prev = v2p_package.frame_id;
 
-
-        if (vision_outback_enable_take_foto) {
-            // WP_VISION_OUTBACK_LANDSPOT
-           // waypoint_set_xy_i(WP_dummy, POS_BFP_OF_REAL(v2p_package.land_enu_x), POS_BFP_OF_REAL(v2p_package.land_enu_y));
-          }
-
         if (vision_outback_enable_landing) {
             if ((v2p_package.out_of_range_since > 0 && v2p_package.out_of_range_since < 1.f) || (v2p_package.out_of_range_since < 0 && v2p_package.height < vision_outback_moment_height )) {
                 het_moment = true;
               } else {
                 het_moment = false;
               }
+            waypoint_set_xy_i(WP_TD_mrk, POS_BFP_OF_REAL(v2p_package.land_enu_x), POS_BFP_OF_REAL(v2p_package.land_enu_y));
+            msg_marker_x = v2p_package.land_enu_x;
+            msg_marker_y = v2p_package.land_enu_y;
           } else {
             het_moment = false;
           }
 
         if (vision_outback_enable_findjoe) {
-            waypoint_set_xy_i(WP_JOE_found, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
-            enable_wp_joe_telemetry_updates();
-          }
+          waypoint_set_xy_i(WP_JOE_found, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
+          msg_marker_x = v2p_package.marker_enu_x;
+          msg_marker_y = v2p_package.marker_enu_y;
+        }
 
         // Send ABI message
         if (timeoutcount > 0) {
@@ -205,14 +207,13 @@ static inline void vision_outback_parse_msg(void)
     }
 }
 
-void enable_wp_joe_telemetry_updates(void) {
-  static bool enabled = false;
-  if (!enabled) {
-      uint8_t wp_id = WP_JOE_found; //WP_VISION_OUTBACK_JOE;
-      RunOnceEvery(60, DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,&(waypoints[wp_id].enu_i.x),
-                                                  &(waypoints[wp_id].enu_i.y), &(waypoints[wp_id].enu_i.z)));
-      enabled = true;
-    }
+void enable_wp_telemetry_updates(void) {
+      uint8_t wp_joe_id = WP_JOE_found;
+      RunOnceEvery(10, DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_joe_id,&(waypoints[wp_joe_id].enu_i.x),
+                                                  &(waypoints[wp_joe_id].enu_i.y), &(waypoints[wp_joe_id].enu_i.z)));
+      uint8_t wp_TD_mkr_id = WP_TD_mrk;
+      RunOnceEvery(10, DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_TD_mkr_id,&(waypoints[wp_TD_mkr_id].enu_i.x),
+                                                  &(waypoints[wp_TD_mkr_id].enu_i.y), &(waypoints[wp_TD_mkr_id].enu_i.z)));
 }
 
 /* We need to wait for incomming messages */
