@@ -31,7 +31,9 @@
     <waypoint name="STDBY" x="-58.5" y="64.3"/>
     <waypoint name="AVOID" x="69.7" y="-214.3"/>
     <waypoint name="HOVER" x="-11.4" y="24.7"/>
-    <waypoint name="JOE" x="10.4" y="10.0"/>
+    <waypoint name="JOE_reported" x="5" y="15"/>
+    <waypoint name="JOE_found" x="5" y="25"/>
+    <waypoint name="TD_mrk" x="5" y="35"/>
   </waypoints>
   <sectors>
     <sector color="yellow" name="MissionBoundary" type="dynamic">

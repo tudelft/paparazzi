@@ -211,7 +211,7 @@ static inline void vision_outback_parse_msg(void)
           }
 
         if (vision_outback_enable_findjoe) {
-            waypoint_set_xy_i(WP_JOE, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
+            waypoint_set_xy_i(WP_JOE_found, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
             enable_wp_joe_telemetry_updates();
           }
 
@@ -230,7 +230,7 @@ static inline void vision_outback_parse_msg(void)
 void enable_wp_joe_telemetry_updates(void) {
   static bool enabled = false;
   if (!enabled) {
-      uint8_t wp_id = WP_JOE; //WP_VISION_OUTBACK_JOE;
+      uint8_t wp_id = WP_JOE_found; //WP_VISION_OUTBACK_JOE;
       RunOnceEvery(60, DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,&(waypoints[wp_id].enu_i.x),
                                                   &(waypoints[wp_id].enu_i.y), &(waypoints[wp_id].enu_i.z)));
       enabled = true;
@@ -324,10 +324,16 @@ void enableVisionLandingspotSearch(bool b) {
 }
 
 void enableVisionDescent(bool b) {
+  if (b) {
+      vision_outback_enable_findjoe  = false;
+  }
   vision_outback_enable_landing = b;
 }
 
 void enableVisionFindJoe(bool b) {
+  if (b) {
+      vision_outback_enable_landing  = false;
+  }
   vision_outback_enable_findjoe = b;
 }
 

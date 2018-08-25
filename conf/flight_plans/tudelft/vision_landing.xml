@@ -1,7 +1,8 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="4" ground_alt="0" lat0="52.170358" lon0="4.427702" max_dist_from_home="120" name="Delft Basic" security_height="2"> <!-- kite power -->
-<!--flight_plan alt="4" ground_alt="0" lat0="52.170358" lon0="4.427702" max_dist_from_home="120" name="Delft Basic" security_height="2"--> <!-- run way -->
+
+<flight_plan alt="4" ground_alt="0" lat0="52.1682020" lon0="4.4130950" max_dist_from_home="120" name="Delft Basic" security_height="2"> <!-- run way -->
+<!-- <flight_plan alt="4" ground_alt="0" lat0="52.170358" lon0="4.427702" max_dist_from_home="120" name="Delft Basic" security_height="2"-->  <!--kite power -->
   <header>
     #include "autopilot.h"
     #include "subsystems/datalink/datalink.h"
@@ -18,7 +19,9 @@
     <waypoint alt="50.0" name="p3" x="38.8" y="-6.7"/>
     <waypoint alt="50.0" name="p4" x="8.8" y="-18.3"/>    
     <waypoint name="TD" x="5.6" y="-10.9"/>
-    <waypoint name="JOE" x="5" y="5"/>
+    <waypoint name="JOE_reported" x="5" y="15"/>
+    <waypoint name="JOE_found" x="5" y="25"/>
+    <waypoint name="TD_mrk" x="5" y="35"/>
   </waypoints>
   <exceptions>
     <exception cond="((radio_control.status == RC_REALLY_LOST) &&
@@ -66,30 +69,10 @@
     </block>
     <block name="stay_p1">
       <stay wp="p1"/>
-    </block>
-    <block name="go_p2">
-      <go wp="p2"/>
-      <deroute block="stay_p1"/>
-    </block>
-    <block name="line_p1_p2">
-      <go from="p1" hmode="route" wp="p2"/>
-      <stay until="stage_time>10" wp="p2"/>
-      <go from="p2" hmode="route" wp="p1"/>
-      <deroute block="stay_p1"/>
-    </block>
-    <block name="route">
-      <go from="p1" hmode="route" wp="p2"/>
-      <go from="p2" hmode="route" wp="p3"/>
-      <go from="p3" hmode="route" wp="p4"/>
-      <go from="p4" hmode="route" wp="p1"/>
-      <deroute block="stay_p1"/>
-    </block>
-    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
-      <call_once fun="NavSetWaypointHere(WP_TD)"/>
-      <deroute block="land"/>
-    </block>
+    </block>    
     <block name="route_findjoe">
       <call fun="enableVisionFindJoe(true)" loop="false"/>
+      <exception cond="vision_timeout " deroute="Standby"/>
       <go from="p1" hmode="route" wp="p2"/>
       <go from="p2" hmode="route" wp="p3"/>
       <go from="p3" hmode="route" wp="p4"/>
@@ -97,11 +80,38 @@
       <deroute block="stay_p1"/>
     </block>
     <block name="goto_joe">
-      <call fun="enableVisionFindJoe(false)" loop="false"/>
-      <call_once fun="NavCopyWaypoint(WP_TD,WP_JOE)"/>
-      <stay wp="JOE"/>
+      <call fun="enableVisionFindJoe(false)" loop="false"/>      
+      <stay wp="JOE_found"/>
+    </block>
+    <block name="land_mrk">
+      <call fun="enableVisionDescent(true)" loop="false"/>
+      <go wp="TD_mrk"/>
+    </block>
+    <block name="descent_mrk">
+      <exception cond="8.0 > stateGetPositionEnu_f()->z" deroute="descent_slow"/>
+      <exception cond="vision_timeout " deroute="Standby"/>
+      <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
+      <stay climb="-1" vmode="climb" wp="TD_mrk"/>
+    </block>
+    <block name="descent_slow_mrk">
+      <exception cond="het_moment" deroute="flare"/>
+      <exception cond="vision_timeout " deroute="Standby"/>
+      <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
+      <stay climb="-0.5" vmode="climb" wp="TD_mrk"/>
+    </block>
+    <block name="flare_mrk">
+      <exception cond="NavDetectGround()" deroute="Holding point"/>
+      <exception cond="!nav_is_in_flight()" deroute="landed"/>
+      <call_once fun="NavStartDetectGround()"/>
+      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
+      <deroute block="land"/>
+    </block>
+    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <deroute block="landed"/>
     </block>
     <block name="land">
+    <call fun="enableVisionDescent(true)" loop="false"/>
       <go wp="TD"/>
     </block>
     <block name="descent">
