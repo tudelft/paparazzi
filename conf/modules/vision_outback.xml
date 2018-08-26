@@ -9,7 +9,7 @@
     <settings>
     <dl_settings>
       <dl_settings NAME="vision_outback">
-        <dl_setting var="vision_outback_moment_height" min="0.2" max="0.75" step="0.05" shortname="moment_height"/>
+        <dl_setting var="vision_outback_moment_height" min="0.0" max="0.5" step="0.01" shortname="moment_height"/>
         <dl_setting var="vision_outback_enable_landing" min="0" max="1" step="1" values="off|on" shortname="landing"/>
         <dl_setting var="vision_outback_enable_take_foto" min="0" max="1" step="1" values="off|on" shortname="foto"/>
         <dl_setting var="vision_outback_enable_findjoe" min="0" max="1" step="1" values="off|on" shortname="findjoe"/>

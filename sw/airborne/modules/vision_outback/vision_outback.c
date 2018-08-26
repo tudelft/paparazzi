@@ -59,7 +59,7 @@ static uint8_t mp_msg_buf[128]  __attribute__((aligned));   ///< The message buf
 int shutdown_count;
 
 struct  Vision2PPRZPackage v2p_package;
-float vision_outback_moment_height = 0.35;
+float vision_outback_moment_height = 0.1;
 bool vision_outback_enable_landing = false;
 bool vision_outback_enable_take_foto = false;
 bool vision_outback_enable_findjoe = false;
