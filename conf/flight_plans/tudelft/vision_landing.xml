@@ -65,6 +65,8 @@
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <call fun="enableVisionFindJoe(false)" loop="false"/>
+      <call fun="enableVisionDescent(false)" loop="false"/>
       <stay wp="STDBY"/>
     </block>
     <block name="stay_p1">
