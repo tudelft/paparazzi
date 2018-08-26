@@ -120,6 +120,13 @@
           <property name="size" value="15."/>
           <property name="color" value="#00ff00"/>
         </papget>
+        <papget type="message_field" display="text" x="130" y="65">
+          <property name="scale" value="1."/>
+          <property name="field" value="VISION_OUTBACK:status"/>
+          <property name="format" value="Vision %.0f"/>
+          <property name="size" value="15."/>
+          <property name="color" value="#00ff00"/>
+        </papget>
       </widget>
     </columns>
     <widget NAME="aircraft" size="549"/>
