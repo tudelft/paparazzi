@@ -44,6 +44,11 @@
 #include "pprzlink/pprzlink_transport.h"
 #include "pprzlink/pprzlink_device.h"
 
+#ifdef VISION_PWR_ON
+#define VISION_POWER_ON_AT_BOOT false
+#else
+#define VISION_POWER_ON_AT_BOOT true
+#endif
 
 /* Main magneto structure */
 static struct vision_outback_t vision_outback = {
@@ -109,7 +114,6 @@ void vision_outback_init() {
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VISION_OUTBACK, send_vision_outback);
 #endif
 
-  NavSetWaypointHere(WP_dummy); //WP_VISION_OUTBACK_LANDING
   v2p_package.height = -0.01;
   v2p_package.status = 1;
   timeoutcount = 0;
@@ -285,8 +289,8 @@ enum vision_power_status power_state = VISION_POWER_STATUS_INIT;
 void do_power_state_machine(void) {
   switch(power_state){
     case VISION_POWER_STATUS_INIT:
-      if (v2p_package.status == 0) {
-          power_state = VISION_POWER_STATUS_READY;
+      if (VISION_POWER_ON_AT_BOOT) {
+          power_state = VISION_POWER_STATUS_POWER_ON;
         } else {
 #ifdef VISION_PWR_OFF
           VISION_PWR_OFF(VISION_PWR, VISION_PWR_PIN);
@@ -304,6 +308,7 @@ void do_power_state_machine(void) {
       vision_outback_power = VISION_SETTING_STATUS_REQUEST_POWER_OFF;
       break;
     case VISION_POWER_STATUS_POWER_ON:
+      vision_outback_power = VISION_SETTING_STATUS_REQUEST_POWER_ON;
 #ifdef VISION_PWR_ON
       VISION_PWR_ON(VISION_PWR, VISION_PWR_PIN);
 #endif
