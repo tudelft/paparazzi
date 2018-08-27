@@ -72,6 +72,7 @@ struct PPRZ2VisionPackage {
     float reported_joe_gpsx;
     float reported_joe_gpsy;
     float reported_joe_gpsz;
+    uint8_t ac_id;
     unsigned char enables;
 }__attribute__((__packed__));
 
