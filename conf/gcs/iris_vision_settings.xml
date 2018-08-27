@@ -1,0 +1,43 @@
+<!DOCTYPE layout SYSTEM "layout.dtd">
+
+<layout width="1865" height="1056" x="55" y="24">
+  <rows>
+    <columns SIZE="500">
+      <rows SIZE="300">
+        <widget NAME="strips" size="260"/>
+        <widget NAME="alarms" size="235"/>
+      </rows>
+      <widget NAME="map2d" size="1558">       
+        <papget type="message_field" display="text" x="130" y="82">
+          <property name="scale" value="1."/>
+          <property name="field" value="VISION_OUTBACK:status"/>
+          <property name="format" value="Vision status: %.0f"/>
+          <property name="size" value="15."/>
+          <property name="color" value="#00ff00"/>
+        </papget>
+        <papget type="message_field" display="text" x="130" y="56">
+          <property name="scale" value="1."/>
+          <property name="field" value="VISION_OUTBACK:height"/>
+          <property name="format" value="Height: %.2f"/>
+          <property name="size" value="15."/>
+          <property name="color" value="#00ff00"/>
+        </papget>
+        <papget type="message_field" display="text" x="130" y="4">
+          <property name="scale" value="1."/>
+          <property name="field" value="VISION_OUTBACK:marker_enu_x"/>
+          <property name="format" value="Marker x: %.2f"/>
+          <property name="size" value="15."/>
+          <property name="color" value="#00ff00"/>
+        </papget>
+        <papget type="message_field" display="text" x="130" y="30">
+          <property name="scale" value="1."/>
+          <property name="field" value="VISION_OUTBACK:marker_enu_y"/>
+          <property name="format" value="Marker y: %.2f"/>
+          <property name="size" value="15."/>
+          <property name="color" value="#00ff00"/>
+        </papget>
+      </widget>
+    </columns>
+    <widget NAME="aircraft" size="549"/>
+  </rows>
+</layout>
