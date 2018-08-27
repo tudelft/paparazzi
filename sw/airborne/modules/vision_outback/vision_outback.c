@@ -77,6 +77,15 @@ float msg_marker_y = 0;
 int turbocnt = 0;
 int turbosize = 0;
 
+//TODO: make airframe file settings:
+#ifdef VISION_PWR_ON // DelftaCopter...
+#define DRONE_WIDTH 1.f;
+#define DRONE_LENGTH 0.3f;
+#else  // IRIS
+#define DRONE_WIDTH 0.2f;
+#define DRONE_LENGTH 0.2f;
+#endif
+
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
@@ -179,7 +188,16 @@ static inline void vision_outback_parse_msg(void)
         frame_id_prev = v2p_package.frame_id;
 
         if (vision_outback_enable_landing) {
-            if ((v2p_package.out_of_range_since > 0 && v2p_package.out_of_range_since < 1.f) || (v2p_package.out_of_range_since < 0 && v2p_package.height < vision_outback_moment_height )) {
+
+            //compensate het_moment for the attitude of the drone, if the drone has an angle the sides will be lower then the camera:
+            struct FloatEulers * attE = stateGetNedToBodyEulers_f();
+            float height_roll = tanf(attE->phi) * DRONE_WIDTH;
+            float height_pitch = tanf(attE->theta) * DRONE_LENGTH;
+            float height_att = height_roll;
+            if (height_pitch > height_roll)
+                height_att = height_pitch;
+
+            if ((v2p_package.out_of_range_since > 0 && v2p_package.out_of_range_since < 1.f) || (v2p_package.out_of_range_since < 0 && v2p_package.height < (vision_outback_moment_height-height_att) )) {
                 het_moment = true;
               } else {
                 het_moment = false;
