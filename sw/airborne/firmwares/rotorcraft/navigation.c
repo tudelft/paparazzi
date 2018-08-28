@@ -76,6 +76,10 @@
 #define CLOSE_TO_WAYPOINT (15 << INT32_POS_FRAC)
 #define CARROT_DIST (12 << INT32_POS_FRAC)
 
+#ifndef NAV_LINE_FOLLOWING_DIST
+#define NAV_LINE_FOLLOWING_DIST (CARROT_DIST >> INT32_POS_FRAC)
+#endif
+
 const float max_dist_from_home = MAX_DIST_FROM_HOME;
 const float max_dist2_from_home = MAX_DIST_FROM_HOME * MAX_DIST_FROM_HOME;
 float failsafe_mode_dist2 = FAILSAFE_MODE_DISTANCE * FAILSAFE_MODE_DISTANCE;
@@ -593,7 +597,7 @@ void nav_route(struct EnuCoor_i *wp_start, struct EnuCoor_i *wp_end)
   uint32_t leg_length2 = Max((wp_diff.x * wp_diff.x + wp_diff.y * wp_diff.y), 1);
   nav_leg_length = int32_sqrt(leg_length2);
   nav_leg_progress = (pos_diff.x * wp_diff.x + pos_diff.y * wp_diff.y) / nav_leg_length;
-  int32_t progress = Max((CARROT_DIST >> INT32_POS_FRAC), 0);
+  int32_t progress = Max(NAV_LINE_FOLLOWING_DIST, 0);
   nav_leg_progress += progress;
   int32_t prog_2 = nav_leg_length;
   Bound(nav_leg_progress, 0, prog_2);
