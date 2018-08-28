@@ -73,15 +73,12 @@ static void guidance_hybrid_transition_hover(void);
 static void guidance_hybrid_forward(void);
 static void guidance_hybrid_hover(bool in_flight);
 static void guidance_hybrid_set_nav_throttle_curve(void);
-static void change_heading_in_wind(void);
 
 // Private variables
 static int32_t last_hover_heading;
 static int32_t last_forward_heading;
 static int32_t transition_time = 0;
 bool has_transitioned = false;
-float wind_heading_deg = 0.0;
-static bool reset_wind_heading = false;
 
 struct Int32Eulers guidance_hybrid_ypr_sp;
 static struct Int32Vect2 guidance_hybrid_airspeed_sp;
@@ -250,7 +247,6 @@ static void guidance_hybrid_hover(bool in_flight) {
 
   INT32_VECT2_NED_OF_ENU(guidance_h.sp.pos, navigation_carrot);
   guidance_h_update_reference();
-  //change_heading_in_wind();
 
   // Set psi command
   guidance_h.sp.heading = ANGLE_FLOAT_OF_BFP(nav_heading);
@@ -295,54 +291,6 @@ static void guidance_hybrid_set_nav_throttle_curve(void) {
       nav_throttle_curve_set(DC_FORWARD_THROTTLE_CURVE);
     }
   }
-}
-
-static void change_heading_in_wind(void) {
-  /*
-  //find the angle of the integrator
-  struct FloatVect2 pos_integrator = {guidance_h_trim_att_integrator.x, guidance_h_trim_att_integrator.y};
-  wind_heading = atan2f(pos_integrator.y, pos_integrator.x);
-  FLOAT_ANGLE_NORMALIZE(wind_heading);
-  */
-
-  // The wind heading can be set manually
-  // TODO: use the function find_wind_heading instead
-  if(reset_wind_heading) {
-    set_wind_heading_to_current90();
-    reset_wind_heading = false;
-  }
-  float wind_heading = RadOfDeg(wind_heading_deg);
-  //struct FloatQuat *current_quat = stateGetNedToBodyQuat_f();
-  //find_wind_heading(current_quat);
-  FLOAT_ANGLE_NORMALIZE(wind_heading);
-
-  // There are two possible ways to fly sideways into the wind
-  int32_t desired_heading1 = ANGLE_BFP_OF_REAL(wind_heading) + ANGLE_BFP_OF_REAL(M_PI_2);
-  int32_t desired_heading2 = ANGLE_BFP_OF_REAL(wind_heading) - ANGLE_BFP_OF_REAL(M_PI_2);
-  INT32_ANGLE_NORMALIZE(desired_heading1);
-  INT32_ANGLE_NORMALIZE(desired_heading2);
-
-  // Find the one closest to the current heading
-  int32_t heading_error = desired_heading1 - nav_heading;
-  INT32_ANGLE_NORMALIZE(heading_error);
-  if(ANGLE_FLOAT_OF_BFP(abs(heading_error)) > M_PI_2) {
-    heading_error = desired_heading2 - nav_heading;
-    INT32_ANGLE_NORMALIZE(heading_error);
-  }
-
-  // slowly change the heading in that direction
-  if(heading_error>0){
-    nav_heading += 1;
-  } else if(heading_error<0){
-    nav_heading -= 1;
-  }
-}
-
-/** Set wind heading to current heading */
-void set_wind_heading_to_current90(void) {
-  float wind_heading = stateGetNedToBodyEulers_f()->psi + M_PI_2;
-  FLOAT_ANGLE_NORMALIZE(wind_heading);
-  wind_heading_deg = DegOfRad(wind_heading);
 }
 
 /**

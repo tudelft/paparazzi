@@ -32,8 +32,6 @@
 #include "math/pprz_algebra_int.h"
 #include "guidance_hybrid.h"
 
-extern void set_wind_heading_to_current90(void);
-
 extern int32_t v_control_pitch;
 extern float vertical_setpont_outback;
 extern int32_t nominal_forward_thrust;
@@ -46,7 +44,6 @@ extern enum hybrid_mode_t dc_hybrid_mode;
 extern struct Int32Eulers guidance_hybrid_ypr_sp;
 extern float perpen_dgain;
 extern float throttle_from_pitch_up;
-extern float wind_heading_deg;
 extern bool has_transitioned;
 extern int16_t transition_throttle;
 
