@@ -1,7 +1,7 @@
 <!DOCTYPE layout SYSTEM "layout.dtd">
 
-<layout width="1865" height="1056" x="1975" y="24">
+<layout width="1375" height="876" x="65" y="24">
   <rows>
-    <widget NAME="map2d" size="1054"/>
+    <widget NAME="map2d" size="874"/>
   </rows>
 </layout>
