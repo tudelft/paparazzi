@@ -110,7 +110,7 @@
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
-      <deroute block="landed"/>
+      <deroute block="land"/>
     </block>
     <block name="land">
     <call fun="enableVisionDescent(true)" loop="false"/>
