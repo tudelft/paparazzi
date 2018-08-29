@@ -1,0 +1,146 @@
+<!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
+
+<flight_plan alt="70" ground_alt="0" home_mode_height="70" lat0="52.1702964" lon0="4.4279714" max_dist_from_home="1200" name="FW Avoidance test" qfu="40" security_height="50">
+  <waypoints>
+    <waypoint lat="52.171592" lon="4.429012" name="START"/>
+    <waypoint lat="52.172303" lon="4.428435" name="P"/>
+    <waypoint lat="52.172053" lon="4.427243" name="WP1"/>
+    <waypoint lat="52.1701016" lon="4.4201663" name="WP2"/>
+    <waypoint lat="52.168534" lon="4.421087" name="WP3"/>
+    <waypoint lat="52.170491" lon="4.428522" name="WP4"/>
+    <waypoint name="HOME" x="0" y="0"/>
+    <waypoint name="STDBY" x="-84.6" y="-16.6"/>
+    <waypoint alt="30.0" name="AF" x="11.7" y="-108.3"/>
+    <waypoint alt="-1.0" name="TD" x="82.6" y="27.6"/>
+    <waypoint name="CLIMB" x="-137.7" y="13.9"/>
+    <waypoint name="BASELEG" x="181.3" y="-69.0"/>
+    <waypoint lat="52.171103" lon="4.423350" name="_NFZ0_0"/>
+    <waypoint lat="52.171295" lon="4.423973" name="_NFZ0_1"/>
+    <waypoint lat="52.170974" lon="4.424297" name="_NFZ0_2"/>
+    <waypoint lat="52.170784" lon="4.423737" name="_NFZ0_3"/>
+    <waypoint lat="52.169283" lon="4.423472" name="_NFZ1_0"/>
+    <waypoint lat="52.169559" lon="4.424181" name="_NFZ1_1"/>
+    <waypoint lat="52.169211" lon="4.424387" name="_NFZ1_2"/>
+    <waypoint lat="52.168923" lon="4.423737" name="_NFZ1_3"/>
+    <waypoint lat="52.170908" lon="4.421624" name="_NFZ2_0"/>
+    <waypoint lat="52.171005" lon="4.422175" name="_NFZ2_1"/>
+    <waypoint lat="52.170749" lon="4.422386" name="_NFZ2_2"/>
+    <waypoint lat="52.170634" lon="4.421828" name="_NFZ2_3"/>
+    <waypoint lat="52.171301" lon="4.410844" name="MB1"/>
+    <waypoint lat="52.176136" lon="4.430876" name="MB2"/>
+    <waypoint lat="52.169087" lon="4.438128" name="MB3"/>
+    <waypoint lat="52.163088" lon="4.418611" name="MB4"/>
+    <waypoint lat="52.171026" lon="4.417145" name="SB1"/>
+    <waypoint lat="52.174098" lon="4.429340" name="SB2"/>
+    <waypoint lat="52.169322" lon="4.434160" name="SB3"/>
+    <waypoint lat="52.165705" lon="4.419700" name="SB4"/>
+  </waypoints>
+  <sectors>
+    <sector color="red" name="MissionBoundary" type="dynamic">
+      <corner name="MB1"/>
+      <corner name="MB2"/>
+      <corner name="MB3"/>
+      <corner name="MB4"/>
+    </sector>
+    <sector color="yellow" name="SoftBoundary" type="dynamic">
+      <corner name="SB1"/>
+      <corner name="SB2"/>
+      <corner name="SB3"/>
+      <corner name="SB4"/>
+    </sector>
+    <sector color="orange" name="NFZ0" type="dynamic">
+      <corner name="_NFZ0_0"/>
+      <corner name="_NFZ0_1"/>
+      <corner name="_NFZ0_2"/>
+      <corner name="_NFZ0_3"/>
+    </sector>
+    <sector color="orange" name="NFZ1" type="dynamic">
+      <corner name="_NFZ1_0"/>
+      <corner name="_NFZ1_1"/>
+      <corner name="_NFZ1_2"/>
+      <corner name="_NFZ1_3"/>
+    </sector>
+    <sector color="orange" name="NFZ2" type="dynamic">
+      <corner name="_NFZ2_0"/>
+      <corner name="_NFZ2_1"/>
+      <corner name="_NFZ2_2"/>
+      <corner name="_NFZ2_3"/>
+    </sector>
+  </sectors>
+  <modules>
+    <module name="mission" type="fw"/>
+  </modules>
+  <exceptions>
+    <exception cond="LOW_BAT_LEVEL > PowerVoltage()" deroute="Standby"/>
+    <exception cond="Or(! InsideMissionBoundary(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 600) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Takeoff')) && !(nav_block == IndexOfBlock('land')) && !(nav_block == IndexOfBlock('final')) && !(nav_block == IndexOfBlock('flare'))" deroute="Standby"/>
+    <exception cond="Or(! InsideSoftBoundary(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 600) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Takeoff')) && !(nav_block == IndexOfBlock('land')) && !(nav_block == IndexOfBlock('final')) && !(nav_block == IndexOfBlock('flare'))" deroute="Standby"/>
+  </exceptions>
+  <blocks>
+    <block name="Wait GPS">
+      <while cond="!GpsFixValid()"/>
+      <set value="1" var="autopilot.kill_throttle"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetAltitudeReferenceHere()"/>
+      <set value="TRUE" var="air_data.calc_qnh_once"/>
+    </block>
+    <block name="Holding point">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <attitude roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <block name="Takeoff">
+      <exception cond="GetPosAlt() > GetAltRef()+25" deroute="Standby"/>
+      <set value="0" var="autopilot.kill_throttle"/>
+      <set value="0" var="autopilot.flight_time"/>
+      <go from="HOME" pitch="15" throttle="1.0" vmode="throttle" wp="CLIMB"/>
+    </block>
+    <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
+      <circle radius="nav_radius" wp="STDBY"/>
+    </block>
+    <block name="START_MISSION">
+      <go wp="START"/>
+    </block>
+    <block name="START to P">
+      <go from="START" hmode="route" wp="P"/>
+    </block>
+    <block name="P to WP1">
+      <go from="P" hmode="route" wp="WP1"/>
+    </block>
+    <block name="RUN MISSION">
+      <call fun="mission_run()"/>
+      <deroute block="Standby"/>
+    </block>
+    <block name="WP1 to WP2">
+      <go from="WP1" hmode="route" wp="WP2"/>
+    </block>
+    <block name="Wp2 to Wp3">
+      <go from="WP2" hmode="route" wp="WP3"/>
+    </block>
+    <block name="Wp3 to Wp4">
+      <go from="WP3" hmode="route" wp="WP4"/>
+      <deroute block="Standby"/>
+    </block>
+    <block name="Land Right AF-TD" strip_button="Land right (wp AF-TD)" strip_icon="land-right.png">
+      <set value="DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <deroute block="land"/>
+    </block>
+    <block key="l" name="Land Left AF-TD" strip_button="Land left (wp AF-TD)" strip_icon="land-left.png">
+      <set value="-DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <deroute block="land"/>
+    </block>
+    <block key="<control>l" name="land">
+      <call_once fun="nav_compute_baseleg(WP_AF, WP_TD, WP_BASELEG, nav_radius)"/>
+      <circle radius="nav_radius" until="NavCircleCount() > 0.5" wp="BASELEG"/>
+      <circle radius="nav_radius" until="NavQdrCloseTo(DegOfRad(baseleg_out_qdr)-(nav_radius/fabs(nav_radius))*10) && 10 > fabs(GetPosAlt() - WaypointAlt(WP_BASELEG))" wp="BASELEG"/>
+    </block>
+    <block name="final">
+      <exception cond="GetAltRef() + 10 > GetPosAlt()" deroute="flare"/>
+      <go from="AF" hmode="route" vmode="glide" wp="TD"/>
+    </block>
+    <block name="flare">
+      <go approaching_time="0" from="AF" hmode="route" throttle="0.0" vmode="throttle" wp="TD"/>
+      <attitude roll="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>
