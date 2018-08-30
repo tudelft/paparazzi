@@ -331,5 +331,45 @@
         <arg flag="extreme_3d_pro.xml"/>
       </program>
     </session>
+    <session name="Avoidance sim fw">
+      <program name="Simulator">
+        <arg flag="-a" constant="Avoidance_fw_sim"/>
+        <arg flag="-t" constant="nps"/>
+      </program>
+      <program name="GCS">
+        <arg flag="-layout" constant="bottom_settings.xml"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Traffic Server">
+        <arg flag="-ac" constant="19"/>
+        <arg flag="-platform" constant="fw"/>
+      </program>
+    </session>
+    <session name="Avoidance sim rc">
+      <program name="Simulator">
+        <arg flag="-a" constant="Avoidance_rc_sim"/>
+        <arg flag="-t" constant="nps"/>
+      </program>
+      <program name="GCS">
+        <arg flag="-layout" constant="bottom_settings.xml"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Traffic Server">
+        <arg flag="-ac" constant="29"/>
+        <arg flag="-platform" constant="rc"/>
+      </program>
+    </session>
   </section>
 </control_panel>
