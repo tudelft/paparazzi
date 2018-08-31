@@ -45,6 +45,15 @@
 #define DC_FORWARD_THROTTLE_CURVE 2
 #endif
 
+/* Transition throttle curve */
+#ifndef DC_TRANSITION_THROTTLE_CURVE
+#define DC_TRANSITION_THROTTLE_CURVE DC_FORWARD_THROTTLE_CURVE
+#endif
+
+#ifndef DC_TRANSITION_TIME
+#define DC_TRANSITION_TIME 4
+#endif
+
 /* High res frac for integration of angles */
 #define INT32_ANGLE_HIGH_RES_FRAC 18
 
@@ -78,7 +87,7 @@ static void guidance_hybrid_set_nav_throttle_curve(void);
 static int32_t last_hover_heading;
 static int32_t last_forward_heading;
 static int32_t transition_time = 0;
-bool has_transitioned = false;
+bool has_transitioned_for_a_long_time = false;
 
 struct Int32Eulers guidance_hybrid_ypr_sp;
 static struct Int32Vect2 guidance_hybrid_airspeed_sp;
@@ -190,7 +199,7 @@ static void guidance_hybrid_transition_forward(void) {
 
   // Reset just transitioned timer
   transition_time = 0;
-  has_transitioned = false;
+  has_transitioned_for_a_long_time = false;
 }
 
 /**
@@ -230,10 +239,10 @@ static void guidance_hybrid_forward(void) {
   last_forward_heading = guidance_hybrid_ypr_sp.psi;
 
   // Need 3 seconds in forward flight to get speed
-  if(transition_time < 3*PERIODIC_FREQUENCY) {
+  if(transition_time < 5*PERIODIC_FREQUENCY) {
     transition_time += 1;
   } else {
-    has_transitioned = true;
+    has_transitioned_for_a_long_time = true;
   }
 }
 
@@ -243,7 +252,7 @@ static void guidance_hybrid_forward(void) {
 static void guidance_hybrid_hover(bool in_flight) {
   // Reset just transitioned timer
   transition_time = 0;
-  has_transitioned = false;
+  has_transitioned_for_a_long_time = false;
 
   INT32_VECT2_NED_OF_ENU(guidance_h.sp.pos, navigation_carrot);
   guidance_h_update_reference();
@@ -279,7 +288,7 @@ static void guidance_hybrid_set_nav_throttle_curve(void) {
     if(transition_percentage < (50 << INT32_PERCENTAGE_FRAC)) {
       nav_throttle_curve_set(DC_HOVER_THROTTLE_CURVE);
     } else {
-      nav_throttle_curve_set(DC_FORWARD_THROTTLE_CURVE);
+      nav_throttle_curve_set(DC_TRANSITION_THROTTLE_CURVE);
     }
   } 
   // Forward flight
@@ -288,7 +297,11 @@ static void guidance_hybrid_set_nav_throttle_curve(void) {
     if(transition_percentage < (90 << INT32_PERCENTAGE_FRAC)) {
       nav_throttle_curve_set(DC_HOVER_THROTTLE_CURVE);
     } else {
-      nav_throttle_curve_set(DC_FORWARD_THROTTLE_CURVE);
+      if (has_transitioned_for_a_long_time) {
+        nav_throttle_curve_set(DC_FORWARD_THROTTLE_CURVE);
+      } else {
+        nav_throttle_curve_set(DC_TRANSITION_THROTTLE_CURVE);
+      }
     }
   }
 }
