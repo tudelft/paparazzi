@@ -278,6 +278,11 @@
       <call_once fun="nav_hybrid_heading_init()"/>
       <stay pre_call="nav_hybrid_heading_set()" wp="STDBY"/>
     </block>
+    <block group="safe" name="StandbyWpHeading" strip_button="StandbyWP">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_p1)"/>
+      <stay pre_call="nav_hybrid_heading_set_to_waypoint()" wp="STDBY"/>
+    </block>
     <block group="safe" name="Hover_here" strip_button="HoverHere">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="waypoint_set_alt(WP_HOVER,stateGetPositionEnu_f()->z)"/>
