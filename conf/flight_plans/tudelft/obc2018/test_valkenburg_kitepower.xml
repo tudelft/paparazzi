@@ -111,17 +111,12 @@
     </block>
     <block group="takeoff_base" name="base_climb">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <exception cond="stateGetPositionEnu_f()->z > 50.0" deroute="transition_to_joe"/>
+      <exception cond="stateGetPositionEnu_f()->z > 50.0" deroute="route_to_joe"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z - POS_BFP_OF_REAL(5.0), -SPEED_BFP_OF_REAL(3.0), 0)"/>
       <stay climb="nav_climb_vspeed" until="stateGetPositionEnu_f()->z > 20.0" vmode="climb" wp="CLIMB"/>
       <call_once fun="nav_hybrid_heading_init()"/>
       <stay climb="nav_climb_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="CLIMB"/>
-    </block>
-    <block group="fly_to_joe" name="transition_to_joe">
-      <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_p1)"/>
-      <stay until="stage_time>2" wp="p1"/>
     </block>
     <block group="fly_to_joe" name="route_to_joe">
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
@@ -205,17 +200,12 @@
     </block>
     <block group="takeoff_joe" name="joe_climb">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <exception cond="stateGetPositionEnu_f()->z > 50.0" deroute="transition_to_base"/>
+      <exception cond="stateGetPositionEnu_f()->z > 50.0" deroute="route_to_base"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z - POS_BFP_OF_REAL(5.0), -SPEED_BFP_OF_REAL(3.0), 0)"/>
       <stay climb="nav_climb_vspeed" until="stateGetPositionEnu_f()->z > 20.0" vmode="climb" wp="CLIMB"/>
       <call_once fun="nav_hybrid_heading_init()"/>
       <stay climb="nav_climb_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="CLIMB"/>
-    </block>
-    <block group="fly_to_base" name="transition_to_base">
-      <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_p1)"/>
-      <stay until="stage_time>2" wp="p1"/>
     </block>
     <block group="fly_to_base" name="route_to_base">
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
