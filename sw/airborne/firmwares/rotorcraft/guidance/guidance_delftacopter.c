@@ -45,6 +45,15 @@
 #define DC_FORWARD_THROTTLE_CURVE 2
 #endif
 
+/* Transition throttle curve */
+#ifndef DC_TRANSITION_THROTTLE_CURVE
+#define DC_TRANSITION_THROTTLE_CURVE DC_FORWARD_THROTTLE_CURVE
+#endif
+
+#ifndef DC_TRANSITION_TIME
+#define DC_TRANSITION_TIME 4
+#endif
+
 /* High res frac for integration of angles */
 #define INT32_ANGLE_HIGH_RES_FRAC 18
 
@@ -155,7 +164,7 @@ void guidance_hybrid_run(bool in_flight)
 
   /* Verify in which flight mode the delftacopter is flying */
   // Transition to forward flight
-  if((dc_hybrid_mode == HB_FORWARD) && (transition_percentage < (100 << INT32_PERCENTAGE_FRAC) || transition_time < (4*PERIODIC_FREQUENCY))) {
+  if((dc_hybrid_mode == HB_FORWARD) && (transition_percentage < (100 << INT32_PERCENTAGE_FRAC) || transition_time < (DC_TRANSITION_TIME*PERIODIC_FREQUENCY))) {
     guidance_hybrid_transition_forward();
   }
   // Transition to hover
@@ -278,6 +287,8 @@ static void guidance_hybrid_set_nav_throttle_curve(void) {
     // Check the transition percentage
     if(transition_percentage < (90 << INT32_PERCENTAGE_FRAC)) {
       nav_throttle_curve_set(DC_HOVER_THROTTLE_CURVE);
+    } else if (transition_time < (DC_TRANSITION_TIME*PERIODIC_FREQUENCY)) {
+      nav_throttle_curve_set(DC_TRANSITION_THROTTLE_CURVE);
     } else {
       nav_throttle_curve_set(DC_FORWARD_THROTTLE_CURVE);
     }

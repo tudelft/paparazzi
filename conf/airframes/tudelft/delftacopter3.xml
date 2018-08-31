@@ -179,6 +179,8 @@
   <heli_curves>
     <curve throttle="0,6000,0,0,0" collective="-9600,-8150,-6700,-5250,-3800"/> <!-- Spinup curve -->
     <curve throttle="7300,7800,8300" rpm="2800,2800,2800" collective="-9600,-6500,-2300"/><!-- Hover curve RPM controlled -->
+    <curve throttle="7300,7800,8300" rpm="2800,2800,2800" collective="-9600,-6500,-2300"/><!-- Hover curve RPM controlled -->
+    <curve throttle="8600,8600,8600,8600,9600" collective="-9600,-9600,-7470,-3770,30"/><!-- Forward inefficient curve -->
     <curve throttle="5000,5000,5000,5000,5300" collective="-9600,-6300,-3000,700,4500"/><!-- Forward curve -->
   </heli_curves>
 
@@ -353,6 +355,13 @@
     <define name="DGAIN" value="40"/>
     <define name="AGAIN" value="30"/>
     <define name="IGAIN" value="10"/>
+  </section>
+
+  <!-- gains for delftacopter control -->
+  <section name="DC_" prefix="DC_">
+    <define name="HOVER_THROTTLE_CURVE" value="2"/>
+    <define name="TRANSITION_THROTTLE_CURVE" value="3"/>
+    <define name="FORWARD_THROTTLE_CURVE" value="4"/>
   </section>
 
   <!-- Gains for forward mode -->
