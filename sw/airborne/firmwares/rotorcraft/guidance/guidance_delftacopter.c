@@ -78,7 +78,6 @@ static void guidance_hybrid_set_nav_throttle_curve(void);
 static int32_t last_hover_heading;
 static int32_t last_forward_heading;
 static int32_t transition_time = 0;
-bool has_transitioned = false;
 
 struct Int32Eulers guidance_hybrid_ypr_sp;
 static struct Int32Vect2 guidance_hybrid_airspeed_sp;
@@ -156,7 +155,7 @@ void guidance_hybrid_run(bool in_flight)
 
   /* Verify in which flight mode the delftacopter is flying */
   // Transition to forward flight
-  if((dc_hybrid_mode == HB_FORWARD) && (transition_percentage < (100 << INT32_PERCENTAGE_FRAC))) {
+  if((dc_hybrid_mode == HB_FORWARD) && (transition_percentage < (100 << INT32_PERCENTAGE_FRAC) || transition_time < (4*PERIODIC_FREQUENCY))) {
     guidance_hybrid_transition_forward();
   }
   // Transition to hover
@@ -188,9 +187,12 @@ static void guidance_hybrid_transition_forward(void) {
   transition_att_sp.psi = last_hover_heading;
   stabilization_attitude_set_rpy_setpoint_i(&transition_att_sp);
 
-  // Reset just transitioned timer
-  transition_time = 0;
-  has_transitioned = false;
+  if(transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
+    // Reset just transitioned timer
+    transition_time = 0;
+  } else {
+    transition_time++;
+  }
 }
 
 /**
@@ -228,23 +230,12 @@ static void guidance_hybrid_forward(void) {
   guidance_hybrid_set_cmd_i(&guidance_hybrid_ypr_sp);
 
   last_forward_heading = guidance_hybrid_ypr_sp.psi;
-
-  // Need 3 seconds in forward flight to get speed
-  if(transition_time < 3*PERIODIC_FREQUENCY) {
-    transition_time += 1;
-  } else {
-    has_transitioned = true;
-  }
 }
 
 /**
  * Hover flight guidance loop
  */
 static void guidance_hybrid_hover(bool in_flight) {
-  // Reset just transitioned timer
-  transition_time = 0;
-  has_transitioned = false;
-
   INT32_VECT2_NED_OF_ENU(guidance_h.sp.pos, navigation_carrot);
   guidance_h_update_reference();
 
