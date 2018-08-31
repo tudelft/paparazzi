@@ -615,10 +615,10 @@ void guidance_h_from_nav(bool in_flight)
 
 void guidance_h_transition_run(bool to_forward)
 {
-  if (to_forward) {
+  if (to_forward && transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
     //Add 0.00625%
     transition_percentage += 1 << (INT32_PERCENTAGE_FRAC - 4);
-  } else {
+  } else if (!to_forward && transition_percentage > 0) {
     //Subtract 0.00625%
     transition_percentage -= 1 << (INT32_PERCENTAGE_FRAC - 4);
   }
@@ -627,6 +627,7 @@ void guidance_h_transition_run(bool to_forward)
   const int32_t max_offset = ANGLE_BFP_OF_REAL(TRANSITION_MAX_OFFSET);
   transition_theta_offset = INT_MULT_RSHIFT((transition_percentage << (INT32_ANGLE_FRAC - INT32_PERCENTAGE_FRAC)) / 100,
                             max_offset, INT32_ANGLE_FRAC);
+  Bound(transition_theta_offset, ANGLE_BFP_OF_REAL(TRANSITION_MAX_OFFSET), 0);
 #endif
 }
 
