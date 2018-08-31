@@ -38,11 +38,31 @@ float nav_hybrid_heading_setpoint = 0;
 float nav_hybrid_heading_max_yaw_rate = NAV_HYBRID_MAX_YAW_RATE_RAD;
 float nav_hybrid_heading_pitch_deadband = NAV_HYBRID_PITCH_DEADBAND_RAD;
 
+// setpoint for slow turn to WP
+float nav_hybrid_heading_wp_ref = 0;
+float nav_hybrid_heading_wp_setpoint = 0;
+
+
 void nav_hybrid_heading_init(void) {
   nav_hybrid_heading_setpoint = ANGLE_FLOAT_OF_BFP(nav_heading);
 }
 
+void nav_hybrid_heading_init_to_waypoint(int wp) {
+
+  nav_hybrid_heading_wp_ref = ANGLE_FLOAT_OF_BFP(nav_heading);
+
+  struct FloatVect2 target = {WaypointX(wp), WaypointY(wp)};
+  struct FloatVect2 pos_diff;
+  VECT2_DIFF(pos_diff, target, *stateGetPositionEnu_f());
+  // don't change heading if closer than 0.5m to target
+  if (VECT2_NORM2(pos_diff) > 0.25) {
+    nav_hybrid_heading_wp_setpoint = atan2f(pos_diff.x, pos_diff.y);
+  }
+
+}
+
 void nav_hybrid_heading_periodic(void) {
+  // Align with tip in wind
   // if pitch is down, yaw right
   if (stateGetNedToBodyEulers_f()->theta < -nav_hybrid_heading_pitch_deadband) {
     nav_hybrid_heading_setpoint += nav_hybrid_heading_max_yaw_rate / 512.0f;
@@ -50,8 +70,19 @@ void nav_hybrid_heading_periodic(void) {
   } else if (stateGetNedToBodyEulers_f()->theta > nav_hybrid_heading_pitch_deadband) {
     nav_hybrid_heading_setpoint -= nav_hybrid_heading_max_yaw_rate / 512.0f;
   }
+
+  // Towards Waypoint
+  if (nav_hybrid_heading_wp_ref < nav_hybrid_heading_wp_setpoint) {
+    nav_hybrid_heading_wp_ref += nav_hybrid_heading_max_yaw_rate / 512.0f;
+  } else {
+    nav_hybrid_heading_wp_ref -= nav_hybrid_heading_max_yaw_rate / 512.0f;
+  }
 }
 
 void nav_hybrid_heading_set(void) {
   nav_set_heading_rad( nav_hybrid_heading_setpoint );
+}
+
+void nav_hybrid_heading_set_to_waypoint(void) {
+  nav_set_heading_rad( nav_hybrid_heading_wp_ref );
 }

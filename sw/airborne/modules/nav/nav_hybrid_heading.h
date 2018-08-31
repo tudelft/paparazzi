@@ -26,10 +26,16 @@
 #ifndef NAV_HYBRID_HEADING_H
 #define NAV_HYBRID_HEADING_H
 
-
+// Align with wind
 extern void nav_hybrid_heading_init(void);
-extern void nav_hybrid_heading_periodic(void);
 extern void nav_hybrid_heading_set(void);
+
+// Turn to waypoint
+extern void nav_hybrid_heading_init_to_waypoint(int wp);
+extern void nav_hybrid_heading_set_to_waypoint(void);
+
+// Module
+extern void nav_hybrid_heading_periodic(void);
 
 extern float nav_hybrid_heading_max_yaw_rate;
 extern float nav_hybrid_heading_pitch_deadband;
