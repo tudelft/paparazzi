@@ -35,7 +35,9 @@
       <module name="guidance"      type="delftacopter"/>
       <!--module name="guidance"      type="indi"/-->
       <module name="gain_scheduling"/>
-      <module name="intermcu"      type="uart"/>
+      <module name="intermcu"      type="uart">
+        <configure name="SECONDARY_GPS" value="imcu"/>
+      </module>
       <module name="telemetry"     type="intermcu"/>
       <module name="current_sensor"/>
       <module name="opa_controller"/>
@@ -48,14 +50,12 @@
         <configure name="VISION_OUTBACK_PORT" value="UART4"/>
       </module>
 
-      <module name="nav_hybrid_heading"/>
-
       <module name="geo_mag"/>
       <module name="air_data">
-        <!--define name="AIR_DATA_BARO_ABS_ID" value="IMU_MAG_PITOT_ID"/>
-        <define name="AIR_DATA_TEMPERATURE_ID" value="IMU_MAG_PITOT_ID"/-->
-        <define name="AIR_DATA_BARO_ABS_ID" value="BARO_BOARD_SENDER_ID"/>
-        <define name="AIR_DATA_TEMPERATURE_ID" value="BARO_BOARD_SENDER_ID"/>
+        <define name="AIR_DATA_BARO_ABS_ID" value="IMU_MAG_PITOT_ID"/>
+        <define name="AIR_DATA_TEMPERATURE_ID" value="IMU_MAG_PITOT_ID"/>
+        <!--define name="AIR_DATA_BARO_ABS_ID" value="BARO_BOARD_SENDER_ID"/>
+        <define name="AIR_DATA_TEMPERATURE_ID" value="BARO_BOARD_SENDER_ID"/-->
         <define name="AIR_DATA_CALC_AMSL_BARO" value="TRUE"/>
       </module>
 
@@ -76,7 +76,9 @@
       <module name="actuators"     type="pwm">
         <define name="SERVO_HZ"    value="300"/>
       </module>
-      <module name="intermcu"      type="uart"/>
+      <module name="intermcu"      type="uart">
+        <define name="IMCU_GPS_ID" value="GPS_UBX_ID"/>
+      </module>
       <module name="telemetry"     type="intermcu"/>
       <module name="opa_controller"/>
       <module name="heli_swashplate_mixing"/>
@@ -179,12 +181,15 @@
   <heli_curves>
     <curve throttle="0,6000,0,0,0" collective="-9600,-8150,-6700,-5250,-3800"/> <!-- Spinup curve -->
     <curve throttle="7300,7800,8300" rpm="2800,2800,2800" collective="-9600,-6500,-2300"/><!-- Hover curve RPM controlled -->
-    <curve throttle="8600,8600,8600,8600,9600" collective="-9600,-7300,-5000,-2300,500"/><!-- Forward curve -->
+    <curve throttle="7300,7800,8300" rpm="2800,2800,2800" collective="-9600,-6500,-2300"/><!-- Hover curve RPM controlled -->
+    <curve throttle="8600,8600,8600,8600,9600" collective="-9600,-9600,-7470,-3770,30"/><!-- Forward inefficient curve -->
+    <curve throttle="5000,5000,5000,5000,5300" collective="-9600,-6300,-3000,700,4500"/><!-- Forward curve -->
   </heli_curves>
 
   <section name="MISC">
     <define name="NAV_CLIMB_VSPEED" value="3.0"/>
-    <define name="NAV_DESCEND_VSPEED" value="-1.5"/>
+    <define name="NAV_DESCEND_VSPEED" value="-3.5"/>
+    <define name="NAV_LINE_FOLLOWING_DIST" value="85.0"/>
     <define name="ARRIVED_AT_WAYPOINT" value="50"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
@@ -315,9 +320,9 @@
     <define name="PHI_I" value="{180, 0}"/>
     <define name="PHI_DD" value="{0, 0}"/>
 
-    <define name="THETA_P" value="{1605, 950}"/>
-    <define name="THETA_D" value="{293, 293}"/>
-    <define name="THETA_I" value="{180, 220}"/>
+    <define name="THETA_P" value="{1605, 850}"/>
+    <define name="THETA_D" value="{293, 160}"/>
+    <define name="THETA_I" value="{180, 200}"/>
     <define name="THETA_DD" value="{0, 0}"/>
 
     <define name="PSI_P" value="{500, 800}"/>
@@ -354,10 +359,17 @@
     <define name="IGAIN" value="10"/>
   </section>
 
+  <!-- gains for delftacopter control -->
+  <section name="DC_" prefix="DC_">
+    <define name="HOVER_THROTTLE_CURVE" value="2"/>
+    <define name="TRANSITION_THROTTLE_CURVE" value="3"/>
+    <define name="FORWARD_THROTTLE_CURVE" value="4"/>
+  </section>
+
   <!-- Gains for forward mode -->
   <section name="DC_FORWARD" prefix="DC_FORWARD_">
     <define name="MAX_AIRSPEED" value="18.0"/>
-    <define name="NOMINAL_THRUST" value="5900"/>
+    <define name="NOMINAL_THRUST" value="6300"/>
     <define name="VERTICAL_PGAIN" value="0.1"/>
     <define name="VERTICAL_DGAIN" value="0.015"/>
     <define name="VERTICAL_LOW_AIRSPEED" value="17.0"/>
@@ -380,7 +392,7 @@
 
   <!-- Different autopilot modes for the RC -->
   <section name="AUTOPILOT">
-    <define name="MODE_MANUAL" value="AP_MODE_RATE_DIRECT"/>
+    <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1"  value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>
   </section>
