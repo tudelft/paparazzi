@@ -93,7 +93,7 @@ int turbosize = 0;
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
-uint8_t timeoutcount = 0;
+uint16_t timeoutcount = 0;
 void enable_wp_telemetry_updates(void);
 void do_power_state_machine(void);
 
@@ -101,11 +101,12 @@ static void send_vision_outback( struct transport_tx *trans, struct link_device 
 {
   v2p_package.flow_x = turbocnt;
   v2p_package.flow_y = turbosize;
+  uint8_t timeoutcount_kutmsg = timeoutcount/5; // scale to 8 bit because changing message is pain
 
   pprz_msg_send_VISION_OUTBACK(trans, dev, AC_ID,
                                &v2p_package.status,
                                (uint8_t *)&het_moment,
-                               &timeoutcount,
+                               &timeoutcount_kutmsg,
                                (uint8_t *)&vision_timeout,
                                &v2p_package.height,
                                &v2p_package.out_of_range_since,
@@ -184,9 +185,9 @@ static inline void vision_outback_parse_msg(void)
         for(uint8_t i = 0; i < size; i++) {
             tmp[i] = msg[i];
           }
-        timeoutcount = VISION_OUTBACK_PERIODIC_FREQ;
+        timeoutcount = 5*VISION_OUTBACK_PERIODIC_FREQ;
         static int32_t frame_id_prev = 0;
-        if (frame_id_prev >= v2p_package.frame_id) {
+        if (frame_id_prev == v2p_package.frame_id) { // Realsense resets id when changing from stereo to color. So, only check if frame is not freezing.
             timeoutcount = 0;
           }
         frame_id_prev = v2p_package.frame_id;
