@@ -104,17 +104,10 @@
       <stay climb="-1" vmode="climb" wp="TD_mrk"/>
     </block>
     <block name="descent_slow_mrk">
-      <exception cond="het_moment" deroute="flare_mrk"/>
+      <exception cond="het_moment" deroute="landed"/>
       <exception cond="vision_timeout " deroute="Standby"/>
       <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
       <stay climb="-0.5" vmode="climb" wp="TD_mrk"/>
-    </block>
-    <block name="flare_mrk">
-      <exception cond="NavDetectGround()" deroute="Holding point"/>
-      <exception cond="!nav_is_in_flight()" deroute="landed"/>
-      <call_once fun="NavStartDetectGround()"/>
-      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
-      <deroute block="landed"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="waypoint_set_here_2d(WP_TD)"/>
@@ -131,17 +124,11 @@
       <stay climb="-1" vmode="climb" wp="TD"/>
     </block>
     <block name="descent_slow">
-      <exception cond="het_moment" deroute="flare"/>
+      <exception cond="het_moment" deroute="landed"/>
       <exception cond="vision_timeout " deroute="Standby"/>
       <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
       <stay climb="-0.5" vmode="climb" wp="TD"/>
-    </block>
-    <block name="flare">
-      <exception cond="NavDetectGround()" deroute="Holding point"/>
-      <exception cond="!nav_is_in_flight()" deroute="landed"/>
-      <call_once fun="NavStartDetectGround()"/>
-      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
-    </block>
+    </block>    
     <block name="landed">
       <call fun="enableVisionFindJoe(false)" loop="false"/>
       <call fun="enableVisionDescent(false)" loop="false"/>
