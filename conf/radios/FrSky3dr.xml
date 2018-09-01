@@ -51,8 +51,8 @@
  <channel ctl="A" function="THROTTLE" min="990" neutral="990" max="2015" average="0"/>
  <channel ctl="B" function="YAW"      min="990" neutral="1490" max="2015" average="0"/>
 
- <channel ctl="RSwtiches_Mix" function="MODE"    min="1145" neutral="1500" max="1862" average="1"/>
- <channel ctl="TILT" function="AUX2"     min="990" neutral="990" max="2015" average="0"/>
+ <channel ctl="RSwtiches_Mix" function="MODE"    min="1862" neutral="1500" max="1145" average="1"/>
+ <channel ctl="TILT" function="AUX2"     min="2015" neutral="990" max="990" average="0"/>
  <channel ctl="CH7" function="KILL"    min="2015" neutral="1490" max="990" average="1"/>
- <channel ctl="E" function="UNUSED2"    min="990" neutral="1900" max="2015" average="1"/>
+ <channel ctl="E" function="UNUSED2"    min="2015" neutral="1900" max="990" average="1"/>
 </radio>
