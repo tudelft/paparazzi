@@ -66,7 +66,11 @@ bool vision_outback_enable_findjoe = false;
 bool vision_outback_enable_opticflow = false;
 bool vision_outback_enable_attcalib = false;
 bool vision_outback_enable_videorecord = false;
-uint8_t vision_outback_power = 0; // 0 = power off, 1 = soft off, 2 = power on
+#ifdef VISION_PWR_OFF
+uint8_t vision_outback_power = VISION_SETTING_STATUS_REQUEST_POWER_OFF;
+#else
+uint8_t vision_outback_power = VISION_SETTING_STATUS_REQUEST_POWER_ON;
+#endif
 bool het_moment = false;
 bool vision_timeout = false; // TODO: remove
 
@@ -195,7 +199,7 @@ static inline void vision_outback_parse_msg(void)
             float height_pitch = tanf(attE->theta) * DRONE_LENGTH;
             float height_att = height_roll;
             if (height_pitch > height_roll)
-                height_att = height_pitch;
+              height_att = height_pitch;
 
             if ((v2p_package.out_of_range_since > 0 && v2p_package.out_of_range_since < 1.f) || (v2p_package.out_of_range_since < 0 && v2p_package.height < (vision_outback_moment_height-height_att) )) {
                 het_moment = true;
@@ -295,8 +299,10 @@ void vision_outback_periodic() {
 
   if (timeoutcount > 0) {
       timeoutcount--;
+      vision_timeout = false;
     } else {
       v2p_package.status = 1;
+      vision_timeout = true;
     }
 
   do_power_state_machine();
@@ -324,6 +330,7 @@ void do_power_state_machine(void) {
         }
       if (vision_outback_power == VISION_SETTING_STATUS_REQUEST_POWER_ON) {
           power_state = VISION_POWER_STATUS_POWER_ON;
+          break;
         }
       vision_outback_power = VISION_SETTING_STATUS_REQUEST_POWER_OFF;
       break;
@@ -337,6 +344,9 @@ void do_power_state_machine(void) {
     case VISION_POWER_STATUS_BOOTING:
       if (v2p_package.status == 0) {
           power_state = VISION_POWER_STATUS_READY;
+        }
+      if (vision_outback_power  == VISION_SETTING_STATUS_REQUEST_POWER_OFF) {
+              power_state = VISION_POWER_STATUS_POWER_OFF;
         }
       break;
     case VISION_POWER_STATUS_READY:
@@ -406,7 +416,7 @@ bool enableVisionVideoRecord(bool b) {
 
 bool enableVisionShutdown(bool b) {
   if (b)
-    vision_outback_power= 1;
+    vision_outback_power= VISION_SETTING_STATUS_REQUEST_HALT;
   return true; // klote pprz flight plan
 }
 
