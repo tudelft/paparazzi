@@ -1,8 +1,8 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
 
-<flight_plan alt="4" ground_alt="0" lat0="52.1682020" lon0="4.4130950" max_dist_from_home="120" name="Delft Basic" security_height="2"> <!-- run way -->
-<!-- <flight_plan alt="4" ground_alt="0" lat0="52.170358" lon0="4.427702" max_dist_from_home="120" name="Delft Basic" security_height="2"-->  <!--kite power -->
+<flight_plan alt="8" ground_alt="0" lat0="52.1682020" lon0="4.4130950" max_dist_from_home="120" name="Delft Basic" security_height="2"> <!-- run way -->
+<!-- <flight_plan alt="8" ground_alt="0" lat0="52.170358" lon0="4.427702" max_dist_from_home="120" name="Delft Basic" security_height="2"-->  <!--kite power -->
   <header>
     #include "autopilot.h"
     #include "subsystems/datalink/datalink.h"
@@ -14,10 +14,10 @@
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint name="CLIMB" x="17.7" y="1.8"/>
     <waypoint alt="20.0" name="STDBY" x="1.8" y="-4.9"/>
-    <waypoint alt="50.0" name="p1" x="-8.2" y="24.1"/>
-    <waypoint alt="50.0" name="p2" x="26.4" y="33.6"/>
-    <waypoint alt="50.0" name="p3" x="38.8" y="-6.7"/>
-    <waypoint alt="50.0" name="p4" x="8.8" y="-18.3"/>    
+    <waypoint alt="40.0" name="p1" x="-8.2" y="24.1"/>
+    <waypoint alt="40.0" name="p2" x="26.4" y="33.6"/>
+    <waypoint alt="40.0" name="p3" x="38.8" y="-6.7"/>
+    <waypoint alt="40.0" name="p4" x="8.8" y="-18.3"/>
     <waypoint name="TD" x="5.6" y="-10.9"/>
     <waypoint name="JOE_reported" x="5" y="15"/>
     <waypoint name="JOE_found" x="5" y="25"/>
@@ -53,15 +53,14 @@
     </block>
     <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block>
-    <block name="Start Engine">
-      <call_once fun="NavResurrect()"/>
+      <call fun="enableVisionFindJoe(false)" loop="false"/>
+      <call fun="enableVisionDescent(false)" loop="false"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="stateGetPositionEnu_f()->z > 2.0" deroute="Standby"/>
-      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <call_once fun="NavResurrect()"/>
+      <call_once fun="waypoint_set_here_2d(WP_CLIMB)"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
@@ -70,6 +69,8 @@
       <stay wp="STDBY"/>
     </block>
     <block name="stay_p1">
+      <call fun="enableVisionFindJoe(false)" loop="false"/>
+      <call fun="enableVisionDescent(false)" loop="false"/>
       <stay wp="p1"/>
     </block>    
     <block name="route_findjoe">
@@ -85,18 +86,25 @@
       <call fun="enableVisionFindJoe(false)" loop="false"/>      
       <stay wp="JOE_found"/>
     </block>
+    <block name="stay_marker">
+      <call_once fun="waypoint_set_here(WP_TD_mrk)"/>
+      <call fun="enableVisionFindJoe(false)" loop="false"/>
+      <call fun="enableVisionDescent(true)" loop="false"/>
+      <stay wp="TD_mrk"/>
+    </block>
     <block name="land_mrk">
+      <call_once fun="waypoint_set_here(WP_TD)"/>
       <call fun="enableVisionDescent(true)" loop="false"/>
       <go wp="TD_mrk"/>
     </block>
     <block name="descent_mrk">
-      <exception cond="8.0 > stateGetPositionEnu_f()->z" deroute="descent_slow"/>
+      <exception cond="5.0 > stateGetPositionEnu_f()->z" deroute="descent_slow_mrk"/>
       <exception cond="vision_timeout " deroute="Standby"/>
       <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
       <stay climb="-1" vmode="climb" wp="TD_mrk"/>
     </block>
     <block name="descent_slow_mrk">
-      <exception cond="het_moment" deroute="flare"/>
+      <exception cond="het_moment" deroute="flare_mrk"/>
       <exception cond="vision_timeout " deroute="Standby"/>
       <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
       <stay climb="-0.5" vmode="climb" wp="TD_mrk"/>
@@ -106,10 +114,10 @@
       <exception cond="!nav_is_in_flight()" deroute="landed"/>
       <call_once fun="NavStartDetectGround()"/>
       <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
-      <deroute block="land"/>
+      <deroute block="landed"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
-      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <call_once fun="waypoint_set_here_2d(WP_TD)"/>
       <deroute block="land"/>
     </block>
     <block name="land">
@@ -117,7 +125,7 @@
       <go wp="TD"/>
     </block>
     <block name="descent">
-      <exception cond="8.0 > stateGetPositionEnu_f()->z" deroute="descent_slow"/>
+      <exception cond="5.0 > stateGetPositionEnu_f()->z" deroute="descent_slow"/>
       <exception cond="vision_timeout " deroute="Standby"/>
       <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
       <stay climb="-1" vmode="climb" wp="TD"/>
@@ -135,6 +143,8 @@
       <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">
+      <call fun="enableVisionFindJoe(false)" loop="false"/>
+      <call fun="enableVisionDescent(false)" loop="false"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="ComeBackAndLand">
@@ -142,7 +152,7 @@
       <deroute block="land here"/>
     </block>
     <block name="DatalinkLoss">
-      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <call_once fun="waypoint_set_here_2d(WP_TD)"/>
       <stay until="stage_time>60" wp="TD"/>
       <deroute block="ComeBackAndLand"/>
     </block>
