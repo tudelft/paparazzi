@@ -27,6 +27,8 @@
     <module name="stabilization" type="indi_simple" />
     <module name="guidance" type="indi">
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500"/>
+      <define name="GUIDANCE_INDI_POS_GAIN" value="0.5"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.4"/>
     </module>
     <module name="ahrs" type="int_cmpl_quat" >
       <define name="AHRS_ICQ_IMU_ID" value="IMU_PX4_ID" />         <!-- Meaning the lsm303 and l3g -->
@@ -237,8 +239,8 @@
   </section>
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
-    <define name="MAX_BANK" value="20" unit="deg" />
-    <define name="REF_MAX_SPEED" value="5" unit="m/s" />
+    <define name="MAX_BANK" value="45" unit="deg" />
+    <define name="REF_MAX_SPEED" value="9" unit="m/s" />
     <define name="REF_MAX_ACCEL" value="3.2" />
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
