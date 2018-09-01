@@ -25,6 +25,9 @@
     </module>
     <module name="gps" type="ubx_ucenter" />
     <module name="stabilization" type="indi_simple" />
+    <module name="guidance" type="indi">
+      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500"/>
+    </module>
     <module name="ahrs" type="int_cmpl_quat" >
       <define name="AHRS_ICQ_IMU_ID" value="IMU_PX4_ID" />         <!-- Meaning the lsm303 and l3g -->
       <define name="AHRS_ICQ_MAG_ID" value="MAG_HMC58XX_SENDER_ID" />         <!-- Meaning the external hmc-->
@@ -48,9 +51,6 @@
   <firmware name="rotorcraft">
     <target name="fbw" board="px4io_2.4" />
     <module name="motor_mixing" />
-    <module name="guidance" type="indi">
-      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500"/>
-    </module>
     <module name="radio_control" type="ppm">
       <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="1" />
       <define name="RADIO_KILL_SWITCH" value="RADIO_KILL" />
