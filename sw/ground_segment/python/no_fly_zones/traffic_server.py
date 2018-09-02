@@ -677,7 +677,7 @@ class TrafficServer(object):
         soft_geofence = self.create_geofence_fp()
         sys.stdout.flush()
         
-        self.mission = mission.Mission(self.ac_id, 15., Zones, Transit_points, 70.0, self.UAV, self._interface, soft_geofence, self.flightplan, self.platform_type)
+        self.mission = mission.Mission(self.ac_id, 15., Zones, Transit_points, self.flightplan.flight_plan.ground_alt + 70.0, self.UAV, self._interface, soft_geofence, self.flightplan, self.platform_type)
         
         sys.stdout.flush()
         
