@@ -283,8 +283,8 @@ def constructSSD(asas, traf, tla, wind):
                     tlos_new, ids_tla_new = get_times(asas,traf,0, [i_other[i]], tla)
                     ids_tla = np.append(ids_tla,ids_tla_new)
             
-            if len(ids_tla) != 0:
-                asas.free_tla[0] = False   
+                if len(ids_tla) != 0:
+                    asas.free_tla[0] = False   
         
             for j in range(np.shape(i_other)[0]):
                     

@@ -165,6 +165,9 @@ class ReceiverThread (threading.Thread):
 #                    self.Active_object_lst = np.delete(self.Active_object_lst, i)
 #                else:
 #                    i = i + 1
+#                    
+#            # Update active traffic list
+#            self.active_traffic_objects = self.Traffic_object_lst[self.Active_object_lst == True]
 #            
 #            # Visualize traffic on the ground station
 #            if (self.dt < 0.5):
@@ -173,6 +176,9 @@ class ReceiverThread (threading.Thread):
 #                self.visualizer.visualize(self.TrkN_lst, self.Traffic_object_lst, self.Active_object_lst) 
 #                self.dt = 0
 #                self.visualize_time = time.clock()
+#                
+#            
+#            # Visualize traffic on the ground station
 #            #print('%d. Receiver received = %s' % (self.counter, parsed))
 #            #print(parsed)
 #            #print(len(parsed))
