@@ -14,14 +14,14 @@
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint name="CLIMB" x="17.7" y="1.8"/>
     <waypoint alt="20.0" name="STDBY" x="1.8" y="-4.9"/>
-    <waypoint alt="40.0" name="p1" x="-8.2" y="24.1"/>
-    <waypoint alt="40.0" name="p2" x="26.4" y="33.6"/>
-    <waypoint alt="40.0" name="p3" x="38.8" y="-6.7"/>
-    <waypoint alt="40.0" name="p4" x="8.8" y="-18.3"/>
+    <waypoint alt="50.0" name="p1" x="-70.0" y="-0.0"/>
+    <waypoint alt="50.0" name="p2" x="70.0" y="-0.0"/>
+    <waypoint alt="50.0" name="p3" x="0" y="-70.0"/>
+    <waypoint alt="50.0" name="p4" x="0" y="70.0"/>
     <waypoint name="TD" x="5.6" y="-10.9"/>
-    <waypoint name="JOE_reported" x="5" y="15"/>
-    <waypoint name="JOE_found" x="5" y="25"/>
-    <waypoint name="TD_mrk" x="5" y="35"/>
+    <waypoint alt="50.0" name="JOE_reported" x="5" y="15"/>
+    <waypoint alt="50.0" name="JOE_found" x="5" y="25"/>
+    <waypoint alt="50.0" name="TD_mrk" x="5" y="35"/>
   </waypoints>
   <exceptions>
     <exception cond="((radio_control.status == RC_REALLY_LOST) &&
@@ -84,6 +84,7 @@
     </block>
     <block name="goto_joe">
       <call fun="enableVisionFindJoe(false)" loop="false"/>      
+      <call fun="NavCopyWaypoint(WP_TD_mrk,WP_JOE_found)" loop="false"/>
       <stay wp="JOE_found"/>
     </block>
     <block name="stay_marker">
@@ -93,7 +94,7 @@
       <stay wp="TD_mrk"/>
     </block>
     <block name="land_mrk">
-      <call_once fun="waypoint_set_here(WP_TD)"/>
+      <call_once fun="waypoint_set_here(WP_TD_mrk)"/>
       <call fun="enableVisionDescent(true)" loop="false"/>
       <go wp="TD_mrk"/>
     </block>
