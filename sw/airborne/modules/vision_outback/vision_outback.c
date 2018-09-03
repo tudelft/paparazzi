@@ -333,6 +333,9 @@ void do_power_state_machine(void) {
           power_state = VISION_POWER_STATUS_POWER_ON;
           break;
         }
+#ifndef VISION_PWR_ON
+      power_state = VISION_POWER_STATUS_POWER_ON; // reset the flag to on, so that when vision is replugged it not immidiately halts
+#endif
       vision_outback_power = VISION_SETTING_STATUS_REQUEST_POWER_OFF;
       break;
     case VISION_POWER_STATUS_POWER_ON:
