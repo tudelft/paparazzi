@@ -276,16 +276,16 @@ static void guidance_hybrid_set_nav_throttle_curve(void) {
   // When hovering
   if(dc_hybrid_mode == HB_HOVER) {
     // Check the transition percentage
-    if(transition_percentage < (50 << INT32_PERCENTAGE_FRAC)) {
+    if(transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
       nav_throttle_curve_set(DC_HOVER_THROTTLE_CURVE);
     } else {
-      nav_throttle_curve_set(DC_FORWARD_THROTTLE_CURVE);
+      nav_throttle_curve_set(DC_TRANSITION_THROTTLE_CURVE);
     }
   } 
   // Forward flight
   else {
     // Check the transition percentage
-    if(transition_percentage < (90 << INT32_PERCENTAGE_FRAC)) {
+    if(transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
       nav_throttle_curve_set(DC_HOVER_THROTTLE_CURVE);
     } else if (transition_time < (DC_TRANSITION_TIME*PERIODIC_FREQUENCY)) {
       nav_throttle_curve_set(DC_TRANSITION_THROTTLE_CURVE);
@@ -444,7 +444,7 @@ void guidance_hybrid_vertical(void)
     stabilization_cmd[COMMAND_THRUST] = guidance_v_delta_t;
     return;
   }
-  else if (transition_percentage < (90 << INT32_PERCENTAGE_FRAC)) {
+  else if (transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
     stabilization_cmd[COMMAND_THRUST] = transition_throttle;
     return;
   }
