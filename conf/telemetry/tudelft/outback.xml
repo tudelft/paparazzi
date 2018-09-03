@@ -7,34 +7,28 @@
 
     <mode name="default" key_press="d">
       <message name="AUTOPILOT_VERSION"      period="11.1"/>
+      <message name="ALIVE"                  period="5.1"/>
       <message name="DL_VALUE"               period="1.1"/>
-      <message name="ROTORCRAFT_STATUS"      period="1.2"/>
+      <message name="ROTORCRAFT_STATUS"      period="2.2"/>
       <message name="ROTORCRAFT_FP"          period="0.25"/>
-      <message name="ALIVE"                  period="2.1"/>
       <message name="INS_REF"                period="5.1"/>
       <message name="ROTORCRAFT_NAV_STATUS"  period="1.6"/>
       <message name="WP_MOVED"               period="1.3"/>
-      <message name="ROTORCRAFT_CAM"         period="1."/>
       <message name="GPS_INT"                period=".25"/>
       <message name="INS"                    period=".25"/>
-      <message name="I2C_ERRORS"             period="4.1"/>
-      <message name="UART_ERRORS"            period="3.1"/>
-      <message name="SUPERBITRF"             period="3"/>
+      <message name="UART_ERRORS"            period="33.1"/>
       <message name="ENERGY"                 period="2.5"/>
-      <message name="DATALINK_REPORT"        period="5.1"/>
-      <message name="STATE_FILTER_STATUS"    period="3.2"/>
+      <message name="DATALINK_REPORT"        period="15.1"/>
+      <message name="STATE_FILTER_STATUS"    period="16.2"/>
       <message name="AIR_DATA"               period="1.3"/>
-      <message name="SURVEY"                 period="2.5"/>
-      <message name="OPTIC_FLOW_EST"         period="0.25"/>
-      <message name="VECTORNAV_INFO"         period="0.5"/>
-      <message name="TEMP_ADC"               period="3.0"/>
-      <message name="FBW_STATUS"             period="2.0"/>
-      <message name="MOTOR"                  period="0.5"/>
-      <message name="THROTTLE_CURVE"         period="0.5"/>
-      <message name="AHRS_REF_QUAT"          period="0.2"/>
-      <message name="VISION_OUTBACK"         period="0.2"/>
-      <message name="CHIRP"                  period="1"/>
-      <message name="DELFTACOPTER_FILTER_LOGGING" period="0.5"/>
+      <message name="TEMP_ADC"               period="6.0"/>
+      <message name="FBW_STATUS"             period="3.0"/>
+      <message name="MOTOR"                  period="1.5"/>
+      <message name="THROTTLE_CURVE"         period="1.5"/>
+      <message name="AHRS_REF_QUAT"          period="4.2"/>
+      <message name="VISION_OUTBACK"         period="1.2"/>
+      <!--message name="CHIRP"                  period="1"/-->
+      <!--message name="DELFTACOPTER_FILTER_LOGGING" period="0.5"/-->
     </mode>
 
     <mode name="ppm">
@@ -176,7 +170,27 @@
 
   <process name="InterMCU">
     <mode name="default">
-      <message name="ROTORCRAFT_STATUS"      period="0.1"/>
+      <message name="AUTOPILOT_VERSION"      period="11.1"/>
+      <message name="ALIVE"                  period="5.1"/>
+      <message name="DL_VALUE"               period="1.1"/>
+      <message name="ROTORCRAFT_STATUS"      period="2.2"/>
+      <message name="ROTORCRAFT_FP"          period="0.25"/>
+      <message name="INS_REF"                period="5.1"/>
+      <message name="ROTORCRAFT_NAV_STATUS"  period="1.6"/>
+      <message name="WP_MOVED"               period="1.3"/>
+      <message name="GPS_INT"                period=".25"/>
+      <message name="INS"                    period=".25"/>
+      <message name="UART_ERRORS"            period="33.1"/>
+      <message name="ENERGY"                 period="2.5"/>
+      <message name="DATALINK_REPORT"        period="15.1"/>
+      <message name="STATE_FILTER_STATUS"    period="16.2"/>
+      <message name="AIR_DATA"               period="1.3"/>
+      <message name="TEMP_ADC"               period="6.0"/>
+      <message name="FBW_STATUS"             period="3.0"/>
+      <message name="MOTOR"                  period="1.5"/>
+      <message name="THROTTLE_CURVE"         period="1.5"/>
+      <message name="AHRS_REF_QUAT"          period="4.2"/>
+      <message name="VISION_OUTBACK"         period="1.2"/>
     </mode>
   </process>
 
