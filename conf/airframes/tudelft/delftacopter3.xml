@@ -310,7 +310,7 @@
   <section name="GAIN_SETS">
     <define name="NUMBER_OF_GAINSETS" value="2"/>
     <define name="SCHEDULING_VARIABLE" value="throttle_curve.mode"/>
-    <define name="SCHEDULING_POINTS" value="{1.4, 1.5}"/>
+    <define name="SCHEDULING_POINTS" value="{2.4, 2.5}"/>
     <define name="SCHEDULING_VARIABLE_FRAC" value="0"/>
 
     <define name="PHI_P" value="{854, 458}"/>
