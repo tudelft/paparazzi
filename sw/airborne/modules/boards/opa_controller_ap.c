@@ -46,12 +46,6 @@ void opa_controller_init() {
 }
 
 void opa_controller_periodic() {
-  /* Update the vision control power */
-  if (opa_controller_vision_power) {
-    VISION_PWR_ON(VISION_PWR, VISION_PWR_PIN);
-  } else {
-    VISION_PWR_OFF(VISION_PWR, VISION_PWR_PIN);
-  }
 
   /* Set the FTD Disarm state */
   opa_controller_ftd_disarm = intermcu.cmd_status & (1 << 1);

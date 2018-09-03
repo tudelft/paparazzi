@@ -28,7 +28,6 @@
 
 #include "std.h"
 
-extern bool opa_controller_vision_power;
 extern bool opa_controller_ftd_disarm;
 extern void opa_controller_ap_disarm(bool take);
 
