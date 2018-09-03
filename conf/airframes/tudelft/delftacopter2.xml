@@ -364,6 +364,8 @@
     <define name="HOVER_THROTTLE_CURVE" value="2"/>
     <define name="TRANSITION_THROTTLE_CURVE" value="3"/>
     <define name="FORWARD_THROTTLE_CURVE" value="4"/>
+    <define name="TRANSITION_THROTTLE_TO_FORWARD" value="8500"/>
+    <define name="TRANSITION_THROTTLE_TO_HOVER" value="4800"/>
   </section>
 
   <!-- Gains for forward mode -->
@@ -380,7 +382,6 @@
     <define name="THROTTLE_FROM_PITCH_UP" value="50.0"/>
     <define name="MIN_PITCH" value="-15.0"/>
     <define name="MAX_PITCH" value="10.0"/>
-    <define name="TRANSITION_THROTTLE" value="8500"/>
   </section>
 
   <!-- Radio control specific switches -->

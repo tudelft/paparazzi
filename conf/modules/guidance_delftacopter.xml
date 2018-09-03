@@ -19,7 +19,8 @@
     <define name="DC_FORWARD_THROTTLE_FROM_PITCH_UP" description="Forward throttle from pitch up gain"/>
     <define name="DC_FORWARD_MIN_PITCH" description="Forward minimum pitch value"/>
     <define name="DC_FORWARD_MAX_PITCH" description="Forward minimum pitch value"/>
-    <define name="DC_FORWARD_TRANSITION_THROTTLE" description="Throttle during transition"/>
+    <define name="DC_TRANSITION_THROTTLE_TO_FORWARD" description="Throttle during transition to forward"/>
+    <define name="DC_TRANSITION_THROTTLE_TO_HOVER" description="Throttle during transition to hover"/>
   </doc>
   <settings>
     <dl_settings>
@@ -33,7 +34,8 @@
         <dl_setting var="turn_bank_gain" min="0.1" step="0.01" max="3.0" param="DC_FORWARD_TURN_BANK_GAIN"/>
         <dl_setting var="vertical_pitch_of_roll" min="0.0" step="0.01" max="0.25" param="DC_FORWARD_PITCH_OF_ROLL"/>
         <dl_setting var="throttle_from_pitch_up" min="0.0" step="1.0" max="500.0" param="DC_FORWARD_THROTTLE_FROM_PITCH_UP"/>
-        <dl_setting var="transition_throttle" min="3200" max="9600" param="DC_FORWARD_TRANSITION_THROTTLE"/>
+        <dl_setting var="transition_throttle_to_forward" min="3200" max="9600" param="DC_TRANSITION_THROTTLE_TO_FORWARD"/>
+        <dl_setting var="transition_throttle_to_hover" min="3200" max="9600" param="DC_TRANSITION_THROTTLE_TO_HOVER"/>
 
         <!-- Unknown... -->
         <dl_setting var="perpen_dgain" min="0.0" step="0.01" max="360.0" shortname="perpen_dgain"/>       

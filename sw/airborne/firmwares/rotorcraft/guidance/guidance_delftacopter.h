@@ -44,6 +44,7 @@ extern enum hybrid_mode_t dc_hybrid_mode;
 extern struct Int32Eulers guidance_hybrid_ypr_sp;
 extern float perpen_dgain;
 extern float throttle_from_pitch_up;
-extern int16_t transition_throttle;
+extern int16_t transition_throttle_to_forward;
+extern int16_t transition_throttle_to_hover;
 
 #endif /* GUIDANCE_DELFTACOPTER_H */

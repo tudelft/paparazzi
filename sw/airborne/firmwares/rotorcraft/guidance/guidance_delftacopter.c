@@ -50,8 +50,9 @@
 #define DC_TRANSITION_THROTTLE_CURVE DC_FORWARD_THROTTLE_CURVE
 #endif
 
+/* Extra transition time in special curve and no turning */
 #ifndef DC_TRANSITION_TIME
-#define DC_TRANSITION_TIME 4
+#define DC_TRANSITION_TIME 3
 #endif
 
 /* High res frac for integration of angles */
@@ -67,7 +68,8 @@ float vertical_dgain = DC_FORWARD_VERTICAL_DGAIN;
 float low_airspeed_pitch_gain = DC_FORWARD_VERTICAL_LOW_AIRSPEED_PITCH_GAIN;
 
 // Horizontal gains
-int16_t transition_throttle = DC_FORWARD_TRANSITION_THROTTLE;
+int16_t transition_throttle_to_forward = DC_TRANSITION_THROTTLE_TO_FORWARD;
+int16_t transition_throttle_to_hover = DC_TRANSITION_THROTTLE_TO_HOVER;
 int32_t max_airspeed = DC_FORWARD_MAX_AIRSPEED;
 float max_turn_bank = DC_FORWARD_MAX_TURN_BANK;
 float turn_bank_gain = DC_FORWARD_TURN_BANK_GAIN;
@@ -444,8 +446,14 @@ void guidance_hybrid_vertical(void)
     stabilization_cmd[COMMAND_THRUST] = guidance_v_delta_t;
     return;
   }
-  else if (transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
-    stabilization_cmd[COMMAND_THRUST] = transition_throttle;
+  // Transition to forward
+  else if ((dc_hybrid_mode == HB_FORWARD) && transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
+    stabilization_cmd[COMMAND_THRUST] = transition_throttle_to_forward;
+    return;
+  }
+  // Transitions to hover
+  else if ((dc_hybrid_mode == HB_HOVER) && transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
+    stabilization_cmd[COMMAND_THRUST] = transition_throttle_to_hover;
     return;
   }
   
