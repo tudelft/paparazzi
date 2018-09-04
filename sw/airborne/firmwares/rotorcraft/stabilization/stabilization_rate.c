@@ -227,8 +227,8 @@ void stabilization_rate_run(bool in_flight)
 
 #if defined(STABILIZATION_ADVANCE_ANGLE_P) || defined(STABILIZATION_ADVANCE_ANGLE_Q)
   /* Advance angle compensation for advanced helicopter swashplate mixing */
-  int16_t cmd_roll  = cosf(STABILIZATION_ADVANCE_ANGLE_P)*stabilization_cmd[COMMAND_ROLL] - sinf(STABILIZATION_ADVANCE_ANGLE_Q)*stabilization_cmd[COMMAND_PITCH];
-  int16_t cmd_pitch = sinf(STABILIZATION_ADVANCE_ANGLE_P)*stabilization_cmd[COMMAND_ROLL] + cosf(STABILIZATION_ADVANCE_ANGLE_Q)*stabilization_cmd[COMMAND_PITCH];
+  int32_t cmd_roll  = cosf(STABILIZATION_ADVANCE_ANGLE_P)*stabilization_cmd[COMMAND_ROLL] - sinf(STABILIZATION_ADVANCE_ANGLE_Q)*stabilization_cmd[COMMAND_PITCH];
+  int32_t cmd_pitch = sinf(STABILIZATION_ADVANCE_ANGLE_P)*stabilization_cmd[COMMAND_ROLL] + cosf(STABILIZATION_ADVANCE_ANGLE_Q)*stabilization_cmd[COMMAND_PITCH];
 
   stabilization_cmd[COMMAND_ROLL] = cmd_roll;
   stabilization_cmd[COMMAND_PITCH] = cmd_pitch;
