@@ -17,7 +17,7 @@
         <dl_setting min="0" max="1" step="0.01" shortname="on-axis noise" var="chirp_noise_stdv_onaxis_ratio" type="float" module="system_identification/sys_id_chirp"/>
         <dl_setting min="0" max="1" step="0.01" shortname="off-axis noise" var="chirp_noise_stdv_offaxis_ratio" type="float" module="system_identification/sys_id_chirp"/>
         <dl_setting min="0" max="3" step="0.01" shortname="Fstart_hz" var="chirp_f0_hz" type="float" module="system_identification/sys_id_chirp"/>
-        <dl_setting min="3" max="10" step="0.1" shortname="Fend_hz" var="chirp_f1_hz" type="float" module="system_identification/sys_id_chirp"/>
+        <dl_setting min="3" max="20" step="0.1" shortname="Fend_hz" var="chirp_f1_hz" type="float" module="system_identification/sys_id_chirp"/>
         <dl_setting min="0" max="100" step="0.5" shortname="Length_s" var="chirp_length_s" type="float" module="system_identification/sys_id_chirp"/>
         <dl_setting min="0" max="1" step="1" values="False|True" shortname="Apply advance angle" var="chirp_apply_advance" type="uint8_t" module="system_identification/sys_id_chirp"/>
       </dl_settings>
