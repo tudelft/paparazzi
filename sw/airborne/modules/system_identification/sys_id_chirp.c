@@ -37,6 +37,7 @@ float chirp_noise_stdv_offaxis_ratio = 0.2;
 float chirp_f0_hz = 0.5;
 float chirp_f1_hz = 10;
 float chirp_length_s = 20;
+uint8_t chirp_apply_advance = false;
 
 struct FloatRates* chirp_rates;
 struct FloatQuat* chirp_quat;
@@ -127,14 +128,29 @@ void sys_id_chirp_run(void) {
 
 void sys_id_chirp_add_values_and_log(int32_t in_cmd[])
 {
-  // Add chirp system identification values
   #if USE_SYS_ID_CHIRP
-  in_cmd[COMMAND_ROLL] += current_chirp_values[0];
-  in_cmd[COMMAND_PITCH] += current_chirp_values[1];
-  in_cmd[COMMAND_YAW] += current_chirp_values[2];
-  in_cmd[COMMAND_ELEVATOR] += current_chirp_values[3];
-  in_cmd[COMMAND_AILERON] += current_chirp_values[4];
+  // Add chirp system identification values
+  int32_t cmd_roll  = cosf(STABILIZATION_ADVANCE_ANGLE_P)*current_chirp_values[0] - sinf(STABILIZATION_ADVANCE_ANGLE_Q)*current_chirp_values[1];
+  int32_t cmd_pitch = sinf(STABILIZATION_ADVANCE_ANGLE_P)*current_chirp_values[0] + cosf(STABILIZATION_ADVANCE_ANGLE_Q)*current_chirp_values[1];
+
+  if (chirp_apply_advance) {
+    in_cmd[COMMAND_ROLL] += cmd_roll;
+    in_cmd[COMMAND_PITCH] += cmd_pitch;
+    in_cmd[COMMAND_YAW] += current_chirp_values[2];
+    in_cmd[COMMAND_ELEVATOR] += current_chirp_values[3];
+    in_cmd[COMMAND_AILERON] += current_chirp_values[4];
+  }
+  else {
+    in_cmd[COMMAND_ROLL] += current_chirp_values[0];
+    in_cmd[COMMAND_PITCH] += current_chirp_values[1];
+    in_cmd[COMMAND_YAW] += current_chirp_values[2];
+    in_cmd[COMMAND_ELEVATOR] += current_chirp_values[3];
+    in_cmd[COMMAND_AILERON] += current_chirp_values[4];
+  }
   #endif
+
+
+
 
   /* bound the result */
   BoundAbs(in_cmd[COMMAND_ROLL], MAX_PPRZ);
