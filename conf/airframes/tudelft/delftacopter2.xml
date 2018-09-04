@@ -27,6 +27,7 @@
         <define name="GPS_TIMEOUT" value="2"/>
       </module>
       <module name="sys_id_chirp"/>
+      <module name="sys_id_doublet"/>
       <module name="stabilization" type="int_quat"/>
       <module name="stabilization" type="rate"/>
       <module name="ahrs"          type="int_cmpl_quat">
@@ -393,7 +394,7 @@
 
   <!-- Different autopilot modes for the RC -->
   <section name="AUTOPILOT">
-    <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
+    <define name="MODE_MANUAL" value="AP_MODE_RATE_DIRECT"/>
     <define name="MODE_AUTO1"  value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>
   </section>
