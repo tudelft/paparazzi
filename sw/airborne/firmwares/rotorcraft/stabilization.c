@@ -31,6 +31,15 @@
 
 int32_t stabilization_cmd[COMMANDS_NB];
 
+
+#if defined(STABILIZATION_ADVANCE_ANGLE_P) || defined(STABILIZATION_ADVANCE_ANGLE_Q)
+float stabilization_advance_angle_p = STABILIZATION_ADVANCE_ANGLE_P;
+float stabilization_advance_angle_q = STABILIZATION_ADVANCE_ANGLE_Q;
+#else
+float stabilization_advance_angle_p = 0;
+float stabilization_advance_angle_q = 0;
+#endif
+
 #if STABILIZATION_FILTER_CMD_ROLL_PITCH
 #ifndef STABILIZATION_FILTER_CMD_ROLL_CUTOFF
 #define STABILIZATION_FILTER_CMD_ROLL_CUTOFF 20.0

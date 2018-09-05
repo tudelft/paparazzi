@@ -70,6 +70,7 @@ struct FloatRates stabilization_rate_igain;
 struct FloatRates stabilization_rate_sum_err;
 
 struct FloatRates stabilization_rate_fb_cmd;
+float stabilization_advance_angle;
 
 #ifndef STABILIZATION_RATE_DEADBAND_P
 #define STABILIZATION_RATE_DEADBAND_P 0
@@ -227,8 +228,8 @@ void stabilization_rate_run(bool in_flight)
 
 #if defined(STABILIZATION_ADVANCE_ANGLE_P) || defined(STABILIZATION_ADVANCE_ANGLE_Q)
   /* Advance angle compensation for advanced helicopter swashplate mixing */
-  int32_t cmd_roll  = cosf(STABILIZATION_ADVANCE_ANGLE_P)*stabilization_cmd[COMMAND_ROLL] - sinf(STABILIZATION_ADVANCE_ANGLE_Q)*stabilization_cmd[COMMAND_PITCH];
-  int32_t cmd_pitch = sinf(STABILIZATION_ADVANCE_ANGLE_P)*stabilization_cmd[COMMAND_ROLL] + cosf(STABILIZATION_ADVANCE_ANGLE_Q)*stabilization_cmd[COMMAND_PITCH];
+  int32_t cmd_roll  = cosf(stabilization_advance_angle_p)*stabilization_cmd[COMMAND_ROLL] - sinf(stabilization_advance_angle_q)*stabilization_cmd[COMMAND_PITCH];
+  int32_t cmd_pitch = sinf(stabilization_advance_angle_p)*stabilization_cmd[COMMAND_ROLL] + cosf(stabilization_advance_angle_q)*stabilization_cmd[COMMAND_PITCH];
 
   stabilization_cmd[COMMAND_ROLL] = cmd_roll;
   stabilization_cmd[COMMAND_PITCH] = cmd_pitch;

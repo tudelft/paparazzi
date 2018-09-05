@@ -40,4 +40,7 @@ extern void stabilization_filter_commands(void);
  */
 extern int32_t stabilization_cmd[COMMANDS_NB];
 
+extern float stabilization_advance_angle_p;
+extern float stabilization_advance_angle_q;
+
 #endif /* STABILIZATION_H */
