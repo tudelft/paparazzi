@@ -66,7 +66,7 @@ class traffic_scenario(object):
         
         for j in range(len(self.circular_zones)):
             self.Traffic.create(1, 0, self.circular_zones[j][2].lat * 10. **-7, self.circular_zones[j][2].lon * 10. **-7, 0, 'Zone' + str(j), self.circular_zones[j][0])
-    
+        
     def get_active_traffic_objects(self, ReceiverThread):
         active_traffic_objects = ReceiverThread.active_traffic_objects
         return active_traffic_objects

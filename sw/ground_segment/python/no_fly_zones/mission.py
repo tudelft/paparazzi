@@ -80,6 +80,8 @@ class Mission(object):
         self.reduced_tla_step = 2. #[s] minimal reduced tla to be selected
         self.extended_tla = 10. #[s]
         self.reduced_tla_margin = 10. #[s]
+        self.max_tla = 60. #[s]
+        self.min_avoid_leg_time = 0. #[s]
         
         self.circular_zones = static_nfz.get_circular_zones(Zones, self.UAV.ref_utm_i)
         self.draw_circular_static_nfzs()
@@ -88,7 +90,7 @@ class Mission(object):
         
         self.tla = 60.
         
-        self.gui = gui.Avoidance_GUI(self.detection_margin, self.resolution_margin, self.commanded_airspeed, self.reduced_tla_step, self.extended_tla, self.reduced_tla_margin, self.reduced_resolution_margin)
+        self.gui = gui.Avoidance_GUI(self.detection_margin, self.resolution_margin, self.commanded_airspeed, self.reduced_tla_step, self.extended_tla, self.reduced_tla_margin, self.max_tla, self.reduced_resolution_margin, self.min_avoid_leg_time)
         
         def WIND_cb(ac_id, msg):
             if ac_id == self.ac_id:
@@ -142,6 +144,8 @@ class Mission(object):
         self.reduced_tla_step = self.gui.w_reduced_tla_step_slider.get()
         self.extended_tla = self.gui.w_extended_tla_slider.get()
         self.reduced_tla_margin = self.gui.w_reduced_tla_margin_slider.get()
+        self.max_tla = self.gui.w_max_tla_slider.get()
+        self.min_avoid_leg_time = self.gui.w_min_avoid_leg_time_slider.get()
         if self.gui.resend:
             self.reinit()
             
@@ -251,9 +255,10 @@ class Mission(object):
         from_point_enu = geodetic.EnuCoor_f(from_point[0], from_point[1], self.altitude)
         
         self.traffic_scenario_extrapolated.update_traffic_scenario(self.commanded_airspeed, hdg, self.wind, from_point_enu, dt, self.receiver_thread, types = types)
-        tla = self.time_to_arrive_at_point(from_point, to_point, self.traffic_scenario_extrapolated)
+        time_to_arrive_at_point = self.time_to_arrive_at_point(from_point, to_point, self.traffic_scenario_extrapolated)
+        tla = min(time_to_arrive_at_point, self.max_tla)
         
-        reduced_tla = self.reduced_tla_step
+        reduced_tla = self.min_avoid_leg_time
         looping = True
         reduce_resolution_margin = False        
         
@@ -265,11 +270,15 @@ class Mission(object):
             else:
                 resolutions = self.traffic_scenario_extrapolated.detect_conflicts(reduced_tla + self.reduced_tla_margin, self.wind, self.resolution_margin)
             
+            if resolutions[0] == 'free':
+                print("do nothing because first calculation point already free of obstacles")
+                return 'nosol'
+            
             if ((resolutions[0] == 'nosol') or (resolutions[0] =='free')):
                 if reduce_resolution_margin == False:
                     print("reducing margin because current calculation point within margin")
                     reduce_resolution_margin = True
-                    reduced_tla = self.reduced_tla_step
+                    reduced_tla = self.min_avoid_leg_time;
                     resolutions = self.traffic_scenario_extrapolated.detect_conflicts(reduced_tla + self.reduced_tla_margin, self.wind, self.reduced_resolution_margin)
                     if ((resolutions[0] == 'nosol') or (resolutions[0] =='free')):
                         return 'nosol'
@@ -322,7 +331,7 @@ class Mission(object):
                 
                 
                 self.traffic_scenario_extrapolated.update_traffic_scenario(self.commanded_airspeed, hdg_target, self.wind, new_from_point_enu, dt + reduced_tla, self.receiver_thread, types = types)
-                tla_target = self.time_to_arrive_at_point(new_from_point, to_point, self.traffic_scenario_extrapolated)
+                tla_target = min(self.time_to_arrive_at_point(new_from_point, to_point, self.traffic_scenario_extrapolated), self.max_tla)
                 
                 if reduce_resolution_margin:
                     conflict = self.traffic_scenario_extrapolated.detect_conflicts(tla_target, self.wind, self.reduced_resolution_margin)
@@ -344,7 +353,7 @@ class Mission(object):
                 looping = False
                 return resolution_point
             else:
-                if (reduced_tla <= tla + self.extended_tla):
+                if (reduced_tla <= time_to_arrive_at_point + self.extended_tla):
                     reduced_tla = reduced_tla + self.reduced_tla_step
                 else:
                     if not reduce_resolution_margin:
@@ -890,7 +899,7 @@ class Mission_comm(object):
         self._interface.send(msg)
         
     def visualize_legs(self, mission_object):
-        for index in range(255-64):
+        for index in range(255-74):
             if ((index in self.indices_confirmed) and (index != 0)):
                 self.visualize_leg(mission_object, index)
             else:
