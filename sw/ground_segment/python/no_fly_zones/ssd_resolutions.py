@@ -74,7 +74,7 @@ class Asas:
         
         self.vmin = 5. # [m/s]
         self.vmax = 40. # [m/s]
-        self.v_air_nom = 14. # [m/s]
+        self.v_air_nom = V # [m/s]
         #self.R = 5*nm #minimum horizontal separation of 5NM (protected zone)
         self.mar = margin
         

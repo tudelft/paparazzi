@@ -96,8 +96,9 @@ class ReceiverThread (threading.Thread):
             # Remove old non streamed objects from the traffic object list
             if len(parsed) > 0 :
                 current_ToT = parsed[0]['I070']['ToT']['val']
+                i = 0
                 while i < len(self.Traffic_object_lst):
-                    if ((abs(current_ToT - self.Traffic_object_lst[i].ToT_lst[-1])) > 5): # Remove object if no data received for 5 seconds (And restart of server)
+                    if (((abs(current_ToT - self.Traffic_object_lst[i].ToT_lst[-1])) > 4) or ((time.time() - self.Traffic_object_lst[i].sys_time) > 5)): # Remove object if no data received for 5 seconds (And restart of server)
                         self.TrkN_lst = np.delete(self.TrkN_lst, i)
                         self.Traffic_object_lst = np.delete(self.Traffic_object_lst, i)
                         self.Active_object_lst = np.delete(self.Active_object_lst, i)
@@ -192,6 +193,7 @@ class ReceivedTraffic(object):
     def __init__(self, TrkN, ToT, Lat, Lon, Alt, RoC, ref_utm_i):
         self.TrkN = TrkN
         self.ToT_lst = [ToT] # Needs at least 2 time values to derive speed and heading
+        self.sys_time = time.time()
         self.ref_utm_i = ref_utm_i
         self.lla_lst = [geodetic.LlaCoor_i(int(Lat*10**7), int(Lon*10**7), int((Alt)*10**3))] # Needs at least last 2 coordinates to derive speed and heading
         self.enu_lst = [coord_trans.lla_to_enu_fw(self.lla_lst[-1], self.ref_utm_i)]
@@ -207,6 +209,7 @@ class ReceivedTraffic(object):
         self.enu_lst = self.enu_lst[-1:] + [coord_trans.lla_to_enu_fw(self.lla_lst[-1], self.ref_utm_i)]
         self.RoC = RoC
         self.ToT_lst = self.ToT_lst[-1:] + [ToT]
+        self.sys_time = time.time()
         dt = (self.ToT_lst[1] - self.ToT_lst[0])
         dx = (self.enu_lst[1].x - self.enu_lst[0].x)
         dy = (self.enu_lst[1].y - self.enu_lst[0].y) 
@@ -224,7 +227,7 @@ class ReceivedTraffic(object):
     def store_radius(self):
         # Other Air Traffic
         if (self.TrkN < 20000):
-            self.radius = 50. # Mind to set it to 300 for DALBY !!!!!!!!!!
+            self.radius = 300. # Mind to set it to 300 for DALBY !!!!!!!!!!
         # Localised Weather Events
         elif (self.TrkN >= 20000 and self.TrkN < 30000): 
             alt = self.lla_lst[-1].alt/1000.
@@ -257,10 +260,17 @@ class TrafficVisualizer(object):
             msg['text'] = str(int(plotable_traffic[i].radius))
             self._interface.send(msg)
         # devisualize non active traffic
-        for j in range(32-len(plotable_traffic)):
+        for j in range(64-len(plotable_traffic)):
             msg = PprzMessage("ground", "SHAPE")
             msg['id'] = int(32 + len(plotable_traffic) + j)
+            msg['linecolor'] = "orange"
+            msg['fillcolor'] = "yellow"
+            msg['opacity'] = 1
+            msg['shape'] = 0
             msg['status'] = 1
+            msg['latarr'] = [0, 0] # e-7 deg
+            msg['lonarr'] = [0, 0] # e-7 deg
+            msg['radius'] = 100.
             self._interface.send(msg)
             
 
