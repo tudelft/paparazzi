@@ -223,8 +223,8 @@ void stabilization_rate_run(bool in_flight)
   stabilization_cmd[COMMAND_YAW]   = stabilization_rate_fb_cmd.r;
 
   // Forward command to aero actuators
-  stabilization_cmd[COMMAND_ELEVATOR] = stabilization_cmd[COMMAND_PITCH];
-  stabilization_cmd[COMMAND_AILERON] = stabilization_cmd[COMMAND_YAW];
+  stabilization_cmd[COMMAND_ELEVATOR] = ailevon_effective*stabilization_cmd[COMMAND_PITCH];
+  stabilization_cmd[COMMAND_AILERON] = ailevon_effective*stabilization_cmd[COMMAND_YAW];
 
 #if defined(STABILIZATION_ADVANCE_ANGLE_P) || defined(STABILIZATION_ADVANCE_ANGLE_Q)
   /* Advance angle compensation for advanced helicopter swashplate mixing */

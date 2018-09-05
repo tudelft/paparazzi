@@ -39,6 +39,7 @@ float stabilization_advance_angle_q = STABILIZATION_ADVANCE_ANGLE_Q;
 float stabilization_advance_angle_p = 0;
 float stabilization_advance_angle_q = 0;
 #endif
+float ailevon_effective = 1.0;
 
 #if STABILIZATION_FILTER_CMD_ROLL_PITCH
 #ifndef STABILIZATION_FILTER_CMD_ROLL_CUTOFF

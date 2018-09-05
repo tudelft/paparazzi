@@ -42,5 +42,6 @@ extern int32_t stabilization_cmd[COMMANDS_NB];
 
 extern float stabilization_advance_angle_p;
 extern float stabilization_advance_angle_q;
+extern float ailevon_effective;
 
 #endif /* STABILIZATION_H */

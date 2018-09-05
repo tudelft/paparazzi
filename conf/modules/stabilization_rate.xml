@@ -30,6 +30,7 @@
         <dl_setting var="stabilization_rate_igain.q" min="0" step="1" max="500" shortname="igain q" param="STABILIZATION_RATE_IGAIN_Q" type="int32" persistent="true"/>
         <dl_setting var="stabilization_advance_angle_p" min="0" step="0.01" max="3.14" shortname="adv_p" param="STABILIZATION_ADVANCE_ANGLE_P" type="float" persistent="true"/>
         <dl_setting var="stabilization_advance_angle_q" min="0" step="0.01" max="3.14" shortname="adv_q" param="STABILIZATION_ADVANCE_ANGLE_Q" type="float" persistent="true"/>
+        <dl_setting var="ailevon_effective" min="0" step="0.01" max="1.0" shortname="ailevon_eff"/>
       </dl_settings>
     </dl_settings>
   </settings>
