@@ -227,7 +227,7 @@ class ReceivedTraffic(object):
     def store_radius(self):
         # Other Air Traffic
         if (self.TrkN < 20000):
-            self.radius = 300. # Mind to set it to 300 for DALBY !!!!!!!!!!
+            self.radius = 50. # Mind to set it to 300 for DALBY !!!!!!!!!!
         # Localised Weather Events
         elif (self.TrkN >= 20000 and self.TrkN < 30000): 
             alt = self.lla_lst[-1].alt/1000.
