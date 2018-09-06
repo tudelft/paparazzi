@@ -19,9 +19,9 @@
     <waypoint alt="50.0" name="p3" x="0" y="-70.0"/>
     <waypoint alt="50.0" name="p4" x="0" y="70.0"/>
     <waypoint name="TD" x="5.6" y="-10.9"/>
-    <waypoint alt="50.0" name="JOE_reported" x="5" y="15"/>
-    <waypoint alt="50.0" name="JOE_found" x="5" y="25"/>
-    <waypoint alt="50.0" name="TD_mrk" x="5" y="35"/>
+    <waypoint alt="50.0" name="JOE_reported" x="0" y="0"/>
+    <waypoint alt="50.0" name="JOE_found" x="0" y="110"/>
+    <waypoint alt="50.0" name="TD_mrk" x="0" y="25"/>
   </waypoints>
   <exceptions>
     <exception cond="((radio_control.status == RC_REALLY_LOST) &&
@@ -76,6 +76,11 @@
     <block name="route_findjoe">
       <call fun="enableVisionFindJoe(true)" loop="false"/>
       <exception cond="vision_timeout " deroute="Standby"/>
+      <go  wp="JOE_reported"/>
+      <circle radius="30" wp="JOE_reported"/>
+      <circle radius="50" wp="JOE_reported"/>
+      <circle radius="70" wp="JOE_reported"/>
+      <circle radius="90" wp="JOE_reported"/>
       <go from="p1" hmode="route" wp="p2"/>
       <go from="p2" hmode="route" wp="p3"/>
       <go from="p3" hmode="route" wp="p4"/>
@@ -88,7 +93,6 @@
       <stay wp="JOE_found"/>
     </block>
     <block name="stay_marker">
-      <call_once fun="waypoint_set_here(WP_TD_mrk)"/>
       <call fun="enableVisionFindJoe(false)" loop="false"/>
       <call fun="enableVisionDescent(true)" loop="false"/>
       <stay wp="TD_mrk"/>
