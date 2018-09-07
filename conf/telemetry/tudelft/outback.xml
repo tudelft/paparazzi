@@ -28,8 +28,8 @@
       <message name="AHRS_REF_QUAT"          period="4.2"/>
       <message name="VISION_OUTBACK"         period="1.2"/>
       <message name="CHIRP"                  period="1"/>
-      <message name="DELFTACOPTER_FILTER_LOGGING" period="0.5"/>
       <message name="DOUBLET"                period="1"/>      
+      <message name="STAB_ATTITUDE_INT"      period="5"/>
     </mode>
 
     <mode name="ppm">
@@ -167,6 +167,7 @@
       <message name="MOTOR"                  period="0.02"/>
       <message name="DELFTACOPTER_FILTER_LOGGING" period="0.005"/>
       <message name="INS"                    period="0.1"/>
+      <message name="STAB_ATTITUDE_INT"      period="0.1"/>
     </mode>
   </process>
 
