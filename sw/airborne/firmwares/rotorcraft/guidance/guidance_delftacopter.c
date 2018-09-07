@@ -175,10 +175,12 @@ void guidance_hybrid_run(bool in_flight)
   }
   // Forward flight
   else if(dc_hybrid_mode == HB_FORWARD) {
+    arrived_at_waypoint = ARRIVED_AT_WAYPOINT;
     guidance_hybrid_forward();
   }
   // Hover flight
   else {
+    arrived_at_waypoint = ARRIVED_AT_WAYPOINT_HOVER;
     guidance_hybrid_hover(in_flight);
   }
 }

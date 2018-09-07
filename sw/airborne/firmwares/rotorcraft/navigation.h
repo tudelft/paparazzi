@@ -79,6 +79,7 @@ extern bool too_far_from_home;
 extern float failsafe_mode_dist2; ///< maximum squared distance to home wp before going to failsafe mode
 
 extern float dist2_to_wp;       ///< squared distance to next waypoint
+extern float arrived_at_waypoint;
 
 extern bool exception_flag[10];
 

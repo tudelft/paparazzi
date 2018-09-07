@@ -280,7 +280,7 @@
       <go pre_call="nav_hybrid_heading_set()" from="p5" hmode="route" wp="p6"/>
       <go pre_call="nav_hybrid_heading_set()" from="p6" hmode="route" wp="p7"/>
       <go pre_call="nav_hybrid_heading_set()" from="p7" hmode="route" wp="p8"/>
-      <deroute block="route_to_joe"/>
+      <deroute block="cross_5678"/>
     </block>
     <block group="safe" name="Standby" strip_button="Standby">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>

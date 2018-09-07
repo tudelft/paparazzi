@@ -67,6 +67,7 @@
 #ifndef ARRIVED_AT_WAYPOINT
 #define ARRIVED_AT_WAYPOINT 3.0
 #endif
+float arrived_at_waypoint = ARRIVED_AT_WAYPOINT;
 
 /** Maximum distance from HOME waypoint before going into failsafe mode */
 #ifndef FAILSAFE_MODE_DISTANCE
@@ -286,7 +287,7 @@ bool nav_approaching_from(struct EnuCoor_i *wp, struct EnuCoor_i *from, int16_t 
   dist_to_point = float_vect2_norm(&diff_f);
 
   /* return TRUE if we have arrived */
-  if (dist_to_point < ARRIVED_AT_WAYPOINT) {
+  if (dist_to_point < arrived_at_waypoint) {
     return true;
   }
 
@@ -319,7 +320,7 @@ bool nav_check_wp_time(struct EnuCoor_i *wp, uint16_t stay_time)
   VECT2_DIFF(diff, *wp, *stateGetPositionEnu_i());
   struct FloatVect2 diff_f = {POS_FLOAT_OF_BFP(diff.x), POS_FLOAT_OF_BFP(diff.y)};
   dist_to_point = float_vect2_norm(&diff_f);
-  if (dist_to_point < ARRIVED_AT_WAYPOINT) {
+  if (dist_to_point < arrived_at_waypoint) {
     if (!wp_reached) {
       wp_reached = true;
       wp_entry_time = autopilot.flight_time;
