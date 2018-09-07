@@ -29,6 +29,10 @@
     <waypoint name="p2" x="463.8" y="94.0"/>
     <waypoint name="p3" x="-91.6" y="91.5"/>
     <waypoint name="p4" x="4.1" y="227.9"/>
+    <waypoint name="p5" x="64.4" y="21.9"/>
+    <waypoint name="p6" x="-16.1" y="-1.2"/>
+    <waypoint name="p7" x="9.9" y="46.7"/>
+    <waypoint name="p8" x="31.6" y="-23.4"/>
     <waypoint alt="40.0" name="TD" x="26.7" y="10.4"/>
     <waypoint name="CLIMB" x="8.4" y="32.9"/>
     <waypoint name="STDBY" x="63.0" y="36.0"/>
@@ -121,7 +125,7 @@
     <block group="fly_to_joe" name="transition_to_joe">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_p1)"/>
-      <stay until="stage_time>4" pre_call="nav_hybrid_heading_set_to_waypoint()" wp="CLIMB"/>
+      <stay pre_call="nav_hybrid_heading_set_to_waypoint()" until="stage_time>4" wp="CLIMB"/>
     </block>
     <block group="fly_to_joe" name="route_to_joe">
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
@@ -215,7 +219,7 @@
     <block group="fly_to_base" name="transition_to_base">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_p1)"/>
-      <stay until="stage_time>4" pre_call="nav_hybrid_heading_set_to_waypoint()" wp="CLIMB"/>
+      <stay pre_call="nav_hybrid_heading_set_to_waypoint()" until="stage_time>4" wp="CLIMB"/>
     </block>
     <block group="fly_to_base" name="route_to_base">
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
@@ -267,7 +271,16 @@
       <call_once fun="opa_controller_ap_disarm(true)"/>
       <call_once fun="nav_throttle_curve_set(0)"/>
       <attitude pitch="0" roll="0" throttle="0" until="stage_time>2" vmode="throttle"/>
-      <attitude pitch="0" roll="0" throttle="0" until="electrical.vsupply>190" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <block group="safe" name="cross_5678">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <go pre_call="nav_hybrid_heading_set()" from="p8" hmode="route" wp="p5"/>
+      <go pre_call="nav_hybrid_heading_set()" from="p5" hmode="route" wp="p6"/>
+      <go pre_call="nav_hybrid_heading_set()" from="p6" hmode="route" wp="p7"/>
+      <go pre_call="nav_hybrid_heading_set()" from="p7" hmode="route" wp="p8"/>
+      <deroute block="route_to_joe"/>
     </block>
     <block group="safe" name="Standby" strip_button="Standby">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
