@@ -381,7 +381,6 @@
     <define name="THROTTLE_FROM_PITCH_UP" value="50.0"/>
     <define name="MIN_PITCH" value="-15.0"/>
     <define name="MAX_PITCH" value="10.0"/>
-    <define name="TRANSITION_THROTTLE" value="8500"/>
   </section>
 
   <!-- Radio control specific switches -->
@@ -393,7 +392,7 @@
 
   <!-- Different autopilot modes for the RC -->
   <section name="AUTOPILOT">
-    <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
+    <define name="MODE_MANUAL" value="AP_MODE_RATE_DIRECT"/>
     <define name="MODE_AUTO1"  value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>
   </section>
