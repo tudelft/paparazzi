@@ -240,8 +240,8 @@
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
     <define name="MAX_BANK" value="45" unit="deg" />
-    <define name="REF_MAX_SPEED" value="9" unit="m/s" />
-    <define name="REF_MAX_ACCEL" value="3.2" />
+    <define name="REF_MAX_SPEED" value="12" unit="m/s" />
+    <define name="REF_MAX_ACCEL" value="4.5" />
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
     <define name="PGAIN" value="50" />
