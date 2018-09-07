@@ -77,10 +77,10 @@
       <call fun="enableVisionFindJoe(true)" loop="false"/>
       <exception cond="vision_timeout " deroute="Standby"/>
       <go  wp="JOE_reported"/>
-      <circle radius="30" wp="JOE_reported"/>
-      <circle radius="50" wp="JOE_reported"/>
-      <circle radius="70" wp="JOE_reported"/>
-      <circle radius="90" wp="JOE_reported"/>
+      <circle radius="-30" wp="JOE_reported" until="fabs(ANGLE_FLOAT_OF_BFP(nav_circle_radians)) > 6.28"/>
+      <circle radius="-50" wp="JOE_reported" until="fabs(ANGLE_FLOAT_OF_BFP(nav_circle_radians)) > 6.28"/>
+      <circle radius="-70" wp="JOE_reported" until="fabs(ANGLE_FLOAT_OF_BFP(nav_circle_radians)) > 6.28"/>
+      <circle radius="-90" wp="JOE_reported" until="fabs(ANGLE_FLOAT_OF_BFP(nav_circle_radians)) > 6.28"/>
       <go from="p1" hmode="route" wp="p2"/>
       <go from="p2" hmode="route" wp="p3"/>
       <go from="p3" hmode="route" wp="p4"/>
@@ -116,6 +116,11 @@
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="waypoint_set_here_2d(WP_TD)"/>
+      <deroute block="land"/>
+    </block>
+    <block name="land on joe_found">
+      <go wp="JOE_found"/>
+      <call fun="NavCopyWaypoint(WP_TD,WP_JOE_found)" loop="false"/>
       <deroute block="land"/>
     </block>
     <block name="land">
