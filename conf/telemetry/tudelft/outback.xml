@@ -168,6 +168,7 @@
       <message name="DELFTACOPTER_FILTER_LOGGING" period="0.005"/>
       <message name="INS"                    period="0.1"/>
       <message name="STAB_ATTITUDE_INT"      period="0.1"/>
+      <message name="STAB_ATTITUDE_REF_INT"  period="0.1"/>
     </mode>
   </process>
 
