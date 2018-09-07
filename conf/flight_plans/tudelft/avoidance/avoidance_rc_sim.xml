@@ -1,16 +1,16 @@
 <!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
 
-<flight_plan alt="70" ground_alt="0" home_mode_height="70" lat0="52.1702964" lon0="4.4279714" max_dist_from_home="1200" name="RC Avoidance test" qfu="40" security_height="50">
+<flight_plan alt="70" ground_alt="0" home_mode_height="70" lat0="52.1683003" lon0="4.4133430" max_dist_from_home="1200" name="RC Avoidance test" qfu="40" security_height="50">
   <waypoints>
-    <waypoint lat="52.171592" lon="4.429012" name="START"/>
-    <waypoint lat="52.172303" lon="4.428435" name="P"/>
-    <waypoint lat="52.172053" lon="4.427243" name="WP1"/>
-    <waypoint lat="52.1701016" lon="4.4201663" name="WP2"/>
-    <waypoint lat="52.168534" lon="4.421087" name="WP3"/>
-    <waypoint lat="52.170491" lon="4.428522" name="WP4"/>
+    <waypoint lat="52.168967" lon="4.412623" name="START"/>
+    <waypoint lat="52.169424" lon="4.412345" name="P"/>
+    <waypoint lat="52.169565" lon="4.413013" name="WP1"/>
+    <waypoint lat="52.170219" lon="4.417936" name="WP2"/>
+    <waypoint lat="52.168312" lon="4.418483" name="WP3"/>
+    <waypoint lat="52.167382" lon="4.414523" name="WP4"/>
     <waypoint name="HOME" x="0" y="0"/>
     <waypoint name="STDBY" x="-84.6" y="-16.6"/>
-    <waypoint alt="-1.0" name="TD" x="82.6" y="27.6"/>
+    <waypoint alt="-1.0" name="TD" x="33.8" y="-16.1"/>
     <waypoint name="CLIMB" x="1.9" y="1.0"/>
     <waypoint lat="52.171103" lon="4.423350" name="_NFZ0_0"/>
     <waypoint lat="52.171295" lon="4.423973" name="_NFZ0_1"/>
@@ -20,18 +20,18 @@
     <waypoint lat="52.169559" lon="4.424181" name="_NFZ1_1"/>
     <waypoint lat="52.169211" lon="4.424387" name="_NFZ1_2"/>
     <waypoint lat="52.168923" lon="4.423737" name="_NFZ1_3"/>
-    <waypoint lat="52.170955" lon="4.421661" name="_NFZ2_0"/>
-    <waypoint lat="52.171044" lon="4.422184" name="_NFZ2_1"/>
-    <waypoint lat="52.170722" lon="4.422290" name="_NFZ2_2"/>
-    <waypoint lat="52.170621" lon="4.421808" name="_NFZ2_3"/>
-    <waypoint lat="52.171301" lon="4.410844" name="MB1"/>
-    <waypoint lat="52.176136" lon="4.430876" name="MB2"/>
-    <waypoint lat="52.169087" lon="4.438128" name="MB3"/>
-    <waypoint lat="52.163088" lon="4.418611" name="MB4"/>
-    <waypoint lat="52.171026" lon="4.417145" name="SB1"/>
-    <waypoint lat="52.174098" lon="4.429340" name="SB2"/>
-    <waypoint lat="52.169322" lon="4.434160" name="SB3"/>
-    <waypoint lat="52.165705" lon="4.419700" name="SB4"/>
+    <waypoint lat="52.169991" lon="4.415086" name="_NFZ2_0"/>
+    <waypoint lat="52.170227" lon="4.415636" name="_NFZ2_1"/>
+    <waypoint lat="52.169860" lon="4.415906" name="_NFZ2_2"/>
+    <waypoint lat="52.169700" lon="4.415304" name="_NFZ2_3"/>
+    <waypoint lat="52.171278" lon="4.406088" name="MB1"/>
+    <waypoint lat="52.174178" lon="4.423135" name="MB2"/>
+    <waypoint lat="52.166090" lon="4.426744" name="MB3"/>
+    <waypoint lat="52.161838" lon="4.412232" name="MB4"/>
+    <waypoint lat="52.170679" lon="4.409294" name="SB1"/>
+    <waypoint lat="52.172169" lon="4.419896" name="SB2"/>
+    <waypoint lat="52.166399" lon="4.423039" name="SB3"/>
+    <waypoint lat="52.163367" lon="4.414227" name="SB4"/>
   </waypoints>
   <sectors>
     <sector color="red" name="MissionBoundary" type="dynamic">
