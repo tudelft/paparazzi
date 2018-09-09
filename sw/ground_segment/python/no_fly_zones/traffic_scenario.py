@@ -66,6 +66,9 @@ class traffic_scenario(object):
         for i in range(len(active_traffic_objects)):
             if ((active_traffic_objects[i].TrkN >= 40000 and active_traffic_objects[i].TrkN < 50000) and (active_traffic_objects[i].prey_loitering == True)):
                 self.Traffic.create(1, active_traffic_objects[i].velocity_prey, active_traffic_objects[i].lla_lst_prey[-1].lat * 10.**-7, active_traffic_objects[i].lla_lst_prey[-1].lon * 10.**-7, active_traffic_objects[i].hdg_prey, 'AC' + str(i+1), active_traffic_objects[i].radius_prey)
+            if (active_traffic_objects[i].TrkN >= 1 and active_traffic_objects[i].TrkN < 20000):
+                print(self.calc_tcpa(active_traffic_objects[i].enu_lst[-1], active_traffic_objects[i].gspeed['east'], active_traffic_objects[i].gspeed['north'], self.UAV_speed, self.UAV_hdg))
+                self.Traffic.create(1, active_traffic_objects[i].velocity, active_traffic_objects[i].lla_lst[-1].lat * 10.**-7, active_traffic_objects[i].lla_lst[-1].lon * 10.**-7, active_traffic_objects[i].hdg, 'AC' + str(i+1), active_traffic_objects[i].radius)
             else:
                 self.Traffic.create(1, active_traffic_objects[i].velocity, active_traffic_objects[i].lla_lst[-1].lat * 10.**-7, active_traffic_objects[i].lla_lst[-1].lon * 10.**-7, active_traffic_objects[i].hdg, 'AC' + str(i+1), active_traffic_objects[i].radius)
         
@@ -82,6 +85,15 @@ class traffic_scenario(object):
         ssd_resolutions.constructSSD(self.asas, self.Traffic, self.asas.tla, wind)
         resolutions = ssd_resolutions.calculate_resolution(self.asas, self.Traffic)
         return resolutions
+        
+    def calc_tcpa(self, enu_other, speed_other_x, speed_other_y, airspeed, UAV_hdg):
+        du = speed_other_x - (airspeed * np.sin(np.deg2rad(UAV_hdg)))
+        dv = speed_other_y - (airspeed * np.cos(np.deg2rad(UAV_hdg)))
+        dx = enu_other.x - self.UAV_point_enu.x
+        dy = enu_other.y - self.UAV_point_enu.y
+        vrel2 = du * du + dv * dv
+        tcpa = -(du * dx + dv * dy) / vrel2
+        return tcpa
         
     def init_SSD_plot(self):
         plt.ion()
@@ -194,6 +206,23 @@ class traffic_scenario_extrapolated(object):
         
         if ((types == "dynamic") or (types == "both")):
             for i in range(len(active_traffic_objects)):
+                if ((active_traffic_objects[i].TrkN >= 1 and active_traffic_objects[i].TrkN < 20000) and (active_traffic_objects[i].prey_loitering == True)):
+                    velocity = active_traffic_objects[i].velocity
+                    lla_point_old = active_traffic_objects[i].lla_lst[-1]
+                    hdg = active_traffic_objects[i].hdg
+                    radius = active_traffic_objects[i].radius
+                    
+                    
+                    # Speed components to compute future position
+                    Vx = velocity * np.sin(np.deg2rad(hdg)) # V in east direction
+                    Vy = velocity * np.cos(np.deg2rad(hdg)) # V in north direction
+                    Vz = active_traffic_objects[i].RoC # V in upward direction
+                    
+                    # enu_point conversion to new point and to lla
+                    enu_point_old = coord_trans.lla_to_enu_fw(lla_point_old, self.UAV.ref_utm_i)
+                    enu_point_new = geodetic.EnuCoor_f(enu_point_old.x + Vx * dt, enu_point_old.y + Vy * dt, enu_point_old.z + Vz * dt)
+                    lla_point_new = coord_trans.enu_to_lla_fw(enu_point_new, self.UAV.ref_utm_i)
+                    print(self.calc_tcpa(enu_point_new, Vx, Vy, commanded_airspeed, wind, UAV_hdg))
                 if ((active_traffic_objects[i].TrkN >= 40000 and active_traffic_objects[i].TrkN < 50000) and (active_traffic_objects[i].prey_loitering == True)):                
                     velocity = active_traffic_objects[i].velocity_prey
                     lla_point_old = active_traffic_objects[i].lla_lst_prey[-1]
@@ -247,3 +276,12 @@ class traffic_scenario_extrapolated(object):
         
         resolutions = ssd_resolutions.calculate_resolution(self.asas, self.Traffic)
         return resolutions
+        
+    def calc_tcpa(self, enu_other, speed_other_x, speed_other_y, airspeed, wind, UAV_hdg):
+        du = speed_other_x - (airspeed * np.sin(np.deg2rad(UAV_hdg)) + wind['east'])
+        dv = speed_other_y - (airspeed * np.cos(np.deg2rad(UAV_hdg)) + wind['north'])
+        dx = enu_other.x - self.UAV_point_enu.x
+        dy = enu_other.y - self.UAV_point_enu.y
+        vrel2 = du * du + dv * dv
+        tcpa = -(du * dx + dv * dy) / vrel2
+        return tcpa
