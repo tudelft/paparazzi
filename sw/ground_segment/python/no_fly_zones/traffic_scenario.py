@@ -64,11 +64,25 @@ class traffic_scenario(object):
         
         
         for i in range(len(active_traffic_objects)):
-            if ((active_traffic_objects[i].TrkN >= 40000 and active_traffic_objects[i].TrkN < 50000) and (active_traffic_objects[i].prey_loitering == True)):
-                self.Traffic.create(1, active_traffic_objects[i].velocity_prey, active_traffic_objects[i].lla_lst_prey[-1].lat * 10.**-7, active_traffic_objects[i].lla_lst_prey[-1].lon * 10.**-7, active_traffic_objects[i].hdg_prey, 'AC' + str(i+1), active_traffic_objects[i].radius_prey)
             if (active_traffic_objects[i].TrkN >= 1 and active_traffic_objects[i].TrkN < 20000):
-                print(self.calc_tcpa(active_traffic_objects[i].enu_lst[-1], active_traffic_objects[i].gspeed['east'], active_traffic_objects[i].gspeed['north'], self.UAV_speed, self.UAV_hdg))
-                self.Traffic.create(1, active_traffic_objects[i].velocity, active_traffic_objects[i].lla_lst[-1].lat * 10.**-7, active_traffic_objects[i].lla_lst[-1].lon * 10.**-7, active_traffic_objects[i].hdg, 'AC' + str(i+1), active_traffic_objects[i].radius)
+                if (active_traffic_objects[i].yaw_rate > 2.):
+                    tcpa = self.calc_tcpa(active_traffic_objects[i].enu_lst[-1], active_traffic_objects[i].gspeed['east'], active_traffic_objects[i].gspeed['north'], self.UAV_speed, self.UAV_hdg)
+                    if tcpa > 0.:
+                        t_yawing = 10. #[s] predicted, editable        
+                        if tcpa > t_yawing:
+                            d_hdg = active_traffic_objects[i].yaw_rate * t_yawing
+                        else:
+                            d_hdg = active_traffic_objects[i].yaw_rate * tcpa
+                        new_hdg = (active_traffic_objects[i].hdg + d_hdg) % 360.
+                        self.Traffic.create(1, active_traffic_objects[i].velocity, active_traffic_objects[i].lla_lst[-1].lat * 10.**-7, active_traffic_objects[i].lla_lst[-1].lon * 10.**-7, new_hdg, 'AC' + str(i+1), active_traffic_objects[i].radius)
+                    else:
+                        self.Traffic.create(1, active_traffic_objects[i].velocity, active_traffic_objects[i].lla_lst[-1].lat * 10.**-7, active_traffic_objects[i].lla_lst[-1].lon * 10.**-7, active_traffic_objects[i].hdg, 'AC' + str(i+1), active_traffic_objects[i].radius)
+                else:
+                    self.Traffic.create(1, active_traffic_objects[i].velocity, active_traffic_objects[i].lla_lst[-1].lat * 10.**-7, active_traffic_objects[i].lla_lst[-1].lon * 10.**-7, active_traffic_objects[i].hdg, 'AC' + str(i+1), active_traffic_objects[i].radius)
+            
+            if ((active_traffic_objects[i].TrkN >= 40000 and active_traffic_objects[i].TrkN < 50000) and (active_traffic_objects[i].prey_loitering == True) and False):
+                self.Traffic.create(1, active_traffic_objects[i].velocity_prey, active_traffic_objects[i].lla_lst_prey[-1].lat * 10.**-7, active_traffic_objects[i].lla_lst_prey[-1].lon * 10.**-7, active_traffic_objects[i].hdg_prey, 'AC' + str(i+1), active_traffic_objects[i].radius_prey)
+            
             else:
                 self.Traffic.create(1, active_traffic_objects[i].velocity, active_traffic_objects[i].lla_lst[-1].lat * 10.**-7, active_traffic_objects[i].lla_lst[-1].lon * 10.**-7, active_traffic_objects[i].hdg, 'AC' + str(i+1), active_traffic_objects[i].radius)
         
@@ -206,6 +220,7 @@ class traffic_scenario_extrapolated(object):
         
         if ((types == "dynamic") or (types == "both")):
             for i in range(len(active_traffic_objects)):
+                
                 if ((active_traffic_objects[i].TrkN >= 1 and active_traffic_objects[i].TrkN < 20000) and (active_traffic_objects[i].prey_loitering == True)):
                     velocity = active_traffic_objects[i].velocity
                     lla_point_old = active_traffic_objects[i].lla_lst[-1]
@@ -220,9 +235,21 @@ class traffic_scenario_extrapolated(object):
                     
                     # enu_point conversion to new point and to lla
                     enu_point_old = coord_trans.lla_to_enu_fw(lla_point_old, self.UAV.ref_utm_i)
+                    if (active_traffic_objects[i].yaw_rate > 2.):
+                        tcpa = self.calc_tcpa(enu_point_old, Vx, Vy, commanded_airspeed, wind, self.UAV_hdg)
+                        if tcpa > 0.:
+                            t_yawing = 10. #[s] predicted, editable        
+                            if tcpa > t_yawing:
+                                d_hdg = active_traffic_objects[i].yaw_rate * t_yawing
+                            else:
+                                d_hdg = active_traffic_objects[i].yaw_rate * tcpa
+                            hdg = (active_traffic_objects[i].hdg + d_hdg) % 360.
+                    
                     enu_point_new = geodetic.EnuCoor_f(enu_point_old.x + Vx * dt, enu_point_old.y + Vy * dt, enu_point_old.z + Vz * dt)
+                    
+                    
                     lla_point_new = coord_trans.enu_to_lla_fw(enu_point_new, self.UAV.ref_utm_i)
-                    print(self.calc_tcpa(enu_point_new, Vx, Vy, commanded_airspeed, wind, UAV_hdg))
+                
                 if ((active_traffic_objects[i].TrkN >= 40000 and active_traffic_objects[i].TrkN < 50000) and (active_traffic_objects[i].prey_loitering == True)):                
                     velocity = active_traffic_objects[i].velocity_prey
                     lla_point_old = active_traffic_objects[i].lla_lst_prey[-1]
