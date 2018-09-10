@@ -87,15 +87,20 @@
       <go from="p4" hmode="route" wp="p1"/>
       <deroute block="stay_p1"/>
     </block>
-    <block name="goto_joe">
+    <block name="goto_joe_found">
       <call fun="enableVisionFindJoe(false)" loop="false"/>      
       <call fun="NavCopyWaypoint(WP_TD_mrk,WP_JOE_found)" loop="false"/>
       <stay wp="JOE_found"/>
     </block>
-    <block name="stay_marker">
+    <block name="stay_joe_found">
       <call fun="enableVisionFindJoe(true)" loop="false"/>
       <call fun="enableVisionDescent(true)" loop="false"/>
       <stay wp="JOE_found"/>
+    </block>
+    <block name="stay_td_mrk">
+      <call fun="enableVisionFindJoe(true)" loop="false"/>
+      <call fun="enableVisionDescent(true)" loop="false"/>
+      <stay wp="TD_mrk"/>
     </block>
     <block name="land_mrk">
       <call_once fun="waypoint_set_here(WP_TD_mrk)"/>

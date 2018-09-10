@@ -219,7 +219,7 @@ static inline void vision_outback_parse_msg(void)
           }
 
         if (vision_outback_enable_findjoe) {
-            waypoint_set_xy_i(WP_TD_mrk, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_x));
+            waypoint_set_xy_i(WP_TD_mrk, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
             if (!vision_outback_enable_landing) {
                 waypoint_set_xy_i(WP_JOE_found, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
               }
