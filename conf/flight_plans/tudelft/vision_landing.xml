@@ -93,13 +93,14 @@
       <stay wp="JOE_found"/>
     </block>
     <block name="stay_marker">
-      <call fun="enableVisionFindJoe(false)" loop="false"/>
+      <call fun="enableVisionFindJoe(true)" loop="false"/>
       <call fun="enableVisionDescent(true)" loop="false"/>
-      <stay wp="TD_mrk"/>
+      <stay wp="JOE_found"/>
     </block>
     <block name="land_mrk">
       <call_once fun="waypoint_set_here(WP_TD_mrk)"/>
       <call fun="enableVisionDescent(true)" loop="false"/>
+      <call fun="enableVisionFindJoe(true)" loop="false"/>
       <go wp="TD_mrk"/>
     </block>
     <block name="descent_mrk">

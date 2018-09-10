@@ -395,16 +395,10 @@ void do_power_state_machine(void) {
 }
 
 void enableVisionDescent(bool b) {
-  if (b) {
-      vision_outback_enable_findjoe  = false;
-    }
   vision_outback_enable_landing = b;
 }
 
 void enableVisionFindJoe(bool b) {
-  if (b) {
-      vision_outback_enable_landing  = false;
-    }
   vision_outback_enable_findjoe = b;
 }
 
