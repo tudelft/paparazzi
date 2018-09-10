@@ -21,25 +21,25 @@
     <waypoint name="MB3" x="363.8" y="1258.5"/>
     <waypoint name="MB4" x="1353.8" y="-317.7"/>
     <waypoint alt="40.0" name="BASE" x="39.5" y="18.6"/>
-    <waypoint alt="40.0" name="JOE" x="42.0" y="8.6"/>
+    <waypoint alt="50.0" name="JOE" x="42.0" y="8.6"/>
     <waypoint alt="40.0" name="JOE_reported" x="54.9" y="33.7"/>
-    <waypoint name="JOE_found" x="297.3" y="-99.5"/>
-    <waypoint name="TD_mrk" x="257.6" y="-132.7"/>
+    <waypoint alt="50.0" name="JOE_found" x="297.3" y="-99.5"/>
+    <waypoint alt="50.0" name="TD_mrk" x="257.6" y="-132.7"/>
     <waypoint name="p1" x="408" y="-36"/>
     <waypoint name="p2" x="463.8" y="94.0"/>
     <waypoint name="p3" x="-91.6" y="91.5"/>
     <waypoint name="p4" x="4.1" y="227.9"/>
-    <waypoint name="j1" x="63.9" y="48.7"/>
-    <waypoint name="j2" x="35.3" y="41.6"/>
-    <waypoint name="j3" x="66.6" y="41.1"/>
-    <waypoint name="j4" x="38.1" y="33.4"/>
-    <waypoint name="j5" x="69.9" y="32.7"/>
-    <waypoint name="j6" x="41.6" y="25.4"/>
-    <waypoint name="j7" x="72.5" y="24.9"/>
-    <waypoint name="j8" x="44.7" y="16.1"/>
+    <waypoint alt="50.0" name="j1" x="63.9" y="48.7"/>
+    <waypoint alt="50.0" name="j2" x="35.3" y="41.6"/>
+    <waypoint alt="50.0" name="j3" x="66.6" y="41.1"/>
+    <waypoint alt="50.0" name="j4" x="38.1" y="33.4"/>
+    <waypoint alt="50.0" name="j5" x="69.9" y="32.7"/>
+    <waypoint alt="50.0" name="j6" x="41.6" y="25.4"/>
+    <waypoint alt="50.0" name="j7" x="72.5" y="24.9"/>
+    <waypoint alt="50.0" name="j8" x="44.7" y="16.1"/>
     <waypoint alt="40.0" name="TD" x="26.7" y="10.4"/>
     <waypoint name="CLIMB" x="8.4" y="32.9"/>
-    <waypoint name="STDBY" x="85.3" y="39.9"/>
+    <waypoint alt="50.0" name="STDBY" x="85.3" y="39.9"/>
     <waypoint name="HOVER" x="-155.1" y="-275.9"/>
   </waypoints>
   <sectors>
