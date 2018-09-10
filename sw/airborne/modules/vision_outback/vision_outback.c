@@ -85,7 +85,7 @@ int turbosize = 0;
 #ifdef VISION_PWR_ON // DelftaCopter...
 #define DRONE_WIDTH 1.f;
 #define DRONE_LENGTH 0.3f;
-float vision_outback_moment_height = 0.25;
+float vision_outback_moment_height = 0.35;
 #else  // IRIS
 #define DRONE_WIDTH 0.2f;
 #define DRONE_LENGTH 0.2f;

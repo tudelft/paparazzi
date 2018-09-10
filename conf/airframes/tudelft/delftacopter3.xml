@@ -190,7 +190,7 @@
     <define name="NAV_DESCEND_VSPEED" value="-3.5"/>
     <define name="NAV_LINE_FOLLOWING_DIST" value="85.0"/>
     <define name="ARRIVED_AT_WAYPOINT" value="50"/>
-    <define name="ARRIVED_AT_WAYPOINT_HOVER" value="3"/>
+    <define name="ARRIVED_AT_WAYPOINT_HOVER" value="5"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
     <define name="APVoltageOfAdc(adc)" value="(adc*0.0061456 + 0.321688)"/>
