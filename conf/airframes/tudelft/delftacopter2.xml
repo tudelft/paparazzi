@@ -33,8 +33,8 @@
       <module name="ahrs"          type="int_cmpl_quat">
         <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>      </module>
       <module name="ins"           type="hff"/>
-      <module name="guidance"      type="delftacopter"/>
-      <!--module name="guidance"      type="indi"/-->
+      <module name="guidance"      type="delftacopter">
+      <module name="guidance"      type="indi"/>
       <module name="gain_scheduling"/>
       <module name="intermcu"      type="uart">
         <configure name="SECONDARY_GPS" value="imcu"/>
