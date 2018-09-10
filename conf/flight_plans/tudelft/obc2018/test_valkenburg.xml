@@ -125,6 +125,7 @@
       <stay climb="nav_climb_vspeed" until="stateGetPositionEnu_f()->z > 20.0" vmode="climb" wp="CLIMB"/>
       <call_once fun="nav_hybrid_heading_init()"/>
       <stay climb="nav_climb_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="CLIMB"/>
+      <derout block="find_joe"/> <!-- TMP -->
     </block>
     <block group="fly_to_joe" name="transition_to_joe">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -146,6 +147,7 @@
     <block group="find_joe" name="find_joe">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_hybrid_heading_init()"/>
+      <call fun="enableVisionFindJoe(true)" loop="false"/>
       <go from="j8" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j1"/>
       <go from="j1" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j2"/>
       <go from="j2" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j3"/>
@@ -155,6 +157,10 @@
       <go from="j6" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j7"/>
       <go from="j7" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j8"/>
       <deroute block="find_joe"/>
+    </block>
+    <block group="stay_joe_found" name="stay_joe">
+      <call fun="enableVisionFindJoe(true)" loop="false"/>
+      <stay wp="JOE_found"/>
     </block>
     <block group="land_joe" name="joe_land">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
