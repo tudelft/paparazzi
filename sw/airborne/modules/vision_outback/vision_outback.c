@@ -209,9 +209,9 @@ static inline void vision_outback_parse_msg(void)
               } else {
                 het_moment = false;
               }
-            waypoint_set_xy_i(WP_TD_mrk, POS_BFP_OF_REAL(v2p_package.land_enu_x), POS_BFP_OF_REAL(v2p_package.land_enu_y));
-            msg_marker_x = v2p_package.land_enu_x;
-            msg_marker_y = v2p_package.land_enu_y;
+
+//            msg_marker_x = v2p_package.land_enu_x;
+//            msg_marker_y = v2p_package.land_enu_y;
 
             AbiSendMsgAGL(AGL_SONAR_ADC_ID, v2p_package.height);
           } else {
@@ -219,7 +219,10 @@ static inline void vision_outback_parse_msg(void)
           }
 
         if (vision_outback_enable_findjoe) {
-            waypoint_set_xy_i(WP_JOE_found, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
+            waypoint_set_xy_i(WP_TD_mrk, POS_BFP_OF_REAL(v2p_package.land_enu_x), POS_BFP_OF_REAL(v2p_package.land_enu_y));
+            if (!vision_outback_enable_landing) {
+                waypoint_set_xy_i(WP_JOE_found, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
+              }
             msg_marker_x = v2p_package.marker_enu_x;
             msg_marker_y = v2p_package.marker_enu_y;
           }
