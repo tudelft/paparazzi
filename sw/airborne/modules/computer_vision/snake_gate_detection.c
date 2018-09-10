@@ -981,7 +981,7 @@ int check_color_sgd(struct image_t *im, int x, int y) {
 
   // Call the function in image.c with the color thresholds:
   // Please note that we have to switch x and y around here, due to the strange sensor mounting in the Bebop:
-  int success = check_color(im, y, x, color_Y_min, color_Y_max, color_U_min, color_U_max, color_V_min, color_V_max);
+  int success = check_color_yuv422(im, y, x, color_Y_min, color_Y_max, color_U_min, color_U_max, color_V_min, color_V_max);
 
   /*
   #ifdef DEBUG_SNAKE_GATE
