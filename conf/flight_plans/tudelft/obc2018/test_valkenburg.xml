@@ -125,7 +125,7 @@
       <stay climb="nav_climb_vspeed" until="stateGetPositionEnu_f()->z > 20.0" vmode="climb" wp="CLIMB"/>
       <call_once fun="nav_hybrid_heading_init()"/>
       <stay climb="nav_climb_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="CLIMB"/>
-      <derout block="find_joe"/> <!-- TMP -->
+      <deroute block="find_joe"/> <!-- TMP -->
     </block>
     <block group="fly_to_joe" name="transition_to_joe">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
