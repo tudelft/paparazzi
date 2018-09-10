@@ -20,8 +20,8 @@
     <waypoint alt="50.0" name="p4" x="0" y="70.0"/>
     <waypoint name="TD" x="5.6" y="-10.9"/>
     <waypoint alt="50.0" name="JOE_reported" x="0" y="0"/>
-    <waypoint alt="50.0" name="JOE_found" x="0" y="110"/>
-    <waypoint alt="50.0" name="TD_mrk" x="0" y="25"/>
+    <waypoint alt="30.0" name="JOE_found" x="0" y="110"/>
+    <waypoint alt="30.0" name="TD_mrk" x="0" y="25"/>
   </waypoints>
   <exceptions>
     <exception cond="((radio_control.status == RC_REALLY_LOST) &&
@@ -110,6 +110,7 @@
     </block>
     <block name="descent_mrk">
       <exception cond="5.0 > stateGetPositionEnu_f()->z" deroute="descent_slow_mrk"/>
+      <exception cond="4.0 > vision_height" deroute="descent_slow_mrk"/>
       <exception cond="vision_timeout " deroute="Standby"/>
       <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
       <stay climb="-1" vmode="climb" wp="TD_mrk"/>
@@ -118,7 +119,7 @@
       <exception cond="het_moment" deroute="landed"/>
       <exception cond="vision_timeout " deroute="Standby"/>
       <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
-      <stay climb="-0.5" vmode="climb" wp="TD_mrk"/>
+      <stay climb="-0.3" vmode="climb" wp="TD_mrk"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="waypoint_set_here_2d(WP_TD)"/>

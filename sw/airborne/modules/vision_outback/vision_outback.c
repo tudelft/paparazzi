@@ -73,6 +73,7 @@ uint8_t vision_outback_power = VISION_SETTING_STATUS_REQUEST_POWER_ON;
 #endif
 bool het_moment = false;
 bool vision_timeout = false; // TODO: remove
+float vision_height = false; // TODO: remove
 
 float msg_marker_x = 0;
 float msg_marker_y = 0;
@@ -187,7 +188,7 @@ static inline void vision_outback_parse_msg(void)
         for(uint8_t i = 0; i < size; i++) {
             tmp[i] = msg[i];
           }
-        timeoutcount = 5*VISION_OUTBACK_PERIODIC_FREQ;
+        timeoutcount = 1*VISION_OUTBACK_PERIODIC_FREQ;
         static int32_t frame_id_prev = 0;
         if (frame_id_prev == v2p_package.frame_id) { // Realsense resets id when changing from stereo to color. So, only check if frame is not freezing.
             timeoutcount = 0;
@@ -214,6 +215,7 @@ static inline void vision_outback_parse_msg(void)
 //            msg_marker_y = v2p_package.land_enu_y;
 
             AbiSendMsgAGL(AGL_SONAR_ADC_ID, v2p_package.height);
+            vision_height = v2p_package.height;
           } else {
             het_moment = false;
           }
