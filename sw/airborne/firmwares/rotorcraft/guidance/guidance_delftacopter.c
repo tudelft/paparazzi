@@ -129,7 +129,8 @@ static void send_hybrid_guidance(struct transport_tx *trans, struct link_device 
                                 &heading_diff_disp,
                                 &guidance_hybrid_ypr_sp.phi,
                                 &guidance_hybrid_ypr_sp.theta,
-                                &guidance_hybrid_ypr_sp.psi);
+                                &guidance_hybrid_ypr_sp.psi,
+                                &filtered_beta_estimate);
 }
 
 #endif

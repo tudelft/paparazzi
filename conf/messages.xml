@@ -216,6 +216,7 @@
       <field name="phi" type="int32" alt_unit="deg" alt_unit_coef="0.0139882"/>
       <field name="theta" type="int32" alt_unit="deg" alt_unit_coef="0.0139882"/>
       <field name="psi" type="int32" alt_unit="deg" alt_unit_coef="0.0139882"/>
+      <field name="beta" type="float" unit="rad" alt_unit="deg"/>
     </message>
 
     <message name="SVINFO" id="25">
