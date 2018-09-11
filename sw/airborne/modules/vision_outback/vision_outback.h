@@ -59,10 +59,14 @@ extern struct Vision2PPRZPackage v2p_package;
 
 //should be exactly the same as pprz.h
 struct PPRZ2VisionPackage {
-    float qi;
-    float qx;
-    float qy;
-    float qz;
+    float att_qi;
+    float att_qx;
+    float att_qy;
+    float att_qz;
+    float rate_qi;
+    float rate_qx;
+    float rate_qy;
+    float rate_qz;
     float gpsx;
     float gpsy;
     float gpsz;

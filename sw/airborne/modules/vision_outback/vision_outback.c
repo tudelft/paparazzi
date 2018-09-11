@@ -257,14 +257,21 @@ void vision_outback_event() {
 void vision_outback_periodic() {
 
   struct FloatQuat *att = stateGetNedToBodyQuat_f();
+  struct FloatQuat *rate = stateGetBodyRates_f();
+
   struct EnuCoor_f *pos = stateGetPositionEnu_f();
 
 
   struct PPRZ2VisionPackage p2k_package;
-  p2k_package.qi = att->qi;
-  p2k_package.qx = att->qx;
-  p2k_package.qy = att->qy;
-  p2k_package.qz = att->qz;
+  p2k_package.att_qi = att->qi;
+  p2k_package.att_qx = att->qx;
+  p2k_package.att_qy = att->qy;
+  p2k_package.att_qz = att->qz;
+  p2k_package.rate_qi = rate->qi;
+  p2k_package.rate_qx = rate->qx;
+  p2k_package.rate_qy = rate->qy;
+  p2k_package.rate_qz = rate->qz;
+
   p2k_package.gpsx = pos->x;
   p2k_package.gpsy = pos->y;
   p2k_package.gpsz = pos->z;
