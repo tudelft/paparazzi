@@ -140,28 +140,31 @@ static struct image_t *detect_gate_func(struct image_t *img)
     image_yuv422_colorfilt(img, img, color_Ym, color_YM, color_Um, color_UM, color_Vm, color_VM);
   } else {
     // perform snake gate detection:
-    snake_gate_detection(img, n_samples, min_px_size, min_gate_quality, gate_thickness, min_n_sides, color_Ym, color_YM, color_Um, color_UM, color_Vm, color_VM, &best_gate);
+    int ret = snake_gate_detection(img, n_samples, min_px_size, min_gate_quality, gate_thickness, min_n_sides, color_Ym, color_YM, color_Um, color_UM, color_Vm, color_VM, &best_gate);
+    if (ret == 1)
+    {
 
-    // debugging snake gate:
-    printf("Detected gate: ");
-    for(int i = 0; i < 4; i++) {
-      printf("(%d,%d) ", best_gate.x_corners[i], best_gate.y_corners[i]);
+      // debugging snake gate:
+      printf("Detected gate: ");
+      for(int i = 0; i < 4; i++) {
+        printf("(%d,%d) ", best_gate.x_corners[i], best_gate.y_corners[i]);
+      }
+      printf("\n");
+
+      drone_position = get_world_position_from_image_points(best_gate.x_corners, best_gate.y_corners, world_corners, 3, DETECT_GATE_CAMERA.camera_intrinsics, cam_body);
+      drone_position.x -= gate_dist_x;
+
+      // debugging the drone position:
+      printf("Position drone: (%f, %f, %f)\n", drone_position.x, drone_position.y, drone_position.z);
+
+      // send from thread to module
+      pthread_mutex_lock(&gate_detect_mutex);
+      detect_gate_x = drone_position.x;
+      detect_gate_y = drone_position.y;
+      detect_gate_z = drone_position.z;
+      detect_gate_has_new_data = true;
+      pthread_mutex_unlock(&gate_detect_mutex);
     }
-    printf("\n");
-
-    drone_position = get_world_position_from_image_points(best_gate.x_corners, best_gate.y_corners, world_corners, 3, DETECT_GATE_CAMERA.camera_intrinsics, cam_body);
-    drone_position.x -= gate_dist_x;
-
-    // debugging the drone position:
-    printf("Position drone: (%f, %f, %f)\n", drone_position.x, drone_position.y, drone_position.z);
-
-    // send from thread to module
-    pthread_mutex_lock(&gate_detect_mutex);
-    detect_gate_x = drone_position.x;
-    detect_gate_y = drone_position.y;
-    detect_gate_z = drone_position.z;
-    detect_gate_has_new_data = true;
-    pthread_mutex_unlock(&gate_detect_mutex);
   }
   return img;
 }
