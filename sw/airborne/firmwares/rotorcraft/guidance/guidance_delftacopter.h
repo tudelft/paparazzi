@@ -31,6 +31,7 @@
 
 #include "math/pprz_algebra_int.h"
 #include "guidance_hybrid.h"
+#include "filters/low_pass_filter.h"
 
 extern int32_t v_control_pitch;
 extern float vertical_setpont_outback;

@@ -83,17 +83,22 @@ static void guidance_hybrid_transition_hover(void);
 static void guidance_hybrid_forward(void);
 static void guidance_hybrid_hover(bool in_flight);
 static void guidance_hybrid_set_nav_throttle_curve(void);
+static void guidance_hybrid_update_sideslip_estimate(void);
 
 // Private variables
 static int32_t last_hover_heading;
 static int32_t last_forward_heading;
 static int32_t transition_time = 0;
+static float filtered_beta_estimate = 0;
 
 struct Int32Eulers guidance_hybrid_ypr_sp;
 static struct Int32Vect2 guidance_hybrid_airspeed_sp;
 static struct Int32Vect2 guidance_h_pos_err;
 static struct Int32Vect2 wind_estimate;
 static struct Int32Vect2 guidance_hybrid_ref_airspeed;
+static struct SecondOrderLowPass beta_filter;
+float tau_beta_filter = 1/(0.5f * 2 * M_PI); // Beta filter cutoff frequency in Hertz
+float q_beta_filter = 1.0f;
 
 static int32_t norm_sp_airspeed_disp;
 static int32_t heading_diff_disp;
@@ -143,6 +148,8 @@ void guidance_hybrid_init(void)
   guidance_hybrid_norm_ref_airspeed = 0;
   dperpendicular = 0.0;
   perpendicular_prev = 0.0;
+
+  init_second_order_low_pass(&beta_filter, tau_beta_filter, q_beta_filter, 1./PERIODIC_FREQUENCY, 0);
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_HYBRID_GUIDANCE, send_hybrid_guidance);
@@ -228,10 +235,21 @@ static void guidance_hybrid_transition_hover(void) {
 }
 
 /**
+ * Get the current body y acceleration and low-pass filter it. Usable for side-slip control.
+ */
+static void guidance_hybrid_update_sideslip_estimate(void) {
+  struct Int32Vect3 *acceleration = stateGetAccelBody_i();
+  float acceleration_y_f = ACCEL_FLOAT_OF_BFP(acceleration->y);
+
+  filtered_beta_estimate = update_second_order_low_pass(&beta_filter, acceleration_y_f);
+}
+
+/**
  * Forward flight guidance loop
  */
 static void guidance_hybrid_forward(void) {
   INT32_VECT2_NED_OF_ENU(guidance_h.sp.pos, navigation_target);
+  guidance_hybrid_update_sideslip_estimate();
   guidance_hybrid_attitude_delftacopter(&guidance_hybrid_ypr_sp);
   guidance_hybrid_set_cmd_i(&guidance_hybrid_ypr_sp);
 
