@@ -384,6 +384,7 @@
     <define name="THROTTLE_FROM_PITCH_UP" value="50.0"/>
     <define name="MIN_PITCH" value="-15.0"/>
     <define name="MAX_PITCH" value="10.0"/>
+    <define name="MAX_PSI" value="20.0"/>
   </section>
 
   <!-- Radio control specific switches -->

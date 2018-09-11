@@ -55,8 +55,6 @@
 #define DC_TRANSITION_TIME 3
 #endif
 
-/* High res frac for integration of angles */
-#define INT32_ANGLE_HIGH_RES_FRAC 18
 
 // Variables used for settings
 enum hybrid_mode_t dc_hybrid_mode = HB_HOVER;
@@ -70,12 +68,13 @@ float low_airspeed_pitch_gain = DC_FORWARD_VERTICAL_LOW_AIRSPEED_PITCH_GAIN;
 // Horizontal gains
 int16_t transition_throttle_to_forward = DC_TRANSITION_THROTTLE_TO_FORWARD;
 int16_t transition_throttle_to_hover = DC_TRANSITION_THROTTLE_TO_HOVER;
-int32_t max_airspeed = DC_FORWARD_MAX_AIRSPEED;
+float max_airspeed = DC_FORWARD_MAX_AIRSPEED;
 float max_turn_bank = DC_FORWARD_MAX_TURN_BANK;
 float turn_bank_gain = DC_FORWARD_TURN_BANK_GAIN;
 float vertical_pitch_of_roll = DC_FORWARD_PITCH_OF_ROLL;
 int32_t nominal_forward_thrust = DC_FORWARD_NOMINAL_THRUST;
 float throttle_from_pitch_up = DC_FORWARD_THROTTLE_FROM_PITCH_UP;
+float forward_max_psi = DC_FORWARD_MAX_PSI;
 
 /* Private functions */
 static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp);
@@ -98,8 +97,7 @@ static struct Int32Vect2 guidance_hybrid_ref_airspeed;
 
 static int32_t norm_sp_airspeed_disp;
 static int32_t heading_diff_disp;
-static int32_t omega_disp;
-static int32_t high_res_psi;
+static float high_res_psi;
 int32_t v_control_pitch = 0;
 struct NedCoor_i ned_gps_vel;
 float dperpendicular = 0.0;
@@ -150,11 +148,6 @@ void guidance_hybrid_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_HYBRID_GUIDANCE, send_hybrid_guidance);
 #endif
 }
-
-#define INT32_ANGLE_HIGH_RES_NORMALIZE(_a) {             \
-    while ((_a) > (INT32_ANGLE_PI << (INT32_ANGLE_HIGH_RES_FRAC - INT32_ANGLE_FRAC)))  (_a) -= (INT32_ANGLE_2_PI << (INT32_ANGLE_HIGH_RES_FRAC - INT32_ANGLE_FRAC));    \
-    while ((_a) < (-(INT32_ANGLE_PI << (INT32_ANGLE_HIGH_RES_FRAC - INT32_ANGLE_FRAC)))) (_a) += (INT32_ANGLE_2_PI << (INT32_ANGLE_HIGH_RES_FRAC - INT32_ANGLE_FRAC));    \
-  }
 
 /**
  * Guidance running in NAV mode only
@@ -263,6 +256,7 @@ static void guidance_hybrid_hover(bool in_flight) {
   last_hover_heading = sp_cmd_i.psi;
 
 #if GUIDANCE_INDI
+  (void)in_flight;
   guidance_indi_run(guidance_h.sp.heading);
 #else
   /* compute x,y earth commands */
@@ -306,7 +300,7 @@ static void guidance_hybrid_set_nav_throttle_curve(void) {
 void guidance_hybrid_reset_heading(struct Int32Eulers *sp_cmd)
 {
   guidance_hybrid_ypr_sp.psi = sp_cmd->psi;
-  high_res_psi = sp_cmd->psi << (INT32_ANGLE_HIGH_RES_FRAC - INT32_ANGLE_FRAC);
+  high_res_psi = ANGLE_FLOAT_OF_BFP(sp_cmd->psi);
 }
 
 /// Convert a required airspeed to a certain attitude for the Quadshot
@@ -388,24 +382,25 @@ static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp)
   if (ypr_sp->phi > ANGLE_BFP_OF_REAL(max_turn_bank / 180.0 * M_PI)) { ypr_sp->phi = ANGLE_BFP_OF_REAL(max_turn_bank / 180.0 * M_PI); }
   if (ypr_sp->phi < ANGLE_BFP_OF_REAL(-max_turn_bank / 180.0 * M_PI)) { ypr_sp->phi = ANGLE_BFP_OF_REAL(-max_turn_bank / 180.0 * M_PI); }
 
-  int32_t omega = 0;
-  //feedforward estimate angular rotation omega = g*tan(phi)/v
-  omega = ANGLE_BFP_OF_REAL(9.81 / max_airspeed * tanf(ANGLE_FLOAT_OF_BFP(
-                              ypr_sp->phi)));
+  // Feedforward estimate angular rotation omega = g*tan(phi)/v
+  float omega = 9.81 / max_airspeed * tanf(ANGLE_FLOAT_OF_BFP(ypr_sp->phi));
+  BoundAbs(omega, 0.7);
 
-  if (omega > ANGLE_BFP_OF_REAL(0.7)) { omega = ANGLE_BFP_OF_REAL(0.7); }
-  if (omega < ANGLE_BFP_OF_REAL(-0.7)) { omega = ANGLE_BFP_OF_REAL(-0.7); }
+  // Integrate the omega to a psi angle
+  high_res_psi += omega / 512;
 
-  //only for debugging purposes
-  omega_disp = omega;
+  // Calculate the error in psi
+  float curr_psi_f = stabilization_attitude_get_heading_f();
+  float err_psi_f = curr_psi_f - high_res_psi;
+  FLOAT_ANGLE_NORMALIZE(err_psi_f);
 
-  //go to higher resolution because else the increment is too small to be added
-  high_res_psi += (omega << (INT32_ANGLE_HIGH_RES_FRAC - INT32_ANGLE_FRAC)) / 512;
-
-  INT32_ANGLE_HIGH_RES_NORMALIZE(high_res_psi);
+  // Bound the high resolution psi
+  BoundAbs(err_psi_f, forward_max_psi);
+  high_res_psi = curr_psi_f + err_psi_f;
+  FLOAT_ANGLE_NORMALIZE(high_res_psi);
 
   // go back to angle_frac
-  ypr_sp->psi = high_res_psi >> (INT32_ANGLE_HIGH_RES_FRAC - INT32_ANGLE_FRAC);
+  ypr_sp->psi = ANGLE_BFP_OF_REAL(high_res_psi);
 
   float pitch_up_from_roll = vertical_pitch_of_roll * fabs(ANGLE_FLOAT_OF_BFP(ypr_sp->phi)); // radians
   ypr_sp->theta = ypr_sp->theta + ANGLE_BFP_OF_REAL(pitch_up_from_roll);

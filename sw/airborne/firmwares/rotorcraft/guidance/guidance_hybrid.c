@@ -48,7 +48,7 @@
 // Variables used for settings
 int32_t guidance_hybrid_norm_ref_airspeed;
 float alt_pitch_gain = 0.3;
-int32_t max_airspeed = MAX_AIRSPEED;
+float max_airspeed = MAX_AIRSPEED;
 int32_t wind_gain;
 int32_t horizontal_speed_gain;
 float max_turn_bank;
