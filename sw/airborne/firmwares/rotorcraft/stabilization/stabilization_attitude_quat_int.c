@@ -65,6 +65,12 @@ struct Int32Eulers stab_att_sp_euler;
 
 struct AttRefQuatInt att_ref_quat_i;
 
+#ifdef STABILIZATION_SWASHPLATE_GAIN
+float stabilization_swashplate_gain = STABILIZATION_SWASHPLATE_GAIN;
+#else
+float stabilization_swashplate_gain = 1.0;
+#endif
+
 #define IERROR_SCALE 128
 #define GAIN_PRESCALER_FF 48
 #define GAIN_PRESCALER_P 12
@@ -299,6 +305,12 @@ void stabilization_attitude_run(bool enable_integrator)
   stabilization_cmd[COMMAND_PITCH] = cmd_pitch;
 #endif
 
+  // HACK to disable swashplate if forward only
+  if (throttle_curve.mode == DC_TRANSITION_THROTTLE_CURVE || throttle_curve.mode == DC_FORWARD_THROTTLE_CURVE) {
+    stabilization_cmd[COMMAND_ROLL] = stabilization_cmd[COMMAND_ROLL] * stabilization_swashplate_gain;
+    stabilization_cmd[COMMAND_PITCH] = stabilization_cmd[COMMAND_PITCH] * stabilization_swashplate_gain;
+    stabilization_cmd[COMMAND_YAW] = stabilization_cmd[COMMAND_YAW] * stabilization_swashplate_gain;
+  }
 
   // if (autopilot.mode == AP_MODE_NAV) {
   sys_id_chirp_add_values_and_log(stabilization_cmd);
@@ -308,6 +320,8 @@ void stabilization_attitude_run(bool enable_integrator)
   BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PPRZ);
   BoundAbs(stabilization_cmd[COMMAND_YAW], MAX_PPRZ);
+  BoundAbs(stabilization_cmd[COMMAND_ELEVATOR], MAX_PPRZ);
+  BoundAbs(stabilization_cmd[COMMAND_AILERON], MAX_PPRZ);
 }
 
 void stabilization_attitude_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn)
