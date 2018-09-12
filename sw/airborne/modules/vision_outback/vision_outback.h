@@ -63,10 +63,9 @@ struct PPRZ2VisionPackage {
     float att_qx;
     float att_qy;
     float att_qz;
-    float rate_qi;
-    float rate_qx;
-    float rate_qy;
-    float rate_qz;
+    float rate_p;
+    float rate_q;
+    float rate_r;
     float gpsx;
     float gpsy;
     float gpsz;

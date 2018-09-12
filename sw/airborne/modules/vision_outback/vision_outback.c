@@ -96,20 +96,17 @@ float vision_outback_moment_height = 0.1;
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
-uint16_t timeoutcount = 0;
+uint8_t timeoutcount = 0;
 void enable_wp_telemetry_updates(void);
 void do_power_state_machine(void);
 
 static void send_vision_outback( struct transport_tx *trans, struct link_device *dev)
 {
-  v2p_package.flow_x = turbocnt;
-  v2p_package.flow_y = turbosize;
-  uint8_t timeoutcount_kutmsg = timeoutcount/5; // scale to 8 bit because changing message is pain
 
   pprz_msg_send_VISION_OUTBACK(trans, dev, AC_ID,
                                &v2p_package.status,
                                (uint8_t *)&het_moment,
-                               &timeoutcount_kutmsg,
+                               (uint8_t *)&timeoutcount,
                                (uint8_t *)&vision_timeout,
                                &v2p_package.height,
                                &v2p_package.out_of_range_since,
@@ -199,20 +196,17 @@ static inline void vision_outback_parse_msg(void)
 
             //compensate het_moment for the attitude of the drone, if the drone has an angle the sides will be lower then the camera:
             struct FloatEulers * attE = stateGetNedToBodyEulers_f();
-            float height_roll = tanf(attE->phi) * DRONE_WIDTH;
-            float height_pitch = tanf(attE->theta) * DRONE_LENGTH;
+            float height_roll = tanf(fabs(attE->phi)) * DRONE_WIDTH;
+            float height_pitch = tanf(fabs(attE->theta)) * DRONE_LENGTH;
             float height_att = height_roll;
             if (height_pitch > height_roll)
-              height_att = height_pitch;
+              height_att = height_pitch;          
 
-            if ((v2p_package.out_of_range_since > 0 && v2p_package.out_of_range_since < 1.f) || (v2p_package.out_of_range_since < 0 && v2p_package.height < (vision_outback_moment_height-height_att) )) {
+            if ((v2p_package.out_of_range_since > 0 && v2p_package.out_of_range_since < 1.f) || (v2p_package.out_of_range_since < 0 && v2p_package.height -height_att < vision_outback_moment_height )) {
                 het_moment = true;
               } else {
                 het_moment = false;
               }
-
-//            msg_marker_x = v2p_package.land_enu_x;
-//            msg_marker_y = v2p_package.land_enu_y;
 
             AbiSendMsgAGL(AGL_SONAR_ADC_ID, v2p_package.height);
             vision_height = v2p_package.height;
@@ -257,7 +251,7 @@ void vision_outback_event() {
 void vision_outback_periodic() {
 
   struct FloatQuat *att = stateGetNedToBodyQuat_f();
-  struct FloatQuat *rate = stateGetBodyRates_f();
+  struct FloatRates *rate = stateGetBodyRates_f();
 
   struct EnuCoor_f *pos = stateGetPositionEnu_f();
 
@@ -267,11 +261,9 @@ void vision_outback_periodic() {
   p2k_package.att_qx = att->qx;
   p2k_package.att_qy = att->qy;
   p2k_package.att_qz = att->qz;
-  p2k_package.rate_qi = rate->qi;
-  p2k_package.rate_qx = rate->qx;
-  p2k_package.rate_qy = rate->qy;
-  p2k_package.rate_qz = rate->qz;
-
+  p2k_package.rate_p = rate->p;
+  p2k_package.rate_q = rate->q;
+  p2k_package.rate_r = rate->r;
   p2k_package.gpsx = pos->x;
   p2k_package.gpsy = pos->y;
   p2k_package.gpsz = pos->z;
