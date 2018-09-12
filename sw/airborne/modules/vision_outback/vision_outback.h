@@ -103,6 +103,7 @@ extern float vision_height;
 extern void vision_outback_init(void);
 extern void vision_outback_event(void);
 extern void vision_outback_periodic(void);
+extern bool vision_outback_joe_is_found(void);
 
 extern void enableVisionDescent(bool b);
 extern void enableVisionOpticFlow(bool b);

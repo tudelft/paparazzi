@@ -166,10 +166,19 @@
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="enableVisionDescent(true)"/>
       <stay until="stage_time>4" wp="JOE"/>
+      <deroute block="joe_descend"/>
+    </block>
+    <block group="land_joe" name="joe_lost_holdalt">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="vision_outback_joe_is_found()" deroute="joe_descend"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0)"/>
+      <stay climb="0" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="JOE"/>
     </block>
     <block group="land_joe" name="joe_descend">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <exception cond="12.0 > stateGetPositionEnu_f()->z" deroute="joe_descendSlow"/>
+      <exception cond="!vision_outback_joe_is_found()" deroute="joe_lost_holdalt"/>
       <call_once fun="nav_hybrid_heading_init()"/>
       <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0)"/>
       <stay climb="nav_descend_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="JOE"/>

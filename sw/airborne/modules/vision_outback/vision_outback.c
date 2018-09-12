@@ -75,6 +75,10 @@ bool het_moment = false;
 bool vision_timeout = false; // TODO: remove
 float vision_height = false; // TODO: remove
 
+bool vision_outback_joe_is_found(void) {
+  return true;
+}
+
 float msg_marker_x = 0;
 float msg_marker_y = 0;
 
