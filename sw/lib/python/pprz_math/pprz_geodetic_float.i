@@ -104,6 +104,11 @@ struct LtpDef_f {
     enu_of_ecef_vect_f(&enu, ltp, $self);
     return enu;
   }
+  struct EcefCoor_i to_int() {
+    struct EcefCoor_i ecef;
+    ECEF_BFP_OF_REAL(ecef, *$self);
+    return ecef;
+  }
 };
 
 %extend NedCoor_f {
@@ -142,6 +147,11 @@ struct LtpDef_f {
     struct EcefCoor_f ecef;
     ecef_of_ned_vect_f(&ecef, ltp, $self);
     return ecef;
+  }
+  struct NedCoor_i to_int() {
+    struct NedCoor_i ned;
+    NED_BFP_OF_REAL(&ned, $self);
+    return ned;
   }
 };
 
@@ -182,6 +192,11 @@ struct LtpDef_f {
     ecef_of_enu_vect_f(&ecef, ltp, $self);
     return ecef;
   }
+  struct EnuCoor_i to_int() {
+    struct EnuCoor_i enu;
+    ENU_BFP_OF_REAL(&enu, $self);
+    return enu;
+  }
 };
 
 %extend UtmCoor_f {
@@ -202,6 +217,11 @@ struct LtpDef_f {
     struct LlaCoor_f lla;
     lla_of_utm_f(&lla, $self);
     return lla;
+  }
+  struct UtmCoor_i to_int() {
+    struct UtmCoor_i utm;
+    UTM_BFP_OF_REAL(utm, *$self);
+    return utm;
   }
 };
 
@@ -242,6 +262,11 @@ struct LtpDef_f {
     struct LtpDef_f ltp;
     ltp_def_from_lla_f(&ltp, $self);
     return ltp;
+  }
+  struct LlaCoor_i to_int() {
+    struct LlaCoor_i lla;
+    LLA_BFP_OF_REAL(&lla, $self);
+    return lla;
   }
 };
 
