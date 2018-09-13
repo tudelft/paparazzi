@@ -174,7 +174,7 @@
   </section>
   <section name="INS" prefix="INS_">
     <define name="SONAR_MAX_RANGE" value="5"/>
-    <define name="SONAR_MIN_RANGE" value="0.1"/>
+    <define name="SONAR_MIN_RANGE" value="0.15"/>
     <define name="SONAR_UPDATE_ON_AGL" value="TRUE" />
   </section>
   <section name="RC_SETPOINT" prefix="STABILIZATION_ATTITUDE_">
