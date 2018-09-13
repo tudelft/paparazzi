@@ -196,11 +196,11 @@
     </block>
     <block group="wait_joe" name="joe_inert">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <call_once fun="NavKillThrottle()"/>
+      <!--call_once fun="NavKillThrottle()"/>
       <call_once fun="opa_controller_ap_disarm(true)"/>
       <call_once fun="nav_throttle_curve_set(0)"/>
-      <attitude pitch="0" roll="0" throttle="0" until="stage_time>2" vmode="throttle"/>
-      <attitude pitch="0" roll="0" throttle="0" until="electrical.vsupply>190" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0" until="stage_time>2" vmode="throttle"/-->
+      <attitude pitch="0" roll="0" throttle="0" vmode="throttle"/> <!--until="electrical.vsupply>190"-->
     </block>
     <block group="wait_joe" name="joe_wait">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -290,10 +290,10 @@
     </block>
     <block group="wait_base" name="base_inert">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <call_once fun="NavKillThrottle()"/>
+      <!--call_once fun="NavKillThrottle()"/>
       <call_once fun="opa_controller_ap_disarm(true)"/>
       <call_once fun="nav_throttle_curve_set(0)"/>
-      <attitude pitch="0" roll="0" throttle="0" until="stage_time>2" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0" until="stage_time>2" vmode="throttle"/-->
       <attitude pitch="0" roll="0" throttle="0" vmode="throttle"/>
     </block>
     <block group="safe" name="Standby" strip_button="Standby">
