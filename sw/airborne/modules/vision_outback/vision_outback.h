@@ -47,6 +47,7 @@ struct Vision2PPRZPackage {
     int32_t frame_id;
     float height;
     float out_of_range_since;
+    float stupid_pprz_height;
     float marker_enu_x;
     float marker_enu_y;
     float land_enu_x;
