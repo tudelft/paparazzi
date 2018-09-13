@@ -410,11 +410,11 @@ static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp)
 
   // Calculate the error in psi
   float curr_psi_f = stabilization_attitude_get_heading_f();
-  float err_psi_f = curr_psi_f - high_res_psi;
+  float err_psi_f = high_res_psi - curr_psi_f;
   FLOAT_ANGLE_NORMALIZE(err_psi_f);
 
   // Bound the high resolution psi
-  BoundAbs(err_psi_f, forward_max_psi);
+  BoundAbs(err_psi_f, RadOfDeg(forward_max_psi));
   high_res_psi = curr_psi_f + err_psi_f;
   FLOAT_ANGLE_NORMALIZE(high_res_psi);
 
