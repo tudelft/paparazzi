@@ -207,8 +207,9 @@ static inline void vision_outback_parse_msg(void)
               } else {
                 het_moment = false;
               }
+            if (v2p_package.out_of_range_since < 0) // Only send sonar message if height can be trusted (out_of_range==-1 then)
+              AbiSendMsgAGL(AGL_SONAR_ADC_ID, v2p_package.height);
 
-            AbiSendMsgAGL(AGL_SONAR_ADC_ID, v2p_package.height);
             vision_height = v2p_package.height;
           } else {
             het_moment = false;
