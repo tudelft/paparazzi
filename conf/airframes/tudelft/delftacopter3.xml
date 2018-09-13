@@ -31,7 +31,12 @@
       <module name="ahrs"          type="int_cmpl_quat">
         <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>
       </module>
-      <module name="ins"           type="hff"/>
+      <module name="ins"           type="hff_extended">
+        <define name="USE_SONAR"                value="true"/>
+        <define name="INS_SONAR_MAX_RANGE"      value="5"/>
+        <define name="INS_SONAR_MIN_RANGE"      value="0.15"/>
+        <define name="INS_SONAR_UPDATE_ON_AGL"  value="TRUE"/>
+      </module>
       <module name="guidance"      type="delftacopter"/>
       <module name="guidance"      type="indi"/>
       <module name="gain_scheduling"/>
