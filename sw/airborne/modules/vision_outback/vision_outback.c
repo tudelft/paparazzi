@@ -112,7 +112,7 @@ static void send_vision_outback( struct transport_tx *trans, struct link_device 
                                &v2p_package.out_of_range_since,
                                &msg_marker_x,
                                &msg_marker_y,
-                               &v2p_package.flow_x,
+                               &v2p_package.stupid_pprz_height, // In the message this is flow_x, but we use it for height
                                &v2p_package.flow_y);
 }
 #endif
@@ -203,12 +203,13 @@ static inline void vision_outback_parse_msg(void)
               height_att = height_pitch;          
 
             if ((v2p_package.out_of_range_since > 0 && v2p_package.out_of_range_since < 1.f) || (v2p_package.out_of_range_since < 0 && v2p_package.height -height_att < vision_outback_moment_height )) {
-                het_moment = true;
-              } else {
-                het_moment = false;
-              }
-            if (v2p_package.out_of_range_since < 0) // Only send sonar message if height can be trusted (out_of_range==-1 then)
-              AbiSendMsgAGL(AGL_SONAR_ADC_ID, v2p_package.height);
+              het_moment = true;
+            } else {
+              het_moment = false;
+            }
+            // If height==-1, the measurement is faulty so don't send it
+            if (v2p_package.stupid_pprz_height > 0)
+              AbiSendMsgAGL(AGL_SONAR_ADC_ID, v2p_package.stupid_pprz_height);
 
             vision_height = v2p_package.height;
           } else {
