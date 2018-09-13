@@ -7,9 +7,9 @@
      * Baro:        MS5611 (AP)
      * Pitot+mag:   External in wing
      * Actuators:   10 PWM (FTD)
-     * GPS:         UBlox M8N (AP), UBlox M8N (FTD)
-     * RC:          Crossfire diversity SBUS (RC2)
-     * Telemetry:   868/900 MHz Long range (AP), Iridium (FTD)
+     * GPS:         UBlox M8N (AP)
+     * RC:          Crossfire Micro V2 SBUS (RC2)
+     * Telemetry:   XBee API (AP)
   </description>
 
   <firmware name="rotorcraft">
@@ -107,15 +107,15 @@
     <servo name="SW_LEFTFRONT"   no="2" min="1100" neutral="1500" max="1900"/>
     <servo name="SW_RIGHTFRONT"  no="3" min="1900" neutral="1500" max="1100"/>
     <servo name="TAIL_LEFT"      no="4" min="1100" neutral="1500" max="1900"/>
-    <servo name="TAIL_RIGHT"     no="5" min="1100" neutral="1500" max="1900"/>
-    <servo name="AIL_LEFTLOW"    no="6" min="1060" neutral="1460" max="1860"/>
-    <servo name="AIL_RIGHTLOW"   no="7" min="1140" neutral="1540" max="1940"/>
+    <servo name="TAIL_RIGHT"     no="5" min="1900" neutral="1500" max="1100"/>
+    <servo name="AIL_LEFTLOW"    no="6" min="1100" neutral="1500" max="1900"/>
+    <servo name="AIL_RIGHTLOW"   no="7" min="1090" neutral="1490" max="1890"/>
     <servo name="AIL_LEFTUP"     no="8" min="1100" neutral="1500" max="1900"/>
     <servo name="AIL_RIGHTUP"    no="9" min="1100" neutral="1500" max="1900"/>
   </servos>
 
   <section name="GCS">
-    <define name="SPEECH_NAME" value="Two Oscar India"/>
+    <define name="SPEECH_NAME" value="DC Four"/>
     <define name="AC_ICON" value="flyingwing"/>
   </section>
 
@@ -193,7 +193,7 @@
     <define name="NAV_DESCEND_VSPEED" value="-3.5"/>
     <define name="NAV_LINE_FOLLOWING_DIST" value="85.0"/>
     <define name="ARRIVED_AT_WAYPOINT" value="50"/>
-    <define name="ARRIVED_AT_WAYPOINT_HOVER" value="3"/>
+    <define name="ARRIVED_AT_WAYPOINT_HOVER" value="5"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
     <define name="APVoltageOfAdc(adc)" value="(adc*0.0061456 + 0.321688)"/>
@@ -207,13 +207,13 @@
     <define name="ACCEL_Y_NEUTRAL" value="11"/>
     <define name="ACCEL_Z_NEUTRAL" value="-25"/>
 
-    <!-- Calibration 07-06-2018 Valkenburg 4.5kg 190 KV 24inch with dummy 1.6kg + 580g LiPo -->
-   <define name="MAG_X_NEUTRAL" value="27"/>
-   <define name="MAG_Y_NEUTRAL" value="-11"/>
-   <define name="MAG_Z_NEUTRAL" value="22"/>
-   <define name="MAG_X_SENS" value="20.0910427549" integer="16"/>
-   <define name="MAG_Y_SENS" value="17.0723811001" integer="16"/>
-   <define name="MAG_Z_SENS" value="17.0490382969" integer="16"/>
+    <!-- Calibration 18-07-2018 Valkenburg 4.5kg 190 KV 26inch with vision + 6s6p LiIo -->
+    <define name="MAG_X_NEUTRAL" value="5"/>
+    <define name="MAG_Y_NEUTRAL" value="-16"/>
+    <define name="MAG_Z_NEUTRAL" value="16"/>
+    <define name="MAG_X_SENS" value="19.6890782429" integer="16"/>
+    <define name="MAG_Y_SENS" value="16.5616985505" integer="16"/>
+    <define name="MAG_Z_SENS" value="16.6658506111" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
