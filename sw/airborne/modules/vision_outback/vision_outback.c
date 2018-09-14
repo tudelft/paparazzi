@@ -66,6 +66,7 @@ bool vision_outback_enable_findjoe = false;
 bool vision_outback_enable_opticflow = false;
 bool vision_outback_enable_attcalib = false;
 bool vision_outback_enable_videorecord = false;
+bool vision_outback_close_process = false;
 #ifdef VISION_PWR_OFF
 uint8_t vision_outback_power = VISION_SETTING_STATUS_REQUEST_POWER_OFF;
 #else
@@ -303,6 +304,8 @@ void vision_outback_periodic() {
     p2k_package.enables |= 0b100000;
   if (vision_outback_power != VISION_SETTING_STATUS_REQUEST_POWER_ON)
     p2k_package.enables |= 0b1000000;
+  if (vision_outback_close_process)
+    p2k_package.enables |= 0b10000000;
 
   if (timeoutcount > 0) {
       timeoutcount--;
@@ -310,6 +313,7 @@ void vision_outback_periodic() {
     } else {
       v2p_package.status = 1;
       vision_timeout = true;
+      vision_outback_close_process = false;
     }
 
   do_power_state_machine();
@@ -421,6 +425,11 @@ bool enableVisionVideoRecord(bool b) {
 bool enableVisionShutdown(bool b) {
   if (b)
     vision_outback_power= VISION_SETTING_STATUS_REQUEST_HALT;
+  return true; // klote pprz flight plan
+}
+
+bool enableVisionCloseProcess(bool b) {
+  vision_outback_close_process = b;
   return true; // klote pprz flight plan
 }
 

@@ -95,6 +95,7 @@ extern bool vision_outback_enable_findjoe;
 extern bool vision_outback_enable_opticflow;
 extern bool vision_outback_enable_attcalib;
 extern bool vision_outback_enable_videorecord;
+extern bool vision_outback_close_process;
 extern uint8_t vision_outback_power;
 extern struct FloatVect3 land_cmd;
 extern bool het_moment;
@@ -111,6 +112,7 @@ extern void enableVisionFindJoe(bool b);
 extern bool enableVisionAttCalib(bool b);
 extern bool enableVisionVideoRecord(bool b);
 extern bool enableVisionShutdown(bool b);
+extern bool enableVisionCloseProcess(bool b);
 
 extern bool getVisionReady(void);
 
