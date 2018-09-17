@@ -117,12 +117,13 @@
     <define name="ACCEL_Z_SENS" value="7.45488455799" integer="16"/>
 
     <!--Calibrated outside, based on sw/tools/calibration/calibrate.py -s MAG var/logs/16_12_05__16_32_21.data -vp -->
-    <define name="MAG_X_NEUTRAL" value="105"/>
-    <define name="MAG_Y_NEUTRAL" value="10"/>
-    <define name="MAG_Z_NEUTRAL" value="-23"/>
-    <define name="MAG_X_SENS" value="4.01453293111" integer="16"/>
-    <define name="MAG_Y_SENS" value="3.96379405627" integer="16"/>
-    <define name="MAG_Z_SENS" value="3.92499630895" integer="16"/>
+    <!-- Dalby, Australia -->
+    <define name="MAG_X_NEUTRAL" value="120"/>
+    <define name="MAG_Y_NEUTRAL" value="7"/>
+    <define name="MAG_Z_NEUTRAL" value="-154"/>
+    <define name="MAG_X_SENS" value="3.45991266235" integer="16"/>
+    <define name="MAG_Y_SENS" value="3.41499861695" integer="16"/>
+    <define name="MAG_Z_SENS" value="3.61716434466" integer="16"/>
   </section>
   <commands>
     <axis name="PITCH" failsafe_value="0" />
