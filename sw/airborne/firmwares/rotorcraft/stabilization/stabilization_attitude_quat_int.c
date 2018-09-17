@@ -235,7 +235,9 @@ static void attitude_run_fb(int32_t fb_commands[], struct Int32AttitudeGains *ga
 
 void stabilization_attitude_run(bool enable_integrator)
 {
+#if USE_SYS_ID_DOUBLET
   sys_id_doublet_add_attitude(&stab_att_sp_quat);
+#endif
 
   /*
    * Update reference
@@ -312,9 +314,11 @@ void stabilization_attitude_run(bool enable_integrator)
     stabilization_cmd[COMMAND_YAW] = stabilization_cmd[COMMAND_YAW] * stabilization_swashplate_gain;
   }
 
+#if USE_SYS_ID_CHIRP
   // if (autopilot.mode == AP_MODE_NAV) {
   sys_id_chirp_add_values_and_log(stabilization_cmd);
   // }
+#endif
 
   /* bound the result */
   BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PPRZ);

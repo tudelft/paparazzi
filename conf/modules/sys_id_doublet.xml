@@ -21,6 +21,7 @@
 
   <header>
     <file name="sys_id_doublet.h"/>
+    <define name="USE_SYS_ID_DOUBLET" value="TRUE"/>
   </header>
   <init fun="sys_id_doublet_init()"/>
 

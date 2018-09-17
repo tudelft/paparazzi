@@ -35,6 +35,7 @@
 #include "subsystems/electrical.h"
 #include "subsystems/datalink/telemetry.h"
 #include "subsystems/radio_control.h"
+#include "stabilization/stabilization_attitude_rc_setpoint.h"
 
 #if USE_GPS
 #include "subsystems/gps.h"

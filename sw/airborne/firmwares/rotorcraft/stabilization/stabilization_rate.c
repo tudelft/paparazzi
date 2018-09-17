@@ -191,10 +191,13 @@ void stabilization_rate_run(bool in_flight)
   /* compute feed-back command */
   struct FloatRates _error;
   struct FloatRates *body_rate = stateGetBodyRates_f();
+
+#if USE_SYS_ID_DOUBLET
   if (rc_is_read)
     sys_id_doublet_add_rate(&stabilization_rate_sp);
 
   rc_is_read = false;
+#endif
   
   RATES_DIFF(_error, stabilization_rate_sp, (*body_rate));
   if (in_flight) {
@@ -235,9 +238,11 @@ void stabilization_rate_run(bool in_flight)
   stabilization_cmd[COMMAND_PITCH] = cmd_pitch;
 #endif
 
+#if USE_SYS_ID_CHIRP
   // if (autopilot.mode == AP_MODE_NAV) {
   sys_id_chirp_add_values_and_log(stabilization_cmd);
   // }
+#endif
   
   /* bound the result */
   BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PPRZ);
