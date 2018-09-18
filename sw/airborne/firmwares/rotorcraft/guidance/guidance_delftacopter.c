@@ -448,6 +448,7 @@ void guidance_hybrid_set_cmd_i(struct Int32Eulers *sp_cmd)
   /* get current heading setpoint */
   struct Int32Quat q_yaw_sp;
   int32_quat_of_axis_angle(&q_yaw_sp, &zaxis, sp_cmd->psi);
+  int32_quat_normalize(&q_yaw_sp); // int32_quat_of_axis_angle does not normalize the quaternion
 
   //   first apply the roll/pitch setpoint and then the yaw
   int32_quat_comp(&stab_att_sp_quat, &q_yaw_sp, &q_rp_i);
