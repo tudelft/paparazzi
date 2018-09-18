@@ -80,7 +80,7 @@ int32_t nominal_forward_thrust = DC_FORWARD_NOMINAL_THRUST;
 float throttle_from_pitch_up = DC_FORWARD_THROTTLE_FROM_PITCH_UP;
 float forward_max_psi = DC_FORWARD_MAX_PSI;
 float acc_y_filter_cutoff_hz = DC_FORWARD_ACC_Y_FILTER_CUTOFF_HZ;
-float feedforward_yaw_of_turn_rate = 0.0f;
+float feedforward_yaw_of_turn_rate = DC_FORWARD_K_FF_TO_YAW;
 
 /* Private functions */
 static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp);
