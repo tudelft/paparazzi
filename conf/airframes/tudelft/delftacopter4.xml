@@ -8,7 +8,7 @@
      * Pitot+mag:   External in wing
      * Actuators:   10 PWM (FTD)
      * GPS:         UBlox M8N (AP)
-     * RC:          Crossfire Micro V2 SBUS (RC2)
+     * RC:          Crossfire diversity SBUS (RC2)
      * Telemetry:   XBee API (AP)
   </description>
 
@@ -31,9 +31,14 @@
       <module name="stabilization" type="int_quat"/>
       <module name="stabilization" type="rate"/>
       <module name="ahrs"          type="int_cmpl_quat">
-        <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>
+        <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>      
       </module>
-      <module name="ins"           type="hff"/>
+      <module name="ins"           type="hff_extended">
+        <define name="USE_SONAR"                value="true"/>
+        <define name="INS_SONAR_MAX_RANGE"      value="5"/>
+        <define name="INS_SONAR_MIN_RANGE"      value="0.15"/>
+        <define name="INS_SONAR_UPDATE_ON_AGL"  value="TRUE"/>
+      </module>
       <module name="guidance"      type="delftacopter"/>
       <module name="guidance"      type="indi"/>
       <module name="gain_scheduling"/>
@@ -125,7 +130,7 @@
   -->
 
   <section name="GCS">
-    <define name="SPEECH_NAME" value="DC Four"/>
+    <define name="SPEECH_NAME" value="Four Hotel Papa"/>
     <define name="AC_ICON" value="flyingwing"/>
   </section>
 
