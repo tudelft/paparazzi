@@ -173,6 +173,7 @@ void stabilization_attitude_set_failsafe_setpoint(void)
   stab_att_sp_quat.qx = 0;
   stab_att_sp_quat.qy = 0;
   PPRZ_ITRIG_SIN(stab_att_sp_quat.qz, heading2);
+  int32_quat_normalize(&stab_att_sp_quat);
 }
 
 void stabilization_attitude_set_rpy_setpoint_i(struct Int32Eulers *rpy)
