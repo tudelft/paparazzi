@@ -69,7 +69,7 @@ class AsterixReceiver(threading.Thread):
         """
         logging.info("Starting " + self.name)
         
-        # Main loop for receiving packets
+        # Main loop for receiving packets until stop is given
         while not self.stop_event.is_set():
 
             # Receive and parse an asterix packets

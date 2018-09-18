@@ -10,11 +10,9 @@ import threading
 
 
 
-class Avoidance_GUI(threading.Thread):
+class AvoidanceGUI(threading.Thread):
     def __init__(self, detm, resm, cas, reduced_tla_step, extended_tla, reduced_tla_margin, max_tla, reduced_resolution_margin, min_avoid_leg_time):
         threading.Thread.__init__(self)
-        self.start()       
-        
         self.detm_init = detm
         self.resm_init = resm
         self.reduced_resolution_margin_init = reduced_resolution_margin
