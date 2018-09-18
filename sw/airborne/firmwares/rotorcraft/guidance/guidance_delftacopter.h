@@ -33,6 +33,8 @@
 #include "guidance_hybrid.h"
 #include "filters/low_pass_filter.h"
 
+extern int32_t guidance_feed_forward_yaw_which_is_delftacopter_roll;  ///< Rate FF in forward mode.
+
 extern int32_t v_control_pitch;
 extern float vertical_setpont_outback;
 extern int32_t nominal_forward_thrust;

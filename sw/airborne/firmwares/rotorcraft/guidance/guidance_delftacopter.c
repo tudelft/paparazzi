@@ -60,6 +60,10 @@
 enum hybrid_mode_t dc_hybrid_mode = HB_HOVER;
 int32_t guidance_hybrid_norm_ref_airspeed;
 
+// Exported global variables
+int32_t guidance_feed_forward_yaw_which_is_delftacopter_roll = 0;
+
+
 // Vertical gains
 float vertical_pgain = DC_FORWARD_VERTICAL_PGAIN;
 float vertical_dgain = DC_FORWARD_VERTICAL_DGAIN;
@@ -76,6 +80,7 @@ int32_t nominal_forward_thrust = DC_FORWARD_NOMINAL_THRUST;
 float throttle_from_pitch_up = DC_FORWARD_THROTTLE_FROM_PITCH_UP;
 float forward_max_psi = DC_FORWARD_MAX_PSI;
 float acc_y_filter_cutoff_hz = DC_FORWARD_ACC_Y_FILTER_CUTOFF_HZ;
+float feedforward_yaw_of_turn_rate = 0.0f;
 
 /* Private functions */
 static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp);
@@ -329,6 +334,7 @@ void guidance_hybrid_reset_heading(struct Int32Eulers *sp_cmd)
   high_res_psi = ANGLE_FLOAT_OF_BFP(sp_cmd->psi);
 }
 
+
 /// Convert a required airspeed to a certain attitude for the Quadshot
 static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp)
 {
@@ -412,8 +418,15 @@ static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp)
   float omega = 9.81 / max_airspeed * tanf(ANGLE_FLOAT_OF_BFP(ypr_sp->phi));
   BoundAbs(omega, 0.7);
 
+  // Direct feed-forward of yaw to actuator, bypassing the normal control
+  // Terrible hack. Sorry Freek
+  guidance_feed_forward_yaw_which_is_delftacopter_roll = (int32_t) (feedforward_yaw_of_turn_rate * omega);
+
+  // Add side-slip controller here
+  // ....
+
   // Integrate the omega to a psi angle
-  high_res_psi += omega / 512;
+  high_res_psi += omega / 512.0f;
 
   // Calculate the error in psi
   float curr_psi_f = stabilization_attitude_get_heading_f();

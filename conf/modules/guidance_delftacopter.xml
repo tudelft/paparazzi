@@ -22,6 +22,7 @@
     <define name="DC_TRANSITION_THROTTLE_TO_FORWARD" description="Throttle during transition to forward"/>
     <define name="DC_TRANSITION_THROTTLE_TO_HOVER" description="Throttle during transition to hover"/>
     <define name="DC_FORWARD_MAX_PSI" description="Maximum psi offset from measured psi in forward"/>
+    <define name="DC_FORWARD_K_FF_TO_YAW" description="Feed forward gain of yaw command from desired yaw-rate in forward"/>
   </doc>
   <settings>
     <dl_settings>
@@ -39,6 +40,7 @@
         <dl_setting var="transition_throttle_to_hover" min="3200" max="9600" param="DC_TRANSITION_THROTTLE_TO_HOVER"/>
         <dl_setting var="forward_max_psi" min="0.0" step="0.5" max="30.0" param="DC_FORWARD_MAX_PSI"/>
         <dl_setting var="acc_y_filter_cutoff_hz" min="0.0" max="10" step="0.001" param="DC_FORWARD_ACC_Y_FILTER_CUTOFF_HZ" type="float" handler="set_acc_y_cutoff_hz" module="guidance/guidance_delftacopter"/>
+        <dl_setting var="guidance_feed_forward_yaw_which_is_delftacopter_roll" min="0.0" max="3000.0" step="1" param="DC_FORWARD_K_FF_TO_YAW"/>
         <!-- Unknown... -->
         <dl_setting var="perpen_dgain" min="0.0" step="0.01" max="360.0" shortname="perpen_dgain"/>       
       </dl_settings>

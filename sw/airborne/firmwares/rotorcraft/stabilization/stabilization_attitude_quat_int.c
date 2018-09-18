@@ -287,6 +287,9 @@ void stabilization_attitude_run(bool enable_integrator)
   /* compute the feed forward command */
   attitude_run_ff(stabilization_att_ff_cmd, &stabilization_gains, &att_ref_quat_i.accel);
 
+  stabilization_att_ff_cmd[COMMAND_ROLL] += guidance_feed_forward_yaw_which_is_delftacopter_roll;
+  guidance_feed_forward_yaw_which_is_delftacopter_roll = 0;
+
   /* compute the feed back command */
   attitude_run_fb(stabilization_att_fb_cmd, &stabilization_gains, &att_err, &rate_err, &stabilization_att_sum_err_quat);
 
