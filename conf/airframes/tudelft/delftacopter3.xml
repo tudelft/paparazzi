@@ -108,7 +108,7 @@
     <servo name="THROTTLE"       no="0" min="1000" neutral="1000" max="2000"/>
     <servo name="SW_BACK"        no="1" min="1900" neutral="1500" max="1100"/>
     <servo name="SW_LEFTFRONT"   no="2" min="1100" neutral="1500" max="1900"/>
-    <servo name="SW_RIGHTFRONT"  no="3" min="1900" neutral="1500" max="1100"/>
+    <servo name="SW_RIGHTFRONT"  no="3" min="1850" neutral="1450" max="1050"/>
     <servo name="TAIL_LEFT"      no="4" min="1100" neutral="1500" max="1900"/>
     <servo name="TAIL_RIGHT"     no="5" min="1900" neutral="1500" max="1100"/>
     <servo name="AIL_LEFTLOW"    no="6" min="1100" neutral="1500" max="1900"/>
@@ -116,6 +116,16 @@
     <servo name="AIL_LEFTUP"     no="8" min="1100" neutral="1500" max="1900"/>
     <servo name="AIL_RIGHTUP"    no="9" min="1100" neutral="1500" max="1900"/>
   </servos>
+
+  <!-- T-Motor 190kv with 24.2 inch prop -->
+  <!-- * Top linkages circa 59.7 mm
+       * Distance from the bottom the the upper-swashplate rotation-link ball-rodds to the bottom of the blade grip just above is circa 56.2 mm.
+       * The servo is about 30deg down in failsafe, where its bolt aligns with the 2 servo fixing bolts
+       * The top of the rotorhead should be 90.0mm (2OI) 88.1mm (3MM) 89.3mm (4HP)
+       * There should be at least 3mm below the swashplate up to 5mm with the 90.0mm rotoraxis
+       * This should correspond to the blade grip ball to be aligned with the rotorhead-T fixation bolt
+       * This should correspong to a blade grip or blade root angle of -17 degrees
+  -->
 
   <section name="GCS">
     <define name="SPEECH_NAME" value="Three Mike Mike"/>

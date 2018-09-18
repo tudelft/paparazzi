@@ -185,6 +185,15 @@
   </command_laws>
 
   <!-- T-Motor 190kv with 24.2 inch prop -->
+  <!-- * Top linkages circa 59.7 mm
+       * Distance from the bottom the the upper-swashplate rotation-link ball-rodds to the bottom of the blade grip just above is circa 56.2 mm.
+       * The servo is about 30deg down in failsafe, where its bolt aligns with the 2 servo fixing bolts
+       * The top of the rotorhead should be 90.0mm (2OI) 88.1mm (3MM) 89.3mm (4HP)
+       * There should be at least 3mm below the swashplate up to 5mm with the 90.0mm rotoraxis
+       * This should correspond to the blade grip ball to be aligned with the rotorhead-T fixation bolt
+       * This should correspong to a blade grip or blade root angle of -17 degrees
+  -->
+
   <heli_curves>
     <curve throttle="0,6000,0,0,0" collective="-9600,-8150,-6700,-5250,-3800"/> <!-- Spinup curve -->
     <curve throttle="7300,7800,8300" rpm="2800,2800,2800" collective="-9600,-6500,-2300"/><!-- Hover curve RPM controlled -->
