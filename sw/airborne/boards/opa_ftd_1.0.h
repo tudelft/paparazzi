@@ -57,6 +57,12 @@
 #define BAL_PWR_ON gpio_set
 #define BAL_PWR_OFF gpio_clear
 
+/* Beeper */
+#define BEEPER GPIOB
+#define BEEPER_PIN GPIO15
+#define BEEPER_ON gpio_set
+#define BEEPER_OFF gpio_clear
+
 /*
  * Buttons
  */

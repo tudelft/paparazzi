@@ -24,8 +24,9 @@
  */
 
 #include "modules/boards/opa_controller_fbw.h"
-#include "subsystems/intermcu.h"
 #include "generated/airframe.h"
+#include "firmwares/rotorcraft/main_fbw.h"
+#include "subsystems/intermcu.h"
 #include "mcu_periph/gpio.h"
 #include "led.h"
 
@@ -36,6 +37,7 @@
 static bool arming_led = false;
 extern bool autopilot_motors_on;
 bool opa_controller_disarm = false;
+extern fbw_mode_enum fbw_mode;
 
 
 void opa_controller_init(void) {
@@ -55,6 +57,11 @@ void opa_controller_init(void) {
   /* Enable Balancer power */
   gpio_setup_output(BAL_PWR, BAL_PWR_PIN);
   BAL_PWR_OFF(BAL_PWR, BAL_PWR_PIN);
+
+  /* Disable beeper */
+  gpio_setup_output(BEEPER, BEEPER_PIN);
+  BEEPER_OFF(BEEPER, BEEPER_PIN);
+
 
 #if defined ARMING_LED
   /* Disable the arming LED */
@@ -113,6 +120,30 @@ void opa_controller_periodic(void) {
   }
   else {
     arming_cnt = 0;
+  }
+
+  /* Beeper for failsafe mode */
+  static uint16_t failsafe_beeper = 0;
+  if(fbw_mode == FBW_MODE_FAILSAFE) {
+    failsafe_beeper++;
+
+    // Half second on
+    if(failsafe_beeper < 20*0.5) {
+      BEEPER_ON(BEEPER, BEEPER_PIN);
+    }
+    // One second off
+    else if (failsafe_beeper < 20*1.5) {
+      BEEPER_OFF(BEEPER, BEEPER_PIN);
+    }
+    // Reset and start again
+    else {
+      failsafe_beeper = 0;
+    }
+  }
+  else if (failsafe_beeper > 0) {
+    // Reset beeper if out failsafe
+    BEEPER_OFF(BEEPER, BEEPER_PIN);
+    failsafe_beeper = 0;
   }
 
 #if defined ARMING_LED
