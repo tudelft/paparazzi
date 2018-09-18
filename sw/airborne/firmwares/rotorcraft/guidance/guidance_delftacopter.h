@@ -51,6 +51,8 @@ extern float forward_max_psi;
 extern int16_t transition_throttle_to_forward;
 extern int16_t transition_throttle_to_hover;
 extern float acc_y_filter_cutoff_hz;
+extern float e_psi_deg_from_acc_y;
+extern float feedforward_yaw_of_turn_rate;
 
 extern void guidance_delftacopter_set_acc_y_cutoff_hz(float cutoff_hz);
 

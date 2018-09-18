@@ -81,6 +81,7 @@ float throttle_from_pitch_up = DC_FORWARD_THROTTLE_FROM_PITCH_UP;
 float forward_max_psi = DC_FORWARD_MAX_PSI;
 float acc_y_filter_cutoff_hz = DC_FORWARD_ACC_Y_FILTER_CUTOFF_HZ;
 float feedforward_yaw_of_turn_rate = DC_FORWARD_K_FF_TO_YAW;
+float e_psi_deg_from_acc_y = DC_FORWARD_E_PSI_DEG_FROM_ACC_Y;
 
 /* Private functions */
 static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp);
@@ -423,7 +424,7 @@ static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp)
   guidance_feed_forward_yaw_which_is_delftacopter_roll = (int32_t) (feedforward_yaw_of_turn_rate * omega);
 
   // Add side-slip controller here
-  // ....
+  guidance_feed_forward_yaw_which_is_delftacopter_roll += (int32_t) (-e_psi_deg_from_acc_y * filtered_acc_y);
 
   // Integrate the omega to a psi angle
   high_res_psi += omega / 512.0f;
