@@ -24,7 +24,6 @@ Visualize asterix events in the ground station
 """
 
 from os import path, getenv
-import sys
 import time
 from asterix_receiver import AsterixEvent, AsterixReceiver
 from sets import Set
@@ -33,8 +32,8 @@ from sets import Set
 # file is a reasonable substitute
 PPRZ_HOME = getenv("PAPARAZZI_HOME", path.normpath(path.join(path.dirname(path.abspath(__file__)), '../../../../')))
 PPRZ_SRC = getenv("PAPARAZZI_SRC", path.normpath(path.join(path.dirname(path.abspath(__file__)), '../../../../')))
-sys.path.append(PPRZ_SRC + "/sw/lib/python")
-sys.path.append(PPRZ_HOME + "/var/lib/python") # pprzlink
+path.append(PPRZ_SRC + "/sw/lib/python")
+path.append(PPRZ_HOME + "/var/lib/python") # pprzlink
 
 from pprzlink.message import PprzMessage
 from pprzlink.ivy import IvyMessagesInterface

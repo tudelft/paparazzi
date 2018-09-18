@@ -67,6 +67,7 @@
   </sectors>
   <modules>
     <module name="mission" type="rotorcraft"/>
+    <module name="mission" type="path"/>
   </modules>
   <blocks>
     <block name="Wait GPS">
