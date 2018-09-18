@@ -260,8 +260,8 @@
 
   <!-- The advance angles for the rotorhead, P and Q couplings -->
   <section name="STABILIZATION" prefix="STABILIZATION_">
-    <define name="ADVANCE_ANGLE_P" value="1.05"/>
-    <define name="ADVANCE_ANGLE_Q" value="1.05"/>
+    <define name="ADVANCE_ANGLE_P" value="0.9"/>
+    <define name="ADVANCE_ANGLE_Q" value="0.5"/>
   </section>
 
   <!-- Rate controller gains for development -->
@@ -336,8 +336,8 @@
     <define name="PHI_I" value="{180, 0}"/>
     <define name="PHI_DD" value="{0, 0}"/>
 
-    <define name="THETA_P" value="{1605, 850}"/>
-    <define name="THETA_D" value="{293, 160}"/>
+    <define name="THETA_P" value="{990, 850}"/>
+    <define name="THETA_D" value="{265, 160}"/>
     <define name="THETA_I" value="{180, 200}"/>
     <define name="THETA_DD" value="{0, 0}"/>
 
