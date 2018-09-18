@@ -89,16 +89,16 @@ static void guidance_hybrid_update_sideslip_estimate(void);
 static int32_t last_hover_heading;
 static int32_t last_forward_heading;
 static int32_t transition_time = 0;
-static float filtered_beta_estimate = 0;
+static float filtered_acc_y = 0;
 
 struct Int32Eulers guidance_hybrid_ypr_sp;
 static struct Int32Vect2 guidance_hybrid_airspeed_sp;
 static struct Int32Vect2 guidance_h_pos_err;
 static struct Int32Vect2 wind_estimate;
 static struct Int32Vect2 guidance_hybrid_ref_airspeed;
-static struct SecondOrderLowPass beta_filter;
-float tau_beta_filter = 1/(0.5f * 2 * M_PI); // Beta filter cutoff frequency in Hertz
-float q_beta_filter = 1.0f;
+static struct SecondOrderLowPass acc_y_filter;
+float tau_acc_y_filter = 1/(0.5f * 2 * M_PI); // acc_y filter cutoff frequency in Hertz
+float q_acc_y_filter = 1.0f;
 
 static int32_t norm_sp_airspeed_disp;
 static int32_t heading_diff_disp;
@@ -130,7 +130,7 @@ static void send_hybrid_guidance(struct transport_tx *trans, struct link_device 
                                 &guidance_hybrid_ypr_sp.phi,
                                 &guidance_hybrid_ypr_sp.theta,
                                 &guidance_hybrid_ypr_sp.psi,
-                                &filtered_beta_estimate);
+                                &filtered_acc_y);
 }
 
 #endif
@@ -150,7 +150,7 @@ void guidance_hybrid_init(void)
   dperpendicular = 0.0;
   perpendicular_prev = 0.0;
 
-  init_second_order_low_pass(&beta_filter, tau_beta_filter, q_beta_filter, 1./PERIODIC_FREQUENCY, 0);
+  init_second_order_low_pass(&acc_y_filter, tau_acc_y_filter, q_acc_y_filter, 1./PERIODIC_FREQUENCY, 0);
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_HYBRID_GUIDANCE, send_hybrid_guidance);
@@ -242,7 +242,7 @@ static void guidance_hybrid_update_sideslip_estimate(void) {
   struct Int32Vect3 *acceleration = stateGetAccelBody_i();
   float acceleration_y_f = ACCEL_FLOAT_OF_BFP(acceleration->y);
 
-  filtered_beta_estimate = update_second_order_low_pass(&beta_filter, acceleration_y_f);
+  filtered_acc_y = update_second_order_low_pass(&acc_y_filter, acceleration_y_f);
 }
 
 /**
