@@ -221,7 +221,7 @@
       </program>
       <program name="Server"/>
       <program name="Ivy2UDP">
-        <arg flag="-h" constant="192.168.1.3"/>
+        <arg flag="-h" constant="192.168.1.255"/>
         <arg flag="-id" constant="@AC_ID"/>
       </program>
       <program name="GCS">

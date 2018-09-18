@@ -54,6 +54,7 @@ let () =
   let sockaddr = Unix.ADDR_INET (addr, !port) in
   let socket = Unix.socket Unix.PF_INET Unix.SOCK_DGRAM 0 in
 
+  Unix.setsockopt socket Unix.SO_BROADCAST true;
   Ivy.init "Link" "READY" (fun _ _ -> ());
   Ivy.start !ivy_bus;
 
