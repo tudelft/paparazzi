@@ -75,6 +75,7 @@ float vertical_pitch_of_roll = DC_FORWARD_PITCH_OF_ROLL;
 int32_t nominal_forward_thrust = DC_FORWARD_NOMINAL_THRUST;
 float throttle_from_pitch_up = DC_FORWARD_THROTTLE_FROM_PITCH_UP;
 float forward_max_psi = DC_FORWARD_MAX_PSI;
+float acc_y_filter_cutoff_hz = DC_FORWARD_ACC_Y_FILTER_CUTOFF_HZ;
 
 /* Private functions */
 static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp);
@@ -96,9 +97,7 @@ static struct Int32Vect2 guidance_hybrid_airspeed_sp;
 static struct Int32Vect2 guidance_h_pos_err;
 static struct Int32Vect2 wind_estimate;
 static struct Int32Vect2 guidance_hybrid_ref_airspeed;
-static struct SecondOrderLowPass acc_y_filter;
-float tau_acc_y_filter = 1/(0.5f * 2 * M_PI); // acc_y filter cutoff frequency in Hertz
-float q_acc_y_filter = 1.0f;
+static Butterworth2LowPass acc_y_filter;
 
 static int32_t norm_sp_airspeed_disp;
 static int32_t heading_diff_disp;
@@ -150,11 +149,19 @@ void guidance_hybrid_init(void)
   dperpendicular = 0.0;
   perpendicular_prev = 0.0;
 
-  init_second_order_low_pass(&acc_y_filter, tau_acc_y_filter, q_acc_y_filter, 1./PERIODIC_FREQUENCY, 0);
+  init_butterworth_2_low_pass(&acc_y_filter, 1/(acc_y_filter_cutoff_hz * 2 * M_PI), 1./PERIODIC_FREQUENCY, 0);
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_HYBRID_GUIDANCE, send_hybrid_guidance);
 #endif
+}
+
+void guidance_delftacopter_set_acc_y_cutoff_hz(float cutoff_hz)
+{
+  acc_y_filter_cutoff_hz = cutoff_hz;
+  float tau_acc_y_filter = 1/(cutoff_hz * 2 * M_PI); // acc_y filter cutoff frequency in Hertz
+
+  init_butterworth_2_low_pass(&acc_y_filter, tau_acc_y_filter, 1./PERIODIC_FREQUENCY, get_butterworth_2_low_pass(&acc_y_filter));
 }
 
 /**
@@ -242,7 +249,7 @@ static void guidance_hybrid_update_sideslip_estimate(void) {
   struct Int32Vect3 *acceleration = stateGetAccelBody_i();
   float acceleration_y_f = ACCEL_FLOAT_OF_BFP(acceleration->y);
 
-  filtered_acc_y = update_second_order_low_pass(&acc_y_filter, acceleration_y_f);
+  filtered_acc_y = update_butterworth_2_low_pass(&acc_y_filter, acceleration_y_f);
 }
 
 /**

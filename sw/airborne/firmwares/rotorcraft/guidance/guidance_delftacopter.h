@@ -48,5 +48,8 @@ extern float throttle_from_pitch_up;
 extern float forward_max_psi;
 extern int16_t transition_throttle_to_forward;
 extern int16_t transition_throttle_to_hover;
+extern float acc_y_filter_cutoff_hz;
+
+extern void guidance_delftacopter_set_acc_y_cutoff_hz(float cutoff_hz);
 
 #endif /* GUIDANCE_DELFTACOPTER_H */
