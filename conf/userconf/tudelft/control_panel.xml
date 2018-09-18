@@ -45,6 +45,7 @@
       <arg flag="--port" constant="/dev/ttyUSB1"/>
       <arg flag="--id" constant="1"/>
     </program>
+    <program name="Ivy2UDP" command="sw/ground_segment/tmtc/ivy2udp"/>
     <program name="BluegigaUsbDongleScanner" command="sw/tools/bluegiga_usb_dongle/bluegiga_usb_driver">
       <arg flag="/dev/ttyACM2"/>
       <arg flag="scan" />
@@ -196,7 +197,10 @@
         <arg flag="-s" constant="57600"/>
       </program>
       <program name="Server"/>
-      <program name="EnergyManager"/>
+      <program name="Ivy2UDP">
+        <arg flag="-h" constant="192.168.1.3"/>
+        <arg flag="-id" constant="@AC_ID"/>
+      </program>
       <program name="GCS">
         <arg flag="-speech" />
         <arg flag="-maps_fill" />
@@ -216,7 +220,10 @@
         <arg flag="-s" constant="9600"/>
       </program>
       <program name="Server"/>
-       <program name="EnergyManager"/>
+      <program name="Ivy2UDP">
+        <arg flag="-h" constant="192.168.1.3"/>
+        <arg flag="-id" constant="@AC_ID"/>
+      </program>
       <program name="GCS">
         <arg flag="-speech" />
         <arg flag="-maps_fill" />
@@ -229,6 +236,14 @@
         <arg flag="-maps_fill" />
         <arg flag="-layout" constant="map_only.xml" />
       </program>
+    </session>
+    <session name="Flight Outback PC2">
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Server"/>
+      <program name="Messages"/>
+      <program name="EnergyManager"/>
     </session>
     <session name="Raw Sensors">
       <program name="Real-time Plotter">

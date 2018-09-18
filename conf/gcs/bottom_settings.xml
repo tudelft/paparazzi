@@ -1,52 +1,17 @@
 <!DOCTYPE layout SYSTEM "layout.dtd">
 
-<layout width="1855" height="1056" x="1505" y="24">
+<layout width="1855" height="1056" x="65" y="24">
   <rows>
     <columns SIZE="500">
       <rows SIZE="300">
         <widget NAME="strips" size="260"/>
-        <widget NAME="alarms" size="234"/>
+        <widget NAME="alarms" size="463"/>
       </rows>
       <widget NAME="map2d" size="1547">
-        <papget type="message_field" display="text" x="252" y="3">
-          <property name="scale" value="0.001"/>
-          <property name="field" value="MOTOR:current"/>
-          <property name="format" value="Mot %.2f A"/>
-          <property name="size" value="15."/>
-          <property name="color" value="#00ff00"/>
-        </papget>
         <papget type="message_field" display="text" x="374" y="45">
           <property name="scale" value="1."/>
           <property name="field" value="FBW_STATUS:mode"/>
           <property name="format" value="FBW %.0f"/>
-          <property name="size" value="15."/>
-          <property name="color" value="#00ff00"/>
-        </papget>
-        <papget type="message_field" display="text" x="130" y="3">
-          <property name="scale" value="0.1"/>
-          <property name="field" value="ROTORCRAFT_STATUS:vsupply"/>
-          <property name="format" value="Bat %.1f V"/>
-          <property name="size" value="15."/>
-          <property name="color" value="#00ff00"/>
-        </papget>
-        <papget type="message_field" display="text" x="925" y="24">
-          <property name="scale" value="1.94384"/>
-          <property name="field" value="ROTORCRAFT_FP_MIN:gspeed"/>
-          <property name="format" value="GS %.2f kts"/>
-          <property name="size" value="15."/>
-          <property name="color" value="#00ff00"/>
-        </papget>
-        <papget type="message_field" display="text" x="130" y="25">
-          <property name="scale" value="1."/>
-          <property name="field" value="TEMP_ADC:temp2"/>
-          <property name="format" value="Bat %.1f °C"/>
-          <property name="size" value="15."/>
-          <property name="color" value="#00ff00"/>
-        </papget>
-        <papget type="message_field" display="text" x="374" y="24">
-          <property name="scale" value="1."/>
-          <property name="field" value="FBW_STATUS:frame_rate"/>
-          <property name="format" value="RC %.1f Hz"/>
           <property name="size" value="15."/>
           <property name="color" value="#00ff00"/>
         </papget>
@@ -64,13 +29,6 @@
           <property name="size" value="15."/>
           <property name="color" value="#00ff00"/>
         </papget>
-        <papget type="message_field" display="text" x="492" y="3">
-          <property name="scale" value="1."/>
-          <property name="field" value="THROTTLE_CURVE:curve"/>
-          <property name="format" value="CRV %.0f"/>
-          <property name="size" value="15."/>
-          <property name="color" value="#00ff00"/>
-        </papget>
         <papget type="message_field" display="text" x="251" y="46">
           <property name="scale" value="1."/>
           <property name="field" value="MOTOR:rpm"/>
@@ -78,10 +36,38 @@
           <property name="size" value="15."/>
           <property name="color" value="#00ff00"/>
         </papget>
-        <papget type="message_field" display="text" x="130" y="65">
+        <papget type="message_field" display="text" x="925" y="24">
+          <property name="scale" value="1.94384"/>
+          <property name="field" value="ROTORCRAFT_FP_MIN:gspeed"/>
+          <property name="format" value="GS %.2f kts"/>
+          <property name="size" value="15."/>
+          <property name="color" value="#00ff00"/>
+        </papget>
+        <papget type="message_field" display="text" x="250" y="24">
           <property name="scale" value="1."/>
-          <property name="field" value="VISION_OUTBACK:status"/>
-          <property name="format" value="Vision %.0f"/>
+          <property name="field" value="TEMP_ADC:temp1"/>
+          <property name="format" value="Mot %.1f °C"/>
+          <property name="size" value="15."/>
+          <property name="color" value="#00ff00"/>
+        </papget>
+        <papget type="message_field" display="text" x="252" y="3">
+          <property name="scale" value="0.001"/>
+          <property name="field" value="MOTOR:current"/>
+          <property name="format" value="Mot %.2f A"/>
+          <property name="size" value="15."/>
+          <property name="color" value="#00ff00"/>
+        </papget>
+        <papget type="message_field" display="text" x="616" y="28">
+          <property name="scale" value="0.166666"/>
+          <property name="field" value="ENERGY:amp"/>
+          <property name="format" value="Cell %.2f A"/>
+          <property name="size" value="15."/>
+          <property name="color" value="#00ff00"/>
+        </papget>
+        <papget type="message_field" display="text" x="130" y="25">
+          <property name="scale" value="1."/>
+          <property name="field" value="TEMP_ADC:temp2"/>
+          <property name="format" value="Bat %.1f °C"/>
           <property name="size" value="15."/>
           <property name="color" value="#00ff00"/>
         </papget>
@@ -92,10 +78,31 @@
           <property name="size" value="15."/>
           <property name="color" value="#00ff00"/>
         </papget>
-        <papget type="message_field" display="text" x="616" y="28">
-          <property name="scale" value="0.166666"/>
-          <property name="field" value="ENERGY:amp"/>
-          <property name="format" value="Cell %.2f A"/>
+        <papget type="message_field" display="text" x="616" y="4">
+          <property name="scale" value="0.16666"/>
+          <property name="field" value="ENERGY:bat"/>
+          <property name="format" value="Cell %.2f V"/>
+          <property name="size" value="15."/>
+          <property name="color" value="#00ff00"/>
+        </papget>
+        <papget type="message_field" display="text" x="130" y="65">
+          <property name="scale" value="1."/>
+          <property name="field" value="VISION_OUTBACK:status"/>
+          <property name="format" value="Vision %.0f"/>
+          <property name="size" value="15."/>
+          <property name="color" value="#00ff00"/>
+        </papget>
+        <papget type="message_field" display="text" x="492" y="3">
+          <property name="scale" value="1."/>
+          <property name="field" value="THROTTLE_CURVE:curve"/>
+          <property name="format" value="CRV %.0f"/>
+          <property name="size" value="15."/>
+          <property name="color" value="#00ff00"/>
+        </papget>
+        <papget type="message_field" display="text" x="130" y="3">
+          <property name="scale" value="0.1"/>
+          <property name="field" value="ROTORCRAFT_STATUS:vsupply"/>
+          <property name="format" value="Bat %.1f V"/>
           <property name="size" value="15."/>
           <property name="color" value="#00ff00"/>
         </papget>
@@ -113,22 +120,15 @@
           <property name="size" value="15."/>
           <property name="color" value="#00ff00"/>
         </papget>
-        <papget type="message_field" display="text" x="250" y="24">
+        <papget type="message_field" display="text" x="374" y="24">
           <property name="scale" value="1."/>
-          <property name="field" value="TEMP_ADC:temp1"/>
-          <property name="format" value="Mot %.1f °C"/>
-          <property name="size" value="15."/>
-          <property name="color" value="#00ff00"/>
-        </papget>
-        <papget type="message_field" display="text" x="616" y="4">
-          <property name="scale" value="0.16666"/>
-          <property name="field" value="ENERGY:bat"/>
-          <property name="format" value="Cell %.2f V"/>
+          <property name="field" value="FBW_STATUS:frame_rate"/>
+          <property name="format" value="RC %.1f Hz"/>
           <property name="size" value="15."/>
           <property name="color" value="#00ff00"/>
         </papget>
       </widget>
     </columns>
-    <widget NAME="aircraft" size="548"/>
+    <widget NAME="aircraft" size="319"/>
   </rows>
 </layout>
