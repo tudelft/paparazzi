@@ -234,6 +234,7 @@ let log_and_parse = fun ac_name (a:Aircraft.aircraft) msg values ->
             and up    = foi32value "up" /. pos_frac in
             let (geo, h) = geo_hmsl_of_ltp (LL.make_ned [| north; east; -. up |]) nav_ref a.d_hmsl in
             a.pos <- geo;
+            a.heading <- norm_course (foi32value "heading" /. angle_frac);
             a.alt <- h
         end;
         a.gspeed  <- fvalue "gspeed" /. 100.;

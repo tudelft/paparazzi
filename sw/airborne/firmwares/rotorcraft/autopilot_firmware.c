@@ -151,10 +151,12 @@ static void send_fp_min(struct transport_tx *trans, struct link_device *dev)
   // ground speed in cm/s
   uint16_t gspeed = stateGetHorizontalSpeedNorm_f() / 100;
 #endif
+  int32_t hybrid_heading = stabilization_attitude_get_heading_i();
   pprz_msg_send_ROTORCRAFT_FP_MIN(trans, dev, AC_ID,
                                   &(stateGetPositionEnu_i()->x),
                                   &(stateGetPositionEnu_i()->y),
                                   &(stateGetPositionEnu_i()->z),
+                                  &hybrid_heading,
                                   &gspeed);
 }
 

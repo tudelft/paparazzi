@@ -1708,6 +1708,7 @@
       <field name="east"     type="int32" alt_unit="m" alt_unit_coef="0.0039063"/>
       <field name="north"    type="int32" alt_unit="m" alt_unit_coef="0.0039063"/>
       <field name="up"       type="int32" alt_unit="m" alt_unit_coef="0.0039063"/>
+      <field name="heading"  type="int32" alt_unit="deg" alt_unit_coef="0.0139882"/>
       <field name="gspeed"   type="uint16" unit="cm/s" alt_unit="m/s"/>
     </message>
 
