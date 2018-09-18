@@ -27,8 +27,8 @@
       <message name="THROTTLE_CURVE"         period="1.5"/>
       <message name="AHRS_REF_QUAT"          period="4.2"/>
       <message name="VISION_OUTBACK"         period="1.2"/>
-      <message name="CHIRP"                  period="1"/>
-      <message name="DOUBLET"                period="1"/>      
+      <message name="HYBRID_GUIDANCE"        period=".5"/>
+      <message name="CHIRP"                  period="1"/>     
       <message name="STAB_ATTITUDE_INT"      period="5"/>
     </mode>
 

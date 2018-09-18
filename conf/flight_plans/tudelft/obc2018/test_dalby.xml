@@ -25,10 +25,10 @@
     <waypoint alt="40.0" name="JOE_reported" x="54.9" y="33.7"/>
     <waypoint alt="50.0" name="JOE_found" x="297.3" y="-99.5"/>
     <waypoint alt="50.0" name="TD_mrk" x="257.6" y="-132.7"/>
-    <waypoint name="p1" x="227.0" y="-397.1"/>
-    <waypoint name="p2" x="564.8" y="-361.5"/>
-    <waypoint name="p3" x="137.0" y="78.0"/>
-    <waypoint name="p4" x="484.6" y="71.9"/>
+    <waypoint name="p1" x="-257.6" y="-182.9"/>
+    <waypoint name="p2" x="45.7" y="-461.7"/>
+    <waypoint name="p3" x="122.4" y="77.3"/>
+    <waypoint name="p4" x="510.0" y="-40.0"/>
     <waypoint alt="50.0" name="j1" x="63.9" y="48.7"/>
     <waypoint alt="50.0" name="j2" x="35.3" y="41.6"/>
     <waypoint alt="50.0" name="j3" x="66.6" y="41.1"/>
@@ -125,7 +125,7 @@
       <stay climb="nav_climb_vspeed" until="stateGetPositionEnu_f()->z > 20.0" vmode="climb" wp="CLIMB"/>
       <call_once fun="nav_hybrid_heading_init()"/>
       <stay climb="nav_climb_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="CLIMB"/>
-      <deroute block="find_joe"/>
+      <deroute block="transition_to_joe"/>
     </block>
     <block group="fly_to_joe" name="transition_to_joe">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
