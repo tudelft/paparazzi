@@ -77,7 +77,7 @@ void nav_hybrid_heading_periodic(void) {
 
   // Towards Waypoint
   float err = nav_hybrid_heading_wp_setpoint - nav_hybrid_heading_wp_ref;
-  NormCourseRad(err);
+  NormRadAngle(err);
   if (err < 0) {
     nav_hybrid_heading_wp_ref += nav_hybrid_heading_max_yaw_rate / 512.0f;
   } else {
