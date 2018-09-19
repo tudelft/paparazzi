@@ -64,6 +64,7 @@ struct Int32Quat   stab_att_sp_quat;
 struct Int32Eulers stab_att_sp_euler;
 
 struct AttRefQuatInt att_ref_quat_i;
+struct FloatEulers fdwEulers;
 
 #ifdef STABILIZATION_SWASHPLATE_GAIN
 float stabilization_swashplate_gain = STABILIZATION_SWASHPLATE_GAIN;
@@ -316,7 +317,6 @@ void stabilization_attitude_run(bool enable_integrator)
   if(delftacopter_fwd_controller_enabled) {
     struct FloatQuat pitchQ;
     struct FloatQuat fwdState;
-    struct FloatEulers fdwEulers;
     
     // Rotate rates from body axis to forward axis
     struct FloatRates *curRates = stateGetBodyRates_f();

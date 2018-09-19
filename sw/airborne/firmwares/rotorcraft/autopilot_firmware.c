@@ -125,6 +125,12 @@ static void send_fp(struct transport_tx *trans, struct link_device *dev)
   int32_t carrot_up = -guidance_v_z_sp;
   int32_t carrot_heading = ANGLE_BFP_OF_REAL(guidance_h.sp.heading);
   int32_t hybrid_heading = stabilization_attitude_get_heading_i();
+  int32_t hybrid_phi = stateGetNedToBodyEulers_i()->phi;
+  int32_t hybrid_theta = stateGetNedToBodyEulers_i()->theta;
+  if(delftacopter_fwd_controller_enabled) {
+    hybrid_phi = fdwEulers.psi;
+    hybrid_theta = fdwEulers.theta;
+  }
   pprz_msg_send_ROTORCRAFT_FP(trans, dev, AC_ID,
                               &(stateGetPositionEnu_i()->x),
                               &(stateGetPositionEnu_i()->y),
@@ -132,8 +138,8 @@ static void send_fp(struct transport_tx *trans, struct link_device *dev)
                               &(stateGetSpeedEnu_i()->x),
                               &(stateGetSpeedEnu_i()->y),
                               &(stateGetSpeedEnu_i()->z),
-                              &(stateGetNedToBodyEulers_i()->phi),
-                              &(stateGetNedToBodyEulers_i()->theta),
+                              &hybrid_phi,
+                              &hybrid_theta,
                               &hybrid_heading,
                               &guidance_h.sp.pos.y,
                               &guidance_h.sp.pos.x,
