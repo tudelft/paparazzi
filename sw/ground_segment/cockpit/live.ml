@@ -1187,7 +1187,7 @@ let listen_flight_params = fun geomap auto_center_new_ac auto_center_ac fit_to_w
         ac.last_unix_time <- unix_time
       end;
 
-      if ac.first_pos < 10 then begin
+      if ac.first_pos < 120 then begin
         if auto_center_new_ac then begin
           center geomap ac.track ();
         end;
