@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
 
-<flight_plan alt="80" ground_alt="0" home_mode_height="80" lat0="-27.217022" lon0="151.236898" max_dist_from_home="1400" name="DALBY2018" qfu="20" security_height="10">
+<flight_plan alt="80" ground_alt="0" home_mode_height="80" lat0="-27.217022" lon0="151.236898" max_dist_from_home="2800" name="DALBY2018" qfu="20" security_height="10">
   <header>
 #include "autopilot.h"
 #include "guidance/guidance_delftacopter.h"
@@ -16,17 +16,17 @@
 </header>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
-    <waypoint name="MB1" x="-10.0" y="-1370.1"/>
-    <waypoint name="MB2" x="-1389.6" y="-108.5"/>
-    <waypoint name="MB3" x="363.8" y="1258.5"/>
-    <waypoint name="MB4" x="1353.8" y="-317.7"/>
+    <waypoint name="MB1" x="1328.9" y="-1875.6"/>
+    <waypoint name="MB2" x="-1968.3" y="-1969.1"/>
+    <waypoint name="MB3" x="-2065.8" y="550.7"/>
+    <waypoint name="MB4" x="1613.2" y="318.9"/>
     <waypoint alt="40.0" name="BASE" x="39.5" y="18.6"/>
     <waypoint alt="50.0" name="JOE" x="42.0" y="8.6"/>
     <waypoint alt="40.0" name="JOE_reported" x="54.9" y="33.7"/>
     <waypoint alt="50.0" name="JOE_found" x="297.3" y="-99.5"/>
     <waypoint alt="50.0" name="TD_mrk" x="257.6" y="-132.7"/>
     <waypoint name="p1" x="-257.6" y="-182.9"/>
-    <waypoint name="p2" x="45.7" y="-461.7"/>
+    <waypoint name="p2" x="259.4" y="-353.2"/>
     <waypoint name="p3" x="122.4" y="77.3"/>
     <waypoint name="p4" x="510.0" y="-40.0"/>
     <waypoint alt="50.0" name="j1" x="63.9" y="48.7"/>
