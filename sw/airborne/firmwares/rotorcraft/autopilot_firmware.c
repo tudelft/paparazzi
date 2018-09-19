@@ -128,7 +128,7 @@ static void send_fp(struct transport_tx *trans, struct link_device *dev)
   int32_t hybrid_phi = stateGetNedToBodyEulers_i()->phi;
   int32_t hybrid_theta = stateGetNedToBodyEulers_i()->theta;
   if(delftacopter_fwd_controller_enabled) {
-    hybrid_phi = fdwEulers.psi;
+    hybrid_phi = fdwEulers.phi;
     hybrid_theta = fdwEulers.theta;
   }
   pprz_msg_send_ROTORCRAFT_FP(trans, dev, AC_ID,
