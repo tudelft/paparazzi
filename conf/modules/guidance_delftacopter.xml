@@ -46,14 +46,14 @@
         <dl_setting var="perpen_dgain" min="0.0" step="0.01" max="360.0" shortname="perpen_dgain"/>       
       </dl_settings>
       <dl_settings NAME="FWD">
-        <dl_setting var="delftacopter_fwd_roll_pgain" shortname="roll_pgain" min="-5000" step="0.01" max="5000"/>
-        <dl_setting var="delftacopter_fwd_roll_dgain" shortname="roll_dgain" min="-5000" step="0.01" max="5000"/>
-        <dl_setting var="delftacopter_fwd_pitch_pgain" shortname="pitch_pgain" min="-5000" step="0.01" max="5000"/>
-        <dl_setting var="delftacopter_fwd_pitch_dgain" shortname="pitch_dgain" min="-5000" step="0.01" max="5000"/>
-        <dl_setting var="delftacopter_fwd_pitch_igain" shortname="pitch_igain" min="-5000" step="0.01" max="5000"/>
-        <dl_setting var="feedforward_yaw_of_turn_rate" shortname="yaw_of_turnr" min="-5000" step="0.01" max="5000"/>
-        <dl_setting var="delftacopter_fwd_advance_angle_p" shortname="adv_p" min="-360" step="0.01" max="360"/>
-        <dl_setting var="delftacopter_fwd_advance_angle_q" shortname="adv_q" min="-360" step="0.01" max="360"/>
+        <dl_setting var="delftacopter_fwd_roll_pgain" shortname="roll_pgain" min="0" step="0.01" max="10000"/>
+        <dl_setting var="delftacopter_fwd_roll_dgain" shortname="roll_dgain" min="0" step="0.01" max="5000"/>
+        <dl_setting var="delftacopter_fwd_pitch_pgain" shortname="pitch_pgain" min="0" step="0.01" max="10000"/>
+        <dl_setting var="delftacopter_fwd_pitch_dgain" shortname="pitch_dgain" min="0" step="0.01" max="5000"/>
+        <dl_setting var="delftacopter_fwd_pitch_igain" shortname="pitch_igain" min="0" step="0.01" max="5000"/>
+        <dl_setting var="feedforward_yaw_of_turn_rate" shortname="yaw_of_turnr" min="0" step="0.01" max="5000"/>
+        <dl_setting var="delftacopter_fwd_advance_angle_p" shortname="adv_p" min="-1.6" step="0.005" max="1.6"/>
+        <dl_setting var="delftacopter_fwd_advance_angle_q" shortname="adv_q" min="-1.6" step="0.005" max="1.6"/>
         <dl_setting var="delftacopter_fwd_pitch_swp" shortname="pitch_swp" min="0" step="0.01" max="1"/>
       </dl_settings>
     </dl_settings>

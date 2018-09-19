@@ -345,7 +345,7 @@ void stabilization_attitude_run(bool enable_integrator)
 
     // Compute the stabilization commands
     stabilization_cmd[COMMAND_ELEVATOR] = pitch_cmd;
-    stabilization_cmd[COMMAND_AILERON] = roll_err * delftacopter_fwd_roll_pgain - fwd_roll_rate * delftacopter_fwd_roll_dgain;
+    stabilization_cmd[COMMAND_AILERON] = -(roll_err * delftacopter_fwd_roll_pgain - fwd_roll_rate * delftacopter_fwd_roll_dgain);
     stabilization_cmd[COMMAND_ROLL] = cmd_roll1;
     stabilization_cmd[COMMAND_PITCH] = cmd_pitch1;
     stabilization_cmd[COMMAND_YAW] = 0;
