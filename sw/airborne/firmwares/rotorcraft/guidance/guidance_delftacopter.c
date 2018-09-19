@@ -178,6 +178,9 @@ void guidance_hybrid_run(bool in_flight)
   // Set the correct throttle curve
   guidance_hybrid_set_nav_throttle_curve();
 
+  // Calculate the sideslip
+  guidance_hybrid_update_sideslip_estimate();
+
   /* Verify in which flight mode the delftacopter is flying */
   // Transition to forward flight
   if((dc_hybrid_mode == HB_FORWARD) && (transition_percentage < (100 << INT32_PERCENTAGE_FRAC) || transition_time < (DC_TRANSITION_TIME*PERIODIC_FREQUENCY))) {
@@ -263,7 +266,6 @@ static void guidance_hybrid_update_sideslip_estimate(void) {
  */
 static void guidance_hybrid_forward(void) {
   INT32_VECT2_NED_OF_ENU(guidance_h.sp.pos, navigation_target);
-  guidance_hybrid_update_sideslip_estimate();
   guidance_hybrid_attitude_delftacopter(&guidance_hybrid_ypr_sp);
   guidance_hybrid_set_cmd_i(&guidance_hybrid_ypr_sp);
 
