@@ -127,7 +127,7 @@ static void send_fp(struct transport_tx *trans, struct link_device *dev)
   int32_t hybrid_heading = stabilization_attitude_get_heading_i();
   int32_t hybrid_phi = stateGetNedToBodyEulers_i()->phi;
   int32_t hybrid_theta = stateGetNedToBodyEulers_i()->theta;
-  if(delftacopter_fwd_controller_enabled) {
+  if(dc_mode_fwd) {
     hybrid_phi = fdwEulers.phi;
     hybrid_theta = fdwEulers.theta;
   }

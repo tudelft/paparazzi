@@ -65,6 +65,7 @@ struct Int32Eulers stab_att_sp_euler;
 
 struct AttRefQuatInt att_ref_quat_i;
 struct FloatEulers fdwEulers;
+bool dc_mode_fwd = false;
 
 #ifdef STABILIZATION_SWASHPLATE_GAIN
 float stabilization_swashplate_gain = STABILIZATION_SWASHPLATE_GAIN;
@@ -348,9 +349,11 @@ void stabilization_attitude_run(bool enable_integrator)
     stabilization_cmd[COMMAND_ROLL] = cmd_roll1;
     stabilization_cmd[COMMAND_PITCH] = cmd_pitch1;
     stabilization_cmd[COMMAND_YAW] = 0;
+    dc_mode_fwd = true;
   }
   else {
     pitch_integrated = 0;//-0.03*MAX_PPRZ;
+    dc_mode_fwd = false;
   }
   delftacopter_fwd_controller_enabled = false;
 

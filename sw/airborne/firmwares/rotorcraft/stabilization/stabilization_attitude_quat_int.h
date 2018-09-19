@@ -36,6 +36,7 @@ extern struct AttRefQuatInt att_ref_quat_i;
 extern struct Int32Quat stabilization_att_sum_err_quat;
 extern float stabilization_swashplate_gain;
 extern struct FloatEulers fdwEulers;
+extern bool dc_mode_fwd;
 
 /* settings handlers for ref model params */
 #define stabilization_attitude_quat_int_SetOmegaP(_val) {   \
