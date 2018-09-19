@@ -64,7 +64,7 @@ struct Int32Quat   stab_att_sp_quat;
 struct Int32Eulers stab_att_sp_euler;
 
 struct AttRefQuatInt att_ref_quat_i;
-struct FloatEulers fdwEulers;
+struct FloatEulers fwdEulers;
 bool dc_mode_fwd = false;
 
 #ifdef STABILIZATION_SWASHPLATE_GAIN
@@ -328,11 +328,11 @@ void stabilization_attitude_run(bool enable_integrator)
     struct FloatEulers pitch90 = {0.0, -TRANSITION_MAX_OFFSET, 0.0};
     float_quat_of_eulers(&pitchQ, &pitch90);
     float_quat_comp(&fwdState, curState, &pitchQ);
-    float_eulers_of_quat(&fdwEulers, &fwdState);
+    float_eulers_of_quat(&fwdEulers, &fwdState);
 
     // Compute the roll and pitch error
-    float roll_err = delftacopter_fwd_roll - fdwEulers.phi;
-    float pitch_err = delftacopter_fwd_pitch - fdwEulers.theta;
+    float roll_err = delftacopter_fwd_roll - fwdEulers.phi;
+    float pitch_err = delftacopter_fwd_pitch - fwdEulers.theta;
 
     // Compute the pitch integrator
     pitch_integrated += pitch_err * delftacopter_fwd_pitch_igain;

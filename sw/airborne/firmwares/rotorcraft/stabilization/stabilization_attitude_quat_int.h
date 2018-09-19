@@ -35,7 +35,7 @@ extern struct Int32Eulers stab_att_sp_euler; ///< with #INT32_ANGLE_FRAC
 extern struct AttRefQuatInt att_ref_quat_i;
 extern struct Int32Quat stabilization_att_sum_err_quat;
 extern float stabilization_swashplate_gain;
-extern struct FloatEulers fdwEulers;
+extern struct FloatEulers fwdEulers;
 extern bool dc_mode_fwd;
 
 /* settings handlers for ref model params */

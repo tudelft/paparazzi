@@ -128,8 +128,8 @@ static void send_fp(struct transport_tx *trans, struct link_device *dev)
   int32_t hybrid_phi = stateGetNedToBodyEulers_i()->phi;
   int32_t hybrid_theta = stateGetNedToBodyEulers_i()->theta;
   if(dc_mode_fwd) {
-    hybrid_phi = fdwEulers.phi;
-    hybrid_theta = fdwEulers.theta;
+    hybrid_phi = ANGLE_BFP_OF_REAL(fwdEulers.phi);
+    hybrid_theta = ANGLE_BFP_OF_REAL(fwdEulers.theta);
   }
   pprz_msg_send_ROTORCRAFT_FP(trans, dev, AC_ID,
                               &(stateGetPositionEnu_i()->x),
