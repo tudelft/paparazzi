@@ -402,8 +402,17 @@
     <define name="MAX_PITCH" value="10.0"/>
     <define name="MAX_PSI" value="20.0"/>
     <define name="ACC_Y_FILTER_CUTOFF_HZ" value="0.5"/>
-    <define name="K_FF_TO_YAW" value="0.0"/> <!-- order of magnitude -->
     <define name="E_PSI_DEG_FROM_ACC_Y" value="0"/>
+    
+    <define name="ROLL_PGAIN" value="0.0"/>
+    <define name="ROLL_DGAIN" value="0.0"/>
+    <define name="PITCH_PGAIN" value="0.0"/>
+    <define name="PITCH_DGAIN" value="0.0"/>
+    <define name="PITCH_IGAIN" value="0.0"/>
+    <define name="K_FF_TO_YAW" value="0.0"/> <!-- order of magnitude -->
+    <define name="ADVANCE_P" value="0.0"/>
+    <define name="ADVANCE_Q" value="0.0"/>
+    <define name="PITCH_SWP" value="0.0"/>
   </section>
 
   <!-- Radio control specific switches -->

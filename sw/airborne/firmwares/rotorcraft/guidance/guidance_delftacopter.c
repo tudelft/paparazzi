@@ -87,15 +87,15 @@ bool delftacopter_fwd_controller_enabled = false;
 float delftacopter_fwd_roll = 0;
 float delftacopter_fwd_pitch = 0;
 float delftacopter_fwd_yaw = 0;
-float delftacopter_fwd_roll_pgain = 0;
-float delftacopter_fwd_roll_dgain = 0;
-float delftacopter_fwd_pitch_pgain = 0;
-float delftacopter_fwd_pitch_dgain = 0;
-float delftacopter_fwd_pitch_igain = 0;
+float delftacopter_fwd_roll_pgain = DC_FORWARD_ROLL_PGAIN;
+float delftacopter_fwd_roll_dgain = DC_FORWARD_ROLL_DGAIN;
+float delftacopter_fwd_pitch_pgain = DC_FORWARD_PITCH_PGAIN;
+float delftacopter_fwd_pitch_dgain = DC_FORWARD_PITCH_DGAIN;
+float delftacopter_fwd_pitch_igain = DC_FORWARD_PITCH_IGAIN;
 float feedforward_yaw_of_turn_rate = DC_FORWARD_K_FF_TO_YAW;
-float delftacopter_fwd_advance_angle_p = 0;
-float delftacopter_fwd_advance_angle_q = 0;
-float delftacopter_fwd_pitch_swp = 0;
+float delftacopter_fwd_advance_angle_p = DC_FORWARD_ADVANCE_P;
+float delftacopter_fwd_advance_angle_q = DC_FORWARD_ADVANCE_Q;
+float delftacopter_fwd_pitch_swp = DC_FORWARD_PITCH_SWP;
 
 /* Private functions */
 static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp);
