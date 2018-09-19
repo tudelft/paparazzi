@@ -53,13 +53,14 @@ void nav_hybrid_heading_init_to_waypoint(int wp) {
 
   // WP-X is East
   // WP-Y is North
-  // Fill in NED WP position
-  struct FloatVect2 target_NED = {WaypointY(wp), WaypointX(wp)};
+  struct FloatVect2 target = {WaypointX(wp), WaypointY(wp)};
   struct FloatVect2 pos_diff;
-  VECT2_DIFF(pos_diff, target_NED, *stateGetPositionNed_f());
+  VECT2_DIFF(pos_diff, target, *stateGetPositionEnu_f());
   // don't change heading if closer than 0.5m to target
   if (VECT2_NORM2(pos_diff) > 0.25) {
     nav_hybrid_heading_wp_setpoint = atan2f(pos_diff.x, pos_diff.y);
+  } else {
+    nav_hybrid_heading_wp_setpoint = nav_hybrid_heading_wp_ref;
   }
 
 }
@@ -75,7 +76,9 @@ void nav_hybrid_heading_periodic(void) {
   }
 
   // Towards Waypoint
-  if (nav_hybrid_heading_wp_ref < nav_hybrid_heading_wp_setpoint) {
+  float err = nav_hybrid_heading_wp_setpoint - nav_hybrid_heading_wp_ref;
+  NormCourseRad(err);
+  if (err < 0) {
     nav_hybrid_heading_wp_ref += nav_hybrid_heading_max_yaw_rate / 512.0f;
   } else {
     nav_hybrid_heading_wp_ref -= nav_hybrid_heading_max_yaw_rate / 512.0f;
