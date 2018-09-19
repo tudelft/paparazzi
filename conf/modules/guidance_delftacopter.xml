@@ -41,7 +41,7 @@
         <dl_setting var="forward_max_psi" shortname="fwd_max_psi" min="0.0" step="0.5" max="30.0" param="DC_FORWARD_MAX_PSI"/>
         <dl_setting var="acc_y_filter_cutoff_hz" shortname="slip_fiter_cutoff_hz" min="0.0" max="10" step="0.001" param="DC_FORWARD_ACC_Y_FILTER_CUTOFF_HZ" type="float" handler="set_acc_y_cutoff_hz" module="guidance/guidance_delftacopter"/>
         <dl_setting var="feedforward_yaw_of_turn_rate" shortname="ff_yaw_of_turnr" min="0.0" max="3000.0" step="1" param="DC_FORWARD_K_FF_TO_YAW"/>
-        <dl_setting var="e_psi_deg_from_acc_y" shortname="ff_yaw_of_yacc" min="0.0" max="1000" step="0.01" param="DC_FORWARD_E_PSI_DEG_FROM_ACC_Y" type="float"/>
+        <dl_setting var="e_psi_deg_from_acc_y" shortname="ff_yaw_of_yacc" min="-50" max="50" step="0.01" param="DC_FORWARD_E_PSI_DEG_FROM_ACC_Y" type="float"/>
         <!-- Unknown... -->
         <dl_setting var="perpen_dgain" min="0.0" step="0.01" max="360.0" shortname="perpen_dgain"/>       
       </dl_settings>

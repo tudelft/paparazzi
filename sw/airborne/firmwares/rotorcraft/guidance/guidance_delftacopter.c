@@ -426,7 +426,7 @@ static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp)
   guidance_feed_forward_yaw_which_is_delftacopter_roll = (int32_t) (feedforward_yaw_of_turn_rate * omega);
 
   // Add side-slip controller here
-  guidance_feed_forward_yaw_which_is_delftacopter_roll += (int32_t) (-e_psi_deg_from_acc_y * filtered_acc_y);
+  omega += -e_psi_deg_from_acc_y * filtered_acc_y;
 
   // Integrate the omega to a psi angle
   high_res_psi += omega / 512.0f;
