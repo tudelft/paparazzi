@@ -442,6 +442,7 @@ static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp)
 
   // Set forward yaw
   delftacopter_fwd_yaw = omega * feedforward_yaw_of_turn_rate;
+  delftacopter_fwd_controller_enabled = true;
 }
 
 void guidance_hybrid_set_cmd_i(struct Int32Eulers *sp_cmd)
