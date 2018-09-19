@@ -104,7 +104,6 @@ static void guidance_hybrid_transition_hover(void);
 static void guidance_hybrid_forward(void);
 static void guidance_hybrid_hover(bool in_flight);
 static void guidance_hybrid_set_nav_throttle_curve(void);
-static void guidance_hybrid_update_sideslip_estimate(void);
 
 // Private variables
 static int32_t last_hover_heading;
