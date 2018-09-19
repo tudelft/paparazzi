@@ -51,9 +51,12 @@ void nav_hybrid_heading_init_to_waypoint(int wp) {
 
   nav_hybrid_heading_wp_ref = ANGLE_FLOAT_OF_BFP(nav_heading);
 
-  struct FloatVect2 target = {WaypointX(wp), WaypointY(wp)};
+  // WP-X is East
+  // WP-Y is North
+  // Fill in NED WP position
+  struct FloatVect2 target_NED = {WaypointY(wp), WaypointX(wp)};
   struct FloatVect2 pos_diff;
-  VECT2_DIFF(pos_diff, target, *stateGetPositionEnu_f());
+  VECT2_DIFF(pos_diff, target_NED, *stateGetPositionNed_f());
   // don't change heading if closer than 0.5m to target
   if (VECT2_NORM2(pos_diff) > 0.25) {
     nav_hybrid_heading_wp_setpoint = atan2f(pos_diff.x, pos_diff.y);
