@@ -368,6 +368,7 @@ void guidance_h_run(bool  in_flight)
         guidance_h_transition_run(false);
       }
       if(transition_percentage >= (100 << INT32_PERCENTAGE_FRAC)) {
+        guidance_hybrid_update_sideslip_estimate();
         delftacopter_fwd_roll = get_rc_roll_f();
         delftacopter_fwd_pitch = get_rc_pitch_f();
         delftacopter_fwd_yaw = get_rc_yaw_f() * feedforward_yaw_of_turn_rate;

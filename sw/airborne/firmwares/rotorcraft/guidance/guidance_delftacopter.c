@@ -268,7 +268,7 @@ static void guidance_hybrid_transition_hover(void) {
 /**
  * Get the current body y acceleration and low-pass filter it. Usable for side-slip control.
  */
-static void guidance_hybrid_update_sideslip_estimate(void) {
+void guidance_hybrid_update_sideslip_estimate(void) {
   struct Int32Vect3 *acceleration = stateGetAccelBody_i();
   float acceleration_y_f = ACCEL_FLOAT_OF_BFP(acceleration->y);
 

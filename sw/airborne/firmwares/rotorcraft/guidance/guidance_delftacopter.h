@@ -68,5 +68,6 @@ extern float delftacopter_fwd_advance_angle_q;
 extern float delftacopter_fwd_pitch_swp;
 
 extern void guidance_delftacopter_set_acc_y_cutoff_hz(float cutoff_hz);
+extern void guidance_hybrid_update_sideslip_estimate(void);
 
 #endif /* GUIDANCE_DELFTACOPTER_H */
