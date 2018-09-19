@@ -106,7 +106,7 @@
       <go from="P" hmode="route" wp="WP1"/>
     </block>
     <block name="RUN MISSION">
-      <call fun="mission_run()"/>
+      <call fun="mission_path_run()"/>
       <deroute block="Standby"/>
     </block>
     <block name="WP1 to WP2">

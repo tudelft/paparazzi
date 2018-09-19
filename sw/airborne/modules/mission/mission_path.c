@@ -36,7 +36,7 @@ static uint8_t mission_path_last_idx;                               ///< The las
 
 static bool mission_path_add(struct mission_path_elem_t *elem);
 static bool mission_path_delete(uint8_t id);
-static void mission_path_reset(void);
+//static void mission_path_reset(void);
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -66,6 +66,47 @@ void mission_path_init(void) {
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MISSION_PATH_STATUS, send_mission_path_status);
 #endif
+}
+
+/**
+ * Run from flight plan
+ */
+bool mission_path_run(void) {
+  // Check if we have at least one element
+  if(mission_path_last_idx == 0 && mission_path_idx >= mission_path_last_idx)
+    return false;
+  
+  // Goto first waypoint
+  if(mission_path_idx == 0) {
+    struct EnuCoor_i *target_wp = &mission_path[mission_path_idx].wp;
+
+    // Check if we have reached the target waypoint
+    if (nav_approaching_from(target_wp, NULL, CARROT))
+      mission_path_idx++;
+    
+    // Navigate to the target waypoint
+    horizontal_mode = HORIZONTAL_MODE_WAYPOINT;
+    VECT3_COPY(navigation_target, *target_wp);
+    NavVerticalAutoThrottleMode(RadOfDeg(0.000000));
+    NavVerticalAltitudeMode(POS_FLOAT_OF_BFP(target_wp->z), 0.);
+    return true;
+  }
+  // Route between previous and current waypoint
+  else {
+    struct EnuCoor_i *from_wp = &mission_path[mission_path_idx-1].wp;
+    struct EnuCoor_i *to_wp = &mission_path[mission_path_idx].wp;
+
+    // Check if we have reached the target waypoint
+    if (nav_approaching_from(to_wp, from_wp, CARROT))
+      mission_path_idx++;
+
+    // Route Between from-to
+    horizontal_mode = HORIZONTAL_MODE_ROUTE;
+    nav_route(from_wp, to_wp);
+    NavVerticalAutoThrottleMode(RadOfDeg(0.0));
+    NavVerticalAltitudeMode(POS_FLOAT_OF_BFP(to_wp->z), 0.);
+    return true;
+  }
 }
 
 /**
@@ -126,10 +167,10 @@ static bool mission_path_delete(uint8_t id) {
 /**
  * Delete all path elements
  */
-static void mission_path_reset(void) {
+/*static void mission_path_reset(void) {
   mission_path_idx = 0;
   mission_path_last_idx = 0;
-}
+}*/
 
 /**
  * Wen a datalink MISSION_PATH_ADD is received
@@ -142,7 +183,7 @@ bool mission_path_parse_ADD(struct link_device *dev, struct transport_tx *trans,
   elem.id = DL_MISSION_PATH_ADD_id(buf);
   elem.wp.x = DL_MISSION_PATH_ADD_wp_east(buf);
   elem.wp.y = DL_MISSION_PATH_ADD_wp_north(buf);
-  elem.wp.z = DL_MISSION_PATH_ADD_wp_alt(buf);
+  elem.wp.z = DL_MISSION_PATH_ADD_wp_up(buf);
   mission_path_add(&elem);
 
   // Send ACK back

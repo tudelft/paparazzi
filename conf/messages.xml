@@ -2486,9 +2486,9 @@
       </description>
       <field name="ac_id" type="uint8"/>
       <field name="id" type="uint16"/>
-      <field name="wp_east" type="float" unit="m"/>
-      <field name="wp_north" type="float" unit="m"/>
-      <field name="wp_alt" type="float" unit="m">altitude above geoid (MSL)</field>
+      <field name="wp_east" type="int32" unit="m" alt_unit_coef="0.0039063"/>
+      <field name="wp_north" type="int32" unit="m" alt_unit_coef="0.0039063"/>
+      <field name="wp_up" type="int32" unit="m" alt_unit_coef="0.0039063"/>
     </message>
 
     <message name="MISSION_PATH_DELETE" id="62" link="forwarded">

@@ -36,11 +36,12 @@
 #include "math/pprz_geodetic_int.h"
 
 struct mission_path_elem_t {
-  struct EnuCoor_f wp;
+  struct EnuCoor_i wp;
   uint16_t id;
 };
 
 extern void mission_path_init(void);
+extern bool mission_path_run(void);
 extern bool mission_path_parse_ADD(struct link_device *dev, struct transport_tx *trans, uint8_t *buf);
 extern bool mission_path_parse_DELETE(struct link_device *dev, struct transport_tx *trans, uint8_t *buf);
 
