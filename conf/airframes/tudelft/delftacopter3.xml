@@ -404,14 +404,14 @@
     <define name="ACC_Y_FILTER_CUTOFF_HZ" value="0.5"/>
     <define name="E_PSI_DEG_FROM_ACC_Y" value="0"/>
     
-    <define name="ROLL_PGAIN" value="0.0"/>
-    <define name="ROLL_DGAIN" value="0.0"/>
-    <define name="PITCH_PGAIN" value="0.0"/>
-    <define name="PITCH_DGAIN" value="0.0"/>
-    <define name="PITCH_IGAIN" value="0.0"/>
-    <define name="K_FF_TO_YAW" value="0.0"/> <!-- order of magnitude -->
-    <define name="ADVANCE_P" value="0.0"/>
-    <define name="ADVANCE_Q" value="0.0"/>
+    <define name="ROLL_PGAIN" value="1000.0"/>
+    <define name="ROLL_DGAIN" value="200.0"/>
+    <define name="PITCH_PGAIN" value="2000.0"/>
+    <define name="PITCH_DGAIN" value="1000.0"/>
+    <define name="PITCH_IGAIN" value="1.0"/>
+    <define name="K_FF_TO_YAW" value="600.0"/> <!-- order of magnitude -->
+    <define name="ADVANCE_P" value="1.1"/>
+    <define name="ADVANCE_Q" value="1.1"/>
     <define name="PITCH_SWP" value="0.0"/>
   </section>
 
