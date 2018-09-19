@@ -89,7 +89,7 @@ static int32_t get_rc_yaw(void)
   return yaw * max_rc_r / (MAX_PPRZ - STABILIZATION_ATTITUDE_DEADBAND_R);
 }
 
-static float get_rc_roll_f(void)
+float get_rc_roll_f(void)
 {
   int32_t roll = radio_control.values[RADIO_ROLL];
 #if STABILIZATION_ATTITUDE_DEADBAND_A
@@ -100,7 +100,7 @@ static float get_rc_roll_f(void)
 #endif
 }
 
-static float get_rc_pitch_f(void)
+float get_rc_pitch_f(void)
 {
   int32_t pitch = radio_control.values[RADIO_PITCH];
 #if STABILIZATION_ATTITUDE_DEADBAND_E
@@ -111,7 +111,7 @@ static float get_rc_pitch_f(void)
 #endif
 }
 
-static inline float get_rc_yaw_f(void)
+float get_rc_yaw_f(void)
 {
   int32_t yaw = radio_control.values[RADIO_YAW];
   DeadBand(yaw, STABILIZATION_ATTITUDE_DEADBAND_R);

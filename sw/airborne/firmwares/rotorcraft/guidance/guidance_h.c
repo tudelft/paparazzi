@@ -367,6 +367,13 @@ void guidance_h_run(bool  in_flight)
       if ((!(guidance_h.mode == GUIDANCE_H_MODE_FORWARD)) && transition_percentage > 0) {
         guidance_h_transition_run(false);
       }
+      if(transition_percentage >= (100 << INT32_PERCENTAGE_FRAC)) {
+        delftacopter_fwd_roll = get_rc_roll_f();
+        delftacopter_fwd_pitch = get_rc_pitch_f();
+        delftacopter_fwd_yaw = get_rc_yaw_f() * feedforward_yaw_of_turn_rate;
+        delftacopter_fwd_controller_enabled = true;
+      }
+
       stabilization_attitude_run(in_flight);
 #if (STABILIZATION_FILTER_CMD_ROLL_PITCH || STABILIZATION_FILTER_CMD_YAW)
       if (in_flight) {

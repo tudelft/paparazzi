@@ -52,7 +52,20 @@ extern int16_t transition_throttle_to_forward;
 extern int16_t transition_throttle_to_hover;
 extern float acc_y_filter_cutoff_hz;
 extern float e_psi_deg_from_acc_y;
+
+extern bool delftacopter_fwd_controller_enabled;
+extern float delftacopter_fwd_roll;
+extern float delftacopter_fwd_pitch;
+extern float delftacopter_fwd_yaw;
+extern float delftacopter_fwd_roll_pgain;
+extern float delftacopter_fwd_roll_dgain;
+extern float delftacopter_fwd_pitch_pgain;
+extern float delftacopter_fwd_pitch_dgain;
+extern float delftacopter_fwd_pitch_igain;
 extern float feedforward_yaw_of_turn_rate;
+extern float delftacopter_fwd_advance_angle_p;
+extern float delftacopter_fwd_advance_angle_q;
+extern float delftacopter_fwd_pitch_swp;
 
 extern void guidance_delftacopter_set_acc_y_cutoff_hz(float cutoff_hz);
 

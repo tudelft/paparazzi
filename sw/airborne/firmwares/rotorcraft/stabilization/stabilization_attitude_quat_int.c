@@ -311,6 +311,49 @@ void stabilization_attitude_run(bool enable_integrator)
   stabilization_cmd[COMMAND_PITCH] = cmd_pitch;
 #endif
 
+  // HACK forward controller
+  static float pitch_integrated = 0;
+  if(delftacopter_fwd_controller_enabled) {
+    struct FloatQuat pitchQ;
+    struct FloatQuat fwdState;
+    struct FloatEulers fdwEulers;
+    
+    // Rotate rates from body axis to forward axis
+    struct FloatRates *curRates = stateGetBodyRates_f();
+    float fwd_roll_rate = -curRates->r;
+
+    // Rotate body attitude to forward axis
+    struct FloatQuat *curState = stateGetNedToBodyQuat_f();
+    struct FloatEulers pitch90 = {0.0, -TRANSITION_MAX_OFFSET, 0.0};
+    float_quat_of_eulers(&pitchQ, &pitch90);
+    float_quat_comp(&fwdState, curState, &pitchQ);
+    float_eulers_of_quat(&fdwEulers, &fwdState);
+
+    // Compute the roll and pitch error
+    float roll_err = delftacopter_fwd_roll - fdwEulers.phi;
+    float pitch_err = delftacopter_fwd_pitch - fdwEulers.theta;
+
+    // Compute the pitch integrator
+    pitch_integrated += pitch_err * delftacopter_fwd_pitch_igain;
+    BoundAbs(pitch_integrated, MAX_PPRZ/3);
+    float pitch_cmd = pitch_err * delftacopter_fwd_pitch_pgain - curRates->q * delftacopter_fwd_pitch_dgain + pitch_integrated;
+
+    // Calculate roll and pitch based on yaw
+    int32_t cmd_roll1  = cosf(delftacopter_fwd_advance_angle_p)*delftacopter_fwd_yaw - sinf(delftacopter_fwd_advance_angle_q)*pitch_cmd*delftacopter_fwd_pitch_swp;
+    int32_t cmd_pitch1 = sinf(delftacopter_fwd_advance_angle_p)*delftacopter_fwd_yaw + cosf(delftacopter_fwd_advance_angle_q)*pitch_cmd*delftacopter_fwd_pitch_swp;
+
+    // Compute the stabilization commands
+    stabilization_cmd[COMMAND_ELEVATOR] = pitch_cmd;
+    stabilization_cmd[COMMAND_AILERON] = roll_err * delftacopter_fwd_roll_pgain - fwd_roll_rate * delftacopter_fwd_roll_dgain;
+    stabilization_cmd[COMMAND_ROLL] = cmd_roll1;
+    stabilization_cmd[COMMAND_PITCH] = cmd_pitch1;
+    stabilization_cmd[COMMAND_YAW] = 0;
+  }
+  else {
+    pitch_integrated = 0;//-0.03*MAX_PPRZ;
+  }
+  delftacopter_fwd_controller_enabled = false;
+
   // HACK to disable swashplate if forward only
   if (throttle_curve.mode == DC_TRANSITION_THROTTLE_CURVE || throttle_curve.mode == DC_FORWARD_THROTTLE_CURVE) {
     stabilization_cmd[COMMAND_ROLL] = stabilization_cmd[COMMAND_ROLL] * stabilization_swashplate_gain;

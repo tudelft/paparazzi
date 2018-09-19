@@ -80,8 +80,22 @@ int32_t nominal_forward_thrust = DC_FORWARD_NOMINAL_THRUST;
 float throttle_from_pitch_up = DC_FORWARD_THROTTLE_FROM_PITCH_UP;
 float forward_max_psi = DC_FORWARD_MAX_PSI;
 float acc_y_filter_cutoff_hz = DC_FORWARD_ACC_Y_FILTER_CUTOFF_HZ;
-float feedforward_yaw_of_turn_rate = DC_FORWARD_K_FF_TO_YAW;
 float e_psi_deg_from_acc_y = DC_FORWARD_E_PSI_DEG_FROM_ACC_Y;
+
+// Forward stabilization loop
+bool delftacopter_fwd_controller_enabled = false;
+float delftacopter_fwd_roll = 0;
+float delftacopter_fwd_pitch = 0;
+float delftacopter_fwd_yaw = 0;
+float delftacopter_fwd_roll_pgain = 0;
+float delftacopter_fwd_roll_dgain = 0;
+float delftacopter_fwd_pitch_pgain = 0;
+float delftacopter_fwd_pitch_dgain = 0;
+float delftacopter_fwd_pitch_igain = 0;
+float feedforward_yaw_of_turn_rate = DC_FORWARD_K_FF_TO_YAW;
+float delftacopter_fwd_advance_angle_p = 0;
+float delftacopter_fwd_advance_angle_q = 0;
+float delftacopter_fwd_pitch_swp = 0;
 
 /* Private functions */
 static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp);
@@ -411,42 +425,23 @@ static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp)
   guidance_hybrid_ref_airspeed.x = (guidance_hybrid_norm_ref_airspeed * c_psi) >> INT32_TRIG_FRAC;
   guidance_hybrid_ref_airspeed.y = (guidance_hybrid_norm_ref_airspeed * s_psi) >> INT32_TRIG_FRAC;
 
-  ypr_sp->theta = ANGLE_BFP_OF_REAL(TRANSITION_MAX_OFFSET);
+ 
+  delftacopter_fwd_roll = heading_diff * turn_bank_gain;
+  BoundAbs(delftacopter_fwd_roll, max_turn_bank / 180.0 * M_PI);
 
-  ypr_sp->phi = ANGLE_BFP_OF_REAL(heading_diff * turn_bank_gain);
-  if (ypr_sp->phi > ANGLE_BFP_OF_REAL(max_turn_bank / 180.0 * M_PI)) { ypr_sp->phi = ANGLE_BFP_OF_REAL(max_turn_bank / 180.0 * M_PI); }
-  if (ypr_sp->phi < ANGLE_BFP_OF_REAL(-max_turn_bank / 180.0 * M_PI)) { ypr_sp->phi = ANGLE_BFP_OF_REAL(-max_turn_bank / 180.0 * M_PI); }
+  float pitch_up_from_roll = vertical_pitch_of_roll * fabs(delftacopter_fwd_roll); // radians
+  delftacopter_fwd_pitch = pitch_up_from_roll + ANGLE_FLOAT_OF_BFP(v_control_pitch);
 
+ 
   // Feedforward estimate angular rotation omega = g*tan(phi)/v
   float omega = 9.81 / max_airspeed * tanf(ANGLE_FLOAT_OF_BFP(ypr_sp->phi));
   BoundAbs(omega, 0.7);
 
-  // Direct feed-forward of yaw to actuator, bypassing the normal control
-  // Terrible hack. Sorry Freek
-  guidance_feed_forward_yaw_which_is_delftacopter_roll = (int32_t) (feedforward_yaw_of_turn_rate * omega);
-
   // Add side-slip controller here
   omega += -e_psi_deg_from_acc_y * filtered_acc_y;
 
-  // Integrate the omega to a psi angle
-  high_res_psi += omega / 512.0f;
-
-  // Calculate the error in psi
-  float curr_psi_f = stabilization_attitude_get_heading_f();
-  float err_psi_f = high_res_psi - curr_psi_f;
-  FLOAT_ANGLE_NORMALIZE(err_psi_f);
-
-  // Bound the high resolution psi
-  BoundAbs(err_psi_f, RadOfDeg(forward_max_psi));
-  high_res_psi = curr_psi_f + err_psi_f;
-  FLOAT_ANGLE_NORMALIZE(high_res_psi);
-
-  // go back to angle_frac
-  ypr_sp->psi = ANGLE_BFP_OF_REAL(high_res_psi);
-
-  float pitch_up_from_roll = vertical_pitch_of_roll * fabs(ANGLE_FLOAT_OF_BFP(ypr_sp->phi)); // radians
-  ypr_sp->theta = ypr_sp->theta + ANGLE_BFP_OF_REAL(pitch_up_from_roll);
-  ypr_sp->theta = ypr_sp->theta + v_control_pitch;
+  // Set forward yaw
+  delftacopter_fwd_yaw = omega * feedforward_yaw_of_turn_rate;
 }
 
 void guidance_hybrid_set_cmd_i(struct Int32Eulers *sp_cmd)
