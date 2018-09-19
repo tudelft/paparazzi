@@ -124,42 +124,38 @@ void stabilization_attitude_reset_care_free_heading(void)
   care_free_heading = stateGetNedToBodyEulers_f()->psi;
 }
 
-/*   This is a different way to obtain yaw. It will not switch when going beyond 90 degrees pitch.
-     However, when rolling more then 90 degrees in combination with pitch it switches. For a
-     transition vehicle this is better as 90 degrees pitch will occur, but more than 90 degrees roll probably not. */
+// See float variant for documentation
 int32_t stabilization_attitude_get_heading_i(void)
 {
-  struct Int32Eulers *att = stateGetNedToBodyEulers_i();
-
-  int32_t heading;
-
-  if (abs(att->phi) < INT32_ANGLE_PI_2) {
-    int32_t sin_theta;
-    PPRZ_ITRIG_SIN(sin_theta, att->theta);
-    heading = att->psi - INT_MULT_RSHIFT(sin_theta, att->phi, INT32_TRIG_FRAC);
-  } else if (ANGLE_FLOAT_OF_BFP(att->theta) > 0) {
-    heading = att->psi - att->phi;
-  } else {
-    heading = att->psi + att->phi;
-  }
+  float heading_f = stabilization_attitude_get_heading_f();
+  int32_t heading = ANGLE_BFP_OF_REAL(heading_f);
 
   return heading;
 }
 
+/*   This is a different way to obtain yaw. It calculates the intersection between the xz-plane and the horizontal
+ *  plane, which is independent of pitch and works both in hover and forward flight mode
+ */
 float stabilization_attitude_get_heading_f(void)
 {
-  struct FloatEulers *att = stateGetNedToBodyEulers_f();
+  float heading = 0;
+  struct FloatRMat* rmat = stateGetNedToBodyRMat_f();
 
-  float heading;
+  // else y-axis points exactly up or down, xz-plane in horizontal plane
+  if (fabs(rmat->m[2 + 2*3]) < 1)
+  {
+    float y1 = rmat->m[0 + 1*3];
+    float y2 = rmat->m[1 + 1*3];
+    heading = atan2f(-y1, y2);
 
-  if (fabsf(att->phi) < M_PI / 2) {
-    heading = att->psi - sinf(att->theta) * att->phi;
-  } else if (att->theta > 0) {
-    heading = att->psi - att->phi;
-  } else {
-    heading = att->psi + att->phi;
   }
-
+  else
+  { // Use the direction of the x-axis, which is exactly in the horizontal plane
+    float x1 = rmat->m[0];
+    float x2 = rmat->m[1];
+    heading = atan2f(-x1, x2);
+  }
+  FLOAT_ANGLE_NORMALIZE(heading);
   return heading;
 }
 
