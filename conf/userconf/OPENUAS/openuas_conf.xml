@@ -3,7 +3,7 @@
    name="Disco"
    ac_id="241"
    airframe="airframes/OPENUAS/openuas_parrot_disco.xml"
-   radio="radios/OPENUAS/openuas_sbus_out.xml"
+   radio="radios/mistery_sbus.xml"
    telemetry="telemetry/OPENUAS/openuas_fixedwing_imu.xml"
    flight_plan="flight_plans/OPENUAS/openuas_versatile_unified.xml"
    settings="settings/fixedwing_basic.xml settings/control/ctl_energyadaptive.xml settings/estimation/ac_char.xml settings/control/ctl_adaptive_h_ff.xml"

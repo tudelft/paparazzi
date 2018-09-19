@@ -10,7 +10,7 @@
      + AIRSPEED:    Default MS4515DO
      + TELEMETRY:   Default WiFi
      + CURRENT:     Default Build in V/A sensing
-     + RC RX:       Added a Spektrum DSMX Orange R620X Receiver with SBUS out, can be any receiver ofcourse
+     + RC RX:       Added a FrSky R-XSR Receiver with SBUS out, can be any RC receiver ofcourse
 
  NOTES:
 
@@ -29,6 +29,7 @@
      + If you change your control from ETECS to Classic or New make sure to disable the settings/estimation/ac_char
      + Added 12c 5200mAh battery, expect flighttimes of 52minutes at 15m/s
      + PPRZLink v2 advised for tcas fun
+     + Somtime there is an Orange R620X RX connected, change radio definition
 
  WIP:
      + It flies well, still not all gains are tuned to optimum, feel free to enhance and a PR...
@@ -37,8 +38,10 @@
      + Investigate effectiveness scheduling for (high)speed adjustments on non transitional fixedwing
 
  RC:
-     The RC receiver Orange R620X make sure to set modeswitch to Auto2 on your TX when binding!
+     If The RC receiver Orange R620X make sure to set modeswitch to Auto2 on your TX when binding!
      else if one would lose RC or switch of transmitter during Auto2 flight, it will hop to manual.. very bad...
+
+     If using a FrSky R-XSR make sure that you set it up in such a way that on RC loss the output is no RC or at least the mode is AUTO2 as failsafe value.
 
      A PPM receiver could theoretically be used, only for Linux ARCH no software to handle it is written (hint!)
      SUMD also. For the PPRZ Spektum could also, but not if you also want to fly it with RC but without PPRZ as AP only original
@@ -129,7 +132,7 @@
 
       <!-- SBUS out is AETR by default but our transmitter sends TAER -->
       <module name="radio_control" type="sbus"> <!-- The output type of RX, over the air it can can be all kinds e.g. DSMX-->
-        <define name="RADIO_CONTROL_NB_CHANNEL" value="12"/> <!-- This R620X Has maximum sbus channel output of 12 -->
+        <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/> <!-- This FRSky Has maximum sbus channel output of 16 -->
       </module>
 
       <!-- Those modules not so much use in simulation, therefore only in this target section real HW -->
@@ -154,19 +157,17 @@
       <!-- For easier on desk testing transparent_usb, else transparent -->
       <!-- <module name="telemetry" type="transparent_usb"/>--> <!-- FIXME: gives compile error -->
 
-      <!--
       <module name="telemetry" type="transparent_udp"/>
-      -->
 
       <!-- By adding new kernel drivers to the Disco it is very well possible to
       use all kinds of external devices. A special page on how to use this is under development...-->
 
       <!-- E.g. a serial modem via FTDI cable on CHUCK Micro USB 2, testflights performed, all works well -->
       <!-- Possible if one connect other serial devices they present them as ttyACMx devices, if so try UART5 or UART6 -->
-      <module name="telemetry" type="transparent"><!-- Or use type="xbee_api" for Digi Xbee modems -->
-        <configure name="MODEM_PORT" value="UART2"/>
+      <!--<module name="telemetry" type="transparent">--><!-- Or use type="xbee_api" for Digi Xbee modems -->
+     <!-- <configure name="MODEM_PORT" value="UART2"/>
         <configure name="MODEM_BAUD" value="B9600"/>
-      </module>
+      </module>-->
 
       <!-- <module name="extra_pprz_dl"/>--> <!-- e.g. for WiFi *AND* a LongRangeModem -->
 
@@ -448,9 +449,9 @@
   </rc_commands>
 
   <!-- ************************ AUTO RC COMMANDS ***************************** -->
-  <auto_rc_commands>
+  <!--<auto_rc_commands>-->
     <!--**TEMPorary for heading change steering if someting not OK with course in Autonomous flight **-->
-    <set command="YAW" value="@YAW"/>
+    <!--<set command="YAW" value="@YAW"/>-->
     <!-- To be able to set gain values via RC Transmitter these ones below.
      This way the can keep his eye on a fast moving plane and set somegain values
      makes life of a single testpiloted AC much easier -->
@@ -458,7 +459,7 @@
     <set command="CALIB"    value="@GAIN2"/>-->
     <!-- Todo to determin best pitch for flare in auto2 one can add Pitch command temporary also-->
     <!--<set command="PITCH" value="@PITCH"/>-->
-  </auto_rc_commands>
+  <!--</auto_rc_commands>-->
 
 <!-- ************************ COMMANDS ***************************** -->
   <commands>
@@ -471,10 +472,10 @@
 <!-- ************************ AUTO1 ***************************** -->
   <!-- Do not set MAX_ROLL, MAX_PITCH to small of a value, otherwise one can NOT control the plane very well manually -->
   <!-- If you have dual rate swith it of with same swtch as mode switch thus auto1 means dualrate is switched off also -->
-  <section name="AUTO1" prefix="AUTO1_">
+ <section name="AUTO1" prefix="AUTO1_">
     <define name="MAX_ROLL" value="60" unit="deg"/> <!-- More autority while testflying for first time -->
     <define name="MAX_PITCH" value="45" unit="deg"/> <!-- More autority while testflying for first time -->
-  </section>
+ </section>
 
 <!-- ************************ TRIM ***************************** -->
   <section name="TRIM" prefix="COMMAND_">
@@ -530,6 +531,7 @@ The most crucial part for the magnetometer calibration:
     <define name="MAG_X_NEUTRAL" value="4"/>
     <define name="MAG_Y_NEUTRAL" value="-111"/>
     <define name="MAG_Z_NEUTRAL" value="-515"/>
+
     <define name="MAG_X_SENS" value="6.99930117435" integer="16"/>
     <define name="MAG_Y_SENS" value="6.85616692786" integer="16"/>
     <define name="MAG_Z_SENS" value="7.25614648348" integer="16"/>

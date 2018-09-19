@@ -40,7 +40,7 @@ the order of the functon in the list
  <channel ctl="RightStickVertical" function="PITCH"    min="1107" neutral="1520" max="1932" average="0"/>
  <channel ctl="LeftStickVertical" function="THROTTLE" min="1107" neutral="1107" max="1932" average="0"/>
  <channel ctl="LeftStickHorizontal" function="YAW"      min="1107" neutral="1520" max="1932" average="0"/>
- <channel ctl="CONTROL8" function="MODE"     max="966" neutral="1520" min="2072" average="2"/>
+ <channel ctl="CONTROL8" function="MODE"     max="966" neutral="1520" min="2072" average="0"/>
  <channel ctl="SW8" function="GAIN1"    min="966" neutral="1520" max="2072" average="0"/>
  <channel ctl="CONTROL5" function="GAIN2"    min="966" neutral="1520" max="2072" average="0"/>
 </radio>

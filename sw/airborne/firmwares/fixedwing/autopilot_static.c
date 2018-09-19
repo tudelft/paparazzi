@@ -114,18 +114,31 @@ void autopilot_static_on_rc_frame(void)
   uint8_t mode_changed = false;
   copy_from_to_fbw();
 
-  /* really_lost is true if we lost RC in MANUAL or AUTO1 */
-  uint8_t really_lost = bit_is_set(imcu_get_status(), STATUS_RADIO_REALLY_LOST) &&
+  /* rc_lost_while_in_use is true if we lost RC in MANUAL or AUTO1 */
+  uint8_t rc_lost_while_in_use = bit_is_set(imcu_get_status(), STATUS_RADIO_REALLY_LOST) &&
                         (autopilot_get_mode() == AP_MODE_AUTO1 || autopilot_get_mode() == AP_MODE_MANUAL);
 
+  /* RC_LOST_MODE defaults to AP_MODE_HOME, but it can also be set to NAV_MODE
+   */
+  if (rc_lost_while_in_use) {
+    mode_changed = autopilot_set_mode(RC_LOST_MODE);
+
+    /* Safety on the ground: if the RC is switched off with throttle off, then kill the throttle in any RC_LOST_MODE */
+#if defined RADIO_CONTROL || defined RADIO_CONTROL_AUTO1
+    if (imcu_get_radio(RADIO_THROTTLE) <= (0.01 * MAX_PPRZ)) {
+      autopilot_set_motors_on(false);
+    }
+#endif
+  }
+
+  /* If in-flight, with good GPS but too far, then activate HOME mode
+   * In MANUAL with good RC, FBW will allow to override. */
   if (autopilot_get_mode() != AP_MODE_HOME && autopilot_get_mode() != AP_MODE_GPS_OUT_OF_ORDER && autopilot.launch) {
     if (too_far_from_home || datalink_lost() || higher_than_max_altitude()) {
       mode_changed = autopilot_set_mode(AP_MODE_HOME);
     }
-    if (really_lost) {
-      mode_changed = autopilot_set_mode(RC_LOST_MODE);
-    }
   }
+
   if (bit_is_set(imcu_get_status(), AVERAGED_CHANNELS_SENT)) {
     bool pprz_mode_changed = pprz_mode_update();
     mode_changed |= pprz_mode_changed;
