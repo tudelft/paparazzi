@@ -38,7 +38,9 @@ extern void nav_hybrid_heading_set_to_waypoint(void);
 extern void nav_hybrid_heading_periodic(void);
 
 extern float nav_hybrid_heading_max_yaw_rate;
+extern float nav_hybrid_heading_max_yaw_rate_to_wp;
 extern float nav_hybrid_heading_pitch_deadband;
+extern float nav_hybrid_heading_tip_in_wind;
 
 
 #endif

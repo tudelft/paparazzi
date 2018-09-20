@@ -28,15 +28,19 @@
 #include "state.h"
 
 
-#define NAV_HYBRID_MAX_YAW_RATE_RAD     RadOfDeg(90.0f/5.0f)   // rad/sec
-#define NAV_HYBRID_PITCH_DEADBAND_RAD   RadOfDeg(8.0f)          // rad
+#define NAV_HYBRID_MAX_YAW_RATE_RAD         RadOfDeg(30.0f/5.0f)    // rad/sec
+#define NAV_HYBRID_MAX_YAW_RATE_TO_WP_RAD   RadOfDeg(120.0f/5.0f)    // rad/sec
+#define NAV_HYBRID_PITCH_DEADBAND_RAD       RadOfDeg(8.0f)          // rad
+#define NAV_HYBRID_TIP_IN_WIND              1;                     // Left (-1) - Right (1)
 
 // setpoint
 float nav_hybrid_heading_setpoint = 0;
 
 // settings
 float nav_hybrid_heading_max_yaw_rate = NAV_HYBRID_MAX_YAW_RATE_RAD;
+float nav_hybrid_heading_max_yaw_rate_to_wp = NAV_HYBRID_MAX_YAW_RATE_TO_WP_RAD;
 float nav_hybrid_heading_pitch_deadband = NAV_HYBRID_PITCH_DEADBAND_RAD;
+float nav_hybrid_heading_tip_in_wind = NAV_HYBRID_TIP_IN_WIND;
 
 // setpoint for slow turn to WP
 float nav_hybrid_heading_wp_ref = 0;
@@ -69,19 +73,19 @@ void nav_hybrid_heading_periodic(void) {
   // Align with tip in wind
   // if pitch is down, yaw right
   if (stateGetNedToBodyEulers_f()->theta < -nav_hybrid_heading_pitch_deadband) {
-    nav_hybrid_heading_setpoint += nav_hybrid_heading_max_yaw_rate / 512.0f;
+    nav_hybrid_heading_setpoint -= nav_hybrid_heading_max_yaw_rate / 512.0f * nav_hybrid_heading_tip_in_wind;
   // if pitch is up, yaw left
   } else if (stateGetNedToBodyEulers_f()->theta > nav_hybrid_heading_pitch_deadband) {
-    nav_hybrid_heading_setpoint -= nav_hybrid_heading_max_yaw_rate / 512.0f;
+    nav_hybrid_heading_setpoint += nav_hybrid_heading_max_yaw_rate / 512.0f * nav_hybrid_heading_tip_in_wind;
   }
 
   // Towards Waypoint
   float err = nav_hybrid_heading_wp_setpoint - nav_hybrid_heading_wp_ref;
   NormRadAngle(err);
   if (err < 0) {
-    nav_hybrid_heading_wp_ref -= nav_hybrid_heading_max_yaw_rate / 512.0f;
+    nav_hybrid_heading_wp_ref -= nav_hybrid_heading_max_yaw_rate_to_wp / 512.0f;
   } else {
-    nav_hybrid_heading_wp_ref += nav_hybrid_heading_max_yaw_rate / 512.0f;
+    nav_hybrid_heading_wp_ref += nav_hybrid_heading_max_yaw_rate_to_wp / 512.0f;
   }
 }
 
