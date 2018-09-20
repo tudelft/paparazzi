@@ -223,6 +223,8 @@ static inline void vision_outback_parse_msg(void)
             msg_marker_x = v2p_package.marker_enu_x;
             msg_marker_y = v2p_package.marker_enu_y;
           }
+        if (!(v2p_package.version > 1.0999 && v2p_package.version < 1.001 ))
+          v2p_package.status = 2;
         break;
       }
     default:
@@ -315,7 +317,6 @@ void vision_outback_periodic() {
       vision_timeout = true;
       vision_outback_close_process = false;
     }
-
   do_power_state_machine();
 
   pprz_msg_send_IMCU_DEBUG(&(vision_outback.transport.trans_tx), vision_outback.device,

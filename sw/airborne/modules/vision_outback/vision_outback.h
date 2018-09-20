@@ -54,6 +54,7 @@ struct Vision2PPRZPackage {
     float land_enu_y;
     float flow_x;
     float flow_y;
+    float version;
     uint8_t status;
 } __attribute__((__packed__));
 extern struct Vision2PPRZPackage v2p_package;
