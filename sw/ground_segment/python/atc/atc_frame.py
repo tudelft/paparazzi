@@ -111,14 +111,14 @@ class AtcFrame(wx.Frame):
         #dc.SetBackground(brush)
         #dc.Clear()
 
-	fontscale = int(w * 50.0 / 700.0)
+	fontscale = int(w * 40.0 / 700.0)
         if fontscale < 6:
             fontscale = 6
 
         # Background
         dc.SetBrush(wx.Brush(wx.Colour(0,0,0), wx.TRANSPARENT))
         #dc.DrawCircle(w/2,w/2,w/2-1)
-        font = wx.Font(fontscale, wx.ROMAN, wx.BOLD, wx.NORMAL)
+        font = wx.Font(fontscale, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         dc.SetFont(font)
         dc.DrawText("Airspeed: " + str(self.airspeed) + " kt",tdx,tdx)
         dc.DrawText("Ground Speed: " + str(self.gspeed) + " kt",tdx,tdx+tdy*1)
