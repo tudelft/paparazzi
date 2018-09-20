@@ -27,8 +27,10 @@
     <module name="stabilization" type="indi_simple" />
     <module name="guidance" type="indi">
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500"/>
-      <define name="GUIDANCE_INDI_POS_GAIN" value="0.5"/>
-      <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.4"/>
+      <define name="GUIDANCE_INDI_POS_GAIN_XY" value="0.5"/>
+      <define name="GUIDANCE_INDI_POS_GAIN_Z" value="0.5"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN_XY" value="1.4"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN_Z" value="1.6"/>
     </module>
     <module name="ahrs" type="int_cmpl_quat" >
       <define name="AHRS_ICQ_IMU_ID" value="IMU_PX4_ID" />         <!-- Meaning the lsm303 and l3g -->

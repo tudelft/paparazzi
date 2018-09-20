@@ -53,16 +53,29 @@
 // values are tuned for 4 Hz GPS updates. If you have high speed position updates, the
 // gains can be higher, depending on the speed of the inner loop.
 #ifdef GUIDANCE_INDI_POS_GAIN
-float guidance_indi_pos_gain = GUIDANCE_INDI_POS_GAIN;
+float guidance_indi_pos_gain_xy = GUIDANCE_INDI_POS_GAIN_XY;
 #else
-float guidance_indi_pos_gain = 0.5;
+float guidance_indi_pos_gain_xy = 0.5;
+#endif
+#ifdef GUIDANCE_INDI_POS_GAIN_Z
+
+float guidance_indi_pos_gain_z = GUIDANCE_INDI_POS_GAIN_Z;
+#else
+float guidance_indi_pos_gain_z = 0.5;
 #endif
 
-#ifdef GUIDANCE_INDI_SPEED_GAIN
-float guidance_indi_speed_gain = GUIDANCE_INDI_SPEED_GAIN;
+#ifdef GUIDANCE_INDI_SPEED_GAIN_XY
+float guidance_indi_speed_gain_xy = GUIDANCE_INDI_SPEED_GAIN_XY;
 #else
-float guidance_indi_speed_gain = 1.8;
+float guidance_indi_speed_gain_xy = 1.8;
 #endif
+#ifdef GUIDANCE_INDI_SPEED_GAIN_Z
+float guidance_indi_speed_gain_z = GUIDANCE_INDI_SPEED_GAIN_Z;
+#else
+float guidance_indi_speed_gain_z = 1.8;
+#endif
+
+
 
 #ifndef GUIDANCE_INDI_ACCEL_SP_ID
 #define GUIDANCE_INDI_ACCEL_SP_ID ABI_BROADCAST
@@ -165,16 +178,16 @@ void guidance_indi_run(float heading_sp)
   float pos_y_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y) - stateGetPositionNed_f()->y;
   float pos_z_err = POS_FLOAT_OF_BFP(guidance_v_z_ref - stateGetPositionNed_i()->z);
 
-  float speed_sp_x = pos_x_err * guidance_indi_pos_gain;
-  float speed_sp_y = pos_y_err * guidance_indi_pos_gain;
-  float speed_sp_z = pos_z_err * guidance_indi_pos_gain;
+  float speed_sp_x = pos_x_err * guidance_indi_pos_gain_xy;
+  float speed_sp_y = pos_y_err * guidance_indi_pos_gain_xy;
+  float speed_sp_z = pos_z_err * guidance_indi_pos_gain_z;
 
   // If the acceleration setpoint is set over ABI message
   if (indi_accel_sp_set_2d) {
     sp_accel.x = indi_accel_sp.x;
     sp_accel.y = indi_accel_sp.y;
     // In 2D the vertical motion is derived from the flight plan
-    sp_accel.z = (speed_sp_z - stateGetSpeedNed_f()->z) * guidance_indi_speed_gain;
+    sp_accel.z = (speed_sp_z - stateGetSpeedNed_f()->z) * guidance_indi_speed_gain_z;
     float dt = get_sys_time_float() - time_of_accel_sp_2d;
     // If the input command is not updated after a timeout, switch back to flight plan control
     if (dt > 0.5) {
@@ -190,9 +203,9 @@ void guidance_indi_run(float heading_sp)
       indi_accel_sp_set_3d = false;
     }
   } else {
-    sp_accel.x = (speed_sp_x - stateGetSpeedNed_f()->x) * guidance_indi_speed_gain;
-    sp_accel.y = (speed_sp_y - stateGetSpeedNed_f()->y) * guidance_indi_speed_gain;
-    sp_accel.z = (speed_sp_z - stateGetSpeedNed_f()->z) * guidance_indi_speed_gain;
+    sp_accel.x = (speed_sp_x - stateGetSpeedNed_f()->x) * guidance_indi_speed_gain_xy;
+    sp_accel.y = (speed_sp_y - stateGetSpeedNed_f()->y) * guidance_indi_speed_gain_xy;
+    sp_accel.z = (speed_sp_z - stateGetSpeedNed_f()->z) * guidance_indi_speed_gain_z;
   }
 
 #if GUIDANCE_INDI_RC_DEBUG

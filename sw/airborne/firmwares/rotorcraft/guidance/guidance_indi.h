@@ -40,8 +40,10 @@ extern void guidance_indi_init(void);
 extern float guidance_indi_thrust_specific_force_gain;
 
 // settings for guidance INDI
-extern float guidance_indi_pos_gain;
-extern float guidance_indi_speed_gain;
+extern float guidance_indi_pos_gain_xy;
+extern float guidance_indi_pos_gain_z;
+extern float guidance_indi_speed_gain_xy;
+extern float guidance_indi_speed_gain_z;
 extern float guidance_indi_max_bank;
 
 #endif /* GUIDANCE_INDI_H */
