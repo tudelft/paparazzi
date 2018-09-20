@@ -2,6 +2,7 @@
 %module geodetic_float
 %{
 #include "math/pprz_geodetic_float.h"
+#include "math/pprz_geodetic_int.h"
 %}
 
 /* don't wrap everything in header
@@ -150,7 +151,7 @@ struct LtpDef_f {
   }
   struct NedCoor_i to_int() {
     struct NedCoor_i ned;
-    NED_BFP_OF_REAL(&ned, $self);
+    NED_BFP_OF_REAL(ned, *$self);
     return ned;
   }
 };
@@ -194,7 +195,7 @@ struct LtpDef_f {
   }
   struct EnuCoor_i to_int() {
     struct EnuCoor_i enu;
-    ENU_BFP_OF_REAL(&enu, $self);
+    ENU_BFP_OF_REAL(enu, *$self);
     return enu;
   }
 };
@@ -265,7 +266,7 @@ struct LtpDef_f {
   }
   struct LlaCoor_i to_int() {
     struct LlaCoor_i lla;
-    LLA_BFP_OF_REAL(&lla, $self);
+    LLA_BFP_OF_REAL(lla, *$self);
     return lla;
   }
 };

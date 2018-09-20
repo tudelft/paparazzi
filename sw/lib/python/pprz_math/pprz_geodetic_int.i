@@ -1,13 +1,13 @@
 /* File : pprz_geodetic_int.i */
 %module geodetic_int
 %include "stdint.i"
+%include "pprz_geodetic_float.i"
 %{
 #include "math/pprz_geodetic_int.h"
 #include "math/pprz_geodetic_float.h"
 %}
 
 %include "math/pprz_geodetic_int.h"
-%include "math/pprz_geodetic_float.h"
 
 
 %extend EcefCoor_i {
