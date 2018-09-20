@@ -374,12 +374,18 @@ void do_power_state_machine(void) {
           shutdown_count = 20*VISION_OUTBACK_PERIODIC_FREQ;
           power_state = VISION_POWER_STATUS_HALT_WAIT;
         }
+      if (vision_outback_power  == VISION_SETTING_STATUS_REQUEST_POWER_OFF) {
+              power_state = VISION_POWER_STATUS_POWER_OFF;
+        }
       break;
     case VISION_POWER_STATUS_HALT_WAIT:
       shutdown_count--;
       if (shutdown_count == 0 )
         power_state = VISION_POWER_STATUS_POWER_OFF;
-      break;
+      if (vision_outback_power  == VISION_SETTING_STATUS_REQUEST_POWER_OFF) {
+              power_state = VISION_POWER_STATUS_POWER_OFF;
+        }
+      break;      
     case VISION_POWER_STATUS_POWER_OFF:
 #ifdef VISION_PWR_OFF
       VISION_PWR_OFF(VISION_PWR, VISION_PWR_PIN);
