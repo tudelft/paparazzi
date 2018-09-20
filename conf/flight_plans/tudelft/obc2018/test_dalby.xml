@@ -179,7 +179,8 @@
       <exception cond="het_moment" deroute="joe_moment"/>
       <exception cond="vision_timeout " deroute="Standby"/>
       <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
-      <stay climb="-0.5" vmode="climb" wp="JOE"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay climb="-0.5" vmode="climb" pre_call="nav_hybrid_heading_set()" wp="JOE"/>
     </block>
     <block group="land_joe" name="joe_moment">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -269,7 +270,8 @@
       <exception cond="het_moment" deroute="base_moment"/>
       <exception cond="vision_timeout " deroute="Standby"/>
       <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
-      <stay climb="-0.5" vmode="climb" wp="BASE"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay climb="-0.5" vmode="climb" pre_call="nav_hybrid_heading_set()" wp="BASE"/>
     </block>
     <block group="land_base" name="base_moment">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -311,19 +313,15 @@
     <block group="safe" name="LandHere" strip_button="LandHere">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <exception cond="12.0 > stateGetPositionEnu_f()->z" deroute="LandHereSlow"/>
-      <call_once fun="enableVisionDescent(true)"/>
-      <call_once fun="nav_set_heading_current()"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
       <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0)"/>
-      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay climb="nav_descend_vspeed" vmode="climb" pre_call="nav_hybrid_heading_set()" wp="TD"/>
     </block>
     <block group="safe" name="LandHereSlow">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <call_once fun="enableVisionDescent(true)"/>
-      <exception cond="het_moment" deroute="landing_moment"/>
-      <exception cond="vision_timeout " deroute="Standby"/>
-      <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
-      <stay climb="-0.5" vmode="climb" wp="TD"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay climb="-0.5" vmode="climb" pre_call="nav_hybrid_heading_set()" wp="TD"/>
     </block>
     <block group="safe" name="landing_moment">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
