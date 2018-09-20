@@ -9,7 +9,7 @@
      * Actuators:   10 PWM (FTD)
      * GPS:         UBlox M8N (AP)
      * RC:          R-XSR SBUS (RC2)
-     * Telemetry:   XBee API (AP)
+     * Telemetry:   868/900 MHz Long range (AP), Iridium (FTD)
   </description>
 
   <firmware name="rotorcraft">
@@ -19,7 +19,7 @@
         <subsystem name="fdm" type="jsbsim"/>
       </target-->
 
-       <module name="telemetry"     type="transparent">
+      <module name="telemetry"     type="transparent">
         <configure name="MODEM_BAUD" value="B9600"/>
       </module>
       <module name="imu"           type="mpu6000"/>

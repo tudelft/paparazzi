@@ -262,8 +262,8 @@
 
   <!-- The advance angles for the rotorhead, P and Q couplings -->
   <section name="STABILIZATION" prefix="STABILIZATION_">
-    <define name="ADVANCE_ANGLE_P" value="1.05"/>
-    <define name="ADVANCE_ANGLE_Q" value="1.05"/>
+    <define name="ADVANCE_ANGLE_P" value="0.9"/>
+    <define name="ADVANCE_ANGLE_Q" value="0.5"/>
   </section>
 
   <!-- Rate controller gains for development -->
@@ -296,7 +296,7 @@
     <define name="DEADBAND_R" value="200"/>
 
     <!-- reference -->
-    <define name="REF_OMEGA_P" value="800" unit="deg/s"/>
+    <define name="REF_OMEGA_P" value="500" unit="deg/s"/>
     <define name="REF_ZETA_P" value="0.85"/>
     <define name="REF_MAX_P" value="300." unit="deg/s"/>
     <define name="REF_MAX_PDOT" value="RadOfDeg(7000.)"/>
@@ -338,8 +338,8 @@
     <define name="PHI_I" value="{180, 0}"/>
     <define name="PHI_DD" value="{0, 0}"/>
 
-    <define name="THETA_P" value="{1605, 850}"/>
-    <define name="THETA_D" value="{293, 160}"/>
+    <define name="THETA_P" value="{990, 850}"/>
+    <define name="THETA_D" value="{265, 160}"/>
     <define name="THETA_I" value="{180, 200}"/>
     <define name="THETA_DD" value="{0, 0}"/>
 
@@ -354,7 +354,7 @@
     <define name="HOVER_KP"    value="75"/>
     <define name="HOVER_KD"    value="40"/>
     <define name="HOVER_KI"    value="12"/>
-    <define name="NOMINAL_HOVER_THROTTLE" value="0.71"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value="0.61"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>
     <define name="REF_MAX_ZD" value="1.5"/>
   </section>
@@ -389,12 +389,12 @@
   <!-- Gains for forward mode -->
   <section name="DC_FORWARD" prefix="DC_FORWARD_">
     <define name="MAX_AIRSPEED" value="18.0"/>
-    <define name="NOMINAL_THRUST" value="6300"/>
+    <define name="NOMINAL_THRUST" value="7400"/>
     <define name="VERTICAL_PGAIN" value="0.1"/>
     <define name="VERTICAL_DGAIN" value="0.015"/>
     <define name="VERTICAL_LOW_AIRSPEED" value="17.0"/>
     <define name="VERTICAL_LOW_AIRSPEED_PITCH_GAIN" value="0.0"/>
-    <define name="MAX_TURN_BANK" value="25.0"/>
+    <define name="MAX_TURN_BANK" value="35.0"/>
     <define name="TURN_BANK_GAIN" value="0.5"/>
     <define name="PITCH_OF_ROLL" value="0.02"/>
     <define name="THROTTLE_FROM_PITCH_UP" value="50.0"/>
@@ -402,9 +402,19 @@
     <define name="MAX_PITCH" value="10.0"/>
     <define name="MAX_PSI" value="20.0"/>
     <define name="ACC_Y_FILTER_CUTOFF_HZ" value="0.5"/>
-    <define name="K_FF_TO_YAW" value="0.0"/> <!-- order of magnitude -->
     <define name="E_PSI_DEG_FROM_ACC_Y" value="0"/>
+    
+    <define name="ROLL_PGAIN" value="3000.0"/>
+    <define name="ROLL_DGAIN" value="200.0"/>
+    <define name="PITCH_PGAIN" value="2500.0"/>
+    <define name="PITCH_DGAIN" value="1000.0"/>
+    <define name="PITCH_IGAIN" value="0.0"/>
+    <define name="K_FF_TO_YAW" value="600.0"/> <!-- order of magnitude -->
+    <define name="ADVANCE_P" value="1.1"/>
+    <define name="ADVANCE_Q" value="1.1"/>
+    <define name="PITCH_SWP" value="0.0"/>
   </section>
+
   <!-- Radio control specific switches -->
   <section name="RADIO" prefix="RADIO_">
     <define name="TH_HOLD"    value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
