@@ -354,7 +354,7 @@
     <define name="HOVER_KP"    value="75"/>
     <define name="HOVER_KD"    value="40"/>
     <define name="HOVER_KI"    value="12"/>
-    <define name="NOMINAL_HOVER_THROTTLE" value="0.71"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value="0.61"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>
     <define name="REF_MAX_ZD" value="1.5"/>
   </section>
@@ -406,7 +406,7 @@
     
     <define name="ROLL_PGAIN" value="3000.0"/>
     <define name="ROLL_DGAIN" value="200.0"/>
-    <define name="PITCH_PGAIN" value="2000.0"/>
+    <define name="PITCH_PGAIN" value="2500.0"/>
     <define name="PITCH_DGAIN" value="1000.0"/>
     <define name="PITCH_IGAIN" value="0.0"/>
     <define name="K_FF_TO_YAW" value="600.0"/> <!-- order of magnitude -->
