@@ -65,5 +65,6 @@
   <makefile target="ap|nps" firmware="rotorcraft">
     <file name="guidance_delftacopter.c" dir="$(SRC_FIRMWARE)/guidance"/>
     <define name="HYBRID_NAVIGATION" value="TRUE"/>
+    <define name="USE_GUIDANCE_DELFTACOPTER" value="TRUE"/>
   </makefile>
 </module>

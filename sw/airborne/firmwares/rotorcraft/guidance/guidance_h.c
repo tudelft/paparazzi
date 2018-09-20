@@ -367,6 +367,7 @@ void guidance_h_run(bool  in_flight)
       if ((!(guidance_h.mode == GUIDANCE_H_MODE_FORWARD)) && transition_percentage > 0) {
         guidance_h_transition_run(false, 0.000625);
       }
+#if USE_GUIDANCE_DELFTACOPTER
       if(transition_percentage >= 1.0) {
         guidance_hybrid_update_sideslip_estimate();
         delftacopter_fwd_roll = get_rc_roll_f();
@@ -374,6 +375,7 @@ void guidance_h_run(bool  in_flight)
         delftacopter_fwd_yaw = get_rc_yaw_f() * feedforward_yaw_of_turn_rate;
         delftacopter_fwd_controller_enabled = true;
       }
+#endif
 
       stabilization_attitude_run(in_flight);
 #if (STABILIZATION_FILTER_CMD_ROLL_PITCH || STABILIZATION_FILTER_CMD_YAW)
