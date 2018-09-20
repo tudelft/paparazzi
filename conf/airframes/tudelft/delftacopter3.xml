@@ -361,8 +361,10 @@
 
   <!-- INDI guidance controller for hover mode -->
   <section name="GUIDANCE_INDI" prefix="GUIDANCE_INDI_">
-    <define name="POS_GAIN" value="0.3"/>
-    <define name="SPEED_GAIN" value="1.0"/>
+    <define name="POS_GAIN_XY" value="0.3"/>
+    <define name="POS_GAIN_Z" value="0.3"/>
+    <define name="SPEED_GAIN_XY" value="1.0"/>
+    <define name="SPEED_GAIN_Z" value="1.0"/>
     <define name="FILTER_CUTOFF" value="0.8"/>
   </section>
 
