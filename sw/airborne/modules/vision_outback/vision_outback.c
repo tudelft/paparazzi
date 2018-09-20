@@ -50,6 +50,8 @@
 #define VISION_POWER_ON_AT_BOOT true
 #endif
 
+#define WANTED_VISION_VERSION 1.0f
+
 /* Main magneto structure */
 static struct vision_outback_t vision_outback = {
   .device = (&((VISION_OUTBACK_PORT).device)),
@@ -114,7 +116,7 @@ static void send_vision_outback( struct transport_tx *trans, struct link_device 
                                &msg_marker_x,
                                &msg_marker_y,
                                &v2p_package.stupid_pprz_height, // In the message this is flow_x, but we use it for height
-                               &v2p_package.flow_y);
+                               &v2p_package.version);
 }
 #endif
 
@@ -223,8 +225,8 @@ static inline void vision_outback_parse_msg(void)
             msg_marker_x = v2p_package.marker_enu_x;
             msg_marker_y = v2p_package.marker_enu_y;
           }
-        float wanted_version = 1.0;
-        if (!(v2p_package.version > wanted_version-0.001 && v2p_package.version < wanted_version+0.001 ))
+
+        if (!(v2p_package.version > WANTED_VISION_VERSION-0.001 && v2p_package.version < WANTED_VISION_VERSION+0.001 ))
           v2p_package.status = 2;
         break;
       }
