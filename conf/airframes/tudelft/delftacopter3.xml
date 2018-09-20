@@ -404,7 +404,7 @@
     <define name="ACC_Y_FILTER_CUTOFF_HZ" value="0.5"/>
     <define name="E_PSI_DEG_FROM_ACC_Y" value="0"/>
     
-    <define name="ROLL_PGAIN" value="1000.0"/>
+    <define name="ROLL_PGAIN" value="3000.0"/>
     <define name="ROLL_DGAIN" value="200.0"/>
     <define name="PITCH_PGAIN" value="2000.0"/>
     <define name="PITCH_DGAIN" value="1000.0"/>
