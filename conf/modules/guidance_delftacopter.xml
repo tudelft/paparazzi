@@ -48,9 +48,12 @@
       <dl_settings NAME="FWD">
         <dl_setting var="delftacopter_fwd_roll_pgain" shortname="roll_pgain" min="0" step="0.01" max="10000" param="DC_FORWARD_ROLL_PGAIN"/>
         <dl_setting var="delftacopter_fwd_roll_dgain" shortname="roll_dgain" min="0" step="0.01" max="5000" param="DC_FORWARD_ROLL_DGAIN"/>
+        <dl_setting var="delftacopter_fwd_roll_igain" shortname="roll_igain" min="0" step="0.01" max="10000" param="DC_FORWARD_ROLL_IGAIN"/>
+        <dl_setting var="delftacopter_fwd_roll_igain" shortname="roll_trim" min="0" step="0.01" max="10000" param="DC_FORWARD_ROLL_TRIM"/>
         <dl_setting var="delftacopter_fwd_pitch_pgain" shortname="pitch_pgain" min="0" step="0.01" max="10000" param="DC_FORWARD_PITCH_PGAIN"/>
         <dl_setting var="delftacopter_fwd_pitch_dgain" shortname="pitch_dgain" min="0" step="0.01" max="5000" param="DC_FORWARD_PITCH_DGAIN"/>
         <dl_setting var="delftacopter_fwd_pitch_igain" shortname="pitch_igain" min="0" step="0.01" max="1000" param="DC_FORWARD_PITCH_IGAIN"/>
+        <dl_setting var="delftacopter_fwd_pitch_trim" shortname="pitch_trim" min="0" step="0.01" max="1000" param="DC_FORWARD_PITCH_TRIM"/>
         <dl_setting var="feedforward_yaw_of_turn_rate" shortname="yaw_of_turnr" min="0" step="0.01" max="5000" param="DC_FORWARD_K_FF_TO_YAW"/>
         <dl_setting var="delftacopter_fwd_advance_angle_p" shortname="adv_p" min="-1.6" step="0.005" max="1.6" param="DC_FORWARD_ADVANCE_P"/>
         <dl_setting var="delftacopter_fwd_advance_angle_q" shortname="adv_q" min="-1.6" step="0.005" max="1.6" param="DC_FORWARD_ADVANCE_Q"/>

@@ -119,6 +119,16 @@
     <servo name="AIL_RIGHTUP"    no="9" min="1100" neutral="1500" max="1900"/>
   </servos>
 
+  <!-- T-Motor 190kv with 24.2 inch prop -->
+  <!-- * Top linkages circa 59.7 mm
+       * Distance from the bottom the the upper-swashplate rotation-link ball-rodds to the bottom of the blade grip just above is circa 56.2 mm.
+       * The servo is about 30deg down in failsafe, where its bolt aligns with the 2 servo fixing bolts
+       * The top of the rotorhead should be 90.0mm (2OI) 88.1mm (3MM) 89.3mm (4HP)
+       * There should be at least 3mm below the swashplate up to 5mm with the 90.0mm rotoraxis
+       * This should correspond to the blade grip ball to be aligned with the rotorhead-T fixation bolt
+       * This should correspong to a blade grip or blade root angle of -17 degrees
+  -->
+
   <section name="GCS">
     <define name="SPEECH_NAME" value="Two Oscar India"/>
     <define name="AC_ICON" value="flyingwing"/>
@@ -185,15 +195,6 @@
   </command_laws>
 
   <!-- T-Motor 190kv with 24.2 inch prop -->
-  <!-- * Top linkages circa 59.7 mm
-       * Distance from the bottom the the upper-swashplate rotation-link ball-rodds to the bottom of the blade grip just above is circa 56.2 mm.
-       * The servo is about 30deg down in failsafe, where its bolt aligns with the 2 servo fixing bolts
-       * The top of the rotorhead should be 90.0mm (2OI) 88.1mm (3MM) 89.3mm (4HP)
-       * There should be at least 3mm below the swashplate up to 5mm with the 90.0mm rotoraxis
-       * This should correspond to the blade grip ball to be aligned with the rotorhead-T fixation bolt
-       * This should correspong to a blade grip or blade root angle of -17 degrees
-  -->
-
   <heli_curves>
     <curve throttle="0,6000,0,0,0" collective="-9600,-8150,-6700,-5250,-3800"/> <!-- Spinup curve -->
     <curve throttle="7300,7800,8300" rpm="2800,2800,2800" collective="-9600,-6500,-2300"/><!-- Hover curve RPM controlled -->
@@ -222,12 +223,12 @@
     <define name="ACCEL_Z_NEUTRAL" value="-25"/>
 
     <!-- Calibration 07-06-2018 Valkenburg 4.5kg 190 KV 24inch with dummy 1.6kg + 580g LiPo -->
-   <define name="MAG_X_NEUTRAL" value="27"/>
-   <define name="MAG_Y_NEUTRAL" value="-11"/>
-   <define name="MAG_Z_NEUTRAL" value="22"/>
-   <define name="MAG_X_SENS" value="20.0910427549" integer="16"/>
-   <define name="MAG_Y_SENS" value="17.0723811001" integer="16"/>
-   <define name="MAG_Z_SENS" value="17.0490382969" integer="16"/>
+    <define name="MAG_X_NEUTRAL" value="27"/>
+    <define name="MAG_Y_NEUTRAL" value="-11"/>
+    <define name="MAG_Z_NEUTRAL" value="22"/>
+    <define name="MAG_X_SENS" value="20.0910427549" integer="16"/>
+    <define name="MAG_Y_SENS" value="17.0723811001" integer="16"/>
+    <define name="MAG_Z_SENS" value="17.0490382969" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
@@ -407,9 +408,12 @@
     
     <define name="ROLL_PGAIN" value="3000.0"/>
     <define name="ROLL_DGAIN" value="200.0"/>
+    <define name="ROLL_IGAIN" value="0.2"/>
+    <define name="ROLL_TRIM" value="0.0"/>
     <define name="PITCH_PGAIN" value="2500.0"/>
     <define name="PITCH_DGAIN" value="1000.0"/>
-    <define name="PITCH_IGAIN" value="0.0"/>
+    <define name="PITCH_IGAIN" value="0.5"/>
+    <define name="PITCH_TRIM" value="0.0"/>
     <define name="K_FF_TO_YAW" value="600.0"/> <!-- order of magnitude -->
     <define name="ADVANCE_P" value="1.1"/>
     <define name="ADVANCE_Q" value="1.1"/>
