@@ -66,14 +66,11 @@ void ctrl_eff_scheduling_init(void)
 
 void ctrl_eff_scheduling_periodic(void)
 {
-  // Go from transition percentage to ratio
-  float ratio = FLOAT_OF_BFP(transition_percentage, INT32_PERCENTAGE_FRAC) / 100;
-
   int8_t i;
   int8_t j;
   for (i = 0; i < INDI_OUTPUTS; i++) {
     for (j = 0; j < INDI_NUM_ACT; j++) {
-      g1g2[i][j] = (g1g2_hover[i][j] * (1.0 - ratio) + g1g2_forward[i][j] * ratio);
+      g1g2[i][j] = (g1g2_hover[i][j] * (1.0 - transition_percentage) + g1g2_forward[i][j] * transition_percentage);
     }
   }
 }

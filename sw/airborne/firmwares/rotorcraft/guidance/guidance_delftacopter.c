@@ -186,8 +186,10 @@ void guidance_delftacopter_set_acc_y_cutoff_hz(float cutoff_hz)
 /**
  * Guidance running in NAV mode only
  */
+
 void guidance_hybrid_run(bool in_flight)
 {
+
   // Set the correct throttle curve
   guidance_hybrid_set_nav_throttle_curve();
 
@@ -196,11 +198,11 @@ void guidance_hybrid_run(bool in_flight)
 
   /* Verify in which flight mode the delftacopter is flying */
   // Transition to forward flight
-  if((dc_hybrid_mode == HB_FORWARD) && (transition_percentage < (100 << INT32_PERCENTAGE_FRAC) || transition_time < (DC_TRANSITION_TIME*PERIODIC_FREQUENCY))) {
+  if((dc_hybrid_mode == HB_FORWARD) && (transition_percentage < 1.0f || transition_time < (DC_TRANSITION_TIME*PERIODIC_FREQUENCY))) {
     guidance_hybrid_transition_forward();
   }
   // Transition to hover
-  else if((dc_hybrid_mode == HB_HOVER) && (transition_percentage > 0)) {
+  else if((dc_hybrid_mode == HB_HOVER) && (transition_percentage > 0.0f)) {
     guidance_hybrid_transition_hover();
   }
   // Forward flight
@@ -220,17 +222,35 @@ void guidance_hybrid_run(bool in_flight)
  * Keeps the roll and extra pitch at zero
  */
 static void guidance_hybrid_transition_forward(void) {
+  static float start_phi = 0.0;
+  static float start_theta = 0.0;
+  static float perc_step = 0.000625;
+
+  // Set initial transition angles
+  if(transition_percentage <= 0) {
+    start_phi = stateGetNedToBodyEulers_f()->phi;
+    start_theta = stateGetNedToBodyEulers_f()->theta;
+
+
+    float dtheta = (-TRANSITION_MAX_OFFSET - start_theta) / -TRANSITION_MAX_OFFSET;
+    perc_step = 0.000625 * dtheta;
+  }
+
   // Transition to forward
-  guidance_h_transition_run(true);
+  guidance_h_transition_run(true, perc_step);
+
+  // Calculate theta and phi
+  float trans_theta = start_theta + (TRANSITION_MAX_OFFSET-start_theta)*perc_step;
+  float trans_phi = start_phi + (0-start_phi)*perc_step;
 
   // Set the corresponding attitude
   struct Int32Eulers transition_att_sp;
-  transition_att_sp.phi = 0;
-  transition_att_sp.theta = transition_theta_offset;
+  transition_att_sp.phi = ANGLE_BFP_OF_REAL(trans_phi);
+  transition_att_sp.theta = ANGLE_BFP_OF_REAL(trans_theta);
   transition_att_sp.psi = last_hover_heading;
   stabilization_attitude_set_rpy_setpoint_i(&transition_att_sp);
 
-  if(transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
+  if(transition_percentage < 1.0) {
     // Reset just transitioned timer
     transition_time = 0;
   } else {
@@ -244,7 +264,7 @@ static void guidance_hybrid_transition_forward(void) {
  */
 static void guidance_hybrid_transition_hover(void) {
   // Transition to hover
-  guidance_h_transition_run(false);
+  guidance_h_transition_run(false,0.000625);
 
   // Set the corresponding attitude
   struct Int32Eulers transition_att_sp;
@@ -282,7 +302,7 @@ static void guidance_hybrid_forward(void) {
   guidance_hybrid_attitude_delftacopter(&guidance_hybrid_ypr_sp);
   guidance_hybrid_set_cmd_i(&guidance_hybrid_ypr_sp);
 
-  last_forward_heading = guidance_hybrid_ypr_sp.psi;
+  last_forward_heading = stabilization_attitude_get_heading_i();
 }
 
 /**
@@ -321,7 +341,7 @@ static void guidance_hybrid_set_nav_throttle_curve(void) {
   // When hovering
   if(dc_hybrid_mode == HB_HOVER) {
     // Check the transition percentage
-    if(transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
+    if(transition_percentage < 1.0) {
       nav_throttle_curve_set(DC_HOVER_THROTTLE_CURVE);
     } else {
       nav_throttle_curve_set(DC_TRANSITION_THROTTLE_CURVE);
@@ -330,7 +350,7 @@ static void guidance_hybrid_set_nav_throttle_curve(void) {
   // Forward flight
   else {
     // Check the transition percentage
-    if(transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
+    if(transition_percentage < 1.0) {
       nav_throttle_curve_set(DC_HOVER_THROTTLE_CURVE);
     } else if (transition_time < (DC_TRANSITION_TIME*PERIODIC_FREQUENCY)) {
       nav_throttle_curve_set(DC_TRANSITION_THROTTLE_CURVE);
@@ -487,12 +507,12 @@ void guidance_hybrid_vertical(void)
     return;
   }
   // Transition to forward
-  else if ((dc_hybrid_mode == HB_FORWARD) && transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
+  else if ((dc_hybrid_mode == HB_FORWARD) && transition_percentage < 1.0) {
     stabilization_cmd[COMMAND_THRUST] = transition_throttle_to_forward;
     return;
   }
   // Transitions to hover
-  else if ((dc_hybrid_mode == HB_HOVER) && transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
+  else if ((dc_hybrid_mode == HB_HOVER) && transition_percentage < 1.0) {
     stabilization_cmd[COMMAND_THRUST] = transition_throttle_to_hover;
     return;
   }

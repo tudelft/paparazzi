@@ -79,7 +79,7 @@ PRINT_CONFIG_VAR(GUIDANCE_H_USE_SPEED_REF)
 
 struct HorizontalGuidance guidance_h;
 
-int32_t transition_percentage;
+float transition_percentage;
 
 /*
  * internal variables
@@ -358,16 +358,16 @@ void guidance_h_run(bool  in_flight)
 #endif
 
     case GUIDANCE_H_MODE_FORWARD:
-      if (transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
-        guidance_h_transition_run(true);
+      if (transition_percentage < 1.0) {
+        guidance_h_transition_run(true, 0.000625);
       }
       /* Falls through. */
     case GUIDANCE_H_MODE_CARE_FREE:
     case GUIDANCE_H_MODE_ATTITUDE:
       if ((!(guidance_h.mode == GUIDANCE_H_MODE_FORWARD)) && transition_percentage > 0) {
-        guidance_h_transition_run(false);
+        guidance_h_transition_run(false, 0.000625);
       }
-      if(transition_percentage >= (100 << INT32_PERCENTAGE_FRAC)) {
+      if(transition_percentage >= 1.0) {
         guidance_hybrid_update_sideslip_estimate();
         delftacopter_fwd_roll = get_rc_roll_f();
         delftacopter_fwd_pitch = get_rc_pitch_f();
@@ -621,20 +621,18 @@ void guidance_h_from_nav(bool in_flight)
   }
 }
 
-void guidance_h_transition_run(bool to_forward)
+//0.0625 / 100
+void guidance_h_transition_run(bool to_forward, float percentage_add)
 {
-  if (to_forward && transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
-    //Add 0.00625%
-    transition_percentage += 1 << (INT32_PERCENTAGE_FRAC - 4);
-  } else if (!to_forward && transition_percentage > 0) {
-    //Subtract 0.00625%
-    transition_percentage -= 1 << (INT32_PERCENTAGE_FRAC - 4);
+  if (to_forward && transition_percentage < 1.0) {
+    transition_percentage += percentage_add;
+  } else if (!to_forward && transition_percentage > 0.0) {
+    transition_percentage -= percentage_add;
   }
+  Bound(transition_percentage, 0.0, 1.0);
 
 #ifdef TRANSITION_MAX_OFFSET
-  const int32_t max_offset = ANGLE_BFP_OF_REAL(TRANSITION_MAX_OFFSET);
-  transition_theta_offset = INT_MULT_RSHIFT((transition_percentage << (INT32_ANGLE_FRAC - INT32_PERCENTAGE_FRAC)) / 100,
-                            max_offset, INT32_ANGLE_FRAC);
+  transition_theta_offset = ANGLE_BFP_OF_REAL(TRANSITION_MAX_OFFSET*transition_percentage);
   Bound(transition_theta_offset, ANGLE_BFP_OF_REAL(TRANSITION_MAX_OFFSET), 0);
 #endif
 }

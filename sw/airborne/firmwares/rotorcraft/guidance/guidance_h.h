@@ -106,7 +106,7 @@ struct HorizontalGuidance {
 extern struct HorizontalGuidance guidance_h;
 extern struct Int32Vect2  guidance_h_cmd_earth;
 
-extern int32_t transition_percentage;
+extern float transition_percentage;
 
 extern void guidance_h_init(void);
 extern void guidance_h_mode_changed(uint8_t new_mode);
@@ -172,7 +172,7 @@ extern const struct Int32Vect2 *guidance_h_get_pos_err(void);
 /** Run the transition to forward or hover mode for hybrid vehicles
  * @param to_forward If the transition is to forward (false is to hover)
  */
-extern void guidance_h_transition_run(bool to_forward);
+extern void guidance_h_transition_run(bool to_forward, float precentage_add);
 
 /** Update the guidance reference model
  */
