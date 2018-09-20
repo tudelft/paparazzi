@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="8" ground_alt="0" lat0="-27.2172864" lon0="151.2377145" max_dist_from_home="120" name="Delft Basic" security_height="2"> <!-- test field outback -->
+<flight_plan alt="343" ground_alt="335" lat0="-27.2172864" lon0="151.2377145" max_dist_from_home="120" name="Delft Basic" security_height="2"> <!-- test field outback -->
 <!-- <flight_plan alt="8" ground_alt="0" lat0="52.1682020" lon0="4.4130950" max_dist_from_home="120" name="Delft Basic" security_height="2"> --> <!-- taxi -->
 <!-- <flight_plan alt="8" ground_alt="0" lat0="52.170358" lon0="4.427702" max_dist_from_home="120" name="Delft Basic" security_height="2"-->  <!--kite power -->
   <header>
@@ -13,15 +13,15 @@
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint name="CLIMB" x="17.7" y="1.8"/>
-    <waypoint alt="20.0" name="STDBY" x="1.8" y="-4.9"/>
-    <waypoint alt="50.0" name="p1" x="-70.0" y="-0.0"/>
-    <waypoint alt="50.0" name="p2" x="70.0" y="-0.0"/>
-    <waypoint alt="50.0" name="p3" x="0" y="-70.0"/>
-    <waypoint alt="50.0" name="p4" x="0" y="70.0"/>
+    <waypoint height="20.0" name="STDBY" x="1.8" y="-4.9"/>
+    <waypoint height="50.0" name="p1" x="-70.0" y="-0.0"/>
+    <waypoint height="50.0" name="p2" x="70.0" y="-0.0"/>
+    <waypoint height="50.0" name="p3" x="0" y="-70.0"/>
+    <waypoint height="50.0" name="p4" x="0" y="70.0"/>
     <waypoint name="TD" x="5.6" y="-10.9"/>
-    <waypoint alt="50.0" name="JOE_reported" x="0" y="0"/>
-    <waypoint alt="30.0" name="JOE_found" x="0" y="110"/>
-    <waypoint alt="30.0" name="TD_mrk" x="0" y="25"/>
+    <waypoint height="50.0" name="JOE_reported" x="0" y="0"/>
+    <waypoint height="30.0" name="JOE_found" x="0" y="110"/>
+    <waypoint height="30.0" name="TD_mrk" x="0" y="25"/>
   </waypoints>
   <exceptions>
     <exception cond="((radio_control.status == RC_REALLY_LOST) &&
