@@ -11,15 +11,14 @@ import sys
 from os import path, getenv
 import numpy as np
 import traffic_scenario
-import copy
 import resolution_functions as res_func
 import route_functions as route_func
 import coordinate_transformations as coord_trans
-import traffic_server
 import asterix_receiver
 import static_nfz
 import avoidance_gui as gui
 import shapely.geometry as geometry
+from sympy import cos, sin, nsolve, Symbol
 
 
 # if PAPARAZZI_SRC or PAPARAZZI_HOME not set, then assume the tree containing this
@@ -31,7 +30,6 @@ sys.path.append(PPRZ_HOME + "/var/lib/python") # pprzlink
 
 from pprzlink.ivy import IvyMessagesInterface
 from pprzlink.message import PprzMessage
-#from settings_xml_parse import PaparazziACSettings
 from pprz_math import geodetic
 from time import sleep
 
@@ -75,22 +73,35 @@ class Mission(object):
         print("leg_status: ", self.leg_status)
         
         self.detection_margin = 20. #[m]
-        self.resolution_margin = 30. #[m]
-        self.reduced_resolution_margin = 25. #[m]
-        self.reduced_tla_step = 2. #[s] minimal reduced tla to be selected
+        self.resolution_margin = 40. #[m]
+        self.reduced_resolution_margin = 30. #[m]
+        self.reduced_tla_step = 2.5 #[s] minimal reduced tla to be selected
         self.extended_tla = 10. #[s]
         self.reduced_tla_margin = 10. #[s]
-        self.max_tla = 60. #[s]
-        self.min_avoid_leg_time = 0. #[s]
+        self.max_tla = 25. #[s]
+        self.min_avoid_leg_time = 10. #[s]
+        self.max_blind_speed = 100. # [m/s] maximum blind speed outside enveloppe to be able to detect best avoidaince direction in case no resolutions
         
         self.circular_zones = static_nfz.get_circular_zones(Zones, self.UAV.ref_utm_i)
         self.draw_circular_static_nfzs()
         self.traffic_scenario = traffic_scenario.traffic_scenario(self.UAV, 'HDG', self.circular_zones)
         self.traffic_scenario_extrapolated = traffic_scenario.traffic_scenario_extrapolated(self.UAV, 'HDG', self.circular_zones)
         
-        self.tla = 60.
+        self.tla = self.max_tla #60.
         
         self.gui = gui.Avoidance_GUI(self.detection_margin, self.resolution_margin, self.commanded_airspeed, self.reduced_tla_step, self.extended_tla, self.reduced_tla_margin, self.max_tla, self.reduced_resolution_margin, self.min_avoid_leg_time)
+        
+        
+        # New mission_path related stuff
+        self.id_max = 64000
+        self.transit_counter = 0
+        self.num_transit_pts = 8
+        self.max_initial_pts_in_leg = 20
+        self.seperation_transit_points = self.id_max / self.num_transit_pts
+        self.path = []
+        self.pathinit()
+        self.mission_wp_id_lookup = {}  
+        
         
         def WIND_cb(ac_id, msg):
             if ac_id == self.ac_id:
@@ -114,6 +125,13 @@ class Mission(object):
         
         self.run_mission()
         
+    def pathinit(self):
+        for i in range(len(self.route)):
+            if self.route[i] in Transit_points:
+                path_element = MissionPathElem(self.route[i][0], self.route[i][1], self.altitude, self.transit_counter * self.seperation_transit_points + 1, 'transit')
+            else:
+                path_element = MissionPathElem(self.route[i][0], self.route[i][1], self.altitude, self.transit_counter * self.seperation_transit_points + path_element[-1].wp_id + self.seperation_transit_points / self.max_initial_pts_in_leg, 'static')
+                
     def reinit(self):
         self.initial_route = res_func.leg_shortest_route(route_func.route_calc_avoidance_routes_cz(self.Zones, self.Transit_points[1:-1], (self.Transit_points[0]['east'], self.Transit_points[0]['north']), (self.Transit_points[-1]['east'], self.Transit_points[-1]['north'])))
         self.initial_route_in_legs = route_func.route_break_in_legs(self.Transit_points, self.initial_route)
@@ -132,9 +150,10 @@ class Mission(object):
         self.mission_comm.parse_initial_mission(self)
         
         self.leg_status = self.init_leg_status()
-        print("leg_status: ", self.leg_status)
         
         self.gui.resend = False
+        
+        self.pathinit()
     
     def get_gui(self):
         self.detection_margin = self.gui.w_detm_slider.get()
@@ -166,7 +185,7 @@ class Mission(object):
                 self.indices.append(10*(i+1) + j)
                 self.messages.append(self.current_message_id)
                 self.current_message_id = self.current_message_id + 1
-                if self.current_message_id == 255:
+                if self.current_message_id == 240:
                     self.current_message_id = 1
         
     def get_current_index(self):
@@ -192,100 +211,134 @@ class Mission(object):
     # Dynamic avoidance algotithms #
     ################################    
     
-    def time_to_arrive_at_next_point(self, UAV):
-        index = self.get_current_index
-        target = self.route[1:][self.indices == index]
-        x = UAV.P[0]
-        y = UAV.P[1]
-        t_x = target[0]
-        t_y = target[1]
-        dist = np.sqrt((x-t_x)**2 + (y-t_y)**2)
-        V = np.sqrt(UAV.V[0]**2 + UAV.V[1]**2)
-        if V != 0:
-            time = dist/V
-        else:
-            time = 5.*60.
-        return time
+#    def time_to_arrive_at_next_point(self, UAV):
+#        index = self.get_current_index
+#        target = self.route[1:][self.indices == index]
+#        x = UAV.P[0]
+#        y = UAV.P[1]
+#        t_x = target[0]
+#        t_y = target[1]
+#        dist = np.sqrt((x-t_x)**2 + (y-t_y)**2)
+#        V = np.sqrt(UAV.V[0]**2 + UAV.V[1]**2)
+#        if V != 0:
+#            time = dist/V
+#        else:
+#            time = 5.*60.
+#        return time
+    
+    def ground_velocity_from_commanded_airspeed(self, hdg, commanded_airspeed):
+        #solution = nsolve((c * sin(np.deg2rad(hdg)) - commanded_airspeed * sin(nose_angle) + self.wind['east'], c * cos(np.deg2rad(hdg)) - commanded_airspeed * cos(nose_angle) + self.wind['north']), [c, nose_angle], [1, 1])
+        c = Symbol('c')
+        nose_angle = Symbol('nose_angle')
+        f1 = c * sin(np.deg2rad(hdg)) - commanded_airspeed * sin(nose_angle) + self.wind['east']
+        f2 = c * cos(np.deg2rad(hdg)) - commanded_airspeed * cos(nose_angle) + self.wind['north']
+        solution = nsolve((f1, f2), (c, nose_angle), (1, 1))
+        c = float(solution[0])
+        ground_speed_vector = ((c*np.sin(np.deg2rad(hdg))), (c*np.cos(np.deg2rad(hdg))))
+        ground_velocity = np.sqrt(ground_speed_vector[0]**2 + ground_speed_vector[1]**2)
+        return ground_velocity, ground_speed_vector
         
-    def time_to_arrive_at_point(self, from_point, to_point, traffic_scenario):
+    def time_to_arrive_at_point(self, from_point, to_point, commanded_airspeed):
         dist = np.sqrt((from_point[0]-to_point[0])**2 + (from_point[1]-to_point[1])**2)
-        V = traffic_scenario.UAV_speed
+        hdg = np.rad2deg(np.arctan2(to_point[0] - from_point[0], to_point[1] - from_point[1])) % 360.
+        V = self.ground_velocity_from_commanded_airspeed(hdg, commanded_airspeed)[0]
         if V !=0:
             time = dist/V
         else:
             time = 5.*60.
         return time
-    
-    def check_collision_to_point(self, from_point, to_point, velocity, dt):
-        hdg_to_target = np.rad2deg(np.arctan2(to_point[0] - from_point[0], to_point[1] - from_point[1]))
-        if hdg_to_target < 0:
-            hdg_to_target = hdg_to_target + 360.
+        
+    def CheckRelativeHeadingDirection(self, hdg_current, hdg_new):
+        hdg_diff = hdg_new - hdg_current
+        
+        if ((hdg_diff > 0) and (hdg_diff < 180)):
+            return 'right'
+        
+        if ((hdg_diff > 0) and (hdg_diff > 180)):
+            return 'left'
             
-        from_point_enu = geodetic.EnuCoor_f(from_point[0], from_point[1], self.altitude)
+        if ((hdg_diff < 0) and (hdg_diff > -180)):
+            return 'left'
+        #else
+        return 'right'
         
-        self.traffic_scenario_extrapolated.update_traffic_scenario(velocity, hdg_to_target, self.wind, from_point_enu, dt, self.receiver_thread)
-
-        tla = self.time_to_arrive_at_point(from_point, to_point, self.traffic_scenario_extrapolated)
-        conflict = self.traffic_scenario_extrapolated.detect_conflicts(tla, self.wind, self.detection_margin)
-        return conflict[0], tla
-        
-    def check_collision_on_current_leg(self):
-        from_point = (self.UAV.P[0], self.UAV.P[1])
-        current_index = self.get_current_index()
-        to_point = self.route_in_legs[current_index/10 - 1][-1]
-        velocity = np.sqrt(self.UAV.V[0]**2 + self.UAV.V[1]**2)
-        collision = self.check_collision_to_point(from_point, to_point, velocity, 0.)
-        if collision[0] == 'conflict':
-            resolution_point = self.resolution_on_leg(from_point, to_point, 0.)
-            if resolution_point != 'nosol':
-                self.resolution_in_progress[current_index/10 - 1] = True
-                return resolution_point
-        else:    
-            return 'no conflict'
-
-    def resolution_on_leg(self, from_point, to_point, dt, types = "both"):
-        print("start resolution on leg function")
+    def BlindAvoidance(self, from_point, to_point, dt, types):
         dx = to_point[0] - from_point[0]
         dy = to_point[1] - from_point[1]
-        hdg = np.rad2deg(np.arctan2(dx, dy))
-        if hdg < 0:
-            hdg = hdg + 360.
-            
+        hdg = np.rad2deg(np.arctan2(dx, dy)) % 360.            
         
         from_point_enu = geodetic.EnuCoor_f(from_point[0], from_point[1], self.altitude)
         
-        self.traffic_scenario_extrapolated.update_traffic_scenario(self.commanded_airspeed, hdg, self.wind, from_point_enu, dt, self.receiver_thread, types = types)
-        time_to_arrive_at_point = self.time_to_arrive_at_point(from_point, to_point, self.traffic_scenario_extrapolated)
-        tla = min(time_to_arrive_at_point, self.max_tla)
+        for speed in np.arange(self.commanded_airspeed, self.max_blind_speed, 5.):
+            abs_speed, speed_vector = self.ground_velocity_from_commanded_airspeed(hdg, speed)
+            self.traffic_scenario_extrapolated.update_traffic_scenario(speed_vector, abs_speed, hdg, self.wind, from_point_enu, dt, self.receiver_thread, types)
+            resolutions = self.traffic_scenario_extrapolated.detect_conflicts(self.min_avoid_leg_time, self.wind, self.resolution_margin)
+            
+            if (resolutions[0] == 'nosol'):
+                continue
+            
+            elif (resolutions[0] == 'conflict'):
+                resolution_point = (from_point[0] + speed_vector[0] * self.min_avoid_leg_time, from_point[1] + speed_vector[1] * self.min_avoid_leg_time)
+                resolution_point_geom = geometry.Point(resolution_point)
+                if not self.check_intersecting_static_nfzs(from_point, resolution_point):
+                    if (resolution_point_geom.within(self.soft_geofence.polygon)):
+                        return resolution_point
+                else:
+                    return 'nosol'
+                
+            elif (resolutions[0] == 'free'):
+                return 'nosol' #no solution found by increasing ssd ownspeed
+        return 'nosol'
+    
+    def check_area_conflicts(self, location, radius, dt, time):
+        free_circle = geometry.Point(location).buffer(radius)
+        for i in range(1, self.traffic_scenario.Traffic.ntraf):
+            pos_traf_lla = geodetic.LlaCoor_i(self.traffic_scenario.Traffic.lat[i]*10**7, self.traffic_scenario.Traffic.lon[i]*10**7, 0)
+            pos_traf_enu = coord_trans.lla_to_enu_fw(pos_traf_lla, self.UAV.ref_utm_i)
+            start_pos_traf = (pos_traf_enu.x + dt * self.traffic_scenario.Traffic.gseast[i], pos_traf_enu.y + dt * self.traffic_scenario.Traffic.gsnorth[i])
+            end_pos_traffic = (start_pos_traf[0] + time * self.traffic_scenario.Traffic.gseast[i], start_pos_traf[1] + time * self.traffic_scenario.Traffic.gsnorth[i])
+            traf_line_obstacle = geometry.linestring([start_pos_traf, end_pos_traffic]).buffer(self.traffic_scenario.Traffic.hsep + self.resolution_margin)
+            if traf_line_obstacle.intersects(free_circle):
+                return False
+        return True
+        
+    def check_intersecting_static_nfzs(self, from_point, to_point):
+        intersecting = False
+        line = geometry.LineString([from_point, to_point])
+        for i in range(len(self.Zones)):
+            if line.intersects(self.Zones[i].circle['geo']):
+                intersecting = True
+                return intersecting
+        return intersecting
+    
+    def resolution_on_leg_new(self, from_point, to_point, next_point, dt, detection_margin, resolution_margin, types):
+        dx = to_point[0] - from_point[0]
+        dy = to_point[1] - from_point[1]
+        hdg = np.rad2deg(np.arctan2(dx, dy)) % 360.            
+        
+        from_point_enu = geodetic.EnuCoor_f(from_point[0], from_point[1], self.altitude)
+        
+        abs_speed, speed_vector = self.ground_velocity_from_commanded_airspeed(hdg, self.commanded_airspeed)
+        
+        self.traffic_scenario_extrapolated.update_traffic_scenario(speed_vector, abs_speed, hdg, self.wind, from_point_enu, dt, self.receiver_thread, types)
+        time_to_arrive_at_point = self.time_to_arrive_at_point(from_point, to_point, self.commanded_airspeed)
+
         
         reduced_tla = self.min_avoid_leg_time
-        looping = True
-        reduce_resolution_margin = False        
+        looping = True        
         
         while looping:
-            self.traffic_scenario_extrapolated.update_traffic_scenario(self.commanded_airspeed, hdg, self.wind, from_point_enu, dt, self.receiver_thread, types = types)
-            print("entering looping with t= ", reduced_tla)
-            if reduce_resolution_margin:
-                resolutions = self.traffic_scenario_extrapolated.detect_conflicts(reduced_tla + self.reduced_tla_margin, self.wind, self.reduced_resolution_margin)
-            else:
-                resolutions = self.traffic_scenario_extrapolated.detect_conflicts(reduced_tla + self.reduced_tla_margin, self.wind, self.resolution_margin)
+            abs_speed, speed_vector = self.ground_velocity_from_commanded_airspeed(hdg, self.commanded_airspeed)
             
-            if resolutions[0] == 'free':
-                print("do nothing because first calculation point already free of obstacles")
-                return 'nosol'
+            self.traffic_scenario_extrapolated.update_traffic_scenario(speed_vector, abs_speed, hdg, self.wind, from_point_enu, dt, self.receiver_thread, types)
+            resolutions = self.traffic_scenario_extrapolated.detect_conflicts(reduced_tla + self.reduced_tla_margin, self.wind, resolution_margin)
             
-            if ((resolutions[0] == 'nosol') or (resolutions[0] =='free')):
-                if reduce_resolution_margin == False:
-                    print("reducing margin because current calculation point within margin")
-                    reduce_resolution_margin = True
-                    reduced_tla = self.min_avoid_leg_time;
-                    resolutions = self.traffic_scenario_extrapolated.detect_conflicts(reduced_tla + self.reduced_tla_margin, self.wind, self.reduced_resolution_margin)
-                    if ((resolutions[0] == 'nosol') or (resolutions[0] =='free')):
-                        return 'nosol'
-                else:
-                    print('To close to obstacle to calculate resolution')
-                    return 'nosol'       
-                    
+            if (resolutions[0] == 'free'):
+                return 'free'
+            
+            if (resolutions[0] == 'nosol'):
+                print ("nosol from begin in resolution function")
+                return 'nosol'                        
             
             if (len(resolutions[1]) < 30):
                 n_i = len(resolutions[1])
@@ -297,16 +350,11 @@ class Mission(object):
             rightleftsolution = {'right' : False, 'left' : False}
             
             for i in range(n_i-1):
-                if (rightleftsolution['right'] and rightleftsolution['left']):
-                    print ('Left and Right solution found')
-                    sys.stdout.flush()
+                if ((rightleftsolution['right'] == True) and (rightleftsolution['left'] == True)):
                     break
                 
-                hdg_res = np.arctan2(resolutions[1][i], resolutions[2][i])
-                UAV_speed = (self.commanded_airspeed * np.sin(hdg_res) + self.wind['east'], self.commanded_airspeed * np.cos(hdg_res) + self.wind['north'])
-                hdg_res = np.rad2deg(hdg_res)
-                if hdg_res < 0:
-                    hdg_res = hdg_res + 360.
+                hdg_res = np.rad2deg(np.arctan2(resolutions[1][i], resolutions[2][i])) % 360.
+                UAV_speed = self.ground_velocity_from_commanded_airspeed(hdg_res, self.commanded_airspeed)[1]
                     
                 res_dir = self.CheckRelativeHeadingDirection(hdg, hdg_res)
                 
@@ -316,11 +364,18 @@ class Mission(object):
                     pass
                 else:
                     continue
-
+                
                 new_from_point = (from_point[0] + UAV_speed[0]*reduced_tla, from_point[1] + UAV_speed[1]*reduced_tla)
-                new_from_point_geom = geometry.Point(new_from_point[0], new_from_point[1])
-                if (new_from_point_geom.within(self.soft_geofence.polygon) == False):
+                
+                linestring_to = geometry.LineString([from_point, new_from_point])
+                linestring_from = geometry.LineString([new_from_point, next_point])
+                if ((linestring_to.contains(self.soft_geofence.polygon) == False) and (linestring_from.contains(self.soft_geofence.polygon) == False)):
                     continue
+                
+                for Zone in range(len(self.Zones)):
+                    if (linestring_to.intersects(self.Zones[Zone].circle['geo']) and (linestring_from.intersects(self.Zones[Zone].circle['geo']))):
+                        continue
+                    
                 new_from_point_enu = geodetic.EnuCoor_f(new_from_point[0], new_from_point[1], self.altitude)
                 
                 dx_target = to_point[0] - new_from_point[0]
@@ -328,15 +383,12 @@ class Mission(object):
                 
                 hdg_target = np.rad2deg(np.arctan2(dx_target, dy_target))
                 
+                abs_speed, speed_vector = self.ground_velocity_from_commanded_airspeed(hdg_target, self.commanded_airspeed)
                 
+                self.traffic_scenario_extrapolated.update_traffic_scenario(speed_vector, abs_speed, hdg_target, self.wind, new_from_point_enu, dt + reduced_tla, self.receiver_thread, types = types)
+                tla_target = min(self.time_to_arrive_at_point(new_from_point, to_point, self.commanded_airspeed), self.max_tla) # look later
                 
-                self.traffic_scenario_extrapolated.update_traffic_scenario(self.commanded_airspeed, hdg_target, self.wind, new_from_point_enu, dt + reduced_tla, self.receiver_thread, types = types)
-                tla_target = min(self.time_to_arrive_at_point(new_from_point, to_point, self.traffic_scenario_extrapolated), self.max_tla)
-                
-                if reduce_resolution_margin:
-                    conflict = self.traffic_scenario_extrapolated.detect_conflicts(tla_target, self.wind, self.reduced_resolution_margin)
-                else:
-                    conflict = self.traffic_scenario_extrapolated.detect_conflicts(tla_target, self.wind, self.resolution_margin)
+                conflict = self.traffic_scenario_extrapolated.detect_conflicts(tla_target, self.wind, resolution_margin) # mayve detection margin good as well
                 
                 if (conflict[0] == 'free'):
                     
@@ -356,289 +408,176 @@ class Mission(object):
                 if (reduced_tla <= time_to_arrive_at_point + self.extended_tla):
                     reduced_tla = reduced_tla + self.reduced_tla_step
                 else:
-                    if not reduce_resolution_margin:
-                        print("Reducing margin for resolution")
-                        reduce_resolution_margin = True;
-                        reduced_tla = self.reduced_tla_step
-                    else:
-                        looping = False
-                        print("resolution_on_leg: no solutions found on leg")
-                        return 'nosol'
-            
+                    looping = False
+                    return 'nosol'    
         
-    def CheckRelativeHeadingDirection(self, hdg_current, hdg_new):
-        hdg_diff = hdg_new - hdg_current
-        
-        if ((hdg_diff > 0) and (hdg_diff < 180)):
-            return 'right'
-        
-        if ((hdg_diff > 0) and (hdg_diff > 180)):
-            return 'left'
-            
-        if ((hdg_diff < 0) and (hdg_diff > -180)):
-            return 'left'
-        #else
-        return 'right'
-        
-    def process_current_leg(self):
-        # Check if direct route to target is free
-        from_point = (self.UAV.P[0], self.UAV.P[1])
-        from_point_2 = (from_point[0] + 2 * self.UAV.V[0], from_point[1] + 2 * self.UAV.V[1]) # from point extrapolated by 2 seconds
-        current_index = self.get_current_index() # current index send over datalink
+    def run_route(self):
+        current_index = self.get_current_index() # Current index of flight plan
+        final_i = len(self.indices) - 1 # i of the final index
         try:
-            current_i = self.indices.index(current_index)
-        except ValueError:
-            print("process_current_leg: not synchronus with live flight")
+            indices_i = self.indices.index(current_index) # i of connecting points in route
+        except:
+            # If online is not synchronus with offline plan, further implemented in ground extrapolation function
             return
-        leg_i = current_index / 10 - 1
-        to_point = self.route_in_legs[current_index/10 - 1][-1]
-        hdg_to_target = np.rad2deg(np.arctan2(to_point[0] - from_point[0], to_point[1] - from_point[1]))
-        if hdg_to_target < 0:
-            hdg_to_target = hdg_to_target + 360.
             
-        from_point_enu = geodetic.EnuCoor_f(from_point[0], from_point[1], self.altitude)
+        from_point = (self.UAV.P[0], self.UAV.P[1]) # Set UAV position as from point
+        from_point_4 =  (from_point[0] + 4 * self.UAV.V[0], from_point[1] + 4 * self.UAV.V[1]) # From point extrapolated by 4 seconds
+        from_point_4_enu = geodetic.EnuCoor_f(from_point_4[0], from_point_4[1], self.altitude) # Convert to PPRZ enu point
         
+        next_point = self.route[indices_i+1] # Next point on route
+        
+        time_to_arrive_at_next_point = self.time_to_arrive_at_point(from_point, next_point, self.commanded_airspeed) # Calculate time to arrive at next point
+        
+        indices_i_within_tla = [indices_i] # List containing indices that are within the current tla
+        indices_within_tla = [current_index]
+        times_to_finish_indices = [time_to_arrive_at_next_point] # List containing times to finish a index from now
+        if (time_to_arrive_at_next_point < self.max_tla):
+            next_point_in_tla = True # Next point is within tla
+            while next_point_in_tla:
+                if (indices_i_within_tla[-1] == final_i):
+                    break #break if no indices any more, arriving at target location
+                time_to_next = self.time_to_arrive_at_point(self.route[indices_i_within_tla[-1] + 1], self.route[indices_i_within_tla[-1] + 2], self.commanded_airspeed)
+                indices_i_within_tla.append(indices_i_within_tla[-1] + 1)
+                indices_within_tla.append(self.indices[indices_i_within_tla[-1]])
+                times_to_finish_indices.append(times_to_finish_indices[-1] + time_to_next)
+                if (times_to_finish_indices[-1] > self.max_tla): 
+                    next_point_in_tla = False # stop when latest point not in tla any more
+        
+        dt_avoid = 0
+        for i in range(len(indices_within_tla)):
+            index_avoid = indices_within_tla[i]
+            if (i == 0):
+                from_point_avoid = from_point_4
+                from_point_enu_avoid = from_point_4_enu
+            else:
+                from_point_avoid = self.route[indices_i_within_tla[i]]
+                from_point_enu_avoid = geodetic.EnuCoor_f(from_point_avoid[0], from_point_avoid[1], self.altitude)
+            tla_avoid = self.max_tla - dt_avoid
+            
+            if (i==0):
+                avoidance = self.avoid_en_route(index_avoid, from_point_avoid, from_point_enu_avoid, dt_avoid, tla_avoid, True)    
+                
+            else:
+                avoidance = self.avoid_en_route(index_avoid, from_point_avoid, from_point_enu_avoid, dt_avoid, tla_avoid - dt_avoid, False) 
+                
+            if avoidance == 'resolved':
+                break
+            
+            dt_avoid = times_to_finish_indices[i]
+                    
+    def avoid_en_route(self, index, from_point, from_point_enu, dt, tla, current_flg):
         try:
-            if(self.indices[current_i+1] == ((current_index / 10) + 1)*10):
-                self.resolution_in_progress[leg_i] = False
-        except IndexError:
-            self.resolution_in_progress[leg_i] = False
-            
-        # Use detection margin if no resolution in progress on current leg
-        if self.resolution_in_progress[leg_i] == False:
-            self.traffic_scenario_extrapolated.update_traffic_scenario(self.commanded_airspeed, hdg_to_target, self.wind, from_point_enu, 0., self.receiver_thread)
-            tla = self.time_to_arrive_at_point(from_point, to_point, self.traffic_scenario_extrapolated)
-            self.tla = tla
-            conflict = self.traffic_scenario_extrapolated.detect_conflicts(tla, self.wind, self.detection_margin)
-            if conflict[0] == 'conflict':
-                resolution_point = self.resolution_on_leg(from_point_2, to_point, 0.)
-                if resolution_point != 'nosol':
-                    self.resolution_in_progress[leg_i] = True
-                    self.route = self.route[:current_i] + [from_point_2, resolution_point] + self.route[current_i+1:]
-                    #self.route_in_legs = route_func.route_break_in_legs(self.Transit_points, self.route)
-                    self.indices = self.indices[:current_i+1] + [current_index + 1] + self.indices[current_i+1:]
-                    self.messages = self.messages[:current_i] + [self.current_message_id, self.current_message_id + 1] + self.messages[current_i+1:]
-                    self.current_message_id = self.current_message_id + 2
-                    if self.current_message_id >= 254:
-                        self.current_message_id = 1
-            
-        else:
-            # Check for other collisions on current leg even if already in avoidance mode
-            
-            avoidance_point = self.route[current_i]
-
-            hdg_to_avoidance = np.rad2deg(np.arctan2(avoidance_point[0] - from_point[0], avoidance_point[1] - from_point[1]))
-            if hdg_to_avoidance < 0:
-                hdg_to_avoidance = hdg_to_avoidance + 360.
-                
-            from_point_enu = geodetic.EnuCoor_f(from_point[0], from_point[1], self.altitude)
-            
-            self.traffic_scenario_extrapolated.update_traffic_scenario(self.commanded_airspeed, hdg_to_avoidance, self.wind, from_point_enu, 0., self.receiver_thread)
-            tla = self.time_to_arrive_at_point(from_point, avoidance_point, self.traffic_scenario_extrapolated)
-            self.tla = tla
-            conflict = self.traffic_scenario_extrapolated.detect_conflicts(tla, self.wind, self.detection_margin)
-            
-            if conflict[0] == 'conflict':
-                resolution_point = self.resolution_on_leg(from_point_2, to_point, 0.)
-                if resolution_point != 'nosol':
-                    self.route = self.route[:current_i] + [from_point_2, resolution_point] + self.route[current_i+2:]
-                    #self.route_in_legs = route_func.route_break_in_legs(self.Transit_points, self.route)
-                    #self.indices = self.indices[:current_i+1] + [current_index + 1] + self.indices[current_i+1:]
-                    self.messages = self.messages[:current_i] + [self.current_message_id, self.current_message_id + 1] + self.messages[current_i+2:]
-                    self.current_message_id = self.current_message_id + 2
-                    if self.current_message_id >= 254:
-                        self.current_message_id = 1
-            
-            # check if route is free towards target point with resolution margin
-            self.traffic_scenario_extrapolated.update_traffic_scenario(self.commanded_airspeed, hdg_to_target, self.wind, from_point_enu, 0., self.receiver_thread)
-            tla = self.time_to_arrive_at_point(from_point, to_point, self.traffic_scenario_extrapolated)
-            conflict = self.traffic_scenario_extrapolated.detect_conflicts(tla, self.wind, self.resolution_margin)
-            if ((conflict[0] == 'free') and tla > 0):
-                self.change_current_index = (True, current_index / 10 * 10)
-                print('free of conflict to target')
-                # directly go to target again
-                
-                next_leg_i = leg_i + 2
-                try:
-                    begin_leg_i = self.indices.index((leg_i+1)*10)
-                except ValueError:
-                    print("process_current_leg: begin")
-                    return
-                    
-                self.resolution_in_progress[leg_i] = False
-                    
-                final_leg = False
-                try:
-                    next_leg_i = self.indices.index(next_leg_i*10) # leg exists
-                except ValueError:
-                    final_leg = True
-                    
-                if not final_leg:    
-                    self.route = self.route[:begin_leg_i] + [from_point_2] + self.route[next_leg_i:]
-                    self.indices = self.indices[:begin_leg_i+1] + self.indices[next_leg_i:]
-                    self.messages = self.messages[:begin_leg_i] + [self.current_message_id] + self.messages[next_leg_i:]
-                    self.current_message_id = self.current_message_id + 1
-                    if self.current_message_id >= 254:
-                        self.current_message_id = 1
-                        
-                else:
-                    self.route = self.route[:begin_leg_i] + [from_point_2, to_point]
-                    self.indices = self.indices[:begin_leg_i+1]
-                    self.messages = self.messages[:begin_leg_i] + [self.current_message_id]
-                    self.current_message_id = self.current_message_id + 1
-                    if self.current_message_id >= 254:
-                        self.current_message_id = 1
-    
-    def process_leg(self, leg_i, dt, index = 'start', from_point = 'start'):
-        if index == 'start':
-            index = (leg_i+1)*10        
+            indices_i = self.indices.index(index) # i of connecting points in route
+        except:
+            # If online is not synchronus with offline plan, further implemented in ground extrapolation function
+            print ("error synchronous")
+            return
+        indices_i_start_leg = self.indices.index(index/10*10) # i of first connecting point on leg        
         
-        indices_i = self.indices.index(index)
-        indices_i_start_leg = self.indices.index(index/10*10)
-        
-        final_leg = False
+        final_leg = False # Flag indicating if final leg in progress
+        # Check to test if final leg in progress
         try:
             indices_i_next_leg = self.indices.index((index+10)/10*10)
         except ValueError:
             final_leg = True
         
-        if from_point == 'start':
-            from_point = self.route[indices_i]
+        leg_i = index / 10 - 1 # i of leg between transit points        
         
-        target_point = self.route_in_legs[leg_i][-1]
-        hdg_to_target = np.rad2deg(np.arctan2(target_point[0] - from_point[0], target_point[1] - from_point[1]))
-        if hdg_to_target < 0:
-            hdg_to_target = hdg_to_target + 360.
+        target_point = self.route_in_legs[leg_i][-1] # The endpoint of the current leg
+        hdg_to_target = np.rad2deg(np.arctan2(target_point[0] - from_point[0], target_point[1] - from_point[1])) % 360. # Heading to target
         
-        next_point = self.route[indices_i+1]
-        hdg_to_next = np.rad2deg(np.arctan2(next_point[0] - from_point[0], next_point[1] - from_point[1]))
-        if hdg_to_next < 0:
-            hdg_to_next = hdg_to_next + 360.
-        
-        from_point_enu = geodetic.EnuCoor_f(from_point[0], from_point[1], self.altitude)
-        
-        #################################################################################################
-        # If no dynamic avoidance declared on leg, detect new conflicts with detection margin and avoid #
-        #################################################################################################
+        next_point = self.route[indices_i+1] # Next point on route
+        hdg_to_next = np.rad2deg(np.arctan2(next_point[0] - from_point[0], next_point[1] - from_point[1])) % 360. # Heading to next point
+
+        #######################################################
+        #detect new conflicts with detection margin and avoid #
+        #######################################################
         if ((self.leg_status[indices_i] == 'to_target') or (self.leg_status[indices_i] == 'static_avoid') or (self.leg_status[indices_i] == 'dynamic_avoid')):
-            
-            self.traffic_scenario_extrapolated.update_traffic_scenario(self.commanded_airspeed, hdg_to_next, self.wind, from_point_enu, dt, self.receiver_thread, types = "dynamic")
-            tla = self.time_to_arrive_at_point(from_point, next_point, self.traffic_scenario_extrapolated)
-            self.tla = tla
+            abs_speed, speed_vector = self.ground_velocity_from_commanded_airspeed(hdg_to_next, self.commanded_airspeed)
+            self.traffic_scenario_extrapolated.update_traffic_scenario(speed_vector, abs_speed, hdg_to_next, self.wind, from_point_enu, dt, self.receiver_thread, "both")
             conflict = self.traffic_scenario_extrapolated.detect_conflicts(tla, self.wind, self.detection_margin)
-            if conflict[0] == 'conflict':
-                resolution_point = self.resolution_on_leg(from_point, target_point, dt, types="dynamic")
-                    
-                if resolution_point != 'nosol':
-                    # check if only static avoidance has to be applied
-                    print("resolution_point found")
+            
+            
+            if (conflict[0] == 'conflict' or conflict[0] == 'nosol'):
+                resolution_point = self.resolution_on_leg_new(from_point, target_point, next_point, dt, self.detection_margin, self.resolution_margin, "both")
+                if (resolution_point == "free"):
+                    print ('Avoid, free')
+                    return 'free'
+                elif (resolution_point == "nosol"):
+                    print ('Avoid, calc resolution')
+                    resolution_point = self.resolution_on_leg_new(from_point, target_point, next_point, dt, self.detection_margin, self.reduced_resolution_margin, "both")
+                    if (resolution_point == "nosol"):
+                        print ('Avoid, no sol on normal margin')
+                        resolution_point = self.resolution_on_leg_new(from_point, next_point, target_point, dt, self.detection_margin, self.detection_margin, "both")
+                        if (resolution_point == "nosol"):
+                            print ('Avoid, reducing margin to 0,0')
+                            resolution_point = self.resolution_on_leg_new(from_point, next_point, target_point, dt, 0., 0., "both")
+                            if (resolution_point == "nosol"):
+                                resolution_point = self.BlindAvoidance(from_point, target_point, dt, "both")
+                                if (resolution_point == "nosol"):
+                                    print ('Avoid, no solution found')
+                                    return 'not_resolved'
+                if resolution_point == "free":
+                    print ('Avoid, resolution point free')
+                    return 'free'
                 
-                    if (self.check_intersecting_static_nfzs(from_point, resolution_point)):
-                        print("resolution_point_ intersecting static zone: ", resolution_point)
-                        new_leg = res_func.leg_return_shortest_leg_cz(self.Zones, from_point, target_point)
-                        
-                        hdg_to_new_point = np.rad2deg(np.arctan2(new_leg[1][0] - from_point[0], new_leg[1][1] - from_point[1]))
-                        if hdg_to_new_point < 0:
-                            hdg_to_new_point = hdg_to_next + 360.
-                        self.traffic_scenario_extrapolated.update_traffic_scenario(self.commanded_airspeed, hdg_to_new_point, self.wind, from_point_enu, dt, self.receiver_thread, types = "dynamic")
-                        conflict = self.traffic_scenario_extrapolated.detect_conflicts(tla, self.wind, self.detection_margin)
-                        
-                        # if new dynamic avoid needed because on new leg still conflict
-                        if conflict[0] == 'conflict':
-                            resolution_point = self.resolution_on_leg(from_point, target_point, dt, types="both")
-                            if resolution_point != 'nosol':
-                                resetted_index = index/10*10
-                                self.current_index_change = True
-                                self.mission_comm.set_current_index(resetted_index)
-                                if final_leg == False:
-                                    self.route = self.route[:indices_i_start_leg] + [from_point, resolution_point, target_point] + self.route[indices_i_next_leg+1:]
-                                    self.indices = self.indices[:indices_i_start_leg] + [resetted_index, resetted_index + 1] + self.indices[indices_i_next_leg:]
-                                    self.leg_status = self.leg_status[:indices_i_start_leg]  + ["dynamic_avoid", "to_target"] + self.leg_status[indices_i_next_leg]
-                                    self.messages = self.messages[:indices_i_start_leg] + [self.current_message_id, self.current_message_id + 1] + self.messages[indices_i_next_leg:]
-                                    self.current_message_id = self.current_message_id + 2
-                                    if self.current_message_id >= 240:
-                                        self.current_message_id = 1
-                                    return
-                                else:
-                                    self.route = self.route[:indices_i_start_leg] + [from_point, resolution_point, target_point]
-                                    self.indices = self.indices[:indices_i_start_leg] + [resetted_index, resetted_index + 1]
-                                    self.leg_status = self.leg_status[:indices_i_start_leg]  + ["dynamic_avoid", "to_target"]
-                                    self.messages = self.messages[:indices_i_start_leg] + [self.current_message_id, self.current_message_id + 1]
-                                    self.current_message_id = self.current_message_id + 2
-                                    if self.current_message_id >= 240:
-                                        self.current_message_id = 1
-                                    return
-                                        
-                        # if new static avoid leg calculated
-                        else:
-                            print("valid point resolution_point: ", resolution_point)
-                            resetted_index = index/10*10
-                            self.mission_comm.set_current_index(resetted_index)
-                            new_leg_length = len(new_leg)
-                            new_leg_index_range = range(resetted_index, resetted_index + new_leg_length-1)
-                            new_leg_status = []
-                            for i in range(len(new_leg_index_range)):
-                                if i != len(new_leg_index_range):
-                                    new_leg_status.append("static_avoid")
-                                else:
-                                    new_leg_status.append("to_target")
-                            new_leg_messages = range(self.current_message_id, self.current_message_id + new_leg_length-1)
-                            if final_leg == False:
-                                self.route = self.route[:indices_i_start_leg] + new_leg + self.route[indices_i_next_leg+1:]
-                                self.indices = self.indices[:indices_i_start_leg] + new_leg_index_range + self.indices[indices_i_next_leg:]
-                                self.leg_status = self.leg_status[:indices_i_start_leg]  + new_leg_status + self.leg_status[indices_i_next_leg:]
-                                self.messages = self.messages[:indices_i_start_leg] + new_leg_messages + self.messages[indices_i_next_leg:]
-                                self.current_message_id = self.current_message_id + len(new_leg_messages)
-                                if self.current_message_id >= 240:
-                                    self.current_message_id = 1
-                                return
-                            else:
-                                self.route = self.route[:indices_i_start_leg] + new_leg
-                                self.indices = self.indices[:indices_i_start_leg] + new_leg_index_range
-                                self.leg_status = self.leg_status[:indices_i_start_leg]  + new_leg_status
-                                self.messages = self.messages[:indices_i_start_leg] + new_leg_messages
-                                self.current_message_id = self.current_message_id + len(new_leg_messages)
-                                if self.current_message_id >= 240:
-                                    self.current_message_id = 1
-                                return
+                if current_flg:
+                    resetted_index = index/10*10
+                    self.current_index_change = True
+                    self.mission_comm.set_current_index(resetted_index)
+                    if final_leg == False:
+                        self.route = self.route[:indices_i_start_leg] + [from_point, resolution_point, target_point] + self.route[indices_i_next_leg+1:]
+                        self.indices = self.indices[:indices_i_start_leg] + [resetted_index, resetted_index + 1] + self.indices[indices_i_next_leg:]
+                        self.leg_status = self.leg_status[:indices_i_start_leg] + ["dynamic_avoid", "to_target"] + self.leg_status[indices_i_next_leg:]
+                        self.messages = self.messages[:indices_i_start_leg] + [self.current_message_id, self.current_message_id + 1] + self.messages[indices_i_next_leg:]
+                        self.current_message_id = self.current_message_id + 2
+                        if self.current_message_id >= 240:
+                            self.current_message_id = 1
+                            
+                        return 'resolved'
                     else:
-                         print("resolution_point_ free of static zones: ", resolution_point)
-                         resetted_index = index/10*10
-                         self.mission_comm.set_current_index(resetted_index)
-                         if final_leg == False:
-                            self.route = self.route[:indices_i_start_leg] + [from_point, resolution_point, target_point] + self.route[indices_i_next_leg+1:]
-                            self.indices = self.indices[:indices_i_start_leg] + [resetted_index, resetted_index + 1] + self.indices[indices_i_next_leg:]
-                            self.leg_status = self.leg_status[:indices_i_start_leg]  + ["dynamic_avoid", "to_target"] + self.leg_status[indices_i_next_leg:]
-                            self.messages = self.messages[:indices_i_start_leg] + [self.current_message_id, self.current_message_id + 1] + self.messages[indices_i_next_leg:]
-                            self.current_message_id = self.current_message_id + 2
-                            if self.current_message_id >= 240:
-                                self.current_message_id = 1
-                            return
-                         else:
-                            self.route = self.route[:indices_i_start_leg] + [from_point, resolution_point, target_point]
-                            self.indices = self.indices[:indices_i_start_leg] + [resetted_index, resetted_index + 1]
-                            self.leg_status = self.leg_status[:indices_i_start_leg]  + ["dynamic_avoid", "to_target"]
-                            self.messages = self.messages[:indices_i_start_leg] + [self.current_message_id, self.current_message_id + 1]
-                            self.current_message_id = self.current_message_id + 2
-                            if self.current_message_id >= 240:
-                                self.current_message_id = 1
-                            return
-    
+                        self.route = self.route[:indices_i_start_leg] + [from_point, resolution_point, target_point]
+                        self.indices = self.indices[:indices_i_start_leg] + [resetted_index, resetted_index + 1]
+                        self.leg_status = self.leg_status[:indices_i_start_leg]  + ["dynamic_avoid", "to_target"]
+                        self.messages = self.messages[:indices_i_start_leg] + [self.current_message_id, self.current_message_id + 1]
+                        self.current_message_id = self.current_message_id + 2
+                        if self.current_message_id >= 240:
+                            self.current_message_id = 1
+                        return 'resolved'
+                        
+                else: # current_flg == false
+                    if final_leg == False:
+                        self.route = self.route[:indices_i] + [from_point, resolution_point, target_point] + self.route[indices_i_next_leg+1:]
+                        self.indices = self.indices[:indices_i] + [index, index + 1] + self.indices[indices_i_next_leg:]
+                        self.leg_status = self.leg_status[:indices_i] + ["dynamic_avoid", "to_target"] + self.leg_status[indices_i_next_leg:]
+                        self.messages = self.messages[:indices_i] + [self.current_message_id, self.current_message_id + 1] + self.messages[indices_i_next_leg:]
+                        self.current_message_id = self.current_message_id + 2
+                        if self.current_message_id >= 240:
+                            self.current_message_id = 1
+                        return 'resolved'
+                    else:
+                        self.route = self.route[:indices_i] + [from_point, resolution_point, target_point]
+                        self.indices = self.indices[:indices_i] + [index, index + 1]
+                        self.leg_status = self.leg_status[:indices_i]  + ["dynamic_avoid", "to_target"]
+                        self.messages = self.messages[:indices_i] + [self.current_message_id, self.current_message_id + 1]
+                        self.current_message_id = self.current_message_id + 2
+                        if self.current_message_id >= 240:
+                            self.current_message_id = 1
+                        return 'resolved'
+        
         #################################################################################################
         # If dynamic avoidance declared on leg, detect new conflicts with detection margin and avoid,   #
         # check if route to target or next static avoidance point is free and fly there                 #
         #################################################################################################
         if (self.leg_status[indices_i] == 'dynamic_avoid'):
-            
+            abs_speed, speed_vector = self.ground_velocity_from_commanded_airspeed(hdg_to_target, self.commanded_airspeed)
             # First check if towards resolution margin free of conflicts
-            self.traffic_scenario_extrapolated.update_traffic_scenario(self.commanded_airspeed, hdg_to_target, self.wind, from_point_enu, dt, self.receiver_thread, types = "dynamic")
-            tla = self.time_to_arrive_at_point(from_point, target_point, self.traffic_scenario_extrapolated)
-            self.tla = tla
+            self.traffic_scenario_extrapolated.update_traffic_scenario(speed_vector, abs_speed, hdg_to_target, self.wind, from_point_enu, dt, self.receiver_thread, types = "both")
             conflict = self.traffic_scenario_extrapolated.detect_conflicts(tla, self.wind, self.resolution_margin)
             if conflict[0] == 'free':
-                
-                    if not (self.check_intersecting_static_nfzs(from_point, target_point)):
-                        print("go direct to target, everything free")
+                linestring = geometry.LineString([from_point, target_point])
+                if (not self.check_intersecting_static_nfzs(from_point, target_point) and (linestring.within(self.soft_geofence))):
+                    if current_flg == True:
                         resetted_index = index/10*10
                         self.mission_comm.set_current_index(resetted_index)
                         if final_leg == False:
@@ -649,8 +588,8 @@ class Mission(object):
                             self.current_message_id = self.current_message_id + 1
                             if self.current_message_id >= 240:
                                 self.current_message_id = 1
-                            return
-                            
+                            return 'resolved'
+                        
                         else:
                             self.route = self.route[:indices_i_start_leg] + [from_point, target_point]
                             self.indices = self.indices[:indices_i_start_leg] + [resetted_index]
@@ -659,47 +598,197 @@ class Mission(object):
                             self.current_message_id = self.current_message_id + 1
                             if self.current_message_id >= 240:
                                 self.current_message_id = 1
-                            return
-    
-    def check_area_conflicts(self, location, radius, dt, time):
-        free_circle = geometry.Point(location).buffer(radius)
-        for i in range(1, self.traffic_scenario.Traffic.ntraf):
-            pos_traf_lla = geodetic.LlaCoor_i(self.traffic_scenario.Traffic.lat[i]*10**7, self.traffic_scenario.Traffic.lon[i]*10**7, 0)
-            pos_traf_enu = coord_trans.lla_to_enu_fw(pos_traf_lla, self.UAV.ref_utm_i)
-            start_pos_traf = (pos_traf_enu.x + dt * self.traffic_scenario.Traffic.gseast[i], pos_traf_enu.y + dt * self.traffic_scenario.Traffic.gsnorth[i])
-            end_pos_traffic = (start_pos_traf[0] + time * self.traffic_scenario.Traffic.gseast[i], start_pos_traf[1] + time * self.traffic_scenario.Traffic.gsnorth[i])
-            traf_line_obstacle = geometry.linestring([start_pos_traf, end_pos_traffic]).buffer(self.traffic_scenario.Traffic.hsep + self.resolution_margin)
-            if traf_line_obstacle.intersects(free_circle):
-                return False
-        return True
-            
-                     
+                            return 'resolved'
+                    
+                    else: # current_flg
+                        if final_leg == False:
+                            self.route = self.route[:indices_i] + [from_point, target_point] + self.route[indices_i_next_leg+1:]
+                            self.indices = self.indices[:indices_i] + [index] + self.indices[indices_i_next_leg:]
+                            self.leg_status = self.leg_status[:indices_i]  + ["to_target"] + self.leg_status[indices_i_next_leg:]
+                            self.messages = self.messages[:indices_i] + [self.current_message_id] + self.messages[indices_i_next_leg:]
+                            self.current_message_id = self.current_message_id + 1
+                            if self.current_message_id >= 240:
+                                self.current_message_id = 1
+                            return 'resolved'
+                        
+                        else:
+                            self.route = self.route[:indices_i] + [from_point, target_point]
+                            self.indices = self.indices[:indices_i] + [index]
+                            self.leg_status = self.leg_status[:indices_i]  + ["to_target"]
+                            self.messages = self.messages[:indices_i] + [self.current_message_id]
+                            self.current_message_id = self.current_message_id + 1
+                            if self.current_message_id >= 240:
+                                self.current_message_id = 1
+                            return 'resolved'
+                    
+        return 'free'
 
-    def experiment_run_current_leg(self):
-        # Check if direct route to target is free
-        from_point = (self.UAV.P[0], self.UAV.P[1])
-        from_point_2 = (from_point[0] + 4 * self.UAV.V[0], from_point[1] + 4 * self.UAV.V[1]) # from point extrapolated by 2 seconds
-        current_index = self.get_current_index() # current index send over datalink
-        try:
-            current_i = self.indices.index(current_index)
-        except ValueError:
-            print("process_current_leg: not synchronus with live flight")
-            return
-        leg_i = current_index / 10 - 1
+    def update_mission_index_lookup (self):
+        self.mission_wp_id_lookup = {}    
+        for i in range(len(self.path)):
+            wp_id = path[i].wp_id
+            self.mission_wp_id_lookup[wp_id] = self.path[i]
         
-        self.process_leg(leg_i, 0., index = current_index, from_point = from_point_2)
+    def avoid_en_route_freek(self, from_path_elem, dt, tla, current_flg):
+        # Check to test if final leg in progress
+        if (from_path_elem.wp_id % (self.seperation_transit_points)) == (self.path[-1] % (self.seperation_transit_points)):
+            final_leg = True
+        else:
+            final_leg = False # Flag indicating if final leg in progress    
         
-    def check_intersecting_static_nfzs(self, from_point, to_point):
-        intersecting = False
-        line = geometry.LineString([from_point, to_point])
-        for i in range(len(self.Zones)):
-            if line.intersects(self.Zones[i].circle['geo']):
-                intersecting = True
-                return intersecting
-        return intersecting
+        i_from_path_elem = self.path.index(from_path_elem)
+        for i in range(i_from_path_elem, len(path)):
+            if (path[i].wp_type == 'transit'):
+                target_path_elem = self.path[i]
+                break
+        
+        from_point = (from_path_elem.wp.x, from_path_elem.wp.y)
+        target_point = (target_path_elem.wp.x, target_path_elem.wp.y) # The endpoint of the current leg
+        hdg_to_target = np.rad2deg(np.arctan2(target_point[0] - from_point[0], target_point[1] - from_point[1])) % 360. # Heading to target
+
+        next_path_elem = path[i_from_path_elem + 1]
+        next_point = (next_path_elem.wp.x, next_path_elem.wp.y)
+        hdg_to_next = np.rad2deg(np.arctan2(next_point[0] - from_point[0], next_point[1] - from_point[1])) % 360. # Heading to next point
+
+        #######################################################
+        #detect new conflicts with detection margin and avoid #
+        #######################################################
+        if ((next_path_elem.type == 'target') or (next_path_elem.type == 'static') or (next_path_elem.type == 'dynamic')):
+            abs_speed, speed_vector = self.ground_velocity_from_commanded_airspeed(hdg_to_next, self.commanded_airspeed)
+            self.traffic_scenario_extrapolated.update_traffic_scenario(speed_vector, abs_speed, hdg_to_next, self.wind, from_path_elem.wp, dt, self.receiver_thread, "both")
+            conflict = self.traffic_scenario_extrapolated.detect_conflicts(tla, self.wind, self.detection_margin)
             
-        
-        
+            
+            if (conflict[0] == 'conflict' or conflict[0] == 'nosol'):
+                resolution_point = self.resolution_on_leg_new(from_point, target_point, next_point, dt, self.detection_margin, self.resolution_margin, "both")
+                if (resolution_point == "free"):
+                    print ('Avoid, free')
+                    return 'free'
+                elif (resolution_point == "nosol"):
+                    print ('Avoid, calc resolution')
+                    resolution_point = self.resolution_on_leg_new(from_point, target_point, next_point, dt, self.detection_margin, self.reduced_resolution_margin, "both")
+                    if (resolution_point == "nosol"):
+                        print ('Avoid, no sol on normal margin')
+                        resolution_point = self.resolution_on_leg_new(from_point, next_point, target_point, dt, self.detection_margin, self.detection_margin, "both")
+                        if (resolution_point == "nosol"):
+                            print ('Avoid, reducing margin to 0,0')
+                            resolution_point = self.resolution_on_leg_new(from_point, next_point, target_point, dt, 0., 0., "both")
+                            if (resolution_point == "nosol"):
+                                resolution_point = self.BlindAvoidance(from_point, target_point, dt, "both")
+                                if (resolution_point == "nosol"):
+                                    print ('Avoid, no solution found')
+                                    return 'not_resolved'
+                if resolution_point == "free":
+                    print ('Avoid, resolution point free')
+                    return 'free'
+                
+                resolution_path_elem = MissionPathElem(resolution_point[0], resolution_point[1], self.altitude, 'dynamic')
+                        
+                
+#                if current_flg:
+#                    self.path = self.path[]
+                
+#                if current_flg:
+#                    resetted_index = index/10*10
+#                    self.current_index_change = True
+#                    self.mission_comm.set_current_index(resetted_index)
+#                    if final_leg == False:
+#                        self.route = self.route[:indices_i_start_leg] + [from_point, resolution_point, target_point] + self.route[indices_i_next_leg+1:]
+#                        self.indices = self.indices[:indices_i_start_leg] + [resetted_index, resetted_index + 1] + self.indices[indices_i_next_leg:]
+#                        self.leg_status = self.leg_status[:indices_i_start_leg] + ["dynamic_avoid", "to_target"] + self.leg_status[indices_i_next_leg:]
+#                        self.messages = self.messages[:indices_i_start_leg] + [self.current_message_id, self.current_message_id + 1] + self.messages[indices_i_next_leg:]
+#                        self.current_message_id = self.current_message_id + 2
+#                        if self.current_message_id >= 240:
+#                            self.current_message_id = 1
+#                            
+#                        return 'resolved'
+#                    else:
+#                        self.route = self.route[:indices_i_start_leg] + [from_point, resolution_point, target_point]
+#                        self.indices = self.indices[:indices_i_start_leg] + [resetted_index, resetted_index + 1]
+#                        self.leg_status = self.leg_status[:indices_i_start_leg]  + ["dynamic_avoid", "to_target"]
+#                        self.messages = self.messages[:indices_i_start_leg] + [self.current_message_id, self.current_message_id + 1]
+#                        self.current_message_id = self.current_message_id + 2
+#                        if self.current_message_id >= 240:
+#                            self.current_message_id = 1
+#                        return 'resolved'
+#                        
+#                else: # current_flg == false
+#                    if final_leg == False:
+#                        self.route = self.route[:indices_i] + [from_point, resolution_point, target_point] + self.route[indices_i_next_leg+1:]
+#                        self.indices = self.indices[:indices_i] + [index, index + 1] + self.indices[indices_i_next_leg:]
+#                        self.leg_status = self.leg_status[:indices_i] + ["dynamic_avoid", "to_target"] + self.leg_status[indices_i_next_leg:]
+#                        self.messages = self.messages[:indices_i] + [self.current_message_id, self.current_message_id + 1] + self.messages[indices_i_next_leg:]
+#                        self.current_message_id = self.current_message_id + 2
+#                        if self.current_message_id >= 240:
+#                            self.current_message_id = 1
+#                        return 'resolved'
+#                    else:
+#                        self.route = self.route[:indices_i] + [from_point, resolution_point, target_point]
+#                        self.indices = self.indices[:indices_i] + [index, index + 1]
+#                        self.leg_status = self.leg_status[:indices_i]  + ["dynamic_avoid", "to_target"]
+#                        self.messages = self.messages[:indices_i] + [self.current_message_id, self.current_message_id + 1]
+#                        self.current_message_id = self.current_message_id + 2
+#                        if self.current_message_id >= 240:
+#                            self.current_message_id = 1
+#                        return 'resolved'
+#        
+#        #################################################################################################
+#        # If dynamic avoidance declared on leg, detect new conflicts with detection margin and avoid,   #
+#        # check if route to target or next static avoidance point is free and fly there                 #
+#        #################################################################################################
+#        if (self.leg_status[indices_i] == 'dynamic_avoid'):
+#            abs_speed, speed_vector = self.ground_velocity_from_commanded_airspeed(hdg_to_target, self.commanded_airspeed)
+#            # First check if towards resolution margin free of conflicts
+#            self.traffic_scenario_extrapolated.update_traffic_scenario(speed_vector, abs_speed, hdg_to_target, self.wind, from_point_enu, dt, self.receiver_thread, types = "both")
+#            conflict = self.traffic_scenario_extrapolated.detect_conflicts(tla, self.wind, self.resolution_margin)
+#            if conflict[0] == 'free':
+#                linestring = geometry.LineString([from_point, target_point])
+#                if (not self.check_intersecting_static_nfzs(from_point, target_point) and (linestring.within(self.soft_geofence))):
+#                    if current_flg == True:
+#                        resetted_index = index/10*10
+#                        self.mission_comm.set_current_index(resetted_index)
+#                        if final_leg == False:
+#                            self.route = self.route[:indices_i_start_leg] + [from_point, target_point] + self.route[indices_i_next_leg+1:]
+#                            self.indices = self.indices[:indices_i_start_leg] + [resetted_index] + self.indices[indices_i_next_leg:]
+#                            self.leg_status = self.leg_status[:indices_i_start_leg]  + ["to_target"] + self.leg_status[indices_i_next_leg:]
+#                            self.messages = self.messages[:indices_i_start_leg] + [self.current_message_id] + self.messages[indices_i_next_leg:]
+#                            self.current_message_id = self.current_message_id + 1
+#                            if self.current_message_id >= 240:
+#                                self.current_message_id = 1
+#                            return 'resolved'
+#                        
+#                        else:
+#                            self.route = self.route[:indices_i_start_leg] + [from_point, target_point]
+#                            self.indices = self.indices[:indices_i_start_leg] + [resetted_index]
+#                            self.leg_status = self.leg_status[:indices_i_start_leg]  + ["to_target"]
+#                            self.messages = self.messages[:indices_i_start_leg] + [self.current_message_id]
+#                            self.current_message_id = self.current_message_id + 1
+#                            if self.current_message_id >= 240:
+#                                self.current_message_id = 1
+#                            return 'resolved'
+#                    
+#                    else: # current_flg
+#                        if final_leg == False:
+#                            self.route = self.route[:indices_i] + [from_point, target_point] + self.route[indices_i_next_leg+1:]
+#                            self.indices = self.indices[:indices_i] + [index] + self.indices[indices_i_next_leg:]
+#                            self.leg_status = self.leg_status[:indices_i]  + ["to_target"] + self.leg_status[indices_i_next_leg:]
+#                            self.messages = self.messages[:indices_i] + [self.current_message_id] + self.messages[indices_i_next_leg:]
+#                            self.current_message_id = self.current_message_id + 1
+#                            if self.current_message_id >= 240:
+#                                self.current_message_id = 1
+#                            return 'resolved'
+#                        
+#                        else:
+#                            self.route = self.route[:indices_i] + [from_point, target_point]
+#                            self.indices = self.indices[:indices_i] + [index]
+#                            self.leg_status = self.leg_status[:indices_i]  + ["to_target"]
+#                            self.messages = self.messages[:indices_i] + [self.current_message_id]
+#                            self.current_message_id = self.current_message_id + 1
+#                            if self.current_message_id >= 240:
+#                                self.current_message_id = 1
+#                            return 'resolved'
+#            
+#        return 'free'
         
     def run_mission(self):
         self.traffic_scenario.init_SSD_plot()
@@ -713,20 +802,16 @@ class Mission(object):
                 except RuntimeError:
                     pass
                 
-                #print("indices: ", self.indices)
-                #print("messages: ", self.messages)
-                #print("route: ", self.route)
-                
+                update_mission_index_lookup()
                 self.traffic_scenario.update_traffic_scenario(self.UAV, self.receiver_thread)
                 if self.traffic_scenario.Traffic.ntraf > 1:
                     try:
-                        self.traffic_scenario.detect_conflicts(self.tla, self.wind, self.detection_margin)
+                        self.traffic_scenario.detect_conflicts(self.tla, self.wind, self.detection_margin, self.commanded_airspeed)
                         self.traffic_scenario.plot_SSD() 
                     except: # All errors to overcome pyclipper error UnboundLocalError: # When simulated aircraft are too far
                         pass # Do nothing
                     if self.current_block == self.flightplan.block_name_lookup['RUN MISSION'].no :
-                        #self.process_current_leg()
-                        self.experiment_run_current_leg()
+                        self.run_route()
                 self.mission_comm.parse_missing_messages(self)
                 visualization = True
                 if visualization:
@@ -771,6 +856,7 @@ class Mission_comm(object):
         self.indices = mission_object.indices
         self.messages = mission_object.messages
         for i in range(len(self.indices)):
+            sleep(0.2)
             self.parse_ordered_segment(mission_object, self.indices[i])
             self.visualize_leg(mission_object, self.indices[i])
       
@@ -904,3 +990,10 @@ class Mission_comm(object):
                 self.visualize_leg(mission_object, index)
             else:
                 self.devisualize_leg(index)
+                
+class MissionPathElem(object):
+    def __init__(self, e, n, u, wp_id, wp_type):
+        self.wp = geodetic.EnuCoor_f()
+        self.wp_id = 0
+        self.wp_type = 'none' # none, transit, static, dynamic
+    
