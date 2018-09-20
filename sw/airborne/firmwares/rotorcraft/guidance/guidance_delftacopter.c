@@ -240,8 +240,8 @@ static void guidance_hybrid_transition_forward(void) {
   guidance_h_transition_run(true, perc_step);
 
   // Calculate theta and phi
-  float trans_theta = start_theta + (TRANSITION_MAX_OFFSET-start_theta)*perc_step;
-  float trans_phi = start_phi + (0-start_phi)*perc_step;
+  float trans_theta = start_theta + (TRANSITION_MAX_OFFSET-start_theta)*transition_percentage;
+  float trans_phi = start_phi + (0-start_phi)*transition_percentage;
 
   // Set the corresponding attitude
   struct Int32Eulers transition_att_sp;
