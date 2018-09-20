@@ -36,7 +36,6 @@ static uint8_t mission_path_last_idx;                               ///< The las
 
 static bool mission_path_add(struct mission_path_elem_t *elem);
 static bool mission_path_delete(uint8_t id);
-//static void mission_path_reset(void);
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -46,6 +45,11 @@ static void send_mission_path_status(struct transport_tx *trans, struct link_dev
   uint16_t mission_ids[MISSION_PATH_MAX];
   for(uint8_t i = 0; i < mission_path_last_idx; i++)
     mission_ids[i] = mission_path[i].id;
+
+  if(mission_path_last_idx == 0) {
+    mission_ids[0] = 0xFFFF;
+    mission_path_last_idx = 1;
+  }
   
   pprz_msg_send_MISSION_PATH_STATUS(trans, dev, AC_ID,
                                 &mission_path_idx,
@@ -73,7 +77,7 @@ void mission_path_init(void) {
  */
 bool mission_path_run(void) {
   // Check if we have at least one element
-  if(mission_path_last_idx == 0 && mission_path_idx >= mission_path_last_idx)
+  if(mission_path_last_idx == 0 || mission_path_idx >= mission_path_last_idx)
     return false;
   
   // Goto first waypoint
@@ -142,7 +146,7 @@ static bool mission_path_add(struct mission_path_elem_t *elem) {
     }
   }
   // Change the element
-  else if(add_idx < MISSION_PATH_MAX) {
+  else if(add_idx < mission_path_last_idx) {
     mission_path[add_idx] = *elem;
   }
   else {
@@ -156,6 +160,8 @@ static bool mission_path_add(struct mission_path_elem_t *elem) {
  */
 static bool mission_path_delete(uint8_t id) {
   bool deleted = false;
+
+  // Delete and shift the elements
   for(uint8_t i = 0; i < mission_path_last_idx; i++) {
     if(mission_path[i].id == id) {
       deleted = true;
@@ -166,16 +172,25 @@ static bool mission_path_delete(uint8_t id) {
     }
   }
 
+  // Reset the last mission ID
+  if(mission_path_last_idx < MISSION_PATH_MAX)
+    mission_path[mission_path_last_idx].id = 0;
+
   return deleted;
 }
 
 /**
- * Delete all path elements
+ * Delete all path elements and start from the beginning
  */
-/*static void mission_path_reset(void) {
+void mission_path_reset(void) {
+  // Reset the ids
+  for(uint8_t i = 0; i < mission_path_last_idx; i++)
+    mission_path[i].id = 0;
+
+  // Reset the indexes
   mission_path_idx = 0;
   mission_path_last_idx = 0;
-}*/
+}
 
 /**
  * Wen a datalink MISSION_PATH_ADD is received

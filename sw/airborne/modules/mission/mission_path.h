@@ -42,6 +42,7 @@ struct mission_path_elem_t {
 
 extern void mission_path_init(void);
 extern bool mission_path_run(void);
+extern void mission_path_reset(void);
 extern bool mission_path_parse_ADD(struct link_device *dev, struct transport_tx *trans, uint8_t *buf);
 extern bool mission_path_parse_DELETE(struct link_device *dev, struct transport_tx *trans, uint8_t *buf);
 

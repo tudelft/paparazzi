@@ -66,7 +66,6 @@
     </sector>
   </sectors>
   <modules>
-    <module name="mission" type="rotorcraft"/>
     <module name="mission" type="path"/>
   </modules>
   <blocks>
@@ -94,6 +93,10 @@
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
+      <circle radius="nav_radius" wp="STDBY"/>
+    </block>
+    <block key="s" name="ResetMission">
+      <call_once fun="mission_path_reset()"/>
       <circle radius="nav_radius" wp="STDBY"/>
     </block>
     <block name="START_MISSION">

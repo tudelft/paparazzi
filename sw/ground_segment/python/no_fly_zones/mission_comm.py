@@ -39,9 +39,15 @@ sys.path.append(PPRZ_HOME + "/var/lib/python") # pprzlink
 
 from pprzlink.message import PprzMessage
 from pprzlink.ivy import IvyMessagesInterface
+from pprz_math import geodetic
 
 class MissionComm(threading.Thread):
     THREAD_SLEEP = 1 # Time to sleep in between update checks in seconds
+
+    class Element(object):
+        def __init__(self, id, wp):
+            self.id = id
+            self.wp = wp
 
     def __init__(self, ac_id = None):
         """
@@ -76,10 +82,18 @@ class MissionComm(threading.Thread):
         
         try:
             self.remote_lock.acquire()
+            # Always as list
+            if not isinstance(msg['ids'], list):
+                msg['ids'] = [msg['ids']]
+
+            logging.debug("Received path status [%d, %s, %s]", ac_id, msg['cur_idx'], ','.join(msg['ids']))
 
             # Update the remote list
-            self.remote_idx = msg['cur_idx']
-            self.remote_mission = Set(msg['ids'])
+            if len(msg['ids']) == 1 and int(msg['ids'][0]) == 0xFFFF:
+                self.remote_mission = Set([])
+            else:
+                self.remote_idx = int(msg['cur_idx'])
+                self.remote_mission = Set([int(x) for x in msg['ids']])
         finally:
             self.remote_lock.release()
 
@@ -93,10 +107,11 @@ class MissionComm(threading.Thread):
         
         try:
             self.remote_lock.acquire()
+            logging.debug("Received path ack add [%d, %s, %s]", ac_id, msg['cur_idx'], msg['id'])
 
             # Update the remote list
-            self.remote_idx = msg['cur_idx']
-            self.remote_mission.add(msg['id'])
+            self.remote_idx = int(msg['cur_idx'])
+            self.remote_mission.add(int(msg['id']))
         finally:
             self.remote_lock.release()
 
@@ -110,10 +125,11 @@ class MissionComm(threading.Thread):
         
         try:
             self.remote_lock.acquire()
+            logging.debug("Received path ack delete [%d, %s, %s]", ac_id, msg['cur_idx'], msg['id'])
 
             # Update the remote list
-            self.remote_idx = msg['cur_idx']
-            self.remote_mission.discard(msg['id'])
+            self.remote_idx = int(msg['cur_idx'])
+            self.remote_mission.discard(int(msg['id']))
         finally:
             self.remote_lock.release()
 
@@ -161,7 +177,7 @@ class MissionComm(threading.Thread):
         Send a new mission path element
         """
         assert self.ac_id != None
-        logging.debug("Send path add "+elem.id)
+        logging.debug("Send path add "+str(elem.id))
 
         # Convert the waypoint to integer
         wp_i = elem.wp.to_int()
@@ -180,7 +196,7 @@ class MissionComm(threading.Thread):
         Send a delete mission path by id
         """
         assert self.ac_id != None
-        logging.debug("Send path delete "+id)
+        logging.debug("Send path delete "+str(id))
 
         # Create the message
         msg = PprzMessage("datalink", "MISSION_PATH_DELETE")
@@ -192,18 +208,38 @@ class MissionComm(threading.Thread):
         """
         Update the full mission
         """
+        for elem in new_mission:
+            assert elem.id != 0xFFFF
+        
         try:
             self.lock.acquire()
             self.local_mission = new_mission
         finally:
             self.lock.release()
 
+    def stop(self):
+        """
+        Thread safe stopping the mission communicator
+        """
+        self.stop_event.set()
+        self.ivy_interface.stop()
+
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     mission_comm = MissionComm(29)
     mission_comm.start()
 
-
+    # Add or update paths
+    mission_path = [MissionComm.Element(0, geodetic.EnuCoor_f(10, 10, 5)),
+                    MissionComm.Element(3, geodetic.EnuCoor_f(-10, 30, 5)),
+                    MissionComm.Element(10, geodetic.EnuCoor_f(10, 50, 5))]
+    try:
+        while True:
+            mission_comm.set_mission(mission_path)
+            time.sleep(1)
+    except (KeyboardInterrupt, SystemExit):
+        mission_comm.stop()
 
 
     
