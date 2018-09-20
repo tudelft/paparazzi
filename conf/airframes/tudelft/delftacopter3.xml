@@ -296,7 +296,7 @@
     <define name="DEADBAND_R" value="200"/>
 
     <!-- reference -->
-    <define name="REF_OMEGA_P" value="800" unit="deg/s"/>
+    <define name="REF_OMEGA_P" value="150" unit="deg/s"/>
     <define name="REF_ZETA_P" value="0.85"/>
     <define name="REF_MAX_P" value="300." unit="deg/s"/>
     <define name="REF_MAX_PDOT" value="RadOfDeg(7000.)"/>
