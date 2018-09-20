@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
 
-<flight_plan alt="80" ground_alt="0" home_mode_height="80" lat0="-27.217022" lon0="151.236898" max_dist_from_home="2800" name="DALBY2018" qfu="20" security_height="10">
+<flight_plan alt="80" ground_alt="0" home_mode_height="100" lat0="-27.217022" lon0="151.236898" max_dist_from_home="2800" name="DALBY2018" qfu="20" security_height="10">
   <header>
 #include "autopilot.h"
 #include "guidance/guidance_delftacopter.h"
@@ -39,7 +39,7 @@
     <waypoint alt="50.0" name="j8" x="44.7" y="16.1"/>
     <waypoint alt="40.0" name="TD" x="69.3" y="-36.0"/>
     <waypoint name="CLIMB" x="73.5" y="-9.9"/>
-    <waypoint alt="50.0" name="STDBY" x="140.0" y="-25.9"/>
+    <waypoint alt="80.0" name="STDBY" x="140.0" y="-25.9"/>
     <waypoint name="HOVER" x="-155.1" y="-275.9"/>
   </waypoints>
   <sectors>
@@ -119,7 +119,7 @@
     </block>
     <block group="takeoff_base" name="base_climb">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <exception cond="stateGetPositionEnu_f()->z > 50.0" deroute="transition_to_joe"/>
+      <exception cond="stateGetPositionEnu_f()->z > 100.0" deroute="transition_to_joe"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z - POS_BFP_OF_REAL(5.0), -SPEED_BFP_OF_REAL(3.0), 0)"/>
       <stay climb="nav_climb_vspeed" until="stateGetPositionEnu_f()->z > 20.0" vmode="climb" wp="CLIMB"/>
