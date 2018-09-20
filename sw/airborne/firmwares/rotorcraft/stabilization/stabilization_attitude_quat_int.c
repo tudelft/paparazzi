@@ -350,6 +350,7 @@ void stabilization_attitude_run(bool enable_integrator)
     stabilization_cmd[COMMAND_PITCH] = cmd_pitch1;
     stabilization_cmd[COMMAND_YAW] = 0;
     dc_mode_fwd = true;
+    stabilization_attitude_enter();
   }
   else {
     pitch_integrated = 0;//-0.03*MAX_PPRZ;
