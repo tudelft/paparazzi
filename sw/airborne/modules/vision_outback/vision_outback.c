@@ -320,6 +320,8 @@ void vision_outback_periodic() {
       vision_timeout = true;
       vision_outback_close_process = false;
     }
+  if (v2p_package.status != 0 )
+    vision_timeout = true;
   do_power_state_machine();
 
   pprz_msg_send_IMCU_DEBUG(&(vision_outback.transport.trans_tx), vision_outback.device,
