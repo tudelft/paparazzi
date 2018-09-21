@@ -129,7 +129,7 @@ bool mission_path_run(void) {
       mission_path_idx++;
 
     // Go to the waypoint
-    nav_route_xy(0.0, 0.0, to_wp.x, to_wp.y);
+    nav_route_xy(0.0, 0.0, target_wp.x, target_wp.y);
     NavVerticalAutoThrottleMode(0.);
     NavVerticalAltitudeMode(target_wp.z, 0.); // both altitude should be the same anyway
     return true;
