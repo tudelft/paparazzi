@@ -133,9 +133,18 @@ class EnergyMonFrame(wx.Frame):
         self.Refresh()
 
     def OnSize(self, event):
-        self.w = event.GetSize()[0]
-        self.h = event.GetSize()[1]
+        self.w = event.GetSize().x
+        self.h = event.GetSize().y
+        self.cfg.Write("width", str(self.w));
+        self.cfg.Write("height", str(self.h));
         self.Refresh()
+
+    def OnMove(self, event):
+        self.x = event.GetPosition().x
+        self.y = event.GetPosition().y
+        self.cfg.Write("left", str(self.x));
+        self.cfg.Write("top", str(self.y));
+
 
     def StatusBox(self, dc, nr, txt, percent, color):
         if percent < 0:
@@ -255,10 +264,22 @@ class EnergyMonFrame(wx.Frame):
         self.w = WIDTH
         self.h = WIDTH + BARH
 
+        self.cfg = wx.Config('energymon_conf')
+        if self.cfg.Exists('width'):
+            self.w = int(self.cfg.Read('width'))
+            self.h = int(self.cfg.Read('height'))
+
         wx.Frame.__init__(self, id=-1, parent=None, name=u'EnergyMonFrame',
                           size=wx.Size(self.w, self.h), title=u'Energy Monitoring')
+
+        if self.cfg.Exists('left'):
+            self.x = int(self.cfg.Read('left'))
+            self.y = int(self.cfg.Read('top'))
+            self.SetPosition(wx.Point(self.x,self.y), wx.SIZE_USE_EXISTING)
+
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_MOVE, self.OnMove)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
 
         ico = wx.Icon(PPRZ_SRC + "/sw/ground_segment/python/energy_mon/energy_mon.ico", wx.BITMAP_TYPE_ICO)
