@@ -75,6 +75,7 @@ void mission_path_init(void) {
 /**
  * Run from flight plan
  */
+#if MISSION_PATH_ROTORCRAFT
 bool mission_path_run(void) {
   // Check if we have at least one element
   if(mission_path_last_idx == 0 || mission_path_idx >= mission_path_last_idx)
@@ -104,7 +105,7 @@ bool mission_path_run(void) {
     if (nav_approaching_from(to_wp, from_wp, CARROT))
       mission_path_idx++;
 
-    // Route Between from-to
+    // Route between from-to
     horizontal_mode = HORIZONTAL_MODE_ROUTE;
     nav_route(from_wp, to_wp);
     NavVerticalAutoThrottleMode(RadOfDeg(0.0));
@@ -112,6 +113,45 @@ bool mission_path_run(void) {
     return true;
   }
 }
+#else
+bool mission_path_run(void) {
+  // Check if we have at least one element
+  if(mission_path_last_idx == 0 || mission_path_idx >= mission_path_last_idx)
+    return false;
+  
+  // Goto first waypoint
+  if(mission_path_idx == 0) {
+    struct EnuCoor_f target_wp;
+    ENU_FLOAT_OF_BFP(target_wp, mission_path[mission_path_idx].wp);
+
+    // Check if we have reached to target wp
+    if (nav_approaching_xy(target_wp.x, target_wp.y, 0.0, 0.0, CARROT))
+      mission_path_idx++;
+
+    // Go to the waypoint
+    nav_route_xy(target_wp.x, target_wp.y, 0.0, 0.0);
+    NavVerticalAutoThrottleMode(0.);
+    NavVerticalAltitudeMode(target_wp.z, 0.); // both altitude should be the same anyway
+    return true;
+  }
+  // Route between previous and current waypoint
+  else {
+    struct EnuCoor_f from_wp, to_wp;
+    ENU_FLOAT_OF_BFP(from_wp, mission_path[mission_path_idx-1].wp);
+    ENU_FLOAT_OF_BFP(to_wp, mission_path[mission_path_idx].wp);
+
+    // Check if we have reached to target wp
+    if (nav_approaching_xy(to_wp.x, to_wp.y, from_wp.x, from_wp.y, CARROT))
+      mission_path_idx++;
+
+    // Route between from-to
+    nav_route_xy(to_wp.x, to_wp.y, from_wp.x, from_wp.y);
+    NavVerticalAutoThrottleMode(0.);
+    NavVerticalAltitudeMode(to_wp.z, 0.); // both altitude should be the same anyway
+    return true;
+  }
+}
+#endif
 
 /**
  * Add a mission path at a specific index

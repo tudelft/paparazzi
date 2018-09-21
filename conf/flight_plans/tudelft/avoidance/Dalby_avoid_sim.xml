@@ -138,7 +138,7 @@
     </sector>
   </sectors>
   <modules>
-    <module name="mission" type="fw"/>
+    <module name="mission" type="path"/>
   </modules>
   <exceptions>
     <exception cond="LOW_BAT_LEVEL > PowerVoltage()" deroute="Standby"/>
@@ -166,11 +166,15 @@
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <circle radius="nav_radius" wp="STDBY"/>
     </block>
+    <block key="s" name="ResetMission">
+      <call_once fun="mission_path_reset()"/>
+      <circle radius="nav_radius" wp="STDBY"/>
+    </block>
     <block name="START_MISSION">
       <go from="START" hmode="route" wp="WP1"/>
     </block>
     <block name="RUN MISSION">
-      <call fun="mission_run()"/>
+      <call fun="mission_path_run()"/>
       <deroute block="Standby"/>
     </block>
     <block name="Land Right AF-TD" strip_button="Land right (wp AF-TD)" strip_icon="land-right.png">

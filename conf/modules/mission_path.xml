@@ -17,4 +17,7 @@
   <makefile>
     <file name="mission_path.c"/>
   </makefile>
+  <makefile firmware="rotorcraft">
+    <define name="MISSION_PATH_ROTORCRAFT"/>
+  </makefile>
 </module>
