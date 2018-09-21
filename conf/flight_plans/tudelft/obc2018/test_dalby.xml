@@ -299,16 +299,12 @@
       <call_once fun="nav_hybrid_heading_init()"/>
       <stay pre_call="nav_hybrid_heading_set()" wp="STDBY"/>
     </block>
-    <block group="safe" name="StandbyWpHeading" strip_button="StandbyWP">
-      <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_p1)"/>
-      <stay pre_call="nav_hybrid_heading_set_to_waypoint()" wp="STDBY"/>
-    </block>
     <block group="safe" name="Hover_here" strip_button="HoverHere">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="waypoint_set_alt(WP_HOVER,stateGetPositionEnu_f()->z)"/>
       <call_once fun="NavSetWaypointHere(WP_HOVER)"/>
-      <stay wp="HOVER"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay wp="HOVER" pre_call="nav_hybrid_heading_set()"/>
     </block>
     <block group="safe" name="LandHere" strip_button="LandHere">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -344,18 +340,19 @@
       <call_once fun="nav_throttle_curve_set(1)"/>
       <call_once fun="waypoint_set_alt(WP_HOVER,stateGetPositionEnu_f()->z)"/>
       <call_once fun="NavSetWaypointHere(WP_HOVER)"/>
-      <stay until="stage_time>10" wp="HOVER"/>
+      <stay until="stage_time>60" wp="HOVER"/>
       <attitude climb="nav_descend_vspeed" pitch="0" roll="0" until="GpsFixValid() && (stateGetPositionEnu_f()->z > 20.0)" vmode="climb"/>
       <deroute block="Standby"/>
     </block>
     <block group="autosafe" name="DatalinkLoss">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <exception cond="block_time>120" deroute="Standby"/>
-      <exception cond="get_temp(1) > 100" deroute="Standby"/>
+      <exception cond="block_time>120" deroute="StandbyAutoHeading"/>
+      <exception cond="get_temp(1) > 100" deroute="StandbyAutoHeading"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
       <call_once fun="NavSetWaypointHere(WP_HOVER)"/>
       <call_once fun="waypoint_set_alt(WP_HOVER,stateGetPositionEnu_f()->z + 20)"/>
-      <stay until="60 > datalink_time" wp="HOVER"/>
-      <stay wp="HOVER"/>
+      <stay until="60 > datalink_time" pre_call="nav_hybrid_heading_set()" wp="HOVER"/>
+      <stay wp="HOVER" pre_call="nav_hybrid_heading_set()"/>
     </block>
     <block group="autosafe" name="failsafe">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
