@@ -148,14 +148,14 @@
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_hybrid_heading_init()"/>
       <call fun="enableVisionFindJoe(true)" loop="false"/>
-      <go from="j8" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j1"/>
-      <go from="j1" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j2"/>
-      <go from="j2" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j3"/>
-      <go from="j3" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j4"/>
-      <go from="j4" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j5"/>
-      <go from="j5" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j6"/>
-      <go from="j6" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j7"/>
-      <go from="j7" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j8"/>
+      <go from="j8" hmode="route" pre_call="nav_hybrid_heading_set_l()" wp="j1"/>
+      <go from="j1" hmode="route" pre_call="nav_hybrid_heading_set_r()" wp="j2"/>
+      <go from="j2" hmode="route" pre_call="nav_hybrid_heading_set_l()" wp="j3"/>
+      <go from="j3" hmode="route" pre_call="nav_hybrid_heading_set_r()" wp="j4"/>
+      <go from="j4" hmode="route" pre_call="nav_hybrid_heading_set_l()" wp="j5"/>
+      <go from="j5" hmode="route" pre_call="nav_hybrid_heading_set_r()" wp="j6"/>
+      <go from="j6" hmode="route" pre_call="nav_hybrid_heading_set_l()" wp="j7"/>
+      <go from="j7" hmode="route" pre_call="nav_hybrid_heading_set_r()" wp="j8"/>
       <deroute block="find_joe"/>
     </block>
     <block group="stay_joe_found" name="stay_joe">

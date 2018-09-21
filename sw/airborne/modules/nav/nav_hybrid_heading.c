@@ -93,6 +93,16 @@ void nav_hybrid_heading_set(void) {
   nav_set_heading_rad( nav_hybrid_heading_setpoint );
 }
 
+void nav_hybrid_heading_set_l(void) {
+  nav_hybrid_heading_tip_in_wind = -1;
+  nav_set_heading_rad( nav_hybrid_heading_setpoint );
+}
+
+void nav_hybrid_heading_set_r(void) {
+  nav_hybrid_heading_tip_in_wind = 1;
+  nav_set_heading_rad( nav_hybrid_heading_setpoint );
+}
+
 void nav_hybrid_heading_set_to_waypoint(void) {
   nav_set_heading_rad( nav_hybrid_heading_wp_ref );
 }
