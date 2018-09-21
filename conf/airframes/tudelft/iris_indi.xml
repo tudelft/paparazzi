@@ -245,7 +245,8 @@
   </section>
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
-    <define name="MAX_BANK" value="45" unit="deg" />
+    <define name="MAX_PHI" value="45" unit="deg"/>
+    <define name="MAX_THETA" value="45" unit="deg"/>
     <define name="REF_MAX_SPEED" value="12" unit="m/s" />
     <define name="REF_MAX_ACCEL" value="4.5" />
     <!-- Bad weather -->
