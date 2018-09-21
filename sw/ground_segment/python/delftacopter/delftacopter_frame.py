@@ -47,49 +47,69 @@ class DelftaCopterFrame(wx.Frame):
         if msg.name =="ROTORCRAFT_FP_MIN":
             self.gspeed = round(float(msg['gspeed']) / 100.0 * 3.6 / 1.852,1)
             self.alt = round(float(msg['up']) * 0.0039063 * 3.28084 ,1)
+            self.toggle()
             wx.CallAfter(self.update)
         elif msg.name =="ROTORCRAFT_FP":
             self.alt = round(float(msg['up']) * 0.0039063 ,1)
             self.alt_sp = round(float(msg['carrot_up']) * 0.0039063 ,1)
+            self.toggle()
             wx.CallAfter(self.update)
         elif msg.name =="AIR_DATA":
             self.airspeed = round(float(msg['airspeed']),1)
             self.amsl = round(float(msg['amsl_baro']) * 3.28084,1)
+            self.toggle()
             wx.CallAfter(self.update)
         elif msg.name =="ROTORCRAFT_NAV_STATUS":
             self.range = round(float(msg['dist_home']),1)
+            self.toggle()
             wx.CallAfter(self.update)
         elif msg.name =="TEMP_ADC":
             self.motor_temp = round(float(msg['temp1']) ,1)
             self.batt_temp = round(float(msg['temp2']) ,1)
+            self.toggle()
             wx.CallAfter(self.update)
         elif msg.name =="THROTTLE_CURVE":
             self.throttle = round(float(msg['throttle']) )
             self.rpm = round(float(msg['rpm_meas']) )
+            self.toggle()
             wx.CallAfter(self.update)
 
         elif msg.name =="HYBRID_GUIDANCE":
             self.sideslip = round(float(msg['beta']) )
+            self.toggle()
             wx.CallAfter(self.update)
         elif msg.name =="GPS_INT":
             self.gps_acc = round(float(msg['pacc'])/100.0 , 1)
             self.gps_fix = round(float(msg['fix']) )
             self.gps_sv = round(float(msg['numsv']) )
+            self.toggle()
             wx.CallAfter(self.update)
         elif msg.name =="VISION_OUTBACK":
             self.vision_status = round(float(msg['status']) )
             self.vision_marker_x = round(float(msg['marker_enu_x']) )
             self.vision_marker_y = round(float(msg['marker_enu_y']) )
             self.vision_height = round(float(msg['height']) )
+            self.toggle()
             wx.CallAfter(self.update)
+
+    def toggle(self):
+        self.link_toggle = 1 - self.link_toggle
 
     def update(self):
         self.Refresh()
 
     def OnSize(self, event):
-        self.w = event.GetSize()[0]
-        self.h = event.GetSize()[1]
+        self.w = event.GetSize().x
+        self.h = event.GetSize().y
+        self.cfg.Write("width", str(self.w));
+        self.cfg.Write("height", str(self.h));
         self.Refresh()
+
+    def OnMove(self, event):
+        self.x = event.GetPosition().x
+        self.y = event.GetPosition().y
+        self.cfg.Write("left", str(self.x));
+        self.cfg.Write("top", str(self.y));
 
     def StatusBox(self, dc, nr, txt, percent, color):
         if percent < 0:
@@ -118,6 +138,8 @@ class DelftaCopterFrame(wx.Frame):
         dc.DrawText(txt,18,int(nr*self.stat+tdy+tdx)) 
 
     def motor_color(self):
+        if self.motor_temp < 0:
+            return -1
         if (self.motor_temp > 90):
             return 0
         elif (self.motor_temp > 60):
@@ -125,9 +147,10 @@ class DelftaCopterFrame(wx.Frame):
         return 1
 
     def gps_color(self):
+        if (self.gps_fix < 0):
+            return -1
         if (self.gps_fix < 3):
             return 0
-        
         if (self.gps_acc > 10):
             return 0
         elif (self.gps_acc > 3):
@@ -144,12 +167,24 @@ class DelftaCopterFrame(wx.Frame):
         return 1
 
     def alt_color(self):
+        if self.alt_sp < 0:
+            return -1
         dh = self.alt_sp - self.alt
         if dh < 0:
             dh = -dh
         if dh > 15:
             return 0
         elif dh > 5:
+            return 0.5
+        return 1
+
+    def sideslip_color(self):
+        if self.sideslip > 900:
+            return -1
+        ss = abs( self.sideslip )
+        if ss > 1.5:
+            return 0
+        elif ss > 0.5:
             return 0.5
         return 1
 
@@ -169,9 +204,9 @@ class DelftaCopterFrame(wx.Frame):
         self.stat = tdy
         
         dc = wx.PaintDC(self)
-        #brush = wx.Brush("white")
-        #dc.SetBackground(brush)
-        #dc.Clear()
+        brush = wx.Brush("white")
+        dc.SetBackground(brush)
+        dc.Clear()
 
 	fontscale = int(w * 40.0 / WIDTH)
         if fontscale < 6:
@@ -179,18 +214,22 @@ class DelftaCopterFrame(wx.Frame):
 
         # Background
         dc.SetBrush(wx.Brush(wx.Colour(0,0,0), wx.TRANSPARENT))
-        #dc.DrawCircle(w/2,w/2,w/2-1)
         font = wx.Font(fontscale, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         dc.SetFont(font)
+
         dc.DrawText("Airspeed: " + str(self.airspeed) + " m/s",self.stat+tdx,tdx)
         self.StatusBox(dc,0,"",1.0, self.airspeed_color())
+
         dc.DrawText("RPM: " + str(self.rpm) + "",self.stat+tdx,tdx+tdy*1)
 
         dc.DrawText("Motor Temp: " + str(self.motor_temp) + "",self.stat+tdx,tdx+tdy*2)
         self.StatusBox(dc,2,"",1.0, self.motor_color())
+
         dc.DrawText("Batt Temp: " + str(self.batt_temp) + "",self.stat+tdx,tdx+tdy*3)
 
         dc.DrawText("SideSlip: " + str(self.sideslip) + "",self.stat+tdx,tdx+tdy*4)
+        self.StatusBox(dc,4,"",1.0, self.sideslip_color())
+
         dc.DrawText("Vision: " + str(int(self.vision_status)) + ", " + str(self.vision_height) + "m " + str(self.vision_marker_x) + "," + str(self.vision_marker_y) ,self.stat+tdx,tdx+tdy*5)
 
 
@@ -203,6 +242,10 @@ class DelftaCopterFrame(wx.Frame):
         #c = wx.Colour(0,0,0)
         #dc.SetBrush(wx.Brush(c, wx.SOLID))
         #dc.DrawCircle(int(w/2),int(w/2),10)
+        if self.toggle:
+            dc.SetBrush(wx.Brush(wx.Colour(0,250,0)))
+            dc.DrawRectangle(0, self.h-5, self.w, 5) 
+
 
 
 
@@ -215,9 +258,9 @@ class DelftaCopterFrame(wx.Frame):
         self.batt_temp = -1
         self.rpm = -1
 
+        self.toggle = 0
         self.airspeed = -1
-
-        self.sideslip = -1
+        self.sideslip = 999
 
         self.vision_status = -1
         self.vision_marker_x = -1
@@ -225,18 +268,30 @@ class DelftaCopterFrame(wx.Frame):
         self.vision_height = -1
 
         self.range = -1
-        self.alt = -1
+        self.alt = 0
         self.alt_sp = -1
         self.gps_acc = -1
         self.gps_fix = -1
         self.gps_sv = -1
 
+        self.cfg = wx.Config('delftacopter_conf')
+        if self.cfg.Exists('width'):
+            self.w = int(self.cfg.Read('width'))
+            self.h = int(self.cfg.Read('height'))
+
+
         wx.Frame.__init__(self, id=-1, parent=None, name=u'DelftaCopter Center',
                           size=wx.Size(self.w, self.h), title=u'DelftaCopter Center')
+
+        if self.cfg.Exists('left'):
+            self.x = int(self.cfg.Read('left'))
+            self.y = int(self.cfg.Read('top'))
+            self.SetPosition(wx.Point(self.x,self.y), wx.SIZE_USE_EXISTING)
 
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_MOVE, self.OnMove)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
 
         ico = wx.Icon(PPRZ_SRC + "/sw/ground_segment/python/delftacopter/dc.ico", wx.BITMAP_TYPE_ICO)
