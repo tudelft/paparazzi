@@ -222,13 +222,14 @@
     <define name="ACCEL_Y_NEUTRAL" value="11"/>
     <define name="ACCEL_Z_NEUTRAL" value="-25"/>
 
-    <!-- Calibration 07-06-2018 Valkenburg 4.5kg 190 KV 24inch with dummy 1.6kg + 580g LiPo -->
-    <define name="MAG_X_NEUTRAL" value="27"/>
-    <define name="MAG_Y_NEUTRAL" value="-11"/>
-    <define name="MAG_Z_NEUTRAL" value="22"/>
-    <define name="MAG_X_SENS" value="20.0910427549" integer="16"/>
-    <define name="MAG_Y_SENS" value="17.0723811001" integer="16"/>
-    <define name="MAG_Z_SENS" value="17.0490382969" integer="16"/>
+    <!-- Calibration 21-09-2019 dalby test field total setup with extra USB -->
+    <define name="MAG_X_NEUTRAL" value="-1"/>
+    <define name="MAG_Y_NEUTRAL" value="7"/>
+    <define name="MAG_Z_NEUTRAL" value="1"/>
+    <define name="MAG_X_SENS" value="16.5514602014" integer="16"/>
+    <define name="MAG_Y_SENS" value="15.4152361724" integer="16"/>
+    <define name="MAG_Z_SENS" value="15.3826558014" integer="16"/>
+
 
     <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
@@ -373,7 +374,7 @@
     <define name="MAX_PHI" value="28" unit="deg"/>
     <define name="MAX_THETA" value="50" unit="deg"/>
     <define name="USE_SPEED_REF" value="TRUE"/>
-    <define name="REF_MAX_SPEED" value="15" />
+    <!--define name="REF_MAX_SPEED" value="15" /-->
     <define name="PGAIN" value="20"/>
     <define name="DGAIN" value="40"/>
     <define name="AGAIN" value="30"/>
