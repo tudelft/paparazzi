@@ -36,8 +36,8 @@
         <dl_setting var="turn_bank_gain" min="0.1" step="0.01" max="3.0" param="DC_FORWARD_TURN_BANK_GAIN"/>
         <dl_setting var="vertical_pitch_of_roll" min="0.0" step="0.01" max="0.25" param="DC_FORWARD_PITCH_OF_ROLL"/>
         <dl_setting var="throttle_from_pitch_up" min="0.0" step="1.0" max="500.0" param="DC_FORWARD_THROTTLE_FROM_PITCH_UP"/>
-        <dl_setting var="transition_throttle_to_forward" min="3200" max="9600" param="DC_TRANSITION_THROTTLE_TO_FORWARD"/>
-        <dl_setting var="transition_throttle_to_hover" min="3200" max="9600" param="DC_TRANSITION_THROTTLE_TO_HOVER"/>
+        <dl_setting var="transition_throttle_to_forward" min="3200" step="1" max="9600" param="DC_TRANSITION_THROTTLE_TO_FORWARD"/>
+        <dl_setting var="transition_throttle_to_hover" min="3200" step="1" max="9600" param="DC_TRANSITION_THROTTLE_TO_HOVER"/>
         <dl_setting var="forward_max_psi" shortname="fwd_max_psi" min="0.0" step="0.5" max="30.0" param="DC_FORWARD_MAX_PSI"/>
         <dl_setting var="acc_y_filter_cutoff_hz" shortname="slip_fiter_cutoff_hz" min="0.0" max="10" step="0.001" param="DC_FORWARD_ACC_Y_FILTER_CUTOFF_HZ" type="float" handler="set_acc_y_cutoff_hz" module="guidance/guidance_delftacopter"/>
         <dl_setting var="feedforward_yaw_of_turn_rate" shortname="ff_yaw_of_turnr" min="0.0" max="3000.0" step="1" param="DC_FORWARD_K_FF_TO_YAW"/>
