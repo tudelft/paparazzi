@@ -194,16 +194,20 @@
         <arg flag="-speech"/>
         <arg flag="-maps_fill"/>
         <arg flag="-center_ac_id" constant="@AC_ID"/>
-        <arg flag="-zoom" constant="15"/>
+        <arg flag="-zoom" constant="1"/>
+        <arg flag="-srtm"/>
         <arg flag="-maps_zoom" constant="15"/>
         <arg flag="-layout" constant="bottom_settings.xml"/>
       </program>
       <program name="GCS">
         <arg flag="-fit_to_window"/>
         <arg flag="-maps_fill"/>
+        <arg flag="-srtm"/>
         <arg flag="-maps_zoom" constant="13"/>
         <arg flag="-layout" constant="map_only.xml"/>
       </program>
+      <program name="EnergyManager"/>
+      <program name="DelftaCopter"/>
     </session>
     <session name="Joystick Hobbyking">
       <program name="Joystick">
@@ -249,6 +253,13 @@
       <program name="EnergyManager"/>
       <program name="ATC"/>
       <program name="DelftaCopter"/>
+      <program name="GCS">
+        <arg flag="-fit_to_window"/>
+        <arg flag="-maps_fill"/>
+        <arg flag="-srtm"/>
+        <arg flag="-maps_zoom" constant="13"/>
+        <arg flag="-layout" constant="map_only.xml"/>
+      </program>
     </session>
     <session name="Flight USB0 @57600">
       <program name="Data Link">
@@ -301,11 +312,12 @@
       <program name="Server"/>
       <program name="Ivy2UDP">
         <arg flag="-h" constant="192.168.1.255"/>
-        <arg flag="-id" constant="6"/>
+        <arg flag="-id" constant="@AC_ID"/>
       </program>
       <program name="GCS">
         <arg flag="-speech"/>
         <arg flag="-maps_fill"/>
+        <arg flag="-srtm"/>
         <arg flag="-zoom" constant="0.5"/>
         <arg flag="-maps_zoom" constant="15"/>
         <arg flag="-layout" constant="bottom_settings.xml"/>
