@@ -222,13 +222,13 @@
     <define name="ACCEL_Y_NEUTRAL" value="11"/>
     <define name="ACCEL_Z_NEUTRAL" value="-25"/>
 
-    <!-- Calibration 18-07-2018 Valkenburg 4.5kg 190 KV 26inch with vision + 6s6p LiIo -->
+    <!-- Calibration 21-09-2018 Dalby 4.3kg 190 KV 26inch with vision + 6s6p LiIo -->
     <define name="MAG_X_NEUTRAL" value="5"/>
-    <define name="MAG_Y_NEUTRAL" value="-16"/>
-    <define name="MAG_Z_NEUTRAL" value="16"/>
-    <define name="MAG_X_SENS" value="19.6890782429" integer="16"/>
-    <define name="MAG_Y_SENS" value="16.5616985505" integer="16"/>
-    <define name="MAG_Z_SENS" value="16.6658506111" integer="16"/>
+    <define name="MAG_Y_NEUTRAL" value="31"/>
+    <define name="MAG_Z_NEUTRAL" value="49"/>
+    <define name="MAG_X_SENS" value="17.0760121201" integer="16"/>
+    <define name="MAG_Y_SENS" value="15.8052950523" integer="16"/>
+    <define name="MAG_Z_SENS" value="15.7811278057" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
