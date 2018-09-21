@@ -49,7 +49,7 @@
         <dl_setting var="delftacopter_fwd_roll_pgain" shortname="roll_pgain" min="0" step="0.01" max="10000" param="DC_FORWARD_ROLL_PGAIN"/>
         <dl_setting var="delftacopter_fwd_roll_dgain" shortname="roll_dgain" min="0" step="0.01" max="5000" param="DC_FORWARD_ROLL_DGAIN"/>
         <dl_setting var="delftacopter_fwd_roll_igain" shortname="roll_igain" min="0" step="0.01" max="10000" param="DC_FORWARD_ROLL_IGAIN"/>
-        <dl_setting var="delftacopter_fwd_roll_igain" shortname="roll_trim" min="0" step="0.01" max="10000" param="DC_FORWARD_ROLL_TRIM"/>
+        <dl_setting var="delftacopter_fwd_roll_trim" shortname="roll_trim" min="0" step="0.01" max="10000" param="DC_FORWARD_ROLL_TRIM"/>
         <dl_setting var="delftacopter_fwd_pitch_pgain" shortname="pitch_pgain" min="0" step="0.01" max="10000" param="DC_FORWARD_PITCH_PGAIN"/>
         <dl_setting var="delftacopter_fwd_pitch_dgain" shortname="pitch_dgain" min="0" step="0.01" max="5000" param="DC_FORWARD_PITCH_DGAIN"/>
         <dl_setting var="delftacopter_fwd_pitch_igain" shortname="pitch_igain" min="0" step="0.01" max="1000" param="DC_FORWARD_PITCH_IGAIN"/>
