@@ -126,7 +126,7 @@ class AtcFrame(wx.Frame):
         dc.DrawText("AMSL: " + str(self.amsl) + " ft",tdx,tdx+tdy*2)
         dc.DrawText("QNH: " + str(self.qnh) + " ",tdx,tdx+tdy*3)
 
-        dc.DrawText("ALT: " + str(self.alt) + " ",tdx,tdx+tdy*4)
+        dc.DrawText("Height: " + str(self.alt) + " ",tdx,tdx+tdy*4)
         dc.DrawText("QFE: " + str(self.qfe) + " ",tdx,tdx+tdy*5)
 
         #dc.DrawText("HMSL: " + str(self.hmsl) + " ft",tdx,tdx+tdy*6)
