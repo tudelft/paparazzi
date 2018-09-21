@@ -29,6 +29,8 @@
 // Align with wind
 extern void nav_hybrid_heading_init(void);
 extern void nav_hybrid_heading_set(void);
+extern void nav_hybrid_heading_set_l(void);
+extern void nav_hybrid_heading_set_r(void);
 
 // Turn to waypoint
 extern void nav_hybrid_heading_init_to_waypoint(int wp);
