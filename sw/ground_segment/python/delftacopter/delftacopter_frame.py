@@ -131,7 +131,7 @@ class DelftaCopterFrame(wx.Frame):
         if (self.gps_acc > 10):
             return 0
         elif (self.gps_acc > 3):
-            return 0.1
+            return 0.5
         return 1
 
     def airspeed_color(self):
@@ -140,7 +140,7 @@ class DelftaCopterFrame(wx.Frame):
         if (self.airspeed < 19):
             return 0
         elif (self.airspeed < 21):
-            return 0.1
+            return 0.5
         return 1
 
     def alt_color(self):
@@ -150,7 +150,7 @@ class DelftaCopterFrame(wx.Frame):
         if dh > 15:
             return 0
         elif dh > 5:
-            return 0.1
+            return 0.5
         return 1
 
     def OnPaint(self, e):
