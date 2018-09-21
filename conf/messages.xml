@@ -369,7 +369,10 @@
       <field name="alt" type="float" unit="m"/>
     </message>
 
-    <!-- 45 is free -->
+    <message name="TRIM" id="45">
+      <field name="trim_pitch" type="float"/>
+      <field name="trim_roll" type="float"/>
+    </message>
 
     <message name="BARO_WORDS" id="46">
       <field name="w1"  type="uint16"/>

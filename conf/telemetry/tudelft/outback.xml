@@ -29,6 +29,7 @@
       <message name="STAB_ATTITUDE_INT"      period="5"/>
       <message name="HYBRID_GUIDANCE"        period=".5"/>
       <message name="SVINFO"                 period="7.5"/>
+      <message name="TRIM"                   period="6.5"/>
     </mode>
 
     <mode name="ppm">

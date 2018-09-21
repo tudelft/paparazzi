@@ -139,6 +139,13 @@ static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *d
                               &(quat->qy),
                               &(quat->qz));
 }
+
+static void send_trim(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_TRIM(trans, dev, AC_ID,
+                              &delftacopter_fwd_pitch_trim,
+                              &delftacopter_fwd_roll_trim);
+}
 #endif
 
 void stabilization_attitude_init(void)
@@ -152,6 +159,7 @@ void stabilization_attitude_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_INT, send_att);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_REF_INT, send_att_ref);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_TRIM, send_trim);
 #endif
 }
 
