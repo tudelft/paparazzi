@@ -40,8 +40,8 @@
       <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
 
     </module>
-    <module name="ins" type="extended">
-      <define name="USE_SONAR" value="true"/>
+    <module name="ins" >
+<!--      <define name="USE_SONAR" value="true"/>-->
     </module>
     <module name="current_sensor">
       <configure name="ADC_CURRENT_SENSOR" value="ADC_3" />
