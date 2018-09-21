@@ -247,6 +247,7 @@
     <session name="Flight Outback PC2">
       <program name="Data Link">
         <arg flag="-udp"/>
+        <arg flag="-nouplink"/>
       </program>
       <program name="Server"/>
       <program name="Messages"/>
