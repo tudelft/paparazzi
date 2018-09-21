@@ -206,7 +206,7 @@
   <section name="MISC">
     <define name="NAV_CLIMB_VSPEED" value="3.0"/>
     <define name="NAV_DESCEND_VSPEED" value="-3.5"/>
-    <define name="NAV_LINE_FOLLOWING_DIST" value="85.0"/>
+    <define name="NAV_LINE_FOLLOWING_DIST" value="160.0"/>
     <define name="ARRIVED_AT_WAYPOINT" value="50"/>
     <define name="ARRIVED_AT_WAYPOINT_HOVER" value="5"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
@@ -370,9 +370,10 @@
 
   <!-- Horizontal gains in hover mode -->
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="MAX_BANK" value="45" unit="deg"/>
-    <define name="TOTAL_MAX_BANK" value="60" unit="deg"/>
+    <define name="MAX_PHI" value="28" unit="deg"/>
+    <define name="MAX_THETA" value="50" unit="deg"/>
     <define name="USE_SPEED_REF" value="TRUE"/>
+    <define name="REF_MAX_SPEED" value="15" />
     <define name="PGAIN" value="20"/>
     <define name="DGAIN" value="40"/>
     <define name="AGAIN" value="30"/>
