@@ -205,15 +205,17 @@
         <arg flag="-speech" />
         <arg flag="-maps_fill" />
         <arg flag="-center_ac_id" constant="@AC_ID" />
-        <arg flag="-zoom" constant="15" />
+        <arg flag="-zoom" constant="1" />
         <arg flag="-maps_zoom" constant="15" />
         <arg flag="-layout" constant="bottom_settings.xml" />
+        <arg flag="-srtm">
       </program>
       <program name="GCS">
         <arg flag="-fit_to_window" />
         <arg flag="-maps_fill" />
         <arg flag="-maps_zoom" constant="13" />
         <arg flag="-layout"  constant="map_only.xml" />
+        <arg flag="-srtm">
       </program>
     </session>
     <session name="Flight Outback Long-Range">
@@ -230,15 +232,17 @@
         <arg flag="-speech" />
         <arg flag="-maps_fill" />
         <arg flag="-center_ac_id" constant="@AC_ID" />
-        <arg flag="-zoom" constant="15" />
+        <arg flag="-zoom" constant="1" />
         <arg flag="-maps_zoom" constant="15" />
         <arg flag="-layout" constant="bottom_settings.xml" />
+        <arg flag="-srtm">
       </program>
       <program name="GCS">
         <arg flag="-fit_to_window" />
         <arg flag="-maps_fill" />
         <arg flag="-maps_zoom" constant="13" />
         <arg flag="-layout" constant="map_only.xml" />
+        <arg flag="-srtm">
       </program>
     </session>
     <session name="Flight Outback PC2">
