@@ -88,7 +88,7 @@ int turbosize = 0;
 //TODO: make airframe file settings:
 #ifdef VISION_PWR_ON // DelftaCopter...
 #define DRONE_WIDTH 1.f;
-#define DRONE_LENGTH 0.15f;
+#define DRONE_LENGTH 0.01f; //disabled because cam not in the middel of the pitch direction
 float vision_outback_moment_height = 0.25;
 #else  // IRIS
 #define DRONE_WIDTH 0.2f;
