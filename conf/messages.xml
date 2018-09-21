@@ -2926,7 +2926,7 @@
       The text field can not be blank or have spaces.
       If text is not desired for a shape then pass "NULL" into the text field.
     </description>
-      <field name="id"         type="uint8"/>
+      <field name="id"         type="uint16"/>
       <field name="linecolor"  type="string"/>
       <field name="fillcolor"  type="string"/>
       <field name="opacity"    type="uint8" values="Transparent|Light|Medium|Opaque"/>

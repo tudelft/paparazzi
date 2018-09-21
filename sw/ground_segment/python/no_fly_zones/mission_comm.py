@@ -29,6 +29,8 @@ import sys
 import logging
 import threading
 import time
+from aircraft import Aircraft
+from mission_visualizer import MissionVisualizer
 
 # if PAPARAZZI_SRC or PAPARAZZI_HOME not set, then assume the tree containing this
 # file is a reasonable substitute
@@ -49,7 +51,7 @@ class MissionComm(threading.Thread):
             self.id = id
             self.wp = wp
 
-    def __init__(self, ac_id = None):
+    def __init__(self, ac_id = None, ivy_interface = None):
         """
         Initialize the Mission Communicator
         """
@@ -58,7 +60,6 @@ class MissionComm(threading.Thread):
         # Initialize the variables
         self.name = "MissionComm" 
         self.deamon = True
-        self.ivy_interface = IvyMessagesInterface("Mission Communicator")
         self.stop_event = threading.Event()
         self.lock = threading.Lock()
         self.remote_lock = threading.Lock()
@@ -66,6 +67,13 @@ class MissionComm(threading.Thread):
         self.local_mission = []
         self.remote_idx = -1
         self.remote_mission = Set([])
+        self.wait_for_ack = []
+
+        # Create a new ivy interface if needed
+        if ivy_interface == None:
+            self.ivy_interface = IvyMessagesInterface("Mission Communicator")
+        else:
+            self.ivy_interface = ivy_interface
 
         # Subscribe to ivy messages
         self.ivy_interface.subscribe(self.mission_path_status_cb, PprzMessage("telemetry", "MISSION_PATH_STATUS"))
@@ -112,6 +120,11 @@ class MissionComm(threading.Thread):
             # Update the remote list
             self.remote_idx = int(msg['cur_idx'])
             self.remote_mission.add(int(msg['id']))
+
+            # # Remove from wait for acknowledgement
+            # for e in self.wait_for_ack:
+            #     if e[2].id == int(msg['id']):
+            #         self.wait_for_ack.remove(e)
         finally:
             self.remote_lock.release()
 
@@ -130,6 +143,11 @@ class MissionComm(threading.Thread):
             # Update the remote list
             self.remote_idx = int(msg['cur_idx'])
             self.remote_mission.discard(int(msg['id']))
+
+            # # Remove from wait for acknowledgement
+            # for e in self.wait_for_ack:
+            #     if e[2] == int(msg['id']):
+            #         self.wait_for_ack.remove(e)
         finally:
             self.remote_lock.release()
 
@@ -190,6 +208,9 @@ class MissionComm(threading.Thread):
         msg['wp_north'] = wp_i.y
         msg['wp_up'] = wp_i.z
         self.ivy_interface.send(msg)
+        
+        # Add to wait list for acknowledgement
+        # self.wait_for_ack.append((time.time(), 'add', elem))
 
     def send_mission_path_delete(self, id):
         """
@@ -204,6 +225,9 @@ class MissionComm(threading.Thread):
         msg['id'] = id
         self.ivy_interface.send(msg)
 
+        # Add to wait list for acknowledgement
+        # self.wait_for_ack.append((time.time(), 'delete', id))
+
     def set_mission(self, new_mission):
         """
         Update the full mission
@@ -217,6 +241,26 @@ class MissionComm(threading.Thread):
         finally:
             self.lock.release()
 
+    def get_mission(self):
+        """
+        Get the remote current mission
+        """
+        remote_mission = []
+        try:
+            self.remote_lock.acquire()
+            for elem in self.local_mission:
+                if elem.id in self.remote_mission:
+                    remote_mission.append(elem)
+        finally:
+            self.remote_lock.release()
+        return remote_mission
+
+    def get_remote_idx(self):
+        """
+        Get the remote current index
+        """
+        return self.remote_idx
+        
     def stop(self):
         """
         Thread safe stopping the mission communicator
@@ -227,19 +271,29 @@ class MissionComm(threading.Thread):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    mission_comm = MissionComm(29)
+    ac = Aircraft(19)
+    mission_comm = MissionComm(ac.ac_id, ac.ivy_interface)
     mission_comm.start()
+    mission_visualizer = MissionVisualizer(ac.ivy_interface)
 
     # Add or update paths
-    mission_path = [MissionComm.Element(0, geodetic.EnuCoor_f(10, 10, 5)),
-                    MissionComm.Element(3, geodetic.EnuCoor_f(-10, 30, 5)),
-                    MissionComm.Element(10, geodetic.EnuCoor_f(10, 50, 5))]
+    mission_path = [MissionComm.Element(0, geodetic.EnuCoor_f(10, 10, 40)),
+                    MissionComm.Element(3, geodetic.EnuCoor_f(-10, 30, 40)),
+                    MissionComm.Element(10, geodetic.EnuCoor_f(10, 50, 40))]
+
     try:
         while True:
+            # Set a mission path
             mission_comm.set_mission(mission_path)
+
+            # Visualize only when ltp is defined
+            if ac.got_ltp:
+                mission_visualizer.ltp_def = ac.ltp_def
+                mission_visualizer.visualize(mission_comm.get_mission())
             time.sleep(1)
     except (KeyboardInterrupt, SystemExit):
         mission_comm.stop()
+        mission_visualizer.stop()
 
 
     
