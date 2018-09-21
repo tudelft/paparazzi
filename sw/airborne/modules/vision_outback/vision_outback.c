@@ -412,6 +412,7 @@ void do_power_state_machine(void) {
 }
 
 void enableVisionDescent(bool b) {  
+  b = false; // TMP for video
   vision_outback_enable_landing = b;
 }
 
