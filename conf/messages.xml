@@ -454,7 +454,7 @@
     </message>
 
     <message name="VISION_OUTBACK" id="58">
-      <field name="status" type="uint8"/>
+      <field name="status" type="uint8" values="OK|NOT_OK|VERSION_ERROR"/>
       <field name="het_moment" type="uint8"/>
       <field name="timeoutcount" type="uint8"/>
       <field name="vision_timeout" type="uint8"/>
@@ -462,8 +462,8 @@
       <field name="out_of_range" type="float"/>
       <field name="marker_enu_x" type="float"/>
       <field name="marker_enu_y" type="float"/>
-      <field name="flow_x" type="float"/>
-      <field name="flow_y" type="float"/>
+      <field name="Stupid height" type="float"/>
+      <field name="Version" type="float"/>
     </message>
 
     <message name="GPS_LLA" id="59">
