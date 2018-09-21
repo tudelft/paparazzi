@@ -242,7 +242,7 @@ class DelftaCopterFrame(wx.Frame):
         #c = wx.Colour(0,0,0)
         #dc.SetBrush(wx.Brush(c, wx.SOLID))
         #dc.DrawCircle(int(w/2),int(w/2),10)
-        if self.toggle:
+        if self.link_toggle:
             dc.SetBrush(wx.Brush(wx.Colour(0,250,0)))
             dc.DrawRectangle(0, self.h-5, self.w, 5) 
 
@@ -258,7 +258,7 @@ class DelftaCopterFrame(wx.Frame):
         self.batt_temp = -1
         self.rpm = -1
 
-        self.toggle = 0
+        self.link_toggle = 0
         self.airspeed = -1
         self.sideslip = 999
 
