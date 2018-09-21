@@ -60,8 +60,8 @@ class DelftaCopterFrame(wx.Frame):
             self.range = round(float(msg['dist_home']),1)
             wx.CallAfter(self.update)
         elif msg.name =="TEMP_ADC":
-            self.motor_temp = round(float(msg['temp1']) )
-            self.batt_temp = round(float(msg['temp2']) )
+            self.motor_temp = round(float(msg['temp1']) ,1)
+            self.batt_temp = round(float(msg['temp2']) ,1)
             wx.CallAfter(self.update)
         elif msg.name =="THROTTLE_CURVE":
             self.throttle = round(float(msg['throttle']) )
@@ -72,7 +72,7 @@ class DelftaCopterFrame(wx.Frame):
             self.sideslip = round(float(msg['beta']) )
             wx.CallAfter(self.update)
         elif msg.name =="GPS_INT":
-            self.gps_acc = round(float(msg['pacc'])/100.0 )
+            self.gps_acc = round(float(msg['pacc'])/100.0 , 1)
             self.gps_fix = round(float(msg['fix']) )
             self.gps_sv = round(float(msg['numsv']) )
             wx.CallAfter(self.update)
@@ -96,33 +96,67 @@ class DelftaCopterFrame(wx.Frame):
             percent = 0
         if percent > 1:
             percent = 1
-        boxw = self.stat
-        tdx = int(boxw * 10.0 / 300.0)
-        tdy = int(boxw * 6.0 / 300.0)
-        boxh = int(boxw * 40.0 / 300.0)
+
+        tdx = int(self.stat * 0.1)
+        tdy = int(self.stat * 0.1)
         boxw = self.stat - 2*tdx
-        spacing = boxh+10
+        boxh = boxw
 
         dc.SetPen(wx.Pen(wx.Colour(0,0,0))) 
 	dc.SetBrush(wx.Brush(wx.Colour(220,220,220))) 
-        dc.DrawRectangle(tdx, int(nr*spacing+tdx), int(boxw), boxh) 
-        if color < 0.2:
+        dc.DrawRectangle(tdx, int(nr*self.stat+tdx), int(boxw), int(boxh)) 
+        if color < -0.2:
+            dc.SetBrush(wx.Brush(wx.Colour(190,190,190)))
+        elif color < 0.2:
             dc.SetBrush(wx.Brush(wx.Colour(250,0,0)))
         elif color < 0.6:
             dc.SetBrush(wx.Brush(wx.Colour(250,180,0)))
         else:
             dc.SetBrush(wx.Brush(wx.Colour(0,250,0)))
 #        dc.DrawLine(200,50,350,50)
-        dc.DrawRectangle(tdx, int(nr*spacing+tdx), int(boxw * percent), boxh) 
-        dc.DrawText(txt,18,int(nr*spacing+tdy+tdx)) 
+        dc.DrawRectangle(tdx, int(nr*self.stat+tdx), int(boxw * percent), int(boxh)) 
+        dc.DrawText(txt,18,int(nr*self.stat+tdy+tdx)) 
 
+    def motor_color(self):
+        if (self.motor_temp > 90):
+            return 0
+        elif (self.motor_temp > 60):
+            return 0.1
+        return 1
+
+    def gps_color(self):
+        if (self.gps_fix < 3):
+            return 0
+        
+        if (self.gps_acc > 10):
+            return 0
+        elif (self.gps_acc > 3):
+            return 0.1
+        return 1
+
+    def airspeed_color(self):
+        if (self.airspeed < 9):
+            return -1
+        if (self.airspeed < 19):
+            return 0
+        elif (self.airspeed < 21):
+            return 0.1
+        return 1
+
+    def alt_color(self):
+        dh = self.alt_sp - self.alt
+        if dh < 0:
+            dh = -dh
+        if dh > 15:
+            return 0
+        elif dh > 5:
+            return 0.1
+        return 1
 
     def OnPaint(self, e):
 
         w = self.w
         h = self.h
-
-        stat = int(100/WIDTH)*(float(w))
 
         if (float(w)/float(h)) > (WIDTH/HEIGHT):
           w = int(h * WIDTH/HEIGHT)
@@ -131,6 +165,8 @@ class DelftaCopterFrame(wx.Frame):
 
 	tdy = int(w * 75.0 / WIDTH)
         tdx = int(w * 15.0 / WIDTH)
+
+        self.stat = tdy
         
         dc = wx.PaintDC(self)
         #brush = wx.Brush("white")
@@ -146,18 +182,22 @@ class DelftaCopterFrame(wx.Frame):
         #dc.DrawCircle(w/2,w/2,w/2-1)
         font = wx.Font(fontscale, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         dc.SetFont(font)
-        dc.DrawText("Airspeed: " + str(self.airspeed) + " m/s",tdx,tdx)
-        dc.DrawText("RPM: " + str(self.rpm) + "",tdx,tdx+tdy*1)
+        dc.DrawText("Airspeed: " + str(self.airspeed) + " m/s",self.stat+tdx,tdx)
+        self.StatusBox(dc,0,"",1.0, self.airspeed_color())
+        dc.DrawText("RPM: " + str(self.rpm) + "",self.stat+tdx,tdx+tdy*1)
 
-        dc.DrawText("Motor Temp: " + str(self.motor_temp) + "",tdx,tdx+tdy*2)
-        dc.DrawText("Batt Temp: " + str(self.batt_temp) + "",tdx,tdx+tdy*3)
+        dc.DrawText("Motor Temp: " + str(self.motor_temp) + "",self.stat+tdx,tdx+tdy*2)
+        self.StatusBox(dc,2,"",1.0, self.motor_color())
+        dc.DrawText("Batt Temp: " + str(self.batt_temp) + "",self.stat+tdx,tdx+tdy*3)
 
-        dc.DrawText("SideSlip: " + str(self.sideslip) + "",tdx,tdx+tdy*4)
-        dc.DrawText("Vision: " + str(int(self.vision_status)) + ", " + str(self.vision_height) + "m " + str(self.vision_marker_x) + "," + str(self.vision_marker_y) ,tdx,tdx+tdy*5)
+        dc.DrawText("SideSlip: " + str(self.sideslip) + "",self.stat+tdx,tdx+tdy*4)
+        dc.DrawText("Vision: " + str(int(self.vision_status)) + ", " + str(self.vision_height) + "m " + str(self.vision_marker_x) + "," + str(self.vision_marker_y) ,self.stat+tdx,tdx+tdy*5)
 
 
-        dc.DrawText("DeltaH: " + str(self.alt_sp - self.alt)  ,tdx,tdx+tdy*6)
-        dc.DrawText("GPS-ACC: " + str(int(self.gps_fix)) + ", #" + str(int(self.gps_sv)) + ", " + str(self.gps_acc) + "m" ,tdx,tdx+tdy*7)
+        dc.DrawText("DeltaH: " + str(self.alt_sp - self.alt)  ,self.stat+tdx,tdx+tdy*6)
+        self.StatusBox(dc,6,"",1.0, self.alt_color())
+        dc.DrawText("GPS-ACC: " + str(int(self.gps_fix)) + ", #" + str(int(self.gps_sv)) + ", " + str(self.gps_acc) + "m" ,self.stat+tdx,tdx+tdy*7)
+        self.StatusBox(dc,7,"",1.0, self.gps_color())
         #dc.DrawText("HMSL: " + str(self.hmsl) + " ft",tdx,tdx+tdy*6)
 
         #c = wx.Colour(0,0,0)
