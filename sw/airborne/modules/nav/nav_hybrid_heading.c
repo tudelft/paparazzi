@@ -79,6 +79,15 @@ void nav_hybrid_heading_periodic(void) {
     nav_hybrid_heading_setpoint += nav_hybrid_heading_max_yaw_rate / 512.0f * nav_hybrid_heading_tip_in_wind;
   }
 
+  if (nav_hybrid_heading_tip_in_wind == 0) {
+    if (stateGetNedToBodyEulers_f()->phi < -nav_hybrid_heading_pitch_deadband) {
+      nav_hybrid_heading_setpoint -= nav_hybrid_heading_max_yaw_rate / 512.0f * nav_hybrid_heading_tip_in_wind;
+    // if pitch is up, yaw left
+    } else if (stateGetNedToBodyEulers_f()->theta > nav_hybrid_heading_pitch_deadband) {
+      nav_hybrid_heading_setpoint += nav_hybrid_heading_max_yaw_rate / 512.0f * nav_hybrid_heading_tip_in_wind;
+    }
+  }
+
   // Towards Waypoint
   float err = nav_hybrid_heading_wp_setpoint - nav_hybrid_heading_wp_ref;
   NormRadAngle(err);
