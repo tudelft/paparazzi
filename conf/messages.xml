@@ -462,7 +462,7 @@
       <field name="out_of_range" type="float"/>
       <field name="marker_enu_x" type="float"/>
       <field name="marker_enu_y" type="float"/>
-      <field name="Stupid height" type="float"/>
+      <field name="Stupid_height" type="float"/>
       <field name="Version" type="float"/>
     </message>
 
