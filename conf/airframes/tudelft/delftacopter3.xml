@@ -370,9 +370,10 @@
 
   <!-- Horizontal gains in hover mode -->
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="MAX_BANK" value="30" unit="deg"/>
+    <define name="MAX_PHI" value="28" unit="deg"/>
+    <define name="MAX_THETA" value="50" unit="deg"/>
     <define name="USE_SPEED_REF" value="TRUE"/>
-    <define name="REF_MAX_SPEED" value="10" />
+    <define name="REF_MAX_SPEED" value="15" />
     <define name="PGAIN" value="20"/>
     <define name="DGAIN" value="40"/>
     <define name="AGAIN" value="30"/>

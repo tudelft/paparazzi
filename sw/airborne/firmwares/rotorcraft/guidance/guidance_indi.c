@@ -120,7 +120,8 @@ struct FloatMat33 Ga_inv;
 struct FloatVect3 control_increment; // [dtheta, dphi, dthrust]
 
 float filter_cutoff = GUIDANCE_INDI_FILTER_CUTOFF;
-float guidance_indi_max_bank = GUIDANCE_H_MAX_BANK;
+float guidance_indi_max_phi = GUIDANCE_H_MAX_PHI;
+float guidance_indi_max_theta = GUIDANCE_H_MAX_THETA;
 
 float time_of_accel_sp_2d = 0.0;
 float time_of_accel_sp_3d = 0.0;
@@ -269,8 +270,8 @@ void guidance_indi_run(float heading_sp)
 #endif
 
   //Bound euler angles to prevent flipping
-  Bound(guidance_euler_cmd.phi, -guidance_indi_max_bank, guidance_indi_max_bank);
-  Bound(guidance_euler_cmd.theta, -guidance_indi_max_bank, guidance_indi_max_bank);
+  Bound(guidance_euler_cmd.phi, -guidance_indi_max_phi, guidance_indi_max_phi);
+  Bound(guidance_euler_cmd.theta, -guidance_indi_max_theta, guidance_indi_max_theta);
 
   //set the quat setpoint with the calculated roll and pitch
   struct FloatQuat q_sp;
