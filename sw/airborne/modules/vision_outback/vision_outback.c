@@ -69,6 +69,7 @@ bool vision_outback_enable_opticflow = false;
 bool vision_outback_enable_attcalib = false;
 bool vision_outback_enable_videorecord = false;
 bool vision_outback_close_process = false;
+bool vision_outback_update_system = false;
 #ifdef VISION_PWR_OFF
 uint8_t vision_outback_power = VISION_SETTING_STATUS_REQUEST_POWER_OFF;
 #else
@@ -311,6 +312,8 @@ void vision_outback_periodic() {
     p2k_package.enables |= 0b1000000;
   if (vision_outback_close_process)
     p2k_package.enables |= 0b10000000;
+  if (vision_outback_update_system)
+    p2k_package.enables |= 0b11000000;
 
   if (timeoutcount > 0) {
       timeoutcount--;
@@ -319,6 +322,7 @@ void vision_outback_periodic() {
       v2p_package.status = 1;
       vision_timeout = true;
       vision_outback_close_process = false;
+      vision_outback_update_system = false;
     }
   if (v2p_package.status != 0 )
     vision_timeout = true;

@@ -16,7 +16,8 @@
         <dl_setting var="vision_outback_enable_opticflow" min="0" max="1" step="1" values="off|on" shortname="opticflow"/>
         <dl_setting var="vision_outback_enable_videorecord" min="0" max="1" step="1" values="off|on" shortname="record"/>
         <dl_setting var="vision_outback_power" min="0" max="2" step="1" values="soft off|off|on|" shortname="power"/>
-        <dl_setting var="vision_outback_close_process" min="0" max="1" step="1" values="off|on" shortname="close"/>
+        <dl_setting var="vision_outback_close_process" min="0" max="1" step="1" values="meh|do" shortname="close"/>
+        <dl_setting var="vision_outback_update_system" min="0" max="1" step="1" values="meh|do" shortname="update"/>
       </dl_settings>
     </dl_settings>
   </settings>
