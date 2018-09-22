@@ -227,7 +227,7 @@ static inline void vision_outback_parse_msg(void)
             msg_marker_y = v2p_package.marker_enu_y;
           }
 
-        if (!(v2p_package.version > WANTED_VISION_VERSION-0.001 && v2p_package.version < WANTED_VISION_VERSION+0.001 ))
+        if (!(v2p_package.version > WANTED_VISION_VERSION-0.1 && v2p_package.version < WANTED_VISION_VERSION+0.1 ))
           v2p_package.status = 2;
         break;
       }
