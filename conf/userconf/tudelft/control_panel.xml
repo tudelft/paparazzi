@@ -6,7 +6,7 @@
     </program>
     <program name="Link Combiner" command="sw/ground_segment/python/redundant_link/link_combiner.py"/>
     <program name="GCS" command="sw/ground_segment/cockpit/gcs">
-        <arg flag="-layout"  constant="bottom_settings.xml" />
+      <arg flag="-layout" constant="bottom_settings.xml"/>
     </program>
     <program name="Flight Plan Editor" command="sw/ground_segment/cockpit/gcs">
       <arg flag="-edit"/>
@@ -48,18 +48,19 @@
     <program name="Ivy2UDP" command="sw/ground_segment/tmtc/ivy2udp"/>
     <program name="BluegigaUsbDongleScanner" command="sw/tools/bluegiga_usb_dongle/bluegiga_usb_driver">
       <arg flag="/dev/ttyACM2"/>
-      <arg flag="scan" />
+      <arg flag="scan"/>
     </program>
     <program name="BluegigaUsbDongle" command="sw/tools/bluegiga_usb_dongle/bluegiga_usb_driver">
       <arg flag="/dev/ttyACM2"/>
-      <arg flag="00:07:00:2d:d6:bb" />
-      <arg flag="4242" />
-      <arg flag="4252" />
+      <arg flag="00:07:00:2d:d6:bb"/>
+      <arg flag="4242"/>
+      <arg flag="4252"/>
     </program>
     <program name="ADS-B Intruders receiver" command="sw/ground_segment/misc/sbs2ivy">
       <arg flag="--ac" constant="@AC_ID"/>
     </program>
     <program name="ATC" command="sw/ground_segment/python/atc/atc.py"/>
+    <program name="DelftaCopter" command="sw/ground_segment/python/delftacopter/delftacopter.py"/>
     <program name="SVInfo" command="sw/ground_segment/python/svinfo/svinfo.py"/>
     <program name="EnergyManager" command="sw/ground_segment/python/energy_mon/energy_mon.py"/>
     <program name="IridiumDialer" command="sw/tools/iridium/iridium_link.py"/>
@@ -67,7 +68,6 @@
     <program name="Traffic Server" command="sw/ground_segment/python/no_fly_zones/traffic_server.py"/>
     <program name="Avoid Mission" command="sw/ground_segment/python/mission/mission.py"/>
   </section>
-
   <section name="sessions">
     <session name="helidd">
       <program name="BluegigaUsbDongle">
@@ -90,6 +90,16 @@
         <arg flag="hobbyking.xml"/>
       </program>
     </session>
+    <session name="Flight ACM0 @57600">
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/ttyACM0"/>
+        <arg flag="-s" constant="57600"/>
+      </program>
+      <program name="Server"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
+      </program>
+    </session>
     <session name="Bluegiga">
       <program name="BluegigaUsbDongle">
         <arg flag="/dev/ttyACM2" constant="all"/>
@@ -103,7 +113,7 @@
       <program name="Server"/>
       <program name="Messages"/>
       <program name="GCS">
-        <arg flag="-speech" />
+        <arg flag="-speech"/>
       </program>
       <program name="NatNet">
         <arg flag="-ac" constant="1"/>
@@ -117,82 +127,6 @@
         <arg flag="hobbyking.xml"/>
       </program>
     </session>
-    <session name="Flight USB0 @57600">
-      <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyUSB0"/>
-        <arg flag="-s" constant="57600"/>
-      </program>
-      <program name="Server"/>
-      <program name="GCS">
-        <arg flag="-speech" />
-      </program>
-    </session>
-    <session name="Flight Paparazzi @57600">
-      <program name="Data Link">
-        <arg flag="-d" constant="/dev/paparazzi/link"/>
-        <arg flag="-s" constant="57600"/>
-      </program>
-      <program name="Server"/>
-      <program name="GCS">
-        <arg flag="-speech" />
-      </program>
-    </session>
-    <session name="Flight ACM1 @57600">
-      <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyACM1"/>
-        <arg flag="-s" constant="57600"/>
-      </program>
-      <program name="Server"/>
-      <program name="GCS">
-        <arg flag="-speech" />
-      </program>
-    </session>
-    <session name="Flight ACM0 @57600">
-      <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyACM0"/>
-        <arg flag="-s" constant="57600"/>
-      </program>
-      <program name="Server"/>
-      <program name="GCS">
-        <arg flag="-speech" />
-      </program>
-    </session>
-    <session name="Flight XBee @57600">
-      <program name="Data Link">
-        <arg flag="-d" constant="/dev/paparazzi/xbee"/>
-        <arg flag="-transport" constant="xbee"/>
-        <arg flag="-s" constant="57600"/>
-      </program>
-      <program name="Server"/>
-      <program name="GCS">
-        <arg flag="-speech" />
-        <arg flag="-layout"  constant="bottom_settings.xml" />
-      </program>
-    </session>
-    <session name="Flight XBee USB0 @57600">
-      <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyUSB0"/>
-        <arg flag="-transport" constant="xbee"/>
-        <arg flag="-s" constant="57600"/>
-      </program>
-      <program name="Server"/>
-      <program name="GCS">
-        <arg flag="-speech" />
-        <arg flag="-layout"  constant="bottom_settings.xml" />
-      </program>
-      <program name="Messages"/>
-    </session>
-    <session name="Flight UDP">
-      <program name="Data Link">
-        <arg flag="-udp"/>
-      </program>
-      <program name="Server"/>
-      <program name="GCS">
-        <arg flag="-speech" />
-        <arg flag="-layout"  constant="bottom_settings.xml" />
-      </program>
-      <program name="Messages"/>
-    </session>
     <session name="Flight Outback XBee">
       <program name="Data Link">
         <arg flag="-d" constant="/dev/ttyUSB0"/>
@@ -205,18 +139,47 @@
         <arg flag="-id" constant="@AC_ID"/>
       </program>
       <program name="GCS">
-        <arg flag="-speech" />
-        <arg flag="-maps_fill" />
-        <arg flag="-center_ac_id" constant="@AC_ID" />
-        <arg flag="-zoom" constant="15" />
-        <arg flag="-maps_zoom" constant="15" />
-        <arg flag="-layout" constant="bottom_settings.xml" />
+        <arg flag="-speech"/>
+        <arg flag="-maps_fill"/>
+        <arg flag="-center_ac_id" constant="@AC_ID"/>
+        <arg flag="-zoom" constant="15"/>
+        <arg flag="-maps_zoom" constant="15"/>
+        <arg flag="-layout" constant="bottom_settings.xml"/>
       </program>
       <program name="GCS">
-        <arg flag="-fit_to_window" />
-        <arg flag="-maps_fill" />
-        <arg flag="-maps_zoom" constant="13" />
-        <arg flag="-layout"  constant="map_only.xml" />
+        <arg flag="-fit_to_window"/>
+        <arg flag="-maps_fill"/>
+        <arg flag="-maps_zoom" constant="13"/>
+        <arg flag="-layout" constant="map_only.xml"/>
+      </program>
+    </session>
+    <session name="Scaled Sensors">
+      <program name="Real-time Plotter">
+        <arg flag="-g" constant="1000x250-0+0"/>
+        <arg flag="-t" constant="ACC"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-c" constant="9.81"/>
+        <arg flag="-c" constant="0.00"/>
+        <arg flag="-c" constant="-9.81"/>
+        <arg flag="-c" constant="*:telemetry:IMU_ACCEL_SCALED:ax:0.0009766"/>
+        <arg flag="-c" constant="*:telemetry:IMU_ACCEL_SCALED:ay:0.0009766"/>
+        <arg flag="-c" constant="*:telemetry:IMU_ACCEL_SCALED:az:0.0009766"/>
+        <arg flag="-n"/>
+        <arg flag="-g" constant="1000x250-0+250"/>
+        <arg flag="-t" constant="GYRO"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-c" constant="0.00"/>
+        <arg flag="-c" constant="*:telemetry:IMU_GYRO_SCALED:gp:0.0139882"/>
+        <arg flag="-c" constant="*:telemetry:IMU_GYRO_SCALED:gq:0.0139882"/>
+        <arg flag="-c" constant="*:telemetry:IMU_GYRO_SCALED:gr:0.0139882"/>
+        <arg flag="-n"/>
+        <arg flag="-g" constant="1000x250-0+500"/>
+        <arg flag="-t" constant="MAG"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-c" constant="0.00"/>
+        <arg flag="-c" constant="*:telemetry:IMU_MAG_SCALED:mx:0.0004883"/>
+        <arg flag="-c" constant="*:telemetry:IMU_MAG_SCALED:my:0.0004883"/>
+        <arg flag="-c" constant="*:telemetry:IMU_MAG_SCALED:mz:0.0004883"/>
       </program>
     </session>
     <session name="Flight Outback Long-Range">
@@ -230,27 +193,86 @@
         <arg flag="-id" constant="@AC_ID"/>
       </program>
       <program name="GCS">
-        <arg flag="-speech" />
-        <arg flag="-maps_fill" />
-        <arg flag="-center_ac_id" constant="@AC_ID" />
-        <arg flag="-zoom" constant="15" />
-        <arg flag="-maps_zoom" constant="15" />
-        <arg flag="-layout" constant="bottom_settings.xml" />
+        <arg flag="-speech"/>
+        <arg flag="-maps_fill"/>
+        <arg flag="-center_ac_id" constant="@AC_ID"/>
+        <arg flag="-zoom" constant="1"/>
+        <arg flag="-srtm"/>
+        <arg flag="-maps_zoom" constant="15"/>
+        <arg flag="-layout" constant="bottom_settings.xml"/>
       </program>
       <program name="GCS">
-        <arg flag="-fit_to_window" />
-        <arg flag="-maps_fill" />
-        <arg flag="-maps_zoom" constant="13" />
-        <arg flag="-layout" constant="map_only.xml" />
+        <arg flag="-fit_to_window"/>
+        <arg flag="-maps_fill"/>
+        <arg flag="-srtm"/>
+        <arg flag="-maps_zoom" constant="13"/>
+        <arg flag="-layout" constant="map_only.xml"/>
+      </program>
+      <program name="EnergyManager"/>
+      <program name="DelftaCopter"/>
+    </session>
+    <session name="Joystick Hobbyking">
+      <program name="Joystick">
+        <arg flag="-ac" constant="@AIRCRAFT"/>
+        <arg flag="hobbyking.xml"/>
       </program>
     </session>
-    <session name="Flight Outback PC2">
+    <session name="Messages and Settings">
+      <program name="Messages"/>
+      <program name="Settings">
+        <arg flag="-ac" constant="@AIRCRAFT"/>
+      </program>
+    </session>
+    <session name="Flight XBee @57600">
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/paparazzi/xbee"/>
+        <arg flag="-transport" constant="xbee"/>
+        <arg flag="-s" constant="57600"/>
+      </program>
+      <program name="Server"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
+        <arg flag="-layout" constant="bottom_settings.xml"/>
+      </program>
+    </session>
+    <session name="Flight UDP">
       <program name="Data Link">
         <arg flag="-udp"/>
       </program>
       <program name="Server"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
+        <arg flag="-layout" constant="bottom_settings.xml"/>
+      </program>
+      <program name="Messages"/>
+    </session>
+    <session name="Flight Outback PC2">
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-nouplink"/>
+      </program>
+      <program name="Server"/>
       <program name="Messages"/>
       <program name="EnergyManager"/>
+      <program name="ATC"/>
+      <program name="DelftaCopter"/>
+      <program name="GCS">
+        <arg flag="-fit_to_window"/>
+        <arg flag="-maps_fill"/>
+        <arg flag="-srtm"/>
+        <arg flag="-maps_zoom" constant="13"/>
+        <arg flag="-layout" constant="map_only.xml"/>
+      </program>
+    </session>
+    <session name="Flight USB0 @57600">
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/ttyUSB0"/>
+        <arg flag="-s" constant="57600"/>
+      </program>
+      <program name="Server"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
+      </program>
     </session>
     <session name="Raw Sensors">
       <program name="Real-time Plotter">
@@ -285,45 +307,59 @@
         <arg flag="-c" constant="*:telemetry:BARO_RAW:abs"/>
       </program>
     </session>
-    <session name="Scaled Sensors">
-      <program name="Real-time Plotter">
-        <arg flag="-g" constant="1000x250-0+0"/>
-        <arg flag="-t" constant="ACC"/>
-        <arg flag="-u" constant="0.05"/>
-        <arg flag="-c" constant="9.81"/>
-        <arg flag="-c" constant="0.00"/>
-        <arg flag="-c" constant="-9.81"/>
-        <arg flag="-c" constant="*:telemetry:IMU_ACCEL_SCALED:ax:0.0009766"/>
-        <arg flag="-c" constant="*:telemetry:IMU_ACCEL_SCALED:ay:0.0009766"/>
-        <arg flag="-c" constant="*:telemetry:IMU_ACCEL_SCALED:az:0.0009766"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="1000x250-0+250"/>
-        <arg flag="-t" constant="GYRO"/>
-        <arg flag="-u" constant="0.05"/>
-        <arg flag="-c" constant="0.00"/>
-        <arg flag="-c" constant="*:telemetry:IMU_GYRO_SCALED:gp:0.0139882"/>
-        <arg flag="-c" constant="*:telemetry:IMU_GYRO_SCALED:gq:0.0139882"/>
-        <arg flag="-c" constant="*:telemetry:IMU_GYRO_SCALED:gr:0.0139882"/>
-        <arg flag="-n"/>
-        <arg flag="-g" constant="1000x250-0+500"/>
-        <arg flag="-t" constant="MAG"/>
-        <arg flag="-u" constant="0.05"/>
-        <arg flag="-c" constant="0.00"/>
-        <arg flag="-c" constant="*:telemetry:IMU_MAG_SCALED:mx:0.0004883"/>
-        <arg flag="-c" constant="*:telemetry:IMU_MAG_SCALED:my:0.0004883"/>
-        <arg flag="-c" constant="*:telemetry:IMU_MAG_SCALED:mz:0.0004883"/>
+    <session name="Flight Outback Long-Range Single Screen">
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/ttyUSB0"/>
+        <arg flag="-s" constant="9600"/>
+      </program>
+      <program name="Server"/>
+      <program name="Ivy2UDP">
+        <arg flag="-h" constant="192.168.1.255"/>
+        <arg flag="-id" constant="@AC_ID"/>
+      </program>
+      <program name="GCS">
+        <arg flag="-speech"/>
+        <arg flag="-maps_fill"/>
+        <arg flag="-srtm"/>
+        <arg flag="-zoom" constant="0.5"/>
+        <arg flag="-maps_zoom" constant="15"/>
+        <arg flag="-layout" constant="bottom_settings.xml"/>
+      </program>
+      <program name="Messages">
+        <arg flag="-force"/>
       </program>
     </session>
-    <session name="Messages and Settings">
+    <session name="Flight XBee USB0 @57600">
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/ttyUSB0"/>
+        <arg flag="-transport" constant="xbee"/>
+        <arg flag="-s" constant="57600"/>
+      </program>
+      <program name="Server"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
+        <arg flag="-layout" constant="bottom_settings.xml"/>
+      </program>
       <program name="Messages"/>
-      <program name="Settings">
-        <arg flag="-ac" constant="@AIRCRAFT"/>
+    </session>
+    <session name="Flight ACM1 @57600">
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/ttyACM1"/>
+        <arg flag="-s" constant="57600"/>
+      </program>
+      <program name="Server"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
       </program>
     </session>
-    <session name="Joystick Hobbyking">
-      <program name="Joystick">
-        <arg flag="-ac" constant="@AIRCRAFT"/>
-        <arg flag="hobbyking.xml"/>
+    <session name="Flight Paparazzi @57600">
+      <program name="Data Link">
+        <arg flag="-d" constant="/dev/paparazzi/link"/>
+        <arg flag="-s" constant="57600"/>
+      </program>
+      <program name="Server"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
       </program>
     </session>
     <session name="Joystick X3D Pro">

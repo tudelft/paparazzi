@@ -9,7 +9,7 @@
      * Actuators:   10 PWM (FTD)
      * GPS:         UBlox M8N (AP)
      * RC:          Crossfire diversity SBUS (RC2)
-     * Telemetry:   XBee API (AP)
+     * Telemetry:   868/900 MHz Long range (AP), Iridium (FTD)
   </description>
 
   <firmware name="rotorcraft">
@@ -130,7 +130,7 @@
   -->
 
   <section name="GCS">
-    <define name="SPEECH_NAME" value="Four Hotel Papa"/>
+    <define name="SPEECH_NAME" value="Four Hotel Pahpeh"/><!-- papa seems impossible to pronounce -->
     <define name="AC_ICON" value="flyingwing"/>
   </section>
 
@@ -206,7 +206,7 @@
   <section name="MISC">
     <define name="NAV_CLIMB_VSPEED" value="3.0"/>
     <define name="NAV_DESCEND_VSPEED" value="-3.5"/>
-    <define name="NAV_LINE_FOLLOWING_DIST" value="85.0"/>
+    <define name="NAV_LINE_FOLLOWING_DIST" value="160.0"/>
     <define name="ARRIVED_AT_WAYPOINT" value="50"/>
     <define name="ARRIVED_AT_WAYPOINT_HOVER" value="5"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
@@ -222,13 +222,13 @@
     <define name="ACCEL_Y_NEUTRAL" value="11"/>
     <define name="ACCEL_Z_NEUTRAL" value="-25"/>
 
-    <!-- Calibration 18-07-2018 Valkenburg 4.5kg 190 KV 26inch with vision + 6s6p LiIo -->
+    <!-- Calibration 21-09-2018 Dalby 4.3kg 190 KV 26inch with vision + 6s6p LiIo -->
     <define name="MAG_X_NEUTRAL" value="5"/>
-    <define name="MAG_Y_NEUTRAL" value="-16"/>
-    <define name="MAG_Z_NEUTRAL" value="16"/>
-    <define name="MAG_X_SENS" value="19.6890782429" integer="16"/>
-    <define name="MAG_Y_SENS" value="16.5616985505" integer="16"/>
-    <define name="MAG_Z_SENS" value="16.6658506111" integer="16"/>
+    <define name="MAG_Y_NEUTRAL" value="31"/>
+    <define name="MAG_Z_NEUTRAL" value="49"/>
+    <define name="MAG_X_SENS" value="17.0760121201" integer="16"/>
+    <define name="MAG_Y_SENS" value="15.8052950523" integer="16"/>
+    <define name="MAG_Z_SENS" value="15.7811278057" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
@@ -361,18 +361,19 @@
 
   <!-- INDI guidance controller for hover mode -->
   <section name="GUIDANCE_INDI" prefix="GUIDANCE_INDI_">
-    <define name="POS_GAIN_XY" value="0.5"/>
-    <define name="POS_GAIN_Z" value="0.5"/>
-    <define name="SPEED_GAIN_XY" value="1.4"/>
-    <define name="SPEED_GAIN_Z" value="1.4"/>
+    <define name="POS_GAIN_XY" value="0.3"/>
+    <define name="POS_GAIN_Z" value="0.3"/>
+    <define name="SPEED_GAIN_XY" value="1.0"/>
+    <define name="SPEED_GAIN_Z" value="1.0"/>
     <define name="FILTER_CUTOFF" value="0.8"/>
   </section>
 
   <!-- Horizontal gains in hover mode -->
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="MAX_BANK" value="45" unit="deg"/>
-    <define name="TOTAL_MAX_BANK" value="60" unit="deg"/>
+    <define name="MAX_PHI" value="17" unit="deg"/>
+    <define name="MAX_THETA" value="23" unit="deg"/>
     <define name="USE_SPEED_REF" value="TRUE"/>
+    <define name="REF_MAX_SPEED" value="15" />
     <define name="PGAIN" value="20"/>
     <define name="DGAIN" value="40"/>
     <define name="AGAIN" value="30"/>
@@ -384,6 +385,7 @@
     <define name="HOVER_THROTTLE_CURVE" value="2"/>
     <define name="TRANSITION_THROTTLE_CURVE" value="3"/>
     <define name="FORWARD_THROTTLE_CURVE" value="4"/>
+    <define name="TRANSITION_TIME" value="2"/>
     <define name="TRANSITION_THROTTLE_TO_FORWARD" value="8500"/>
     <define name="TRANSITION_THROTTLE_TO_HOVER" value="4800"/>
   </section>
@@ -408,9 +410,12 @@
     
     <define name="ROLL_PGAIN" value="3000.0"/>
     <define name="ROLL_DGAIN" value="200.0"/>
+    <define name="ROLL_IGAIN" value="0.2"/>
+    <define name="ROLL_TRIM" value="0.0"/>
     <define name="PITCH_PGAIN" value="2500.0"/>
     <define name="PITCH_DGAIN" value="1000.0"/>
-    <define name="PITCH_IGAIN" value="0.0"/>
+    <define name="PITCH_IGAIN" value="0.5"/>
+    <define name="PITCH_TRIM" value="1200"/>
     <define name="K_FF_TO_YAW" value="600.0"/> <!-- order of magnitude -->
     <define name="ADVANCE_P" value="1.1"/>
     <define name="ADVANCE_Q" value="1.1"/>

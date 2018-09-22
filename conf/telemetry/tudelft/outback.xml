@@ -29,6 +29,7 @@
       <message name="STAB_ATTITUDE_INT"      period="5"/>
       <message name="HYBRID_GUIDANCE"        period=".5"/>
       <message name="SVINFO"                 period="7.5"/>
+      <message name="TRIM"                   period="6.5"/>
     </mode>
 
     <mode name="ppm">
@@ -164,10 +165,12 @@
       <message name="CHIRP"                  period="0.2"/>
       <message name="AIR_DATA"               period="0.01"/>
       <message name="MOTOR"                  period="0.02"/>
-      <message name="DELFTACOPTER_FILTER_LOGGING" period="0.005"/>
-      <message name="INS"                    period="0.1"/>
+      <message name="DELFTACOPTER_FILTER_LOGGING" period="0.01"/>
+      <message name="INS"                    period="0.05"/>
       <message name="STAB_ATTITUDE_INT"      period="0.1"/>
       <message name="STAB_ATTITUDE_REF_INT"  period="0.1"/>
+      <message name="GUIDANCE_H_REF_INT"     period="0.01"/>
+      <message name="TRIM"                   period="1"/>
     </mode>
   </process>
 

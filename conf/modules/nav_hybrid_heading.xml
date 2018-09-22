@@ -7,10 +7,10 @@
   <settings>
     <dl_settings NAME="hybrid">
       <dl_settings NAME="heading">
-        <dl_setting module="nav/nav_hybrid_heading" var="nav_hybrid_heading_max_yaw_rate" min="0" max="6.0" step="0.001"/>
-        <dl_setting module="nav/nav_hybrid_heading" var="nav_hybrid_heading_max_yaw_rate_to_wp" min="0" max="6.0" step="0.001"/>
-        <dl_setting module="nav/nav_hybrid_heading" var="nav_hybrid_heading_pitch_deadband" min="0" max="6.0" step="0.001"/>
-        <dl_setting module="nav/nav_hybrid_heading" var="nav_hybrid_heading_tip_in_wind" min="-1" max="1" step="2"/>
+        <dl_setting module="nav/nav_hybrid_heading" var="nav_hybrid_heading_max_yaw_rate" shortname="max_yaw" min="0" max="6.0" step="0.001"/>
+        <dl_setting module="nav/nav_hybrid_heading" var="nav_hybrid_heading_max_yaw_rate_to_wp" shortname="max_yaw_to_wp" min="0" max="6.0" step="0.001"/>
+        <dl_setting module="nav/nav_hybrid_heading" var="nav_hybrid_heading_pitch_deadband" min="0" shortname="pitch_deadband" max="6.0" step="0.001"/>
+        <dl_setting module="nav/nav_hybrid_heading" var="nav_hybrid_heading_tip_in_wind" shortname="mode" min="0" max="3" step="1" values="AUTO|LEFT|NOSE|RIGHT"/>
       </dl_settings>
     </dl_settings>
   </settings>

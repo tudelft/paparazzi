@@ -206,7 +206,7 @@
   <section name="MISC">
     <define name="NAV_CLIMB_VSPEED" value="3.0"/>
     <define name="NAV_DESCEND_VSPEED" value="-3.5"/>
-    <define name="NAV_LINE_FOLLOWING_DIST" value="85.0"/>
+    <define name="NAV_LINE_FOLLOWING_DIST" value="160.0"/>
     <define name="ARRIVED_AT_WAYPOINT" value="50"/>
     <define name="ARRIVED_AT_WAYPOINT_HOVER" value="5"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
@@ -370,9 +370,10 @@
 
   <!-- Horizontal gains in hover mode -->
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="MAX_BANK" value="45" unit="deg"/>
-    <define name="TOTAL_MAX_BANK" value="60" unit="deg"/>
+    <define name="MAX_PHI" value="17" unit="deg"/>
+    <define name="MAX_THETA" value="23" unit="deg"/>
     <define name="USE_SPEED_REF" value="TRUE"/>
+    <define name="REF_MAX_SPEED" value="15" />
     <define name="PGAIN" value="20"/>
     <define name="DGAIN" value="40"/>
     <define name="AGAIN" value="30"/>
@@ -384,6 +385,7 @@
     <define name="HOVER_THROTTLE_CURVE" value="2"/>
     <define name="TRANSITION_THROTTLE_CURVE" value="3"/>
     <define name="FORWARD_THROTTLE_CURVE" value="4"/>
+    <define name="TRANSITION_TIME" value="2"/>
     <define name="TRANSITION_THROTTLE_TO_FORWARD" value="8500"/>
     <define name="TRANSITION_THROTTLE_TO_HOVER" value="4800"/>
   </section>
@@ -408,9 +410,12 @@
     
     <define name="ROLL_PGAIN" value="3000.0"/>
     <define name="ROLL_DGAIN" value="200.0"/>
+    <define name="ROLL_IGAIN" value="0.2"/>
+    <define name="ROLL_TRIM" value="0.0"/>
     <define name="PITCH_PGAIN" value="2500.0"/>
     <define name="PITCH_DGAIN" value="1000.0"/>
-    <define name="PITCH_IGAIN" value="0.0"/>
+    <define name="PITCH_IGAIN" value="0.5"/>
+    <define name="PITCH_TRIM" value="200.0"/>
     <define name="K_FF_TO_YAW" value="600.0"/> <!-- order of magnitude -->
     <define name="ADVANCE_P" value="1.1"/>
     <define name="ADVANCE_Q" value="1.1"/>

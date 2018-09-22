@@ -899,11 +899,11 @@ let get_fbw_msg = fun alarm _sender vs ->
   and rate = (float_of_int ((PprzLink.int_assoc "rc_rate" vs) * 10) ) /. ac.rc_max_rate in
   (* divide by 5 to have normal values between 0 and 10 *)
   (* RC rate max approx. 50 Hz *)
-  ac.strip#set_rc rate status;
-  let mode = PprzLink.string_assoc "rc_mode" vs in
+  ac.strip#set_rc rate status
+  (*let mode = PprzLink.string_assoc "rc_mode" vs in
   if mode = "FAILSAFE" then begin
     log_and_say alarm ac.ac_name (sprintf "%s, mayday, AP Failure. Switch to manual." ac.ac_speech_name)
-  end
+  end*)
 
 let get_telemetry_status = fun alarm _sender vs ->
   let ac = get_ac vs in

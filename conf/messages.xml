@@ -369,7 +369,10 @@
       <field name="alt" type="float" unit="m"/>
     </message>
 
-    <!-- 45 is free -->
+    <message name="TRIM" id="45">
+      <field name="trim_pitch" type="float"/>
+      <field name="trim_roll" type="float"/>
+    </message>
 
     <message name="BARO_WORDS" id="46">
       <field name="w1"  type="uint16"/>
@@ -451,7 +454,7 @@
     </message>
 
     <message name="VISION_OUTBACK" id="58">
-      <field name="status" type="uint8"/>
+      <field name="status" type="uint8" values="OK|NOT_OK|VERSION_ERROR"/>
       <field name="het_moment" type="uint8"/>
       <field name="timeoutcount" type="uint8"/>
       <field name="vision_timeout" type="uint8"/>
@@ -459,8 +462,8 @@
       <field name="out_of_range" type="float"/>
       <field name="marker_enu_x" type="float"/>
       <field name="marker_enu_y" type="float"/>
-      <field name="flow_x" type="float"/>
-      <field name="flow_y" type="float"/>
+      <field name="Stupid_height" type="float"/>
+      <field name="Version" type="float"/>
     </message>
 
     <message name="GPS_LLA" id="59">

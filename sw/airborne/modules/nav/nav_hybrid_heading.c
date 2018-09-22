@@ -70,13 +70,36 @@ void nav_hybrid_heading_init_to_waypoint(int wp) {
 }
 
 void nav_hybrid_heading_periodic(void) {
-  // Align with tip in wind
-  // if pitch is down, yaw right
-  if (stateGetNedToBodyEulers_f()->theta < -nav_hybrid_heading_pitch_deadband) {
-    nav_hybrid_heading_setpoint -= nav_hybrid_heading_max_yaw_rate / 512.0f * nav_hybrid_heading_tip_in_wind;
-  // if pitch is up, yaw left
-  } else if (stateGetNedToBodyEulers_f()->theta > nav_hybrid_heading_pitch_deadband) {
-    nav_hybrid_heading_setpoint += nav_hybrid_heading_max_yaw_rate / 512.0f * nav_hybrid_heading_tip_in_wind;
+
+  // Nose in the wing
+  if (nav_hybrid_heading_tip_in_wind == 2) {
+    if (stateGetNedToBodyEulers_f()->phi < -nav_hybrid_heading_pitch_deadband) {
+      nav_hybrid_heading_setpoint -= nav_hybrid_heading_max_yaw_rate / 512.0f;
+    // if pitch is up, yaw left
+    } else if (stateGetNedToBodyEulers_f()->phi > nav_hybrid_heading_pitch_deadband) {
+      nav_hybrid_heading_setpoint += nav_hybrid_heading_max_yaw_rate / 512.0f;
+    }
+  } else {
+    // Align with tip in wind
+
+    float yawdirection = 1;
+    if (nav_hybrid_heading_tip_in_wind == 1) {
+      yawdirection = -1;
+    }
+    if (nav_hybrid_heading_tip_in_wind == 0) {
+      if (stateGetNedToBodyEulers_f()->phi > 0) {
+        yawdirection = 1;
+      }
+    }
+
+    // if pitch is down, yaw right
+    if (stateGetNedToBodyEulers_f()->theta < -nav_hybrid_heading_pitch_deadband) {
+      nav_hybrid_heading_setpoint -= nav_hybrid_heading_max_yaw_rate / 512.0f * yawdirection;
+    // if pitch is up, yaw left
+    } else if (stateGetNedToBodyEulers_f()->theta > nav_hybrid_heading_pitch_deadband) {
+      nav_hybrid_heading_setpoint += nav_hybrid_heading_max_yaw_rate / 512.0f * yawdirection;
+    }
+
   }
 
   // Towards Waypoint
@@ -90,6 +113,21 @@ void nav_hybrid_heading_periodic(void) {
 }
 
 void nav_hybrid_heading_set(void) {
+  nav_set_heading_rad( nav_hybrid_heading_setpoint );
+}
+
+void nav_hybrid_heading_set_left(void) {
+  nav_hybrid_heading_tip_in_wind = 1;
+  nav_set_heading_rad( nav_hybrid_heading_setpoint );
+}
+
+void nav_hybrid_heading_set_nose(void) {
+  nav_hybrid_heading_tip_in_wind = 2;
+  nav_set_heading_rad( nav_hybrid_heading_setpoint );
+}
+
+void nav_hybrid_heading_set_right(void) {
+  nav_hybrid_heading_tip_in_wind = 3;
   nav_set_heading_rad( nav_hybrid_heading_setpoint );
 }
 

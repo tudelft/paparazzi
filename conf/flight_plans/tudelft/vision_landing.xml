@@ -68,39 +68,6 @@
       <call fun="enableVisionDescent(false)" loop="false"/>
       <stay wp="STDBY"/>
     </block>
-    <block name="HILOW">
-      <call fun="enableVisionFindJoe(true)" loop="false"/>
-      <call fun="NavCopyWaypoint(WP_CLIMB,WP_STDBY)" loop="false"/>
-      <call_once fun="waypoint_set_alt(WP_CLIMB,50)"/>
-      <stay wp="CLIMB" until="stage_time > 9"/>
-      <call_once fun="waypoint_set_alt(WP_CLIMB,15)"/>
-      <stay wp="CLIMB" until="stage_time > 9"/>
-      <deroute block="Standby"/>
-    </block>
-    <block name="stay_p1">
-      <call fun="enableVisionFindJoe(false)" loop="false"/>
-      <call fun="enableVisionDescent(false)" loop="false"/>
-      <stay wp="p1"/>
-    </block>    
-    <block name="route_findjoe">
-      <call fun="enableVisionFindJoe(true)" loop="false"/>
-      <exception cond="vision_timeout " deroute="Standby"/>
-      <go  wp="JOE_reported"/>
-      <circle radius="-30" wp="JOE_reported" until="fabs(ANGLE_FLOAT_OF_BFP(nav_circle_radians)) > 6.28"/>
-      <circle radius="-50" wp="JOE_reported" until="fabs(ANGLE_FLOAT_OF_BFP(nav_circle_radians)) > 6.28"/>
-      <circle radius="-70" wp="JOE_reported" until="fabs(ANGLE_FLOAT_OF_BFP(nav_circle_radians)) > 6.28"/>
-      <circle radius="-90" wp="JOE_reported" until="fabs(ANGLE_FLOAT_OF_BFP(nav_circle_radians)) > 6.28"/>
-      <go from="p1" hmode="route" wp="p2"/>
-      <go from="p2" hmode="route" wp="p3"/>
-      <go from="p3" hmode="route" wp="p4"/>
-      <go from="p4" hmode="route" wp="p1"/>
-      <deroute block="stay_p1"/>
-    </block>
-    <block name="goto_joe_found">
-      <call fun="enableVisionFindJoe(false)" loop="false"/>      
-      <call fun="NavCopyWaypoint(WP_TD_mrk,WP_JOE_found)" loop="false"/>
-      <stay wp="JOE_found"/>
-    </block>
     <block name="stay_joe_found_static">
       <call fun="enableVisionFindJoe(false)" loop="false"/>
       <call fun="enableVisionDescent(false)" loop="false"/>
@@ -111,10 +78,22 @@
       <call fun="enableVisionDescent(true)" loop="false"/>
       <stay wp="JOE_found"/>
     </block>
-    <block name="stay_td_mrk">
+    <block name="route_findjoe">
       <call fun="enableVisionFindJoe(true)" loop="false"/>
-      <call fun="enableVisionDescent(true)" loop="false"/>
-      <stay wp="TD_mrk"/>
+      <exception cond="vision_timeout " deroute="Standby"/>
+      <go  wp="JOE_reported"/>
+      <circle radius="-30" wp="JOE_reported" until="fabs(ANGLE_FLOAT_OF_BFP(nav_circle_radians)) > 6.28"/>
+      <circle radius="-50" wp="JOE_reported" until="fabs(ANGLE_FLOAT_OF_BFP(nav_circle_radians)) > 6.28"/>
+      <circle radius="-70" wp="JOE_reported" until="fabs(ANGLE_FLOAT_OF_BFP(nav_circle_radians)) > 6.28"/>
+<!--      <circle radius="-90" wp="JOE_reported" until="fabs(ANGLE_FLOAT_OF_BFP(nav_circle_radians)) > 6.28"/>-->
+<!--      <go from="p1" hmode="route" wp="p2"/>-->
+<!--      <go from="p2" hmode="route" wp="p3"/>-->
+<!--      <go from="p3" hmode="route" wp="p4"/>-->
+<!--      <go from="p4" hmode="route" wp="p1"/>-->
+<!--      <deroute block="stay_p1"/>-->
+    </block>
+    <block name="goto_joe_found">      
+      <stay wp="JOE_found" until="stage_time>10"/>
     </block>
     <block name="land_mrk">
       <call_once fun="waypoint_set_here(WP_TD_mrk)"/>
@@ -124,7 +103,7 @@
     </block>
     <block name="descent_mrk">
       <exception cond="5.0 > stateGetPositionEnu_f()->z" deroute="descent_slow_mrk"/>
-      <exception cond="4.0 > vision_height" deroute="descent_slow_mrk"/>
+      <exception cond="5.0 > vision_height" deroute="descent_slow_mrk"/>
       <exception cond="vision_timeout " deroute="Standby"/>
       <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
       <stay climb="-1" vmode="climb" wp="TD_mrk"/>
@@ -150,6 +129,7 @@
     </block>
     <block name="descent">
       <exception cond="5.0 > stateGetPositionEnu_f()->z" deroute="descent_slow"/>
+      <exception cond="5.0 > vision_height" deroute="descent_slow"/>
       <exception cond="vision_timeout " deroute="Standby"/>
       <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
       <stay climb="-1" vmode="climb" wp="TD"/>

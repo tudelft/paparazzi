@@ -50,7 +50,7 @@
 #define VISION_POWER_ON_AT_BOOT true
 #endif
 
-#define WANTED_VISION_VERSION 1.0f
+#define WANTED_VISION_VERSION 1.1f
 
 /* Main magneto structure */
 static struct vision_outback_t vision_outback = {
@@ -69,6 +69,7 @@ bool vision_outback_enable_opticflow = false;
 bool vision_outback_enable_attcalib = false;
 bool vision_outback_enable_videorecord = false;
 bool vision_outback_close_process = false;
+bool vision_outback_update_system = false;
 #ifdef VISION_PWR_OFF
 uint8_t vision_outback_power = VISION_SETTING_STATUS_REQUEST_POWER_OFF;
 #else
@@ -88,7 +89,7 @@ int turbosize = 0;
 //TODO: make airframe file settings:
 #ifdef VISION_PWR_ON // DelftaCopter...
 #define DRONE_WIDTH 1.f;
-#define DRONE_LENGTH 0.3f;
+#define DRONE_LENGTH 0.01f; //disabled because cam not in the middel of the pitch direction
 float vision_outback_moment_height = 0.25;
 #else  // IRIS
 #define DRONE_WIDTH 0.2f;
@@ -226,7 +227,7 @@ static inline void vision_outback_parse_msg(void)
             msg_marker_y = v2p_package.marker_enu_y;
           }
 
-        if (!(v2p_package.version > WANTED_VISION_VERSION-0.001 && v2p_package.version < WANTED_VISION_VERSION+0.001 ))
+        if (!(v2p_package.version > WANTED_VISION_VERSION-0.09 && v2p_package.version < WANTED_VISION_VERSION+0.09 ))
           v2p_package.status = 2;
         break;
       }
@@ -311,6 +312,8 @@ void vision_outback_periodic() {
     p2k_package.enables |= 0b1000000;
   if (vision_outback_close_process)
     p2k_package.enables |= 0b10000000;
+  if (vision_outback_update_system)
+    p2k_package.enables |= 0b11000000;
 
   if (timeoutcount > 0) {
       timeoutcount--;
@@ -319,7 +322,10 @@ void vision_outback_periodic() {
       v2p_package.status = 1;
       vision_timeout = true;
       vision_outback_close_process = false;
+      vision_outback_update_system = false;
     }
+  if (v2p_package.status != 0 )
+    vision_timeout = true;
   do_power_state_machine();
 
   pprz_msg_send_IMCU_DEBUG(&(vision_outback.transport.trans_tx), vision_outback.device,
@@ -409,7 +415,7 @@ void do_power_state_machine(void) {
     }
 }
 
-void enableVisionDescent(bool b) {  
+void enableVisionDescent(bool b) {    
   vision_outback_enable_landing = b;
 }
 

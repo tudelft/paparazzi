@@ -139,6 +139,13 @@ static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *d
                               &(quat->qy),
                               &(quat->qz));
 }
+
+static void send_trim(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_TRIM(trans, dev, AC_ID,
+                              &delftacopter_fwd_pitch_trim,
+                              &delftacopter_fwd_roll_trim);
+}
 #endif
 
 void stabilization_attitude_init(void)
@@ -152,6 +159,7 @@ void stabilization_attitude_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_INT, send_att);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_REF_INT, send_att_ref);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_TRIM, send_trim);
 #endif
 }
 
@@ -314,7 +322,6 @@ void stabilization_attitude_run(bool enable_integrator)
 #endif
 
   // HACK forward controller
-  static float pitch_integrated = 0;
   if(delftacopter_fwd_controller_enabled) {
     struct FloatQuat pitchQ;
     struct FloatQuat fwdState;
@@ -335,17 +342,20 @@ void stabilization_attitude_run(bool enable_integrator)
     float pitch_err = delftacopter_fwd_pitch - fwdEulers.theta;
 
     // Compute the pitch integrator
-    pitch_integrated += pitch_err * delftacopter_fwd_pitch_igain;
-    BoundAbs(pitch_integrated, MAX_PPRZ/3);
-    float pitch_cmd = pitch_err * delftacopter_fwd_pitch_pgain - curRates->q * delftacopter_fwd_pitch_dgain + pitch_integrated;
+    delftacopter_fwd_pitch_trim += pitch_err * delftacopter_fwd_pitch_igain;
+    delftacopter_fwd_roll_trim += roll_err * delftacopter_fwd_roll_igain;
+    BoundAbs(delftacopter_fwd_pitch_trim, MAX_PPRZ/3);
+    BoundAbs(delftacopter_fwd_roll_trim, MAX_PPRZ/3);
+    float pitch_cmd = pitch_err * delftacopter_fwd_pitch_pgain - curRates->q * delftacopter_fwd_pitch_dgain + delftacopter_fwd_pitch_trim;
+    float roll_cmd = roll_err * delftacopter_fwd_roll_pgain - fwd_roll_rate * delftacopter_fwd_roll_dgain + delftacopter_fwd_roll_trim;
 
     // Calculate roll and pitch based on yaw
     int32_t cmd_roll1  = cosf(delftacopter_fwd_advance_angle_p)*delftacopter_fwd_yaw - sinf(delftacopter_fwd_advance_angle_q)*pitch_cmd*delftacopter_fwd_pitch_swp;
     int32_t cmd_pitch1 = sinf(delftacopter_fwd_advance_angle_p)*delftacopter_fwd_yaw + cosf(delftacopter_fwd_advance_angle_q)*pitch_cmd*delftacopter_fwd_pitch_swp;
 
     // Compute the stabilization commands
-    stabilization_cmd[COMMAND_ELEVATOR] = pitch_cmd;
-    stabilization_cmd[COMMAND_AILERON] = -(roll_err * delftacopter_fwd_roll_pgain - fwd_roll_rate * delftacopter_fwd_roll_dgain);
+    stabilization_cmd[COMMAND_ELEVATOR] =  pitch_cmd;
+    stabilization_cmd[COMMAND_AILERON] = - roll_cmd; // Roll is using delftacopter yaw actuator which has opposite sign than fixedwing roll
     stabilization_cmd[COMMAND_ROLL] = cmd_roll1;
     stabilization_cmd[COMMAND_PITCH] = cmd_pitch1;
     stabilization_cmd[COMMAND_YAW] = 0;
@@ -353,7 +363,8 @@ void stabilization_attitude_run(bool enable_integrator)
     stabilization_attitude_enter();
   }
   else {
-    pitch_integrated = 0;//-0.03*MAX_PPRZ;
+    delftacopter_fwd_pitch_trim = DC_FORWARD_PITCH_TRIM;//-0.03*MAX_PPRZ;
+    delftacopter_fwd_roll_trim = DC_FORWARD_ROLL_TRIM;
     dc_mode_fwd = false;
   }
   delftacopter_fwd_controller_enabled = false;

@@ -13,7 +13,8 @@
         <dl_setting var="guidance_indi_pos_gain_z" min="0" step="0.1" max="10.0" shortname="kp_p_z" param="GUIDANCE_INDI_POS_GAIN_Z" persistent="true"/>
         <dl_setting var="guidance_indi_speed_gain_xy" min="0" step="0.1" max="10.0" shortname="kp_v_xy" param="GUIDANCE_INDI_SPEED_GAIN_XY" persistent="true"/>
         <dl_setting var="guidance_indi_speed_gain_z" min="0" step="0.1" max="10.0" shortname="kp_v_z" param="GUIDANCE_INDI_SPEED_GAIN_Z" persistent="true"/>
-        <dl_setting var="guidance_indi_max_bank" min="0" step="0.1" max="3.14" shortname="max_bank rad" param="GUIDANCE_H_MAX_BANK"/>
+        <dl_setting var="guidance_indi_max_phi" min="0" step="0.1" max="3.14" shortname="max_phi rad" param="GUIDANCE_H_MAX_PHI"/>
+        <dl_setting var="guidance_indi_max_theta" min="0" step="0.1" max="3.14" shortname="max_theta rad" param="GUIDANCE_H_MAX_THETA"/>
       </dl_settings>
     </dl_settings>
   </settings>

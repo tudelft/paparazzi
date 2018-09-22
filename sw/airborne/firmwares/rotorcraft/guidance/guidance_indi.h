@@ -44,6 +44,7 @@ extern float guidance_indi_pos_gain_xy;
 extern float guidance_indi_pos_gain_z;
 extern float guidance_indi_speed_gain_xy;
 extern float guidance_indi_speed_gain_z;
-extern float guidance_indi_max_bank;
+extern float guidance_indi_max_phi;
+extern float guidance_indi_max_theta;
 
 #endif /* GUIDANCE_INDI_H */

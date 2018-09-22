@@ -63,9 +63,17 @@ class AtcFrame(wx.Frame):
         self.Refresh()
 
     def OnSize(self, event):
-        self.w = event.GetSize()[0]
-        self.h = event.GetSize()[1]
+        self.w = event.GetSize().x
+        self.h = event.GetSize().y
+        self.cfg.Write("width", str(self.w));
+        self.cfg.Write("height", str(self.h));
         self.Refresh()
+
+    def OnMove(self, event):
+        self.x = event.GetPosition().x
+        self.y = event.GetPosition().y
+        self.cfg.Write("left", str(self.x));
+        self.cfg.Write("top", str(self.y));
 
     def StatusBox(self, dc, nr, txt, percent, color):
         if percent < 0:
@@ -111,22 +119,22 @@ class AtcFrame(wx.Frame):
         #dc.SetBackground(brush)
         #dc.Clear()
 
-	fontscale = int(w * 50.0 / 700.0)
+	fontscale = int(w * 40.0 / 700.0)
         if fontscale < 6:
             fontscale = 6
 
         # Background
         dc.SetBrush(wx.Brush(wx.Colour(0,0,0), wx.TRANSPARENT))
         #dc.DrawCircle(w/2,w/2,w/2-1)
-        font = wx.Font(fontscale, wx.ROMAN, wx.BOLD, wx.NORMAL)
+        font = wx.Font(fontscale, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         dc.SetFont(font)
         dc.DrawText("Airspeed: " + str(self.airspeed) + " kt",tdx,tdx)
         dc.DrawText("Ground Speed: " + str(self.gspeed) + " kt",tdx,tdx+tdy*1)
 
         dc.DrawText("AMSL: " + str(self.amsl) + " ft",tdx,tdx+tdy*2)
-        dc.DrawText("QNH: " + str(self.qnh) + " ",tdx,tdx+tdy*3)
+        dc.DrawText("QNH: " + str(self.qnh*100.0) + " ",tdx,tdx+tdy*3)
 
-        dc.DrawText("ALT: " + str(self.alt) + " ",tdx,tdx+tdy*4)
+        dc.DrawText("Height: " + str(self.alt) + " ft",tdx,tdx+tdy*4)
         dc.DrawText("QFE: " + str(self.qfe) + " ",tdx,tdx+tdy*5)
 
         #dc.DrawText("HMSL: " + str(self.hmsl) + " ft",tdx,tdx+tdy*6)
@@ -138,6 +146,7 @@ class AtcFrame(wx.Frame):
 
 
     def __init__(self):
+
 
         self.w = 700
         self.h = 500
@@ -153,12 +162,18 @@ class AtcFrame(wx.Frame):
         #self.hmsl = 0;
         self.gspeed = 0;
 
+        self.cfg = wx.Config('atc_conf')
+        if self.cfg.Exists('width'):
+            self.w = int(self.cfg.Read('width'))
+            self.h = int(self.cfg.Read('height'))
+
         wx.Frame.__init__(self, id=-1, parent=None, name=u'ATC Center',
                           size=wx.Size(self.w, self.h), title=u'ATC Center')
 
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_MOVE, self.OnMove)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
 
         ico = wx.Icon(PPRZ_SRC + "/sw/ground_segment/python/atc/atc.ico", wx.BITMAP_TYPE_ICO)
@@ -166,6 +181,11 @@ class AtcFrame(wx.Frame):
 
         self.interface = IvyMessagesInterface("ATC-Center")
         self.interface.subscribe(self.message_recv)
+
+        if self.cfg.Exists('left'):
+            self.x = int(self.cfg.Read('left'))
+            self.y = int(self.cfg.Read('top'))
+            self.SetPosition(wx.Point(self.x,self.y), wx.SIZE_USE_EXISTING)
 
     def OnClose(self, event):
         self.interface.shutdown()

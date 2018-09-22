@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
 
-<flight_plan alt="100" ground_alt="0" home_mode_height="100" lat0="-27.217022" lon0="151.236898" max_dist_from_home="2800" name="DALBY2018" qfu="20" security_height="10">
+<flight_plan alt="437" ground_alt="337" home_mode_height="437" lat0="-27.217022" lon0="151.236898" max_dist_from_home="2800" name="DALBY2018" qfu="20" security_height="10">
   <header>
 #include "autopilot.h"
 #include "guidance/guidance_delftacopter.h"
@@ -20,27 +20,27 @@
     <waypoint name="MB2" x="-1968.3" y="-1969.1"/>
     <waypoint name="MB3" x="-2065.8" y="550.7"/>
     <waypoint name="MB4" x="1613.2" y="318.9"/>
-    <waypoint alt="40.0" name="BASE" x="39.5" y="18.6"/>
-    <waypoint alt="50.0" name="JOE" x="42.0" y="8.6"/>
-    <waypoint alt="40.0" name="JOE_reported" x="54.9" y="33.7"/>
-    <waypoint alt="50.0" name="JOE_found" x="297.3" y="-99.5"/>
-    <waypoint alt="50.0" name="TD_mrk" x="257.6" y="-132.7"/>
-    <waypoint name="p1" x="-257.6" y="-182.9"/>
-    <waypoint name="p2" x="259.4" y="-353.2"/>
-    <waypoint name="p3" x="122.4" y="77.3"/>
-    <waypoint name="p4" x="510.0" y="-40.0"/>
-    <waypoint alt="50.0" name="j1" x="63.9" y="48.7"/>
-    <waypoint alt="50.0" name="j2" x="35.3" y="41.6"/>
-    <waypoint alt="50.0" name="j3" x="66.6" y="41.1"/>
-    <waypoint alt="50.0" name="j4" x="38.1" y="33.4"/>
-    <waypoint alt="50.0" name="j5" x="69.9" y="32.7"/>
-    <waypoint alt="50.0" name="j6" x="41.6" y="25.4"/>
-    <waypoint alt="50.0" name="j7" x="72.5" y="24.9"/>
-    <waypoint alt="50.0" name="j8" x="44.7" y="16.1"/>
-    <waypoint alt="40.0" name="TD" x="69.3" y="-36.0"/>
-    <waypoint name="CLIMB" x="73.5" y="-9.9"/>
-    <waypoint alt="80.0" name="STDBY" x="140.0" y="-25.9"/>
-    <waypoint name="HOVER" x="-155.1" y="-275.9"/>
+    <waypoint height="40.0" name="BASE" x="43.2" y="-36.1"/>
+    <waypoint height="50.0" name="JOE" x="49.9" y="-49.6"/>
+    <waypoint height="40.0" name="JOE_reported" x="100." y="-59.6"/>
+    <waypoint height="30.0" name="JOE_found" x="-258.1" y="-21.9"/>
+    <waypoint height="50.0" name="TD_mrk" x="-240.6" y="-36.0"/>
+    <waypoint name="p1" x="-16.9" y="-321.3"/>
+    <waypoint name="p2" x="285.2" y="-386.0"/>
+    <waypoint name="p3" x="143.2" y="19.3"/>
+    <waypoint name="p4" x="450.7" y="-88.5"/>
+    <waypoint height="50.0" name="j1" x="264.1" y="39.7"/>
+    <waypoint height="50.0" name="j2" x="57.2" y="-20.7"/>
+    <waypoint height="50.0" name="j3" x="282.0" y="-2.0"/>
+    <waypoint height="50.0" name="j4" x="81.0" y="-75.6"/>
+    <waypoint height="50.0" name="j5" x="310.6" y="-47.7"/>
+    <waypoint height="50.0" name="j6" x="102.4" y="-116.9"/>
+    <waypoint height="50.0" name="j7" x="340.4" y="-94.9"/>
+    <waypoint height="50.0" name="j8" x="130.5" y="-168.1"/>
+    <waypoint height="40.0" name="TD" x="30.9" y="-45.4"/>
+    <waypoint name="CLIMB" x="33.7" y="43.7"/>
+    <waypoint height="80.0" name="STDBY" x="149.9" y="-123.2"/>
+    <waypoint name="HOVER" x="-239.7" y="-134.0"/>
   </waypoints>
   <sectors>
     <sector color="yellow" name="MissionBoundary" type="dynamic">
@@ -87,7 +87,7 @@
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="nav_throttle_curve_set(0)"/>
-      <call_once fun="NavSetAltitudeReferenceHere()"/>
+      <!--call_once fun="NavSetAltitudeReferenceHere()"/-->
     </block>
     <block group="init" name="holdingPoint">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -147,20 +147,42 @@
     <block group="find_joe" name="find_joe">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_hybrid_heading_init()"/>
-      <call fun="enableVisionFindJoe(true)" loop="false"/>
-      <go from="j8" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j1"/>
-      <go from="j1" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j2"/>
-      <go from="j2" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j3"/>
-      <go from="j3" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j4"/>
-      <go from="j4" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j5"/>
-      <go from="j5" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j6"/>
-      <go from="j6" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j7"/>
-      <go from="j7" hmode="route" pre_call="nav_hybrid_heading_set()" wp="j8"/>
+      <call_once fun="enableVisionFindJoe(true)"/>
+      <go from="j8" hmode="route" pre_call="nav_hybrid_heading_set_left()" wp="j1"/>
+      <go from="j1" hmode="route" pre_call="nav_hybrid_heading_set_right()" wp="j2"/>
+      <go from="j2" hmode="route" pre_call="nav_hybrid_heading_set_left()" wp="j3"/>
+      <go from="j3" hmode="route" pre_call="nav_hybrid_heading_set_right()" wp="j4"/>
+      <go from="j4" hmode="route" pre_call="nav_hybrid_heading_set_left()" wp="j5"/>
+      <go from="j5" hmode="route" pre_call="nav_hybrid_heading_set_right()" wp="j6"/>
+      <go from="j6" hmode="route" pre_call="nav_hybrid_heading_set_left()" wp="j7"/>
+      <go from="j7" hmode="route" pre_call="nav_hybrid_heading_set_right()" wp="j8"/>
       <deroute block="find_joe"/>
     </block>
-    <block group="stay_joe_found" name="stay_joe">
-      <call fun="enableVisionFindJoe(true)" loop="false"/>
+    <block group="joe_found" name="fjoe_stay">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="enableVisionFindJoe(true)"/>
       <stay wp="JOE_found"/>
+    </block>
+    <block group="joe_found" name="fjoe_land">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="enableVisionFindJoe(true)"/>
+      <call_once fun="enableVisionDescent(true)"/>
+      <stay until="stage_time>4" wp="JOE_found"/>
+    </block>
+    <block group="joe_found" name="fjoe_descend">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="12.0 > stateGetPositionEnu_f()->z" deroute="fjoe_descendSlow"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0)"/>
+      <stay climb="nav_descend_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="JOE_found"/>
+    </block>
+    <block group="joe_found" name="fjoe_descendSlow">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="het_moment" deroute="joe_moment"/>
+      <exception cond="vision_timeout " deroute="Standby"/>
+      <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay climb="-0.5" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="JOE_found"/>
     </block>
     <block group="land_joe" name="joe_land">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -180,7 +202,7 @@
       <exception cond="vision_timeout " deroute="Standby"/>
       <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
       <call_once fun="nav_hybrid_heading_init()"/>
-      <stay climb="-0.5" vmode="climb" pre_call="nav_hybrid_heading_set()" wp="JOE"/>
+      <stay climb="-0.5" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="JOE"/>
     </block>
     <block group="land_joe" name="joe_moment">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -271,7 +293,7 @@
       <exception cond="vision_timeout " deroute="Standby"/>
       <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
       <call_once fun="nav_hybrid_heading_init()"/>
-      <stay climb="-0.5" vmode="climb" pre_call="nav_hybrid_heading_set()" wp="BASE"/>
+      <stay climb="-0.5" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="BASE"/>
     </block>
     <block group="land_base" name="base_moment">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -299,16 +321,12 @@
       <call_once fun="nav_hybrid_heading_init()"/>
       <stay pre_call="nav_hybrid_heading_set()" wp="STDBY"/>
     </block>
-    <block group="safe" name="StandbyWpHeading" strip_button="StandbyWP">
-      <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_p1)"/>
-      <stay pre_call="nav_hybrid_heading_set_to_waypoint()" wp="STDBY"/>
-    </block>
     <block group="safe" name="Hover_here" strip_button="HoverHere">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="waypoint_set_alt(WP_HOVER,stateGetPositionEnu_f()->z)"/>
       <call_once fun="NavSetWaypointHere(WP_HOVER)"/>
-      <stay wp="HOVER"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay wp="HOVER" pre_call="nav_hybrid_heading_set()"/>
     </block>
     <block group="safe" name="LandHere" strip_button="LandHere">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -316,12 +334,12 @@
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
       <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0)"/>
       <call_once fun="nav_hybrid_heading_init()"/>
-      <stay climb="nav_descend_vspeed" vmode="climb" pre_call="nav_hybrid_heading_set()" wp="TD"/>
+      <stay climb="nav_descend_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="TD"/>
     </block>
     <block group="safe" name="LandHereSlow">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_hybrid_heading_init()"/>
-      <stay climb="-0.5" vmode="climb" pre_call="nav_hybrid_heading_set()" wp="TD"/>
+      <stay climb="-0.5" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="TD"/>
     </block>
     <block group="safe" name="landing_moment">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -344,18 +362,19 @@
       <call_once fun="nav_throttle_curve_set(1)"/>
       <call_once fun="waypoint_set_alt(WP_HOVER,stateGetPositionEnu_f()->z)"/>
       <call_once fun="NavSetWaypointHere(WP_HOVER)"/>
-      <stay until="stage_time>10" wp="HOVER"/>
+      <stay until="stage_time>60" wp="HOVER"/>
       <attitude climb="nav_descend_vspeed" pitch="0" roll="0" until="GpsFixValid() && (stateGetPositionEnu_f()->z > 20.0)" vmode="climb"/>
       <deroute block="Standby"/>
     </block>
     <block group="autosafe" name="DatalinkLoss">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <exception cond="block_time>120" deroute="Standby"/>
-      <exception cond="get_temp(1) > 100" deroute="Standby"/>
+      <exception cond="block_time>120" deroute="StandbyAutoHeading"/>
+      <exception cond="get_temp(1) > 100" deroute="StandbyAutoHeading"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
       <call_once fun="NavSetWaypointHere(WP_HOVER)"/>
       <call_once fun="waypoint_set_alt(WP_HOVER,stateGetPositionEnu_f()->z + 20)"/>
-      <stay until="60 > datalink_time" wp="HOVER"/>
-      <stay wp="HOVER"/>
+      <stay until="60 > datalink_time" pre_call="nav_hybrid_heading_set()" wp="HOVER"/>
+      <stay wp="HOVER" pre_call="nav_hybrid_heading_set()"/>
     </block>
     <block group="autosafe" name="failsafe">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>

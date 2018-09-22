@@ -29,6 +29,9 @@
 // Align with wind
 extern void nav_hybrid_heading_init(void);
 extern void nav_hybrid_heading_set(void);
+extern void nav_hybrid_heading_set_left(void);
+extern void nav_hybrid_heading_set_nose(void);
+extern void nav_hybrid_heading_set_right(void);
 
 // Turn to waypoint
 extern void nav_hybrid_heading_init_to_waypoint(int wp);
@@ -40,7 +43,7 @@ extern void nav_hybrid_heading_periodic(void);
 extern float nav_hybrid_heading_max_yaw_rate;
 extern float nav_hybrid_heading_max_yaw_rate_to_wp;
 extern float nav_hybrid_heading_pitch_deadband;
-extern float nav_hybrid_heading_tip_in_wind;
+extern float nav_hybrid_heading_tip_in_wind;        ///< 0=auto, 1=left, 2=nose, 3=right
 
 
 #endif
