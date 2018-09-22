@@ -192,6 +192,31 @@ class DelftaCopterFrame(wx.Frame):
             return 0.5
         return 1
 
+    def get_vision_status(self):
+        if self.vision_status == 0:
+            return "On"
+        elif self.vision_status == 2:
+            return "Version Error!"
+        elif self.vision_status == 1:
+            return "Off"
+        return "?"
+
+    def vision_color(self):
+        if self.vision_status == 0:
+            return 1.0
+        elif self.vision_status == 2:
+            return 0.0
+        return -1
+
+    def range_color(self):
+        if self.range > 10000:
+            return 0
+        elif self.range > 5000:
+            return 0.5
+        elif self.range >= 0:
+            return  1
+        return -1
+
     def OnPaint(self, e):
 
         w = self.w
@@ -229,12 +254,14 @@ class DelftaCopterFrame(wx.Frame):
         dc.DrawText("Motor Temp: " + str(self.motor_temp) + "",self.stat+tdx,tdx+tdy*2)
         self.StatusBox(dc,2,"",1.0, self.motor_color())
 
-        dc.DrawText("Batt Temp: " + str(self.batt_temp) + "",self.stat+tdx,tdx+tdy*3)
+        dc.DrawText("Link Range: " + str(self.range / 1000.0) + " km",self.stat+tdx,tdx+tdy*3)
+        self.StatusBox(dc,3,"",1.0, self.range_color())
 
         dc.DrawText("SideSlip: " + str(self.sideslip) + "",self.stat+tdx,tdx+tdy*4)
         self.StatusBox(dc,4,"",1.0, self.sideslip_color())
 
-        dc.DrawText("Vision: " + str(int(self.vision_status)) + ", " + str(self.vision_height) + "m " + str(self.vision_marker_x) + "," + str(self.vision_marker_y) ,self.stat+tdx,tdx+tdy*5)
+        dc.DrawText("Vision: " + self.get_vision_status() + " " + str(self.vision_height) + "m " + str(self.vision_marker_x) + "," + str(self.vision_marker_y) ,self.stat+tdx,tdx+tdy*5)
+        self.StatusBox(dc,5,"",1.0, self.vision_color())
 
 
         dc.DrawText("DeltaH: " + str(self.alt_sp - self.alt)  ,self.stat+tdx,tdx+tdy*6)
