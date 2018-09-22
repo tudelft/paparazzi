@@ -43,16 +43,15 @@ class TrafficScenario(object):
         self.circular_zones = circular_zones
         
     def update_traffic_scenario(self, aircraft, ReceiverThread):
-        self.UAV_speed = aircraft.get_ground_speed() # [m/s]
+        self.UAV_speed = aircraft.get_gspeed() # [m/s]
         self.UAV_point_enu = aircraft.get_enu()#geodetic.EnuCoor_f(self.UAV.P[0], self.UAV.P[1], self.UAV.P[2])
         self.UAV_lla = aircraft.get_lla()
         self.UAV_hdg = aircraft.get_course()
         
         self.Traffic = traffic.Aircraft()
-        self.Traffic.create(1 , self.UAV_speed, self.UAV_lat, self.UAV_lon, self.UAV_hdg, 'UAV', 0.)
+        self.Traffic.create(1 , self.UAV_speed, np.rad2deg(self.UAV.lla.lat), np.rad2deg(self.UAV.lla.lon), self.UAV_hdg, 'UAV', 0.)
         
         traffic_events = ReceiverThread.get_events()
-        
         
         for i in range(len(traffic_events)):
             self.Traffic.create(1, traffic_events[i].get_speed(), traffic_events[i].get_lla().lat, traffic_events[i].get_lla().lon, traffic_events[i].get_course(), 'AC' + str(i+1), traffic_events[i].get_radius())

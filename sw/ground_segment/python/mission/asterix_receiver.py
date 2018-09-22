@@ -45,7 +45,7 @@ from pprz_math import geodetic
 # Asterix receiver over UDP
 class AsterixReceiver(threading.Thread):
 
-    def __init__(self):
+    def __init__(self, ltp_def):
         """
         Initialize the Asterix receiver thread
         """
@@ -57,6 +57,7 @@ class AsterixReceiver(threading.Thread):
         self.events = Set([])
         self.lock = threading.Lock()
         self.stop_event = threading.Event()
+        self.ltp_def = ltp_def
         
         # Create the socket for communication
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -83,7 +84,7 @@ class AsterixReceiver(threading.Thread):
             # For each received asterix packet
             logging.debug("Parsing %d asterix packets", len(packets))
             for p in packets:
-                new_t = AsterixEvent(p)
+                new_t = AsterixEvent(p, self.ltp_def)
 
                 # Check if it already existed then update else add
                 try:
@@ -91,7 +92,7 @@ class AsterixReceiver(threading.Thread):
                     found = False
                     for t in self.events:
                         if t == new_t:
-                            t.update(new_t)
+                            t.update(new_t, self.ltp_def)
                             found = True
                         
                     if not found:
@@ -142,7 +143,7 @@ class AsterixEvent(object):
     MIGRATORY_BIRD = 2
     BIRD_OF_PREY = 3
 
-    def __init__(self, asterix_packet):
+    def __init__(self, asterix_packet, ltp_def):
         """
         Create a new event from received asterix packet
         """
@@ -154,9 +155,13 @@ class AsterixEvent(object):
         self.roc = asterix_packet['I220']['RoC']['val'] * AsterixEvent.FT_TO_M # [m]
         self.tot_lst = [self.tot]
         self.lla_lst = [geodetic.LlaCoor_f(self.lat, self.lon, self.alt)]
+        self.enu_lst = [geodetic.LlaCoor_f(self.lat/180*math.pi, self.lon/180*math.pi, 0).to_enu(self.ltp_def)]
+        self.gspeed = 0.
+        self.velocity = 0.
+        self.hdg = 0.
         self.time = time.time()
 
-    def update(self, other):
+    def update(self, other, ltp_def):
         """
         Update the current object with information from the new other object
         """
@@ -168,8 +173,15 @@ class AsterixEvent(object):
         self.roc = other.roc
         self.tot_lst = [self.tot_lst[-1], other.tot_lst[-1]]
         self.lla_lst = [self.lla_lst[-1], other.lla_lst[-1]]
+        self.enu_lst = [self.enu_lst[-1], geodetic.LlaCoor_f(self.lat/180*math.pi, self.lon/180*math.pi, self.alt).to_enu(self.ltp_def)]
+        dt = (self.ToT_lst[1] - self.ToT_lst[0])
+        dx = (self.enu_lst[1].x - self.enu_lst[0].x)
+        dy = (self.enu_lst[1].y - self.enu_lst[0].y) 
+        self.gspeed = {'east': dx/dt , 'north' : dy/dt }
+        self.velocity = np.sqrt(self.gspeed['east']**2 + self.gspeed['north']**2)
+        self.hdg = np.rad2deg(np.arctan2(self.gspeed['east'], self.gspeed['north'])) % 360.
         self.time = time.time()
-
+        
     def timed_out(self):
         """
         Whether we haven't received an update for a while and exceeded the TIMEOUT
@@ -212,6 +224,24 @@ class AsterixEvent(object):
         Return the last lat, long, alt position
         """
         return self.lla_lst[-1]
+        
+    def get_enu(self):
+        """
+        Return the last east, north, up position
+        """
+        return self.enu_lst[-1]
+        
+    def get_gspeed(self):
+        """
+        Return the ground speed vector
+        """
+        return self.gspeed
+        
+    def get_velocity(self):
+        """
+        Return the gspeed magnitude
+        """
+        return self.velocity
 
     def __eq__(self, other):
         """

@@ -47,11 +47,11 @@ class RealtimeResolution(object):
         """
         self.realtime_scenario.init_SSD_plot()
         
-    def run_realtime(self, tla, wind, detection_margin, airspeed):
+    def run_realtime(self, tla, wind, detection_margin, airspeed, aircraft, receiverthread):
         """
         run the realtime_resolutions
         """
-        self.realtime_scenario.update_traffic_scenario(aircraft, ReceiverThread)
+        self.realtime_scenario.update_traffic_scenario(aircraft, receiverthread)
         if self.traffic_scenario.Traffic.ntraf > 1:
             try:
                 self.realtime_scenario.detect_conflicts(tla, wind, detection_margin, airspeed)

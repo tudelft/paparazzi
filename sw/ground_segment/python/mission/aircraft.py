@@ -29,6 +29,7 @@ import sys
 import logging
 import threading
 import time
+import numpy as np
 
 # if PAPARAZZI_SRC or PAPARAZZI_HOME not set, then assume the tree containing this
 # file is a reasonable substitute
@@ -111,7 +112,8 @@ class Aircraft(object):
         try:
             self.lock.acquire()
             
-            self.lla = geodetic.LlaCoor_f(float(msg['lat']), float(msg['long']), float(msg['alt']))
+            self.lla = geodetic.LlaCoor_f(float(msg['lat']) / 180. * np.pi, float(msg['long']) / 180. * np.pi, float(msg['alt']) / 180.*np.pi)
+            self.enu = geodetic.LlaCoor_f(self.lla.lat/180*np.pi, self.lla.lon/180*np.pi, self.lla.alt).to_enu(self.ltp_def)
             self.course = float(msg['course'])
             self.ground_speed = float(msg['speed'])
             self.airspeed = float(msg['airspeed'])
@@ -144,6 +146,17 @@ class Aircraft(object):
         finally:
             self.lock.release()
         return lla
+        
+    def get_enu(self):
+        """
+        Return the ENU of the aircraft
+        """
+        try:
+            self.lock.acquire()
+            enu = self.enu
+        finally:
+            self.lock.release()
+        return enu
         
     def get_course(self):
         """
