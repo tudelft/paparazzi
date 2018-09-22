@@ -22,12 +22,16 @@ from pprz_math import geodetic
 
 import static_nfz
 import coordinate_transformations as coord_trans
+import asterix_receiver
+import asterix_visualizer
+import aircraft
 
 import flightplan_xml_parse
 
 #defines
 static_margin = 100. #[m]
 altitude = 120.
+airspeed = 23.
 
 class Mission(object):
     def __init__(self, ac_id):
@@ -51,6 +55,13 @@ class Mission(object):
         # mission elements
         self.altitude = altitude
         self.mission_elements = []
+        
+        # asterix
+        self.asterixreceiver = asterix_receiver.AsterixReceiver()
+        self.asterixvisualizer = asterix_visualizer.AsterixVisualizer(self.ivy_interface)
+        
+        # own aircraft
+        self.aircraft = aircraft.Aircraft()
         
         
     def static_nfzs_from_fp(self):
@@ -127,9 +138,11 @@ class Mission(object):
         Main loop
         """
         self.initialize_mission_elements()
+        self.asterixreceiver.start()
         
         while True:
             self.draw_circular_static_nfzs()
+            self.asterixvisualizer.visualize(self.asterixreceiver.get_events())
             time.sleep(1)
 
 # Mission element

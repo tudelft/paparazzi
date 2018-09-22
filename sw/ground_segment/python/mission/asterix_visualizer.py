@@ -41,12 +41,16 @@ from pprzlink.message import PprzMessage
 from pprzlink.ivy import IvyMessagesInterface
 
 class AsterixVisualizer(object):
-    def __init__(self):
+    def __init__(self, ivy_interface = None):
         """
         Initialize the asterix visualizer
         """
         self.event_ids = Set([]) # IDs that are currently drawn on the ground station
-        self.ivy_interface = IvyMessagesInterface("Asterix Visualizer")
+        # Create a new ivy interface if needed
+        if ivy_interface == None:
+            self.ivy_interface = IvyMessagesInterface("Aircraft NFZ")
+        else:
+            self.ivy_interface = ivy_interface
 
     def __delete__(self):
         self.stop()

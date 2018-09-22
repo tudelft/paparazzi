@@ -19,7 +19,6 @@ import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 from PIL import Image
 from matplotlib.offsetbox import (OffsetImage, AnnotationBbox)
-import copy
 from time import sleep
 
 
@@ -35,71 +34,31 @@ from pprzlink.message import PprzMessage
 from pprz_math import geodetic
 
 class traffic_scenario(object):
-    def __init__(self, UAV, strategy, circular_zones):
-        self.UAV_speed = np.sqrt(UAV.V[0]**2 + UAV.V[1]**2) # [m/s]
-        self.UAV_point_enu = geodetic.EnuCoor_f(UAV.P[0], UAV.P[1], UAV.P[2])
-        self.UAV_lla = coord_trans.enu_to_lla_fw(self.UAV_point_enu, UAV.ref_utm_i)
-        self.UAV_lat = self.UAV_lla.lat*10.**-7
-        self.UAV_lon = self.UAV_lla.lon*10.**-7
-        self.UAV_hdg = float(UAV.hdg)
-        self.UAV = UAV
+    def __init__(self, aircraft, circular_zones):
+        self.UAV_speed = aircraft.get_ground_speed() # [m/s]
+        self.UAV_point_enu = aircraft.get_enu()
+        self.UAV_lla = aircraft.get_lla()
+        self.UAV_hdg = aircraft.get_course()
         self.Traffic = traffic.Aircraft()
-        self.strategy = strategy
         self.circular_zones = circular_zones
         
-    def update_traffic_scenario(self, UAV, ReceiverThread):
-        self.UAV = UAV
-        self.UAV_speed = np.sqrt(self.UAV.V[0]**2 + self.UAV.V[1]**2) # [m/s]
-        self.UAV_point_enu = geodetic.EnuCoor_f(self.UAV.P[0], self.UAV.P[1], self.UAV.P[2])
-        self.UAV_lla = coord_trans.enu_to_lla_fw(self.UAV_point_enu, UAV.ref_utm_i)
-        self.UAV_lat = self.UAV_lla.lat*10.**-7
-        self.UAV_lon = self.UAV_lla.lon*10.**-7
-        self.UAV_hdg = float(self.UAV.hdg)
+    def update_traffic_scenario(self, aircraft, ReceiverThread):
+        self.UAV_speed = aircraft.get_ground_speed() # [m/s]
+        self.UAV_point_enu = aircraft.get_enu()#geodetic.EnuCoor_f(self.UAV.P[0], self.UAV.P[1], self.UAV.P[2])
+        self.UAV_lla = aircraft.get_lla()
+        self.UAV_hdg = aircraft.get_course()
         
         self.Traffic = traffic.Aircraft()
         self.Traffic.create(1 , self.UAV_speed, self.UAV_lat, self.UAV_lon, self.UAV_hdg, 'UAV', 0.)
-    
         
-        active_traffic_objects = self.get_active_traffic_objects(ReceiverThread)
+        traffic_events = ReceiverThread.get_events()
         
         
-        for i in range(len(active_traffic_objects)):
-            if (active_traffic_objects[i].TrkN >= 1 and active_traffic_objects[i].TrkN < 20000):
-                if (active_traffic_objects[i].yaw_rate > 2.):
-                    tcpa = self.calc_tcpa(active_traffic_objects[i].enu_lst[-1], active_traffic_objects[i].gspeed['east'], active_traffic_objects[i].gspeed['north'], self.UAV_speed, self.UAV_hdg)
-                    if tcpa > 0. and tcpa < 30.:
-                        t_yawing = 7. #[s] predicted, editable        
-                        hdg = active_traffic_objects[i].hdg
-                        if tcpa > 3.:
-                            hdg = hdg + active_traffic_objects[i].yaw_rate * 3.
-                        else:
-                            hdg = hdg + active_traffic_objects[i].yaw_rate * tcpa                        
-                        
-                        if tcpa > t_yawing + 3.:
-                            d_hdg = active_traffic_objects[i].yaw_rate * t_yawing
-                        else:
-                            d_hdg = active_traffic_objects[i].yaw_rate * tcpa
-                        if d_hdg > 30.:
-                            d_hdg = 30.
-                        for hdg_step in range(int(d_hdg)):
-                            self.Traffic.create(1, active_traffic_objects[i].velocity, active_traffic_objects[i].lla_lst[-1].lat * 10.**-7, active_traffic_objects[i].lla_lst[-1].lon * 10.**-7, (hdg + hdg_step) % 360., 'AC' + str(i+1), active_traffic_objects[i].radius)
-                    else:
-                        self.Traffic.create(1, active_traffic_objects[i].velocity, active_traffic_objects[i].lla_lst[-1].lat * 10.**-7, active_traffic_objects[i].lla_lst[-1].lon * 10.**-7, active_traffic_objects[i].hdg, 'AC' + str(i+1), active_traffic_objects[i].radius)
-                else:
-                    self.Traffic.create(1, active_traffic_objects[i].velocity, active_traffic_objects[i].lla_lst[-1].lat * 10.**-7, active_traffic_objects[i].lla_lst[-1].lon * 10.**-7, active_traffic_objects[i].hdg, 'AC' + str(i+1), active_traffic_objects[i].radius)
-            
-            elif ((active_traffic_objects[i].TrkN >= 40000 and active_traffic_objects[i].TrkN < 50000) and (active_traffic_objects[i].prey_loitering == True) and False):
-                self.Traffic.create(1, active_traffic_objects[i].velocity_prey, active_traffic_objects[i].lla_lst_prey[-1].lat * 10.**-7, active_traffic_objects[i].lla_lst_prey[-1].lon * 10.**-7, active_traffic_objects[i].hdg_prey, 'AC' + str(i+1), active_traffic_objects[i].radius_prey)
-            
-            else:
-                self.Traffic.create(1, active_traffic_objects[i].velocity, active_traffic_objects[i].lla_lst[-1].lat * 10.**-7, active_traffic_objects[i].lla_lst[-1].lon * 10.**-7, active_traffic_objects[i].hdg, 'AC' + str(i+1), active_traffic_objects[i].radius)
+        for i in range(len(traffic_events)):
+            self.Traffic.create(1, traffic_events[i].get_speed(), traffic_events[i].get_lla().lat, traffic_events[i].get_lla().lon, traffic_events[i].get_course(), 'AC' + str(i+1), traffic_events[i].get_radius())
         
         for j in range(len(self.circular_zones)):
             self.Traffic.create(1, 0, self.circular_zones[j][2].lat * 10. **-7, self.circular_zones[j][2].lon * 10. **-7, 0, 'Zone' + str(j), self.circular_zones[j][0])
-        
-    def get_active_traffic_objects(self, ReceiverThread):
-        active_traffic_objects = ReceiverThread.active_traffic_objects
-        return active_traffic_objects
         
     def detect_conflicts(self, tla, wind, margin):
         self.asas = ssd_resolutions.Asas(self.Traffic.ntraf, self.UAV_speed, self.strategy, tla, margin)
@@ -120,7 +79,6 @@ class traffic_scenario(object):
     def init_SSD_plot(self):
         plt.ion()
         self.fig, self.ax = plt.subplots()
-        #self.line1, = plt.plot([], [], color = '#404040', label="Velocity limits")
         
     def plot_SSD(self):
         #==============================================================================
@@ -129,11 +87,8 @@ class traffic_scenario(object):
         
         #Choose ownship
         i_own = 0
-        #i_own = Traffic.id.index("KL204")
         
         #AC velocity vector
-        v_own = np.array([self.Traffic.gseast[i_own], self.Traffic.gsnorth[i_own]])
-        
         
         #SSD- CIRCLES OF VMAX AND VMIN
         vmin = self.asas.vmin
@@ -157,15 +112,9 @@ class traffic_scenario(object):
         #------------------------------------------------------------------------------
         
         #PLOTS
-        #fig, ax = plt.subplots()
         self.ax.clear()
-        #line1, = plt.plot(x_SSD_outer, y_SSD_outer, color = '#404040', label="Velocity limits")
-        #self.line1.set_xdata(x_SSD_outer)
-        #self.line1.set_ydata(y_SSD_outer)
         self.ax.plot(x_SSD_outer, y_SSD_outer, color = '#404040')
         self.ax.plot(x_SSD_inner, y_SSD_inner, color = '#404040')
-        
-        
         
         if self.asas.ARV_calc[i_own]:
             for j in range(len(self.asas.ARV_calc[i_own])):
@@ -205,117 +154,46 @@ class traffic_scenario(object):
         self.ax.axis('equal')
         self.ax.axis('off')
         self.fig.canvas.draw()
-        #plt.savefig('bar.jpg',bbox_inches = 'tight')
-        #plt.show()
         
 class traffic_scenario_extrapolated(object):
-    def __init__(self, UAV, strategy, circular_zones):
-        self.UAV = UAV
-        self.strategy = strategy
+    def __init__(self, aircraft, circular_zones):
         self.circular_zones = circular_zones
         
-    def update_traffic_scenario(self, commanded_airspeed, UAV_hdg, wind, pos_enu, dt, ReceiverThread, types = "both"):
+    def update_traffic_scenario(self, commanded_airspeed, UAV_hdg, wind, pos_enu, dt, ReceiverThread):
         self.UAV_in_PZ = False
         self.UAV_speed = np.sqrt((commanded_airspeed * np.sin(np.deg2rad(UAV_hdg)) + wind['east'])**2 + (commanded_airspeed * np.cos(np.deg2rad(UAV_hdg)) + wind['north'])**2)
         self.UAV_point_enu = pos_enu
-        self.UAV_lla = coord_trans.enu_to_lla_fw(self.UAV_point_enu, self.UAV.ref_utm_i)
+        self.UAV_lla = coord_trans.enu_to_lla_fw(self.UAV_point_enu, self.UAV.ref_utm_i) ## check
         self.UAV_lat = self.UAV_lla.lat*10.**-7
         self.UAV_lon = self.UAV_lla.lon*10.**-7
         self.UAV_hdg = float(UAV_hdg)
         self.Traffic = traffic.Aircraft()
         self.Traffic.create(1 , self.UAV_speed, self.UAV_lat, self.UAV_lon, self.UAV_hdg, 'UAV', 0.)
-        active_traffic_objects = self.get_active_traffic_objects(ReceiverThread)
         
-        if ((types == "dynamic") or (types == "both")):
-            for i in range(len(active_traffic_objects)):
-                
-                if ((active_traffic_objects[i].TrkN >= 1 and active_traffic_objects[i].TrkN < 20000) and (active_traffic_objects[i].prey_loitering == True)):
-                    velocity = active_traffic_objects[i].velocity
-                    lla_point_old = active_traffic_objects[i].lla_lst[-1]
-                    hdg = active_traffic_objects[i].hdg
-                    radius = active_traffic_objects[i].radius
-                    
-                    
-                    # Speed components to compute future position
-                    Vx = velocity * np.sin(np.deg2rad(hdg)) # V in east direction
-                    Vy = velocity * np.cos(np.deg2rad(hdg)) # V in north direction
-                    Vz = active_traffic_objects[i].RoC # V in upward direction
-                    
-                    # enu_point conversion to new point and to lla
-                    enu_point_old = coord_trans.lla_to_enu_fw(lla_point_old, self.UAV.ref_utm_i)
-                    if (active_traffic_objects[i].yaw_rate > 2.):
-                        tcpa = self.calc_tcpa(enu_point_old, Vx, Vy, commanded_airspeed, wind, self.UAV_hdg)
-                        if tcpa > 0. and tcpa < 30.:
-                            t_yawing = 7. #[s] predicted, editable   
-                            
-                            if tcpa > 3.:
-                                hdg = hdg + active_traffic_objects[i].yaw_rate * 3.
-                            else:
-                                hdg = hdg + active_traffic_objects[i].yaw_rate * tcpa
-                                
-                            if tcpa > t_yawing + 3.:
-                                d_hdg = active_traffic_objects[i].yaw_rate * t_yawing
-                                
-                            else:
-                                d_hdg = active_traffic_objects[i].yaw_rate * tcpa
-                            if d_hdg > 30.:
-                                d_hdg = 30.
-                            for hdg_step in range(1,int(d_hdg)):
-                                hdg_temp = (hdg + hdg_step) % 360.
-                                Vx_temp = velocity * np.sin(np.deg2rad(hdg_temp)) # V in east direction
-                                Vy_temp = velocity * np.cos(np.deg2rad(hdg_temp)) # V in north direction
-                                Vz_temp = active_traffic_objects[i].RoC # V in upward direction
-                                enu_point_new_temp = geodetic.EnuCoor_f(enu_point_old.x + Vx_temp * dt, enu_point_old.y + Vy_temp * dt, enu_point_old.z + Vz_temp * dt)
-                                lla_point_new_temp = coord_trans.enu_to_lla_fw(enu_point_new_temp, self.UAV.ref_utm_i)
-                                self.Traffic.create(1, velocity, lla_point_new_temp.lat * 10.**-7, lla_point_new_temp.lon * 10.**-7, hdg_temp, 'AC' + str(i+1), radius)
-                    
-                    enu_point_new = geodetic.EnuCoor_f(enu_point_old.x + Vx * dt, enu_point_old.y + Vy * dt, enu_point_old.z + Vz * dt)
-                    lla_point_new = coord_trans.enu_to_lla_fw(enu_point_new, self.UAV.ref_utm_i)
-                
-                elif ((active_traffic_objects[i].TrkN >= 40000 and active_traffic_objects[i].TrkN < 50000) and (active_traffic_objects[i].prey_loitering == True) and False):                
-                    velocity = active_traffic_objects[i].velocity_prey
-                    lla_point_old = active_traffic_objects[i].lla_lst_prey[-1]
-                    hdg = active_traffic_objects[i].hdg_prey
-                    radius = active_traffic_objects[i].radius_prey
-                    
-                    
-                    # Speed components to compute future position
-                    Vx = velocity * np.sin(np.deg2rad(hdg)) # V in east direction
-                    Vy = velocity * np.cos(np.deg2rad(hdg)) # V in north direction
-                    Vz = active_traffic_objects[i].RoC # V in upward direction
-                    
-                    # enu_point conversion to new point and to lla
-                    enu_point_old = coord_trans.lla_to_enu_fw(lla_point_old, self.UAV.ref_utm_i)
-                    enu_point_new = geodetic.EnuCoor_f(enu_point_old.x + Vx * dt, enu_point_old.y + Vy * dt, enu_point_old.z + Vz * dt)
-                    lla_point_new = coord_trans.enu_to_lla_fw(enu_point_new, self.UAV.ref_utm_i)
-                else:
-                    velocity = active_traffic_objects[i].velocity
-                    lla_point_old = active_traffic_objects[i].lla_lst[-1]
-                    hdg = active_traffic_objects[i].hdg
-                    radius = active_traffic_objects[i].radius
-                    
-                    
-                    # Speed components to compute future position
-                    Vx = velocity * np.sin(np.deg2rad(hdg)) # V in east direction
-                    Vy = velocity * np.cos(np.deg2rad(hdg)) # V in north direction
-                    Vz = active_traffic_objects[i].RoC # V in upward direction
-                    
-                    # enu_point conversion to new point and to lla
-                    enu_point_old = coord_trans.lla_to_enu_fw(lla_point_old, self.UAV.ref_utm_i)
-                    enu_point_new = geodetic.EnuCoor_f(enu_point_old.x + Vx * dt, enu_point_old.y + Vy * dt, enu_point_old.z + Vz * dt)
-                    lla_point_new = coord_trans.enu_to_lla_fw(enu_point_new, self.UAV.ref_utm_i)
-                
-                # Create traffic object
-                self.Traffic.create(1, velocity, lla_point_new.lat * 10.**-7, lla_point_new.lon * 10.**-7, hdg, 'AC' + str(i+1), radius)
+        traffic_events = ReceiverThread.get_events()
         
-        if ((types == "dynamic") or (types == "both")):
-            for j in range(len(self.circular_zones)):
-                             
-                self.Traffic.create(1, 0, self.circular_zones[j][2].lat * 10. **-7, self.circular_zones[j][2].lon * 10. **-7, 0, 'Zone' + str(j), self.circular_zones[j][0])
+        for i in range(len(traffic_events)):
+            velocity = traffic_events[i].get_ground_speed()
+            lla_point_old = traffic_events[i].get_lla()
+            hdg = traffic_events[i].get_course()
+            radius = traffic_events[i].get_radius()
             
-    def get_active_traffic_objects(self, ReceiverThread):
-        active_traffic_objects = ReceiverThread.active_traffic_objects
-        return active_traffic_objects
+            # Speed components to compute future position
+            Vx = velocity * np.sin(np.deg2rad(hdg)) # V in east direction
+            Vy = velocity * np.cos(np.deg2rad(hdg)) # V in north direction
+            Vz = traffic_events[i].RoC # V in upward direction
+            
+            # enu_point conversion to new point and to lla
+            enu_point_old = coord_trans.lla_to_enu_fw(lla_point_old, self.UAV.ref_utm_i)
+            enu_point_new = geodetic.EnuCoor_f(enu_point_old.x + Vx * dt, enu_point_old.y + Vy * dt, enu_point_old.z + Vz * dt)
+            lla_point_new = coord_trans.enu_to_lla_fw(enu_point_new, self.UAV.ref_utm_i)
+            
+            # Create traffic object
+            self.Traffic.create(1, velocity, lla_point_new.lat * 10.**-7, lla_point_new.lon * 10.**-7, hdg, 'AC' + str(i+1), radius)
+    
+        for j in range(len(self.circular_zones)):
+                         
+            self.Traffic.create(1, 0, self.circular_zones[j][2].lat * 10. **-7, self.circular_zones[j][2].lon * 10. **-7, 0, 'Zone' + str(j), self.circular_zones[j][0])
             
     def detect_conflicts(self, tla, wind, margin):
         self.asas = ssd_resolutions.Asas(self.Traffic.ntraf, self.UAV_speed, self.strategy, tla, margin)
