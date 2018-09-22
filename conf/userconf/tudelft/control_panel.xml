@@ -190,6 +190,8 @@
       <program name="Ivy2UDP">
         <arg flag="-h" constant="192.168.1.255"/>
         <arg flag="-id" constant="@AC_ID"/>
+        <arg flag="-p" value="7272"/>
+        <arg flag="-dp" value="7273"/>
       </program>
       <program name="GCS">
         <arg flag="-speech"/>
@@ -249,11 +251,14 @@
       <program name="Data Link">
         <arg flag="-udp"/>
         <arg flag="-nouplink"/>
+        <arg flag="-udp_port" value="7272"/>
+        <arg flag="-udp_uplink_port" value="7273"/>
       </program>
       <program name="Server"/>
       <program name="Messages"/>
       <program name="EnergyManager"/>
       <program name="ATC"/>
+      <program name="Wind"/>
       <program name="DelftaCopter"/>
       <program name="GCS">
         <arg flag="-fit_to_window"/>
@@ -315,6 +320,8 @@
       <program name="Ivy2UDP">
         <arg flag="-h" constant="192.168.1.255"/>
         <arg flag="-id" constant="@AC_ID"/>
+        <arg flag="-p" value="7272"/>
+        <arg flag="-dp" value="7273"/>
       </program>
       <program name="GCS">
         <arg flag="-speech"/>
