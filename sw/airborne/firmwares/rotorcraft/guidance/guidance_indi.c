@@ -270,8 +270,11 @@ void guidance_indi_run(float heading_sp)
 #endif
 
   //Bound euler angles to prevent flipping
-  Bound(guidance_euler_cmd.phi, -guidance_indi_max_phi, guidance_indi_max_phi);
-  Bound(guidance_euler_cmd.theta, -guidance_indi_max_theta, guidance_indi_max_theta);
+
+  // CDW: WARNING: THIS IS INVERTED ON PURPOSE: APPARENTLY (for DelftaCopter) the limit in phi is applied to theta
+  // this has probably something to do with setpoint yxz
+  Bound(guidance_euler_cmd.theta, -guidance_indi_max_phi, guidance_indi_max_phi);
+  Bound(guidance_euler_cmd.phi, -guidance_indi_max_theta, guidance_indi_max_theta);
 
   //set the quat setpoint with the calculated roll and pitch
   struct FloatQuat q_sp;
