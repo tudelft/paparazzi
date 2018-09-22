@@ -88,7 +88,7 @@ void nav_hybrid_heading_periodic(void) {
     }
     if (nav_hybrid_heading_tip_in_wind == 0) {
       if (stateGetNedToBodyEulers_f()->phi > 0) {
-        yawdirection = -1;
+        yawdirection = 1;
       }
     }
 
