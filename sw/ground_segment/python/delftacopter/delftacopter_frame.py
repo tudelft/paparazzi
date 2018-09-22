@@ -84,7 +84,7 @@ class DelftaCopterFrame(wx.Frame):
             wx.CallAfter(self.update)
 
         elif msg.name =="HYBRID_GUIDANCE":
-            self.sideslip = float(msg['beta'])
+            self.sideslip = round(float(msg['beta']),2)
             self.toggle()
             wx.CallAfter(self.update)
         elif msg.name =="GPS_INT":
@@ -95,9 +95,10 @@ class DelftaCopterFrame(wx.Frame):
             wx.CallAfter(self.update)
         elif msg.name =="VISION_OUTBACK":
             self.vision_status = round(float(msg['status']) )
-            self.vision_marker_x = round(float(msg['marker_enu_x']) )
-            self.vision_marker_y = round(float(msg['marker_enu_y']) )
-            self.vision_height = round(float(msg['height']) )
+            self.vision_marker_x = round(float(msg['marker_enu_x']) ,1)
+            self.vision_marker_y = round(float(msg['marker_enu_y']) ,1)
+            self.vision_height = round(float(msg['height']) , 1)
+            self.vision_version = round(float(msg['Version']) , 1)
             self.toggle()
             wx.CallAfter(self.update)
         elif msg.name == "TRIM":
@@ -270,7 +271,7 @@ class DelftaCopterFrame(wx.Frame):
         dc.DrawText("SideSlip: {:.2f}".format(self.sideslip),self.stat+tdx,tdx+tdy*4)
         self.StatusBox(dc,4,"",1.0, self.sideslip_color())
 
-        dc.DrawText("Vision: " + self.get_vision_status() + " " + str(self.vision_height) + "m " + str(self.vision_marker_x) + "," + str(self.vision_marker_y) ,self.stat+tdx,tdx+tdy*5)
+        dc.DrawText("Vision: " + self.get_vision_status() + " " + str(self.vision_height) + "m " + str(self.vision_marker_x) + "," + str(self.vision_marker_y) + " v" + str(self.vision_version) ,self.stat+tdx,tdx+tdy*5)
         self.StatusBox(dc,5,"",1.0, self.vision_color())
 
 
@@ -309,6 +310,7 @@ class DelftaCopterFrame(wx.Frame):
         self.vision_marker_x = -1
         self.vision_marker_y = -1
         self.vision_height = -1
+        self.vision_version =-1
 
         self.range = -1
         self.alt = 0
