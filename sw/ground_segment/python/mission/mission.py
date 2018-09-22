@@ -8,6 +8,8 @@ import numpy as np
 import shapely.geometry as geometry
 import math
 import time
+import argparse
+import logging
 
 # if PAPARAZZI_SRC or PAPARAZZI_HOME not set, then assume the tree containing this
 # file is a reasonable substitute
@@ -26,6 +28,8 @@ import asterix_receiver
 import asterix_visualizer
 import aircraft
 import resolution
+import mission_comm
+import mission_visualizer
 
 import flightplan_xml_parse
 
@@ -53,13 +57,24 @@ class Mission(object):
         self.geofence = self.geofence_from_fp()
         self.circular_zones = static_nfz.get_circular_zones(self.static_nfzs)
         
-        # mission elements
+        # Mission elements
         self.altitude = altitude
-        self.mission_elements = []
+        self.mission_elements = self.mission_elem_from_fp()
+
+        # Initialize the mission communication
+        self.mission_comm = mission_comm.MissionComm(self.ac_id, self.ivy_interface)
+        self.mission_comm.start()
+        self.mission_comm.set_mission(self.mission_elements)
+
+        # Initialize the mission visualizer
+        self.mission_visualizer = mission_visualizer.MissionVisualizer(self.ivy_interface, self.ltp_def)
         
-        # asterix
-        self.asterixreceiver = asterix_receiver.AsterixReceiver()
-        self.asterixvisualizer = asterix_visualizer.AsterixVisualizer(self.ivy_interface)
+        # Initialize the asterix receiver
+        self.asterix_receiver = asterix_receiver.AsterixReceiver()
+        self.asterix_receiver.start()
+
+        # Initialize the asterix visualiser
+        self.asterix_visualizer = asterix_visualizer.AsterixVisualizer(self.ivy_interface)
         
         # own aircraft
         self.aircraft = aircraft.Aircraft(self.ac_id, self.ivy_interface)
@@ -128,33 +143,39 @@ class Mission(object):
             self.ivy_interface.send(msg)
             id += 1
             
-    def initialize_mission_elements(self):
+    def mission_elem_from_fp(self):
         """
-        Add the mission flight plan
+        Add the mission flight path
         """
         id = 0
+        elems = []
         for point in self.transit_points:
             elem = MissionElement(id, point.enu)
-            self.mission_elements.append(elem)
+            elems.append(elem)
             id += 100
+        return elems
 
     def run_mission(self):
         """
         Main loop
         """
-        self.initialize_mission_elements()
-        self.asterixreceiver.start()
+        self.draw_circular_static_nfzs()
         
         while True:
-            self.draw_circular_static_nfzs()
-            self.asterixvisualizer.visualize(self.asterixreceiver.get_events())
+            logging.debug("Mission LOOP")
+
+            # Visualize the asterix events and the mission
+            self.asterix_visualizer.visualize(self.asterix_receiver.get_events())
+            self.mission_visualizer.visualize(self.mission_comm.get_mission())
+
+            # Wait time in main loop
             time.sleep(1)
 
 # Mission element
 class MissionElement(object):
     def __init__(self, id, wp):
-        self.wp = geodetic.EnuCoor_f()
-        self.wp_id = 0
+        self.wp = wp
+        self.id = id
 
 # Transit waypoint
 class TransitWaypoint(object):
@@ -169,13 +190,16 @@ class StaticNFZ(object):
         self.enu_points = enu_points
         
 if __name__ == '__main__':
-    import argparse
-
+    # Argyment parser
     parser = argparse.ArgumentParser(description="Mission for Avoidance")
-    parser.add_argument("-ac", "--ac_id", dest='ac_id', default=0, type=int, help="aircraft ID")
+    parser.add_argument("-ac", "--ac_id", dest='ac_id', type=int, help="aircraft ID")
+    parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", help="Verbose")
     args = parser.parse_args()
     
-    ac_id = args.ac_id
+    # Enable debugging
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
 
-    mission = Mission(ac_id)
+    # Run the mission
+    mission = Mission(args.ac_id)
     mission.run_mission()
