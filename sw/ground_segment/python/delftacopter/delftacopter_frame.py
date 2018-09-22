@@ -74,7 +74,7 @@ class DelftaCopterFrame(wx.Frame):
             wx.CallAfter(self.update)
 
         elif msg.name =="HYBRID_GUIDANCE":
-            self.sideslip = round(float(msg['beta']) )
+            self.sideslip = float(msg['beta'])
             self.toggle()
             wx.CallAfter(self.update)
         elif msg.name =="GPS_INT":
@@ -91,8 +91,8 @@ class DelftaCopterFrame(wx.Frame):
             self.toggle()
             wx.CallAfter(self.update)
         elif msg.name == "TRIM":
-            self.trim_pitch = round(float(msg['trim_pitch']))
-            self.trim_roll = round(float(msg['trim_roll']))
+            self.trim_pitch = int(msg['trim_pitch'])
+            self.trim_roll = int(msg['trim_roll'])
             self.toggle()
             wx.CallAfter(self.update)
 
@@ -257,7 +257,7 @@ class DelftaCopterFrame(wx.Frame):
         dc.DrawText("Link Range: " + str(self.range / 1000.0) + " km",self.stat+tdx,tdx+tdy*3)
         self.StatusBox(dc,3,"",1.0, self.range_color())
 
-        dc.DrawText("SideSlip: " + str(self.sideslip) + "",self.stat+tdx,tdx+tdy*4)
+        dc.DrawText("SideSlip: {:.2f}".format(self.sideslip),self.stat+tdx,tdx+tdy*4)
         self.StatusBox(dc,4,"",1.0, self.sideslip_color())
 
         dc.DrawText("Vision: " + self.get_vision_status() + " " + str(self.vision_height) + "m " + str(self.vision_marker_x) + "," + str(self.vision_marker_y) ,self.stat+tdx,tdx+tdy*5)
@@ -269,7 +269,7 @@ class DelftaCopterFrame(wx.Frame):
         dc.DrawText("GPS-ACC: " + str(int(self.gps_fix)) + ", #" + str(int(self.gps_sv)) + ", " + str(self.gps_acc) + "m" ,self.stat+tdx,tdx+tdy*7)
         self.StatusBox(dc,7,"",1.0, self.gps_color())
         
-        dc.DrawText("Trim elev {} ail {}".format(self.trim_pitch, self.trim_roll), self.stat+tdx, tdx+tdy*8)
+        dc.DrawText("Trim elev {:d} ail {:d}".format(self.trim_pitch, self.trim_roll), self.stat+tdx, tdx+tdy*8)
         #dc.DrawText("HMSL: " + str(self.hmsl) + " ft",tdx,tdx+tdy*6)
 
         #c = wx.Colour(0,0,0)
