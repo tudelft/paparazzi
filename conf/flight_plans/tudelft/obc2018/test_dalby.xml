@@ -22,8 +22,8 @@
     <waypoint name="MB4" x="1613.2" y="318.9"/>
     <waypoint height="40.0" name="BASE" x="43.2" y="-36.1"/>
     <waypoint height="50.0" name="JOE" x="49.9" y="-49.6"/>
-    <waypoint height="40.0" name="JOE_reported" x="192.4" y="-59.6"/>
-    <waypoint height="50.0" name="JOE_found" x="-258.1" y="-21.9"/>
+    <waypoint height="40.0" name="JOE_reported" x="100." y="-59.6"/>
+    <waypoint height="30.0" name="JOE_found" x="-258.1" y="-21.9"/>
     <waypoint height="50.0" name="TD_mrk" x="-240.6" y="-36.0"/>
     <waypoint name="p1" x="-16.9" y="-321.3"/>
     <waypoint name="p2" x="285.2" y="-386.0"/>
