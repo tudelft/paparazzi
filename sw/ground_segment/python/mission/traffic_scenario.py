@@ -33,12 +33,12 @@ from pprzlink.ivy import IvyMessagesInterface
 from pprzlink.message import PprzMessage
 from pprz_math import geodetic
 
-class traffic_scenario(object):
-    def __init__(self, aircraft, circular_zones):
-        self.UAV_speed = aircraft.get_ground_speed() # [m/s]
-        self.UAV_point_enu = aircraft.get_enu()
-        self.UAV_lla = aircraft.get_lla()
-        self.UAV_hdg = aircraft.get_course()
+class TrafficScenario(object):
+    def __init__(self, circular_zones):
+        self.UAV_speed = 0 # [m/s]
+        self.UAV_point_enu = 0
+        self.UAV_lla = 0
+        self.UAV_hdg = 0
         self.Traffic = traffic.Aircraft()
         self.circular_zones = circular_zones
         

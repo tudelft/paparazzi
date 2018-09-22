@@ -25,6 +25,7 @@ import coordinate_transformations as coord_trans
 import asterix_receiver
 import asterix_visualizer
 import aircraft
+import resolution
 
 import flightplan_xml_parse
 
@@ -61,7 +62,10 @@ class Mission(object):
         self.asterixvisualizer = asterix_visualizer.AsterixVisualizer(self.ivy_interface)
         
         # own aircraft
-        self.aircraft = aircraft.Aircraft()
+        self.aircraft = aircraft.Aircraft(self.ac_id, self.ivy_interface)
+        
+        # realtime ssd
+        self.realtime_ssd = resolution.RealtimeResolution(self.circular_zones)
         
         
     def static_nfzs_from_fp(self):
