@@ -33,7 +33,7 @@ sys.path.append(PPRZ_HOME + "/var/lib/python")
 from pprzlink.ivy import IvyMessagesInterface
 
 WIDTH = 300.0
-BARH = 140.0
+BARH = 40.0
 
 MAX_AIRSPEED = 35.0
 
@@ -93,15 +93,15 @@ class WindFrame(wx.Frame):
         w = float(self.w)
         h = float(self.h)
 
-        if h/w < (WIDTH / (WIDTH+BARH)):
+        if w/h > (WIDTH / (WIDTH+BARH)):
             w = (WIDTH / (WIDTH+BARH)) * h
         else:
             h = ((WIDTH+BARH) / (WIDTH)) * w
 
         bar = BARH / WIDTH * w
 
-        tdx = -5
-        tdy = -7
+        tdx = -5.0 / WIDTH * w
+        tdy = -7.0 / WIDTH * w
         th = 15.0 / WIDTH * w
 
         dc = wx.PaintDC(self)
@@ -145,11 +145,15 @@ class WindFrame(wx.Frame):
 
         font = wx.Font(8, wx.ROMAN, wx.NORMAL, wx.NORMAL)
         dc.SetFont(font)
-        dc.DrawText("#" + str(self.count_gs) + ", " + str(self.count_as) + " | " + str(self.click_x) + "-" + str(self.click_y), 0, w + tdy)
+        dc.DrawText("#" + str(self.count_gs) + ", " + str(self.count_as) + " | " + str(self.click_x) + "-" + str(self.click_y), 0, h - 14)
 
         windspeed = math.sqrt(self.click_x * +self.click_x + +self.click_y * +self.click_y) / diameter * MAX_AIRSPEED
         windheading = math.atan2(self.click_x,-self.click_y) * 180 / math.pi
-        dc.DrawText("Windspeed = " + str(round(windspeed,2)) + " m/s  form " + str(round(windheading, 1)), 0, w + tdy + th)
+
+        fontsize = int(16.0 / WIDTH * w)
+        font = wx.Font(fontsize, wx.ROMAN, wx.NORMAL, wx.NORMAL)
+        dc.SetFont(font)
+        dc.DrawText("Wind = " + str(round(windspeed,1)) + " m/s from " + str(round(windheading, 0)), 0, w )
 
         # SV
 #            y = float(w) / 2.0 - math.cos(az) * el
@@ -212,7 +216,7 @@ class WindFrame(wx.Frame):
 
         #self.Bind( wx.EVT_BUTTON, self.OnButton, btn1 )
 
-        ico = wx.Icon(PPRZ_SRC + "/sw/ground_segment/python/wind/wind2.png", wx.BITMAP_TYPE_PNG)
+        ico = wx.Icon(PPRZ_SRC + "/sw/ground_segment/python/wind/wind.png", wx.BITMAP_TYPE_PNG)
         self.SetIcon(ico)
 
         self.interface = IvyMessagesInterface("windframe")
