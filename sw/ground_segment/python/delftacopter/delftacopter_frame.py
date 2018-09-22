@@ -42,6 +42,13 @@ HEIGHT = 700.0
 
 class DelftaCopterFrame(wx.Frame):
 
+    def count_distance(self):
+        dx = self.north - self.track_lastnorth
+        dy = self.east - self.track_lasteast
+        self.track_lastnorth = self.north
+        self.track_lasteast = self.east
+        self.track_distance = self.track_distance + sqrt(dx*dx+dy+dy)
+
     def message_recv(self, ac_id, msg):
         if msg.name =="ROTORCRAFT_FP_MIN":
             self.gspeed = round(float(msg['gspeed']) / 100.0 * 3.6 / 1.852,1)
@@ -49,6 +56,9 @@ class DelftaCopterFrame(wx.Frame):
             self.toggle()
             wx.CallAfter(self.update)
         elif msg.name =="ROTORCRAFT_FP":
+            self.east = float(msg['east']) * 0.0039063
+            self.north = float(msg['north']) * 0.0039063
+            self.count_distance()  # do not count_distance in 2 messages: use single source
             self.alt = round(float(msg['up']) * 0.0039063 ,1)
             self.alt_sp = round(float(msg['carrot_up']) * 0.0039063 ,1)
             self.toggle()
@@ -308,6 +318,10 @@ class DelftaCopterFrame(wx.Frame):
         self.gps_sv = -1
         self.trim_pitch = -1
         self.trim_roll = -1
+
+	self.track_distance = 0;
+        self.track_lastnorth = 0;
+        self.track_lastnorth = 0;
 
         self.cfg = wx.Config('delftacopter_conf')
         if self.cfg.Exists('width'):
