@@ -118,7 +118,7 @@ class MissionVisualizer(object):
         msg['status'] = 0
         msg['latarr'] = [lla_from.lat, lla_to.lat] # e-7 deg
         msg['lonarr'] = [lla_from.lon, lla_to.lon] # e-7 deg
-        msg['radius'] = 500.
+        msg['radius'] = 500
         self.ivy_interface.send(msg)
 
     def delete_line(self, id):

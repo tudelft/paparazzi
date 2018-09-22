@@ -271,7 +271,7 @@ class MissionComm(threading.Thread):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    ac = Aircraft(19)
+    ac = Aircraft(29)
     mission_comm = MissionComm(ac.ac_id, ac.ivy_interface)
     mission_comm.start()
     mission_visualizer = MissionVisualizer(ac.ivy_interface)
@@ -293,7 +293,6 @@ if __name__ == '__main__':
             time.sleep(1)
     except (KeyboardInterrupt, SystemExit):
         mission_comm.stop()
-        mission_visualizer.stop()
 
 
     
