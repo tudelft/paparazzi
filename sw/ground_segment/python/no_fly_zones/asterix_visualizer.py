@@ -28,6 +28,7 @@ import time
 import sys
 from asterix_receiver import AsterixEvent, AsterixReceiver
 from sets import Set
+import logging
 
 # if PAPARAZZI_SRC or PAPARAZZI_HOME not set, then assume the tree containing this
 # file is a reasonable substitute
@@ -59,6 +60,8 @@ class AsterixVisualizer(object):
         """
         remove_events = self.event_ids.copy()
 
+        logging.debug("Visualizing %d events", len(asterix_events))
+
         # Go through the asterix events
         for ev in asterix_events:
             remove_events.discard(ev.id)
@@ -86,12 +89,12 @@ class AsterixVisualizer(object):
         else:
             self.draw_shape(ev.id, ev.get_lla(), ev.get_radius(), "orange", "orange")
 
-    def delete_event(self, ev):
+    def delete_event(self, id):
         """
         Delete a drawn event
         """
         self.delete_shape(id)
-        self.event_ids.discard(ev.id)
+        self.event_ids.discard(id)
 
     def draw_shape(self, id, lla, radius, line_color, fill_color):
         """
@@ -104,8 +107,8 @@ class AsterixVisualizer(object):
         msg['opacity'] = 1
         msg['shape'] = 0 # Circle
         msg['status'] = 0 # Create
-        msg['latarr'] = [lla.to_int(), 0]
-        msg['lonarr'] = [lla.to_int(), 0]
+        msg['latarr'] = [lla.to_int().lat, 0]
+        msg['lonarr'] = [lla.to_int().lon, 0]
         msg['radius'] = radius
         self.ivy_interface.send(msg)
 
@@ -119,6 +122,8 @@ class AsterixVisualizer(object):
         self.ivy_interface.send(msg)
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+
     # Start receiving asterix packets
     asterix_receiver = AsterixReceiver()
     asterix_receiver.start()

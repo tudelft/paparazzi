@@ -293,7 +293,6 @@ if __name__ == '__main__':
             time.sleep(1)
     except (KeyboardInterrupt, SystemExit):
         mission_comm.stop()
-        mission_visualizer.stop()
 
 
     

@@ -31,6 +31,7 @@ import asterix
 import time
 import logging
 from sets import Set
+import math
 
 # if PAPARAZZI_SRC or PAPARAZZI_HOME not set, then assume the tree containing this
 # file is a reasonable substitute
@@ -80,25 +81,29 @@ class AsterixReceiver(threading.Thread):
             packets = asterix.parse(asterix_packet)
             
             # For each received asterix packet
-            logging.info("Parsing " + len(packets) + " asterix packets")
+            logging.debug("Parsing %d asterix packets", len(packets))
             for p in packets:
-                new_t = AsterixTraffic(p)
+                new_t = AsterixEvent(p)
 
                 # Check if it already existed then update else add
                 try:
                     self.lock.acquire()
+                    found = False
                     for t in self.events:
                         if t == new_t:
                             t.update(new_t)
-                        else:
-                            self.events.add(new_t)
+                            found = True
+                        
+                    if not found:
+                        self.events.add(new_t)
                 finally:
                     self.lock.release()
 
             # Check if we need to remove any events
             try:
                 self.lock.acquire()
-                for t in self.events:
+                events_copy = self.events.copy()
+                for t in events_copy:
                     if t.timed_out():
                         self.events.discard(t)
             finally:
@@ -141,12 +146,12 @@ class AsterixEvent(object):
         """
         Create a new event from received asterix packet
         """
-        self.id = parsed[i]['I040']['TrkN']['val'] 
-        self.tot = parsed[i]['I070']['ToT']['val'] # [s]
-        self.lat = parsed[i]['I105']['Lat']['val'] # [deg]
-        self.lon = parsed[i]['I105']['Lon']['val'] # [deg]
-        self.alt = parsed[i]['I130']['Alt']['val'] * AsterixEvent.FT_TO_M # [m]
-        self.roc = parsed[i]['I220']['RoC']['val'] * AsterixEvent.FT_TO_M # [m]
+        self.id = asterix_packet['I040']['TrkN']['val'] 
+        self.tot = asterix_packet['I070']['ToT']['val'] # [s]
+        self.lat = asterix_packet['I105']['Lat']['val'] / 180. * math.pi # [deg]
+        self.lon = asterix_packet['I105']['Lon']['val'] / 180. * math.pi # [deg]
+        self.alt = asterix_packet['I130']['Alt']['val'] * AsterixEvent.FT_TO_M # [m]
+        self.roc = asterix_packet['I220']['RoC']['val'] * AsterixEvent.FT_TO_M # [m]
         self.tot_lst = [self.tot]
         self.lla_lst = [geodetic.LlaCoor_f(self.lat, self.lon, self.alt)]
         self.time = time.time()
@@ -161,8 +166,8 @@ class AsterixEvent(object):
         self.lon = other.lon
         self.alt = other.alt
         self.roc = other.roc
-        self.tot_lst += other.tot_lst
-        self.lla_lst += other.lla_lst
+        self.tot_lst = [self.tot_lst[-1], other.tot_lst[-1]]
+        self.lla_lst = [self.lla_lst[-1], other.lla_lst[-1]]
         self.time = time.time()
 
     def timed_out(self):
@@ -194,7 +199,7 @@ class AsterixEvent(object):
         """
         ev_type = self.get_type()
         if ev_type == AsterixEvent.OTHER_AIR_TRAFFIC:
-            return 300
+            return 300.
         elif ev_type == AsterixEvent.LOCALIZED_WEATHER:
             return 150. + 150. * self.alt/3000.
         elif ev_type == AsterixEvent.MIGRATORY_BIRD:
