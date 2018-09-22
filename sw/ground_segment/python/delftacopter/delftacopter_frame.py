@@ -323,7 +323,7 @@ class DelftaCopterFrame(wx.Frame):
 
 	self.track_distance = 0;
         self.track_lastnorth = 0;
-        self.track_lastnorth = 0;
+        self.track_lasteast = 0;
 
         self.cfg = wx.Config('delftacopter_conf')
         if self.cfg.Exists('width'):
