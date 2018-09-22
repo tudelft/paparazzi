@@ -25,6 +25,7 @@ import flightplan_xml_parse
 
 #defines
 static_margin = 100. #[m]
+altitude = 120.
 
 class Mission(object):
     def __init__(self, ac_id):
@@ -43,6 +44,12 @@ class Mission(object):
         self.circular_zones = static_nfz.get_circular_zones(self.Zones, self.ref_utm_i)
         self.Transit_points = self.create_Transit_points_fp()
         self.geofence = self.create_geofence_fp()
+        
+        # mission elements
+        self.altitude = altitude
+        self.mission_elements = []
+        
+        
     
     def create_Zones_fp(self):
         Zones = []
@@ -111,10 +118,16 @@ class Mission(object):
             msg['radius'] = self.circular_zones[i][0]
             msg['text'] = str(i)
             self._interface.send(msg)
-        
+            
+    def initialize_mission_elements(self):
+        for i in range(len(self.Transit_points)):
+            identity = 1 + 10 *1 
+            self.mission_elements.append(MissionPathElem(self.Transit_points[i].east, self.Transit_points[i].north), self.altitude, identity)
+            
     def run_mission(self):
         self.ref_lla_i = geodetic.LlaCoor_i(int(self.flightplan.flight_plan.lat0*10.**7), int(self.flightplan.flight_plan.lon0*10.**7), int(self.flightplan.flight_plan.ground_alt*1000.))
         self.draw_circular_static_nfzs()
+        self.initialize_mission_elements()
      
 # Class containg a NFZ
 class Zone(object):
@@ -128,7 +141,7 @@ class Zone(object):
 
 # class containing mission path elements
 class MissionPathElem(object):
-    def __init__(self, e, n, u, wp_id, wp_type):
+    def __init__(self, e, n, u, wp_i):
         self.wp = geodetic.EnuCoor_f()
         self.wp_id = 0
         
