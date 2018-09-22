@@ -190,8 +190,8 @@
       <program name="Ivy2UDP">
         <arg flag="-h" constant="192.168.1.255"/>
         <arg flag="-id" constant="@AC_ID"/>
-        <arg flag="-p" value="7272"/>
-        <arg flag="-dp" value="7273"/>
+        <arg flag="-p" constant="7272"/>
+        <arg flag="-dp" constant="7273"/>
       </program>
       <program name="GCS">
         <arg flag="-speech"/>
@@ -251,8 +251,8 @@
       <program name="Data Link">
         <arg flag="-udp"/>
         <arg flag="-nouplink"/>
-        <arg flag="-udp_port" value="7272"/>
-        <arg flag="-udp_uplink_port" value="7273"/>
+        <arg flag="-udp_port" constant="7272"/>
+        <arg flag="-udp_uplink_port" constant="7273"/>
       </program>
       <program name="Server"/>
       <program name="Messages"/>
@@ -320,8 +320,8 @@
       <program name="Ivy2UDP">
         <arg flag="-h" constant="192.168.1.255"/>
         <arg flag="-id" constant="@AC_ID"/>
-        <arg flag="-p" value="7272"/>
-        <arg flag="-dp" value="7273"/>
+        <arg flag="-p" constant="7272"/>
+        <arg flag="-dp" constant="7273"/>
       </program>
       <program name="GCS">
         <arg flag="-speech"/>
