@@ -386,6 +386,7 @@
     <define name="HOVER_THROTTLE_CURVE" value="2"/>
     <define name="TRANSITION_THROTTLE_CURVE" value="3"/>
     <define name="FORWARD_THROTTLE_CURVE" value="4"/>
+    <define name="TRANSITION_TIME" value="2"/>
     <define name="TRANSITION_THROTTLE_TO_FORWARD" value="8500"/>
     <define name="TRANSITION_THROTTLE_TO_HOVER" value="4800"/>
   </section>
