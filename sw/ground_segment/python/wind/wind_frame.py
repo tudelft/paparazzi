@@ -212,7 +212,7 @@ class WindFrame(wx.Frame):
 
         #self.Bind( wx.EVT_BUTTON, self.OnButton, btn1 )
 
-        ico = wx.Icon(PPRZ_SRC + "/sw/ground_segment/python/wind/wind.ico", wx.BITMAP_TYPE_ICO)
+        ico = wx.Icon(PPRZ_SRC + "/sw/ground_segment/python/wind/wind2.png", wx.BITMAP_TYPE_PNG)
         self.SetIcon(ico)
 
         self.interface = IvyMessagesInterface("windframe")
