@@ -25,36 +25,13 @@ sys.path.append(PPRZ_HOME + "/var/lib/python") # pprzlink
 
 from pprz_math import geodetic
     
-def get_circle_geometry (xy_arr):
+def get_circle_around_zone(zone):
+    return make_circle(zone.enu_points)
     
-    circle = make_circle(xy_arr)
-    cx = circle[0]
-    cy = circle[1]
-    center = (cx, cy)
-    radius = circle[2]
-
-    circle_geometry = geometry.Point(center).buffer(radius)
-    
-    circle = {}
-    circle['geo'] = circle_geometry
-    circle['radius'] = radius
-    circle['center'] = center
-    return circle
-    
-def get_circle_around_zone (Zone, ref_utm_i):
-    circle = make_circle(Zone.xy_arr)
-    cx = circle[0]
-    cy = circle[1]
-    center = (cx, cy)
-    radius = circle[2]
-    center_lla = coord_trans.enu_to_lla_fw(geodetic.EnuCoor_f(center[0], center[1], 0), ref_utm_i)
-    return radius, center, center_lla
-    
-def get_circular_zones (Zones, ref_utm_i):
+def get_circular_zones(zones):
     circular_zones = []
-    for i in range(len(Zones)):
-        circular_zone = get_circle_around_zone(Zones[i], ref_utm_i)
-        circular_zones.append(circular_zone)
+    for zone in zones:
+        circular_zones.append(get_circle_around_zone(zone))
     return circular_zones
     
 # 
@@ -89,7 +66,7 @@ def get_circular_zones (Zones, ref_utm_i):
 # Initially: No boundary points known
 def make_circle(points):
 	# Convert to float and randomize order
-	shuffled = [(float(x), float(y)) for (x, y) in points]
+	shuffled = [(float(p.x), float(p.y)) for p in points]
 	random.shuffle(shuffled)
 	
 	# Progressively add points to circle or recompute circle
