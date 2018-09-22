@@ -222,14 +222,13 @@
     <define name="ACCEL_Y_NEUTRAL" value="11"/>
     <define name="ACCEL_Z_NEUTRAL" value="-25"/>
 
-    <!-- Calibration 21-09-2019 dalby test field total setup with extra USB -->
+    <!-- Calibration 21-09-2018 dalby test field total setup with extra USB -->
     <define name="MAG_X_NEUTRAL" value="-1"/>
     <define name="MAG_Y_NEUTRAL" value="7"/>
     <define name="MAG_Z_NEUTRAL" value="1"/>
     <define name="MAG_X_SENS" value="16.5514602014" integer="16"/>
     <define name="MAG_Y_SENS" value="15.4152361724" integer="16"/>
     <define name="MAG_Z_SENS" value="15.3826558014" integer="16"/>
-
 
     <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
@@ -416,7 +415,7 @@
     <define name="PITCH_PGAIN" value="2500.0"/>
     <define name="PITCH_DGAIN" value="1000.0"/>
     <define name="PITCH_IGAIN" value="0.5"/>
-    <define name="PITCH_TRIM" value="0.0"/>
+    <define name="PITCH_TRIM" value="1200"/>
     <define name="K_FF_TO_YAW" value="600.0"/> <!-- order of magnitude -->
     <define name="ADVANCE_P" value="1.1"/>
     <define name="ADVANCE_Q" value="1.1"/>

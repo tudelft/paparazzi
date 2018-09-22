@@ -385,6 +385,7 @@
     <define name="HOVER_THROTTLE_CURVE" value="2"/>
     <define name="TRANSITION_THROTTLE_CURVE" value="3"/>
     <define name="FORWARD_THROTTLE_CURVE" value="4"/>
+    <define name="TRANSITION_TIME" value="2"/>
     <define name="TRANSITION_THROTTLE_TO_FORWARD" value="8500"/>
     <define name="TRANSITION_THROTTLE_TO_HOVER" value="4800"/>
   </section>
@@ -414,7 +415,7 @@
     <define name="PITCH_PGAIN" value="2500.0"/>
     <define name="PITCH_DGAIN" value="1000.0"/>
     <define name="PITCH_IGAIN" value="0.5"/>
-    <define name="PITCH_TRIM" value="0.0"/>
+    <define name="PITCH_TRIM" value="200.0"/>
     <define name="K_FF_TO_YAW" value="600.0"/> <!-- order of magnitude -->
     <define name="ADVANCE_P" value="1.1"/>
     <define name="ADVANCE_Q" value="1.1"/>
