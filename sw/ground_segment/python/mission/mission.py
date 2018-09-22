@@ -66,6 +66,7 @@ class Mission(object):
         
         # realtime ssd
         self.realtime_ssd = resolution.RealtimeResolution(self.circular_zones)
+        self.realtime_ssd.init_realtime()
         
         
     def static_nfzs_from_fp(self):
