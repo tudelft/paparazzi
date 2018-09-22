@@ -37,7 +37,7 @@ sys.path.append(PPRZ_HOME + "/var/lib/python")
 from pprzlink.ivy import IvyMessagesInterface
 
 WIDTH = 850.0
-HEIGHT = 700.0
+HEIGHT = 750.0
 
 
 class DelftaCopterFrame(wx.Frame):
@@ -47,7 +47,7 @@ class DelftaCopterFrame(wx.Frame):
         dy = self.east - self.track_lasteast
         self.track_lastnorth = self.north
         self.track_lasteast = self.east
-        self.track_distance = self.track_distance + sqrt(dx*dx+dy+dy)
+        self.track_distance = self.track_distance + math.sqrt(dx*dx+dy*dy)
 
     def message_recv(self, ac_id, msg):
         if msg.name =="ROTORCRAFT_FP_MIN":
@@ -181,6 +181,15 @@ class DelftaCopterFrame(wx.Frame):
             return 0.5
         return 1
 
+    def trim_color(self):
+        if (self.trim_pitch == 9999):
+            return -1
+        elif (self.trim_pitch > 1500) | (self.trim_pitch < -500):
+            return 0
+        elif (self.trim_pitch > 1000) | (self.trim_pitch < 0):
+            return 0.5
+        return 1
+
     def alt_color(self):
         if self.alt_sp < 0:
             return -1
@@ -281,7 +290,9 @@ class DelftaCopterFrame(wx.Frame):
         self.StatusBox(dc,7,"",1.0, self.gps_color())
         
         dc.DrawText("Trim elev {} ail {}".format(self.trim_pitch, self.trim_roll), self.stat+tdx, tdx+tdy*8)
-        #dc.DrawText("HMSL: " + str(self.hmsl) + " ft",tdx,tdx+tdy*6)
+        self.StatusBox(dc,8,"",1.0, self.trim_color())
+
+        dc.DrawText("Flown Dist: " + str(round(self.track_distance / 1000.0,1)) + " km",self.stat+tdx,tdx+tdy*9)
 
         #c = wx.Colour(0,0,0)
         #dc.SetBrush(wx.Brush(c, wx.SOLID))
@@ -318,8 +329,8 @@ class DelftaCopterFrame(wx.Frame):
         self.gps_acc = -1
         self.gps_fix = -1
         self.gps_sv = -1
-        self.trim_pitch = -1
-        self.trim_roll = -1
+        self.trim_pitch = 9999
+        self.trim_roll = 9999
 
 	self.track_distance = 0;
         self.track_lastnorth = 0;
