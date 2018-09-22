@@ -133,3 +133,47 @@ class Aircraft(object):
         finally:
             self.lock.release()
         return ltp_def
+        
+    def get_lla(self):
+        """
+        Return the LLA of the aircraft
+        """
+        try:
+            self.lock.acquire()
+            lla = self.lla
+        finally:
+            self.lock.release()
+        return lla
+        
+    def get_course(self):
+        """
+        Return the course of the aircraft
+        """
+        try:
+            self.lock.acquire()
+            course = self.course
+        finally:
+            self.lock.release()
+        return course
+        
+    def get_ground_speed(self):
+        """
+        Return the course of the aircraft
+        """
+        try:
+            self.lock.acquire()
+            ground_speed = self.ground_speed
+        finally:
+            self.lock.release()
+        return ground_speed
+            
+    def get_airspeed(self):
+        """
+        Return the course of the aircraft
+        """
+        try:
+            self.lock.acquire()
+            airspeed = self.airspeed
+        finally:
+            self.lock.release()
+        return airspeed
