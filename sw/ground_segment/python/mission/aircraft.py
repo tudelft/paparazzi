@@ -44,13 +44,13 @@ from pprz_math import geodetic
 
 class Aircraft(object):
     
-    def __init__(self, ac_id, ivy_interface = None):
+    def __init__(self, ac_id, ivy_interface = None, ltp_def = None):
         assert ac_id <> None
 
         # Initialize the variables
         self.ac_id = ac_id
-        self.got_ltp = False
-        self.ltp_def = None
+        self.got_ltp = (ltp_def != None)
+        self.ltp_def = ltp_def
         self.lla = geodetic.LlaCoor_f(0.0, 0.0, 0.0)
         self.course = 0.0
         self.ground_speed = 0.0

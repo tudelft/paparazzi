@@ -32,6 +32,7 @@ import time
 import logging
 from sets import Set
 import math
+import numpy as np
 
 # if PAPARAZZI_SRC or PAPARAZZI_HOME not set, then assume the tree containing this
 # file is a reasonable substitute
@@ -155,7 +156,7 @@ class AsterixEvent(object):
         self.roc = asterix_packet['I220']['RoC']['val'] * AsterixEvent.FT_TO_M # [m]
         self.tot_lst = [self.tot]
         self.lla_lst = [geodetic.LlaCoor_f(self.lat, self.lon, self.alt)]
-        self.enu_lst = [geodetic.LlaCoor_f(self.lat/180*math.pi, self.lon/180*math.pi, 0).to_enu(self.ltp_def)]
+        self.enu_lst = [geodetic.LlaCoor_f(self.lat/180*math.pi, self.lon/180*math.pi, 0).to_enu(ltp_def)]
         self.gspeed = 0.
         self.velocity = 0.
         self.hdg = 0.
@@ -173,7 +174,7 @@ class AsterixEvent(object):
         self.roc = other.roc
         self.tot_lst = [self.tot_lst[-1], other.tot_lst[-1]]
         self.lla_lst = [self.lla_lst[-1], other.lla_lst[-1]]
-        self.enu_lst = [self.enu_lst[-1], geodetic.LlaCoor_f(self.lat/180*math.pi, self.lon/180*math.pi, self.alt).to_enu(self.ltp_def)]
+        self.enu_lst = [self.enu_lst[-1], geodetic.LlaCoor_f(self.lat/180*math.pi, self.lon/180*math.pi, self.alt).to_enu(ltp_def)]
         dt = (self.ToT_lst[1] - self.ToT_lst[0])
         dx = (self.enu_lst[1].x - self.enu_lst[0].x)
         dy = (self.enu_lst[1].y - self.enu_lst[0].y) 

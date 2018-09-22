@@ -58,5 +58,11 @@ class RealtimeResolution(object):
                 self.realtime_Scenario.plot_SSD() 
             except: # All errors to overcome pyclipper error UnboundLocalError: # When simulated aircraft are too far
                 pass # Do nothing
+                
+class ResolutionFinder(object):
+    def __init__(self, circular_zones):
+        self.extrapolated_scenario = traffic_scenario.ExtrapolatedScenario(circular_zones)
+    
+    
         
         

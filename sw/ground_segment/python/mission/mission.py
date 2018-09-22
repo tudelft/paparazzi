@@ -70,14 +70,14 @@ class Mission(object):
         self.mission_visualizer = mission_visualizer.MissionVisualizer(self.ivy_interface, self.ltp_def)
         
         # Initialize the asterix receiver
-        self.asterix_receiver = asterix_receiver.AsterixReceiver()
+        self.asterix_receiver = asterix_receiver.AsterixReceiver(self.ltp_def)
         self.asterix_receiver.start()
 
         # Initialize the asterix visualiser
         self.asterix_visualizer = asterix_visualizer.AsterixVisualizer(self.ivy_interface)
         
         # own aircraft
-        self.aircraft = aircraft.Aircraft(self.ac_id, self.ivy_interface)
+        self.aircraft = aircraft.Aircraft(self.ac_id, self.ivy_interface, self.ltp_def)
         
         # realtime ssd
         self.realtime_ssd = resolution.RealtimeResolution(self.circular_zones)

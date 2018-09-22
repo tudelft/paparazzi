@@ -154,8 +154,8 @@ class TrafficScenario(object):
         self.ax.axis('off')
         self.fig.canvas.draw()
         
-class traffic_scenario_extrapolated(object):
-    def __init__(self, aircraft, circular_zones):
+class ExtrapolatedScenario(object):
+    def __init__(self, circular_zones):
         self.circular_zones = circular_zones
         
     def update_traffic_scenario(self, commanded_airspeed, UAV_hdg, wind, pos_enu, dt, ReceiverThread):
