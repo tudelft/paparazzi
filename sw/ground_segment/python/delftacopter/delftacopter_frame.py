@@ -8,7 +8,7 @@
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# paparazzi is distributed in the hope that it will be useful,
+# paparazzi is distributed in the hope that it will be useful,  
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
@@ -23,7 +23,6 @@ import os
 import time
 import threading
 import math
-import pynotify
 import array
 from cStringIO import StringIO
 
@@ -89,6 +88,11 @@ class DelftaCopterFrame(wx.Frame):
             self.vision_marker_x = round(float(msg['marker_enu_x']) )
             self.vision_marker_y = round(float(msg['marker_enu_y']) )
             self.vision_height = round(float(msg['height']) )
+            self.toggle()
+            wx.CallAfter(self.update)
+        elif msg.name == "TRIM":
+            self.trim_pitch = round(float(msg['trim_pitch']))
+            self.trim_roll = round(float(msg['trim_roll']))
             self.toggle()
             wx.CallAfter(self.update)
 
@@ -237,6 +241,8 @@ class DelftaCopterFrame(wx.Frame):
         self.StatusBox(dc,6,"",1.0, self.alt_color())
         dc.DrawText("GPS-ACC: " + str(int(self.gps_fix)) + ", #" + str(int(self.gps_sv)) + ", " + str(self.gps_acc) + "m" ,self.stat+tdx,tdx+tdy*7)
         self.StatusBox(dc,7,"",1.0, self.gps_color())
+        
+        dc.DrawText("Trim elev {} ail {}".format(self.trim_pitch, self.trim_roll), self.stat+tdx, tdx+tdy*8)
         #dc.DrawText("HMSL: " + str(self.hmsl) + " ft",tdx,tdx+tdy*6)
 
         #c = wx.Colour(0,0,0)
@@ -244,7 +250,7 @@ class DelftaCopterFrame(wx.Frame):
         #dc.DrawCircle(int(w/2),int(w/2),10)
         if self.link_toggle:
             dc.SetBrush(wx.Brush(wx.Colour(0,250,0)))
-            dc.DrawRectangle(0, self.h-5, self.w, 5) 
+            dc.DrawRectangle(0, self.h-5, self.w, 5)
 
 
 
@@ -273,6 +279,8 @@ class DelftaCopterFrame(wx.Frame):
         self.gps_acc = -1
         self.gps_fix = -1
         self.gps_sv = -1
+        self.trim_pitch = -1
+        self.trim_roll = -1
 
         self.cfg = wx.Config('delftacopter_conf')
         if self.cfg.Exists('width'):
