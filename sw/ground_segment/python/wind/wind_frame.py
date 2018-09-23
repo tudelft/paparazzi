@@ -42,9 +42,9 @@ MSG_BUFFER_SIZE = 1000
 class WindFrame(wx.Frame):
     def message_recv(self, ac_id, msg):
         if msg.name == "ROTORCRAFT_FP":
-            self.ground_gs_x[self.count_gs] = float(msg['veast'])
-            self.ground_gs_y[self.count_gs] = float(msg['vnorth'])
-            self.last_heading = float(msg['psi'])
+            self.ground_gs_x[self.count_gs] = float(msg['veast'])  * 0.0000019
+            self.ground_gs_y[self.count_gs] = float(msg['vnorth']) * 0.0000019
+            self.last_heading = float(msg['psi']) * 0.0139882
             self.count_gs = self.count_gs + 1
             if self.count_gs > MSG_BUFFER_SIZE:
                 self.count_gs = 0
