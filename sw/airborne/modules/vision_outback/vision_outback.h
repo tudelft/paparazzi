@@ -89,7 +89,8 @@ enum Landing_Status {
     ls_lost_fixed_joe = 5,
     ls_refound_fixed_joe = 6,
     ls_aruco_lock = 7,
-    ls_lost_aruco_lock = 8
+    ls_lost_aruco_lock = 8,
+    ls_error = 9
 };
 
 
