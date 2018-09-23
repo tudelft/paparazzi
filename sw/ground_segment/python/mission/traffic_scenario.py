@@ -171,7 +171,7 @@ class TrafficScenario(object):
         #plt.show()
         
 class ExtrapolatedScenario(object):
-    def __init__(self, circular_zones, ref_utm_i):
+    def __init__(self, circular_zones, ref_utm_i, ltp_def):
         self.circular_zones = circular_zones
         self.circular_zones_lla = []
         for zone in circular_zones:
@@ -187,20 +187,20 @@ class ExtrapolatedScenario(object):
         self.UAV_hdg = aircraft.get_course()
         
         self.Traffic = traffic.Aircraft()
-        self.Traffic.create(1 , self.UAV_speed, self.UAV_lat, self.UAV_lon, self.UAV_hdg, 'UAV', 0.)
+        self.Traffic.create(1 , self.UAV_speed, np.rad2deg(self.UAV_lla.lat), np.rad2deg(self.UAV_lla.lon), self.UAV_hdg, 'UAV', 0.)
         
         i=0
         for traffic_event in traffic_events:
-            velocity = traffic_events.get_ground_speed()
-            lla_point = traffic_events.get_lla()
+            velocity = traffic_event.get_velocity()
+            lla_point = traffic_event.get_lla()
             lla_point_old = geodetic.LlaCoor_i(int(np.rad2deg(lla_point.lat) * 10. ** 7), int(np.rad2deg(lla_point.lon) * 10. ** 7), int(np.rad2deg(lla_point.alt) * 1000.))
-            hdg = traffic_events.get_course()
-            radius = traffic_events.get_radius()
+            hdg = traffic_event.get_course()
+            radius = traffic_event.get_radius()
             
             # Speed components to compute future position
             Vx = velocity * np.sin(np.deg2rad(hdg)) # V in east direction
             Vy = velocity * np.cos(np.deg2rad(hdg)) # V in north direction
-            Vz = traffic_events.get_roc() # V in upward direction
+            Vz = traffic_event.get_roc() # V in upward direction
             
             # enu_point conversion to new point and to lla
             enu_point_old = coord_trans.lla_to_enu_fw(lla_point_old, self.ref_utm_i)
@@ -215,7 +215,7 @@ class ExtrapolatedScenario(object):
             self.Traffic.create(1, 0., np.rad2deg(self.circular_zones_lla[j].lat), np.rad2deg(self.circular_zones_lla[j].lon), 0, 'Zone' + str(j), self.circular_zones[j][2])
             
     def detect_conflicts(self, tla, wind, margin):
-        self.asas = ssd_resolutions.Asas(self.Traffic.ntraf, self.UAV_speed, self.strategy, tla, margin)
+        self.asas = ssd_resolutions.Asas(self.Traffic.ntraf, self.UAV_speed, 'HDG', tla, margin)
         self.asas.inconf[0] = True
         if ssd_resolutions.constructSSD(self.asas, self.Traffic, self.asas.tla, wind) == 'LoS':
             return ("nosol", 0., 0.)

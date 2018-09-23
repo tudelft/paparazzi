@@ -35,10 +35,10 @@ import flightplan_xml_parse
 
 #defines
 static_margin = 100. #[m]
-dynamic_margin = 50. #[m]
+dynamic_margin = 100. #[m]
 altitude = 120.
-airspeed = 23.
-tla = 60. #[s] change later
+#airspeed = 23.
+max_tla = 60. #[s] change later
 wind = {'east': 0., 'north' : 0.}
 
 class Mission(object):
@@ -84,6 +84,10 @@ class Mission(object):
         
         # realtime ssd
         self.realtime_ssd = resolution.RealtimeResolution(self.circular_zones, self.ltp_def)
+        
+        # avoidance variables
+        self.avoidance_lock_id = 0 # until what onboard id avoidance is prohibited
+        self.resolution_finder = resolution.ResolutionFinder(self.circular_zones, self.ref_utm_i, self.ltp_def)
         
     def static_nfzs_from_fp(self):
         """
@@ -156,7 +160,33 @@ class Mission(object):
             elems.append(elem)
             id += 100
         return elems
-
+        
+    def avoidance(self):
+        """
+        calling the avoidance function when allowed
+        """
+        # first sort the offline mission elements
+        sorted(self.mission_elements, key=lambda elem: elem.id)
+        
+        idx = self.mission_comm.get_remote_idx()
+        if (idx > len(self.mission_elements) - 1):
+            return
+        
+        if ((self.mission_elements[idx].id > self.avoidance_lock_id) and (idx > 0)): 
+            from_point_enu = self.aircraft.get_enu()
+            to_point_enu = self.mission_elements[idx].wp
+            resolution_point = self.resolution_finder.resolution_on_leg(from_point_enu, to_point_enu, self.aircraft.get_gspeed(), dynamic_margin, self.aircraft, self.asterix_receiver.get_events(), wind, self.flightplan.flight_plan.alt, self.geofence, self.static_nfzs, max_tla)
+            if resolution_point == 'free':
+                return
+            elif resolution_point == 'nosol':
+                return
+            else:
+                self.mission_elements[idx].wp = from_point_enu
+                self.mission_elements.insert(idx + 1, MissionElement(self.mission_elements[idx].id + 1, resolution_point))
+                self.mission_elements.insert(idx + 2, MissionElement(self.mission_elements[idx].id + 2, to_point_enu))
+                self.avoidance_lock_id = self.mission_elements[idx + 1].id
+                self.mission_comm.set_mission(self.mission_elements)
+                
     def run_mission(self):
         """
         Main loop
@@ -171,9 +201,13 @@ class Mission(object):
             self.asterix_visualizer.visualize(self.asterix_receiver.get_events())
             self.mission_visualizer.visualize(self.mission_comm.get_mission())
             
-            # realimte ssd plotter
-            self.realtime_ssd.run_realtime(tla, wind, dynamic_margin, self.aircraft.get_airspeed(), self.aircraft, self.asterix_receiver.get_events())
+            self.draw_circular_static_nfzs()
             
+            # realimte ssd plotter
+            self.realtime_ssd.run_realtime(max_tla, wind, dynamic_margin, self.aircraft.get_airspeed(), self.aircraft, self.asterix_receiver.get_events())
+            
+            # run avoidance
+            self.avoidance()
 
             # Wait time in main loop
             time.sleep(1)
