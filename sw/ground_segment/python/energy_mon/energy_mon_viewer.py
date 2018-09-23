@@ -82,7 +82,7 @@ class BatteryCell(object):
     def get_temp(self):
         return "Cell Temp = "+str(round(self.temperature ,2))
     def get_power_text(self):
-        return "Battery Power = {:.0f}W".format(self.get_power())
+        return "Battery Power: {:.0f}W".format(self.get_power() * bat.cells_in_battery)
     def get_volt_perc(self):
         return (self.voltage - 2.5) / (4.2 - 2.5)
     def get_power(self):
@@ -160,7 +160,7 @@ class EnergyPrediction(object):
         return self.battery_cell.get_power() / self.get_expected_power()
 
     def get_power_fraction_text(self):
-        return "Fraction: {:.1f}".format(self.get_power_fraction())
+        return "Fraction: {:.2f}".format(self.get_power_fraction())
 
     def get_power_fraction_color(self):
         if self.get_power_fraction() > 1.2:
@@ -182,7 +182,7 @@ class EnergyPrediction(object):
         return fraction
 
     def get_hover_seconds_left(self):
-        hover_volt, hover_ampere = bat.volt_amp_from_mAh_power(self.battery_cell.energy, self.power_hover_cell)
+        hover_volt, hover_ampere = bat.volt_amp_from_mAh_power(self.battery_cell.model, self.power_hover_cell)
         time_to_empty_battery, _ = bat.time_mAh_from_volt_to_volt_power(hover_volt, self.min_allowable_voltage, self.power_hover_cell)
         return time_to_empty_battery
 
