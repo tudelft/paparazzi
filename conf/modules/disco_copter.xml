@@ -1,0 +1,15 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="disco_copter">
+  <doc>
+    <description></description>
+  </doc>
+  <header>
+    <file name="disco_copter.h"/>
+  </header>
+  <init fun="disco_copter_init()"/>
+  <makefile>
+    <file name="disco_copter.c"/>
+  </makefile>
+</module>
+
