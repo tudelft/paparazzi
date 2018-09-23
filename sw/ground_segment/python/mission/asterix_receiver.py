@@ -159,7 +159,7 @@ class AsterixEvent(object):
         self.enu_lst = [geodetic.LlaCoor_f(self.lat/180*math.pi, self.lon/180*math.pi, 0).to_enu(ltp_def)]
         self.gspeed = 0.
         self.velocity = 0.
-        self.hdg = 0.
+        self.course = 0.
         self.time = time.time()
 
     def update(self, other, ltp_def):
@@ -180,7 +180,7 @@ class AsterixEvent(object):
         dy = (self.enu_lst[1].y - self.enu_lst[0].y) 
         self.gspeed = {'east': dx/dt , 'north' : dy/dt }
         self.velocity = np.sqrt(self.gspeed['east']**2 + self.gspeed['north']**2)
-        self.hdg = np.rad2deg(np.arctan2(self.gspeed['east'], self.gspeed['north'])) % 360.
+        self.course = np.rad2deg(np.arctan2(self.gspeed['east'], self.gspeed['north'])) % 360.
         self.time = time.time()
         
     def timed_out(self):
@@ -243,6 +243,12 @@ class AsterixEvent(object):
         Return the gspeed magnitude
         """
         return self.velocity
+        
+    def get_course(self):
+        """
+        Return the gspeed magnitude
+        """
+        return self.course
 
     def __eq__(self, other):
         """

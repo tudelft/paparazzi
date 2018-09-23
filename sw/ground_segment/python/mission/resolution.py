@@ -47,15 +47,16 @@ class RealtimeResolution(object):
         """
         self.realtime_scenario.init_SSD_plot()
         
-    def run_realtime(self, tla, wind, detection_margin, airspeed, aircraft, receiverthread):
+    def run_realtime(self, tla, wind, detection_margin, airspeed, aircraft, traffic_events):
         """
         run the realtime_resolutions
         """
-        self.realtime_scenario.update_traffic_scenario(aircraft, receiverthread)
-        if self.traffic_scenario.Traffic.ntraf > 1:
+        self.realtime_scenario.update_traffic_scenario(aircraft, traffic_events)
+        
+        if self.realtime_scenario.Traffic.ntraf > 1:
             try:
                 self.realtime_scenario.detect_conflicts(tla, wind, detection_margin, airspeed)
-                self.realtime_Scenario.plot_SSD() 
+                self.realtime_scenario.plot_SSD() 
             except: # All errors to overcome pyclipper error UnboundLocalError: # When simulated aircraft are too far
                 pass # Do nothing
                 

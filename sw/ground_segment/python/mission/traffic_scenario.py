@@ -34,7 +34,7 @@ from pprzlink.message import PprzMessage
 from pprz_math import geodetic
 
 class TrafficScenario(object):
-    def __init__(self, circular_zones, ref_ltp):
+    def __init__(self, circular_zones, ltp_def):
         self.UAV_speed = 0 # [m/s]
         self.UAV_point_enu = 0
         self.UAV_lla = 0
@@ -43,10 +43,11 @@ class TrafficScenario(object):
         self.circular_zones = circular_zones
         self.circular_zones_lla = []
         for zone in circular_zones:
-            zone_lla = geodetic.EnuCoor_f(zone[0], zone[1], 0).to_lla(self.ltp_def)
+            zone_ecef = geodetic.EnuCoor_f(zone[0], zone[1], 0).to_ecef(ltp_def)
+            zone_lla = zone_ecef.to_lla()
             self.circular_zones_lla.append(zone_lla)
         
-    def update_traffic_scenario(self, aircraft, ReceiverThread):
+    def update_traffic_scenario(self, aircraft, traffic_events):
         self.UAV_speed = aircraft.get_gspeed() # [m/s]
         self.UAV_point_enu = aircraft.get_enu()#geodetic.EnuCoor_f(self.UAV.P[0], self.UAV.P[1], self.UAV.P[2])
         self.UAV_lla = aircraft.get_lla()
@@ -54,17 +55,17 @@ class TrafficScenario(object):
         
         self.Traffic = traffic.Aircraft()
         self.Traffic.create(1 , self.UAV_speed, np.rad2deg(self.UAV_lla.lat), np.rad2deg(self.UAV_lla.lon), self.UAV_hdg, 'UAV', 0.)
+    
+        i=0
+        for traffic_event in traffic_events:
+            self.Traffic.create(1, traffic_event.get_velocity(), np.rad2deg(traffic_event.get_lla().lat), np.rad2deg(traffic_event.get_lla().lon), traffic_event.get_course(), 'AC' + str(i), traffic_event.get_radius())
+            i += i
+            
+        for j in range(len(self.circular_zones_lla)):
+            self.Traffic.create(1, 0., np.rad2deg(self.circular_zones_lla[j].lat), np.rad2deg(self.circular_zones_lla[j].lon), 0, 'Zone' + str(j), self.circular_zones[j][2])
         
-        traffic_events = ReceiverThread.get_events()
-        
-        for i in range(len(traffic_events)):
-            self.Traffic.create(1, traffic_events[i].get_speed(), traffic_events[i].get_lla().lat, traffic_events[i].get_lla().lon, traffic_events[i].get_course(), 'AC' + str(i+1), traffic_events[i].get_radius())
-        
-        for j in range(self.circular_zones_lla):
-            self.Traffic.create(1, 0, np.rad2deg(self.circular_zones_lla[j].lat), np.rad2deg(self.circular_zones_lla[j].lon), 0, 'Zone' + str(j), self.circular_zones[j][2])
-        
-    def detect_conflicts(self, tla, wind, margin):
-        self.asas = ssd_resolutions.Asas(self.Traffic.ntraf, self.UAV_speed, self.strategy, tla, margin)
+    def detect_conflicts(self, tla, wind, margin, airspeed):
+        self.asas = ssd_resolutions.Asas(self.Traffic.ntraf, airspeed, 'HDG', tla, margin)
         self.asas.inconf[0] = True
         ssd_resolutions.constructSSD(self.asas, self.Traffic, self.asas.tla, wind)
         resolutions = ssd_resolutions.calculate_resolution(self.asas, self.Traffic)
@@ -90,8 +91,11 @@ class TrafficScenario(object):
         
         #Choose ownship
         i_own = 0
+        #i_own = Traffic.id.index("KL204")
         
         #AC velocity vector
+        v_own = np.array([self.Traffic.gseast[i_own], self.Traffic.gsnorth[i_own]])
+        
         
         #SSD- CIRCLES OF VMAX AND VMIN
         vmin = self.asas.vmin
@@ -115,9 +119,15 @@ class TrafficScenario(object):
         #------------------------------------------------------------------------------
         
         #PLOTS
+        #fig, ax = plt.subplots()
         self.ax.clear()
+        #line1, = plt.plot(x_SSD_outer, y_SSD_outer, color = '#404040', label="Velocity limits")
+        #self.line1.set_xdata(x_SSD_outer)
+        #self.line1.set_ydata(y_SSD_outer)
         self.ax.plot(x_SSD_outer, y_SSD_outer, color = '#404040')
         self.ax.plot(x_SSD_inner, y_SSD_inner, color = '#404040')
+        
+        
         
         if self.asas.ARV_calc[i_own]:
             for j in range(len(self.asas.ARV_calc[i_own])):
@@ -157,6 +167,8 @@ class TrafficScenario(object):
         self.ax.axis('equal')
         self.ax.axis('off')
         self.fig.canvas.draw()
+        #plt.savefig('bar.jpg',bbox_inches = 'tight')
+        #plt.show()
         
 class ExtrapolatedScenario(object):
     def __init__(self, circular_zones):
