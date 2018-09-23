@@ -47,8 +47,8 @@ class TrafficScenario(object):
             zone_lla = zone_ecef.to_lla()
             self.circular_zones_lla.append(zone_lla)
         
-    def update_traffic_scenario(self, aircraft, traffic_events):
-        self.UAV_speed = aircraft.get_gspeed() # [m/s]
+    def update_traffic_scenario(self, aircraft, traffic_events, groundspeed):
+        self.UAV_speed = groundspeed # [m/s]
         self.UAV_point_enu = aircraft.get_enu()#geodetic.EnuCoor_f(self.UAV.P[0], self.UAV.P[1], self.UAV.P[2])
         self.UAV_lla = aircraft.get_lla()
         self.UAV_hdg = aircraft.get_course()
@@ -180,8 +180,8 @@ class ExtrapolatedScenario(object):
             self.circular_zones_lla.append(zone_lla)
         self.ref_utm_i = ref_utm_i
         
-    def update_traffic_scenario(self, aircraft, traffic_events, hdg, dt):
-        self.UAV_speed = aircraft.get_gspeed() # [m/s]
+    def update_traffic_scenario(self, aircraft, traffic_events, hdg, dt, groundspeed):
+        self.UAV_speed = groundspeed # [m/s]
         self.UAV_point_enu = aircraft.get_enu()
         self.UAV_lla = aircraft.get_lla() # check
         self.UAV_hdg = aircraft.get_course()

@@ -37,9 +37,17 @@ import flightplan_xml_parse
 static_margin = 100. #[m]
 dynamic_margin = 150. #[m]
 altitude = 120.
-#airspeed = 23.
+airspeed = 23.
 max_tla = 60. #[s] change later
 wind = {'east': 0., 'north' : 0.}
+t_arrive_lock = 30. # [s]
+
+#defines for resolution algoritm
+conflict_counter_th = 3 # min number of consecutive detections before avoidance
+avoidance_time_th = 30. # [s] min tume before waypoint for which avoidance is not allowed
+hdg_diff_th = 30. # max absolute heading change for resolution
+avoid_dist_min = 500. # avoid distance, when possible, otherwise half leg length
+hdg_margin = 5. # deg
 
 class Mission(object):
     def __init__(self, ac_id):
@@ -174,20 +182,28 @@ class Mission(object):
             return
         
         if ((self.mission_elements[idx].id > self.avoidance_lock_id) and (idx > 0)): 
+            groundspeed = self.aircraft.get_gspeed()
+            
+            # if groundspeed messages are not coming in
+            if groundspeed < 1.0:
+                groundspeed = airspeed
+            
             from_point_enu = self.aircraft.get_enu()
             to_point_enu = self.mission_elements[idx].wp
-            resolution_point = self.resolution_finder.resolution_on_leg(from_point_enu, to_point_enu, self.aircraft.get_gspeed(), dynamic_margin, self.aircraft, self.asterix_receiver.get_events(), wind, self.flightplan.flight_plan.alt, self.geofence, self.static_nfzs, max_tla)
-            if resolution_point == 'free':
-                return
-            elif resolution_point == 'nosol':
-                return
-            else:
-                    self.mission_elements.insert(idx, MissionElement(self.mission_elements[idx-1].id + 2, resolution_point))
-                    self.mission_elements.insert(idx, MissionElement(self.mission_elements[idx-1].id + 1, from_point_enu))
-
-                    self.avoidance_lock_id = self.mission_elements[idx + 1].id
-                    self.mission_comm.set_mission(self.mission_elements)
-                    
+            t_arrive = resolution.time_to_arrive_at_point(from_point_enu, to_point_enu, groundspeed)
+            if (t_arrive > t_arrive_lock):
+                resolution_point = self.resolution_finder.resolution_on_leg(from_point_enu, to_point_enu, self.aircraft.get_gspeed(), dynamic_margin, self.aircraft, self.asterix_receiver.get_events(), wind, self.flightplan.flight_plan.alt, self.geofence, self.static_nfzs, max_tla, conflict_counter_th, avoidance_time_th, hdg_diff_th, avoid_dist_min)
+                if resolution_point == 'free':
+                    return
+                elif resolution_point == 'nosol':
+                    return
+                else:
+                        self.mission_elements.insert(idx, MissionElement(self.mission_elements[idx-1].id + 2, resolution_point))
+                        self.mission_elements.insert(idx, MissionElement(self.mission_elements[idx-1].id + 1, from_point_enu))
+    
+                        self.avoidance_lock_id = self.mission_elements[idx + 1].id
+                        self.mission_comm.set_mission(self.mission_elements)
+                
                 
     def run_mission(self):
         """
@@ -206,7 +222,11 @@ class Mission(object):
             self.draw_circular_static_nfzs()
             
             # realimte ssd plotter
-            self.realtime_ssd.run_realtime(max_tla, wind, dynamic_margin, self.aircraft.get_airspeed(), self.aircraft, self.asterix_receiver.get_events())
+            groundspeed = self.aircraft.get_gspeed()
+            # if no groundspeed message update
+            if groundspeed < 1.0:
+                groundspeed = airspeed
+            self.realtime_ssd.run_realtime(max_tla, wind, dynamic_margin, groundspeed, self.aircraft, self.asterix_receiver.get_events(), groundspeed)
             
             # run avoidance
             self.avoidance()
