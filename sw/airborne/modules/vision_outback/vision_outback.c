@@ -109,6 +109,7 @@ static void send_vision_outback( struct transport_tx *trans, struct link_device 
 
   pprz_msg_send_VISION_OUTBACK(trans, dev, AC_ID,
                                &v2p_package.status,
+                               &v2p_package.landing_status,
                                (uint8_t *)&het_moment,
                                (uint8_t *)&timeoutcount,
                                (uint8_t *)&vision_timeout,

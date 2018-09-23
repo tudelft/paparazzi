@@ -455,6 +455,7 @@
 
     <message name="VISION_OUTBACK" id="58">
       <field name="status" type="uint8" values="OK|NOT_OK|VERSION_ERROR"/>
+      <field name="landing_status" type="uint8"  values="init|searching|found_joe|found_good_joe|fixed_joe|refound_joe|aruco_lock|lost_aruco"/>      
       <field name="het_moment" type="uint8"/>
       <field name="timeoutcount" type="uint8"/>
       <field name="vision_timeout" type="uint8"/>
