@@ -49,6 +49,20 @@ class DelftaCopterFrame(wx.Frame):
         self.track_lasteast = self.east
         self.track_distance = self.track_distance + math.sqrt(dx*dx+dy*dy)
 
+    def vision_landing_status(self):
+        landing_status_enum = {
+            0: "Init",
+            1: "Searching_joe",
+            2: "Found_a_joe",
+            3: "Found_a_good_joe",
+            4: "Fixed_joe_location",
+            5: "Lost_fixed_joe",
+            6: "Refound_fixed_joe",
+            7: "Aruco_lock",
+            8: "Lost_aruco_lock"
+        }
+        self.landing_status = landing_status_enum.get(argument, "unknown")
+
     def message_recv(self, ac_id, msg):
         if msg.name =="ROTORCRAFT_FP_MIN":
             self.gspeed = round(float(msg['gspeed']) / 100.0 * 3.6 / 1.852,1)
