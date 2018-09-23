@@ -170,8 +170,8 @@ static bool mission_path_add(struct mission_path_elem_t *elem) {
   // Add the element
   if(mission_path[add_idx].id != elem->id && add_idx < MISSION_PATH_MAX-1) {
     // Update the current index if the point is added before
-    if(add_idx < mission_path_idx)
-      mission_path_idx++;
+//    if(add_idx < mission_path_idx)
+//      mission_path_idx++;
 
     // Add the element itself
     struct mission_path_elem_t saved_elem = mission_path[add_idx];
