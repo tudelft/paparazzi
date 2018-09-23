@@ -23,7 +23,6 @@ import os
 import time
 import threading
 import math
-import pynotify
 import array
 from cStringIO import StringIO
 
