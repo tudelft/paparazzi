@@ -86,7 +86,7 @@ class BatteryCell(object):
     def get_volt_perc(self):
         return (self.voltage - 2.5) / (4.2 - 2.5)
     def get_power(self):
-        return self.power
+        return self.voltage * self.current
     def get_power_per_cell(self):
         return self.get_power() / bat.cells_in_parallel / bat.cells_in_series
     def get_temp_perc(self):
