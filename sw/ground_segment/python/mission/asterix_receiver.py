@@ -249,6 +249,12 @@ class AsterixEvent(object):
         Return the gspeed magnitude
         """
         return self.course
+        
+    def get_roc(self):
+        """
+        Return the rate of climb
+        """
+        return self.roc
 
     def __eq__(self, other):
         """

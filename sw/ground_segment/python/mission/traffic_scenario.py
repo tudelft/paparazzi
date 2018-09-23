@@ -171,44 +171,48 @@ class TrafficScenario(object):
         #plt.show()
         
 class ExtrapolatedScenario(object):
-    def __init__(self, circular_zones):
+    def __init__(self, circular_zones, ref_utm_i):
         self.circular_zones = circular_zones
+        self.circular_zones_lla = []
+        for zone in circular_zones:
+            zone_ecef = geodetic.EnuCoor_f(zone[0], zone[1], 0).to_ecef(ltp_def)
+            zone_lla = zone_ecef.to_lla()
+            self.circular_zones_lla.append(zone_lla)
+        self.ref_utm_i = ref_utm_i
         
-    def update_traffic_scenario(self, commanded_airspeed, UAV_hdg, wind, pos_enu, dt, ReceiverThread):
-        self.UAV_in_PZ = False
-        self.UAV_speed = np.sqrt((commanded_airspeed * np.sin(np.deg2rad(UAV_hdg)) + wind['east'])**2 + (commanded_airspeed * np.cos(np.deg2rad(UAV_hdg)) + wind['north'])**2)
-        self.UAV_point_enu = pos_enu
-        self.UAV_lla = coord_trans.enu_to_lla_fw(self.UAV_point_enu, self.UAV.ref_utm_i) ## check
-        self.UAV_lat = self.UAV_lla.lat*10.**-7
-        self.UAV_lon = self.UAV_lla.lon*10.**-7
-        self.UAV_hdg = float(UAV_hdg)
+    def update_traffic_scenario(self, aircraft, traffic_events, hdg, dt):
+        self.UAV_speed = aircraft.get_gspeed() # [m/s]
+        self.UAV_point_enu = aircraft.get_enu()
+        self.UAV_lla = aircraft.get_lla() # check
+        self.UAV_hdg = aircraft.get_course()
+        
         self.Traffic = traffic.Aircraft()
         self.Traffic.create(1 , self.UAV_speed, self.UAV_lat, self.UAV_lon, self.UAV_hdg, 'UAV', 0.)
         
-        traffic_events = ReceiverThread.get_events()
-        
-        for i in range(len(traffic_events)):
-            velocity = traffic_events[i].get_ground_speed()
-            lla_point_old = traffic_events[i].get_lla()
-            hdg = traffic_events[i].get_course()
-            radius = traffic_events[i].get_radius()
+        i=0
+        for traffic_event in traffic_events:
+            velocity = traffic_events.get_ground_speed()
+            lla_point = traffic_events.get_lla()
+            lla_point_old = geodetic.LlaCoor_i(int(np.rad2deg(lla_point.lat) * 10. ** 7), int(np.rad2deg(lla_point.lon) * 10. ** 7), int(np.rad2deg(lla_point.alt) * 1000.))
+            hdg = traffic_events.get_course()
+            radius = traffic_events.get_radius()
             
             # Speed components to compute future position
             Vx = velocity * np.sin(np.deg2rad(hdg)) # V in east direction
             Vy = velocity * np.cos(np.deg2rad(hdg)) # V in north direction
-            Vz = traffic_events[i].RoC # V in upward direction
+            Vz = traffic_events.get_roc() # V in upward direction
             
             # enu_point conversion to new point and to lla
-            enu_point_old = coord_trans.lla_to_enu_fw(lla_point_old, self.UAV.ref_utm_i)
+            enu_point_old = coord_trans.lla_to_enu_fw(lla_point_old, self.ref_utm_i)
             enu_point_new = geodetic.EnuCoor_f(enu_point_old.x + Vx * dt, enu_point_old.y + Vy * dt, enu_point_old.z + Vz * dt)
-            lla_point_new = coord_trans.enu_to_lla_fw(enu_point_new, self.UAV.ref_utm_i)
+            lla_point_new = coord_trans.enu_to_lla_fw(enu_point_new, self.ref_utm_i)
             
             # Create traffic object
             self.Traffic.create(1, velocity, lla_point_new.lat * 10.**-7, lla_point_new.lon * 10.**-7, hdg, 'AC' + str(i+1), radius)
-    
-        for j in range(len(self.circular_zones)):
-                         
-            self.Traffic.create(1, 0, self.circular_zones[j][2].lat * 10. **-7, self.circular_zones[j][2].lon * 10. **-7, 0, 'Zone' + str(j), self.circular_zones[j][0])
+            i += 1
+             
+        for j in range(len(self.circular_zones_lla)):
+            self.Traffic.create(1, 0., np.rad2deg(self.circular_zones_lla[j].lat), np.rad2deg(self.circular_zones_lla[j].lon), 0, 'Zone' + str(j), self.circular_zones[j][2])
             
     def detect_conflicts(self, tla, wind, margin):
         self.asas = ssd_resolutions.Asas(self.Traffic.ntraf, self.UAV_speed, self.strategy, tla, margin)

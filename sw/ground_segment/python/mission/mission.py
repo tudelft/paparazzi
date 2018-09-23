@@ -165,11 +165,13 @@ class Mission(object):
         
         while True:
             logging.debug("Mission LOOP")
-            self.realtime_ssd.run_realtime(tla, wind, dynamic_margin, airspeed, self.aircraft, self.asterix_receiver.get_events())
 
             # Visualize the asterix events and the mission
             self.asterix_visualizer.visualize(self.asterix_receiver.get_events())
             self.mission_visualizer.visualize(self.mission_comm.get_mission())
+            
+            # realimte ssd plotter
+            self.realtime_ssd.run_realtime(tla, wind, dynamic_margin, self.aircraft.get_airspeed(), self.aircraft, self.asterix_receiver.get_events())
             
 
             # Wait time in main loop
