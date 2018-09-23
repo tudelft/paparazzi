@@ -31,6 +31,7 @@
       <message name="HYBRID_GUIDANCE"        period="3.75"/>
       <message name="SVINFO"                 period="7.5"/>
       <message name="TRIM"                   period="6.5"/>
+      <message name="MISSION_PATH_STATUS"    period="11.4"/>
     </mode>
 
     <mode name="ppm">
@@ -198,6 +199,7 @@
       <message name="THROTTLE_CURVE"         period="1.5"/>
       <message name="AHRS_REF_QUAT"          period="4.2"/>
       <message name="VISION_OUTBACK"         period="1.2"/>
+      <message name="MISSION_PATH_STATUS"    period="10.1"/>
     </mode>
   </process>
 
