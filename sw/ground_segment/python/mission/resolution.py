@@ -25,6 +25,7 @@ from os import path, getenv
 import sys
 
 import numpy as np
+import shapely.geometry as geometry
 
 # if PAPARAZZI_SRC or PAPARAZZI_HOME not set, then assume the tree containing this
 # file is a reasonable substitute
@@ -63,109 +64,206 @@ class RealtimeResolution(object):
 #                pass # Do nothing
                 
 class ResolutionFinder(object):
-    def __init__(self, circular_zones, ltp_def):
-        self.extrapolated_scenario = traffic_scenario.ExtrapolatedScenario(circular_zones, ltp_def)
+    def __init__(self, circular_zones, ref_utm_i, ltp_def):
+        self.extrapolated_scenario = traffic_scenario.ExtrapolatedScenario(circular_zones, ref_utm_i, ltp_def)
+        self.conflict_counter = 0
     
-    def resolution_on_leg(self, from_point_enu, to_point_enu, groundspeed, margin):
+#    def resolution_on_leg(self, from_point_enu, to_point_enu, groundspeed, margin, aircraft, traffic_events, wind, altitude, geofence, zones, max_tla):
+#        conflict_counter_th = 4 # loops     
+#        avoidance_time_th = 30. # [s]
+#        hdg_diff_th = 30.
+#        avoid_dist_min = 1000. # [m]
+#        max_iter_steps = 4
+#        
+#        dx = to_point_enu.x - from_point_enu.x
+#        dy = to_point_enu.y - from_point_enu.y
+#        hdg = np.rad2deg(np.arctan2(dx, dy)) % 360.            
+#        
+#        self.extrapolated_scenario.update_traffic_scenario(aircraft, traffic_events, hdg, 0.)
+#        time_to_arrive_at_point = self.time_to_arrive_at_point(from_point_enu, to_point_enu, groundspeed)
+#        resolutions = self.extrapolated_scenario.detect_conflicts(time_to_arrive_at_point, wind, margin)
+#        
+#        print(self.conflict_counter)        
+#        sys.stdout.flush()
+#        
+#        if ((resolutions[0] == 'conflict') or (resolutions[0] == 'nosol')):
+#            if ((self.conflict_counter < conflict_counter_th) or (resolutions[0] == 'nosol')):
+#                self.conflict_counter = self.conflict_counter + 1
+#                return 'free'
+#        if (resolutions[0] == 'free'):
+#            self.conflict_counter = 0
+#            return 'free'
+#        
+#        if ((self.conflict_counter >= conflict_counter_th) and (resolutions[0] != 'nosol') and (time_to_arrive_at_point > avoidance_time_th)):
+#            #find resolutions
+#            resolution_points = []
+#            distances = []
+#            half_leg_distance = enu_distance(from_point_enu, to_point_enu) / 2.
+#            avoid_dist = min(half_leg_distance, avoid_dist_min)
+#            
+#            for i in range(len(resolutions[1])):
+#                # stop when not within thresholds
+#                x_res = resolutions[1][i]
+#                y_res = resolutions[2][i]
+#                hdg_res = np.rad2deg(np.arctan2(x_res, y_res)) % 360.
+#                hdg_diff = calc_absolute_hdg_diff(hdg, hdg_res)
+#                if (hdg_diff > hdg_diff_th):
+#                    print ("hdg diff to big: ", hdg_diff)
+#                    sys.stdout.flush()
+#                    return 'nosol'
+#                
+#                for j in range(max_iter_steps):
+#                    resolution_dist = avoid_dist/max_iter_steps * (j + 1)
+#                    dt = resolution_dist / groundspeed
+#                    new_from_point_enu = geodetic.EnuCoor_f(from_point_enu.x + np.sin(np.deg2rad(hdg_res)) * resolution_dist, from_point_enu.y + np.cos(np.deg2rad(hdg_res)) * resolution_dist, altitude)
+#                
+#                    linestring_to = geometry.LineString([(from_point_enu.x, from_point_enu.y), (new_from_point_enu.x, new_from_point_enu.y)])
+#                    linestring_from = geometry.LineString([(new_from_point_enu.x, new_from_point_enu.y), (to_point_enu.x, to_point_enu.y)])
+#                    
+#                    geofence_polygon = geometry.Polygon(enu_lst_to_polygon(geofence))
+#                    
+#                    if ((geofence_polygon.contains(linestring_to) == False) or (geofence_polygon.contains(linestring_from) == False)):
+#                        # Non valid solution
+#                        continue
+#            
+#                    for zone in zones:
+#                        zone_polygon = geometry.Polygon(enu_lst_to_polygon(zone.enu_points))
+#                        if (linestring_to.intersects(zone_polygon) or (linestring_from.intersects(zone_polygon))):
+#                            # Non valid solution
+#                            continue
+#                    
+#                    dx_target = to_point_enu.x - new_from_point_enu.x
+#                    dy_target = to_point_enu.y - new_from_point_enu.y
+#                    
+#                    hdg_target = np.rad2deg(np.arctan2(dx_target, dy_target)) % 360.
+#                    
+#                    self.extrapolated_scenario.update_traffic_scenario(aircraft, traffic_events, hdg_target, dt)
+#                    tla_target = min(self.time_to_arrive_at_point(new_from_point_enu, to_point_enu, groundspeed), max_tla)
+#                
+#                    conflict = self.extrapolated_scenario.detect_conflicts(tla_target, wind, margin) # mayve detection margin good as well
+#                
+#                    if (conflict[0] == 'free'):
+#                        resolution_points.append(new_from_point_enu)
+#                        distance = enu_distance(new_from_point_enu, from_point_enu) + enu_distance(new_from_point_enu, to_point_enu)
+#                        distances.append(distance)
+#                    
+#            if len(resolution_points) > 0:
+#                resolution_point = resolution_points[np.argmin(distances)]
+#                self.conflict_counter = 0
+#                print("resolution ooint")
+#                sys.stdout.flush()
+#                return resolution_point
+#            else:
+#                print("nosol")
+#                sys.stdout.flush()
+#                return 'nosol' 
+#        else:
+#            return 'free'
+            
+    def resolution_on_leg(self, from_point_enu, to_point_enu, groundspeed, margin, aircraft, traffic_events, wind, altitude, geofence, zones, max_tla):
+        conflict_counter_th = 3 # loops     
+        avoidance_time_th = 30. # [s]
+        hdg_diff_th = 30.
+        avoid_dist_min = 1000. # [m]
+
+        
         dx = to_point_enu.x - from_point_enu.x
         dy = to_point_enu.y - from_point_enu.y
         hdg = np.rad2deg(np.arctan2(dx, dy)) % 360.            
         
-        #abs_speed, speed_vector = self.ground_velocity_from_commanded_airspeed(hdg, self.commanded_airspeed)
+        self.extrapolated_scenario.update_traffic_scenario(aircraft, traffic_events, hdg, 0.)
+        time_to_arrive_at_point = self.time_to_arrive_at_point(from_point_enu, to_point_enu, groundspeed)
+        resolutions = self.extrapolated_scenario.detect_conflicts(min(max_tla, time_to_arrive_at_point), wind, margin)
         
-        self.traffic_scenario_extrapolated.update_traffic_scenario(speed_vector, groundspeed, hdg, self.wind, from_point_enu, 0., self.receiver_thread, types)
-        time_to_arrive_at_point = self.time_to_arrive_at_point(from_point, to_point, self.commanded_airspeed)
-
+        print(self.conflict_counter)        
+        sys.stdout.flush()
         
-        reduced_tla = self.min_avoid_leg_time
-        looping = True        
-        
-        while looping:
-            abs_speed, speed_vector = self.ground_velocity_from_commanded_airspeed(hdg, self.commanded_airspeed)
-            
-            self.traffic_scenario_extrapolated.update_traffic_scenario(speed_vector, abs_speed, hdg, self.wind, from_point_enu, dt, self.receiver_thread, types)
-            resolutions = self.traffic_scenario_extrapolated.detect_conflicts(reduced_tla + self.reduced_tla_margin, self.wind, resolution_margin)
-            
-            if (resolutions[0] == 'free'):
+        if ((resolutions[0] == 'conflict') or (resolutions[0] == 'nosol')):
+            if ((self.conflict_counter < conflict_counter_th) or (resolutions[0] == 'nosol')):
+                self.conflict_counter = self.conflict_counter + 1
                 return 'free'
-            
-            if (resolutions[0] == 'nosol'):
-                print ("nosol from begin in resolution function")
-                return 'nosol'                        
-            
-            if (len(resolutions[1]) < 30):
-                n_i = len(resolutions[1])
-            else:
-                n_i = 30
-                
+        if (resolutions[0] == 'free'):
+            self.conflict_counter = 0
+            return 'free'
+        
+        if ((self.conflict_counter >= conflict_counter_th) and (resolutions[0] != 'nosol') and (time_to_arrive_at_point > avoidance_time_th)):
+            #find resolutions
             resolution_points = []
             distances = []
-            rightleftsolution = {'right' : False, 'left' : False}
+            half_leg_distance = enu_distance(from_point_enu, to_point_enu) / 2.
+            avoid_dist = min(half_leg_distance, avoid_dist_min)
             
-            for i in range(n_i-1):
-                if ((rightleftsolution['right'] == True) and (rightleftsolution['left'] == True)):
+            for i in range(len(resolutions[1])):
+                # stop when not within thresholds
+                x_res = resolutions[1][i]
+                y_res = resolutions[2][i]
+                hdg_res = np.rad2deg(np.arctan2(x_res, y_res)) % 360.
+                hdg_diff = calc_absolute_hdg_diff(hdg, hdg_res)
+                if (hdg_diff > hdg_diff_th):
+                    print ("hdg diff to big: ", hdg_diff)
+                    sys.stdout.flush()
                     break
                 
-                hdg_res = np.rad2deg(np.arctan2(resolutions[1][i], resolutions[2][i])) % 360.
-                UAV_speed = self.ground_velocity_from_commanded_airspeed(hdg_res, self.commanded_airspeed)[1]
+                resolution_dist = avoid_dist
+                dt = resolution_dist / groundspeed
+                new_from_point_enu = geodetic.EnuCoor_f(from_point_enu.x + np.sin(np.deg2rad(hdg_res)) * resolution_dist, from_point_enu.y + np.cos(np.deg2rad(hdg_res)) * resolution_dist, altitude)
+                
+                linestring_to = geometry.LineString([(from_point_enu.x, from_point_enu.y), (new_from_point_enu.x, new_from_point_enu.y)])
+                linestring_from = geometry.LineString([(new_from_point_enu.x, new_from_point_enu.y), (to_point_enu.x, to_point_enu.y)])
                     
-                res_dir = self.CheckRelativeHeadingDirection(hdg, hdg_res)
-                
-                if (res_dir == 'right' and not rightleftsolution['right']):
-                    pass
-                elif (res_dir == 'left' and not rightleftsolution['left']):
-                    pass
-                else:
+                geofence_polygon = geometry.Polygon(enu_lst_to_polygon(geofence))
+                    
+                if ((geofence_polygon.contains(linestring_to) == False) or (geofence_polygon.contains(linestring_from) == False)):
+                    # Non valid solution
                     continue
-                
-                new_from_point = (from_point[0] + UAV_speed[0]*reduced_tla, from_point[1] + UAV_speed[1]*reduced_tla)
-                
-                linestring_to = geometry.LineString([from_point, new_from_point])
-                linestring_from = geometry.LineString([new_from_point, next_point])
-                
-                if ((self.soft_geofence.polygon.contains(linestring_to) == False) and (self.soft_geofence.polygon.contains(linestring_from) == False)):
-                    continue
-                
-                for Zone in range(len(self.Zones)):
-                    if (linestring_to.intersects(self.Zones[Zone].circle['geo']) and (linestring_from.intersects(self.Zones[Zone].circle['geo']))):
+        
+                for zone in zones:
+                    zone_polygon = geometry.Polygon(enu_lst_to_polygon(zone.enu_points))
+                    if (linestring_to.intersects(zone_polygon) or (linestring_from.intersects(zone_polygon))):
+                        # Non valid solution
                         continue
-                    
-                new_from_point_enu = geodetic.EnuCoor_f(new_from_point[0], new_from_point[1], self.altitude)
                 
-                dx_target = to_point[0] - new_from_point[0]
-                dy_target = to_point[1] - new_from_point[1]
+                dx_target = to_point_enu.x - new_from_point_enu.x
+                dy_target = to_point_enu.y - new_from_point_enu.y
                 
-                hdg_target = np.rad2deg(np.arctan2(dx_target, dy_target))
-                
-                abs_speed, speed_vector = self.ground_velocity_from_commanded_airspeed(hdg_target, self.commanded_airspeed)
-                
-                self.traffic_scenario_extrapolated.update_traffic_scenario(speed_vector, abs_speed, hdg_target, self.wind, new_from_point_enu, dt + reduced_tla, self.receiver_thread, types = types)
-                tla_target = min(self.time_to_arrive_at_point(new_from_point, to_point, self.commanded_airspeed), self.max_tla) # look later
-                
-                conflict = self.traffic_scenario_extrapolated.detect_conflicts(tla_target, self.wind, resolution_margin) # mayve detection margin good as well
-                
-                if (conflict[0] == 'free'):
-                    
-                    if (res_dir == 'right'):
-                        rightleftsolution['right'] = True
-                    else:
-                        rightleftsolution['left'] = True
-                    resolution_points.append(new_from_point)
-                    distance = np.sqrt((new_from_point[0] - from_point[0])**2 + (new_from_point[1] - from_point[1])**2) + np.sqrt((to_point[0] - new_from_point[0])**2 + (to_point[1] - new_from_point[1])**2)
-                    distances.append(distance)
+                hdg_target = np.rad2deg(np.arctan2(dx_target, dy_target)) % 360.
+                resolution_points.append(new_from_point_enu)
+                distance = enu_distance(new_from_point_enu, from_point_enu) + enu_distance(new_from_point_enu, to_point_enu)
+                distances.append(distance)
                     
             if len(resolution_points) > 0:
-                resolution_point = resolution_points[np.argmin(distances)]
-                looping = False
+                resolution_point = resolution_points[-1]
+                self.conflict_counter = 0
+                print("resolution point")
+                sys.stdout.flush()
                 return resolution_point
             else:
-                if (reduced_tla <= time_to_arrive_at_point + self.extended_tla):
-                    reduced_tla = reduced_tla + self.reduced_tla_step
-                else:
-                    looping = False
-                    return 'nosol'    
+                print("nosol")
+                sys.stdout.flush()
+                return 'nosol' 
+        else:
+            return 'free'
+                    
+    def time_to_arrive_at_point(self, from_point_enu, to_point_enu, groundspeed):
+        dist = np.sqrt((from_point_enu.x - to_point_enu.x) ** 2 + (from_point_enu.y - to_point_enu.y) ** 2)
+        V = groundspeed
+        if V != 0:
+            time = dist/V
+        else:
+            time = 5.*60.
+        return time
         
+def calc_absolute_hdg_diff(hdg1, hdg2):
+    diff = abs(hdg1 - hdg2)
+    diff = 180. - abs(180. - abs(hdg1 - hdg2) % 360.)
+    return diff
+        
+def enu_distance(enu1, enu2):
+    distance = np.sqrt((enu1.x - enu2.x) ** 2 + (enu1.y - enu2.y) ** 2)
+    return distance
     
-    
-        
-        
+def enu_lst_to_polygon(enu_lst):
+    coords = []
+    for enu in enu_lst:
+        coords.append((enu.x, enu.y))
+    return coords

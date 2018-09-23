@@ -114,7 +114,7 @@ class Aircraft(object):
             self.lock.acquire()
             
             self.lla = geodetic.LlaCoor_f(float(msg['lat']) / 180. * np.pi, float(msg['long']) / 180. * np.pi, float(msg['alt']) / 180.*np.pi)
-            self.enu = geodetic.LlaCoor_f(self.lla.lat/180*np.pi, self.lla.lon/180*np.pi, self.lla.alt).to_enu(self.ltp_def)
+            self.enu = self.lla.to_enu(self.ltp_def)
             self.course = float(msg['course'])
             self.ground_speed = float(msg['speed'])
             self.airspeed = float(msg['airspeed'])

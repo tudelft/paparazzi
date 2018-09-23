@@ -78,6 +78,28 @@
    gui_color="red"
   />
   <aircraft
+   name="Avoidance_fw_sim"
+   ac_id="19"
+   airframe="airframes/tudelft/avoidance_fw_sim.xml"
+   radio="radios/cockpitSX.xml"
+   telemetry="telemetry/default_fixedwing.xml"
+   flight_plan="flight_plans/tudelft/avoidance/Dalby_avoid_sim.xml"
+   settings="settings/fixedwing_basic.xml"
+   settings_modules="modules/gps_ubx_ucenter.xml modules/geo_mag.xml modules/air_data.xml modules/ahrs_int_cmpl_quat.xml modules/nav_basic_fw.xml modules/gps.xml modules/imu_common.xml modules/guidance_basic_fw.xml modules/stabilization_attitude_fw.xml"
+   gui_color="#ffffffffffff"
+  />
+  <aircraft
+   name="Avoidance_rc_sim"
+   ac_id="29"
+   airframe="airframes/examples/bebop2_indi.xml"
+   radio="radios/cockpitSX.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/tudelft/avoidance/Dalby_avoid_sim_rc.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/gps_ubx_ucenter.xml modules/air_data.xml modules/geo_mag.xml modules/ins_extended.xml modules/ahrs_int_cmpl_quat.xml modules/stabilization_indi_simple.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/gps.xml modules/imu_common.xml"
+   gui_color="#ffffffffffff"
+  />
+  <aircraft
    name="BebopMavlink"
    ac_id="9"
    airframe="airframes/tudelft/bebop_mavlink.xml"

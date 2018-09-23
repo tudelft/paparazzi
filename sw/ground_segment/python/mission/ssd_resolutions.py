@@ -531,7 +531,6 @@ def calculate_resolution(asas, traf, tol=0):
     except:
         asas.asase[0] = 0.
         asas.asasn[0] = 0.
-        print("calculate_resolution: no ARV defined due to pyclip error")
         return('nosol', asas.asase[0],  asas.asasn[0])
         
     if asas.inconf[0] and len(ARV[0]) > 0:
@@ -549,7 +548,6 @@ def calculate_resolution(asas, traf, tol=0):
     else:    
         asas.asase[0] = 0.
         asas.asasn[0] = 0.
-        print("Aircraft", 0, "has not resolved")
         return('nosol', asas.asase[0],  asas.asasn[0])
     
     
