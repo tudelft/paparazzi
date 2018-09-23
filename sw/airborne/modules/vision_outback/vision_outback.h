@@ -115,6 +115,7 @@ extern uint8_t vision_outback_power;
 extern struct FloatVect3 land_cmd;
 extern bool het_moment;
 extern bool vision_timeout;
+extern bool vision_found_joe;
 extern float vision_height;
 
 extern void vision_outback_init(void);

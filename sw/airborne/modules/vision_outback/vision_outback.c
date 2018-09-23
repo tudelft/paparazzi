@@ -78,6 +78,7 @@ uint8_t vision_outback_power = VISION_SETTING_STATUS_REQUEST_POWER_ON;
 bool het_moment = false;
 bool vision_timeout = false; // TODO: remove
 float vision_height = false; // TODO: remove
+bool vision_found_joe = false;
 
 float msg_marker_x = 0;
 float msg_marker_y = 0;
@@ -315,6 +316,10 @@ void vision_outback_periodic() {
     p2k_package.enables |= 0b10000000;
   if (vision_outback_update_system)
     p2k_package.enables |= 0b11000000;
+
+
+  vision_found_joe =  (vision_outback_enable_findjoe && (v2p_package.landing_status == ls_found_a_good_joe ||  v2p_package.landing_status == ls_fixed_joe_location || v2p_package.landing_status == ls_refound_fixed_joe || v2p_package.landing_status == ls_aruco_lock));
+
 
   if (timeoutcount > 0) {
       timeoutcount--;
