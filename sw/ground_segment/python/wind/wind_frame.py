@@ -52,7 +52,7 @@ class WindFrame(wx.Frame):
 
         elif msg.name =="AIR_DATA":
             self.airspeed[self.count_as] = float(msg['airspeed'])
-            self.heading[self.count_as] = self.last_heading
+            self.heading[self.count_as] = self.last_heading * math.pi / 180.0
             self.count_as = self.count_as + 1
             if self.count_as > MSG_BUFFER_SIZE:
                 self.count_as = 0
@@ -132,15 +132,15 @@ class WindFrame(wx.Frame):
             gy = self.ground_gs_y[i]
 
             #dc.DrawLine(gx,gy,gx,gy)
-            dc.DrawCircle(int(gx+self.mid+self.click_x), int(gy+self.mid+self.click_y), 2)
+            dc.DrawCircle(int(gx * diameter / MAX_AIRSPEED + self.mid + self.click_x), int(gy * diameter / MAX_AIRSPEED + self.mid + self.click_y), 2)
 
         dc.SetBrush(wx.Brush(wx.Colour(255, 0, 0), wx.SOLID))
         for i in range(0,MSG_BUFFER_SIZE):
-            gx = self.airspeed[i] * math.cos(0)
-            gy = self.airspeed[i] * math.sin(0)
+            gx = self.airspeed[i] * math.cos(self.heading[i])
+            gy = self.airspeed[i] * math.sin(self.heading[i])
 
             #dc.DrawLine(gx,gy,gx,gy)
-            dc.DrawCircle(int(gx+self.mid), int(gy+self.mid), 2)
+            dc.DrawCircle(int(gx * diameter / MAX_AIRSPEED + self.mid), int(gy * diameter / MAX_AIRSPEED + self.mid), 2)
 
 
         font = wx.Font(8, wx.ROMAN, wx.NORMAL, wx.NORMAL)
