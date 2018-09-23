@@ -34,13 +34,17 @@ from pprzlink.message import PprzMessage
 from pprz_math import geodetic
 
 class TrafficScenario(object):
-    def __init__(self, circular_zones):
+    def __init__(self, circular_zones, ref_ltp):
         self.UAV_speed = 0 # [m/s]
         self.UAV_point_enu = 0
         self.UAV_lla = 0
         self.UAV_hdg = 0
         self.Traffic = traffic.Aircraft()
         self.circular_zones = circular_zones
+        self.circular_zones_lla = []
+        for zone in circular_zones:
+            zone_lla = geodetic.EnuCoor_f(zone[0], zone[1], 0).to_lla(self.ltp_def)
+            self.circular_zones_lla.append(zone_lla)
         
     def update_traffic_scenario(self, aircraft, ReceiverThread):
         self.UAV_speed = aircraft.get_gspeed() # [m/s]
@@ -49,15 +53,15 @@ class TrafficScenario(object):
         self.UAV_hdg = aircraft.get_course()
         
         self.Traffic = traffic.Aircraft()
-        self.Traffic.create(1 , self.UAV_speed, np.rad2deg(self.UAV.lla.lat), np.rad2deg(self.UAV.lla.lon), self.UAV_hdg, 'UAV', 0.)
+        self.Traffic.create(1 , self.UAV_speed, np.rad2deg(self.UAV_lla.lat), np.rad2deg(self.UAV_lla.lon), self.UAV_hdg, 'UAV', 0.)
         
         traffic_events = ReceiverThread.get_events()
         
         for i in range(len(traffic_events)):
             self.Traffic.create(1, traffic_events[i].get_speed(), traffic_events[i].get_lla().lat, traffic_events[i].get_lla().lon, traffic_events[i].get_course(), 'AC' + str(i+1), traffic_events[i].get_radius())
         
-        for j in range(len(self.circular_zones)):
-            self.Traffic.create(1, 0, self.circular_zones[j][2].lat * 10. **-7, self.circular_zones[j][2].lon * 10. **-7, 0, 'Zone' + str(j), self.circular_zones[j][0])
+        for j in range(self.circular_zones_lla):
+            self.Traffic.create(1, 0, np.rad2deg(self.circular_zones_lla[j].lat), np.rad2deg(self.circular_zones_lla[j].lon), 0, 'Zone' + str(j), self.circular_zones[j][2])
         
     def detect_conflicts(self, tla, wind, margin):
         self.asas = ssd_resolutions.Asas(self.Traffic.ntraf, self.UAV_speed, self.strategy, tla, margin)

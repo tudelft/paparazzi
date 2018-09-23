@@ -38,8 +38,8 @@ from pprz_math import geodetic
 import traffic_scenario
 
 class RealtimeResolution(object):
-    def __init__(self, circular_zones):
-        self.realtime_scenario = traffic_scenario.TrafficScenario(circular_zones)
+    def __init__(self, circular_zones, ltp_def):
+        self.realtime_scenario = traffic_scenario.TrafficScenario(circular_zones, ltp_def)
         
     def init_realtime(self):
         """

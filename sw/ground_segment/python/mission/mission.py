@@ -35,8 +35,11 @@ import flightplan_xml_parse
 
 #defines
 static_margin = 100. #[m]
+dynamic_margin = 50. #[m]
 altitude = 120.
 airspeed = 23.
+tla = 60. #[s] change later
+wind = {'east': 0., 'north' : 0.}
 
 class Mission(object):
     def __init__(self, ac_id):
@@ -80,9 +83,7 @@ class Mission(object):
         self.aircraft = aircraft.Aircraft(self.ac_id, self.ivy_interface, self.ltp_def)
         
         # realtime ssd
-        self.realtime_ssd = resolution.RealtimeResolution(self.circular_zones)
-        self.realtime_ssd.init_realtime()
-        
+        self.realtime_ssd = resolution.RealtimeResolution(self.circular_zones, self.ltp_def)
         
     def static_nfzs_from_fp(self):
         """
@@ -93,7 +94,7 @@ class Mission(object):
             if "NFZ" in sector.name:
                 enu_points = []
                 for point in sector.corner_list:
-                    point_enu = geodetic.LlaCoor_f(point.lat/180*math.pi, point.lon/180*math.pi, 0).to_enu(self.ltp_def)
+                    point_enu = geodetic.LlaCoor_f(point.lat/180*math.pi, point.lon/180*math.pi, 0).to_ecef(self.ltp_def).to_lla()
                     enu_points.append(point_enu)
                 zones.append(StaticNFZ(sector.name, enu_points))
         return zones
@@ -160,6 +161,7 @@ class Mission(object):
         Main loop
         """
         self.draw_circular_static_nfzs()
+        self.realtime_ssd.init_realtime()
         
         while True:
             logging.debug("Mission LOOP")
@@ -167,6 +169,7 @@ class Mission(object):
             # Visualize the asterix events and the mission
             self.asterix_visualizer.visualize(self.asterix_receiver.get_events())
             self.mission_visualizer.visualize(self.mission_comm.get_mission())
+            self.realtime_ssd.run_realtime(tla, wind, dynamic_margin, airspeed, self.aircraft, self.asterix_receiver)
 
             # Wait time in main loop
             time.sleep(1)

@@ -52,6 +52,7 @@ class Aircraft(object):
         self.got_ltp = (ltp_def != None)
         self.ltp_def = ltp_def
         self.lla = geodetic.LlaCoor_f(0.0, 0.0, 0.0)
+        self.enu = geodetic.EnuCoor_f(0.0, 0.0, 0.0)
         self.course = 0.0
         self.ground_speed = 0.0
         self.airspeed = 0.0
@@ -169,7 +170,7 @@ class Aircraft(object):
             self.lock.release()
         return course
         
-    def get_ground_speed(self):
+    def get_gspeed(self):
         """
         Return the course of the aircraft
         """
