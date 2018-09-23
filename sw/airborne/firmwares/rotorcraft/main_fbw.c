@@ -54,6 +54,10 @@
 #define LessThan(_x, _y) ((_x) < (_y))
 #define MoreThan(_x, _y) ((_x) > (_y))
 
+/* Default FBW startup mode */
+#ifndef FBW_MODE_STARTUP
+#define FBW_MODE_STARTUP FBW_MODE_FAILSAFE
+#endif
 
 /** Fly by wire modes */
 fbw_mode_enum fbw_mode;
@@ -75,7 +79,7 @@ tid_t telemetry_tid;     ///< id for telemetry_periodic() timer
 void main_init(void)
 {
   // Set startup mode to Failsafe
-  fbw_mode = FBW_MODE_FAILSAFE;
+  fbw_mode = FBW_MODE_STARTUP;
 
   mcu_init();
 
