@@ -161,7 +161,7 @@ class ResolutionFinder(object):
 #            return 'free'
             
     def resolution_on_leg(self, from_point_enu, to_point_enu, groundspeed, margin, aircraft, traffic_events, wind, altitude, geofence, zones, max_tla):
-        conflict_counter_th = 3 # loops     
+        conflict_counter_th = 2 # loops     
         avoidance_time_th = 30. # [s]
         hdg_diff_th = 30.
         avoid_dist_min = 1000. # [m]
