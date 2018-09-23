@@ -110,9 +110,9 @@ class Mission(object):
         waypoints = []
         for wp in self.flightplan.waypoints.member_list:
             # Select only waypoints from the Main path
-            if "WP" in wp.name:
+            if wp.name[:2] == "FP":
                 wp_enu = geodetic.LlaCoor_f(wp.lat/180*math.pi, wp.lon/180*math.pi, self.flightplan.flight_plan.alt).to_enu(self.ltp_def)
-                wp_enu.z = self.flightplan.flight_plan.alt # FIXME: not really correct but for now works
+                wp_enu.z = self.flightplan.flight_plan.alt - self.flightplan.flight_plan.ground_alt # FIXME: not really correct but for now works
                 wp = TransitWaypoint(wp.name, wp_enu)
                 waypoints.append(wp)
         return waypoints    
@@ -122,9 +122,10 @@ class Mission(object):
         Get the geofence from the flight plan
         """
         enu_points = []
-        for point in self.flightplan.sector_name_lookup['SoftBoundary'].corner_list:
-            point_enu = geodetic.LlaCoor_f(point.lat/180*math.pi, point.lon/180*math.pi, 0).to_enu(self.ltp_def)
-            enu_points.append(point_enu)
+        if self.flightplan.sector_name_lookup['SoftBoundary']:
+            for point in self.flightplan.sector_name_lookup['SoftBoundary'].corner_list:
+                point_enu = geodetic.LlaCoor_f(point.lat/180*math.pi, point.lon/180*math.pi, 0).to_enu(self.ltp_def)
+                enu_points.append(point_enu)
         return enu_points
         
     def draw_circular_static_nfzs(self):

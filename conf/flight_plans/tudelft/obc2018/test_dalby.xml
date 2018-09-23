@@ -25,10 +25,10 @@
     <waypoint height="40.0" name="JOE_reported" x="100." y="-59.6"/>
     <waypoint height="30.0" name="JOE_found" x="-258.1" y="-21.9"/>
     <waypoint height="50.0" name="TD_mrk" x="-240.6" y="-36.0"/>
-    <waypoint name="p1" x="-16.9" y="-321.3"/>
-    <waypoint name="p2" x="285.2" y="-386.0"/>
-    <waypoint name="p3" x="143.2" y="19.3"/>
-    <waypoint name="p4" x="450.7" y="-88.5"/>
+    <waypoint name="FP1" x="-16.9" y="-321.3"/>
+    <waypoint name="FP2" x="285.2" y="-386.0"/>
+    <waypoint name="FP3" x="143.2" y="19.3"/>
+    <waypoint name="FP4" x="450.7" y="-88.5"/>
     <waypoint height="50.0" name="j1" x="264.1" y="39.7"/>
     <waypoint height="50.0" name="j2" x="57.2" y="-20.7"/>
     <waypoint height="50.0" name="j3" x="282.0" y="-2.0"/>
@@ -51,6 +51,7 @@
     </sector>
   </sectors>
   <modules>
+    <module name="mission" type="path"/>
     <module name="nav" type="heli_spinup"/>
     <module name="nav" type="hybrid_heading"/>
   </modules>
@@ -129,15 +130,21 @@
     </block>
     <block group="fly_to_joe" name="transition_to_joe">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_p1)"/>
+      <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_FP1)"/>
       <stay pre_call="nav_hybrid_heading_set_to_waypoint()" until="stage_time>4" wp="CLIMB"/>
     </block>
     <block group="fly_to_joe" name="route_to_joe">
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
-      <go from="p4" hmode="route" wp="p1"/>
-      <go from="p1" hmode="route" wp="p2"/>
-      <go from="p2" hmode="route" wp="p3"/>
-      <go from="p3" hmode="route" wp="p4"/>
+      <call_once fun="mission_path_reset()"/>
+      <go from="FP4" hmode="route" wp="FP1"/>
+      <go from="FP1" hmode="route" wp="FP2"/>
+      <go from="FP2" hmode="route" wp="FP3"/>
+      <go from="FP3" hmode="route" wp="FP4"/>
+      <deroute block="route_to_joe"/>
+    </block>
+    <block group="fly_to_joe" name="route_to_joe_mission">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <call fun="mission_path_run()"/>
       <deroute block="route_to_joe"/>
     </block>
     <block group="fly_to_joe" name="transition_at_joe">
@@ -260,15 +267,15 @@
     </block>
     <block group="fly_to_base" name="transition_to_base">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_p1)"/>
+      <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_FP1)"/>
       <stay pre_call="nav_hybrid_heading_set_to_waypoint()" until="stage_time>4" wp="CLIMB"/>
     </block>
     <block group="fly_to_base" name="route_to_base">
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
-      <go from="p4" hmode="route" wp="p1"/>
-      <go from="p1" hmode="route" wp="p2"/>
-      <go from="p2" hmode="route" wp="p3"/>
-      <go from="p3" hmode="route" wp="p4"/>
+      <go from="FP4" hmode="route" wp="FP1"/>
+      <go from="FP1" hmode="route" wp="FP2"/>
+      <go from="FP2" hmode="route" wp="FP3"/>
+      <go from="FP3" hmode="route" wp="FP4"/>
       <deroute block="route_to_base"/>
     </block>
     <block group="fly_to_base" name="transition_at_base">
