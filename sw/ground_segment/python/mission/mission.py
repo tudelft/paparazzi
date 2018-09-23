@@ -195,7 +195,7 @@ class StaticNFZ(object):
 if __name__ == '__main__':
     # Argyment parser
     parser = argparse.ArgumentParser(description="Mission for Avoidance")
-    parser.add_argument("-ac", "--ac_id", dest='ac_id', type=int, help="aircraft ID")
+    parser.add_argument("-ac", "--ac_id", dest='ac_id', type=int, help="aircraft ID", required = True)
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", help="Verbose")
     args = parser.parse_args()
     
