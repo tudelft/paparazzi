@@ -67,98 +67,6 @@ class ResolutionFinder(object):
     def __init__(self, circular_zones, ref_utm_i, ltp_def):
         self.extrapolated_scenario = traffic_scenario.ExtrapolatedScenario(circular_zones, ref_utm_i, ltp_def)
         self.conflict_counter = 0
-    
-#    def resolution_on_leg(self, from_point_enu, to_point_enu, groundspeed, margin, aircraft, traffic_events, wind, altitude, geofence, zones, max_tla):
-#        conflict_counter_th = 4 # loops     
-#        avoidance_time_th = 30. # [s]
-#        hdg_diff_th = 30.
-#        avoid_dist_min = 1000. # [m]
-#        max_iter_steps = 4
-#        
-#        dx = to_point_enu.x - from_point_enu.x
-#        dy = to_point_enu.y - from_point_enu.y
-#        hdg = np.rad2deg(np.arctan2(dx, dy)) % 360.            
-#        
-#        self.extrapolated_scenario.update_traffic_scenario(aircraft, traffic_events, hdg, 0.)
-#        time_to_arrive_at_point = self.time_to_arrive_at_point(from_point_enu, to_point_enu, groundspeed)
-#        resolutions = self.extrapolated_scenario.detect_conflicts(time_to_arrive_at_point, wind, margin)
-#        
-#        print(self.conflict_counter)        
-#        sys.stdout.flush()
-#        
-#        if ((resolutions[0] == 'conflict') or (resolutions[0] == 'nosol')):
-#            if ((self.conflict_counter < conflict_counter_th) or (resolutions[0] == 'nosol')):
-#                self.conflict_counter = self.conflict_counter + 1
-#                return 'free'
-#        if (resolutions[0] == 'free'):
-#            self.conflict_counter = 0
-#            return 'free'
-#        
-#        if ((self.conflict_counter >= conflict_counter_th) and (resolutions[0] != 'nosol') and (time_to_arrive_at_point > avoidance_time_th)):
-#            #find resolutions
-#            resolution_points = []
-#            distances = []
-#            half_leg_distance = enu_distance(from_point_enu, to_point_enu) / 2.
-#            avoid_dist = min(half_leg_distance, avoid_dist_min)
-#            
-#            for i in range(len(resolutions[1])):
-#                # stop when not within thresholds
-#                x_res = resolutions[1][i]
-#                y_res = resolutions[2][i]
-#                hdg_res = np.rad2deg(np.arctan2(x_res, y_res)) % 360.
-#                hdg_diff = calc_absolute_hdg_diff(hdg, hdg_res)
-#                if (hdg_diff > hdg_diff_th):
-#                    print ("hdg diff to big: ", hdg_diff)
-#                    sys.stdout.flush()
-#                    return 'nosol'
-#                
-#                for j in range(max_iter_steps):
-#                    resolution_dist = avoid_dist/max_iter_steps * (j + 1)
-#                    dt = resolution_dist / groundspeed
-#                    new_from_point_enu = geodetic.EnuCoor_f(from_point_enu.x + np.sin(np.deg2rad(hdg_res)) * resolution_dist, from_point_enu.y + np.cos(np.deg2rad(hdg_res)) * resolution_dist, altitude)
-#                
-#                    linestring_to = geometry.LineString([(from_point_enu.x, from_point_enu.y), (new_from_point_enu.x, new_from_point_enu.y)])
-#                    linestring_from = geometry.LineString([(new_from_point_enu.x, new_from_point_enu.y), (to_point_enu.x, to_point_enu.y)])
-#                    
-#                    geofence_polygon = geometry.Polygon(enu_lst_to_polygon(geofence))
-#                    
-#                    if ((geofence_polygon.contains(linestring_to) == False) or (geofence_polygon.contains(linestring_from) == False)):
-#                        # Non valid solution
-#                        continue
-#            
-#                    for zone in zones:
-#                        zone_polygon = geometry.Polygon(enu_lst_to_polygon(zone.enu_points))
-#                        if (linestring_to.intersects(zone_polygon) or (linestring_from.intersects(zone_polygon))):
-#                            # Non valid solution
-#                            continue
-#                    
-#                    dx_target = to_point_enu.x - new_from_point_enu.x
-#                    dy_target = to_point_enu.y - new_from_point_enu.y
-#                    
-#                    hdg_target = np.rad2deg(np.arctan2(dx_target, dy_target)) % 360.
-#                    
-#                    self.extrapolated_scenario.update_traffic_scenario(aircraft, traffic_events, hdg_target, dt)
-#                    tla_target = min(self.time_to_arrive_at_point(new_from_point_enu, to_point_enu, groundspeed), max_tla)
-#                
-#                    conflict = self.extrapolated_scenario.detect_conflicts(tla_target, wind, margin) # mayve detection margin good as well
-#                
-#                    if (conflict[0] == 'free'):
-#                        resolution_points.append(new_from_point_enu)
-#                        distance = enu_distance(new_from_point_enu, from_point_enu) + enu_distance(new_from_point_enu, to_point_enu)
-#                        distances.append(distance)
-#                    
-#            if len(resolution_points) > 0:
-#                resolution_point = resolution_points[np.argmin(distances)]
-#                self.conflict_counter = 0
-#                print("resolution ooint")
-#                sys.stdout.flush()
-#                return resolution_point
-#            else:
-#                print("nosol")
-#                sys.stdout.flush()
-#                return 'nosol' 
-#        else:
-#            return 'free'
             
     def resolution_on_leg(self, from_point_enu, to_point_enu, groundspeed, margin, aircraft, traffic_events, wind, altitude, geofence, zones, max_tla):
         conflict_counter_th = 2 # loops     
@@ -174,9 +82,6 @@ class ResolutionFinder(object):
         self.extrapolated_scenario.update_traffic_scenario(aircraft, traffic_events, hdg, 0.)
         time_to_arrive_at_point = self.time_to_arrive_at_point(from_point_enu, to_point_enu, groundspeed)
         resolutions = self.extrapolated_scenario.detect_conflicts(min(max_tla, time_to_arrive_at_point), wind, margin)
-        
-        print(self.conflict_counter)        
-        sys.stdout.flush()
         
         if ((resolutions[0] == 'conflict') or (resolutions[0] == 'nosol')):
             if ((self.conflict_counter < conflict_counter_th) or (resolutions[0] == 'nosol')):
@@ -200,8 +105,6 @@ class ResolutionFinder(object):
                 hdg_res = np.rad2deg(np.arctan2(x_res, y_res)) % 360.
                 hdg_diff = calc_absolute_hdg_diff(hdg, hdg_res)
                 if (hdg_diff > hdg_diff_th):
-                    print ("hdg diff to big: ", hdg_diff)
-                    sys.stdout.flush()
                     break
                 
                 resolution_dist = avoid_dist
@@ -234,12 +137,8 @@ class ResolutionFinder(object):
             if len(resolution_points) > 0:
                 resolution_point = resolution_points[-1]
                 self.conflict_counter = 0
-                print("resolution point")
-                sys.stdout.flush()
                 return resolution_point
             else:
-                print("nosol")
-                sys.stdout.flush()
                 return 'nosol' 
         else:
             return 'free'
