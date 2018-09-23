@@ -49,11 +49,11 @@ struct Vision2PPRZPackage {
     float stupid_pprz_height;
     float marker_enu_x;
     float marker_enu_y;
-    uint8_t landing_status;
     float flow_x;
     float flow_y;
     float version;
     uint8_t status;
+    uint8_t landing_status;
 } __attribute__((__packed__));
 extern struct Vision2PPRZPackage v2p_package;
 
