@@ -1,0 +1,146 @@
+<!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
+
+<flight_plan alt="70" ground_alt="0" home_mode_height="70" lat0="52.1683003" lon0="4.4133430" max_dist_from_home="1200" name="RC Avoidance test" qfu="40" security_height="50">
+  <waypoints>
+    <waypoint lat="52.168967" lon="4.412623" name="START"/>
+    <waypoint lat="52.169424" lon="4.412345" name="P"/>
+    <waypoint lat="52.169565" lon="4.413013" name="WP1"/>
+    <waypoint lat="52.170219" lon="4.417936" name="WP2"/>
+    <waypoint lat="52.168312" lon="4.418483" name="WP3"/>
+    <waypoint lat="52.167382" lon="4.414523" name="WP4"/>
+    <waypoint name="HOME" x="0" y="0"/>
+    <waypoint name="STDBY" x="-84.6" y="-16.6"/>
+    <waypoint alt="-1.0" name="TD" x="33.8" y="-16.1"/>
+    <waypoint name="CLIMB" x="1.9" y="1.0"/>
+    <waypoint lat="52.171103" lon="4.423350" name="_NFZ0_0"/>
+    <waypoint lat="52.171295" lon="4.423973" name="_NFZ0_1"/>
+    <waypoint lat="52.170974" lon="4.424297" name="_NFZ0_2"/>
+    <waypoint lat="52.170784" lon="4.423737" name="_NFZ0_3"/>
+    <waypoint lat="52.169283" lon="4.423472" name="_NFZ1_0"/>
+    <waypoint lat="52.169559" lon="4.424181" name="_NFZ1_1"/>
+    <waypoint lat="52.169211" lon="4.424387" name="_NFZ1_2"/>
+    <waypoint lat="52.168923" lon="4.423737" name="_NFZ1_3"/>
+    <waypoint lat="52.169991" lon="4.415086" name="_NFZ2_0"/>
+    <waypoint lat="52.170227" lon="4.415636" name="_NFZ2_1"/>
+    <waypoint lat="52.169860" lon="4.415906" name="_NFZ2_2"/>
+    <waypoint lat="52.169700" lon="4.415304" name="_NFZ2_3"/>
+    <waypoint lat="52.171278" lon="4.406088" name="MB1"/>
+    <waypoint lat="52.174178" lon="4.423135" name="MB2"/>
+    <waypoint lat="52.166090" lon="4.426744" name="MB3"/>
+    <waypoint lat="52.161838" lon="4.412232" name="MB4"/>
+    <waypoint lat="52.170679" lon="4.409294" name="SB1"/>
+    <waypoint lat="52.172169" lon="4.419896" name="SB2"/>
+    <waypoint lat="52.166399" lon="4.423039" name="SB3"/>
+    <waypoint lat="52.163367" lon="4.414227" name="SB4"/>
+  </waypoints>
+  <sectors>
+    <sector color="red" name="MissionBoundary" type="dynamic">
+      <corner name="MB1"/>
+      <corner name="MB2"/>
+      <corner name="MB3"/>
+      <corner name="MB4"/>
+    </sector>
+    <sector color="yellow" name="SoftBoundary" type="dynamic">
+      <corner name="SB1"/>
+      <corner name="SB2"/>
+      <corner name="SB3"/>
+      <corner name="SB4"/>
+    </sector>
+    <sector color="orange" name="NFZ0" type="dynamic">
+      <corner name="_NFZ0_0"/>
+      <corner name="_NFZ0_1"/>
+      <corner name="_NFZ0_2"/>
+      <corner name="_NFZ0_3"/>
+    </sector>
+    <sector color="orange" name="NFZ1" type="dynamic">
+      <corner name="_NFZ1_0"/>
+      <corner name="_NFZ1_1"/>
+      <corner name="_NFZ1_2"/>
+      <corner name="_NFZ1_3"/>
+    </sector>
+    <sector color="orange" name="NFZ2" type="dynamic">
+      <corner name="_NFZ2_0"/>
+      <corner name="_NFZ2_1"/>
+      <corner name="_NFZ2_2"/>
+      <corner name="_NFZ2_3"/>
+    </sector>
+  </sectors>
+  <modules>
+    <module name="mission" type="path"/>
+  </modules>
+  <blocks>
+    <block name="Wait GPS">
+      <while cond="!GpsFixValid()"/>
+      <set value="1" var="autopilot.kill_throttle"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetAltitudeReferenceHere()"/>
+      <set value="TRUE" var="air_data.calc_qnh_once"/>
+    </block>
+    <block name="Holding point">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <attitude roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <block key="r" name="Start Engine">
+      <call_once fun="NavResurrect()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <call_once fun="NavResurrect()"/>
+    </block>
+    <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+      <exception cond="GetPosAlt() > 1.0" deroute="Standby"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
+    </block>
+    <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
+      <circle radius="nav_radius" wp="STDBY"/>
+    </block>
+    <block key="s" name="ResetMission">
+      <call_once fun="mission_path_reset()"/>
+      <circle radius="nav_radius" wp="STDBY"/>
+    </block>
+    <block name="START_MISSION">
+      <go wp="START"/>
+    </block>
+    <block name="START to P">
+      <go from="START" hmode="route" wp="P"/>
+    </block>
+    <block name="P to WP1">
+      <go from="P" hmode="route" wp="WP1"/>
+    </block>
+    <block name="RUN MISSION">
+      <call fun="mission_path_run()"/>
+      <deroute block="Standby"/>
+    </block>
+    <block name="WP1 to WP2">
+      <go from="WP1" hmode="route" wp="WP2"/>
+    </block>
+    <block name="Wp2 to Wp3">
+      <go from="WP2" hmode="route" wp="WP3"/>
+    </block>
+    <block name="Wp3 to Wp4">
+      <go from="WP3" hmode="route" wp="WP4"/>
+      <deroute block="Standby"/>
+    </block>
+    <block key="l" name="Land here" strip_button="Land Here" strip_icon="land-right.png">
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <go wp="TD"/>
+      <deroute block="Flare"/>
+    </block>
+    <block name="Land">
+      <go wp="TD"/>
+      <deroute block="Flare"/>
+    </block>
+    <block name="Flare">
+      <exception cond="NavDetectGround()" deroute="Holding point"/>
+      <exception cond="!nav_is_in_flight()" deroute="Landed"/>
+      <exception cond="0.10 > GetPosAlt()" deroute="Landed"/>
+      <call_once fun="NavStartDetectGround()"/>
+      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="Landed">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>

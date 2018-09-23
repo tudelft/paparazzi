@@ -1,8 +1,10 @@
 /* File : pprz_geodetic_int.i */
 %module geodetic_int
 %include "stdint.i"
+%include "pprz_geodetic_float.i"
 %{
 #include "math/pprz_geodetic_int.h"
+#include "math/pprz_geodetic_float.h"
 %}
 
 %include "math/pprz_geodetic_int.h"
@@ -35,6 +37,11 @@
     v.z = $self->z - other->z;
     return v;
   }
+  struct EcefCoor_f to_float() {
+    struct EcefCoor_f ecef;
+    ECEF_FLOAT_OF_BFP(ecef, *$self);
+    return ecef;
+  }
 };
 
 %extend NedCoor_i {
@@ -63,6 +70,11 @@
     v.y = $self->y - other->y;
     v.z = $self->z - other->z;
     return v;
+  }
+  struct NedCoor_f to_float() {
+    struct NedCoor_f ned;
+    NED_FLOAT_OF_BFP(ned, *$self);
+    return ned;
   }
 };
 
@@ -93,6 +105,11 @@
     v.z = $self->z - other->z;
     return v;
   }
+  struct EnuCoor_f to_float() {
+    struct EnuCoor_f enu;
+    ENU_FLOAT_OF_BFP(enu, *$self);
+    return enu;
+  }
 };
 
 %extend UtmCoor_i {
@@ -109,6 +126,11 @@
     v->zone = zone;
     return v;
   }
+  struct UtmCoor_f to_float() {
+    struct UtmCoor_f utm;
+    UTM_FLOAT_OF_BFP(utm, *$self);
+    return utm;
+  }
 };
 
 %extend LlaCoor_i {
@@ -123,6 +145,11 @@
     v->lon = lon;
     v->alt = alt;
     return v;
+  }
+  struct LlaCoor_f to_float() {
+    struct LlaCoor_f lla;
+    LLA_FLOAT_OF_BFP(lla, *$self);
+    return lla;
   }
 };
 

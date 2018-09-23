@@ -1,0 +1,202 @@
+<!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
+
+<flight_plan alt="423.8" ground_alt="343.8" home_mode_height="120" lat0="-27.2738966" lon0="151.2900371" max_dist_from_home="13000" name="OBC2016" qfu="170" security_height="10">
+  <waypoints>
+    <waypoint lat="-27.272151" lon="151.293859" name="START"/>
+    <waypoint name="HOME" x="0" y="0"/>
+    <waypoint name="STDBY" x="412.5" y="311.4"/>
+    <waypoint height="30.0" name="AF" x="11.7" y="-108.3"/>
+    <waypoint height="-1.0" name="TD" x="53.9" y="1.6"/>
+    <waypoint name="CLIMB" x="-32.5" y="159.8"/>
+    <waypoint name="BASELEG" x="56." y="367."/>
+    <waypoint lat="-27.273166" lon="151.293249" name="WP1"/>
+    <waypoint lat="-27.281064" lon="151.326755" name="WP2"/>
+    <waypoint lat="-27.277079" lon="151.289346" name="WP3"/>
+    <waypoint lat="-27.318547" lon="151.330033" name="WP4"/>
+    <waypoint lat="-27.319918" lon="151.354908" name="WP5"/>
+    <waypoint lat="-27.303298" lon="151.341988" name="WP6"/>
+    <waypoint lat="-27.288562" lon="151.368406" name="WP7"/>
+    <waypoint lat="-27.268332" lon="151.285295" name="MB1"/>
+    <waypoint lat="-27.305194" lon="151.281118" name="MB2"/>
+    <waypoint lat="-27.343226" lon="151.327054" name="MB3"/>
+    <waypoint lat="-27.347462" lon="151.359991" name="MB4"/>
+    <waypoint lat="-27.348133" lon="151.384818" name="MB5"/>
+    <waypoint lat="-27.281792" lon="151.394289" name="MB6"/>
+    <waypoint lat="-27.268332" lon="151.285295" name="SB1"/>
+    <waypoint lat="-27.305194" lon="151.281118" name="SB2"/>
+    <waypoint lat="-27.343226" lon="151.327054" name="SB3"/>
+    <waypoint lat="-27.347462" lon="151.359991" name="SB4"/>
+    <waypoint lat="-27.348133" lon="151.384818" name="SB5"/>
+    <waypoint lat="-27.281792" lon="151.394289" name="SB6"/>
+    <waypoint lat="-27.289267" lon="151.292374" name="_NFZ0_0"/>
+    <waypoint lat="-27.289419" lon="151.294559" name="_NFZ0_1"/>
+    <waypoint lat="-27.291450" lon="151.294295" name="_NFZ0_2"/>
+    <waypoint lat="-27.291215" lon="151.292053" name="_NFZ0_3"/>
+    <waypoint lat="-27.288962" lon="151.325726" name="_NFZ1_0"/>
+    <waypoint lat="-27.289286" lon="151.327612" name="_NFZ1_1"/>
+    <waypoint lat="-27.291151" lon="151.327312" name="_NFZ1_2"/>
+    <waypoint lat="-27.290809" lon="151.325384" name="_NFZ1_3"/>
+    <waypoint lat="-27.288562" lon="151.349894" name="_NFZ2_0"/>
+    <waypoint lat="-27.288664" lon="151.351980" name="_NFZ2_1"/>
+    <waypoint lat="-27.290720" lon="151.351723" name="_NFZ2_2"/>
+    <waypoint lat="-27.290173" lon="151.350059" name="_NFZ2_3"/>
+    <waypoint lat="-27.298330" lon="151.363007" name="_NFZ3_0"/>
+    <waypoint lat="-27.298463" lon="151.364935" name="_NFZ3_1"/>
+    <waypoint lat="-27.299986" lon="151.365171" name="_NFZ3_2"/>
+    <waypoint lat="-27.299786" lon="151.363157" name="_NFZ3_3"/>
+    <waypoint lat="-27.281136" lon="151.360307" name="_NFZ4_0"/>
+    <waypoint lat="-27.281593" lon="151.362493" name="_NFZ4_1"/>
+    <waypoint lat="-27.283649" lon="151.361721" name="_NFZ4_2"/>
+    <waypoint lat="-27.282850" lon="151.359664" name="_NFZ4_3"/>
+    <waypoint lat="-27.319918" lon="151.369499" name="_NFZ5_0"/>
+    <waypoint lat="-27.320213" lon="151.372434" name="_NFZ5_1"/>
+    <waypoint lat="-27.322250" lon="151.372059" name="_NFZ5_2"/>
+    <waypoint lat="-27.322155" lon="151.369584" name="_NFZ5_3"/>
+    <waypoint lat="-27.311409" lon="151.348373" name="_NFZ6_0"/>
+    <waypoint lat="-27.312094" lon="151.350751" name="_NFZ6_1"/>
+    <waypoint lat="-27.313598" lon="151.350966" name="_NFZ6_2"/>
+    <waypoint lat="-27.314017" lon="151.348138" name="_NFZ6_3"/>
+    <waypoint lat="-27.329245" lon="151.337296" name="_NFZ7_0"/>
+    <waypoint lat="-27.329464" lon="151.339385" name="_NFZ7_1"/>
+    <waypoint lat="-27.331777" lon="151.338957" name="_NFZ7_2"/>
+    <waypoint lat="-27.331472" lon="151.336761" name="_NFZ7_3"/>
+    <waypoint lat="-27.307325" lon="151.306219" name="_NFZ8_0"/>
+    <waypoint lat="-27.307868" lon="151.309015" name="_NFZ8_1"/>
+    <waypoint lat="-27.310381" lon="151.308115" name="_NFZ8_2"/>
+    <waypoint lat="-27.309581" lon="151.305672" name="_NFZ8_3"/>
+  </waypoints>
+  <sectors>
+    <sector color="red" name="MissionBoundary" type="dynamic">
+      <corner name="MB1"/>
+      <corner name="MB2"/>
+      <corner name="MB3"/>
+      <corner name="MB4"/>
+      <corner name="MB5"/>
+      <corner name="MB6"/>
+    </sector>
+    <sector color="yellow" name="SoftBoundary" type="dynamic">
+      <corner name="SB1"/>
+      <corner name="SB2"/>
+      <corner name="SB3"/>
+      <corner name="SB4"/>
+      <corner name="SB5"/>
+      <corner name="SB6"/>
+    </sector>
+    <sector color="orange" name="NFZ0" type="dynamic">
+      <corner name="_NFZ0_0"/>
+      <corner name="_NFZ0_1"/>
+      <corner name="_NFZ0_2"/>
+      <corner name="_NFZ0_3"/>
+    </sector>
+    <sector color="orange" name="NFZ1" type="dynamic">
+      <corner name="_NFZ1_0"/>
+      <corner name="_NFZ1_1"/>
+      <corner name="_NFZ1_2"/>
+      <corner name="_NFZ1_3"/>
+    </sector>
+    <sector color="orange" name="NFZ2" type="dynamic">
+      <corner name="_NFZ2_0"/>
+      <corner name="_NFZ2_1"/>
+      <corner name="_NFZ2_2"/>
+      <corner name="_NFZ2_3"/>
+    </sector>
+    <sector color="orange" name="NFZ3" type="dynamic">
+      <corner name="_NFZ3_0"/>
+      <corner name="_NFZ3_1"/>
+      <corner name="_NFZ3_2"/>
+      <corner name="_NFZ3_3"/>
+    </sector>
+    <sector color="orange" name="NFZ4" type="dynamic">
+      <corner name="_NFZ4_0"/>
+      <corner name="_NFZ4_1"/>
+      <corner name="_NFZ4_2"/>
+      <corner name="_NFZ4_3"/>
+    </sector>
+    <sector color="orange" name="NFZ5" type="dynamic">
+      <corner name="_NFZ5_0"/>
+      <corner name="_NFZ5_1"/>
+      <corner name="_NFZ5_2"/>
+      <corner name="_NFZ5_3"/>
+    </sector>
+    <sector color="orange" name="NFZ6" type="dynamic">
+      <corner name="_NFZ6_0"/>
+      <corner name="_NFZ6_1"/>
+      <corner name="_NFZ6_2"/>
+      <corner name="_NFZ6_3"/>
+    </sector>
+    <sector color="orange" name="NFZ7" type="dynamic">
+      <corner name="_NFZ7_0"/>
+      <corner name="_NFZ7_1"/>
+      <corner name="_NFZ7_2"/>
+      <corner name="_NFZ7_3"/>
+    </sector>
+    <sector color="orange" name="NFZ8" type="dynamic">
+      <corner name="_NFZ8_0"/>
+      <corner name="_NFZ8_1"/>
+      <corner name="_NFZ8_2"/>
+      <corner name="_NFZ8_3"/>
+    </sector>
+  </sectors>
+  <modules>
+    <module name="mission" type="path"/>
+  </modules>
+  <exceptions>
+    <exception cond="LOW_BAT_LEVEL > PowerVoltage()" deroute="Standby"/>
+  </exceptions>
+  <blocks>
+    <block name="Wait GPS">
+      <while cond="!GpsFixValid()"/>
+      <set value="1" var="autopilot.kill_throttle"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetAltitudeReferenceHere()"/>
+      <set value="TRUE" var="air_data.calc_qnh_once"/>
+    </block>
+    <block name="Holding point">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <attitude roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <block name="Takeoff">
+      <exception cond="GetPosAlt() > GetAltRef()+25" deroute="Standby"/>
+      <set value="0" var="autopilot.kill_throttle"/>
+      <set value="0" var="autopilot.flight_time"/>
+      <go from="HOME" pitch="15" throttle="1.0" vmode="throttle" wp="CLIMB"/>
+    </block>
+    <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
+      <circle radius="nav_radius" wp="STDBY"/>
+    </block>
+    <block key="s" name="ResetMission">
+      <call_once fun="mission_path_reset()"/>
+      <circle radius="nav_radius" wp="STDBY"/>
+    </block>
+    <block name="START_MISSION">
+      <go from="START" hmode="route" wp="WP1"/>
+    </block>
+    <block name="RUN MISSION">
+      <call fun="mission_path_run()"/>
+      <deroute block="Standby"/>
+    </block>
+    <block name="Land Right AF-TD" strip_button="Land right (wp AF-TD)" strip_icon="land-right.png">
+      <set value="DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <deroute block="land"/>
+    </block>
+    <block key="l" name="Land Left AF-TD" strip_button="Land left (wp AF-TD)" strip_icon="land-left.png">
+      <set value="-DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <deroute block="land"/>
+    </block>
+    <block key="<control>l" name="land">
+      <call_once fun="nav_compute_baseleg(WP_AF, WP_TD, WP_BASELEG, nav_radius)"/>
+      <circle radius="nav_radius" until="NavCircleCount() > 0.5" wp="BASELEG"/>
+      <circle radius="nav_radius" until="NavQdrCloseTo(DegOfRad(baseleg_out_qdr)-(nav_radius/fabs(nav_radius))*10) && 10 > fabs(GetPosAlt() - WaypointAlt(WP_BASELEG))" wp="BASELEG"/>
+    </block>
+    <block name="final">
+      <exception cond="GetAltRef() + 10 > GetPosAlt()" deroute="flare"/>
+      <go from="AF" hmode="route" vmode="glide" wp="TD"/>
+    </block>
+    <block name="flare">
+      <go approaching_time="0" from="AF" hmode="route" throttle="0.0" vmode="throttle" wp="TD"/>
+      <attitude roll="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>

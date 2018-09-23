@@ -1,0 +1,23 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="mission_path" dir="mission">
+  <doc>
+    <description>
+      Interface for efficient path mission control for rotorcraft.
+    </description>
+  </doc>
+  <header>
+    <file name="mission_path.h"/>
+  </header>
+  <init fun="mission_path_init()"/>
+
+  <datalink message="MISSION_PATH_ADD" fun="mission_path_parse_ADD(dev, trans, buf)"/>
+  <datalink message="MISSION_PATH_DELETE" fun="mission_path_parse_DELETE(dev, trans, buf)"/>
+
+  <makefile>
+    <file name="mission_path.c"/>
+  </makefile>
+  <makefile firmware="rotorcraft">
+    <define name="MISSION_PATH_ROTORCRAFT"/>
+  </makefile>
+</module>

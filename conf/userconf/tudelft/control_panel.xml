@@ -66,6 +66,8 @@
     <program name="IridiumDialer" command="sw/tools/iridium/iridium_link.py"/>
     <program name="Wind" command="sw/ground_segment/python/wind/wind.py"/>
     <program name="PayloadForward" command="sw/ground_segment/python/payload_forward/payload.py"/>
+    <program name="Traffic Server" command="sw/ground_segment/python/no_fly_zones/traffic_server.py"/>
+    <program name="Avoid Mission" command="sw/ground_segment/python/mission/mission.py"/>
   </section>
   <section name="sessions">
     <session name="helidd">
@@ -372,6 +374,44 @@
       <program name="Joystick">
         <arg flag="-ac" constant="@AIRCRAFT"/>
         <arg flag="extreme_3d_pro.xml"/>
+      </program>
+    </session>
+    <session name="Avoidance sim fw">
+      <program name="Simulator">
+        <arg flag="-a" constant="Avoidance_fw_sim"/>
+        <arg flag="-t" constant="nps"/>
+      </program>
+      <program name="GCS">
+        <arg flag="-layout" constant="bottom_settings.xml"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Avoid Mission">
+        <arg flag="-ac" constant="19"/>
+      </program>
+    </session>
+    <session name="Avoidance sim rc">
+      <program name="Simulator">
+        <arg flag="-a" constant="Avoidance_rc_sim"/>
+        <arg flag="-t" constant="nps"/>
+      </program>
+      <program name="GCS">
+        <arg flag="-layout" constant="bottom_settings.xml"/>
+      </program>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_broadcast"/>
+      </program>
+      <program name="Avoid Mission">
+        <arg flag="-ac" constant="29"/>
       </program>
     </session>
   </section>
