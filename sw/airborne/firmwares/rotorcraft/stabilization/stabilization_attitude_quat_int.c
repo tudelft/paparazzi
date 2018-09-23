@@ -363,8 +363,8 @@ void stabilization_attitude_run(bool enable_integrator)
     stabilization_attitude_enter();
   }
   else {
-    delftacopter_fwd_pitch_trim = DC_FORWARD_PITCH_TRIM;//-0.03*MAX_PPRZ;
-    delftacopter_fwd_roll_trim = DC_FORWARD_ROLL_TRIM;
+//    delftacopter_fwd_pitch_trim = DC_FORWARD_PITCH_TRIM;//-0.03*MAX_PPRZ;
+//    delftacopter_fwd_roll_trim = DC_FORWARD_ROLL_TRIM;
     dc_mode_fwd = false;
   }
   delftacopter_fwd_controller_enabled = false;
