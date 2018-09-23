@@ -156,7 +156,7 @@ class AsterixEvent(object):
         self.roc = asterix_packet['I220']['RoC']['val'] * AsterixEvent.FT_TO_M # [m]
         self.tot_lst = [self.tot]
         self.lla_lst = [geodetic.LlaCoor_f(self.lat, self.lon, self.alt)]
-        self.enu_lst = [geodetic.LlaCoor_f(self.lat/180*math.pi, self.lon/180*math.pi, 0).to_enu(ltp_def)]
+        self.enu_lst = [self.lla_lst[-1].to_enu(ltp_def)]
         self.gspeed = 0.
         self.velocity = 0.
         self.course = 0.
@@ -174,9 +174,12 @@ class AsterixEvent(object):
         self.roc = other.roc
         self.tot_lst = [self.tot_lst[-1], other.tot_lst[-1]]
         self.lla_lst = [self.lla_lst[-1], other.lla_lst[-1]]
-        self.enu_lst = [self.enu_lst[-1], geodetic.LlaCoor_f(self.lat/180*math.pi, self.lon/180*math.pi, self.alt).to_enu(ltp_def)]
+        self.enu_lst = [self.enu_lst[-1], other.lla_lst[-1].to_enu(ltp_def)]
+        
         dt = (self.tot_lst[1] - self.tot_lst[0])
         dx = (self.enu_lst[1].x - self.enu_lst[0].x)
+        print(self.enu_lst[-1].x)
+        sys.stdout.flush()
         dy = (self.enu_lst[1].y - self.enu_lst[0].y) 
         self.gspeed = {'east': dx/dt , 'north' : dy/dt }
         self.velocity = np.sqrt(self.gspeed['east']**2 + self.gspeed['north']**2)
