@@ -108,7 +108,7 @@ class Mission(object):
             # Select only waypoints from the Main path
             if "WP" in wp.name:
                 wp_enu = geodetic.LlaCoor_f(wp.lat/180*math.pi, wp.lon/180*math.pi, self.flightplan.flight_plan.alt).to_enu(self.ltp_def)
-                wp_enu.z = self.flightplan.flight_plan.alt # FIXME: not really correct but for now works
+                wp_enu.z = self.flightplan.flight_plan.alt - self.flightplan.flight_plan.ground_alt # FIXME: not really correct but for now works
                 wp = TransitWaypoint(wp.name, wp_enu)
                 waypoints.append(wp)
         return waypoints    
