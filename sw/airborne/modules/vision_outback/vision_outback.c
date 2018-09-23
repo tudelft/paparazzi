@@ -320,7 +320,7 @@ void vision_outback_periodic() {
       timeoutcount--;
       vision_timeout = false;
     } else {
-      v2p_package.status = 1;
+      v2p_package.status = 3;
       vision_timeout = true;
       vision_outback_close_process = false;
       vision_outback_update_system = false;
