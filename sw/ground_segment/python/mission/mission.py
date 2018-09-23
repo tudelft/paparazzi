@@ -35,7 +35,7 @@ import flightplan_xml_parse
 
 #defines
 static_margin = 100. #[m]
-dynamic_margin = 100. #[m]
+dynamic_margin = 150. #[m]
 altitude = 120.
 #airspeed = 23.
 max_tla = 60. #[s] change later
@@ -182,8 +182,9 @@ class Mission(object):
             elif resolution_point == 'nosol':
                 return
             else:
-                    self.mission_elements.insert(idx, MissionElement(self.mission_elements[idx].id + 2, resolution_point))
-                    self.mission_elements.insert(idx, MissionElement(self.from_point_enu, self.mission_elements[idx].id - 1))
+                    self.mission_elements.insert(idx, MissionElement(self.mission_elements[idx-1].id + 2, resolution_point))
+                    self.mission_elements.insert(idx, MissionElement(self.mission_elements[idx-1].id + 1, from_point_enu))
+
                     self.avoidance_lock_id = self.mission_elements[idx + 1].id
                     self.mission_comm.set_mission(self.mission_elements)
                     
