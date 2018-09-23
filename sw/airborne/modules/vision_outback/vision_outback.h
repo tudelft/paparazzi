@@ -41,7 +41,6 @@ struct vision_outback_t {
   bool msg_available;                 ///< If we received a message
 };
 
-
 //should be exactly the same as pprz.h
 struct Vision2PPRZPackage {
     int32_t frame_id;
@@ -50,12 +49,11 @@ struct Vision2PPRZPackage {
     float stupid_pprz_height;
     float marker_enu_x;
     float marker_enu_y;
-    float land_enu_x;
-    float land_enu_y;
     float flow_x;
     float flow_y;
     float version;
     uint8_t status;
+    uint8_t landing_status;
 } __attribute__((__packed__));
 extern struct Vision2PPRZPackage v2p_package;
 
@@ -80,6 +78,21 @@ struct PPRZ2VisionPackage {
     uint8_t ac_id;
     unsigned char enables;
 }__attribute__((__packed__));
+
+//should be exactly the same as pprz.h
+enum Landing_Status {
+    ls_init = 0,
+    ls_searching_joe = 1,
+    ls_found_a_joe = 2,
+    ls_found_a_good_joe = 3,
+    ls_fixed_joe_location = 4,
+    ls_lost_fixed_joe = 5,
+    ls_refound_fixed_joe = 6,
+    ls_aruco_lock = 7,
+    ls_lost_aruco_lock = 8,
+    ls_error = 9
+};
+
 
 enum vision_power_status {VISION_POWER_STATUS_INIT,VISION_POWER_STATUS_POWERED_OFF,VISION_POWER_STATUS_POWER_ON,VISION_POWER_STATUS_BOOTING,VISION_POWER_STATUS_READY,VISION_POWER_STATUS_HALTING,VISION_POWER_STATUS_HALT_WAIT,VISION_POWER_STATUS_POWER_OFF,VISION_POWER_STATUS_POWER_OFF_WAIT };
 enum vision_power_status_setting {
