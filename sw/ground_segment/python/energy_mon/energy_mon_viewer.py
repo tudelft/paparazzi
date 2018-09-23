@@ -193,6 +193,30 @@ class EnergyPrediction(object):
         m, s = divmod(int(self.get_hover_seconds_left()), int(60))
         return "{:02d}:{:02d} hover left".format(m, s)
 
+    def get_fw_seconds_color(self):
+        fraction = self.get_hover_seconds_left() / 120
+        if fraction > 1:
+            fraction = 1
+        return fraction
+
+    def get_fw_seconds_fraction(self):
+        fraction = self.get_hover_seconds_left() / 120
+        if fraction > 1:
+            fraction = 1
+        return fraction
+
+    def get_fw_seconds_left(self):
+        fw_volt, fw_ampere = bat.volt_amp_from_mAh_power(self.battery_cell.model, self.get_expected_power())
+        if fw_volt >= self.min_allowable_voltage:
+            time_to_empty_battery, _ = bat.time_mAh_from_volt_to_volt_power(fw_volt, self.min_allowable_voltage, self.power_hover_cell)
+        else:
+            time_to_empty_battery = 0
+        return time_to_empty_battery
+
+    def get_fw_seconds_left_text(self):
+        m, s = divmod(int(self.get_hover_seconds_left()), int(60))
+        return "{:02d}:{:02d} fw left".format(m, s)
+
     def get_max_hover_charge(self):
         vmin = self.min_allowable_voltage
         Areq = self.power_hover / bat.cells_in_series / bat.cells_in_parallel / vmin
@@ -350,6 +374,7 @@ class EnergyMonFrame(wx.Frame):
         self.StatusBox(dc,6, self.cell.get_power_text(), self.cell.get_power_perc(), self.cell.get_power_color())
         self.StatusBox(dc,7, self.energy_prediction.get_power_fraction_text(), self.energy_prediction.get_power_fraction(), self.energy_prediction.get_power_fraction_color())
         self.StatusBox(dc,8, self.energy_prediction.get_hover_seconds_left_text(), self.energy_prediction.get_power_fraction(), self.energy_prediction.get_hover_seconds_color())
+        self.StatusBox(dc,9, self.energy_prediction.get_fw_seconds_left_text(), self.energy_prediction.get_power_fraction(), self.energy_prediction.get_fw_seconds_color())
 
         self.DischargePlot(dc)
 
