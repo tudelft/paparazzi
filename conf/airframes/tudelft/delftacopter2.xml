@@ -401,7 +401,7 @@
     <define name="MAX_TURN_BANK" value="35.0"/>
     <define name="TURN_BANK_GAIN" value="0.5"/>
     <define name="PITCH_OF_ROLL" value="0.02"/>
-    <define name="THROTTLE_FROM_PITCH_UP" value="50.0"/>
+    <define name="THROTTLE_FROM_PITCH_UP" value="125.0"/>
     <define name="MIN_PITCH" value="-15.0"/>
     <define name="MAX_PITCH" value="10.0"/>
     <define name="MAX_PSI" value="20.0"/>
