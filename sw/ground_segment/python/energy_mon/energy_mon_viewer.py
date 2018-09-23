@@ -183,7 +183,10 @@ class EnergyPrediction(object):
 
     def get_hover_seconds_left(self):
         hover_volt, hover_ampere = bat.volt_amp_from_mAh_power(self.battery_cell.model, self.power_hover_cell)
-        time_to_empty_battery, _ = bat.time_mAh_from_volt_to_volt_power(hover_volt, self.min_allowable_voltage, self.power_hover_cell)
+        if hover_volt >= self.min_allowable_voltage:
+            time_to_empty_battery, _ = bat.time_mAh_from_volt_to_volt_power(hover_volt, self.min_allowable_voltage, self.power_hover_cell)
+        else:
+            time_to_empty_battery = 0
         return time_to_empty_battery
 
     def get_hover_seconds_left_text(self):
