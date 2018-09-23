@@ -110,9 +110,9 @@ class Mission(object):
         waypoints = []
         for wp in self.flightplan.waypoints.member_list:
             # Select only waypoints from the Main path
-            if wp.name[:2] == "FP":
+            if wp.name[:2] == "WP":
                 wp_enu = geodetic.LlaCoor_f(wp.lat/180*math.pi, wp.lon/180*math.pi, self.flightplan.flight_plan.alt).to_enu(self.ltp_def)
-                wp_enu.z = self.flightplan.flight_plan.alt - self.flightplan.flight_plan.ground_alt # FIXME: not really correct but for now works
+                wp_enu.z = self.flightplan.flight_plan.alt
                 wp = TransitWaypoint(wp.name, wp_enu)
                 waypoints.append(wp)
         return waypoints    
@@ -182,11 +182,11 @@ class Mission(object):
             elif resolution_point == 'nosol':
                 return
             else:
-                self.mission_elements[idx].wp = from_point_enu
-                self.mission_elements.insert(idx + 1, MissionElement(self.mission_elements[idx].id + 1, resolution_point))
-                self.mission_elements.insert(idx + 2, MissionElement(self.mission_elements[idx].id + 2, to_point_enu))
-                self.avoidance_lock_id = self.mission_elements[idx + 1].id
-                self.mission_comm.set_mission(self.mission_elements)
+                    self.mission_elements.insert(idx, MissionElement(self.mission_elements[idx].id + 2, resolution_point))
+                    self.mission_elements.insert(idx, MissionElement(self.from_point_enu, self.mission_elements[idx].id - 1))
+                    self.avoidance_lock_id = self.mission_elements[idx + 1].id
+                    self.mission_comm.set_mission(self.mission_elements)
+                    
                 
     def run_mission(self):
         """
