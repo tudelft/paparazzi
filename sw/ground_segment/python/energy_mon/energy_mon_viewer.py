@@ -86,7 +86,7 @@ class BatteryCell(object):
     def get_volt_perc(self):
         return (self.voltage - 2.5) / (4.2 - 2.5)
     def get_power(self):
-        return self.current * self.voltage
+        return self.power
     def get_power_per_cell(self):
         return self.get_power() / bat.cells_in_parallel / bat.cells_in_series
     def get_temp_perc(self):
@@ -154,10 +154,10 @@ class EnergyPrediction(object):
         """Calculate expected power based on airspeed; if airspeed < 15, this model is invalid and hover power is assumed"""
         if self.airspeed > 15:
             return self.get_epxected_power_from_airspeed(self.airspeed)
-        return self.power_hover_cell
+        return self.power_hover
 
     def get_power_fraction(self):
-        return self.battery_cell.get_power() / self.get_expected_power()
+        return self.battery_cell.get_power() * bat.cells_in_battery / self.get_expected_power()
 
     def get_power_fraction_text(self):
         return "Fraction: {:.2f}".format(self.get_power_fraction())

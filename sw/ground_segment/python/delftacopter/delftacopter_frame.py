@@ -66,14 +66,14 @@ class DelftaCopterFrame(wx.Frame):
     def message_recv(self, ac_id, msg):
         if msg.name =="ROTORCRAFT_FP_MIN":
             self.gspeed = round(float(msg['gspeed']) / 100.0 * 3.6 / 1.852,1)
-            self.alt = round(float(msg['up']) * 0.0039063 * 3.28084 ,1)
+            # self.alt = round(float(msg['up']) * 0.0039063 * 3.28084 ,1)
             self.toggle()
             wx.CallAfter(self.update)
         elif msg.name =="ROTORCRAFT_FP":
             self.east = float(msg['east']) * 0.0039063
             self.north = float(msg['north']) * 0.0039063
             self.count_distance()  # do not count_distance in 2 messages: use single source
-            self.alt = round(float(msg['up']) * 0.0039063 ,1)
+            self.alt = round(float(msg['up']) * 0.0039063,1)
             self.alt_sp = round(float(msg['carrot_up']) * 0.0039063 ,1)
             self.toggle()
             wx.CallAfter(self.update)
