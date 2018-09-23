@@ -178,8 +178,6 @@ class AsterixEvent(object):
         
         dt = (self.tot_lst[1] - self.tot_lst[0])
         dx = (self.enu_lst[1].x - self.enu_lst[0].x)
-        print(self.enu_lst[-1].x)
-        sys.stdout.flush()
         dy = (self.enu_lst[1].y - self.enu_lst[0].y) 
         self.gspeed = {'east': dx/dt , 'north' : dy/dt }
         self.velocity = np.sqrt(self.gspeed['east']**2 + self.gspeed['north']**2)
