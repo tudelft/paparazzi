@@ -62,6 +62,7 @@ void nav_goto_block(uint8_t block_id);
 #define Max(x,y) (x > y ? x : y)
 #define LessThan(_x, _y) ((_x) < (_y))
 #define MoreThan(_x, _y) ((_x) > (_y))
+#define Ternary(_cond, _yes, _no) ((_cond) ? (_yes) : (_no))
 
 /** Time in s since the entrance in the current block */
 #define NavBlockTime() (block_time)
