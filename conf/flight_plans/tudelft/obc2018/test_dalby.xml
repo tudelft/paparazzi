@@ -35,8 +35,6 @@
     <waypoint height="50.0" name="j4" x="81.0" y="-75.6"/>
     <waypoint height="50.0" name="j5" x="310.6" y="-47.7"/>
     <waypoint height="50.0" name="j6" x="102.4" y="-116.9"/>
-    <waypoint height="50.0" name="j7" x="340.4" y="-94.9"/>
-    <waypoint height="50.0" name="j8" x="130.5" y="-168.1"/>
     <waypoint height="40.0" name="TD" x="30.9" y="-45.4"/>
     <waypoint name="CLIMB" x="33.7" y="43.7"/>
     <waypoint height="80.0" name="STDBY" x="149.9" y="-123.2"/>
@@ -159,14 +157,12 @@
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_hybrid_heading_init()"/>
       <call_once fun="enableVisionFindJoe(true)"/>
-      <go from="j8" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j1"/>
+      <go from="j6" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j1"/>
       <go from="j1" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j2"/>
       <go from="j2" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j3"/>
       <go from="j3" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j4"/>
       <go from="j4" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j5"/>
       <go from="j5" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j6"/>
-      <go from="j6" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j7"/>
-      <go from="j7" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j8"/>
       <deroute block="find_joe"/>
     </block>
     <block group="joe_found" name="fjoe_hover">
