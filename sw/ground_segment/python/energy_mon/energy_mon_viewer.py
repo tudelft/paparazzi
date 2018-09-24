@@ -214,13 +214,13 @@ class EnergyPrediction(object):
         return min(1, fraction)
 
     def get_fw_seconds_left(self):
-        return self.get_time_to_empty_battery_from_power(self.get_expected_power())
+        return self.get_time_to_empty_battery_from_power(self.get_expected_power() / bat.cells_in_battery)
 
     def get_fw_seconds_left_text(self):
         return "{} fw left".format(get_text_from_seconds(self.get_fw_seconds_left()))
 
     def get_fw_seconds_left_20mps(self):
-        return self.get_time_to_empty_battery_from_power(self.get_expected_power_from_airspeed(20))
+        return self.get_time_to_empty_battery_from_power(self.get_expected_power_from_airspeed(20) / bat.cells_in_battery)
 
     def get_fw_seconds_left_20mps_text(self):
         return "{} left@20".format(get_text_from_seconds(self.get_fw_seconds_left_20mps()))
