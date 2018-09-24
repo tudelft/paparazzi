@@ -133,6 +133,20 @@ class ResolutionFinder(object):
                 return 'nosol' 
         else:
             return 'free'
+        
+def check_area_conflicts(location, radius, time, ltp_def, margin, traffic_events):
+    free_circle = geometry.Point((location.x, location.y)).buffer(radius)
+    for traffic_event in traffic_events:
+        pos_traf_lla = traffic_event.get_lla()
+        pos_traf_enu = pos_traf_lla.to_enu(ltp_def)
+        start_pos_traf = (pos_traf_enu.x, pos_traf_enu.y)
+        Vx = traffic_event.get_gspeed()['east']
+        Vy = traffic_event.get_gspeed()['north']
+        end_pos_traffic = (start_pos_traf[0] + time * Vx, start_pos_traf[1] + time * Vy)
+        traf_line_obstacle = geometry.LineString([start_pos_traf, end_pos_traffic])#.buffer(margin)
+        if traf_line_obstacle.intersects(free_circle):
+            return False
+    return True
                     
 def time_to_arrive_at_point(from_point_enu, to_point_enu, groundspeed):
     dist = np.sqrt((from_point_enu.x - to_point_enu.x) ** 2 + (from_point_enu.y - to_point_enu.y) ** 2)
