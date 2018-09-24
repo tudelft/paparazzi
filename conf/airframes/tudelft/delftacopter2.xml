@@ -19,6 +19,7 @@
         <subsystem name="fdm" type="jsbsim"/>
       </target-->
 
+      <module name="opa_controller"/>
       <module name="telemetry"     type="transparent">
         <configure name="MODEM_BAUD" value="B9600"/>
       </module>
@@ -47,7 +48,6 @@
       </module>
       <module name="telemetry"     type="intermcu"/>
       <module name="current_sensor"/>
-      <module name="opa_controller"/>
       <module name="mag_pitot_uart" />
       <module name="pwm_meas"/>
       <module name="rpm_sensor">
@@ -143,7 +143,7 @@
     <set command="PITCH"        value="@PITCH"/>
     <set command="YAW"          value="@YAW"/>
     <set command="ELEVATOR"     value="@PITCH"/>
-    <set command="AILERON"      value="@ROLL"/>
+    <set command="AILERON"      value="-@ROLL"/>
   </rc_commands>
 
   <!-- Commands send from AP to FBW -->
@@ -153,8 +153,8 @@
     <axis name="PITCH"      failsafe_value="0"/>
     <axis name="YAW"        failsafe_value="0"/>
     <axis name="COLLECTIVE" failsafe_value="-9600"/>
-    <axis name="ELEVATOR"   failsafe_value="0"/>
-    <axis name="AILERON"    failsafe_value="0"/>
+    <axis name="ELEVATOR"   failsafe_value="9600"/>
+    <axis name="AILERON"    failsafe_value="9600"/>
   </commands>
 
   <!-- Swashplate mixing HR120 (1 Back, 2 Front at 120 degree) -->

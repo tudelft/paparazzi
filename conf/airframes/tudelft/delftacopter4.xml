@@ -131,7 +131,7 @@
   -->
 
   <section name="GCS">
-    <define name="SPEECH_NAME" value="Four Hotel Pahpeh"/><!-- papa seems impossible to pronounce -->
+    <define name="SPEECH_NAME" value="Four Hotel Papa"/>
     <define name="AC_ICON" value="flyingwing"/>
   </section>
 
@@ -201,7 +201,7 @@
     <curve throttle="7300,7800,8300" rpm="2800,2800,2800" collective="-9600,-6500,-2300"/><!-- Hover curve RPM controlled -->
     <curve throttle="7300,7800,8300" rpm="2800,2800,2800" collective="-9600,-6500,-2300"/><!-- Hover curve RPM controlled -->
     <curve throttle="8600,8600,8600,8600,9600" collective="-9600,-9600,-7470,-3770,30"/><!-- Forward inefficient curve -->
-    <curve throttle="5000,5000,5000,5000,5300" collective="-9600,-6300,-3000,700,4500"/><!-- Forward curve -->
+    <curve throttle="4500,4500,4500,5100,5800" collective="-9600,-6300,-3000,700,4500"/><!-- Forward curve -->
   </heli_curves>
 
   <section name="MISC">
@@ -387,7 +387,7 @@
     <define name="TRANSITION_THROTTLE_CURVE" value="3"/>
     <define name="FORWARD_THROTTLE_CURVE" value="4"/>
     <define name="TRANSITION_TIME" value="2"/>
-    <define name="TRANSITION_THROTTLE_TO_FORWARD" value="8500"/>
+    <define name="TRANSITION_THROTTLE_TO_FORWARD" value="7000"/>
     <define name="TRANSITION_THROTTLE_TO_HOVER" value="4800"/>
   </section>
 
@@ -402,7 +402,7 @@
     <define name="MAX_TURN_BANK" value="35.0"/>
     <define name="TURN_BANK_GAIN" value="0.5"/>
     <define name="PITCH_OF_ROLL" value="0.02"/>
-    <define name="THROTTLE_FROM_PITCH_UP" value="50.0"/>
+    <define name="THROTTLE_FROM_PITCH_UP" value="125.0"/>
     <define name="MIN_PITCH" value="-15.0"/>
     <define name="MAX_PITCH" value="10.0"/>
     <define name="MAX_PSI" value="20.0"/>
