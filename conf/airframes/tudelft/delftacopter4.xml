@@ -143,7 +143,7 @@
     <set command="PITCH"        value="@PITCH"/>
     <set command="YAW"          value="@YAW"/>
     <set command="ELEVATOR"     value="@PITCH"/>
-    <set command="AILERON"      value="@ROLL"/>
+    <set command="AILERON"      value="-@ROLL"/>
   </rc_commands>
 
   <!-- Commands send from AP to FBW -->
