@@ -92,6 +92,7 @@ class ResolutionFinder(object):
             half_leg_distance = enu_distance(from_point_enu, to_point_enu) / 2.
             avoid_dist = min(half_leg_distance, avoid_dist_min)
             
+            first_loop = True
             for i in range(len(resolutions[1])):
                 # stop when not within thresholds
                 x_res = resolutions[1][i]
@@ -99,7 +100,15 @@ class ResolutionFinder(object):
                 hdg_res = np.rad2deg(np.arctan2(x_res, y_res)) % 360.
                 hdg_diff = calc_absolute_hdg_diff(hdg, hdg_res)
                 if (hdg_diff > hdg_diff_th):
-                    break
+                    if (first_loop == True):
+                        if (checkeheadingdirection(hdg, hdg_res) == 'right'):
+                            hdg_res = (hdg + 30.) % 360.
+                        else:
+                            hdg_res = (hdg - 30.) % 360.
+                    else:
+                        break
+                
+                first_loop = False
                 
                 resolution_dist = avoid_dist
                 new_from_point_enu = geodetic.EnuCoor_f(from_point_enu.x + np.sin(np.deg2rad(hdg_res)) * resolution_dist, from_point_enu.y + np.cos(np.deg2rad(hdg_res)) * resolution_dist, altitude)
@@ -171,7 +180,7 @@ def enu_lst_to_polygon(enu_lst):
         coords.append((enu.x, enu.y))
     return coords
     
-def checkeheadingdirection(self, hdg_current, hdg_new):
+def checkeheadingdirection(hdg_current, hdg_new):
     hdg_diff = hdg_new - hdg_current
     
     if ((hdg_diff > 0) and (hdg_diff < 180)):
