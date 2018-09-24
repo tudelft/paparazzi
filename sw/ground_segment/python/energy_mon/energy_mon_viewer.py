@@ -84,7 +84,9 @@ class BatteryCell(object):
     def get_power_text(self):
         return "Battery Power: {:.0f}W".format(self.get_power() * bat.cells_in_battery)
     def get_volt_perc(self):
-        return (self.voltage - 2.5) / (4.2 - 2.5)
+        return self.get_volt_percent(self.voltage)
+    def get_volt_percent(self,volt):
+        return (volt - 2.5) / (4.3 - 2.5)
     def get_power(self):
         return self.voltage * self.current
     def get_power_per_cell(self):
@@ -298,18 +300,27 @@ class EnergyMonFrame(wx.Frame):
 	dc.SetBrush(wx.Brush(wx.Colour(250,250,250))) 
         dc.DrawRectangle(self.plot_x(0.0), self.plot_y(1.0), self.w-self.stat-2*self.tdx, self.h-2*self.tdx)
         
-        for i in range(0,5):
-            dc.DrawLine(self.plot_x(0.0), self.plot_y(i/5.0), self.plot_x(1.0), self.plot_y(i/5.0))
+        for i in range(0,6):
+            dc.DrawLine(self.plot_x(0.0), self.plot_y(i/6.0), self.plot_x(1.0), self.plot_y(i/6.0))
         for i in range(0,7):
             dc.DrawLine(self.plot_x(i/7.0), self.plot_y(0), self.plot_x(i/7.0), self.plot_y(1))
 
         
-        dc.SetPen(wx.Pen(wx.Colour(255,180,0),4))
+        dc.SetPen(wx.Pen(wx.Colour(0,0,0),4))
         dc.DrawLine(self.plot_x(self.cell.model/3500), self.plot_y(0), self.plot_x(self.cell.model/3500), self.plot_y(1))
         dc.DrawLine(self.plot_x(0.0), self.plot_y(self.cell.get_volt_perc()), self.plot_x(1.0), self.plot_y(self.cell.get_volt_perc()))
 
         # Draw maximum charge point
+        dc.SetPen(wx.Pen(wx.Colour(255,0,0),2))
         dc.DrawLine(self.plot_x(self.energy_prediction.get_max_hover_charge() / 3500), self.plot_y(0), self.plot_x(self.energy_prediction.get_max_hover_charge() / 3500), self.plot_y(1))
+
+
+        font = wx.Font(8, wx.ROMAN, wx.NORMAL, wx.NORMAL)
+        dc.SetFont(font)
+        for i in range(0,3500,500):
+            dc.DrawText(str(i) + "mAh", self.plot_x(float(i)/3500.0), self.plot_y(1.0))
+        for i in range(25,43,3):
+            dc.DrawText(str(round(i/10.0,1)) + "V", self.plot_x(0), self.plot_y(self.cell.get_volt_percent(float(i/10.0))))
 
         thickness = 3
         dc.SetPen(wx.Pen(wx.Colour(0,0,0),thickness))
