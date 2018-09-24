@@ -40,6 +40,10 @@ WIDTH = 600
 BARH = 140
 
 
+def get_text_from_seconds(secs):
+    m, s = divmod(int(secs), int(60))
+    return "{:02d}:{:02d}".format(m, s)
+
 class AirDataMessage(object):
     def __init__(self, msg):
         self.airspeed = float(msg['airspeed'])
@@ -141,6 +145,7 @@ class EnergyPrediction(object):
     power_hover = 550  # W required for hover per battery
     power_hover_cell = power_hover / bat.cells_in_battery
     min_allowable_voltage = 3.0
+    expected_landing_time = 30
 
     def __init__(self, battery_cell):
         self.battery_cell = battery_cell
@@ -149,13 +154,14 @@ class EnergyPrediction(object):
     def fill_from_air_data_msg(self, air_data):
         self.airspeed = air_data.airspeed
 
-    def get_epxected_power_from_airspeed(self, airspeed):
+    def get_expected_power_from_airspeed(self, airspeed):
         return sum(self.coeffs_power_from_airspeed[i] * airspeed ** (2 - i) for i in range(3))
 
     def get_expected_power(self):
-        """Calculate expected power based on airspeed; if airspeed < 15, this model is invalid and hover power is assumed"""
+        """Calculate expected power based on airspeed; if airspeed < 15, this model is invalid and hover power is assumed
+        Power for whole battery"""
         if self.airspeed > 15:
-            return self.get_epxected_power_from_airspeed(self.airspeed)
+            return self.get_expected_power_from_airspeed(self.airspeed)
         return self.power_hover
 
     def get_power_fraction(self):
@@ -171,53 +177,65 @@ class EnergyPrediction(object):
             return 0.5
         return 1
 
+    def get_time_to_empty_battery_from_power(self, power):
+        volt, amp = bat.volt_amp_from_mAh_power(self.battery_cell.model, power)
+        if volt >= self.min_allowable_voltage:
+            time_to_empty_battery, _ = bat.time_mAh_from_volt_to_volt_power(volt, self.min_allowable_voltage, power)
+        else:
+            time_to_empty_battery = 0
+        return time_to_empty_battery
+
     def get_hover_seconds_color(self):
-        fraction = self.get_hover_seconds_left() / 120
-        if fraction > 1:
-            fraction = 1
-        return fraction
+        if self.get_hover_seconds_left() > 90:
+            return 1
+        if self.get_hover_seconds_left() > 30:
+            return 0.5
+        return 0.1
 
     def get_hover_seconds_fraction(self):
         fraction = self.get_hover_seconds_left() / 120
-        if fraction > 1:
-            fraction = 1
-        return fraction
+        return min(1, fraction)
 
     def get_hover_seconds_left(self):
-        hover_volt, hover_ampere = bat.volt_amp_from_mAh_power(self.battery_cell.model, self.power_hover_cell)
-        if hover_volt >= self.min_allowable_voltage:
-            time_to_empty_battery, _ = bat.time_mAh_from_volt_to_volt_power(hover_volt, self.min_allowable_voltage, self.power_hover_cell)
-        else:
-            time_to_empty_battery = 0
-        return time_to_empty_battery
+        return self.get_time_to_empty_battery_from_power(self.power_hover_cell)
 
     def get_hover_seconds_left_text(self):
-        m, s = divmod(int(self.get_hover_seconds_left()), int(60))
-        return "{:02d}:{:02d} hover left".format(m, s)
+        return "{} hover left".format(get_text_from_seconds(self.get_hover_seconds_left()))
 
     def get_fw_seconds_color(self):
-        fraction = self.get_hover_seconds_left() / 120
-        if fraction > 1:
-            fraction = 1
-        return fraction
+        if self.get_fw_seconds_left() > 120:
+            return 1
+        if self.get_fw_seconds_left() > 60:
+            return 0.5
+        return 0.1
 
     def get_fw_seconds_fraction(self):
-        fraction = self.get_hover_seconds_left() / 120
-        if fraction > 1:
-            fraction = 1
-        return fraction
+        fraction = self.get_fw_seconds_left() / 120
+        return min(1, fraction)
 
     def get_fw_seconds_left(self):
-        fw_volt, fw_ampere = bat.volt_amp_from_mAh_power(self.battery_cell.model, self.get_expected_power())
-        if fw_volt >= self.min_allowable_voltage:
-            time_to_empty_battery, _ = bat.time_mAh_from_volt_to_volt_power(fw_volt, self.min_allowable_voltage, self.power_hover_cell)
-        else:
-            time_to_empty_battery = 0
-        return time_to_empty_battery
+        return self.get_time_to_empty_battery_from_power(self.get_expected_power())
 
     def get_fw_seconds_left_text(self):
-        m, s = divmod(int(self.get_hover_seconds_left()), int(60))
-        return "{:02d}:{:02d} fw left".format(m, s)
+        return "{} fw left".format(get_text_from_seconds(self.get_fw_seconds_left()))
+
+    def get_fw_seconds_left_20mps(self):
+        return self.get_time_to_empty_battery_from_power(self.get_expected_power_from_airspeed(20))
+
+    def get_fw_seconds_left_20mps_text(self):
+        return "{} left@20".format(get_text_from_seconds(self.get_fw_seconds_left_20mps()))
+
+    def get_fw_seconds_left_20mps_fraction(self):
+        fraction = self.get_fw_seconds_left_20mps() / 120
+        return min(1, fraction)
+
+    def get_fw_seconds_left_20mps_color(self):
+        if self.get_fw_seconds_left_20mps() > 120:
+            return 1
+        if self.get_fw_seconds_left_20mps() > 60:
+            return 0.5
+        return 0.1
+
 
     def get_max_hover_charge(self):
         vmin = self.min_allowable_voltage
@@ -274,16 +292,18 @@ class EnergyMonFrame(wx.Frame):
 
         dc.SetPen(wx.Pen(wx.Colour(0,0,0))) 
 	dc.SetBrush(wx.Brush(wx.Colour(220,220,220))) 
-        dc.DrawRectangle(tdx, int(nr*spacing+tdx), int(boxw), boxh) 
+        dc.DrawRectangle(tdx, int(nr*spacing+tdx), int(boxw), boxh)
+        dc.SetTextForeground(wx.Colour(0, 0, 0))
         if color < 0.2:
+            dc.SetTextForeground(wx.Colour(255, 255, 255))
             dc.SetBrush(wx.Brush(wx.Colour(250,0,0)))
         elif color < 0.6:
             dc.SetBrush(wx.Brush(wx.Colour(250,180,0)))
         else:
             dc.SetBrush(wx.Brush(wx.Colour(0,250,0)))
 #        dc.DrawLine(200,50,350,50)
-        dc.DrawRectangle(tdx, int(nr*spacing+tdx), int(boxw * percent), boxh) 
-        dc.DrawText(txt,18,int(nr*spacing+tdy+tdx)) 
+        dc.DrawRectangle(tdx, int(nr*spacing+tdx), int(boxw * percent), boxh)
+        dc.DrawText(txt,18,int(nr*spacing+tdy+tdx))
 
     def plot_x(self, x):
         return int(self.stat+self.tdx +  x * (self.w-self.stat-2*self.tdx))
@@ -384,8 +404,9 @@ class EnergyMonFrame(wx.Frame):
         self.StatusBox(dc,4, self.cell.get_temp(), self.cell.get_temp_perc(), self.cell.get_temp_color())
         self.StatusBox(dc,6, self.cell.get_power_text(), self.cell.get_power_perc(), self.cell.get_power_color())
         self.StatusBox(dc,7, self.energy_prediction.get_power_fraction_text(), self.energy_prediction.get_power_fraction(), self.energy_prediction.get_power_fraction_color())
-        self.StatusBox(dc,8, self.energy_prediction.get_hover_seconds_left_text(), self.energy_prediction.get_power_fraction(), self.energy_prediction.get_hover_seconds_color())
-        self.StatusBox(dc,9, self.energy_prediction.get_fw_seconds_left_text(), self.energy_prediction.get_power_fraction(), self.energy_prediction.get_fw_seconds_color())
+        self.StatusBox(dc,8, self.energy_prediction.get_hover_seconds_left_text(), self.energy_prediction.get_hover_seconds_fraction(), self.energy_prediction.get_hover_seconds_color())
+        self.StatusBox(dc,9, self.energy_prediction.get_fw_seconds_left_text(), self.energy_prediction.get_fw_seconds_fraction(), self.energy_prediction.get_fw_seconds_color())
+        self.StatusBox(dc,10, self.energy_prediction.get_fw_seconds_left_20mps_text(), self.energy_prediction.get_fw_seconds_left_20mps_fraction(), self.energy_prediction.get_fw_seconds_left_20mps_color())
 
         self.DischargePlot(dc)
 
@@ -429,7 +450,7 @@ class EnergyMonFrame(wx.Frame):
 
 if __name__ == '__main__':
     energy_message = EnergyMessage({"bat": 22, "amp": 18, "power": 22 * 18, "energy": 10000})
-    air_data_message = AirDataMessage({"airspeed": 20})
+    air_data_message = AirDataMessage({"airspeed": 21})
     cell = BatteryCell()
     cell.fill_from_energy_msg(energy_message)
 
@@ -438,15 +459,17 @@ if __name__ == '__main__':
 
     print(energy_prediction.get_expected_power())
     print(energy_prediction.get_hover_seconds_left_text())
-
+    print(energy_prediction.get_fw_seconds_left_text())
+    print(energy_prediction.get_fw_seconds_left_20mps_text())
     import matplotlib.pyplot as plt
     import numpy as np
     energies = np.arange(0, 3200*6, 10)
     seconds_left = np.zeros(energies.shape)
-    for i, energy in enumerate(energies):
-        cell.fill_from_energy_msg(EnergyMessage({"bat": 22, "amp": 18, "power": 22 * 18, "energy": energy}))
-        seconds_left[i] = energy_prediction.get_hover_seconds_left()
 
-
-    plt.plot(energies, seconds_left)
-    plt.show()
+    # for i, energy in enumerate(energies):
+    #     cell.fill_from_energy_msg(EnergyMessage({"bat": 22, "amp": 18, "power": 22 * 18, "energy": energy}))
+    #     seconds_left[i] = energy_prediction.get_hover_seconds_left()
+    #
+    #
+    # plt.plot(energies, seconds_left)
+    # plt.show()
