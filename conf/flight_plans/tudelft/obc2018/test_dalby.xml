@@ -68,12 +68,15 @@
       !(nav_block == IndexOfBlock('failsafe'))
       )" deroute="HeightLimit"/>
     <exception cond="(!GpsFixValid() &&
+      !(nav_block == IndexOfBlock('waitGps')) &&
+      !(nav_block == IndexOfBlock('geoInit')) &&
+      !(nav_block == IndexOfBlock('failsafe')) &&
       !(nav_block == IndexOfBlock('GpsLoss')) &&
+      !(nav_block == IndexOfBlock('holdingPoint')) &&
       !(nav_block == IndexOfBlock('Descent_noGPS')) &&
       !(nav_block == IndexOfBlock('Descent_slow_noGPS')) &&
       !(nav_block == IndexOfBlock('landing_moment_noGPS')) &&
       !(nav_block == IndexOfBlock('landed')) &&
-      !(nav_block == IndexOfBlock('failsafe')) &&
       (autopilot_in_flight() == true) )" deroute="GpsLoss"/>
     <exception cond="(datalink_time > 180 &&
       !(nav_block == IndexOfBlock('DatalinkLoss')) &&
