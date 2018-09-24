@@ -129,7 +129,7 @@
 
     <!-- Output the PWM values -->
     <set servo="MOTOR"       value="($th_hold? -9600 : @THRUST)"/>
-    <set servo="AILEVON_RIGHT"     value="@ELEVATOR + @AILERON"/>
+    <set servo="AILEVON_RIGHT"     value="@ELEVATOR - @AILERON"/>
     <set servo="AILEVON_LEFT"    value="@ELEVATOR + @AILERON"/>
   </command_laws>
 
