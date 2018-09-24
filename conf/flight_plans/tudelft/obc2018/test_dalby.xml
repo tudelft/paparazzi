@@ -21,23 +21,23 @@
     <waypoint name="MB3" x="-2065.8" y="550.7"/>
     <waypoint name="MB4" x="1613.2" y="318.9"/>
     <waypoint height="40.0" name="BASE" x="43.2" y="-36.1"/>
-    <waypoint height="50.0" name="JOE" x="49.9" y="-49.6"/>
-    <waypoint height="40.0" name="JOE_reported" x="100." y="-59.6"/>
+    <waypoint name="JOE" x="67.8" y="-39.0"/>
+    <waypoint name="JOE_reported" x="165.5" y="-36.8"/>
     <waypoint height="30.0" name="JOE_found" x="-258.1" y="-21.9"/>
     <waypoint height="50.0" name="TD_mrk" x="-240.6" y="-36.0"/>
     <waypoint name="FP1" x="-16.9" y="-321.3"/>
     <waypoint name="FP2" x="285.2" y="-386.0"/>
     <waypoint name="FP3" x="143.2" y="19.3"/>
     <waypoint name="FP4" x="450.7" y="-88.5"/>
-    <waypoint height="50.0" name="j1" x="264.1" y="39.7"/>
-    <waypoint height="50.0" name="j2" x="57.2" y="-20.7"/>
-    <waypoint height="50.0" name="j3" x="282.0" y="-2.0"/>
-    <waypoint height="50.0" name="j4" x="81.0" y="-75.6"/>
-    <waypoint height="50.0" name="j5" x="310.6" y="-47.7"/>
-    <waypoint height="50.0" name="j6" x="102.4" y="-116.9"/>
+    <waypoint name="j1" x="197.4" y="38.8"/>
+    <waypoint name="j2" x="80.8" y="-12.5"/>
+    <waypoint name="j3" x="235.4" y="1.7"/>
+    <waypoint name="j4" x="88.0" y="-74.6"/>
+    <waypoint name="j5" x="247.5" y="-53.0"/>
+    <waypoint name="j6" x="122.4" y="-105.3"/>
     <waypoint height="40.0" name="TD" x="30.9" y="-45.4"/>
     <waypoint name="CLIMB" x="33.7" y="43.7"/>
-    <waypoint height="80.0" name="STDBY" x="149.9" y="-123.2"/>
+    <waypoint name="STDBY" x="75.6" y="-145.2"/>
     <waypoint name="HOVER" x="-239.7" y="-134.0"/>
   </waypoints>
   <sectors>
@@ -49,7 +49,7 @@
     </sector>
   </sectors>
   <variables>
-    <variable shortname="nojoe_vfraction" var="joe_not_found_descend_speed_fraction" init="0.3" min="0" max="1" step="0.1" type="float"/>
+    <variable init="0.3" max="1" min="0" shortname="nojoe_vfraction" step="0.1" type="float" var="joe_not_found_descend_speed_fraction"/>
   </variables>
   <modules>
     <module name="mission" type="path"/>
@@ -93,7 +93,6 @@
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="nav_throttle_curve_set(0)"/>
-      <!--call_once fun="NavSetAltitudeReferenceHere()"/-->
     </block>
     <block group="init" name="holdingPoint">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -173,7 +172,7 @@
       <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0)"/>
       <call_once fun="enableVisionFindJoe(true)"/>
       <call_once fun="enableVisionDescent(true)"/>
-      <go wp="JOE_found" vmode="climb" climb="0"/>
+      <go climb="0" vmode="climb" wp="JOE_found"/>
     </block>
     <block group="joe_found" name="fjoe_descend">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -329,7 +328,7 @@
       <call_once fun="waypoint_set_alt(WP_HOVER,stateGetPositionEnu_f()->z)"/>
       <call_once fun="NavSetWaypointHere(WP_HOVER)"/>
       <call_once fun="nav_hybrid_heading_init()"/>
-      <stay wp="HOVER" pre_call="nav_hybrid_heading_set()"/>
+      <stay pre_call="nav_hybrid_heading_set()" wp="HOVER"/>
     </block>
     <block group="safe" name="LandHere" strip_button="LandHere">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -380,8 +379,8 @@
       <call_once fun="nav_hybrid_heading_init()"/>
       <call_once fun="NavSetWaypointHere(WP_HOVER)"/>
       <call_once fun="waypoint_set_alt(WP_HOVER,stateGetPositionEnu_f()->z + 20)"/>
-      <stay until="60 > datalink_time" pre_call="nav_hybrid_heading_set()" wp="HOVER"/>
-      <stay wp="HOVER" pre_call="nav_hybrid_heading_set()"/>
+      <stay pre_call="nav_hybrid_heading_set()" until="60 > datalink_time" wp="HOVER"/>
+      <stay pre_call="nav_hybrid_heading_set()" wp="HOVER"/>
     </block>
     <block group="autosafe" name="Descent_noGPS">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
