@@ -29,9 +29,9 @@
 
 
 #define NAV_HYBRID_MAX_YAW_RATE_RAD         RadOfDeg(30.0f/5.0f)    // rad/sec
-#define NAV_HYBRID_MAX_YAW_RATE_TO_WP_RAD   RadOfDeg(120.0f/5.0f)    // rad/sec
+#define NAV_HYBRID_MAX_YAW_RATE_TO_WP_RAD   RadOfDeg(160.0f/5.0f)    // rad/sec
 #define NAV_HYBRID_PITCH_DEADBAND_RAD       RadOfDeg(8.0f)          // rad
-#define NAV_HYBRID_TIP_IN_WIND              1;                     // Left (-1) - Right (1)
+#define NAV_HYBRID_TIP_IN_WIND              0;                     // Left (-1) - Right (1)
 
 // setpoint
 float nav_hybrid_heading_setpoint = 0;
@@ -41,6 +41,7 @@ float nav_hybrid_heading_max_yaw_rate = NAV_HYBRID_MAX_YAW_RATE_RAD;
 float nav_hybrid_heading_max_yaw_rate_to_wp = NAV_HYBRID_MAX_YAW_RATE_TO_WP_RAD;
 float nav_hybrid_heading_pitch_deadband = NAV_HYBRID_PITCH_DEADBAND_RAD;
 float nav_hybrid_heading_tip_in_wind = NAV_HYBRID_TIP_IN_WIND;
+float nav_hybrid_heading_highspeed = 1.0;
 
 // setpoint for slow turn to WP
 float nav_hybrid_heading_wp_ref = 0;
@@ -94,10 +95,10 @@ void nav_hybrid_heading_periodic(void) {
 
     // if pitch is down, yaw right
     if (stateGetNedToBodyEulers_f()->theta < -nav_hybrid_heading_pitch_deadband) {
-      nav_hybrid_heading_setpoint -= nav_hybrid_heading_max_yaw_rate / 512.0f * yawdirection;
+      nav_hybrid_heading_setpoint -= nav_hybrid_heading_max_yaw_rate / 512.0f * yawdirection * nav_hybrid_heading_highspeed;
     // if pitch is up, yaw left
     } else if (stateGetNedToBodyEulers_f()->theta > nav_hybrid_heading_pitch_deadband) {
-      nav_hybrid_heading_setpoint += nav_hybrid_heading_max_yaw_rate / 512.0f * yawdirection;
+      nav_hybrid_heading_setpoint += nav_hybrid_heading_max_yaw_rate / 512.0f * yawdirection * nav_hybrid_heading_highspeed;
     }
 
   }
@@ -113,6 +114,12 @@ void nav_hybrid_heading_periodic(void) {
 }
 
 void nav_hybrid_heading_set(void) {
+  nav_hybrid_heading_highspeed = 1.0;
+  nav_set_heading_rad( nav_hybrid_heading_setpoint );
+}
+
+void nav_hybrid_heading_set_fast(void) {
+  nav_hybrid_heading_highspeed = 2.0;
   nav_set_heading_rad( nav_hybrid_heading_setpoint );
 }
 
