@@ -154,7 +154,7 @@
     <axis name="YAW"        failsafe_value="0"/>
     <axis name="COLLECTIVE" failsafe_value="-9600"/>
     <axis name="ELEVATOR"   failsafe_value="0"/>
-    <axis name="AILERON"    failsafe_value="0"/>
+    <axis name="AILERON"    failsafe_value="9600"/>
   </commands>
 
   <!-- Swashplate mixing HR120 (1 Back, 2 Front at 120 degree) -->
