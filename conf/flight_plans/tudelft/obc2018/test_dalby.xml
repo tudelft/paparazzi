@@ -57,16 +57,19 @@
     <module name="nav" type="hybrid_heading"/>
   </modules>
   <exceptions>
+    <!-- Mission boundary crossing -->
     <exception cond="(!InsideMissionBoundary(GetPosX(), GetPosY()) &&
       !(nav_block == IndexOfBlock('waitGps')) &&
       !(nav_block == IndexOfBlock('geoInit')) &&
       !(nav_block == IndexOfBlock('failsafe'))
       )" deroute="failsafe"/>
+    <!-- Height limit crossing -->
     <exception cond="(air_data.amsl_baro > (337. + 457.) && air_data.amsl_baro_valid &&
       !(nav_block == IndexOfBlock('waitGps')) &&
       !(nav_block == IndexOfBlock('geoInit')) &&
       !(nav_block == IndexOfBlock('failsafe'))
       )" deroute="HeightLimit"/>
+    <!-- GPS loss -->
     <exception cond="(!GpsFixValid() &&
       !(nav_block == IndexOfBlock('waitGps')) &&
       !(nav_block == IndexOfBlock('geoInit')) &&
@@ -77,14 +80,34 @@
       !(nav_block == IndexOfBlock('Descent_slow_noGPS')) &&
       !(nav_block == IndexOfBlock('landing_moment_noGPS')) &&
       !(nav_block == IndexOfBlock('landed')) &&
+      !(nav_block == IndexOfBlock('joe_descendSlow')) &&
+      !(nav_block == IndexOfBlock('joe_moment')) &&
+      !(nav_block == IndexOfBlock('joe_landed')) &&
+      !(nav_block == IndexOfBlock('joe_inert')) &&
+      !(nav_block == IndexOfBlock('joe_wait')) &&
+      !(nav_block == IndexOfBlock('base_descendSlow')) &&
+      !(nav_block == IndexOfBlock('base_moment')) &&
+      !(nav_block == IndexOfBlock('base_landed')) &&
       (autopilot_in_flight() == true) )" deroute="GpsLoss"/>
+    <!-- Datalink loss -->
     <exception cond="(datalink_time > 180 &&
       !(nav_block == IndexOfBlock('DatalinkLoss')) &&
-      !(nav_block == IndexOfBlock('failsafe')) &&
+      !(nav_block == IndexOfBlock('GpsLoss')) &&
       !(nav_block == IndexOfBlock('landed')) &&
+      !(nav_block == IndexOfBlock('holdingPoint')) &&
+      !(nav_block == IndexOfBlock('failsafe')) &&
+      !(nav_block == IndexOfBlock('joe_descendSlow')) &&
+      !(nav_block == IndexOfBlock('joe_moment')) &&
+      !(nav_block == IndexOfBlock('joe_landed')) &&
+      !(nav_block == IndexOfBlock('joe_inert')) &&
+      !(nav_block == IndexOfBlock('joe_wait')) &&
+      !(nav_block == IndexOfBlock('base_descendSlow')) &&
+      !(nav_block == IndexOfBlock('base_moment')) &&
+      !(nav_block == IndexOfBlock('base_landed')) &&
       (autopilot_in_flight() == true) )" deroute="DatalinkLoss"/>
   </exceptions>
   <blocks>
+    <!-- Initialization -->
     <block group="init" name="waitGps">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="NavKillThrottle()"/>
@@ -103,6 +126,8 @@
       <call_once fun="nav_throttle_curve_set(0)"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
+
+    <!-- Takeoff from base -->
     <block group="takeoff_base" name="base_startEngine" strip_button="Start_Engine">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_throttle_curve_set(0)"/>
@@ -135,6 +160,8 @@
       <stay climb="nav_climb_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="CLIMB"/>
       <deroute block="transition_to_joe"/>
     </block>
+
+    <!-- Fly towards joe -->
     <block group="fly_to_joe" name="transition_to_joe">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_FP1)"/>
@@ -158,6 +185,8 @@
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
       <go wp="j1"/>
     </block>
+
+    <!-- Find joe and land with vision -->
     <block group="find_joe" name="find_joe">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_hybrid_heading_init()"/>
@@ -192,6 +221,8 @@
       <call_once fun="nav_hybrid_heading_init()"/>
       <stay climb="-0.5" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="JOE_found"/>
     </block>
+
+    <!-- Land at joe (without vision)-->
     <block group="land_joe" name="joe_land">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="enableVisionDescent(true)"/>
@@ -225,6 +256,8 @@
       <call_once fun="enableVisionDescent(false)"/>
       <attitude pitch="0" roll="0" throttle="0" until="stage_time>2 && autopilot.mode == AP_MODE_NAV" vmode="throttle"/>
     </block>
+
+    <!-- Wait at joe for sample -->
     <block group="wait_joe" name="joe_inert">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="opa_controller_ap_disarm(true)"/>
@@ -236,6 +269,8 @@
       <call_once fun="nav_throttle_curve_set(0)"/>
       <attitude pitch="0" roll="0" throttle="0" until="(stage_time>60) && GpsFixValid()" vmode="throttle"/>
     </block>
+
+    <!-- Takeoff at joe -->
     <block group="takeoff_joe" name="joe_startEngine">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_throttle_curve_set(0)"/>
@@ -267,6 +302,8 @@
       <call_once fun="nav_hybrid_heading_init()"/>
       <stay climb="nav_climb_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="CLIMB"/>
     </block>
+
+    <!-- Fly to the base -->
     <block group="fly_to_base" name="transition_to_base">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_FP1)"/>
@@ -284,6 +321,8 @@
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
       <go wp="BASE"/>
     </block>
+
+    <!-- Land at the base -->
     <block group="land_base" name="base_land">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="enableVisionDescent(true)"/>
@@ -317,6 +356,8 @@
       <call_once fun="enableVisionDescent(false)"/>
       <attitude pitch="0" roll="0" throttle="0" vmode="throttle"/>
     </block>
+
+    <!-- Manual Safety features -->
     <block group="safe" name="Standby" strip_button="Standby">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <stay wp="STDBY"/>
@@ -359,6 +400,8 @@
       <call_once fun="enableVisionDescent(false)"/>
       <attitude pitch="0" roll="0" throttle="0" vmode="throttle"/>
     </block>
+
+    <!-- Automatic safety features -->
     <block group="autosafe" name="HeightLimit">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <stay wp="STDBY"/>
@@ -405,6 +448,8 @@
       <attitude pitch="0" roll="0" throttle="0.5" until="stage_time>0" vmode="throttle"/>
       <deroute block="landed"/>
     </block>
+
+    <!-- KILL -->
     <block group="autosafe" name="failsafe">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="NavKillThrottle()"/>

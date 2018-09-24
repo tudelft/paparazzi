@@ -24,7 +24,7 @@
       </module>
       <module name="imu"           type="mpu6000"/>
       <module name="gps"           type="ublox">
-        <define name="GPS_TIMEOUT" value="2"/>
+        <define name="GPS_TIMEOUT" value="10"/>
       </module>
       <!--module name="sys_id_chirp"/-->
       <!--module name="sys_id_doublet"/-->
