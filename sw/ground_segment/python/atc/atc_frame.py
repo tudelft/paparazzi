@@ -130,10 +130,10 @@ class AtcFrame(wx.Frame):
         dc.DrawText("Airspeed: " + str(self.airspeed) + " kt",tdx,tdx)
         dc.DrawText("Ground Speed: " + str(self.gspeed) + " kt",tdx,tdx+tdy*1)
 
-        dc.DrawText("AMSL: " + str(self.amsl) + " ft",tdx,tdx+tdy*2)
+        dc.DrawText("AMSL: " + str(self.amsl) + " ft (<2600ft)",tdx,tdx+tdy*2)
         dc.DrawText("QNH: " + str(self.qnh*100.0) + " ",tdx,tdx+tdy*3)
 
-        dc.DrawText("Height: " + str(self.alt) + " ft",tdx,tdx+tdy*4)
+        dc.DrawText("Height: " + str(self.alt) + " ft (<1500ft)",tdx,tdx+tdy*4)
         dc.DrawText("QFE: " + str(self.qfe) + " ",tdx,tdx+tdy*5)
 
         #dc.DrawText("HMSL: " + str(self.hmsl) + " ft",tdx,tdx+tdy*6)
