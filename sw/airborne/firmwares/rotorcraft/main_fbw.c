@@ -262,8 +262,12 @@ static void fbw_on_rc_frame(void)
     fbw_mode = AP_LOST_FBW_MODE;
   }
 
+  /* AP failsafe will win from RC */
+  if(INTERMCU_GET_CMD_STATUS(INTERMCU_CMD_FAILSAFE))
+    fbw_mode = FBW_MODE_FAILSAFE;
+
   /* If the FBW is in control */
-  if (fbw_mode == FBW_MODE_MANUAL && !INTERMCU_GET_CMD_STATUS(INTERMCU_CMD_FAILSAFE)) {
+  if (fbw_mode == FBW_MODE_MANUAL) {
     fbw_motors_on = true;
     SetCommands(commands_failsafe);
 #ifdef SetCommandsFromRC
