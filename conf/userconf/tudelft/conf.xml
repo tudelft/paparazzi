@@ -79,7 +79,7 @@
   />
   <aircraft
    name="Avoidance_fw_sim"
-   ac_id="19"
+   ac_id="59"
    airframe="airframes/tudelft/avoidance_fw_sim.xml"
    radio="radios/cockpitSX.xml"
    telemetry="telemetry/default_fixedwing.xml"
