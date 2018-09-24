@@ -201,7 +201,7 @@
     <curve throttle="7300,7800,8300" rpm="2800,2800,2800" collective="-9600,-6500,-2300"/><!-- Hover curve RPM controlled -->
     <curve throttle="7300,7800,8300" rpm="2800,2800,2800" collective="-9600,-6500,-2300"/><!-- Hover curve RPM controlled -->
     <curve throttle="8600,8600,8600,8600,9600" collective="-9600,-9600,-7470,-3770,30"/><!-- Forward inefficient curve -->
-    <curve throttle="5000,5000,5000,5000,5300" collective="-9600,-6300,-3000,700,4500"/><!-- Forward curve -->
+    <curve throttle="5000,5000,5000,5000,5800" collective="-9600,-6300,-3000,700,4500"/><!-- Forward curve -->
   </heli_curves>
 
   <section name="MISC">
@@ -387,7 +387,7 @@
     <define name="TRANSITION_THROTTLE_CURVE" value="3"/>
     <define name="FORWARD_THROTTLE_CURVE" value="4"/>
     <define name="TRANSITION_TIME" value="2"/>
-    <define name="TRANSITION_THROTTLE_TO_FORWARD" value="8500"/>
+    <define name="TRANSITION_THROTTLE_TO_FORWARD" value="7000"/>
     <define name="TRANSITION_THROTTLE_TO_HOVER" value="4800"/>
   </section>
 
