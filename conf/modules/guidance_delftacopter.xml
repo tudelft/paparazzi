@@ -58,6 +58,8 @@
         <dl_setting var="delftacopter_fwd_advance_angle_p" shortname="adv_p" min="-1.6" step="0.005" max="1.6" param="DC_FORWARD_ADVANCE_P"/>
         <dl_setting var="delftacopter_fwd_advance_angle_q" shortname="adv_q" min="-1.6" step="0.005" max="1.6" param="DC_FORWARD_ADVANCE_Q"/>
         <dl_setting var="delftacopter_fwd_pitch_swp" shortname="pitch_swp" min="0" step="0.01" max="1" param="DC_FORWARD_PITCH_SWP"/>
+        <dl_setting var="delftacopter_fwd_roll_swp_trim" shortname="roll_swp_trim" min="-4000" step="5" max="4000" param="DC_FORWARD_ROLL_SWP_TRIM"/>
+        <dl_setting var="delftacopter_fwd_pitch_swp_trim" shortname="pitch_swp_trim" min="-400" step="5" max="4000" param="DC_FORWARD_PITCH_SWP_TRIM"/>
       </dl_settings>
     </dl_settings>
   </settings>

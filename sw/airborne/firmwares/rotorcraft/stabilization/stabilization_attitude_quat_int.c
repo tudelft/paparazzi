@@ -356,8 +356,8 @@ void stabilization_attitude_run(bool enable_integrator)
     // Compute the stabilization commands
     stabilization_cmd[COMMAND_ELEVATOR] =  pitch_cmd;
     stabilization_cmd[COMMAND_AILERON] = - roll_cmd; // Roll is using delftacopter yaw actuator which has opposite sign than fixedwing roll
-    stabilization_cmd[COMMAND_ROLL] = cmd_roll1;
-    stabilization_cmd[COMMAND_PITCH] = cmd_pitch1;
+    stabilization_cmd[COMMAND_ROLL] = cmd_roll1 + delftacopter_fwd_roll_swp_trim;
+    stabilization_cmd[COMMAND_PITCH] = cmd_pitch1 + delftacopter_fwd_pitch_swp_trim;
     stabilization_cmd[COMMAND_YAW] = 0;
     dc_mode_fwd = true;
     stabilization_attitude_enter();

@@ -99,6 +99,8 @@ float feedforward_yaw_of_turn_rate = DC_FORWARD_K_FF_TO_YAW;
 float delftacopter_fwd_advance_angle_p = DC_FORWARD_ADVANCE_P;
 float delftacopter_fwd_advance_angle_q = DC_FORWARD_ADVANCE_Q;
 float delftacopter_fwd_pitch_swp = DC_FORWARD_PITCH_SWP;
+float delftacopter_fwd_roll_swp_trim = DC_FORWARD_ROLL_SWP_TRIM;
+float delftacopter_fwd_pitch_swp_trim = DC_FORWARD_PITCH_SWP_TRIM;
 
 /* Private functions */
 static void guidance_hybrid_attitude_delftacopter(struct Int32Eulers *ypr_sp);

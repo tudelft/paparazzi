@@ -421,6 +421,8 @@
     <define name="ADVANCE_P" value="1.1"/>
     <define name="ADVANCE_Q" value="1.1"/>
     <define name="PITCH_SWP" value="0.0"/>
+    <define name="ROLL_SWP_TRIM" value="0"/>
+    <define name="PITCH_SWP_TRIM" value="0"/>
   </section>
 
   <!-- Radio control specific switches -->
