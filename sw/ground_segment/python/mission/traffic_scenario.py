@@ -58,8 +58,9 @@ class TrafficScenario(object):
     
         i=0
         for traffic_event in traffic_events:
-            self.Traffic.create(1, traffic_event.get_velocity(), np.rad2deg(traffic_event.get_lla().lat), np.rad2deg(traffic_event.get_lla().lon), traffic_event.get_course(), 'AC' + str(i), traffic_event.get_radius())
-            i += i
+            if (traffic_event.crossing == True):
+                self.Traffic.create(1, traffic_event.get_velocity(), np.rad2deg(traffic_event.get_lla().lat), np.rad2deg(traffic_event.get_lla().lon), traffic_event.get_course(), 'AC' + str(i), traffic_event.get_radius())
+                i += i
             
         for j in range(len(self.circular_zones_lla)):
             self.Traffic.create(1, 0., np.rad2deg(self.circular_zones_lla[j].lat), np.rad2deg(self.circular_zones_lla[j].lon), 0, 'Zone' + str(j), self.circular_zones[j][2])
@@ -191,25 +192,26 @@ class ExtrapolatedScenario(object):
         
         i=0
         for traffic_event in traffic_events:
-            velocity = traffic_event.get_velocity()
-            lla_point = traffic_event.get_lla()
-            lla_point_old = geodetic.LlaCoor_i(int(np.rad2deg(lla_point.lat) * 10. ** 7), int(np.rad2deg(lla_point.lon) * 10. ** 7), int(np.rad2deg(lla_point.alt) * 1000.))
-            hdg = traffic_event.get_course()
-            radius = traffic_event.get_radius()
-            
-            # Speed components to compute future position
-            Vx = velocity * np.sin(np.deg2rad(hdg)) # V in east direction
-            Vy = velocity * np.cos(np.deg2rad(hdg)) # V in north direction
-            Vz = traffic_event.get_roc() # V in upward direction
-            
-            # enu_point conversion to new point and to lla
-            enu_point_old = coord_trans.lla_to_enu_fw(lla_point_old, self.ref_utm_i)
-            enu_point_new = geodetic.EnuCoor_f(enu_point_old.x + Vx * dt, enu_point_old.y + Vy * dt, enu_point_old.z + Vz * dt)
-            lla_point_new = coord_trans.enu_to_lla_fw(enu_point_new, self.ref_utm_i)
-            
-            # Create traffic object
-            self.Traffic.create(1, velocity, lla_point_new.lat * 10.**-7, lla_point_new.lon * 10.**-7, hdg, 'AC' + str(i+1), radius)
-            i += 1
+            if (traffic_event.crossing == True):
+                velocity = traffic_event.get_velocity()
+                lla_point = traffic_event.get_lla()
+                lla_point_old = geodetic.LlaCoor_i(int(np.rad2deg(lla_point.lat) * 10. ** 7), int(np.rad2deg(lla_point.lon) * 10. ** 7), int(np.rad2deg(lla_point.alt) * 1000.))
+                hdg = traffic_event.get_course()
+                radius = traffic_event.get_radius()
+                
+                # Speed components to compute future position
+                Vx = velocity * np.sin(np.deg2rad(hdg)) # V in east direction
+                Vy = velocity * np.cos(np.deg2rad(hdg)) # V in north direction
+                Vz = traffic_event.get_roc() # V in upward direction
+                
+                # enu_point conversion to new point and to lla
+                enu_point_old = coord_trans.lla_to_enu_fw(lla_point_old, self.ref_utm_i)
+                enu_point_new = geodetic.EnuCoor_f(enu_point_old.x + Vx * dt, enu_point_old.y + Vy * dt, enu_point_old.z + Vz * dt)
+                lla_point_new = coord_trans.enu_to_lla_fw(enu_point_new, self.ref_utm_i)
+                
+                # Create traffic object
+                self.Traffic.create(1, velocity, lla_point_new.lat * 10.**-7, lla_point_new.lon * 10.**-7, hdg, 'AC' + str(i+1), radius)
+                i += 1
              
         for j in range(len(self.circular_zones_lla)):
             self.Traffic.create(1, 0., np.rad2deg(self.circular_zones_lla[j].lat), np.rad2deg(self.circular_zones_lla[j].lon), 0, 'Zone' + str(j), self.circular_zones[j][2])

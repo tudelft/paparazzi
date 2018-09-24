@@ -9,13 +9,13 @@
     <waypoint height="-1.0" name="TD" x="53.9" y="1.6"/>
     <waypoint name="CLIMB" x="-32.5" y="159.8"/>
     <waypoint name="BASELEG" x="56." y="367."/>
-    <waypoint lat="-27.273166" lon="151.293249" name="WP1"/>
-    <waypoint lat="-27.281064" lon="151.326755" name="WP2"/>
-    <waypoint lat="-27.277079" lon="151.289346" name="WP3"/>
-    <waypoint lat="-27.318547" lon="151.330033" name="WP4"/>
-    <waypoint lat="-27.319918" lon="151.354908" name="WP5"/>
-    <waypoint lat="-27.303298" lon="151.341988" name="WP6"/>
-    <waypoint lat="-27.288562" lon="151.368406" name="WP7"/>
+    <waypoint lat="-27.273166" lon="151.293249" name="FP1"/>
+    <waypoint lat="-27.281064" lon="151.326755" name="FP2"/>
+    <waypoint lat="-27.277079" lon="151.289346" name="FP3"/>
+    <waypoint lat="-27.318547" lon="151.330033" name="FP4"/>
+    <waypoint lat="-27.319918" lon="151.354908" name="FP5"/>
+    <waypoint lat="-27.303298" lon="151.341988" name="FP6"/>
+    <waypoint lat="-27.288562" lon="151.368406" name="FP7"/>
     <waypoint lat="-27.268332" lon="151.285295" name="MB1"/>
     <waypoint lat="-27.305194" lon="151.281118" name="MB2"/>
     <waypoint lat="-27.343226" lon="151.327054" name="MB3"/>
@@ -171,7 +171,7 @@
       <circle radius="nav_radius" wp="STDBY"/>
     </block>
     <block name="START_MISSION">
-      <go from="START" hmode="route" wp="WP1"/>
+      <go from="START" hmode="route" wp="FP1"/>
     </block>
     <block name="RUN MISSION">
       <call fun="mission_path_run()"/>

@@ -87,7 +87,7 @@ class Mission(object):
         self.mission_visualizer = mission_visualizer.MissionVisualizer(self.ivy_interface, self.ltp_def)
         
         # Initialize the asterix receiver
-        self.asterix_receiver = asterix_receiver.AsterixReceiver(self.ltp_def)
+        self.asterix_receiver = asterix_receiver.AsterixReceiver(self.ltp_def, self.flightplan.flight_plan.ground_alt)
         self.asterix_receiver.start()
 
         # Initialize the asterix visualiser
@@ -125,7 +125,7 @@ class Mission(object):
         for wp in self.flightplan.waypoints.member_list:
             # Select only waypoints from the Main path
             if wp.name[:2] == "FP":
-                wp_enu = geodetic.LlaCoor_f(wp.lat/180*math.pi, wp.lon/180*math.pi, self.flightplan.flight_plan.alt).to_enu(self.ltp_def)
+                wp_enu = geodetic.LlaCoor_f(wp.lat/180*math.pi, wp.lon/180*math.pi, self.flightplan.flight_plan.alt - self.flightplan.flight_plan.ground_alt).to_enu(self.ltp_def)
                 wp_enu.z = self.flightplan.flight_plan.alt - self.flightplan.flight_plan.ground_alt
                 wp = TransitWaypoint(wp.name, wp_enu)
                 waypoints.append(wp)
@@ -220,13 +220,14 @@ class Mission(object):
         
         while True:
             logging.debug("Mission LOOP")
-            
+        
             #Check occupancy of baseif 
             if self.mission_comm.get_remote_idx() == 0:
                 start_location = self.mission_elements[0].wp
                 base_free = resolution.check_area_conflicts(start_location, base_radius, base_free_time, self.ltp_def, dynamic_margin, self.asterix_receiver.get_events())
 
             # Visualize the asterix events and the mission
+            self.asterix_receiver.set_altitude(self.aircraft.get_lla().alt)
             self.asterix_visualizer.visualize(self.asterix_receiver.get_events())
             self.mission_visualizer.visualize(self.mission_comm.get_mission())
             

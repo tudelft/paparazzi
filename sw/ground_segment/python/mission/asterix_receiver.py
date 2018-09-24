@@ -46,7 +46,7 @@ from pprz_math import geodetic
 # Asterix receiver over UDP
 class AsterixReceiver(threading.Thread):
 
-    def __init__(self, ltp_def):
+    def __init__(self, ltp_def, groundalt):
         """
         Initialize the Asterix receiver thread
         """
@@ -59,6 +59,8 @@ class AsterixReceiver(threading.Thread):
         self.lock = threading.Lock()
         self.stop_event = threading.Event()
         self.ltp_def = ltp_def
+        self.groundalt = groundalt
+        self.altitude = self.groundalt + 200.
         
         # Create the socket for communication
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -85,7 +87,7 @@ class AsterixReceiver(threading.Thread):
             # For each received asterix packet
             logging.debug("Parsing %d asterix packets", len(packets))
             for p in packets:
-                new_t = AsterixEvent(p, self.ltp_def)
+                new_t = AsterixEvent(p, self.ltp_def, self.groundalt, self.altitude)
 
                 # Check if it already existed then update else add
                 try:
@@ -93,7 +95,7 @@ class AsterixReceiver(threading.Thread):
                     found = False
                     for t in self.events:
                         if t == new_t:
-                            t.update(new_t, self.ltp_def)
+                            t.update(new_t, self.ltp_def, self.altitude)
                             found = True
                         
                     if not found:
@@ -124,7 +126,13 @@ class AsterixReceiver(threading.Thread):
         finally:
             self.lock.release()
         return events
-
+        
+    def set_altitude(self, altitude):
+        if (altitude - self.groundalt) < 200.:
+            self.altitude = 200. + self.groundalt
+        else:
+            self.altitude = altitude
+            
     def stop(self):
         """
         Thread safe stopping the asterix receiver
@@ -144,7 +152,7 @@ class AsterixEvent(object):
     MIGRATORY_BIRD = 2
     BIRD_OF_PREY = 3
 
-    def __init__(self, asterix_packet, ltp_def):
+    def __init__(self, asterix_packet, ltp_def, groundalt, own_altitude):
         """
         Create a new event from received asterix packet
         """
@@ -161,8 +169,13 @@ class AsterixEvent(object):
         self.velocity = 0.
         self.course = 0.
         self.time = time.time()
+        self.groundalt = groundalt
+        self.own_altitude = own_altitude
+        self.tla = 60.
+        self.alt_margin = 150.
+        self.crossing = True
 
-    def update(self, other, ltp_def):
+    def update(self, other, ltp_def, own_altitude):
         """
         Update the current object with information from the new other object
         """
@@ -183,6 +196,16 @@ class AsterixEvent(object):
         self.velocity = np.sqrt(self.gspeed['east']**2 + self.gspeed['north']**2)
         self.course = np.rad2deg(np.arctan2(self.gspeed['east'], self.gspeed['north'])) % 360.
         self.time = time.time()
+        self.own_altitude = own_altitude
+        # Crossing check
+        self.crossing = True
+        if self.id < 20000:
+            alt_diff = self.own_altitude - self.alt
+            if (alt_diff < 0):
+                if ((self.tla * self.roc) < (alt_diff + 150. + self.alt_margin)):
+                    self.crossing == True
+                else:
+                    self.crossing = False
         
     def timed_out(self):
         """
@@ -215,7 +238,7 @@ class AsterixEvent(object):
         if ev_type == AsterixEvent.OTHER_AIR_TRAFFIC:
             return 300.
         elif ev_type == AsterixEvent.LOCALIZED_WEATHER:
-            return 150. + 150. * self.alt/3000.
+            return 150. + 150. * self.own_altitude/3000.
         elif ev_type == AsterixEvent.MIGRATORY_BIRD:
             return 100.
         else:

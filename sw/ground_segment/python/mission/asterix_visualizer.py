@@ -84,7 +84,7 @@ class AsterixVisualizer(object):
         self.event_ids.add(ev.id)
 
         ev_type = ev.get_type()
-        if ev_type == AsterixEvent.OTHER_AIR_TRAFFIC:
+        if ev_type == AsterixEvent.OTHER_AIR_TRAFFIC and ev.crossing == True:
             self.draw_shape(ev.id, ev.get_lla(), ev.get_radius(), "orange", "yellow")
         elif ev_type == AsterixEvent.LOCALIZED_WEATHER:
             self.draw_shape(ev.id, ev.get_lla(), ev.get_radius(), "orange", "yellow")
