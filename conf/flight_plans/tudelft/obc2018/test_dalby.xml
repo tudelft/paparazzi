@@ -385,14 +385,6 @@
       <stay until="60 > datalink_time" pre_call="nav_hybrid_heading_set()" wp="HOVER"/>
       <stay wp="HOVER" pre_call="nav_hybrid_heading_set()"/>
     </block>
-    <block group="autosafe" name="failsafe">
-      <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <call_once fun="NavKillThrottle()"/>
-      <call_once fun="NavSetFailsafe()"/>
-      <call_once fun="INTERMCU_SET_CMD_STATUS(INTERMCU_CMD_FAILSAFE)"/>
-      <call_once fun="nav_throttle_curve_set(0)"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block>
     <block group="autosafe" name="Descent_noGPS">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <exception cond="10.0 > stateGetPositionEnu_f()->z" deroute="Descent_slow_noGPS"/>
@@ -412,6 +404,15 @@
       <call_once fun="nav_throttle_curve_set(1)"/>
       <attitude pitch="0" roll="0" throttle="0.5" until="stage_time>0" vmode="throttle"/>
       <deroute block="landed"/>
+    </block>
+    <block group="autosafe" name="failsafe">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="NavKillThrottle()"/>
+      <call_once fun="NavSetFailsafe()"/>
+      <call_once fun="opa_controller_ap_disarm(true)"/>
+      <call_once fun="INTERMCU_SET_CMD_STATUS(INTERMCU_CMD_FAILSAFE)"/>
+      <call_once fun="nav_throttle_curve_set(0)"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
   </blocks>
 </flight_plan>

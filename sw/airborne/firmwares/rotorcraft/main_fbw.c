@@ -263,7 +263,7 @@ static void fbw_on_rc_frame(void)
   }
 
   /* If the FBW is in control */
-  if (fbw_mode == FBW_MODE_MANUAL) {
+  if (fbw_mode == FBW_MODE_MANUAL && !INTERMCU_GET_CMD_STATUS(INTERMCU_CMD_FAILSAFE)) {
     fbw_motors_on = true;
     SetCommands(commands_failsafe);
 #ifdef SetCommandsFromRC
