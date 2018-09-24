@@ -49,6 +49,12 @@ hdg_diff_th = 30. # max absolute heading change for resolution
 avoid_dist_min = 500. # avoid distance, when possible, otherwise half leg length
 hdg_margin = 5. # deg
 
+# defines for occupancy check
+base_radius = 300.
+base_free_time = 30.
+
+
+
 class Mission(object):
     def __init__(self, ac_id):
         # Load flightplan
@@ -214,7 +220,13 @@ class Mission(object):
         
         while True:
             logging.debug("Mission LOOP")
-
+            
+            #Check occupancy of baseif 
+            if self.mission_comm.get_remote_idx() == 0:
+                start_location = self.mission_elements[0].wp
+                print("start_location_free: ", resolution.check_area_conflicts(start_location, base_radius, base_free_time, self.ltp_def, dynamic_margin, self.asterix_receiver.get_events()))
+                sys.stdout.flush()
+            
             # Visualize the asterix events and the mission
             self.asterix_visualizer.visualize(self.asterix_receiver.get_events())
             self.mission_visualizer.visualize(self.mission_comm.get_mission())

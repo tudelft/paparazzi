@@ -87,6 +87,7 @@
    settings="settings/fixedwing_basic.xml"
    settings_modules="modules/gps_ubx_ucenter.xml modules/geo_mag.xml modules/air_data.xml modules/ahrs_int_cmpl_quat.xml modules/nav_basic_fw.xml modules/gps.xml modules/imu_common.xml modules/guidance_basic_fw.xml modules/stabilization_attitude_fw.xml"
    gui_color="#ffffffffffff"
+   release="b90c3d62b1425fdfac0ecfc8bb242d8cb6663df7"
   />
   <aircraft
    name="Avoidance_rc_sim"

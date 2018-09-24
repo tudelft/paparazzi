@@ -157,7 +157,7 @@ class AsterixEvent(object):
         self.tot_lst = [self.tot]
         self.lla_lst = [geodetic.LlaCoor_f(self.lat, self.lon, self.alt)]
         self.enu_lst = [self.lla_lst[-1].to_enu(ltp_def)]
-        self.gspeed = 0.
+        self.gspeed = {'east': 0. , 'north' : 0. }
         self.velocity = 0.
         self.course = 0.
         self.time = time.time()
