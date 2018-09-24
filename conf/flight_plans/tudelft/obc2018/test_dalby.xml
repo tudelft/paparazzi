@@ -169,20 +169,18 @@
       <go from="j7" hmode="route" pre_call="nav_hybrid_heading_set_right()" wp="j8"/>
       <deroute block="find_joe"/>
     </block>
-    <block group="joe_found" name="fjoe_stay">
+    <block group="joe_found" name="fjoe_hover">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <call_once fun="enableVisionFindJoe(true)"/>
-      <stay wp="JOE_found"/>
-    </block>
-    <block group="joe_found" name="fjoe_land">
-      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0)"/>
       <call_once fun="enableVisionFindJoe(true)"/>
       <call_once fun="enableVisionDescent(true)"/>
-      <stay until="stage_time>4" wp="JOE_found"/>
-    </block>
+      <go wp="JOE_found" vmode="climb" climb="0"/>
+      <stay climb="0" until="stage_time>4" wp="JOE_found" pre_call="nav_hybrid_heading_set()" vmode="climb"/>
+    </block><!-- TODO make counter such that this doesn't end in infinite loop-->
     <block group="joe_found" name="fjoe_descend">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <exception cond="12.0 > stateGetPositionEnu_f()->z" deroute="fjoe_descendSlow"/>
+      <exception cond="!vision_found_joe" deroute="fjoe_hover"/>
       <call_once fun="nav_hybrid_heading_init()"/>
       <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0)"/>
       <stay climb="nav_descend_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="JOE_found"/>
