@@ -81,6 +81,7 @@
     <block name="route_findjoe">
       <call fun="enableVisionFindJoe(true)" loop="false"/>
       <exception cond="vision_timeout " deroute="Standby"/>
+      <exception cond="vision_found_joe " deroute="goto_joe_found"/>
       <go  wp="JOE_reported"/>
       <circle radius="-30" wp="JOE_reported" until="fabs(ANGLE_FLOAT_OF_BFP(nav_circle_radians)) > 6.28"/>
       <circle radius="-50" wp="JOE_reported" until="fabs(ANGLE_FLOAT_OF_BFP(nav_circle_radians)) > 6.28"/>

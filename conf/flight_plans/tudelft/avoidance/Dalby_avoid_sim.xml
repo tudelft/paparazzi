@@ -150,7 +150,7 @@
     </block>
     <block name="Geo init">
       <while cond="LessThan(NavBlockTime(), 10)"/>
-      <call_once fun="NavSetAltitudeReferenceHere()"/>
+      <!--<call_once fun="N!--avSetAltitudeReferenceHere()"/>-->
       <set value="TRUE" var="air_data.calc_qnh_once"/>
     </block>
     <block name="Holding point">

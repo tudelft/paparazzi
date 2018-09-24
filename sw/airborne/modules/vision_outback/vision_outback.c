@@ -50,7 +50,7 @@
 #define VISION_POWER_ON_AT_BOOT true
 #endif
 
-#define WANTED_VISION_VERSION 1.1f
+#define WANTED_VISION_VERSION 1.5f
 
 /* Main magneto structure */
 static struct vision_outback_t vision_outback = {
@@ -78,6 +78,7 @@ uint8_t vision_outback_power = VISION_SETTING_STATUS_REQUEST_POWER_ON;
 bool het_moment = false;
 bool vision_timeout = false; // TODO: remove
 float vision_height = false; // TODO: remove
+bool vision_found_joe = false;
 
 float msg_marker_x = 0;
 float msg_marker_y = 0;
@@ -109,6 +110,7 @@ static void send_vision_outback( struct transport_tx *trans, struct link_device 
 
   pprz_msg_send_VISION_OUTBACK(trans, dev, AC_ID,
                                &v2p_package.status,
+                               &v2p_package.landing_status,
                                (uint8_t *)&het_moment,
                                (uint8_t *)&timeoutcount,
                                (uint8_t *)&vision_timeout,
@@ -314,6 +316,10 @@ void vision_outback_periodic() {
     p2k_package.enables |= 0b10000000;
   if (vision_outback_update_system)
     p2k_package.enables |= 0b11000000;
+
+
+  vision_found_joe =  (vision_outback_enable_findjoe && (v2p_package.landing_status == ls_found_a_good_joe ||  v2p_package.landing_status == ls_fixed_joe_location || v2p_package.landing_status == ls_refound_fixed_joe || v2p_package.landing_status == ls_aruco_lock));
+
 
   if (timeoutcount > 0) {
       timeoutcount--;

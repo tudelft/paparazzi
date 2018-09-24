@@ -124,9 +124,9 @@ class Mission(object):
         waypoints = []
         for wp in self.flightplan.waypoints.member_list:
             # Select only waypoints from the Main path
-            if wp.name[:2] == "WP":
+            if wp.name[:2] == "FP":
                 wp_enu = geodetic.LlaCoor_f(wp.lat/180*math.pi, wp.lon/180*math.pi, self.flightplan.flight_plan.alt).to_enu(self.ltp_def)
-                wp_enu.z = self.flightplan.flight_plan.alt
+                wp_enu.z = self.flightplan.flight_plan.alt - self.flightplan.flight_plan.ground_alt
                 wp = TransitWaypoint(wp.name, wp_enu)
                 waypoints.append(wp)
         return waypoints    
@@ -198,7 +198,7 @@ class Mission(object):
             to_point_enu = self.mission_elements[idx].wp
             t_arrive = resolution.time_to_arrive_at_point(from_point_enu, to_point_enu, groundspeed)
             if (t_arrive > t_arrive_lock):
-                resolution_point = self.resolution_finder.resolution_on_leg(from_point_enu, to_point_enu, self.aircraft.get_gspeed(), dynamic_margin, self.aircraft, self.asterix_receiver.get_events(), wind, self.flightplan.flight_plan.alt, self.geofence, self.static_nfzs, max_tla, conflict_counter_th, avoidance_time_th, hdg_diff_th, avoid_dist_min)
+                resolution_point = self.resolution_finder.resolution_on_leg(from_point_enu, to_point_enu, self.aircraft.get_gspeed(), dynamic_margin, self.aircraft, self.asterix_receiver.get_events(), wind, self.flightplan.flight_plan.alt - self.flightplan.flight_plan.ground_alt, self.geofence, self.static_nfzs, max_tla, conflict_counter_th, avoidance_time_th, hdg_diff_th, avoid_dist_min)
                 if resolution_point == 'free':
                     return
                 elif resolution_point == 'nosol':
@@ -224,9 +224,8 @@ class Mission(object):
             #Check occupancy of baseif 
             if self.mission_comm.get_remote_idx() == 0:
                 start_location = self.mission_elements[0].wp
-                print("start_location_free: ", resolution.check_area_conflicts(start_location, base_radius, base_free_time, self.ltp_def, dynamic_margin, self.asterix_receiver.get_events()))
-                sys.stdout.flush()
-            
+                base_free = resolution.check_area_conflicts(start_location, base_radius, base_free_time, self.ltp_def, dynamic_margin, self.asterix_receiver.get_events())
+
             # Visualize the asterix events and the mission
             self.asterix_visualizer.visualize(self.asterix_receiver.get_events())
             self.mission_visualizer.visualize(self.mission_comm.get_mission())

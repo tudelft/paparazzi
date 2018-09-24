@@ -7,28 +7,20 @@
      * Baro:        MS5611 (AP)
      * Pitot+mag:   External in wing
      * Actuators:   10 PWM (FTD)
-     * GPS:         UBlox M8N (AP), UBlox M8N (FTD)
+     * GPS:         UBlox M8N (AP)
      * RC:          R-XSR SBUS (RC2)
      * Telemetry:   868/900 MHz Long range (AP), Iridium (FTD)
   </description>
 
   <firmware name="rotorcraft">
     <!-- AP (autopilot) part of the board -->
-    <target name="ap" board="opa_ap_1.0">
-      <!--target name="nps" board="pc">
-        <subsystem name="fdm" type="jsbsim"/>
-      </target-->
+    <target name="ap" board="disco">
 
-      <module name="opa_controller"/>
-      <module name="telemetry"     type="transparent">
-        <configure name="MODEM_BAUD" value="B9600"/>
-      </module>
-      <module name="imu"           type="mpu6000"/>
+      <module name="telemetry"     type="transparent_udp"/>
+      <module name="imu"           type="disco"/>
       <module name="gps"           type="ublox">
         <define name="GPS_TIMEOUT" value="2"/>
       </module>
-      <!--module name="sys_id_chirp"/-->
-      <!--module name="sys_id_doublet"/-->
       <module name="stabilization" type="int_quat"/>
       <module name="stabilization" type="rate"/>
       <module name="ahrs"          type="int_cmpl_quat">
@@ -43,56 +35,30 @@
       <module name="guidance"      type="delftacopter"/>
       <module name="guidance"      type="indi"/>
       <module name="gain_scheduling"/>
-      <module name="intermcu"      type="uart">
-        <configure name="SECONDARY_GPS" value="imcu"/>
-      </module>
-      <module name="telemetry"     type="intermcu"/>
-      <module name="current_sensor"/>
-      <module name="mag_pitot_uart" />
-      <module name="pwm_meas"/>
-      <module name="rpm_sensor">
-        <define name="RPM_PULSE_PER_RND" value="21"/>
-      </module>      
+      <module name="heli_swashplate_mixing"/>
+      <module name="disco_copter" />
+
       <module name="vision_outback">
         <configure name="VISION_OUTBACK_PORT" value="UART4"/>
       </module>
 
+      <module name="airspeed" type="ms45xx_i2c">
+        <define name="MS45XX_I2C_DEV" value="i2c1"/>
+        <define name="MS45XX_PRESSURE_RANVE" value="0.05"/>
+      </module>
+
       <module name="geo_mag"/>
+
       <module name="air_data">
-        <define name="AIR_DATA_BARO_ABS_ID" value="IMU_MAG_PITOT_ID"/>
-        <define name="AIR_DATA_TEMPERATURE_ID" value="IMU_MAG_PITOT_ID"/>
-        <!--define name="AIR_DATA_BARO_ABS_ID" value="BARO_BOARD_SENDER_ID"/>
-        <define name="AIR_DATA_TEMPERATURE_ID" value="BARO_BOARD_SENDER_ID"/-->
         <define name="AIR_DATA_CALC_AMSL_BARO" value="TRUE"/>
       </module>
 
-      <module name="temp_adc"/>
-      <module name="logger_sd_spi_direct">
-        <define name="SDLOGGER_ON_ARM" value="TRUE"/>
-      </module>
       <module name="gps_ubx_ucenter"/>
-      <module name="heli_throttle_curve"/>
-      <define name="ROTORCRAFT_IS_HELI" value="TRUE" />
       <define name="RC_LOST_MODE" value="AP_MODE_NAV" />
-    </target>
-
-    <!-- FBW (Flight by Wire) part of the board -->
-    <target name="fbw" board="opa_ftd_1.0">
 
       <module name="radio_control" type="sbus"/>
-      <module name="actuators"     type="pwm">
-        <define name="SERVO_HZ"    value="300"/>
-      </module>
-      <module name="intermcu"      type="uart">
-        <define name="IMCU_GPS_ID" value="GPS_UBX_ID"/>
-      </module>
-      <module name="telemetry"     type="intermcu"/>
-      <module name="opa_controller"/>
-      <module name="heli_swashplate_mixing"/>
-      <module name="gps" type="ublox"/>
-      <module name="gps_ubx_ucenter"/>
+      <module name="actuators"     type="disco"/>
 
-      <define name="FBW_MODE_STARTUP" value="FBW_MODE_AUTO"/><!-- Change default startup mode to AUTO -->
       <define name="RC_LOST_FBW_MODE" value="FBW_MODE_FAILSAFE"/><!-- Switch to Failsafe or to Autopilot on RC loss? -->
       <define name="RC_LOST_IN_AUTO_FBW_MODE" value="FBW_MODE_AUTO"/><!-- Switch to Failsafe with a working autopilot on RC loss? -->
       <define name="AP_LOST_FBW_MODE" value="FBW_MODE_MANUAL"/><!-- Switch to Failsafe or to Manual on AP loss? -->
@@ -107,43 +73,26 @@
     <define name="MAX_BAT_LEVEL" value="25.2" unit="V"/>
   </section>
 
-  <servos driver="Pwm">
-    <servo name="THROTTLE"       no="0" min="1000" neutral="1000" max="2000"/>
-    <servo name="SW_BACK"        no="1" min="1900" neutral="1500" max="1100"/>
-    <servo name="SW_LEFTFRONT"   no="2" min="1100" neutral="1500" max="1900"/>
-    <servo name="SW_RIGHTFRONT"  no="3" min="1900" neutral="1500" max="1100"/>
-    <servo name="TAIL_LEFT"      no="4" min="1100" neutral="1500" max="1900"/>
-    <servo name="TAIL_RIGHT"     no="5" min="1100" neutral="1500" max="1900"/>
-    <servo name="AIL_LEFTLOW"    no="6" min="1060" neutral="1460" max="1860"/>
-    <servo name="AIL_RIGHTLOW"   no="7" min="1140" neutral="1540" max="1940"/>
-    <servo name="AIL_LEFTUP"     no="8" min="1100" neutral="1500" max="1900"/>
-    <servo name="AIL_RIGHTUP"    no="9" min="1100" neutral="1500" max="1900"/>
+  <servos>
+    <servo name="MOTOR" no="0" min="1000" neutral="1000" max="12500"/>
+    <servo name="AILEVON_RIGHT" no="6" min="1900" neutral="1500" max="1100"/>
+    <servo name="AILEVON_LEFT" no="1" min="1100" neutral="1500" max="1900"/>
   </servos>
 
-  <!-- T-Motor 190kv with 24.2 inch prop -->
-  <!-- * Top linkages circa 59.7 mm
-       * Distance from the bottom the the upper-swashplate rotation-link ball-rodds to the bottom of the blade grip just above is circa 56.2 mm.
-       * The servo is about 30deg down in failsafe, where its bolt aligns with the 2 servo fixing bolts
-       * The top of the rotorhead should be 90.0mm (2OI) 88.1mm (3MM) 89.3mm (4HP)
-       * There should be at least 3mm below the swashplate up to 5mm with the 90.0mm rotoraxis
-       * This should correspond to the blade grip ball to be aligned with the rotorhead-T fixation bolt
-       * This should correspong to a blade grip or blade root angle of -17 degrees
-  -->
-
   <section name="GCS">
-    <define name="SPEECH_NAME" value="Two Oscar India"/>
+    <define name="SPEECH_NAME" value="Disco Copter One"/>
     <define name="AC_ICON" value="flyingwing"/>
   </section>
 
   <!-- Direct RC commands conversion for FBW -->
   <rc_commands>
-    <set command="THRUST"       value="@THROTTLE"/>
-    <set command="COLLECTIVE"   value="@THROTTLE-MAX_PPRZ"/>
+    <set command="THRUST"        value="@THROTTLE"/>
+    <set command="COLLECTIVE"   value="@THROTTLE"/>
     <set command="ROLL"         value="@ROLL"/>
     <set command="PITCH"        value="@PITCH"/>
     <set command="YAW"          value="@YAW"/>
     <set command="ELEVATOR"     value="@PITCH"/>
-    <set command="AILERON"      value="-@ROLL"/>
+    <set command="AILERON"      value="@ROLL"/>
   </rc_commands>
 
   <!-- Commands send from AP to FBW -->
@@ -153,8 +102,8 @@
     <axis name="PITCH"      failsafe_value="0"/>
     <axis name="YAW"        failsafe_value="0"/>
     <axis name="COLLECTIVE" failsafe_value="-9600"/>
-    <axis name="ELEVATOR"   failsafe_value="9600"/>
-    <axis name="AILERON"    failsafe_value="9600"/>
+    <axis name="ELEVATOR"   failsafe_value="0"/>
+    <axis name="AILERON"    failsafe_value="0"/>
   </commands>
 
   <!-- Swashplate mixing HR120 (1 Back, 2 Front at 120 degree) -->
@@ -178,21 +127,10 @@
     <call fun="swashplate_mixing_run(values)"/>
     <let var="th_hold"          value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
 
-    <!-- Enable or disable the tip propellors on an interMCU command -->
-    <let var="forward_curve"    value="INTERMCU_GET_CMD_STATUS(INTERMCU_CMD_TIPPROPS)"/>
-    <call fun="INTERMCU_CLR_CMD_STATUS(INTERMCU_CMD_TIPPROPS)"/>
-
     <!-- Output the PWM values -->
-    <set servo="THROTTLE"       value="($th_hold? -9600 : @THRUST)"/>
-    <set servo="SW_BACK"        value="swashplate_mixing.commands[SW_BACK]"/>
-    <set servo="SW_LEFTFRONT"   value="swashplate_mixing.commands[SW_LEFTFRONT]"/>
-    <set servo="SW_RIGHTFRONT"  value="swashplate_mixing.commands[SW_RIGHTFRONT]"/>
-    <set servo="TAIL_LEFT"      value="(Or($th_hold, $forward_curve)? 0 : (-@YAW - @THRUST*0.25) )"/>
-    <set servo="TAIL_RIGHT"     value="(Or($th_hold, $forward_curve)? 0 : (-@YAW - @THRUST*0.25) )"/>
-    <set servo="AIL_LEFTLOW"    value=" 1*@ELEVATOR + 1.5*@AILERON"/>
-    <set servo="AIL_RIGHTLOW"   value="-1*@ELEVATOR + 1.5*@AILERON"/>
-    <set servo="AIL_LEFTUP"     value=" 1*@ELEVATOR + 1.5*@AILERON"/>
-    <set servo="AIL_RIGHTUP"    value="-1*@ELEVATOR + 1.5*@AILERON"/>
+    <set servo="MOTOR"       value="($th_hold? -9600 : @THRUST)"/>
+    <set servo="AILEVON_RIGHT"     value="@ELEVATOR - @AILERON"/>
+    <set servo="AILEVON_LEFT"    value="@ELEVATOR + @AILERON"/>
   </command_laws>
 
   <!-- T-Motor 190kv with 24.2 inch prop -->
@@ -214,7 +152,7 @@
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
     <define name="APVoltageOfAdc(adc)" value="(adc*0.0061456 + 0.321688)"/>
     <define name="MilliAmpereOfAdc(_adc)" value="(DefaultMilliAmpereOfAdc(_adc) + 417 - 100)"/>
-    <define name="TRANSITION_MAX_OFFSET" value="-83.0" unit="deg"/>
+    <define name="TRANSITION_MAX_OFFSET" value="0.0" unit="deg"/>
     <define name="USE_EARTH_BOUND_RC_SETPOINT" value="TRUE"/>
   </section>
 
@@ -223,17 +161,17 @@
     <define name="ACCEL_Y_NEUTRAL" value="11"/>
     <define name="ACCEL_Z_NEUTRAL" value="-25"/>
 
-    <!-- Calibration 21-09-2018 dalby test field total setup with extra USB -->
-    <define name="MAG_X_NEUTRAL" value="-1"/>
-    <define name="MAG_Y_NEUTRAL" value="7"/>
-    <define name="MAG_Z_NEUTRAL" value="1"/>
-    <define name="MAG_X_SENS" value="16.5514602014" integer="16"/>
-    <define name="MAG_Y_SENS" value="15.4152361724" integer="16"/>
-    <define name="MAG_Z_SENS" value="15.3826558014" integer="16"/>
+    <!-- Calibration 18-07-2018 Valkenburg 4.5kg 190 KV 26inch with vision + 6s6p LiIo -->
+    <define name="MAG_X_NEUTRAL" value="5"/>
+    <define name="MAG_Y_NEUTRAL" value="-16"/>
+    <define name="MAG_Z_NEUTRAL" value="16"/>
+    <define name="MAG_X_SENS" value="19.6890782429" integer="16"/>
+    <define name="MAG_Y_SENS" value="16.5616985505" integer="16"/>
+    <define name="MAG_Z_SENS" value="16.6658506111" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
-    <define name="BODY_TO_IMU_PSI"   value="180." unit="deg"/>
+    <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
 
     <!-- Rotate magneto compared to imu -90 degress -->
     <define name="TO_MAG_PHI"   value="0." unit="deg"/>
@@ -402,7 +340,7 @@
     <define name="MAX_TURN_BANK" value="35.0"/>
     <define name="TURN_BANK_GAIN" value="0.5"/>
     <define name="PITCH_OF_ROLL" value="0.02"/>
-    <define name="THROTTLE_FROM_PITCH_UP" value="125.0"/>
+    <define name="THROTTLE_FROM_PITCH_UP" value="50.0"/>
     <define name="MIN_PITCH" value="-15.0"/>
     <define name="MAX_PITCH" value="10.0"/>
     <define name="MAX_PSI" value="20.0"/>
@@ -416,7 +354,7 @@
     <define name="PITCH_PGAIN" value="2500.0"/>
     <define name="PITCH_DGAIN" value="1000.0"/>
     <define name="PITCH_IGAIN" value="0.5"/>
-    <define name="PITCH_TRIM" value="1200"/>
+    <define name="PITCH_TRIM" value="200.0"/>
     <define name="K_FF_TO_YAW" value="600.0"/> <!-- order of magnitude -->
     <define name="ADVANCE_P" value="1.1"/>
     <define name="ADVANCE_Q" value="1.1"/>
@@ -432,8 +370,8 @@
 
   <!-- Different autopilot modes for the RC -->
   <section name="AUTOPILOT">
-    <define name="MODE_MANUAL" value="AP_MODE_RATE_DIRECT"/>
-    <define name="MODE_AUTO1"  value="AP_MODE_ATTITUDE_DIRECT"/>
+    <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
+    <define name="MODE_AUTO1"  value="AP_MODE_FORWARD"/>
     <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>
   </section>
 

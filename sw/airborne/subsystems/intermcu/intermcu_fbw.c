@@ -32,6 +32,7 @@
 #include "subsystems/electrical.h"
 #include "mcu_periph/uart.h"
 #include "modules/telemetry/telemetry_intermcu.h"
+#include "main_fbw.h"
 
 
 #include "modules/spektrum_soft_bind/spektrum_soft_bind_fbw.h"
@@ -51,6 +52,8 @@ tid_t px4bl_tid; ///< id for time out of the px4 bootloader reset
 #define RADIO_CONTROL_NB_CHANNEL 8
 INFO("InterMCU UART will only send 8 radio channels!")
 #endif
+
+extern fbw_mode_enum fbw_mode;
 
 /* Main InterMCU structure */
 struct intermcu_t intermcu = {
@@ -103,7 +106,7 @@ void intermcu_periodic(void)
   }
 }
 
-void intermcu_on_rc_frame(uint8_t fbw_mode)
+void intermcu_on_rc_frame(uint8_t rc_fbw_mode)
 {
   pprz_t  values[9];
 
@@ -133,7 +136,7 @@ void intermcu_on_rc_frame(uint8_t fbw_mode)
 #endif
 
   pprz_msg_send_IMCU_RADIO_COMMANDS(&(intermcu.transport.trans_tx), intermcu.device,
-                                    INTERMCU_FBW, &fbw_mode, RADIO_CONTROL_NB_CHANNEL, values);
+                                    INTERMCU_FBW, &rc_fbw_mode, RADIO_CONTROL_NB_CHANNEL, values);
 }
 
 void intermcu_send_status(uint8_t mode)
@@ -163,6 +166,10 @@ static void intermcu_parse_msg(void (*commands_frame_handler)(void))
         // Read the autopilot status and then clear it
         autopilot_motors_on = INTERMCU_GET_CMD_STATUS(INTERMCU_CMD_MOTORS_ON);
         INTERMCU_CLR_CMD_STATUS(INTERMCU_CMD_MOTORS_ON)
+
+        // Go to failsafe on receive of command from AP
+        if(INTERMCU_GET_CMD_STATUS(INTERMCU_CMD_FAILSAFE))
+          fbw_mode = FBW_MODE_FAILSAFE;
 
         for (i = 0; i < size; i++) {
           intermcu_commands[i] = new_commands[i];

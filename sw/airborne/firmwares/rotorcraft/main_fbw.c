@@ -54,6 +54,10 @@
 #define LessThan(_x, _y) ((_x) < (_y))
 #define MoreThan(_x, _y) ((_x) > (_y))
 
+/* Default FBW startup mode */
+#ifndef FBW_MODE_STARTUP
+#define FBW_MODE_STARTUP FBW_MODE_FAILSAFE
+#endif
 
 /** Fly by wire modes */
 fbw_mode_enum fbw_mode;
@@ -75,7 +79,7 @@ tid_t telemetry_tid;     ///< id for telemetry_periodic() timer
 void main_init(void)
 {
   // Set startup mode to Failsafe
-  fbw_mode = FBW_MODE_FAILSAFE;
+  fbw_mode = FBW_MODE_STARTUP;
 
   mcu_init();
 
@@ -257,6 +261,10 @@ static void fbw_on_rc_frame(void)
       (fbw_mode == FBW_MODE_AUTO)) {
     fbw_mode = AP_LOST_FBW_MODE;
   }
+
+  /* AP failsafe will win from RC */
+  if(INTERMCU_GET_CMD_STATUS(INTERMCU_CMD_FAILSAFE))
+    fbw_mode = FBW_MODE_FAILSAFE;
 
   /* If the FBW is in control */
   if (fbw_mode == FBW_MODE_MANUAL) {

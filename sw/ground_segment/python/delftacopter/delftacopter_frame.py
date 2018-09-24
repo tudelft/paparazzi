@@ -37,7 +37,7 @@ sys.path.append(PPRZ_HOME + "/var/lib/python")
 from pprzlink.ivy import IvyMessagesInterface
 
 WIDTH = 850.0
-HEIGHT = 750.0
+HEIGHT = 820.0
 
 
 class DelftaCopterFrame(wx.Frame):
@@ -49,7 +49,7 @@ class DelftaCopterFrame(wx.Frame):
         self.track_lasteast = self.east
         self.track_distance = self.track_distance + math.sqrt(dx*dx+dy*dy)
 
-    def vision_landing_status(self):
+    def vision_landing_status_text(self):
         landing_status_enum = {
             0: "Init",
             1: "Searching_joe",
@@ -59,21 +59,22 @@ class DelftaCopterFrame(wx.Frame):
             5: "Lost_fixed_joe",
             6: "Refound_fixed_joe",
             7: "Aruco_lock",
-            8: "Lost_aruco_lock"
+            8: "Lost_aruco_lock",
+            9: "error"
         }
-        self.landing_status = landing_status_enum.get(argument, "unknown")
+        return landing_status_enum.get(self.vision_landing_status, "unknown")
 
     def message_recv(self, ac_id, msg):
         if msg.name =="ROTORCRAFT_FP_MIN":
             self.gspeed = round(float(msg['gspeed']) / 100.0 * 3.6 / 1.852,1)
-            self.alt = round(float(msg['up']) * 0.0039063 * 3.28084 ,1)
+            # self.alt = round(float(msg['up']) * 0.0039063 * 3.28084 ,1)
             self.toggle()
             wx.CallAfter(self.update)
         elif msg.name =="ROTORCRAFT_FP":
             self.east = float(msg['east']) * 0.0039063
             self.north = float(msg['north']) * 0.0039063
             self.count_distance()  # do not count_distance in 2 messages: use single source
-            self.alt = round(float(msg['up']) * 0.0039063 ,1)
+            self.alt = round(float(msg['up']) * 0.0039063,1)
             self.alt_sp = round(float(msg['carrot_up']) * 0.0039063 ,1)
             self.toggle()
             wx.CallAfter(self.update)
@@ -109,6 +110,7 @@ class DelftaCopterFrame(wx.Frame):
             wx.CallAfter(self.update)
         elif msg.name =="VISION_OUTBACK":
             self.vision_status = round(float(msg['status']) )
+            self.vision_landing_status = round(float(msg['landing_status']))
             self.vision_marker_x = round(float(msg['marker_enu_x']) ,1)
             self.vision_marker_y = round(float(msg['marker_enu_y']) ,1)
             self.vision_height = round(float(msg['height']) , 1)
@@ -294,19 +296,22 @@ class DelftaCopterFrame(wx.Frame):
         dc.DrawText("SideSlip: {:.2f}".format(self.sideslip),self.stat+tdx,tdx+tdy*4)
         self.StatusBox(dc,4,"",1.0, self.sideslip_color())
 
-        dc.DrawText("Vision: " + self.get_vision_status() + " " + str(self.vision_height) + "m " + str(self.vision_marker_x) + "," + str(self.vision_marker_y) + " v" + str(self.vision_version) ,self.stat+tdx,tdx+tdy*5)
+        dc.DrawText("Vision: " + self.get_vision_status() + " " + str(self.vision_height) + "m " + " v" + str(self.vision_version) ,self.stat+tdx,tdx+tdy*5)
         self.StatusBox(dc,5,"",1.0, self.vision_color())
 
+        dc.DrawText("Vision Landing: " + self.vision_landing_status_text() + " " + str(self.vision_marker_x) + "," + str(self.vision_marker_y) ,self.stat+tdx,tdx+tdy*6)
+        self.StatusBox(dc,6,"",1.0, self.vision_color())
 
-        dc.DrawText("DeltaH: " + str(self.alt_sp - self.alt)  ,self.stat+tdx,tdx+tdy*6)
-        self.StatusBox(dc,6,"",1.0, self.alt_color())
-        dc.DrawText("GPS-ACC: " + str(int(self.gps_fix)) + ", #" + str(int(self.gps_sv)) + ", " + str(self.gps_acc) + "m" ,self.stat+tdx,tdx+tdy*7)
-        self.StatusBox(dc,7,"",1.0, self.gps_color())
+        dc.DrawText("DeltaH: " + str(self.alt_sp - self.alt)  ,self.stat+tdx,tdx+tdy*7)
+        self.StatusBox(dc,7,"",1.0, self.alt_color())
+
+        dc.DrawText("GPS-ACC: " + str(int(self.gps_fix)) + ", #" + str(int(self.gps_sv)) + ", " + str(self.gps_acc) + "m" ,self.stat+tdx,tdx+tdy*8)
+        self.StatusBox(dc,8,"",1.0, self.gps_color())
         
-        dc.DrawText("Trim elev {} ail {}".format(self.trim_pitch, self.trim_roll), self.stat+tdx, tdx+tdy*8)
-        self.StatusBox(dc,8,"",1.0, self.trim_color())
+        dc.DrawText("Trim elev {} ail {}".format(self.trim_pitch, self.trim_roll), self.stat+tdx, tdx+tdy*9)
+        self.StatusBox(dc,9,"",1.0, self.trim_color())
 
-        dc.DrawText("Flown Dist: " + str(round(self.track_distance / 1000.0,1)) + " km",self.stat+tdx,tdx+tdy*9)
+        dc.DrawText("Flown Dist: " + str(round(self.track_distance / 1000.0,1)) + " km",self.stat+tdx,tdx+tdy*10)
 
         #c = wx.Colour(0,0,0)
         #dc.SetBrush(wx.Brush(c, wx.SOLID))
@@ -332,10 +337,11 @@ class DelftaCopterFrame(wx.Frame):
         self.sideslip = 999
 
         self.vision_status = -1
+        self.vision_landing_status = -1
         self.vision_marker_x = -1
         self.vision_marker_y = -1
         self.vision_height = -1
-        self.vision_version =-1
+        self.vision_version = -1
 
         self.range = -1
         self.alt = 0

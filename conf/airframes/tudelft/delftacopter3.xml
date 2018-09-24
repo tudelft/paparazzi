@@ -92,6 +92,7 @@
       <module name="gps" type="ublox"/>
       <module name="gps_ubx_ucenter"/>
 
+      <define name="FBW_MODE_STARTUP" value="FBW_MODE_AUTO"/><!-- Change default startup mode to AUTO -->
       <define name="RC_LOST_FBW_MODE" value="FBW_MODE_FAILSAFE"/><!-- Switch to Failsafe or to Autopilot on RC loss? -->
       <define name="RC_LOST_IN_AUTO_FBW_MODE" value="FBW_MODE_AUTO"/><!-- Switch to Failsafe with a working autopilot on RC loss? -->
       <define name="AP_LOST_FBW_MODE" value="FBW_MODE_MANUAL"/><!-- Switch to Failsafe or to Manual on AP loss? -->

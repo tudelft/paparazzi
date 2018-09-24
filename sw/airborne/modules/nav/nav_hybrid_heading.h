@@ -32,6 +32,7 @@ extern void nav_hybrid_heading_set(void);
 extern void nav_hybrid_heading_set_left(void);
 extern void nav_hybrid_heading_set_nose(void);
 extern void nav_hybrid_heading_set_right(void);
+extern void nav_hybrid_heading_set_fast(void);
 
 // Turn to waypoint
 extern void nav_hybrid_heading_init_to_waypoint(int wp);
