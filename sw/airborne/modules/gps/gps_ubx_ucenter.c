@@ -539,11 +539,13 @@ static bool gps_ubx_ucenter_configure(void)
         DEBUG_PRINT("%u\n", gps_ubx_ucenter.replies[i]);
       }
 #endif
+#ifdef DOWNLINK_TRANSPORT
       {
         uint8_t a = 0;
         uint8_t b = 0;
         DOWNLINK_SEND_UBLOX_INFO(DefaultChannel, DefaultDevice, &gps_ubx_ucenter.baud_run, &gps_ubx_ucenter.sw_ver_h, &gps_ubx_ucenter.sw_ver_l, &gps_ubx_ucenter.hw_ver_h, &gps_ubx_ucenter.hw_ver_l, &a, &b);
       }
+#endif
       return true;
     default:
       break;
