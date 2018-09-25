@@ -415,14 +415,14 @@
     <define name="ROLL_TRIM" value="0.0"/>
     <define name="PITCH_PGAIN" value="2500.0"/>
     <define name="PITCH_DGAIN" value="1000.0"/>
-    <define name="PITCH_IGAIN" value="0.5"/>
+    <define name="PITCH_IGAIN" value="0.75"/>
     <define name="PITCH_TRIM" value="1200"/>
     <define name="K_FF_TO_YAW" value="600.0"/> <!-- order of magnitude -->
     <define name="ADVANCE_P" value="1.1"/>
     <define name="ADVANCE_Q" value="1.1"/>
     <define name="PITCH_SWP" value="0.0"/>
-    <define name="ROLL_SWP_TRIM" value="0"/>
-    <define name="PITCH_SWP_TRIM" value="0"/>
+    <define name="ROLL_SWP_TRIM" value="600"/>
+    <define name="PITCH_SWP_TRIM" value="600"/>
   </section>
 
   <!-- Radio control specific switches -->
