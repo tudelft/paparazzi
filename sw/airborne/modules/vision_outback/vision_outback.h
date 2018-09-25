@@ -49,6 +49,7 @@ struct Vision2PPRZPackage {
     float stupid_pprz_height;
     float marker_enu_x;
     float marker_enu_y;
+    float marker_score;
     float flow_x;
     float flow_y;
     float version;
