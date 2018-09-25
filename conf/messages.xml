@@ -617,7 +617,13 @@
       <field name="GX3_chksm"	type="uint16"/>
     </message>
 
-    <!-- 74 is free -->
+    <message name="UBLOX_VERSION" id="74">
+      <field name="ver_sw_h"  type="uint8" />
+      <field name="ver_sw_l"  type="uint8" />
+      <field name="ver_hw_h"  type="uint8" />
+      <field name="ver_hw_l"  type="uint8" />
+    </message>
+
     <!-- 75 is free -->
     <!-- 76 is free -->
     <!-- 77 is free -->
