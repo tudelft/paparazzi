@@ -215,7 +215,7 @@ class AsterixEvent(object):
         if ev_type == AsterixEvent.OTHER_AIR_TRAFFIC:
             return 300.
         elif ev_type == AsterixEvent.LOCALIZED_WEATHER:
-            return 150. + 150. * self.alt/3000.
+            return 200.
         elif ev_type == AsterixEvent.MIGRATORY_BIRD:
             return 100.
         else:
