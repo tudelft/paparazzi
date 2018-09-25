@@ -142,7 +142,7 @@ class EnergyPrediction(object):
     energy_land = 3  # Wh required to land
     energy_takeoff = 3  # Wh required for take-off
     charge_land = 0.3 * 1000 # mAh for battery
-    power_hover = 550  # W required for hover per battery
+    power_hover = 700  # W required for hover per battery
     power_hover_cell = power_hover / bat.cells_in_battery
     min_allowable_voltage = 3.0
     expected_landing_time = 30
