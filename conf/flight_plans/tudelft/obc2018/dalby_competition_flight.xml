@@ -437,7 +437,7 @@
       <deroute block="transition_at_joe"/>
     </block>
     <block group="fly_to_joe" name="route_to_joe_mission">
-      <exception cond="do_avoid_mission" deroute="route_to_joe0"/>
+      <exception cond="!do_avoid_mission" deroute="route_to_joe0"/>
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
       <call fun="mission_path_run(10000)"/>
       <deroute block="transition_at_joe"/>
@@ -615,7 +615,7 @@
       <deroute block="transition_at_base"/>
     </block>
     <block group="fly_to_base" name="route_to_base_mission">
-      <exception cond="do_avoid_mission" deroute="route_to_base0"/>
+      <exception cond="!do_avoid_mission" deroute="route_to_base0"/>
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
       <call fun="mission_path_run(30000)"/>
       <deroute block="transition_at_base"/>
