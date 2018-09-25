@@ -201,7 +201,7 @@ class Mission(object):
             to_point_enu = self.mission_elements[idx].wp
             t_arrive = resolution.time_to_arrive_at_point(from_point_enu, to_point_enu, groundspeed)
             if (t_arrive > t_arrive_lock):
-                resolution_point = self.resolution_finder.resolution_on_leg(from_point_enu, to_point_enu, self.aircraft.get_gspeed(), dynamic_margin, self.aircraft, self.asterix_receiver.get_events(), wind, self.flightplan.flight_plan.alt - self.flightplan.flight_plan.ground_alt, self.geofence, self.static_nfzs, max_tla, conflict_counter_th, avoidance_time_th, hdg_diff_th, avoid_dist_min)
+                resolution_point = self.resolution_finder.resolution_on_leg(from_point_enu, to_point_enu, self.aircraft.get_gspeed(), dynamic_margin, self.aircraft, self.asterix_receiver.get_events(), wind, to_point_enu.z, self.geofence, self.static_nfzs, max_tla, conflict_counter_th, avoidance_time_th, hdg_diff_th, avoid_dist_min)
                 if resolution_point == 'free':
                     return
                 elif resolution_point == 'nosol':
