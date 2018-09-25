@@ -140,8 +140,8 @@ void vision_outback_init() {
   timeoutcount = 0;
   enable_wp_telemetry_updates();
 
-  msg_marker_x = WaypointX(WP_JOE_reported);
-  msg_marker_y = WaypointY(WP_JOE_reported);
+  msg_marker_x = WaypointX(WP_JOE);
+  msg_marker_y = WaypointY(WP_JOE);
   msg_best_landing_status = ls_init;
 
 }
