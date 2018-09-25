@@ -102,7 +102,7 @@ float vision_outback_moment_height = 0.1;
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
-uint8_t timeoutcount = 0;
+uint16_t timeoutcount = 0;
 void enable_wp_telemetry_updates(void);
 void do_power_state_machine(void);
 
@@ -196,7 +196,8 @@ static inline void vision_outback_parse_msg(void)
         for(uint8_t i = 0; i < size; i++) {
             tmp[i] = msg[i];
           }
-        timeoutcount = 1*VISION_OUTBACK_PERIODIC_FREQ;
+        if (timeoutcount < 1*VISION_OUTBACK_PERIODIC_FREQ)
+          timeoutcount = 1*VISION_OUTBACK_PERIODIC_FREQ;
         static int32_t frame_id_prev = 0;
         if (frame_id_prev == v2p_package.frame_id) { // Realsense resets id when changing from stereo to color. So, only check if frame is not freezing.
             timeoutcount = 0;
@@ -437,11 +438,13 @@ void do_power_state_machine(void) {
     }
 }
 
-void enableVisionDescent(bool b) {    
+void enableVisionDescent(bool b) {
+  timeoutcount = 10*VISION_OUTBACK_PERIODIC_FREQ;
   vision_outback_enable_landing = b;
 }
 
 void enableVisionFindJoe(bool b) {
+  timeoutcount = 10*VISION_OUTBACK_PERIODIC_FREQ;
   vision_outback_enable_findjoe = b;
 }
 
