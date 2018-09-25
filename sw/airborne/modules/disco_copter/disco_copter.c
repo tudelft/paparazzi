@@ -82,4 +82,9 @@ void disco_copter_init()
 
 }
 
+bool hasFoundGoodJoe(void)
+{
+	return 1;
+}
+
 
