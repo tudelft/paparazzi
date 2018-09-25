@@ -36,7 +36,8 @@ sys.path.append(PPRZ_HOME + "/var/lib/python")
 
 from pprzlink.ivy import IvyMessagesInterface
 
-WIDTH = 300
+HEIGHT = 500.0
+WIDTH = 700.0
 
 
 class AtcFrame(wx.Frame):
@@ -105,20 +106,20 @@ class AtcFrame(wx.Frame):
         w = self.w
         h = self.h
 
-        if (float(w)/float(h)) > (7.0/5.0):
-          w = int(h * 7.0/5.0)
+        if (float(w)/float(h)) > (WIDTH/HEIGHT):
+          w = int(h * WIDTH/HEIGHT)
         else:
-          h = int(w * 5.0/7.0)
+          h = int(w * HEIGHT/WIDTH)
 
-	tdy = int(w * 75.0 / 700.0)
-        tdx = int(w * 15.0 / 700.0)
+	tdy = int(w * 75.0 / WIDTH)
+        tdx = int(w * 15.0 / WIDTH)
         
         dc = wx.PaintDC(self)
         #brush = wx.Brush("white")
         #dc.SetBackground(brush)
         #dc.Clear()
 
-	fontscale = int(w * 40.0 / 700.0)
+	fontscale = int(w * 40.0 / WIDTH)
         if fontscale < 6:
             fontscale = 6
 
@@ -147,8 +148,8 @@ class AtcFrame(wx.Frame):
     def __init__(self):
 
 
-        self.w = 700
-        self.h = 500
+        self.w = WIDTH
+        self.h = HEIGHT
 
         self.airspeed = 0;
 
