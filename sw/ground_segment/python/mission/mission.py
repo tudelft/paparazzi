@@ -126,8 +126,8 @@ class Mission(object):
         for wp in self.flightplan.waypoints.member_list:
             # Select only waypoints from the Main path
             if wp.name[:2] == prefix:
-                wp_enu = geodetic.LlaCoor_f(wp.lat/180*math.pi, wp.lon/180*math.pi, self.flightplan.flight_plan.alt).to_enu(self.ltp_def)
-                wp_enu.z = self.flightplan.flight_plan.alt - self.flightplan.flight_plan.ground_alt
+                wp_enu = geodetic.LlaCoor_f(wp.lat/180*math.pi, wp.lon/180*math.pi, wp.alt).to_enu(self.ltp_def)
+                #wp_enu.z = self.flightplan.flight_plan.alt - self.flightplan.flight_plan.ground_alt
                 wp = TransitWaypoint(wp.name, wp_enu)
                 waypoints.append(wp)
         if (inverted == True):

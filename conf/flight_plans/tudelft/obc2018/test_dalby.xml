@@ -25,14 +25,14 @@
     <waypoint height="40.0" name="JOE_reported" lat="-27.2173751" lon="151.2385633"/>
     <waypoint height="30.0" name="JOE_found" x="-258.1" y="-21.9"/>
     <waypoint height="30.0" name="TD_mrk" x="-240.6" y="-36.0"/>
-    <waypoint name="FP0" lat="-27.2178778" lon="151.2414347"/>
-    <waypoint name="FP1" lat="-27.2199193" lon="151.2366817"/>
-    <waypoint name="FP2" lat="-27.2203979" lon="151.2394529"/>
-    <waypoint name="FP3" lat="-27.2168660" lon="151.2383462"/>
-    <waypoint name="FP4" lat="-27.2192055" lon="151.2406009"/>
-    <waypoint name="FP5" lat="-27.2216095" lon="151.2361086"/>
-    <waypoint name="FP6" lat="-27.2217650" lon="151.2388523"/>
-    <waypoint name="FP7" lat="-27.2187869" lon="151.2381259"/>
+    <waypoint name="FP0" lat="-27.2178778" lon="151.2414347" alt="407"/>
+    <waypoint name="FP1" lat="-27.2199193" lon="151.2366817" alt="437"/>
+    <waypoint name="FP2" lat="-27.2203979" lon="151.2394529" alt="437"/>
+    <waypoint name="FP3" lat="-27.2168660" lon="151.2383462" alt="437"/>
+    <waypoint name="FP4" lat="-27.2192055" lon="151.2406009" alt="437"/>
+    <waypoint name="FP5" lat="-27.2216095" lon="151.2361086" alt="437"/>
+    <waypoint name="FP6" lat="-27.2217650" lon="151.2388523" alt="437"/>
+    <waypoint name="FP7" lat="-27.2187869" lon="151.2381259" alt="407"/>
     <waypoint height="40.0" name="j1" x="197.4" y="38.8"/>
     <waypoint height="40.0" name="j2" x="80.8" y="-12.5"/>
     <waypoint height="40.0" name="j3" x="235.4" y="1.7"/>
