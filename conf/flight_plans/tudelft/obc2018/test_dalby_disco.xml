@@ -143,7 +143,7 @@
     </block>
     <block group="fly_to_joe" name="route_to_joe_mission">
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
-      <call fun="mission_path_run()"/>
+      <call fun="mission_path_run(10000)"/>
       <deroute block="route_to_joe"/>
     </block>
     <block group="fly_to_joe" name="transition_at_joe">

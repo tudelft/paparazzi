@@ -114,9 +114,9 @@ bool mission_path_run(void) {
   }
 }
 #else
-bool mission_path_run(void) {
+bool mission_path_run(uint16_t until) {
   // Check if we have at least one element
-  if(mission_path_last_idx == 0 || mission_path_idx >= mission_path_last_idx)
+  if(mission_path_last_idx == 0 || mission_path_idx >= mission_path_last_idx || mission_path[mission_path_idx].id >= until)
     return false;
   
   // Goto first waypoint

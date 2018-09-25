@@ -174,7 +174,7 @@
       <go from="START" hmode="route" wp="WP1"/>
     </block>
     <block name="RUN MISSION">
-      <call fun="mission_path_run()"/>
+      <call fun="mission_path_run(10000)"/>
       <deroute block="Standby"/>
     </block>
     <block name="Land Right AF-TD" strip_button="Land right (wp AF-TD)" strip_icon="land-right.png">
