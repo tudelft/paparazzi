@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
 
-<flight_plan alt="437" ground_alt="337" home_mode_height="437" lat0="-27.27392" lon0="151.290039" max_dist_from_home="2800" name="DALBY2018" qfu="20" security_height="10">
+<flight_plan alt="437" ground_alt="337" home_mode_height="437" lat0="-27.27392" lon0="151.290039" max_dist_from_home="13000" name="DALBY2018" qfu="20" security_height="10">
   <header>
 #include "autopilot.h"
 #include "guidance/guidance_delftacopter.h"
@@ -30,11 +30,12 @@
     <waypoint name="HOVER" x="-239.7" y="-134.0"/>
     <waypoint lat="-27.2739" lon="151.290039" name="BASE"/>
     <waypoint lat="-27.357830" lon="151.240222" name="JOE_reported"/>
+    <waypoint lat="-27.357830" lon="151.240222" name="JOE"/>
+    <waypoint lat="-27.280426" lon="151.290535" name="FP0"/>
     <waypoint lat="-27.32544133940339" lon="151.2810230591555" name="FP1"/>
     <waypoint lat="-27.27292716526073" lon="151.2906279518992" name="FP2"/>
     <waypoint lat="-27.273033" lon="151.273964" name="FP3"/>
     <waypoint lat="-27.318887" lon="151.257506" name="FP4"/>
-    <waypoint lat="-27.280426" lon="151.290535" name="FP0"/>
     <waypoint lat="-27.331643" lon="151.252819" name="FP5"/>
     <waypoint lat="-27.347147" lon="151.243603" name="FP6"/>
     <waypoint lat="-27.357183" lon="151.242202" name="FP7"/>
@@ -200,7 +201,7 @@
       <corner name="_NFZ10_2"/>
       <corner name="_NFZ10_3"/>
     </sector>
-    <sector color="orange" name="NFZ10" type="dynamic">
+    <sector color="orange" name="NFZ11" type="dynamic">
       <corner name="_NFZ11_0"/>
       <corner name="_NFZ11_1"/>
       <corner name="_NFZ11_2"/>
@@ -419,7 +420,7 @@
       <set value="FALSE" var="do_avoid_mission"/>
       <go from="FP3" hmode="route" wp="FP4"/>
     </block>
-    <block group="fly_to_joe" name="route_to_joe4">
+    <block group="fly_to_joe" name="route_to_joe5">
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
       <set value="FALSE" var="do_avoid_mission"/>
       <go from="FP4" hmode="route" wp="FP5"/>
