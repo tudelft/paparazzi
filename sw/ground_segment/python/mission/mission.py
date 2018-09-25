@@ -66,7 +66,7 @@ class Mission(object):
         self.ref_lla_i = geodetic.LlaCoor_i(int(self.flightplan.flight_plan.lat0*10.**7), int(self.flightplan.flight_plan.lon0*10.**7), int(0.*1000.))
         self.ref_utm_i = geodetic.UtmCoor_i()
         geodetic.utm_of_lla_i(self.ref_utm_i, self.ref_lla_i)  
-        self.ltp_def = geodetic.LlaCoor_f(self.flightplan.flight_plan.lat0/180*math.pi, self.flightplan.flight_plan.lon0/180*math.pi, self.flightplan.flight_plan.alt).to_ltp_def()   
+        self.ltp_def = geodetic.LlaCoor_f(self.flightplan.flight_plan.lat0/180*math.pi, self.flightplan.flight_plan.lon0/180*math.pi, self.flightplan.flight_plan.ground_alt).to_ltp_def()   
         
         # From flightplan
         self.transit_points_to_joe = self.transit_waypoints_from_fp('FP')
