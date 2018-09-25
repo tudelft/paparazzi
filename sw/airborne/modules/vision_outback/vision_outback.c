@@ -82,6 +82,7 @@ bool vision_found_joe = false;
 
 float msg_marker_x = 0;
 float msg_marker_y = 0;
+uint8_t msg_best_landing_status = 0;
 
 //TMP for debugging weird uart crossover talk shizzle
 int turbocnt = 0;
@@ -138,6 +139,10 @@ void vision_outback_init() {
   v2p_package.status = 1;
   timeoutcount = 0;
   enable_wp_telemetry_updates();
+
+  msg_marker_x = WaypointX(WP_JOE_reported);
+  msg_marker_y = WaypointY(WP_JOE_reported);
+  msg_best_landing_status = ls_init;
 
 }
 
@@ -223,10 +228,21 @@ static inline void vision_outback_parse_msg(void)
           }
 
         if (vision_outback_enable_findjoe) {
-            waypoint_set_xy_i(WP_TD_mrk, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
-            waypoint_set_xy_i(WP_JOE_found, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
-            msg_marker_x = v2p_package.marker_enu_x;
-            msg_marker_y = v2p_package.marker_enu_y;
+            /*if (
+                (msg_best_landing_status < ls_found_a_joe) ||
+                (v2p_package.landing_status == ls_found_a_good_joe) ||
+                (v2p_package.landing_status == ls_found_a_good_joe) ||
+                (v2p_package.landing_status == ls_fixed_joe_location) ||
+                (v2p_package.landing_status == ls_aruco_lock) ||
+                (v2p_package.landing_status == ls_refound_fixed_joe)
+                )
+            {*/
+              msg_best_landing_status = v2p_package.landing_status;
+              waypoint_set_xy_i(WP_TD_mrk, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
+              waypoint_set_xy_i(WP_JOE_found, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
+              msg_marker_x = v2p_package.marker_enu_x;
+              msg_marker_y = v2p_package.marker_enu_y;
+            //}
           }
 
         if (!(v2p_package.version > WANTED_VISION_VERSION-0.09 && v2p_package.version < WANTED_VISION_VERSION+0.09 ))
