@@ -617,11 +617,14 @@
       <field name="GX3_chksm"	type="uint16"/>
     </message>
 
-    <message name="UBLOX_VERSION" id="74">
+    <message name="UBLOX_INFO" id="74">
+      <field name="baud"  type="uint32" />
       <field name="ver_sw_h"  type="uint8" />
       <field name="ver_sw_l"  type="uint8" />
-      <field name="ver_hw_h"  type="uint8" />
-      <field name="ver_hw_l"  type="uint8" />
+      <field name="ver_hw_h"  type="uint16" />
+      <field name="ver_hw_l"  type="uint16" />
+      <field name="sbas"  type="uint8" />
+      <field name="glonas"  type="uint8" />
     </message>
 
     <!-- 75 is free -->

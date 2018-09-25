@@ -455,15 +455,6 @@ static bool gps_ubx_ucenter_configure(void)
       // Version info is important for proper configuration as different firmwares have different settings
       break;
     case 6:
-      // Send some debugging info: detected baudrate, software version etc...
-      gps_ubx_ucenter.replies[0] = (gps_ubx_ucenter.baud_init / 1000);
-      gps_ubx_ucenter.replies[1] = (gps_ubx_ucenter.baud_init - 1000 * gps_ubx_ucenter.replies[0]) / 100;
-      gps_ubx_ucenter.replies[2] = gps_ubx_ucenter.sw_ver_h;
-      gps_ubx_ucenter.replies[3] = gps_ubx_ucenter.sw_ver_l;
-      gps_ubx_ucenter.replies[4] = gps_ubx_ucenter.hw_ver_h;
-      gps_ubx_ucenter.replies[5] = gps_ubx_ucenter.hw_ver_l;
-      DOWNLINK_SEND_DEBUG(DefaultChannel, DefaultDevice, 6, gps_ubx_ucenter.replies);
-      DOWNLINK_SEND_UBLOX_VERSION(DefaultChannel, DefaultDevice, &gps_ubx_ucenter.sw_ver_h, &gps_ubx_ucenter.sw_ver_l, &gps_ubx_ucenter.hw_ver_h, &gps_ubx_ucenter.hw_ver_l)
       // Configure CFG-NAV(5) message
       gps_ubx_ucenter_config_nav();
       break;
@@ -548,6 +539,11 @@ static bool gps_ubx_ucenter_configure(void)
         DEBUG_PRINT("%u\n", gps_ubx_ucenter.replies[i]);
       }
 #endif
+      {
+        uint8_t a = 0;
+        uint8_t b = 0;
+        DOWNLINK_SEND_UBLOX_INFO(DefaultChannel, DefaultDevice, &gps_ubx_ucenter.baud_run, &gps_ubx_ucenter.sw_ver_h, &gps_ubx_ucenter.sw_ver_l, &gps_ubx_ucenter.hw_ver_h, &gps_ubx_ucenter.hw_ver_l, &a, &b);
+      }
       return true;
     default:
       break;
