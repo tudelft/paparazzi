@@ -60,9 +60,10 @@ struct gps_ubx_ucenter_struct {
 
   uint8_t sw_ver_h;
   uint8_t sw_ver_l;
-
   uint16_t hw_ver_h;
   uint16_t hw_ver_l;
+
+  uint8_t gnss_in_use;
 
   /// Port identifier number
   uint8_t port_id;

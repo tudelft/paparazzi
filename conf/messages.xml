@@ -624,7 +624,7 @@
       <field name="ver_hw_h"  type="uint16" />
       <field name="ver_hw_l"  type="uint16" />
       <field name="sbas"  type="uint8" />
-      <field name="glonas"  type="uint8" />
+      <field name="gnss"  type="uint8" values="NONE|GPS|GLONAS|GPS+GLONAS|BEIDOU|GPS+BEIDOU|GLONAS+BEIDOU|GPS+GLONAS+BEIDOU|GALILEO"/>
     </message>
 
     <!-- 75 is free -->
