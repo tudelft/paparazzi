@@ -402,6 +402,20 @@ supported.
       </block>
     </message>
 
+    <message name="GET_GNSS" ID="0x28" length="0">
+    </message>
+
+    <message name="GNSS" ID="0x28" length="8">
+      <field name="version" format="U1"/>
+      <field name="supported" format="U1"/>
+      <field name="defaultGnss" format="U1"/>
+      <field name="enabled" format="U1"/>
+      <field name="simultaneous" format="U1"/>
+      <field name="reserved1" format="U1"/>
+      <field name="reserved2" format="U1"/>
+      <field name="reserved3" format="U1"/>
+    </message>
+
   </msg_class>
 
 </ubx>
