@@ -32,10 +32,10 @@ import os
 from os import path
 pygtk.require('2.0')
 
-
+# Old number 00881631625613
 DEFAULT_DEVICE = "/dev/ttyUSB0"
 DEFAULT_BAUD = "19200"
-DEFAULT_NUMBER = "00881631625613"
+DEFAULT_NUMBER = "00881632582242"
 UDP_IN = 4243
 UDP_OUT = 4242
 
