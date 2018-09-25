@@ -481,3 +481,16 @@ bool getVisionReady(void) {
 bool hasFoundGoodJoe(void) {
   return v2p_package.landing_status == ls_found_a_good_joe;
 }
+
+
+void enableVisionPower(void)
+{
+  vision_outback_power = VISION_POWER_STATUS_POWER_ON;
+}
+
+void killVision(void)
+{
+  vision_outback_power = VISION_POWER_STATUS_POWERED_OFF;
+}
+
+

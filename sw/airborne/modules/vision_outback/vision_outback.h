@@ -131,6 +131,9 @@ extern bool enableVisionVideoRecord(bool b);
 extern bool enableVisionShutdown(bool b);
 extern bool enableVisionCloseProcess(bool b);
 
+extern void enableVisionPower(void);
+extern void killVision(void);
+
 extern bool getVisionReady(void);
 extern bool hasFoundGoodJoe(void);
 

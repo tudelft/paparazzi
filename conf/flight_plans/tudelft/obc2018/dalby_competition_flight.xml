@@ -431,6 +431,7 @@
       <go from="FP5" hmode="route" wp="FP6"/>
     </block>
     <block group="fly_to_joe" name="route_to_joe7">
+      <call_once fun="enableVisionPower()" />
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
       <set value="FALSE" var="do_avoid_mission"/>
       <go from="FP6" hmode="route" wp="FP7"/>
@@ -443,9 +444,15 @@
       <deroute block="transition_at_joe"/>
     </block>
     <block group="fly_to_joe" name="transition_at_joe">
+      <call_once fun="enableVisionPower()" />
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
       <go wp="j1"/>
     </block>
+    <block>
+      <exception cond="getVisionReady()" deroute="find_joe" />
+      <deroute name="fjoe_hover" />
+    </block>
+
 
     <!-- Find joe and land with vision -->
     <block group="find_joe" name="find_joe">
@@ -501,8 +508,7 @@
     <block group="land_joe" name="joe_descendSlow">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <exception cond="het_moment" deroute="joe_moment"/>
-      <exception cond="vision_timeout " deroute="Standby"/>
-      <exception cond="!vision_outback_enable_landing " deroute="Standby"/>
+      <exception cond="(!vision_outback_enable_landing || vision_timeout) && stage_time > 30" deroute="joe_moment"/>
       <call_once fun="nav_hybrid_heading_init()"/>
       <stay climb="-0.5" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="JOE"/>
     </block>
