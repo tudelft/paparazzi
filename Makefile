@@ -135,7 +135,7 @@ conf/%.xml :conf/%_example.xml
 	[ -L $@ ] || [ -f $@ ] || cp $< $@
 
 
-ground_segment: _print_building update_google_version conf libpprz subdirs commands static
+ground_segment: _print_building update_google_version conf libpprz subdirs commands static libpython
 ground_segment.opt: ground_segment cockpit.opt tmtc.opt
 
 static: cockpit tmtc generators sim_static joystick static_h
@@ -146,6 +146,9 @@ libpprzlink:
 
 libpprz: libpprzlink _save_build_version
 	$(MAKE) -C $(LIB)/ocaml
+
+libpython:
+	$(MAKE) -C $(LIB)/python/pprz_math
 
 cockpit: libpprz
 	$(MAKE) -C $(COCKPIT)
