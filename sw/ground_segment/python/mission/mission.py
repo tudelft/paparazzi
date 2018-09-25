@@ -136,8 +136,8 @@ class Mission(object):
         Get the geofence from the flight plan
         """
         enu_points = []
-        if self.flightplan.sector_name_lookup['SoftBoundary']:
-            for point in self.flightplan.sector_name_lookup['SoftBoundary'].corner_list:
+        if self.flightplan.sector_name_lookup['MissionBoundary']:
+            for point in self.flightplan.sector_name_lookup['MissionBoundary'].corner_list:
                 point_enu = geodetic.LlaCoor_f(point.lat/180*math.pi, point.lon/180*math.pi, 0).to_enu(self.ltp_def)
                 enu_points.append(point_enu)
         return enu_points
