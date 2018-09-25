@@ -252,7 +252,6 @@
     <session name="Flight Outback PC2">
       <program name="Data Link">
         <arg flag="-udp"/>
-        <arg flag="-nouplink"/>
         <arg flag="-udp_port" constant="7272"/>
         <arg flag="-udp_uplink_port" constant="7273"/>
       </program>
