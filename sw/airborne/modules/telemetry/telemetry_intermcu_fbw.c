@@ -103,7 +103,7 @@ static void telemetry_intermcu_repack(struct transport_tx *trans, struct link_de
   struct pprzlink_msg pmsg;
   pmsg.trans = trans;
   pmsg.dev = dev;
-  pmsg.sender_id = ac_id;
+  pmsg.sender_id = ac_id + 1;
   pmsg.receiver_id = 0;
   pmsg.component_id = 0;
   
@@ -112,6 +112,7 @@ static void telemetry_intermcu_repack(struct transport_tx *trans, struct link_de
   trans->put_bytes(&pmsg, _FD, DL_TYPE_UINT8, DL_FORMAT_ARRAY, (void *) msg, size);
   trans->end_message(&pmsg, _FD);
 #else
+#warning AC_ID is not +1 for FBW datalink
   trans->count_bytes(trans->impl, dev, trans->size_of(trans->impl, size));
   trans->start_message(trans->impl, dev, 0, size);
   trans->put_bytes(trans->impl, dev, 0, DL_TYPE_UINT8, DL_FORMAT_ARRAY, (void *) msg, size);

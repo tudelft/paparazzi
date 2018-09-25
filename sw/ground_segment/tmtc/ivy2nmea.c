@@ -502,33 +502,33 @@ static void on_Gps(IvyClientPtr app, void *user_data, int argc, char *argv[])
 
 /*
   <message name="FLIGHT_PARAM" id="11">
-    <field name="ac_id"  type="string"/>
-    <field 0 name="roll"   type="float" unit="deg"/>
-    <field 1 name="pitch"  type="float" unit="deg"/>
-    <field 2 name="heading" type="float" unit="deg"/>
-    <field 3 name="lat"    type="float" unit="deg"/>
-    <field 4 name="long"   type="float" unit="deg"/>
-    <field 5 name="speed"  type="float" unit="m/s"/>
-    <field 6 name="course" type="float" unit="deg" format="%.1f"/>
-    <field 7 name="alt"    type="float" unit="m"/>
-    <field 8 name="climb"  type="float" unit="m/s"/>
-    <field 9 name="agl"    type="float" unit="m"/>
-    <field 10 name="unix_time"    type="float" unit="s (Unix time)"/>
-    <field 11 name="itow"   type="uint32" unit="ms"/>
-    <field 12 name="airspeed" type="float" unit="m/s"/>
+    <field 0 name="ac_id"  type="string"/>
+    <field 1 name="roll"   type="float" unit="deg"/>
+    <field 2 name="pitch"  type="float" unit="deg"/>
+    <field 3 name="heading" type="float" unit="deg"/>
+    <field 4 name="lat"    type="float" unit="deg"/>
+    <field 5 name="long"   type="float" unit="deg"/>
+    <field 6 name="speed"  type="float" unit="m/s"/>
+    <field 7 name="course" type="float" unit="deg" format="%.1f"/>
+    <field 8 name="alt"    type="float" unit="m"/>
+    <field 9 name="climb"  type="float" unit="m/s"/>
+    <field 10 name="agl"    type="float" unit="m"/>
+    <field 11 name="unix_time"    type="float" unit="s (Unix time)"/>
+    <field 12 name="itow"   type="uint32" unit="ms"/>
+    <field 13 name="airspeed" type="float" unit="m/s"/>
   </message>
 */
 
   nmeaINFO_of_UAV info;
-  info.roll = atof(argv[0]);  // deg
-  info.pitch = atof(argv[1]);  // deg
-  info.heading = atof(argv[2]);  // deg
-  info.lat = atof(argv[3]);
-  info.lon = atof(argv[4]);
-  info.speed = atof(argv[5]);
-  info.direction = atof(argv[6]);
-  info.elv = atof(argv[7]);
-  info.agl = atof(argv[9]);
+  info.roll = atof(argv[1]);  // deg
+  info.pitch = atof(argv[2]);  // deg
+  info.heading = atof(argv[3]);  // deg
+  info.lat = atof(argv[4]);
+  info.lon = atof(argv[5]);
+  info.speed = atof(argv[6]);
+  info.direction = atof(argv[7]);
+  info.elv = atof(argv[8]);
+  info.agl = atof(argv[10]);
 
   nmeaGPGGA gga;
   nmea_info2GPGGA(&info, &gga);
@@ -722,7 +722,7 @@ int main ( int argc, char** argv)
   // Start IVY
   IvyInit ("IVY2NMEA", "IVY2NMEA READY", NULL, NULL, NULL, NULL);
   //IvyBindMsg(on_Gps, NULL, "^%s GPS (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)",ac_id);
-  IvyBindMsg(on_Gps, NULL, "^ground FLIGHT_PARAM %s (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)", ac_id);
+  IvyBindMsg(on_Gps, NULL, "^ground FLIGHT_PARAM (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*) (\\S*)");
   //IvyBindMsg(on_Gps, NULL, "(.*)");
   IvyStart(ivy_bus);
 
