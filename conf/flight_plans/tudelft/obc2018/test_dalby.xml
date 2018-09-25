@@ -16,19 +16,23 @@
 </header>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
-    <waypoint name="MB1" x="1328.9" y="-1875.6"/>
-    <waypoint name="MB2" x="-1968.3" y="-1969.1"/>
-    <waypoint name="MB3" x="-2065.8" y="550.7"/>
-    <waypoint name="MB4" x="1613.2" y="318.9"/>
+    <waypoint name="MB1" lat="-27.2341157" lon="151.2500470"/>
+    <waypoint name="MB2" lat="-27.2345395" lon="151.2167475"/>
+    <waypoint name="MB3" lat="-27.2117885" lon="151.2161256"/>
+    <waypoint name="MB4" lat="-27.2143482" lon="151.2532262"/>
     <waypoint height="40.0" name="BASE" x="43.2" y="-36.1"/>
     <waypoint height="40.0" name="JOE" x="67.8" y="-39.0"/>
-    <waypoint height="40.0" name="JOE_reported" x="165.5" y="-36.8"/>
+    <waypoint height="40.0" name="JOE_reported" lat="-27.2173751" lon="151.2385633"/>
     <waypoint height="30.0" name="JOE_found" x="-258.1" y="-21.9"/>
     <waypoint height="30.0" name="TD_mrk" x="-240.6" y="-36.0"/>
-    <waypoint name="FP1" x="-16.9" y="-321.3"/>
-    <waypoint name="FP2" x="285.2" y="-386.0"/>
-    <waypoint name="FP3" x="143.2" y="19.3"/>
-    <waypoint name="FP4" x="450.7" y="-88.5"/>
+    <waypoint name="FP0" lat="-27.2178778" lon="151.2414347"/>
+    <waypoint name="FP1" lat="-27.2199193" lon="151.2366817"/>
+    <waypoint name="FP2" lat="-27.2203979" lon="151.2394529"/>
+    <waypoint name="FP3" lat="-27.2168660" lon="151.2383462"/>
+    <waypoint name="FP4" lat="-27.2192055" lon="151.2406009"/>
+    <waypoint name="FP5" lat="-27.2216095" lon="151.2361086"/>
+    <waypoint name="FP6" lat="-27.2217650" lon="151.2388523"/>
+    <waypoint name="FP7" lat="-27.2187869" lon="151.2381259"/>
     <waypoint height="40.0" name="j1" x="197.4" y="38.8"/>
     <waypoint height="40.0" name="j2" x="80.8" y="-12.5"/>
     <waypoint height="40.0" name="j3" x="235.4" y="1.7"/>
@@ -57,7 +61,7 @@
     <module name="nav" type="hybrid_heading"/>
   </modules>
   <exceptions>
-    <!-- Mission boundary crossing -->
+   <!-- Mission boundary crossing -->
     <exception cond="(!InsideMissionBoundary(GetPosX(), GetPosY()) &&
       !(nav_block == IndexOfBlock('waitGps')) &&
       !(nav_block == IndexOfBlock('geoInit')) &&
@@ -164,22 +168,56 @@
     <!-- Fly towards joe -->
     <block group="fly_to_joe" name="transition_to_joe">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_FP1)"/>
+      <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_FP0)"/>
       <stay pre_call="nav_hybrid_heading_set_to_waypoint()" until="stage_time>4" wp="CLIMB"/>
+      <deroute block="route_to_joe_mission"/>
     </block>
-    <block group="fly_to_joe" name="route_to_joe">
+    <block group="fly_to_joe" name="route_to_joe0">
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
-      <call_once fun="mission_path_reset()"/>
-      <go from="FP4" hmode="route" wp="FP1"/>
+      <set value="FALSE" var="do_avoid_mission"/>
+      <go wp="FP0"/>
+    </block>
+    <block group="fly_to_joe" name="route_to_joe1">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <set value="FALSE" var="do_avoid_mission"/>
+      <go from="FP0" hmode="route" wp="FP1"/>
+    </block>
+    <block group="fly_to_joe" name="route_to_joe2">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <set value="FALSE" var="do_avoid_mission"/>
       <go from="FP1" hmode="route" wp="FP2"/>
+    </block>
+    <block group="fly_to_joe" name="route_to_joe3">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <set value="FALSE" var="do_avoid_mission"/>
       <go from="FP2" hmode="route" wp="FP3"/>
+    </block>
+    <block group="fly_to_joe" name="route_to_joe4">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <set value="FALSE" var="do_avoid_mission"/>
       <go from="FP3" hmode="route" wp="FP4"/>
-      <deroute block="route_to_joe"/>
+    </block>
+    <block group="fly_to_joe" name="route_to_joe5">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <set value="FALSE" var="do_avoid_mission"/>
+      <go from="FP4" hmode="route" wp="FP5"/>
+    </block>
+    <block group="fly_to_joe" name="route_to_joe6">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <set value="FALSE" var="do_avoid_mission"/>
+      <go from="FP5" hmode="route" wp="FP6"/>
+    </block>
+    <block group="fly_to_joe" name="route_to_joe7">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <set value="FALSE" var="do_avoid_mission"/>
+      <go from="FP6" hmode="route" wp="FP7"/>
+      <deroute block="transition_at_joe"/>
     </block>
     <block group="fly_to_joe" name="route_to_joe_mission">
+      <exception cond="!do_avoid_mission" deroute="route_to_joe0"/>
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
       <call fun="mission_path_run(10000)"/>
-      <deroute block="route_to_joe"/>
+      <deroute block="transition_at_joe"/>
     </block>
     <block group="fly_to_joe" name="transition_at_joe">
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
@@ -191,13 +229,15 @@
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_hybrid_heading_init()"/>
       <call_once fun="enableVisionFindJoe(true)"/>
+      <exception cond="hasFoundGoodJoe()" deroute="fjoe_hover"/>
       <go from="j6" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j1"/>
       <go from="j1" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j2"/>
       <go from="j2" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j3"/>
       <go from="j3" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j4"/>
       <go from="j4" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j5"/>
       <go from="j5" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j6"/>
-      <deroute block="find_joe"/>
+      <!-- Todo hasFoundAJoe is better than none -->
+      <deroute block="joe_land"/>
     </block>
     <block group="joe_found" name="fjoe_hover">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
@@ -306,16 +346,56 @@
     <!-- Fly to the base -->
     <block group="fly_to_base" name="transition_to_base">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_FP1)"/>
+      <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_FP7)"/>
       <stay pre_call="nav_hybrid_heading_set_to_waypoint()" until="stage_time>4" wp="CLIMB"/>
+      <deroute block="route_to_base_mission"/>
     </block>
-    <block group="fly_to_base" name="route_to_base">
+    <block group="fly_to_base" name="route_to_base0">
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
-      <go from="FP4" hmode="route" wp="FP1"/>
-      <go from="FP1" hmode="route" wp="FP2"/>
-      <go from="FP2" hmode="route" wp="FP3"/>
-      <go from="FP3" hmode="route" wp="FP4"/>
-      <deroute block="route_to_base"/>
+      <set value="FALSE" var="do_avoid_mission"/>
+      <go wp="FP7"/>
+    </block>
+    <block group="fly_to_base" name="route_to_base1">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <set value="FALSE" var="do_avoid_mission"/>
+      <go from="FP7" hmode="route" wp="FP6"/>
+    </block>
+    <block group="fly_to_base" name="route_to_base2">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <set value="FALSE" var="do_avoid_mission"/>
+      <go from="FP6" hmode="route" wp="FP5"/>
+    </block>
+    <block group="fly_to_base" name="route_to_base3">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <set value="FALSE" var="do_avoid_mission"/>
+      <go from="FP5" hmode="route" wp="FP4"/>
+    </block>
+    <block group="fly_to_base" name="route_to_base4">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <set value="FALSE" var="do_avoid_mission"/>
+      <go from="FP4" hmode="route" wp="FP3"/>
+    </block>
+    <block group="fly_to_base" name="route_to_base5">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <set value="FALSE" var="do_avoid_mission"/>
+      <go from="FP3" hmode="route" wp="FP2"/>
+    </block>
+    <block group="fly_to_base" name="route_to_base6">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <set value="FALSE" var="do_avoid_mission"/>
+      <go from="FP2" hmode="route" wp="FP1"/>
+    </block>
+    <block group="fly_to_base" name="route_to_base7">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <set value="FALSE" var="do_avoid_mission"/>
+      <go from="FP1" hmode="route" wp="FP0"/>
+      <deroute block="transition_at_base"/>
+    </block>
+    <block group="fly_to_base" name="route_to_base_mission">
+      <exception cond="!do_avoid_mission" deroute="route_to_base0"/>
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <call fun="mission_path_run(30000)"/>
+      <deroute block="transition_at_base"/>
     </block>
     <block group="fly_to_base" name="transition_at_base">
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>

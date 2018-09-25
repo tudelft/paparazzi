@@ -95,10 +95,10 @@
    airframe="airframes/examples/bebop2_indi.xml"
    radio="radios/cockpitSX.xml"
    telemetry="telemetry/default_rotorcraft.xml"
-   flight_plan="flight_plans/tudelft/obc2018/test_dalby.xml"
+   flight_plan="flight_plans/tudelft/avoidance/avoidance_rc_sim.xml"
    settings="settings/rotorcraft_basic.xml"
-   settings_modules="modules/nav_hybrid_heading.xml [modules/gps_ubx_ucenter.xml] [modules/air_data.xml] [modules/geo_mag.xml] [modules/ins_extended.xml] modules/ahrs_int_cmpl_quat.xml modules/stabilization_indi_simple.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/gps.xml modules/imu_common.xml"
    gui_color="#ffffffffffff"
+   settings_modules="modules/gps_ubx_ucenter.xml modules/air_data.xml modules/geo_mag.xml modules/ins_extended.xml modules/ahrs_int_cmpl_quat.xml modules/stabilization_indi_simple.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/gps.xml modules/imu_common.xml"
   />
   <aircraft
    name="BebopMavlink"
@@ -146,7 +146,7 @@
   />
   <aircraft
    name="Bebop_default"
-   ac_id="243"
+   ac_id="20"
    airframe="airframes/examples/bebop.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"
@@ -168,7 +168,7 @@
   />
   <aircraft
    name="CX10"
-   ac_id="19"
+   ac_id="18"
    airframe="airframes/tudelft/cx10.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"
@@ -194,18 +194,7 @@
    airframe="airframes/tudelft/delftacopter2.xml"
    radio="radios/crossfire_sbus.xml"
    telemetry="telemetry/tudelft/outback.xml"
-   flight_plan="flight_plans/tudelft/obc2018/test_dalby2.xml"
-   settings="settings/rotorcraft_basic.xml"
-   settings_modules="modules/nav_hybrid_heading.xml modules/heli_throttle_curve.xml modules/gps_ubx_ucenter.xml modules/logger_sd_spi_direct.xml modules/temp_adc.xml modules/air_data.xml modules/geo_mag.xml modules/vision_outback.xml modules/gain_scheduling.xml modules/guidance_indi.xml modules/guidance_delftacopter.xml modules/ins_hff_extended.xml modules/ahrs_int_cmpl_quat.xml modules/stabilization_rate.xml modules/stabilization_int_quat.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/gps.xml modules/imu_common.xml modules/opa_controller.xml"
-   gui_color="#ffffdffac31f"
-  />
-  <aircraft
-   name="DelftaCopter2-ir"
-   ac_id="18"
-   airframe="airframes/tudelft/delftacopter2.xml"
-   radio="radios/crossfire_sbus.xml"
-   telemetry="telemetry/tudelft/outback.xml"
-   flight_plan="flight_plans/tudelft/obc2018/test_dalby2.xml"
+   flight_plan="flight_plans/tudelft/obc2018/test_dalby.xml"
    settings="settings/rotorcraft_basic.xml"
    settings_modules="modules/nav_hybrid_heading.xml modules/heli_throttle_curve.xml modules/gps_ubx_ucenter.xml modules/logger_sd_spi_direct.xml modules/temp_adc.xml modules/air_data.xml modules/geo_mag.xml modules/vision_outback.xml modules/gain_scheduling.xml modules/guidance_indi.xml modules/guidance_delftacopter.xml modules/ins_hff_extended.xml modules/ahrs_int_cmpl_quat.xml modules/stabilization_rate.xml modules/stabilization_int_quat.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/gps.xml modules/imu_common.xml modules/opa_controller.xml"
    gui_color="#ffffdffac31f"
@@ -223,31 +212,8 @@
    release="b7bee4ad31a8848592ae7962068ff57dd75659de"
   />
   <aircraft
-   name="DelftaCopter3-ir"
-   ac_id="7"
-   airframe="airframes/tudelft/delftacopter3.xml"
-   radio="radios/crossfire_sbus.xml"
-   telemetry="telemetry/tudelft/outback.xml"
-   flight_plan="flight_plans/tudelft/obc2018/test_dalby2.xml"
-   settings="settings/rotorcraft_basic.xml"
-   settings_modules="modules/nav_hybrid_heading.xml modules/heli_throttle_curve.xml modules/gps_ubx_ucenter.xml modules/logger_sd_spi_direct.xml modules/temp_adc.xml modules/air_data.xml modules/geo_mag.xml modules/vision_outback.xml modules/opa_controller.xml modules/gain_scheduling.xml modules/guidance_indi.xml modules/guidance_delftacopter.xml modules/ins_hff_extended.xml modules/ahrs_int_cmpl_quat.xml modules/stabilization_rate.xml modules/stabilization_int_quat.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/gps.xml modules/imu_common.xml"
-   gui_color="#ffffdffac31f"
-   release="b7bee4ad31a8848592ae7962068ff57dd75659de"
-  />
-  <aircraft
    name="DelftaCopter4"
    ac_id="54"
-   airframe="airframes/tudelft/delftacopter4.xml"
-   radio="radios/crossfire_sbus.xml"
-   telemetry="telemetry/tudelft/outback.xml"
-   flight_plan="flight_plans/tudelft/obc2018/test_dalby.xml"
-   settings="settings/rotorcraft_basic.xml"
-   settings_modules="modules/nav_hybrid_heading.xml modules/heli_throttle_curve.xml modules/gps_ubx_ucenter.xml modules/logger_sd_spi_direct.xml modules/temp_adc.xml modules/air_data.xml modules/geo_mag.xml modules/vision_outback.xml modules/gain_scheduling.xml modules/guidance_indi.xml modules/guidance_delftacopter.xml modules/ins_hff_extended.xml modules/ahrs_int_cmpl_quat.xml modules/stabilization_rate.xml modules/stabilization_int_quat.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/gps.xml modules/imu_common.xml [modules/opa_controller.xml]"
-   gui_color="#ffffdffac31f"
-  />
-  <aircraft
-   name="DelftaCopter4-ir"
-   ac_id="55"
    airframe="airframes/tudelft/delftacopter4.xml"
    radio="radios/crossfire_sbus.xml"
    telemetry="telemetry/tudelft/outback.xml"
@@ -270,7 +236,7 @@
   />
   <aircraft
    name="DiscoCopter"
-   ac_id="20"
+   ac_id="19"
    airframe="airframes/tudelft/disco_copter.xml"
    radio="radios/crossfire_sbus.xml"
    telemetry="telemetry/tudelft/outback.xml"
@@ -690,7 +656,7 @@
   />
   <aircraft
    name="quadshot"
-   ac_id="173"
+   ac_id="7"
    airframe="airframes/examples/quadshot_asp21_spektrum.xml"
    radio="radios/cockpitSX.xml"
    telemetry="telemetry/default_rotorcraft.xml"
