@@ -131,6 +131,7 @@ extern bool enableVisionShutdown(bool b);
 extern bool enableVisionCloseProcess(bool b);
 
 extern bool getVisionReady(void);
+extern bool hasFoundGoodJoe(void);
 
 #endif
 

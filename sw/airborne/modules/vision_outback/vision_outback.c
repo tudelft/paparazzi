@@ -474,3 +474,7 @@ bool enableVisionCloseProcess(bool b) {
 bool getVisionReady(void) {
   return v2p_package.status == 0;
 }
+
+bool hasFoundGoodJoe(void) {
+  return v2p_package.landing_status == ls_found_a_good_joe;
+}

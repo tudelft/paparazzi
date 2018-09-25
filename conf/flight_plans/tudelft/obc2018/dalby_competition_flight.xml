@@ -452,13 +452,15 @@
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="nav_hybrid_heading_init()"/>
       <call_once fun="enableVisionFindJoe(true)"/>
+      <exception cond="hasFoundGoodJoe()" deroute="fjoe_hover"/>
       <go from="j6" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j1"/>
       <go from="j1" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j2"/>
       <go from="j2" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j3"/>
       <go from="j3" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j4"/>
       <go from="j4" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j5"/>
       <go from="j5" hmode="route" pre_call="nav_hybrid_heading_set_fast()" wp="j6"/>
-      <deroute block="find_joe"/>
+      <!-- Todo hasFoundAJoe is better than none -->
+      <deroute block="joe_land"/>
     </block>
     <block group="joe_found" name="fjoe_hover">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
