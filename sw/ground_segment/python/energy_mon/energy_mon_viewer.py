@@ -331,8 +331,9 @@ class EnergyMonFrame(wx.Frame):
         dc.DrawLine(self.plot_x(0.0), self.plot_y(self.cell.get_volt_perc()), self.plot_x(1.0), self.plot_y(self.cell.get_volt_perc()))
 
         # Draw maximum charge point
-        dc.SetPen(wx.Pen(wx.Colour(255,0,0),2))
+        dc.SetPen(wx.Pen(wx.Colour(0,0,255),2))
         dc.DrawLine(self.plot_x(self.energy_prediction.get_max_hover_charge() / 3500), self.plot_y(0), self.plot_x(self.energy_prediction.get_max_hover_charge() / 3500), self.plot_y(1))
+        dc.DrawLine(self.plot_x(1415. / 3500), self.plot_y(0), self.plot_x(1415. / 3500), self.plot_y(1))  # Competition latest land at joe (18km/h0degwind, 25m/s)
 
 
         font = wx.Font(8, wx.ROMAN, wx.NORMAL, wx.NORMAL)
