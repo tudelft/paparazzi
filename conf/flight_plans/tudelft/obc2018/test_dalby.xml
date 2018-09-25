@@ -54,6 +54,7 @@
   </sectors>
   <variables>
     <variable init="0.3" max="1" min="0" shortname="nojoe_vfraction" step="0.1" type="float" var="joe_not_found_descend_speed_fraction"/>
+    <variable init="1" max="1" min="0" shortname="do_mission" step="1" type="bool" var="do_avoid_mission" values="FALSE|TRUE"/>
   </variables>
   <modules>
     <module name="mission" type="path"/>

@@ -40,10 +40,12 @@ struct mission_path_elem_t {
   uint16_t id;
 };
 
+
 extern void mission_path_init(void);
 extern bool mission_path_run(uint16_t until);
 extern void mission_path_reset(void);
 extern bool mission_path_parse_ADD(struct link_device *dev, struct transport_tx *trans, uint8_t *buf);
 extern bool mission_path_parse_DELETE(struct link_device *dev, struct transport_tx *trans, uint8_t *buf);
+extern uint8_t mission_path_last_idx;
 
 #endif /* MISSION_PATH_H */

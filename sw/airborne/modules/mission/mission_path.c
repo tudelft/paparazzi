@@ -27,12 +27,12 @@
  */
 
 #ifndef MISSION_PATH_MAX
-#define MISSION_PATH_MAX 64
+#define MISSION_PATH_MAX 100
 #endif
 
 static struct mission_path_elem_t mission_path[MISSION_PATH_MAX];   ///< The mission path elements
 static uint8_t mission_path_idx;                                    ///< The current path index
-static uint8_t mission_path_last_idx;                               ///< The last mission index
+uint8_t mission_path_last_idx;                               ///< The last mission index
 
 static bool mission_path_add(struct mission_path_elem_t *elem);
 static bool mission_path_delete(uint8_t id);
