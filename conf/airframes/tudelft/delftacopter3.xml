@@ -394,7 +394,12 @@
   <!-- Gains for forward mode -->
   <section name="DC_FORWARD" prefix="DC_FORWARD_">
     <define name="MAX_AIRSPEED" value="18.0"/>
-    <define name="NOMINAL_THRUST" value="7400"/>
+ 
+    <define name="MIN_THRUST"     value="4800"/><!-- 50% = 18.5 m/s -->
+    <define name="SLOW_THRUST"    value="5800"/><!-- 60% = 22.7 m/s -->
+    <define name="NOMINAL_THRUST" value="6800"/><!-- 70% = 24.8 m/s -->
+    <define name="MAX_THRUST"     value="7600"/><!-- 80% = 27.0 m/s -->
+
     <define name="VERTICAL_PGAIN" value="0.1"/>
     <define name="VERTICAL_DGAIN" value="0.015"/>
     <define name="VERTICAL_LOW_AIRSPEED" value="17.0"/>
@@ -402,7 +407,7 @@
     <define name="MAX_TURN_BANK" value="35.0"/>
     <define name="TURN_BANK_GAIN" value="0.5"/>
     <define name="PITCH_OF_ROLL" value="0.02"/>
-    <define name="THROTTLE_FROM_PITCH_UP" value="50.0"/>
+    <define name="THROTTLE_FROM_PITCH_UP" value="125.0"/>
     <define name="MIN_PITCH" value="-15.0"/>
     <define name="MAX_PITCH" value="10.0"/>
     <define name="MAX_PSI" value="20.0"/>
