@@ -16,18 +16,18 @@
 </header>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
-    <waypoint name="MB1" x="1328.9" y="-1875.6"/>
-    <waypoint name="MB2" x="-1968.3" y="-1969.1"/>
-    <waypoint name="MB3" x="-2065.8" y="550.7"/>
+    <waypoint name="MB1" x="1523.4" y="-2305.2"/>
+    <waypoint name="MB2" x="-2804.0" y="-1719.4"/>
+    <waypoint name="MB3" x="-1737.8" y="1799.3"/>
     <waypoint name="MB4" x="1734.1" y="511.7"/>
     <waypoint name="BASE" x="-133.0" y="-2.7"/>
     <waypoint name="JOE" x="-163.6" y="36.2"/>
     <waypoint name="JOE_reported" x="-349.4" y="8.3"/>
     <waypoint name="JOE_found" x="-4.6" y="-150.9"/>
     <waypoint name="TD_mrk" x="21.8" y="-171.8"/>
-    <waypoint name="FP1" x="-1097.0" y="-168.3"/>
-    <waypoint name="FP2" x="-779.3" y="-433.1"/>
-    <waypoint name="FP3" x="-510.5" y="113.4"/>
+    <waypoint name="FP1" x="-1677.6" y="-1075.7"/>
+    <waypoint name="FP2" x="-1258.3" y="-1383.9"/>
+    <waypoint name="FP3" x="-696.4" y="233.8"/>
     <waypoint name="FP4" x="-293.2" y="-99.6"/>
     <waypoint name="j1" x="-268.1" y="22.4"/>
     <waypoint name="j2" x="-364.8" y="85.4"/>
