@@ -463,7 +463,7 @@ static bool gps_ubx_ucenter_configure(void)
       gps_ubx_ucenter.replies[4] = gps_ubx_ucenter.hw_ver_h;
       gps_ubx_ucenter.replies[5] = gps_ubx_ucenter.hw_ver_l;
       DOWNLINK_SEND_DEBUG(DefaultChannel, DefaultDevice, 6, gps_ubx_ucenter.replies);
-//      DOWNLINK_SEND_UBLOX_VERSION(DefaultChannel, DefaultDevice, )
+      DOWNLINK_SEND_UBLOX_VERSION(DefaultChannel, DefaultDevice, &gps_ubx_ucenter.sw_ver_h, &gps_ubx_ucenter.sw_ver_l, &gps_ubx_ucenter.hw_ver_h, &gps_ubx_ucenter.hw_ver_l)
       // Configure CFG-NAV(5) message
       gps_ubx_ucenter_config_nav();
       break;
