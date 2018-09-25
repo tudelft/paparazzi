@@ -121,7 +121,7 @@
   </servos>
 
   <!-- T-Motor 190kv with 24.2 inch prop -->
-  <!-- * Top linkages circa 59.7 mm
+  <!-- * Top linkages circa 59.7 mm plastic end to plastic end
        * Distance from the bottom the the upper-swashplate rotation-link ball-rodds to the bottom of the blade grip just above is circa 56.2 mm.
        * The servo is about 30deg down in failsafe, where its bolt aligns with the 2 servo fixing bolts
        * The top of the rotorhead should be 90.0mm (2OI) 88.1mm (3MM) 89.3mm (4HP)
@@ -394,7 +394,12 @@
   <!-- Gains for forward mode -->
   <section name="DC_FORWARD" prefix="DC_FORWARD_">
     <define name="MAX_AIRSPEED" value="18.0"/>
-    <define name="NOMINAL_THRUST" value="7400"/>
+ 
+    <define name="MIN_THRUST"     value="4800"/><!-- 50% = 18.5 m/s -->
+    <define name="SLOW_THRUST"    value="5800"/><!-- 60% = 22.7 m/s -->
+    <define name="NOMINAL_THRUST" value="6800"/><!-- 70% = 24.8 m/s -->
+    <define name="MAX_THRUST"     value="7600"/><!-- 80% = 27.0 m/s -->
+
     <define name="VERTICAL_PGAIN" value="0.1"/>
     <define name="VERTICAL_DGAIN" value="0.015"/>
     <define name="VERTICAL_LOW_AIRSPEED" value="17.0"/>

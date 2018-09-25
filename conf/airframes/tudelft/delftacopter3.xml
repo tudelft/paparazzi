@@ -19,6 +19,7 @@
         <subsystem name="fdm" type="jsbsim"/>
       </target-->
 
+      <module name="opa_controller"/>
       <module name="telemetry"     type="transparent">
         <configure name="MODEM_BAUD" value="B9600"/>
       </module>
@@ -47,7 +48,6 @@
       </module>
       <module name="telemetry"     type="intermcu"/>
       <module name="current_sensor"/>
-      <module name="opa_controller"/>
       <module name="mag_pitot_uart" />
       <module name="pwm_meas"/>
       <module name="rpm_sensor">
@@ -143,7 +143,7 @@
     <set command="PITCH"        value="@PITCH"/>
     <set command="YAW"          value="@YAW"/>
     <set command="ELEVATOR"     value="@PITCH"/>
-    <set command="AILERON"      value="@ROLL"/>
+    <set command="AILERON"      value="-@ROLL"/>
   </rc_commands>
 
   <!-- Commands send from AP to FBW -->
@@ -201,7 +201,7 @@
     <curve throttle="7300,7800,8300" rpm="2800,2800,2800" collective="-9600,-6500,-2300"/><!-- Hover curve RPM controlled -->
     <curve throttle="7300,7800,8300" rpm="2800,2800,2800" collective="-9600,-6500,-2300"/><!-- Hover curve RPM controlled -->
     <curve throttle="8600,8600,8600,8600,9600" collective="-9600,-9600,-7470,-3770,30"/><!-- Forward inefficient curve -->
-    <curve throttle="5000,5000,5000,5000,5300" collective="-9600,-6300,-3000,700,4500"/><!-- Forward curve -->
+    <curve throttle="5000,5000,5000,5000,5800" collective="-9600,-6300,-3000,700,4500"/><!-- Forward curve -->
   </heli_curves>
 
   <section name="MISC">
@@ -387,7 +387,7 @@
     <define name="TRANSITION_THROTTLE_CURVE" value="3"/>
     <define name="FORWARD_THROTTLE_CURVE" value="4"/>
     <define name="TRANSITION_TIME" value="2"/>
-    <define name="TRANSITION_THROTTLE_TO_FORWARD" value="8500"/>
+    <define name="TRANSITION_THROTTLE_TO_FORWARD" value="7000"/>
     <define name="TRANSITION_THROTTLE_TO_HOVER" value="4800"/>
   </section>
 
@@ -420,7 +420,7 @@
     <define name="ROLL_TRIM" value="0.0"/>
     <define name="PITCH_PGAIN" value="2500.0"/>
     <define name="PITCH_DGAIN" value="1000.0"/>
-    <define name="PITCH_IGAIN" value="0.5"/>
+    <define name="PITCH_IGAIN" value="0.75"/>
     <define name="PITCH_TRIM" value="200.0"/>
     <define name="K_FF_TO_YAW" value="600.0"/> <!-- order of magnitude -->
     <define name="ADVANCE_P" value="1.1"/>
