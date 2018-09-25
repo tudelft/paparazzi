@@ -69,14 +69,15 @@ class Mission(object):
         self.ltp_def = geodetic.LlaCoor_f(self.flightplan.flight_plan.lat0/180*math.pi, self.flightplan.flight_plan.lon0/180*math.pi, self.flightplan.flight_plan.alt).to_ltp_def()   
         
         # From flightplan
-        self.transit_points = self.transit_waypoints_from_fp()
+        self.transit_points_to_joe = self.transit_waypoints_from_fp('FP')
+        self.transit_points_from_joe = self.transit_waypoints_from_fp('FP', True)
         self.static_nfzs = self.static_nfzs_from_fp()
         self.geofence = self.geofence_from_fp()
         self.circular_zones = static_nfz.get_circular_zones(self.static_nfzs)
         
         # Mission elements
         self.altitude = altitude
-        self.mission_elements = self.mission_elem_from_fp()
+        self.mission_elements = self.mission_elem_from_fp(self.transit_points_to_joe, 0) + self.mission_elem_from_fp(self.transit_points_from_joe, 10000)
 
         # Initialize the mission communication
         self.mission_comm = mission_comm.MissionComm(self.ac_id, self.ivy_interface)
@@ -117,18 +118,20 @@ class Mission(object):
                 zones.append(StaticNFZ(sector.name, enu_points))
         return zones
         
-    def transit_waypoints_from_fp(self):    
+    def transit_waypoints_from_fp(self, prefix, inverted = False):    
         """
         Get the transit waypoints from the flight plan
         """
         waypoints = []
         for wp in self.flightplan.waypoints.member_list:
             # Select only waypoints from the Main path
-            if wp.name[:2] == "FP":
+            if wp.name[:2] == prefix:
                 wp_enu = geodetic.LlaCoor_f(wp.lat/180*math.pi, wp.lon/180*math.pi, self.flightplan.flight_plan.alt).to_enu(self.ltp_def)
                 wp_enu.z = self.flightplan.flight_plan.alt - self.flightplan.flight_plan.ground_alt
                 wp = TransitWaypoint(wp.name, wp_enu)
                 waypoints.append(wp)
+        if (inverted == True):
+            waypoints = waypoints[::-1]
         return waypoints    
         
     def geofence_from_fp(self):
@@ -136,8 +139,8 @@ class Mission(object):
         Get the geofence from the flight plan
         """
         enu_points = []
-        if self.flightplan.sector_name_lookup['MissionBoundary']:
-            for point in self.flightplan.sector_name_lookup['MissionBoundary'].corner_list:
+        if self.flightplan.sector_name_lookup['SoftBoundary']:
+            for point in self.flightplan.sector_name_lookup['SoftBoundary'].corner_list:
                 point_enu = geodetic.LlaCoor_f(point.lat/180*math.pi, point.lon/180*math.pi, 0).to_enu(self.ltp_def)
                 enu_points.append(point_enu)
         return enu_points
@@ -164,13 +167,13 @@ class Mission(object):
             self.ivy_interface.send(msg)
             id += 1
             
-    def mission_elem_from_fp(self):
+    def mission_elem_from_fp(self, transit_points, start_id):
         """
         Add the mission flight path
         """
-        id = 0
+        id = start_id
         elems = []
-        for point in self.transit_points:
+        for point in transit_points:
             elem = MissionElement(id, point.enu)
             elems.append(elem)
             id += 100
@@ -187,7 +190,7 @@ class Mission(object):
         if (idx > len(self.mission_elements) - 1):
             return
         
-        if ((self.mission_elements[idx].id > self.avoidance_lock_id) and (idx > 0)): 
+        if ((self.mission_elements[idx].id > self.avoidance_lock_id) and (self.mission_elements[idx].id != 0) and (self.mission_elements[idx].id != 10000)): 
             groundspeed = self.aircraft.get_gspeed()
             
             # if groundspeed messages are not coming in

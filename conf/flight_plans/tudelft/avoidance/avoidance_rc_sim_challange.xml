@@ -1,0 +1,408 @@
+<!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
+
+<flight_plan alt="437" ground_alt="337" home_mode_height="437" lat0="-27.27392" lon0="151.290039" max_dist_from_home="20000" name="DALBY2018" qfu="20" security_height="10">
+  <waypoints>
+    <waypoint name="HOME" x="0" y="0"/>
+    <waypoint name="STDBY" x="-84.6" y="-16.6"/>
+    <waypoint alt="-1.0" name="TD" x="33.8" y="-16.1"/>
+    <waypoint name="CLIMB" x="1.9" y="1.0"/>
+    <waypoint lat="-27.2739" lon="151.290039" name="BASE"/>
+    <waypoint lat="-27.357830" lon="151.240222" name="JOE_reported"/>
+    <waypoint lat="-27.280426" lon="151.290535" name="FP0"/>
+    <waypoint lat="-27.32544133940339" lon="151.2810230591555" name="FP1"/>
+    <waypoint lat="-27.27292716526073" lon="151.2906279518992" name="FP2"/>
+    <waypoint lat="-27.273033" lon="151.273964" name="FP3"/>
+    <waypoint lat="-27.318887" lon="151.257506" name="FP4"/>
+    <waypoint lat="-27.331643" lon="151.252819" name="FP5"/>
+    <waypoint lat="-27.347147" lon="151.243603" name="FP6"/>
+    <waypoint lat="-27.357183" lon="151.242202" name="FP7"/>
+    <waypoint lat="-27.360503" lon="151.229472" name="MB1"/>
+    <waypoint lat="-27.262847" lon="151.246414" name="MB2"/>
+    <waypoint lat="-27.27051" lon="151.301867" name="MB3"/>
+    <waypoint lat="-27.364638" lon="151.282746" name="MB4"/>
+    <waypoint lat="-27.364144" lon="151.243025" name="MB5"/>
+    <waypoint lat="-27.360503" lon="151.229472" name="SB1"/>
+    <waypoint lat="-27.262847" lon="151.246414" name="SB2"/>
+    <waypoint lat="-27.27051" lon="151.301867" name="SB3"/>
+    <waypoint lat="-27.364638" lon="151.282746" name="SB4"/>
+    <waypoint lat="-27.364144" lon="151.243025" name="SB5"/>
+    <waypoint lat="-27.28797146668507" lon="151.2531224518434" name="_NFZ1_0"/>
+    <waypoint lat="-27.28780851501299" lon="151.2549681511527" name="_NFZ1_1"/>
+    <waypoint lat="-27.28579768822575" lon="151.2547903854683" name="_NFZ1_2"/>
+    <waypoint lat="-27.28600018480169" lon="151.2528023345815" name="_NFZ1_3"/>
+    <waypoint lat="-27.29131562665559" lon="151.2531491943206" name="_NFZ2_0"/>
+    <waypoint lat="-27.2912733596268" lon="151.2545527828541" name="_NFZ2_1"/>
+    <waypoint lat="-27.28909776362712" lon="151.2544221994416" name="_NFZ2_2"/>
+    <waypoint lat="-27.28916989422427" lon="151.2529694071765" name="_NFZ2_3"/>
+    <waypoint lat="-27.2965622405854" lon="151.2534106360309" name="_NFZ3_0"/>
+    <waypoint lat="-27.29754147820372" lon="151.255846645168" name="_NFZ3_1"/>
+    <waypoint lat="-27.29584588263604" lon="151.2566612247823" name="_NFZ3_2"/>
+    <waypoint lat="-27.29471389794415" lon="151.2542232885258" name="_NFZ3_3"/>
+    <waypoint lat="-27.29489028861541" lon="151.2424744774728" name="_NFZ4_0"/>
+    <waypoint lat="-27.29731446805698" lon="151.2420732655593" name="_NFZ4_1"/>
+    <waypoint lat="-27.29779391267503" lon="151.2453340660857" name="_NFZ4_2"/>
+    <waypoint lat="-27.29521311465392" lon="151.2458186794024" name="_NFZ4_3"/>
+    <waypoint lat="-27.29834086006369" lon="151.2568352913166" name="_NFZ5_0"/>
+    <waypoint lat="-27.30275318617537" lon="151.2560613850818" name="_NFZ5_1"/>
+    <waypoint lat="-27.30326087782207" lon="151.2594195314413" name="_NFZ5_2"/>
+    <waypoint lat="-27.30001393749841" lon="151.2600271678872" name="_NFZ5_3"/>
+    <waypoint lat="-27.3021003383209" lon="151.2684867357293" name="_NFZ6_0"/>
+    <waypoint lat="-27.30509807437675" lon="151.2679222411966" name="_NFZ6_1"/>
+    <waypoint lat="-27.30611160359011" lon="151.2756985388902" name="_NFZ6_2"/>
+    <waypoint lat="-27.30313249083856" lon="151.2763569351247" name="_NFZ6_3"/>
+    <waypoint lat="-27.30331283996544" lon="151.2779045558818" name="_NFZ7_0"/>
+    <waypoint lat="-27.3068259565803" lon="151.2772803739555" name="_NFZ7_1"/>
+    <waypoint lat="-27.30735977550913" lon="151.28059623167" name="_NFZ7_2"/>
+    <waypoint lat="-27.30405521114428" lon="151.2812080272745" name="_NFZ7_3"/>
+    <waypoint lat="-27.30883598117828" lon="151.2456170022165" name="_NFZ8_0"/>
+    <waypoint lat="-27.30914813428918" lon="151.2478407097655" name="_NFZ8_1"/>
+    <waypoint lat="-27.30673649159034" lon="151.248352024107" name="_NFZ8_2"/>
+    <waypoint lat="-27.30636444565307" lon="151.2459336273776" name="_NFZ8_3"/>
+    <waypoint lat="-27.3207083175421" lon="151.2885237450797" name="_NFZ9_0"/>
+    <waypoint lat="-27.32105449628281" lon="151.2908263640613" name="_NFZ9_1"/>
+    <waypoint lat="-27.31917851957875" lon="151.2912074227204" name="_NFZ9_2"/>
+    <waypoint lat="-27.31878723768866" lon="151.2887775864464" name="_NFZ9_3"/>
+    <waypoint lat="-27.31948487388696" lon="151.274400433175" name="_NFZ10_0"/>
+    <waypoint lat="-27.32383574140775" lon="151.2736807960298" name="_NFZ10_1"/>
+    <waypoint lat="-27.32437055952639" lon="151.2774133130898" name="_NFZ10_2"/>
+    <waypoint lat="-27.32005694298308" lon="151.2782217712092" name="_NFZ10_3"/>
+    <waypoint lat="-27.32579476511365" lon="151.242407315129" name="_NFZ11_0"/>
+    <waypoint lat="-27.32734122916957" lon="151.2515638717719" name="_NFZ11_1"/>
+    <waypoint lat="-27.32209788982477" lon="151.2526680549796" name="_NFZ11_2"/>
+    <waypoint lat="-27.3202137287355" lon="151.2433202399698" name="_NFZ11_3"/>
+    <waypoint lat="-27.3288356579475" lon="151.256811043814" name="_NFZ12_0"/>
+    <waypoint lat="-27.32909351866034" lon="151.2586738094959" name="_NFZ12_1"/>
+    <waypoint lat="-27.32482404770595" lon="151.2594366897344" name="_NFZ12_2"/>
+    <waypoint lat="-27.32451467430437" lon="151.2574925744189" name="_NFZ12_3"/>
+    <waypoint lat="-27.32931785521345" lon="151.2604767573859" name="_NFZ13_0"/>
+    <waypoint lat="-27.33137530546479" lon="151.2602391129689" name="_NFZ13_1"/>
+    <waypoint lat="-27.33180878401745" lon="151.263233156138" name="_NFZ13_2"/>
+    <waypoint lat="-27.32974970419714" lon="151.2636357372468" name="_NFZ13_3"/>
+    <waypoint lat="-27.33020582876388" lon="151.2740616540407" name="_NFZ14_0"/>
+    <waypoint lat="-27.33126889030321" lon="151.2739099094317" name="_NFZ14_1"/>
+    <waypoint lat="-27.33149587731529" lon="151.2754145386837" name="_NFZ14_2"/>
+    <waypoint lat="-27.33043858120965" lon="151.275632664112" name="_NFZ14_3"/>
+    <waypoint lat="-27.33778624196356" lon="151.2766037056538" name="_NFZ15_0"/>
+    <waypoint lat="-27.33978549607257" lon="151.2763020700364" name="_NFZ15_1"/>
+    <waypoint lat="-27.34027289925642" lon="151.2793012784545" name="_NFZ15_2"/>
+    <waypoint lat="-27.33826293534931" lon="151.279687116223" name="_NFZ15_3"/>
+    <waypoint lat="-27.34580113823281" lon="151.255973309931" name="_NFZ16_0"/>
+    <waypoint lat="-27.34670527712604" lon="151.2618782363516" name="_NFZ16_1"/>
+    <waypoint lat="-27.34012293997134" lon="151.2602392498748" name="_NFZ16_2"/>
+    <waypoint lat="-27.338319140472" lon="151.2570627766381" name="_NFZ16_3"/>
+    <waypoint lat="-27.34387403871704" lon="151.2758487479772" name="_NFZ17_0"/>
+    <waypoint lat="-27.34931959189822" lon="151.2761326766948" name="_NFZ17_1"/>
+    <waypoint lat="-27.35025961869675" lon="151.2829318969093" name="_NFZ17_2"/>
+    <waypoint lat="-27.34499305289468" lon="151.2839544873202" name="_NFZ17_3"/>
+    <waypoint lat="-27.34690824282207" lon="151.2487750801261" name="_NFZ18_0"/>
+    <waypoint lat="-27.3479318921394" lon="151.2485917148871" name="_NFZ18_1"/>
+    <waypoint lat="-27.34813835623421" lon="151.2498219178302" name="_NFZ18_2"/>
+    <waypoint lat="-27.3471107121246" lon="151.2500584031504" name="_NFZ18_3"/>
+    <waypoint lat="-27.35298060394757" lon="151.2664287428415" name="_NFZ19_0"/>
+    <waypoint lat="-27.35324453675727" lon="151.2684692860511" name="_NFZ19_1"/>
+    <waypoint lat="-27.35178902577004" lon="151.2685607636535" name="_NFZ19_2"/>
+    <waypoint lat="-27.35150533097664" lon="151.2664214973217" name="_NFZ19_3"/>
+    <waypoint lat="-27.35535801262855" lon="151.2709518791747" name="_NFZ20_0"/>
+    <waypoint lat="-27.3555769602272" lon="151.2726973502571" name="_NFZ20_1"/>
+    <waypoint lat="-27.35436630387383" lon="151.2728561538626" name="_NFZ20_2"/>
+    <waypoint lat="-27.35414421997288" lon="151.27097932312" name="_NFZ20_3"/>
+    <waypoint lat="-27.35472251569119" lon="151.2399929730796" name="_NFZ21_0"/>
+    <waypoint lat="-27.35601859560337" lon="151.2393206100524" name="_NFZ21_1"/>
+    <waypoint lat="-27.3565894368339" lon="151.2405846910035" name="_NFZ21_2"/>
+    <waypoint lat="-27.35528401679979" lon="151.2412869338043" name="_NFZ21_3"/>
+    <waypoint lat="-27.361977304257" lon="151.2740741926089" name="_NFZ22_0"/>
+    <waypoint lat="-27.36219719065553" lon="151.2759009311463" name="_NFZ22_1"/>
+    <waypoint lat="-27.36065769737946" lon="151.2762453243335" name="_NFZ22_2"/>
+    <waypoint lat="-27.36042214565788" lon="151.274337271853" name="_NFZ22_3"/>
+  </waypoints>
+  <sectors>
+    <sector color="yellow" name="MissionBoundary" type="dynamic">
+      <corner name="MB1"/>
+      <corner name="MB2"/>
+      <corner name="MB3"/>
+      <corner name="MB4"/>
+      <corner name="MB5"/>
+    </sector>
+    <sector color="yellow" name="SoftBoundary" type="dynamic">
+      <corner name="SB1"/>
+      <corner name="SB2"/>
+      <corner name="SB3"/>
+      <corner name="SB4"/>
+      <corner name="SB5"/>
+    </sector>
+    <sector color="orange" name="NFZ1" type="dynamic">
+      <corner name="_NFZ1_0"/>
+      <corner name="_NFZ1_1"/>
+      <corner name="_NFZ1_2"/>
+      <corner name="_NFZ1_3"/>
+    </sector>
+    <sector color="orange" name="NFZ2" type="dynamic">
+      <corner name="_NFZ2_0"/>
+      <corner name="_NFZ2_1"/>
+      <corner name="_NFZ2_2"/>
+      <corner name="_NFZ2_3"/>
+    </sector>
+    <sector color="orange" name="NFZ3" type="dynamic">
+      <corner name="_NFZ3_0"/>
+      <corner name="_NFZ3_1"/>
+      <corner name="_NFZ3_2"/>
+      <corner name="_NFZ3_3"/>
+    </sector>
+    <sector color="orange" name="NFZ4" type="dynamic">
+      <corner name="_NFZ4_0"/>
+      <corner name="_NFZ4_1"/>
+      <corner name="_NFZ4_2"/>
+      <corner name="_NFZ4_3"/>
+    </sector>
+    <sector color="orange" name="NFZ5" type="dynamic">
+      <corner name="_NFZ5_0"/>
+      <corner name="_NFZ5_1"/>
+      <corner name="_NFZ5_2"/>
+      <corner name="_NFZ5_3"/>
+    </sector>
+    <sector color="orange" name="NFZ6" type="dynamic">
+      <corner name="_NFZ6_0"/>
+      <corner name="_NFZ6_1"/>
+      <corner name="_NFZ6_2"/>
+      <corner name="_NFZ6_3"/>
+    </sector>
+    <sector color="orange" name="NFZ7" type="dynamic">
+      <corner name="_NFZ7_0"/>
+      <corner name="_NFZ7_1"/>
+      <corner name="_NFZ7_2"/>
+      <corner name="_NFZ7_3"/>
+    </sector>
+    <sector color="orange" name="NFZ8" type="dynamic">
+      <corner name="_NFZ8_0"/>
+      <corner name="_NFZ8_1"/>
+      <corner name="_NFZ8_2"/>
+      <corner name="_NFZ8_3"/>
+    </sector>
+    <sector color="orange" name="NFZ9" type="dynamic">
+      <corner name="_NFZ9_0"/>
+      <corner name="_NFZ9_1"/>
+      <corner name="_NFZ9_2"/>
+      <corner name="_NFZ9_3"/>
+    </sector>
+    <sector color="orange" name="NFZ10" type="dynamic">
+      <corner name="_NFZ10_0"/>
+      <corner name="_NFZ10_1"/>
+      <corner name="_NFZ10_2"/>
+      <corner name="_NFZ10_3"/>
+    </sector>
+    <sector color="orange" name="NFZ11" type="dynamic">
+      <corner name="_NFZ11_0"/>
+      <corner name="_NFZ11_1"/>
+      <corner name="_NFZ11_2"/>
+      <corner name="_NFZ11_3"/>
+    </sector>
+    <sector color="orange" name="NFZ12" type="dynamic">
+      <corner name="_NFZ12_0"/>
+      <corner name="_NFZ12_1"/>
+      <corner name="_NFZ12_2"/>
+      <corner name="_NFZ12_3"/>
+    </sector>
+    <sector color="orange" name="NFZ13" type="dynamic">
+      <corner name="_NFZ13_0"/>
+      <corner name="_NFZ13_1"/>
+      <corner name="_NFZ13_2"/>
+      <corner name="_NFZ13_3"/>
+    </sector>
+    <sector color="orange" name="NFZ14" type="dynamic">
+      <corner name="_NFZ14_0"/>
+      <corner name="_NFZ14_1"/>
+      <corner name="_NFZ14_2"/>
+      <corner name="_NFZ14_3"/>
+    </sector>
+    <sector color="orange" name="NFZ15" type="dynamic">
+      <corner name="_NFZ15_0"/>
+      <corner name="_NFZ15_1"/>
+      <corner name="_NFZ15_2"/>
+      <corner name="_NFZ15_3"/>
+    </sector>
+    <sector color="orange" name="NFZ16" type="dynamic">
+      <corner name="_NFZ16_0"/>
+      <corner name="_NFZ16_1"/>
+      <corner name="_NFZ16_2"/>
+      <corner name="_NFZ16_3"/>
+    </sector>
+    <sector color="orange" name="NFZ17" type="dynamic">
+      <corner name="_NFZ17_0"/>
+      <corner name="_NFZ17_1"/>
+      <corner name="_NFZ17_2"/>
+      <corner name="_NFZ17_3"/>
+    </sector>
+    <sector color="orange" name="NFZ18" type="dynamic">
+      <corner name="_NFZ18_0"/>
+      <corner name="_NFZ18_1"/>
+      <corner name="_NFZ18_2"/>
+      <corner name="_NFZ18_3"/>
+    </sector>
+    <sector color="orange" name="NFZ19" type="dynamic">
+      <corner name="_NFZ19_0"/>
+      <corner name="_NFZ19_1"/>
+      <corner name="_NFZ19_2"/>
+      <corner name="_NFZ19_3"/>
+    </sector>
+    <sector color="orange" name="NFZ20" type="dynamic">
+      <corner name="_NFZ20_0"/>
+      <corner name="_NFZ20_1"/>
+      <corner name="_NFZ20_2"/>
+      <corner name="_NFZ20_3"/>
+    </sector>
+    <sector color="orange" name="NFZ21" type="dynamic">
+      <corner name="_NFZ21_0"/>
+      <corner name="_NFZ21_1"/>
+      <corner name="_NFZ21_2"/>
+      <corner name="_NFZ21_3"/>
+    </sector>
+    <sector color="orange" name="NFZ22" type="dynamic">
+      <corner name="_NFZ22_0"/>
+      <corner name="_NFZ22_1"/>
+      <corner name="_NFZ22_2"/>
+      <corner name="_NFZ22_3"/>
+    </sector>
+  </sectors>
+  <modules>
+    <module name="mission" type="path"/>
+  </modules>
+  <blocks>
+    <block name="Wait GPS">
+      <while cond="!GpsFixValid()"/>
+      <set value="1" var="autopilot.kill_throttle"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetAltitudeReferenceHere()"/>
+      <set value="TRUE" var="air_data.calc_qnh_once"/>
+    </block>
+    <block name="Holding point">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <attitude roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <block key="r" name="Start Engine">
+      <call_once fun="NavResurrect()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <call_once fun="NavResurrect()"/>
+    </block>
+    <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+      <exception cond="GetPosAlt() > 1.0" deroute="Standby"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
+      <deroute block="BASE to FP1"/>
+    </block>
+    <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
+      <circle radius="nav_radius" wp="STDBY"/>
+    </block>
+    <block key="s" name="ResetMission">
+      <call_once fun="mission_path_reset()"/>
+      <circle radius="nav_radius" wp="STDBY"/>
+    </block>
+    <block name="RUN MISSION To JOE">
+      <call fun="mission_path_run(10000)"/>
+      <deroute block="FP7 to JOE"/>
+    </block>
+    <block name="BASE to FP1">
+	  <go from="FP1" hmode="route" wp="FP2"/>
+    </block>
+    <block name="FP1 to FP2">
+      <go from="FP1" hmode="route" wp="FP2"/>
+    </block>
+    <block name="FP2 to FP3">
+      <go from="FP2" hmode="route" wp="FP3"/>
+    </block>
+    <block name="FP3 to FP4">
+      <go from="FP3" hmode="route" wp="FP4"/>
+    </block>
+    <block name="FP4 to FP5">
+      <go from="FP4" hmode="route" wp="FP5"/>
+    </block>
+    <block name="FP5 to FP6">
+      <go from="FP5" hmode="route" wp="FP6"/>
+    </block>
+    <block name="FP6 to FP7">
+      <go from="FP6" hmode="route" wp="FP7"/>
+    </block>
+    <block name="FP7 to JOE">
+      <go from="FP7" hmode="route" wp="JOE_reported"/>
+    </block>
+    <block name="Land JOE">
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <go wp="TD"/>
+    </block>
+    <block name="Flare JOE">
+      <exception cond="NavDetectGround()" deroute="Holding point"/>
+      <exception cond="!nav_is_in_flight()" deroute="Landed"/>
+      <exception cond="0.10 > GetPosAlt()" deroute="Landed"/>
+      <call_once fun="NavStartDetectGround()"/>
+      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="Landed JOE">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Hold JOE">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <attitude roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <block name="Start Engine JOE">
+      <call_once fun="NavResurrect()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <call_once fun="NavResurrect()"/>
+    </block>
+    <block name="Takeoff JOE" strip_button="Takeoff" strip_icon="takeoff.png">
+      <exception cond="GetPosAlt() > 1.0" deroute="Standby"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
+    </block>
+    <block name="JOE to FP7">
+      <go from="JOE_reported" hmode="route" wp="FP7"/>
+    </block>
+    <block name="RUN MISSION FROM JOE">
+      <call fun="mission_path_run(20000)"/>
+      <deroute block="FP1 to BASE"/>
+    </block>
+    <block name="FP7 to FP6">
+      <go from="FP7" hmode="route" wp="FP6"/>
+    </block>
+    <block name="FP6 to FP5">
+      <go from="FP6" hmode="route" wp="FP5"/>
+    </block>
+    <block name="FP5 to FP4">
+      <go from="FP5" hmode="route" wp="FP4"/>
+    </block>
+    <block name="FP4 to FP3">
+      <go from="FP4" hmode="route" wp="FP3"/>
+    </block>
+    <block name="FP3 to FP2">
+      <go from="FP3" hmode="route" wp="FP2"/>
+    </block>
+    <block name="FP2 to FP1">
+      <go from="FP2" hmode="route" wp="FP1"/>
+    </block>
+    <block name="FP1 to BASE">
+      <go from="FP1" hmode="route" wp="BASE"/>
+      <deroute block="Land here"/>
+    </block>
+    <block key="l" name="Land here" strip_button="Land Here" strip_icon="land-right.png">
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <go wp="TD"/>
+      <deroute block="Flare"/>
+    </block>
+    <block name="Land">
+      <go wp="TD"/>
+      <deroute block="Flare"/>
+    </block>
+    <block name="Flare">
+      <exception cond="NavDetectGround()" deroute="Holding point"/>
+      <exception cond="!nav_is_in_flight()" deroute="Landed"/>
+      <exception cond="0.10 > GetPosAlt()" deroute="Landed"/>
+      <call_once fun="NavStartDetectGround()"/>
+      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="Landed">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>

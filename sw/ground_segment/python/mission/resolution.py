@@ -66,6 +66,7 @@ class RealtimeResolution(object):
 class ResolutionFinder(object):
     def __init__(self, circular_zones, ref_utm_i, ltp_def):
         self.extrapolated_scenario = traffic_scenario.ExtrapolatedScenario(circular_zones, ref_utm_i, ltp_def)
+        self.circular_zones = circular_zones
         self.conflict_counter = 0
             
     def resolution_on_leg(self, from_point_enu, to_point_enu, groundspeed, margin, aircraft, traffic_events, wind, altitude, geofence, zones, max_tla, conflict_counter_th, avoidance_time_th, hdg_diff_th, avoid_dist_min):
@@ -120,16 +121,13 @@ class ResolutionFinder(object):
                     
                 if ((geofence_polygon.contains(linestring_to) == False) or (geofence_polygon.contains(linestring_from) == False)):
                     # Non valid solution
-                    continue
-        
-                for zone in zones:
-                    zone_polygon = geometry.Polygon(enu_lst_to_polygon(zone.enu_points))
-                    if (linestring_to.intersects(zone_polygon) or (linestring_from.intersects(zone_polygon))):
-                        # Non valid solution
-                        continue
+                    return 'nosol'
                 
-                dx_target = to_point_enu.x - new_from_point_enu.x
-                dy_target = to_point_enu.y - new_from_point_enu.y
+                circular_zones_geometries = circuluar_zones_lst_to_geometry(self.circular_zones, margin)
+                for zone in circular_zones_geometries:
+                    if (linestring_to.intersects(zone) or (linestring_from.intersects(zone))):
+                        # Non valid solution
+                        return 'nosol'
                 
                 resolution_points.append(new_from_point_enu)
                 distance = enu_distance(new_from_point_enu, from_point_enu) + enu_distance(new_from_point_enu, to_point_enu)
@@ -179,6 +177,12 @@ def enu_lst_to_polygon(enu_lst):
     for enu in enu_lst:
         coords.append((enu.x, enu.y))
     return coords
+    
+def circuluar_zones_lst_to_geometry(zones, margin):
+    circular_zones = []
+    for zone in zones:
+        circular_zones.append(geometry.Point(zone[0], zone[1]).buffer(zone[2] + margin))
+    return circular_zones
     
 def checkeheadingdirection(hdg_current, hdg_new):
     hdg_diff = hdg_new - hdg_current
