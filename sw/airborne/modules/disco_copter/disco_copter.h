@@ -26,8 +26,16 @@
 #ifndef DISCO_COPTER_H
 #define DISCO_COPTER_H
 
+
+#define INTERMCU_SET_CMD_STATUS(X) {}
+#define INTERMCU_CMD_FAILSAFE 0
+
 #include "modules/helicopter/throttle_curve.h"
 #include "modules/sensors/temp_adc.h"
+
+#include "modules/nav/nav_heli_spinup.h"
+#include "firmwares/rotorcraft/guidance/guidance_delftacopter.h"
+#include "modules/boards/opa_controller_ap.h"
 
 
 extern void disco_copter_init(void);

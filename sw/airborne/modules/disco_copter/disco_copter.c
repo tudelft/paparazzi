@@ -24,24 +24,54 @@
  */
 
 #include "modules/disco_copter/disco_copter.h"
+#include "modules/vision_outback/vision_outback.h"
 
 
 
 struct throttle_curve_t throttle_curve;
+enum hybrid_mode_t dc_hybrid_mode;
+void nav_heli_spinup_setup( uint16_t duration __attribute__((unused)), float throttle __attribute__((unused))){}
+bool nav_heli_spinup_run(void)
+{
+  return false;
+}
+
+void opa_controller_ap_disarm(bool take __attribute__((unused)) ){
+}
+
+void uart8_init(void);
+void uart8_init(void)
+{
+}
+
+bool het_moment = false;
+bool vision_timeout = false;
+bool vision_outback_enable_landing = false;
+bool vision_found_joe = false;
 
 
-void gpio_setup_output(uint32_t port, uint16_t gpios) {}
+void enableVisionDescent(bool b __attribute__((unused))) {}
+void enableVisionFindJoe(bool b __attribute__((unused))) {}
 
-void gpio_set(uint32_t port, uint16_t pin) {}
 
 
-void nav_throttle_curve_set(uint8_t mode)
+
+
+void gpio_setup_output(uint32_t port __attribute__((unused)), uint16_t gpios __attribute__((unused)));
+void gpio_setup_output(uint32_t port __attribute__((unused)), uint16_t gpios __attribute__((unused)))
+{}
+
+void gpio_set(uint32_t port __attribute__((unused)), uint16_t pin __attribute__((unused)));
+void gpio_set(uint32_t port __attribute__((unused)), uint16_t pin __attribute__((unused)))
+{}
+
+void nav_throttle_curve_set(uint8_t mode __attribute__((unused)))
 {
 
 }
 
 
-float get_temp(uint8_t nr)
+float get_temp(uint8_t nr __attribute__((unused)))
 {
   return 20.5;
 }

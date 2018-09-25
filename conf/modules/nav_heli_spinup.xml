@@ -12,7 +12,7 @@
   <header>
     <file name="nav_heli_spinup.h"/>
   </header>
-  <makefile>
+  <makefile target="ap|fbw">
     <file name="nav_heli_spinup.c"/>
   </makefile>
 </module>
