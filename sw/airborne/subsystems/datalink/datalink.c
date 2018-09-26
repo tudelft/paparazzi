@@ -89,7 +89,7 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
         break;
 
         case DL_SETTING : {
-          if (DL_SETTING_ac_id(buf) != AC_ID) { break; }
+          if (DL_SETTING_ac_id(buf) != AC_ID && DL_SETTING_ac_id(buf) != (AC_ID+1)) { break; }
           uint8_t i = DL_SETTING_index(buf);
           float var = DL_SETTING_value(buf);
           DlSetting(i, var);
@@ -109,7 +109,7 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
         break;
 
         case DL_GET_SETTING : {
-          if (DL_GET_SETTING_ac_id(buf) != AC_ID) { break; }
+          if (DL_GET_SETTING_ac_id(buf) != AC_ID && DL_GET_SETTING_ac_id(buf) != (AC_ID+1)) { break; }
           uint8_t i = DL_GET_SETTING_index(buf);
           float val = settings_get_value(i);
 #if PPRZLINK_DEFAULT_VER == 2
@@ -154,7 +154,7 @@ void dl_parse_msg(struct link_device *dev, struct transport_tx *trans, uint8_t *
 #if USE_GPS
         case DL_GPS_INJECT : {
           // Check if the GPS is for this AC
-          if (DL_GPS_INJECT_ac_id(buf) != AC_ID) { break; }
+          if (DL_GPS_INJECT_ac_id(buf) != AC_ID && DL_GPS_INJECT_ac_id(buf) != (AC_ID+1)) { break; }
 
           // GPS parse data
           gps_inject_data(

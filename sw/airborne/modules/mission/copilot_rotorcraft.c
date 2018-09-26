@@ -67,7 +67,7 @@
  */
 void copilot_parse_move_wp_dl(uint8_t *buf)
 {
-  if (DL_MOVE_WP_ac_id(buf) == AC_ID) {
+  if (DL_MOVE_WP_ac_id(buf) == AC_ID || DL_MOVE_WP_ac_id(buf) == (AC_ID+1)) {
     if (stateIsLocalCoordinateValid()) {
       uint8_t wp_id = DL_MOVE_WP_wp_id(buf);
       if (wp_id >= nb_waypoint) {

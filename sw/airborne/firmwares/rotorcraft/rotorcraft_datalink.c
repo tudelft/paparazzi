@@ -46,14 +46,14 @@ void firmware_parse_msg(struct link_device *dev __attribute__((unused)), struct 
 
 #ifdef USE_NAVIGATION
     case DL_BLOCK : {
-      if (DL_BLOCK_ac_id(buf) != AC_ID) { break; }
+      if (DL_BLOCK_ac_id(buf) != AC_ID && DL_BLOCK_ac_id(buf) != (AC_ID+1)) { break; }
       nav_goto_block(DL_BLOCK_block_id(buf));
     }
     break;
 
     case DL_MOVE_WP : {
       uint8_t ac_id = DL_MOVE_WP_ac_id(buf);
-      if (ac_id != AC_ID) { break; }
+      if (ac_id != AC_ID && ac_id != (AC_ID+1)) { break; }
       if (stateIsLocalCoordinateValid()) {
         uint8_t wp_id = DL_MOVE_WP_wp_id(buf);
         struct LlaCoor_i lla;
@@ -72,7 +72,7 @@ void firmware_parse_msg(struct link_device *dev __attribute__((unused)), struct 
 
 #ifdef AP_MODE_GUIDED
     case DL_GUIDED_SETPOINT_NED:
-      if (DL_GUIDED_SETPOINT_NED_ac_id(buf) != AC_ID) { break; }
+      if (DL_GUIDED_SETPOINT_NED_ac_id(buf) != AC_ID && DL_GUIDED_SETPOINT_NED_ac_id(buf) != (AC_ID+1) { break; }
 
       autopilot_guided_update(DL_GUIDED_SETPOINT_NED_flags(buf),
                               DL_GUIDED_SETPOINT_NED_x(buf),

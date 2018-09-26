@@ -74,7 +74,7 @@ void telemetry_intermcu_event(void)
     /* Switch on MSG ID */
     switch(pprzlink_get_msg_id(telemetry_intermcu.rx_buffer)) {
       case DL_EMERGENCY_CMD:
-        if(DL_EMERGENCY_CMD_ac_id(telemetry_intermcu.rx_buffer) == AC_ID
+        if((DL_EMERGENCY_CMD_ac_id(telemetry_intermcu.rx_buffer) == AC_ID || DL_EMERGENCY_CMD_ac_id(telemetry_intermcu.rx_buffer) == (AC_ID+1))
             && DL_EMERGENCY_CMD_cmd(telemetry_intermcu.rx_buffer) == 0) {
           fbw_mode = FBW_MODE_FAILSAFE;
         }
