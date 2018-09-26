@@ -307,7 +307,7 @@
       !(nav_block == IndexOfBlock('failsafe'))
       )" deroute="failsafe"/>
     <!-- Height limit crossing -->
-    <exception cond="(air_data.amsl_baro > (337. + 457.) && air_data.amsl_baro_valid &&
+    <exception cond="(air_data.amsl_baro > (343. + 457.) && air_data.amsl_baro_valid &&
       !(nav_block == IndexOfBlock('waitGps')) &&
       !(nav_block == IndexOfBlock('geoInit')) &&
       !(nav_block == IndexOfBlock('failsafe'))
