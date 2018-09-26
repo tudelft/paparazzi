@@ -33,7 +33,7 @@
 
     <waypoint alt="383.0" lat="-27.2744961" lon="151.2898817" name="BASE"/> <!-- alt=436.99 agl=94 -->
     <waypoint alt="383.0" lat="-27.357830" lon="151.240222" name="JOE_reported"/> <!-- alt=436.98 agl=95 -->
-    <waypoint alt="383.0" lat="-27.3576787" lon="151.2403704" name="JOE"/> <!-- alt436.98= agl=95 --><!-- SAME SPOT? -->
+    <waypoint alt="383.0" lat="-27.3579417" lon="151.2402764" name="JOE"/> <!-- alt436.98= agl=95 --><!-- SAME SPOT? -->
 
     <waypoint lat="-27.2801165" lon="151.2894907" name="FP0" alt="413"/> <!-- alt=436.98 agl=94 -->
     <waypoint lat="-27.32544133940339" lon="151.2810230591555" name="FP1" alt="543"/> <!-- alt=436.98 agl=94 -->
