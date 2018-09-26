@@ -72,7 +72,7 @@ void firmware_parse_msg(struct link_device *dev __attribute__((unused)), struct 
 
 #ifdef AP_MODE_GUIDED
     case DL_GUIDED_SETPOINT_NED:
-      if (DL_GUIDED_SETPOINT_NED_ac_id(buf) != AC_ID && DL_GUIDED_SETPOINT_NED_ac_id(buf) != (AC_ID+1) { break; }
+      if (DL_GUIDED_SETPOINT_NED_ac_id(buf) != AC_ID && DL_GUIDED_SETPOINT_NED_ac_id(buf) != (AC_ID+1)) { break; }
 
       autopilot_guided_update(DL_GUIDED_SETPOINT_NED_flags(buf),
                               DL_GUIDED_SETPOINT_NED_x(buf),
