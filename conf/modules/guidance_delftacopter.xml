@@ -28,12 +28,7 @@
     <dl_settings>
       <dl_settings NAME="Hybrid Guidance">
         <dl_setting var="max_airspeed" min="5" step="0.5" max="45" param="DC_FORWARD_MAX_AIRSPEED"/>
-        <dl_setting var="nominal_forward_thrust" min="0" step="50" max="9600" param="DC_FORWARD_NOMINAL_THRUST">
-          <strip_button name="STALL" icon="turtle.png" value="DC_FORWARD_MIN_THRUST" group="speed_select"/>
-          <strip_button name="SLOW" icon="walking.png" value="DC_FORWARD_SLOW_THRUST" group="speed_select"/>
-          <strip_button name="NORMAL" icon="running.png" value="DC_FORWARD_NOMINAL_THRUST" group="speed_select"/>
-          <strip_button name="RACE" icon="rabbit.png" value="DC_FORWARD_MAX_THRUST" group="speed_select"/>
-        </dl_setting>
+        <dl_setting var="nominal_forward_thrust" min="0" step="50" max="9600" param="DC_FORWARD_NOMINAL_THRUST"/>
         <dl_setting var="vertical_dgain" min="0.0" step="0.001" max="1.0" param="DC_FORWARD_VERTICAL_DGAIN"/>
         <dl_setting var="low_airspeed_pitch_gain" min="0.0" step="0.1" max="5.0" param="DC_FORWARD_VERTICAL_LOW_AIRSPEED_PITCH_GAIN"/>
         <dl_setting var="max_turn_bank" min="10.0" step="1.0" max="60.0" param="DC_FORWARD_MAX_TURN_BANK"/>
