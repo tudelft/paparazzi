@@ -159,11 +159,13 @@ void ransac_push(float time, float x, float y, float mx, float my)
          * @param[out] fit_error* Total error of the fit
          */
 
+
+
         // Variables
         int n_samples = ((int)(dr_ransac.buf_size * 0.4));
         int n_iterations = 200;
         float error_threshold = 1.0;
-        int Dimension = 1;
+        // int Dimension = 1;
         int count = dr_ransac.buf_size;
         float targets_x[RANSAC_BUF_SIZE];
         float targets_y[RANSAC_BUF_SIZE];
@@ -189,6 +191,7 @@ void ransac_push(float time, float x, float y, float mx, float my)
 
         //printf("Running RANSAC with %d points and %d samples, err_max %f\n",count, n_samples, error_threshold);
 
+
         RANSAC_linear_model(n_samples, n_iterations, error_threshold, targets_x, 1,
                                  samples, count, params_x, &fit_error);
 
@@ -206,7 +209,7 @@ void ransac_push(float time, float x, float y, float mx, float my)
 
 
         // Put EVERY FIT in a file to verify
-#define DEBUG_RANSAC
+// #define DEBUG_RANSAC
 #ifdef DEBUG_RANSAC
 
         if(dr_ransac.ransac_cnt % 20 == 0)

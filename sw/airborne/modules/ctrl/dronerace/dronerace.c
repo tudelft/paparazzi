@@ -165,6 +165,7 @@ void dronerace_enter(void)
 
 void dronerace_periodic(void)
 {
+
   float phi = stateGetNedToBodyEulers_f()->phi - RadOfDeg(-1.5);
   float theta = stateGetNedToBodyEulers_f()->theta - RadOfDeg(2.0);
   float psi = stateGetNedToBodyEulers_f()->psi - psi0;
@@ -172,6 +173,9 @@ void dronerace_periodic(void)
   filter_predict(phi,theta,psi, dt);
 
   write_log();
+
+
+
 
   // Show position on the map
   /*
