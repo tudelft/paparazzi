@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
 
-<flight_plan alt="437" ground_alt="337" home_mode_height="437" lat0="-27.27392" lon0="151.290039" max_dist_from_home="13000" name="DALBY2018" qfu="20" security_height="10">
+<flight_plan alt="437" ground_alt="337" home_mode_height="537" lat0="-27.27392" lon0="151.290039" max_dist_from_home="13000" name="DALBY2018" qfu="20" security_height="537">
   <header>
 #include "autopilot.h"
 #include "guidance/guidance_delftacopter.h"
@@ -30,7 +30,7 @@
     <waypoint name="HOVER" x="-239.7" y="-134.0"/> <!-- alt=??436.98 agl=96 -->
     <waypoint lat="-27.2739" lon="151.290039" name="BASE"/> <!-- alt=436.99 agl=94 -->
     <waypoint lat="-27.357830" lon="151.240222" name="JOE_reported"/> <!-- alt=436.98 agl=95 -->
-    <waypoint lat="-27.357830" lon="151.240222" name="JOE"/> <!-- alt436.98= agl=95 --><!-- SAME SPOT? -->
+    <waypoint lat="-27.3582400" lon="151.2400430" name="JOE"/> <!-- alt436.98= agl=95 --><!-- SAME SPOT? -->
     <waypoint lat="-27.280426" lon="151.290535" name="FP0"/> <!-- alt=436.98 agl=94 -->
     <waypoint lat="-27.32544133940339" lon="151.2810230591555" name="FP1"/> <!-- alt=436.98 agl=94 -->
     <waypoint lat="-27.27292716526073" lon="151.2906279518992" name="FP2"/> <!-- alt=436.99 agl=94 -->
@@ -541,7 +541,7 @@
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="NavKillThrottle()"/>
       <call_once fun="nav_throttle_curve_set(0)"/>
-      <attitude pitch="0" roll="0" throttle="0" until="(stage_time>60) && GpsFixValid()" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0" until="(stage_time>60) && GpsFixValid()" vmode="throttle"/> <!-- CDW: err: in this block, the tip props start turning ! -->
     </block>
 
     <!-- Takeoff at joe -->

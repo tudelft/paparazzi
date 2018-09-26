@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
 
-<flight_plan alt="437" ground_alt="337" home_mode_height="437" lat0="-27.217022" lon0="151.236898" max_dist_from_home="2800" name="DALBY2018" qfu="20" security_height="10">
+<flight_plan alt="437" ground_alt="337" home_mode_height="437" lat0="-27.217022" lon0="151.236898" max_dist_from_home="2800" name="DALBY2018" qfu="20" security_height="437">
   <header>
 #include "autopilot.h"
 #include "guidance/guidance_delftacopter.h"

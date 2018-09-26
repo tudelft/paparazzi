@@ -114,7 +114,7 @@ class DelftaCopterFrame(wx.Frame):
             self.vision_marker_x = round(float(msg['marker_enu_x']) ,1)
             self.vision_marker_y = round(float(msg['marker_enu_y']) ,1)
             self.vision_height = round(float(msg['height']) , 1)
-            self.vision_version = round(float(msg['Version']) , 2)
+            self.vision_version = round(float(msg['Version']) , 3)
             self.toggle()
             wx.CallAfter(self.update)
         elif msg.name == "TRIM":
