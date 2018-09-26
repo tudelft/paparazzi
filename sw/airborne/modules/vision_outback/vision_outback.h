@@ -118,6 +118,7 @@ extern bool het_moment;
 extern bool vision_timeout;
 extern bool vision_found_joe;
 extern float vision_height;
+extern float unfiltered_vision_height;
 
 extern void vision_outback_init(void);
 extern void vision_outback_event(void);
@@ -136,6 +137,8 @@ extern void killVision(void);
 
 extern bool getVisionReady(void);
 extern bool hasFoundGoodJoe(void);
+extern bool hasArucoLock(void);
+extern bool isVisionHeightUsedInINS(void);
 
 #endif
 

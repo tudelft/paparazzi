@@ -259,10 +259,18 @@
     </block>
     <block group="joe_found" name="fjoe_descendSlow">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="AND(4.0 > stateGetPositionEnu_f()->z, AND(!hasArucoLock(), isVisionHeightUsedInINS()))" deroute="fjoe_descendUltraSlow"/>
       <exception cond="het_moment" deroute="joe_moment"/>
       <exception cond="(!vision_outback_enable_landing || vision_timeout) && stage_time > 30" deroute="joe_moment"/>
       <call_once fun="nav_hybrid_heading_init()"/>
       <stay climb="-0.5" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="JOE_found"/>
+    </block>
+    <block group="joe_found" name="fjoe_descendUltraSlow">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="het_moment" deroute="joe_moment"/>
+      <exception cond="(!vision_outback_enable_landing || vision_timeout) && stage_time > 20" deroute="joe_moment"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay climb="-0.25" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="JOE_found"/>
     </block>
 
     <!-- Land at joe (without vision)-->

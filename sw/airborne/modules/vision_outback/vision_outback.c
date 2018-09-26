@@ -79,6 +79,7 @@ bool het_moment = false;
 bool vision_timeout = false; // TODO: remove
 float vision_height = false; // TODO: remove
 bool vision_found_joe = false;
+float unfiltered_vision_height = 0; // Raw vision height not fused with gps
 
 float msg_marker_x = 0;
 float msg_marker_y = 0;
@@ -220,8 +221,11 @@ static inline void vision_outback_parse_msg(void)
               het_moment = false;
             }
             // If height==-1, the measurement is faulty so don't send it
-            if (v2p_package.stupid_pprz_height > 0)
+            if (v2p_package.stupid_pprz_height > 0) {
               AbiSendMsgAGL(AGL_SONAR_ADC_ID, v2p_package.stupid_pprz_height);
+            }
+            // This should go outside the if above, since any sanity checks should also fail if lower than 0
+            unfiltered_vision_height = v2p_package.stupid_pprz_height;
 
             vision_height = v2p_package.height;
           } else {
@@ -482,6 +486,13 @@ bool hasFoundGoodJoe(void) {
   return v2p_package.landing_status == ls_found_a_good_joe;
 }
 
+bool hasArucoLock(void) {
+  return v2p_package.landing_status == ls_aruco_lock;
+}
+
+bool isVisionHeightUsedInINS(void) {
+  return unfiltered_vision_height > INS_SONAR_MIN_RANGE && unfiltered_vision_height < INS_SONAR_MAX_RANGE;
+}
 
 void enableVisionPower(void)
 {
