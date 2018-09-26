@@ -60,16 +60,15 @@ let () =
 
   let get_ivy_message = fun _ args ->
     try
-      let ac_id = args.(0) in
-      let (msg_id, vs) = Tm_Pprz.values_of_string args.(1) in
-      let payload = Tm_Pprz.payload_of_values msg_id (int_of_string ac_id) vs in
+      let (msg_id, vs) = Tm_Pprz.values_of_string args.(0) in
+      let payload = Tm_Pprz.payload_of_values msg_id (int_of_string !id) vs in
       let buf = Pprz_transport.Transport.packet payload in
       let n = Compat.bytes_length buf in
       let n' = Unix.sendto socket buf 0 n [] sockaddr in
       assert (n = n')
     with _ -> () in
 
-  let _b = Ivy.bind get_ivy_message "(.*)" in
+  let _b = Ivy.bind get_ivy_message (sprintf "^%s (.*)" !id) in
 
   (* Receiving a datalink message over UDP, on the same port *)
   let sockaddr = Unix.ADDR_INET (Unix.inet_addr_any, !datalink_port)
