@@ -19,6 +19,7 @@
     <waypoint height="40.0" name="p3" x="0" y="-70.0"/>
     <waypoint height="40.0" name="p4" x="0" y="70.0"/>
     <waypoint name="TD" x="5.6" y="-10.9"/>
+     <waypoint name="JOE" x="5.6" y="-10.9"/>
     <waypoint height="40.0" name="JOE_reported" x="0" y="0"/>
     <waypoint height="30.0" name="JOE_found" x="0" y="110"/>
     <waypoint height="30.0" name="TD_mrk" x="0" y="25"/>
