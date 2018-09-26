@@ -19,12 +19,12 @@
     <waypoint height="30.0" name="JOE_found" x="-258.1" y="-21.9"/> <!-- alt=436.99 agl=94 -->
     <waypoint height="30.0" name="TD_mrk" x="500.6" y="-500.0"/> <!--366.99 alt= agl=24 -->
 
-    <waypoint name="j1" x="-4715.9" y="-9297.3" alt="381.99"/> <!-- alt=436.99 agl=95 -->
-    <waypoint name="j2" x="-4873.3" y="-9278.1" alt="383.99"/> <!-- alt=436.99 agl=93 -->
-    <waypoint name="j3" x="-4731.5" y="-9325.7" alt="381.99"/> <!-- alt=436.99 agl=95 -->
-    <waypoint name="j4" x="-4873.1" y="-9344.5" alt="385.98"/> <!-- alt=436.98 agl=91 -->
-    <waypoint name="j5" x="-4735.5" y="-9414.4" alt="383.98"/> <!-- alt=436.98 agl=93 -->
-    <waypoint name="j6" x="-4879.1" y="-9397.4" alt="382.99"/> <!-- alt=436.99 agl=94 -->
+    <waypoint name="j1" lat="-27.3573175" lon="151.2406668" alt="381.99"/> <!-- alt=436.99 agl=95 -->
+    <waypoint name="j2" lat="-27.3572397" lon="151.2398595" alt="383.99"/> <!-- alt=436.99 agl=93 -->
+    <waypoint name="j3" lat="-27.3583163" lon="151.2402419" alt="381.99"/> <!-- alt=436.99 agl=95 -->
+    <waypoint name="j4" lat="-27.3572759" lon="151.2402189" alt="385.98"/> <!-- alt=436.98 agl=91 -->
+    <waypoint name="j5" lat="-27.3581397" lon="151.2396467" alt="383.98"/> <!-- alt=436.98 agl=93 -->
+    <waypoint name="j6" lat="-27.3574628" lon="151.2407173" alt="382.99"/> <!-- alt=436.99 agl=94 -->
 
     <waypoint name="CLIMB" x="-400.7" y="400.7"/> <!-- alt=??436.99 agl=94 -->
     <waypoint name="STDBY" x="400.6" y="-400.2"/> <!-- alt=416.99 agl=75 -->
