@@ -79,7 +79,7 @@ float get_temp(uint8_t nr __attribute__((unused)))
 
 void disco_copter_init()
 {
-
+  throttle_curve.rpm_meas = 1300;
 }
 
 bool hasFoundGoodJoe(void)
