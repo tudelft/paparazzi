@@ -259,7 +259,7 @@
     </block>
     <block group="joe_found" name="fjoe_descendSlow">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
-      <exception cond="AND(4.0 > stateGetPositionEnu_f()->z, AND(!hasArucoLock(), isVisionHeightUsedInINS()))" deroute="fjoe_descendUltraSlow"/>
+      <exception cond="And(4.0 > stateGetPositionEnu_f()->z, And(!hasArucoLock(), isVisionHeightUsedInINS()))" deroute="fjoe_descendUltraSlow"/>
       <exception cond="het_moment" deroute="joe_moment"/>
       <exception cond="(!vision_outback_enable_landing || vision_timeout) && stage_time > 30" deroute="joe_moment"/>
       <call_once fun="nav_hybrid_heading_init()"/>
@@ -327,7 +327,7 @@
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="NavKillThrottle()"/>
       <call_once fun="nav_throttle_curve_set(0)"/>
-      <attitude pitch="0" roll="0" throttle="0" until="(stage_time>60) && GpsFixValid()" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0" until="(stage_time>60) && GpsFixValid()" vmode="throttle" pre_call="nav_set_heading_current()" />
     </block>
 
     <!-- Takeoff at joe -->
