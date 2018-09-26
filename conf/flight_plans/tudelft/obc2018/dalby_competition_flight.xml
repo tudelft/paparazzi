@@ -431,6 +431,7 @@
       <go from="FP4" hmode="route" wp="FP5"/>
     </block>
     <block group="fly_to_joe" name="route_to_joe6">
+      <call_once fun="enableVisionPower()" />
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
       <set value="FALSE" var="do_avoid_mission"/>
       <go from="FP5" hmode="route" wp="FP6"/>
@@ -620,11 +621,13 @@
       <go from="FP3" hmode="route" wp="FP2"/>
     </block>
     <block group="fly_to_base" name="route_to_base6">
+      <call_once fun="enableVisionPower()" />
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
       <set value="FALSE" var="do_avoid_mission"/>
       <go from="FP2" hmode="route" wp="FP1"/>
     </block>
     <block group="fly_to_base" name="route_to_base7">
+      <call_once fun="enableVisionPower()" />
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
       <set value="FALSE" var="do_avoid_mission"/>
       <go from="FP1" hmode="route" wp="FP0"/>
