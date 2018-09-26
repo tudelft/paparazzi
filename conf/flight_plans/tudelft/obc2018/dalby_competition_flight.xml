@@ -34,7 +34,7 @@
     <waypoint lat="-27.357830" lon="151.240222" name="JOE_reported"/> <!-- alt=436.98 agl=95 -->
     <waypoint lat="-27.3572916" lon="151.2403845" name="JOE"/> <!-- alt436.98= agl=95 --><!-- SAME SPOT? -->
 
-    <waypoint lat="-27.280426" lon="151.290535" name="FP0" alt="413"/> <!-- alt=436.98 agl=94 -->
+    <waypoint lat="-27.2801165" lon="151.2894907" name="FP0" alt="413"/> <!-- alt=436.98 agl=94 -->
     <waypoint lat="-27.32544133940339" lon="151.2810230591555" name="FP1" alt="543"/> <!-- alt=436.98 agl=94 -->
     <waypoint lat="-27.27292716526073" lon="151.2906279518992" name="FP2" alt="543"/> <!-- alt=436.99 agl=94 -->
     <waypoint lat="-27.273033" lon="151.273964" name="FP3" alt="543"/> <!-- alt=436.98 agl=96 -->
