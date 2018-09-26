@@ -147,6 +147,13 @@ extern bool guidance_v_set_guided_vz(float vz);
 
 extern bool guidance_v_set_guided_th(float th);
 
+
+/**
+ * Return true if the integrator equals lower bound -> if the bounds are large, we are landed
+ * WARNING: use only if the bounds are sufficiently large
+ */
+extern bool is_guidance_v_integrator_lower_bounded(void);
+
 #define guidance_v_SetKi(_val) {      \
     guidance_v_ki = _val;       \
     guidance_v_z_sum_err = 0;     \

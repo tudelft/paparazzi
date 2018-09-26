@@ -402,6 +402,9 @@ static int32_t get_vertical_thrust_coeff(void)
   return coef;
 }
 
+bool is_guidance_v_integrator_lower_bounded(void) {
+  return guidance_v_z_sum_err == -GUIDANCE_V_MAX_SUM_ERR;
+}
 
 #define FF_CMD_FRAC 18
 
