@@ -46,14 +46,15 @@ static void send_mission_path_status(struct transport_tx *trans, struct link_dev
   for(uint8_t i = 0; i < mission_path_last_idx; i++)
     mission_ids[i] = mission_path[i].id;
 
-  if(mission_path_last_idx == 0) {
+  uint8_t mission_send_idx = mission_path_last_idx;
+  if(mission_send_idx == 0) {
     mission_ids[0] = 0xFFFF;
-    mission_path_last_idx = 1;
+    mission_send_idx = 1;
   }
   
   pprz_msg_send_MISSION_PATH_STATUS(trans, dev, AC_ID,
                                 &mission_path_idx,
-                                mission_path_last_idx,
+                                mission_send_idx,
                                 mission_ids);
 }
 
