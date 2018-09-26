@@ -535,7 +535,8 @@
     <block group="wait_joe" name="joe_inert">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>   
       <call_once fun="opa_controller_ap_disarm(true)"/>
-      <attitude pitch="0" roll="0" throttle="0" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0" until="stage_time>2" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0" until="electrical.vsupply>100" vmode="throttle"/>
     </block>
     <block group="wait_joe" name="joe_wait">
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
