@@ -25,6 +25,7 @@
     <waypoint height="40.0" name="JOE_reported" lat="-27.2173751" lon="151.2385633"/>
     <waypoint height="30.0" name="JOE_found" x="-258.1" y="-21.9"/>
     <waypoint height="30.0" name="TD_mrk" x="-240.6" y="-36.0"/>
+
     <waypoint name="FP0" lat="-27.2178778" lon="151.2414347" alt="407"/>
     <waypoint name="FP1" lat="-27.2199193" lon="151.2366817" alt="437"/>
     <waypoint name="FP2" lat="-27.2203979" lon="151.2394529" alt="437"/>
@@ -33,6 +34,7 @@
     <waypoint name="FP5" lat="-27.2216095" lon="151.2361086" alt="437"/>
     <waypoint name="FP6" lat="-27.2217650" lon="151.2388523" alt="437"/>
     <waypoint name="FP7" lat="-27.2187869" lon="151.2381259" alt="407"/>
+
     <waypoint height="40.0" name="j1" x="197.4" y="38.8"/>
     <waypoint height="40.0" name="j2" x="80.8" y="-12.5"/>
     <waypoint height="40.0" name="j3" x="235.4" y="1.7"/>
@@ -43,6 +45,11 @@
     <waypoint name="CLIMB" x="33.7" y="43.7"/>
     <waypoint height="80.0" name="STDBY" x="75.6" y="-145.2"/>
     <waypoint name="HOVER" x="-239.7" y="-134.0"/>
+
+    <waypoint lat="-27.28797146668507" lon="151.2531224518434" name="_NFZ1_0"/>
+    <waypoint lat="-27.28780851501299" lon="151.2549681511527" name="_NFZ1_1"/>
+    <waypoint lat="-27.28579768822575" lon="151.2547903854683" name="_NFZ1_2"/>
+    <waypoint lat="-27.28600018480169" lon="151.2528023345815" name="_NFZ1_3"/>
   </waypoints>
   <sectors>
     <sector color="yellow" name="MissionBoundary" type="dynamic">
@@ -50,6 +57,12 @@
       <corner name="MB2"/>
       <corner name="MB3"/>
       <corner name="MB4"/>
+    </sector>
+    <sector color="orange" name="NFZ1" type="dynamic">
+      <corner name="_NFZ1_0"/>
+      <corner name="_NFZ1_1"/>
+      <corner name="_NFZ1_2"/>
+      <corner name="_NFZ1_3"/>
     </sector>
   </sectors>
   <variables>
@@ -62,7 +75,7 @@
     <module name="nav" type="hybrid_heading"/>
   </modules>
   <exceptions>
-   <!-- Mission boundary crossing -->
+    <!-- Mission boundary crossing -->
     <exception cond="(!InsideMissionBoundary(GetPosX(), GetPosY()) &&
       !(nav_block == IndexOfBlock('waitGps')) &&
       !(nav_block == IndexOfBlock('geoInit')) &&
@@ -204,6 +217,7 @@
       <go from="FP4" hmode="route" wp="FP5"/>
     </block>
     <block group="fly_to_joe" name="route_to_joe6">
+      <call_once fun="enableVisionPower()" />
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
       <set value="FALSE" var="do_avoid_mission"/>
       <go from="FP5" hmode="route" wp="FP6"/>
@@ -401,11 +415,13 @@
       <go from="FP3" hmode="route" wp="FP2"/>
     </block>
     <block group="fly_to_base" name="route_to_base6">
+      <call_once fun="enableVisionPower()" />
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
       <set value="FALSE" var="do_avoid_mission"/>
       <go from="FP2" hmode="route" wp="FP1"/>
     </block>
     <block group="fly_to_base" name="route_to_base7">
+      <call_once fun="enableVisionPower()" />
       <set value="HB_FORWARD" var="dc_hybrid_mode"/>
       <set value="FALSE" var="do_avoid_mission"/>
       <go from="FP1" hmode="route" wp="FP0"/>
