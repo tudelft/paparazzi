@@ -30,9 +30,9 @@
     <waypoint name="CLIMB" x="33.7" y="43.7"/> <!-- alt=??436.99 agl=94 -->
     <waypoint height="80.0" name="STDBY" x="75.6" y="-145.2"/> <!-- alt=416.99 agl=75 -->
     <waypoint name="HOVER" x="-239.7" y="-134.0"/> <!-- alt=??436.98 agl=96 -->
-    <waypoint lat="-27.2731565" lon="151.2901192" name="BASE"/> <!-- alt=436.99 agl=94 -->
+    <waypoint lat="-27.2744961" lon="151.2898817" name="BASE"/> <!-- alt=436.99 agl=94 -->
     <waypoint lat="-27.357830" lon="151.240222" name="JOE_reported"/> <!-- alt=436.98 agl=95 -->
-    <waypoint lat="-27.3582400" lon="151.2400430" name="JOE"/> <!-- alt436.98= agl=95 --><!-- SAME SPOT? -->
+    <waypoint lat="-27.3572916" lon="151.2403845" name="JOE"/> <!-- alt436.98= agl=95 --><!-- SAME SPOT? -->
 
     <waypoint lat="-27.280426" lon="151.290535" name="FP0" alt="413"/> <!-- alt=436.98 agl=94 -->
     <waypoint lat="-27.32544133940339" lon="151.2810230591555" name="FP1" alt="543"/> <!-- alt=436.98 agl=94 -->
