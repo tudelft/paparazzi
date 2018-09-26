@@ -17,7 +17,7 @@
   <waypoints> <!-- alt= agl= --><!--ALT and AGL UNITS in METERS -->
     <waypoint name="HOME" x="0" y="0"/> <!-- alt=436.99 agl=94 -->
     <waypoint height="30.0" name="JOE_found" x="-258.1" y="-21.9"/> <!-- alt=436.99 agl=94 -->
-    <waypoint height="30.0" name="TD_mrk" x="-240.6" y="-36.0"/> <!--366.99 alt= agl=24 -->
+    <waypoint height="30.0" name="TD_mrk" x="500.6" y="-500.0"/> <!--366.99 alt= agl=24 -->
 
     <waypoint name="j1" x="-4715.9" y="-9297.3" alt="381.99"/> <!-- alt=436.99 agl=95 -->
     <waypoint name="j2" x="-4873.3" y="-9278.1" alt="383.99"/> <!-- alt=436.99 agl=93 -->
@@ -26,15 +26,15 @@
     <waypoint name="j5" x="-4735.5" y="-9414.4" alt="383.98"/> <!-- alt=436.98 agl=93 -->
     <waypoint name="j6" x="-4879.1" y="-9397.4" alt="382.99"/> <!-- alt=436.99 agl=94 -->
 
-    <waypoint height="40.0" name="TD" x="30.9" y="-45.4"/> <!-- alt=376.99 agl=34 -->
+    <waypoint height="40.0" name="TD" x="500.9" y="500.4"/> <!-- alt=376.99 agl=34 -->
     <waypoint name="CLIMB" x="33.7" y="43.7"/> <!-- alt=??436.99 agl=94 -->
-    <waypoint height="80.0" name="STDBY" x="75.6" y="-145.2"/> <!-- alt=416.99 agl=75 -->
-    <waypoint name="HOVER" x="-239.7" y="-134.0"/> <!-- alt=??436.98 agl=96 -->
+    <waypoint height="80.0" name="STDBY" x="500.6" y="-500.2"/> <!-- alt=416.99 agl=75 -->
+    <waypoint name="HOVER" x="-500.7" y="-500.0"/> <!-- alt=??436.98 agl=96 -->
     <waypoint lat="-27.2744961" lon="151.2898817" name="BASE"/> <!-- alt=436.99 agl=94 -->
     <waypoint lat="-27.357830" lon="151.240222" name="JOE_reported"/> <!-- alt=436.98 agl=95 -->
     <waypoint lat="-27.3572916" lon="151.2403845" name="JOE"/> <!-- alt436.98= agl=95 --><!-- SAME SPOT? -->
 
-    <waypoint lat="-27.280426" lon="151.290535" name="FP0" alt="413"/> <!-- alt=436.98 agl=94 -->
+    <waypoint lat="-27.2801165" lon="151.2894907" name="FP0" alt="413"/> <!-- alt=436.98 agl=94 -->
     <waypoint lat="-27.32544133940339" lon="151.2810230591555" name="FP1" alt="543"/> <!-- alt=436.98 agl=94 -->
     <waypoint lat="-27.27292716526073" lon="151.2906279518992" name="FP2" alt="543"/> <!-- alt=436.99 agl=94 -->
     <waypoint lat="-27.273033" lon="151.273964" name="FP3" alt="543"/> <!-- alt=436.98 agl=96 -->
