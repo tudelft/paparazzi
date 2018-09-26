@@ -40,7 +40,7 @@
     <waypoint lat="-27.273033" lon="151.273964" name="FP3" alt="543"/> <!-- alt=436.98 agl=96 -->
     <waypoint lat="-27.318887" lon="151.257506" name="FP4" alt="543"/> <!-- alt=436.98 agl=96 -->
     <waypoint lat="-27.331643" lon="151.252819" name="FP5" alt="543"/> <!-- alt=436.98 agl=96 -->
-    <waypoint lat="-27.347147" lon="151.243603" name="FP6" alt="543"/> <!-- alt=436.98 agl=92 -->
+    <waypoint lat="-27.3469925" lon="151.2452562" name="FP6" alt="543"/> <!-- alt=436.98 agl=92 -->
     <waypoint lat="-27.357183" lon="151.242202" name="FP7" alt="413"/> <!-- alt=436.98 agl=92 -->
 
     <waypoint lat="-27.360503" lon="151.229472" name="MB1"/> <!-- alt=436.98 agl=93 -->
