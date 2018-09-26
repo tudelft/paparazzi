@@ -16,8 +16,8 @@
 </header>
   <waypoints> <!-- alt= agl= --><!--ALT and AGL UNITS in METERS -->
     <waypoint name="HOME" x="0" y="0"/> <!-- alt=436.99 agl=94 -->
-    <waypoint height="30.0" name="JOE_found" x="-258.1" y="-21.9"/> <!-- alt=436.99 agl=94 -->
-    <waypoint height="30.0" name="TD_mrk" x="500.6" y="-500.0"/> <!--366.99 alt= agl=24 -->
+    <waypoint alt="383.0" lat="-27.3579417" lon="151.2402764" name="JOE_found"/> <!-- alt=436.99 agl=94 -->
+    <waypoint alt="383.0" lat="-27.3579417" lon="151.2402764" name="TD_mrk"/> <!--366.99 alt= agl=24 -->
 
     <waypoint name="j1" lat="-27.3573175" lon="151.2406668" alt="381.99"/> <!-- alt=436.99 agl=95 -->
     <waypoint name="j2" lat="-27.3572397" lon="151.2398595" alt="383.99"/> <!-- alt=436.99 agl=93 -->
