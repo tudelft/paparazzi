@@ -324,7 +324,7 @@
       !(nav_block == IndexOfBlock('landing_moment_noGPS')) &&
       !(nav_block == IndexOfBlock('landed')) &&
       !(nav_block == IndexOfBlock('joe_descendSlow')) &&
-      !(nav_block == IndexOfBlock('joe_descendUltraSlow')) &&
+      !(nav_block == IndexOfBlock('fjoe_descendUltraSlow')) &&
       !(nav_block == IndexOfBlock('joe_moment')) &&
       !(nav_block == IndexOfBlock('joe_landed')) &&
       !(nav_block == IndexOfBlock('joe_inert')) &&
@@ -341,7 +341,7 @@
       !(nav_block == IndexOfBlock('holdingPoint')) &&
       !(nav_block == IndexOfBlock('failsafe')) &&
       !(nav_block == IndexOfBlock('joe_descendSlow')) &&
-      !(nav_block == IndexOfBlock('joe_descendUltraSlow')) &&
+      !(nav_block == IndexOfBlock('fjoe_descendUltraSlow')) &&
       !(nav_block == IndexOfBlock('joe_moment')) &&
       !(nav_block == IndexOfBlock('joe_landed')) &&
       !(nav_block == IndexOfBlock('joe_inert')) &&
