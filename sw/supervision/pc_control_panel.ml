@@ -203,6 +203,7 @@ let supervision = fun ?file gui log (ac_combo : Gtk_tools.combo) (target_combo :
           match try double_quote (Xml.attrib arg "constant") with _ -> "" with
             "@AIRCRAFT" -> (Gtk_tools.combo_value ac_combo)
           | "@AC_ID" -> gui#entry_ac_id#text
+          | "@AC_FBW_ID" -> sprintf "%d" ((int_of_string gui#entry_ac_id#text) + 1)
           | const -> const in
 	    args := sprintf "%s %s %s" !args (ExtXml.attrib arg "flag") constant)
 	  (Xml.children program);
