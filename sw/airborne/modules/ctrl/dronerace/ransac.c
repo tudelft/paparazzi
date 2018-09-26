@@ -1,6 +1,7 @@
 
 #include "ransac.h"
 #include "filter.h"
+#include "math/RANSAC.h"
 
 #include "stdio.h"
 //#include <stdio.h>
@@ -188,12 +189,12 @@ void ransac_push(float time, float x, float y, float mx, float my)
 
         //printf("Running RANSAC with %d points and %d samples, err_max %f\n",count, n_samples, error_threshold);
 
-/*        RANSAC_linear_model( n_samples, n_iterations,  error_threshold,
-                             targets_x, Dimension, samples, count, params_x, &fit_error);
+        RANSAC_linear_model(n_samples, n_iterations, error_threshold, targets_x, 1,
+                                 samples, count, params_x, &fit_error);
 
-        RANSAC_linear_model( n_samples, n_iterations,  error_threshold,
-                             targets_y, Dimension, samples, count, params_y, &fit_error);
-*/
+        RANSAC_linear_model(n_samples, n_iterations, error_threshold, targets_y, 1,
+                                         samples, count, params_y, &fit_error);
+
         // Export the RANSAC corrections
         dr_ransac.corr_x = 0; //-params_x[1];
         dr_ransac.corr_y = 0;//-params_y[1];
