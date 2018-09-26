@@ -5,7 +5,8 @@
 #include "control.h"
 #include "filter.h"
 #include "flightplan.h"
-
+#include "ransac.h"
+#include <math.h>
 
 // Variables
 struct dronerace_control_struct dr_control;
@@ -43,6 +44,7 @@ void control_reset(void)
 
   // Reset own variables
   dr_control.psi_ref = 0;
+  dr_control.psi_cmd = 0;
 }
 
 static float angle180(float r)
@@ -79,8 +81,8 @@ void control_run(float dt)
   dr_control.psi_ref += r_cmd * dt;
 
   // Position error to Speed
-  vxcmd = (dr_fp.x_set - dr_state.x) * 1.1f - dr_state.vx * 0.0f;
-  vycmd = (dr_fp.y_set - dr_state.y) * 1.1f - dr_state.vy * 0.0f;
+  vxcmd = (dr_fp.x_set - (dr_state.x+dr_ransac.corr_x)) * 1.1f - dr_state.vx * 0.0f;
+  vycmd = (dr_fp.y_set - (dr_state.y+dr_ransac.corr_y)) * 1.1f - dr_state.vy * 0.0f;
 
   Bound(vxcmd, -CTRL_MAX_SPEED, CTRL_MAX_SPEED);
   Bound(vycmd, -CTRL_MAX_SPEED, CTRL_MAX_SPEED);

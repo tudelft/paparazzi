@@ -4,7 +4,7 @@
 #include "fifo.h"
 #include "ransac.h"
 #include "flightplan.h"
-
+#include <math.h>
 #include "std.h"
 
 
@@ -35,7 +35,7 @@ void filter_reset()
   ransac_reset();
 }
 
-
+float filteredX, filteredY;
 
 
 // PREDICTION MODEL
@@ -48,12 +48,13 @@ void filter_predict(float phi, float theta, float psi, float dt)
 {
   ////////////////////////////////////////////////////////////////////////
   // Body accelerations
-  float abx =  sin(-theta) * DR_FILTER_GRAVITY / cos(theta * DR_FILTER_THRUSTCORR) / cos(phi * DR_FILTER_THRUSTCORR);
-  float aby =  sin( phi)   * DR_FILTER_GRAVITY / cos(theta * DR_FILTER_THRUSTCORR) / cos(phi * DR_FILTER_THRUSTCORR);
+  float az = DR_FILTER_GRAVITY / cosf(theta * DR_FILTER_THRUSTCORR) / cosf(phi * DR_FILTER_THRUSTCORR);
+  float abx =  sinf(-theta) * az;
+  float aby =  sinf( phi)   * az;
 
   // Earth accelerations
-  float ax =  cos(psi) * abx - sin(psi) * aby - dr_state.vx * DR_FILTER_DRAG ;
-  float ay =  sin(psi) * abx + cos(psi) * aby - dr_state.vy * DR_FILTER_DRAG;
+  float ax =  cosf(psi) * abx - sinf(psi) * aby - dr_state.vx * DR_FILTER_DRAG ;
+  float ay =  sinf(psi) * abx + cosf(psi) * aby - dr_state.vy * DR_FILTER_DRAG;
 
 
   // Velocity and Position
@@ -70,21 +71,72 @@ void filter_predict(float phi, float theta, float psi, float dt)
 
   // Store old states for latency compensation
   fifo_push(dr_state.x, dr_state.y, 0);
+
+  // Check if Ransac buffer is empty
+  ransac_propagate(ax,ay,dt);
+
+  filteredX = dr_state.x;
+  filteredY = dr_state.y;
+
 }
+
+float log_mx, log_my;
+float mx, my;
+void transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy);
 
 void filter_correct(void)
 {
   // Retrieve oldest element of state buffer (that corresponds to current vision measurement)
   float sx, sy, sz;
-  float mx, my;
+  float rotx, roty;
+
+  float vision_scale = 1.0f;
 
   fifo_pop(&sx, &sy, &sz);
 
+
+
+  /*
   // Compute current absolute position
-  // TODO: check: this is probably wrong!
-  mx = dr_fp.gate_x - dr_vision.dx;
-  my = dr_fp.gate_y - dr_vision.dy;
+  rotx =  cosf(dr_fp.gate_psi) * dr_vision.dx - sinf(dr_fp.gate_psi) * dr_vision.dy;
+  roty = sinf(dr_fp.gate_psi) * dr_vision.dx + cosf(dr_fp.gate_psi) * dr_vision.dy;
+
+  mx = dr_fp.gate_x + rotx * vision_scale;
+  my = dr_fp.gate_y + roty * vision_scale;
+   */
+
+  transfer_measurement_local_2_global(&mx,&my,dr_vision.dx,dr_vision.dy);
+
+  log_mx = dr_fp.gate_x;
+  log_my = dr_fp.gate_y;
 
   // Push to RANSAC
   ransac_push(dr_state.time, dr_state.x, dr_state.y, mx, my);
+
+  // for logging the filtering result  Shuo add
+  filteredX = dr_state.x+dr_ransac.corr_x;
+  filteredY = dr_state.y+dr_ransac.corr_y;
 }
+
+
+void transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy)
+{
+    float min_distance = 9999;
+    for(int i = 0;i<MAX_GATES;i++)
+    {
+        float rotx = cosf(gates[i].psi) * dx - sinf(gates[i].psi) * dy;
+        float roty = sinf(gates[i].psi) * dx + cosf(gates[i].psi) * dy;
+        float x = gates[i].x + rotx;
+        float y = gates[i].y + roty;
+        float distance_measured_2_drone = 0;
+        distance_measured_2_drone = (x-(dr_state.x+dr_ransac.corr_x))*(x-(dr_state.x+dr_ransac.corr_x))+
+                                    (y-(dr_state.y+dr_ransac.corr_y))*(y-(dr_state.y+dr_ransac.corr_y));
+        if(distance_measured_2_drone < min_distance)
+        {
+            min_distance = distance_measured_2_drone;
+            *mx = x;
+            *my = y;
+        }
+    }
+}
+

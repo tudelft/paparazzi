@@ -1,6 +1,4 @@
 
-
-
 struct dronerace_fp_struct
 {
   // Current Gate Position
@@ -20,7 +18,18 @@ struct dronerace_fp_struct
 // Variables
 extern struct dronerace_fp_struct dr_fp;
 
+#define MAX_GATES 4
+struct dronerace_flightplan_item_struct
+{
+    float x;
+    float y;
+    float alt;
+    float psi;
+};
+
+extern const struct dronerace_flightplan_item_struct gates[MAX_GATES];
 
 // Functions
 extern void flightplan_reset(void);
 extern void flightplan_run(void);
+

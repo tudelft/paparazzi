@@ -27,17 +27,12 @@
 #include "modules/ctrl/dronerace/dronerace.h"
 #include "firmwares/rotorcraft/guidance/guidance_v.h"
 #include "modules/sonar/sonar_bebop.h"
-
 #include "subsystems/abi.h"
-
 #include "state.h"
-
 #include "filter.h"
 #include "control.h"
 #include "ransac.h"
 #include "flightplan.h"
-
-
 #include "subsystems/datalink/telemetry.h"
 
 
@@ -185,7 +180,7 @@ void dronerace_periodic(void)
   pos.y = dr_state.y;
   pos.z = sonar_bebop.distance; // Hardcoded push of sonar to the altitude
   //stateSetPositionNed_f(&pos);
-  */
+*/
 }
 
 void dronerace_set_rc(UNUSED float rt, UNUSED float rx, UNUSED float ry, UNUSED float rz)

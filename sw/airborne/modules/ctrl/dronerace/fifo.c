@@ -1,9 +1,6 @@
 #include "fifo.h"
 
-
 // VISION LATENCY COMPENSATION
-
-#define VISION_LATENCY_TIME_STEPS    10    // Time steps: note: must be at least 1
 
 struct dronerace_vision_struct
 {
@@ -13,7 +10,10 @@ struct dronerace_vision_struct
   int index;
 } dr_past_state;
 
+// Variable
+struct dronerace_vision_struct dr_past_state;
 
+// Reset
 void fifo_reset(void)
 {
   int i;
@@ -25,6 +25,7 @@ void fifo_reset(void)
   dr_past_state.index = 0;
 }
 
+// Add New
 void fifo_push(float x, float y, float z)
 {
   dr_past_state.index++;
@@ -35,6 +36,8 @@ void fifo_push(float x, float y, float z)
   dr_past_state.y[dr_past_state.index] = y;
 
 }
+
+// Retrieve Oldest
 void fifo_pop(float *x, float *y, float *z)
 {
   int index = dr_past_state.index + 1;

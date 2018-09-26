@@ -1,4 +1,5 @@
 
+#define VISION_LATENCY_TIME_STEPS 2 ///< Time steps: note: must be at least 1
 
 
 extern void fifo_reset(void);
