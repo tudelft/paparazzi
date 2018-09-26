@@ -210,6 +210,7 @@
         <arg flag="-srtm"/>
         <arg flag="-maps_zoom" constant="13"/>
         <arg flag="-layout" constant="map_only.xml"/>
+        <arg flag="-track_size" constant="2000"/>
       </program>
       <program name="EnergyManager"/>
       <program name="DelftaCopter"/>
@@ -267,6 +268,7 @@
         <arg flag="-srtm"/>
         <arg flag="-maps_zoom" constant="13"/>
         <arg flag="-layout" constant="map_only.xml"/>
+        <arg flag="-track_size" constant="2000"/>
       </program>
     </session>
     <session name="Flight USB0 @57600">
