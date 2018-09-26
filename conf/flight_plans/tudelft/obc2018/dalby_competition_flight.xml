@@ -48,7 +48,12 @@
     <waypoint lat="-27.27051" lon="151.301867" name="MB3"/> <!-- alt=436.99 agl=92 -->
     <waypoint lat="-27.364638" lon="151.282746" name="MB4"/> <!-- alt=436.99 agl=92 -->
     <waypoint lat="-27.364144" lon="151.243025" name="MB5"/> <!-- alt=436.97 agl=93 -->
-
+    
+    
+	<waypoint lat="-27.274101" lon="151.289605" name="_NFZ0_0"/>
+    <waypoint lat="-27.274660" lon="151.289518" name="_NFZ0_1"/>
+    <waypoint lat="-27.274571" lon="151.288894" name="_NFZ0_2"/>
+    <waypoint lat="-27.274040" lon="151.288986" name="_NFZ0_3"/>
     <waypoint lat="-27.28797146668507" lon="151.2531224518434" name="_NFZ1_0"/>
     <waypoint lat="-27.28780851501299" lon="151.2549681511527" name="_NFZ1_1"/>
     <waypoint lat="-27.28579768822575" lon="151.2547903854683" name="_NFZ1_2"/>
@@ -145,6 +150,12 @@
       <corner name="MB3"/>
       <corner name="MB4"/>
       <corner name="MB5"/>
+    </sector>
+    <sector color="orange" name="NFZ0" type="dynamic">
+      <corner name="_NFZ0_0"/>
+      <corner name="_NFZ0_1"/>
+      <corner name="_NFZ0_2"/>
+      <corner name="_NFZ0_3"/>
     </sector>
     <sector color="orange" name="NFZ1" type="dynamic">
       <corner name="_NFZ1_0"/>
