@@ -18,12 +18,12 @@
     <waypoint name="HOME" x="0" y="0"/> <!-- alt=436.99 agl=94 -->
     <waypoint height="30.0" name="JOE_found" x="-258.1" y="-21.9"/> <!-- alt=436.99 agl=94 -->
     <waypoint height="30.0" name="TD_mrk" x="-240.6" y="-36.0"/> <!--366.99 alt= agl=24 -->
-    <waypoint name="j1" x="-4715.9" y="-9297.3"/> <!-- alt=436.99 agl=95 -->
-    <waypoint name="j2" x="-4873.3" y="-9278.1"/> <!-- alt=436.99 agl=93 -->
-    <waypoint name="j3" x="-4731.5" y="-9325.7"/> <!-- alt=436.99 agl=95 -->
-    <waypoint name="j4" x="-4873.1" y="-9344.5"/> <!-- alt=436.98 agl=91 -->
-    <waypoint name="j5" x="-4735.5" y="-9414.4"/> <!-- alt=436.98 agl=93 -->
-    <waypoint name="j6" x="-4879.1" y="-9397.4"/> <!-- alt=436.99 agl=94 -->
+    <waypoint name="j1" x="-4715.9" y="-9297.3" alt="381.99"/> <!-- alt=436.99 agl=95 -->
+    <waypoint name="j2" x="-4873.3" y="-9278.1" alt="383.99"/> <!-- alt=436.99 agl=93 -->
+    <waypoint name="j3" x="-4731.5" y="-9325.7" alt="381.99"/> <!-- alt=436.99 agl=95 -->
+    <waypoint name="j4" x="-4873.1" y="-9344.5" alt="385.98"/> <!-- alt=436.98 agl=91 -->
+    <waypoint name="j5" x="-4735.5" y="-9414.4" alt="383.98"/> <!-- alt=436.98 agl=93 -->
+    <waypoint name="j6" x="-4879.1" y="-9397.4" alt="382.99"/> <!-- alt=436.99 agl=94 -->
     <waypoint height="40.0" name="TD" x="30.9" y="-45.4"/> <!-- alt=376.99 agl=34 -->
     <waypoint name="CLIMB" x="33.7" y="43.7"/> <!-- alt=??436.99 agl=94 -->
     <waypoint height="80.0" name="STDBY" x="75.6" y="-145.2"/> <!-- alt=416.99 agl=75 -->
@@ -31,14 +31,14 @@
     <waypoint lat="-27.2739" lon="151.290039" name="BASE"/> <!-- alt=436.99 agl=94 -->
     <waypoint lat="-27.357830" lon="151.240222" name="JOE_reported"/> <!-- alt=436.98 agl=95 -->
     <waypoint lat="-27.3582400" lon="151.2400430" name="JOE"/> <!-- alt436.98= agl=95 --><!-- SAME SPOT? -->
-    <waypoint lat="-27.280426" lon="151.290535" name="FP0"/> <!-- alt=436.98 agl=94 -->
-    <waypoint lat="-27.32544133940339" lon="151.2810230591555" name="FP1"/> <!-- alt=436.98 agl=94 -->
-    <waypoint lat="-27.27292716526073" lon="151.2906279518992" name="FP2"/> <!-- alt=436.99 agl=94 -->
-    <waypoint lat="-27.273033" lon="151.273964" name="FP3"/> <!-- alt=436.98 agl=96 -->
-    <waypoint lat="-27.318887" lon="151.257506" name="FP4"/> <!-- alt=436.98 agl=96 -->
-    <waypoint lat="-27.331643" lon="151.252819" name="FP5"/> <!-- alt=436.98 agl=96 -->
-    <waypoint lat="-27.347147" lon="151.243603" name="FP6"/> <!-- alt=436.98 agl=92 -->
-    <waypoint lat="-27.357183" lon="151.242202" name="FP7"/> <!-- alt=436.98 agl=92 -->
+    <waypoint lat="-27.280426" lon="151.290535" name="FP0" alt="412.98"/> <!-- alt=436.98 agl=94 -->
+    <waypoint lat="-27.32544133940339" lon="151.2810230591555" name="FP1" alt="542.98"/> <!-- alt=436.98 agl=94 -->
+    <waypoint lat="-27.27292716526073" lon="151.2906279518992" name="FP2" alt="542.99"/> <!-- alt=436.99 agl=94 -->
+    <waypoint lat="-27.273033" lon="151.273964" name="FP3" alt="540.98"/> <!-- alt=436.98 agl=96 -->
+    <waypoint lat="-27.318887" lon="151.257506" name="FP4" alt="540.98"/> <!-- alt=436.98 agl=96 -->
+    <waypoint lat="-27.331643" lon="151.252819" name="FP5" alt="540.98"/> <!-- alt=436.98 agl=96 -->
+    <waypoint lat="-27.347147" lon="151.243603" name="FP6" alt="540.98"/> <!-- alt=436.98 agl=92 -->
+    <waypoint lat="-27.357183" lon="151.242202" name="FP7" alt="414.98"/> <!-- alt=436.98 agl=92 -->
     <waypoint lat="-27.360503" lon="151.229472" name="MB1"/> <!-- alt=436.98 agl=93 -->
     <waypoint lat="-27.262847" lon="151.246414" name="MB2"/> <!-- alt=436.98 agl=98 -->
     <waypoint lat="-27.27051" lon="151.301867" name="MB3"/> <!-- alt=436.99 agl=92 -->
