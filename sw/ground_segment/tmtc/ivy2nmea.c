@@ -495,7 +495,7 @@ static void on_Gps(IvyClientPtr app, void *user_data, int argc, char *argv[])
   // Reset Watchdog
   watchdog = 0;
 
-  if (argc != 13)
+  if (argc != 14)
   {
     fprintf(stderr,"ERROR: IVY2NMEA: invalid message length FLIGHT_PARAM\n");
   }
