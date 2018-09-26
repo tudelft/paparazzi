@@ -33,6 +33,7 @@
  *
  */
 
+
 #ifndef PNP_AHRS_H
 #define PNP_AHRS_H
 
@@ -46,6 +47,5 @@
 
 // Get the world position of the camera, given image coordinates and corresponding world corners.
 struct FloatVect3 get_world_position_from_image_points(int *x_corners, int *y_corners, struct FloatVect3 *world_corners,
-    int n_corners,
-    struct camera_intrinsics_t cam_intrinsics, struct FloatEulers cam_body);
+    int n_corners, struct camera_intrinsics_t cam_intrinsics, struct FloatEulers cam_body);
 #endif /* PNP_AHRS_H */

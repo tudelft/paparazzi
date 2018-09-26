@@ -128,9 +128,17 @@ volatile float detect_gate_z;
 
 static pthread_mutex_t gate_detect_mutex;            ///< Mutex lock fo thread safety
 
+// Shared data between thread and main
+volatile int detect_gate_has_new_data;
+volatile float detect_gate_x;
+volatile float detect_gate_y;
+volatile float detect_gate_z;
+
+static pthread_mutex_t gate_detect_mutex;            ///< Mutex lock fo thread safety
+
+
 // Function
-struct image_t *detect_gate_func(struct image_t *img);
-struct image_t *detect_gate_func(struct image_t *img)
+static struct image_t *detect_gate_func(struct image_t *img)
 {
   // detect the gate and draw it in the image:
   if (just_filtering) {
