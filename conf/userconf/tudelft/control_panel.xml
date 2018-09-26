@@ -42,7 +42,7 @@
     <program name="App Server" command="sw/ground_segment/tmtc/app_server"/>
     <program name="NatNet" command="sw/ground_segment/misc/natnet2ivy"/>
     <program name="Ivy2Nmea" command="sw/ground_segment/tmtc/ivy2nmea">
-      <arg flag="--port" constant="/dev/ttyUSB1"/>
+      <arg flag="--port" constant="/dev/paparazzi/nmea"/>
       <arg flag="--id" constant="1"/>
     </program>
     <program name="Ivy2UDP" command="sw/ground_segment/tmtc/ivy2udp"/>
@@ -130,7 +130,7 @@
     </session>
     <session name="Flight Outback XBee">
       <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyUSB0"/>
+        <arg flag="-d" constant="/dev/paparazzi/longrange"/>
         <arg flag="-transport" constant="xbee"/>
         <arg flag="-s" constant="57600"/>
       </program>
@@ -185,7 +185,7 @@
     </session>
     <session name="Flight Outback Long-Range">
       <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyUSB0"/>
+        <arg flag="-d" constant="/dev/paparazzi/longrange"/>
         <arg flag="-s" constant="9600"/>
       </program>
       <program name="Server"/>
@@ -314,7 +314,7 @@
     </session>
     <session name="Flight Outback Long-Range Single Screen">
       <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyUSB0"/>
+        <arg flag="-d" constant="/dev/paparazzi/longrange"/>
         <arg flag="-s" constant="9600"/>
       </program>
       <program name="Server"/>
