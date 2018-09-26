@@ -109,6 +109,7 @@ static void telemetry_intermcu_repack(struct transport_tx *trans, struct link_de
   
   trans->count_bytes(&pmsg, size);
   trans->start_message(&pmsg, _FD, size);
+  msg[0]++;
   trans->put_bytes(&pmsg, _FD, DL_TYPE_UINT8, DL_FORMAT_ARRAY, (void *) msg, size);
   trans->end_message(&pmsg, _FD);
 #else
