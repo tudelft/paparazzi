@@ -21,6 +21,7 @@
  */
 
 #include "mission_path.h"
+#include "generated/modules.h"
 
 /** @file modules/mission/mission_path.c
  *  @brief efficient mission path planner
@@ -99,6 +100,12 @@ bool mission_path_run(uint16_t until) {
   }
   // Route between previous and current waypoint
   else {
+
+    if ((mission_path[mission_path_idx].id == 500) || (mission_path[mission_path_idx].id == 10500)) {
+      enableVisionPower();
+    }
+
+
     struct EnuCoor_i *from_wp = &mission_path[mission_path_idx-1].wp;
     struct EnuCoor_i *to_wp = &mission_path[mission_path_idx].wp;
 
