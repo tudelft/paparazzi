@@ -261,6 +261,11 @@
         <arg flag="-udp_port" constant="7272"/>
         <arg flag="-udp_uplink_port" constant="7273"/>
       </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-udp_port" constant="8272"/>
+        <arg flag="-udp_uplink_port" constant="8273"/>
+      </program>
       <program name="Server"/>
       <program name="Messages"/>
       <program name="EnergyManager"/>
