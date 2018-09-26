@@ -26,13 +26,14 @@
     <waypoint name="j5" x="-4735.5" y="-9414.4" alt="383.98"/> <!-- alt=436.98 agl=93 -->
     <waypoint name="j6" x="-4879.1" y="-9397.4" alt="382.99"/> <!-- alt=436.99 agl=94 -->
 
-    <waypoint height="40.0" name="TD" x="500.9" y="500.4"/> <!-- alt=376.99 agl=34 -->
-    <waypoint name="CLIMB" x="33.7" y="43.7"/> <!-- alt=??436.99 agl=94 -->
-    <waypoint height="80.0" name="STDBY" x="500.6" y="-500.2"/> <!-- alt=416.99 agl=75 -->
-    <waypoint name="HOVER" x="-500.7" y="-500.0"/> <!-- alt=??436.98 agl=96 -->
-    <waypoint lat="-27.2744961" lon="151.2898817" name="BASE"/> <!-- alt=436.99 agl=94 -->
-    <waypoint lat="-27.357830" lon="151.240222" name="JOE_reported"/> <!-- alt=436.98 agl=95 -->
-    <waypoint lat="-27.3572916" lon="151.2403845" name="JOE"/> <!-- alt436.98= agl=95 --><!-- SAME SPOT? -->
+    <waypoint name="CLIMB" x="-400.7" y="400.7"/> <!-- alt=??436.99 agl=94 -->
+    <waypoint name="STDBY" x="400.6" y="-400.2"/> <!-- alt=416.99 agl=75 -->
+    <waypoint name="HOVER" x="-400.7" y="-400.0"/> <!-- alt=??436.98 agl=96 -->
+    <waypoint name="TD"    x="400.9" y="400.4"/> <!-- alt=376.99 agl=34 -->
+
+    <waypoint alt="383.0" lat="-27.2744961" lon="151.2898817" name="BASE"/> <!-- alt=436.99 agl=94 -->
+    <waypoint alt="383.0" lat="-27.357830" lon="151.240222" name="JOE_reported"/> <!-- alt=436.98 agl=95 -->
+    <waypoint alt="383.0" lat="-27.3572916" lon="151.2403845" name="JOE"/> <!-- alt436.98= agl=95 --><!-- SAME SPOT? -->
 
     <waypoint lat="-27.2801165" lon="151.2894907" name="FP0" alt="413"/> <!-- alt=436.98 agl=94 -->
     <waypoint lat="-27.32544133940339" lon="151.2810230591555" name="FP1" alt="543"/> <!-- alt=436.98 agl=94 -->
@@ -48,9 +49,8 @@
     <waypoint lat="-27.27051" lon="151.301867" name="MB3"/> <!-- alt=436.99 agl=92 -->
     <waypoint lat="-27.364638" lon="151.282746" name="MB4"/> <!-- alt=436.99 agl=92 -->
     <waypoint lat="-27.364144" lon="151.243025" name="MB5"/> <!-- alt=436.97 agl=93 -->
-    
-    
-	<waypoint lat="-27.274101" lon="151.289605" name="_NFZ0_0"/>
+
+    <waypoint lat="-27.274101" lon="151.289605" name="_NFZ0_0"/>
     <waypoint lat="-27.274660" lon="151.289518" name="_NFZ0_1"/>
     <waypoint lat="-27.274571" lon="151.288894" name="_NFZ0_2"/>
     <waypoint lat="-27.274040" lon="151.288986" name="_NFZ0_3"/>
