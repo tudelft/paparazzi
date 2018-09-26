@@ -88,3 +88,26 @@ bool hasFoundGoodJoe(void)
 }
 
 
+void enableVisionPower(void)
+{
+}
+
+bool enableVisionShutdown(bool b __attribute__((unused)))
+{
+  return true;
+}
+
+void killVision(void)
+{
+}
+
+bool getVisionReady(void)
+{
+  return false;
+}
+
+
+
+
+
+
