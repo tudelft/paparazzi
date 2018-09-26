@@ -41,6 +41,10 @@
 extern void disco_copter_init(void);
 
 
+extern uint8_t disco_vision_is_on;
+extern uint8_t disco_vision_found_joe;
+
+
 
 #endif
 

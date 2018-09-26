@@ -84,28 +84,34 @@ void disco_copter_init()
 
 bool hasFoundGoodJoe(void)
 {
-	return 1;
+	return disco_vision_found_joe;
 }
 
 
 void enableVisionPower(void)
 {
+  disco_vision_is_on = true;
 }
 
 bool enableVisionShutdown(bool b __attribute__((unused)))
 {
+  disco_vision_is_on = false;
   return true;
 }
 
 void killVision(void)
 {
+  disco_vision_is_on = false;
 }
 
 bool getVisionReady(void)
 {
-  return false;
+  return disco_vision_is_on;
 }
 
+
+uint8_t disco_vision_is_on = false;
+uint8_t disco_vision_found_joe = false;
 
 
 
