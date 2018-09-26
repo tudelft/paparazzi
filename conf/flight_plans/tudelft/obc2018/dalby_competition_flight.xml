@@ -730,7 +730,7 @@
       <call_once fun="NavKillThrottle()"/>
       <call_once fun="nav_throttle_curve_set(0)"/>
       <call_once fun="enableVisionDescent(false)"/>
-      <attitude pitch="0" roll="0" throttle="0" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" pre_call="nav_set_heading_current()"/>
     </block>
 
     <!-- Automatic safety features -->
