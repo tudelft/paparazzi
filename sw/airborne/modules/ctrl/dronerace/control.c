@@ -55,6 +55,8 @@ static float angle180(float r)
   {
     r -= RadOfDeg(360.0f);
   }
+
+  return r;
 }
 
 void control_run(float dt)
