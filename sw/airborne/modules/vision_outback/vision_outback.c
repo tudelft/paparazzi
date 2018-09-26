@@ -408,7 +408,7 @@ void do_power_state_machine(void) {
       break;
     case VISION_POWER_STATUS_HALTING:
       if (v2p_package.status > 0) {
-          shutdown_count = 20*VISION_OUTBACK_PERIODIC_FREQ;
+          shutdown_count = 120*VISION_OUTBACK_PERIODIC_FREQ;
           power_state = VISION_POWER_STATUS_HALT_WAIT;
         }
       if (vision_outback_power  == VISION_SETTING_STATUS_REQUEST_POWER_OFF) {
