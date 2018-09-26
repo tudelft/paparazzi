@@ -547,7 +547,7 @@
       <set value="HB_HOVER" var="dc_hybrid_mode"/>
       <call_once fun="NavKillThrottle()"/>
       <call_once fun="nav_throttle_curve_set(0)"/>
-      <attitude pitch="0" roll="0" throttle="0" until="(stage_time>60) && GpsFixValid()" vmode="throttle"/> <!-- CDW: err: in this block, the tip props start turning ! -->
+      <attitude pitch="0" roll="0" throttle="0" until="(stage_time>60) && GpsFixValid()" vmode="throttle" pre_call="nav_set_heading_current()" />
     </block>
 
     <!-- Takeoff at joe -->
