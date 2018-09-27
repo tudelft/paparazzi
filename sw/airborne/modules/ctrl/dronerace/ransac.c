@@ -146,21 +146,6 @@ void ransac_push(float time, float x, float y, float mx, float my)
     // If sufficient items in buffer
     if (dr_ransac.buf_size > 5)
     {
-        /** Perform RANSAC to fit a linear model.
-         *
-         * @param[in] n_samples The number of samples to use for a single fit
-         * @param[in] n_iterations The number of times a linear fit is performed
-         * @param[in] error_threshold The threshold used to cap errors in the RANSAC process
-         * @param[in] targets The target values
-         * @param[in] samples The samples / feature vectors
-         * @param[in] D The dimensionality of the samples
-         * @param[in] count The number of samples
-         * @param[out] parameters* Parameters of the linear fit
-         * @param[out] fit_error* Total error of the fit
-         */
-
-
-
         // Variables
         int n_samples = ((int)(dr_ransac.buf_size * 0.4));
         int n_iterations = 200;

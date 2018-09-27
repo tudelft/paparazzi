@@ -30,7 +30,7 @@
     <define name="DETECT_GATE_GATE_THICKNESS" value="0.0" description="Snaking goes up and down, and then left and right from the extreme points. If the gate is thick, it is better to start a little bit before the end point. This value is how thick the gate border is as a proportion of the total size."/>
     <define name="DETECT_GATE_Y_MIN" value="20" description="Minimal Y of the color filter."/>
     <define name="DETECT_GATE_Y_MAX" value="228" description="Maximal Y of the color filter."/>
-    <define name="DETECT_GATE_U_MIN" value="66" description="Minimal U of the color filter."/>
+    <define name="DETECT_GATE_U_MIN" value="42" description="Minimal U of the color filter."/>
     <define name="DETECT_GATE_U_MAX" value="121" description="Maximal U of the color filter."/>
     <define name="DETECT_GATE_V_MIN" value="134" description="Minimal V of the color filter."/>
     <define name="DETECT_GATE_V_MAX" value="230" description="Maximal V of the color filter."/>
