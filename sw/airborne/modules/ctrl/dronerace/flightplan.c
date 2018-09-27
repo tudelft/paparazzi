@@ -23,7 +23,7 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 };
 
 
-const struct dronerace_flightplan_item_struct waypoints[MAX_GATES] = {
+const struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES] = {
         {5.0, 0.0, -1.5, RadOfDeg(0)},
         {11.0, 0.0, -1.5, RadOfDeg(-0)},
         {16, 0.0, -1.5, RadOfDeg(-225)},
@@ -64,15 +64,15 @@ void flightplan_run(void)
   // Get current gate position
   update_gate_setpoints();
 
-  dr_fp.x_set = waypoints[dr_fp.gate_nr].x;
-  dr_fp.y_set = waypoints[dr_fp.gate_nr].y;
+  dr_fp.x_set = waypoints_dr[dr_fp.gate_nr].x;
+  dr_fp.y_set = waypoints_dr[dr_fp.gate_nr].y;
   dr_fp.alt_set = dr_fp.gate_alt;
 
   // Estimate distance to the gate
   float correctedX,correctedY;
   correctedX = dr_state.x+dr_ransac.corr_x;
   correctedY = dr_state.y+dr_ransac.corr_y;
-  dist = (waypoints[dr_fp.gate_nr].x - correctedX)*(waypoints[dr_fp.gate_nr].x- correctedX) + (waypoints[dr_fp.gate_nr].y- correctedY)*(waypoints[dr_fp.gate_nr].y - correctedY);
+  dist = (waypoints_dr[dr_fp.gate_nr].x - correctedX)*(waypoints_dr[dr_fp.gate_nr].x- correctedX) + (waypoints_dr[dr_fp.gate_nr].y- correctedY)*(waypoints_dr[dr_fp.gate_nr].y - correctedY);
   // Align with current gate
   dr_fp.psi_set = dr_fp.gate_psi;
 
