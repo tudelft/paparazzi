@@ -16,18 +16,18 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 
 
 const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
-    {4.0, 0.0, -1.5, RadOfDeg(0)},
-    {10.0, 0, -1.5, RadOfDeg(0)},
-    {15, 0, -1.5, RadOfDeg(0)},
-    {0.0, 0.0, 1.5, RadOfDeg(-270)},
+    {4.0, 0.0, 1.0, RadOfDeg(0)},
+    {10.0, 0, 1.0, RadOfDeg(0)},
+    {15, 0, 1.0, RadOfDeg(0)},
+    {0.0, 0.0, 1.0, RadOfDeg(-270)},
 };
 
 
 const struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES] = {
-        {5.0, 0.0, -1.5, RadOfDeg(0)},
-        {11.0, 0.0, -1.5, RadOfDeg(-0)},
-        {16, 0.0, -1.5, RadOfDeg(-225)},
-        {0.0, 0.0, 1.5, RadOfDeg(-270)},
+        {5.0, 0.0, 1.0, RadOfDeg(0)},
+        {11.0, 0.0, 1.0, RadOfDeg(-0)},
+        {16, 0.0, 1.0, RadOfDeg(-225)},
+        {0.0, 0.0, 1.0, RadOfDeg(-270)},
 };
 
 static void update_gate_setpoints(void)

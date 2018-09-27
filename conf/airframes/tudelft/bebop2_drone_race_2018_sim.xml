@@ -19,7 +19,9 @@
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
     </module>
     <define name="USE_SONAR" value="TRUE"/>
+
     <define name="DETECT_GATE_N_SAMPLES" value="1000" />
+
     <module name="ins" type="extended"/>
     <configure name="USE_GPS" value="FALSE"/>
     <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>

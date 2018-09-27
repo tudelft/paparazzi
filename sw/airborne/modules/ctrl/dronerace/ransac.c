@@ -2,11 +2,7 @@
 #include "ransac.h"
 #include "filter.h"
 #include "math/RANSAC.h"
-
 #include "stdio.h"
-//#include <stdio.h>
-//#include <cstdlib>
-
 
 // RANSAC Measurement buffer size
 #define  RANSAC_BUF_SIZE   30
@@ -174,7 +170,7 @@ void ransac_push(float time, float x, float y, float mx, float my)
             //printf("Fit %f to %f\n", targets_x[i], samples[i][0]);
         }
 
-        //printf("Running RANSAC with %d points and %d samples, err_max %f\n",count, n_samples, error_threshold);
+        // printf("Running RANSAC with %d points and %d samples, err_max %f\n",count, n_samples, error_threshold);
 
 
         RANSAC_linear_model(n_samples, n_iterations, error_threshold, targets_x, 1,
@@ -184,17 +180,15 @@ void ransac_push(float time, float x, float y, float mx, float my)
                                          samples, count, params_y, &fit_error);
 
         // Export the RANSAC corrections
-        dr_ransac.corr_x = 0; //-params_x[1];
-        dr_ransac.corr_y = 0;//-params_y[1];
-        dr_ransac.corr_vx = 0;//-params_x[0];
-        dr_ransac.corr_vy = 0;//-params_y[0];
+        dr_ransac.corr_x = -params_x[1];
+        dr_ransac.corr_y = -params_y[1];
+        dr_ransac.corr_vx = -params_x[0];
+        dr_ransac.corr_vy = -params_y[0];
 
         dr_ransac.ransac_cnt ++;
 
-
-
         // Put EVERY FIT in a file to verify
-// #define DEBUG_RANSAC
+#define DEBUG_RANSAC
 #ifdef DEBUG_RANSAC
 
         if(dr_ransac.ransac_cnt % 20 == 0)
