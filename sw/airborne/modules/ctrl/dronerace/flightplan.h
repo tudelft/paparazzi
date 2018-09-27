@@ -1,3 +1,7 @@
+// for jungle gate:
+#define UPPER_GATE 0
+#define LOWER_GATE 1
+extern int flagHighOrLowGate;
 
 struct dronerace_fp_struct
 {
@@ -15,16 +19,36 @@ struct dronerace_fp_struct
   float alt_set;
 };
 
+
+# define MAX_DETECTION 2
+
+struct JungleGate
+{
+    int flagJungleGateDetected;
+    int numJungleGateDetection;
+    float jungleGateHeight;
+    float sumJungleGateHeight;
+    float jungleGateDetection[MAX_DETECTION];
+    int flagInJungleGate;
+    long long timeStartJungleGate;
+};
+
 // Variables
 extern struct dronerace_fp_struct dr_fp;
 
 #define MAX_GATES 4
+#define  REGULAR 0
+#define JUNGLE 1
+#define VIRTUAL 2
+#define DIAL 3
+
 struct dronerace_flightplan_item_struct
 {
     float x;
     float y;
     float alt;
     float psi;
+    int type;
 };
 
 extern const struct dronerace_flightplan_item_struct gates[MAX_GATES];
@@ -32,4 +56,5 @@ extern const struct dronerace_flightplan_item_struct gates[MAX_GATES];
 // Functions
 extern void flightplan_reset(void);
 extern void flightplan_run(void);
-
+extern struct JungleGate jungleGate;
+extern void resetJungleGate(void);

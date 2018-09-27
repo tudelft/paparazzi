@@ -6,6 +6,10 @@
 
 struct dronerace_fp_struct dr_fp;
 
+struct JungleGate jungleGate;
+void checkJungleGate();
+int flagHighOrLowGate;
+
 // X, Y, ALT, PSI
 /*
 #define MAX_GATES 1
@@ -16,18 +20,18 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 
 
 const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
-    {4.0, 0.0, 1.0, RadOfDeg(0)},
-    {10.0, 0, 1.0, RadOfDeg(0)},
-    {15, 0, 1.0, RadOfDeg(0)},
-    {0.0, 0.0, 1.0, RadOfDeg(-270)},
+    {4.0, 0.0, 1.0, RadOfDeg(0), REGULAR},
+    {10.0, 0, 1.0, RadOfDeg(0), REGULAR},
+    {15, 0, 1.0, RadOfDeg(0), REGULAR},
+    {0.0, 0.0, 1.0, RadOfDeg(-270), REGULAR},
 };
 
 
 const struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES] = {
-        {5.0, 0.0, 1.0, RadOfDeg(0)},
-        {11.0, 0.0, 1.0, RadOfDeg(-0)},
-        {16, 0.0, 1.0, RadOfDeg(-225)},
-        {0.0, 0.0, 1.0, RadOfDeg(-270)},
+        {5.0, 0.0, 1.0, RadOfDeg(0), REGULAR},
+        {11.0, 0.0, 1.0, RadOfDeg(-0), REGULAR},
+        {16, 0.0, 1.0, RadOfDeg(-225), REGULAR},
+        {0.0, 0.0, 1.0, RadOfDeg(-270), REGULAR},
 };
 
 static void update_gate_setpoints(void)
@@ -51,6 +55,8 @@ void flightplan_reset()
   dr_fp.y_set = 0;
   dr_fp.alt_set = 0;
   dr_fp.psi_set = 0;
+
+  resetJungleGate();
 }
 
 
@@ -67,6 +73,8 @@ void flightplan_run(void)
   dr_fp.x_set = waypoints_dr[dr_fp.gate_nr].x;
   dr_fp.y_set = waypoints_dr[dr_fp.gate_nr].y;
   dr_fp.alt_set = dr_fp.gate_alt;
+
+  checkJungleGate();
 
   // Estimate distance to the gate
   float correctedX,correctedY;
@@ -97,4 +105,47 @@ void flightplan_run(void)
       dr_fp.gate_nr = (MAX_GATES -1);
     }
   }
+}
+
+
+#define MAX_TIME_JUNGLE_GATE_DETECTION 1.0
+void checkJungleGate()
+{
+  // get the time when enter jungle gate logic
+  if(gates[dr_fp.gate_nr].type == JUNGLE && jungleGate.flagInJungleGate == false)
+  {
+    jungleGate.flagInJungleGate = 1;
+    jungleGate.timeStartJungleGate = dr_state.time; // TODO: this will compile but don't know if it is correct
+  }
+
+
+  // if there is no detection within 1s, it is likely to be a low gate
+    /*
+  if((mav::getCurrentTimeMillis() - jungleGate.timeStartJungleGate)/1000.0 > MAX_TIME_JUNGLE_GATE_DETECTION && jungleGate.flagJungleGateDetected == false)
+  {
+    jungleGate.flagJungleGateDetected = 1;
+    flagHighOrLowGate = LOWER_GATE;
+  }
+     */
+
+
+  // When determine the gate is in high or low position, send controller desired altitude
+  if(gates[dr_fp.gate_nr].type == JUNGLE && jungleGate.flagJungleGateDetected == 1)
+  {
+    if(flagHighOrLowGate == UPPER_GATE)
+      dr_fp.alt_set = -1.6;
+    else
+      dr_fp.alt_set = -0.6;
+  }
+
+}
+
+
+void resetJungleGate()
+{
+  jungleGate.flagJungleGateDetected = false;
+  jungleGate.numJungleGateDetection = 0;
+  jungleGate.jungleGateHeight = 0;
+  jungleGate.sumJungleGateHeight = 0;
+  jungleGate.flagInJungleGate = false;
 }

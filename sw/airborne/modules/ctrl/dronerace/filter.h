@@ -39,3 +39,4 @@ extern float mx;
 extern float my;
 extern float filteredX;
 extern float filteredY;
+extern struct JungleGate jungleGate;

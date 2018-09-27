@@ -84,6 +84,8 @@ float log_mx, log_my;
 float mx, my;
 void transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy);
 
+void pushJungleGateDetection();
+
 void filter_correct(void)
 {
   // Retrieve oldest element of state buffer (that corresponds to current vision measurement)
@@ -94,7 +96,7 @@ void filter_correct(void)
 
   fifo_pop(&sx, &sy, &sz);
 
-
+  pushJungleGateDetection();
 
   /*
   // Compute current absolute position
@@ -140,3 +142,21 @@ void transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy)
     }
 }
 
+void pushJungleGateDetection()
+{
+    if(gates[dr_fp.gate_nr].type == JUNGLE && jungleGate.flagJungleGateDetected == false && jungleGate.numJungleGateDetection < MAX_DETECTION)
+    {
+        jungleGate.jungleGateDetection[jungleGate.numJungleGateDetection] = dr_vision.dz;
+        jungleGate.sumJungleGateHeight += dr_vision.dz;
+        jungleGate.numJungleGateDetection++;
+        jungleGate.jungleGateHeight = jungleGate.sumJungleGateHeight / jungleGate.numJungleGateDetection;
+        if(jungleGate.numJungleGateDetection == MAX_DETECTION)
+        {
+            jungleGate.flagJungleGateDetected = true;
+            if(jungleGate.jungleGateHeight > -1.0)
+                flagHighOrLowGate = UPPER_GATE;
+            else
+                flagHighOrLowGate = LOWER_GATE;
+        }
+    }
+}
