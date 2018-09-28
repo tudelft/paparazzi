@@ -30,6 +30,12 @@
 
     <define name="MT9F002_OUTPUT_HEIGHT" value="640" />
     <define name="MT9F002_OUTPUT_WIDTH" value="640" />
+
+    <define name="MT9F002_FOCAL_X" value="320"/>          <!-- lens parameter -->
+    <define name="MT9F002_FOCAL_Y" value="320"/>
+    <define name="MT9F002_CENTER_X" value="320"/>
+    <define name="MT9F002_CENTER_Y" value="320"/>
+
     <define name="MT9F002_INITIAL_OFFSET_X" value="0.15" />
     <define name="MT9F002_INITIAL_OFFSET_Y" value="0.0" />
     <define name="MT9F002_TARGET_EXPOSURE" value="30" />
