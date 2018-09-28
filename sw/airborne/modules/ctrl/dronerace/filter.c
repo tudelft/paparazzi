@@ -40,9 +40,9 @@ float filteredX, filteredY;
 
 // PREDICTION MODEL
 
-#define DR_FILTER_GRAVITY  9.81
-#define DR_FILTER_DRAG  0.5
-#define DR_FILTER_THRUSTCORR  0.8
+#define DR_FILTER_GRAVITY  9.81f
+#define DR_FILTER_DRAG  0.5f
+#define DR_FILTER_THRUSTCORR  0.8f
 
 void filter_predict(float phi, float theta, float psi, float dt)
 {
@@ -90,7 +90,6 @@ void filter_correct(void)
 {
   // Retrieve oldest element of state buffer (that corresponds to current vision measurement) // TODO: should we not empirically determine the delay (is it now just guessed?)
   float sx, sy, sz;
-  float rotx, roty;
 
   float vision_scale = 1.0f;
 
@@ -131,7 +130,8 @@ void filter_correct(void)
 void transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy)
 {
     float min_distance = 9999;
-    for(int i = 0;i<MAX_GATES;i++)
+	int i;
+    for( i = 0;i<MAX_GATES;i++)
     {
         float rotx = cosf(gates[i].psi) * dx - sinf(gates[i].psi) * dy;
         float roty = sinf(gates[i].psi) * dx + cosf(gates[i].psi) * dy;

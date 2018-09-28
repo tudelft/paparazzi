@@ -72,6 +72,8 @@ void flightplan_reset()
 void flightplan_run(void)
 {
   float dist = 0.0;
+  float correctedX, correctedY;
+  float dist_2_gate;
 
   // Get current gate position
   update_gate_setpoints();
@@ -83,14 +85,13 @@ void flightplan_run(void)
   checkJungleGate();
 
   // Estimate distance to the gate
-  float correctedX,correctedY;
   correctedX = dr_state.x+dr_ransac.corr_x;
   correctedY = dr_state.y+dr_ransac.corr_y;
   dist = (waypoints_dr[dr_fp.gate_nr].x - correctedX)*(waypoints_dr[dr_fp.gate_nr].x- correctedX) + (waypoints_dr[dr_fp.gate_nr].y- correctedY)*(waypoints_dr[dr_fp.gate_nr].y - correctedY);
   // Align with current gate
   dr_fp.psi_set = dr_fp.gate_psi;
 
-  float dist_2_gate =  (dr_fp.gate_x - correctedX)*(dr_fp.gate_x - correctedX) + (dr_fp.gate_y - correctedY)*(dr_fp.gate_y - correctedY);
+  dist_2_gate =  (dr_fp.gate_x - correctedX)*(dr_fp.gate_x - correctedX) + (dr_fp.gate_y - correctedY)*(dr_fp.gate_y - correctedY);
 
   // If too close to the gate to see the gate, heading to next gate
   if (dist_2_gate < DISTANCE_GATE_NOT_IN_SIGHT * DISTANCE_GATE_NOT_IN_SIGHT)
@@ -139,9 +140,9 @@ void checkJungleGate()
   if(gates[dr_fp.gate_nr].type == JUNGLE && jungleGate.flagJungleGateDetected == 1)
   {
     if(flagHighOrLowGate == UPPER_GATE)
-      dr_fp.alt_set = -1.6;
+      dr_fp.alt_set = -1.6f;
     else
-      dr_fp.alt_set = -0.6;
+      dr_fp.alt_set = -0.6f;
   }
 
 }
