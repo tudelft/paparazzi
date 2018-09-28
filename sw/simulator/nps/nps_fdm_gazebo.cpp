@@ -704,6 +704,10 @@ static void init_gazebo_video(void)
       cameras[i]->crop.h = MT9F002_OUTPUT_HEIGHT;
     }
 #endif
+    cameras[i]->camera_intrinsics.focal_x = cameras[i]->output_size.w/2.0f;
+    cameras[i]->camera_intrinsics.center_x = cameras[i]->output_size.w/2.0f;
+    cameras[i]->camera_intrinsics.focal_y = cameras[i]->output_size.h/2.0f;
+    cameras[i]->camera_intrinsics.center_y = cameras[i]->output_size.h/2.0f;
     cameras[i]->fps = cam->UpdateRate();
     cout << "ok" << endl;
   }
