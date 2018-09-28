@@ -20,18 +20,24 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 
 
 const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
-    {4.0, 0.0, 1.0, RadOfDeg(0), REGULAR},
-    {10.0, 0, 1.0, RadOfDeg(0), REGULAR},
-    {15, 0, 1.0, RadOfDeg(0), REGULAR},
-    {0.0, 0.0, 1.0, RadOfDeg(-270), REGULAR},
+    {4.0, 0.0, 1.0, RadOfDeg(0), REGULAR, NO_BRAKE},
+    {10.0, 0.0, 1.0, RadOfDeg(0), REGULAR, BRAKE},
+    {11.5, 5, 1.0, RadOfDeg(90), REGULAR, BRAKE},
+    {4.0, 8.0, 1.0, RadOfDeg(180), REGULAR, NO_BRAKE},
+    {0.0, 8.0, 1.0, RadOfDeg(180), VIRTUAL, BRAKE},
+    {0.0, 5.0, 1.0, RadOfDeg(180), VIRTUAL, BRAKE},
+    {4.0, 4.0, 1.0, RadOfDeg(0), JUNGLE, BRAKE}
 };
 
 
 const struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES] = {
-        {5.0, 0.0, 1.0, RadOfDeg(0), REGULAR},
-        {11.0, 0.0, 1.0, RadOfDeg(-0), REGULAR},
-        {16, 0.0, 1.0, RadOfDeg(-225), REGULAR},
-        {0.0, 0.0, 1.0, RadOfDeg(-270), REGULAR},
+    {6.0, 0.0, 1.0, RadOfDeg(0), REGULAR, NO_BRAKE},
+    {10.5, 0.0, 1.0, RadOfDeg(-0), REGULAR, BRAKE},
+    {11.5, 6.0, 1.0, RadOfDeg(90), REGULAR, BRAKE},
+    {3.0, 8.0, 1.0, RadOfDeg(180), REGULAR, NO_BRAKE},
+    {0.0, 8.0, 1.0, RadOfDeg(180), VIRTUAL, BRAKE},
+    {0.0, 5.0, 1.0, RadOfDeg(180), VIRTUAL, BRAKE},
+    {6.0, 4.0, 1.0, RadOfDeg(0), JUNGLE, BRAKE},
 };
 
 static void update_gate_setpoints(void)

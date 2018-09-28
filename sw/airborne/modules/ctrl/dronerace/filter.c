@@ -67,7 +67,7 @@ void filter_predict(float phi, float theta, float psi, float dt)
   dr_state.time += dt;
 
   // Store psi for local corrections
-  dr_state.psi = psi;
+  dr_state.psi = psi; // TODO: use psi command?
 
   // Store old states for latency compensation
   fifo_push(dr_state.x, dr_state.y, 0);
@@ -88,15 +88,13 @@ void pushJungleGateDetection();
 
 void filter_correct(void)
 {
-  // Retrieve oldest element of state buffer (that corresponds to current vision measurement)
+  // Retrieve oldest element of state buffer (that corresponds to current vision measurement) // TODO: should we not empirically determine the delay (is it now just guessed?)
   float sx, sy, sz;
   float rotx, roty;
 
   float vision_scale = 1.0f;
 
   fifo_pop(&sx, &sy, &sz);
-
-  pushJungleGateDetection();
 
   /*
   // Compute current absolute position
@@ -107,17 +105,26 @@ void filter_correct(void)
   my = dr_fp.gate_y + roty * vision_scale;
    */
 
-  transfer_measurement_local_2_global(&mx,&my,dr_vision.dx,dr_vision.dy);
+  if(gates[dr_fp.gate_nr].type != VIRTUAL) {
 
-  log_mx = dr_fp.gate_x;
-  log_my = dr_fp.gate_y;
+    pushJungleGateDetection();
 
-  // Push to RANSAC
-  ransac_push(dr_state.time, dr_state.x, dr_state.y, mx, my);
+    transfer_measurement_local_2_global(&mx,&my,dr_vision.dx,dr_vision.dy);
 
-  // for logging the filtering result  Shuo add
-  filteredX = dr_state.x+dr_ransac.corr_x;
-  filteredY = dr_state.y+dr_ransac.corr_y;
+    log_mx = dr_fp.gate_x;
+    log_my = dr_fp.gate_y;
+
+    // Push to RANSAC
+    ransac_push(dr_state.time, dr_state.x, dr_state.y, mx, my);
+
+    // for logging the filtering result  Shuo add
+    filteredX = dr_state.x+dr_ransac.corr_x;
+    filteredY = dr_state.y+dr_ransac.corr_y;
+  }
+  else {
+    filteredX = dr_state.x;
+    filteredY = dr_state.y;
+  }
 }
 
 

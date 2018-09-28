@@ -36,11 +36,15 @@ struct JungleGate
 // Variables
 extern struct dronerace_fp_struct dr_fp;
 
-#define MAX_GATES 4
+#define MAX_GATES 7
+
 #define  REGULAR 0
 #define JUNGLE 1
 #define VIRTUAL 2
 #define DIAL 3
+
+#define BRAKE 1
+#define NO_BRAKE 0
 
 struct dronerace_flightplan_item_struct
 {
@@ -49,9 +53,11 @@ struct dronerace_flightplan_item_struct
     float alt;
     float psi;
     int type;
+    int brake;
 };
 
 extern const struct dronerace_flightplan_item_struct gates[MAX_GATES];
+extern const struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];
 
 // Functions
 extern void flightplan_reset(void);

@@ -78,11 +78,16 @@ void control_run(float dt)
 
   // Apply rate limit
   Bound(r_cmd, -CTRL_MAX_R, CTRL_MAX_R);
-  dr_control.psi_ref += r_cmd * dt;
+  dr_control.psi_ref += 2.0f * r_cmd * dt;
 
   // Position error to Speed
-  vxcmd = (dr_fp.x_set - (dr_state.x+dr_ransac.corr_x)) * 1.1f - dr_state.vx * 0.0f;
+  vxcmd = (dr_fp.x_set - (dr_state.x+dr_ransac.corr_x)) * 1.1f - dr_state.vx * 0.0f; // TODO: interestingly, we don't use the velocity correction for control: t_fit * dr_ransac.corr_vx
   vycmd = (dr_fp.y_set - (dr_state.y+dr_ransac.corr_y)) * 1.1f - dr_state.vy * 0.0f;
+
+  if(!waypoints_dr[dr_fp.gate_nr].brake) {
+      vxcmd += 10.0f * cosf(waypoints_dr[dr_fp.gate_nr].psi);
+      vycmd += 10.0f * sinf(waypoints_dr[dr_fp.gate_nr].psi);
+  }
 
   Bound(vxcmd, -CTRL_MAX_SPEED, CTRL_MAX_SPEED);
   Bound(vycmd, -CTRL_MAX_SPEED, CTRL_MAX_SPEED);
