@@ -109,6 +109,15 @@ bool getVisionReady(void)
   return disco_vision_is_on;
 }
 
+ bool hasArucoLock(void)
+{
+	return true;
+}
+
+bool isVisionHeightUsedInINS(void)
+{
+	return true;
+}
 
 uint8_t disco_vision_is_on = false;
 uint8_t disco_vision_found_joe = false;
