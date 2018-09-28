@@ -39,6 +39,14 @@
 
 float dt = 1.0f / 512.f;
 
+float input_phi;
+float input_theta;
+float input_psi;
+float input_cnt;
+float input_dx;
+float input_dy;
+float input_dz;
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // LOGGING
@@ -48,6 +56,7 @@ float dt = 1.0f / 512.f;
 /** Set the default File logger path to the USB drive */
 #ifndef FILE_LOGGER_PATH
 #define FILE_LOGGER_PATH /data/ftp/internal_000
+//#define FILE_LOGGER_PATH ./
 #endif
 
 /** The file pointer */
@@ -84,8 +93,9 @@ static void open_log(void) {
 static void write_log(void)
 {
   if (file_logger != 0) {
-    fprintf(file_logger, "%f,%f,%f,%f,%d,%f,%f\n",dr_state.x, dr_state.y, dr_state.vx, dr_state.vy,
-        dr_vision.cnt,dr_vision.dx,dr_vision.dy);
+//    fprintf(file_logger, "%f,%f,%f,%f,%d,%f,%f\n",dr_state.x, dr_state.y, dr_state.vx, dr_state.vy,
+//        dr_vision.cnt,dr_vision.dx,dr_vision.dy);
+    fprintf(file_logger, "%f,%f,%f,%d,%f,%f,%f\n",input_phi, input_theta, input_psi, input_cnt, input_dx, input_dy, input_dz);
   }
 }
 
@@ -134,11 +144,18 @@ static abi_event gate_detected_ev;
 
 static void gate_detected_cb(uint8_t sender_id __attribute__((unused)), int32_t cnt, float dx, float dy, float dz, float vx, float vy, float vz)
 {
+  // Logging
+  input_cnt = cnt;
+  input_dx = dx;
+  input_dy = dy;
+  input_dz = dz;
+
   // Vision update
   dr_vision.cnt = cnt;
   dr_vision.dx = dx;
   dr_vision.dy = dy;
   dr_vision.dz = dz;
+
   filter_correct();
 }
 
@@ -166,11 +183,11 @@ void dronerace_enter(void)
 void dronerace_periodic(void)
 {
 
-  float phi = stateGetNedToBodyEulers_f()->phi - RadOfDeg(-1.5);
-  float theta = stateGetNedToBodyEulers_f()->theta - RadOfDeg(2.0);
-  float psi = stateGetNedToBodyEulers_f()->psi - psi0;
+  input_phi = stateGetNedToBodyEulers_f()->phi - RadOfDeg(-1.5);
+  input_theta = stateGetNedToBodyEulers_f()->theta - RadOfDeg(2.0);
+  input_psi = stateGetNedToBodyEulers_f()->psi - psi0;
 
-  filter_predict(phi,theta,psi, dt);
+  filter_predict(input_phi,input_theta,input_psi, dt);
 
   write_log();
 

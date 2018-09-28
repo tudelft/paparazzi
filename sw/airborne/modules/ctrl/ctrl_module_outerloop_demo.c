@@ -82,7 +82,7 @@ void guidance_h_module_run(bool in_flight)
 {
   // YOUR NEW HORIZONTAL OUTERLOOP CONTROLLER GOES HERE
   // ctrl.cmd = CallMyNewHorizontalOuterloopControl(ctrl);
-  dronerace_get_cmd(&ctrl.theta, &ctrl.phi, &ctrl.theta, &ctrl.psi);
+  dronerace_get_cmd(&ctrl.alt, &ctrl.phi, &ctrl.theta, &ctrl.psi);
 
   ctrl.cmd.phi = ANGLE_BFP_OF_REAL(ctrl.phi);
   ctrl.cmd.theta = ANGLE_BFP_OF_REAL(ctrl.theta);
