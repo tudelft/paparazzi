@@ -42,10 +42,11 @@ float dt = 1.0f / 512.f;
 float input_phi;
 float input_theta;
 float input_psi;
-float input_cnt;
-float input_dx;
-float input_dy;
-float input_dz;
+volatile int input_cnt = 0;
+volatile float input_dx = 0;
+volatile float input_dy = 0;
+volatile float input_dz = 0;
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -142,7 +143,7 @@ static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
 static abi_event gate_detected_ev;
 
 
-static void gate_detected_cb(uint8_t sender_id __attribute__((unused)), int32_t cnt, float dx, float dy, float dz, float vx, float vy, float vz)
+static void gate_detected_cb(uint8_t sender_id __attribute__((unused)), int32_t cnt, float dx, float dy, float dz, float vx __attribute__((unused)), float vy __attribute__((unused)), float vz __attribute__((unused)))
 {
   // Logging
   input_cnt = cnt;
@@ -150,13 +151,6 @@ static void gate_detected_cb(uint8_t sender_id __attribute__((unused)), int32_t 
   input_dy = dy;
   input_dz = dz;
 
-  // Vision update
-  dr_vision.cnt = cnt;
-  dr_vision.dx = dx;
-  dr_vision.dy = dy;
-  dr_vision.dz = dz;
-
-  filter_correct();
 }
 
 void dronerace_init(void)
@@ -189,6 +183,16 @@ void dronerace_periodic(void)
 
   filter_predict(input_phi,input_theta,input_psi, dt);
 
+  // Vision update
+  if (input_cnt > dr_vision.cnt) {
+    dr_vision.cnt = input_cnt;
+    dr_vision.dx = input_dx;
+    dr_vision.dy = input_dy;
+    dr_vision.dz = input_dz;
+
+    filter_correct();
+  }
+
   write_log();
 
 
@@ -216,6 +220,7 @@ void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi_cmd)
   *phi = dr_control.phi_cmd;
   *theta = dr_control.theta_cmd;
   *psi_cmd = dr_control.psi_cmd + psi0;
+  *alt = dr_control.alt_cmd;
 
   guidance_v_z_sp = POS_BFP_OF_REAL(-dr_control.alt_cmd);
 }
