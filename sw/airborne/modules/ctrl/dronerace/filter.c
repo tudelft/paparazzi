@@ -6,6 +6,7 @@
 #include "flightplan.h"
 #include <math.h>
 #include "std.h"
+#include "stdio.h"
 
 // to know if we are simulating:
 #include "generated/airframe.h"
@@ -97,10 +98,10 @@ void filter_correct(void)
 {
   // Retrieve oldest element of state buffer (that corresponds to current vision measurement) // TODO: should we not empirically determine the delay (is it now just guessed?)
   float sx, sy, sz;
+  /*
   float rotx, roty;
-
   float vision_scale = 1.0f;
-
+   */
   fifo_pop(&sx, &sy, &sz);
 
   /*
@@ -112,7 +113,9 @@ void filter_correct(void)
   my = dr_fp.gate_y + roty * vision_scale;
    */
 
-  if(gates[dr_fp.gate_nr].type != VIRTUAL) {
+  // TODO: we should actually check that the determined height is not so different from the gate height, given that we are not looking at the jungle gate
+  // With the check on dr_vision.dz, we want to exclude the detection of the gate botom part.
+  if(gates[dr_fp.gate_nr].type != VIRTUAL && dr_vision.dz > -2.5) {
 
     pushJungleGateDetection();
 
@@ -137,6 +140,7 @@ void filter_correct(void)
 
 void transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy)
 {
+    // TODO: reintroduce vision scale?
     float min_distance = 9999;
     int assigned_gate_index = 0;
     for(int i = 0;i<MAX_GATES;i++)
