@@ -6,7 +6,10 @@
 #include "flightplan.h"
 #include <math.h>
 #include "std.h"
+#include "stdio.h"
 
+// to know if we are simulating:
+#include "generated/airframe.h"
 
 
 struct dronerace_state_struct dr_state;
@@ -40,9 +43,14 @@ float filteredX, filteredY;
 
 // PREDICTION MODEL
 
-#define DR_FILTER_GRAVITY  9.81f
-#define DR_FILTER_DRAG  0.5f
-#define DR_FILTER_THRUSTCORR  0.8f
+#define DR_FILTER_GRAVITY  9.81
+#if NPS_SIMULATE_MT9F002
+  #define DR_FILTER_DRAG  0.95
+  #define DR_FILTER_THRUSTCORR  0.8
+#else
+  #define DR_FILTER_DRAG  0.5
+  #define DR_FILTER_THRUSTCORR  0.8
+#endif
 
 void filter_predict(float phi, float theta, float psi, float dt)
 {
@@ -91,8 +99,6 @@ void filter_correct(void)
   // Retrieve oldest element of state buffer (that corresponds to current vision measurement) // TODO: should we not empirically determine the delay (is it now just guessed?)
   float sx, sy, sz;
 
-  float vision_scale = 1.0f;
-
   fifo_pop(&sx, &sy, &sz);
 
   /*
@@ -104,7 +110,9 @@ void filter_correct(void)
   my = dr_fp.gate_y + roty * vision_scale;
    */
 
-  if(gates[dr_fp.gate_nr].type != VIRTUAL) {
+  // TODO: we should actually check that the determined height is not so different from the gate height, given that we are not looking at the jungle gate
+  // With the check on dr_vision.dz, we want to exclude the detection of the gate botom part.
+  if(gates[dr_fp.gate_nr].type != VIRTUAL && dr_vision.dz > -2.5) {
 
     pushJungleGateDetection();
 
@@ -129,9 +137,11 @@ void filter_correct(void)
 
 void transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy)
 {
+    // TODO: reintroduce vision scale?
     float min_distance = 9999;
-	int i;
-    for( i = 0;i<MAX_GATES;i++)
+
+    int assigned_gate_index = 0;
+    for(int i = 0;i<MAX_GATES;i++)
     {
         float rotx = cosf(gates[i].psi) * dx - sinf(gates[i].psi) * dy;
         float roty = sinf(gates[i].psi) * dx + cosf(gates[i].psi) * dy;
@@ -142,11 +152,13 @@ void transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy)
                                     (y-(dr_state.y+dr_ransac.corr_y))*(y-(dr_state.y+dr_ransac.corr_y));
         if(distance_measured_2_drone < min_distance)
         {
-            min_distance = distance_measured_2_drone;
-            *mx = x;
-            *my = y;
+          assigned_gate_index = i;
+          min_distance = distance_measured_2_drone;
+          *mx = x;
+          *my = y;
         }
     }
+    printf("Assigned gate = %d, (dx,dy) = (%f,%f), (mx,my) = (%f,%f).\n", assigned_gate_index, dx, dy, (*mx), (*my));
 }
 
 void pushJungleGateDetection()

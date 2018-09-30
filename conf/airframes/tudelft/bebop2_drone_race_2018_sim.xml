@@ -20,7 +20,7 @@
     </module>
     <define name="USE_SONAR" value="TRUE"/>
 
-    <define name="DETECT_GATE_N_SAMPLES" value="1000" />
+    <define name="DETECT_GATE_N_SAMPLES" value="2000" />
 
     <module name="ins" type="extended"/>
     <configure name="USE_GPS" value="FALSE"/>
@@ -46,6 +46,8 @@
     <define name="MT9F002_OUTPUT_SCALER" value="0.25"/>
     <define name="MT9F002_X_ODD_INC_VAL" value="1"/>
     <define name="MT9F002_Y_ODD_INC_VAL" value="1"/>   
+    <define name="MT9F002_CENTER_X" value="320"/>
+    <define name="MT9F002_CENTER_Y" value="320"/>
 
   </firmware>
 
@@ -54,7 +56,7 @@
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
     <module name="logger_file">
-      <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
+      <define name="FILE_LOGGER_PATH" value="."/>
     </module>
 
     <module name="video_thread"/>

@@ -20,24 +20,24 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 
 
 const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
-    {4.0, 0.0, 1.0, RadOfDeg(0), REGULAR, NO_BRAKE},
-    {10.0, 0.0, 1.0, RadOfDeg(0), REGULAR, BRAKE},
-    {11.5, 5, 1.0, RadOfDeg(90), REGULAR, BRAKE},
-    {4.0, 8.0, 1.0, RadOfDeg(180), REGULAR, NO_BRAKE},
-    {0.0, 8.0, 1.0, RadOfDeg(180), VIRTUAL, BRAKE},
-    {0.0, 5.0, 1.0, RadOfDeg(180), VIRTUAL, BRAKE},
-    {4.0, 4.0, 1.0, RadOfDeg(0), JUNGLE, BRAKE}
+    {4.0, 0.0, 2.0, RadOfDeg(0), REGULAR, NO_BRAKE},
+    {10.0, 0.0, 2.0, RadOfDeg(0), REGULAR, BRAKE},
+    {11.5, 5, 2.0, RadOfDeg(90), REGULAR, BRAKE},
+    {4.0, 8.0, 2.0, RadOfDeg(180), REGULAR, NO_BRAKE},
+    {0.0, 8.0, 2.0, RadOfDeg(180), VIRTUAL, BRAKE},
+    {0.0, 5.0, 2.0, RadOfDeg(180), VIRTUAL, BRAKE},
+    {4.0, 4.0, 2.0, RadOfDeg(0), JUNGLE, BRAKE}
 };
 
 
 const struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES] = {
-    {6.0, 0.0, 1.0, RadOfDeg(0), REGULAR, NO_BRAKE},
-    {10.5, 0.0, 1.0, RadOfDeg(-0), REGULAR, BRAKE},
-    {11.5, 6.0, 1.0, RadOfDeg(90), REGULAR, BRAKE},
-    {3.0, 8.0, 1.0, RadOfDeg(180), REGULAR, NO_BRAKE},
-    {0.0, 8.0, 1.0, RadOfDeg(180), VIRTUAL, BRAKE},
-    {0.0, 5.0, 1.0, RadOfDeg(180), VIRTUAL, BRAKE},
-    {6.0, 4.0, 1.0, RadOfDeg(0), JUNGLE, BRAKE},
+    {6.0, 0.0, 2.0, RadOfDeg(0), REGULAR, NO_BRAKE},
+    {10.5, 0.0, 2.0, RadOfDeg(-0), REGULAR, BRAKE},
+    {11.5, 6.0, 2.0, RadOfDeg(90), REGULAR, BRAKE},
+    {3.0, 8.0, 2.0, RadOfDeg(180), REGULAR, NO_BRAKE},
+    {0.0, 8.0, 2.0, RadOfDeg(180), VIRTUAL, BRAKE},
+    {0.0, 5.0, 2.0, RadOfDeg(180), VIRTUAL, BRAKE},
+    {6.0, 4.0, 2.0, RadOfDeg(0), JUNGLE, BRAKE},
 };
 
 static void update_gate_setpoints(void)
@@ -88,6 +88,9 @@ void flightplan_run(void)
   correctedX = dr_state.x+dr_ransac.corr_x;
   correctedY = dr_state.y+dr_ransac.corr_y;
   dist = (waypoints_dr[dr_fp.gate_nr].x - correctedX)*(waypoints_dr[dr_fp.gate_nr].x- correctedX) + (waypoints_dr[dr_fp.gate_nr].y- correctedY)*(waypoints_dr[dr_fp.gate_nr].y - correctedY);
+
+  printf("Gate nr: %d, vision count = %d, nr msm in buffer = %d, (x,y) = (%f, %f), (cx, cy) = (%f, %f)\n", dr_fp.gate_nr, dr_vision.cnt, dr_ransac.buf_size, dr_state.x, dr_state.y, correctedX, correctedY);
+
   // Align with current gate
   dr_fp.psi_set = dr_fp.gate_psi;
 
@@ -127,22 +130,14 @@ void checkJungleGate()
 
 
   // if there is no detection within 1s, it is likely to be a low gate
-    /*
-  if((mav::getCurrentTimeMillis() - jungleGate.timeStartJungleGate)/1000.0 > MAX_TIME_JUNGLE_GATE_DETECTION && jungleGate.flagJungleGateDetected == false)
-  {
-    jungleGate.flagJungleGateDetected = 1;
-    flagHighOrLowGate = LOWER_GATE;
-  }
-     */
-
-
   // When determine the gate is in high or low position, send controller desired altitude
   if(gates[dr_fp.gate_nr].type == JUNGLE && jungleGate.flagJungleGateDetected == 1)
   {
+    // TODO: altitudes in the simulator are positive... is this also the case for the real bebop?
     if(flagHighOrLowGate == UPPER_GATE)
-      dr_fp.alt_set = -1.6f;
+      dr_fp.alt_set = 1.6;
     else
-      dr_fp.alt_set = -0.6f;
+      dr_fp.alt_set = 0.6;
   }
 
 }
