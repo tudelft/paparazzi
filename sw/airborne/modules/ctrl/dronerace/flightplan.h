@@ -28,7 +28,8 @@ struct JungleGate
     int numJungleGateDetection;
     float jungleGateHeight;
     float sumJungleGateHeight;
-    float jungleGateDetection[MAX_DETECTION];
+    float jungleGateDetectionZ[MAX_DETECTION];
+    float jungleGateDetectionY[MAX_DETECTION];
     int flagInJungleGate;
     long long timeStartJungleGate;
 };
@@ -36,7 +37,7 @@ struct JungleGate
 // Variables
 extern struct dronerace_fp_struct dr_fp;
 
-#define MAX_GATES 7
+#define MAX_GATES 8
 
 #define  REGULAR 0
 #define JUNGLE 1
@@ -54,10 +55,12 @@ struct dronerace_flightplan_item_struct
     float psi;
     int type;
     int brake;
+    float distance_after_gate;
+    int both_side;
 };
 
 extern const struct dronerace_flightplan_item_struct gates[MAX_GATES];
-extern const struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];
+extern struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];
 
 // Functions
 extern void flightplan_reset(void);

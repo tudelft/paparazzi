@@ -20,18 +20,18 @@ struct dronerace_vision_struct dr_vision;
 void filter_reset()
 {
   // Time
-  dr_state.time = 0;
+  dr_state.time = 0.0f;
 
   // Position
-  dr_state.x = 0;
-  dr_state.y = 0;
+  dr_state.x = 0.0f;
+  dr_state.y = 0.0f;
 
   // Speed
-  dr_state.vx = 0;
-  dr_state.vy = 0;
+  dr_state.vx = 0.0f;
+  dr_state.vy = 0.0f;
 
   // Heading
-  dr_state.psi = 0;
+  dr_state.psi = 0.0f;
 
   // Vision latency
   fifo_reset();
@@ -101,18 +101,10 @@ void filter_correct(void)
 
   fifo_pop(&sx, &sy, &sz);
 
-  /*
-  // Compute current absolute position
-  rotx =  cosf(dr_fp.gate_psi) * dr_vision.dx - sinf(dr_fp.gate_psi) * dr_vision.dy;
-  roty = sinf(dr_fp.gate_psi) * dr_vision.dx + cosf(dr_fp.gate_psi) * dr_vision.dy;
-
-  mx = dr_fp.gate_x + rotx * vision_scale;
-  my = dr_fp.gate_y + roty * vision_scale;
-   */
-
   // TODO: we should actually check that the determined height is not so different from the gate height, given that we are not looking at the jungle gate
   // With the check on dr_vision.dz, we want to exclude the detection of the gate botom part.
-  if(gates[dr_fp.gate_nr].type != VIRTUAL && dr_vision.dz > -2.5) {
+  //  && dr_vision.dz > -2.5
+  if(gates[dr_fp.gate_nr].type != VIRTUAL) {
 
     pushJungleGateDetection();
 
@@ -125,8 +117,8 @@ void filter_correct(void)
     ransac_push(dr_state.time, dr_state.x, dr_state.y, mx, my);
 
     // for logging the filtering result  Shuo add
-    filteredX = dr_state.x+dr_ransac.corr_x;
-    filteredY = dr_state.y+dr_ransac.corr_y;
+    filteredX = dr_state.x + dr_ransac.corr_x;
+    filteredY = dr_state.y + dr_ransac.corr_y;
   }
   else {
     filteredX = dr_state.x;
@@ -143,8 +135,23 @@ void transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy)
     int assigned_gate_index = 0;
     for(int i = 0;i<MAX_GATES;i++)
     {
-        float rotx = cosf(gates[i].psi) * dx - sinf(gates[i].psi) * dy;
-        float roty = sinf(gates[i].psi) * dx + cosf(gates[i].psi) * dy;
+      if(gates[i].type == VIRTUAL)
+      {
+          continue;
+      }
+      // we can detect the gate from the back side, so not only check one gate in front. But also check back
+      for(int j = 0; j<2;j++)
+      {
+        if(j == 1 &&!gates[dr_fp.gate_nr].both_side)
+        {
+            break;
+            //if the drone are at the back side of the gate and there is white paper on the gate,
+            // we should not consider this gate
+        }
+        float psi = gates[i].psi - j*RadOfDeg(180);
+        float rotx = cosf(psi) * dx - sinf(psi) * dy;
+        float roty = sinf(psi) * dx + cosf(psi) * dy;
+
         float x = gates[i].x + rotx;
         float y = gates[i].y + roty;
         float distance_measured_2_drone = 0;
@@ -157,6 +164,7 @@ void transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy)
           *mx = x;
           *my = y;
         }
+      }
     }
     printf("Assigned gate = %d, (dx,dy) = (%f,%f), (mx,my) = (%f,%f).\n", assigned_gate_index, dx, dy, (*mx), (*my));
 }
@@ -165,7 +173,8 @@ void pushJungleGateDetection()
 {
     if(gates[dr_fp.gate_nr].type == JUNGLE && jungleGate.flagJungleGateDetected == false && jungleGate.numJungleGateDetection < MAX_DETECTION)
     {
-        jungleGate.jungleGateDetection[jungleGate.numJungleGateDetection] = dr_vision.dz;
+        jungleGate.jungleGateDetectionZ[jungleGate.numJungleGateDetection] = dr_vision.dz;
+        jungleGate.jungleGateDetectionY[jungleGate.numJungleGateDetection] = dr_vision.dy;
         jungleGate.sumJungleGateHeight += dr_vision.dz;
         jungleGate.numJungleGateDetection++;
         jungleGate.jungleGateHeight = jungleGate.sumJungleGateHeight / jungleGate.numJungleGateDetection;

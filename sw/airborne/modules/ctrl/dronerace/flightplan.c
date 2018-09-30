@@ -3,11 +3,14 @@
 #include "filter.h"
 #include "ransac.h"
 #include "std.h"
+#include "stdio.h"
 
 struct dronerace_fp_struct dr_fp;
 
 struct JungleGate jungleGate;
 void checkJungleGate();
+void generate_waypoints_from_gates();
+
 int flagHighOrLowGate;
 
 // X, Y, ALT, PSI
@@ -19,26 +22,22 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 */
 
 
+
+// Note: pprz has positive Z here, while jevois has negative Z
+// both_side: bool in Jevois code, 0 or 1 here.
 const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
-    {4.0, 0.0, 2.0, RadOfDeg(0), REGULAR, NO_BRAKE},
-    {10.0, 0.0, 2.0, RadOfDeg(0), REGULAR, BRAKE},
-    {11.5, 5, 2.0, RadOfDeg(90), REGULAR, BRAKE},
-    {4.0, 8.0, 2.0, RadOfDeg(180), REGULAR, NO_BRAKE},
-    {0.0, 8.0, 2.0, RadOfDeg(180), VIRTUAL, BRAKE},
-    {0.0, 5.0, 2.0, RadOfDeg(180), VIRTUAL, BRAKE},
-    {4.0, 4.0, 2.0, RadOfDeg(0), JUNGLE, BRAKE}
+    //  X-coordinate  Y-coordinate  Z-coordinate  Psi-gate          Type-of-gate  Brake-at-gate   Distance-after gate       both side
+    {   4.0,          0.0,          1.5,          RadOfDeg(0),      REGULAR,      NO_BRAKE,       1.0,                      1},
+    {   10.0,         0.0,          2.1,          RadOfDeg(0),      REGULAR,      BRAKE,          0.5,                      0},
+    {   11.5,         5.0,          1.5,          RadOfDeg(90),     REGULAR,      BRAKE,          1.0,                      0},
+    {   4.0,          8.0,          1.5,          RadOfDeg(180),    REGULAR,      NO_BRAKE,       1.0,                      0},
+    {   0.0,          8.0,          1.5,          RadOfDeg(180),    VIRTUAL,      BRAKE,          0.0,                      0},
+    {   0.0,          5.0,          1.5,          RadOfDeg(180),    VIRTUAL,      BRAKE,          0.0,                      0},
+    {   4.0,          4.0,          1.5,          RadOfDeg(0),      JUNGLE,       BRAKE,          1.0,                      0},
+    {   7.0,          8.0,          1.5,          RadOfDeg(-90),    VIRTUAL,      BRAKE,          0.0,                      0}
 };
 
-
-const struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES] = {
-    {6.0, 0.0, 2.0, RadOfDeg(0), REGULAR, NO_BRAKE},
-    {10.5, 0.0, 2.0, RadOfDeg(-0), REGULAR, BRAKE},
-    {11.5, 6.0, 2.0, RadOfDeg(90), REGULAR, BRAKE},
-    {3.0, 8.0, 2.0, RadOfDeg(180), REGULAR, NO_BRAKE},
-    {0.0, 8.0, 2.0, RadOfDeg(180), VIRTUAL, BRAKE},
-    {0.0, 5.0, 2.0, RadOfDeg(180), VIRTUAL, BRAKE},
-    {6.0, 4.0, 2.0, RadOfDeg(0), JUNGLE, BRAKE},
-};
+struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];
 
 static void update_gate_setpoints(void)
 {
@@ -63,6 +62,7 @@ void flightplan_reset()
   dr_fp.psi_set = 0;
 
   resetJungleGate();
+  generate_waypoints_from_gates();
 }
 
 
@@ -150,4 +150,75 @@ void resetJungleGate()
   jungleGate.jungleGateHeight = 0;
   jungleGate.sumJungleGateHeight = 0;
   jungleGate.flagInJungleGate = false;
+}
+
+
+// #define DEBUG_WP_GENERATION
+void generate_waypoints_from_gates()
+{
+
+#ifdef DEBUG_WP_GENERATION
+  if(debug) {
+
+    char filename[128];
+    FILE* fp;
+    sprintf(filename,"%06d.txt",1111);
+    fp = fopen(filename,"w");
+    fprintf(fp,"gate_x,gate_y,gate_z,gate_psi,gate_tpye,gate_brake,gate_after_distance\n");
+    for (int i=0;i<MAX_GATES;i++)
+    {
+      fprintf(fp,"%f,%f,%f,%f,%d,%d,%f\n",gates[i].x,
+              gates[i].y,
+              gates[i].alt,
+              gates[i].psi,
+              gates[i].type,
+              gates[i].brake,
+              gates[i].distance_after_gate
+      );
+    }
+
+    fprintf(fp,"\n\n\n");
+    fclose(fp);
+  }
+#endif
+
+  for(int i = 0; i<MAX_GATES;i++)
+  {
+    float d = gates[i].distance_after_gate;
+    if(gates[i].type == VIRTUAL)
+    {
+      waypoints_dr[i].x = gates[i].x;
+      waypoints_dr[i].y = gates[i].y;
+    }
+    else
+    {
+      waypoints_dr[i].x = cos(gates[i].psi)*d + gates[i].x;
+      waypoints_dr[i].y = sin(gates[i].psi)*d + gates[i].y;
+    }
+    waypoints_dr[i].alt = gates[i].alt;
+    waypoints_dr[i].psi= gates[i].psi;
+    waypoints_dr[i].type= gates[i].type;
+    waypoints_dr[i].brake= gates[i].brake;
+    waypoints_dr[i].distance_after_gate= gates[i].distance_after_gate;
+    waypoints_dr[i].both_side = gates[i].both_side;
+  }
+
+#ifdef DEBUG_WP_GENERATION
+  fp = fopen(filename,"a");
+  fprintf(fp,"wp_x,wp_y,wp_z,wp_psi,wp_tpye,wp_brake,wp_after_distance\n");
+  for (int i=0;i<MAX_GATES;i++)
+  {
+    fprintf(fp,"%f,%f,%f,%f,%d,%d,%f\n",waypoints_dr[i].x,
+            waypoints_dr[i].y,
+            waypoints_dr[i].alt,
+            waypoints_dr[i].psi,
+            waypoints_dr[i].type,
+            waypoints_dr[i].brake,
+            waypoints_dr[i].distance_after_gate
+    );
+  }
+
+  fclose(fp);
+#endif
+
 }

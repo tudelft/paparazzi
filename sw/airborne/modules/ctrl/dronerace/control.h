@@ -1,4 +1,18 @@
+#ifndef  P_FORWARD
+#define P_FORWARD 1.1
+#endif
 
+#ifndef  D_FORWARD
+#define D_FORWARD 0.0
+#endif
+
+#ifndef  P_LATERAL
+#define P_LATERAL 1.1
+#endif
+
+#ifndef  D_LATERAL
+#define D_LATERAL 0.0
+#endif
 
 struct dronerace_control_struct
 {
