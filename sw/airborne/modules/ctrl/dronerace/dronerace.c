@@ -139,6 +139,7 @@ static void gate_detected_cb(uint8_t sender_id __attribute__((unused)), int32_t 
   dr_vision.dx = dx;
   dr_vision.dy = dy;
   dr_vision.dz = dz;
+  printf("filter.cpp: dx, dy, dz = (%f, %f, %f)\n", dr_vision.dx, dr_vision.dy, dr_vision.dz);
   filter_correct();
 }
 

@@ -702,6 +702,13 @@ static void init_gazebo_video(void)
       cameras[i]->sensor_size.h = MT9F002_OUTPUT_HEIGHT;
       cameras[i]->crop.w = MT9F002_OUTPUT_WIDTH;
       cameras[i]->crop.h = MT9F002_OUTPUT_HEIGHT;
+      cameras[i]->camera_intrinsics = {
+          .focal_x = MT9F002_FOCAL_X,
+          .focal_y = MT9F002_FOCAL_Y,
+          .center_x = MT9F002_CENTER_X,
+          .center_y = MT9F002_CENTER_Y,
+          .Dhane_k = MT9F002_DHANE_K
+        };
     }
 #endif
     cameras[i]->fps = cam->UpdateRate();

@@ -19,7 +19,10 @@
 
 #include "modules/computer_vision/snake_gate_detection.h"
 
-// #define DEBUG_GATE
+// To know if we are simulating or not the camera of the Bebop:
+#include "generated/airframe.h"
+
+//#define DEBUG_GATE
 
 #ifndef DETECT_GATE_JUST_FILTER
 #define DETECT_GATE_JUST_FILTER 0
@@ -37,7 +40,7 @@ PRINT_CONFIG_VAR(DETECT_GATE_FPS)
 PRINT_CONFIG_VAR(DETECT_GATE_CAMERA)
 
 #ifndef DETECT_GATE_N_SAMPLES
-#define DETECT_GATE_N_SAMPLES 10000
+#define DETECT_GATE_N_SAMPLES 2000
 #endif
 PRINT_CONFIG_VAR(DETECT_GATE_N_SAMPLES)
 
@@ -151,10 +154,23 @@ static struct image_t *detect_gate_func(struct image_t *img)
     snake_gate_detection(img, n_samples, min_px_size, min_gate_quality, gate_thickness, min_n_sides, color_Ym, color_YM,
                          color_Um, color_UM, color_Vm, color_VM, &best_gate, gates_c, &n_gates);
 
+#if NPS_SIMULATE_MT9F002
+    int temp[4];
+#endif
+
 #ifdef DEBUG_GATE
+    printf("\n**** START DEBUG DETECT GATE ****\n");
     if (n_gates > 1) {
       for (int i = 0; i < n_gates; i++) {
         if (gates_c[i].quality > min_gate_quality * 2 && gates_c[i].n_sides >= 3) {
+
+#if NPS_SIMULATE_MT9F002
+          // swap x and y coordinates:
+          memcpy(temp, gates_c[i].x_corners, sizeof(gates_c[i].x_corners));
+          memcpy(gates_c[i].x_corners, gates_c[i].y_corners, sizeof(gates_c[i].x_corners));
+          memcpy(gates_c[i].y_corners, temp, sizeof(gates_c[i].y_corners));
+#endif
+
           drone_position = get_world_position_from_image_points(gates_c[i].x_corners, gates_c[i].y_corners, world_corners,
                            n_corners,
                            DETECT_GATE_CAMERA.camera_intrinsics, cam_body);
@@ -167,6 +183,13 @@ static struct image_t *detect_gate_func(struct image_t *img)
 #endif
 
     if (best_gate.quality > min_gate_quality * 2) {
+
+#if NPS_SIMULATE_MT9F002
+      // swap x and y coordinates:
+      memcpy(temp, best_gate.x_corners, sizeof(best_gate.x_corners));
+      memcpy(best_gate.x_corners, best_gate.y_corners, sizeof(best_gate.x_corners));
+      memcpy(best_gate.y_corners, temp, sizeof(best_gate.y_corners));
+#endif
 
 #ifdef DEBUG_GATE
       // debugging snake gate:
@@ -185,6 +208,7 @@ static struct image_t *detect_gate_func(struct image_t *img)
 #ifdef DEBUG_GATE
       // debugging the drone position:
       printf("Position drone: (%f, %f, %f)\n", drone_position.x, drone_position.y, drone_position.z);
+      printf("**** END DEBUG DETECT GATE ****\n");
 #endif
 
       // send from thread to module - only when there is a best gate:
@@ -234,6 +258,19 @@ void detect_gate_init(void)
   color_VM = DETECT_GATE_V_MAX;
 
   // World coordinates: X positive towards the gate, Z positive down, Y positive right:
+#if NPS_SIMULATE_MT9F002
+  // Top-left, CW:
+  printf("\n\n*** Using sim normal coordinate system in detect gate ***\n\n");
+  VECT3_ASSIGN(world_corners[0],
+               0.0f, -(gate_size_m / 2), gate_center_height - (gate_size_m / 2));
+  VECT3_ASSIGN(world_corners[1],
+               0.0f, (gate_size_m / 2), gate_center_height - (gate_size_m / 2));
+  VECT3_ASSIGN(world_corners[2],
+               0.0f, (gate_size_m / 2), gate_center_height + (gate_size_m / 2));
+  VECT3_ASSIGN(world_corners[3],
+               0.0f, -(gate_size_m / 2), gate_center_height + (gate_size_m / 2));
+
+#else
   // Bottom-right, CCW:
   VECT3_ASSIGN(world_corners[0],
                0.0f, (gate_size_m / 2), gate_center_height + (gate_size_m / 2));
@@ -243,7 +280,7 @@ void detect_gate_init(void)
                0.0f, -(gate_size_m / 2), gate_center_height - (gate_size_m / 2));
   VECT3_ASSIGN(world_corners[3],
                0.0f, -(gate_size_m / 2), gate_center_height + (gate_size_m / 2));
-
+#endif
   cam_body.phi = 0;
   cam_body.theta = 0;
   cam_body.psi = 0;
