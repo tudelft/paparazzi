@@ -35,7 +35,8 @@
 #include "flightplan.h"
 #include "subsystems/datalink/telemetry.h"
 
-
+// to know if we are simulating:
+#include "generated/airframe.h"
 
 float dt = 1.0f / 512.f;
 
@@ -47,8 +48,19 @@ float dt = 1.0f / 512.f;
 
 /** Set the default File logger path to the USB drive */
 #ifndef FILE_LOGGER_PATH
-#define FILE_LOGGER_PATH /data/ftp/internal_000
+  #if NPS_SIMULATE_MT9F002
+    #define FILE_LOGGER_PATH .
+  #else
+    #define FILE_LOGGER_PATH /data/ftp/internal_000
+  #endif
 #endif
+
+// What type of log to make during flight:
+#define CHRISTOPHE_LOG 0
+#define OLD_LOG 1
+#define FULL_LOG 2
+#define TYPE_LOG CHRISTOPHE_LOG
+
 
 /** The file pointer */
 static FILE *file_logger = NULL;
@@ -73,19 +85,42 @@ static void open_log(void) {
     counter++;
   }
 
+  printf("\n\n*** chosen filename log drone race: %s ***\n\n", filename);
+
   file_logger = fopen(filename, "w");
 
   if (file_logger != NULL) {
-    fprintf(
-      file_logger,"Test\n");
+    if(TYPE_LOG == CHRISTOPHE_LOG) {
+      fprintf(file_logger,"phi,theta,psi,vision_cnt,dx,dy,dz\n");
+    }
+    else if(TYPE_LOG == OLD_LOG) {
+      fprintf(file_logger,"dr_state_x,dr_state_y,dr_state_vx,dr_state_vy,vision_cnt,vision_dx,vision_dy\n");
+    }
+    else {
+      fprintf(file_logger,"phi,theta,psi,vision_cnt,ransac_buf_size,vision_dx,vision_dy,vision_dz,dr_state_x,dr_state_y,dr_state_vx,dr_state_vy,corr_x,corr_y\n");
+    }
   }
 }
 
 static void write_log(void)
 {
+  //int type = CHRISTOPHE_LOG;
+
   if (file_logger != 0) {
-    fprintf(file_logger, "%f,%f,%f,%f,%d,%f,%f\n",dr_state.x, dr_state.y, dr_state.vx, dr_state.vy,
-        dr_vision.cnt,dr_vision.dx,dr_vision.dy);
+
+    if(TYPE_LOG == OLD_LOG) {
+      fprintf(file_logger, "%f,%f,%f,%f,%d,%f,%f\n",dr_state.x, dr_state.y, dr_state.vx, dr_state.vy,
+          dr_vision.cnt,dr_vision.dx,dr_vision.dy);
+    }
+    else if(TYPE_LOG == CHRISTOPHE_LOG) {
+      fprintf(file_logger, "%f,%f,%f,%d,%f,%f,%f\n",stateGetNedToBodyEulers_f()->phi, stateGetNedToBodyEulers_f()->theta, stateGetNedToBodyEulers_f()->psi,
+                dr_vision.cnt, dr_vision.dx, dr_vision.dy, dr_vision.dz);
+    }
+    else {
+      fprintf(file_logger, "%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",stateGetNedToBodyEulers_f()->phi, stateGetNedToBodyEulers_f()->theta, stateGetNedToBodyEulers_f()->psi,
+                      dr_vision.cnt, dr_ransac.buf_size, dr_vision.dx, dr_vision.dy, dr_vision.dz, dr_state.x, dr_state.y, dr_state.vx, dr_state.vy,
+                      dr_state.x+dr_ransac.corr_x, dr_state.y+dr_ransac.corr_y);
+    }
   }
 }
 
@@ -167,8 +202,18 @@ void dronerace_enter(void)
 void dronerace_periodic(void)
 {
 
-  float phi = stateGetNedToBodyEulers_f()->phi - RadOfDeg(-1.5);
-  float theta = stateGetNedToBodyEulers_f()->theta - RadOfDeg(2.0);
+  float phi_bias = 0.0;
+  float theta_bias = 0.0;
+
+// TODO: it is nicer to test a more generic variable that indicates simulation:
+#if NPS_SIMULATE_MT9F002
+  // Only add biases ourselves when we are simulating.
+  phi_bias = RadOfDeg(0.0f); //(-1.5);
+  theta_bias = RadOfDeg(0.0f); //(2.0);
+#endif
+
+  float phi = stateGetNedToBodyEulers_f()->phi - phi_bias;
+  float theta = stateGetNedToBodyEulers_f()->theta - theta_bias;
   float psi = stateGetNedToBodyEulers_f()->psi - psi0;
 
   filter_predict(phi,theta,psi, dt);

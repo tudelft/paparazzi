@@ -260,7 +260,6 @@ void detect_gate_init(void)
   // World coordinates: X positive towards the gate, Z positive down, Y positive right:
 #if NPS_SIMULATE_MT9F002
   // Top-left, CW:
-  printf("\n\n*** Using sim normal coordinate system in detect gate ***\n\n");
   VECT3_ASSIGN(world_corners[0],
                0.0f, -(gate_size_m / 2), gate_center_height - (gate_size_m / 2));
   VECT3_ASSIGN(world_corners[1],

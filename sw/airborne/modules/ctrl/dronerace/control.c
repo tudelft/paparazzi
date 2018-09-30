@@ -82,7 +82,7 @@ void control_run(float dt)
 
   // Position error to Speed
 
-  float CONTROL_GAIN = 1.1f;
+  float CONTROL_GAIN = 1.5f;//1.1f;
   vxcmd = (dr_fp.x_set - (dr_state.x+dr_ransac.corr_x)) * CONTROL_GAIN - dr_state.vx * 0.0f; // TODO: interestingly, we don't use the velocity correction for control: t_fit * dr_ransac.corr_vx
   vycmd = (dr_fp.y_set - (dr_state.y+dr_ransac.corr_y)) * CONTROL_GAIN - dr_state.vy * 0.0f;
 

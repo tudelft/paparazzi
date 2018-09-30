@@ -7,6 +7,8 @@
 #include <math.h>
 #include "std.h"
 
+// to know if we are simulating:
+#include "generated/airframe.h"
 
 
 struct dronerace_state_struct dr_state;
@@ -41,8 +43,13 @@ float filteredX, filteredY;
 // PREDICTION MODEL
 
 #define DR_FILTER_GRAVITY  9.81
-#define DR_FILTER_DRAG  0.5
-#define DR_FILTER_THRUSTCORR  0.8
+#if NPS_SIMULATE_MT9F002
+  #define DR_FILTER_DRAG  0.3
+  #define DR_FILTER_THRUSTCORR  0.8
+#else
+  #define DR_FILTER_DRAG  0.5
+  #define DR_FILTER_THRUSTCORR  0.8
+#endif
 
 void filter_predict(float phi, float theta, float psi, float dt)
 {
@@ -131,6 +138,7 @@ void filter_correct(void)
 void transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy)
 {
     float min_distance = 9999;
+    int assigned_gate_index = 0;
     for(int i = 0;i<MAX_GATES;i++)
     {
         float rotx = cosf(gates[i].psi) * dx - sinf(gates[i].psi) * dy;
@@ -142,11 +150,13 @@ void transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy)
                                     (y-(dr_state.y+dr_ransac.corr_y))*(y-(dr_state.y+dr_ransac.corr_y));
         if(distance_measured_2_drone < min_distance)
         {
-            min_distance = distance_measured_2_drone;
-            *mx = x;
-            *my = y;
+          assigned_gate_index = i;
+          min_distance = distance_measured_2_drone;
+          *mx = x;
+          *my = y;
         }
     }
+    printf("Assigned gate = %d, (dx,dy) = (%f,%f), (mx,my) = (%f,%f).\n", assigned_gate_index, dx, dy, (*mx), (*my));
 }
 
 void pushJungleGateDetection()
