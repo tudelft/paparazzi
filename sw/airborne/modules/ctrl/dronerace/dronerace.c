@@ -247,7 +247,7 @@ void dronerace_periodic(void)
     dr_vision.dy = input_dy;
     dr_vision.dz = input_dz;
 
-    //filter_correct();
+    filter_correct();
   }
 
   write_log();
@@ -258,8 +258,8 @@ void dronerace_periodic(void)
     target_ned.y = dr_fp.gate_x;
     target_ned.z = -dr_fp.gate_alt;
 
-    //ENU_BFP_OF_REAL(navigation_carrot, target_ned);
-    //ENU_BFP_OF_REAL(navigation_target, target_ned);
+    ENU_BFP_OF_REAL(navigation_carrot, target_ned);
+    ENU_BFP_OF_REAL(navigation_target, target_ned);
 
   }
 
