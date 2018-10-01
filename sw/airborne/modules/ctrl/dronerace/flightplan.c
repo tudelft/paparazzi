@@ -4,6 +4,7 @@
 #include "ransac.h"
 #include "std.h"
 #include "stdio.h"
+#include "state.h"
 
 struct dronerace_fp_struct dr_fp;
 
@@ -91,7 +92,7 @@ void flightplan_run(void)
   correctedY = dr_state.y+dr_ransac.corr_y;
   dist = (waypoints_dr[dr_fp.gate_nr].x - correctedX)*(waypoints_dr[dr_fp.gate_nr].x- correctedX) + (waypoints_dr[dr_fp.gate_nr].y- correctedY)*(waypoints_dr[dr_fp.gate_nr].y - correctedY);
 
-  printf("Gate nr: %d, vision count = %d, nr msm in buffer = %d, (x,y) = (%f, %f), (cx, cy) = (%f, %f)\n", dr_fp.gate_nr, dr_vision.cnt, dr_ransac.buf_size, dr_state.x, dr_state.y, correctedX, correctedY);
+  printf("Gate nr: %d, vision count = %d, nr msm in buffer = %d, (x,y) = (%f, %f), (cx, cy) = (%f, %f), (real_x, real_y) = (%f, %f)\n", dr_fp.gate_nr, dr_vision.cnt, dr_ransac.buf_size, dr_state.x, dr_state.y, correctedX, correctedY, stateGetPositionNed_f()->x, stateGetPositionNed_f()->y);
 
   // Align with current gate
   dr_fp.psi_set = dr_fp.gate_psi;
