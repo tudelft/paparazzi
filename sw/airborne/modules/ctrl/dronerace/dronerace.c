@@ -120,8 +120,7 @@ static void write_log(void)
           dr_vision.cnt,dr_vision.dx,dr_vision.dy);
     }
     else if(TYPE_LOG == CHRISTOPHE_LOG) {
-      fprintf(file_logger, "%f,%f,%f,%d,%f,%f,%f\n",stateGetNedToBodyEulers_f()->phi, stateGetNedToBodyEulers_f()->theta, stateGetNedToBodyEulers_f()->psi,
-                dr_vision.cnt, dr_vision.dx, dr_vision.dy, dr_vision.dz);
+      fprintf(file_logger, "%f,%f,%f,%d,%f,%f,%f\n",input_phi, input_theta, input_psi, input_cnt, input_dx, input_dy, input_dz);
     }
     else {
       fprintf(file_logger, "%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",stateGetNedToBodyEulers_f()->phi, stateGetNedToBodyEulers_f()->theta, stateGetNedToBodyEulers_f()->psi,
@@ -176,13 +175,12 @@ static abi_event gate_detected_ev;
 
 static void gate_detected_cb(uint8_t sender_id __attribute__((unused)), int32_t cnt, float dx, float dy, float dz, float vx __attribute__((unused)), float vy __attribute__((unused)), float vz __attribute__((unused)))
 {
-  // Vision update
-  dr_vision.cnt = cnt;
-  dr_vision.dx = dx;
-  dr_vision.dy = dy;
-  dr_vision.dz = dz;
-  printf("filter.cpp: dx, dy, dz = (%f, %f, %f)\n", dr_vision.dx, dr_vision.dy, dr_vision.dz);
-  filter_correct();
+  // Logging
+  input_cnt = cnt;
+  input_dx = dx;
+  input_dy = dy;
+  input_dz = dz;
+
 }
 
 void dronerace_init(void)
@@ -219,9 +217,9 @@ void dronerace_periodic(void)
   theta_bias = RadOfDeg(0.0f); //(2.0);
 #endif
 
-  float phi = stateGetNedToBodyEulers_f()->phi - phi_bias;
-  float theta = stateGetNedToBodyEulers_f()->theta - theta_bias;
-  float psi = stateGetNedToBodyEulers_f()->psi - psi0;
+  input_phi = stateGetNedToBodyEulers_f()->phi - phi_bias;
+  input_theta = stateGetNedToBodyEulers_f()->theta - theta_bias;
+  input_psi = stateGetNedToBodyEulers_f()->psi - psi0;
 
   filter_predict(input_phi,input_theta,input_psi, dt);
 
