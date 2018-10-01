@@ -37,7 +37,7 @@ struct JungleGate
 // Variables
 extern struct dronerace_fp_struct dr_fp;
 
-#define MAX_GATES 8
+#define MAX_GATES 10
 
 #define  REGULAR 0
 #define JUNGLE 1

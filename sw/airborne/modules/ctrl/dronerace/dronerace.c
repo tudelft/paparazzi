@@ -27,6 +27,7 @@
 #include "modules/ctrl/dronerace/dronerace.h"
 #include "firmwares/rotorcraft/guidance/guidance_v.h"
 #include "modules/sonar/sonar_bebop.h"
+#include "generated/flight_plan.h"
 #include "subsystems/abi.h"
 #include "state.h"
 #include "filter.h"
@@ -193,6 +194,9 @@ void dronerace_init(void)
 
   // Start Logging
   open_log();
+
+  // Compute waypoints
+  dronerace_enter();
 }
 
 float psi0 = 0;
@@ -202,6 +206,19 @@ void dronerace_enter(void)
   psi0 = stateGetNedToBodyEulers_f()->psi;
   filter_reset();
   control_reset();
+
+  for (int i=0;i<MAX_GATES;i++)
+  {
+    struct EnuCoor_f enu_g = {.x=gates[i].y, .y=gates[i].x, .z=-gates[i].alt};
+    struct EnuCoor_f enu_w = {.x=waypoints_dr[i].y, .y=waypoints_dr[i].x, .z=-waypoints_dr[i].alt};
+    if (gates[i].type == VIRTUAL) {
+      enu_g.x = 0;
+      enu_g.y = 0;
+    }
+    waypoint_set_enu( WP_G1+i, &enu_g);
+    waypoint_set_enu( WP_p1+i, &enu_w);
+    printf("Moved %f %f \n", enu_g.x, enu_g.y);
+  }
 }
 
 void dronerace_periodic(void)
@@ -235,7 +252,16 @@ void dronerace_periodic(void)
 
   write_log();
 
+  {
+    struct NedCoor_f target_ned;
+    target_ned.x = dr_fp.gate_y;
+    target_ned.y = dr_fp.gate_x;
+    target_ned.z = -dr_fp.gate_alt;
 
+    ENU_BFP_OF_REAL(navigation_carrot, target_ned);
+    ENU_BFP_OF_REAL(navigation_target, target_ned);
+
+  }
 
 
   // Show position on the map
