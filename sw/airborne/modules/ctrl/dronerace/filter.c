@@ -92,7 +92,7 @@ float log_mx, log_my;
 float mx, my;
 int transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy);
 
-void pushJungleGateDetection();
+void pushJungleGateDetection(void);
 
 void filter_correct(void)
 {
@@ -132,7 +132,7 @@ void filter_correct(void)
 }
 
 
-int transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy)
+int transfer_measurement_local_2_global(float * _mx,float *_my,float dx,float dy)
 {
     // TODO: reintroduce vision scale?
     float min_distance = 9999;
@@ -166,16 +166,16 @@ int transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy)
         {
           assigned_gate_index = i;
           min_distance = distance_measured_2_drone;
-          *mx = x;
-          *my = y;
+          *_mx = x;
+          *_my = y;
         }
       }
     }
-    printf("Assigned gate = %d, (dx,dy) = (%f,%f), (mx,my) = (%f,%f).\n", assigned_gate_index, dx, dy, (*mx), (*my));
+    printf("Assigned gate = %d, (dx,dy) = (%f,%f), (mx,my) = (%f,%f).\n", assigned_gate_index, dx, dy, (*_mx), (*_my));
     return assigned_gate_index;
 }
 
-void pushJungleGateDetection()
+void pushJungleGateDetection(void)
 {
     if(gates[dr_fp.gate_nr].type == JUNGLE && jungleGate.flagJungleGateDetected == false && jungleGate.numJungleGateDetection < MAX_DETECTION)
     {

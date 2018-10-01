@@ -22,7 +22,7 @@ struct dronerace_fp_struct
 
 # define MAX_DETECTION 2
 
-struct JungleGate
+struct jungle_gate_struct
 {
     int flagJungleGateDetected;
     int numJungleGateDetection;
@@ -61,9 +61,9 @@ struct dronerace_flightplan_item_struct
 
 extern const struct dronerace_flightplan_item_struct gates[MAX_GATES];
 extern struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];
+extern struct jungle_gate_struct jungleGate;
 
 // Functions
 extern void flightplan_reset(void);
 extern void flightplan_run(void);
-extern struct JungleGate jungleGate;
 extern void resetJungleGate(void);

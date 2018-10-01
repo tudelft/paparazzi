@@ -8,9 +8,9 @@
 
 struct dronerace_fp_struct dr_fp;
 
-struct JungleGate jungleGate;
-void checkJungleGate();
-void generate_waypoints_from_gates();
+struct jungle_gate_struct jungleGate;
+void checkJungleGate(void);
+void generate_waypoints_from_gates(void);
 
 int flagHighOrLowGate;
 

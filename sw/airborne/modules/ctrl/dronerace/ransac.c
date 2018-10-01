@@ -141,7 +141,7 @@ void correct_state() {
 // @param[time]: Filter time
 // @param[x,y]: Filter predictions
 // @param[mx,my]: Vision measurements
-void ransac_push(float time, float x, float y, float mx, float my)
+void ransac_push(float time, float _x, float _y, float _mx, float _my)
 {
     int i = 0;
 
@@ -152,10 +152,10 @@ void ransac_push(float time, float x, float y, float mx, float my)
         dr_ransac.buf_index_of_last = 0;
     }
     ransac_buf[dr_ransac.buf_index_of_last].time = time;
-    ransac_buf[dr_ransac.buf_index_of_last].x = x;
-    ransac_buf[dr_ransac.buf_index_of_last].y = y;
-    ransac_buf[dr_ransac.buf_index_of_last].mx = mx;
-    ransac_buf[dr_ransac.buf_index_of_last].my = my;
+    ransac_buf[dr_ransac.buf_index_of_last].x = _x;
+    ransac_buf[dr_ransac.buf_index_of_last].y = _y;
+    ransac_buf[dr_ransac.buf_index_of_last].mx = _mx;
+    ransac_buf[dr_ransac.buf_index_of_last].my = _my;
 
     // If sufficient items in buffer
     if (dr_ransac.buf_size > RANSAC_MIN_SAMPLES_FOR_FIT)

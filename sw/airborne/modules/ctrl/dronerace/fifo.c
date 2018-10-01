@@ -8,7 +8,7 @@ struct dronerace_vision_struct
   float y[VISION_LATENCY_TIME_STEPS];
   float z[VISION_LATENCY_TIME_STEPS];
   int index;
-} dr_past_state;
+};
 
 // Variable
 struct dronerace_vision_struct dr_past_state;

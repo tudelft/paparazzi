@@ -26,7 +26,7 @@ extern struct dronerace_ransac_struct dr_ransac;
 extern void ransac_reset(void);
 
 // Correct the state predictions with the help of
-void correct_state();
+void correct_state(void);
 
 // On new IMU measurement: PREDICT
 extern void ransac_propagate(float ax, float ay, float dt);

@@ -77,11 +77,13 @@ static FILE *file_logger = NULL;
 
 static void open_log(void) {
   // Get current date/time, format is YYYY-MM-DD.HH:mm:ss
+  /*
   char date_time[80];
   time_t now = time(0);
   struct tm  tstruct;
   tstruct = *localtime(&now);
-  //strftime(date_time, sizeof(date_time), "%Y-%m-%d_%X", &tstruct);
+  strftime(date_time, sizeof(date_time), "%Y-%m-%d_%X", &tstruct);
+  */
 
   uint32_t counter = 0;
   char filename[512];
