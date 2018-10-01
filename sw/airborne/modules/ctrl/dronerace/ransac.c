@@ -120,16 +120,21 @@ void ransac_propagate(float ax, float ay, float dt)
         float age = (dr_state.time - ransac_buf[dr_ransac.buf_index_of_last].time);
         if (age > dr_ransac.dt_novision)
         {
-            // Apply correction to the Kalman Filter
-            dr_state.x += dr_ransac.corr_x;
-            dr_state.y += dr_ransac.corr_y;
-            dr_state.vx += dr_ransac.corr_vx;
-            dr_state.vy += dr_ransac.corr_vy;
-
-            // Reset the RANSAC process
-            ransac_reset();
+          //printf("\n\n*** RESET DUE TO NO VISION ***\n\n");
+          correct_state();
         }
     }
+}
+
+void correct_state() {
+  // Apply correction to the Kalman Filter
+  dr_state.x += dr_ransac.corr_x;
+  dr_state.y += dr_ransac.corr_y;
+  dr_state.vx += dr_ransac.corr_vx;
+  dr_state.vy += dr_ransac.corr_vy;
+
+  // Reset the RANSAC process
+  ransac_reset();
 }
 
 // Add new measurement and DO RANSAC

@@ -114,6 +114,10 @@ void flightplan_run(void)
     {
       dr_fp.gate_nr = (MAX_GATES -1);
     }
+
+    //printf("\n\n*** RESET DUE TO NEXT GATE ***\n\n");
+    // correct the state predictions, refresh the ransac buffer:
+    correct_state();
   }
 }
 
