@@ -29,6 +29,8 @@
     <waypoint y="-4" x="0" name="G8"/>
     <waypoint y="-4" x="0" name="G9"/>
     <waypoint y="-4" x="0" name="G10"/>
+    <waypoint y="-4" x="0" name="G11"/>
+    <waypoint y="-4" x="0" name="G12"/>
 
     <waypoint y="-6" x="0" name="p1"/>
     <waypoint y="-6" x="0" name="p2"/>
@@ -40,6 +42,8 @@
     <waypoint y="-6" x="0" name="p8"/>
     <waypoint y="-6" x="0" name="p9"/>
     <waypoint y="-6" x="0" name="p10"/>
+    <waypoint y="-6" x="0" name="p11"/>
+    <waypoint y="-6" x="0" name="p12"/>
 
     <waypoint y="-5" x="-2" name="FA1"/>
     <waypoint y="15" x="-2" name="FA2"/>
