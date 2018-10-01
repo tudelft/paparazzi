@@ -90,12 +90,25 @@ static uint8_t pulse_transition_counter;
  * waveform 1 is shorter pulse used at low altitude
  */
 static uint8_t sonar_bebop_spi_d[2][16] = {{ 0xF0, 0xF0, 0xF0, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-                                           { 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0x00, 0x00, 0x00, 0x00 }};
+  { 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0x00, 0x00, 0x00, 0x00 }
+};
 
 struct SonarBebop sonar_bebop;
 
 static struct spi_transaction sonar_bebop_spi_t;
 void *sonar_bebop_read(void *data);
+
+float sonar_filter_gate(float distance_sonar);
+float distance_after_filter = 0;
+float distance_before_filter = 0;
+float previous_distance;
+float current_distance;
+float z0;
+bool through_gate_green_light;
+bool conunt_gate_green_light;
+float diff_pre_cur;
+int counter_temp3 = 0;
+float time_temp3 = 0;
 
 void sonar_bebop_init(void)
 {
@@ -119,7 +132,11 @@ void sonar_bebop_init(void)
   pthread_setname_np(tid, "pprz_sonar_thread");
 #endif
 
-  init_median_filter_f(&sonar_filt, 5);
+  previous_distance = 0;
+  counter_temp3 = 0;
+  time_temp3 = 0;
+
+  init_median_filter_f(&sonar_filt, 3);
 }
 
 uint16_t adc_buffer[SONAR_BEBOP_ADC_BUFFER_SIZE];
@@ -173,6 +190,10 @@ void *sonar_bebop_read(void *data __attribute__((unused)))
       sonar_bebop.meas = first_peak - (stop_send - diff / 2);
       sonar_bebop.distance = update_median_filter_f(&sonar_filt, (float)sonar_bebop.meas * SONAR_BEBOP_INX_DIFF_TO_DIST);
 
+      distance_before_filter = sonar_bebop.distance;
+      distance_after_filter = sonar_filter_gate(distance_before_filter);
+      sonar_bebop.distance = distance_after_filter;
+
       // set sonar pulse mode for next pulse based on altitude
       if (mode == 0 && sonar_bebop.distance > SONAR_BEBOP_TRANSITION_LOW_TO_HIGH) {
         if (++pulse_transition_counter > SONAR_BEBOP_TRANSITION_COUNT) {
@@ -189,9 +210,9 @@ void *sonar_bebop_read(void *data __attribute__((unused)))
       }
 
 #else // SITL
-      sonar_bebop.distance = stateGetPositionEnu_f()->z;
-      Bound(sonar_bebop.distance, 0.1f, 7.0f);
-      sonar_bebop.meas = sonar_bebop.distance / SONAR_BEBOP_INX_DIFF_TO_DIST;
+    sonar_bebop.distance = stateGetPositionEnu_f()->z;
+    Bound(sonar_bebop.distance, 0.1f, 7.0f);
+    sonar_bebop.meas = sonar_bebop.distance / SONAR_BEBOP_INX_DIFF_TO_DIST;
 #endif // SITL
 
       // Send ABI message
@@ -204,4 +225,38 @@ void *sonar_bebop_read(void *data __attribute__((unused)))
     usleep(10000); //100Hz
   }
   return NULL;
+}
+
+float sonar_filter_gate(float distance_sonar)
+{
+  float distance;
+  current_distance = distance_sonar;
+  diff_pre_cur = current_distance - previous_distance;
+  if (diff_pre_cur < -0.4) {
+    z0 = previous_distance;
+    through_gate_green_light = 1;
+    counter_temp3 = 0;
+    time_temp3 = 0;
+  }
+  if (diff_pre_cur > 0.4 || time_temp3 > 1.0) {
+
+    through_gate_green_light = 0;
+  }
+
+  if (through_gate_green_light == 1) {
+    distance = z0;
+  } else {
+    distance = distance_sonar;
+  }
+  previous_distance = current_distance;
+  if (distance > 5) {
+    distance = 5;
+  }
+  return distance;
+}
+
+void sonar_bebop_clock()
+{
+  counter_temp3++;
+  time_temp3 = counter_temp3 / 200.0;
 }
