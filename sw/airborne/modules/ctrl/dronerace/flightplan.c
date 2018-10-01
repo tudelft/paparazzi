@@ -27,7 +27,7 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 // both_side: bool in Jevois code, 0 or 1 here.
 const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
     //  X-coordinate  Y-coordinate  Z-coordinate  Psi-gate          Type-of-gate  Brake-at-gate   Distance-after gate       both side
-    {   2.5,          0.0,          -2.0,          RadOfDeg(0),      REGULAR,      NO_BRAKE,       0.1,                      1},
+    {   3.5,          0.0,          -2.0,          RadOfDeg(0),      REGULAR,      NO_BRAKE,       0.1,                      1},
     {   8.5,          0.0,          -2.0,          RadOfDeg(0),      REGULAR,      BRAKE,          1.5,                      0},
     {   11.5,         3.5,          -2.0,          RadOfDeg(90),     REGULAR,      BRAKE,          1.5,                      0},
     {   5.0,          5.5,          -2.0,          RadOfDeg(180),    REGULAR,      NO_BRAKE,       0.1,                      0},
@@ -35,8 +35,8 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
     {   -0.5,         3.0,          -2.0,          RadOfDeg(-90),    VIRTUAL,      BRAKE,          0.0,                      0},
     {   3.0,          3.0,          -2.0,          RadOfDeg(0),      JUNGLE,       BRAKE,          1.0,                      0},
     {   6.0,          5.5,          -2.0,          RadOfDeg(-90),    VIRTUAL,      BRAKE,          0.0,                      0},
-    {   6.0,          3.0,          -1.0,          RadOfDeg(-90),    REGULAR,      BRAKE,          1.0,                      0},
-    {   2.5,          0.0,          -2.0,          RadOfDeg(180),    REGULAR,      BRAKE,          2.5,                      0}
+    {   6.0,          3.0,          -1.0,          RadOfDeg(-90),    REGULAR,      BRAKE,          2.0,                      0},
+    {   3.5,          0.0,          -2.0,          RadOfDeg(180),    REGULAR,      BRAKE,          3.5,                      0}
 };
 
 struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];
