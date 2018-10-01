@@ -27,14 +27,14 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 // both_side: bool in Jevois code, 0 or 1 here.
 const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
     //  X-coordinate  Y-coordinate  Z-coordinate  Psi-gate          Type-of-gate  Brake-at-gate   Distance-after gate       both side
-    {   4.0,          0.0,          1.5,          RadOfDeg(0),      REGULAR,      NO_BRAKE,       1.0,                      1},
-    {   10.0,         0.0,          2.1,          RadOfDeg(0),      REGULAR,      BRAKE,          0.5,                      0},
-    {   11.5,         5.0,          1.5,          RadOfDeg(90),     REGULAR,      BRAKE,          1.0,                      0},
-    {   4.0,          8.0,          1.5,          RadOfDeg(180),    REGULAR,      NO_BRAKE,       1.0,                      0},
-    {   0.0,          8.0,          1.5,          RadOfDeg(180),    VIRTUAL,      BRAKE,          0.0,                      0},
-    {   0.0,          5.0,          1.5,          RadOfDeg(180),    VIRTUAL,      BRAKE,          0.0,                      0},
-    {   4.0,          4.0,          1.5,          RadOfDeg(0),      JUNGLE,       BRAKE,          1.0,                      0},
-    {   7.0,          8.0,          1.5,          RadOfDeg(-90),    VIRTUAL,      BRAKE,          0.0,                      0}
+    {   4.0,          0.0,          2.0,          RadOfDeg(0),      REGULAR,      NO_BRAKE,       1.0,                      1},
+    {   10.0,         0.0,          2.0,          RadOfDeg(0),      REGULAR,      BRAKE,          0.5,                      0},
+    {   11.5,         5.0,          2.0,          RadOfDeg(90),     REGULAR,      BRAKE,          1.0,                      0},
+    {   4.0,          8.0,          2.0,          RadOfDeg(180),    REGULAR,      NO_BRAKE,       1.0,                      0},
+    {   0.0,          8.0,          2.0,          RadOfDeg(180),    VIRTUAL,      BRAKE,          0.0,                      0},
+    {   0.0,          5.0,          2.0,          RadOfDeg(180),    VIRTUAL,      BRAKE,          0.0,                      0},
+    {   4.0,          4.0,          2.0,          RadOfDeg(0),      JUNGLE,       BRAKE,          1.0,                      0},
+    {   7.0,          8.0,          2.0,          RadOfDeg(-90),    VIRTUAL,      BRAKE,          0.0,                      0}
 };
 
 struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];
