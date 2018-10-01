@@ -209,10 +209,10 @@ void dronerace_enter(void)
 
   for (int i=0;i<MAX_GATES;i++)
   {
-    struct EnuCoor_f enu_g = {.x=gates[i].y, .y=gates[i].x, .z=-gates[i].alt};
-    struct EnuCoor_f enu_w = {.x=waypoints_dr[i].y, .y=waypoints_dr[i].x, .z=-waypoints_dr[i].alt};
+    struct EnuCoor_f enu_g = {.x=gates[i].y, .y=gates[i].x, .z=-gates[i].z};
+    struct EnuCoor_f enu_w = {.x=waypoints_dr[i].y, .y=waypoints_dr[i].x, .z=-waypoints_dr[i].z};
     if (gates[i].type == VIRTUAL) {
-      enu_g.x = 0;
+      enu_g.x = -10;
       enu_g.y = 0;
     }
     waypoint_set_enu( WP_G1+i, &enu_g);
@@ -256,7 +256,7 @@ void dronerace_periodic(void)
     struct NedCoor_f target_ned;
     target_ned.x = dr_fp.gate_y;
     target_ned.y = dr_fp.gate_x;
-    target_ned.z = -dr_fp.gate_alt;
+    target_ned.z = -dr_fp.gate_z;
 
     if (autopilot.mode_auto2 == AP_MODE_MODULE) {
       ENU_BFP_OF_REAL(navigation_carrot, target_ned);
@@ -287,8 +287,8 @@ void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi_cmd)
   *phi = dr_control.phi_cmd;
   *theta = dr_control.theta_cmd;
   *psi_cmd = dr_control.psi_cmd + psi0;
-  *alt = dr_control.alt_cmd;
+  *alt = - dr_control.z_cmd;
 
-  guidance_v_z_sp = POS_BFP_OF_REAL(-dr_control.alt_cmd);
+  guidance_v_z_sp = POS_BFP_OF_REAL(dr_control.z_cmd);
 }
 

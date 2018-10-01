@@ -112,7 +112,7 @@ void control_run(float dt)
   //printf("Phi command = %f\n", dr_control.phi_cmd);
   dr_control.theta_cmd = - cosf(psi) * ax - sinf(psi) * ay;
   dr_control.psi_cmd   = dr_control.psi_ref;
-  dr_control.alt_cmd   = dr_fp.alt_set;
+  dr_control.z_cmd   = dr_fp.z_set;
 
 }
 

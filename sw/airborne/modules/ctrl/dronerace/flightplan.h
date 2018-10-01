@@ -9,14 +9,14 @@ struct dronerace_fp_struct
   int gate_nr;
   float gate_x;
   float gate_y;
-  float gate_alt;
+  float gate_z;
   float gate_psi;
 
   // Current Navigation Target
   float x_set;
   float y_set;
   float psi_set;
-  float alt_set;
+  float z_set;
 };
 
 
@@ -51,7 +51,7 @@ struct dronerace_flightplan_item_struct
 {
     float x;
     float y;
-    float alt;
+    float z;
     float psi;
     int type;
     int brake;

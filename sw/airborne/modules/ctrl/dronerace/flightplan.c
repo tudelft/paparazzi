@@ -27,16 +27,16 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 // both_side: bool in Jevois code, 0 or 1 here.
 const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
     //  X-coordinate  Y-coordinate  Z-coordinate  Psi-gate          Type-of-gate  Brake-at-gate   Distance-after gate       both side
-    {   2.5,          0.0,          2.0,          RadOfDeg(0),      REGULAR,      NO_BRAKE,       1.0,                      1},
-    {   8.5,          0.0,          2.0,          RadOfDeg(0),      REGULAR,      BRAKE,          0.5,                      0},
-    {   11.5,         3.5,          2.0,          RadOfDeg(90),     REGULAR,      BRAKE,          1.0,                      0},
-    {   5.0,          5.5,          2.0,          RadOfDeg(180),    REGULAR,      NO_BRAKE,       1.0,                      0},
-    {   3.0,          5.5,          2.0,          RadOfDeg(180),    REGULAR,      BRAKE,          1.0,                      0},
-    {   -0.5,         6.0,          2.0,          RadOfDeg(-90),    VIRTUAL,      BRAKE,          0.0,                      0},
-    {   3.0,          3.0,          2.0,          RadOfDeg(0),      JUNGLE,       BRAKE,          1.0,                      0},
-    {   6.0,          5.5,          2.0,          RadOfDeg(-90),    VIRTUAL,      BRAKE,          0.0,                      0},
-    {   6.0,          3.0,          2.0,          RadOfDeg(-90),    REGULAR,      BRAKE,          1.0,                      0},
-    {   2.5,          0.0,          2.0,          RadOfDeg(180),    REGULAR,      BRAKE,          1.0,                      0}
+    {   2.5,          0.0,          -2.0,          RadOfDeg(0),      REGULAR,      NO_BRAKE,       0.1,                      1},
+    {   8.5,          0.0,          -2.0,          RadOfDeg(0),      REGULAR,      BRAKE,          1.5,                      0},
+    {   11.5,         3.5,          -2.0,          RadOfDeg(90),     REGULAR,      BRAKE,          1.5,                      0},
+    {   5.0,          5.5,          -2.0,          RadOfDeg(180),    REGULAR,      NO_BRAKE,       0.1,                      0},
+    {   3.0,          5.5,          -2.0,          RadOfDeg(180),    REGULAR,      BRAKE,          3.0,                      0},
+    {   -0.5,         3.0,          -2.0,          RadOfDeg(-90),    VIRTUAL,      BRAKE,          0.0,                      0},
+    {   3.0,          3.0,          -2.0,          RadOfDeg(0),      JUNGLE,       BRAKE,          1.0,                      0},
+    {   6.0,          5.5,          -2.0,          RadOfDeg(-90),    VIRTUAL,      BRAKE,          0.0,                      0},
+    {   6.0,          3.0,          -1.0,          RadOfDeg(-90),    REGULAR,      BRAKE,          1.0,                      0},
+    {   2.5,          0.0,          -2.0,          RadOfDeg(180),    REGULAR,      BRAKE,          2.5,                      0}
 };
 
 struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];
@@ -45,7 +45,7 @@ static void update_gate_setpoints(void)
 {
   dr_fp.gate_x   = gates[dr_fp.gate_nr].x;
   dr_fp.gate_y   = gates[dr_fp.gate_nr].y;
-  dr_fp.gate_alt = gates[dr_fp.gate_nr].alt;
+  dr_fp.gate_z = gates[dr_fp.gate_nr].z;
   dr_fp.gate_psi = gates[dr_fp.gate_nr].psi;
 }
 
@@ -60,7 +60,7 @@ void flightplan_reset()
   // Navigation Setpoint
   dr_fp.x_set = 3;
   dr_fp.y_set = 0;
-  dr_fp.alt_set = 0;
+  dr_fp.z_set = 0;
   dr_fp.psi_set = 0;
 
   resetJungleGate();
@@ -82,7 +82,7 @@ void flightplan_run(void)
 
   dr_fp.x_set = waypoints_dr[dr_fp.gate_nr].x;
   dr_fp.y_set = waypoints_dr[dr_fp.gate_nr].y;
-  dr_fp.alt_set = dr_fp.gate_alt;
+  dr_fp.z_set = dr_fp.gate_z;
 
   checkJungleGate();
 
@@ -141,9 +141,9 @@ void checkJungleGate()
   {
     // TODO: altitudes in the simulator are positive... is this also the case for the real bebop?
     if(flagHighOrLowGate == UPPER_GATE)
-      dr_fp.alt_set = 1.6;
+      dr_fp.z_set = -1.6;
     else
-      dr_fp.alt_set = 0.6;
+      dr_fp.z_set = -0.6;
   }
 
 }
@@ -175,7 +175,7 @@ void generate_waypoints_from_gates()
     {
       fprintf(fp,"%f,%f,%f,%f,%d,%d,%f\n",gates[i].x,
               gates[i].y,
-              gates[i].alt,
+              gates[i].z,
               gates[i].psi,
               gates[i].type,
               gates[i].brake,
@@ -201,7 +201,7 @@ void generate_waypoints_from_gates()
       waypoints_dr[i].x = cos(gates[i].psi)*d + gates[i].x;
       waypoints_dr[i].y = sin(gates[i].psi)*d + gates[i].y;
     }
-    waypoints_dr[i].alt = gates[i].alt;
+    waypoints_dr[i].z = gates[i].z;
     waypoints_dr[i].psi= gates[i].psi;
     waypoints_dr[i].type= gates[i].type;
     waypoints_dr[i].brake= gates[i].brake;
@@ -216,7 +216,7 @@ void generate_waypoints_from_gates()
   {
     fprintf(fp,"%f,%f,%f,%f,%d,%d,%f\n",waypoints_dr[i].x,
             waypoints_dr[i].y,
-            waypoints_dr[i].alt,
+            waypoints_dr[i].z,
             waypoints_dr[i].psi,
             waypoints_dr[i].type,
             waypoints_dr[i].brake,

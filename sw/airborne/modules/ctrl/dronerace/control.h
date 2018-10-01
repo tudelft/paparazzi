@@ -23,7 +23,7 @@ struct dronerace_control_struct
   float phi_cmd;
   float theta_cmd;
   float psi_cmd;
-  float alt_cmd;
+  float z_cmd;
 };
 
 extern struct dronerace_control_struct dr_control;
