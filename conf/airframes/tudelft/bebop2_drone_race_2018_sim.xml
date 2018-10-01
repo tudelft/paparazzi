@@ -20,7 +20,7 @@
     </module>
     <define name="USE_SONAR" value="TRUE"/>
 
-    <define name="DETECT_GATE_N_SAMPLES" value="2000" />
+    <define name="DETECT_GATE_N_SAMPLES" value="5000" />
 
     <module name="ins" type="extended"/>
     <configure name="USE_GPS" value="FALSE"/>

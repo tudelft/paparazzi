@@ -90,7 +90,7 @@ void filter_predict(float phi, float theta, float psi, float dt)
 
 float log_mx, log_my;
 float mx, my;
-void transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy);
+int transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy);
 
 void pushJungleGateDetection();
 
@@ -106,28 +106,33 @@ void filter_correct(void)
   //  && dr_vision.dz > -2.5
   if(gates[dr_fp.gate_nr].type != VIRTUAL) {
 
-    pushJungleGateDetection();
+    int assigned_gate = transfer_measurement_local_2_global(&mx,&my,dr_vision.dx,dr_vision.dy);
 
-    transfer_measurement_local_2_global(&mx,&my,dr_vision.dx,dr_vision.dy);
+    if(assigned_gate == dr_fp.gate_nr) {
 
-    log_mx = dr_fp.gate_x;
-    log_my = dr_fp.gate_y;
+      pushJungleGateDetection();
 
-    // Push to RANSAC
-    ransac_push(dr_state.time, dr_state.x, dr_state.y, mx, my);
+      log_mx = dr_fp.gate_x;
+      log_my = dr_fp.gate_y;
 
-    // for logging the filtering result  Shuo add
-    filteredX = dr_state.x + dr_ransac.corr_x;
-    filteredY = dr_state.y + dr_ransac.corr_y;
+      // Push to RANSAC
+      ransac_push(dr_state.time, dr_state.x, dr_state.y, mx, my);
+
+      // for logging the filtering result  Shuo add
+      filteredX = dr_state.x + dr_ransac.corr_x;
+      filteredY = dr_state.y + dr_ransac.corr_y;
+
+      return;
+    }
   }
-  else {
-    filteredX = dr_state.x;
-    filteredY = dr_state.y;
-  }
+
+  filteredX = dr_state.x;
+  filteredY = dr_state.y;
+  return;
 }
 
 
-void transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy)
+int transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy)
 {
     // TODO: reintroduce vision scale?
     float min_distance = 9999;
@@ -167,6 +172,7 @@ void transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy)
       }
     }
     printf("Assigned gate = %d, (dx,dy) = (%f,%f), (mx,my) = (%f,%f).\n", assigned_gate_index, dx, dy, (*mx), (*my));
+    return assigned_gate_index;
 }
 
 void pushJungleGateDetection()

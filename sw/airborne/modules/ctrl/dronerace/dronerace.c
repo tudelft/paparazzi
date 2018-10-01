@@ -69,7 +69,7 @@ volatile float input_dz = 0;
 #define CHRISTOPHE_LOG 0
 #define OLD_LOG 1
 #define FULL_LOG 2
-#define TYPE_LOG CHRISTOPHE_LOG
+#define TYPE_LOG FULL_LOG
 
 
 /** The file pointer */
@@ -81,17 +81,15 @@ static void open_log(void) {
   time_t now = time(0);
   struct tm  tstruct;
   tstruct = *localtime(&now);
-  strftime(date_time, sizeof(date_time), "%Y-%m-%d_%X", &tstruct);
+  //strftime(date_time, sizeof(date_time), "%Y-%m-%d_%X", &tstruct);
 
   uint32_t counter = 0;
   char filename[512];
-
   // Check for available files
-  sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), date_time);
+  sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "log_file");
   while ((file_logger = fopen(filename, "r"))) {
     fclose(file_logger);
-
-    sprintf(filename, "%s/%s_%05d.csv", STRINGIFY(FILE_LOGGER_PATH), date_time, counter);
+    sprintf(filename, "%s/%s_%05d.csv", STRINGIFY(FILE_LOGGER_PATH), "log_file", counter);
     counter++;
   }
 
@@ -107,7 +105,7 @@ static void open_log(void) {
       fprintf(file_logger,"dr_state_x,dr_state_y,dr_state_vx,dr_state_vy,vision_cnt,vision_dx,vision_dy\n");
     }
     else {
-      fprintf(file_logger,"phi,theta,psi,vision_cnt,ransac_buf_size,vision_dx,vision_dy,vision_dz,dr_state_x,dr_state_y,dr_state_vx,dr_state_vy,corr_x,corr_y\n");
+      fprintf(file_logger,"phi,theta,psi,vision_cnt,ransac_buf_size,vision_dx,vision_dy,vision_dz,dr_state_x,dr_state_y,dr_state_vx,dr_state_vy,corr_x,corr_y,real_x,real_y\n");
     }
   }
 }
@@ -124,9 +122,9 @@ static void write_log(void)
       fprintf(file_logger, "%f,%f,%f,%d,%f,%f,%f\n",input_phi, input_theta, input_psi, input_cnt, input_dx, input_dy, input_dz);
     }
     else {
-      fprintf(file_logger, "%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",stateGetNedToBodyEulers_f()->phi, stateGetNedToBodyEulers_f()->theta, stateGetNedToBodyEulers_f()->psi,
+      fprintf(file_logger, "%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",stateGetNedToBodyEulers_f()->phi, stateGetNedToBodyEulers_f()->theta, stateGetNedToBodyEulers_f()->psi,
                       dr_vision.cnt, dr_ransac.buf_size, dr_vision.dx, dr_vision.dy, dr_vision.dz, dr_state.x, dr_state.y, dr_state.vx, dr_state.vy,
-                      dr_state.x+dr_ransac.corr_x, dr_state.y+dr_ransac.corr_y);
+                      dr_state.x+dr_ransac.corr_x, dr_state.y+dr_ransac.corr_y, stateGetPositionNed_f()->x, stateGetPositionNed_f()->y);
     }
   }
 }
