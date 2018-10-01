@@ -105,7 +105,7 @@ void ransac_reset(void)
 // @param[ax,ay]: acceleration prediction in EARTH axis
 // @param[dt]: Time step in seconds
 
-void ransac_propagate(float ax, float ay, float dt)
+void ransac_propagate( void )
 {
     // Propagate Internal Model
     // TODO: ?

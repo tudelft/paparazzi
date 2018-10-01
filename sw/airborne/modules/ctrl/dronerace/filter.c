@@ -81,7 +81,7 @@ void filter_predict(float phi, float theta, float psi, float dt)
   fifo_push(dr_state.x, dr_state.y, 0);
 
   // Check if Ransac buffer is empty
-  ransac_propagate(ax,ay,dt);
+  ransac_propagate();
 
   filteredX = dr_state.x;
   filteredY = dr_state.y;

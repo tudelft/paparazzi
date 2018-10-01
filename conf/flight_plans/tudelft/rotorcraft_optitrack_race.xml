@@ -51,7 +51,7 @@
     <waypoint y="-5" x="12" name="FA4"/>
   </waypoints>
   <sectors>
-    <sector color="red" name="Flight_Area">
+    <sector color="red" name="Flight_Area_1">
       <corner name="FA4"/>
       <corner name="FA3"/>
       <corner name="FA2"/>

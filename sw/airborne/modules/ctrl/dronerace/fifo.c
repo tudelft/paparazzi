@@ -26,7 +26,7 @@ void fifo_reset(void)
 }
 
 // Add New
-void fifo_push(float x, float y, float z)
+void fifo_push(float x, float y, float z __attribute__((unused)))
 {
   dr_past_state.index++;
   if (dr_past_state.index >= VISION_LATENCY_TIME_STEPS) {

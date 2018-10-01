@@ -29,7 +29,7 @@ extern void ransac_reset(void);
 void correct_state(void);
 
 // On new IMU measurement: PREDICT
-extern void ransac_propagate(float ax, float ay, float dt);
+extern void ransac_propagate(void);
 
 // On new vision update: PUSH a measurement update
 extern void ransac_push(float time, float x, float y, float mx, float my);
