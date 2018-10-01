@@ -18,22 +18,23 @@
     <waypoint name="GOAL" x="20" y="2.0"/>
     <waypoint name="STDBY" x="0" y="0"/>
     <waypoint name="TD" x="20" y="6"/>
-    <waypoint x="4" y="0" name="G1"/>
-    <waypoint x="6" y="0" name="p1"/>
 
-    <waypoint x="10" y="0" name="G2"/>
-    <waypoint x="10.5" y="0" name="p2"/>
+    <waypoint y="4" x="0" name="G1"/>
+    <waypoint y="6" x="0" name="p1"/>
 
-    <waypoint x="11.5" y="-5" name="G3"/>
-    <waypoint x="11.5" y="-6" name="p3"/>
-    <waypoint x="4" y="-8" name="p4"/>
-    <waypoint x="0" y="-8" name="p5"/>
-    <waypoint x="0" y="-5" name="p6"/>
-    <waypoint x="4" y="-4" name="p7"/>
-    <waypoint x="-5" y="2" name="FA1"/>
-    <waypoint x="15" y="2" name="FA2"/>
-    <waypoint x="15" y="-12" name="FA3"/>
-    <waypoint x="-5" y="-12" name="FA4"/>
+    <waypoint y="10" x="0" name="G2"/>
+    <waypoint y="10.5" x="0" name="p2"/>
+
+    <waypoint y="11.5" x="5" name="G3"/>
+    <waypoint y="11.5" x="6" name="p3"/>
+    <waypoint y="4" x="8" name="p4"/>
+    <waypoint y="0" x="8" name="p5"/>
+    <waypoint y="0" x="5" name="p6"/>
+    <waypoint y="4" x="4" name="p7"/>
+    <waypoint y="-5" x="-2" name="FA1"/>
+    <waypoint y="15" x="-2" name="FA2"/>
+    <waypoint y="15" x="12" name="FA3"/>
+    <waypoint y="-5" x="12" name="FA4"/>
   </waypoints>
   <sectors>
     <sector color="red" name="Flight_Area">
