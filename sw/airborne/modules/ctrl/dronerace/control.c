@@ -18,7 +18,7 @@ struct dronerace_control_struct dr_control;
 #define CTRL_MAX_SPEED  2.5             // m/s
 #define CTRL_MAX_PITCH  RadOfDeg(15)    // rad
 #define CTRL_MAX_ROLL   RadOfDeg(10)    // rad
-#define CTRL_MAX_R      RadOfDeg(45)    // rad/sec
+#define CTRL_MAX_R      RadOfDeg(60)    // rad/sec
 
 /*
 // Max speed for bebop
@@ -78,7 +78,7 @@ void control_run(float dt)
 
   // Apply rate limit
   Bound(r_cmd, -CTRL_MAX_R, CTRL_MAX_R);
-  dr_control.psi_ref += 2.0f * r_cmd * dt;
+  dr_control.psi_ref += r_cmd * dt;
 
   // Position error to Speed
   // TODO: interestingly, we don't use the velocity correction for control: t_fit * dr_ransac.corr_vx
