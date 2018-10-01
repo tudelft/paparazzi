@@ -31,10 +31,11 @@
     <define name="MT9F002_OUTPUT_HEIGHT" value="640" />
     <define name="MT9F002_OUTPUT_WIDTH" value="640" />
 
-    <define name="MT9F002_FOCAL_X" value="320"/>          <!-- lens parameter -->
-    <define name="MT9F002_FOCAL_Y" value="320"/>
+    <define name="MT9F002_FOCAL_X" value="340"/>          <!-- lens parameter -->
+    <define name="MT9F002_FOCAL_Y" value="340"/>
     <define name="MT9F002_CENTER_X" value="320"/>
     <define name="MT9F002_CENTER_Y" value="320"/>
+    <define name="MT9F002_DHANE_K" value="1.31"/>
 
     <define name="MT9F002_INITIAL_OFFSET_X" value="0.15" />
     <define name="MT9F002_INITIAL_OFFSET_Y" value="0.0" />
@@ -45,9 +46,7 @@
     <define name="MT9F002_GAIN_BLUE" value="5"/>
     <define name="MT9F002_OUTPUT_SCALER" value="0.25"/>
     <define name="MT9F002_X_ODD_INC_VAL" value="1"/>
-    <define name="MT9F002_Y_ODD_INC_VAL" value="1"/>   
-    <define name="MT9F002_CENTER_X" value="320"/>
-    <define name="MT9F002_CENTER_Y" value="320"/>
+    <define name="MT9F002_Y_ODD_INC_VAL" value="1"/>   	
 
   </firmware>
 
@@ -78,6 +77,10 @@
 	<define name="DETECT_GATE_FPS" value="0"/>
     </module>
 
+    <!-- modules for drone racing control -->
+    <module name="dronerace"/> 
+    <module name="ctrl_module_outerloop_demo"/> 
+
     <module name="video_rtp_stream">
       <define name="VIEWVIDEO_CAMERA" value="front_camera"/>
       <!-- <define name="VIEWVIDEO_CAMERA2" value="bottom_camera"/> -->
@@ -85,9 +88,6 @@
       <define name="VIEWVIDEO_QUALITY_FACTOR" value="90"/>
     </module>
 
-    <!-- modules for drone racing control -->
-    <module name="dronerace"/> 
-    <module name="ctrl_module_outerloop_demo"/> 
   </modules>
 
 
