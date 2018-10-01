@@ -45,11 +45,11 @@ float filteredX, filteredY;
 
 #define DR_FILTER_GRAVITY  9.81
 #if NPS_SIMULATE_MT9F002
-  #define DR_FILTER_DRAG  0.95
-  #define DR_FILTER_THRUSTCORR  0.8
+#define DR_FILTER_DRAG  0.95
+#define DR_FILTER_THRUSTCORR  0.8
 #else
-  #define DR_FILTER_DRAG  0.5
-  #define DR_FILTER_THRUSTCORR  0.8
+#define DR_FILTER_DRAG  0.5
+#define DR_FILTER_THRUSTCORR  0.8
 #endif
 
 void filter_predict(float phi, float theta, float psi, float dt)
@@ -58,7 +58,7 @@ void filter_predict(float phi, float theta, float psi, float dt)
   // Body accelerations
   float az = DR_FILTER_GRAVITY / cosf(theta * DR_FILTER_THRUSTCORR) / cosf(phi * DR_FILTER_THRUSTCORR);
   float abx =  sinf(-theta) * az;
-  float aby =  sinf( phi)   * az;
+  float aby =  sinf(phi)   * az;
 
   // Earth accelerations
   float ax =  cosf(psi) * abx - sinf(psi) * aby - dr_state.vx * DR_FILTER_DRAG ;
@@ -90,7 +90,7 @@ void filter_predict(float phi, float theta, float psi, float dt)
 
 float log_mx, log_my;
 float mx, my;
-int transfer_measurement_local_2_global(float * mx,float *my,float dx,float dy);
+int transfer_measurement_local_2_global(float *mx, float *my, float dx, float dy);
 
 void pushJungleGateDetection(void);
 
@@ -104,11 +104,11 @@ void filter_correct(void)
   // TODO: we should actually check that the determined height is not so different from the gate height, given that we are not looking at the jungle gate
   // With the check on dr_vision.dz, we want to exclude the detection of the gate botom part.
   //  && dr_vision.dz > -2.5
-  if(gates[dr_fp.gate_nr].type != VIRTUAL) {
+  if (gates[dr_fp.gate_nr].type != VIRTUAL) {
 
-    int assigned_gate = transfer_measurement_local_2_global(&mx,&my,dr_vision.dx,dr_vision.dy);
+    int assigned_gate = transfer_measurement_local_2_global(&mx, &my, dr_vision.dx, dr_vision.dy);
 
-    if(assigned_gate == dr_fp.gate_nr) {
+    if (assigned_gate == dr_fp.gate_nr) {
 
       pushJungleGateDetection();
 
@@ -132,65 +132,61 @@ void filter_correct(void)
 }
 
 
-int transfer_measurement_local_2_global(float * _mx,float *_my,float dx,float dy)
+int transfer_measurement_local_2_global(float *_mx, float *_my, float dx, float dy)
 {
-    // TODO: reintroduce vision scale?
-    float min_distance = 9999;
+  // TODO: reintroduce vision scale?
+  float min_distance = 9999;
 
-    int assigned_gate_index = 0;
-    for(int i = 0;i<MAX_GATES;i++)
-    {
-      if(gates[i].type == VIRTUAL)
-      {
-          continue;
+  dr_state.assigned_gate_index = 0;
+  for (int i = 0; i < MAX_GATES; i++) {
+    if (gates[i].type == VIRTUAL) {
+      continue;
+    }
+    // we can detect the gate from the back side, so not only check one gate in front. But also check back
+    for (int j = 0; j < 2; j++) {
+      if (j == 1 && !gates[dr_fp.gate_nr].both_side) {
+        break;
+        //if the drone are at the back side of the gate and there is white paper on the gate,
+        // we should not consider this gate
       }
-      // we can detect the gate from the back side, so not only check one gate in front. But also check back
-      for(int j = 0; j<2;j++)
-      {
-        if(j == 1 &&!gates[dr_fp.gate_nr].both_side)
-        {
-            break;
-            //if the drone are at the back side of the gate and there is white paper on the gate,
-            // we should not consider this gate
-        }
-        float psi = gates[i].psi - j*RadOfDeg(180);
-        float rotx = cosf(psi) * dx - sinf(psi) * dy;
-        float roty = sinf(psi) * dx + cosf(psi) * dy;
+      float psi = gates[i].psi - j * RadOfDeg(180);
+      float rotx = cosf(psi) * dx - sinf(psi) * dy;
+      float roty = sinf(psi) * dx + cosf(psi) * dy;
 
-        float x = gates[i].x + rotx;
-        float y = gates[i].y + roty;
-        float distance_measured_2_drone = 0;
-        distance_measured_2_drone = (x-(dr_state.x+dr_ransac.corr_x))*(x-(dr_state.x+dr_ransac.corr_x))+
-                                    (y-(dr_state.y+dr_ransac.corr_y))*(y-(dr_state.y+dr_ransac.corr_y));
-        if(distance_measured_2_drone < min_distance)
-        {
-          assigned_gate_index = i;
-          min_distance = distance_measured_2_drone;
-          *_mx = x;
-          *_my = y;
-        }
+      float x = gates[i].x + rotx;
+      float y = gates[i].y + roty;
+      float distance_measured_2_drone = 0;
+      distance_measured_2_drone = (x - (dr_state.x + dr_ransac.corr_x)) * (x - (dr_state.x + dr_ransac.corr_x)) +
+                                  (y - (dr_state.y + dr_ransac.corr_y)) * (y - (dr_state.y + dr_ransac.corr_y));
+      if (distance_measured_2_drone < min_distance) {
+        dr_state.assigned_gate_index = i;
+        min_distance = distance_measured_2_drone;
+        *_mx = x;
+        *_my = y;
       }
     }
-    printf("Assigned gate = %d, (dx,dy) = (%f,%f), (mx,my) = (%f,%f).\n", assigned_gate_index, dx, dy, (*_mx), (*_my));
-    return assigned_gate_index;
+  }
+  printf("Assigned gate = %d, (dx,dy) = (%f,%f), (mx,my) = (%f,%f).\n", dr_state.assigned_gate_index, dx, dy, (*_mx),
+         (*_my));
+  return dr_state.assigned_gate_index;
 }
 
 void pushJungleGateDetection(void)
 {
-    if(gates[dr_fp.gate_nr].type == JUNGLE && jungleGate.flagJungleGateDetected == false && jungleGate.numJungleGateDetection < MAX_DETECTION)
-    {
-        jungleGate.jungleGateDetectionZ[jungleGate.numJungleGateDetection] = dr_vision.dz;
-        jungleGate.jungleGateDetectionY[jungleGate.numJungleGateDetection] = dr_vision.dy;
-        jungleGate.sumJungleGateHeight += dr_vision.dz;
-        jungleGate.numJungleGateDetection++;
-        jungleGate.jungleGateHeight = jungleGate.sumJungleGateHeight / jungleGate.numJungleGateDetection;
-        if(jungleGate.numJungleGateDetection == MAX_DETECTION)
-        {
-            jungleGate.flagJungleGateDetected = true;
-            if(jungleGate.jungleGateHeight > -1.0)
-                flagHighOrLowGate = UPPER_GATE;
-            else
-                flagHighOrLowGate = LOWER_GATE;
-        }
+  if (gates[dr_fp.gate_nr].type == JUNGLE && jungleGate.flagJungleGateDetected == false
+      && jungleGate.numJungleGateDetection < MAX_DETECTION) {
+    jungleGate.jungleGateDetectionZ[jungleGate.numJungleGateDetection] = dr_vision.dz;
+    jungleGate.jungleGateDetectionY[jungleGate.numJungleGateDetection] = dr_vision.dy;
+    jungleGate.sumJungleGateHeight += dr_vision.dz;
+    jungleGate.numJungleGateDetection++;
+    jungleGate.jungleGateHeight = jungleGate.sumJungleGateHeight / jungleGate.numJungleGateDetection;
+    if (jungleGate.numJungleGateDetection == MAX_DETECTION) {
+      jungleGate.flagJungleGateDetected = true;
+      if (jungleGate.jungleGateHeight > -1.0) {
+        flagHighOrLowGate = UPPER_GATE;
+      } else {
+        flagHighOrLowGate = LOWER_GATE;
+      }
     }
+  }
 }

@@ -152,7 +152,7 @@ static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
 
   //float ez = POS_FLOAT_OF_BFP(guidance_v_z_sp);
 
-  int32_t ix = 0; // Error
+  int32_t ix = dr_state.assigned_gate_index; // Error
   int32_t iy = dr_ransac.buf_size; // Error
 
   /*

@@ -1,29 +1,30 @@
-struct dronerace_vision_struct
-{
-    int cnt;
-    float dx;
-    float dy;
-    float dz;
+struct dronerace_vision_struct {
+  int cnt;
+  float dx;
+  float dy;
+  float dz;
 };
 
 // store for logging purposes
 extern struct dronerace_vision_struct dr_vision;
 
-struct dronerace_state_struct
-{
-    // Time
-    float time;
+struct dronerace_state_struct {
+  // Time
+  float time;
 
-    // Positon
-    float x;
-    float y;
+  // Positon
+  float x;
+  float y;
 
-    // Speed
-    float vx;
-    float vy;
+  // Speed
+  float vx;
+  float vy;
 
-    // Heading
-    float psi;
+  // Heading
+  float psi;
+
+  // Logic
+  int assigned_gate_index;
 };
 
 extern float log_mx, log_my;
