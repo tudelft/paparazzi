@@ -138,31 +138,35 @@ static void write_log(void)
 // sending the divergence message to the ground station:
 static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
 {
-  float fx = dr_state.x; // Flows
-  float fy = dr_state.y;
-  float fz = dr_state.time;
+  float fx = dr_state.time;
+  float fy = dr_state.x; // Flows
+  float fz = dr_state.y;
 
   float cx = dr_state.vx; // Covariance
   float cy = dr_state.vy;
-  float cz = 0;
 
-  float gx = dr_vision.dx; // Gains
+  int32_t gc = dr_vision.cnt; // Error
+  float gx = dr_vision.dx; // Vision
   float gy = dr_vision.dy;
   float gz = dr_vision.dz;
 
-  float ex = dr_vision.cnt; // Error
-  float ey = 0;
-  float ez = POS_FLOAT_OF_BFP(guidance_v_z_sp);
+  //float ez = POS_FLOAT_OF_BFP(guidance_v_z_sp);
 
-  int32_t ix = dr_ransac.buf_size; // Error
-  float iy = (float) dr_ransac.buf_index_of_last;
-  float iz = dr_ransac.dt_max;
+  int32_t ix = 0; // Error
+  int32_t iy = dr_ransac.buf_size; // Error
 
+  /*
   pprz_msg_send_OPTICAL_FLOW_HOVER(trans, dev, AC_ID, &fx, &fy, &fz,
                                    &cx, &cy, &cz,
                                    &gx, &gy, &gz,
                                    &ex, &ey, &ez,
-                                   &ix, &iy, &iz);
+                                   &ix, &iy, &iz); */
+
+  pprz_msg_send_DRONE_RACE(trans, dev, AC_ID,
+		  &fx, &fy, &fz, &cx, &cy,
+		  &gc, &gx, &gy, &gz,
+		  &ix, &iy);
+
 }
 
 

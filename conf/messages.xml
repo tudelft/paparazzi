@@ -1635,7 +1635,24 @@
       <field name="p" type="float" unit="pascal"/>
     </message>
 
-    <!-- 211 is free -->
+    <message name="DRONE_RACE" id="211">
+      <field name="Time" type="float"> Filter Time </field>
+
+      <field name="X"   type="float"> Filter </field>
+      <field name="Y"   type="float"> Filter </field>
+
+      <field name="VX"  type="float"> Filter </field>
+      <field name="VY"  type="float"> Filter </field>
+
+      <field name="CNT" type="int32"> Vision </field>
+      <field name="DX"  type="float"> Vision </field>
+      <field name="DY"  type="float"> Vision </field>
+      <field name="DZ"  type="float"> Vision </field>
+
+      <field name="GATE" type="int32"> Logic </field>
+      <field name="RANSAC" type="int32"> Ransac </field>
+    </message>
+
     <!-- 212 is free -->
 
     <message name="TUNE_VERT" id="213">
