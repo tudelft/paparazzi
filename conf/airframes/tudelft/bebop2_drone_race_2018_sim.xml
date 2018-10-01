@@ -75,6 +75,8 @@
     <module name="cv_detect_gate">
 	<define name="DETECT_GATE_CAMERA" value="front_camera"/>
 	<define name="DETECT_GATE_FPS" value="0"/>
+	<define name="DETECT_GATE_EXCLUDE_PIXELS_TOP" value="80"/>
+	<define name="DETECT_GATE_EXCLUDE_PIXELS_BOTTOM" value="160"/>
     </module>
 
     <!-- modules for drone racing control -->

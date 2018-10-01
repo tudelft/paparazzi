@@ -128,12 +128,14 @@ int cmp_i(const void *a, const void *b)
  * @param[in] color_vM The V maximum value
  * @param[out] *best_gate This gate_img struct will be filled with the data of the best detected gate.
  * @param[out] *gates_c Array of gates with size MAX_GATES
+ * @param[in] exclude_top The number of pixels excluded for sampling at the top of the image.
+ * @param[in] exclude_bottom The number of pixels excluded for sampling at the bottom of the image.
  */
 
 int snake_gate_detection(struct image_t *img, int n_samples, int min_px_size, float min_gate_quality,
                          float gate_thickness, int min_n_sides,
                          uint8_t color_Ym, uint8_t color_YM, uint8_t color_Um, uint8_t color_UM, uint8_t color_Vm, uint8_t color_VM,
-                         struct gate_img *best_gate, struct gate_img *gates_c, int *n_gates)
+                         struct gate_img *best_gate, struct gate_img *gates_c, int *n_gates, int exclude_top, int exclude_bottom)
 {
 
   static int last_frame_detection = 0;
@@ -186,7 +188,7 @@ int snake_gate_detection(struct image_t *img, int n_samples, int min_px_size, fl
     // TODO: would it work better to scan different lines in the image?
     // get a random coordinate:
     x = rand() % img->h;
-    y = rand() % img->w;
+    y = exclude_top + rand() % (img->w - exclude_top - exclude_bottom);
 
     // check if it has the right color
     if (check_color_snake_gate_detection(img, x, y)) {

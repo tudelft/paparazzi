@@ -95,6 +95,17 @@ PRINT_CONFIG_VAR(DETECT_GATE_V_MIN)
 #endif
 PRINT_CONFIG_VAR(DETECT_GATE_V_MAX)
 
+#ifndef DETECT_GATE_EXCLUDE_PIXELS_TOP
+#define DETECT_GATE_EXCLUDE_PIXELS_TOP 0
+#endif
+PRINT_CONFIG_VAR(DETECT_GATE_EXCLUDE_PIXELS_TOP)
+
+#ifndef DETECT_GATE_EXCLUDE_PIXELS_BOTTOM
+#define DETECT_GATE_EXCLUDE_PIXELS_BOTTOM 0
+#endif
+PRINT_CONFIG_VAR(DETECT_GATE_EXCLUDE_PIXELS_BOTTOM)
+
+
 // settings:
 int just_filtering;
 int n_samples;
@@ -108,6 +119,8 @@ uint8_t color_Um;
 uint8_t color_UM;
 uint8_t color_Vm;
 uint8_t color_VM;
+int exclude_top;
+int exclude_bottom;
 
 // External variables that have the results:
 struct FloatVect3 drone_position;
@@ -144,7 +157,7 @@ static struct image_t *detect_gate_func(struct image_t *img)
     // perform snake gate detection:
     int n_gates;
     snake_gate_detection(img, n_samples, min_px_size, min_gate_quality, gate_thickness, min_n_sides, color_Ym, color_YM,
-                         color_Um, color_UM, color_Vm, color_VM, &best_gate, gates_c, &n_gates);
+                         color_Um, color_UM, color_Vm, color_VM, &best_gate, gates_c, &n_gates, exclude_top, exclude_bottom);
 
 #if NPS_SIMULATE_MT9F002
     int temp[4];
@@ -248,6 +261,8 @@ void detect_gate_init(void)
   color_UM = DETECT_GATE_U_MAX;
   color_Vm = DETECT_GATE_V_MIN;
   color_VM = DETECT_GATE_V_MAX;
+  exclude_top = DETECT_GATE_EXCLUDE_PIXELS_TOP;
+  exclude_bottom = DETECT_GATE_EXCLUDE_PIXELS_BOTTOM;
 
   // World coordinates: X positive towards the gate, Z positive down, Y positive right:
 #if NPS_SIMULATE_MT9F002
