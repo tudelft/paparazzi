@@ -118,7 +118,7 @@ struct gate_img gates_c[MAX_GATES];
 // Structure of the gate:
 struct FloatVect3 world_corners[4];
 float gate_size_m = 1.4; //size of gate edges in meters
-float gate_center_height = -1.7; //height of gate in meters ned wrt ground
+float gate_center_height = -2.0; //height of gate in meters ned wrt ground
 int n_corners = 3;
 
 // camera to body:
