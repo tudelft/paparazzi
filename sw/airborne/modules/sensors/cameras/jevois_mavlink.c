@@ -41,6 +41,9 @@
 #include "autopilot.h"
 #include "generated/modules.h"
 
+#include "subsystems/abi.h"
+#include "subsystems/abi_sender_ids.h"
+
 mavlink_system_t mavlink_system;
 
 #ifndef MAVLINK_SYSID
@@ -65,7 +68,8 @@ mavlink_debug_t jevois_mavlink_debug;
 mavlink_altitude_t jevois_mavlink_altitude;
 mavlink_attitude_t jevois_mavlink_attitude;
 mavlink_local_position_ned_t jevois_mavlink_local_position;
-
+mavlink_highres_imu_t jevois_mavlink_vision_measurement;
+mavlink_vision_position_estimate_t vision_position_estimate;
 
 
 /*
@@ -113,6 +117,11 @@ void jevois_mavlink_periodic(void)
   RunOnceEvery(1, mavlink_send_highres_imu());
   RunOnceEvery(1, mavlink_send_set_mode());
 }
+
+#ifndef JEVOIS_MAVLINK_ABI_ID
+#define JEVOIS_MAVLINK_ABI_ID 34
+#endif
+
 
 
 void jevois_mavlink_event(void)
@@ -171,9 +180,34 @@ void jevois_mavlink_event(void)
 
 
         case MAVLINK_MSG_ID_LOCAL_POSITION_NED: {
+
           mavlink_msg_local_position_ned_decode(&msg, &jevois_mavlink_local_position);
+
+
         }
         break;
+
+
+        case MAVLINK_MSG_ID_HIGHRES_IMU: {
+          mavlink_msg_highres_imu_decode(&msg, &jevois_mavlink_vision_measurement);
+        }
+
+        case MAVLINK_MSG_ID_VISION_POSITION_ESTIMATE: {
+          static int cnt = 0;
+
+          mavlink_msg_vision_position_estimate_decode(&msg, &vision_position_estimate);
+
+          AbiSendMsgRELATIVE_LOCALIZATION(JEVOIS_MAVLINK_ABI_ID, cnt++,
+                                          vision_position_estimate.x,
+                                          vision_position_estimate.y,
+                                          vision_position_estimate.z,
+                                          0,
+                                          0,
+                                          0);
+
+
+        }
+
       }
     }
   }

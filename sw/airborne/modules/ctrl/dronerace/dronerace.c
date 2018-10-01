@@ -168,6 +168,7 @@ static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
 
 // ABI receive gates!
 #ifndef DRONE_RACE_ABI_ID
+// Receive from: 33 (=onboard vision) 34 (=jevois) or 255=any
 #define DRONE_RACE_ABI_ID ABI_BROADCAST
 #endif
 
