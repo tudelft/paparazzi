@@ -78,6 +78,7 @@ void flightplan_run(void)
   float dist = 0.0;
   float correctedX, correctedY;
   float dist_2_gate;
+  float dx,dy;
 
   // Get current gate position
   update_gate_setpoints();
@@ -89,9 +90,12 @@ void flightplan_run(void)
   checkJungleGate();
 
   // Estimate distance to the gate
-  correctedX = dr_state.x+dr_ransac.corr_x;
-  correctedY = dr_state.y+dr_ransac.corr_y;
-  dist = (waypoints_dr[dr_fp.gate_nr].x - correctedX)*(waypoints_dr[dr_fp.gate_nr].x- correctedX) + (waypoints_dr[dr_fp.gate_nr].y- correctedY)*(waypoints_dr[dr_fp.gate_nr].y - correctedY);
+  correctedX = dr_state.x + dr_ransac.corr_x;
+  correctedY = dr_state.y + dr_ransac.corr_y;
+
+  dx = waypoints_dr[dr_fp.gate_nr].x - correctedX;
+  dy = waypoints_dr[dr_fp.gate_nr].y - correctedY;
+  dist = sqrt( (dx*dx)*(dy*dy) );
 
   printf("Gate nr: %d, vision count = %d, nr msm in buffer = %d, (x,y) = (%f, %f), (cx, cy) = (%f, %f), (real_x, real_y) = (%f, %f)\n", dr_fp.gate_nr, dr_vision.cnt, dr_ransac.buf_size, dr_state.x, dr_state.y, correctedX, correctedY, stateGetPositionNed_f()->x, stateGetPositionNed_f()->y);
 
@@ -101,17 +105,20 @@ void flightplan_run(void)
   dist_2_gate =  (dr_fp.gate_x - correctedX)*(dr_fp.gate_x - correctedX) + (dr_fp.gate_y - correctedY)*(dr_fp.gate_y - correctedY);
 
   // If too close to the gate to see the gate, heading to next gate
-  if (dist_2_gate < DISTANCE_GATE_NOT_IN_SIGHT * DISTANCE_GATE_NOT_IN_SIGHT)
+  if (dist_2_gate < DISTANCE_GATE_NOT_IN_SIGHT)
   {
     if ((dr_fp.gate_nr+1) < MAX_GATES)
     {
-      dr_fp.psi_set = gates[dr_fp.gate_nr+1].psi;
+      dx = gates[dr_fp.gate_nr].x - correctedX;
+      dy = gates[dr_fp.gate_nr].y - correctedY;
+      dr_fp.psi_set = atan2(dy,dx);
+      //dr_fp.psi_set = gates[dr_fp.gate_nr+1].psi;
     }
   }
 
 
   // If close to desired position, switch to next
-  if (dist < DISTANCE_ARRIVED_AT_WP * DISTANCE_ARRIVED_AT_WP)
+  if (dist < DISTANCE_ARRIVED_AT_WP)
   {
     dr_fp.gate_nr ++;
     if (dr_fp.gate_nr >= MAX_GATES)
