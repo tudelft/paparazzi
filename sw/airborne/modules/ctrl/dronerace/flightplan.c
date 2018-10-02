@@ -33,7 +33,8 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
     {   10.0,         2.7,          -2.4,          RadOfDeg(90),     REGULAR,      BRAKE,          1.5,                      0},
     {   7.4,          4.9,          -2.4,          RadOfDeg(180),    REGULAR,      NO_BRAKE,       0.1,                      0},
     {   2.6,          4.9,          -2.4,          RadOfDeg(180),    REGULAR,      BRAKE,          3.0,                      0},
-    {   0.0,          3.0,          -2.4,          RadOfDeg(-90),    VIRTUAL,      BRAKE,          0.0,                      0},
+    {   -0.5,         4.9,          -2.4,          RadOfDeg(-90),    VIRTUAL,      BRAKE,          0.0,                      0},
+    {   -0.5,         3.0,          -2.4,          RadOfDeg(0),      VIRTUAL,      BRAKE,          0.0,                      0},
     {   1.5,          3.0,          -2.4,          RadOfDeg(0),      JUNGLE,       BRAKE,          2.0,                      0},
     {   5.3,          2.0,          -1.2,          RadOfDeg(-90),    REGULAR,      BRAKE,          2.0,                      0},
     {   3.5,          0.0,          -2.4,          RadOfDeg(180),    REGULAR,      BRAKE,          3.5,                      0}
