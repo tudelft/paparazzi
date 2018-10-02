@@ -134,36 +134,39 @@ void filter_correct(void)
 
 int transfer_measurement_local_2_global(float *_mx, float *_my, float dx, float dy)
 {
+  int i, j;
   // TODO: reintroduce vision scale?
   float min_distance = 9999;
 
   dr_state.assigned_gate_index = 0;
-  for (int i = 0; i < MAX_GATES; i++) {
+  for ( i = 0; i < MAX_GATES; i++) {
     if (gates[i].type == VIRTUAL) {
       continue;
     }
     // we can detect the gate from the back side, so not only check one gate in front. But also check back
-    for (int j = 0; j < 2; j++) {
+    for ( j = 0; j < 2; j++) {
       if (j == 1 && !gates[dr_fp.gate_nr].both_side) {
         break;
         //if the drone are at the back side of the gate and there is white paper on the gate,
         // we should not consider this gate
       }
-      float psi = gates[i].psi - j * RadOfDeg(180);
-      float rotx = cosf(psi) * dx - sinf(psi) * dy;
-      float roty = sinf(psi) * dx + cosf(psi) * dy;
+	  {
+        float psi = gates[i].psi - j * RadOfDeg(180);
+        float rotx = cosf(psi) * dx - sinf(psi) * dy;
+        float roty = sinf(psi) * dx + cosf(psi) * dy;
 
-      float x = gates[i].x + rotx;
-      float y = gates[i].y + roty;
-      float distance_measured_2_drone = 0;
-      distance_measured_2_drone = (x - (dr_state.x + dr_ransac.corr_x)) * (x - (dr_state.x + dr_ransac.corr_x)) +
-                                  (y - (dr_state.y + dr_ransac.corr_y)) * (y - (dr_state.y + dr_ransac.corr_y));
-      if (distance_measured_2_drone < min_distance) {
-        dr_state.assigned_gate_index = i;
-        min_distance = distance_measured_2_drone;
-        *_mx = x;
-        *_my = y;
-      }
+        float x = gates[i].x + rotx;
+        float y = gates[i].y + roty;
+        float distance_measured_2_drone = 0;
+        distance_measured_2_drone = (x - (dr_state.x + dr_ransac.corr_x)) * (x - (dr_state.x + dr_ransac.corr_x)) +
+                                    (y - (dr_state.y + dr_ransac.corr_y)) * (y - (dr_state.y + dr_ransac.corr_y));
+	    if (distance_measured_2_drone < min_distance) {
+          dr_state.assigned_gate_index = i;
+          min_distance = distance_measured_2_drone;
+          *_mx = x;
+          *_my = y;
+	    }
+	  }
     }
   }
   printf("Assigned gate = %d, (dx,dy) = (%f,%f), (mx,my) = (%f,%f).\n", dr_state.assigned_gate_index, dx, dy, (*_mx),

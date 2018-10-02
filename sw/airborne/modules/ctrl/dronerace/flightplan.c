@@ -150,7 +150,7 @@ void flightplan_run(void)
 
     //printf("\n\n*** RESET DUE TO NEXT GATE ***\n\n");
     // correct the state predictions, refresh the ransac buffer:
-    correct_state();
+    //correct_state();
   }
 }
 
@@ -193,7 +193,7 @@ void resetJungleGate()
 // #define DEBUG_WP_GENERATION
 void generate_waypoints_from_gates()
 {
-
+  int i;
 #ifdef DEBUG_WP_GENERATION
   if(debug) {
 
@@ -219,7 +219,7 @@ void generate_waypoints_from_gates()
   }
 #endif
 
-  for(int i = 0; i<MAX_GATES;i++)
+  for( i = 0; i<MAX_GATES;i++)
   {
     float d = gates[i].distance_after_gate;
     if(gates[i].type == VIRTUAL)

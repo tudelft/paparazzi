@@ -1,6 +1,7 @@
 
 #include "ransac.h"
 #include "filter.h"
+#include "flightplan.h"
 #include "math/RANSAC.h"
 #include "stdio.h"
 
@@ -121,7 +122,7 @@ void ransac_propagate( void )
         if (age > dr_ransac.dt_novision)
         {
           //printf("\n\n*** RESET DUE TO NO VISION ***\n\n");
-          correct_state();
+          //correct_state();
         }
     }
 }
@@ -227,7 +228,11 @@ void ransac_push(float time, float _x, float _y, float _mx, float _my)
                         ransac_buf[get_index(i)].y + dr_ransac.corr_y + t_fit * dr_ransac.corr_vy
                 );
             }
-            fprintf(fp,"%d,%f,%f,%f,%f,%f,%f,%f\n", -1 ,params_x[0], params_x[1], params_y[0], params_y[1] ,0.0f ,0.0f ,0.0f);
+			{
+			  float gate = (float) dr_fp.gate_nr;
+			  float assigned = (float) dr_state.assigned_gate_index;
+	          fprintf(fp,"%d,%f,%f,%f,%f,%f,%f,%f\n", -1 , gate, assigned,  params_x[0], params_x[1], params_y[0], params_y[1] ,0.0f);
+			}
 
             // fprintf(fp,"\n\n X = %f %f Y = %f  %f \n",params_x[0], params_x[1], params_y[0], params_y[1] );
             fclose(fp);
