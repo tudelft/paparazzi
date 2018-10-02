@@ -69,3 +69,4 @@ extern struct jungle_gate_struct jungleGate;
 extern void flightplan_reset(void);
 extern void flightplan_run(void);
 extern void resetJungleGate(void);
+extern void flightplan_list(void);

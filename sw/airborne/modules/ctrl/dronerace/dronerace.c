@@ -255,6 +255,8 @@ void dronerace_periodic(void)
     dr_vision.dz = input_dz;
 
     filter_correct();
+
+    flightplan_list();
   }
 
   write_log();

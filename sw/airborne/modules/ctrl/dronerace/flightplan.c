@@ -52,6 +52,28 @@ static void update_gate_setpoints(void)
 }
 
 
+void flightplan_list(void)
+{
+  int i;
+  for (i = 0; i < MAX_GATES; i++) {
+    if (gates[i].type != VIRTUAL) {
+      float dx = gates[i].x - dr_state.x;
+      float dy = gates[i].y - dr_state.y;
+      float yaw = gates[i].psi - dr_state.psi;
+      float dist = sqrt(dx * dx + dy * dy);
+      float size =  1.4f * 340.0f / dist;
+      // dist = 1.4f * 340.0f / ((float)size);
+      float bearing = atan2(dy, dx);
+      float view = bearing - dr_state.psi;
+      if ((view > -320.0f / 340.0f) && (view < 320.0f / 340.0f)
+          && ((yaw > -RadOfDeg(90.0f)) && (yaw < RadOfDeg(90.0f)))
+         ) {
+        float px = view * 340.0f + 320.0f;
+        //printf("Expected gates: %d  %.1f s=%.1f heading %.1f rot %.1f\n", i, dist, size, px, yaw * 57.6f);
+      }
+    }
+  }
+}
 
 void flightplan_reset()
 {
