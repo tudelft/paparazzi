@@ -139,7 +139,7 @@ void jevois_mavlink_event(void)
           mavlink_heartbeat_t heartbeat;
           mavlink_msg_heartbeat_decode(&msg, &heartbeat);
           // do something with heartbeat variable
-          DEBUG_PRINT("[jevois mavlink] heartbeart\n");
+          DEBUG_PRINT("[jevois mavlink] heartbeat\n");
         }
         break;
 
@@ -184,6 +184,7 @@ void jevois_mavlink_event(void)
 
           mavlink_msg_local_position_ned_decode(&msg, &jevois_mavlink_local_position);
 
+          DEBUG_PRINT("[jevois mavlink] LOCAL_POSITION_NED \n");
 
         }
         break;

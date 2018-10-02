@@ -131,8 +131,8 @@ void flightplan_run(void)
   {
     if ((dr_fp.gate_nr+1) < MAX_GATES)
     {
-      dx = gates[dr_fp.gate_nr].x - correctedX;
-      dy = gates[dr_fp.gate_nr].y - correctedY;
+      dx = gates[dr_fp.gate_nr + 1].x - correctedX;
+      dy = gates[dr_fp.gate_nr + 1].y - correctedY;
       dr_fp.psi_set = atan2(dy,dx);
       //dr_fp.psi_set = gates[dr_fp.gate_nr+1].psi;
     }
