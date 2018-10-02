@@ -22,7 +22,7 @@
 // To know if we are simulating or not the camera of the Bebop:
 #include "generated/airframe.h"
 
-// #define DEBUG_GATE
+//#define DEBUG_GATE
 
 #ifndef DETECT_GATE_JUST_FILTER
 #define DETECT_GATE_JUST_FILTER 0
@@ -207,14 +207,49 @@ static struct image_t *detect_gate_func(struct image_t *img)
       printf("\n");
 #endif
 
-      // TODO: try out RANSAC with all combinations of 3 corners out of 4 corners.
-      drone_position = get_world_position_from_image_points(best_gate.x_corners, best_gate.y_corners, world_corners,
-                       n_corners,
-                       DETECT_GATE_CAMERA.camera_intrinsics, cam_body);
+      static bool simple_position = true;
+
+      if(simple_position) {
+        float sz1_best, sz2_best;
+        sz1_best = (float) (best_gate.x_corners[2] - best_gate.x_corners[0]);
+        sz2_best = (float) (best_gate.y_corners[1] - best_gate.y_corners[0]);
+        float size = (sz1_best > sz2_best) ? sz1_best : sz2_best;
+
+        //float width, height;
+  #if NPS_SIMULATE_MT9F002
+        //width = (float) img->w;
+        //height = (float) img->h;
+        float pix_x = (best_gate.x_corners[2] + best_gate.x_corners[0]) / 2.0f;
+        float pix_y = (best_gate.y_corners[1] + best_gate.y_corners[0]) / 2.0f;
+  #else
+        //width = (float) img->h;
+        //height = (float) img->w;
+        float pix_y = (best_gate.x_corners[2] + best_gate.x_corners[0]) / 2.0f;
+        float pix_x = (best_gate.y_corners[1] + best_gate.y_corners[0]) / 2.0f;
+  #endif
+        float angle_x = (pix_x-DETECT_GATE_CAMERA.camera_intrinsics.center_x) / DETECT_GATE_CAMERA.camera_intrinsics.focal_x;
+        float angle_y = (pix_y-DETECT_GATE_CAMERA.camera_intrinsics.center_y) / DETECT_GATE_CAMERA.camera_intrinsics.focal_y;
+        float dist = gate_size_m * (DETECT_GATE_CAMERA.camera_intrinsics.focal_x / size);
+        drone_position.x = -dist;
+        drone_position.y = -angle_y*dist;
+        drone_position.z = angle_x*dist + gate_center_height;
+      }
+      else {
+        // TODO: try out RANSAC with all combinations of 3 corners out of 4 corners.
+        drone_position = get_world_position_from_image_points(best_gate.x_corners, best_gate.y_corners, world_corners,
+                               n_corners, DETECT_GATE_CAMERA.camera_intrinsics, cam_body);
+      }
+
+
+      printf("Position drone: (%f, %f, %f)\n", drone_position.x, drone_position.y, drone_position.z);
 
 #ifdef DEBUG_GATE
       // debugging the drone position:
       printf("Position drone: (%f, %f, %f)\n", drone_position.x, drone_position.y, drone_position.z);
+      printf("pix_x = %f, pix_y = %f\n", pix_x, pix_y);
+      printf("size = %f, focal = %f, %f, center = %f, %f\n", size, DETECT_GATE_CAMERA.camera_intrinsics.focal_x, DETECT_GATE_CAMERA.camera_intrinsics.focal_y,
+                                                                   DETECT_GATE_CAMERA.camera_intrinsics.center_x, DETECT_GATE_CAMERA.camera_intrinsics.center_y);
+      printf("Christophe says: (%f, %f, %f)\n", dx_CDW, dy_CDW, dz_CDW);
       printf("**** END DEBUG DETECT GATE ****\n");
 #endif
 

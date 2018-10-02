@@ -143,7 +143,7 @@ int snake_gate_detection(struct image_t *img, int n_samples, int min_px_size, fl
   static struct gate_img previous_best_gate = {0};
   static struct gate_img last_gate;
 
-  bool check_initial_square = true;
+  bool check_initial_square = false;
   float iou_threshold = 0.7; // when bigger than this, gates are assumed to represent the same gate
 
 
@@ -352,10 +352,11 @@ int snake_gate_detection(struct image_t *img, int n_samples, int min_px_size, fl
         ratio = limit_ratio + 0.1;
       }
 
-      printf("Gate with surface area: %f, quality %f, n_sides %d, and ratio %f\n", sz1g*sz2g, gates_c[gate_nr].quality, gates_c[gate_nr].n_sides, ratio);
+      //printf("Gate with surface area: %f, quality %f, n_sides %d, and ratio %f\n", sz1g*sz2g, gates_c[gate_nr].quality, gates_c[gate_nr].n_sides, ratio);
 
       // if (gates_c[gate_nr].n_sides >= min_n_sides && gates_c[gate_nr].quality > best_gate->quality) {
       if (sz1g*sz2g > sz1*sz2 && gates_c[gate_nr].quality > min_gate_quality * 2 && gates_c[gate_nr].n_sides >= min_n_sides && ratio <= limit_ratio) {
+        //printf("Becomes the best gate!\n");
         // store the information in the gate:
         best_gate->x = gates_c[gate_nr].x;
         best_gate->y = gates_c[gate_nr].y;
@@ -993,7 +994,7 @@ void gate_refine_corners(struct image_t *color_image, int *x_points, int *y_poin
 {
 
   // TODO: make parameter?
-  float corner_area = 0.4f;
+  float corner_area = 0.3f;
   refine_single_corner(color_image, x_points, y_points, size, corner_area);
   refine_single_corner(color_image, &(x_points[1]), &(y_points[1]), size, corner_area);
   refine_single_corner(color_image, &(x_points[2]), &(y_points[2]), size, corner_area);
