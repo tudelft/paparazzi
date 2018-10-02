@@ -244,6 +244,7 @@ int snake_gate_detection(struct image_t *img, int n_samples, int min_px_size, fl
 
             // check the gate quality:
             check_gate_initial(img, gates_c[(*n_gates)], &gates_c[(*n_gates)].quality, &gates_c[(*n_gates)].n_sides);
+
           } else {
 
             // The first two corners have a high y:
@@ -269,7 +270,7 @@ int snake_gate_detection(struct image_t *img, int n_samples, int min_px_size, fl
           // set the corners to make a square gate for now:
           set_gate_points(&gates_c[(*n_gates)]);
 
-          // TODO: for multiple gates we need to use intersection of union and fitness here.
+
           bool add_gate = true;
           float iou;
           for (int g = 0; g < (*n_gates); g++) {
@@ -285,6 +286,7 @@ int snake_gate_detection(struct image_t *img, int n_samples, int min_px_size, fl
               } else {
                 // throw the old gate away:
                 // TODO: consider making a function for doing this "deep" copy
+                add_gate = true;
                 gates_c[g].x = gates_c[(*n_gates)].x;
                 gates_c[g].y = gates_c[(*n_gates)].y;
                 gates_c[g].sz = gates_c[(*n_gates)].sz;
@@ -294,6 +296,7 @@ int snake_gate_detection(struct image_t *img, int n_samples, int min_px_size, fl
               }
             }
           }
+
           if (add_gate) {
             (*n_gates)++;
           }
@@ -335,13 +338,24 @@ int snake_gate_detection(struct image_t *img, int n_samples, int min_px_size, fl
       check_gate_outline(img, gates_c[gate_nr], &gates_c[gate_nr].quality, &gates_c[gate_nr].n_sides);
 
       // If the gate is good enough:
-
       float sz1g, sz2g;
       sz1g = (float) (gates_c[gate_nr].x_corners[1] - gates_c[gate_nr].x_corners[0]);
       sz2g = (float) (gates_c[gate_nr].y_corners[1] - gates_c[gate_nr].y_corners[2]);
 
+      // Don't accept gates that look too rectangular (not square enough)
+      float ratio;
+      static float limit_ratio = 1.5;
+      if(sz1g > 0.1 && sz2g > 0.1) {
+        ratio = (sz1g >= sz2g) ? sz1g / sz2g : sz2g / sz1g;
+      }
+      else {
+        ratio = limit_ratio + 0.1;
+      }
+
+      printf("Gate with surface area: %f, quality %f, n_sides %d, and ratio %f\n", sz1g*sz2g, gates_c[gate_nr].quality, gates_c[gate_nr].n_sides, ratio);
+
       // if (gates_c[gate_nr].n_sides >= min_n_sides && gates_c[gate_nr].quality > best_gate->quality) {
-      if (sz1g*sz2g > sz1*sz2) {
+      if (sz1g*sz2g > sz1*sz2 && gates_c[gate_nr].quality > min_gate_quality * 2 && gates_c[gate_nr].n_sides >= min_n_sides && ratio <= limit_ratio) {
         // store the information in the gate:
         best_gate->x = gates_c[gate_nr].x;
         best_gate->y = gates_c[gate_nr].y;
