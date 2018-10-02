@@ -35,6 +35,10 @@
     <define name="MT9F002_CENTER_X" value="80"/>
     <define name="MT9F002_CENTER_Y" value="150"/>
 
+
+    <define name="PREDICTION_BIAS_PHI" value="0.8" />
+    <define name="PREDICTION_BIAS_THETA" value="0.0" />
+
 	<!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
     <module name="radio_control" type="datalink"/>

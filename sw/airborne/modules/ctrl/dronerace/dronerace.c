@@ -44,6 +44,7 @@ float dt = 1.0f / 512.f;
 float input_phi;
 float input_theta;
 float input_psi;
+
 volatile int input_cnt = 0;
 volatile float input_dx = 0;
 volatile float input_dy = 0;
@@ -226,18 +227,19 @@ void dronerace_enter(void)
   }
 }
 
+#ifndef PREDICTION_BIAS_PHI
+#define PREDICTION_BIAS_PHI        0.0f
+#endif
+
+#ifndef PREDICTION_BIAS_THETA
+#define PREDICTION_BIAS_THETA      0.0f
+#endif
+
 void dronerace_periodic(void)
 {
 
-  float phi_bias = 0.0;
-  float theta_bias = 0.0;
-
-// TODO: it is nicer to test a more generic variable that indicates simulation:
-#if NPS_SIMULATE_MT9F002
-  // Only add biases ourselves when we are simulating.
-  phi_bias = RadOfDeg(0.0f); //(-1.5);
-  theta_bias = RadOfDeg(0.0f); //(2.0);
-#endif
+  float phi_bias = RadOfDeg(PREDICTION_BIAS_PHI);
+  float theta_bias = RadOfDeg(PREDICTION_BIAS_THETA);
 
   input_phi = stateGetNedToBodyEulers_f()->phi - phi_bias;
   input_theta = stateGetNedToBodyEulers_f()->theta - theta_bias;
