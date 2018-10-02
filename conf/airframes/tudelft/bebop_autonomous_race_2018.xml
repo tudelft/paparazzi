@@ -77,10 +77,9 @@
     <module name="jevois_mavlink"/>
 
     <!-- or internal detection -->
-    <module name="video_thread"/>
+    <!--module name="video_thread"/>
 
     <module name="cv_detect_gate">
-      <!-- <define name="UNDISTORT_MIN_X_NORMALIZED" value="-2.0"/> -->
       <define name="DETECT_GATE_CAMERA" value="front_camera"/>
     </module>
 
@@ -91,7 +90,8 @@
       <define name="VIEWVIDEO_QUALITY_FACTOR" value="40"/>
     </module>
 
-    <module name="bebop_ae_awb"/>
+    <module name="bebop_ae_awb"/-->
+      <!--<define name="UNDISTORT_MIN_X_NORMALIZED" value="-2.0"/> -->
 
 
   </firmware>
