@@ -187,7 +187,21 @@ static struct image_t *detect_gate_func(struct image_t *img)
     }
 #endif
 
-    if (best_gate.quality > min_gate_quality * 2) {
+    // Don't accept gates that look too rectangular (not square enough)
+    float sz1, sz2;
+    sz1 = (float) (best_gate.x_corners[1] - best_gate.x_corners[0]);
+    sz2 = (float) (best_gate.y_corners[1] - best_gate.y_corners[2]);
+    float ratio;
+    static float limit_ratio = 1.3;
+    if(sz1 > 0.1 && sz2 > 0.1) {
+      ratio = (sz1 >= sz2) ? sz1 / sz2 : sz2 / sz1;
+    }
+    else {
+      ratio = limit_ratio + 0.1;
+    }
+
+    //printf("ratio = %f\n", ratio);
+    if (best_gate.quality > min_gate_quality * 2 && ratio <= limit_ratio) {
 
 #if NPS_SIMULATE_MT9F002
       // swap x and y coordinates:
