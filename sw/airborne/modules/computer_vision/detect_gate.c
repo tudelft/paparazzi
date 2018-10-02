@@ -131,7 +131,7 @@ struct gate_img gates_c[MAX_GATES];
 // Structure of the gate:
 struct FloatVect3 world_corners[4];
 float gate_size_m = 1.4; //size of gate edges in meters
-float gate_center_height = -2.0; //height of gate in meters ned wrt ground
+float gate_center_height = 0.0; //height of gate in meters ned wrt ground
 int n_corners = 3;
 
 // camera to body:
@@ -232,7 +232,7 @@ static struct image_t *detect_gate_func(struct image_t *img)
         float dist = gate_size_m * (DETECT_GATE_CAMERA.camera_intrinsics.focal_x / size);
         drone_position.x = -dist;
         drone_position.y = -angle_y*dist;
-        drone_position.z = angle_x*dist + gate_center_height;
+        drone_position.z = angle_x*dist;
       }
       else {
         // TODO: try out RANSAC with all combinations of 3 corners out of 4 corners.
