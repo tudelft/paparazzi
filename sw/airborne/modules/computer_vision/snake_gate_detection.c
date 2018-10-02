@@ -319,6 +319,8 @@ int snake_gate_detection(struct image_t *img, int n_samples, int min_px_size, fl
   best_gate->quality = 0;
   best_gate->n_sides = 0;
   repeat_gate = 0;
+  float sz1 =0;
+  float sz2 = 0;
 
   // do an additional fit to improve the gate detection:
   if ((best_quality > min_gate_quality && (*n_gates) > 0) || last_frame_detection) {
@@ -333,7 +335,13 @@ int snake_gate_detection(struct image_t *img, int n_samples, int min_px_size, fl
       check_gate_outline(img, gates_c[gate_nr], &gates_c[gate_nr].quality, &gates_c[gate_nr].n_sides);
 
       // If the gate is good enough:
-      if (gates_c[gate_nr].n_sides >= min_n_sides && gates_c[gate_nr].quality > best_gate->quality) {
+
+      float sz1g, sz2g;
+      sz1g = (float) (gates_c[gate_nr].x_corners[1] - gates_c[gate_nr].x_corners[0]);
+      sz2g = (float) (gates_c[gate_nr].y_corners[1] - gates_c[gate_nr].y_corners[2]);
+
+      // if (gates_c[gate_nr].n_sides >= min_n_sides && gates_c[gate_nr].quality > best_gate->quality) {
+      if (sz1g*sz2g > sz1*sz2) {
         // store the information in the gate:
         best_gate->x = gates_c[gate_nr].x;
         best_gate->y = gates_c[gate_nr].y;
@@ -344,6 +352,9 @@ int snake_gate_detection(struct image_t *img, int n_samples, int min_px_size, fl
         best_gate->n_sides = gates_c[gate_nr].n_sides;
         memcpy(best_gate->x_corners, gates_c[gate_nr].x_corners, sizeof(best_gate->x_corners));
         memcpy(best_gate->y_corners, gates_c[gate_nr].y_corners, sizeof(best_gate->y_corners));
+        sz1 = (float) (best_gate->x_corners[1] - best_gate->x_corners[0]);
+        sz2 = (float) (best_gate->y_corners[1] - best_gate->y_corners[2]);
+
       }
     }
 
