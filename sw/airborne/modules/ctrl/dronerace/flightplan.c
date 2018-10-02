@@ -27,27 +27,28 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 // Note: pprz has positive Z here, while jevois has negative Z
 // both_side: bool in Jevois code, 0 or 1 here.
 const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
-    //  X-coordinate  Y-coordinate  Z-coordinate  Psi-gate          Type-of-gate  Brake-at-gate   Distance-after gate       both side
-    {   3.5,          0.0,          -2.4,          RadOfDeg(0),      REGULAR,      NO_BRAKE,       0.1,                      1},
-    {   7.7,          0.0,          -2.4,          RadOfDeg(0),      REGULAR,      BRAKE,          2.5,                      0},
-    {   10.0,         2.7,          -2.4,          RadOfDeg(90),     REGULAR,      BRAKE,          1.5,                      0},
-    {   7.4,          4.9,          -2.4,          RadOfDeg(180),    REGULAR,      NO_BRAKE,       0.1,                      0},
-    {   2.6,          4.9,          -2.4,          RadOfDeg(180),    REGULAR,      BRAKE,          3.0,                      0},
-    {   -0.5,         4.9,          -2.4,          RadOfDeg(-90),    VIRTUAL,      BRAKE,          0.0,                      0},
-    {   -0.5,         3.0,          -2.4,          RadOfDeg(0),      VIRTUAL,      BRAKE,          0.0,                      0},
-    {   1.5,          3.0,          -2.4,          RadOfDeg(0),      JUNGLE,       BRAKE,          2.0,                      0},
-    {   5.3,          2.0,          -1.2,          RadOfDeg(-90),    REGULAR,      BRAKE,          2.0,                      0},
-    {   3.5,          0.0,          -2.4,          RadOfDeg(180),    REGULAR,      BRAKE,          3.5,                      0}
+    //  X-coordinate  Y-coordinate  Z-coordinate   Psi-gate          Speed    Type-of-gate  Brake-at-gate   Distance-after gate       both side
+    {   3.5,          0.0,          -2.4,          RadOfDeg(0),      1.2f,    REGULAR,      NO_BRAKE,       0.1,                      1},
+    {   7.7,          0.0,          -2.4,          RadOfDeg(0),      1.0f,    REGULAR,      BRAKE,          2.5,                      0},
+    {   10.0,         2.7,          -2.4,          RadOfDeg(90),     0.7f,    REGULAR,      BRAKE,          1.5,                      0},
+    {   7.4,          4.9,          -2.4,          RadOfDeg(180),    0.7f,    REGULAR,      NO_BRAKE,       0.1,                      0},
+    {   2.6,          4.9,          -2.4,          RadOfDeg(180),    1.2f,    REGULAR,      BRAKE,          3.0,                      0},
+    {   -0.5,         4.9,          -2.4,          RadOfDeg(-90),    1.0f,    VIRTUAL,      BRAKE,          0.0,                      0},
+    {   -0.5,         3.0,          -2.4,          RadOfDeg(0),      1.0f,    VIRTUAL,      BRAKE,          0.0,                      0},
+    {   1.5,          3.0,          -2.4,          RadOfDeg(0),      1.0f,    JUNGLE,       BRAKE,          2.0,                      0},
+    {   5.3,          2.0,          -1.2,          RadOfDeg(-90),    1.0f,    REGULAR,      BRAKE,          2.0,                      0},
+    {   3.5,          0.0,          -2.4,          RadOfDeg(180),    1.0f,    REGULAR,      BRAKE,          3.5,                      0}
 };
 
 struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];
 
 static void update_gate_setpoints(void)
 {
-  dr_fp.gate_x   = gates[dr_fp.gate_nr].x;
-  dr_fp.gate_y   = gates[dr_fp.gate_nr].y;
-  dr_fp.gate_z = gates[dr_fp.gate_nr].z;
-  dr_fp.gate_psi = gates[dr_fp.gate_nr].psi;
+  dr_fp.gate_x     = gates[dr_fp.gate_nr].x;
+  dr_fp.gate_y     = gates[dr_fp.gate_nr].y;
+  dr_fp.gate_z     = gates[dr_fp.gate_nr].z;
+  dr_fp.gate_psi   = gates[dr_fp.gate_nr].psi;
+  dr_fp.gate_speed = gates[dr_fp.gate_nr].speed;
 }
 
 
@@ -203,10 +204,11 @@ void generate_waypoints_from_gates()
       waypoints_dr[i].y = sin(gates[i].psi)*d + gates[i].y;
     }
     waypoints_dr[i].z = gates[i].z;
-    waypoints_dr[i].psi= gates[i].psi;
-    waypoints_dr[i].type= gates[i].type;
-    waypoints_dr[i].brake= gates[i].brake;
-    waypoints_dr[i].distance_after_gate= gates[i].distance_after_gate;
+    waypoints_dr[i].psi = gates[i].psi;
+    waypoints_dr[i].speed = gates[i].speed;
+    waypoints_dr[i].type = gates[i].type;
+    waypoints_dr[i].brake = gates[i].brake;
+    waypoints_dr[i].distance_after_gate = gates[i].distance_after_gate;
     waypoints_dr[i].both_side = gates[i].both_side;
   }
 

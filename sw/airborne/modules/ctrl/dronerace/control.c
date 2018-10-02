@@ -101,6 +101,9 @@ void control_run(float dt)
   Bound(vxcmd, -CTRL_MAX_SPEED, CTRL_MAX_SPEED);
   Bound(vycmd, -CTRL_MAX_SPEED, CTRL_MAX_SPEED);
 
+  vxcmd *= dr_fp.gate_speed;
+  vycmd *= dr_fp.gate_speed;
+
   // Speed to Attitude
   ax = (vxcmd - dr_state.vx) * 1.0f + vxcmd * RadOfDeg(10.0f) / 3.0f;
   ay = (vycmd - dr_state.vy) * 1.0f + vycmd * RadOfDeg(10.0f) / 3.0f;
