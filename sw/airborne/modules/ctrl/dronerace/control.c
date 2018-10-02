@@ -15,10 +15,10 @@ struct dronerace_control_struct dr_control;
 
 
 // Slow speed
-#define CTRL_MAX_SPEED  2.5             // m/s
-#define CTRL_MAX_PITCH  RadOfDeg(15)    // rad
-#define CTRL_MAX_ROLL   RadOfDeg(10)    // rad
-#define CTRL_MAX_R      RadOfDeg(60)    // rad/sec
+#define CTRL_MAX_SPEED  3.5             // m/s
+#define CTRL_MAX_PITCH  RadOfDeg(17)    // rad
+#define CTRL_MAX_ROLL   RadOfDeg(15)    // rad
+#define CTRL_MAX_R      RadOfDeg(70)    // rad/sec
 
 /*
 // Max speed for bebop

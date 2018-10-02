@@ -30,7 +30,7 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
     //  X-coordinate  Y-coordinate  Z-coordinate  Psi-gate          Type-of-gate  Brake-at-gate   Distance-after gate       both side
     {   3.5,          0.0,          -2.4,          RadOfDeg(0),      REGULAR,      NO_BRAKE,       0.1,                      1},
     {   7.7,          0.0,          -2.4,          RadOfDeg(0),      REGULAR,      BRAKE,          2.5,                      0},
-    {   10.45,        2.75,         -2.4,          RadOfDeg(90),     REGULAR,      BRAKE,          1.5,                      0},
+    {   10.0,         2.7,          -2.4,          RadOfDeg(90),     REGULAR,      BRAKE,          1.5,                      0},
     {   7.4,          4.9,          -2.4,          RadOfDeg(180),    REGULAR,      NO_BRAKE,       0.1,                      0},
     {   2.6,          4.9,          -2.4,          RadOfDeg(180),    REGULAR,      BRAKE,          3.0,                      0},
     {   0.0,          3.0,          -2.4,          RadOfDeg(-90),    VIRTUAL,      BRAKE,          0.0,                      0},
