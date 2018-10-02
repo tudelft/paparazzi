@@ -139,6 +139,7 @@ void jevois_mavlink_event(void)
           mavlink_heartbeat_t heartbeat;
           mavlink_msg_heartbeat_decode(&msg, &heartbeat);
           // do something with heartbeat variable
+          DEBUG_PRINT("[jevois mavlink] heartbeart\n");
         }
         break;
 
@@ -192,6 +193,10 @@ void jevois_mavlink_event(void)
           mavlink_msg_highres_imu_decode(&msg, &jevois_mavlink_vision_measurement);
         }
 
+        DEBUG_PRINT("[jevois mavlink] jevois_mavlink_vision_measurement %f,%f \n",jevois_mavlink_vision_measurement.xacc, jevois_mavlink_vision_measurement.yacc);
+
+        break;
+
         case MAVLINK_MSG_ID_VISION_POSITION_ESTIMATE: {
           static int cnt = 0;
 
@@ -204,9 +209,10 @@ void jevois_mavlink_event(void)
                                           0,
                                           0,
                                           0);
-
+          DEBUG_PRINT("[jevois mavlink] VISION_POSITION_ESTIMATE %f,%f,%f \n",vision_position_estimate.x,vision_position_estimate.y,vision_position_estimate.z);
 
         }
+        break;
 
       }
     }
