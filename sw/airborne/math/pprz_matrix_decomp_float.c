@@ -29,6 +29,7 @@
 #include "math/pprz_algebra_float.h"
 #include <math.h>
 #include <string.h>
+#include "stdio.h"
 
 /** Cholesky decomposition
  *
@@ -548,4 +549,142 @@ void fit_linear_model(float *targets, int D, float (*samples)[D], uint16_t count
   for (d = 0; d < D_1; d++) {
     params[d] = parameters[d][0];
   }
+}
+
+
+/**
+ * Fit a linear model from samples to target values with a prior.
+ * Effectively a wrapper for the pprz_svd_float and pprz_svd_solve_float functions.
+ *
+ * @param[in] targets The target values
+ * @param[in] samples The samples / feature vectors
+ * @param[in] D The dimensionality of the samples
+ * @param[in] count The number of samples
+ * @param[in] use_bias Whether to use the bias. Please note that params should always be of size D+1, but in case of no bias, the bias value is set to 0.
+ * @param[out] parameters* Parameters of the linear fit
+ * @param[out] fit_error* Total error of the fit
+ */
+void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t count, bool use_bias, float *params, float *fit_error)
+{
+
+  // We will solve systems of the form A x = b,
+  // where A = [nx(D+1)] matrix with entries [s1, ..., sD, 1] for each sample (1 is the bias)
+  // and b = [nx1] vector with the target values.
+  // x in the system are the parameters for the linear regression function.
+
+  // local vars for iterating, random numbers:
+  int sam, d;
+  uint16_t n_samples = count;
+  uint8_t D_1 = D + 1;
+
+  if(D_1 != 2) {
+    printf("not yet implemented!!\n");
+    return;
+  }
+
+  //printf("n_samples = %d\n", n_samples);
+  // ensure that n_samples is high enough to ensure a result for a single fit:
+  n_samples = (n_samples < D_1) ? D_1 : n_samples;
+  // n_samples should not be higher than count:
+  n_samples = (n_samples < count) ? n_samples : count;
+  count = n_samples;
+  //printf("n_samples = %d\n", n_samples);
+
+  // initialize matrices and vectors for the full point set problem:
+  // this is used for determining inliers
+  float _AA[count][D_1];
+  MAKE_MATRIX_PTR(AA, _AA, count);
+  float _AAT[D_1][count];
+  MAKE_MATRIX_PTR(AAT, _AAT, D_1);
+  float _AATAA[D_1][D_1];
+  MAKE_MATRIX_PTR(AATAA, _AATAA, D_1);
+  float _PRIOR[D_1][D_1];
+  MAKE_MATRIX_PTR(PRIOR, _PRIOR, D_1);
+  PRIOR[0][0]  = 10.0f;
+  PRIOR[1][0]  = 0.0f;
+  PRIOR[0][1]  = 0.0f;
+  PRIOR[1][1]  = 1.0f;
+
+  float _targets_all[count][1];
+  MAKE_MATRIX_PTR(targets_all, _targets_all, count);
+
+  for (sam = 0; sam < count; sam++) {
+    for (d = 0; d < D; d++) {
+      AA[sam][d] = samples[sam][d];
+    }
+    if (use_bias) {
+      AA[sam][D] = 1.0f;
+    } else {
+      AA[sam][D] = 0.0f;
+    }
+    targets_all[sam][0] = targets[sam];
+  }
+
+  //printf("A:\n");
+  //MAT_PRINT(count, D_1, AA);
+
+  // make the pseudo-inverse matrix:
+  float_mat_transpose(AAT, AA, count, D_1);
+  //printf("AT:\n");
+  //MAT_PRINT(D_1, count, AAT);
+
+  float_mat_mul(AATAA, AAT, AA, D_1, count, D_1);
+  //printf("ATA:\n");
+  //MAT_PRINT(D_1, D_1, AATAA);
+  // add the prior to AATAA:
+  float_mat_sum(AATAA, AATAA, PRIOR, D_1, D_1);
+  //printf("ATA+prior*I:\n");
+  //MAT_PRINT(D_1, D_1, AATAA);
+  float _INV_AATAA[D_1][D_1];
+  MAKE_MATRIX_PTR(INV_AATAA, _INV_AATAA, D_1);
+  float det = AATAA[0][0] * AATAA[1][1] - AATAA[0][1] * AATAA[1][0];
+  if (fabsf(det) < 1e-4) {
+    printf("Not invertible\n");
+    return;
+  } //not invertible
+
+  INV_AATAA[0][0] =  AATAA[1][1] / det;
+  INV_AATAA[0][1] = -AATAA[0][1] / det;
+  INV_AATAA[1][0] = -AATAA[1][0] / det;
+  INV_AATAA[1][1] =  AATAA[0][0] / det;
+
+  //printf("INV:\n");
+  //MAT_PRINT(D_1, D_1, INV_AATAA);
+
+  //float_mat_inv_2d(INV_AATAA, _INV_AATAA);
+  float _PINV[D_1][count];
+  MAKE_MATRIX_PTR(PINV, _PINV, D_1);
+  MAT_MUL(D_1, D_1, count, PINV, INV_AATAA, AAT);
+  //printf("PINV:\n");
+  //MAT_PRINT(D_1, count, PINV);
+
+  float _parameters[D_1][1];
+  MAKE_MATRIX_PTR(parameters, _parameters, D_1);
+  MAT_MUL(D_1, 1, count, parameters, PINV, targets_all);
+  //printf("parameters:\n");
+  //MAT_PRINT(D_1, 1, parameters);
+
+
+  // used to determine the error of a set of parameters on the whole set:
+  float _bb[count][1];
+  MAKE_MATRIX_PTR(bb, _bb, count);
+  float _C[count][1];
+  MAKE_MATRIX_PTR(C, _C, count);
+
+  // error is determined on the entire set
+  // bb = AA * parameters:
+  MAT_MUL(count, D_1, 1, bb, AA, parameters);
+  // subtract bu_all: C = 0 in case of perfect fit:
+  MAT_SUB(count, 1, C, bb, targets_all);
+  *fit_error = 0;
+  for (sam = 0; sam < count; sam++) {
+    *fit_error += fabsf(C[sam][0]);
+  }
+  *fit_error /= count;
+
+
+  for (d = 0; d < D_1; d++) {
+    params[d] = parameters[d][0];
+  }
+  //printf("End of the function\n");
 }
