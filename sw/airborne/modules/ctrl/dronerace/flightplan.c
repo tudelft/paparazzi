@@ -174,9 +174,9 @@ void checkJungleGate()
   if (gates[dr_fp.gate_nr].type == JUNGLE && jungleGate.flagJungleGateDetected == 1) {
     // TODO: altitudes in the simulator are positive... is this also the case for the real bebop?
     if (flagHighOrLowGate == UPPER_GATE) {
-      dr_fp.z_set = -1.6;
+      dr_fp.z_set = -2.2;
     } else {
-      dr_fp.z_set = -0.6;
+      dr_fp.z_set = -1.2;
     }
   }
 

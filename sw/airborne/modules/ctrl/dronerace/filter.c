@@ -224,7 +224,7 @@ void pushJungleGateDetection(void)
     jungleGate.jungleGateHeight = jungleGate.sumJungleGateHeight / jungleGate.numJungleGateDetection;
     if (jungleGate.numJungleGateDetection == MAX_DETECTION) {
       jungleGate.flagJungleGateDetected = true;
-      if (jungleGate.jungleGateHeight > -1.0) {
+      if (jungleGate.jungleGateHeight > 0.0) {
         flagHighOrLowGate = UPPER_GATE;
       } else {
         flagHighOrLowGate = LOWER_GATE;
