@@ -5,7 +5,9 @@
   </description>
 
   <firmware name="rotorcraft">
-    <target name="ap" board="bebop"/>
+    <target name="ap" board="bebop">
+	<define name="SIMULATE" value="FALSE"/>
+    </target>
 
     <target name="nps" board="pc">
       <module name="fdm" type="jsbsim"/>
