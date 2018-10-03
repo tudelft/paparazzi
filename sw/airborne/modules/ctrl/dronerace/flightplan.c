@@ -124,9 +124,11 @@ void flightplan_run(void)
   dy = waypoints_dr[dr_fp.gate_nr].y - correctedY;
   dist = sqrt((dx * dx) + (dy * dy));
 
+  /*
   printf("Gate nr: %d, vision count = %d, nr msm in buffer = %d, (x,y) = (%f, %f), (cx, cy) = (%f, %f), (real_x, real_y) = (%f, %f)\n",
          dr_fp.gate_nr, dr_vision.cnt, dr_ransac.buf_size, dr_state.x, dr_state.y, correctedX, correctedY,
          stateGetPositionNed_f()->x, stateGetPositionNed_f()->y);
+  */
 
   // Align with current gate
   dr_fp.psi_set = dr_fp.gate_psi;

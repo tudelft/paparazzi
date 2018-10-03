@@ -223,7 +223,7 @@ void dronerace_enter(void)
     }
     waypoint_set_enu( WP_G1+i, &enu_g);
     waypoint_set_enu( WP_p1+i, &enu_w);
-    printf("Moved %f %f \n", enu_g.x, enu_g.y);
+    //printf("Moved %f %f \n", enu_g.x, enu_g.y);
   }
 }
 

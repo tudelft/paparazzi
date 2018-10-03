@@ -110,7 +110,7 @@ void filter_correct(void)
 
     int assigned_gate = transfer_measurement_local_2_global(&mx, &my, dr_vision.dx, dr_vision.dy);
 
-    printf("assigned gate = %d, gate nr = %d.\n", assigned_gate, dr_fp.gate_nr);
+    //printf("assigned gate = %d, gate nr = %d.\n", assigned_gate, dr_fp.gate_nr);
 
     if (assigned_gate == dr_fp.gate_nr) {
 
@@ -142,7 +142,7 @@ int transfer_measurement_local_2_global(float *_mx, float *_my, float dx, float 
   // TODO: reintroduce vision scale?
   float min_distance = 9999;
 
-  dr_state.assigned_gate_index = 0;
+  dr_state.assigned_gate_index = -1;
 
   for (i = 0; i < MAX_GATES; i++) {
     if (gates[i].type != VIRTUAL) {
@@ -174,12 +174,19 @@ int transfer_measurement_local_2_global(float *_mx, float *_my, float dx, float 
           min_distance = distance_measured_2_drone;
           *_mx = x;
           *_my = y;
-          //printf("Mx = %f, my = %f\n", *_mx, );
+          //printf("Mx = %f, my = %f\n", *_mx, *_my);
         }
           //printf("Expected gates: %d  %.1f s=%.1f heading %.1f rot %.1f\n", i, dist, size, px, yaw * 57.6f);
       }
     }
   }
+
+  if(dr_state.assigned_gate_index == -1) {
+    dr_state.assigned_gate_index = dr_fp.gate_nr;
+  }
+
+  //printf("Final assigned gate = %d: mx,my = %f,%f\n", dr_state.assigned_gate_index, *_mx, *_my);
+
 
 
   /*

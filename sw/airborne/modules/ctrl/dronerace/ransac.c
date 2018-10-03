@@ -189,7 +189,7 @@ void ransac_push(float time, float _x, float _y, float _mx, float _my)
             //printf("Fit %f to %f\n", targets_x[i], samples[i][0]);
         }
 
-        printf("Running RANSAC with %d points and %d samples, err_max %f\n",count, n_samples, error_threshold);
+        //printf("Running RANSAC with %d points and %d samples, err_max %f\n",count, n_samples, error_threshold);
         RANSAC_linear_model(n_samples, n_iterations, error_threshold, targets_x, 1,
                                  samples, count, params_x, &fit_error);
 
