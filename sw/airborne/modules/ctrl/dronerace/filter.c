@@ -149,20 +149,23 @@ int transfer_measurement_local_2_global(float *_mx, float *_my, float dx, float 
       float exp_dx = gates[i].x - dr_state.x;
       float exp_dy = gates[i].y - dr_state.y;
       float exp_yaw = gates[i].psi - dr_state.psi;
-      float exp_dist = sqrt(exp_dx * exp_dx + exp_dy * exp_dy);
+      float exp_dist = sqrtf(exp_dx * exp_dx + exp_dy * exp_dy);
       if (exp_dist == 0.0) {
         exp_dist = 0.0001f;
       }
       float exp_size =  1.4f * 340.0f / exp_dist;
       // dist = 1.4f * 340.0f / ((float)size);
-      float exp_bearing = atan2(dy, dx);
+      float exp_bearing = atan2(exp_dy, exp_dx);
       float exp_view = exp_bearing - dr_state.psi;
       if ((exp_view > -320.0f / 340.0f) && (exp_view < 320.0f / 340.0f)
           && ((exp_yaw > -RadOfDeg(60.0f)) && (exp_yaw < RadOfDeg(60.0f)))
          ) {
 
-        float x = gates[i].x + dx;
-        float y = gates[i].y + dy;
+        float rot_dx = cosf(psi) * dx -sinf(psi) * dy;
+        float rot_dy = sinf(psi) * dx + cosf(psi) * dy;
+
+        float x = gates[i].x + rot_dx;
+        float y = gates[i].y + rot_dy;
         float distance_measured_2_drone = 0;
         distance_measured_2_drone = (x - (dr_state.x + dr_ransac.corr_x)) * (x - (dr_state.x + dr_ransac.corr_x)) +
                                     (y - (dr_state.y + dr_ransac.corr_y)) * (y - (dr_state.y + dr_ransac.corr_y));
@@ -171,6 +174,7 @@ int transfer_measurement_local_2_global(float *_mx, float *_my, float dx, float 
           min_distance = distance_measured_2_drone;
           *_mx = x;
           *_my = y;
+          //printf("Mx = %f, my = %f\n", *_mx, );
         }
           //printf("Expected gates: %d  %.1f s=%.1f heading %.1f rot %.1f\n", i, dist, size, px, yaw * 57.6f);
       }
