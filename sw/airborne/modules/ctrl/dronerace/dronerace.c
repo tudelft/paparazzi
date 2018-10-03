@@ -59,7 +59,7 @@ volatile float input_dz = 0;
 
 /** Set the default File logger path to the USB drive */
 #ifndef FILE_LOGGER_PATH
-  #if NPS_SIMULATE_MT9F002
+  #if SIMULATE
     #define FILE_LOGGER_PATH .
   #else
     #define FILE_LOGGER_PATH /data/ftp/internal_000
@@ -259,7 +259,9 @@ void dronerace_periodic(void)
     flightplan_list();
   }
 
+  //printf("before write log\n");
   write_log();
+  //printf("after write log\n");
 
   {
     struct NedCoor_f target_ned;

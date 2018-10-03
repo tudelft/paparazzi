@@ -44,7 +44,7 @@ float filteredX, filteredY;
 // PREDICTION MODEL
 
 #define DR_FILTER_GRAVITY  9.81
-#if NPS_SIMULATE_MT9F002
+#if SIMULATE
 #define DR_FILTER_DRAG  0.95
 #define DR_FILTER_THRUSTCORR  0.8
 #else
@@ -169,8 +169,7 @@ int transfer_measurement_local_2_global(float *_mx, float *_my, float dx, float 
 	  }
     }
   }
-  printf("Assigned gate = %d, (dx,dy) = (%f,%f), (mx,my) = (%f,%f).\n", dr_state.assigned_gate_index, dx, dy, (*_mx),
-         (*_my));
+  // printf("Assigned gate = %d, (dx,dy) = (%f,%f), (mx,my) = (%f,%f).\n", dr_state.assigned_gate_index, dx, dy, (*_mx), (*_my));
   return dr_state.assigned_gate_index;
 }
 
