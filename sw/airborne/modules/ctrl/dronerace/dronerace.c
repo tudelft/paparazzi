@@ -248,6 +248,7 @@ void dronerace_periodic(void)
   filter_predict(input_phi,input_theta,input_psi, dt);
 
   // Vision update
+  // printf("input count, vision count: %d, %d\n", input_cnt, dr_vision.cnt);
   if (input_cnt > dr_vision.cnt) {
     dr_vision.cnt = input_cnt;
     dr_vision.dx = input_dx;

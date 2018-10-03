@@ -71,12 +71,12 @@
     <module name="cv_detect_gate">
 	<define name="DETECT_GATE_CAMERA" value="front_camera"/>
 	<define name="DETECT_GATE_FPS" value="0"/>
-    <define name="DETECT_GATE_Y_MIN" value="91"/>
+    <define name="DETECT_GATE_Y_MIN" value="31"/>
     <define name="DETECT_GATE_Y_MAX" value="130"/>
-    <define name="DETECT_GATE_U_MIN" value="111"/>
+    <define name="DETECT_GATE_U_MIN" value="62"/>
     <define name="DETECT_GATE_U_MAX" value="138"/>
-    <define name="DETECT_GATE_V_MIN" value="143"/>
-    <define name="DETECT_GATE_V_MAX" value="155"/>
+    <define name="DETECT_GATE_V_MIN" value="148"/>
+    <define name="DETECT_GATE_V_MAX" value="221"/>
 
     </module>
 

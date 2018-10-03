@@ -264,6 +264,7 @@ static struct image_t *detect_gate_func(struct image_t *img)
       detect_gate_x = drone_position.x;
       detect_gate_y = drone_position.y;
       detect_gate_z = drone_position.z;
+      //printf("new measurement!!\n");
       detect_gate_has_new_data = true;
       pthread_mutex_unlock(&gate_detect_mutex);
     }
@@ -277,6 +278,7 @@ void detect_gate_event(void)
   static int32_t cnt = 0;
   pthread_mutex_lock(&gate_detect_mutex);
   if (detect_gate_has_new_data) {
+    //printf("Sending data!\n");
     detect_gate_has_new_data = false;
     AbiSendMsgRELATIVE_LOCALIZATION(DETECT_GATE_ABI_ID, cnt++,
                                     detect_gate_x,

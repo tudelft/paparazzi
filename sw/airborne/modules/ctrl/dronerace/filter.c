@@ -110,6 +110,8 @@ void filter_correct(void)
 
     int assigned_gate = transfer_measurement_local_2_global(&mx, &my, dr_vision.dx, dr_vision.dy);
 
+    printf("assigned gate = %d, gate nr = %d.\n", assigned_gate, dr_fp.gate_nr);
+
     if (assigned_gate == dr_fp.gate_nr) {
 
       pushJungleGateDetection();
@@ -141,6 +143,42 @@ int transfer_measurement_local_2_global(float *_mx, float *_my, float dx, float 
   float min_distance = 9999;
 
   dr_state.assigned_gate_index = 0;
+
+  for (i = 0; i < MAX_GATES; i++) {
+    if (gates[i].type != VIRTUAL) {
+      float exp_dx = gates[i].x - dr_state.x;
+      float exp_dy = gates[i].y - dr_state.y;
+      float exp_yaw = gates[i].psi - dr_state.psi;
+      float exp_dist = sqrt(exp_dx * exp_dx + exp_dy * exp_dy);
+      if (exp_dist == 0.0) {
+        exp_dist = 0.0001f;
+      }
+      float exp_size =  1.4f * 340.0f / exp_dist;
+      // dist = 1.4f * 340.0f / ((float)size);
+      float exp_bearing = atan2(dy, dx);
+      float exp_view = exp_bearing - dr_state.psi;
+      if ((exp_view > -320.0f / 340.0f) && (exp_view < 320.0f / 340.0f)
+          && ((exp_yaw > -RadOfDeg(60.0f)) && (exp_yaw < RadOfDeg(60.0f)))
+         ) {
+
+        float x = gates[i].x + dx;
+        float y = gates[i].y + dy;
+        float distance_measured_2_drone = 0;
+        distance_measured_2_drone = (x - (dr_state.x + dr_ransac.corr_x)) * (x - (dr_state.x + dr_ransac.corr_x)) +
+                                    (y - (dr_state.y + dr_ransac.corr_y)) * (y - (dr_state.y + dr_ransac.corr_y));
+        if (distance_measured_2_drone < min_distance) {
+          dr_state.assigned_gate_index = i;
+          min_distance = distance_measured_2_drone;
+          *_mx = x;
+          *_my = y;
+        }
+          //printf("Expected gates: %d  %.1f s=%.1f heading %.1f rot %.1f\n", i, dist, size, px, yaw * 57.6f);
+      }
+    }
+  }
+
+
+  /*
   for (i = 0; i < MAX_GATES; i++) {
     if (gates[i].type == VIRTUAL) {
       continue;
@@ -170,7 +208,7 @@ int transfer_measurement_local_2_global(float *_mx, float *_my, float dx, float 
         }
       }
     }
-  }
+  }*/
   // printf("Assigned gate = %d, (dx,dy) = (%f,%f), (mx,my) = (%f,%f).\n", dr_state.assigned_gate_index, dx, dy, (*_mx), (*_my));
   return dr_state.assigned_gate_index;
 }
