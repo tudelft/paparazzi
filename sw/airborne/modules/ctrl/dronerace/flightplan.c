@@ -35,7 +35,31 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
   {   2.6,          4.9,          -2.4,          RadOfDeg(180),    1.2f,    REGULAR,      BRAKE,          3.0,                      0},
   {   -0.5,         4.9,          -2.0,          RadOfDeg(-90),    1.0f,    VIRTUAL,      BRAKE,          0.0,                      0},
   {   -0.5,         3.0,          -1.7,          RadOfDeg(0),      0.8f,    VIRTUAL,      BRAKE,          0.0,                      0},
+
+  // NO HEIGHT LOGIC:
+  // TOP LEFT:
+  // {   1.5,          3.0,          -1.9,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+  // BOTTOM LEFT:
+  // {   1.5,          3.0,          -1.0,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+  // BOTTOM RIGHT:
+  // {   1.5,          4.0,          -1.0,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+  // TOP RIGHT:
+  // {   1.5,          4.0,          -1.9,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+
+
+  // WITH HEIGHT LOGIC:
+  // TOP LEFT:
+  // {   1.5,          3.0,          -1.7,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+  // BOTTOM LEFT:
+  // {   1.5,          3.0,          -1.7,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+  // BOTTOM RIGHT:
+  // {   1.5,          4.0,          -1.7,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+  // TOP RIGHT:
+  // {   1.5,          4.0,          -1.7,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+
+  // GENERIC:
   {   1.5,          3.0,          -1.7,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+
   {   5.3,          3.5,          -1.2,          RadOfDeg(-45),    0.5f,    VIRTUAL,      BRAKE,          0.0,                      0},
   {   5.3,          2.0,          -1.2,          RadOfDeg(-90),    1.5f,    REGULAR,      BRAKE,          1.0,                      0},
   {   5.5,          0.0,          -2.4,          RadOfDeg(180),    1.0f,    VIRTUAL,      BRAKE,          0.0,                      0},
