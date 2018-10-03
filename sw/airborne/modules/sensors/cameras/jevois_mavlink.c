@@ -114,8 +114,8 @@ void jevois_mavlink_periodic(void)
 {
   RunOnceEvery(100, mavlink_send_heartbeat());
   RunOnceEvery(2, mavlink_send_attitude());
-  RunOnceEvery(1, mavlink_send_highres_imu());
-  RunOnceEvery(1, mavlink_send_set_mode());
+//  RunOnceEvery(1, mavlink_send_highres_imu());
+//  RunOnceEvery(1, mavlink_send_set_mode());
 }
 
 #ifndef JEVOIS_MAVLINK_ABI_ID
@@ -146,55 +146,56 @@ void jevois_mavlink_event(void)
         case MAVLINK_MSG_ID_ATTITUDE: {
 
           // read attitude command from Jevois
-          mavlink_msg_attitude_decode(&msg, &jevois_mavlink_attitude);
+          //mavlink_msg_attitude_decode(&msg, &jevois_mavlink_attitude);
 
-          DEBUG_PRINT("[jevois mavlink] phi_cmd = %f\n", DegOfRad(jevois_mavlink_attitude.roll));
-          DEBUG_PRINT("[jevois mavlink] theta_cmd = %f\n", DegOfRad(jevois_mavlink_attitude.pitch));
-          DEBUG_PRINT("[jevois mavlink] psi_cmd = %f\n", DegOfRad(jevois_mavlink_attitude.yaw));
+          //DEBUG_PRINT("[jevois mavlink] phi_cmd = %f\n", DegOfRad(jevois_mavlink_attitude.roll));
+          //DEBUG_PRINT("[jevois mavlink] theta_cmd = %f\n", DegOfRad(jevois_mavlink_attitude.pitch));
+          //DEBUG_PRINT("[jevois mavlink] psi_cmd = %f\n", DegOfRad(jevois_mavlink_attitude.yaw));
         }
         break;
 
         case MAVLINK_MSG_ID_ALTITUDE: {
-          mavlink_msg_altitude_decode(&msg, &jevois_mavlink_altitude);
+          //mavlink_msg_altitude_decode(&msg, &jevois_mavlink_altitude);
 
-          DEBUG_PRINT("[jevois mavlink] desired altitude is %f", jevois_mavlink_altitude.altitude_relative);
+          //DEBUG_PRINT("[jevois mavlink] desired altitude is %f", jevois_mavlink_altitude.altitude_relative);
         }
         break;
 
         case MAVLINK_MSG_ID_DEBUG: {
-          mavlink_msg_debug_decode(&msg, &jevois_mavlink_debug);
+          //mavlink_msg_debug_decode(&msg, &jevois_mavlink_debug);
 
-          DEBUG_PRINT("[jevois mavlink] debug value is %f", jevois_mavlink_debug.value);
-          DEBUG_PRINT("[jevois mavlink] debug ind is %d", jevois_mavlink_debug.ind);
+          //DEBUG_PRINT("[jevois mavlink] debug value is %f", jevois_mavlink_debug.value);
+          //DEBUG_PRINT("[jevois mavlink] debug ind is %d", jevois_mavlink_debug.ind);
         }
         break;
 
         case MAVLINK_MSG_ID_MANUAL_SETPOINT: {
-          mavlink_msg_manual_setpoint_decode(&msg, &jevois_mavlink_manual_setpoint);
+          //mavlink_msg_manual_setpoint_decode(&msg, &jevois_mavlink_manual_setpoint);
 
-          DEBUG_PRINT("[jevois mavlink] phi_cmd = %f\n", DegOfRad(jevois_mavlink_manual_setpoint.roll));
-          DEBUG_PRINT("[jevois mavlink] theta_cmd = %f\n", DegOfRad(jevois_mavlink_manual_setpoint.pitch));
-          DEBUG_PRINT("[jevois mavlink] psi_cmd = %f\n", DegOfRad(jevois_mavlink_manual_setpoint.yaw));
-          DEBUG_PRINT("[jevois mavlink] alt_cmd = %f\n", jevois_mavlink_manual_setpoint.thrust);
+          //DEBUG_PRINT("[jevois mavlink] phi_cmd = %f\n", DegOfRad(jevois_mavlink_manual_setpoint.roll));
+          //DEBUG_PRINT("[jevois mavlink] theta_cmd = %f\n", DegOfRad(jevois_mavlink_manual_setpoint.pitch));
+          //DEBUG_PRINT("[jevois mavlink] psi_cmd = %f\n", DegOfRad(jevois_mavlink_manual_setpoint.yaw));
+          //DEBUG_PRINT("[jevois mavlink] alt_cmd = %f\n", jevois_mavlink_manual_setpoint.thrust);
         }
         break;
 
 
         case MAVLINK_MSG_ID_LOCAL_POSITION_NED: {
 
-          mavlink_msg_local_position_ned_decode(&msg, &jevois_mavlink_local_position);
+          //mavlink_msg_local_position_ned_decode(&msg, &jevois_mavlink_local_position);
 
-          DEBUG_PRINT("[jevois mavlink] LOCAL_POSITION_NED \n");
+          //DEBUG_PRINT("[jevois mavlink] LOCAL_POSITION_NED \n");
 
         }
         break;
 
 
         case MAVLINK_MSG_ID_HIGHRES_IMU: {
-          mavlink_msg_highres_imu_decode(&msg, &jevois_mavlink_vision_measurement);
-        }
 
-        DEBUG_PRINT("[jevois mavlink] jevois_mavlink_vision_measurement %f,%f \n",jevois_mavlink_vision_measurement.xacc, jevois_mavlink_vision_measurement.yacc);
+          mavlink_msg_highres_imu_decode(&msg, &jevois_mavlink_vision_measurement);
+
+          //DEBUG_PRINT("[jevois mavlink] jevois_mavlink_vision_measurement %f,%f \n",jevois_mavlink_vision_measurement.xacc, jevois_mavlink_vision_measurement.yacc);
+        }
 
         break;
 
@@ -210,6 +211,7 @@ void jevois_mavlink_event(void)
                                           0,
                                           0,
                                           0);
+
           DEBUG_PRINT("[jevois mavlink] VISION_POSITION_ESTIMATE %f,%f,%f \n",vision_position_estimate.x,vision_position_estimate.y,vision_position_estimate.z);
 
         }
