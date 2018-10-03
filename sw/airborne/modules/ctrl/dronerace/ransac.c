@@ -15,7 +15,7 @@
 #define RANSAC_MIN_SAMPLES_FOR_FIT 5
 // used to be 1.0 for max and 0.5 for no vision
 // max delta time (DT) for a measurement to be considered in the RANSAC buffer
-#define RANSAC_DT_MAX 1.0
+#define RANSAC_DT_MAX 3.0
 // delta time (DT) after which RANSAC decides that there are no vision measurements any more
 // the correction will then be applied and the buffer emptied
 #define RANSAC_DT_NO_VISION 0.5
