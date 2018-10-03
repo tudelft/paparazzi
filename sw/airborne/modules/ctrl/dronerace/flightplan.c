@@ -27,17 +27,17 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 // Note: pprz has positive Z here, while jevois has negative Z
 // both_side: bool in Jevois code, 0 or 1 here.
 const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
-    //  X-coordinate  Y-coordinate  Z-coordinate   Psi-gate          Speed    Type-of-gate  Brake-at-gate   Distance-after gate       both side
-    {   3.5,          0.0,          -2.4,          RadOfDeg(0),      1.2f,    REGULAR,      NO_BRAKE,       0.1,                      1},
-    {   7.7,          0.0,          -2.4,          RadOfDeg(0),      1.0f,    REGULAR,      BRAKE,          2.5,                      0},
-    {   10.0,         2.7,          -2.4,          RadOfDeg(90),     0.7f,    REGULAR,      BRAKE,          1.5,                      0},
-    {   7.4,          4.9,          -2.4,          RadOfDeg(180),    0.7f,    REGULAR,      NO_BRAKE,       0.1,                      0},
-    {   2.6,          4.9,          -2.4,          RadOfDeg(180),    1.2f,    REGULAR,      BRAKE,          3.0,                      0},
-    {   -0.5,         4.9,          -2.4,          RadOfDeg(-90),    1.0f,    VIRTUAL,      BRAKE,          0.0,                      0},
-    {   -0.5,         3.0,          -2.4,          RadOfDeg(0),      1.0f,    VIRTUAL,      BRAKE,          0.0,                      0},
-    {   1.5,          3.0,          -2.4,          RadOfDeg(0),      1.0f,    JUNGLE,       BRAKE,          2.0,                      0},
-    {   5.3,          2.0,          -1.2,          RadOfDeg(-90),    1.0f,    REGULAR,      BRAKE,          2.0,                      0},
-    {   3.5,          0.0,          -2.4,          RadOfDeg(180),    1.0f,    REGULAR,      BRAKE,          3.5,                      0}
+  //  X-coordinate  Y-coordinate  Z-coordinate   Psi-gate          Speed    Type-of-gate  Brake-at-gate   Distance-after gate       both side
+  {   3.5,          0.0,          -2.4,          RadOfDeg(0),      1.2f,    REGULAR,      NO_BRAKE,       0.1,                      1},
+  {   7.7,          0.0,          -2.4,          RadOfDeg(0),      1.0f,    REGULAR,      BRAKE,          2.5,                      0},
+  {   10.0,         2.7,          -2.4,          RadOfDeg(90),     0.7f,    REGULAR,      BRAKE,          1.5,                      0},
+  {   7.4,          4.9,          -2.4,          RadOfDeg(180),    0.7f,    REGULAR,      NO_BRAKE,       0.1,                      0},
+  {   2.6,          4.9,          -2.4,          RadOfDeg(180),    1.2f,    REGULAR,      BRAKE,          3.0,                      0},
+  {   -0.5,         4.9,          -2.4,          RadOfDeg(-90),    1.0f,    VIRTUAL,      BRAKE,          0.0,                      0},
+  {   -0.5,         3.0,          -2.4,          RadOfDeg(0),      1.0f,    VIRTUAL,      BRAKE,          0.0,                      0},
+  {   1.5,          3.0,          -2.4,          RadOfDeg(0),      1.0f,    JUNGLE,       BRAKE,          2.0,                      0},
+  {   5.3,          2.0,          -1.2,          RadOfDeg(-90),    1.0f,    REGULAR,      BRAKE,          2.0,                      0},
+  {   3.5,          0.0,          -2.4,          RadOfDeg(180),    1.0f,    REGULAR,      BRAKE,          3.5,                      0}
 };
 
 struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];
@@ -61,6 +61,9 @@ void flightplan_list(void)
       float dy = gates[i].y - dr_state.y;
       float yaw = gates[i].psi - dr_state.psi;
       float dist = sqrt(dx * dx + dy * dy);
+      if (dist == 0.0) {
+        dist = 0.0001f;
+      }
       float size =  1.4f * 340.0f / dist;
       // dist = 1.4f * 340.0f / ((float)size);
       float bearing = atan2(dy, dx);
@@ -100,7 +103,7 @@ void flightplan_run(void)
   float dist = 0.0;
   float correctedX, correctedY;
   float dist_2_gate;
-  float dx,dy;
+  float dx, dy;
 
   // Get current gate position
   update_gate_setpoints();
@@ -117,35 +120,34 @@ void flightplan_run(void)
 
   dx = waypoints_dr[dr_fp.gate_nr].x - correctedX;
   dy = waypoints_dr[dr_fp.gate_nr].y - correctedY;
-  dist = sqrt( (dx*dx) + (dy*dy) );
+  dist = sqrt((dx * dx) + (dy * dy));
 
-  printf("Gate nr: %d, vision count = %d, nr msm in buffer = %d, (x,y) = (%f, %f), (cx, cy) = (%f, %f), (real_x, real_y) = (%f, %f)\n", dr_fp.gate_nr, dr_vision.cnt, dr_ransac.buf_size, dr_state.x, dr_state.y, correctedX, correctedY, stateGetPositionNed_f()->x, stateGetPositionNed_f()->y);
+  printf("Gate nr: %d, vision count = %d, nr msm in buffer = %d, (x,y) = (%f, %f), (cx, cy) = (%f, %f), (real_x, real_y) = (%f, %f)\n",
+         dr_fp.gate_nr, dr_vision.cnt, dr_ransac.buf_size, dr_state.x, dr_state.y, correctedX, correctedY,
+         stateGetPositionNed_f()->x, stateGetPositionNed_f()->y);
 
   // Align with current gate
   dr_fp.psi_set = dr_fp.gate_psi;
 
-  dist_2_gate =  (dr_fp.gate_x - correctedX)*(dr_fp.gate_x - correctedX) + (dr_fp.gate_y - correctedY)*(dr_fp.gate_y - correctedY);
+  dist_2_gate = (dr_fp.gate_x - correctedX) * (dr_fp.gate_x - correctedX) + (dr_fp.gate_y - correctedY) *
+                (dr_fp.gate_y - correctedY);
 
   // If too close to the gate to see the gate, heading to next gate
-  if (dist_2_gate < DISTANCE_GATE_NOT_IN_SIGHT)
-  {
-    if ((dr_fp.gate_nr+1) < MAX_GATES)
-    {
+  if (dist_2_gate < DISTANCE_GATE_NOT_IN_SIGHT) {
+    if ((dr_fp.gate_nr + 1) < MAX_GATES) {
       dx = gates[dr_fp.gate_nr + 1].x - correctedX;
       dy = gates[dr_fp.gate_nr + 1].y - correctedY;
-      dr_fp.psi_set = atan2(dy,dx);
+      dr_fp.psi_set = atan2(dy, dx);
       //dr_fp.psi_set = gates[dr_fp.gate_nr+1].psi;
     }
   }
 
 
   // If close to desired position, switch to next
-  if (dist < DISTANCE_ARRIVED_AT_WP)
-  {
+  if (dist < DISTANCE_ARRIVED_AT_WP) {
     dr_fp.gate_nr ++;
-    if (dr_fp.gate_nr >= MAX_GATES)
-    {
-      dr_fp.gate_nr = (MAX_GATES -1);
+    if (dr_fp.gate_nr >= MAX_GATES) {
+      dr_fp.gate_nr = (MAX_GATES - 1);
     }
 
     //printf("\n\n*** RESET DUE TO NEXT GATE ***\n\n");
@@ -159,8 +161,7 @@ void flightplan_run(void)
 void checkJungleGate()
 {
   // get the time when enter jungle gate logic
-  if(gates[dr_fp.gate_nr].type == JUNGLE && jungleGate.flagInJungleGate == false)
-  {
+  if (gates[dr_fp.gate_nr].type == JUNGLE && jungleGate.flagInJungleGate == false) {
     jungleGate.flagInJungleGate = 1;
     jungleGate.timeStartJungleGate = dr_state.time; // TODO: this will compile but don't know if it is correct
   }
@@ -168,13 +169,13 @@ void checkJungleGate()
 
   // if there is no detection within 1s, it is likely to be a low gate
   // When determine the gate is in high or low position, send controller desired altitude
-  if(gates[dr_fp.gate_nr].type == JUNGLE && jungleGate.flagJungleGateDetected == 1)
-  {
+  if (gates[dr_fp.gate_nr].type == JUNGLE && jungleGate.flagJungleGateDetected == 1) {
     // TODO: altitudes in the simulator are positive... is this also the case for the real bebop?
-    if(flagHighOrLowGate == UPPER_GATE)
+    if (flagHighOrLowGate == UPPER_GATE) {
       dr_fp.z_set = -1.6;
-    else
+    } else {
       dr_fp.z_set = -0.6;
+    }
   }
 
 }
@@ -195,42 +196,37 @@ void generate_waypoints_from_gates()
 {
   int i;
 #ifdef DEBUG_WP_GENERATION
-  if(debug) {
+  if (debug) {
 
     char filename[128];
-    FILE* fp;
-    sprintf(filename,"%06d.txt",1111);
-    fp = fopen(filename,"w");
-    fprintf(fp,"gate_x,gate_y,gate_z,gate_psi,gate_tpye,gate_brake,gate_after_distance\n");
-    for (int i=0;i<MAX_GATES;i++)
-    {
-      fprintf(fp,"%f,%f,%f,%f,%d,%d,%f\n",gates[i].x,
+    FILE *fp;
+    sprintf(filename, "%06d.txt", 1111);
+    fp = fopen(filename, "w");
+    fprintf(fp, "gate_x,gate_y,gate_z,gate_psi,gate_tpye,gate_brake,gate_after_distance\n");
+    for (int i = 0; i < MAX_GATES; i++) {
+      fprintf(fp, "%f,%f,%f,%f,%d,%d,%f\n", gates[i].x,
               gates[i].y,
               gates[i].z,
               gates[i].psi,
               gates[i].type,
               gates[i].brake,
               gates[i].distance_after_gate
-      );
+             );
     }
 
-    fprintf(fp,"\n\n\n");
+    fprintf(fp, "\n\n\n");
     fclose(fp);
   }
 #endif
 
-  for( i = 0; i<MAX_GATES;i++)
-  {
+  for (i = 0; i < MAX_GATES; i++) {
     float d = gates[i].distance_after_gate;
-    if(gates[i].type == VIRTUAL)
-    {
+    if (gates[i].type == VIRTUAL) {
       waypoints_dr[i].x = gates[i].x;
       waypoints_dr[i].y = gates[i].y;
-    }
-    else
-    {
-      waypoints_dr[i].x = cos(gates[i].psi)*d + gates[i].x;
-      waypoints_dr[i].y = sin(gates[i].psi)*d + gates[i].y;
+    } else {
+      waypoints_dr[i].x = cos(gates[i].psi) * d + gates[i].x;
+      waypoints_dr[i].y = sin(gates[i].psi) * d + gates[i].y;
     }
     waypoints_dr[i].z = gates[i].z;
     waypoints_dr[i].psi = gates[i].psi;
@@ -242,18 +238,17 @@ void generate_waypoints_from_gates()
   }
 
 #ifdef DEBUG_WP_GENERATION
-  fp = fopen(filename,"a");
-  fprintf(fp,"wp_x,wp_y,wp_z,wp_psi,wp_tpye,wp_brake,wp_after_distance\n");
-  for (int i=0;i<MAX_GATES;i++)
-  {
-    fprintf(fp,"%f,%f,%f,%f,%d,%d,%f\n",waypoints_dr[i].x,
+  fp = fopen(filename, "a");
+  fprintf(fp, "wp_x,wp_y,wp_z,wp_psi,wp_tpye,wp_brake,wp_after_distance\n");
+  for (int i = 0; i < MAX_GATES; i++) {
+    fprintf(fp, "%f,%f,%f,%f,%d,%d,%f\n", waypoints_dr[i].x,
             waypoints_dr[i].y,
             waypoints_dr[i].z,
             waypoints_dr[i].psi,
             waypoints_dr[i].type,
             waypoints_dr[i].brake,
             waypoints_dr[i].distance_after_gate
-    );
+           );
   }
 
   fclose(fp);
