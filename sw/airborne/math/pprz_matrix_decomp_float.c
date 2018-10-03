@@ -52,9 +52,15 @@ void pprz_cholesky_float(float **out, float **in, int n)
       for (k = 0; k < j; k++) {
         s += o[i][k] * o[j][k];
       }
-      o[i][j] = (i == j) ?
-                sqrtf(in[i][i] - s) :
-                (1.0 / o[j][j] * (in[i][j] - s));
+      if (i == j) {
+        o[i][j] = sqrtf(in[i][i] - s);
+      } else {
+        if (o[j][j] != 0) {
+          o[i][j] = 1.0 / o[j][j] * (in[i][j] - s);
+        } else {
+          o[i][j] = 0.0;
+        }
+      }
     }
   }
   float_mat_copy(out, o, n, n);
@@ -117,6 +123,7 @@ static inline float pythag(float a, float b)
   absa = fabsf(a);
   absb = fabsf(b);
   if (absa > absb) {
+    if (absa == 0) { return 0.0; }
     return (absa * sqrtf(1.0 + (absb / absa) * (absb / absa)));
   } else if (absb == 0.0) {
     return 0.0;
@@ -184,7 +191,11 @@ int pprz_svd_float(float **a, float *w, float **v, int m, int n)
             for (k = i; k < m; ++k) {
               S = S + a[k][i] * a[k][j];
             }
-            F = S / H;
+            if (H != 0.0) {
+              F = S / H;
+            } else {
+              F = 0.0;
+            }
             for (k = i; k < m; ++k) {
               a[k][j] = a[k][j] + F * a[k][i];
             }
@@ -215,6 +226,9 @@ int pprz_svd_float(float **a, float *w, float **v, int m, int n)
           G = -G;
         }
         H = F * G - S;
+        if (H == 0.0) {
+          H = 0.00001f;
+        }
         a[i][l] = F - G;
         for (k = l; k < n; ++k) {
           rv1[k] = a[i][k] / H;
@@ -246,7 +260,11 @@ int pprz_svd_float(float **a, float *w, float **v, int m, int n)
     if (i < (n - 1)) {
       if (G != 0.0) {
         for (j = l; j < n; ++j) {
-          v[j][i] = (a[i][j] / a[i][l]) / G;
+          if (a[i][l] != 0) {
+            v[j][i] = (a[i][j] / a[i][l]) / G;
+          } else {
+            v[j][i] = 0.0;
+          }
         }
         for (j = l; j < n; ++j) {
           S = 0.0;
@@ -331,7 +349,11 @@ int pprz_svd_float(float **a, float *w, float **v, int m, int n)
             //H = sqrtf( F * F + G * G );
             H = pythag(F, G);
             w[i] = H;
-            H = 1.0 / H;
+            if (H != 0) {
+              H = 1.0 / H;
+            } else {
+              H = 0;
+            }
             C = (G * H);
             S = -(F * H);
             for (j = 0; j < m; ++j) {
@@ -366,14 +388,22 @@ int pprz_svd_float(float **a, float *w, float **v, int m, int n)
       Y = w[NM];
       G = rv1[NM];
       H = rv1[k];
-      F = ((Y - Z) * (Y + Z) + (G - H) * (G + H)) / (2.0 * H * Y);
+      if (H * Y != 0) {
+        F = ((Y - Z) * (Y + Z) + (G - H) * (G + H)) / (2.0 * H * Y);
+      } else {
+        F = 0;
+      }
       //G = sqrtf( F * F + 1.0 );
       G = pythag(F, 1.0);
       tmp = G;
       if (F < 0.0) {
         tmp = -tmp;
       }
-      F = ((X - Z) * (X + Z) + H * ((Y / (F + tmp)) - H)) / X;
+      if ((F + tmp) != 0) {
+        F = ((X - Z) * (X + Z) + H * ((Y / (F + tmp)) - H)) / X;
+      } else {
+        F = 0;
+      }
 
       /* Next QR transformation. */
       C = 1.0;
@@ -387,8 +417,13 @@ int pprz_svd_float(float **a, float *w, float **v, int m, int n)
         //Z = sqrtf( F * F + H * H );
         Z = pythag(F, H);
         rv1[j] = Z;
-        C = F / Z;
-        S = H / Z;
+        if (Z != 0) {
+          C = F / Z;
+          S = H / Z;
+        } else {
+          C = 0;
+          S = 0;
+        }
         F = (X * C) + (G * S);
         G = -(X * S) + (G * C);
         H = Y * S;
@@ -543,7 +578,9 @@ void fit_linear_model(float *targets, int D, float (*samples)[D], uint16_t count
   for (sam = 0; sam < count; sam++) {
     *fit_error += fabsf(C[sam][0]);
   }
-  *fit_error /= count;
+  if (count > 0) {
+    *fit_error /= count;
+  }
 
 
   for (d = 0; d < D_1; d++) {
@@ -564,7 +601,8 @@ void fit_linear_model(float *targets, int D, float (*samples)[D], uint16_t count
  * @param[out] parameters* Parameters of the linear fit
  * @param[out] fit_error* Total error of the fit
  */
-void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t count, bool use_bias, float *params, float *fit_error)
+void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t count, bool use_bias, float *params,
+                            float *fit_error)
 {
 
   static int DEBUG = 0;
@@ -579,12 +617,12 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
   uint16_t n_samples = count;
   uint8_t D_1 = D + 1;
 
-  if(D_1 != 2) {
+  if (D_1 != 2) {
     printf("not yet implemented!!\n");
     return;
   }
 
-  if(DEBUG) {
+  if (DEBUG) {
     printf("n_samples = %d\n", n_samples);
   }
 
@@ -594,7 +632,7 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
   n_samples = (n_samples < count) ? n_samples : count;
   count = n_samples;
 
-  if(DEBUG) {
+  if (DEBUG) {
     printf("n_samples = %d\n", n_samples);
   }
 
@@ -628,21 +666,21 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
     targets_all[sam][0] = targets[sam];
   }
 
-  if(DEBUG) {
+  if (DEBUG) {
     printf("A:\n");
     MAT_PRINT(count, D_1, AA);
   }
   // make the pseudo-inverse matrix:
   float_mat_transpose(AAT, AA, count, D_1);
 
-  if(DEBUG) {
+  if (DEBUG) {
     printf("AT:\n");
     MAT_PRINT(D_1, count, AAT);
   }
 
   float_mat_mul(AATAA, AAT, AA, D_1, count, D_1);
 
-  if(DEBUG) {
+  if (DEBUG) {
     printf("ATA:\n");
     MAT_PRINT(D_1, D_1, AATAA);
   }
@@ -650,7 +688,7 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
   // add the prior to AATAA:
   float_mat_sum(AATAA, AATAA, PRIOR, D_1, D_1);
 
-  if(DEBUG) {
+  if (DEBUG) {
     printf("ATA+prior*I:\n");
     MAT_PRINT(D_1, D_1, AATAA);
   }
@@ -668,7 +706,7 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
   INV_AATAA[1][0] = -AATAA[1][0] / det;
   INV_AATAA[1][1] =  AATAA[0][0] / det;
 
-  if(DEBUG) {
+  if (DEBUG) {
     printf("INV:\n");
     MAT_PRINT(D_1, D_1, INV_AATAA);
   }
@@ -679,7 +717,7 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
   MAKE_MATRIX_PTR(PINV, _PINV, D_1);
   MAT_MUL(D_1, D_1, count, PINV, INV_AATAA, AAT);
 
-  if(DEBUG) {
+  if (DEBUG) {
     printf("PINV:\n");
     MAT_PRINT(D_1, count, PINV);
   }
@@ -688,7 +726,7 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
   MAKE_MATRIX_PTR(parameters, _parameters, D_1);
   MAT_MUL(D_1, 1, count, parameters, PINV, targets_all);
 
-  if(DEBUG) {
+  if (DEBUG) {
     printf("parameters:\n");
     MAT_PRINT(D_1, 1, parameters);
   }
@@ -727,14 +765,14 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
   if(DEBUG) {
     printf("Fit error = %f\n", *fit_error);
   }
-*/
+  */
   // TODO: uncomment the above again and remove this:
   *fit_error = 0.0;
 
   for (d = 0; d < D_1; d++) {
     params[d] = parameters[d][0];
   }
-  if(DEBUG) {
+  if (DEBUG) {
     printf("End of the function\n");
   }
 }
