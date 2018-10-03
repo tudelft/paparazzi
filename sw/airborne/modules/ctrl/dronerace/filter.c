@@ -161,8 +161,8 @@ int transfer_measurement_local_2_global(float *_mx, float *_my, float dx, float 
           && ((exp_yaw > -RadOfDeg(60.0f)) && (exp_yaw < RadOfDeg(60.0f)))
          ) {
 
-        float rot_dx = cosf(psi) * dx -sinf(psi) * dy;
-        float rot_dy = sinf(psi) * dx + cosf(psi) * dy;
+        float rot_dx = cosf(dr_state.psi) * dx -sinf(dr_state.psi) * dy;
+        float rot_dy = sinf(dr_state.psi) * dx + cosf(dr_state.psi) * dy;
 
         float x = gates[i].x + rot_dx;
         float y = gates[i].y + rot_dy;
