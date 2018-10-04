@@ -9,7 +9,7 @@
     #include "autopilot.h"    
     // Note: use 'git submodule update --init -- sw/ext/tudelft_gazebo_models/'
     // to download the required models.
-    #define NPS_GAZEBO_WORLD "drone_race_track_2018_actual_WITH_GATEPAPERS.world"
+    #define NPS_GAZEBO_WORLD "drone_race_track_2018_actual_with_gate_papers.world"
 </header>
 
   <waypoints>
