@@ -73,7 +73,7 @@
 #endif
 
 #ifndef DELFLY_VISION_THETA_GAINS_P
-#define DELFLY_VISION_THETA_GAINS_P 0.5
+#define DELFLY_VISION_THETA_GAINS_P 2
 #endif
 
 #ifndef DELFLY_VISION_THETA_GAINS_I
@@ -107,9 +107,9 @@ struct FloatRMat RM_earth_to_gate;
 struct FloatRMat RM_earth_to_body;
 struct FloatEulers angle_to_gate = {.phi=0, .theta=0, .psi=0};
 
-bool filt_on=false;
-float filt_tc=3;  // gate filter time constant, in seconds
-int gate_target_size=0.4; // target gate size for distance keeping, in rad
+bool filt_on=true;
+float filt_tc=0.25;  // gate filter time constant, in seconds
+float gate_target_size=0.35; // target gate size for distance keeping, in rad
 
 struct pid_t phi_gains = {DELFLY_VISION_PHI_GAINS_P, DELFLY_VISION_PHI_GAINS_I, 0.f};
 struct pid_t theta_gains = {DELFLY_VISION_THETA_GAINS_P, DELFLY_VISION_THETA_GAINS_I, 0.f};
@@ -232,17 +232,18 @@ static void att_sp_align_3d(void)
 
   // apply pid gains for yaw, pitch and thrust
   struct FloatEulers sp;
+//  sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
   sp.phi = phi_gains.p*alignment_error + phi_gains.i*alignment_error_sum;
-  sp.theta = -theta_gains.p*dist_error + theta_gains.i*dist_error_sum;
+  sp.theta = -theta_gains.p*dist_error - theta_gains.i*dist_error_sum;
   thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
 
   // simply set angle for yaw
   sp.psi = gate_psi + stateGetNedToBodyEulers_f()->psi;
-  //sp.psi = 0;
+//  sp.psi = stateGetNedToBodyEulers_f()->psi;
 
   // bound result to max values
-  BoundAbs(sp.phi, STABILIZATION_ATTITUDE_SP_MAX_PHI);
-  BoundAbs(sp.theta, STABILIZATION_ATTITUDE_SP_MAX_THETA);
+  BoundAbs(sp.phi, STABILIZATION_ATTITUDE_SP_MAX_PHI/3);
+  BoundAbs(sp.theta, STABILIZATION_ATTITUDE_SP_MAX_THETA/3);
   Bound(thrust_sp, 0.f, max_thurst); // TODO add nominal thrust somewhere
 
   // scale to integers
@@ -350,7 +351,7 @@ void guidance_h_module_run(bool in_flight)
 
   static uint8_t prev = 0;
 
-  if (radio_control.values[RADIO_FLAP] > 5000) // Vision switch ON
+  if (radio_control.values[RADIO_FLAP] > 5000 && (get_sys_time_float() - last_time) < 0.2) // Vision switch ON
   {
 
     stab_cmd.phi = rc_sp.phi + att_sp.phi;

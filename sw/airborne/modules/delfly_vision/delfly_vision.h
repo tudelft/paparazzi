@@ -71,7 +71,7 @@ extern void guidance_v_module_run(bool in_flight);
 
 // settings
 extern float filt_tc;  // gate filter time constant
-extern int gate_target_size; // target gate size for distance keeping
+extern float gate_target_size; // target gate size for distance keeping
 
 extern struct pid_t phi_gains;
 extern struct pid_t theta_gains;
