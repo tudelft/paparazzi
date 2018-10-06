@@ -29,39 +29,54 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
   //  X-coordinate  Y-coordinate  Z-coordinate   Psi-gate          Speed    Type-of-gate  Brake-at-gate   Distance-after gate       both side
   {   3.5,          0.0,          -2.4,          RadOfDeg(0),      1.2f,    REGULAR,      NO_BRAKE,       0.1,                      0},
-  {   7.7,          0.0,          -2.4,          RadOfDeg(0),      1.0f,    REGULAR,      BRAKE,          2.5,                      0},
-  {   10.0,         2.7,          -2.4,          RadOfDeg(90),     0.7f,    REGULAR,      BRAKE,          1.5,                      0},
+  {   7.7,          0.0,          -2.4,          RadOfDeg(0),      1.0f,    REGULAR,      BRAKE,          2.0,                      0},
+  {   10.0,         2.7,          -2.4,          RadOfDeg(90),     0.7f,    REGULAR,      BRAKE,          0.5,                      0},
   {   7.4,          4.9,          -2.4,          RadOfDeg(180),    0.7f,    REGULAR,      NO_BRAKE,       0.1,                      0},
-  {   2.6,          4.9,          -2.4,          RadOfDeg(180),    1.2f,    REGULAR,      BRAKE,          3.0,                      0},
-  {   -0.5,         4.9,          -2.0,          RadOfDeg(-90),    1.0f,    VIRTUAL,      BRAKE,          0.0,                      0},
-  {   -0.5,         3.0,          -1.7,          RadOfDeg(0),      0.8f,    VIRTUAL,      BRAKE,          0.0,                      0},
+  {   2.6,          4.9,          -2.4,          RadOfDeg(180),    1.2f,    REGULAR,      BRAKE,          2.0,                      0},
+
 
   // NO HEIGHT LOGIC:
+#define BACK 0.0
+
+#define LEFT 2.5
+#define RIGHT 3.5
+
+#define HIGH -2.2
+#define LOW -1.2
+
   // TOP LEFT:
-  // {   1.5,          3.0,          -1.9,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+  // {   BACK,         4.9,          -2.2,          RadOfDeg(-90),    1.0f,    VIRTUAL,      BRAKE,          0.0,                      0},
+  // {   BACK,         LEFT,          HIGH,          RadOfDeg(0),      0.8f,    VIRTUAL,      BRAKE,          0.0,                      0},
+  // {   1.5,          LEFT,          HIGH,          RadOfDeg(0),      0.5f,    REGULAR,       BRAKE,          1.0,                      0},
   // BOTTOM LEFT:
-  // {   1.5,          3.0,          -1.0,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+  // {   BACK,        4.9,          -1.5,          RadOfDeg(-90),    1.0f,    VIRTUAL,      BRAKE,          0.0,                      0},
+  // {   BACK,        LEFT,          LOW,          RadOfDeg(0),      0.8f,    VIRTUAL,      BRAKE,          0.0,                      0},
+  // {   1.5,         LEFT,          LOW,          RadOfDeg(0),      0.5f,    REGULAR,       BRAKE,          1.0,                      0},
   // BOTTOM RIGHT:
-  // {   1.5,          4.0,          -1.0,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+  // {   BACK,        4.9,          -1.5,          RadOfDeg(-90),    1.0f,    VIRTUAL,      BRAKE,          0.0,                      0},
+  // {   BACK,        RIGHT,         LOW,          RadOfDeg(0),      0.8f,    VIRTUAL,      BRAKE,          0.0,                      0},
+  // {   1.5,         RIGHT,         LOW,          RadOfDeg(0),      0.5f,    REGULAR,       BRAKE,          1.0,                      0},
   // TOP RIGHT:
-  // {   1.5,          4.0,          -1.9,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+  {   BACK,        4.5,            -2.2,          RadOfDeg(-90),    1.0f,    VIRTUAL,      BRAKE,          0.0,                      0},
+  {   BACK,        RIGHT,          HIGH,          RadOfDeg(0),      0.8f,    VIRTUAL,      BRAKE,          0.0,                      0},
+  {   1.5,         RIGHT,          HIGH,          RadOfDeg(0),      0.5f,    REGULAR,      BRAKE,          1.0,                      0},
 
 
   // WITH HEIGHT LOGIC:
   // TOP LEFT:
-  // {   1.5,          3.0,          -1.7,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+  // {   1.5,          3.0,          -1.7,          RadOfDeg(0),      0.5f,    REGULAR,       BRAKE,          1.0,                      0},
   // BOTTOM LEFT:
-  // {   1.5,          3.0,          -1.7,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+  // {   1.5,          3.0,          -1.7,          RadOfDeg(0),      0.5f,    REGULAR,       BRAKE,          1.0,                      0},
   // BOTTOM RIGHT:
-  // {   1.5,          4.0,          -1.7,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+  // {   1.5,          4.0,          -1.7,          RadOfDeg(0),      0.5f,    REGULAR,       BRAKE,          1.0,                      0},
   // TOP RIGHT:
-  // {   1.5,          4.0,          -1.7,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+  // {   1.5,          4.0,          -1.7,          RadOfDeg(0),      0.5f,    REGULAR,       BRAKE,          1.0,                      0},
 
   // GENERIC:
-  {   1.5,          3.0,          -1.7,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          2.0,                      0},
+  // {   1.5,          3.0,          -1.7,          RadOfDeg(0),      0.5f,    JUNGLE,       BRAKE,          1.0,                      0},
 
-  {   5.3,          3.5,          -1.2,          RadOfDeg(-45),    0.5f,    VIRTUAL,      BRAKE,          0.0,                      0},
-  {   5.3,          2.0,          -1.2,          RadOfDeg(-90),    1.5f,    REGULAR,      BRAKE,          1.0,                      0},
+  {   5.3,          4.5,          -1.2,          RadOfDeg(-45),    0.5f,    VIRTUAL,      BRAKE,          0.0,                      0},
+  {   5.3,          2.5,          -1.2,          RadOfDeg(-90),    1.5f,    VIRTUAL,      BRAKE,          1.0,                      0},
   {   5.5,          0.0,          -2.4,          RadOfDeg(180),    1.0f,    VIRTUAL,      BRAKE,          0.0,                      0},
   {   3.5,          0.0,          -2.4,          RadOfDeg(180),    1.0f,    REGULAR,      BRAKE,          3.5,                      0}
 };

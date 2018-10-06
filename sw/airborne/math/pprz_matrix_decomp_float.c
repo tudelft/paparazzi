@@ -589,6 +589,8 @@ void fit_linear_model(float *targets, int D, float (*samples)[D], uint16_t count
 }
 
 
+// TODO: to make it more generic, let the user pass a prior matrix to this function
+// Then  use the SVD to invert the (ATA + PRIOR) matrix.
 /**
  * Fit a linear model from samples to target values with a prior.
  * Effectively a wrapper for the pprz_svd_float and pprz_svd_solve_float functions.
@@ -685,6 +687,7 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
     MAT_PRINT(D_1, D_1, AATAA);
   }
 
+  // TODO: here, AATAA is used as float** - should be ok right?
   // add the prior to AATAA:
   float_mat_sum(AATAA, AATAA, PRIOR, D_1, D_1);
 
@@ -698,7 +701,7 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
   float det = AATAA[0][0] * AATAA[1][1] - AATAA[0][1] * AATAA[1][0];
   if (fabsf(det) < 1e-4) {
     printf("Not invertible\n");
-    return;
+    return; // does this return go well?
   } //not invertible
 
   INV_AATAA[0][0] =  AATAA[1][1] / det;
@@ -715,6 +718,7 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
   //float_mat_inv_2d(INV_AATAA, _INV_AATAA);
   float _PINV[D_1][count];
   MAKE_MATRIX_PTR(PINV, _PINV, D_1);
+  // TODO: what is the difference with float_mat_mul used above? Only that this is a matrix expansion?
   MAT_MUL(D_1, D_1, count, PINV, INV_AATAA, AAT);
 
   if (DEBUG) {
@@ -724,14 +728,13 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
 
   float _parameters[D_1][1];
   MAKE_MATRIX_PTR(parameters, _parameters, D_1);
-  MAT_MUL(D_1, 1, count, parameters, PINV, targets_all);
+  MAT_MUL(D_1, count, 1, parameters, PINV, targets_all);
 
   if (DEBUG) {
     printf("parameters:\n");
     MAT_PRINT(D_1, 1, parameters);
   }
 
-  /*
   // used to determine the error of a set of parameters on the whole set:
   float _bb[count][1];
   MAKE_MATRIX_PTR(bb, _bb, count);
@@ -765,9 +768,6 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
   if(DEBUG) {
     printf("Fit error = %f\n", *fit_error);
   }
-  */
-  // TODO: uncomment the above again and remove this:
-  *fit_error = 0.0;
 
   for (d = 0; d < D_1; d++) {
     params[d] = parameters[d][0];
