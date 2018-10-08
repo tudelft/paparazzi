@@ -44,17 +44,27 @@
 //
 // UCENTER: init, periodic and event
 #ifndef GPS_I2C
-static bool gps_ubx_ucenter_autobaud(void);
+static bool gps_ubx_ucenter_autobaud(uint8_t nr);
 #endif
-static bool gps_ubx_ucenter_configure(void);
+static bool gps_ubx_ucenter_configure(uint8_t nr);
+
+#define GPS_UBX_UCENTER_STATUS_STOPPED    0
+#define GPS_UBX_UCENTER_STATUS_AUTOBAUD   1
+#define GPS_UBX_UCENTER_STATUS_CONFIG     2
+#define GPS_UBX_UCENTER_STATUS_WAITING    3
+
+#define GPS_UBX_UCENTER_REPLY_NONE        0
+#define GPS_UBX_UCENTER_REPLY_ACK         1
+#define GPS_UBX_UCENTER_REPLY_NACK        2
+#define GPS_UBX_UCENTER_REPLY_VERSION     3
+#define GPS_UBX_UCENTER_REPLY_CFG_PRT     4
 
 // Target baudrate for the module
 #define UBX_GPS_BAUD (UBX_GPS_LINK).baudrate
 
 // All U-Center data
 struct gps_ubx_ucenter_struct gps_ubx_ucenter;
-static uint32_t gps_ubx_baudrates[] = {B57600, B38400, B9600, B57600, B4800, B115200, B230400}; 
-static const uint16_t gps_ubx_baudrates_cnt = sizeof(gps_ubx_baudrates) / sizeof(uint32_t);
+
 
 /////////////////////////////
 // Init Function
@@ -62,14 +72,13 @@ static const uint16_t gps_ubx_baudrates_cnt = sizeof(gps_ubx_baudrates) / sizeof
 void gps_ubx_ucenter_init(void)
 {
   // Start UCenter
-  gps_ubx_ucenter.status = GPS_UBX_UCENTER_STATUS_WAIT;
+  gps_ubx_ucenter.status = GPS_UBX_UCENTER_STATUS_AUTOBAUD;
   gps_ubx_ucenter.reply = GPS_UBX_UCENTER_REPLY_NONE;
   gps_ubx_ucenter.cnt = 0;
 
   gps_ubx_ucenter.baud_init = 0;
   gps_ubx_ucenter.baud_run = 0;
   gps_ubx_ucenter.baud_target = UBX_GPS_BAUD;
-  gps_ubx_baudrates[0] = UBX_GPS_BAUD;
 
   gps_ubx_ucenter.sw_ver_h = 0;
   gps_ubx_ucenter.sw_ver_l = 0;
@@ -90,28 +99,18 @@ void gps_ubx_ucenter_init(void)
 
 void gps_ubx_ucenter_periodic(void)
 {
-  static uint32_t timeout_timer = 0;
-
   switch (gps_ubx_ucenter.status) {
-    // Wait a boot for GPS to initialize
-    case GPS_UBX_UCENTER_STATUS_WAIT:
-      if(timeout_timer == 0)
-        timeout_timer = get_sys_time_msec();
-      else if((timeout_timer + 2000) < get_sys_time_msec()) {
-        gps_ubx_ucenter.cnt = 0;
-        gps_ubx_ucenter.reply = GPS_UBX_UCENTER_REPLY_NONE;
-#ifdef GPS_I2C
-        if(gps_i2c_tx_is_ready())
-          gps_ubx_ucenter.status = GPS_UBX_UCENTER_STATUS_CONFIG;
-#else
-        gps_ubx_ucenter.status = GPS_UBX_UCENTER_STATUS_AUTOBAUD;
-#endif  /* GPS_I2C */
-      }
-      break;
-    
-    // Automatically find baudrate for UART
+      // Save processing time inflight
+    case GPS_UBX_UCENTER_STATUS_STOPPED:
+      return;
+    break;
+      // Automatically Determine Current Baudrate
     case GPS_UBX_UCENTER_STATUS_AUTOBAUD:
-      if (gps_ubx_ucenter_autobaud()) {
+#ifdef GPS_I2C
+      gps_ubx_ucenter.cnt = 0;
+      gps_ubx_ucenter.status = GPS_UBX_UCENTER_STATUS_CONFIG;
+#else
+      if (gps_ubx_ucenter_autobaud(gps_ubx_ucenter.cnt) == FALSE) {
         gps_ubx_ucenter.status = GPS_UBX_UCENTER_STATUS_CONFIG;
         gps_ubx_ucenter.cnt = 0;
 #if PRINT_DEBUG_GPS_UBX_UCENTER
@@ -121,26 +120,35 @@ void gps_ubx_ucenter_periodic(void)
           DEBUG_PRINT("WARNING: Unable to determine the ublox baudrate. Autoconfiguration is unlikely to work.\n");
         }
 #endif
+      } else {
+        gps_ubx_ucenter.cnt++;
       }
+#endif /* GPS_I2C */
       break;
-
-    // Send Configuration
+      // Send Configuration
     case GPS_UBX_UCENTER_STATUS_CONFIG:
-      if (gps_ubx_ucenter_configure()) {
-        gps_ubx_ucenter.status = GPS_UBX_UCENTER_STATUS_FINISHED;
+      if (gps_ubx_ucenter_configure(gps_ubx_ucenter.cnt) == FALSE) {
+        gps_ubx_ucenter.status = GPS_UBX_UCENTER_STATUS_STOPPED;
 #ifdef GPS_I2C
         gps_i2c_begin();
 #endif
         gps_ubx_ucenter.cnt = 0;
+      } else {
+        gps_ubx_ucenter.cnt++;
+#ifdef GPS_I2C
+        gps_ubx_ucenter.status = GPS_UBX_UCENTER_STATUS_WAITING;
       }
       break;
-    
-    // The module has finished
-    case GPS_UBX_UCENTER_STATUS_FINISHED:
-      return;
-      break;
+    case GPS_UBX_UCENTER_STATUS_WAITING:
+      if (gps_i2c_tx_is_ready())
+      {
+        gps_ubx_ucenter.status = GPS_UBX_UCENTER_STATUS_CONFIG;
+#endif /*GPS_I2C*/
+      }
+    break;
     default:
-      return;
+      // stop this module now...
+      // todo
       break;
   }
 }
@@ -152,7 +160,7 @@ void gps_ubx_ucenter_periodic(void)
 void gps_ubx_ucenter_event(void)
 {
   // Save processing time inflight
-  if (gps_ubx_ucenter.status == GPS_UBX_UCENTER_STATUS_FINISHED) {
+  if (gps_ubx_ucenter.status == GPS_UBX_UCENTER_STATUS_STOPPED) {
     return;
   }
 
@@ -237,35 +245,85 @@ static inline void gps_ubx_ucenter_enable_msg(uint8_t class, uint8_t id, uint8_t
  * Only needed when connecting to a UART port on the u-blox.
  * The discovered baudrate is copied to gps_ubx_ucenter.baud_init.
  *
- * @return true when completed
+ * @param nr Autobaud step number to perform
+ * @return FALSE when completed
  */
 #ifndef GPS_I2C
-static bool gps_ubx_ucenter_autobaud(void)
+static bool gps_ubx_ucenter_autobaud(uint8_t nr)
 {
-  static uint32_t timeout_timer = 0;
+  switch (nr) {
+    case 0:
+    case 1:
+      // Very important for some modules:
+      // Give the GPS some time to boot (up to 0.75 second)
+      break;
+    case 2:
+      gps_ubx_ucenter.reply = GPS_UBX_UCENTER_REPLY_NONE;
+      uart_periph_set_baudrate(&(UBX_GPS_LINK), B38400); // Try the most common first?
+      gps_ubx_ucenter_config_port_poll();
+      break;
+    case 3:
+      if (gps_ubx_ucenter.reply == GPS_UBX_UCENTER_REPLY_ACK) {
+        gps_ubx_ucenter.baud_init = gps_ubx_ucenter.baud_run;
+        return false;
+      }
+      gps_ubx_ucenter.reply = GPS_UBX_UCENTER_REPLY_NONE;
+      uart_periph_set_baudrate(&(UBX_GPS_LINK), B9600); // Maybe the factory default?
+      gps_ubx_ucenter_config_port_poll();
+      break;
+    case 4:
+      if (gps_ubx_ucenter.reply == GPS_UBX_UCENTER_REPLY_ACK) {
+        gps_ubx_ucenter.baud_init = gps_ubx_ucenter.baud_run;
+        return false;
+      }
+      gps_ubx_ucenter.reply = GPS_UBX_UCENTER_REPLY_NONE;
+      uart_periph_set_baudrate(&(UBX_GPS_LINK), B57600); // The high-rate default?
+      gps_ubx_ucenter_config_port_poll();
+      break;
+    case 5:
+      if (gps_ubx_ucenter.reply == GPS_UBX_UCENTER_REPLY_ACK) {
+        gps_ubx_ucenter.baud_init = gps_ubx_ucenter.baud_run;
+        return false;
+      }
+      gps_ubx_ucenter.reply = GPS_UBX_UCENTER_REPLY_NONE;
+      uart_periph_set_baudrate(&(UBX_GPS_LINK), B4800); // Default NMEA baudrate?
+      gps_ubx_ucenter_config_port_poll();
+      break;
+    case 6:
+      if (gps_ubx_ucenter.reply == GPS_UBX_UCENTER_REPLY_ACK) {
+        gps_ubx_ucenter.baud_init = gps_ubx_ucenter.baud_run;
+        return false;
+      }
+      gps_ubx_ucenter.reply = GPS_UBX_UCENTER_REPLY_NONE;
+      uart_periph_set_baudrate(&(UBX_GPS_LINK), B115200); // Last possible option for ublox
+      gps_ubx_ucenter_config_port_poll();
+      break;
+     case 7:
+      if (gps_ubx_ucenter.reply == GPS_UBX_UCENTER_REPLY_ACK) {
+        gps_ubx_ucenter.baud_init = gps_ubx_ucenter.baud_run;
+        return false;
+      }
+      gps_ubx_ucenter.reply = GPS_UBX_UCENTER_REPLY_NONE;
+      uart_periph_set_baudrate(&(UBX_GPS_LINK), B230400); // Last possible option for ublox
+      gps_ubx_ucenter_config_port_poll();
+      break;
+    case 8:
+      if (gps_ubx_ucenter.reply == GPS_UBX_UCENTER_REPLY_ACK) {
+        gps_ubx_ucenter.baud_init = gps_ubx_ucenter.baud_run;
+        return false;
+      }
 
-  // Check if we have received an ACK
-  if(gps_ubx_ucenter.reply == GPS_UBX_UCENTER_REPLY_ACK) {
-    gps_ubx_ucenter.baud_init = gps_ubx_baudrates[gps_ubx_ucenter.cnt - 1];
-    return true;
+      // Autoconfig Failed... let's setup the failsafe baudrate
+      // Should we try even a different baudrate?
+      gps_ubx_ucenter.baud_init = 0; // Set as zero to indicate that we couldn't verify the baudrate
+      uart_periph_set_baudrate(&(UBX_GPS_LINK), B9600);
+      return false;
+    default:
+      break;
   }
-  // Check if we have a timeout
-  else if((timeout_timer + 500) < get_sys_time_msec()) {
-    // When we have finished all the baudrates and did not get a reply
-    if(gps_ubx_ucenter.cnt >= gps_ubx_baudrates_cnt) {
-      uart_periph_set_baudrate(&(UBX_GPS_LINK), UBX_GPS_BAUD);
-      return true;
-    }
-    
-    // Go to the next baudrate and pull config
-    gps_ubx_ucenter.reply = GPS_UBX_UCENTER_REPLY_NONE;
-    uart_periph_set_baudrate(&(UBX_GPS_LINK), gps_ubx_baudrates[gps_ubx_ucenter.cnt++]);
-    gps_ubx_ucenter_config_port_poll();
-  }
-  return false;
+  return true;
 }
 #endif /* GPS_I2C */
-
 /////////////////////////////////////
 // UBlox internal Navigation Solution
 
@@ -420,16 +478,16 @@ static inline void gps_ubx_ucenter_config_sbas(void)
 // Text Telemetry for Debugging
 #undef GOT_PAYLOAD
 
-static bool gps_ubx_ucenter_configure(void)
+static bool gps_ubx_ucenter_configure(uint8_t nr)
 {
-  DEBUG_PRINT("gps_ubx_ucenter_configure nr: %u\n", gps_ubx_ucenter.cnt);
+  DEBUG_PRINT("gps_ubx_ucenter_configure nr: %u\n", nr);
 
   // Store the reply of the last configuration step and reset
-  if (gps_ubx_ucenter.cnt < GPS_UBX_UCENTER_CONFIG_STEPS) {
-    gps_ubx_ucenter.replies[gps_ubx_ucenter.cnt] = gps_ubx_ucenter.reply;
+  if (nr < GPS_UBX_UCENTER_CONFIG_STEPS) {
+    gps_ubx_ucenter.replies[nr] = gps_ubx_ucenter.reply;
   }
 
-  switch (gps_ubx_ucenter.cnt) {
+  switch (nr) {
     case 0:
       // Use old baudrate to issue a baudrate change command
       gps_ubx_ucenter_config_port();
@@ -553,14 +611,13 @@ static bool gps_ubx_ucenter_configure(void)
         DOWNLINK_SEND_UBLOX_INFO(DefaultChannel, DefaultDevice, &gps_ubx_ucenter.baud_run, &gps_ubx_ucenter.sw_ver_h, &gps_ubx_ucenter.sw_ver_l, &gps_ubx_ucenter.hw_ver_h, &gps_ubx_ucenter.hw_ver_l, &sbas, &gnss);
       }
 #endif
-      return true;
+      return false;
     default:
       break;
   }
 
-  gps_ubx_ucenter.cnt++;
   gps_ubx_ucenter.reply = GPS_UBX_UCENTER_REPLY_NONE;
-  return false; // Continue, except for the last case
+  return true; // Continue, except for the last case
 }
 
 int gps_ubx_ucenter_get_status(void)
