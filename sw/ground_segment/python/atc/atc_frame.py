@@ -91,31 +91,6 @@ class AtcFrame(wx.Frame):
         self.cfg.Write("left", str(self.x));
         self.cfg.Write("top", str(self.y));
 
-    def StatusBox(self, dc, nr, txt, percent, color):
-        if percent < 0:
-            percent = 0
-        if percent > 1:
-            percent = 1
-        boxw = self.stat
-        tdx = int(boxw * 10.0 / 300.0)
-        tdy = int(boxw * 6.0 / 300.0)
-        boxh = int(boxw * 40.0 / 300.0)
-        boxw = self.stat - 2*tdx
-        spacing = boxh+10
-
-        dc.SetPen(wx.Pen(wx.Colour(0,0,0))) 
-	dc.SetBrush(wx.Brush(wx.Colour(220,220,220))) 
-        dc.DrawRectangle(tdx, int(nr*spacing+tdx), int(boxw), boxh) 
-        if color < 0.2:
-            dc.SetBrush(wx.Brush(wx.Colour(250,0,0)))
-        elif color < 0.6:
-            dc.SetBrush(wx.Brush(wx.Colour(250,180,0)))
-        else:
-            dc.SetBrush(wx.Brush(wx.Colour(0,250,0)))
-#        dc.DrawLine(200,50,350,50)
-        dc.DrawRectangle(tdx, int(nr*spacing+tdx), int(boxw * percent), boxh) 
-        dc.DrawText(txt,18,int(nr*spacing+tdy+tdx)) 
-
 
     def OnPaint(self, e):
 
@@ -127,15 +102,12 @@ class AtcFrame(wx.Frame):
         else:
           h = int(w * HEIGHT/WIDTH)
 
-	tdy = int(w * 75.0 / WIDTH)
+        tdy = int(w * 75.0 / WIDTH)
         tdx = int(w * 15.0 / WIDTH)
-        
-        dc = wx.PaintDC(self)
-        #brush = wx.Brush("white")
-        #dc.SetBackground(brush)
-        #dc.Clear()
 
-	fontscale = int(w * 40.0 / WIDTH)
+        dc = wx.PaintDC(self)
+
+        fontscale = int(w * 40.0 / WIDTH)
         if fontscale < 6:
             fontscale = 6
 
@@ -156,16 +128,7 @@ class AtcFrame(wx.Frame):
         
         dc.DrawText("Safe to approach: " + self.safe_to_approach + " ",tdx,tdx+tdy*6)
 
-        #dc.DrawText("HMSL: " + str(self.hmsl) + " ft",tdx,tdx+tdy*6)
-
-        #c = wx.Colour(0,0,0)
-        #dc.SetBrush(wx.Brush(c, wx.SOLID))
-        #dc.DrawCircle(int(w/2),int(w/2),10)
-
-
-
     def __init__(self):
-
 
         self.w = WIDTH
         self.h = HEIGHT
