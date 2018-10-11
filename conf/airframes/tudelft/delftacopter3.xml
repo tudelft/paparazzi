@@ -20,9 +20,7 @@
       </target-->
 
       <module name="opa_controller"/>
-      <module name="telemetry"     type="transparent">
-        <configure name="MODEM_BAUD" value="B9600"/>
-      </module>
+      <module name="telemetry"     type="xbee_api"/>
       <module name="imu"           type="mpu6000"/>
       <module name="gps"           type="ublox">
         <define name="GPS_TIMEOUT" value="10"/>
