@@ -741,7 +741,6 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
   float _C[count][1];
   MAKE_MATRIX_PTR(C, _C, count);
 
-  printf("A\n");
 
   if(DEBUG) {
       printf("A:\n");
@@ -752,12 +751,8 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
   // bb = AA * parameters:
   MAT_MUL(count, D_1, 1, bb, AA, parameters);
 
-  printf("B\n");
-
   // subtract bu_all: C = 0 in case of perfect fit:
   MAT_SUB(count, 1, C, bb, targets_all);
-
-  printf("C\n");
 
   *fit_error = 0;
   for (sam = 0; sam < count; sam++) {
