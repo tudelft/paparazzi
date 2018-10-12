@@ -503,65 +503,6 @@ void pprz_svd_solve_float(float **x, float **u, float *w, float **v, float **b, 
 }
 
 
-/*
- * Calculate the (pseudo) inverse of a matrix with the help of singular value decomposition.
- * SVD: A = U W VT
- * Inverse = V W^-1 UT
- * This is true, because U^-1 = UT and V^-1 = VT. Furthermore,
- * W is a diagonal matrix, which allows for easy calculation of the inverse.
- *
- * @param[in] a The matrix to be inverted.
- * @param[in] rows The number of rows of a.
- * @param[in] cols The number of columns of a.
- * @param[out] inv_a The inverse matrix if it exists. Else, the inverse matrix will be a zero matrix.
- */
-/*
-void pprz_inverse_float_svd(float **a, int rows, int cols, float **inv_a) {
-
-  float w[rows], _v[cols][cols], _vt[cols][cols], _ut[cols][rows], _Winv[rows][rows], _temp_a[rows][cols];
-  MAKE_MATRIX_PTR(v, _v, cols);
-  MAKE_MATRIX_PTR(vt, _vt, cols);
-  MAKE_MATRIX_PTR(Winv, _Winv, rows);
-  MAKE_MATRIX_PTR(temp_a, _temp_a, rows);
-  // TODO: check: apparently, paparazzi uses a col then rows structure...
-  MAKE_MATRIX_PTR(ut, _ut, cols);
-
-  // perform the SVD:
-  pprz_svd_float(a, w, v, rows, cols);
-
-  // transpose the matrices:
-  // a has been replaced by u:
-  float_mat_transpose(ut, a, rows, cols);
-  float_mat_transpose(vt, v, cols, cols);
-  int invertible = 1;
-  for (int i = 0; i < rows; i++) {
-    for (int j = 0; j < rows; j++) {
-      if(i == j) {
-        if(fabs(w[i]) >  1E-5) {
-          Winv[i][j] = 1.0f / w[i];
-        }
-        else {
-          Winv[i][j] = 0.0f;
-          invertible = 0;
-        }
-      }
-      else {
-        Winv[i][j] = 0.0f;
-      }
-    }
-  }
-  if(!invertible) {
-    for (int i = 0; i < rows; i++) {
-      Winv[i][i] = 0.0f;
-    }
-  }
-
-  // calculate the invertible matrix:
-  float_mat_mul(temp_a, Winv, ut, rows, rows, cols);
-  float_mat_mul(inv_a, v, temp_a, cols, rows, cols);
-}
-*/
-
 /**
  * Fit a linear model from samples to target values.
  * Effectively a wrapper for the pprz_svd_float and pprz_svd_solve_float functions.
