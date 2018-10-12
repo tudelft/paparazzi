@@ -515,6 +515,7 @@ void pprz_svd_solve_float(float **x, float **u, float *w, float **v, float **b, 
  * @param[in] cols The number of columns of a.
  * @param[out] inv_a The inverse matrix if it exists. Else, the inverse matrix will be a zero matrix.
  */
+/*
 void pprz_inverse_float_svd(float **a, int rows, int cols, float **inv_a) {
 
   float w[rows], _v[cols][cols], _vt[cols][cols], _ut[cols][rows], _Winv[rows][rows], _temp_a[rows][cols];
@@ -559,6 +560,7 @@ void pprz_inverse_float_svd(float **a, int rows, int cols, float **inv_a) {
   float_mat_mul(temp_a, Winv, ut, rows, rows, cols);
   float_mat_mul(inv_a, v, temp_a, cols, rows, cols);
 }
+*/
 
 /**
  * Fit a linear model from samples to target values.
@@ -641,15 +643,12 @@ void fit_linear_model(float *targets, int D, float (*samples)[D], uint16_t count
     *fit_error /= count;
   }
 
-
   for (d = 0; d < D_1; d++) {
     params[d] = parameters[d][0];
   }
 }
 
 
-// TODO: to make it more generic, let the user pass a prior matrix to this function
-// Then  use the SVD to invert the (ATA + PRIOR) matrix.
 /**
  * Fit a linear model from samples to target values with a prior.
  * Effectively a wrapper for the pprz_svd_float and pprz_svd_solve_float functions.
@@ -659,11 +658,12 @@ void fit_linear_model(float *targets, int D, float (*samples)[D], uint16_t count
  * @param[in] D The dimensionality of the samples
  * @param[in] count The number of samples
  * @param[in] use_bias Whether to use the bias. Please note that params should always be of size D+1, but in case of no bias, the bias value is set to 0.
+ * @param[in] priors Prior per dimension. If use_bias, also for the dimension D+1.
  * @param[out] parameters* Parameters of the linear fit
  * @param[out] fit_error* Total error of the fit
  */
-void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t count, bool use_bias, float *params,
-                            float *fit_error)
+void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t count, bool use_bias, float *priors,
+                            float *params, float *fit_error)
 {
 
   static int DEBUG = 0;
@@ -707,10 +707,15 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
   MAKE_MATRIX_PTR(AATAA, _AATAA, D_1);
   float _PRIOR[D_1][D_1];
   MAKE_MATRIX_PTR(PRIOR, _PRIOR, D_1);
-  PRIOR[0][0]  = 10.0f;
-  PRIOR[1][0]  = 0.0f;
-  PRIOR[0][1]  = 0.0f;
-  PRIOR[1][1]  = 1.0f;
+  for(int d = 0; d < D; d++) {
+    PRIOR[d][d] = priors[d];
+  }
+  if(use_bias) {
+    PRIOR[D][D] = priors[D];
+  }
+  else {
+    PRIOR[D][D] = 1.0f;
+  }
 
   float _targets_all[count][1];
   MAKE_MATRIX_PTR(targets_all, _targets_all, count);
@@ -758,8 +763,6 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
   float _INV_AATAA[D_1][D_1];
   MAKE_MATRIX_PTR(INV_AATAA, _INV_AATAA, D_1);
 
-
-
   /*
   // 2-dimensional:
   float det = AATAA[0][0] * AATAA[1][1] - AATAA[0][1] * AATAA[1][0];
@@ -772,11 +775,18 @@ void fit_linear_model_prior(float *targets, int D, float (*samples)[D], uint16_t
   INV_AATAA[0][1] = -AATAA[0][1] / det;
   INV_AATAA[1][0] = -AATAA[1][0] / det;
   INV_AATAA[1][1] =  AATAA[0][0] / det;
-  */
-
 
   if (DEBUG) {
-    printf("INV:\n");
+    printf("INV assuming D_1 = 2:\n");
+    MAT_PRINT(D_1, D_1, INV_AATAA);
+  }
+  */
+
+  // the AATAA matrix is square, so:
+  float_mat_invert(INV_AATAA, AATAA, D_1);
+
+  if (DEBUG) {
+    printf("GENERIC INV:\n");
     MAT_PRINT(D_1, D_1, INV_AATAA);
   }
 
