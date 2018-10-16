@@ -52,6 +52,7 @@
     <module name="delfly_vision">
       <configure name="STEREO_UART" value="UART3"/>
       <configure name="STEREO_BAUD" value="B921600"/>
+      <!--configure name="STEREO_BAUD" value="B38400"/-->
     </module>
           
     <module name="actuators" type="pwm">

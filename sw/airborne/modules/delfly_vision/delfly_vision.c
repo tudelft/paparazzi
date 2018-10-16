@@ -73,7 +73,7 @@
 #endif
 
 #ifndef DELFLY_VISION_THETA_GAINS_P
-#define DELFLY_VISION_THETA_GAINS_P 2
+#define DELFLY_VISION_THETA_GAINS_P 0
 #endif
 
 #ifndef DELFLY_VISION_THETA_GAINS_I
@@ -106,6 +106,8 @@ struct FloatRMat RM_cam_to_gate;
 struct FloatRMat RM_earth_to_gate;
 struct FloatRMat RM_earth_to_body;
 struct FloatEulers angle_to_gate = {.phi=0, .theta=0, .psi=0};
+
+uint16_t range;
 
 bool filt_on=true;
 float filt_tc=0.25;  // gate filter time constant, in seconds
@@ -144,6 +146,8 @@ void delfly_vision_init(void)
   gate.phi = 0.f;
   gate.theta = 0.f;
   gate.depth = 0.f;
+
+  range = 0;
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DELFLY_VISION, send_delfly_vision_msg);
@@ -266,6 +270,7 @@ static void delfly_vision_parse_msg(void)
 {
   /* Parse the stereocam message */
   uint8_t msg_id = pprzlink_get_msg_id(stereocam_msg_buf);
+
   switch (msg_id) {
 
     case DL_STEREOCAM_GATE: {
@@ -274,16 +279,30 @@ static void delfly_vision_parse_msg(void)
       gate.height  = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
       gate.phi     = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
       gate.theta   = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
-      gate.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
+//      gate.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
 
       evaluate_state_machine();
 
       break;
     }
 
-    default:
+//    <message name="IMCU_REMOTE_GROUND" id="15">
+//      <field name="mode" type="uint8" values="SWITCH|SONAR|LASER|INFRARED"/>
+//      <field name="id" type="uint8">Sensor ID</field>
+//      <field name="range" type="uint16" unit="cm"/>
+//    </message>
+    case DL_IMCU_REMOTE_GROUND: {
+      range = DL_IMCU_REMOTE_GROUND_range(stereocam_msg_buf);
+      range=3;
+
+      gate.depth=range; // For now for debugging, TODO add a new message entry?
+      break;
+    }
+
+    default: {gate.depth=5;}
       break;
   }
+
 }
 
 void delfly_vision_periodic(void)

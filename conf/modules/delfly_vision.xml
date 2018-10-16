@@ -27,9 +27,12 @@
   <periodic fun="delfly_vision_periodic()" freq="20" autorun="TRUE"/>
   <event fun="delfly_vision_event()"/>
   <makefile>
-    <!-- Configure default UART port and baudrate -->
+    <!-- Configure default UART port and baudrate for Stereocam -->
     <configure name="STEREO_UART" default="UART4" case="upper|lower"/>
     <configure name="STEREO_BAUD" default="B921600"/>
+    <!-- Configure default UART port and baudrate for Laser Range Finder-->
+<!--    <configure name="STEREO_UART" default="UART4" case="upper|lower"/-->
+<!--    <configure name="STEREO_BAUD" default="B38400"/-->
     
     <!-- Enable UART and set baudrate -->
     <define name="USE_$(STEREO_UART_UPPER)"/>
