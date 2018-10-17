@@ -26,6 +26,7 @@
     
     <file name="laser_range_array.c"/>
     <file name="pprz_transport.c" dir="pprzlink/src"/>
+<!--    <configure name="PPRZLINK_LIB_VERSION" value="1.0"/-->
   </makefile>
 
   <makefile target="nps">

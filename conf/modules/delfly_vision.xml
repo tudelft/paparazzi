@@ -5,6 +5,11 @@
     <description>Vision module for (tail less) DelFlies that reads the data from a stereoboard mady by Christophe de Wagter of TU Delft and sends commands to the DelFly.</description>
     <configure name="STEREO_UART" value="UARTX" description="Sets the UART port number of the connected camera (required)"/>
     <configure name="STEREO_BAUD" value="BXXXXX" description="Sets the BAUD rate of the connected camera (required: must be same as camera)"/>
+	<configure name="LASER_UART" value="UART2" description="select which uart it is connected to"/>
+    <configure name="LASER_BAUD" value="38400" description="set the baudrate of the uart"/>
+    <define name="LASER_NUM_SENSORS" value="0" description="Total amount of laser range sensors on the airframe"/>
+    <define name="LASER_ORIENTATIONS" value="0,0" type="float[]" description="The orientation per laser range sensor in the order: elevation,heading. The array is built up like (elv_1, head_1, elv_2, head_2,...elv_n, head_n) with n=LASER_RANGE_ARRAY_NUM_SENSORS"/>
+    	    
   </doc>
   <settings>
     <dl_settings>
@@ -28,21 +33,28 @@
   <event fun="delfly_vision_event()"/>
   <makefile>
     <!-- Configure default UART port and baudrate for Stereocam -->
-    <configure name="STEREO_UART" default="UART4" case="upper|lower"/>
-    <configure name="STEREO_BAUD" default="B921600"/>
-    <!-- Configure default UART port and baudrate for Laser Range Finder-->
+    <configure name="STEREO_UART" default="UART3" case="upper|lower"/>
+    <configure name="STEREO_BAUD" default="B38400"/>
 <!--    <configure name="STEREO_UART" default="UART4" case="upper|lower"/-->
-<!--    <configure name="STEREO_BAUD" default="B38400"/-->
+<!--    <configure name="STEREO_BAUD" default="B921600"/-->
+    <!-- Configure default UART port and baudrate for Laser Range Finder-->
+    <configure name="LASER_UART" default="UART4" case="upper|lower"/>
+    <configure name="LASER_BAUD" default="B38400"/>
     
     <!-- Enable UART and set baudrate -->
     <define name="USE_$(STEREO_UART_UPPER)"/>
     <define name="UART_LINK" value="$(STEREO_UART_LOWER)"/>
     <define name="$(STEREO_UART_UPPER)_BAUD" value="$(STEREO_BAUD)"/>
     
+    <define name="USE_$(LASER_UART_UPPER)"/>
+    <define name="LASER_UART" value="$(LASER_UART_LOWER)"/>
+    <define name="USE_$(LASER_UART_UPPER)_TX" value="FALSE"/>
+    <define name="$(LASER_UART_UPPER)_BAUD" value="$(LASER_BAUD)"/>
+        
     <!-- Sources and PPRZLink for transport -->
     <file name="delfly_vision.c"/>
     <file name="pprz_transport.c" dir="pprzlink/src"/>
-    <!-- configure name="PPRZLINK_LIB_VERSION" value="1.0"/-->
+    <configure name="PPRZLINK_LIB_VERSION" value="1.0"/>
    	<raw>
       ap.CFLAGS += -DGUIDANCE_V_MODE_MODULE_SETTING=GUIDANCE_V_MODE_MODULE
       ap.CFLAGS += -DGUIDANCE_H_MODE_MODULE_SETTING=GUIDANCE_H_MODE_MODULE

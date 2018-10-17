@@ -41,6 +41,8 @@
 #include "firmwares/rotorcraft/stabilization.h"
 //#include "guidance/guidance_v.c"
 
+#include "subsystems/datalink/downlink.h"
+
 #include "generated/airframe.h"
 #include "mcu_periph/sys_time.h"
 
@@ -94,6 +96,25 @@ struct stereocam_t stereocam = {
 };
 static uint8_t stereocam_msg_buf[256]  __attribute__((aligned));   ///< The message buffer for the stereocamera
 
+/* Main laser device strcuture */
+struct laser_range_array_t {
+  struct link_device *device;           ///< The device which is uses for communication
+  struct pprz_transport transport;      ///< The transport layer (PPRZ)
+  bool msg_available;                   ///< If we received a message
+};
+static struct laser_range_array_t laser_range_array = {
+  .device = (&((LASER_UART).device)),
+  .msg_available = false
+};
+static uint8_t lra_msg_buf[128]  __attribute__((aligned));   ///< The message buffer
+
+//PRINT_CONFIG_VAR(LASER_NUM_SENSORS)
+//static float laser_range_array_orientations[] = LASER_ORIENTATIONS;
+//static uint8_t agl_id = 255;
+//
+//#define VL53L0_MAX_VAL 8.191f
+
+
 static struct Int32Eulers stab_cmd;   ///< The commands that are send to the satbilization loop
 static struct Int32Eulers rc_sp;   ///< Euler setpoints given by the rc
 
@@ -107,7 +128,7 @@ struct FloatRMat RM_earth_to_gate;
 struct FloatRMat RM_earth_to_body;
 struct FloatEulers angle_to_gate = {.phi=0, .theta=0, .psi=0};
 
-uint16_t range;
+float range;
 
 bool filt_on=true;
 float filt_tc=0.25;  // gate filter time constant, in seconds
@@ -139,6 +160,7 @@ void delfly_vision_init(void)
 {
   // Initialize transport protocol
   pprz_transport_init(&stereocam.transport);
+  pprz_transport_init(&laser_range_array.transport);
 
   gate.quality = 0;
   gate.width = 0.f;
@@ -147,7 +169,7 @@ void delfly_vision_init(void)
   gate.theta = 0.f;
   gate.depth = 0.f;
 
-  range = 0;
+  range = 0.f;
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DELFLY_VISION, send_delfly_vision_msg);
@@ -291,18 +313,47 @@ static void delfly_vision_parse_msg(void)
 //      <field name="id" type="uint8">Sensor ID</field>
 //      <field name="range" type="uint16" unit="cm"/>
 //    </message>
-    case DL_IMCU_REMOTE_GROUND: {
-      range = DL_IMCU_REMOTE_GROUND_range(stereocam_msg_buf);
-      range=3;
+//    case DL_IMCU_REMOTE_GROUND: {
+////      range = DL_IMCU_REMOTE_GROUND_range(stereocam_msg_buf);
+////      range=3;
+//
+//      gate.depth=range; // For now for debugging, TODO add a new message entry?
+//      break;
+//    }
 
-      gate.depth=range; // For now for debugging, TODO add a new message entry?
-      break;
-    }
-
-    default: {gate.depth=5;}
+    default: {gate.depth=4;}
       break;
   }
 
+}
+
+/* Parse the InterMCU message */
+static void laser_range_array_parse_msg(void)
+{
+  uint8_t msgid = lra_msg_buf[1];
+  gate.depth=3;
+
+  // Get Time of Flight laser range sensor ring  messages
+  switch (msgid) {
+    case DL_IMCU_REMOTE_GROUND: {
+      uint8_t id = DL_IMCU_REMOTE_GROUND_id(lra_msg_buf);
+
+//      if (id < LASER_NUM_SENSORS) {
+        range = DL_IMCU_REMOTE_GROUND_range(lra_msg_buf) / 1000.f;
+        gate.depth=range; // For now for debugging, TODO add a new message entry?
+        // wait till all sensors received before sending update
+//        AbiSendMsgOBSTACLE_DETECTION(OBS_DETECTION_RANGE_ARRAY_ID, range, laser_range_array_orientations[id*2],
+//            laser_range_array_orientations[id*2 + 1]);
+//
+//        if (id == agl_id && range > 1e-5 && range < VL53L0_MAX_VAL) {
+//          AbiSendMsgAGL(AGL_VL53L0_LASER_ARRAY_ID, range);
+//        }
+//      }
+      break;
+    }
+    default: {gate.depth=5;}
+      break;
+  }
 }
 
 void delfly_vision_periodic(void)
@@ -320,6 +371,16 @@ void delfly_vision_event(void)
    if (stereocam.msg_available) {
      delfly_vision_parse_msg();
      stereocam.msg_available = false;
+   }
+
+   pprz_check_and_parse(laser_range_array.device, &laser_range_array.transport, lra_msg_buf,
+         &laser_range_array.msg_available);
+//   gate.depth=1;
+
+   if (laser_range_array.msg_available) {
+     gate.depth=2;
+     laser_range_array_parse_msg();
+     laser_range_array.msg_available = false;
    }
 }
 

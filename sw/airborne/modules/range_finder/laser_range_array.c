@@ -83,10 +83,17 @@ static void laser_range_array_parse_msg(void)
   // Get Time of Flight laser range sensor ring  messages
   switch (msg_id) {
     case DL_IMCU_REMOTE_GROUND: {
-      uint8_t id = DL_IMCU_REMOTE_GROUND_id(lra_msg_buf);
-
+//      uint8_t id = DL_IMCU_REMOTE_GROUND_id(lra_msg_buf);
+      uint8_t id = _PPRZ_VAL_uint8_t(lra_msg_buf, 3);
+      // id 1 or 3
       if (id < LASER_RANGE_ARRAY_NUM_SENSORS) {
-        float range = DL_IMCU_REMOTE_GROUND_range(lra_msg_buf) / 1000.f;
+        //float range = DL_IMCU_REMOTE_GROUND_range(lra_msg_buf) / 1000.f;
+//        if (id==1) {
+        float range = _PPRZ_VAL_uint16_t(lra_msg_buf, 4);
+        float id_f=(float) id;
+//        range=1.;
+        DOWNLINK_SEND_DRAGSPEED(DefaultChannel, DefaultDevice, &range,&id_f,0,0);
+//        }
         // wait till all sensors received before sending update
         AbiSendMsgOBSTACLE_DETECTION(OBS_DETECTION_RANGE_ARRAY_ID, range, laser_range_array_orientations[id*2],
             laser_range_array_orientations[id*2 + 1]);
