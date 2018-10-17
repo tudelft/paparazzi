@@ -49,21 +49,16 @@
       <define name="RPM_PULSE_PER_RND" value='5'/>
     </module>
     
-<!--    <module name="delfly_vision">-->
-<!--      <configure name="STEREO_UART" value="UART4"/>-->
-<!--      <configure name="STEREO_BAUD" value="B921600"/>-->
-<!--      <configure name="LASER_UART" value="UART3"/>-->
-<!--      <configure name="LASER_BAUD" value="B38400"/>-->
-<!--      <define name="LASER_NUM_SENSORS" value="1"/>-->
-<!--      <define name="LASER_ORIENTATIONS" value="1,1"/-->
-<!--    </module>-->
+    <module name="delfly_vision">
+      <configure name="STEREO_UART" value="UART4"/>
+      <configure name="STEREO_BAUD" value="B921600"/>
+    </module>
 
 	<module name="laser_range_array">
       <configure name="LASER_RANGE_ARRAY_BAUD" value="38400"/>
       <configure name="LASER_RANGE_ARRAY_PORT" value="UART3"/>
-<!--      <define name="LASER_RANGE_ARRAY_NUM_SENSORS" value="0"/>-->
-<!--    <define name="LASER_RANGE_ARRAY_ORIENTATIONS" value="0,0" type="float[]"/>-->
-  </module>          
+    </module>          
+
     <module name="actuators" type="pwm">
         <define name="SERVO_HZ" value="200"/>
       <define name="USE_SERVOS_1AND2"/>
@@ -140,9 +135,9 @@
   	<define name="THETA" value="0" unit="deg"/>
   	<define name="PSI" value="0" unit="deg"/>
   </section>
-  <section name="LASER_RANGE_ARRAY" prefix="LASER_RANGE_ARRAY_">
-    <define name="NUM_SENSORS" value="5"/>
-    <define name="ORIENTATIONS" value="0.,-1.57, 1.57,0., 0.,1.57, -1.57,0., 0.,0." type="float[]"/>
+  <section name="LASER_" prefix="LASER_RANGE_ARRAY_">
+    <define name="NUM_SENSORS" value="2"/>
+    <define name="ORIENTATIONS" value="0.,-1.57,0.,1.57" type="float[]"/>
     <define name="SEND_AGL" value="true"/>
   </section>
   
@@ -241,9 +236,16 @@
     <define name="PSI_AGAIN" value="0"/>
   </section>
   
-  <section name="INS" prefix="INS_">
+  <section name="INS" prefix="">
     <define name="USE_GPS_ALT" value="0"/>
     <define name="USE_GPS_ALT_SPEED" value="0"/>
+    <define name="USE_SONAR" value="1"/>
+    <define name="USE_VFF_EXTENDED" value="1"/>
+    <define name="INS_INT_SONAR_ID" value="ABI_AGL_ID"/>
+<!--    <define name="INS_SONAR_THROTTLE_THRESHOLD" value="MAX_PPRZ"/-->
+    <define name="INS_SONAR_MIN_RANGE" value="0.001"/>
+    <define name="INS_SONAR_MAX_RANGE" value="2.0"/>
+    <define name="INS_SONAR_UPDATE_ON_AGL" value="1"/>
   </section>
   
 <!--  <section name="GPS" prefix="GPS_"-->

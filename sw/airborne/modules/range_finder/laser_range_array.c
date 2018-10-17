@@ -39,7 +39,7 @@
 #include "pprzlink/messages.h"
 #include "subsystems/datalink/downlink.h"
 
-/* Main device strcuture */
+/* Main device structure */
 struct laser_range_array_t {
   struct link_device *device;           ///< The device which is uses for communication
   struct pprz_transport transport;      ///< The transport layer (PPRZ)
@@ -64,15 +64,16 @@ void laser_range_array_init(void)
   // Initialize transport protocol
   pprz_transport_init(&laser_range_array.transport);
 
-#if LASER_RANGE_ARRAY_SEND_AGL
-  // find sensor looking down
-  for (int k = 0; k < LASER_RANGE_ARRAY_NUM_SENSORS; k++) {
-    if (fabsf(laser_range_array_orientations[k * 2] + M_PI_2) < RadOfDeg(5)) {
-      agl_id = k;
-      break;
-    }
-  }
-#endif
+//#if LASER_RANGE_ARRAY_SEND_AGL
+//  // find sensor looking down
+//  for (int k = 0; k < LASER_RANGE_ARRAY_NUM_SENSORS; k++) {
+//    if (fabsf(laser_range_array_orientations[k * 2] + M_PI_2) < RadOfDeg(5)) {
+//      agl_id = k;
+//      break;
+//    }
+//  }
+//#endif
+  agl_id=0;
 }
 
 /* Parse the InterMCU message */
@@ -85,15 +86,15 @@ static void laser_range_array_parse_msg(void)
     case DL_IMCU_REMOTE_GROUND: {
 //      uint8_t id = DL_IMCU_REMOTE_GROUND_id(lra_msg_buf);
       uint8_t id = _PPRZ_VAL_uint8_t(lra_msg_buf, 3);
-      // id 1 or 3
-      if (id < LASER_RANGE_ARRAY_NUM_SENSORS) {
+      // id 0 or 2
+//      if (id < LASER_RANGE_ARRAY_NUM_SENSORS) {
         //float range = DL_IMCU_REMOTE_GROUND_range(lra_msg_buf) / 1000.f;
-//        if (id==1) {
-        float range = _PPRZ_VAL_uint16_t(lra_msg_buf, 4);
+        float range = _PPRZ_VAL_uint16_t(lra_msg_buf, 4) / 1000.f;
         float id_f=(float) id;
-//        range=1.;
-        DOWNLINK_SEND_DRAGSPEED(DefaultChannel, DefaultDevice, &range,&id_f,0,0);
-//        }
+
+        // for debugging:
+        // DOWNLINK_SEND_DRAGSPEED(DefaultChannel, DefaultDevice, &range,&id_f,0,0);
+
         // wait till all sensors received before sending update
         AbiSendMsgOBSTACLE_DETECTION(OBS_DETECTION_RANGE_ARRAY_ID, range, laser_range_array_orientations[id*2],
             laser_range_array_orientations[id*2 + 1]);
@@ -101,7 +102,7 @@ static void laser_range_array_parse_msg(void)
         if (id == agl_id && range > 1e-5 && range < VL53L0_MAX_VAL) {
           AbiSendMsgAGL(AGL_VL53L0_LASER_ARRAY_ID, range);
         }
-      }
+//      }
       break;
     }
     default:

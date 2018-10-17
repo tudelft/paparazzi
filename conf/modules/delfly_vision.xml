@@ -34,12 +34,7 @@
   <makefile>
     <!-- Configure default UART port and baudrate for Stereocam -->
     <configure name="STEREO_UART" default="UART3" case="upper|lower"/>
-    <configure name="STEREO_BAUD" default="B38400"/>
-<!--    <configure name="STEREO_UART" default="UART4" case="upper|lower"/-->
-<!--    <configure name="STEREO_BAUD" default="B921600"/-->
-    <!-- Configure default UART port and baudrate for Laser Range Finder-->
-    <configure name="LASER_UART" default="UART4" case="upper|lower"/>
-    <configure name="LASER_BAUD" default="B38400"/>
+    <configure name="STEREO_BAUD" default="B921600"/>
     
     <!-- Enable UART and set baudrate -->
     <define name="USE_$(STEREO_UART_UPPER)"/>
@@ -54,7 +49,7 @@
     <!-- Sources and PPRZLink for transport -->
     <file name="delfly_vision.c"/>
     <file name="pprz_transport.c" dir="pprzlink/src"/>
-    <configure name="PPRZLINK_LIB_VERSION" value="1.0"/>
+<!--    <configure name="PPRZLINK_LIB_VERSION" value="1.0"/-->
    	<raw>
       ap.CFLAGS += -DGUIDANCE_V_MODE_MODULE_SETTING=GUIDANCE_V_MODE_MODULE
       ap.CFLAGS += -DGUIDANCE_H_MODE_MODULE_SETTING=GUIDANCE_H_MODE_MODULE
