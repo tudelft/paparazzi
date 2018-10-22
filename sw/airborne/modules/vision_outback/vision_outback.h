@@ -70,12 +70,13 @@ struct PPRZ2VisionPackage {
     float gpsx;
     float gpsy;
     float gpsz;
+    float baro;
+    float real_gpsz;
+    float accz;
+    float thrust;
     float geo_init_gpsx;
     float geo_init_gpsy;
     float geo_init_gpsz;
-    float reported_joe_gpsx;
-    float reported_joe_gpsy;
-    float reported_joe_gpsz;
     uint8_t ac_id;
     unsigned char enables;
 }__attribute__((__packed__));

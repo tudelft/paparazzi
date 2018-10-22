@@ -44,13 +44,15 @@
 #include "pprzlink/pprzlink_transport.h"
 #include "pprzlink/pprzlink_device.h"
 
+#include "air_data/air_data.h"
+
 #ifdef VISION_PWR_ON
 #define VISION_POWER_ON_AT_BOOT false
 #else
 #define VISION_POWER_ON_AT_BOOT true
 #endif
 
-#define WANTED_VISION_VERSION 1.7f
+#define WANTED_VISION_VERSION 1.9f
 
 /* Main magneto structure */
 static struct vision_outback_t vision_outback = {
@@ -299,6 +301,10 @@ void vision_outback_periodic() {
   p2k_package.gpsx = pos->x;
   p2k_package.gpsy = pos->y;
   p2k_package.gpsz = pos->z;
+  p2k_package.baro =air_data.amsl_baro;
+  p2k_package.real_gpsz = gps.hmsl;
+  p2k_package.accz = imu.accel.z;
+  p2k_package.thrust = stabilization_cmd[COMMAND_THRUST];
 
   if (state.ned_initialized_f) {
       p2k_package.geo_init_gpsx = state.ned_origin_f.lla.lat;
@@ -309,10 +315,6 @@ void vision_outback_periodic() {
       p2k_package.geo_init_gpsy = 0;
       p2k_package.geo_init_gpsz = 0;
     }
-
-  p2k_package.reported_joe_gpsx = waypoint_get_x(WP_JOE_reported);
-  p2k_package.reported_joe_gpsy = waypoint_get_y(WP_JOE_reported);
-  p2k_package.reported_joe_gpsz = waypoint_get_alt(WP_JOE_reported);
 
   p2k_package.ac_id = AC_ID;
 
