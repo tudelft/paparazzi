@@ -91,6 +91,7 @@
 #define UART6_GPIO_PORT_RX GPIOC
 #define UART6_GPIO_RX GPIO7
 
+
 /* Serial Debugging Connector, not used with PPRZ as of now, use JTAG, can be put to other good use */
 #define UART7_GPIO_AF GPIO_AF8
 #define UART7_GPIO_PORT_RX GPIOE
@@ -120,7 +121,6 @@
 #define PERIPHERAL3V3_ENABLE_OFF gpio_clear
 
 /* Turn SBUS invert */
-//TODO: Test
 #define RC_POLARITY_GPIO_PORT GPIOC
 #define RC_POLARITY_GPIO_PIN GPIO13
 

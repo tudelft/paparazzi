@@ -48,9 +48,7 @@
 
     <module name="motor_mixing" />
 
-    <module name="radio_control" type="spektrum">
-      <define name="RADIO_CONTROL_SPEKTRUM_NO_SIGN" value="1"/>
-      <define name="SPEKTRUM_HAS_SOFT_BIND_PIN" value="1"/>
+    <module name="radio_control" type="sbus">
       <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="0" />
       <define name="RADIO_KILL_SWITCH" value="5" />
     </module>
@@ -60,8 +58,7 @@
     <module name="px4_flash"/>
     <module name="geo_mag" />
     <module name="air_data" />
-    <module name="send_imu_mag_current" />
-    <module name="spektrum_soft_bind"/>
+    <module name="send_imu_mag_current" />    
   </modules>
 
   <section name="MISC">
