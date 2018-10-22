@@ -270,7 +270,7 @@ When a read-operation of an RTD resistance data register occurs, DRDY returns hi
 //??FT = Five-volt tolerant. In order to sustain a voltage higher than VDD+0.3 the internal pull-up/pull-down resistors must be disabled.
 //FIXME: Determine best stock values
 #if USE_ADC_2
-#define DefaultVoltageOfAdc(adc) (0.004f * (float)adc) // FIXME: Value scale for a common PowerBrick
+#define DefaultVoltageOfAdc(adc) (0.0083f * (float)adc) // FIXME: Value scale for a common PowerBrick
 #else
 #define DefaultVoltageOfAdc(adc) (0.004f * (float)adc) // FIXME: Value scale internal vdd to 5V
 #endif
