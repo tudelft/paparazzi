@@ -1,8 +1,9 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<!-- <flight_plan alt="343" ground_alt="335" lat0="-27.2172864" lon0="151.2377145" max_dist_from_home="120" name="Delft Basic" security_height="2"> --> <!-- test field outback -->
-<flight_plan alt="8" ground_alt="0" lat0="52.1682020" lon0="4.4130950" max_dist_from_home="120" name="Delft Basic" security_height="2">
-<!-- <flight_plan alt="8" ground_alt="0" lat0="52.170358" lon0="4.427702" max_dist_from_home="120" name="Delft Basic" security_height="2"-->  <!--kite power -->
+<!-- flight_plan alt="343" ground_alt="335" lat0="-27.2172864" lon0="151.2377145" max_dist_from_home="120" name="Outback testfield" security_height="2"--> <!-- test field outback -->
+<!-- <flight_plan alt="8" ground_alt="0" lat0="52.1682020" lon0="4.4130950" max_dist_from_home="120" name="Valkenburg Taxi" security_height="2"> --> <!-- taxi -->
+<!-- <flight_plan alt="8" ground_alt="0" lat0="52.170358" lon0="4.427702" max_dist_from_home="120" name="Valkenburg Kite" security_height="2"-->  <!--kite power -->
+<flight_plan alt="8" ground_alt="3" lat0="52.792211" lon0="4.511681" max_dist_from_home="25000" name="North Sea" security_height="2">  <!--North sea -->
   <header>
     #include "autopilot.h"
     #include "subsystems/datalink/datalink.h"
@@ -13,13 +14,14 @@
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint name="CLIMB" x="17.7" y="1.8"/>
-    <waypoint height="30.0" name="STDBY" x="1.8" y="-4.9"/>
+    <waypoint height="15.0" name="STDBY" x="1.8" y="-4.9"/>
     <waypoint height="40.0" name="p1" x="-70.0" y="-0.0"/>
     <waypoint height="40.0" name="p2" x="70.0" y="-0.0"/>
     <waypoint height="40.0" name="p3" x="0" y="-70.0"/>
     <waypoint height="40.0" name="p4" x="0" y="70.0"/>
     <waypoint name="TD" x="5.6" y="-10.9"/>
-     <waypoint name="JOE" x="5.6" y="-10.9"/>
+    <waypoint name="JOE" x="5.6" y="-10.9"/>
+    <waypoint name="SHIP" x="5.6" y="-15.9"/>
     <waypoint height="40.0" name="JOE_reported" x="0" y="0"/>
     <waypoint height="30.0" name="JOE_found" x="0" y="110"/>
     <waypoint height="30.0" name="TD_mrk" x="0" y="25"/>
@@ -68,6 +70,21 @@
       <call fun="enableVisionFindJoe(false)" loop="false"/>
       <call fun="enableVisionDescent(false)" loop="false"/>
       <stay wp="STDBY"/>
+    </block>
+    <block name="Standby_follow0" >
+      <call fun="enableVisionFindJoe(false)" loop="false"/>
+      <call fun="enableVisionDescent(false)" loop="false"/>
+      <stay pre_call="waypoint_set_xy_i(WP_STDBY,POS_BFP_OF_REAL(WaypointX(WP_SHIP)), POS_BFP_OF_REAL(WaypointY(WP_SHIP)))" wp="STDBY"/>
+    </block>
+    <block name="Standby_follow1" >
+      <call fun="enableVisionFindJoe(false)" loop="false"/>
+      <call fun="enableVisionDescent(false)" loop="false"/>
+      <stay pre_call="waypoint_set_xy_i(WP_STDBY,POS_BFP_OF_REAL(WaypointX(WP_SHIP)+2), POS_BFP_OF_REAL(WaypointY(WP_SHIP)+2))" wp="STDBY"/>
+    </block>
+    <block name="Standby_follow2" >
+      <call fun="enableVisionFindJoe(false)" loop="false"/>
+      <call fun="enableVisionDescent(false)" loop="false"/>
+      <stay pre_call="waypoint_set_xy_i(WP_STDBY,POS_BFP_OF_REAL(WaypointX(WP_SHIP)-2), POS_BFP_OF_REAL(WaypointY(WP_SHIP)-2))" wp="STDBY"/>
     </block>
     <block name="stay_joe_found_static">
       <call fun="enableVisionFindJoe(false)" loop="false"/>
