@@ -24,7 +24,7 @@
       <module name="radio_control" type="ppm">
         <configure name="RADIO_CONTROL_PPM_PIN" value="SERVO6"/>
 <!--        <define name="RADIO_KILL_SWITCH" value="RADIO_GEAR"/-->
-            </module>
+      </module>
       
       <!-- for flashing with Black Magic Probe v2.0 or newer -->
       <configure name="FLASH_MODE" value="SWD_NOPWR"/>
@@ -37,10 +37,13 @@
       
       <define name="USE_SONAR" value="TRUE"/>
       
-      <define name="USE_BARO_BOARD" value="1"/>
+      <define name="USE_BARO_BOARD" value="TRUE"/>
       <define name="BARO_PERIODIC_FREQUENCY" value="100"/>
        
       <configure name="USE_MAGNETOMETER" value="0"/>
+
+      <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
+      <define name="VFF_EXTENDED_ACCEL_NOISE" value="10"/>      
     </target>
     
     <!-- Necessary to build succesfully, but not used -->
@@ -52,13 +55,13 @@
     </module>
     
     <module name="delfly_vision">
-      <configure name="STEREO_UART" value="UART4"/>
+      <configure name="STEREO_UART" value="UART3"/>
       <configure name="STEREO_BAUD" value="B921600"/>
     </module>
 
 	<module name="laser_range_array">
       <configure name="LASER_RANGE_ARRAY_BAUD" value="38400"/>
-      <configure name="LASER_RANGE_ARRAY_PORT" value="UART3"/>
+      <configure name="LASER_RANGE_ARRAY_PORT" value="UART4"/>
     </module>          
 
     <module name="actuators" type="pwm">
@@ -177,8 +180,8 @@
     <define name="MODE_STARTUP" value="AP_MODE_RC_DIRECT"/>
        <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO2" value="AP_MODE_MODULE"/>
     <!--define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_Z_HOLD"/-->
+    <define name="MODE_AUTO2" value="AP_MODE_MODULE"/>
     <!--define name="MODE_AUTO2" value="AP_MODE_FLIP"/-->
         
     <define name="USE_THROTTLE_FOR_MOTOR_ARMING" value="TRUE"/>
@@ -255,13 +258,13 @@
 <!--  </section-->
   
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
-    <define name="HOVER_KP" value="276"/>
-    <define name="HOVER_KD" value="300"/>
-    <define name="HOVER_KI" value="100"/>
+    <define name="HOVER_KP" value="600"/>
+    <define name="HOVER_KD" value="0"/>
+    <define name="HOVER_KI" value="0"/>
     <define name="NOMINAL_HOVER_THROTTLE" value="0.7"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>
-    <define name="GUIDANCE_V_ADAPT_MIN_HOVER_THROTTLE" value="0.5"/>
-    <define name="GUIDANCE_V_ADAPT_MAX_HOVER_THROTTLE" value="0.9"/>    
+    <define name="ADAPT_MIN_HOVER_THROTTLE" value="0.5"/>
+    <define name="ADAPT_MAX_HOVER_THROTTLE" value="0.9"/>    
   </section>
   
   

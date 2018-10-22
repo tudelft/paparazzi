@@ -37,6 +37,9 @@
 
 #include "math/pprz_algebra_int.h"
 
+#include "subsystems/abi.h"
+#include "filters/low_pass_filter.h"
+
 
 /* error if some gains are negative */
 #if (GUIDANCE_V_HOVER_KP < 0) ||                   \
@@ -137,6 +140,11 @@ int32_t guidance_v_z_sum_err;
 
 int32_t guidance_v_thrust_coeff;
 
+int32_t altitude;
+abi_event laser_event2;
+struct SecondOrderLowPass_int filter_throttle;
+
+
 
 static int32_t get_vertical_thrust_coeff(void);
 
@@ -171,6 +179,11 @@ static void send_tune_vert(struct transport_tx *trans, struct link_device *dev)
 }
 #endif
 
+static void laser_data_cb(uint8_t __attribute__((unused)) sender_id, float distance)
+{
+  altitude = POS_BFP_OF_REAL(distance);
+}
+
 void guidance_v_init(void)
 {
 
@@ -199,6 +212,10 @@ void guidance_v_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VERT_LOOP, send_vert_loop);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_TUNE_VERT, send_tune_vert);
 #endif
+
+  AbiBindMsgAGL(ABI_BROADCAST, &laser_event2, laser_data_cb);
+
+  init_second_order_low_pass_int(&filter_throttle, 10, 0.7071, 1.0 / PERIODIC_FREQUENCY, 0.0);
 }
 
 
@@ -403,6 +420,7 @@ static int32_t get_vertical_thrust_coeff(void)
 }
 
 
+
 #define FF_CMD_FRAC 18
 
 void run_hover_loop(bool in_flight)
@@ -417,6 +435,7 @@ void run_hover_loop(bool in_flight)
   desired_zd_updated = true;
   /* compute the error to our reference */
   int32_t err_z  = guidance_v_z_ref - stateGetPositionNed_i()->z;
+//  int32_t err_z  = POS_BFP_OF_REAL(-1) + altitude;
   Bound(err_z, GUIDANCE_V_MIN_ERR_Z, GUIDANCE_V_MAX_ERR_Z);
   int32_t err_zd = guidance_v_zd_ref - stateGetSpeedNed_i()->z;
   Bound(err_zd, GUIDANCE_V_MIN_ERR_ZD, GUIDANCE_V_MAX_ERR_ZD);
@@ -449,8 +468,8 @@ void run_hover_loop(bool in_flight)
   guidance_v_ff_cmd = guidance_v_nominal_throttle * MAX_PPRZ;
 #endif
 
-  /* bound the nominal command to 0.9*MAX_PPRZ */
-  Bound(guidance_v_ff_cmd, 0, 8640);
+  /* bound the nominal command to MAX_PPRZ */
+  Bound(guidance_v_ff_cmd, 0, MAX_PPRZ);
 
 
   /* our error feed back command                   */
@@ -461,8 +480,13 @@ void run_hover_loop(bool in_flight)
 
   guidance_v_delta_t = guidance_v_ff_cmd + guidance_v_fb_cmd;
 
+  /* filter the throttle command */
+  guidance_v_delta_t = update_second_order_low_pass_int(&filter_throttle, guidance_v_delta_t);
+
   /* bound the result */
   Bound(guidance_v_delta_t, 0, MAX_PPRZ);
+
+
 
 }
 

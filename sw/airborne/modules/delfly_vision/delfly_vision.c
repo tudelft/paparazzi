@@ -121,6 +121,10 @@ struct pid_t phi_gains = {DELFLY_VISION_PHI_GAINS_P, DELFLY_VISION_PHI_GAINS_I, 
 struct pid_t theta_gains = {DELFLY_VISION_THETA_GAINS_P, DELFLY_VISION_THETA_GAINS_I, 0.f};
 struct pid_t thrust_gains = {DELFLY_VISION_THRUST_GAINS_P, DELFLY_VISION_THRUST_GAINS_I, 0.f};
 
+float obstacle_psi;
+float line_psi;
+float safe_angle=0.1;
+
 // todo implement
 float max_thurst = 1.f;
 
@@ -141,7 +145,7 @@ static void send_delfly_vision_msg(struct transport_tx *trans, struct link_devic
 //void laser_data_cb(uint8_t sender_id, float distance, float elevation, float heading)
 static void laser_data_cb(uint8_t __attribute__((unused)) sender_id, float distance)
 {
-  gate.depth = distance;
+  gate.quality = distance*100;
 }
 
 
@@ -251,8 +255,23 @@ static void att_sp_align_3d(void)
   sp.theta = -theta_gains.p*dist_error - theta_gains.i*dist_error_sum;
   thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
 
-  // simply set angle for yaw
-  sp.psi = gate_psi + stateGetNedToBodyEulers_f()->psi;
+
+  obstacle_psi=-gate.depth; // TODO make a new message for obstacles
+  line_psi=gate_psi;
+    // simply set angle for yaw
+  if (obstacle_psi==-1 || abs(line_psi - obstacle_psi) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
+    {
+      sp.psi = line_psi + stateGetNedToBodyEulers_f()->psi;
+    }
+  else // we see an obstacle and it is on our flight path
+    {
+      if (line_psi > obstacle_psi) {
+        sp.psi = obstacle_psi + safe_angle + stateGetNedToBodyEulers_f()->psi;
+      }
+      else {
+        sp.psi = obstacle_psi - safe_angle + stateGetNedToBodyEulers_f()->psi;
+      }
+    }
 //  sp.psi = stateGetNedToBodyEulers_f()->psi;
 
   // bound result to max values
@@ -284,12 +303,12 @@ static void delfly_vision_parse_msg(void)
   switch (msg_id) {
 
     case DL_STEREOCAM_GATE: {
-      gate.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
+//      gate.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
       gate.width   = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
       gate.height  = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
       gate.phi     = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
       gate.theta   = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
-//      gate.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
+      gate.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
 
       evaluate_state_machine();
 
