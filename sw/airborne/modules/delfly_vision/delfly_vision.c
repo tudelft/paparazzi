@@ -39,7 +39,7 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "subsystems/radio_control.h"
 #include "firmwares/rotorcraft/stabilization.h"
-//#include "guidance/guidance_v.c"
+#include "math/pprz_isa.h"
 
 #include "subsystems/datalink/downlink.h"
 
@@ -90,6 +90,34 @@
 #define DELFLY_VISION_THRUST_GAINS_I 0
 #endif
 
+#ifndef DELFLY_VISION_THRUST_GAINS_D
+#define DELFLY_VISION_THRUST_GAINS_D 0
+#endif
+
+// Guidance defines
+
+#ifndef GUIDANCE_V_MIN_ERR_Z
+#define GUIDANCE_V_MIN_ERR_Z POS_BFP_OF_REAL(-10.)
+#endif
+
+#ifndef GUIDANCE_V_MAX_ERR_Z
+#define GUIDANCE_V_MAX_ERR_Z POS_BFP_OF_REAL(10.)
+#endif
+
+#ifndef GUIDANCE_V_MIN_ERR_ZD
+#define GUIDANCE_V_MIN_ERR_ZD SPEED_BFP_OF_REAL(-10.)
+#endif
+
+#ifndef GUIDANCE_V_MAX_ERR_ZD
+#define GUIDANCE_V_MAX_ERR_ZD SPEED_BFP_OF_REAL(10.)
+#endif
+
+#ifndef GUIDANCE_V_MAX_SUM_ERR
+#define GUIDANCE_V_MAX_SUM_ERR 2000000
+#endif
+
+#define FF_CMD_FRAC 18
+
 struct stereocam_t stereocam = {
   .device = (&((UART_LINK).device)),
   .msg_available = false
@@ -110,8 +138,21 @@ struct FloatRMat RM_earth_to_gate;
 struct FloatRMat RM_earth_to_body;
 struct FloatEulers angle_to_gate = {.phi=0, .theta=0, .psi=0};
 
-float range;
+float laser_altitude;
 abi_event laser_event;
+abi_event baro_event_vision;
+float baro_pressure;
+float baro_pressure_ref;
+float baro_altitude;
+float baro_altitude_ref;
+bool baro_initialized;
+float fused_altitude;
+float fused_altitude_ref;
+float fused_altitude_prev;
+bool previous_laser_based;
+float last_altitude_time;
+float climb_rate;
+float altitude_setp;
 
 bool filt_on=true;
 float filt_tc=0.25;  // gate filter time constant, in seconds
@@ -119,7 +160,7 @@ float gate_target_size=0.35; // target gate size for distance keeping, in rad
 
 struct pid_t phi_gains = {DELFLY_VISION_PHI_GAINS_P, DELFLY_VISION_PHI_GAINS_I, 0.f};
 struct pid_t theta_gains = {DELFLY_VISION_THETA_GAINS_P, DELFLY_VISION_THETA_GAINS_I, 0.f};
-struct pid_t thrust_gains = {DELFLY_VISION_THRUST_GAINS_P, DELFLY_VISION_THRUST_GAINS_I, 0.f};
+struct pid_t thrust_gains = {DELFLY_VISION_THRUST_GAINS_P, DELFLY_VISION_THRUST_GAINS_I, DELFLY_VISION_THRUST_GAINS_D};
 
 float obstacle_psi;
 float line_psi;
@@ -146,15 +187,75 @@ static void send_delfly_vision_msg(struct transport_tx *trans, struct link_devic
 static void laser_data_cb(uint8_t __attribute__((unused)) sender_id, float distance)
 {
   gate.quality = distance*100;
+  laser_altitude = distance;
 }
 
+static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
+{
+  if (!baro_initialized && pressure > 1e-7)
+  {
+    // wait for a first positive value
+    baro_pressure_ref = pressure;
+    baro_initialized = true;
+  }
 
+  if (baro_initialized)
+  {
+    baro_altitude = pprz_isa_height_of_pressure(pressure, baro_pressure_ref);
+  }
+}
+
+static void estimate_altitude(void)
+{
+  static float p_laser = 0.8;
+  static float p_baro = 0.95;
+  if (laser_altitude > 4.0) // laser measurement out of range
+  {
+    if (previous_laser_based)
+    {
+      baro_altitude_ref = baro_altitude;
+      fused_altitude_ref = fused_altitude;
+      previous_laser_based = 0;
+    }
+
+    // complementary filter - baro based measurements
+    fused_altitude = fused_altitude*p_baro + (fused_altitude_ref + baro_altitude - baro_altitude_ref)*(1.0-p_baro);
+  }
+  else // laser measurement correct, trust laser
+  {
+    // complementary filter - laser based measurements
+    fused_altitude = fused_altitude*p_laser + laser_altitude*(1.0-p_laser);
+    previous_laser_based = 1;
+  }
+
+  float deltat = get_sys_time_float() - last_altitude_time;
+  if (deltat > 0)
+    {
+    climb_rate = (fused_altitude - fused_altitude_prev)/deltat;
+    }
+  else
+  {
+    climb_rate = 0;
+  }
+
+  last_altitude_time = get_sys_time_float();
+  fused_altitude_prev = fused_altitude;
+
+  // reusing the GATE messages, TODO create new messages!!!
+  gate.height = baro_altitude;
+  gate.width = fused_altitude;
+  gate.phi = climb_rate;
+
+}
 
 void delfly_vision_init(void)
 {
   // Subscribe to ABI messages
 //  AbiBindMsgOBSTACLE_DETECTION(ABI_BROADCAST, &laser_event, laser_data_cb);
   AbiBindMsgAGL(ABI_BROADCAST, &laser_event, laser_data_cb);
+  // Bind to BARO_ABS message
+  AbiBindMsgBARO_ABS(ABI_BARO_DIFF_ID, &baro_event_vision, baro_cb);
+  baro_initialized = false;
 
   // Initialize transport protocol
   pprz_transport_init(&stereocam.transport);
@@ -166,7 +267,12 @@ void delfly_vision_init(void)
   gate.theta = 0.f;
   gate.depth = 0.f;
 
-  range = 0.f;
+  laser_altitude = 0.f;
+  fused_altitude = 0.f;
+  fused_altitude_prev = 0.f;
+  previous_laser_based = 1;
+  last_altitude_time = 0.f;
+  climb_rate = 0.f;
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DELFLY_VISION, send_delfly_vision_msg);
@@ -253,7 +359,7 @@ static void att_sp_align_3d(void)
 //  sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
   sp.phi = phi_gains.p*alignment_error + phi_gains.i*alignment_error_sum;
   sp.theta = -theta_gains.p*dist_error - theta_gains.i*dist_error_sum;
-  thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
+//  thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
 
 
   obstacle_psi=-gate.depth; // TODO make a new message for obstacles
@@ -304,9 +410,9 @@ static void delfly_vision_parse_msg(void)
 
     case DL_STEREOCAM_GATE: {
 //      gate.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
-      gate.width   = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
-      gate.height  = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
-      gate.phi     = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
+//      gate.width   = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
+//      gate.height  = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
+//      gate.phi     = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
       gate.theta   = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
       gate.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
 
@@ -327,6 +433,7 @@ void delfly_vision_periodic(void)
 {
   // for debugging
   //  evaluate_state_machine();
+  estimate_altitude();
 }
 
 void delfly_vision_event(void)
@@ -346,7 +453,10 @@ void delfly_vision_event(void)
  * Initialization of horizontal & vertical guidance modules
  */
 void guidance_h_module_init(void) {}
-void guidance_v_module_init(void) {}
+void guidance_v_module_init(void)
+{
+  altitude_setp = 0.f;
+}
 
 /**
  * Horizontal guidance mode enter resets the errors
@@ -354,11 +464,6 @@ void guidance_v_module_init(void) {}
  */
 void guidance_h_module_enter(void)
 {
-//  /* Set roll/pitch to 0 degrees and psi to current heading */
-//  stab_cmd.phi = 0;
-//  stab_cmd.theta = 0;
-//  stab_cmd.psi = stateGetNedToBodyEulers_i()->psi;
-//
   // reset integrator of rc_yaw_setpoint
   stabilization_attitude_read_rc_setpoint_eulers(&rc_sp, false, false, false);
 
@@ -388,7 +493,7 @@ void guidance_h_module_run(bool in_flight)
 
   static uint8_t prev = 0;
 
-  if (radio_control.values[RADIO_FLAP] > 5000 && (get_sys_time_float() - last_time) < 0.2) // Vision switch ON
+  if (radio_control.values[RADIO_FLAP] > 5000 && (get_sys_time_float() - last_time) < 0.2) // Vision switch ON, and we had a recent update from the camera
   {
 
     stab_cmd.phi = rc_sp.phi + att_sp.phi;
@@ -423,7 +528,69 @@ void guidance_h_module_run(bool in_flight)
   stabilization_attitude_run(in_flight);
 }
 
-void guidance_v_module_run(UNUSED bool in_flight)
+void guidance_v_module_run(bool in_flight)
 {
-  stabilization_cmd[COMMAND_THRUST]=radio_control.values[RADIO_THROTTLE];
+
+  static bool altitude_hold_on = 0;
+
+  if (radio_control.values[RADIO_FLAP] > 5000) // Vision switch ON
+    {
+      if (altitude_hold_on == 0) // entering altitude hold
+      {
+        altitude_hold_on = 1;
+        altitude_setp = fused_altitude;
+        guidance_v_z_sum_err = 0; // reset integration error
+      }
+
+      // in the following code, z is considered positive upwards
+      int32_t err_z  = POS_BFP_OF_REAL(altitude_setp) - POS_BFP_OF_REAL(fused_altitude);
+      Bound(err_z, GUIDANCE_V_MIN_ERR_Z, GUIDANCE_V_MAX_ERR_Z);
+      int32_t err_zd = 0 - POS_BFP_OF_REAL(climb_rate); // desired rate is 0
+      Bound(err_zd, GUIDANCE_V_MIN_ERR_ZD, GUIDANCE_V_MAX_ERR_ZD);
+
+      if (in_flight) {
+        guidance_v_z_sum_err += err_z;
+        Bound(guidance_v_z_sum_err, -GUIDANCE_V_MAX_SUM_ERR, GUIDANCE_V_MAX_SUM_ERR);
+      } else {
+        guidance_v_z_sum_err = 0;
+      }
+
+      /* our nominal command : (g + zdd)*m   */
+      int32_t inv_m;
+//      if (guidance_v_adapt_throttle_enabled) {
+//        inv_m =  gv_adapt_X >> (GV_ADAPT_X_FRAC - FF_CMD_FRAC);
+//      } else {
+        /* use the fixed nominal throttle */
+        inv_m = BFP_OF_REAL(9.81 / (guidance_v_nominal_throttle * MAX_PPRZ), FF_CMD_FRAC);
+//      }
+
+      const int32_t g_m_zdd = (int32_t)BFP_OF_REAL(9.81, FF_CMD_FRAC) -
+                              (guidance_v_zdd_ref << (FF_CMD_FRAC - INT32_ACCEL_FRAC));
+
+      guidance_v_ff_cmd = g_m_zdd / inv_m;
+      /* feed forward command */
+      guidance_v_ff_cmd = (guidance_v_ff_cmd << INT32_TRIG_FRAC) / guidance_v_thrust_coeff;
+
+      /* bound the nominal command to MAX_PPRZ */
+      Bound(guidance_v_ff_cmd, 0, MAX_PPRZ);
+
+      /* our error feed back command                   */
+      guidance_v_fb_cmd = ((guidance_v_kp * err_z)  >> 7) +
+                          ((guidance_v_kd * err_zd) >> 16) +
+                          ((guidance_v_ki * guidance_v_z_sum_err) >> 16);
+
+      guidance_v_delta_t = guidance_v_ff_cmd + guidance_v_fb_cmd;
+
+      /* bound the result */
+      Bound(guidance_v_delta_t, 0, MAX_PPRZ);
+
+    stabilization_cmd[COMMAND_THRUST] = guidance_v_delta_t;
+    thrust_sp = guidance_v_delta_t;
+    }
+  else // Vision switch OFF
+    {
+      stabilization_cmd[COMMAND_THRUST] = radio_control.values[RADIO_THROTTLE];
+      altitude_hold_on = 0;
+
+    }
 }
