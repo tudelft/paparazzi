@@ -53,6 +53,8 @@
 #warning "STEREO_BODY_TO_STEREO_XXX not defined. Using default Euler rotation angles (0,0,0)"
 #endif
 
+#define VISION_ON FALSE
+
 #ifndef STEREO_BODY_TO_STEREO_PHI
 #define STEREO_BODY_TO_STEREO_PHI 0
 #endif
@@ -151,6 +153,9 @@ float fused_altitude_ref;
 float fused_altitude_prev;
 bool previous_laser_based;
 float last_altitude_time;
+float last_laser_time;
+float laser_altitude_prev;
+float laser_rate;
 float climb_rate;
 float altitude_setp;
 
@@ -186,8 +191,10 @@ static void send_delfly_vision_msg(struct transport_tx *trans, struct link_devic
 //void laser_data_cb(uint8_t sender_id, float distance, float elevation, float heading)
 static void laser_data_cb(uint8_t __attribute__((unused)) sender_id, float distance)
 {
-  gate.quality = distance*100;
   laser_altitude = distance;
+  gate.quality = distance*100;
+
+  last_laser_time = get_sys_time_float();
 }
 
 static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
@@ -209,7 +216,7 @@ static void estimate_altitude(void)
 {
   static float p_laser = 0.8;
   static float p_baro = 0.95;
-  if (laser_altitude > 4.0) // laser measurement out of range
+  if (laser_altitude > 4.0 || (get_sys_time_float() - last_laser_time) > 0.2) // laser measurement out of range, or no recent laser readings
   {
     if (previous_laser_based)
     {
@@ -232,19 +239,23 @@ static void estimate_altitude(void)
   if (deltat > 0)
     {
     climb_rate = (fused_altitude - fused_altitude_prev)/deltat;
+    laser_rate = (laser_altitude - laser_altitude_prev)/deltat;
     }
   else
   {
     climb_rate = 0;
+    laser_rate = 0;
   }
 
   last_altitude_time = get_sys_time_float();
   fused_altitude_prev = fused_altitude;
+  laser_altitude_prev = laser_altitude;
 
   // reusing the GATE messages, TODO create new messages!!!
   gate.height = baro_altitude;
   gate.width = fused_altitude;
   gate.phi = climb_rate;
+  gate.theta = laser_rate;
 
 }
 
@@ -272,7 +283,10 @@ void delfly_vision_init(void)
   fused_altitude_prev = 0.f;
   previous_laser_based = 1;
   last_altitude_time = 0.f;
+  last_laser_time = 0.f;
+  laser_altitude_prev = 0.f;
   climb_rate = 0.f;
+  laser_rate = 0.f;
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DELFLY_VISION, send_delfly_vision_msg);
@@ -413,7 +427,7 @@ static void delfly_vision_parse_msg(void)
 //      gate.width   = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
 //      gate.height  = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
 //      gate.phi     = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
-      gate.theta   = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
+//      gate.theta   = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
       gate.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
 
       evaluate_state_machine();
@@ -493,7 +507,7 @@ void guidance_h_module_run(bool in_flight)
 
   static uint8_t prev = 0;
 
-  if (radio_control.values[RADIO_FLAP] > 5000 && (get_sys_time_float() - last_time) < 0.2) // Vision switch ON, and we had a recent update from the camera
+  if (radio_control.values[RADIO_FLAP] > 5000 && (get_sys_time_float() - last_time) < 0.2 && VISION_ON) // Vision switch ON, and we had a recent update from the camera
   {
 
     stab_cmd.phi = rc_sp.phi + att_sp.phi;
@@ -506,7 +520,7 @@ void guidance_h_module_run(bool in_flight)
   {
     if (prev == 0)
     {
-      stabilization_attitude_read_rc_setpoint_eulers(&rc_sp, false, false, false);
+      stabilization_attitude_read_rc_setpoint_eulers(&rc_sp, false, false, false); // reset rc yaw setpoint
       prev = 1;
     }
 
@@ -575,7 +589,7 @@ void guidance_v_module_run(bool in_flight)
       Bound(guidance_v_ff_cmd, 0, MAX_PPRZ);
 
       /* our error feed back command                   */
-      guidance_v_fb_cmd = ((guidance_v_kp * err_z)  >> 7) +
+      guidance_v_fb_cmd = ((guidance_v_kp * 8 * err_z)  >> 7) + // the P gain is 8 times stronger than in the standard guidance_v
                           ((guidance_v_kd * err_zd) >> 16) +
                           ((guidance_v_ki * guidance_v_z_sum_err) >> 16);
 
