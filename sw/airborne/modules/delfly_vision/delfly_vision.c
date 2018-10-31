@@ -184,7 +184,9 @@ static void send_delfly_vision_msg(struct transport_tx *trans, struct link_devic
                                   &gate.phi, &gate.theta, &gate.depth,
                                   &angle_to_gate.theta, &angle_to_gate.psi,
                                   &att_sp.phi, &att_sp.theta, &att_sp.psi,
-                                  &thrust_sp);
+                                  &thrust_sp, &laser_altitude, &baro_altitude,
+                                  &fused_altitude, &climb_rate, &laser_rate,
+                                  &line_psi, &obstacle_psi);
 }
 #endif
 
@@ -192,7 +194,7 @@ static void send_delfly_vision_msg(struct transport_tx *trans, struct link_devic
 static void laser_data_cb(uint8_t __attribute__((unused)) sender_id, float distance)
 {
   laser_altitude = distance;
-  gate.quality = distance*100;
+  //gate.quality = distance*100;
 
   last_laser_time = get_sys_time_float();
 }
@@ -252,10 +254,8 @@ static void estimate_altitude(void)
   laser_altitude_prev = laser_altitude;
 
   // reusing the GATE messages, TODO create new messages!!!
-  gate.height = baro_altitude;
-  gate.width = fused_altitude;
-  gate.phi = climb_rate;
-  gate.theta = laser_rate;
+//  gate.phi = climb_rate;
+//  gate.theta = laser_rate;
 
 }
 
@@ -423,11 +423,11 @@ static void delfly_vision_parse_msg(void)
   switch (msg_id) {
 
     case DL_STEREOCAM_GATE: {
-//      gate.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
-//      gate.width   = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
-//      gate.height  = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
-//      gate.phi     = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
-//      gate.theta   = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
+      gate.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
+      gate.width   = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
+      gate.height  = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
+      gate.phi     = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
+      gate.theta   = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
       gate.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
 
       evaluate_state_machine();
@@ -571,12 +571,7 @@ void guidance_v_module_run(bool in_flight)
 
       /* our nominal command : (g + zdd)*m   */
       int32_t inv_m;
-//      if (guidance_v_adapt_throttle_enabled) {
-//        inv_m =  gv_adapt_X >> (GV_ADAPT_X_FRAC - FF_CMD_FRAC);
-//      } else {
-        /* use the fixed nominal throttle */
-        inv_m = BFP_OF_REAL(9.81 / (guidance_v_nominal_throttle * MAX_PPRZ), FF_CMD_FRAC);
-//      }
+      inv_m = BFP_OF_REAL(9.81 / (guidance_v_nominal_throttle * MAX_PPRZ), FF_CMD_FRAC);
 
       const int32_t g_m_zdd = (int32_t)BFP_OF_REAL(9.81, FF_CMD_FRAC) -
                               (guidance_v_zdd_ref << (FF_CMD_FRAC - INT32_ACCEL_FRAC));
