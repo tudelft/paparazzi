@@ -20,7 +20,9 @@
       </target-->
 
       <module name="opa_controller"/>
-      <module name="telemetry"     type="xbee_api"/>
+      <module name="telemetry"     type="transparent">
+        <configure name="MODEM_BAUD" value="B9600"/>
+      </module>
       <module name="imu"           type="mpu6000"/>
       <module name="gps"           type="ublox">
         <define name="GPS_TIMEOUT" value="10"/>
@@ -77,18 +79,20 @@
     <!-- FBW (Flight by Wire) part of the board -->
     <target name="fbw" board="opa_ftd_1.0">
 
-      <module name="radio_control" type="sbus"/>
+      <module name="radio_control" type="sbus_dual"/>
       <module name="actuators"     type="pwm">
         <define name="SERVO_HZ"    value="300"/>
       </module>
       <module name="intermcu"      type="uart">
         <define name="IMCU_GPS_ID" value="GPS_UBX_ID"/>
       </module>
-      <module name="telemetry"     type="intermcu"/>
+      <module name="telemetry"     type="intermcu">
+        <configure name="TELEMETRY_INTERMCU_DEV" value="UART4"/>
+      </module>
       <module name="opa_controller"/>
       <module name="heli_swashplate_mixing"/>
-      <module name="gps" type="ublox"/>
-      <module name="gps_ubx_ucenter"/>
+      <!--module name="gps" type="ublox"/>
+      <module name="gps_ubx_ucenter"/-->
 
       <define name="FBW_MODE_STARTUP" value="FBW_MODE_AUTO"/><!-- Change default startup mode to AUTO -->
       <define name="RC_LOST_FBW_MODE" value="FBW_MODE_FAILSAFE"/><!-- Switch to Failsafe or to Autopilot on RC loss? -->
@@ -151,8 +155,8 @@
     <axis name="PITCH"      failsafe_value="0"/>
     <axis name="YAW"        failsafe_value="0"/>
     <axis name="COLLECTIVE" failsafe_value="-9600"/>
-    <axis name="ELEVATOR"   failsafe_value="9600"/>
-    <axis name="AILERON"    failsafe_value="9600"/>
+    <axis name="ELEVATOR"   failsafe_value="0"/>
+    <axis name="AILERON"    failsafe_value="0"/>
   </commands>
 
   <!-- Swashplate mixing HR120 (1 Back, 2 Front at 120 degree) -->

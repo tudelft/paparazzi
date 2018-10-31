@@ -1,0 +1,483 @@
+<!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
+
+<flight_plan alt="80" ground_alt="0" home_mode_height="80" lat0="53.408431" lon0="6.156777" max_dist_from_home="8500" name="Schier2018" qfu="20" security_height="10">
+  <header>
+#include "autopilot.h"
+#include "guidance/guidance_delftacopter.h"
+#include "guidance/guidance_v.h"
+#include "guidance/guidance_h.h"
+#include "subsystems/electrical.h"
+#include "guidance/guidance_indi.h"
+#include "subsystems/navigation/waypoints.h"
+#include "subsystems/datalink/datalink.h"
+#include "modules/sensors/temp_adc.h"
+#include "subsystems/radio_control.h"
+#include "modules/vision_outback/vision_outback.h"
+</header>
+  <waypoints>
+    <waypoint name="HOME" x="0" y="0"/>
+
+    <waypoint lat="53.4106446" lon="6.1416114" name="MB1"/>
+    <waypoint lat="53.4810852" lon="6.1857690" name="MB2"/>
+    <waypoint lat="53.4753706" lon="6.2165853" name="MB3"/>
+    <waypoint lat="53.4049780" lon="6.1719575" name="MB4"/>
+
+    <waypoint lat="53.408431" lon="6.156777" height="50" name="BASE"/>
+    <waypoint lat="53.473150" lon="6.194667" height="40" name="JOE"   />
+    <waypoint lat="53.473150" lon="6.194667" height="40" name="JOE_reported"   />
+    <waypoint lat="53.473150" lon="6.194667" height="30" name="JOE_found"   />
+    <waypoint lat="53.473150" lon="6.194667" height="30" name="TD_mrk"   />
+
+    <waypoint lat="53.473150" lon="6.194667" height="10" name="HeliPad"   />
+    <waypoint lat="53.434940" lon="6.141985" height="200" name="TP1"      />
+    <waypoint lat="53.424702" lon="6.167150" height="200" name="CROSS1"   />
+    <waypoint lat="53.461978" lon="6.188143" height="200" name="CROSS2"   />
+    <waypoint lat="53.409819" lon="6.197927" height="200" name="HARBOUR1" />
+    <waypoint lat="53.468079" lon="6.202471" height="200" name="HARBOUR2" />
+
+    <waypoint lat="53.3663833333" lon="6.100647222222" name="TGB1"/>  <!-- 53°21'58.98"N 006°06' 2.33"O -->
+    <waypoint lat="53.3663250000" lon="6.261691666666" name="TGB2"/>  <!-- 53°21'58.77"N 006°15'42.09"O -->
+    <waypoint lat="53.5084027778" lon="6.267658333333" name="TGB3"/>  <!-- 53°30'30.25"N 006°16' 3.57"O -->
+    <waypoint lat="53.5028252778" lon="6.110375000000" name="TGB4"/>  <!-- 53°30'10.26"N 006°06'37.35"O -->
+
+    <waypoint x="100" y="100" name="FP0" height="80"/>
+    <waypoint x="2650" y="6927" name="FP1" height="80"/>
+    <!--waypoint x="2600" y="6927" name="FP2" height="80"/>
+    <waypoint x="50" y="100" name="FP3" height="80"/-->
+
+    <waypoint height="40.0" name="TD" x="30.9" y="-45.4"/>
+    <waypoint name="CLIMB" x="100" y="300"/>
+    <waypoint name="STDBY" x="-10" y="70"/>
+    <waypoint name="HOVER" x="-1100" y="220" height="60"/>
+  </waypoints>
+  <sectors>
+    <sector color="yellow" name="MissionBoundary" type="dynamic">
+      <corner name="MB1"/>
+      <corner name="MB2"/>
+      <corner name="MB3"/>
+      <corner name="MB4"/>
+    </sector>
+  </sectors>
+  <variables>
+    <variable init="0.3" max="1" min="0" shortname="nojoe_vfraction" step="0.1" type="float" var="joe_not_found_descend_speed_fraction"/>
+    <variable init="1" max="1" min="0" shortname="do_mission" step="1" type="bool" var="do_avoid_mission" values="FALSE|TRUE"/>
+  </variables>
+  <modules>
+    <module name="mission" type="path"/>
+    <module name="nav" type="heli_spinup"/>
+    <module name="nav" type="hybrid_heading"/>
+  </modules>
+  <exceptions>
+    <!-- Mission boundary crossing -->
+    <exception cond="(!InsideMissionBoundary(GetPosX(), GetPosY()) &&
+      !(nav_block == IndexOfBlock('waitGps')) &&
+      !(nav_block == IndexOfBlock('geoInit')) &&
+      !(nav_block == IndexOfBlock('failsafe'))
+      )" deroute="failsafe"/>
+    <!-- Height limit crossing -->
+    <!--exception cond="(air_data.amsl_baro > (337. + 457.) && air_data.amsl_baro_valid &&
+      !(nav_block == IndexOfBlock('waitGps')) &&
+      !(nav_block == IndexOfBlock('geoInit')) &&
+      !(nav_block == IndexOfBlock('failsafe'))
+      )" deroute="HeightLimit"/-->
+    <!-- GPS loss -->
+    <exception cond="(!GpsFixValid() &&
+      !(nav_block == IndexOfBlock('waitGps')) &&
+      !(nav_block == IndexOfBlock('geoInit')) &&
+      !(nav_block == IndexOfBlock('failsafe')) &&
+      !(nav_block == IndexOfBlock('GpsLoss')) &&
+      !(nav_block == IndexOfBlock('holdingPoint')) &&
+      !(nav_block == IndexOfBlock('Descent_noGPS')) &&
+      !(nav_block == IndexOfBlock('Descent_slow_noGPS')) &&
+      !(nav_block == IndexOfBlock('landing_moment_noGPS')) &&
+      !(nav_block == IndexOfBlock('landed')) &&
+      !(nav_block == IndexOfBlock('joe_descendSlow')) &&
+      !(nav_block == IndexOfBlock('fjoe_descendUltraSlow')) &&
+      !(nav_block == IndexOfBlock('joe_moment')) &&
+      !(nav_block == IndexOfBlock('joe_landed')) &&
+      !(nav_block == IndexOfBlock('joe_inert')) &&
+      !(nav_block == IndexOfBlock('joe_wait')) &&
+      !(nav_block == IndexOfBlock('base_descendSlow')) &&
+      !(nav_block == IndexOfBlock('base_moment')) &&
+      !(nav_block == IndexOfBlock('base_landed')) &&
+      (autopilot_in_flight() == true) )" deroute="GpsLoss"/>
+    <!-- Datalink loss -->
+    <exception cond="(datalink_time > 180 &&
+      !(nav_block == IndexOfBlock('DatalinkLoss')) &&
+      !(nav_block == IndexOfBlock('GpsLoss')) &&
+      !(nav_block == IndexOfBlock('landed')) &&
+      !(nav_block == IndexOfBlock('holdingPoint')) &&
+      !(nav_block == IndexOfBlock('failsafe')) &&
+      !(nav_block == IndexOfBlock('joe_descendSlow')) &&
+      !(nav_block == IndexOfBlock('fjoe_descendUltraSlow')) &&
+      !(nav_block == IndexOfBlock('joe_moment')) &&
+      !(nav_block == IndexOfBlock('joe_landed')) &&
+      !(nav_block == IndexOfBlock('joe_inert')) &&
+      !(nav_block == IndexOfBlock('joe_wait')) &&
+      !(nav_block == IndexOfBlock('base_descendSlow')) &&
+      !(nav_block == IndexOfBlock('base_moment')) &&
+      !(nav_block == IndexOfBlock('base_landed')) &&
+      (autopilot_in_flight() == true) )" deroute="DatalinkLoss"/>
+  </exceptions>
+  <blocks>
+    <!-- Initialization -->
+    <block group="init" name="waitGps">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="NavKillThrottle()"/>
+      <call_once fun="nav_throttle_curve_set(0)"/>
+      <manual pitch="0" roll="0" throttle="0" until="TRUE" vmode="throttle" yaw="0"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <block group="init" name="geoInit">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="nav_throttle_curve_set(0)"/>
+    </block>
+    <block group="init" name="holdingPoint">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="NavKillThrottle()"/>
+      <call_once fun="nav_throttle_curve_set(0)"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+
+    <!-- Takeoff from base -->
+    <block group="takeoff_base" name="base_startEngine" strip_button="Start_Engine">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="nav_throttle_curve_set(0)"/>
+      <call_once fun="nav_heli_spinup_setup(2, 0.07)"/>
+      <call_once fun="NavResurrect()"/>
+      <call fun="nav_heli_spinup_run()"/>
+      <call_once fun="nav_throttle_curve_set(1)"/>
+      <attitude pitch="0" roll="0" throttle="0" until="stage_time>1" vmode="throttle"/>
+    </block>
+    <block group="takeoff_base" name="base_holdAttitude">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="1200 > throttle_curve.rpm_meas" deroute="base_startEngine"/>
+      <call_once fun="nav_throttle_curve_set(1)"/>
+      <call_once fun="nav_set_heading_current()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="stage_time>0" vmode="throttle"/>
+    </block>
+    <block group="takeoff_base" name="base_takeOff">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="stateGetPositionEnu_f()->z > 4.0" deroute="base_climb"/>
+      <call_once fun="nav_throttle_curve_set(1)"/>
+      <attitude pitch="0" roll="0" throttle="0.78" until="stage_time>2" vmode="throttle"/>
+    </block>
+    <block group="takeoff_base" name="base_climb">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="stateGetPositionEnu_f()->z > 50.0" deroute="transition_to_joe"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z - POS_BFP_OF_REAL(5.0), -SPEED_BFP_OF_REAL(3.0), 0)"/>
+      <stay climb="nav_climb_vspeed" until="stateGetPositionEnu_f()->z > 20.0" vmode="climb" wp="CLIMB"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay climb="nav_climb_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="CLIMB"/>
+      <deroute block="transition_to_joe"/>
+    </block>
+
+    <!-- Fly towards joe -->
+    <block group="fly_to_joe" name="transition_to_joe">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_FP0)"/>
+      <stay pre_call="nav_hybrid_heading_set_to_waypoint()" until="stage_time>4" wp="CLIMB"/>
+    </block>
+    <block group="fly_to_joe" name="route_to_joe0">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <go wp="FP0"/>
+    </block>
+    <block group="fly_to_joe" name="route_to_joe1">
+      <call_once fun="enableVisionPower()" />
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <go from="FP0" hmode="route" wp="FP1"/>
+    </block>
+    <block group="fly_to_joe" name="transition_at_joe">
+      <call_once fun="enableVisionPower()" />
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <go wp="JOE"/>
+    </block>
+
+    <!-- Find joe and land with vision -->
+    <block group="joe_found" name="fjoe_hover">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0)"/>
+      <call_once fun="enableVisionFindJoe(true)"/>
+      <call_once fun="enableVisionDescent(true)"/>
+      <go climb="0" vmode="climb" wp="JOE_found"/>
+    </block>
+    <block group="joe_found" name="fjoe_descend">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="12.0 > stateGetPositionEnu_f()->z" deroute="fjoe_descendSlow"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0)"/>
+      <stay climb="Ternary(vision_found_joe, nav_descend_vspeed, nav_descend_vspeed * joe_not_found_descend_speed_fraction)" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="JOE_found"/>
+    </block>
+    <block group="joe_found" name="fjoe_descendSlow">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="And(4.0 > stateGetPositionEnu_f()->z, And(!hasArucoLock(), isVisionHeightUsedInINS()))" deroute="fjoe_descendUltraSlow"/>
+      <exception cond="het_moment" deroute="joe_moment"/>
+      <exception cond="(!vision_outback_enable_landing || vision_timeout) && stage_time > 40" deroute="joe_moment"/>
+      <exception cond="And(And(!vision_outback_enable_landing || vision_timeout, stage_time > 20), is_guidance_v_integrator_lower_bounded())" deroute="joe_moment"/>
+      <exception cond="stage_time > 120" deroute="joe_moment"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay climb="-0.5" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="JOE_found"/>
+    </block>
+    <block group="joe_found" name="fjoe_descendUltraSlow">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="het_moment" deroute="joe_moment"/>
+      <exception cond="(!vision_outback_enable_landing || vision_timeout) && stage_time > 30" deroute="joe_moment"/>
+      <exception cond="And(And(!vision_outback_enable_landing || vision_timeout, stage_time > 16), is_guidance_v_integrator_lower_bounded())" deroute="joe_moment"/>
+      <exception cond="stage_time > 120" deroute="joe_moment"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay climb="-0.25" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="JOE_found"/>
+    </block>
+
+    <!-- Land at joe (without vision)-->
+    <block group="land_joe" name="joe_land_reset">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="enableVisionFindJoe(false)"/>
+      <call_once fun="killVision()"/>
+      <stay until="stage_time>2" wp="JOE"/>
+    </block>
+    <block group="land_joe" name="joe_land">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="enableVisionPower()" />
+      <call_once fun="enableVisionDescent(true)"/>
+      <stay until="stage_time>10" wp="JOE"/>
+    </block>
+    <block group="land_joe" name="joe_descend">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="12.0 > stateGetPositionEnu_f()->z" deroute="joe_descendSlow"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0)"/>
+      <stay climb="nav_descend_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="JOE"/>
+    </block>
+    <block group="land_joe" name="joe_descendSlow">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="het_moment" deroute="joe_moment"/>
+      <exception cond="(!vision_outback_enable_landing || vision_timeout) && stage_time > 40" deroute="joe_moment"/>
+      <exception cond="And(stage_time > 20, is_guidance_v_integrator_lower_bounded())" deroute="joe_moment"/>
+      <exception cond="stage_time > 120" deroute="joe_moment"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay climb="-0.5" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="JOE"/>
+    </block>
+    <block group="land_joe" name="joe_moment">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="nav_throttle_curve_set(1)"/>
+      <attitude pitch="0" roll="0" throttle="0.5" until="stage_time>0" vmode="throttle"/>
+      <deroute block="joe_landed"/>
+    </block>
+    <block group="land_joe" name="joe_landed">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="NavKillThrottle()"/>
+      <call_once fun="nav_throttle_curve_set(0)"/>
+      <call_once fun="enableVisionDescent(false)"/>
+      <call_once fun="enableVisionFindJoe(false)"/>
+      <call_once fun="enableVisionShutdown(true)"/>
+      <attitude pitch="0" roll="0" throttle="0" until="stage_time>2 && autopilot.mode == AP_MODE_NAV" vmode="throttle"/>
+    </block>
+
+    <!-- Wait at joe for sample -->
+    <block group="wait_joe" name="joe_inert">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>   
+      <call_once fun="opa_controller_ap_disarm(true)"/>
+      <attitude pitch="0" roll="0" throttle="0" until="stage_time>2" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0" until="electrical.vsupply>100" vmode="throttle"/>
+    </block>
+    <block group="wait_joe" name="joe_wait">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="NavKillThrottle()"/>
+      <call_once fun="nav_throttle_curve_set(0)"/>
+      <attitude pitch="0" roll="0" throttle="0" until="(stage_time>60) && GpsFixValid()" vmode="throttle" pre_call="nav_set_heading_current()" />
+    </block>
+
+    <!-- Takeoff at joe -->
+    <block group="takeoff_joe" name="joe_startEngine">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="nav_throttle_curve_set(0)"/>
+      <call_once fun="nav_heli_spinup_setup(2, 0.07)"/>
+      <call_once fun="NavResurrect()"/>
+      <call fun="nav_heli_spinup_run()"/>
+      <call_once fun="nav_throttle_curve_set(1)"/>
+      <attitude pitch="0" roll="0" throttle="0" until="stage_time>1" vmode="throttle"/>
+    </block>
+    <block group="takeoff_joe" name="joe_holdAttitude">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="1200 > throttle_curve.rpm_meas" deroute="joe_takeOff"/>
+      <call_once fun="nav_throttle_curve_set(1)"/>
+      <call_once fun="nav_set_heading_current()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="stage_time>0" vmode="throttle"/>
+    </block>
+    <block group="takeoff_joe" name="joe_takeOff">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="stateGetPositionEnu_f()->z > 4.0" deroute="joe_climb"/>
+      <call_once fun="nav_throttle_curve_set(1)"/>
+      <attitude pitch="0" roll="0" throttle="0.78" until="stage_time>2" vmode="throttle"/>
+    </block>
+    <block group="takeoff_joe" name="joe_climb">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="stateGetPositionEnu_f()->z > 50.0" deroute="transition_to_base"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z - POS_BFP_OF_REAL(5.0), -SPEED_BFP_OF_REAL(3.0), 0)"/>
+      <stay climb="nav_climb_vspeed" until="stateGetPositionEnu_f()->z > 20.0" vmode="climb" wp="CLIMB"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay climb="nav_climb_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="CLIMB"/>
+    </block>
+
+    <!-- Fly to the base -->
+    <block group="fly_to_base" name="transition_to_base">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="nav_hybrid_heading_init_to_waypoint(WP_FP1)"/>
+      <stay pre_call="nav_hybrid_heading_set_to_waypoint()" until="stage_time>4" wp="CLIMB"/>
+    </block>
+    <block group="fly_to_base" name="route_to_base0">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <go wp="FP1"/>
+    </block>
+    <block group="fly_to_base" name="route_to_base5">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <go from="FP1" hmode="route" wp="FP0"/>
+    </block>
+    <block group="fly_to_base" name="transition_at_base">
+      <set value="HB_FORWARD" var="dc_hybrid_mode"/>
+      <go wp="BASE"/>
+    </block>
+
+    <!-- Land at the base -->
+    <block group="land_base" name="base_land">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="enableVisionDescent(true)"/>
+      <stay until="stage_time>4" wp="BASE"/>
+    </block>
+    <block group="land_base" name="base_descend">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="12.0 > stateGetPositionEnu_f()->z" deroute="base_descendSlow"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0)"/>
+      <stay climb="nav_descend_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="BASE"/>
+    </block>
+    <block group="land_base" name="base_descendSlow">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="het_moment" deroute="base_moment"/>
+      <exception cond="(!vision_outback_enable_landing || vision_timeout) && stage_time > 40" deroute="base_moment"/>
+      <exception cond="And(And(!vision_outback_enable_landing || vision_timeout, stage_time > 20), is_guidance_v_integrator_lower_bounded())" deroute="base_moment"/>
+      <exception cond="stage_time > 120" deroute="base_moment"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay climb="-0.5" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="BASE"/>
+    </block>
+    <block group="land_base" name="base_moment">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="nav_throttle_curve_set(1)"/>
+      <attitude pitch="0" roll="0" throttle="0.5" until="stage_time>0" vmode="throttle"/>
+      <deroute block="base_landed"/>
+    </block>
+    <block group="land_base" name="base_landed">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="NavKillThrottle()"/>
+      <call_once fun="nav_throttle_curve_set(0)"/>
+      <call_once fun="enableVisionDescent(false)"/>
+      <attitude pitch="0" roll="0" throttle="0" vmode="throttle"/>
+    </block>
+
+    <!-- Manual Safety features -->
+    <block group="safe" name="Standby" strip_button="Standby">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <stay wp="STDBY"/>
+    </block>
+    <block group="safe" name="StandbyAutoHeading" strip_button="Standby90">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay pre_call="nav_hybrid_heading_set()" wp="STDBY"/>
+    </block>
+    <block group="safe" name="Hover_here" strip_button="HoverHere">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="waypoint_set_alt(WP_HOVER,stateGetPositionEnu_f()->z)"/>
+      <call_once fun="NavSetWaypointHere(WP_HOVER)"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay pre_call="nav_hybrid_heading_set()" wp="HOVER"/>
+    </block>
+    <block group="safe" name="LandHere" strip_button="LandHere">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="12.0 > stateGetPositionEnu_f()->z" deroute="LandHereSlow"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0)"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay climb="nav_descend_vspeed" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="TD"/>
+    </block>
+    <block group="safe" name="LandHereSlow">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <stay climb="-0.5" pre_call="nav_hybrid_heading_set()" vmode="climb" wp="TD"/>
+    </block>
+    <block group="safe" name="landing_moment">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="nav_throttle_curve_set(1)"/>
+      <attitude pitch="0" roll="0" throttle="0.5" until="stage_time>0" vmode="throttle"/>
+      <deroute block="landed"/>
+    </block>
+    <block group="safe" name="landed">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="NavKillThrottle()"/>
+      <call_once fun="nav_throttle_curve_set(0)"/>
+      <call_once fun="enableVisionDescent(false)"/>
+      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" pre_call="nav_set_heading_current()"/>
+    </block>
+
+    <!-- Automatic safety features -->
+    <block group="autosafe" name="HeightLimit">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <stay wp="STDBY"/>
+    </block>
+    <block group="autosafe" name="GpsLoss">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="2.0 > stateGetPositionEnu_f()->z" deroute="landing_moment_noGPS"/>
+      <exception cond="GpsFixValid() && (20.0 > stateGetPositionEnu_f()->z)" deroute="Hover_here"/>
+      <exception cond="block_time>30" deroute="Descent_noGPS"/>
+      <call_once fun="nav_throttle_curve_set(1)"/>
+      <call_once fun="waypoint_set_alt(WP_HOVER,stateGetPositionEnu_f()->z)"/>
+      <call_once fun="NavSetWaypointHere(WP_HOVER)"/>
+      <stay until="stage_time>60" wp="HOVER"/>
+      <attitude climb="nav_descend_vspeed" pitch="0" roll="0" until="GpsFixValid() && (stateGetPositionEnu_f()->z > 20.0)" vmode="climb"/>
+      <deroute block="Standby"/>
+    </block>
+    <block group="autosafe" name="DatalinkLoss">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="block_time>120" deroute="StandbyAutoHeading"/>
+      <exception cond="get_temp(1) > 100" deroute="StandbyAutoHeading"/>
+      <call_once fun="nav_hybrid_heading_init()"/>
+      <call_once fun="NavSetWaypointHere(WP_HOVER)"/>
+      <call_once fun="waypoint_set_alt(WP_HOVER,stateGetPositionEnu_f()->z + 20)"/>
+      <stay pre_call="nav_hybrid_heading_set()" until="60 > datalink_time" wp="HOVER"/>
+      <stay pre_call="nav_hybrid_heading_set()" wp="HOVER"/>
+    </block>
+    <block group="autosafe" name="Descent_noGPS">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <exception cond="10.0 > stateGetPositionEnu_f()->z" deroute="Descent_slow_noGPS"/>
+      <call_once fun="nav_set_heading_current()"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <call_once fun="GuidanceVSetRef(stateGetPositionNed_i()->z, 0, 0)"/>
+      <call_once fun="nav_throttle_curve_set(1)"/>
+      <attitude climb="nav_descend_vspeed" pitch="0" roll="0" vmode="climb"/>
+    </block>
+    <block group="autosafe" name="Descent_slow_noGPS">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="nav_throttle_curve_set(1)"/>
+      <attitude climb="-0.5" pitch="0" roll="0" vmode="climb"/>
+    </block>
+    <block group="autosafe" name="landing_moment_noGPS">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="nav_throttle_curve_set(1)"/>
+      <attitude pitch="0" roll="0" throttle="0.5" until="stage_time>0" vmode="throttle"/>
+      <deroute block="landed"/>
+    </block>
+
+    <!-- KILL -->
+    <block group="autosafe" name="failsafe">
+      <set value="HB_HOVER" var="dc_hybrid_mode"/>
+      <call_once fun="NavKillThrottle()"/>
+      <call_once fun="NavSetFailsafe()"/>
+      <call_once fun="opa_controller_ap_disarm(true)"/>
+      <call_once fun="INTERMCU_SET_CMD_STATUS(INTERMCU_CMD_FAILSAFE)"/>
+      <call_once fun="nav_throttle_curve_set(0)"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>

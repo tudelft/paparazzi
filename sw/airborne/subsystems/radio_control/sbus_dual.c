@@ -44,6 +44,9 @@
 #define RC2_POLARITY_GPIO_PIN RC_POLARITY_GPIO_PIN
 #endif
 
+PRINT_CONFIG_VAR(SBUS1_UART_DEV);
+PRINT_CONFIG_VAR(SBUS2_UART_DEV);
+
 /** SBUS struct */
 struct Sbus sbus1, sbus2;
 
