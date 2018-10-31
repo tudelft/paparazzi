@@ -261,7 +261,7 @@
     <define name="HOVER_KP" value="140"/>
     <define name="HOVER_KD" value="200"/>
     <define name="HOVER_KI" value="0"/>
-    <define name="NOMINAL_HOVER_THROTTLE" value="0.7"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value="0.75"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>
     <define name="ADAPT_MIN_HOVER_THROTTLE" value="0.5"/>
     <define name="ADAPT_MAX_HOVER_THROTTLE" value="0.9"/>    

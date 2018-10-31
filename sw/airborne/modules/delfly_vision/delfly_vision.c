@@ -53,7 +53,7 @@
 #warning "STEREO_BODY_TO_STEREO_XXX not defined. Using default Euler rotation angles (0,0,0)"
 #endif
 
-#define VISION_ON FALSE
+#define VISION_ON TRUE
 
 #ifndef STEREO_BODY_TO_STEREO_PHI
 #define STEREO_BODY_TO_STEREO_PHI 0
@@ -368,15 +368,21 @@ static void att_sp_align_3d(void)
   alt_error_sum += alt_error*dt;
   lat_error_sum += lat_error*dt;
 
+  // GATE FLIGHT THROUGH
+
   // apply pid gains for yaw, pitch and thrust
   struct FloatEulers sp;
 //  sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
   sp.phi = phi_gains.p*alignment_error + phi_gains.i*alignment_error_sum;
-  sp.theta = -theta_gains.p*dist_error - theta_gains.i*dist_error_sum;
+//  sp.theta = -theta_gains.p*dist_error - theta_gains.i*dist_error_sum;
 //  thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
+  sp.psi = gate_psi + stateGetNedToBodyEulers_f()->psi;
 
 
-  obstacle_psi=-gate.depth; // TODO make a new message for obstacles
+  // LINE FOLLOWING
+
+  //obstacle_psi=-gate.depth; // TODO make a new message for obstacles
+  obstacle_psi=0.;
   line_psi=gate_psi;
     // simply set angle for yaw
   if (obstacle_psi==-1 || abs(line_psi - obstacle_psi) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
@@ -392,12 +398,14 @@ static void att_sp_align_3d(void)
         sp.psi = obstacle_psi - safe_angle + stateGetNedToBodyEulers_f()->psi;
       }
     }
+  sp.theta = -0.25; // ~ 15 degrees pitch
+
 //  sp.psi = stateGetNedToBodyEulers_f()->psi;
 
   // bound result to max values
   BoundAbs(sp.phi, STABILIZATION_ATTITUDE_SP_MAX_PHI/3);
   BoundAbs(sp.theta, STABILIZATION_ATTITUDE_SP_MAX_THETA/3);
-  Bound(thrust_sp, 0.f, max_thurst); // TODO add nominal thrust somewhere
+//  Bound(thrust_sp, 0.f, max_thurst); // TODO add nominal thrust somewhere
 
   // scale to integers
   att_sp.phi = ANGLE_BFP_OF_REAL(sp.phi);
@@ -547,7 +555,7 @@ void guidance_v_module_run(bool in_flight)
 
   static bool altitude_hold_on = 0;
 
-  if (radio_control.values[RADIO_FLAP] > 5000) // Vision switch ON
+  if (radio_control.values[RADIO_GEAR] < 5000) // Altitude hold switch ON
     {
       if (altitude_hold_on == 0) // entering altitude hold
       {
@@ -596,7 +604,7 @@ void guidance_v_module_run(bool in_flight)
     stabilization_cmd[COMMAND_THRUST] = guidance_v_delta_t;
     thrust_sp = guidance_v_delta_t;
     }
-  else // Vision switch OFF
+  else // Altitude hold switch OFF
     {
       stabilization_cmd[COMMAND_THRUST] = radio_control.values[RADIO_THROTTLE];
       altitude_hold_on = 0;
