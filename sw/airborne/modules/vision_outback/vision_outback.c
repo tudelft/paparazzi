@@ -52,7 +52,7 @@
 #define VISION_POWER_ON_AT_BOOT true
 #endif
 
-#define WANTED_VISION_VERSION 2.0f
+#define WANTED_VISION_VERSION 2.1f
 
 /* Main magneto structure */
 static struct vision_outback_t vision_outback = {
