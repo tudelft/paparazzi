@@ -22,7 +22,7 @@
  * @author Matej Karasek
  * Vision module for (tail less) DelFlies
  * Include delfly_vision.xml to your airframe file.
- * Define parameters STEREO_PORT, STEREO_BAUD
+ * Define parameters STEREO_PORT, STEREO_BAUD, LASER_PORT, LASER_BAUD
  */
 
 #include "modules/delfly_vision/delfly_vision.h"
@@ -52,8 +52,6 @@
 #if !defined(STEREO_BODY_TO_STEREO_PHI) || !defined(STEREO_BODY_TO_STEREO_THETA) || !defined(STEREO_BODY_TO_STEREO_PSI)
 #warning "STEREO_BODY_TO_STEREO_XXX not defined. Using default Euler rotation angles (0,0,0)"
 #endif
-
-#define VISION_ON TRUE
 
 #ifndef STEREO_BODY_TO_STEREO_PHI
 #define STEREO_BODY_TO_STEREO_PHI 0
@@ -130,7 +128,8 @@ static uint8_t stereocam_msg_buf[256]  __attribute__((aligned));   ///< The mess
 static struct Int32Eulers stab_cmd;   ///< The commands that are send to the satbilization loop
 static struct Int32Eulers rc_sp;   ///< Euler setpoints given by the rc
 
-struct gate_t gate;
+struct gate_t gate_raw;
+struct gate_filt_t gate_filt;
 struct Int32Eulers att_sp = {.phi=0, .theta=0, .psi=0};
 float thrust_sp;
 struct FloatRMat RM_body_to_cam;
@@ -139,6 +138,7 @@ struct FloatRMat RM_cam_to_gate;
 struct FloatRMat RM_earth_to_gate;
 struct FloatRMat RM_earth_to_body;
 struct FloatEulers angle_to_gate = {.phi=0, .theta=0, .psi=0};
+struct FloatEulers angle_to_gate_filt = {.phi=0, .theta=0, .psi=0};
 
 float laser_altitude;
 abi_event laser_event;
@@ -171,6 +171,8 @@ float obstacle_psi;
 float line_psi;
 float safe_angle=0.1;
 
+struct FloatEulers sp;
+
 // todo implement
 float max_thurst = 1.f;
 
@@ -180,8 +182,8 @@ float max_thurst = 1.f;
 static void send_delfly_vision_msg(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_DELFLY_VISION(trans, dev, AC_ID,
-                                  &gate.quality, &gate.width, &gate.height,
-                                  &gate.phi, &gate.theta, &gate.depth,
+                                  &gate_raw.quality, &gate_raw.width, &gate_raw.height,
+                                  &gate_raw.phi, &gate_raw.theta, &gate_raw.depth,
                                   &angle_to_gate.theta, &angle_to_gate.psi,
                                   &att_sp.phi, &att_sp.theta, &att_sp.psi,
                                   &thrust_sp, &laser_altitude, &baro_altitude,
@@ -194,7 +196,7 @@ static void send_delfly_vision_msg(struct transport_tx *trans, struct link_devic
 static void laser_data_cb(uint8_t __attribute__((unused)) sender_id, float distance)
 {
   laser_altitude = distance;
-  //gate.quality = distance*100;
+  //gate_raw.quality = distance*100;
 
   last_laser_time = get_sys_time_float();
 }
@@ -253,10 +255,6 @@ static void estimate_altitude(void)
   fused_altitude_prev = fused_altitude;
   laser_altitude_prev = laser_altitude;
 
-  // reusing the GATE messages, TODO create new messages!!!
-//  gate.phi = climb_rate;
-//  gate.theta = laser_rate;
-
 }
 
 void delfly_vision_init(void)
@@ -271,12 +269,18 @@ void delfly_vision_init(void)
   // Initialize transport protocol
   pprz_transport_init(&stereocam.transport);
 
-  gate.quality = 0;
-  gate.width = 0.f;
-  gate.height = 0.f;
-  gate.phi = 0.f;
-  gate.theta = 0.f;
-  gate.depth = 0.f;
+  gate_raw.quality = 0;
+  gate_raw.width = 0.f;
+  gate_raw.height = 0.f;
+  gate_raw.phi = 0.f;
+  gate_raw.theta = 0.f;
+  gate_raw.depth = 0.f;
+  gate_raw.dt = 0.f;
+
+  gate_filt.width = 0.f;
+  gate_filt.height = 0.f;
+  gate_filt.psi = 0.f;
+  gate_filt.theta = 0.f;
 
   laser_altitude = 0.f;
   fused_altitude = 0.f;
@@ -298,26 +302,19 @@ void delfly_vision_init(void)
 
 static float alignment_error_sum = 0.f, dist_error_sum = 0.f, alt_error_sum = 0.f, lat_error_sum = 0.f;
 static float last_time = 0.f;
-/*
- * Compute attitude set-point given gate position
- */
-static void att_sp_align_3d(void)
-{
-  static float gate_w, gate_h, gate_theta, gate_psi;
 
-  // rotate angles from camera to body reference frame
+/*
+ * Rotate angles from camera to body reference frame
+ */
+static void rotate_camera(void)
+{
   // we apply a convenience rotation here to align the camera x and y with the y and -z body frame
-  struct FloatEulers cam_angles = {.phi=0., .theta=gate.phi, .psi=gate.theta}, body_angles, attitude;
+  struct FloatEulers cam_angles = {.phi=0., .theta=gate_raw.phi, .psi=gate_raw.theta}, body_angles, attitude;
 
   float_rmat_of_eulers_321(&RM_cam_to_gate, &cam_angles); // rotation matrix cam to gate
   float_rmat_comp(&RM_body_to_gate, &RM_body_to_cam, &RM_cam_to_gate); // rotation matrix body to gate
   float_eulers_of_rmat(&body_angles, &RM_body_to_gate); // Eulers of gate in body frame
-
-  // the following three lines might be wrapped in a function float_rmat_transp_mult(&angle_to_gate, stateGetNedToBodyRMat_f(), &body_angles); its current implementation is incorrect
   float_rmat_of_eulers_321(&RM_body_to_gate, &body_angles); // rotation matrix body to gate
-
-  /* true earth axes */
-  //float_rmat_comp(&RM_earth_to_gate, stateGetNedToBodyRMat_f(), &RM_body_to_gate); // rotation matrix earth to gate
 
   /* earth axes, but x always aligned with current heading */
   attitude.psi = 0.;
@@ -327,64 +324,73 @@ static void att_sp_align_3d(void)
   float_rmat_comp(&RM_earth_to_gate, &RM_earth_to_body, &RM_body_to_gate); // rotation matrix earth to gate
 
   float_eulers_of_rmat(&angle_to_gate, &RM_earth_to_gate); // Eulers of gate in earth frame
+}
 
-  // update filters
-  float dt = get_sys_time_float() - last_time;
-  if (dt <= 0) return;
+/*
+ * Compute attitude set-point given gate position
+ */
+static void navigate_towards_gate(void)
+{
+    // update filters
+  gate_raw.dt = get_sys_time_float() - last_time;
+  if (gate_raw.dt <= 0) return;
   last_time = get_sys_time_float();
-  if (dt < 1.f && filt_on)
+  if (gate_raw.dt < 1.f && filt_on)
   {
     // propagate low-pass filter
-    float scaler = 1.f / (filt_tc + dt);
-    gate_w = (gate.width*dt + gate_w*filt_tc) * scaler;
-    gate_h = (gate.height*dt + gate_h*filt_tc) * scaler;
-    gate_theta = (angle_to_gate.theta*dt + gate_theta*filt_tc) * scaler;
-    gate_psi = (angle_to_gate.psi*dt + gate_psi*filt_tc) * scaler;
+    float scaler = 1.f / (filt_tc + gate_raw.dt);
+    gate_filt.width = (gate_raw.width*gate_raw.dt + gate_filt.width*filt_tc) * scaler;
+    gate_filt.height = (gate_raw.height*gate_raw.dt + gate_filt.height*filt_tc) * scaler;
+    gate_filt.theta = (angle_to_gate.theta*gate_raw.dt + gate_filt.theta*filt_tc) * scaler;
+    gate_filt.psi = (angle_to_gate.psi*gate_raw.dt + gate_filt.psi*filt_tc) * scaler;
   }
   else
   {
     // reset filter if last update too long ago
-    gate_w = gate.width;
-    gate_h = gate.height;
-    gate_theta = angle_to_gate.theta;
-    gate_psi = angle_to_gate.psi;
+    gate_filt.width = gate_raw.width;
+    gate_filt.height = gate_raw.height;
+    gate_filt.theta = angle_to_gate.theta;
+    gate_filt.psi = angle_to_gate.psi;
   }
 
   // compute errors
-  float alignment_error = gate_h / gate_w - 1.f; // [-]
+  float alignment_error = gate_filt.height / gate_filt.width - 1.f; // [-]
   BoundLower(alignment_error, 0.f);
   // sign of the alignment error is ambiguous so set it based on the long term derivative of the error
   // alignment_gain_sign = -(derivative of the error)
   float alignment_gain_sign = 1.f; // TODO implement
   alignment_error *= alignment_gain_sign;
 
-  float dist_error = (gate_target_size - gate_h);  // rad
-  float alt_error = -gate_theta; // rad
-  float lat_error = gate_psi; // rad
+  float dist_error = (gate_target_size - gate_filt.height);  // rad
+  float alt_error = -gate_filt.theta; // rad
+  float lat_error = gate_filt.psi; // rad
 
   // Increment integrated errors
-  alignment_error_sum += alignment_error*dt;
-  dist_error_sum += dist_error*dt;
-  alt_error_sum += alt_error*dt;
-  lat_error_sum += lat_error*dt;
+  alignment_error_sum += alignment_error*gate_raw.dt;
+  dist_error_sum += dist_error*gate_raw.dt;
+  alt_error_sum += alt_error*gate_raw.dt;
+  lat_error_sum += lat_error*gate_raw.dt;
 
   // GATE FLIGHT THROUGH
 
   // apply pid gains for yaw, pitch and thrust
-  struct FloatEulers sp;
+
 //  sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
   sp.phi = phi_gains.p*alignment_error + phi_gains.i*alignment_error_sum;
-//  sp.theta = -theta_gains.p*dist_error - theta_gains.i*dist_error_sum;
+  sp.theta = -theta_gains.p*dist_error - theta_gains.i*dist_error_sum;
 //  thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
-  sp.psi = gate_psi + stateGetNedToBodyEulers_f()->psi;
+  sp.psi = gate_filt.psi + stateGetNedToBodyEulers_f()->psi;
+}
 
+static void follow_line(void)
+{
+  // TODO make new messages for line following
 
-  // LINE FOLLOWING
+  line_psi=gate_filt.psi;
+  //obstacle_psi=-gate_raw.depth;
+  obstacle_psi=-1.; // -1 rad --> no gate detected
 
-  //obstacle_psi=-gate.depth; // TODO make a new message for obstacles
-  obstacle_psi=0.;
-  line_psi=gate_psi;
-    // simply set angle for yaw
+  // simply set angle for yaw
   if (obstacle_psi==-1 || abs(line_psi - obstacle_psi) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
     {
       sp.psi = line_psi + stateGetNedToBodyEulers_f()->psi;
@@ -399,9 +405,12 @@ static void att_sp_align_3d(void)
       }
     }
   sp.theta = -0.25; // ~ 15 degrees pitch
+  sp.phi = 0.;
+}
 
-//  sp.psi = stateGetNedToBodyEulers_f()->psi;
 
+static void set_attitude_setpoint(void)
+{
   // bound result to max values
   BoundAbs(sp.phi, STABILIZATION_ATTITUDE_SP_MAX_PHI/3);
   BoundAbs(sp.theta, STABILIZATION_ATTITUDE_SP_MAX_THETA/3);
@@ -419,7 +428,12 @@ static void att_sp_align_3d(void)
  */
 static void evaluate_state_machine(void)
 {
-  att_sp_align_3d();
+  rotate_camera();
+
+  navigate_towards_gate();
+  //follow_line();
+
+  set_attitude_setpoint();
 }
 
 /* Parse the InterMCU message */
@@ -431,12 +445,12 @@ static void delfly_vision_parse_msg(void)
   switch (msg_id) {
 
     case DL_STEREOCAM_GATE: {
-      gate.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
-      gate.width   = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
-      gate.height  = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
-      gate.phi     = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
-      gate.theta   = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
-      gate.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
+      gate_raw.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
+      gate_raw.width   = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
+      gate_raw.height  = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
+      gate_raw.phi     = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
+      gate_raw.theta   = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
+      gate_raw.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
 
       evaluate_state_machine();
 
@@ -515,7 +529,7 @@ void guidance_h_module_run(bool in_flight)
 
   static uint8_t prev = 0;
 
-  if (radio_control.values[RADIO_FLAP] > 5000 && (get_sys_time_float() - last_time) < 0.2 && VISION_ON) // Vision switch ON, and we had a recent update from the camera
+  if (radio_control.values[RADIO_FLAP] > 5000 && (get_sys_time_float() - last_time) < 0.2) // Vision switch ON, and we had a recent update from the camera
   {
 
     stab_cmd.phi = rc_sp.phi + att_sp.phi;
@@ -580,6 +594,7 @@ void guidance_v_module_run(bool in_flight)
       /* our nominal command : (g + zdd)*m   */
       int32_t inv_m;
       inv_m = BFP_OF_REAL(9.81 / (guidance_v_nominal_throttle * MAX_PPRZ), FF_CMD_FRAC);
+      // TODO make nominal_throttle a function of body pitch and V_batt?
 
       const int32_t g_m_zdd = (int32_t)BFP_OF_REAL(9.81, FF_CMD_FRAC) -
                               (guidance_v_zdd_ref << (FF_CMD_FRAC - INT32_ACCEL_FRAC));
@@ -599,7 +614,7 @@ void guidance_v_module_run(bool in_flight)
       guidance_v_delta_t = guidance_v_ff_cmd + guidance_v_fb_cmd;
 
       /* bound the result */
-      Bound(guidance_v_delta_t, 0, MAX_PPRZ);
+      Bound(guidance_v_delta_t, guidance_v_nominal_throttle*0.8*MAX_PPRZ, MAX_PPRZ); // to avoid free fall descends
 
     stabilization_cmd[COMMAND_THRUST] = guidance_v_delta_t;
     thrust_sp = guidance_v_delta_t;

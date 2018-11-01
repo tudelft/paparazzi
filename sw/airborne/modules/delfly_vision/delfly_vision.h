@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Matej Karasek
+ * Copyright (C) Matej Karasek, Kirk Scheper
  *
  * This file is part of paparazzi
  *
@@ -19,7 +19,7 @@
  */
 /**
  * @file "modules/delfly_vision/delfly_vision.h"
- * @author Matej Karasek
+ * @author Matej Karasek, Kirk Scheper
  * Vision module for (tail less) DelFlies
  */
 
@@ -45,9 +45,17 @@ struct gate_t {
   float phi;
   float theta;
   float depth;
+  float dt;
 };
 
-extern struct gate_t gate;
+struct gate_filt_t {
+  float width;
+  float height;
+  float psi;
+  float theta;
+};
+
+extern struct gate_t gate_raw;
 
 struct pid_t {
   float p;
