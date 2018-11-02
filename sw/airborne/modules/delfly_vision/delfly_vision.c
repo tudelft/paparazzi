@@ -324,14 +324,8 @@ static void rotate_camera(void)
   float_rmat_comp(&RM_earth_to_gate, &RM_earth_to_body, &RM_body_to_gate); // rotation matrix earth to gate
 
   float_eulers_of_rmat(&angle_to_gate, &RM_earth_to_gate); // Eulers of gate in earth frame
-}
 
-/*
- * Compute attitude set-point given gate position
- */
-static void navigate_towards_gate(void)
-{
-    // update filters
+  // update filters
   gate_raw.dt = get_sys_time_float() - last_time;
   if (gate_raw.dt <= 0) return;
   last_time = get_sys_time_float();
@@ -352,7 +346,13 @@ static void navigate_towards_gate(void)
     gate_filt.theta = angle_to_gate.theta;
     gate_filt.psi = angle_to_gate.psi;
   }
+}
 
+/*
+ * Compute attitude set-point given gate position
+ */
+static void navigate_towards_gate(void)
+{
   // compute errors
   float alignment_error = gate_filt.height / gate_filt.width - 1.f; // [-]
   BoundLower(alignment_error, 0.f);
@@ -386,9 +386,10 @@ static void follow_line(void)
 {
   // TODO make new messages for line following
 
-  line_psi=gate_filt.psi;
-  //obstacle_psi=-gate_raw.depth;
-  obstacle_psi=-1.; // -1 rad --> no gate detected
+//  line_psi=gate_filt.psi;
+  line_psi=angle_to_gate.psi;
+    //obstacle_psi=-gate_raw.depth;
+  obstacle_psi=-1; // -1 rad --> no gate detected
 
   // simply set angle for yaw
   if (obstacle_psi==-1 || abs(line_psi - obstacle_psi) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
@@ -404,7 +405,8 @@ static void follow_line(void)
         sp.psi = obstacle_psi - safe_angle + stateGetNedToBodyEulers_f()->psi;
       }
     }
-  sp.theta = -0.25; // ~ 15 degrees pitch
+//  sp.theta = -0.25; // ~ 15 degrees pitch
+  sp.theta = 0.;
   sp.phi = 0.;
 }
 
@@ -428,11 +430,14 @@ static void set_attitude_setpoint(void)
  */
 static void evaluate_state_machine(void)
 {
+  // 1) Rotate camera data to body reference
   rotate_camera();
 
+  // 2) Compute setpoints to fly to a gate OR follow a line
   navigate_towards_gate();
-  //follow_line();
+//  follow_line();
 
+  // 3) Set attitude setpoints
   set_attitude_setpoint();
 }
 
