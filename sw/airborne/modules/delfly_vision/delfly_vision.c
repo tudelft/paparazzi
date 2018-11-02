@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Matej Karasek
+ * Copyright (C) Matej Karasek, Kirk Scheper
  *
  * This file is part of paparazzi
  *
@@ -19,10 +19,10 @@
  */
 /**
  * @file "modules/delfly_vision/delfly_vision.c"
- * @author Matej Karasek
+ * @author Matej Karasek, Kirk Scheper
  * Vision module for (tail less) DelFlies
  * Include delfly_vision.xml to your airframe file.
- * Define parameters STEREO_PORT, STEREO_BAUD, LASER_PORT, LASER_BAUD
+ * Define parameters STEREO_PORT, STEREO_BAUD
  */
 
 #include "modules/delfly_vision/delfly_vision.h"
@@ -67,7 +67,7 @@
 
 
 #ifndef DELFLY_VISION_PHI_GAINS_P
-#define DELFLY_VISION_PHI_GAINS_P 0
+#define DELFLY_VISION_PHI_GAINS_P 5.
 #endif
 
 #ifndef DELFLY_VISION_PHI_GAINS_I
@@ -154,6 +154,7 @@ float fused_altitude_prev;
 bool previous_laser_based;
 float last_altitude_time;
 float last_laser_time;
+float last_step_time;
 float laser_altitude_prev;
 float laser_rate;
 float climb_rate;
@@ -196,9 +197,19 @@ static void send_delfly_vision_msg(struct transport_tx *trans, struct link_devic
 static void laser_data_cb(uint8_t __attribute__((unused)) sender_id, float distance)
 {
   laser_altitude = distance;
-  //gate_raw.quality = distance*100;
+
+  float laser_dt = get_sys_time_float() - last_laser_time;
+  if (laser_dt > 0)
+  {
+    laser_rate = (laser_altitude - laser_altitude_prev)/laser_dt;
+  }
+  else
+  {
+    laser_rate = 0;
+  }
 
   last_laser_time = get_sys_time_float();
+
 }
 
 static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
@@ -220,6 +231,8 @@ static void estimate_altitude(void)
 {
   static float p_laser = 0.8;
   static float p_baro = 0.95;
+  static bool laser_ok = 1;
+
   if (laser_altitude > 4.0 || (get_sys_time_float() - last_laser_time) > 0.2) // laser measurement out of range, or no recent laser readings
   {
     if (previous_laser_based)
@@ -230,12 +243,27 @@ static void estimate_altitude(void)
     }
 
     // complementary filter - baro based measurements
-    fused_altitude = fused_altitude*p_baro + (fused_altitude_ref + baro_altitude - baro_altitude_ref)*(1.0-p_baro);
+    fused_altitude = fused_altitude*p_baro + (fused_altitude_ref + baro_altitude - baro_altitude_ref)*(1.0 - p_baro);
   }
   else // laser measurement correct, trust laser
   {
     // complementary filter - laser based measurements
-    fused_altitude = fused_altitude*p_laser + laser_altitude*(1.0-p_laser);
+    if (abs(laser_rate) < 4. && (get_sys_time_float() - last_step_time) > 1.)
+    {
+      p_laser = 0.8; // we trust laser
+      laser_ok = 1;
+    }
+    else  // filtering out steps in the measurement when crossing
+    {
+      p_laser = 0.98; // we don't trust laser for the next 1 second
+      if (laser_ok)
+      {
+        last_step_time = get_sys_time_float();
+        laser_ok = 0;
+      }
+    }
+
+    fused_altitude = fused_altitude*p_laser + laser_altitude*(1.0 - p_laser);
     previous_laser_based = 1;
   }
 
@@ -243,12 +271,10 @@ static void estimate_altitude(void)
   if (deltat > 0)
     {
     climb_rate = (fused_altitude - fused_altitude_prev)/deltat;
-    laser_rate = (laser_altitude - laser_altitude_prev)/deltat;
     }
   else
   {
     climb_rate = 0;
-    laser_rate = 0;
   }
 
   last_altitude_time = get_sys_time_float();
@@ -288,6 +314,7 @@ void delfly_vision_init(void)
   previous_laser_based = 1;
   last_altitude_time = 0.f;
   last_laser_time = 0.f;
+  last_step_time = 0.f;
   laser_altitude_prev = 0.f;
   climb_rate = 0.f;
   laser_rate = 0.f;
@@ -375,11 +402,24 @@ static void navigate_towards_gate(void)
 
   // apply pid gains for yaw, pitch and thrust
 
-//  sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
-  sp.phi = phi_gains.p*alignment_error + phi_gains.i*alignment_error_sum;
+  sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
+//  sp.phi = phi_gains.p*alignment_error + phi_gains.i*alignment_error_sum;
   sp.theta = -theta_gains.p*dist_error - theta_gains.i*dist_error_sum;
 //  thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
-  sp.psi = gate_filt.psi + stateGetNedToBodyEulers_f()->psi;
+//  sp.psi = gate_filt.psi + stateGetNedToBodyEulers_f()->psi;
+
+  static bool prev_vision = 0;
+
+  if (radio_control.values[RADIO_FLAP] > 5000  && !prev_vision) // Vision switch ON
+  {
+    sp.psi = stateGetNedToBodyEulers_f()->psi;
+    prev_vision = 1;
+  }
+
+  if (radio_control.values[RADIO_FLAP] <= 5000) prev_vision =0;
+
+
+
 }
 
 static void follow_line(void)
@@ -576,10 +616,12 @@ void guidance_v_module_run(bool in_flight)
 
   if (radio_control.values[RADIO_GEAR] < 5000) // Altitude hold switch ON
     {
-      if (altitude_hold_on == 0) // entering altitude hold
+    altitude_setp = 1.1;
+
+    if (altitude_hold_on == 0) // entering altitude hold
       {
         altitude_hold_on = 1;
-        altitude_setp = fused_altitude;
+        //altitude_setp = fused_altitude;
         guidance_v_z_sum_err = 0; // reset integration error
       }
 
