@@ -576,10 +576,6 @@ void guidance_h_module_read_rc(void)
   // TODO: change the desired vx/vy
 }
 
-#define YAW_DEADBAND_EXCEEDED()                                         \
-  (radio_control.values[RADIO_YAW] >  STABILIZATION_ATTITUDE_DEADBAND_R || \
-   radio_control.values[RADIO_YAW] < -STABILIZATION_ATTITUDE_DEADBAND_R)
-
 /**
  * Main guidance loop
  * @param[in] in_flight Whether we are in flight or not
@@ -595,10 +591,6 @@ void guidance_h_module_run(bool in_flight)
     stab_cmd.phi = rc_sp.phi + att_sp.phi;
     stab_cmd.theta = rc_sp.theta + att_sp.theta;
     stab_cmd.psi = att_sp.psi;
-
-    if (YAW_DEADBAND_EXCEEDED()){
-      target_psi = ANGLE_FLOAT_OF_BFP(att_sp.psi);
-    }
 
     prev = 0;
   } else // Vision switch OFF
