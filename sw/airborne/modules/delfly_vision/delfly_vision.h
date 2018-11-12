@@ -67,6 +67,11 @@ struct follow_t {
   float line_slope;
   float obst_phi;
   float obst_theta;
+  float line_phiF;
+  float line_thetaF;
+  float line_slopeF;
+  float obst_phiF;
+  float obst_thetaF;
   float dt;
 };
 

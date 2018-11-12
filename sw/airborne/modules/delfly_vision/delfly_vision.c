@@ -67,7 +67,7 @@
 
 
 #ifndef DELFLY_VISION_PHI_GAINS_P
-#define DELFLY_VISION_PHI_GAINS_P 1.
+#define DELFLY_VISION_PHI_GAINS_P 0.5
 #endif
 
 #ifndef DELFLY_VISION_PHI_GAINS_I
@@ -161,7 +161,7 @@ float climb_rate;
 float altitude_setp;
 
 bool filt_on=true;
-float filt_tc=0.1;  // gate filter time constant, in seconds
+float filt_tc=0.5;  // gate filter time constant, in seconds
 float gate_target_size=0.35; // target gate size for distance keeping, in rad
 
 struct pid_t phi_gains = {DELFLY_VISION_PHI_GAINS_P, DELFLY_VISION_PHI_GAINS_I, 0.f};
@@ -188,7 +188,7 @@ static void send_delfly_vision_msg(struct transport_tx *trans, struct link_devic
                                   &att_sp.phi, &att_sp.theta, &att_sp.psi,
                                   &thrust_sp, &laser_altitude, &baro_altitude,
                                   &fused_altitude, &climb_rate, &laser_rate,
-                                  &follow.line_slope, &follow.obstacle_phi);
+                                  &follow.line_slopeF, &follow.line_phiF);
 }
 #endif
 
@@ -306,6 +306,14 @@ void delfly_vision_init(void)
   gate_filt.height = 0.f;
   gate_filt.psi = 0.f;
   gate_filt.theta = 0.f;
+
+  follow.dt=0.f;
+  follow.line_phi=0.f;
+  follow.line_theta=0.f;
+  follow.line_slope=0.f;
+  follow.obst_phi=0.f;
+  follow.obst_theta=0.f;
+  follow.line_quality=0;
 
   laser_altitude = 0.f;
   fused_altitude = 0.f;
@@ -442,28 +450,65 @@ static void navigate_towards_gate(void)
 
 static void follow_line(void)
 {
-  // allign body with the line slope
-  sp.psi = follow.line_slope + stateGetNedToBodyEulers_f()->psi;
+  // update filters
+  if (follow.dt <= 0) return;
+
+  if (follow.dt < 1.f && filt_on)
+  {
+    // propagate low-pass filter
+    float scaler = 1.f / (filt_tc + follow.dt);
+    follow.line_slopeF = (follow.line_slope*follow.dt + follow.line_slopeF*filt_tc) * scaler;
+    follow.line_phiF = (follow.line_phi*follow.dt + follow.line_phiF*filt_tc) * scaler;
+    follow.line_thetaF = (follow.line_theta*follow.dt + follow.line_thetaF*filt_tc) * scaler;
+  } else {
+    // reset filter if last update too long ago
+    follow.line_slopeF = follow.line_slope;
+    follow.line_phiF = follow.line_phi;
+    follow.line_thetaF = follow.line_theta;
+  }
+
+  if (follow.dt < 1.f && filt_on && follow.obst_phi > -0.5 && follow.obst_theta < 0.39)
+   {
+     // propagate low-pass filter
+     float scaler = 1.f / (filt_tc + follow.dt);
+     follow.obst_phiF = (follow.obst_phi*follow.dt + follow.obst_phiF*filt_tc) * scaler;
+     follow.obst_thetaF = (follow.obst_theta*follow.dt + follow.obst_thetaF*filt_tc) * scaler;
+   } else {
+     // reset filter if last update too long ago, or if no obstacles are seen
+     follow.obst_phiF = follow.obst_phi;
+     follow.obst_thetaF = follow.obst_theta;
+   }
+
 
   float lat_error;
-  if (follow.obst_phi == -1 || fabsf(follow.line_phi - follow.obst_phi) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
+  if ((follow.obst_phi < -0.5 && follow.obst_theta > 0.39) || fabsf(follow.line_phiF - follow.obst_phiF) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
   {
-    lat_error = 0;
+    lat_error = follow.line_phiF;
   } else { // we see an obstacle and it is on our flight path
-    if (follow.line_phi > follow.obst_phi) {
-      lat_error = follow.obst_phi + safe_angle;
+    if (follow.line_phiF > follow.obst_phiF) {
+      lat_error = follow.obst_phiF + safe_angle;
     } else {
-      lat_error = follow.obst_phi - safe_angle;
+      lat_error = follow.obst_phiF - safe_angle;
     }
   }
 
   // integrate error
   lat_error_sum += lat_error*gate_raw.dt;
 
-//  sp.theta = -0.25; // ~ 15 degrees pitch
-  sp.theta = 0.;
+  sp.theta = -0.25; // ~ 15 degrees pitch
+//  sp.theta = 0.;
   sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
 
+  // allign body with the line slope
+  float yaw_rate = 0.2; // in rad/s
+
+  if (fabsf(follow.line_slopeF) < 0.2)
+  {
+    sp.psi = stateGetNedToBodyEulers_f()->psi - follow.line_slopeF;
+  } else {
+    float sign=((follow.line_slopeF > 0) - (follow.line_slopeF < 0));
+    sp.psi = stateGetNedToBodyEulers_f()->psi - sign*yaw_rate;
+  }
 }
 
 
@@ -478,6 +523,7 @@ static void set_attitude_setpoint(void)
   att_sp.phi = ANGLE_BFP_OF_REAL(sp.phi);
   att_sp.theta = ANGLE_BFP_OF_REAL(sp.theta);
   att_sp.psi = ANGLE_BFP_OF_REAL(sp.psi);
+  INT32_ANGLE_NORMALIZE(att_sp.psi);
   //guidance_v_zd_sp = thrust_sp; // todo implement
 }
 
@@ -490,8 +536,8 @@ static void evaluate_state_machine(void)
   rotate_camera();
 
   // 2) Compute setpoints to fly to a gate OR follow a line
-  navigate_towards_gate();
-//  follow_line();
+//  navigate_towards_gate();
+  follow_line();
 
   // 3) Set attitude setpoints
   set_attitude_setpoint();
@@ -505,7 +551,7 @@ static void delfly_vision_parse_msg(void)
 
   switch (msg_id) {
 
-    case DL_STEREOCAM_GATE: {
+    case DL_STEREOCAM_GATE:
       if (DL_STEREOCAM_GATE_quality(stereocam_msg_buf) > 14) // ignore messages when gate was not detected (quality=14)
       {
         gate_raw.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
@@ -534,24 +580,22 @@ static void delfly_vision_parse_msg(void)
       }
 
       break;
-    }
 
-    case DL_STEREOCAM_LINE: {
-            follow.line_quality = DL_STEREOCAM_LINE_fit(stereocam_msg_buf);
-            follow.line_slope   = DL_STEREOCAM_LINE_rotation(stereocam_msg_buf);
-            follow.line_phi  = DL_STEREOCAM_LINE_phi_line(stereocam_msg_buf);
-            follow.line_theta   = DL_STEREOCAM_LINE_theta_line(stereocam_msg_buf);
-            follow.obst_phi = DL_STEREOCAM_LINE_phi_onstacle(stereocam_msg_buf);
-            follow.obst_theta = DL_STEREOCAM_LINE_theta_obstacle(stereocam_msg_buf);
+    case DL_STEREOCAM_LINE:
+      follow.line_quality = DL_STEREOCAM_LINE_fit(stereocam_msg_buf);
+      follow.line_slope   = DL_STEREOCAM_LINE_rotation(stereocam_msg_buf);
+      follow.line_theta  = DL_STEREOCAM_LINE_phi_line(stereocam_msg_buf);
+      follow.line_phi   = DL_STEREOCAM_LINE_theta_line(stereocam_msg_buf);
+      follow.obst_theta = DL_STEREOCAM_LINE_phi_obstacle(stereocam_msg_buf);
+      follow.obst_phi = DL_STEREOCAM_LINE_theta_obstacle(stereocam_msg_buf);
 
-            follow.dt = get_sys_time_float() - last_time;
-            last_time = get_sys_time_float();
+      follow.dt = get_sys_time_float() - last_time;
+      last_time = get_sys_time_float();
 
-            evaluate_state_machine();
-            break;
-        }
+      evaluate_state_machine();
+      break;
 
-    default: {}
+    default:
       break;
   }
 }
@@ -672,7 +716,7 @@ void guidance_v_module_run(bool in_flight)
   static bool altitude_hold_on = 0;
 
   if (radio_control.values[RADIO_GEAR] < 5000) { // Altitude hold switch ON
-    altitude_setp = 1.1;
+    altitude_setp = 0.8;
 
     if (altitude_hold_on == 0) // entering altitude hold
     {
