@@ -168,8 +168,7 @@ struct pid_t phi_gains = {DELFLY_VISION_PHI_GAINS_P, DELFLY_VISION_PHI_GAINS_I, 
 struct pid_t theta_gains = {DELFLY_VISION_THETA_GAINS_P, DELFLY_VISION_THETA_GAINS_I, 0.f};
 struct pid_t thrust_gains = {DELFLY_VISION_THRUST_GAINS_P, DELFLY_VISION_THRUST_GAINS_I, DELFLY_VISION_THRUST_GAINS_D};
 
-float obstacle_psi;
-float line_psi;
+struct follow_t follow;
 float safe_angle=0.1;
 
 struct FloatEulers sp;
@@ -189,7 +188,7 @@ static void send_delfly_vision_msg(struct transport_tx *trans, struct link_devic
                                   &att_sp.phi, &att_sp.theta, &att_sp.psi,
                                   &thrust_sp, &laser_altitude, &baro_altitude,
                                   &fused_altitude, &climb_rate, &laser_rate,
-                                  &line_psi, &obstacle_psi);
+                                  &follow.line_slope, &follow.obstacle_phi);
 }
 #endif
 
@@ -428,8 +427,8 @@ static void navigate_towards_gate(void)
   //thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
 
   // reusing line messages, for testing only
-  line_psi = target_psi;
-  obstacle_psi = target_psi_error_sum;
+//  line_psi = target_psi;
+//  obstacle_psi = target_psi_error_sum;
 
   if (radio_control.values[RADIO_FLAP] > 5000  && !prev_vision) // Vision switch ON
   {
@@ -443,27 +442,28 @@ static void navigate_towards_gate(void)
 
 static void follow_line(void)
 {
-  // TODO make new messages for line following
+  // allign body with the line slope
+  sp.psi = follow.line_slope + stateGetNedToBodyEulers_f()->psi;
 
-  //  line_psi=gate_filt.psi;
-  line_psi = angle_to_gate.psi;
-  //obstacle_psi=-gate_raw.depth;
-  obstacle_psi = -1.f; // -1 rad --> no gate detected
-
-  // simply set angle for yaw
-  if (obstacle_psi == -1 || fabsf(line_psi - obstacle_psi) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
+  float lat_error;
+  if (follow.obst_phi == -1 || fabsf(follow.line_phi - follow.obst_phi) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
   {
-    sp.psi = line_psi + stateGetNedToBodyEulers_f()->psi;
+    lat_error = 0;
   } else { // we see an obstacle and it is on our flight path
-    if (line_psi > obstacle_psi) {
-      sp.psi = obstacle_psi + safe_angle + stateGetNedToBodyEulers_f()->psi;
+    if (follow.line_phi > follow.obst_phi) {
+      lat_error = follow.obst_phi + safe_angle;
     } else {
-      sp.psi = obstacle_psi - safe_angle + stateGetNedToBodyEulers_f()->psi;
+      lat_error = follow.obst_phi - safe_angle;
     }
   }
+
+  // integrate error
+  lat_error_sum += lat_error*gate_raw.dt;
+
 //  sp.theta = -0.25; // ~ 15 degrees pitch
   sp.theta = 0.;
-  sp.phi = 0.;
+  sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
+
 }
 
 
@@ -513,9 +513,10 @@ static void delfly_vision_parse_msg(void)
         gate_raw.height  = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
         gate_raw.phi     = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
         gate_raw.theta   = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
-        gate_raw.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
+//        gate_raw.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
 
         gate_raw.dt = get_sys_time_float() - last_time;
+        gate_raw.depth = gate_raw.dt; // TODO create separate message
         last_time = get_sys_time_float();
 
         gate_raw.num_color_bins = pprzlink_get_STEREOCAM_GATE_color_bins_length(stereocam_msg_buf);
@@ -534,6 +535,21 @@ static void delfly_vision_parse_msg(void)
 
       break;
     }
+
+    case DL_STEREOCAM_LINE: {
+            follow.line_quality = DL_STEREOCAM_LINE_fit(stereocam_msg_buf);
+            follow.line_slope   = DL_STEREOCAM_LINE_rotation(stereocam_msg_buf);
+            follow.line_phi  = DL_STEREOCAM_LINE_phi_line(stereocam_msg_buf);
+            follow.line_theta   = DL_STEREOCAM_LINE_theta_line(stereocam_msg_buf);
+            follow.obst_phi = DL_STEREOCAM_LINE_phi_onstacle(stereocam_msg_buf);
+            follow.obst_theta = DL_STEREOCAM_LINE_theta_obstacle(stereocam_msg_buf);
+
+            follow.dt = get_sys_time_float() - last_time;
+            last_time = get_sys_time_float();
+
+            evaluate_state_machine();
+            break;
+        }
 
     default: {}
       break;

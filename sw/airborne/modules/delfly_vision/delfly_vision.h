@@ -59,6 +59,20 @@ struct gate_filt_t {
 
 extern struct gate_t gate_raw;
 
+/* follow structure */
+struct follow_t {
+  int32_t line_quality;
+  float line_phi;
+  float line_theta;
+  float line_slope;
+  float obst_phi;
+  float obst_theta;
+  float dt;
+};
+
+extern struct follow_t follow;
+
+
 struct pid_t {
   float p;
   float i;
