@@ -67,7 +67,7 @@
 
 
 #ifndef DELFLY_VISION_PHI_GAINS_P
-#define DELFLY_VISION_PHI_GAINS_P 0.
+#define DELFLY_VISION_PHI_GAINS_P 1.
 #endif
 
 #ifndef DELFLY_VISION_PHI_GAINS_I
@@ -161,7 +161,7 @@ float climb_rate;
 float altitude_setp;
 
 bool filt_on=true;
-float filt_tc=0.25;  // gate filter time constant, in seconds
+float filt_tc=0.1;  // gate filter time constant, in seconds
 float gate_target_size=0.35; // target gate size for distance keeping, in rad
 
 struct pid_t phi_gains = {DELFLY_VISION_PHI_GAINS_P, DELFLY_VISION_PHI_GAINS_I, 0.f};
@@ -327,7 +327,7 @@ void delfly_vision_init(void)
   float_rmat_of_eulers(&RM_body_to_cam, &euler);
 }
 
-static float alignment_error_sum = 0.f, dist_error_sum = 0.f, alt_error_sum = 0.f, lat_error_sum = 0.f;
+static float alignment_error_sum = 0.f, dist_error_sum = 0.f, alt_error_sum = 0.f, lat_error_sum = 0.f, target_psi_error_sum = 0.f;
 static float last_time = 0.f;
 
 /*
@@ -353,9 +353,7 @@ static void rotate_camera(void)
   float_eulers_of_rmat(&angle_to_gate, &RM_earth_to_gate); // Eulers of gate in earth frame
 
   // update filters
-  gate_raw.dt = get_sys_time_float() - last_time;
   if (gate_raw.dt <= 0) return;
-  last_time = get_sys_time_float();
   if (gate_raw.dt < 1.f && filt_on)
   {
     // propagate low-pass filter
@@ -364,9 +362,7 @@ static void rotate_camera(void)
     gate_filt.height = (gate_raw.height*gate_raw.dt + gate_filt.height*filt_tc) * scaler;
     gate_filt.theta = (angle_to_gate.theta*gate_raw.dt + gate_filt.theta*filt_tc) * scaler;
     gate_filt.psi = (angle_to_gate.psi*gate_raw.dt + gate_filt.psi*filt_tc) * scaler;
-  }
-  else
-  {
+  } else {
     // reset filter if last update too long ago
     gate_filt.width = gate_raw.width;
     gate_filt.height = gate_raw.height;
@@ -374,6 +370,8 @@ static void rotate_camera(void)
     gate_filt.psi = angle_to_gate.psi;
   }
 }
+
+static float target_psi = 0;
 
 /*
  * Compute attitude set-point given gate position
@@ -391,71 +389,78 @@ static void navigate_towards_gate(void)
   float dist_error = (gate_target_size - gate_filt.height);  // rad
   float alt_error = -gate_filt.theta; // rad
   float lat_error = gate_filt.psi; // rad
+  float target_psi_error = stateGetNedToBodyEulers_f()->psi - target_psi;
 
   static bool prev_vision = 0;
 
-  if (gate_raw.dt > 1.f || (radio_control.values[RADIO_FLAP] > 5000  && !prev_vision))
-    {
-    // reset integrators if no measurement for more than a second OR when we switch vision on
-    alignment_error_sum = 0;
-    dist_error_sum = 0;
-    alt_error_sum = 0;
-    lat_error_sum = 0;
-    }
-  else
-  {
+//  if (gate_raw.dt > 1.f || (radio_control.values[RADIO_FLAP] > 5000  && !prev_vision))
+//    {
+//    // reset integrators if no measurement for more than a second OR when we switch vision on
+//    alignment_error_sum = 0;
+//    target_psi_error_sum = 0;
+//    dist_error_sum = 0;
+//    alt_error_sum = 0;
+//    lat_error_sum = 0;
+//    }
+//  else
+//  {
     // Increment integrated errors
     alignment_error_sum += alignment_error*gate_raw.dt;
+    target_psi_error_sum += target_psi_error*gate_raw.dt;
     dist_error_sum += dist_error*gate_raw.dt;
     alt_error_sum += alt_error*gate_raw.dt;
     lat_error_sum += lat_error*gate_raw.dt;
-  }
+//  }
 
   // GATE FLIGHT THROUGH
 
   // apply pid gains for yaw, pitch and thrust
 
-  sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
-//  sp.phi = phi_gains.p*alignment_error + phi_gains.i*alignment_error_sum;
-  sp.theta = -theta_gains.p*dist_error - theta_gains.i*dist_error_sum;
-//  thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
+  //sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
+  //sp.phi = phi_gains.p*alignment_error + phi_gains.i*alignment_error_sum;
+  sp.phi = phi_gains.p*target_psi_error + phi_gains.i*target_psi_error_sum;
+
+  //sp.theta = -theta_gains.p*dist_error - theta_gains.i*dist_error_sum;
+  sp.theta = 0.;
+
   sp.psi = gate_filt.psi + stateGetNedToBodyEulers_f()->psi;
+
+  //thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
+
+  // reusing line messages, for testing only
+  line_psi = target_psi;
+  obstacle_psi = target_psi_error_sum;
 
   if (radio_control.values[RADIO_FLAP] > 5000  && !prev_vision) // Vision switch ON
   {
-    sp.psi = stateGetNedToBodyEulers_f()->psi; // reset heading set point when entering
+    target_psi = stateGetNedToBodyEulers_f()->psi; // remember heading at the beginning, should be aligned with the gates
+    sp.psi = stateGetNedToBodyEulers_f()->psi; // reset heading setpoint
     prev_vision = 1;
   }
 
   if (radio_control.values[RADIO_FLAP] <= 5000) prev_vision = 0;
-
-
-
 }
 
 static void follow_line(void)
 {
   // TODO make new messages for line following
 
-//  line_psi=gate_filt.psi;
-  line_psi=angle_to_gate.psi;
-    //obstacle_psi=-gate_raw.depth;
-  obstacle_psi=-1; // -1 rad --> no gate detected
+  //  line_psi=gate_filt.psi;
+  line_psi = angle_to_gate.psi;
+  //obstacle_psi=-gate_raw.depth;
+  obstacle_psi = -1.f; // -1 rad --> no gate detected
 
   // simply set angle for yaw
-  if (obstacle_psi==-1 || abs(line_psi - obstacle_psi) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
-    {
-      sp.psi = line_psi + stateGetNedToBodyEulers_f()->psi;
+  if (obstacle_psi == -1 || fabsf(line_psi - obstacle_psi) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
+  {
+    sp.psi = line_psi + stateGetNedToBodyEulers_f()->psi;
+  } else { // we see an obstacle and it is on our flight path
+    if (line_psi > obstacle_psi) {
+      sp.psi = obstacle_psi + safe_angle + stateGetNedToBodyEulers_f()->psi;
+    } else {
+      sp.psi = obstacle_psi - safe_angle + stateGetNedToBodyEulers_f()->psi;
     }
-  else // we see an obstacle and it is on our flight path
-    {
-      if (line_psi > obstacle_psi) {
-        sp.psi = obstacle_psi + safe_angle + stateGetNedToBodyEulers_f()->psi;
-      }
-      else {
-        sp.psi = obstacle_psi - safe_angle + stateGetNedToBodyEulers_f()->psi;
-      }
-    }
+  }
 //  sp.theta = -0.25; // ~ 15 degrees pitch
   sp.theta = 0.;
   sp.phi = 0.;
@@ -510,6 +515,16 @@ static void delfly_vision_parse_msg(void)
         gate_raw.theta   = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
         gate_raw.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
 
+        gate_raw.dt = get_sys_time_float() - last_time;
+        last_time = get_sys_time_float();
+
+        gate_raw.num_color_bins = pprzlink_get_STEREOCAM_GATE_color_bins_length(stereocam_msg_buf);
+        if (gate_raw.num_color_bins > 64) {
+          gate_raw.num_color_bins = 64;
+        }
+
+        memcpy(gate_raw.color_cnt, pprzlink_get_DL_STEREOCAM_GATE_color_bins(stereocam_msg_buf), gate_raw.num_color_bins*sizeof(gate_raw.color_cnt[0]));
+
         evaluate_state_machine();
       }
       else
@@ -523,9 +538,7 @@ static void delfly_vision_parse_msg(void)
     default: {}
       break;
   }
-
 }
-
 
 
 void delfly_vision_periodic(void)
@@ -592,7 +605,7 @@ void guidance_h_module_run(bool in_flight)
 
   static uint8_t prev = 0;
 
-  if (radio_control.values[RADIO_FLAP] > 5000 && (get_sys_time_float() - last_time) < 0.2) // Vision switch ON, and we had a recent update from the camera
+  if (radio_control.values[RADIO_FLAP] > 5000 && (get_sys_time_float() - last_time) < 3.) // Vision switch ON, and we had a recent update from the camera
   {
     static int32_t rc_setp_roll=0;
 
@@ -611,8 +624,7 @@ void guidance_h_module_run(bool in_flight)
     stab_cmd.psi = att_sp.psi;
 
     prev = 0;
-  }
-  else // Vision switch OFF
+  } else // Vision switch OFF
   {
     if (prev == 0)
     {
@@ -629,6 +641,7 @@ void guidance_h_module_run(bool in_flight)
     dist_error_sum = 0.f;
     alt_error_sum = 0.f;
     lat_error_sum = 0.f;
+    target_psi_error_sum = 0.f;
   }
 
   /* Update the setpoint */
@@ -640,65 +653,60 @@ void guidance_h_module_run(bool in_flight)
 
 void guidance_v_module_run(bool in_flight)
 {
-
   static bool altitude_hold_on = 0;
 
-  if (radio_control.values[RADIO_GEAR] < 5000) // Altitude hold switch ON
-    {
+  if (radio_control.values[RADIO_GEAR] < 5000) { // Altitude hold switch ON
     altitude_setp = 1.1;
 
     if (altitude_hold_on == 0) // entering altitude hold
-      {
-        altitude_hold_on = 1;
-        //altitude_setp = fused_altitude;
-        guidance_v_z_sum_err = 0; // reset integration error
-      }
+    {
+      altitude_hold_on = 1;
+      //altitude_setp = fused_altitude;
+      guidance_v_z_sum_err = 0; // reset integration error
+    }
 
-      // in the following code, z is considered positive upwards
-      int32_t err_z  = POS_BFP_OF_REAL(altitude_setp) - POS_BFP_OF_REAL(fused_altitude);
-      Bound(err_z, GUIDANCE_V_MIN_ERR_Z, GUIDANCE_V_MAX_ERR_Z);
-      int32_t err_zd = 0 - POS_BFP_OF_REAL(climb_rate); // desired rate is 0
-      Bound(err_zd, GUIDANCE_V_MIN_ERR_ZD, GUIDANCE_V_MAX_ERR_ZD);
+    // in the following code, z is considered positive upwards
+    int32_t err_z  = POS_BFP_OF_REAL(altitude_setp) - POS_BFP_OF_REAL(fused_altitude);
+    Bound(err_z, GUIDANCE_V_MIN_ERR_Z, GUIDANCE_V_MAX_ERR_Z);
+    int32_t err_zd = 0 - POS_BFP_OF_REAL(climb_rate); // desired rate is 0
+    Bound(err_zd, GUIDANCE_V_MIN_ERR_ZD, GUIDANCE_V_MAX_ERR_ZD);
 
-      if (in_flight) {
-        guidance_v_z_sum_err += err_z;
-        Bound(guidance_v_z_sum_err, -GUIDANCE_V_MAX_SUM_ERR, GUIDANCE_V_MAX_SUM_ERR);
-      } else {
-        guidance_v_z_sum_err = 0;
-      }
+    if (in_flight) {
+      guidance_v_z_sum_err += err_z;
+      Bound(guidance_v_z_sum_err, -GUIDANCE_V_MAX_SUM_ERR, GUIDANCE_V_MAX_SUM_ERR);
+    } else {
+      guidance_v_z_sum_err = 0;
+    }
 
-      /* our nominal command : (g + zdd)*m   */
-      int32_t inv_m;
-      inv_m = BFP_OF_REAL(9.81 / (guidance_v_nominal_throttle * MAX_PPRZ), FF_CMD_FRAC);
-      // TODO make nominal_throttle a function of body pitch and V_batt?
+    /* our nominal command : (g + zdd)*m   */
+    int32_t inv_m;
+    inv_m = BFP_OF_REAL(9.81 / (guidance_v_nominal_throttle * MAX_PPRZ), FF_CMD_FRAC);
+    // TODO make nominal_throttle a function of body pitch and V_batt?
 
-      const int32_t g_m_zdd = (int32_t)BFP_OF_REAL(9.81, FF_CMD_FRAC) -
-                              (guidance_v_zdd_ref << (FF_CMD_FRAC - INT32_ACCEL_FRAC));
+    const int32_t g_m_zdd = (int32_t)BFP_OF_REAL(9.81, FF_CMD_FRAC) -
+                            (guidance_v_zdd_ref << (FF_CMD_FRAC - INT32_ACCEL_FRAC));
 
-      guidance_v_ff_cmd = g_m_zdd / inv_m;
-      /* feed forward command */
-      guidance_v_ff_cmd = (guidance_v_ff_cmd << INT32_TRIG_FRAC) / guidance_v_thrust_coeff;
+    guidance_v_ff_cmd = g_m_zdd / inv_m;
+    /* feed forward command */
+    guidance_v_ff_cmd = (guidance_v_ff_cmd << INT32_TRIG_FRAC) / guidance_v_thrust_coeff;
 
-      /* bound the nominal command to MAX_PPRZ */
-      Bound(guidance_v_ff_cmd, 0, MAX_PPRZ);
+    /* bound the nominal command to MAX_PPRZ */
+    Bound(guidance_v_ff_cmd, 0, MAX_PPRZ);
 
-      /* our error feed back command                   */
-      guidance_v_fb_cmd = ((guidance_v_kp * 8 * err_z)  >> 7) + // the P gain is 8 times stronger than in the standard guidance_v
-                          ((guidance_v_kd * err_zd) >> 16) +
-                          ((guidance_v_ki * guidance_v_z_sum_err) >> 16);
+    /* our error feed back command                   */
+    guidance_v_fb_cmd = ((guidance_v_kp * 8 * err_z)  >> 7) + // the P gain is 8 times stronger than in the standard guidance_v
+                        ((guidance_v_kd * err_zd) >> 16) +
+                        ((guidance_v_ki * guidance_v_z_sum_err) >> 16);
 
-      guidance_v_delta_t = guidance_v_ff_cmd + guidance_v_fb_cmd;
+    guidance_v_delta_t = guidance_v_ff_cmd + guidance_v_fb_cmd;
 
-      /* bound the result */
-      Bound(guidance_v_delta_t, guidance_v_nominal_throttle*0.8*MAX_PPRZ, MAX_PPRZ); // to avoid free fall descends
+    /* bound the result */
+    Bound(guidance_v_delta_t, guidance_v_nominal_throttle*0.8*MAX_PPRZ, MAX_PPRZ); // to avoid free fall descends
 
     stabilization_cmd[COMMAND_THRUST] = guidance_v_delta_t;
     thrust_sp = guidance_v_delta_t;
-    }
-  else // Altitude hold switch OFF
-    {
-      stabilization_cmd[COMMAND_THRUST] = radio_control.values[RADIO_THROTTLE];
-      altitude_hold_on = 0;
-
-    }
+  } else { // Altitude hold switch OFF
+    stabilization_cmd[COMMAND_THRUST] = radio_control.values[RADIO_THROTTLE];
+    altitude_hold_on = 0;
+  }
 }
