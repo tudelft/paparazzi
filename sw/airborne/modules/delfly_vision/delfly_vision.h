@@ -46,6 +46,8 @@ struct gate_t {
   float theta;
   float depth;
   float dt;
+  uint16_t color_cnt[64];
+  uint16_t num_color_bins;
 };
 
 struct gate_filt_t {

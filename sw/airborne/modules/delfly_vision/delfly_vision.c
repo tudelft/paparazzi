@@ -180,16 +180,21 @@ float max_thurst = 1.f;
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
-static void send_delfly_vision_msg(struct transport_tx *trans, struct link_device *dev)
+static void send_delfly_vision(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_DELFLY_VISION(trans, dev, AC_ID,
                                   &gate_raw.quality, &gate_raw.width, &gate_raw.height,
                                   &gate_raw.phi, &gate_raw.theta, &gate_raw.depth,
                                   &angle_to_gate.theta, &angle_to_gate.psi,
                                   &att_sp.phi, &att_sp.theta, &att_sp.psi,
-                                  &thrust_sp, &laser_altitude, &baro_altitude,
-                                  &fused_altitude, &climb_rate, &laser_rate,
                                   &line_psi, &obstacle_psi);
+}
+
+static void send_delfly_height(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_DELFLY_HEIGHT(trans, dev, AC_ID,
+                                  &thrust_sp, &laser_altitude, &baro_altitude,
+                                  &fused_altitude, &climb_rate, &laser_rate);
 }
 #endif
 
@@ -320,14 +325,15 @@ void delfly_vision_init(void)
   laser_rate = 0.f;
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DELFLY_VISION, send_delfly_vision_msg);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DELFLY_VISION, send_delfly_vision);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DELFLY_HEIGHT, send_delfly_height);
 #endif
 
   struct FloatEulers euler = {STEREO_BODY_TO_STEREO_PHI, STEREO_BODY_TO_STEREO_THETA, STEREO_BODY_TO_STEREO_PSI};
   float_rmat_of_eulers(&RM_body_to_cam, &euler);
 }
 
-static float alignment_error_sum = 0.f, dist_error_sum = 0.f, alt_error_sum = 0.f, lat_error_sum = 0.f;
+static float alignment_error_sum = 0.f, dist_error_sum = 0.f, alt_error_sum = 0.f, lat_error_sum = 0.f, target_psi_error_sum = 0.f;
 static float last_time = 0.f;
 
 /*
@@ -364,9 +370,7 @@ static void rotate_camera(void)
     gate_filt.height = (gate_raw.height*gate_raw.dt + gate_filt.height*filt_tc) * scaler;
     gate_filt.theta = (angle_to_gate.theta*gate_raw.dt + gate_filt.theta*filt_tc) * scaler;
     gate_filt.psi = (angle_to_gate.psi*gate_raw.dt + gate_filt.psi*filt_tc) * scaler;
-  }
-  else
-  {
+  } else {
     // reset filter if last update too long ago
     gate_filt.width = gate_raw.width;
     gate_filt.height = gate_raw.height;
@@ -374,6 +378,8 @@ static void rotate_camera(void)
     gate_filt.psi = angle_to_gate.psi;
   }
 }
+
+static float target_psi = 0;
 
 /*
  * Compute attitude set-point given gate position
@@ -391,60 +397,62 @@ static void navigate_towards_gate(void)
   float dist_error = (gate_target_size - gate_filt.height);  // rad
   float alt_error = -gate_filt.theta; // rad
   float lat_error = gate_filt.psi; // rad
+  float target_psi_error = target_psi - stateGetNedToBodyEulers_f()->psi;
 
   // Increment integrated errors
-  alignment_error_sum += alignment_error*gate_raw.dt;
-  dist_error_sum += dist_error*gate_raw.dt;
-  alt_error_sum += alt_error*gate_raw.dt;
-  lat_error_sum += lat_error*gate_raw.dt;
+  if (gate_raw.dt < 1.f){
+    alignment_error_sum += alignment_error * gate_raw.dt;
+    dist_error_sum += dist_error * gate_raw.dt;
+    alt_error_sum += alt_error * gate_raw.dt;
+    lat_error_sum += lat_error * gate_raw.dt;
+    target_psi_error_sum += target_psi_error * gate_raw.dt;
+  }
 
   // GATE FLIGHT THROUGH
 
   // apply pid gains for yaw, pitch and thrust
 
-  sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
+  //sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
 //  sp.phi = phi_gains.p*alignment_error + phi_gains.i*alignment_error_sum;
+  sp.phi = phi_gains.p*target_psi_error + phi_gains.i*target_psi_error_sum;
+
+
   sp.theta = -theta_gains.p*dist_error - theta_gains.i*dist_error_sum;
 //  thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
-//  sp.psi = gate_filt.psi + stateGetNedToBodyEulers_f()->psi;
+  sp.psi = gate_filt.psi + stateGetNedToBodyEulers_f()->psi;
 
   static bool prev_vision = 0;
 
   if (radio_control.values[RADIO_FLAP] > 5000  && !prev_vision) // Vision switch ON
   {
+    target_psi = stateGetNedToBodyEulers_f()->psi;
     sp.psi = stateGetNedToBodyEulers_f()->psi;
     prev_vision = 1;
   }
 
-  if (radio_control.values[RADIO_FLAP] <= 5000) prev_vision =0;
-
-
-
+  if (radio_control.values[RADIO_FLAP] <= 5000) prev_vision = 0;
 }
 
 static void follow_line(void)
 {
   // TODO make new messages for line following
 
-//  line_psi=gate_filt.psi;
-  line_psi=angle_to_gate.psi;
-    //obstacle_psi=-gate_raw.depth;
-  obstacle_psi=-1; // -1 rad --> no gate detected
+  //  line_psi=gate_filt.psi;
+  line_psi = angle_to_gate.psi;
+  //obstacle_psi=-gate_raw.depth;
+  obstacle_psi = -1.f; // -1 rad --> no gate detected
 
   // simply set angle for yaw
-  if (obstacle_psi==-1 || abs(line_psi - obstacle_psi) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
-    {
-      sp.psi = line_psi + stateGetNedToBodyEulers_f()->psi;
+  if (obstacle_psi==-1 || fabsf(line_psi - obstacle_psi) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
+  {
+    sp.psi = line_psi + stateGetNedToBodyEulers_f()->psi;
+  } else { // we see an obstacle and it is on our flight path
+    if (line_psi > obstacle_psi) {
+      sp.psi = obstacle_psi + safe_angle + stateGetNedToBodyEulers_f()->psi;
+    } else {
+      sp.psi = obstacle_psi - safe_angle + stateGetNedToBodyEulers_f()->psi;
     }
-  else // we see an obstacle and it is on our flight path
-    {
-      if (line_psi > obstacle_psi) {
-        sp.psi = obstacle_psi + safe_angle + stateGetNedToBodyEulers_f()->psi;
-      }
-      else {
-        sp.psi = obstacle_psi - safe_angle + stateGetNedToBodyEulers_f()->psi;
-      }
-    }
+  }
 //  sp.theta = -0.25; // ~ 15 degrees pitch
   sp.theta = 0.;
   sp.phi = 0.;
@@ -488,7 +496,6 @@ static void delfly_vision_parse_msg(void)
   uint8_t msg_id = pprzlink_get_msg_id(stereocam_msg_buf);
 
   switch (msg_id) {
-
     case DL_STEREOCAM_GATE: {
       gate_raw.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
       gate_raw.width   = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
@@ -497,17 +504,22 @@ static void delfly_vision_parse_msg(void)
       gate_raw.theta   = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
       gate_raw.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
 
-      evaluate_state_machine();
+      gate_raw.num_color_bins = pprzlink_get_STEREOCAM_GATE_color_bins_length(stereocam_msg_buf);
+      if (gate_raw.num_color_bins > 64) {
+        gate_raw.num_color_bins = 64;
+      }
 
+      memcpy(gate_raw.color_cnt, pprzlink_get_DL_STEREOCAM_GATE_color_bins(stereocam_msg_buf), gate_raw.num_color_bins*sizeof(gate_raw.color_cnt[0]));
+
+      if (gate_raw.quality > 14){
+        evaluate_state_machine();
+      }
       break;
     }
-
     default: {}
       break;
   }
-
 }
-
 
 
 void delfly_vision_periodic(void)
@@ -564,6 +576,10 @@ void guidance_h_module_read_rc(void)
   // TODO: change the desired vx/vy
 }
 
+#define YAW_DEADBAND_EXCEEDED()                                         \
+  (radio_control.values[RADIO_YAW] >  STABILIZATION_ATTITUDE_DEADBAND_R || \
+   radio_control.values[RADIO_YAW] < -STABILIZATION_ATTITUDE_DEADBAND_R)
+
 /**
  * Main guidance loop
  * @param[in] in_flight Whether we are in flight or not
@@ -576,14 +592,16 @@ void guidance_h_module_run(bool in_flight)
 
   if (radio_control.values[RADIO_FLAP] > 5000 && (get_sys_time_float() - last_time) < 0.2) // Vision switch ON, and we had a recent update from the camera
   {
-
     stab_cmd.phi = rc_sp.phi + att_sp.phi;
     stab_cmd.theta = rc_sp.theta + att_sp.theta;
     stab_cmd.psi = att_sp.psi;
 
+    if (YAW_DEADBAND_EXCEEDED()){
+      target_psi = ANGLE_FLOAT_OF_BFP(att_sp.psi);
+    }
+
     prev = 0;
-  }
-  else // Vision switch OFF
+  } else // Vision switch OFF
   {
     if (prev == 0)
     {
@@ -600,6 +618,7 @@ void guidance_h_module_run(bool in_flight)
     dist_error_sum = 0.f;
     alt_error_sum = 0.f;
     lat_error_sum = 0.f;
+    target_psi_error_sum = 0.f;
   }
 
   /* Update the setpoint */
@@ -611,65 +630,60 @@ void guidance_h_module_run(bool in_flight)
 
 void guidance_v_module_run(bool in_flight)
 {
-
   static bool altitude_hold_on = 0;
 
-  if (radio_control.values[RADIO_GEAR] < 5000) // Altitude hold switch ON
-    {
+  if (radio_control.values[RADIO_GEAR] > 5000) { // Altitude hold switch ON
     altitude_setp = 1.1;
 
     if (altitude_hold_on == 0) // entering altitude hold
-      {
-        altitude_hold_on = 1;
-        //altitude_setp = fused_altitude;
-        guidance_v_z_sum_err = 0; // reset integration error
-      }
+    {
+      altitude_hold_on = 1;
+      //altitude_setp = fused_altitude;
+      guidance_v_z_sum_err = 0; // reset integration error
+    }
 
-      // in the following code, z is considered positive upwards
-      int32_t err_z  = POS_BFP_OF_REAL(altitude_setp) - POS_BFP_OF_REAL(fused_altitude);
-      Bound(err_z, GUIDANCE_V_MIN_ERR_Z, GUIDANCE_V_MAX_ERR_Z);
-      int32_t err_zd = 0 - POS_BFP_OF_REAL(climb_rate); // desired rate is 0
-      Bound(err_zd, GUIDANCE_V_MIN_ERR_ZD, GUIDANCE_V_MAX_ERR_ZD);
+    // in the following code, z is considered positive upwards
+    int32_t err_z  = POS_BFP_OF_REAL(altitude_setp) - POS_BFP_OF_REAL(fused_altitude);
+    Bound(err_z, GUIDANCE_V_MIN_ERR_Z, GUIDANCE_V_MAX_ERR_Z);
+    int32_t err_zd = 0 - POS_BFP_OF_REAL(climb_rate); // desired rate is 0
+    Bound(err_zd, GUIDANCE_V_MIN_ERR_ZD, GUIDANCE_V_MAX_ERR_ZD);
 
-      if (in_flight) {
-        guidance_v_z_sum_err += err_z;
-        Bound(guidance_v_z_sum_err, -GUIDANCE_V_MAX_SUM_ERR, GUIDANCE_V_MAX_SUM_ERR);
-      } else {
-        guidance_v_z_sum_err = 0;
-      }
+    if (in_flight) {
+      guidance_v_z_sum_err += err_z;
+      Bound(guidance_v_z_sum_err, -GUIDANCE_V_MAX_SUM_ERR, GUIDANCE_V_MAX_SUM_ERR);
+    } else {
+      guidance_v_z_sum_err = 0;
+    }
 
-      /* our nominal command : (g + zdd)*m   */
-      int32_t inv_m;
-      inv_m = BFP_OF_REAL(9.81 / (guidance_v_nominal_throttle * MAX_PPRZ), FF_CMD_FRAC);
-      // TODO make nominal_throttle a function of body pitch and V_batt?
+    /* our nominal command : (g + zdd)*m   */
+    int32_t inv_m;
+    inv_m = BFP_OF_REAL(9.81 / (guidance_v_nominal_throttle * MAX_PPRZ), FF_CMD_FRAC);
+    // TODO make nominal_throttle a function of body pitch and V_batt?
 
-      const int32_t g_m_zdd = (int32_t)BFP_OF_REAL(9.81, FF_CMD_FRAC) -
-                              (guidance_v_zdd_ref << (FF_CMD_FRAC - INT32_ACCEL_FRAC));
+    const int32_t g_m_zdd = (int32_t)BFP_OF_REAL(9.81, FF_CMD_FRAC) -
+                            (guidance_v_zdd_ref << (FF_CMD_FRAC - INT32_ACCEL_FRAC));
 
-      guidance_v_ff_cmd = g_m_zdd / inv_m;
-      /* feed forward command */
-      guidance_v_ff_cmd = (guidance_v_ff_cmd << INT32_TRIG_FRAC) / guidance_v_thrust_coeff;
+    guidance_v_ff_cmd = g_m_zdd / inv_m;
+    /* feed forward command */
+    guidance_v_ff_cmd = (guidance_v_ff_cmd << INT32_TRIG_FRAC) / guidance_v_thrust_coeff;
 
-      /* bound the nominal command to MAX_PPRZ */
-      Bound(guidance_v_ff_cmd, 0, MAX_PPRZ);
+    /* bound the nominal command to MAX_PPRZ */
+    Bound(guidance_v_ff_cmd, 0, MAX_PPRZ);
 
-      /* our error feed back command                   */
-      guidance_v_fb_cmd = ((guidance_v_kp * 8 * err_z)  >> 7) + // the P gain is 8 times stronger than in the standard guidance_v
-                          ((guidance_v_kd * err_zd) >> 16) +
-                          ((guidance_v_ki * guidance_v_z_sum_err) >> 16);
+    /* our error feed back command                   */
+    guidance_v_fb_cmd = ((guidance_v_kp * 8 * err_z)  >> 7) + // the P gain is 8 times stronger than in the standard guidance_v
+                        ((guidance_v_kd * err_zd) >> 16) +
+                        ((guidance_v_ki * guidance_v_z_sum_err) >> 16);
 
-      guidance_v_delta_t = guidance_v_ff_cmd + guidance_v_fb_cmd;
+    guidance_v_delta_t = guidance_v_ff_cmd + guidance_v_fb_cmd;
 
-      /* bound the result */
-      Bound(guidance_v_delta_t, guidance_v_nominal_throttle*0.8*MAX_PPRZ, MAX_PPRZ); // to avoid free fall descends
+    /* bound the result */
+    Bound(guidance_v_delta_t, guidance_v_nominal_throttle*0.8*MAX_PPRZ, MAX_PPRZ); // to avoid free fall descends
 
     stabilization_cmd[COMMAND_THRUST] = guidance_v_delta_t;
     thrust_sp = guidance_v_delta_t;
-    }
-  else // Altitude hold switch OFF
-    {
-      stabilization_cmd[COMMAND_THRUST] = radio_control.values[RADIO_THROTTLE];
-      altitude_hold_on = 0;
-
-    }
+  } else { // Altitude hold switch OFF
+    stabilization_cmd[COMMAND_THRUST] = radio_control.values[RADIO_THROTTLE];
+    altitude_hold_on = 0;
+  }
 }
