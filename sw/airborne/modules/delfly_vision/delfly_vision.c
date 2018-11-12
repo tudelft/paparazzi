@@ -67,11 +67,11 @@
 
 
 #ifndef DELFLY_VISION_PHI_GAINS_P
-#define DELFLY_VISION_PHI_GAINS_P 5.
+#define DELFLY_VISION_PHI_GAINS_P 0.
 #endif
 
 #ifndef DELFLY_VISION_PHI_GAINS_I
-#define DELFLY_VISION_PHI_GAINS_I 0
+#define DELFLY_VISION_PHI_GAINS_I 0.
 #endif
 
 #ifndef DELFLY_VISION_THETA_GAINS_P
@@ -392,11 +392,24 @@ static void navigate_towards_gate(void)
   float alt_error = -gate_filt.theta; // rad
   float lat_error = gate_filt.psi; // rad
 
-  // Increment integrated errors
-  alignment_error_sum += alignment_error*gate_raw.dt;
-  dist_error_sum += dist_error*gate_raw.dt;
-  alt_error_sum += alt_error*gate_raw.dt;
-  lat_error_sum += lat_error*gate_raw.dt;
+  static bool prev_vision = 0;
+
+  if (gate_raw.dt > 1.f || (radio_control.values[RADIO_FLAP] > 5000  && !prev_vision))
+    {
+    // reset integrators if no measurement for more than a second OR when we switch vision on
+    alignment_error_sum = 0;
+    dist_error_sum = 0;
+    alt_error_sum = 0;
+    lat_error_sum = 0;
+    }
+  else
+  {
+    // Increment integrated errors
+    alignment_error_sum += alignment_error*gate_raw.dt;
+    dist_error_sum += dist_error*gate_raw.dt;
+    alt_error_sum += alt_error*gate_raw.dt;
+    lat_error_sum += lat_error*gate_raw.dt;
+  }
 
   // GATE FLIGHT THROUGH
 
@@ -406,17 +419,15 @@ static void navigate_towards_gate(void)
 //  sp.phi = phi_gains.p*alignment_error + phi_gains.i*alignment_error_sum;
   sp.theta = -theta_gains.p*dist_error - theta_gains.i*dist_error_sum;
 //  thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
-//  sp.psi = gate_filt.psi + stateGetNedToBodyEulers_f()->psi;
-
-  static bool prev_vision = 0;
+  sp.psi = gate_filt.psi + stateGetNedToBodyEulers_f()->psi;
 
   if (radio_control.values[RADIO_FLAP] > 5000  && !prev_vision) // Vision switch ON
   {
-    sp.psi = stateGetNedToBodyEulers_f()->psi;
+    sp.psi = stateGetNedToBodyEulers_f()->psi; // reset heading set point when entering
     prev_vision = 1;
   }
 
-  if (radio_control.values[RADIO_FLAP] <= 5000) prev_vision =0;
+  if (radio_control.values[RADIO_FLAP] <= 5000) prev_vision = 0;
 
 
 
@@ -490,14 +501,21 @@ static void delfly_vision_parse_msg(void)
   switch (msg_id) {
 
     case DL_STEREOCAM_GATE: {
-      gate_raw.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
-      gate_raw.width   = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
-      gate_raw.height  = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
-      gate_raw.phi     = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
-      gate_raw.theta   = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
-      gate_raw.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
+      if (DL_STEREOCAM_GATE_quality(stereocam_msg_buf) > 14) // ignore messages when gate was not detected (quality=14)
+      {
+        gate_raw.quality = DL_STEREOCAM_GATE_quality(stereocam_msg_buf);
+        gate_raw.width   = DL_STEREOCAM_GATE_width(stereocam_msg_buf);
+        gate_raw.height  = DL_STEREOCAM_GATE_height(stereocam_msg_buf);
+        gate_raw.phi     = DL_STEREOCAM_GATE_phi(stereocam_msg_buf);
+        gate_raw.theta   = DL_STEREOCAM_GATE_theta(stereocam_msg_buf);
+        gate_raw.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
 
-      evaluate_state_machine();
+        evaluate_state_machine();
+      }
+      else
+      {
+        gate_raw.quality = 0;
+      }
 
       break;
     }
@@ -576,8 +594,19 @@ void guidance_h_module_run(bool in_flight)
 
   if (radio_control.values[RADIO_FLAP] > 5000 && (get_sys_time_float() - last_time) < 0.2) // Vision switch ON, and we had a recent update from the camera
   {
+    static int32_t rc_setp_roll=0;
 
-    stab_cmd.phi = rc_sp.phi + att_sp.phi;
+    // add a deadband to roll RC commands when in auto
+    if (abs(rc_sp.phi)>ANGLE_BFP_OF_REAL(0.))
+    {
+      rc_setp_roll=rc_sp.phi;
+    }
+    else
+    {
+      rc_setp_roll=0;
+    }
+
+    stab_cmd.phi = rc_setp_roll + att_sp.phi;
     stab_cmd.theta = rc_sp.theta + att_sp.theta;
     stab_cmd.psi = att_sp.psi;
 
