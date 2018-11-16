@@ -65,6 +65,16 @@
       <configure name="MODEM_PORT" value="UART1"/>
     </module>
     
+    <module name="delfly_vision">
+      <configure name="STEREO_UART" value="UART4"/>
+      <configure name="STEREO_BAUD" value="B921600"/>
+    </module>
+
+    <module name="laser_range_array">
+      <configure name="LASER_RANGE_ARRAY_BAUD" value="38400"/>
+      <configure name="LASER_RANGE_ARRAY_PORT" value="UART3"/>
+    </module>
+              
     <module name="imu" type="lisa_mx_v2.1"/>
     <module name="gps" type="datalink"/>
     <module name="stabilization" type="int_euler">
@@ -247,9 +257,9 @@
 <!--  </section-->
   
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
-    <define name="HOVER_KP" value="140"/>
-    <define name="HOVER_KD" value="200"/>
-    <define name="HOVER_KI" value="0"/>
+    <define name="HOVER_KP" value="200"/>
+    <define name="HOVER_KD" value="85"/>
+    <define name="HOVER_KI" value="50"/>
     <define name="NOMINAL_HOVER_THROTTLE" value="0.75"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>
     <define name="ADAPT_MIN_HOVER_THROTTLE" value="0.5"/>

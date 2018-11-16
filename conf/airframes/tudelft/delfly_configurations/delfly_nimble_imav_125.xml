@@ -1,18 +1,6 @@
 <!DOCTYPE airframe SYSTEM "../../airframe.dtd">
 
 <airframe>
-  <firmware name="rotorcraft">
-    <module name="delfly_vision">
-      <configure name="STEREO_UART" value="UART4"/>
-      <configure name="STEREO_BAUD" value="B921600"/>
-    </module>
-
-    <module name="laser_range_array">
-      <configure name="LASER_RANGE_ARRAY_BAUD" value="38400"/>
-      <configure name="LASER_RANGE_ARRAY_PORT" value="UART3"/>
-    </module>
-  </firmware>    
-              
   <servos driver="Pwm">
     <servo name="MOTOR_LEFT" no="0" min="1100" neutral="1100" max="1900"/> 
     <servo name="MOTOR_RIGHT" no="1" min="1100" neutral="1100" max="1900"/>

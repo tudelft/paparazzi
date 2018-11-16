@@ -720,11 +720,16 @@ void guidance_h_module_run(bool in_flight)
 void guidance_v_module_run(bool in_flight)
 {
   static bool altitude_hold_on = 0;
-  static float b1 = 43635;
-  static float b2 = -981430;
+  static int32_t b1 =  43634;
+  static int32_t b2 = -9814;
+  static int32_t ff_throttle_hover;
   static int32_t ff_throttle;
 
-  ff_throttle = b1 + b2*electrical.vsupply;
+  float theta_now=stateGetNedToBodyEulers_f()->theta;
+
+  ff_throttle_hover = b1 + b2*electrical.vsupply/1000;
+  ff_throttle = (-0.293010703148371*fabsf(theta_now)*theta_now*theta_now - 0.376641389607983*theta_now*theta_now + 0.163645801762599*fabsf(theta_now) + 1)*ff_throttle_hover;
+  //thrust_sp = ff_throttle;
 
   if (radio_control.values[RADIO_GEAR] < 5000) { // Altitude hold switch ON
     altitude_setp = 1.;
@@ -739,7 +744,7 @@ void guidance_v_module_run(bool in_flight)
     // in the following code, z is considered positive upwards
     int32_t err_z  = POS_BFP_OF_REAL(altitude_setp) - POS_BFP_OF_REAL(fused_altitude);
     Bound(err_z, GUIDANCE_V_MIN_ERR_Z, GUIDANCE_V_MAX_ERR_Z);
-    int32_t err_zd = 0 - POS_BFP_OF_REAL(climb_rate); // desired rate is 0
+    int32_t err_zd = 0 - SPEED_BFP_OF_REAL(climb_rate); // desired rate is 0
     Bound(err_zd, GUIDANCE_V_MIN_ERR_ZD, GUIDANCE_V_MAX_ERR_ZD);
 
     if (in_flight) {
@@ -751,7 +756,7 @@ void guidance_v_module_run(bool in_flight)
 
     /* our nominal command : (g + zdd)*m   */
     int32_t inv_m;
-    inv_m = BFP_OF_REAL(9.81 / (ff_throttle * MAX_PPRZ), FF_CMD_FRAC);
+    inv_m = BFP_OF_REAL(9.81 / (ff_throttle), FF_CMD_FRAC);
     // TODO make nominal_throttle a function of body pitch and V_batt?
 
     const int32_t g_m_zdd = (int32_t)BFP_OF_REAL(9.81, FF_CMD_FRAC) -
@@ -772,7 +777,7 @@ void guidance_v_module_run(bool in_flight)
     guidance_v_delta_t = guidance_v_ff_cmd + guidance_v_fb_cmd;
 
     /* bound the result */
-    Bound(guidance_v_delta_t, ff_throttle*0.7*MAX_PPRZ, MAX_PPRZ); // to avoid free fall descends
+    Bound(guidance_v_delta_t, ff_throttle*0.7, MAX_PPRZ); // to avoid free fall descends
 
     stabilization_cmd[COMMAND_THRUST] = guidance_v_delta_t;
     thrust_sp = guidance_v_delta_t;
