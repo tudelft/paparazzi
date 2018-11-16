@@ -49,6 +49,7 @@
 #include "math/pprz_algebra_int.h"
 
 #include "autopilot_static.h"
+#include "subsystems/electrical.h"
 
 // general stereocam definitions
 #if !defined(STEREO_BODY_TO_STEREO_PHI) || !defined(STEREO_BODY_TO_STEREO_THETA) || !defined(STEREO_BODY_TO_STEREO_PSI)
@@ -719,9 +720,14 @@ void guidance_h_module_run(bool in_flight)
 void guidance_v_module_run(bool in_flight)
 {
   static bool altitude_hold_on = 0;
+  static float b1 = 43635;
+  static float b2 = -981430;
+  static int32_t ff_throttle;
+
+  ff_throttle = b1 + b2*electrical.vsupply;
 
   if (radio_control.values[RADIO_GEAR] < 5000) { // Altitude hold switch ON
-    altitude_setp = 0.7;
+    altitude_setp = 1.;
 
     if (altitude_hold_on == 0) // entering altitude hold
     {
@@ -745,7 +751,7 @@ void guidance_v_module_run(bool in_flight)
 
     /* our nominal command : (g + zdd)*m   */
     int32_t inv_m;
-    inv_m = BFP_OF_REAL(9.81 / (guidance_v_nominal_throttle * MAX_PPRZ), FF_CMD_FRAC);
+    inv_m = BFP_OF_REAL(9.81 / (ff_throttle * MAX_PPRZ), FF_CMD_FRAC);
     // TODO make nominal_throttle a function of body pitch and V_batt?
 
     const int32_t g_m_zdd = (int32_t)BFP_OF_REAL(9.81, FF_CMD_FRAC) -
@@ -766,7 +772,7 @@ void guidance_v_module_run(bool in_flight)
     guidance_v_delta_t = guidance_v_ff_cmd + guidance_v_fb_cmd;
 
     /* bound the result */
-    Bound(guidance_v_delta_t, guidance_v_nominal_throttle*0.7*MAX_PPRZ, MAX_PPRZ); // to avoid free fall descends
+    Bound(guidance_v_delta_t, ff_throttle*0.7*MAX_PPRZ, MAX_PPRZ); // to avoid free fall descends
 
     stabilization_cmd[COMMAND_THRUST] = guidance_v_delta_t;
     thrust_sp = guidance_v_delta_t;
