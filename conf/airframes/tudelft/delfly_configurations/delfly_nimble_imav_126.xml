@@ -1,0 +1,10 @@
+<!DOCTYPE airframe SYSTEM "../../airframe.dtd">
+
+<airframe> 
+  <servos driver="Pwm">
+    <servo name="MOTOR_LEFT" no="0" min="1100" neutral="1100" max="1900"/> 
+    <servo name="MOTOR_RIGHT" no="1" min="1100" neutral="1100" max="1900"/>
+    <servo name="DIHEDRAL" no="3" min="1725" neutral="1375" max="1225"/>
+    <servo name="WING_DEF" no="2" min="900" neutral="1590" max="2100"/>
+  </servos>
+</airframe>

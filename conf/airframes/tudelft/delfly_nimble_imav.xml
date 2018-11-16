@@ -15,7 +15,7 @@
   settings_modules="modules/gps_ubx_ucenter.xml modules/delfly_vision.xml"
 -->
 
-<airframe name="DelFly_Transformer_MXS">
+<airframe name="DelFly_Nimble_IMAV">
   
   <!-- FIRMWARE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
   
@@ -109,14 +109,9 @@
   </firmware>
   
   <!-- ACTUATORS & COMMANDS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%-->
-  <servos driver="Pwm">
-    <servo name="MOTOR_LEFT" no="0" min="1100" neutral="1100" max="1900"/> 
-    <servo name="MOTOR_RIGHT" no="1" min="1100" neutral="1100" max="1900"/>
-	<servo name="DIHEDRAL" no="3" min="1760" neutral="1510" max="1260"/>
-	<servo name="WING_DEF" no="2" min="1000" neutral="1500" max="2000"/>
-  </servos>
-
-
+  <include href="conf/airframes/tudelft/delfly_configurations/delfly_nimble_imav_$AC_ID.xml"/> 
+  
+  		
   <commands>
     <axis name="PITCH" failsafe_value="0"/>
     <axis name="ROLL" failsafe_value="0"/>
@@ -186,7 +181,11 @@
         
     <define name="USE_THROTTLE_FOR_MOTOR_ARMING" value="TRUE"/>
 <!--    <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/-->
-        <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
+    <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
+<!--		<define name="KILL_AS_FAILSAFE" value="TRUE"/>       -->
+    <define name="FAILSAFE_DESCENT_SPEED" value="1."/>
+	<define name="FAILSAFE_GROUND_DETECT" value="TRUE"/>
+    <define name="THRESHOLD_GROUND_DETECT" value="90"/>     
   </section>
   
   <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">

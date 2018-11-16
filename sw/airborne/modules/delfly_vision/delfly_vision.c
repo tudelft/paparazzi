@@ -48,6 +48,8 @@
 
 #include "math/pprz_algebra_int.h"
 
+#include "autopilot_static.h"
+
 // general stereocam definitions
 #if !defined(STEREO_BODY_TO_STEREO_PHI) || !defined(STEREO_BODY_TO_STEREO_THETA) || !defined(STEREO_BODY_TO_STEREO_PSI)
 #warning "STEREO_BODY_TO_STEREO_XXX not defined. Using default Euler rotation angles (0,0,0)"
@@ -169,7 +171,7 @@ struct pid_t theta_gains = {DELFLY_VISION_THETA_GAINS_P, DELFLY_VISION_THETA_GAI
 struct pid_t thrust_gains = {DELFLY_VISION_THRUST_GAINS_P, DELFLY_VISION_THRUST_GAINS_I, DELFLY_VISION_THRUST_GAINS_D};
 
 struct follow_t follow;
-float safe_angle=0.1;
+float safe_angle=0.15;
 
 struct FloatEulers sp;
 
@@ -188,7 +190,7 @@ static void send_delfly_vision_msg(struct transport_tx *trans, struct link_devic
                                   &att_sp.phi, &att_sp.theta, &att_sp.psi,
                                   &thrust_sp, &laser_altitude, &baro_altitude,
                                   &fused_altitude, &climb_rate, &laser_rate,
-                                  &follow.line_slopeF, &follow.line_phiF);
+                                  &follow.line_slopeF, &follow.obst_phiF);
 }
 #endif
 
@@ -495,8 +497,8 @@ static void follow_line(void)
   // integrate error
   lat_error_sum += lat_error*gate_raw.dt;
 
-  sp.theta = -0.25; // ~ 15 degrees pitch
-//  sp.theta = 0.;
+//  sp.theta = -0.25; // ~ 15 degrees pitch
+  sp.theta = 0.;
   sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
 
   // allign body with the line slope
@@ -606,6 +608,9 @@ void delfly_vision_periodic(void)
   // for debugging
   //  evaluate_state_machine();
   estimate_altitude();
+
+  // failsafe when RC is lost
+  if (radio_control.status == RC_REALLY_LOST) autopilot_set_mode(AP_MODE_FAILSAFE);
 }
 
 void delfly_vision_event(void)
@@ -716,7 +721,7 @@ void guidance_v_module_run(bool in_flight)
   static bool altitude_hold_on = 0;
 
   if (radio_control.values[RADIO_GEAR] < 5000) { // Altitude hold switch ON
-    altitude_setp = 0.8;
+    altitude_setp = 0.7;
 
     if (altitude_hold_on == 0) // entering altitude hold
     {
@@ -761,7 +766,7 @@ void guidance_v_module_run(bool in_flight)
     guidance_v_delta_t = guidance_v_ff_cmd + guidance_v_fb_cmd;
 
     /* bound the result */
-    Bound(guidance_v_delta_t, guidance_v_nominal_throttle*0.8*MAX_PPRZ, MAX_PPRZ); // to avoid free fall descends
+    Bound(guidance_v_delta_t, guidance_v_nominal_throttle*0.7*MAX_PPRZ, MAX_PPRZ); // to avoid free fall descends
 
     stabilization_cmd[COMMAND_THRUST] = guidance_v_delta_t;
     thrust_sp = guidance_v_delta_t;
