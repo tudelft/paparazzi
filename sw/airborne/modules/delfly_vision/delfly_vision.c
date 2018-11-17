@@ -311,8 +311,7 @@ void delfly_vision_init(void)
   gate_filt.theta = 0.f;
 
   follow.dt=0.f;
-  follow.line_phi=0.f;
-  follow.line_theta=0.f;
+  follow.line_lat=0.f;
   follow.line_slope=0.f;
   follow.obst_phi=0.f;
   follow.obst_theta=0.f;
@@ -453,6 +452,37 @@ static void navigate_towards_gate(void)
 
 static void follow_line(void)
 {
+
+
+//  //compute angle to imput in 2nd order function
+//  float cam_angle = deg2rad(45); //cam angle, positive down
+//  float body_pitch_angle = state_pitch; //pitch angle, nose up positive
+//  float y = -(deg2rad(90) + body_pitch_angle - cam_angle); // angle around y-axis towards verticle
+//
+//  //import 2nd order polynomial and convert it to an angle function
+//  //format: x = a*y^2 + by + c
+//
+//  //the input of the function is in pixels
+//  int a,b,c; //you'll get this from the pprz message
+//
+//  x_offset_angle = a*y^2+b*y+c; //[rad]
+//  x_offset_distance = sin(x_offset_angle)*alt; // this is control var 1, it's the distance on the ground right beneath the DelFly between rope and vehicle, it's positive if the rope is on the right of the vehicle.
+//  x_slope = 2*a*y + b; //[-]
+//  x_angle = atan(x_slope); //this is control var 2, it's an angle in [rad]. It is the right hand positive orientation of the line right under the vehicle. That is, positive x_angle means positive heading should be added.
+
+  //compute angle to imput in 2nd order function
+  float cam_angle = RadOfDeg(30); //cam angle, positive down, with respect to forward (at hover)
+  float interest_angle = RadOfDeg(70); //angle where lat error is computed, positive down, with respect to forward (at hover)
+  float y = -(interest_angle + stateGetNedToBodyEulers_f()->theta - cam_angle); // angle around y-axis towards vertical
+
+  //import 2nd order polynomial and convert it to an angle function
+  //format: x = a*y^2 + by + c
+  float x_offset_angle = follow.A*y*y+follow.B*y+follow.C; //[rad]
+  // TODO adjust for perspective
+  follow.line_lat = sin(x_offset_angle)*fused_altitude;
+  float x_slope = 2*follow.A*y + follow.B; //[-]
+  follow.line_slope = atan(x_slope);
+
   // update filters
   if (follow.dt <= 0) return;
 
@@ -461,13 +491,11 @@ static void follow_line(void)
     // propagate low-pass filter
     float scaler = 1.f / (filt_tc + follow.dt);
     follow.line_slopeF = (follow.line_slope*follow.dt + follow.line_slopeF*filt_tc) * scaler;
-    follow.line_phiF = (follow.line_phi*follow.dt + follow.line_phiF*filt_tc) * scaler;
-    follow.line_thetaF = (follow.line_theta*follow.dt + follow.line_thetaF*filt_tc) * scaler;
+    follow.line_latF = (follow.line_lat*follow.dt + follow.line_latF*filt_tc) * scaler;
   } else {
     // reset filter if last update too long ago
     follow.line_slopeF = follow.line_slope;
-    follow.line_phiF = follow.line_phi;
-    follow.line_thetaF = follow.line_theta;
+    follow.line_latF = follow.line_lat;
   }
 
   if (follow.dt < 1.f && filt_on && follow.obst_phi > -0.5 && follow.obst_theta < 0.39)
@@ -484,11 +512,11 @@ static void follow_line(void)
 
 
   float lat_error;
-  if ((follow.obst_phi < -0.5 && follow.obst_theta > 0.39) || fabsf(follow.line_phiF - follow.obst_phiF) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
+  if ((follow.obst_phi < -0.5 && follow.obst_theta > 0.39) || fabsf(follow.line_latF - follow.obst_phiF) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
   {
-    lat_error = follow.line_phiF;
+    lat_error = follow.line_latF;
   } else { // we see an obstacle and it is on our flight path
-    if (follow.line_phiF > follow.obst_phiF) {
+    if (follow.line_latF > follow.obst_phiF) {
       lat_error = follow.obst_phiF + safe_angle;
     } else {
       lat_error = follow.obst_phiF - safe_angle;
@@ -585,15 +613,28 @@ static void delfly_vision_parse_msg(void)
       break;
 
     case DL_STEREOCAM_LINE:
-      follow.line_quality = DL_STEREOCAM_LINE_fit(stereocam_msg_buf);
-      follow.line_slope   = DL_STEREOCAM_LINE_rotation(stereocam_msg_buf);
-      follow.line_theta  = DL_STEREOCAM_LINE_phi_line(stereocam_msg_buf);
-      follow.line_phi   = DL_STEREOCAM_LINE_theta_line(stereocam_msg_buf);
-      follow.obst_theta = DL_STEREOCAM_LINE_phi_obstacle(stereocam_msg_buf);
-      follow.obst_phi = DL_STEREOCAM_LINE_theta_obstacle(stereocam_msg_buf);
+//      follow.line_quality = DL_STEREOCAM_LINE_fit(stereocam_msg_buf);
+//      follow.line_slope   = DL_STEREOCAM_LINE_rotation(stereocam_msg_buf);
+//      follow.line_theta  = DL_STEREOCAM_LINE_phi_line(stereocam_msg_buf);
+//      follow.line_phi   = DL_STEREOCAM_LINE_theta_line(stereocam_msg_buf);
+//      follow.obst_theta = DL_STEREOCAM_LINE_phi_obstacle(stereocam_msg_buf);
+//      follow.obst_phi = DL_STEREOCAM_LINE_theta_obstacle(stereocam_msg_buf);
 
-      follow.dt = get_sys_time_float() - last_time;
-      last_time = get_sys_time_float();
+//      <field name="r2" type="float">Measure of how certainty of line identificaiton</field>
+//            <field name="A"  type="float" unit="rad"> Quadratic coefficient of the second order fitted polynomial</field>
+//            <field name="B"  type="float" unit="rad"> Lienar coefficient of the second order fitted polynomial</field>
+//            <field name="C"  type="float" unit="rad"> Constant coefficient of the second order fitted polynomial</field>
+//            <field name="phi_obstacle"     type="float" unit="rad">Bearing of the line in the camera frame</field>
+//            <field name="theta_obstacle"   type="float" unit="rad"/>
+//
+      follow.A = DL_STEREOCAM_LINE_A(stereocam_msg_buf);
+      follow.B   = DL_STEREOCAM_LINE_B(stereocam_msg_buf);
+      follow.C  = DL_STEREOCAM_LINE_C(stereocam_msg_buf);
+      follow.obst_theta = DL_STEREOCAM_LINE_theta_obstacle(stereocam_msg_buf);
+      follow.obst_phi = DL_STEREOCAM_LINE_phi_obstacle(stereocam_msg_buf);
+
+//      follow.obst_dt = get_sys_time_float() - last_time_obst;
+//      last_time_obst = get_sys_time_float();
 
       evaluate_state_machine();
       break;
