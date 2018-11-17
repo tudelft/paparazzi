@@ -78,9 +78,12 @@ extern struct gate_t gate_raw;
 /* follow structure */
 struct follow_t {
   int32_t line_quality;
+  float dt;
   float A;
   float B;
   float C;
+  float r2;
+  float line_lon;
   float line_lat;
   float line_slope;
   float obst_phi;
@@ -89,7 +92,8 @@ struct follow_t {
   float line_slopeF;
   float obst_phiF;
   float obst_thetaF;
-  float dt;
+  float obst_lat;
+  float obst_lon;
 };
 
 extern struct follow_t follow;

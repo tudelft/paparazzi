@@ -182,25 +182,44 @@ float max_thurst = 1.f;
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
-static void send_delfly_vision_msg(struct transport_tx *trans, struct link_device *dev)
+static void send_delfly_control_msg(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_DELFLY_VISION(trans, dev, AC_ID,
-                                  &gate_raw.quality, &gate_raw.width, &gate_raw.height,
-                                  &gate_raw.phi, &gate_raw.theta, &gate_raw.depth,
-                                  &angle_to_gate.theta, &angle_to_gate.psi,
+  pprz_msg_send_DELFLY_CONTROL(trans, dev, AC_ID,
                                   &att_sp.phi, &att_sp.theta, &att_sp.psi,
                                   &thrust_sp, &laser_altitude, &baro_altitude,
-                                  &fused_altitude, &climb_rate, &laser_rate,
-                                  &follow.line_slopeF, &follow.obst_phiF);
+                                  &fused_altitude, &climb_rate, &laser_rate, &laser_dt);
 }
+
+static void send_delfly_gate_msg(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_DELFLY_GATE(trans, dev, AC_ID,
+                                  &gate_raw.quality, &gate_raw.width, &gate_raw.height,
+                                  &gate_raw.phi, &gate_raw.theta, &gate_raw.depth,
+                                  &angle_to_gate.theta, &angle_to_gate.psi, &gate_raw.dt);
+}
+
+
+static void send_delfly_follow_msg(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_DELFLY_FOLLOW(trans, dev, AC_ID,
+                                  &follow.A, &follow.B, &follow.C, &follow.r2,
+                                  &follow.line_lat,&follow.line_lon,&follow.line_angle,
+                                  &follow.line_latF,&follow.line_lonF,&follow.line_angleF,
+                                  &follow.obstacle_phi,&follow.obstacle_theta,
+                                  &follow.obstacle_phiF,&follow.obstacle_thetaF,
+                                  &follow.obstacle_lat,&follow.obstacle_lon,&follow.dt);                                                              );
+}
+
 #endif
+
+float laser_dt;
 
 //void laser_data_cb(uint8_t sender_id, float distance, float elevation, float heading)
 static void laser_data_cb(uint8_t __attribute__((unused)) sender_id, float distance)
 {
   laser_altitude = distance;
 
-  float laser_dt = get_sys_time_float() - last_laser_time;
+  laser_dt = get_sys_time_float() - last_laser_time;
   if (laser_dt > 0)
   {
     laser_rate = (laser_altitude - laser_altitude_prev)/laser_dt;
@@ -337,7 +356,7 @@ void delfly_vision_init(void)
 }
 
 static float alignment_error_sum = 0.f, dist_error_sum = 0.f, alt_error_sum = 0.f, lat_error_sum = 0.f, target_psi_error_sum = 0.f;
-static float last_time = 0.f;
+static float last_time = 0.f; last_time_line = 0.f; last_time_obst = 0.f;
 
 /*
  * Rotate angles from camera to body reference frame
@@ -452,36 +471,26 @@ static void navigate_towards_gate(void)
 
 static void follow_line(void)
 {
+//  float line_follow_alt=fused_altitude;
+  float line_follow_alt=1.0;
 
-
-//  //compute angle to imput in 2nd order function
-//  float cam_angle = deg2rad(45); //cam angle, positive down
-//  float body_pitch_angle = state_pitch; //pitch angle, nose up positive
-//  float y = -(deg2rad(90) + body_pitch_angle - cam_angle); // angle around y-axis towards verticle
-//
-//  //import 2nd order polynomial and convert it to an angle function
-//  //format: x = a*y^2 + by + c
-//
-//  //the input of the function is in pixels
-//  int a,b,c; //you'll get this from the pprz message
-//
-//  x_offset_angle = a*y^2+b*y+c; //[rad]
-//  x_offset_distance = sin(x_offset_angle)*alt; // this is control var 1, it's the distance on the ground right beneath the DelFly between rope and vehicle, it's positive if the rope is on the right of the vehicle.
-//  x_slope = 2*a*y + b; //[-]
-//  x_angle = atan(x_slope); //this is control var 2, it's an angle in [rad]. It is the right hand positive orientation of the line right under the vehicle. That is, positive x_angle means positive heading should be added.
-
-  //compute angle to imput in 2nd order function
-  float cam_angle = RadOfDeg(30); //cam angle, positive down, with respect to forward (at hover)
+  //compute angle to input in 2nd order function
+  float cam_pitch = RadOfDeg(30); //cam pitch, positive down, with respect to forward (at hover)
   float interest_angle = RadOfDeg(70); //angle where lat error is computed, positive down, with respect to forward (at hover)
-  float y = -(interest_angle + stateGetNedToBodyEulers_f()->theta - cam_angle); // angle around y-axis towards vertical
+//  float y = -(interest_angle + stateGetNedToBodyEulers_f()->theta - cam_pitch); // angle around y-axis towards vertical
+//  float y = -(interest_angle - cam_pitch); // assuming hover
+float y=0; // center of te image
+
+// TODO adjust for perspective, get code from stereoboard
+//  float alpha = RadOfDeg(90) - cam_pitch + y; // y is positive nose up
+//  follow.line_lon = line_follow_alt*sinf(alpha);
 
   //import 2nd order polynomial and convert it to an angle function
   //format: x = a*y^2 + by + c
   float x_offset_angle = follow.A*y*y+follow.B*y+follow.C; //[rad]
-  // TODO adjust for perspective
-  follow.line_lat = sin(x_offset_angle)*fused_altitude;
+  follow.line_lat = sinf(x_offset_angle)*line_follow_alt;
   float x_slope = 2*follow.A*y + follow.B; //[-]
-  follow.line_slope = atan(x_slope);
+  follow.line_slope = atanf(x_slope);
 
   // update filters
   if (follow.dt <= 0) return;
@@ -510,8 +519,16 @@ static void follow_line(void)
      follow.obst_thetaF = follow.obst_theta;
    }
 
+  follow.obst_lat=0;
+  follow.obst_lon=0;
+
 
   float lat_error;
+
+  // disabling obstacle avoidance
+  follow.obst_phi=-1;
+  follow.obst_theta=1;
+
   if ((follow.obst_phi < -0.5 && follow.obst_theta > 0.39) || fabsf(follow.line_latF - follow.obst_phiF) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
   {
     lat_error = follow.line_latF;
@@ -627,14 +644,16 @@ static void delfly_vision_parse_msg(void)
 //            <field name="phi_obstacle"     type="float" unit="rad">Bearing of the line in the camera frame</field>
 //            <field name="theta_obstacle"   type="float" unit="rad"/>
 //
+      follow.r2 = DL_STEREOCAM_LINE_r2(stereocam_msg_buf)
       follow.A = DL_STEREOCAM_LINE_A(stereocam_msg_buf);
       follow.B   = DL_STEREOCAM_LINE_B(stereocam_msg_buf);
       follow.C  = DL_STEREOCAM_LINE_C(stereocam_msg_buf);
+
       follow.obst_theta = DL_STEREOCAM_LINE_theta_obstacle(stereocam_msg_buf);
       follow.obst_phi = DL_STEREOCAM_LINE_phi_obstacle(stereocam_msg_buf);
 
-//      follow.obst_dt = get_sys_time_float() - last_time_obst;
-//      last_time_obst = get_sys_time_float();
+      follow.dt = get_sys_time_float() - last_time;
+      last_time = get_sys_time_float();
 
       evaluate_state_machine();
       break;
