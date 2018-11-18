@@ -190,9 +190,18 @@ struct pid_t phi_gains = {DELFLY_VISION_PHI_GAINS_P, DELFLY_VISION_PHI_GAINS_I, 
 struct pid_t theta_gains = {DELFLY_VISION_THETA_GAINS_P, DELFLY_VISION_THETA_GAINS_I, 0.f};
 struct pid_t thrust_gains = {DELFLY_VISION_THRUST_GAINS_P, DELFLY_VISION_THRUST_GAINS_I, DELFLY_VISION_THRUST_GAINS_D};
 
+uint8_t vision_on = 1;
+uint8_t altitude_hold_on = 1;
+
+
 struct follow_t follow;
 float safe_angle=0.15;
 float r2_min = 0.8;
+float y_slope = -0.15;
+float y_offset = -0.3;
+
+float sp_theta_gate = 0.;
+float sp_theta_follow = 0.;
 
 struct FloatEulers sp;
 
@@ -208,7 +217,7 @@ static void send_delfly_control_msg(struct transport_tx *trans, struct link_devi
                                   &att_sp.phi, &att_sp.theta, &att_sp.psi,
                                   &thrust_sp, &laser_altitude, &laser_altitudeF,
                                   &baro_altitude, &baro_altitudeF, &fused_altitude,
-                                  &climb_rate, &laser_rate, &laser_dt, &baro_dt);
+                                  &climb_rate, &laser_rate, &vision_on, &altitude_hold_on, &laser_dt, &baro_dt);
 }
 
 static void send_delfly_gate_msg(struct transport_tx *trans, struct link_device *dev)
@@ -486,7 +495,6 @@ static void navigate_towards_gate(void)
   float lat_error = gate_filt.psi; // rad
   float target_psi_error = stateGetNedToBodyEulers_f()->psi - target_psi;
 
-  static bool prev_vision = 0;
 
   // Increment integrated errors
   alignment_error_sum += alignment_error*gate_raw.dt;
@@ -504,20 +512,20 @@ static void navigate_towards_gate(void)
   sp.phi = phi_gains.p*target_psi_error + phi_gains.i*target_psi_error_sum;
 
   //sp.theta = -theta_gains.p*dist_error - theta_gains.i*dist_error_sum;
-  sp.theta = 0.;
+  sp.theta = sp_theta_gate;
 
   sp.psi = gate_filt.psi + stateGetNedToBodyEulers_f()->psi;
 
   //thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
 
-  if (radio_control.values[RADIO_FLAP] > 5000  && !prev_vision) // Vision switch ON
+  if (radio_control.values[RADIO_FLAP] > 5000  && !vision_on) // Vision switch ON
   {
     target_psi = stateGetNedToBodyEulers_f()->psi; // remember heading at the beginning, should be aligned with the gates
     sp.psi = stateGetNedToBodyEulers_f()->psi; // reset heading setpoint
-    prev_vision = 1;
+    vision_on = 1;
   }
 
-  if (radio_control.values[RADIO_FLAP] <= 5000) prev_vision = 0;
+  if (radio_control.values[RADIO_FLAP] <= 5000) vision_on = 0;
 }
 
 
@@ -530,8 +538,8 @@ static void follow_line(void)
 {
 // camera field of view: FOVy = 0.776672 / 44.5 deg, FOVx = 1.0018119 / 57.4 deg
 
-    float line_follow_alt=fused_altitude;
-//  float line_follow_alt=1.0; // if altitude measurement not working
+    float line_follow_alt = fused_altitude;
+//  float line_follow_alt = 1.0; // if altitude measurement not working
 
   // define the vertical angle y [rad] where the fitted curve function is evaluated
 //  float cam_pitch = RadOfDeg(30); //cam pitch, positive down, with respect to forward (at hover)
@@ -539,7 +547,8 @@ static void follow_line(void)
 //  float y = -(interest_angle + stateGetNedToBodyEulers_f()->theta - cam_pitch); // angle around y-axis towards vertical
 //  float y = -(interest_angle - cam_pitch); // assuming hover
 //  float y=0; // center of the image
-  float y = -RadOfDeg(10);
+//  y_slope = -RadOfDeg(10);
+//  y_offset = -RadOfDeg(20);
 
 // TODO adjust for perspective, get code from stereoboard
 //  float alpha = RadOfDeg(90) - cam_pitch + y; // y is positive nose up
@@ -547,8 +556,8 @@ static void follow_line(void)
 
   //import 2nd order polynomial and convert it to an angle function
   //format: x = a*y^2 + by + c
-  float x_offset_angle = follow.A*y*y+follow.B*y+follow.C; //[rad]
-  float x_slope = 2*follow.A*y + follow.B; //[-]
+  float x_offset_angle = follow.A*y_offset*y_offset + follow.B*y_offset + follow.C; //[rad]
+  float x_slope = 2*follow.A*y_slope + follow.B; //[-]
 
   // update filters
   if (follow.dt <= 0) return;
@@ -612,7 +621,7 @@ static void follow_line(void)
   lat_error_sum += lat_error*gate_raw.dt;
 
 //  sp.theta = -0.25; // ~ 15 degrees pitch
-  sp.theta = 0.;
+  sp.theta = sp_theta_follow;
   sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
 
   // allign body with the line slope
@@ -843,7 +852,6 @@ void guidance_h_module_run(bool in_flight)
 
 void guidance_v_module_run(bool in_flight)
 {
-  static bool altitude_hold_on = 0;
   static int32_t b1 =  43634;
   static int32_t b2 = -9814;
   static int32_t ff_throttle_hover;

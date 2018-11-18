@@ -126,6 +126,10 @@ extern float filt_gate_tc;  // gate filter time constant
 extern float filt_line_tc;  // line filter time constant
 extern float filt_obst_tc;  // obstacle filter time constant
 extern float altitude_setp;
+extern float y_slope; // vertical camera angle where slope of the fitted curve is computed
+extern float y_offset; // vertical camera angle where offset of the fitted curve is computed
+extern float sp_theta_gate;
+extern float sp_theta_follow;
 
 extern struct pid_t phi_gains;
 extern struct pid_t theta_gains;
