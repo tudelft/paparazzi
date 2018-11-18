@@ -144,11 +144,14 @@ struct FloatEulers angle_to_gate = {.phi=0, .theta=0, .psi=0};
 struct FloatEulers angle_to_gate_filt = {.phi=0, .theta=0, .psi=0};
 
 float laser_altitude;
+float laser_altitudeF = 0;
 abi_event laser_event;
 abi_event baro_event_vision;
 float baro_pressure;
+float baro_pressureF;
 float baro_pressure_ref;
 float baro_altitude;
+float baro_altitudeF = 0;
 float baro_altitude_ref;
 bool baro_initialized;
 float fused_altitude;
@@ -158,11 +161,17 @@ bool previous_laser_based;
 float last_altitude_time;
 float last_laser_time;
 float last_step_time;
+float last_baro_time;
 float laser_altitude_prev;
 float laser_rate;
 float laser_dt;
+float baro_dt;
 float climb_rate;
 float altitude_setp;
+
+float filt_baro_tc = 3;
+float filt_laser_tc_nominal = 0.5;
+float filt_laser_tc_slow = 2;
 
 float altitude_setp = 1.f;
 
@@ -188,7 +197,7 @@ float r2_min = 0.8;
 struct FloatEulers sp;
 
 // todo implement
-float max_thurst = 1.f;
+float max_thrust = 1.f;
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -197,8 +206,9 @@ static void send_delfly_control_msg(struct transport_tx *trans, struct link_devi
 {
   pprz_msg_send_DELFLY_CONTROL(trans, dev, AC_ID,
                                   &att_sp.phi, &att_sp.theta, &att_sp.psi,
-                                  &thrust_sp, &laser_altitude, &baro_altitude,
-                                  &fused_altitude, &climb_rate, &laser_rate, &laser_dt);
+                                  &thrust_sp, &laser_altitude, &laser_altitudeF,
+                                  &baro_altitude, &baro_altitudeF, &fused_altitude,
+                                  &climb_rate, &laser_rate, &laser_dt, &baro_dt);
 }
 
 static void send_delfly_gate_msg(struct transport_tx *trans, struct link_device *dev)
@@ -226,10 +236,12 @@ static void send_delfly_follow_msg(struct transport_tx *trans, struct link_devic
 //void laser_data_cb(uint8_t sender_id, float distance, float elevation, float heading)
 static void laser_data_cb(uint8_t __attribute__((unused)) sender_id, float distance)
 {
+  static bool laser_nominal = 1;
+
   laser_altitude = distance;
 
   laser_dt = get_sys_time_float() - last_laser_time;
-  if (laser_dt > 0)
+  if (laser_dt > 0 && laser_altitude < 4.0)
   {
     laser_rate = (laser_altitude - laser_altitude_prev)/laser_dt;
   }
@@ -238,8 +250,39 @@ static void laser_data_cb(uint8_t __attribute__((unused)) sender_id, float dista
     laser_rate = 0;
   }
 
-  last_laser_time = get_sys_time_float();
+  float tc;
 
+  if (laser_altitude < 4.0)
+  {
+    if (fabsf(laser_rate) < 4.0 && (get_sys_time_float() - last_step_time) > 1.)
+    {
+      tc = filt_laser_tc_nominal; // we trust laser
+      laser_nominal = 1;
+    }
+    else  // filtering out steps in the measurement when crossing
+    {
+      tc = filt_laser_tc_slow; // we don't trust laser for the next 1 second
+      if (laser_nominal)
+      {
+        last_step_time = get_sys_time_float();
+        laser_nominal = 0;
+      }
+    }
+
+    if (laser_dt < 0.5)
+    {
+      // filter laser
+      float scaler = 1.f / (tc + laser_dt);
+      laser_altitudeF = (laser_altitude*laser_dt + laser_altitudeF*tc)*scaler;
+    }
+    else
+    {
+      // last valid measurement too long ago --> reset to current value
+      laser_altitudeF = laser_altitude;
+    }
+
+    last_laser_time = get_sys_time_float();
+  }
 }
 
 static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
@@ -248,12 +291,22 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
   {
     // wait for a first positive value
     baro_pressure_ref = pressure;
+    baro_pressureF = baro_pressure_ref;
     baro_initialized = true;
+    last_baro_time = get_sys_time_float();
   }
-
-  if (baro_initialized)
+  else if (baro_initialized)
   {
+    baro_dt = get_sys_time_float() - last_baro_time;
+
+    // filter pressure
+    float scaler = 1.f / (filt_baro_tc + baro_dt);
+    baro_pressureF = (pressure*baro_dt + baro_pressureF*filt_baro_tc)*scaler;
+
     baro_altitude = pprz_isa_height_of_pressure(pressure, baro_pressure_ref);
+    baro_altitudeF = pprz_isa_height_of_pressure(baro_pressureF, baro_pressure_ref);
+
+    last_baro_time = get_sys_time_float();
   }
 }
 
@@ -262,9 +315,10 @@ static void estimate_altitude(void)
 {
   static float p_laser = 0.8;
   static float p_baro = 0.95;
-  static bool laser_ok = 1;
+  static bool laser_nominal = 1;
+  static float tc;
 
-  if (laser_altitude > 4.0 || (get_sys_time_float() - last_laser_time) > 0.2) // laser measurement out of range, or no recent laser readings
+  if (laser_altitude > 4.0 || (get_sys_time_float() - last_laser_time) > 0.5) // laser measurement out of range, or no recent laser readings
   {
     if (previous_laser_based)
     {
@@ -275,6 +329,9 @@ static void estimate_altitude(void)
 
     // complementary filter - baro based measurements
     fused_altitude = fused_altitude*p_baro + (fused_altitude_ref + baro_altitude - baro_altitude_ref)*(1.0 - p_baro);
+//    float scaler = 1.f / (filt_baro_tc + baro_dt);
+//    fused_altitude = (baro_altitude*baro_dt + fused_altitude*filt_baro_tc)*scaler;
+//    fused_altitude = fused_altitude_ref + baro_altitudeF - baro_altitude_ref;
   }
   else // laser measurement correct, trust laser
   {
@@ -282,19 +339,25 @@ static void estimate_altitude(void)
     if (abs(laser_rate) < 4. && (get_sys_time_float() - last_step_time) > 1.)
     {
       p_laser = 0.8; // we trust laser
-      laser_ok = 1;
+      tc = filt_laser_tc_nominal;
+      laser_nominal = 1;
     }
     else  // filtering out steps in the measurement when crossing
     {
       p_laser = 0.98; // we don't trust laser for the next 1 second
-      if (laser_ok)
+      tc = filt_laser_tc_slow;
+      if (laser_nominal)
       {
         last_step_time = get_sys_time_float();
-        laser_ok = 0;
+        laser_nominal = 0;
       }
     }
 
     fused_altitude = fused_altitude*p_laser + laser_altitude*(1.0 - p_laser);
+    //    float scaler = 1.f / (tc + baro_dt);
+    //    fused_altitude = (baro_altitude*baro_dt + fused_altitude*filt_baro_tc)*scaler;
+//    fused_altitude = laser_altitudeF;
+
     previous_laser_based = 1;
   }
 
@@ -465,12 +528,17 @@ static void navigate_towards_gate(void)
   if (radio_control.values[RADIO_FLAP] <= 5000) prev_vision = 0;
 }
 
+
+float x_offset_angleF = 0, x_slopeF = 0;
+
 /*
  * Compute attitude set-point for line following
  */
 static void follow_line(void)
 {
-//  float line_follow_alt=fused_altitude;
+// camera field of view: FOVy = 0.776672 / 44.5 deg, FOVx = 1.0018119 / 57.4 deg
+
+  //  float line_follow_alt=fused_altitude;
   float line_follow_alt=1.0; // if altitude measurement not working
 
   // define the vertical angle y [rad] where the fitted curve function is evaluated
@@ -479,7 +547,7 @@ static void follow_line(void)
 //  float y = -(interest_angle + stateGetNedToBodyEulers_f()->theta - cam_pitch); // angle around y-axis towards vertical
 //  float y = -(interest_angle - cam_pitch); // assuming hover
 //  float y=0; // center of the image
-  float y = -RadOfDeg(10);
+  float y = -RadOfDeg(20);
 
 // TODO adjust for perspective, get code from stereoboard
 //  float alpha = RadOfDeg(90) - cam_pitch + y; // y is positive nose up
@@ -492,8 +560,6 @@ static void follow_line(void)
 
   // update filters
   if (follow.dt <= 0) return;
-
-  float x_offset_angleF, x_slopeF;
 
   if (follow.r2 > r2_min && follow.line_dt < 1.f && filt_line_on)
   {
@@ -524,7 +590,7 @@ static void follow_line(void)
      follow.obst_thetaF = follow.obst_theta;
    }
 
-  // todo adjust for camera perspective, the formulas below only work if we look straigh down
+  // todo adjust for camera perspective, the formulas below only work if we look straight down
   follow.obst_lat=sinf(follow.obst_phiF)*line_follow_alt;
   follow.obst_lon=sinf(follow.obst_thetaF)*line_follow_alt;
 
