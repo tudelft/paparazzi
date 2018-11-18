@@ -160,11 +160,21 @@ float last_laser_time;
 float last_step_time;
 float laser_altitude_prev;
 float laser_rate;
+float laser_dt;
 float climb_rate;
 float altitude_setp;
 
-bool filt_on=true;
-float filt_tc=0.5;  // gate filter time constant, in seconds
+float altitude_setp = 1.f;
+
+bool filt_gate_on=true;
+float filt_gate_tc=0.5;  // gate filter time constant, in seconds
+
+bool filt_line_on=true;
+float filt_line_tc=0.5;  // line filter time constant, in seconds
+
+bool filt_obst_on=true;
+float filt_obst_tc=0.5;  // obstacle filter time constant, in seconds
+
 float gate_target_size=0.35; // target gate size for distance keeping, in rad
 
 struct pid_t phi_gains = {DELFLY_VISION_PHI_GAINS_P, DELFLY_VISION_PHI_GAINS_I, 0.f};
@@ -173,6 +183,7 @@ struct pid_t thrust_gains = {DELFLY_VISION_THRUST_GAINS_P, DELFLY_VISION_THRUST_
 
 struct follow_t follow;
 float safe_angle=0.15;
+float r2_min = 0.8;
 
 struct FloatEulers sp;
 
@@ -203,16 +214,14 @@ static void send_delfly_follow_msg(struct transport_tx *trans, struct link_devic
 {
   pprz_msg_send_DELFLY_FOLLOW(trans, dev, AC_ID,
                                   &follow.A, &follow.B, &follow.C, &follow.r2,
-                                  &follow.line_lat,&follow.line_lon,&follow.line_angle,
-                                  &follow.line_latF,&follow.line_lonF,&follow.line_angleF,
-                                  &follow.obstacle_phi,&follow.obstacle_theta,
-                                  &follow.obstacle_phiF,&follow.obstacle_thetaF,
-                                  &follow.obstacle_lat,&follow.obstacle_lon,&follow.dt);                                                              );
+                                  &follow.line_lat, &follow.line_lon, &follow.line_angle,
+                                  &follow.line_latF, &follow.line_lonF, &follow.line_angleF,
+                                  &follow.obst_phi, &follow.obst_theta,
+                                  &follow.obst_phiF, &follow.obst_thetaF,
+                                  &follow.obst_lat, &follow.obst_lon, &follow.dt);
 }
 
 #endif
-
-float laser_dt;
 
 //void laser_data_cb(uint8_t sender_id, float distance, float elevation, float heading)
 static void laser_data_cb(uint8_t __attribute__((unused)) sender_id, float distance)
@@ -248,6 +257,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
   }
 }
 
+/* altitude estimation - runs at periodic frequency of the module */
 static void estimate_altitude(void)
 {
   static float p_laser = 0.8;
@@ -331,7 +341,7 @@ void delfly_vision_init(void)
 
   follow.dt=0.f;
   follow.line_lat=0.f;
-  follow.line_slope=0.f;
+  follow.line_angle=0.f;
   follow.obst_phi=0.f;
   follow.obst_theta=0.f;
   follow.line_quality=0;
@@ -348,7 +358,9 @@ void delfly_vision_init(void)
   laser_rate = 0.f;
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DELFLY_VISION, send_delfly_vision_msg);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DELFLY_CONTROL, send_delfly_control_msg);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DELFLY_GATE, send_delfly_gate_msg);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DELFLY_FOLLOW, send_delfly_follow_msg);
 #endif
 
   struct FloatEulers euler = {STEREO_BODY_TO_STEREO_PHI, STEREO_BODY_TO_STEREO_THETA, STEREO_BODY_TO_STEREO_PSI};
@@ -356,7 +368,7 @@ void delfly_vision_init(void)
 }
 
 static float alignment_error_sum = 0.f, dist_error_sum = 0.f, alt_error_sum = 0.f, lat_error_sum = 0.f, target_psi_error_sum = 0.f;
-static float last_time = 0.f; last_time_line = 0.f; last_time_obst = 0.f;
+static float last_time = 0.f, last_time_line = 0.f;
 
 /*
  * Rotate angles from camera to body reference frame
@@ -382,14 +394,14 @@ static void rotate_camera(void)
 
   // update filters
   if (gate_raw.dt <= 0) return;
-  if (gate_raw.dt < 1.f && filt_on)
+  if (gate_raw.dt < 1.f && filt_gate_on)
   {
     // propagate low-pass filter
-    float scaler = 1.f / (filt_tc + gate_raw.dt);
-    gate_filt.width = (gate_raw.width*gate_raw.dt + gate_filt.width*filt_tc) * scaler;
-    gate_filt.height = (gate_raw.height*gate_raw.dt + gate_filt.height*filt_tc) * scaler;
-    gate_filt.theta = (angle_to_gate.theta*gate_raw.dt + gate_filt.theta*filt_tc) * scaler;
-    gate_filt.psi = (angle_to_gate.psi*gate_raw.dt + gate_filt.psi*filt_tc) * scaler;
+    float scaler = 1.f / (filt_gate_tc + gate_raw.dt);
+    gate_filt.width = (gate_raw.width*gate_raw.dt + gate_filt.width*filt_gate_tc) * scaler;
+    gate_filt.height = (gate_raw.height*gate_raw.dt + gate_filt.height*filt_gate_tc) * scaler;
+    gate_filt.theta = (angle_to_gate.theta*gate_raw.dt + gate_filt.theta*filt_gate_tc) * scaler;
+    gate_filt.psi = (angle_to_gate.psi*gate_raw.dt + gate_filt.psi*filt_gate_tc) * scaler;
   } else {
     // reset filter if last update too long ago
     gate_filt.width = gate_raw.width;
@@ -421,24 +433,12 @@ static void navigate_towards_gate(void)
 
   static bool prev_vision = 0;
 
-//  if (gate_raw.dt > 1.f || (radio_control.values[RADIO_FLAP] > 5000  && !prev_vision))
-//    {
-//    // reset integrators if no measurement for more than a second OR when we switch vision on
-//    alignment_error_sum = 0;
-//    target_psi_error_sum = 0;
-//    dist_error_sum = 0;
-//    alt_error_sum = 0;
-//    lat_error_sum = 0;
-//    }
-//  else
-//  {
-    // Increment integrated errors
-    alignment_error_sum += alignment_error*gate_raw.dt;
-    target_psi_error_sum += target_psi_error*gate_raw.dt;
-    dist_error_sum += dist_error*gate_raw.dt;
-    alt_error_sum += alt_error*gate_raw.dt;
-    lat_error_sum += lat_error*gate_raw.dt;
-//  }
+  // Increment integrated errors
+  alignment_error_sum += alignment_error*gate_raw.dt;
+  target_psi_error_sum += target_psi_error*gate_raw.dt;
+  dist_error_sum += dist_error*gate_raw.dt;
+  alt_error_sum += alt_error*gate_raw.dt;
+  lat_error_sum += lat_error*gate_raw.dt;
 
   // GATE FLIGHT THROUGH
 
@@ -455,10 +455,6 @@ static void navigate_towards_gate(void)
 
   //thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
 
-  // reusing line messages, for testing only
-//  line_psi = target_psi;
-//  obstacle_psi = target_psi_error_sum;
-
   if (radio_control.values[RADIO_FLAP] > 5000  && !prev_vision) // Vision switch ON
   {
     target_psi = stateGetNedToBodyEulers_f()->psi; // remember heading at the beginning, should be aligned with the gates
@@ -469,17 +465,21 @@ static void navigate_towards_gate(void)
   if (radio_control.values[RADIO_FLAP] <= 5000) prev_vision = 0;
 }
 
+/*
+ * Compute attitude set-point for line following
+ */
 static void follow_line(void)
 {
 //  float line_follow_alt=fused_altitude;
-  float line_follow_alt=1.0;
+  float line_follow_alt=1.0; // if altitude measurement not working
 
-  //compute angle to input in 2nd order function
-  float cam_pitch = RadOfDeg(30); //cam pitch, positive down, with respect to forward (at hover)
-  float interest_angle = RadOfDeg(70); //angle where lat error is computed, positive down, with respect to forward (at hover)
+  // define the vertical angle y [rad] where the fitted curve function is evaluated
+//  float cam_pitch = RadOfDeg(30); //cam pitch, positive down, with respect to forward (at hover)
+//  float interest_angle = RadOfDeg(70); //angle where lat error is computed, positive down, with respect to forward (at hover)
 //  float y = -(interest_angle + stateGetNedToBodyEulers_f()->theta - cam_pitch); // angle around y-axis towards vertical
 //  float y = -(interest_angle - cam_pitch); // assuming hover
-float y=0; // center of te image
+//  float y=0; // center of the image
+  float y = -RadOfDeg(10);
 
 // TODO adjust for perspective, get code from stereoboard
 //  float alpha = RadOfDeg(90) - cam_pitch + y; // y is positive nose up
@@ -488,39 +488,45 @@ float y=0; // center of te image
   //import 2nd order polynomial and convert it to an angle function
   //format: x = a*y^2 + by + c
   float x_offset_angle = follow.A*y*y+follow.B*y+follow.C; //[rad]
-  follow.line_lat = sinf(x_offset_angle)*line_follow_alt;
   float x_slope = 2*follow.A*y + follow.B; //[-]
-  follow.line_slope = atanf(x_slope);
 
   // update filters
   if (follow.dt <= 0) return;
 
-  if (follow.dt < 1.f && filt_on)
+  float x_offset_angleF, x_slopeF;
+
+  if (follow.r2 > r2_min && follow.line_dt < 1.f && filt_line_on)
   {
-    // propagate low-pass filter
-    float scaler = 1.f / (filt_tc + follow.dt);
-    follow.line_slopeF = (follow.line_slope*follow.dt + follow.line_slopeF*filt_tc) * scaler;
-    follow.line_latF = (follow.line_lat*follow.dt + follow.line_latF*filt_tc) * scaler;
-  } else {
+    // propagate low-pass filter if sufficient quality (line_dt only gets updated when quality is above r2_min)
+    float scaler = 1.f / (filt_line_tc + follow.line_dt);
+    x_offset_angleF = (x_offset_angle*follow.line_dt + x_offset_angleF*filt_line_tc) * scaler;
+    x_slopeF = (x_slope*follow.line_dt + x_slopeF*filt_line_tc) * scaler;
+  } else if (follow.line_dt > 1.f || filt_line_on){
     // reset filter if last update too long ago
-    follow.line_slopeF = follow.line_slope;
-    follow.line_latF = follow.line_lat;
+    x_offset_angleF = x_offset_angle;
+    x_slopeF = x_slope;
   }
 
-  if (follow.dt < 1.f && filt_on && follow.obst_phi > -0.5 && follow.obst_theta < 0.39)
+  follow.line_lat = sinf(x_offset_angle)*line_follow_alt;
+  follow.line_angle = atanf(x_slope);
+  follow.line_latF = sinf(x_offset_angleF)*line_follow_alt;
+  follow.line_angleF = atanf(x_slopeF);
+
+  if (follow.dt < 1.f && filt_obst_on && follow.obst_phi > -0.5 && follow.obst_theta < 0.39)
    {
      // propagate low-pass filter
-     float scaler = 1.f / (filt_tc + follow.dt);
-     follow.obst_phiF = (follow.obst_phi*follow.dt + follow.obst_phiF*filt_tc) * scaler;
-     follow.obst_thetaF = (follow.obst_theta*follow.dt + follow.obst_thetaF*filt_tc) * scaler;
+     float scaler = 1.f / (filt_obst_tc + follow.dt);
+     follow.obst_phiF = (follow.obst_phi*follow.dt + follow.obst_phiF*filt_obst_tc) * scaler;
+     follow.obst_thetaF = (follow.obst_theta*follow.dt + follow.obst_thetaF*filt_obst_tc) * scaler;
    } else {
      // reset filter if last update too long ago, or if no obstacles are seen
      follow.obst_phiF = follow.obst_phi;
      follow.obst_thetaF = follow.obst_theta;
    }
 
-  follow.obst_lat=0;
-  follow.obst_lon=0;
+  // todo adjust for camera perspective, the formulas below only work if we look straigh down
+  follow.obst_lat=sinf(follow.obst_phiF)*line_follow_alt;
+  follow.obst_lon=sinf(follow.obst_thetaF)*line_follow_alt;
 
 
   float lat_error;
@@ -550,11 +556,11 @@ float y=0; // center of te image
   // allign body with the line slope
   float yaw_rate = 0.2; // in rad/s
 
-  if (fabsf(follow.line_slopeF) < 0.2)
+  if (fabsf(follow.line_angleF) < 0.2)
   {
-    sp.psi = stateGetNedToBodyEulers_f()->psi - follow.line_slopeF;
+    sp.psi = stateGetNedToBodyEulers_f()->psi - follow.line_angleF;
   } else {
-    float sign=((follow.line_slopeF > 0) - (follow.line_slopeF < 0));
+    float sign=((follow.line_angleF > 0) - (follow.line_angleF < 0));
     sp.psi = stateGetNedToBodyEulers_f()->psi - sign*yaw_rate;
   }
 }
@@ -575,21 +581,29 @@ static void set_attitude_setpoint(void)
   //guidance_v_zd_sp = thrust_sp; // todo implement
 }
 
-/*
- * Evaluate state machine to decide what to do
- */
-static void evaluate_state_machine(void)
+/* State machine for gate-flight-through */
+static void evaluate_state_machine_gate(void)
 {
   // 1) Rotate camera data to body reference
   rotate_camera();
 
-  // 2) Compute setpoints to fly to a gate OR follow a line
-//  navigate_towards_gate();
-  follow_line();
+  // 2) Compute setpoints to fly to a gate
+  navigate_towards_gate();
 
   // 3) Set attitude setpoints
   set_attitude_setpoint();
 }
+
+/* State machine for line following */
+static void evaluate_state_machine_follow(void)
+{
+  // 1) Compute setpoints to follow a line
+  follow_line();
+
+  // 2) Set attitude setpoints
+  set_attitude_setpoint();
+}
+
 
 /* Parse the InterMCU message */
 static void delfly_vision_parse_msg(void)
@@ -620,7 +634,7 @@ static void delfly_vision_parse_msg(void)
 
         memcpy(gate_raw.color_cnt, pprzlink_get_DL_STEREOCAM_GATE_color_bins(stereocam_msg_buf), gate_raw.num_color_bins*sizeof(gate_raw.color_cnt[0]));
 
-        evaluate_state_machine();
+        evaluate_state_machine_gate();
       }
       else
       {
@@ -630,24 +644,17 @@ static void delfly_vision_parse_msg(void)
       break;
 
     case DL_STEREOCAM_LINE:
-//      follow.line_quality = DL_STEREOCAM_LINE_fit(stereocam_msg_buf);
-//      follow.line_slope   = DL_STEREOCAM_LINE_rotation(stereocam_msg_buf);
-//      follow.line_theta  = DL_STEREOCAM_LINE_phi_line(stereocam_msg_buf);
-//      follow.line_phi   = DL_STEREOCAM_LINE_theta_line(stereocam_msg_buf);
-//      follow.obst_theta = DL_STEREOCAM_LINE_phi_obstacle(stereocam_msg_buf);
-//      follow.obst_phi = DL_STEREOCAM_LINE_theta_obstacle(stereocam_msg_buf);
 
-//      <field name="r2" type="float">Measure of how certainty of line identificaiton</field>
-//            <field name="A"  type="float" unit="rad"> Quadratic coefficient of the second order fitted polynomial</field>
-//            <field name="B"  type="float" unit="rad"> Lienar coefficient of the second order fitted polynomial</field>
-//            <field name="C"  type="float" unit="rad"> Constant coefficient of the second order fitted polynomial</field>
-//            <field name="phi_obstacle"     type="float" unit="rad">Bearing of the line in the camera frame</field>
-//            <field name="theta_obstacle"   type="float" unit="rad"/>
-//
-      follow.r2 = DL_STEREOCAM_LINE_r2(stereocam_msg_buf)
-      follow.A = DL_STEREOCAM_LINE_A(stereocam_msg_buf);
-      follow.B   = DL_STEREOCAM_LINE_B(stereocam_msg_buf);
-      follow.C  = DL_STEREOCAM_LINE_C(stereocam_msg_buf);
+      follow.r2 = DL_STEREOCAM_LINE_r2(stereocam_msg_buf);
+
+      if (follow.r2 > r2_min)
+      {
+        follow.A = DL_STEREOCAM_LINE_A(stereocam_msg_buf);
+        follow.B   = DL_STEREOCAM_LINE_B(stereocam_msg_buf);
+        follow.C  = DL_STEREOCAM_LINE_C(stereocam_msg_buf);
+        follow.line_dt = get_sys_time_float() - last_time_line;
+        last_time_line = get_sys_time_float();
+      }
 
       follow.obst_theta = DL_STEREOCAM_LINE_theta_obstacle(stereocam_msg_buf);
       follow.obst_phi = DL_STEREOCAM_LINE_phi_obstacle(stereocam_msg_buf);
@@ -655,7 +662,7 @@ static void delfly_vision_parse_msg(void)
       follow.dt = get_sys_time_float() - last_time;
       last_time = get_sys_time_float();
 
-      evaluate_state_machine();
+      evaluate_state_machine_follow();
       break;
 
     default:
@@ -666,8 +673,6 @@ static void delfly_vision_parse_msg(void)
 
 void delfly_vision_periodic(void)
 {
-  // for debugging
-  //  evaluate_state_machine();
   estimate_altitude();
 
   // failsafe when RC is lost
@@ -691,10 +696,7 @@ void delfly_vision_event(void)
  * Initialization of horizontal & vertical guidance modules
  */
 void guidance_h_module_init(void) {}
-void guidance_v_module_init(void)
-{
-  altitude_setp = 0.f;
-}
+void guidance_v_module_init(void) {}
 
 /**
  * Horizontal guidance mode enter resets the errors
@@ -792,7 +794,6 @@ void guidance_v_module_run(bool in_flight)
   //thrust_sp = ff_throttle;
 
   if (radio_control.values[RADIO_GEAR] < 5000) { // Altitude hold switch ON
-    altitude_setp = 1.;
 
     if (altitude_hold_on == 0) // entering altitude hold
     {

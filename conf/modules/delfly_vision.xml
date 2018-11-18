@@ -14,14 +14,16 @@
   <settings>
     <dl_settings>
       <dl_settings name="delfly_vision">
-        <dl_setting shortname="phi_p_gain"       var="phi_gains.p"     min="0" step="0.05" max="10."/>
-        <dl_setting shortname="phi_i_gain"       var="phi_gains.i"     min="0" step="0.05" max="10."/>
-        <dl_setting shortname="theta_p_gain"     var="theta_gains.p"   min="0" step="0.05" max="10."/>
-        <dl_setting shortname="theta_i_gain"     var="theta_gains.i"   min="0" step="0.05" max="10."/>
-        <dl_setting shortname="thrust_p_gain"    var="thrust_gains.p" min="0" step="0.05" max="10."/>
-        <dl_setting shortname="thrust_i_gain"    var="thrust_gains.i" min="0" step="0.05" max="10."/>
-        <dl_setting shortname="gate_target_size" var="gate_target_size" min="10" step="1" max="50"/>
-        <dl_setting shortname="filter_timeconstant" var="filt_tc"     min="0.05" step="0.05" max="0.5"/>
+        <dl_setting shortname="phi_p_gain"         var="phi_gains.p"      min="0" step="0.05" max="10."/>
+        <dl_setting shortname="phi_i_gain"         var="phi_gains.i"      min="0" step="0.05" max="10."/>
+        <dl_setting shortname="theta_p_gain"       var="theta_gains.p"    min="0" step="0.05" max="10."/>
+        <dl_setting shortname="theta_i_gain"       var="theta_gains.i"    min="0" step="0.05" max="10."/>
+        <dl_setting shortname="thrust_p_gain"      var="thrust_gains.p"   min="0" step="0.05" max="10."/>
+        <dl_setting shortname="thrust_i_gain"      var="thrust_gains.i"   min="0" step="0.05" max="10."/>
+        <dl_setting shortname="altitude_setp"      var="altitude_setp"    min="0.1" step="0.05" max="2"/>
+        <dl_setting shortname="gate_filter_tc"     var="filt_gate_tc"     min="0.05" step="0.05" max="1"/>
+        <dl_setting shortname="line_filter_tc"     var="filt_line_tc"     min="0.05" step="0.05" max="1"/>
+        <dl_setting shortname="obstacle_filter_tc" var="filt_obst_tc"     min="0.05" step="0.05" max="1"/>
       </dl_settings>
     </dl_settings>
   </settings>

@@ -85,11 +85,13 @@ struct follow_t {
   float r2;
   float line_lon;
   float line_lat;
-  float line_slope;
+  float line_angle;
+  float line_lonF;
+  float line_latF;
+  float line_angleF;
+  float line_dt;
   float obst_phi;
   float obst_theta;
-  float line_latF;
-  float line_slopeF;
   float obst_phiF;
   float obst_thetaF;
   float obst_lat;
@@ -120,8 +122,10 @@ extern void guidance_v_module_enter(void);
 extern void guidance_v_module_run(bool in_flight);
 
 // settings
-extern float filt_tc;  // gate filter time constant
-extern float gate_target_size; // target gate size for distance keeping
+extern float filt_gate_tc;  // gate filter time constant
+extern float filt_line_tc;  // line filter time constant
+extern float filt_obst_tc;  // obstacle filter time constant
+extern float altitude_setp;
 
 extern struct pid_t phi_gains;
 extern struct pid_t theta_gains;
