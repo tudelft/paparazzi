@@ -168,6 +168,7 @@ float laser_dt;
 float baro_dt;
 float climb_rate;
 float altitude_setp;
+float position_along_gate_field;
 
 float filt_baro_tc = 3;
 float filt_laser_tc_nominal = 0.5;
@@ -420,6 +421,7 @@ void delfly_vision_init(void)
   laser_altitude_prev = 0.f;
   climb_rate = 0.f;
   laser_rate = 0.f;
+  position_along_gate_field = -3.f; // initialise assuming we start 3 meters from the first gate
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DELFLY_CONTROL, send_delfly_control_msg);
@@ -492,7 +494,7 @@ static void navigate_towards_gate(void)
 
   float dist_error = (gate_target_size - gate_filt.height);  // rad
   float alt_error = -gate_filt.theta; // rad
-  float lat_error = gate_filt.psi; // rad
+  float lat_error = gate_raw.depth * sinf(gate_raw.phi); // m
   float target_psi_error = stateGetNedToBodyEulers_f()->psi - target_psi;
 
 
@@ -507,9 +509,9 @@ static void navigate_towards_gate(void)
 
   // apply pid gains for yaw, pitch and thrust
 
-  //sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
+  sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
   //sp.phi = phi_gains.p*alignment_error + phi_gains.i*alignment_error_sum;
-  sp.phi = phi_gains.p*target_psi_error + phi_gains.i*target_psi_error_sum;
+  //sp.phi = phi_gains.p*target_psi_error + phi_gains.i*target_psi_error_sum;
 
   //sp.theta = -theta_gains.p*dist_error - theta_gains.i*dist_error_sum;
   sp.theta = sp_theta_gate;
@@ -677,6 +679,9 @@ static void evaluate_state_machine_follow(void)
 
 
 /* Parse the InterMCU message */
+// distances between gate = 2.73, 2.6, 3.7, 2.08
+static float gate_distances[5] = {0., 2.73, 5.33, 9.03, 11.11}; // accumulative distance [m]
+static float gate_diameters[5] = {1.3, 1.2, 0.93, 0.74, 0.48};  // [m]
 static void delfly_vision_parse_msg(void)
 {
   /* Parse the stereocam message */
@@ -695,7 +700,29 @@ static void delfly_vision_parse_msg(void)
 //        gate_raw.depth   = DL_STEREOCAM_GATE_depth(stereocam_msg_buf);
 
         gate_raw.dt = get_sys_time_float() - last_time;
-        gate_raw.depth = gate_raw.dt; // TODO create separate message
+
+        // figure out which gate we are likely looking at
+        float min_error = 100.f;
+        uint16_t min_idx = 0;
+        for (int32_t i = 0; i < 5; i++){
+          float dis_obs = gate_distances[i] - gate_diameters[i] / (2.f*sinf(gate_raw.width/2.f));;
+          float obs_error = position_along_gate_field - dis_obs;
+          if (fabsf(obs_error) < min_error){
+            min_error = fabsf(obs_error);
+            min_idx = i;
+          }
+        }
+
+        // "fuse" distance estimates
+        if(min_error < 1.5f){
+          gate_raw.depth = gate_diameters[min_idx] / (2.f*sinf(gate_raw.width/2.f));
+          // filter position update from vision
+          position_along_gate_field += ((gate_distances[min_idx] - gate_raw.depth) - position_along_gate_field) / 4.f;
+
+          //TODO feedforward estimate to position_along_gate_field with forward speed from body pitch
+        }
+        gate_raw.depth = gate_distances[min_idx] - position_along_gate_field;
+
         last_time = get_sys_time_float();
 
         gate_raw.num_color_bins = pprzlink_get_STEREOCAM_GATE_color_bins_length(stereocam_msg_buf);
@@ -782,6 +809,7 @@ void guidance_h_module_enter(void)
   stab_cmd.theta = rc_sp.theta;
   stab_cmd.psi = rc_sp.psi;
 
+  position_along_gate_field = -3.f; // initialise assuming we start 3 meters from the first gate
 }
 
 void guidance_v_module_enter(void) {}
