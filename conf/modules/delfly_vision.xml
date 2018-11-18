@@ -31,7 +31,7 @@
     <file name="delfly_vision.h"/>
   </header>
   <init fun="delfly_vision_init()"/>
-  <periodic fun="delfly_vision_periodic()" freq="20" autorun="TRUE"/>
+  <periodic fun="delfly_vision_periodic()" freq="25" autorun="TRUE"/>
   <event fun="delfly_vision_event()"/>
   <makefile>
     <!-- Configure default UART port and baudrate for Stereocam -->

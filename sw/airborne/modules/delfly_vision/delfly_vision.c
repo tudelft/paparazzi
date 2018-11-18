@@ -316,7 +316,6 @@ static void estimate_altitude(void)
   static float p_laser = 0.8;
   static float p_baro = 0.95;
   static bool laser_nominal = 1;
-  static float tc;
 
   if (laser_altitude > 4.0 || (get_sys_time_float() - last_laser_time) > 0.5) // laser measurement out of range, or no recent laser readings
   {
@@ -329,9 +328,6 @@ static void estimate_altitude(void)
 
     // complementary filter - baro based measurements
     fused_altitude = fused_altitude*p_baro + (fused_altitude_ref + baro_altitude - baro_altitude_ref)*(1.0 - p_baro);
-//    float scaler = 1.f / (filt_baro_tc + baro_dt);
-//    fused_altitude = (baro_altitude*baro_dt + fused_altitude*filt_baro_tc)*scaler;
-//    fused_altitude = fused_altitude_ref + baro_altitudeF - baro_altitude_ref;
   }
   else // laser measurement correct, trust laser
   {
@@ -339,13 +335,11 @@ static void estimate_altitude(void)
     if (abs(laser_rate) < 4. && (get_sys_time_float() - last_step_time) > 1.)
     {
       p_laser = 0.8; // we trust laser
-      tc = filt_laser_tc_nominal;
       laser_nominal = 1;
     }
     else  // filtering out steps in the measurement when crossing
     {
       p_laser = 0.98; // we don't trust laser for the next 1 second
-      tc = filt_laser_tc_slow;
       if (laser_nominal)
       {
         last_step_time = get_sys_time_float();
@@ -354,8 +348,6 @@ static void estimate_altitude(void)
     }
 
     fused_altitude = fused_altitude*p_laser + laser_altitude*(1.0 - p_laser);
-    //    float scaler = 1.f / (tc + baro_dt);
-    //    fused_altitude = (baro_altitude*baro_dt + fused_altitude*filt_baro_tc)*scaler;
 //    fused_altitude = laser_altitudeF;
 
     previous_laser_based = 1;
@@ -538,8 +530,8 @@ static void follow_line(void)
 {
 // camera field of view: FOVy = 0.776672 / 44.5 deg, FOVx = 1.0018119 / 57.4 deg
 
-  //  float line_follow_alt=fused_altitude;
-  float line_follow_alt=1.0; // if altitude measurement not working
+    float line_follow_alt=fused_altitude;
+//  float line_follow_alt=1.0; // if altitude measurement not working
 
   // define the vertical angle y [rad] where the fitted curve function is evaluated
 //  float cam_pitch = RadOfDeg(30); //cam pitch, positive down, with respect to forward (at hover)
@@ -547,7 +539,7 @@ static void follow_line(void)
 //  float y = -(interest_angle + stateGetNedToBodyEulers_f()->theta - cam_pitch); // angle around y-axis towards vertical
 //  float y = -(interest_angle - cam_pitch); // assuming hover
 //  float y=0; // center of the image
-  float y = -RadOfDeg(20);
+  float y = -RadOfDeg(10);
 
 // TODO adjust for perspective, get code from stereoboard
 //  float alpha = RadOfDeg(90) - cam_pitch + y; // y is positive nose up
@@ -561,17 +553,21 @@ static void follow_line(void)
   // update filters
   if (follow.dt <= 0) return;
 
-  if (follow.r2 > r2_min && follow.line_dt < 1.f && filt_line_on)
+  if (follow.r2 > r2_min)
   {
-    // propagate low-pass filter if sufficient quality (line_dt only gets updated when quality is above r2_min)
-    float scaler = 1.f / (filt_line_tc + follow.line_dt);
-    x_offset_angleF = (x_offset_angle*follow.line_dt + x_offset_angleF*filt_line_tc) * scaler;
-    x_slopeF = (x_slope*follow.line_dt + x_slopeF*filt_line_tc) * scaler;
-  } else if (follow.line_dt > 1.f || filt_line_on){
-    // reset filter if last update too long ago
-    x_offset_angleF = x_offset_angle;
-    x_slopeF = x_slope;
+    if (follow.line_dt < 2.f && filt_line_on)
+    {
+      // propagate low-pass filter if sufficient quality (line_dt only gets updated when quality is above r2_min)
+      float scaler = 1.f / (filt_line_tc + follow.line_dt);
+      x_offset_angleF = (x_offset_angle*follow.line_dt + x_offset_angleF*filt_line_tc) * scaler;
+      x_slopeF = (x_slope*follow.line_dt + x_slopeF*filt_line_tc) * scaler;
+    } else {
+      // reset filter if last update too long ago
+      x_offset_angleF = x_offset_angle;
+      x_slopeF = x_slope;
+    }
   }
+  // else keep the previous values
 
   follow.line_lat = sinf(x_offset_angle)*line_follow_alt;
   follow.line_angle = atanf(x_slope);
@@ -622,13 +618,13 @@ static void follow_line(void)
   // allign body with the line slope
   float yaw_rate = 0.2; // in rad/s
 
-  if (fabsf(follow.line_angleF) < 0.2)
-  {
+//  if (fabsf(follow.line_angleF) < 0.2)
+//  {
     sp.psi = stateGetNedToBodyEulers_f()->psi - follow.line_angleF;
-  } else {
-    float sign=((follow.line_angleF > 0) - (follow.line_angleF < 0));
-    sp.psi = stateGetNedToBodyEulers_f()->psi - sign*yaw_rate;
-  }
+//  } else {
+//    float sign=((follow.line_angleF > 0) - (follow.line_angleF < 0));
+//    sp.psi = stateGetNedToBodyEulers_f()->psi - sign*yaw_rate;
+//  }
 }
 
 
