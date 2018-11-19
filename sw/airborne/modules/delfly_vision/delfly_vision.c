@@ -234,6 +234,7 @@ static void send_delfly_gate_msg(struct transport_tx *trans, struct link_device 
   pprz_msg_send_DELFLY_GATE(trans, dev, AC_ID,
                                   &gate_raw.quality, &gate_raw.width, &gate_raw.height,
                                   &gate_raw.phi, &gate_raw.theta, &gate_raw.depth,
+                                  &position_along_gate_field, position_along_gate_field_from_speed,
                                   &angle_to_gate.theta, &angle_to_gate.psi, &gate_raw.dt);
 }
 
