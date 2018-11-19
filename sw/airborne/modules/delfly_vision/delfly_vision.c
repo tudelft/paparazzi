@@ -169,18 +169,25 @@ float baro_dt;
 float climb_rate;
 float altitude_setp;
 float position_along_gate_field;
+float position_along_gate_field_init = -3.0; // starting position from the first gate, positive along the gates
+float position_along_gate_field_from_speed;
 
+// these tcs are only used for individual sensors, not for the fused signals used in control!!!
 float filt_baro_tc = 3;
 float filt_laser_tc_nominal = 0.5;
 float filt_laser_tc_slow = 2;
 
-float altitude_setp = 1.f;
+float altitude_setp = 0.7f;
 
 bool filt_gate_on=true;
 float filt_gate_tc=0.5;  // gate filter time constant, in seconds
 
-bool filt_line_on=true;
-float filt_line_tc=0.5;  // line filter time constant, in seconds
+bool filt_line_slope_on=true;
+float filt_line_slope_tc=0.5;  // line filter time constant, in seconds
+
+bool filt_line_offset_on=true;
+float filt_line_offset_tc=0.5;  // line filter time constant, in seconds
+
 
 bool filt_obst_on=true;
 float filt_obst_tc=0.5;  // obstacle filter time constant, in seconds
@@ -198,11 +205,12 @@ uint8_t altitude_hold_on = 1;
 struct follow_t follow;
 float safe_angle=0.15;
 float r2_min = 0.8;
-float y_slope = -0.15;
-float y_offset = -0.3;
+float y_slope = 0.12;
+float y_offset = -0.05;
+float follow_yaw_rate = 1.;
 
-float sp_theta_gate = 0.;
-float sp_theta_follow = 0.;
+float sp_theta_gate = -0.;
+float sp_theta_follow = -0.2;
 
 struct FloatEulers sp;
 
@@ -421,7 +429,8 @@ void delfly_vision_init(void)
   laser_altitude_prev = 0.f;
   climb_rate = 0.f;
   laser_rate = 0.f;
-  position_along_gate_field = -3.f; // initialise assuming we start 3 meters from the first gate
+  position_along_gate_field = position_along_gate_field_init; // initialise assuming we start x meters from the first gate
+  position_along_gate_field_from_speed = position_along_gate_field_init;
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DELFLY_CONTROL, send_delfly_control_msg);
@@ -478,6 +487,7 @@ static void rotate_camera(void)
 }
 
 static float target_psi = 0;
+static bool gate_vision_on = false;
 
 /*
  * Compute attitude set-point given gate position
@@ -520,18 +530,22 @@ static void navigate_towards_gate(void)
 
   //thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
 
-  if (radio_control.values[RADIO_FLAP] > 5000  && !vision_on) // Vision switch ON
+  if (radio_control.values[RADIO_FLAP] > 5000  && !gate_vision_on) // Vision switch OFF --> ON
   {
     target_psi = stateGetNedToBodyEulers_f()->psi; // remember heading at the beginning, should be aligned with the gates
     sp.psi = stateGetNedToBodyEulers_f()->psi; // reset heading setpoint
-    vision_on = 1;
+
+    position_along_gate_field = position_along_gate_field_init; // reset position estimates assuming we start x meters from the first gate
+    position_along_gate_field_from_speed = position_along_gate_field_init;
+    gate_vision_on = 1;
   }
 
-  if (radio_control.values[RADIO_FLAP] <= 5000) vision_on = 0;
+  if (radio_control.values[RADIO_FLAP] <= 5000) gate_vision_on = 0;
 }
 
 
 float x_offset_angleF = 0, x_slopeF = 0;
+static bool follow_vision_on = false;
 
 /*
  * Compute attitude set-point for line following
@@ -556,36 +570,55 @@ static void follow_line(void)
 //  float alpha = RadOfDeg(90) - cam_pitch + y; // y is positive nose up
 //  follow.line_lon = line_follow_alt*sinf(alpha);
 
-  //import 2nd order polynomial and convert it to an angle function
-  //format: x = a*y^2 + by + c
-  float x_offset_angle = follow.A*y_offset*y_offset + follow.B*y_offset + follow.C; //[rad]
-  float x_slope = 2*follow.A*y_slope + follow.B; //[-]
-
   // update filters
   if (follow.dt <= 0) return;
 
+  float x_offset_angle, x_slope;
+
   if (follow.r2 > r2_min)
   {
-    if (follow.line_dt < 2.f && filt_line_on)
+    //import 2nd order polynomial and convert it to an angle function
+    //format: x = a*y^2 + by + c
+    x_offset_angle = follow.A*y_offset*y_offset + follow.B*y_offset + follow.C; //[rad]
+    x_slope = 2*follow.A*y_slope + follow.B; //[-]
+  }
+  else
+  {
+    x_offset_angle = 0; // this will get propagated by the low pass filter
+  }
+
+  // the lateral error filter runs all the time, such that the lateral error has some 'inertia' when the line is lost
+  if (follow.line_dt < 1. && filt_line_offset_on)
+  {
+    // propagate low-pass filter (follow.dt gets updated with every new camera message)
+    float scaler = 1.f / (filt_line_offset_tc + follow.dt);
+    x_offset_angleF = (x_offset_angle*follow.dt + x_offset_angleF*filt_line_offset_tc) * scaler;
+  } else {
+    // reset filter if last update too long ago
+    x_offset_angleF = x_offset_angle;
+  }
+
+  // we run the slope filter only with valid measurements
+  if (follow.r2 > r2_min)
+  {
+    if (follow.line_dt < 0.25 && filt_line_slope_on)
     {
       // propagate low-pass filter if sufficient quality (line_dt only gets updated when quality is above r2_min)
-      float scaler = 1.f / (filt_line_tc + follow.line_dt);
-      x_offset_angleF = (x_offset_angle*follow.line_dt + x_offset_angleF*filt_line_tc) * scaler;
-      x_slopeF = (x_slope*follow.line_dt + x_slopeF*filt_line_tc) * scaler;
+      float scaler = 1.f / (filt_line_slope_tc + follow.line_dt);
+      x_slopeF = (x_slope*follow.line_dt + x_slopeF*filt_line_slope_tc) * scaler;
     } else {
       // reset filter if last update too long ago
-      x_offset_angleF = x_offset_angle;
       x_slopeF = x_slope;
     }
   }
-  // else keep the previous values
 
   follow.line_lat = sinf(x_offset_angle)*line_follow_alt;
   follow.line_angle = atanf(x_slope);
   follow.line_latF = sinf(x_offset_angleF)*line_follow_alt;
   follow.line_angleF = atanf(x_slopeF);
 
-  if (follow.dt < 1.f && filt_obst_on && follow.obst_phi > -0.5 && follow.obst_theta < 0.39)
+
+  if (follow.dt < 0.25 && filt_obst_on && follow.obst_phi > -0.5 && follow.obst_theta < 0.39)
    {
      // propagate low-pass filter
      float scaler = 1.f / (filt_obst_tc + follow.dt);
@@ -601,10 +634,9 @@ static void follow_line(void)
   follow.obst_lat=sinf(follow.obst_phiF)*line_follow_alt;
   follow.obst_lon=sinf(follow.obst_thetaF)*line_follow_alt;
 
-
   float lat_error;
 
-  // disabling obstacle avoidance
+  // disabling obstacle avoidance for now
   follow.obst_phi=-1;
   follow.obst_theta=1;
 
@@ -620,22 +652,44 @@ static void follow_line(void)
   }
 
   // integrate error
-  lat_error_sum += lat_error*gate_raw.dt;
+  if (follow.dt < 0.25) lat_error_sum += lat_error*gate_raw.dt;
+  else lat_error_sum = 0;
 
-//  sp.theta = -0.25; // ~ 15 degrees pitch
   sp.theta = sp_theta_follow;
   sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
 
-  // allign body with the line slope
-  float yaw_rate = 0.2; // in rad/s
+  if (follow.r2 > r2_min)
+  {
+    sp.psi = stateGetNedToBodyEulers_f()->psi + follow.line_angleF; // align body with the line slope
+  }
+  else
+  {
+    // if we do not have a valid measurement, we turn towards the line, determined by the last lateral error
+    if (follow.line_latF > 0) {
+      sp.psi += follow_yaw_rate*follow.dt;
+    } else {
+      sp.psi += -follow_yaw_rate*follow.dt;
+    }
+  }
+
+//  float yaw_rate = 0.2; // in rad/s
 
 //  if (fabsf(follow.line_angleF) < 0.2)
 //  {
-    sp.psi = stateGetNedToBodyEulers_f()->psi - follow.line_angleF;
+//    sp.psi = stateGetNedToBodyEulers_f()->psi - follow.line_angleF;
 //  } else {
 //    float sign=((follow.line_angleF > 0) - (follow.line_angleF < 0));
 //    sp.psi = stateGetNedToBodyEulers_f()->psi - sign*yaw_rate;
 //  }
+
+  if (radio_control.values[RADIO_FLAP] > 5000  && !follow_vision_on) // Vision switch OFF --> ON
+  {
+    sp.psi = stateGetNedToBodyEulers_f()->psi; // reset heading setpoint
+
+    follow_vision_on = 1;
+  }
+
+  if (radio_control.values[RADIO_FLAP] <= 5000) follow_vision_on = 0;
 }
 
 
@@ -650,6 +704,21 @@ static void set_attitude_setpoint(void)
   att_sp.phi = ANGLE_BFP_OF_REAL(sp.phi);
   att_sp.theta = ANGLE_BFP_OF_REAL(sp.theta);
   att_sp.psi = ANGLE_BFP_OF_REAL(sp.psi);
+
+  // Make sure the yaw setpoint does not differ too much from the real yaw
+  // to prevent a sudden switch at 180 deg
+  const int32_t delta_limit = ANGLE_BFP_OF_REAL(STABILIZATION_ATTITUDE_SP_PSI_DELTA_LIMIT);
+
+  int32_t heading = stabilization_attitude_get_heading_i();
+
+  int32_t delta_psi = att_sp.psi - heading;
+  INT32_ANGLE_NORMALIZE(delta_psi);
+  if (delta_psi > delta_limit) {
+    att_sp.psi = heading + delta_limit;
+  } else if (delta_psi < -delta_limit) {
+    att_sp.psi = heading - delta_limit;
+  }
+
   INT32_ANGLE_NORMALIZE(att_sp.psi);
   //guidance_v_zd_sp = thrust_sp; // todo implement
 }
@@ -680,6 +749,7 @@ static void evaluate_state_machine_follow(void)
 
 /* Parse the InterMCU message */
 // distances between gate = 2.73, 2.6, 3.7, 2.08
+// height of the gate centers =
 static float gate_distances[5] = {0., 2.73, 5.33, 9.03, 11.11}; // accumulative distance [m]
 static float gate_diameters[5] = {1.3, 1.2, 0.93, 0.74, 0.48};  // [m]
 static void delfly_vision_parse_msg(void)
@@ -720,6 +790,9 @@ static void delfly_vision_parse_msg(void)
           position_along_gate_field += ((gate_distances[min_idx] - gate_raw.depth) - position_along_gate_field) / 4.f;
 
           //TODO feedforward estimate to position_along_gate_field with forward speed from body pitch
+          float speed_est = -0.049*sp_theta_gate; // estimate from pitch setpoint
+          //float speed_est = -0.049*stateGetNedToBodyEulers_f()->theta; // estimate from measured pitch
+          position_along_gate_field_from_speed += speed_est*gate_raw.dt;
         }
         gate_raw.depth = gate_distances[min_idx] - position_along_gate_field;
 
@@ -808,8 +881,6 @@ void guidance_h_module_enter(void)
   stab_cmd.phi = rc_sp.phi;
   stab_cmd.theta = rc_sp.theta;
   stab_cmd.psi = rc_sp.psi;
-
-  position_along_gate_field = -3.f; // initialise assuming we start 3 meters from the first gate
 }
 
 void guidance_v_module_enter(void) {}
@@ -832,9 +903,10 @@ void guidance_h_module_run(bool in_flight)
 
   static uint8_t prev = 0;
 
-  if (radio_control.values[RADIO_FLAP] > 5000 && (get_sys_time_float() - last_time) < 3.) // Vision switch ON, and we had a recent update from the camera
+  if (radio_control.values[RADIO_FLAP] > 5000) // Vision switch ON
   {
     static int32_t rc_setp_roll=0;
+    vision_on = 1;
 
     // add a deadband to roll RC commands when in auto
     if (abs(rc_sp.phi)>ANGLE_BFP_OF_REAL(0.))
@@ -858,6 +930,8 @@ void guidance_h_module_run(bool in_flight)
       stabilization_attitude_read_rc_setpoint_eulers(&rc_sp, false, false, false); // reset rc yaw setpoint
       prev = 1;
     }
+
+    vision_on = 0;
 
     stab_cmd.phi = rc_sp.phi;
     stab_cmd.theta = rc_sp.theta;

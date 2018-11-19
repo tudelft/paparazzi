@@ -123,13 +123,16 @@ extern void guidance_v_module_run(bool in_flight);
 
 // settings
 extern float filt_gate_tc;  // gate filter time constant
-extern float filt_line_tc;  // line filter time constant
+extern float filt_line_slope_tc;  // line slope filter time constant
+extern float filt_line_offset_tc;  // line offset filter time constant
 extern float filt_obst_tc;  // obstacle filter time constant
 extern float altitude_setp;
 extern float y_slope; // vertical camera angle where slope of the fitted curve is computed
 extern float y_offset; // vertical camera angle where offset of the fitted curve is computed
 extern float sp_theta_gate;
 extern float sp_theta_follow;
+extern float position_along_gate_field_init;
+extern float follow_yaw_rate; // rate of yawing towards the line when line tracking is lost
 
 extern struct pid_t phi_gains;
 extern struct pid_t theta_gains;
