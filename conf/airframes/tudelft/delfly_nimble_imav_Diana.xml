@@ -114,7 +114,7 @@
     <servo name="MOTOR_LEFT" no="1" min="1100" neutral="1100" max="1900"/> 
     <servo name="MOTOR_RIGHT" no="0" min="1100" neutral="1100" max="1900"/>
     <servo name="DIHEDRAL" no="3" min="1575" neutral="1325" max="1075"/>
-    <servo name="WING_DEF" no="2" min="1090" neutral="1590" max="2090"/>
+    <servo name="WING_DEF" no="2" min="1000" neutral="1500" max="2000"/>
   </servos>
   		
   <commands>
