@@ -505,7 +505,7 @@ static void navigate_towards_gate(void)
 
   float dist_error = (gate_target_size - gate_filt.height);  // rad
   float alt_error = -gate_filt.theta; // rad
-  float lat_error = gate_raw.depth * sinf(gate_raw.phi); // m
+  float lat_error = gate_raw.depth * sinf(gate_filt.psi); // m
   float target_psi_error = stateGetNedToBodyEulers_f()->psi - target_psi;
 
 
@@ -527,7 +527,7 @@ static void navigate_towards_gate(void)
   //sp.theta = -theta_gains.p*dist_error - theta_gains.i*dist_error_sum;
   sp.theta = sp_theta_gate;
 
-  sp.psi = gate_filt.psi + stateGetNedToBodyEulers_f()->psi;
+  //sp.psi = gate_filt.psi + stateGetNedToBodyEulers_f()->psi;
 
   //thrust_sp = thrust_gains.p*alt_error + thrust_gains.i*alt_error_sum;
 
@@ -753,6 +753,9 @@ static void evaluate_state_machine_follow(void)
 // height of the gate centers =
 static float gate_distances[5] = {0., 2.73, 5.33, 9.03, 11.11}; // accumulative distance [m]
 static float gate_diameters[5] = {1.3, 1.2, 0.93, 0.74, 0.48};  // [m]
+
+static float window_width = 1.f;  // width of the window
+bool window_on = false;   // setting to switch between the gate and the window
 static void delfly_vision_parse_msg(void)
 {
   /* Parse the stereocam message */
@@ -772,30 +775,33 @@ static void delfly_vision_parse_msg(void)
 
         gate_raw.dt = get_sys_time_float() - last_time;
 
-        // figure out which gate we are likely looking at
-        float min_error = 100.f;
-        uint16_t min_idx = 0;
-        for (int32_t i = 0; i < 5; i++){
-          float dis_obs = gate_distances[i] - gate_diameters[i] / (2.f*sinf(gate_raw.width/2.f));;
-          float obs_error = position_along_gate_field - dis_obs;
-          if (fabsf(obs_error) < min_error){
-            min_error = fabsf(obs_error);
-            min_idx = i;
+        if (!window_on){
+          // figure out which gate we are likely looking at
+          float min_error = 100.f;
+          uint16_t min_idx = 0;
+          for (int32_t i = 0; i < 5; i++){
+            float dis_obs = gate_distances[i] - gate_diameters[i] / (2.f*sinf(gate_raw.width/2.f));;
+            float obs_error = position_along_gate_field - dis_obs;
+            if (fabsf(obs_error) < min_error){
+              min_error = fabsf(obs_error);
+              min_idx = i;
+            }
           }
-        }
 
-        // "fuse" distance estimates
-        if(min_error < 1.5f){
-          gate_raw.depth = gate_diameters[min_idx] / (2.f*sinf(gate_raw.width/2.f));
-          // filter position update from vision
-          position_along_gate_field += ((gate_distances[min_idx] - gate_raw.depth) - position_along_gate_field) / 4.f;
+          // "fuse" distance estimates
+          if(min_error < 1.5f){
+            gate_raw.depth = gate_diameters[min_idx] / (2.f*sinf(gate_raw.width/2.f));
+            // filter position update from vision
+            position_along_gate_field += ((gate_distances[min_idx] - gate_raw.depth) - position_along_gate_field) / 4.f;
 
-          //TODO feedforward estimate to position_along_gate_field with forward speed from body pitch
+          }
+          gate_raw.depth = gate_distances[min_idx] - position_along_gate_field;
           float speed_est = -0.049*sp_theta_gate; // estimate from pitch setpoint
           //float speed_est = -0.049*stateGetNedToBodyEulers_f()->theta; // estimate from measured pitch
           position_along_gate_field_from_speed += speed_est*gate_raw.dt;
+        } else {
+          gate_raw.depth = window_width / (2.f*sinf(gate_raw.width/2.f));
         }
-        gate_raw.depth = gate_distances[min_idx] - position_along_gate_field;
 
         last_time = get_sys_time_float();
 
