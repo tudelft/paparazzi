@@ -549,6 +549,7 @@ static void navigate_towards_gate(void)
 
 float x_offset_angleF = 0, x_slopeF = 0;
 static bool follow_vision_on = false;
+float time_follow_vision_on = 0;
 
 /*
  * Compute attitude set-point for line following
@@ -662,7 +663,7 @@ static void follow_line(void)
 //    }
 //  }
 
-  int return_direction;
+  static int8_t return_direction = 0;
 
   // integrate error
   if (follow.dt < 0.25) lat_error_sum += lat_error*gate_raw.dt;
@@ -670,8 +671,6 @@ static void follow_line(void)
 
   sp.theta = sp_theta_follow;
   sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
-
-  float yaw_rate = 0.2; // in rad/s
 
   if (follow.r2 > r2_min && follow.num_points > min_num_points)
   {
@@ -691,19 +690,12 @@ static void follow_line(void)
     sp.psi += return_direction*follow_yaw_rate*follow.dt;
   }
 
-//  if (fabsf(follow.line_angleF) < 0.2)
-//  {
-//    sp.psi = stateGetNedToBodyEulers_f()->psi - follow.line_angleF;
-//  } else {
-//    float sign=((follow.line_angleF > 0) - (follow.line_angleF < 0));
-//    sp.psi = stateGetNedToBodyEulers_f()->psi - sign*yaw_rate;
-//  }
-
   if (radio_control.values[RADIO_FLAP] > 5000  && !follow_vision_on) // Vision switch OFF --> ON
   {
     sp.psi = stateGetNedToBodyEulers_f()->psi; // reset heading setpoint
 
     follow_vision_on = 1;
+    time_follow_vision_on = get_sys_time_float();
 
     x_offset_angleF = 0.f;
     x_slopeF = 0.f;
@@ -948,8 +940,16 @@ void guidance_h_module_run(bool in_flight)
 
     stab_cmd.phi = rc_setp_roll + att_sp.phi;
     stab_cmd.theta = rc_sp.theta + att_sp.theta;
-    stab_cmd.psi = att_sp.psi;
 
+    // for the line code, we wait 0.5 sec until the camera starts pointing down
+    if (follow_vision_on && (get_sys_time_float() - time_follow_vision_on) < 0.5)
+    {
+      stab_cmd.psi = rc_sp.psi;
+    }
+    else
+    {
+      stab_cmd.psi = att_sp.psi;
+    }
     prev = 0;
   } else // Vision switch OFF
   {
