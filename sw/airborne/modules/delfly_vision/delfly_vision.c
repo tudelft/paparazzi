@@ -200,11 +200,13 @@ struct pid_t thrust_gains = {DELFLY_VISION_THRUST_GAINS_P, DELFLY_VISION_THRUST_
 
 uint8_t vision_on = 1;
 uint8_t altitude_hold_on = 1;
+bool line_lost = false;
 
 
 struct follow_t follow;
 float safe_angle=0.15;
 float r2_min = 0.8;
+uint32_t min_num_points = 10;
 float y_slope = 0.12;
 float y_offset = -0.05;
 float follow_yaw_rate = 1.;
@@ -242,7 +244,7 @@ static void send_delfly_gate_msg(struct transport_tx *trans, struct link_device 
 static void send_delfly_follow_msg(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_DELFLY_FOLLOW(trans, dev, AC_ID,
-                                  &follow.A, &follow.B, &follow.C, &follow.r2,
+                                  &follow.A, &follow.B, &follow.C, &follow.r2, &follow.num_points,
                                   &follow.line_lat, &follow.line_lon, &follow.line_angle,
                                   &follow.line_latF, &follow.line_lonF, &follow.line_angleF,
                                   &follow.obst_phi, &follow.obst_theta,
@@ -576,13 +578,18 @@ static void follow_line(void)
 
   float x_offset_angle, x_slope;
 
-  if (follow.r2 > r2_min)
+  if (follow.r2 > r2_min && follow.num_points > min_num_points)
   {
-    //import 2nd order polynomial and convert it to an angle function
-    //format: x = a*y^2 + by + c
+    // import 2nd order polynomial and convert it to an angle function
+    // format: x = a*y^2 + by + c
     x_offset_angle = follow.A*y_offset*y_offset + follow.B*y_offset + follow.C; //[rad]
     x_slope = 2*follow.A*y_slope + follow.B; //[-]
-    // todo, limit to 60 deg??
+
+    // limit slope to 2 --> 63.2 deg
+    if (fabsf(x_slope) > 2)
+    {
+      x_slope = x_slope/fabsf(x_slope)*2;
+    }
   }
   else
   {
@@ -601,11 +608,11 @@ static void follow_line(void)
   }
 
   // we run the slope filter only with valid measurements
-  if (follow.r2 > r2_min)
+  if (follow.r2 > r2_min && follow.num_points > min_num_points)
   {
     if (follow.line_dt < 0.25 && filt_line_slope_on)
     {
-      // propagate low-pass filter if sufficient quality (line_dt only gets updated when quality is above r2_min)
+      // propagate low-pass filter if sufficient quality (line_dt only gets updated when quality is above r2_min & if enough points is seen)
       float scaler = 1.f / (filt_line_slope_tc + follow.line_dt);
       x_slopeF = (x_slope*follow.line_dt + x_slopeF*filt_line_slope_tc) * scaler;
     } else {
@@ -620,38 +627,42 @@ static void follow_line(void)
   follow.line_angleF = atanf(x_slopeF);
 
 
-  if (follow.dt < 0.25 && filt_obst_on && follow.obst_phi > -0.5 && follow.obst_theta < 0.39)
-   {
-     // propagate low-pass filter
-     float scaler = 1.f / (filt_obst_tc + follow.dt);
-     follow.obst_phiF = (follow.obst_phi*follow.dt + follow.obst_phiF*filt_obst_tc) * scaler;
-     follow.obst_thetaF = (follow.obst_theta*follow.dt + follow.obst_thetaF*filt_obst_tc) * scaler;
-   } else {
-     // reset filter if last update too long ago, or if no obstacles are seen
-     follow.obst_phiF = follow.obst_phi;
-     follow.obst_thetaF = follow.obst_theta;
-   }
-
-  // todo adjust for camera perspective, the formulas below only work if we look straight down
-  follow.obst_lat=sinf(follow.obst_phiF)*line_follow_alt;
-  follow.obst_lon=sinf(follow.obst_thetaF)*line_follow_alt;
+//  if (follow.dt < 0.25 && filt_obst_on && follow.obst_phi > -0.5 && follow.obst_theta < 0.39)
+//   {
+//     // propagate low-pass filter
+//     float scaler = 1.f / (filt_obst_tc + follow.dt);
+//     follow.obst_phiF = (follow.obst_phi*follow.dt + follow.obst_phiF*filt_obst_tc) * scaler;
+//     follow.obst_thetaF = (follow.obst_theta*follow.dt + follow.obst_thetaF*filt_obst_tc) * scaler;
+//   } else {
+//     // reset filter if last update too long ago, or if no obstacles are seen
+//     follow.obst_phiF = follow.obst_phi;
+//     follow.obst_thetaF = follow.obst_theta;
+//   }
+//
+//  // todo adjust for camera perspective, the formulas below only work if we look straight down
+//  follow.obst_lat=sinf(follow.obst_phiF)*line_follow_alt;
+//  follow.obst_lon=sinf(follow.obst_thetaF)*line_follow_alt;
+//
+//
+//  // disabling obstacle avoidance for now
+//  follow.obst_phi=-1;
+//  follow.obst_theta=1;
 
   float lat_error;
+  lat_error = follow.line_latF;
 
-  // disabling obstacle avoidance for now
-  follow.obst_phi=-1;
-  follow.obst_theta=1;
+  //  if ((follow.obst_phi < -0.5 && follow.obst_theta > 0.39) || fabsf(follow.line_latF - follow.obst_phiF) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
+//  {
+//    lat_error = follow.line_latF;
+//  } else { // we see an obstacle and it is on our flight path
+//    if (follow.line_latF > follow.obst_phiF) {
+//      lat_error = follow.obst_phiF + safe_angle;
+//    } else {
+//      lat_error = follow.obst_phiF - safe_angle;
+//    }
+//  }
 
-  if ((follow.obst_phi < -0.5 && follow.obst_theta > 0.39) || fabsf(follow.line_latF - follow.obst_phiF) > safe_angle) // no obstacle detected or obstacle safely out of our flight path
-  {
-    lat_error = follow.line_latF;
-  } else { // we see an obstacle and it is on our flight path
-    if (follow.line_latF > follow.obst_phiF) {
-      lat_error = follow.obst_phiF + safe_angle;
-    } else {
-      lat_error = follow.obst_phiF - safe_angle;
-    }
-  }
+  int return_direction;
 
   // integrate error
   if (follow.dt < 0.25) lat_error_sum += lat_error*gate_raw.dt;
@@ -660,21 +671,25 @@ static void follow_line(void)
   sp.theta = sp_theta_follow;
   sp.phi = phi_gains.p*lat_error + phi_gains.i*lat_error_sum;
 
-  if (follow.r2 > r2_min)
+  float yaw_rate = 0.2; // in rad/s
+
+  if (follow.r2 > r2_min && follow.num_points > min_num_points)
   {
     sp.psi = stateGetNedToBodyEulers_f()->psi + follow.line_angleF; // align body with the line slope
+
+    line_lost = false;
+    return_direction = 0;
   }
   else
   {
     // if we do not have a valid measurement, we turn towards the line, determined by the last lateral error
-    if (follow.line_latF > 0) {
-      sp.psi += follow_yaw_rate*follow.dt;
-    } else {
-      sp.psi += -follow_yaw_rate*follow.dt;
+    if (!line_lost && fabsf(follow.line_latF) > 0.02)
+    {
+      line_lost = true;
+      return_direction = follow.line_latF/fabs(follow.line_latF);
     }
+    sp.psi += return_direction*follow_yaw_rate*follow.dt;
   }
-
-//  float yaw_rate = 0.2; // in rad/s
 
 //  if (fabsf(follow.line_angleF) < 0.2)
 //  {
@@ -829,8 +844,9 @@ static void delfly_vision_parse_msg(void)
     case DL_STEREOCAM_LINE:
 
       follow.r2 = DL_STEREOCAM_LINE_r2(stereocam_msg_buf);
+      follow.num_points = DL_STEREOCAM_LINE_num_points(stereocam_msg_buf);
 
-      if (follow.r2 > r2_min)
+      if (follow.r2 > r2_min && follow.num_points > min_num_points)
       {
         follow.A = DL_STEREOCAM_LINE_A(stereocam_msg_buf);
         follow.B   = DL_STEREOCAM_LINE_B(stereocam_msg_buf);

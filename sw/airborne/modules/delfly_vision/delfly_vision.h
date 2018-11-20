@@ -83,6 +83,7 @@ struct follow_t {
   float B;
   float C;
   float r2;
+  uint32_t num_points;
   float line_lon;
   float line_lat;
   float line_angle;
