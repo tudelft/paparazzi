@@ -209,7 +209,7 @@ float y_slope = 0.12;
 float y_offset = -0.05;
 float follow_yaw_rate = 1.;
 
-float sp_theta_gate = -0.;
+float sp_theta_gate = -0.2;
 float sp_theta_follow = -0.2;
 
 struct FloatEulers sp;
@@ -582,6 +582,7 @@ static void follow_line(void)
     //format: x = a*y^2 + by + c
     x_offset_angle = follow.A*y_offset*y_offset + follow.B*y_offset + follow.C; //[rad]
     x_slope = 2*follow.A*y_slope + follow.B; //[-]
+    // todo, limit to 60 deg??
   }
   else
   {
@@ -688,6 +689,9 @@ static void follow_line(void)
     sp.psi = stateGetNedToBodyEulers_f()->psi; // reset heading setpoint
 
     follow_vision_on = 1;
+
+    x_offset_angleF = 0.f;
+    x_slopeF = 0.f;
   }
 
   if (radio_control.values[RADIO_FLAP] <= 5000) follow_vision_on = 0;
@@ -798,6 +802,7 @@ static void delfly_vision_parse_msg(void)
           gate_raw.depth = gate_distances[min_idx] - position_along_gate_field;
           float speed_est = -0.049*sp_theta_gate; // estimate from pitch setpoint
           //float speed_est = -0.049*stateGetNedToBodyEulers_f()->theta; // estimate from measured pitch
+          position_along_gate_field += speed_est*gate_raw.dt;
           position_along_gate_field_from_speed += speed_est*gate_raw.dt;
         } else {
           gate_raw.depth = window_width / (2.f*sinf(gate_raw.width/2.f));
