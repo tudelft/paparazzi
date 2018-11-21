@@ -206,7 +206,7 @@ bool line_lost = false;
 struct follow_t follow;
 float safe_angle=0.15;
 float r2_min = 0.8;
-uint32_t min_num_points = 10;
+uint32_t min_num_points = 20;
 float y_slope = 0.12;
 float y_offset = -0.05;
 float follow_yaw_rate = 1.;
@@ -622,9 +622,9 @@ static void follow_line(void)
     }
   }
 
-  follow.line_lat = sinf(x_offset_angle)*line_follow_alt;
+  follow.line_lat = line_follow_alt*tanf(x_offset_angle);
   follow.line_angle = atanf(x_slope);
-  follow.line_latF = sinf(x_offset_angleF)*line_follow_alt;
+  follow.line_latF = line_follow_alt*tanf(x_offset_angleF);
   follow.line_angleF = atanf(x_slopeF);
 
 
