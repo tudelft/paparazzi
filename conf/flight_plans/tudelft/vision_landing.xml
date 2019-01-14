@@ -1,9 +1,9 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
 <!-- flight_plan alt="343" ground_alt="335" lat0="-27.2172864" lon0="151.2377145" max_dist_from_home="120" name="Outback testfield" security_height="2"--> <!-- test field outback -->
-<!-- <flight_plan alt="8" ground_alt="0" lat0="52.1682020" lon0="4.4130950" max_dist_from_home="120" name="Valkenburg Taxi" security_height="2"> --> <!-- taxi -->
+<flight_plan alt="8" ground_alt="0" lat0="52.1682020" lon0="4.4130950" max_dist_from_home="120" name="Valkenburg Taxi" security_height="2">  <!-- taxi -->
 <!-- <flight_plan alt="8" ground_alt="0" lat0="52.170358" lon0="4.427702" max_dist_from_home="120" name="Valkenburg Kite" security_height="2"-->  <!--kite power -->
-<flight_plan alt="8" ground_alt="3" lat0="52.792211" lon0="4.511681" max_dist_from_home="25000" name="North Sea" security_height="2">  <!--North sea -->
+<!--flight_plan alt="8" ground_alt="3" lat0="52.792211" lon0="4.511681" max_dist_from_home="25000" name="North Sea" security_height="2"-->  <!--North sea -->
   <header>
     #include "autopilot.h"
     #include "subsystems/datalink/datalink.h"
@@ -68,6 +68,11 @@
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <call fun="enableVisionFindJoe(false)" loop="false"/>
+      <call fun="enableVisionDescent(false)" loop="false"/>
+      <stay wp="STDBY"/>
+    </block>
+    <block name="Standby_FJ">
+      <call fun="enableVisionFindJoe(true)" loop="false"/>
       <call fun="enableVisionDescent(false)" loop="false"/>
       <stay wp="STDBY"/>
     </block>
