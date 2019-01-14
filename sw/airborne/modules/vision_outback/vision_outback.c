@@ -52,7 +52,7 @@
 #define VISION_POWER_ON_AT_BOOT true
 #endif
 
-#define WANTED_VISION_VERSION 2.1f
+#define WANTED_VISION_VERSION 2.2f
 
 /* Main magneto structure */
 static struct vision_outback_t vision_outback = {
@@ -122,7 +122,7 @@ static void send_vision_outback( struct transport_tx *trans, struct link_device 
                                &v2p_package.out_of_range_since,
                                &msg_marker_x,
                                &msg_marker_y,
-                               &v2p_package.stupid_pprz_height, // In the message this is flow_x, but we use it for height
+                               &v2p_package.raw_height, // In the message this is flow_x, but we use it for height
                                &v2p_package.version);
 }
 #endif
@@ -223,11 +223,11 @@ static inline void vision_outback_parse_msg(void)
               het_moment = false;
             }
             // If height==-1, the measurement is faulty so don't send it
-            if (v2p_package.stupid_pprz_height > 0) {
-              AbiSendMsgAGL(AGL_SONAR_ADC_ID, v2p_package.stupid_pprz_height);
+            if (v2p_package.raw_height > 0) {
+              AbiSendMsgAGL(AGL_SONAR_ADC_ID, v2p_package.raw_height);
             }
             // This should go outside the if above, since any sanity checks should also fail if lower than 0
-            unfiltered_vision_height = v2p_package.stupid_pprz_height;
+            unfiltered_vision_height = v2p_package.raw_height;
 
             vision_height = v2p_package.height;
           } else {

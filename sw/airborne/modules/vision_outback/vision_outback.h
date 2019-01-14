@@ -42,11 +42,12 @@ struct vision_outback_t {
 };
 
 //should be exactly the same as pprz.h
-struct Vision2PPRZPackage {
+struct Vision2PPRZPackage
+{
     int32_t frame_id;
-    float height;
+    float height ;
     float out_of_range_since;
-    float stupid_pprz_height;
+    float raw_height;
     float marker_enu_x;
     float marker_enu_y;
     float marker_score;
@@ -56,10 +57,11 @@ struct Vision2PPRZPackage {
     uint8_t status;
     uint8_t landing_status;
 } __attribute__((__packed__));
-extern struct Vision2PPRZPackage v2p_package;
+
 
 //should be exactly the same as pprz.h
-struct PPRZ2VisionPackage {
+struct PPRZ2VisionPackage
+{
     float att_qi;
     float att_qx;
     float att_qy;
@@ -74,12 +76,12 @@ struct PPRZ2VisionPackage {
     float real_gpsz;
     float accz;
     float thrust;
-    float geo_init_gpsx;
-    float geo_init_gpsy;
-    float geo_init_gpsz;
+    float geo_init_gpsx; // lat in radians
+    float geo_init_gpsy; // lon in radians
+    float geo_init_gpsz; //TODO: remove, unused
     uint8_t ac_id;
     unsigned char enables;
-}__attribute__((__packed__));
+} __attribute__((__packed__));
 
 //should be exactly the same as pprz.h
 enum Landing_Status {
