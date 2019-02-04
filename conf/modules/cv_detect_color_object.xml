@@ -3,7 +3,7 @@
 <module name="cv_detect_color_object" dir="computer_vision">
   <doc>
     <description>Color Object Detector
-    Detects an object by a continuous color. Does not draw on image.
+    Detects an object by a continuous color. Optionally draws on image.
     
     </description>
     <define name="COLOR_OBJECT_DETECTOR_CAMERA1" value="front_camera|bottom_camera" description="Video device to use"/>

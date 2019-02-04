@@ -111,7 +111,7 @@ void orange_avoider_guided_init(void)
 }
 
 /*
- * Function that checks it is safe to move forwards, and then moves a waypoint forward or changes the heading
+ * Function that checks it is safe to move forwards, and then sets a forward velocity setpoint or changes the heading
  */
 void orange_avoider_guided_periodic(void)
 {
