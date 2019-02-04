@@ -50,6 +50,7 @@ extern bool cod_draw1;
 extern bool cod_draw2;
 
 // Module functions
-void color_object_detector_init(void);
+extern void color_object_detector_init(void);
+extern void color_object_detector_periodic(void);
 
 #endif /* COLOR_OBJECT_DETECTOR_CV_H */

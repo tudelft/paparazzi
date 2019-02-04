@@ -53,8 +53,8 @@ enum navigation_state_t {
 };
 
 // define settings
-float oag_color_count_frac = 0.15f;       // obstacle detection threshold as a fraction of total of image
-float oag_floor_count_frac = 0.01f;       // floor detection threshold as a fraction of total of image
+float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a fraction of total of image
+float oag_floor_count_frac = 0.05f;       // floor detection threshold as a fraction of total of image
 float oag_max_speed = 0.5f;               // max flight speed [m/s]
 float oag_heading_rate = RadOfDeg(20.f);  // heading change setpoint for avoidance [rad/s]
 
@@ -125,10 +125,11 @@ void orange_avoider_guided_periodic(void)
   // compute current color thresholds
   int32_t color_count_threshold = oag_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
   int32_t floor_count_threshold = oag_floor_count_frac * front_camera.output_size.w * front_camera.output_size.h;
+  float floor_centroid_frac = floor_centroid / (float)front_camera.output_size.h / 2.f;
 
   VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
   VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
-  VERBOSE_PRINT("Floor centroid: %f\n", abs(floor_centroid) / (float)front_camera.output_size.h / 2.f);
+  VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
 
   // update our safe confidence using color threshold
   if(color_count < color_count_threshold){
@@ -144,7 +145,7 @@ void orange_avoider_guided_periodic(void)
 
   switch (navigation_state){
     case SAFE:
-      if (floor_count < floor_count_threshold || abs(floor_centroid) / (float)front_camera.output_size.h / 2.f > 0.15){
+      if (floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0){
         navigation_state = OBSTACLE_FOUND;
@@ -177,18 +178,18 @@ void orange_avoider_guided_periodic(void)
       guidance_h_set_guided_body_vel(0, 0);
 
       // start turn back into arena
-      guidance_h_set_guided_heading_rate(RadOfDeg(15));
+      guidance_h_set_guided_heading_rate(avoidance_heading_direction * RadOfDeg(15));
 
       navigation_state = REENTER_ARENA;
 
       break;
     case REENTER_ARENA:
-      if (floor_count >= floor_count_threshold && abs(floor_centroid) / (float)front_camera.output_size.w / 2.f < 0.15){
+      // force floor center to opposite side of turn to head back into arena
+      if (floor_count >= floor_count_threshold && avoidance_heading_direction * floor_centroid_frac >= 0.f){
         // return to heading mode
         guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
 
-        // inform search of proper direction and reset safe counter
-        avoidance_heading_direction = 1.f;
+        // reset safe counter
         obstacle_free_confidence = 0;
 
         // ensure direction is safe before continuing

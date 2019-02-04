@@ -50,7 +50,7 @@ enum navigation_state_t {
 };
 
 // define settings
-float oa_color_count_frac = 0.15f;
+float oa_color_count_frac = 0.18f;
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
@@ -146,12 +146,14 @@ void orange_avoider_periodic(void)
       }
       break;
     case OUT_OF_BOUNDS:
-      increase_nav_heading(15);
+      increase_nav_heading(heading_increment);
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
 
       if (InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
-        // inform search of proper direction and reset safe counter
-        heading_increment = 5.f;
+        // add offset to head back into arena
+        increase_nav_heading(heading_increment);
+
+        // reset safe counter
         obstacle_free_confidence = 0;
 
         // ensure direction is safe before continuing
