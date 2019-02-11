@@ -34,11 +34,29 @@ using namespace std;
 #include <opencv2/imgproc/imgproc.hpp>
 using namespace cv;
 
+#include <cstdio>
+
+static void find_yuv_order(void) {
+  // Some versions of OpenCV incorrectly swap RGB and/or YUV channels during
+  // conversion. This function tests
+  // https://github.com/opencv/opencv/pull/7481
+  // https://github.com/opencv/opencv/issues/4946
+
+  // While testing for the course, it seems that OpenCV on the Bebop behaves
+  // correctly.
+  Mat test_bgr(1, 1, CV_8UC3);
+  Mat test_yuv;
+  test_bgr.at<Vec3b>(0, 0) = Vec3b(255, 0, 0); // Blue: YUV 29, 239, 103
+  cvtColor(test_bgr, test_yuv, COLOR_BGR2YUV);
+  Vec3b yuv = test_yuv.at<Vec3b>(0, 0);
+  printf("Y = %d, U = %d, V = %d\n", yuv.val[0], yuv.val[1], yuv.val[2]);
+}
+
 void coloryuv_opencv_to_yuv422(Mat image, char *img, int width, int height)
 {
-  // Note: OpenCV3.2.0 stores images in a YVU color order(!)
   CV_Assert(image.depth() == CV_8U);
   CV_Assert(image.channels() == 3);
+  find_yuv_order();
 
   int nRows = image.rows;
   int nCols = image.cols;
