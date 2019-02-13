@@ -19,11 +19,11 @@
     <file name="cv_opencvdemo.c"/>
     <file name="opencv_example.cpp"/>
     <file name="opencv_image_functions.cpp"/>
-    <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install/include"/>
+    <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_arm/include"/>
     
-	<flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install/lib" />
+	<flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install_arm/lib" />
 	<flag name="LDFLAGS" value="lopencv_world" />
-	<flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install/share/OpenCV/3rdparty/lib" />
+	<flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install_arm/share/OpenCV/3rdparty/lib" />
 	<flag name="LDFLAGS" value="llibprotobuf" />
 	<flag name="LDFLAGS" value="llibjpeg-turbo" />
 	<flag name="LDFLAGS" value="llibpng" />
@@ -47,25 +47,10 @@
     <flag name="LDFLAGS" value="lopencv_world" />
     <flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install_pc/share/OpenCV/3rdparty/lib" />
     <flag name="LDFLAGS" value="lprotobuf" />
-    <flag name="LDFLAGS" value="littnotify"/>
-    <flag name="LDFLAGS" value="lquirc"/>
-    <flag name="LDFLAGS" value="lippiw"/>
-    <flag name="LDFLAGS" value="lippicv"/>
     <flag name="LDFLAGS" value="ljpeg"/>
+    <flag name="LDFLAGS" value="lpng"/>
     <flag name="LDFLAGS" value="ltiff"/>
     <flag name="LDFLAGS" value="ldc1394"/>
-    <flag name="LDFLAGS" value="lgtk-3"/>
-    <flag name="LDFLAGS" value="lgdk-3"/>
-    <flag name="LDFLAGS" value="lpangocairo-1.0"/>
-    <flag name="LDFLAGS" value="lpango-1.0"/>
-    <flag name="LDFLAGS" value="latk-1.0"/>
-    <flag name="LDFLAGS" value="lcairo-gobject"/>
-    <flag name="LDFLAGS" value="lcairo"/>
-    <flag name="LDFLAGS" value="lgdk_pixbuf-2.0"/>
-    <flag name="LDFLAGS" value="lgio-2.0"/>
-    <flag name="LDFLAGS" value="lgobject-2.0"/>
-    <flag name="LDFLAGS" value="lglib-2.0"/>
-    <flag name="LDFLAGS" value="lgthread-2.0"/>
     <flag name="LDFLAGS" value="lz"/>
     <flag name="LDFLAGS" value="ldl"/>
     <flag name="LDFLAGS" value="lm"/>
