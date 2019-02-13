@@ -65,7 +65,7 @@ void coloryuv_opencv_to_yuv422(Mat image, char *img, int width, int height)
   for(int r = 0; r < nRows; ++r) {
     for(int c = 0; c < nCols; ++c) {
       Vec3b yvu = image.at<Vec3b>(r, c);
-      if((byte_index % 4) == 2) {
+      if((byte_index % 4) == 0) {
         img[byte_index++] = yvu.val[1]; // U
       } else {
         img[byte_index++] = yvu.val[2]; // V
