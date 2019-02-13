@@ -34,24 +34,18 @@ using namespace std;
 using namespace cv;
 #include "opencv_image_functions.h"
 
-#include <cstdio>
 
 int opencv_example(char *img, int width, int height)
 {
   // Create a new image, using the original bebop image.
-  printf("Create image...\n");
-  printf("height = %d, width = %d\n", height, width);
   Mat M(height, width, CV_8UC2, img);
   Mat image;
   // If you want a color image, uncomment this line
-  printf("cvtColor...\n");
   cvtColor(M, image, CV_YUV2BGR_Y422);
-  printf("ok\n");
   // For a grayscale image, use this one
 //  cvtColor(M, image, CV_YUV2GRAY_Y422);
 
   // Blur it, because we can
-  printf("blur...\n");
   blur(image, image, Size(5, 5));
 
   // Canny edges, only works with grayscale image
@@ -60,9 +54,7 @@ int opencv_example(char *img, int width, int height)
 
   // Convert back to YUV422, and put it in place of the original image
 //  grayscale_opencv_to_yuv422(image, img, width, height);
-  printf("rgb to yuv...\n");
-  colorrgb_opencv_to_yuv422(image, img, width, height);
-  printf("done.\n");
+  colorbgr_opencv_to_yuv422(image, img, width, height);
 
   return 0;
 }
