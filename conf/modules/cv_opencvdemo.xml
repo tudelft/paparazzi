@@ -25,15 +25,17 @@
 	<flag name="LDFLAGS" value="lopencv_world" />
 	<flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install/share/OpenCV/3rdparty/lib" />
 	<flag name="LDFLAGS" value="llibprotobuf" />
-	<flag name="LDFLAGS" value="llibjpeg" />
+	<flag name="LDFLAGS" value="llibjpeg-turbo" />
 	<flag name="LDFLAGS" value="llibpng" />
 	<flag name="LDFLAGS" value="llibtiff" />
 	<flag name="LDFLAGS" value="lzlib" />
 	<flag name="LDFLAGS" value="ltegra_hal" />
+	<flag name="LDFLAGS" value="lquirc" />
 	<flag name="LDFLAGS" value="ldl" />
 	<flag name="LDFLAGS" value="lm" />
 	<flag name="LDFLAGS" value="lpthread" />
 	<flag name="LDFLAGS" value="lrt" />
+
     
     <!-- <flag name="LDFLAGS" value="Wl,--verbose"/> -->
 
@@ -42,9 +44,24 @@
     <file name="cv_opencvdemo.c"/>
     <file name="opencv_example.cpp"/>
     <file name="opencv_image_functions.cpp"/>
-    <raw>
+    
+    <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_pc/include"/>
+    
+    <flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install_pc/lib" />
+    <flag name="LDFLAGS" value="lopencv_world" />
+    <flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install_pc/share/OpenCV/3rdparty/lib" />
+    <flag name="LDFLAGS" value="lprotobuf" />
+    <flag name="LDFLAGS" value="littnotify"/>
+    <flag name="LDFLAGS" value="lquirc"/>
+    <flag name="LDFLAGS" value="lz"/>
+    <flag name="LDFLAGS" value="ldl"/>
+    <flag name="LDFLAGS" value="lm"/>
+    <flag name="LDFLAGS" value="lpthread"/>
+    <flag name="LDFLAGS" value="lrt"/>
+    
+    <!-- <raw>
       nps.CXXFLAGS += $(shell pkg-config opencv --cflags)
       nps.LDFLAGS  += -lopencv_imgproc -lopencv_highgui -lopencv_core
-    </raw>
+    </raw> -->
   </makefile>
 </module>
