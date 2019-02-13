@@ -35,10 +35,6 @@
 	<flag name="LDFLAGS" value="lm" />
 	<flag name="LDFLAGS" value="lpthread" />
 	<flag name="LDFLAGS" value="lrt" />
-
-    
-    <!-- <flag name="LDFLAGS" value="Wl,--verbose"/> -->
-
   </makefile>
   <makefile target="nps">
     <file name="cv_opencvdemo.c"/>
@@ -53,15 +49,27 @@
     <flag name="LDFLAGS" value="lprotobuf" />
     <flag name="LDFLAGS" value="littnotify"/>
     <flag name="LDFLAGS" value="lquirc"/>
+    <flag name="LDFLAGS" value="lippiw"/>
+    <flag name="LDFLAGS" value="lippicv"/>
+    <flag name="LDFLAGS" value="ljpeg"/>
+    <flag name="LDFLAGS" value="ltiff"/>
+    <flag name="LDFLAGS" value="ldc1394"/>
+    <flag name="LDFLAGS" value="lgtk-3"/>
+    <flag name="LDFLAGS" value="lgdk-3"/>
+    <flag name="LDFLAGS" value="lpangocairo-1.0"/>
+    <flag name="LDFLAGS" value="lpango-1.0"/>
+    <flag name="LDFLAGS" value="latk-1.0"/>
+    <flag name="LDFLAGS" value="lcairo-gobject"/>
+    <flag name="LDFLAGS" value="lcairo"/>
+    <flag name="LDFLAGS" value="lgdk_pixbuf-2.0"/>
+    <flag name="LDFLAGS" value="lgio-2.0"/>
+    <flag name="LDFLAGS" value="lgobject-2.0"/>
+    <flag name="LDFLAGS" value="lglib-2.0"/>
+    <flag name="LDFLAGS" value="lgthread-2.0"/>
     <flag name="LDFLAGS" value="lz"/>
     <flag name="LDFLAGS" value="ldl"/>
     <flag name="LDFLAGS" value="lm"/>
     <flag name="LDFLAGS" value="lpthread"/>
     <flag name="LDFLAGS" value="lrt"/>
-    
-    <!-- <raw>
-      nps.CXXFLAGS += $(shell pkg-config opencv --cflags)
-      nps.LDFLAGS  += -lopencv_imgproc -lopencv_highgui -lopencv_core
-    </raw> -->
   </makefile>
 </module>
