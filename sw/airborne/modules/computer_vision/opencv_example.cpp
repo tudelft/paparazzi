@@ -40,11 +40,13 @@ int opencv_example(char *img, int width, int height)
 {
   // Create a new image, using the original bebop image.
   printf("Create image...\n");
+  printf("height = %d, width = %d\n", height, width);
   Mat M(height, width, CV_8UC2, img);
   Mat image;
   // If you want a color image, uncomment this line
   printf("cvtColor...\n");
   cvtColor(M, image, CV_YUV2BGR_Y422);
+  printf("ok\n");
   // For a grayscale image, use this one
 //  cvtColor(M, image, CV_YUV2GRAY_Y422);
 
