@@ -62,7 +62,7 @@ static struct vision_outback_t vision_outback = {
 static uint8_t mp_msg_buf[128]  __attribute__((aligned));   ///< The message buffer for the Vision
 int shutdown_count;
 
-struct  Vision2PPRZPackage v2p_package;
+struct  Vision2PPRZPackage v2ap_package;
 
 bool vision_outback_enable_landing = false;
 bool vision_outback_enable_take_foto = false;
@@ -138,8 +138,8 @@ void vision_outback_init() {
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_VISION_OUTBACK, send_vision_outback);
 #endif
 
-  v2p_package.height = -0.01;
-  v2p_package.status = 1;
+  v2ap_package.height = -0.01;
+  v2ap_package.status = 1;
   timeoutcount = 0;
   enable_wp_telemetry_updates();
 
@@ -190,7 +190,7 @@ static inline void vision_outback_parse_msg(void)
         turbosize = size;
         turbocnt++;
 
-        unsigned char * tmp = (unsigned char*)&v2p_package;
+        unsigned char * tmp = (unsigned char*)&v2ap_package;
 
         //impossible case, but seems to happen:
         if (size != sizeof(struct Vision2PPRZPackage))
@@ -202,10 +202,10 @@ static inline void vision_outback_parse_msg(void)
         if (timeoutcount < 1*VISION_OUTBACK_PERIODIC_FREQ)
           timeoutcount = 1*VISION_OUTBACK_PERIODIC_FREQ;
         static int32_t frame_id_prev = 0;
-        if (frame_id_prev == v2p_package.frame_id) { // Realsense resets id when changing from stereo to color. So, only check if frame is not freezing.
+        if (frame_id_prev == v2ap_package.frame_id) { // Realsense resets id when changing from stereo to color. So, only check if frame is not freezing.
             timeoutcount = 0;
           }
-        frame_id_prev = v2p_package.frame_id;
+        frame_id_prev = v2ap_package.frame_id;
 
         if (vision_outback_enable_landing) {
 
@@ -217,19 +217,19 @@ static inline void vision_outback_parse_msg(void)
             if (height_pitch > height_roll)
               height_att = height_pitch;          
 
-            if ((v2p_package.out_of_range_since > 0 && v2p_package.out_of_range_since < 1.f) || (v2p_package.out_of_range_since < 0 && v2p_package.height -height_att < vision_outback_moment_height )) {
+            if ((v2ap_package.out_of_range_since > 0 && v2ap_package.out_of_range_since < 1.f) || (v2ap_package.out_of_range_since < 0 && v2ap_package.height -height_att < vision_outback_moment_height )) {
               het_moment = true;
             } else {
               het_moment = false;
             }
             // If height==-1, the measurement is faulty so don't send it
-            if (v2p_package.raw_height > 0) {
-              AbiSendMsgAGL(AGL_SONAR_ADC_ID, v2p_package.raw_height);
+            if (v2ap_package.raw_height > 0) {
+              AbiSendMsgAGL(AGL_SONAR_ADC_ID, v2ap_package.raw_height);
             }
             // This should go outside the if above, since any sanity checks should also fail if lower than 0
-            unfiltered_vision_height = v2p_package.raw_height;
+            unfiltered_vision_height = v2ap_package.raw_height;
 
-            vision_height = v2p_package.height;
+            vision_height = v2ap_package.height;
           } else {
             het_moment = false;
           }
@@ -244,16 +244,16 @@ static inline void vision_outback_parse_msg(void)
                 (v2p_package.landing_status == ls_refound_fixed_joe)
                 )
             {*/
-              msg_best_landing_status = v2p_package.landing_status;
-              waypoint_set_xy_i(WP_TD_mrk, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
-              waypoint_set_xy_i(WP_JOE_found, POS_BFP_OF_REAL(v2p_package.marker_enu_x), POS_BFP_OF_REAL(v2p_package.marker_enu_y));
-              msg_marker_x = v2p_package.marker_enu_x;
-              msg_marker_y = v2p_package.marker_enu_y;
+              msg_best_landing_status = v2ap_package.landing_status;
+              waypoint_set_xy_i(WP_TD_mrk, POS_BFP_OF_REAL(v2ap_package.marker_enu_x), POS_BFP_OF_REAL(v2ap_package.marker_enu_y));
+              waypoint_set_xy_i(WP_JOE_found, POS_BFP_OF_REAL(v2ap_package.marker_enu_x), POS_BFP_OF_REAL(v2ap_package.marker_enu_y));
+              msg_marker_x = v2ap_package.marker_enu_x;
+              msg_marker_y = v2ap_package.marker_enu_y;
             //}
           }
 
-        if (!(v2p_package.version > WANTED_VISION_VERSION-0.09 && v2p_package.version < WANTED_VISION_VERSION+0.09 ))
-          v2p_package.status = 2;
+        if (!(v2ap_package.version > WANTED_VISION_VERSION-0.09 && v2ap_package.version < WANTED_VISION_VERSION+0.09 ))
+          v2ap_package.status = 2;
         break;
       }
     default:
@@ -341,19 +341,19 @@ void vision_outback_periodic() {
     p2k_package.enables |= 0b11000000;
 
 
-  vision_found_joe =  (vision_outback_enable_findjoe && (v2p_package.landing_status == ls_found_a_good_joe ||  v2p_package.landing_status == ls_fixed_joe_location || v2p_package.landing_status == ls_refound_fixed_joe || v2p_package.landing_status == ls_aruco_lock));
+  vision_found_joe =  (vision_outback_enable_findjoe && (v2ap_package.landing_status == ls_found_a_good_joe ||  v2ap_package.landing_status == ls_fixed_joe_location || v2ap_package.landing_status == ls_refound_fixed_joe || v2ap_package.landing_status == ls_aruco_lock));
 
 
   if (timeoutcount > 0) {
       timeoutcount--;
       vision_timeout = false;
     } else {
-      v2p_package.status = 1;
+      v2ap_package.status = 1;
       vision_timeout = true;
       vision_outback_close_process = false;
       vision_outback_update_system = false;
     }
-  if (v2p_package.status != 0 )
+  if (v2ap_package.status != 0 )
     vision_timeout = true;
   do_power_state_machine();
 
@@ -375,7 +375,7 @@ void do_power_state_machine(void) {
         }
       break;
     case VISION_POWER_STATUS_POWERED_OFF:
-      if (v2p_package.status == 0) {
+      if (v2ap_package.status == 0) {
           power_state = VISION_POWER_STATUS_READY;
         }
       if (vision_outback_power == VISION_SETTING_STATUS_REQUEST_POWER_ON) {
@@ -395,7 +395,7 @@ void do_power_state_machine(void) {
       power_state = VISION_POWER_STATUS_BOOTING;
       break;
     case VISION_POWER_STATUS_BOOTING:
-      if (v2p_package.status == 0) {
+      if (v2ap_package.status == 0) {
           power_state = VISION_POWER_STATUS_READY;
         }
       if (vision_outback_power  == VISION_SETTING_STATUS_REQUEST_POWER_OFF) {
@@ -409,7 +409,7 @@ void do_power_state_machine(void) {
         power_state = VISION_POWER_STATUS_POWER_OFF;
       break;
     case VISION_POWER_STATUS_HALTING:
-      if (v2p_package.status > 0) {
+      if (v2ap_package.status > 0) {
           shutdown_count = 120*VISION_OUTBACK_PERIODIC_FREQ;
           power_state = VISION_POWER_STATUS_HALT_WAIT;
         }
@@ -432,7 +432,7 @@ void do_power_state_machine(void) {
       power_state = VISION_POWER_STATUS_POWER_OFF_WAIT;
       break;
     case VISION_POWER_STATUS_POWER_OFF_WAIT:
-      if (v2p_package.status > 0) {
+      if (v2ap_package.status > 0) {
           power_state = VISION_POWER_STATUS_POWERED_OFF;
         }
       if (vision_outback_power == VISION_SETTING_STATUS_REQUEST_POWER_ON) {
@@ -481,15 +481,15 @@ bool enableVisionCloseProcess(bool b) {
 }
 
 bool getVisionReady(void) {
-  return v2p_package.status == 0;
+  return v2ap_package.status == 0;
 }
 
 bool hasFoundGoodJoe(void) {
-  return v2p_package.landing_status == ls_found_a_good_joe;
+  return v2ap_package.landing_status == ls_found_a_good_joe;
 }
 
 bool hasArucoLock(void) {
-  return v2p_package.landing_status == ls_aruco_lock;
+  return v2ap_package.landing_status == ls_aruco_lock;
 }
 
 bool isVisionHeightUsedInINS(void) {
