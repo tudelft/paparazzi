@@ -101,24 +101,24 @@
   </section>
 
   <section name="IMU" prefix="IMU_">
-    <!--define name="ACCEL_X_NEUTRAL" value="0"/>
-    <define name="ACCEL_Y_NEUTRAL" value="0"/>
-    <define name="ACCEL_Z_NEUTRAL" value="0"/>
-    <define name="ACCEL_X_SENS" value="4.88671674253" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.85140885386" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.89977338537" integer="16"/-->
+    <define name="ACCEL_X_NEUTRAL" value="-40"/>
+    <define name="ACCEL_Y_NEUTRAL" value="-23"/>
+    <define name="ACCEL_Z_NEUTRAL" value="-183"/>
+    <define name="ACCEL_X_SENS" value="2.4431331038735986" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="2.4439914926903663" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.4150383162339826" integer="16"/>
 
-    <define name= "MAG_X_CURRENT_COEF" value="-1.8609825961051705"/>
-    <define name= "MAG_Y_CURRENT_COEF" value="-1.6568817208655613"/>
-    <define name= "MAG_Z_CURRENT_COEF" value="16.329866025311297"/>
+    <define name= "MAG_X_CURRENT_COEF" value="10.523560657094679"/>
+    <define name= "MAG_Y_CURRENT_COEF" value="-2.684364998762302"/>
+    <define name= "MAG_Z_CURRENT_COEF" value="24.31795811675837"/>
 
     <!-- replace this with your own calibration -->
-    <define name="MAG_X_NEUTRAL" value="-48"/>
-    <define name="MAG_Y_NEUTRAL" value="69"/>
-    <define name="MAG_Z_NEUTRAL" value="155"/>
-    <define name="MAG_X_SENS" value="7.646781508055661" integer="16"/>
-    <define name="MAG_Y_SENS" value="7.71865134635356" integer="16"/>
-    <define name="MAG_Z_SENS" value="7.691679165490501" integer="16"/>
+    <define name="MAG_X_NEUTRAL" value="184"/>
+    <define name="MAG_Y_NEUTRAL" value="9"/>
+    <define name="MAG_Z_NEUTRAL" value="50"/>
+    <define name="MAG_X_SENS" value="7.85592109030867" integer="16"/>
+    <define name="MAG_Y_SENS" value="7.839593567747121" integer="16"/>
+    <define name="MAG_Z_SENS" value="7.86456539855408" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI"   value="0" unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
@@ -160,28 +160,28 @@
     <define name="DEADBAND_R" value="200"/>
 
     <!-- reference -->
-    <define name="REF_OMEGA_P" value="800" unit="deg/s"/>
+    <define name="REF_OMEGA_P" value="400" unit="deg/s"/>
     <define name="REF_ZETA_P" value="0.85"/>
     <define name="REF_MAX_P" value="300." unit="deg/s"/>
     <define name="REF_MAX_PDOT" value="RadOfDeg(7000.)"/>
-    <define name="REF_OMEGA_Q" value="800" unit="deg/s"/>
+    <define name="REF_OMEGA_Q" value="400" unit="deg/s"/>
     <define name="REF_ZETA_Q" value="0.85"/>
     <define name="REF_MAX_Q" value="300." unit="deg/s"/>
     <define name="REF_MAX_QDOT" value="RadOfDeg(7000.)"/>
-    <define name="REF_OMEGA_R" value="500" unit="deg/s"/>
+    <define name="REF_OMEGA_R" value="300" unit="deg/s"/>
     <define name="REF_ZETA_R" value="0.85"/>
     <define name="REF_MAX_R" value="180." unit="deg/s"/>
     <define name="REF_MAX_RDOT" value="RadOfDeg(1800.)"/>
 
     <!-- feedback -->
-    <define name="PHI_PGAIN" value="500"/>
-    <define name="PHI_DGAIN" value="230"/>
-    <define name="PHI_IGAIN" value="10"/>
-    <define name="THETA_PGAIN" value="500"/>
-    <define name="THETA_DGAIN" value="230"/>
-    <define name="THETA_IGAIN" value="10"/>
-    <define name="PSI_PGAIN" value="700"/>
-    <define name="PSI_DGAIN" value="200"/>
+    <define name="PHI_PGAIN" value="800"/>
+    <define name="PHI_DGAIN" value="350"/>
+    <define name="PHI_IGAIN" value="40"/>
+    <define name="THETA_PGAIN" value="800"/>
+    <define name="THETA_DGAIN" value="350"/>
+    <define name="THETA_IGAIN" value="40"/>
+    <define name="PSI_PGAIN" value="1250"/>
+    <define name="PSI_DGAIN" value="320"/>
     <define name="PSI_IGAIN" value="10"/>
 
     <!-- feedforward -->
