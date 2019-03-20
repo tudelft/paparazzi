@@ -141,7 +141,7 @@ static void gps_ubx_parse_nav_pvt(void) {
   gps_ubx.state.pdop        = UBX_NAV_PVT_pDOP(gps_ubx.msg_buf);
   gps_ubx.state.hacc        = UBX_NAV_PVT_hAcc(gps_ubx.msg_buf) / 10;
   gps_ubx.state.vacc        = UBX_NAV_PVT_vAcc(gps_ubx.msg_buf) / 10;
-  gps_ubx.state.sacc        = UBX_NAV_PVT_vAcc(gps_ubx.msg_buf) / 10;
+  gps_ubx.state.sacc        = UBX_NAV_PVT_sAcc(gps_ubx.msg_buf) / 10;
 }
 
 static void gps_ubx_parse_nav_sol(void) {
@@ -194,8 +194,8 @@ static void gps_ubx_parse_nav_posllh(void) {
   SetBit(gps_ubx.state.valid_fields, GPS_VALID_HMSL_BIT);
 
   // Copy accuracy information
-  gps_ubx.state.hacc        = UBX_NAV_POSLLH_hAcc(gps_ubx.msg_buf);
-  gps_ubx.state.vacc        = UBX_NAV_POSLLH_vAcc(gps_ubx.msg_buf);
+  gps_ubx.state.hacc        = UBX_NAV_POSLLH_hAcc(gps_ubx.msg_buf) / 10;
+  gps_ubx.state.vacc        = UBX_NAV_POSLLH_vAcc(gps_ubx.msg_buf) / 10;
 }
 
 static void gps_ubx_parse_nav_posutm(void) {

@@ -106,6 +106,7 @@ static abi_event accel_ev;
 static abi_event mag_ev;
 static abi_event gps_ev;
 static abi_event body_to_imu_ev;
+struct gps_message gps_msg = {};
 
 /* All ABI callbacks */
 static void agl_cb(uint8_t sender_id, uint32_t stamp, float distance);
@@ -141,10 +142,12 @@ static void ins_ekf2_publish_attitude(uint32_t stamp);
 
 /* Static local variables */
 static Ekf ekf;                                   ///< EKF class itself
-static parameters *ekf2_params;                   ///< The EKF parameters
-static struct ekf2_t ekf2;                        ///< Local EKF EKF status structure
+static parameters *ekf_params;                   ///< The EKF parameters
+struct ekf2_t ekf2;                               ///< Local EKF2 status structure
 static uint8_t ahrs_ekf2_id = AHRS_COMP_ID_EKF2;  ///< Component ID for EKF
 
+/* External paramters */
+struct ekf2_parameters_t ekf2_params;
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -206,8 +209,8 @@ static void send_filter_status(struct transport_tx *trans, struct link_device *d
 void ins_ekf2_init(void)
 {
   /* Get the ekf parameters */
-  ekf2_params = ekf.getParamHandle();
-  ekf2_params->mag_fusion_type = MAG_FUSE_TYPE_HEADING;
+  ekf_params = ekf.getParamHandle();
+  ekf_params->mag_fusion_type = MAG_FUSE_TYPE_HEADING;
 
   /* Initialize struct */
   ekf2.ltp_stamp = 0;
@@ -313,6 +316,10 @@ void ins_ekf2_update(void)
 #endif
 
   ekf2.got_imu_data = false;
+}
+
+void ins_ekf2_change_param(int32_t unk) {
+  ekf_params->mag_fusion_type = ekf2_params.mag_fusion_type = unk;
 }
 
 /** Publish the attitude and get the new state
@@ -493,7 +500,6 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp,
                    struct GpsState *gps_s)
 {
-  struct gps_message gps_msg = {};
   gps_msg.time_usec = stamp;
   gps_msg.lat = gps_s->lla_pos.lat;
   gps_msg.lon = gps_s->lla_pos.lon;
@@ -501,8 +507,8 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   gps_msg.yaw = NAN;
   gps_msg.yaw_offset = NAN;
   gps_msg.fix_type = gps_s->fix;
-  gps_msg.eph = gps_s->hacc / 1000.0;
-  gps_msg.epv = gps_s->vacc / 1000.0;
+  gps_msg.eph = gps_s->hacc / 100.0;
+  gps_msg.epv = gps_s->vacc / 100.0;
   gps_msg.sacc = gps_s->sacc / 100.0;
   gps_msg.vel_m_s = gps_s->gspeed / 100.0;
   gps_msg.vel_ned[0] = (gps_s->ned_vel.x) / 100.0;
