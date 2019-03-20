@@ -28,6 +28,7 @@
 #include "subsystems/actuators/actuators_sbus.h"
 #include "generated/airframe.h"
 #include "mcu_periph/uart.h"
+#include "mcu_periph/gpio.h"
 
 /* Currently we only support 7 channels */
 #if SERVOS_SBUS_NB > ACTUATORS_SBUS_MAX_NB
@@ -54,6 +55,10 @@ void actuators_sbus_init(void)
 
   uart_periph_set_bits_stop_parity(&ACTUATORS_SBUS_DEV, UBITS_8, USTOP_2, UPARITY_EVEN);
   uart_periph_set_baudrate(&ACTUATORS_SBUS_DEV, B100000);
+
+  gpio_clear(GPIOB, GPIO4);
+  gpio_setup_output(GPIOB, GPIO4);
+  gpio_clear(GPIOB, GPIO4);
 }
 
 /*
@@ -93,6 +98,8 @@ static inline void actuators_sbus_send(struct link_device *dev)
   uint8_t i = 0;
   uint8_t bits_sent = 0;
   uint8_t data[22];
+  gpio_setup_output(GPIOB, GPIO4);
+    gpio_clear(GPIOB, GPIO4);
 
   /* start */
   dev->put_byte(dev->periph, 0, SBUS_START_BYTE);

@@ -122,7 +122,7 @@
 //pin:           A0  A1  B8  B9  A6  A7  B0  B1
 //timer/channel: 2/1 2/2 4/3 4/4 3/1 3/2 3/3 3/4
 #define PWM_USE_TIM2 1
-//#define PWM_USE_TIM3 1 // spektrum already uses tim3
+#define PWM_USE_TIM3 1 // spektrum already uses tim3
 #define PWM_USE_TIM4 1
 
 //#define ACTUATORS_PWM_NB 4
@@ -131,10 +131,10 @@
 #define USE_PWM2 1
 #define USE_PWM3 1
 #define USE_PWM4 1
-//#define USE_PWM5 1
-//#define USE_PWM6 1
-//#define USE_PWM7 1
-//#define USE_PWM8 1
+#define USE_PWM5 1
+#define USE_PWM6 1
+#define USE_PWM7 1
+#define USE_PWM8 1
 
 // PWM_SERVO_x is the index of the servo in the actuators_pwm_values array
 #if USE_PWM1
@@ -238,7 +238,7 @@
 /* servos 3-4 on TIM4 */
 #define PWM_TIM4_CHAN_MASK (PWM_SERVO_3_OC_BIT|PWM_SERVO_4_OC_BIT)
 /* servos 5-8 on TIM3 */
-//#define PWM_TIM3_CHAN_MASK (PWM_SERVO_5_OC_BIT|PWM_SERVO_6_OC_BIT|PWM_SERVO_7_OC_BIT|PWM_SERVO_8_OC_BIT)
+#define PWM_TIM3_CHAN_MASK (PWM_SERVO_5_OC_BIT|PWM_SERVO_6_OC_BIT|PWM_SERVO_7_OC_BIT|PWM_SERVO_8_OC_BIT)
 
 /* Default actuators driver */
 #define DEFAULT_ACTUATORS "subsystems/actuators/actuators_pwm.h"

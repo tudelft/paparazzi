@@ -177,7 +177,7 @@ void px4flash_event(void)
       * 6. Watch the output of the command of step 4, it should recognize the IO bootloader and start flashing. If not try repeating step 5a.
       * 7. Don forget to disable the define and upload the ap again :)
       */
-      //#define forceprog
+#define forceprog
 
 #ifndef forceprog
       //send the reboot to bootloader command:

@@ -35,6 +35,7 @@
       <message name="LOGGER_STATUS"            period="5.1"/>
       <message name="LIDAR"                    period="1.2"/>
       <message name="INS_EKF2"                 period=".25"/>
+      <message name="FBW_STATUS"               period="2.1"/>
     </mode>
 
     <mode name="ppm">
@@ -202,4 +203,3 @@
   </process>
 
 </telemetry>
-

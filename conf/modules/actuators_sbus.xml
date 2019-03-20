@@ -17,8 +17,8 @@
     <define name="ACTUATORS"/>
     <define name="ACTUATORS_SBUS_DEV" value="$(ACTUATORS_SBUS_DEV_LOWER)"/>
     <define name="USE_$(ACTUATORS_SBUS_DEV_UPPER)"/>
-    <define name="$(ACTUATORS_SBUS_DEV_UPPER)_BAUD" value="100000"/>
-    <define name="USE_$(ACTUATORS_SBUS_DEV_UPPER)_RX" value="FALSE"/>
+    <!--define name="$(ACTUATORS_SBUS_DEV_UPPER)_BAUD" value="100000"/-->
+    <!--define name="USE_$(ACTUATORS_SBUS_DEV_UPPER)_RX" value="FALSE"/-->
     <file name="actuators_sbus.c" dir="subsystems/actuators"/>
   </makefile>
 </module>

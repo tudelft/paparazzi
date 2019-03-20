@@ -29,7 +29,7 @@ BARO_LED           ?= none
 AHRS_ALIGNER_LED   ?= none
 GPS_LED            ?= none
 SYS_TIME_LED       ?= 2
-FBW_MODE_LED	     ?= 3
+FBW_MODE_LED         ?= 3
 
 #
 # default UART configuration (modem, gps, spektrum)
