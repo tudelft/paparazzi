@@ -34,7 +34,9 @@ FBW_MODE_LED	     ?= 3
 #
 # default UART configuration (modem, gps, spektrum)
 #
+SBUS_PORT ?= UART3
 RADIO_CONTROL_SPEKTRUM_PRIMARY_PORT   ?= UART1
+ACTUATORS_SBUS_DEV ?= UART3
 
 #
 # default actuator configuration
