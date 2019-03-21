@@ -79,14 +79,14 @@
     <servo name="MOTOR_4" no="1" min="1000" neutral="1150" max="1900"/>
     <servo name="MOTOR_9" no="2" min="1000" neutral="1150" max="1900"/>
     <servo name="MOTOR_10" no="3" min="1000" neutral="1150" max="1900"/>
-    <servo name="AIL_1" no="4" min="1000" neutral="1500" max="1900"/>
-    <servo name="AIL_2" no="5" min="1000" neutral="1500" max="1900"/>
-    <servo name="AIL_3" no="6" min="1000" neutral="1500" max="1900"/>
-    <servo name="AIL_4" no="7" min="1000" neutral="1500" max="1900"/>
-    <servo name="FLAP_1" no="8" min="1000" neutral="1500" max="1900"/>
-    <servo name="FLAP_2" no="9" min="1000" neutral="1500" max="1900"/>
-    <servo name="FLAP_3" no="10" min="1000" neutral="1500" max="1900"/>
-    <servo name="FLAP_4" no="11" min="1000" neutral="1500" max="1900"/>
+    <servo name="AIL_1" no="4" min="1100" neutral="1500" max="1900"/>
+    <servo name="AIL_2" no="5" min="1100" neutral="1500" max="1900"/>
+    <servo name="AIL_3" no="6" min="1100" neutral="1500" max="1900"/>
+    <servo name="AIL_4" no="7" min="1100" neutral="1500" max="1900"/>
+    <servo name="FLAP_1" no="8" min="1100" neutral="1500" max="1900"/>
+    <servo name="FLAP_2" no="9" min="1100" neutral="1500" max="1900"/>
+    <servo name="FLAP_3" no="10" min="1100" neutral="1500" max="1900"/>
+    <servo name="FLAP_4" no="11" min="1100" neutral="1500" max="1900"/>
   </servos>
 
   <commands>
@@ -128,6 +128,14 @@
     <set servo="MOTOR_10"  value="motor_mixing.commands[9]"/>
     <set servo="MOTOR_11"  value="motor_mixing.commands[10]"/>
     <set servo="MOTOR_12"  value="motor_mixing.commands[11]"/>
+    <set servo="AIL_1"     value="@PITCH + @YAW"/>
+    <set servo="AIL_2"     value="@PITCH - @YAW"/>
+    <set servo="AIL_3"     value="@PITCH - @YAW"/>
+    <set servo="AIL_4"     value="@PITCH + @YAW"/>
+    <set servo="FLAP_1"     value="@PITCH + @YAW"/>
+    <set servo="FLAP_2"     value="@PITCH - @YAW"/>
+    <set servo="FLAP_3"     value="@PITCH - @YAW"/>
+    <set servo="FLAP_4"     value="@PITCH + @YAW"/>
   </command_laws>
 
   <section name="MISC">

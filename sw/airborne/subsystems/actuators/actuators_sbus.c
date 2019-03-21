@@ -56,8 +56,7 @@ void actuators_sbus_init(void)
   uart_periph_set_bits_stop_parity(&ACTUATORS_SBUS_DEV, UBITS_8, USTOP_2, UPARITY_EVEN);
   uart_periph_set_baudrate(&ACTUATORS_SBUS_DEV, B100000);
 
-  gpio_clear(GPIOB, GPIO4);
-  gpio_setup_output(GPIOB, GPIO4);
+  gpio_setup_pin_af(GPIOB, GPIO4, AFIO_MAPR_SWJ_CFG_FULL_SWJ_NO_JNTRST, true);
   gpio_clear(GPIOB, GPIO4);
 }
 
@@ -98,8 +97,6 @@ static inline void actuators_sbus_send(struct link_device *dev)
   uint8_t i = 0;
   uint8_t bits_sent = 0;
   uint8_t data[22];
-  gpio_setup_output(GPIOB, GPIO4);
-    gpio_clear(GPIOB, GPIO4);
 
   /* start */
   dev->put_byte(dev->periph, 0, SBUS_START_BYTE);
