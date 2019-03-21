@@ -108,7 +108,7 @@ static inline void actuators_sbus_send(struct link_device *dev)
   uint8_t index = 0;
   uint8_t offset = 0;
   for (i = 0; i < ACTUATORS_SBUS_MAX_NB; i++) {
-    uint16_t value = actuators_sbus.cmds[i] & 0x07ff; // 11 bit
+    uint16_t value = (uint16_t)((actuators_sbus.cmds[i] - 880) * 1.6f) & 0x07ff; // 11 bit
 
     while (offset >= 8) {
       ++index;
