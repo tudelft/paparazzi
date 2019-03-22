@@ -26,9 +26,11 @@
       <module name="gps"           type="ubx_ucenter"/>
       <module name="stabilization" type="int_quat"/>
       <module name="stabilization" type="rate"/>
-      <module name="ahrs" type="int_cmpl_quat">
-        <!--define name="AHRS_ICQ_MAG_ID" value="MAG_HMC58XX_SENDER_ID" /-->         <!-- Meaning the external hmc-->
-
+      <!--module name="ahrs" type="int_cmpl_quat">
+        <configure name="USE_MAGNETOMETER" value="TRUE"/>
+      </module-->
+      <module name="ahrs" type="float_mlkf">
+        <define name="AHRS_MLKF_IMU_ID" value="IMU_PX4_ID"/>
         <configure name="USE_MAGNETOMETER" value="TRUE"/>
       </module>
       <module name="ins" type="extended" />
