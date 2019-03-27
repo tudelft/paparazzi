@@ -172,11 +172,27 @@ static void send_ins_ekf2(struct transport_tx *trans, struct link_device *dev)
   ekf.get_ekf_soln_status(&soln_status);
 
   uint16_t innov_test_status;
-  float mag, vel, pos, hgt, tas, hagl, beta;
+  float mag, vel, pos, hgt, tas, hagl, beta, mag_decl;
   ekf.get_innovation_test_status(&innov_test_status, &mag, &vel, &pos, &hgt, &tas, &hagl, &beta);
+  ekf.get_mag_decl_deg(&mag_decl);
   pprz_msg_send_INS_EKF2(trans, dev, AC_ID,
                          &control_mode, &filter_fault_status, &gps_check_status, &soln_status,
-                         &innov_test_status, &mag, &vel, &pos, &hgt, &tas, &hagl, &beta);
+                         &innov_test_status, &mag, &vel, &pos, &hgt, &tas, &hagl, &beta,
+                         &mag_decl);
+}
+
+static void send_ins_ekf2_ext(struct transport_tx *trans, struct link_device *dev)
+{
+  float gps_drift[3], vibe[3];
+  bool gps_blocked;
+  uint8_t gps_blocked_b;
+  ekf.get_gps_drift_metrics(gps_drift, &gps_blocked);
+  ekf.get_imu_vibe_metrics(vibe);
+  gps_blocked_b = gps_blocked;
+
+  pprz_msg_send_INS_EKF2_EXT(trans, dev, AC_ID,
+                         &gps_drift[0], &gps_drift[1], &gps_drift[2], &gps_blocked_b,
+                         &vibe[0], &vibe[1], &vibe[2]);
 }
 
 static void send_filter_status(struct transport_tx *trans, struct link_device *dev)
@@ -203,6 +219,29 @@ static void send_filter_status(struct transport_tx *trans, struct link_device *d
 
   pprz_msg_send_STATE_FILTER_STATUS(trans, dev, AC_ID, &ahrs_ekf2_id, &mde, &filter_fault_status);
 }
+
+static void send_wind_info_ret(struct transport_tx *trans, struct link_device *dev)
+{
+  float velNE_wind[2], tas;
+  uint8_t flags = 0x5;
+  float f_zero = 0;
+
+  ekf.get_wind_velocity(velNE_wind);
+  ekf.get_true_airspeed(&tas);
+
+  pprz_msg_send_WIND_INFO_RET(trans, dev, AC_ID, &flags, &velNE_wind[1], &velNE_wind[0], &f_zero, &tas);
+}
+
+static void send_ahrs_bias(struct transport_tx *trans, struct link_device *dev)
+{
+  float accel_bias[3], gyro_bias[3], states[24];
+  ekf.get_accel_bias(accel_bias);
+  ekf.get_gyro_bias(gyro_bias);
+  ekf.get_state_delayed(states);
+
+  pprz_msg_send_AHRS_BIAS(trans, dev, AC_ID, &accel_bias[0], &accel_bias[1], &accel_bias[2], 
+                          &gyro_bias[0], &gyro_bias[1], &gyro_bias[2], &states[19], &states[20], &states[21]);
+}
 #endif
 
 /* Initialize the EKF */
@@ -227,7 +266,10 @@ void ins_ekf2_init(void)
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_EKF2, send_ins_ekf2);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_EKF2_EXT, send_ins_ekf2_ext);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STATE_FILTER_STATUS, send_filter_status);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WIND_INFO_RET, send_wind_info_ret);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_BIAS, send_ahrs_bias);
 #endif
 
   /*

@@ -35,7 +35,10 @@
       <message name="LOGGER_STATUS"            period="5.1"/>
       <message name="LIDAR"                    period="1.2"/>
       <message name="INS_EKF2"                 period=".25"/>
+      <message name="INS_EKF2_EXT"             period="4.25"/>
       <message name="FBW_STATUS"               period="2.1"/>
+      <message name="WIND_INFO_RET"            period="9.2"/>
+      <message name="AHRS_BIAS"                period="7.5"/>
     </mode>
 
     <mode name="ppm">
@@ -202,6 +205,9 @@
       <message name="IMU_MAG_RAW"              period=".0125"/>
       <message name="LIDAR"                    period="0.05"/>
       <message name="INS_EKF2"                 period="0.05"/>
+      <message name="INS_EKF2_EXT"             period="0.1"/>
+      <message name="WIND_INFO_RET"            period="0.2"/>
+      <message name="AHRS_BIAS"                period="0.5"/>
     </mode>
   </process>
 
