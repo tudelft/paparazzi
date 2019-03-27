@@ -53,8 +53,8 @@ enum navigation_state_t {
 };
 
 // define settings
-float oag_color_count_frac = 0.2f;       // obstacle detection threshold as a fraction of total of image
-float oag_floor_count_frac = 0.03f;       // floor detection threshold as a fraction of total of image
+float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a fraction of total of image
+float oag_floor_count_frac = 0.05f;       // floor detection threshold as a fraction of total of image
 float oag_max_speed = 1.f;               // max flight speed [m/s]
 float oag_heading_rate = RadOfDeg(20.f);  // heading change setpoint for avoidance [rad/s]
 
@@ -230,10 +230,19 @@ uint8_t chooseRandomIncrementAvoidance(void)
     VERBOSE_PRINT("Floor centroid x: %d\n", floor_centroid_x);
     avoidance_heading_direction = 1.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
-  } else {
+  } else if (floor_centroid_x > 0){
     VERBOSE_PRINT("Floor centroid x: %d\n", floor_centroid_x);
     avoidance_heading_direction = -1.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
+  } else {
+    if (rand() % 2 == 0) {
+      avoidance_heading_direction = 1.f;
+      VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
+    } else {
+      avoidance_heading_direction = -1.f;
+      VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
+    }
   }
+
   return false;
 }
