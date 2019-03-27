@@ -171,7 +171,7 @@ void sdlog_chibios_init(void)
 #endif
 
   // Start polling on USB
-  //usbStorageStartPolling();
+  usbStorageStartPolling();
 
   // Start log thread
   chThdCreateStatic(wa_thd_startlog, sizeof(wa_thd_startlog),
