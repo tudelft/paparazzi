@@ -42,6 +42,7 @@ float follow_me_distance = FOLLOW_ME_DISTANCE;
 float follow_me_heading = 0.;
 float follow_me_min_speed = FOLLOW_ME_MIN_SPEED;
 
+static uint32_t ground_time_msec = 0;
 static bool ground_set = false;
 static struct LlaCoor_i ground_lla;
 static float ground_speed;
@@ -51,6 +52,7 @@ static float ground_course;
 void follow_me_init(void)
 {
   ground_set = false;
+  ground_time_msec = 0;
 }
 
 void follow_me_parse_ground_gps(uint8_t *buf)
@@ -59,6 +61,7 @@ void follow_me_parse_ground_gps(uint8_t *buf)
     return;
   
   // Save the received values
+  ground_time_msec = get_sys_time_msec();
   ground_lla.lat = DL_GROUND_GPS_lat(buf);
   ground_lla.lon = DL_GROUND_GPS_lon(buf);
   ground_lla.alt = DL_GROUND_GPS_alt(buf);
@@ -78,7 +81,7 @@ void follow_me_set_wp(uint8_t wp_id)
 {
   // Only if we have a valid ground position
   if(ground_set) {
-    // Claculate x and y offset
+    // Calculate x and y offset
     int32_t x = POS_BFP_OF_REAL(follow_me_distance*sinf(follow_me_heading/180.*M_PI));
     int32_t y = POS_BFP_OF_REAL(follow_me_distance*cosf(follow_me_heading/180.*M_PI));
 
@@ -92,6 +95,26 @@ void follow_me_set_wp(uint8_t wp_id)
                                &waypoints[wp_id].enu_i.y,
                                &waypoints[wp_id].enu_i.z);
     ground_set = false;
+  }
+  // Only if we ever had a valid position
+  else if(ground_time_msec != 0) {
+    uint32_t msec_diff = get_sys_time_msec() - ground_time_msec;
+    float dist_m = msec_diff / 1000.f * ground_speed;
+
+    // Calculate x and y offset
+    int32_t x = POS_BFP_OF_REAL(dist_m*sinf(ground_course/180.*M_PI));
+    int32_t y = POS_BFP_OF_REAL(dist_m*cosf(ground_course/180.*M_PI));
+
+    // Set the waypoint
+    //waypoint_set_latlon(wp_id, &ground_lla);
+    waypoint_set_xy_i(wp_id, waypoints[wp_id].enu_i.x+x, waypoints[wp_id].enu_i.y+y);
+
+    // Send to the GCS that the waypoint has been moved
+    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+                               &waypoints[wp_id].enu_i.x,
+                               &waypoints[wp_id].enu_i.y,
+                               &waypoints[wp_id].enu_i.z);
+    ground_time_msec = get_sys_time_msec();
   }
 }
 

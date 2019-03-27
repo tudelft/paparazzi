@@ -27,7 +27,8 @@
       <module name="stabilization" type="int_quat"/>
       <module name="stabilization" type="rate"/>
       <module name="ahrs" type="int_cmpl_quat">
-        <configure name="USE_MAGNETOMETER" value="FALSE"/>
+        <define name="AHRS_ICQ_MAG_ID" value="MAG_HMC58XX_SENDER_ID" />         <!-- Meaning the external hmc-->
+        <configure name="USE_MAGNETOMETER" value="TRUE"/>
       </module>
       <!--module name="ahrs" type="float_mlkf">
         <define name="AHRS_MLKF_IMU_ID" value="IMU_PX4_ID"/>
@@ -160,12 +161,20 @@
 
   <section name="IMU" prefix="IMU_">
     <!-- replace this with your own calibration -->
-    <define name="MAG_X_NEUTRAL" value="184"/>
-    <define name="MAG_Y_NEUTRAL" value="9"/>
-    <define name="MAG_Z_NEUTRAL" value="50"/>
-    <define name="MAG_X_SENS" value="7.85592109030867" integer="16"/>
-    <define name="MAG_Y_SENS" value="7.839593567747121" integer="16"/>
-    <define name="MAG_Z_SENS" value="7.86456539855408" integer="16"/>
+    <define name="ACCEL_X_NEUTRAL" value="0"/>
+    <define name="ACCEL_Y_NEUTRAL" value="0"/>
+    <define name="ACCEL_Z_NEUTRAL" value="0"/>
+    <define name="ACCEL_X_SENS" value="7.53390969897" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="7.35267287758" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="7.45488455799" integer="16"/>
+
+    <!-- NOT CALIBRATED STOLEN -->
+    <define name="MAG_X_NEUTRAL" value="105"/>
+    <define name="MAG_Y_NEUTRAL" value="10"/>
+    <define name="MAG_Z_NEUTRAL" value="-23"/>
+    <define name="MAG_X_SENS" value="4.01453293111" integer="16"/>
+    <define name="MAG_Y_SENS" value="3.96379405627" integer="16"/>
+    <define name="MAG_Z_SENS" value="3.92499630895" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI"   value="0" unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="75." unit="deg"/>
@@ -201,8 +210,8 @@
 
   <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
     <!-- setpoints -->
-    <define name="SP_MAX_PHI" value="35." unit="deg"/>
-    <define name="SP_MAX_THETA" value="35." unit="deg"/>
+    <define name="SP_MAX_PHI" value="60." unit="deg"/>
+    <define name="SP_MAX_THETA" value="60." unit="deg"/>
     <define name="SP_MAX_R" value="90." unit="deg/s"/>
     <define name="DEADBAND_R" value="200"/>
 
