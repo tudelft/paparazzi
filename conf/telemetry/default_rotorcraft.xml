@@ -199,6 +199,7 @@
       <message name="IMU_GYRO_SCALED"          period=".002"/>
       <message name="IMU_ACCEL_SCALED"         period=".002"/>
       <message name="IMU_MAG_SCALED"           period=".0125"/>
+      <message name="IMU_MAG_RAW"              period=".0125"/>
       <message name="LIDAR"                    period="0.05"/>
       <message name="INS_EKF2"                 period="0.34"/>
     </mode>
