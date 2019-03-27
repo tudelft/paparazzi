@@ -66,7 +66,7 @@
 #define MSG_NAME    "FLIGHT_PARAM"
 #define MSG_ID		"GCS"
 
-#define TIMEOUT_PERIOD 200
+#define TIMEOUT_PERIOD 10
 
 struct gps_data_t *gpsdata;
 gboolean verbose;
@@ -151,7 +151,7 @@ static void update_gps(struct gps_data_t *gpsdata,
 
 static gboolean gps_periodic(gpointer data __attribute__ ((unused)))
 {
-    if (gps_waiting (gpsdata, 500)) {
+    if (gps_waiting (gpsdata, TIMEOUT_PERIOD)) {
         if (gps_read (gpsdata) == -1) {
             perror("gps read error");
         } else {
