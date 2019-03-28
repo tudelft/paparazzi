@@ -270,6 +270,10 @@ void autopilot_set_power_switch(bool power_switch)
     gpio_clear(POWER_SWITCH_GPIO);
   }
 #endif
+  //FIXME!!!!!
+  if(!power_switch)
+    NVIC_SystemReset();
+  
   autopilot.power_switch = power_switch;
 }
 
