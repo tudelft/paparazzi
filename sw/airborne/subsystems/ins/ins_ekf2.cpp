@@ -250,6 +250,7 @@ void ins_ekf2_init(void)
   /* Get the ekf parameters */
   ekf_params = ekf.getParamHandle();
   ekf_params->mag_fusion_type = MAG_FUSE_TYPE_HEADING;
+  ekf_params->is_moving_scaler = 0.8f;
 
   /* Initialize struct */
   ekf2.ltp_stamp = 0;
