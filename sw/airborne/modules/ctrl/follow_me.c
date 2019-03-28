@@ -41,6 +41,7 @@
 float follow_me_distance = FOLLOW_ME_DISTANCE;
 float follow_me_heading = 0.;
 float follow_me_min_speed = FOLLOW_ME_MIN_SPEED;
+float follow_me_filt = 0.9;
 
 static uint32_t ground_time_msec = 0;
 static bool ground_set = false;
@@ -79,6 +80,9 @@ void follow_me_parse_ground_gps(uint8_t *buf)
 
 void follow_me_set_wp(uint8_t wp_id)
 {
+   static float x_filt = 0;
+   static float y_filt = 0;
+
   // Only if we have a valid ground position
   if(ground_set) {
     // Calculate x and y offset
@@ -102,8 +106,10 @@ void follow_me_set_wp(uint8_t wp_id)
     float dist_m = msec_diff / 1000.f * ground_speed;
 
     // Calculate x and y offset
-    int32_t x = POS_BFP_OF_REAL(dist_m*sinf(ground_course/180.*M_PI));
-    int32_t y = POS_BFP_OF_REAL(dist_m*cosf(ground_course/180.*M_PI));
+    x_filt = x_filt * follow_me_filt + (dist_m*sinf(ground_course/180.*M_PI)) * (1-follow_me_filt);
+    y_filt = y_filt * follow_me_filt + (dist_m*cosf(ground_course/180.*M_PI)) * (1-follow_me_filt);
+    int32_t x = POS_BFP_OF_REAL(x_filt);
+    int32_t y = POS_BFP_OF_REAL(y_filt);
 
     // Set the waypoint
     //waypoint_set_latlon(wp_id, &ground_lla);

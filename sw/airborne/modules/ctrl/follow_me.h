@@ -40,6 +40,10 @@ extern float follow_me_heading;
  */
 extern float follow_me_min_speed;
 
+/** Follow me filter value
+ */
+extern float follow_me_filt;
+
 /** init function
  */
 extern void follow_me_init(void);
