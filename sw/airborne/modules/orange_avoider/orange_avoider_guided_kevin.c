@@ -53,10 +53,10 @@ enum navigation_state_t {
 };
 
 // define settings
-float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a fraction of total of image
-float oag_floor_count_frac = 0.05f;       // floor detection threshold as a fraction of total of image
+float oag_color_count_frac = 0.10f;       // obstacle detection threshold as a fraction of total of image
+float oag_floor_count_frac = 0.14f;       // floor detection threshold as a fraction of total of image
 float oag_max_speed = 1.f;               // max flight speed [m/s]
-float oag_heading_rate = RadOfDeg(20.f);  // heading change setpoint for avoidance [rad/s]
+float oag_heading_rate = RadOfDeg(40.f);  // heading change setpoint for avoidance [rad/s]
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;   // current state in state machine
@@ -134,7 +134,7 @@ void orange_avoider_guided_periodic(void)
   VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
 
   // update our safe confidence using color threshold
-  if(color_count < color_count_threshold && floor_centroid > 0){
+  if(color_count < color_count_threshold /*&& floor_centroid > 0*/){
     obstacle_free_confidence++;
   } else{
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
@@ -183,7 +183,7 @@ void orange_avoider_guided_periodic(void)
       guidance_h_set_guided_body_vel(0, 0);
 
       // start turn back into arena
-      guidance_h_set_guided_heading_rate(avoidance_heading_direction * RadOfDeg(15));
+      guidance_h_set_guided_heading_rate(avoidance_heading_direction * RadOfDeg(40));
 
       navigation_state = REENTER_ARENA;
 
