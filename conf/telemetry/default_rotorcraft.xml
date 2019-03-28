@@ -39,6 +39,8 @@
       <message name="FBW_STATUS"               period="2.1"/>
       <message name="WIND_INFO_RET"            period="9.2"/>
       <message name="AHRS_BIAS"                period="7.5"/>
+      <message name="HOVER_LOOP"               period="0.3"/>
+      <message name="GUIDANCE_H_REF_INT"       period="0.31"/>
     </mode>
 
     <mode name="ppm">
@@ -208,6 +210,8 @@
       <message name="INS_EKF2_EXT"             period="0.1"/>
       <message name="WIND_INFO_RET"            period="0.2"/>
       <message name="AHRS_BIAS"                period="0.5"/>
+      <message name="HOVER_LOOP"               period="0.02"/>
+      <message name="GUIDANCE_H_REF_INT"       period="0.02"/>
     </mode>
   </process>
 
