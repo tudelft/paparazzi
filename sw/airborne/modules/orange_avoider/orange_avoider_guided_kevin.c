@@ -54,7 +54,7 @@ enum navigation_state_t {
 
 // define settings
 float oag_color_count_frac = 0.10f;       // obstacle detection threshold as a fraction of total of image
-float oag_floor_count_frac = 0.14f;       // floor detection threshold as a fraction of total of image
+float oag_floor_count_frac = 0.13f;       // floor detection threshold as a fraction of total of image
 float oag_max_speed = 1.f;               // max flight speed [m/s]
 float oag_heading_rate = RadOfDeg(40.f);  // heading change setpoint for avoidance [rad/s]
 
@@ -134,7 +134,7 @@ void orange_avoider_guided_periodic(void)
   VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
 
   // update our safe confidence using color threshold
-  if(color_count < color_count_threshold /*&& floor_centroid > 0*/){
+  if(color_count < color_count_threshold && floor_centroid > 0){
     obstacle_free_confidence++;
   } else{
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
