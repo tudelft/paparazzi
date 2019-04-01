@@ -94,8 +94,8 @@ static void floor_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int32_t quality, int16_t __attribute__((unused)) extra)
 {
   floor_count = quality;
-  floor_centroid = pixel_y;
-  floor_centroid_x = pixel_x;
+  floor_centroid = pixel_y;     //calculate centroid in y-direction
+  floor_centroid_x = pixel_x;   //calculate centroid in x-direction
 }
 
 /*
@@ -133,7 +133,7 @@ void orange_avoider_guided_periodic(void)
   VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
   VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
 
-  // update our safe confidence using color threshold
+  // update our safe confidence using color threshold and check for green obstacles if green centroid > 0
   if(color_count < color_count_threshold && floor_centroid > 0){
     obstacle_free_confidence++;
   } else{
