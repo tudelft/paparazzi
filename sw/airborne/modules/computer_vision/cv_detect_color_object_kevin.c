@@ -207,7 +207,7 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   uint8_t *buffer = img->buf;
   VERBOSE_PRINT('img-> = %d \n' img->w)
   // Go through all the pixels
-  for (uint16_t y = 0.25 * (img->h); y < 0.75 * (img->h); y++) {
+  for (uint16_t y = 0.25 * (img->h); y < 0.75 * (img->h); y++) { /*Cuts of 25% of the right and left of the to be analyzed image*/
     for (uint16_t x = 0; x < img->w; x ++) {
       // Check if the color is inside the specified values
       uint8_t *yp, *up, *vp;
@@ -227,7 +227,7 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
       if ( (*yp >= lum_min) && (*yp <= lum_max) &&
            (*up >= cb_min ) && (*up <= cb_max ) &&
            (*vp >= cr_min ) && (*vp <= cr_max )) {
-        cnt += 1.2f;
+        cnt += 1.2f;     /*Increase Threshold*/
         tot_x += x;
         tot_y += y;
         if (draw){
