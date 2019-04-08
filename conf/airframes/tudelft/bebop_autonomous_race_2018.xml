@@ -29,12 +29,9 @@
     <!--module name="stabilization" type="int_quat"/-->
     <module name="ahrs" type="int_cmpl_quat">
        <configure name="USE_MAGNETOMETER" value="FALSE"/> <!--TRUE-->
-
-      <configure name="USE_GPS" value="TRUE"/>
-
-      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/><!--TRUE-->
-
-      <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>
+       <configure name="USE_GPS" value="TRUE"/>
+       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/><!--TRUE-->
+       <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>
     </module>
     <module name="ins" type="extended"/>
 
@@ -52,7 +49,6 @@
 
     <module name="ctrl_module_outerloop_demo"/>
     <module name="sonar_bebop"/>
-
     <module name="jevois_mavlink"/>
 
   </firmware>

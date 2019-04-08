@@ -88,7 +88,26 @@ void file_logger_start(void)
 
 	  //rotorcraft uses COMMAND_THRUST, fixedwing COMMAND_THROTTLE at this time
 #ifdef COMMAND_THRUST
-      "counter,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,roll,pitch,yaw,opti_x,opti_y,opti_z\n"
+    "counter,\
+    accel.x,\
+    accel.y,\
+    accel.z,\
+    gyro_unscaled.p,\
+    gyro_unscaled.q,\
+    gyro_unscaled.r,\
+    rot->phi,\
+    rot->theta,\
+    rot->psi,\
+    pos->x, pos->y, pos->z,\
+    COMMAND_THRUST,\
+    COMMAND_ROLL,\
+    COMMAND_PITCH,\
+    COMMAND_YAW,\
+    rpm_obs[0],\
+    rpm_obs[1],\
+    rpm_obs[2],\
+    rpm_obs[3]\n"
+      //"counter,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,roll,pitch,yaw,opti_x,opti_y,opti_z\n"
 #else
       "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,	h_ctl_aileron_setpoint, h_ctl_elevator_setpoint, qi,qx,qy,qz\n"
 #endif
@@ -124,27 +143,43 @@ void file_logger_periodic(void)
     // "opti_x","opti_y","opti_z","time"]
 
 #ifdef COMMAND_THRUST //For example rotorcraft
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f\n",
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d\n",
           counter,
-          imu.accel_unscaled.x,
-          imu.accel_unscaled.y,
-          imu.accel_unscaled.z,
+          imu.accel.x, // using imu.accel_unscaled creates problems, /512. 
+          imu.accel.y, // /1024 now
+          imu.accel.z,
           imu.gyro_unscaled.p,
           imu.gyro_unscaled.q,
           imu.gyro_unscaled.r,
           rot->phi,
           rot->theta,
           rot->psi,
-          pos->x, pos->y, pos->z);
-          /*
+          pos->x, pos->y, pos->z,
           stabilization_cmd[COMMAND_THRUST],
           stabilization_cmd[COMMAND_ROLL],
           stabilization_cmd[COMMAND_PITCH],
           stabilization_cmd[COMMAND_YAW],
+          actuators_bebop.rpm_obs[0],
+          actuators_bebop.rpm_obs[1],
+          actuators_bebop.rpm_obs[2],
+          actuators_bebop.rpm_obs[3]);
+          /*
           quat->qi,
           quat->qx,
           quat->qy,
           quat->qz
+                                          &stabilization_cmd[COMMAND_THRUST],
+                                &stabilization_cmd[COMMAND_ROLL],
+                                &stabilization_cmd[COMMAND_PITCH],
+                                &stabilization_cmd[COMMAND_YAW],
+                                &actuators_bebop.rpm_ref[0],
+                                &actuators_bebop.rpm_ref[1],
+                                &actuators_bebop.rpm_ref[2],
+                                &actuators_bebop.rpm_ref[3],
+                                &actuators_bebop.rpm_obs[0],
+                                &actuators_bebop.rpm_obs[1],
+                                &actuators_bebop.rpm_obs[2],
+                                &actuators_bebop.rpm_obs[3]);
           */
 #else
   fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
