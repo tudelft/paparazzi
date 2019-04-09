@@ -19,9 +19,18 @@ endif
 #
 ifeq ($(shell which $(PREFIX)-gcc),)
 ifndef HARD_FLOAT
+  # try codesourcery first
   TOOLCHAIN=$(shell find -L /usr/local/codesourcery -maxdepth 2 -type d -name arm-none-linux-gnueabi 2>/dev/null | head -n 1)
   ifneq ($(TOOLCHAIN),)
     PREFIX=$(shell dirname $(TOOLCHAIN))/bin/arm-none-linux-gnueabi
+  else
+  endif
+  # if still no compiler found, look for parrot compiler
+  ifeq ($(TOOLCHAIN),)
+    TOOLCHAIN=$(shell find -L /opt/arm-2012.03 -maxdepth 2 -type d -name arm-none-linux-gnueabi 2>/dev/null | head -n 1)
+    ifneq ($(TOOLCHAIN),)
+      PREFIX=$(shell dirname $(TOOLCHAIN))/bin/arm-none-linux-gnueabi
+    endif
   endif
 endif
 endif
