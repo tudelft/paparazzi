@@ -19,9 +19,15 @@
   <header>
     <file name="ctrl_module_outerloop_demo.h"/>
   </header>
+  <periodic fun="dronerace_periodic()"/>
 
   <makefile>
     <file name="ctrl_module_outerloop_demo.c"/>
+    <file name="dronerace/dronerace.c"/>
+    <file name="dronerace/filter.c"/>
+    <file name="dronerace/control.c"/>
+    <file name="dronerace/flightplan.c"/>
+    <file name="dronerace/fifo.c"/>
   </makefile>
 
 </module>
