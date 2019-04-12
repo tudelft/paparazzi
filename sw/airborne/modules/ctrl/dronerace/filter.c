@@ -35,7 +35,7 @@ void filter_reset()
 
   // Vision latency
   fifo_reset();
-  ransac_reset();
+  //ransac_reset();
 }
 
 float filteredX, filteredY;
@@ -83,7 +83,7 @@ void filter_predict(float phi, float theta, float psi, float dt)
   fifo_push(dr_state.x, dr_state.y, 0);
 
   // Check if Ransac buffer is empty
-  ransac_propagate();
+  //ransac_propagate();
 
   filteredX = dr_state.x;
   filteredY = dr_state.y;
@@ -92,11 +92,11 @@ void filter_predict(float phi, float theta, float psi, float dt)
 
 float log_mx, log_my;
 float mx, my;
-int transfer_measurement_local_2_global(float *mx, float *my, float dx, float dy);
+// int transfer_measurement_local_2_global(float *mx, float *my, float dx, float dy);
 
-void pushJungleGateDetection(void);
+// void pushJungleGateDetection(void);
 
-void filter_correct(void)
+/*void filter_correct(void)
 {
   // Retrieve oldest element of state buffer (that corresponds to current vision measurement) // TODO: should we not empirically determine the delay (is it now just guessed?)
   float sx, sy, sz;
@@ -133,9 +133,9 @@ void filter_correct(void)
   filteredX = dr_state.x;
   filteredY = dr_state.y;
   return;
-}
+}*/
 
-
+#if 0
 int transfer_measurement_local_2_global(float *_mx, float *_my, float dx, float dy)
 {
   int i, j;
@@ -224,6 +224,7 @@ int transfer_measurement_local_2_global(float *_mx, float *_my, float dx, float 
   return dr_state.assigned_gate_index;
 }
 
+
 void pushJungleGateDetection(void)
 {
   if (gates[dr_fp.gate_nr].type == JUNGLE && jungleGate.flagJungleGateDetected == false
@@ -242,4 +243,5 @@ void pushJungleGateDetection(void)
       }
     }
   }
-}
+
+#endif

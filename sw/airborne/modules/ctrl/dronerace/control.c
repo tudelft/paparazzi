@@ -84,13 +84,13 @@ void control_run(float dt)
   // TODO: interestingly, we don't use the velocity correction for control: t_fit * dr_ransac.corr_vx
   if(gates[dr_fp.gate_nr].psi == RadOfDeg(0.0) || gates[dr_fp.gate_nr].psi == RadOfDeg(180))
   {
-    vxcmd = (dr_fp.x_set - (dr_state.x + dr_ransac.corr_x)) * P_FORWARD - dr_state.vx * D_FORWARD;
-    vycmd = (dr_fp.y_set - (dr_state.y+dr_ransac.corr_y)) * P_LATERAL - dr_state.vy * D_LATERAL;
+    vxcmd = (dr_fp.x_set - (dr_state.x)) * P_FORWARD - dr_state.vx * D_FORWARD;
+    vycmd = (dr_fp.y_set - (dr_state.y)) * P_LATERAL - dr_state.vy * D_LATERAL;
   }
   else
   {
-    vxcmd = (dr_fp.x_set - (dr_state.x + dr_ransac.corr_x)) * P_LATERAL- dr_state.vx * D_LATERAL;
-    vycmd = (dr_fp.y_set - (dr_state.y+dr_ransac.corr_y)) * P_FORWARD- dr_state.vy * D_FORWARD;
+    vxcmd = (dr_fp.x_set - (dr_state.x )) * P_LATERAL- dr_state.vx * D_LATERAL;
+    vycmd = (dr_fp.y_set - (dr_state.y)) * P_FORWARD- dr_state.vy * D_FORWARD;
   }
 
   if(!waypoints_dr[dr_fp.gate_nr].brake) {

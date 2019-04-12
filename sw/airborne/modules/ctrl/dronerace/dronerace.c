@@ -125,10 +125,10 @@ static void write_log(void)
       fprintf(file_logger, "%f,%f,%f,%d,%f,%f,%f\n",input_phi, input_theta, input_psi, input_cnt, input_dx, input_dy, input_dz);
     }
     else {
-      fprintf(file_logger, "%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",stateGetNedToBodyEulers_f()->phi, stateGetNedToBodyEulers_f()->theta, stateGetNedToBodyEulers_f()->psi,
+      /*fprintf(file_logger, "%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",stateGetNedToBodyEulers_f()->phi, stateGetNedToBodyEulers_f()->theta, stateGetNedToBodyEulers_f()->psi,
                       dr_vision.cnt, dr_ransac.buf_size, dr_vision.dx, dr_vision.dy, dr_vision.dz, dr_state.x, dr_state.y, dr_state.vx, dr_state.vy,
                       dr_state.x+dr_ransac.corr_x, dr_state.y+dr_ransac.corr_y, stateGetPositionNed_f()->x, stateGetPositionNed_f()->y);
-    }
+    */}
   }
 }
 
@@ -145,6 +145,11 @@ static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
 
   float cx = dr_state.vx; // Covariance
   float cy = dr_state.vy;
+  float cz;
+  
+  float ex = 0;
+  float ey = 0;
+  float ez = 0;
 
   int32_t gc = dr_vision.cnt; // Error
   float gx = dr_vision.dx; // Vision
@@ -153,21 +158,22 @@ static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
 
   //float ez = POS_FLOAT_OF_BFP(guidance_v_z_sp);
 
-  int32_t ix = dr_state.assigned_gate_index; // Error
-  int32_t iy = dr_ransac.buf_size; // Error
+  float ix = dr_state.assigned_gate_index; // Error
+  int32_t iy =  0; //dr_ransac.buf_size; // Error
+  int32_t iz = 0;
 
-  /*
+  
   pprz_msg_send_OPTICAL_FLOW_HOVER(trans, dev, AC_ID, &fx, &fy, &fz,
                                    &cx, &cy, &cz,
                                    &gx, &gy, &gz,
                                    &ex, &ey, &ez,
-                                   &ix, &iy, &iz); */
-
+                                   &ix, &iy, &iz); 
+/*
   pprz_msg_send_DRONE_RACE(trans, dev, AC_ID,
 		  &fx, &fy, &fz, &cx, &cy,
 		  &gc, &gx, &gy, &gz,
 		  &ix, &iy);
-
+*/
 }
 
 
@@ -193,7 +199,7 @@ static void gate_detected_cb(uint8_t sender_id __attribute__((unused)), int32_t 
 void dronerace_init(void)
 {
   // Receive vision
-  AbiBindMsgRELATIVE_LOCALIZATION(DRONE_RACE_ABI_ID, &gate_detected_ev, gate_detected_cb);
+  //AbiBindMsgRELATIVE_LOCALIZATION(DRONE_RACE_ABI_ID, &gate_detected_ev, gate_detected_cb);
 
   // Send telemetry
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_OPTICAL_FLOW_HOVER, send_dronerace);
@@ -249,6 +255,7 @@ void dronerace_periodic(void)
 
   // Vision update
   // printf("input count, vision count: %d, %d\n", input_cnt, dr_vision.cnt);
+  /*
   if (input_cnt > dr_vision.cnt) {
     dr_vision.cnt = input_cnt;
     dr_vision.dx = input_dx;
@@ -259,7 +266,7 @@ void dronerace_periodic(void)
 
     flightplan_list();
   }
-
+*/
   //printf("before write log\n");
   write_log();
   //printf("after write log\n");
