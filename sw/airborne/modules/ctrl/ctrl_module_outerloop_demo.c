@@ -85,10 +85,11 @@ void guidance_h_module_run(bool in_flight)
   
   dronerace_get_cmd(&alt, &roll, &pitch, &yaw);
 
-  ctrl.cmd.phi = ANGLE_BFP_OF_REAL(roll);
-  ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch);
-  ctrl.cmd.psi = ANGLE_BFP_OF_REAL(yaw);
-
+  //ctrl.cmd.phi = ANGLE_BFP_OF_REAL(roll);
+  ctrl.cmd.phi = 0;
+  ctrl.cmd.theta = -ANGLE_BFP_OF_REAL(8.5*3.142/180);//ANGLE_BFP_OF_REAL(pitch);
+  //ctrl.cmd.psi = ANGLE_BFP_OF_REAL(yaw); // stateGetNedToBodyEulers_f()->psi;
+  
   stabilization_attitude_set_rpy_setpoint_i(&(ctrl.cmd));
   stabilization_attitude_run(in_flight);
 

@@ -302,10 +302,16 @@ void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi_cmd)
 {
 
   control_run(dt);
-
+  /*
   *phi = dr_control.phi_cmd;
   *theta = dr_control.theta_cmd;
   *psi_cmd = dr_control.psi_cmd + psi0;
+  *alt = - dr_control.z_cmd;
+  */
+
+  *phi = 0;
+  *theta = -ANGLE_BFP_OF_REAL(43*3.142/180);
+  *psi_cmd = 0;
   *alt = - dr_control.z_cmd;
 
   guidance_v_z_sp = POS_BFP_OF_REAL(dr_control.z_cmd);

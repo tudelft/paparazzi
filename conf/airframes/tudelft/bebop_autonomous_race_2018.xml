@@ -12,7 +12,7 @@
       <module name="udp"/>
     </target>
 
-    <define name="USE_SONAR" value="TRUE"/>
+    <define name="USE_SONAR" value="FALSE"/>
     <define name="SONAR_BEBOP_FILTER_NARROW_OBSTACLES" value="TRUE" />
     <define name="SONAR_BEBOP_FILTER_NARROW_OBSTACLES_JUMP" value="0.4" />
     <define name="SONAR_BEBOP_FILTER_NARROW_OBSTACLES_TIME" value="1.0" />
@@ -28,9 +28,9 @@
     <module name="stabilization" type="rate_indi"/>
     <!--module name="stabilization" type="int_quat"/-->
     <module name="ahrs" type="int_cmpl_quat">
-       <configure name="USE_MAGNETOMETER" value="FALSE"/> <!--TRUE-->
+       <configure name="USE_MAGNETOMETER" value="FALSE"/> 
        <configure name="USE_GPS" value="TRUE"/>
-       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/><!--TRUE-->
+       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
        <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>
     </module>
     <module name="ins" type="extended"/>
@@ -48,8 +48,8 @@
     </module>
 
     <module name="ctrl_module_outerloop_demo"/>
-    <module name="sonar_bebop"/>
-    <module name="jevois_mavlink"/>
+    <!--module name="sonar_bebop"/-->
+    <!--module name="jevois_mavlink"/-->
 
   </firmware>
 
@@ -105,6 +105,12 @@
     <define name="BODY_TO_IMU_PHI" value="0." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
     <define name="BODY_TO_IMU_PSI" value="0." unit="deg"/>
+	<define name="ACCEL_X_NEUTRAL" value="41"/>
+	<define name="ACCEL_Y_NEUTRAL" value="-39"/>
+	<define name="ACCEL_Z_NEUTRAL" value="-269"/>
+	<define name="ACCEL_X_SENS" value="2.45987774581" integer="16"/>
+	<define name="ACCEL_Y_SENS" value="2.43923473559" integer="16"/>
+	<define name="ACCEL_Z_SENS" value="2.41518497181" integer="16"/>
   </section>
 
   <!-- local magnetic field -->
