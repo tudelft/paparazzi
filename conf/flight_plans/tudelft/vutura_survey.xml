@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="260" ground_alt="185" lat0="52.16806227038738" lon0="4.4129204750061035" max_dist_from_home="1500" name="Basic" security_height="25">
+<flight_plan alt="80" ground_alt="0" lat0="52.16806227038738" lon0="4.4129204750061035" max_dist_from_home="1500" name="Basic" security_height="50">
   <header>
 #include "subsystems/datalink/datalink.h"
 </header>
@@ -15,11 +15,11 @@
     <waypoint alt="215.0" name="AF" x="177.4" y="45.1"/>
     <waypoint alt="185.0" name="TD" x="28.8" y="57.0"/>
     <waypoint name="_BASELEG" x="168.8" y="-13.8"/>
-    <waypoint name="CLIMB" x="-114.5" y="162.3"/>
-    <waypoint name="FENCE_01" lat="52.16956259994888" lon="4.411160945892334"/>
-    <waypoint name="FENCE_02" lat="52.17004953814237" lon="4.41300630569458"/>
-    <waypoint name="FENCE_03" lat="52.1683320702236" lon="4.413875341415405"/>
-    <waypoint name="FENCE_04" lat="52.16799152991573" lon="4.41301167011261"/>
+    <waypoint name="CLIMB" x="50" y="50"/>
+    <waypoint name="FENCE_01" lat="52.16950337737266" lon="4.410860538482661"/>
+    <waypoint name="FENCE_02" lat="52.17114183956855" lon="4.416074752807617"/>
+    <waypoint name="FENCE_03" lat="52.167325247862124" lon="4.418735504150391"/>
+    <waypoint name="FENCE_04" lat="52.165772196147465" lon="4.413006305694575"/>
   </waypoints>
   <sectors>
     <sector color="yellow" name="GeoFence">
