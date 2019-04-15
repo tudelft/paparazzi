@@ -37,7 +37,7 @@
     <!-- RC loss -->
     <exception cond="((radio_control.status == RC_REALLY_LOST) &&
       !(IndexOfBlock('Takeoff') > nav_block) &&
-      !(nav_block == IndexOfBlock('ReturnCenterPointNoThrottle'))"
+      !(nav_block == IndexOfBlock('ReturnCenterPointNoThrottle')))"
       deroute="ReturnCenterPointNoThrottle"
     />
 
@@ -92,9 +92,9 @@
     <block name="Survey S1-S2" strip_button="Survey (wp S1-S2)" strip_icon="survey.png" group="extra_pattern">
       <survey_rectangle grid="150" wp1="S1" wp2="S2"/>
     </block>
-    <block name="Path 1,2,S1,S2,STDBY" strip_button="Path (1,2,S1,S2,STDBY)" strip_icon="path.png" group="extra_pattern">
+    <block name="Path 1,2,S1,S2,CenterPoint" strip_button="Path (1,2,S1,S2,CenterPoint)" strip_icon="path.png" group="extra_pattern">
       <path wpts="1,2 S1"/>
-      <path wpts="S1, S2 STDBY" approaching_time="1" pitch="auto" throttle="0.4"/>
+      <path wpts="S1, S2 CenterPoint" approaching_time="1" pitch="auto" throttle="0.4"/>
       <deroute block="Standby"/>
     </block>
     <block name="Land Right AF-TD" strip_button="Land right (wp AF-TD)" strip_icon="land-right.png" group="land">
