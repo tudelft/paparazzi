@@ -97,8 +97,8 @@
   <rc_commands>
     <set command="THRUST" value="@THROTTLE" />
     <set command="ROLL" value="@YAW" />
-    <set command="PITCH" value="@PITCH" />
-    <set command="YAW" value="-@ROLL" />
+    <set command="PITCH" value="@PITCH/2" />
+    <set command="YAW" value="-@ROLL/4" />
   </rc_commands>
 
   <section name="MIXING" prefix="MOTOR_MIXING_">
@@ -207,7 +207,7 @@
   <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
     <!-- setpoints -->
     <define name="SP_MAX_PHI" value="60." unit="deg"/>
-    <define name="SP_MAX_THETA" value="60." unit="deg"/>
+    <define name="SP_MAX_THETA" value="80." unit="deg"/>
     <define name="SP_MAX_R" value="90." unit="deg/s"/>
     <define name="DEADBAND_R" value="200"/>
 

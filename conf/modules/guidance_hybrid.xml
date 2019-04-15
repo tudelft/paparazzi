@@ -9,7 +9,7 @@
   <settings>
     <dl_settings>
       <dl_settings NAME="Hybrid Guidance">
-        <dl_setting var="max_airspeed" MIN="4" STEP="1" MAX="25" module="guidance/guidance_hybrid"/>
+        <dl_setting var="max_airspeed" MIN="4" STEP="1" MAX="160" module="guidance/guidance_hybrid"/>
         <dl_setting var="wind_gain" MIN="1" STEP="1" MAX="256"/>
         <dl_setting var="horizontal_speed_gain" MIN="1" STEP="1" MAX="15" shortname="hor_speed_div"/>
         <dl_setting var="alt_pitch_gain" MIN="0" STEP="0.01" MAX="5.0" shortname="alt_pitch_gain"/>

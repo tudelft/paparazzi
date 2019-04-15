@@ -41,6 +41,7 @@
       <message name="AHRS_BIAS"                period="7.5"/>
       <message name="HOVER_LOOP"               period="0.3"/>
       <message name="GUIDANCE_H_REF_INT"       period="0.31"/>
+      <message name="HYBRID_GUIDANCE"          period="0.4"/>
     </mode>
 
     <mode name="ppm">
