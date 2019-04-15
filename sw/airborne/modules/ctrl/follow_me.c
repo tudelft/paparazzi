@@ -116,7 +116,7 @@ void follow_me_set_wp(uint8_t wp_id, float speed)
     static struct NedCoor_f cur_pos;
     static uint32_t last_relpos_tow = 0;
 
-    // Make sure to only use the current state from the receive of the GPS message
+    // Make sure to only use the current state from the receive of the GPS message (FIXME overflow at sunday)
     if(last_relpos_tow < gps.relpos_tow) {
       cur_pos = *stateGetPositionNed_f();
       last_relpos_tow = gps.relpos_tow;
@@ -133,9 +133,11 @@ void follow_me_set_wp(uint8_t wp_id, float speed)
   }
   // Check if we got a position from the ground which didn't timeout and local NED is initialized
   else if(ground_set && state.ned_initialized_i && ground_time_msec+FOLLOW_ME_GROUND_TIMEOUT > get_sys_time_msec()) {
-    struct NedCoor_i target_pos_i;
-    ned_of_lla_point_i(&target_pos_i, &state.ned_origin_i, &ground_lla);
-    NED_FLOAT_OF_BFP(target_pos, target_pos_i);
+    struct NedCoor_i target_pos_cm;
+    ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &ground_lla);
+    target_pos.x = target_pos_cm.x / 100.;
+    target_pos.y = target_pos_cm.y / 100.;
+    target_pos.z = target_pos_cm.z / 100.;
 
     // Calculate the difference in time from the measurement
     diff_time_ms = get_sys_time_msec() - ground_time_msec + follow_me_datalink_delay;
