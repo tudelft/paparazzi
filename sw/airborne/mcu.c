@@ -195,6 +195,9 @@ void mcu_init(void)
 #if USE_SPI3
   spi3_init();
 #endif
+#if USE_SPI4
+  spi4_init();
+#endif
   spi_init_slaves();
 #endif // SPI_MASTER
 

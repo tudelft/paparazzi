@@ -293,26 +293,19 @@ static void gps_ubx_parse_nav_status(void) {
 }
 
 static void gps_ubx_parse_nav_relposned(void) {
-  /*uint8_t version = UBX_NAV_RELPOSNED_VERSION(gps_ubx.msg_buf);
-  if (version != NAV_RELPOSNED_VERSION)
+  gps_ubx.state.tow   = UBX_NAV_RELPOSNED_iTOW(gps_ubx.msg_buf);
+  uint8_t version     = UBX_NAV_RELPOSNED_version(gps_ubx.msg_buf);
+  if (version != 1)
     return;
 
-  gps_relposned.iTOW          = UBX_NAV_RELPOSNED_ITOW(gps_ubx.msg_buf);
-  gps_relposned.refStationId  = UBX_NAV_RELPOSNED_refStationId(gps_ubx.msg_buf);
-  gps_relposned.relPosN     = UBX_NAV_RELPOSNED_RELPOSN(gps_ubx.msg_buf);
-  gps_relposned.relPosE     = UBX_NAV_RELPOSNED_RELPOSE(gps_ubx.msg_buf);
-  gps_relposned.relPosD     = UBX_NAV_RELPOSNED_RELPOSD(gps_ubx.msg_buf) ;
-  gps_relposned.relPosHPN   = UBX_NAV_RELPOSNED_RELPOSNHP(gps_ubx.msg_buf);
-  gps_relposned.relPosHPE   = UBX_NAV_RELPOSNED_RELPOSEHP(gps_ubx.msg_buf);
-  gps_relposned.relPosHPD   = UBX_NAV_RELPOSNED_RELPOSDHP(gps_ubx.msg_buf);
-  gps_relposned.accN      = UBX_NAV_RELPOSNED_Nacc(gps_ubx.msg_buf);
-  gps_relposned.accE      = UBX_NAV_RELPOSNED_Eacc(gps_ubx.msg_buf);
-  gps_relposned.accD      = UBX_NAV_RELPOSNED_Dacc(gps_ubx.msg_buf);
-  uint8_t flags           = UBX_NAV_RELPOSNED_Flags(gps_ubx.msg_buf);
-  gps_relposned.carrSoln    = RTCMgetbitu(&flags, 3, 2);
-  gps_relposned.relPosValid   = RTCMgetbitu(&flags, 5, 1);
-  gps_relposned.diffSoln    = RTCMgetbitu(&flags, 6, 1);
-  gps_relposned.gnssFixOK   = RTCMgetbitu(&flags, 7, 1);*/
+  uint8_t flags           = UBX_NAV_RELPOSNED_flags(gps_ubx.msg_buf);
+  if(flags & 0x4 || flags & 0x40) {
+    gps_ubx.state.relpos_tow    = UBX_NAV_RELPOSNED_iTOW(gps_ubx.msg_buf);
+    gps_ubx.state.relpos_ned.x  = UBX_NAV_RELPOSNED_relPosN(gps_ubx.msg_buf);
+    gps_ubx.state.relpos_ned.y  = UBX_NAV_RELPOSNED_relPosE(gps_ubx.msg_buf);
+    gps_ubx.state.relpos_ned.z  = UBX_NAV_RELPOSNED_relPosD(gps_ubx.msg_buf);
+    SetBit(gps_ubx.state.valid_fields, GPS_VALID_RELPOS_BIT);
+  }
 }
 
 void gps_ubx_read_message(void)

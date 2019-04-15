@@ -89,6 +89,7 @@ void ms5611_spi_start_conversion(struct Ms5611_Spi *ms)
  * Should run at 100Hz max.
  * Typical conversion time is 8.22ms at max resolution.
  */
+extern struct Ms5611_Spi bb_ms5611;
 void ms5611_spi_periodic_check(struct Ms5611_Spi *ms)
 {
   switch (ms->status) {

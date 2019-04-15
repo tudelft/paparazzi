@@ -56,6 +56,7 @@ PRINT_CONFIG_VAR(BB_MS5611_SPI_DEV)
 struct Ms5611_Spi bb_ms5611;
 struct MedianFilterFloat bb_ms5611_filt;
 
+
 void baro_init(void)
 {
   ms5611_spi_init(&bb_ms5611, &BB_MS5611_SPI_DEV, BB_MS5611_SLAVE_IDX, BB_MS5611_TYPE_MS5607);

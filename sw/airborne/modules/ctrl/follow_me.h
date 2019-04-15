@@ -32,6 +32,10 @@
  */
 extern float follow_me_distance;
 
+/** height from the ground gps
+ */
+extern float follow_me_height;
+
 /** heading direction in which to hover from (automatically set if ground is exceeding speed)
  */
 extern float follow_me_heading;
@@ -40,9 +44,33 @@ extern float follow_me_heading;
  */
 extern float follow_me_min_speed;
 
-/** Follow me filter value
+/** Follow me course sin/cos filter value (higher is harder filter)
  */
 extern float follow_me_filt;
+
+/** Diagonal speed for follow me
+ */
+extern float follow_me_diag_speed;
+
+/** Follow me GPS delay from the relative positionb packet (in ms)
+ */
+extern float follow_me_gps_delay;
+
+/** Follow me datalink delay from the ground GPS packet (in ms)
+ */
+extern float follow_me_datalink_delay;
+
+/** Follow me waypoint advance time in ms (multiplied by the ground speed)
+ */
+extern float follow_me_advance_ms;
+
+/** Follow me minimum distance in meters when trying to approach with a certain speed
+ */
+extern float follow_me_min_dist;
+
+/** Follow me minimum height in meters when approaching with a speed
+ */
+extern float follow_me_min_height;
 
 /** init function
  */
@@ -63,7 +91,7 @@ extern void follow_me_parse_ground_gps(uint8_t *buf);
  *  </block>
  *
  */
-extern void follow_me_set_wp(uint8_t wp_id);
+extern void follow_me_set_wp(uint8_t wp_id, float speed);
 
 #endif
 

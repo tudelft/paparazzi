@@ -208,7 +208,7 @@
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
     <define name="HOVER_KP"    value="250"/>
-    <define name="HOVER_KD"    value="90"/>
+    <define name="HOVER_KD"    value="140"/>
     <define name="HOVER_KI"    value="5"/>
     <define name="NOMINAL_HOVER_THROTTLE" value="0.5"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>
@@ -217,10 +217,10 @@
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <define name="MAX_BANK" value="35" unit="deg"/>
     <define name="USE_SPEED_REF" value="TRUE"/>
-    <define name="PGAIN" value="60"/>
-    <define name="DGAIN" value="100"/>
+    <define name="PGAIN" value="146"/>
+    <define name="DGAIN" value="175"/>
     <define name="AGAIN" value="0"/>
-    <define name="IGAIN" value="20"/>
+    <define name="IGAIN" value="30"/>
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">

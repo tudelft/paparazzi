@@ -41,7 +41,10 @@
 #include "firmwares/rotorcraft/guidance/guidance_v.h"
 
 // max airspeed for quadshot guidance
+#ifndef MAX_AIRSPEED
 #define MAX_AIRSPEED 15
+#endif
+
 // high res frac for integration of angles
 #define INT32_ANGLE_HIGH_RES_FRAC 18
 

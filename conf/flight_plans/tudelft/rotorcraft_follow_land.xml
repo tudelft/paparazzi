@@ -47,21 +47,14 @@
       <stay wp="STDBY"/>
     </block>
 
-    <block name="stay_follow">
-      <stay pre_call="waypoint_set_xy_i(WP_FOLLOW, POS_BFP_OF_REAL(WaypointX(WP_SHIP)), POS_BFP_OF_REAL(WaypointY(WP_SHIP)+3))" wp="FOLLOW"/>
-    </block>
-    <block name="descend_follow">
-      <!--exception cond="NavDetectGround()" deroute="Holding point"/-->
-      <!--exception cond="!nav_is_in_flight()" deroute="landed"/-->
-      <!--call_once fun="NavStartDetectGround()"/-->
-      <stay pre_call="waypoint_set_xy_i(WP_FOLLOW, POS_BFP_OF_REAL(WaypointX(WP_SHIP)), POS_BFP_OF_REAL(WaypointY(WP_SHIP)+3))" climb="nav_descend_vspeed" vmode="climb" wp="FOLLOW"/>
-    </block>
-
     <block name="follow_module">
-      <stay pre_call="follow_me_set_wp(WP_FOLLOW)" wp="FOLLOW"/>
+      <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
+    </block>
+    <block name="follow_module_diag">
+      <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed)" wp="FOLLOW"/>
     </block>
     <block name="follow_module_land">
-      <stay pre_call="follow_me_set_wp(WP_FOLLOW)" climb="nav_descend_vspeed" vmode="climb" wp="FOLLOW"/>
+      <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed*0.5)" climb="nav_descend_vspeed * 0.25" vmode="climb" wp="FOLLOW"/>
     </block>
 
     <!--block name="stay_p1">

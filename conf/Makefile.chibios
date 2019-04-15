@@ -80,6 +80,9 @@ endif
 $(TARGET).srcs += c++.cpp pprz_syscalls.c
 $(TARGET).CXXFLAGS += -fno-sized-deallocation
 
+# with cortex-m3 and m4 unaligned data can still be read
+$(TARGET).CFLAGS += -DPPRZLINK_UNALIGNED_ACCESS=1
+
 #
 # General rules
 #

@@ -106,7 +106,7 @@ static void update_gps(struct gps_data_t *gpsdata,
         }
 
         if (verbose)
-            printf("sending gps info viy Ivy: lat %g, lon %g, speed %g, course %g, alt %g, climb %g\n",
+            printf("sending gps info viy Ivy: lat %f, lon %f, speed %g, course %g, alt %g, climb %g\n",
                    gpsdata->fix.latitude, gpsdata->fix.longitude, fix_speed, fix_track, fix_altitude, fix_climb);
 
         IvySendMsg("%s %s %s %f %f %f %f %f %f %f %f %f %f %f %d %f",

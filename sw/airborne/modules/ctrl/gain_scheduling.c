@@ -28,6 +28,7 @@
 // #include "state.h"
 #include "math/pprz_algebra_int.h"
 #include "subsystems/radio_control.h"
+#include "guidance/guidance_hybrid.h"
 
 #ifndef NUMBER_OF_GAINSETS
 #error You must define the number of gainsets to use this module!
@@ -68,7 +69,8 @@ void gain_scheduling_init(void)
       {phi_p[i], theta_p[i], psi_p[i] },
       {phi_d[i], theta_d[i], psi_d[i] },
       {phi_dd[i], theta_dd[i], psi_dd[i] },
-      {phi_i[i], theta_i[i], psi_i[i] }
+      {phi_i[i], theta_i[i], psi_i[i] },
+      {0, 0, 0}
     };
 
     gainlibrary[i] = swap;

@@ -163,9 +163,11 @@ static inline uint16_t spi_resolve_CR1(struct spi_transaction *t __attribute__((
 {
   uint16_t CR1 = 0;
 #if defined(STM32F1) || defined(STM32F4) || defined(STM32F7)
+#if defined(SPI_CR1_DFF)
   if (t->dss == SPIDss16bit) {
     CR1 |= SPI_CR1_DFF;
   }
+#endif
   if (t->bitorder == SPILSBFirst) {
     CR1 |= SPI_CR1_LSBFIRST;
   }
@@ -435,6 +437,45 @@ void spi3_arch_init(void)
   // Create thread
   chThdCreateStatic(wa_thd_spi3, sizeof(wa_thd_spi3),
                     NORMALPRIO + 1, thd_spi3, NULL);
+}
+#endif
+
+#if USE_SPI4
+static SEMAPHORE_DECL(spi4_sem, 0);
+#if defined STM32F7
+// We need a special buffer for DMA operations
+static IN_DMA_SECTION(uint8_t spi4_dma_buf_out[SPI_DMA_BUF_LEN]);
+static IN_DMA_SECTION(uint8_t spi4_dma_buf_in[SPI_DMA_BUF_LEN]);
+static struct spi_init spi4_init_s = {
+  .sem = &spi4_sem,
+  .dma_buf_out = spi4_dma_buf_out,
+  .dma_buf_in = spi4_dma_buf_in
+};
+#else
+static struct spi_init spi4_init_s = {
+  .sem = &spi4_sem,
+};
+#endif
+
+static __attribute__((noreturn)) void thd_spi4(void *arg)
+{
+  (void) arg;
+  chRegSetThreadName("spi4");
+
+  while (TRUE) {
+    handle_spi_thd(&spi4);
+  }
+}
+
+static THD_WORKING_AREA(wa_thd_spi4, 1024);
+
+void spi4_arch_init(void)
+{
+  spi4.reg_addr = &SPID4;
+  spi4.init_struct = &spi4_init_s;
+  // Create thread
+  chThdCreateStatic(wa_thd_spi4, sizeof(wa_thd_spi4),
+                    NORMALPRIO + 1, thd_spi4, NULL);
 }
 #endif
 

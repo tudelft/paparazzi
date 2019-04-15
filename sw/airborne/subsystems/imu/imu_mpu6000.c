@@ -49,6 +49,13 @@ PRINT_CONFIG_MSG("Gyro/Accel output rate is 100Hz at 1kHz internal sampling")
 #define IMU_MPU_LOWPASS_FILTER MPU60X0_DLPF_256HZ
 #define IMU_MPU_SMPLRT_DIV 3
 PRINT_CONFIG_MSG("Gyro/Accel output rate is 2kHz at 8kHz internal sampling")
+#elif PERIODIC_FREQUENCY == 500
+/* Accelerometer: Bandwidth 42Hz, Delay 0ms
+ * Gyroscope: Bandwidth 42Hz, Delay 0.98ms sampling 8kHz
+ */
+#define IMU_MPU_LOWPASS_FILTER MPU60X0_DLPF_42HZ
+#define IMU_MPU_SMPLRT_DIV 0
+PRINT_CONFIG_MSG("Gyro/Accel output rate is 2kHz at 8kHz internal sampling")
 #else
 #error Non-default PERIODIC_FREQUENCY: please define IMU_MPU_LOWPASS_FILTER and IMU_MPU_SMPLRT_DIV.
 #endif
@@ -58,6 +65,34 @@ PRINT_CONFIG_VAR(IMU_MPU_SMPLRT_DIV)
 
 PRINT_CONFIG_VAR(IMU_MPU_GYRO_RANGE)
 PRINT_CONFIG_VAR(IMU_MPU_ACCEL_RANGE)
+
+// Default channels order
+#ifndef IMU_MPU6000_CHAN_X
+#define IMU_MPU6000_CHAN_X 1
+#endif
+PRINT_CONFIG_VAR(IMU_MPU6000_CHAN_X)
+#ifndef IMU_MPU6000_CHAN_Y
+#define IMU_MPU6000_CHAN_Y 0
+#endif
+PRINT_CONFIG_VAR(IMU_MPU6000_CHAN_Y)
+#ifndef IMU_MPU6000_CHAN_Z
+#define IMU_MPU6000_CHAN_Z 2
+#endif
+PRINT_CONFIG_VAR(IMU_MPU6000_CHAN_Z)
+
+// Default channel signs
+#ifndef IMU_MPU6000_X_SIGN
+#define IMU_MPU6000_X_SIGN 1
+#endif
+PRINT_CONFIG_VAR(IMU_MPU6000_X_SIGN)
+#ifndef IMU_MPU6000_Y_SIGN
+#define IMU_MPU6000_Y_SIGN 1
+#endif
+PRINT_CONFIG_VAR(IMU_MPU6000_Y_SIGN)
+#ifndef IMU_MPU6000_Z_SIGN
+#define IMU_MPU6000_Z_SIGN -1
+#endif
+PRINT_CONFIG_VAR(IMU_MPU6000_Z_SIGN)
 
 
 struct ImuMpu6000 imu_mpu_spi;
@@ -83,11 +118,29 @@ void imu_mpu_spi_event(void)
   mpu60x0_spi_event(&imu_mpu_spi.mpu);
   if (imu_mpu_spi.mpu.data_available) {
     uint32_t now_ts = get_sys_time_usec();
-    RATES_COPY(imu.gyro_unscaled, imu_mpu_spi.mpu.data_rates.rates);
-    VECT3_COPY(imu.accel_unscaled, imu_mpu_spi.mpu.data_accel.vect);
+
+    // set channel order
+    struct Int32Vect3 accel = {
+      IMU_MPU6000_X_SIGN * (int32_t)(imu_mpu_spi.mpu.data_accel.value[IMU_MPU6000_CHAN_X]),
+      IMU_MPU6000_Y_SIGN * (int32_t)(imu_mpu_spi.mpu.data_accel.value[IMU_MPU6000_CHAN_Y]),
+      IMU_MPU6000_Z_SIGN * (int32_t)(imu_mpu_spi.mpu.data_accel.value[IMU_MPU6000_CHAN_Z])
+    };
+    struct Int32Rates rates = {
+      IMU_MPU6000_X_SIGN * (int32_t)(imu_mpu_spi.mpu.data_rates.value[IMU_MPU6000_CHAN_X]),
+      IMU_MPU6000_Y_SIGN * (int32_t)(imu_mpu_spi.mpu.data_rates.value[IMU_MPU6000_CHAN_Y]),
+      IMU_MPU6000_Z_SIGN * (int32_t)(imu_mpu_spi.mpu.data_rates.value[IMU_MPU6000_CHAN_Z])
+    };
+    // unscaled vector
+    VECT3_COPY(imu.accel_unscaled, accel);
+    RATES_COPY(imu.gyro_unscaled, rates);
+
     imu_mpu_spi.mpu.data_available = false;
+
+    // Scale the gyro and accelerometer
     imu_scale_gyro(&imu);
     imu_scale_accel(&imu);
+
+    // Send the scaled values over ABI
     AbiSendMsgIMU_GYRO_INT32(IMU_MPU6000_ID, now_ts, &imu.gyro);
     AbiSendMsgIMU_ACCEL_INT32(IMU_MPU6000_ID, now_ts, &imu.accel);
   }

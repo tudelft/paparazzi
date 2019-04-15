@@ -69,6 +69,10 @@
 
 /***************************************************************************/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 #ifndef USE_CHIBIOS_RTOS // already defined by chibios syscalls
@@ -183,5 +187,9 @@ void __cxa_pure_virtual(void);
 void __cxa_pure_virtual() { while (1); } //TODO: Handle properly, maybe generate a traceback
 
 #pragma GCC diagnostic pop
+
+#ifdef __cplusplus
+}
+#endif
 
 /*** EOF ***/
