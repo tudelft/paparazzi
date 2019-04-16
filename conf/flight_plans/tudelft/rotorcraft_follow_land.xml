@@ -54,7 +54,7 @@
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed)" wp="FOLLOW"/>
     </block>
     <block name="follow_module_land">
-      <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed*0.5)" climb="nav_descend_vspeed * 0.25" vmode="climb" wp="FOLLOW"/>
+      <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed*0.5)" climb="nav_descend_vspeed * 0.5" vmode="climb" wp="FOLLOW"/>
     </block>
 
     <!--block name="stay_p1">
