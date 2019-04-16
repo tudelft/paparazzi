@@ -108,7 +108,7 @@ void guidance_hybrid_init(void)
 
   high_res_psi = 0;
   guidance_hovering = true;
-  horizontal_speed_gain = 8;
+  horizontal_speed_gain = 3;
   guidance_hybrid_norm_ref_airspeed = 0;
   max_turn_bank = 40.0;
   turn_bank_gain = 0.8;
