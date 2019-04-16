@@ -271,8 +271,8 @@ void autopilot_set_power_switch(bool power_switch)
   }
 #endif
   //FIXME!!!!!
-  //if(!power_switch)
-    //NVIC_SystemReset();
+  if(!power_switch)
+    NVIC_SystemReset();
   
   autopilot.power_switch = power_switch;
 }
