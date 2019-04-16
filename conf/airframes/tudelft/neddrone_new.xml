@@ -31,9 +31,14 @@
       </module>
 
       <module name="guidance" type="hybrid"/>
-
       <module name="intermcu" type="uart"/>
       <!--module name="px4_flash"/-->
+
+       <!-- Logger -->
+      <!--module name="tlsf"/>
+      <module name="pprzlog"/>
+      <module name="logger" type="sd_chibios"/>
+      <module name="flight_recorder"/-->
     </target>
 
     <target name="fbw" board="px4io_2.4">
