@@ -61,7 +61,7 @@ void guidance_h_module_init(void)
 void guidance_h_module_enter(void)
 {
   // Store current heading
-  //ctrl.cmd.psi = stateGetNedToBodyEulers_i()->psi;
+  ctrl.cmd.psi = stateGetNedToBodyEulers_i()->psi;
 
   // Convert RC to setpoint
   //stabilization_attitude_read_rc_setpoint_eulers(&ctrl.rc_sp, autopilot.in_flight, false, false);
@@ -85,11 +85,14 @@ void guidance_h_module_run(bool in_flight)
   
   dronerace_get_cmd(&alt, &roll, &pitch, &yaw);
 
-  //ctrl.cmd.phi = ANGLE_BFP_OF_REAL(roll);
+  ctrl.cmd.phi = ANGLE_BFP_OF_REAL(roll);
+  ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch);//-ANGLE_BFP_OF_REAL(5*3.142/180);//ANGLE_BFP_OF_REAL(pitch);
+  ctrl.cmd.psi = ANGLE_BFP_OF_REAL(yaw); // stateGetNedToBodyEulers_f()->psi;//
+
   ctrl.cmd.phi = 0;
-  ctrl.cmd.theta = -ANGLE_BFP_OF_REAL(8.5*3.142/180);//ANGLE_BFP_OF_REAL(pitch);
-  //ctrl.cmd.psi = ANGLE_BFP_OF_REAL(yaw); // stateGetNedToBodyEulers_f()->psi;
-  
+  ctrl.cmd.theta = -ANGLE_BFP_OF_REAL(25*3.142/180); //-ANGLE_BFP_OF_REAL(5*3.142/180);//ANGLE_BFP_OF_REAL(pitch);
+  ctrl.cmd.psi = ANGLE_BFP_OF_REAL(0); // stateGetNedToBodyEulers_f()->psi;//
+
   stabilization_attitude_set_rpy_setpoint_i(&(ctrl.cmd));
   stabilization_attitude_run(in_flight);
 

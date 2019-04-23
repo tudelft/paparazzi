@@ -29,7 +29,7 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
   //  X-coordinate  Y-coordinate  Z-coordinate   Psi-gate          Speed    Type-of-gate  Brake-at-gate   Distance-after gate       both side
   {   2,          0,          -1.4,          RadOfDeg(0),      1.2f,    REGULAR,      BRAKE,          0.0,                      0},
-  {   2,          2,          -1.4,          RadOfDeg(0),      1.2f,    REGULAR,      BRAKE,          0.0,                      0},
+  {   0,          2,          -1.4,          RadOfDeg(0),      1.2f,    REGULAR,      BRAKE,          0.0,                      0},
   {   0,          0,          -1.4,          RadOfDeg(0),      1.2f,    REGULAR,      BRAKE,          0.0,                      0},
 };
 
