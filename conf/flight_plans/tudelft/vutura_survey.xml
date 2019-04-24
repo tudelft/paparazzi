@@ -22,8 +22,8 @@
     <waypoint name="FENCE_04" lat="52.165772196147465" lon="4.413006305694575"/-->
     <waypoint name="FENCE_01" x="-400" y="200"/>
     <waypoint name="FENCE_02" x="400" y="200"/>
-    <waypoint name="FENCE_03" x="400" y="-400"/>
-    <waypoint name="FENCE_04" x="-400" y="-400"/>
+    <waypoint name="FENCE_03" x="400" y="-200"/>
+    <waypoint name="FENCE_04" x="-400" y="-200"/>
     
   </waypoints>
   <sectors>
@@ -47,7 +47,7 @@
     />
 
     <!-- Check inside Flight Area, then goto CenterPoint -->
-    <exception cond="!InsideGeoFence(GetPosX(), GetPosY()) &&
+    <exception cond="Or(!InsideGeoFence(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 100) &&
       !(IndexOfBlock('Takeoff') > nav_block) &&
       !(nav_block == IndexOfBlock('ReturnCenterPointNoThrottle'))"
       deroute="ReturnCenterPointNoThrottle"
@@ -75,12 +75,7 @@
       <exception cond="GetPosAlt() > GetAltRef()+25" deroute="Standby"/>
       <set value="0" var="autopilot.kill_throttle"/>
       <set value="0" var="autopilot.flight_time"/>
-      <go from="HOME" throttle="1.0" vmode="throttle" wp="CLIMB" pitch="15"/>
-    </block>
-    <block name="ReturnCenterPointNoThrottle">
-      <exception cond="And(!(radio_control.status == RC_REALLY_LOST), And(InsideGeoFence(GetPosX(), GetPosY()), MoreThan(GetPosAlt(), GetAltRef() + 20)))" deroute="Standby"/>
-      <set value="1" var="autopilot.kill_throttle"/>
-      <circle radius="nav_radius" wp="CenterPoint" vmode="throttle" throttle="0.0"/>
+      <go from="HOME" throttle="1.0" vmode="throttle" wp="CLIMB" pitch="25"/>
     </block>
     <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">
       <set value="0" var="autopilot.kill_throttle"/>
@@ -125,6 +120,11 @@
     <block name="flare">
       <go approaching_time="0" from="AF" hmode="route" throttle="0.0" vmode="throttle" wp="TD"/>
       <attitude roll="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="ReturnCenterPointNoThrottle">
+      <exception cond="And(!(radio_control.status == RC_REALLY_LOST), And(InsideGeoFence(GetPosX(), GetPosY()), And(MoreThan(GetPosAlt(), GetAltRef() + 20), LessThan(GetPosAlt(), GetAltRef() + 80))))" deroute="Standby"/>
+      <set value="1" var="autopilot.kill_throttle"/>
+      <circle radius="nav_radius" wp="CenterPoint" vmode="throttle" throttle="0.0"/>
     </block>
   </blocks>
 </flight_plan>
