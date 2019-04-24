@@ -15,14 +15,15 @@ ap.MAKEFILE = disco
 
 # -----------------------------------------------------------------------
 USER=foobar
-HOST?=192.168.42.1
+HOST?=10.8.0.18
 SUB_DIR=internal_000/paparazzi
 FTP_DIR=/data/ftp
 TARGET_DIR=$(FTP_DIR)/$(SUB_DIR)
 # -----------------------------------------------------------------------
 
 # The datalink default uses UDP
-MODEM_HOST         ?= 192.168.42.255
+#MODEM_HOST         ?= 192.168.42.255
+MODEM_HOST         = 10.8.0.6
 
 # The GPS sensor is connected internally
 GPS_PORT           ?= UART1
