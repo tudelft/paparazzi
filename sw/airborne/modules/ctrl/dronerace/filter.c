@@ -7,6 +7,7 @@
 #include <math.h>
 #include "std.h"
 #include "stdio.h"
+#include "state.h"
 
 // to know if we are simulating:
 #include "generated/airframe.h"
@@ -52,6 +53,107 @@ float filteredX, filteredY;
 #define DR_FILTER_THRUSTCORR  0.8
 #endif
 
+#define VERSION_SUPERSTATE 1
+
+#ifdef VERSION_SUPERSTATE
+
+bool first_call = true;
+
+float *velWorld;
+float *posWorld;
+
+void filter_predict(float phi, float theta, float psi, float dt)
+{
+  ////////////////////////////////////////////////////////////////////////
+  // Body accelerations
+  if (first_call) {
+    // init is imp, dead reckon
+    velWorld = (float [3]) {0,0,0};
+    posWorld = (float [3]) {stateGetPositionNed_f()->x, stateGetPositionNed_f()->y, stateGetPositionNed_f()->z};
+
+    first_call = false;
+  }
+
+  float az = -9.81 / (cosf(theta) * cosf(phi));
+
+  // float bodyVel[3] = {dr_state.vx, dr_state.vy, 0}; // TODO: replace to vz
+
+  float world2body[3][3] ={{cos(theta)*cos(psi), cos(theta)*sin(psi), -sin(theta)},
+      {sin(phi)*sin(theta)*cos(psi)-cos(phi)*sin(psi), sin(phi)*sin(theta)*sin(psi)+cos(phi)*cos(psi), sin(phi)*cos(theta)},
+      {cos(phi)*sin(theta)*cos(psi)+sin(phi)*sin(psi), cos(phi)*sin(theta)*sin(psi)-sin(phi)*cos(psi), cos(phi)*cos(theta)}};
+  
+  float rpmAvg = (actuators_bebop.rpm_obs[0] + actuators_bebop.rpm_obs[1] + actuators_bebop.rpm_obs[2] + actuators_bebop.rpm_obs[3])/4;
+  
+  float kdx = 1.0428;
+  float kdy = 1.0095;
+
+  float kd[3][3] = {{-kdx * rpmAvg, 0, 0}, {0, -kdy * rpmAvg, 0}, {0,0,0}};
+
+
+  //  accBody = kd * world2body * worldVel;
+  float accBody_temp[3] = {0};
+  float bodyVel_temp[3] = {0};
+  float_mat_vect_mul(bodyVel_temp, world2body, velWorld, 3, 3); // TODO: but this is scaled :( )
+  float_mat_vect_mul(accBody_temp, kd, bodyVel_temp, 3, 3);
+  
+  float accBody[3] = {accBody_temp[1], accBody_temp[2], az};
+
+  // acc_t = ([0;0;9.8] + R'* [0;0;thrust(i,3)] + R'* [a_body(i,1); a_body(i,2); 0])';
+  float grav[3] = {0, 0, 9.8};
+  float body2world[3][3] = {0};
+  float_mat_transpose(body2world, world2body, 3, 3); 
+
+  float accWorld[3] = {0};
+  float_mat_vect_mul(accWorld, body2world, accBody, 3, 3);
+  float_vect_add(accWorld, grav, 3);
+
+  float tmp[3] = {0};
+  float_vect_smul(tmp, accWorld, dt, 3);    // tmp  = accWorld*dt
+
+  float_vect_add(velWorld, tmp, 3);   // velWorld += accWorld*dt
+  
+  float_vect_smul(tmp, velWorld, dt, 3);    // tmp = velWorld * dt
+
+  float_vect_add(posWorld, tmp, 3);   // posWorld += velWorld * dt
+  
+  //TODO:  + 0.5 * accWorld * dt * dt; 
+  dr_state.vx += accWorld[1]; // * dt; // already scaled by dt
+  dr_state.vy += accWorld[2]; // * dt; // already scaled by dt
+  dr_state.x +=  dr_state.vx * dt; //TODO: + 0.5 * dr_state.accWorld[1] * dt *dt;
+  dr_state.y +=  dr_state.vy * dt; //TODO: + 0.5 * dr_state.accWorld[2] * dt *dt;
+
+
+    /*
+    % Kdrag - Kumar: work here
+    kd = rpmAvg(i,1) * [-kdx 0 0; 0 -kdy 0; 0 0 0];
+    a_body(i, 1:3) = (kd * R * vel_w2(i-1, 1:3)')'; % plus some bias. 
+    
+    acc_t = ([0;0;9.8] + R'* [0;0;thrust(i,3)] + R'* [a_body(i,1); a_body(i,2); 0])';
+    acc_w2(i,1) = acc_t(1);
+    acc_w2(i,2) = acc_t(2);
+    acc_w2(i,3) = acc_t(3);
+    vel_w2(i,1:3) = vel_w2(i-1,1:3) + (acc_w2(i,1:3) .* dt);
+    pos_w2(i,1:3) = pos_w2(i-1,1:3) + (vel_w2(i,1:3) .* dt); 
+    */
+
+  // Store psi for local corrections
+  dr_state.psi = psi; // TODO: use psi command?
+
+  // Store old states for latency compensation
+  fifo_push(dr_state.x, dr_state.y, 0);
+
+  // Check if Ransac buffer is empty
+  //ransac_propagate();
+
+  filteredX = dr_state.x;
+  filteredY = dr_state.y;
+
+}
+
+
+
+#else
+
 void filter_predict(float phi, float theta, float psi, float dt)
 {
   ////////////////////////////////////////////////////////////////////////
@@ -89,6 +191,8 @@ void filter_predict(float phi, float theta, float psi, float dt)
   filteredY = dr_state.y;
 
 }
+
+#endif
 
 float log_mx, log_my;
 float mx, my;

@@ -250,7 +250,7 @@ void dronerace_periodic(void)
   input_phi = stateGetNedToBodyEulers_f()->phi - phi_bias;
   input_theta = stateGetNedToBodyEulers_f()->theta - theta_bias;
   input_psi = stateGetNedToBodyEulers_f()->psi - psi0;
-
+  
   filter_predict(input_phi,input_theta,input_psi, dt);
 
   // Vision update
