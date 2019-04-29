@@ -35,6 +35,8 @@ extern struct dronerace_state_struct dr_state;
 extern void filter_reset(void);
 
 extern void filter_predict(float phi, float theta, float psi, float dt);
+extern void filter_predict1(float phi, float theta, float psi, float dt);
+
 extern void filter_correct(void);
 extern float mx;
 extern float my;

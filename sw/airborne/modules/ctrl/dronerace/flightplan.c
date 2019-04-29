@@ -28,9 +28,10 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
 // both_side: bool in Jevois code, 0 or 1 here.
 const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
   //  X-coordinate  Y-coordinate  Z-coordinate   Psi-gate          Speed    Type-of-gate  Brake-at-gate   Distance-after gate       both side
-  {   2,          0,          -1.4,          RadOfDeg(0),      1.2f,    REGULAR,      BRAKE,          0.0,                      0},
-  {   0,          2,          -1.4,          RadOfDeg(0),      1.2f,    REGULAR,      BRAKE,          0.0,                      0},
-  {   0,          0,          -1.4,          RadOfDeg(0),      1.2f,    REGULAR,      BRAKE,          0.0,                      0},
+  {   3,          0,          -1.2,          RadOfDeg(0),      0.9f,    REGULAR,      BRAKE,          0.0,                      0},
+  {   3,          3,          -1.2,          RadOfDeg(0),      0.9f,    REGULAR,      BRAKE,          0.0,                      0},
+  {   0,          3,          -1.2,          RadOfDeg(0),      0.9f,    REGULAR,      BRAKE,          0.0,                      0},
+  {   0,          0,          -1.2,          RadOfDeg(0),      0.9f,    REGULAR,      BRAKE,          0.0,                      0},
 };
 
 struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];

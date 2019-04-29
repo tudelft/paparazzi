@@ -88,11 +88,11 @@ void guidance_h_module_run(bool in_flight)
   ctrl.cmd.phi = ANGLE_BFP_OF_REAL(roll);
   ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch);//-ANGLE_BFP_OF_REAL(5*3.142/180);//ANGLE_BFP_OF_REAL(pitch);
   ctrl.cmd.psi = ANGLE_BFP_OF_REAL(yaw); // stateGetNedToBodyEulers_f()->psi;//
-
+  /*
   ctrl.cmd.phi = 0;
   ctrl.cmd.theta = -ANGLE_BFP_OF_REAL(25*3.142/180); //-ANGLE_BFP_OF_REAL(5*3.142/180);//ANGLE_BFP_OF_REAL(pitch);
   ctrl.cmd.psi = ANGLE_BFP_OF_REAL(0); // stateGetNedToBodyEulers_f()->psi;//
-
+  */
   stabilization_attitude_set_rpy_setpoint_i(&(ctrl.cmd));
   stabilization_attitude_run(in_flight);
 

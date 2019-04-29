@@ -253,6 +253,7 @@ void dronerace_periodic(void)
   
   filter_predict(input_phi,input_theta,input_psi, dt);
 
+
   // Vision update
   // printf("input count, vision count: %d, %d\n", input_cnt, dr_vision.cnt);
   /*
@@ -307,13 +308,6 @@ void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi_cmd)
   *theta = dr_control.theta_cmd;
   *psi_cmd = dr_control.psi_cmd + psi0;
   *alt = - dr_control.z_cmd;
-  
-  /*
-  *phi = 0;
-  *theta = -ANGLE_BFP_OF_REAL(43*3.142/180);
-  *psi_cmd = 0; // ANGLE_BFP_OF_REAL(37.5*3.142/180);
-  *alt = - dr_control.z_cmd;
-  */
 
   guidance_v_z_sp = POS_BFP_OF_REAL(dr_control.z_cmd);
 }

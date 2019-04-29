@@ -9,6 +9,8 @@
 #include "stdio.h"
 #include "state.h"
 
+#include "math/pprz_algebra_float.h"
+
 // to know if we are simulating:
 #include "generated/airframe.h"
 
@@ -53,16 +55,13 @@ float filteredX, filteredY;
 #define DR_FILTER_THRUSTCORR  0.8
 #endif
 
-#define VERSION_SUPERSTATE 1
-
-#ifdef VERSION_SUPERSTATE
 
 bool first_call = true;
 
 float *velWorld;
 float *posWorld;
 
-void filter_predict(float phi, float theta, float psi, float dt)
+void filter_predict1(float phi, float theta, float psi, float dt)
 {
   ////////////////////////////////////////////////////////////////////////
   // Body accelerations
@@ -84,15 +83,15 @@ void filter_predict(float phi, float theta, float psi, float dt)
   
   float rpmAvg = (actuators_bebop.rpm_obs[0] + actuators_bebop.rpm_obs[1] + actuators_bebop.rpm_obs[2] + actuators_bebop.rpm_obs[3])/4;
   
-  float kdx = 1.0428;
-  float kdy = 1.0095;
+  float kdx = 0.6;
+  float kdy = 0.7;
 
   float kd[3][3] = {{-kdx * rpmAvg, 0, 0}, {0, -kdy * rpmAvg, 0}, {0,0,0}};
 
 
   //  accBody = kd * world2body * worldVel;
-  float accBody_temp[3] = {0};
-  float bodyVel_temp[3] = {0};
+  float accBody_temp[3];
+  float bodyVel_temp[3];
   float_mat_vect_mul(bodyVel_temp, world2body, velWorld, 3, 3); // TODO: but this is scaled :( )
   float_mat_vect_mul(accBody_temp, kd, bodyVel_temp, 3, 3);
   
@@ -100,10 +99,10 @@ void filter_predict(float phi, float theta, float psi, float dt)
 
   // acc_t = ([0;0;9.8] + R'* [0;0;thrust(i,3)] + R'* [a_body(i,1); a_body(i,2); 0])';
   float grav[3] = {0, 0, 9.8};
-  float body2world[3][3] = {0};
+  float body2world[3][3];
   float_mat_transpose(body2world, world2body, 3, 3); 
 
-  float accWorld[3] = {0};
+  float accWorld[3];
   float_mat_vect_mul(accWorld, body2world, accBody, 3, 3);
   float_vect_add(accWorld, grav, 3);
 
@@ -136,6 +135,9 @@ void filter_predict(float phi, float theta, float psi, float dt)
     pos_w2(i,1:3) = pos_w2(i-1,1:3) + (vel_w2(i,1:3) .* dt); 
     */
 
+  // Time
+  dr_state.time += dt;
+
   // Store psi for local corrections
   dr_state.psi = psi; // TODO: use psi command?
 
@@ -150,9 +152,6 @@ void filter_predict(float phi, float theta, float psi, float dt)
 
 }
 
-
-
-#else
 
 void filter_predict(float phi, float theta, float psi, float dt)
 {
@@ -192,7 +191,6 @@ void filter_predict(float phi, float theta, float psi, float dt)
 
 }
 
-#endif
 
 float log_mx, log_my;
 float mx, my;
