@@ -68,8 +68,8 @@ void filter_predict1(float phi, float theta, float psi, float dt)
   if (first_call) {
     // init is imp, dead reckon
     velWorld = (float [3]) {0,0,0};
-    posWorld = (float [3]) {stateGetPositionNed_f()->x, stateGetPositionNed_f()->y, stateGetPositionNed_f()->z};
-
+    // posWorld = (float [3]) {stateGetPositionNed_f()->x, stateGetPositionNed_f()->y, stateGetPositionNed_f()->z};
+    posWorld = (float [3]) {0,0,0};
     first_call = false;
   }
 
@@ -77,16 +77,40 @@ void filter_predict1(float phi, float theta, float psi, float dt)
 
   // float bodyVel[3] = {dr_state.vx, dr_state.vy, 0}; // TODO: replace to vz
 
-  float world2body[3][3] ={{cos(theta)*cos(psi), cos(theta)*sin(psi), -sin(theta)},
+  float _world2body[3][3] ={{cos(theta)*cos(psi), cos(theta)*sin(psi), -sin(theta)},
       {sin(phi)*sin(theta)*cos(psi)-cos(phi)*sin(psi), sin(phi)*sin(theta)*sin(psi)+cos(phi)*cos(psi), sin(phi)*cos(theta)},
       {cos(phi)*sin(theta)*cos(psi)+sin(phi)*sin(psi), cos(phi)*sin(theta)*sin(psi)-sin(phi)*cos(psi), cos(phi)*cos(theta)}};
-  
+  MAKE_MATRIX_PTR(world2body, _world2body, 3);
+
+  world2body[0][0] = cos(theta)*cos(psi);
+  world2body[0][1] = cos(theta)*sin(psi);
+  world2body[0][2] = -sin(theta);
+  world2body[1][0] = sin(phi)*sin(theta)*cos(psi)-cos(phi)*sin(psi);
+  world2body[1][1] = sin(phi)*sin(theta)*sin(psi)+cos(phi)*cos(psi);
+  world2body[1][2] = sin(phi)*cos(theta);
+  world2body[2][0] = cos(phi)*sin(theta)*cos(psi)+sin(phi)*sin(psi);
+  world2body[2][1] = cos(phi)*sin(theta)*sin(psi)-sin(phi)*cos(psi);
+  world2body[2][2] = cos(phi)*cos(theta);
+
+
   float rpmAvg = (actuators_bebop.rpm_obs[0] + actuators_bebop.rpm_obs[1] + actuators_bebop.rpm_obs[2] + actuators_bebop.rpm_obs[3])/4;
   
-  float kdx = 0.6;
-  float kdy = 0.7;
+  float kdx = 0.5379;
+  float kdy = 0.6105;
 
-  float kd[3][3] = {{-kdx * rpmAvg, 0, 0}, {0, -kdy * rpmAvg, 0}, {0,0,0}};
+  float _kd[3][3] = {{-kdx * rpmAvg, 0, 0}, {0, -kdy * rpmAvg, 0}, {0,0,0}};
+  MAKE_MATRIX_PTR(kd, _kd, 3);
+
+
+  kd[0][0] = -kdx * rpmAvg;
+  kd[0][1] = 0;
+  kd[0][2] = 0;
+  kd[1][0] = 0;
+  kd[1][1] = -kdy * rpmAvg;
+  kd[1][2] = 0;
+  kd[2][0] = 0;
+  kd[2][1] = 0;
+  kd[2][2] = 0;
 
 
   //  accBody = kd * world2body * worldVel;
@@ -99,7 +123,9 @@ void filter_predict1(float phi, float theta, float psi, float dt)
 
   // acc_t = ([0;0;9.8] + R'* [0;0;thrust(i,3)] + R'* [a_body(i,1); a_body(i,2); 0])';
   float grav[3] = {0, 0, 9.8};
-  float body2world[3][3];
+  float _body2world[3][3];
+  MAKE_MATRIX_PTR(body2world, _body2world, 3);
+
   float_mat_transpose(body2world, world2body, 3, 3); 
 
   float accWorld[3];
