@@ -120,18 +120,19 @@
   <command_laws>
     <call fun="motor_mixing_run(fbw_motors_on,FALSE,values)"/>
     <let var="th_hold"     value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
+    <let var="fwd_hold"    value="RadioControlValues(RADIO_FMODE)> 4800"/>
 
     <set servo="MOTOR_1"   value="($th_hold? -9600 : motor_mixing.commands[0])"/>
-    <set servo="MOTOR_2"   value="($th_hold? -9600 : motor_mixing.commands[1])"/>
-    <set servo="MOTOR_3"   value="($th_hold? -9600 : motor_mixing.commands[2])"/>
-    <set servo="MOTOR_4"   value="($th_hold? -9600 : motor_mixing.commands[3])"/>
-    <set servo="MOTOR_5"   value="($th_hold? -9600 : motor_mixing.commands[4])"/>
+    <set servo="MOTOR_2"   value="(($th_hold || $fwd_hold)? -9600 : motor_mixing.commands[1])"/>
+    <set servo="MOTOR_3"   value="(($th_hold || $fwd_hold)? -9600 : motor_mixing.commands[2])"/>
+    <set servo="MOTOR_4"   value="(($th_hold || $fwd_hold)? -9600 : motor_mixing.commands[3])"/>
+    <set servo="MOTOR_5"   value="(($th_hold || $fwd_hold)? -9600 : motor_mixing.commands[4])"/>
     <set servo="MOTOR_6"   value="($th_hold? -9600 : motor_mixing.commands[5])"/>
     <set servo="MOTOR_7"   value="($th_hold? -9600 : motor_mixing.commands[6])"/>
-    <set servo="MOTOR_8"   value="($th_hold? -9600 : motor_mixing.commands[7])"/>
-    <set servo="MOTOR_9"   value="($th_hold? -9600 : motor_mixing.commands[8])"/>
-    <set servo="MOTOR_10"  value="($th_hold? -9600 : motor_mixing.commands[9])"/>
-    <set servo="MOTOR_11"  value="($th_hold? -9600 : motor_mixing.commands[10])"/>
+    <set servo="MOTOR_8"   value="(($th_hold || $fwd_hold)? -9600 : motor_mixing.commands[7])"/>
+    <set servo="MOTOR_9"   value="(($th_hold || $fwd_hold)? -9600 : motor_mixing.commands[8])"/>
+    <set servo="MOTOR_10"  value="(($th_hold || $fwd_hold)? -9600 : motor_mixing.commands[9])"/>
+    <set servo="MOTOR_11"  value="(($th_hold || $fwd_hold)? -9600 : motor_mixing.commands[10])"/>
     <set servo="MOTOR_12"  value="($th_hold? -9600 : motor_mixing.commands[11])"/>
     <set servo="AIL_1"     value="-2*@PITCH + 4*@YAW"/>
     <set servo="AIL_2"     value="-2*@PITCH - 4*@YAW"/>
