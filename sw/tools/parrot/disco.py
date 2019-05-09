@@ -26,7 +26,8 @@ from parrot_utils import ParrotUtils
 
 class Disco(ParrotUtils):
     uav_name = 'Disco'
-    address = '10.8.0.18'
+    address = '10.11.0.18'
+    #address = '192.168.42.1'
     version_file = '/version.txt'
     upload_path = '/data/ftp/'
     check_version_before_run = True

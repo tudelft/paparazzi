@@ -7,18 +7,18 @@
 <airframe name="Disco">
 
   <firmware name="fixedwing">
-    <configure name="PERIODIC_FREQUENCY" value="120"/>
     <configure name="USE_MAGNETOMETER" value="TRUE"/>
 
     <target name="ap" board="disco">
+      <configure name="PERIODIC_FREQUENCY" value="120"/>
       <module name="radio_control" type="sbus"/>
       <define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>
+      <module name="telemetry" type="transparent_udp"/>
     </target>
     <target name="sim" board="pc">
       <module name="radio_control" type="ppm"/>
+      <module name="telemetry" type="transparent"/>
     </target>
-
-    <module name="telemetry" type="transparent_udp"/>
 
     <module name="imu" type="disco"/>
     <module name="ahrs" type="float_dcm"/>
