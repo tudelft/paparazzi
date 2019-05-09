@@ -132,9 +132,11 @@
     <define name="ALTITUDE_MAX_CLIMB" value="4."/>
     <!-- disable climb rate limiter -->
     <define name="AUTO_CLIMB_LIMIT" value="2*V_CTL_ALTITUDE_MAX_CLIMB"/>
+    <!-- trim added -->
+    <define name="PITCH_TRIM" value="2." unit="deg"/>
 
     <!-- Cruise throttle + limits -->
-    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.48"/>
+    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.6"/>
     <define name="AUTO_THROTTLE_MIN_CRUISE_THROTTLE" value="0.25"/>
     <define name="AUTO_THROTTLE_MAX_CRUISE_THROTTLE" value="0.85"/>
 
