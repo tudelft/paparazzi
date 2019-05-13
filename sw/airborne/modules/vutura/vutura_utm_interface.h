@@ -26,7 +26,9 @@
 #ifndef VUTURA_UTM_INTERFACE_H
 #define VUTURA_UTM_INTERFACE_H
 
+extern void init_vutura_utm_interface(void);
 extern void parse_gps(void);
+extern void avoid_check(void);
 
 #endif
 

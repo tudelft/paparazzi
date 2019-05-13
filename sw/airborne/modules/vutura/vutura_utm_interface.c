@@ -38,6 +38,11 @@
 #define VERBOSE_PRINT(...)
 #endif
 
+void init_vutura_utm_interface(void)
+{
+	return;
+}
+
 void parse_gps(void)
 {
 	struct LlaCoor_i *lonlatalt = stateGetPositionLla_i();
@@ -51,6 +56,11 @@ void parse_gps(void)
 
 	VERBOSE_PRINT("lon %i [degE7], lat %i [degE7], alt %i [mm] \n", lon, lat, alt);
 	VERBOSE_PRINT("Vn %i [mm/s], Ve %i [mm/s], Vd %i [mm/s] \n", Vn, Ve, Vd);
+	return;
+}
+
+void avoid_check(void)
+{
 	return;
 }
 

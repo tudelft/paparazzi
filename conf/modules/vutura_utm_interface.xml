@@ -7,7 +7,9 @@
   <header>
     <file name="vutura_utm_interface.h"/>
   </header>
+  <init fun="init_vutura_utm_interface()"/>
   <periodic fun="parse_gps()" freq="4"/>
+  <event fun="avoid_check()"/>
   <makefile>
     <file name="vutura_utm_interface.c"/>
   </makefile>
