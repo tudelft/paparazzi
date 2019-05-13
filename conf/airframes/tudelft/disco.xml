@@ -37,6 +37,7 @@
       <define name="USE_SONAR"/>
       <define name="SENSOR_SYNC_SEND_SONAR"/>
     </module>-->
+  <module name="vutura_utm_interface"/>
   </firmware>
 
   <servos>

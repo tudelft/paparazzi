@@ -1,0 +1,15 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="vutura_utm_interface" dir="vutura">
+  <doc>
+    <description>Sends over position and speed data to vutura utm module</description>
+  </doc>
+  <header>
+    <file name="vutura_utm_interface.h"/>
+  </header>
+  <periodic fun="parse_gps()" freq="4"/>
+  <makefile>
+    <file name="vutura_utm_interface.c"/>
+  </makefile>
+</module>
+
