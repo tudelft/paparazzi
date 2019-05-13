@@ -97,7 +97,7 @@
       <attitude roll="0" throttle="0" vmode="throttle"/>
     </block>
     <block key="t" name="Takeoff" strip_button="Takeoff (wp CLIMB)" strip_icon="takeoff.png" group="home">
-      <exception cond="GetPosAlt() > GetAltRef()+25" deroute="disco_wind_from_west_wide_taxitrack"/>
+      <exception cond="GetPosAlt() > GetAltRef()+25" deroute="disco_wind_from_east_wide_taxitrack"/>
       <set value="0" var="autopilot.kill_throttle"/>
       <set value="0" var="autopilot.flight_time"/>
       <go from="HOME" throttle="1.0" vmode="throttle" wp="CLIMB" pitch="25"/>
