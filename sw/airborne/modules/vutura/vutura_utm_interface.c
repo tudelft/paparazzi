@@ -28,6 +28,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
 
 #define VUTURA_UTM_INTERFACE_VERBOSE 1
 
@@ -38,24 +41,63 @@
 #define VERBOSE_PRINT(...)
 #endif
 
+struct vutura_utm_interface_t {
+	int fd;
+	struct sockaddr_in ext_addr;
+	struct sockaddr_in loc_addr;
+	uint8_t buf[2041];
+} vutura_utm_data;
+
+
 void init_vutura_utm_interface(void)
 {
-	return;
+	// Make a UDP connection
+	vutura_utm_data.fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+	// Listen to UAV
+	memset(&vutura_utm_data.loc_addr, 0, sizeof(vutura_utm_data.loc_addr));
+	vutura_utm_data.loc_addr.sin_family = AF_INET;
+	vutura_utm_data.loc_addr.sin_addr.s_addr = INADDR_ANY;
+	vutura_utm_data.loc_addr.sin_port = htons(8200);
+
+	if (bind(vutura_utm_data.fd, (struct sockaddr *)&vutura_utm_data.loc_addr, sizeof(struct sockaddr)) == -1)
+	{
+		VERBOSE_PRINT("UDP bind failed");
+		close(vutura_utm_data.fd);
+		exit(EXIT_FAILURE);
+	}
+
+	// Configure socket for sending to UAV
+	memset(&vutura_utm_data.ext_addr, 0, sizeof(vutura_utm_data.ext_addr));
+	vutura_utm_data.ext_addr.sin_family = AF_INET;
+	vutura_utm_data.ext_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	vutura_utm_data.ext_addr.sin_port = htons(14551);
 }
 
 void parse_gps(void)
 {
 	struct LlaCoor_i *lonlatalt = stateGetPositionLla_i();
 	struct NedCoor_f *speed_ned = stateGetSpeedNed_f();
-	int32_t lon = lonlatalt->lon; // [deg e7]
-	int32_t lat = lonlatalt->lat; // [deg e7]]
-	int32_t alt = lonlatalt->alt; // [m]
-	int32_t Vn  = speed_ned->x * 1000.; // [mm/s]
-	int32_t Ve  = speed_ned->y * 1000.; // [mm/s]
-	int32_t Vd  = speed_ned->z * 1000.; // [mm/s]
 
-	VERBOSE_PRINT("lon %i [degE7], lat %i [degE7], alt %i [mm] \n", lon, lat, alt);
-	VERBOSE_PRINT("Vn %i [mm/s], Ve %i [mm/s], Vd %i [mm/s] \n", Vn, Ve, Vd);
+	// Construct message
+	PaparazziToVuturaMsg msg;
+
+	msg.lon = lonlatalt->lon; // [deg e7]
+	msg.lat = lonlatalt->lat; // [deg e7]]
+	msg.alt = lonlatalt->alt; // [m]
+	msg.Vn  = speed_ned->x * 1000.; // [mm/s]
+	msg.Ve  = speed_ned->y * 1000.; // [mm/s]
+	msg.Vd  = speed_ned->z * 1000.; // [mm/s]
+
+	VERBOSE_PRINT("lon %i [degE7], lat %i [degE7], alt %i [mm] \n", msg.lon, msg.lat, msg.alt);
+	VERBOSE_PRINT("Vn %i [mm/s], Ve %i [mm/s], Vd %i [mm/s] \n", msg.Vn, msg.Ve, msg.Vd);
+
+	// Put it in the buffer
+
+	// Send over UDP
+
+	ssize_t bytes_sent = sendto(vutura_utm_data.fd, &msg, sizeof(msg), 0, (struct sockaddr*)&vutura_utm_data.ext_addr, sizeof(struct sockaddr_in));
+	(void) bytes_sent;
 	return;
 }
 

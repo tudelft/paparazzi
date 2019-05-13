@@ -26,6 +26,21 @@
 #ifndef VUTURA_UTM_INTERFACE_H
 #define VUTURA_UTM_INTERFACE_H
 
+#include <stdint.h>
+
+union paparazzi_to_vutura_msg_t {
+	struct {
+		int32_t lon;
+		int32_t lat;
+		int32_t alt;
+		int32_t Vn;
+		int32_t Ve;
+		int32_t Vd;
+	};
+	unsigned char bytes;
+} __attribute((__packed__));
+typedef union paparazzi_to_vutura_msg_t PaparazziToVuturaMsg;
+
 extern void init_vutura_utm_interface(void);
 extern void parse_gps(void);
 extern void avoid_check(void);
