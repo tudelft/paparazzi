@@ -33,10 +33,10 @@
     <module name="actuators" type="disco"/>
     <module name="control" type="new"/>
     <module name="navigation"/>
-    <module name="sonar_bebop">
+    <!--<module name="sonar_bebop">
       <define name="USE_SONAR"/>
       <define name="SENSOR_SYNC_SEND_SONAR"/>
-    </module>
+    </module>-->
   </firmware>
 
   <servos>
