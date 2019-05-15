@@ -113,7 +113,8 @@ void guidance_v_module_enter(void)
   // your code that should be executed when entering this vertical mode goes here
 }
 
-void guidance_v_module_run(UNUSED bool in_flight)
+void guidance_v_module_run(bool in_flight)
 {
+  stabilization_cmd[COMMAND_THRUST] = ctrl_module_demo.rc_t;
   // your vertical controller goes here
 }

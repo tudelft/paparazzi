@@ -32,6 +32,7 @@
 #include "std.h"
 
 #include "subsystems/imu.h"
+
 #ifdef COMMAND_THRUST
 #include "firmwares/rotorcraft/stabilization.h"
 #else
@@ -168,18 +169,18 @@ void file_logger_periodic(void)
           quat->qx,
           quat->qy,
           quat->qz
-                                          &stabilization_cmd[COMMAND_THRUST],
-                                &stabilization_cmd[COMMAND_ROLL],
-                                &stabilization_cmd[COMMAND_PITCH],
-                                &stabilization_cmd[COMMAND_YAW],
-                                &actuators_bebop.rpm_ref[0],
-                                &actuators_bebop.rpm_ref[1],
-                                &actuators_bebop.rpm_ref[2],
-                                &actuators_bebop.rpm_ref[3],
-                                &actuators_bebop.rpm_obs[0],
-                                &actuators_bebop.rpm_obs[1],
-                                &actuators_bebop.rpm_obs[2],
-                                &actuators_bebop.rpm_obs[3]);
+          &stabilization_cmd[COMMAND_THRUST],
+          &stabilization_cmd[COMMAND_ROLL],
+          &stabilization_cmd[COMMAND_PITCH],
+          &stabilization_cmd[COMMAND_YAW],
+          &actuators_bebop.rpm_ref[0],
+          &actuators_bebop.rpm_ref[1],
+          &actuators_bebop.rpm_ref[2],
+          &actuators_bebop.rpm_ref[3],
+          &actuators_bebop.rpm_obs[0],
+          &actuators_bebop.rpm_obs[1],
+          &actuators_bebop.rpm_obs[2],
+          &actuators_bebop.rpm_obs[3]);
           */
 #else
   fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",

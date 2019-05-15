@@ -73,7 +73,7 @@ void guidance_h_module_read_rc(void)
   //stabilization_attitude_read_rc_setpoint_eulers(&ctrl.rc_sp, autopilot.in_flight, false, false);
 }
 
-
+float time_var = 0.0;
 void guidance_h_module_run(bool in_flight)
 {
   // YOUR NEW HORIZONTAL OUTERLOOP CONTROLLER GOES HERE
@@ -82,20 +82,59 @@ void guidance_h_module_run(bool in_flight)
   float roll = 0.0;
   float pitch = 0.0;
   float yaw = 0.0;
-  
-  dronerace_get_cmd(&alt, &roll, &pitch, &yaw);
+
+  dronerace_get_cmd(&alt, &roll, &pitch, &yaw, &time_var);
 
   ctrl.cmd.phi = ANGLE_BFP_OF_REAL(roll);
   ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch);//-ANGLE_BFP_OF_REAL(5*3.142/180);//ANGLE_BFP_OF_REAL(pitch);
   ctrl.cmd.psi = ANGLE_BFP_OF_REAL(yaw); // stateGetNedToBodyEulers_f()->psi;//
-  /*
-  ctrl.cmd.phi = 0;
-  ctrl.cmd.theta = -ANGLE_BFP_OF_REAL(25*3.142/180); //-ANGLE_BFP_OF_REAL(5*3.142/180);//ANGLE_BFP_OF_REAL(pitch);
-  ctrl.cmd.psi = ANGLE_BFP_OF_REAL(0); // stateGetNedToBodyEulers_f()->psi;//
-  */
+  
+  float abey = 45*3.142/180;
+  if (time_var < 0.8) {
+    ctrl.cmd.phi = ANGLE_BFP_OF_REAL(abey);
+  }
+  if (time_var > 0.8) {
+    ctrl.cmd.phi = ANGLE_BFP_OF_REAL(-abey);
+  }  
+  if (time_var > 1.6) {
+    ctrl.cmd.phi = 0;
+  }
+
   stabilization_attitude_set_rpy_setpoint_i(&(ctrl.cmd));
   stabilization_attitude_run(in_flight);
 
   // Alternatively, use the indi_guidance and send AbiMsgACCEL_SP to it instead of setting pitch and roll
 }
 
+
+void guidance_v_module_init(void)
+{
+  // initialization of your custom vertical controller goes here
+}
+
+// Implement own Vertical loops
+void guidance_v_module_enter(void)
+{
+  // your code that should be executed when entering this vertical mode goes here
+}
+
+void guidance_v_module_run(bool in_flight)
+{ 
+  float nominal = radio_control.values[RADIO_THROTTLE];
+  stabilization_cmd[COMMAND_THRUST] = nominal;
+  if (time_var < 0.8) {
+    stabilization_cmd[COMMAND_THRUST] = nominal * 1.2;
+  }
+  if (time_var > 0.8 && time_var < 1.6) {
+    stabilization_cmd[COMMAND_THRUST] = nominal * 1.3;
+  }  
+
+  if (time_var >= 1.6 && time_var < 1.65) {
+    stabilization_cmd[COMMAND_THRUST] = nominal * 1.1;
+  }
+  // if (time_var > 1.64 && time_var < 2.5) {
+  //   stabilization_cmd[COMMAND_THRUST] = nominal * 0.9;
+  // }
+  
+  // your vertical controller goes here
+}

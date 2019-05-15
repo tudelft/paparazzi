@@ -37,12 +37,26 @@ extern float comode_time;
 #define GUIDANCE_H_MODE_MODULE_SETTING GUIDANCE_H_MODE_MODULE
 
 // But re-using an existing altitude-hold controller
-#define GUIDANCE_V_MODE_MODULE_SETTING GUIDANCE_V_MODE_HOVER
+#define GUIDANCE_V_MODE_MODULE_SETTING GUIDANCE_V_MODE_MODULE
 
 // Implement own Horizontal loops
 extern void guidance_h_module_init(void);
 extern void guidance_h_module_enter(void);
 extern void guidance_h_module_read_rc(void);
 extern void guidance_h_module_run(bool in_flight);
+
+
+
+// Settings
+extern float ctrl_module_demo_pr_ff_gain;  // Pitch/Roll
+extern float ctrl_module_demo_pr_d_gain;
+extern float ctrl_module_demo_y_ff_gain;   // Yaw
+extern float ctrl_module_demo_y_d_gain;
+
+
+// Implement own Vertical loops
+extern void guidance_v_module_init(void);
+extern void guidance_v_module_enter(void);
+extern void guidance_v_module_run(bool in_flight);
 
 #endif /* CTRL_MODULE_OUTERLOOP_DEMO_H_ */

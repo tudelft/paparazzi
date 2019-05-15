@@ -81,6 +81,7 @@ void vertical_ctrl_module_run(bool in_flight)
     int32_t thrust = nominal_throttle + v_ctrl.pgain * err + v_ctrl.igain * v_ctrl.sum_err;
     Bound(thrust, 0, MAX_PPRZ);
     stabilization_cmd[COMMAND_THRUST] = thrust;
+    
     v_ctrl.sum_err += err;
   }
 }
