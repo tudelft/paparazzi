@@ -45,16 +45,23 @@ struct vutura_utm_interface_t {
 	int fd;
 	struct sockaddr_in ext_addr;
 	struct sockaddr_in loc_addr;
-	uint8_t buf[2041];
 } vutura_utm_data;
+
+AvoidanceParameters avoidance;
 
 
 void init_vutura_utm_interface(void)
 {
+	// initialise constants
+	avoidance.avoid = false;
+	avoidance.vn = 0;
+	avoidance.ve = 0;
+	avoidance.vd = 0;
+
 	// Make a UDP connection
 	vutura_utm_data.fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-	// Listen to UAV
+	// Listen to Vutura UTM
 	memset(&vutura_utm_data.loc_addr, 0, sizeof(vutura_utm_data.loc_addr));
 	vutura_utm_data.loc_addr.sin_family = AF_INET;
 	vutura_utm_data.loc_addr.sin_addr.s_addr = INADDR_ANY;
@@ -67,11 +74,12 @@ void init_vutura_utm_interface(void)
 		exit(EXIT_FAILURE);
 	}
 
-	// Configure socket for sending to UAV
+	// Configure socket for sending from UAV to Vutura_utm
 	memset(&vutura_utm_data.ext_addr, 0, sizeof(vutura_utm_data.ext_addr));
 	vutura_utm_data.ext_addr.sin_family = AF_INET;
 	vutura_utm_data.ext_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 	vutura_utm_data.ext_addr.sin_port = htons(14551);
+
 }
 
 void parse_gps(void)
@@ -84,13 +92,13 @@ void parse_gps(void)
 
 	msg.lon = lonlatalt->lon; // [deg e7]
 	msg.lat = lonlatalt->lat; // [deg e7]]
-	msg.alt = lonlatalt->alt; // [m]
+	msg.alt = lonlatalt->alt; // [mm]
 	msg.Vn  = speed_ned->x * 1000.; // [mm/s]
 	msg.Ve  = speed_ned->y * 1000.; // [mm/s]
 	msg.Vd  = speed_ned->z * 1000.; // [mm/s]
 
-	VERBOSE_PRINT("lon %i [degE7], lat %i [degE7], alt %i [mm] \n", msg.lon, msg.lat, msg.alt);
-	VERBOSE_PRINT("Vn %i [mm/s], Ve %i [mm/s], Vd %i [mm/s] \n", msg.Vn, msg.Ve, msg.Vd);
+	//VERBOSE_PRINT("lon %i [degE7], lat %i [degE7], alt %i [mm] \n", msg.lon, msg.lat, msg.alt);
+	//VERBOSE_PRINT("Vn %i [mm/s], Ve %i [mm/s], Vd %i [mm/s] \n", msg.Vn, msg.Ve, msg.Vd);
 
 	// Put it in the buffer
 
@@ -103,6 +111,28 @@ void parse_gps(void)
 
 void avoid_check(void)
 {
+
+	VuturaToPaparazziMsg msg;
+
+	socklen_t addr_len = sizeof(vutura_utm_data.loc_addr);
+	ssize_t count = recvfrom(vutura_utm_data.fd, &msg, sizeof(msg), MSG_DONTWAIT, (struct sockaddr*)&vutura_utm_data.loc_addr, &addr_len);
+	if (count == -1)
+		{
+			//VERBOSE_PRINT("No UDP data\n");
+		}
+		else if (count > sizeof(msg))
+		{
+			//VERBOSE_PRINT("Avoidance datagram too big %i\n", count);
+		}
+		else
+		{
+			avoidance.avoid = msg.avoid;
+			avoidance.vn = msg.vn;
+			avoidance.ve = msg.ve;
+			avoidance.vd = msg.vd;
+			VERBOSE_PRINT("received avoidance msg: avoid->%i, vn->%i, ve->%i, vd->%i\n", avoidance.avoid, avoidance.vn, avoidance.ve, avoidance.vd);
+		}
+
 	return;
 }
 

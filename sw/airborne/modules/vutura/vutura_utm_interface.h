@@ -27,6 +27,7 @@
 #define VUTURA_UTM_INTERFACE_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 union paparazzi_to_vutura_msg_t {
 	struct {
@@ -40,6 +41,30 @@ union paparazzi_to_vutura_msg_t {
 	unsigned char bytes;
 } __attribute((__packed__));
 typedef union paparazzi_to_vutura_msg_t PaparazziToVuturaMsg;
+
+union vutura_to_paparazzi_msg_t {
+	struct  {
+		bool avoid;
+		int32_t vn;
+		int32_t ve;
+		int32_t vd;
+	};
+	unsigned char bytes;
+} __attribute((__packed__));
+typedef union vutura_to_paparazzi_msg_t VuturaToPaparazziMsg;
+
+struct avoidance_parameters_t
+{
+	bool avoid;
+	int32_t vn;
+	int32_t ve;
+	int32_t vd;
+};
+typedef struct avoidance_parameters_t AvoidanceParameters;
+
+// Global variables
+extern AvoidanceParameters avoidance;
+
 
 extern void init_vutura_utm_interface(void);
 extern void parse_gps(void);
