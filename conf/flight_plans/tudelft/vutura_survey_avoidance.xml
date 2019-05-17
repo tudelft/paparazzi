@@ -1,0 +1,313 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="100" ground_alt="0" lat0="52.16810052554008" lon0="4.412674313128298" max_dist_from_home="1500" name="Basic" security_height="50">
+  <header>
+#include "subsystems/datalink/datalink.h"
+</header>
+  <waypoints>
+    <waypoint name="HOME" x="0" y="0"/>
+    <waypoint alt="215.0" name="AF" x="177.4" y="45.1"/>
+    <waypoint alt="185.0" name="TD" x="28.8" y="57.0"/>
+    <waypoint name="_BASELEG" x="168.8" y="-13.8"/>
+    <waypoint name="CLIMB" x="50" y="-50"/>
+    <waypoint name="CenterPoint" lat="52.16882159944184" lon="4.417506194127447"/>
+    <waypoint name="ROUTE_00" lat="52.167153758107176" lon="4.414723323126365" height="100"/>
+    <waypoint name="ROUTE_01" lat="52.16911055333959" lon="4.419393630221458" height="100"/>
+    <waypoint name="ROUTE_02" lat="52.16945359831984" lon="4.419035257415475" height="100"/>
+    <waypoint name="ROUTE_03" lat="52.16751919853292" lon="4.4143615152236295" height="100"/>
+    <waypoint name="ROUTE_04" lat="52.167195593543795" lon="4.414679378434059" height="100"/>
+    <waypoint name="ROUTE_05" lat="52.169146961998564" lon="4.419353555210329" height="100"/>
+    <waypoint name="ROUTE_06" lat="52.16965642732997" lon="4.418822141269236" height="100"/>
+    <waypoint name="ROUTE_07" lat="52.16774437234143" lon="4.4141184706811805" height="100"/>
+    <waypoint name="ROUTE_08" lat="52.16736799513812" lon="4.4144940898599785" height="100"/>
+    <waypoint name="ROUTE_09" lat="52.1692547796185" lon="4.419170430853248" height="100"/>
+    <waypoint name="ROUTE_10" lat="52.16958686197147" lon="4.4188328807239285" height="100"/>
+    <waypoint name="ROUTE_11" lat="52.167697643158306" lon="4.4141097892316985" height="100"/>
+    <waypoint name="ROUTE_12" lat="52.167032279368215" lon="4.4136332835923175" height="100"/>
+    <waypoint name="ROUTE_13" lat="52.167886624910906" lon="4.4128670258116305" height="100"/>
+    <waypoint name="AVOID_00" lat="52.167153758107176" lon="4.414723323126365" height="100"/>
+    <waypoint name="AVOID_01" lat="52.16911055333959" lon="4.419393630221458" height="100"/>
+    <waypoint name="AVOID_02" lat="52.16945359831984" lon="4.419035257415475" height="100"/>
+    <waypoint name="AVOID_03" lat="52.16751919853292" lon="4.4143615152236295" height="100"/>
+    <waypoint name="AVOID_04" lat="52.167195593543795" lon="4.414679378434059" height="100"/>
+    <waypoint name="AVOID_05" lat="52.169146961998564" lon="4.419353555210329" height="100"/>
+    <waypoint name="AVOID_06" lat="52.16965642732997" lon="4.418822141269236" height="100"/>
+    <waypoint name="AVOID_07" lat="52.16774437234143" lon="4.4141184706811805" height="100"/>
+    <waypoint name="AVOID_08" lat="52.16736799513812" lon="4.4144940898599785" height="100"/>
+    <waypoint name="AVOID_09" lat="52.1692547796185" lon="4.419170430853248" height="100"/>
+    <waypoint name="AVOID_10" lat="52.16958686197147" lon="4.4188328807239285" height="100"/>
+    <waypoint name="AVOID_11" lat="52.167697643158306" lon="4.4141097892316985" height="100"/>
+    <waypoint name="AVOID_12" lat="52.167032279368215" lon="4.4136332835923175" height="100"/>
+    <waypoint name="AVOID_13" lat="52.167886624910906" lon="4.4128670258116305" height="100"/>
+    <waypoint name="FENCE_00" lat="52.169851532935944" lon="4.41615338461242"/>
+    <waypoint name="FENCE_01" lat="52.172800906396056" lon="4.422615437701677"/>
+    <waypoint name="FENCE_02" lat="52.17326555208937" lon="4.42404701483153"/>
+    <waypoint name="FENCE_03" lat="52.17098546333649" lon="4.426170882602671"/>
+    <waypoint name="FENCE_04" lat="52.16849635026803" lon="4.420310014187492"/>
+    <waypoint name="FENCE_05" lat="52.16576040601871" lon="4.413352136503864"/>
+    <waypoint name="FENCE_06" lat="52.16792663605859" lon="4.410998171658509"/>
+    <waypoint name="_SW_00" lat="52.16927397628467" lon="4.415536705562699"/>
+    <waypoint name="_SW_01" lat="52.16938912140934" lon="4.415826199268378"/>
+    <waypoint name="_SW_02" lat="52.16901718482455" lon="4.416201044907153"/>
+    <waypoint name="_SW_03" lat="52.168903760082316" lon="4.4159274586688095"/>
+  </waypoints>
+  <sectors>
+    <sector color="yellow" name="GeoFence" type="dynamic">
+      <corner name="FENCE_00"/>
+      <corner name="FENCE_01"/>
+      <corner name="FENCE_02"/>
+      <corner name="FENCE_03"/>
+      <corner name="FENCE_04"/>
+      <corner name="FENCE_05"/>
+      <corner name="FENCE_06"/>
+    </sector>
+    <sector color="red" name="stieltjesweg">
+      <corner name="_SW_00"/>
+      <corner name="_SW_01"/>
+      <corner name="_SW_02"/>
+      <corner name="_SW_03"/>
+    </sector>
+  </sectors>
+  <exceptions>
+    <!-- Datalink timeout -->
+    <!--exception cond="(datalink_time > 22 &&
+      !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('ReturnCenterPointNoThrottle'))" deroute="ReturnCenterPointNoThrottle"/-->
+
+    <!-- RC loss -->
+    <exception cond="((radio_control.status == RC_REALLY_LOST) &&
+      !(IndexOfBlock('Takeoff') > nav_block) &&
+      !(nav_block == IndexOfBlock('ReturnCenterPointNoThrottle')))"
+      deroute="ReturnCenterPointNoThrottle"
+    />
+
+    <!-- Check inside Flight Area, then goto CenterPoint -->
+    <exception cond="(GetPosAlt() > GetAltRef() + 150) &&
+      !(IndexOfBlock('Takeoff') > nav_block) &&
+      !(nav_block == IndexOfBlock('ReturnCenterPointNoThrottle'))"
+      deroute="ReturnCenterPointNoThrottle"
+    />
+    <!--exception cond="!InsideGeoFence(GetPosX(), GetPosY())"
+      deroute="ReturnCenterPointNoThrottle"
+    /-->
+  </exceptions>
+  <blocks>
+    <block name="Wait GPS">
+      <set value="1" var="autopilot.kill_throttle"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="nav_reset_alt()"/>
+    </block>
+    <block name="Holding point">
+      <!--set var="nav_mode" value="NAV_MODE_ROLL"/-->
+      <set value="1" var="autopilot.kill_throttle"/>
+      <attitude roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <block key="t" name="Takeoff" strip_button="Takeoff (wp CLIMB)" strip_icon="takeoff.png" group="home">
+      <exception cond="GetPosAlt() > GetAltRef()+25" deroute="LEG_00"/>
+      <set value="0" var="autopilot.kill_throttle"/>
+      <set value="0" var="autopilot.flight_time"/>
+      <go from="HOME" throttle="1.0" vmode="throttle" wp="CLIMB" pitch="25"/>
+    </block>
+    <block name="LEG_00">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_00_stage0"/>
+    	<go from="ROUTE_00" wp="ROUTE_01" hmode="route"/>
+    	<deroute block="LEG_01"/>
+    </block>
+    <block name="LEG_01">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_01_stage0"/>
+    	<go from="ROUTE_01" wp="ROUTE_02" hmode="route"/>
+    	<deroute block="LEG_02"/>
+    </block>
+    <block name="LEG_02">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_02_stage0"/>
+    	<go from="ROUTE_02" wp="ROUTE_03" hmode="route"/>
+    	<deroute block="LEG_03"/>
+    </block>
+    <block name="LEG_03">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_03_stage0"/>
+    	<go from="ROUTE_03" wp="ROUTE_04" hmode="route"/>
+    	<deroute block="LEG_04"/>
+    </block>
+    <block name="LEG_04">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_04_stage0"/>
+    	<go from="ROUTE_04" wp="ROUTE_05" hmode="route"/>
+    	<deroute block="LEG_05"/>
+    </block>
+    <block name="LEG_05">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_05_stage0"/>
+    	<go from="ROUTE_05" wp="ROUTE_06" hmode="route"/>
+    	<deroute block="LEG_06"/>
+    </block>
+    <block name="LEG_06">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_06_stage0"/>
+    	<go from="ROUTE_06" wp="ROUTE_07" hmode="route"/>
+    	<deroute block="LEG_07"/>
+    </block>
+    <block name="LEG_07">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_07_stage0"/>
+    	<go from="ROUTE_07" wp="ROUTE_08" hmode="route"/>
+    	<deroute block="LEG_08"/>
+    </block>
+    <block name="LEG_08">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_08_stage0"/>
+    	<go from="ROUTE_08" wp="ROUTE_09" hmode="route"/>
+    	<deroute block="LEG_09"/>
+    </block>
+    <block name="LEG_09">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_09_stage0"/>
+    	<go from="ROUTE_09" wp="ROUTE_10" hmode="route"/>
+    	<deroute block="LEG_10"/>
+    </block>
+    <block name="LEG_10">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_10_stage0"/>
+    	<go from="ROUTE_10" wp="ROUTE_11" hmode="route"/>
+    	<deroute block="LEG_11"/>
+    </block>
+    <block name="LEG_11">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_11_stage0"/>
+    	<go from="ROUTE_11" wp="ROUTE_12" hmode="route"/>
+    	<deroute block="LEG_12"/>
+    </block>
+    <block name="LEG_12">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_12_stage0"/>
+    	<go from="ROUTE_12" wp="ROUTE_13" hmode="route"/>
+    	<deroute block="Standby"/>
+    </block>
+    <block name="LEG_AVOID_00_stage0">
+    	<go from="AVOID_00" wp="AVOID_01" hmode="route"/>
+    	<deroute block="LEG_AVOID_00_stage1"/>
+    </block>
+    <block name="LEG_AVOID_00_stage1">
+    	<go from="AVOID_01" wp="ROUTE_01" hmode="route"/>
+    	<deroute block="LEG_01"/>
+    </block>
+    <block name="LEG_AVOID_01_stage0">
+    	<go from="AVOID_01" wp="AVOID_02" hmode="route"/>
+    	<deroute block="LEG_AVOID_01_stage1"/>
+    </block>
+    <block name="LEG_AVOID_01_stage1">
+    	<go from="AVOID_02" wp="ROUTE_02" hmode="route"/>
+    	<deroute block="LEG_02"/>
+    </block>
+    <block name="LEG_AVOID_02_stage0">
+    	<go from="AVOID_02" wp="AVOID_03" hmode="route"/>
+    	<deroute block="LEG_AVOID_02_stage1"/>
+    </block>
+    <block name="LEG_AVOID_02_stage1">
+    	<go from="AVOID_03" wp="ROUTE_03" hmode="route"/>
+    	<deroute block="LEG_03"/>
+    </block>
+    <block name="LEG_AVOID_03_stage0">
+    	<go from="AVOID_03" wp="AVOID_04" hmode="route"/>
+    	<deroute block="LEG_AVOID_03_stage1"/>
+    </block>
+    <block name="LEG_AVOID_03_stage1">
+    	<go from="AVOID_04" wp="ROUTE_04" hmode="route"/>
+    	<deroute block="LEG_04"/>
+    </block>
+    <block name="LEG_AVOID_04_stage0">
+    	<go from="AVOID_04" wp="AVOID_05" hmode="route"/>
+    	<deroute block="LEG_AVOID_04_stage1"/>
+    </block>
+    <block name="LEG_AVOID_04_stage1">
+    	<go from="AVOID_05" wp="ROUTE_05" hmode="route"/>
+    	<deroute block="LEG_05"/>
+    </block>
+    <block name="LEG_AVOID_05_stage0">
+    	<go from="AVOID_05" wp="AVOID_06" hmode="route"/>
+    	<deroute block="LEG_AVOID_05_stage1"/>
+    </block>
+    <block name="LEG_AVOID_05_stage1">
+    	<go from="AVOID_06" wp="ROUTE_06" hmode="route"/>
+    	<deroute block="LEG_06"/>
+    </block>
+    <block name="LEG_AVOID_06_stage0">
+    	<go from="AVOID_06" wp="AVOID_07" hmode="route"/>
+    	<deroute block="LEG_AVOID_06_stage1"/>
+    </block>
+    <block name="LEG_AVOID_06_stage1">
+    	<go from="AVOID_07" wp="ROUTE_07" hmode="route"/>
+    	<deroute block="LEG_07"/>
+    </block>
+    <block name="LEG_AVOID_07_stage0">
+    	<go from="AVOID_07" wp="AVOID_08" hmode="route"/>
+    	<deroute block="LEG_AVOID_07_stage1"/>
+    </block>
+    <block name="LEG_AVOID_07_stage1">
+    	<go from="AVOID_08" wp="ROUTE_08" hmode="route"/>
+    	<deroute block="LEG_08"/>
+    </block>
+    <block name="LEG_AVOID_08_stage0">
+    	<go from="AVOID_08" wp="AVOID_09" hmode="route"/>
+    	<deroute block="LEG_AVOID_08_stage1"/>
+    </block>
+    <block name="LEG_AVOID_08_stage1">
+    	<go from="AVOID_09" wp="ROUTE_09" hmode="route"/>
+    	<deroute block="LEG_09"/>
+    </block>
+    <block name="LEG_AVOID_09_stage0">
+    	<go from="AVOID_09" wp="AVOID_10" hmode="route"/>
+    	<deroute block="LEG_AVOID_09_stage1"/>
+    </block>
+    <block name="LEG_AVOID_09_stage1">
+    	<go from="AVOID_10" wp="ROUTE_10" hmode="route"/>
+    	<deroute block="LEG_10"/>
+    </block>
+    <block name="LEG_AVOID_10_stage0">
+    	<go from="AVOID_10" wp="AVOID_11" hmode="route"/>
+    	<deroute block="LEG_AVOID_10_stage1"/>
+    </block>
+    <block name="LEG_AVOID_10_stage1">
+    	<go from="AVOID_11" wp="ROUTE_11" hmode="route"/>
+    	<deroute block="LEG_11"/>
+    </block>
+    <block name="LEG_AVOID_11_stage0">
+    	<go from="AVOID_11" wp="AVOID_12" hmode="route"/>
+    	<deroute block="LEG_AVOID_11_stage1"/>
+    </block>
+    <block name="LEG_AVOID_11_stage1">
+    	<go from="AVOID_12" wp="ROUTE_12" hmode="route"/>
+    	<deroute block="LEG_12"/>
+    </block>
+    <block name="LEG_AVOID_12_stage0">
+    	<go from="AVOID_12" wp="AVOID_13" hmode="route"/>
+    	<deroute block="LEG_AVOID_12_stage1"/>
+    </block>
+    <block name="LEG_AVOID_12_stage1">
+    	<go from="AVOID_13" wp="ROUTE_13" hmode="route"/>
+    	<deroute block="Standby"/>
+    </block>
+    <block key="Ctrl+a" name="Standby" strip_button="Standby" strip_icon="home.png" group="home">
+      <set value="0" var="autopilot.kill_throttle"/>
+      <circle radius="nav_radius" wp="CenterPoint"/>
+    </block>
+    <block name="Land Right AF-TD" strip_button="Land right (wp AF-TD)" strip_icon="land-right.png" group="land">
+      <set value="DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <deroute block="land"/>
+    </block>
+    <block name="Land Left AF-TD" strip_button="Land left (wp AF-TD)" strip_icon="land-left.png" group="land">
+      <set value="-DEFAULT_CIRCLE_RADIUS" var="nav_radius"/>
+      <deroute block="land"/>
+    </block>
+    <block name="land">
+      <call_once fun="nav_compute_baseleg(WP_AF, WP_TD, WP__BASELEG, nav_radius)"/>
+      <circle radius="nav_radius" until="NavCircleCount() > 0.5" wp="_BASELEG"/>
+      <circle radius="nav_radius" until="And(NavQdrCloseTo(DegOfRad(baseleg_out_qdr)-(nav_radius/fabs(nav_radius))*10), 10 > fabs(GetPosAlt() - WaypointAlt(WP__BASELEG)))" wp="_BASELEG"/>
+    </block>
+    <block name="final">
+      <exception cond="GetAltRef() + 10 > GetPosAlt()" deroute="flare"/>
+      <go from="AF" hmode="route" vmode="glide" wp="TD"/>
+    </block>
+    <block name="flare">
+      <go approaching_time="0" from="AF" hmode="route" throttle="0.0" vmode="throttle" wp="TD"/>
+      <attitude roll="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="ReturnCenterPointNoThrottle">
+      <exception cond="And(!(radio_control.status == RC_REALLY_LOST), And(InsideGeoFence(GetPosX(), GetPosY()), And(MoreThan(GetPosAlt(), GetAltRef() + 20), LessThan(GetPosAlt(), GetAltRef() + 80))))" deroute="Standby"/>
+      <set value="1" var="autopilot.kill_throttle"/>
+      <circle radius="nav_radius" wp="CenterPoint" vmode="throttle" throttle="0.0"/>
+    </block>
+  </blocks>
+</flight_plan>

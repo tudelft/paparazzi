@@ -120,11 +120,7 @@ void avoid_check(void)
 		{
 			//VERBOSE_PRINT("No UDP data\n");
 		}
-		else if (count > sizeof(msg))
-		{
-			//VERBOSE_PRINT("Avoidance datagram too big %i\n", count);
-		}
-		else
+		else if (count == sizeof(msg))
 		{
 			avoidance.avoid = msg.avoid;
 			avoidance.vn = msg.vn;
@@ -132,8 +128,16 @@ void avoid_check(void)
 			avoidance.vd = msg.vd;
 			VERBOSE_PRINT("received avoidance msg: avoid->%i, vn->%i, ve->%i, vd->%i\n", avoidance.avoid, avoidance.vn, avoidance.ve, avoidance.vd);
 		}
+		else
+		{
+			//VeRBOSE_PRINT("msg not of correct size);
+		}
 
 	return;
 }
 
+bool GetAvoid(void)
+{
+	return avoidance.avoid;
+}
 

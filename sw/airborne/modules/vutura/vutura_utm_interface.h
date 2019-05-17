@@ -70,5 +70,8 @@ extern void init_vutura_utm_interface(void);
 extern void parse_gps(void);
 extern void avoid_check(void);
 
+// functions to be called in flightplan exceptions
+extern bool GetAvoid(void);
+
 #endif
 
