@@ -24,17 +24,19 @@
  */
 
 #include "modules/vutura/vutura_utm_interface.h"
-#include "state.h"
+#include "firmwares/fixedwing/nav.h"
+#include "generated/flight_plan.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <string.h>
 
 
 #define VUTURA_UTM_INTERFACE_VERBOSE 1
 
-#define PRINT(string,...) fprintf(stderr, "[orange_avoider->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
+#define PRINT(string,...) fprintf(stderr, "[vutura_utm->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 #if VUTURA_UTM_INTERFACE_VERBOSE
 #define VERBOSE_PRINT PRINT
 #else
@@ -48,10 +50,13 @@ struct vutura_utm_interface_t {
 } vutura_utm_data;
 
 AvoidanceParameters avoidance;
-
+FlightplanParameters flightplan;
 
 void init_vutura_utm_interface(void)
 {
+	// Initialise flightplan
+	InitFlightplan();
+
 	// initialise constants
 	avoidance.avoid = false;
 	avoidance.vn = 0;
@@ -97,14 +102,11 @@ void parse_gps(void)
 	msg.Ve  = speed_ned->y * 1000.; // [mm/s]
 	msg.Vd  = speed_ned->z * 1000.; // [mm/s]
 
-	//VERBOSE_PRINT("lon %i [degE7], lat %i [degE7], alt %i [mm] \n", msg.lon, msg.lat, msg.alt);
-	//VERBOSE_PRINT("Vn %i [mm/s], Ve %i [mm/s], Vd %i [mm/s] \n", msg.Vn, msg.Ve, msg.Vd);
-
 	// Put it in the buffer
 
 	// Send over UDP
 
-	ssize_t bytes_sent = sendto(vutura_utm_data.fd, &msg, sizeof(msg), 0, (struct sockaddr*)&vutura_utm_data.ext_addr, sizeof(struct sockaddr_in));
+	ssize_t bytes_sent = sendto(vutura_utm_data.fd, &msg, sizeof(msg), 0, (struct sockaddr*)&vutura_utm_data.ext_addr, sizeof(vutura_utm_data.ext_addr));
 	(void) bytes_sent;
 	return;
 }
@@ -126,11 +128,13 @@ void avoid_check(void)
 			avoidance.vn = msg.vn;
 			avoidance.ve = msg.ve;
 			avoidance.vd = msg.vd;
-			VERBOSE_PRINT("received avoidance msg: avoid->%i, vn->%i, ve->%i, vd->%i\n", avoidance.avoid, avoidance.vn, avoidance.ve, avoidance.vd);
+			avoidance.lat = msg.lat;
+			avoidance.lon = msg.lon;
+			VERBOSE_PRINT("received avoidance msg: avoid->%i, vn->%i, ve->%i, vd->%i, lat->%i, lon->%i\n", avoidance.avoid, avoidance.vn, avoidance.ve, avoidance.vd, avoidance.lat, avoidance.lon);
 		}
 		else
 		{
-			//VeRBOSE_PRINT("msg not of correct size);
+			//VERBOSE_PRINT("msg not of correct size\n");
 		}
 
 	return;
@@ -139,5 +143,74 @@ void avoid_check(void)
 bool GetAvoid(void)
 {
 	return avoidance.avoid;
+}
+
+void InitFlightplan(void)
+{
+	flightplan.start_index_ROUTE = WP_ROUTE_00;
+	flightplan.start_index_AVOID = WP_AVOID_00;
+	flightplan.lla_ref_i.lat = NAV_LAT0;
+	flightplan.lla_ref_i.lon = NAV_LON0;
+	flightplan.lla_ref_i.alt = NAV_ALT0;
+	ltp_def_from_lla_i(&flightplan.ltp_ref_i, &flightplan.lla_ref_i);
+}
+
+void RunAvoidance(void)
+{
+	// First check if LEG_xx block is activated
+	char* fp_blocks[NB_BLOCK] = FP_BLOCKS;
+	uint8_t leg_number;
+
+	// Check if LEG and/or AVOID block is activated and move avoidance waypoints
+	if (strstr(fp_blocks[nav_block], "LEG_") != NULL)
+	{
+		char leg_number_c[2];
+
+		if (strstr(fp_blocks[nav_block], "_AVOID_") != NULL)
+		{
+			// Check LEG number if in AVOID LEG
+			leg_number_c[0] = fp_blocks[nav_block][10];
+			leg_number_c[1] = fp_blocks[nav_block][11];
+			leg_number = atoi(leg_number_c);
+		}
+		else
+		{
+			// Check LEG number if in regular LEG
+			leg_number_c[0] = fp_blocks[nav_block][4];
+			leg_number_c[1] = fp_blocks[nav_block][5];
+			leg_number = atoi(leg_number_c);
+		}
+
+		// If in LEG or AVOID, move waypoints in case of avoidance
+		if (avoidance.avoid)
+		{
+			uint8_t wp_id_from = flightplan.start_index_AVOID + leg_number;
+			uint8_t wp_id_to = wp_id_from + 1;
+
+			NavSetWaypointHere(wp_id_from);
+
+			set_wp_at_latlon(wp_id_to, avoidance.lat, avoidance.lon);
+
+
+
+		}
+	}
+}
+
+void set_wp_at_latlon(uint8_t wp_id, int32_t lat, int32_t lon)
+{
+	struct LlaCoor_i wp_lla_i;
+	struct EnuCoor_i wp_enu_i;
+	struct EnuCoor_f wp_enu_f;
+	wp_lla_i.lat = lat;
+	wp_lla_i.lon = lon;
+	wp_lla_i.alt = WaypointAlt(wp_id) / 1000.;
+
+	enu_of_lla_point_i(&wp_enu_i, &flightplan.ltp_ref_i, &wp_lla_i);
+
+	ENU_FLOAT_OF_BFP(wp_enu_f, wp_enu_i);
+
+	waypoints[wp_id].x = wp_enu_f.x;
+	waypoints[wp_id].y = wp_enu_f.y;
 }
 

@@ -180,6 +180,7 @@
     	<deroute block="LEG_AVOID_00_stage1"/>
     </block>
     <block name="LEG_AVOID_00_stage1">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_00_stage0"/>
     	<go from="AVOID_01" wp="ROUTE_01" hmode="route"/>
     	<deroute block="LEG_01"/>
     </block>
@@ -188,6 +189,7 @@
     	<deroute block="LEG_AVOID_01_stage1"/>
     </block>
     <block name="LEG_AVOID_01_stage1">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_01_stage0"/>
     	<go from="AVOID_02" wp="ROUTE_02" hmode="route"/>
     	<deroute block="LEG_02"/>
     </block>
@@ -196,6 +198,7 @@
     	<deroute block="LEG_AVOID_02_stage1"/>
     </block>
     <block name="LEG_AVOID_02_stage1">
+    <exception cond="GetAvoid()" deroute="LEG_AVOID_02_stage0"/>
     	<go from="AVOID_03" wp="ROUTE_03" hmode="route"/>
     	<deroute block="LEG_03"/>
     </block>
@@ -204,6 +207,7 @@
     	<deroute block="LEG_AVOID_03_stage1"/>
     </block>
     <block name="LEG_AVOID_03_stage1">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_03_stage0"/>
     	<go from="AVOID_04" wp="ROUTE_04" hmode="route"/>
     	<deroute block="LEG_04"/>
     </block>
@@ -212,6 +216,7 @@
     	<deroute block="LEG_AVOID_04_stage1"/>
     </block>
     <block name="LEG_AVOID_04_stage1">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_04_stage0"/>
     	<go from="AVOID_05" wp="ROUTE_05" hmode="route"/>
     	<deroute block="LEG_05"/>
     </block>
@@ -220,6 +225,7 @@
     	<deroute block="LEG_AVOID_05_stage1"/>
     </block>
     <block name="LEG_AVOID_05_stage1">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_05_stage0"/>
     	<go from="AVOID_06" wp="ROUTE_06" hmode="route"/>
     	<deroute block="LEG_06"/>
     </block>
@@ -228,6 +234,7 @@
     	<deroute block="LEG_AVOID_06_stage1"/>
     </block>
     <block name="LEG_AVOID_06_stage1">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_06_stage0"/>
     	<go from="AVOID_07" wp="ROUTE_07" hmode="route"/>
     	<deroute block="LEG_07"/>
     </block>
@@ -236,6 +243,7 @@
     	<deroute block="LEG_AVOID_07_stage1"/>
     </block>
     <block name="LEG_AVOID_07_stage1">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_07_stage0"/>
     	<go from="AVOID_08" wp="ROUTE_08" hmode="route"/>
     	<deroute block="LEG_08"/>
     </block>
@@ -244,6 +252,7 @@
     	<deroute block="LEG_AVOID_08_stage1"/>
     </block>
     <block name="LEG_AVOID_08_stage1">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_08_stage0"/>
     	<go from="AVOID_09" wp="ROUTE_09" hmode="route"/>
     	<deroute block="LEG_09"/>
     </block>
@@ -252,6 +261,7 @@
     	<deroute block="LEG_AVOID_09_stage1"/>
     </block>
     <block name="LEG_AVOID_09_stage1">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_09_stage0"/>
     	<go from="AVOID_10" wp="ROUTE_10" hmode="route"/>
     	<deroute block="LEG_10"/>
     </block>
@@ -260,6 +270,7 @@
     	<deroute block="LEG_AVOID_10_stage1"/>
     </block>
     <block name="LEG_AVOID_10_stage1">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_10_stage0"/>
     	<go from="AVOID_11" wp="ROUTE_11" hmode="route"/>
     	<deroute block="LEG_11"/>
     </block>
@@ -268,6 +279,7 @@
     	<deroute block="LEG_AVOID_11_stage1"/>
     </block>
     <block name="LEG_AVOID_11_stage1">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_11_stage0"/>
     	<go from="AVOID_12" wp="ROUTE_12" hmode="route"/>
     	<deroute block="LEG_12"/>
     </block>
@@ -276,6 +288,7 @@
     	<deroute block="LEG_AVOID_12_stage1"/>
     </block>
     <block name="LEG_AVOID_12_stage1">
+    	<exception cond="GetAvoid()" deroute="LEG_AVOID_12_stage0"/>
     	<go from="AVOID_13" wp="ROUTE_13" hmode="route"/>
     	<deroute block="Standby"/>
     </block>

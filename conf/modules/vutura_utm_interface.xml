@@ -10,6 +10,7 @@
   <init fun="init_vutura_utm_interface()"/>
   <periodic fun="parse_gps()" freq="4"/>
   <event fun="avoid_check()"/>
+  <event fun="RunAvoidance()"/>
   <makefile>
     <file name="vutura_utm_interface.c"/>
   </makefile>
