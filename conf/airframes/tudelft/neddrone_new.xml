@@ -29,6 +29,7 @@
         <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>
         <configure name="MAG_IST8310_I2C_DEV" value="I2C3"/>
       </module>
+      <module name="lidar" type="tfmini"/>
 
       <module name="guidance" type="hybrid"/>
       <module name="intermcu" type="uart"/>
@@ -145,7 +146,7 @@
   </command_laws>
 
   <section name="MISC">
-    <define name="NAV_CLIMB_VSPEED" value="2.5"/>
+    <define name="NAV_CLIMB_VSPEED" value="3.5"/>
     <define name="NAV_DESCEND_VSPEED" value="-1.0"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>

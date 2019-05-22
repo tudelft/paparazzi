@@ -108,11 +108,11 @@ void guidance_hybrid_init(void)
 
   high_res_psi = 0;
   guidance_hovering = true;
-  horizontal_speed_gain = 3;
+  horizontal_speed_gain = 5;
   guidance_hybrid_norm_ref_airspeed = 0;
   max_turn_bank = 40.0;
   turn_bank_gain = 0.8;
-  wind_gain = 64;
+  wind_gain = 35;
   force_forward_flight = 0;
   INT_VECT2_ZERO(wind_estimate);
   INT_VECT2_ZERO(guidance_hybrid_ref_airspeed);
@@ -215,8 +215,8 @@ void guidance_hybrid_airspeed_to_attitude(struct Int32Eulers *ypr_sp)
     }
 
     // gain of 10 means that for 4 m/s an angle of 40 degrees is needed
-    ypr_sp->theta = (((- (c_psi * hover_sp.x + s_psi * hover_sp.y)) >> INT32_TRIG_FRAC) * 10 * INT32_ANGLE_PI / 180) >> 8;
-    ypr_sp->phi = ((((- s_psi * hover_sp.x + c_psi * hover_sp.y)) >> INT32_TRIG_FRAC) * 10 * INT32_ANGLE_PI / 180) >>  8;
+    ypr_sp->theta = (((- (c_psi * hover_sp.x + s_psi * hover_sp.y)) >> INT32_TRIG_FRAC) * 12 * INT32_ANGLE_PI / 180) >> 8;
+    ypr_sp->phi = ((((- s_psi * hover_sp.x + c_psi * hover_sp.y)) >> INT32_TRIG_FRAC) * 12 * INT32_ANGLE_PI / 180) >>  8;
   } else {
     /// if required speed is higher than 4 m/s act like a fixedwing
     // translate speed_sp into theta + thrust
@@ -390,7 +390,7 @@ void guidance_hybrid_vertical(void)
   } else if (guidance_hybrid_norm_ref_airspeed > (8 << 8)) { //if airspeed ref > 8 only pitch,
     //at 15 m/s the thrust has to be 33%
     stabilization_cmd[COMMAND_THRUST] = MAX_PPRZ / 5 + (((guidance_hybrid_norm_ref_airspeed - (8 << 8)) / 7 *
-                                        (MAX_PPRZ / 3 - MAX_PPRZ / 5)) >> 8) + (guidance_v_delta_t - MAX_PPRZ / 2) / 10;
+                                        (MAX_PPRZ / 2 - MAX_PPRZ / 5)) >> 8) + (guidance_v_delta_t - MAX_PPRZ / 2) / 10;
     //stabilization_cmd[COMMAND_THRUST] = MAX_PPRZ/5;
     // stabilization_cmd[COMMAND_THRUST] = ((guidance_hybrid_norm_ref_airspeed - (8<<8)) / 7 * (MAX_PPRZ/3 - MAX_PPRZ/5))>>8 + 9600/5;
     //Control altitude with pitch, now only proportional control
@@ -401,7 +401,7 @@ void guidance_hybrid_vertical(void)
     guidance_v_ki = GUIDANCE_V_HOVER_KI / 2;
   } else { //if airspeed ref > 4 && < 8 both
     int32_t airspeed_transition = (guidance_hybrid_norm_ref_airspeed - (4 << 8)) / 4; //divide by 4 to scale it to 0-1 (<<8)
-    stabilization_cmd[COMMAND_THRUST] = ((MAX_PPRZ / 5 + (guidance_v_delta_t - MAX_PPRZ / 2) / 10) * airspeed_transition +
+    stabilization_cmd[COMMAND_THRUST] = ((MAX_PPRZ / 5 + (guidance_v_delta_t - MAX_PPRZ / 2) / 9) * airspeed_transition +
                                          guidance_v_delta_t * ((1 << 8) - airspeed_transition)) >> 8;
     float alt_control_pitch = (guidance_v_delta_t - MAX_PPRZ * guidance_v_nominal_throttle) * alt_pitch_gain;
     v_control_pitch = INT_MULT_RSHIFT((int32_t) ANGLE_BFP_OF_REAL(alt_control_pitch / (MAX_PPRZ *
