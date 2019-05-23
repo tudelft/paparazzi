@@ -65,7 +65,7 @@
 
 /** minimum horizontal distance to waypoint to mark as arrived */
 #ifndef ARRIVED_AT_WAYPOINT
-#define ARRIVED_AT_WAYPOINT 3.0
+#define ARRIVED_AT_WAYPOINT 8.0
 #endif
 
 /** Maximum distance from HOME waypoint before going into failsafe mode */
@@ -593,7 +593,7 @@ void nav_route(struct EnuCoor_i *wp_start, struct EnuCoor_i *wp_end)
   uint32_t leg_length2 = Max((wp_diff.x * wp_diff.x + wp_diff.y * wp_diff.y), 1);
   nav_leg_length = int32_sqrt(leg_length2);
   nav_leg_progress = (pos_diff.x * wp_diff.x + pos_diff.y * wp_diff.y) / nav_leg_length;
-  int32_t progress = Max((CARROT_DIST >> INT32_POS_FRAC), 0);
+  int32_t progress = Max((CARROT_DIST >> INT32_POS_FRAC)*2, 0);
   nav_leg_progress += progress;
   int32_t prog_2 = nav_leg_length;
   Bound(nav_leg_progress, 0, prog_2);

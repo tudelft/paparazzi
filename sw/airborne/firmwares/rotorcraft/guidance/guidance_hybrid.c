@@ -110,8 +110,8 @@ void guidance_hybrid_init(void)
   guidance_hovering = true;
   horizontal_speed_gain = 5;
   guidance_hybrid_norm_ref_airspeed = 0;
-  max_turn_bank = 40.0;
-  turn_bank_gain = 0.8;
+  max_turn_bank = 23.0;
+  turn_bank_gain = 0.5;
   wind_gain = 35;
   force_forward_flight = 0;
   INT_VECT2_ZERO(wind_estimate);
