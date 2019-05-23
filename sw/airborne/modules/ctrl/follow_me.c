@@ -65,8 +65,8 @@ float follow_me_min_speed = FOLLOW_ME_MIN_SPEED;
 float follow_me_filt = FOLLOW_ME_FILT;
 float follow_me_diag_speed = 1.5;
 float follow_me_gps_delay = 200;
-float follow_me_datalink_delay = 500;
-float follow_me_advance_ms = 150;
+float follow_me_datalink_delay = 600;
+float follow_me_advance_ms = 800;
 float follow_me_min_dist = 0;
 float follow_me_min_height = 15;
 
