@@ -30,12 +30,12 @@
 
 // Distance to the target to hover from is by default 15 meters
 #ifndef FOLLOW_ME_DISTANCE
-#define FOLLOW_ME_DISTANCE 15
+#define FOLLOW_ME_DISTANCE 45
 #endif
 
 // Height difference between te target be default 18 meters
 #ifndef FOLLOW_ME_HEIGHT
-#define FOLLOW_ME_HEIGHT 18
+#define FOLLOW_ME_HEIGHT 75
 #endif
 
 // Minimum speed in m/s which the ground needs to have in order to update the heading
@@ -55,7 +55,7 @@
 
 // The default course sin/cos filter value (higher is harder filtering)
 #ifndef FOLLOW_ME_FILT
-#define FOLLOW_ME_FILT 0.8
+#define FOLLOW_ME_FILT 0.9
 #endif
 
 float follow_me_distance = FOLLOW_ME_DISTANCE;
@@ -66,9 +66,9 @@ float follow_me_filt = FOLLOW_ME_FILT;
 float follow_me_diag_speed = 1.5;
 float follow_me_gps_delay = 200;
 float follow_me_datalink_delay = 500;
-float follow_me_advance_ms = 100;
+float follow_me_advance_ms = 150;
 float follow_me_min_dist = 0;
-float follow_me_min_height = 3;
+float follow_me_min_height = 15;
 
 static uint32_t ground_time_msec = 0;
 static bool ground_set = false;

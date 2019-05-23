@@ -40,29 +40,34 @@
     <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="stateGetPositionEnu_f()->z > 10.0" deroute="Takeoff"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
-      <attitude pitch="-25." roll="0" throttle="0.65" vmode="throttle"/>
+      <attitude pitch="-45." roll="0" throttle="0.67" vmode="throttle"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="stateGetPositionEnu_f()->z > 20.0" deroute="Standby"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay vmode="climb" climb="nav_climb_vspeed" wp="CLIMB"/>
     </block>
-    <block name="Standby" strip_button="Standby" strip_icon="home.png">
-      <set var="force_forward_flight" value="FALSE"/>
-      <stay wp="STDBY"/>
-    </block>
 
     <block name="follow_module">
+      <set var="force_forward_flight" value="FALSE"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
     </block>
     <block name="follow_module_diag">
+      <set var="force_forward_flight" value="FALSE"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed)" wp="FOLLOW"/>
     </block>
     <block name="follow_module_land">
+      <set var="force_forward_flight" value="FALSE"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed*0.5)" climb="nav_descend_vspeed * 0.5" vmode="climb" wp="FOLLOW"/>
     </block>
     <block name="follow_landed">
+      <set var="force_forward_flight" value="FALSE"/>
       <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <set var="force_forward_flight" value="FALSE"/>
+      <stay wp="STDBY"/>
     </block>
 
     <block name="stay_p1">
