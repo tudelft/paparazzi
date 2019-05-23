@@ -61,12 +61,12 @@
       <attitude pitch="-65" roll="0" throttle="0" vmode="throttle" until="stage_time>1"/>
     </block>
     <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="stateGetPositionEnu_f()->z > 10.0" deroute="Takeoff"/>
+      <exception cond="stateGetPositionEnu_f()->z > 15.0" deroute="Takeoff"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <attitude pitch="-45." roll="0" throttle="0.67" vmode="throttle"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="stateGetPositionEnu_f()->z > 20.0" deroute="Standby"/>
+      <exception cond="stateGetPositionEnu_f()->z > 40.0" deroute="Standby"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay vmode="climb" climb="nav_climb_vspeed" wp="CLIMB"/>
     </block>
@@ -121,7 +121,7 @@
       <set var="force_forward_flight" value="TRUE"/>
       <oval p1="p1" p2="p2" radius="nav_radius"/>
     </block>
-    
+
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <set var="force_forward_flight" value="FALSE"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
