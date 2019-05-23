@@ -311,7 +311,7 @@
   <section name="AUTOPILOT">
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1"  value="AP_MODE_FORWARD"/>
-    <define name="MODE_AUTO2"  value="AP_MODE_FORWARD"/>
+    <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>
   </section>
 
   <section name="BAT">

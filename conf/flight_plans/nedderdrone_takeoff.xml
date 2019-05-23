@@ -1,21 +1,44 @@
 <!DOCTYPE flight_plan SYSTEM "flight_plan.dtd">
 
-<flight_plan alt="85" ground_alt="0" lat0="43 33 50.83" lon0="1 28 52.61" max_dist_from_home="50000" name="Rotorcraft Basic (Enac)" security_height="2">
+<flight_plan alt="85" ground_alt="0" lat0="52.9219719" lon0="4.5356120" max_dist_from_home="60000" name="Rotorcraft Basic (Enac)" security_height="2">
   <header>
 #include "autopilot.h"
   </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
-    <waypoint name="CLIMB" x="0.0" y="5.0"/>
-    <waypoint name="STDBY" x="-2.0" y="-5.0"/>
-    <waypoint name="p1" x="3.6" y="-13.9"/>
-    <waypoint name="p2" x="27.5" y="-48.2"/>
-    <waypoint name="p3" x="16.7" y="-19.6"/>
-    <waypoint name="p4" x="13.7" y="-40.7"/>
-    <waypoint name="CAM" x="-20" y="-50" height="2."/>
-    <waypoint name="TD" x="5.6" y="-10.9"/>
+    <waypoint name="CLIMB" x="0.0" y="55.0"/>
+    <waypoint name="STDBY" x="-8.0" y="-55.0"/>
+    <waypoint name="p1" x="3.6" y="-139"/>
+    <waypoint name="p2" x="275" y="-482"/>
+    <waypoint name="p3" x="167" y="-196"/>
+    <waypoint name="p4" x="137" y="-407"/>
+    <waypoint name="TD" x="55.6" y="-10.9"/>
     <waypoint name="FOLLOW" x="60.5" y="13.5"/>
+
+    <!-- EHR8 -->
+    <waypoint name="_C1" lat="52.96166667" lon="4.740277778"/>
+    <waypoint name="_C2" lat="52.86666667" lon="4.716666667"/>
+    <waypoint name="_C3" lat="52.78333333" lon="4.683333333"/>
+    <waypoint name="_C4" lat="52.75" lon="4.533333333"/>
+    <waypoint name="_C5" lat="52.775" lon="4.433333333"/>
+    <waypoint name="_C6" lat="52.81666667" lon="4.35"/>
+    <waypoint name="_C7" lat="53.08333333" lon="4.35"/>
+    <waypoint name="_C8" lat="53.10277778" lon="4.515555556"/>
+    <waypoint name="_C9" lat="53.04972222" lon="4.679444444"/>
   </waypoints>
+  <sectors>
+    <sector color="orange" name="EHR8">
+      <corner name="_C1"/>
+      <corner name="_C2"/>
+      <corner name="_C3"/>
+      <corner name="_C4"/>
+      <corner name="_C5"/>
+      <corner name="_C6"/>
+      <corner name="_C7"/>
+      <corner name="_C8"/>
+      <corner name="_C9"/>
+    </sector>
+  </sectors>
   <modules>
     <module name="follow_me"/>
   </modules>
@@ -98,16 +121,7 @@
       <set var="force_forward_flight" value="TRUE"/>
       <oval p1="p1" p2="p2" radius="nav_radius"/>
     </block>
-    <block name="test yaw">
-      <go wp="p1"/>
-      <for var="i" from="1" to="16">
-        <heading alt="WaypointAlt(WP_p1)" course="90 * $i" until="stage_time > 3"/>
-      </for>
-      <deroute block="Standby"/>
-    </block>
-    <block name="circle CAM" pre_call="nav_set_heading_towards_waypoint(WP_CAM)">
-      <circle radius="nav_radius" wp="CAM"/>
-    </block>
+    
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <set var="force_forward_flight" value="FALSE"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
