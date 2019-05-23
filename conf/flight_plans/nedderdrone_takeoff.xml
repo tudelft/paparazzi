@@ -66,7 +66,7 @@
       <attitude pitch="-45." roll="0" throttle="0.67" vmode="throttle"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="stateGetPositionEnu_f()->z > 40.0" deroute="Standby"/>
+      <exception cond="stateGetPositionEnu_f()->z > 40.0" deroute="follow_module"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay vmode="climb" climb="nav_climb_vspeed" wp="CLIMB"/>
     </block>
@@ -108,7 +108,7 @@
       <go from="p1" hmode="route" wp="p2"/>
       <stay wp="p2" until="stage_time>10"/>
       <go from="p2" hmode="route" wp="p1"/>
-      <deroute block="stay_p1"/>
+      <deroute block="line_p1_p2"/>
     </block>
     <block name="route">
       <set var="force_forward_flight" value="TRUE"/>
