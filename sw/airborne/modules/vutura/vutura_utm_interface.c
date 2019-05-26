@@ -130,7 +130,7 @@ void avoid_check(void)
 			avoidance.vd = msg.vd;
 			avoidance.lat = msg.lat;
 			avoidance.lon = msg.lon;
-			VERBOSE_PRINT("received avoidance msg: avoid->%i, vn->%i, ve->%i, vd->%i, lat->%i, lon->%i\n", avoidance.avoid, avoidance.vn, avoidance.ve, avoidance.vd, avoidance.lat, avoidance.lon);
+			//VERBOSE_PRINT("received avoidance msg: avoid->%i, vn->%i, ve->%i, vd->%i, lat->%i, lon->%i\n", avoidance.avoid, avoidance.vn, avoidance.ve, avoidance.vd, avoidance.lat, avoidance.lon);
 		}
 		else
 		{
@@ -206,7 +206,7 @@ void set_wp_at_latlon(uint8_t wp_id, int32_t lat, int32_t lon)
 	wp_lla_i.lon = lon;
 	wp_lla_i.alt = WaypointAlt(wp_id) / 1000.;
 
-	enu_of_lla_point_i(&wp_enu_i, &flightplan.ltp_ref_i, &wp_lla_i);
+	enu_of_lla_pos_i(&wp_enu_i, &flightplan.ltp_ref_i, &wp_lla_i);
 
 	ENU_FLOAT_OF_BFP(wp_enu_f, wp_enu_i);
 
