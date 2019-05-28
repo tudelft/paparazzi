@@ -65,6 +65,7 @@
     <program name="EnergyManager" command="sw/ground_segment/python/energy_mon/energy_mon.py"/>
     <program name="IridiumDialer" command="sw/tools/iridium/iridium_link.py"/>
     <program name="PayloadForward" command="sw/ground_segment/python/payload_forward/payload.py"/>
+    <program name="VuturaTraffic" command="sw/ground_segment/python/vutura/vutura_visualizer.py"/>
   </section>
   <section name="sessions">
     <session name="helidd">
