@@ -43,14 +43,24 @@
 #define VERBOSE_PRINT(...)
 #endif
 
+struct vutura_avoidance_interface_t {
+	int fd;
+	struct sockaddr_in ext_addr;
+	struct sockaddr_in loc_addr;
+} vutura_avoidance_data;
+
 struct vutura_utm_interface_t {
 	int fd;
 	struct sockaddr_in ext_addr;
 	struct sockaddr_in loc_addr;
-} vutura_utm_data;
+} vutura_utm_interface;
 
 AvoidanceParameters avoidance;
 FlightplanParameters flightplan;
+enum utm_state_t utm_state = UTM_STATE_INIT;
+
+// private functions
+void send_to_utm_interface(PaparazziToUtmInterfaceMsg *msg);
 
 void init_vutura_utm_interface(void)
 {
@@ -64,26 +74,50 @@ void init_vutura_utm_interface(void)
 	avoidance.vd = 0;
 
 	// Make a UDP connection
-	vutura_utm_data.fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	vutura_avoidance_data.fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
 	// Listen to Vutura UTM
-	memset(&vutura_utm_data.loc_addr, 0, sizeof(vutura_utm_data.loc_addr));
-	vutura_utm_data.loc_addr.sin_family = AF_INET;
-	vutura_utm_data.loc_addr.sin_addr.s_addr = INADDR_ANY;
-	vutura_utm_data.loc_addr.sin_port = htons(8200);
+	memset(&vutura_avoidance_data.loc_addr, 0, sizeof(vutura_avoidance_data.loc_addr));
+	vutura_avoidance_data.loc_addr.sin_family = AF_INET;
+	vutura_avoidance_data.loc_addr.sin_addr.s_addr = INADDR_ANY;
+	vutura_avoidance_data.loc_addr.sin_port = htons(8200);
 
-	if (bind(vutura_utm_data.fd, (struct sockaddr *)&vutura_utm_data.loc_addr, sizeof(struct sockaddr)) == -1)
+	if (bind(vutura_avoidance_data.fd, (struct sockaddr *)&vutura_avoidance_data.loc_addr, sizeof(struct sockaddr)) == -1)
 	{
 		VERBOSE_PRINT("UDP bind failed");
-		close(vutura_utm_data.fd);
+		close(vutura_avoidance_data.fd);
 		exit(EXIT_FAILURE);
 	}
 
 	// Configure socket for sending from UAV to Vutura_utm
-	memset(&vutura_utm_data.ext_addr, 0, sizeof(vutura_utm_data.ext_addr));
-	vutura_utm_data.ext_addr.sin_family = AF_INET;
-	vutura_utm_data.ext_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	vutura_utm_data.ext_addr.sin_port = htons(14551);
+	memset(&vutura_avoidance_data.ext_addr, 0, sizeof(vutura_avoidance_data.ext_addr));
+	vutura_avoidance_data.ext_addr.sin_family = AF_INET;
+	vutura_avoidance_data.ext_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	vutura_avoidance_data.ext_addr.sin_port = htons(14551);
+
+
+	// Initialise the UTM Interface socket
+	// Make a UDP connection
+	vutura_utm_interface.fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+	// Listen to Vutura UTM
+	memset(&vutura_utm_interface.loc_addr, 0, sizeof(vutura_utm_interface.loc_addr));
+	vutura_utm_interface.loc_addr.sin_family = AF_INET;
+	vutura_utm_interface.loc_addr.sin_addr.s_addr = INADDR_ANY;
+	vutura_utm_interface.loc_addr.sin_port = htons(8201);
+
+	if (bind(vutura_utm_interface.fd, (struct sockaddr *)&vutura_utm_interface.loc_addr, sizeof(struct sockaddr)) == -1)
+	{
+		VERBOSE_PRINT("UDP bind failed");
+		close(vutura_utm_interface.fd);
+		exit(EXIT_FAILURE);
+	}
+
+	// Configure socket for sending from UAV to Vutura_utm
+	memset(&vutura_utm_interface.ext_addr, 0, sizeof(vutura_utm_interface.ext_addr));
+	vutura_utm_interface.ext_addr.sin_family = AF_INET;
+	vutura_utm_interface.ext_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	vutura_utm_interface.ext_addr.sin_port = htons(8301);
 
 }
 
@@ -106,7 +140,7 @@ void parse_gps(void)
 
 	// Send over UDP
 
-	ssize_t bytes_sent = sendto(vutura_utm_data.fd, &msg, sizeof(msg), 0, (struct sockaddr*)&vutura_utm_data.ext_addr, sizeof(vutura_utm_data.ext_addr));
+	ssize_t bytes_sent = sendto(vutura_avoidance_data.fd, &msg, sizeof(msg), 0, (struct sockaddr*)&vutura_avoidance_data.ext_addr, sizeof(vutura_avoidance_data.ext_addr));
 	(void) bytes_sent;
 	return;
 }
@@ -116,8 +150,8 @@ void avoid_check(void)
 
 	VuturaToPaparazziMsg msg;
 
-	socklen_t addr_len = sizeof(vutura_utm_data.loc_addr);
-	ssize_t count = recvfrom(vutura_utm_data.fd, &msg, sizeof(msg), MSG_DONTWAIT, (struct sockaddr*)&vutura_utm_data.loc_addr, &addr_len);
+	socklen_t addr_len = sizeof(vutura_avoidance_data.loc_addr);
+	ssize_t count = recvfrom(vutura_avoidance_data.fd, &msg, sizeof(msg), MSG_DONTWAIT, (struct sockaddr*)&vutura_avoidance_data.loc_addr, &addr_len);
 	if (count == -1)
 		{
 			//VERBOSE_PRINT("No UDP data\n");
@@ -214,3 +248,39 @@ void set_wp_at_latlon(uint8_t wp_id, int32_t lat, int32_t lon)
 	waypoints[wp_id].y = wp_enu_f.y;
 }
 
+void utm_interface_event(void)
+{
+	UtmInterfaceToPaparazziMsg msg;
+	socklen_t addr_len = sizeof(vutura_utm_interface.loc_addr);
+	ssize_t count = recvfrom(vutura_utm_interface.fd, &msg, sizeof(msg), MSG_DONTWAIT, (struct sockaddr*)&vutura_utm_interface.loc_addr, &addr_len);
+	if (count == -1)
+		{
+			//VERBOSE_PRINT("No UDP data\n");
+		}
+		else if (count == sizeof(msg))
+		{
+			// Received packet from utm interface
+			VERBOSE_PRINT("RECEIVED: %d\n", msg.utm_state);
+			utm_state = msg.utm_state;
+		}
+		else
+		{
+			//VERBOSE_PRINT("msg not of correct size\n");
+		}
+
+	return;
+}
+
+void utm_request(enum utm_request_t request)
+{
+	VERBOSE_PRINT("HIERRR");
+	PaparazziToUtmInterfaceMsg msg;
+	msg.utm_request = request;
+	send_to_utm_interface(&msg);
+}
+
+void send_to_utm_interface(PaparazziToUtmInterfaceMsg *msg)
+{
+	ssize_t bytes_sent = sendto(vutura_utm_interface.fd, msg, sizeof(PaparazziToUtmInterfaceMsg), 0, (struct sockaddr*)&vutura_utm_interface.ext_addr, sizeof(vutura_utm_interface.ext_addr));
+	(void) bytes_sent;
+}

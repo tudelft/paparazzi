@@ -3,6 +3,7 @@
 <flight_plan alt="100" ground_alt="0" lat0="52.16810052554008" lon0="4.412674313128298" max_dist_from_home="1500" name="Basic" security_height="50">
   <header>
 #include "subsystems/datalink/datalink.h"
+#include "modules/vutura/vutura_utm_interface.h"
 </header>
   <waypoints>
     <waypoint name="HOME" x="0" y="0"/>
@@ -98,6 +99,41 @@
     <block name="Geo init">
       <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="nav_reset_alt()"/>
+    </block>
+    <block name="- UTM Init -">
+      <exception cond="utm_state == UTM_STATE_LOGGED_IN" deroute="- UTM Connected -"/>
+      <attitude roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <block name="- UTM Connected -">
+      <attitude roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <block name="UTM Request Flight">
+      <call_once fun="utm_request(UTM_REQUEST_FLIGHT)"/>
+      <while cond="utm_state == UTM_STATE_LOGGED_IN"/>
+      <exception cond="utm_state == UTM_STATE_REQUEST_PENDING" deroute="- UTM Request Pending -"/>
+      <exception cond="utm_state == UTM_STATE_REQUEST_APPROVED" deroute="- UTM Request Approved -"/>
+      <attitude roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <block name="- UTM Request Pending -">
+      <exception cond="utm_state == UTM_STATE_LOGGED_IN" deroute="- UTM Connected -"/>
+      <exception cond="utm_state == UTM_STATE_REQUEST_APPROVED" deroute="- UTM Request Approved -"/>
+      <attitude roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <block name="- UTM Request Approved -">
+      <attitude roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <block name="UTM Start Flight">
+      <exception cond="utm_state == UTM_STATE_FLIGHT_STARTED" deroute="- UTM Flight Started -"/>
+      <call_once fun="utm_request(UTM_REQUEST_START)"/>
+      <attitude roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <block name="- UTM Flight Started -">
+      <attitude roll="0" throttle="0" vmode="throttle"/>
+    </block>
+    <block name="UTM End Flight">
+      <exception cond="utm_state == UTM_STATE_LOGGED_IN" deroute="- UTM Connected -"/>
+      <call_once fun="utm_request(UTM_REQUEST_END)"/>
+      <attitude roll="0" throttle="0" vmode="throttle"/>
     </block>
     <block name="Holding point">
       <!--set var="nav_mode" value="NAV_MODE_ROLL"/-->

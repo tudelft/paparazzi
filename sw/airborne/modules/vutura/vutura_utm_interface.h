@@ -31,6 +31,21 @@
 
 #include "state.h"
 
+enum utm_state_t {
+	UTM_STATE_INIT = 0,
+	UTM_STATE_LOGGED_IN,
+	UTM_STATE_REQUEST_PENDING,
+	UTM_STATE_REQUEST_REJECTED,
+	UTM_STATE_REQUEST_APPROVED,
+	UTM_STATE_FLIGHT_STARTED
+};
+
+enum utm_request_t {
+	UTM_REQUEST_FLIGHT,
+	UTM_REQUEST_START,
+	UTM_REQUEST_END
+};
+
 union paparazzi_to_vutura_msg_t {
 	struct {
 		int32_t lon;
@@ -39,6 +54,7 @@ union paparazzi_to_vutura_msg_t {
 		int32_t Vn;
 		int32_t Ve;
 		int32_t Vd;
+		uint32_t target_wp;
 	};
 	unsigned char bytes;
 } __attribute((__packed__));
@@ -56,6 +72,22 @@ union vutura_to_paparazzi_msg_t {
 	unsigned char bytes;
 } __attribute((__packed__));
 typedef union vutura_to_paparazzi_msg_t VuturaToPaparazziMsg;
+
+union paparazzi_to_utm_interface_t {
+	struct {
+		int32_t utm_request;
+	};
+	unsigned char bytes;
+} __attribute((__packed__));
+typedef union paparazzi_to_utm_interface_t PaparazziToUtmInterfaceMsg;
+
+union utm_interface_to_paparazzi_t {
+	struct {
+		int32_t utm_state;
+	};
+	unsigned char bytes;
+} __attribute((__packed__));
+typedef union utm_interface_to_paparazzi_t UtmInterfaceToPaparazziMsg;
 
 struct avoidance_parameters_t
 {
@@ -80,10 +112,12 @@ typedef struct flightplan_parameters_t FlightplanParameters;
 // Global variables
 extern AvoidanceParameters avoidance;
 extern FlightplanParameters flightplan;
+extern enum utm_state_t utm_state;
 
 extern void init_vutura_utm_interface(void);
 extern void parse_gps(void);
 extern void avoid_check(void);
+extern void utm_interface_event(void);
 
 // functions to be called by flightplan exceptions
 extern bool GetAvoid(void);
@@ -92,6 +126,9 @@ extern bool GetAvoid(void);
 extern void InitFlightplan(void);
 extern void RunAvoidance(void);
 extern void set_wp_at_latlon(uint8_t wp_id, int32_t lat, int32_t lon); // [dege7]
+
+// functions to manage utm requests using the flightplan
+void utm_request(enum utm_request_t request);
 
 #endif
 
