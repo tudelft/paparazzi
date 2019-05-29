@@ -3,6 +3,7 @@
 <module name="vutura_utm_interface" dir="vutura">
   <doc>
     <description>Sends over position and speed data to vutura utm module</description>
+    <define name="SSD_VSET" value="12.0" description="nominal airspeed for avoidance"/>
   </doc>
   <header>
     <file name="vutura_utm_interface.h"/>

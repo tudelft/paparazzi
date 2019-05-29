@@ -26,6 +26,10 @@
 #ifndef VUTURA_UTM_INTERFACE_H
 #define VUTURA_UTM_INTERFACE_H
 
+#ifndef SSD_VSET
+#define SSD_VSET 12.
+#endif
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -106,6 +110,8 @@ struct flightplan_parameters_t
 	uint8_t start_index_AVOID;
 	struct LlaCoor_i lla_ref_i;
 	struct LtpDef_i ltp_ref_i;
+	uint8_t target_leg;
+	uint8_t target_wp;
 };
 typedef struct flightplan_parameters_t FlightplanParameters;
 
@@ -126,6 +132,7 @@ extern bool GetAvoid(void);
 extern void InitFlightplan(void);
 extern void RunAvoidance(void);
 extern void set_wp_at_latlon(uint8_t wp_id, int32_t lat, int32_t lon); // [dege7]
+extern void set_avoidance_wp_fixed_for_carrot_time(uint8_t wp_id, int32_t lat, int32_t lon); //[dege7]
 
 // functions to manage utm requests using the flightplan
 void utm_request(enum utm_request_t request);

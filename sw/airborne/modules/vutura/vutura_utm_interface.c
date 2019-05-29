@@ -129,13 +129,13 @@ void parse_gps(void)
 	// Construct message
 	PaparazziToVuturaMsg msg;
 
-	msg.lon = lonlatalt->lon; // [deg e7]
-	msg.lat = lonlatalt->lat; // [deg e7]]
-	msg.alt = lonlatalt->alt; // [mm]
-	msg.Vn  = speed_ned->x * 1000.; // [mm/s]
-	msg.Ve  = speed_ned->y * 1000.; // [mm/s]
-	msg.Vd  = speed_ned->z * 1000.; // [mm/s]
-
+	msg.lon 		= lonlatalt->lon; // [deg e7]
+	msg.lat 		= lonlatalt->lat; // [deg e7]]
+	msg.alt 		= lonlatalt->alt; // [mm]
+	msg.Vn  		= speed_ned->x * 1000.; // [mm/s]
+	msg.Ve  		= speed_ned->y * 1000.; // [mm/s]
+	msg.Vd  		= speed_ned->z * 1000.; // [mm/s]
+	msg.target_wp 	= flightplan.target_wp; // integer index of wp number
 	// Put it in the buffer
 
 	// Send over UDP
@@ -187,6 +187,9 @@ void InitFlightplan(void)
 	flightplan.lla_ref_i.lon = NAV_LON0;
 	flightplan.lla_ref_i.alt = NAV_ALT0;
 	ltp_def_from_lla_i(&flightplan.ltp_ref_i, &flightplan.lla_ref_i);
+
+	flightplan.target_leg = 0;
+	flightplan.target_wp = 0;
 }
 
 void RunAvoidance(void)
@@ -216,18 +219,18 @@ void RunAvoidance(void)
 		}
 
 		// If in LEG or AVOID, move waypoints in case of avoidance
-		if (avoidance.avoid)
+		if (avoidance.avoid && (strstr(fp_blocks[nav_block], "stage0") != NULL))
 		{
 			uint8_t wp_id_from = flightplan.start_index_AVOID + leg_number;
 			uint8_t wp_id_to = wp_id_from + 1;
 
 			NavSetWaypointHere(wp_id_from);
 
-			set_wp_at_latlon(wp_id_to, avoidance.lat, avoidance.lon);
-
-
-
+			set_avoidance_wp_fixed_for_carrot_time(wp_id_to, avoidance.lat, avoidance.lon);
 		}
+
+		flightplan.target_leg = leg_number;
+		flightplan.target_wp = leg_number + 1;
 	}
 }
 
@@ -283,4 +286,31 @@ void send_to_utm_interface(PaparazziToUtmInterfaceMsg *msg)
 {
 	ssize_t bytes_sent = sendto(vutura_utm_interface.fd, msg, sizeof(PaparazziToUtmInterfaceMsg), 0, (struct sockaddr*)&vutura_utm_interface.ext_addr, sizeof(vutura_utm_interface.ext_addr));
 	(void) bytes_sent;
+}
+
+void set_avoidance_wp_fixed_for_carrot_time(uint8_t wp_id, int32_t lat, int32_t lon)
+{
+	float carrot_time = CARROT;
+
+	struct LlaCoor_i wp_lla_i;
+	struct EnuCoor_i wp_enu_i;
+	struct EnuCoor_f wp_enu_f;
+	wp_lla_i.lat = lat;
+	wp_lla_i.lon = lon;
+	wp_lla_i.alt = WaypointAlt(wp_id) / 1000.;
+
+	enu_of_lla_pos_i(&wp_enu_i, &flightplan.ltp_ref_i, &wp_lla_i);
+
+	ENU_FLOAT_OF_BFP(wp_enu_f, wp_enu_i);
+
+	struct EnuCoor_f *own_enu_f = stateGetPositionEnu_f();
+	float dx = wp_enu_f.x - own_enu_f->x;
+	float dy = wp_enu_f.y - own_enu_f->y;
+	float d2 = dx * dx + dy * dy;
+	float d = sqrt(d2);
+	float dx_u = dx / d;
+	float dy_u = dy / d;
+
+	waypoints[wp_id].x = wp_enu_f.x + dx_u * SSD_VSET * carrot_time;
+	waypoints[wp_id].y = wp_enu_f.y + dy_u * SSD_VSET * carrot_time;
 }
