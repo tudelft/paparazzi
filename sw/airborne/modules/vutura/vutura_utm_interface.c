@@ -226,7 +226,8 @@ void RunAvoidance(void)
 
 			NavSetWaypointHere(wp_id_from);
 
-			set_avoidance_wp_fixed_for_carrot_time(wp_id_to, avoidance.lat, avoidance.lon);
+			//set_avoidance_wp_fixed_for_carrot_time(wp_id_to, avodance.lat, avoidance.lon);
+			set_wp_at_latlon(wp_id_to, avoidance.lat, avoidance.lon);
 		}
 
 		flightplan.target_leg = leg_number;
@@ -246,9 +247,27 @@ void set_wp_at_latlon(uint8_t wp_id, int32_t lat, int32_t lon)
 	enu_of_lla_pos_i(&wp_enu_i, &flightplan.ltp_ref_i, &wp_lla_i);
 
 	ENU_FLOAT_OF_BFP(wp_enu_f, wp_enu_i);
+	if (In_Soft_geofence(wp_enu_f.x, wp_enu_f.y))
+	{
+		waypoints[wp_id].x = wp_enu_f.x;
+		waypoints[wp_id].y = wp_enu_f.y;
+	}
+}
 
-	waypoints[wp_id].x = wp_enu_f.x;
-	waypoints[wp_id].y = wp_enu_f.y;
+bool In_Soft_geofence(float _x, float _y)
+{
+  uint8_t i, j;
+  bool c = false;
+  const uint8_t nb_pts = 4;
+  const uint8_t wps_id[] = { WP__SG_00, WP__SG_01, WP__SG_02, WP__SG_03 };
+
+  for (i = 0, j = nb_pts - 1; i < nb_pts; j = i++) {
+    if (((WaypointY(wps_id[i]) > _y) != (WaypointY(wps_id[j]) > _y)) &&
+       (_x < (WaypointX(wps_id[j])-WaypointX(wps_id[i])) * (_y-WaypointY(wps_id[i])) / (WaypointY(wps_id[j])-WaypointY(wps_id[i])) + WaypointX(wps_id[i]))) {
+      if (c == TRUE) { c = FALSE; } else { c = TRUE; }
+    }
+  }
+  return c;
 }
 
 void utm_interface_event(void)

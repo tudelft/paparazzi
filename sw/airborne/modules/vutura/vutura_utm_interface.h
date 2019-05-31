@@ -132,6 +132,7 @@ extern bool GetAvoid(void);
 extern void InitFlightplan(void);
 extern void RunAvoidance(void);
 extern void set_wp_at_latlon(uint8_t wp_id, int32_t lat, int32_t lon); // [dege7]
+extern bool In_Soft_geofence(float _x, float _y);
 extern void set_avoidance_wp_fixed_for_carrot_time(uint8_t wp_id, int32_t lat, int32_t lon); //[dege7]
 
 // functions to manage utm requests using the flightplan
