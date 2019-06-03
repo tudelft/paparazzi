@@ -125,6 +125,8 @@ void parse_gps(void)
 {
 	struct LlaCoor_i *lonlatalt = stateGetPositionLla_i();
 	struct NedCoor_f *speed_ned = stateGetSpeedNed_f();
+	bool wind_valid = stateIsWindspeedValid();
+	struct FloatVect2 *horizontal_wind_speed_f = stateGetHorizontalWindspeed_f();
 
 	// Construct message
 	PaparazziToVuturaMsg msg;
@@ -136,6 +138,16 @@ void parse_gps(void)
 	msg.Ve  		= speed_ned->y * 1000.; // [mm/s]
 	msg.Vd  		= speed_ned->z * 1000.; // [mm/s]
 	msg.target_wp 	= flightplan.target_wp; // integer index of wp number
+	if (wind_valid)
+	{
+		msg.wind_north = -(horizontal_wind_speed_f->x * 1000.);
+		msg.wind_east  = -(horizontal_wind_speed_f->y * 1000.);
+	}
+	else
+	{
+		msg.wind_north 	= 0;
+		msg.wind_east 	= 0;
+	}
 	// Put it in the buffer
 
 	// Send over UDP

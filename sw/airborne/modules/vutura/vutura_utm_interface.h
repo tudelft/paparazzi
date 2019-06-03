@@ -59,6 +59,8 @@ union paparazzi_to_vutura_msg_t {
 		int32_t Ve;
 		int32_t Vd;
 		uint32_t target_wp;
+		int32_t wind_north;
+		int32_t wind_east;
 	};
 	unsigned char bytes;
 } __attribute((__packed__));
