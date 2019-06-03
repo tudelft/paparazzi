@@ -284,10 +284,10 @@ class ParrotUtils:
         # Upload the file
         self.upload_file(name, folder)
 
-        if self.update_time_before_run:
-            from datetime import datetime
-            self.execute_command("date --set '" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "'")
-            print("Set date on " + self.uav_name + " to " + datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+#        if self.update_time_before_run:
+#            from datetime import datetime
+#            self.execute_command("date --set '" + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "'")
+#            print("Set date on " + self.uav_name + " to " + datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         # Make the file executable and execute it
         self.start_program(self.upload_path + folder + '/' + f[1])
