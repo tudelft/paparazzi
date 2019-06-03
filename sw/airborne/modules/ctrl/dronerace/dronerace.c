@@ -209,10 +209,32 @@ void dronerace_init(void)
 
   // Compute waypoints
   dronerace_enter();
+  /*
+  float phi0 = 0;
+  float phi1 = 0;
+  float invert_time = 0;
+
+  float x0[2] = {-3.0, -3.0}; //GPS_take;
+  float v0[2] = {2.0, 0.0}; // needs non zero initial velocity, not sure why
+
+  float xd[2] = {-0.0, 0.0};
+  float vd[2] = {3.0, 0};
+
+  float xt[2] = {0.0, 0.0};
+  float vt[2] = {0.0, 0.0};
+
+  float psi_init = stateGetNedToBodyEulers_f()->psi;
+  
+  find_optimal(x0, v0, xd, vd, xt, vt, &phi0, &phi1, &invert_time, psi_init);
+
+  printf("init check: phi0: %f, phi1: %f, dt: %f\n", phi0, phi1, invert_time);
+  printf("init reaching set: x: %f, y: %f, vx: %f, vy: %f\n", xt[0], xt[1], vt[0], vt[1]); // TODO: fix ptr
+  */
+
 }
 
-float psi0 = 0;
 
+float psi0 = 0;
 void dronerace_enter(void)
 {
   psi0 = stateGetNedToBodyEulers_f()->psi;
@@ -250,9 +272,13 @@ void dronerace_periodic(void)
   input_phi = stateGetNedToBodyEulers_f()->phi - phi_bias;
   input_theta = stateGetNedToBodyEulers_f()->theta - theta_bias;
   input_psi = stateGetNedToBodyEulers_f()->psi - psi0;
-  
-  filter_predict(input_phi,input_theta,input_psi, dt);
 
+  dr_state.phi = input_phi;
+  dr_state.psi = input_psi;
+  dr_state.theta = input_theta;
+  
+  filter_predict(input_phi, input_theta, input_psi, dt);
+  
 
   // Vision update
   // printf("input count, vision count: %d, %d\n", input_cnt, dr_vision.cnt);
@@ -299,7 +325,7 @@ void dronerace_set_rc(UNUSED float rt, UNUSED float rx, UNUSED float ry, UNUSED 
 {
 }
 
-void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi_cmd, float *var)
+void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi_cmd, float *var_time, float *vel)
 {
 
   control_run(dt);
@@ -308,7 +334,163 @@ void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi_cmd, flo
   *theta = dr_control.theta_cmd;
   *psi_cmd = dr_control.psi_cmd + psi0;
   *alt = - dr_control.z_cmd;
-  *var = dr_state.time;
+  *var_time = dr_state.time;
+  *vel = dr_state.vy;
   // guidance_v_z_sp = POS_BFP_OF_REAL(dr_control.z_cmd);
 }
 
+
+float K_ff_theta = 14.0/57 / 5;   // rad to fly at (e.g. 10 deg = 5 m/s)
+float K_p_theta = 6.0 / 57;       // m/s to radians
+
+
+#define OPT_ITER 1000
+void find_optimal(float *x0, float *v0, 
+                  float *xd, float *vd,
+                  float *xt, float *vt,
+                  float *phi0, float *phi1, 
+                  float *switch_time, float psi_init)
+{
+  // flip the drone at 55% of total time
+  float t1 = (xd[0]-x0[0]) / ((0.0*v0[0] + 1.0*vd[0])) * 0.55;
+  *switch_time = t1;
+
+  // set initial step size as 4 degrees
+  float dphi0 = 4.0/57; 
+  float dphi1 = 4.0/57;
+
+  for (int i = 0; i < OPT_ITER; i++) {
+    
+    float c1pstep = (*phi0 + dphi0);
+    float c2pstep = (*phi1 + dphi1);
+
+    float c0  = pathPredict(x0, v0, xd, vd, *phi0,   *phi1, t1, xt, vt, psi_init);
+    float c1p = pathPredict(x0, v0, xd, vd, c1pstep, *phi1, t1, xt, vt, psi_init);  // phi0 + gradient0
+    float c2p = pathPredict(x0, v0, xd, vd, *phi0, c2pstep, t1, xt, vt, psi_init);  // phi1 + gradient1
+
+    // printf("iter: %d, c1step: %f,c1p: %f, c2pstep: %f, c2p: %f\n", i, c1pstep, c1p, c2pstep, c2p);
+    
+    if (c0 < c1p) {
+      // calc minus step size
+      float c1mstep = (*phi0 - dphi0);
+      float c1m = pathPredict(x0, v0, xd, vd, c1mstep, *phi1, t1, xt, vt, psi_init);
+
+      if (c1m < c0) {
+        // reverse sign
+        dphi0 = -dphi0;
+      }
+      else {
+        // no need of reversing gradient, just reduce it
+        dphi0 = dphi0 / 2;
+      }
+
+    }
+    if (c0 < c2p) {
+      // calc minus step size
+      float c2mstep = (*phi1 - dphi1);
+      float c2m = pathPredict(x0, v0, xd, vd, *phi0, c2mstep, t1, xt, vt, psi_init);
+      
+      if (c2m < c0) {
+        // reverse sign
+        dphi1 = -dphi1;
+      }
+      else {
+        // no need of reversing gradient, just reduce it
+        dphi1 = dphi1 / 2;
+      }
+    }
+
+    if (c1p < c2p) {
+      // see if c1p can become better
+      *phi0 = *phi0 + dphi0;
+    }
+    else {
+      *phi1 = *phi1 + dphi1;
+    }
+  
+  }
+
+  // send final phi0 and phi1
+
+}
+
+float pathPredict(float x0[2], float v0[2],
+                  float xd[2], float vd[2], 
+                  float phi0, float phi1, float t1, 
+                  float *xt, float *vt, float psi_init)
+{
+  float deltat = 0.01;
+  float simtime = 0;
+  float phi = 0;
+  // float psi = psi_init; // fix yaw to nothing at the moment
+  float flapping = 0.85;
+
+  float x[2];
+  x[0] = x0[0];
+  x[1] = x0[1];
+  
+  float v[2]; 
+  v[0] = v0[0];
+  v[1] = v0[1];
+
+  // float theta =  20 * 3.142 / 180; // +ve is correct in their frame of ref
+  float maxbank = 45.0/57;
+  
+  // Predict until passing the gate
+  while ((x[0] - xd[0]) < 0.1) {
+
+    float theta = K_p_theta * (vd[0] - v[0]) +  K_ff_theta * vd[0];
+    // printf("theta: %f\n", theta);
+    if (theta > maxbank) {
+      theta = maxbank;
+    }
+    if (theta < -maxbank) {
+      theta = -maxbank; 
+    }
+    
+    if (simtime < t1) {
+      phi = phi0;
+    }
+    if (simtime >= t1) {
+      phi = phi1;
+    }
+
+    // saturate @ 57
+    if (phi > 1) {
+      phi = 1;
+    }
+    if (phi < -1) {
+      phi = -1;
+    }
+
+    float thrust = 9.81/ (cos(flapping * phi) * cos(flapping * theta)); 
+    
+    float ax = (cos(phi) * sin(theta) * cos(psi_init) + sin(phi) * sin(psi_init)) * thrust - v[0] * KDX;
+    float ay = (cos(phi) * sin(theta) * sin(psi_init) - sin(phi) * cos(psi_init)) * thrust - v[1] * KDY;
+
+    // Simulation
+    simtime = simtime + deltat;
+    v[0] = v[0] + ax * deltat;
+    x[0] = x[0] + v[0] * deltat; 
+
+    v[1] = v[1] + ay * deltat;
+    x[1] = x[1] + v[1] * deltat; 
+  }
+  // TODO: does it also care about x positions? this is only y
+  // Position at the Gate
+  xt[0] = x[0];
+  xt[1] = x[1];
+
+  vt[0] = v[0];
+  vt[1] = v[1];
+  // printf("reaching set: x: %f, y: %f, vx: %f, vy: %f\n", xt[0], xt[1], vt[0], vt[1]);
+  // penalize x more than y
+  float cost = fabsf(x[1] - xd[1])*fabsf(x[1] - xd[1]) * 10 + fabsf(v[1]- vd[1])*fabsf(v[1] - vd[1]);
+
+  return cost; 
+}
+
+// void get_state(dronerace_state_struct *var) 
+// {
+//   *var = dr_state;
+// }

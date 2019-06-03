@@ -26,6 +26,9 @@
 #ifndef DRONERACE_H
 #define DRONERACE_H
 
+#define KDX 0.57 
+#define KDY 0.56
+
 // run
 extern void dronerace_init(void);
 
@@ -34,7 +37,22 @@ extern void dronerace_periodic(void);
 
 // export
 extern void dronerace_set_rc(float t, float x, float y, float z);
-extern void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi, float* var);
+extern void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi, float *var_time, float *vel);
+
+
+
+void find_optimal(float *x0, float *v0, 
+                  float *xd, float *vd,
+                  float *xt, float *vt,
+                  float *phi0, float *phi1, 
+                  float *switch_time, float psi0);
+
+float pathPredict(float x0[2], float v0[2],
+                  float xd[2], float vd[2], 
+                  float phi0, float phi1, float t1, 
+                  float *xt, float *vt, float psi0);
+
+//void get_state(dronerace_state_struct *var) ;
 
 #endif
 

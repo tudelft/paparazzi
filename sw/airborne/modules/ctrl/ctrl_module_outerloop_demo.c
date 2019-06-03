@@ -31,10 +31,12 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "autopilot.h"
-
+#include <stdio.h>
 #include "./dronerace/dronerace.h"
-
+#include "./dronerace/filter.h"
 // Own Variables
+
+
 
 struct ctrl_module_demo_struct {
 // RC Inputs
@@ -50,13 +52,40 @@ struct ctrl_module_demo_struct {
 float comode_time = 0;
 
 
+
+float phi0 = 0;
+float phi1 = 0;
+float invert_time = 0;
+float x0[2] = {-3.0, -3.0}; //GPS_take;
+float v0[2] = {2.0, 0.0}; // needs non zero initial velocity, not sure why
+
+float xd[2] = {-0.0, 0.0};
+float vd[2] = {3.0, 0};
+
+float xt[2] = {0.0, 0.0};
+float vt[2] = {0.0, 0.0};
+
+
+
+
 ////////////////////////////////////////////////////////////////////
 // Call our controller
 // Implement own Horizontal loops
 void guidance_h_module_init(void)
 {
   dronerace_init();
+
+  float psi_init = stateGetNedToBodyEulers_f()->psi;
+
+  find_optimal(x0, v0, xd, vd, xt, vt, &phi0, &phi1, &invert_time, psi_init);
+
+  printf("init check: phi0: %f, phi1: %f, dt: %f\n", phi0, phi1, invert_time);
+  printf("init reaching set: x: %f, y: %f, vx: %f, vy: %f\n", xt[0], xt[1], vt[0], vt[1]);
+
 }
+
+
+
 
 void guidance_h_module_enter(void)
 {
@@ -73,31 +102,43 @@ void guidance_h_module_read_rc(void)
   //stabilization_attitude_read_rc_setpoint_eulers(&ctrl.rc_sp, autopilot.in_flight, false, false);
 }
 
-float time_var = 0.0;
+float var_time = 0.0;
+// float alt = 0.0;
+// float roll = 0.0;
+// float pitch = 0.0;
+// float yaw = 0.0;
+// float vel = 0;
+
+float K_ff_theta1 = 14.0/57.0/5.0;   // rad to fly at (e.g. 10 deg = 5 m/s)
+float K_p_theta1 = 6.0/57.0;       // m/s to radians
+
 void guidance_h_module_run(bool in_flight)
 {
   // YOUR NEW HORIZONTAL OUTERLOOP CONTROLLER GOES HERE
   // ctrl.cmd = CallMyNewHorizontalOuterloopControl(ctrl);
-  float alt = 0.0;
-  float roll = 0.0;
-  float pitch = 0.0;
-  float yaw = 0.0;
 
-  dronerace_get_cmd(&alt, &roll, &pitch, &yaw, &time_var);
 
-  ctrl.cmd.phi = ANGLE_BFP_OF_REAL(roll);
-  ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch);//-ANGLE_BFP_OF_REAL(5*3.142/180);//ANGLE_BFP_OF_REAL(pitch);
-  ctrl.cmd.psi = ANGLE_BFP_OF_REAL(yaw); // stateGetNedToBodyEulers_f()->psi;//
+  // dronerace_get_cmd(&alt, &roll, &pitch, &yaw, &var_time, &vel);
+  var_time = dr_state.time;
+
+  // ctrl.cmd.phi = ANGLE_BFP_OF_REAL(roll);
+  // ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch);//-ANGLE_BFP_OF_REAL(5*3.142/180);//ANGLE_BFP_OF_REAL(pitch);
+  // ctrl.cmd.psi = ANGLE_BFP_OF_REAL(yaw); // stateGetNedToBodyEulers_f()->psi;//
   
-  float abey = 45*3.142/180;
-  if (time_var < 0.8) {
-    ctrl.cmd.phi = ANGLE_BFP_OF_REAL(abey);
+  float lateral_vel_x = K_ff_theta1 * (vd[0] - dr_state.vx) + K_p_theta1 * vd[0];
+  
+
+  if (var_time < invert_time) {
+    ctrl.cmd.phi = ANGLE_BFP_OF_REAL(phi0);
+    ctrl.cmd.theta = ANGLE_BFP_OF_REAL(- lateral_vel_x);
   }
-  if (time_var > 0.8) {
-    ctrl.cmd.phi = ANGLE_BFP_OF_REAL(-abey);
+  if (var_time > invert_time) {
+    ctrl.cmd.phi = ANGLE_BFP_OF_REAL(phi1);
+    ctrl.cmd.theta = ANGLE_BFP_OF_REAL(- lateral_vel_x);
   }  
-  if (time_var > 1.6) {
-    ctrl.cmd.phi = 0;
+  if (var_time > invert_time / 0.55) {
+    ctrl.cmd.phi = ANGLE_BFP_OF_REAL(0);
+    ctrl.cmd.theta = ANGLE_BFP_OF_REAL(0);
   }
 
   stabilization_attitude_set_rpy_setpoint_i(&(ctrl.cmd));
@@ -118,23 +159,48 @@ void guidance_v_module_enter(void)
   // your code that should be executed when entering this vertical mode goes here
 }
 
+float sratio = 0.2;
+float eratio = 0.01;
 void guidance_v_module_run(bool in_flight)
 { 
+  
   float nominal = radio_control.values[RADIO_THROTTLE];
-  stabilization_cmd[COMMAND_THRUST] = nominal;
-  if (time_var < 0.8) {
-    stabilization_cmd[COMMAND_THRUST] = nominal * 1.2;
-  }
-  if (time_var > 0.8 && time_var < 1.6) {
-    stabilization_cmd[COMMAND_THRUST] = nominal * 1.3;
-  }  
+  stabilization_cmd[COMMAND_THRUST] = nominal / (cosf(dr_state.phi) * cosf(dr_state.theta));
+  /*
+  float aoa = (dr_state.phi);
+  // dronerace_state_struct testdrone;
 
-  if (time_var >= 1.6 && time_var < 1.65) {
-    stabilization_cmd[COMMAND_THRUST] = nominal * 1.1;
+  if (var_time < 1.2) {
+
+    stabilization_cmd[COMMAND_THRUST] = nominal / (cosf(dr_state.phi) * cosf(dr_state.theta)); // - sratio * aoa * vel * nominal ; //(cosf(dr_state.theta) * cosf(dr_state.phi));
+
   }
-  // if (time_var > 1.64 && time_var < 2.5) {
+  // if (var_time >= 0.8 && var_time < 1.3) {
+  //   stabilization_cmd[COMMAND_THRUST] = 1.35 * nominal / (cosf(roll) * cosf(pitch));  // because drag is helping to slow down (hopefully no downwash vortex)
+  // }   
+
+  if (var_time >= 1.2 && var_time < 2.4) {
+    // float varafds = eratio * nominal * vel * aoa;
+    stabilization_cmd[COMMAND_THRUST] = nominal / (cosf(dr_state.phi) * cosf(dr_state.theta)) + eratio * nominal * vel;  // 1.03 because drag is helping to slow down (hopefully no downwash vortex)
+    // printf("comp %f\n", varafds);
+    // printf("cmd: %d\n", stabilization_cmd[COMMAND_THRUST]);
+  }   
+    if (var_time >= 2.2 && var_time < 2.4) {
+    // float varafds = eratio * nominal * vel * aoa;
+    stabilization_cmd[COMMAND_THRUST] = nominal;  // 1.03 because drag is helping to slow down (hopefully no downwash vortex)
+    // printf("comp %f\n", varafds);
+    // printf("cmd: %d\n", stabilization_cmd[COMMAND_THRUST]);
+  }   
+
+
+  if (var_time >= 2.4 && var_time < 2.5) {
+    stabilization_cmd[COMMAND_THRUST] = 1.3 * nominal; // just ..
+  }
+  // if (time_dr_state > 1.64 && time_dr_state < 2.5) {
   //   stabilization_cmd[COMMAND_THRUST] = nominal * 0.9;
   // }
   
   // your vertical controller goes here
+  */
 }
+

@@ -21,6 +21,8 @@ struct dronerace_state_struct {
   float vy;
 
   // Heading
+  float theta;
+  float phi;
   float psi;
 
   // Logic

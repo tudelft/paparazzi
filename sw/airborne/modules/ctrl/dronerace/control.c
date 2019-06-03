@@ -111,8 +111,8 @@ void control_run(float dt)
   Bound(ax, -CTRL_MAX_PITCH, CTRL_MAX_PITCH);
   Bound(ay, -CTRL_MAX_PITCH, CTRL_MAX_PITCH);
 
-  dr_control.phi_cmd   = - sinf(psi) * ax + cosf(psi) * ay;
-  dr_control.theta_cmd = - cosf(psi) * ax - sinf(psi) * ay;
+  dr_control.phi_cmd   = -sinf(psi) * ax + cosf(psi) * ay;
+  dr_control.theta_cmd = -cosf(psi) * ax - sinf(psi) * ay;
   dr_control.psi_cmd   = dr_control.psi_ref;
   dr_control.z_cmd   = dr_fp.z_set;
 
