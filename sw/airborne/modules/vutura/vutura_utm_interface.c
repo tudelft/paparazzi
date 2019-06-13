@@ -58,6 +58,7 @@ struct vutura_utm_interface_t {
 AvoidanceParameters avoidance;
 FlightplanParameters flightplan;
 enum utm_state_t utm_state = UTM_STATE_INIT;
+bool avoidance_message_received = false;
 
 // private functions
 void send_to_utm_interface(PaparazziToUtmInterfaceMsg *msg);
@@ -72,6 +73,9 @@ void init_vutura_utm_interface(void)
 	avoidance.vn = 0;
 	avoidance.ve = 0;
 	avoidance.vd = 0;
+	avoidance.skip_wp = false;
+	avoidance.skip_to_wp = 0;
+	avoidance_message_received = false;
 
 	// Make a UDP connection
 	vutura_avoidance_data.fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -176,6 +180,9 @@ void avoid_check(void)
 			avoidance.vd = msg.vd;
 			avoidance.lat = msg.lat;
 			avoidance.lon = msg.lon;
+			avoidance.skip_wp = msg.skip_wp;
+			avoidance.skip_to_wp = msg.skip_to_wp;
+			avoidance_message_received = true;
 			//VERBOSE_PRINT("received avoidance msg: avoid->%i, vn->%i, ve->%i, vd->%i, lat->%i, lon->%i\n", avoidance.avoid, avoidance.vn, avoidance.ve, avoidance.vd, avoidance.lat, avoidance.lon);
 		}
 		else
@@ -195,6 +202,15 @@ void InitFlightplan(void)
 {
 	flightplan.start_index_ROUTE = WP_ROUTE_00;
 	flightplan.start_index_AVOID = WP_AVOID_00;
+	char* fp_blocks[NB_BLOCK] = FP_BLOCKS;
+	for (uint8_t i = 0; i < NB_BLOCK; ++i)
+	{
+		if (strstr(fp_blocks[i], "LEG_00"))
+		{
+			flightplan.start_index_LEG_BLOCK = i;
+			break;
+		}
+	}
 	flightplan.lla_ref_i.lat = NAV_LAT0;
 	flightplan.lla_ref_i.lon = NAV_LON0;
 	flightplan.lla_ref_i.alt = NAV_ALT0;
@@ -206,45 +222,56 @@ void InitFlightplan(void)
 
 void RunAvoidance(void)
 {
-	// First check if LEG_xx block is activated
-	char* fp_blocks[NB_BLOCK] = FP_BLOCKS;
-	uint8_t leg_number;
-
-	// Check if LEG and/or AVOID block is activated and move avoidance waypoints
-	if (strstr(fp_blocks[nav_block], "LEG_") != NULL)
+	if (avoidance_message_received)
 	{
-		char leg_number_c[2];
+	// First check if LEG_xx block is activated
+		char* fp_blocks[NB_BLOCK] = FP_BLOCKS;
+		uint8_t leg_number;
 
-		if (strstr(fp_blocks[nav_block], "_AVOID_") != NULL)
+		// Check if LEG and/or AVOID block is activated and move avoidance waypoints
+		if (strstr(fp_blocks[nav_block], "LEG_") != NULL)
 		{
-			// Check LEG number if in AVOID LEG
-			leg_number_c[0] = fp_blocks[nav_block][10];
-			leg_number_c[1] = fp_blocks[nav_block][11];
-			leg_number = atoi(leg_number_c);
+			char leg_number_c[2];
+
+			if (strstr(fp_blocks[nav_block], "_AVOID_") != NULL)
+			{
+				// Check LEG number if in AVOID LEG
+				leg_number_c[0] = fp_blocks[nav_block][10];
+				leg_number_c[1] = fp_blocks[nav_block][11];
+				leg_number = atoi(leg_number_c);
+			}
+			else
+			{
+				// Check LEG number if in regular LEG
+				leg_number_c[0] = fp_blocks[nav_block][4];
+				leg_number_c[1] = fp_blocks[nav_block][5];
+				leg_number = atoi(leg_number_c);
+			}
+
+			if (avoidance.skip_wp)
+			{
+				uint32_t new_leg_number = avoidance.skip_to_wp - 1;
+				VERBOSE_PRINT("TEST %i", leg_number);
+				leg_number = fmax(new_leg_number, leg_number);
+				nav_block = flightplan.start_index_LEG_BLOCK + leg_number;
+			}
+			// If in LEG or AVOID, move waypoints in case of avoidance
+			else if (avoidance.avoid && (strstr(fp_blocks[nav_block], "stage0") != NULL))
+			{
+				uint8_t wp_id_from = flightplan.start_index_AVOID + leg_number;
+				uint8_t wp_id_to = wp_id_from + 1;
+
+				NavSetWaypointHere(wp_id_from);
+
+				//set_avoidance_wp_fixed_for_carrot_time(wp_id_to, avodance.lat, avoidance.lon);
+				set_wp_at_latlon(wp_id_to, avoidance.lat, avoidance.lon);
+			}
+
+			flightplan.target_leg = leg_number;
+			flightplan.target_wp = leg_number + 1;
 		}
-		else
-		{
-			// Check LEG number if in regular LEG
-			leg_number_c[0] = fp_blocks[nav_block][4];
-			leg_number_c[1] = fp_blocks[nav_block][5];
-			leg_number = atoi(leg_number_c);
-		}
-
-		// If in LEG or AVOID, move waypoints in case of avoidance
-		if (avoidance.avoid && (strstr(fp_blocks[nav_block], "stage0") != NULL))
-		{
-			uint8_t wp_id_from = flightplan.start_index_AVOID + leg_number;
-			uint8_t wp_id_to = wp_id_from + 1;
-
-			NavSetWaypointHere(wp_id_from);
-
-			//set_avoidance_wp_fixed_for_carrot_time(wp_id_to, avodance.lat, avoidance.lon);
-			set_wp_at_latlon(wp_id_to, avoidance.lat, avoidance.lon);
-		}
-
-		flightplan.target_leg = leg_number;
-		flightplan.target_wp = leg_number + 1;
 	}
+	avoidance_message_received = false;
 }
 
 void set_wp_at_latlon(uint8_t wp_id, int32_t lat, int32_t lon)

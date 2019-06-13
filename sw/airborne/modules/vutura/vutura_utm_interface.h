@@ -74,6 +74,8 @@ union vutura_to_paparazzi_msg_t {
 		int32_t vd;
 		int32_t lat; //[dege7]
 		int32_t lon; //[dege7]
+		bool skip_wp;
+		uint32_t skip_to_wp;
 	};
 	unsigned char bytes;
 } __attribute((__packed__));
@@ -103,6 +105,8 @@ struct avoidance_parameters_t
 	int32_t vd;
 	int32_t lat; //[dege7]
 	int32_t lon; //[dege7]
+	bool skip_wp;
+	uint32_t skip_to_wp;
 };
 typedef struct avoidance_parameters_t AvoidanceParameters;
 
@@ -110,6 +114,7 @@ struct flightplan_parameters_t
 {
 	uint8_t start_index_ROUTE;
 	uint8_t start_index_AVOID;
+	uint8_t start_index_LEG_BLOCK;
 	struct LlaCoor_i lla_ref_i;
 	struct LtpDef_i ltp_ref_i;
 	uint8_t target_leg;
@@ -121,6 +126,7 @@ typedef struct flightplan_parameters_t FlightplanParameters;
 extern AvoidanceParameters avoidance;
 extern FlightplanParameters flightplan;
 extern enum utm_state_t utm_state;
+extern bool avoidance_message_received;
 
 extern void init_vutura_utm_interface(void);
 extern void parse_gps(void);
