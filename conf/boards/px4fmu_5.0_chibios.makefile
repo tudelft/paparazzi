@@ -88,6 +88,8 @@ IMU_MPU_SPI_SLAVE_IDX ?= SPI_SLAVE0
 #
 # default UART configuration (modem, gps, spektrum)
 #
+SBUS_PORT ?= UART6
+RADIO_CONTROL_SPEKTRUM_PRIMARY_PORT   ?= UART6
 
 #The modem serial on px4 is called serial 1, but connected to uart2 on the f4
 MODEM_PORT ?= UART2

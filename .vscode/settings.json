@@ -8,4 +8,8 @@
     "[python]": {
         "editor.tabSize": 4,
     },
+    "files.associations": {
+        "actuators_pwm_arch.h": "c",
+        "canard.h": "c"
+    },
 }
