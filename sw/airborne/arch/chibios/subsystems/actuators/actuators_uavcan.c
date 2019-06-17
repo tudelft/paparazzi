@@ -177,7 +177,7 @@ static THD_FUNCTION(can_tx, p) {
         canardPopTxQueue(&iface->canard);
       } else {
         // After 100 retries giveup
-        if(err_cnt >= 100) {
+        if(err_cnt >= 5) {
           err_cnt = 0;
           canardPopTxQueue(&iface->canard);
           continue;

@@ -88,9 +88,9 @@ static inline bool autopilot_arming_check_valid(bool yaw_must_be_centered)
 {
   if (!THROTTLE_STICK_DOWN()) {
     autopilot.arming_status = AP_ARMING_STATUS_THROTTLE_NOT_DOWN;
-  } else if (!PITCH_STICK_CENTERED()) {
+  } /*else if (!PITCH_STICK_CENTERED()) {
     autopilot.arming_status = AP_ARMING_STATUS_PITCH_NOT_CENTERED;
-  } else if (!ROLL_STICK_CENTERED()) {
+  }*/ else if (!ROLL_STICK_CENTERED()) {
     autopilot.arming_status = AP_ARMING_STATUS_ROLL_NOT_CENTERED;
   } else {
     if (yaw_must_be_centered && !YAW_STICK_CENTERED()) {
