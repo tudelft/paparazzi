@@ -86,19 +86,19 @@ void file_logger_start(void)
   if (file_logger != NULL) {
     fprintf(
       file_logger,
-
-	  //rotorcraft uses COMMAND_THRUST, fixedwing COMMAND_THROTTLE at this time
-#ifdef COMMAND_THRUST
     "counter,\
     accel.x,\
     accel.y,\
     accel.z,\
-    gyro_unscaled.p,\
-    gyro_unscaled.q,\
-    gyro_unscaled.r,\
+    gyro.p,\
+    gyro.q,\
+    gyro.r,\
     rot->phi,\
     rot->theta,\
     rot->psi,\
+    rates->p,\
+    rates->q,\
+    rates->r,\
     pos->x, pos->y, pos->z,\
     COMMAND_THRUST,\
     COMMAND_ROLL,\
@@ -108,10 +108,6 @@ void file_logger_start(void)
     rpm_obs[1],\
     rpm_obs[2],\
     rpm_obs[3]\n"
-      //"counter,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,roll,pitch,yaw,opti_x,opti_y,opti_z\n"
-#else
-      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,	h_ctl_aileron_setpoint, h_ctl_elevator_setpoint, qi,qx,qy,qz\n"
-#endif
     );
   }
 }
@@ -136,25 +132,20 @@ void file_logger_periodic(void)
   // struct Int32Quat *quat = stateGetNedToBodyQuat_i();
   struct FloatEulers *rot = stateGetNedToBodyEulers_f();
   struct NedCoor_f *pos = stateGetPositionNed_f();
-  //["counter",
-    // "accel_unscaled_x","accel_unscaled_y","accel_unscaled_z",
-    // "gyro_unscaled_p","gyro_unscaled_q","gyro_unscaled_r",
-    // "mag_unscaled_x","mag_unscaled_y","mag_unscaled_z",
-    // "phi","theta","psi",
-    // "opti_x","opti_y","opti_z","time"]
+  struct FloatRates *rates = stateGetBodyRates_f();
 
-#ifdef COMMAND_THRUST //For example rotorcraft
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d\n",
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d\n",
           counter,
-          imu.accel.x, // using imu.accel_unscaled creates problems, /512. 
+          imu.accel.x, 
           imu.accel.y, // /1024 now
           imu.accel.z,
-          imu.gyro_unscaled.p,
-          imu.gyro_unscaled.q,
-          imu.gyro_unscaled.r,
+          imu.gyro.p,  // INT32_RATE_FRAC is 4096
+          imu.gyro.q,
+          imu.gyro.r,
           rot->phi,
           rot->theta,
           rot->psi,
+          rates->p, rates->q, rates->r,
           pos->x, pos->y, pos->z,
           stabilization_cmd[COMMAND_THRUST],
           stabilization_cmd[COMMAND_ROLL],
@@ -182,26 +173,7 @@ void file_logger_periodic(void)
           &actuators_bebop.rpm_obs[2],
           &actuators_bebop.rpm_obs[3]);
           */
-#else
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
-          counter,
-          imu.gyro_unscaled.p,
-          imu.gyro_unscaled.q,
-          imu.gyro_unscaled.r,
-          imu.accel_unscaled.x,
-          imu.accel_unscaled.y,
-          imu.accel_unscaled.z,
-          imu.mag_unscaled.x,
-          imu.mag_unscaled.y,
-          imu.mag_unscaled.z,
-		  h_ctl_aileron_setpoint,
-		  h_ctl_elevator_setpoint,
-          quat->qi,
-          quat->qx,
-          quat->qy,
-          quat->qz
-         );
-#endif
+
 
   counter++;
 }

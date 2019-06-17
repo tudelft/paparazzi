@@ -103,11 +103,6 @@ void guidance_h_module_read_rc(void)
 }
 
 float var_time = 0.0;
-// float alt = 0.0;
-// float roll = 0.0;
-// float pitch = 0.0;
-// float yaw = 0.0;
-// float vel = 0;
 
 float K_ff_theta1 = 14.0/57.0/5.0;   // rad to fly at (e.g. 10 deg = 5 m/s)
 float K_p_theta1 = 6.0/57.0;       // m/s to radians
@@ -121,12 +116,17 @@ void guidance_h_module_run(bool in_flight)
   // dronerace_get_cmd(&alt, &roll, &pitch, &yaw, &var_time, &vel);
   var_time = dr_state.time;
 
-  // ctrl.cmd.phi = ANGLE_BFP_OF_REAL(roll);
-  // ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch);//-ANGLE_BFP_OF_REAL(5*3.142/180);//ANGLE_BFP_OF_REAL(pitch);
-  // ctrl.cmd.psi = ANGLE_BFP_OF_REAL(yaw); // stateGetNedToBodyEulers_f()->psi;//
-  
+  ctrl.cmd.phi = ANGLE_BFP_OF_REAL(roll);
+  ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch);//-ANGLE_BFP_OF_REAL(5*3.142/180);//ANGLE_BFP_OF_REAL(pitch);
+  ctrl.cmd.psi = ANGLE_BFP_OF_REAL(yaw); // stateGetNedToBodyEulers_f()->psi;//
+  #if 0
   float lateral_vel_x = K_ff_theta1 * (vd[0] - dr_state.vx) + K_p_theta1 * vd[0];
-  
+  if (lateral_vel_x > 20.0/57.0) {
+    lateral_vel_x = 20.0/57.0;
+  }
+  if (lateral_vel_x < -20.0/57.0) {
+    lateral_vel_x = -20.0/57.0;
+  }
 
   if (var_time < invert_time) {
     ctrl.cmd.phi = ANGLE_BFP_OF_REAL(phi0);
@@ -138,8 +138,9 @@ void guidance_h_module_run(bool in_flight)
   }  
   if (var_time > invert_time / 0.55) {
     ctrl.cmd.phi = ANGLE_BFP_OF_REAL(0);
-    ctrl.cmd.theta = ANGLE_BFP_OF_REAL(0);
+    ctrl.cmd.theta = ANGLE_BFP_OF_REAL(0);  
   }
+  #endif
 
   stabilization_attitude_set_rpy_setpoint_i(&(ctrl.cmd));
   stabilization_attitude_run(in_flight);
@@ -147,6 +148,8 @@ void guidance_h_module_run(bool in_flight)
   // Alternatively, use the indi_guidance and send AbiMsgACCEL_SP to it instead of setting pitch and roll
 }
 
+
+#if 1
 
 void guidance_v_module_init(void)
 {
@@ -204,3 +207,4 @@ void guidance_v_module_run(bool in_flight)
   */
 }
 
+#endif

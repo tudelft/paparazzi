@@ -77,6 +77,7 @@ volatile float input_dz = 0;
 static FILE *file_logger = NULL;
 
 static void open_log(void) {
+  #if 0 
   // Get current date/time, format is YYYY-MM-DD.HH:mm:ss
   /*
   char date_time[80];
@@ -111,10 +112,12 @@ static void open_log(void) {
       fprintf(file_logger,"phi,theta,psi,vision_cnt,ransac_buf_size,vision_dx,vision_dy,vision_dz,dr_state_x,dr_state_y,dr_state_vx,dr_state_vy,corr_x,corr_y,real_x,real_y\n");
     }
   }
+  #endif
 }
 
 static void write_log(void)
 {
+  #if 0
   if (file_logger != 0) {
 
     if(TYPE_LOG == OLD_LOG) {
@@ -130,6 +133,7 @@ static void write_log(void)
                       dr_state.x+dr_ransac.corr_x, dr_state.y+dr_ransac.corr_y, stateGetPositionNed_f()->x, stateGetPositionNed_f()->y);
     */}
   }
+  #endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -293,7 +297,7 @@ void dronerace_periodic(void)
 
     flightplan_list();
   }
-*/
+  */
   //printf("before write log\n");
   write_log();
   //printf("after write log\n");
@@ -359,6 +363,8 @@ void find_optimal(float *x0, float *v0,
   float dphi0 = 4.0/57; 
   float dphi1 = 4.0/57;
 
+  float maxbank = 25.0/57.0;
+
   for (int i = 0; i < OPT_ITER; i++) {
     
     float c1pstep = (*phi0 + dphi0);
@@ -407,6 +413,23 @@ void find_optimal(float *x0, float *v0,
     else {
       *phi1 = *phi1 + dphi1;
     }
+
+    
+    // saturate @ 57
+    if (*phi0 > maxbank) {
+      *phi0 = maxbank;
+    }
+    if (*phi0 < -maxbank) {
+      *phi0 = -maxbank;
+    }
+
+    // saturate @ 57
+    if (*phi1 > maxbank) {
+      *phi1 = maxbank;
+    }
+    if (*phi1 < -maxbank) {
+      *phi1 = -maxbank;
+    }
   
   }
 
@@ -434,7 +457,7 @@ float pathPredict(float x0[2], float v0[2],
   v[1] = v0[1];
 
   // float theta =  20 * 3.142 / 180; // +ve is correct in their frame of ref
-  float maxbank = 45.0/57;
+  float maxbank = 25.0/57.0;
   
   // Predict until passing the gate
   while ((x[0] - xd[0]) < 0.1) {
@@ -453,14 +476,6 @@ float pathPredict(float x0[2], float v0[2],
     }
     if (simtime >= t1) {
       phi = phi1;
-    }
-
-    // saturate @ 57
-    if (phi > 1) {
-      phi = 1;
-    }
-    if (phi < -1) {
-      phi = -1;
     }
 
     float thrust = 9.81/ (cos(flapping * phi) * cos(flapping * theta)); 
