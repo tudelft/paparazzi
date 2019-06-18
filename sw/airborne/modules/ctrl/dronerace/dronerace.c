@@ -36,6 +36,7 @@
 #include "flightplan.h"
 
 #include "subsystems/datalink/telemetry.h"
+#include "firmwares/rotorcraft/stabilization.h"
 #include "boards/bebop/actuators.h"
 
 // to know if we are simulating:
@@ -60,32 +61,37 @@ volatile float input_dz = 0;
 /** The file pointer */
 static FILE *file_logger_t = NULL;
 
-static void open_log(void) {
+static void open_log(void) 
+{
+  
   uint32_t counterf = 0;
   char filename[512];
   // Check for available files
   sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "log_file");
   while ((file_logger_t = fopen(filename, "r"))) {
     fclose(file_logger_t);
-    sprintf(filename, "%s/%s_%05d.csv", STRINGIFY(FILE_LOGGER_PATH), "log_file", counterf);
+    sprintf(filename, "%s/%s_%02d.csv", STRINGIFY(FILE_LOGGER_PATH), "log_file", counterf);
     counterf++;
   }
-
   printf("\n\n*** chosen filename log drone race: %s ***\n\n", filename);
-
   file_logger_t = fopen(filename, "w");
+  
 }
 
 uint32_t counter = 0; 
+struct FloatEulers *rot; 
+struct NedCoor_f *pos;   
+struct FloatRates *rates;
 static void write_log(void)
-{
+{ 
   
   if (file_logger_t != 0) {
-    struct FloatEulers *rot  = stateGetNedToBodyEulers_f();
-    struct NedCoor_f *pos    = stateGetPositionNed_f();
-    struct FloatRates *rates = stateGetBodyRates_f();
+
+    rot = stateGetNedToBodyEulers_f();
+    pos = stateGetPositionNed_f();
+    rates = stateGetBodyRates_f();
     
-    fprintf(file_logger_t, "%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d\n",
+    fprintf(file_logger_t, "%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f\n",
             counter,
             imu.accel.x, 
             imu.accel.y, // /1024 now
@@ -105,11 +111,10 @@ static void write_log(void)
             actuators_bebop.rpm_obs[0],
             actuators_bebop.rpm_obs[1],
             actuators_bebop.rpm_obs[2],
-            actuators_bebop.rpm_obs[3]);
+            actuators_bebop.rpm_obs[3],
+            dr_state.x, dr_state.y);
     counter++; 
-  }
-  
-  
+  }  
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -208,7 +213,7 @@ void dronerace_init(void)
 
 }
 
-
+bool start_log = 0;
 float psi0 = 0;
 void dronerace_enter(void)
 {
@@ -228,6 +233,7 @@ void dronerace_enter(void)
     waypoint_set_enu( WP_p1+i, &enu_w);
     //printf("Moved %f %f \n", enu_g.x, enu_g.y);
   }
+  start_log = 1;
 }
 
 #ifndef PREDICTION_BIAS_PHI
@@ -253,12 +259,15 @@ void dronerace_periodic(void)
   dr_state.theta = input_theta;
   
   filter_predict(input_phi, input_theta, input_psi, dt);
-  if(dr_state.time < MAXTIME) {
+  
+  if(dr_state.time < MAXTIME && start_log == 1) {
     write_log();
   }
   if(dr_state.time > MAXTIME) {
-    fclose(file_logger_t);
+    start_log = 0;
+    //fclose(file_logger_t);
   }
+  
   
   
   struct NedCoor_f target_ned;

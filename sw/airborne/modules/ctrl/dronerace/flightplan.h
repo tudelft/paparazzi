@@ -38,9 +38,9 @@ struct jungle_gate_struct
 // Variables
 extern struct dronerace_fp_struct dr_fp;
 
-#define MAX_GATES 2
+#define MAX_GATES 3
 
-#define  REGULAR 0
+#define REGULAR 0
 #define JUNGLE 1
 #define VIRTUAL 2
 #define DIAL 3
