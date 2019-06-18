@@ -155,25 +155,5 @@ void file_logger_periodic(void)
           actuators_bebop.rpm_obs[1],
           actuators_bebop.rpm_obs[2],
           actuators_bebop.rpm_obs[3]);
-          /*
-          quat->qi,
-          quat->qx,
-          quat->qy,
-          quat->qz
-          &stabilization_cmd[COMMAND_THRUST],
-          &stabilization_cmd[COMMAND_ROLL],
-          &stabilization_cmd[COMMAND_PITCH],
-          &stabilization_cmd[COMMAND_YAW],
-          &actuators_bebop.rpm_ref[0],
-          &actuators_bebop.rpm_ref[1],
-          &actuators_bebop.rpm_ref[2],
-          &actuators_bebop.rpm_ref[3],
-          &actuators_bebop.rpm_obs[0],
-          &actuators_bebop.rpm_obs[1],
-          &actuators_bebop.rpm_obs[2],
-          &actuators_bebop.rpm_obs[3]);
-          */
-
-
   counter++;
 }

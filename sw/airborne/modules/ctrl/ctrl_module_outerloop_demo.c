@@ -52,7 +52,7 @@ struct ctrl_module_demo_struct {
 float comode_time = 0;
 
 
-
+/* 
 float phi0 = 0;
 float phi1 = 0;
 float invert_time = 0;
@@ -64,7 +64,7 @@ float vd[2] = {3.0, 0};
 
 float xt[2] = {0.0, 0.0};
 float vt[2] = {0.0, 0.0};
-
+*/
 
 
 
@@ -76,13 +76,13 @@ void guidance_h_module_init(void)
   dronerace_init();
 
   float psi_init = stateGetNedToBodyEulers_f()->psi;
-
+  /* 
   find_optimal(x0, v0, xd, vd, xt, vt, &phi0, &phi1, &invert_time, psi_init);
 
   printf("init check: phi0: %f, phi1: %f, dt: %f\n", phi0, phi1, invert_time);
   printf("init reaching set: x: %f, y: %f, vx: %f, vy: %f\n", xt[0], xt[1], vt[0], vt[1]);
-
-}
+  */
+} 
 
 
 
@@ -107,18 +107,25 @@ float var_time = 0.0;
 float K_ff_theta1 = 14.0/57.0/5.0;   // rad to fly at (e.g. 10 deg = 5 m/s)
 float K_p_theta1 = 6.0/57.0;       // m/s to radians
 
+
+float alt = 0;
+float roll = 0;
+float pitch = 0;
+float yaw = 0;
+
+
 void guidance_h_module_run(bool in_flight)
 {
   // YOUR NEW HORIZONTAL OUTERLOOP CONTROLLER GOES HERE
   // ctrl.cmd = CallMyNewHorizontalOuterloopControl(ctrl);
 
 
-  // dronerace_get_cmd(&alt, &roll, &pitch, &yaw, &var_time, &vel);
+  dronerace_get_cmd(&alt, &roll, &pitch, &yaw);
   var_time = dr_state.time;
 
-  ctrl.cmd.phi = ANGLE_BFP_OF_REAL(roll);
-  ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch);//-ANGLE_BFP_OF_REAL(5*3.142/180);//ANGLE_BFP_OF_REAL(pitch);
-  ctrl.cmd.psi = ANGLE_BFP_OF_REAL(yaw); // stateGetNedToBodyEulers_f()->psi;//
+  ctrl.cmd.phi   = ANGLE_BFP_OF_REAL(roll);
+  ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch); //-ANGLE_BFP_OF_REAL(5*3.142/180);
+  ctrl.cmd.psi   = ANGLE_BFP_OF_REAL(yaw);   // stateGetNedToBodyEulers_f()->psi;//
   #if 0
   float lateral_vel_x = K_ff_theta1 * (vd[0] - dr_state.vx) + K_p_theta1 * vd[0];
   if (lateral_vel_x > 20.0/57.0) {
@@ -168,7 +175,7 @@ void guidance_v_module_run(bool in_flight)
 { 
   
   float nominal = radio_control.values[RADIO_THROTTLE];
-  stabilization_cmd[COMMAND_THRUST] = nominal / (cosf(dr_state.phi) * cosf(dr_state.theta));
+  stabilization_cmd[COMMAND_THRUST] = nominal / (cosf(dr_state.phi * 0.8) * cosf(dr_state.theta * 0.8));
   /*
   float aoa = (dr_state.phi);
   // dronerace_state_struct testdrone;

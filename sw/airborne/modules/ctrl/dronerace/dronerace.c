@@ -34,10 +34,15 @@
 #include "control.h"
 #include "ransac.h"
 #include "flightplan.h"
+
 #include "subsystems/datalink/telemetry.h"
+#include "boards/bebop/actuators.h"
 
 // to know if we are simulating:
 #include "generated/airframe.h"
+
+#define MAXTIME 8.0
+#define FILE_LOGGER_PATH /data/ftp/internal_000
 
 float dt = 1.0f / 512.f;
 
@@ -50,90 +55,61 @@ volatile float input_dx = 0;
 volatile float input_dy = 0;
 volatile float input_dz = 0;
 
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// LOGGING
-
 #include <stdio.h>
 
-/** Set the default File logger path to the USB drive */
-#ifndef FILE_LOGGER_PATH
-  #if SIMULATE
-    #define FILE_LOGGER_PATH .
-  #else
-    #define FILE_LOGGER_PATH /data/ftp/internal_000
-  #endif
-#endif
-
-// What type of log to make during flight:
-#define CHRISTOPHE_LOG 0
-#define OLD_LOG 1
-#define FULL_LOG 2
-#define TYPE_LOG FULL_LOG
-
-
 /** The file pointer */
-static FILE *file_logger = NULL;
+static FILE *file_logger_t = NULL;
 
 static void open_log(void) {
-  #if 0 
-  // Get current date/time, format is YYYY-MM-DD.HH:mm:ss
-  /*
-  char date_time[80];
-  time_t now = time(0);
-  struct tm  tstruct;
-  tstruct = *localtime(&now);
-  strftime(date_time, sizeof(date_time), "%Y-%m-%d_%X", &tstruct);
-  */
-
-  uint32_t counter = 0;
+  uint32_t counterf = 0;
   char filename[512];
   // Check for available files
   sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "log_file");
-  while ((file_logger = fopen(filename, "r"))) {
-    fclose(file_logger);
-    sprintf(filename, "%s/%s_%05d.csv", STRINGIFY(FILE_LOGGER_PATH), "log_file", counter);
-    counter++;
+  while ((file_logger_t = fopen(filename, "r"))) {
+    fclose(file_logger_t);
+    sprintf(filename, "%s/%s_%05d.csv", STRINGIFY(FILE_LOGGER_PATH), "log_file", counterf);
+    counterf++;
   }
 
   printf("\n\n*** chosen filename log drone race: %s ***\n\n", filename);
 
-  file_logger = fopen(filename, "w");
-
-  if (file_logger != NULL) {
-    if(TYPE_LOG == CHRISTOPHE_LOG) {
-      fprintf(file_logger,"phi,theta,psi,vision_cnt,dx,dy,dz\n");
-    }
-    else if(TYPE_LOG == OLD_LOG) {
-      fprintf(file_logger,"dr_state_x,dr_state_y,dr_state_vx,dr_state_vy,vision_cnt,vision_dx,vision_dy\n");
-    }
-    else {
-      fprintf(file_logger,"phi,theta,psi,vision_cnt,ransac_buf_size,vision_dx,vision_dy,vision_dz,dr_state_x,dr_state_y,dr_state_vx,dr_state_vy,corr_x,corr_y,real_x,real_y\n");
-    }
-  }
-  #endif
+  file_logger_t = fopen(filename, "w");
 }
 
+uint32_t counter = 0; 
 static void write_log(void)
 {
-  #if 0
-  if (file_logger != 0) {
-
-    if(TYPE_LOG == OLD_LOG) {
-      fprintf(file_logger, "%f,%f,%f,%f,%d,%f,%f\n",dr_state.x, dr_state.y, dr_state.vx, dr_state.vy,
-          dr_vision.cnt,dr_vision.dx,dr_vision.dy);
-    }
-    else if(TYPE_LOG == CHRISTOPHE_LOG) {
-      fprintf(file_logger, "%f,%f,%f,%d,%f,%f,%f\n",input_phi, input_theta, input_psi, input_cnt, input_dx, input_dy, input_dz);
-    }
-    else {
-      /*fprintf(file_logger, "%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",stateGetNedToBodyEulers_f()->phi, stateGetNedToBodyEulers_f()->theta, stateGetNedToBodyEulers_f()->psi,
-                      dr_vision.cnt, dr_ransac.buf_size, dr_vision.dx, dr_vision.dy, dr_vision.dz, dr_state.x, dr_state.y, dr_state.vx, dr_state.vy,
-                      dr_state.x+dr_ransac.corr_x, dr_state.y+dr_ransac.corr_y, stateGetPositionNed_f()->x, stateGetPositionNed_f()->y);
-    */}
+  
+  if (file_logger_t != 0) {
+    struct FloatEulers *rot  = stateGetNedToBodyEulers_f();
+    struct NedCoor_f *pos    = stateGetPositionNed_f();
+    struct FloatRates *rates = stateGetBodyRates_f();
+    
+    fprintf(file_logger_t, "%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d\n",
+            counter,
+            imu.accel.x, 
+            imu.accel.y, // /1024 now
+            imu.accel.z,
+            imu.gyro.p,  // INT32_RATE_FRAC is 4096
+            imu.gyro.q,
+            imu.gyro.r,
+            rot->phi,
+            rot->theta,
+            rot->psi,
+            rates->p, rates->q, rates->r,
+            pos->x, pos->y, pos->z,
+            stabilization_cmd[COMMAND_THRUST],
+            stabilization_cmd[COMMAND_ROLL],
+            stabilization_cmd[COMMAND_PITCH],
+            stabilization_cmd[COMMAND_YAW],
+            actuators_bebop.rpm_obs[0],
+            actuators_bebop.rpm_obs[1],
+            actuators_bebop.rpm_obs[2],
+            actuators_bebop.rpm_obs[3]);
+    counter++; 
   }
-  #endif
+  
+  
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,6 +129,7 @@ static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
   
   float ex = 0;
   float ey = 0;
+
   float ez = 0;
 
   int32_t gc = dr_vision.cnt; // Error
@@ -172,12 +149,6 @@ static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
                                    &gx, &gy, &gz,
                                    &ex, &ey, &ez,
                                    &ix, &iy, &iz); 
-/*
-  pprz_msg_send_DRONE_RACE(trans, dev, AC_ID,
-		  &fx, &fy, &fz, &cx, &cy,
-		  &gc, &gx, &gy, &gz,
-		  &ix, &iy);
-*/
 }
 
 
@@ -270,76 +241,50 @@ void dronerace_enter(void)
 void dronerace_periodic(void)
 {
 
-  float phi_bias = RadOfDeg(PREDICTION_BIAS_PHI);
+  float phi_bias   = RadOfDeg(PREDICTION_BIAS_PHI);
   float theta_bias = RadOfDeg(PREDICTION_BIAS_THETA);
 
-  input_phi = stateGetNedToBodyEulers_f()->phi - phi_bias;
+  input_phi   = stateGetNedToBodyEulers_f()->phi - phi_bias;
   input_theta = stateGetNedToBodyEulers_f()->theta - theta_bias;
-  input_psi = stateGetNedToBodyEulers_f()->psi - psi0;
+  input_psi   = stateGetNedToBodyEulers_f()->psi - psi0;
 
-  dr_state.phi = input_phi;
-  dr_state.psi = input_psi;
+  dr_state.phi   = input_phi;
+  dr_state.psi   = input_psi;
   dr_state.theta = input_theta;
   
   filter_predict(input_phi, input_theta, input_psi, dt);
+  if(dr_state.time < MAXTIME) {
+    write_log();
+  }
+  if(dr_state.time > MAXTIME) {
+    fclose(file_logger_t);
+  }
   
+  
+  struct NedCoor_f target_ned;
+  target_ned.x = dr_fp.gate_y;
+  target_ned.y = dr_fp.gate_x;
+  target_ned.z = -dr_fp.gate_z;
 
-  // Vision update
-  // printf("input count, vision count: %d, %d\n", input_cnt, dr_vision.cnt);
-  /*
-  if (input_cnt > dr_vision.cnt) {
-    dr_vision.cnt = input_cnt;
-    dr_vision.dx = input_dx;
-    dr_vision.dy = input_dy;
-    dr_vision.dz = input_dz;
-
-    filter_correct();
-
-    flightplan_list();
+  if (autopilot.mode_auto2 == AP_MODE_MODULE) {
+    ENU_BFP_OF_REAL(navigation_carrot, target_ned);
+    ENU_BFP_OF_REAL(navigation_target, target_ned);
   }
-  */
-  //printf("before write log\n");
-  write_log();
-  //printf("after write log\n");
-
-  {
-    struct NedCoor_f target_ned;
-    target_ned.x = dr_fp.gate_y;
-    target_ned.y = dr_fp.gate_x;
-    target_ned.z = -dr_fp.gate_z;
-
-    if (autopilot.mode_auto2 == AP_MODE_MODULE) {
-      ENU_BFP_OF_REAL(navigation_carrot, target_ned);
-      ENU_BFP_OF_REAL(navigation_target, target_ned);
-    }
-  }
-
-
-  // Show position on the map
-  /*
-  struct NedCoor_f pos;
-  pos.x = dr_state.x;
-  pos.y = dr_state.y;
-  pos.z = sonar_bebop.distance; // Hardcoded push of sonar to the altitude
-  //stateSetPositionNed_f(&pos);
-*/
 }
 
 void dronerace_set_rc(UNUSED float rt, UNUSED float rx, UNUSED float ry, UNUSED float rz)
 {
 }
 
-void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi_cmd, float *var_time, float *vel)
+void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi_cmd)
 {
 
   control_run(dt);
   
-  *phi = dr_control.phi_cmd;
-  *theta = dr_control.theta_cmd;
+  *phi     = dr_control.phi_cmd;
+  *theta   = dr_control.theta_cmd;
   *psi_cmd = dr_control.psi_cmd + psi0;
-  *alt = - dr_control.z_cmd;
-  *var_time = dr_state.time;
-  *vel = dr_state.vy;
+  *alt     = - dr_control.z_cmd;
   // guidance_v_z_sp = POS_BFP_OF_REAL(dr_control.z_cmd);
 }
 
