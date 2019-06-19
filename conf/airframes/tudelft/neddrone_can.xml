@@ -251,9 +251,9 @@
     <define name="PHI_I" value="{40, 20}"/>
     <define name="PHI_DD" value="{0, 0}"/>
 
-    <define name="THETA_P" value="{800, 600}"/>
-    <define name="THETA_D" value="{350, 250}"/>
-    <define name="THETA_I" value="{40, 200}"/>
+    <define name="THETA_P" value="{800, 400}"/>
+    <define name="THETA_D" value="{350, 150}"/>
+    <define name="THETA_I" value="{40, 100}"/>
     <define name="THETA_DD" value="{0, 0}"/>
 
     <define name="PSI_P" value="{1250, 1250}"/>
