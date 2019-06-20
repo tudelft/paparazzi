@@ -58,14 +58,17 @@
     </block>
     <block name="Start Engine">
       <call_once fun="NavResurrect()"/>
+      <call_once fun="nav_set_heading_current()"/>
       <attitude pitch="-65" roll="0" throttle="0" vmode="throttle" until="stage_time>1"/>
     </block>
     <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="stateGetPositionEnu_f()->z > 18.0" deroute="Takeoff"/>
+      <call_once fun="nav_set_heading_current()"/>
       <attitude pitch="-45." roll="0" throttle="0.67" vmode="throttle"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="stateGetPositionEnu_f()->z > 40.0" deroute="follow_module"/>
+      <call_once fun="nav_set_heading_current()"/>
       <stay pre_call="follow_me_set_wp(WP_CLIMB, 0)" vmode="climb" climb="nav_climb_vspeed" wp="CLIMB"/>
     </block>
 
