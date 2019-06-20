@@ -213,6 +213,7 @@
       <message name="AHRS_BIAS"                period="0.5"/>
       <message name="HOVER_LOOP"               period="0.02"/>
       <message name="GUIDANCE_H_REF_INT"       period="0.02"/>
+      <message name="HYBRID_GUIDANCE"          period="0.1"/>
     </mode>
   </process>
 
