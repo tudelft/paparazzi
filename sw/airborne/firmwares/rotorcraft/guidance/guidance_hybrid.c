@@ -51,21 +51,29 @@
 // Variables used for settings
 int32_t guidance_hybrid_norm_ref_airspeed;
 float guidance_hybrid_norm_ref_airspeed_f;
-float alt_pitch_gain = 0.3 / 0.42;
 int32_t max_airspeed = MAX_AIRSPEED;
 int32_t wind_gain;
 int32_t horizontal_speed_gain;
 float max_turn_bank;
 float turn_bank_gain;
 
-#define AIRSPEED_HOVER      4
-#define AIRSPEED_FORWARD    12
-#define CRUISE_THROTTLE     (MAX_PPRZ / 5)
-#define FWD_P_GAIN          (MAX_PPRZ / 14) //
-#define FWD_ALT_GAIN        0.10
-#define FWD_PID_DIV         2
-#define HOVER_P_GAIN        12
-#define FORWARD_NOMINAL_PITCH 78.0
+#define AIRSPEED_HOVER          4
+#define AIRSPEED_FORWARD        12
+#define CRUISE_THROTTLE         (MAX_PPRZ / 5)
+#define FWD_SPEED_P_GAIN        (MAX_PPRZ / 14) //
+#define FWD_ALT_THRUST_GAIN     0.10
+#define FWD_PID_DIV             2
+#define FWD_NOMINAL_PITCH       78.0
+#define FWD_PITCH_GAIN          (0.3 / 0.42)
+#define HOVER_P_GAIN            12
+
+int32_t cruise_throttle = CRUISE_THROTTLE;
+int32_t fwd_speed_p_gain = FWD_SPEED_P_GAIN;
+float fwd_alt_thrust_gain = FWD_ALT_THRUST_GAIN;
+float fwd_pid_div = FWD_PID_DIV;
+float fwd_nominal_pitch = FWD_NOMINAL_PITCH;
+float fwd_pitch_gain = FWD_PITCH_GAIN;
+int32_t hover_p_gain = HOVER_P_GAIN;
 
 // Private variables
 static struct Int32Eulers guidance_hybrid_ypr_sp;
@@ -227,8 +235,8 @@ void guidance_hybrid_airspeed_to_attitude(struct Int32Eulers *ypr_sp)
     }
 
     // gain of 10 means that for 4 m/s an angle of 40 degrees is needed
-    ypr_sp->theta = (((- (c_psi * hover_sp.x + s_psi * hover_sp.y)) >> INT32_TRIG_FRAC) * HOVER_P_GAIN * INT32_ANGLE_PI / 180) >> 8;
-    ypr_sp->phi = ((((- s_psi * hover_sp.x + c_psi * hover_sp.y)) >> INT32_TRIG_FRAC) * HOVER_P_GAIN * INT32_ANGLE_PI / 180) >>  8;
+    ypr_sp->theta = (((- (c_psi * hover_sp.x + s_psi * hover_sp.y)) >> INT32_TRIG_FRAC) * hover_p_gain * INT32_ANGLE_PI / 180) >> 8;
+    ypr_sp->phi = ((((- s_psi * hover_sp.x + c_psi * hover_sp.y)) >> INT32_TRIG_FRAC) * hover_p_gain * INT32_ANGLE_PI / 180) >>  8;
   } else {
     /// if required speed is higher than 4 m/s act like a fixedwing
     // translate speed_sp into theta + thrust
@@ -236,11 +244,11 @@ void guidance_hybrid_airspeed_to_attitude(struct Int32Eulers *ypr_sp)
 
     // calculate required pitch angle from airspeed_sp magnitude
     if (guidance_hybrid_norm_ref_airspeed_f > AIRSPEED_FORWARD) {
-      ypr_sp->theta = -ANGLE_BFP_OF_REAL(RadOfDeg(FORWARD_NOMINAL_PITCH));
+      ypr_sp->theta = -ANGLE_BFP_OF_REAL(RadOfDeg(fwd_nominal_pitch));
     } else {
       float airspeed_transition = (guidance_hybrid_norm_ref_airspeed_f - AIRSPEED_HOVER) / (AIRSPEED_FORWARD - AIRSPEED_HOVER);
-      float hover_max_deg = HOVER_P_GAIN * AIRSPEED_HOVER;
-      float diff_deg = (FORWARD_NOMINAL_PITCH - hover_max_deg) * airspeed_transition;
+      float hover_max_deg = hover_p_gain * AIRSPEED_HOVER;
+      float diff_deg = (fwd_nominal_pitch - hover_max_deg) * airspeed_transition;
       ypr_sp->theta = -ANGLE_BFP_OF_REAL(RadOfDeg(diff_deg + hover_max_deg));
     }
 
@@ -391,12 +399,12 @@ void guidance_hybrid_set_cmd_i(struct Int32Eulers *sp_cmd)
 void guidance_hybrid_vertical(void)
 {
   float fwd_speed_err = guidance_hybrid_norm_ref_airspeed_f - AIRSPEED_FORWARD;
-  float fwd_thrust = CRUISE_THROTTLE
-                      + (fwd_speed_err * FWD_P_GAIN)
-                      + (guidance_v_delta_t - (MAX_PPRZ * guidance_v_nominal_throttle)) * FWD_ALT_GAIN;
+  float fwd_thrust = cruise_throttle
+                      + (fwd_speed_err * fwd_speed_p_gain)
+                      + (guidance_v_delta_t - (MAX_PPRZ * guidance_v_nominal_throttle)) * fwd_alt_thrust_gain;
   int32_t hover_thrust = guidance_v_delta_t;
 
-  float alt_control_pitch = (guidance_v_delta_t - MAX_PPRZ * guidance_v_nominal_throttle) * alt_pitch_gain;
+  float alt_control_pitch = (guidance_v_delta_t - MAX_PPRZ * guidance_v_nominal_throttle) * fwd_pitch_gain;
   int32_t fwd_pitch = ANGLE_BFP_OF_REAL(alt_control_pitch / MAX_PPRZ);
 
   /* Hover regime */
@@ -415,9 +423,9 @@ void guidance_hybrid_vertical(void)
    
     //Control altitude with pitch, now only proportional control
     v_control_pitch = fwd_pitch;
-    guidance_v_kp = GUIDANCE_V_HOVER_KP / FWD_PID_DIV;
-    guidance_v_kd = GUIDANCE_V_HOVER_KD / FWD_PID_DIV;
-    guidance_v_ki = GUIDANCE_V_HOVER_KI / FWD_PID_DIV;
+    guidance_v_kp = GUIDANCE_V_HOVER_KP / fwd_pid_div;
+    guidance_v_kd = GUIDANCE_V_HOVER_KD / fwd_pid_div;
+    guidance_v_ki = GUIDANCE_V_HOVER_KI / fwd_pid_div;
   }
   /* Transition regime */
   else {
