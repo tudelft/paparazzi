@@ -63,12 +63,12 @@ float follow_me_height = FOLLOW_ME_HEIGHT;
 float follow_me_heading = 0.;
 float follow_me_min_speed = FOLLOW_ME_MIN_SPEED;
 float follow_me_filt = FOLLOW_ME_FILT;
-float follow_me_diag_speed = 1.2;
+float follow_me_diag_speed = 1.0;
 float follow_me_gps_delay = 200;
 float follow_me_datalink_delay = 600;
 float follow_me_advance_ms = 800;
-float follow_me_min_dist = 10;
-float follow_me_min_height = 25;
+float follow_me_min_dist = 1;
+float follow_me_min_height = 30;
 
 static uint32_t ground_time_msec = 0;
 static bool ground_set = false;
