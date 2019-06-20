@@ -59,12 +59,12 @@ float turn_bank_gain;
 
 #define AIRSPEED_HOVER          4
 #define AIRSPEED_FORWARD        12
-#define CRUISE_THROTTLE         (MAX_PPRZ / 5)
-#define FWD_SPEED_P_GAIN        (MAX_PPRZ / 14) //
-#define FWD_ALT_THRUST_GAIN     0.10
+#define CRUISE_THROTTLE         4000
+#define FWD_SPEED_P_GAIN        30
+#define FWD_ALT_THRUST_GAIN     0.35
 #define FWD_PID_DIV             2
 #define FWD_NOMINAL_PITCH       78.0
-#define FWD_PITCH_GAIN          (0.3 / 0.42)
+#define FWD_PITCH_GAIN          2.1
 #define HOVER_P_GAIN            12
 
 int32_t cruise_throttle = CRUISE_THROTTLE;
@@ -126,7 +126,7 @@ void guidance_hybrid_init(void)
 
   high_res_psi = 0;
   guidance_hovering = true;
-  horizontal_speed_gain = 5;
+  horizontal_speed_gain = 6;
   guidance_hybrid_norm_ref_airspeed = 0;
   guidance_hybrid_norm_ref_airspeed_f = 0;
   max_turn_bank = 23.0;
