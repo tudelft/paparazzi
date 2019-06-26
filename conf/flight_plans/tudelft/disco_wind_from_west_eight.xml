@@ -165,76 +165,91 @@
       <circle radius="nav_radius" wp="CenterPoint"/>
     </block>
     <block name="LEG_00">
+      <call_once fun="ResetAvoid()"/>
       <exception cond="GetAvoid()" deroute="LEG_AVOID_00_stage0"/>
       <go from="ROUTE_00" wp="ROUTE_01" hmode="route"/>
       <deroute block="LEG_01"/>
     </block>
     <block name="LEG_01">
+      <call_once fun="ResetAvoid()"/>
       <exception cond="GetAvoid()" deroute="LEG_AVOID_01_stage0"/>
       <go from="ROUTE_01" wp="ROUTE_02" hmode="route"/>
       <deroute block="LEG_02"/>
     </block>
     <block name="LEG_02">
+      <call_once fun="ResetAvoid()"/>
       <exception cond="GetAvoid()" deroute="LEG_AVOID_02_stage0"/>
       <go from="ROUTE_02" wp="ROUTE_03" hmode="route"/>
       <deroute block="LEG_03"/>
     </block>
     <block name="LEG_03">
+      <call_once fun="ResetAvoid()"/>
       <exception cond="GetAvoid()" deroute="LEG_AVOID_03_stage0"/>
       <go from="ROUTE_03" wp="ROUTE_04" hmode="route"/>
       <deroute block="LEG_04"/>
     </block>
     <block name="LEG_04">
+      <call_once fun="ResetAvoid()"/>
       <exception cond="GetAvoid()" deroute="LEG_AVOID_04_stage0"/>
       <go from="ROUTE_04" wp="ROUTE_05" hmode="route"/>
       <deroute block="LEG_05"/>
     </block>
     <block name="LEG_05">
+      <call_once fun="ResetAvoid()"/>
       <exception cond="GetAvoid()" deroute="LEG_AVOID_05_stage0"/>
       <go from="ROUTE_05" wp="ROUTE_06" hmode="route"/>
       <deroute block="LEG_06"/>
     </block>
     <block name="LEG_06">
+      <call_once fun="ResetAvoid()"/>
       <exception cond="GetAvoid()" deroute="LEG_AVOID_06_stage0"/>
       <go from="ROUTE_06" wp="ROUTE_07" hmode="route"/>
       <deroute block="LEG_07"/>
     </block>
     <block name="LEG_07">
+      <call_once fun="ResetAvoid()"/>
       <exception cond="GetAvoid()" deroute="LEG_AVOID_07_stage0"/>
       <go from="ROUTE_07" wp="ROUTE_08" hmode="route"/>
       <deroute block="LEG_08"/>
     </block>
     <block name="LEG_08">
+      <call_once fun="ResetAvoid()"/>
       <exception cond="GetAvoid()" deroute="LEG_AVOID_08_stage0"/>
       <go from="ROUTE_08" wp="ROUTE_09" hmode="route"/>
       <deroute block="LEG_09"/>
     </block>
     <block name="LEG_09">
+      <call_once fun="ResetAvoid()"/>
       <exception cond="GetAvoid()" deroute="LEG_AVOID_09_stage0"/>
       <go from="ROUTE_09" wp="ROUTE_10" hmode="route"/>
       <deroute block="LEG_10"/>
     </block>
     <block name="LEG_10">
+      <call_once fun="ResetAvoid()"/>
       <exception cond="GetAvoid()" deroute="LEG_AVOID_10_stage0"/>
       <go from="ROUTE_10" wp="ROUTE_11" hmode="route"/>
       <deroute block="LEG_11"/>
     </block>
     <block name="LEG_11">
+      <call_once fun="ResetAvoid()"/>
       <exception cond="GetAvoid()" deroute="LEG_AVOID_11_stage0"/>
       <go from="ROUTE_11" wp="ROUTE_12" hmode="route"/>
       <deroute block="LEG_12"/>
     </block>
     <block name="LEG_12">
+      <call_once fun="ResetAvoid()"/>
       <exception cond="GetAvoid()" deroute="LEG_AVOID_12_stage0"/>
       <go from="ROUTE_12" wp="ROUTE_13" hmode="route"/>
       <deroute block="LEG_13"/>
     </block>
     <block name="LEG_13">
+      <call_once fun="ResetAvoid()"/>
       <exception cond="GetAvoid()" deroute="LEG_AVOID_13_stage0"/>
       <go from="ROUTE_13" wp="ROUTE_14" hmode="route"/>
       <deroute block="LEG_14"/>
     </block>
     <block name="LEG_14">
+      <call_once fun="ResetAvoid()"/>
       <exception cond="GetAvoid()" deroute="LEG_AVOID_14_stage0"/>
       <go from="ROUTE_14" wp="ROUTE_15" hmode="route"/>
       <deroute block="Standby"/>

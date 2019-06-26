@@ -115,6 +115,7 @@ struct flightplan_parameters_t
 	uint8_t start_index_ROUTE;
 	uint8_t start_index_AVOID;
 	uint8_t start_index_LEG_BLOCK;
+	uint8_t N_wpts;
 	struct LlaCoor_i lla_ref_i;
 	struct LtpDef_i ltp_ref_i;
 	uint8_t target_leg;
@@ -135,6 +136,7 @@ extern void utm_interface_event(void);
 
 // functions to be called by flightplan exceptions
 extern bool GetAvoid(void);
+extern void ResetAvoid(void);
 
 // functions that reads flightplan and moves avoidance waypoints
 extern void InitFlightplan(void);
@@ -142,6 +144,8 @@ extern void RunAvoidance(void);
 extern void set_wp_at_latlon(uint8_t wp_id, int32_t lat, int32_t lon); // [dege7]
 extern bool In_Soft_geofence(float _x, float _y);
 extern void set_avoidance_wp_fixed_for_carrot_time(uint8_t wp_id, int32_t lat, int32_t lon); //[dege7]
+extern void reset_avoidance_waypoints(void);
+
 
 // functions to manage utm requests using the flightplan
 void utm_request(enum utm_request_t request);
