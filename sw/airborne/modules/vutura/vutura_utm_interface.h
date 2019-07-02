@@ -100,6 +100,7 @@ typedef union utm_interface_to_paparazzi_t UtmInterfaceToPaparazziMsg;
 struct avoidance_parameters_t
 {
 	bool avoid;
+	bool avoid_check;
 	int32_t vn;
 	int32_t ve;
 	int32_t vd;

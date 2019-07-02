@@ -53,7 +53,8 @@ class VuturaReceiver(threading.Thread):
         self.stop_event = threading.Event()
         
         self.sock = Socket(SUB)
-        self.sock.connect('ipc:///tmp/traffic_info_0'.encode('utf-8'))
+        #self.sock.connect('ipc:///tmp/traffic_info_0'.encode('utf-8'))
+        self.sock.connect('tcp://10.11.0.1:8340'.encode('utf-8'))
         self.sock.set_string_option(SUB, SUB_SUBSCRIBE, ''.encode('utf-8'))
         
         
@@ -68,9 +69,12 @@ class VuturaReceiver(threading.Thread):
             msg = self.sock.recv()
             traffic_info = messages_pb2.TrafficInfo()
             traffic_info.ParseFromString(msg)
-            
+            if (not "flight|" in traffic_info.aircraft_id):
+                continue
             # create a new event
             new_t = VuturaEvent(traffic_info)
+            
+           
             
             # Check if already existed then update, else add
             try:

@@ -76,22 +76,21 @@ class VuturaVisualizer(object):
             
         # Delete events that are not in the list anymore
         for ev in remove_events:
-            self.delete_event(ev.get_aircraft_id())
+            self.delete_event(ev)
             
     def draw_event(self, ev):
         """
         Draw an vutura event
         """
-        logging.debug("test")
         shape_id = 255
         try:
             shape_id = self.id_number_map[ev.get_aircraft_id()]
         except:
+            values = []
+            for key, value in self.id_number_map.items():
+                values.append(value)
             for i in range(256):
-                values = []
-                for key, value in self.id_number_map.items():
-                    values.append(value)
-                if (values.count == 0):   
+                if (values.count(i) == 0):   
                     shape_id = i
                     self.id_number_map[ev.get_aircraft_id()] = i
         latd_old = ev.get_lat()

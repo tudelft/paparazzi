@@ -70,6 +70,7 @@ void init_vutura_utm_interface(void)
 
 	// initialise constants
 	avoidance.avoid = false;
+	avoidance.avoid_check = false;
 	avoidance.vn = 0;
 	avoidance.ve = 0;
 	avoidance.vd = 0;
@@ -175,6 +176,7 @@ void avoid_check(void)
 		else if (count == sizeof(msg))
 		{
 			avoidance.avoid = msg.avoid;
+			avoidance.avoid_check = msg.avoid;
 			avoidance.vn = msg.vn;
 			avoidance.ve = msg.ve;
 			avoidance.vd = msg.vd;
@@ -195,12 +197,15 @@ void avoid_check(void)
 
 bool GetAvoid(void)
 {
-	return avoidance.avoid;
+	bool avoid = avoidance.avoid_check;
+	avoidance.avoid_check = false;
+	return avoid;
 }
 
 void ResetAvoid(void)
 {
 	avoidance.avoid = false;
+	avoidance.avoid_check = false;
 }
 
 void InitFlightplan(void)
