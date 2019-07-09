@@ -176,7 +176,7 @@ static THD_FUNCTION(can_tx, p) {
         err_cnt = 0;
         canardPopTxQueue(&iface->canard);
       } else {
-        // After 100 retries giveup
+        // After 5 retries giveup
         if(err_cnt >= 5) {
           err_cnt = 0;
           canardPopTxQueue(&iface->canard);
@@ -184,9 +184,11 @@ static THD_FUNCTION(can_tx, p) {
         }
 
         // Timeout - just exit and try again later
+        chMtxUnlock(&iface->mutex);
         err_cnt++;
         canardPopTxQueue(&iface->canard);
         chThdSleepMilliseconds(err_cnt * 5);
+        chMtxLock(&iface->mutex);
         continue;
       }
     }
