@@ -88,10 +88,11 @@ static void write_log(void)
     pos = stateGetPositionNed_f();
     rates = stateGetBodyRates_f();
     
+    /*
     fprintf(file_logger_t, "%d,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", counter, 
     imu.accel.x/1024.0, imu.accel.y/1024.0, imu.accel.z/1024.0,
     imu.gyro.p/4096.0, imu.gyro.q/4096.0, imu.gyro.r/4096.0,
-    est_state_roll, est_state_pitch, est_state_yaw);
+    est_state_roll, est_state_pitch, est_state_yaw);*/
     counter++;
   }  
   
@@ -104,37 +105,17 @@ static void write_log(void)
 // sending the divergence message to the ground station:
 static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
 {
-  /*
-  float fx = dr_state.time;
-  float fy = dr_state.x; // Flows
-  float fz = dr_state.y;
-
-  float cx = dr_state.vx; // Covariance
-  float cy = dr_state.vy;
-  float cz;
   
-  float ex = 0;
-  float ey = 0;
-
-  float ez = 0;
-
-  int32_t gc = dr_vision.cnt; // Error
-  float gx = dr_vision.dx; // Vision
-  float gy = dr_vision.dy;
-  float gz = dr_vision.dz;
+  float est_roll = est_state_roll*(180./3.1416);
+  float est_pitch = est_state_pitch*(180./3.1416);
+  float est_yaw = est_state_yaw*(180./3.1416);
 
   //float ez = POS_FLOAT_OF_BFP(guidance_v_z_sp);
 
-  float ix = dr_state.assigned_gate_index; // Error
-  int32_t iy =  0; //dr_ransac.buf_size; // Error
-  int32_t iz = 0;
+ 
 
   
-  pprz_msg_send_OPTICAL_FLOW_HOVER(trans, dev, AC_ID, &fx, &fy, &fz,
-                                   &cx, &cy, &cz,
-                                   &gx, &gy, &gz,
-                                   &ex, &ey, &ez,
-                                   &ix, &iy, &iz); */
+  pprz_msg_send_OPTICAL_FLOW_HOVER(trans, dev, AC_ID,&est_roll,&est_pitch,&est_yaw);
 }
 
 
@@ -240,10 +221,10 @@ void dronerace_periodic(void)
   dr_state.theta = input_theta;
   
   filter_predict(input_phi, input_theta, input_psi, dt);
-  
+  ahrsblah();
   if(dr_state.time < MAXTIME && start_log == 1) {
     write_log();
-    ahrsblah();
+    
   }
   if(dr_state.time > MAXTIME) {
     start_log = 0;
@@ -479,16 +460,16 @@ void ahrsblah() {
   float p,q,r, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z;
   float dt1 = 1.0/512.0;
   float GRAVITY = -9.81;
-  float KP_AHRS = 0.01;
-  float KI_AHRS = 0.0001;
+  float KP_AHRS = 0.1;
+  float KI_AHRS = 0.002;
+  
+  accel_x = (double)imu.accel.x / 1024.0;
+  accel_y = (double)imu.accel.y / 1024.0;
+  accel_z = (double)imu.accel.z / 1024.0;
 
-  accel_x = imu.accel.x / 1024.0;
-  accel_y = imu.accel.y / 1024.0;
-  accel_z = imu.accel.z / 1024.0;
-
-  gyro_x = imu.gyro.p / 4096.0;
-  gyro_y = imu.gyro.q / 4096.0;
-  gyro_z = imu.gyro.r / 4096.0;
+  gyro_x = (double)imu.gyro.p / 4096.0;
+  gyro_y = (double)imu.gyro.q / 4096.0;
+  gyro_z = (double)imu.gyro.r / 4096.0;
 
   float acc[3] = {accel_x, accel_y, accel_z};
   float imu_pqr[3] = {gyro_x, gyro_y, gyro_z};
@@ -497,18 +478,26 @@ void ahrsblah() {
   // gravity in body frame
   float gB[3] = {-sinf(att[1]) * GRAVITY, sinf(att[0]) * cosf(att[1]) * GRAVITY, cosf(att[0]) * cosf(att[1]) * GRAVITY};
   float norm_gB = sqrtf(gB[0] * gB[0] + gB[1] * gB[1] + gB[2] * gB[2]); //gB.dot(gB);
+  if(norm_gB < 1.0) {
+    norm_gB = fabs(GRAVITY);
+  }
   float gB_scaled[3] = {gB[0] / norm_gB, gB[1] / norm_gB, gB[2] / norm_gB};  // When gravity is downwards
 
 
   // acceleration in body frame
   float norm_acc = sqrtf(acc[0] * acc[0] + acc[1] * acc[1] + acc[2] * acc[2]);  //acc.dot(acc);
+  if(norm_acc < 1.0) {
+    norm_acc = fabs(GRAVITY);
+  }
   float acc_scaled[3] = {acc[0] / norm_acc, acc[1] / norm_acc, acc[2] / norm_acc};
+  
 
   // error between gravity and acceleration
-  float error[3] = {0,0,0};   // acc_scaled.cross(gB_scaled);
+  float error[3] = {0, 0, 0};   // acc_scaled.cross(gB_scaled);
   error[0] = acc_scaled[1] * gB_scaled[2] - acc_scaled[2] * gB_scaled[1];
   error[1] = acc_scaled[2] * gB_scaled[0] - acc_scaled[0] * gB_scaled[2];
   error[2] = acc_scaled[0] * gB_scaled[1] - acc_scaled[1] * gB_scaled[0];
+  // printf("acc_scaled[0]: %f,acc_scaled[1]:%f,acc_scaled[2]:%f,norm_acc: %f\n",acc_scaled[0],acc_scaled[1],acc_scaled[2],norm_acc);
 
   static float sum_error_ahrs[3] = {0, 0, 0};
   sum_error_ahrs[0] = sum_error_ahrs[0] + error[0] * dt1;
