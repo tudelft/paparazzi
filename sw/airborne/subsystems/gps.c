@@ -55,12 +55,6 @@ PRINT_CONFIG_VAR(PRIMARY_GPS)
 PRINT_CONFIG_VAR(SECONDARY_GPS)
 #endif
 
-/* expand GpsId(PRIMARY_GPS) to e.g. GPS_UBX_ID */
-#define __GpsId(_x) _x ## _ID
-#define _GpsId(_x) __GpsId(_x)
-#define GpsId(_x) _GpsId(_x)
-
-
 #ifdef GPS_POWER_GPIO
 #include "mcu_periph/gpio.h"
 
@@ -321,6 +315,8 @@ void gps_init(void)
   gps.week = 0;
   gps.tow = 0;
   gps.cacc = 0;
+  gps.hacc = 0;
+  gps.vacc = 0;
 
   gps.last_3dfix_ticks = 0;
   gps.last_3dfix_time = 0;
