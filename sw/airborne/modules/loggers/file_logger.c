@@ -32,6 +32,10 @@
 #include "std.h"
 
 #include "subsystems/imu.h"
+#include "modules/ctrl/dronerace/filter.h"
+#include "modules/ctrl/ctrl_module_outerloop_demo.h"
+#include "boards/bebop/actuators.h"
+
 
 #ifdef COMMAND_THRUST
 #include "firmwares/rotorcraft/stabilization.h"
@@ -107,7 +111,11 @@ void file_logger_start(void)
     rpm_obs[0],\
     rpm_obs[1],\
     rpm_obs[2],\
-    rpm_obs[3]\n"
+    rpm_obs[3],\
+    dr_state.x,\
+    dr_state.y,\
+    ctrl.cmd.phi,\
+    ctrl.cmd.theta\n"
     );
   }
 }
@@ -120,6 +128,10 @@ void file_logger_stop(void)
     file_logger = NULL;
   }
 }
+
+  // struct dronerace_state_struct dr_state = {0};
+  // struct ctrl_module_demo_struct dr_ctrl = {0};
+
 
 /** Log the values to a csv file    */
 /** Change the Variable that you are interested in here */
@@ -134,7 +146,7 @@ void file_logger_periodic(void)
   struct NedCoor_f *pos = stateGetPositionNed_f();
   struct FloatRates *rates = stateGetBodyRates_f();
 
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d\n",
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f\n",
           counter,
           imu.accel.x, 
           imu.accel.y, // /1024 now
@@ -154,6 +166,10 @@ void file_logger_periodic(void)
           actuators_bebop.rpm_obs[0],
           actuators_bebop.rpm_obs[1],
           actuators_bebop.rpm_obs[2],
-          actuators_bebop.rpm_obs[3]);
+          actuators_bebop.rpm_obs[3],
+          dr_state.x,
+          dr_state.y,
+          ANGLE_FLOAT_OF_BFP(dr_ctrl.cmd.phi),
+          ANGLE_FLOAT_OF_BFP(dr_ctrl.cmd.theta));
   counter++;
 }

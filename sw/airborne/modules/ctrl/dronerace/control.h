@@ -26,7 +26,7 @@ struct dronerace_control_struct
   float z_cmd;
 };
 
-extern struct dronerace_control_struct dr_control;
+//extern struct dronerace_control_struct dr_control;
 
 extern void control_reset(void);
 extern void control_run(float dt);

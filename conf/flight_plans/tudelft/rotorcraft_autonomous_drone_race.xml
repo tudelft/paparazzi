@@ -49,14 +49,19 @@
     <waypoint y="15" x="-2" name="FA2"/>
     <waypoint y="15" x="12" name="FA3"/>
     <waypoint y="-5" x="12" name="FA4"/>
+    <waypoint lat="51.9906831" lon="4.3768073" name="_DZ1" />
+    <waypoint lat="51.9906472" lon="4.3767093" name="_DZ2" />
+    <waypoint lat="51.9905876" lon="4.3767679" name="_DZ3" />
+    <waypoint lat="51.9906254" lon="4.3768677" name="_DZ4" />
   </waypoints>
   <sectors>
     <sector color="red" name="Flight_Area_1">
-      <corner name="FA4"/>
-      <corner name="FA3"/>
-      <corner name="FA2"/>
-      <corner name="FA1"/>
+      <corner name="_DZ1"/>
+      <corner name="_DZ2"/>
+      <corner name="_DZ3"/>
+      <corner name="_DZ4"/>
     </sector>
+
   </sectors>
   <blocks>
     <block name="Wait GPS">

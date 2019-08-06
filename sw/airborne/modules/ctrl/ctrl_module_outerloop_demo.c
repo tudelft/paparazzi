@@ -26,45 +26,29 @@
 
 #include "modules/ctrl/ctrl_module_outerloop_demo.h"
 #include "state.h"
-#include "subsystems/radio_control.h"
-#include "firmwares/rotorcraft/stabilization.h"
-#include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
-#include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "autopilot.h"
 #include <stdio.h>
 #include "./dronerace/dronerace.h"
 #include "./dronerace/filter.h"
 // Own Variables
 
-
-
-struct ctrl_module_demo_struct {
-// RC Inputs
-  struct Int32Eulers rc_sp;
-
-// Output command
-  struct Int32Eulers cmd;
-
-} ctrl;
-
+struct ctrl_module_demo_struct dr_ctrl = {0};
 
 // Settings
 float comode_time = 0;
 
-
-/* 
 float phi0 = 0;
 float phi1 = 0;
 float invert_time = 0;
-float x0[2] = {-3.0, -3.0}; //GPS_take;
-float v0[2] = {2.0, 0.0}; // needs non zero initial velocity, not sure why
+float x0[2] = {-4, -2.5}; //GPS_take;
+float v0[2] = {0.0, 0.0}; // needs non zero initial velocity, not sure why
 
-float xd[2] = {-0.0, 0.0};
+float xd[2] = {0.0, 0.0};
 float vd[2] = {3.0, 0};
 
 float xt[2] = {0.0, 0.0};
 float vt[2] = {0.0, 0.0};
-*/
+
 
 
 
@@ -76,12 +60,13 @@ void guidance_h_module_init(void)
   dronerace_init();
 
   float psi_init = stateGetNedToBodyEulers_f()->psi;
-  /* 
-  find_optimal(x0, v0, xd, vd, xt, vt, &phi0, &phi1, &invert_time, psi_init);
-
+  
+  // find_optimal(x0, v0, xd, vd, xt, vt, &phi0, &phi1, &invert_time, psi_init);
   printf("init check: phi0: %f, phi1: %f, dt: %f\n", phi0, phi1, invert_time);
   printf("init reaching set: x: %f, y: %f, vx: %f, vy: %f\n", xt[0], xt[1], vt[0], vt[1]);
-  */
+
+
+
 } 
 
 
@@ -90,7 +75,9 @@ void guidance_h_module_init(void)
 void guidance_h_module_enter(void)
 {
   // Store current heading
-  ctrl.cmd.psi = stateGetNedToBodyEulers_i()->psi;
+  dr_ctrl.cmd.psi = stateGetNedToBodyEulers_i()->psi;
+  float temp_psi = 0;
+  //find_optimal(x0, v0, xd, vd, xt, vt, &phi0, &phi1, &invert_time, temp_psi);
 
   // Convert RC to setpoint
   //stabilization_attitude_read_rc_setpoint_eulers(&ctrl.rc_sp, autopilot.in_flight, false, false);
@@ -120,13 +107,13 @@ void guidance_h_module_run(bool in_flight)
   // ctrl.cmd = CallMyNewHorizontalOuterloopControl(ctrl);
 
 
-  dronerace_get_cmd(&alt, &roll, &pitch, &yaw);
+  // dronerace_get_cmd(&alt, &roll, &pitch, &yaw);
   var_time = dr_state.time;
 
-  ctrl.cmd.phi   = ANGLE_BFP_OF_REAL(roll);
-  ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch); //-ANGLE_BFP_OF_REAL(5*3.142/180);
-  ctrl.cmd.psi   = ANGLE_BFP_OF_REAL(yaw);   // stateGetNedToBodyEulers_f()->psi;//
-  #if 0
+  // dr_ctrl.cmd.phi   = ANGLE_BFP_OF_REAL(roll);
+  // dr_ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch); //-ANGLE_BFP_OF_REAL(5*3.142/180);
+  // dr_ctrl.cmd.psi   = ANGLE_BFP_OF_REAL(yaw);   // stateGetNedToBodyEulers_f()->psi;//
+  #if 1
   float lateral_vel_x = K_ff_theta1 * (vd[0] - dr_state.vx) + K_p_theta1 * vd[0];
   if (lateral_vel_x > 20.0/57.0) {
     lateral_vel_x = 20.0/57.0;
@@ -136,20 +123,20 @@ void guidance_h_module_run(bool in_flight)
   }
 
   if (var_time < invert_time) {
-    ctrl.cmd.phi = ANGLE_BFP_OF_REAL(phi0);
-    ctrl.cmd.theta = ANGLE_BFP_OF_REAL(- lateral_vel_x);
+    dr_ctrl.cmd.phi = ANGLE_BFP_OF_REAL(phi0);
+    dr_ctrl.cmd.theta = ANGLE_BFP_OF_REAL(- lateral_vel_x);
   }
   if (var_time > invert_time) {
-    ctrl.cmd.phi = ANGLE_BFP_OF_REAL(phi1);
-    ctrl.cmd.theta = ANGLE_BFP_OF_REAL(- lateral_vel_x);
+    dr_ctrl.cmd.phi = ANGLE_BFP_OF_REAL(phi1);
+    dr_ctrl.cmd.theta = ANGLE_BFP_OF_REAL(- lateral_vel_x);
   }  
-  if (var_time > invert_time / 0.55) {
-    ctrl.cmd.phi = ANGLE_BFP_OF_REAL(0);
-    ctrl.cmd.theta = ANGLE_BFP_OF_REAL(0);  
+  if (var_time > invert_time / 0.45) {
+    dr_ctrl.cmd.phi = ANGLE_BFP_OF_REAL(0);
+    dr_ctrl.cmd.theta = ANGLE_BFP_OF_REAL(0);  
   }
   #endif
 
-  stabilization_attitude_set_rpy_setpoint_i(&(ctrl.cmd));
+  stabilization_attitude_set_rpy_setpoint_i(&(dr_ctrl.cmd));
   stabilization_attitude_run(in_flight);
 
   // Alternatively, use the indi_guidance and send AbiMsgACCEL_SP to it instead of setting pitch and roll
@@ -171,11 +158,16 @@ void guidance_v_module_enter(void)
 
 float sratio = 0.2;
 float eratio = 0.01;
+
 void guidance_v_module_run(bool in_flight)
 { 
   
   float nominal = radio_control.values[RADIO_THROTTLE];
-  stabilization_cmd[COMMAND_THRUST] = nominal / (cosf(dr_state.phi * 0.8) * cosf(dr_state.theta * 0.8));
+  float flap = 0.85;
+  stabilization_cmd[COMMAND_THRUST] = nominal / (cosf(dr_state.phi * flap) * cosf(dr_state.theta * flap));
+  
+  
+  // Helicopter dynamics
   /*
   float aoa = (dr_state.phi);
   // dronerace_state_struct testdrone;

@@ -29,9 +29,25 @@
 #define CTRL_MODULE_OUTERLOOP_DEMO_H_
 
 #include <std.h>
+#include "state.h"
+#include "autopilot.h"
+#include "subsystems/radio_control.h"
+#include "firmwares/rotorcraft/stabilization.h"
+#include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
+#include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 
 // Settings
 extern float comode_time;
+
+struct ctrl_module_demo_struct {
+  // RC Inputs
+  struct Int32Eulers rc_sp;
+
+  // Output command
+  struct Int32Eulers cmd;
+};
+
+extern struct ctrl_module_demo_struct dr_ctrl;
 
 // Demo with own guidance_h
 #define GUIDANCE_H_MODE_MODULE_SETTING GUIDANCE_H_MODE_MODULE

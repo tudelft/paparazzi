@@ -16,8 +16,8 @@ struct dronerace_control_struct dr_control;
 
 // Slow speed
 #define CTRL_MAX_SPEED  6.0             // m/s
-#define CTRL_MAX_PITCH  RadOfDeg(27)    // rad
-#define CTRL_MAX_ROLL   RadOfDeg(27)    // rad
+#define CTRL_MAX_PITCH  RadOfDeg(28)    // rad
+#define CTRL_MAX_ROLL   RadOfDeg(28)    // rad
 #define CTRL_MAX_R      RadOfDeg(45)    // rad/sec
 
 

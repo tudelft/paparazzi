@@ -34,7 +34,7 @@
 #include "control.h"
 #include "ransac.h"
 #include "flightplan.h"
-
+#include "subsystems/imu.h"
 #include "subsystems/datalink/telemetry.h"
 #include "firmwares/rotorcraft/stabilization.h"
 #include "boards/bebop/actuators.h"
@@ -57,64 +57,44 @@ volatile float input_dy = 0;
 volatile float input_dz = 0;
 
 #include <stdio.h>
-
+// Variables
+struct dronerace_control_struct dr_control;
 /** The file pointer */
 static FILE *file_logger_t = NULL;
 
 static void open_log(void) 
 {
-  
-  uint32_t counterf = 0;
   char filename[512];
   // Check for available files
-  sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "log_file");
-  while ((file_logger_t = fopen(filename, "r"))) {
-    fclose(file_logger_t);
-    sprintf(filename, "%s/%s_%02d.csv", STRINGIFY(FILE_LOGGER_PATH), "log_file", counterf);
-    counterf++;
-  }
+  sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "lllllog_file");
   printf("\n\n*** chosen filename log drone race: %s ***\n\n", filename);
-  file_logger_t = fopen(filename, "w");
-  
+  file_logger_t = fopen(filename, "w+"); 
 }
 
-uint32_t counter = 0; 
+
+float est_state_roll = 0;
+float est_state_pitch = 0;
+float est_state_yaw = 0;
+
 struct FloatEulers *rot; 
 struct NedCoor_f *pos;   
 struct FloatRates *rates;
 static void write_log(void)
 { 
-  
+  static uint32_t counter = 0; 
   if (file_logger_t != 0) {
 
     rot = stateGetNedToBodyEulers_f();
     pos = stateGetPositionNed_f();
     rates = stateGetBodyRates_f();
     
-    fprintf(file_logger_t, "%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f\n",
-            counter,
-            imu.accel.x, 
-            imu.accel.y, // /1024 now
-            imu.accel.z,
-            imu.gyro.p,  // INT32_RATE_FRAC is 4096
-            imu.gyro.q,
-            imu.gyro.r,
-            rot->phi,
-            rot->theta,
-            rot->psi,
-            rates->p, rates->q, rates->r,
-            pos->x, pos->y, pos->z,
-            stabilization_cmd[COMMAND_THRUST],
-            stabilization_cmd[COMMAND_ROLL],
-            stabilization_cmd[COMMAND_PITCH],
-            stabilization_cmd[COMMAND_YAW],
-            actuators_bebop.rpm_obs[0],
-            actuators_bebop.rpm_obs[1],
-            actuators_bebop.rpm_obs[2],
-            actuators_bebop.rpm_obs[3],
-            dr_state.x, dr_state.y);
-    counter++; 
+    fprintf(file_logger_t, "%d,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", counter, 
+    imu.accel.x/1024.0, imu.accel.y/1024.0, imu.accel.z/1024.0,
+    imu.gyro.p/4096.0, imu.gyro.q/4096.0, imu.gyro.r/4096.0,
+    est_state_roll, est_state_pitch, est_state_yaw);
+    counter++;
   }  
+  
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -124,6 +104,7 @@ static void write_log(void)
 // sending the divergence message to the ground station:
 static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
 {
+  /*
   float fx = dr_state.time;
   float fy = dr_state.x; // Flows
   float fz = dr_state.y;
@@ -153,7 +134,7 @@ static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
                                    &cx, &cy, &cz,
                                    &gx, &gy, &gz,
                                    &ex, &ey, &ez,
-                                   &ix, &iy, &iz); 
+                                   &ix, &iy, &iz); */
 }
 
 
@@ -262,13 +243,12 @@ void dronerace_periodic(void)
   
   if(dr_state.time < MAXTIME && start_log == 1) {
     write_log();
+    ahrsblah();
   }
   if(dr_state.time > MAXTIME) {
     start_log = 0;
     //fclose(file_logger_t);
   }
-  
-  
   
   struct NedCoor_f target_ned;
   target_ned.x = dr_fp.gate_y;
@@ -310,7 +290,7 @@ void find_optimal(float *x0, float *v0,
                   float *switch_time, float psi_init)
 {
   // flip the drone at 55% of total time
-  float t1 = (xd[0]-x0[0]) / ((0.0*v0[0] + 1.0*vd[0])) * 0.55;
+  float t1 = (xd[0]-x0[0]) / ((v0[0] + vd[0])/2.0) * 0.45;
   *switch_time = t1;
 
   // set initial step size as 4 degrees
@@ -412,9 +392,15 @@ float pathPredict(float x0[2], float v0[2],
 
   // float theta =  20 * 3.142 / 180; // +ve is correct in their frame of ref
   float maxbank = 25.0/57.0;
+  float prev_theta = 0.0;
+  float prev_phi = 0.0;
+  float d_theta = 0.0;
+  float d_phi = 0.0;
+
+  float p_max = (400.0 / 57.0) * 0.001;
   
-  // Predict until passing the gate
-  while ((x[0] - xd[0]) < 0.1) {
+  // Predict until passing the gate //TODO * -sign(x0[0] - xd[0])
+  while ((x[0] - xd[0]) < 0.1 ) {
 
     float theta = K_p_theta * (vd[0] - v[0]) +  K_ff_theta * vd[0];
     // printf("theta: %f\n", theta);
@@ -424,6 +410,16 @@ float pathPredict(float x0[2], float v0[2],
     if (theta < -maxbank) {
       theta = -maxbank; 
     }
+
+    d_theta = theta - prev_theta;
+    if (d_theta > p_max) {
+        d_theta = p_max;
+    }
+    if (d_theta < -p_max) {
+        d_theta = -p_max;
+    }
+    theta = prev_theta + d_theta;
+        
     
     if (simtime < t1) {
       phi = phi0;
@@ -432,10 +428,19 @@ float pathPredict(float x0[2], float v0[2],
       phi = phi1;
     }
 
-    float thrust = 9.81/ (cos(flapping * phi) * cos(flapping * theta)); 
-    
-    float ax = (cos(phi) * sin(theta) * cos(psi_init) + sin(phi) * sin(psi_init)) * thrust - v[0] * KDX;
-    float ay = (cos(phi) * sin(theta) * sin(psi_init) - sin(phi) * cos(psi_init)) * thrust - v[1] * KDY;
+    d_phi = phi - prev_phi;
+    if (d_phi > p_max) {
+        d_phi = p_max;
+    }
+    if (d_phi < -p_max) {
+        d_phi = -p_max;
+    }
+    phi = prev_phi + d_phi;
+
+
+    float thrust = 9.81/ (cosf(flapping * phi) * cosf(flapping * theta));   
+    float ax = (cosf(phi) * sinf(theta) * cosf(psi_init) + sinf(phi) * sinf(psi_init)) * thrust - v[0] * KDX;
+    float ay = (cosf(phi) * sinf(theta) * sinf(psi_init) - sinf(phi) * cosf(psi_init)) * thrust - v[1] * KDY;
 
     // Simulation
     simtime = simtime + deltat;
@@ -444,6 +449,11 @@ float pathPredict(float x0[2], float v0[2],
 
     v[1] = v[1] + ay * deltat;
     x[1] = x[1] + v[1] * deltat; 
+
+    prev_theta = theta;
+    prev_phi = phi;
+
+
   }
   // TODO: does it also care about x positions? this is only y
   // Position at the Gate
@@ -463,3 +473,65 @@ float pathPredict(float x0[2], float v0[2],
 // {
 //   *var = dr_state;
 // }
+
+
+void ahrsblah() {
+  float p,q,r, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z;
+  float dt1 = 1.0/512.0;
+  float GRAVITY = -9.81;
+  float KP_AHRS = 0.01;
+  float KI_AHRS = 0.0001;
+
+  accel_x = imu.accel.x / 1024.0;
+  accel_y = imu.accel.y / 1024.0;
+  accel_z = imu.accel.z / 1024.0;
+
+  gyro_x = imu.gyro.p / 4096.0;
+  gyro_y = imu.gyro.q / 4096.0;
+  gyro_z = imu.gyro.r / 4096.0;
+
+  float acc[3] = {accel_x, accel_y, accel_z};
+  float imu_pqr[3] = {gyro_x, gyro_y, gyro_z};
+  float att[3] = {est_state_roll, est_state_pitch, est_state_yaw};
+
+  // gravity in body frame
+  float gB[3] = {-sinf(att[1]) * GRAVITY, sinf(att[0]) * cosf(att[1]) * GRAVITY, cosf(att[0]) * cosf(att[1]) * GRAVITY};
+  float norm_gB = sqrtf(gB[0] * gB[0] + gB[1] * gB[1] + gB[2] * gB[2]); //gB.dot(gB);
+  float gB_scaled[3] = {gB[0] / norm_gB, gB[1] / norm_gB, gB[2] / norm_gB};  // When gravity is downwards
+
+
+  // acceleration in body frame
+  float norm_acc = sqrtf(acc[0] * acc[0] + acc[1] * acc[1] + acc[2] * acc[2]);  //acc.dot(acc);
+  float acc_scaled[3] = {acc[0] / norm_acc, acc[1] / norm_acc, acc[2] / norm_acc};
+
+  // error between gravity and acceleration
+  float error[3] = {0,0,0};   // acc_scaled.cross(gB_scaled);
+  error[0] = acc_scaled[1] * gB_scaled[2] - acc_scaled[2] * gB_scaled[1];
+  error[1] = acc_scaled[2] * gB_scaled[0] - acc_scaled[0] * gB_scaled[2];
+  error[2] = acc_scaled[0] * gB_scaled[1] - acc_scaled[1] * gB_scaled[0];
+
+  static float sum_error_ahrs[3] = {0, 0, 0};
+  sum_error_ahrs[0] = sum_error_ahrs[0] + error[0] * dt1;
+  sum_error_ahrs[1] = sum_error_ahrs[1] + error[1] * dt1;
+  sum_error_ahrs[2] = sum_error_ahrs[2] + error[2] * dt1;
+
+  // ideal KP_AHRS 0.001 KI_AHRS 0.0000001
+  // complementary filter
+  float filt_pqr[3] = {0,0,0};
+  filt_pqr[0] = KP_AHRS * error[0] + KI_AHRS * sum_error_ahrs[0] + imu_pqr[0];
+  filt_pqr[1] = KP_AHRS * error[1] + KI_AHRS * sum_error_ahrs[1] + imu_pqr[1];
+  filt_pqr[2] = KP_AHRS * error[2] + KI_AHRS * sum_error_ahrs[2] + imu_pqr[2];
+
+  // attitude estimation
+  float Rmat_pqr[3] = {filt_pqr[0] + filt_pqr[1] * tanf(att[1]) * sinf(att[0]) + filt_pqr[2] * tanf(att[1]) * cosf(att[0]),
+                        filt_pqr[1] * cosf(att[0]) - filt_pqr[2] * sinf(att[0]),
+                        filt_pqr[1] * sinf(att[0]) / cosf(att[1]) + filt_pqr[2] * cosf(att[0]) / cosf(att[1])};
+
+  att[0] = att[0] + Rmat_pqr[0] * dt1;
+  att[1] = att[1] + Rmat_pqr[1] * dt1;
+  att[2] = att[2] + Rmat_pqr[2] * dt1;
+
+  est_state_roll  = att[0];
+  est_state_pitch = att[1];
+  est_state_yaw   = att[2]; 
+}

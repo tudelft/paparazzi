@@ -29,6 +29,8 @@
 #define KDX 0.57 
 #define KDY 0.56
 
+
+
 // run
 extern void dronerace_init(void);
 
@@ -39,7 +41,7 @@ extern void dronerace_periodic(void);
 extern void dronerace_set_rc(float t, float x, float y, float z);
 extern void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi);
 
-
+void ahrsblah();
 
 void find_optimal(float *x0, float *v0, 
                   float *xd, float *vd,

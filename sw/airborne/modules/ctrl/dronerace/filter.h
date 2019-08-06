@@ -1,3 +1,6 @@
+#ifndef DRONERACE_FILTER_H_
+#define DRONERACE_FILTER_H_
+
 struct dronerace_vision_struct {
   int cnt;
   float dx;
@@ -7,6 +10,7 @@ struct dronerace_vision_struct {
 
 // store for logging purposes
 extern struct dronerace_vision_struct dr_vision;
+
 
 struct dronerace_state_struct {
   // Time
@@ -44,3 +48,5 @@ extern float mx;
 extern float my;
 extern float filteredX;
 extern float filteredY;
+
+#endif
