@@ -17,7 +17,7 @@ int main()
   Matrix3f m = Matrix3f::Random(3,3);
   Vector3f v = Vector3f::Zero();
   Quaternionf q = Quaternionf::Identity();
-afdsdf
+
   while(1) {
     v(0) += m(1,2);
     if (v(0) < -1000 || v(0) > 1000) { v(0) = 0.; }

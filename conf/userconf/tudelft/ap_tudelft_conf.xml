@@ -1,5 +1,5 @@
 <conf>
-   <aircraft
+  <aircraft
    name="autonomous_race_2018"
    ac_id="121"
    airframe="airframes/tudelft/bebop_autonomous_race_2018.xml"

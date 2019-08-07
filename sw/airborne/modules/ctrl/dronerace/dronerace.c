@@ -72,9 +72,9 @@ static void open_log(void)
 }
 
 
-float est_state_roll = 0;
-float est_state_pitch = 0;
-float est_state_yaw = 0;
+// float est_state_roll = 0;
+// float est_state_pitch = 0;
+// float est_state_yaw = 0;
 
 struct FloatEulers *rot; 
 struct NedCoor_f *pos;   
@@ -106,16 +106,16 @@ static void write_log(void)
 static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
 {
   
-  float est_roll = est_state_roll*(180./3.1416);
-  float est_pitch = est_state_pitch*(180./3.1416);
-  float est_yaw = est_state_yaw*(180./3.1416);
+  // float est_roll = est_state_roll*(180./3.1416);
+  // float est_pitch = est_state_pitch*(180./3.1416);
+  // float est_yaw = est_state_yaw*(180./3.1416);
 
   //float ez = POS_FLOAT_OF_BFP(guidance_v_z_sp);
 
  
 
   
-  pprz_msg_send_OPTICAL_FLOW_HOVER(trans, dev, AC_ID,&est_roll,&est_pitch,&est_yaw);
+  // pprz_msg_send_OPTICAL_FLOW_HOVER(trans, dev, AC_ID,&est_roll,&est_pitch,&est_yaw);
 }
 
 
@@ -221,7 +221,7 @@ void dronerace_periodic(void)
   dr_state.theta = input_theta;
   
   filter_predict(input_phi, input_theta, input_psi, dt);
-  ahrsblah();
+  // ahrsblah();
   if(dr_state.time < MAXTIME && start_log == 1) {
     write_log();
     
@@ -455,13 +455,13 @@ float pathPredict(float x0[2], float v0[2],
 //   *var = dr_state;
 // }
 
-
+#if 0
 void ahrsblah() {
   float p,q,r, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z;
   float dt1 = 1.0/512.0;
   float GRAVITY = -9.81;
-  float KP_AHRS = 0.1;
-  float KI_AHRS = 0.002;
+  float KP_AHRS = 0.2;
+  float KI_AHRS = 0.004;
   
   accel_x = (double)imu.accel.x / 1024.0;
   accel_y = (double)imu.accel.y / 1024.0;
@@ -520,7 +520,8 @@ void ahrsblah() {
   att[1] = att[1] + Rmat_pqr[1] * dt1;
   att[2] = att[2] + Rmat_pqr[2] * dt1;
 
-  est_state_roll  = att[0];
-  est_state_pitch = att[1];
-  est_state_yaw   = att[2]; 
+  est_state_roll  = wrapAngle(att[0]);
+  est_state_pitch = wrapAngle(att[1]);
+  est_state_yaw   = wrapAngle(att[2]); 
 }
+#endif

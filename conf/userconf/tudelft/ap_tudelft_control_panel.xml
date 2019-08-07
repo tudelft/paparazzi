@@ -129,30 +129,32 @@
       </program>
     </session>
 <session name="Debug Graphs">
-      <program name="Real-time Plotter">
-        <arg flag="-t" constant="phi"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="'*:telemetry:ATTITUDE:phi'"/>
-        <arg flag="-c" constant="'*:telemetry:DESIRED:roll'"/>
+	<program name="Data Link">
+        <arg flag="-udp"/>
       </program>
       <program name="Real-time Plotter">
-        <arg flag="-t" constant="theta"/>
+        <arg flag="-t" constant="AHRS:Phi"/>
         <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="'*:telemetry:ATTITUDE:theta'"/>
-        <arg flag="-c" constant="'*:telemetry:DESIRED:pitch'"/>
+         <arg flag="-c" constant="0"/>
+        <arg flag="-c" constant="'*:telemetry:AHRS_EULER_INT:imu_phi:0.014285714'"/>
+        <arg flag="-c" constant="'*:telemetry:AHRS_ALPHAPILOT:est_roll'"/>
       </program>
       <program name="Real-time Plotter">
-        <arg flag="-t" constant="speed"/>
+        <arg flag="-t" constant="AHRS:theta"/>
         <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="'*:telemetry:AIRSPEED:airspeed'"/>
-        <arg flag="-c" constant="'*:telemetry:AIRSPEED:airspeed_sp'"/>
+         <arg flag="-c" constant="0"/>
+        <arg flag="-c" constant="'*:telemetry:AHRS_EULER_INT:imu_theta:0.014285714'"/>
+        <arg flag="-c" constant="'*:telemetry:AHRS_ALPHAPILOT:est_pitch'"/>
       </program>
       <program name="Real-time Plotter">
-        <arg flag="-t" constant="altitude"/>
+        <arg flag="-t" constant="AHRS:psi"/>
         <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="'*:telemetry:ESTIMATOR:z'"/>
-        <arg flag="-c" constant="'*:telemetry:DESIRED:altitude'"/>
+        <arg flag="-c" constant="0"/>
+        <arg flag="-c" constant="'*:telemetry:AHRS_EULER_INT:imu_psi:0.014285714'"/>
+        <arg flag="-c" constant="'*:telemetry:AHRS_ALPHAPILOT:est_yaw'"/>
       </program>
+  	<program name="Messages"/>
+
     </session>
 
     <session name="Scaled Sensors">

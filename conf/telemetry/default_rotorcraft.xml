@@ -5,6 +5,20 @@
 
   <process name="Main">
 
+    <mode name="ahrs" key_press="a">
+      <message name="ROTORCRAFT_STATUS"  period="1.2"/>
+      <message name="DL_VALUE"           period="0.5"/>
+      <message name="ALIVE"              period="2.1"/>
+      <message name="FILTER_ALIGNER"     period="2.2"/>
+      <message name="FILTER"             period=".5"/>
+      <message name="GEO_MAG"            period="5."/>
+      <message name="AHRS_GYRO_BIAS_INT" period="0.08"/>
+      <message name="AHRS_QUAT_INT"      period=".25"/>
+      <message name="AHRS_EULER_INT"     period=".1"/>
+      <message name="AHRS_EULER"         period=".1"/>
+      <message name="AHRS_ALPHAPILOT" period="0.05"/>
+    </mode>
+
     <mode name="default" key_press="d">
       <message name="AUTOPILOT_VERSION"        period="11.1"/>
       <message name="DL_VALUE"                 period="1.1"/>
@@ -68,20 +82,7 @@
       <message name="IMU_MAG_SCALED"         period=".1"/>
     </mode>
 
-    <mode name="ahrs">
-      <message name="ROTORCRAFT_STATUS"  period="1.2"/>
-      <message name="DL_VALUE"           period="0.5"/>
-      <message name="ALIVE"              period="2.1"/>
-      <message name="FILTER_ALIGNER"     period="2.2"/>
-      <message name="FILTER"             period=".5"/>
-      <message name="GEO_MAG"            period="5."/>
-      <message name="AHRS_GYRO_BIAS_INT" period="0.08"/>
-      <message name="AHRS_QUAT_INT"      period=".25"/>
-      <message name="AHRS_EULER_INT"     period=".1"/>
-      <message name="AHRS_EULER"         period=".1"/>
-      <message name="OPTICAL_FLOW_HOVER"       period="0.05"/>
-<!--      <message name="AHRS_RMAT_INT"   period=".5"/> -->
-    </mode>
+    
 
     <mode name="rate_loop">
       <message name="ROTORCRAFT_STATUS" period="1.2"/>

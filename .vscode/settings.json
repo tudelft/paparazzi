@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "dronerace.h": "c",
+        "alphapilotahrs.h": "c",
+        "telemetry.h": "c",
+        "dense": "c"
+    }
+}

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE protocol SYSTEM "messages.dtd">
 <protocol>
- <!-- messages from modem or sim to server -->
+ <!-- messages from modem or sim to server --> 
  <msg_class name="telemetry" id="1">
 
     <message name="AUTOPILOT_VERSION" id="1">
@@ -442,7 +442,6 @@
       <field name="groundspeed_sp" type="float" unit="m/s"/>
     </message>
 
-    <!-- 55 is free -->
 
     <message name="BARO_ETS" id="56">
       <field name="adc" type="uint16"/>
@@ -1938,7 +1937,28 @@
 
     <message name="OPTICAL_FLOW_HOVER" id="243">
       <description>
-       This message is adapted from optical flow hover to ahrs attitude estimation
+              This messages includes the messages send by the Optical Flow Hover module, providing data for all three axes.
+            </description>
+            <field name="flowX" type="float"> Filtered Horizontal velocity in X / height used in Optical Flow Hover</field>
+            <field name="flowY" type="float"> Filtered Horizontal velocity in X / height used in Optical Flow Hover</field>
+            <field name="Divergence" type="float"> Filtered vertical velocity / height used in Optical Flow Hover</field>
+            <field name="cov_flowX" type="float"> covariance of Ventral flow in X and past ventral flow in X</field>
+            <field name="cov_flowY" type="float"> covariance of Ventral flow in Y and past ventral flow in Y</field>
+            <field name="cov_divZ" type="float"> covariance of divergence and past divergence or thrust history</field>
+            <field name="pusedX" type="float"> Gain used in the X feedback</field>
+            <field name="pusedY" type="float"> Gain used in the Y feedback</field>
+            <field name="pusedZ" type="float"> Gain used in the Z feedback</field>
+            <field name="sum_errX" type="float"> Sum of errors in X</field>
+            <field name="sum_errY" type="float"> Sum of errors in Y</field>
+            <field name="sum_errZ" type="float"> Sum of errors in Z</field>
+            <field name="thrust" type="int32"> The thrust</field>
+            <field name="phi_des" type="float" alt_unit="deg" alt_unit_coef="0.0139882"> The desired phi angle in degrees</field>
+            <field name="theta_des" type="float" alt_unit="deg" alt_unit_coef="0.0139882"> The desired theta angle in degrees</field>
+    </message>
+
+    <message name="AHRS_ALPHAPILOT" id="61">
+      <description>
+       ahrs attitude estimation alphapilot2019
       </description>
       <field name="est_roll" type="float"> Estimated Roll angle in degrees</field>
       <field name="est_pitch" type="float"> Estimated pitch angle in degrees</field>
@@ -2069,6 +2089,8 @@
       <field name="decrypt_err"      type="uint32"/>
       <field name="encrypt_err"      type="uint32"/>
     </message>
+
+
 
   </msg_class>
 
