@@ -1,0 +1,20 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="alphapilotahrs">
+  <doc>
+    <description>AHRS used in ALPHAPILOT2019</description>
+  </doc>
+  <header>
+    <file name="alphapilotahrs.h"/>
+  </header>
+   
+  <init fun="alphapilot_ahrs_init()"/>
+  <periodic fun="alphapilot_ahrs_periodic()" freq="alphapilot_ahrs_call()"/>
+  <event fun="alphapilot_ahrs_event()"/>
+  
+  <makefile>
+    <file name="alphapilotahrs.c"/>
+    <!--include name="$(PAPARAZZI_SRC)/sw/ext/eigen/"/-->
+  </makefile>
+</module>
+
