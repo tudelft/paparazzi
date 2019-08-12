@@ -1,0 +1,16 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="qpoas">
+  <doc>
+    <description>opti</description>
+  </doc>
+  <header>
+    <file name="qpoas.h"/>
+  </header>
+  <init fun="qp_init()"/>
+  <event fun="replan()"/>
+  <makefile>
+    <file name="qpoas.c"/>
+  </makefile>
+</module>
+
