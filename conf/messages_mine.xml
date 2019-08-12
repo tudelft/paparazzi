@@ -1963,6 +1963,15 @@
       <field name="est_roll" type="float"> Estimated Roll angle in degrees</field>
       <field name="est_pitch" type="float"> Estimated pitch angle in degrees</field>
       <field name="est_yaw" type="float"> Estimated yaw angle in degrees</field>
+      <field name="accel_x" type="float"> acceleration x</field>
+      <field name="accel_y" type="float"> acceleration y</field>
+      <field name="accel_z" type="float"> acceleration z</field>
+      <field name="accel_x_corr" type="float"> gravity corrected accel x</field>
+      <field name="accel_y_corr" type="float"> gravity corrected accel x</field>
+      <field name="accel_z_corr" type="float"> gravity corrected accel x</field>
+      <field name="pos_est_x" type="float">estimated xE</field>
+      <field name="pos_est_y" type="float">estimated yE </field>
+      <field name="pos_est_z" type="float">estimated zE</field>
     </message>
 
     <message name="NPS_WIND" id="244">

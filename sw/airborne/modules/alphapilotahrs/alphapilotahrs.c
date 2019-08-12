@@ -26,13 +26,19 @@
 #include "modules/alphapilotahrs/alphapilotahrs.h"
 #include "subsystems/imu.h"
 #include "subsystems/datalink/telemetry.h"
-
-
-
+// #include <Eigen/Dense>
+float v_est[3]={0};
+float pos_est[3]={0};
+float grav_body[3]={};
+float accel_earth[3]={};
+float accel_corr[3]={};
 float est_state_roll = 0;
 float est_state_pitch = 0;
 float est_state_yaw = 0;
-
+float GRAVITY = -9.81;;
+double counter = 1;
+float est_euler[3] = {};
+float p,q,r, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z;
 static void send_alphapahrs(struct transport_tx *trans, struct link_device *dev)
 {
   
@@ -40,9 +46,9 @@ static void send_alphapahrs(struct transport_tx *trans, struct link_device *dev)
   float est_pitch = est_state_pitch*(180./3.1416);
   float est_yaw = est_state_yaw*(180./3.1416);
   
-  printf("voor\n");
- pprz_msg_send_AHRS_ALPHAPILOT(trans, dev, AC_ID,&est_roll,&est_pitch,&est_yaw);
-  printf("na\n");
+
+ pprz_msg_send_AHRS_ALPHAPILOT(trans, dev, AC_ID,&est_roll,&est_pitch,&est_yaw,&accel_x,&accel_y,&accel_z,&accel_corr[0],&accel_corr[1],&accel_corr[2],&pos_est[0],&pos_est[1],&pos_est[2]);
+
 }
 
 
@@ -55,9 +61,9 @@ register_periodic_telemetry(DefaultPeriodic,  PPRZ_MSG_ID_AHRS_ALPHAPILOT, send_
 
 void alphapilot_ahrs_periodic() {
 
-float p,q,r, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z;
+
   float dt1 = 1.0/512.0;
-  float GRAVITY = -9.81;
+  
   float KP_AHRS = 0.2;
   float KI_AHRS = 0.004;
   
@@ -121,9 +127,40 @@ float p,q,r, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z;
   est_state_roll  = wrapAngle(att[0]);
   est_state_pitch = wrapAngle(att[1]);
   est_state_yaw   = wrapAngle(att[2]); 
+  est_euler[0] = est_state_roll;
+  est_euler[1] = est_state_pitch;
+  est_euler[2] = est_state_yaw;
 
+  // grav_body[0]=0;
+  // grav_body[1]=0;
+  // grav_body[2]=GRAVITY;
+  // transform2Body(est_euler,grav_body);
+  // printf("grav_body[0]: %f, grav_body[1]: %f, grav_body[2]: %f\n",grav_body[0],grav_body[1],grav_body[2]);
+  // double normG = sqrtf(grav_body[0]*grav_body[0]+grav_body[1]*grav_body[1]+grav_body[2]*grav_body[2]);
+  accel_earth[0]=accel_x;
+  accel_earth[1]=accel_y;
+  accel_earth[2]=accel_z; 
+  transform2Earth(est_euler,accel_earth);
+
+  counter+=1;
+  accel_corr[0]=accel_earth[0];
+  accel_corr[1]=accel_earth[1];
+  accel_corr[2]=accel_earth[2]-GRAVITY;
+
+
+  v_est[0]+=accel_corr[0]*dt1;
+  v_est[1]+=accel_corr[1]*dt1;
+  v_est[2]+=accel_corr[2]*dt1;
+  printf("gx: %f, gy:%f, gz:%f\n",accel_earth[0],accel_earth[1],accel_earth[2]);
+
+  pos_est[0]+=v_est[0]*dt1;
+  pos_est[1]+=v_est[1]*dt1;
+  pos_est[2]+=v_est[2]*dt1;
 
 }
+
+
+
 void alphapilot_ahrs_event() {}
 
 

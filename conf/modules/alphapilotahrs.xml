@@ -14,7 +14,7 @@
   
   <makefile>
     <file name="alphapilotahrs.c"/>
-    <!--include name="$(PAPARAZZI_SRC)/sw/ext/eigen/"/-->
+    <include name="$(PAPARAZZI_SRC)/sw/ext/eigen/"/>
   </makefile>
 </module>
 
