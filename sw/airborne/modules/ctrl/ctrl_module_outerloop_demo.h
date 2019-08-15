@@ -53,8 +53,8 @@ extern struct ctrl_module_demo_struct dr_ctrl;
 #define GUIDANCE_H_MODE_MODULE_SETTING GUIDANCE_H_MODE_MODULE
 
 // But re-using an existing altitude-hold controller
-//#define GUIDANCE_V_MODE_MODULE_SETTING GUIDANCE_V_MODE_HOVER
-#define GUIDANCE_V_MODE_MODULE_SETTING GUIDANCE_V_MODE_MODULE
+#define GUIDANCE_V_MODE_MODULE_SETTING GUIDANCE_V_MODE_HOVER
+//#define GUIDANCE_V_MODE_MODULE_SETTING GUIDANCE_V_MODE_MODULE
 
 // Implement own Horizontal loops
 extern void guidance_h_module_init(void);
@@ -70,7 +70,7 @@ extern float ctrl_module_demo_pr_d_gain;
 extern float ctrl_module_demo_y_ff_gain;   // Yaw
 extern float ctrl_module_demo_y_d_gain;
 
-#if 1
+#if 0
 // Implement own Vertical loops
 extern void guidance_v_module_init(void);
 extern void guidance_v_module_enter(void);

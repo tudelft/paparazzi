@@ -32,6 +32,7 @@ const struct dronerace_flightplan_item_struct gates[MAX_GATES] = {
   {   4.5,          0,          -1.2,          RadOfDeg(0),     1.0f,    REGULAR,      BRAKE,          0.0,                      0},
   {   4.5,          4.5,        -1.2,          RadOfDeg(0),     1.0f,    REGULAR,      BRAKE,          0.0,                      0},
   {   0,            4.5,        -1.2,          RadOfDeg(0),     1.0f,    REGULAR,      BRAKE,          0.0,                      0},
+  {   0,            0,          -1.2,          RadOfDeg(0),     1.0f,    REGULAR,      BRAKE,          0.0,                      0},
 };
 
 struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];

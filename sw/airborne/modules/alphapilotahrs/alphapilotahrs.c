@@ -151,7 +151,7 @@ void alphapilot_ahrs_periodic() {
   v_est[0]+=accel_corr[0]*dt1;
   v_est[1]+=accel_corr[1]*dt1;
   v_est[2]+=accel_corr[2]*dt1;
-  printf("gx: %f, gy:%f, gz:%f\n",accel_earth[0],accel_earth[1],accel_earth[2]);
+  // printf("gx: %f, gy:%f, gz:%f\n",accel_earth[0],accel_earth[1],accel_earth[2]);
 
   pos_est[0]+=v_est[0]*dt1;
   pos_est[1]+=v_est[1]*dt1;

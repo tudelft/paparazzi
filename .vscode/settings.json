@@ -3,6 +3,7 @@
         "dronerace.h": "c",
         "alphapilotahrs.h": "c",
         "telemetry.h": "c",
-        "dense": "c"
+        "dense": "c",
+        "control.h": "c"
     }
 }

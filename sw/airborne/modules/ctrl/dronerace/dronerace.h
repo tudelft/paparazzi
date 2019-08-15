@@ -23,6 +23,9 @@
  * Autonomous Drone Race
  */
 
+
+#include <stdio.h>
+
 #ifndef DRONERACE_H
 #define DRONERACE_H
 
@@ -38,6 +41,7 @@ extern void dronerace_periodic(void);
 // export
 extern void dronerace_set_rc(float t, float x, float y, float z);
 extern void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi);
+
 
 void ahrsblah();
 

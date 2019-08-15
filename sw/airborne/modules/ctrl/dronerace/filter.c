@@ -17,38 +17,25 @@
 struct dronerace_state_struct dr_state = {0};
 struct dronerace_vision_struct dr_vision = {0};
 
-
-
 void filter_reset()
 {
   // Time
   dr_state.time = 0.0f;
-
-  // Position
-  // dr_state.x = 0.0f;
-  // dr_state.y = 0.0f;
 
   struct NedCoor_f *pos = stateGetPositionNed_f();
 
   dr_state.x = pos->x;
   dr_state.y = pos->y;
 
-  dr_state.x = 0.0f;
-  dr_state.y = 0.0f;
-
   // Speed
   dr_state.vx = 0.0f;
   dr_state.vy = 0.0f;
+
   printf("filter reset \n\n\n");
   // Heading
   dr_state.psi = 0.0f;
 
-  // Vision latency
-  fifo_reset();
-  //ransac_reset();
 }
-
-float filteredX, filteredY;
 
 
 // PREDICTION MODEL
@@ -61,7 +48,7 @@ float filteredX, filteredY;
 #define DR_FILTER_DRAG  0.5
 #define DR_FILTER_THRUSTCORR  0.8
 #endif
-
+float filteredX, filteredY;
 void filter_predict(float phi, float theta, float psi, float dt)
 {
   ////////////////////////////////////////////////////////////////////////
