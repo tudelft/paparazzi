@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "dense": "cpp",
+        "core": "cpp",
+        "matrixfunctions": "cpp",
+        "ostream": "cpp",
+        "iostream": "cpp"
+    }
+}

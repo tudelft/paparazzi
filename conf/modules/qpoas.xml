@@ -10,7 +10,16 @@
   <init fun="qp_init()"/>
   <event fun="replan()"/>
   <makefile>
-    <file name="qpoas.c"/>
+    <configure name="CXXSTANDARD" value="-std=c++14"/>
+    <include name="$(PAPARAZZI_SRC)/sw/ext/eigen"/>
+    <flag name="LDFLAGS" value="lstdc++" />
+    <define name="EIGEN_NO_MALLOC"/>
+    <define name="EIGEN_NO_AUTOMATIC_RESIZING"/>
+    <define name="EIGEN_NO_DEBUG"/>
+    <flag name="CXXFLAGS" value="Wno-bool-compare"/>
+    <flag name="CXXFLAGS" value="Wno-logical-not-parentheses -O3 -finline-functions -I. -I./qpoases -I./qpoases/includ1e -I./qpoases/s1rc"/>
+    <file name="qpoas.cpp"/>
+    <file name="qpoas.h"/>
   </makefile>
 </module>
 

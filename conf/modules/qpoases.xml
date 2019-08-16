@@ -1,0 +1,16 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="qpoases">
+  <doc>
+    <description>quadprog and eigen test</description>
+  </doc>
+  <header>
+    <file name="qpoases.h"/>
+  </header>
+  <init fun="qpoases_init()"/>
+  <event fun="qpoases_replan()"/>
+  <makefile>
+    <file name="qpoases.c"/>
+  </makefile>
+</module>
+

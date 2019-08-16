@@ -26,8 +26,16 @@
 #ifndef QPOAS_H
 #define QPOAS_H
 
-// extern void qp_init();
-// extern void replan();
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern void qp_init(void);
+extern void replan(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
