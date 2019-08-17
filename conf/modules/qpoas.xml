@@ -10,12 +10,11 @@
   <init fun="qp_init()"/>
   <event fun="replan()"/>
   <makefile>
-    <!--configure name="CXXSTANDARD" value="-std=c++14"/-->
+    <configure name="CXXSTANDARD" value="-std=c++14"/>
     <include name="$(PAPARAZZI_SRC)/sw/ext/eigen"/>
     <!-- <include name="$(PAPARAZZI_SRC)/sw/ext/qpOASES-3.2.1"/>
     <include name="$(PAPARAZZI_SRC)/sw/ext/qpOASES-3.2.1/INCLUDE"/>
     <include name="$(PAPARAZZI_SRC)/sw/ext/qpOASES-3.2.1/SRC"/> -->
-    <include name="$(PAPARAZZI_SRC)/sw/ext/quadrotor_mpc_codegen"/>
     <flag name="LDFLAGS" value="lstdc++ -lm -lrt" />
     <flag name="CXXFLAGS" value="Wno-bool-compare"/>
     <flag name="CXXFLAGS" value="Wno-logical-not-parentheses"/>

@@ -34,8 +34,6 @@ www.acadotoolkit.org
 #include "modules/qpoas/acado_common.h"
 #include "modules/qpoas/acado_auxiliary_functions.h"
 #include "modules/qpoas/qpoas.h"
-
-
 #include <stdio.h>
 
 /* Some convenient definitions. */
@@ -57,7 +55,7 @@ ACADOvariables acadoVariables;
 ACADOworkspace acadoWorkspace;
 
 /* A template for testing of the solver. */
-void qp_init( void)
+void qp_init( )
 {
 	/* Some temporary variables. */
 	int    i, iter;
@@ -118,5 +116,3 @@ void qp_init( void)
 	acado_printControlVariables();
 
 }
-
-void replan(void) {}
