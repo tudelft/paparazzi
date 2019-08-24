@@ -2,7 +2,8 @@
  *	This file is part of qpOASES.
  *
  *	qpOASES -- An Implementation of the Online Active Set Strategy.
- *	Copyright (C) 2007-2008 by Hans Joachim Ferreau et al. All rights reserved.
+ *	Copyright (C) 2007-2017 by Hans Joachim Ferreau, Andreas Potschka,
+ *	Christian Kirches et al. All rights reserved.
  *
  *	qpOASES is free software; you can redistribute it and/or
  *	modify it under the terms of the GNU Lesser General Public
@@ -11,8 +12,8 @@
  *
  *	qpOASES is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *	Lesser General Public License for more details.
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *	See the GNU Lesser General Public License for more details.
  *
  *	You should have received a copy of the GNU Lesser General Public
  *	License along with qpOASES; if not, write to the Free Software
@@ -22,17 +23,20 @@
 
 
 /**
- *	\file SRC/SubjectTo.cpp
- *	\author Hans Joachim Ferreau
- *	\version 1.3embedded
- *	\date 2007-2008
+ *	\file src/SubjectTo.cpp
+ *	\author Hans Joachim Ferreau, Andreas Potschka, Christian Kirches
+ *	\version 3.2
+ *	\date 2007-2017
  *
  *	Implementation of the SubjectTo class designed to manage working sets of
  *	constraints and bounds within a QProblem.
  */
 
 
-#include <SubjectTo.hpp>
+#include <qpOASES/SubjectTo.hpp>
+
+
+BEGIN_NAMESPACE_QPOASES
 
 
 /*****************************************************************************
@@ -43,34 +47,33 @@
 /*
  *	S u b j e c t T o
  */
-SubjectTo::SubjectTo( ) :	noLower( BT_TRUE ),
-							noUpper( BT_TRUE ),
-							size( 0 )
+SubjectTo::SubjectTo( )
 {
-	int i;
+	type   = 0;
+	status = 0;
 
-	for( i=0; i<size; ++i )
-	{
-		type[i] = ST_UNKNOWN;
-		status[i] = ST_UNDEFINED;
-	}
+	init( );
 }
 
 
 /*
  *	S u b j e c t T o
  */
-SubjectTo::SubjectTo( const SubjectTo& rhs ) :	noLower( rhs.noLower ),
-												noUpper( rhs.noUpper ),
-												size( rhs.size )
+SubjectTo::SubjectTo( int_t _n )
 {
-	int i;
+	type   = 0;
+	status = 0;
 
-	for( i=0; i<size; ++i )
-	{
-		type[i] = rhs.type[i];
-		status[i] = rhs.status[i];
-	}
+	init( _n );
+}
+
+
+/*
+ *	S u b j e c t T o
+ */
+SubjectTo::SubjectTo( const SubjectTo& rhs )
+{
+	copy( rhs );
 }
 
 
@@ -79,6 +82,7 @@ SubjectTo::SubjectTo( const SubjectTo& rhs ) :	noLower( rhs.noLower ),
  */
 SubjectTo::~SubjectTo( )
 {
+	clear( );
 }
 
 
@@ -87,43 +91,43 @@ SubjectTo::~SubjectTo( )
  */
 SubjectTo& SubjectTo::operator=( const SubjectTo& rhs )
 {
-	int i;
-
 	if ( this != &rhs )
 	{
-		size = rhs.size;
-
-		for( i=0; i<size; ++i )
-		{
-			type[i] = rhs.type[i];
-			status[i] = rhs.status[i];
-		}
-
-		noLower = rhs.noLower;
-		noUpper = rhs.noUpper;
+		clear( );
+		copy( rhs );
 	}
 
 	return *this;
 }
 
 
-
 /*
  *	i n i t
  */
-returnValue SubjectTo::init( int n )
+returnValue SubjectTo::init(	int_t _n
+								)
 {
-	int i;
+	int_t i;
 
-	size = n;
+	if ( _n < 0 )
+		return THROWERROR( RET_INVALID_ARGUMENTS );
 
+	clear( );
+
+	n = _n;
 	noLower = BT_TRUE;
 	noUpper = BT_TRUE;
 
-	for( i=0; i<size; ++i )
+	if ( n > 0 )
 	{
-		type[i] = ST_UNKNOWN;
-		status[i] = ST_UNDEFINED;
+		type   = new SubjectToType[n];
+		status = new SubjectToStatus[n];
+
+		for( i=0; i<n; ++i )
+		{
+			type[i]   = ST_UNKNOWN;
+			status[i] = ST_UNDEFINED;
+		}
 	}
 
 	return SUCCESSFUL_RETURN;
@@ -136,20 +140,84 @@ returnValue SubjectTo::init( int n )
  *****************************************************************************/
 
 /*
+ *	c l e a r
+ */
+returnValue SubjectTo::clear( )
+{
+	if ( type != 0 )
+	{
+		delete[] type;
+		type = 0;
+	}
+
+	if ( status != 0 )
+	{
+		delete[] status;
+		status = 0;
+	}
+
+	return SUCCESSFUL_RETURN;
+}
+
+
+/*
+ *	c o p y
+ */
+returnValue SubjectTo::copy(	const SubjectTo& rhs
+								)
+{
+	int_t i;
+
+	n = rhs.n;
+	noLower = rhs.noLower;
+	noUpper = rhs.noUpper;
+
+	if ( rhs.n != 0 )
+	{
+		type   = new SubjectToType[n];
+		status = new SubjectToStatus[n];
+
+		for( i=0; i<n; ++i )
+		{
+			type[i]   = rhs.type[i];
+			status[i] = rhs.status[i];
+		}
+	}
+	else
+	{
+		type   = 0;
+		status = 0;
+	}
+
+	return SUCCESSFUL_RETURN;
+}
+
+
+/*
  *	a d d I n d e x
  */
 returnValue SubjectTo::addIndex(	Indexlist* const indexlist,
-									int newnumber, SubjectToStatus newstatus
+									int_t newnumber, SubjectToStatus newstatus
 									)
 {
-	/* consistency check */
-	if ( status[newnumber] == newstatus )
-		return THROWERROR( RET_INDEX_ALREADY_OF_DESIRED_STATUS );
+	if ( status != 0 )
+	{
+		/* consistency check */
+		if ( status[newnumber] == newstatus )
+			return THROWERROR( RET_INDEX_ALREADY_OF_DESIRED_STATUS );
 
-	status[newnumber] = newstatus;
-
-	if ( indexlist->addNumber( newnumber ) == RET_INDEXLIST_EXCEEDS_MAX_LENGTH )
+		status[newnumber] = newstatus;
+	}
+	else
 		return THROWERROR( RET_ADDINDEX_FAILED );
+
+	if ( indexlist != 0 )
+	{
+		if ( indexlist->addNumber( newnumber ) == RET_INDEXLIST_EXCEEDS_MAX_LENGTH )
+			return THROWERROR( RET_ADDINDEX_FAILED );
+	}
+	else
+		return THROWERROR( RET_INVALID_ARGUMENTS );
 
 	return SUCCESSFUL_RETURN;
 }
@@ -158,14 +226,22 @@ returnValue SubjectTo::addIndex(	Indexlist* const indexlist,
 /*
  *	r e m o v e I n d e x
  */
-returnValue SubjectTo::removeIndex(	Indexlist* const indexlist, 
-									int removenumber
+returnValue SubjectTo::removeIndex(	Indexlist* const indexlist,
+									int_t removenumber
 									)
 {
-	status[removenumber] = ST_UNDEFINED;
+	if ( status != 0 )
+		status[removenumber] = ST_UNDEFINED;
+	else
+		return THROWERROR( RET_REMOVEINDEX_FAILED );
 
-	if ( indexlist->removeNumber( removenumber ) != SUCCESSFUL_RETURN )
-		return THROWERROR( RET_UNKNOWN_BUG );
+	if ( indexlist != 0 )
+	{
+		if ( indexlist->removeNumber( removenumber ) != SUCCESSFUL_RETURN )
+			return THROWERROR( RET_REMOVEINDEX_FAILED );
+	}
+	else
+		return THROWERROR( RET_INVALID_ARGUMENTS );
 
 	return SUCCESSFUL_RETURN;
 }
@@ -175,11 +251,16 @@ returnValue SubjectTo::removeIndex(	Indexlist* const indexlist,
  *	s w a p I n d e x
  */
 returnValue SubjectTo::swapIndex(	Indexlist* const indexlist,
-									int number1, int number2
+									int_t number1, int_t number2
 									)
 {
 	/* consistency checks */
-	if ( status[number1] != status[number2] )
+	if ( status != 0 )
+	{
+		if ( status[number1] != status[number2] )
+			return THROWERROR( RET_SWAPINDEX_FAILED );
+	}
+	else
 		return THROWERROR( RET_SWAPINDEX_FAILED );
 
 	if ( number1 == number2 )
@@ -188,11 +269,19 @@ returnValue SubjectTo::swapIndex(	Indexlist* const indexlist,
 		return SUCCESSFUL_RETURN;
 	}
 
-	if ( indexlist->swapNumbers( number1,number2 ) != SUCCESSFUL_RETURN )
-		return THROWERROR( RET_SWAPINDEX_FAILED );
+	if ( indexlist != 0 )
+	{
+		if ( indexlist->swapNumbers( number1,number2 ) != SUCCESSFUL_RETURN )
+			return THROWERROR( RET_SWAPINDEX_FAILED );
+	}
+	else
+		return THROWERROR( RET_INVALID_ARGUMENTS );
 
 	return SUCCESSFUL_RETURN;
 }
+
+
+END_NAMESPACE_QPOASES
 
 
 /*

@@ -1,122 +1,162 @@
 /*
- *    This file was auto-generated using the ACADO Toolkit.
- *    
- *    While ACADO Toolkit is free software released under the terms of
- *    the GNU Lesser General Public License (LGPL), the generated code
- *    as such remains the property of the user who used ACADO Toolkit
- *    to generate this code. In particular, user dependent data of the code
- *    do not inherit the GNU LGPL license. On the other hand, parts of the
- *    generated code that are a direct copy of source code from the
- *    ACADO Toolkit or the software tools it is based on, remain, as derived
- *    work, automatically covered by the LGPL license.
- *    
- *    ACADO Toolkit is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *    
+ * Copyright (C) mavlab
+ *
+ * This file is part of paparazzi
+ *
+ * paparazzi is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * paparazzi is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with paparazzi; see the file COPYING.  If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
+/**
+ * @file "modules/qpoas/qpoas.c"
+ * @author mavlab
+ * opti
  */
 
-
-
-/*
-
-IMPORTANT: This file should serve as a starting point to develop the user
-code for the OCP solver. The code below is for illustration purposes. Most
-likely you will not get good results if you execute this code without any
-modification(s).
-
-Please read the examples in order to understand how to write user code how
-to run the OCP solver. You can find more info on the website:
-www.acadotoolkit.org
-
-*/
-
-#include "modules/qpoas/acado_common.h"
-#include "modules/qpoas/acado_auxiliary_functions.h"
 #include "modules/qpoas/qpoas.h"
 
 
-#include <stdio.h>
+// Eigen headers
+#pragma GCC diagnostic ignored "-Wint-in-bool-context"
+#pragma GCC diagnostic ignored "-Wshadow"
+#include <Eigen/Dense>
+#include <Eigen/Core>
+#include <unsupported/Eigen/MatrixFunctions>
+#include <math.h>
 
-/* Some convenient definitions. */
-#define NX          ACADO_NX  /* Number of differential state variables.  */
-#define NXA         ACADO_NXA /* Number of algebraic variables. */
-#define NU          ACADO_NU  /* Number of control inputs. */
-#define NOD         ACADO_NOD  /* Number of online data values. */
+#pragma GCC diagnostic pop
+#include "qpOASES.hpp"
 
-#define NY          ACADO_NY  /* Number of measurements/references on nodes 0..N - 1. */
-#define NYN         ACADO_NYN /* Number of measurements/references on node N. */
 
-#define N           ACADO_N   /* Number of intervals in the horizon. */
 
-#define NUM_STEPS   10        /* Number of real-time iterations. */
-#define VERBOSE     1         /* Show iterations: 1, silent: 0.  */
+#define MAX_N 100
+using namespace Eigen;
+USING_NAMESPACE_QPOASES
 
-/* Global variables used by the solver. */
-ACADOvariables acadoVariables;
-ACADOworkspace acadoWorkspace;
+void qp_init(void) {
+	float pos0[2] = {10.0, 2.0};
+	float posf[2] = {0 ,0};
+	
+	float vel0[2] = {0, 0};
+	float velf[2] = {0, 0};
+	float dt = 0.1;
+	float T = sqrtf(pow((pos0[0] - posf[0]),2) + pow((pos0[1] - posf[1]),2)) / 4.0;
+	unsigned int N = round(T/dt);
+	  
+	
+	Eigen::Matrix<double, 4, 4> A;
+	A << 0.9512, 0, 0, 0,
+		0.09754, 1, 0, 0,
+		0, 0, 0.9512, 0,
+		0, 0, 0.09754, 1;
 
-/* A template for testing of the solver. */
-void qp_init( void)
-{
-	/* Some temporary variables. */
-	int    i, iter;
-	acado_timer t;
+	Eigen::Matrix<double, 4, 2> B;
+	B << 0.9569, 0,
+		0.04824, 0,
+		0, 0.9569,
+		0, 0.04824;
 
-	/* Initialize the solver. */
-	acado_initializeSolver();
+	Eigen::Matrix<double, 4, 4> P;
+	P << 1,0,0,0,
+		0,10,0,0,
+		0,0,1,0,
+		0,0,0,10;
+	
+	// Eigen::Matrix<double, 4, Dynamic> R;
+	Eigen::MatrixXd oldR(4, 2 * MAX_N);
+	oldR.resize(4, 2*N);
+	
+	oldR.block(0, 2*N-2, 4, 2) =  B;
+	Eigen::Matrix<double, 4, 4> AN = A;
 
-	/* Initialize the states and controls. */
-	for (i = 0; i < NX * (N + 1); ++i)  acadoVariables.x[ i ] = 0.0;
-	for (i = 0; i < NU * N; ++i)  acadoVariables.u[ i ] = 0.0;
-
-	/* Initialize the measurements/reference. */
-	for (i = 0; i < NY * N; ++i)  acadoVariables.y[ i ] = 0.0;
-	for (i = 0; i < NYN; ++i)  acadoVariables.yN[ i ] = 0.0;
-
-	/* MPC: initialize the current state feedback. */
-#if ACADO_INITIAL_STATE_FIXED
-	for (i = 0; i < NX; ++i) acadoVariables.x0[ i ] = 0.1;
-#endif
-
-	if( VERBOSE ) acado_printHeader();
-
-	/* Prepare first step */
-	acado_preparationStep();
-
-	/* Get the time before start of the loop. */
-	acado_tic( &t );
-
-	/* The "real-time iterations" loop. */
-	for(iter = 0; iter < NUM_STEPS; ++iter)
-	{
-        /* Perform the feedback step. */
-		acado_feedbackStep( );
-
-		/* Apply the new control immediately to the process, first NU components. */
-
-		if( VERBOSE ) printf("\tReal-Time Iteration %d:  KKT Tolerance = %.3e\n\n", iter, acado_getKKT() );
-
-		/* Optional: shift the initialization (look at acado_common.h). */
-        /* acado_shiftStates(2, 0, 0); */
-		/* acado_shiftControls( 0 ); */
-
-		/* Prepare for the next step. */
-		acado_preparationStep();
+	for(int i=1; i<N; i++) {
+		oldR.block(0, 2*N-2*(i+1), 4, 2) =  A * oldR.block(0, 2*N-2*i, 4, 2);
+		AN = A * AN; 
 	}
-	/* Read the elapsed time. */
-	real_t te = acado_toc( &t );
+	Eigen::MatrixXd R = oldR.block(0,0,4,2*N);
 
-	if( VERBOSE ) printf("\n\nEnd of the RTI loop. \n\n\n");
+	Eigen::MatrixXd old_H = 2 * (R.transpose() * P * R);
+	
+	Eigen::MatrixXd eye(2* MAX_N, 2 * MAX_N); 
+	eye.resize(2*N, 2*N);
+	eye.setIdentity();
+	Eigen::MatrixXd H = 0.5 * (old_H + old_H.transpose() + eye);
 
-	/* Eye-candy. */
+	Eigen::Matrix<double, 4, 1> x0; Eigen::Matrix<double, 4, 1> xd;
+	x0 << vel0[0], pos0[0], vel0[1], pos0[1];
+	xd << velf[0], posf[0], velf[1], posf[1];
+	
+	Eigen::MatrixXd f;
+	f = (2 * ((AN * x0)- xd)).transpose() * P * R;
 
-	if( !VERBOSE )
-	printf("\n\n Average time of one real-time iteration:   %.3g microseconds\n\n", 1e6 * te / NUM_STEPS);
+	// to compare with matlab
+	printf("size of H: %d, %d\n", H.rows(), H.cols());
+	//cout << "H \n" << H << endl;
+	printf("size of f: %d, %d\n", f.rows(), f.cols());
+	//cout << "f \n" << f << endl;
+	
+	float maxbank = 45.0 * 3.142 / 180.0;
 
-	acado_printDifferentialVariables();
-	acado_printControlVariables();
+	int sizes = 2 * N;
 
+	real_t ub[sizes];
+	real_t lb[sizes];
+	
+	for (int i=0; i<sizes; i++) {
+		ub[i] = maxbank;
+		lb[i] = -maxbank;
+	}
+	
+	real_t newH[sizes * sizes];
+	real_t newf[sizes];
+
+  Eigen::Map<MatrixXd>(newH, sizes, sizes) =   H.transpose();
+	Eigen::Map<MatrixXd>(newf, 1, sizes) = f;
+	/* to check row or column major 
+	for (int i=0; i<sizes*sizes; i++) {
+		cout << newH[i] << ",";
+	}
+	*/
+	printf("\n\n\n");
+	for (int i=0; i<sizes; i++) {
+		printf("%f,\t", newf[i]);
+	}
+	printf("\n\n\n");
+	
+
+	// /* Setting up QProblemB object. */
+	QProblemB mpctry( 2*N );  // our class of problem, we don't have any constraints on position or velocity, just the inputs
+
+	/* Solve first QP. */
+	int nWSR = 100;
+	mpctry.init(newH, newf, lb, ub, nWSR, NULL);
+
+	/* Get and print solution of first QP. */
+	real_t xOpt[sizes];
+	float theta_cmd[N];
+	float phi_cmd[N];
+	if (mpctry.getPrimalSolution(xOpt) == SUCCESSFUL_RETURN) {
+		for (int i=0; i<N; i++) {
+			theta_cmd[i] = (float) xOpt[2*i];
+			phi_cmd[i]   = (float) -1 * xOpt[2*i + 1];
+			printf("theta: %f \t phi: %f\n", theta_cmd[i], phi_cmd[i]);
+		}
+	}
+
+	printf("\n\n");
+	printf("\nfval = %e\n\n", mpctry.getObjVal());
 }
 
 void replan(void) {}
+
+

@@ -5,6 +5,9 @@
     <description>opti</description>
   </doc>
   <header>
+    <!-- <file name="acado_auxiliary_functions.h"/>
+    <file name="acado_common.h"/>
+    <file name="acado_qpoases_interface.hpp"/> -->
     <file name="qpoas.h"/>
   </header>
   <init fun="qp_init()"/>
@@ -18,10 +21,36 @@
     <flag name="LDFLAGS" value="lstdc++ -lm -lrt" />
     <flag name="CXXFLAGS" value="Wno-bool-compare"/>
     <flag name="CXXFLAGS" value="Wno-logical-not-parentheses"/>
-    <flag name="CXXFLAGS" value="finline-functions"/>
+    <flag name="CXXFLAGS" value="O3 -finline-functions"/>
     <define name="EIGEN_NO_MALLOC"/>
     <define name="EIGEN_NO_AUTOMATIC_RESIZING"/>
     <define name="EIGEN_NO_DEBUG"/>
+    <include name="$(PAPARAZZI_SRC)/sw/airborne/modules/qpoas/"/>
+    <include name="$(PAPARAZZI_SRC)/sw/airborne/modules/qpoas/qpoases"/>
+    <include name="$(PAPARAZZI_SRC)/sw/airborne/modules/qpoas/qpoases/INCLUDE/qpOASES/"/>
+    <include name="$(PAPARAZZI_SRC)/sw/airborne/modules/qpoas/qpoases/INCLUDE/"/>
+    <include name="$(PAPARAZZI_SRC)/sw/airborne/modules/qpoas/qpoases/SRC/"/>
+    <file name="qpoases/SRC/Bounds.cpp"/>
+    <file name="qpoases/SRC/Constraints.cpp"/>
+    <file name="qpoases/SRC/QProblem.cpp"/>
+    <file name="qpoases/SRC/QProblemB.cpp"/>
+    <!--file name="qpoases/SRC/CyclingManager.cpp"/-->
+    <file name="qpoases/SRC/Indexlist.cpp"/>
+    <file name="qpoases/SRC/MessageHandling.cpp"/>
+    <file name="qpoases/SRC/SubjectTo.cpp"/>
+    <file name="qpoases/SRC/Utils.cpp"/>
+    <file name="qpoases/SRC/BLASReplacement.cpp"/>
+    <file name="qpoases/SRC/LAPACKReplacement.cpp"/>
+    <file name="qpoases/SRC/Matrices.cpp"/>
+    <file name="qpoases/SRC/Flipper.cpp"/>    
+    <file name="qpoases/SRC/Indexlist.cpp"/>
+    <file name="qpoases/SRC/Options.cpp"/>
+    <file name="qpoases/SRC/OQPinterface.cpp"/>
+    <!-- <file name="acado_auxiliary_functions.c"/>
+    <file name="acado_integrator.c"/>
+    <file name="acado_solver.c"/>
+    <file name="acado_qpoases_interface.cpp"/> 
+    <file name="test.c"/> -->
     <file name="qpoas.cpp"/>
     <file name="qpoas.h"/>
   </makefile>

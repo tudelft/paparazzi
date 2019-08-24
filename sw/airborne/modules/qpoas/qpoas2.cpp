@@ -34,6 +34,8 @@ www.acadotoolkit.org
 #include "modules/qpoas/acado_common.h"
 #include "modules/qpoas/acado_auxiliary_functions.h"
 #include "modules/qpoas/qpoas.h"
+
+
 #include <stdio.h>
 
 /* Some convenient definitions. */
@@ -55,7 +57,7 @@ ACADOvariables acadoVariables;
 ACADOworkspace acadoWorkspace;
 
 /* A template for testing of the solver. */
-void blah( )
+void qp_init(void)
 {
 	/* Some temporary variables. */
 	int    i, iter;
@@ -109,10 +111,12 @@ void blah( )
 
 	/* Eye-candy. */
 
-	if( !VERBOSE )
-	printf("\n\n Average time of one real-time iteration:   %.3g microseconds\n\n", 1e6 * te / NUM_STEPS);
+	if( VERBOSE )
+	printf("\n\n Average time of one real-time iteration: %.3g microseconds\n\n", 1e6 * te / NUM_STEPS);
 
 	acado_printDifferentialVariables();
 	acado_printControlVariables();
 
 }
+
+void replan(void) {}
