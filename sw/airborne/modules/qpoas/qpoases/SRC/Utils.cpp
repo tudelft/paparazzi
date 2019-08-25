@@ -31,6 +31,8 @@
  *	Implementation of some utility functions for working with qpOASES.
  */
 
+#define __SUPPRESSANYOUTPUT__
+#define __NO_COPYRIGHT__
 
 #include <math.h>
 

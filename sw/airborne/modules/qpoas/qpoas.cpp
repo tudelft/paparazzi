@@ -25,7 +25,6 @@
 
 #include "modules/qpoas/qpoas.h"
 
-
 // Eigen headers
 #pragma GCC diagnostic ignored "-Wint-in-bool-context"
 #pragma GCC diagnostic ignored "-Wshadow"
@@ -36,14 +35,62 @@
 
 #pragma GCC diagnostic pop
 #include "qpOASES.hpp"
+#include <sys/time.h>
 
+#include <unistd.h>
 
 
 #define MAX_N 100
 using namespace Eigen;
 USING_NAMESPACE_QPOASES
 
+
+/** A structure for keeping internal timer data. */
+typedef struct acado_timer_
+{
+	struct timespec tic;
+	struct timespec toc;
+} acado_timer;
+
+
+/* read current time */
+void profile_tic( acado_timer* t )
+{
+	clock_gettime(CLOCK_MONOTONIC, &t->tic);
+}
+
+
+/* return time passed since last call to tic on this timer */
+real_t profile_toc( acado_timer* t )
+{
+	struct timespec temp;
+    
+	clock_gettime(CLOCK_MONOTONIC, &t->toc);	
+    
+	if ((t->toc.tv_nsec - t->tic.tv_nsec) < 0)
+	{
+		temp.tv_sec = t->toc.tv_sec - t->tic.tv_sec - 1;
+		temp.tv_nsec = 1000000000+t->toc.tv_nsec - t->tic.tv_nsec;
+	}
+	else
+	{
+		temp.tv_sec = t->toc.tv_sec - t->tic.tv_sec;
+		temp.tv_nsec = t->toc.tv_nsec - t->tic.tv_nsec;
+	}
+	
+	return (real_t)temp.tv_sec + (real_t)temp.tv_nsec / 1e9;
+}
+
+
 void qp_init(void) {
+
+}
+
+void replan(void) {
+
+	acado_timer t;
+	profile_tic(&t);
+
 	float pos0[2] = {10.0, 2.0};
 	float posf[2] = {0 ,0};
 	
@@ -52,7 +99,6 @@ void qp_init(void) {
 	float dt = 0.1;
 	float T = sqrtf(pow((pos0[0] - posf[0]),2) + pow((pos0[1] - posf[1]),2)) / 4.0;
 	unsigned int N = round(T/dt);
-	  
 	
 	Eigen::Matrix<double, 4, 4> A;
 	A << 0.9512, 0, 0, 0,
@@ -98,12 +144,6 @@ void qp_init(void) {
 	
 	Eigen::MatrixXd f;
 	f = (2 * ((AN * x0)- xd)).transpose() * P * R;
-
-	// to compare with matlab
-	printf("size of H: %d, %d\n", H.rows(), H.cols());
-	//cout << "H \n" << H << endl;
-	printf("size of f: %d, %d\n", f.rows(), f.cols());
-	//cout << "f \n" << f << endl;
 	
 	float maxbank = 45.0 * 3.142 / 180.0;
 
@@ -120,22 +160,20 @@ void qp_init(void) {
 	real_t newH[sizes * sizes];
 	real_t newf[sizes];
 
-  Eigen::Map<MatrixXd>(newH, sizes, sizes) =   H.transpose();
+  	Eigen::Map<MatrixXd>(newH, sizes, sizes) =   H.transpose();
 	Eigen::Map<MatrixXd>(newf, 1, sizes) = f;
-	/* to check row or column major 
-	for (int i=0; i<sizes*sizes; i++) {
-		cout << newH[i] << ",";
-	}
-	*/
-	printf("\n\n\n");
-	for (int i=0; i<sizes; i++) {
-		printf("%f,\t", newf[i]);
-	}
-	printf("\n\n\n");
 	
-
 	// /* Setting up QProblemB object. */
-	QProblemB mpctry( 2*N );  // our class of problem, we don't have any constraints on position or velocity, just the inputs
+	QProblemB mpctry( 2*N );  
+	// our class of problem, we don't have any constraints on position or velocity, just the inputs
+
+	Options optionsmpc;
+	//options.enableFlippingBounds = BT_FALSE;
+	optionsmpc.printLevel = PL_LOW;
+	optionsmpc.initialStatusBounds = ST_INACTIVE;
+	optionsmpc.numRefinementSteps = 1;
+	// optionsmpc.enableCholeskyRefactorisation = 1;
+	mpctry.setOptions( optionsmpc );
 
 	/* Solve first QP. */
 	int nWSR = 100;
@@ -149,14 +187,19 @@ void qp_init(void) {
 		for (int i=0; i<N; i++) {
 			theta_cmd[i] = (float) xOpt[2*i];
 			phi_cmd[i]   = (float) -1 * xOpt[2*i + 1];
-			printf("theta: %f \t phi: %f\n", theta_cmd[i], phi_cmd[i]);
+			// printf("theta: %f \t phi: %f\n", theta_cmd[i], phi_cmd[i]);
 		}
 	}
-
 	printf("\n\n");
-	printf("\nfval = %e\n\n", mpctry.getObjVal());
-}
+	printf("\nfval = %e \n\n", mpctry.getObjVal());
+	
+	stabilization_attitude_set_rpy_setpoint_i(&(ctrl.cmd));
+	stabilization_attitude_run(in_flight);
 
-void replan(void) {}
+	/* Read the elapsed time. */
+	real_t te = profile_toc( &t );
+	printf("\n\n Average time of one real-time iteration: %.3g microseconds\n\n", 1e6 * te);
+
+}
 
 

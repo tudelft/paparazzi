@@ -22,6 +22,7 @@
     <flag name="CXXFLAGS" value="Wno-bool-compare"/>
     <flag name="CXXFLAGS" value="Wno-logical-not-parentheses"/>
     <flag name="CXXFLAGS" value="O3 -finline-functions"/>
+    <flag name="__SUPPRESSANYOUTPUT__" value=""/>
     <define name="EIGEN_NO_MALLOC"/>
     <define name="EIGEN_NO_AUTOMATIC_RESIZING"/>
     <define name="EIGEN_NO_DEBUG"/>
