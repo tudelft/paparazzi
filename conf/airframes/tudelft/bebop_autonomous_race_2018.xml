@@ -6,18 +6,9 @@
 
   <firmware name="rotorcraft">
     <target name="ap" board="bebop"/>
+    <define name="USE_SONAR" value="FALSE"/>
 
-    <target name="nps" board="pc">
-      <module name="fdm" type="jsbsim"/>
-      <module name="udp"/>
-    </target>
-
-    <define name="USE_SONAR" value="TRUE"/>
-    <define name="SONAR_BEBOP_FILTER_NARROW_OBSTACLES" value="TRUE" />
-    <define name="SONAR_BEBOP_FILTER_NARROW_OBSTACLES_JUMP" value="0.4" />
-    <define name="SONAR_BEBOP_FILTER_NARROW_OBSTACLES_TIME" value="1.0" />
-
-	<!-- Subsystem section -->
+    <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
     <module name="radio_control" type="datalink"/>
     <module name="motor_mixing"/>
@@ -26,31 +17,22 @@
     <module name="gps" type="datalink"/>
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
-    <!--module name="stabilization" type="int_quat"/-->
     <module name="ahrs" type="int_cmpl_quat">
-       <configure name="USE_MAGNETOMETER" value="FALSE"/> <!--TRUE-->
+       <configure name="USE_MAGNETOMETER" value="TRUE"/> <!--TRUE-->
        <configure name="USE_GPS" value="TRUE"/>
        <define name="AHRS_USE_GPS_HEADING" value="TRUE"/><!--TRUE-->
        <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>
     </module>
     <module name="ins" type="extended"/>
 
-    <!--module name="guidance" type="indi">
-      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500.0"/>
-    </module-->
-
     <module name="geo_mag"/>
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
-    <!--module name="guidance_loop_velocity_autonomous_race"/-->
     <module name="logger_file">
       <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
     </module>
 
     <module name="ctrl_module_outerloop_demo"/>
-    <module name="sonar_bebop"/>
-
-    <module name="jevois_mavlink"/>
     <module name="qpoas"/>
 
   </firmware>

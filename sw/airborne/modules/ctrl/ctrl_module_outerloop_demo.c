@@ -31,18 +31,16 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "autopilot.h"
-
+#include <stdio.h>
+#include "modules/qpoas/qpoas.h"
 // Own Variables
 
 struct ctrl_module_demo_struct {
-// RC Inputs
+  // RC Inputs
   struct Int32Eulers rc_sp;
-
-// Output command
+  // Output command
   struct Int32Eulers cmd;
-
 } ctrl;
-
 
 // Settings
 float comode_time = 0;
@@ -60,6 +58,8 @@ void guidance_h_module_enter(void)
   // Store current heading
   ctrl.cmd.psi = stateGetNedToBodyEulers_i()->psi;
 
+  optimal_enter();
+
   // Convert RC to setpoint
   stabilization_attitude_read_rc_setpoint_eulers(&ctrl.rc_sp, autopilot.in_flight, false, false);
 }
@@ -69,14 +69,17 @@ void guidance_h_module_read_rc(void)
   stabilization_attitude_read_rc_setpoint_eulers(&ctrl.rc_sp, autopilot.in_flight, false, false);
 }
 
+float roll = 0.0;
+float pitch = 0.0;
 
 void guidance_h_module_run(bool in_flight)
 {
   // YOUR NEW HORIZONTAL OUTERLOOP CONTROLLER GOES HERE
   // ctrl.cmd = CallMyNewHorizontalOuterloopControl(ctrl);
-  float roll = 0.0;
-  float pitch = 0.0;
+  dronerace_get_cmd(&roll, &pitch);
 
+  // printf("roll: %f \t pitch: %f \n", roll, pitch);
+  
   ctrl.cmd.phi = ANGLE_BFP_OF_REAL(roll);
   ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch);
 

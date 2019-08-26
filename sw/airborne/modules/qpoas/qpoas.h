@@ -26,12 +26,21 @@
 #ifndef QPOAS_H
 #define QPOAS_H
 
+
+#include <sys/time.h>
+
+
+#define MAX_N 100
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+extern void optimal_enter(void);
+extern void periodic_10Hz_demo(void);
 extern void qp_init(void);
 extern void replan(void);
+extern void dronerace_get_cmd(float* roll, float* pitch);
 
 #ifdef __cplusplus
 }

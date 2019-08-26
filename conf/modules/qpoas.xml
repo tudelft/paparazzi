@@ -11,6 +11,7 @@
     <file name="qpoas.h"/>
   </header>
   <init fun="qp_init()"/>
+  <periodic fun="periodic_10Hz_demo()" freq="10" autorun="TRUE"/>
   <event fun="replan()"/>
   <makefile>
     <configure name="CXXSTANDARD" value="-std=c++14"/>
