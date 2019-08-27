@@ -29,13 +29,11 @@
 
 #include <sys/time.h>
 
-
 #define MAX_N 100
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 extern void optimal_enter(void);
 extern void periodic_10Hz_demo(void);
 extern void qp_init(void);

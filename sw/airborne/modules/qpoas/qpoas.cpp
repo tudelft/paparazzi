@@ -25,6 +25,16 @@
 
 #include "modules/qpoas/qpoas.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "state.h"
+#ifdef __cplusplus
+}
+#endif
+#include <math.h>
+#include <unistd.h>
+
 // Eigen headers
 #pragma GCC diagnostic ignored "-Wint-in-bool-context"
 #pragma GCC diagnostic ignored "-Wshadow"
@@ -32,9 +42,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Core>
 #include <unsupported/Eigen/MatrixFunctions>
-#include <math.h>
-#include <unistd.h>
-#include "state.h"
+
 #pragma GCC diagnostic pop
 
 #include "qpOASES.hpp"
@@ -106,11 +114,16 @@ void optimal_enter(void) {
 
 	acado_timer t;
 	profile_tic(&t);
-
+	struct NedCoor_f *optipos = stateGetPositionNed_f();
 	float pos0[2] = {-2.7, 2.15};
-	float posf[2] = {0.0, -3.2};
+	pos0[0] = optipos->x;
+	pos0[1] = optipos->y;
+	float posf[2] = {2.6, -3.0};
 	
 	float vel0[2] = {0.0, 0.0};
+	struct NedCoor_f *optivel = stateGetSpeedNed_f();
+	vel0[0] = optivel->x;
+	vel0[1] = optivel->y;
 	float velf[2] = {0.0, -2.0};
 	float dt = 0.1;
 	float T = 2.5;
@@ -141,7 +154,7 @@ void optimal_enter(void) {
 	oldR.block(0, 2*N-2, 4, 2) =  B;
 	Eigen::Matrix<double, 4, 4> AN = A;
 
-	for(int i=1; i<N; i++) {
+	for(unsigned int i=1; i<N; i++) {
 		oldR.block(0, 2*N-2*(i+1), 4, 2) =  A * oldR.block(0, 2*N-2*i, 4, 2);
 		AN = A * AN; 
 	}
@@ -199,7 +212,7 @@ void optimal_enter(void) {
 	real_t xOpt[sizes];
 
 	if (mpctry.getPrimalSolution(xOpt) == SUCCESSFUL_RETURN) {
-		for (int i=0; i<N; i++) {
+		for (unsigned int i=0; i<N; i++) {
 			phi_cmd[i] = (float) xOpt[2*i];
 			theta_cmd[i] = (float) xOpt[2*i + 1];
 			printf("theta: %f \t phi: %f\n", 180/3.142 * (theta_cmd[i]), 180/3.142 * phi_cmd[i]);
@@ -219,7 +232,7 @@ float arbiter_roll = 0.0;
 float arbiter_pitch = 0.0;
 void periodic_10Hz_demo(void) {
 	if (lock_optimal == 1) {
-		static int i = 0;
+		static unsigned int i = 0;
 		if (i < N) {
 			arbiter_roll  = phi_cmd[i];
 			arbiter_pitch = theta_cmd[i];

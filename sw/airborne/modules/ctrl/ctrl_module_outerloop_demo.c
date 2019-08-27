@@ -31,8 +31,8 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "autopilot.h"
-#include <stdio.h>
 #include "modules/qpoas/qpoas.h"
+#include <stdio.h>
 // Own Variables
 
 struct ctrl_module_demo_struct {
