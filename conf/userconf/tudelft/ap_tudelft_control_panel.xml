@@ -153,30 +153,7 @@
         <arg flag="-c" constant="'*:telemetry:AHRS_EULER_INT:imu_psi:0.014285714'"/>
         <arg flag="-c" constant="'*:telemetry:AHRS_ALPHAPILOT:est_yaw'"/>
       </program>
-      <program name="Real-time Plotter">
-        <arg flag="-t" constant="Accelerometer"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="0"/>
-        <arg flag="-c" constant="'*:telemetry:AHRS_ALPHAPILOT:accel_x'"/>
-        <arg flag="-c" constant="'*:telemetry:AHRS_ALPHAPILOT:accel_y'"/>
-        <arg flag="-c" constant="'*:telemetry:AHRS_ALPHAPILOT:accel_z'"/>
-      </program>
-      <program name="Real-time Plotter">
-        <arg flag="-t" constant="Acceleration gravity corrected Earth Reference"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="0"/>
-        <arg flag="-c" constant="'*:telemetry:AHRS_ALPHAPILOT:accel_x_corr'"/>
-        <arg flag="-c" constant="'*:telemetry:AHRS_ALPHAPILOT:accel_y_corr'"/>
-        <arg flag="-c" constant="'*:telemetry:AHRS_ALPHAPILOT:accel_z_corr'"/>
-      </program>
-       <program name="Real-time Plotter">
-        <arg flag="-t" constant="Estimated position"/>
-        <arg flag="-u" constant="0.1"/>
-        <arg flag="-c" constant="0"/>
-        <arg flag="-c" constant="'*:telemetry:AHRS_ALPHAPILOT:pos_est_x'"/>
-        <arg flag="-c" constant="'*:telemetry:AHRS_ALPHAPILOT:pos_est_y'"/>
-        <arg flag="-c" constant="'*:telemetry:AHRS_ALPHAPILOT:pos_est_z'"/>
-      </program>
+      
   	<program name="Messages"/>
 
     </session>

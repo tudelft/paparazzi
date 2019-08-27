@@ -19,6 +19,7 @@ struct dronerace_state_struct {
   // Positon
   float x;
   float y;
+  float z; 
 
   // Speed
   float vx;

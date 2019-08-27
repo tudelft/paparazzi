@@ -31,11 +31,25 @@
 #include "./dronerace/dronerace.h"
 #include "./dronerace/filter.h"
 // Own Variables
-
+inline float z_i =0;
 struct ctrl_module_demo_struct dr_ctrl = {0};
 
 // Settings
 float comode_time = 0;
+
+
+/** The file pointer */
+FILE *file_logger_t2 = NULL;
+
+static void open_log(void) 
+{
+  char filename[512];
+  // Check for available files
+  sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "altitude_log");
+  printf("\n\n*** chosen filename log drone race: %s ***\n\n", filename);
+  file_logger_t2 = fopen(filename, "w+"); 
+}
+
 
 ////////////////////////////////////////////////////////////////////
 // Call our controller
@@ -50,8 +64,9 @@ void guidance_h_module_init(void)
 
 
 void guidance_h_module_enter(void)
-{
+{ 
   // Store current heading
+  open_log();
   dr_ctrl.cmd.psi = stateGetNedToBodyEulers_i()->psi;
 
   // Convert RC to setpoint
@@ -86,7 +101,7 @@ void guidance_h_module_run(bool in_flight)
   // Alternatively, use the indi_guidance and send AbiMsgACCEL_SP to it instead of setting pitch and roll
 }
 
-#if 0
+#if 1
 void guidance_v_module_init(void)
 {
   // initialization of your custom vertical controller goes here
@@ -95,13 +110,46 @@ void guidance_v_module_init(void)
 // Implement own Vertical loops
 void guidance_v_module_enter(void)
 {
+    z_i=0;
   // your code that should be executed when entering this vertical mode goes here
 }
 
+
+// Altitude control gains
+#define Z_ALPHA 0.9
+#define KP_ALT 0.45
+#define KD_ALT 0.04
+#define KI_ALT 0//0.01
+
+#define HOVERTHRUST 0.55
+float prev_meas_z = 0; 
+float z_cmd;
+float z_measured;
+float zv_measured;
+float est_state_vz= 0;
+float est_state_z;
+float thrust_cmd = 0; 
+
 void guidance_v_module_run(bool in_flight)
 { 
+
+
+// Altitude control 
+  z_cmd = -1.75; 
+  z_measured = dr_state.z;//stateGetPositionUtm_f()->alt; //TODO check sign (may be MSL)
+  zv_measured = (z_measured -prev_meas_z)*512.; 
+  
+  est_state_vz = zv_measured;//Z_ALPHA * est_state_vz + (1-Z_ALPHA) * zv_measured;
+  est_state_z = z_measured;// Z_ALPHA * est_state_z + (1-Z_ALPHA) * z_measured;
+  prev_meas_z = z_measured;
+  z_i+=(z_cmd-est_state_z)/512.;
+  thrust_cmd = -(KP_ALT *(z_cmd -est_state_z) - KD_ALT * est_state_vz + KI_ALT*z_i) + HOVERTHRUST /  (cosf(dr_state.phi)*cosf(dr_state.theta));
+  
+
   float nominal = radio_control.values[RADIO_THROTTLE];
   float flap = 0.85;
-  stabilization_cmd[COMMAND_THRUST] = nominal / (cosf(dr_state.phi * flap) * cosf(dr_state.theta * flap));
+  stabilization_cmd[COMMAND_THRUST] = thrust_cmd*9125.;// nominal / (cosf(dr_state.phi * flap) * cosf(dr_state.theta * flap));
+  printf("z_measured: %f, est_state_z:%f, zv_measured: %f,nominal: %f,thrust_cmd: %f\n",z_measured,est_state_z,zv_measured,nominal,thrust_cmd);
+  fprintf(file_logger_t2, "%f, %f, %f,%f, %f\n",z_measured,est_state_z,zv_measured,est_state_vz,thrust_cmd);
 }
 #endif

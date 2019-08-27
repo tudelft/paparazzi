@@ -26,6 +26,7 @@ void filter_reset()
 
   dr_state.x = pos->x;
   dr_state.y = pos->y;
+  dr_state.z = pos->z; 
 
   // Speed
   dr_state.vx = 0.0f;

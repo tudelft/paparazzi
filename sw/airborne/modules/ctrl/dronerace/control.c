@@ -69,26 +69,34 @@ float bound_f(float val, float min, float max) {
 	return val;
 }
 
-#define KP_POS    0.1
+#define KP_POS    0.05
 #define KP_VEL_X  0.1
 #define KP_VEL_Y  0.1
 #define KD_VEL_X  0.05
 #define KD_VEL_Y  0.05
+
 
 void control_run(float dt)
 {
 
   dr_control.z_cmd = dr_fp.z_set;
 
+  // outer loop velocity control
 	static float prev_acc_x_error = 0;
 	static float prev_acc_y_error = 0;
 
   struct NedCoor_f *pos_gps = stateGetPositionNed_f();
   dr_state.x = pos_gps->x;
   dr_state.y = pos_gps->y;
+  dr_state.z = pos_gps->z;
 
 	float vel_cmd_w_x = KP_POS * (0 - dr_state.x)/dt;
 	float vel_cmd_w_y = KP_POS * (0 - dr_state.y)/dt;
+  float dist2target = sqrtf(dr_state.x * dr_state.x + dr_state.y*dr_state.y);
+
+   
+    dr_control.psi_cmd=atan2f(-dr_state.y,-dr_state.x);
+   
 
 //	vel_cmd_w_x -= 5 * cos(flightplan->wp.psi[flightplan->wp_selector]);
 //	vel_cmd_w_y -= 5 * sin(flightplan->wp.psi[flightplan->wp_selector]);
@@ -105,16 +113,16 @@ void control_run(float dt)
 	float d_acc_x_bodyFrame = (acc_x_cmd_bodyFrame - prev_acc_x_error) / dt;
 	float d_acc_y_bodyFrame = (acc_y_cmd_bodyFrame - prev_acc_y_error) / dt;
 
-	dr_control.theta_cmd = -(KP_VEL_X * acc_x_cmd_bodyFrame - KD_VEL_X * d_acc_x_bodyFrame); // + K_FF_THETA * vel_x_cmd_velFrame);
-  dr_control.phi_cmd   =  (KP_VEL_Y * acc_y_cmd_bodyFrame - KD_VEL_Y * d_acc_y_bodyFrame);  // + K_FF_PHI   * vel_y_cmd_velFrame;
+	dr_control.theta_cmd = 0;//-(KP_VEL_X * acc_x_cmd_bodyFrame - KD_VEL_X * d_acc_x_bodyFrame); // + K_FF_THETA * vel_x_cmd_velFrame);
+  dr_control.phi_cmd   = 0;//(KP_VEL_Y * acc_y_cmd_bodyFrame - KD_VEL_Y * d_acc_y_bodyFrame);  // + K_FF_PHI   * vel_y_cmd_velFrame;
 
 	prev_acc_x_error = acc_x_cmd_bodyFrame;
 	prev_acc_y_error = acc_y_cmd_bodyFrame;
 
+
   static int counter = 0;
   fprintf(file_logger_t, "%d,%f,%f,%f,%f,%f,%f,%f,%f\n", counter, dr_control.theta_cmd, dr_control.phi_cmd, dr_state.theta, dr_state.phi, vel_cmd_w_x, vel_cmd_w_y, dr_state.vx, dr_state.vy);
   counter++;
-  
   
 
 }
