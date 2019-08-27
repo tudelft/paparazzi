@@ -118,7 +118,7 @@ void optimal_enter(void) {
 	float pos0[2] = {-2.7, 2.15};
 	pos0[0] = optipos->x;
 	pos0[1] = optipos->y;
-	float posf[2] = {2.6, -3.0};
+	float posf[2] = {2.2, -2.5};
 	
 	float vel0[2] = {0.0, 0.0};
 	struct NedCoor_f *optivel = stateGetSpeedNed_f();

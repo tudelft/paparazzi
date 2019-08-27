@@ -82,10 +82,43 @@ void guidance_h_module_run(bool in_flight)
   
   ctrl.cmd.phi = ANGLE_BFP_OF_REAL(roll);
   ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch);
-
+  
   stabilization_attitude_set_rpy_setpoint_i(&(ctrl.cmd));
   stabilization_attitude_run(in_flight);
 
   // Alternatively, use the indi_guidance and send AbiMsgACCEL_SP to it instead of setting pitch and roll
 }
 
+#if 1
+void guidance_v_module_init(void)
+{
+  // initialization of your custom vertical controller goes here
+}
+
+// Implement own Vertical loops
+void guidance_v_module_enter(void)
+{
+  // your code that should be executed when entering this vertical mode goes here
+}
+
+#define KP_ALT 0.4
+#define KD_ALT 0.05
+#define HOVERTHRUST 0.55
+void guidance_v_module_run(bool in_flight)
+{ 
+  struct NedCoor_f *optipos = stateGetPositionNed_f();
+  struct NedCoor_f *optivel = stateGetSpeedNed_f();
+  struct FloatEulers *att = stateGetNedToBodyEulers_f();
+
+  // Altitude control 
+  float z_cmd = -1.5; 
+  float z_measured  = optipos->z;
+  float zv_measured = optivel->z;
+  
+  float thrust_cmd = -(KP_ALT *(z_cmd - z_measured) - KD_ALT * zv_measured) + HOVERTHRUST /  (cosf(att->phi * 0.8)*cosf(att->theta * 0.8));
+
+  // float nominal = radio_control.values[RADIO_THROTTLE];
+
+  stabilization_cmd[COMMAND_THRUST] = thrust_cmd*9125;
+}
+#endif

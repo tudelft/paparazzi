@@ -80,7 +80,6 @@
     <define name="H_X" value="0.3892503"/>
     <define name="H_Y" value="0.0017972"/>
     <define name="H_Z" value="0.9211303"/>
-
     <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
     <define name="GRAVITY_HEURISTIC_FACTOR" value="30"/><!-- was 0-->
   </section>
@@ -96,14 +95,15 @@
   
 
   <section name="INS" prefix="INS_">
-    <define name="SONAR_MAX_RANGE" value="5"/>
-    <define name="SONAR_UPDATE_ON_AGL" value="TRUE"/>
+    <define name="USE_GPS_ALT" value="1"/>
+    <define name="USE_GPS_ALT_SPEED" value="1"/>
+    <define name="VFF_R_GPS" value="0.01"/>
   </section>
 
   <section name="RC_SETPOINT" prefix="STABILIZATION_ATTITUDE_">
     <!-- setpoint limits for attitude stabilization rc flight -->
-    <define name="SP_MAX_PHI" value="45" unit="deg"/>
-    <define name="SP_MAX_THETA" value="45" unit="deg"/>
+    <define name="SP_MAX_PHI" value="25" unit="deg"/>
+    <define name="SP_MAX_THETA" value="25" unit="deg"/>
     <define name="SP_MAX_R" value="90." unit="deg/s"/>
     <define name="DEADBAND_A" value="0"/>
     <define name="DEADBAND_E" value="0"/>
@@ -166,7 +166,7 @@
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
-    <define name="MAX_BANK" value="20" unit="deg"/>
+    <define name="MAX_BANK" value="25" unit="deg"/>
     <define name="REF_MAX_SPEED" value="2" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
@@ -175,24 +175,14 @@
     <define name="IGAIN" value="30"/>
   </section>
 
-
   <section name="NAVIGATION" prefix="NAV_">
     <define name="CLIMB_VSPEED" value="2.5"/>
     <define name="DESCEND_VSPEED" value="-1.0"/>
   </section>
 
-  <section name="SIMULATOR" prefix="NPS_">
-    <define name="ACTUATOR_NAMES" value="nw_motor, ne_motor, se_motor, sw_motor" type="string[]"/>
-    <define name="JSBSIM_MODEL" value="simple_x_quad_ccw" type="string"/>
-    <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
-  </section>
-
   <section name="AUTOPILOT">
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
-    <!--define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/-->
     <define name="MODE_AUTO2" value="AP_MODE_MODULE"/>
-
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>
 
