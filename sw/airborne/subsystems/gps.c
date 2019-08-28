@@ -63,6 +63,20 @@ PRINT_CONFIG_VAR(SECONDARY_GPS)
 #endif
 #endif
 
+
+
+FILE *gps_logger = NULL;
+
+static void open_log(void) 
+{
+  char filename[512];
+  // Check for available files
+  sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "gps_log");
+  printf("\n\n*** chosen filename log drone race: %s ***\n\n", filename);
+  gps_logger = fopen(filename, "w+"); 
+}
+
+
 #define MSEC_PER_WEEK (1000*60*60*24*7)
 #define TIME_TO_SWITCH 5000 //ten s in ms
 
@@ -127,6 +141,9 @@ static void send_gps(struct transport_tx *trans, struct link_device *dev)
   uint8_t zero = 0;
   int16_t climb = -gps.ned_vel.z;
   int16_t course = (DegOfRad(gps.course) / ((int32_t)1e6));
+  uint32_t logtime = get_sys_time_msec();
+  fprintf(gps_logger,"%d,%f\n",logtime, (float)gps.course/1e7); 
+  
   struct UtmCoor_i utm = utm_int_from_gps(&gps, 0);
 #if PPRZLINK_DEFAULT_VER == 2 && GPS_POS_BROADCAST
   // broadcast GPS message
@@ -137,15 +154,19 @@ static void send_gps(struct transport_tx *trans, struct link_device *dev)
   msg.receiver_id = PPRZLINK_MSG_BROADCAST;
   msg.component_id = 0;
   pprzlink_msg_send_GPS(&msg,
+  
 #else
   pprz_msg_send_GPS(trans, dev, AC_ID,
 #endif
                     &gps.fix,
                     &utm.east, &utm.north,
-                    &course, &gps.hmsl, &gps.gspeed, &climb,
+                    &course, &gps.hmsl, &gps.gspeed, &climb, 
                     &gps.week, &gps.tow, &utm.zone, &zero);
+ ///< GPS course over ground in rad*1e7, [0, 2*Pi]*1e7 (CW/north)
   // send SVINFO for available satellites that have new data
   send_svinfo_available(trans, dev);
+ 
+ 
 }
 
 static void send_gps_rtk(struct transport_tx *trans, struct link_device *dev)
@@ -309,7 +330,7 @@ static void gps_cb(uint8_t sender_id,
 void gps_init(void)
 {
   multi_gps_mode = MULTI_GPS_MODE;
-
+  open_log();
   gps.valid_fields = 0;
   gps.fix = GPS_FIX_NONE;
   gps.week = 0;

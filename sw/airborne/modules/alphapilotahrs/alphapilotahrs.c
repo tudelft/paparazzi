@@ -26,6 +26,20 @@
 #include "modules/alphapilotahrs/alphapilotahrs.h"
 #include "subsystems/imu.h"
 #include "subsystems/datalink/telemetry.h"
+
+/** The file pointer */
+FILE *file_logger_t3 = NULL;
+
+static void open_log(void) 
+{
+  char filename[512];
+  // Check for available files
+  sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "ahrs_log");
+  printf("\n\n*** chosen filename log drone race: %s ***\n\n", filename);
+  file_logger_t3 = fopen(filename, "w+"); 
+}
+
+
 // #include <Eigen/Dense>
 float v_est[3]={0};
 float pos_est[3]={0};
@@ -54,7 +68,7 @@ static void send_alphapahrs(struct transport_tx *trans, struct link_device *dev)
 
 void alphapilot_ahrs_init() {
 register_periodic_telemetry(DefaultPeriodic,  PPRZ_MSG_ID_AHRS_ALPHAPILOT, send_alphapahrs);
-  
+  open_log();
 }
 
 
@@ -156,7 +170,10 @@ void alphapilot_ahrs_periodic() {
   pos_est[0]+=v_est[0]*dt1;
   pos_est[1]+=v_est[1]*dt1;
   pos_est[2]+=v_est[2]*dt1;
+  float logtime=get_sys_time_float();
+  fprintf(file_logger_t3,"%f, %f, %f, %f\n",logtime,est_state_roll,est_state_pitch,est_state_yaw);
 
+  
 }
 
 

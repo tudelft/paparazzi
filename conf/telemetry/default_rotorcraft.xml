@@ -16,7 +16,8 @@
       <message name="AHRS_QUAT_INT"      period=".25"/>
       <message name="AHRS_EULER_INT"     period=".1"/>
       <message name="AHRS_EULER"         period=".1"/>
-      <message name="AHRS_ALPHAPILOT" period="0.05"/>
+      <message name="AHRS_ALPHAPILOT" 	period="0.05"/>
+      <message name="GPS" 		period="0.05"/>
     </mode>
 
     <mode name="default" key_press="d">
