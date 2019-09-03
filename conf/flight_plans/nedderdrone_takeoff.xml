@@ -1,19 +1,25 @@
 <!DOCTYPE flight_plan SYSTEM "flight_plan.dtd">
 
-<flight_plan alt="85" ground_alt="0" lat0="52.9219719" lon0="4.5356120" max_dist_from_home="60000" name="Rotorcraft Basic (Enac)" security_height="2">
+<flight_plan alt="85" ground_alt="0" lat0="52.3931263" lon0="5.9207213" max_dist_from_home="60000" name="Rotorcraft Basic (Enac)" security_height="2">
   <header>
 #include "autopilot.h"
   </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint name="CLIMB" x="0.0" y="55.0"/>
-    <waypoint name="STDBY" x="-8.0" y="-55.0"/>
+    <waypoint name="STDBY" x="16.0" y="55.0"/>
     <waypoint name="p1" x="3.6" y="-139"/>
     <waypoint name="p2" x="275" y="-482"/>
     <waypoint name="p3" x="167" y="-196"/>
     <waypoint name="p4" x="137" y="-407"/>
     <waypoint name="TD" x="55.6" y="-10.9"/>
     <waypoint name="FOLLOW" x="60.5" y="13.5"/>
+
+    <!-- 't Harde -->
+    <waypoint name="R1" lat="52.3938563" lon="5.9233533"/>
+    <waypoint name="R2" lat="52.3924228" lon="5.9211302"/>
+    <waypoint name="R3" lat="52.3998454" lon="5.9102605"/>
+    <waypoint name="R4" lat="52.4015975" lon="5.9170479"/>
 
     <!-- EHR8 -->
     <waypoint name="_C1" lat="52.96166667" lon="4.740277778"/>
@@ -38,10 +44,19 @@
       <corner name="_C8"/>
       <corner name="_C9"/>
     </sector>
+    <!--sector color="red" name="RES" type="dynamic">
+      <corner name="R1"/>
+      <corner name="R2"/>
+      <corner name="R3"/>
+      <corner name="R4"/>
+    </sector-->
   </sectors>
   <modules>
     <module name="follow_me"/>
   </modules>
+  <!--exceptions>
+    <exception cond="Or(!InsideRES(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 500) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+  </exceptions-->
   <blocks>
     <block name="Wait GPS">
       <call_once fun="NavKillThrottle()"/>

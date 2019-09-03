@@ -173,6 +173,9 @@ void mcu_init(void)
 #ifdef USE_I2C3
   i2c3_init();
 #endif
+#ifdef USE_I2C4
+  i2c4_init();
+#endif
 #if USE_ADC
   adc_init();
 #endif

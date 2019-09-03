@@ -613,7 +613,7 @@ object (self)
     l
 
 
-  method circle = fun ?(group = canvas#root) ?(width=1) ?fill_color ?(opacity=0) ?(color="black") geo radius ->
+  method circle = fun ?(group = canvas#root) ?(width=1) ?fill_color ?(opacity=0) ?(color="lightgrey") geo radius ->
     let (x, y) = self#world_of geo in
     let (stpwidth, stpstr) = stipple_opacity opacity in
     (** Compute the actual radius in a UTM projection *)
@@ -625,7 +625,7 @@ object (self)
     l#show ();
     l
 
-  method polygon = fun ?(group = canvas#root) ?(width=1) ?fill_color ?(opacity=0) ?(color="black") geo_arr ->
+  method polygon = fun ?(group = canvas#root) ?(width=1) ?fill_color ?(opacity=0) ?(color="lightgrey") geo_arr ->
     (*setting opacity from 0-4 *)
     let (stpwidth, stpstr) = stipple_opacity opacity in
     let points = self#convert_positions_to_points geo_arr in
@@ -633,7 +633,7 @@ object (self)
     l#show ();
     l
 
-  method photoprojection = fun ?(group = canvas#root) ?(width=1) ?fill_color ?(color="black") ?(number="1") geo radius ->
+  method photoprojection = fun ?(group = canvas#root) ?(width=1) ?fill_color ?(color="lightgrey") ?(number="1") geo radius ->
     let (x, y) = self#world_of geo in
 
     (** Compute the actual radius in a UTM projection *)
