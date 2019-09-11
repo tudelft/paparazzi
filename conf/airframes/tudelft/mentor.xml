@@ -127,7 +127,7 @@
 
   <section name="INS" prefix="INS_">
     <define name="ROLL_NEUTRAL_DEFAULT" value="0.0" unit="deg"/>
-    <define name="PITCH_NEUTRAL_DEFAULT" value="5.9" unit="deg"/>
+    <define name="PITCH_NEUTRAL_DEFAULT" value="0" unit="deg"/>
   </section>
 
   <!-- ************************* GAINS ************************* -->
@@ -148,23 +148,23 @@
 
   <section name="VERTICAL CONTROL" prefix="V_CTL_">
     <!-- power -->
-    <define name="POWER_CTL_BAT_NOMINAL" value="11.1" unit="volt"/>
+    <define name="POWER_CTL_BAT_NOMINAL" value="14.8" unit="volt"/>
     <!-- outer loop proportional gain -->
-    <define name="ALTITUDE_PGAIN" value="0.183"/>
-    <define name="AIRSPEED_PGAIN" value="0.217"/>
+    <define name="ALTITUDE_PGAIN" value="0.1"/>
+    <define name="AIRSPEED_PGAIN" value="0.0"/>
     <!-- outer loop saturation -->
-    <define name="ALTITUDE_MAX_CLIMB" value="10."/>
+    <define name="ALTITUDE_MAX_CLIMB" value="3."/>
     <define name="MAX_ACCELERATION" value="2."/>
     <!-- energy -->
-    <define name="ENERGY_TOT_PGAIN" value="0.205"/>
-    <define name="ENERGY_TOT_IGAIN" value="0.403"/>
-    <define name="ENERGY_DIFF_PGAIN" value="0.403"/>
-    <define name="ENERGY_DIFF_IGAIN" value="0.259"/>
+    <define name="ENERGY_TOT_PGAIN" value="0.0"/>
+    <define name="ENERGY_TOT_IGAIN" value="0.0"/>
+    <define name="ENERGY_DIFF_PGAIN" value="0.0"/>
+    <define name="ENERGY_DIFF_IGAIN" value="0.0"/>
     <define name="GLIDE_RATIO" value="7."/>
     <!-- auto throttle -->
-    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.5"/>
-    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0." unit="%/(m/s)"/>
-    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0."/>
+    <define name="AUTO_THROTTLE_NOMINAL_CRUISE_THROTTLE" value="0.55"/>
+    <define name="AUTO_THROTTLE_CLIMB_THROTTLE_INCREMENT" value="0.1" unit="%/(m/s)"/>
+    <define name="AUTO_THROTTLE_PITCH_OF_VZ_PGAIN" value="0.15"/>
     <!-- extra's -->
     <define name="AUTO_THROTTLE_OF_AIRSPEED_PGAIN" value="0.0"/>
     <define name="AUTO_THROTTLE_OF_AIRSPEED_IGAIN" value="0.0"/>

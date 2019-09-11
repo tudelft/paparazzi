@@ -29,9 +29,15 @@
       <module name="send_imu_mag_current"/>
       <module name="gain_scheduling"/>
 
-      <module name="mag_ist8310">
+      <!-- internal-->
+      <!--module name="mag_ist8310">
         <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>
         <configure name="MAG_IST8310_I2C_DEV" value="I2C3"/>
+      </module-->
+      <!-- external-->
+      <module name="mag_lis3mdl">
+        <define name="MODULE_LIS3MDL_UPDATE_AHRS" value="TRUE"/>
+        <configure name="MAG_LIS3MDL_I2C_DEV" value="I2C4"/>
       </module>
       <module name="lidar" type="tfmini"/>
 
@@ -39,7 +45,7 @@
       <module name="intermcu" type="uart"/>
       <!--module name="px4_flash"/-->
 
-       <!-- Logger -->
+      <!-- Logger -->
       <module name="tlsf"/>
       <module name="pprzlog"/>
       <module name="logger" type="sd_chibios"/>
@@ -179,13 +185,21 @@
     <define name= "MAG_Y_CURRENT_COEF" value="-0.7696784114750511"/>
     <define name= "MAG_Z_CURRENT_COEF" value="1.1626106815908253"/>
 
-    <!-- NOT CALIBRATED STOLEN -->
-    <define name="MAG_X_NEUTRAL" value="11"/>
-    <define name="MAG_Y_NEUTRAL" value="-6"/>
-    <define name="MAG_Z_NEUTRAL" value="18"/>
-    <define name="MAG_X_SENS" value="12.270808065808852" integer="16"/>
-    <define name="MAG_Y_SENS" value="12.586881365148184" integer="16"/>
-    <define name="MAG_Z_SENS" value="12.147148038840342" integer="16"/>
+    <!-- Calibrated in the field at delft with 4S11P NCR18650GA battery internal MAG -->
+    <!--define name="MAG_X_NEUTRAL" value="-106"/>
+    <define name="MAG_Y_NEUTRAL" value="-29"/>
+    <define name="MAG_Z_NEUTRAL" value="234"/>
+    <define name="MAG_X_SENS" value="13.028684793638755" integer="16"/>
+    <define name="MAG_Y_SENS" value="13.974975533917162" integer="16"/>
+    <define name="MAG_Z_SENS" value="11.681233446758739" integer="16"/-->
+
+    <!-- Calibrated in the field at delft with 4S11P NCR18650GA battery external MAG -->
+    <define name="MAG_X_NEUTRAL" value="-946"/>
+    <define name="MAG_Y_NEUTRAL" value="-262"/>
+    <define name="MAG_Z_NEUTRAL" value="5396"/>
+    <define name="MAG_X_SENS" value="0.6183541464093891" integer="16"/>
+    <define name="MAG_Y_SENS" value="0.6390032395540786" integer="16"/>
+    <define name="MAG_Z_SENS" value="0.6581371909061796" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI"   value="0" unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="75." unit="deg"/>

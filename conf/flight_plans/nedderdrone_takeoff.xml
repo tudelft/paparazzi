@@ -2,7 +2,8 @@
 
 <flight_plan alt="85" ground_alt="0" lat0="52.3931263" lon0="5.9207213" max_dist_from_home="60000" name="Rotorcraft Basic (Enac)" security_height="2">
   <header>
-#include "autopilot.h"
+    #include "autopilot.h"
+    #include "subsystems/datalink/datalink.h"
   </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
@@ -33,7 +34,7 @@
     <waypoint name="_C9" lat="53.04972222" lon="4.679444444"/>
   </waypoints>
   <sectors>
-    <sector color="orange" name="EHR8">
+    <sector color="orange" name="EHR8" type="dynamic">
       <corner name="_C1"/>
       <corner name="_C2"/>
       <corner name="_C3"/>
@@ -54,9 +55,10 @@
   <modules>
     <module name="follow_me"/>
   </modules>
-  <!--exceptions>
-    <exception cond="Or(!InsideRES(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 500) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
-  </exceptions-->
+  <exceptions>
+    <exception cond="Or(!InsideEHR8(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 500) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+    <exception cond="datalink_time > 25 && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+  </exceptions>
   <blocks>
     <block name="Wait GPS">
       <call_once fun="NavKillThrottle()"/>

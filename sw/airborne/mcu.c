@@ -43,7 +43,7 @@
 #define USING_UART 1
 #include "mcu_periph/uart.h"
 #endif
-#if USE_I2C0 || USE_I2C1 || USE_I2C2 || USE_I2C3
+#if USE_I2C0 || USE_I2C1 || USE_I2C2 || USE_I2C3 || USE_I2C4
 #define USING_I2C 1
 #include "mcu_periph/i2c.h"
 #endif

@@ -349,9 +349,9 @@
    telemetry="telemetry/default_fixedwing_imu_9k6.xml"
    flight_plan="flight_plans/versatile.xml"
    settings="settings/fixedwing_basic.xml settings/estimation/ins_neutrals.xml settings/control/tune_agr_climb.xml"
+   settings_modules="modules/digital_cam.xml modules/light.xml modules/gps.xml modules/nav_basic_fw.xml modules/guidance_basic_fw.xml modules/stabilization_attitude_fw.xml"
    gui_color="#b748fe64fe64"
    release="46b814ea46496cfc3f6a874bb5013db1a350bfcf"
-   settings_modules="modules/digital_cam.xml modules/light.xml modules/gps.xml modules/nav_basic_fw.xml modules/guidance_basic_fw.xml modules/stabilization_attitude_fw.xml"
   />
   <aircraft
    name="Splash"
