@@ -114,7 +114,7 @@
     <define name="MAG_Z_SENS" value="4.40442339014" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI" value="0" unit="deg"/>
-    <define name="BODY_TO_IMU_THETA" value="10" unit="deg"/>
+    <define name="BODY_TO_IMU_THETA" value="14" unit="deg"/>
     <define name="BODY_TO_IMU_PSI" value="0" unit="deg"/>
   </section>
 
