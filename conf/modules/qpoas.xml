@@ -16,9 +16,6 @@
   <makefile>
     <configure name="CXXSTANDARD" value="-std=c++14"/>
     <include name="$(PAPARAZZI_SRC)/sw/ext/eigen"/>
-    <!-- <include name="$(PAPARAZZI_SRC)/sw/ext/qpOASES-3.2.1"/>
-    <include name="$(PAPARAZZI_SRC)/sw/ext/qpOASES-3.2.1/INCLUDE"/>
-    <include name="$(PAPARAZZI_SRC)/sw/ext/qpOASES-3.2.1/SRC"/> -->
     <flag name="LDFLAGS" value="lstdc++ -lm -lrt" />
     <flag name="CXXFLAGS" value="Wno-bool-compare"/>
     <flag name="CXXFLAGS" value="Wno-logical-not-parentheses"/>
@@ -48,11 +45,6 @@
     <file name="qpoases/SRC/Indexlist.cpp"/>
     <file name="qpoases/SRC/Options.cpp"/>
     <file name="qpoases/SRC/OQPinterface.cpp"/>
-    <!-- <file name="acado_auxiliary_functions.c"/>
-    <file name="acado_integrator.c"/>
-    <file name="acado_solver.c"/>
-    <file name="acado_qpoases_interface.cpp"/> 
-    <file name="test.c"/> -->
     <file name="qpoas.cpp"/>
     <file name="qpoas.h"/>
   </makefile>

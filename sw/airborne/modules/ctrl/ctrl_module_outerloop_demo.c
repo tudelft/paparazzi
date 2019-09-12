@@ -58,7 +58,7 @@ void guidance_h_module_enter(void)
   // Store current heading
   ctrl.cmd.psi = stateGetNedToBodyEulers_i()->psi;
 
-  optimal_enter();
+  // optimal_enter();
 
   // Convert RC to setpoint
   stabilization_attitude_read_rc_setpoint_eulers(&ctrl.rc_sp, autopilot.in_flight, false, false);
@@ -76,7 +76,8 @@ void guidance_h_module_run(bool in_flight)
 {
   // YOUR NEW HORIZONTAL OUTERLOOP CONTROLLER GOES HERE
   // ctrl.cmd = CallMyNewHorizontalOuterloopControl(ctrl);
-  dronerace_get_cmd(&roll, &pitch);
+  
+  // dronerace_get_cmd(&roll, &pitch);
 
   // printf("roll: %f \t pitch: %f \n", roll, pitch);
   

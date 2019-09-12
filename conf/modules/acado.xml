@@ -1,0 +1,37 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="acado">
+  <doc>
+    <description>acado toolkit embedded version</description>
+  </doc>
+  <header>
+    <file name="acado.h"/>
+  </header>
+  <init fun="acado_init()"/>
+  <periodic fun="acado_flush_output()" freq="10" autorun="FALSE"/>
+  <event fun="acado_on_buttonpress()"/>
+  <makefile>
+    <flag name="LDFLAGS" value="lstdc++ -lm -lrt"/>
+    <include name="$(PAPARAZZI_SRC)/sw/airborne/modules/acado/"/>
+    <include name="$(PAPARAZZI_SRC)/sw/airborne/modules/acado/qpoases/"/>
+    <include name="$(PAPARAZZI_SRC)/sw/airborne/modules/acado/qpoases/INCLUDE/"/>
+    <include name="$(PAPARAZZI_SRC)/sw/airborne/modules/acado/qpoases/SRC/"/>
+    <file name="qpoases/SRC/Bounds.cpp"/>
+    <file name="qpoases/SRC/Constraints.cpp"/>
+    <file name="qpoases/SRC/QProblem.cpp"/>
+    <file name="qpoases/SRC/QProblemB.cpp"/>
+    <file name="qpoases/SRC/CyclingManager.cpp"/>
+    <file name="qpoases/SRC/Indexlist.cpp"/>
+    <file name="qpoases/SRC/MessageHandling.cpp"/>
+    <file name="qpoases/SRC/SubjectTo.cpp"/>
+    <file name="qpoases/SRC/Utils.cpp"/>
+    <file name="acado_auxiliary_functions.c"/>
+    <file name="acado_integrator.c"/>
+    <file name="acado_qpoases_interface.cpp"/>
+    <file name="acado_solver.c"/>
+    <!--file name="test.c"/-->
+    <file name="acado.h"/>
+    <file name="acado.c"/>
+  </makefile>
+</module>
+

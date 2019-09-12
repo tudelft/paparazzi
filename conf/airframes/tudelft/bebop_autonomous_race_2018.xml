@@ -33,7 +33,8 @@
     </module>
 
     <module name="ctrl_module_outerloop_demo"/>
-    <module name="qpoas"/>
+    <!--module name="qpoas"/-->
+    <module name="acado"/>
 
   </firmware>
 
