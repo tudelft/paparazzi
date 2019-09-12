@@ -43,8 +43,8 @@ f_batmodel = interpolate.RectBivariateSpline(batmodel_reversed[:, 0], range(2, 1
 # 2: mAh 10A
 
 capacity = 3300 #mAh
-cells_in_series = 6 #cells
-cells_in_parallel = 6 #cells
+cells_in_series = 4 #cells
+cells_in_parallel = 11 #cells
 cells_in_battery = cells_in_parallel * cells_in_series
 
 def interpolate_monotonic_x(x, y, x_test):
