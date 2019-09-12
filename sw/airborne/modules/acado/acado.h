@@ -26,9 +26,19 @@
 #ifndef ACADO_H
 #define ACADO_H
 
-extern void acado_init();
-extern void acado_flush_output();
-extern void acado_on_buttonpress();
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern void acado_init(void);
+extern void acado_flush_output(void);
+extern void acado_on_buttonpress(void);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

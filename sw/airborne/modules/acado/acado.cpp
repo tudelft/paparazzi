@@ -1,35 +1,31 @@
 /*
- *    This file was auto-generated using the ACADO Toolkit.
- *    
- *    While ACADO Toolkit is free software released under the terms of
- *    the GNU Lesser General Public License (LGPL), the generated code
- *    as such remains the property of the user who used ACADO Toolkit
- *    to generate this code. In particular, user dependent data of the code
- *    do not inherit the GNU LGPL license. On the other hand, parts of the
- *    generated code that are a direct copy of source code from the
- *    ACADO Toolkit or the software tools it is based on, remain, as derived
- *    work, automatically covered by the LGPL license.
- *    
- *    ACADO Toolkit is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *    
+ * Copyright (C) mavlab
+ *
+ * This file is part of paparazzi
+ *
+ * paparazzi is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * paparazzi is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with paparazzi; see the file COPYING.  If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
+/**
+ * @file "modules/acado/acado.c"
+ * @author mavlab
+ * acado toolkit embedded version
  */
 
+#include "modules/acado/acado.h"
+#include "subsystems/datalink/telemetry.h"
 
-
-/*
-
-IMPORTANT: This file should serve as a starting point to develop the user
-code for the OCP solver. The code below is for illustration purposes. Most
-likely you will not get good results if you execute this code without any
-modification(s).
-
-Please read the examples in order to understand how to write user code how
-to run the OCP solver. You can find more info on the website:
-www.acadotoolkit.org
-
-*/
 
 #include "acado_common.h"
 #include "acado_auxiliary_functions.h"
@@ -54,12 +50,40 @@ www.acadotoolkit.org
 ACADOvariables acadoVariables;
 ACADOworkspace acadoWorkspace;
 
-/* A template for testing of the solver. */
-int main( )
+// sending the divergence message to the ground station:
+static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
 {
+	float x = 0;
+	float y = 0; // Flows
+	float vx = 0;
+	float vy = 0; // Flows
+	float t = 0.7;
+
+	int32_t cnt = 5; // Covariance
+	float cy = 0;
+
+	float dx = 0; // Vision
+	float dy = 0;
+	float dz = 0;
+
+	int32_t gate = 1;
+	int32_t ransac = 1;
+
+	pprz_msg_send_DRONE_RACE(trans, dev, AC_ID,
+	&t, &x, &y, &vx, &vy, &cnt,
+	&dx, &dy, &dz, &gate, &ransac);
+}
+
+
+
+void acado_init(void) {
+
+   // Send telemetry
+   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DRONE_RACE, send_dronerace);
+
 	/* Some temporary variables. */
 	int    i, iter;
-	acado_timer t;
+	// acado_timer t;
 
 	/* Initialize the solver. */
 	acado_initializeSolver();
@@ -83,7 +107,7 @@ int main( )
 	acado_preparationStep();
 
 	/* Get the time before start of the loop. */
-	acado_tic( &t );
+	// acado_tic( &t );
 
 	/* The "real-time iterations" loop. */
 	for(iter = 0; iter < NUM_STEPS; ++iter)
@@ -103,17 +127,22 @@ int main( )
 		acado_preparationStep();
 	}
 	/* Read the elapsed time. */
-	real_t te = acado_toc( &t );
+	// real_t te = acado_toc( &t );
 
 	if( VERBOSE ) printf("\n\nEnd of the RTI loop. \n\n\n");
 
 	/* Eye-candy. */
 
 	if( !VERBOSE )
-	printf("\n\n Average time of one real-time iteration:   %.3g microseconds\n\n", 1e6 * te / NUM_STEPS);
+	// printf("\n\n Average time of one real-time iteration:   %.3g microseconds\n\n", 1e6 * te / NUM_STEPS);
 
 	acado_printDifferentialVariables();
 	acado_printControlVariables();
 
-    return 0;
+
 }
+
+void acado_flush_output(void) {}
+void acado_on_buttonpress(void) {}
+
+

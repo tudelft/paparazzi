@@ -35,7 +35,8 @@
       <message name="LOGGER_STATUS"            period="5.1"/>
       <message name="LIDAR"                    period="1.2"/>
       <message name="INS_EKF2"                 period=".25"/>
-    </mode>
+      <message name="DRONE_RACE"               period="0.05"/>
+    </mode> 
 
     <mode name="ppm">
       <message name="DL_VALUE"                 period="0.5"/>
