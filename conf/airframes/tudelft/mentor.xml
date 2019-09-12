@@ -100,7 +100,7 @@
     <define name="DEFAULT_PITCH" value="5.0" unit="deg"/>
     <define name="HOME_RADIUS" value="DEFAULT_CIRCLE_RADIUS" unit="m"/>
     <define name="KILL_MODE_DISTANCE" value="(MAX_DIST_FROM_HOME*1.5)"/>
-    <define name="DELAY_WITHOUT_GPS" value="3" unit="s"/>
+    <define name="DELAY_WITHOUT_GPS" value="10" unit="s"/>
   </section>
 
   <!-- ************************* SENSORS ************************* -->
