@@ -28,10 +28,10 @@
       </module>
       <!--module name="lidar" type="tfmini"/-->
 
-      <module name="airspeed" type="ms45xx_i2c">
+      <!--module name="airspeed" type="ms45xx_i2c">
         <define name="USE_I2C4"/>
         <define name="MS45XX_I2C_DEV" value="i2c4"/>
-      </module>
+      </module-->
       <module name="air_data"/>
 
       <module name="control" type="energy"/>
