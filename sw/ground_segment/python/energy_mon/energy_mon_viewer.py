@@ -51,7 +51,7 @@ class AirDataMessage(object):
 class EnergyMessage(object):
     def __init__(self, msg):
         self.volt = float(msg['voltage'])
-        self.current = float(msg['current'])
+        self.current = float(msg['current'])*2.0
         self.power = float(msg['power'])
         self.energy = float(msg['energy'])
 
