@@ -18,7 +18,7 @@
     <waypoint name="CLIMB" x="-114.5" y="162.3"/>
 
     <!-- EHR8 -->
-    <waypoint name="C1" lat="52.96166667" lon="4.740277778"/>
+    <!--waypoint name="C1" lat="52.96166667" lon="4.740277778"/>
     <waypoint name="C2" lat="52.86666667" lon="4.716666667"/>
     <waypoint name="C3" lat="52.78333333" lon="4.683333333"/>
     <waypoint name="C4" lat="52.75" lon="4.533333333"/>
@@ -26,10 +26,15 @@
     <waypoint name="C6" lat="52.81666667" lon="4.35"/>
     <waypoint name="C7" lat="53.08333333" lon="4.35"/>
     <waypoint name="C8" lat="53.10277778" lon="4.515555556"/>
-    <waypoint name="C9" lat="53.04972222" lon="4.679444444"/>
+    <waypoint name="C9" lat="53.04972222" lon="4.679444444"/-->
+
+    <waypoint name="C1" x="1000" y="-1000"/>
+    <waypoint name="C2" x="1000" y="1000"/>
+    <waypoint name="C3" x="-1000" y="1000"/>
+    <waypoint name="C4" x="-1000" y="-1000"/>
   </waypoints>
   <sectors>
-    <sector color="orange" name="EHR8" type="dynamic">
+    <!--sector color="orange" name="EHR8" type="dynamic">
       <corner name="C1"/>
       <corner name="C2"/>
       <corner name="C3"/>
@@ -39,6 +44,12 @@
       <corner name="C7"/>
       <corner name="C8"/>
       <corner name="C9"/>
+    </sector-->
+    <sector color="orange" name="EHR8" type="dynamic">
+      <corner name="C1"/>
+      <corner name="C2"/>
+      <corner name="C3"/>
+      <corner name="C4"/>
     </sector>
   </sectors>
   <exceptions>
