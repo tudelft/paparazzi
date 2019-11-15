@@ -1,0 +1,4 @@
+weights_inhid.txt
+neuron_hid.txt
+weights_hidout.txt
+neuron_out.txt

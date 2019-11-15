@@ -50,3 +50,6 @@
 [submodule "sw/ext/matrix"]
 	path = sw/ext/matrix
 	url = https://github.com/PX4/Matrix.git
+[submodule "sw/airborne/modules/spiking_landing/tinysnn"]
+	path = sw/airborne/modules/spiking_landing/tinysnn
+	url = https://github.com/Huizerd/tinysnn.git
