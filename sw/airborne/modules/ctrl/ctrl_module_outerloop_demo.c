@@ -92,7 +92,7 @@ void guidance_h_module_run(bool in_flight)
   dronerace_get_cmd(&alt, &roll, &pitch, &yaw);
 
   dr_ctrl.cmd.phi   = ANGLE_BFP_OF_REAL(roll);
-  dr_ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch); //-ANGLE_BFP_OF_REAL(5*3.142/180);
+  // dr_ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch); //-ANGLE_BFP_OF_REAL(5*3.142/180); //pitch is calculated to control altitude below 
   dr_ctrl.cmd.psi   = ANGLE_BFP_OF_REAL(yaw);   // stateGetNedToBodyEulers_f()->psi;//
 
   stabilization_attitude_set_rpy_setpoint_i(&(dr_ctrl.cmd));
@@ -115,35 +115,65 @@ void guidance_v_module_enter(void)
 }
 
 
+
 // Altitude control gains
 #define Z_ALPHA 0.9
 #define KP_ALT 0.45
 #define KD_ALT 0.04
 #define KI_ALT 0//0.01
 
+#define KP_Z 3.0
+#define KP_VZ 3.0
+#define KP_VZDOT 0.1
+
 #define HOVERTHRUST 0.55
+#define FIXEDTHRUST 0.57
+#define MAXPITCH 20* PI/180.0
 float prev_meas_z = 0; 
 float z_cmd;
 float z_measured;
 float zv_measured;
+float zv_dot_measured;
+float prev_meas_zv = 0;
+float zv_command; 
+float theta_cmd;
+float theta_0; 
+float zv_dot_command; 
 float est_state_vz= 0;
 float est_state_z;
 float thrust_cmd = 0; 
+float m = 0.420; //mass of bebop 
+
 
 void guidance_v_module_run(bool in_flight)
 { 
-
-
+  theta_0 = - acosf(HOVERTHRUST/FIXEDTHRUST) // calculate theoretical pitch angle where the lift component should be equal to the weight. Potentially add correction for roll later
+ 
 // Altitude control 
   z_cmd = -1.75; 
   z_measured = dr_state.z;//stateGetPositionUtm_f()->alt; //TODO check sign (may be MSL)
   zv_measured = (z_measured -prev_meas_z)*512.; 
+  zv_dot_measured = (zv_measured - prev_meas_zv)*512.0; // TODO replace by optitrack values 
   
   est_state_vz = zv_measured;//Z_ALPHA * est_state_vz + (1-Z_ALPHA) * zv_measured;
   est_state_z = z_measured;// Z_ALPHA * est_state_z + (1-Z_ALPHA) * z_measured;
   prev_meas_z = z_measured;
+  prev_meas_zv = zv_measured;
+  zv_command = (z_cmd - z_measured)*KP_ALT;
+  zv_dot_command = (zv_command-zv_measured)*KP_VZ;
+  theta_cmd = (zv_dot_command-zv_dot_measured)*KP_VZDOT + theta_0; 
+
+  if(theta_cmd>0){
+    theta_cmd = 0;
+  }
+  if(abs(theta_cmd)>MAXPITCH){
+    theta_cmd = (theta_cmd/abs(theta_cmd))*MAXPITCH;
+  }
+
+  dr_ctrl.cmd.theta = ANGLE_BFP_OF_REAL(theta_cmd);
+
   z_i+=(z_cmd-est_state_z)/512.;
-  thrust_cmd = -(KP_ALT *(z_cmd -est_state_z) - KD_ALT * est_state_vz + KI_ALT*z_i) + HOVERTHRUST /  (cosf(dr_state.phi)*cosf(dr_state.theta));
+  thrust_cmd = FIXEDTHRUST;
   
 
   float nominal = radio_control.values[RADIO_THROTTLE];

@@ -1,0 +1,18 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="ctrl_circle">
+  <doc>
+    <description>This controller will guide the drone into a coordinated circle turn.</description>
+  </doc>
+  <header>
+    <file name="ctrl_circle.h"/>
+  </header>
+  <init fun="circle_ctrl_init()"/>
+  <periodic fun="circle_ctrl_period()" freq="512" start="circle_ctrl_start()" stop="circle_ctrl_stop()"/>
+  <event fun="circle_ctrl_event()"/>
+  <datalink message="circle_ctrl_msg" fun="circle_ctrl_callback()"/>
+  <makefile>
+    <file name="ctrl_circle.c"/>
+  </makefile>
+</module>
+

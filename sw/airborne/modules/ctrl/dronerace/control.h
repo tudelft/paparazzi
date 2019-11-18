@@ -22,5 +22,7 @@ extern void control_run(float dt);
 
 
 #define HOVERTHRUST 0.53
+float POSI=0;
 
+#define PI 3.14159265359
 
