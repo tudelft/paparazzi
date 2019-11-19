@@ -147,10 +147,10 @@ float m = 0.420; //mass of bebop
 
 void guidance_v_module_run(bool in_flight)
 { 
-  theta_0 = - acosf(HOVERTHRUST/FIXEDTHRUST) // calculate theoretical pitch angle where the lift component should be equal to the weight. Potentially add correction for roll later
+  theta_0 = - acosf(HOVERTHRUST/FIXEDTHRUST); // calculate theoretical pitch angle where the lift component should be equal to the weight. Potentially add correction for roll later
  
 // Altitude control 
-  z_cmd = -1.75; 
+  z_cmd = -1.5; 
   z_measured = dr_state.z;//stateGetPositionUtm_f()->alt; //TODO check sign (may be MSL)
   zv_measured = (z_measured -prev_meas_z)*512.; 
   zv_dot_measured = (zv_measured - prev_meas_zv)*512.0; // TODO replace by optitrack values 
@@ -161,7 +161,7 @@ void guidance_v_module_run(bool in_flight)
   prev_meas_zv = zv_measured;
   zv_command = (z_cmd - z_measured)*KP_ALT;
   zv_dot_command = (zv_command-zv_measured)*KP_VZ;
-  theta_cmd = (zv_dot_command-zv_dot_measured)*KP_VZDOT + theta_0; 
+  theta_cmd = (zv_dot_command-zv_dot_measured)*KP_VZDOT + theta_0;  //todo add Integral? 
 
   if(theta_cmd>0){
     theta_cmd = 0;

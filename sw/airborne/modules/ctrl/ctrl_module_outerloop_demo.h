@@ -56,6 +56,8 @@ extern struct ctrl_module_demo_struct dr_ctrl;
 // #define GUIDANCE_V_MODE_MODULE_SETTING GUIDANCE_V_MODE_HOVER
 #define GUIDANCE_V_MODE_MODULE_SETTING GUIDANCE_V_MODE_MODULE
 
+#define PI 3.14159265359
+
 // Implement own Horizontal loops
 extern void guidance_h_module_init(void);
 extern void guidance_h_module_enter(void);

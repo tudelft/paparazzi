@@ -113,7 +113,7 @@ void dronerace_init(void)
   // Send telemetry
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_OPTICAL_FLOW_HOVER, send_dronerace);
 
-
+  POS_I=0.0; //reset integral
   // Compute waypoints
   dronerace_enter();
 }
