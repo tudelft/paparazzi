@@ -23,6 +23,6 @@ extern void control_run(float dt);
 // float POSI = 0; 
 float POS_I;
 #define HOVERTHRUST 0.53
-
+#define GRAVITY -9.80665
 #define PI 3.14159265359
 

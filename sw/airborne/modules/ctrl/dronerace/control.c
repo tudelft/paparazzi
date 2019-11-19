@@ -34,6 +34,13 @@ static void open_log(void)
 #define CTRL_MAX_ROLL   RadOfDeg(18)    // rad
 #define CTRL_MAX_R      RadOfDeg(45)    // rad/sec
 
+float bound_angle(float angle, float max_angle){
+  if(abs(angle)>max_angle){
+    angle = max_angle * angle/abs(angle);
+    
+  }
+  return angle;
+}
 
 void control_reset(void)
 { 
@@ -70,18 +77,24 @@ float bound_f(float val, float min, float max) {
 	return val;
 }
 
-#define KP_POS    0.05
+#define KP_POS    0.08
 #define KI_POS 0.001
 #define KP_VEL_X  0.1
 #define KP_VEL_Y  0.1
 #define KD_VEL_X  0.05
 #define KD_VEL_Y  0.05
 #define radius_des 4.0 
-#define lookahead  10 * PI/180.0
-
+#define lookahead  0 * PI/180.0
+#define PITCHFIX  -2 * PI/180.0
+#define DIRECTION 1 // 1 for clockwise, -1 for counterclockwise
 
 void control_run(float dt)
 {
+
+  float psi_meas=stateGetNedToBodyEulers_f()->psi;
+  float theta_meas=stateGetNedToBodyEulers_f()->theta;
+  float phi_meas=stateGetNedToBodyEulers_f()->phi;
+
 
   dr_control.z_cmd = dr_fp.z_set;
 
@@ -93,16 +106,34 @@ void control_run(float dt)
   dr_state.z = pos_gps->z;
 
   float dist2target = sqrtf(dr_state.x * dr_state.x + dr_state.y*dr_state.y);
-  float radiuserror = (radius_des - dist2target);
-  dr_control.phi_cmd   = KP_POS* radiuserror + POS_I*KI_POS; //maybe remove integral? 
-  // POSI = POSI + radiuserror*dt;
+  float absvel = (dr_state.vx * dr_state.vx + dr_state.vy*dr_state.vy);
+  float radiuserror = (dist2target-radius_des);
 
-  float phase_angle = atan2f(dr_state.x,dr_state.y); 
+  float phase_angle = atan2f(dr_state.y,dr_state.x); 
+  float r_error_x=radiuserror * sinf(phase_angle);
+  float r_error_y=radiuserror * cosf(phase_angle);
 
-  float psi_cmd = phase_angle + 0.5*PI + lookahead;
-  dr_control.psi_cmd = angle180(psi_cmd*180.0/PI)*PI/180.0;
+  float rx = r_error_x - dr_state.x; //translate error to body 
+  float ry = r_error_y - dr_state.y;
+
+  //rotate error to body
+  float rxb = rx*cosf(theta_meas)*cosf(psi_meas)+ry*cosf(theta_meas)*sinf(psi_meas);
+  float ryb = rx*(sinf(phi_meas)*sinf(theta_meas)*cosf(psi_meas)-cosf(phi_meas)*sinf(psi_meas)) + ry*(sinf(phi_meas)*sinf(theta_meas)*sinf(psi_meas)+cosf(phi_meas)*cosf(psi_meas));
+  radiuserror = ryb; 
+
+  dr_control.phi_cmd =KP_POS* radiuserror + POS_I*KI_POS + DIRECTION*atan2f(absvel * cosf(dr_state.theta), (abs(GRAVITY) * radius_des)); //fix sign for direction of circle 
+ dr_control.phi_cmd = bound_angle(dr_control.phi_cmd,CTRL_MAX_ROLL);
+
+  POS_I = POS_I + radiuserror*dt;
 
 
+  float psi_cmd = phase_angle +(DIRECTION*PI) + lookahead;
+  dr_control.psi_cmd =angle180(psi_cmd*180.0/PI)*PI/180.0;
+
+  dr_control.theta_cmd = PITCHFIX ;
+  dr_control.theta_cmd = bound_angle(dr_control.theta_cmd,CTRL_MAX_PITCH);
+
+  printf("posx: %f, posy: %f, PosR: %f, phaseangle: %f, yaw_angle: %f\n",dr_state.x, dr_state.y, dist2target,phase_angle*180./PI,psi_cmd*180/PI);
 
   static int counter = 0;
   fprintf(file_logger_t, "%d,%f,%f,%f,%f,%f,%f\n", counter, dr_control.theta_cmd, dr_control.phi_cmd, dr_state.theta, dr_state.phi, dist2target, phase_angle);

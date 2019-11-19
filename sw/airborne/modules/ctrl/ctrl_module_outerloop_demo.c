@@ -92,7 +92,7 @@ void guidance_h_module_run(bool in_flight)
   dronerace_get_cmd(&alt, &roll, &pitch, &yaw);
 
   dr_ctrl.cmd.phi   = ANGLE_BFP_OF_REAL(roll);
-  // dr_ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch); //-ANGLE_BFP_OF_REAL(5*3.142/180); //pitch is calculated to control altitude below 
+  dr_ctrl.cmd.theta = ANGLE_BFP_OF_REAL(pitch); //-ANGLE_BFP_OF_REAL(5*3.142/180); //pitch is calculated to control altitude below 
   dr_ctrl.cmd.psi   = ANGLE_BFP_OF_REAL(yaw);   // stateGetNedToBodyEulers_f()->psi;//
 
   stabilization_attitude_set_rpy_setpoint_i(&(dr_ctrl.cmd));
@@ -149,37 +149,51 @@ void guidance_v_module_run(bool in_flight)
 { 
   theta_0 = - acosf(HOVERTHRUST/FIXEDTHRUST); // calculate theoretical pitch angle where the lift component should be equal to the weight. Potentially add correction for roll later
  
-// Altitude control 
-  z_cmd = -1.5; 
+// Altitude control pitch
+  // z_cmd = -1.5; 
+  // z_measured = dr_state.z;//stateGetPositionUtm_f()->alt; //TODO check sign (may be MSL)
+  // zv_measured = (z_measured -prev_meas_z)*512.; 
+  // zv_dot_measured = (zv_measured - prev_meas_zv)*512.0; // TODO replace by optitrack values 
+  
+  // est_state_vz = zv_measured;//Z_ALPHA * est_state_vz + (1-Z_ALPHA) * zv_measured;
+  // est_state_z = z_measured;// Z_ALPHA * est_state_z + (1-Z_ALPHA) * z_measured;
+  // prev_meas_z = z_measured;
+  // prev_meas_zv = zv_measured;
+  // zv_command = (z_cmd - z_measured)*KP_ALT;
+  // zv_dot_command = (zv_command-zv_measured)*KP_VZ;
+  // theta_cmd = (zv_dot_command-zv_dot_measured)*KP_VZDOT + theta_0;  //todo add Integral? 
+
+  // if(theta_cmd>0){
+  //   theta_cmd = 0;
+  // }
+  // if(abs(theta_cmd)>MAXPITCH){
+  //   theta_cmd = (theta_cmd/abs(theta_cmd))*MAXPITCH;
+  // }
+
+  // dr_ctrl.cmd.theta = ANGLE_BFP_OF_REAL(theta_cmd);
+
+  // z_i+=(z_cmd-est_state_z)/512.;
+  // thrust_cmd = FIXEDTHRUST;
+  
+
+// Altitude control old
+  z_cmd = -1.75; 
   z_measured = dr_state.z;//stateGetPositionUtm_f()->alt; //TODO check sign (may be MSL)
   zv_measured = (z_measured -prev_meas_z)*512.; 
-  zv_dot_measured = (zv_measured - prev_meas_zv)*512.0; // TODO replace by optitrack values 
   
   est_state_vz = zv_measured;//Z_ALPHA * est_state_vz + (1-Z_ALPHA) * zv_measured;
   est_state_z = z_measured;// Z_ALPHA * est_state_z + (1-Z_ALPHA) * z_measured;
   prev_meas_z = z_measured;
-  prev_meas_zv = zv_measured;
-  zv_command = (z_cmd - z_measured)*KP_ALT;
-  zv_dot_command = (zv_command-zv_measured)*KP_VZ;
-  theta_cmd = (zv_dot_command-zv_dot_measured)*KP_VZDOT + theta_0;  //todo add Integral? 
-
-  if(theta_cmd>0){
-    theta_cmd = 0;
-  }
-  if(abs(theta_cmd)>MAXPITCH){
-    theta_cmd = (theta_cmd/abs(theta_cmd))*MAXPITCH;
-  }
-
-  dr_ctrl.cmd.theta = ANGLE_BFP_OF_REAL(theta_cmd);
-
   z_i+=(z_cmd-est_state_z)/512.;
-  thrust_cmd = FIXEDTHRUST;
-  
+  thrust_cmd = -(KP_ALT *(z_cmd -est_state_z) - KD_ALT * est_state_vz + KI_ALT*z_i) + HOVERTHRUST /  (cosf(dr_state.phi)*cosf(dr_state.theta));
 
+  if(thrust_cmd>0.8){
+    thrust_cmd=0.8;
+  }
   float nominal = radio_control.values[RADIO_THROTTLE];
   float flap = 0.85;
   stabilization_cmd[COMMAND_THRUST] = thrust_cmd*9125.;// nominal / (cosf(dr_state.phi * flap) * cosf(dr_state.theta * flap));
-  printf("z_measured: %f, est_state_z:%f, zv_measured: %f,nominal: %f,thrust_cmd: %f\n",z_measured,est_state_z,zv_measured,nominal,thrust_cmd);
+  // printf("z_measured: %f, est_state_z:%f, zv_measured: %f,nominal: %f,thrust_cmd: %f\n",z_measured,est_state_z,zv_measured,nominal,thrust_cmd);
   fprintf(file_logger_t2, "%f, %f, %f,%f, %f\n",z_measured,est_state_z,zv_measured,est_state_vz,thrust_cmd);
 }
 #endif
