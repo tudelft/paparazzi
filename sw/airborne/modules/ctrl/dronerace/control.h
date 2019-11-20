@@ -1,5 +1,5 @@
 
-
+#include "filter.h"
 #include <stdio.h>
 struct dronerace_control_struct
 {
@@ -17,6 +17,7 @@ struct dronerace_control_struct
 
 extern void control_reset(void);
 extern void control_run(float dt);
+// extern struct dronerace_state_struct dr_state = {0};
 
 // gains from AIRR sim
 

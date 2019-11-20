@@ -3,7 +3,7 @@
 
 
 #include "control.h"
-#include "filter.h"
+
 #include "flightplan.h"
 #include "ransac.h"
 #include <math.h>
@@ -31,13 +31,15 @@ static void open_log(void)
 // Slow speed
 #define CTRL_MAX_SPEED  6.0             // m/s
 #define CTRL_MAX_PITCH  RadOfDeg(18)    // rad
-#define CTRL_MAX_ROLL   RadOfDeg(18)    // rad
+#define CTRL_MAX_ROLL   RadOfDeg(5)    // rad
 #define CTRL_MAX_R      RadOfDeg(45)    // rad/sec
 
 float bound_angle(float angle, float max_angle){
-  if(abs(angle)>max_angle){
-    angle = max_angle * angle/abs(angle);
-    
+  if(angle>max_angle){
+    angle=max_angle;
+  }
+  if(angle<(-max_angle)){
+    angle=-max_angle;
   }
   return angle;
 }
@@ -78,14 +80,14 @@ float bound_f(float val, float min, float max) {
 }
 
 #define KP_POS    0.08
-#define KI_POS 0.001
+#define KI_POS 0.00
 #define KP_VEL_X  0.1
 #define KP_VEL_Y  0.1
 #define KD_VEL_X  0.05
 #define KD_VEL_Y  0.05
-#define radius_des 4.0 
+#define radius_des 0.5 
 #define lookahead  0 * PI/180.0
-#define PITCHFIX  -2 * PI/180.0
+#define PITCHFIX  0 * PI/180.0
 #define DIRECTION 1 // 1 for clockwise, -1 for counterclockwise
 
 void control_run(float dt)
@@ -113,27 +115,33 @@ void control_run(float dt)
   float r_error_x=radiuserror * sinf(phase_angle);
   float r_error_y=radiuserror * cosf(phase_angle);
 
-  float rx = r_error_x - dr_state.x; //translate error to body 
-  float ry = r_error_y - dr_state.y;
+  float rx = r_error_x;// - dr_state.x; //translate error to body 
+  float ry = r_error_y;// - dr_state.y;
 
   //rotate error to body
   float rxb = rx*cosf(theta_meas)*cosf(psi_meas)+ry*cosf(theta_meas)*sinf(psi_meas);
   float ryb = rx*(sinf(phi_meas)*sinf(theta_meas)*cosf(psi_meas)-cosf(phi_meas)*sinf(psi_meas)) + ry*(sinf(phi_meas)*sinf(theta_meas)*sinf(psi_meas)+cosf(phi_meas)*cosf(psi_meas));
-  radiuserror = ryb; 
+  radiuserror = ryb;
 
   dr_control.phi_cmd =KP_POS* radiuserror + POS_I*KI_POS + DIRECTION*atan2f(absvel * cosf(dr_state.theta), (abs(GRAVITY) * radius_des)); //fix sign for direction of circle 
- dr_control.phi_cmd = bound_angle(dr_control.phi_cmd,CTRL_MAX_ROLL);
+  dr_control.phi_cmd = 0;//bound_angle(dr_control.phi_cmd,CTRL_MAX_ROLL);
+//   if(dr_control.phi_cmd>CTRL_MAX_ROLL){
+//     dr_control.phi_cmd = CTRL_MAX_ROLL;
+//   }
 
-  POS_I = POS_I + radiuserror*dt;
+// if(dr_control.phi_cmd<(-1*(CTRL_MAX_ROLL))){
+//   dr_control.phi_cmd = -CTRL_MAX_ROLL;
+// }
+  POS_I = POS_I + radiuserror*dt; 
 
 
-  float psi_cmd = phase_angle +(DIRECTION*PI) + lookahead;
-  dr_control.psi_cmd =angle180(psi_cmd*180.0/PI)*PI/180.0;
+  float psi_cmd = phase_angle +(DIRECTION*0.5*PI) + lookahead;    
+  dr_control.psi_cmd = 0;//angle180(0*180.0/PI)*PI/180.0;
 
   dr_control.theta_cmd = PITCHFIX ;
   dr_control.theta_cmd = bound_angle(dr_control.theta_cmd,CTRL_MAX_PITCH);
 
-  printf("posx: %f, posy: %f, PosR: %f, phaseangle: %f, yaw_angle: %f\n",dr_state.x, dr_state.y, dist2target,phase_angle*180./PI,psi_cmd*180/PI);
+  printf("posx: %f, posy: %f, PosR: %f, phaseangle: %f, yaw_angle: %f, yaw_cmd: %f, radius error: %f\n",dr_state.x, dr_state.y, dist2target,phase_angle*180./PI,psi_meas*180/PI,dr_control.psi_cmd*180./PI,radiuserror);
 
   static int counter = 0;
   fprintf(file_logger_t, "%d,%f,%f,%f,%f,%f,%f\n", counter, dr_control.theta_cmd, dr_control.phi_cmd, dr_state.theta, dr_state.phi, dist2target, phase_angle);

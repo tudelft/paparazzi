@@ -36,8 +36,8 @@
     </module-->
 
     <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="FALSE"/>
-      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
+      <configure name="USE_MAGNETOMETER" value="TRUE"/>
+      <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
     </module>
 
     <!-- ins extended reduces lag, gps passthrough has lag-->
@@ -56,7 +56,7 @@
     </module>
 
     <module name="ctrl_module_outerloop_demo"/>
-    <module name="alphapilotahrs"/>
+    <!--<module name="alphapilotahrs"/>-->
     <!--module name="sonar_bebop"/-->
     <!--module name="jevois_mavlink"/-->
 

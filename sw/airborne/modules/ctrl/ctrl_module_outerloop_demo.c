@@ -63,6 +63,7 @@ void guidance_h_module_init(void)
 
 
 
+
 void guidance_h_module_enter(void)
 { 
   // Store current heading
@@ -185,6 +186,7 @@ void guidance_v_module_run(bool in_flight)
   est_state_z = z_measured;// Z_ALPHA * est_state_z + (1-Z_ALPHA) * z_measured;
   prev_meas_z = z_measured;
   z_i+=(z_cmd-est_state_z)/512.;
+  
   thrust_cmd = -(KP_ALT *(z_cmd -est_state_z) - KD_ALT * est_state_vz + KI_ALT*z_i) + HOVERTHRUST /  (cosf(dr_state.phi)*cosf(dr_state.theta));
 
   if(thrust_cmd>0.8){

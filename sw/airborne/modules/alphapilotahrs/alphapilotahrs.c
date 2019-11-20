@@ -26,6 +26,7 @@
 #include "modules/alphapilotahrs/alphapilotahrs.h"
 #include "subsystems/imu.h"
 #include "subsystems/datalink/telemetry.h"
+// #include "modules/ctrl/dronerace/control.h"
 
 /** The file pointer */
 FILE *file_logger_t3 = NULL;

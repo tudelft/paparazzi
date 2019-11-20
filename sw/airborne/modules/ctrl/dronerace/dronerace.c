@@ -69,6 +69,9 @@ struct FloatEulers *rot;
 struct NedCoor_f *pos;   
 struct FloatRates *rates;
 
+float posx;
+float posy;
+float posz;
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // TELEMETRY
 
@@ -93,6 +96,18 @@ static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
 #endif
 
 static abi_event gate_detected_ev;
+float test0 =0;
+float est_psi;
+static void send_alphapahrs(struct transport_tx *trans, struct link_device *dev)
+{
+  
+ 
+
+ pprz_msg_send_AHRS_ALPHAPILOT(trans, dev, AC_ID,&test0,&test0,&est_psi,&test0,&test0,&test0,&test0,&test0,&test0,&posx,&posy,&posz);
+
+}
+
+
 
 
 static void gate_detected_cb(uint8_t sender_id __attribute__((unused)), int32_t cnt, float dx, float dy, float dz, float vx __attribute__((unused)), float vy __attribute__((unused)), float vz __attribute__((unused)))
@@ -112,6 +127,7 @@ void dronerace_init(void)
 
   // Send telemetry
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_OPTICAL_FLOW_HOVER, send_dronerace);
+  register_periodic_telemetry(DefaultPeriodic,  PPRZ_MSG_ID_AHRS_ALPHAPILOT, send_alphapahrs);
 
   POS_I=0.0; //reset integral
   // Compute waypoints
@@ -129,8 +145,10 @@ void dronerace_enter(void)
 
 
 void dronerace_periodic(void)
-{
-
+{  
+  // printf("PSI0: %f  ",psi0);
+  est_psi = stateGetNedToBodyEulers_f()->psi;
+  struct NedCoor_f *pos_gps = stateGetPositionNed_f();
   input_phi   = stateGetNedToBodyEulers_f()->phi;
   input_theta = stateGetNedToBodyEulers_f()->theta;
   input_psi   = stateGetNedToBodyEulers_f()->psi - psi0;
@@ -138,7 +156,9 @@ void dronerace_periodic(void)
   dr_state.phi   = input_phi;
   dr_state.psi   = input_psi;
   dr_state.theta = input_theta;
-  
+    posx = pos_gps->x;
+    posy = pos_gps->y;
+    posz = pos_gps->z; 
   filter_predict(input_phi, input_theta, input_psi, dt);
 
   
@@ -164,7 +184,7 @@ void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi_cmd)
   
   *phi     = dr_control.phi_cmd;
   *theta   = dr_control.theta_cmd;
-  *psi_cmd = dr_control.psi_cmd + psi0;
+  *psi_cmd = dr_control.psi_cmd;// + psi0;
   *alt     = - dr_control.z_cmd; 
   // guidance_v_z_sp = POS_BFP_OF_REAL(dr_control.z_cmd);
 }
