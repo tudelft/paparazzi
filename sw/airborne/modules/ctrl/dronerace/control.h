@@ -21,8 +21,8 @@ extern void control_run(float dt);
 
 // gains from AIRR sim
 
-// float POSI = 0; 
-float POS_I;
+ float POS_I ;
+ float lookI;
 #define HOVERTHRUST 0.53
 #define GRAVITY -9.80665
 #define PI 3.14159265359

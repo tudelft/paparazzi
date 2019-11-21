@@ -124,12 +124,13 @@ void dronerace_init(void)
 {
   // Receive vision
   //AbiBindMsgRELATIVE_LOCALIZATION(DRONE_RACE_ABI_ID, &gate_detected_ev, gate_detected_cb);
-
+  POS_I = 0;
+  lookI = 0;
   // Send telemetry
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_OPTICAL_FLOW_HOVER, send_dronerace);
   register_periodic_telemetry(DefaultPeriodic,  PPRZ_MSG_ID_AHRS_ALPHAPILOT, send_alphapahrs);
 
-  POS_I=0.0; //reset integral
+ //reset integral
   // Compute waypoints
   dronerace_enter();
 }
