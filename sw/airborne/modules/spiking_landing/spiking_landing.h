@@ -18,7 +18,7 @@
  * <http://www.gnu.org/licenses/>.
  */
 /**
- * @file "modules/spiking_net/spiking_landing.h"
+ * @file "modules/spiking_spiking_landing/spiking_landing.h"
  * @author Huizerd
  * Spiking neural networks for optical flow landing.
  */
@@ -32,7 +32,7 @@ extern void snn_filter_control();
 
 // Thrust settings
 // TODO: is this necessary? Is this because of dl_settings in
-// spiking_landing.xml?
+//  spiking_landing.xml?
 extern float thrust_effect;
 extern float thrust_p_gain;
 extern float thrust_i_gain;

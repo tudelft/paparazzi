@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/>.
  */
 /**
- * @file "modules/spiking_net/spiking_landing.c"
+ * @file "modules/spiking_landing/spiking_landing.c"
  * @author Huizerd
  * Spiking neural networks for optical flow landing.
  */
@@ -28,7 +28,7 @@
 #include "modules/spiking_landing/spiking_landing.h"
 
 // tinysnn headers
-#include "modules/spiking_landing/tinysnn/Network.h"
+#include "Network.h"
 
 // Paparazzi headers
 // TODO: do we need all this? And in what order?
@@ -122,7 +122,10 @@ int const hid_size = 20;
 int const out_size = 1;
 
 // Build network
-Network net = build_network(in_size, hid_size, out_size);
+// TODO: does this const work? Or do we need to do #define? Since we can't have
+//  non-constants outside of functions
+//Network const net = build_network(in_size, hid_size, out_size);
+Network *net;
 
 // Callback function for control (bound to optical flow ABI messages)
 static void snn_control_callback(uint8_t sender_id, uint32_t stamp,
@@ -159,7 +162,7 @@ static void snn_control_callback(uint8_t sender_id, uint32_t stamp,
   if (first_run) {
     start_time = get_sys_time_float();
     nominal_throttle = (float)stabilization_cmd[COMMAND_THRUST] / MAX_PPRZ;
-    reset_network(&net);
+    reset_network(net);
     first_run = false;
   }
 
@@ -180,9 +183,9 @@ static void snn_control_callback(uint8_t sender_id, uint32_t stamp,
 
   // Forward spiking net to get action/thrust for control
   // TODO: mind that we still need to convert from G to m/s2!
-  net.in[0] = divergence;
-  net.in[1] = divergence_dot;
-  thrust = forward_network(&net) * 9.81f;
+  net->in[0] = divergence;
+  net->in[1] = divergence_dot;
+  thrust = forward_network(net) * 9.81f;
 
   // Bound thrust to limits (-0.8g, 0.5g)
   Bound(thrust, -7.848f, 4.905f)
@@ -198,12 +201,17 @@ static void snn_control_callback(uint8_t sender_id, uint32_t stamp,
 
 // Initialize the spiking net
 void snn_init() {
+  // Build network
+  Network built_net = build_network(in_size, hid_size, out_size);
+  // Assign to global pointer
+  // TODO: or does this give problems because e.g. malloc() is needed?
+  net = &built_net;
   // Init network
-  init_network(&net);
+  init_network(net);
   // Load network parameters
-  load_network(&net, param_path);
+  load_network(net, param_path);
   // Reset network
-  reset_network(&net);
+  reset_network(net);
 
   // Reset network inputs/output
   divergence = 0.0f;
@@ -234,7 +242,7 @@ void snn_init() {
 // TODO: function for freeing memory at end?
 
 // Periodic function for printing debugging info
-void snn_print_debug() { printf("Output trace: %.2f\n", net.out->t[0]); }
+void snn_print_debug() { printf("Output trace: %.2f\n", net->out->t[0]); }
 
 // Event function for pushing control through filters
 // TODO: or closed-loop PI control for going from acceleration to motor control?

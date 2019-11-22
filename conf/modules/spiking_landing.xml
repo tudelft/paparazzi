@@ -25,5 +25,9 @@
 
     <makefile target="ap|nps">
         <file name="spiking_landing.c"/>
+        <file name="Network.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
+        <file name="Neuron.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
+        <file name="Connection.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
+        <include name="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
     </makefile>
 </module>
