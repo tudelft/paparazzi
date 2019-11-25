@@ -43,8 +43,8 @@
 //extern void guidance_v_module_init();
 //extern void guidance_v_module_enter();
 //extern void guidance_v_module_run(bool in_flight);
-extern void spiking_landing_init();
-extern void spiking_landing_event();
+extern void spiking_landing_init(void);
+extern void spiking_landing_event(void);
 
 // Spiking network
 extern Network net;

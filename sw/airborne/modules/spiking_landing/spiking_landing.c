@@ -165,14 +165,14 @@ static void sl_optical_flow_cb(uint8_t sender_id, uint32_t stamp,
                                float size_divergence);
 
 // Spiking landing module functions
-void sl_init();
-void sl_run();
+void sl_init(void);
+void sl_run(void);
 
 // Closed-loop, active thrust control
-static void sl_active_control();
+static void sl_active_control(void);
 
 // Reset global variables
-static void reset_globals();
+static void reset_globals(void);
 
 // Module initialization function
 void sl_init() {
