@@ -8,7 +8,7 @@
 #include "ransac.h"
 #include <math.h>
 #include "state.h"
-
+#include "subsystems/datalink/telemetry.h"
 // Variables
 struct dronerace_control_struct dr_control;
 
@@ -173,7 +173,7 @@ void control_run(float dt)
   printf("posx: %f, posy: %f, PosR: %f, ang1: %f, ang2: %f, ang: %f, LookI: %f, Vx: %f, Vy: %f\n",dr_state.x, dr_state.y, dist2target,ang1*180./PI,ang2*180/PI,ang*180./PI,lookI*180/PI,dr_state.vx,dr_state.vy);
 
   static int counter = 0;
-  fprintf(file_logger_t, "%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f, %f, %f, %f, %f, %f, %f, %f, %f\n", counter, dr_control.theta_cmd, dr_control.phi_cmd, theta_meas,phi_meas,dr_state.x,dr_state.y, dist2target, phase_angle,rxb,ryb,centriterm, 
+  fprintf(file_logger_t, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f, %f, %f, %f, %f, %f, %f, %f, %f\n", get_sys_time_float(), dr_control.theta_cmd, dr_control.phi_cmd, theta_meas,phi_meas,dr_state.x,dr_state.y, dist2target, phase_angle,rxb,ryb,centriterm, 
   dr_control.psi_cmd,psi_meas,dr_state.vx,dr_state.vy,rx,ry,radiuserror,ang1,ang2,ang);
   counter++;
   

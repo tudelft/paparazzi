@@ -162,7 +162,7 @@ void dronerace_periodic(void)
     posy = pos_gps->y;
     posz = pos_gps->z; 
   filter_predict(input_phi, input_theta, input_psi, dt);
-
+ 
   
   struct NedCoor_f target_ned;
   target_ned.x = dr_fp.gate_y;
