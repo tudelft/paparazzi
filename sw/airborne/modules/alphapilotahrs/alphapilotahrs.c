@@ -50,7 +50,7 @@ float accel_corr[3]={};
 float est_state_roll = 0;
 float est_state_pitch = 0;
 float est_state_yaw = 0;
-float GRAVITY = -9.81;;
+float GRAVITY = 9.81;;
 double counter = 1;
 float est_euler[3] = {};
 float p,q,r, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z;
@@ -79,34 +79,34 @@ void alphapilot_ahrs_periodic() {
 
   float dt1 = 1.0/512.0;
   
-  float KP_AHRS = 0.2;
-  float KI_AHRS = 0.004;
+  float KP_AHRS = 0.1;
+  float KI_AHRS = 0.002;
   
   accel_x = (double)imu.accel.x / 1024.0;
   accel_y = (double)imu.accel.y / 1024.0;
   accel_z = (double)imu.accel.z / 1024.0;
 
-  gyro_x = (double)imu.gyro.p / 4096.0;
-  gyro_y = (double)imu.gyro.q / 4096.0;
-  gyro_z = (double)imu.gyro.r / 4096.0;
+  gyro_x = (double)imu.gyro.p / 4096.0; // p  
+  gyro_y = (double)imu.gyro.q / 4096.0; // q 
+  gyro_z = (double)imu.gyro.r / 4096.0; // r 
 
   float acc[3] = {accel_x, accel_y, accel_z};
   float imu_pqr[3] = {gyro_x, gyro_y, gyro_z};
   float att[3] = {est_state_roll, est_state_pitch, est_state_yaw};
 
   // gravity in body frame
-  float gB[3] = {-sinf(att[1]) * GRAVITY, sinf(att[0]) * cosf(att[1]) * GRAVITY, cosf(att[0]) * cosf(att[1]) * GRAVITY};
+  float gB[3] = {-sinf(att[1]) * -GRAVITY, sinf(att[0]) * cosf(att[1]) * -GRAVITY, cosf(att[0]) * cosf(att[1]) * -GRAVITY};
   float norm_gB = sqrtf(gB[0] * gB[0] + gB[1] * gB[1] + gB[2] * gB[2]); //gB.dot(gB);
-  if(norm_gB < 1.0) {
-    norm_gB = fabs(GRAVITY);
+  if(norm_gB < 2.0) {
+    norm_gB = 2.0;//fabs(GRAVITY);
   }
   float gB_scaled[3] = {gB[0] / norm_gB, gB[1] / norm_gB, gB[2] / norm_gB};  // When gravity is downwards
 
 
   // acceleration in body frame
   float norm_acc = sqrtf(acc[0] * acc[0] + acc[1] * acc[1] + acc[2] * acc[2]);  //acc.dot(acc);
-  if(norm_acc < 1.0) {
-    norm_acc = fabs(GRAVITY);
+  if(norm_acc < 1.5) {
+    norm_acc = 1.5;//fabs(GRAVITY);
   }
   float acc_scaled[3] = {acc[0] / norm_acc, acc[1] / norm_acc, acc[2] / norm_acc};
   
@@ -162,7 +162,7 @@ void alphapilot_ahrs_periodic() {
   accel_corr[1]=accel_earth[1];
   accel_corr[2]=accel_earth[2]-GRAVITY;
 
-
+  // IGNORE position estimation below.. it's horrible 
   v_est[0]+=accel_corr[0]*dt1;
   v_est[1]+=accel_corr[1]*dt1;
   v_est[2]+=accel_corr[2]*dt1;

@@ -98,6 +98,7 @@ static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
 static abi_event gate_detected_ev;
 float test0 =0;
 float est_psi;
+/*
 static void send_alphapahrs(struct transport_tx *trans, struct link_device *dev)
 {
   
@@ -105,7 +106,7 @@ static void send_alphapahrs(struct transport_tx *trans, struct link_device *dev)
 
  pprz_msg_send_AHRS_ALPHAPILOT(trans, dev, AC_ID,&test0,&test0,&est_psi,&test0,&test0,&test0,&test0,&test0,&test0,&posx,&posy,&posz);
 
-}
+}*/
 
 
 
@@ -128,7 +129,7 @@ void dronerace_init(void)
   lookI = 0;
   // Send telemetry
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_OPTICAL_FLOW_HOVER, send_dronerace);
-  register_periodic_telemetry(DefaultPeriodic,  PPRZ_MSG_ID_AHRS_ALPHAPILOT, send_alphapahrs);
+  
 
  //reset integral
   // Compute waypoints

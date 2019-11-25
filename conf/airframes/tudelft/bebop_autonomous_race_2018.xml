@@ -57,7 +57,7 @@
     </module>
 
     <module name="ctrl_module_outerloop_demo"/>
-    <!--<module name="alphapilotahrs"/>-->
+    <module name="alphapilotahrs"/>
     <!--module name="sonar_bebop"/-->
     <!--module name="jevois_mavlink"/-->
 
