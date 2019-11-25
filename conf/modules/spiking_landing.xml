@@ -3,14 +3,46 @@
 <module name="spiking_landing">
     <doc>
         <description>Spiking neural networks for optical flow landing.</description>
+        <!-- TODO: why is this in doc here? -->
+        <define name="OFL_AGL_ID" value="ABI_BROADCAST" description="Sender id of the AGL (sonar) ABI message"/>
+        <section name="OFL" prefix="OFL_">
+            <define name="PGAIN" value="0.50" description="P gain on height error"/>
+            <define name="IGAIN" value="0.10" description="I gain on summed height error"/>
+            <define name="DGAIN" value="0.0" description="D gain on summed height error"/>
+            <define name="VISION_METHOD" value="1" description="0 = fake vision, 1 = real vision"/>
+            <define name="CONTROL_METHOD" value="2" description="0 = fixed gain control, 1 = adaptive gain control, 2 = exponential control"/>
+            <define name="COV_METHOD" value="0" description="0 = cov(uz, div), 1 = cov(div_past, div)"/>
+            <define name="COV_WINDOW_SIZE" value="30" description="Number of time steps for window size for getting the covariance over time."/>
+            <define name="COV_LANDING_LIMIT" value="2.2" description="Covariance where the vehicle engages final landing procedure."/>
+            <define name="COV_SETPOINT" value="-0.0075" description="Target Covariance for adaptive gain increment."/>
+            <define name="LP_CONST" value="0.75" description="Low pass filter constant for divergence input."/>
+            <define name="ELC_OSCILLATE" value="true" description="Oscillate to find optimum gain before initiating landing."/>
+        </section>
     </doc>
 
     <settings>
         <dl_settings>
             <dl_settings NAME="SpikingLanding">
-                <dl_setting var="thrust_effect" min="0" step="0.05" max="2"/>
-                <dl_setting var="thrust_p_gain" min="0" step="0.05" max="2"/>
-                <dl_setting var="thrust_i_gain" min="0" step="0.05" max="2"/>
+                <dl_setting var="sl_settings.nominal_thrust" min="0" step="0.001" max="1" module="ctrl/optical_flow_landing" shortname="nominal_thrust"/>
+                <dl_setting var="sl_settings.lp_const" min="0.005" step="0.005" max="1" module="ctrl/optical_flow_landing" shortname="lp_factor" param="OFL_LP_CONST"/>
+                <dl_setting var="sl_settings.divergence_setpoint" min="-1" step="0.01" max="1" module="ctrl/optical_flow_landing" shortname="div sp"/>
+                <dl_setting var="sl_settings.cov_set_point" min="-6" step="0.0001" max="6" module="ctrl/optical_flow_landing" shortname="cov_set_point" param="OFL_COV_SETPOINT"/>
+                <dl_setting var="sl_settings.cov_limit" min="0" step="0.0001" max="6" module="ctrl/optical_flow_landing" shortname="cov_limit" param="OFL_COV_LANDING_LIMIT"/>
+                <dl_setting var="sl_settings.pgain" min="0" step="0.001" max="6" module="ctrl/optical_flow_landing" shortname="pgain" param="OFL_PGAIN"/>
+                <dl_setting var="sl_settings.igain" min="0" step="0.001" max="1" module="ctrl/optical_flow_landing" shortname="igain" param="OFL_IGAIN"/>
+                <dl_setting var="sl_settings.dgain" min="0" step="0.1" max="6" module="ctrl/optical_flow_landing" shortname="dgain" param="OFL_DGAIN"/>
+                <dl_setting var="sl_settings.VISION_METHOD" min="0" step="1" max="1" values="Ground truth|Online" module="ctrl/optical_flow_landing" shortname="VISION_METHOD" param="OFL_VISION_METHOD"/>
+                <dl_setting var="sl_settings.CONTROL_METHOD" min="0" step="1" max="2" values="Simple|Adaptive|Exp" module="ctrl/optical_flow_landing" shortname="CONTROL_METHOD" param="OFL_CONTROL_METHOD"/>
+                <dl_setting var="sl_settings.COV_METHOD" min="0" step="1" max="1" values="Div-Thrust|Div-Shift div" module="ctrl/optical_flow_landing" shortname="COV_METHOD" param="OFL_COV_METHOD"/>
+                <dl_setting var="sl_settings.delay_steps" min="0" step="1" max="60" module="ctrl/optical_flow_landing" shortname="delay_steps"/>
+                <dl_setting var="sl_settings.pgain_adaptive" min="0" step="0.1" max="20.0" module="ctrl/optical_flow_landing" shortname="pgain_adaptive"/>
+                <dl_setting var="sl_settings.igain_adaptive" min="0" step="0.01" max="1.0" module="ctrl/optical_flow_landing" shortname="igain_adaptive"/>
+                <dl_setting var="sl_settings.dgain_adaptive" min="0" step="0.01" max="5.0" module="ctrl/optical_flow_landing" shortname="dgain_adaptive"/>
+                <dl_setting var="sl_settings.reduction_factor_elc" min="0.1" step="0.01" max="3.0" module="ctrl/optical_flow_landing" shortname="reduction_factor_elc"/>
+                <dl_setting var="sl_settings.elc_oscillate" min="0" step="1" max="1" values="FALSE|TRUE" module="ctrl/optical_flow_landing" shortname="oscillate" param="OFL_ELC_OSCILLATE"/>
+                <dl_setting var="sl_settings.thrust_effect" min="0" step="0.05" max="2"/>
+                <dl_setting var="sl_settings.thrust_p_gain" min="0" step="0.05" max="2"/>
+                <dl_setting var="sl_settings.thrust_i_gain" min="0" step="0.05" max="2"/>
             </dl_settings>
         </dl_settings>
     </settings>
@@ -19,9 +51,8 @@
         <file name="spiking_landing.h"/>
     </header>
 
-    <init fun="snn_init()"/>
-    <periodic fun="snn_print_debug()" freq="2" autorun="FALSE"/>
-    <event fun="snn_filter_control()"/>
+    <init fun="spiking_landing_init()"/>
+    <event fun="spiking_landing_event()"/>
 
     <makefile target="ap|nps">
         <file name="spiking_landing.c"/>

@@ -32,117 +32,217 @@
 
 // Paparazzi headers
 // TODO: do we need all this? And in what order?
-#include "navigation.h"
-#include "state.h"
-#include "subsystems/datalink/downlink.h"
-#include "subsystems/gps.h"
-#include "subsystems/gps/gps_datalink.h"
+//#include "navigation.h"
+//#include "state.h"
+//#include "subsystems/datalink/downlink.h"
+//#include "subsystems/gps.h"
+//#include "subsystems/gps/gps_datalink.h"
+//#include "firmwares/rotorcraft/stabilization.h"
+//#include "firmwares/rotorcraft/guidance/guidance_v_adapt.h"
+//
+//#include "generated/flight_plan.h"
+//#include "math/pprz_geodetic_double.h"
+//#include "math/pprz_geodetic_int.h"
+//
+//#include "generated/airframe.h"
+//#include "subsystems/abi.h"
+//
+//#include "autopilot.h"
+//#include "guidance/guidance_h.h"
+//#include "guidance/guidance_indi.h"
+//#include "guidance/guidance_v.h"
+//#include "mcu_periph/sys_time.h"
+//
+//#include "subsystems/abi.h"
 
-#include "generated/flight_plan.h"
-#include "math/pprz_geodetic_double.h"
-#include "math/pprz_geodetic_int.h"
-
+#include "firmwares/rotorcraft/guidance/guidance_v_adapt.h"
+#include "firmwares/rotorcraft/stabilization.h"
 #include "generated/airframe.h"
+#include "paparazzi.h"
 #include "subsystems/abi.h"
 
+// used for automated landing:
 #include "autopilot.h"
 #include "filters/low_pass_filter.h"
-#include "guidance/guidance_h.h"
-#include "guidance/guidance_indi.h"
-#include "guidance/guidance_v.h"
+#include "subsystems/datalink/telemetry.h"
+#include "subsystems/navigation/common_flight_plan.h"
 
-#include "subsystems/abi.h"
+// for measuring time
+#include "mcu_periph/sys_time.h"
 
 // C standard library headers
 #include <stdbool.h>
 #include <stdio.h>
 
-// Constants
-// TODO: is this the way to do this? Seems a bit overdreven, and inconsistent
-//  between the different constants
-// Thrust settings
-// From G to thrust percentage
-float thrust_effect = 0.05f;
+// Default sonar/agl to use
+#ifndef SL_AGL_ID
+#define SL_AGL_ID ABI_BROADCAST
+#endif
+PRINT_CONFIG_VAR(SL_AGL_ID)
 
+// Use optical flow estimates
+#ifndef SL_OPTICAL_FLOW_ID
+#define SL_OPTICAL_FLOW_ID ABI_BROADCAST
+#endif
+PRINT_CONFIG_VAR(SL_OPTICAL_FLOW_ID)
+
+// Other default values
 // Closed-loop thrust control, else linear transform
 #define ACTIVE_CONTROL true
 
 // Gains for closed-loop control
-#ifndef THRUST_P_GAIN
-#define THRUST_P_GAIN 0.7
+#ifndef SL_THRUST_EFFECT
+#define SL_THRUST_EFFECT 0.05f
 #endif
-#ifndef THRUST_I_GAIN
-#define THRUST_I_GAIN 0.3
+#ifndef SL_THRUST_P_GAIN
+#define SL_THRUST_P_GAIN 0.7f
 #endif
-float thrust_p_gain = THRUST_P_GAIN;
-float thrust_i_gain = THRUST_I_GAIN;
+#ifndef SL_THRUST_I_GAIN
+#define SL_THRUST_I_GAIN 0.3f
+#endif
 
 // Optical flow settings
-#ifndef OF_FILTER_CUTOFF
-#define OF_FILTER_CUTOFF 1.5f
+#ifndef SL_OF_FILTER_CUTOFF
+#define SL_OF_FILTER_CUTOFF 1.5f
 #endif
-#ifndef OF_SNN_ID
-#define OF_SNN_ID ABI_BROADCAST
+
+// Network configuration
+// Layer sizes
+#ifndef SL_NET_IN
+#define SL_NET_IN 4
 #endif
-static abi_event optical_flow_event;
+#ifndef SL_NET_HID
+#define SL_NET_HID 20
+#endif
+#ifndef SL_NET_OUT
+#define SL_NET_OUT 1
+#endif
+// File with network parameters
+#ifndef SL_NET_FILE
+#define SL_NET_FILE "sw/airborne/modules/spiking_landing/network.txt"
+#endif
+
+// Events
+//static abi_event agl_ev;
+static abi_event optical_flow_ev;
 
 // Low-pass filters for acceleration and thrust
 static Butterworth2LowPass accel_ned_filt;
 static Butterworth2LowPass thrust_filt;
 
-// Variables for divergence + derivative, thrust
+// Variables retained between module calls
+// For divergence + derivative, thrust
 static float divergence, divergence_dot, thrust;
 
-// Variables for control
-static float nominal_throttle = 0.0f;
-static bool active_control = false;
+// For control
+static float nominal_throttle;
+static bool active_control;
+
+// To keep track of time
+//static float time, prev_time;
+
+// Declare network struct
+Network net;
+// And struct to hold settings
+struct SpikingLandingSettings sl_settings;
 
 // Sending stuff to ground station
-// TODO: do we want this? Or does this include OptiTrack data?
-#if PERIODIC_TELEMETRY
-#include "subsystems/datalink/telemetry.h"
-
-// Send divergence + derivative, height, velocity, acceleration, thrust, mode
-static void send_spiking_landing(struct transport_tx *trans,
-                                 struct link_device *dev) {
+// Divergence + derivative, height, velocity, acceleration, thrust, mode
+static void send_sl(struct transport_tx *trans, struct link_device *dev) {
   pprz_msg_send_SPIKING_LANDING(trans, dev, AC_ID, &divergence, &divergence_dot,
                                 &(stateGetPositionNed_f()->z),
                                 &(stateGetSpeedNed_f()->z),
                                 &accel_ned_filt.o[0], &thrust, &autopilot.mode);
 }
-#endif
 
-// Create the spiking net in global scope
-// TODO: correct way to do this? Or use defines?
-// File containing parameters
-char const param_path[] = "network.txt";
-// Network layer sizes
-int const in_size = 4;
-int const hid_size = 20;
-int const out_size = 1;
+// Function definitions
+// Callback function of optical flow estimate (bound to optical flow ABI
+// messages)
+static void sl_optical_flow_cb(uint8_t sender_id, uint32_t stamp,
+                               int16_t UNUSED flow_x, int16_t UNUSED flow_y,
+                               int16_t UNUSED flow_der_x,
+                               int16_t UNUSED flow_der_y, float UNUSED quality,
+                               float size_divergence);
 
-// Build network
-// TODO: does this const work? Or do we need to do #define? Since we can't have
-//  non-constants outside of functions
-//Network const net = build_network(in_size, hid_size, out_size);
-Network *net;
+// Spiking landing module functions
+void sl_init();
+void sl_run();
 
-// Callback function for control (bound to optical flow ABI messages)
-static void snn_control_callback(uint8_t sender_id, uint32_t stamp,
-                                 int16_t UNUSED flow_x, int16_t UNUSED flow_y,
-                                 int16_t UNUSED flow_der_x,
-                                 int16_t UNUSED flow_der_y,
-                                 float UNUSED quality, float size_divergence) {
+// Closed-loop, active thrust control
+static void sl_active_control();
+
+// Reset global variables
+static void reset_globals();
+
+// Module initialization function
+void sl_init() {
+  // Build network
+  net = build_network(SL_NET_IN, SL_NET_HID, SL_NET_OUT);
+  // Init network
+  init_network(&net);
+  // Load network parameters
+  load_network(&net, SL_NET_FILE);
+  // Reset network
+  reset_network(&net);
+
+  // Fill settings
+  sl_settings.thrust_effect = SL_THRUST_EFFECT;
+  sl_settings.thrust_p_gain = SL_THRUST_P_GAIN;
+  sl_settings.thrust_i_gain = SL_THRUST_I_GAIN;
+
+  // Reset global variables
+  reset_globals();
+
+  // Register telemetry message
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_SPIKING_LANDING,
+                              send_sl);
+
+  // Subscribe to optical flow estimation
+  AbiBindMsgOPTICAL_FLOW(SL_OPTICAL_FLOW_ID, &optical_flow_ev,
+                         sl_optical_flow_cb);
+
+  // Init low-pass filters for acceleration and thrust
+  float tau = 1.0f / (2.0f * M_PI * SL_OF_FILTER_CUTOFF);
+  float ts = 1.0f / PERIODIC_FREQUENCY;
+  init_butterworth_2_low_pass(&accel_ned_filt, tau, ts, 0.0f);
+  init_butterworth_2_low_pass(&thrust_filt, tau, ts, 0.0f);
+}
+
+// Reset global variables (e.g., when starting/re-entering module)
+static void reset_globals() {
+  divergence = 0.0f;
+  divergence_dot = 0.0f;
+  thrust = 0.0f;
+  nominal_throttle = guidance_v_nominal_throttle;
+  active_control = false;
+//  time = prev_time = get_sys_time_float();
+}
+
+// Get optical flow estimate from sensors via callback
+static void sl_optical_flow_cb(uint8_t sender_id, uint32_t stamp,
+                               int16_t UNUSED flow_x, int16_t UNUSED flow_y,
+                               int16_t UNUSED flow_der_x,
+                               int16_t UNUSED flow_der_y, float UNUSED quality,
+                               float size_divergence) {
   // Compute time step
   static uint32_t last_stamp = 0;
   float dt = (stamp - last_stamp) / 1e6;
   last_stamp = stamp;
 
-  // Compute derivative of divergence
+  // Compute derivative of divergence and divergence
   if (dt > 1e-5) {
     divergence_dot = (size_divergence - divergence) / dt;
   }
   divergence = size_divergence;
+}
+
+// Run the spiking landing module
+void sl_run() {
+  // Check if new measurement
+  //  float dt = time - prev_time;
+  //  if (dt < 1e-5) {
+  //    return;
+  //  }
 
   // These "static" types are great!
   static bool first_run = true;
@@ -153,7 +253,7 @@ static void snn_control_callback(uint8_t sender_id, uint32_t stamp,
   // TODO: is this for resetting altitude?
   if (autopilot_get_mode() != AP_MODE_GUIDED) {
     first_run = true;
-    guidance_v_set_guided_z(-3.9);
+    guidance_v_set_guided_z(-4.9);
     active_control = false;
     return;
   }
@@ -161,9 +261,11 @@ static void snn_control_callback(uint8_t sender_id, uint32_t stamp,
   // TODO: here we reset the network in between runs!
   if (first_run) {
     start_time = get_sys_time_float();
+    reset_globals();
     nominal_throttle = (float)stabilization_cmd[COMMAND_THRUST] / MAX_PPRZ;
-    reset_network(net);
+    reset_network(&net);
     first_run = false;
+    active_control = ACTIVE_CONTROL;
   }
 
   // Let the vehicle settle
@@ -183,70 +285,76 @@ static void snn_control_callback(uint8_t sender_id, uint32_t stamp,
 
   // Forward spiking net to get action/thrust for control
   // TODO: mind that we still need to convert from G to m/s2!
-  net->in[0] = divergence;
-  net->in[1] = divergence_dot;
-  thrust = forward_network(net) * 9.81f;
+  net.in[0] = divergence;
+  net.in[1] = divergence_dot;
+  thrust = forward_network(&net) * 9.81f;
 
   // Bound thrust to limits (-0.8g, 0.5g)
-  Bound(thrust, -7.848f, 4.905f)
+  Bound(thrust, -7.848f, 4.905f);
 
-      // Set control mode: active closed-loop control or linear transform
-      if (ACTIVE_CONTROL) {
-    active_control = true;
+  // Set control mode: active closed-loop control or linear transform
+  if (active_control) {
+    sl_active_control();
+  } else {
+    // TODO: or stabilization_cmd?
+    guidance_v_set_guided_th(thrust * sl_settings.thrust_effect + nominal_throttle);
   }
-  else {
-    guidance_v_set_guided_th(thrust * thrust_effect + nominal_throttle);
-  }
+
+  // Is this ever reached?
+  // Only set vertical acceleration
+  //  struct FloatVect3 accel_sp;
+  //  uint8_t accel_sp_flag = 0;
+  //  SetBit(accel_sp_flag, GUIDANCE_INDI_VERT_SP_FLAG);
+  //
+  //  accel_sp.z = -thrust;
+  //  AbiBindMsgACCEL_SP(ACCEL_SP_ID, accel_sp_flag, &accel_sp);
 }
 
-// Initialize the spiking net
-void snn_init() {
-  // Build network
-  Network built_net = build_network(in_size, hid_size, out_size);
-  // Assign to global pointer
-  // TODO: or does this give problems because e.g. malloc() is needed?
-  net = &built_net;
-  // Init network
-  init_network(net);
-  // Load network parameters
-  load_network(net, param_path);
-  // Reset network
-  reset_network(net);
-
-  // Reset network inputs/output
-  divergence = 0.0f;
-  divergence_dot = 0.0f;
-  thrust = 0.0f;
-  nominal_throttle = guidance_v_nominal_throttle;
-
-  // Register telemetry message
-  // TODO: or use #if here? And then move out of this function?
-  if (PERIODIC_TELEMETRY) {
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_SPIKING_LANDING,
-                                send_spiking_landing);
-  }
-
-  // Bind network forward pass to optical flow message
-  // TODO: to sync them? Or to have divergence?
-  // TODO: is this the way to go, or more an approach similar to
-  //  optical_flow_landing?
-  AbiBindMsgOPTICAL_FLOW(OF_SNN_ID, &optical_flow_event, snn_control_callback);
-
-  // Init low-pass filters for acceleration and thrust
-  float tau = 1.0f / (2.0f * M_PI * OF_FILTER_CUTOFF);
-  float ts = 1.0f / PERIODIC_FREQUENCY;
-  init_butterworth_2_low_pass(&accel_ned_filt, tau, ts, 0.0f);
-  init_butterworth_2_low_pass(&thrust_filt, tau, ts, 0.0f);
-}
+//// Initialize the spiking net
+// void snn_init() {
+//  // Build network
+//  net = build_network(in_size, hid_size, out_size);
+//  // Assign to global pointer
+//  // TODO: or does this give problems because e.g. malloc() is needed?
+////  net = &built_net;
+//  // Init network
+//  init_network(&net);
+//  // Load network parameters
+//  load_network(&net, param_path);
+//  // Reset network
+//  reset_network(&net);
+//
+//  // Reset network inputs/output
+//  divergence = 0.0f;
+//  divergence_dot = 0.0f;
+//  thrust = 0.0f;
+//  nominal_throttle = guidance_v_nominal_throttle;
+//
+//  // Register telemetry message
+//  // TODO: or use #if here? And then move out of this function?
+//  if (PERIODIC_TELEMETRY) {
+//    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_SPIKING_LANDING,
+//                                send_spiking_landing);
+//  }
+//
+//  // Bind network forward pass to optical flow message
+//  // TODO: to sync them? Or to have divergence?
+//  // TODO: is this the way to go, or more an approach similar to
+//  //  optical_flow_landing?
+//  AbiBindMsgOPTICAL_FLOW(OF_SNN_ID, &optical_flow_event,
+//  snn_control_callback);
+//
+//  // Init low-pass filters for acceleration and thrust
+//  float tau = 1.0f / (2.0f * M_PI * OF_FILTER_CUTOFF);
+//  float ts = 1.0f / PERIODIC_FREQUENCY;
+//  init_butterworth_2_low_pass(&accel_ned_filt, tau, ts, 0.0f);
+//  init_butterworth_2_low_pass(&thrust_filt, tau, ts, 0.0f);
+//}
 
 // TODO: function for freeing memory at end?
 
-// Periodic function for printing debugging info
-void snn_print_debug() { printf("Output trace: %.2f\n", net->out->t[0]); }
-
-// Event function for pushing control through filters
-// TODO: or closed-loop PI control for going from acceleration to motor control?
-void snn_filter_control() {
+// Closed-loop PI control for going from acceleration to motor control
+static void sl_active_control() {
   // "static" here implies that value is kept between function invocations
   static float error_integrator = 0.0f;
 
@@ -257,22 +365,47 @@ void snn_filter_control() {
 
   // Proportional
   float error = thrust_filt.o[0] + accel_ned_filt.o[0];
-  BoundAbs(error, 1.0f / (thrust_p_gain + 0.01f));
+  BoundAbs(error, 1.0f / (sl_settings.thrust_p_gain + 0.01f));
 
   // Integral
   error_integrator += error / PERIODIC_FREQUENCY;
-  BoundAbs(error_integrator, 1.0f / (thrust_i_gain + 0.01f));
+  BoundAbs(error_integrator, 1.0f / (sl_settings.thrust_i_gain + 0.01f));
 
   // Acceleration setpoint
   float acceleration_sp =
-      (thrust + error * thrust_p_gain + error_integrator * thrust_i_gain) *
-          thrust_effect +
+      (thrust + error * sl_settings.thrust_p_gain + error_integrator * sl_settings.thrust_i_gain) *
+          sl_settings.thrust_effect +
       nominal_throttle;
 
   // Perform active closed-loop control or do simple linear transform
   if (active_control) {
+    // TODO: or stabilization_cmd?
     guidance_v_set_guided_th(acceleration_sp);
   } else {
     error_integrator = 0.0f;
   }
 }
+
+////////////////////////////////////////////////////////////
+// Overwrite vertical guidance loops with our own
+// Init
+void spiking_landing_init() {
+  sl_init();
+}
+//void guidance_v_module_init() {
+//  sl_init();
+//}
+//
+// Entering module for first time
+//void guidance_v_module_enter() {
+//  printf("Activate spiking landing!\n");
+//}
+//
+// Run
+void spiking_landing_event() {
+  sl_run();
+}
+
+//void guidance_v_module_run(bool in_flight) {
+//  sl_run(in_flight);
+//}

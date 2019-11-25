@@ -39,7 +39,7 @@
         <define name="USE_SONAR"/>
 
         <module name="logger_file">
-            <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
+            <define name="FILE_LOGGER_PATH" value="/tmp/paparazzi/internal_000"/>
         </module>
 
         <module name="bebop_cam"/>
@@ -59,11 +59,11 @@
 
         <module name="spiking_landing"/>
 
-        <!-- <module name="video_rtp_stream">
-          <define name="VIEWVIDEO_CAMERA" value="bottom_camera"/>
-          <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="1"/>
-          <define name="VIEWVIDEO_QUALITY_FACTOR" value="60"/>
-        </module> -->
+        <module name="video_rtp_stream">
+            <define name="VIEWVIDEO_CAMERA" value="bottom_camera"/>
+            <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="1"/>
+            <define name="VIEWVIDEO_QUALITY_FACTOR" value="99"/>
+        </module>
 
     </firmware>
 
@@ -301,16 +301,16 @@
         <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
 
         <!-- TODO: needed? -->
-        <define name="GAZEBO_WORLD" value="cyberzoo.world" type="string"/>
-        <define name="GAZEBO_AC_NAME" value="bebop" type="string"/>
-        <define name="ACTUATOR_THRUSTS" value="1.55, 1.55, 1.55, 1.55" type="float[]"/>
-        <define name="ACTUATOR_TORQUES" value="0.155, 0.155, 0.155, 0.155" type="float[]"/>
+        <define name="GAZEBO_WORLD" value="cyberzoo_jesse.world" type="string"/>
+        <!--        <define name="GAZEBO_AC_NAME" value="bebop" type="string"/>-->
+        <!--        <define name="ACTUATOR_THRUSTS" value="1.55, 1.55, 1.55, 1.55" type="float[]"/>-->
+        <!--        <define name="ACTUATOR_TORQUES" value="0.155, 0.155, 0.155, 0.155" type="float[]"/>-->
     </section>
     <include href="conf/simulator/gazebo/airframes/bebop.xml"/>
 
     <section name="AUTOPILOT">
         <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
-        <define name="MODE_MANUAL" value="AP_MODE_MODULE"/>
+        <!--<define name="MODE_MANUAL" value="AP_MODE_MODULE"/>-->
         <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
         <define name="MODE_AUTO1" value="AP_MODE_MODULE"/>
         <!--<define name="MODE_AUTO2" value="AP_MODE_HOVER_Z_HOLD"/>-->
