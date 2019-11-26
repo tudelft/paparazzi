@@ -71,6 +71,10 @@ static void opticflow_telem_send(struct transport_tx *trans, struct link_device 
 {
   pthread_mutex_lock(&opticflow_mutex);
   if (opticflow_result.noise_measurement < 0.8) {
+    float D_true = 0.0f;
+    if (fabsf(stateGetPositionNed_f()->z) > 1e-5f) {
+      D_true = -2.0f * stateGetSpeedNed_f()->z / stateGetPositionNed_f()->z;
+    }
     pprz_msg_send_OPTIC_FLOW_EST(trans, dev, AC_ID,
                                  &opticflow_result.fps, &opticflow_result.corner_cnt,
                                  &opticflow_result.tracked_cnt, &opticflow_result.flow_x,
@@ -78,7 +82,7 @@ static void opticflow_telem_send(struct transport_tx *trans, struct link_device 
                                  &opticflow_result.flow_der_y, &opticflow_result.vel_body.x,
                                  &opticflow_result.vel_body.y, &opticflow_result.vel_body.z,
                                  &opticflow_result.div_size, &opticflow_result.surface_roughness,
-                                 &opticflow_result.divergence); // TODO: no noise measurement here...
+                                 &opticflow_result.divergence, &D_true); // TODO: no noise measurement here...
   }
   pthread_mutex_unlock(&opticflow_mutex);
 }

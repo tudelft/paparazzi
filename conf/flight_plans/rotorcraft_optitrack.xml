@@ -18,7 +18,8 @@
         <waypoint name="CLIMB" x="1.2" y="-0.6"/>
         <waypoint name="GOAL" x="2.0" y="2.0"/>
         <waypoint name="STDBY" x="-0.7" y="-0.8" alt="1.0"/>
-        <waypoint name="STDBY_HIGH" x="-0.7" y="-0.8" alt="4.9"/>
+        <!-- 4.8 instead of 5.0 to account for slight climb when setting guided -->
+        <waypoint name="STDBY_HIGH" x="-0.7" y="-0.8" alt="4.8"/>
         <waypoint name="TD" x="0.8" y="-1.7"/>
         <waypoint lat="51.990630" lon="4.376823" name="p1"/>
         <waypoint lat="51.990614" lon="4.376779" name="p2"/>
@@ -57,7 +58,7 @@
             <call_once fun="NavResurrect()"/>
         </block>
         <block name="takeoff" strip_button="takeoff" strip_icon="takeoff.png">
-            <exception cond="stateGetPositionEnu_f()->z > 0.5" deroute="standby"/>
+            <exception cond="stateGetPositionEnu_f()->z > 0.5" deroute="standby high"/>
             <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
             <call_once fun="NavSetWaypointHere(WP_STDBY_HIGH)"/>
             <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
@@ -71,11 +72,11 @@
         </block>
         <block name="set guided">
             <call_once fun="setGuided()"/>
-            <stay wp="STDBY"/>
+            <stay wp="STDBY_HIGH"/>
         </block>
         <block name="set nav">
             <call_once fun="setNav()"/>
-            <stay wp="STDBY"/>
+            <stay wp="STDBY_HIGH"/>
         </block>
         <block name="ascend 0.1">
             <exception cond="stateGetPositionEnu_f()->z >= WaypointAlt(WP_STDBY_HIGH)" deroute="descend 0.1"/>
@@ -143,4 +144,3 @@
         </block>
     </blocks>
 </flight_plan>
-
