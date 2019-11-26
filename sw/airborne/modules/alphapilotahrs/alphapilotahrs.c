@@ -121,19 +121,16 @@ void alphapilot_ahrs_periodic() {
     float spsi = sinf(est_psi);
 
     float vx_B = vx_E*(ctheta*cpsi) + vy_E * (ctheta*spsi) - vz_E * stheta;
-    float vy_B = vx_E*(sphi*stheta*cpsi-cphi*spsi) + 
-    vy_E * (sphi*stheta*spsi+cphi*cpsi)+
-    vz_E * (sphi*ctheta);
-
+    float vy_B = vx_E*(sphi*stheta*cpsi-cphi*spsi) + vy_E * (sphi*stheta*spsi+cphi*cpsi)+ vz_E * (sphi*ctheta);
     float vz_B = vx_E * (cphi*stheta*cpsi+sphi*spsi) + 
                 vy_E * (cphi*stheta*spsi-sphi*cpsi) +
                 vz_E * (cphi*ctheta);
     
 
 
-  comp_acc[0] = acc[0]- (gyro_y*vz_B-gyro_z*vy_B);
-  comp_acc[1] = acc[1] - (gyro_z*vx_B-gyro_x*vz_B);
-  comp_acc[2] = acc[2] - (gyro_x*vy_E-gyro_y*vx_E); 
+  comp_acc[0] = acc[0]-  (gyro_y*vz_B - gyro_z*vy_B);
+  comp_acc[1] = acc[1] - (gyro_z*vx_B - gyro_x*vz_B);
+  comp_acc[2] = acc[2] - (gyro_x*vy_B - gyro_y*vx_B); 
 
   // acceleration in body frame
   float norm_acc = sqrtf(comp_acc[0] * comp_acc[0] + comp_acc[1] * comp_acc[1] + comp_acc[2] * comp_acc[2]);  //acc.dot(acc);
