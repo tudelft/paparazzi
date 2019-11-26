@@ -43,14 +43,15 @@ static void open_log(void)
 
 
 // #include <Eigen/Dense>
+float comp_acc[3] ={};
 float v_est[3]={0};
 float pos_est[3]={0};
 float grav_body[3]={};
 float accel_earth[3]={};
 float accel_corr[3]={};
-float est_state_roll = 0;
-float est_state_pitch = 0;
-float est_state_yaw = 0;
+float est_phi = 0;
+float est_theta = 0;
+float est_psi = 0;
 float GRAVITY = 9.81;;
 double counter = 1;
 float est_euler[3] = {};
@@ -58,9 +59,9 @@ float p,q,r, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z;
 static void send_alphapahrs(struct transport_tx *trans, struct link_device *dev)
 {
   
-  float est_roll = est_state_roll*(180./3.1416);
-  float est_pitch = est_state_pitch*(180./3.1416);
-  float est_yaw = est_state_yaw*(180./3.1416);
+  float est_roll = est_phi*(180./3.1416);
+  float est_pitch = est_theta*(180./3.1416);
+  float est_yaw = est_psi*(180./3.1416);
   
 
  pprz_msg_send_AHRS_ALPHAPILOT(trans, dev, AC_ID,&est_roll,&est_pitch,&est_yaw,&accel_x,&accel_y,&accel_z,&accel_corr[0],&accel_corr[1],&accel_corr[2],&pos_est[0],&pos_est[1],&pos_est[2]);
@@ -93,9 +94,10 @@ void alphapilot_ahrs_periodic() {
   gyro_y = (double)imu.gyro.q / 4096.0; // q 
   gyro_z = (double)imu.gyro.r / 4096.0; // r 
 
+  
   float acc[3] = {accel_x, accel_y, accel_z};
   float imu_pqr[3] = {gyro_x, gyro_y, gyro_z};
-  float att[3] = {est_state_roll, est_state_pitch, est_state_yaw};
+  float att[3] = {est_phi, est_theta, est_psi};
 
   // gravity in body frame
   float gB[3] = {-sinf(att[1]) * -GRAVITY, sinf(att[0]) * cosf(att[1]) * -GRAVITY, cosf(att[0]) * cosf(att[1]) * -GRAVITY};
@@ -106,12 +108,39 @@ void alphapilot_ahrs_periodic() {
   float gB_scaled[3] = {gB[0] / norm_gB, gB[1] / norm_gB, gB[2] / norm_gB};  // When gravity is downwards
 
 
+    struct NedCoor_f *vel_gps = stateGetSpeedNed_f();
+    float vx_E =  vel_gps->x;
+    float vy_E =  vel_gps->y;
+    float vz_E =  vel_gps->z;
+
+    float cphi = cosf(est_phi);
+    float sphi = sinf(est_phi);
+    float ctheta = cosf(est_theta);
+    float stheta = sinf(est_theta);
+    float cpsi = cosf(est_psi);
+    float spsi = sinf(est_psi);
+
+    float vx_B = vx_E*(ctheta*cpsi) + vy_E * (ctheta*spsi) - vz_E * stheta;
+    float vy_B = vx_E*(sphi*stheta*cpsi-cphi*spsi) + 
+    vy_E * (sphi*stheta*spsi+cphi*cpsi)+
+    vz_E * (sphi*ctheta);
+
+    float vz_B = vx_E * (cphi*stheta*cpsi+sphi*spsi) + 
+                vy_E * (cphi*stheta*spsi-sphi*cpsi) +
+                vz_E * (cphi*ctheta);
+    
+
+
+  comp_acc[0] = acc[0]- (gyro_y*vz_B-gyro_z*vy_B);
+  comp_acc[1] = acc[1] - (gyro_z*vx_B-gyro_x*vz_B);
+  comp_acc[2] = acc[2] - (gyro_x*vy_E-gyro_y*vx_E); 
+
   // acceleration in body frame
-  float norm_acc = sqrtf(acc[0] * acc[0] + acc[1] * acc[1] + acc[2] * acc[2]);  //acc.dot(acc);
+  float norm_acc = sqrtf(comp_acc[0] * comp_acc[0] + comp_acc[1] * comp_acc[1] + comp_acc[2] * comp_acc[2]);  //acc.dot(acc);
   if(norm_acc < 1.5) {
     norm_acc = 1.5;//fabs(GRAVITY);
   }
-  float acc_scaled[3] = {acc[0] / norm_acc, acc[1] / norm_acc, acc[2] / norm_acc};
+  float acc_scaled[3] = {comp_acc[0] / norm_acc, comp_acc[1] / norm_acc, comp_acc[2] / norm_acc};
   
 
   // error between gravity and acceleration
@@ -142,12 +171,12 @@ void alphapilot_ahrs_periodic() {
   att[1] = att[1] + Rmat_pqr[1] * dt1;
   att[2] = att[2] + Rmat_pqr[2] * dt1;
 
-  est_state_roll  = wrapAngle(att[0]);
-  est_state_pitch = wrapAngle(att[1]);
-  est_state_yaw   = wrapAngle(att[2]); 
-  est_euler[0] = est_state_roll;
-  est_euler[1] = est_state_pitch;
-  est_euler[2] = est_state_yaw;
+  est_phi  = wrapAngle(att[0]);
+  est_theta = wrapAngle(att[1]);
+  est_psi   = wrapAngle(att[2]); 
+  est_euler[0] = est_phi;
+  est_euler[1] = est_theta;
+  est_euler[2] = est_psi;
 
   // grav_body[0]=0;
   // grav_body[1]=0;
@@ -175,7 +204,7 @@ void alphapilot_ahrs_periodic() {
   pos_est[1]+=v_est[1]*dt1;
   pos_est[2]+=v_est[2]*dt1;
   float logtime=get_sys_time_float();
-  fprintf(file_logger_t3,"%f, %f, %f, %f, %f, %f, %f\n",logtime,est_state_roll,est_state_pitch,est_state_yaw,phi_def,theta_def,psi_def);
+  fprintf(file_logger_t3,"%f, %f, %f, %f, %f, %f, %f\n",logtime,est_phi,est_theta,est_psi,phi_def,theta_def,psi_def);
 
   
 }
