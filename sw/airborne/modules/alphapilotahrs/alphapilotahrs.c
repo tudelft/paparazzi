@@ -26,6 +26,7 @@
 #include "modules/alphapilotahrs/alphapilotahrs.h"
 #include "subsystems/imu.h"
 #include "subsystems/datalink/telemetry.h"
+#include "state.h"
 // #include "modules/ctrl/dronerace/control.h"
 
 /** The file pointer */
@@ -76,7 +77,9 @@ register_periodic_telemetry(DefaultPeriodic,  PPRZ_MSG_ID_AHRS_ALPHAPILOT, send_
 
 void alphapilot_ahrs_periodic() {
 
-
+  float psi_def=stateGetNedToBodyEulers_f()->psi;
+  float theta_def=stateGetNedToBodyEulers_f()->theta;
+  float phi_def=stateGetNedToBodyEulers_f()->phi;
   float dt1 = 1.0/512.0;
   
   float KP_AHRS = 0.1;
@@ -172,7 +175,7 @@ void alphapilot_ahrs_periodic() {
   pos_est[1]+=v_est[1]*dt1;
   pos_est[2]+=v_est[2]*dt1;
   float logtime=get_sys_time_float();
-  fprintf(file_logger_t3,"%f, %f, %f, %f\n",logtime,est_state_roll,est_state_pitch,est_state_yaw);
+  fprintf(file_logger_t3,"%f, %f, %f, %f, %f, %f, %f\n",logtime,est_state_roll,est_state_pitch,est_state_yaw,phi_def,theta_def,psi_def);
 
   
 }
