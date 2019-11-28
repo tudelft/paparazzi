@@ -21,7 +21,7 @@
 	url = https://github.com/paparazzi/mavlink.git
 [submodule "sw/ext/pprzlink"]
 	path = sw/ext/pprzlink
-	url = https://github.com/paparazzi/pprzlink.git
+	url = https://github.com/Huizerd/pprzlink.git
 [submodule "sw/ext/opencv_bebop"]
 	path = sw/ext/opencv_bebop
 	url = https://github.com/tudelft/opencv_bebop.git
@@ -40,7 +40,7 @@
 	url = https://github.com/paparazzi/key_generator.git
 [submodule "sw/ext/tudelft_gazebo_models"]
 	path = sw/ext/tudelft_gazebo_models
-	url = https://github.com/tudelft/gazebo_models.git
+	url = https://github.com/Huizerd/gazebo_models.git
 [submodule "sw/ext/eigen"]
 	path = sw/ext/eigen
 	url = https://github.com/eigenteam/eigen-git-mirror.git
