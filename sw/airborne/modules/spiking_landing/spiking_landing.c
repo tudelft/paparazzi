@@ -115,9 +115,12 @@ static Butterworth2LowPass accel_ned_filt;
 static Butterworth2LowPass thrust_filt;
 
 // Variables retained between module calls
-// For divergence + derivative, thrust
-static float divergence, divergence_dot, thrust;
-
+// For divergence + derivative, low-passed acceleration, thrust
+float divergence, divergence_dot, acc_lp, thrust;
+float div_gt, divdot_gt;
+float div_gt_tmp;
+// For recording
+uint8_t record;
 // For control
 static float nominal_throttle;
 static bool active_control;
@@ -133,7 +136,8 @@ static void send_sl(struct transport_tx *trans, struct link_device *dev) {
   pprz_msg_send_SPIKING_LANDING(trans, dev, AC_ID, &divergence, &divergence_dot,
                                 &(stateGetPositionNed_f()->z),
                                 &(stateGetSpeedNed_f()->z),
-                                &accel_ned_filt.o[0], &thrust, &autopilot.mode);
+                                &(stateGetAccelNed_f()->z),
+                                &accel_ned_filt.o[0], &thrust, &autopilot.mode, &record);
 }
 
 // Function definitions
@@ -197,7 +201,12 @@ static void sl_init() {
 static void init_globals() {
   divergence = 0.0f;
   divergence_dot = 0.0f;
+  div_gt = 0.0f;
+  divdot_gt = 0.0f;
+  div_gt_tmp = 0.0f;
   thrust = 0.0f;
+  acc_lp = 0.0f;
+  record = 0;
   nominal_throttle = guidance_v_nominal_throttle;
   active_control = false;
 }
@@ -219,6 +228,15 @@ static void sl_optical_flow_cb(uint8_t sender_id, uint32_t stamp,
   }
   divergence = 2.0f * size_divergence;
 
+  // Compute GT of divergence + derivative
+  if (fabsf(stateGetPositionNed_f()->z) > 1e-5f) {
+    div_gt_tmp = -2.0f * stateGetSpeedNed_f()->z / stateGetPositionNed_f()->z;
+  }
+  if (dt > 1e-5f) {
+    divdot_gt = (div_gt_tmp - div_gt) / dt;
+  }
+  div_gt = div_gt_tmp;
+
   // Run the spiking network
   sl_run(divergence, divergence_dot);
 }
@@ -238,6 +256,7 @@ static void sl_run(float divergence, float divergence_dot) {
     // 4.9 instead of 5.0 to account for slight climb when setting guided
     guidance_v_set_guided_z(-4.9);
     active_control = false;
+    record = 0;
     return;
   }
 
@@ -252,24 +271,30 @@ static void sl_run(float divergence, float divergence_dot) {
   // Let the vehicle settle
   if (get_sys_time_float() - start_time < 5.0f) {
     // 4.9 instead of 5.0 to account for slight climb when setting guided
-    //    guidance_v_set_guided_z(-4.9);
+    // guidance_v_set_guided_z(-4.9);
     return;
   }
 
   // After vehicle settling, compute and improve nominal throttle estimate
   if (get_sys_time_float() - start_time < 10.0f) {
     // 4.9 instead of 5.0 to account for slight climb when setting guided
-    //    guidance_v_set_guided_z(-4.9);
+    // guidance_v_set_guided_z(-4.9);
     nominal_throttle_sum += (float)stabilization_cmd[COMMAND_THRUST] / MAX_PPRZ;
     nominal_throttle_samples++;
     nominal_throttle = nominal_throttle_sum / nominal_throttle_samples;
-
-    // TODO: we don't need to init the network further, right?
     return;
+  }
+
+  // Set recording while in flight
+  if (autopilot.in_flight) {
+    record = 1;
+  } else {
+    record = 0;
   }
 
   // Forward spiking net to get action/thrust for control
   // TODO: mind that we still need to convert from G to m/s2!
+  // TODO: and take into account the trace scaling!
   net.in[0] = divergence;
   net.in[1] = divergence_dot;
   thrust = forward_network(&net) * 9.81f;
@@ -286,8 +311,6 @@ static void sl_run(float divergence, float divergence_dot) {
   }
 }
 
-// TODO: function for freeing memory at end?
-
 // Closed-loop PI control for going from acceleration to motor control
 static void sl_control() {
   // "static" here implies that value is kept between function invocations
@@ -297,6 +320,7 @@ static void sl_control() {
   struct NedCoor_f *acceleration = stateGetAccelNed_f();
   update_butterworth_2_low_pass(&accel_ned_filt, acceleration->z);
   update_butterworth_2_low_pass(&thrust_filt, thrust);
+  acc_lp = accel_ned_filt.o[0];
 
   // Proportional
   float error = thrust_filt.o[0] + accel_ned_filt.o[0];
@@ -320,8 +344,7 @@ static void sl_control() {
   }
 }
 
-////////////////////////////////////////////////////////////
-// External functions
+// Module functions
 // Init
 void spiking_landing_init() { sl_init(); }
 
