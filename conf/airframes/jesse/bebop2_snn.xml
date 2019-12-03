@@ -259,15 +259,22 @@
     </section>
 
     <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
-        <define name="HOVER_KP" value="350"/>
+        <define name="HOVER_KP" value="283"/>
+        <!--<define name="HOVER_KP" value="350"/>-->
         <!--<define name="HOVER_KP" value="300"/>-->
-        <define name="HOVER_KD" value="85"/>
+        <define name="HOVER_KD" value="82"/>
+        <!--<define name="HOVER_KD" value="85"/>-->
         <!--<define name="HOVER_KD" value="100"/>-->
         <define name="HOVER_KI" value="20"/>
-        <define name="NOMINAL_HOVER_THROTTLE" value="0.52"/>
+        <define name="NOMINAL_HOVER_THROTTLE" value="0.68"/>
+        <!--<define name="NOMINAL_HOVER_THROTTLE" value="0.62"/>-->
         <!--<define name="NOMINAL_HOVER_THROTTLE" value="0.59"/>-->
         <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
         <!--<define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>-->
+
+        <define name="ADAPT_INITIAL_HOVER_THROTTLE" value="0.68" />
+        <define name="ADAPT_MIN_HOVER_THROTTLE" value="0.55" />
+        <define name="ADAPT_MAX_HOVER_THROTTLE" value="0.72" />
     </section>
 
     <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
@@ -291,8 +298,8 @@
     </section>
 
     <section name="NAVIGATION" prefix="NAV_">
-        <define name="CLIMB_VSPEED" value="1.0"/>
-        <define name="DESCEND_VSPEED" value="-0.75"/>
+        <define name="CLIMB_VSPEED" value="0.5"/>
+        <define name="DESCEND_VSPEED" value="-0.5"/>
     </section>
 
     <section name="SIMULATOR" prefix="NPS_">

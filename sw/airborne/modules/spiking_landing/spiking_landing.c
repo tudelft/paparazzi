@@ -252,9 +252,6 @@ static void sl_run(float divergence, float divergence_dot) {
   // TODO: is this for resetting altitude?
   if (autopilot_get_mode() != AP_MODE_GUIDED) {
     first_run = true;
-    // TODO: what's the use of this guided set?
-    // 4.9 instead of 5.0 to account for slight climb when setting guided
-    guidance_v_set_guided_z(-4.9);
     active_control = false;
     record = 0;
     return;
