@@ -83,8 +83,8 @@ float bound_f(float val, float min, float max) {
 #define KI_look 0.0 
 #define KP_POS  0.2
 #define KI_POS 0.02
-#define KP_VEL_X  0.1
-#define KP_VEL_Y  0.1
+#define KP_VEL_X  0.2
+#define KP_VEL_Y  0.2 
 #define KD_VEL_X  0.05
 #define KD_VEL_Y  0.05
 #define radius_des 2
@@ -125,9 +125,16 @@ void control_run(float dt)
 // transform to body reference frame 
   dr_state.vx = (cthet*cpsi)*vxE + (cthet*spsi)*vyE - sthet*vzE;
   dr_state.vy = (sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE + (sphi*cthet)*vzE;
+  float posxVel = (cthet*cpsi)*dr_state.x + (cthet*spsi)*dr_state.y - sthet*dr_state.z;
+  float posyVel = (sphi*sthet*cpsi-cphi*spsi)*dr_state.x + (sphi*sthet*spsi+cphi*cpsi)*dr_state.y + (sphi*cthet)*dr_state.z;
 
-  dr_control.phi_cmd= bound_angle(KP_VEL_Y * -dr_state.vy,CTRL_MAX_ROLL);
-  dr_control.theta_cmd=bound_angle(KP_VEL_X * dr_state.vx,CTRL_MAX_PITCH);  
+  float vx_des = bound_angle(-posxVel,2);
+  float vy_des = bound_angle(-posyVel,2);
+
+
+
+  dr_control.phi_cmd= bound_angle(KP_VEL_Y * (vy_des-dr_state.vy),CTRL_MAX_ROLL);
+  dr_control.theta_cmd=bound_angle(KP_VEL_X *-1* (vx_des-dr_state.vx),CTRL_MAX_PITCH);  
    
 
   dr_control.psi_cmd = 0;// angle180(psi_cmd*180.0/PI)*PI/180.0;
