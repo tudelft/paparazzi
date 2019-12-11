@@ -121,7 +121,7 @@
 #endif
 
 /* allow to define ADC_CHANNEL_CURRENT in the airframe file*/
-#ifndef ADC_CHANNEL_CURRENT
+#if !defined(ADC_CHANNEL_CURRENT) && !ADC_CURRENT_DISABLE
 #define ADC_CHANNEL_CURRENT ADC_2
 #endif
 

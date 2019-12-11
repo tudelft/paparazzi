@@ -34,6 +34,16 @@
 
 #include <canard.h>
 #include <string.h>
+#include "subsystems/electrical.h"
+
+struct actuators_uavcan_telem_t {
+  float voltage;
+  float current;
+  float temperature;
+  int32_t rpm;
+  uint32_t energy;
+};
+static struct actuators_uavcan_telem_t uavcan_telem[ACTUATORS_UAVCAN_NB];
 
 struct uavcan_iface_t {
   CANDriver *can_driver;
@@ -68,7 +78,7 @@ static struct uavcan_iface_t can1_iface = {
   .can_cfg = {
     CAN_MCR_ABOM | CAN_MCR_AWUM | CAN_MCR_TXFP,
     CAN_BTR_SJW(0) | CAN_BTR_TS2(1) |
-    CAN_BTR_TS1(14) | CAN_BTR_BRP((STM32_PCLK1/18)/125000 - 1)
+    CAN_BTR_TS1(14) | CAN_BTR_BRP((STM32_PCLK1/18)/1000000 - 1)
   },
   .thread_rx_wa = can1_rx_wa,
   .thread_rx_wa_size = sizeof(can1_rx_wa),
@@ -88,7 +98,7 @@ static struct uavcan_iface_t can2_iface = {
   .can_cfg = {
     CAN_MCR_ABOM | CAN_MCR_AWUM | CAN_MCR_TXFP,
     CAN_BTR_SJW(0) | CAN_BTR_TS2(1) |
-    CAN_BTR_TS1(14) | CAN_BTR_BRP((STM32_PCLK1/18)/125000 - 1)
+    CAN_BTR_TS1(14) | CAN_BTR_BRP((STM32_PCLK1/18)/1000000 - 1)
   },
   .thread_rx_wa = can2_rx_wa,
   .thread_rx_wa_size = sizeof(can2_rx_wa),
@@ -104,8 +114,26 @@ int16_t actuators_uavcan_values[ACTUATORS_UAVCAN_NB];
 CANConfig can_cfg = {
   CAN_MCR_ABOM | CAN_MCR_AWUM | CAN_MCR_TXFP,
   CAN_BTR_SJW(0) | CAN_BTR_TS2(1) |
-  CAN_BTR_TS1(14) | CAN_BTR_BRP((STM32_PCLK1/18)/125000 - 1)
+  CAN_BTR_TS1(14) | CAN_BTR_BRP((STM32_PCLK1/18)/1000000 - 1)
 };
+
+#if PERIODIC_TELEMETRY
+#include "subsystems/datalink/telemetry.h"
+
+static void actuators_uavcan_send_esc(struct transport_tx *trans, struct link_device *dev)
+{
+  static uint8_t esc_idx = 0;
+  float power = uavcan_telem[esc_idx].current * uavcan_telem[esc_idx].voltage;
+  float rpm = uavcan_telem[esc_idx].rpm;
+  float energy = uavcan_telem[esc_idx].energy;
+  pprz_msg_send_ESC(trans, dev, AC_ID, &uavcan_telem[esc_idx].current, &electrical.vsupply, &power,
+                                        &rpm, &uavcan_telem[esc_idx].voltage, &energy, &esc_idx);
+  esc_idx++;
+
+  if(esc_idx >= ACTUATORS_UAVCAN_NB)
+    esc_idx = 0;
+}
+#endif
 
 /*
  * Receiver thread.
@@ -196,15 +224,55 @@ static THD_FUNCTION(can_tx, p) {
   }
 }
 
-static void onTransferReceived(CanardInstance* ins, CanardRxTransfer* transfer) {
+#define UAVCAN_EQUIPMENT_ESC_STATUS_ID                     1034
+#define UAVCAN_EQUIPMENT_ESC_STATUS_SIGNATURE              (0xA9AF28AEA2FBB254ULL)
+#define UAVCAN_EQUIPMENT_ESC_STATUS_MAX_SIZE               ((110 + 7)/8)
 
+static void onTransferReceived(CanardInstance* ins, CanardRxTransfer* transfer) {
+  struct uavcan_iface_t *iface = (struct uavcan_iface_t *)ins->user_reference;
+
+  switch (transfer->data_type_id) {
+    case UAVCAN_EQUIPMENT_ESC_STATUS_ID: {
+      uint8_t esc_idx;
+      uint16_t tmp_float;
+
+      canardDecodeScalar(transfer, 105, 5, false, (void*)&esc_idx);
+      if(iface == &can2_iface)
+        esc_idx += 10;
+      if(esc_idx >= ACTUATORS_UAVCAN_NB)
+        break;
+      
+      canardDecodeScalar(transfer, 0, 32, false, (void*)&uavcan_telem[esc_idx].energy);
+      canardDecodeScalar(transfer, 32, 16, true, (void*)&tmp_float);
+      uavcan_telem[esc_idx].voltage = canardConvertFloat16ToNativeFloat(tmp_float);
+      canardDecodeScalar(transfer, 48, 16, true, (void*)&tmp_float);
+      uavcan_telem[esc_idx].current = canardConvertFloat16ToNativeFloat(tmp_float);
+      canardDecodeScalar(transfer, 64, 16, true, (void*)&tmp_float);
+      uavcan_telem[esc_idx].temperature = canardConvertFloat16ToNativeFloat(tmp_float);
+      canardDecodeScalar(transfer, 80, 18, true, (void*)&uavcan_telem[esc_idx].rpm);
+
+      // Update total current
+      electrical.current = 0;
+      for(uint8_t i = 0; i < ACTUATORS_UAVCAN_NB; ++i)
+        electrical.current += uavcan_telem[i].current;
+      break;
+    }
+  }
 }
 
-static bool shouldAcceptTransfer(const CanardInstance* ins,
+static bool shouldAcceptTransfer(const CanardInstance* ins __attribute__((unused)),
                                  uint64_t* out_data_type_signature,
                                  uint16_t data_type_id,
-                                 CanardTransferType transfer_type,
-                                 uint8_t source_node_id) {
+                                 CanardTransferType transfer_type __attribute__((unused)),
+                                 uint8_t source_node_id __attribute__((unused))) {
+
+  switch (data_type_id) {
+    case UAVCAN_EQUIPMENT_ESC_STATUS_ID:
+      *out_data_type_signature = UAVCAN_EQUIPMENT_ESC_STATUS_SIGNATURE;
+      return true;
+  }
+   
+
   return false;
 }
 
@@ -227,6 +295,11 @@ void actuators_uavcan_init(void)
    *----------------*/
   uavcanInitIface(&can1_iface);
   uavcanInitIface(&can2_iface);
+
+  /* Configure telemetry */
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ESC, actuators_uavcan_send_esc);
+#endif
 }
 
 #define UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_ID                 1030

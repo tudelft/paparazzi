@@ -34,7 +34,7 @@
     <waypoint name="C9" lat="53.04972222" lon="4.679444444"/>
   </waypoints>
   <sectors>
-    <sector color="orange" name="EHR8">
+    <sector color="orange" name="EHR8" type="dynamic">
       <corner name="C1"/>
       <corner name="C2"/>
       <corner name="C3"/>
