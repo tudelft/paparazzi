@@ -30,6 +30,7 @@
     <file name="dronerace/control.c"/>
     <file name="dronerace/flightplan.c"/>
     <file name="dronerace/fifo.c"/>
+    <file name="dronerace/bangbang.c"/>
   </makefile>
 
 </module>

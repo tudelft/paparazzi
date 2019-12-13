@@ -9,6 +9,7 @@
 #include <math.h>
 #include "state.h"
 #include "subsystems/datalink/telemetry.h"
+#include "bangbang.h"
 // Variables
 struct dronerace_control_struct dr_control;
 
@@ -114,35 +115,25 @@ void control_run(float dt)
    float vyE = vel_gps->y;
    float vzE = vel_gps->z;
 
+// transform to body reference frame 
+
   float cthet=cosf(theta_meas);
   float sthet=sinf(theta_meas);
   float cphi= cosf(phi_meas);
   float sphi = sinf(phi_meas);
   float cpsi = cosf(psi_meas);
   float spsi = sinf(psi_meas);
+  optimize(4,3,0);
+  // printf("bang_ctrl: %f %f %f\n",bang_ctrl[0],bang_ctrl[1],bang_ctrl[2]);
 
-
-// transform to body reference frame 
   dr_state.vx = (cthet*cpsi)*vxE + (cthet*spsi)*vyE - sthet*vzE;
   dr_state.vy = (sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE + (sphi*cthet)*vzE;
   float posxVel = (cthet*cpsi)*dr_state.x + (cthet*spsi)*dr_state.y - sthet*dr_state.z;
   float posyVel = (sphi*sthet*cpsi-cphi*spsi)*dr_state.x + (sphi*sthet*spsi+cphi*cpsi)*dr_state.y + (sphi*cthet)*dr_state.z;
 
-  float vx_des = bound_angle(-posxVel,2);
-  float vy_des = bound_angle(-posyVel,2);
-
-
-
-  dr_control.phi_cmd= bound_angle(KP_VEL_Y * (vy_des-dr_state.vy),CTRL_MAX_ROLL);
-  dr_control.theta_cmd=bound_angle(KP_VEL_X *-1* (vx_des-dr_state.vx),CTRL_MAX_PITCH);  
-   
-
   dr_control.psi_cmd = 0;// angle180(psi_cmd*180.0/PI)*PI/180.0;
-
-  // dr_control.theta_cmd = 0; //PITCHFIX ;
-  // dr_control.theta_cmd = 0;// bound_angle(dr_control.theta_cmd,CTRL_MAX_PITCH);
-
-  // printf("posx: %f, posy: %f, PosR: %f, ang1: %f, ang2: %f, ang: %f, LookI: %f, Vx: %f, Vy: %f\n",dr_state.x, dr_state.y, dist2target,ang1*180./PI,ang2*180/PI,ang*180./PI,lookI*180/PI,dr_state.vx,dr_state.vy);
+  dr_control.phi_cmd = 0;
+  dr_control.theta_cmd = 0;
 
   static int counter = 0;
   // fprintf(file_logger_t, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f, %f, %f, %f, %f, %f, %f, %f, %f\n", get_sys_time_float(), dr_control.theta_cmd, dr_control.phi_cmd, theta_meas,phi_meas,dr_state.x,dr_state.y, dist2target, phase_angle,rxb,ryb,centriterm, 
