@@ -100,7 +100,10 @@ void control_run(float dt)
   float theta_meas=stateGetNedToBodyEulers_f()->theta;
   float phi_meas=stateGetNedToBodyEulers_f()->phi;
 
-
+  dr_state.phi=phi_meas;
+  dr_state.theta=theta_meas;
+  dr_state.psi=psi_meas;
+  
   dr_control.z_cmd = dr_fp.z_set;
 
   // outer loop velocity control
