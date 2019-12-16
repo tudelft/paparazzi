@@ -37,11 +37,16 @@ float sat_corr[2];
 float T;
 int dim;
 float Cd = 0.56;
+float ang0 ;
+float ang1 ;
+float angc ;
+float angc_old ;
 
 float v0[2];
 float mass=0.42;
 float t_target;
 float y_target;
+float t_s=1e9;
 
 void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
     pos_error[0]=pos_error_vel_x;
@@ -68,6 +73,17 @@ void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
     {
         sat_corr[1]=sat_angle.y;
         sign_corr.y=1;
+    }
+
+    if(!brake){
+        if(t_s<0.02 && t_target>0 &&t_s<t_target){
+            brake=true;
+        }
+    }
+    else{
+        if(!(t_target>0)){
+            brake = false;
+        }
     }
 
     if(fabs(pos_error[0])>=fabs(pos_error[1])){
@@ -103,19 +119,70 @@ void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
         
         while(fabs(E_pos)>error_thresh&&fabs(t_s-t_s_old)>0.02){
             t_s_old=t_s; 
-            E_pos=get_E_pos(v_desired);
+            E_pos=get_E_pos(v_desired, sat_corr[dim]);
+            if(E_pos*signcorrsat>0){
+                t0=t_s;
+            }
+            else{
+                t1=t_s;
+            }
+            t_s=(t0+t1)/2.0;
         }
+        bang_ctrl[dim]=sat_corr[dim];
     }
+    //if braking:
+    else{
+        ang0=-sat_corr[dim];
+        ang1=sat_corr[dim];
+        angc=(ang0+ang1)/2.0;
+        angc_old = 1e9;
+        E_pos = 1e9;
+        while(fabs(E_pos)>error_thresh && fabs(angc-angc_old)>(0.1*d2r)){
+            angc_old=angc;
+            E_pos = get_E_pos(v_desired, angc);
 
+            if(E_pos*signcorrsat>0){
+                ang0=angc;
+            }
+            else{
+                ang1=angc;
+            }
+            angc=(ang0+ang1)/2.;
+        }
+        bang_ctrl[dim]=angc;
+    }
+    //optimize second parameter
+    type = SECOND;
+    dim = 1-satdim;
 
-    bang_ctrl[0]+=0.1;
-    bang_ctrl[1]+=0.2;
-    bang_ctrl[2]+=0.3;
+    ang0 = -sat_corr[dim];
+    ang1 = sat_corr[dim];
+    angc = (ang0+ang1)/2.0;
+    angc_old = 1e9;
+    E_pos = 1e9;
+
+    while(fabs(E_pos)>error_thresh&&fabs(angc-angc_old)>0.1*d2r){
+        angc_old=angc;
+        E_pos=get_E_pos(v_desired,angc);
+        if(E_pos*signcorrsec>0){/* code */
+            ang0=angc;
+        }
+        else
+        {
+            ang1=angc;
+        }
+        angc=(ang0+ang1)/2;
+    }
+    bang_ctrl[dim]=angc;
+
+    // bang_ctrl[0]+=0.1;
+    // bang_ctrl[1]+=0.2;
+    // bang_ctrl[2]+=0.3;
     printf("satdim: %d, pEx: %f, pEy: %f\n",satdim,pos_error[0],pos_error[1]);
 };
 
-float get_E_pos(float Vd){
-    float y_target=predict_path_analytical(t_s,sat_corr[dim],Vd);
+float get_E_pos(float Vd, float angle){
+    float y_target=predict_path_analytical(t_s,angle,Vd);
 
     return pos_error[dim]-y_target;
 }

@@ -17,7 +17,7 @@ int satdim_prev;
 float t_s; 
 float t_t;
 extern void optimize(float pos_error_vel_x, float pos_error_vel_y,float v_desired);
-float get_E_pos(float Vd);
+float get_E_pos(float Vd, float angle);
 float predict_path_analytical(float t_s, float angle, float Vd);
 void find_constants(float yi,float vi);
 float get_position_analytical(float t);
