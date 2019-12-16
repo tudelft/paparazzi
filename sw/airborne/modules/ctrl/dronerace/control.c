@@ -10,19 +10,28 @@
 #include "state.h"
 #include "subsystems/datalink/telemetry.h"
 #include "bangbang.h"
+
+
+#define r2d 180./M_PI
+#define d2r M_PI/180.0
 // Variables
 struct dronerace_control_struct dr_control;
 
 /** The file pointer */
 FILE *file_logger_t = NULL;
+FILE *bang_bang_t = NULL;
 
 static void open_log(void) 
 {
   char filename[512];
+  char filename2[512];
   // Check for available files
   sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "lllllog_file");
+  sprintf(filename2, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "bangbang_log");
   printf("\n\n*** chosen filename log drone race: %s ***\n\n", filename);
   file_logger_t = fopen(filename, "w+"); 
+  bang_bang_t = fopen(filename2,"w+");
+  fprintf(bang_bang_t,"time,satdim, brake, t_s, t_target, error_x, error_y, posx, posy, vxvel, vyvel, c1_sat,c2_sat, c1_sat_brake, c2_sat_brake, c1_sec, c2_sec\n");
 }
 
 
@@ -126,18 +135,26 @@ void control_run(float dt)
   float sphi = sinf(phi_meas);
   float cpsi = cosf(psi_meas);
   float spsi = sinf(psi_meas);
-  optimize(4,3,0);
-  // printf("bang_ctrl: %f %f %f\n",bang_ctrl[0],bang_ctrl[1],bang_ctrl[2]);
+  
+  
 
   dr_state.vx = (cthet*cpsi)*vxE + (cthet*spsi)*vyE - sthet*vzE;
   dr_state.vy = (sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE + (sphi*cthet)*vzE;
   float posxVel = (cthet*cpsi)*dr_state.x + (cthet*spsi)*dr_state.y - sthet*dr_state.z;
   float posyVel = (sphi*sthet*cpsi-cphi*spsi)*dr_state.x + (sphi*sthet*spsi+cphi*cpsi)*dr_state.y + (sphi*cthet)*dr_state.z;
+  float posx_cmd = 0;
+  float posy_cmd = 0;
 
-  dr_control.psi_cmd = 0;// angle180(psi_cmd*180.0/PI)*PI/180.0;
-  dr_control.phi_cmd = 0;
-  dr_control.theta_cmd = 0;
+  float error_posx_vel = posx_cmd-posxVel;
+  float error_posy_vel = posy_cmd-posyVel; 
 
+  optimize(1,2,0.2);
+
+  dr_control.psi_cmd = angle180(r2d*atan2f(error_posy_vel,error_posx_vel));// angle180(psi_cmd*180.0/PI)*PI/180.0;
+  
+  dr_control.phi_cmd = bang_ctrl[1];
+  dr_control.theta_cmd = bang_ctrl[0];
+  // printf("satdim: %i error x: %f, error_y: %f phi_cmd: %f, theta_cmd: %f, t_switch: %f, t_target: %f, brake: %i\n",satdim,error_posx_vel,error_posy_vel,dr_control.phi_cmd*r2d,dr_control.theta_cmd*r2d,t_s,t_target,brake);
   static int counter = 0;
   // fprintf(file_logger_t, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f, %f, %f, %f, %f, %f, %f, %f, %f\n", get_sys_time_float(), dr_control.theta_cmd, dr_control.phi_cmd, theta_meas,phi_meas,dr_state.x,dr_state.y, dist2target, phase_angle,rxb,ryb,centriterm, 
   // dr_control.psi_cmd,psi_meas,dr_state.vx,dr_state.vy,rx,ry,radiuserror,ang1,ang2,ang);

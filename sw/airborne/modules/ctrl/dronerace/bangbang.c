@@ -1,12 +1,13 @@
 #include "bangbang.h"
 #include <math.h>
-#include <stdbool.h>
+
 #include "std.h"
 #include "filter.h"
+#include "subsystems/datalink/telemetry.h"
 #define SATURATION 0
 #define SECOND 1
 #define r2d 180./M_PI
-#define d2r 1./r2d
+#define d2r M_PI/180.0
 
 // float m = 0.42; //bebop mass [kg]
 float g = 9.80665;//gravity
@@ -26,6 +27,9 @@ struct BangDim sign_corr=
 };
 
 struct anaConstant constant;
+struct anaConstant constant_sat_accel;
+struct anaConstant constant_sat_brake; //braking part of prediction
+struct anaConstant constant_sec; //for logging 
 // struct BangDim pos_error;
 
 float satangle;
@@ -35,6 +39,8 @@ float signcorrsec;
 float pos_error[2];
 float sat_corr[2];
 float T;
+float T_sat;
+float T_sec; // for debugging purposes
 int dim;
 float Cd = 0.56;
 float ang0 ;
@@ -51,8 +57,8 @@ float t_s=1e9;
 void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
     pos_error[0]=pos_error_vel_x;
     pos_error[1]=pos_error_vel_y;
-    
 
+    
     // Determine which dimension will be saturated 
 
     float error_thresh = 1e-3; 
@@ -76,7 +82,7 @@ void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
     }
 
     if(!brake){
-        if(t_s<0.02 && t_target>0 &&t_s<t_target){
+        if(t_s<0.5 && t_target>0 &&t_s<t_target){
             brake=true;
         }
     }
@@ -113,22 +119,25 @@ void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
     dim=satdim;
     if(!brake){
         float t0 = 0; 
-        float t1 = fabs(pos_error[satdim])+1;
+        float t1 = fabs(pos_error[satdim])+3;
         t_s = (t0+t1)/2.0;
         float t_s_old = 1e2;
         
         while(fabs(E_pos)>error_thresh&&fabs(t_s-t_s_old)>0.02){
             t_s_old=t_s; 
             E_pos=get_E_pos(v_desired, sat_corr[dim]);
+            printf("E_pos: %f, t_s: %f , t0: %f, t1: %f\n",E_pos*signcorrsat,t_s,t0,t1);
             if(E_pos*signcorrsat>0){
-                t0=t_s;
-            }
-            else{
                 t1=t_s;
             }
+            else{
+                t0=t_s;
+            }
             t_s=(t0+t1)/2.0;
+            
         }
         bang_ctrl[dim]=sat_corr[dim];
+        printf("\n");
     }
     //if braking:
     else{
@@ -172,51 +181,71 @@ void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
             ang1=angc;
         }
         angc=(ang0+ang1)/2;
+        // printf("angc: %f, angc_old: %f E_pos: %f\n",angc,angc_old,E_pos);
     }
     bang_ctrl[dim]=angc;
 
     // bang_ctrl[0]+=0.1;
     // bang_ctrl[1]+=0.2;
     // bang_ctrl[2]+=0.3;
-    printf("satdim: %d, pEx: %f, pEy: %f\n",satdim,pos_error[0],pos_error[1]);
+
+    //  fprintf(bang_bang_t,"time,satdim, brake, t_s, t_target, error_x, error_y, posx, posy, vxvel, vyvel, c1_sat,c2_sat, c1_sec, c2_sec\n");
+    fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(), satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1],
+    constant_sat_accel.c1,constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec);
 };
 
 float get_E_pos(float Vd, float angle){
     float y_target=predict_path_analytical(t_s,angle,Vd);
 
-    return pos_error[dim]-y_target;
+    return y_target-pos_error[dim];
 }
 
 float predict_path_analytical(float t_s, float angle,float Vd){
-    
-    T = (mass*g)/tanf(angle);//Thrust component forward 
+    if(dim==0){
+
+        T = (mass*g)*tanf(-angle);//Thrust component forward 
+    }
+    else{
+        T = (mass*g)*tanf(angle);//Thrust component forward 
+    }
 
     //Correct NED velocity for the drone's heading which is the initial speed in path prediction
     v0[0]=dr_state.vx*cosf(dr_state.psi)-dr_state.vy*sinf(dr_state.psi); 
     v0[1]=dr_state.vx*sinf(dr_state.psi)+dr_state.vy*cosf(dr_state.psi);
-    
+    v0[0]=2;
+    v0[1]=0.1;
     if(type==0){ // if saturation
+        T_sat = T; 
         if(!brake){
             find_constants(0.0,v0[dim]); // find constant for accelerating part; 
+            constant_sat_accel = constant;
             float ys = get_position_analytical(t_s);
             float vs = get_velocity_analytical(t_s);
 
             //predict braking part
             T=-1*T; 
             find_constants(ys,vs); //update constants for second part;
+            constant_sat_brake = constant;
             t_target = get_time_analytical(Vd);
             y_target = get_position_analytical(t_target);
+            t_target=t_target+t_s;
+            
         }
         else{ //if braking 
             find_constants(0.0,v0[dim]);
+            constant_sat_brake = constant;
             t_target=get_time_analytical(Vd);
             y_target = get_position_analytical(t_target);
+            
         }
     }
     else{ //if second dimension
+        T_sec = T;
         find_constants(0.0,v0[dim]);
+        constant_sec = constant; 
         y_target=get_position_analytical(t_target);//find position in lateral direction using the predicted eta of the first dimension;    }
-
+        // printf("y_target_sec: %f, t_target: %f, angle: %f, tanf: %f",y_target,t_target,angle,tanf(angle));
+    // printf("\n");
     return y_target;
     }
 }
