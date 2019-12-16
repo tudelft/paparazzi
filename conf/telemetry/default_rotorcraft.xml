@@ -43,6 +43,7 @@
       <message name="GUIDANCE_H_REF_INT"       period="0.31"/>
       <message name="HYBRID_GUIDANCE"          period="0.4"/>
       <message name="ESC"                      period="0.5"/>
+      <message name="WINDTUNNEL_MEAS"          period="0.1"/>
     </mode>
 
     <mode name="ppm">
@@ -216,6 +217,7 @@
       <message name="GUIDANCE_H_REF_INT"       period="0.02"/>
       <message name="HYBRID_GUIDANCE"          period="0.1"/>
       <message name="ESC"                      period="0.02"/>
+      <message name="WINDTUNNEL_MEAS"          period="0.005"/>
     </mode>
   </process>
 
