@@ -44,10 +44,10 @@ extern struct min_max_ctrl_t ctrl_windtunnel_flaps;
 
 
 // Demo with own guidance_h
-#define GUIDANCE_H_MODE_MODULE_SETTING GUIDANCE_H_MODE_MODULE
+//#define GUIDANCE_H_MODE_MODULE_SETTING GUIDANCE_H_MODE_MODULE
 
 // and own guidance_v
-#define GUIDANCE_V_MODE_MODULE_SETTING GUIDANCE_V_MODE_MODULE
+//#define GUIDANCE_V_MODE_MODULE_SETTING GUIDANCE_V_MODE_MODULE
 
 // Implement own Horizontal loops
 extern void guidance_h_module_init(void);
