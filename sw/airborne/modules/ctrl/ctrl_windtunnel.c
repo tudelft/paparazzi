@@ -38,8 +38,8 @@ struct ctrl_windtunnel_struct {
 } ctrl_windtunnel;
 
 float ctrl_windtunnel_steptime = 8.0;
-struct min_max_ctrl_t ctrl_windtunnel_throttle = {.min = 6000, .max = 9600, .step = 600};
-struct min_max_ctrl_t ctrl_windtunnel_flaps = {.min = -9600, .max = 0, .step = 600};
+struct min_max_ctrl_t ctrl_windtunnel_throttle = {.min = 6000, .max = 9600, .step = 1200};
+struct min_max_ctrl_t ctrl_windtunnel_flaps = {.min = -9600, .max = 0, .step = 2400};
 static float last_time = 0;
 
 void ctrl_module_init(void);
