@@ -69,7 +69,7 @@ void ctrl_module_init(void)
 
 void ctrl_module_run(bool in_flight)
 {
-  if (!in_flight) {
+  /*if (!in_flight) {
     stabilization_cmd[COMMAND_ROLL] = 0;
     stabilization_cmd[COMMAND_PITCH] = 0;
     stabilization_cmd[COMMAND_YAW] = 0;
@@ -79,7 +79,7 @@ void ctrl_module_run(bool in_flight)
     ctrl_windtunnel_throttle.current = ctrl_windtunnel_throttle.min;
     ctrl_windtunnel_flaps.current = ctrl_windtunnel_flaps.min;
     last_time = get_sys_time_float();
-  } else {
+  } else*/ {
     bool done = false;
     // Increase step in steptime
     if(ctrl_windtunnel.rc_throttle > (MAX_PPRZ/2) && (get_sys_time_float() - last_time) > ctrl_windtunnel_steptime) { 
