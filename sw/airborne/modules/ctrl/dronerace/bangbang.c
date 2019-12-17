@@ -16,7 +16,7 @@ bool brake = false;
 float bang_ctrl[3]; //control inputs that will be the final product of the bangbang optimizer 
 
 struct BangDim sat_angle = {
-    -10*d2r,
+    -30*d2r,
     10*d2r,
 };
 // struct BangDim sat_corr;
@@ -126,7 +126,7 @@ void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
         while(fabs(E_pos)>error_thresh&&fabs(t_s-t_s_old)>0.02){
             t_s_old=t_s; 
             E_pos=get_E_pos(v_desired, sat_corr[dim]);
-            printf("E_pos: %f, t_s: %f , t0: %f, t1: %f\n",E_pos*signcorrsat,t_s,t0,t1);
+            // printf("satdim: %i, E_pos: %f, t_s: %f , t0: %f, t1: %f\n",dim,E_pos*signcorrsat,t_s,t0,t1);
             if(E_pos*signcorrsat>0){
                 t1=t_s;
             }
@@ -184,14 +184,11 @@ void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
         // printf("angc: %f, angc_old: %f E_pos: %f\n",angc,angc_old,E_pos);
     }
     bang_ctrl[dim]=angc;
-
-    // bang_ctrl[0]+=0.1;
-    // bang_ctrl[1]+=0.2;
-    // bang_ctrl[2]+=0.3;
-
+    printf("satdim: %i, brake: %i, theta_cmd: %f, phi_cmd: %f, errx: %f, erry: %f, t_s: %f, t_t: %f\n",satdim,brake,bang_ctrl[0],bang_ctrl[1],pos_error[0],pos_error[1],t_s,t_target);
+    // printf("bang_ctrl[0]: %f, bang_ctrl[1]: %f \n",bang_ctrl[0],bang_ctrl[1]);
     //  fprintf(bang_bang_t,"time,satdim, brake, t_s, t_target, error_x, error_y, posx, posy, vxvel, vyvel, c1_sat,c2_sat, c1_sec, c2_sec\n");
-    fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(), satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1],
-    constant_sat_accel.c1,constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec);
+    // fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(), satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1],
+    // constant_sat_accel.c1,constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec);
 };
 
 float get_E_pos(float Vd, float angle){
@@ -212,8 +209,8 @@ float predict_path_analytical(float t_s, float angle,float Vd){
     //Correct NED velocity for the drone's heading which is the initial speed in path prediction
     v0[0]=dr_state.vx*cosf(dr_state.psi)-dr_state.vy*sinf(dr_state.psi); 
     v0[1]=dr_state.vx*sinf(dr_state.psi)+dr_state.vy*cosf(dr_state.psi);
-    v0[0]=2;
-    v0[1]=0.1;
+    // v0[0]=2;
+    // v0[1]=0.1;
     if(type==0){ // if saturation
         T_sat = T; 
         if(!brake){

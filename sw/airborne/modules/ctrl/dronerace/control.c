@@ -137,7 +137,6 @@ void control_run(float dt)
   float spsi = sinf(psi_meas);
   
   
-
   dr_state.vx = (cthet*cpsi)*vxE + (cthet*spsi)*vyE - sthet*vzE;
   dr_state.vy = (sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE + (sphi*cthet)*vzE;
   float posxVel = (cthet*cpsi)*dr_state.x + (cthet*spsi)*dr_state.y - sthet*dr_state.z;
@@ -147,13 +146,17 @@ void control_run(float dt)
 
   float error_posx_vel = posx_cmd-posxVel;
   float error_posy_vel = posy_cmd-posyVel; 
+  float dist2target = sqrtf(error_posx_vel*error_posx_vel+error_posy_vel*error_posy_vel);
 
-  optimize(1,2,0.2);
+  optimize(error_posx_vel,error_posy_vel,0.2);
 
-  dr_control.psi_cmd = angle180(r2d*atan2f(error_posy_vel,error_posx_vel));// angle180(psi_cmd*180.0/PI)*PI/180.0;
-  
-  dr_control.phi_cmd = bang_ctrl[1];
+  if(error_posy_vel>0.5){ //freeze yaw cmd when it gets close to wp
+    dr_control.psi_cmd =atan2f(error_posy_vel,error_posx_vel);// angle180(psi_cmd*180.0/PI)*PI/180.0;
+  }
+  dr_control.phi_cmd =0;// bang_ctrl[1];
   dr_control.theta_cmd = bang_ctrl[0];
+
+  // printf("theta_cmd: %f\n",dr_control.theta_cmd);
   // printf("satdim: %i error x: %f, error_y: %f phi_cmd: %f, theta_cmd: %f, t_switch: %f, t_target: %f, brake: %i\n",satdim,error_posx_vel,error_posy_vel,dr_control.phi_cmd*r2d,dr_control.theta_cmd*r2d,t_s,t_target,brake);
   static int counter = 0;
   // fprintf(file_logger_t, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f, %f, %f, %f, %f, %f, %f, %f, %f\n", get_sys_time_float(), dr_control.theta_cmd, dr_control.phi_cmd, theta_meas,phi_meas,dr_state.x,dr_state.y, dist2target, phase_angle,rxb,ryb,centriterm, 
