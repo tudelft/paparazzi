@@ -30,16 +30,29 @@
 #include "firmwares/rotorcraft/stabilization.h"
 #include "subsystems/electrical.h"
 
+#ifndef WINDTUNNEL_TO_BODY_PHI
+#define WINDTUNNEL_TO_BODY_PHI 0
+#endif
+
+#ifndef WINDTUNNEL_TO_BODY_THETA
+#define WINDTUNNEL_TO_BODY_THETA 0
+#endif
+
+#ifndef WINDTUNNEL_TO_BODY_PSI
+#define WINDTUNNEL_TO_BODY_PSI 0
+#endif
+
 struct ctrl_windtunnel_struct {
   int rc_throttle;
   int rc_roll;
   int rc_pitch;
   int rc_yaw;
+  struct OrientationReps rotation;
 } ctrl_windtunnel;
 
 float ctrl_windtunnel_steptime = 8.0;
-struct min_max_ctrl_t ctrl_windtunnel_throttle = {.min = 6000, .max = 9600, .step = 1200};
-struct min_max_ctrl_t ctrl_windtunnel_flaps = {.min = -9600, .max = 0, .step = 2400};
+struct min_max_ctrl_t ctrl_windtunnel_throttle = {.min = 0, .max = 0, .step = 1200};
+struct min_max_ctrl_t ctrl_windtunnel_flaps = {.min = -7200, .max = 0, .step = 2400};
 static float last_time = 0;
 
 void ctrl_module_init(void);
@@ -49,7 +62,14 @@ void ctrl_module_run(bool in_flight);
 #include "subsystems/datalink/telemetry.h"
 static void send_windtunnel_meas(struct transport_tx *trans, struct link_device *dev)
 {
-  float aoa = 0.0f;
+  struct FloatQuat windtunnel_to_body;
+  struct FloatEulers windtunnel_to_body_e;
+  struct FloatQuat *rotation = orientationGetQuat_f(&ctrl_windtunnel.rotation);
+  struct FloatQuat *ned_to_body = stateGetNedToBodyQuat_f();
+  float_quat_comp_inv(&windtunnel_to_body, ned_to_body, rotation);
+  float_eulers_of_quat(&windtunnel_to_body_e, &windtunnel_to_body);
+
+  float aoa = DegOfRad(windtunnel_to_body_e.theta);
   float power = electrical.vsupply * electrical.current;
   pprz_msg_send_WINDTUNNEL_MEAS(trans, dev, AC_ID, &aoa, &air_data.airspeed, &electrical.vsupply, &electrical.current, &power, COMMANDS_NB, stabilization_cmd);
 }
@@ -62,58 +82,56 @@ void ctrl_module_init(void)
   ctrl_windtunnel.rc_pitch = 0;
   ctrl_windtunnel.rc_yaw = 0;
 
+  // Create a rotation to the windtunnel from the body
+  struct FloatEulers windtunnel_to_body_eulers =
+  {WINDTUNNEL_TO_BODY_PHI, WINDTUNNEL_TO_BODY_THETA, WINDTUNNEL_TO_BODY_PSI};
+  orientationSetEulers_f(&ctrl_windtunnel.rotation, &windtunnel_to_body_eulers);
+
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WINDTUNNEL_MEAS, send_windtunnel_meas);
 #endif
 }
 
-void ctrl_module_run(bool in_flight)
+void ctrl_module_run(bool in_flight __attribute__((unused)))
 {
-  /*if (!in_flight) {
-    stabilization_cmd[COMMAND_ROLL] = 0;
-    stabilization_cmd[COMMAND_PITCH] = 0;
-    stabilization_cmd[COMMAND_YAW] = 0;
-    stabilization_cmd[COMMAND_THRUST] = 0;
-    stabilization_cmd[COMMAND_FLAPS] = 0;
+  bool done = false;
+  // Increase step in steptime
+  if(ctrl_windtunnel.rc_throttle > (MAX_PPRZ/2) && (get_sys_time_float() - last_time) > ctrl_windtunnel_steptime) { 
+    // Increase throttle step if flaps at the end
+    if((ctrl_windtunnel_flaps.current + ctrl_windtunnel_flaps.step) > ctrl_windtunnel_flaps.max) {
+      // Only increase step if throttle is not at the end
+      if((ctrl_windtunnel_throttle.current + ctrl_windtunnel_throttle.step) <= ctrl_windtunnel_throttle.max) {
+        ctrl_windtunnel_throttle.current += ctrl_windtunnel_throttle.step;
+        ctrl_windtunnel_flaps.current = ctrl_windtunnel_flaps.min;
+        last_time = get_sys_time_float();
+      }
+      else {
+        // Finished
+        done = true;
+      }
+    }
+    else {
+      // By default increase flaps
+      ctrl_windtunnel_flaps.current += ctrl_windtunnel_flaps.step;
 
+      // Double the amount of steptime during double transition
+      if((ctrl_windtunnel_flaps.current == ctrl_windtunnel_flaps.min))
+        last_time = get_sys_time_float() + ctrl_windtunnel_steptime;
+      else
+        last_time = get_sys_time_float();
+    }
+  } else if (ctrl_windtunnel.rc_throttle < (MAX_PPRZ/2)) {
+    // RESET
     ctrl_windtunnel_throttle.current = ctrl_windtunnel_throttle.min;
     ctrl_windtunnel_flaps.current = ctrl_windtunnel_flaps.min;
     last_time = get_sys_time_float();
-  } else*/ {
-    bool done = false;
-    // Increase step in steptime
-    if(ctrl_windtunnel.rc_throttle > (MAX_PPRZ/2) && (get_sys_time_float() - last_time) > ctrl_windtunnel_steptime) { 
-      // Increase throttle step if flaps at the end
-      if((ctrl_windtunnel_flaps.current + ctrl_windtunnel_flaps.step) > ctrl_windtunnel_flaps.max) {
-        // Only increase step if throttle is not at the end
-        if((ctrl_windtunnel_throttle.current + ctrl_windtunnel_throttle.step) <= ctrl_windtunnel_throttle.max) {
-          ctrl_windtunnel_throttle.current += ctrl_windtunnel_throttle.step;
-          ctrl_windtunnel_flaps.current = ctrl_windtunnel_flaps.min;
-          last_time = get_sys_time_float();
-        }
-        else {
-          // Finished
-          done = true;
-        }
-      }
-      else {
-        // By default increase flaps
-        ctrl_windtunnel_flaps.current += ctrl_windtunnel_flaps.step;
-        last_time = get_sys_time_float();
-      }
-    } else if (ctrl_windtunnel.rc_throttle < (MAX_PPRZ/2)) {
-      // RESET
-      ctrl_windtunnel_throttle.current = ctrl_windtunnel_throttle.min;
-      ctrl_windtunnel_flaps.current = ctrl_windtunnel_flaps.min;
-      last_time = get_sys_time_float();
-    }
-
-    stabilization_cmd[COMMAND_ROLL] = 0;
-    stabilization_cmd[COMMAND_PITCH] = 0;
-    stabilization_cmd[COMMAND_YAW] = 0;
-    stabilization_cmd[COMMAND_THRUST] = (done)? 0 : ctrl_windtunnel_throttle.current;
-    stabilization_cmd[COMMAND_FLAPS] = (done)? 0 : ctrl_windtunnel_flaps.current;
   }
+
+  stabilization_cmd[COMMAND_ROLL] = 0;
+  stabilization_cmd[COMMAND_PITCH] = 0;
+  stabilization_cmd[COMMAND_YAW] = 0;
+  stabilization_cmd[COMMAND_THRUST] = (done)? 0 : ctrl_windtunnel_throttle.current;
+  stabilization_cmd[COMMAND_FLAPS] = (done)? 0 : ctrl_windtunnel_flaps.current;
 }
 
 
