@@ -21,6 +21,7 @@
 
     <init fun="spiking_landing_init()"/>
     <event fun="spiking_landing_event()"/>
+<!--    <periodic fun="spiking_landing_event()" freq="50"/>-->
 
     <makefile target="ap|nps">
         <file name="spiking_landing.c"/>

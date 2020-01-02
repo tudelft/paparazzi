@@ -27,6 +27,9 @@
 // Header for this file
 #include "modules/spiking_landing/spiking_landing.h"
 
+// Header with network parameters
+#include "modules/spiking_landing/case1+1393/network_conf.h"
+
 // tinysnn headers
 #include "Network.h"
 
@@ -38,7 +41,6 @@
 //#include "subsystems/gps.h"
 //#include "subsystems/gps/gps_datalink.h"
 
-//#include "generated/flight_plan.h"
 //#include "math/pprz_geodetic_double.h"
 //#include "math/pprz_geodetic_int.h"
 
@@ -56,7 +58,6 @@
 #include "autopilot.h"
 #include "filters/low_pass_filter.h"
 #include "subsystems/datalink/telemetry.h"
-#include "subsystems/navigation/common_flight_plan.h"
 
 // For measuring time
 #include "mcu_periph/sys_time.h"
@@ -91,22 +92,6 @@ PRINT_CONFIG_VAR(SL_OPTICAL_FLOW_ID)
 #define SL_OF_FILTER_CUTOFF 1.5f
 #endif
 
-// Network configuration
-// Layer sizes
-#ifndef SL_NET_IN
-#define SL_NET_IN 4
-#endif
-#ifndef SL_NET_HID
-#define SL_NET_HID 20
-#endif
-#ifndef SL_NET_OUT
-#define SL_NET_OUT 1
-#endif
-// File with network parameters
-#ifndef SL_NET_FILE
-#define SL_NET_FILE "sw/airborne/modules/spiking_landing/network.txt"
-#endif
-
 // Events
 static abi_event optical_flow_ev;
 
@@ -116,9 +101,12 @@ static Butterworth2LowPass thrust_filt;
 
 // Variables retained between module calls
 // For divergence + derivative, low-passed acceleration, thrust
-float divergence, divergence_dot, acc_lp, thrust;
+float divergence, divergence_dot, acc_lp, thrust, thrust_lp;
+float acceleration_sp;
 float div_gt, divdot_gt;
 float div_gt_tmp;
+// Spike count
+uint16_t spike_count;
 // For recording
 uint8_t record;
 // For control
@@ -133,11 +121,12 @@ struct SpikingLandingSettings sl_settings;
 // Sending stuff to ground station
 // Divergence + derivative, height, velocity, acceleration, thrust, mode
 static void send_sl(struct transport_tx *trans, struct link_device *dev) {
-  pprz_msg_send_SPIKING_LANDING(trans, dev, AC_ID, &divergence, &divergence_dot,
-                                &(stateGetPositionNed_f()->z),
-                                &(stateGetSpeedNed_f()->z),
-                                &(stateGetAccelNed_f()->z),
-                                &accel_ned_filt.o[0], &thrust, &autopilot.mode, &record);
+  pprz_msg_send_SPIKING_LANDING(
+      trans, dev, AC_ID, &divergence, &divergence_dot,
+      &(stateGetPositionNed_f()->z), &(stateGetPositionEnu_f()->z),
+      &(state.ned_origin_f.hmsl), &(stateGetSpeedNed_f()->z),
+      &(stateGetAccelNed_f()->z), &accel_ned_filt.o[0], &thrust,
+      &autopilot.mode, &record);
 }
 
 // Function definitions
@@ -162,11 +151,12 @@ static void init_globals(void);
 // Module initialization function
 static void sl_init() {
   // Build network
-  net = build_network(SL_NET_IN, SL_NET_HID, SL_NET_OUT);
+  net = build_network(conf.in_size, conf.in_enc_size, conf.hid_size,
+                      conf.out_size);
   // Init network
   init_network(&net);
   // Load network parameters
-  load_network(&net, SL_NET_FILE);
+  load_network_from_header(&net, &conf);
   // Reset network
   reset_network(&net);
   // Print network
@@ -205,7 +195,10 @@ static void init_globals() {
   divdot_gt = 0.0f;
   div_gt_tmp = 0.0f;
   thrust = 0.0f;
+  spike_count = 0;
   acc_lp = 0.0f;
+  thrust_lp = 0.0f;
+  acceleration_sp = 0.0f;
   record = 0;
   nominal_throttle = guidance_v_nominal_throttle;
   active_control = false;
@@ -267,15 +260,11 @@ static void sl_run(float divergence, float divergence_dot) {
 
   // Let the vehicle settle
   if (get_sys_time_float() - start_time < 5.0f) {
-    // 4.9 instead of 5.0 to account for slight climb when setting guided
-    // guidance_v_set_guided_z(-4.9);
     return;
   }
 
   // After vehicle settling, compute and improve nominal throttle estimate
   if (get_sys_time_float() - start_time < 10.0f) {
-    // 4.9 instead of 5.0 to account for slight climb when setting guided
-    // guidance_v_set_guided_z(-4.9);
     nominal_throttle_sum += (float)stabilization_cmd[COMMAND_THRUST] / MAX_PPRZ;
     nominal_throttle_samples++;
     nominal_throttle = nominal_throttle_sum / nominal_throttle_samples;
@@ -290,14 +279,18 @@ static void sl_run(float divergence, float divergence_dot) {
   }
 
   // Forward spiking net to get action/thrust for control
-  // TODO: mind that we still need to convert from G to m/s2!
-  // TODO: and take into account the trace scaling!
+  // Converting to G's and clamping happens here, in simulation this was done in
+  // environment
   net.in[0] = divergence;
   net.in[1] = divergence_dot;
   thrust = forward_network(&net) * 9.81f;
 
   // Bound thrust to limits (-0.8g, 0.5g)
   Bound(thrust, -7.848f, 4.905f);
+
+  // Get spike count
+  // No need to reset, since that is done in reset_network()
+  spike_count = net.hid->s_count + net.out->s_count;
 
   // Set control mode: active closed-loop control or linear transform
   if (SL_ACTIVE_CONTROL) {
@@ -318,6 +311,7 @@ static void sl_control() {
   update_butterworth_2_low_pass(&accel_ned_filt, acceleration->z);
   update_butterworth_2_low_pass(&thrust_filt, thrust);
   acc_lp = accel_ned_filt.o[0];
+  thrust_lp = thrust_filt.o[0];
 
   // Proportional
   float error = thrust_filt.o[0] + accel_ned_filt.o[0];
@@ -328,7 +322,7 @@ static void sl_control() {
   BoundAbs(error_integrator, 1.0f / (sl_settings.thrust_i_gain + 0.01f));
 
   // Acceleration setpoint
-  float acceleration_sp = (thrust + error * sl_settings.thrust_p_gain +
+  acceleration_sp = (thrust + error * sl_settings.thrust_p_gain +
                            error_integrator * sl_settings.thrust_i_gain) *
                               sl_settings.thrust_effect +
                           nominal_throttle;

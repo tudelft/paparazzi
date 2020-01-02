@@ -69,7 +69,7 @@ static void file_logger_write_header(FILE *file) {
   fprintf(file, "acc_x,acc_y,acc_z,");
   fprintf(file, "att_phi,att_theta,att_psi,");
   fprintf(file, "rate_p,rate_q,rate_r,");
-  fprintf(file, "div,divdot,div_gt,divdot_gt,thrust,acc_lp,record,");
+  fprintf(file, "div,divdot,div_gt,divdot_gt,thrust,thrust_lp,acc_sp,acc_lp,spike_count,record,");
 #ifdef COMMAND_THRUST
   fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
 #else
@@ -96,7 +96,7 @@ static void file_logger_write_row(FILE *file) {
   fprintf(file, "%f,%f,%f,", acc->x, acc->y, acc->z);
   fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
-  fprintf(file, "%f,%f,%f,%f,%f,%f,%d,", divergence, divergence_dot, div_gt, divdot_gt, thrust, acc_lp, record);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,", divergence, divergence_dot, div_gt, divdot_gt, thrust, thrust_lp, acceleration_sp, acc_lp, spike_count, record);
 #ifdef COMMAND_THRUST
   fprintf(file, "%d,%d,%d,%d\n",
       stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],

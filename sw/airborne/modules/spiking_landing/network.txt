@@ -1,4 +1,0 @@
-sw/airborne/modules/spiking_landing/weights_inhid.txt
-sw/airborne/modules/spiking_landing/neuron_hid.txt
-sw/airborne/modules/spiking_landing/weights_hidout.txt
-sw/airborne/modules/spiking_landing/neuron_out.txt

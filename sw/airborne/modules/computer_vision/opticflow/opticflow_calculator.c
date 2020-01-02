@@ -230,6 +230,8 @@ PRINT_CONFIG_VAR(OPTICFLOW_SHOW_FLOW)
 //Include median filter
 #include "filters/median_filter.h"
 struct MedianFilter3Float vel_filt;
+//struct MedianFilter3Float flow_filt;
+//struct MedianFilterFloat div_size_filt;
 struct FloatRMat body_to_cam;
 
 /* Functions only used here */
@@ -308,6 +310,8 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
 
     // Init median filters with zeros
     InitMedianFilterVect3Float(vel_filt, MEDIAN_DEFAULT_SIZE);
+//    InitMedianFilterVect3Float(flow_filt, MEDIAN_DEFAULT_SIZE);
+//    init_median_filter_f(&div_size_filt, MEDIAN_DEFAULT_SIZE);
   }
 
   // Convert image to grayscale
@@ -462,6 +466,16 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
     free(back_vectors);
   }
 
+//  if (result->tracked_cnt == 0) {
+//    // We got no flow
+//    result->flow_x = 0;
+//    result->flow_y = 0;
+//
+//    free(vectors);
+//    image_switch(&opticflow->img_gray, &opticflow->prev_img_gray);
+//    return false;
+//  }
+
   if (opticflow->show_flow) {
     uint8_t color[4] = {0, 0, 0, 0};
     uint8_t bad_color[4] = {0, 0, 0, 0};
@@ -497,6 +511,14 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
   }
 
   // Get the median flow
+//  float sum_x = 0.f, sum_y = 0.f;
+//  for (int i = 0; i < result->tracked_cnt; i++){
+//    sum_x += vectors[i].flow_x;
+//    sum_y += vectors[i].flow_y;
+//  }
+//  result->flow_x = sum_x / result->tracked_cnt;
+//  result->flow_y = sum_y / result->tracked_cnt;
+
   qsort(vectors, result->tracked_cnt, sizeof(struct flow_t), cmp_flow);
   if (result->tracked_cnt == 0) {
     // We got no flow
@@ -581,6 +603,17 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
       }
     }
   }
+
+  //Apply a  median filter to the velocity if wanted
+//  if (opticflow->median_filter == true) {
+//    struct FloatVect3 temp_flow = {result->flow_x, result->flow_y, result->divergence};
+//    UpdateMedianFilterVect3Float(flow_filt, temp_flow);
+//    result->flow_x = temp_flow.x;
+//    result->flow_y = temp_flow.y;
+//    result->divergence = temp_flow.z;
+//
+//    result->div_size = update_median_filter_f(&div_size_filt, result->div_size);
+//  }
 
   // Velocity calculation
   // Right now this formula is under assumption that the flow only exist in the center axis of the camera.

@@ -52,7 +52,8 @@
                 <arg flag="-t" constant="H+V"/>
                 <arg flag="-u" constant="0.05"/>
                 <arg flag="-c" constant="0.00"/>
-                <arg flag="-c" constant="5.00"/>
+                <arg flag="-c" constant="1.00"/>
+                <arg flag="-c" constant="-4.00"/>
                 <arg flag="-c" constant="*:telemetry:SPIKING_LANDING:h"/>
                 <arg flag="-c" constant="*:telemetry:SPIKING_LANDING:v"/>
                 <arg flag="-n"/>
@@ -91,11 +92,6 @@
             </program>
             <program name="Server"/>
             <program name="GCS"/>
-            <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
-                <arg flag="-ac" constant="@AIRCRAFT"/>
-                <arg flag="sm600.xml"/>
-                <arg flag="-d 0"/>
-            </program>
             <program name="NatNet" command="sw/ground_segment/misc/natnet2ivy">
                 <arg flag="-ac 9999" constant="@AC_ID"/>
             </program>
@@ -114,7 +110,8 @@
                 <arg flag="-t" constant="H+V"/>
                 <arg flag="-u" constant="0.05"/>
                 <arg flag="-c" constant="0.00"/>
-                <arg flag="-c" constant="5.00"/>
+                <arg flag="-c" constant="1.00"/>
+                <arg flag="-c" constant="-4.00"/>
                 <arg flag="-c" constant="*:telemetry:SPIKING_LANDING:h"/>
                 <arg flag="-c" constant="*:telemetry:SPIKING_LANDING:v"/>
                 <arg flag="-n"/>
@@ -140,6 +137,7 @@
                 <arg flag="-c" constant="*:telemetry:SPIKING_LANDING:record"/>
                 <arg flag="-c" constant="*:telemetry:ROTORCRAFT_STATUS:ap_v_mode"/>
                 <arg flag="-c" constant="*:telemetry:ROTORCRAFT_STATUS:ap_in_flight"/>
+                <arg flag="-c" constant="*:telemetry:ROTORCRAFT_STATUS:gps_status"/>
             </program>
             <program name="Settings">
                 <arg flag="-ac" constant="@AIRCRAFT"/>

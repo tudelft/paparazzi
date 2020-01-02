@@ -42,8 +42,10 @@ extern Network net;
 // Divergence + derivative and thrust for logging
 // And recording variable to easily identify descents
 // TODO: is extern here dangerous?
-extern float divergence, divergence_dot, acc_lp, thrust;
+extern float divergence, divergence_dot, acc_lp, thrust_lp, thrust;
+extern float acceleration_sp;
 extern float div_gt, divdot_gt;
+extern uint16_t spike_count;
 extern uint8_t record;
 
 // Struct to hold settings
