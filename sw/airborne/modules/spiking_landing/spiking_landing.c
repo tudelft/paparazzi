@@ -28,7 +28,7 @@
 #include "modules/spiking_landing/spiking_landing.h"
 
 // Header with network parameters
-#include "modules/spiking_landing/case1+1393/network_conf.h"
+#include "modules/spiking_landing/case7+910/network_conf.h"
 
 // tinysnn headers
 #include "Network.h"
