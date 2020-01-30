@@ -10,6 +10,10 @@
     },
     "files.associations": {
         "actuators_pwm_arch.h": "c",
-        "canard.h": "c"
+        "canard.h": "c",
+        "getopt.h": "c",
+        "numeric": "c",
+        "electrical.h": "c",
+        "printf.h": "c"
     },
 }
