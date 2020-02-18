@@ -26,7 +26,7 @@
     <module name="ins" type="hff_extended"/>
 
 	<module name="divergence_stop">
-		<define name="DIVERGENCE_STOP_THRESHOLD" value="10"/>
+		<define name="DIVERGENCE_STOP_THRESHOLD" value="0.05"/>
 	</module>
 
     <module name="pose_history"/>

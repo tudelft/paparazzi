@@ -476,6 +476,17 @@
    gui_color="red"
   />
   <aircraft
+   name="bebop_divergence_stop"
+   ac_id="27"
+   airframe="airframes/tudelft/bebop_divergence_stop_demo.xml"
+   radio="radios/dummy.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/tudelft/rotorcraft_cyberzoo_no_gps.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/video_rtp_stream.xml modules/video_capture.xml modules/cv_opticflow.xml modules/bebop_cam.xml modules/ins_hff_extended.xml modules/ahrs_int_cmpl_quat.xml modules/stabilization_indi.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/imu_common.xml"
+   gui_color="black"
+  />
+  <aircraft
    name="bebop_flip"
    ac_id="3"
    airframe="airframes/tudelft/bebop_flip.xml"
