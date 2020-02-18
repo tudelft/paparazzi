@@ -25,6 +25,10 @@
     </module>
     <module name="ins" type="hff_extended"/>
 
+	<module name="divergence_stop">
+		<define name="DIVERGENCE_STOP_THRESHOLD" value="10"/>
+	</module>
+
     <module name="pose_history"/>
     <module name="bebop_cam"/>
     <module name="cv_opticflow">
