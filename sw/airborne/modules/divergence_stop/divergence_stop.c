@@ -17,12 +17,7 @@ float size_divergence;
 
 #define PRINT(string,...) fprintf(stderr, "[divergence_stop->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 
-enum navigation_state_t {
-  FORWARD,
-  STOP
-};
-enum navigation_state_t navigation_state = FORWARD;
-
+navigation_state = DIVERGENCE_MODE_FORWARD;
 
 static abi_event optical_flow_ev;
 static void optical_flow_cb(uint8_t sender_id __attribute__((unused)), uint32_t stamp, int16_t flow_x, int16_t flow_y,
@@ -34,7 +29,7 @@ static void optical_flow_cb(uint8_t sender_id __attribute__((unused)), uint32_t 
 void divergence_stop_init(void)
 {
   // Initialize by flying forward
-  navigation_state = FORWARD;
+  navigation_state = DIVERGENCE_MODE_FORWARD;
 
   // Subscribe to the optical flow estimator:
   AbiBindMsgOPTICAL_FLOW(OFH_OPTICAL_FLOW_ID, &optical_flow_ev, optical_flow_cb);
@@ -44,14 +39,16 @@ void divergence_stop_init(void)
 void divergence_stop_periodic(void)
 {
   if (size_divergence > DIVERGENCE_STOP_THRESHOLD) {
-	  navigation_state = STOP;
-  }
-  if (navigation_state == STOP) {
-	  guidance_h_set_guided_body_vel(0, 0);
-	  PRINT("THRESHOLD EXCEEDED\n");
+	  navigation_state = DIVERGENCE_MODE_STOP;
   } else {
-	  guidance_h_set_guided_body_vel(1.0, 0);
+	  navigation_state = DIVERGENCE_MODE_FORWARD;
   }
+  if (navigation_state == DIVERGENCE_MODE_STOP) {
+	  // guidance_h_set_guided_body_vel(0, 0);
+	  PRINT("THRESHOLD EXCEEDED\n");
+  } //else {
+	  // guidance_h_set_guided_body_vel(1.0, 0);
+  //}
   PRINT("%f\n", size_divergence);
   return;
 }

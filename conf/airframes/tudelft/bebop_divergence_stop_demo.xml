@@ -23,10 +23,10 @@
     <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
     </module>
-    <module name="ins" type="hff_extended"/>
+    <module name="ins" type="extended"/>
 
 	<module name="divergence_stop">
-		<define name="DIVERGENCE_STOP_THRESHOLD" value="0.05"/>
+		<define name="DIVERGENCE_STOP_THRESHOLD" value="0.03"/>
 	</module>
 
     <module name="pose_history"/>
@@ -155,6 +155,7 @@
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <define name="MAX_BANK" value="20" unit="deg"/>
+    <define name="USE_SPEED_REF" value="TRUE"/>
     <define name="REF_MAX_SPEED" value="0.7" unit="m/s"/>
     <define name="PGAIN" value="120"/>
     <define name="DGAIN" value="100"/>
