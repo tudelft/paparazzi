@@ -11,6 +11,7 @@ extern void divergence_stop_periodic(void);
 #define DIVERGENCE_MODE_STOP 0
 #endif
 
+extern float divergence_stop_threshold;
 extern int navigation_state;
 
 #endif

@@ -17,7 +17,8 @@ float size_divergence;
 
 #define PRINT(string,...) fprintf(stderr, "[divergence_stop->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 
-navigation_state = DIVERGENCE_MODE_FORWARD;
+int navigation_state = DIVERGENCE_MODE_FORWARD;
+float divergence_stop_threshold = DIVERGENCE_STOP_THRESHOLD;
 
 static abi_event optical_flow_ev;
 static void optical_flow_cb(uint8_t sender_id __attribute__((unused)), uint32_t stamp, int16_t flow_x, int16_t flow_y,
@@ -38,7 +39,7 @@ void divergence_stop_init(void)
 
 void divergence_stop_periodic(void)
 {
-  if (size_divergence > DIVERGENCE_STOP_THRESHOLD) {
+  if (size_divergence > divergence_stop_threshold) {
 	  navigation_state = DIVERGENCE_MODE_STOP;
   } else {
 	  navigation_state = DIVERGENCE_MODE_FORWARD;

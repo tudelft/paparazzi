@@ -43,7 +43,7 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <attitude pitch="-1" roll="0" throttle="1.0" until="FALSE" vmode="throttle"/>      
+      <attitude pitch="-5" roll="0" throttle="1.0" until="FALSE" vmode="throttle"/>      
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <stay wp="STDBY"/>
