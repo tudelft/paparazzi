@@ -56,7 +56,7 @@
     <module name="follow_me"/>
   </modules>
   <exceptions>
-    <exception cond="Or(!InsideEHR8(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 1500) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+    <!--exception cond="Or(!InsideEHR8(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 1500) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/-->
     <exception cond="datalink_time > 25 && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
   </exceptions>
   <blocks>
@@ -107,7 +107,7 @@
     </block>
 
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
-      <set var="force_forward_flight" value="FALSE"/>
+      <!--set var="force_forward_flight" value="FALSE"/-->
       <stay wp="STDBY"/>
     </block>
 
