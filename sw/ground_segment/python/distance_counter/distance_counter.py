@@ -17,6 +17,8 @@
 # along with paparazzi.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+# This is not the main script. Run dist.py to have a distance counter.
+
 import wx
 import sys
 import os   
@@ -28,7 +30,6 @@ import wx
 import array
 from PIL import Image
 import math
-
 
 PPRZ_SRC = os.getenv("PAPARAZZI_SRC", os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../..')))
 
@@ -131,3 +132,6 @@ class DistanceCounterFrame(wx.Frame):
     def OnClose(self, event):
         self.interface.shutdown()
         self.Destroy()
+
+if __name__ == '__main__':
+    raise Exception('This is not the main script. Please run dist.py instead of distance_counter.py')
