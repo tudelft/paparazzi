@@ -19,14 +19,14 @@
 
 import wx
 import sys
-import os
+import os   
 import threading
 import socket
 import array
 from cStringIO import StringIO
 import wx
 import array
-import Image
+from PIL import Image
 import math
 
 
@@ -63,6 +63,12 @@ class DistanceCounterFrame(wx.Frame):
 
             # graphical update
             wx.CallAfter(self.update)
+        if msg.name == "ROTORCRAFT_STATUS":
+            self.msg_count_time = self.msg_count_time + 1
+            time_new = float(msg.get_field(12))
+            if time_new > self.time_old:
+                self.time_elapsed += time_new - self.time_old
+            self.time_old = time_new
 
     def update(self):
         self.Refresh()
@@ -86,7 +92,7 @@ class DistanceCounterFrame(wx.Frame):
         dc.DrawText("INS Packets:" + str(self.msg_count),2,2)
         dc.DrawText("Data: " + str(self.ins_msg_x) + ", " + str(self.ins_msg_y) + ", " + str(self.ins_msg_z) + ".",2,22)
         dc.DrawText("Distance: " + str(round(float(self.distance)/1.0,2)) + " m",2,22+20)
-
+        dc.DrawText("Time elapsed: " + str(self.time_elapsed) + "s",2,22+20+20)
 
 
     def __init__(self, _settings):
@@ -113,7 +119,10 @@ class DistanceCounterFrame(wx.Frame):
         self.interface.subscribe(self.message_recv)
 
         self.msg_count = 0
+        self.msg_count_time = 0
         self.distance = 0
+        self.time_old = 0
+        self.time_elapsed = 0
         self.ins_msg_x = 0
         self.ins_msg_y = 0
         self.ins_msg_z = 0
