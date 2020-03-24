@@ -75,6 +75,9 @@ struct color_object_t {
   int32_t x_c;
   int32_t y_c;
   uint32_t color_count;
+  uint32_t color_count_1;
+  uint32_t color_count_2;
+
   bool updated;
 };
 struct color_object_t global_filters[2];
@@ -83,7 +86,7 @@ struct color_object_t global_filters[2];
 uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
                               uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
-                              uint8_t cr_min, uint8_t cr_max);
+                              uint8_t cr_min, uint8_t cr_max,  uint8_t mark);
 
 /*
  * object_detector
@@ -124,13 +127,17 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   int32_t x_c, y_c;
 
   // Filter and find centroid
-  uint32_t count = find_object_centroid(img, &x_c, &y_c, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
+  uint32_t count = find_object_centroid(img, &x_c, &y_c, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max, 0);
+  uint32_t count_1 = find_object_centroid(img, &x_c, &y_c, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max, 1);
+  uint32_t count_2 = find_object_centroid(img, &x_c, &y_c, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max, 2);
   VERBOSE_PRINT("Color count %d: %u, threshold %u, x_c %d, y_c %d\n", camera, object_count, count_threshold, x_c, y_c);
   VERBOSE_PRINT("centroid %d: (%d, %d) r: %4.2f a: %4.2f\n", camera, x_c, y_c,
         hypotf(x_c, y_c) / hypotf(img->w * 0.5, img->h * 0.5), RadOfDeg(atan2f(y_c, x_c)));
 
   pthread_mutex_lock(&mutex);
   global_filters[filter-1].color_count = count;
+  global_filters[filter-1].color_count_1 = count_1;
+  global_filters[filter-1].color_count_2 = count_2;
   global_filters[filter-1].x_c = x_c;
   global_filters[filter-1].y_c = y_c;
   global_filters[filter-1].updated = true;
@@ -209,51 +216,144 @@ void color_object_detector_init(void)
 uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
                               uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
-                              uint8_t cr_min, uint8_t cr_max)
+                              uint8_t cr_min, uint8_t cr_max, uint8_t mark)
 {
   uint32_t cnt = 0;
   uint32_t tot_x = 0;
   uint32_t tot_y = 0;
   uint8_t *buffer = img->buf;
 
-  // Go through all the pixels
-  for (uint16_t y = 0; y < img->h; y++) {
-    for (uint16_t x = 0; x < img->w; x ++) {
-      // Check if the color is inside the specified values
-      uint8_t *yp, *up, *vp;
-      if (x % 2 == 0) {
-        // Even x
-        up = &buffer[y * 2 * img->w + 2 * x];      // U
-        yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
-        vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
-        //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
-      } else {
-        // Uneven x
-        up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
-        //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
-        vp = &buffer[y * 2 * img->w + 2 * x];      // V
-        yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
-      }
-      if ( (*yp >= lum_min) && (*yp <= lum_max) &&
-           (*up >= cb_min ) && (*up <= cb_max ) &&
-           (*vp >= cr_min ) && (*vp <= cr_max )) {
-        cnt ++;
-        tot_x += x;
-        tot_y += y;
-        if (draw){
-          *yp = 255;  // make pixel brighter in image
+  switch (mark){ 
+    case 0:
+    //Scan for lower half and left 1/3 of the img
+      lum_min = cod_lum_min1;
+      for (uint16_t y = 0; y < img->h/4; y++) {
+        for (uint16_t x = 0; x < img->w/2; x ++) {
+          // Check if the color is inside the specified values
+          uint8_t *yp, *up, *vp;
+          if (x % 2 == 0) {
+            // Even x
+            up = &buffer[y * 2 * img->w + 2 * x];      // U
+            yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
+            vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+            //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
+          } else {
+              // Uneven x
+              up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+              //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
+              vp = &buffer[y * 2 * img->w + 2 * x];      // V
+              yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+          }
+          if ( (*yp >= lum_min) && (*yp <= lum_max) &&
+             (*up >= cb_min ) && (*up <= cb_max ) &&
+             (*vp >= cr_min ) && (*vp <= cr_max )) {
+           cnt ++;
+           tot_x += x;
+           tot_y += y;
+           if (draw){
+              *yp = 255;  // make pixel brighter in image
+            }
+          }
         }
+      }    
+      if (cnt > 0) {
+        *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
+        *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
+      } else {
+        *p_xc = 0;
+        *p_yc = 0;
       }
-    }
-  }
-  if (cnt > 0) {
-    *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
-    *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
-  } else {
-    *p_xc = 0;
-    *p_yc = 0;
-  }
-  return cnt;
+      return cnt;      
+      break;
+
+      //x = img->w/3*2; x < img->w; x ++
+    
+    case 1:
+    //Scan for lower half and centeral 1/3 of the img
+      lum_min = cod_lum_min1;
+      for (uint16_t y = img->h/4; y < (img->h/4)*3; y++) {
+        for (uint16_t x = 0; x < img->w/2; x ++) {
+          // Check if the color is inside the specified values
+          uint8_t *yp, *up, *vp;
+          if (x % 2 == 0) {
+            // Even x
+            up = &buffer[y * 2 * img->w + 2 * x];      // U
+            yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
+            vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+            //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
+          } else {
+              // Uneven x
+              up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+              //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
+              vp = &buffer[y * 2 * img->w + 2 * x];      // V
+              yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+          }
+          if ( (*yp >= lum_min) && (*yp <= lum_max) &&
+             (*up >= cb_min ) && (*up <= cb_max ) &&
+             (*vp >= cr_min ) && (*vp <= cr_max )) {
+           cnt ++;
+           tot_x += x;
+           tot_y += y;
+           if (draw){
+              *yp = 255;  // make pixel brighter in image
+            }
+          }
+        }
+      }    
+      if (cnt > 0) {
+        *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
+        *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
+      } else {
+        *p_xc = 0;
+        *p_yc = 0;
+      }
+      return cnt;
+      break;
+    
+    case 2:
+    //Scan for lower half and right 1/3 of the img
+      lum_min = cod_lum_min1;
+      for (uint16_t y = (img->h/4)*3; y < img->h; y++) {
+        for (uint16_t x = 0; x < img->w/2; x ++) {
+          // Check if the color is inside the specified values
+          uint8_t *yp, *up, *vp;
+          if (x % 2 == 0) {
+            // Even x
+            up = &buffer[y * 2 * img->w + 2 * x];      // U
+            yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
+            vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+            //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
+          } else {
+              // Uneven x
+              up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+              //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
+              vp = &buffer[y * 2 * img->w + 2 * x];      // V
+              yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+          }
+          if ( (*yp >= lum_min) && (*yp <= lum_max) &&
+             (*up >= cb_min ) && (*up <= cb_max ) &&
+             (*vp >= cr_min ) && (*vp <= cr_max )) {
+           cnt ++;
+           tot_x += x;
+           tot_y += y;
+           if (draw){
+              *yp = 255;  // make pixel brighter in image
+            }
+          }
+        }
+      }    
+      if (cnt > 0) {
+        *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
+        *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
+      } else {
+        *p_xc = 0;
+        *p_yc = 0;
+      }
+      return cnt;
+	break;
+      default:
+	return cnt;
+  };
 }
 
 void color_object_detector_periodic(void)
@@ -265,12 +365,12 @@ void color_object_detector_periodic(void)
 
   if(local_filters[0].updated){
     AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION1_ID, local_filters[0].x_c, local_filters[0].y_c,
-        0, 0, local_filters[0].color_count, 0);
+        0, 0, local_filters[0].color_count, local_filters[0].color_count_1, local_filters[0].color_count_2, 0);
     local_filters[0].updated = false;
   }
   if(local_filters[1].updated){
-    AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION2_ID, local_filters[1].x_c, local_filters[1].y_c,
-        0, 0, local_filters[1].color_count, 1);
+    AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION1_ID, local_filters[0].x_c, local_filters[0].y_c,
+        0, 0, local_filters[0].color_count, local_filters[0].color_count_1, local_filters[0].color_count_2, 0);
     local_filters[1].updated = false;
   }
 }
