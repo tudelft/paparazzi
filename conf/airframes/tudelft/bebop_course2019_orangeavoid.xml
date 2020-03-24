@@ -11,12 +11,12 @@
       <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000/log"/>
       
       <!-- Detect orange -->
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="40"/>
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX1" value="145"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MIN1" value="65"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MAX1" value="140"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MIN1" value="160"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MAX1" value="225"/>
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="0"/>
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX1" value="150"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MIN1" value="0"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MAX1" value="120"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MIN1" value="0"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MAX1" value="120"/>
     </target>
     <target name="nps" board="pc">
       <module name="fdm" type="gazebo"/>
@@ -24,12 +24,12 @@
       <define name="FILE_LOGGER_PATH" value="/tmp/paparazzi/log"/>
       
       <!-- Detect orange -->
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="41"/>
-      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX1" value="183"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MIN1" value="53"/>
-      <define name="COLOR_OBJECT_DETECTOR_CB_MAX1" value="121"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MIN1" value="134"/>
-      <define name="COLOR_OBJECT_DETECTOR_CR_MAX1" value="249"/>
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="0"/>
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX1" value="160"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MIN1" value="0"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MAX1" value="125"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MIN1" value="0"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MAX1" value="125"/>
     </target>
     
     <define name="ARRIVED_AT_WAYPOINT" value="0.5"/><!-- Detect arrival at waypoint when within 0.5m -->
