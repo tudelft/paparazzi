@@ -18,9 +18,15 @@
     <file name="nn.h"/>
   </header>
   <init fun="nn_init()"/>
-  <periodic fun="nn_periodic()" freq="2" autorun="FALSE"/>
+  <!-- <periodic fun="nn_periodic()" freq="2" autorun="FALSE"/> -->
   <event fun="nn_cntrl()"/>
   <makefile target="ap|nps">
     <file name="nn.c"/>
+    <!-- Below is needed for compatibility, not actually used!-->
+    <file name="Network.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
+    <file name="Neuron.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
+    <file name="Connection.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
+    <file name="functional.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
+    <include name="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
   </makefile>
 </module>

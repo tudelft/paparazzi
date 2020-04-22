@@ -31,7 +31,15 @@
 // modules
 extern void nn_init(void);
 extern void nn_cntrl(void);
-extern void nn_periodic(void);
+
+// Divergence + derivative and thrust for logging
+// And recording variable to easily identify descents
+// TODO: is extern here dangerous?
+extern float divergence, divergence_dot, acc_lp, thrust_lp, thrust;
+extern float acceleration_sp;
+extern float div_gt, divdot_gt;
+extern uint16_t spike_count; // not used!
+extern uint8_t record;
 
 // settings
 extern float thrust_effectiveness;

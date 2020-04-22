@@ -36,7 +36,8 @@
 #include "mcu_periph/sys_time.h"
 #include "state.h"
 #include "generated/airframe.h"
-#include "modules/spiking_landing/spiking_landing.h"
+// #include "modules/spiking_landing/spiking_landing.h"
+#include "modules/nn_divergence_landing/nn.h"
 #ifdef COMMAND_THRUST
 #include "firmwares/rotorcraft/stabilization.h"
 #else

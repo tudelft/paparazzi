@@ -37,6 +37,7 @@
 #include "state.h"
 #include "navigation.h"
 #include "filters/low_pass_filter.h"
+#include "subsystems/datalink/telemetry.h"
 
 #include "generated/flight_plan.h"
 #include "math/pprz_geodetic_int.h"
@@ -91,11 +92,20 @@ static float sigmoid(float val)
 }
 #endif
 
-static float divergence, divergence_dot, thrust;
+// Variables retained between module calls
+// For divergence + derivative, low-passed acceleration, thrust
+float divergence, divergence_dot, acc_lp, thrust, thrust_lp;
+float acceleration_sp;
+float div_gt, divdot_gt;
+float div_gt_tmp;
+// Spike count --> not used!
+uint16_t spike_count;
+// For recording
+uint8_t record;
 
-#if PERIODIC_TELEMETRY
-#include "subsystems/datalink/telemetry.h"
-#include "autopilot.h"
+// Kirk's network uses half of our divergence
+static float divergence_half, divergence_dot_half;
+
 /**
  * Send optical flow telemetry information
  * @param[in] *trans The transport structure to send the information over
@@ -103,12 +113,13 @@ static float divergence, divergence_dot, thrust;
  */
 static void nn_landing_telem_send(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_NN_LANDING(trans, dev, AC_ID,
-                               &divergence, &divergence_dot,
-                               &accel_ned_filt.o[0], &(stateGetSpeedNed_f()->z), &(stateGetPositionNed_f()->z),
-                               &thrust, &autopilot.mode);
+  pprz_msg_send_SPIKING_LANDING(
+      trans, dev, AC_ID, &divergence, &divergence_dot,
+      &(stateGetPositionNed_f()->z), &(stateGetPositionEnu_f()->z),
+      &(state.ned_origin_f.hmsl), &(stateGetSpeedNed_f()->z),
+      &(stateGetAccelNed_f()->z), &accel_ned_filt.o[0], &thrust,
+      &autopilot.mode, &record);
 }
-#endif
 
 static void zero_neurons(void){
   for (int16_t i = 0; i < nr_input_neurons; i++){
@@ -193,9 +204,9 @@ static int nn_run(float D, float Ddot, float dt)
 
   if(autopilot_get_mode() != AP_MODE_GUIDED){
     first_run = true;
-    guidance_v_set_guided_z(-3.9);
     active_control = false;
-    return 0;
+    record = 0;
+    return;
   }
 
   if (first_run){
@@ -206,12 +217,12 @@ static int nn_run(float D, float Ddot, float dt)
   }
 
   // Stabilise the vehicle and improve the estimate of the nominal throttle
-  if(get_sys_time_float() - start_time < 4.f){
+  if(get_sys_time_float() - start_time < 5.0f){
     // wait a few seconds for the Guided controller to settle
-    return 0;
+    return;
   }
 
-  if(get_sys_time_float() - start_time < 5.f){
+  if(get_sys_time_float() - start_time < 10.0f){
     // get good estimate to nominal throttle
     nominal_throttle_sum += (float)stabilization_cmd[COMMAND_THRUST] / MAX_PPRZ;
     nominal_throttle_samples++;
@@ -221,7 +232,14 @@ static int nn_run(float D, float Ddot, float dt)
     // initialise network by running zeros through it
     static float zero_input[] = {0.f, 0.f};
     predict_nn(zero_input, dt);
-    return 0;
+    return;
+  }
+
+  // Set recording while in flight
+  if (autopilot.in_flight) {
+    record = 1;
+  } else {
+    record = 0;
   }
 
   float input[] = {D, Ddot};
@@ -240,8 +258,6 @@ static int nn_run(float D, float Ddot, float dt)
   // set throttle using linear transform
   guidance_v_set_guided_th(thrust*thrust_effectiveness + nominal_throttle);
 #endif
-
-  return 1;
 }
 
 /* Use optical flow estimates */
@@ -260,11 +276,22 @@ static void div_cb(uint8_t sender_id, uint32_t stamp, int16_t UNUSED flow_x,
   float dt = (stamp - last_stamp) / 1e6;
   last_stamp = stamp;
   if (dt > 1e-5){
-    divergence_dot = (size_divergence - divergence) / dt;
+    divergence_dot_half = (size_divergence - divergence_half) / dt;
+    divergence_dot = (2.0f * size_divergence - divergence) / dt;
   }
-  divergence = size_divergence;
+  divergence_half = size_divergence;
+  divergence = 2.0f * size_divergence;
 
-  nn_run(divergence, divergence_dot, dt);
+  // Compute GT of divergence + derivative
+  if (fabsf(stateGetPositionNed_f()->z) > 1e-5f) {
+    div_gt_tmp = -2.0f * stateGetSpeedNed_f()->z / stateGetPositionNed_f()->z;
+  }
+  if (dt > 1e-5f) {
+    divdot_gt = (div_gt_tmp - div_gt) / dt;
+  }
+  div_gt = div_gt_tmp;
+
+  nn_run(divergence_half, divergence_dot_half, dt);
 }
 
 void nn_init(void)
@@ -272,13 +299,22 @@ void nn_init(void)
   zero_neurons();
 
   divergence = 0.f;
+  divergence_half = 0.f;
   divergence_dot = 0.f;
+  divergence_dot_half = 0.f;
+  div_gt = 0.0f;
+  divdot_gt = 0.0f;
+  div_gt_tmp = 0.0f;
   thrust = 0.f;
+  spike_count = 0;
+  acc_lp = 0.0f;
+  thrust_lp = 0.0f;
+  acceleration_sp = 0.0f;
+  record = 0;
   nominal_throttle = guidance_v_nominal_throttle;
+  active_control = false;
 
-#if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_NN_LANDING, nn_landing_telem_send);
-#endif
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_SPIKING_LANDING, nn_landing_telem_send);
 
   // bind to optical flow messages to get divergence
   AbiBindMsgOPTICAL_FLOW(OFL_NN_ID, &optical_flow_ev, div_cb);
@@ -298,6 +334,8 @@ void nn_cntrl(void)
   struct NedCoor_f *accel = stateGetAccelNed_f();
   update_butterworth_2_low_pass(&accel_ned_filt, accel->z);
   update_butterworth_2_low_pass(&thrust_filt, thrust);
+  acc_lp = accel_ned_filt.o[0];
+  thrust_lp = thrust_filt.o[0];
 
   float error = thrust_filt.o[0] + accel_ned_filt.o[0]; // rotate accel to enu
   BoundAbs(error, 1.f / (nn_thrust_p_gain + 0.01f)); // limit effect of integrator to max 1m/s
@@ -306,22 +344,12 @@ void nn_cntrl(void)
   BoundAbs(error_integrator, 1.f / (nn_thrust_i_gain + 0.01f));  // limit effect of integrator to max 1m/s
 
   // FF + P + I
-  float accel_sp = (thrust + error*nn_thrust_p_gain + error_integrator*nn_thrust_i_gain)*thrust_effectiveness
+  acceleration_sp = (thrust + error*nn_thrust_p_gain + error_integrator*nn_thrust_i_gain)*thrust_effectiveness
       + nominal_throttle;
 
   if(active_control){
-    guidance_v_set_guided_th(accel_sp);
+    guidance_v_set_guided_th(acceleration_sp);
   } else {
     error_integrator = 0.f;
   }
 }
-
-/*
- *  debug printout
- */
-void nn_periodic(void)
-{
-  float input[] = {1.f, 1.f};
-  printf("%f\n", predict_nn(input, 0.025));
-}
-
