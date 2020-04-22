@@ -242,16 +242,6 @@ static int nn_run(float D, float Ddot, float dt)
 #endif
 
   return 1;
-
-  struct FloatVect3 accel_sp;
-  uint8_t accel_sp_flag = 0;
-  SetBit(accel_sp_flag, GUIDANCE_INDI_VERT_SP_FLAG);   // vertical accel only
-
-  accel_sp.z = -thrust;
-
-  AbiSendMsgACCEL_SP(ACCEL_SP_DVS_ID, accel_sp_flag, &accel_sp);
-
-  return 1;
 }
 
 /* Use optical flow estimates */
