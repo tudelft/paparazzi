@@ -36,6 +36,7 @@
       <message name="LIDAR"                    period="1.2"/>
       <message name="INS_EKF2"                 period=".25"/>
       <message name="SPIKING_LANDING"          period="0.05"/>
+      <message name="NN_LANDING"               period="0.05"/>
     </mode>
 
     <mode name="ppm">
