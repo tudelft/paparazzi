@@ -15,14 +15,16 @@
 
             <define name="HFF_ACCEL_NOISE" value="3."/>
             <define name="HFF_VEL_NOISE" value="0.3"/>
-            <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
+            <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000/logs"/>
+            <define name="VIDEO_CAPTURE_PATH" value="/data/ftp/internal_000/videos"/>
         </target>
 
         <!-- Simulation -->
         <target name="nps" board="pc">
             <module name="fdm" type="gazebo"/>
             <module name="stabilization" type="int_quat"/>
-            <define name="FILE_LOGGER_PATH" value="/tmp/paparazzi"/>
+            <define name="FILE_LOGGER_PATH" value="/tmp/paparazzi/logs"/>
+            <define name="VIDEO_CAPTURE_PATH" value="/tmp/paparazzi/videos"/>
         </target>
 
         <!-- Subsystems -->
@@ -41,12 +43,31 @@
         <!--<module name="ins" type="hff_extended"/>-->
         <!--<define name="USE_SONAR"/>-->
 
+        <!-- Logging of CSV files and JPEG images -->
         <module name="logger_file"/>
+        <module name="video_capture">
+            <define name="VIDEO_CAPTURE_CAMERA" value="bottom_camera"/>
+            <define name="VIDEO_CAPTURE_FPS" value="0"/>
+        </module>
 
-        <module name="bebop_cam"/>
+        <!-- Some module for camera settings? -->
+        <module name="bebop_cam">
+            <define name="MT9V117_TARGET_FPS" value="45"/>
+        </module>
+
+        <!-- For internal use of video in modules -->
         <module name="video_thread">
             <define name="MT9V117_TARGET_FPS" value="45"/>
         </module>
+
+        <!-- For streaming video to e.g. VLC -->
+        <module name="video_rtp_stream">
+            <define name="VIEWVIDEO_CAMERA" value="bottom_camera"/>
+            <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="1"/>
+            <define name="VIEWVIDEO_QUALITY_FACTOR" value="99"/>
+            <define name="VIEWVIDEO_FPS" value="45"/>
+        </module>
+
         <module name="pose_history"/>
 
         <module name="cv_opticflow">
@@ -59,12 +80,6 @@
         </module>
 
         <module name="spiking_landing"/>
-
-        <!--module name="video_rtp_stream">
-            <define name="VIEWVIDEO_CAMERA" value="bottom_camera"/>
-            <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="1"/>
-            <define name="VIEWVIDEO_QUALITY_FACTOR" value="99"/>
-        </module-->
 
     </firmware>
 
