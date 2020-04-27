@@ -741,10 +741,10 @@ void image_show_flow_color(struct image_t *img, struct flow_t *vectors, uint16_t
     };
 
     if (vectors[i].error >= LARGE_FLOW_ERROR) {
-      image_draw_crosshair(img, &to, bad_color, size_crosshair);
+      // image_draw_crosshair(img, &to, bad_color, size_crosshair);
       image_draw_line_color(img, &from, &to, bad_color);
     } else {
-      image_draw_crosshair(img, &to, color, size_crosshair);
+      // image_draw_crosshair(img, &to, color, size_crosshair);
       image_draw_line_color(img, &from, &to, color);
     }
   }

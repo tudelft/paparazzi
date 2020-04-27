@@ -51,21 +51,11 @@
         </module>
 
         <!-- Some module for camera settings? -->
-        <module name="bebop_cam">
-            <define name="MT9V117_TARGET_FPS" value="45"/>
-        </module>
+        <module name="bebop_cam"/>
 
         <!-- For internal use of video in modules -->
         <module name="video_thread">
             <define name="MT9V117_TARGET_FPS" value="45"/>
-        </module>
-
-        <!-- For streaming video to e.g. VLC -->
-        <module name="video_rtp_stream">
-            <define name="VIEWVIDEO_CAMERA" value="bottom_camera"/>
-            <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="1"/>
-            <define name="VIEWVIDEO_QUALITY_FACTOR" value="99"/>
-            <define name="VIEWVIDEO_FPS" value="45"/>
         </module>
 
         <module name="pose_history"/>
@@ -74,12 +64,21 @@
             <define name="OPTICFLOW_METHOD" value="0"/>
             <define name="OPTICFLOW_MEDIAN_FILTER" value="TRUE"/>
             <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
+            <define name="OPTICFLOW_SHOW_FLOW" value="TRUE"/>
             <!--<define name="MAX_HORIZON" value="10"/>-->
             <!--<define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="0.8"/> &lt;!&ndash;Obtained from a linefit&ndash;&gt;-->
             <!--<define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.85"/> &lt;!&ndash;Obtained from a linefit&ndash;&gt;-->
         </module>
 
         <module name="spiking_landing"/>
+
+        <!-- For streaming video to e.g. VLC -->
+        <module name="video_rtp_stream">
+            <define name="VIEWVIDEO_CAMERA" value="bottom_camera"/>
+            <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="1"/>
+            <define name="VIEWVIDEO_QUALITY_FACTOR" value="99"/>
+            <define name="VIEWVIDEO_FPS" value="45"/>
+        </module>
 
     </firmware>
 

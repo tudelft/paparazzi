@@ -8,4 +8,10 @@
     "[python]": {
         "editor.tabSize": 4,
     },
+    "files.associations": {
+        "*.tikz": "latex",
+        "*.m": "matlab",
+        "detect_gate.h": "c",
+        "spiking_landing.h": "c"
+    },
 }
