@@ -57,9 +57,9 @@ PRINT_CONFIG_VAR(PL_OPTICAL_FLOW_ID)
 // Closed-loop thrust control, else linear transform
 #define PL_ACTIVE_CONTROL true
 
-// Gains and setpoint for optical flow control
+// Gains, setpoint and clamps for optical flow control
 #ifndef PL_P_GAIN
-#define PL_P_GAIN 0.4f
+#define PL_P_GAIN 1.96f
 #endif
 #ifndef PL_I_GAIN
 #define PL_I_GAIN 0.0f
@@ -68,7 +68,13 @@ PRINT_CONFIG_VAR(PL_OPTICAL_FLOW_ID)
 #define PL_D_GAIN 0.0f
 #endif
 #ifndef PL_DIV_SP
-#define PL_DIV_SP 0.5f
+#define PL_DIV_SP 2.5f
+#endif
+#ifndef PL_T_MIN
+#define PL_T_MIN -0.7f
+#endif
+#ifndef PL_T_MAX
+#define PL_T_MAX 0.3f
 #endif
 
 // Gains for closed-loop control
@@ -153,6 +159,8 @@ static void pl_init() {
   pl_settings.i_gain = PL_I_GAIN;
   pl_settings.d_gain = PL_D_GAIN;
   pl_settings.div_setpoint = PL_DIV_SP;
+  pl_settings.t_min = PL_T_MIN;
+  pl_settings.t_max = PL_T_MAX;
   pl_settings.thrust_effect = PL_THRUST_EFFECT;
   pl_settings.thrust_p_gain = PL_THRUST_P_GAIN;
   pl_settings.thrust_i_gain = PL_THRUST_I_GAIN;
@@ -278,8 +286,8 @@ static void pl_run(float divergence, float dt) {
   // environment
   thrust = pl_divergence_control(divergence, pl_settings.p_gain, pl_settings.i_gain, pl_settings.d_gain, dt);
 
-  // Bound thrust to limits (-0.8g, 0.5g)
-  Bound(thrust, -7.848f, 4.905f);
+  // Bound thrust to limits
+  Bound(thrust, pl_settings.t_min * 9.81f, pl_settings.t_max * 9.81f);
 
   // Set control mode: active closed-loop control or linear transform
   if (PL_ACTIVE_CONTROL) {

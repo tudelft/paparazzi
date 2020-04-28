@@ -8,10 +8,12 @@
     <settings>
         <dl_settings>
             <dl_settings NAME="PIDlanding">
-                <dl_setting var="pl_settings.p_gain" min="0" step="0.05" max="2"/>
+                <dl_setting var="pl_settings.p_gain" min="0" step="0.02" max="5"/>
                 <dl_setting var="pl_settings.i_gain" min="0" step="0.05" max="2"/>
                 <dl_setting var="pl_settings.d_gain" min="0" step="0.05" max="2"/>
-                <dl_setting var="pl_settings.div_setpoint" min="0" step="0.05" max="2"/>
+                <dl_setting var="pl_settings.div_setpoint" min="0" step="0.02" max="5"/>
+                <dl_setting var="pl_settings.t_min" min="-0.8" step="0.02" max="0"/>
+                <dl_setting var="pl_settings.t_max" min="0" step="0.02" max="0.5"/>
                 <dl_setting var="pl_settings.thrust_effect" min="0" step="0.05" max="2"/>
                 <dl_setting var="pl_settings.thrust_p_gain" min="0" step="0.05" max="2"/>
                 <dl_setting var="pl_settings.thrust_i_gain" min="0" step="0.05" max="2"/>

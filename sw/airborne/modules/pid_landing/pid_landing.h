@@ -48,6 +48,8 @@ struct PIDLandingSettings {
   float i_gain;                 ///< I-gain for optical flow control
   float d_gain;                 ///< D-gain for optical flow control
   float div_setpoint;           ///< divergence setpoint for optical flow control
+  float t_min;                  ///< lower bound for thrust
+  float t_max;                  ///< upper bound for thrust
   float thrust_effect;          ///< thrust effectiveness
   float thrust_p_gain;          ///< P-gain for active thrust control
   float thrust_i_gain;          ///< I-gain for active thrust control
