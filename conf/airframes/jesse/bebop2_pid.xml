@@ -70,7 +70,7 @@
             <!--<define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.85"/> &lt;!&ndash;Obtained from a linefit&ndash;&gt;-->
         </module>
 
-        <module name="optical_flow_landing"/>
+        <module name="pid_landing"/>
 
         <!-- For streaming video to e.g. VLC -->
         <module name="video_rtp_stream">

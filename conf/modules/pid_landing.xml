@@ -1,0 +1,39 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="pid_landing">
+    <doc>
+        <description>Proportional controller for optical flow landing.</description>
+    </doc>
+
+    <settings>
+        <dl_settings>
+            <dl_settings NAME="PIDlanding">
+                <dl_setting var="pl_settings.p_gain" min="0" step="0.05" max="2"/>
+                <dl_setting var="pl_settings.i_gain" min="0" step="0.05" max="2"/>
+                <dl_setting var="pl_settings.d_gain" min="0" step="0.05" max="2"/>
+                <dl_setting var="pl_settings.div_setpoint" min="0" step="0.05" max="2"/>
+                <dl_setting var="pl_settings.thrust_effect" min="0" step="0.05" max="2"/>
+                <dl_setting var="pl_settings.thrust_p_gain" min="0" step="0.05" max="2"/>
+                <dl_setting var="pl_settings.thrust_i_gain" min="0" step="0.05" max="2"/>
+            </dl_settings>
+        </dl_settings>
+    </settings>
+
+    <header>
+        <file name="pid_landing.h"/>
+    </header>
+
+    <init fun="pid_landing_init()"/>
+    <event fun="pid_landing_event()"/>
+<!--    <periodic fun="spiking_landing_event()" freq="50"/>-->
+
+    <makefile target="ap|nps">
+        <file name="pid_landing.c"/>
+        <!-- Below is needed for compatibility, not actually used!-->
+        <file name="Network.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
+        <file name="Neuron.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
+        <file name="Connection.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
+        <file name="functional.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
+        <include name="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
+    </makefile>
+</module>
