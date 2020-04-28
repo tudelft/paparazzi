@@ -99,6 +99,7 @@ typedef uint8_t unit_t;
 #endif
 
 #define BoundUpper(_x, _max) { if (_x > (_max)) _x = (_max);}
+#define BoundLower(_x, _min) { if (_x < (_min)) _x = (_min);}
 
 
 #define Bound(_x, _min, _max) { if (_x > (_max)) _x = (_max); else if (_x < (_min)) _x = (_min); }

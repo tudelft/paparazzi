@@ -708,9 +708,10 @@ void image_show_points_color(struct image_t *img, struct point_t *points, uint16
 
 void image_show_flow(struct image_t *img, struct flow_t *vectors, uint16_t points_cnt, uint8_t subpixel_factor)
 {
-  static uint8_t color[4] = {255, 255, 255, 255};
-  static uint8_t bad_color[4] = {0, 0, 0, 0};
-  image_show_flow_color(img, vectors, points_cnt, subpixel_factor, color, bad_color);
+  static uint8_t line_color[4] = {127, 255, 127, 255};
+  static uint8_t to_color[4] = {0, 127, 0, 127};
+  static uint8_t from_color[4] = {0, 127, 255, 127}; // red?
+  image_show_flow_color(img, vectors, points_cnt, subpixel_factor, from_color, line_color, to_color);
 }
 
 /**
@@ -724,9 +725,9 @@ void image_show_flow(struct image_t *img, struct flow_t *vectors, uint16_t point
  * @param[in] bad_color:  color for bad vectors
  */
 void image_show_flow_color(struct image_t *img, struct flow_t *vectors, uint16_t points_cnt, uint8_t subpixel_factor,
-                           const uint8_t *color, const uint8_t *bad_color)
+                           const uint8_t *from_color, const uint8_t *line_color, const uint8_t *to_color)
 {
-  static int size_crosshair = 5;
+  static int size_crosshair = 2;
 
   // Go through all the points
   for (uint16_t i = 0; i < points_cnt; i++) {
@@ -736,16 +737,17 @@ void image_show_flow_color(struct image_t *img, struct flow_t *vectors, uint16_t
       .y = vectors[i].pos.y / subpixel_factor
     };
     struct point_t to = {
-      .x = (uint32_t)roundf(((float)vectors[i].pos.x + vectors[i].flow_x) / subpixel_factor),
-      .y = (uint32_t)roundf(((float)vectors[i].pos.y + vectors[i].flow_y) / subpixel_factor)
+      .x = (uint32_t)roundf(((float)vectors[i].pos.x + vectors[i].flow_x * 20.0f) / subpixel_factor),
+      .y = (uint32_t)roundf(((float)vectors[i].pos.y + vectors[i].flow_y * 20.0f) / subpixel_factor)
     };
 
     if (vectors[i].error >= LARGE_FLOW_ERROR) {
       // image_draw_crosshair(img, &to, bad_color, size_crosshair);
-      image_draw_line_color(img, &from, &to, bad_color);
+      // image_draw_line_color(img, &from, &to, bad_color);
     } else {
-      // image_draw_crosshair(img, &to, color, size_crosshair);
-      image_draw_line_color(img, &from, &to, color);
+      image_draw_line_color(img, &from, &to, line_color);
+      image_draw_crosshair(img, &from, from_color, size_crosshair);
+      image_draw_crosshair(img, &to, to_color, size_crosshair);
     }
   }
 }

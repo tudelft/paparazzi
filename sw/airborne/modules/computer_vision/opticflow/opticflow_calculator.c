@@ -477,10 +477,8 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
 //  }
 
   if (opticflow->show_flow) {
-    uint8_t color[4] = {0, 0, 0, 0};
-    uint8_t bad_color[4] = {0, 0, 0, 0};
     image_to_grayscale(img, img);
-    image_show_flow_color(img, vectors, result->tracked_cnt, opticflow->subpixel_factor, color, bad_color);
+    image_show_flow(img, vectors, result->tracked_cnt, opticflow->subpixel_factor);
   }
 
   static int n_samples = 100;
@@ -578,10 +576,8 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
         struct flow_t *predicted_flow_vectors = predict_flow_vectors(vectors, result->tracked_cnt, phi_diff, theta_diff,
                                                 psi_diff, opticflow);
         if (opticflow->show_flow) {
-          uint8_t color[4] = {255, 255, 255, 255};
-          uint8_t bad_color[4] = {255, 255, 255, 255};
           image_to_grayscale(img, img);
-          image_show_flow_color(img, predicted_flow_vectors, result->tracked_cnt, opticflow->subpixel_factor, color, bad_color);
+          image_show_flow(img, predicted_flow_vectors, result->tracked_cnt, opticflow->subpixel_factor);
         }
 
         for (int i = 0; i < result->tracked_cnt; i++) {
