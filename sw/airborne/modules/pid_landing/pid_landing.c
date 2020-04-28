@@ -276,14 +276,13 @@ static void pl_run(float divergence, float dt) {
   // Proportional divergence control
   // Converting to G's and clamping happens here, in simulation this was done in
   // environment
-  net.in[0] = divergence;
   thrust = pl_divergence_control(divergence, pl_settings.p_gain, pl_settings.i_gain, pl_settings.d_gain, dt);
 
   // Bound thrust to limits (-0.8g, 0.5g)
   Bound(thrust, -7.848f, 4.905f);
 
   // Set control mode: active closed-loop control or linear transform
-  if (SL_ACTIVE_CONTROL) {
+  if (PL_ACTIVE_CONTROL) {
     active_control = true;
   } else {
     guidance_v_set_guided_th(thrust * pl_settings.thrust_effect +
