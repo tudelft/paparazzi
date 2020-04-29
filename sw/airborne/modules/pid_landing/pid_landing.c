@@ -165,6 +165,11 @@ static void pl_init() {
   pl_settings.thrust_p_gain = PL_THRUST_P_GAIN;
   pl_settings.thrust_i_gain = PL_THRUST_I_GAIN;
 
+  printf("\nP: %f\n", pl_settings.p_gain);
+  printf("D sp: %f\n", pl_settings.div_setpoint);
+  printf("Tmin: %f\n", pl_settings.t_min);
+  printf("Tmax: %f\n\n", pl_settings.t_max);
+
   // Fill errors
   pl_errors.sum_err = 0.0f;
   pl_errors.d_err = 0.0f;

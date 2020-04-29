@@ -43,20 +43,16 @@
         <!--<module name="ins" type="hff_extended"/>-->
         <!--<define name="USE_SONAR"/>-->
 
-        <!-- Logging of CSV files and JPEG images -->
+        <!-- Logging of CSV files -->
         <module name="logger_file"/>
-        <module name="video_capture">
-            <define name="VIDEO_CAPTURE_CAMERA" value="bottom_camera"/>
-            <define name="VIDEO_CAPTURE_FPS" value="0"/>
-        </module>
 
         <!-- Some module for camera settings? -->
         <module name="bebop_cam"/>
 
         <!-- For internal use of video in modules -->
-        <module name="video_thread">
+        <!-- <module name="video_thread">
             <define name="MT9V117_TARGET_FPS" value="45"/>
-        </module>
+        </module> -->
 
         <module name="pose_history"/>
 
@@ -70,15 +66,22 @@
             <!--<define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.85"/> &lt;!&ndash;Obtained from a linefit&ndash;&gt;-->
         </module>
 
+        <!-- Logging of JPEG images -->
+        <module name="video_capture">
+            <define name="VIDEO_CAPTURE_CAMERA" value="bottom_camera"/>
+            <define name="VIDEO_CAPTURE_FPS" value="0"/>
+            <define name="VIDEO_CAPTURE_JPEG_QUALITY" value="99"/>
+        </module>
+
         <module name="spiking_landing"/>
 
         <!-- For streaming video to e.g. VLC -->
-        <module name="video_rtp_stream">
+        <!-- <module name="video_rtp_stream">
             <define name="VIEWVIDEO_CAMERA" value="bottom_camera"/>
             <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="1"/>
             <define name="VIEWVIDEO_QUALITY_FACTOR" value="99"/>
-            <define name="VIEWVIDEO_FPS" value="45"/>
-        </module>
+            <define name="VIEWVIDEO_FPS" value="30"/>
+        </module> -->
 
     </firmware>
 

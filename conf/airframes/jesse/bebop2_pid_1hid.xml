@@ -1,6 +1,6 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
-<airframe name="bebop2_nn">
+<airframe name="bebop2_pid_0hid">
 
     <firmware name="rotorcraft">
         <!-- Autopilot -->
@@ -73,7 +73,13 @@
             <define name="VIDEO_CAPTURE_JPEG_QUALITY" value="99"/>
         </module>
 
-        <module name="nn_divergence_landing"/>
+        <!-- Controller settings for slower landing -->
+        <module name="pid_landing">
+            <define name="PL_P_GAIN" value="0.98f"/>
+            <define name="PL_DIV_SP" value="2.5f"/>
+            <define name="PL_T_MIN" value="-0.2f"/>
+            <define name="PL_T_MAX" value="0.25f"/>
+        </module>
 
         <!-- For streaming video to e.g. VLC -->
         <!-- <module name="video_rtp_stream">
