@@ -477,7 +477,7 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
 //  }
 
   if (opticflow->show_flow) {
-    image_to_grayscale(img, img);
+    // image_to_grayscale(img, img);
     image_show_flow(img, vectors, result->tracked_cnt, opticflow->subpixel_factor);
   }
 
@@ -576,7 +576,7 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
         struct flow_t *predicted_flow_vectors = predict_flow_vectors(vectors, result->tracked_cnt, phi_diff, theta_diff,
                                                 psi_diff, opticflow);
         if (opticflow->show_flow) {
-          image_to_grayscale(img, img);
+          // image_to_grayscale(img, img);
           image_show_flow(img, predicted_flow_vectors, result->tracked_cnt, opticflow->subpixel_factor);
         }
 
