@@ -30,6 +30,7 @@
  * PWM configuration files are defined in the board file,
  * so maximal architecture independence is ensured.
  */
+#include "subsystems/actuators/actuators_uavcan_arch.h"
 #include "subsystems/actuators/actuators_uavcan.h"
 
 #include <canard.h>
@@ -160,7 +161,7 @@ static THD_FUNCTION(can_rx, p) {
       } else {
         rx_frame.id = rx_msg.SID;
       }
- 
+
       canardHandleRxFrame(&iface->canard, &rx_frame, timestamp);
     }
     chMtxUnlock(&iface->mutex);
@@ -241,7 +242,7 @@ static void onTransferReceived(CanardInstance* ins, CanardRxTransfer* transfer) 
         esc_idx += 10;
       if(esc_idx >= ACTUATORS_UAVCAN_NB)
         break;
-      
+
       canardDecodeScalar(transfer, 0, 32, false, (void*)&uavcan_telem[esc_idx].energy);
       canardDecodeScalar(transfer, 32, 16, true, (void*)&tmp_float);
       uavcan_telem[esc_idx].voltage = canardConvertFloat16ToNativeFloat(tmp_float);
@@ -271,7 +272,7 @@ static bool shouldAcceptTransfer(const CanardInstance* ins __attribute__((unused
       *out_data_type_signature = UAVCAN_EQUIPMENT_ESC_STATUS_SIGNATURE;
       return true;
   }
-   
+
 
   return false;
 }
@@ -288,7 +289,7 @@ static void uavcanInitIface(struct uavcan_iface_t *iface) {
   chThdCreateStatic(iface->thread_tx_wa, iface->thread_tx_wa_size, NORMALPRIO + 7, can_tx, (void*)iface);
 }
 
-void actuators_uavcan_init(void)
+void actuators_uavcan_arch_init(void)
 {
   /*----------------
    * Configure CAN busses
@@ -326,7 +327,7 @@ static void transmit_esc_raw(struct uavcan_iface_t *iface, uint8_t start_idx, ui
 
 
 void actuators_uavcan_commit(void)
-{ 
+{
   RunOnceEvery(5, {
   transmit_esc_raw(&can1_iface, 0, 10);
   transmit_esc_raw(&can2_iface, 10, 10);
