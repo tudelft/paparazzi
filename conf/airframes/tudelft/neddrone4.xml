@@ -1,15 +1,15 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
-<!-- this is a quadrotor frame in X-configuration equipped with
-     * Autopilot:   Pixhawk
-     * Actuators:   4x Swellpro ESC + Motors
-     * Datalink:    Xbee Pro S1
-     * GPS:         UBlox M8N
-     * RC:          SBUS X4R
+<!-- This is a Nedderdrone
+     * Autopilot:   Pixhawk 4
+     * Actuators:   12x T-Moter ESC + Motors and 8x Servos (all CAN)
+     * Datalink:    Herelink
+     * GPS:         UBlox F9P
+     * RC:          SBUS Crossfire
 -->
 
-<airframe name="Neddrone">
-  <description>Neddrone</description>
+<airframe name="Neddrone4">
+  <description>Neddrone4</description>
 
   <firmware name="rotorcraft">
     <target name="ap" board="px4fmu_5.0_chibios">
@@ -43,7 +43,7 @@
       <module name="fdm" type="jsbsim"/>
 
       <module name="logger_file">
-        <define name="FILE_LOGGER_PATH" value="/home/ewoud/Documents"/>
+        <define name="FILE_LOGGER_PATH" value="~/Documents"/>
       </module>
 
       <!--Not dealing with these in the simulation-->
@@ -66,14 +66,15 @@
     <module name="stabilization" type="int_quat"/>
     <module name="stabilization" type="rate"/>
     <module name="ins" type="ekf2" />
-    <module name="airspeed" type="ms45xx_i2c">
+    <!--module name="airspeed" type="ms45xx_i2c"> 
       <define name="USE_I2C4"/>
       <define name="MS45XX_I2C_DEV" value="i2c4"/>
-    </module>
+    </module-->
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
     <module name="gain_scheduling"/>
 
+    <!-- Needs to be connected -->
     <module name="mag_ist8310">
       <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>
       <configure name="MAG_IST8310_I2C_DEV" value="I2C3"/>
@@ -87,29 +88,29 @@
   </firmware>
 
   <servos driver="Uavcan">
-    <!-- CAN BUS 1 -->
+    <!-- CAN BUS 1 (Front Wing) -->
     <servo name="MOTOR_1" no="0" min="0" neutral="1500" max="8191"/>
     <servo name="MOTOR_2" no="1" min="0" neutral="1500" max="8191"/>
     <servo name="MOTOR_3" no="2" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_10" no="3" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_11" no="4" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_12" no="5" min="0" neutral="1500" max="8191"/>
+    <servo name="MOTOR_4" no="3" min="0" neutral="1500" max="8191"/>
+    <servo name="MOTOR_5" no="4" min="0" neutral="1500" max="8191"/>
+    <servo name="MOTOR_6" no="5" min="0" neutral="1500" max="8191"/>
     <servo name="AIL_1" no="6" min="6000" neutral="0" max="-6000"/>
     <servo name="FLAP_1" no="7" min="6000" neutral="0" max="-6000"/>
-    <servo name="FLAP_4" no="8" min="6000" neutral="0" max="-6000"/>
-    <servo name="AIL_4" no="9" min="6000" neutral="0" max="-6000"/>
+    <servo name="FLAP_2" no="8" min="6000" neutral="0" max="-6000"/>
+    <servo name="AIL_2" no="9" min="6000" neutral="0" max="-6000"/>
 
-    <!-- CAN BUS 2 -->
-    <servo name="MOTOR_4" no="10" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_5" no="11" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_6"  no="12" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_7" no="13" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_8" no="14" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_9" no="15" min="0" neutral="1500" max="8191"/>
-    <servo name="FLAP_2" no="16" min="-6000" neutral="0" max="6000"/>
-    <servo name="AIL_2" no="17" min="-6000" neutral="0" max="6000"/>
-    <servo name="AIL_3" no="18" min="-6000" neutral="0" max="6000"/>
-    <servo name="FLAP_3" no="19" min="-6000" neutral="0" max="6000"/>
+    <!-- CAN BUS 2 (Back Wing) -->
+    <servo name="MOTOR_7" no="10" min="0" neutral="1500" max="8191"/>
+    <servo name="MOTOR_8" no="11" min="0" neutral="1500" max="8191"/>
+    <servo name="MOTOR_9"  no="12" min="0" neutral="1500" max="8191"/>
+    <servo name="MOTOR_10" no="13" min="0" neutral="1500" max="8191"/>
+    <servo name="MOTOR_11" no="14" min="0" neutral="1500" max="8191"/>
+    <servo name="MOTOR_12" no="15" min="0" neutral="1500" max="8191"/>
+    <servo name="FLAP_3" no="16" min="-6000" neutral="0" max="6000"/>
+    <servo name="AIL_3" no="17" min="-6000" neutral="0" max="6000"/>
+    <servo name="AIL_4" no="18" min="-6000" neutral="0" max="6000"/>
+    <servo name="FLAP_4" no="19" min="-6000" neutral="0" max="6000"/>
   </servos>
 
   <commands>
@@ -188,7 +189,7 @@
   </section>
 
   <section name="IMU" prefix="IMU_">
-    <!-- Calibrated near boat -->
+    <!-- TBD -->
     <define name="ACCEL_X_NEUTRAL" value="-309"/>
     <define name="ACCEL_Y_NEUTRAL" value="16"/>
     <define name="ACCEL_Z_NEUTRAL" value="-30"/>
@@ -200,7 +201,7 @@
     <define name= "MAG_Y_CURRENT_COEF" value="-0.7696784114750511"/>
     <define name= "MAG_Z_CURRENT_COEF" value="1.1626106815908253"/-->
 
-    <!-- Calibrated near boat -->
+    <!-- TBD -->
     <define name="MAG_X_NEUTRAL" value="-13"/>
     <define name="MAG_Y_NEUTRAL" value="-16"/>
     <define name="MAG_Z_NEUTRAL" value="20"/>
