@@ -189,13 +189,13 @@
   </section>
 
   <section name="IMU" prefix="IMU_">
-    <!-- TBD -->
-    <define name="ACCEL_X_NEUTRAL" value="-309"/>
-    <define name="ACCEL_Y_NEUTRAL" value="16"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-30"/>
-    <define name="ACCEL_X_SENS" value="4.615681276039531" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.890981691160912" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.824451353255886" integer="16"/>
+    <!-- Calibrated in the MAVLab 14-05-2020 -->
+    <define name="ACCEL_X_NEUTRAL" value="-337"/>
+    <define name="ACCEL_Y_NEUTRAL" value="64"/>
+    <define name="ACCEL_Z_NEUTRAL" value="-25"/>
+    <define name="ACCEL_X_SENS" value="4.670307671109528" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="4.9016250738902425" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="4.846689188075245" integer="16"/>
 
     <!--define name= "MAG_X_CURRENT_COEF" value="-1.7139708082316483"/>
     <define name= "MAG_Y_CURRENT_COEF" value="-0.7696784114750511"/>
