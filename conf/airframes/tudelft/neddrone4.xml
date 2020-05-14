@@ -97,8 +97,8 @@
     <servo name="MOTOR_6" no="5" min="0" neutral="1500" max="8191"/>
     <servo name="AIL_1" no="6" min="6000" neutral="0" max="-6000"/>
     <servo name="FLAP_1" no="7" min="6000" neutral="0" max="-6000"/>
-    <servo name="FLAP_2" no="8" min="6000" neutral="0" max="-6000"/>
-    <servo name="AIL_2" no="9" min="6000" neutral="0" max="-6000"/>
+    <servo name="FLAP_2" no="8" min="-6000" neutral="0" max="6000"/>
+    <servo name="AIL_2" no="9" min="-6000" neutral="0" max="6000"/>
 
     <!-- CAN BUS 2 (Back Wing) -->
     <servo name="MOTOR_7" no="10" min="0" neutral="1500" max="8191"/>
@@ -109,8 +109,8 @@
     <servo name="MOTOR_12" no="15" min="0" neutral="1500" max="8191"/>
     <servo name="FLAP_3" no="16" min="-6000" neutral="0" max="6000"/>
     <servo name="AIL_3" no="17" min="-6000" neutral="0" max="6000"/>
-    <servo name="AIL_4" no="18" min="-6000" neutral="0" max="6000"/>
-    <servo name="FLAP_4" no="19" min="-6000" neutral="0" max="6000"/>
+    <servo name="AIL_4" no="18" min="6000" neutral="0" max="-6000"/>
+    <servo name="FLAP_4" no="19" min="6000" neutral="0" max="-6000"/>
   </servos>
 
   <commands>
@@ -174,7 +174,7 @@
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>
     <define name="NAV_DESCEND_VSPEED" value="-1.0"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 12.0877510901 * adc)"/>
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 17.9024749557 * adc)"/>
   </section>
 
    <section name="FORWARD">
