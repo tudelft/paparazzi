@@ -490,7 +490,11 @@ void guidance_v_from_nav(bool in_flight)
     guidance_v_delta_t = nav_throttle;
   }
 #if HYBRID_NAVIGATION
-  guidance_hybrid_vertical();
+  if (vertical_mode != VERTICAL_MODE_MANUAL) {
+    guidance_hybrid_vertical();
+  } else {
+    stabilization_cmd[COMMAND_THRUST] = guidance_v_delta_t;
+  }
 #else
 #if !NO_RC_THRUST_LIMIT
   /* use rc limitation if available */
