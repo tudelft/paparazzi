@@ -36,13 +36,13 @@
   </metrics>
 
   <mass_balance>
-    <ixx unit="KG*M2"> 1.5 </ixx>
-    <iyy unit="KG*M2"> 0.6  </iyy>
-    <izz unit="KG*M2"> 1.5 </izz>
+    <ixx unit="KG*M2"> 12.04 </ixx>
+    <iyy unit="KG*M2"> 0.6644  </iyy>
+    <izz unit="KG*M2"> 12.0 </izz>
     <ixy unit="KG*M2"> 0. </ixy>
     <ixz unit="KG*M2"> 0. </ixz>
     <iyz unit="KG*M2"> 0. </iyz>
-        <emptywt unit="KG"> 4.0 </emptywt>
+        <emptywt unit="KG"> 13.0 </emptywt>
     <location name="CG" unit="M">
       <x> 0 </x>
       <y> 0 </y>
@@ -53,9 +53,9 @@
   <ground_reactions>
     <contact type="STRUCTURE" name="CONTACT_FRONT">
       <location unit="M">
-        <x>-0.15 </x>
-        <y> 0 </y>
-        <z>-0.1 </z>
+        <x> 0.41 </x>
+        <y> 0.2 </y>
+        <z>-0.11 </z>
       </location>
       <static_friction>  0.8 </static_friction>
       <dynamic_friction> 0.5 </dynamic_friction>
@@ -69,9 +69,9 @@
 
     <contact type="STRUCTURE" name="CONTACT_BACK">
       <location unit="M">
-        <x> 0.15</x>
-        <y> 0   </y>
-        <z>-0.1 </z>
+        <x>  0.41</x>
+        <y> -0.2   </y>
+        <z> -0.11 </z>
       </location>
       <static_friction>  0.8 </static_friction>
       <dynamic_friction> 0.5 </dynamic_friction>
@@ -85,9 +85,9 @@
 
     <contact type="STRUCTURE" name="CONTACT_RIGHT">
       <location unit="M">
-        <x> 0.  </x>
-        <y> 0.15</y>
-        <z>-0.1 </z>
+        <x> 0.11  </x>
+        <y> 0.2</y>
+        <z> 0.41 </z>
       </location>
       <static_friction>  0.8 </static_friction>
       <dynamic_friction> 0.5 </dynamic_friction>
@@ -101,9 +101,9 @@
 
     <contact type="STRUCTURE" name="CONTACT_LEFT">
       <location unit="M">
-        <x> 0.  </x>
-        <y>-0.15</y>
-        <z>-0.1 </z>
+        <x> 0.11  </x>
+        <y>-0.2</y>
+        <z> 0.41 </z>
       </location>
       <static_friction>  0.8 </static_friction>
       <dynamic_friction> 0.5 </dynamic_friction>
@@ -273,12 +273,12 @@
       <function>
         <product>
           <property>fcs/m1_lag</property>
-          <value> 1.35 </value>
+          <value> 3.822 </value>
         </product>
       </function>
       <location unit="M">
-        <x>-0.2</x>
-        <y>-1.0</y>
+        <x>-0.141</x>
+        <y>-1.105</y>
         <z>0</z>
       </location>
       <direction>
@@ -287,16 +287,16 @@
         <z>-1</z>
       </direction>
     </force>
-    <force name="m2" frame="BODY" unit="bla">
+    <force name="m2" frame="BODY" unit="LBS">
       <function>
         <product>
           <property>fcs/m2_lag</property>
-          <value> 1.35 </value>
+          <value> 3.822 </value>
         </product>
       </function>
       <location unit="M">
-        <x>-0.2</x>
-        <y>-0.6</y>
+        <x>-0.141</x>
+        <y>-0.735</y>
         <z>0</z>
       </location>
       <direction>
@@ -309,12 +309,12 @@
       <function>
         <product>
           <property>fcs/m3_lag</property>
-          <value> 1.35 </value>
+          <value> 3.822 </value>
         </product>
       </function>
       <location unit="M">
-        <x>-0.2</x>
-        <y>-0.3</y>
+        <x>-0.141</x>
+        <y>-0.320</y>
         <z>0</z>
       </location>
       <direction>
@@ -327,12 +327,12 @@
       <function>
         <product>
           <property>fcs/m4_lag</property>
-          <value> 1.35 </value>
+          <value> 3.822 </value>
         </product>
       </function>
       <location unit="M">
-        <x>-0.2</x>
-        <y>0.3</y>
+        <x>-0.141</x>
+        <y>0.320</y>
         <z>0</z>
       </location>
       <direction>
@@ -345,12 +345,12 @@
       <function>
         <product>
           <property>fcs/m5_lag</property>
-          <value> 1.35 </value>
+          <value> 3.822 </value>
         </product>
       </function>
       <location unit="M">
-        <x>-0.2</x>
-        <y>0.6</y>
+        <x>-0.141</x>
+        <y>0.735</y>
         <z>0</z>
       </location>
       <direction>
@@ -363,12 +363,12 @@
       <function>
         <product>
           <property>fcs/m6_lag</property>
-          <value> 1.35 </value>
+          <value> 3.822 </value>
         </product>
       </function>
       <location unit="M">
-        <x>-0.2</x>
-        <y>1.0</y>
+        <x>-0.141</x>
+        <y>1.105</y>
         <z>0</z>
       </location>
       <direction>
@@ -381,12 +381,12 @@
       <function>
         <product>
           <property>fcs/m7_lag</property>
-          <value> 1.35 </value>
+          <value> 3.822 </value>
         </product>
       </function>
       <location unit="M">
-        <x>0.2</x>
-        <y>1.0</y>
+        <x>0.141</x>
+        <y>1.105</y>
         <z>0</z>
       </location>
       <direction>
@@ -399,12 +399,12 @@
       <function>
         <product>
           <property>fcs/m8_lag</property>
-          <value> 1.35 </value>
+          <value> 3.822 </value>
         </product>
       </function>
       <location unit="M">
-        <x>0.2</x>
-        <y>0.6</y>
+        <x>0.141</x>
+        <y>0.735</y>
         <z>0</z>
       </location>
       <direction>
@@ -417,12 +417,12 @@
       <function>
         <product>
           <property>fcs/m9_lag</property>
-          <value> 1.35 </value>
+          <value> 3.822 </value>
         </product>
       </function>
       <location unit="M">
-        <x>0.2</x>
-        <y>0.3</y>
+        <x>0.141</x>
+        <y>0.320</y>
         <z>0</z>
       </location>
       <direction>
@@ -435,12 +435,12 @@
       <function>
         <product>
           <property>fcs/m10_lag</property>
-          <value> 1.35 </value>
+          <value> 3.822 </value>
         </product>
       </function>
       <location unit="M">
-        <x>0.2</x>
-        <y>-0.3</y>
+        <x>0.141</x>
+        <y>-0.320</y>
         <z>0</z>
       </location>
       <direction>
@@ -453,12 +453,12 @@
       <function>
         <product>
           <property>fcs/m11_lag</property>
-          <value> 1.35 </value>
+          <value> 3.822 </value>
         </product>
       </function>
       <location unit="M">
-        <x>0.2</x>
-        <y>-0.6</y>
+        <x>0.141</x>
+        <y>-0.735</y>
         <z>0</z>
       </location>
       <direction>
@@ -471,12 +471,12 @@
       <function>
         <product>
           <property>fcs/m12_lag</property>
-          <value> 1.35 </value>
+          <value> 3.822 </value>
         </product>
       </function>
       <location unit="M">
-        <x>0.2</x>
-        <y>-1.0</y>
+        <x>0.141</x>
+        <y>-1.105</y>
         <z>0</z>
       </location>
       <direction>
@@ -532,7 +532,7 @@
               <value> -1 </value>
             </product>
           </sum>
-          <value> 0.2 </value>
+          <value> 1.2 </value>
         </product>
       </function>
       <location unit="M">
@@ -568,7 +568,7 @@
               <value> -1 </value>
             </product>
           </sum>
-          <value> 0.2 </value>
+          <value> 1.2 </value>
         </product>
       <location unit="M">
         <x>0</x>

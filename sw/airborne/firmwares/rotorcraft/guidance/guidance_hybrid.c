@@ -64,7 +64,7 @@ float turn_bank_gain;
 #define FWD_ALT_THRUST_GAIN     0.35
 #define FWD_PID_DIV             2
 #define FWD_NOMINAL_PITCH       78.0
-#define FWD_PITCH_GAIN          2.1
+#define FWD_PITCH_GAIN          0.5
 #define HOVER_P_GAIN            12
 
 int32_t cruise_throttle = CRUISE_THROTTLE;
@@ -410,17 +410,17 @@ void guidance_hybrid_vertical(void)
   /* Hover regime */
   if (guidance_hybrid_norm_ref_airspeed_f < AIRSPEED_HOVER) {
     stabilization_cmd[COMMAND_THRUST] = hover_thrust;
-    
+
     // Do not control pitch and only PID for hover
     v_control_pitch = 0;
     guidance_v_kp = GUIDANCE_V_HOVER_KP;
     guidance_v_kd = GUIDANCE_V_HOVER_KD;
     guidance_v_ki = GUIDANCE_V_HOVER_KI;
-  } 
+  }
   /* Forward regime */
   else if (guidance_hybrid_norm_ref_airspeed_f > AIRSPEED_FORWARD) {
     stabilization_cmd[COMMAND_THRUST] = fwd_thrust;
-   
+
     //Control altitude with pitch, now only proportional control
     v_control_pitch = fwd_pitch;
     guidance_v_kp = GUIDANCE_V_HOVER_KP / fwd_pid_div;
