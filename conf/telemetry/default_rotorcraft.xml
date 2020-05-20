@@ -209,16 +209,15 @@
       <message name="IMU_GYRO_SCALED"          period=".002"/>
       <message name="IMU_ACCEL_SCALED"         period=".002"/>
       <message name="IMU_MAG_SCALED"           period=".0125"/>
-      <!--<message name="IMU_MAG_RAW"              period=".0125"/>-->
       <message name="LIDAR"                    period="0.05"/>
       <message name="INS_EKF2"                 period="0.05"/>
       <message name="INS_EKF2_EXT"             period="0.1"/>
       <message name="WIND_INFO_RET"            period="0.2"/>
       <message name="AHRS_BIAS"                period="0.5"/>
       <message name="AHRS_REF_QUAT"            period="0.01"/>
-      <!--<message name="HOVER_LOOP"               period="0.02"/>-->
-      <!--<message name="GUIDANCE_H_REF_INT"       period="0.02"/>-->
-      <!--<message name="HYBRID_GUIDANCE"          period="0.1"/>-->
+      <message name="HOVER_LOOP"               period="0.02"/>
+      <message name="GUIDANCE_H_REF_INT"       period="0.02"/>
+      <message name="HYBRID_GUIDANCE"          period="0.1"/>
       <message name="ESC"                      period="0.02"/>
       <!--<message name="WINDTUNNEL_MEAS"          period="0.005"/>-->
     </mode>
