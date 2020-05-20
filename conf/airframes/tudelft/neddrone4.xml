@@ -74,10 +74,13 @@
     <module name="send_imu_mag_current"/>
     <module name="gain_scheduling"/>
 
-    <!-- Needs to be connected -->
-    <module name="mag_ist8310">
-      <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>
-      <configure name="MAG_IST8310_I2C_DEV" value="I2C3"/>
+    <!-- External GPS -->
+    <module name="mag_lis3mdl">
+      <define name="MODULE_LIS3MDL_UPDATE_AHRS" value="TRUE"/>
+      <configure name="MAG_LIS3MDL_I2C_DEV" value="I2C1"/>
+      <define name="LIS3MDL_MAG_TO_IMU_PHI" value="0.0"/>
+      <define name="LIS3MDL_MAG_TO_IMU_THETA" value="0.0"/>
+      <define name="LIS3MDL_MAG_TO_IMU_PSI" value="180.0"/>
     </module>
     <!--module name="lidar" type="tfmini"/-->
 
@@ -210,13 +213,14 @@
     <define name= "MAG_Y_CURRENT_COEF" value="-0.7696784114750511"/>
     <define name= "MAG_Z_CURRENT_COEF" value="1.1626106815908253"/-->
 
-    <!-- TBD -->
-    <define name="MAG_X_NEUTRAL" value="-13"/>
-    <define name="MAG_Y_NEUTRAL" value="-16"/>
-    <define name="MAG_Z_NEUTRAL" value="20"/>
-    <define name="MAG_X_SENS" value="14.650339331593473" integer="16"/>
-    <define name="MAG_Y_SENS" value="14.437207425384758" integer="16"/>
-    <define name="MAG_Z_SENS" value="14.235213327414126" integer="16"/>
+    <!-- Calibrated at valkenburg 20-05-2020 -->
+    <define name="MAG_X_NEUTRAL" value="-655"/>
+    <define name="MAG_Y_NEUTRAL" value="-1263"/>
+    <define name="MAG_Z_NEUTRAL" value="-2971"/>
+    <define name="MAG_X_SENS" value="0.6746868758550484" integer="16"/>
+    <define name="MAG_Y_SENS" value="0.5947541806500393" integer="16"/>
+    <define name="MAG_Z_SENS" value="0.6181615907221173" integer="16"/>
+
 
     <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="90." unit="deg"/>
