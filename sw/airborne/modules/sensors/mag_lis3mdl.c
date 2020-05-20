@@ -40,10 +40,10 @@
 #define LIS3MDL_CHAN_Z 2
 #endif
 #ifndef LIS3MDL_CHAN_X_SIGN
-#define LIS3MDL_CHAN_X_SIGN +
+#define LIS3MDL_CHAN_X_SIGN -
 #endif
 #ifndef LIS3MDL_CHAN_Y_SIGN
-#define LIS3MDL_CHAN_Y_SIGN +
+#define LIS3MDL_CHAN_Y_SIGN -
 #endif
 #ifndef LIS3MDL_CHAN_Z_SIGN
 #define LIS3MDL_CHAN_Z_SIGN +
