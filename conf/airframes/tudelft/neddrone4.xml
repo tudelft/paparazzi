@@ -89,24 +89,24 @@
 
   <servos driver="Uavcan">
     <!-- CAN BUS 1 (Front Wing) -->
-    <servo name="MOTOR_1" no="0" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_2" no="1" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_3" no="2" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_4" no="3" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_5" no="4" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_6" no="5" min="0" neutral="1500" max="8191"/>
+    <servo name="MOTOR_1" no="0" min="-8191" neutral="1500" max="8191"/>
+    <servo name="MOTOR_2" no="1" min="-8191" neutral="1500" max="8191"/>
+    <servo name="MOTOR_3" no="2" min="-8191" neutral="1500" max="8191"/>
+    <servo name="MOTOR_4" no="3" min="-8191" neutral="1500" max="8191"/>
+    <servo name="MOTOR_5" no="4" min="-8191" neutral="1500" max="8191"/>
+    <servo name="MOTOR_6" no="5" min="-8191" neutral="1500" max="8191"/>
     <servo name="AIL_1" no="6" min="6000" neutral="0" max="-6000"/>
     <servo name="FLAP_1" no="7" min="6000" neutral="0" max="-6000"/>
     <servo name="FLAP_2" no="8" min="-6000" neutral="0" max="6000"/>
     <servo name="AIL_2" no="9" min="-6000" neutral="0" max="6000"/>
 
     <!-- CAN BUS 2 (Back Wing) -->
-    <servo name="MOTOR_7" no="10" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_8" no="11" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_9"  no="12" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_10" no="13" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_11" no="14" min="0" neutral="1500" max="8191"/>
-    <servo name="MOTOR_12" no="15" min="0" neutral="1500" max="8191"/>
+    <servo name="MOTOR_7" no="10" min="-8191" neutral="1500" max="8191"/>
+    <servo name="MOTOR_8" no="11" min="-8191" neutral="1500" max="8191"/>
+    <servo name="MOTOR_9"  no="12" min="-8191" neutral="1500" max="8191"/>
+    <servo name="MOTOR_10" no="13" min="-8191" neutral="1500" max="8191"/>
+    <servo name="MOTOR_11" no="14" min="-8191" neutral="1500" max="8191"/>
+    <servo name="MOTOR_12" no="15" min="-8191" neutral="1500" max="8191"/>
     <servo name="FLAP_3" no="16" min="-6000" neutral="0" max="6000"/>
     <servo name="AIL_3" no="17" min="-6000" neutral="0" max="6000"/>
     <servo name="AIL_4" no="18" min="6000" neutral="0" max="-6000"/>
@@ -147,17 +147,26 @@
     <let var="back_hold1"   value="RadioControlValues(RADIO_BACK_THOLD) > -4800"/>
     <let var="back_hold2"   value="RadioControlValues(RADIO_BACK_THOLD) > 4800"/>
 
-    <set servo="MOTOR_1"   value="($th_hold? -9600 : motor_mixing.commands[0])"/>
-    <set servo="MOTOR_2"   value="(($th_hold || $fwd_hold)? -9600 : motor_mixing.commands[1])"/>
-    <set servo="MOTOR_3"   value="(($th_hold || $fwd_hold)? -9600 : motor_mixing.commands[2])"/>
-    <set servo="MOTOR_4"   value="(($th_hold || $fwd_hold)? -9600 : motor_mixing.commands[3])"/>
-    <set servo="MOTOR_5"   value="(($th_hold || $fwd_hold)? -9600 : motor_mixing.commands[4])"/>
+    <let var="motor_2_s"   value="((LessThan(actuators[SERVO_MOTOR_2_IDX], 1) || $th_hold)? -9600 : ((actuators[SERVO_MOTOR_2_IDX]-1500)*9600/6691-2))"/>
+    <let var="motor_3_s"   value="((LessThan(actuators[SERVO_MOTOR_3_IDX], 1) || $th_hold)? -9600 : ((actuators[SERVO_MOTOR_3_IDX]-1500)*9600/6691-2))"/>
+    <let var="motor_4_s"   value="((LessThan(actuators[SERVO_MOTOR_4_IDX], 1) || $th_hold)? -9600 : ((actuators[SERVO_MOTOR_4_IDX]-1500)*9600/6691-2))"/>
+    <let var="motor_5_s"   value="((LessThan(actuators[SERVO_MOTOR_5_IDX], 1) || $th_hold)? -9600 : ((actuators[SERVO_MOTOR_5_IDX]-1500)*9600/6691-2))"/>
+    <let var="motor_8_s"   value="((LessThan(actuators[SERVO_MOTOR_8_IDX], 1) || $th_hold || $back_hold2)? -9600 : ((actuators[SERVO_MOTOR_8_IDX]-1500)*9600/6691-2))"/>
+    <let var="motor_9_s"   value="((LessThan(actuators[SERVO_MOTOR_9_IDX], 1) || $th_hold || $back_hold1)? -9600 : ((actuators[SERVO_MOTOR_9_IDX]-1500)*9600/6691-2))"/>
+    <let var="motor_10_s"  value="((LessThan(actuators[SERVO_MOTOR_10_IDX], 1) || $th_hold || $back_hold1)? -9600 : ((actuators[SERVO_MOTOR_10_IDX]-1500)*9600/6691-2))"/>
+    <let var="motor_11_s"  value="((LessThan(actuators[SERVO_MOTOR_11_IDX], 1) || $th_hold || $back_hold2)? -9600 : ((actuators[SERVO_MOTOR_11_IDX]-1500)*9600/6691-2))"/>
+
+    <set servo="MOTOR_1"   value="($th_hold? -9600 : motor_mixing.commands[0])"/> 
+    <set servo="MOTOR_2"   value="(($th_hold || $fwd_hold)? $motor_2_s : motor_mixing.commands[1])"/>
+    <set servo="MOTOR_3"   value="(($th_hold || $fwd_hold)? $motor_3_s : motor_mixing.commands[2])"/>
+    <set servo="MOTOR_4"   value="(($th_hold || $fwd_hold)? $motor_4_s : motor_mixing.commands[3])"/>
+    <set servo="MOTOR_5"   value="(($th_hold || $fwd_hold)? $motor_5_s : motor_mixing.commands[4])"/>
     <set servo="MOTOR_6"   value="($th_hold? -9600 : motor_mixing.commands[5])"/>
     <set servo="MOTOR_7"   value="($th_hold? -9600 : motor_mixing.commands[6])"/>
-    <set servo="MOTOR_8"   value="(($th_hold || $fwd_hold || $back_hold2)? -9600 : motor_mixing.commands[7])"/>
-    <set servo="MOTOR_9"   value="(($th_hold || $fwd_hold || $back_hold1)? -9600 : motor_mixing.commands[8])"/>
-    <set servo="MOTOR_10"  value="(($th_hold || $fwd_hold || $back_hold1)? -9600 : motor_mixing.commands[9])"/>
-    <set servo="MOTOR_11"  value="(($th_hold || $fwd_hold || $back_hold2)? -9600 : motor_mixing.commands[10])"/>
+    <set servo="MOTOR_8"   value="(($th_hold || $fwd_hold || $back_hold2)? $motor_8_s : motor_mixing.commands[7])"/>
+    <set servo="MOTOR_9"   value="(($th_hold || $fwd_hold || $back_hold1)? $motor_9_s : motor_mixing.commands[8])"/>
+    <set servo="MOTOR_10"  value="(($th_hold || $fwd_hold || $back_hold1)? $motor_10_s : motor_mixing.commands[9])"/>
+    <set servo="MOTOR_11"  value="(($th_hold || $fwd_hold || $back_hold2)? $motor_11_s : motor_mixing.commands[10])"/>
     <set servo="MOTOR_12"  value="($th_hold? -9600 : motor_mixing.commands[11])"/>
     <set servo="AIL_1"     value="-2*@PITCH + 4*@YAW + @FLAPS"/>
     <set servo="AIL_2"     value="-2*@PITCH - 4*@YAW + @FLAPS"/>
