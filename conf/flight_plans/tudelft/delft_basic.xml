@@ -6,11 +6,13 @@
     #include "subsystems/datalink/datalink.h"
     #include "subsystems/electrical.h"
     #include "subsystems/radio_control.h"
+    #include "modules/percevite_vo/percevite_vo.h"
   </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint name="CLIMB" x="0.0" y="5.0"/>
     <waypoint name="STDBY" x="-2.0" y="-5.0"/>
+    <waypoint name="AVOID" x="-12.0" y="-5.0"/>
     <waypoint name="p1" x="-19.9" y="14.3"/>
     <waypoint name="p2" x="-0.6" y="21.6"/>
     <waypoint name="p3" x="22.2" y="-26.5"/>
@@ -19,6 +21,16 @@
     <waypoint name="TD" x="5.6" y="-10.9"/>
   </waypoints>
   <exceptions>
+    <!-- Avoid -->
+    <exception cond="((percevite_requires_avoidance == true) &&
+      !(nav_block == IndexOfBlock('PercEviteAvoid')) &&
+      (autopilot_in_flight() == true) )" deroute="PercEviteAvoid"/>
+
+    <!-- After Avoiding -->
+    <exception cond="((percevite_requires_avoidance == false) &&
+      (nav_block == IndexOfBlock('PercEviteAvoid')) &&
+      (autopilot_in_flight() == true) )" deroute="line_p1_p2"/> <!-- resume -->
+
     <!-- RC-Loss -->
     <exception cond="((radio_control.status == RC_REALLY_LOST) &&
       !(IndexOfBlock('Takeoff') > nav_block) &&
@@ -73,6 +85,9 @@
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <stay wp="STDBY"/>
+    </block>
+    <block name="PercEviteAvoid">
+      <stay wp="AVOID"/>
     </block>
     <block name="stay_p1">
       <stay wp="p1"/>
