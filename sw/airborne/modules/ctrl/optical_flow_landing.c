@@ -143,6 +143,35 @@ float previous_cov_err;
 int32_t thrust_set;
 float divergence_setpoint;
 
+// *********************************
+// include and define stuff for SSL:
+// *********************************
+#define RECURSIVE_LEARNING 1
+#include <stdio.h>
+#include "modules/computer_vision/textons.h"
+float* last_texton_distribution; // used to check if a new texton distribution has been received
+// TODO: last_texton_distribution's size depends on the number of textons in textons.h/c.
+// it should now be set to 10 to match the number of textons on the stereoboard... this is extremely ugly.
+#define n_ts 10
+float texton_distribution_stereoboard[n_ts];
+// #define TEXTON_DISTRIBUTION_PATH /data/video/
+// On Bebop 2:
+#define TEXTON_DISTRIBUTION_PATH /data/ftp/internal_000
+// for RLS, recursive least squares:
+float** P_RLS;
+// forgetting factor:
+float lambda;
+static FILE *distribution_logger = NULL;
+static FILE *weights_file = NULL;
+unsigned int n_read_samples;
+// paparazzi files for doing svd etc.:
+#include "math/pprz_algebra_float.h"
+#include "math/pprz_matrix_decomp_float.h"
+#include "math/pprz_simple_matrix.h"
+float module_active_time_sec;
+float module_enter_time;
+float previous_divergence_setpoint;
+
 // for the exponentially decreasing gain strategy:
 int32_t elc_phase;
 uint32_t elc_time_start;
@@ -235,6 +264,8 @@ void vertical_ctrl_module_init(void)
   // register telemetry:
   AbiBindMsgOPTICAL_FLOW(OFL_OPTICAL_FLOW_ID, &optical_flow_ev, vertical_ctrl_optical_flow_cb);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DIVERGENCE, send_divergence);
+
+  module_enter_time = get_sys_time_float();
 }
 
 /**
@@ -252,6 +283,7 @@ static void reset_all_vars(void)
   divergence_vision = 0.;
   divergence_vision_dt = 0.;
   divergence_setpoint = 0;
+  previous_divergence_setpoint = divergence_setpoint;
 
   vision_time = get_sys_time_float();
   prev_vision_time = vision_time;
@@ -295,6 +327,8 @@ void vertical_ctrl_module_run(bool in_flight)
   if (dt <= 1e-5f) {
     return;
   }
+
+  module_active_time_sec = get_sys_time_float() - module_enter_time;
 
   Bound(of_landing_ctrl.lp_const, 0.001f, 1.f);
   float lp_factor = dt / of_landing_ctrl.lp_const;
@@ -385,6 +419,11 @@ void vertical_ctrl_module_run(bool in_flight)
       // use the divergence for control:
       thrust_set = PID_divergence_control(of_landing_ctrl.divergence_setpoint, pused, of_landing_ctrl.igain,
                                           of_landing_ctrl.dgain, dt);
+
+      // SSL: if close enough, store texton inputs:
+      if(fabs(error_cov) < of_landing_ctrl.close_to_edge) {
+        save_texton_distribution();
+      }
 
       // when to make the final landing:
       if (pstate < of_landing_ctrl.p_land_threshold) {
@@ -486,6 +525,163 @@ void vertical_ctrl_module_run(bool in_flight)
       } else {
         thrust_set = final_landing_procedure();
       }
+    }
+    else if (of_landing_ctrl.CONTROL_METHOD == 3) {
+      // SSL LANDING: use learned weights for setting the gain on the way down:
+      if (elc_phase == 0) {
+	float phase_0_set_point = 0.0f;
+
+	// adapt the p-gain with a low-pass filter to the gain predicted by image appearance:
+	pstate = predict_gain(texton_distribution);
+	// low-pass filtered, downscaled pstate predictions:
+	of_landing_ctrl.pgain = of_landing_ctrl.lp_factor_prediction * of_landing_ctrl.pgain + (1.0f - of_landing_ctrl.lp_factor_prediction) * of_landing_ctrl.reduction_factor_elc * pstate;
+	pused = of_landing_ctrl.pgain;
+	// make sure pused does not become too small, nor grows too fast:
+	if (of_landing_ctrl.pgain < MINIMUM_GAIN) { of_landing_ctrl.pgain = MINIMUM_GAIN; }
+	// have the i and d gain depend on the p gain:
+	istate = 0.025 * of_landing_ctrl.pgain;
+	dstate = 0.0f;
+	printf("of_landing_ctrl.pgain = %f\n", of_landing_ctrl.pgain);
+
+	// use the divergence for control:
+	thrust_set = PID_divergence_control(phase_0_set_point, pused, istate, dstate, dt);
+
+	// if the low-pass filter of the p-gain has settled and the drone is moving in the right direction:
+	// TODO: add module active time:
+	if (module_active_time_sec >= 3.0f && of_landing_ctrl.divergence * of_landing_ctrl.divergence_setpoint >= 0.0f) {
+	    // next phase:
+	    elc_phase = 1;
+	}
+      }
+      else {
+	  // adapt the p-gain with a low-pass filter to the gain predicted by image appearance:
+	  pstate = predict_gain(texton_distribution);
+	  of_landing_ctrl.pgain = of_landing_ctrl.lp_factor_prediction * of_landing_ctrl.pgain + (1.0f - of_landing_ctrl.lp_factor_prediction) * of_landing_ctrl.reduction_factor_elc * pstate;
+	  pused = of_landing_ctrl.pgain;
+	  // make sure pused does not become too small, nor grows too fast:
+	  if (of_landing_ctrl.pgain < MINIMUM_GAIN) { of_landing_ctrl.pgain = MINIMUM_GAIN; }
+	  // have the i and d gain depend on the p gain:
+	  istate = 0.025 * of_landing_ctrl.pgain;
+	  dstate = 0.0f;
+	  printf("of_landing_ctrl.pgain = %f\n", of_landing_ctrl.pgain);
+
+	  // use the divergence for control:
+	  thrust_set = PID_divergence_control(of_landing_ctrl.divergence_setpoint, pused, istate, dstate, dt);
+
+      }
+
+      if (pused < of_landing_ctrl.p_land_threshold) {
+	  final_landing_procedure();
+      }
+    }
+    else  if (of_landing_ctrl.CONTROL_METHOD == 4) {
+
+      // SSL + EXPONENTIAL LANDING: use learned weights for setting the gain on the way down:
+
+      if (elc_phase == 0) {
+
+	float phase_0_set_point = 0.0f;
+	previous_divergence_setpoint = 0.0f;
+	// adapt the p-gain with a low-pass filter to the gain predicted by image appearance:
+	// TODO: lp_factor is now the same as used for the divergence. This may not be appropriate
+	pstate = predict_gain(texton_distribution);
+	float lp_factor_prediction = 0.95;
+	// of_landing_ctrl.pgain = lp_factor_prediction * of_landing_ctrl.pgain + (1.0f - lp_factor_prediction) * of_landing_ctrl.stable_gain_factor * pstate;
+	of_landing_ctrl.pgain = lp_factor_prediction * of_landing_ctrl.pgain + (1.0f - lp_factor_prediction) * of_landing_ctrl.reduction_factor_elc * pstate;
+	pused = of_landing_ctrl.pgain;
+	// make sure pused does not become too small, nor grows too fast:
+	if (of_landing_ctrl.pgain < MINIMUM_GAIN) { of_landing_ctrl.pgain = MINIMUM_GAIN; }
+	// have the i and d gain depend on the p gain:
+	istate = 0.025 * of_landing_ctrl.pgain;
+	dstate = 0.0f;
+	printf("of_landing_ctrl.pgain = %f\n", of_landing_ctrl.pgain);
+
+	// use the divergence for control:
+	thrust = PID_divergence_control(phase_0_set_point, pused, istate, dstate, &err);
+	// keep track of histories and set the covariance
+	set_cov_div(thrust);
+	// update the controller errors:
+	update_errors(err);
+
+	// if the low-pass filter of the p-gain has settled and the drone is moving in the right direction:
+	if (module_active_time_sec >= 3.0f && divergence * of_landing_ctrl.divergence_setpoint >= 0.0f) {
+	    // next phase:
+	    elc_phase = 1;
+	    clock_gettime(CLOCK_MONOTONIC, &spec);
+	    elc_time_start = spec.tv_sec * 1E3 + spec.tv_nsec / 1E6;
+
+	    // we don't have to reduce the gain, as this is done above for the p-gain already:
+	    elc_p_gain_start = pused;
+	    elc_i_gain_start = istate;
+	    elc_d_gain_start = dstate;
+	    count_covdiv = 0;
+	    of_landing_ctrl.sum_err = 0.0f;
+	}
+      }
+      else if (elc_phase == 1) {
+	// land while exponentially decreasing the gain:
+	clock_gettime(CLOCK_MONOTONIC, &spec);
+	new_time = spec.tv_sec * 1E3 + spec.tv_nsec / 1E6;
+	float t_interval = (new_time - elc_time_start) / 1000.0f;
+
+	// this should not happen, but just to be sure to prevent too high gain values:
+	if (t_interval < 0) { t_interval = 0.0f; }
+
+	// determine the P-gain, weighing between an exponentially decaying one and the predicted one based on textons:
+	float gain_scaling = exp(of_landing_ctrl.divergence_setpoint * t_interval);
+	float prediction = predict_gain(texton_distribution); // low-pass it in of_landing_ctrl.pgain?
+	float weight_prediction = 0.5;
+
+	if (gain_scaling <= 1.0f) {
+	 pstate = weight_prediction * of_landing_ctrl.reduction_factor_elc * prediction + (1-weight_prediction) * elc_p_gain_start * gain_scaling;
+	 istate = 0.025 * weight_prediction * of_landing_ctrl.reduction_factor_elc * prediction + (1-weight_prediction) * elc_i_gain_start * gain_scaling;
+	 dstate = 0.0f;
+	}
+	else {
+	    // should never come here:
+	    pstate = of_landing_ctrl.reduction_factor_elc * prediction;
+	    istate = 0.025 * of_landing_ctrl.reduction_factor_elc * prediction;
+	    dstate = 0.0f;
+	}
+	pused = pstate;
+
+	// use the divergence for control:
+	thrust = PID_divergence_control(of_landing_ctrl.divergence_setpoint, pused, istate, dstate, &err);
+	// keep track of histories and set the covariance
+	set_cov_div(thrust);
+	// update the controller errors:
+	update_errors(err);
+
+	// when to make the final landing:
+	if (pstate < of_landing_ctrl.p_land_threshold) {
+	 elc_phase = 2;
+	}
+      }
+      else {
+	final_landing_procedure();
+      }
+    }
+    else  if (of_landing_ctrl.CONTROL_METHOD == 5) {
+
+	// SSL hover, to check if it works nicely:
+
+	pstate = predict_gain(texton_distribution);
+	of_landing_ctrl.pgain = of_landing_ctrl.lp_factor_prediction * of_landing_ctrl.pgain + (1.0f - of_landing_ctrl.lp_factor_prediction) * of_landing_ctrl.reduction_factor_elc * pstate;
+	pused = of_landing_ctrl.pgain;
+	// make sure pused does not become too small, nor grows too fast:
+	if (of_landing_ctrl.pgain < MINIMUM_GAIN) { of_landing_ctrl.pgain = MINIMUM_GAIN; }
+	// have the i and d gain depend on the p gain:
+	istate = 0.025 * of_landing_ctrl.pgain;
+	dstate = 0.0f;
+	printf("of_landing_ctrl.pgain = %f\n", of_landing_ctrl.pgain);
+
+	// use the divergence for control:
+	thrust = PID_divergence_control(of_landing_ctrl.divergence_setpoint, pused, istate, dstate, &err);
+	// keep track of histories and set the covariance
+	set_cov_div(thrust);
+	// update the controller errors:
+	update_errors(err);
+
     }
 
     if (in_flight) {
@@ -627,4 +823,458 @@ void guidance_v_module_enter(void)
 void guidance_v_module_run(bool in_flight)
 {
   vertical_ctrl_module_run(in_flight);
+}
+
+// SSL:
+void save_texton_distribution(void)
+{
+  // Since the control module runs faster than the texton vision process, we need to check that we are storing a recent vision result:
+  int i, same;
+  same = 1;
+  for(i = 0; i < n_textons; i++)
+  {
+    // check if the texton distribution is the same as the previous one:
+    if(texton_distribution[i] != last_texton_distribution[i])
+    {
+      same = 0;
+    }
+    // update the last texton distribution:
+    last_texton_distribution[i] = texton_distribution[i];
+  }
+
+  // don't save the texton distribution if it is the same as previous time step:
+  /*if(same)
+  {
+    printf("Same\n");
+    return;
+  }*/
+
+  // TODO: if(!same)?
+  // If not the same, append the target values (heights, gains) and texton values to a .dat file:
+  char filename[512];
+        sprintf(filename, "%s/Training_set_%05d.dat", STRINGIFY(TEXTON_DISTRIBUTION_PATH), 0);
+  distribution_logger = fopen(filename, "a");
+        if(distribution_logger == NULL)
+        {
+    perror(filename);
+                //perror("Error while opening the file.\n");
+        }
+        else
+        {
+    printf("Logging at height %f, gain %f, cov_div %f\n", of_landing_ctrl.agl, pstate, cov_div);
+
+    // save the information in a single row:
+    fprintf(distribution_logger, "%f ", of_landing_ctrl.agl); // sonar measurement
+    fprintf(distribution_logger, "%f ", pstate); // gain measurement
+    fprintf(distribution_logger, "%f ", cov_div); // cov div measurement
+    for(i = 0; i < n_textons-1; i++)
+    {
+      fprintf(distribution_logger, "%f ", texton_distribution[i]);
+    }
+    fprintf(distribution_logger, "%f\n", texton_distribution[n_textons-1]);
+    fclose(distribution_logger);
+  }
+}
+
+void load_texton_distribution(void)
+{
+  int i, j, read_result;
+  char filename[512];
+        sprintf(filename, "%s/Training_set_%05d.dat", STRINGIFY(TEXTON_DISTRIBUTION_PATH), 0);
+
+        if((distribution_logger = fopen(filename, "r")))
+        {
+    // Load the dictionary:
+    n_read_samples = 0;
+    // For now we read the samples sequentially:
+    // for(i = 0; i < MAX_SAMPLES_LEARNING; i++)
+    for(i = 0; i < 30; i++)
+    {
+      read_result = fscanf(distribution_logger, "%f ", &sonar[n_read_samples]);
+                        if(read_result == EOF) break;
+      // if(i % 100) printf("SONAR: %f\n", sonar[n_read_samples]);
+      read_result = fscanf(distribution_logger, "%f ", &gains[n_read_samples]);
+                        if(read_result == EOF) break;
+      read_result = fscanf(distribution_logger, "%f ", &cov_divs_log[n_read_samples]);
+                        if(read_result == EOF) break;
+
+      text_dists[n_read_samples] = (float*) calloc(n_textons,sizeof(float));
+
+      for(j = 0; j < n_textons-1; j++)
+      {
+        read_result = fscanf(distribution_logger, "%f ", &text_dists[n_read_samples][j]);
+                        if(read_result == EOF) break;
+      }
+      read_result = fscanf(distribution_logger, "%f\n", &text_dists[n_read_samples][n_textons-1]);
+                        if(read_result == EOF) break;
+      n_read_samples++;
+    }
+                fclose(distribution_logger);
+
+    // printf("Learned samples = %d\n", n_read_samples);
+  }
+}
+
+void learn_from_file(void)
+{
+  int i;
+  float fit_error;
+
+  // first load the texton distributions:
+  load_texton_distribution();
+
+  // then learn from it:
+  // TODO: uncomment & comment to learn gains instead of sonar:
+  if(!RECURSIVE_LEARNING)
+  {
+    fit_linear_model(gains, text_dists, n_textons, n_read_samples, weights, &fit_error);
+    // fit_linear_model(sonar, text_dists, n_textons, n_read_samples, weights, &fit_error);
+  }
+  else
+  {
+    recursive_least_squares_batch(gains, text_dists, n_textons, n_read_samples, weights, &fit_error);
+  }
+
+  // save the weights to a file:
+  save_weights();
+
+  printf("Learned! Fit error = %f\n", fit_error);
+
+  // free learning distributions:
+  for(i = 0; i < n_read_samples; i++)
+  {
+    free(text_dists[i]);
+  }
+}
+
+/**
+ * Recursively fit a linear model from samples to target values - batch mode, possibly for initialization.
+ * @param[in] targets The target values
+ * @param[in] samples The samples / feature vectors
+ * @param[in] D The dimensionality of the samples
+ * @param[in] count The number of samples
+ * @param[out] parameters* Parameters of the linear fit
+ * @param[out] fit_error* Total error of the fit // TODO: relevant for RLS?
+ */
+void recursive_least_squares_batch(float* targets, float** samples, uint8_t D, uint16_t count, float* params, float* fit_error)
+{
+  // TODO: potentially randomizing the sequence of the samples, as not to get a bias towards the later samples
+  // local vars for iterating, random numbers:
+  int sam, d;
+  uint8_t D_1 = D+1;
+  float augmented_sample[D_1];
+  // augmented sample is used if the bias is used:
+  augmented_sample[D] = 1.0f;
+
+  // Initialize the weights with 0.0f:
+  for(d = 0; d < D_1; d++)
+  {
+    weights[d] = 0.0f;
+  }
+
+  // Reset the P matrix to an identity matrix:
+  int i, j;
+  for(i = 0; i < n_textons+1; i++)
+  {
+    for(j = 0; j < n_textons+1; j++)
+    {
+      if(i == j)
+      {
+        P_RLS[i][j] = 1.0f;
+      }
+      else
+      {
+        P_RLS[i][j] = 0.0f;
+      }
+    }
+  }
+
+  // give the samples one by one to the recursive procedure:
+  for(sam = 0; sam < count; sam++)
+  {
+    if(!of_landing_ctrl.use_bias)
+    {
+      recursive_least_squares(targets[sam], samples[sam], D, params);
+    }
+    else
+    {
+      for(d = 0; d < D; d++)
+      {
+        augmented_sample[d] = samples[sam][d];
+      }
+      recursive_least_squares(targets[sam], augmented_sample, D_1, params);
+    }
+  }
+
+  // give the samples one by one to the recursive procedure to determine the fit on the training set:
+  float prediction;
+  float sum_abs_err = 0;
+  for(sam = 0; sam < count; sam++)
+  {
+    prediction = predict_gain(samples[sam]);
+    sum_abs_err += fabs(prediction - targets[sam]);
+  }
+  (*fit_error) = sum_abs_err / count;
+}
+
+static inline void float_mat_div_scalar(float **o, float **a, float scalar, int m, int n)
+{
+   int i, j;
+   for (i = 0; i < m; i++) {
+     for (j = 0; j < n; j++) {
+         o[i][j] = a[i][j] / scalar;
+     }
+   }
+}
+
+static inline void float_mat_mul_scalar(float **o, float **a, float scalar, int m, int n)
+{
+   int i, j;
+   for (i = 0; i < m; i++) {
+     for (j = 0; j < n; j++) {
+         o[i][j] = a[i][j] * scalar;
+     }
+   }
+}
+
+
+void recursive_least_squares(float target, float* sample, uint8_t length_sample, float* params)
+{
+  // MATLAB procedure:
+  /*
+    u = features(i,:);
+    phi = u * P ;
+          k(:, i) = phi' / (lamda + phi * u' );
+    y(i)= weights(:,i)' * u';
+    e(i) = targets(i) - y(i) ;
+          weights(:,i+1) = weights(:,i) + k(:, i) * e(i) ;
+          P = ( P - k(:, i) * phi ) / lamda;
+  */
+
+  float _u[1][length_sample];
+  float _uT[length_sample][1];
+  float _phi[1][length_sample];
+  float _phiT[length_sample][1];
+  float _k[length_sample][1];
+  float _ke[length_sample][1];
+  float prediction, error;
+  float _u_P_uT[1][1];
+  float scalar;
+  float _O[length_sample][length_sample];
+  int i;
+
+  // u = features(i,:);
+  for(i=0; i < length_sample; i++)
+  {
+    _u[0][i] = sample[i];
+    _uT[i][0] = sample[i];
+  }
+  MAKE_MATRIX_PTR(u, _u, 1);
+  MAKE_MATRIX_PTR(uT, _uT, length_sample); // transpose
+  MAKE_MATRIX_PTR(phi, _phi, 1);
+  MAKE_MATRIX_PTR(phiT, _phiT, length_sample);
+  MAKE_MATRIX_PTR(u_P_uT, _u_P_uT, 1); // actually a scalar
+  MAKE_MATRIX_PTR(k, _k, length_sample);
+  MAKE_MATRIX_PTR(ke, _ke, length_sample);
+
+  // TODO: does this go well for bias / no bias? Because P_RLS is created with (n_textons+1) x (n_textons+1)
+  // I think yes, as long as P_RLS is initialized with n_textons+1 rows and columns.
+  MAKE_MATRIX_PTR(P, P_RLS, length_sample);
+  MAKE_MATRIX_PTR(O, _O, length_sample);
+  // phi = u * P ;
+  // result of multiplication goes into phi
+  MAT_MUL(1, length_sample, length_sample, phi, u, P);
+  // k(:, i) = phi' / (lamda + phi * u' );
+  for(i = 0; i < length_sample; i++)
+  {
+    phiT[i][0] = phi[0][i];
+  }
+  // scalar:
+  MAT_MUL(1, length_sample, 1, u_P_uT, phi, uT);
+  scalar = u_P_uT[0][0];
+  float_mat_div_scalar(k, phiT, lambda+scalar, length_sample, 1);
+  // y(i)= weights(:,i)' * u';
+  prediction = predict_gain(sample);
+  // e(i) = targets(i) - y(i) ;
+  error = target - prediction;
+  // weights(:,i+1) = weights(:,i) + k(:, i) * e(i) ;
+  float_mat_mul_scalar(ke, k, error, length_sample, 1);
+  for(i = 0; i < length_sample; i++)
+  {
+    weights[i] += ke[i][0];
+  }
+  // P = ( P - k(:, i) * phi ) / lamda;
+  MAT_MUL(length_sample, 1, length_sample, O, k, phi);
+  MAT_SUB(length_sample, length_sample, P, P, O);
+  float_mat_div_scalar(P, P, lambda, length_sample, length_sample);
+}
+
+/**
+ * Fit a linear model from samples to target values.
+ * @param[in] targets The target values
+ * @param[in] samples The samples / feature vectors
+ * @param[in] D The dimensionality of the samples
+ * @param[in] count The number of samples
+ * @param[out] parameters* Parameters of the linear fit
+ * @param[out] fit_error* Total error of the fit
+ */
+void fit_linear_model(float* targets, float** samples, uint8_t D, uint16_t count, float* params, float* fit_error)
+{
+
+  // We will solve systems of the form A x = b,
+  // where A = [nx(D+1)] matrix with entries [s1, ..., sD, 1] for each sample (1 is the bias)
+  // and b = [nx1] vector with the target values.
+  // x in the system are the parameters for the linear regression function.
+
+  // local vars for iterating, random numbers:
+  int sam, d;
+  uint16_t n_samples = count;
+  uint8_t D_1 = D+1;
+  // ensure that n_samples is high enough to ensure a result for a single fit:
+  n_samples = (n_samples < D_1) ? D_1 : n_samples;
+  // n_samples should not be higher than count:
+  n_samples = (n_samples < count) ? n_samples : count;
+
+  // initialize matrices and vectors for the full point set problem:
+  // this is used for determining inliers
+  float _AA[count][D_1];
+  MAKE_MATRIX_PTR(AA, _AA, count);
+  float _targets_all[count][1];
+  MAKE_MATRIX_PTR(targets_all, _targets_all, count);
+
+  for (sam = 0; sam < count; sam++) {
+     for(d = 0; d < D; d++) {
+      AA[sam][d] = samples[sam][d];
+    }
+    if(of_landing_ctrl.use_bias) {
+      AA[sam][D] = 1.0f;
+    }
+    else {
+      AA[sam][D] = 0.0f;
+    }
+    targets_all[sam][0] = targets[sam];
+  }
+
+
+  // decompose A in u, w, v with singular value decomposition A = u * w * vT.
+  // u replaces A as output:
+  float _parameters[D_1][1];
+  MAKE_MATRIX_PTR(parameters, _parameters, D_1);
+  float w[n_samples], _v[D_1][D_1];
+  MAKE_MATRIX_PTR(v, _v, D_1);
+
+  pprz_svd_float(AA, w, v, count, D_1);
+  pprz_svd_solve_float(parameters, AA, w, v, targets_all, count, D_1, 1);
+
+  // used to determine the error of a set of parameters on the whole set:
+  float _bb[count][1];
+  MAKE_MATRIX_PTR(bb, _bb, count);
+  float _C[count][1];
+  MAKE_MATRIX_PTR(C, _C, count);
+
+  // error is determined on the entire set
+  // bb = AA * parameters:
+  MAT_MUL(count, D_1, 1, bb, AA, parameters);
+  // subtract bu_all: C = 0 in case of perfect fit:
+  MAT_SUB(count, 1, C, bb, targets_all);
+  *fit_error = 0;
+  for (sam = 0; sam < count; sam++) {
+    *fit_error += abs(C[sam][0]);
+  }
+  *fit_error /= count;
+
+  for(d = 0; d < D_1; d++) {
+      params[d] = parameters[d][0];
+  }
+
+}
+
+
+
+// General TODO: what happens if n_textons changes?
+
+float predict_gain(float* distribution)
+{
+  //printf("Start prediction!\n");
+  int i;
+  float sum;
+
+  /*
+  // TODO: is this not slower than what our own implementation would do?
+
+  uint8_t D_1 = n_textons+1;
+  float _distr[D_1];
+  float _pred[1][1];
+
+  // make feature vector:
+  MAKE_MATRIX_PTR(distr, _distr, D_1);
+  for(i = 0; i < n_textons; i++) {
+    distr[i] = distribution[i];
+  }
+  distr[n_textons] = 1.0f; // bias
+
+  // make weight vector:
+  MAKE_MATRIX_PTR(w, weights, D_1);
+  // make resulting prediction:
+  MAKE_MATRIX_PTR(pred, _pred, count);
+
+  // multiply the vectors:
+  MAT_MUL(1, D_1, 1, pred, distr, w);
+
+  return pred[0][0];
+  */
+
+  sum = 0.0f;
+  for(i = 0; i < n_textons; i++)
+  {
+    sum += weights[i] * distribution[i];
+  }
+  if(of_landing_ctrl.use_bias) {
+    sum += weights[n_textons];
+  }
+  // printf("Prediction = %f\n", sum);
+  return sum;
+}
+
+void save_weights(void) {
+  // save the weights to a file:
+  int i;
+  char filename[512];
+        sprintf(filename, "%s/Weights_%05d.dat", STRINGIFY(TEXTON_DISTRIBUTION_PATH), 0);
+  weights_file = fopen(filename, "w");
+        if(weights_file == NULL)
+        {
+    perror(filename);
+        }
+        else
+        {
+    // save the information in a single row:
+    for(i = 0; i <= n_textons; i++)
+    {
+      fprintf(weights_file, "%f ", weights[i]);
+    }
+    fclose(weights_file);
+  }
+}
+
+void load_weights(void) {
+  int i, read_result;
+  char filename[512];
+  sprintf(filename, "%s/Weights_%05d.dat", STRINGIFY(TEXTON_DISTRIBUTION_PATH), 0);
+  weights_file = fopen(filename, "r");
+        if(weights_file == NULL)
+        {
+    printf("No weights file!\n");
+    perror(filename);
+        }
+        else
+        {
+    // load the weights, stored in a single row:
+    for(i = 0; i <= n_textons; i++)
+    {
+      read_result = fscanf(weights_file, "%f ", &weights[i]);
+                        if(read_result == EOF) break;
+    }
+    fclose(weights_file);
+  }
 }
