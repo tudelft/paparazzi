@@ -5,6 +5,8 @@
     <description>Represent the appearance (texture, color) of an image by means of a texton histogram.</description>
 
     <section name="TEXTONS" prefix="TEXTONS_">
+      <define name="FPS" value="0" description="The (maximum) frequency to run the calculations at. If zero, it will max out at the camera frame rate"/>
+      <define name="CAMERA" value="bottom_camera|front_camera" description="The V4L2 camera device that is used for the calculations"/>
       <define name="LOAD_DICTIONARY" value="YES" description="Whether a dictionary is loaded (YES) or learned (NO)."/>
       <define name="N_TEXTONS" value="20" description="The number of textons (words) in the dictionary."/>
       <define name="PATCH_SIZE" value="6" description="Size of the image patches extracted from the image - even numbers."/>
@@ -15,6 +17,7 @@
       <define name="N_LEARNING_SAMPLES" value="10000" description="Number of samples used for learning the dictionary."/>
       <define name="BORDER_WIDTH" value="0" description="Width of the image border from which no samples are taken."/>
       <define name="BORDER_HEIGHT" value="0" description="Height of the border from which no samples are taken."/>
+      <define name="DICTIONARY_PATH" value="/data/video" description="Path to which the textons dictionary is saved."/>
     </section>
 
   </doc>
@@ -41,7 +44,7 @@
   </header>
   <init fun="textons_init()"/>
 
-  <makefile target="ap">
+  <makefile target="ap|nps">
     <file name="textons.c"/>
     <file name="image.c" dir="modules/computer_vision/lib/vision"/>
   </makefile>

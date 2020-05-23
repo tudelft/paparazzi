@@ -40,6 +40,11 @@ uint8_t dictionary_initialized = 0;
 float *texton_distribution;
 
 // initial settings:
+#ifndef TEXTONS_FPS
+#define TEXTONS_FPS 30
+#endif
+PRINT_CONFIG_VAR(TEXTONS_FPS)
+
 #ifndef TEXTONS_LOAD_DICTIONARY
 #define TEXTONS_LOAD_DICTIONARY 1
 #endif
@@ -90,6 +95,11 @@ PRINT_CONFIG_VAR(TEXTONS_BORDER_HEIGHT)
 #endif
 PRINT_CONFIG_VAR(TEXTONS_DICTIONARY_NUMBER)
 
+#ifndef TEXTONS_DICTIONARY_PATH
+#define TEXTONS_DICTIONARY_PATH /data/video/
+#endif
+
+struct video_listener *listener = NULL;
 
 uint8_t load_dictionary = TEXTONS_LOAD_DICTIONARY;
 uint8_t alpha_uint = TEXTONS_ALPHA;
@@ -108,9 +118,6 @@ float alpha = 0.0;
 
 // File pointer for saving the dictionary
 static FILE *dictionary_logger = NULL;
-#ifndef DICTIONARY_PATH
-#define DICTIONARY_PATH /data/video/
-#endif
 
 /**
  * Main texton processing function that first either loads or learns a dictionary and then extracts the texton histogram.
@@ -320,8 +327,6 @@ void DistributionExtraction(uint8_t *frame, uint16_t width, uint16_t height)
   //       EXECUTION
   // ************************
 
-  printf("Execute!\n");
-
   // Allocate memory for texton distances and image patch:
   float *texton_distances, * **patch;
   texton_distances = (float *)calloc(n_textons, sizeof(float));
@@ -444,7 +449,7 @@ void save_texton_dictionary(void)
   char filename[512];
 
   // Check for available files
-  sprintf(filename, "%s/Dictionary_%05d.dat", STRINGIFY(DICTIONARY_PATH), dictionary_number);
+  sprintf(filename, "%s/Dictionary_%05d.dat", STRINGIFY(TEXTONS_DICTIONARY_PATH), dictionary_number);
 
   dictionary_logger = fopen(filename, "w");
 
@@ -471,7 +476,7 @@ void save_texton_dictionary(void)
 void load_texton_dictionary(void)
 {
   char filename[512];
-  sprintf(filename, "%s/Dictionary_%05d.dat", STRINGIFY(DICTIONARY_PATH), dictionary_number);
+  sprintf(filename, "%s/Dictionary_%05d.dat", STRINGIFY(TEXTONS_DICTIONARY_PATH), dictionary_number);
 
   if ((dictionary_logger = fopen(filename, "r"))) {
     // Load the dictionary:
@@ -516,7 +521,7 @@ void textons_init(void)
     }
   }
 
-  cv_add(texton_func);
+  listener = cv_add_to_device(&TEXTONS_CAMERA, texton_func, TEXTONS_FPS);
 }
 
 void textons_stop(void)
