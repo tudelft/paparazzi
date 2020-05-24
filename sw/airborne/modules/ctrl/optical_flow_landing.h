@@ -52,7 +52,7 @@
 struct OpticalFlowLanding {
   float agl;                    ///< agl = height from sonar (only used when using "fake" divergence)
   float agl_lp;                 ///< low-pass version of agl
-  float lp_factor;              ///< low-pass factor in [0,1], with 0 purely using the current measurement
+  float lp_const;		///< low-pass value for divergence
   float vel;                    ///< vertical velocity as determined with sonar (only used when using "fake" divergence)
   float divergence_setpoint;    ///< setpoint for constant divergence approach
   float pgain;                  ///< P-gain for constant divergence control (from divergence error to thrust)
@@ -93,7 +93,7 @@ extern struct OpticalFlowLanding of_landing_ctrl;
 
 // SSL:
 float *text_dists[MAX_SAMPLES_LEARNING];
-float sonar[MAX_SAMPLES_LEARNING];
+float sonar_OF[MAX_SAMPLES_LEARNING];
 float gains[MAX_SAMPLES_LEARNING];
 float cov_divs_log[MAX_SAMPLES_LEARNING];
 float *weights;
@@ -117,7 +117,7 @@ extern void guidance_v_module_run(bool in_flight);
 // SSL functions:
 void save_texton_distribution(void);
 void load_texton_distribution(void);
-void fit_linear_model(float* targets, float** samples, uint8_t D, uint16_t count, float* parameters, float* fit_error);
+void fit_linear_model_OF(float* targets, float** samples, uint8_t D, uint16_t count, float* parameters, float* fit_error);
 void learn_from_file(void);
 float predict_gain(float* distribution);
 void save_weights(void);

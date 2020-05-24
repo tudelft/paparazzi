@@ -133,8 +133,9 @@ PRINT_CONFIG_VAR(OFL_OPTICAL_FLOW_ID)
 float divergence_vision;
 float divergence_vision_dt;
 float normalized_thrust;
-float cov_div;
-float pstate, pused;
+//float cov_div;
+//float pstate, pused;
+float pused;
 float istate;
 float dstate;
 float vision_time,  prev_vision_time;
@@ -171,6 +172,12 @@ unsigned int n_read_samples;
 float module_active_time_sec;
 float module_enter_time;
 float previous_divergence_setpoint;
+
+// for ramping
+int ramp;
+float delta_setpoint;
+float ramp_start_time;
+float start_setpoint_ramp;
 
 // for the exponentially decreasing gain strategy:
 int32_t elc_phase;
@@ -266,6 +273,13 @@ void vertical_ctrl_module_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DIVERGENCE, send_divergence);
 
   module_enter_time = get_sys_time_float();
+
+  of_landing_ctrl.ramp_duration = 0.50f; // ramp duration in seconds
+  // ramping:
+  ramp = 0;
+  delta_setpoint = 0.0f;
+  ramp_start_time = 0.0f;
+  start_setpoint_ramp = 0.0f;
 }
 
 /**
@@ -312,6 +326,12 @@ static void reset_all_vars(void)
   of_landing_ctrl.previous_err = 0.;
   of_landing_ctrl.sum_err = 0.;
   of_landing_ctrl.d_err = 0.;
+
+  // ramping:
+  ramp = 0;
+  delta_setpoint = 0.0f;
+  ramp_start_time = 0.0f;
+  start_setpoint_ramp = 0.0f;
 }
 
 /**
@@ -527,49 +547,40 @@ void vertical_ctrl_module_run(bool in_flight)
       }
     }
     else if (of_landing_ctrl.CONTROL_METHOD == 3) {
-      // SSL LANDING: use learned weights for setting the gain on the way down:
-      if (elc_phase == 0) {
-	float phase_0_set_point = 0.0f;
 
-	// adapt the p-gain with a low-pass filter to the gain predicted by image appearance:
-	pstate = predict_gain(texton_distribution);
-	// low-pass filtered, downscaled pstate predictions:
-	of_landing_ctrl.pgain = of_landing_ctrl.lp_factor_prediction * of_landing_ctrl.pgain + (1.0f - of_landing_ctrl.lp_factor_prediction) * of_landing_ctrl.reduction_factor_elc * pstate;
-	pused = of_landing_ctrl.pgain;
-	// make sure pused does not become too small, nor grows too fast:
-	if (of_landing_ctrl.pgain < MINIMUM_GAIN) { of_landing_ctrl.pgain = MINIMUM_GAIN; }
-	// have the i and d gain depend on the p gain:
-	istate = 0.025 * of_landing_ctrl.pgain;
-	dstate = 0.0f;
-	printf("of_landing_ctrl.pgain = %f\n", of_landing_ctrl.pgain);
+      // SSL LANDING: use learned weights for setting the gain on the way down:
+
+      // adapt the p-gain with a low-pass filter to the gain predicted by image appearance:
+      pstate = predict_gain(texton_distribution);
+      // low-pass filtered, downscaled pstate predictions:
+      // TODO: just as with divergence, also take dt into account for low-pass filtering:
+      of_landing_ctrl.pgain = of_landing_ctrl.lp_factor_prediction * of_landing_ctrl.pgain + (1.0f - of_landing_ctrl.lp_factor_prediction) * of_landing_ctrl.reduction_factor_elc * pstate;
+      pused = of_landing_ctrl.pgain;
+      // make sure pused does not become too small, nor grows too fast:
+      if (of_landing_ctrl.pgain < MINIMUM_GAIN) { of_landing_ctrl.pgain = MINIMUM_GAIN; }
+      // have the i and d gain depend on the p gain:
+      istate = 0.025 * of_landing_ctrl.pgain;
+      dstate = 0.0f;
+      printf("of_landing_ctrl.pgain = %f\n", of_landing_ctrl.pgain);
+
+      if (elc_phase == 0) {
+	// Let the low-pass filter settle first with 0 divergence:
+	float phase_0_set_point = 0.0f;
+	previous_divergence_setpoint = 0.0f;
 
 	// use the divergence for control:
 	thrust_set = PID_divergence_control(phase_0_set_point, pused, istate, dstate, dt);
 
 	// if the low-pass filter of the p-gain has settled and the drone is moving in the right direction:
-	// TODO: add module active time:
 	if (module_active_time_sec >= 3.0f && of_landing_ctrl.divergence * of_landing_ctrl.divergence_setpoint >= 0.0f) {
 	    // next phase:
 	    elc_phase = 1;
 	}
       }
       else {
-	  // adapt the p-gain with a low-pass filter to the gain predicted by image appearance:
-	  pstate = predict_gain(texton_distribution);
-	  of_landing_ctrl.pgain = of_landing_ctrl.lp_factor_prediction * of_landing_ctrl.pgain + (1.0f - of_landing_ctrl.lp_factor_prediction) * of_landing_ctrl.reduction_factor_elc * pstate;
-	  pused = of_landing_ctrl.pgain;
-	  // make sure pused does not become too small, nor grows too fast:
-	  if (of_landing_ctrl.pgain < MINIMUM_GAIN) { of_landing_ctrl.pgain = MINIMUM_GAIN; }
-	  // have the i and d gain depend on the p gain:
-	  istate = 0.025 * of_landing_ctrl.pgain;
-	  dstate = 0.0f;
-	  printf("of_landing_ctrl.pgain = %f\n", of_landing_ctrl.pgain);
-
-	  // use the divergence for control:
+	  // use the chosen divergence setpoint and the measured divergence for control:
 	  thrust_set = PID_divergence_control(of_landing_ctrl.divergence_setpoint, pused, istate, dstate, dt);
-
       }
-
       if (pused < of_landing_ctrl.p_land_threshold) {
 	  final_landing_procedure();
       }
@@ -583,11 +594,9 @@ void vertical_ctrl_module_run(bool in_flight)
 	float phase_0_set_point = 0.0f;
 	previous_divergence_setpoint = 0.0f;
 	// adapt the p-gain with a low-pass filter to the gain predicted by image appearance:
-	// TODO: lp_factor is now the same as used for the divergence. This may not be appropriate
 	pstate = predict_gain(texton_distribution);
-	float lp_factor_prediction = 0.95;
 	// of_landing_ctrl.pgain = lp_factor_prediction * of_landing_ctrl.pgain + (1.0f - lp_factor_prediction) * of_landing_ctrl.stable_gain_factor * pstate;
-	of_landing_ctrl.pgain = lp_factor_prediction * of_landing_ctrl.pgain + (1.0f - lp_factor_prediction) * of_landing_ctrl.reduction_factor_elc * pstate;
+	of_landing_ctrl.pgain = of_landing_ctrl.lp_factor_prediction * of_landing_ctrl.pgain + (1.0f - of_landing_ctrl.lp_factor_prediction) * of_landing_ctrl.reduction_factor_elc * pstate;
 	pused = of_landing_ctrl.pgain;
 	// make sure pused does not become too small, nor grows too fast:
 	if (of_landing_ctrl.pgain < MINIMUM_GAIN) { of_landing_ctrl.pgain = MINIMUM_GAIN; }
@@ -597,20 +606,15 @@ void vertical_ctrl_module_run(bool in_flight)
 	printf("of_landing_ctrl.pgain = %f\n", of_landing_ctrl.pgain);
 
 	// use the divergence for control:
-	thrust = PID_divergence_control(phase_0_set_point, pused, istate, dstate, &err);
-	// keep track of histories and set the covariance
-	set_cov_div(thrust);
-	// update the controller errors:
-	update_errors(err);
+	thrust_set = PID_divergence_control(phase_0_set_point, pused, istate, dstate, dt);
 
 	// if the low-pass filter of the p-gain has settled and the drone is moving in the right direction:
-	if (module_active_time_sec >= 3.0f && divergence * of_landing_ctrl.divergence_setpoint >= 0.0f) {
+	if (module_active_time_sec >= 3.0f && of_landing_ctrl.divergence * of_landing_ctrl.divergence_setpoint >= 0.0f) {
 	    // next phase:
 	    elc_phase = 1;
-	    clock_gettime(CLOCK_MONOTONIC, &spec);
-	    elc_time_start = spec.tv_sec * 1E3 + spec.tv_nsec / 1E6;
+	    elc_time_start = get_sys_time_float();
 
-	    // we don't have to reduce the gain, as this is done above for the p-gain already:
+	    // we don't have to reduce the gain with of_landing_ctrl.reduction_factor_elc, as this is done above for the p-gain already:
 	    elc_p_gain_start = pused;
 	    elc_i_gain_start = istate;
 	    elc_d_gain_start = dstate;
@@ -620,9 +624,8 @@ void vertical_ctrl_module_run(bool in_flight)
       }
       else if (elc_phase == 1) {
 	// land while exponentially decreasing the gain:
-	clock_gettime(CLOCK_MONOTONIC, &spec);
-	new_time = spec.tv_sec * 1E3 + spec.tv_nsec / 1E6;
-	float t_interval = (new_time - elc_time_start) / 1000.0f;
+	float new_time = get_sys_time_float();
+	float t_interval = new_time - elc_time_start;
 
 	// this should not happen, but just to be sure to prevent too high gain values:
 	if (t_interval < 0) { t_interval = 0.0f; }
@@ -646,11 +649,7 @@ void vertical_ctrl_module_run(bool in_flight)
 	pused = pstate;
 
 	// use the divergence for control:
-	thrust = PID_divergence_control(of_landing_ctrl.divergence_setpoint, pused, istate, dstate, &err);
-	// keep track of histories and set the covariance
-	set_cov_div(thrust);
-	// update the controller errors:
-	update_errors(err);
+	thrust_set = PID_divergence_control(of_landing_ctrl.divergence_setpoint, pused, istate, dstate, dt);
 
 	// when to make the final landing:
 	if (pstate < of_landing_ctrl.p_land_threshold) {
@@ -663,7 +662,7 @@ void vertical_ctrl_module_run(bool in_flight)
     }
     else  if (of_landing_ctrl.CONTROL_METHOD == 5) {
 
-	// SSL hover, to check if it works nicely:
+	// SSL raw, no landing procedure, ideal for hovering:
 
 	pstate = predict_gain(texton_distribution);
 	of_landing_ctrl.pgain = of_landing_ctrl.lp_factor_prediction * of_landing_ctrl.pgain + (1.0f - of_landing_ctrl.lp_factor_prediction) * of_landing_ctrl.reduction_factor_elc * pstate;
@@ -676,12 +675,7 @@ void vertical_ctrl_module_run(bool in_flight)
 	printf("of_landing_ctrl.pgain = %f\n", of_landing_ctrl.pgain);
 
 	// use the divergence for control:
-	thrust = PID_divergence_control(of_landing_ctrl.divergence_setpoint, pused, istate, dstate, &err);
-	// keep track of histories and set the covariance
-	set_cov_div(thrust);
-	// update the controller errors:
-	update_errors(err);
-
+	thrust_set = PID_divergence_control(of_landing_ctrl.divergence_setpoint, pused, istate, dstate, dt);
     }
 
     if (in_flight) {
@@ -750,8 +744,39 @@ void set_cov_div(int32_t thrust)
  */
 int32_t PID_divergence_control(float setpoint, float P, float I, float D, float dt)
 {
-  // determine the error:
-  float err = setpoint - of_landing_ctrl.divergence;
+
+  if(previous_divergence_setpoint != setpoint)
+  {
+    ramp = 1;
+    delta_setpoint = setpoint - previous_divergence_setpoint;
+    start_setpoint_ramp = previous_divergence_setpoint;
+    ramp_start_time = get_sys_time_float();
+  }
+
+  // determine the error, possibly using a ramp:
+  float err;
+  if(!ramp) {
+    err = setpoint - of_landing_ctrl.divergence;
+  }
+  else {
+    // rt is in [0,1] and used to make the ramp:
+    float ramp_time = get_sys_time_float();
+    float rt = (ramp_time - ramp_start_time) / (of_landing_ctrl.ramp_duration);
+
+    if(rt > 1.0f) {
+      ramp = 0; // end of the ramp
+      err = setpoint - of_landing_ctrl.divergence;
+      // Send the setpoint back via the divergence message, so that we can see that this procedure works
+      divergence_vision_dt = setpoint;
+    }
+    else {
+      float ds = start_setpoint_ramp + rt * delta_setpoint;
+      // Send the setpoint back via the divergence message, so that we can see that this procedure works
+      divergence_vision_dt = ds;
+      // determine the error:
+      err = ds - of_landing_ctrl.divergence;
+    }
+  }
 
   // update the controller errors:
   update_errors(err, dt);
@@ -767,6 +792,8 @@ int32_t PID_divergence_control(float setpoint, float P, float I, float D, float 
 
   // update covariance
   set_cov_div(thrust);
+
+  previous_divergence_setpoint = setpoint;
 
   return thrust;
 }
@@ -890,9 +917,9 @@ void load_texton_distribution(void)
     // for(i = 0; i < MAX_SAMPLES_LEARNING; i++)
     for(i = 0; i < 30; i++)
     {
-      read_result = fscanf(distribution_logger, "%f ", &sonar[n_read_samples]);
+      read_result = fscanf(distribution_logger, "%f ", &sonar_OF[n_read_samples]);
                         if(read_result == EOF) break;
-      // if(i % 100) printf("SONAR: %f\n", sonar[n_read_samples]);
+      // if(i % 100) printf("SONAR: %f\n", sonar_OF[n_read_samples]);
       read_result = fscanf(distribution_logger, "%f ", &gains[n_read_samples]);
                         if(read_result == EOF) break;
       read_result = fscanf(distribution_logger, "%f ", &cov_divs_log[n_read_samples]);
@@ -927,8 +954,8 @@ void learn_from_file(void)
   // TODO: uncomment & comment to learn gains instead of sonar:
   if(!RECURSIVE_LEARNING)
   {
-    fit_linear_model(gains, text_dists, n_textons, n_read_samples, weights, &fit_error);
-    // fit_linear_model(sonar, text_dists, n_textons, n_read_samples, weights, &fit_error);
+    fit_linear_model_OF(gains, text_dists, n_textons, n_read_samples, weights, &fit_error);
+    // fit_linear_model_OF(sonar_OF, text_dists, n_textons, n_read_samples, weights, &fit_error);
   }
   else
   {
@@ -1118,7 +1145,7 @@ void recursive_least_squares(float target, float* sample, uint8_t length_sample,
  * @param[out] parameters* Parameters of the linear fit
  * @param[out] fit_error* Total error of the fit
  */
-void fit_linear_model(float* targets, float** samples, uint8_t D, uint16_t count, float* params, float* fit_error)
+void fit_linear_model_OF(float* targets, float** samples, uint8_t D, uint16_t count, float* params, float* fit_error)
 {
 
   // We will solve systems of the form A x = b,
