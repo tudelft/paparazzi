@@ -1,22 +1,22 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
-<airframe name="Disco_Inferno">
+<airframe name="Disco_FlatSpin">
   <description>
 
-    * Parrot Disco Fixedwing Modiefied Hardware with added Pixracer board.
+    * Parrot Disco Fixedwing Modified Hardware with added Pixracer board.
     + Airframe to validate all onboard functionally...
-    Own Disco Inferno
-    + Autopilot: Pixracer 1
-    + Actuators: Hitec HS5055 servos
-    + GPS: uBlox M8N GNSS
-    + TELEMETRY: 3DR Si1000 based 868
-    + CURRENT: V/A power block sensing
-    + RC RX: R-XSR FrSky Receiver with SBUS out
+    Disco FlatSpin
+    + Autopilot:   Pixracer 1
+    + Actuators:   Hitec HS5055 servos
+    + GPS:         uBlox M8N GNSS
+    + TELEMETRY:   3DR Si1000 based 868
+    + CURRENT:     V/A power block sensing
+    + RC RX:       R-XSR FrSky Receiver with SBUS out
 
     NOTES:
 
     + Hey, calibrate your magneto! Yes, you too ;), unit UKF auto works... output
-    + One could make a flightplan mimicing exact default behaviour of Parrot assisted flight
-    + Enlarged battery bay ,and option fit a 5200 mAh 3S battery. The all-up weight (AUW)) of the airframe will be ~150g more
+    + One could make a flightplan mimicking exact default behaviour of Parrot assisted flight
+    + Enlarged battery bay ,and option fit a 5200 mAh 3S battery. The all-up weight (AUW)) of the airframe will be  ~150g more
     Center of gravity still the same, flighttime doubles...
     + If you change your control from ETECS to Classic or New make sure to disable the settings/estimation/ac_char
     + PPRZLink v2 advised for tcas fun
@@ -28,23 +28,24 @@
     else if one would lose RC or switch of transmitter during Auto2 flight, it will hop to manual.. very bad...
 
     A PPM receiver could theoretically be used, only for Linux ARCH no software to handle it is written (hint!)
-    SUMD also. For the PPRZ Spektum could also, but not if you also want to fly it with RC but without PPRZ as AP only original since Spektrum serial is not handled by the Parrot main AP
+    SUMD also. For the PPRZ Spektum could also, but not if you also want to fly it with RC but without PPRZ as AP only original
+    since Spektrum serial is not handled by the Parrot main AP
 
     The setup ot Transmitter is in such a way that one could fly without PPRC just Parrot with a 3rd party transmitter
     Thus modeswitch on 5 for well.. mode
 
-    TX Channel Nr Function Control type Comments
-    1 Roll Stick
-    2 Pitch Stick
-    3 Throttle Stick
-    4 Yaw Stick Used to set the Disco in loiter
-    5 Gear 3-position switch Used to configure the piloting mode:
-      Auto-pilot with Parrot SkyController2 (Risky so better limit this one exept if you teaching people to fly with Skycontroller student AND RCTX for teacher )
-      Auto-pilot with RC controller
-      Full manual with RC controller
-    6 Automatic Take-off/Landing 2-position trainer switch Used in “Auto-pilot with RC controller” mode
-    Start: SWx Landing: SWy
-    Motor off in manual mode SW?
+    TX Channel Nr  Function                        Control type        Comments
+    1              Roll                            Stick
+    2              Pitch                           Stick
+    3              Throttle                        Stick
+    4              Yaw                             Stick               Used to set the Disco in loiter
+    5              Gear                            3-position switch   Used to configure the piloting mode:
+    Auto-pilot with Parrot SkyController2 (Risky so better limit this one exept if you teaching people to fly with Skycontroller student AND RCTX for teacher )
+    Auto-pilot with RC controller
+    Full manual with RC controller
+    6              Automatic Take-off/Landing      2-position trainer switch Used in “Auto-pilot with RC controller” mode
+    Start: SWx    Landing: SWy
+    Motor off in manual mode    SW?
   </description>
   <firmware name="fixedwing">
     <!-- ********************** For in the real flying hardware ******************** -->
@@ -57,6 +58,7 @@
     <define name="LOW_NOISE_TIME" value="10"/>
     -->
     <define name="ADC_CHANNEL_VSUPPLY" value="ADC_1"/><!-- TODO to boardfile, if default remove define-->
+
 
     <!-- <configure name="CPU_LED" value="1"/>--> <!-- Change to whatever you like -->
 
@@ -81,8 +83,8 @@
       <configure name="IMU_MPU9250_SPI_DEV" value="spi1"/>
       <configure name="IMU_MPU9250_SPI_SLAVE_IDX" value="SPI_SLAVE2"/>
       <define name="IMU_MPU9250_READ_MAG" value="FALSE"/>
-      <define name="IMU_MPU9250_GYRO_RANGE" value="MPU9250_GYRO_RANGE_2000"/>
-      <!-- To be able (for now) to set AP IMU orientaion -->
+      <define name="IMU_MPU9250_GYRO_RANGE" value="MPU9250_GYRO_RANGE_2000" />
+      <!-- To be able (for now) to set AP IMU orientation -->
       <!-- <define name="IMU_MPU9250_CHAN_X" value="1"/>
       <define name="IMU_MPU9250_CHAN_Y" value="0"/>
       <define name="IMU_MPU9250_CHAN_Z" value="2"/>
@@ -93,9 +95,9 @@
 
     <module name="mag" type="hmc58xx">
       <!-- We will use the magnetometer that is available on our GPS board
-         Thi one is temperature compensated and furtherest away from all other devices
+         Thi one is temperature compensated and furthest away from all other devices
          so less influence (still to measure raw mag values to check this though )
-         In case we where sloppy builing in the GPS+mag combo , we always are ;)
+         In case we where sloppy building in the GPS+mag combo , we always are ;)
          we need to compensate this a bit e.g. the pitch
          lucky the tree axis are aligned already in hardware ;) -->
       <!-- <define name="MAG_TO_IMU_THETA" value="6" unit="deg"/>-->
@@ -110,7 +112,7 @@
     </module>
 
     <!-- If you build in your GPS where the MAGNETOMETER resides on the board
-      not aligned with the Accelometer/Gyro axis then set these values -->
+  not aligned with the Accelerometer/Gyro axis then set these values -->
     <define name="MAG_TO_IMU_PHI" value="0.0" unit="deg"/>
     <define name="MAG_TO_IMU_PSI" value="0.0" unit="deg"/>
     <define name="MAG_TO_IMU_THETA" value="0.0" unit="deg"/>
@@ -118,11 +120,12 @@
     <module name="actuators" type="pwm"/>
     <!-- This GPS is a real ublox M8N, so setting can be saved, no need
     for ubx_ucenter one has can set it oneself since we have all kinds
-    of nifty Galilleio setting we rather keep that, but for now, lazyness -->
+    of nifty Galileo setting we rather keep that, but for now, laziness -->
     <module name="gps" type="ubx_ucenter"/>
 
     <!-- SBUS out is AETR by default but our transmitter sends TAER -->
-    <!-- <module name="radio_control" type="datalink">--> <!-- The output type of RX, over the air it can can be all kinds e.g. DSMX-->
+    <module name="radio_control" type="sbus"/>
+    <!--    The output type of RX, over the air it can can be all kinds e.g. DSMX-->
     <!--  <define name="RADIO_CONTROL_NB_CHANNEL" value="7"/>
     </module>-->
 
@@ -149,7 +152,7 @@
     <configure name="USE_BARO_BOARD" value="TRUE"/>
 
     <!-- amount of time it take for the bat to trigger check -->
-    <!-- to avoid bat low spike detection when strong pullup withch draws short sudden power-->
+    <!-- to avoid bat low spike detection when strong pullup which draws short sudden power-->
     <!-- TODO: specificaly test for Disco see if needed or which value -->
     <define name="BAT_CHECKER_DELAY" value="80" unit="s/10"/> <!-- in tenth of seconds per default use ELECTRICAL_PERIODIC_FREQ if you for some reason want it differently-->
 
@@ -196,15 +199,8 @@
 
     <module name="geo_mag"/>
     <module name="nav" type="line"/>
-    <module name="nav" type="line_border"/>
-    <module name="nav" type="line_osam"/>
-    <module name="nav" type="survey_polygon">
-      <define name="POLYSURVEY_DEFAULT_DISTANCE" value="40" unit="m"/> <!-- Make it your fit for plan and camera type -->
-    </module>
-    <module name="nav" type="survey_poly_osam"/>
-    <module name="nav" type="smooth"/>
-    <module name="nav" type="vertical_raster"/>
-    <module name="nav" type="flower"/>
+
+    <module name="fs_landing"/>
 
   </firmware>
 
@@ -217,7 +213,7 @@
   </servos>
 
   <section name="ServoPositions">
-    <define name="ThrottleHigh()" value="(ap_state->commands[COMMAND_THROTTLE]>9600/2)"/>
+    <define name="ThrottleHigh()" value="(imcu_get_command(COMMAND_THROTTLE)>9600/2)"/>
   </section>
 
   <!-- ********************* SERVO MIXER *************************** -->
@@ -615,30 +611,6 @@
     <define name="ALT_SHIFT_PLUS_PLUS" value="40"/>
     <define name="ALT_SHIFT_PLUS" value="20"/>
     <define name="ALT_SHIFT_MINUS" value="-20"/>
-  </section>
-
-  <!-- ************************ SIMU ******************************** -->
-  <section name="SIMU">
-    <define name="JSBSIM_MODEL" value="&quot;Malolo1&quot;"/>
-    <!--define name="JSBSIM_INIT"   value="&quot;Malolo1-IC&quot;"/-->
-    <define name="JSBSIM_LAUNCHSPEED" value="11.0"/>
-    <define name="WEIGHT" value="1."/>
-    <define name="JSBSIM_IR_ROLL_NEUTRAL" value="RadOfDeg(0.)"/>
-    <define name="JSBSIM_IR_PITCH_NEUTRAL" value="RadOfDeg(0.)"/>
-    <define name="YAW_RESPONSE_FACTOR" value=".9"/>   <!--default 1.-->
-    <define name="PITCH_RESPONSE_FACTOR" value="1."/> <!--default 1.-->
-    <define name="ROLL_RESPONSE_FACTOR" value="20."/> <!--default 15-->
-  </section>
-
-  <!-- ************************ JSBSIM ******************************* -->
-  <section name="SIMULATOR" prefix="NPS_">
-    <define name="JSBSIM_MODEL" value="&quot;Malolo1&quot;" type="string"/>
-    <define name="COMMANDS_NB" value="4"/>
-    <define name="ACTUATOR_NAMES" value="throttle-cmd-norm, aileron-cmd-norm, elevator-cmd-norm, rudder-cmd-norm" type="string[]"/>
-    <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
-    <define name="JS_AXIS_MODE" value="4"/>
-    <define name="BYPASS_AHRS" value="TRUE"/>
-    <define name="BYPASS_INS" value="TRUE"/>
   </section>
 
 </airframe>

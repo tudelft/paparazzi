@@ -22,6 +22,11 @@
 // TODO Complain during compilation, something might cause controller to brake
 #endif
 
+#define S_THROTTLE_LEFT 0
+#define S_THROTTLE_RIGHT 1
+#define S_ELEVON_LEFT 2
+#define S_ELEVON_RIGHT 3
+
 #define NB_ACT_FS 4
 
 struct fs_landing_t {

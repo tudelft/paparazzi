@@ -5,6 +5,9 @@
 
 #include "fs_landing.h"
 
+struct fs_landing_t fs_landing;
+struct fs_landing_t current_actuator_values;
+
 void fs_landing_init()
 {
     uint8_t i;
@@ -19,7 +22,7 @@ void fs_landing_run()
     return;
 }
 
-void is_fs_landing_active()
+bool is_fs_landing_active()
 {
     bool is_active;
     if (radio_control.values[RADIO_AUX2] < 4500) {
@@ -33,10 +36,10 @@ void is_fs_landing_active()
 void fs_landing_set_actuator_values()
 {
     if (is_fs_landing_active()) {
-        fs_landing.commands[S_THROTTLE_LEFT] = current_actuator_values[S_THROTTLE_LEFT];
-        fs_landing.commands[S_THROTTLE_RIGHT] = current_actuator_values[S_THROTTLE_RIGHT];
-        fs_landing.commands[S_ELEVON_LEFT] = current_actuator_values[S_ELEVON_LEFT];
-        fs_landing.commands[S_ELEVON_RIGHT] = current_actuator_values[S_ELEVON_RIGHT];
+        fs_landing.commands[S_THROTTLE_LEFT] = current_actuator_values.commands[S_THROTTLE_LEFT];
+        fs_landing.commands[S_THROTTLE_RIGHT] = current_actuator_values.commands[S_THROTTLE_RIGHT];
+        fs_landing.commands[S_ELEVON_LEFT] = current_actuator_values.commands[S_ELEVON_LEFT];
+        fs_landing.commands[S_ELEVON_RIGHT] = current_actuator_values.commands[S_ELEVON_RIGHT];
 
         uint8_t i;
         for (i = 0; i < NB_ACT_FS; i++) {
