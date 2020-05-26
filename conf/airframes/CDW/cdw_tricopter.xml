@@ -82,6 +82,7 @@ LiPo/LiIo-Zellen: 3
     <axis name="ROLL" failsafe_value="0"/>
     <axis name="YAW" failsafe_value="0"/>
     <axis name="THRUST" failsafe_value="0"/>
+<!--    <axis name="LEFTFLAP" failsafe_value="0"/>-->
   </commands>
 
   <section name="MIXING" prefix="MOTOR_MIXING_">
