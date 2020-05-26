@@ -1,0 +1,18 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="fs_landing" dir="fs_landing">
+  <doc>
+    <description>
+      Flat spin controller
+    </description>
+  </doc>
+  <header>
+    <file name="fs_landing.h" />
+  </header>
+  <init fun="fs_landing_init()"/>
+  <periodic fun="fs_landing_run()"/>
+  <makefile>
+    <file name="fs_landing.c" />
+  </makefile>
+</module>
+
