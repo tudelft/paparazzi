@@ -1,7 +1,7 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 <airframe name="Disco_FlatSpin">
   <description>
-
+    <!-- TODO Update doc -->
     * Parrot Disco Fixedwing Modified Hardware with added Pixracer board.
     + Airframe to validate all onboard functionally...
     Disco FlatSpin
@@ -211,7 +211,7 @@
 
     <module name="tlsf"/>
     <module name="pprzlog"/>
-    <module name="logger" type="sd_chibios"/>  <!-- FIXME -->
+    <module name="logger" type="sd_chibios"/>
     <module name="flight_recorder"/>
 
     <module name="fs_landing"/>
@@ -222,8 +222,8 @@
   <servos>
     <servo name="S_THROTTLE_LEFT" no="0" min="1100" neutral="1110" max="1900"/>
     <servo name="S_THROTTLE_RIGHT" no="1" min="1100" neutral="1110" max="1900"/>
-    <servo name="S_ELEVON_LEFT" no="2" min="1100" neutral="1500" max="1900"/>
-    <servo name="S_ELEVON_RIGHT" no="3" min="1900" neutral="1500" max="1100"/>
+    <servo name="S_ELEVON_LEFT" no="2" min="1100" neutral="1500" max="1900"/> <!-- max is upward deflection-->
+    <servo name="S_ELEVON_RIGHT" no="3" min="1900" neutral="1500" max="1100"/> <!-- min is downward deflection-->
   </servos>
 
   <section name="ServoPositions">
@@ -233,7 +233,7 @@
   <!-- ********************* SERVO MIXER *************************** -->
   <section name="MIXER">
     <define name="ELEVON_ROLL_FACTOR" value="0.7f"/>
-    <define name="ELEVON_PITCH_FACTOR" value="0.6f"/>
+    <define name="ELEVON_PITCH_FACTOR" value="0.6f"/>  <!-- TODO Check sign -->
     <define name="ELEVON_YAW_FACTOR" value="0.9f"/>
     <!-- Set up/down deflection differences, needs many in flight tests to find acceptable values-->
     <define name="ELEVON_DIFF" value="0.3f"/> <!-- TODO: not used yet, not tuned yet... -->
@@ -257,9 +257,6 @@
     <set command="YAW" value="@YAW"/>
     <!-- Map flat-spin landing to RC switch -->
     <set command="FS_LANDING" value="@AUX2" />
-    <!-- for EXTRAs e.g. tuning via RC these ones below -->
-    <!-- <set command="GAIN1" value="@GAIN1"/> -->
-    <!-- <set command="CALIB" value="@GAIN2"/> -->
   </rc_commands>
 
   <!-- ************************ AUTO RC COMMANDS ***************************** -->
@@ -272,7 +269,7 @@
      makes life of a single test piloted AC much easier -->
     <!--<set command="GAIN1"    value="@GAIN1"/>
     <set command="CALIB"    value="@GAIN2"/>-->
-    <!-- Todo to determin best pitch for flare in auto2 one can add Pitch command temporary also-->
+    <!-- Todo to determine best pitch for flare in auto2 one can add Pitch command temporary also-->
     <!--<set command="PITCH" value="@PITCH"/>-->
   </auto_rc_commands>
 
@@ -286,8 +283,8 @@
     <!-- opposite of left -->
     <let var="rudderleft" value="-(@YAW * $leftyaw) * ELEVON_YAW_FACTOR"/>
     <let var="rudderright" value="(@YAW * $rightyaw) * ELEVON_YAW_FACTOR"/>
-    <let var="throttleleft" value="@THROTTLE*$leftyaw"/>
-    <let var="throttleright" value="@THROTTLE*$rightyaw"/>
+    <let var="throttleleft" value="@THROTTLE + $leftyaw * @YAW + rightyaw * @YAW"/>
+    <let var="throttleright" value="@THROTTLE - rightyaw * @YAW - leftyaw * @YAW"/>
 
     <!-- flat_spin landing values -->
     <call fun="fs_landing_set_actuator_values()"/>
