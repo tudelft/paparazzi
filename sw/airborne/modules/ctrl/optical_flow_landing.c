@@ -408,6 +408,20 @@ void vertical_ctrl_module_run(bool in_flight)
   ***********/
   // landing indicates whether the drone is already performing a final landing procedure (flare):
   if (!landing) {
+
+    /*
+    // First seconds, don't do anything crazy:
+    if (module_active_time_sec < 2.5f) {
+      int32_t nominal_throttle = of_landing_ctrl.nominal_thrust * MAX_PPRZ;
+      thrust_set = nominal_throttle;
+      stabilization_cmd[COMMAND_THRUST] = thrust;
+      // keep track of histories and set the covariance
+      set_cov_div(thrust_set);
+      cov_div = 0.0f; // however, cov div is set to 0 to prevent strange issues at module startup.
+      return;
+    }
+    */
+
     if (of_landing_ctrl.CONTROL_METHOD == 0) {
       // FIXED GAIN CONTROL, cov_limit for landing:
 
