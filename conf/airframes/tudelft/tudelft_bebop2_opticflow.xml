@@ -64,7 +64,9 @@
       <define name="TEXTONS_N_TEXTONS" value="10"/>
     </module>
 
-    <module name="optical_flow_landing.xml"/>
+    <module name="optical_flow_landing.xml">
+	<define name="OFL_COV_SETPOINT" value="-0.10"/>
+    </module>
 
     <!-- <module name="video_rtp_stream">
       <define name="VIEWVIDEO_CAMERA" value="bottom_camera"/>
@@ -252,8 +254,6 @@
 
   <section name="AUTOPILOT">
 
-
-
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
     <define name="MODE_MANUAL" value="AP_MODE_MODULE"/>
     <define name="MODE_AUTO1" value="AP_MODE_MODULE"/>
@@ -265,6 +265,7 @@
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
 -->
+
     <!--
     <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_MANUAL" value="AP_MODE_MODULE"/>

@@ -11,17 +11,20 @@
     </description>
     <define name="OFL_AGL_ID" value="ABI_BROADCAST" description="Sender id of the AGL (sonar) ABI message"/>
     <section name="OFL" prefix="OFL_">
-      <define name="PGAIN" value="0.50" description="P gain on height error"/>
-      <define name="IGAIN" value="0.10" description="I gain on summed height error"/>
-      <define name="DGAIN" value="0.0" description="D gain on summed height error"/>
+      <define name="PGAIN" value="0.50" description="P gain on divergence error"/>
+      <define name="IGAIN" value="0.10" description="I gain on summed divergence error"/>
+      <define name="DGAIN" value="0.0" description="D gain on differential of divergence error"/>
       <define name="VISION_METHOD" value="1" description="0 = fake vision, 1 = real vision"/>
       <define name="CONTROL_METHOD" value="0" description="0 = fixed gain control, 1 = adaptive gain control, 2 = exponential control, 3 = learning-based control."/>
       <define name="COV_METHOD" value="0" description="0 = cov(uz, div), 1 = cov(div_past, div)"/>
       <define name="COV_WINDOW_SIZE" value="30" description="Number of time steps for window size for getting the covariance over time."/>
       <define name="COV_LANDING_LIMIT" value="2.2" description="Covariance where the vehicle engages final landing procedure."/>
-      <define name="COV_SETPOINT" value="-0.0075" description="Target Covariance for adaptive gain increment."/>
+      <define name="COV_SETPOINT" value="-0.10" description="Target Covariance for adaptive gain increment."/>
       <define name="LP_CONST" value="0.75" description="Low pass filter constant for divergence input."/>
       <define name="ELC_OSCILLATE" value="true" description="Oscillate to find optimum gain before initiating landing."/>
+<!--      <define name="PGAIN_ADAPTIVE" value="0.50" description="P gain on cov error"/>
+      <define name="IGAIN_ADAPTIVE" value="0.10" description="I gain on summed cov error"/>
+      <define name="DGAIN_ADAPTIVE" value="0.0" description="D gain on differential cov error"/> -->
       <!-- TODO: add more explanations of settings below -->
     </section>
   </doc>
