@@ -1,30 +1,52 @@
 //
 // Created by matteo on 09/05/2020.
 //
-#include "subsystems/radio_control.h"
 
 #include "fs_landing.h"
+#include "feed_forward.h"
 
 struct fs_landing_t fs_landing;
 struct fs_landing_t current_actuator_values;
 
+uint8_t is_spinning = false;
+uint8_t has_ff_started = false;
+float ff_start_time = 0;
+
 void fs_landing_init()
 {
     uint8_t i;
-    for (i = 0; i < NB_ACT_FS; i++) {
+    for (i = 0; i < ACTUATORS_NB; i++) {
         fs_landing.commands[i] = 0;
+        current_actuator_values.commands[i] = 0;
     }
 }
 
 void fs_landing_run()
 {
-    // TODO set current_actuator_values here
+    if (is_fs_landing_active()) {
+        if (is_spinning) {
+            // TODO Replace actuator values with correct ones
+            current_actuator_values.commands[SERVO_S_THROTTLE_LEFT] = 1200;  // A visually obvious value
+            current_actuator_values.commands[SERVO_S_THROTTLE_RIGHT] = 1200;  // A visually obvious value
+            current_actuator_values.commands[SERVO_S_ELEVON_LEFT] = 1200;  // A visually obvious value
+            current_actuator_values.commands[SERVO_S_ELEVON_RIGHT] = 1800;  // A visually obvious value
+        } else {
+            if (has_ff_started) {
+                ff_actuator_values(&current_actuator_values, ff_start_time, &is_spinning);
+            } else {
+                ff_start_time = get_sys_time_float();
+                has_ff_started = true;
+            }
+        }
+    }
     return;
 }
 
 bool is_fs_landing_active()
 {
     bool is_active;
+    // Map to command so if a different switch is used it will still work
+    // if (radio_control.values[FS_LANDING] < 4500) { TODO Check
     if (radio_control.values[RADIO_AUX2] < 4500) {
         is_active = false;
     } else {
@@ -36,13 +58,13 @@ bool is_fs_landing_active()
 void fs_landing_set_actuator_values()
 {
     if (is_fs_landing_active()) {
-        fs_landing.commands[S_THROTTLE_LEFT] = current_actuator_values.commands[S_THROTTLE_LEFT];
-        fs_landing.commands[S_THROTTLE_RIGHT] = current_actuator_values.commands[S_THROTTLE_RIGHT];
-        fs_landing.commands[S_ELEVON_LEFT] = current_actuator_values.commands[S_ELEVON_LEFT];
-        fs_landing.commands[S_ELEVON_RIGHT] = current_actuator_values.commands[S_ELEVON_RIGHT];
+        fs_landing.commands[SERVO_S_THROTTLE_LEFT] = current_actuator_values.commands[SERVO_S_THROTTLE_LEFT];
+        fs_landing.commands[SERVO_S_THROTTLE_RIGHT] = current_actuator_values.commands[SERVO_S_THROTTLE_RIGHT];
+        fs_landing.commands[SERVO_S_ELEVON_LEFT] = current_actuator_values.commands[SERVO_S_ELEVON_LEFT];
+        fs_landing.commands[SERVO_S_ELEVON_RIGHT] = current_actuator_values.commands[SERVO_S_ELEVON_RIGHT];
 
         uint8_t i;
-        for (i = 0; i < NB_ACT_FS; i++) {
+        for (i = 0; i < ACTUATORS_NB; i++) {
             BoundAbs(fs_landing.commands[i], MAX_PPRZ);
         }
     }
