@@ -3,11 +3,11 @@
 
 % load Dictionary
 % YUV_Dict = load('GoodDictionaryCyberZooPinkMat.dat');
-YUV_Dict = load('Dictionary_00000.dat');
+YUV_Dict = load('Dictionary_real_mat.dat');
 % YUV_Dict = load('Dictionary_big_flowers.dat');
 
 % params
-n_textons = 20; % number of visual words
+n_textons = 10; % number of visual words
 patch_size = 6; % size of one patch
 
 % extract YUV components
