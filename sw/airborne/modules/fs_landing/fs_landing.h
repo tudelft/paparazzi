@@ -32,6 +32,9 @@ extern struct fs_landing_t fs_landing;
 extern void fs_landing_init(void);
 extern void fs_landing_run(void);
 
+// Handlers for changing gcs variables
+extern void fs_landing_pilot_control_handler(uint8_t active);
+
 extern void fs_landing_set_actuator_values(void);
 
 bool is_fs_landing_active(void);
