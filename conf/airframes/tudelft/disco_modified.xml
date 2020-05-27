@@ -283,8 +283,8 @@
     <!-- opposite of left -->
     <let var="rudderleft" value="-(@YAW * $leftyaw) * ELEVON_YAW_FACTOR"/>
     <let var="rudderright" value="(@YAW * $rightyaw) * ELEVON_YAW_FACTOR"/>
-    <let var="throttleleft" value="@THROTTLE + $leftyaw * @YAW + rightyaw * @YAW"/>
-    <let var="throttleright" value="@THROTTLE - rightyaw * @YAW - leftyaw * @YAW"/>
+    <let var="throttleleft" value="@THROTTLE + $leftyaw * @YAW + $rightyaw * @YAW"/>
+    <let var="throttleright" value="@THROTTLE - $rightyaw * @YAW - $leftyaw * @YAW"/>
 
     <!-- flat_spin landing values -->
     <call fun="fs_landing_set_actuator_values()"/>
