@@ -62,6 +62,7 @@
       <define name="TEXTONS_FPS" value="30"/> <!-- TODO: can this be higher? -->
       <define name="TEXTONS_CAMERA" value="bottom_camera"/>
       <define name="TEXTONS_N_TEXTONS" value="10"/>
+      <define name="TEXTONS_DICTIONARY_PATH" value="/data/ftp/internal_000"/>
     </module>
 
     <module name="optical_flow_landing.xml">

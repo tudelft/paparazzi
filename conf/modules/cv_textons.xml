@@ -19,7 +19,7 @@
       <define name="N_LEARNING_SAMPLES" value="5000" description="Number of samples used for learning the dictionary."/>
       <define name="BORDER_WIDTH" value="0" description="Width of the image border from which no samples are taken."/>
       <define name="BORDER_HEIGHT" value="0" description="Height of the border from which no samples are taken."/>
-      <define name="DICTIONARY_PATH" value="/data/video" description="Path to which the textons dictionary is saved."/>
+      <define name="DICTIONARY_PATH" value="/data/ftp/internal_000" description="Path to which the textons dictionary is saved."/>
     </section>
 
   </doc>
