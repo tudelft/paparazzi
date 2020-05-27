@@ -59,6 +59,7 @@
     -->
     <define name="ADC_CHANNEL_VSUPPLY" value="ADC_1"/><!-- TODO to boardfile, if default remove define-->
 
+
     <!-- <configure name="CPU_LED" value="1"/>--> <!-- Change to whatever you like -->
 
     <!-- Note that PERIODIC_FREQUENCY should be least equal or greater than AHRS_PROPAGATE_FREQUENCY -->
