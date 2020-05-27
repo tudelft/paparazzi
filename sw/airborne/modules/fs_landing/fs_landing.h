@@ -28,6 +28,8 @@ struct fs_landing_t {
 };
 extern struct fs_landing_t fs_landing;
 
+extern uint8_t pilot_has_control;
+
 /* External used functions */
 extern void fs_landing_init(void);
 extern void fs_landing_run(void);

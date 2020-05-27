@@ -36,6 +36,7 @@
   <makefile>
     <file name="fs_landing.c"/>
     <file name="feed_forward.c"/>
+    <file name="pilot_test.c"/>
   </makefile>
 
 </module>

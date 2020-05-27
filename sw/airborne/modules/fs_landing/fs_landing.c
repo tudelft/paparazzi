@@ -4,6 +4,7 @@
 
 #include "fs_landing.h"
 #include "feed_forward.h"
+#include "pilot_test.h"
 
 struct fs_landing_t fs_landing;
 struct fs_landing_t current_actuator_values;
