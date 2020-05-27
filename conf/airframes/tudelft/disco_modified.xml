@@ -220,7 +220,8 @@
 
   <!-- ************************* ACTUATORS ************************* -->
   <servos>
-    <servo name="S_THROTTLE_LEFT" no="0" min="1100" neutral="1110" max="1900"/>
+    <!-- TODO Check physical wiring -->
+    <servo name="S_THROTTLE_LEFT" no="0" min="1100" neutral="1110" max="1900"/>  <!-- TODO Test reverse -->
     <servo name="S_THROTTLE_RIGHT" no="1" min="1100" neutral="1110" max="1900"/>
     <servo name="S_ELEVON_LEFT" no="2" min="1100" neutral="1500" max="1900"/> <!-- max is upward deflection-->
     <servo name="S_ELEVON_RIGHT" no="3" min="1900" neutral="1500" max="1100"/> <!-- min is downward deflection-->
@@ -290,15 +291,15 @@
     <call fun="fs_landing_set_actuator_values()"/>
     <let var="fs_throttle_left" value="fs_landing.commands[SERVO_S_THROTTLE_LEFT]"/>
     <let var="fs_throttle_right" value="fs_landing.commands[SERVO_S_THROTTLE_RIGHT]"/>
-    <let var="fs_aileron_left" value="fs_landing.commands[SERVO_S_ELEVON_LEFT]"/>
-    <let var="fs_aileron_right" value="fs_landing.commands[SERVO_S_ELEVON_RIGHT]"/>
+    <let var="fs_elevon_left" value="fs_landing.commands[SERVO_S_ELEVON_LEFT]"/>
+    <let var="fs_elevon_right" value="fs_landing.commands[SERVO_S_ELEVON_RIGHT]"/>
 
     <!-- Set actuator values -->
     <let var="is_spinning" value="(@FS_LANDING > 4500 ? 1 : 0)"/>
     <set servo="S_THROTTLE_LEFT" value="($is_spinning ? $fs_throttle_left : $throttleleft)"/>
     <set servo="S_THROTTLE_RIGHT" value="($is_spinning ? $fs_throttle_right : $throttleright)"/>
-    <set servo="S_ELEVON_LEFT" value="($is_spinning ? $fs_aileron_left : $elevator - $aileron + $rudderleft)"/>
-    <set servo="S_ELEVON_RIGHT" value="($is_spinning ? $fs_aileron_right : $elevator + $aileron + $rudderright)"/>
+    <set servo="S_ELEVON_LEFT" value="($is_spinning ? $fs_elevon_left : $elevator - $aileron + $rudderleft)"/>
+    <set servo="S_ELEVON_RIGHT" value="($is_spinning ? $fs_elevon_right : $elevator + $aileron + $rudderright)"/>
   </command_laws>
 
   <!-- ************************ AUTO1 ***************************** -->

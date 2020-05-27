@@ -23,6 +23,7 @@ void fs_landing_init()
     }
 }
 
+// TODO Make sure all files agree on direction of spin (e.g. assume anti-clocwise rotation)
 void fs_landing_run()
 {
     if (is_fs_landing_active()) {
