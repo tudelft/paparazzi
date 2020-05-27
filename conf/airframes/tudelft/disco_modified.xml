@@ -49,7 +49,7 @@
   </description>
   <firmware name="fixedwing">
     <!-- ********************** For in the real flying hardware ******************** -->
-    <target name="ap" board="px4fmu_4.0"/>
+    <target name="ap" board="px4fmu_4.0_chibios"/>
 
     <!-- Towards a better and no messing it all up kind of aligner -->
     <!--
@@ -58,7 +58,6 @@
     <define name="LOW_NOISE_TIME" value="10"/>
     -->
     <define name="ADC_CHANNEL_VSUPPLY" value="ADC_1"/><!-- TODO to boardfile, if default remove define-->
-
 
     <!-- <configure name="CPU_LED" value="1"/>--> <!-- Change to whatever you like -->
 
@@ -117,6 +116,12 @@
     <define name="MAG_TO_IMU_PSI" value="0.0" unit="deg"/>
     <define name="MAG_TO_IMU_THETA" value="0.0" unit="deg"/>
 
+<!--    <module name="baro_ms5611_spi" >-->
+<!--      <configure name="MS5611_SPI_DEV" value="spi1"/>-->
+<!--      <configure name="MS5611_SLAVE_IDX" value="SPI_SLAVE3"/>-->
+<!--      <define name="SENSOR_SYNC_SEND"/>-->
+<!--    </module>-->
+
     <module name="actuators" type="pwm"/>
     <!-- This GPS is a real ublox M8N, so setting can be saved, no need
     for ubx_ucenter one has can set it oneself since we have all kinds
@@ -135,9 +140,14 @@
       <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.3"/><!-- TODO determine -->
     </module>
 
-    <module name="telemetry" type="transparent"/>
+    <module name="telemetry" type="transparent">
+      <configure name="MODEM_PORT" value="UART2"/> <!--  Telem1 on pixracer -->
+      <configure name="MODEM_BAUD" value="B57600"/>
+    </module>
 
-    <module name="gps" type="ublox"/>
+    <module name="gps" type="ublox">
+      <configure name="GPS_BAUD" value="B57600"/>
+    </module>
 
     <define name="AGR_CLIMB"/> <!--Has aggressive mode handy for testing purposes -->
     <define name="TUNE_AGRESSIVE_CLIMB"/>
@@ -146,7 +156,7 @@
     <define name="WIND_INFO"/>
     <define name="WIND_INFO_RET"/>
 
-    <define name="autopilot_motors_on" value="TRUE"/><!-- TODO: choose ;) -->
+    <define name="autopilot_motors_on" value="FALSE"/><!-- TODO: choose ;) -->
     <!-- temp fix for geomag, normally only used for rotorcraft -->
     <define name="SENSOR_SYNC_SEND"/> <!-- Temp for debugging Baro -->
     <configure name="USE_BARO_BOARD" value="TRUE"/>
@@ -165,11 +175,9 @@
 
     <configure name="USE_MAGNETOMETER" value="TRUE"/><!-- should be as in USE the device -->
 
-    <!-- ************************* MODULES ************************* -->
-
     <module name="ahrs" type="float_cmpl_quat"> <!-- Compare e.g. float_dcm -->
       <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/> <!-- as in USE it for values in the AHRS -->
-      <configure name="AHRS_ALIGNER_LED" value="2"/><!-- Which color you want sir? ;) -->
+      <configure name="AHRS_ALIGNER_LED" value="2"/>
       <define name="AHRS_MAG_UPDATE_ALL_AXES" value="TRUE"/> <!-- if TRUE with those high roll n pith angles magneto should be calibrated well or use UKF autocalib -->
       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/><!-- TRUE by default Use GPS course to update heading for time being,if FALSE data from magneto only -->
       <!-- <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="FALSE"/>--> <!--Already TRUE by default Compensation of centrifugal force via GPS speed (to fly in circles with a fixedwing)"-->
@@ -178,17 +186,17 @@
       <define name="AHRS_BIAS_UPDATE_HEADING_THRESHOLD" value="0.174533" unit="rad"/> <!-- don't update gyro bias if heading deviation is above this rotation threshold"-->
       <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="3.0" unit="m/s"/> <!-- CAREFULL,  Don't update heading from GPS course if GPS ground speed is below is this threshold in m/s" -->
       <!-- Some insights https://lists.nongnu.org/archive/html/paparazzi-devel/2013-10/msg00126.html -->
-      <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="0.5"/> <!-- TODO: determine Default is 30. Reduce accelerometer cut-off frequency when the vehicle is accelerating: norm(ax,ay,az) 9,81 m/s2. WARNING: when the IMU is not well damped, the norm of accelerometers never equals to 9,81 m/s2. As a result, the GRAVITY_HEURISTIC_FACTOR will reduce the accelerometer bandwith even if the vehicle is not accelerating. -->
+      <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="10"/> <!-- TODO: determine Default is 30. Reduce accelerometer cut-off frequency when the vehicle is accelerating: norm(ax,ay,az) 9,81 m/s2. WARNING: when the IMU is not well damped, the norm of accelerometers never equals to 9,81 m/s2. As a result, the GRAVITY_HEURISTIC_FACTOR will reduce the accelerometer bandwith even if the vehicle is not accelerating. -->
       <define name="AHRS_ICQ_IMU_ID" value="ABI_BROADCAST"/> <!-- ABI sender id of IMU to use -->
       <define name="AHRS_ICQ_MAG_ID" value="MAG_CALIB_UKF_ID"/><!-- for when using the mag_clib_ukf -->
     </module>
 
     <module name="ins" type="alt_float"/>
 
-    <module name="control" type="new"/>
+    <module name="control"/>
     <module name="navigation"/>
     <!--<module name="imu_quality_assessment"/>--><!--needs fixing for FW fix test then disable after initial tuning-->
-    <module name="send_imu_mag_current"/> <!-- Can be Disabled after one time callibration, quite the same for all Discos -->
+    <module name="send_imu_mag_current"/> <!-- Can be Disabled after one time calibration, quite the same for all Discos -->
 
     <!-- Also used if QNH needed -->
     <module name="air_data">
@@ -199,6 +207,11 @@
 
     <module name="geo_mag"/>
     <module name="nav" type="line"/>
+
+    <module name="tlsf"/>
+    <module name="pprzlog"/>
+    <module name="logger" type="sd_chibios"/>  <!-- FIXME -->
+    <module name="flight_recorder"/>
 
     <module name="fs_landing"/>
 
@@ -251,11 +264,11 @@
   <!-- ************************ AUTO RC COMMANDS ***************************** -->
   <!-- TODO Check is this section is necessary -->
   <auto_rc_commands>
-    <!--**TEMPorary for heading change steering if someting not OK with course in Autonomous flight **-->
+    <!--**TEMPorary for heading change steering if something not OK with course in Autonomous flight **-->
     <set command="YAW" value="@YAW"/>
     <!-- To be able to set gain values via RC Transmitter these ones below.
-     This way the can keep his eye on a fast moving plane and set somegain values
-     makes life of a single testpiloted AC much easier -->
+     This way the can keep his eye on a fast moving plane and set some gain values
+     makes life of a single test piloted AC much easier -->
     <!--<set command="GAIN1"    value="@GAIN1"/>
     <set command="CALIB"    value="@GAIN2"/>-->
     <!-- Todo to determin best pitch for flare in auto2 one can add Pitch command temporary also-->
@@ -277,13 +290,13 @@
 
     <!-- flat_spin landing values -->
     <call fun="fs_landing_set_actuator_values()"/>
-    <let var="fs_throttle_left" value="fs_landing.commands[S_THROTTLE_LEFT]"/>
-    <let var="fs_throttle_right" value="fs_landing.commands[S_THROTTLE_RIGHT]"/>
-    <let var="fs_aileron_left" value="fs_landing.commands[S_ELEVON_LEFT]"/>
-    <let var="fs_aileron_right" value="fs_landing.commands[S_ELEVON_RIGHT]"/>
+    <let var="fs_throttle_left" value="fs_landing.commands[SERVO_S_THROTTLE_LEFT]"/>
+    <let var="fs_throttle_right" value="fs_landing.commands[SERVO_S_THROTTLE_RIGHT]"/>
+    <let var="fs_aileron_left" value="fs_landing.commands[SERVO_S_ELEVON_LEFT]"/>
+    <let var="fs_aileron_right" value="fs_landing.commands[SERVO_S_ELEVON_RIGHT]"/>
 
     <!-- Set actuator values -->
-    <let var="is_spinning" value="(@FS_LANDING > 4500 ? 1 : 0)"/>  <!-- TODO Check what value should be true -->
+    <let var="is_spinning" value="(@FS_LANDING > 4500 ? 1 : 0)"/>
     <set servo="S_THROTTLE_LEFT" value="($is_spinning ? $fs_throttle_left : $throttleleft)"/>
     <set servo="S_THROTTLE_RIGHT" value="($is_spinning ? $fs_throttle_right : $throttleright)"/>
     <set servo="S_ELEVON_LEFT" value="($is_spinning ? $fs_aileron_left : $elevator - $aileron + $rudderleft)"/>
@@ -292,10 +305,10 @@
 
   <!-- ************************ AUTO1 ***************************** -->
   <!-- Do not set MAX_ROLL, MAX_PITCH to small of a value, otherwise one can NOT control the plane very well manually -->
-  <!-- If you have dual rate swith it of with same swtch as mode switch thus auto1 means dualrate is switched off also -->
+  <!-- If you have dual rate switch it of with same switch as mode switch thus auto1 means dualrate is switched off also -->
   <section name="AUTO1" prefix="AUTO1_">
-    <define name="MAX_ROLL" value="45" unit="deg"/> <!-- More autority while testflying for first time -->
-    <define name="MAX_PITCH" value="40" unit="deg"/> <!-- More autority while testflying for first time -->
+    <define name="MAX_ROLL" value="45" unit="deg"/> <!-- More authority while test flying for first time -->
+    <define name="MAX_PITCH" value="40" unit="deg"/> <!-- More authority while test flying for first time -->
   </section>
 
   <!-- ************************ TRIM ***************************** -->
@@ -412,9 +425,9 @@
    -->
     <define name="COURSE_PRE_BANK_CORRECTION" value="0.97"/>
 
-    <define name="ROLL_MAX_SETPOINT" value="75" unit="deg"/>
-    <define name="PITCH_MAX_SETPOINT" value="60" unit="deg"/>
-    <define name="PITCH_MIN_SETPOINT" value="-60" unit="deg"/>
+    <define name="ROLL_MAX_SETPOINT" value="40" unit="deg"/>
+    <define name="PITCH_MAX_SETPOINT" value="40" unit="deg"/>
+    <define name="PITCH_MIN_SETPOINT" value="-40" unit="deg"/>
 
     <define name="PITCH_PGAIN" value="6500"/>
     <define name="PITCH_DGAIN" value="100"/>
@@ -573,9 +586,9 @@
 
     <define name="KILL_MODE_DISTANCE" value="MAX_DIST_FROM_HOME*1.3+HOME_RADIUS" unit="m"/>  <!--  improve value by default turn radius calc -->
 
-    <define name="DEFAULT_CIRCLE_RADIUS" value="35." unit="m"/> <!-- TODO: Determine convinient minimum -->
+    <define name="DEFAULT_CIRCLE_RADIUS" value="80." unit="m"/> <!-- TODO: Determine convinient minimum -->
     <define name="HOME_RADIUS" value="DEFAULT_CIRCLE_RADIUS" unit="m"/>
-    <define name="LANDING_CIRCLE_RADIUS" value="30." unit="m"/> <!-- TODO: determine optimum minimum -->
+    <define name="LANDING_CIRCLE_RADIUS" value="60." unit="m"/> <!-- TODO: determine optimum minimum -->
     <!-- MIN_CIRCLE_RADIUS used and needed for spiral navigation function and panic autolanding turns-->
     <define name="MIN_CIRCLE_RADIUS" value="25." unit="m"/> <!-- TODO: determine optimum minimum -->
 
