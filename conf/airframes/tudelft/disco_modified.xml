@@ -123,7 +123,7 @@
 <!--      <define name="SENSOR_SYNC_SEND"/>-->
 <!--    </module>-->
 
-    <module name="actuators" type="pwm"/>
+<!--    <module name="actuators" type="pwm"/>-->  <!-- TODO Necessary? -->
     <!-- This GPS is a real ublox M8N, so setting can be saved, no need
     for ubx_ucenter one has can set it oneself since we have all kinds
     of nifty Galileo setting we rather keep that, but for now, laziness -->
@@ -220,11 +220,10 @@
 
   <!-- ************************* ACTUATORS ************************* -->
   <servos>
-    <!-- TODO Check physical wiring -->
-    <servo name="S_THROTTLE_LEFT" no="0" min="1100" neutral="1110" max="1900"/>  <!-- TODO Test reverse -->
-    <servo name="S_THROTTLE_RIGHT" no="1" min="1100" neutral="1110" max="1900"/>
-    <servo name="S_ELEVON_LEFT" no="2" min="1100" neutral="1500" max="1900"/> <!-- max is upward deflection-->
-    <servo name="S_ELEVON_RIGHT" no="3" min="1900" neutral="1500" max="1100"/> <!-- min is downward deflection-->
+    <servo name="S_THROTTLE_LEFT" no="0" min="1100" neutral="1500" max="1900"/>  <!-- TODO Test reverse -->
+    <servo name="S_ELEVON_LEFT" no="1" min="1100" neutral="1500" max="1900"/> <!-- max is upward deflection-->
+    <servo name="S_ELEVON_RIGHT" no="2" min="1780" neutral="1380" max="980"/> <!-- min is downward deflection-->
+    <servo name="S_THROTTLE_RIGHT" no="3" min="1100" neutral="1500" max="1900"/>
   </servos>
 
   <section name="ServoPositions">
@@ -234,7 +233,7 @@
   <!-- ********************* SERVO MIXER *************************** -->
   <section name="MIXER">
     <define name="ELEVON_ROLL_FACTOR" value="0.7f"/>
-    <define name="ELEVON_PITCH_FACTOR" value="0.6f"/>  <!-- TODO Check sign -->
+    <define name="ELEVON_PITCH_FACTOR" value="-0.6f"/>  <!-- TODO Check sign -->
     <define name="ELEVON_YAW_FACTOR" value="0.9f"/>
     <!-- Set up/down deflection differences, needs many in flight tests to find acceptable values-->
     <define name="ELEVON_DIFF" value="0.3f"/> <!-- TODO: not used yet, not tuned yet... -->
@@ -282,10 +281,10 @@
     <let var="leftyaw" value="(@YAW >= 0? 0 : 1)"/>
     <let var="rightyaw" value="(1 - $leftyaw)"/>
     <!-- opposite of left -->
-    <let var="rudderleft" value="-(@YAW * $leftyaw) * ELEVON_YAW_FACTOR"/>
+    <let var="rudderleft" value="(@YAW * $leftyaw) * ELEVON_YAW_FACTOR"/>
     <let var="rudderright" value="(@YAW * $rightyaw) * ELEVON_YAW_FACTOR"/>
-    <let var="throttleleft" value="@THROTTLE + $leftyaw * @YAW + $rightyaw * @YAW"/>
-    <let var="throttleright" value="@THROTTLE - $rightyaw * @YAW - $leftyaw * @YAW"/>
+    <let var="throttleleft" value="@THROTTLE + $rudderleft + $rudderright"/>
+    <let var="throttleright" value="@THROTTLE - $rudderleft - $rudderright"/>
 
     <!-- flat_spin landing values -->
     <call fun="fs_landing_set_actuator_values()"/>
@@ -298,8 +297,8 @@
     <let var="is_spinning" value="(@FS_LANDING > 4500 ? 1 : 0)"/>
     <set servo="S_THROTTLE_LEFT" value="($is_spinning ? $fs_throttle_left : $throttleleft)"/>
     <set servo="S_THROTTLE_RIGHT" value="($is_spinning ? $fs_throttle_right : $throttleright)"/>
-    <set servo="S_ELEVON_LEFT" value="($is_spinning ? $fs_elevon_left : $elevator - $aileron + $rudderleft)"/>
-    <set servo="S_ELEVON_RIGHT" value="($is_spinning ? $fs_elevon_right : $elevator + $aileron + $rudderright)"/>
+    <set servo="S_ELEVON_LEFT" value="($is_spinning ? $fs_elevon_left : $elevator + $aileron)"/>
+    <set servo="S_ELEVON_RIGHT" value="($is_spinning ? $fs_elevon_right : $elevator - $aileron)"/>
   </command_laws>
 
   <!-- ************************ AUTO1 ***************************** -->
