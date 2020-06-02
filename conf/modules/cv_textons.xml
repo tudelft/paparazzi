@@ -8,15 +8,15 @@
       <define name="FPS" value="0" description="The (maximum) frequency to run the calculations at. If zero, it will max out at the camera frame rate"/>
       <define name="CAMERA" value="bottom_camera|front_camera" description="The V4L2 camera device that is used for the calculations"/>
       <define name="RUN" value="YES" description="Whether the texton function is running (YES) or not (NO)."/>  
-      <define name="REINITIALIZE_DICTIONARY" value="NO" description="If set to YES, the dictionary will be reinitialized with the current image."/>
       <define name="LOAD_DICTIONARY" value="YES" description="Whether a dictionary is loaded (YES) or learned (NO)."/>
+      <define name="REINITIALIZE_DICTIONARY" value="NO" description="If set to YES, the dictionary will be reinitialized with the current image."/>
       <define name="N_TEXTONS" value="10" description="The number of textons (words) in the dictionary."/>
       <define name="PATCH_SIZE" value="6" description="Size of the image patches extracted from the image - even numbers."/>
       <define name="FULL_SAMPLING" value="NO" description="If YES, the entire image is covered with samples, if NO sub-sampling is used (faster)."/>
       <define name="DICTIONARY_NUMBER" value="0" description="Number of the dictionary (so that different environments can each have their specific dictionary)."/>
-      <define name="ALPHA" value="10" description="Learning rate when creating the dictionary: 0 = no learning, 255 = the texton becomes equal to the new patch."/>
       <define name="N_SAMPLES" value="50" description="Number of samples extracted form the image when not doing full sampling."/>
       <define name="N_LEARNING_SAMPLES" value="5000" description="Number of samples used for learning the dictionary."/>
+      <define name="ALPHA" value="10" description="Learning rate when creating the dictionary: 0 = no learning, 255 = the texton becomes equal to the new patch."/>
       <define name="BORDER_WIDTH" value="0" description="Width of the image border from which no samples are taken."/>
       <define name="BORDER_HEIGHT" value="0" description="Height of the border from which no samples are taken."/>
       <define name="DICTIONARY_PATH" value="/data/ftp/internal_000" description="Path to which the textons dictionary is saved."/>

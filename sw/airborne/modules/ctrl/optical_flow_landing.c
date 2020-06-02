@@ -121,6 +121,24 @@ PRINT_CONFIG_VAR(OFL_OPTICAL_FLOW_ID)
 #define OFL_ELC_OSCILLATE true
 #endif
 
+#ifndef OFL_CLOSE_TO_EDGE
+#define OFL_CLOSE_TO_EDGE 0.025
+#endif
+
+
+#ifndef OFL_PGAIN_ADAPTIVE
+#define OFL_PGAIN_ADAPTIVE 0.50
+#endif
+
+#ifndef OFL_IGAIN_ADAPTIVE
+#define OFL_IGAIN_ADAPTIVE 0.50
+#endif
+
+#ifndef OFL_DGAIN_ADAPTIVE
+#define OFL_DGAIN_ADAPTIVE 0.50
+#endif
+
+
 // Constants
 // minimum value of the P-gain for divergence control
 // adaptive control / exponential gain control will not be able to go lower
@@ -150,7 +168,7 @@ float divergence_setpoint;
 #define RECURSIVE_LEARNING 1
 #include <stdio.h>
 #include "modules/computer_vision/textons.h"
-float* last_texton_distribution; // used to check if a new texton distribution has been received
+// float* last_texton_distribution; // used to check if a new texton distribution has been received
 // TODO: last_texton_distribution's size depends on the number of textons in textons.h/c.
 // it should now be set to 10 to match the number of textons on the stereoboard... this is extremely ugly.
 #define n_ts 10
@@ -252,9 +270,9 @@ void vertical_ctrl_module_init(void)
   of_landing_ctrl.COV_METHOD = OFL_COV_METHOD;
   of_landing_ctrl.delay_steps = 15;
   of_landing_ctrl.window_size = OFL_COV_WINDOW_SIZE;
-  of_landing_ctrl.pgain_adaptive = OFL_PGAIN;
-  of_landing_ctrl.igain_adaptive = OFL_IGAIN;
-  of_landing_ctrl.dgain_adaptive = OFL_DGAIN;
+  of_landing_ctrl.pgain_adaptive = OFL_PGAIN_ADAPTIVE;
+  of_landing_ctrl.igain_adaptive = OFL_IGAIN_ADAPTIVE;
+  of_landing_ctrl.dgain_adaptive = OFL_DGAIN_ADAPTIVE;
   of_landing_ctrl.reduction_factor_elc =
     0.80f; // for exponential gain landing, after detecting oscillations, the gain is multiplied with this factor
   of_landing_ctrl.lp_cov_div_factor =
@@ -263,6 +281,7 @@ void vertical_ctrl_module_init(void)
   // if the gain reaches this value during an exponential landing, the drone makes the final landing.
   of_landing_ctrl.p_land_threshold = OFL_P_LAND_THRESHOLD;
   of_landing_ctrl.elc_oscillate = OFL_ELC_OSCILLATE;
+  of_landing_ctrl.close_to_edge = OFL_CLOSE_TO_EDGE;
   reset_all_vars();
 
   // Subscribe to the altitude above ground level ABI messages
@@ -455,6 +474,7 @@ void vertical_ctrl_module_run(bool in_flight)
                                           of_landing_ctrl.dgain, dt);
 
       // SSL: if close enough, store texton inputs:
+      printf("abs error cov = %f, close = %f\n", fabs(error_cov), of_landing_ctrl.close_to_edge);
       if(fabs(error_cov) < of_landing_ctrl.close_to_edge) {
         save_texton_distribution();
       }
@@ -869,6 +889,9 @@ void guidance_v_module_run(bool in_flight)
 // SSL:
 void save_texton_distribution(void)
 {
+  printf("Logging textons!\n");
+  int i;
+  /*
   // Since the control module runs faster than the texton vision process, we need to check that we are storing a recent vision result:
   int i, same;
   same = 1;
@@ -881,7 +904,7 @@ void save_texton_distribution(void)
     }
     // update the last texton distribution:
     last_texton_distribution[i] = texton_distribution[i];
-  }
+  }*/
 
   // don't save the texton distribution if it is the same as previous time step:
   /*if(same)

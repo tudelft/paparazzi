@@ -20,11 +20,12 @@
       <define name="COV_WINDOW_SIZE" value="30" description="Number of time steps for window size for getting the covariance over time."/>
       <define name="COV_LANDING_LIMIT" value="2.2" description="Covariance where the vehicle engages final landing procedure."/>
       <define name="COV_SETPOINT" value="-0.10" description="Target Covariance for adaptive gain increment."/>
-      <define name="LP_CONST" value="0.75" description="Low pass filter constant for divergence input."/>
+      <define name="LP_CONST" value="0.05" description="Low pass filter constant for divergence input."/>
       <define name="ELC_OSCILLATE" value="true" description="Oscillate to find optimum gain before initiating landing."/>
-<!--      <define name="PGAIN_ADAPTIVE" value="0.50" description="P gain on cov error"/>
+      <define name="CLOSE_TO_EDGE" value="0.025" description="When the cov_div value gets this close to the setpoint, we consider the drone to oscillate"/>
+      <define name="PGAIN_ADAPTIVE" value="0.50" description="P gain on cov error"/>
       <define name="IGAIN_ADAPTIVE" value="0.10" description="I gain on summed cov error"/>
-      <define name="DGAIN_ADAPTIVE" value="0.0" description="D gain on differential cov error"/> -->
+      <define name="DGAIN_ADAPTIVE" value="0.0" description="D gain on differential cov error"/>
       <!-- TODO: add more explanations of settings below -->
     </section>
   </doc>

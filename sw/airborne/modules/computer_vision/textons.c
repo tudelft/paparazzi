@@ -141,11 +141,12 @@ static FILE *dictionary_logger = NULL;
 struct image_t *texton_func(struct image_t *img);
 struct image_t *texton_func(struct image_t *img)
 {
-
   // whether to execute the function:
   if(!running) return img;
 
   if (img->buf_size == 0) { return img; }
+
+  printf("Enter texton_func!!!\n");
 
   // extract frame from img struct:
   uint8_t *frame = (uint8_t *)img->buf;
@@ -213,6 +214,8 @@ struct image_t *texton_func(struct image_t *img)
     // printf("N textons = %d\n", n_samples_image);
     // printf("Entropy texton distribution = %f\n", get_entropy(texton_distribution, n_textons));
   }
+
+  printf("Exit texton_func!!!\n");
 
   return img; // Colorfilter did not make a new image
 }
@@ -470,9 +473,11 @@ void DistributionExtraction(uint8_t *frame, uint16_t width, uint16_t height)
   }
 
   // Normalize distribution:
-  for (i = 0; i < n_textons; i++) {
-    texton_distribution[i] = texton_distribution[i] / (float) n_extracted_textons;
-    // printf("textons[%d] = %f\n", i, texton_distribution[i]);
+  if(n_extracted_textons > 0) { // should always be the case
+    for (i = 0; i < n_textons; i++) {
+      texton_distribution[i] = texton_distribution[i] / (float) n_extracted_textons;
+      // printf("textons[%d] = %f\n", i, texton_distribution[i]);
+    }
   }
   // printf("\n");
 

@@ -75,7 +75,12 @@
     -->
 
     <module name="optical_flow_landing.xml">
-	<define name="OFL_COV_SETPOINT" value="-0.10"/>
+	<define name="OFL_COV_SETPOINT" value="-0.075"/>
+	<define name="OFL_PGAIN" value="0.50"/>
+	<define name="OFL_LP_CONST" value="0.033"/>
+	<define name="OFL_CLOSE_TO_EDGE" value="0.025"/>
+	<define name="OFL_IGAIN_ADAPTIVE" value="0.15"/>
+	<define name="OFL_CONTROL_METHOD" value="1"/> <!-- 1 is adaptive gain -->
     </module>
 
   </modules>
