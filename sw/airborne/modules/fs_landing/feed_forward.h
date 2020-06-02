@@ -18,7 +18,7 @@ extern float thr_r_spinning;
 extern float elev_l_spinning;
 extern float elev_r_spinning;
 
-void ff_actuator_values(struct fs_landing_t *actuator_values, float ff_start_time, uint8_t *has_ff_finished);
+uint8_t ff_actuator_values(struct fs_landing_t *actuator_values, float ff_start_time);
 void spin_actuator_values(struct fs_landing_t *actuator_values);
 
 // Handlers for changing gcs variables

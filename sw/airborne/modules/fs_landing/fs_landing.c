@@ -23,19 +23,18 @@ void fs_landing_init()
     }
 }
 
-// TODO Make sure all files agree on direction of spin (e.g. assume anti-clocwise rotation)
+// TODO Make sure all files agree on direction of spin (e.g. assume anti-clockwise rotation)
 void fs_landing_run()
 {
     if (is_fs_landing_active()) {
         if (is_spinning) {
+            spin_actuator_values(&current_actuator_values);  // Constant actuator values to maintain spin
             if (pilot_has_control) {
                 pilot_actuator_values(&current_actuator_values);  // RC Channels control actuator deflection
-            } else {
-                spin_actuator_values(&current_actuator_values);  // Constant actuator values to maintain spin
             }
         } else {
             if (has_ff_started) {
-                ff_actuator_values(&current_actuator_values, ff_start_time, &is_spinning);
+                is_spinning = ff_actuator_values(&current_actuator_values, ff_start_time);
             } else {
                 ff_start_time = get_sys_time_float();
                 has_ff_started = true;

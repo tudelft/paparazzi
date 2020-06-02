@@ -16,8 +16,8 @@ void pilot_actuator_values(struct fs_landing_t *actuator_values) {
     // PITCH channel controls elevon deflection, left right together
     float elevon_tog = radio_control.values[RADIO_PITCH];
 
-    actuator_values->commands[SERVO_S_THROTTLE_LEFT] = throttle;
-    actuator_values->commands[SERVO_S_THROTTLE_RIGHT] = -throttle;
-    actuator_values->commands[SERVO_S_ELEVON_LEFT] = elevon_tog + elevon_alt;
-    actuator_values->commands[SERVO_S_ELEVON_RIGHT] = elevon_tog - elevon_alt;
+//    actuator_values->commands[SERVO_S_THROTTLE_LEFT] = throttle;
+//    actuator_values->commands[SERVO_S_THROTTLE_RIGHT] = -throttle;
+    actuator_values->commands[SERVO_S_ELEVON_LEFT] += elevon_tog + elevon_alt;
+    actuator_values->commands[SERVO_S_ELEVON_RIGHT] += elevon_tog - elevon_alt;
 }
