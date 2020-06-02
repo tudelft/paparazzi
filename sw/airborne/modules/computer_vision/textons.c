@@ -146,7 +146,7 @@ struct image_t *texton_func(struct image_t *img)
 
   if (img->buf_size == 0) { return img; }
 
-  printf("Enter texton_func!!!\n");
+  //printf("Enter texton_func!!!\n");
 
   // extract frame from img struct:
   uint8_t *frame = (uint8_t *)img->buf;
@@ -215,7 +215,7 @@ struct image_t *texton_func(struct image_t *img)
     // printf("Entropy texton distribution = %f\n", get_entropy(texton_distribution, n_textons));
   }
 
-  printf("Exit texton_func!!!\n");
+  //printf("Exit texton_func!!!\n");
 
   return img; // Colorfilter did not make a new image
 }

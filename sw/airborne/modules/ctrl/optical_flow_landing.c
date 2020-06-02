@@ -465,7 +465,7 @@ void vertical_ctrl_module_run(bool in_flight)
       pused = pstate - (of_landing_ctrl.pgain_adaptive * pstate) * error_cov;
       // make sure pused does not become too small, nor grows too fast:
       if (pused < MINIMUM_GAIN) { pused = MINIMUM_GAIN; }
-      if (of_landing_ctrl.COV_METHOD == 1 && error_cov > 0.001) {
+      if (error_cov > 0.001) {
         pused = 0.5 * pused;
       }
 
