@@ -3,7 +3,7 @@
 
 % load Dictionary
 % YUV_Dict = load('GoodDictionaryCyberZooPinkMat.dat');
-YUV_Dict = load('Dictionary_real_mat.dat');
+YUV_Dict = load('Dictionary_00000.dat');
 % YUV_Dict = load('Dictionary_big_flowers.dat');
 
 % params

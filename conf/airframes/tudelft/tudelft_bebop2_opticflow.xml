@@ -66,15 +66,17 @@
       <define name="TEXTONS_DICTIONARY_PATH" value="/data/ftp/internal_000"/>
     </module>
 
-    <module name="optical_flow_landing.xml">
-	<define name="OFL_COV_SETPOINT" value="-0.10"/>
-    </module>
-
-    <!-- <module name="video_rtp_stream">
+    <!--
+    <module name="video_rtp_stream">
       <define name="VIEWVIDEO_CAMERA" value="bottom_camera"/>
       <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="1"/>
       <define name="VIEWVIDEO_QUALITY_FACTOR" value="60"/>
-    </module> -->
+    </module>
+    -->
+
+    <module name="optical_flow_landing.xml">
+	<define name="OFL_COV_SETPOINT" value="-0.10"/>
+    </module>
 
   </modules>
 
@@ -255,6 +257,7 @@
   </section>
 
   <section name="AUTOPILOT">
+
 
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
     <define name="MODE_MANUAL" value="AP_MODE_MODULE"/>
