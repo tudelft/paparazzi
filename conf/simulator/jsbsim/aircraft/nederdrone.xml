@@ -36,7 +36,7 @@
   </metrics>
 
   <mass_balance>
-    <ixx unit="KG*M2"> 12.04 </ixx>
+    <ixx unit="KG*M2"> 6.0 </ixx>
     <iyy unit="KG*M2"> 0.6644  </iyy>
     <izz unit="KG*M2"> 12.0 </izz>
     <ixy unit="KG*M2"> 0. </ixy>
@@ -126,7 +126,7 @@
             <min>0</min>
             <max>1</max>
         </clipto>
-        <c1> 31.7 </c1>
+        <c1> 18.0 </c1>
         <output> fcs/m1_lag</output>
       </lag_filter>
       <lag_filter name="m2_lag">
@@ -135,7 +135,7 @@
             <min>0</min>
             <max>1</max>
         </clipto>
-        <c1> 31.7 </c1>
+        <c1> 18.0 </c1>
         <output> fcs/m2_lag</output>
       </lag_filter>
       <lag_filter name="m3_lag">
@@ -144,7 +144,7 @@
             <min>0</min>
             <max>1</max>
         </clipto>
-        <c1> 31.7 </c1>
+        <c1> 18.0 </c1>
         <output> fcs/m3_lag</output>
       </lag_filter>
       <lag_filter name="m4_lag">
@@ -153,7 +153,7 @@
             <min>0</min>
             <max>1</max>
         </clipto>
-        <c1> 31.7 </c1>
+        <c1> 18.0 </c1>
         <output> fcs/m4_lag</output>
       </lag_filter>
       <lag_filter name="m5_lag">
@@ -162,7 +162,7 @@
             <min>0</min>
             <max>1</max>
         </clipto>
-        <c1> 31.7 </c1>
+        <c1> 18.0 </c1>
         <output> fcs/m5_lag</output>
       </lag_filter>
       <lag_filter name="m6_lag">
@@ -171,7 +171,7 @@
             <min>0</min>
             <max>1</max>
         </clipto>
-        <c1> 31.7 </c1>
+        <c1> 18.0 </c1>
         <output> fcs/m6_lag</output>
       </lag_filter>
       <lag_filter name="m7_lag">
@@ -180,7 +180,7 @@
             <min>0</min>
             <max>1</max>
         </clipto>
-        <c1> 31.7 </c1>
+        <c1> 18.0 </c1>
         <output> fcs/m7_lag</output>
       </lag_filter>
       <lag_filter name="m8_lag">
@@ -189,7 +189,7 @@
             <min>0</min>
             <max>1</max>
         </clipto>
-        <c1> 31.7 </c1>
+        <c1> 18.0 </c1>
         <output> fcs/m8_lag</output>
       </lag_filter>
       <lag_filter name="m9_lag">
@@ -198,7 +198,7 @@
             <min>0</min>
             <max>1</max>
         </clipto>
-        <c1> 31.7 </c1>
+        <c1> 18.0 </c1>
         <output> fcs/m9_lag</output>
       </lag_filter>
       <lag_filter name="m10_lag">
@@ -207,7 +207,7 @@
             <min>0</min>
             <max>1</max>
         </clipto>
-        <c1> 31.7 </c1>
+        <c1> 18.0 </c1>
         <output> fcs/m10_lag</output>
       </lag_filter>
       <lag_filter name="m11_lag">
@@ -216,7 +216,7 @@
             <min>0</min>
             <max>1</max>
         </clipto>
-        <c1> 31.7 </c1>
+        <c1> 18.0 </c1>
         <output> fcs/m11_lag</output>
       </lag_filter>
       <lag_filter name="m12_lag">
@@ -225,7 +225,7 @@
             <min>0</min>
             <max>1</max>
         </clipto>
-        <c1> 31.7 </c1>
+        <c1> 18.0 </c1>
         <output> fcs/m12_lag</output>
       </lag_filter>
     </channel>
