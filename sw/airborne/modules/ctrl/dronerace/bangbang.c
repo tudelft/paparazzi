@@ -248,17 +248,17 @@ float predict_path_analytical(float t_s, float angle,float Vd){
 }
 
  void find_constants(float yi,float vi){
-    constant.c1 = (vi-T*(mass/Cd))*(-mass/Cd);
+    constant.c1 = (vi-(T/Cd))*(-mass/Cd);
     constant.c2 = yi-constant.c1;
 }
 float get_position_analytical(float t){
-    return constant.c1*expf(-(Cd/mass)*t)+constant.c2+T*(mass/Cd)*t;
+    return constant.c1*expf(-(Cd/mass)*t)+constant.c2+(T/Cd)*t;
 }
 float get_velocity_analytical(float t){
-    return constant.c1*(-Cd/mass)*expf(-(Cd/mass)*t)+T*(mass/Cd);
+    return constant.c1*(-Cd/mass)*expf(-(Cd/mass)*t)+(T/Cd);
 }
 float get_time_analytical(float V){
-    float t_t = (-mass/Cd)*logf((V-(T*(mass/Cd)))/(constant.c1*(-Cd/mass)));
+    float t_t = (-mass/Cd)*logf((V-(T/Cd))/(constant.c1*(-Cd/mass)));
     if(isnan(t_t)){
         t_t=0;
     }

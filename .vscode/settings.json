@@ -4,6 +4,13 @@
         "alphapilotahrs.h": "c",
         "telemetry.h": "c",
         "dense": "c",
-        "control.h": "c"
+        "control.h": "c",
+        "ransac.h": "c",
+        "flightplan.h": "c",
+        "math.h": "c",
+        "guidance_v.h": "c",
+        "bangbang.h": "c",
+        "stdbool.h": "c",
+        "filter.h": "c"
     }
 }
