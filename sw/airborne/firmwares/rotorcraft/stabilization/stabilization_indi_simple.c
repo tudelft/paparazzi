@@ -171,6 +171,7 @@ void indi_init_filters(void)
   float tau_r = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_R);
   float tau_axis[3] = {tau, tau, tau_r};
   float tau_est = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_ESTIMATION_FILT_CUTOFF);
+  float tau_yaw = 1.0 / (2.0 * M_PI * 4.0);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
   // Filtering of gyroscope and actuators
   for (int8_t i = 0; i < 3; i++) {
@@ -178,6 +179,8 @@ void indi_init_filters(void)
     init_butterworth_2_low_pass(&indi.rate[i], tau_axis[i], sample_time, 0.0);
     init_butterworth_2_low_pass(&indi.est.u[i], tau_est, sample_time, 0.0);
     init_butterworth_2_low_pass(&indi.est.rate[i], tau_est, sample_time, 0.0);
+
+    init_butterworth_2_low_pass(&indi.yaw, tau_yaw, sample_time, 0.0);
   }
 }
 
@@ -311,7 +314,8 @@ static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct I
   rates_for_feedback.q = indi.rate[1].o[0];
 #endif
 #if STABILIZATION_INDI_FILTER_YAW_RATE
-  rates_for_feedback.r = indi.rate[2].o[0];
+  /*rates_for_feedback.r = indi.rate[2].o[0];*/
+  rates_for_feedback.r = indi.yaw.o[0];
 #endif
 
   indi.angular_accel_ref.p = indi.reference_acceleration.err_p * QUAT1_FLOAT_OF_BFP(att_err->qx)
