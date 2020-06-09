@@ -344,10 +344,17 @@ static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct I
   indi.du.q = 1.0 / indi.g1.q * (indi.angular_accel_ref.q - indi.rate_d[1]);
   indi.du.r = 1.0 / (indi.g1.r + indi.g2) * (indi.angular_accel_ref.r - indi.rate_d[2] + indi.g2 * indi.du.r);
 
-  //add the increment to the total control input
-  indi.u_in.p = indi.u[0].o[0] + indi.du.p;
-  indi.u_in.q = indi.u[1].o[0] + indi.du.q;
-  indi.u_in.r = indi.u[2].o[0] + indi.du.r;
+  if (stabilization_cmd[COMMAND_THRUST] < 300) {
+    //add the increment to the total control input
+    indi.u_in.p = indi.du.p;
+    indi.u_in.q = indi.du.q;
+    indi.u_in.r = indi.du.r;
+  } else {
+    //add the increment to the total control input
+    indi.u_in.p = indi.u[0].o[0] + indi.du.p;
+    indi.u_in.q = indi.u[1].o[0] + indi.du.q;
+    indi.u_in.r = indi.u[2].o[0] + indi.du.r;
+  }
 
   //bound the total control input
 #if STABILIZATION_INDI_FULL_AUTHORITY
@@ -372,9 +379,6 @@ static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct I
   //TODO: this should be something more elegant, but without this the inputs
   //will increment to the maximum before even getting in the air.
   if (stabilization_cmd[COMMAND_THRUST] < 300) {
-    FLOAT_RATES_ZERO(indi.du);
-    FLOAT_RATES_ZERO(indi.u_act_dyn);
-    FLOAT_RATES_ZERO(indi.u_in);
   } else {
     // only run the estimation if the commands are not zero.
     lms_estimation();
