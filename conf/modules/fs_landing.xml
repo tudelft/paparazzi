@@ -14,11 +14,11 @@
         <dl_setting min="-9600" max="9600" step="50" shortname="THR_L FF" var="thr_l_ff" type="float" module="fs_landing/feed_forward" handler="thr_l_ff_handler" />
         <dl_setting min="-9600" max="9600" step="50" shortname="THR_R FF" var="thr_r_ff" type="float" module="fs_landing/feed_forward" handler="thr_r_ff_handler" />
         <dl_setting min="-9600" max="9600" step="50" shortname="ELEV_L FF" var="elev_l_ff" type="float" module="fs_landing/feed_forward" handler="elev_l_ff_handler" />
-        <dl_setting min="-9600" max="9600" step="50" shortname="ELEV_R FF" var="elev_r_ff" type="float" module="fs_landing/feed_forward" handler="elev_l_ff_handler" />
+        <dl_setting min="-9600" max="9600" step="50" shortname="ELEV_R FF" var="elev_r_ff" type="float" module="fs_landing/feed_forward" handler="elev_r_ff_handler" />
         <dl_setting min="-9600" max="9600" step="50" shortname="THR_L Spin" var="thr_l_spinning" type="float" module="fs_landing/feed_forward" handler="thr_l_spin_handler" />
         <dl_setting min="-9600" max="9600" step="50" shortname="THR_R Spin" var="thr_r_spinning" type="float" module="fs_landing/feed_forward" handler="thr_r_spin_handler" />
         <dl_setting min="-9600" max="9600" step="50" shortname="ELEV_L Spin" var="elev_l_spinning" type="float" module="fs_landing/feed_forward" handler="elev_l_spin_handler" />
-        <dl_setting min="-9600" max="9600" step="50" shortname="ELEV_R Spin" var="elev_r_spinning" type="float" module="fs_landing/feed_forward" handler="elev_l_spin_handler" />
+        <dl_setting min="-9600" max="9600" step="50" shortname="ELEV_R Spin" var="elev_r_spinning" type="float" module="fs_landing/feed_forward" handler="elev_r_spin_handler" />
       </dl_settings>
       <dl_settings name="Pilot Control">
         <dl_setting min="0" max="1" step="1" shortname="Active" var="pilot_has_control" type="uint8_t" module="fs_landing/fs_landing" handler="pilot_control_handler" />
