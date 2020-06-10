@@ -165,7 +165,7 @@ float divergence_setpoint;
 // *********************************
 // include and define stuff for SSL:
 // *********************************
-#define RECURSIVE_LEARNING 1
+#define RECURSIVE_LEARNING 0
 #include <stdio.h>
 #include "modules/computer_vision/textons.h"
 // float* last_texton_distribution; // used to check if a new texton distribution has been received
@@ -249,6 +249,7 @@ void vertical_ctrl_module_run(bool in_flight);
 void vertical_ctrl_module_init(void)
 {
   // filling the of_landing_ctrl struct with default values:
+  of_landing_ctrl.use_bias = true;
   of_landing_ctrl.agl = 0.0f;
   of_landing_ctrl.agl_lp = 0.0f;
   of_landing_ctrl.vel = 0.0f;
@@ -282,6 +283,50 @@ void vertical_ctrl_module_init(void)
   of_landing_ctrl.p_land_threshold = OFL_P_LAND_THRESHOLD;
   of_landing_ctrl.elc_oscillate = OFL_ELC_OSCILLATE;
   of_landing_ctrl.close_to_edge = OFL_CLOSE_TO_EDGE;
+
+  // TODO: not freed!
+  int i;
+  if(of_landing_ctrl.use_bias) {
+      weights = (float *)calloc(n_textons+1,sizeof(float));
+      for(i = 0; i <= n_textons; i++)
+      {
+          weights[i] = 0.0f;
+      }
+  }
+  else {
+      weights = (float *)calloc(n_textons,sizeof(float));
+      for(i = 0; i < n_textons; i++)
+      {
+	  weights[i] = 0.0f;
+      }
+  }
+
+
+  /*
+   *
+   // RLS:
+  // TODO: not freed!
+  P_RLS = (float **)calloc((n_textons+1),sizeof(float*));
+  for(i = 0; i < n_textons+1; i++)
+  {
+    P_RLS[i] = (float *)calloc((n_textons+1),sizeof(float));
+  }
+  int j;
+  for(i = 0; i < n_textons+1; i++)
+  {
+    for(j = 0; j < n_textons+1; j++)
+    {
+          if(i == j)
+          {
+            P_RLS[i][j] = 1.0f;
+          }
+          else
+          {
+            P_RLS[i][j] = 0.0f;
+          }
+    }
+  }
+  */
   reset_all_vars();
 
   // Subscribe to the altitude above ground level ABI messages
@@ -341,6 +386,7 @@ static void reset_all_vars(void)
   istate = of_landing_ctrl.igain;
   dstate = of_landing_ctrl.dgain;
 
+  of_landing_ctrl.load_weights = false;
   of_landing_ctrl.divergence = 0.;
   of_landing_ctrl.previous_err = 0.;
   of_landing_ctrl.sum_err = 0.;
@@ -372,6 +418,31 @@ void vertical_ctrl_module_run(bool in_flight)
   Bound(of_landing_ctrl.lp_const, 0.001f, 1.f);
   float lp_factor = dt / of_landing_ctrl.lp_const;
   Bound(lp_factor, 0.f, 1.f);
+
+  if (!in_flight) {
+
+    // When not flying and in mode module:
+    // Reset integrators, landing phases, etc.
+    // reset_all_vars(); // commented out to allow us to study the observation variables in-hand, i.e., without flying
+
+    //pstate = predict_gain(texton_distribution);
+    //printf("Predicted gain: %f\n", pstate);
+
+    // SSL: only learn if not flying - due to use of resources:
+    if(of_landing_ctrl.learn_gains) {
+      printf("LEARNING WEIGHTS!\n");
+      // learn the weights from the file filled with training examples:
+      learn_from_file();
+      // reset the learn_gains variable to false:
+      of_landing_ctrl.learn_gains = false;
+      // dt is smaller than it actually should be...
+    }
+    if(of_landing_ctrl.load_weights) {
+        printf("LOADING WEIGHTS!");
+      load_weights();
+      of_landing_ctrl.load_weights = false;
+    }
+  }
 
   /***********
    * VISION
@@ -944,26 +1015,27 @@ void load_texton_distribution(void)
 {
   int i, j, read_result;
   char filename[512];
-        sprintf(filename, "%s/Training_set_%05d.dat", STRINGIFY(TEXTON_DISTRIBUTION_PATH), 0);
 
-        if((distribution_logger = fopen(filename, "r")))
-        {
+  sprintf(filename, "%s/Training_set_%05d.dat", STRINGIFY(TEXTON_DISTRIBUTION_PATH), 0);
+  printf("Loading textons from %s\n",filename);
+
+  distribution_logger = fopen(filename, "r");
+  if(distribution_logger)
+  {
     // Load the dictionary:
     n_read_samples = 0;
     // For now we read the samples sequentially:
-    // for(i = 0; i < MAX_SAMPLES_LEARNING; i++)
+    //for(i = 0; i < MAX_SAMPLES_LEARNING; i++)
     for(i = 0; i < 30; i++)
     {
       read_result = fscanf(distribution_logger, "%f ", &sonar_OF[n_read_samples]);
-                        if(read_result == EOF) break;
-      // if(i % 100) printf("SONAR: %f\n", sonar_OF[n_read_samples]);
+			if(read_result == EOF) break;
       read_result = fscanf(distribution_logger, "%f ", &gains[n_read_samples]);
                         if(read_result == EOF) break;
       read_result = fscanf(distribution_logger, "%f ", &cov_divs_log[n_read_samples]);
                         if(read_result == EOF) break;
 
       text_dists[n_read_samples] = (float*) calloc(n_textons,sizeof(float));
-
       for(j = 0; j < n_textons-1; j++)
       {
         read_result = fscanf(distribution_logger, "%f ", &text_dists[n_read_samples][j]);
@@ -973,9 +1045,11 @@ void load_texton_distribution(void)
                         if(read_result == EOF) break;
       n_read_samples++;
     }
-                fclose(distribution_logger);
-
-    // printf("Learned samples = %d\n", n_read_samples);
+    fclose(distribution_logger);
+  }
+  else
+  {
+      printf("There was an error opening %s\n", filename);
   }
 }
 
@@ -985,12 +1059,15 @@ void learn_from_file(void)
   float fit_error;
 
   // first load the texton distributions:
+  printf("Loading distribution\n");
   load_texton_distribution();
 
   // then learn from it:
   // TODO: uncomment & comment to learn gains instead of sonar:
+  printf("Learning!\n");
   if(!RECURSIVE_LEARNING)
   {
+
     fit_linear_model_OF(gains, text_dists, n_textons, n_read_samples, weights, &fit_error);
     // fit_linear_model_OF(sonar_OF, text_dists, n_textons, n_read_samples, weights, &fit_error);
   }
@@ -999,6 +1076,7 @@ void learn_from_file(void)
     recursive_least_squares_batch(gains, text_dists, n_textons, n_read_samples, weights, &fit_error);
   }
 
+  printf("Saving!\n");
   // save the weights to a file:
   save_weights();
 
