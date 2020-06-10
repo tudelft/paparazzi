@@ -70,7 +70,7 @@ struct IndiVariables {
 
   Butterworth2LowPass u[3];
   Butterworth2LowPass rate[3];
-  Butterworth2LowPass yaw;
+  Butterworth2LowPass filt_r;
   struct FloatRates g1;
   float g2;
 

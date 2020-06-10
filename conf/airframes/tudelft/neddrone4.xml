@@ -305,7 +305,7 @@
 
     <define name="FORWARD_G1_P" value="0.0040"/>
     <define name="FORWARD_G1_Q" value="0.0065"/>
-    <define name="FORWARD_G1_R" value="0.0008"/>
+    <define name="FORWARD_G1_R" value="0.0025"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="30.0"/>

@@ -180,7 +180,7 @@ void indi_init_filters(void)
     init_butterworth_2_low_pass(&indi.est.u[i], tau_est, sample_time, 0.0);
     init_butterworth_2_low_pass(&indi.est.rate[i], tau_est, sample_time, 0.0);
 
-    init_butterworth_2_low_pass(&indi.yaw, tau_yaw, sample_time, 0.0);
+    init_butterworth_2_low_pass(&indi.filt_r, tau_yaw, sample_time, 0.0);
   }
 }
 
@@ -297,6 +297,7 @@ static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct I
   struct FloatRates *body_rates = stateGetBodyRates_f();
   filter_pqr(indi.u, &indi.u_act_dyn);
   filter_pqr(indi.rate, body_rates);
+  /*update_butterworth_2_low_pass(&indi.filt_r, body_rates->r);*/
 
   // Calculate the derivative of the rates
   finite_difference_from_filter(indi.rate_d, indi.rate);
@@ -315,7 +316,7 @@ static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct I
 #endif
 #if STABILIZATION_INDI_FILTER_YAW_RATE
   /*rates_for_feedback.r = indi.rate[2].o[0];*/
-  rates_for_feedback.r = indi.yaw.o[0];
+  rates_for_feedback.r = indi.filt_r.o[0];
 #endif
 
   indi.angular_accel_ref.p = indi.reference_acceleration.err_p * QUAT1_FLOAT_OF_BFP(att_err->qx)
