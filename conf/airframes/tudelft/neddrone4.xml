@@ -63,7 +63,10 @@
     <module name="imu" type="mpu6000"/>
     <module name="gps"           type="ublox"/>
     <module name="gps"           type="ubx_ucenter"/>
+    <!--<module name="stabilization" type="int_quat"/>-->
+    <!--<module name="gain_scheduling"/>-->
     <module name="stabilization" type="indi_simple"/>
+    <module name="scheduling_indi_simple"/>
     <module name="stabilization" type="rate"/>
     <module name="ins" type="ekf2" />
     <!--module name="airspeed" type="ms45xx_i2c"> 
@@ -72,7 +75,6 @@
     </module-->
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
-    <!--<module name="gain_scheduling"/>-->
 
     <!-- External GPS -->
     <module name="mag_lis3mdl">
@@ -261,6 +263,7 @@
     <define name="SP_MAX_THETA" value="80." unit="deg"/>
     <define name="SP_MAX_R" value="90." unit="deg/s"/>
     <define name="DEADBAND_R" value="200"/>
+    <define name="SP_PSI_DELTA_LIMIT" value="45" unit="deg"/>
 
     <!-- reference -->
     <define name="REF_OMEGA_P" value="400" unit="deg/s"/>
@@ -297,8 +300,12 @@
     <!-- control effectiveness -->
     <define name="G1_P" value="0.0040"/>
     <define name="G1_Q" value="0.0026"/>
-    <define name="G1_R" value="0.0010"/>
-    <define name="G2_R" value="0.0"/>
+    <define name="G1_R" value="0.0008"/>
+    <define name="G2_R" value="0.00015"/>
+
+    <define name="FORWARD_G1_P" value="0.0040"/>
+    <define name="FORWARD_G1_Q" value="0.0065"/>
+    <define name="FORWARD_G1_R" value="0.0008"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="30.0"/>
