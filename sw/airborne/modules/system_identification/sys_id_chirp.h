@@ -21,6 +21,18 @@
  * @file "modules/helicopter/sys_id_chirp.h"
  * @author Joost Meulenbeld
  * System identification chirp
+ * 
+ * This is the module implementation for the chirp maneuver. The mathematical definition of the chirp
+ * can be found in pprz_chirp.h. Use sys_id_chirp by adding the module to your airframe file and
+ * adding the following line to the top of the <command_laws> section of your airframe file:
+ * 
+ * <call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,values)"/>
+ * 
+ * In the GCS you can then start and stop the chirp, change frequencies and choose which axis it should
+ * be applied to. Documentation of the specific options can be found in the module xml file.
+ * 
+ * The axes to which noise is applied is set in the xml file with the variable CHIRP_AXES. The axis that
+ * is selected in the GCS to apply the chirp on is the index in the CHIRP_AXES array
  */
 
 #ifndef SYS_ID_CHIRP_H
@@ -32,37 +44,53 @@
 #include "modules/system_identification/pprz_chirp.h"
 #include "generated/airframe.h"
 #include "mcu_periph/sys_time.h"
-#include "math/pprz_algebra_float.h"
-#include "state.h"
+#include "filters/low_pass_filter.h"
+#include "random.h"
 
-// Number of axes for which the chirp will generate a signal
-#define CHIRP_NO_AXES 5
 
-// The current values for all axes that should be added to output commands to the UAV
-extern int32_t current_chirp_values[CHIRP_NO_AXES];
+#ifndef CHIRP_AXES
+#define CHIRP_AXES {COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW}
+#endif
+
+#ifndef CHIRP_ENABLED
+#define CHIRP_ENABLED TRUE
+#endif
+
+#ifndef CHIRP_USE_NOISE
+#define CHIRP_USE_NOISE TRUE
+#endif
+
+#ifndef CHIRP_EXPONENTIAL
+#define CHIRP_EXPONENTIAL TRUE
+#endif
+
+#ifndef CHIRP_FADEIN
+#define CHIRP_FADEIN TRUE
+#endif
 
 extern uint8_t chirp_active;
-extern int32_t chirp_amplitude;
-extern float chirp_noise_stdv_onaxis_ratio;
-extern float chirp_noise_stdv_offaxis_ratio;
+extern pprz_t chirp_amplitude;
+extern float chirp_noise_stdv_onaxis_ratio; // On-axis noise is amplitude times this value
+extern float chirp_noise_stdv_offaxis; // Off-axis noise (the axes that the chirp is not applied to)
 
-extern float chirp_f0_hz;
-extern float chirp_f1_hz;
+extern float chirp_fstart_hz;
+extern float chirp_fstop_hz;
 extern float chirp_length_s;
 
-// 0: Roll, 1: Pitch, 2: Yaw, 3: Elevator, 4: Aileron
-extern uint8_t chirp_axis;
+extern uint8_t chirp_axis; // Index of chirp axis in ACTIVE_CHIRP_AXES
 
-void sys_id_chirp_init(void);
+extern void sys_id_chirp_init(void);
 
 // If chirp is running, update its values
 extern void sys_id_chirp_run(void);
 
-// Handler for chaning the chirp_active variable in the GCS
-extern void sys_id_chirp_chirp_activate_handler(uint8_t activate);
+// Handlers for changing gcs variables
+extern void sys_id_chirp_activate_handler(uint8_t activate); // Activate the chirp
+extern void sys_id_chirp_axis_handler(uint8_t axis); // Check if new axis is valid
+extern void sys_id_chirp_fstart_handler(float fstart); // Check if fstart is lower than current fend
+extern void sys_id_chirp_fstop_handler(float fstop); // Check if fend is higher than current fstart
 
-// Call this function in command_laws to add the control values
-extern void sys_id_chirp_add_values_and_log(int32_t in_cmd[]);
-
+// Add the current chirp values to the in_cmd values if motors_on is true
+extern void sys_id_chirp_add_values(bool motors_on, bool override_on, pprz_t in_cmd[]);
 
 #endif // SYS_ID_CHIRP_H
