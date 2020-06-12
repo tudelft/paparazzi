@@ -73,9 +73,12 @@
       <define name="USE_I2C4"/>
       <define name="MS45XX_I2C_DEV" value="i2c4"/>
     </module-->
-    <load name="airspeed_ets.xml">
-      <!--<define name="AIRSPEED_ETS_SYNC_SEND"/>-->
-    </load>
+    <module name="airspeed_ets.xml">
+      <define name="USE_I2C4"/>
+      <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>
+      <define name="AIRSPEED_ETS_SYNC_SEND"/>
+      <define name="USE_AIRSPEED_ETS" value="TRUE"/>
+    </module>
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
 
