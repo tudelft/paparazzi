@@ -5,12 +5,14 @@
 #include "fs_landing.h"
 #include "feed_forward.h"
 #include "pilot_test.h"
+#include "actuator_id.h"
 
 struct fs_landing_t fs_landing;
 struct fs_landing_t current_actuator_values;
 
 uint8_t is_spinning = false;
 uint8_t pilot_has_control = false;
+uint8_t act_identification_active = false;
 uint8_t has_ff_started = false;
 float ff_start_time = 0;
 
@@ -31,6 +33,8 @@ void fs_landing_run()
             spin_actuator_values(&current_actuator_values);  // Constant actuator values to maintain spin
             if (pilot_has_control) {
                 pilot_actuator_values(&current_actuator_values);  // RC Channels control actuator deflection
+            } else if (act_identification_active){
+                add_chirp(&current_actuator_values);  // +- sinusoidally varying delta to one of the actuators
             }
         } else {
             if (has_ff_started) {
@@ -63,6 +67,15 @@ bool is_fs_landing_active()
 void fs_landing_pilot_control_handler(uint8_t active)
 {
     pilot_has_control = active;
+}
+
+void fs_landing_actuator_id_handler(uint8_t active)
+{
+    if (is_spinning){
+        act_identification_active = active;
+    } else {
+        act_identification_active = false;
+    }
 }
 
 void fs_landing_set_actuator_values()
