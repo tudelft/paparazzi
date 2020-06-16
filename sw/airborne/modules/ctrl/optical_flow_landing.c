@@ -771,6 +771,7 @@ void vertical_ctrl_module_run(bool in_flight)
 	// SSL raw, no landing procedure, ideal for hovering:
 
 	pstate = predict_gain(texton_distribution);
+	printf("prediction = %f\n", pstate);
 	of_landing_ctrl.pgain = of_landing_ctrl.lp_factor_prediction * of_landing_ctrl.pgain + (1.0f - of_landing_ctrl.lp_factor_prediction) * of_landing_ctrl.reduction_factor_elc * pstate;
 	pused = of_landing_ctrl.pgain;
 	// make sure pused does not become too small, nor grows too fast:
@@ -782,6 +783,10 @@ void vertical_ctrl_module_run(bool in_flight)
 
 	// use the divergence for control:
 	thrust_set = PID_divergence_control(of_landing_ctrl.divergence_setpoint, pused, istate, dstate, dt);
+
+	if (pstate < of_landing_ctrl.p_land_threshold) {
+	    thrust_set = final_landing_procedure();
+	}
     }
 
     if (in_flight) {

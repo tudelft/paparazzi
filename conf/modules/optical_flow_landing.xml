@@ -26,6 +26,7 @@
       <define name="PGAIN_ADAPTIVE" value="0.50" description="P gain on cov error"/>
       <define name="IGAIN_ADAPTIVE" value="0.10" description="I gain on summed cov error"/>
       <define name="DGAIN_ADAPTIVE" value="0.0" description="D gain on differential cov error"/>
+      <define name="P_LAND_THRESHOLD" value="0.15" description="P-value at which the drone will initiate a final landing procedure, for adaptive control"/>
       <!-- TODO: add more explanations of settings below -->
     </section>
   </doc>
@@ -58,7 +59,7 @@
         <dl_setting var="of_landing_ctrl.use_bias" min="0" step="1" max="1" shortname="use_bias" module="ctrl/optical_flow_landing"/>
         <dl_setting var="of_landing_ctrl.snapshot" min="0" step="1" max="1" shortname="snapshot" module="ctrl/optical_flow_landing"/>
         <dl_setting var="of_landing_ctrl.lp_factor_prediction" min="0" step="0.001" max="1" module="ctrl/optical_flow_landing" shortname="lp_factor_prediction"/>
-        <dl_setting var="of_landing_ctrl.p_land_threshold" min="0" step="0.01" max="1.0" module="ctrl/optical_flow_landing" shortname="p_land_threshold"/>
+        <dl_setting var="of_landing_ctrl.p_land_threshold" min="0" step="0.01" max="2.0" module="ctrl/optical_flow_landing" shortname="p_land_threshold"/>
         <dl_setting var="of_landing_ctrl.ramp_duration" min="0" step="0.01" max="2.0" module="ctrl/optical_flow_landing" shortname="ramp_duration"/>        
       </dl_settings>
     </dl_settings>
