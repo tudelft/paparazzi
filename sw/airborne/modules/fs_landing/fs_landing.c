@@ -7,6 +7,8 @@
 #include "pilot_test.h"
 #include "actuator_id.h"
 
+#include "subsystems/datalink/downlink.h"
+
 struct fs_landing_t fs_landing;
 struct fs_landing_t current_actuator_values;
 
@@ -15,6 +17,11 @@ uint8_t pilot_has_control = false;
 uint8_t act_identification_active = false;
 uint8_t has_ff_started = false;
 float ff_start_time = 0;
+
+// For debug use:
+// float send_values[4];
+// send_values[0] = (float)current_actuator_values.commands[1];
+// DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 8, send_values);
 
 void fs_landing_init()
 {
@@ -47,6 +54,7 @@ void fs_landing_run()
     } else {
         is_spinning = false;
         has_ff_started = false;
+        act_identification_active = false;
     }
     return;
 }
