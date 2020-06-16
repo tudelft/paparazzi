@@ -274,8 +274,8 @@ void vertical_ctrl_module_init(void)
   of_landing_ctrl.pgain_adaptive = OFL_PGAIN_ADAPTIVE;
   of_landing_ctrl.igain_adaptive = OFL_IGAIN_ADAPTIVE;
   of_landing_ctrl.dgain_adaptive = OFL_DGAIN_ADAPTIVE;
-  of_landing_ctrl.reduction_factor_elc =
-    0.80f; // for exponential gain landing, after detecting oscillations, the gain is multiplied with this factor
+  of_landing_ctrl.reduction_factor_elc = 0.25f; // TODO: it used to be 0.80 for the oscillation landings... make a separate factor for the predictions.
+  // for exponential gain landing, after detecting oscillations, the gain is multiplied with this factor
   of_landing_ctrl.lp_cov_div_factor =
     0.99f; // low pass filtering cov div so that the drone is really oscillating when triggering the descent
   of_landing_ctrl.t_transition = 2.f;
@@ -283,7 +283,7 @@ void vertical_ctrl_module_init(void)
   of_landing_ctrl.p_land_threshold = OFL_P_LAND_THRESHOLD;
   of_landing_ctrl.elc_oscillate = OFL_ELC_OSCILLATE;
   of_landing_ctrl.close_to_edge = OFL_CLOSE_TO_EDGE;
-
+  of_landing_ctrl.lp_factor_prediction = 0.95;
   // TODO: not freed!
   int i;
   if(of_landing_ctrl.use_bias) {
@@ -386,7 +386,7 @@ static void reset_all_vars(void)
   istate = of_landing_ctrl.igain;
   dstate = of_landing_ctrl.dgain;
 
-  of_landing_ctrl.load_weights = false;
+  of_landing_ctrl.load_weights = true;
   of_landing_ctrl.divergence = 0.;
   of_landing_ctrl.previous_err = 0.;
   of_landing_ctrl.sum_err = 0.;
@@ -419,6 +419,12 @@ void vertical_ctrl_module_run(bool in_flight)
   float lp_factor = dt / of_landing_ctrl.lp_const;
   Bound(lp_factor, 0.f, 1.f);
 
+  if(of_landing_ctrl.load_weights) {
+      printf("LOADING WEIGHTS!\n");
+    load_weights();
+    of_landing_ctrl.load_weights = false;
+  }
+
   if (!in_flight) {
 
     // When not flying and in mode module:
@@ -436,11 +442,6 @@ void vertical_ctrl_module_run(bool in_flight)
       // reset the learn_gains variable to false:
       of_landing_ctrl.learn_gains = false;
       // dt is smaller than it actually should be...
-    }
-    if(of_landing_ctrl.load_weights) {
-        printf("LOADING WEIGHTS!");
-      load_weights();
-      of_landing_ctrl.load_weights = false;
     }
   }
 

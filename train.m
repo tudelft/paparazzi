@@ -18,7 +18,8 @@ end
 % 2) gain
 % 3) cov div
 % 4-end) textons
-A = load('Training_set_00000.dat');
+% A = load('Training_set_00000.dat');
+A = load('Training_set_landing_mat_oscillate_different_heights.dat');
 n_samples = size(A,1);
 if(TEST_SET)
     n_training = round((1-test_ratio) * n_samples);
@@ -35,8 +36,8 @@ end
 % **************************************
 
 A = A(start_sample:min([MAX_SAMPLES, size(A,1)]), :);
-b = A(:,2);
-f = A(:,4:end);
+b = A(:,2); % targets
+f = A(:,4:end); % features
 if(BIAS)
     AA = [f, ones(size(A,1),1)];
 else
@@ -59,7 +60,7 @@ fclose(fid);
 
 % evaluate the resulting estimates and compare them with the weights
 % learned onboard:
-y = AA * x;
+y = AA * x; % x is the weights
 height_gain_estimate = y;
 fprintf('MAE on training set = %f\n', mean(abs(y-b)));
 if(weights)
@@ -68,16 +69,23 @@ end
 figure(); plot(y); hold on; plot(b);
 if(weights)
     plot(Z);
+    title('Height on training set')
+    legend({'height gain estimate', 'height gain', 'onboard gain estimate'});
+else
+    title('Height on training set')
+    legend({'height gain estimate', 'height gain'});
 end
-title('Height on training set')
-legend({'height gain estimate', 'height gain', 'onboard gain estimate'});
+
 
 figure(); plot(smooth(y, 20)); hold on; plot(b);
 if(weights)
     plot(smooth(Z, 20));
+    legend({'height gain estimate', 'height gain', 'onboard gain estimate'});
+    title('Smoothed Height')
+else
+    legend({'height gain estimate', 'height gain'});
+    title('Smoothed Height')
 end
-title('Smoothed Height')
-legend({'height gain estimate', 'height gain', 'onboard gain estimate'});
 
 figure();
 bar(x, 'FaceColor', [1 0 0]); % hold on; bar(w);
@@ -86,6 +94,7 @@ title('Weights learned in MATLAB');
 figure();
 plot(A(:,1)); hold on; plot(A(:,2));
 legend({'Height', 'Gain'});
+title('Height and adaptive gain in the data set')
 
 % MAE on test set:
 f_test = A_test(:,4:end);
@@ -103,9 +112,12 @@ end
 figure(); plot(y_test); hold on; plot(b_test);
 if(weights)
     plot(Z_test);
+    title('Height on test set')
+    legend({'height gain estimate', 'height gain', 'onboard gain estimate'});
+else
+    title('Height on test set')
+    legend({'height gain estimate', 'height gain'});
 end
-title('Height on test set')
-legend({'height gain estimate', 'height gain', 'onboard gain estimate'});
 
 
 % ***********************************
