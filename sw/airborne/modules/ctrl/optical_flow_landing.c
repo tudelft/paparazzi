@@ -667,7 +667,7 @@ void vertical_ctrl_module_run(bool in_flight)
       // have the i and d gain depend on the p gain:
       istate = 0.025 * of_landing_ctrl.pgain;
       dstate = 0.0f;
-      printf("of_landing_ctrl.pgain = %f\n", of_landing_ctrl.pgain);
+      printf("of_landing_ctrl.pgain = %f, divergence = %f, phase = %d\n", of_landing_ctrl.pgain, of_landing_ctrl.divergence, elc_phase);
 
       if (elc_phase == 0) {
 	// Let the low-pass filter settle first with 0 divergence:
@@ -688,12 +688,12 @@ void vertical_ctrl_module_run(bool in_flight)
 	  thrust_set = PID_divergence_control(of_landing_ctrl.divergence_setpoint, pused, istate, dstate, dt);
       }
       if (pused < of_landing_ctrl.p_land_threshold) {
-	  final_landing_procedure();
+	  thrust_set = final_landing_procedure();
       }
     }
     else  if (of_landing_ctrl.CONTROL_METHOD == 4) {
 
-      // SSL + EXPONENTIAL LANDING: use learned weights for setting the gain on the way down:
+      // Mixed SSL + EXPONENTIAL LANDING: use learned weights for setting the gain on the way down:
 
       if (elc_phase == 0) {
 
@@ -709,7 +709,7 @@ void vertical_ctrl_module_run(bool in_flight)
 	// have the i and d gain depend on the p gain:
 	istate = 0.025 * of_landing_ctrl.pgain;
 	dstate = 0.0f;
-	printf("of_landing_ctrl.pgain = %f\n", of_landing_ctrl.pgain);
+	printf("of_landing_ctrl.pgain = %f, divergence = %f\n", of_landing_ctrl.pgain, of_landing_ctrl.divergence);
 
 	// use the divergence for control:
 	thrust_set = PID_divergence_control(phase_0_set_point, pused, istate, dstate, dt);
@@ -763,7 +763,7 @@ void vertical_ctrl_module_run(bool in_flight)
 	}
       }
       else {
-	final_landing_procedure();
+	  thrust_set = final_landing_procedure();
       }
     }
     else  if (of_landing_ctrl.CONTROL_METHOD == 5) {
@@ -771,7 +771,7 @@ void vertical_ctrl_module_run(bool in_flight)
 	// SSL raw, no landing procedure, ideal for hovering:
 
 	pstate = predict_gain(texton_distribution);
-	printf("prediction = %f\n", pstate);
+	// printf("prediction = %f\n", pstate);
 	of_landing_ctrl.pgain = of_landing_ctrl.lp_factor_prediction * of_landing_ctrl.pgain + (1.0f - of_landing_ctrl.lp_factor_prediction) * of_landing_ctrl.reduction_factor_elc * pstate;
 	pused = of_landing_ctrl.pgain;
 	// make sure pused does not become too small, nor grows too fast:
@@ -802,9 +802,9 @@ void vertical_ctrl_module_run(bool in_flight)
  */
 uint32_t final_landing_procedure()
 {
-  // land with 85% nominal thrust:
+  // land with 95% nominal thrust:
   uint32_t nominal_throttle = of_landing_ctrl.nominal_thrust * MAX_PPRZ;
-  uint32_t thrust = 0.85 * nominal_throttle;
+  uint32_t thrust = 0.975 * nominal_throttle;
   Bound(thrust, 0.6 * nominal_throttle, 0.9 * MAX_PPRZ);
   landing = true;
 
