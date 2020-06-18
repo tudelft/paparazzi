@@ -67,6 +67,8 @@ struct guidance_indi_hybrid_params gih_params = {
 
   .speed_gain = GUIDANCE_INDI_SPEED_GAIN,
   .speed_gainz = GUIDANCE_INDI_SPEED_GAINZ,
+
+  .heading_bank_gain = GUIDANCE_INDI_HEADING_BANK_GAIN,
 };
 
 #ifdef GUIDANCE_INDI_MAX_AIRSPEED
@@ -256,7 +258,7 @@ void guidance_indi_run(float *heading_sp) {
     // In turn acceleration proportional to heading diff
     sp_accel_b.y = atan2(desired_airspeed.y, desired_airspeed.x) - psi;
     FLOAT_ANGLE_NORMALIZE(sp_accel_b.y);
-    sp_accel_b.y *= GUIDANCE_INDI_HEADING_BANK_GAIN;
+    sp_accel_b.y *= gih_params.heading_bank_gain;
 
     // Control the airspeed
     sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;

@@ -64,8 +64,11 @@ struct guidance_indi_hybrid_params {
   float pos_gainz;
   float speed_gain;
   float speed_gainz;
+  float heading_bank_gain;
 };
 
 extern struct guidance_indi_hybrid_params gih_params;
+
+extern struct FloatEulers guidance_euler_cmd; // for logging
 
 #endif /* GUIDANCE_INDI_HYBRID_H */
