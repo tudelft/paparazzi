@@ -130,24 +130,24 @@
 
   <section name="IMU" prefix="IMU_">
     <!-- Calibrated near boat -->
-    <define name="ACCEL_X_NEUTRAL" value="-309"/>
-    <define name="ACCEL_Y_NEUTRAL" value="16"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-30"/>
-    <define name="ACCEL_X_SENS" value="4.615681276039531" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.890981691160912" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.824451353255886" integer="16"/>
+    <define name="ACCEL_X_NEUTRAL" value="-164"/>
+    <define name="ACCEL_Y_NEUTRAL" value="-19"/>
+    <define name="ACCEL_Z_NEUTRAL" value="-302"/>
+    <define name="ACCEL_X_SENS" value="2.4353263325616896" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="2.430457186142149" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.4083032197503895" integer="16"/>
 
     <!--define name= "MAG_X_CURRENT_COEF" value="-1.7139708082316483"/>
     <define name= "MAG_Y_CURRENT_COEF" value="-0.7696784114750511"/>
     <define name= "MAG_Z_CURRENT_COEF" value="1.1626106815908253"/-->
 
     <!-- Calibrated near boat -->
-    <define name="MAG_X_NEUTRAL" value="-13"/>
-    <define name="MAG_Y_NEUTRAL" value="-16"/>
-    <define name="MAG_Z_NEUTRAL" value="20"/>
-    <define name="MAG_X_SENS" value="14.650339331593473" integer="16"/>
-    <define name="MAG_Y_SENS" value="14.437207425384758" integer="16"/>
-    <define name="MAG_Z_SENS" value="14.235213327414126" integer="16"/>
+    <define name="MAG_X_NEUTRAL" value="-195"/>
+    <define name="MAG_Y_NEUTRAL" value="-266"/>
+    <define name="MAG_Z_NEUTRAL" value="-806"/>
+    <define name="MAG_X_SENS" value="7.239846705729754" integer="16"/>
+    <define name="MAG_Y_SENS" value="7.037092768037254" integer="16"/>
+    <define name="MAG_Z_SENS" value="7.583294047780469" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="90." unit="deg"/>
