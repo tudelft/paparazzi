@@ -83,6 +83,7 @@
       <configure name="IMU_MPU9250_SPI_DEV" value="spi1"/>
       <configure name="IMU_MPU9250_SPI_SLAVE_IDX" value="SPI_SLAVE2"/>
       <define name="IMU_MPU9250_READ_MAG" value="FALSE"/>
+
       <define name="IMU_MPU9250_GYRO_RANGE" value="MPU9250_GYRO_RANGE_2000" />
       <!-- To be able (for now) to set AP IMU orientation -->
       <!-- <define name="IMU_MPU9250_CHAN_X" value="1"/>
@@ -328,9 +329,9 @@
   <section name="IMU" prefix="IMU_">
 
     <!-- ***************** GYRO *****************-->
-    <define name="GYRO_P_SENS" value=" 1.01" integer="16"/>
-    <define name="GYRO_Q_SENS" value=" 1.01" integer="16"/>
-    <define name="GYRO_R_SENS" value=" 1.01" integer="16"/>
+    <define name="GYRO_P_SENS" value="4.5" integer="16"/>
+    <define name="GYRO_Q_SENS" value="4.5" integer="16"/>
+    <define name="GYRO_R_SENS" value="4.5" integer="16"/>
 
     <!-- ***************** ACCELO *****************-->
     <!-- Replace these values with your own calibration, on the correct sensor -->
