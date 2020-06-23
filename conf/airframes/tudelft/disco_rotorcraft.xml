@@ -61,8 +61,8 @@
 
   <servos>
     <servo name="MOTOR" no="0" min="1000" neutral="1000" max="12500"/>
-    <servo name="AILEVON_RIGHT" no="6" min="1900" neutral="1500" max="1100"/>
-    <servo name="AILEVON_LEFT" no="1" min="1100" neutral="1500" max="1900"/>
+    <servo name="AILEVON_RIGHT" no="6" min="1850" neutral="1450" max="1050"/>
+    <servo name="AILEVON_LEFT" no="1" min="1050" neutral="1450" max="1850"/>
   </servos>
 
 
@@ -77,9 +77,9 @@
 
   <rc_commands>
     <set command="THRUST" value="@THROTTLE" />
-    <set command="ROLL" value="@YAW" />
-    <set command="PITCH" value="@PITCH/2" />
-    <set command="YAW" value="-@ROLL/4" />
+    <set command="ROLL" value="@ROLL / 2" />
+    <set command="PITCH" value="@PITCH / 2" />
+    <set command="YAW" value="@YAW / 2" />
     <set command="FLAPS" value="@FLAPS" />
   </rc_commands>
 
@@ -97,12 +97,14 @@
   <command_laws>
     <!--call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/-->
     <let var="th_hold"     value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
+    <let var="manual"     value="LessThan(RadioControlValues(RADIO_MODE), -4800)"/>
+    <let var="autopil"     value="(1-($manual))"/>
     <!--let var="fwd_hold"    value="RadioControlValues(RADIO_FMODE)> 4800"/>
     <let var="back_hold1"   value="RadioControlValues(RADIO_BACK_THOLD) > -4800"/>
     <let var="back_hold2"   value="RadioControlValues(RADIO_BACK_THOLD) > 4800"/-->
 
-    <set servo="AILEVON_RIGHT"    value="@PITCH + @YAW"/>
-    <set servo="AILEVON_LEFT"     value="@PITCH - @YAW"/>
+    <set servo="AILEVON_RIGHT"    value="@PITCH - @YAW * $autopil + @ROLL * $manual"/>
+    <set servo="AILEVON_LEFT"     value="@PITCH + @YAW * $autopil - @ROLL * $manual"/>
     <set servo="MOTOR"            value="($th_hold? -9600 : @THRUST)"/>
   </command_laws>
 
@@ -111,6 +113,7 @@
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>
     <define name="NAV_DESCEND_VSPEED" value="-1.0"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
+    <define name="ROTORCRAFT_COMMANDS_YAW_ALWAYS_ENABLED" value="TRUE"/>
     <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 12.0877510901 * adc)"/>
   </section>
 
@@ -273,7 +276,7 @@
   </section>
 
   <section name="AUTOPILOT">
-    <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
+    <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
     <define name="MODE_AUTO1"  value="AP_MODE_FORWARD"/>
     <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>
   </section>
