@@ -35,6 +35,7 @@
       <module name="send_imu_mag_current"/>
       <module name="gain_scheduling"/>
 
+      <define name="STABILIZATION_ATTITUDE_SP_PSI_DELTA_LIMIT" value="0.001" />
 
       <module name="guidance" type="hybrid"/>
       <module name="actuators" type="disco"/>
