@@ -36,6 +36,7 @@
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
 #include "subsystems/radio_control.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
+#include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 
 /* for guidance_v_thrust_coeff */
 #include "firmwares/rotorcraft/guidance/guidance_v.h"
@@ -273,12 +274,19 @@ void guidance_hybrid_airspeed_to_attitude(struct Int32Eulers *ypr_sp)
   omega_disp = omega;
 
   //go to higher resolution because else the increment is too small to be added
+#ifndef STABILIZATION_ATTITUDE_SP_PSI_DELTA_LIMIT
+#warning integrate_psi_setpoint_from_roll
   high_res_psi += (omega << (INT32_ANGLE_HIGH_RES_FRAC - INT32_ANGLE_FRAC)) / 512;
-
   INT32_ANGLE_HIGH_RES_NORMALIZE(high_res_psi);
 
   // go back to angle_frac
   ypr_sp->psi = high_res_psi >> (INT32_ANGLE_HIGH_RES_FRAC - INT32_ANGLE_FRAC);
+#else
+#warning psi-setpoint-is-psi
+  ypr_sp->psi = stabilization_attitude_get_heading_i();
+#endif
+
+  // go back to angle_frac
   ypr_sp->theta = ypr_sp->theta + v_control_pitch;
 }
 
