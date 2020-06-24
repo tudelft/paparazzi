@@ -62,7 +62,7 @@
     <module name="cv_textons.xml">
       <define name="TEXTONS_FPS" value="0"/>
       <define name="TEXTONS_CAMERA" value="bottom_camera"/>
-      <define name="TEXTONS_N_TEXTONS" value="10"/>
+      <define name="TEXTONS_N_TEXTONS" value="20"/>
       <define name="TEXTONS_DICTIONARY_PATH" value="/data/ftp/internal_000"/>
     </module>
 

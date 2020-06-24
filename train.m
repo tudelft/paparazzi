@@ -5,21 +5,23 @@ start_sample = 1;
 
 BIAS = true;
 PRIOR = true;
-TEST_SET = true;
+TEST_SET = false;
 test_ratio = 0.30;
 
-weights = false; % whether we have onboard weights we want to compare to the current learning:
+weights = true; % whether we have onboard weights we want to compare to the current learning:
 if(weights)
     w = load('Weights_00000.dat');
 end
+
+rand('seed', 1)
 
 % structure A:
 % 1) height
 % 2) gain
 % 3) cov div
 % 4-end) textons
-% A = load('Training_set_00000.dat');
-A = load('Training_set_landing_mat_oscillate_different_heights.dat');
+A = load('Training_set_00000.dat');
+% A = load('Training_set_landing_mat_oscillate_different_heights.dat');
 n_samples = size(A,1);
 if(TEST_SET)
     n_training = round((1-test_ratio) * n_samples);
@@ -96,29 +98,30 @@ plot(A(:,1)); hold on; plot(A(:,2));
 legend({'Height', 'Gain'});
 title('Height and adaptive gain in the data set')
 
-% MAE on test set:
-f_test = A_test(:,4:end);
-if(BIAS)
-    AA_test = [f_test, ones(size(A_test,1),1)];
-else
-    AA_test = f_test;
+if(TEST_SET)
+    % MAE on test set:
+    f_test = A_test(:,4:end);
+    if(BIAS)
+        AA_test = [f_test, ones(size(A_test,1),1)];
+    else
+        AA_test = f_test;
+    end
+    y_test = AA_test * x;
+    b_test = A_test(:, 2);
+    fprintf('MAE on test set = %f\n', mean(abs(y_test-b_test)));
+    if(weights)
+        Z_test = AA_test * w';
+    end
+    figure(); plot(y_test); hold on; plot(b_test);
+    if(weights)
+        plot(Z_test);
+        title('Height on test set')
+        legend({'height gain estimate', 'height gain', 'onboard gain estimate'});
+    else
+        title('Height on test set')
+        legend({'height gain estimate', 'height gain'});
+    end
 end
-y_test = AA_test * x;
-b_test = A_test(:, 2);
-fprintf('MAE on test set = %f\n', mean(abs(y_test-b_test)));
-if(weights)
-    Z_test = AA_test * w';
-end
-figure(); plot(y_test); hold on; plot(b_test);
-if(weights)
-    plot(Z_test);
-    title('Height on test set')
-    legend({'height gain estimate', 'height gain', 'onboard gain estimate'});
-else
-    title('Height on test set')
-    legend({'height gain estimate', 'height gain'});
-end
-
 
 % ***********************************
 % now learn a function to learn sonar 

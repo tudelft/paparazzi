@@ -1031,8 +1031,8 @@ void load_texton_distribution(void)
     // Load the dictionary:
     n_read_samples = 0;
     // For now we read the samples sequentially:
-    //for(i = 0; i < MAX_SAMPLES_LEARNING; i++)
-    for(i = 0; i < 30; i++)
+    for(i = 0; i < MAX_SAMPLES_LEARNING; i++)
+    //for(i = 0; i < 30; i++)
     {
       read_result = fscanf(distribution_logger, "%f ", &sonar_OF[n_read_samples]);
 			if(read_result == EOF) break;
@@ -1074,6 +1074,8 @@ void learn_from_file(void)
   if(!RECURSIVE_LEARNING)
   {
 
+     // fit_linear_model_prior(&gains, D, float (*samples)[D], uint16_t count, bool use_bias, float *priors,
+     //                             float *params, float *fit_error)
     fit_linear_model_OF(gains, text_dists, n_textons, n_read_samples, weights, &fit_error);
     // fit_linear_model_OF(sonar_OF, text_dists, n_textons, n_read_samples, weights, &fit_error);
   }
