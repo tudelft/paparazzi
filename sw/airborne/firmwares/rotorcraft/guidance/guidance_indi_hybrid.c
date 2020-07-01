@@ -110,6 +110,7 @@ float guidance_indi_max_airspeed = GUIDANCE_INDI_MAX_AIRSPEED;
 float inv_eff[4];
 
 float lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF;
+float lift_eff_scaling = GUIDANCE_INDI_LIFT_EFF_SCALING;
 
 /** state eulers in zxy order */
 struct FloatEulers eulers_zxy;
@@ -489,9 +490,9 @@ float guidance_indi_get_liftd(float airspeed, float theta) {
     float pitch_interp = DegOfRad(theta);
     Bound(pitch_interp, -80.0, -40.0);
     float ratio = (pitch_interp + 40.0)/(-40.);
-    liftd = -24.0*ratio;
+    liftd = -24.0*ratio*lift_pitch_eff/0.12*lift_eff_scaling;
   } else {
-    liftd = -(airspeed - 8.5)*lift_pitch_eff/M_PI*180.0;
+    liftd = -(airspeed - 8.5)*lift_pitch_eff/M_PI*180.0*lift_eff_scaling;
   }
   //TODO: bound liftd
   return liftd;

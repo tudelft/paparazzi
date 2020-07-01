@@ -109,6 +109,7 @@
       <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/> <!--heading can not be set by navigation-->
       <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="15"/>
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-600.0"/>
+      <define name="GUIDANCE_INDI_LIFT_EFF_SCALING" value="1.0"/>
     </module>
 
     <module name="motor_mixing"/>
@@ -331,6 +332,8 @@
     <define name="FORWARD_G1_P" value="0.0040"/>
     <define name="FORWARD_G1_Q" value="0.0065"/>
     <define name="FORWARD_G1_R" value="0.0025"/>
+
+    <define name="FORWARD_G1_P_FEW_PROPS" value="0.0020"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="30.0"/>
