@@ -297,7 +297,7 @@ static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct I
   struct FloatRates *body_rates = stateGetBodyRates_f();
   filter_pqr(indi.u, &indi.u_act_dyn);
   filter_pqr(indi.rate, body_rates);
-  /*update_butterworth_2_low_pass(&indi.filt_r, body_rates->r);*/
+  update_butterworth_2_low_pass(&indi.filt_r, body_rates->r);
 
   // Calculate the derivative of the rates
   finite_difference_from_filter(indi.rate_d, indi.rate);
