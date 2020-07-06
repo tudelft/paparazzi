@@ -17,6 +17,9 @@ void add_chirp(struct fs_landing_t *actuator_values) {
         actuator_values -> commands[SERVO_S_THROTTLE_LEFT] += (int32_t) (max_delta_amplitude * sinf(current_yaw));
         actuator_values -> commands[SERVO_S_THROTTLE_RIGHT] += (int32_t) (max_delta_amplitude * sinf(current_yaw));
     } else {
-        actuator_values -> commands[selected_actuator] += (int32_t)(max_delta_amplitude * sinf(current_yaw));
+        float roll_inp = radio_control.values[RADIO_ROLL];
+        float pitch_inp = radio_control.values[RADIO_PITCH];
+        actuator_values -> commands[selected_actuator] += (int32_t)(pitch_inp * sinf(current_yaw)) +
+                (int32_t)(roll_inp * cosf(current_yaw));
     }
 }

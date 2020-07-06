@@ -38,11 +38,12 @@ void fs_landing_run()
     if (is_fs_landing_active()) {
         if (is_spinning) {
             spin_actuator_values(&current_actuator_values);  // Constant actuator values to maintain spin
-            if (pilot_has_control) {
-                pilot_actuator_values(&current_actuator_values);  // RC Channels control actuator deflection
-            } else if (act_identification_active){
-                add_chirp(&current_actuator_values);  // +- sinusoidally varying delta to one of the actuators
-            }
+            add_chirp(&current_actuator_values);
+            //            if (pilot_has_control) {
+//                pilot_actuator_values(&current_actuator_values);  // RC Channels control actuator deflection
+//            } else if (act_identification_active){
+//                add_chirp(&current_actuator_values);  // +- sinusoidally varying delta to one of the actuators
+//            }
         } else {
             if (has_ff_started) {
                 is_spinning = ff_actuator_values(&current_actuator_values, ff_start_time);

@@ -7,6 +7,7 @@
 
 #include "fs_landing.h"
 #include "state.h"
+#include "subsystems/radio_control.h"
 #include <math.h>
 
 extern uint8_t selected_actuator;

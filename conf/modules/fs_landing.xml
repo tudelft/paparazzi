@@ -25,7 +25,7 @@
       </dl_settings>
       <dl_settings name="Actuator Identification">
         <dl_setting min="0" max="5" step="1" var="selected_actuator" shortname="Actuator No" type="uint8_t" module="fs_landing/actuator_id"/>
-        <dl_setting min="0" max="9600" step="10" var="max_delta_amplitude" shortname="Max Act Delta" type="float" module="fs_landing/actuator_id"/>
+        <dl_setting min="0" max="19400" step="10" var="max_delta_amplitude" shortname="Max Act Delta" type="float" module="fs_landing/actuator_id"/>
         <dl_setting min="0" max="1" step="1" values="Inactive|Active" var="act_identification_active" shortname="Activate ID" type="uint8_t" module="fs_landing/fs_landing" handler="actuator_id_handler">
           <strip_button name="Act_ID Start" value="1"/>
           <strip_button name="Act_ID Stop" value="0"/>
