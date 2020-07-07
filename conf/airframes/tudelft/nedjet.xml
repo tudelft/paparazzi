@@ -64,7 +64,7 @@
     <!--<module name="stabilization" type="int_quat"/>-->
     <!--<module name="gain_scheduling"/>-->
     <module name="stabilization" type="indi_simple"/>
-    <!--module name="scheduling_indi_simple"/-->
+    <module name="scheduling_indi_simple"/>
     <module name="stabilization" type="rate"/>
     <module name="ins" type="ekf2" />
     <!--module name="airspeed" type="ms45xx_i2c"> 
@@ -295,9 +295,9 @@
     <define name="G1_R" value="0.0017"/>
     <define name="G2_R" value="0.00009"/>
 
-    <!--<define name="FORWARD_G1_P" value="0.0065"/>-->
-    <!--<define name="FORWARD_G1_Q" value="0.0122"/>-->
-    <!--<define name="FORWARD_G1_R" value="0.0025"/>-->
+    <define name="FORWARD_G1_P" value="0.0065"/>
+    <define name="FORWARD_G1_Q" value="0.0305"/>
+    <define name="FORWARD_G1_R" value="0.0053"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="30.0"/>
