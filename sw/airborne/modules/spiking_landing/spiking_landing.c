@@ -28,10 +28,8 @@
 #include "modules/spiking_landing/spiking_landing.h"
 
 // Header with network parameters
-#include "modules/spiking_landing/first/network_conf.h"
-
-// tinysnn headers
-#include "Network.h"
+#include "modules/spiking_landing/twolayer/network_conf.h"
+// #include "modules/spiking_landing/threelayer/network_conf.h"
 
 // Paparazzi headers
 // TODO: do we need all this? And in what order?

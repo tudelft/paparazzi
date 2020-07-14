@@ -36,10 +36,7 @@
 #include "mcu_periph/sys_time.h"
 #include "state.h"
 #include "generated/airframe.h"
-// Is this allowed? Multiple headers that extern the same set of variables?
 #include "modules/spiking_landing/spiking_landing.h"
-#include "modules/nn_divergence_landing/nn.h"
-#include "modules/pid_landing/pid_landing.h"
 #ifdef COMMAND_THRUST
 #include "firmwares/rotorcraft/stabilization.h"
 #else

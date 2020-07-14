@@ -25,7 +25,8 @@
 
     <makefile target="ap|nps">
         <file name="spiking_landing.c"/>
-        <file name="Network.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
+        <file name="TwoLayerNetwork.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
+        <!-- <file name="ThreeLayerNetwork.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/> -->
         <file name="Neuron.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
         <file name="Connection.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
         <file name="functional.c" dir="$(PAPARAZZI_SRC)/sw/ext/tinysnn"/>
