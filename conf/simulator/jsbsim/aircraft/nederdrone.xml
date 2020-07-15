@@ -36,9 +36,9 @@
   </metrics>
 
   <mass_balance>
-    <ixx unit="KG*M2"> 6.0 </ixx>
-    <iyy unit="KG*M2"> 0.6644  </iyy>
-    <izz unit="KG*M2"> 12.0 </izz>
+    <ixx unit="KG*M2"> 2.25 </ixx>
+    <iyy unit="KG*M2"> 0.3322  </iyy>
+    <izz unit="KG*M2"> 4.0 </izz>
     <ixy unit="KG*M2"> 0. </ixy>
     <ixz unit="KG*M2"> 0. </ixz>
     <iyz unit="KG*M2"> 0. </iyz>

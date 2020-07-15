@@ -39,6 +39,8 @@
 #include "firmwares/fixedwing/stabilization/stabilization_adaptive.h"
 #endif
 
+#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
+
 #include "state.h"
 
 /** Set the default File logger path to the USB drive */
@@ -88,7 +90,7 @@ void file_logger_start(void)
 
 	  //rotorcraft uses COMMAND_THRUST, fixedwing COMMAND_THROTTLE at this time
 #ifdef COMMAND_THRUST
-      "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz\n"
+      "counter,rates_p,rates_q,rates_r,stab_cmd_T,stab_cmd_R,stab_cmd_P,stab_cmd_Y,quati,quatx,quaty,quatz,sp_quati,sp_quatx,sp_quaty,sp_quatz,accelx,accely,accelz,posx,posy,posz,speedx,speedy,speedz,v_z_ref,sp_accelx,sp_accely,sp_accelz,speed_sp.x,speed_sp.y,speed_sp.z,desired_airspeed.x,desired_airspeed.y,eulercmdx,eulercmdy,eulercmdz,guidance_euler_cmd_phi,guidance_euler_cmd_theta\n"
 #else
       "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,mag_unscaled_y,mag_unscaled_z,	h_ctl_aileron_setpoint, h_ctl_elevator_setpoint, qi,qx,qy,qz\n"
 #endif
@@ -105,6 +107,9 @@ void file_logger_stop(void)
   }
 }
 
+#include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
+#include "firmwares/rotorcraft/guidance/guidance_v.h"
+
 /** Log the values to a csv file    */
 /** Change the Variable that you are interested in here */
 void file_logger_periodic(void)
@@ -113,20 +118,16 @@ void file_logger_periodic(void)
     return;
   }
   static uint32_t counter;
-  struct Int32Quat *quat = stateGetNedToBodyQuat_i();
+  struct FloatQuat *quat = stateGetNedToBodyQuat_f();
+  struct FloatRates *rates = stateGetBodyRates_f();
+  struct Int32Vect3 *accel = stateGetAccelBody_i();
 
 #ifdef COMMAND_THRUST //For example rotorcraft
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+  fprintf(file_logger, "%d,%f,%f,%f,%d,%d,%d,%d,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
           counter,
-          imu.gyro_unscaled.p,
-          imu.gyro_unscaled.q,
-          imu.gyro_unscaled.r,
-          imu.accel_unscaled.x,
-          imu.accel_unscaled.y,
-          imu.accel_unscaled.z,
-          imu.mag_unscaled.x,
-          imu.mag_unscaled.y,
-          imu.mag_unscaled.z,
+          rates->p,
+          rates->q,
+          rates->r,
           stabilization_cmd[COMMAND_THRUST],
           stabilization_cmd[COMMAND_ROLL],
           stabilization_cmd[COMMAND_PITCH],
@@ -134,7 +135,34 @@ void file_logger_periodic(void)
           quat->qi,
           quat->qx,
           quat->qy,
-          quat->qz
+          quat->qz,
+          stab_att_sp_quat.qi,
+          stab_att_sp_quat.qx,
+          stab_att_sp_quat.qy,
+          stab_att_sp_quat.qz,
+          accel->x,
+          accel->y,
+          accel->z,
+          stateGetPositionNed_f()->x,
+          stateGetPositionNed_f()->y,
+          stateGetPositionNed_f()->z,
+          stateGetSpeedNed_f()->x,
+          stateGetSpeedNed_f()->y,
+          stateGetSpeedNed_f()->z,
+          guidance_v_z_ref,
+          sp_accel.x,
+          sp_accel.y,
+          sp_accel.z,
+          speed_sp.x,
+          speed_sp.y,
+          speed_sp.z,
+          desired_airspeed.x,
+          desired_airspeed.y,
+          euler_cmd.x,
+          euler_cmd.y,
+          euler_cmd.z,
+          guidance_euler_cmd.phi,
+          guidance_euler_cmd.theta
          );
 #else
   fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",

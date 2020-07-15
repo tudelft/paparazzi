@@ -19,6 +19,16 @@
         <configure name="SBUS_PORT" value="UART3"/>
       </module>
 
+      <module name="airspeed_ets.xml">
+        <define name="USE_I2C4"/>
+        <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>
+        <define name="AIRSPEED_ETS_SYNC_SEND"/>
+        <define name="USE_AIRSPEED_ETS" value="TRUE"/>
+        <define name="AIRSPEED_ETS_SCALE" value="1.24"/>
+      </module>
+
+      <module name="scheduling_indi_simple"/>
+
        <!-- Logger -->
       <module name="tlsf"/>
       <module name="pprzlog"/>
@@ -43,7 +53,7 @@
       <module name="fdm" type="jsbsim"/>
 
       <module name="logger_file">
-        <define name="FILE_LOGGER_PATH" value="~/Documents"/>
+        <define name="FILE_LOGGER_PATH" value="/home/ewoud/Documents"/>
       </module>
 
       <!--Not dealing with these in the simulation-->
@@ -66,19 +76,12 @@
     <!--<module name="stabilization" type="int_quat"/>-->
     <!--<module name="gain_scheduling"/>-->
     <module name="stabilization" type="indi_simple"/>
-    <module name="scheduling_indi_simple"/>
     <module name="stabilization" type="rate"/>
     <module name="ins" type="ekf2" />
     <!--module name="airspeed" type="ms45xx_i2c"> 
       <define name="USE_I2C4"/>
       <define name="MS45XX_I2C_DEV" value="i2c4"/>
     </module-->
-    <module name="airspeed_ets.xml">
-      <define name="USE_I2C4"/>
-      <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>
-      <define name="AIRSPEED_ETS_SYNC_SEND"/>
-      <define name="USE_AIRSPEED_ETS" value="TRUE"/>
-    </module>
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
 
@@ -92,7 +95,22 @@
     </module>
     <!--module name="lidar" type="tfmini"/-->
 
-    <module name="guidance" type="hybrid"/>
+    <!--<module name="guidance" type="hybrid"/>-->
+    <module name="guidance" type="indi_hybrid">
+      <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
+      <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
+      <define name="GUIDANCE_INDI_POS_GAINZ" value="0.5"/>
+      <define name="GUIDANCE_INDI_SPEED_GAINZ" value="1.8"/>
+      <define name="GUIDANCE_INDI_PITCH_LIFT_EFF" value="0.12"/>
+      <define name="GUIDANCE_INDI_PITCH_EFF_SCALING" value="1.0"/>
+      <define name="GUIDANCE_H_REF_MAX_SPEED" value="18.0"/> <!--not used-->
+      <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="16.0"/>
+      <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/> <!--heading can not be set by navigation-->
+      <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="15"/>
+      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-600.0"/>
+      <define name="GUIDANCE_INDI_LIFT_EFF_SCALING" value="1.0"/>
+    </module>
 
     <module name="motor_mixing"/>
 
@@ -206,6 +224,8 @@
     <define name="MAX_FWD_SPEED" value="20.0"/>
     <!-- For hybrid guidance -->
     <define name="MAX_AIRSPEED" value="20.0"/>
+
+    <define name="USE_AIRSPEED" value="TRUE"/>
   </section>
 
   <section name="IMU" prefix="IMU_">
@@ -312,6 +332,8 @@
     <define name="FORWARD_G1_P" value="0.0040"/>
     <define name="FORWARD_G1_Q" value="0.0065"/>
     <define name="FORWARD_G1_R" value="0.0025"/>
+
+    <define name="FORWARD_G1_P_FEW_PROPS" value="0.0020"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="30.0"/>

@@ -53,6 +53,12 @@ void ctrl_eff_scheduling_periodic(void)
     ratio = 0.0;
   }
 
+  if (radio_control.values[RADIO_FMODE] > 4800) {
+    g_forward[0] = STABILIZATION_INDI_FORWARD_G1_P_FEW_PROPS;
+  } else {
+    g_forward[0] = STABILIZATION_INDI_FORWARD_G1_P;
+  }
+
   indi.g1.p = (g_hover[0] * (1.0 - ratio) + g_forward[0] * ratio);
   indi.g1.q = (g_hover[1] * (1.0 - ratio) + g_forward[1] * ratio);
   indi.g1.r = (g_hover[2] * (1.0 - ratio) + g_forward[2] * ratio);

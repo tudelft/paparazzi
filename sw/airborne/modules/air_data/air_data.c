@@ -194,10 +194,11 @@ static void send_baro_raw(struct transport_tx *trans, struct link_device *dev)
 
 static void send_air_data(struct transport_tx *trans, struct link_device *dev)
 {
+  float airspeed = stateGetAirspeed_f();
   pprz_msg_send_AIR_DATA(trans, dev, AC_ID,
                          &air_data.pressure, &air_data.differential,
                          &air_data.temperature, &air_data.qnh,
-                         &air_data.amsl_baro, &air_data.airspeed,
+                         &air_data.amsl_baro, &airspeed,
                          &air_data.tas);
 }
 
