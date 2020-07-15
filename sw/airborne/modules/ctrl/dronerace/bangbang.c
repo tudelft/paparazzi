@@ -25,13 +25,18 @@ struct BangDim sign_corr=
     1,
     1,    
 };
-
+struct controllerstatestruct controllerstate={
+    false, //apply_compensation boolean2
+    false, // in_transition boolean
+    0.5, // compensation time (add to 2nd section of prediction)
+    -2,   //delta_v (add to initial condition of second section)
+    3      //delta_y (add to second section of prediction)
+};
 struct anaConstant constant;
 struct anaConstant constant_sat_accel;
 struct anaConstant constant_sat_brake; //braking part of prediction
 struct anaConstant constant_sec; //for logging 
 // struct BangDim pos_error;
-
 float satangle;
 float secangle;
 float signcorrsat;
@@ -53,6 +58,8 @@ float mass=0.42;
 float t_target;
 float y_target;
 float t_s=1e9;
+float t_0_trans; //start time of transition
+
 
 void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
     pos_error[0]=pos_error_vel_x;
@@ -84,12 +91,23 @@ void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
     if(!brake){
         if(t_s<0.5 && t_target>0 &&t_s<t_target){
             brake=true;
+            if(controllerstate.apply_compensation && !controllerstate.in_transition){
+                t_0_trans=get_sys_time_float();
+                controllerstate.in_transition=true;
+            }
+        }
+        else{
+            controllerstate.in_transition=false; // make sure that in_transition is always false when not braking (in_transition is basically flying blind because the controller forces to brake at maximum angle)
         }
     }
     else{
         if(!(t_target>0)){
             brake = false;
         }
+    }
+
+    if(controllerstate.in_transition && ((get_sys_time_float()-t_0_trans)>controllerstate.delta_t)){
+        controllerstate.in_transition=false;
     }
 
     if(fabs(pos_error[0])>=fabs(pos_error[1])){
@@ -109,6 +127,7 @@ void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
 
     if(satdim_prev!=satdim){
         brake=false;
+        
     }
     satdim_prev = satdim;
     
@@ -141,28 +160,34 @@ void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
     }
     //if braking:
     else{
-        ang0=-sat_corr[dim];
-        ang1=sat_corr[dim];
-        angc=(ang0+ang1)/2.0;
-        angc_old = 1e9;
-        E_pos = 1e9;
-        while(fabs(E_pos)>error_thresh && fabs(angc-angc_old)>(0.1*d2r)){
-            angc_old=angc;
-            E_pos = get_E_pos(v_desired, angc);
 
-            if(E_pos*signcorrsat>0){
-                ang0=angc;
-            }
-            else{
-                ang1=angc;
-            }
-            angc=(ang0+ang1)/2.;
+        if(controllerstate.in_transition){ //when in transition desired angle is max brake angle
+            bang_ctrl[dim]=-sat_corr[dim];
         }
-        bang_ctrl[dim]=angc;
+        else{   // else optimize the braking angle to reach the desired speed at the desired position.
+            ang0=-sat_corr[dim];
+            ang1=sat_corr[dim];
+            angc=(ang0+ang1)/2.0;
+            angc_old = 1e9;
+            E_pos = 1e9;
+            while(fabs(E_pos)>error_thresh && fabs(angc-angc_old)>(0.1*d2r)){
+                angc_old=angc;
+                E_pos = get_E_pos(v_desired, angc);
+
+                if(E_pos*signcorrsat>0){
+                    ang0=angc;
+                }
+                else{
+                    ang1=angc;
+                }
+                angc=(ang0+ang1)/2.;
+            }
+            bang_ctrl[dim]=angc;
+        }
     }
     //optimize second parameter
     type = SECOND;
-    dim = 1-satdim;
+    dim = 1-satdim; //switch dimension identifier from saturation to second 
 
     ang0 = -sat_corr[dim];
     ang1 = sat_corr[dim];
@@ -192,7 +217,7 @@ void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
 };
 
 float get_E_pos(float Vd, float angle){
-    float y_target=predict_path_analytical(t_s,angle,Vd);
+    y_target=predict_path_analytical(t_s,angle,Vd); //y_target is the position at which the desired speed is reached. Ideally we want this value at pos_error (distance to wp)
 
     return y_target-pos_error[dim];
 }
@@ -221,12 +246,21 @@ float predict_path_analytical(float t_s, float angle,float Vd){
 
             //predict braking part
             T=-1*T; 
-            find_constants(ys,vs); //update constants for second part;
+            if(controllerstate.apply_compensation){
+                find_constants(ys+controllerstate.delta_y,vs+controllerstate.delta_v);
+                }
+            else{
+                find_constants(ys,vs); //update constants for second part;
+                }
             constant_sat_brake = constant;
             t_target = get_time_analytical(Vd);
             y_target = get_position_analytical(t_target);
-            t_target=t_target+t_s;
-            
+            if(controllerstate.apply_compensation){
+                t_target=t_target+t_s+controllerstate.delta_t; // t_target for 2nd section is relative to t_s. So add t_s and compensation to get absolute ETA
+            }
+            else{
+                t_target=t_target+t_s;
+            }
         }
         else{ //if braking 
             find_constants(0.0,v0[dim]);

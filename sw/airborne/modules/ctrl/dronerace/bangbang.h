@@ -10,6 +10,14 @@ struct anaConstant{
     float c2;
 };
 
+struct controllerstatestruct{
+    bool apply_compensation;
+    bool in_transition; // when in transition from acceleration to braking the saturation dimension should not be optimized 
+    float delta_t; 
+    float delta_v; 
+    float delta_y; 
+};
+
 // struct BangDim sign_correct;
 // struct BangDim sat_angle; 
 
@@ -26,5 +34,6 @@ float get_position_analytical(float t);
 float get_velocity_analytical(float t);
 float get_time_analytical(float V);
 extern float bang_ctrl[3];
+extern struct controllerstatestruct controllerstate;
 
 FILE *bang_bang_t;
