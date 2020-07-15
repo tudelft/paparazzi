@@ -290,14 +290,14 @@
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness -->
-    <define name="G1_P" value="0.0065"/>
-    <define name="G1_Q" value="0.0122"/>
-    <define name="G1_R" value="0.0017"/>
-    <define name="G2_R" value="0.00009"/>
+    <define name="G1_P" value="0.0048"/>
+    <define name="G1_Q" value="0.0079"/>
+    <define name="G1_R" value="0.0015"/>
+    <define name="G2_R" value="0.000"/>
 
     <define name="FORWARD_G1_P" value="0.0065"/>
-    <define name="FORWARD_G1_Q" value="0.0305"/>
-    <define name="FORWARD_G1_R" value="0.0053"/>
+    <define name="FORWARD_G1_Q" value="0.0100"/>
+    <define name="FORWARD_G1_R" value="0.0040"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="30.0"/>
