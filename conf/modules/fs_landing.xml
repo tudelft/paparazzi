@@ -32,7 +32,7 @@
         </dl_setting>
       </dl_settings>
 <!--      <dl_settings name="Act Frequency Test">-->
-<!--        <dl_setting min="0" step="0.01" max="2" var="test_freq" shortname="Frequency" type="float" module="fs_landing/actuator_freq_test"/>-->
+<!--        <dl_setting min="0" step="0.01" max="4" var="test_freq" shortname="Frequency" type="float" module="fs_landing/actuator_freq_test"/>-->
 <!--      </dl_settings>-->
     </dl_settings>
   </settings>
