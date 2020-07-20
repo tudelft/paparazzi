@@ -74,6 +74,7 @@
         </module>
 
         <module name="spiking_landing"/>
+	<module name="uart_driver"/>
 
         <!-- For streaming video to e.g. VLC -->
         <!-- <module name="video_rtp_stream">

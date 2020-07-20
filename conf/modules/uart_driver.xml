@@ -1,0 +1,22 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="uart_driver">
+  <doc>
+    <description>UART to transfer between Jetson nano and Bebop2</description>
+  </doc>
+  <header>
+    <file name="uart_driver.h"/>
+  </header>
+  <init fun="uart_driver_init()"/>
+  <periodic fun="uart_driver_tx_loop()" freq="30.0" autorun="TRUE"/>
+  <event fun="uart_driver_rx_event()"/>
+  <makefile>
+    <file name="uart_driver.c"/>
+    <configure name="UART_DRIVER_PORT" default="uart2" case="upper|lower"/>
+    <configure name="UART_DRIVER_BAUD" default="B115200"/>
+    <define name="UART_DRIVER_PORT" value="$(UART_DRIVER_PORT_LOWER)"/>
+    <define name="USE_$(UART_DRIVER_PORT_UPPER)"/>
+    <define name="$(UART_DRIVER_PORT_UPPER)_BAUD" value="$(UART_DRIVER_BAUD)"/>
+  </makefile>
+</module>
+
