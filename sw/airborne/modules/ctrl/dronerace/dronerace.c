@@ -151,9 +151,9 @@ void dronerace_periodic(void)
   // printf("PSI0: %f  ",psi0);
   est_psi = stateGetNedToBodyEulers_f()->psi;
   struct NedCoor_f *pos_gps = stateGetPositionNed_f();
-  input_phi   = stateGetNedToBodyEulers_f()->phi;
-  input_theta = stateGetNedToBodyEulers_f()->theta;
-  input_psi   = stateGetNedToBodyEulers_f()->psi - psi0;
+  input_phi   = stateGetNedToBodyEulers_f()-> phi;
+  input_theta = stateGetNedToBodyEulers_f()-> theta;
+  input_psi   = stateGetNedToBodyEulers_f()-> psi - psi0;
 
   dr_state.phi   = input_phi;
   dr_state.psi   = input_psi;

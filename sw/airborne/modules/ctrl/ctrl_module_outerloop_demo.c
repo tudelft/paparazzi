@@ -62,12 +62,12 @@ void guidance_h_module_init(void)
 
 
 
-
-
 void guidance_h_module_enter(void)
 { 
   // Store current heading
+  #ifdef LOG
   open_log();
+  #endif
   dr_ctrl.cmd.psi = stateGetNedToBodyEulers_i()->psi;
 
   // Convert RC to setpoint
@@ -167,6 +167,8 @@ void guidance_v_module_run(bool in_flight)
   float flap = 0.85;
   stabilization_cmd[COMMAND_THRUST] = thrust_cmd*9125.;// nominal / (cosf(dr_state.phi * flap) * cosf(dr_state.theta * flap));
   // printf("z_measured: %f, est_state_z:%f, zv_measured: %f,nominal: %f,thrust_cmd: %f\n",z_measured,est_state_z,zv_measured,nominal,thrust_cmd);
+  #ifdef LOG
   fprintf(file_logger_t2, "%f, %f, %f,%f, %f\n",z_measured,est_state_z,zv_measured,est_state_vz,thrust_cmd);
+  #endif
 }
 #endif

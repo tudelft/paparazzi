@@ -142,7 +142,9 @@ static void send_gps(struct transport_tx *trans, struct link_device *dev)
   int16_t climb = -gps.ned_vel.z;
   int16_t course = (DegOfRad(gps.course) / ((int32_t)1e6));
   uint32_t logtime = get_sys_time_msec();
+  #ifdef LOG
   fprintf(gps_logger,"%d,%f\n",logtime, (float)gps.course/1e7); 
+  #endif
   
   struct UtmCoor_i utm = utm_int_from_gps(&gps, 0);
 #if PPRZLINK_DEFAULT_VER == 2 && GPS_POS_BROADCAST
@@ -330,7 +332,9 @@ static void gps_cb(uint8_t sender_id,
 void gps_init(void)
 {
   multi_gps_mode = MULTI_GPS_MODE;
+  #ifdef LOG
   open_log();
+  #endif
   gps.valid_fields = 0;
   gps.fix = GPS_FIX_NONE;
   gps.week = 0;

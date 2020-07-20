@@ -61,6 +61,8 @@ struct dronerace_flightplan_item_struct
     int both_side;
 };
 
+
+
 extern const struct dronerace_flightplan_item_struct gates[MAX_GATES];
 extern struct dronerace_flightplan_item_struct waypoints_dr[MAX_GATES];
 extern struct jungle_gate_struct jungleGate;

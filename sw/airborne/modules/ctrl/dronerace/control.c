@@ -60,7 +60,9 @@ void control_reset(void)
   lookI = 0.0;
   // Reset flight plan logic
   flightplan_reset();
+  #ifdef LOG
   open_log();
+  #endif
   // Reset own variables
   dr_control.psi_ref = 0;
   dr_control.psi_cmd = 0;
@@ -131,7 +133,7 @@ void control_run(float dt)
 
   float cthet=cosf(theta_meas);
   float sthet=sinf(theta_meas);
-  float cphi= cosf(phi_meas);
+  float cphi = cosf(phi_meas);
   float sphi = sinf(phi_meas);
   float cpsi = cosf(psi_meas);
   float spsi = sinf(psi_meas);
@@ -148,7 +150,7 @@ void control_run(float dt)
   float error_posy_vel = posy_cmd-posyVel; 
   float dist2target = sqrtf(error_posx_vel*error_posx_vel+error_posy_vel*error_posy_vel);
 
-  optimize(error_posx_vel,error_posy_vel,0.2);
+  optimizeBangBang(error_posx_vel,error_posy_vel,0.2); // function writes to bang_ctrl 
 
   if(error_posy_vel>0.5){ //freeze yaw cmd when it gets close to wp
     dr_control.psi_cmd =atan2f(error_posy_vel,error_posx_vel);// angle180(psi_cmd*180.0/PI)*PI/180.0;
@@ -159,8 +161,10 @@ void control_run(float dt)
   // printf("theta_cmd: %f\n",dr_control.theta_cmd);
   // printf("satdim: %i error x: %f, error_y: %f phi_cmd: %f, theta_cmd: %f, t_switch: %f, t_target: %f, brake: %i\n",satdim,error_posx_vel,error_posy_vel,dr_control.phi_cmd*r2d,dr_control.theta_cmd*r2d,t_s,t_target,brake);
   static int counter = 0;
+  // #ifdef LOG
   // fprintf(file_logger_t, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f, %f, %f, %f, %f, %f, %f, %f, %f\n", get_sys_time_float(), dr_control.theta_cmd, dr_control.phi_cmd, theta_meas,phi_meas,dr_state.x,dr_state.y, dist2target, phase_angle,rxb,ryb,centriterm, 
   // dr_control.psi_cmd,psi_meas,dr_state.vx,dr_state.vy,rx,ry,radiuserror,ang1,ang2,ang);
+  // #endif
   // counter++;
   
 

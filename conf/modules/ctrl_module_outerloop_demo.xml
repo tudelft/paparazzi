@@ -5,7 +5,7 @@
     <description>
         Demo Control Module.
         Only for rotorcraft firmware.
-        Simple rate controler as example on how to integrate write and call your own controller in a module.
+        Simple rate controler as example on how to integrate write and call your own controller in a module
     </description>
   </doc>
   <settings>
@@ -34,4 +34,3 @@
   </makefile>
 
 </module>
-

@@ -26,4 +26,4 @@ extern void control_run(float dt);
 #define HOVERTHRUST 0.53
 #define GRAVITY -9.80665
 #define PI 3.14159265359
-
+// #define LOG 

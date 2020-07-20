@@ -71,7 +71,9 @@ static void send_alphapahrs(struct transport_tx *trans, struct link_device *dev)
 
 void alphapilot_ahrs_init() {
 register_periodic_telemetry(DefaultPeriodic,  PPRZ_MSG_ID_AHRS_ALPHAPILOT, send_alphapahrs);
+#ifdef LOG
   open_log();
+  #endif
 }
 
 
@@ -201,7 +203,9 @@ void alphapilot_ahrs_periodic() {
   pos_est[1]+=v_est[1]*dt1;
   pos_est[2]+=v_est[2]*dt1;
   float logtime=get_sys_time_float();
+  #ifdef LOG
   fprintf(file_logger_t3,"%f, %f, %f, %f, %f, %f, %f\n",logtime,est_phi,est_theta,est_psi,phi_def,theta_def,psi_def);
+  #endif
 
   
 }

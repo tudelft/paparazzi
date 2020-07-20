@@ -61,13 +61,13 @@ float t_s=1e9;
 float t_0_trans; //start time of transition
 
 
-void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
+void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
     pos_error[0]=pos_error_vel_x;
     pos_error[1]=pos_error_vel_y;
 
     
     // Determine which dimension will be saturated 
-
+    
     float error_thresh = 1e-3; 
     if(pos_error[0]<0){
         sat_corr[0]=-sat_angle.x; //sat_corr are the saturated angles,but corrected for which side of the wp the drone is at. 
@@ -210,11 +210,12 @@ void optimize(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
     }
     bang_ctrl[dim]=angc;
     printf("satdim: %i, brake: %i, theta_cmd: %f, phi_cmd: %f, errx: %f, erry: %f, t_s: %f, t_t: %f\n",satdim,brake,bang_ctrl[0],bang_ctrl[1],pos_error[0],pos_error[1],t_s,t_target);
-    // printf("bang_ctrl[0]: %f, bang_ctrl[1]: %f \n",bang_ctrl[0],bang_ctrl[1]);
+    // printf("bang_ctrl[0]: %f, bang_ctrl[1]: %f \n",bang_ctrl[0],bang_ctrl[1]);1
     //  fprintf(bang_bang_t,"time,satdim, brake, t_s, t_target, error_x, error_y, posx, posy, vxvel, vyvel, c1_sat,c2_sat, c1_sec, c2_sec\n");
-    // fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(), satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1],
-    // constant_sat_accel.c1,constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec);
+    fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(), satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1],
+    constant_sat_accel.c1,constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec);
 };
+
 
 float get_E_pos(float Vd, float angle){
     y_target=predict_path_analytical(t_s,angle,Vd); //y_target is the position at which the desired speed is reached. Ideally we want this value at pos_error (distance to wp)
