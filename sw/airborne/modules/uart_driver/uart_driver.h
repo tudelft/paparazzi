@@ -50,28 +50,40 @@ typedef enum {
 } jetson_state_t;
 
 typedef struct __attribute__((packed)) {
-  float pot;
-  uint8_t but0:1;
-  uint8_t but1:1;
-  uint8_t but2:1;
-  uint8_t but3:1;
-  uint8_t but4:1;
-} data_frame_t;
-
-typedef struct __attribute__((packed)) {
   uint8_t packet_type;
-  // packet_length is counted from start byte to the end of data frame
-  // in this case: 1 start byte + 2 info bytes + 5 byte of data = 8 bytes
   uint8_t packet_length; 
 } info_frame_t;
 
+/*
+LOIHI LANDER - TX DIVERGENCE
+*/
+
+typedef struct __attribute__((packed)) {
+  int cnt;
+  float divergence;
+  float divergence_dot;
+} divergence_frame_t;
 
 typedef struct __attribute__((packed)) {
   info_frame_t info;
-  data_frame_t data;
-} uart_packet_t;
+  divergence_frame_t data;
+} divergence_packet_t;
 
-extern data_frame_t uart_rx_buffer;
+/*
+LOIHI LANDER - RX DIVERGENCE
+*/
+
+typedef struct __attribute__((packed)) {
+  int cnt;
+  float thurst;
+} thurst_frame_t;
+
+typedef struct __attribute__((packed)) {
+  info_frame_t info;
+  thurst_frame_t data;
+} thurst_packet_t;
+
+extern thurst_frame_t uart_rx_buffer;
 
 extern void uart_driver_rx_event(void);
 extern void uart_driver_init(void);

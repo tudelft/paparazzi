@@ -22,26 +22,10 @@
  * @author nilay_994@hotmail.com
  * uart between jetson and bebop
  */
-/*
-+--------+------------+--------------+--------------------------------+--------------+--------------+-------------------+----------+
-| field  | start byte | frame type   | packet length                  | pot          | button       | checksum          | end byte |
-|        |            | (info frame) | (info frame)                   | (data frame) | (data frame) |                   |          |
-+--------+------------+--------------+--------------------------------+--------------+--------------+-------------------+----------+
-| value  | $          | DATA/OTHER   | start byte to data length = 8B | float        | fragged bool | info + data frame | *        |
-+--------+------------+--------------+--------------------------------+--------------+--------------+-------------------+----------+
-| length | 1B         | 1B           | 1B                             | 4B           | 1B           | 1B                | 1B       |
-+--------+------------+--------------+--------------------------------+--------------+--------------+-------------------+----------+
-*/
-/* printf, fprintf */
+
 #include <stdio.h>
-
-/* memset, memcpy */
 #include <string.h>
-
-/* float sys get time */
 #include "mcu_periph/sys_time.h"
-
-/* gps functions */
 #include "state.h"
 
 #include "modules/uart_driver/uart_driver.h"
@@ -49,10 +33,10 @@
 /* add pprz messages for jetson heartbeat later */
 // #include "subsystems/datalink/telemetry.h"
 
-#define DBG
+// #define DBG
 
 /* deep copied variable */
-data_frame_t uart_rx_buffer;
+thurst_frame_t uart_rx_buffer;
 
 // tx: finally send a hex array to jetson
 static uint8_t send_to_jetson(uint8_t *s, uint8_t len) {
@@ -78,37 +62,37 @@ static uint8_t send_to_jetson(uint8_t *s, uint8_t len) {
 	return (i + 3);
 }
 
-// tx: send struct to esp32
-static void tx_data_struct(uart_packet_t *uart_packet_tx) {
-
+static void tx_data_struct(divergence_packet_t *uart_packet_tx) {
 	uint8_t tx_string[UART_MAX_LEN] = {0};
+
 	// copy packed struct into a string
-	memcpy(tx_string, uart_packet_tx, sizeof(uart_packet_t));
+	memcpy(tx_string, uart_packet_tx, sizeof(divergence_packet_t));
 
 	#ifdef DBG
-		printf("[tx] type: %d, pot: %f\n", 
+		printf("[tx] type: %d, divergence: %f, divergence_dot: %f\n", 
 		uart_packet_tx->info.packet_type,
-		uart_packet_tx->data.pot);
+		uart_packet_tx->data.divergence,
+		uart_packet_tx->data.divergence_dot);
 
 		// check via wireshark
 		printf("Jetson should receive bytes:\n");
-		for (int i = 0; i < sizeof(uart_packet_t); i++) {
+		for (int i = 0; i < sizeof(divergence_packet_t); i++) {
 			printf("0x%02x,", tx_string[i]);
 		}
 		printf(" + checksum ****\n");
 	#endif
 	
 	// send "stringed" struct
-	send_to_jetson(tx_string, sizeof(uart_packet_t));
+	send_to_jetson(tx_string, sizeof(divergence_packet_t));
 }
 
 // rx: print struct received after checksum match
-static void print_rx_struct(uart_packet_t *uart_packet_rx) {
-	printf("[rx] type: %d, len: %d, pot: %f, but0: %d\n", 
+static void print_rx_struct(thurst_packet_t *uart_packet_rx) {
+	printf("[rx] type: %d, len: %d, cnt: %i, thurst: %f\n", 
 					uart_packet_rx->info.packet_type,
 					uart_packet_rx->info.packet_length, 
-					uart_packet_rx->data.pot,
-					uart_packet_rx->data.but0);
+					uart_packet_rx->data.cnt,
+					uart_packet_rx->data.thurst);
 }
 
 // rx: parse uart bytes that are sent from the jetson board
@@ -153,8 +137,10 @@ static void parse(uint8_t c) {
 				packet_length = c;
 				byte_ctr = byte_ctr + 1;
 
+				#ifdef DBG
 				// info frame populated!! 
 				printf("[uart] packet_length: %d, packet_type: %d\n", packet_length, packet_type);
+				#endif
 
 				// this if loop will barely be used!
 				/* if (packet_type == ACK_FRAME && packet_length == 3) {
@@ -165,7 +151,7 @@ static void parse(uint8_t c) {
 				} */
 
         /* packet length will always be shorter than padded struct, create some leeway */
-        if (packet_type == DATA_FRAME && (packet_length >= (sizeof(info_frame_t) + sizeof(data_frame_t)))) {
+        if (packet_type == DATA_FRAME && (packet_length >= (sizeof(info_frame_t) + sizeof(thurst_frame_t)))) {
 					// overwrite old checksum, start afresh
 					checksum = packet_type + packet_length;
 					jetson_state = JTSN_DATA;
@@ -183,7 +169,7 @@ static void parse(uint8_t c) {
 			// start byte = 2 bytes from info frame + 1 packet start byte
 			const uint8_t st_byte_pos = sizeof(info_frame_t) + 1;
 
-			if (byte_ctr < packet_length) {
+			if (byte_ctr < packet_length+1) {
 				/* fill a databuf from zero and calculate data+info checksum */
 				databuf[byte_ctr - st_byte_pos] = c;
 				checksum += databuf[byte_ctr - st_byte_pos];
@@ -191,7 +177,7 @@ static void parse(uint8_t c) {
 			}
 
 			/* after rx, go for error checking */
-			if (byte_ctr == packet_length) {
+			if (byte_ctr == packet_length+1) {
 				byte_ctr = 0;
 				jetson_state = JTSN_ERR_CHK;
 			}
@@ -224,10 +210,10 @@ static void parse(uint8_t c) {
 			if (packet_type == DATA_FRAME) {
 				/* checksum matches, proceed to populate the data struct */
 				/* hope this is atomic, vo reads from externed dr_data */
-				memcpy(&uart_rx_buffer, &databuf, sizeof(data_frame_t));
+				memcpy(&uart_rx_buffer, &databuf, sizeof(thurst_frame_t));
 
 				/* checksum matches, proceed to populate the info struct */
-				uart_packet_t tmp_uart_packet_rx = {
+				thurst_packet_t tmp_uart_packet_rx = {
 					.info = {
 						.packet_type = packet_type,
 						.packet_length = packet_length,
@@ -293,38 +279,23 @@ void uart_driver_init() {
 
 // send data to jetson every few milliseconds
 void uart_driver_tx_loop() {
-	// bool gps_valid = stateIsLocalCoordinateValid();
-	// if (gps_valid) {
+	static int cnt = 0;
+	cnt++;
 
-		uart_packet_t uart_packet_tx = {
-			.info = {
-				.packet_type = DATA_FRAME,
-				.packet_length = 1 + sizeof(uart_packet_t),  // 7 byte frame + 1 start bytes
-			},
-			.data = {
-				.pot = 0.25f,
-				.but0 = 0,
-				.but1 = 1,
-				.but2 = 0,
-				.but3 = 1,
-				.but4 = 0,
-			},
-		};
+	// TODO: send actual values
+	divergence_packet_t uart_packet_tx = {
+		.info = {
+			.packet_type = DATA_FRAME,
+			.packet_length = 3 + sizeof(divergence_packet_t),
+		},
+		.data = {
+			.cnt = cnt,
+			.divergence = 0.75f,
+			.divergence_dot = 0.14f,
+		},
+	};
 
-		/* send to jetson */
-		tx_data_struct(&uart_packet_tx);
-
-		// LOG: MAXDRONES for me = 2 (can't use ID 0x00 packet terminates..):(
-		// fmt: x,y,vel,head,time
-		// for (int id = 1; id < 3; id++) {
-		// 	fprintf(drone_data_f, "%f,%f,", dr_data[id].pos.x, dr_data[id].pos.y);
-		// 	fprintf(drone_data_f, "%f,%f,", dr_data[id].vel.x, dr_data[id].vel.y);
-		// }
-		// fprintf(drone_data_f, "%f\n", get_sys_time_float());
-
-	// mutex, don't tx to esp when ack is being sent
-  // if (esp.state!= ESP_RX_OK) {
-		
-	//}
+	/* send to jetson */
+	tx_data_struct(&uart_packet_tx);
 
 }
