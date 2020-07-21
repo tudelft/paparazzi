@@ -114,6 +114,8 @@
 
     <module name="motor_mixing"/>
 
+    <module name="motor_vs_flap_slider"/>
+
   </firmware>
 
   <servos driver="Uavcan">
