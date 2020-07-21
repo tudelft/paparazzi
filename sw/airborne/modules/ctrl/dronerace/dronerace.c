@@ -33,7 +33,7 @@
 #include "filter.h"
 #include "control.h"
 #include "ransac.h"
-#include "flightplan.h"
+#include "flightplan_Bang.h"
 #include "subsystems/imu.h"
 #include "subsystems/datalink/telemetry.h"
 #include "firmwares/rotorcraft/stabilization.h"
@@ -43,7 +43,7 @@
 #include "generated/airframe.h"
 
 #define MAXTIME 8.0
-#define FILE_LOGGER_PATH /data/ftp/internal_000
+
 
 float dt = 1.0f / 512.f;
 
@@ -165,9 +165,9 @@ void dronerace_periodic(void)
  
   
   struct NedCoor_f target_ned;
-  target_ned.x = dr_fp.gate_y;
-  target_ned.y = dr_fp.gate_x;
-  target_ned.z = -dr_fp.gate_z;
+  target_ned.x = dr_bang.gate_x;
+  target_ned.y = dr_bang.gate_y;
+  target_ned.z = dr_bang.gate_z;
 
   if (autopilot.mode_auto2 == AP_MODE_MODULE) {
     ENU_BFP_OF_REAL(navigation_carrot, target_ned);

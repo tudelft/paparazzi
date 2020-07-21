@@ -30,13 +30,15 @@
 #include <stdio.h>
 #include "./dronerace/dronerace.h"
 #include "./dronerace/filter.h"
+#include "subsystems/datalink/telemetry.h"
+#include "./dronerace/flightplan_Bang.h"
 // Own Variables
 inline float z_i =0;
 struct ctrl_module_demo_struct dr_ctrl = {0};
 
 // Settings
 float comode_time = 0;
-
+#define LOG
 
 /** The file pointer */
 FILE *file_logger_t2 = NULL;
@@ -119,9 +121,9 @@ void guidance_v_module_enter(void)
 
 // Altitude control gains
 #define Z_ALPHA 0.9
-#define KP_ALT 0.45
-#define KD_ALT 0.04
-#define KI_ALT 0//0.01
+#define KP_ALT 3
+#define KD_ALT 0.3
+#define KI_ALT 0.1
 
 #define KP_Z 3.0
 #define KP_VZ 3.0
@@ -149,16 +151,22 @@ void guidance_v_module_run(bool in_flight)
 { 
 
 // Altitude control old
-  z_cmd = -1.75; 
+  z_cmd = dr_bang.gate_z;
   z_measured = dr_state.z;//stateGetPositionUtm_f()->alt; //TODO check sign (may be MSL)
   zv_measured = (z_measured -prev_meas_z)*512.; 
+
+   struct NedCoor_f *vel_gps = stateGetSpeedNed_f();
+  //  float vxE = vel_gps->x; // In earth reference frame
+  //  float vyE = vel_gps->y;
+   float vzE = vel_gps->z;
   
-  est_state_vz = zv_measured;//Z_ALPHA * est_state_vz + (1-Z_ALPHA) * zv_measured;
+  est_state_vz = vzE;//Z_ALPHA * est_state_vz + (1-Z_ALPHA) * zv_measured;
   est_state_z = z_measured;// Z_ALPHA * est_state_z + (1-Z_ALPHA) * z_measured;
   prev_meas_z = z_measured;
-  z_i+=(z_cmd-est_state_z)/512.;
+  z_i+=(zv_command-vzE)/512.;
   
-  thrust_cmd = -(KP_ALT *(z_cmd -est_state_z) - KD_ALT * est_state_vz + KI_ALT*z_i) + HOVERTHRUST /  (cosf(dr_state.phi)*cosf(dr_state.theta));
+  zv_command= (KP_ALT *(z_cmd -est_state_z));
+  thrust_cmd = -KD_ALT*(zv_command-vzE) - z_i*KI_ALT+ HOVERTHRUST /  (cosf(dr_state.phi)*cosf(dr_state.theta));
 
   if(thrust_cmd>0.8){
     thrust_cmd=0.8;
@@ -168,7 +176,7 @@ void guidance_v_module_run(bool in_flight)
   stabilization_cmd[COMMAND_THRUST] = thrust_cmd*9125.;// nominal / (cosf(dr_state.phi * flap) * cosf(dr_state.theta * flap));
   // printf("z_measured: %f, est_state_z:%f, zv_measured: %f,nominal: %f,thrust_cmd: %f\n",z_measured,est_state_z,zv_measured,nominal,thrust_cmd);
   #ifdef LOG
-  fprintf(file_logger_t2, "%f, %f, %f,%f, %f\n",z_measured,est_state_z,zv_measured,est_state_vz,thrust_cmd);
+  fprintf(file_logger_t2, "%f, %f, %f, %f,%f, %f, %f, %f\n",get_sys_time_float(),z_measured,est_state_z,zv_measured,est_state_vz,thrust_cmd,vzE,zv_command);
   #endif
 }
 #endif

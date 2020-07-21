@@ -28,7 +28,7 @@
     <file name="dronerace/dronerace.c"/>
     <file name="dronerace/filter.c"/>
     <file name="dronerace/control.c"/>
-    <file name="dronerace/flightplan.c"/>
+    <file name="dronerace/flightplan_Bang.c"/>
     <file name="dronerace/fifo.c"/>
     <file name="dronerace/bangbang.c"/>
   </makefile>
