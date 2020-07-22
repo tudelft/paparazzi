@@ -19,6 +19,8 @@
         <configure name="SBUS_PORT" value="UART3"/>
       </module>
 
+      <configure name="FLASH_MODE" value="SWD"/>
+
        <!-- Logger -->
       <module name="tlsf"/>
       <module name="pprzlog"/>
@@ -298,6 +300,8 @@
     <define name="FORWARD_G1_P" value="0.0065"/>
     <define name="FORWARD_G1_Q" value="0.0100"/>
     <define name="FORWARD_G1_R" value="0.0040"/>
+
+    <define name="FORWARD_G1_P_FEW_PROPS" value="STABILIZATION_INDI_FORWARD_G1_P"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="30.0"/>
