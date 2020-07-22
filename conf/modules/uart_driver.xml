@@ -8,7 +8,7 @@
     <file name="uart_driver.h"/>
   </header>
   <init fun="uart_driver_init()"/>
-  <periodic fun="uart_driver_tx_loop()" freq="30.0" autorun="TRUE"/>
+  <!-- <periodic fun="uart_driver_tx_loop()" freq="30.0" autorun="TRUE"/> -->
   <event fun="uart_driver_rx_event()"/>
   <makefile>
     <file name="uart_driver.c"/>

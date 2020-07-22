@@ -38,6 +38,9 @@
 /* deep copied variable */
 thurst_frame_t uart_rx_buffer;
 
+/* mutex for rx struct */
+pthread_mutex_t* rx_mutex;
+
 // tx: finally send a hex array to jetson
 static uint8_t send_to_jetson(uint8_t *s, uint8_t len) {
 
@@ -87,12 +90,10 @@ static void tx_data_struct(divergence_packet_t *uart_packet_tx) {
 }
 
 // rx: print struct received after checksum match
-static void print_rx_struct(thurst_packet_t *uart_packet_rx) {
-	printf("[rx] type: %d, len: %d, cnt: %i, thurst: %f\n", 
-					uart_packet_rx->info.packet_type,
-					uart_packet_rx->info.packet_length, 
-					uart_packet_rx->data.cnt,
-					uart_packet_rx->data.thurst);
+static void print_rx_struct(thurst_frame_t *uart_rx_buffer) {
+	printf("[rx] cnt: %i, thurst: %f\n", 
+					uart_rx_buffer->cnt,
+					uart_rx_buffer->thurst);
 }
 
 // rx: parse uart bytes that are sent from the jetson board
@@ -210,19 +211,12 @@ static void parse(uint8_t c) {
 			if (packet_type == DATA_FRAME) {
 				/* checksum matches, proceed to populate the data struct */
 				/* hope this is atomic, vo reads from externed dr_data */
+				pthread_mutex_lock(rx_mutex);
 				memcpy(&uart_rx_buffer, &databuf, sizeof(thurst_frame_t));
+				pthread_mutex_unlock(rx_mutex);
 
-				/* checksum matches, proceed to populate the info struct */
-				thurst_packet_t tmp_uart_packet_rx = {
-					.info = {
-						.packet_type = packet_type,
-						.packet_length = packet_length,
-					},			
-				};
-				/* now rest of the packet.. for dropout logs later */
-				tmp_uart_packet_rx.data = uart_rx_buffer;
 				#ifdef DBG
-					print_rx_struct(&tmp_uart_packet_rx);
+					print_rx_struct(&uart_rx_buffer);
 				#endif
 			}
 		
@@ -275,6 +269,10 @@ void uart_driver_rx_event(void) {
 
 void uart_driver_init() {
 
+	/* mutex for rx struct */
+	rx_mutex = malloc(sizeof(pthread_mutex_t));
+	pthread_mutex_init(rx_mutex, NULL);
+
 }
 
 // send data to jetson every few milliseconds
@@ -292,6 +290,28 @@ void uart_driver_tx_loop() {
 			.cnt = cnt,
 			.divergence = 0.75f,
 			.divergence_dot = 0.14f,
+		},
+	};
+
+	/* send to jetson */
+	tx_data_struct(&uart_packet_tx);
+
+}
+
+// event-triggered function to send data to jetson
+void uart_driver_tx_event(float divergence, float divergence_dot) {
+	static int cnt = 0;
+	cnt++;
+
+	divergence_packet_t uart_packet_tx = {
+		.info = {
+			.packet_type = DATA_FRAME,
+			.packet_length = 3 + sizeof(divergence_packet_t),
+		},
+		.data = {
+			.cnt = cnt,
+			.divergence = divergence,
+			.divergence_dot = divergence_dot,
 		},
 	};
 

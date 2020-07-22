@@ -29,6 +29,7 @@
 extern "C" {
 #endif
 
+#include <pthread.h>
 #include "mcu_periph/uart.h"
 
 #define UART_MAX_LEN 30
@@ -70,7 +71,7 @@ typedef struct __attribute__((packed)) {
 } divergence_packet_t;
 
 /*
-LOIHI LANDER - RX DIVERGENCE
+LOIHI LANDER - RX THRUST
 */
 
 typedef struct __attribute__((packed)) {
@@ -84,10 +85,12 @@ typedef struct __attribute__((packed)) {
 } thurst_packet_t;
 
 extern thurst_frame_t uart_rx_buffer;
+extern pthread_mutex_t* rx_mutex;
 
 extern void uart_driver_rx_event(void);
 extern void uart_driver_init(void);
 extern void uart_driver_tx_loop(void);
+extern void uart_driver_tx_event(float divergence, float divergence_dot);
 
 #ifdef __cplusplus
 } /* extern "C" */
