@@ -26,10 +26,10 @@
 #ifndef ALPHAPILOTAHRS_H
 #define ALPHAPILOTAHRS_H
 
-extern void alphapilot_ahrs_init();
-extern void alphapilot_ahrs_periodic();
-extern void alphapilot_ahrs_event();
-extern void alphapilot_datalink_call();
+extern void alphapilot_ahrs_init(void);
+extern void alphapilot_ahrs_periodic(void);
+extern void alphapilot_ahrs_event(void);
+extern void alphapilot_datalink_call(void);
 
 
 

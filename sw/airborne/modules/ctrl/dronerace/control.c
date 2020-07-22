@@ -26,13 +26,13 @@ static void open_log(void)
   char filename[512];
   char filename2[512];
   // Check for available files
-  sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "pid_outer_log_file");
+  sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "state_log");
   sprintf(filename2, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "bangbang_log");
   printf("\n\n*** chosen filename log drone race: %s ***\n\n", filename);
   file_logger_t = fopen(filename, "w+"); 
   bang_bang_t = fopen(filename2,"w+");
-  fprintf(bang_bang_t,"time,satdim, brake, t_s, t_target, error_x, error_y, posx, posy, vxvel, vyvel, c1_sat,c2_sat, c1_sat_brake, c2_sat_brake, c1_sec, c2_sec\n");
-  fprintf(file_logger_t,"time, gate_nr, gate_type, controller_type\n");
+  fprintf(bang_bang_t,"get_sys_time_float(), satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1], constant_sat_accel.c1, constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec, apply_compensation, in_transition, delta_t, delta_y, delta_v\n");
+  fprintf(file_logger_t,"time,dr_state.x,dr_state.y,posxVel,posyVel,dr_state.z,vxE,vyE,vzE,dr_state.vx,dr_state.vy,dr_state.phi,dr_state.theta,dr_state.psi\n");
 }
 
 
@@ -104,6 +104,9 @@ float bound_f(float val, float min, float max) {
 float lookahead = 25 * PI/180.0;
 #define PITCHFIX  -10 * PI/180.0
 #define DIRECTION 1 // 1 for clockwise, -1 for counterclockwise
+float vxE_old=0;
+float vyE_old=0;
+float vzE_old=0;
 
 void control_run(float dt)
 {
@@ -139,10 +142,20 @@ void control_run(float dt)
   float cpsi = cosf(dr_control.psi_cmd);
   float spsi = sinf(dr_control.psi_cmd);
   
-  
+  //only overwrite dr_state.v if there is a new gps update (filter adds accelerations in the meantime)
+  if((vxE!=vxE_old)||(vyE!=vyE_old)){
   dr_state.vx = (cthet*cpsi)*vxE + (cthet*spsi)*vyE ;//- sthet*vzE;
   dr_state.vy = (sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE ;//+ (sphi*cthet)*vzE;
+  }
+  
+  vxE_old=vxE;
+  vyE_old=vzE;
+  vzE_old=vzE;
+
+
   // float posxVel = (cthet*cpsi)*dr_state.x + (cthet*spsi)*dr_state.y - sthet*dr_state.z;
+
+
   // float posyVel = (sphi*sthet*cpsi-cphi*spsi)*dr_state.x + (sphi*sthet*spsi+cphi*cpsi)*dr_state.y + (sphi*cthet)*dr_state.z;
   float posx_cmd =  dr_bang.gate_x; //position command in earth reference frame
   float posy_cmd =  dr_bang.gate_y;
@@ -159,7 +172,10 @@ void control_run(float dt)
     optimizeBangBang(error_posx_vel,error_posy_vel,0.2); // function writes to bang_ctrl 
 
     if(abs(error_posx_vel)>1){ //freeze yaw cmd when it gets close to wp
-      dr_control.psi_cmd =atan2f(error_posy_vel,error_posx_vel);// angle180(psi_cmd*180.0/PI)*PI/180.0;
+      dr_control.psi_cmd =atan2f(error_posy_E,error_posx_E);// angle180(psi_cmd*180.0/PI)*PI/180.0;
+    }
+    else{
+      dr_control.psi_cmd=dr_bang.gate_psi;
     }
     dr_control.phi_cmd =0;// bang_ctrl[1];
     dr_control.theta_cmd = bang_ctrl[0];
@@ -174,17 +190,17 @@ void control_run(float dt)
       float vx_des = bound_angle(error_posx_vel,2);
       float vy_des = bound_angle(error_posy_vel,2);
       if(abs(error_posx_vel)>1){ //freeze yaw cmd when it gets close to wp
-        dr_control.psi_cmd =atan2(error_posy_E,error_posx_E);// angle180(psi_cmd*180.0/PI)*PI/180.0;
+        dr_control.psi_cmd =atan2(error_posy_E,error_posx_E); // yaw towards gate when distance is large enough. 
       }
       else{
         dr_control.psi_cmd=dr_bang.gate_psi;
       }
 
-      printf("psicmd: %f,atan: %f, error_posx: %f, error_posy: %f, error_posx_vel: %f\n",dr_control.psi_cmd,(error_posy_E,error_posx_E),error_posx_E,error_posy_E, error_posx_vel);
+      // printf("psicmd: %f,atan: %f, error_posx: %f, error_posy: %f, error_posx_vel: %f\n",dr_control.psi_cmd,(error_posy_E,error_posx_E),error_posx_E,error_posy_E, error_posx_vel);
       dr_control.phi_cmd= bound_angle(KP_VEL_Y * (vy_des-dr_state.vy),CTRL_MAX_ROLL);
       dr_control.theta_cmd=bound_angle(KP_VEL_X *-1* (vx_des-dr_state.vx),CTRL_MAX_PITCH); 
       #ifdef LOG
-      fprintf(file_logger_t,"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(),posx_cmd,posy_cmd,dr_state.x,dr_state.y,error_posx_vel,error_posy_vel,vx_cmd,vy_cmd,dr_state.vx,dr_state.vy,dr_control.phi_cmd,dr_control.theta_cmd,posxVel,posyVel);
+      fprintf(file_logger_t,"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(),dr_state.x,dr_state.y,posxVel,posyVel,dr_state.z,vxE,vyE,vzE,dr_state.vx,dr_state.vy,dr_state.phi,dr_state.theta,dr_state.psi);
       #endif
   } 
 

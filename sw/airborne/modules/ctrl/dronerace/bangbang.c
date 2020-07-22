@@ -8,7 +8,7 @@
 #define SECOND 1
 #define r2d 180./M_PI
 #define d2r M_PI/180.0
-
+#define LOG
 // float m = 0.42; //bebop mass [kg]
 float g = 9.80665;//gravity
 int type; 
@@ -55,7 +55,6 @@ float angc_old ;
 
 float v0[2];
 float mass=0.42;
-float t_target;
 float y_target;
 float t_s=1e9;
 float t_0_trans; //start time of transition
@@ -209,11 +208,13 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         // printf("angc: %f, angc_old: %f E_pos: %f\n",angc,angc_old,E_pos);
     }
     bang_ctrl[dim]=angc;
-    printf("satdim: %i, brake: %i, theta_cmd: %f, phi_cmd: %f, errx: %f, erry: %f, t_s: %f, t_t: %f\n",satdim,brake,bang_ctrl[0],bang_ctrl[1],pos_error[0],pos_error[1],t_s,t_target);
+    // printf("satdim: %i, brake: %i, theta_cmd: %f, phi_cmd: %f, errx: %f, erry: %f, t_s: %f, t_t: %f\n",satdim,brake,bang_ctrl[0],bang_ctrl[1],pos_error[0],pos_error[1],t_s,t_target);
     // printf("bang_ctrl[0]: %f, bang_ctrl[1]: %f \n",bang_ctrl[0],bang_ctrl[1]);1
     //  fprintf(bang_bang_t,"time,satdim, brake, t_s, t_target, error_x, error_y, posx, posy, vxvel, vyvel, c1_sat,c2_sat, c1_sec, c2_sec\n");
-    fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(), satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1],
-    constant_sat_accel.c1,constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec);
+    #ifdef LOG
+    fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %d, %d, %f, %f, %f\n",get_sys_time_float(), satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1],
+    constant_sat_accel.c1,constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec,controllerstate.apply_compensation,controllerstate.in_transition,controllerstate.delta_t,controllerstate.delta_y,controllerstate.delta_v);
+    #endif
 };
 
 
@@ -278,8 +279,8 @@ float predict_path_analytical(float t_s, float angle,float Vd){
         y_target=get_position_analytical(t_target);//find position in lateral direction using the predicted eta of the first dimension;    }
         // printf("y_target_sec: %f, t_target: %f, angle: %f, tanf: %f",y_target,t_target,angle,tanf(angle));
     // printf("\n");
-    return y_target;
     }
+    return y_target;
 }
 
  void find_constants(float yi,float vi){
