@@ -58,10 +58,6 @@ static uint8_t send_to_jetson(uint8_t *s, uint8_t len) {
 	uart_put_byte(&(UART_DRIVER_PORT), 0, checksum);
 	uart_put_byte(&(UART_DRIVER_PORT), 0, 0x2a); // '*'
 
-	#ifdef DBG
-		printf("appended checksum when bbp tx: 0x%02x\n", checksum);
-	#endif
-
 	return (i + 3);
 }
 
@@ -72,28 +68,11 @@ static void tx_data_struct(divergence_packet_t *uart_packet_tx) {
 	memcpy(tx_string, uart_packet_tx, sizeof(divergence_packet_t));
 
 	#ifdef DBG
-		printf("[tx] type: %d, divergence: %f, divergence_dot: %f\n", 
-		uart_packet_tx->info.packet_type,
-		uart_packet_tx->data.divergence,
-		uart_packet_tx->data.divergence_dot);
-
-		// check via wireshark
-		printf("Jetson should receive bytes:\n");
-		for (int i = 0; i < sizeof(divergence_packet_t); i++) {
-			printf("0x%02x,", tx_string[i]);
-		}
-		printf(" + checksum ****\n");
+	printf("[TX] cnt: %i, div: %f, divdot: %f\n", uart_packet_tx->data.cnt, uart_packet_tx->data.divergence, uart_packet_tx->data.divergence_dot);
 	#endif
 	
 	// send "stringed" struct
 	send_to_jetson(tx_string, sizeof(divergence_packet_t));
-}
-
-// rx: print struct received after checksum match
-static void print_rx_struct(thurst_frame_t *uart_rx_buffer) {
-	printf("[rx] cnt: %i, thurst: %f\n", 
-					uart_rx_buffer->cnt,
-					uart_rx_buffer->thurst);
 }
 
 // rx: parse uart bytes that are sent from the jetson board
@@ -111,10 +90,6 @@ static void parse(uint8_t c) {
 	static uint8_t checksum = 0;
 	// static uint8_t prev_char = 0;
 	
-	#ifdef DBG
-  	printf("byte ctr: %d, jetson state: %d, char rxed: 0x%02x\n", byte_ctr, jetson_state, c);
-	#endif
-  
 	// uart state machine
 	switch (jetson_state) {
 		
@@ -137,11 +112,6 @@ static void parse(uint8_t c) {
 				/* take note of packet length */
 				packet_length = c;
 				byte_ctr = byte_ctr + 1;
-
-				#ifdef DBG
-				// info frame populated!! 
-				printf("[uart] packet_length: %d, packet_type: %d\n", packet_length, packet_type);
-				#endif
 
 				// this if loop will barely be used!
 				/* if (packet_type == ACK_FRAME && packet_length == 3) {
@@ -188,9 +158,6 @@ static void parse(uint8_t c) {
 			/* take in the last byte and check if it matches data+info checksum */
 			if (c == checksum) {
 				jetson_state = JTSN_RX_OK;
-				#ifdef DBG
-					printf("[uart] checksum matched!\n");
-				#endif
 			}	else {
 				jetson_state = JTSN_RX_ERR;
 			}
@@ -201,13 +168,6 @@ static void parse(uint8_t c) {
 		} // no break statement required;
 
     case JTSN_RX_OK: {
-			#ifdef DBG
-			printf("[uart] received string: ");
-			// print string
-			for (int i = 0; i < packet_length; i++) {
-				printf("0x%02x,", databuf[i]);
-			}
-			#endif
 			if (packet_type == DATA_FRAME) {
 				/* checksum matches, proceed to populate the data struct */
 				/* hope this is atomic, vo reads from externed dr_data */
@@ -216,7 +176,7 @@ static void parse(uint8_t c) {
 				pthread_mutex_unlock(rx_mutex);
 
 				#ifdef DBG
-					print_rx_struct(&uart_rx_buffer);
+				printf("[RX] cnt: %i, thrust: %f\n", uart_rx_buffer.cnt, uart_rx_buffer.thurst);
 				#endif
 			}
 		
@@ -227,9 +187,6 @@ static void parse(uint8_t c) {
 		} break;
 
     case JTSN_RX_ERR: {
-			#ifdef DBG
-				printf("[uart] JTSN_RX_ERR\n");
-			#endif
 			memset(databuf, 0, UART_MAX_LEN);
 			byte_ctr = 0;
 			checksum = 0;
@@ -238,9 +195,6 @@ static void parse(uint8_t c) {
     } break;
 
     default: {
-			#ifdef DBG
-				printf("[uart] JTSN_RX_ERR\n");
-			#endif
 			memset(databuf, 0, UART_MAX_LEN);
 			byte_ctr = 0;
 			checksum = 0;
