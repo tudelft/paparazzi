@@ -72,6 +72,14 @@ struct FloatRates *rates;
 float posx;
 float posy;
 float posz;
+
+
+float vxE_old=0;
+float vyE_old=0;
+float vzE_old=0;
+float posx_old=0;
+float posy_old=0;
+float posz_old=0;
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // TELEMETRY
 
@@ -140,7 +148,7 @@ bool start_log = 0;
 float psi0 = 0;
 void dronerace_enter(void)
 {
-  psi0 = stateGetNedToBodyEulers_f()->psi;
+  psi0 = stateGetNedToBodyEulers_f()->psi; //check if this is correct 
   filter_reset();
   control_reset();
 }
@@ -150,17 +158,54 @@ void dronerace_periodic(void)
 {  
   // printf("PSI0: %f  ",psi0);
   est_psi = stateGetNedToBodyEulers_f()->psi;
+
   struct NedCoor_f *pos_gps = stateGetPositionNed_f();
+  struct NedCoor_f *vel_gps = stateGetSpeedNed_f();
+
   input_phi   = stateGetNedToBodyEulers_f()-> phi;
   input_theta = stateGetNedToBodyEulers_f()-> theta;
-  input_psi   = stateGetNedToBodyEulers_f()-> psi - psi0;
+  input_psi   = stateGetNedToBodyEulers_f()-> psi;// - psi0;
 
   dr_state.phi   = input_phi;
   dr_state.psi   = input_psi;
   dr_state.theta = input_theta;
-    posx = pos_gps->x;
-    posy = pos_gps->y;
-    posz = pos_gps->z; 
+
+  posx = pos_gps->x;
+  posy = pos_gps->y;
+  posz = pos_gps->z; 
+
+
+   if((posx!=posx_old)||(posy!=posy_old)||(posz!=posz_old)){
+    dr_state.x=posx;
+    dr_state.y=posy;
+    dr_state.z=posz;
+  }
+  
+  posx_old=posx;
+  posy_old=posy;
+  posz_old=posz;
+
+  vxE = vel_gps->x; // In earth reference frame
+  vyE = vel_gps->y;
+  vzE = vel_gps->z;
+  
+  float cthet=cosf(dr_state.theta);
+  float sthet=sinf(dr_state.theta);
+  float cphi = cosf(dr_state.phi);
+  float sphi = sinf(dr_state.phi);
+  float cpsi = cosf(dr_state.psi);
+  float spsi = sinf(dr_state.psi);
+  
+
+   if((vxE!=vxE_old)||(vyE!=vyE_old)){
+    dr_state.vx = (cthet*cpsi)*vxE + (cthet*spsi)*vyE ;//- sthet*vzE;
+    dr_state.vy = (sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE ;//+ (sphi*cthet)*vzE;
+  }
+  vxE_old=vxE;
+  vyE_old=vzE;
+  vzE_old=vzE;
+
+  
   filter_predict(input_phi, input_theta, input_psi, dt);
  
   

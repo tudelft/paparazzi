@@ -234,8 +234,8 @@ float predict_path_analytical(float t_s, float angle,float Vd){
     }
 
     //Correct NED velocity for the drone's heading which is the initial speed in path prediction
-    v0[0]=dr_state.vx*cosf(dr_state.psi)-dr_state.vy*sinf(dr_state.psi); 
-    v0[1]=dr_state.vx*sinf(dr_state.psi)+dr_state.vy*cosf(dr_state.psi);
+    v0[0]=dr_state.vx;//*cosf(dr_state.psi)-dr_state.vy*sinf(dr_state.psi); //allready gets corrected in control.c
+    v0[1]=dr_state.vx;//*sinf(dr_state.psi)+dr_state.vy*cosf(dr_state.psi);
     // v0[0]=2;
     // v0[1]=0.1;
     if(type==0){ // if saturation

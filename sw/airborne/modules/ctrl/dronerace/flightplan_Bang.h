@@ -12,14 +12,15 @@ struct bangbang_fp_struct
     float gate_psi; 
     float gate_speed; 
     int gate_type;
-    int controller_type
-}
-;
+    int controller_type;
+};
 #define MAX_GATES 2 
 
 extern const struct bangbang_fp_struct Banggates[MAX_GATES];
 extern struct bangbang_fp_struct dr_bang;
-
+float dist2gate;
 // Functions 
 extern void flightplan_reset(void);
 extern void flightplan_run(void);
+
+FILE *fp_logger_t;
