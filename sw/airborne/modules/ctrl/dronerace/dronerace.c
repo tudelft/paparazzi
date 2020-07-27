@@ -197,9 +197,9 @@ void dronerace_periodic(void)
   float spsi = sinf(dr_state.psi);
   
 
-   if((vxE!=vxE_old)||(vyE!=vyE_old)){
-    dr_state.vx = (cthet*cpsi)*vxE + (cthet*spsi)*vyE ;//- sthet*vzE;
-    dr_state.vy = (sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE ;//+ (sphi*cthet)*vzE;
+   if((vxE!=vxE_old)||(vyE!=vyE_old)){ // in filter.c dr_state.vx and dr_state.vy are defined in the earth frame. 
+    dr_state.vx = vxE;//(cthet*cpsi)*vxE + (cthet*spsi)*vyE - sthet*vzE;
+    dr_state.vy = vyE;//(sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE ;//+ (sphi*cthet)*vzE;
   }
   vxE_old=vxE;
   vyE_old=vzE;

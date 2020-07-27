@@ -34,9 +34,9 @@ static void open_log(void)
   file_logger_t = fopen(filename, "w+"); 
   bang_bang_t = fopen(filename2,"w+");
   fp_logger_t=fopen(filename3,"w+"); 
-  fprintf(bang_bang_t,"get_sys_time_float(), satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1], constant_sat_accel.c1, constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec, apply_compensation, in_transition, delta_t, delta_y, delta_v\n");
+  fprintf(bang_bang_t,"get_sys_time_float(), satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1], constant_sat_accel.c1, constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec, apply_compensation, in_transition, delta_t, delta_y, delta_v, ys, vs\n");
   fprintf(file_logger_t,"time, dr_state.x, dr_state.y, posxVel, posyVel, dr_state.z, vxE, vyE, vzE, dr_state.vx, dr_state.vy, dr_state.phi, dr_state.theta, dr_state.psi, phi_cmd, theta_cmd, psi_cmd\n");
-  fprintf(fp_logger_t,"time, gate_nr, gate_type, controller_type, gate_x, gate_y, gate_z \n");
+  fprintf(fp_logger_t,"time, gate_nr, gate_type, controller_type, gate_x, gate_y, gate_z, gate_psi \n");
 }
 
 
@@ -150,30 +150,24 @@ void control_run(float dt)
   // float spsi = sinf(dr_state.psi);
 
 
-  //only overwrite dr_state.v if there is a new gps update (filter adds accelerations in the meantime)
-  
-  
   
 
-
-  // float posxVel = (cthet*cpsi)*dr_state.x + (cthet*spsi)*dr_state.y - sthet*dr_state.  z;
-
-
-  // float posyVel = (sphi*sthet*cpsi-cphi*spsi)*dr_state.x + (sphi*sthet*spsi+cphi*cpsi)*dr_state.y + (sphi*cthet)*dr_state.z;
   float posx_cmd =  dr_bang.gate_x; //position command in earth reference frame
   float posy_cmd =  dr_bang.gate_y;
-  float vx_cmd =0;
-  float vy_cmd =0;
-  float error_posx_E=posx_cmd-dr_state.x; //error in earth frame
+
+  float error_posx_E=posx_cmd-dr_state.x; //position error in earth frame
   float error_posy_E=posy_cmd-dr_state.y;
-  float error_posx_vel =(cthet*cpsi)*error_posx_E+(cthet*spsi)*error_posy_E;//error in velocity frame
-  float error_posy_vel = (sphi*sthet*cpsi-cphi*spsi)*error_posx_E+(sphi*sthet*spsi+cphi*cpsi)*error_posy_E;
+  float error_posx_vel =cpsi*error_posx_E+spsi*error_posy_E;//position error in velocity frame
+  float error_posy_vel = -spsi*error_posx_E+cpsi*error_posy_E;
+
   dist2gate = sqrtf(error_posx_vel*error_posx_vel+error_posy_vel*error_posy_vel);
 
-  dr_state.vx = (cthet*cpsi)*vxE + (cthet*spsi)*vyE - sthet*vzE;
-  dr_state.vy = (sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE + (sphi*cthet)*vzE;
-  float posxVel = (cthet*cpsi)*dr_state.x + (cthet*spsi)*dr_state.y - sthet*dr_state.z;
-  float posyVel = (sphi*sthet*cpsi-cphi*spsi)*dr_state.x + (sphi*sthet*spsi+cphi*cpsi)*dr_state.y + (sphi*cthet)*dr_state.z;
+  float posxVel = cpsi*dr_state.x + spsi*dr_state.y;
+  float posyVel = -spsi*dr_state.x + cpsi*dr_state.y ;
+
+  float vx_vel=dr_state.vx*cpsi +dr_state.vy*spsi;
+  float vy_vel=-dr_state.vx*spsi + dr_state.vy*cpsi;
+
 
   // if(dr_bang.controller_type==BANGBANG)
   // {
@@ -185,16 +179,15 @@ void control_run(float dt)
     else{
       dr_control.psi_cmd=dr_bang.gate_psi;
     }
-    dr_control.phi_cmd =0;// bang_ctrl[1];
+    dr_control.phi_cmd =0;// TODO bang_ctrl[1];
     dr_control.theta_cmd = bang_ctrl[0];
   // }
   // else{ // USE a PID controller if not BANGBANG
         
       
+      float vx_des_vel = bound_angle(error_posx_vel,CTRL_MAX_SPEED); //saturate to max velocity
+      float vy_des_vel = bound_angle(error_posy_vel,CTRL_MAX_SPEED);
       
-
-      float vx_des = bound_angle(error_posx_vel,2);
-      float vy_des = bound_angle(error_posy_vel,2);
       if(abs(error_posx_vel)>1){ //freeze yaw cmd when it gets close to wp
         dr_control.psi_cmd =atan2(error_posy_E,error_posx_E); // yaw towards gate when distance is large enough. 
       }
@@ -203,12 +196,12 @@ void control_run(float dt)
       }
 
       // printf("psicmd: %f,atan: %f, error_posx: %f, error_posy: %f, error_posx_vel: %f\n",dr_control.psi_cmd,(error_posy_E,error_posx_E),error_posx_E,error_posy_E, error_posx_vel);
-      dr_control.phi_cmd= bound_angle(KP_VEL_Y * (vy_des-dr_state.vy),CTRL_MAX_ROLL);
-      dr_control.theta_cmd=bound_angle(KP_VEL_X *-1* (vx_des-dr_state.vx),CTRL_MAX_PITCH); 
+      dr_control.phi_cmd= bound_angle(KP_VEL_Y * (vy_des_vel-vy_vel),CTRL_MAX_ROLL);
+      dr_control.theta_cmd=bound_angle(KP_VEL_X *-1* (vx_des_vel-vx_vel),CTRL_MAX_PITCH); 
       
   // } 
     if(dr_bang.controller_type==BANGBANG){
-      dr_control.theta_cmd=bang_ctrl[0];
+      dr_control.theta_cmd=bang_ctrl[0]; //TODO for now only pitch can be affected by bangbang
     }
   // dr_control.psi_cmd=0;
   // dr_control.phi_cmd=0;

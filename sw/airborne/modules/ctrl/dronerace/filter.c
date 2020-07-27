@@ -75,7 +75,7 @@ void filter_predict(float phi, float theta, float psi, float dt)
   dr_state.time += dt;
 
   // Store psi for local corrections
-  dr_state.psi = psi; // TODO: use psi command?
+  dr_state.psi = psi; //TODO: use psi command?
 
   // Store old states for latency compensation
   fifo_push(dr_state.x, dr_state.y, 0);

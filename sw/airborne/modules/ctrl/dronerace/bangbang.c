@@ -53,6 +53,15 @@ float ang1 ;
 float angc ;
 float angc_old ;
 
+float ys;
+float vs;
+
+int satdim;
+int satdim_prev=10; 
+float t_s; 
+float t_target;
+bool brake; 
+
 float v0[2];
 float mass=0.42;
 float y_target;
@@ -88,7 +97,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     }
 
     if(!brake){
-        if(t_s<0.5 && t_target>0 &&t_s<t_target){
+        if(t_s<0.25 && t_target>0 &&t_s<t_target){
             brake=true;
             if(controllerstate.apply_compensation && !controllerstate.in_transition){
                 t_0_trans=get_sys_time_float();
@@ -110,14 +119,21 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     }
 
     if(fabs(pos_error[0])>=fabs(pos_error[1])){
-        satdim=0;
+        satdim=0;        
+    }
+    else{
+        satdim=1;        
+    }
+
+    satdim=0; // TODO: force satdim for debugging purposes 
+
+    if(satdim==0){
         satangle=sat_corr[0];
         secangle=sat_corr[1];
         signcorrsat=sign_corr.x;
         signcorrsec=sign_corr.y;
     }
     else{
-        satdim=1;
         satangle=sat_corr[1];
         secangle=sat_corr[0];
         signcorrsat=sat_corr[1];
@@ -212,8 +228,8 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     // printf("bang_ctrl[0]: %f, bang_ctrl[1]: %f \n",bang_ctrl[0],bang_ctrl[1]);1
     //  fprintf(bang_bang_t,"time,satdim, brake, t_s, t_target, error_x, error_y, posx, posy, vxvel, vyvel, c1_sat,c2_sat, c1_sec, c2_sec\n");
     #ifdef LOG
-    fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %d, %d, %f, %f, %f\n",get_sys_time_float(), satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1],
-    constant_sat_accel.c1,constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec,controllerstate.apply_compensation,controllerstate.in_transition,controllerstate.delta_t,controllerstate.delta_y,controllerstate.delta_v);
+    fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %d, %d, %f, %f, %f, %f, %f\n",get_sys_time_float(), satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1],
+    constant_sat_accel.c1,constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec,controllerstate.apply_compensation,controllerstate.in_transition,controllerstate.delta_t,controllerstate.delta_y,controllerstate.delta_v,ys,vs);
     #endif
 };
 
@@ -234,8 +250,8 @@ float predict_path_analytical(float t_s, float angle,float Vd){
     }
 
     //Correct NED velocity for the drone's heading which is the initial speed in path prediction
-    v0[0]=dr_state.vx;//*cosf(dr_state.psi)-dr_state.vy*sinf(dr_state.psi); //allready gets corrected in control.c
-    v0[1]=dr_state.vx;//*sinf(dr_state.psi)+dr_state.vy*cosf(dr_state.psi);
+    v0[0]=dr_state.vx*cosf(dr_state.psi)-dr_state.vy*sinf(dr_state.psi); 
+    v0[1]=-dr_state.vx*sinf(dr_state.psi)+dr_state.vy*cosf(dr_state.psi);
     // v0[0]=2;
     // v0[1]=0.1;
     if(type==0){ // if saturation
@@ -243,10 +259,10 @@ float predict_path_analytical(float t_s, float angle,float Vd){
         if(!brake){
             find_constants(0.0,v0[dim]); // find constant for accelerating part; 
             constant_sat_accel = constant;
-            float ys = get_position_analytical(t_s);
-            float vs = get_velocity_analytical(t_s);
+            ys = get_position_analytical(t_s);
+            vs = get_velocity_analytical(t_s);
 
-            //predict braking part
+            //predict braking part:
             T=-1*T; 
             if(controllerstate.apply_compensation){
                 find_constants(ys+controllerstate.delta_y,vs+controllerstate.delta_v);
