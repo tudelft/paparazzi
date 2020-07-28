@@ -11,6 +11,7 @@
         "guidance_v.h": "c",
         "bangbang.h": "c",
         "stdbool.h": "c",
-        "filter.h": "c"
+        "filter.h": "c",
+        "*.ipp": "c"
     }
 }

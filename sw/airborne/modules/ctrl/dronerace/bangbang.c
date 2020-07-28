@@ -17,7 +17,7 @@ float bang_ctrl[3]; //control inputs that will be the final product of the bangb
 
 struct BangDim sat_angle = {
     -30*d2r,
-    10*d2r,
+    30*d2r,
 };
 // struct BangDim sat_corr;
 struct BangDim sign_corr=
@@ -97,7 +97,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     }
 
     if(!brake){
-        if(t_s<0.25 && t_target>0 &&t_s<t_target){
+        if(t_s<0.3 && t_target>0 &&t_s<t_target){
             brake=true;
             if(controllerstate.apply_compensation && !controllerstate.in_transition){
                 t_0_trans=get_sys_time_float();
@@ -125,7 +125,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         satdim=1;        
     }
 
-    satdim=0; // TODO: force satdim for debugging purposes 
+    // satdim=0; // TODO: force satdim for debugging purposes 
 
     if(satdim==0){
         satangle=sat_corr[0];
@@ -190,10 +190,10 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
                 E_pos = get_E_pos(v_desired, angc);
 
                 if(E_pos*signcorrsat>0){
-                    ang0=angc;
+                    ang1=angc;
                 }
                 else{
-                    ang1=angc;
+                    ang0=angc;
                 }
                 angc=(ang0+ang1)/2.;
             }
@@ -214,11 +214,11 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         angc_old=angc;
         E_pos=get_E_pos(v_desired,angc);
         if(E_pos*signcorrsec>0){/* code */
-            ang0=angc;
+            ang1=angc;
         }
         else
         {
-            ang1=angc;
+            ang0=angc;
         }
         angc=(ang0+ang1)/2;
         // printf("angc: %f, angc_old: %f E_pos: %f\n",angc,angc_old,E_pos);

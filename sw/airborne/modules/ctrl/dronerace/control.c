@@ -10,7 +10,7 @@
 #include "state.h"
 #include "subsystems/datalink/telemetry.h"
 #include "bangbang.h"
-
+#define LOG
 
 #define r2d 180./M_PI
 #define d2r M_PI/180.0
@@ -21,27 +21,34 @@ struct dronerace_control_struct dr_control;
 FILE *file_logger_t = NULL;
 FILE *bang_bang_t = NULL;
 FILE *fp_logger_t = NULL;
+FILE *brake_log_t = NULL;
 static void open_log(void) 
 {
   char filename[512];
   char filename2[512];
   char filename3[512];
+  char filename4[512];
   // Check for available files
   sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "state_log");
   sprintf(filename2, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "bangbang_log");
   sprintf(filename3, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "flightplan_log");
+  // sprintf(filename4, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), "brake_log");
   printf("\n\n*** chosen filename log drone race: %s ***\n\n", filename);
   file_logger_t = fopen(filename, "w+"); 
   bang_bang_t = fopen(filename2,"w+");
   fp_logger_t=fopen(filename3,"w+"); 
+  // brake_log_t=fopen(filename4,"w+");
   fprintf(bang_bang_t,"get_sys_time_float(), satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1], constant_sat_accel.c1, constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec, apply_compensation, in_transition, delta_t, delta_y, delta_v, ys, vs\n");
   fprintf(file_logger_t,"time, dr_state.x, dr_state.y, posxVel, posyVel, dr_state.z, vxE, vyE, vzE, dr_state.vx, dr_state.vy, dr_state.phi, dr_state.theta, dr_state.psi, phi_cmd, theta_cmd, psi_cmd\n");
   fprintf(fp_logger_t,"time, gate_nr, gate_type, controller_type, gate_x, gate_y, gate_z, gate_psi \n");
+  // fprintf(brake_log_t,"time, y0, v0, c1, c2, ang0, ang1, angc, Epos\n");
 }
 
 
 // Settings
 
+float vx_des_vel ;
+float vy_des_vel ;
 
 // Slow speed
 #define CTRL_MAX_SPEED  3.0             // m/s
@@ -169,40 +176,46 @@ void control_run(float dt)
   float vy_vel=-dr_state.vx*spsi + dr_state.vy*cpsi;
 
 
-  // if(dr_bang.controller_type==BANGBANG)
-  // {
+  if(dr_bang.controller_type==BANGBANG)
+  {
     optimizeBangBang(error_posx_vel,error_posy_vel,0.2); // function writes to bang_ctrl 
 
     if(abs(error_posx_vel)>1){ //freeze yaw cmd when it gets close to wp
-      dr_control.psi_cmd =atan2f(error_posy_E,error_posx_E);// angle180(psi_cmd*180.0/PI)*PI/180.0;
+      dr_control.psi_cmd = atan2f(error_posy_E,error_posx_E);// angle180(psi_cmd*180.0/PI)*PI/180.0;
     }
     else{
       dr_control.psi_cmd=dr_bang.gate_psi;
     }
-    dr_control.phi_cmd =0;// TODO bang_ctrl[1];
+    dr_control.phi_cmd = bang_ctrl[1];
+    // vy_des_vel = bound_angle(error_posy_vel,CTRL_MAX_SPEED);
+    // dr_control.phi_cmd= bound_angle(KP_VEL_Y * (vy_des_vel-vy_vel),CTRL_MAX_ROLL);//TODO
     dr_control.theta_cmd = bang_ctrl[0];
-  // }
-  // else{ // USE a PID controller if not BANGBANG
+  }
+  else{ // USE a PID controller if not BANGBANG
         
       
-      float vx_des_vel = bound_angle(error_posx_vel,CTRL_MAX_SPEED); //saturate to max velocity
-      float vy_des_vel = bound_angle(error_posy_vel,CTRL_MAX_SPEED);
+       vx_des_vel = bound_angle(error_posx_vel,CTRL_MAX_SPEED); //saturate to max velocity
+       vy_des_vel = bound_angle(error_posy_vel,CTRL_MAX_SPEED);
       
       if(abs(error_posx_vel)>1){ //freeze yaw cmd when it gets close to wp
-        dr_control.psi_cmd =atan2(error_posy_E,error_posx_E); // yaw towards gate when distance is large enough. 
+        dr_control.psi_cmd =atan2f(error_posy_E,error_posx_E); // yaw towards gate when distance is large enough. 
       }
       else{
         dr_control.psi_cmd=dr_bang.gate_psi;
       }
-
+      if(dr_bang.turning==TURNING){
+        dr_control.psi_cmd=dr_bang.gate_psi;
+      }
       // printf("psicmd: %f,atan: %f, error_posx: %f, error_posy: %f, error_posx_vel: %f\n",dr_control.psi_cmd,(error_posy_E,error_posx_E),error_posx_E,error_posy_E, error_posx_vel);
       dr_control.phi_cmd= bound_angle(KP_VEL_Y * (vy_des_vel-vy_vel),CTRL_MAX_ROLL);
       dr_control.theta_cmd=bound_angle(KP_VEL_X *-1* (vx_des_vel-vx_vel),CTRL_MAX_PITCH); 
       
-  // } 
-    if(dr_bang.controller_type==BANGBANG){
-      dr_control.theta_cmd=bang_ctrl[0]; //TODO for now only pitch can be affected by bangbang
-    }
+  } 
+    // dr_control.psi_cmd=-0.5*M_PI;
+  
+    // if(dr_bang.controller_type==BANGBANG){
+    //   dr_control.theta_cmd=bang_ctrl[0]; //TODO for now only pitch can be affected by bangbang
+    // }
   // dr_control.psi_cmd=0;
   // dr_control.phi_cmd=0;
   // dr_control.theta_cmd=0;

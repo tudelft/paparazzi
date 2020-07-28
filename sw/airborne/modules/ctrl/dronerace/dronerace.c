@@ -189,24 +189,25 @@ void dronerace_periodic(void)
   vyE = vel_gps->y;
   vzE = vel_gps->z;
   
-  float cthet=cosf(dr_state.theta);
-  float sthet=sinf(dr_state.theta);
-  float cphi = cosf(dr_state.phi);
-  float sphi = sinf(dr_state.phi);
-  float cpsi = cosf(dr_state.psi);
-  float spsi = sinf(dr_state.psi);
+  // float cthet=cosf(dr_state.theta);
+  // float sthet=sinf(dr_state.theta);
+  // float cphi = cosf(dr_state.phi);
+  // float sphi = sinf(dr_state.phi);
+  // float cpsi = cosf(dr_state.psi);
+  // float spsi = sinf(dr_state.psi);
   
+  //only overwrite when new values are available
 
    if((vxE!=vxE_old)||(vyE!=vyE_old)){ // in filter.c dr_state.vx and dr_state.vy are defined in the earth frame. 
     dr_state.vx = vxE;//(cthet*cpsi)*vxE + (cthet*spsi)*vyE - sthet*vzE;
-    dr_state.vy = vyE;//(sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE ;//+ (sphi*cthet)*vzE;
+    dr_state.vy = vyE;//(sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE ;//+ (sphi*cthet)*vzE; 
   }
   vxE_old=vxE;
   vyE_old=vzE;
   vzE_old=vzE;
 
   
-  filter_predict(input_phi, input_theta, input_psi, dt);
+  filter_predict(input_phi, input_theta, input_psi, dt); // adds accelerometer values to dr_state (earth frame)
  
   
   struct NedCoor_f target_ned;

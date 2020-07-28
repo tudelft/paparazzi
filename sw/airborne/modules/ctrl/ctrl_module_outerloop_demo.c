@@ -38,7 +38,7 @@ struct ctrl_module_demo_struct dr_ctrl = {0};
 
 // Settings
 float comode_time = 0;
-#define LOG
+// #define LOG
 
 /** The file pointer */
 FILE *file_logger_t2 = NULL;
