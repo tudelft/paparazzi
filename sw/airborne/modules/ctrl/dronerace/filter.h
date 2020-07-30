@@ -1,6 +1,6 @@
 #ifndef DRONERACE_FILTER_H_
 #define DRONERACE_FILTER_H_
-
+#include <stdio.h>
 struct dronerace_vision_struct {
   int cnt;
   float dx;
@@ -50,4 +50,11 @@ extern float my;
 extern float filteredX;
 extern float filteredY;
 
+extern float filter_az;
+extern float filter_abx;
+extern float filter_aby;
+extern float filter_ax;
+extern float filter_ay;
+
+FILE *filter_log_t;
 #endif

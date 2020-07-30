@@ -63,9 +63,10 @@ void flightplan_run(void){
     pos_error_x_vel=cosf(dr_state.psi)*pos_error_x+sinf(dr_state.psi)*pos_error_y;
     // dist2gate=sqrtf((pos_error_x*pos_error_x)+(pos_error_y*pos_error_y));
     error_speed=dr_bang.gate_speed-((dr_state.vx*dr_state.vx)+(dr_state.vy*dr_state.vy));
-    if(dist2gate<0.5){
+    if(dist2gate<0.4){
         
-        if(abs(pos_error_x_vel)<0.3 && abs(dr_state.theta)<0.5){
+        if(pos_error_x_vel<0.1 && abs(dr_state.theta)<0.5 && timer1>64){
+        
             dr_bang.controller_type=PID;
             dr_bang.gate_psi=Banggates[next_gate_nr].gate_psi;//atan2f(Banggates[next_gate_nr].gate_y-dr_state.y,Banggates[next_gate_nr].gate_x-dr_state.x);
             printf("\n Gate_psi: %f\n",dr_bang.gate_psi);

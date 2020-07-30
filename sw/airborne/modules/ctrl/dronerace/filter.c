@@ -35,7 +35,6 @@ void filter_reset()
   printf("filter reset \n\n\n");
   // Heading
   dr_state.psi = 0.0f;
-
 }
 
 
@@ -49,19 +48,19 @@ void filter_reset()
 #define DR_FILTER_DRAG  0.5
 #define DR_FILTER_THRUSTCORR  0.8
 #endif
-float filteredX, filteredY;
+float filteredX, filteredY, filter_abx, filter_aby, filter_ax, filter_ay, filter_az;
 void filter_predict(float phi, float theta, float psi, float dt)
 {
   ////////////////////////////////////////////////////////////////////////
   // Body accelerations
   BoundAbs(phi, RadOfDeg(50));
   BoundAbs(theta, RadOfDeg(50));
-  float az = DR_FILTER_GRAVITY / cosf(theta * DR_FILTER_THRUSTCORR) / cosf(phi * DR_FILTER_THRUSTCORR);
+  float az = DR_FILTER_GRAVITY / (cosf(theta * DR_FILTER_THRUSTCORR) * cosf(phi * DR_FILTER_THRUSTCORR));
   float abx =  sinf(-theta) * az;
   float aby =  sinf(phi)   * az;
 
   // Earth accelerations
-  float ax =  cosf(psi) * abx - sinf(psi) * aby - dr_state.vx * DR_FILTER_DRAG ;
+  float ax =  cosf(psi) * abx - sinf(psi) * aby - dr_state.vx * DR_FILTER_DRAG ; //TODO shouldnt the drag term be divided by mass? assuming Drag force = v*DR_FILTER_DRAG
   float ay =  sinf(psi) * abx + cosf(psi) * aby - dr_state.vy * DR_FILTER_DRAG;
 
 
@@ -85,5 +84,11 @@ void filter_predict(float phi, float theta, float psi, float dt)
 
   filteredX = dr_state.x;
   filteredY = dr_state.y;
+
+  filter_az=az;
+  filter_abx=abx;
+  filter_aby=aby;
+  filter_ax=ax;
+  filter_ay=ay;
 
 }

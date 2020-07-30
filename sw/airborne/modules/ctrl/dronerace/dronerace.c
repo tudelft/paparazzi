@@ -102,6 +102,7 @@ static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
 // Receive from: 33 (=onboard vision) 34 (=jevois) or 255=any
 #define DRONE_RACE_ABI_ID ABI_BROADCAST
 #endif
+#define LOG
 
 static abi_event gate_detected_ev;
 float test0 =0;
@@ -166,6 +167,11 @@ void dronerace_periodic(void)
   input_theta = stateGetNedToBodyEulers_f()-> theta;
   input_psi   = stateGetNedToBodyEulers_f()-> psi;// - psi0;
 
+
+  // input_phi   = dr_control.phi_cmd;
+  // input_theta = dr_control.theta_cmd;
+  // input_psi   = dr_control.psi_cmd;
+
   dr_state.phi   = input_phi;
   dr_state.psi   = input_psi;
   dr_state.theta = input_theta;
@@ -174,20 +180,33 @@ void dronerace_periodic(void)
   posy = pos_gps->y;
   posz = pos_gps->z; 
 
-
-   if((posx!=posx_old)||(posy!=posy_old)||(posz!=posz_old)){
-    dr_state.x=posx;
-    dr_state.y=posy;
-    dr_state.z=posz;
-  }
-  
-  posx_old=posx;
-  posy_old=posy;
-  posz_old=posz;
-
   vxE = vel_gps->x; // In earth reference frame
   vyE = vel_gps->y;
   vzE = vel_gps->z;
+
+   if((posx!=posx_old)||(abs(vxE-vxE_old)>1e-3)){ // filter.c is applied to dr_state.x ... in  between gps updates
+    dr_state.x=posx;
+    posx_old=posx;
+    dr_state.vx = vxE;//(cthet*cpsi)*vxE + (cthet*spsi)*vyE - sthet*vzE;
+    vxE_old=vxE;
+  }
+
+  if((posy!=posy_old)||(abs(vyE!=vyE_old)>1e-3)){ // filter.c is applied to dr_state.x ... in  between gps updates
+    dr_state.y=posy;
+    posy_old=posy;
+    dr_state.vy = vyE;//(sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE ;//+ (sphi*cthet)*vzE; 
+    vyE_old=vyE;
+  }
+
+  if((posz!=posz_old)){ // filter.c is applied to dr_state.x ... in  between gps updates
+    dr_state.z=posz;
+    posz_old=posz;
+  }
+
+  
+  
+  
+
   
   // float cthet=cosf(dr_state.theta);
   // float sthet=sinf(dr_state.theta);
@@ -198,17 +217,9 @@ void dronerace_periodic(void)
   
   //only overwrite when new values are available
 
-   if((vxE!=vxE_old)||(vyE!=vyE_old)){ // in filter.c dr_state.vx and dr_state.vy are defined in the earth frame. 
-    dr_state.vx = vxE;//(cthet*cpsi)*vxE + (cthet*spsi)*vyE - sthet*vzE;
-    dr_state.vy = vyE;//(sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE ;//+ (sphi*cthet)*vzE; 
-  }
-  vxE_old=vxE;
-  vyE_old=vzE;
-  vzE_old=vzE;
 
-  
   filter_predict(input_phi, input_theta, input_psi, dt); // adds accelerometer values to dr_state (earth frame)
- 
+  
   
   struct NedCoor_f target_ned;
   target_ned.x = dr_bang.gate_x;
@@ -229,6 +240,10 @@ void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi_cmd)
 {
 
   control_run(dt);
+
+  #ifdef LOG
+  fprintf(filter_log_t,"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(),posx,posy,posz,vxE,vyE,vzE,filter_az,filter_abx,filter_aby,filter_ax,filter_ay);
+  #endif
   
   *phi     = dr_control.phi_cmd;
   *theta   = dr_control.theta_cmd;
