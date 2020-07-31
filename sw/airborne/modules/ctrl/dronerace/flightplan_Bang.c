@@ -9,9 +9,38 @@
 struct bangbang_fp_struct dr_bang;
 int next_gate_nr;
 int timer1=0;
+
+// int gate_nr;float gate_x;float gate_y;float gate_z;float gate_psi;float gate_speed;int gate_type;int controller_type;int turning;float psi_forced; bool overwrite_psi;
+
+// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+// {0, -2.0,1.2,-1.75,-1.25*M_PI,0.2,STARTPOINT,BANGBANG,0,0},
+// {1, 2.0,1.2,-1.75,0,0.2,GATE,BANGBANG,0,0},
+// {1, 0.0,-2.0,-1.75,-0.75*M_PI,0.2,GATE,BANGBANG,0,0},
+// };
+
+// Demo Forward
+// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+// {0, -2.0,0,-1.75,M_PI,0.2,STARTPOINT,BANGBANG,0,0,false},
+// {1, 2.0,0,-1.75,0,0.2,GATE,BANGBANG,0,0,false},
+// };
+
+// Demo Forward/backwards  25deg
+// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+// {0, -2.0,0,-1.75,0.0,0.2,STARTPOINT,BANGBANG,0,0,true},
+// {1, 2.0,0,-1.75,0.0,0.2,GATE,BANGBANG,0,0,true},
+// };
+
+
+// // // Demo Sideways    // set saturation angles to 25 deg or lower for relatively safe
+// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+// {0, -2.0,0,-1.75,-0.5*M_PI,0.2,STARTPOINT,BANGBANG,0,-0.5*M_PI,true},
+// {1, 2.0,0,-1.75,-0.5*M_PI,0.2,GATE,BANGBANG,0,-0.5*M_PI,true},
+// };
+
+// Demo forward + sidestep 
 const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-{0, -2.0,0.0,-1.75,M_PI,0.2,STARTPOINT,PID,0,0},
-{1, 2.0,0.0,-1.75,0,0.2,GATE,BANGBANG,0,0}
+{0, -2.0,2,-1.75,0.75*M_PI,0.2,STARTPOINT,PID,0,-0.5*M_PI,true},
+{1, 2.0,-0.5,-1.75,-0.5*M_PI,0.2,GATE,BANGBANG,0,-0.5*M_PI,true},
 };
 
 static void update_gate_setpoints(void){
@@ -24,9 +53,9 @@ static void update_gate_setpoints(void){
     dr_bang.gate_type= Banggates[dr_bang.gate_nr].gate_type;
     dr_bang.controller_type = Banggates[dr_bang.gate_nr].controller_type;
     dr_bang.turning=0;
-    dr_bang.psi_offset=Banggates[dr_bang.gate_nr].psi_offset;
+    dr_bang.psi_forced=Banggates[dr_bang.gate_nr].psi_forced;
     dr_bang.gate_psi= Banggates[dr_bang.gate_nr].gate_psi;
-    
+    dr_bang.overwrite_psi=Banggates[dr_bang.gate_nr].overwrite_psi;
     if(dr_bang.gate_nr==MAX_GATES-1){
         next_gate_nr=0;
     }
@@ -64,22 +93,22 @@ void flightplan_run(void){
     // dist2gate=sqrtf((pos_error_x*pos_error_x)+(pos_error_y*pos_error_y));
     error_speed=dr_bang.gate_speed-((dr_state.vx*dr_state.vx)+(dr_state.vy*dr_state.vy));
     if(dist2gate<0.4){
-        
+        timer1+=1;
         if(pos_error_x_vel<0.1 && abs(dr_state.theta)<0.5 && timer1>64){
-        
+            
             dr_bang.controller_type=PID;
             dr_bang.gate_psi=Banggates[next_gate_nr].gate_psi;//atan2f(Banggates[next_gate_nr].gate_y-dr_state.y,Banggates[next_gate_nr].gate_x-dr_state.x);
             printf("\n Gate_psi: %f\n",dr_bang.gate_psi);
             dr_bang.turning=TURNING;            
         }
-        if(abs(dr_state.psi-dr_bang.gate_psi)<0.5){ //only go toward next waypoint after a pause
-                timer1+=1;
-                if(timer1>512){
+        // if(abs(dr_state.psi-dr_bang.gate_psi)<0.5){ //only go toward next waypoint after a pause
+                
+                if(timer1>1024){
                 dr_bang.gate_nr=next_gate_nr;
                 printf("new gate: %i\n",next_gate_nr);
                 timer1=0;
                 }
-            }
+            // }
     }
 
     if(dr_bang.gate_nr==next_gate_nr){ //only update setpoints if the gate identifier has changed (todo: fix discrepancy when there is only one gate)

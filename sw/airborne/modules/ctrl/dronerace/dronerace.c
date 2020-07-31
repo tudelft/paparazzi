@@ -184,14 +184,14 @@ void dronerace_periodic(void)
   vyE = vel_gps->y;
   vzE = vel_gps->z;
 
-   if((posx!=posx_old)||(abs(vxE-vxE_old)>1e-3)){ // filter.c is applied to dr_state.x ... in  between gps updates
+   if((posx!=posx_old)||(vxE!=vxE_old)){ // filter.c is applied to dr_state.x ... in  between gps updates
     dr_state.x=posx;
     posx_old=posx;
     dr_state.vx = vxE;//(cthet*cpsi)*vxE + (cthet*spsi)*vyE - sthet*vzE;
     vxE_old=vxE;
   }
 
-  if((posy!=posy_old)||(abs(vyE!=vyE_old)>1e-3)){ // filter.c is applied to dr_state.x ... in  between gps updates
+  if((posy!=posy_old)||(vyE!=vyE_old)){ // filter.c is applied to dr_state.x ... in  between gps updates
     dr_state.y=posy;
     posy_old=posy;
     dr_state.vy = vyE;//(sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE ;//+ (sphi*cthet)*vzE; 

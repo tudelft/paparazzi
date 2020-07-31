@@ -16,8 +16,8 @@ bool brake = false;
 float bang_ctrl[3]; //control inputs that will be the final product of the bangbang optimizer 
 
 struct BangDim sat_angle = {
-    -45*d2r,
-    45*d2r,
+    -25*d2r,
+    25*d2r,
 };
 // struct BangDim sat_corr;
 struct BangDim sign_corr=
@@ -97,7 +97,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     }
 
     if(!brake){
-        if(t_s<0.2 && t_target>0 &&t_s<t_target){
+        if(t_s<0.5 && t_target>0 &&t_s<t_target){
             brake=true;
             if(controllerstate.apply_compensation && !controllerstate.in_transition){
                 t_0_trans=get_sys_time_float();

@@ -56,7 +56,7 @@ float vx_des_vel ;
 float vy_des_vel ;
 
 // Slow speed
-#define CTRL_MAX_SPEED  3.0             // m/s
+#define CTRL_MAX_SPEED  5.0             // m/s
 #define CTRL_MAX_PITCH  RadOfDeg(20)    // rad
 #define CTRL_MAX_ROLL   RadOfDeg(30)    // rad
 #define CTRL_MAX_R      RadOfDeg(90)    // rad/sec
@@ -83,6 +83,7 @@ void control_reset(void)
   // Reset own variables
   dr_control.psi_ref = 0;
   dr_control.psi_cmd = 0;
+  dr_bang.controller_type=PID;
 }
 
 static float angle180(float r)
@@ -216,7 +217,11 @@ void control_run(float dt)
       dr_control.theta_cmd=bound_angle(KP_VEL_X *-1* (vx_des_vel-vx_vel),CTRL_MAX_PITCH); 
       
   } 
-    // dr_control.psi_cmd=-0.5*M_PI;
+    if (dr_bang.overwrite_psi){
+      dr_control.psi_cmd=dr_bang.psi_forced; //
+    }
+
+    printf("psi_cmd: %f, psi_forced %d\n",dr_control.psi_cmd,dr_bang.psi_forced);
   
     // if(dr_bang.controller_type==BANGBANG){
     //   dr_control.theta_cmd=bang_ctrl[0]; //TODO for now only pitch can be affected by bangbang

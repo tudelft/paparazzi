@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #define GATE 0 
 #define STARTPOINT 1
 #define BANGBANG 2
@@ -14,9 +15,10 @@ struct bangbang_fp_struct
     int gate_type;
     int controller_type;
     int turning;
-    float psi_offset;
+    float psi_forced;
+    bool overwrite_psi;
 };
-#define MAX_GATES 2 
+#define MAX_GATES 2
 
 extern const struct bangbang_fp_struct Banggates[MAX_GATES];
 extern struct bangbang_fp_struct dr_bang;
