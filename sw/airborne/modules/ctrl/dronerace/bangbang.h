@@ -33,4 +33,5 @@ extern float bang_ctrl[3];
 extern struct controllerstatestruct controllerstate;
 
 FILE *bang_bang_t;
+FILE *comp_measure_log_t;
 // FILE *brake_log_t;
