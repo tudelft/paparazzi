@@ -4,6 +4,7 @@
 #include "state.h"
 #include "flightplan_Bang.h"
 #include "subsystems/datalink/telemetry.h"
+#include "bangbang.h"
 
 #define LOG
 struct bangbang_fp_struct dr_bang;
@@ -13,16 +14,16 @@ int timer1=0;
 // int gate_nr;float gate_x;float gate_y;float gate_z;float gate_psi;float gate_speed;int gate_type;int controller_type;int turning;float psi_forced; bool overwrite_psi;
 
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,1.2,-1.75,-1.25*M_PI,0.2,STARTPOINT,BANGBANG,0,0},
-// {1, 2.0,1.2,-1.75,0,0.2,GATE,BANGBANG,0,0},
-// {1, 0.0,-2.0,-1.75,-0.75*M_PI,0.2,GATE,BANGBANG,0,0},
+// {0, -2.0,1.2,-1.75,-1.25*M_PI,0.2,STARTPOINT,BANGBANG,0,0,false},
+// {1, 2.0,1.2,-1.75,0,0.2,GATE,BANGBANG,0,0,false},
+// {2, 0.0,-2.0,-1.75,-0.75*M_PI,0.2,GATE,BANGBANG,0,0,false},
 // };
 
 // Demo Forward
-// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-1.75,M_PI,0.2,STARTPOINT,BANGBANG,0,0,false},
-// {1, 2.0,0,-1.75,0,0.2,GATE,BANGBANG,0,0,false},
-// };
+const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+{0, -2.0,0,-1.75,M_PI,0.2,STARTPOINT,BANGBANG,0,0,false},
+{1, 2.5,0,-1.75,0,0.2,GATE,BANGBANG,0,0,false},
+};
 
 // Demo Forward/backwards  25deg
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
@@ -38,10 +39,10 @@ int timer1=0;
 // };
 
 // Demo forward + sidestep 
-const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-{0, -2.0,2,-1.75,0.75*M_PI,0.2,STARTPOINT,PID,0,-0.5*M_PI,true},
-{1, 2.0,-0.5,-1.75,-0.5*M_PI,0.2,GATE,BANGBANG,0,-0.5*M_PI,true},
-};
+// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+// {0, -2.0,2,-1.75,0.75*M_PI,0.2,STARTPOINT,PID,0,-0.5*M_PI,true},
+// {1, 2.0,-0.5,-1.75,-0.5*M_PI,0.2,GATE,BANGBANG,0,-0.5*M_PI,true},
+// };
 
 static void update_gate_setpoints(void){
     dr_bang.gate_x= Banggates[dr_bang.gate_nr].gate_x;
@@ -94,11 +95,11 @@ void flightplan_run(void){
     error_speed=dr_bang.gate_speed-((dr_state.vx*dr_state.vx)+(dr_state.vy*dr_state.vy));
     if(dist2gate<0.4){
         timer1+=1;
-        if(pos_error_x_vel<0.1 && abs(dr_state.theta)<0.5 && timer1>64){
+        if(pos_error_x_vel<0.4 && fabs(dr_state.theta)<0.5 && timer1>64){
             
             dr_bang.controller_type=PID;
             dr_bang.gate_psi=Banggates[next_gate_nr].gate_psi;//atan2f(Banggates[next_gate_nr].gate_y-dr_state.y,Banggates[next_gate_nr].gate_x-dr_state.x);
-            printf("\n Gate_psi: %f\n",dr_bang.gate_psi);
+            // printf("\n Gate_psi: %f\n",dr_bang.gate_psi);
             dr_bang.turning=TURNING;            
         }
         // if(abs(dr_state.psi-dr_bang.gate_psi)<0.5){ //only go toward next waypoint after a pause
@@ -107,6 +108,8 @@ void flightplan_run(void){
                 dr_bang.gate_nr=next_gate_nr;
                 printf("new gate: %i\n",next_gate_nr);
                 timer1=0;
+                brake=false;
+                controllerstate.in_transition=false;
                 }
             // }
     }

@@ -22,6 +22,7 @@ struct bangbang_fp_struct
 
 extern const struct bangbang_fp_struct Banggates[MAX_GATES];
 extern struct bangbang_fp_struct dr_bang;
+
 float dist2gate;
 // Functions 
 extern void flightplan_reset(void);

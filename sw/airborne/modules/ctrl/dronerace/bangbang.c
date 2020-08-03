@@ -14,11 +14,12 @@
 float g = 9.80665;//gravity
 int type; 
 bool brake = false;
+
 float bang_ctrl[3]; //control inputs that will be the final product of the bangbang optimizer 
 
 struct BangDim sat_angle = {
-    -25*d2r,
-    25*d2r,
+    -45*d2r,
+    45*d2r,
 };
 // struct BangDim sat_corr;
 struct BangDim sign_corr=
@@ -29,9 +30,9 @@ struct BangDim sign_corr=
 struct controllerstatestruct controllerstate={
     false, //apply_compensation boolean2
     false, // in_transition boolean
-    0.5, // compensation time (add to 2nd section of prediction)
-    -2,   //delta_v (add to initial condition of second section)
-    3      //delta_y (add to second section of prediction)
+    0.37, // compensation time (add to 2nd section of prediction)
+    -0.4,   //delta_v (add to initial condition of second section)
+    1.8      //delta_y (add to second section of prediction)
 };
 struct anaConstant constant;
 struct anaConstant constant_sat_accel;
@@ -86,8 +87,8 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     pos_error[0]=pos_error_vel_x;
     pos_error[1]=pos_error_vel_y;
 
-    v_velframe[0]=dr_state.vx*cosf(dr_state.psi)-dr_state.vy*sinf(dr_state.psi); 
-    v_velframe[1]=-dr_state.vx*sinf(dr_state.psi)+dr_state.vy*cosf(dr_state.psi);
+    v_velframe[0]=dr_state.vx*cosf(psi_command)-dr_state.vy*sinf(psi_command); 
+    v_velframe[1]=-dr_state.vx*sinf(psi_command)+dr_state.vy*cosf(psi_command);
 
     meas_angle[0]=dr_state.theta;
     meas_angle[1]=dr_state.phi;
@@ -114,47 +115,16 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         sign_corr.y=1;
     }
 
-    if(!brake){
-        if(t_s<0.5 && t_target>0 &&t_s<t_target){
-            brake=true;
-            if(!controllerstate.in_transition){
-                t_0_trans=get_sys_time_float(); // starttime of transition
-                v_0_trans=v_velframe[satdim];
-                y_0_trans=pos_error[satdim];
-                satang_0_trans=meas_angle[satdim];
-                controllerstate.in_transition=true;
-            }
+    
+    if(!controllerstate.in_transition){   //don't update satdim when in transition
+        if(fabs(pos_error[0])>=fabs(pos_error[1])){
+            satdim=0;        
         }
         else{
-            controllerstate.in_transition=false; // make sure that in_transition is always false when not braking (in_transition is basically flying blind because the controller forces to brake at maximum angle)
+            satdim=1;        
         }
     }
-    else{
-        if(!(t_target>0)){
-            brake = false;
-        }
-    }
-    // go out of transition when the measured angle is close to the commanded brake angle (timer is added as temporary measure to deal with the delay of bang_ctrl being updated to brake angle command)
-    if(controllerstate.in_transition && abs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim])<0.1 && (get_sys_time_float()-t_0_trans)>0.1){// ((get_sys_time_float()-t_0_trans)>controllerstate.delta_t)){ // transition ends when it has been active for more than delta_t 
-        controllerstate.in_transition=false;                                    //  ^ will break down if bang_ctrl[satdim] is zero (not likely in practice);
-
-        //measure transition values 
-        satang_1_trans=meas_angle[satdim];
-        y_1_trans=pos_error[satdim];
-        v_1_trans=v_velframe[satdim];
-        t_1_trans=get_sys_time_float();                                                             // note that y_0 and y_1 are actually the position errors to the wp which is why delta_y = y_0-y_1 instead of y_1-y_0. y0>y1
-        fprintf(comp_measure_log_t,"%d, %f, %f, %f, %f, %f, %f\n",satdim,v_0_trans,satang_0_trans,satang_1_trans,t_1_trans-t_0_trans,y_0_trans-y_1_trans,v_1_trans-v_0_trans);
-
-    }
-    if(!controllerstate.in_transition){   //don't update satdim when in transition
-    if(fabs(pos_error[0])>=fabs(pos_error[1])){
-        satdim=0;        
-    }
-    else{
-        satdim=1;        
-    }
-    }
-
+    
 
     // satdim=0; // TODO: force satdim for debugging purposes 
 
@@ -202,7 +172,6 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             
         }
         bang_ctrl[dim]=sat_corr[dim];
-        printf("\n");
     }
     //if braking:
     else{
@@ -210,6 +179,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         if(controllerstate.in_transition){ //when in transition desired angle is max brake angle
             bang_ctrl[dim]=-sat_corr[dim];
             y_target= predict_path_analytical(t_s,meas_angle[dim],v_desired); // call this function to update t_target (the returned y_target is not important here)
+            
         }
         else{   // else optimize the braking angle to reach the desired speed at the desired position.
             ang0=-sat_corr[dim];
@@ -259,9 +229,58 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     // printf("satdim: %i, brake: %i, theta_cmd: %f, phi_cmd: %f, errx: %f, erry: %f, t_s: %f, t_t: %f\n",satdim,brake,bang_ctrl[0],bang_ctrl[1],pos_error[0],pos_error[1],t_s,t_target);
     // printf("bang_ctrl[0]: %f, bang_ctrl[1]: %f \n",bang_ctrl[0],bang_ctrl[1]);1
     //  fprintf(bang_bang_t,"time,satdim, brake, t_s, t_target, error_x, error_y, posx, posy, vxvel, vyvel, c1_sat,c2_sat, c1_sec, c2_sec\n");
+
+    // Check if we need to brake    
+    if(!brake){
+        if(t_s<0.3 && t_target>0 &&t_s<t_target){
+            brake=true;
+            if(!controllerstate.in_transition){
+                t_0_trans=get_sys_time_float(); // starttime of transition
+                v_0_trans=v_velframe[satdim];
+                y_0_trans=pos_error[satdim];
+                satang_0_trans=meas_angle[satdim];
+                controllerstate.in_transition=true;
+            }
+        }
+        else if(controllerstate.in_transition){
+            printf("out transition because not braking\n");
+            controllerstate.in_transition=false; // make sure that in_transition is always false when not braking (in_transition is basically flying blind because the controller forces to brake at maximum angle)
+            
+        }
+    }
+    else if(!controllerstate.in_transition){
+        if(!(t_target>0)){
+            brake = false;
+
+        }
+    }
+    // go out of transition when the measured angle is close to the commanded brake angle (timer is added as temporary measure to deal with the delay of bang_ctrl being updated to brake angle command)
+    if(controllerstate.in_transition && ((fabs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim])<0.15 && (get_sys_time_float()-t_0_trans)>0.1) || fabs(v_velframe[satdim])<1)){// ((get_sys_time_float()-t_0_trans)>controllerstate.delta_t)){ // transition ends when it has been active for more than delta_t 
+        controllerstate.in_transition=false;                                    //  ^ will break down if bang_ctrl[satdim] is zero (not likely in practice);
+
+        //measure transition values 
+        satang_1_trans=meas_angle[satdim];
+        y_1_trans=pos_error[satdim];
+        v_1_trans=v_velframe[satdim];
+        t_1_trans=get_sys_time_float();                                                             // note that y_0 and y_1 are actually the position errors to the wp which is why delta_y = y_0-y_1 instead of y_1-y_0. y0>y1
+        
+
+        comp_log_t=fopen(filename5,"a");
+        fprintf(comp_log_t,"%d, %f, %f, %f, %f, %f, %f\n",satdim,v_0_trans,satang_0_trans,satang_1_trans,t_1_trans-t_0_trans,y_0_trans-y_1_trans,v_1_trans-v_0_trans);
+        fclose(comp_log_t);
+        // fprintf(comp_log_t,"test 1\n");
+        printf("Out transition normal, measured angle: %f, commanded angle: %f, fraction: %f\n",meas_angle[satdim],bang_ctrl[satdim],fabs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim]));
+    }   
+
+
+
+
+
     #ifdef LOG
     fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %d, %d, %f, %f, %f, %f, %f\n",get_sys_time_float(), satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v_velframe[0], v_velframe[1],
     constant_sat_accel.c1,constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec,controllerstate.apply_compensation,controllerstate.in_transition,controllerstate.delta_t,controllerstate.delta_y,controllerstate.delta_v,ys,vs);
+  
+    // fprintf(comp_log_t,"");
     #endif
 };
 

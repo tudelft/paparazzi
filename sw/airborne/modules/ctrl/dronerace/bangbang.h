@@ -29,9 +29,12 @@ void find_constants(float yi,float vi);
 float get_position_analytical(float t);
 float get_velocity_analytical(float t);
 float get_time_analytical(float V);
+float psi_command; 
 extern float bang_ctrl[3];
+extern bool brake; 
 extern struct controllerstatestruct controllerstate;
-
+ FILE *comp_log_t;
 FILE *bang_bang_t;
-FILE *comp_measure_log_t;
+char filename5[512];
+// FILE *comp_measure_log_t;
 // FILE *brake_log_t;
