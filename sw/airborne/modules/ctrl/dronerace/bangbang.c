@@ -14,6 +14,7 @@
 float g = 9.80665;//gravity
 int type; 
 bool brake = false;
+float dt = 1.0f / 512.f;
 
 float bang_ctrl[3]; //control inputs that will be the final product of the bangbang optimizer 
 
@@ -178,8 +179,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
         if(controllerstate.in_transition){ //when in transition desired angle is max brake angle
             bang_ctrl[dim]=-sat_corr[dim];
-            y_target= predict_path_analytical(t_s,meas_angle[dim],v_desired); // call this function to update t_target (the returned y_target is not important here)
-            
+            t_target=t_target-dt; // update t_target for second dimension (no prediction should be done during transition since v_d cannot be reached for the intermediate angles in transition)
         }
         else{   // else optimize the braking angle to reach the desired speed at the desired position.
             ang0=-sat_corr[dim];
