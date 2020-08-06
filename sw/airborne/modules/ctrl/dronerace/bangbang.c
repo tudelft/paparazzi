@@ -264,12 +264,15 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         v_1_trans=v_velframe[satdim];
         t_1_trans=get_sys_time_float();                                                             // note that y_0 and y_1 are actually the position errors to the wp which is why delta_y = y_0-y_1 instead of y_1-y_0. y0>y1
         
+
         if(t_1_trans-t_0_trans>dtt){
-        comp_log_t=fopen(filename5,"a");
-        fprintf(comp_log_t,"%d, %f, %f, %f, %f, %f, %f\n",satdim,v_0_trans,satang_0_trans,satang_1_trans,t_1_trans-t_0_trans,y_0_trans-y_1_trans,v_1_trans-v_0_trans);
-        fclose(comp_log_t);
-        // fprintf(comp_log_t,"test 1\n");
-        printf("Out transition normal, measured angle: %f, commanded angle: %f, fraction: %f\n",meas_angle[satdim],bang_ctrl[satdim],fabs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim]));
+
+            comp_log_t=fopen(filename5,"a");
+            fprintf(comp_log_t,"%d, %f, %f, %f, %f, %f, %f\n",satdim,v_0_trans,satang_0_trans,satang_1_trans,t_1_trans-t_0_trans,y_0_trans-y_1_trans,v_1_trans-v_0_trans);
+            fclose(comp_log_t);
+            
+            // fprintf(comp_log_t,"test 1\n");
+            printf("Out transition normal, measured angle: %f, commanded angle: %f, fraction: %f\n",meas_angle[satdim],bang_ctrl[satdim],fabs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim]));
         }
     }   
 
