@@ -32,6 +32,7 @@
 #include "./dronerace/filter.h"
 #include "subsystems/datalink/telemetry.h"
 #include "./dronerace/flightplan_Bang.h"
+
 // Own Variables
 float z_i =0;
 struct ctrl_module_demo_struct dr_ctrl = {0};
@@ -121,7 +122,7 @@ void guidance_v_module_enter(void)
 
 // Altitude control gains
 #define Z_ALPHA 0.9
-#define KP_ALT 3
+#define KP_ALT 5
 #define KD_ALT 0.3
 #define KI_ALT 0.1
 
@@ -132,10 +133,11 @@ void guidance_v_module_enter(void)
 #define HOVERTHRUST 0.55
 #define FIXEDTHRUST 0.57
 #define MAXPITCH 20* PI/180.0
+
 float prev_meas_z = 0; 
 float z_cmd;
 float z_measured;
-float zv_measured;
+float zv_measured=0;;
 float zv_dot_measured;
 float prev_meas_zv = 0;
 float zv_command; 
@@ -153,7 +155,14 @@ void guidance_v_module_run(bool in_flight)
 // Altitude control old
   z_cmd = dr_bang.gate_z;
   z_measured = dr_state.z;//stateGetPositionUtm_f()->alt; //TODO check sign (may be MSL)
-  zv_measured = (z_measured -prev_meas_z)*512.; 
+  
+  if(!(z_measured==prev_meas_z)){
+      zv_measured=filter_moving_avg((z_measured -prev_meas_z)*512.,buffer_vz);
+      prev_meas_z = z_measured;
+  }
+ 
+
+  // zv_measured = ; 
 
    struct NedCoor_f *vel_gps = stateGetSpeedNed_f();
   //  float vxE = vel_gps->x; // In earth reference frame
@@ -162,10 +171,18 @@ void guidance_v_module_run(bool in_flight)
   
   est_state_vz = vzE;//Z_ALPHA * est_state_vz + (1-Z_ALPHA) * zv_measured;
   est_state_z = z_measured;// Z_ALPHA * est_state_z + (1-Z_ALPHA) * z_measured;
-  prev_meas_z = z_measured;
+
   z_i+=(zv_command-vzE)/512.;
   
   zv_command= (KP_ALT *(z_cmd -est_state_z));
+  
+  if(zv_command<-4){
+    zv_command=-4;
+  }
+  if(zv_command>2.5){
+    zv_command=2.5;
+  }
+  
   thrust_cmd = -KD_ALT*(zv_command-vzE) - z_i*KI_ALT+ HOVERTHRUST /  (cosf(dr_state.phi)*cosf(dr_state.theta));
 
   if(thrust_cmd>0.8){

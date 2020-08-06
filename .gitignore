@@ -19,7 +19,7 @@
 *.cmxa
 
 *.depend
-
+*/vscode/*
 *.aux
 
 *.gdb_history

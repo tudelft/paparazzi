@@ -73,7 +73,8 @@ float posx;
 float posy;
 float posz;
 
-
+float vx_avg;
+float vy_avg;
 float vxE_old=0;
 float vyE_old=0;
 float vzE_old=0;
@@ -187,14 +188,16 @@ void dronerace_periodic(void)
    if((posx!=posx_old)||(vxE!=vxE_old)){ // filter.c is applied to dr_state.x ... in  between gps updates
     dr_state.x=posx;
     posx_old=posx;
-    dr_state.vx = vxE;//(cthet*cpsi)*vxE + (cthet*spsi)*vyE - sthet*vzE;
+    vx_avg=filter_moving_avg(vxE,buffer_vx);
+    dr_state.vx = vx_avg;//(cthet*cpsi)*vxE + (cthet*spsi)*vyE - sthet*vzE;
     vxE_old=vxE;
   }
 
   if((posy!=posy_old)||(vyE!=vyE_old)){ // filter.c is applied to dr_state.x ... in  between gps updates
     dr_state.y=posy;
     posy_old=posy;
-    dr_state.vy = vyE;//(sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE ;//+ (sphi*cthet)*vzE; 
+    vy_avg=filter_moving_avg(vyE,buffer_vy);
+    dr_state.vy = vy_avg;//(sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE ;//+ (sphi*cthet)*vzE; 
     vyE_old=vyE;
   }
 
@@ -242,7 +245,7 @@ void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi_cmd)
   control_run(dt);
 
   #ifdef LOG
-  fprintf(filter_log_t,"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(),posx,posy,posz,vxE,vyE,vzE,filter_az,filter_abx,filter_aby,filter_ax,filter_ay);
+  fprintf(filter_log_t,"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(),posx,posy,posz,vxE,vyE,vzE,filter_az,filter_abx,filter_aby,filter_ax,filter_ay,vx_avg,vy_avg);
   #endif
   
   *phi     = dr_control.phi_cmd;

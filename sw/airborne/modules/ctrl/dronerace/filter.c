@@ -17,6 +17,10 @@
 struct dronerace_state_struct dr_state = {0};
 struct dronerace_vision_struct dr_vision = {0};
 
+
+float buffer_vx[NR_SAMPLES_AVERAGE]={0};
+float buffer_vy[NR_SAMPLES_AVERAGE]={0};
+float buffer_vz[NR_SAMPLES_AVERAGE]={0};
 void filter_reset()
 {
   // Time
@@ -90,5 +94,23 @@ void filter_predict(float phi, float theta, float psi, float dt)
   filter_aby=aby;
   filter_ax=ax;
   filter_ay=ay;
+
+}
+
+float filter_moving_avg(float x, float *buf){
+  int i; 
+  float valx=0;
+
+  for(i=0;i<NR_SAMPLES_AVERAGE-1;i++)
+  {
+    buf[i]=buf[i+1];
+    valx+=buf[i+1];
+    // printf("buf[%d]: %f ",i,buf[i]);
+  }
+  buf[NR_SAMPLES_AVERAGE-1]=x;
+  // printf("buf[%d]: %f ",NR_SAMPLES_AVERAGE-1,buf[NR_SAMPLES_AVERAGE-1]);
+  valx+=x;
+  // printf("total vx: %f, average: %f\n",valx,valx/(float)NR_SAMPLES_AVERAGE);
+  return valx/(float)NR_SAMPLES_AVERAGE;
 
 }

@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #define GATE 0 
-#define STARTPOINT 1
+#define STARTGATE 1
+#define ENDGATE 2
 #define BANGBANG 2
 #define PID 3 
 #define TURNING 1
@@ -18,7 +19,7 @@ struct bangbang_fp_struct
     float psi_forced;
     bool overwrite_psi;
 };
-#define MAX_GATES 2
+#define MAX_GATES 12
 
 extern const struct bangbang_fp_struct Banggates[MAX_GATES];
 extern struct bangbang_fp_struct dr_bang;

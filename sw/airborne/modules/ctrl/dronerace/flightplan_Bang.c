@@ -14,34 +14,40 @@ int timer1=0;
 // int gate_nr;float gate_x;float gate_y;float gate_z;float gate_psi;float gate_speed;int gate_type;int controller_type;int turning;float psi_forced; bool overwrite_psi;
 
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,1.2,-1.75,-1.25*M_PI,0.2,STARTPOINT,BANGBANG,0,0,false},
-// {1, 2.0,1.2,-1.75,0,0.2,GATE,BANGBANG,0,0,false},
-// {2, 0.0,-2.0,-1.75,-0.75*M_PI,0.2,GATE,BANGBANG,0,0,false},
+// {0, -2.0,1.2,-1.75,-1.25*M_PI,0.2,STARTGATE,PID,0,0,false},
+// {1, 2.0,1.2,-1.75,0,0.2,GATE,PID,0,0,false},
+// {2, 0.0,-2.0,-1.75,-0.75*M_PI,0.2,ENDGATE,PID,0,0,false},
 // };
 
 // Demo Forward
 const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-{0, -2.0,0,-1.75,M_PI,0.2,STARTPOINT,BANGBANG,0,0,false},
-{1, 2.5,0,-1.75,0,0.2,GATE,BANGBANG,0,0,false},
+{0, -2.0,0,-1.75,M_PI,0.2,STARTGATE,BANGBANG,0,0,false},
+{1, 2.5,0,-1.75,0,0.2,ENDGATE,BANGBANG,0,0,false},
 };
+
+// demo forward height diff
+// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+// {0, -2.0,0,-0.75,M_PI,0.2,STARTGATE,BANGBANG,0,0,false},
+// {1, 2.5,0,-2.75,0,0.2,ENDGATE,BANGBANG,0,0,false},
+// };
 
 // Demo Forward/backwards  25deg
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-1.75,0.0,0.2,STARTPOINT,BANGBANG,0,0,true},
-// {1, 2.0,0,-1.75,0.0,0.2,GATE,BANGBANG,0,0,true},
+// {0, -2.0,0,-1.75,0.0,0.2,STARTGATE,BANGBANG,0,0,true},
+// {1, 2.0,0,-1.75,0.0,0.2,ENDGATE,BANGBANG,0,0,true},
 // };
 
 
 // // // Demo Sideways    // set saturation angles to 25 deg or lower for relatively safe
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-1.75,-0.5*M_PI,0.2,STARTPOINT,BANGBANG,0,-0.5*M_PI,true},
-// {1, 2.0,0,-1.75,-0.5*M_PI,0.2,GATE,BANGBANG,0,-0.5*M_PI,true},
+// {0, -2.0,0,-1.75,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true},
+// {1, 2.0,0,-1.75,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true},
 // };
 
 // Demo forward + sidestep 
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,2,-1.75,0.75*M_PI,0.2,STARTPOINT,PID,0,-0.5*M_PI,true},
-// {1, 2.0,-0.5,-1.75,-0.5*M_PI,0.2,GATE,BANGBANG,0,-0.5*M_PI,true},
+// {0, -2.0,2,-1.75,0.75*M_PI,0.2,STARTGATE,PID,0,-0.5*M_PI,true},
+// {1, 1.0,-2,-1.75,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true},
 // };
 
 static void update_gate_setpoints(void){
@@ -57,7 +63,7 @@ static void update_gate_setpoints(void){
     dr_bang.psi_forced=Banggates[dr_bang.gate_nr].psi_forced;
     dr_bang.gate_psi= Banggates[dr_bang.gate_nr].gate_psi;
     dr_bang.overwrite_psi=Banggates[dr_bang.gate_nr].overwrite_psi;
-    if(dr_bang.gate_nr==MAX_GATES-1){
+    if(dr_bang.gate_type==ENDGATE){
         next_gate_nr=0;
     }
     else{
@@ -95,7 +101,7 @@ void flightplan_run(void){
     error_speed=dr_bang.gate_speed-((dr_state.vx*dr_state.vx)+(dr_state.vy*dr_state.vy));
     if(dist2gate<0.4){
         timer1+=1;
-        if(pos_error_x_vel<0.4 && fabs(dr_state.theta)<0.5 && timer1>64){
+        if(pos_error_x_vel<0.4 && fabs(dr_state.theta)<0.5 && timer1>128){
             
             dr_bang.controller_type=PID;
             dr_bang.gate_psi=Banggates[next_gate_nr].gate_psi;//atan2f(Banggates[next_gate_nr].gate_y-dr_state.y,Banggates[next_gate_nr].gate_x-dr_state.x);

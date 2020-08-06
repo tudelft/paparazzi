@@ -14,13 +14,13 @@
 float g = 9.80665;//gravity
 int type; 
 bool brake = false;
-float dt = 1.0f / 512.f;
+float dtt = 1.0f / 512.f;
 
 float bang_ctrl[3]; //control inputs that will be the final product of the bangbang optimizer 
 
 struct BangDim sat_angle = {
-    -45*d2r,
-    45*d2r,
+    -40*d2r,
+    40*d2r,
 };
 // struct BangDim sat_corr;
 struct BangDim sign_corr=
@@ -29,11 +29,11 @@ struct BangDim sign_corr=
     1,    
 };
 struct controllerstatestruct controllerstate={
-    false, //apply_compensation boolean2
+    true, //apply_compensation boolean2
     false, // in_transition boolean
-    0.37, // compensation time (add to 2nd section of prediction)
-    -0.4,   //delta_v (add to initial condition of second section)
-    1.8      //delta_y (add to second section of prediction)
+    0.21, // compensation time (add to 2nd section of prediction)
+    0.5,   //delta_v (add to initial condition of second section) should normally be negative but can be different because of delay in velocity estimation
+    1.1      //delta_y (add to second section of prediction)
 };
 struct anaConstant constant;
 struct anaConstant constant_sat_accel;
@@ -88,7 +88,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     pos_error[0]=pos_error_vel_x;
     pos_error[1]=pos_error_vel_y;
 
-    v_velframe[0]=dr_state.vx*cosf(psi_command)-dr_state.vy*sinf(psi_command); 
+    v_velframe[0]=dr_state.vx*cosf(psi_command)+dr_state.vy*sinf(psi_command); 
     v_velframe[1]=-dr_state.vx*sinf(psi_command)+dr_state.vy*cosf(psi_command);
 
     meas_angle[0]=dr_state.theta;
@@ -159,7 +159,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         t_s = (t0+t1)/2.0;
         float t_s_old = 1e2;
         
-        while(fabs(E_pos)>error_thresh&&fabs(t_s-t_s_old)>0.02){
+        while(fabs(E_pos)>error_thresh&&fabs(t_s-t_s_old)>2*dtt){
             t_s_old=t_s; 
             E_pos=get_E_pos(v_desired, sat_corr[dim]);
             // printf("satdim: %i, E_pos: %f, t_s: %f , t0: %f, t1: %f\n",dim,E_pos*signcorrsat,t_s,t0,t1);
@@ -179,7 +179,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
         if(controllerstate.in_transition){ //when in transition desired angle is max brake angle
             bang_ctrl[dim]=-sat_corr[dim];
-            t_target=t_target-dt; // update t_target for second dimension (no prediction should be done during transition since v_d cannot be reached for the intermediate angles in transition)
+            t_target=t_target-dtt; // update t_target for second dimension (no prediction should be done during transition since v_d cannot be reached for the intermediate angles in transition)
         }
         else{   // else optimize the braking angle to reach the desired speed at the desired position.
             ang0=-sat_corr[dim];
@@ -232,7 +232,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
     // Check if we need to brake    
     if(!brake){
-        if(t_s<0.3 && t_target>0 &&t_s<t_target){
+        if(t_s<0.2 && t_target>0 &&t_s<t_target){
             brake=true;
             if(!controllerstate.in_transition){
                 t_0_trans=get_sys_time_float(); // starttime of transition
@@ -264,12 +264,13 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         v_1_trans=v_velframe[satdim];
         t_1_trans=get_sys_time_float();                                                             // note that y_0 and y_1 are actually the position errors to the wp which is why delta_y = y_0-y_1 instead of y_1-y_0. y0>y1
         
-
+        if(t_1_trans-t_0_trans>dtt){
         comp_log_t=fopen(filename5,"a");
         fprintf(comp_log_t,"%d, %f, %f, %f, %f, %f, %f\n",satdim,v_0_trans,satang_0_trans,satang_1_trans,t_1_trans-t_0_trans,y_0_trans-y_1_trans,v_1_trans-v_0_trans);
         fclose(comp_log_t);
         // fprintf(comp_log_t,"test 1\n");
         printf("Out transition normal, measured angle: %f, commanded angle: %f, fraction: %f\n",meas_angle[satdim],bang_ctrl[satdim],fabs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim]));
+        }
     }   
 
 

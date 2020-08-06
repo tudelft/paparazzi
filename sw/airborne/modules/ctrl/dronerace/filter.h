@@ -11,6 +11,11 @@ struct dronerace_vision_struct {
 // store for logging purposes
 extern struct dronerace_vision_struct dr_vision;
 
+#define NR_SAMPLES_AVERAGE 10
+
+extern float buffer_vx[NR_SAMPLES_AVERAGE];
+extern float buffer_vy[NR_SAMPLES_AVERAGE];
+extern float buffer_vz[NR_SAMPLES_AVERAGE];
 
 struct dronerace_state_struct {
   // Time
@@ -43,7 +48,7 @@ extern void filter_reset(void);
 
 extern void filter_predict(float phi, float theta, float psi, float dt);
 extern void filter_predict1(float phi, float theta, float psi, float dt);
-
+extern float filter_moving_avg(float x, float *buf);
 extern void filter_correct(void);
 extern float mx;
 extern float my;
