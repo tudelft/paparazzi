@@ -18,6 +18,7 @@ struct bangbang_fp_struct
     int turning;
     float psi_forced;
     bool overwrite_psi;
+     float sat_angle;
 };
 #define MAX_GATES 12
 

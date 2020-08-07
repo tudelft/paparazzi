@@ -122,7 +122,7 @@ void guidance_v_module_enter(void)
 
 // Altitude control gains
 #define Z_ALPHA 0.9
-#define KP_ALT 5
+#define KP_ALT 2
 #define KD_ALT 0.3
 #define KI_ALT 0.1
 

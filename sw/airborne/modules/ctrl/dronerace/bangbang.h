@@ -22,6 +22,7 @@ struct controllerstatestruct{
 // struct BangDim sat_angle; 
 
 
+
 extern void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y,float v_desired);
 float get_E_pos(float Vd, float angle);
 float predict_path_analytical(float t_s, float angle, float Vd);
@@ -33,6 +34,7 @@ float psi_command;
 extern float bang_ctrl[3];
 extern bool brake; 
 extern struct controllerstatestruct controllerstate;
+struct BangDim sat_angle;
  FILE *comp_log_t;
 FILE *bang_bang_t;
 char filename5[512];

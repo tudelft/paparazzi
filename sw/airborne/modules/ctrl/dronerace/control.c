@@ -204,9 +204,12 @@ void control_run(float dt)
       dr_control.psi_cmd=dr_bang.gate_psi;
     }
     dr_control.phi_cmd = bang_ctrl[1];
-    vy_des_vel = bound_angle(error_posy_vel,CTRL_MAX_SPEED);
-    // dr_control.phi_cmd= bound_angle(KP_VEL_Y * (vy_des_vel-vy_vel),CTRL_MAX_ROLL);//TODO
     dr_control.theta_cmd = bang_ctrl[0];
+    vy_des_vel = bound_angle(error_posy_vel,CTRL_MAX_SPEED);
+    vx_des_vel = bound_angle(error_posx_vel,CTRL_MAX_SPEED);
+    // dr_control.phi_cmd= bound_angle(KP_VEL_Y * (vy_des_vel-vy_vel),CTRL_MAX_ROLL);//TODO
+    // dr_control.theta_cmd= bound_angle(-KP_VEL_X * (vx_des_vel-vx_vel),CTRL_MAX_PITCH);//TODO
+    
   }
   else{ // USE a PID controller if not BANGBANG
         
@@ -231,7 +234,7 @@ void control_run(float dt)
     if (dr_bang.overwrite_psi){
       dr_control.psi_cmd=dr_bang.psi_forced; //
     }
-
+  
     // printf("psi_cmd: %f, psi_forced %d\n",dr_control.psi_cmd,dr_bang.psi_forced);
   
     // if(dr_bang.controller_type==BANGBANG){
