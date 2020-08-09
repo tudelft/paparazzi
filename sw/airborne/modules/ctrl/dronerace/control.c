@@ -11,7 +11,7 @@
 #include "subsystems/datalink/telemetry.h"
 #include "bangbang.h"
 #include "filter.h"
-#define LOG
+// #define LOG
 
 #define r2d 180./M_PI
 #define d2r M_PI/180.0

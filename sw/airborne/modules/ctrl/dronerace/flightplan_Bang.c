@@ -6,7 +6,7 @@
 #include "subsystems/datalink/telemetry.h"
 #include "bangbang.h"
 
-#define LOG
+// #define LOG
 struct bangbang_fp_struct dr_bang;
 int next_gate_nr;
 int timer1=0;

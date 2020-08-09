@@ -9,7 +9,7 @@
 #define SECOND 1
 #define r2d 180./M_PI
 #define d2r M_PI/180.0f
-#define LOG
+// #define LOG
 // float m = 0.42; //bebop mass [kg]
 float g = 9.80665;//gravity
 int type; 
@@ -138,8 +138,8 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     else{
         satangle=sat_corr[1];
         secangle=sat_corr[0];
-        signcorrsat=sat_corr[1];
-        signcorrsec=sat_corr[0];
+        signcorrsat=sign_corr.y;
+        signcorrsec=sign_corr.x;
     }
 
     if(satdim_prev!=satdim){
@@ -264,7 +264,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         v_1_trans=v_velframe[satdim];
         t_1_trans=get_sys_time_float();                                                             // note that y_0 and y_1 are actually the position errors to the wp which is why delta_y = y_0-y_1 instead of y_1-y_0. y0>y1
         
-
+        #ifdef LOG
         if(t_1_trans-t_0_trans>dtt){
 
             comp_log_t=fopen(filename5,"a");
@@ -274,6 +274,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             // fprintf(comp_log_t,"test 1\n");
             printf("Out transition normal, measured angle: %f, commanded angle: %f, fraction: %f\n",meas_angle[satdim],bang_ctrl[satdim],fabs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim]));
         }
+        #endif
     }   
 
 
@@ -292,11 +293,11 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 float get_E_pos(float Vd, float angle){
     y_target=predict_path_analytical(t_s,angle,Vd); //y_target is the position at which the desired speed is reached. Ideally we want this value at pos_error (distance to wp)
 
-    return y_target-pos_error[dim];
+    return y_target-pos_error[dim]; //TODO should be other way around (make sure to change sign_corr accordingly)
 }
 
 float predict_path_analytical(float t_s, float angle,float Vd){
-    if(dim==0){
+    if(dim==0){             //TODO get thrust component by rotation body reference frame to velocity frame.
 
         T = (mass*g)*tanf(-angle);//Thrust component forward 
     }
