@@ -25,6 +25,7 @@
 
 #include "modules/ctrl/scheduling_indi_simple.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi_simple.h"
+#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
 #include "generated/airframe.h"
 #include "state.h"
@@ -59,7 +60,17 @@ void ctrl_eff_scheduling_periodic(void)
     g_forward[0] = STABILIZATION_INDI_FORWARD_G1_P;
   }
 
-  indi.g1.p = (g_hover[0] * (1.0 - ratio) + g_forward[0] * ratio);
-  indi.g1.q = (g_hover[1] * (1.0 - ratio) + g_forward[1] * ratio);
-  indi.g1.r = (g_hover[2] * (1.0 - ratio) + g_forward[2] * ratio);
+  indi.g1.p = g_hover[0] * (1.0 - ratio) + g_forward[0] * ratio;
+  indi.g1.q = g_hover[1] * (1.0 - ratio) + g_forward[1] * ratio;
+  indi.g1.r = g_hover[2] * (1.0 - ratio) + g_forward[2] * ratio;
+
+  float ratio_spec_force = 0.0;
+  if (radio_control.values[RADIO_FMODE] > 4800) {
+    ratio_spec_force = 1.0;
+  } else {
+    ratio_spec_force = 0.0;
+  }
+  thrust_in_specific_force_gain = GUIDANCE_INDI_SPECIFIC_FORCE_GAIN * (1.0 - ratio_spec_force)
+                                  + GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_FWD * ratio;
+
 }

@@ -110,6 +110,7 @@
       <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/> <!--heading can not be set by navigation-->
       <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="15"/>
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-600.0"/>
+      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_FWD" value="-2400.0"/>
       <define name="GUIDANCE_INDI_LIFT_EFF_SCALING" value="1.0"/>
     </module>
 
@@ -397,7 +398,7 @@
   </section>
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="MAX_BANK" value="35" unit="deg"/>
+    <define name="MAX_BANK" value="30" unit="deg"/>
     <define name="USE_SPEED_REF" value="TRUE"/>
     <define name="PGAIN" value="60"/>
     <define name="DGAIN" value="100"/>

@@ -50,6 +50,8 @@ extern struct FloatVect3 speed_sp;
 extern float lift_pitch_eff;
 extern float lift_eff_scaling;
 
+extern float thrust_in_specific_force_gain;
+
 extern float guidance_indi_pos_gain;
 extern float guidance_indi_speed_gain;
 extern float guidance_indi_pos_gainz;
