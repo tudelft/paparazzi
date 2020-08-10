@@ -103,7 +103,7 @@ static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
 // Receive from: 33 (=onboard vision) 34 (=jevois) or 255=any
 #define DRONE_RACE_ABI_ID ABI_BROADCAST
 #endif
-// #define LOG
+#define LOG
 
 static abi_event gate_detected_ev;
 float test0 =0;

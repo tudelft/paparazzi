@@ -11,7 +11,7 @@
 #include "subsystems/datalink/telemetry.h"
 #include "bangbang.h"
 #include "filter.h"
-// #define LOG
+#define LOG
 
 #define r2d 180./M_PI
 #define d2r M_PI/180.0
@@ -234,6 +234,8 @@ void control_run(float dt)
     if (dr_bang.overwrite_psi){
       dr_control.psi_cmd=dr_bang.psi_forced; //
     }
+
+    
   
     // printf("psi_cmd: %f, psi_forced %d\n",dr_control.psi_cmd,dr_bang.psi_forced);
   
