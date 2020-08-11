@@ -94,7 +94,25 @@
     </module-->
 
     <!--module name="lidar" type="tfmini"/-->
-    <module name="guidance" type="hybrid"/>
+
+    <!--<module name="guidance" type="hybrid"/>-->
+    <module name="guidance" type="indi_hybrid">
+      <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
+      <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
+      <define name="GUIDANCE_INDI_POS_GAINZ" value="0.5"/>
+      <define name="GUIDANCE_INDI_SPEED_GAINZ" value="1.8"/>
+      <define name="GUIDANCE_INDI_PITCH_LIFT_EFF" value="0.12"/>
+      <define name="GUIDANCE_INDI_PITCH_EFF_SCALING" value="1.0"/>
+      <define name="GUIDANCE_H_REF_MAX_SPEED" value="18.0"/> <!--not used-->
+      <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="16.0"/>
+      <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/> <!--heading can not be set by navigation-->
+      <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="15"/>
+      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-600.0"/>
+      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_FWD" value="-600.0"/>
+      <define name="GUIDANCE_INDI_LIFT_EFF_SCALING" value="1.0"/>
+    </module>
+
     <module name="motor_mixing"/>
   </firmware>
 
@@ -211,13 +229,12 @@
     <define name= "MAG_Y_CURRENT_COEF" value="-0.7696784114750511"/>
     <define name= "MAG_Z_CURRENT_COEF" value="1.1626106815908253"/-->
 
-    <!-- NOT CALIBRATED -->
-    <define name="MAG_X_NEUTRAL" value="866"/>
-    <define name="MAG_Y_NEUTRAL" value="-1530"/>
-    <define name="MAG_Z_NEUTRAL" value="-3313"/>
-    <define name="MAG_X_SENS" value="0.6067461130451115" integer="16"/>
-    <define name="MAG_Y_SENS" value="0.6544292255627779" integer="16"/>
-    <define name="MAG_Z_SENS" value="0.6352539557433349" integer="16"/>
+    <define name="MAG_X_NEUTRAL" value="-11"/>
+    <define name="MAG_Y_NEUTRAL" value="-7"/>
+    <define name="MAG_Z_NEUTRAL" value="18"/>
+    <define name="MAG_X_SENS" value="12.3485994563" integer="16"/>
+    <define name="MAG_Y_SENS" value="12.6504395923" integer="16"/>
+    <define name="MAG_Z_SENS" value="12.5141980811" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI"   value="180." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="90." unit="deg"/>
