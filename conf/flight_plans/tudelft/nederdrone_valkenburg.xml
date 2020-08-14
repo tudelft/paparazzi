@@ -60,6 +60,7 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="Start Engine">
+      <set value="FALSE" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="nav_set_heading_current()"/>
       <attitude pitch="-65" roll="0" throttle="0" until="stage_time>1" vmode="throttle"/>
@@ -67,10 +68,10 @@
     <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="stateGetPositionEnu_f()->z > 18.0" deroute="Takeoff"/>
       <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="-45." roll="0" throttle="0.67" vmode="throttle"/>
+      <attitude pitch="-45." roll="0" throttle="0.8" vmode="throttle"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="stateGetPositionEnu_f()->z > 40.0" deroute="follow_module"/>
+      <exception cond="stateGetPositionEnu_f()->z > 40.0" deroute="Standby"/>
       <call_once fun="nav_set_heading_current()"/>
       <stay climb="nav_climb_vspeed" pre_call="follow_me_set_wp(WP_CLIMB, 0)" vmode="climb" wp="CLIMB"/>
     </block>
@@ -91,6 +92,7 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <set value="FALSE" var="force_forward"/>
       <stay wp="STDBY"/>
     </block>
     <block name="stay_p1">
@@ -112,7 +114,8 @@
     </block>
     <block name="route">
       <set value="TRUE" var="force_forward"/>
-      <go from="p1" hmode="route" wp="p3"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p3"/>
       <go from="p3" hmode="route" wp="p4"/>
       <go from="p4" hmode="route" wp="p1"/>
       <deroute block="route"/>
@@ -136,7 +139,7 @@
     </block>
     <block name="flare">
       <set value="FALSE" var="force_forward"/>
-      <stay climb="nav_descend_vspeed*0.1" vmode="climb" wp="TD"/>
+      <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>

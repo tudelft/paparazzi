@@ -20,8 +20,6 @@
         <configure name="SBUS_PORT" value="UART3"/>
       </module>
 
-      <module name="flap_wiggle"/>
-
       <module name="airspeed_ets.xml">
         <define name="USE_I2C4"/>
         <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>
@@ -67,6 +65,8 @@
       <define name="RADIO_KILL_SWITCH" value="6"/>
       <define name="RADIO_BACK_THOLD"  value="0"/>
     </target>
+
+    <module name="flap_wiggle"/>
 
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B115200"/>
@@ -218,9 +218,10 @@
   <section name="MISC">
     <define name="WINDTUNNEL_TO_BODY_THETA" value="-90." unit="deg"/>
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>
-    <define name="NAV_DESCEND_VSPEED" value="-1.0"/>
+    <define name="NAV_DESCEND_VSPEED" value="-1.5"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 17.9024749557 * adc)"/>
+    <define name="ARRIVED_AT_WAYPOINT" value="50.0"/>
   </section>
 
    <section name="FORWARD">
