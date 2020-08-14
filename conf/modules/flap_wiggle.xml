@@ -1,0 +1,25 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="flap_wiggle" dir="ctrl">
+  <doc>
+    <description>
+      Module to move flaps independently of control commands
+    </description>
+  </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="flap_wiggle">
+        <dl_setting var="flap_wiggle_state" min="0" step="1" max="1" shortname="state" values="OFF|ON" type="bool"/>
+        <dl_setting var="flap_wiggle_gain" min="0.0" step="10" max="3000" shortname="gain" type="float"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <header>
+    <file name="flap_wiggle.h"/>
+  </header>
+  <init fun="flap_wiggle_init()"/>
+  <periodic fun="flap_wiggle_periodic()" freq="500"/>
+  <makefile>
+    <file name="flap_wiggle.c"/>
+  </makefile>
+</module>
