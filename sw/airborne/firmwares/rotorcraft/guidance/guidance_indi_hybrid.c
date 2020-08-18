@@ -144,6 +144,23 @@ struct FloatVect3 nav_get_speed_setpoint(float pos_gain);
 
 int16_t update_hp_freq_and_reset = 0;
 
+#if PERIODIC_TELEMETRY
+#include "subsystems/datalink/telemetry.h"
+static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_GUIDANCE_INDI_HYBRID(trans, dev, AC_ID,
+                              &sp_accel.x,
+                              &sp_accel.y,
+                              &sp_accel.z,
+                              &euler_cmd.x,
+                              &euler_cmd.y,
+                              &euler_cmd.z,
+                              &filt_accel_ned[0].o[0],
+                              &filt_accel_ned[1].o[0],
+                              &filt_accel_ned[2].o[0]);
+}
+#endif
+
 /**
  * @brief Init function
  */
@@ -160,6 +177,10 @@ void guidance_indi_init(void)
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
+
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE_INDI_HYBRID, send_guidance_indi_hybrid);
+#endif
 }
 
 /**
@@ -318,7 +339,10 @@ void guidance_indi_run(float *heading_sp) {
   accel_filt.y = filt_accel_ned[1].o[0];
   accel_filt.z = filt_accel_ned[2].o[0];
 
-  struct FloatVect3 a_diff = { sp_accel.x - accel_filt.x, sp_accel.y - accel_filt.y, sp_accel.z - accel_filt.z};
+  struct FloatVect3 a_diff;
+  a_diff.x = sp_accel.x - accel_filt.x;
+  a_diff.y = sp_accel.y - accel_filt.y;
+  a_diff.z = sp_accel.z - accel_filt.z;
 
   //Bound the acceleration error so that the linearization still holds
   Bound(a_diff.x, -6.0, 6.0);
