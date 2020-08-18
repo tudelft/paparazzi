@@ -31,6 +31,8 @@
 #include "state.h"
 #include "subsystems/radio_control.h"
 
+#include "modules/ctrl/motor_vs_flap_slider.h"
+
 int32_t use_scheduling = 1;
 
 static float g_forward[3] = {STABILIZATION_INDI_FORWARD_G1_P, STABILIZATION_INDI_FORWARD_G1_Q, STABILIZATION_INDI_FORWARD_G1_R};
@@ -59,6 +61,9 @@ void ctrl_eff_scheduling_periodic(void)
   } else {
     g_forward[0] = STABILIZATION_INDI_FORWARD_G1_P;
   }
+
+  // When using the yaw slider to take the props out of the mix, adjust the yaw effectiveness
+    g_forward[2] = STABILIZATION_INDI_FORWARD_G1_R - (1.0 - yaw_slider) * STABILIZATION_INDI_MOT_YAW_EFF;
 
   indi.g1.p = g_hover[0] * (1.0 - ratio) + g_forward[0] * ratio;
   indi.g1.q = g_hover[1] * (1.0 - ratio) + g_forward[1] * ratio;
