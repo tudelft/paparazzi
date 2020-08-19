@@ -73,7 +73,8 @@
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="stateGetPositionEnu_f()->z > 40.0" deroute="Standby"/>
       <call_once fun="nav_set_heading_current()"/>
-      <stay climb="nav_climb_vspeed" pre_call="follow_me_set_wp(WP_CLIMB, 0)" vmode="climb" wp="CLIMB"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
     <block name="follow_module">
       <set value="FALSE" var="force_forward"/>

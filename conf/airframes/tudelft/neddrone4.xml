@@ -116,6 +116,7 @@
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-943.0"/>
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_FWD" value="-2400.0"/>
       <define name="GUIDANCE_INDI_LIFT_EFF_SCALING" value="1.0"/>
+      <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="0.5"/>
     </module>
 
     <module name="motor_mixing"/>
@@ -340,12 +341,13 @@
 
     <define name="FORWARD_G1_P" value="0.0020"/>
     <define name="FORWARD_G1_Q" value="0.0077"/>
-    <define name="FORWARD_G1_R" value="0.0035"/>
+    <define name="FORWARD_G1_R" value="0.004"/>
 
     <!--P effectiveness if center props are switched off-->
     <define name="FORWARD_G1_P_FEW_PROPS" value="0.0020"/>
     <!--Part of yaw eff that comes from motors-->
-    <define name="MOT_YAW_EFF" value="0.0019"/>
+    <define name="MOT_YAW_EFF" value="0.00"/>
+    <define name="MOT_PITCH_EFF" value="0.003"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="30.0"/>
