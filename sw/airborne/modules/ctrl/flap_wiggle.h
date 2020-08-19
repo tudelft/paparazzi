@@ -32,6 +32,7 @@
 extern bool flap_wiggle_state;
 extern float flap_wiggle_gain;
 extern int32_t wiggle_val[8];
+extern uint32_t wiggle_counter;
 
 /**
  * Initialises periodic loop;

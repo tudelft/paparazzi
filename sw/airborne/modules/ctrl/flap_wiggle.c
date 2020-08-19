@@ -26,23 +26,35 @@
  * functions as clock to generate the signals. */
 
 bool flap_wiggle_state;
-uint32_t counter;
+uint32_t wiggle_counter;
 float flap_wiggle_gain;
 
 int32_t wiggle_val[8];
 
+#if PERIODIC_TELEMETRY
+#include "subsystems/datalink/telemetry.h"
+static void send_wiggle_counter(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_WIGGLE_COUNTER(trans, dev, AC_ID, &wiggle_counter);
+}
+#endif
+
 void flap_wiggle_init(void)
 {
   flap_wiggle_state = 0;
-  counter = 0;
+  wiggle_counter = 0;
   flap_wiggle_gain = 0.0;
+
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WIGGLE_COUNTER, send_wiggle_counter);
+#endif
 }
 
 void flap_wiggle_periodic(void)
 {
-  counter++;
+  wiggle_counter++;
 
-  int32_t phase = counter % 3200;
+  int32_t phase = wiggle_counter % 3200;
 
   int k;
 

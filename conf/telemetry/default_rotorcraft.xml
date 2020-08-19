@@ -142,6 +142,7 @@
       <message name="WP_MOVED" period="1.3"/>
       <message name="GPS_INT" period="1.0"/>
       <message name="INS" period="1.0"/>
+      <message name="GUIDANCE_INDI_HYBRID"     period=".02"/>
     </mode>
 
     <mode name="h_loop" key_press="h">
@@ -193,7 +194,9 @@
       <message name="DL_VALUE"                 period="2.5"/>
       <message name="ROTORCRAFT_STATUS"        period="1.2"/>
       <message name="ROTORCRAFT_FP"            period="0.02"/>
+      <message name="WIGGLE_COUNTER"           period=".002"/>
       <message name="ROTORCRAFT_CMD"           period=".002"/>
+      <message name="GUIDANCE_INDI_HYBRID"     period=".02"/>
       <message name="COMMANDS"                 period=".02"/>
       <message name="INS_REF"                  period="5.1"/>
       <message name="ROTORCRAFT_NAV_STATUS"    period="1.6"/>
