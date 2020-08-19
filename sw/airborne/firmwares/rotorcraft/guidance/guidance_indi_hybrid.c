@@ -107,6 +107,12 @@ static void guidance_indi_filter_thrust(void);
 #endif
 float guidance_indi_max_airspeed = GUIDANCE_INDI_MAX_AIRSPEED;
 
+#ifdef GUIDANCE_INDI_LINE_GAIN
+float guidance_indi_line_gain = GUIDANCE_INDI_LINE_GAIN;
+#else
+float guidance_indi_line_gain = 1.0;
+#endif
+
 float inv_eff[4];
 
 float lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF;
@@ -590,8 +596,8 @@ struct FloatVect3 nav_get_speed_sp_from_line(struct FloatVect2 line_v_enu, struc
 
   // Normal vector scaled to be the distance to the line
   struct FloatVect2 v_to_line, v_along_line;
-  v_to_line.x = dist_to_line*normalv.x/length_normalv;
-  v_to_line.y = dist_to_line*normalv.y/length_normalv;
+  v_to_line.x = dist_to_line*normalv.x/length_normalv*guidance_indi_line_gain;
+  v_to_line.y = dist_to_line*normalv.y/length_normalv*guidance_indi_line_gain;
 
   // Depending on the normal vector, the distance could be negative
   float dist_to_line_abs = fabs(dist_to_line);

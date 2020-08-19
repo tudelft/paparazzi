@@ -117,6 +117,7 @@
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_FWD" value="-2400.0"/>
       <define name="GUIDANCE_INDI_LIFT_EFF_SCALING" value="1.0"/>
       <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="0.5"/>
+      <define name="GUIDANCE_INDI_LINE_GAIN" value="0.2"/>
     </module>
 
     <module name="motor_mixing"/>
