@@ -47,6 +47,7 @@ void motor_vs_flap_slider_periodic(void)
 
   if (airspeed > 15.0 &&
       pitch_deg < -60.0 &&
+      autopilot.mode != AP_MODE_FORWARD &&
       autopilot.mode != AP_MODE_ATTITUDE_DIRECT)
   {
     pitch_gain = pitch_slider;
