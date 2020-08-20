@@ -98,6 +98,7 @@
     </module>
     <module name="lidar" type="tfmini">
       <configure name="TFMINI_PORT" value="UART4"/>
+      <configure name="USE_TFMINI_AGL" value="FALSE"/>
     </module>
 
     <!--<module name="guidance" type="hybrid"/>-->
