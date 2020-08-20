@@ -84,6 +84,8 @@ struct FloatVect3 sp_accel = {0.0,0.0,0.0};
 float thrust_in_specific_force_gain = GUIDANCE_INDI_SPECIFIC_FORCE_GAIN;
 static void guidance_indi_filter_thrust(void);
 
+bool take_heading_control = false;
+
 #ifndef GUIDANCE_INDI_THRUST_DYNAMICS
 #ifndef STABILIZATION_INDI_ACT_DYN_P
 #error "You need to define GUIDANCE_INDI_THRUST_DYNAMICS to be able to use indi vertical control"
@@ -401,8 +403,12 @@ void guidance_indi_run(float *heading_sp) {
 #endif
 
 #ifndef KNIFE_EDGE_TEST
-  *heading_sp += omega / PERIODIC_FREQUENCY;
-  FLOAT_ANGLE_NORMALIZE(*heading_sp);
+  if(take_heading_control) {
+    *heading_sp = ANGLE_FLOAT_OF_BFP(nav_heading);
+  } else {
+    *heading_sp += omega / PERIODIC_FREQUENCY;
+    FLOAT_ANGLE_NORMALIZE(*heading_sp);
+  }
 #endif
 
   guidance_euler_cmd.psi = *heading_sp;
