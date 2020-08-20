@@ -71,6 +71,8 @@
 #define STABILIZATION_INDI_ESTIMATION_FILT_CUTOFF 4.0
 #endif
 
+int32_t indi_cmd_limit = 4500;
+
 struct Int32Eulers stab_att_sp_euler;
 struct Int32Quat   stab_att_sp_quat;
 
@@ -365,9 +367,9 @@ static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct I
   Bound(indi.u_in.r, -rlim, rlim);
   Bound(indi.u_in.r, -9600, 9600);
 #else
-  Bound(indi.u_in.p, -4500, 4500);
-  Bound(indi.u_in.q, -4500, 4500);
-  Bound(indi.u_in.r, -4500, 4500);
+  Bound(indi.u_in.p, -indi_cmd_limit, indi_cmd_limit);
+  Bound(indi.u_in.q, -indi_cmd_limit, indi_cmd_limit);
+  Bound(indi.u_in.r, -indi_cmd_limit, indi_cmd_limit);
 #endif
 
   //Propagate input filters
