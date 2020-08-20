@@ -51,7 +51,7 @@ class AirDataMessage(object):
 class EnergyMessage(object):
     def __init__(self, msg):
         self.volt = float(msg['voltage'])
-        self.current = float(msg['current'])*2.0
+        self.current = float(msg['current'])
         self.power = float(msg['power'])
         self.energy = float(msg['energy'])
 
@@ -317,7 +317,7 @@ class EnergyMonFrame(wx.Frame):
     def DischargePlot(self, dc):
         self.tdx = int(self.stat * 10.0 / 300.0)
         dc.SetPen(wx.Pen(wx.Colour(0,0,0),1))
-	dc.SetBrush(wx.Brush(wx.Colour(250,250,250))) 
+        dc.SetBrush(wx.Brush(wx.Colour(250,250,250))) 
         dc.DrawRectangle(self.plot_x(0.0), self.plot_y(1.0), self.w-self.stat-2*self.tdx, self.h-2*self.tdx)
         
         for i in range(0,6):
