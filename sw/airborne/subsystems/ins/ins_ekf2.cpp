@@ -120,6 +120,7 @@ static void body_to_imu_cb(uint8_t sender_id, struct FloatQuat *q_b2i_f);
 
 /* Main EKF2 structure for keeping track of the status */
 struct ekf2_t {
+  float height_amsl_m;
   uint32_t gyro_stamp;
   uint32_t gyro_dt;
   uint32_t accel_stamp;
@@ -152,6 +153,65 @@ struct ekf2_parameters_t ekf2_params;
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
+
+static void send_ins(struct transport_tx *trans, struct link_device *dev)
+{
+  /* Get the position */
+  float pos_f[3] = {};
+  struct NedCoor_f pos;
+  struct NedCoor_i pos_i;
+  ekf.get_position(pos_f);
+  pos.x = pos_f[0];
+  pos.y = pos_f[1];
+  pos.z = pos_f[2];
+  POSITIONS_BFP_OF_REAL(pos_i, pos);
+
+  /* Get the velocity in NED frame */
+  float vel_f[3] = {};
+  struct NedCoor_f speed;
+  struct NedCoor_i speed_i;
+  ekf.get_velocity(vel_f);
+  speed.x = vel_f[0];
+  speed.y = vel_f[1];
+  speed.z = vel_f[2];
+  SPEEDS_BFP_OF_REAL(speed_i, speed);
+
+  /* Get the accelrations in NED frame */
+  float vel_deriv_f[3] = {};
+  struct NedCoor_f accel;
+  struct NedCoor_i accel_i;
+  ekf.get_vel_deriv_ned(vel_deriv_f);
+  accel.x = vel_deriv_f[0];
+  accel.y = vel_deriv_f[1];
+  accel.z = vel_deriv_f[2];
+  ACCELS_BFP_OF_REAL(accel_i, accel);
+
+  pprz_msg_send_INS(trans, dev, AC_ID,
+                    &pos_i.x, &pos_i.y, &pos_i.z,
+                    &speed_i.x, &speed_i.y, &speed_i.z,
+                    &accel_i.x, &accel_i.y, &accel_i.z);
+}
+
+static void send_ins_z(struct transport_tx *trans, struct link_device *dev)
+{
+  /* Get the position */
+  float pos_f[3] = {};
+  ekf.get_position(pos_f);
+  int32_t pos_z = POS_BFP_OF_REAL(pos_f[2]);
+
+  /* Get the velocity in NED frame */
+  float vel_f[3] = {};
+  ekf.get_velocity(vel_f);
+  int32_t speed_z = SPEED_BFP_OF_REAL(vel_f[2]);
+
+  /* Get the accelrations in NED frame */
+  float vel_deriv_f[3] = {};
+  ekf.get_vel_deriv_ned(vel_deriv_f);
+  int32_t accel_z = ACCEL_BFP_OF_REAL(vel_deriv_f[2]);
+
+  pprz_msg_send_INS_Z(trans, dev, AC_ID,
+                      &ekf2.height_amsl_m, &pos_z, &speed_z, &accel_z);
+}
 
 static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
 {
@@ -266,6 +326,8 @@ void ins_ekf2_init(void)
   ekf.set_rangefinder_limits(INS_SONAR_MIN_RANGE, INS_SONAR_MAX_RANGE);
 
 #if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS, send_ins);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_Z, send_ins_z);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_EKF2, send_ins_ekf2);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_EKF2_EXT, send_ins_ekf2_ext);
@@ -452,9 +514,9 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, uint32_t stamp, f
   ekf.set_air_density(rho);
 
   // Calculate the height above mean sea level based on pressure
-  float height_amsl_m = pprz_isa_height_of_pressure_full(pressure,
+  ekf2.height_amsl_m = pprz_isa_height_of_pressure_full(pressure,
                         101325.0); //101325.0 defined as PPRZ_ISA_SEA_LEVEL_PRESSURE in pprz_isa.h
-  ekf.setBaroData(stamp, height_amsl_m);
+  ekf.setBaroData(stamp, ekf2.height_amsl_m);
 }
 
 /* Update INS based on AGL information */
