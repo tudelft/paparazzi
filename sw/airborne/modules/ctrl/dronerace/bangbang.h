@@ -30,6 +30,8 @@ void find_constants(float yi,float vi);
 float get_position_analytical(float t);
 float get_velocity_analytical(float t);
 float get_time_analytical(float V);
+extern float Cd;
+extern float mass; 
 float psi_command; 
 extern float bang_ctrl[3];
 extern bool brake; 

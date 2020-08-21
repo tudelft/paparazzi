@@ -50,6 +50,7 @@ extern void filter_predict(float phi, float theta, float psi, float dt);
 extern void filter_predict1(float phi, float theta, float psi, float dt);
 extern float filter_moving_avg(float x, float *buf);
 extern void filter_correct(void);
+extern void complementary_filter_speed(float alpha,float Cd,float m,float VxGPS, float VyGPS,float dt);
 extern float mx;
 extern float my;
 extern float filteredX;
@@ -60,6 +61,6 @@ extern float filter_abx;
 extern float filter_aby;
 extern float filter_ax;
 extern float filter_ay;
-
+extern float compl_V[2];
 FILE *filter_log_t;
 #endif

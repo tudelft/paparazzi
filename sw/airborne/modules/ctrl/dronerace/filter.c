@@ -17,6 +17,7 @@
 struct dronerace_state_struct dr_state = {0};
 struct dronerace_vision_struct dr_vision = {0};
 
+float compl_V[2]={0};
 
 float buffer_vx[NR_SAMPLES_AVERAGE]={0};
 float buffer_vy[NR_SAMPLES_AVERAGE]={0};
@@ -112,5 +113,17 @@ float filter_moving_avg(float x, float *buf){
   valx+=x;
   // printf("total vx: %f, average: %f\n",valx,valx/(float)NR_SAMPLES_AVERAGE);
   return valx/(float)NR_SAMPLES_AVERAGE;
+
+}
+
+void complementary_filter_speed(float alpha,float Cd,float m,float VxGPS, float VyGPS,float dt){
+    float axvel=-DR_FILTER_GRAVITY*tanf(dr_state.theta); 
+    float ayvel= DR_FILTER_GRAVITY*tanf(dr_state.phi)/cosf(dr_state.theta); 
+
+    float axE=axvel*cosf(dr_state.psi)-ayvel*sinf(dr_state.psi)-compl_V[0]*Cd;
+    float ayE=axvel*sinf(dr_state.psi)+ayvel*cosf(dr_state.psi)-compl_V[1]*Cd;
+
+    compl_V[0]=alpha*(compl_V[0]+axE*dt) + (1-alpha)*VxGPS;
+    compl_V[1]=alpha*(compl_V[1]+ayE*dt) + (1-alpha)*VyGPS;
 
 }

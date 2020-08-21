@@ -38,6 +38,7 @@
 #include "subsystems/datalink/telemetry.h"
 #include "firmwares/rotorcraft/stabilization.h"
 #include "boards/bebop/actuators.h"
+#include "bangbang.h"
 
 // to know if we are simulating:
 #include "generated/airframe.h"
@@ -207,8 +208,8 @@ void dronerace_periodic(void)
   }
 
   
-  
-  
+  filter_predict(input_phi, input_theta, input_psi, dt); // adds accelerometer values to dr_state (earth frame)
+  complementary_filter_speed(0.1,Cd,mass,vxE,vyE,dt);    // experimental complementary filter
 
   
   // float cthet=cosf(dr_state.theta);
@@ -221,7 +222,7 @@ void dronerace_periodic(void)
   //only overwrite when new values are available
 
 
-  filter_predict(input_phi, input_theta, input_psi, dt); // adds accelerometer values to dr_state (earth frame)
+  
   
   
   struct NedCoor_f target_ned;
@@ -245,7 +246,7 @@ void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi_cmd)
   control_run(dt);
 
   #ifdef LOG
-  fprintf(filter_log_t,"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(),posx,posy,posz,vxE,vyE,vzE,filter_az,filter_abx,filter_aby,filter_ax,filter_ay,vx_avg,vy_avg);
+  fprintf(filter_log_t,"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(),posx,posy,posz,vxE,vyE,vzE,filter_az,filter_abx,filter_aby,filter_ax,filter_ay,vx_avg,vy_avg,compl_V[0],compl_V[1]);
   #endif
   
   *phi     = dr_control.phi_cmd;

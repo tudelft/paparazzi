@@ -9,14 +9,14 @@
 #define SECOND 1
 #define r2d 180./M_PI
 #define d2r M_PI/180.0f
-#define LOG
+// #define LOG
 // float m = 0.42; //bebop mass [kg]
 float g = 9.80665;//gravity
 int type; 
 bool brake = false;
 float dtt = 1.0f / 512.f;
 
-float bang_ctrl[3]; //control inputs that will be the final product of the bangbang optimizer 
+float bang_ctrl[3] = {0}; //control inputs that will be the final product of the bangbang optimizer 
 
 struct BangDim sat_angle = {
     -40*d2r,
@@ -302,7 +302,7 @@ float predict_path_analytical(float t_s, float angle,float Vd){
         T = (mass*g)*tanf(-angle);//Thrust component forward 
     }
     else{
-        T = (mass*g)*tanf(angle);//Thrust component forward 
+        T = (mass*g)*tanf(angle)/cosf(bang_ctrl[0]);//Thrust component forward  // TODO: maybe should use dr_state.theta instead of bang_ctrl[0]?
     }
 
     //Correct NED velocity for the drone's heading which is the initial speed in path prediction
@@ -371,3 +371,4 @@ float get_time_analytical(float V){
     }
     return t_t;
 }
+

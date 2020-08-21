@@ -11,7 +11,7 @@
 #include "subsystems/datalink/telemetry.h"
 #include "bangbang.h"
 #include "filter.h"
-#define LOG
+// #define LOG
 
 #define r2d 180./M_PI
 #define d2r M_PI/180.0
@@ -54,7 +54,7 @@ static void open_log(void)
   fprintf(file_logger_t,"time, dr_state.x, dr_state.y, posxVel, posyVel, dr_state.z, vxE, vyE, vzE, dr_state.vx, dr_state.vy, dr_state.phi, dr_state.theta, dr_state.psi, phi_cmd, theta_cmd, psi_cmd\n");
   fprintf(fp_logger_t,"time, gate_nr, gate_type, controller_type, gate_x, gate_y, gate_z, gate_psi \n");
   fprintf(comp_log_t,"satdim, v0, ang_0, ang_1, delta_t_meas, delta_y_meas, delta_v_meas\n");
-  fprintf(filter_log_t,"time, gps_x, gps_y, gps_z, gps_vx, gps_vy, gps_vz, az, abx, aby, ax, ay, vx_avg, vy_avg\n");
+  fprintf(filter_log_t,"time, gps_x, gps_y, gps_z, gps_vx, gps_vy, gps_vz, az, abx, aby, ax, ay, vx_avg, vy_avg, vx_compl, vy_compl\n");
  fclose(comp_log_t);
   // fprintf(brake_log_t,"time, y0, v0, c1, c2, ang0, ang1, angc, Epos\n");
 }

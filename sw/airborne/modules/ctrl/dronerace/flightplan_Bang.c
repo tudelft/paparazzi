@@ -6,7 +6,7 @@
 #include "subsystems/datalink/telemetry.h"
 #include "bangbang.h"
 
-#define LOG
+// #define LOG
 struct bangbang_fp_struct dr_bang;
 int next_gate_nr;
 int timer1=0;
@@ -134,7 +134,7 @@ void flightplan_run(void){
                 brake=false;
                 controllerstate.in_transition=false;
                 }
-            // }
+            // }1
     }
 
     if(dr_bang.gate_nr==next_gate_nr){ //only update setpoints if the gate identifier has changed (todo: fix discrepancy when there is only one gate)
