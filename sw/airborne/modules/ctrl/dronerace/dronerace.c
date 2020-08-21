@@ -186,21 +186,21 @@ void dronerace_periodic(void)
   vyE = vel_gps->y;
   vzE = vel_gps->z;
 
-   if((posx!=posx_old)||(vxE!=vxE_old)){ // filter.c is applied to dr_state.x ... in  between gps updates
-    dr_state.x=posx;
-    posx_old=posx;
-    vx_avg=filter_moving_avg(vxE,buffer_vx);
-    dr_state.vx = vx_avg;//(cthet*cpsi)*vxE + (cthet*spsi)*vyE - sthet*vzE;
-    vxE_old=vxE;
-  }
+  //  if((posx!=posx_old)||(vxE!=vxE_old)){ // filter.c is applied to dr_state.x ... in  between gps updates
+  //   dr_state.x=posx;
+  //   posx_old=posx;
+  //   vx_avg=filter_moving_avg(vxE,buffer_vx);
+  //   dr_state.vx = vx_avg;//(cthet*cpsi)*vxE + (cthet*spsi)*vyE - sthet*vzE;
+  //   vxE_old=vxE;
+  // }
 
-  if((posy!=posy_old)||(vyE!=vyE_old)){ // filter.c is applied to dr_state.x ... in  between gps updates
-    dr_state.y=posy;
-    posy_old=posy;
-    vy_avg=filter_moving_avg(vyE,buffer_vy);
-    dr_state.vy = vy_avg;//(sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE ;//+ (sphi*cthet)*vzE; 
-    vyE_old=vyE;
-  }
+  // if((posy!=posy_old)||(vyE!=vyE_old)){ // filter.c is applied to dr_state.x ... in  between gps updates
+  //   dr_state.y=posy;
+  //   posy_old=posy;
+  //   vy_avg=filter_moving_avg(vyE,buffer_vy);
+  //   dr_state.vy = vy_avg;//(sphi*sthet*cpsi-cphi*spsi)*vxE + (sphi*sthet*spsi+cphi*cpsi)*vyE ;//+ (sphi*cthet)*vzE; 
+  //   vyE_old=vyE;
+  // }
 
   if((posz!=posz_old)){ // filter.c is applied to dr_state.x ... in  between gps updates
     dr_state.z=posz;
@@ -208,9 +208,13 @@ void dronerace_periodic(void)
   }
 
   
-  filter_predict(input_phi, input_theta, input_psi, dt); // adds accelerometer values to dr_state (earth frame)
-  complementary_filter_speed(0.1,Cd,mass,vxE,vyE,dt);    // experimental complementary filter
-
+  // filter_predict(input_phi, input_theta, input_psi, dt); // adds accelerometer values to dr_state (earth frame)
+  complementary_filter_speed(0.98,0.95, Cd,mass,vxE,vyE,vzE,posx,posy,posz,dt);    // experimental complementary filter
+  dr_state.vx=compl_V[0];
+  dr_state.vy=compl_V[1];
+  dr_state.x=compl_pos[0];
+  dr_state.y=compl_pos[1];
+  dr_state.z=compl_pos[2];
   
   // float cthet=cosf(dr_state.theta);
   // float sthet=sinf(dr_state.theta);
@@ -246,7 +250,7 @@ void dronerace_get_cmd(float* alt, float* phi, float* theta, float* psi_cmd)
   control_run(dt);
 
   #ifdef LOG
-  fprintf(filter_log_t,"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(),posx,posy,posz,vxE,vyE,vzE,filter_az,filter_abx,filter_aby,filter_ax,filter_ay,vx_avg,vy_avg,compl_V[0],compl_V[1]);
+  fprintf(filter_log_t,"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(),posx,posy,posz,vxE,vyE,vzE,filter_az,filter_abx,filter_aby,filter_ax,filter_ay,vx_avg,vy_avg,compl_V[0],compl_V[1],compl_pos[0],compl_pos[1],compl_pos[2]);
   #endif
   
   *phi     = dr_control.phi_cmd;

@@ -11,7 +11,7 @@
 #include "subsystems/datalink/telemetry.h"
 #include "bangbang.h"
 #include "filter.h"
-// #define LOG
+#define LOG
 
 #define r2d 180./M_PI
 #define d2r M_PI/180.0
@@ -54,7 +54,7 @@ static void open_log(void)
   fprintf(file_logger_t,"time, dr_state.x, dr_state.y, posxVel, posyVel, dr_state.z, vxE, vyE, vzE, dr_state.vx, dr_state.vy, dr_state.phi, dr_state.theta, dr_state.psi, phi_cmd, theta_cmd, psi_cmd\n");
   fprintf(fp_logger_t,"time, gate_nr, gate_type, controller_type, gate_x, gate_y, gate_z, gate_psi \n");
   fprintf(comp_log_t,"satdim, v0, ang_0, ang_1, delta_t_meas, delta_y_meas, delta_v_meas\n");
-  fprintf(filter_log_t,"time, gps_x, gps_y, gps_z, gps_vx, gps_vy, gps_vz, az, abx, aby, ax, ay, vx_avg, vy_avg, vx_compl, vy_compl\n");
+  fprintf(filter_log_t,"time, gps_x, gps_y, gps_z, gps_vx, gps_vy, gps_vz, az, abx, aby, ax, ay, vx_avg, vy_avg, vx_compl, vy_compl, x_compl,y_compl, z_compl\n");
  fclose(comp_log_t);
   // fprintf(brake_log_t,"time, y0, v0, c1, c2, ang0, ang1, angc, Epos\n");
 }
@@ -227,8 +227,8 @@ void control_run(float dt)
         dr_control.psi_cmd=dr_bang.gate_psi;
       }
       // printf("psicmd: %f,atan: %f, error_posx: %f, error_posy: %f, error_posx_vel: %f\n",dr_control.psi_cmd,(error_posy_E,error_posx_E),error_posx_E,error_posy_E, error_posx_vel);
-      dr_control.phi_cmd= bound_angle(KP_VEL_Y * (vy_des_vel-vy_vel),CTRL_MAX_ROLL);
-      dr_control.theta_cmd=bound_angle(KP_VEL_X *-1* (vx_des_vel-vx_vel),CTRL_MAX_PITCH); 
+      dr_control.phi_cmd= bound_angle(KP_VEL_Y * (vy_des_vel-vy_vel),d2r*dr_bang.sat_angle);
+      dr_control.theta_cmd=bound_angle(KP_VEL_X *-1* (vx_des_vel-vx_vel),d2r*dr_bang.sat_angle);
       
   } 
     if (dr_bang.overwrite_psi){

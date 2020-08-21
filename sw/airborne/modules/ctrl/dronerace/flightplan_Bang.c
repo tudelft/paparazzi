@@ -6,7 +6,7 @@
 #include "subsystems/datalink/telemetry.h"
 #include "bangbang.h"
 
-// #define LOG
+#define LOG
 struct bangbang_fp_struct dr_bang;
 int next_gate_nr;
 int timer1=0;
@@ -26,15 +26,15 @@ float angle_variations[NR_ANGLEVAR]={5, 5, 10, 10, 15,15,20, 20,25, 25, 30,30 ,3
 
 // Demo Forward
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-1.5,M_PI,0.2,STARTGATE,BANGBANG,0,0,false,20},
+// {0, -2.0,0,-1.5,M_PI,0.2,STARTGATE,PID,0,0,false,20},
 // {1, 2.5,0,-1.5,0,0.2,ENDGATE,BANGBANG,0,0,false,20},
 // };
 
 // demo forward height diff
-// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-0.75,M_PI,0.2,STARTGATE,BANGBANG,0,0,false},
-// {1, 2.5,0,-2.75,0,0.2,ENDGATE,BANGBANG,0,0,false},
-// };
+const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+{0, -2.0,0,-1.0,M_PI,0.2,STARTGATE,BANGBANG,0,0,false,25},
+{1, 2.5,0,-2.75,0,0.2,ENDGATE,BANGBANG,0,0,false,25},
+};
 
 // Demo Forward/backwards  25deg
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
@@ -44,10 +44,10 @@ float angle_variations[NR_ANGLEVAR]={5, 5, 10, 10, 15,15,20, 20,25, 25, 30,30 ,3
 
 
 // // // Demo Sideways    // set saturation angles to 25 deg or lower for relatively safe
-const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-{0, -2.0,1,-1.75,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,35},
-{1, 2.0,1,-1.75,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,35},
-};
+// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+// {0, -2.0,1,-1.75,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,35},
+// {1, 2.0,1,-1.75,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,35},
+// };
 
 // Demo forward + sidestep 
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {

@@ -17,7 +17,8 @@
 struct dronerace_state_struct dr_state = {0};
 struct dronerace_vision_struct dr_vision = {0};
 
-float compl_V[2]={0};
+float compl_V[3]={0};
+float compl_pos[3]={0};
 
 float buffer_vx[NR_SAMPLES_AVERAGE]={0};
 float buffer_vy[NR_SAMPLES_AVERAGE]={0};
@@ -28,15 +29,20 @@ void filter_reset()
   dr_state.time = 0.0f;
 
   struct NedCoor_f *pos = stateGetPositionNed_f();
+  struct NedCoor_f *vel = stateGetSpeedNed_f();
 
   dr_state.x = pos->x;
   dr_state.y = pos->y;
   dr_state.z = pos->z; 
 
   // Speed
-  dr_state.vx = 0.0f;
-  dr_state.vy = 0.0f;
+  dr_state.vx = vel->x;
+  dr_state.vy = vel->y;
 
+  compl_pos[0]= dr_state.x;
+  compl_pos[1]= dr_state.y;
+  compl_V[0]=dr_state.vx;
+  compl_V[1]=dr_state.vy;
   printf("filter reset \n\n\n");
   // Heading
   dr_state.psi = 0.0f;
@@ -116,7 +122,7 @@ float filter_moving_avg(float x, float *buf){
 
 }
 
-void complementary_filter_speed(float alpha,float Cd,float m,float VxGPS, float VyGPS,float dt){
+void complementary_filter_speed(float alpha, float beta, float Cd,float m,float VxGPS, float VyGPS, float VzGPS, float xGPS, float yGPS, float zGPS, float dt){
     float axvel=-DR_FILTER_GRAVITY*tanf(dr_state.theta); 
     float ayvel= DR_FILTER_GRAVITY*tanf(dr_state.phi)/cosf(dr_state.theta); 
 
@@ -125,5 +131,9 @@ void complementary_filter_speed(float alpha,float Cd,float m,float VxGPS, float 
 
     compl_V[0]=alpha*(compl_V[0]+axE*dt) + (1-alpha)*VxGPS;
     compl_V[1]=alpha*(compl_V[1]+ayE*dt) + (1-alpha)*VyGPS;
+
+    compl_pos[0]=alpha*(compl_pos[0]+compl_V[0]*dt)+(1-alpha)*xGPS;
+    compl_pos[1]=alpha*(compl_pos[1]+compl_V[1]*dt)+(1-alpha)*yGPS;
+    compl_pos[2]=beta*(compl_pos[2]+VzGPS*dt)+(1-beta)*zGPS; // not sure if it's a good idea to use complementary filter on Vz since the model assumes hover condition. Could it break when there are altitude variations?
 
 }

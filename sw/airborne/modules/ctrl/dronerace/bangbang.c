@@ -9,7 +9,7 @@
 #define SECOND 1
 #define r2d 180./M_PI
 #define d2r M_PI/180.0f
-// #define LOG
+#define LOG
 // float m = 0.42; //bebop mass [kg]
 float g = 9.80665;//gravity
 int type; 
