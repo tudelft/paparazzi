@@ -41,6 +41,7 @@ void filter_reset()
 
   compl_pos[0]= dr_state.x;
   compl_pos[1]= dr_state.y;
+  compl_pos[2]= dr_state.z;
   compl_V[0]=dr_state.vx;
   compl_V[1]=dr_state.vy;
   printf("filter reset \n\n\n");
@@ -122,8 +123,8 @@ float filter_moving_avg(float x, float *buf){
 
 }
 
-void complementary_filter_speed(float alpha, float beta, float Cd,float m,float VxGPS, float VyGPS, float VzGPS, float xGPS, float yGPS, float zGPS, float dt){
-    float axvel=-DR_FILTER_GRAVITY*tanf(dr_state.theta); 
+void complementary_filter_hovercond(float alpha, float beta, float Cd,float m,float VxGPS, float VyGPS, float VzGPS, float xGPS, float yGPS, float zGPS, float dt){ 
+    float axvel=-DR_FILTER_GRAVITY*tanf(dr_state.theta); // uses model that assumes hover condition and linear drag
     float ayvel= DR_FILTER_GRAVITY*tanf(dr_state.phi)/cosf(dr_state.theta); 
 
     float axE=axvel*cosf(dr_state.psi)-ayvel*sinf(dr_state.psi)-compl_V[0]*Cd;

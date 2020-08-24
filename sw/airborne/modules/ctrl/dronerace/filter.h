@@ -50,7 +50,7 @@ extern void filter_predict(float phi, float theta, float psi, float dt);
 extern void filter_predict1(float phi, float theta, float psi, float dt);
 extern float filter_moving_avg(float x, float *buf);
 extern void filter_correct(void);
-extern void complementary_filter_speed(float alpha,float beta,float Cd,float m,float VxGPS, float VyGPS, float VzGPS, float xGPS, float yGPS, float zGPS, float dt);
+extern void complementary_filter_hovercond(float alpha,float beta,float Cd,float m,float VxGPS, float VyGPS, float VzGPS, float xGPS, float yGPS, float zGPS, float dt);
 extern float mx;
 extern float my;
 extern float filteredX;
