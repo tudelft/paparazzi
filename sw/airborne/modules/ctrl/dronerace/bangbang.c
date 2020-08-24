@@ -4,12 +4,14 @@
 #include "std.h"
 #include "filter.h"
 #include "subsystems/datalink/telemetry.h"
+#include "../ctrl_module_outerloop_demo.h"
 // #include "state.h"
 #define SATURATION 0
 #define SECOND 1
 #define r2d 180./M_PI
 #define d2r M_PI/180.0f
 #define LOG
+#define USETHRUSTALTCTRL
 // float m = 0.42; //bebop mass [kg]
 float g = 9.80665;//gravity
 int type; 
@@ -18,10 +20,7 @@ float dtt = 1.0f / 512.f;
 
 float bang_ctrl[3] = {0}; //control inputs that will be the final product of the bangbang optimizer 
 
-struct BangDim sat_angle = {
-    -40*d2r,
-    40*d2r,
-};
+struct BangDim sat_angle = {0};
 // struct BangDim sat_corr;
 struct BangDim sign_corr=
 {
@@ -127,7 +126,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     }
     
 
-    // satdim=0; // TODO: force satdim for debugging purposes 
+    satdim=0; // TODO: force satdim for debugging purposes 
 
     if(satdim==0){
         satangle=sat_corr[0];
@@ -214,7 +213,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
     while(fabs(E_pos)>error_thresh&&fabs(angc-angc_old)>0.1*d2r){
         angc_old=angc;
-        E_pos=get_E_pos(v_desired,angc);
+        E_pos=get_E_pos(v_desired,angc); //v_desired doesn't do anything here. The point is to reacht the target at t_target.
         if(E_pos*signcorrsec>0){
             ang1=angc;
         }
@@ -297,12 +296,17 @@ float get_E_pos(float Vd, float angle){
 }
 
 float predict_path_analytical(float t_s, float angle,float Vd){
+    #ifdef USETHRUSTALTCTRL //use the thrust as commanded by the altitude controller 
+        T= (thrust_cmd/HOVERTHRUST)*mass*g*cosf(dr_state.phi)*cosf(dr_state.theta);
+    #else
+        T=mass*g;
+    #endif
     if(dim==0){             //TODO get thrust component by rotation body reference frame to velocity frame.
-
-        T = (mass*g)*tanf(-angle);//Thrust component forward 
+        
+        T = T*tanf(-angle);//Thrust component forward 
     }
     else{
-        T = (mass*g)*tanf(angle)/cosf(bang_ctrl[0]);//Thrust component forward  // TODO: maybe should use dr_state.theta instead of bang_ctrl[0]?
+        T = T*tanf(angle)/cosf(bang_ctrl[0]);//Thrust component forward  // TODO: maybe should use dr_state.theta instead of bang_ctrl[0]?
     }
 
     //Correct NED velocity for the drone's heading which is the initial speed in path prediction
@@ -347,7 +351,7 @@ float predict_path_analytical(float t_s, float angle,float Vd){
         T_sec = T;
         find_constants(0.0,v_velframe[dim]);
         constant_sec = constant; 
-        y_target=get_position_analytical(t_target);//find position in lateral direction using the predicted eta of the first dimension;    }
+        y_target=get_position_analytical(0.9*t_target);//find position in lateral direction using the predicted eta of the first dimension;    }
         // printf("y_target_sec: %f, t_target: %f, angle: %f, tanf: %f",y_target,t_target,angle,tanf(angle));
     // printf("\n");
     }

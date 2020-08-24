@@ -25,6 +25,7 @@ FILE *fp_logger_t = NULL;
 FILE *brake_log_t = NULL;
 FILE *filter_log_t = NULL;
 FILE *comp_log_t = NULL;
+
 static void open_log(void) 
 {
   char filename[512];
@@ -47,14 +48,16 @@ static void open_log(void)
   filter_log_t=fopen(filename4,"w+");
   
 
+
   // brake_log_t=fopen(filename4,"w+");
   // fprintf(comp_measure_log_t,"satdim, v0, ang_0, ang_1, delta_t_meas, delta_y_meas, delta_v_meas\n");
   // fprintf(comp_measure_log_t,"time, gps_x, gps_y, gps_z, gps_vx, gps_vy, gps_vz, az, abx, aby, ax, ay\n");
   fprintf(bang_bang_t,"time, satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1], constant_sat_accel.c1, constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec, apply_compensation, in_transition, delta_t, delta_y, delta_v, ys, vs\n");
-  fprintf(file_logger_t,"time, dr_state.x, dr_state.y, posxVel, posyVel, dr_state.z, vxE, vyE, vzE, dr_state.vx, dr_state.vy, dr_state.phi, dr_state.theta, dr_state.psi, phi_cmd, theta_cmd, psi_cmd\n");
-  fprintf(fp_logger_t,"time, gate_nr, gate_type, controller_type, gate_x, gate_y, gate_z, gate_psi \n");
+  fprintf(file_logger_t,"time, dr_state.x, dr_state.y, posxVel, posyVel, dr_state.z, vxE, vyE, vzE, dr_state.vx, dr_state.vy, dr_state.phi, dr_state.theta, dr_state.psi, phi_cmd, theta_cmd, psi_cmd, vx_des, vy_des\n");
+  fprintf(fp_logger_t,"time, gate_nr, gate_type, controller_type, gate_x, gate_y, gate_z, gate_psi, target_reached \n");
   fprintf(comp_log_t,"satdim, v0, ang_0, ang_1, delta_t_meas, delta_y_meas, delta_v_meas\n");
   fprintf(filter_log_t,"time, gps_x, gps_y, gps_z, gps_vx, gps_vy, gps_vz, az, abx, aby, ax, ay, vx_avg, vy_avg, vx_compl, vy_compl, x_compl,y_compl, z_compl\n");
+  
  fclose(comp_log_t);
   // fprintf(brake_log_t,"time, y0, v0, c1, c2, ang0, ang1, angc, Epos\n");
 }
@@ -66,8 +69,8 @@ float vx_des_vel ;
 float vy_des_vel ;
 
 // Slow speed
-#define CTRL_MAX_SPEED  5.0             // m/s
-#define CTRL_MAX_PITCH  RadOfDeg(20)    // rad
+#define CTRL_MAX_SPEED  10.0             // m/s
+#define CTRL_MAX_PITCH  RadOfDeg(20)    // rad //not used currently
 #define CTRL_MAX_ROLL   RadOfDeg(30)    // rad
 #define CTRL_MAX_R      RadOfDeg(90)    // rad/sec
 
@@ -119,19 +122,22 @@ float bound_f(float val, float min, float max) {
 	}
 	return val;
 }
-#define KP_look 0.1
-#define KI_look 0.0 
+
+// Normal PID gains
 #define KP_POS  0.2
 #define KI_POS 0.02
 #define KP_VEL_X  0.2
 #define KP_VEL_Y  0.2 
 #define KD_VEL_X  0.05
 #define KD_VEL_Y  0.05
-#define radius_des 2
-float lookahead = 25 * PI/180.0;
-#define PITCHFIX  -10 * PI/180.0
-#define DIRECTION 1 // 1 for clockwise, -1 for counterclockwise
 
+// High gain PID gains
+#define KP_POS_HIGH  1.5
+#define KI_POS_HIGH 0.02
+#define KP_VEL_X_HIGH  0.8
+#define KP_VEL_Y_HIGH  0.8 
+#define KD_VEL_X_HIGH  0.05
+#define KD_VEL_Y_HIGH  0.05
 
 void control_run(float dt)
 {
@@ -182,8 +188,9 @@ void control_run(float dt)
   float error_posy_E=posy_cmd-dr_state.y;
   float error_posx_vel =cpsi*error_posx_E+spsi*error_posy_E;//position error in velocity frame
   float error_posy_vel = -spsi*error_posx_E+cpsi*error_posy_E;
+  float error_posz = dr_bang.gate_z - dr_state.z;
 
-  dist2gate = sqrtf(error_posx_vel*error_posx_vel+error_posy_vel*error_posy_vel);
+  dist2gate = sqrtf(error_posx_vel*error_posx_vel+error_posy_vel*error_posy_vel+error_posz*error_posz);
 
   float posxVel = cpsi*dr_state.x + spsi*dr_state.y;
   float posyVel = -spsi*dr_state.x + cpsi*dr_state.y ;
@@ -211,9 +218,25 @@ void control_run(float dt)
     // dr_control.theta_cmd= bound_angle(-KP_VEL_X * (vx_des_vel-vx_vel),CTRL_MAX_PITCH);//TODO
     
   }
-  else{ // USE a PID controller if not BANGBANG
-        
+    else if(dr_bang.controller_type==HIGHPID){ 
+      vx_des_vel = bound_angle(KP_POS_HIGH*error_posx_vel,CTRL_MAX_SPEED); //saturate to max velocity
+      vy_des_vel = bound_angle(KP_POS_HIGH*error_posy_vel,CTRL_MAX_SPEED);
       
+      if(fabs(error_posx_vel)>1){ //freeze yaw cmd when it gets close to wp
+        dr_control.psi_cmd =atan2f(error_posy_E,error_posx_E); // yaw towards gate when distance is large enough. 
+      }
+      else{
+        dr_control.psi_cmd=dr_bang.gate_psi;
+      }
+      if(dr_bang.turning==TURNING){
+        dr_control.psi_cmd=dr_bang.gate_psi;
+      }
+      // printf("psicmd: %f,atan: %f, error_posx: %f, error_posy: %f, error_posx_vel: %f\n",dr_control.psi_cmd,(error_posy_E,error_posx_E),error_posx_E,error_posy_E, error_posx_vel);
+      dr_control.phi_cmd= bound_angle(KP_VEL_Y_HIGH * (vy_des_vel-vy_vel),d2r*dr_bang.sat_angle);
+      dr_control.theta_cmd=bound_angle(KP_VEL_X_HIGH *-1* (vx_des_vel-vx_vel),d2r*dr_bang.sat_angle);
+  }    
+  else{ // USE a PID controller 
+            
        vx_des_vel = bound_angle(error_posx_vel,CTRL_MAX_SPEED); //saturate to max velocity
        vy_des_vel = bound_angle(error_posy_vel,CTRL_MAX_SPEED);
       
@@ -229,8 +252,7 @@ void control_run(float dt)
       // printf("psicmd: %f,atan: %f, error_posx: %f, error_posy: %f, error_posx_vel: %f\n",dr_control.psi_cmd,(error_posy_E,error_posx_E),error_posx_E,error_posy_E, error_posx_vel);
       dr_control.phi_cmd= bound_angle(KP_VEL_Y * (vy_des_vel-vy_vel),d2r*dr_bang.sat_angle);
       dr_control.theta_cmd=bound_angle(KP_VEL_X *-1* (vx_des_vel-vx_vel),d2r*dr_bang.sat_angle);
-      
-  } 
+  }
     if (dr_bang.overwrite_psi){
       dr_control.psi_cmd=dr_bang.psi_forced; //
     }
@@ -247,7 +269,7 @@ void control_run(float dt)
   // dr_control.theta_cmd=0;
   
   #ifdef LOG
-      fprintf(file_logger_t,"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(),dr_state.x,dr_state.y,posxVel,posyVel,dr_state.z,vxE,vyE,vzE,dr_state.vx,dr_state.vy,dr_state.phi,dr_state.theta,dr_state.psi,dr_control.phi_cmd,dr_control.theta_cmd,dr_control.psi_cmd);
+      fprintf(file_logger_t,"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(),dr_state.x,dr_state.y,posxVel,posyVel,dr_state.z,vxE,vyE,vzE,dr_state.vx,dr_state.vy,dr_state.phi,dr_state.theta,dr_state.psi,dr_control.phi_cmd,dr_control.theta_cmd,dr_control.psi_cmd,vx_des_vel,vy_des_vel);
       // fprintf(comp_log_t,"test1 : %f",dr_state.x);
   #endif
 

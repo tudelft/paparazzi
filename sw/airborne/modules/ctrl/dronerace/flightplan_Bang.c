@@ -15,7 +15,7 @@ int angle_index=0;
 #define NR_ANGLEVAR 18
 // #define ANGLEOVERWRITE
 float angle_variations[NR_ANGLEVAR]={5, 5, 10, 10, 15,15,20, 20,25, 25, 30,30 ,35,35, 40,40,45,45};
-
+int target_reached = 0;
 // int gate_nr;float gate_x;float gate_y;float gate_z;float gate_psi;float gate_speed;int gate_type;int controller_type;int turning;float psi_forced; bool overwrite_psi, float satangle;
 
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
@@ -26,15 +26,15 @@ float angle_variations[NR_ANGLEVAR]={5, 5, 10, 10, 15,15,20, 20,25, 25, 30,30 ,3
 
 // Demo Forward
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-1.5,M_PI,0.2,STARTGATE,PID,0,0,false,20},
-// {1, 2.5,0,-1.5,0,0.2,ENDGATE,BANGBANG,0,0,false,20},
+// {0, -2.0,0,-1.5,M_PI,0.2,STARTGATE,PID,0,0,false,30},
+// {1, 2.5,0,-1.5,0,0.2,ENDGATE,HIGHPID,0,0,false,30},
 // };
 
 // demo forward height diff
-const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-{0, -2.0,0,-1.0,M_PI,0.2,STARTGATE,BANGBANG,0,0,false,25},
-{1, 2.5,0,-2.75,0,0.2,ENDGATE,BANGBANG,0,0,false,25},
-};
+// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+// {0, -2.0,0,-1.0,M_PI,0.2,STARTGATE,BANGBANG,0,0,false,30},
+// {1, 2.5,0,-2.75,0,0.2,ENDGATE,BANGBANG,0,0,false,30},
+// };
 
 // Demo Forward/backwards  25deg
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
@@ -50,10 +50,12 @@ const struct bangbang_fp_struct Banggates[MAX_GATES] = {
 // };
 
 // Demo forward + sidestep 
-// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,2,-1.5,-0.5*M_PI,0.2,STARTGATE,PID,0,-0.5*M_PI,true,20},
-// {1, 1.0,-2,-1.5,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,20},
-// };
+const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+{0, -2.0,2,-1.5,-0.5*M_PI,0.2,STARTGATE,PID,0,-0.5*M_PI,true,35},
+{1, 1.0,-2,-1.5,-0.5*M_PI,0.2,GATE,HIGHPID,0,-0.5*M_PI,true,35},
+{0, -2.0,2,-1.5,-0.5*M_PI,0.2,GATE,PID,0,-0.5*M_PI,true,35},
+{1, 1.0,-2,-1.5,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,35},
+};
 
 static void update_gate_setpoints(void){
     dr_bang.gate_x= Banggates[dr_bang.gate_nr].gate_x;
@@ -91,6 +93,7 @@ void flightplan_reset(){
     dr_bang.controller_type=PID; // in a reset fly to the first waypoint in PID mode
     timer1=0;
     angle_index=0;
+    target_reached=0;
     
 }
     float pos_error_x;
@@ -103,18 +106,21 @@ void flightplan_reset(){
 
 void flightplan_run(void){
     
-    // printf("psi[0]: %f, psi[1]: %f\n",Banggates[0].gate_psi,Banggates[1].gate_psi);
+    
 
     // update_gate_setpoints();
-
+    printf("target reached: %d, distance to gate: %f\n",target_reached,dist2gate);
     pos_error_x=dr_bang.gate_x-dr_state.x; 
     pos_error_y=dr_bang.gate_y-dr_state.y;
     pos_error_z=dr_bang.gate_z-dr_state.z;
     pos_error_x_vel=cosf(dr_state.psi)*pos_error_x+sinf(dr_state.psi)*pos_error_y;
     // dist2gate=sqrtf((pos_error_x*pos_error_x)+(pos_error_y*pos_error_y));
     error_speed=dr_bang.gate_speed-((dr_state.vx*dr_state.vx)+(dr_state.vy*dr_state.vy));
-    if(dist2gate<0.5){
+    if(dist2gate<0.4){
         timer1+=1;
+        if((pos_error_x_vel<=0)&&(fabs(dr_state.psi-dr_bang.gate_psi)<0.3)){
+            target_reached=1; //when passed waypoint in x-direction it counts as target reached (but we do not yet switch to the next waypoint)
+        }
         // printf("theta: %f, phi: %f, banggates[index].psi: %f,Banggates[nextindex].psi: %f psi: %f, psi gate: %f, next index: %d\n",dr_state.theta,dr_state.phi,Banggates[dr_bang.gate_nr].gate_psi,Banggates[next_gate_nr].gate_psi ,dr_state.psi,dr_bang.gate_psi,next_gate_nr);
         if( fabs(dr_state.theta)<0.5 && timer1>128){
             
@@ -133,6 +139,7 @@ void flightplan_run(void){
                 timer1=0;
                 brake=false;
                 controllerstate.in_transition=false;
+                target_reached=0;
                 }
             // }1
     }
@@ -148,7 +155,7 @@ void flightplan_run(void){
     }
 
     #ifdef LOG
-        fprintf(fp_logger_t,"%f, %d, %d, %d, %f, %f, %f, %f\n",get_sys_time_float(),dr_bang.gate_nr,dr_bang.gate_type,dr_bang.controller_type,dr_bang.gate_x,dr_bang.gate_y,dr_bang.gate_z,dr_bang.gate_psi);
+        fprintf(fp_logger_t,"%f, %d, %d, %d, %f, %f, %f, %f, %d\n",get_sys_time_float(),dr_bang.gate_nr,dr_bang.gate_type,dr_bang.controller_type,dr_bang.gate_x,dr_bang.gate_y,dr_bang.gate_z,dr_bang.gate_psi,target_reached);
     #endif
   
     // printf("Controltype: %d, error_speed: %f, dist2gate: %f, psi: %f \n",dr_bang.controller_type,error_speed,dist2gate,dr_state.psi);

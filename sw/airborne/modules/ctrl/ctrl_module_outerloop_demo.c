@@ -130,7 +130,7 @@ void guidance_v_module_enter(void)
 #define KP_VZ 3.0
 #define KP_VZDOT 0.1
 
-#define HOVERTHRUST 0.55
+ // the bebop airframe file says 0.65 but from tests it was found that 0.56 is a more correct hoverthrust.
 #define FIXEDTHRUST 0.57
 #define MAXPITCH 20* PI/180.0
 
@@ -184,6 +184,7 @@ void guidance_v_module_run(bool in_flight)
   }
   
   thrust_cmd = -KD_ALT*(zv_command-vzE) - z_i*KI_ALT+ HOVERTHRUST /  (cosf(dr_state.phi)*cosf(dr_state.theta));
+  // printf("Thrust command: %f\n",thrust_cmd);
 
   if(thrust_cmd>0.8){
     thrust_cmd=0.8;

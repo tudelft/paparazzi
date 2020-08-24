@@ -4,6 +4,7 @@
 #define ENDGATE 2
 #define BANGBANG 2
 #define PID 3 
+#define HIGHPID 4 // high-gain pid
 #define TURNING 1
 struct bangbang_fp_struct
 {

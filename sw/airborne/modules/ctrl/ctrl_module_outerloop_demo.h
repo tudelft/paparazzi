@@ -71,7 +71,7 @@ extern float ctrl_module_demo_pr_ff_gain;  // Pitch/Roll
 extern float ctrl_module_demo_pr_d_gain;
 extern float ctrl_module_demo_y_ff_gain;   // Yaw
 extern float ctrl_module_demo_y_d_gain;
-
+extern float thrust_cmd; // used for the bangbang prediction as well.
 #if 1
 // Implement own Vertical loops
 extern void guidance_v_module_init(void);
@@ -80,6 +80,6 @@ extern void guidance_v_module_run(bool in_flight);
 #endif
 
 
-
+#define HOVERTHRUST 0.56 
 
 #endif /* CTRL_MODULE_OUTERLOOP_DEMO_H_ */

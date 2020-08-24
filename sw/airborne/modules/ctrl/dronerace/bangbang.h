@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
+
+
 struct BangDim{
     float x;
     float y; 

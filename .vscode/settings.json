@@ -13,5 +13,6 @@
         "stdbool.h": "c",
         "filter.h": "c",
         "*.ipp": "c"
-    }
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }
