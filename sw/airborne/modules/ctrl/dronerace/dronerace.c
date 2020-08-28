@@ -209,7 +209,7 @@ void dronerace_periodic(void)
 
   
   // filter_predict(input_phi, input_theta, input_psi, dt); // adds accelerometer values to dr_state (earth frame)
-  complementary_filter_hovercond(0.98,0.95, Cd,mass,vxE,vyE,vzE,posx,posy,posz,dt);    // experimental complementary filter
+  complementary_filter_hovercond(0.97,0.95, Cd,mass,vxE,vyE,vzE,posx,posy,posz,dt);    // experimental complementary filter
   dr_state.vx=compl_V[0];
   dr_state.vy=compl_V[1];
   dr_state.x=compl_pos[0];

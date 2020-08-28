@@ -12,9 +12,10 @@ int next_gate_nr;
 int timer1=0;
 int angle_index=0;
 #define d2r M_PI/180.0f
-#define NR_ANGLEVAR 18
+#define NR_ANGLEVAR 16 //16
 // #define ANGLEOVERWRITE
-float angle_variations[NR_ANGLEVAR]={5, 5, 10, 10, 15,15,20, 20,25, 25, 30,30 ,35,35, 40,40,45,45};
+float angle_variations[NR_ANGLEVAR]={5, 5,5, 5, 10, 10,10,10, 15,15,15,15, 20, 20,20,20};
+//  float angle_variations[NR_ANGLEVAR]={25, 25,25,25, 30,30,30,30 ,35,35,35,35, 40,40,40,40};
 int target_reached = 0;
 // int gate_nr;float gate_x;float gate_y;float gate_z;float gate_psi;float gate_speed;int gate_type;int controller_type;int turning;float psi_forced; bool overwrite_psi, float satangle;
 
@@ -26,36 +27,43 @@ int target_reached = 0;
 
 // Demo Forward
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-1.5,M_PI,0.2,STARTGATE,PID,0,0,false,30},
-// {1, 2.5,0,-1.5,0,0.2,ENDGATE,HIGHPID,0,0,false,30},
+// {0, -2.0,0,-1.5,M_PI,0.2,STARTGATE,HIGHPID,0,0,false,35},
+// {1, 2.5,0,-1.5,0,0.2,ENDGATE,HIGHPID,0,0,false,35},
+// };
+
+// Demo Angle variations
+// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+// {0, -2.0,0,-1.5,M_PI,0.2,STARTGATE,BANGBANG,0,0,false,30},
+// {1, 2.5,0,-1.5,0,0.2,GATE,BANGBANG,0,0,false,30},
+// {2, 0.25,0,-1.5,M_PI,0.2,GATE,BANGBANG,0,0,false,30},
+// {3, -2,0,-1.5,M_PI,0.2,GATE,BANGBANG,0,0,false,30},
+// {4, 2.5,0,-1.5,0,0.2,ENDGATE,BANGBANG,0,0,false,30},
 // };
 
 // demo forward height diff
-// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-1.0,M_PI,0.2,STARTGATE,BANGBANG,0,0,false,30},
-// {1, 2.5,0,-2.75,0,0.2,ENDGATE,BANGBANG,0,0,false,30},
-// };
+const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+{0, -2.0,0,-1.0,M_PI,0.2,STARTGATE,HIGHPID,0,0,false,35},
+{1, 2.5,0,-2.75,0,0.2,ENDGATE,HIGHPID,0,0,false,35},
+};
 
 // Demo Forward/backwards  25deg
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-1.5,0.0,0.2,STARTGATE,BANGBANG,0,0,true,25},
-// {1, 2.0,0,-1.5,0.0,0.2,ENDGATE,BANGBANG,0,0,true,25},
+// {0, -2.0,0,-1.5,0.0,0.2,STARTGATE,HIGHPID,0,0,true,35},
+// {1, 2.0,0,-1.5,0.0,0.2,ENDGATE,HIGHPID,0,0,true,35},
 // };
 
 
 // // // Demo Sideways    // set saturation angles to 25 deg or lower for relatively safe
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,1,-1.75,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,35},
-// {1, 2.0,1,-1.75,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,35},
+// {0, -2.0,1,-1.75,-0.5*M_PI,0.2,STARTGATE,HIGHPID,0,-0.5*M_PI,true,35},
+// {1, 2.0,1,-1.75,-0.5*M_PI,0.2,ENDGATE,HIGHPID,0,-0.5*M_PI,true,35},
 // };
 
 // Demo forward + sidestep 
-const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-{0, -2.0,2,-1.5,-0.5*M_PI,0.2,STARTGATE,PID,0,-0.5*M_PI,true,35},
-{1, 1.0,-2,-1.5,-0.5*M_PI,0.2,GATE,HIGHPID,0,-0.5*M_PI,true,35},
-{0, -2.0,2,-1.5,-0.5*M_PI,0.2,GATE,PID,0,-0.5*M_PI,true,35},
-{1, 1.0,-2,-1.5,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,35},
-};
+// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+// {0, -2.0,2,-1.5,-0.5*M_PI,0.2,STARTGATE,HIGHPID,0,-0.5*M_PI,true,35},
+// {1, 1.0,-2,-1.5,-0.5*M_PI,0.2,ENDGATE,HIGHPID,0,-0.5*M_PI,true,35},
+// };
 
 static void update_gate_setpoints(void){
     dr_bang.gate_x= Banggates[dr_bang.gate_nr].gate_x;
@@ -109,7 +117,7 @@ void flightplan_run(void){
     
 
     // update_gate_setpoints();
-    printf("target reached: %d, distance to gate: %f\n",target_reached,dist2gate);
+    // printf("target reached: %d, distance to gate: %f\n",target_reached,dist2gate);
     pos_error_x=dr_bang.gate_x-dr_state.x; 
     pos_error_y=dr_bang.gate_y-dr_state.y;
     pos_error_z=dr_bang.gate_z-dr_state.z;
@@ -151,6 +159,7 @@ void flightplan_run(void){
         }
         else{
             angle_index=0;
+            printf("\n\n\n END ANGLE VARIATIONS \n\n\n");
         }
     }
 

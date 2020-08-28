@@ -25,6 +25,10 @@ FILE *fp_logger_t = NULL;
 FILE *brake_log_t = NULL;
 FILE *filter_log_t = NULL;
 FILE *comp_log_t = NULL;
+// float dt = 1.0f / 512.f;
+float vx_vel_old=0;
+float vy_vel_old=0;
+
 
 static void open_log(void) 
 {
@@ -70,8 +74,8 @@ float vy_des_vel ;
 
 // Slow speed
 #define CTRL_MAX_SPEED  10.0             // m/s
-#define CTRL_MAX_PITCH  RadOfDeg(20)    // rad //not used currently
-#define CTRL_MAX_ROLL   RadOfDeg(30)    // rad
+#define CTRL_MAX_PITCH  RadOfDeg(50)    // rad  (overrules dr_bang.satangle if smaller)
+#define CTRL_MAX_ROLL   RadOfDeg(50)    // rad
 #define CTRL_MAX_R      RadOfDeg(90)    // rad/sec
 
 float bound_angle(float angle, float max_angle){
@@ -97,6 +101,8 @@ void control_reset(void)
   dr_control.psi_ref = 0;
   dr_control.psi_cmd = 0;
   dr_bang.controller_type=PID;
+  vx_vel_old=0;
+  vy_vel_old=0;
 }
 
 static float angle180(float r)
@@ -132,12 +138,12 @@ float bound_f(float val, float min, float max) {
 #define KD_VEL_Y  0.05
 
 // High gain PID gains
-#define KP_POS_HIGH  1.5
-#define KI_POS_HIGH 0.02
-#define KP_VEL_X_HIGH  0.8
-#define KP_VEL_Y_HIGH  0.8 
-#define KD_VEL_X_HIGH  0.05
-#define KD_VEL_Y_HIGH  0.05
+#define KP_POS_HIGH  1.8  
+#define KI_POS_HIGH  0//0.02
+#define KP_VEL_X_HIGH  1.5
+#define KP_VEL_Y_HIGH  1.5 
+#define KD_VEL_X_HIGH  0.1//0.05
+#define KD_VEL_Y_HIGH  0.1//0.05
 
 void control_run(float dt)
 {
@@ -232,8 +238,13 @@ void control_run(float dt)
         dr_control.psi_cmd=dr_bang.gate_psi;
       }
       // printf("psicmd: %f,atan: %f, error_posx: %f, error_posy: %f, error_posx_vel: %f\n",dr_control.psi_cmd,(error_posy_E,error_posx_E),error_posx_E,error_posy_E, error_posx_vel);
-      dr_control.phi_cmd= bound_angle(KP_VEL_Y_HIGH * (vy_des_vel-vy_vel),d2r*dr_bang.sat_angle);
-      dr_control.theta_cmd=bound_angle(KP_VEL_X_HIGH *-1* (vx_des_vel-vx_vel),d2r*dr_bang.sat_angle);
+      dr_control.phi_cmd= KP_VEL_Y_HIGH * (vy_des_vel-vy_vel)-KD_VEL_Y_HIGH*(vy_vel-vy_vel_old)/dt;
+      dr_control.theta_cmd=KP_VEL_X_HIGH *-1* (vx_des_vel-vx_vel)+KD_VEL_X_HIGH*(vx_vel-vx_vel_old)/dt;
+
+      dr_control.phi_cmd=bound_angle(dr_control.phi_cmd,d2r*dr_bang.sat_angle);
+      dr_control.theta_cmd=bound_angle(dr_control.theta_cmd,d2r*dr_bang.sat_angle);
+      vx_vel_old=vx_vel;
+      vy_vel_old=vy_vel;
   }    
   else{ // USE a PID controller 
             
@@ -257,7 +268,8 @@ void control_run(float dt)
       dr_control.psi_cmd=dr_bang.psi_forced; //
     }
 
-    
+      // dr_control.phi_cmd=bound_angle(dr_control.phi_cmd,d2r*CTRL_MAX_ROLL);
+      // dr_control.theta_cmd=bound_angle(dr_control.theta_cmd,d2r*CTRL_MAX_PITCH);
   
     // printf("psi_cmd: %f, psi_forced %d\n",dr_control.psi_cmd,dr_bang.psi_forced);
   

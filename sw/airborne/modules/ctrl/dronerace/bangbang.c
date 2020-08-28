@@ -60,7 +60,7 @@ float angc_old ;
 float ys;
 float vs;
 
-int satdim;
+int satdim=0; //default satdim is forward. 
 int satdim_prev=10; 
 float t_s; 
 float t_target;
@@ -92,7 +92,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
     meas_angle[0]=dr_state.theta;
     meas_angle[1]=dr_state.phi;
-    
+    float error_mag=sqrtf(pos_error[0]*pos_error[0]+pos_error[1]*pos_error[1]);
     // Determine which dimension will be saturated 
     
     float error_thresh = 1e-3; 
@@ -116,17 +116,17 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     }
 
     
-    if(!controllerstate.in_transition){   //don't update satdim when in transition
-        if(fabs(pos_error[0])>=fabs(pos_error[1])){
+    if(!controllerstate.in_transition|| fabs(pos_error[0]-pos_error[1])>0.5){   //don't update satdim when in transition or when too close to the waypoint or when the error components are too close together
+        if(fabs(pos_error[0])>=fabs(pos_error[1])){                                              // to avoid twitching.
             satdim=0;        
         }
         else{
             satdim=1;        
         }
     }
-    
+        printf("satdim: %d\n",satdim);
 
-    satdim=0; // TODO: force satdim for debugging purposes 
+    // satdim=0; // TODO: force satdim for debugging purposes 
 
     if(satdim==0){
         satangle=sat_corr[0];
@@ -296,7 +296,7 @@ float get_E_pos(float Vd, float angle){
 }
 
 float predict_path_analytical(float t_s, float angle,float Vd){
-    #ifdef USETHRUSTALTCTRL //use the thrust as commanded by the altitude controller 
+    #ifdef USETHRUSTeALTCTRL //use the thrust as commanded by the altitude controller 
         T= (thrust_cmd/HOVERTHRUST)*mass*g*cosf(dr_state.phi)*cosf(dr_state.theta);
     #else
         T=mass*g;
@@ -351,7 +351,7 @@ float predict_path_analytical(float t_s, float angle,float Vd){
         T_sec = T;
         find_constants(0.0,v_velframe[dim]);
         constant_sec = constant; 
-        y_target=get_position_analytical(0.9*t_target);//find position in lateral direction using the predicted eta of the first dimension;    }
+        y_target=get_position_analytical(t_target);//find position in lateral direction using the predicted eta of the first dimension;    }
         // printf("y_target_sec: %f, t_target: %f, angle: %f, tanf: %f",y_target,t_target,angle,tanf(angle));
     // printf("\n");
     }
