@@ -28,6 +28,7 @@ extern void control_run(float dt);
  float vyE;
  float vzE;
  
+ float bound_f(float val, float min, float max);
 
 
 #define GRAVITY -9.80665

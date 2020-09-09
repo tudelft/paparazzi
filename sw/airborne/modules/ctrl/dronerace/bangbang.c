@@ -18,6 +18,14 @@ int type;
 bool brake = false;
 float dtt = 1.0f / 512.f;
 
+float estimator_time[3] = {0.285600580827510, -0.022035744273907, -0.012053303063961};
+float estimator_pos[3] = {0.164209236667037, 0.120797076901804, 0.162129652187799}; 
+float estimator_vel[3] = {-0.149450000852137, 0.613672580954269, -0.099748395433426};
+float delta_angle_in; //TODO remove.... Now used for logging what's getting inputted in find_losses
+
+
+
+
 float bang_ctrl[3] = {0}; //control inputs that will be the final product of the bangbang optimizer 
 
 struct BangDim sat_angle = {0};
@@ -30,7 +38,7 @@ struct BangDim sign_corr=
 struct controllerstatestruct controllerstate={
     false, //apply_compensation boolean2
     false, // in_transition boolean
-    0.21, // compensation time (add to 2nd section of prediction)
+    0.21, // compensation time (add to 2nd section of prediction) 
     0.5,   //delta_v (add to initial condition of second section) should normally be negative but can be different because of delay in velocity estimation
     1.1      //delta_y (add to second section of prediction)
 };
@@ -83,6 +91,18 @@ float y_1_trans; //position at end of transition ;
 float satang_1_trans;
 
 
+
+void find_losses(float v_initial, float delta_angle){
+    if(dim==0){
+        delta_angle=-1*delta_angle; // TODO find a better solution to adhere to the sign differences between pitch and roll
+    }
+    delta_angle_in=delta_angle; // for logging. 
+    controllerstate.delta_t=estimator_time[0]+estimator_time[1]*delta_angle+estimator_time[2]*v_initial;
+    controllerstate.delta_y =estimator_pos[0]+estimator_pos[1]*delta_angle+estimator_pos[2]*v_initial;
+    controllerstate.delta_v=estimator_vel[0]+estimator_vel[1]*delta_angle+estimator_vel[2]*v_initial;
+}
+
+
 void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
     pos_error[0]=pos_error_vel_x;
     pos_error[1]=pos_error_vel_y;
@@ -92,7 +112,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
     meas_angle[0]=dr_state.theta;
     meas_angle[1]=dr_state.phi;
-    float error_mag=sqrtf(pos_error[0]*pos_error[0]+pos_error[1]*pos_error[1]);
+    // float error_mag=sqrtf(pos_error[0]*pos_error[0]+pos_error[1]*pos_error[1]);
     // Determine which dimension will be saturated 
     
     float error_thresh = 1e-3; 
@@ -172,6 +192,9 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             
         }
         bang_ctrl[dim]=sat_corr[dim];
+    }
+    if(controllerstate.apply_compensation){
+        printf("Compensation: V0: %f, delta_angle: %f, delta_t: %f, delta_y: %f, delta_v: %f\n ",vs,delta_angle_in,controllerstate.delta_t,controllerstate.delta_y,controllerstate.delta_v);
     }
     //if braking:
     else{
@@ -281,8 +304,11 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
 
     #ifdef LOG
-    fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %d, %d, %f, %f, %f, %f, %f\n",get_sys_time_float(), satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v_velframe[0], v_velframe[1],
-    constant_sat_accel.c1,constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec,controllerstate.apply_compensation,controllerstate.in_transition,controllerstate.delta_t,controllerstate.delta_y,controllerstate.delta_v,ys,vs);
+    fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %d, %d, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(), satdim, brake, t_s, t_target, 
+    pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v_velframe[0], v_velframe[1],
+    constant_sat_accel.c1,constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1,
+     constant_sec.c2, T_sat, T_sec,controllerstate.apply_compensation,controllerstate.in_transition,
+     controllerstate.delta_t,controllerstate.delta_y,controllerstate.delta_v,ys,vs,delta_angle_in);
   
     // fprintf(comp_log_t,"");
     #endif
@@ -290,12 +316,12 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
 
 float get_E_pos(float Vd, float angle){
-    y_target=predict_path_analytical(t_s,angle,Vd); //y_target is the position at which the desired speed is reached. Ideally we want this value at pos_error (distance to wp)
+    y_target=predict_path_analytical(angle,Vd); //y_target is the position at which the desired speed is reached. Ideally we want this value at pos_error (distance to wp)
 
     return y_target-pos_error[dim]; //TODO should be other way around (make sure to change sign_corr accordingly)
 }
 
-float predict_path_analytical(float t_s, float angle,float Vd){
+float predict_path_analytical(float angle,float Vd){
     #ifdef USETHRUSTeALTCTRL //use the thrust as commanded by the altitude controller 
         T= (thrust_cmd/HOVERTHRUST)*mass*g*cosf(dr_state.phi)*cosf(dr_state.theta);
     #else
@@ -324,7 +350,8 @@ float predict_path_analytical(float t_s, float angle,float Vd){
             //predict braking part:
             T=-1*T; 
             if(controllerstate.apply_compensation){
-                find_constants(ys+controllerstate.delta_y,vs+controllerstate.delta_v);
+                find_losses(vs,2*sat_corr[dim]); // update delta_t ,delta_v, delta_y in controllerstate. 
+                find_constants(ys+controllerstate.delta_y,vs+controllerstate.delta_v); // find constants for assumed conditions after transition
                 }
             else{
                 find_constants(ys,vs); //update constants for second part;
@@ -375,4 +402,3 @@ float get_time_analytical(float V){
     }
     return t_t;
 }
-

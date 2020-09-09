@@ -27,11 +27,12 @@ struct controllerstatestruct{
 
 extern void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y,float v_desired);
 float get_E_pos(float Vd, float angle);
-float predict_path_analytical(float t_s, float angle, float Vd);
+float predict_path_analytical(float angle, float Vd);
 void find_constants(float yi,float vi);
 float get_position_analytical(float t);
 float get_velocity_analytical(float t);
 float get_time_analytical(float V);
+void find_losses(float v_initial, float delta_angle);
 extern float Cd;
 extern float mass; 
 float psi_command; 
