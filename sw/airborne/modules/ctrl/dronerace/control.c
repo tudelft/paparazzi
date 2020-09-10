@@ -263,8 +263,8 @@ void control_run(float dt)
         dr_control.psi_cmd=dr_bang.gate_psi;
       }
       // printf("psicmd: %f,atan: %f, error_posx: %f, error_posy: %f, error_posx_vel: %f\n",dr_control.psi_cmd,(error_posy_E,error_posx_E),error_posx_E,error_posy_E, error_posx_vel);
-      dr_control.phi_cmd= bound_f(KP_VEL_Y * (vy_des_vel-vy_vel),-d2r*fabs(dr_bang.sat_angle),d2r*fabs(dr_bang.sat_angle));
-      dr_control.theta_cmd=bound_f(KP_VEL_X *-1* (vx_des_vel-vx_vel),-d2r*fabs(dr_bang.sat_angle),d2r*fabs(dr_bang.sat_angle));
+      dr_control.phi_cmd= bound_f(KP_VEL_Y * (vy_des_vel-vy_vel),-d2r*30,d2r*30);
+      dr_control.theta_cmd=bound_f(KP_VEL_X *-1* (vx_des_vel-vx_vel),-d2r*30,d2r*30);
   }
     if (dr_bang.overwrite_psi){
       dr_control.psi_cmd=dr_bang.psi_forced; //

@@ -144,7 +144,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             satdim=1;        
         }
     }
-        printf("satdim: %d\n",satdim);
+        // printf("satdim: %d\n",satdim);
 
     // satdim=0; // TODO: force satdim for debugging purposes 
 
@@ -279,7 +279,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         }
     }
     // go out of transition when the measured angle is close to the commanded brake angle (timer is added as temporary measure to deal with the delay of bang_ctrl being updated to brake angle command)
-    if(controllerstate.in_transition && ((fabs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim])<0.15 && (get_sys_time_float()-t_0_trans)>0.1) || fabs(v_velframe[satdim])<1)){// ((get_sys_time_float()-t_0_trans)>controllerstate.delta_t)){ // transition ends when it has been active for more than delta_t 
+    if(controllerstate.in_transition && ((fabs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim])<0.15 && ((get_sys_time_float()-t_0_trans)>3*dtt)) || fabs(v_velframe[satdim])<1)){// ((get_sys_time_float()-t_0_trans)>controllerstate.delta_t)){ // transition ends when it has been active for more than delta_t 
         controllerstate.in_transition=false;                                    //  ^ will break down if bang_ctrl[satdim] is zero (not likely in practice);
 
         //measure transition values 
