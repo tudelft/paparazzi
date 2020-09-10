@@ -267,7 +267,7 @@ class EnergyMonFrame(wx.Frame):
 
         elif msg.name == "PAYLOAD":
             self.payload = PayloadMessage(msg)
-            print("VALUES: " + self.payload.values)
+            #print("VALUES: " + self.payload.values)
 
     def update(self):
         self.Refresh()
