@@ -178,6 +178,49 @@ class BatteryCell(object):
         return 0.5
 
 
+class PayloadMessage(object):
+    def _init_(self, msg):
+        self.values = ''.join(chr(int(x)) for x in msg['values'])
+
+
+class FuelCellStatus(object):
+
+    def update(self,msg):
+        self.msg = msg
+        elements = self.msg.strip('<').strip('>').split(',')
+        if (len(elements) == 4):
+            self.tank = float(elements[0])
+            self.battery = float(elements[1])
+            self.status = elements[2]
+            self.error = elements[3]
+        else:
+            print('ERROR: ' + msg)
+    def get_tank(self):
+        bar = round(5 + self.tank / 100 * 295,1)
+        return 'Cylinder ' + str(bar) + ' Bar'
+    def get_tank_perc(self):
+        return (self.tank) / 100.0
+    def get_tank_color(self):
+        if (self.tank) < 10:
+            return 0.1
+        elif int(self.tank) < 20:
+            return 0.5
+        else:
+            return 1
+                
+    def get_battery(self):
+        return str(self.battery) + '%'
+    def get_battery_perc(self):
+        return (self.battery) / 100.0
+    def get_battery_color(self):
+        if (self.battery) < 10:
+            return 0.1
+        elif (self.battery) < 20:
+            return 0.5
+        else:
+            return 1
+                
+
 
 class FuelCellFrame(wx.Frame):
     def message_recv(self, ac_id, msg):
@@ -199,6 +242,12 @@ class FuelCellFrame(wx.Frame):
             self.esc = EscMessage(msg)
             self.motors.fill_from_esc_msg(self.esc)
             wx.CallAfter(self.update)    
+
+        elif msg.name == "PAYLOAD":
+            self.payload = PayloadMessage(msg)
+            self.fuelcell.update(self.payload.values)
+            print("Payload: " + self.payload.values)
+
 
     def update(self):
         self.Refresh()
@@ -258,7 +307,7 @@ class FuelCellFrame(wx.Frame):
     def OnPaint(self, e):
         # Automatic Scaling
         w = self.w
-        h = self.h
+        h = self.h - 25
 
         self.stat = int(w/4)
         if self.stat<100:
@@ -278,12 +327,30 @@ class FuelCellFrame(wx.Frame):
         font = wx.Font(fontscale, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         dc.SetFont(font)
 
+	# Draw Drone
+        dc.SetPen(wx.Pen(wx.Colour(0,0,0))) 
+        dc.SetBrush(wx.Brush(wx.Colour(240,240,220))) 
+        # Fuselage
+        dc.DrawRoundedRectangle(int(0.35*w), int(0.05*h),int(0.3*w), int(0.9*h), int(0.1*w))
+        # Front Wing
+        dc.DrawRectangle(int(0.05*w), int(0.25*h),int(0.9*w), int(0.15*h))
+        # Back Wing
+        dc.DrawRectangle(int(0.05*w), int(0.65*h),int(0.9*w), int(0.15*h))
+
+        dc.SetBrush(wx.Brush(wx.Colour(200,200,200))) 
+        dc.DrawRoundedRectangle(int(0.37*w), int(0.07*h),int(0.26*w), int(0.35*h), int(0.13*w))
+
+
         self.StatusBox(dc,0, 0, self.cell.get_volt(), self.cell.get_volt_perc(), self.cell.get_volt_color())
         self.StatusBox(dc,1, 0, self.cell.get_current(), self.cell.get_current_perc(), self.cell.get_current_color() )
         self.StatusBox(dc,2, 0, self.cell.get_energy(), self.cell.get_energy_perc(), self.cell.get_energy_color() )
         self.StatusBox(dc,3, 0, self.cell.get_mah_from_volt(), self.cell.get_energy_perc(), self.cell.get_energy_color() )
         self.StatusBox(dc,4, 0, self.cell.get_temp(), self.cell.get_temp_perc(), self.cell.get_temp_color())
         self.StatusBox(dc,5, 0, self.cell.get_power_text(), self.cell.get_power_perc(), self.cell.get_power_color())
+
+        self.StatusBox(dc,0, 1, self.fuelcell.get_tank(), self.fuelcell.get_tank_perc(), self.fuelcell.get_tank_color())
+        self.StatusBox(dc,1, 1, self.fuelcell.get_battery(), self.fuelcell.get_battery_perc(), self.fuelcell.get_battery_color())
+
 
         i = 6
         for m in self.motors.mot:
@@ -324,6 +391,8 @@ class FuelCellFrame(wx.Frame):
         self.temp = {}
         self.cell = BatteryCell()
         self.motors = MotorList()
+        self.fuelcell = FuelCellStatus()
+        self.fuelcell.update('<50,86,2,0x00020000>')
      
         self.interface = IvyMessagesInterface("fuelcellframe")
         self.interface.subscribe(self.message_recv)
