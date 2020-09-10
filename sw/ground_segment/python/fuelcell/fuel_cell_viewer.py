@@ -70,33 +70,42 @@ class EscMessage(object):
         self.energy = float(msg['energy'])
     
     def get_current(self):
-        return "Mot" + str(self.id) + " " +str(round(self.amp ,1)) + "A"
+        return str(round(self.amp ,1)) + "A"
     def get_current_perc(self):
         return self.amp / 30
 
     def get_rpm(self):
-        return "Mot" + str(self.id) + " " +str(round(self.rpm ,0)) + " rpm"
+        return str(round(self.rpm ,0)) + " rpm"
     def get_rpm_perc(self):
         return self.rpm / 4000
+    def get_rpm_color(self):
+        if self.rpm < 2500:
+            return 1
+        return 0.5
 
 
     def get_volt(self):
-        return "Mot" + str(self.id) + " " +str(round(self.volt_m ,0)) + "V"
+        if (self.id in [6,7,8,9,16,17,18,19]):
+            return "Servo " + str(self.id) + " " +str(round(self.volt_m ,0)) + "V"
+        else:
+            return "Mot " + str(self.id) + " " +str(round(self.volt_m ,0)) + "V"
     def get_volt_perc(self):
         return self.volt_b / (6*4.2)
 
     def get_temp(self):
-        return "Mot" + str(self.id) + " " +str(round(self.temperature ,1)) + "C"
+        if self.temperature < -200:
+            return "xxx"
+        return str(round(self.temperature ,1)) + "C"
     def get_temp_perc(self):
-        if self.temperature < 0:
-            return 0
-        else:
-            return self.temperature / 100
+        return self.temperature / 120.0
 
     def get_temp_color(self):
-        if self.temperature > 40:
+        if self.temperature < 0:
+            return 0
+        elif self.temperature < 60:
+            return 1
+        else:
             return 0.5
-        return 1
 
 class MotorList(object):
     def __init__(self):
@@ -209,6 +218,10 @@ class FuelCellStatus(object):
 
     def update(self,msg):
         self.msg = msg
+        if hasattr(self, 'blink'):
+            self.blink = 1 - self.blink
+        else:
+            self.blink = 0
         elements = self.msg.strip('<').strip('>').split(',')
         if (len(elements) == 4):
             self.tank = float(elements[0])
@@ -219,7 +232,7 @@ class FuelCellStatus(object):
             self.errors = []
             hex = '0000'
             if (len(self.error) >= 4):
-                hex = self.error[0:4]
+                hex = self.error[2:6]
             #array of 16 error codes
             self.error_bin = bin(int(hex, 16))[2:].zfill(16)
 
@@ -228,6 +241,10 @@ class FuelCellStatus(object):
 
     def get_raw(self):
         return self.msg
+    def get_raw_color(self):
+        if self.blink == 0:
+            return 0
+        return 1.0
 
     def get_tank(self):
         bar = round(5 + self.tank / 100 * 295,1)
@@ -286,13 +303,14 @@ class FuelCellStatus(object):
     def get_error_perc(self):
         return 1.0
     def get_error_color(self):
-        
-        return 1.0
+        if self.error[2:6] == '0000':
+            return 1.0
+        return 0.1
 
 
     def get_error_nr(self, nr):
-        err = ["Stack temp 1 above limit", "Stack temp 2 above limit", "Battery Undervoltage", "Battery Overtemperature", "No Fan", "", "Stack temp 1 above limit", "Stack temp 2 above limit", 
-               "Battery Undervoltage", "Battery Overtemperature", "Master Timeout Start", "Master Stop Timeout", "Start Under Pressue", "Tank Under Pressure", "Tank Low Pressure", "Safety Flag Before Master En", ""]
+        err = ["Stack1 OverTemp", "Stack2 OverTemp", "AuxBat UnderVolt", "AuxBat Overtemp", "No Fan", "", "Stack1 OverTemp", "Stack2 OverTemp", 
+               "AuxBat UnderVolt", "AuxBat OverTemp", "Mast Timeout Start", "Master Timeout Stop", "Start Under Pressue", "Tank UnderPress", "Tank LowPress", "SafFlag bf Mastr En.", ""]
         return self.error_bin[nr] + ' ' + err[nr]
     def get_error_nr_color(self, nr):
         if self.error_bin[nr] == '1':
@@ -346,7 +364,7 @@ class FuelCellFrame(wx.Frame):
         self.cfg.Write("top", str(self.y));
 
 
-    def StatusBox(self, dc, row, col, txt, percent, color):
+    def StatusBox(self, dc, dx, dy, row, col, txt, percent, color):
         if percent < 0:
             percent = 0
         if percent > 1:
@@ -360,7 +378,7 @@ class FuelCellFrame(wx.Frame):
 
         dc.SetPen(wx.Pen(wx.Colour(0,0,0))) 
         dc.SetBrush(wx.Brush(wx.Colour(220,220,220))) 
-        dc.DrawRectangle(tdx +  col * 200, int(row*spacing+tdx), int(boxw), boxh)
+        dc.DrawRectangle(tdx +  col * 200 + dx, int(row*spacing+tdx) +dy, int(boxw), boxh)
         dc.SetTextForeground(wx.Colour(0, 0, 0))
         if color < 0.2:
             dc.SetTextForeground(wx.Colour(255, 255, 255))
@@ -370,8 +388,8 @@ class FuelCellFrame(wx.Frame):
         else:
             dc.SetBrush(wx.Brush(wx.Colour(0,250,0)))
 #        dc.DrawLine(200,50,350,50)
-        dc.DrawRectangle(tdx +  col * 200, int(row*spacing+tdx), int(boxw * percent), boxh)
-        dc.DrawText(txt,18 + col * 200,int(row*spacing+tdy+tdx))
+        dc.DrawRectangle(tdx +  col * 200 + dx, int(row*spacing+tdx+dy), int(boxw * percent), boxh)
+        dc.DrawText(txt,18 + col * 200 + dx,int(row*spacing+tdy+tdx+dy))
 
     def plot_x(self, x):
         return int(self.stat+self.tdx +  x * (self.w-self.stat-2*self.tdx))
@@ -389,10 +407,6 @@ class FuelCellFrame(wx.Frame):
         w = self.w
         h = self.h - 25
 
-        self.stat = int(w/8)
-        if self.stat<100:
-            self.stat=100
-
         dc = wx.PaintDC(self)
         brush = wx.Brush("white")
         dc.SetBackground(brush)
@@ -401,7 +415,7 @@ class FuelCellFrame(wx.Frame):
         # Background
         dc.SetBrush(wx.Brush(wx.Colour(0, 0, 0), wx.TRANSPARENT))
 
-        fontscale = int(w * 11.0 / 1600.0)
+        fontscale = int(w * 11.0 / 1500.0)
         if fontscale < 6:
             fontscale = 6
         font = wx.Font(fontscale, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
@@ -411,38 +425,65 @@ class FuelCellFrame(wx.Frame):
         dc.SetPen(wx.Pen(wx.Colour(0,0,0))) 
         dc.SetBrush(wx.Brush(wx.Colour(240,240,220))) 
         # Fuselage
-        dc.DrawRoundedRectangle(int(0.35*w), int(0.05*h),int(0.3*w), int(0.9*h), int(0.1*w))
+        dc.DrawRoundedRectangle(int(0.37*w), int(0.05*h),int(0.26*w), int(0.9*h), int(0.1*w))
         # Front Wing
         dc.DrawRectangle(int(0.05*w), int(0.25*h),int(0.9*w), int(0.15*h))
         # Back Wing
-        dc.DrawRectangle(int(0.05*w), int(0.65*h),int(0.9*w), int(0.15*h))
+        dc.DrawRectangle(int(0.01*w), int(0.65*h),int(0.98*w), int(0.15*h))
 
+        # Fuel Cell
         dc.SetBrush(wx.Brush(wx.Colour(100,100,100))) 
-        dc.DrawRoundedRectangle(int(0.37*w), int(0.07*h),int(0.26*w), int(0.35*h), int(0.08*w))
+        dc.DrawRoundedRectangle(int(0.39*w), int(0.07*h),int(0.22*w), int(0.35*h), int(0.08*w))
 
+        self.stat = int(0.14*w)
 
-        self.StatusBox(dc,0, 0, self.cell.get_volt(), self.cell.get_volt_perc(), self.cell.get_volt_color())
-        self.StatusBox(dc,1, 0, self.cell.get_current(), self.cell.get_current_perc(), self.cell.get_current_color() )
-        self.StatusBox(dc,2, 0, self.cell.get_power_text(), self.cell.get_power_perc(), self.cell.get_power_color())
-        self.StatusBox(dc,3, 0, self.cell.get_power2_text(), self.cell.get_power_perc(), self.cell.get_power_color())
-        self.StatusBox(dc,4, 0, self.cell.get_energy(), self.cell.get_energy_perc(), self.cell.get_energy_color() )
+	dx = int(0.43*w)
+        dy = int(0.43*h)
+        self.StatusBox(dc, dx, dy, 0, 0, self.cell.get_volt(), self.cell.get_volt_perc(), self.cell.get_volt_color())
+        self.StatusBox(dc, dx, dy, 1, 0, self.cell.get_current(), self.cell.get_current_perc(), self.cell.get_current_color() )
+        self.StatusBox(dc, dx, dy, 2, 0, self.cell.get_power_text(), self.cell.get_power_perc(), self.cell.get_power_color())
+        self.StatusBox(dc, dx, dy, 3, 0, self.cell.get_energy(), self.cell.get_energy_perc(), self.cell.get_energy_color() )
 
-        self.StatusBox(dc,0, 2, self.fuelcell.get_raw(), 0, self.fuelcell.get_tank_color())
-        self.StatusBox(dc,1, 2, self.fuelcell.get_tank(), self.fuelcell.get_tank_perc(), self.fuelcell.get_tank_color())
-        self.StatusBox(dc,2, 2, self.fuelcell.get_battery(), self.fuelcell.get_battery_perc(), self.fuelcell.get_battery_color())
-        self.StatusBox(dc,3, 2, self.fuelcell.get_status(), self.fuelcell.get_status_perc(), self.fuelcell.get_status_color())
-        self.StatusBox(dc,4, 2, self.fuelcell.get_error(), self.fuelcell.get_error_perc(), self.fuelcell.get_error_color())
+	dx = int(0.43*w)
+        dy = int(0.15*h)
+        self.StatusBox(dc, dx, dy, 0, 0, self.fuelcell.get_raw(), 0, self.fuelcell.get_raw_color())
+        self.StatusBox(dc, dx, dy, 1, 0, self.fuelcell.get_tank(), self.fuelcell.get_tank_perc(), self.fuelcell.get_tank_color())
+        self.StatusBox(dc, dx, dy, 2, 0, self.fuelcell.get_battery(), self.fuelcell.get_battery_perc(), self.fuelcell.get_battery_color())
+        self.StatusBox(dc, dx, dy, 3, 0, self.fuelcell.get_status(), self.fuelcell.get_status_perc(), self.fuelcell.get_status_color())
+        self.StatusBox(dc, dx, dy, 4, 0, self.fuelcell.get_error(), self.fuelcell.get_error_perc(), self.fuelcell.get_error_color())
 
-        for i in range(0,16,1):
-            self.StatusBox(dc,i, 4, self.fuelcell.get_error_nr(i), 1, self.fuelcell.get_error_nr_color(i))
+        # Warnings
+        self.stat = int(0.14*w)
+        dc.SetBrush(wx.Brush(wx.Colour(70,70,40))) 
+        dc.DrawRectangle(int(0.36*w), int(0.63*h),int(0.28*w), int(0.35*h))
+	dx = int(0.36*w)
+        dy = int(0.63*h)
+        for i in range(0,8,1):
+            self.StatusBox(dc, dx, dy,i, 0, self.fuelcell.get_error_nr(i*2), 1, self.fuelcell.get_error_nr_color(i*2))
+            self.StatusBox(dc, int(0.5*w), dy,i, 0, self.fuelcell.get_error_nr(i*2+1), 1, self.fuelcell.get_error_nr_color(i*2+1))
 
-        i = 6
+        # Motors
+        self.stat = int(0.10*w)
+
+        dc.SetBrush(wx.Brush(wx.Colour(200,200,100))) 
+        w1 = 0.20
+        w2 = 0.60
+        dw = 0.11
+        mw = 0.1
+        mm = [(0.03,w1), (0.03+dw,w1), (0.03+2*dw,w1), (0.97-mw-2*dw,w1), (0.97-mw-dw,w1), (0.97-mw,w1), (0.03,w1+0.17), (0.03+dw,w1+0.17), (0.97-mw-dw,w1+0.17), (0.97-mw,w1+0.17),
+              (0.03,w2), (0.03+dw,w2), (0.03+2*dw,w2), (0.97-mw-2*dw,w2), (0.97-mw-dw,w2), (0.97-mw,w2), (0.03,w2+0.17), (0.03+dw,w2+0.17), (0.97-mw-dw,w2+0.17), (0.97-mw,w2+0.17)]
+        for m in mm:
+            dc.DrawRectangle(int(m[0]*w), int(m[1]*h),int(mw*w), int(0.15*h))
+
         for m in self.motors.mot:
-            self.StatusBox(dc,i, 0, m.get_volt(), m.get_volt_perc(), 1)
-            self.StatusBox(dc,i, 1, m.get_current(), m.get_current_perc(), 1)
-            self.StatusBox(dc,i, 2, m.get_rpm(), m.get_rpm_perc(), 1)
-            self.StatusBox(dc,i, 3, m.get_temp(), m.get_temp_perc(), m.get_temp_color())
-            i = i + 1
+            mo_co = mm[m.id]
+            #print(m.id, mo_co)
+            dx = int(mo_co[0]*w)
+            dy = int(mo_co[1]*h)
+            self.StatusBox(dc, dx, dy, 0, 0, m.get_volt(), m.get_volt_perc(), 1)
+            self.StatusBox(dc, dx, dy, 1, 0, m.get_current(), m.get_current_perc(), 1)
+            self.StatusBox(dc, dx, dy, 2, 0, m.get_rpm(), m.get_rpm_perc(), m.get_rpm_color)
+            self.StatusBox(dc, dx, dy, 3, 0, m.get_temp(), m.get_temp_perc(), m.get_temp_color())
 
 
 
@@ -477,7 +518,7 @@ class FuelCellFrame(wx.Frame):
         self.cell = BatteryCell()
         self.motors = MotorList()
         self.fuelcell = FuelCellStatus()
-        self.fuelcell.update('<50,86,2,00020000>')
+        self.fuelcell.update('<0,0,0,0x08020000>')
      
         self.interface = IvyMessagesInterface("fuelcellframe")
         self.interface.subscribe(self.message_recv)
