@@ -120,6 +120,8 @@ float inv_eff[4];
 float lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF;
 float lift_eff_scaling = GUIDANCE_INDI_LIFT_EFF_SCALING;
 
+float guidance_indi_max_bank = GUIDANCE_H_MAX_BANK;
+
 /** state eulers in zxy order */
 struct FloatEulers eulers_zxy;
 
@@ -382,7 +384,7 @@ void guidance_indi_run(float *heading_sp) {
   guidance_euler_cmd.theta = pitch_filt.o[0] + euler_cmd.y;
 
   //Bound euler angles to prevent flipping
-  Bound(guidance_euler_cmd.phi, -GUIDANCE_H_MAX_BANK, GUIDANCE_H_MAX_BANK);
+  Bound(guidance_euler_cmd.phi, -guidance_indi_max_bank, guidance_indi_max_bank);
   Bound(guidance_euler_cmd.theta, -RadOfDeg(120.0), RadOfDeg(25.0));
 
   float coordinated_turn_roll = guidance_euler_cmd.phi;

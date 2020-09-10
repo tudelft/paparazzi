@@ -48,6 +48,7 @@ extern struct FloatVect3 sp_accel;
 extern struct FloatVect3 speed_sp;
 
 extern bool take_heading_control;
+extern float guidance_indi_max_bank;
 
 extern float lift_pitch_eff;
 extern float lift_eff_scaling;
