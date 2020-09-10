@@ -47,7 +47,7 @@ void generic_uart_event(void) {
   while (gen_uart_dev->char_available(gen_uart_dev->periph)) { 
     gen_msg_buf[gen_msg_cnt++] = gen_uart_dev->get_byte(gen_uart_dev->periph);
     
-    if(gen_msg_buf[gen_msg_cnt-1] == '>')
+    if(gen_msg_buf[gen_msg_cnt-1] == '>' || gen_msg_cnt > 50)
       break;
   }
 
