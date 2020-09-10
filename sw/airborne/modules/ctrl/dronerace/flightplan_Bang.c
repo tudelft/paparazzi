@@ -13,9 +13,9 @@ int timer1=0;
 int angle_index=0;
 #define d2r M_PI/180.0f
 #define NR_ANGLEVAR 16 //16
-// #define ANGLEOVERWRITE
-float angle_variations[NR_ANGLEVAR]={5, 5,5, 5, 10, 10,10,10, 15,15,15,15, 20, 20,20,20};
-//  float angle_variations[NR_ANGLEVAR]={25, 25,25,25, 30,30,30,30 ,35,35,35,35, 40,40,40,40};
+#define ANGLEOVERWRITE
+// float angle_variations[NR_ANGLEVAR]={5, 5,5, 5, 10, 10,10,10, 15,15,15,15, 20, 20,20,20};
+ float angle_variations[NR_ANGLEVAR]={25, 25,25,25, 30,30,30,30 ,35,35,35,35, 40,40,40,40};
 int target_reached = 0;
 // int gate_nr;float gate_x;float gate_y;float gate_z;float gate_psi;float gate_speed;int gate_type;int controller_type;int turning;float psi_forced; bool overwrite_psi, float satangle;
 
@@ -27,11 +27,11 @@ int target_reached = 0;
 
 // Demo Forward
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-1.5,M_PI,0.2,STARTGATE,HIGHPID,0,0,false,35},
-// {1, 2.5,0,-1.5,0,0.2,ENDGATE,HIGHPID,0,0,false,35},
+// {0, -2.0,0,-1.5,M_PI,0.2,STARTGATE,BANGBANG,0,0,false,30},
+// {1, 2.5,0,-1.5,0,0.2,ENDGATE,BANGBANG,0,0,false,30},
 // };
 
-// Demo Angle variations
+// Demo Angle variations forward
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
 // {0, -2.0,0,-1.5,M_PI,0.2,STARTGATE,BANGBANG,0,0,false,30},
 // {1, 2.5,0,-1.5,0,0.2,GATE,BANGBANG,0,0,false,30},
@@ -40,16 +40,25 @@ int target_reached = 0;
 // {4, 2.5,0,-1.5,0,0.2,ENDGATE,BANGBANG,0,0,false,30},
 // };
 
-// demo forward height diff
+// Demo Angle variations sideways
 const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-{0, -2.0,0,-1.0,M_PI,0.2,STARTGATE,HIGHPID,0,0,false,35},
-{1, 2.5,0,-2.75,0,0.2,ENDGATE,HIGHPID,0,0,false,35},
+{0, -2.0,0,-1.5,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,30},
+{1, 2.5,0,-1.5,-0.5*M_PI,0.2,GATE,BANGBANG,0,-0.5*M_PI,true,30},
+{2, 0.25,0,-1.5,-0.5*M_PI,0.2,GATE,BANGBANG,0,-0.5*M_PI,true,30},
+{3, -2,0,-1.5,-0.5*M_PI,0.2,GATE,BANGBANG,0,-0.5*M_PI,true,30},
+{4, 2.5,0,-1.5,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,30},
 };
 
-// Demo Forward/backwards  25deg
+// demo forward height diff
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-1.5,0.0,0.2,STARTGATE,HIGHPID,0,0,true,35},
-// {1, 2.0,0,-1.5,0.0,0.2,ENDGATE,HIGHPID,0,0,true,35},
+// {0, -2.0,0,-1.0,M_PI,0.2,STARTGATE,HIGHPID,0,0,false,35},
+// {1, 2.5,0,-2.75,0,0.2,ENDGATE,HIGHPID,0,0,false,35},
+// };
+
+// Demo Forward/backwards 
+// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+// {0, -2.0,0,-1.5,0.0,0.2,STARTGATE,BANGBANG,0,0,true,35},
+// {1, 0,0,-1.5,0.0,0.2,ENDGATE,BANGBANG,0,0,true,35},
 // };
 
 

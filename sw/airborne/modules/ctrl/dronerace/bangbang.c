@@ -38,9 +38,9 @@ struct BangDim sign_corr=
 struct controllerstatestruct controllerstate={
     false, //apply_compensation boolean2
     false, // in_transition boolean
-    0.21, // compensation time (add to 2nd section of prediction) 
-    0.5,   //delta_v (add to initial condition of second section) should normally be negative but can be different because of delay in velocity estimation
-    1.1      //delta_y (add to second section of prediction)
+    0.2, // compensation time (add to 2nd section of prediction) 
+    0,   //delta_v (add to initial condition of second section) should normally be negative but can be different because of delay in velocity estimation
+    0     //delta_y (add to second section of prediction)
 };
 struct anaConstant constant;
 struct anaConstant constant_sat_accel;
@@ -192,10 +192,12 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             
         }
         bang_ctrl[dim]=sat_corr[dim];
+
+        if(controllerstate.apply_compensation){
+        printf("Compensation: V0: %f, delta_angle: %f, t_s: %f, delta_t: %f, delta_y: %f, delta_v: %f\n ",vs,delta_angle_in,t_s,controllerstate.delta_t,controllerstate.delta_y,controllerstate.delta_v);
     }
-    if(controllerstate.apply_compensation){
-        printf("Compensation: V0: %f, delta_angle: %f, delta_t: %f, delta_y: %f, delta_v: %f\n ",vs,delta_angle_in,controllerstate.delta_t,controllerstate.delta_y,controllerstate.delta_v);
     }
+    
     //if braking:
     else{
 
@@ -254,7 +256,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
     // Check if we need to brake    
     if(!brake){
-        if(t_s<0.2 && t_target>0 &&t_s<t_target){
+        if(t_s<0.3 && t_target>0 &&t_s<t_target){
             brake=true;
             if(!controllerstate.in_transition){
                 t_0_trans=get_sys_time_float(); // starttime of transition
