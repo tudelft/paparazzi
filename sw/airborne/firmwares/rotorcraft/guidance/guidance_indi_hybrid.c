@@ -510,7 +510,15 @@ void guidance_indi_calcg_wing(struct FloatMat33 *Gmat) {
   RMAT_ELMT(*Gmat, 2, 1) = -cphi*stheta*T*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
   RMAT_ELMT(*Gmat, 0, 2) = stheta*cpsi + sphi*ctheta*spsi;
   RMAT_ELMT(*Gmat, 1, 2) = stheta*spsi - sphi*ctheta*cpsi;
-  RMAT_ELMT(*Gmat, 2, 2) = cphi*ctheta;
+  /*RMAT_ELMT(*Gmat, 2, 2) = cphi*ctheta;*/
+
+  float theta = stateGetNedToBodyEulers_f()->theta;
+  Bound(theta, -M_PI_2, 0.0);
+  if (theta > -M_PI_4) {
+    RMAT_ELMT(*Gmat, 2, 2) = 1.0;
+  } else {
+    RMAT_ELMT(*Gmat, 2, 2) = 1.0 + (theta + M_PI_4) / M_PI_4;
+  }
 }
 
 /**

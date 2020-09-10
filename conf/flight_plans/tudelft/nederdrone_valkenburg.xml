@@ -8,23 +8,22 @@
   <waypoints>
     <waypoint name="HOME" x="12.6" y="-48.7"/>
     <waypoint name="CLIMB" x="62.6" y="-80.4"/>
-    <waypoint name="STDBY" x="92.7" y="-46.7"/>
-    <waypoint name="p1" x="203.4" y="-145.6"/>
-    <waypoint name="p2" x="545.6" y="52.6"/>
-    <waypoint name="p3" x="442.2" y="236.4"/>
-    <waypoint name="p4" x="127.1" y="98.5"/>
+    <waypoint name="STDBY" x="106.0" y="-55.1"/>
+    <waypoint name="p1" x="322.0" y="-254.3"/>
+    <waypoint name="p2" x="696.0" y="-148.1"/>
+    <waypoint name="p3" x="600.4" y="73.4"/>
+    <waypoint name="p4" x="238.6" y="-48.5"/>
     <waypoint name="TD" x="-4.1" y="-23.7"/>
     <waypoint name="FOLLOW" x="123.2" y="-87.8"/>
-    <waypoint lat="52.169949" lon="4.409725" name="C1"/>
-    <waypoint lat="52.168367" lon="4.405050" name="C2"/>
-    <waypoint lat="52.166321" lon="4.407227" name="C3"/>
-    <waypoint lat="52.162919" lon="4.406285" name="C4"/>
-    <waypoint lat="52.161095" lon="4.409880" name="C5"/>
-    <waypoint lat="52.163452" lon="4.416387" name="C6"/>
-    <waypoint lat="52.167170" lon="4.429691" name="C7"/>
-    <waypoint lat="52.172308" lon="4.430735" name="C8"/>
-    <waypoint lat="52.173442" lon="4.422916" name="C9"/>
-    <waypoint lat="52.173442" lon="4.432916" name="TEST"/>
+    <waypoint lat="52.169189" lon="4.410820" name="C1"/>
+    <waypoint lat="52.168049" lon="4.406923" name="C2"/>
+    <waypoint lat="52.166515" lon="4.408235" name="C3"/>
+    <waypoint lat="52.163255" lon="4.407668" name="C4"/>
+    <waypoint lat="52.161908" lon="4.410082" name="C5"/>
+    <waypoint lat="52.162641" lon="4.416992" name="C6"/>
+    <waypoint lat="52.164861" lon="4.427268" name="C7"/>
+    <waypoint lat="52.170422" lon="4.427511" name="C8"/>
+    <waypoint lat="52.172276" lon="4.424011" name="C9"/>
   </waypoints>
   <sectors>
     <sector color="red" name="Flyzone" type="dynamic">
@@ -43,7 +42,7 @@
     <module name="follow_me"/>
   </modules>
   <exceptions>
-    <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 1500) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+    <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 1500) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
     <exception cond="datalink_time > 25 && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
   </exceptions>
   <blocks>

@@ -72,12 +72,9 @@ void ctrl_eff_scheduling_periodic(void)
   indi.g1.r = g_hover[2] * (1.0 - ratio) + g_forward[2] * ratio;
 
   float ratio_spec_force = 0.0;
-  if (radio_control.values[RADIO_FMODE] > 4800) {
-    ratio_spec_force = 1.0;
-  } else {
-    ratio_spec_force = 0.0;
-  }
+  float airspeed = stateGetAirspeed_f();
+  Bound(airspeed, 8.0, 20.0);
+  ratio_spec_force = (airspeed-8.0) / 12.0;
   thrust_in_specific_force_gain = GUIDANCE_INDI_SPECIFIC_FORCE_GAIN * (1.0 - ratio_spec_force)
-                                  + GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_FWD * ratio;
-
+                                  + GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_FWD * ratio_spec_force;
 }
