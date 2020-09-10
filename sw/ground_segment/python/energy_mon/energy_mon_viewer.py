@@ -60,6 +60,10 @@ class TempMessage(object):
         self.motor = float(msg['temp1'])
         self.battery = float(msg['temp2'])
 
+class PayloadMessage(object):
+    def __init__(self, msg):
+        self.values = ''.join(chr(int(x)) for x in msg['values'])
+
 class BatteryCell(object):
     def __init__(self):
         self.voltage = 0
@@ -259,7 +263,11 @@ class EnergyMonFrame(wx.Frame):
         elif msg.name == "AIR_DATA":
             self.air_data = AirDataMessage(msg)
             self.energy_prediction.fill_from_air_data_msg(self.air_data)
-            wx.CallAfter(self.update)    
+            wx.CallAfter(self.update) 
+
+        elif msg.name == "PAYLOAD":
+            self.payload = PayloadMessage(msg)
+            print("VALUES: " + self.payload.values)
 
     def update(self):
         self.Refresh()

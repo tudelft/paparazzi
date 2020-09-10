@@ -30,6 +30,9 @@
 
       <module name="scheduling_indi_simple"/>
 
+      <!-- Forward FuelCell data back to the GCS -->
+      <module name="generic_uart_sensor"/>
+
        <!-- Logger -->
       <module name="tlsf"/>
       <module name="pprzlog"/>
@@ -96,10 +99,10 @@
       <define name="LIS3MDL_MAG_TO_IMU_THETA" value="0.0"/>
       <define name="LIS3MDL_MAG_TO_IMU_PSI" value="180.0"/-->
     </module>
-    <module name="lidar" type="tfmini">
+    <!--module name="lidar" type="tfmini">
       <configure name="TFMINI_PORT" value="UART4"/>
       <configure name="USE_TFMINI_AGL" value="FALSE"/>
-    </module>
+    </module-->
 
     <!--<module name="guidance" type="hybrid"/>-->
     <module name="guidance" type="indi_hybrid">
