@@ -77,7 +77,7 @@ class EscMessage(object):
     def get_rpm(self):
         return "Mot " + str(self.id) + " " +str(round(self.rpm ,0)) + ""
     def get_rpm_perc(self):
-        return self.rpm / 6000
+        return self.rpm / 4000
 
 
     def get_volt(self):
@@ -179,8 +179,9 @@ class BatteryCell(object):
 
 
 class PayloadMessage(object):
-    def _init_(self, msg):
+    def __init__(self, msg):
         self.values = ''.join(chr(int(x)) for x in msg['values'])
+
 
 
 class FuelCellStatus(object):
@@ -193,6 +194,7 @@ class FuelCellStatus(object):
             self.battery = float(elements[1])
             self.status = elements[2]
             self.error = elements[3]
+
         else:
             print('ERROR: ' + msg)
     def get_tank(self):
@@ -209,7 +211,8 @@ class FuelCellStatus(object):
             return 1
                 
     def get_battery(self):
-        return str(self.battery) + '%'
+        volt = round( self.battery / 100.0 * (24.0-19.6) + 19.6, 2)
+        return str(volt) + ' V'
     def get_battery_perc(self):
         return (self.battery) / 100.0
     def get_battery_color(self):
@@ -219,6 +222,38 @@ class FuelCellStatus(object):
             return 0.5
         else:
             return 1
+                
+
+    def get_status(self):
+        if int(self.status == 0):
+            return 'Starting'
+        elif int(self.status == 1):
+            return 'Ready (wait for button press)'
+        elif int(self.status == 2):
+            return 'Running'
+        elif int(self.status == 3):
+            return 'Fault'
+        elif int(self.status == 4):
+            return 'Battery only'
+        else:
+            return self.status
+    def get_status_perc(self):
+        return 0.0
+    def get_status_color(self):
+        if (self.status) < 1:
+            return 0.1
+        elif (self.status) == 1:
+            return 0.5
+        else:
+            return 0.5
+                
+
+    def get_error(self):
+        return self.error
+    def get_error_perc(self):
+        return 1.0
+    def get_error_color(self):
+        return 0.1
                 
 
 
@@ -246,7 +281,7 @@ class FuelCellFrame(wx.Frame):
         elif msg.name == "PAYLOAD":
             self.payload = PayloadMessage(msg)
             self.fuelcell.update(self.payload.values)
-            print("Payload: " + self.payload.values)
+            #print("Payload: " + self.payload.values)
 
 
     def update(self):
@@ -309,7 +344,7 @@ class FuelCellFrame(wx.Frame):
         w = self.w
         h = self.h - 25
 
-        self.stat = int(w/4)
+        self.stat = int(w/8)
         if self.stat<100:
             self.stat=100
 
@@ -321,7 +356,7 @@ class FuelCellFrame(wx.Frame):
         # Background
         dc.SetBrush(wx.Brush(wx.Colour(0, 0, 0), wx.TRANSPARENT))
 
-        fontscale = int(w * 11.0 / 800.0)
+        fontscale = int(w * 11.0 / 1600.0)
         if fontscale < 6:
             fontscale = 6
         font = wx.Font(fontscale, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
@@ -337,7 +372,7 @@ class FuelCellFrame(wx.Frame):
         # Back Wing
         dc.DrawRectangle(int(0.05*w), int(0.65*h),int(0.9*w), int(0.15*h))
 
-        dc.SetBrush(wx.Brush(wx.Colour(200,200,200))) 
+        dc.SetBrush(wx.Brush(wx.Colour(100,100,100))) 
         dc.DrawRoundedRectangle(int(0.37*w), int(0.07*h),int(0.26*w), int(0.35*h), int(0.13*w))
 
 
@@ -348,8 +383,10 @@ class FuelCellFrame(wx.Frame):
         self.StatusBox(dc,4, 0, self.cell.get_temp(), self.cell.get_temp_perc(), self.cell.get_temp_color())
         self.StatusBox(dc,5, 0, self.cell.get_power_text(), self.cell.get_power_perc(), self.cell.get_power_color())
 
-        self.StatusBox(dc,0, 1, self.fuelcell.get_tank(), self.fuelcell.get_tank_perc(), self.fuelcell.get_tank_color())
-        self.StatusBox(dc,1, 1, self.fuelcell.get_battery(), self.fuelcell.get_battery_perc(), self.fuelcell.get_battery_color())
+        self.StatusBox(dc,0, 2, self.fuelcell.get_tank(), self.fuelcell.get_tank_perc(), self.fuelcell.get_tank_color())
+        self.StatusBox(dc,1, 2, self.fuelcell.get_battery(), self.fuelcell.get_battery_perc(), self.fuelcell.get_battery_color())
+        self.StatusBox(dc,2, 2, self.fuelcell.get_status(), self.fuelcell.get_status_perc(), self.fuelcell.get_status_color())
+        self.StatusBox(dc,3, 2, self.fuelcell.get_error(), self.fuelcell.get_error_perc(), self.fuelcell.get_error_color())
 
 
         i = 6
