@@ -50,7 +50,7 @@ class AirDataMessage(object):
 class EnergyMessage(object):
     def __init__(self, msg):
         self.volt = float(msg['voltage'])
-        self.current = float(msg['current'])*2.0
+        self.current = float(msg['current'])
         self.power = float(msg['power'])
         self.energy = float(msg['energy'])
 
@@ -61,29 +61,42 @@ class TempMessage(object):
 
 class EscMessage(object):
     def __init__(self, msg):
-        self.id = float(msg['motor_id'])
+        self.id = int(msg['motor_id'])
         self.amp = float(msg['amps'])
         self.rpm = float(msg['rpm'])
         self.volt_b = float(msg['bat_volts'])
         self.volt_m = float(msg['motor_volts'])
-        self.power = float(msg['power'])
+        self.temperature = float(msg['power']) - 273.15
         self.energy = float(msg['energy'])
     
     def get_current(self):
-        return "Mot " + str(self.id) + " " +str(round(self.amp ,1)) + "A"
+        return "Mot" + str(self.id) + " " +str(round(self.amp ,1)) + "A"
     def get_current_perc(self):
         return self.amp / 30
 
     def get_rpm(self):
-        return "Mot " + str(self.id) + " " +str(round(self.rpm ,0)) + ""
+        return "Mot" + str(self.id) + " " +str(round(self.rpm ,0)) + " rpm"
     def get_rpm_perc(self):
         return self.rpm / 4000
 
 
     def get_volt(self):
-        return "Mot " + str(self.id) + " " +str(round(self.volt_b ,0)) + "V"
+        return "Mot" + str(self.id) + " " +str(round(self.volt_m ,0)) + "V"
     def get_volt_perc(self):
         return self.volt_b / (6*4.2)
+
+    def get_temp(self):
+        return "Mot" + str(self.id) + " " +str(round(self.temperature ,1)) + "C"
+    def get_temp_perc(self):
+        if self.temperature < 0:
+            return 0
+        else:
+            return self.temperature / 100
+
+    def get_temp_color(self):
+        if self.temperature > 40:
+            return 0.5
+        return 1
 
 class MotorList(object):
     def __init__(self):
@@ -104,47 +117,51 @@ class BatteryCell(object):
     def __init__(self):
         self.voltage = 0
         self.current = 0
+        self.power = 0
         self.energy = 0
         self.model = 0
         self.temperature = 0
     def fill_from_energy_msg(self, energy):
-        self.voltage = energy.volt / 6
-        self.current = energy.current / 6
-        self.energy  = energy.energy / 6.0
-        self.model = 0 #bat.mah_from_volt_and_current(self.voltage,self.current)
+        self.voltage = energy.volt
+        self.current = energy.current
+        self.power = energy.power
+        self.energy  = energy.energy
+        self.model = 0
     def fill_from_temp_msg(self, temp):
         self.temperature = temp.battery
 
     def get_volt(self):
-        return "Cell Volt = "+str(round(self.voltage,2)) + " V"
-    def get_mah_from_volt(self):
-        return "Cap(U,I) = "+str(round(self.model/1000.0,2)) + " Ah"
+        return "Volt = "+str(round(self.voltage,2)) + " V"
+
     def get_current(self):
-        return "Cell Amps = "+str(round(self.current,2)) + " A"
+        return "Amps = "+str(round(self.current,2)) + " A"
     def get_energy(self):
         return "Cell mAh  = "+str(round(self.energy/1000.0 ,2)) + " Ah"
     def get_temp(self):
         return "Cell Temp = "+str(round(self.temperature ,2))
     def get_power_text(self):
-        return "Battery Power: {:.0f}W".format(self.get_power() * 6)
+        return "Battery Power: {:.0f}W".format(self.get_power())
+    def get_power2_text(self):
+        return "Battery Power: {:.0f}W".format(self.get_power2())
     def get_volt_perc(self):
         return self.get_volt_percent(self.voltage)
     def get_volt_percent(self,volt):
-        return (volt - 2.5) / (4.3 - 2.5)
+        return (volt/6 - 2.5) / (4.3 - 2.5)
+
     def get_power(self):
+        return self.power
+    def get_power2(self):
         return self.voltage * self.current
-    def get_power_per_cell(self):
-        return self.get_power() / 6 / 6
+
     def get_temp_perc(self):
         return (self.temperature / 60)
     def get_current_perc(self):
-        return (self.current / 10)
+        return (self.current / 200)
     def get_energy_perc(self):
         return (self.energy / 4* 4500 + 30000)
-    def get_model_perc(self):
-        return (self.model / 4* 4500 + 30000)
+
     def get_power_perc(self):
-        return (self.get_power() - 200) / (800 - 200)
+        return (self.get_power()) / (2500)
 
     def get_volt_color(self):
         if self.voltage < 3.2:
@@ -154,9 +171,9 @@ class BatteryCell(object):
         return 1
 
     def get_current_color(self):
-        if self.current < 2.5:
+        if self.current < 150:
             return 1
-        elif self.current > 4.5:
+        elif self.current > 200:
             return 0.1
         return 0.5
     
@@ -175,6 +192,8 @@ class BatteryCell(object):
         return 0.1
 
     def get_power_color(self):
+        if self.power < 800:
+            return 1
         return 0.5
 
 
@@ -185,6 +204,8 @@ class PayloadMessage(object):
 
 
 class FuelCellStatus(object):
+    def _init_(self):
+        self.blink = 0
 
     def update(self,msg):
         self.msg = msg
@@ -195,8 +216,19 @@ class FuelCellStatus(object):
             self.status = elements[2]
             self.error = elements[3]
 
-        else:
-            print('ERROR: ' + msg)
+            self.errors = []
+            hex = '0000'
+            if (len(self.error) >= 4):
+                hex = self.error[0:4]
+            #array of 16 error codes
+            self.error_bin = bin(int(hex, 16))[2:].zfill(16)
+
+        #else:
+        #    print('ERROR: ' + msg)
+
+    def get_raw(self):
+        return self.msg
+
     def get_tank(self):
         bar = round(5 + self.tank / 100 * 295,1)
         return 'Cylinder ' + str(bar) + ' Bar'
@@ -250,10 +282,23 @@ class FuelCellStatus(object):
 
     def get_error(self):
         return self.error
+
     def get_error_perc(self):
         return 1.0
     def get_error_color(self):
-        return 0.1
+        
+        return 1.0
+
+
+    def get_error_nr(self, nr):
+        err = ["Stack temp 1 above limit", "Stack temp 2 above limit", "Battery Undervoltage", "Battery Overtemperature", "No Fan", "", "Stack temp 1 above limit", "Stack temp 2 above limit", 
+               "Battery Undervoltage", "Battery Overtemperature", "Master Timeout Start", "Master Stop Timeout", "Start Under Pressue", "Tank Under Pressure", "Tank Low Pressure", "Safety Flag Before Master En", ""]
+        return self.error_bin[nr] + ' ' + err[nr]
+    def get_error_nr_color(self, nr):
+        if self.error_bin[nr] == '1':
+            return 0.1
+        return 1
+
                 
 
 
@@ -373,27 +418,30 @@ class FuelCellFrame(wx.Frame):
         dc.DrawRectangle(int(0.05*w), int(0.65*h),int(0.9*w), int(0.15*h))
 
         dc.SetBrush(wx.Brush(wx.Colour(100,100,100))) 
-        dc.DrawRoundedRectangle(int(0.37*w), int(0.07*h),int(0.26*w), int(0.35*h), int(0.13*w))
+        dc.DrawRoundedRectangle(int(0.37*w), int(0.07*h),int(0.26*w), int(0.35*h), int(0.08*w))
 
 
         self.StatusBox(dc,0, 0, self.cell.get_volt(), self.cell.get_volt_perc(), self.cell.get_volt_color())
         self.StatusBox(dc,1, 0, self.cell.get_current(), self.cell.get_current_perc(), self.cell.get_current_color() )
-        self.StatusBox(dc,2, 0, self.cell.get_energy(), self.cell.get_energy_perc(), self.cell.get_energy_color() )
-        self.StatusBox(dc,3, 0, self.cell.get_mah_from_volt(), self.cell.get_energy_perc(), self.cell.get_energy_color() )
-        self.StatusBox(dc,4, 0, self.cell.get_temp(), self.cell.get_temp_perc(), self.cell.get_temp_color())
-        self.StatusBox(dc,5, 0, self.cell.get_power_text(), self.cell.get_power_perc(), self.cell.get_power_color())
+        self.StatusBox(dc,2, 0, self.cell.get_power_text(), self.cell.get_power_perc(), self.cell.get_power_color())
+        self.StatusBox(dc,3, 0, self.cell.get_power2_text(), self.cell.get_power_perc(), self.cell.get_power_color())
+        self.StatusBox(dc,4, 0, self.cell.get_energy(), self.cell.get_energy_perc(), self.cell.get_energy_color() )
 
-        self.StatusBox(dc,0, 2, self.fuelcell.get_tank(), self.fuelcell.get_tank_perc(), self.fuelcell.get_tank_color())
-        self.StatusBox(dc,1, 2, self.fuelcell.get_battery(), self.fuelcell.get_battery_perc(), self.fuelcell.get_battery_color())
-        self.StatusBox(dc,2, 2, self.fuelcell.get_status(), self.fuelcell.get_status_perc(), self.fuelcell.get_status_color())
-        self.StatusBox(dc,3, 2, self.fuelcell.get_error(), self.fuelcell.get_error_perc(), self.fuelcell.get_error_color())
+        self.StatusBox(dc,0, 2, self.fuelcell.get_raw(), 0, self.fuelcell.get_tank_color())
+        self.StatusBox(dc,1, 2, self.fuelcell.get_tank(), self.fuelcell.get_tank_perc(), self.fuelcell.get_tank_color())
+        self.StatusBox(dc,2, 2, self.fuelcell.get_battery(), self.fuelcell.get_battery_perc(), self.fuelcell.get_battery_color())
+        self.StatusBox(dc,3, 2, self.fuelcell.get_status(), self.fuelcell.get_status_perc(), self.fuelcell.get_status_color())
+        self.StatusBox(dc,4, 2, self.fuelcell.get_error(), self.fuelcell.get_error_perc(), self.fuelcell.get_error_color())
 
+        for i in range(0,16,1):
+            self.StatusBox(dc,i, 4, self.fuelcell.get_error_nr(i), 1, self.fuelcell.get_error_nr_color(i))
 
         i = 6
         for m in self.motors.mot:
-            self.StatusBox(dc,i, 0, m.get_current(), m.get_current_perc(), 1)
-            self.StatusBox(dc,i, 1, m.get_rpm(), m.get_rpm_perc(), 1)
-            self.StatusBox(dc,i, 2, m.get_volt(), m.get_volt_perc(), 1)
+            self.StatusBox(dc,i, 0, m.get_volt(), m.get_volt_perc(), 1)
+            self.StatusBox(dc,i, 1, m.get_current(), m.get_current_perc(), 1)
+            self.StatusBox(dc,i, 2, m.get_rpm(), m.get_rpm_perc(), 1)
+            self.StatusBox(dc,i, 3, m.get_temp(), m.get_temp_perc(), m.get_temp_color())
             i = i + 1
 
 
@@ -429,7 +477,7 @@ class FuelCellFrame(wx.Frame):
         self.cell = BatteryCell()
         self.motors = MotorList()
         self.fuelcell = FuelCellStatus()
-        self.fuelcell.update('<50,86,2,0x00020000>')
+        self.fuelcell.update('<50,86,2,00020000>')
      
         self.interface = IvyMessagesInterface("fuelcellframe")
         self.interface.subscribe(self.message_recv)
