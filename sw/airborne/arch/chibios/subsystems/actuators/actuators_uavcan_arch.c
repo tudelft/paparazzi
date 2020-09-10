@@ -124,7 +124,7 @@ CANConfig can_cfg = {
 static void actuators_uavcan_send_esc(struct transport_tx *trans, struct link_device *dev)
 {
   static uint8_t esc_idx = 0;
-  float power = uavcan_telem[esc_idx].current * uavcan_telem[esc_idx].voltage;
+  float power = uavcan_telem[esc_idx].temperature;//uavcan_telem[esc_idx].current * uavcan_telem[esc_idx].voltage;
   float rpm = uavcan_telem[esc_idx].rpm;
   float energy = uavcan_telem[esc_idx].energy;
   pprz_msg_send_ESC(trans, dev, AC_ID, &uavcan_telem[esc_idx].current, &electrical.vsupply, &power,

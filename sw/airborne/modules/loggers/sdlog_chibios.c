@@ -236,7 +236,7 @@ static void thd_startlog(void *arg)
 		      SDLOG_CONTIGUOUS_STORAGE_MEM, false, tmpFilename, sizeof(tmpFilename)) != SDLOG_OK) {
       sdOk = false;
     }
-    chsnprintf(chibios_sdlog_filenames, sizeof(chibios_sdlog_filenames), ", %s", tmpFilename);
+    chsnprintf(chibios_sdlog_filenames, sizeof(chibios_sdlog_filenames), ",%s", tmpFilename);
 #endif
   }
 
