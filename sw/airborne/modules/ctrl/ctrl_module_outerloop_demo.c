@@ -154,7 +154,7 @@ void guidance_v_module_run(bool in_flight)
 
 // Altitude control old
   z_cmd = dr_bang.gate_z;
-  z_measured = dr_state.z;//stateGetPositionUtm_f()->alt; //TODO check sign (may be MSL)
+  z_measured = dr_state.z;//stateGetPositionUtm_f()->alt; 
   
   if(!(z_measured==prev_meas_z)){
       zv_measured=filter_moving_avg((z_measured -prev_meas_z)*512.,buffer_vz); //not used atm!

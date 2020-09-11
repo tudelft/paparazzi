@@ -1,6 +1,6 @@
 #include "bangbang.h"
 #include <math.h>
-
+#include "compensation.h"
 #include "std.h"
 #include "filter.h"
 #include "subsystems/datalink/telemetry.h"
@@ -17,12 +17,6 @@ float g = 9.80665;//gravity
 int type; 
 bool brake = false;
 float dtt = 1.0f / 512.f;
-
-float estimator_time[3] = {0.285600580827510, -0.022035744273907, -0.012053303063961};
-float estimator_pos[3] = {0.164209236667037, 0.120797076901804, 0.162129652187799}; 
-float estimator_vel[3] = {-0.149450000852137, 0.613672580954269, -0.099748395433426};
-float delta_angle_in; //TODO remove.... Now used for logging what's getting inputted in find_losses
-
 
 
 
@@ -47,6 +41,9 @@ struct anaConstant constant_sat_accel;
 struct anaConstant constant_sat_brake; //braking part of prediction
 struct anaConstant constant_sec; //for logging 
 
+struct estimators *compensation_estimator;
+
+
 float meas_angle[2];
 // struct BangDim pos_error;
 float satangle;
@@ -58,7 +55,7 @@ float sat_corr[2];
 float T;
 float T_sat;
 float T_sec; // for debugging purposes
-int dim;
+// int dim;
 float Cd = 0.56;
 float ang0 ;
 float ang1 ;
@@ -92,15 +89,15 @@ float satang_1_trans;
 
 
 
-void find_losses(float v_initial, float delta_angle){
-    if(dim==0){
-        delta_angle=-1*delta_angle; // TODO find a better solution to adhere to the sign differences between pitch and roll
-    }
-    delta_angle_in=delta_angle; // for logging. 
-    controllerstate.delta_t=estimator_time[0]+estimator_time[1]*delta_angle+estimator_time[2]*v_initial;
-    controllerstate.delta_y =estimator_pos[0]+estimator_pos[1]*delta_angle+estimator_pos[2]*v_initial;
-    controllerstate.delta_v=estimator_vel[0]+estimator_vel[1]*delta_angle+estimator_vel[2]*v_initial;
-}
+// void find_losses(float v_initial, float delta_angle){
+//     if(dim==0){
+//         delta_angle=-1*delta_angle; // TODO find a better solution to adhere to the sign differences between pitch and roll
+//     }
+//     delta_angle_in=delta_angle; // for logging. 
+//     controllerstate.delta_t=estimator_time[0]+estimator_time[1]*delta_angle+estimator_time[2]*v_initial;
+//     controllerstate.delta_y =estimator_pos[0]+estimator_pos[1]*delta_angle+estimator_pos[2]*v_initial;
+//     controllerstate.delta_v=estimator_vel[0]+estimator_vel[1]*delta_angle+estimator_vel[2]*v_initial;
+// }
 
 
 void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
@@ -352,7 +349,20 @@ float predict_path_analytical(float angle,float Vd){
             //predict braking part:
             T=-1*T; 
             if(controllerstate.apply_compensation){
-                find_losses(vs,2*sat_corr[dim]); // update delta_t ,delta_v, delta_y in controllerstate. 
+                
+                if(dim==0){
+                    if(angle<0){
+                        compensation_estimator= &estimator_pitch_fwd;
+                    }
+                    else{
+                        compensation_estimator=&estimator_pitch_bckwd;
+                    } 
+                }
+                else{
+                    compensation_estimator=&estimator_roll;
+                }
+
+                find_losses(vs,-2*sat_corr[dim],compensation_estimator); // -2 because delta_angle is measured as final angle - initial angle  
                 find_constants(ys+controllerstate.delta_y,vs+controllerstate.delta_v); // find constants for assumed conditions after transition
                 }
             else{
