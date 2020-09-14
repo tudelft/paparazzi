@@ -59,7 +59,7 @@ static void open_log(void)
   fprintf(bang_bang_t,"time, satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1], constant_sat_accel.c1, constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec, apply_compensation, in_transition, delta_t, delta_y, delta_v, ys, vs, delta_angle_in\n");
   fprintf(file_logger_t,"time, dr_state.x, dr_state.y, posxVel, posyVel, dr_state.z, vxE, vyE, vzE, dr_state.vx, dr_state.vy, dr_state.phi, dr_state.theta, dr_state.psi, phi_cmd, theta_cmd, psi_cmd, vx_des, vy_des\n");
   fprintf(fp_logger_t,"time, gate_nr, gate_type, controller_type, gate_x, gate_y, gate_z, gate_psi, target_reached \n");
-  fprintf(comp_log_t,"satdim, v0, ang_0, ang_1, delta_t_meas, delta_y_meas, delta_v_meas\n");
+  fprintf(comp_log_t,"time,satdim, v0, ang_0, ang_1, delta_t_meas, delta_y_meas, delta_v_meas\n");
   fprintf(filter_log_t,"time, gps_x, gps_y, gps_z, gps_vx, gps_vy, gps_vz, az, abx, aby, ax, ay, vx_avg, vy_avg, vx_compl, vy_compl, x_compl,y_compl, z_compl\n");
   
  fclose(comp_log_t);
@@ -222,8 +222,8 @@ void control_run(float dt)
     dr_control.theta_cmd = bang_ctrl[0];
     vy_des_vel = bound_f(error_posy_vel,-CTRL_MAX_SPEED, CTRL_MAX_SPEED); 
     vx_des_vel = bound_f(error_posx_vel,-CTRL_MAX_SPEED,CTRL_MAX_SPEED);
-    // dr_control.phi_cmd= bound_angle(KP_VEL_Y * (vy_des_vel-vy_vel),CTRL_MAX_ROLL);//TODO
-    // dr_control.theta_cmd= bound_angle(-KP_VEL_X * (vx_des_vel-vx_vel),CTRL_MAX_PITCH);//TODO
+    // dr_control.phi_cmd= bound_f(KP_VEL_Y * (vy_des_vel-vy_vel),-CTRL_MAX_ROLL,CTRL_MAX_ROLL);//TODO
+    dr_control.theta_cmd= bound_f(-KP_VEL_X * (vx_des_vel-vx_vel),-CTRL_MAX_PITCH,CTRL_MAX_PITCH);//TODO
     
   }
     else if(dr_bang.controller_type==HIGHPID){ 
@@ -269,6 +269,7 @@ void control_run(float dt)
     if (dr_bang.overwrite_psi){
       dr_control.psi_cmd=dr_bang.psi_forced; //
     }
+    printf("pitch_cmd: %f\n",dr_control.theta_cmd);
 
       // dr_control.phi_cmd=bound_angle(dr_control.phi_cmd,d2r*CTRL_MAX_ROLL);
       // dr_control.theta_cmd=bound_angle(dr_control.theta_cmd,d2r*CTRL_MAX_PITCH);

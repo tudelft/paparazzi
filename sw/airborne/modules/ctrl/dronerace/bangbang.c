@@ -65,7 +65,7 @@ float angc_old ;
 float ys;
 float vs;
 
-int satdim=0; //default satdim is forward. 
+int satdim=1; //default satdim is forward. 
 int satdim_prev=10; 
 float t_s; 
 float t_target;
@@ -87,7 +87,7 @@ float v_1_trans; //velocity at end of transition.
 float y_1_trans; //position at end of transition ;
 float satang_1_trans;
 
-
+float t_target_old;
 
 // void find_losses(float v_initial, float delta_angle){
 //     if(dim==0){
@@ -141,6 +141,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             satdim=1;        
         }
     }
+    satdim=1;
         // printf("satdim: %d\n",satdim);
 
     // satdim=0; // TODO: force satdim for debugging purposes 
@@ -165,7 +166,8 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     satdim_prev = satdim;
     
     float E_pos = 1e9;
-
+    float E_pos2=1e9;
+    float E_posc=1e9;
     // first optimize for saturation dimension 
     type=SATURATION;
     dim=satdim;
@@ -208,20 +210,31 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             angc=(ang0+ang1)/2.0;
             angc_old = 1e9;
             E_pos = 1e9;
-            while(fabs(E_pos)>error_thresh && fabs(angc-angc_old)>(0.1*d2r)){
+            E_pos2=1e9;
+            // E_posc=1e9;
+            while((fabs(E_pos)>error_thresh && fabs(E_pos2)>error_thresh) && fabs(angc-angc_old)>(0.1*d2r)){
                 angc_old=angc;
-                E_pos = get_E_pos(v_desired, angc);
-
+                
+                // E_posc = get_E_pos(v_desired, angc);
+                E_pos = get_E_pos(v_desired,angc);
+                // E_pos2 = get_E_pos(v_desired,ang1);
+                // printf("te, E1: %f, E2: %f, angle cond: %f,ang_0: %f, ang_1: %f, ang_c: %f\n",E_pos,E_pos2,fabs(angc-angc_old),ang0,ang1,angc);
+                // if(satdim==0 && pos_error_vel_x<0){
+                //     signcorrsat=1;
+                // }
                 if(E_pos*signcorrsat>0){
                     ang1=angc;
                 }
                 else{
                     ang0=angc;
                 }
-                angc=(ang0+ang1)/2.;
+                
+               angc=(ang0+ang1)/2.;
+               
             }
             bang_ctrl[dim]=angc;
         }
+       
     }
     //optimize second parameter
     type = SECOND;
@@ -253,30 +266,32 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
     // Check if we need to brake    
     if(!brake){
-        if(t_s<0.3 && t_target>0 &&t_s<t_target){
+        if(t_s<0.4 && t_s<t_target){
             brake=true;
             if(!controllerstate.in_transition){
+                if(fabs(pos_error_vel_x)>0.4){
                 t_0_trans=get_sys_time_float(); // starttime of transition
                 v_0_trans=v_velframe[satdim];
                 y_0_trans=pos_error[satdim];
                 satang_0_trans=meas_angle[satdim];
                 controllerstate.in_transition=true;
+                }
             }
         }
         else if(controllerstate.in_transition){
-            printf("out transition because not braking\n");
+            // printf("out transition because not braking\n");
             controllerstate.in_transition=false; // make sure that in_transition is always false when not braking (in_transition is basically flying blind because the controller forces to brake at maximum angle)
             
         }
     }
     else if(!controllerstate.in_transition){
         if(!(t_target>0)){
-            brake = false;
+            // brake = false;
 
         }
     }
     // go out of transition when the measured angle is close to the commanded brake angle (timer is added as temporary measure to deal with the delay of bang_ctrl being updated to brake angle command)
-    if(controllerstate.in_transition && ((fabs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim])<0.15 && ((get_sys_time_float()-t_0_trans)>3*dtt)) || fabs(v_velframe[satdim])<1)){// ((get_sys_time_float()-t_0_trans)>controllerstate.delta_t)){ // transition ends when it has been active for more than delta_t 
+    if(controllerstate.in_transition && fabs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim])<0.15 && ((get_sys_time_float()-t_0_trans)>3*dtt)){// ((get_sys_time_float()-t_0_trans)>controllerstate.delta_t)){ // transition ends when it has been active for more than delta_t 
         controllerstate.in_transition=false;                                    //  ^ will break down if bang_ctrl[satdim] is zero (not likely in practice);
 
         //measure transition values 
@@ -287,13 +302,14 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         
         #ifdef LOG
         if(t_1_trans-t_0_trans>dtt){
-
+            // printf("angle_diff: %f, fractional: %f \n",(bang_ctrl[satdim]-meas_angle[satdim]),fabs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim]));
+            // printf("sat_ang0: %f, sat_ang1:%f \n",satang_0_trans,satang_1_trans);
             comp_log_t=fopen(filename5,"a");
-            fprintf(comp_log_t,"%d, %f, %f, %f, %f, %f, %f\n",satdim,v_0_trans,satang_0_trans,satang_1_trans,t_1_trans-t_0_trans,y_0_trans-y_1_trans,v_1_trans-v_0_trans);
+            fprintf(comp_log_t,"%f, %d, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(),satdim,v_0_trans,satang_0_trans,satang_1_trans,t_1_trans-t_0_trans,y_0_trans-y_1_trans,v_1_trans-v_0_trans);
             fclose(comp_log_t);
             
             // fprintf(comp_log_t,"test 1\n");
-            printf("Out transition normal, measured angle: %f, commanded angle: %f, fraction: %f\n",meas_angle[satdim],bang_ctrl[satdim],fabs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim]));
+            // printf("Out transition normal, measured angle: %f, commanded angle: %f, fraction: %f\n",meas_angle[satdim],bang_ctrl[satdim],fabs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim]));
         }
         #endif
     }   
@@ -371,17 +387,33 @@ float predict_path_analytical(float angle,float Vd){
             constant_sat_brake = constant;
             t_target = get_time_analytical(Vd);
             y_target = get_position_analytical(t_target);
+            
             if(controllerstate.apply_compensation){
                 t_target=t_target+t_s+controllerstate.delta_t; // t_target for 2nd section is relative to t_s. So add t_s and compensation to get absolute ETA
             }
             else{
                 t_target=t_target+t_s;
             }
+            if(t_target<0){
+                t_target=t_target_old-dtt;
+                t_target_old=t_target;
+            }
+            else{
+                t_target_old=t_target;
+            }
+
         }
         else{ //if braking 
             find_constants(0.0,v_velframe[dim]);
             constant_sat_brake = constant;
             t_target=get_time_analytical(Vd);
+            if(t_target<0){
+                t_target=t_target_old-dtt;
+                t_target_old=t_target;
+            }
+            else{
+                t_target_old=t_target;
+            }
             y_target = get_position_analytical(t_target);
             
         }
@@ -410,7 +442,7 @@ float get_velocity_analytical(float t){
 float get_time_analytical(float V){
     float t_t = (-mass/Cd)*logf((V-(T/Cd))/(constant.c1*(-Cd/mass)));
     if(isnan(t_t)){
-        t_t=0;
+        t_t=dtt;
     }
     return t_t;
 }

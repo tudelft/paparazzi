@@ -14,8 +14,8 @@ int angle_index=0;
 #define d2r M_PI/180.0f
 #define NR_ANGLEVAR 16 //16
 #define ANGLEOVERWRITE
-float angle_variations[NR_ANGLEVAR]={5, 5,5, 5, 10, 10,10,10, 15,15,15,15, 20, 20,20,20};
-//  float angle_variations[NR_ANGLEVAR]={25,25,25,25, 30,30,30,30 ,35,35,35,35, 40,40,40,40};
+// float angle_variations[NR_ANGLEVAR]={5, 5,5, 5, 10, 10,10,10, 15,15,15,15, 20, 20,20,20};
+ float angle_variations[NR_ANGLEVAR]={25,25,25,25, 30,30,30,30 ,35,35,35,35, 40,40,40,40};
 int target_reached = 0;
 // int gate_nr;float gate_x;float gate_y;float gate_z;float gate_psi;float gate_speed;int gate_type;int controller_type;int turning;float psi_forced; bool overwrite_psi, float satangle;
 
@@ -27,8 +27,8 @@ int target_reached = 0;
 
 // Demo Forward
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-1.5,M_PI,0.2,STARTGATE,BANGBANG,0,0,false,30},
-// {1, 2.5,0,-1.5,0,0.2,ENDGATE,BANGBANG,0,0,false,30},
+// {0, -2.0,0,-1.5,M_PI,0.2,STARTGATE,BANGBANG,0,0,false,20},
+// {1, 1,0,-1.5,0,0.2,ENDGATE,BANGBANG,0,0,false,20},
 // };
 
 // Demo Angle variations forward
@@ -41,22 +41,22 @@ int target_reached = 0;
 // };
 
 // Demo Angle variations sideways
-// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-1.5,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,30},
-// {1, 2.5,0,-1.5,-0.5*M_PI,0.2,GATE,BANGBANG,0,-0.5*M_PI,true,30},
-// {2, 0.25,0,-1.5,-0.5*M_PI,0.2,GATE,BANGBANG,0,-0.5*M_PI,true,30},
-// {3, -2,0,-1.5,-0.5*M_PI,0.2,GATE,BANGBANG,0,-0.5*M_PI,true,30},
-// {4, 2.5,0,-1.5,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,30},
-// };
+const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+{0, -1.5,0,-1.5,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,30},
+{1, 2.5,0,-1.5,-0.5*M_PI,0.2,GATE,BANGBANG,0,-0.5*M_PI,true,30},
+{2, 0.25,0,-1.5,-0.5*M_PI,0.2,GATE,BANGBANG,0,-0.5*M_PI,true,30},
+{3, -1.5,0,-1.5,-0.5*M_PI,0.2,GATE,BANGBANG,0,-0.5*M_PI,true,30},
+{4, 2.5,0,-1.5,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,30},
+};
 
 // angle variations backwards
-const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-{0, -2.0,0,-1.5,M_PI,0.2,STARTGATE,BANGBANG,0,M_PI,true,30},
-{1, 2.5,0,-1.5,M_PI,0.2,GATE,BANGBANG,0,M_PI,true,30},
-{2, 0.25,0,-1.5,0,0.2,GATE,BANGBANG,0,0,true,30},
-{3, -2,0,-1.5,0,0.2,GATE,BANGBANG,0,0,true,30},
-{4, 2.5,0,-1.5,M_PI,0.2,ENDGATE,BANGBANG,0,M_PI,true,30},
-};
+// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+// {0, -2.0,0,-1.5,0,0.2,STARTGATE,BANGBANG,0,0,true,30},
+// {1, 2.5,0,-1.5,M_PI,0.2,GATE,BANGBANG,0,M_PI,true,30},
+// {2, 0.25,0,-1.5,0,0.2,GATE,BANGBANG,0,0,true,30},
+// {3, -2,0,-1.5,0,0.2,GATE,BANGBANG,0,0,true,30},
+// {4, 2.5,0,-1.5,M_PI,0.2,ENDGATE,BANGBANG,0,M_PI,true,30},
+// };
 
 
 // demo forward height diff
@@ -144,7 +144,7 @@ void flightplan_run(void){
     // dist2gate=sqrtf((pos_error_x*pos_error_x)+(pos_error_y*pos_error_y));
     error_speed=dr_bang.gate_speed-((dr_state.vx*dr_state.vx)+(dr_state.vy*dr_state.vy));
     printf("dist: %f\n", dist2gate);
-    if(dist2gate<0.4){
+    if(dist2gate<0.5){
         
         timer1+=1;
         if((fabs(dr_state.psi-dr_bang.gate_psi)<0.3)){
@@ -162,15 +162,16 @@ void flightplan_run(void){
             dr_bang.turning=TURNING;       
             }     
         }
-        printf("psi thresh: %f, current psi_cmd: %f, next gate psi: %f\n",fabs(dr_state.psi-dr_bang.gate_psi),dr_bang.gate_psi,Banggates[next_gate_nr].gate_psi);
+        // printf("psi thresh: %f, current psi_cmd: %f, next gate psi: %f\n",fabs(dr_state.psi-dr_bang.gate_psi),dr_bang.gate_psi,Banggates[next_gate_nr].gate_psi);
         if(abs(dr_state.psi-dr_bang.gate_psi)<0.5){ //only go toward next waypoint after a pause
-                
+                printf("Reached 3\n");
                 if(fabs(dr_state.psi-dr_bang.gate_psi)<0.1 && timer1>1024){
                 dr_bang.gate_nr=next_gate_nr;
                 printf("new gate: %i\n",next_gate_nr);
                 timer1=0;
                 brake=false;
                 controllerstate.in_transition=false;
+                printf("Reached 4 \n");
                 target_reached=0;
                 }
             }
