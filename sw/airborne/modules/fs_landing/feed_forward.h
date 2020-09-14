@@ -6,6 +6,7 @@
 #define PAPARAZZI_FEED_FORWARD_H
 
 #include "mcu_periph/sys_time.h"
+#include "generated/airframe.h"
 #include "fs_landing.h"
 
 extern float ff_duration;

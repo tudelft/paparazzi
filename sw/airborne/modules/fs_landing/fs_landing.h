@@ -6,6 +6,7 @@
 #define PAPARAZZI_FS_LANDING_H
 
 #include "paparazzi.h"
+#include "state.h"
 #include "generated/airframe.h"
 #include "subsystems/radio_control.h"
 #include "mcu_periph/sys_time.h"
@@ -28,8 +29,14 @@ struct fs_landing_t {
 };
 extern struct fs_landing_t fs_landing;
 
+// GCS Variables
 extern uint8_t pilot_has_control;
 extern uint8_t act_identification_active;
+extern uint8_t use_pre_spin;
+extern float pre_spin_pitch_coeff;
+extern float pre_spin_speed_setpoint;
+extern float pre_spin_trim_percentage;
+extern float err_test;
 
 /* External used functions */
 extern void fs_landing_init(void);
@@ -42,5 +49,6 @@ extern void fs_landing_actuator_id_handler(uint8_t active);
 extern void fs_landing_set_actuator_values(void);
 
 bool is_fs_landing_active(void);
+bool pre_spin_actuator_values(void);
 
 #endif //PAPARAZZI_FS_LANDING_H

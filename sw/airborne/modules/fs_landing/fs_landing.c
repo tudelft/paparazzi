@@ -18,6 +18,12 @@ uint8_t act_identification_active = false;
 uint8_t has_ff_started = false;
 float ff_start_time = 0;
 
+uint8_t use_pre_spin = true;
+float pre_spin_pitch_coeff = 0.05;
+float pre_spin_speed_setpoint = 8;
+float pre_spin_trim_percentage = 0.20;
+float err_test = 5;
+
 // For debug use:
 // float send_values[4];
 // send_values[0] = (float)current_actuator_values.commands[1];
@@ -45,11 +51,15 @@ void fs_landing_run()
 //                add_chirp(&current_actuator_values);  // +- sinusoidally varying delta to one of the actuators
 //            }
         } else {
-            if (has_ff_started) {
-                is_spinning = ff_actuator_values(&current_actuator_values, ff_start_time);
+            if (use_pre_spin) {
+                is_spinning = pre_spin_actuator_values();
             } else {
-                ff_start_time = get_sys_time_float();
-                has_ff_started = true;
+                if (has_ff_started) {
+                    is_spinning = ff_actuator_values(&current_actuator_values, ff_start_time);
+                } else {
+                    ff_start_time = get_sys_time_float();
+                    has_ff_started = true;
+                }
             }
         }
     } else {
@@ -58,6 +68,26 @@ void fs_landing_run()
         act_identification_active = false;
     }
     return;
+}
+
+bool pre_spin_actuator_values() {
+    float err = pre_spin_speed_setpoint - stateGetHorizontalSpeedNorm_f();
+    err = err_test;
+    if (err > 0) {
+        // Assuming max value is upward elevon deflection
+        float elevon_l_range = 9600;
+        float elevon_r_range = 9600;
+        float elevon_l_trim = pre_spin_trim_percentage * elevon_l_range;
+        float elevon_r_trim = pre_spin_trim_percentage * elevon_r_range;
+
+        current_actuator_values.commands[SERVO_S_THROTTLE_LEFT] = 0;
+        current_actuator_values.commands[SERVO_S_THROTTLE_RIGHT] = 0;
+        current_actuator_values.commands[SERVO_S_ELEVON_LEFT] = elevon_l_trim + pre_spin_pitch_coeff * err * elevon_l_range;
+        current_actuator_values.commands[SERVO_S_ELEVON_RIGHT] = elevon_r_trim + pre_spin_pitch_coeff * err * elevon_r_range;
+        return false;
+    } else {
+        return true;
+    }
 }
 
 bool is_fs_landing_active()
