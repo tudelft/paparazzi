@@ -239,7 +239,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     //optimize second parameter
     type = SECOND;
     dim = 1-satdim; //switch dimension identifier from saturation to second 
-
+    
     ang0 = -sat_corr[dim];
     ang1 = sat_corr[dim];
     angc = (ang0+ang1)/2.0;
@@ -266,16 +266,16 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
     // Check if we need to brake    
     if(!brake){
-        if(t_s<0.4 && t_s<t_target){
+        if(t_s<0.2 && t_s<t_target){
             brake=true;
             if(!controllerstate.in_transition){
-                if(fabs(pos_error_vel_x)>0.4){
+               
                 t_0_trans=get_sys_time_float(); // starttime of transition
                 v_0_trans=v_velframe[satdim];
                 y_0_trans=pos_error[satdim];
                 satang_0_trans=meas_angle[satdim];
                 controllerstate.in_transition=true;
-                }
+                
             }
         }
         else if(controllerstate.in_transition){
@@ -394,26 +394,14 @@ float predict_path_analytical(float angle,float Vd){
             else{
                 t_target=t_target+t_s;
             }
-            if(t_target<0){
-                t_target=t_target_old-dtt;
-                t_target_old=t_target;
-            }
-            else{
-                t_target_old=t_target;
-            }
+           
 
         }
         else{ //if braking 
             find_constants(0.0,v_velframe[dim]);
             constant_sat_brake = constant;
             t_target=get_time_analytical(Vd);
-            if(t_target<0){
-                t_target=t_target_old-dtt;
-                t_target_old=t_target;
-            }
-            else{
-                t_target_old=t_target;
-            }
+            
             y_target = get_position_analytical(t_target);
             
         }
