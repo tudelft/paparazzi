@@ -11,7 +11,7 @@
 #define r2d 180./M_PI
 #define d2r M_PI/180.0f
 #define LOG
-#define USETHRUSTALTCTRL
+// #define USETHRUSTALTCTRL
 // float m = 0.42; //bebop mass [kg]
 float g = 9.80665;//gravity
 int type; 
@@ -212,11 +212,13 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             E_pos = 1e9;
             E_pos2=1e9;
             // E_posc=1e9;
-            while((fabs(E_pos)>error_thresh && fabs(E_pos2)>error_thresh) && fabs(angc-angc_old)>(0.1*d2r)){
+            
+            while((fabs(E_pos)>error_thresh )&& fabs(angc-angc_old)>(0.1*d2r)){
                 angc_old=angc;
                 
                 // E_posc = get_E_pos(v_desired, angc);
                 E_pos = get_E_pos(v_desired,angc);
+                printf("ang0: %f, ang1: %f, angc: %f,E_pos: %f\n",ang0,ang1,angc,E_pos);
                 // E_pos2 = get_E_pos(v_desired,ang1);
                 // printf("te, E1: %f, E2: %f, angle cond: %f,ang_0: %f, ang_1: %f, ang_c: %f\n",E_pos,E_pos2,fabs(angc-angc_old),ang0,ang1,angc);
                 // if(satdim==0 && pos_error_vel_x<0){
@@ -232,6 +234,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
                angc=(ang0+ang1)/2.;
                
             }
+            printf("\n \n \n");
             bang_ctrl[dim]=angc;
         }
        
@@ -266,7 +269,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
     // Check if we need to brake    
     if(!brake){
-        if(t_s<0.2 && t_s<t_target){
+        if(t_s<0.3 && t_s<t_target){
             brake=true;
             if(!controllerstate.in_transition){
                
