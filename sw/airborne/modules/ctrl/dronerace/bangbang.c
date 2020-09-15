@@ -11,6 +11,7 @@
 #define r2d 180./M_PI
 #define d2r M_PI/180.0f
 #define LOG
+#define FORCESATDIM 1
 // #define USETHRUSTALTCTRL
 // float m = 0.42; //bebop mass [kg]
 float g = 9.80665;//gravity
@@ -114,24 +115,25 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     
     float error_thresh = 1e-3; 
     if(pos_error[0]<0){
-        sat_corr[0]=-sat_angle.x; //sat_corr are the saturated angles,but corrected for which side of the wp the drone is at. 
+        // sat_corr[0]=-sat_angle.x; //sat_corr are the saturated angles,but corrected for which side of the wp the drone is at. 
         sign_corr.x=-1; // sign_corr is required to correct the position error for the bisection part for which side of the gate we're at.
     }
     else
     {
-        sat_corr[0]=sat_angle.x;
+        // sat_corr[0]=sat_angle.x;
         sign_corr.x=1;
     }
     if(pos_error[1]<0){
-        sat_corr[1] = -sat_angle.y;
+        // sat_corr[1] = -sat_angle.y;
         sign_corr.y=-1;
     }
     else
     {
-        sat_corr[1]=sat_angle.y;
+        // sat_corr[1]=sat_angle.y;
         sign_corr.y=1;
     }
-
+    sat_corr[0]=sat_angle.x;
+    sat_corr[1]=sat_angle.y;
     
     if(!controllerstate.in_transition|| fabs(pos_error[0]-pos_error[1])>0.5){   //don't update satdim when in transition or when too close to the waypoint or when the error components are too close together
         if(fabs(pos_error[0])>=fabs(pos_error[1])){                                              // to avoid twitching.
@@ -141,7 +143,9 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             satdim=1;        
         }
     }
-    satdim=1;
+    #ifdef FORCESATDIM
+        satdim=FORCESATDIM;
+    #endif
         // printf("satdim: %d\n",satdim);
 
     // satdim=0; // TODO: force satdim for debugging purposes 
@@ -179,7 +183,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         
         while(fabs(E_pos)>error_thresh&&fabs(t_s-t_s_old)>2*dtt){
             t_s_old=t_s; 
-            E_pos=get_E_pos(v_desired, sat_corr[dim]);
+            E_pos=get_E_pos(v_desired, sat_corr[dim]*signcorrsat);
             // printf("satdim: %i, E_pos: %f, t_s: %f , t0: %f, t1: %f\n",dim,E_pos*signcorrsat,t_s,t0,t1);
             if(E_pos*signcorrsat>0){
                 t1=t_s;
@@ -190,7 +194,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             t_s=(t0+t1)/2.0;
             
         }
-        bang_ctrl[dim]=sat_corr[dim];
+        bang_ctrl[dim]=sat_corr[dim]*signcorrsat;
 
         if(controllerstate.apply_compensation){
         printf("Compensation: V0: %f, delta_angle: %f, t_s: %f, delta_t: %f, delta_y: %f, delta_v: %f\n ",vs,delta_angle_in,t_s,controllerstate.delta_t,controllerstate.delta_y,controllerstate.delta_v);
@@ -201,7 +205,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     else{
 
         if(controllerstate.in_transition){ //when in transition desired angle is max brake angle
-            bang_ctrl[dim]=-sat_corr[dim];
+            bang_ctrl[dim]=-sat_corr[dim]*signcorrsat;
             t_target=t_target-dtt; // update t_target for second dimension (no prediction should be done during transition since v_d cannot be reached for the intermediate angles in transition)
         }
         else{   // else optimize the braking angle to reach the desired speed at the desired position.
@@ -224,7 +228,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
                 // if(satdim==0 && pos_error_vel_x<0){
                 //     signcorrsat=1;
                 // }
-                if(E_pos*signcorrsat>0){
+                if(E_pos>0){
                     ang1=angc;
                 }
                 else{
@@ -252,7 +256,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     while(fabs(E_pos)>error_thresh&&fabs(angc-angc_old)>0.1*d2r){
         angc_old=angc;
         E_pos=get_E_pos(v_desired,angc); //v_desired doesn't do anything here. The point is to reacht the target at t_target.
-        if(E_pos*signcorrsec>0){
+        if(E_pos>0){
             ang1=angc;
         }
         else
@@ -341,16 +345,16 @@ float get_E_pos(float Vd, float angle){
 
 float predict_path_analytical(float angle,float Vd){
     #ifdef USETHRUSTeALTCTRL //use the thrust as commanded by the altitude controller 
-        T= (thrust_cmd/HOVERTHRUST)*mass*g*cosf(dr_state.phi)*cosf(dr_state.theta);
+        T= (thrust_cmd/HOVERTHRUST)*mass*g*cosf(dr_state.phi)*cosf(dr_state.theta); // - earth z 
     #else
-        T=mass*g;
+        T=mass*g;            // - earth z
     #endif
     if(dim==0){             //TODO get thrust component by rotation body reference frame to velocity frame.
         
-        T = T*tanf(-angle);//Thrust component forward 
+        T = T*tanf(-angle);//Thrust component forward, velframe x
     }
     else{
-        T = T*tanf(angle)/cosf(bang_ctrl[0]);//Thrust component forward  // TODO: maybe should use dr_state.theta instead of bang_ctrl[0]?
+        T = T*tanf(angle)/cosf(bang_ctrl[0]);//Thrust component forward, velframe y  // TODO: maybe should use dr_state.theta instead of bang_ctrl[0]?
     }
 
     //Correct NED velocity for the drone's heading which is the initial speed in path prediction
