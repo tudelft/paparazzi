@@ -194,6 +194,7 @@ void stabilization_indi_enter(void)
   FLOAT_RATES_ZERO(indi.angular_accel_ref);
   FLOAT_RATES_ZERO(indi.u_act_dyn);
   FLOAT_RATES_ZERO(indi.u_in);
+  FLOAT_RATES_ZERO(indi.du);
 
   // Re-initialize filters
   indi_init_filters();

@@ -33,6 +33,8 @@
 
 #include "modules/ctrl/motor_vs_flap_slider.h"
 
+#define INDI_SCHEDULING_LOWER_BOUND_G1 0.0001
+
 int32_t use_scheduling = 1;
 
 static float g_forward[3] = {STABILIZATION_INDI_FORWARD_G1_P, STABILIZATION_INDI_FORWARD_G1_Q, STABILIZATION_INDI_FORWARD_G1_R};
@@ -70,6 +72,17 @@ void ctrl_eff_scheduling_periodic(void)
   indi.g1.p = g_hover[0] * (1.0 - ratio) + g_forward[0] * ratio;
   indi.g1.q = g_hover[1] * (1.0 - ratio) + g_forward[1] * ratio;
   indi.g1.r = g_hover[2] * (1.0 - ratio) + g_forward[2] * ratio;
+
+  // Make sure g1 can never be negative, as the inverse is taken!
+  if (indi.g1.p < INDI_SCHEDULING_LOWER_BOUND_G1) {
+    indi.g1.p = INDI_SCHEDULING_LOWER_BOUND_G1;
+  }
+  if (indi.g1.q < INDI_SCHEDULING_LOWER_BOUND_G1) {
+    indi.g1.q = INDI_SCHEDULING_LOWER_BOUND_G1;
+  }
+  if (indi.g1.r < INDI_SCHEDULING_LOWER_BOUND_G1) {
+    indi.g1.r = INDI_SCHEDULING_LOWER_BOUND_G1;
+  }
 
   float ratio_spec_force = 0.0;
   float airspeed = stateGetAirspeed_f();

@@ -268,12 +268,12 @@ void guidance_indi_run(float *heading_sp) {
         float dv = bv * bv - 4.0 * av * cv;
 
         // dv can only be positive, but just in case
-        if(dv < 0) {
+        if(dv < 0.0) {
           dv = fabs(dv);
         }
         float d_sqrt = sqrtf(dv);
 
-        groundspeed_factor = (-bv + d_sqrt)  / (2 * av);
+        groundspeed_factor = (-bv + d_sqrt)  / (2.0 * av);
       }
 
       desired_airspeed.x = groundspeed_factor * speed_sp.x - windspeed.x;
@@ -682,8 +682,15 @@ struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_ga
   } else {
     // Calculate distance to waypoint
     float dist_to_wp = FLOAT_VECT2_NORM(pos_error);
+
     // Calculate max speed to decelerate from
-    float max_speed_decel = sqrt(2*dist_to_wp*MAX_DECELERATION);
+
+    // dv can only be positive, but just in case
+    float max_speed_decel2 = 2*dist_to_wp*MAX_DECELERATION;
+    if(max_speed_decel2 < 0.0) {
+      max_speed_decel2 = fabs(max_speed_decel2);
+    }
+    float max_speed_decel = sqrtf(max_speed_decel2);
 
     // Bound the setpoint velocity vector
     float max_h_speed = Min(nav_max_speed, max_speed_decel);
