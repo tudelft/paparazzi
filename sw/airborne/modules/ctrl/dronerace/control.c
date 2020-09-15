@@ -223,7 +223,7 @@ void control_run(float dt)
     vy_des_vel = bound_f(error_posy_vel,-CTRL_MAX_SPEED, CTRL_MAX_SPEED); 
     vx_des_vel = bound_f(error_posx_vel,-CTRL_MAX_SPEED,CTRL_MAX_SPEED);
     // dr_control.phi_cmd= bound_f(KP_VEL_Y * (vy_des_vel-vy_vel),-CTRL_MAX_ROLL,CTRL_MAX_ROLL);//TODO
-    dr_control.theta_cmd= bound_f(-KP_VEL_X * (vx_des_vel-vx_vel),-CTRL_MAX_PITCH,CTRL_MAX_PITCH);//TODO
+    // dr_control.theta_cmd= bound_f(-KP_VEL_X * (vx_des_vel-vx_vel),-CTRL_MAX_PITCH,CTRL_MAX_PITCH);//TODO
     
   }
     else if(dr_bang.controller_type==HIGHPID){ 
@@ -269,7 +269,7 @@ void control_run(float dt)
     if (dr_bang.overwrite_psi){
       dr_control.psi_cmd=dr_bang.psi_forced; //
     }
-    printf("pitch_cmd: %f\n",dr_control.theta_cmd);
+    // printf("pitch_cmd: %f\n",dr_control.theta_cmd);
 
       // dr_control.phi_cmd=bound_angle(dr_control.phi_cmd,d2r*CTRL_MAX_ROLL);
       // dr_control.theta_cmd=bound_angle(dr_control.theta_cmd,d2r*CTRL_MAX_PITCH);

@@ -106,7 +106,7 @@ static void send_dronerace(struct transport_tx *trans, struct link_device *dev)
 #endif
 #define LOG
 
-static abi_event gate_detected_ev;
+// static abi_event gate_detected_ev;
 float test0 =0;
 float est_psi;
 /*
@@ -122,15 +122,15 @@ static void send_alphapahrs(struct transport_tx *trans, struct link_device *dev)
 
 
 
-static void gate_detected_cb(uint8_t sender_id __attribute__((unused)), int32_t cnt, float dx, float dy, float dz, float vx __attribute__((unused)), float vy __attribute__((unused)), float vz __attribute__((unused)))
-{
-  // Logging
-  input_cnt = cnt;
-  input_dx = dx;
-  input_dy = dy;
-  input_dz = dz;
+// static void gate_detected_cb(uint8_t sender_id __attribute__((unused)), int32_t cnt, float dx, float dy, float dz, float vx __attribute__((unused)), float vy __attribute__((unused)), float vz __attribute__((unused)))
+// {
+//   // Logging
+//   input_cnt = cnt;
+//   input_dx = dx;
+//   input_dy = dy;
+//   input_dz = dz;
 
-}
+// }
 
 void dronerace_init(void)
 {

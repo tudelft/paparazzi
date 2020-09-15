@@ -60,7 +60,6 @@ static void open_log(void)
 void guidance_h_module_init(void)
 {
   dronerace_init();
-  float psi_init = stateGetNedToBodyEulers_f()->psi;
 } 
 
 
@@ -171,10 +170,11 @@ void guidance_v_module_run(bool in_flight)
   
   est_state_vz = vzE;//Z_ALPHA * est_state_vz + (1-Z_ALPHA) * zv_measured;
   est_state_z = z_measured;// Z_ALPHA * est_state_z + (1-Z_ALPHA) * z_measured;
+  zv_command= (KP_ALT *(z_cmd -est_state_z));
 
   z_i+=(zv_command-vzE)/512.;
   
-  zv_command= (KP_ALT *(z_cmd -est_state_z));
+
   
   if(zv_command<-4){
     zv_command=-4;
@@ -189,8 +189,8 @@ void guidance_v_module_run(bool in_flight)
   if(thrust_cmd>0.8){
     thrust_cmd=0.8;
   }
-  float nominal = radio_control.values[RADIO_THROTTLE];
-  float flap = 0.85;
+  // float nominal = radio_control.values[RADIO_THROTTLE];
+  
   stabilization_cmd[COMMAND_THRUST] = thrust_cmd*9125.;// nominal / (cosf(dr_state.phi * flap) * cosf(dr_state.theta * flap));
   // printf("z_measured: %f, est_state_z:%f, zv_measured: %f,nominal: %f,thrust_cmd: %f\n",z_measured,est_state_z,zv_measured,nominal,thrust_cmd);
   #ifdef LOG
