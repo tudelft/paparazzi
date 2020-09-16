@@ -19,11 +19,8 @@ int angle_index=0;
 int target_reached = 0;
 // int gate_nr;float gate_x;float gate_y;float gate_z;float gate_psi;float gate_speed;int gate_type;int controller_type;int turning;float psi_forced; bool overwrite_psi, float satangle;
 
-// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,1.2,-1.75,-1.25*M_PI,0.2,STARTGATE,PID,0,0,false},
-// {1, 2.0,1.2,-1.75,0,0.2,GATE,PID,0,0,false},
-// {2, 0.0,-2.0,-1.75,-0.75*M_PI,0.2,ENDGATE,PID,0,0,false},
-// };
+
+//------- Flightplan Structures------------------------------------
 
 // Demo Forward
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
@@ -83,6 +80,8 @@ const struct bangbang_fp_struct Banggates[MAX_GATES] = {
 // {0, -2.0,2,-1.5,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,25},
 // {1, 1.0,-2,-1.5,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,25},
 // };
+
+//----------------------------------------------------------------------------------------
 
 static void update_gate_setpoints(void){
     dr_bang.gate_x= Banggates[dr_bang.gate_nr].gate_x;

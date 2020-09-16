@@ -72,7 +72,7 @@ void filter_predict(float phi, float theta, float psi, float dt)
   float aby =  sinf(phi)   * az;
 
   // Earth accelerations
-  float ax =  cosf(psi) * abx - sinf(psi) * aby - dr_state.vx * DR_FILTER_DRAG ; //TODO shouldnt the drag term be divided by mass? assuming Drag force = v*DR_FILTER_DRAG
+  float ax =  cosf(psi) * abx - sinf(psi) * aby - dr_state.vx * DR_FILTER_DRAG ; 
   float ay =  sinf(psi) * abx + cosf(psi) * aby - dr_state.vy * DR_FILTER_DRAG;
 
 

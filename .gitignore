@@ -20,6 +20,7 @@
 
 *.depend
 */vscode/*
+vscode/*
 *.aux
 
 *.gdb_history

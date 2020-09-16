@@ -35,10 +35,6 @@ struct estimators estimator_roll = {
 
 void find_losses(float v_initial, float delta_angle, struct estimators *estimator){
     delta_angle_in=delta_angle; // for logging. 
-    // controllerstate.delta_t=estimator_time[0]+estimator_time[1]*delta_angle+estimator_time[2]*v_initial;
-    // controllerstate.delta_y =estimator_pos[0]+estimator_pos[1]*delta_angle+estimator_pos[2]*v_initial;
-    // controllerstate.delta_v=estimator_vel[0]+estimator_vel[1]*delta_angle+estimator_vel[2]*v_initial;
-
     controllerstate.delta_t = estimator->delta_t[0] + estimator->delta_t[1]*delta_angle + estimator->delta_t[2]*v_initial;
     controllerstate.delta_y = estimator->delta_pos[0] + estimator->delta_pos[1]*delta_angle + estimator->delta_pos[2]*v_initial;
     controllerstate.delta_v = estimator->delta_vel[0] + estimator->delta_vel[1]*delta_angle + estimator->delta_vel[2]*v_initial;
