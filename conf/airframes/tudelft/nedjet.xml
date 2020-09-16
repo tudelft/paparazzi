@@ -20,6 +20,7 @@
       </module>
 
       <module name="flap_wiggle"/>
+      <module name="motor_vs_flap_slider"/>
 
       <configure name="FLASH_MODE" value="SWD"/>
 
@@ -320,7 +321,11 @@
     <define name="FORWARD_G1_Q" value="0.0100"/>
     <define name="FORWARD_G1_R" value="0.0040"/>
 
+    <!--P effectiveness if center props are switched off-->
     <define name="FORWARD_G1_P_FEW_PROPS" value="STABILIZATION_INDI_FORWARD_G1_P"/>
+    <!--Part of yaw eff that comes from motors-->
+    <define name="MOT_YAW_EFF" value="0.0"/>
+    <define name="MOT_PITCH_EFF" value="0.0"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="30.0"/>
