@@ -10,6 +10,10 @@
 
 #include "subsystems/datalink/downlink.h"
 
+#ifndef FS_LANDING_DEBUG
+#define FS_LANDING_DEBUG TRUE
+#endif
+
 struct fs_landing_t fs_landing;
 struct fs_landing_t current_actuator_values;
 
@@ -26,10 +30,9 @@ float pre_spin_speed_setpoint = 8;
 float pre_spin_trim_percentage = 0.20;
 float err_test = 5;
 
-// For debug use:
-// float send_values[4];
-// send_values[0] = (float)current_actuator_values.commands[1];
-// DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 8, send_values);
+#if FS_LANDING_DEBUG
+float dbg_msg[4];
+#endif
 
 void fs_landing_init()
 {
@@ -76,6 +79,11 @@ void fs_landing_run()
 
 bool pre_spin_actuator_values() {
     float err = pre_spin_speed_setpoint - stateGetHorizontalSpeedNorm_f();
+#if FS_LANDING_DEBUG
+    dbg_msg[0] = stateGetHorizontalSpeedNorm_f();
+    dbg_msg[1] = err;
+    DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 4, dbg_msg);
+#endif
 //    err = err_test;
     if (err > 0) {
         // Assuming max value is upward elevon deflection
