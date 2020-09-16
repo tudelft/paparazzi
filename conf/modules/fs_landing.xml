@@ -38,6 +38,13 @@
           <strip_button name="Act_ID Stop" value="0"/>
         </dl_setting>
       </dl_settings>
+      <dl_settings name="Cyclic Control">
+        <dl_setting min="0" max="1" var="both_actuators" type="uint8_t" module="fs_landing/cyclic_control" />
+        <dl_setting min="0" max="1" var="cyclic_control_active" type="uint8_t" module="fs_landing/fs_landing" />
+        <dl_setting min="0" max="5" step="0.01" var="kr" type="float" module="fs_landing/cyclic_control" />
+        <dl_setting min="0" max="5" step="0.01" var="kp" type="float" module="fs_landing/cyclic_control" />
+        <dl_setting min="0" max="180" step="1" var="phase_lead" type="float" module="fs_landing/cyclic_control" />
+      </dl_settings>
 <!--      <dl_settings name="Act Frequency Test">-->
 <!--        <dl_setting min="0" step="0.01" max="4" var="test_freq" shortname="Frequency" type="float" module="fs_landing/actuator_freq_test"/>-->
 <!--      </dl_settings>-->
@@ -56,6 +63,7 @@
     <file name="feed_forward.c"/>
     <file name="pilot_test.c"/>
     <file name="actuator_id.c"/>
+    <file name="cyclic_control.c"/>
     <file name="actuator_freq_test.c"/>
   </makefile>
 

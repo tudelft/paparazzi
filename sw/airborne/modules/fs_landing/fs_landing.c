@@ -6,6 +6,7 @@
 #include "feed_forward.h"
 #include "pilot_test.h"
 #include "actuator_id.h"
+#include "cyclic_control.h"
 
 #include "subsystems/datalink/downlink.h"
 
@@ -15,6 +16,7 @@ struct fs_landing_t current_actuator_values;
 uint8_t is_spinning = false;
 uint8_t pilot_has_control = false;
 uint8_t act_identification_active = false;
+uint8_t cyclic_control_active = false;
 uint8_t has_ff_started = false;
 float ff_start_time = 0;
 
@@ -44,12 +46,14 @@ void fs_landing_run()
     if (is_fs_landing_active()) {
         if (is_spinning) {
             spin_actuator_values(&current_actuator_values);  // Constant actuator values to maintain spin
-            add_chirp(&current_actuator_values);
-            //            if (pilot_has_control) {
-//                pilot_actuator_values(&current_actuator_values);  // RC Channels control actuator deflection
-//            } else if (act_identification_active){
-//                add_chirp(&current_actuator_values);  // +- sinusoidally varying delta to one of the actuators
-//            }
+//            add_chirp(&current_actuator_values);
+            if (pilot_has_control) {
+                pilot_actuator_values(&current_actuator_values);  // RC Channels control actuator deflection
+            } else if (act_identification_active){
+                add_chirp(&current_actuator_values);  // +- sinusoidally varying delta to one of the actuators
+            } else if (cyclic_control_active) {
+                cyclic_control_values(&current_actuator_values);
+            }
         } else {
             if (use_pre_spin) {
                 is_spinning = pre_spin_actuator_values();
@@ -72,7 +76,7 @@ void fs_landing_run()
 
 bool pre_spin_actuator_values() {
     float err = pre_spin_speed_setpoint - stateGetHorizontalSpeedNorm_f();
-    err = err_test;
+//    err = err_test;
     if (err > 0) {
         // Assuming max value is upward elevon deflection
         float elevon_l_range = 9600;
