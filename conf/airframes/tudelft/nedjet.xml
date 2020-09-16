@@ -19,6 +19,8 @@
         <configure name="SBUS_PORT" value="UART3"/>
       </module>
 
+      <module name="flap_wiggle"/>
+
       <configure name="FLASH_MODE" value="SWD"/>
 
        <!-- Logger -->
@@ -187,14 +189,14 @@
     <set servo="MOTOR_6"   value="(($th_hold || $fwd_hold)? $motor_6_s : motor_mixing.commands[5])"/>
     <set servo="MOTOR_7"   value="(($th_hold || $fwd_hold)? $motor_7_s : motor_mixing.commands[6])"/>
     <set servo="MOTOR_8"   value="(($th_hold || $fwd_hold)? $motor_8_s : motor_mixing.commands[7])"/>
-    <set servo="AIL_1"     value="-2*@PITCH + 4*@YAW + @FLAPS"/>
-    <set servo="AIL_2"     value="-2*@PITCH - 4*@YAW + @FLAPS"/>
-    <set servo="AIL_3"     value=" 2*@PITCH - 4*@YAW + @FLAPS"/>
-    <set servo="AIL_4"     value=" 2*@PITCH + 4*@YAW + @FLAPS"/>
-    <set servo="FLAP_1"    value="-2*@PITCH + 4*@YAW + @FLAPS"/>
-    <set servo="FLAP_2"    value="-2*@PITCH - 4*@YAW + @FLAPS"/>
-    <set servo="FLAP_3"    value=" 2*@PITCH - 4*@YAW + @FLAPS"/>
-    <set servo="FLAP_4"    value=" 2*@PITCH + 4*@YAW + @FLAPS"/>
+    <set servo="AIL_1"     value="-2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[0]"/>
+    <set servo="AIL_2"     value="-2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[1]"/>
+    <set servo="AIL_3"     value=" 2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[2]"/>
+    <set servo="AIL_4"     value=" 2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[3]"/>
+    <set servo="FLAP_1"    value="-2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[4]"/>
+    <set servo="FLAP_2"    value="-2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[5]"/>
+    <set servo="FLAP_3"    value=" 2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[6]"/>
+    <set servo="FLAP_4"    value=" 2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[7]"/>
   </command_laws>
 
   <section name="MISC">
