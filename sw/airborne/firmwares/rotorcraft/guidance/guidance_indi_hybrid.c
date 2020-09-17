@@ -387,7 +387,7 @@ void guidance_indi_run(float *heading_sp) {
   Bound(guidance_euler_cmd.phi, -guidance_indi_max_bank, guidance_indi_max_bank);
   Bound(guidance_euler_cmd.theta, -RadOfDeg(120.0), RadOfDeg(25.0));
 
-  float coordinated_turn_roll = guidance_euler_cmd.phi;
+  float coordinated_turn_roll = eulers_zxy.phi;
 
   if( (guidance_euler_cmd.theta > 0.0) && ( fabs(guidance_euler_cmd.phi) < guidance_euler_cmd.theta)) {
     coordinated_turn_roll = ((guidance_euler_cmd.phi > 0.0) - (guidance_euler_cmd.phi < 0.0))*guidance_euler_cmd.theta;
