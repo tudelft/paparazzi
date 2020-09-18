@@ -79,6 +79,7 @@ endif
 #
 $(TARGET).srcs += c++.cpp pprz_syscalls.c
 $(TARGET).CXXFLAGS += -fno-sized-deallocation
+$(TARGET).CXXFLAGS += $(CXXSTANDARD)
 
 #
 # General rules
@@ -95,7 +96,7 @@ $(TARGET).objs	= $($(TARGET).objso:%.S=$(OBJDIR)/%.o)
 
 # Paparazzi options here.
 ifeq ($(PPRZ_DEFINITION),)
-  PPRZ_DEFINITION = -DUSE_CHIBIOS_RTOS -DUSE_ADC_WATCHDOG
+  PPRZ_DEFINITION = -DUSE_CHIBIOS_RTOS -DUSE_ADC_WATCHDOG -DPPRZLINK_UNALIGNED_ACCESS=1
 endif
 
 # Compiler options here.

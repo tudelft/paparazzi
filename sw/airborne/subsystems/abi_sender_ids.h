@@ -103,6 +103,10 @@
 #define AIRSPEED_ADC_ID 2
 #endif
 
+#ifndef AIRSPEED_SDP3X_ID
+#define AIRSPEED_SDP3X_ID 3
+#endif
+
 /*
  * IDs of Incidence angles (message 24)
  */
@@ -119,7 +123,7 @@
 #endif
 
 /*
- * IDs of AGL measurment modules that can be loaded (sonars,...) (message 2)
+ * IDs of AGL measurment modules that can be loaded (sonars, lidars,...) (message 2)
  */
 #ifndef AGL_SONAR_ADC_ID
 #define AGL_SONAR_ADC_ID 1
@@ -165,6 +169,18 @@
 #define AGL_LIDAR_TFMINI_ID 11
 #endif
 
+#ifndef AGL_VL53L1X_ID
+#define AGL_VL53L1X_ID 12
+#endif
+
+#ifndef AGL_SONAR_PWM_ID
+#define AGL_SONAR_PWM_ID 13
+#endif
+
+#ifndef AGL_LIDAR_TFMINI_I2C_ID
+#define AGL_LIDAR_TFMINI_I2C_ID 14
+#endif
+
 /*
  * IDs of magnetometer sensors (including IMUs with mag)
  */
@@ -175,6 +191,10 @@
 
 #ifndef MAG_LIS3MDL_SENDER_ID
 #define MAG_LIS3MDL_SENDER_ID 3
+#endif
+
+#ifndef MAG_IST8310_SENDER_ID
+#define MAG_IST8310_SENDER_ID 4
 #endif
 
 #ifndef IMU_MAG_PITOT_ID
@@ -319,6 +339,10 @@
 #define IMU_VECTORNAV_ID 18
 #endif
 
+#ifndef IMU_BMI088_ID
+#define IMU_BMI088_ID 19
+#endif
+
 // prefiltering with OneEuro filter
 #ifndef IMU_F1E_ID
 #define IMU_F1E_ID 30
@@ -329,6 +353,10 @@
  */
 #ifndef FLOW_OPTICFLOW_ID
 #define FLOW_OPTICFLOW_ID 1
+#endif
+
+#ifndef FLOW_OPTICFLOW_PMW3901_ID
+#define FLOW_OPTICFLOW_PMW3901_ID 2
 #endif
 
 /*
@@ -348,6 +376,10 @@
 
 #ifndef VEL_STEREOCAM_ID
 #define VEL_STEREOCAM_ID 4
+#endif
+
+#ifndef VEL_OPTICFLOW_PMW3901_ID
+#define VEL_OPTICFLOW_PMW3901_ID 5
 #endif
 
 /*
@@ -396,6 +428,10 @@
 
 #ifndef OBS_DETECTION_RANGE_ARRAY_NPS_ID
 #define OBS_DETECTION_RANGE_ARRAY_NPS_ID 3
+#endif
+
+#ifndef OBS_DETECTION_MULTI_RANGER_DECK_ID
+#define OBS_DETECTION_MULTI_RANGER_DECK_ID 4
 #endif
 
 /*

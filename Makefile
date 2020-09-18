@@ -137,14 +137,14 @@ conf/%.xml :conf/%_example.xml
 conf/tools/blacklisted: conf/tools/blacklisted_example
 	cp conf/tools/blacklisted_example conf/tools/blacklisted
 
-ground_segment: _print_building update_google_version conf libpprz subdirs commands static
+ground_segment: _print_building update_google_version conf libpprz subdirs static
 ground_segment.opt: ground_segment cockpit.opt tmtc.opt
 
 static: cockpit tmtc generators sim_static joystick static_h
 
 libpprzlink:
 	$(MAKE) -C $(EXT) pprzlink.update
-	$(Q)Q=$(Q) DESTDIR=$(PPRZLINK_INSTALL) PPRZLINK_LIB_VERSION=${PPRZLINK_LIB_VERSION} $(MAKE) -C $(PPRZLINK_DIR) libpprzlink-install
+	$(Q)Q=$(Q) MAKEFLAGS=-j1 DESTDIR=$(PPRZLINK_INSTALL) PPRZLINK_LIB_VERSION=${PPRZLINK_LIB_VERSION} $(MAKE) -C $(PPRZLINK_DIR) libpprzlink-install
 
 libpprz: libpprzlink _save_build_version
 	$(MAKE) -C $(LIB)/ocaml
@@ -184,7 +184,7 @@ subdirs: $(SUBDIRS)
 
 $(MISC): ext
 
-$(SUBDIRS):
+$(SUBDIRS): libpprz
 	$(MAKE) -C $@
 
 $(PPRZCENTER): libpprz
@@ -193,7 +193,7 @@ $(LOGALIZER): libpprz
 
 static_h: pprzlink_protocol $(GEN_HEADERS)
 
-pprzlink_protocol :
+pprzlink_protocol : libpprz
 	$(Q)test -d $(STATICINCLUDE) || mkdir -p $(STATICINCLUDE)
 	$(Q)test -d $(STATICLIB) || mkdir -p $(STATICLIB)
 ifeq ("$(wildcard $(CUSTOM_MESSAGES_XML))","")
@@ -246,19 +246,9 @@ ac_h ac fbw ap: static conf generators ext
 sim: sim_static
 
 
-#
-# Commands
-#
-
 # stuff to build and upload the lpc bootloader ...
 include Makefile.lpctools
 lpctools: lpc21iap
-
-commands: paparazzi
-
-paparazzi:
-	cat src/paparazzi | sed s#OCAMLRUN#$(OCAMLRUN)# | sed s#OCAML#$(OCAML)# > $@
-	chmod a+x $@
 
 
 #
@@ -276,7 +266,7 @@ dox:
 #
 
 clean:
-	$(Q)rm -fr dox build-stamp configure-stamp conf/%gconf.xml paparazzi
+	$(Q)rm -fr dox build-stamp configure-stamp conf/%gconf.xml
 	$(Q)rm -f  $(GEN_HEADERS)
 	$(Q)MESSAGES_INSTALL=$(MESSAGES_INSTALL) $(MAKE) -C $(PPRZLINK_DIR) uninstall
 	$(Q)rm -fr $(MAVLINK_DIR)
@@ -348,6 +338,6 @@ test_sim: all
 
 .PHONY: all print_build_version _print_building _save_build_version update_google_version init dox ground_segment ground_segment.opt \
 subdirs $(SUBDIRS) conf ext libpprz libpprzlink cockpit cockpit.opt tmtc tmtc.opt generators\
-static sim_static lpctools commands opencv_bebop\
+static sim_static lpctools opencv_bebop\
 clean cleanspaces ab_clean dist_clean distclean dist_clean_irreversible \
 test test_examples test_math test_sim test_all_confs

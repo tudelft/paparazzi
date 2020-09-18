@@ -51,6 +51,14 @@
 #include "modules/nav/nav_survey_rectangle_rotorcraft.h"
 #include "state.h"
 
+#ifndef RECTANGLE_SURVEY_HEADING_NS
+#define RECTANGLE_SURVEY_HEADING_NS 0.f
+#endif
+
+#ifndef RECTANGLE_SURVEY_HEADING_WE
+#define RECTANGLE_SURVEY_HEADING_WE 90.f
+#endif
+
 float sweep = RECTANGLE_SURVEY_DEFAULT_SWEEP;
 static bool nav_survey_rectangle_active = false;
 uint16_t rectangle_survey_sweep_num;
@@ -137,6 +145,7 @@ void nav_survey_rectangle_rotorcraft_setup(uint8_t wp1, uint8_t wp2, float grid,
     }
   }
   nav_survey_shift = grid;
+  sweep = grid;
   survey_uturn = false;
   nav_survey_rectangle_active = false;
 
@@ -147,15 +156,18 @@ void nav_survey_rectangle_rotorcraft_setup(uint8_t wp1, uint8_t wp2, float grid,
   LINE_STOP_FUNCTION;
   NavVerticalAltitudeMode(waypoints[wp1].enu_f.z, 0.);
   if (survey_orientation == NS) {
-    nav_set_heading_deg(0);
+    nav_set_heading_deg(RECTANGLE_SURVEY_HEADING_NS);
   } else {
-    nav_set_heading_deg(90);
+    nav_set_heading_deg(RECTANGLE_SURVEY_HEADING_WE);
   }
 }
 
-
 bool nav_survey_rectangle_rotorcraft_run(uint8_t wp1, uint8_t wp2)
 {
+  #ifdef NAV_SURVEY_RECTANGLE_DYNAMIC
+  nav_survey_shift = (nav_survey_shift > 0 ? sweep : -sweep);
+  #endif  
+
   static bool is_last_half = false;
   static float survey_radius;
   nav_survey_active = true;
@@ -371,4 +383,3 @@ bool nav_survey_rectangle_rotorcraft_run(uint8_t wp1, uint8_t wp2)
   return true;
 
 }// /* END survey_retangle */
-

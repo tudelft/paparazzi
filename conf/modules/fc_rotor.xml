@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="fc_rotor" dir="fc_rotor">
+<module name="fc_rotor" dir="multi/fc_rotor">
   <doc>
     <description>
       Algorithm for the formation control of a team of rotorcrafts.
@@ -14,7 +14,7 @@
 
   <init fun = "fc_rotor_init()"/>
 
-  <datalink message="DESIRED_SETPOINT" fun="fc_read_msg()"/>
+  <datalink message="DESIRED_SETPOINT" fun="fc_read_msg(buf)"/>
 
   <makefile firmware="rotorcraft">
     <define name="FC_ROTOR"/>

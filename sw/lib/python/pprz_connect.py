@@ -125,7 +125,6 @@ class PprzConnect(object):
         """
         self.verbose = verbose
         self._notify = notify
-        self._req_idx = 0
 
         self._conf_list_by_name = {}
         self._conf_list_by_id = {}
@@ -153,7 +152,6 @@ class PprzConnect(object):
             self._ivy.shutdown()
             self._ivy = None
 
-    @property
     def conf_by_name(self, ac_name=None):
         """
         Get a conf by its name
@@ -166,7 +164,6 @@ class PprzConnect(object):
         else:
             return self._conf_list_by_name
 
-    @property
     def conf_by_id(self, ac_id=None):
         """
         Get a conf by its ID
@@ -186,27 +183,6 @@ class PprzConnect(object):
         """
         return self._ivy
 
-    def _get_req_id(self):
-        req_id = '{}_{}'.format(getpid(), self._req_idx)
-        self._req_idx += 1
-        return req_id
-
-    def _message_req(self, msg_name, cb, params=None):
-        bind_id = None
-        def _cb(sender, msg):
-            if bind_id is not None:
-                self._ivy.unsubscribe(bind_id)
-            cb(sender, msg)
-        req_id = self._get_req_id()
-        req_regex = '^{} ([^ ]* +{}( .*|$))'.format(req_id, msg_name)
-        bind_id = self._ivy.subscribe(_cb, req_regex)
-        req_msg = PprzMessage('ground','{}_REQ'.format(msg_name))
-        if params is not None:
-            req_msg.set_values(params)
-        #FIXME we shouldn't use directly Ivy, but pprzlink python API is not supporting the request id for now
-        IvySendMsg('pprz_connect {} {} {}'.format(req_id, req_msg.name, req_msg.payload_to_ivy_string()))
-        #self._ivy.send(req_msg)
-
     def get_aircrafts(self):
         """
         request all aircrafts IDs from a runing server
@@ -219,7 +195,7 @@ class PprzConnect(object):
             #ac_list = [int(a) for a in msg['ac_list'].split(',') if a]
             if self.verbose:
                 print("aircrafts: {}".format(ac_list))
-        self._message_req("AIRCRAFTS", aircrafts_cb)
+        self._ivy.send_request('ground', "AIRCRAFTS", aircrafts_cb)
 
         def new_ac_cb(sender, msg):
             ac_id = msg['ac_id']
@@ -245,7 +221,7 @@ class PprzConnect(object):
                 self._notify(conf) # user defined general callback
             if self.verbose:
                 print(conf)
-        self._message_req("CONFIG", conf_cb, [ac_id])
+        self._ivy.send_request('ground', "CONFIG", conf_cb, ac_id=ac_id)
 
 
 if __name__ == '__main__':

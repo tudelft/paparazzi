@@ -29,6 +29,7 @@
 #include <hal.h>
 #include "modules/loggers/sdlog_chibios/sdLog.h"
 #include "modules/loggers/sdlog_chibios/usbStorage.h"
+#include "modules/loggers/sdlog_chibios/printf.h"
 #include "modules/loggers/sdlog_chibios.h"
 #include "modules/tlsf/tlsf_malloc.h"
 #include "mcu_periph/adc.h"
@@ -100,6 +101,11 @@ static enum {
   SDLOG_ERROR
 } chibios_sdlog_status;
 
+/** sdlog filenames
+ */
+static char chibios_sdlog_filenames[68];
+static char NO_FILE_NAME[] = "none";
+
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 static void send_sdlog_status(struct transport_tx *trans, struct link_device *dev)
@@ -107,7 +113,14 @@ static void send_sdlog_status(struct transport_tx *trans, struct link_device *de
   uint8_t status = (uint8_t) chibios_sdlog_status;
   uint8_t errno = (uint8_t) sdLogGetStorageStatus();
   uint32_t used = (uint32_t) sdLogGetNbBytesWrittenToStorage();
-  pprz_msg_send_LOGGER_STATUS(trans, dev, AC_ID, &status, &errno, &used);
+  uint8_t size = strlen(chibios_sdlog_filenames);
+  char *filenames = chibios_sdlog_filenames;
+  if (size == 0) {
+    // when no file opened
+    filenames = NO_FILE_NAME;
+    size = strlen(filenames);
+  }
+  pprz_msg_send_LOGGER_STATUS(trans, dev, AC_ID, &status, &errno, &used, size, filenames);
 }
 #endif
 
@@ -147,6 +160,7 @@ static void sdlog_send(struct chibios_sdlog *p, long fd)
 }
 
 static int null_function(struct chibios_sdlog *p __attribute__((unused))) { return 0; }
+static uint8_t null_byte_function(struct chibios_sdlog *p __attribute__((unused))) { return 0; }
 
 void chibios_sdlog_init(struct chibios_sdlog *sdlog, FileDes *file)
 {
@@ -159,7 +173,7 @@ void chibios_sdlog_init(struct chibios_sdlog *sdlog, FileDes *file)
   sdlog->device.put_buffer = (put_buffer_t) sdlog_transmit_buffer;
   sdlog->device.send_message = (send_message_t) sdlog_send;
   sdlog->device.char_available = (char_available_t) null_function; // write only
-  sdlog->device.get_byte = (get_byte_t) null_function; // write only
+  sdlog->device.get_byte = (get_byte_t) null_byte_function; // write only
 
 }
 
@@ -182,10 +196,23 @@ void sdlog_chibios_init(void)
 void sdlog_chibios_finish(const bool flush)
 {
   if (pprzLogFile != -1) {
-    // disable all the LEDs to save energy and maximize chance to flush files
+    // disable all required periph to save energy and maximize chance to flush files
     // to mass storage and avoid infamous dirty bit on filesystem
-    led_disable();
+    mcu_periph_energy_save();
+
+    // if a FF_FS_REENTRANT is true, we can umount fs without closing
+    // file, fatfs lock will assure that umount is done after a write,
+    // and umount will close all open files cleanly. Thats the fatest
+    // way to umount cleanly filesystem.
+    //
+    // if FF_FS_REENTRANT is false,
+    // we have to flush and close files before unmounting filesystem
+#if FF_FS_REENTRANT == 0
     sdLogCloseAllLogs(flush);
+#else
+    (void) flush;
+#endif
+
     sdLogFinish();
     pprzLogFile = 0;
 #if FLIGHTRECORDER_SDLOG
@@ -199,6 +226,7 @@ static void thd_startlog(void *arg)
 {
   (void) arg;
   chRegSetThreadName("start log");
+  char tmpFilename[32];
 
   // Wait before starting the log if needed
   chThdSleepSeconds(SDLOG_START_DELAY);
@@ -218,17 +246,19 @@ static void thd_startlog(void *arg)
   } else {
     removeEmptyLogs(PPRZ_LOG_DIR, PPRZ_LOG_NAME, 50);
     if (sdLogOpenLog(&pprzLogFile, PPRZ_LOG_DIR,
-		     PPRZ_LOG_NAME, SDLOG_AUTO_FLUSH_PERIOD, true,
-		     SDLOG_CONTIGUOUS_STORAGE_MEM, false) != SDLOG_OK) {
+		     PPRZ_LOG_NAME, SDLOG_AUTO_FLUSH_PERIOD, LOG_APPEND_TAG_AT_CLOSE_DISABLED,
+		     SDLOG_CONTIGUOUS_STORAGE_MEM, LOG_PREALLOCATION_DISABLED, tmpFilename, sizeof(tmpFilename)) != SDLOG_OK) {
       sdOk = false;
     }
+    chsnprintf(chibios_sdlog_filenames, sizeof(chibios_sdlog_filenames), "%s", tmpFilename);
 #if FLIGHTRECORDER_SDLOG
     removeEmptyLogs(FR_LOG_DIR, FLIGHTRECORDER_LOG_NAME, 50);
     if (sdLogOpenLog(&flightRecorderLogFile, FR_LOG_DIR, FLIGHTRECORDER_LOG_NAME,
-		     SDLOG_AUTO_FLUSH_PERIOD, false,
-		      SDLOG_CONTIGUOUS_STORAGE_MEM, false) != SDLOG_OK) {
+		     SDLOG_AUTO_FLUSH_PERIOD, LOG_APPEND_TAG_AT_CLOSE_DISABLED,
+		      SDLOG_CONTIGUOUS_STORAGE_MEM, LOG_PREALLOCATION_DISABLED, tmpFilename, sizeof(tmpFilename)) != SDLOG_OK) {
       sdOk = false;
     }
+    chsnprintf(chibios_sdlog_filenames, sizeof(chibios_sdlog_filenames), "%s, %s", chibios_sdlog_filenames, tmpFilename);
 #endif
   }
 

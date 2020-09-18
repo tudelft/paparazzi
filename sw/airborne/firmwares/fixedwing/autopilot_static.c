@@ -123,6 +123,12 @@ void autopilot_static_on_rc_frame(void)
     mode_changed = autopilot_set_mode(RC_LOST_MODE);
   }
 
+#ifdef RADIO_KILL_SWITCH
+  if (imcu_get_radio(RADIO_KILL_SWITCH) < MIN_PPRZ / 2) {
+    autopilot_set_kill_throttle(true);
+  }
+#endif
+
   /* If in-flight, with good GPS but too far, then activate HOME mode
    * In MANUAL with good RC, FBW will allow to override. */
   if (autopilot_get_mode() != AP_MODE_HOME && autopilot_get_mode() != AP_MODE_GPS_OUT_OF_ORDER && autopilot.launch) {
@@ -197,9 +203,12 @@ void autopilot_static_SetModeHandler(float new_autopilot_mode)
   autopilot_static_set_mode(new_autopilot_mode);
 }
 
-void autopilot_static_set_motors_on(bool motors_on __attribute__((unused)))
+void autopilot_static_set_motors_on(bool motors_on)
 {
-  // Do nothing on fixedwing ?
+  // it doesn't make real sense on fixedwing, as you can still use throttle
+  // in MAN and AUTO1 modes while have motor killed for AUTO2
+  // only needed for consistency with other firmwares
+  autopilot.motors_on = motors_on;
 }
 
 #ifdef FAILSAFE_DELAY_WITHOUT_GPS

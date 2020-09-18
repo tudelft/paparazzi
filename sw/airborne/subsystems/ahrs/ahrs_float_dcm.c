@@ -117,14 +117,20 @@ void ahrs_dcm_init(void)
 }
 
 bool ahrs_dcm_align(struct FloatRates *lp_gyro, struct FloatVect3 *lp_accel,
-                      struct FloatVect3 *lp_mag)
+                      struct FloatVect3 *lp_mag __attribute__((unused)))
 {
-  /* Compute an initial orientation using euler angles */
-  ahrs_float_get_euler_from_accel_mag(&ahrs_dcm.ltp_to_imu_euler, lp_accel, lp_mag);
+  /* Compute an initial orientation in quaternion (and then back to euler angles) so it works upside-down as well */
+  struct FloatQuat quat;
+#if USE_MAGNETOMETER
+  ahrs_float_get_quat_from_accel_mag(&quat, lp_accel, lp_mag);
+#else
+  ahrs_float_get_quat_from_accel(&quat, lp_accel);
+#endif
+  float_eulers_of_quat(&ahrs_dcm.ltp_to_imu_euler, &quat);
 
-  /* Convert initial orientation in quaternion and rotation matrice representations. */
+  /* Convert initial orientation from quaternion to rotation matrix representations. */
   struct FloatRMat ltp_to_imu_rmat;
-  float_rmat_of_eulers(&ltp_to_imu_rmat, &ahrs_dcm.ltp_to_imu_euler);
+  float_rmat_of_quat(&ltp_to_imu_rmat, &quat);
 
   /* set filter dcm */
   set_dcm_matrix_from_rmat(&ltp_to_imu_rmat);
@@ -175,7 +181,7 @@ void ahrs_dcm_update_gps(struct GpsState *gps_s)
     ahrs_dcm.gps_age = 0;
     ahrs_dcm.gps_speed = gps_s->speed_3d / 100.;
 
-    if (gps_s->gspeed >= 500) { //got a 3d fix and ground speed is more than 5.0 m/s
+    if (gps_s->gspeed >= 500) { //got a 3d fix and ground speed is more than 5.0 m/s //FIXME: Should be settable
       ahrs_dcm.gps_course = ((float)gps_s->course) / 1.e7;
       ahrs_dcm.gps_course_valid = true;
     } else {

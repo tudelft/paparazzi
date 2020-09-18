@@ -157,7 +157,7 @@ static void tfmini_parse(uint8_t byte)
             float phi = stateGetNedToBodyEulers_f()->phi;
             float theta = stateGetNedToBodyEulers_f()->theta;
             float gain = (float)fabs((double)(cosf(phi) * cosf(theta)));
-            tfmini.distance = tfmini.distance / gain;
+            tfmini.distance = tfmini.distance * gain;
           }
 
           // send message (if requested)
@@ -168,6 +168,11 @@ static void tfmini_parse(uint8_t byte)
       }
 
       // Start reading again
+      tfmini.parse_status = TFMINI_PARSE_HEAD;
+      break;
+
+    default:
+      // Error, return to start
       tfmini.parse_status = TFMINI_PARSE_HEAD;
       break;
   }

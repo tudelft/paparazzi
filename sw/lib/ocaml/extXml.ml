@@ -71,9 +71,16 @@ let attrib = fun xml attr ->
 	attr sprint_fields (Xml.attribs xml) in
     raise (Error msg)
 
-let attrib_option = fun xml attr ->
+let attrib_opt = fun xml attr ->
   try Some (Xml.attrib xml attr)
   with Xml.No_attribute _ -> None
+
+let attrib_opt_map = fun xml attr f ->
+  try Some (f (Xml.attrib xml attr))
+  with Xml.No_attribute _ -> None
+
+let attrib_opt_int = fun xml attr -> attrib_opt_map xml attr int_of_string
+let attrib_opt_float = fun xml attr -> attrib_opt_map xml attr float_of_string
 
 let tag_is = fun x v -> Compat.lowercase_ascii (Xml.tag x) = Compat.lowercase_ascii v
 
@@ -89,7 +96,7 @@ let buffer_attr = fun indent tab (n,v) ->
   Buffer.add_char tmp ' ';
   Buffer.add_string tmp n;
   Buffer.add_string tmp "=\"";
-  let l = Compat.bytes_length v in
+  let l = String.length v in
   for p = 0 to l-1 do
     match v.[p] with
       | '\\' -> Buffer.add_string tmp "\\\\"
@@ -145,16 +152,14 @@ let my_to_string_fmt = fun tab_attribs x ->
   Buffer.reset tmp;
   s
 
-
-
 let to_string_fmt = fun ?(tab_attribs = false) xml ->
   let l = Compat.lowercase_ascii in
   let rec lower = function
     | Xml.PCData _ as x -> x
     | Xml.Element (t, ats, cs) ->
-	Xml.Element(l t,
-                    List.map (fun (a,v) -> (l a, v)) ats,
-                    List.map lower cs) in
+      Xml.Element(l t,
+                  List.map (fun (a, v) -> (l a, v)) ats,
+                  List.map lower cs) in
   my_to_string_fmt tab_attribs (lower xml)
 
 
@@ -203,6 +208,15 @@ let remove_child = fun ?(select= fun _ -> true) t xml ->
                    attrs,
                    List.fold_right (fun xml rest -> if tag_is xml t && select xml then rest else xml::rest) children [])
   | Xml.PCData _ -> xml
+
+let parse_children = fun tag f children ->
+  List.fold_left (fun l x -> if Xml.tag x = tag then f x :: l else l)
+    [] children
+
+let parse_children_attribs = fun tag f children ->
+  List.fold_left
+    (fun l x -> if Xml.tag x = tag then f (Xml.attribs x) :: l else l)
+    [] children
 
 
 let float_attrib = fun xml a ->

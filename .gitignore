@@ -26,6 +26,7 @@ vscode/*
 *.gdb_history
 
 .cache.xml
+.directory
 
 # Eclipse IDE project files
 *.cproject
@@ -55,8 +56,6 @@ paparazzi.sublime-workspace
 /var
 /dox
 
-/paparazzi
-
 # /conf/
 /conf/conf.xml
 /conf/conf.xml.20*
@@ -68,6 +67,7 @@ paparazzi.sublime-workspace
 /conf/maps.xml
 /conf/gps/ublox_conf
 !/conf/simulator/gazebo/**/*.config
+/conf/tools/blacklisted
 
 # /doc/pprz_algebra/
 /doc/pprz_algebra/headfile.log
