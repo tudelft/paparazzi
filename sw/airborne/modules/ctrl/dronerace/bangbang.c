@@ -90,7 +90,9 @@ float y_1_trans; //position at end of transition ;
 float satang_1_trans;
 
 float t_target_old;
-
+float delta_pos[2];
+float v0_sat;
+float v0_sec; 
 
 void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
     pos_error[0]=pos_error_vel_x;
@@ -138,13 +140,20 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         secangle=sat_corr[1];
         signcorrsat=sign_corr.x;
         signcorrsec=sign_corr.y;
+        v0_sat=v_velframe[0]*signcorrsat;
+        v0_sec=v_velframe[1]*signcorrsec;
     }
     else{
         satangle=sat_corr[1];
         secangle=sat_corr[0];
         signcorrsat=sign_corr.y;
         signcorrsec=sign_corr.x;
+        v0_sat=v_velframe[1]*signcorrsat;
+        v0_sec=v_velframe[0]*signcorrsec;
     }
+
+     delta_pos[0]=pos_error[0]*sign_corr.x; // rotate prediction frame so that it always positive 
+     delta_pos[1]=pos_error[1]*sign_corr.y;
 
     if(satdim_prev!=satdim){
         brake=false;
@@ -157,15 +166,15 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     dim=satdim;
     if(!brake){
         float t0 = 0; 
-        float t1 = fabs(pos_error[satdim])+3;
+        float t1 = delta_pos[satdim]+3;
         t_s = (t0+t1)/2.0;
         float t_s_old = 1e2;
         
         while(fabs(E_pos)>error_thresh&&fabs(t_s-t_s_old)>2*dtt){
             t_s_old=t_s; 
-            E_pos=get_E_pos(v_desired, satangle*signcorrsat);
+            E_pos=get_E_pos(v_desired, satangle);
             // printf("satdim: %i, E_pos: %f, t_s: %f , t0: %f, t1: %f\n",dim,E_pos*signcorrsat,t_s,t0,t1);
-            if(E_pos*signcorrsat>0){
+            if(E_pos>0){
                 t1=t_s;
             }
             else{
@@ -203,7 +212,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
                angc=(ang0+ang1)/2.;              
             }
             
-            bang_ctrl[dim]=angc;
+            bang_ctrl[dim]=angc*signcorrsat;
         }
        
     }
@@ -229,7 +238,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         }
         angc=(ang0+ang1)/2;
     }
-    bang_ctrl[dim]=angc;
+    bang_ctrl[dim]=angc*signcorrsec;
     
 
     // Check if we need to brake    
@@ -289,11 +298,11 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 float get_E_pos(float Vd, float angle){
    
     y_target = predict_path_analytical(angle,Vd); //y_target is the position at which the desired speed is reached. Ideally we want this value at pos_error (distance to wp)
-    return y_target-pos_error[dim]; //TODO it is more intuitive to have this the other way around -> check signs in bisection parts
+    return y_target-delta_pos[dim]; //TODO it is more intuitive to have this the other way around -> check signs in bisection parts
 }
 float predict_path_analytical(float angle,float Vd){
    
-    #ifdef USETHRUSTeALTCTRL //use the thrust as commanded by the altitude controller 
+    #ifdef USETHRUSTALTCTRL //use the thrust as commanded by the altitude controller 
         T= (thrust_cmd/HOVERTHRUST)*mass*g*cosf(dr_state.phi)*cosf(dr_state.theta); // - earth z 
     #else
         T=mass*g;            // - earth z
@@ -310,17 +319,17 @@ float predict_path_analytical(float angle,float Vd){
     if(type==0){ // if saturation
         T_sat = T; 
         if(!brake){
-            find_constants(0.0,v_velframe[dim]); // find constant for accelerating part; 
+            find_constants(0.0,v0_sat); // find constant for accelerating part; 
             constant_sat_accel = constant;
-            ys = get_position_analytical(t_s);
-            vs = get_velocity_analytical(t_s);
+            ys = get_position_analytical(t_s); // position at switching instant
+            vs = get_velocity_analytical(t_s); // velocity at switching instant
 
             //predict braking part:
             T=-1*T; 
             if(controllerstate.apply_compensation){
                 
                 if(dim==0){
-                    if(angle<0){
+                    if(sign_corr.x<0){
                         compensation_estimator= &estimator_pitch_fwd;
                     }
                     else{
@@ -331,7 +340,7 @@ float predict_path_analytical(float angle,float Vd){
                     compensation_estimator=&estimator_roll;
                 }
 
-                find_losses(vs,-2*angle,compensation_estimator); // -2 because delta_angle in estimator is final angle - initial angle  
+                find_losses(vs,-2*angle*sign_corr.x,compensation_estimator); // -2 because delta_angle in estimator is final angle - initial angle  
                 find_constants(ys+controllerstate.delta_y,vs+controllerstate.delta_v); // find constants for assumed conditions after transition
                 }
             else{
@@ -350,7 +359,7 @@ float predict_path_analytical(float angle,float Vd){
            
         }
         else{ //if already braking, predict only the braking part
-            find_constants(0.0,v_velframe[dim]);
+            find_constants(0.0,v0_sat);
             constant_sat_brake = constant;
             t_target=get_time_analytical(Vd);
             y_target = get_position_analytical(t_target);            
@@ -358,7 +367,7 @@ float predict_path_analytical(float angle,float Vd){
     }
     else{ //if second dimension
         T_sec = T;
-        find_constants(0.0,v_velframe[dim]);
+        find_constants(0.0,v0_sec);
         constant_sec = constant; 
         y_target=get_position_analytical(t_target);//find position in lateral direction using the predicted eta of the saturation dimension;   
     }
@@ -378,7 +387,7 @@ float get_velocity_analytical(float t){
 float get_time_analytical(float V){
     float t_t = (-mass/Cd)*logf((V-(T/Cd))/(constant.c1*(-Cd/mass)));
     if(isnan(t_t)){
-        t_t = (-mass/Cd)*logf((V-(T/Cd))/(-1*constant.c1*(-Cd/mass))); //TODO: temporary fix that seems to work well in practice. Need to look into this more thoroughly
+        t_t = (-mass/Cd)*logf((V-(T/Cd))/(-1*constant.c1*(-Cd/mass))); //TODO: temporary fix that seems to work okay-ish in practice. Need to look into this more thoroughly
     }
     return t_t;
 }
