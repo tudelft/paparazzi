@@ -170,10 +170,10 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         t_s = (t0+t1)/2.0;
         float t_s_old = 1e2;
         
-        while(fabs(E_pos)>error_thresh&&fabs(t_s-t_s_old)>2*dtt){
+        while(fabs(t_s-t_s_old)>2*dtt){
             t_s_old=t_s; 
             E_pos=get_E_pos(v_desired, satangle);
-            // printf("satdim: %i, E_pos: %f, t_s: %f , t0: %f, t1: %f\n",dim,E_pos*signcorrsat,t_s,t0,t1);
+            // printf("E_pos: %f, t_s: %f , t0: %f, t1: %f, delta_pos : %f\n",E_pos,t_s,t0,t1,delta_pos[satdim]);
             if(E_pos>0){
                 t1=t_s;
             }
@@ -183,6 +183,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             t_s=(t0+t1)/2.0;            
         }
         bang_ctrl[dim]=satangle*signcorrsat;
+        // printf("\n");
     }
     
     //if braking:
@@ -198,7 +199,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             angc=(ang0+ang1)/2.0;
             angc_old = 1e9;
 
-            while((fabs(E_pos)>error_thresh )&& fabs(angc-angc_old)>(0.1*d2r)){
+            while(fabs(angc-angc_old)>(0.1*d2r)){
                 angc_old=angc;                
                 E_pos = get_E_pos(v_desired,angc);
 
@@ -226,7 +227,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     angc_old = 1e9;
     E_pos = 1e9;
 
-    while(fabs(E_pos)>error_thresh&&fabs(angc-angc_old)>0.1*d2r){
+    while(fabs(angc-angc_old)>0.1*d2r){
         angc_old=angc;
         E_pos=get_E_pos(v_desired,angc); //v_desired doesn't do anything here. The point is to reach the target at t_target.
         if(E_pos>0){
@@ -243,7 +244,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
     // Check if we need to brake    
     if(!brake){
-        if(t_s<0.3 && t_s<t_target){
+        if(t_s<0.15 && t_s<t_target){
             brake=true;
             if(!controllerstate.in_transition){
                
@@ -285,11 +286,12 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
 
     #ifdef LOG
-    fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %d, %d, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(), satdim, brake, t_s, t_target, 
+    // printf("t_s logged:%f\n\n",t_s);
+    fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %d, %d, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(), satdim, brake, t_s, t_target, 
     pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v_velframe[0], v_velframe[1],
     constant_sat_accel.c1,constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1,
      constant_sec.c2, T_sat, T_sec,controllerstate.apply_compensation,controllerstate.in_transition,
-     controllerstate.delta_t,controllerstate.delta_y,controllerstate.delta_v,ys,vs,delta_angle_in);
+     controllerstate.delta_t,controllerstate.delta_y,controllerstate.delta_v,ys,vs,delta_angle_in,delta_pos[0],delta_pos[1]);
   
     #endif
 };
@@ -387,7 +389,8 @@ float get_velocity_analytical(float t){
 float get_time_analytical(float V){
     float t_t = (-mass/Cd)*logf((V-(T/Cd))/(constant.c1*(-Cd/mass)));
     if(isnan(t_t)){
-        t_t = (-mass/Cd)*logf((V-(T/Cd))/(-1*constant.c1*(-Cd/mass))); //TODO: temporary fix that seems to work okay-ish in practice. Need to look into this more thoroughly
+        // t_t = (-mass/Cd)*logf((V-(T/Cd))/(-1*constant.c1*(-Cd/mass))); //TODO: temporary fix that seems to work okay-ish in practice. Need to look into this more thoroughly
+        t_t=0;
     }
     return t_t;
 }

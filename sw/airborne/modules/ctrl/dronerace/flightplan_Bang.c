@@ -64,15 +64,15 @@ const struct bangbang_fp_struct Banggates[MAX_GATES] = {
 
 // Demo Forward/backwards 
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-1.5,0.0,0.2,STARTGATE,BANGBANG,0,0,true,25},
-// {1, 2,0,-1.5,0.0,-0.2,ENDGATE,BANGBANG,0,0,true,25},
+// {0, -1.5,0,-1.5,0.0,0.2,STARTGATE,BANGBANG,0,0,true,25},
+// {1, 1.5,0,-1.5,0.0,-0.2,ENDGATE,BANGBANG,0,0,true,25},
 // };
 
 
 // // // Demo Sideways    // set saturation angles to 25 deg or lower for relatively safe
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,1,-1.75,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,25},
-// {1, 2.0,1,-1.75,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,25},
+// {0, -2.0,1,-1.75,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,35},
+// {1, 2.0,1,-1.75,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,35},
 // };
 
 // Demo forward + sidestep 

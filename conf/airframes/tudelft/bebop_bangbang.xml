@@ -115,13 +115,21 @@
     <define name="BODY_TO_IMU_PHI" value="0." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
     <define name="BODY_TO_IMU_PSI" value="0." unit="deg"/>
-	<define name="ACCEL_X_NEUTRAL" value="35"/>
+	<!--<define name="ACCEL_X_NEUTRAL" value="35"/>
 	<define name="ACCEL_Y_NEUTRAL" value="-40"/>
 	<define name="ACCEL_Z_NEUTRAL" value="-307"/>
 	<define name="ACCEL_X_SENS" value="2.46010517295" integer="16"/>
 	<define name="ACCEL_Y_SENS" value="2.44008129968" integer="16"/>
-	<define name="ACCEL_Z_SENS" value="2.41739295111" integer="16"/>
+	<define name="ACCEL_Z_SENS" value="2.41739295111" integer="16"/>-->
+    <define name="ACCEL_X_NEUTRAL" value="67"/>
+    <define name="ACCEL_Y_NEUTRAL" value="41"/>
+    <define name="ACCEL_Z_NEUTRAL" value="583"/>
+    <define name="ACCEL_X_SENS" value="2.4350337938914457" integer="16"/> 
+    <define name="ACCEL_Y_SENS" value="2.4409575848327307" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.4145919508518565" integer="16"/>
   </section>
+  
+  
 
   <!-- local magnetic field -->
   <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
