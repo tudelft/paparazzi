@@ -24,8 +24,8 @@ int target_reached = 0;
 
 // Demo Forward
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-1.5,M_PI,0.2,STARTGATE,BANGBANG,0,0,false,25},
-// {1, 1,0,-1.5,0,0.2,ENDGATE,BANGBANG,0,0,false,25},
+// {0, -2.0,0,-1.5,M_PI,0.2,STARTGATE,BANGBANG,0,0,false,35},
+// {1, 2.5,0,-1.5,0,0.2,ENDGATE,BANGBANG,0,0,false,35},
 // };
 
 // Demo Angle variations forward
@@ -55,12 +55,17 @@ int target_reached = 0;
 // {4, 2.5,0,-1.5,M_PI,0.2,ENDGATE,BANGBANG,0,M_PI,true,30},
 // };
 
+//  backwards
+// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+// {0, -2.0,0,-1.5,0,0.2,STARTGATE,BANGBANG,0,0,true,35},
+// {1, 2.5,0,-1.5,M_PI,0.2,ENDGATE,BANGBANG,0,M_PI,true,35},
+// };
 
 // demo forward height diff
-// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,0,-1.0,M_PI,0.2,STARTGATE,HIGHPID,0,0,false,35},
-// {1, 2.5,0,-2.75,0,0.2,ENDGATE,HIGHPID,0,0,false,35},
-// };
+const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+{0, -2.0,0,-1.0,M_PI,0.2,STARTGATE,BANGBANG,0,0,false,35},
+{1, 2.5,0,-2.75,0,0.2,ENDGATE,BANGBANG,0,0,false,35},
+};
 
 // Demo Forward/backwards 
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
@@ -70,15 +75,15 @@ int target_reached = 0;
 
 
 // // // Demo Sideways    // set saturation angles to 25 deg or lower for relatively safe
-const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-{0, -2.0,1,-1.75,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,35},
-{1, 2.0,1,-1.75,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,35},
-};
+// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+// {0, -2.0,1,-1.75,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,35},
+// {1, 2.0,1,-1.75,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,35},
+// };
 
 // Demo forward + sidestep 
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,2,-1.5,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,25},
-// {1, 1.0,-2,-1.5,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,25},
+// {0, -2.0,2,-1.5,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,35},
+// {1, 1.0,-2,-1.5,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,35},
 // };
 
 //----------------------------------------------------------------------------------------
@@ -151,10 +156,10 @@ void flightplan_run(void){
             target_reached=1; //when passed waypoint in x-direction it counts as target reached (but we do not yet switch to the next waypoint)
         }
         // printf("theta: %f, phi: %f, banggates[index].psi: %f,Banggates[nextindex].psi: %f psi: %f, psi gate: %f, next index: %d\n",dr_state.theta,dr_state.phi,Banggates[dr_bang.gate_nr].gate_psi,Banggates[next_gate_nr].gate_psi ,dr_state.psi,dr_bang.gate_psi,next_gate_nr);
-        if( fabs(dr_state.theta)<0.5 && timer1>128){
+        if( fabs(dr_state.theta)<0.25 && timer1>128){
             // printf("reached 2");
             dr_bang.controller_type=PID;
-            if(fabs(dr_state.theta)<0.2 && fabs(dr_state.phi)<0.2){
+            if(fabs(dr_state.theta)<0.05 && fabs(dr_state.phi)<0.05){
             dr_bang.gate_psi=Banggates[next_gate_nr].gate_psi;//atan2f(Banggates[next_gate_nr].gate_y-dr_state.y,Banggates[next_gate_nr].gate_x-dr_state.x);
             dr_bang.psi_forced=Banggates[next_gate_nr].psi_forced;
             // printf("\n Gate_psi: %f\n",dr_bang.gate_psi);
@@ -162,7 +167,7 @@ void flightplan_run(void){
             }     
         }
         // printf("psi thresh: %f, current psi_cmd: %f, next gate psi: %f\n",fabs(dr_state.psi-dr_bang.gate_psi),dr_bang.gate_psi,Banggates[next_gate_nr].gate_psi);
-        if(abs(dr_state.psi-dr_bang.gate_psi)<0.5){ //only go toward next waypoint after a pause
+        if(abs(dr_state.psi-dr_bang.gate_psi)<0.05){ //only go toward next waypoint after a pause
                 // printf("Reached 3\n");
                 if(fabs(dr_state.psi-dr_bang.gate_psi)<0.1 && timer1>1024){
                 dr_bang.gate_nr=next_gate_nr;

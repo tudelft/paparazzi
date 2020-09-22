@@ -11,8 +11,8 @@
 #define r2d 180./M_PI
 #define d2r M_PI/180.0f
 #define LOG
-#define FORCESATDIM 1
-// #define USETHRUSTALTCTRL
+#define FORCESATDIM 0
+#define USETHRUSTALTCTRL
 // float m = 0.42; //bebop mass [kg]
 float g = 9.80665;//gravity
 int type; 
@@ -31,7 +31,7 @@ struct BangDim sign_corr=
     1,    
 };
 struct controllerstatestruct controllerstate={
-    true, //apply_compensation boolean2
+    false, //apply_compensation boolean2
     false, // in_transition boolean
     0.2, // compensation time (add to 2nd section of prediction) 
     0,   //delta_v (add to initial condition of second section) should normally be negative but can be different because of delay in velocity estimation
@@ -125,7 +125,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     sat_corr[0]=sat_angle.x;
     sat_corr[1]=sat_angle.y;
     
-    if(!controllerstate.in_transition|| fabs(pos_error[0]-pos_error[1])>0.5){   //don't update satdim when in transition or when too close to the waypoint or when the error components are too close together
+    if(!controllerstate.in_transition|| fabs(pos_error[0]-pos_error[1])>0.25){   //don't update satdim when in transition or when too close to the waypoint or when the error components are too close together
         if(fabs(pos_error[0])>=fabs(pos_error[1])){                                              // to avoid twitching.
             satdim=0;        
         }
@@ -255,10 +255,10 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
     // Check if we need to brake    
     if(controllerstate.apply_compensation){
-        t_s_threshold=0.05;
+        t_s_threshold=0.1;
     }
     else{
-        t_s_threshold=0.15;
+        t_s_threshold=0.2;
     }
     if(!brake){
         if(t_s<t_s_threshold && t_s<t_target){
@@ -304,11 +304,11 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
     #ifdef LOG
     // printf("t_s logged:%f\n\n",t_s);
-    fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %d, %d, %f, %f, %f, %f, %f, %f, %f, %f\n",get_sys_time_float(), satdim, brake, t_s, t_target, 
+    fprintf(bang_bang_t,"%f, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %d, %d, %f, %f, %f, %f, %f, %f, %f, %f, %i\n",get_sys_time_float(), satdim, brake, t_s, t_target, 
     pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v_velframe[0], v_velframe[1],
     constant_sat_accel.c1,constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1,
      constant_sec.c2, T_sat, T_sec,controllerstate.apply_compensation,controllerstate.in_transition,
-     controllerstate.delta_t,controllerstate.delta_y,controllerstate.delta_v,ys,vs,delta_angle_in,delta_pos[0],delta_pos[1]);
+     controllerstate.delta_t,controllerstate.delta_y,controllerstate.delta_v,ys,vs,delta_angle_in,delta_pos[0],delta_pos[1],predict_direction);
   
     #endif
 };
