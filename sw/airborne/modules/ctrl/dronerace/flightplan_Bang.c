@@ -57,10 +57,10 @@ int target_reached = 0;
 
 
 // demo forward height diff
-const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-{0, -2.0,0,-1.0,M_PI,0.2,STARTGATE,HIGHPID,0,0,false,35},
-{1, 2.5,0,-2.75,0,0.2,ENDGATE,HIGHPID,0,0,false,35},
-};
+// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+// {0, -2.0,0,-1.0,M_PI,0.2,STARTGATE,HIGHPID,0,0,false,35},
+// {1, 2.5,0,-2.75,0,0.2,ENDGATE,HIGHPID,0,0,false,35},
+// };
 
 // Demo Forward/backwards 
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
@@ -70,10 +70,10 @@ const struct bangbang_fp_struct Banggates[MAX_GATES] = {
 
 
 // // // Demo Sideways    // set saturation angles to 25 deg or lower for relatively safe
-// const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,1,-1.75,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,35},
-// {1, 2.0,1,-1.75,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,35},
-// };
+const struct bangbang_fp_struct Banggates[MAX_GATES] = {
+{0, -2.0,1,-1.75,-0.5*M_PI,0.2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,35},
+{1, 2.0,1,-1.75,-0.5*M_PI,0.2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,35},
+};
 
 // Demo forward + sidestep 
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {

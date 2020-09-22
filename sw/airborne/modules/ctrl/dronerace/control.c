@@ -192,7 +192,7 @@ void control_run(float dt)
     dr_control.theta_cmd = bang_ctrl[0];
     vy_des_vel = bound_f(error_posy_vel,-CTRL_MAX_SPEED, CTRL_MAX_SPEED); 
     vx_des_vel = bound_f(error_posx_vel,-CTRL_MAX_SPEED,CTRL_MAX_SPEED);
-    dr_control.phi_cmd= bound_f(KP_VEL_Y * (vy_des_vel-vy_vel),-CTRL_MAX_ROLL,CTRL_MAX_ROLL);
+    // dr_control.phi_cmd= bound_f(KP_VEL_Y * (vy_des_vel-vy_vel),-CTRL_MAX_ROLL,CTRL_MAX_ROLL);
     // dr_control.theta_cmd= bound_f(-KP_VEL_X * (vx_des_vel-vx_vel),-CTRL_MAX_PITCH,CTRL_MAX_PITCH);//Uncomment to overwrite with pd values
     
   }

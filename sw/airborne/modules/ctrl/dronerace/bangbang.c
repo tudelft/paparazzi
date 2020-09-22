@@ -11,7 +11,7 @@
 #define r2d 180./M_PI
 #define d2r M_PI/180.0f
 #define LOG
-#define FORCESATDIM 0
+#define FORCESATDIM 1
 // #define USETHRUSTALTCTRL
 // float m = 0.42; //bebop mass [kg]
 float g = 9.80665;//gravity
@@ -31,7 +31,7 @@ struct BangDim sign_corr=
     1,    
 };
 struct controllerstatestruct controllerstate={
-    false, //apply_compensation boolean2
+    true, //apply_compensation boolean2
     false, // in_transition boolean
     0.2, // compensation time (add to 2nd section of prediction) 
     0,   //delta_v (add to initial condition of second section) should normally be negative but can be different because of delay in velocity estimation
@@ -82,7 +82,7 @@ float t_0_trans; //start time of transition
 float v_0_trans; //velocity at start of transition.
 float y_0_trans; //position at start of transition ;
 float satang_0_trans;
-
+int predict_direction = 10; 
 
 float t_1_trans; //end time of transition
 float v_1_trans; //velocity at end of transition.
@@ -93,6 +93,8 @@ float t_target_old;
 float delta_pos[2];
 float v0_sat;
 float v0_sec; 
+float angle_in;
+float t_s_threshold = 0.15;
 
 void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
     pos_error[0]=pos_error_vel_x;
@@ -183,7 +185,16 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             t_s=(t0+t1)/2.0;            
         }
         bang_ctrl[dim]=satangle*signcorrsat;
-        // printf("\n");
+        if(predict_direction==1){
+            printf("predict forward, signcorrsat: %f\n",signcorrsat);
+        }
+        else if(predict_direction==2){
+            printf("predict backward, signcorrsat: %f\n",signcorrsat);
+        }
+        else if(predict_direction==3){
+            printf("predict roll, signcorrsat: %f\n",signcorrsat);
+        }
+        printf("vs in: %f, delta_angle in: %f ,delta_t: %f\n\n",vs*signcorrsat,angle_in,controllerstate.delta_t);
     }
     
     //if braking:
@@ -243,8 +254,14 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     
 
     // Check if we need to brake    
+    if(controllerstate.apply_compensation){
+        t_s_threshold=0.05;
+    }
+    else{
+        t_s_threshold=0.15;
+    }
     if(!brake){
-        if(t_s<0.15 && t_s<t_target){
+        if(t_s<t_s_threshold && t_s<t_target){
             brake=true;
             if(!controllerstate.in_transition){
                
@@ -331,18 +348,23 @@ float predict_path_analytical(float angle,float Vd){
             if(controllerstate.apply_compensation){
                 
                 if(dim==0){
-                    if(sign_corr.x<0){
+                    if(signcorrsat>0){
                         compensation_estimator= &estimator_pitch_fwd;
+                        predict_direction=1;
                     }
                     else{
                         compensation_estimator=&estimator_pitch_bckwd;
+                        predict_direction=2;
                     } 
                 }
                 else{
                     compensation_estimator=&estimator_roll;
+                    predict_direction=3;
                 }
-
-                find_losses(vs,-2*angle*sign_corr.x,compensation_estimator); // -2 because delta_angle in estimator is final angle - initial angle  
+                angle_in=-2*angle*signcorrsat; // for debugging
+                find_losses(vs*signcorrsat,-2*angle*signcorrsat,compensation_estimator); // -2 because delta_angle in estimator is final angle - initial angle  
+                controllerstate.delta_v=controllerstate.delta_v*signcorrsat;
+                controllerstate.delta_y=controllerstate.delta_y*signcorrsat;
                 find_constants(ys+controllerstate.delta_y,vs+controllerstate.delta_v); // find constants for assumed conditions after transition
                 }
             else{
@@ -353,7 +375,7 @@ float predict_path_analytical(float angle,float Vd){
             y_target = get_position_analytical(t_target);
             
             if(controllerstate.apply_compensation){
-                t_target=t_target+t_s+controllerstate.delta_t; // t_target for 2nd section is relative to t_s. So add t_s and compensation to get absolute ETA
+                t_target=t_target+t_s+controllerstate.delta_t; //// printf("\n"); t_target for 2nd section is relative to t_s. So add t_s and compensation to get absolute ETA
             }
             else{
                 t_target=t_target+t_s;
