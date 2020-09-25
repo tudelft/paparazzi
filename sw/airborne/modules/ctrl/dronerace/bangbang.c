@@ -12,7 +12,7 @@
 #define d2r M_PI/180.0f
 #define LOG
 // #define FORCESATDIM 0
-#define USETHRUSTALTCTRL
+// #define USETHRUSTALTCTRL
 // float m = 0.42; //bebop mass [kg]
 float g = 9.80665;//gravity
 int type; 
@@ -96,7 +96,7 @@ float v0_sec;
 float angle_in;
 float t_s_threshold = 0.15;
 
-void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desired){
+void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desired_sat){
     pos_error[0]=pos_error_vel_x;
     pos_error[1]=pos_error_vel_y;
 
@@ -174,7 +174,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         
         while(fabs(t_s-t_s_old)>2*dtt){
             t_s_old=t_s; 
-            E_pos=get_E_pos(v_desired, satangle);
+            E_pos=get_E_pos(v_desired_sat, satangle);
             // printf("E_pos: %f, t_s: %f , t0: %f, t1: %f, delta_pos : %f\n",E_pos,t_s,t0,t1,delta_pos[satdim]);
             if(E_pos>0){
                 t1=t_s;
@@ -212,7 +212,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
             while(fabs(angc-angc_old)>(0.1*d2r)){
                 angc_old=angc;                
-                E_pos = get_E_pos(v_desired,angc);
+                E_pos = get_E_pos(v_desired_sat,angc);
 
                 if(E_pos>0){
                     ang1=angc;
@@ -240,7 +240,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
 
     while(fabs(angc-angc_old)>0.1*d2r){
         angc_old=angc;
-        E_pos=get_E_pos(v_desired,angc); //v_desired doesn't do anything here. The point is to reach the target at t_target.
+        E_pos=get_E_pos(v_desired_sat,angc); //v_desired doesn't do anything here. The point is to reach the target position at t_target.
         if(E_pos>0){
             ang1=angc;
         }

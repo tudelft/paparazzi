@@ -13,7 +13,7 @@ struct bangbang_fp_struct
     float gate_y;
     float gate_z; 
     float gate_psi; 
-    float gate_speed; 
+    float gate_speed_sat;
     int gate_type;
     int controller_type;
     int turning;

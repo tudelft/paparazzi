@@ -55,7 +55,7 @@ static void open_log(void)
 
   fprintf(bang_bang_t,"time, satdim, brake, t_s, t_target, pos_error_vel_x, pos_error_vel_y, dr_state.x, dr_state.y, v0[0], v0[1], constant_sat_accel.c1, constant_sat_accel.c2, constant_sat_brake.c1, constant_sat_brake.c2, constant_sec.c1, constant_sec.c2, T_sat, T_sec, apply_compensation, in_transition, delta_t, delta_y, delta_v, ys, vs, delta_angle_in, delta_posx, delta_posy, direction\n");
   fprintf(file_logger_t,"time, dr_state.x, dr_state.y, posxVel, posyVel, dr_state.z, vxE, vyE, vzE, dr_state.vx, dr_state.vy, dr_state.phi, dr_state.theta, dr_state.psi, phi_cmd, theta_cmd, psi_cmd, vx_des, vy_des\n");
-  fprintf(fp_logger_t,"time, gate_nr, gate_type, controller_type, gate_x, gate_y, gate_z, gate_psi, target_reached \n");
+  fprintf(fp_logger_t,"time, gate_nr, gate_type, controller_type, gate_x, gate_y, gate_z, gate_psi, target_reached, vel_desired_speed\n");
   fprintf(comp_log_t,"time,satdim, v0, ang_0, ang_1, delta_t_meas, delta_y_meas, delta_v_meas\n");
   fprintf(filter_log_t,"time, gps_x, gps_y, gps_z, gps_vx, gps_vy, gps_vz, az, abx, aby, ax, ay, vx_avg, vy_avg, vx_compl, vy_compl, x_compl,y_compl, z_compl\n");
   
@@ -95,7 +95,14 @@ void control_reset(void)
   vy_vel_old=0;
 }
 
-
+float checksign(float val){
+  if(val<0){
+    return -1;
+  }
+  else{
+    return 1;
+}
+}
 
 float bound_f(float val, float min, float max) {
 	if (val > max) {
@@ -180,34 +187,43 @@ void control_run(float dt)
   if(dr_bang.controller_type==BANGBANG)
   {
     psi_command=dr_control.psi_cmd; //used in bangbang.c 
-    optimizeBangBang(error_posx_vel,error_posy_vel,0.2); // function writes to bang_ctrl 
+    optimizeBangBang(error_posx_vel,error_posy_vel,dr_bang.gate_speed_sat); // function writes to bang_ctrl 
 
     if(fabs(error_posx_vel)>1){ //freeze yaw cmd when it gets close to wp
       dr_control.psi_cmd = atan2f(error_posy_E,error_posx_E);// angle180(psi_cmd*180.0/PI)*PI/180.0;
     }
     else{
-      dr_control.psi_cmd=dr_bang.gate_psi;
+      dr_control.psi_cmd=dr_bang.gate_psi; // note that below it may get overwritten if dr_bang.overwrite_psi is true
     }
+    // dr_control.psi_cmd = atan2f(error_posy_E,error_posx_E);// angle180(psi_cmd*180.0/PI)*PI/180.0;
     dr_control.phi_cmd = bang_ctrl[1];
     dr_control.theta_cmd = bang_ctrl[0];
     vy_des_vel = bound_f(KP_POS_HIGH*error_posy_vel,-CTRL_MAX_SPEED, CTRL_MAX_SPEED); 
     vx_des_vel = bound_f(KP_POS_HIGH*error_posx_vel,-CTRL_MAX_SPEED,CTRL_MAX_SPEED);
-    if(dist2gate<1){
-      if(satdim==0){
-          dr_control.phi_cmd= bound_f(KP_VEL_Y_HIGH * (vy_des_vel-vy_vel)-KD_VEL_Y_HIGH*(vy_vel-vy_vel_old)/dt,-dr_bang.sat_angle/r2d,dr_bang.sat_angle/r2d);
-      }
-      else{
-          dr_control.theta_cmd= bound_f(-KP_VEL_X_HIGH * (vx_des_vel-vx_vel)+KD_VEL_X_HIGH*(vx_vel-vx_vel_old)/dt,-dr_bang.sat_angle/r2d,dr_bang.sat_angle/r2d);//Uncomment to overwrite with pd values
-      }
-    }
+    // if(dist2gate<1){ // when close to the waypoint the lateral control switches to PD control. 
+    //   if(satdim==0){
+    //       dr_control.phi_cmd= bound_f(KP_VEL_Y_HIGH * (vy_des_vel-vy_vel)-KD_VEL_Y_HIGH*(vy_vel-vy_vel_old)/dt,-dr_bang.sat_angle/r2d,dr_bang.sat_angle/r2d);
+    //   }
+    //   else{
+    //       dr_control.theta_cmd= bound_f(-KP_VEL_X_HIGH * (vx_des_vel-vx_vel)+KD_VEL_X_HIGH*(vx_vel-vx_vel_old)/dt,-dr_bang.sat_angle/r2d,dr_bang.sat_angle/r2d);//Uncomment to overwrite with pd values
+    //   }
+    // }
 
     // 
     // 
     
   }
     else if(dr_bang.controller_type==HIGHPID){ 
-      vx_des_vel = bound_f(KP_POS_HIGH*error_posx_vel,-CTRL_MAX_SPEED,CTRL_MAX_SPEED); //saturate to max velocity
-      vy_des_vel = bound_f(KP_POS_HIGH*error_posy_vel,-CTRL_MAX_SPEED,CTRL_MAX_SPEED);
+        if(fabs(error_posx_vel)>fabs(error_posy_vel)){
+          vx_des_vel=dr_bang.gate_speed_sat*(float)checksign(error_posx_vel);
+          vy_des_vel=0;
+        }
+        else{
+          vy_des_vel=dr_bang.gate_speed_sat*(float)checksign(error_posy_vel);
+          vx_des_vel=0;
+        }
+      vx_des_vel = bound_f(vx_des_vel+KP_POS_HIGH*error_posx_vel,-CTRL_MAX_SPEED,CTRL_MAX_SPEED); //saturate to max velocity
+      vy_des_vel = bound_f(vy_des_vel+KP_POS_HIGH*error_posy_vel,-CTRL_MAX_SPEED,CTRL_MAX_SPEED);
       
       if(fabs(error_posx_vel)>1){ //freeze yaw cmd when it gets close to wp
         dr_control.psi_cmd =atan2f(error_posy_E,error_posx_E); // yaw towards gate when distance is large enough. 
@@ -218,6 +234,7 @@ void control_run(float dt)
       if(dr_bang.turning==TURNING){
         dr_control.psi_cmd=dr_bang.gate_psi;
       }
+      // dr_control.psi_cmd =atan2f(error_posy_E,error_posx_E);
       
       dr_control.phi_cmd= KP_VEL_Y_HIGH * (vy_des_vel-vy_vel)-KD_VEL_Y_HIGH*(vy_vel-vy_vel_old)/dt;
       dr_control.theta_cmd=KP_VEL_X_HIGH *-1* (vx_des_vel-vx_vel)+KD_VEL_X_HIGH*(vx_vel-vx_vel_old)/dt;
