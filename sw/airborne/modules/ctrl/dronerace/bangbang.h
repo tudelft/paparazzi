@@ -34,6 +34,7 @@ float get_velocity_analytical(float t);
 float get_time_analytical(float V);
 // void find_losses(float v_initial, float delta_angle);
 int dim;
+int satdim;
 extern float Cd;
 extern float mass; 
 float psi_command; 

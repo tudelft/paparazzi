@@ -190,10 +190,19 @@ void control_run(float dt)
     }
     dr_control.phi_cmd = bang_ctrl[1];
     dr_control.theta_cmd = bang_ctrl[0];
-    vy_des_vel = bound_f(error_posy_vel,-CTRL_MAX_SPEED, CTRL_MAX_SPEED); 
-    vx_des_vel = bound_f(error_posx_vel,-CTRL_MAX_SPEED,CTRL_MAX_SPEED);
-    // dr_control.phi_cmd= bound_f(KP_VEL_Y * (vy_des_vel-vy_vel),-CTRL_MAX_ROLL,CTRL_MAX_ROLL);
-    // dr_control.theta_cmd= bound_f(-KP_VEL_X * (vx_des_vel-vx_vel),-CTRL_MAX_PITCH,CTRL_MAX_PITCH);//Uncomment to overwrite with pd values
+    vy_des_vel = bound_f(KP_POS_HIGH*error_posy_vel,-CTRL_MAX_SPEED, CTRL_MAX_SPEED); 
+    vx_des_vel = bound_f(KP_POS_HIGH*error_posx_vel,-CTRL_MAX_SPEED,CTRL_MAX_SPEED);
+    if(dist2gate<1){
+      if(satdim==0){
+          dr_control.phi_cmd= bound_f(KP_VEL_Y_HIGH * (vy_des_vel-vy_vel)-KD_VEL_Y_HIGH*(vy_vel-vy_vel_old)/dt,-dr_bang.sat_angle/r2d,dr_bang.sat_angle/r2d);
+      }
+      else{
+          dr_control.theta_cmd= bound_f(-KP_VEL_X_HIGH * (vx_des_vel-vx_vel)+KD_VEL_X_HIGH*(vx_vel-vx_vel_old)/dt,-dr_bang.sat_angle/r2d,dr_bang.sat_angle/r2d);//Uncomment to overwrite with pd values
+      }
+    }
+
+    // 
+    // 
     
   }
     else if(dr_bang.controller_type==HIGHPID){ 

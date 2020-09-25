@@ -11,7 +11,7 @@
 #define r2d 180./M_PI
 #define d2r M_PI/180.0f
 #define LOG
-#define FORCESATDIM 0
+// #define FORCESATDIM 0
 #define USETHRUSTALTCTRL
 // float m = 0.42; //bebop mass [kg]
 float g = 9.80665;//gravity
@@ -31,7 +31,7 @@ struct BangDim sign_corr=
     1,    
 };
 struct controllerstatestruct controllerstate={
-    false, //apply_compensation boolean2
+    true, //apply_compensation boolean2
     false, // in_transition boolean
     0.2, // compensation time (add to 2nd section of prediction) 
     0,   //delta_v (add to initial condition of second section) should normally be negative but can be different because of delay in velocity estimation
