@@ -91,6 +91,7 @@ void control_reset(void)
   dr_control.psi_ref = 0;
   dr_control.psi_cmd = 0;
   dr_bang.controller_type=PID;
+  dr_bang.gate_speed_sat=0;
   vx_vel_old=0;
   vy_vel_old=0;
 }
@@ -124,8 +125,8 @@ float bound_f(float val, float min, float max) {
 // High gain PID gains
 #define KP_POS_HIGH  1.8  
 #define KI_POS_HIGH  0//0.02
-#define KP_VEL_X_HIGH  1.5
-#define KP_VEL_Y_HIGH  1.5 
+#define KP_VEL_X_HIGH  1.5 // 1
+#define KP_VEL_Y_HIGH  1.5 // 1 
 #define KD_VEL_X_HIGH  0.1//0.05
 #define KD_VEL_Y_HIGH  0.1//0.05
 
@@ -200,14 +201,14 @@ void control_run(float dt)
     dr_control.theta_cmd = bang_ctrl[0];
     vy_des_vel = bound_f(KP_POS_HIGH*error_posy_vel,-CTRL_MAX_SPEED, CTRL_MAX_SPEED); 
     vx_des_vel = bound_f(KP_POS_HIGH*error_posx_vel,-CTRL_MAX_SPEED,CTRL_MAX_SPEED);
-    // if(dist2gate<1){ // when close to the waypoint the lateral control switches to PD control. 
-    //   if(satdim==0){
-    //       dr_control.phi_cmd= bound_f(KP_VEL_Y_HIGH * (vy_des_vel-vy_vel)-KD_VEL_Y_HIGH*(vy_vel-vy_vel_old)/dt,-dr_bang.sat_angle/r2d,dr_bang.sat_angle/r2d);
-    //   }
-    //   else{
-    //       dr_control.theta_cmd= bound_f(-KP_VEL_X_HIGH * (vx_des_vel-vx_vel)+KD_VEL_X_HIGH*(vx_vel-vx_vel_old)/dt,-dr_bang.sat_angle/r2d,dr_bang.sat_angle/r2d);//Uncomment to overwrite with pd values
-    //   }
-    // }
+    if(dist2gate<1 && fabs(dr_bang.gate_speed_sat)<0.5){ // when close to the waypoint the lateral control switches to PD control. 
+      if(satdim==0){
+          dr_control.phi_cmd= bound_f(KP_VEL_Y * (vy_des_vel-vy_vel)-KD_VEL_Y*(vy_vel-vy_vel_old)/dt,-dr_bang.sat_angle/r2d,dr_bang.sat_angle/r2d);
+      }
+      else{
+          dr_control.theta_cmd= bound_f(-KP_VEL_X * (vx_des_vel-vx_vel)+KD_VEL_X*(vx_vel-vx_vel_old)/dt,-dr_bang.sat_angle/r2d,dr_bang.sat_angle/r2d);//Uncomment to overwrite with pd values
+      }
+    }
 
     // 
     // 

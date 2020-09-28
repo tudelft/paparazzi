@@ -125,7 +125,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     sat_corr[0]=sat_angle.x;
     sat_corr[1]=sat_angle.y;
     
-    if(!controllerstate.in_transition|| fabs(pos_error[0]-pos_error[1])>0.25){   //don't update satdim when in transition or when too close to the waypoint or when the error components are too close together
+    if(!controllerstate.in_transition && fabs(pos_error[0]-pos_error[1])>0.25){   //don't update satdim when in transition or when too close to the waypoint or when the error components are too close together
         if(fabs(pos_error[0])>=fabs(pos_error[1])){                                              // to avoid twitching.
             satdim=0;        
         }
@@ -205,6 +205,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
             t_target=t_target-dtt; // update t_target for second dimension (no prediction should be done during transition since v_d cannot be reached for the intermediate angles in transition)
         }
         else{   // find optimal braking angle to reach the target at the desired velocity
+            
             ang0=-satangle;
             ang1=satangle;
             angc=(ang0+ang1)/2.0;
@@ -223,7 +224,15 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
                 
                angc=(ang0+ang1)/2.;              
             }
-            
+            // if(fabs((angc-satangle)/satangle)<0.2){
+            //     angc=satangle;
+            //     E_pos = get_E_pos(v_desired_sat,angc);
+            // }
+            // else if(fabs((angc+satangle)/satangle)<0.2){
+            //     angc=-satangle;
+            //     E_pos = get_E_pos(v_desired_sat,angc);
+            // }
+
             bang_ctrl[dim]=angc*signcorrsat;
         }
        
@@ -250,6 +259,15 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
         }
         angc=(ang0+ang1)/2;
     }
+    // // TEST: round up to max angle if close enough to compensate for delays
+    // if(fabs(angc-secangle)<0.08){
+    //             angc=secangle;
+    //             E_pos = get_E_pos(v_desired_sat,angc);
+    //         }
+    // else if(fabs(angc+secangle)<0.08){
+    //             angc=-secangle;
+    //             E_pos = get_E_pos(v_desired_sat,angc);
+    //         }
     bang_ctrl[dim]=angc*signcorrsec;
     
 
@@ -280,7 +298,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     }
 
     // go out of transition when the measured angle is close to the commanded brake angle (timer is added as temporary measure to deal with the delay of bang_ctrl being updated to brake angle command)
-    if(controllerstate.in_transition && fabs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim])<0.15 && ((get_sys_time_float()-t_0_trans)>3*dtt)){// ((get_sys_time_float()-t_0_trans)>controllerstate.delta_t)){ // transition ends when it has been active for more than delta_t 
+    if(controllerstate.in_transition && fabs((bang_ctrl[satdim]-meas_angle[satdim])/bang_ctrl[satdim])<0.1 && ((get_sys_time_float()-t_0_trans)>3*dtt)){// ((get_sys_time_float()-t_0_trans)>controllerstate.delta_t)){ // transition ends when it has been active for more than delta_t 
         controllerstate.in_transition=false;                                    //  ^ will break down if bang_ctrl[satdim] is zero (not likely in practice);
 
         //measure transition values 

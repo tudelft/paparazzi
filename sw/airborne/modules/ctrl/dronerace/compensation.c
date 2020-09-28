@@ -38,4 +38,5 @@ void find_losses(float v_initial, float delta_angle, struct estimators *estimato
     controllerstate.delta_t = estimator->delta_t[0] + estimator->delta_t[1]*delta_angle + estimator->delta_t[2]*v_initial;
     controllerstate.delta_y = estimator->delta_pos[0] + estimator->delta_pos[1]*delta_angle + estimator->delta_pos[2]*v_initial;
     controllerstate.delta_v = estimator->delta_vel[0] + estimator->delta_vel[1]*delta_angle + estimator->delta_vel[2]*v_initial;
+    controllerstate.delta_v=0;
 }
