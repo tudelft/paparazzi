@@ -90,71 +90,71 @@
     </block>
 
     <block name="follow_module">
-      <set var="force_forward_flight" value="FALSE"/>
+      <set var="force_forward" value="FALSE"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
     </block>
     <block name="follow_module_diag">
-      <set var="force_forward_flight" value="FALSE"/>
+      <set var="force_forward" value="FALSE"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed)" wp="FOLLOW"/>
     </block>
     <block name="follow_module_land">
-      <set var="force_forward_flight" value="FALSE"/>
+      <set var="force_forward" value="FALSE"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed*0.5)" climb="nav_descend_vspeed * 0.5" vmode="climb" wp="FOLLOW"/>
     </block>
     <block name="follow_landed">
-      <set var="force_forward_flight" value="FALSE"/>
+      <set var="force_forward" value="FALSE"/>
       <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
     </block>
 
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
-      <!--set var="force_forward_flight" value="FALSE"/-->
+      <!--set var="force_forward" value="FALSE"/-->
       <stay wp="STDBY"/>
     </block>
 
     <block name="stay_p1">
-      <set var="force_forward_flight" value="FALSE"/>
+      <set var="force_forward" value="FALSE"/>
       <stay wp="p1"/>
     </block>
     <block name="go_p2">
-      <set var="force_forward_flight" value="TRUE"/>
+      <set var="force_forward" value="TRUE"/>
       <call_once fun="nav_set_heading_deg(90)"/>
       <go wp="p2"/>
       <deroute block="stay_p1"/>
     </block>
     <block name="line_p1_p2">
-      <set var="force_forward_flight" value="TRUE"/>
+      <set var="force_forward" value="TRUE"/>
       <go from="p1" hmode="route" wp="p2"/>
       <stay wp="p2" until="stage_time>10"/>
       <go from="p2" hmode="route" wp="p1"/>
       <deroute block="line_p1_p2"/>
     </block>
     <block name="route">
-      <set var="force_forward_flight" value="TRUE"/>
+      <set var="force_forward" value="TRUE"/>
       <go from="p1" hmode="route" wp="p3"/>
       <go from="p3" hmode="route" wp="p4"/>
       <go from="p4" hmode="route" wp="p1"/>
       <deroute block="route"/>
     </block>
     <block name="Oval">
-      <set var="force_forward_flight" value="TRUE"/>
+      <set var="force_forward" value="TRUE"/>
       <oval p1="p1" p2="p2" radius="nav_radius"/>
     </block>
 
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
-      <set var="force_forward_flight" value="FALSE"/>
+      <set var="force_forward" value="FALSE"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>
     <block name="land">
-      <set var="force_forward_flight" value="FALSE"/>
+      <set var="force_forward" value="FALSE"/>
       <go wp="TD"/>
     </block>
     <block name="descend">
-      <set var="force_forward_flight" value="FALSE"/>
+      <set var="force_forward" value="FALSE"/>
       <exception cond="LessThan(stateGetPositionEnu_f()->z, 15.0)" deroute="flare"/>
       <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="flare">
-      <set var="force_forward_flight" value="FALSE"/>
+      <set var="force_forward" value="FALSE"/>
       <stay climb="nav_descend_vspeed*0.1" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">
