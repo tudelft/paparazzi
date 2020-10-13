@@ -239,9 +239,9 @@
     <define name="MAG_Y_SENS" value="12.6504395923" integer="16"/>
     <define name="MAG_Z_SENS" value="12.5141980811" integer="16"/>
 
-    <define name="BODY_TO_IMU_PHI"   value="180." unit="deg"/>
-    <define name="BODY_TO_IMU_THETA" value="90." unit="deg"/>
-    <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
+    <define name="BODY_TO_IMU_PHI"   value="-90." unit="deg"/>
+    <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
+    <define name="BODY_TO_IMU_PSI"   value="90." unit="deg"/>
   </section>
 
   <section name="AHRS" prefix="AHRS_">
