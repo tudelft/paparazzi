@@ -183,7 +183,7 @@
     <define name="SCALE"       value="256"/>
     <define name="ROLL_COEF"   value="{ 256,  164,   70,  -70, -164, -256, -256, -164,  -70,   70,  164,  256}"/>
     <define name="PITCH_COEF"  value="{ 256,  256,  256,  256,  256,  256, -256, -256, -256, -256, -256, -256}"/>
-    <define name="YAW_COEF"    value="{ 256, -256,  256, -256,  256, -256,  256, -256,  256, -256,  256, -256}"/>
+    <define name="YAW_COEF"    value="{ 238  -248   242  -242   248  -238   250  -240   246  -246   240  -250}"/>
     <define name="THRUST_COEF" value="{ 256,  256,  256,  256,  256,  256,  256,  256,  256,  256,  256,  256}"/>
   </section>
 
@@ -346,8 +346,8 @@
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness -->
-    <define name="G1_P" value="0.0040"/>
-    <define name="G1_Q" value="0.0026"/>
+    <define name="G1_P" value="0.0030"/>
+    <define name="G1_Q" value="0.0035"/>
     <define name="G1_R" value="0.0004"/>
     <define name="G2_R" value="0.00015"/>
 
