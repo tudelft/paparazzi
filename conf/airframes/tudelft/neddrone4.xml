@@ -112,8 +112,8 @@
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
       <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>
       <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
-      <define name="GUIDANCE_INDI_POS_GAINZ" value="0.5"/>
-      <define name="GUIDANCE_INDI_SPEED_GAINZ" value="1.8"/>
+      <define name="GUIDANCE_INDI_POS_GAINZ" value="0.2"/>
+      <define name="GUIDANCE_INDI_SPEED_GAINZ" value="1.0"/>
       <define name="GUIDANCE_INDI_PITCH_LIFT_EFF" value="0.12"/>
       <define name="GUIDANCE_INDI_PITCH_EFF_SCALING" value="1.0"/>
       <define name="GUIDANCE_H_REF_MAX_SPEED" value="18.0"/> <!--not used-->
@@ -183,7 +183,7 @@
     <define name="SCALE"       value="256"/>
     <define name="ROLL_COEF"   value="{ 256,  164,   70,  -70, -164, -256, -256, -164,  -70,   70,  164,  256}"/>
     <define name="PITCH_COEF"  value="{ 256,  256,  256,  256,  256,  256, -256, -256, -256, -256, -256, -256}"/>
-    <define name="YAW_COEF"    value="{ 238  -248   242  -242   248  -238   250  -240   246  -246   240  -250}"/>
+    <define name="YAW_COEF"    value="{ 238,  -248,   242,  -242,   248,  -238,   250,  -240,   246,  -246,   240,  -250}"/>
     <define name="THRUST_COEF" value="{ 256,  256,  256,  256,  256,  256,  256,  256,  256,  256,  256,  256}"/>
   </section>
 

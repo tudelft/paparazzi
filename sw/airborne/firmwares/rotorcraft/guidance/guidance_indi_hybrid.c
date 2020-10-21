@@ -285,6 +285,10 @@ void guidance_indi_run(float *heading_sp) {
     // desired airspeed can not be larger than max airspeed
     speed_sp_b_x = Min(norm_des_as,guidance_indi_max_airspeed);
 
+    if(force_forward) {
+      speed_sp_b_x = guidance_indi_max_airspeed;
+    }
+
     // Calculate accel sp in body axes, because we need to regulate airspeed
     struct FloatVect2 sp_accel_b;
     // In turn acceleration proportional to heading diff
