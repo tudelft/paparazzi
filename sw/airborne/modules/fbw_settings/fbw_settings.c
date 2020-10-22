@@ -28,11 +28,14 @@
 float fbw_setting_damper_yaw = 0.0f;
 float fbw_setting_damper_pitch = 0.0f;
 
+float fbw_differential = 1.0;
 
 void fbw_settings_init(void)
  {
    fbw_setting_damper_yaw = 0.0f;
    fbw_setting_damper_pitch = 0.0f;
+
+   fbw_differential = 0.6f; //60%
 
  }
 

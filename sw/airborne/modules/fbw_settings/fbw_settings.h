@@ -29,6 +29,18 @@
 extern float fbw_setting_damper_yaw;
 extern float fbw_setting_damper_pitch;
 
+extern float fbw_differential;
+
+
+float ApplyDiff(float X) {
+  if (X < 0) {
+    return X;
+  } else {
+    return fbw_differential * X;
+  }
+}
+
+
 extern void fbw_settings_init(void);
 
 #endif
