@@ -218,14 +218,14 @@
     <set servo="MOTOR_10"  value="(($th_hold || $fwd_hold || $back_hold1)? $motor_10_s : motor_mixing.commands[9])"/>
     <set servo="MOTOR_11"  value="(($th_hold || $fwd_hold || $back_hold2)? $motor_11_s : motor_mixing.commands[10])"/>
     <set servo="MOTOR_12"  value="($th_hold? -9600 : motor_mixing.commands[11])"/>
-    <set servo="AIL_1"     value="-2*@PITCH + 2*@YAW + RadioControlValues(RADIO_FLAPS) + wiggle_val[0]"/>
-    <set servo="AIL_2"     value="-2*@PITCH - 2*@YAW + RadioControlValues(RADIO_FLAPS) + wiggle_val[1]"/>
-    <set servo="AIL_3"     value=" 2*@PITCH - 2*@YAW + RadioControlValues(RADIO_FLAPS) + wiggle_val[2]"/>
-    <set servo="AIL_4"     value=" 2*@PITCH + 2*@YAW + RadioControlValues(RADIO_FLAPS) + wiggle_val[3]"/>
-    <set servo="FLAP_1"    value="-2*@PITCH + 2*@YAW + RadioControlValues(RADIO_FLAPS) + wiggle_val[4]"/>
-    <set servo="FLAP_2"    value="-2*@PITCH - 2*@YAW + RadioControlValues(RADIO_FLAPS) + wiggle_val[5]"/>
-    <set servo="FLAP_3"    value=" 2*@PITCH - 2*@YAW + RadioControlValues(RADIO_FLAPS) + wiggle_val[6]"/>
-    <set servo="FLAP_4"    value=" 2*@PITCH + 2*@YAW + RadioControlValues(RADIO_FLAPS) + wiggle_val[7]"/>
+    <set servo="AIL_1"     value="-2*@PITCH + ApplyDiff(  2*@YAW) + RadioControlValues(RADIO_FLAPS) + wiggle_val[0]"/>
+    <set servo="AIL_2"     value="-2*@PITCH + ApplyDiff(- 2*@YAW) + RadioControlValues(RADIO_FLAPS) + wiggle_val[1]"/>
+    <set servo="AIL_3"     value=" 2*@PITCH + ApplyDiff(- 2*@YAW) + RadioControlValues(RADIO_FLAPS) + wiggle_val[2]"/>
+    <set servo="AIL_4"     value=" 2*@PITCH + ApplyDiff(  2*@YAW) + RadioControlValues(RADIO_FLAPS) + wiggle_val[3]"/>
+    <set servo="FLAP_1"    value="-2*@PITCH + ApplyDiff(  2*@YAW) + RadioControlValues(RADIO_FLAPS) + wiggle_val[4]"/>
+    <set servo="FLAP_2"    value="-2*@PITCH + ApplyDiff(- 2*@YAW) + RadioControlValues(RADIO_FLAPS) + wiggle_val[5]"/>
+    <set servo="FLAP_3"    value=" 2*@PITCH + ApplyDiff(- 2*@YAW) + RadioControlValues(RADIO_FLAPS) + wiggle_val[6]"/>
+    <set servo="FLAP_4"    value=" 2*@PITCH + ApplyDiff(  2*@YAW) + RadioControlValues(RADIO_FLAPS) + wiggle_val[7]"/>
   </command_laws>
 
   <section name="MISC">
