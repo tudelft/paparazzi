@@ -1,0 +1,23 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="fbw_settings">
+  <doc>
+    <description>FBW settings</description>
+  </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="FBW Settings">
+        <dl_setting var="fbw_setting_damper_yaw"        min="-12000.0" step="1.0" max="12000.0" module="fbw_settings/fbw_settings" shortname="yawdamp"/>
+        <dl_setting var="fbw_setting_damper_pitch"        min="-12000.0" step="1.0" max="12000.0" module="fbw_settings/fbw_settings" shortname="pitchdamp"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <header>
+    <file name="fbw_settings.h"/>
+  </header>
+  <init fun="fbw_settings_init()"/>
+  <makefile>
+    <file name="fbw_settings.c"/>
+  </makefile>
+</module>
+
