@@ -39,6 +39,9 @@
       <module name="logger" type="sd_chibios"/>
       <module name="flight_recorder"/>
 
+      <module name="fbw_settings"/>
+
+
       <!-- WINDTUNNEL -->
       <!--<module name="ctrl_windtunnel"/>-->
 
