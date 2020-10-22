@@ -10,7 +10,7 @@
     <dl_settings>
       <dl_settings NAME="flap_wiggle">
         <dl_setting var="flap_wiggle_state" min="0" step="1" max="1" shortname="state" values="OFF|ON" type="bool"/>
-        <dl_setting var="flap_wiggle_gain" min="0.0" step="10" max="9000" shortname="gain" type="float"/>
+        <dl_setting var="flap_wiggle_gain" min="-9600" step="10" max="9600" shortname="gain" type="float"/>
       </dl_settings>
     </dl_settings>
   </settings>
