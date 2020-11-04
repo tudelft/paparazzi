@@ -30,8 +30,10 @@ uint32_t wiggle_counter;
 float flap_wiggle_gain;
 
 int32_t wiggle_val[8];
-int32_t deflection_duration = 200; // ticks at 500 Hz
-int32_t total_wiggle_period = 2*deflection_duration*8;
+
+// ticks at 500 Hz
+#define WIGGLE_DEFLECTION_DURATION 200
+#define TOTAL_WIGGLE_PERIOD (2*WIGGLE_DEFLECTION_DURATION*8)
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -56,13 +58,13 @@ void flap_wiggle_periodic(void)
 {
   wiggle_counter++;
 
-  int32_t phase = wiggle_counter % total_wiggle_period;
+  int32_t phase = wiggle_counter % TOTAL_WIGGLE_PERIOD;
 
   int k;
 
   for(k=0; k<6; k++) {
 
-    if (phase > deflection_duration*(2*k) && phase < deflection_duration*(2*k+1) && flap_wiggle_state)
+    if (phase > WIGGLE_DEFLECTION_DURATION*(2*k) && phase < WIGGLE_DEFLECTION_DURATION*(2*k+1) && flap_wiggle_state)
     {
       wiggle_val[k] = flap_wiggle_gain;
     } else {
