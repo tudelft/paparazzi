@@ -425,7 +425,7 @@ void guidance_indi_run(float *heading_sp) {
 
   //Add the increment in specific force * specific_force_to_thrust_gain to the filtered thrust
   thrust_in = thrust_filt.o[0] + euler_cmd.z*thrust_in_specific_force_gain;
-  Bound(thrust_in, 0, 9600);
+  Bound(thrust_in, GUIDANCE_INDI_MIN_THROTTLE, 9600);
 
 #if GUIDANCE_INDI_RC_DEBUG
   if(radio_control.values[RADIO_THROTTLE]<300) {

@@ -39,9 +39,6 @@
       <module name="logger" type="sd_chibios"/>
       <module name="flight_recorder"/>
 
-      <module name="fbw_settings"/>
-
-
       <!-- WINDTUNNEL -->
       <!--<module name="ctrl_windtunnel"/>-->
 
@@ -73,6 +70,8 @@
       <define name="RADIO_KILL_SWITCH" value="6"/>
       <define name="RADIO_BACK_THOLD"  value="0"/>
     </target>
+
+    <module name="fbw_settings"/>
 
     <module name="flap_wiggle"/>
 
@@ -111,7 +110,6 @@
 
     <!--<module name="guidance" type="hybrid"/>-->
     <module name="guidance" type="indi_hybrid">
-      <!--<define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>-->
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
       <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>
       <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
@@ -129,6 +127,7 @@
       <define name="GUIDANCE_INDI_LIFT_EFF_SCALING" value="1.0"/>
       <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="0.5"/>
       <define name="GUIDANCE_INDI_LINE_GAIN" value="0.2"/>
+      <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>
     </module>
 
     <module name="motor_mixing"/>
