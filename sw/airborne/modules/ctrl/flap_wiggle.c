@@ -30,18 +30,20 @@ uint32_t wiggle_counter;
 float flap_wiggle_gain;
 
 int32_t wiggle_val[8];
+int32_t deflection_duration = 200; // ticks at 500 Hz
+int32_t total_wiggle_period = 2*deflection_duration*8;
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 static void send_wiggle_counter(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_WIGGLE_COUNTER(trans, dev, AC_ID, &wiggle_counter);
+  pprz_msg_send_WIGGLE_COUNTER(trans, dev, AC_ID, &wiggle_counter, &flap_wiggle_gain);
 }
 #endif
 
 void flap_wiggle_init(void)
 {
-  flap_wiggle_state = 0;
+  flap_wiggle_state = true;
   wiggle_counter = 0;
   flap_wiggle_gain = 0.0;
 
@@ -54,38 +56,18 @@ void flap_wiggle_periodic(void)
 {
   wiggle_counter++;
 
-  int32_t phase = wiggle_counter % 3200;
+  int32_t phase = wiggle_counter % total_wiggle_period;
 
   int k;
 
   for(k=0; k<6; k++) {
-    wiggle_val[k] = 0;
-  }
 
-  for(k=0; k<6; k++) {
-    if (phase < 200) {
-      wiggle_val[0] = flap_wiggle_gain;
-    }
-    if (phase > 400 && phase < 600) {
-      wiggle_val[1] = flap_wiggle_gain;
-    }
-    if (phase > 800 && phase < 1000) {
-      wiggle_val[2] = flap_wiggle_gain;
-    }
-    if (phase > 1200 && phase < 1400) {
-      wiggle_val[3] = flap_wiggle_gain;
-    }
-    if (phase > 1600 && phase < 1800) {
-      wiggle_val[4] = flap_wiggle_gain;
-    }
-    if (phase > 2000 && phase < 2200) {
-      wiggle_val[5] = flap_wiggle_gain;
-    }
-    if (phase > 2400 && phase < 2600) {
-      wiggle_val[6] = flap_wiggle_gain;
-    }
-    if (phase > 2800 && phase < 3000) {
-      wiggle_val[7] = flap_wiggle_gain;
+    if (phase > deflection_duration*(2*k) && phase < deflection_duration*(2*k+1) && flap_wiggle_state)
+    {
+      wiggle_val[k] = flap_wiggle_gain;
+    } else {
+      // reset wiggle_val input
+      wiggle_val[k] = 0;
     }
   }
 }
