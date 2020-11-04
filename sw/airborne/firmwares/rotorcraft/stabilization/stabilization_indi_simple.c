@@ -77,7 +77,7 @@ struct Int32Eulers stab_att_sp_euler;
 struct Int32Quat   stab_att_sp_quat;
 
 static int32_t stabilization_att_indi_cmd[COMMANDS_NB];
-static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct Int32Quat *att_err, bool rate_control);
+static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct Int32Quat *att_err, bool rate_control, bool in_flight);
 static inline void lms_estimation(void);
 static void indi_init_filters(void);
 
@@ -294,7 +294,7 @@ static inline void finite_difference(float output[3], float new[3], float old[3]
  * @param att_err quaternion attitude error
  * @param rate_control rate control enabled, otherwise attitude control
  */
-static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct Int32Quat *att_err, bool rate_control)
+static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct Int32Quat *att_err, bool rate_control, bool in_flight)
 {
   // Propagate the filter on the gyroscopes and actuators
   struct FloatRates *body_rates = stateGetBodyRates_f();
@@ -348,7 +348,7 @@ static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct I
   indi.du.q = 1.0 / indi.g1.q * (indi.angular_accel_ref.q - indi.rate_d[1]);
   indi.du.r = 1.0 / (indi.g1.r + indi.g2) * (indi.angular_accel_ref.r - indi.rate_d[2] + indi.g2 * indi.du.r);
 
-  if (stabilization_cmd[COMMAND_THRUST] < 300) {
+  if (stabilization_cmd[COMMAND_THRUST] < 300 && !in_flight) {
     //add the increment to the total control input
     indi.u_in.p = indi.du.p;
     indi.u_in.q = indi.du.q;
@@ -400,7 +400,7 @@ static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct I
  * @param in_flight not used
  * @param rate_control rate control enabled, otherwise attitude control
  */
-void stabilization_indi_run(bool in_flight __attribute__((unused)), bool rate_control)
+void stabilization_indi_run(bool in_flight, bool rate_control)
 {
   /* attitude error                          */
   struct Int32Quat att_err;
@@ -411,7 +411,7 @@ void stabilization_indi_run(bool in_flight __attribute__((unused)), bool rate_co
   int32_quat_normalize(&att_err);
 
   /* compute the INDI command */
-  stabilization_indi_calc_cmd(stabilization_att_indi_cmd, &att_err, rate_control);
+  stabilization_indi_calc_cmd(stabilization_att_indi_cmd, &att_err, rate_control, in_flight);
 
   /* copy the INDI command */
   stabilization_cmd[COMMAND_ROLL] = stabilization_att_indi_cmd[COMMAND_ROLL];
