@@ -377,13 +377,13 @@
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="30.0"/>
     <define name="REF_ERR_Q" value="30.0"/>
-    <define name="REF_ERR_R" value="30.0"/>
+    <define name="REF_ERR_R" value="20.0"/>
     <define name="REF_RATE_P" value="6.0"/>
     <define name="REF_RATE_Q" value="6.0"/>
     <define name="REF_RATE_R" value="6.0"/>
 
     <!--Maxium yaw rate, to avoid instability-->
-    <define name="MAX_R" value="90.0" unit="deg/s"/>
+    <define name="MAX_R" value="50.0" unit="deg/s"/>
 
     <!-- Maximum rate setpoint in rate control mode -->
     <define name="MAX_RATE" value="3.0" unit="rad/s"/>
