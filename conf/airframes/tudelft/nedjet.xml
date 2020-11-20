@@ -58,6 +58,15 @@
       <define name="RADIO_KILL_SWITCH" value="6"/>
     </target>
 
+    <module name="sys_id_chirp">
+      <define name="CHIRP_AXES"        value="{0,1,2,3,4,5,6,7}"/>
+      <define name="CHIRP_ENABLED"     value="FALSE"/>
+      <define name="CHIRP_USE_NOISE"   value="FALSE"/>
+      <define name="CHIRP_EXPONENTIAL" value="FALSE"/>
+      <define name="CHIRP_FADEIN"      value="TRUE"/>
+    </module>
+    <module name="fbw_settings"/>
+
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B115200"/>
     </module>
@@ -114,6 +123,7 @@
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-600.0"/>
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_FWD" value="-600.0"/>
       <define name="GUIDANCE_INDI_LIFT_EFF_SCALING" value="1.0"/>
+      <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>
     </module>
 
     <module name="motor_mixing"/>
@@ -190,14 +200,18 @@
     <set servo="MOTOR_6"   value="(($th_hold || $fwd_hold)? $motor_6_s : motor_mixing.commands[5])"/>
     <set servo="MOTOR_7"   value="(($th_hold || $fwd_hold)? $motor_7_s : motor_mixing.commands[6])"/>
     <set servo="MOTOR_8"   value="(($th_hold || $fwd_hold)? $motor_8_s : motor_mixing.commands[7])"/>
-    <set servo="AIL_1"     value="-2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[0]"/>
-    <set servo="AIL_2"     value="-2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[1]"/>
-    <set servo="AIL_3"     value=" 2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[2]"/>
-    <set servo="AIL_4"     value=" 2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[3]"/>
-    <set servo="FLAP_1"    value="-2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[4]"/>
-    <set servo="FLAP_2"    value="-2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[5]"/>
-    <set servo="FLAP_3"    value=" 2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[6]"/>
-    <set servo="FLAP_4"    value=" 2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[7]"/>
+
+<call fun="int16_vect_zero(actuators_pprz,8)"/>
+    <call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>    
+    
+    <set servo="AIL_1"     value="-2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[0]+ actuators_pprz[0]"/>
+    <set servo="AIL_2"     value="-2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[1]+ actuators_pprz[1]"/>
+    <set servo="AIL_3"     value=" 2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[2]+ actuators_pprz[2]"/>
+    <set servo="AIL_4"     value=" 2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[3]+ actuators_pprz[3]"/>
+    <set servo="FLAP_1"    value="-2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[4]+ actuators_pprz[4]"/>
+    <set servo="FLAP_2"    value="-2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[5]+ actuators_pprz[5]"/>
+    <set servo="FLAP_3"    value=" 2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[6]+ actuators_pprz[6]"/>
+    <set servo="FLAP_4"    value=" 2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[7]+ actuators_pprz[7]"/>
   </command_laws>
 
   <section name="MISC">
