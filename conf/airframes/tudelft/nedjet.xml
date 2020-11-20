@@ -145,10 +145,10 @@
     <servo name="MOTOR_6" no="11" min="-8191" neutral="1500" max="8191"/>
     <servo name="MOTOR_7"  no="12" min="-8191" neutral="1500" max="8191"/>
     <servo name="MOTOR_8" no="13" min="-8191" neutral="1500" max="8191"/>
-    <servo name="FLAP_3" no="14" min="6000" neutral="0" max="-6000"/>
-    <servo name="AIL_3" no="15" min="-6000" neutral="0" max="6000"/>
-    <servo name="AIL_4" no="16" min="6000" neutral="0" max="-6000"/>
-    <servo name="FLAP_4" no="17" min="-6000" neutral="0" max="6000"/>
+    <servo name="AIL_3" no="14" min="6000" neutral="0" max="-6000"/>
+    <servo name="FLAP_3" no="15" min="-6000" neutral="0" max="6000"/>
+    <servo name="FLAP_4" no="16" min="6000" neutral="0" max="-6000"/>
+    <servo name="AIL_4" no="17" min="-6000" neutral="0" max="6000"/>
   </servos>
 
   <commands>
@@ -206,12 +206,12 @@
     
     <set servo="AIL_1"     value="-2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[0]+ actuators_pprz[0]+ actuators_pprz[4]+actuators_pprz[6]+actuators_pprz[8]+actuators_pprz[9]"/>
     <set servo="AIL_2"     value="-2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[1]-actuators_pprz[4]-actuators_pprz[6]-actuators_pprz[9]"/>
-    <set servo="AIL_3"     value=" 2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[2]+ actuators_pprz[1]+actuators_pprz[5]+actuators_pprz[7]+actuators_pprz[8]+actuators_pprz[9]"/>
-    <set servo="AIL_4"     value=" 2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[3]-actuators_pprz[5]-actuators_pprz[7]-actuators_pprz[9]"/>
+    <set servo="AIL_3"     value=" 2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[2]-actuators_pprz[5]-actuators_pprz[7]-actuators_pprz[9]"/>
+    <set servo="AIL_4"     value=" 2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[3]+ actuators_pprz[1]+actuators_pprz[5]+actuators_pprz[7]+actuators_pprz[8]+actuators_pprz[9]"/>      
     <set servo="FLAP_1"    value="-2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[4]+ actuators_pprz[2]+actuators_pprz[6]"/>
     <set servo="FLAP_2"    value="-2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[5]-actuators_pprz[6]"/>
-    <set servo="FLAP_3"    value=" 2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[6]+ actuators_pprz[3]+actuators_pprz[7]"/>
-    <set servo="FLAP_4"    value=" 2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[7]+ actuators_pprz[7]-actuators_pprz[7]"/>
+    <set servo="FLAP_3"    value=" 2*@PITCH - 4*@YAW + @FLAPS + wiggle_val[6] + actuators_pprz[7]-actuators_pprz[7]"/>
+    <set servo="FLAP_4"    value=" 2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[7]+ actuators_pprz[3]+actuators_pprz[7]"/>   
   </command_laws>
 
   <section name="MISC">
