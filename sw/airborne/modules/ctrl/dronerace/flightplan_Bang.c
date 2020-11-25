@@ -83,8 +83,8 @@ int target_reached = 0;
 
 // Demo forward + sidestep 
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-// {0, -2.0,2,-1.5,-0.5*M_PI,0.1,STARTGATE,BANGBANG,0,-0.5*M_PI,true,30},
-// {1, 1.0,-2,-1.5,-0.5*M_PI,0.1,ENDGATE,BANGBANG,0,-0.5*M_PI,true,30},
+// {0, -2.0,2,-1.5,-0.5*M_PI,0.1,STARTGATE,HIGHPID,0,-0.5*M_PI,true,30},
+// {1, 1.0,-2,-1.5,-0.5*M_PI,0.1,ENDGATE,HIGHPID,0,-0.5*M_PI,true,30},
 // };
 
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
@@ -112,13 +112,13 @@ int target_reached = 0;
 
 // // 4 waypoints continuous BANGBANG fixed yaw
 const struct bangbang_fp_struct Banggates[MAX_GATES] = {
-{0, -2.0,1.5,-1.5,-0.5*M_PI,5,STARTGATE,BANGBANG,0,-0.5*M_PI,true,30},
-{0, -2.0,-1.5,-1.5,-0.5*M_PI,5,GATE,BANGBANG,0,-0.5*M_PI,true,30},
-{0, 2.0,-1.5,-1.5,-0.5*M_PI,5,GATE,BANGBANG,0,-0.5*M_PI,true,30},
-{1, 2.0,1.5,-1.5,-0.5*M_PI,5,ENDGATE,BANGBANG,0,-0.5*M_PI,true,30},
+{0, -2.0,1.5,-1.5,-0.5*M_PI,2,STARTGATE,BANGBANG,0,-0.5*M_PI,true,30},
+{0, -2.0,-1.5,-1.5,-0.5*M_PI,2,GATE,BANGBANG,0,-0.5*M_PI,true,30},
+{0, 2.0,-1.5,-1.5,-0.5*M_PI,2,GATE,BANGBANG,0,-0.5*M_PI,true,30},
+{1, 2.0,1.5,-1.5,-0.5*M_PI,2,ENDGATE,BANGBANG,0,-0.5*M_PI,true,30},
 };
 
-// 4 waypoints continuous BANGBANG fixed yaw
+// 4 waypoints continuous PID fixed yaw
 // const struct bangbang_fp_struct Banggates[MAX_GATES] = {
 // {0, -2.0,1.5,-1.5,-0.5*M_PI,2,STARTGATE,HIGHPID,0,-0.5*M_PI,true,25},
 // {0, -2.0,-1.5,-1.5,-0.5*M_PI,2,GATE,HIGHPID,0,-0.5*M_PI,true,25},

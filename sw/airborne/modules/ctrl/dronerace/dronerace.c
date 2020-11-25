@@ -42,9 +42,9 @@
 
 // to know if we are simulating:
 #include "generated/airframe.h"
-
+#include <stdio.h>
 #define MAXTIME 8.0
-
+#define FEEDBACKFREQ 512 //different frequency for x and y position and velocity (can't be faster than main loop)  
 
 float dt = 1.0f / 512.f;
 
@@ -57,7 +57,7 @@ volatile float input_dx = 0;
 volatile float input_dy = 0;
 volatile float input_dz = 0;
 
-#include <stdio.h>
+
 // Variables
 struct dronerace_control_struct dr_control;
 
@@ -82,6 +82,7 @@ float vzE_old=0;
 float posx_old=0;
 float posy_old=0;
 float posz_old=0;
+int feedbackcounter=1;
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // TELEMETRY
 
@@ -141,7 +142,7 @@ void dronerace_init(void)
   // Send telemetry
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_OPTICAL_FLOW_HOVER, send_dronerace);
   
-
+  feedbackcounter=1;
  //reset integral
   // Compute waypoints
   dronerace_enter();
@@ -154,6 +155,7 @@ void dronerace_enter(void)
   psi0 = stateGetNedToBodyEulers_f()->psi; //check if this is correct 
   filter_reset();
   control_reset();
+  feedbackcounter=1;
 }
 
 
@@ -174,17 +176,29 @@ void dronerace_periodic(void)
   // input_theta = dr_control.theta_cmd;
   // input_psi   = dr_control.psi_cmd;
 
-  dr_state.phi   = input_phi;
+
+   dr_state.theta = input_theta;
+    dr_state.phi   = input_phi;
   dr_state.psi   = input_psi;
-  dr_state.theta = input_theta;
+  
+  
 
-  posx = pos_gps->x;
-  posy = pos_gps->y;
-  posz = pos_gps->z; 
+  
+  if(feedbackcounter>1/(dt*(float)FEEDBACKFREQ)){
+   
+    // printf("feedback update, counter: %i\n",feedbackcounter);
+    posx = pos_gps->x;
+    posy = pos_gps->y;
+    
 
-  vxE = vel_gps->x; // In earth reference frame
-  vyE = vel_gps->y;
+    vxE = vel_gps->x; // In earth reference frame
+    vyE = vel_gps->y;
+    
+    feedbackcounter=1;
+  }
   vzE = vel_gps->z;
+  posz = pos_gps->z; 
+  feedbackcounter+=1;
 
   //  if((posx!=posx_old)||(vxE!=vxE_old)){ // filter.c is applied to dr_state.x ... in  between gps updates
   //   dr_state.x=posx;

@@ -125,7 +125,7 @@ void optimizeBangBang(float pos_error_vel_x, float pos_error_vel_y, float v_desi
     sat_corr[0]=sat_angle.x;
     sat_corr[1]=sat_angle.y;
     
-    if(!controllerstate.in_transition && fabs(pos_error[0]-pos_error[1])>0.25){   //don't update satdim when in transition or when too close to the waypoint or when the error components are too close together
+    if(!controllerstate.in_transition && fabs(pos_error[0]-pos_error[1])>0.1){   //don't update satdim when in transition or when too close to the waypoint or when the error components are too close together
         if(fabs(pos_error[0])>=fabs(pos_error[1])){                                              // to avoid twitching.
             satdim=0;        
         }
