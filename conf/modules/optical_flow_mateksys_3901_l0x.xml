@@ -1,0 +1,45 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="mateksys_3901_l0x">
+  <doc>
+    <description>
+      Transfers flow X and Y and range data of the Mateksys3901-l0X sensor to the autopilot
+      This by the default serial connection not by connecting the debug pins on ther sensor
+      The Data is in MSP compatible output. If a MSP stack is availabe in the AP one could use that
+      In ths ase we just handle the byres comming from the sensor in MSP compatible handler for this sensor
+    </description>
+    <configure name="MATEKSYS_3901_L0X_PORT" value="UART1" description="Set to which UART the sensor serial stream pin is connected to"/>
+    <configure name="MATEKSYS_3901_L0X_BAUD" value="115200" description="Sets the baudrate of the UART"/>
+    
+  </doc>
+
+
+  <header>
+    <file name="mateksys_3901_l0x.h" dir="modules/optical_flow"/>
+  </header>
+  <init fun="mateksys3901l0x_init()"/>
+  <event fun="mateksys3901l0x_event()"/>
+  <makefile>
+
+    <!-- Configure default UART port and baudrate -->
+    <configure name="MATEKSYS_3901_L0X_PORT" default="UART2" case="upper|lower"/>
+    <configure name="MATEKSYS_3901_L0X_BAUD" default="B115200"/>
+
+    <!-- Enable UART and set baudrate -->
+    <define name="USE_$(MATEKSYS_3901_L0X_PORT_UPPER)"/>
+        <!--<define name="USE_$(MATEKSYS_3901_L0X_PORT)_TX" value="FALSE"/>-->
+    <define name="$(MATEKSYS_3901_L0X_PORT_UPPER)_BAUD" value="$(MATEKSYS_3901_L0X_BAUD)"/>
+    <define name="MATEKSYS_3901_L0X_PORT" value="$(MATEKSYS_3901_L0X_PORT_LOWER)"/>
+
+    <configure name="USE_MATEKSYS_3901_L0X_AGL" default="0"/>
+    <configure name="MATEKSYS_3901_L0X_COMPENSATE_ROTATION" default="0"/>
+    <define name="USE_MATEKSYS_3901_L0X_AGL" value="$(USE_MATEKSYS_3901_L0X_AGL)"/>
+    <define name="MATEKSYS_3901_L0X_COMPENSATE_ROTATION" value="$(MATEKSYS_3901_L0X_COMPENSATE_ROTATION)"/>
+
+    <file name="mateksys_3901_l0x.c" dir="modules/optical_flow"/>
+    <!--<file name="pprz_transport.c" dir="pprzlink/src"/>-->
+  </makefile>
+  <makefile target="nps|sim">
+    <define name="USE_SONAR" value="1"/><!-- in NPS use a virtual sonar to simulate lidar measurements -->
+  </makefile>
+</module>

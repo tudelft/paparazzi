@@ -83,6 +83,8 @@
 
     <module name="flap_wiggle"/>
 
+    <module name="optical_flow_mateksys_3901_l0x.xml"/>  
+
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B115200"/>
     </module>
