@@ -24,7 +24,7 @@
         <define name="USE_I2C4"/>
         <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>
         <define name="AIRSPEED_ETS_SYNC_SEND"/>
-        <define name="USE_AIRSPEED_ETS" value="TRUE"/>
+        <define name="USE_AIRSPEED_ETS" value="FALSE"/>
         <define name="AIRSPEED_ETS_SCALE" value="1.24"/>
       </module>
 
@@ -101,6 +101,9 @@
       <define name="MS45XX_I2C_DEV" value="i2c4"/>
     </module-->
     <module name="air_data"/>
+      <define name="USE_AIRSPEED" value="TRUE"/>
+    </module>
+
     <module name="send_imu_mag_current"/>
 
     <!-- External GPS -->
@@ -260,8 +263,6 @@
     <define name="MAX_FWD_SPEED" value="20.0"/>
     <!-- For hybrid guidance -->
     <define name="MAX_AIRSPEED" value="20.0"/>
-
-    <define name="USE_AIRSPEED" value="TRUE"/>
   </section>
 
   <section name="IMU" prefix="IMU_">
