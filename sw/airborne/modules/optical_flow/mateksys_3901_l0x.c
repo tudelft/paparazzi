@@ -41,32 +41,50 @@ struct Mateksys3901l0X mateksys3901l0x = {
 
 static void mateksys3901l0x_parse(uint8_t byte);
 
-#if PERIODIC_TELEMETRY
+// #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 
-/**
- * Downlink message ranger
- */
-static void mateksys3901l0x_send_flow(struct transport_tx *trans, struct link_device *dev)
-{
-	//TODO: Discuss... Enable flow message. We can misuse the PX4 flow message so no need to create our own
+// /**
+//  * Downlink message ranger
+//  */
+// static void mateksys3901l0x_send_flow(struct transport_tx *trans, struct link_device *dev)
+// {
+// 	//TODO: Discuss... Enable flow message. We can misuse the PX4 flow message so no need to create our own
 	 
-/*
-	static float timestamp = 0;
-  timestamp = ((float)optical_flow.time_usec) * 0.000001;
-  DOWNLINK_SEND_PX4FLOW(DefaultChannel, DefaultDevice,
-                        &timestamp,
-                        &optical_flow.sensor_id,
-                        &optical_flow.flow_x,
-                        &optical_flow.flow_y,
-                        &optical_flow.flow_comp_m_x,
-                        &optical_flow.flow_comp_m_y,
-                        &optical_flow.quality,
-                        &optical_flow.ground_distance);		
-	*/						
+// /*
+// 	static float timestamp = 0;
+//   timestamp = ((float)optical_flow.time_usec) * 0.000001;
+//   DOWNLINK_SEND_PX4FLOW(DefaultChannel, DefaultDevice,
+//                         &timestamp,
+//                         &optical_flow.sensor_id,
+//                         &optical_flow.flow_x,
+//                         &optical_flow.flow_y,
+//                         &optical_flow.flow_comp_m_x,
+//                         &optical_flow.flow_comp_m_y,
+//                         &optical_flow.quality,
+//                         &optical_flow.ground_distance);		
+// 	*/						
+// }
+
+/**
+ * Downlink message for debug
+ */
+void mateksys3901l0x_downlink(void)
+{
+  DOWNLINK_SEND_MATEKFLOW(DefaultChannel, DefaultDevice, 
+                        &mateksys3901l0x.motion_quality,
+                        &mateksys3901l0x.motionX,
+                        &mateksys3901l0x.motionY,
+                        &mateksys3901l0x.distancemm_quality,
+                        &mateksys3901l0x.distancemm,
+                        &mateksys3901l0x.distance,
+                        &mateksys3901l0x.update_agl, 
+                        &mateksys3901l0x.compensate_rotation,
+                        &mateksys3901l0x.parse_crc
+                        );
 }
 
-#endif
+// #endif
 
 /**
  * Initialization function
@@ -74,22 +92,18 @@ static void mateksys3901l0x_send_flow(struct transport_tx *trans, struct link_de
 void mateksys3901l0x_init(void)
 {
   mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
-
   mateksys3901l0x.device = &((MATEKSYS_3901_L0X_PORT).device);
-
 	mateksys3901l0x.motion_quality = 0; //TODO :is this a good choice?
   mateksys3901l0x.motionX = 0; //TODO :is this a good choice?
   mateksys3901l0x.motionY = 0; //TODO :is this a good choice?
   mateksys3901l0x.distancemm_quality = 0;
 	mateksys3901l0x.distancemm= -1; //TODO :is this a good choice?
-
   mateksys3901l0x.distance = 0.0; // [m]
-
 	mateksys3901l0x.update_agl = USE_MATEKSYS_3901_L0X_AGL;
   mateksys3901l0x.compensate_rotation = MATEKSYS_3901_L0X_COMPENSATE_ROTATION;
- 
+
 #if PERIODIC_TELEMETRY
-	//TODO: register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FLOW, mateksys3901l0x_send_flow);
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MATEKFLOW, mateksys3901l0x_downlink);
 #endif
 }
 

@@ -92,7 +92,7 @@ extern struct Mateksys3901l0X mateksys3901l0x;
 
 extern void mateksys3901l0x_init(void);
 extern void mateksys3901l0x_event(void);
-//extern void mateksys3901l0x_downlink(void);
+extern void mateksys3901l0x_downlink(void);
 
 #endif /* MATEKSYS_3901_L0X_H */
 

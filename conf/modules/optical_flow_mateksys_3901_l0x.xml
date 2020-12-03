@@ -19,6 +19,7 @@
   </header>
   <init fun="mateksys3901l0x_init()"/>
   <event fun="mateksys3901l0x_event()"/>
+  <!-- <periodic fun="mateksys3901l0x_downlink()"/> --> <!-- to get messages TODO-->
   <makefile>
 
     <!-- Configure default UART port and baudrate -->
