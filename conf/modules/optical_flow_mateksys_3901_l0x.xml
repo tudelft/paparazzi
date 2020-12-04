@@ -23,7 +23,7 @@
   <makefile>
 
     <!-- Configure default UART port and baudrate -->
-    <configure name="MATEKSYS_3901_L0X_PORT" default="UART2" case="upper|lower"/>
+    <configure name="MATEKSYS_3901_L0X_PORT" default="UART3" case="upper|lower"/>
     <configure name="MATEKSYS_3901_L0X_BAUD" default="B115200"/>
 
     <!-- Enable UART and set baudrate -->

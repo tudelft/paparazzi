@@ -17,7 +17,7 @@
       <configure name="FLASH_MODE" value="SWD"/>
 
       <module name="radio_control" type="sbus">
-        <configure name="SBUS_PORT" value="UART3"/>
+        <configure name="SBUS_PORT" value="UART4"/>
       </module>
 
       <module name="airspeed_ets.xml">
@@ -83,7 +83,8 @@
 
     <module name="flap_wiggle"/>
 
-    <module name="optical_flow_mateksys_3901_l0x.xml"/>  
+    <module name="optical_flow_mateksys_3901_l0x.xml">
+    </module>  
 
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B115200"/>

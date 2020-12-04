@@ -69,19 +69,30 @@ static void mateksys3901l0x_parse(uint8_t byte);
 /**
  * Downlink message for debug
  */
-void mateksys3901l0x_downlink(void)
+// void mateksys3901l0x_downlink(void)
+// {
+//   DOWNLINK_SEND_MATEKFLOW(DefaultChannel, DefaultDevice, 
+//                         &mateksys3901l0x.motion_quality,
+//                         &mateksys3901l0x.motionX,
+//                         &mateksys3901l0x.motionY,
+//                         &mateksys3901l0x.distancemm_quality,
+//                         &mateksys3901l0x.distancemm,
+//                         &mateksys3901l0x.distance,
+//                         &mateksys3901l0x.update_agl, 
+//                         &mateksys3901l0x.compensate_rotation,
+//                         &mateksys3901l0x.parse_crc
+//                         );
+// }
+
+/**
+ * Downlink message lidar
+ */
+static void mateksys3901l0x_send_lidar(struct transport_tx *trans, struct link_device *dev)
 {
-  DOWNLINK_SEND_MATEKFLOW(DefaultChannel, DefaultDevice, 
-                        &mateksys3901l0x.motion_quality,
-                        &mateksys3901l0x.motionX,
-                        &mateksys3901l0x.motionY,
-                        &mateksys3901l0x.distancemm_quality,
-                        &mateksys3901l0x.distancemm,
-                        &mateksys3901l0x.distance,
-                        &mateksys3901l0x.update_agl, 
-                        &mateksys3901l0x.compensate_rotation,
-                        &mateksys3901l0x.parse_crc
-                        );
+  pprz_msg_send_LIDAR(trans, dev, AC_ID,
+                      &mateksys3901l0x.distance,
+                      44,
+                      55);
 }
 
 // #endif
@@ -91,20 +102,20 @@ void mateksys3901l0x_downlink(void)
  */
 void mateksys3901l0x_init(void)
 {
-  mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
   mateksys3901l0x.device = &((MATEKSYS_3901_L0X_PORT).device);
 	mateksys3901l0x.motion_quality = 0; //TODO :is this a good choice?
   mateksys3901l0x.motionX = 0; //TODO :is this a good choice?
   mateksys3901l0x.motionY = 0; //TODO :is this a good choice?
   mateksys3901l0x.distancemm_quality = 0;
 	mateksys3901l0x.distancemm= -1; //TODO :is this a good choice?
-  mateksys3901l0x.distance = 0.0; // [m]
+  mateksys3901l0x.distance = 33.0; // [m]
 	mateksys3901l0x.update_agl = USE_MATEKSYS_3901_L0X_AGL;
   mateksys3901l0x.compensate_rotation = MATEKSYS_3901_L0X_COMPENSATE_ROTATION;
+  mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
 
-#if PERIODIC_TELEMETRY
-	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MATEKFLOW, mateksys3901l0x_downlink);
-#endif
+// #if PERIODIC_TELEMETRY
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_LIDAR, mateksys3901l0x_send_lidar);
+// #endif
 }
 
 /**
