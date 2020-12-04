@@ -86,6 +86,7 @@ struct Mateksys3901l0X {
   bool     update_agl;
   bool     compensate_rotation;
 	uint8_t  parse_crc;
+  uint8_t  debug_list[3]; 
 };
 
 extern struct Mateksys3901l0X mateksys3901l0x;

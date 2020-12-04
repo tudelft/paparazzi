@@ -24,6 +24,7 @@
  *  @brief Driver for the mateksys_3901_l0x sensor via MSP protocol output
  *
  */
+
 #include "mateksys_3901_l0x.h"
 #include "mcu_periph/uart.h"
 #include "subsystems/abi.h"
@@ -41,30 +42,8 @@ struct Mateksys3901l0X mateksys3901l0x = {
 
 static void mateksys3901l0x_parse(uint8_t byte);
 
-// #if PERIODIC_TELEMETRY
+#if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
-
-// /**
-//  * Downlink message ranger
-//  */
-// static void mateksys3901l0x_send_flow(struct transport_tx *trans, struct link_device *dev)
-// {
-// 	//TODO: Discuss... Enable flow message. We can misuse the PX4 flow message so no need to create our own
-	 
-// /*
-// 	static float timestamp = 0;
-//   timestamp = ((float)optical_flow.time_usec) * 0.000001;
-//   DOWNLINK_SEND_PX4FLOW(DefaultChannel, DefaultDevice,
-//                         &timestamp,
-//                         &optical_flow.sensor_id,
-//                         &optical_flow.flow_x,
-//                         &optical_flow.flow_y,
-//                         &optical_flow.flow_comp_m_x,
-//                         &optical_flow.flow_comp_m_y,
-//                         &optical_flow.quality,
-//                         &optical_flow.ground_distance);		
-// 	*/						
-// }
 
 /**
  * Downlink message for debug
@@ -91,11 +70,20 @@ static void mateksys3901l0x_send_lidar(struct transport_tx *trans, struct link_d
 {
   pprz_msg_send_LIDAR(trans, dev, AC_ID,
                       &mateksys3901l0x.distance,
-                      44,
-                      55);
+                      &mateksys3901l0x.parse_crc,
+                      &mateksys3901l0x.motion_quality);
 }
 
-// #endif
+/**
+ * Downlink message debug
+ */
+// static void mateksys3901l0x_send_debug(struct transport_tx *trans, struct link_device *dev)
+// {
+//   pprz_msg_send_DEBUG(trans, dev, AC_ID,
+//                       &mateksys3901l0x.debug_list);
+// }
+
+#endif
 
 /**
  * Initialization function
@@ -103,19 +91,20 @@ static void mateksys3901l0x_send_lidar(struct transport_tx *trans, struct link_d
 void mateksys3901l0x_init(void)
 {
   mateksys3901l0x.device = &((MATEKSYS_3901_L0X_PORT).device);
-	mateksys3901l0x.motion_quality = 0; //TODO :is this a good choice?
-  mateksys3901l0x.motionX = 0; //TODO :is this a good choice?
-  mateksys3901l0x.motionY = 0; //TODO :is this a good choice?
+	mateksys3901l0x.motion_quality = 0;                                             //TODO :is this a good choice?
+  mateksys3901l0x.motionX = 0;                                                    //TODO :is this a good choice?
+  mateksys3901l0x.motionY = 0;                                                    //TODO :is this a good choice?
   mateksys3901l0x.distancemm_quality = 0;
-	mateksys3901l0x.distancemm= -1; //TODO :is this a good choice?
-  mateksys3901l0x.distance = 33.0; // [m]
+	mateksys3901l0x.distancemm= -1;                                                 //TODO :is this a good choice?
+  mateksys3901l0x.distance = 0;                                                   // [m]
 	mateksys3901l0x.update_agl = USE_MATEKSYS_3901_L0X_AGL;
   mateksys3901l0x.compensate_rotation = MATEKSYS_3901_L0X_COMPENSATE_ROTATION;
   mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
 
-// #if PERIODIC_TELEMETRY
+#if PERIODIC_TELEMETRY
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_LIDAR, mateksys3901l0x_send_lidar);
-// #endif
+	// register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG, mateksys3901l0x_send_debug);
+#endif
 }
 
 /**
@@ -137,14 +126,15 @@ static void mateksys3901l0x_parse(uint8_t byte)
     case MATEKSYS_3901_L0X_INITIALIZE:
       break;
 
-    case MATEKSYS_3901_L0X_PARSE_HEAD:
+    case MATEKSYS_3901_L0X_PARSE_HEAD: // OK
       if (byte == 0x24) {
         mateksys3901l0x.parse_status++;
       }
       break;
 
     case MATEKSYS_3901_L0X_PARSE_HEAD2:
-      if (byte == 0x4D) {
+      if (byte == 0x58) {
+        mateksys3901l0x.parse_crc = byte;
         mateksys3901l0x.parse_status++;
       } else {
         mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;

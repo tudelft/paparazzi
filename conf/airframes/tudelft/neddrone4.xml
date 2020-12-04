@@ -17,7 +17,7 @@
       <configure name="FLASH_MODE" value="SWD"/>
 
       <module name="radio_control" type="sbus">
-        <configure name="SBUS_PORT" value="UART4"/>
+        <configure name="SBUS_PORT" value="UART7"/>
       </module>
 
       <module name="airspeed_ets.xml">
