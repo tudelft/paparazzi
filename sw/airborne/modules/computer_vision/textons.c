@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include "modules/computer_vision/cv.h"
 #include "modules/computer_vision/textons.h"
+#include "mcu_periph/sys_time.h"
 
 float ** **dictionary;
 uint32_t learned_samples = 0;
@@ -146,6 +147,8 @@ struct image_t *texton_func(struct image_t *img)
 
   if (img->buf_size == 0) { return img; }
 
+  //float start = get_sys_time_float();
+
   //printf("Enter texton_func!!!\n");
 
   // extract frame from img struct:
@@ -216,6 +219,9 @@ struct image_t *texton_func(struct image_t *img)
   }
 
   //printf("Exit texton_func!!!\n");
+
+  //float end = get_sys_time_float();
+  //printf("Time textons in seconds = %f\n", end-start);
 
   return img; // Colorfilter did not make a new image
 }

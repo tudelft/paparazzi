@@ -45,6 +45,7 @@
 #include "size_divergence.h"
 #include "linear_flow_fit.h"
 #include "modules/sonar/agl_dist.h"
+#include "mcu_periph/sys_time.h"
 
 // to get the definition of front_camera / bottom_camera
 #include BOARD_CONFIG
@@ -336,6 +337,8 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
   // Corner detection
   // *************************************************************************************
 
+  float start_corner_detection = get_sys_time_float();
+
   // if feature_management is selected and tracked corners drop below a threshold, redetect
   if ((opticflow->feature_management) && (result->corner_cnt < opticflow->max_track_corners / 2)) {
     manage_flow_features(img, opticflow, result);
@@ -407,9 +410,14 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
     return false;
   }
 
+  float end_corner_detection = get_sys_time_float();
+  //printf("Time corner detection = %f\n", end_corner_detection-start_corner_detection);
+
   // *************************************************************************************
   // Corner Tracking
   // *************************************************************************************
+
+  float start_OF = get_sys_time_float();
 
   // Execute a Lucas Kanade optical flow
   result->tracked_cnt = result->corner_cnt;
@@ -462,11 +470,16 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
     free(back_vectors);
   }
 
+  float end_OF = get_sys_time_float();
+  //printf("Time corner tracking = %f.\n", end_OF-start_OF);
+
   if (opticflow->show_flow) {
     uint8_t color[4] = {0, 0, 0, 0};
     uint8_t bad_color[4] = {0, 0, 0, 0};
     image_show_flow_color(img, vectors, result->tracked_cnt, opticflow->subpixel_factor, color, bad_color);
   }
+
+  float start_div = get_sys_time_float();
 
   static int n_samples = 100;
   // Estimate size divergence:
@@ -496,6 +509,11 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
     result->surface_roughness = 0.0f;
   }
 
+  float end_div = get_sys_time_float();
+  //printf("Time divergence = %f.\n", end_div - start_div);
+
+
+  float start_median = get_sys_time_float();
   // Get the median flow
   qsort(vectors, result->tracked_cnt, sizeof(struct flow_t), cmp_flow);
   if (result->tracked_cnt == 0) {
@@ -516,11 +534,16 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
     result->flow_y = (vectors[result->tracked_cnt / 2 - 1].flow_y + vectors[result->tracked_cnt / 2].flow_y) / 2.f;
   }
 
+  float end_median = get_sys_time_float();
+  //printf("Time median = %f.\n", end_median - start_median);
+
   // TODO scale flow to rad/s here
 
   // ***************
   // Flow Derotation
   // ***************
+
+  float start_der = get_sys_time_float();
 
   float diff_flow_x = 0.f;
   float diff_flow_y = 0.f;
@@ -581,6 +604,9 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
       }
     }
   }
+
+  float end_der = get_sys_time_float();
+  //printf("Time derotation = %f.\n", end_der - start_der);
 
   // Velocity calculation
   // Right now this formula is under assumption that the flow only exist in the center axis of the camera.

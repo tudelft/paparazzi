@@ -437,8 +437,12 @@ void vertical_ctrl_module_run(bool in_flight)
     // SSL: only learn if not flying - due to use of resources:
     if(of_landing_ctrl.learn_gains) {
       printf("LEARNING WEIGHTS!\n");
+      float start = get_sys_time_float();
       // learn the weights from the file filled with training examples:
       learn_from_file();
+
+      float end = get_sys_time_float();
+      printf("Time to learn: %f\n", end-start);
       // reset the learn_gains variable to false:
       of_landing_ctrl.learn_gains = false;
       // dt is smaller than it actually should be...
