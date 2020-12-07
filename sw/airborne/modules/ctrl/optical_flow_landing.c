@@ -41,6 +41,9 @@
  * <https://arxiv.org/abs/1609.06767>
  */
 
+#include "firmwares/rotorcraft/stabilization/stabilization_indi_simple.h"
+#include "math/pprz_algebra_int.h"
+
 #include "optical_flow_landing.h"
 
 #include "generated/airframe.h"
@@ -148,6 +151,11 @@ PRINT_CONFIG_VAR(OFL_OPTICAL_FLOW_ID)
 #define INCREASE_GAIN_PER_SECOND 0.02
 
 // variables retained between module calls
+
+// horizontal loop:
+float optical_flow_x;
+float optical_flow_y;
+
 //float divergence_vision;
 float divergence_vision_dt;
 float normalized_thrust;
@@ -351,6 +359,9 @@ void vertical_ctrl_module_init(void)
  */
 static void reset_all_vars(void)
 {
+  optical_flow_x = 0.0;
+  optical_flow_y = 0.0;
+
   of_landing_ctrl.agl_lp = of_landing_ctrl.agl = stateGetPositionEnu_f()->z;
 
   thrust_set = of_landing_ctrl.nominal_thrust * MAX_PPRZ;
@@ -452,6 +463,7 @@ void vertical_ctrl_module_run(bool in_flight)
   /***********
    * VISION
    ***********/
+  float new_flow_x, new_flow_y;
   if (of_landing_ctrl.VISION_METHOD == 0) {
     // SIMULATED DIVERGENCE:
 
@@ -487,7 +499,10 @@ void vertical_ctrl_module_run(bool in_flight)
     div_factor = -2.25f; // in the sim
     float new_divergence = (divergence_vision * div_factor) / dt;
     //printf("dt = %f\n", dt);
-
+    new_flow_x = optical_flow_x / dt;
+    new_flow_y = optical_flow_y / dt;
+    printf("flow_x = %f, dt = %f, new_flow_x = %f\n", optical_flow_x, dt, new_flow_x);
+    printf("flow_y = %f, dt = %f, new_flow_y = %f\n", optical_flow_y, dt, new_flow_y);
     // deal with (unlikely) fast changes in divergence:
     static const float max_div_dt = 0.20f;
     if (fabsf(new_divergence - of_landing_ctrl.divergence) > max_div_dt) {
@@ -800,6 +815,16 @@ void vertical_ctrl_module_run(bool in_flight)
       stabilization_cmd[COMMAND_THRUST] = thrust_set;
     }
 
+
+    // Horizontal control:
+    struct FloatEulers* attitude = stateGetNedToBodyEulers_f();
+    printf("flow x, y = %f, %f\n", new_flow_x, new_flow_y);
+    float pitch_cmd = RadOfDeg(-new_flow_y);
+    float roll_cmd = RadOfDeg(new_flow_x * 0.5);
+    struct Int32Eulers rpy = { .phi = (int32_t)ANGLE_BFP_OF_REAL(roll_cmd),
+	.theta = (int32_t)ANGLE_BFP_OF_REAL(pitch_cmd), .psi = (int32_t)ANGLE_BFP_OF_REAL(attitude->psi) };
+    stabilization_indi_set_rpy_setpoint_i(&rpy);
+
   }
 }
 
@@ -939,14 +964,39 @@ void vertical_ctrl_agl_cb(uint8_t sender_id UNUSED, __attribute__((unused)) uint
 
 void vertical_ctrl_optical_flow_cb(uint8_t sender_id UNUSED, uint32_t stamp, int16_t flow_x UNUSED,
                                    int16_t flow_y UNUSED,
-                                   int16_t flow_der_x UNUSED, int16_t flow_der_y UNUSED, float quality UNUSED, float size_divergence)
+                                   int16_t flow_der_x, int16_t flow_der_y, float quality UNUSED, float size_divergence)
 {
+
+  optical_flow_x = ((float)flow_der_x)/10.0;
+  optical_flow_y = ((float)flow_der_y)/10.0;
   divergence_vision = size_divergence;
+  printf("Reading %f, %f, %f\n", optical_flow_x, optical_flow_y, divergence_vision);
   vision_time = ((float)stamp) / 1e6;
 }
 
 ////////////////////////////////////////////////////////////////////
 // Call our controller
+
+void guidance_h_module_init(void)
+{
+
+}
+
+void guidance_h_module_enter(void)
+{
+
+}
+
+void guidance_h_module_run(bool in_flight)
+{
+
+}
+
+void guidance_h_module_read_rc(void)
+{
+
+}
+
 void guidance_v_module_init(void)
 {
   vertical_ctrl_module_init();

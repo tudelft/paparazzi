@@ -105,11 +105,18 @@ float divergence_vision;
 
 
 // Without optitrack set to: GUIDANCE_H_MODE_ATTITUDE
-// With optitrack set to: GUIDANCE_H_MODE_HOVER / NAV
-#define GUIDANCE_H_MODE_MODULE_SETTING GUIDANCE_H_MODE_NAV
+// With optitrack set to: GUIDANCE_H_MODE_HOVER / NAV (NAV is the common option in the experiments.)
+
+#define GUIDANCE_H_MODE_MODULE_SETTING GUIDANCE_H_MODE_MODULE
 
 // Own guidance_v
 #define GUIDANCE_V_MODE_MODULE_SETTING GUIDANCE_V_MODE_MODULE
+
+// Implement own horizontal loop:
+extern void guidance_h_module_init(void);
+extern void guidance_h_module_enter(void);
+extern void guidance_h_module_run(bool in_flight);
+extern void guidance_h_module_read_rc(void);
 
 // Implement own Vertical loops
 extern void guidance_v_module_init(void);
