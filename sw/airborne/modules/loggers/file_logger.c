@@ -96,6 +96,7 @@ void file_logger_start(void)
 
   // Check for available files
   sprintf(filename, "%s/%05d.csv", STRINGIFY(FILE_LOGGER_PATH), counter);
+  printf("Logging to file name = %s\n", filename);
   while ((file_logger = fopen(filename, "r"))) {
     fclose(file_logger);
 
@@ -124,7 +125,7 @@ void file_logger_start(void)
           file_logger,
           "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,"
           "mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz,"
-          "shot,pressure,sonar,phi_f,theta_f,psi_f,pstate,cov_div,"
+          "shot,pressure,sonar,phi_f,theta_f,psi_f,pstate,cov_div,div,z,zd"
         );
     for(int i = 0; i < n_textons-1; i++) {
           fprintf(file_logger, "texton_%d,", i);
@@ -132,6 +133,9 @@ void file_logger_start(void)
     fprintf(file_logger, "texton_%d\n", n_textons-1);
     logger_pressure = 0.0f;
     logger_sonar = 0.0f;
+  }
+  else {
+      printf("Could not open log!\n");
   }
 
   // Subscribe to the altitude above ground level ABI messages
@@ -174,8 +178,10 @@ void file_logger_periodic(void)
   }
 
   struct FloatEulers *eulers = stateGetNedToBodyEulers_f();
+  struct NedCoor_f *velocities = stateGetSpeedNed_f();
+  struct NedCoor_f *position = stateGetPositionNed_f();
 
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,",
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,",
           counter,
           imu.gyro_unscaled.p,
           imu.gyro_unscaled.q,
@@ -201,7 +207,10 @@ void file_logger_periodic(void)
           eulers->theta,
           eulers->psi,
           pstate,
-          cov_div
+          cov_div,
+	  divergence_vision,
+	  position->z,
+	  velocities->z
          );
 
   for(int i = 0; i < n_textons-1; i++) {

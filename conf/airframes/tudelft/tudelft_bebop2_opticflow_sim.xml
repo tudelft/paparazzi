@@ -9,8 +9,8 @@
     </target>
     <target name="nps" board="pc">
       <module name="fdm" type="gazebo"/>
-      <define name="VIDEO_CAPTURE_PATH" value="/tmp/paparazzi/images"/>
-      <define name="FILE_LOGGER_PATH" value="/tmp/paparazzi/log"/>
+      <define name="VIDEO_CAPTURE_PATH" value="/home/guido/paparazzi/images"/>
+      <define name="FILE_LOGGER_PATH" value="/home/guido/paparazzi/log"/>
     </target>
 
     <define name="USE_SONAR"/>
@@ -42,6 +42,10 @@
     <module name="video_thread"/>
 
     <module name="pose_history"/>
+
+    <module name="logger_file">
+	<!-- <define name="FILE_LOGGER_PATH" value="/home/guido/paparazzi/log"/> -->
+    </module>
 
     <module name="cv_opticflow">
       <define name="OPTICFLOW_FPS" value="30"/>

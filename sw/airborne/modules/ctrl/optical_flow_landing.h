@@ -101,6 +101,8 @@ float *weights;
 // for "communication" with file logger:
 float cov_div;
 float pstate;
+float divergence_vision;
+
 
 // Without optitrack set to: GUIDANCE_H_MODE_ATTITUDE
 // With optitrack set to: GUIDANCE_H_MODE_HOVER / NAV

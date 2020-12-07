@@ -148,7 +148,7 @@ PRINT_CONFIG_VAR(OFL_OPTICAL_FLOW_ID)
 #define INCREASE_GAIN_PER_SECOND 0.02
 
 // variables retained between module calls
-float divergence_vision;
+//float divergence_vision;
 float divergence_vision_dt;
 float normalized_thrust;
 //float cov_div;
@@ -483,8 +483,10 @@ void vertical_ctrl_module_run(bool in_flight)
     // TODO: this factor is camera specific and should be implemented in the optical
     // flow calculator module not here. Additionally, the time scaling should also
     // be done in the calculator module
-    div_factor = -1.28f; // magic number comprising field of view etc.
+    // div_factor = -1.28f; // magic number comprising field of view etc.
+    div_factor = -2.25f; // in the sim
     float new_divergence = (divergence_vision * div_factor) / dt;
+    //printf("dt = %f\n", dt);
 
     // deal with (unlikely) fast changes in divergence:
     static const float max_div_dt = 0.20f;
