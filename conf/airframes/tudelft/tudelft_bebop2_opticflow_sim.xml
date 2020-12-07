@@ -44,6 +44,7 @@
     <module name="pose_history"/>
 
     <module name="cv_opticflow">
+      <define name="OPTICFLOW_FPS" value="30"/>
       <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
       <define name="MAX_HORIZON" value="10"/>
       <define name="OPTICFLOW_FX" value="347.22222222"/> <!-- 2.5 / (3.6 * 2.0) * 1000 -->

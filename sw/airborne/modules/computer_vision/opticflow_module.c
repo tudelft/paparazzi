@@ -111,6 +111,7 @@ void opticflow_module_run(void)
   // Update the stabilization loops on the current calculation
   if (opticflow_got_result) {
     uint32_t now_ts = get_sys_time_usec();
+    //printf("Sending div size: %f\n", opticflow_result.div_size);
     AbiSendMsgOPTICAL_FLOW(FLOW_OPTICFLOW_ID, now_ts,
                            opticflow_result.flow_x,
                            opticflow_result.flow_y,
