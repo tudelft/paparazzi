@@ -821,8 +821,9 @@ void vertical_ctrl_module_run(bool in_flight)
     struct FloatEulers* attitude = stateGetNedToBodyEulers_f();
     printf("flow x, y = %f, %f\n", new_flow_x, new_flow_y);
     // negative command is flying forward, positive back.
-    float pitch_cmd = RadOfDeg(-new_flow_y);
-    float roll_cmd = RadOfDeg(new_flow_x);
+    float control_factor = 0.025;
+    float pitch_cmd = RadOfDeg(-new_flow_y * control_factor);
+    float roll_cmd = RadOfDeg(new_flow_x * control_factor);
     struct Int32Eulers rpy = { .phi = (int32_t)ANGLE_BFP_OF_REAL(roll_cmd),
 	.theta = (int32_t)ANGLE_BFP_OF_REAL(pitch_cmd), .psi = (int32_t)ANGLE_BFP_OF_REAL(attitude->psi) };
     stabilization_indi_set_rpy_setpoint_i(&rpy);
