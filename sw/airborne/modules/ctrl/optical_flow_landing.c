@@ -817,13 +817,16 @@ void vertical_ctrl_module_run(bool in_flight)
 
 
     // Horizontal control:
+    // Have a better look at: https://github.com/paparazzi/paparazzi/blob/master/sw/airborne/modules/ctrl/ctrl_module_outerloop_demo.c
     struct FloatEulers* attitude = stateGetNedToBodyEulers_f();
     printf("flow x, y = %f, %f\n", new_flow_x, new_flow_y);
+    // negative command is flying forward, positive back.
     float pitch_cmd = RadOfDeg(-new_flow_y);
-    float roll_cmd = RadOfDeg(new_flow_x * 0.5);
+    float roll_cmd = RadOfDeg(new_flow_x);
     struct Int32Eulers rpy = { .phi = (int32_t)ANGLE_BFP_OF_REAL(roll_cmd),
 	.theta = (int32_t)ANGLE_BFP_OF_REAL(pitch_cmd), .psi = (int32_t)ANGLE_BFP_OF_REAL(attitude->psi) };
     stabilization_indi_set_rpy_setpoint_i(&rpy);
+    stabilization_attitude_run(in_flight);
 
   }
 }
