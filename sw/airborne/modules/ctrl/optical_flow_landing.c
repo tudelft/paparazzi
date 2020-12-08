@@ -155,6 +155,8 @@ PRINT_CONFIG_VAR(OFL_OPTICAL_FLOW_ID)
 // horizontal loop:
 float optical_flow_x;
 float optical_flow_y;
+float sum_roll_error;
+float sum_pitch_error;
 
 //float divergence_vision;
 float divergence_vision_dt;
@@ -361,6 +363,8 @@ static void reset_all_vars(void)
 {
   optical_flow_x = 0.0;
   optical_flow_y = 0.0;
+  sum_roll_error = 0.0;
+  sum_pitch_error = 0.0;
 
   of_landing_ctrl.agl_lp = of_landing_ctrl.agl = stateGetPositionEnu_f()->z;
 
@@ -463,7 +467,8 @@ void vertical_ctrl_module_run(bool in_flight)
   /***********
    * VISION
    ***********/
-  float new_flow_x, new_flow_y;
+  float new_flow_x = 0.0;
+  float new_flow_y = 0.0;
   if (of_landing_ctrl.VISION_METHOD == 0) {
     // SIMULATED DIVERGENCE:
 
@@ -815,17 +820,26 @@ void vertical_ctrl_module_run(bool in_flight)
       stabilization_cmd[COMMAND_THRUST] = thrust_set;
     }
 
-
+    /*********************/
     // Horizontal control:
+    /*********************/
+
     // Have a better look at: https://github.com/paparazzi/paparazzi/blob/master/sw/airborne/modules/ctrl/ctrl_module_outerloop_demo.c
     struct FloatEulers* attitude = stateGetNedToBodyEulers_f();
     printf("flow x, y = %f, %f\n", new_flow_x, new_flow_y);
     // negative command is flying forward, positive back.
     float control_factor = 0.025;
-    float pitch_cmd = RadOfDeg(-new_flow_y * control_factor);
-    float roll_cmd = RadOfDeg(new_flow_x * control_factor);
+    float I_gain_horizontal = 0.00001;
+    float error_pitch = -new_flow_y;
+    float error_roll = new_flow_x;
+    // TODO: introduce trim commands and make the P and I gain sliders!
+    sum_pitch_error += error_pitch;
+    sum_roll_error += error_roll;
+    float pitch_cmd = RadOfDeg(error_pitch * control_factor + I_gain_horizontal * sum_pitch_error);
+    float roll_cmd = RadOfDeg(error_roll * control_factor + I_gain_horizontal * sum_roll_error);
+    float psi_cmd = attitude->psi; // control of psi in simulation is still a bit enthusiastic! Increase the associated control effectiveness.
     struct Int32Eulers rpy = { .phi = (int32_t)ANGLE_BFP_OF_REAL(roll_cmd),
-	.theta = (int32_t)ANGLE_BFP_OF_REAL(pitch_cmd), .psi = (int32_t)ANGLE_BFP_OF_REAL(attitude->psi) };
+	.theta = (int32_t)ANGLE_BFP_OF_REAL(pitch_cmd), .psi = (int32_t)ANGLE_BFP_OF_REAL(psi_cmd) };
     stabilization_indi_set_rpy_setpoint_i(&rpy);
     stabilization_attitude_run(in_flight);
 
