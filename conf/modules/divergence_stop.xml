@@ -1,0 +1,27 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="divergence_stop" dir="divergence_stop">
+    <doc>
+        <description>
+            This module was created to demonstrate optic flow divergence during the course AE4317 Autonomous Flight
+            of Micro Air Vehicles at the TU Delft. The module causes the drone to fly forward until the divergence
+            exceeds a threshold, at which point it stops.
+        </description>
+        <define name="DIVERGENCE_STOP_THRESHOLD" value="10" description="divergence threshold that triggers the drone to stop"/>
+    </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="divergence_stop">
+         <dl_setting var="divergence_stop_threshold" min="0.0" step="0.01" max="1.0" shortname="diff_thresh" />
+      </dl_settings>
+    </dl_settings>
+  </settings>
+    <header>
+        <file name="divergence_stop.h"/>
+    </header>
+    <init fun="divergence_stop_init()"/>
+    <periodic fun="divergence_stop_periodic()" freq="20"/>
+    <makefile target="ap|nps">
+        <file name="divergence_stop.c"/>
+    </makefile>
+</module>
