@@ -344,6 +344,17 @@
    release="f739a81cfa2c633e33f31ab5f095d8f617276974"
   />
   <aircraft
+   name="Raspberry"
+   ac_id="14"
+   airframe="airframes/examples/raspberry.xml"
+   radio="radios/cockpitSX.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/rotorcraft_basic.xml"
+   settings="settings/rotorcraft_basic.xml"
+   gui_color="blue"
+   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/gps.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/nav_basic_rotorcraft.xml modules/stabilization_int_quat.xml"
+  />
+  <aircraft
    name="Robird"
    ac_id="68"
    airframe="airframes/tudelft/robird.xml"
