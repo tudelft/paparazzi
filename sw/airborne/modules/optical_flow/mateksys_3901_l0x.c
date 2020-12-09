@@ -68,20 +68,26 @@ static void mateksys3901l0x_parse(uint8_t byte);
  */
 static void mateksys3901l0x_send_lidar(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_LIDAR(trans, dev, AC_ID,
-                      &mateksys3901l0x.distance,
-                      &mateksys3901l0x.parse_crc,
-                      &mateksys3901l0x.motion_quality);
+  pprz_msg_send_MATEK(trans, dev, AC_ID,
+                      &mateksys3901l0x.id1,
+                      &mateksys3901l0x.id2,
+                      &mateksys3901l0x.data1,
+                      &mateksys3901l0x.data2,
+                      &mateksys3901l0x.data3,
+                      &mateksys3901l0x.data4,
+                      &mateksys3901l0x.data5,
+                      &mateksys3901l0x.data6,
+                      &mateksys3901l0x.data7,
+                      &mateksys3901l0x.data8,
+                      &mateksys3901l0x.data9,
+                      &mateksys3901l0x.data10,
+                      &mateksys3901l0x.data11,
+                      &mateksys3901l0x.data12,
+                      &mateksys3901l0x.data13,
+                      &mateksys3901l0x.data14,
+                      &mateksys3901l0x.data15,
+                      &mateksys3901l0x.data16);
 }
-
-/**
- * Downlink message debug
- */
-// static void mateksys3901l0x_send_debug(struct transport_tx *trans, struct link_device *dev)
-// {
-//   pprz_msg_send_DEBUG(trans, dev, AC_ID,
-//                       &mateksys3901l0x.debug_list);
-// }
 
 #endif
 
@@ -96,14 +102,35 @@ void mateksys3901l0x_init(void)
   mateksys3901l0x.motionY = 0;                                                    //TODO :is this a good choice?
   mateksys3901l0x.distancemm_quality = 0;
 	mateksys3901l0x.distancemm= -1;                                                 //TODO :is this a good choice?
-  mateksys3901l0x.distance = 0;                                                   // [m]
+  mateksys3901l0x.distance = 0;   
+  mateksys3901l0x.id1 = 0;
+  mateksys3901l0x.id2 = 0;
+  mateksys3901l0x.data1 = 0;
+  mateksys3901l0x.data2 = 0;
+  mateksys3901l0x.data3 = 0;
+  mateksys3901l0x.data4 = 0;
+  mateksys3901l0x.data5 = 0;
+  mateksys3901l0x.data6 = 0;
+  mateksys3901l0x.data7 = 0;
+  mateksys3901l0x.data8 = 0;
+  mateksys3901l0x.data9 = 0;
+  mateksys3901l0x.data10 = 0;
+  mateksys3901l0x.data11 = 0;
+  mateksys3901l0x.data12 = 0;
+  mateksys3901l0x.data13 = 0;
+  mateksys3901l0x.data14 = 0;
+  mateksys3901l0x.data15 = 0;
+  mateksys3901l0x.data16 = 0;
+
+
+
+
 	mateksys3901l0x.update_agl = USE_MATEKSYS_3901_L0X_AGL;
   mateksys3901l0x.compensate_rotation = MATEKSYS_3901_L0X_COMPENSATE_ROTATION;
   mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
 
 #if PERIODIC_TELEMETRY
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_LIDAR, mateksys3901l0x_send_lidar);
-	// register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DEBUG, mateksys3901l0x_send_debug);
 #endif
 }
 
@@ -132,47 +159,193 @@ static void mateksys3901l0x_parse(uint8_t byte)
       }
       break;
 
-    case MATEKSYS_3901_L0X_PARSE_HEAD2:
+    case MATEKSYS_3901_L0X_PARSE_HEAD2: // OK
       if (byte == 0x58) {
-        mateksys3901l0x.parse_crc = byte;
         mateksys3901l0x.parse_status++;
       } else {
         mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
       }
       break;
     
-    case MATEKSYS_3901_L0X_PARSE_DIRECTION:
-      if (byte == 0x3E) {  //This input from sensor to the controller
+    case MATEKSYS_3901_L0X_PARSE_DIRECTION: // OK (3C IS REQUEST) / (3E IS RESPONSE)
+      if (byte == 0x3C) {
         mateksys3901l0x.parse_status++;
       } else {
         mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
       }
       break;
 
-    case MATEKSYS_3901_L0X_PARSE_LENGTHV1:
+    case MATEKSYS_3901_L0X_PARSE_LENGTHV1: // OK
       if (byte == 0x00) {
-        mateksys3901l0x.parse_crc += byte;
         mateksys3901l0x.parse_status++;
       } else {
         mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
       }
       break;
+
+    case MATEKSYS_3901_L0X_PARSE_FUNCTION_ID_B1: // OK this is 01 or 02 depending wether is lidar or optic flow (function ID)
+      if (byte == 0x02) { 
+        mateksys3901l0x.id1 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+    
+    case MATEKSYS_3901_L0X_PARSE_FUNCTION_ID_B2: // OK this is the common placeholder for sensortype function ID
+      if (byte == 0x1F) { 
+        mateksys3901l0x.id2 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+
+    case MATEKSYS_3901_L0X_PARSE_DATA_1: 
+      if (byte >= 0x00) { 
+        mateksys3901l0x.data1 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+
+    case MATEKSYS_3901_L0X_PARSE_DATA_2: 
+      if (byte >= 0x00) { 
+        mateksys3901l0x.data2 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+    
+    case MATEKSYS_3901_L0X_PARSE_DATA_3: 
+      if (byte >= 0x00) { 
+        mateksys3901l0x.data3 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+    
+    case MATEKSYS_3901_L0X_PARSE_DATA_4: 
+      if (byte >= 0x00) { 
+        mateksys3901l0x.data4 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+
+    case MATEKSYS_3901_L0X_PARSE_DATA_5: 
+      if (byte >= 0x00) { 
+        mateksys3901l0x.data5 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+
+    case MATEKSYS_3901_L0X_PARSE_DATA_6: 
+      if (byte >= 0x00) { 
+        mateksys3901l0x.data6 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+    
+    case MATEKSYS_3901_L0X_PARSE_DATA_7: 
+      if (byte >= 0x00) { 
+        mateksys3901l0x.data7 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+
+    case MATEKSYS_3901_L0X_PARSE_DATA_8: 
+      if (byte >= 0x00) { 
+        mateksys3901l0x.data8 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+
+    case MATEKSYS_3901_L0X_PARSE_DATA_9: 
+      if (byte >= 0x00) { 
+        mateksys3901l0x.data9 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+    
+    case MATEKSYS_3901_L0X_PARSE_DATA_10: 
+      if (byte >= 0x00) { 
+        mateksys3901l0x.data10 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+
+    case MATEKSYS_3901_L0X_PARSE_DATA_11: 
+      if (byte >= 0x00) { 
+        mateksys3901l0x.data11 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+
+    case MATEKSYS_3901_L0X_PARSE_DATA_12: 
+      if (byte >= 0x00) { 
+        mateksys3901l0x.data12 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+    
+    case MATEKSYS_3901_L0X_PARSE_DATA_13: 
+      if (byte >= 0x00) { 
+        mateksys3901l0x.data13 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+
+    case MATEKSYS_3901_L0X_PARSE_DATA_14: 
+      if (byte >= 0x00) { 
+        mateksys3901l0x.data14 = byte;
+        mateksys3901l0x.parse_status++;
+      } else {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      }
+      break;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     default:
       // Error, return to start
       mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
       break;
- 
-// 		case MATEKSYS_3901_L0X_PARSE_MESSAGETYPE:
-//       if (byte >= 0x33) { //TODO: correct ID or type of message unknown and it can be two Ranger and Flowtype
-//         mateksys3901l0x.parse_crc += byte;
-//         mateksys3901l0x.parse_status++;
-// 				//mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_MOTIONQUALITY etc etc;
-// 				//else mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_DISTANCE; or quality etc etc
-//       } else {
-//         mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
-//       }
-//       break;
 
 
 // //We are lazy ATM ;) for the 1st exaple...refactor plz to a better handler see e.g alhpa_ESC code

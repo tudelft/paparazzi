@@ -50,28 +50,51 @@ enum Mateksys3901l0XParseStatus {
   MATEKSYS_3901_L0X_PARSE_HEAD2,              // if MSP2 then X: 4d 
   MATEKSYS_3901_L0X_PARSE_DIRECTION,          // MSP direction/status flag
   MATEKSYS_3901_L0X_PARSE_LENGTHV1,           // payload size for MSP1 = MSP2 size + 6
-  MATEKSYS_3901_L0X_PARSE_MESSAGETYPEV1,      // fixed message type for V1: 0xFF
-  MATEKSYS_3901_L0X_PARSE_FLAGISV2,           // flag signalling embedded v2 message
-  MATEKSYS_3901_L0X_PARSE_MESSAGETYPEV2_B1,   // first bit of sensor message
-  MATEKSYS_3901_L0X_PARSE_MESSAGETYPEV2_B2,   // second bit of sensor message
-  MATEKSYS_3901_L0X_PARSE_LENGTHV2_B1,        // first bit of payload size v2
-  MATEKSYS_3901_L0X_PARSE_LENGTHV2_B2,        // second bit of payload size v2
-  MATEKSYS_3901_L0X_PARSE_MOTIONQUALITY,
-  MATEKSYS_3901_L0X_PARSE_MOTIONX_B1,
-  MATEKSYS_3901_L0X_PARSE_MOTIONX_B2,
-  MATEKSYS_3901_L0X_PARSE_MOTIONX_B3,
-  MATEKSYS_3901_L0X_PARSE_MOTIONX_B4,
-  MATEKSYS_3901_L0X_PARSE_MOTIONY_B1,
-  MATEKSYS_3901_L0X_PARSE_MOTIONY_B2,
-  MATEKSYS_3901_L0X_PARSE_MOTIONY_B3,
-  MATEKSYS_3901_L0X_PARSE_MOTIONY_B4,
-  MATEKSYS_3901_L0X_PARSE_DISTANCEQUALITY,
-  MATEKSYS_3901_L0X_PARSE_DISTANCE_B1,
-  MATEKSYS_3901_L0X_PARSE_DISTANCE_B2,
-  MATEKSYS_3901_L0X_PARSE_DISTANCE_B3,
-  MATEKSYS_3901_L0X_PARSE_DISTANCE_B4,
-  MATEKSYS_3901_L0X_PARSE_CHECKSUM_V2,        // checksum closing for embedded v2 message
-  MATEKSYS_3901_L0X_PARSE_CHECKSUM_V1         // checksum closing for v1 message
+  MATEKSYS_3901_L0X_PARSE_FUNCTION_ID_B1, 
+  MATEKSYS_3901_L0X_PARSE_FUNCTION_ID_B2,     // fixed message type for V1: 0xFF
+  MATEKSYS_3901_L0X_PARSE_DATA_1,
+  MATEKSYS_3901_L0X_PARSE_DATA_2,
+  MATEKSYS_3901_L0X_PARSE_DATA_3,
+  MATEKSYS_3901_L0X_PARSE_DATA_4,
+  MATEKSYS_3901_L0X_PARSE_DATA_5,
+  MATEKSYS_3901_L0X_PARSE_DATA_6,
+  MATEKSYS_3901_L0X_PARSE_DATA_7,
+  MATEKSYS_3901_L0X_PARSE_DATA_8,
+  MATEKSYS_3901_L0X_PARSE_DATA_9,
+  MATEKSYS_3901_L0X_PARSE_DATA_10,
+  MATEKSYS_3901_L0X_PARSE_DATA_11,
+  MATEKSYS_3901_L0X_PARSE_DATA_12,
+  MATEKSYS_3901_L0X_PARSE_DATA_13,
+  MATEKSYS_3901_L0X_PARSE_DATA_14,
+  MATEKSYS_3901_L0X_PARSE_DATA_15,
+  MATEKSYS_3901_L0X_PARSE_DATA_16
+
+
+
+
+
+
+  // MATEKSYS_3901_L0X_PARSE_FLAGISV2,           // flag signalling embedded v2 message
+  // MATEKSYS_3901_L0X_PARSE_MESSAGETYPEV2_B1,   // first bit of sensor message
+  // MATEKSYS_3901_L0X_PARSE_MESSAGETYPEV2_B2,   // second bit of sensor message
+  // MATEKSYS_3901_L0X_PARSE_LENGTHV2_B1,        // first bit of payload size v2
+  // MATEKSYS_3901_L0X_PARSE_LENGTHV2_B2,        // second bit of payload size v2
+  // MATEKSYS_3901_L0X_PARSE_MOTIONQUALITY,
+  // MATEKSYS_3901_L0X_PARSE_MOTIONX_B1,
+  // MATEKSYS_3901_L0X_PARSE_MOTIONX_B2,
+  // MATEKSYS_3901_L0X_PARSE_MOTIONX_B3,
+  // MATEKSYS_3901_L0X_PARSE_MOTIONX_B4,
+  // MATEKSYS_3901_L0X_PARSE_MOTIONY_B1,
+  // MATEKSYS_3901_L0X_PARSE_MOTIONY_B2,
+  // MATEKSYS_3901_L0X_PARSE_MOTIONY_B3,
+  // MATEKSYS_3901_L0X_PARSE_MOTIONY_B4,
+  // MATEKSYS_3901_L0X_PARSE_DISTANCEQUALITY,
+  // MATEKSYS_3901_L0X_PARSE_DISTANCE_B1,
+  // MATEKSYS_3901_L0X_PARSE_DISTANCE_B2,
+  // MATEKSYS_3901_L0X_PARSE_DISTANCE_B3,
+  // MATEKSYS_3901_L0X_PARSE_DISTANCE_B4,
+  // MATEKSYS_3901_L0X_PARSE_CHECKSUM_V2,        // checksum closing for embedded v2 message
+  // MATEKSYS_3901_L0X_PARSE_CHECKSUM_V1         // checksum closing for v1 message
 };
 
 struct Mateksys3901l0X {
@@ -85,8 +108,25 @@ struct Mateksys3901l0X {
   float    distance; // [m]
   bool     update_agl;
   bool     compensate_rotation;
-	uint8_t  parse_crc;
-  uint8_t  debug_list[3]; 
+	uint8_t  parse_crc; 
+  uint8_t  id1;
+  uint8_t  id2;
+  uint8_t  data1;
+  uint8_t  data2;
+  uint8_t  data3;
+  uint8_t  data4;
+  uint8_t  data5;
+  uint8_t  data6;
+  uint8_t  data7;
+  uint8_t  data8;
+  uint8_t  data9;
+  uint8_t  data10;
+  uint8_t  data11;
+  uint8_t  data12;
+  uint8_t  data13;
+  uint8_t  data14;
+  uint8_t  data15;
+  uint8_t  data16;
 };
 
 extern struct Mateksys3901l0X mateksys3901l0x;
