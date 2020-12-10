@@ -46,87 +46,43 @@ https://github.com/iNavFlight/inav/wiki/MSP-V2
 
 enum Mateksys3901l0XParseStatus {
   MATEKSYS_3901_L0X_INITIALIZE,               // initialization
-  MATEKSYS_3901_L0X_PARSE_HEAD,               // head of MSP is $ for all: 24
-  MATEKSYS_3901_L0X_PARSE_HEAD2,              // if MSP2 then X: 4d 
-  MATEKSYS_3901_L0X_PARSE_DIRECTION,          // MSP direction/status flag
-  MATEKSYS_3901_L0X_PARSE_LENGTHV1,           // payload size for MSP1 = MSP2 size + 6
+  MATEKSYS_3901_L0X_PARSE_HEAD,               
+  MATEKSYS_3901_L0X_PARSE_HEAD2,             
+  MATEKSYS_3901_L0X_PARSE_DIRECTION,          
+  MATEKSYS_3901_L0X_PARSE_LENGTH,           
   MATEKSYS_3901_L0X_PARSE_FUNCTION_ID_B1, 
-  MATEKSYS_3901_L0X_PARSE_FUNCTION_ID_B2,     // fixed message type for V1: 0xFF
-  MATEKSYS_3901_L0X_PARSE_DATA_1,
-  MATEKSYS_3901_L0X_PARSE_DATA_2,
-  MATEKSYS_3901_L0X_PARSE_DATA_3,
-  MATEKSYS_3901_L0X_PARSE_DATA_4,
-  MATEKSYS_3901_L0X_PARSE_DATA_5,
-  MATEKSYS_3901_L0X_PARSE_DATA_6,
-  MATEKSYS_3901_L0X_PARSE_DATA_7,
-  MATEKSYS_3901_L0X_PARSE_DATA_8,
-  MATEKSYS_3901_L0X_PARSE_DATA_9,
-  MATEKSYS_3901_L0X_PARSE_DATA_10,
-  MATEKSYS_3901_L0X_PARSE_DATA_11,
-  MATEKSYS_3901_L0X_PARSE_DATA_12,
-  MATEKSYS_3901_L0X_PARSE_DATA_13,
-  MATEKSYS_3901_L0X_PARSE_DATA_14,
-  MATEKSYS_3901_L0X_PARSE_DATA_15,
-  MATEKSYS_3901_L0X_PARSE_DATA_16
-
-
-
-
-
-
-  // MATEKSYS_3901_L0X_PARSE_FLAGISV2,           // flag signalling embedded v2 message
-  // MATEKSYS_3901_L0X_PARSE_MESSAGETYPEV2_B1,   // first bit of sensor message
-  // MATEKSYS_3901_L0X_PARSE_MESSAGETYPEV2_B2,   // second bit of sensor message
-  // MATEKSYS_3901_L0X_PARSE_LENGTHV2_B1,        // first bit of payload size v2
-  // MATEKSYS_3901_L0X_PARSE_LENGTHV2_B2,        // second bit of payload size v2
-  // MATEKSYS_3901_L0X_PARSE_MOTIONQUALITY,
-  // MATEKSYS_3901_L0X_PARSE_MOTIONX_B1,
-  // MATEKSYS_3901_L0X_PARSE_MOTIONX_B2,
-  // MATEKSYS_3901_L0X_PARSE_MOTIONX_B3,
-  // MATEKSYS_3901_L0X_PARSE_MOTIONX_B4,
-  // MATEKSYS_3901_L0X_PARSE_MOTIONY_B1,
-  // MATEKSYS_3901_L0X_PARSE_MOTIONY_B2,
-  // MATEKSYS_3901_L0X_PARSE_MOTIONY_B3,
-  // MATEKSYS_3901_L0X_PARSE_MOTIONY_B4,
-  // MATEKSYS_3901_L0X_PARSE_DISTANCEQUALITY,
-  // MATEKSYS_3901_L0X_PARSE_DISTANCE_B1,
-  // MATEKSYS_3901_L0X_PARSE_DISTANCE_B2,
-  // MATEKSYS_3901_L0X_PARSE_DISTANCE_B3,
-  // MATEKSYS_3901_L0X_PARSE_DISTANCE_B4,
-  // MATEKSYS_3901_L0X_PARSE_CHECKSUM_V2,        // checksum closing for embedded v2 message
-  // MATEKSYS_3901_L0X_PARSE_CHECKSUM_V1         // checksum closing for v1 message
+  MATEKSYS_3901_L0X_PARSE_FUNCTION_ID_B2,     
+  MATEKSYS_3901_L0X_PARSE_SIZE,
+  MATEKSYS_3901_L0X_PARSE_POINTER,             // ??
+  MATEKSYS_3901_L0X_PARSE_DISTANCEQUALITY,     // used if lidar message
+  MATEKSYS_3901_L0X_PARSE_DISTANCE_B1,
+  MATEKSYS_3901_L0X_PARSE_DISTANCE_B2,
+  MATEKSYS_3901_L0X_PARSE_DISTANCE_B3,
+  MATEKSYS_3901_L0X_PARSE_DISTANCE_B4,
+  MATEKSYS_3901_L0X_PARSE_MOTIONQUALITY,       // used if flow message
+  MATEKSYS_3901_L0X_PARSE_MOTIONX_B1,
+  MATEKSYS_3901_L0X_PARSE_MOTIONX_B2,
+  MATEKSYS_3901_L0X_PARSE_MOTIONX_B3,
+  MATEKSYS_3901_L0X_PARSE_MOTIONX_B4,
+  MATEKSYS_3901_L0X_PARSE_MOTIONY_B1,
+  MATEKSYS_3901_L0X_PARSE_MOTIONY_B2,
+  MATEKSYS_3901_L0X_PARSE_MOTIONY_B3,
+  MATEKSYS_3901_L0X_PARSE_MOTIONY_B4,
+  // MATEKSYS_3901_L0X_PARSE_CHECKSUM,        
 };
 
 struct Mateksys3901l0X {
   struct link_device *device;
   enum Mateksys3901l0XParseStatus parse_status;
+  uint8_t  sensor_id;
 	uint8_t  motion_quality;
   int32_t  motionX;
   int32_t  motionY;
 	uint8_t  distancemm_quality;
-	int32_t  distancemm;// in inav implementation set negative value for out of range, what a waste of bytes but we cannot have it all for now  ;)
-  float    distance; // [m]
+	int32_t  distancemm;
   bool     update_agl;
   bool     compensate_rotation;
 	uint8_t  parse_crc; 
-  uint8_t  id1;
-  uint8_t  id2;
-  uint8_t  data1;
-  uint8_t  data2;
-  uint8_t  data3;
-  uint8_t  data4;
-  uint8_t  data5;
-  uint8_t  data6;
-  uint8_t  data7;
-  uint8_t  data8;
-  uint8_t  data9;
-  uint8_t  data10;
-  uint8_t  data11;
-  uint8_t  data12;
-  uint8_t  data13;
-  uint8_t  data14;
-  uint8_t  data15;
-  uint8_t  data16;
 };
 
 extern struct Mateksys3901l0X mateksys3901l0x;
