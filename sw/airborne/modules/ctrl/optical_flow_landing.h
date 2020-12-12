@@ -87,6 +87,10 @@ struct OpticalFlowLanding {
   bool snapshot;                ///< if true, besides storing a texton distribution, an image will also be stored (when unstable)
   float lp_factor_prediction;   ///< low-pass value for the predicted P-value
   float ramp_duration;          ///< ramp duration in seconds for when the divergence setpoint changes
+  float pgain_horizontal_factor;///< factor multiplied with the vertical P-gain for horizontal ventral-flow-based control
+  float igain_horizontal_factor;///< factor multiplied with the vertical I-gain for horizontal ventral-flow-based control
+  float roll_trim;		///< Roll trim angle in degrees
+  float pitch_trim;		///< Pitch trim angle in degrees
 };
 
 extern struct OpticalFlowLanding of_landing_ctrl;

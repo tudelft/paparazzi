@@ -87,6 +87,22 @@ PRINT_CONFIG_VAR(OFL_OPTICAL_FLOW_ID)
 #define OFL_DGAIN 0.0
 #endif
 
+#ifndef OFL_PGAIN_HORIZONTAL_FACTOR
+#define OFL_PGAIN_HORIZONTAL_FACTOR 0.05
+#endif
+
+#ifndef OFL_IGAIN_HORIZONTAL_FACTOR
+#define OFL_IGAIN_HORIZONTAL_FACTOR 0.1
+#endif
+
+#ifndef OFL_ROLL_TRIM
+#define OFL_ROLL_TRIM 0.0f
+#endif
+
+#ifndef OFL_PITCH_TRIM
+#define OFL_PITCH_TRIM 0.0f
+#endif
+
 #ifndef OFL_VISION_METHOD
 #define OFL_VISION_METHOD 1
 #endif
@@ -271,6 +287,12 @@ void vertical_ctrl_module_init(void)
   of_landing_ctrl.pgain = OFL_PGAIN;
   of_landing_ctrl.igain = OFL_IGAIN;
   of_landing_ctrl.dgain = OFL_DGAIN;
+
+  of_landing_ctrl.pgain_horizontal_factor =OFL_PGAIN_HORIZONTAL_FACTOR;
+  of_landing_ctrl.igain_horizontal_factor =OFL_IGAIN_HORIZONTAL_FACTOR;
+  of_landing_ctrl.pitch_trim = OFL_PITCH_TRIM;
+  of_landing_ctrl.roll_trim = OFL_ROLL_TRIM;
+
   of_landing_ctrl.divergence = 0.;
   of_landing_ctrl.previous_err = 0.;
   of_landing_ctrl.sum_err = 0.0f;
@@ -506,8 +528,8 @@ void vertical_ctrl_module_run(bool in_flight)
     //printf("dt = %f\n", dt);
     new_flow_x = optical_flow_x / dt;
     new_flow_y = optical_flow_y / dt;
-    printf("flow_x = %f, dt = %f, new_flow_x = %f\n", optical_flow_x, dt, new_flow_x);
-    printf("flow_y = %f, dt = %f, new_flow_y = %f\n", optical_flow_y, dt, new_flow_y);
+    //printf("flow_x = %f, dt = %f, new_flow_x = %f\n", optical_flow_x, dt, new_flow_x);
+    //printf("flow_y = %f, dt = %f, new_flow_y = %f\n", optical_flow_y, dt, new_flow_y);
     // deal with (unlikely) fast changes in divergence:
     static const float max_div_dt = 0.20f;
     if (fabsf(new_divergence - of_landing_ctrl.divergence) > max_div_dt) {
@@ -826,21 +848,27 @@ void vertical_ctrl_module_run(bool in_flight)
 
     // Have a better look at: https://github.com/paparazzi/paparazzi/blob/master/sw/airborne/modules/ctrl/ctrl_module_outerloop_demo.c
     struct FloatEulers* attitude = stateGetNedToBodyEulers_f();
-    printf("flow x, y = %f, %f\n", new_flow_x, new_flow_y);
+    //printf("flow x, y = %f, %f\n", new_flow_x, new_flow_y);
     // negative command is flying forward, positive back.
-    float control_factor = 0.025;
-    float I_gain_horizontal = 0.00001;
-    float error_pitch = -new_flow_y;
+
+    float error_pitch = new_flow_y;
     float error_roll = new_flow_x;
     // TODO: introduce trim commands and make the P and I gain sliders!
     sum_pitch_error += error_pitch;
     sum_roll_error += error_roll;
-    float pitch_cmd = RadOfDeg(error_pitch * control_factor + I_gain_horizontal * sum_pitch_error);
-    float roll_cmd = RadOfDeg(error_roll * control_factor + I_gain_horizontal * sum_roll_error);
+    float P_hor = of_landing_ctrl.pgain_horizontal_factor * of_landing_ctrl.pgain;
+    float I_hor = of_landing_ctrl.igain_horizontal_factor * of_landing_ctrl.igain;
+    //printf("error = %f, P cmd = %f, integrated error = %f, I cmd = %f\n", error_pitch, error_pitch *  P_hor,
+    //								  sum_pitch_error, I_hor * sum_pitch_error);
+    float pitch_cmd = RadOfDeg(of_landing_ctrl.pitch_trim + error_pitch *  P_hor +  I_hor * sum_pitch_error);
+    float roll_cmd = RadOfDeg(of_landing_ctrl.roll_trim + error_roll *  P_hor +  I_hor * sum_roll_error);
     float psi_cmd = attitude->psi; // control of psi in simulation is still a bit enthusiastic! Increase the associated control effectiveness.
     struct Int32Eulers rpy = { .phi = (int32_t)ANGLE_BFP_OF_REAL(roll_cmd),
 	.theta = (int32_t)ANGLE_BFP_OF_REAL(pitch_cmd), .psi = (int32_t)ANGLE_BFP_OF_REAL(psi_cmd) };
+
+    // set the desired roll pitch and yaw:
     stabilization_indi_set_rpy_setpoint_i(&rpy);
+    // execute attitude stabilization:
     stabilization_attitude_run(in_flight);
 
   }
@@ -988,7 +1016,7 @@ void vertical_ctrl_optical_flow_cb(uint8_t sender_id UNUSED, uint32_t stamp, int
   optical_flow_x = ((float)flow_der_x)/10.0;
   optical_flow_y = ((float)flow_der_y)/10.0;
   divergence_vision = size_divergence;
-  printf("Reading %f, %f, %f\n", optical_flow_x, optical_flow_y, divergence_vision);
+  //printf("Reading %f, %f, %f\n", optical_flow_x, optical_flow_y, divergence_vision);
   vision_time = ((float)stamp) / 1e6;
 }
 

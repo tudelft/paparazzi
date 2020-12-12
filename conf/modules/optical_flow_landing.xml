@@ -27,6 +27,10 @@
       <define name="IGAIN_ADAPTIVE" value="0.10" description="I gain on summed cov error"/>
       <define name="DGAIN_ADAPTIVE" value="0.0" description="D gain on differential cov error"/>
       <define name="P_LAND_THRESHOLD" value="0.15" description="P-value at which the drone will initiate a final landing procedure, for adaptive control"/>
+      <define name="PGAIN_HORIZONTAL_FACTOR" value="0.0625" description="Factor multiplied with P gain for horizontal control"/>
+      <define name="IGAIN_HORIZONTAL_FACTOR" value="0.0001" description="Factor multiplied with I gain for horizontal control"/>
+      <define name="ROLL_TRIM" value="0.0" description="Roll trim in degrees"/>
+      <define name="PITCH_TRIM" value="0.0" description="Pitch trim in degrees"/>
       <!-- TODO: add more explanations of settings below -->
     </section>
   </doc>
@@ -61,6 +65,10 @@
         <dl_setting var="of_landing_ctrl.lp_factor_prediction" min="0" step="0.001" max="1" module="ctrl/optical_flow_landing" shortname="lp_factor_prediction"/>
         <dl_setting var="of_landing_ctrl.p_land_threshold" min="0" step="0.01" max="2.0" module="ctrl/optical_flow_landing" shortname="p_land_threshold"/>
         <dl_setting var="of_landing_ctrl.ramp_duration" min="0" step="0.01" max="2.0" module="ctrl/optical_flow_landing" shortname="ramp_duration"/>        
+	<dl_setting var="of_landing_ctrl.pgain_horizontal_factor" min="0" step="0.001" max="1" module="ctrl/optical_flow_landing" shortname="pgain_hfact" param="OFL_PGAIN_HORIZONTAL_FACTOR"/>
+        <dl_setting var="of_landing_ctrl.igain_horizontal_factor" min="0" step="0.0001" max="1" module="ctrl/optical_flow_landing" shortname="igain_hfact" param="OFL_IGAIN_HORIZONTAL_FACTOR"/>
+        <dl_setting var="of_landing_ctrl.roll_trim" min="-60.0" step="0.1" max="60.0" module="ctrl/optical_flow_landing" shortname="roll_trim" param="OFL_ROLL_TRIM"/>
+        <dl_setting var="of_landing_ctrl.pitch_trim" min="-60.0" step="0.1" max="60.0" module="ctrl/optical_flow_landing" shortname="pitch_trim" param="OFL_PITCH_TRIM"/>
       </dl_settings>
     </dl_settings>
   </settings>
