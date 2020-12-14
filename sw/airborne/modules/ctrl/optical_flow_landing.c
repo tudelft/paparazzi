@@ -164,7 +164,7 @@ PRINT_CONFIG_VAR(OFL_OPTICAL_FLOW_ID)
 #define MINIMUM_GAIN 0.1
 
 // for exponential gain landing, gain increase per second during the first (hover) phase:
-#define INCREASE_GAIN_PER_SECOND 0.02
+#define INCREASE_GAIN_PER_SECOND 0.10
 
 // variables retained between module calls
 
@@ -841,37 +841,39 @@ void vertical_ctrl_module_run(bool in_flight)
       Bound(thrust_set, 0.25 * of_landing_ctrl.nominal_thrust * MAX_PPRZ, MAX_PPRZ);
       stabilization_cmd[COMMAND_THRUST] = thrust_set;
     }
+  }
 
-    /*********************/
-    // Horizontal control:
-    /*********************/
+  /*********************/
+  // Horizontal control:
+  /*********************/
 
-    // Have a better look at: https://github.com/paparazzi/paparazzi/blob/master/sw/airborne/modules/ctrl/ctrl_module_outerloop_demo.c
-    struct FloatEulers* attitude = stateGetNedToBodyEulers_f();
-    //printf("flow x, y = %f, %f\n", new_flow_x, new_flow_y);
-    // negative command is flying forward, positive back.
+  // Have a better look at: https://github.com/paparazzi/paparazzi/blob/master/sw/airborne/modules/ctrl/ctrl_module_outerloop_demo.c
+  struct FloatEulers* attitude = stateGetNedToBodyEulers_f();
+  //printf("flow x, y = %f, %f\n", new_flow_x, new_flow_y);
+  // negative command is flying forward, positive back.
 
-    float error_pitch = new_flow_y;
-    float error_roll = new_flow_x;
-    // TODO: introduce trim commands and make the P and I gain sliders!
-    sum_pitch_error += error_pitch;
-    sum_roll_error += error_roll;
-    float P_hor = of_landing_ctrl.pgain_horizontal_factor * of_landing_ctrl.pgain;
-    float I_hor = of_landing_ctrl.igain_horizontal_factor * of_landing_ctrl.igain;
-    //printf("error = %f, P cmd = %f, integrated error = %f, I cmd = %f\n", error_pitch, error_pitch *  P_hor,
-    //								  sum_pitch_error, I_hor * sum_pitch_error);
-    float pitch_cmd = RadOfDeg(of_landing_ctrl.pitch_trim + error_pitch *  P_hor +  I_hor * sum_pitch_error);
-    float roll_cmd = RadOfDeg(of_landing_ctrl.roll_trim + error_roll *  P_hor +  I_hor * sum_roll_error);
-    float psi_cmd = attitude->psi; // control of psi in simulation is still a bit enthusiastic! Increase the associated control effectiveness.
-    struct Int32Eulers rpy = { .phi = (int32_t)ANGLE_BFP_OF_REAL(roll_cmd),
+  float error_pitch = new_flow_y;
+  float error_roll = new_flow_x;
+  // TODO: introduce trim commands and make the P and I gain sliders!
+  sum_pitch_error += error_pitch;
+  sum_roll_error += error_roll;
+  // TODO: low pass filter:
+  float P_hor = of_landing_ctrl.pgain_horizontal_factor * of_landing_ctrl.pgain;
+  float I_hor = of_landing_ctrl.igain_horizontal_factor * of_landing_ctrl.igain;
+  //printf("error = %f, P cmd = %f, integrated error = %f, I cmd = %f\n", error_pitch, error_pitch *  P_hor,
+  //								  sum_pitch_error, I_hor * sum_pitch_error);
+  float pitch_cmd = RadOfDeg(of_landing_ctrl.pitch_trim + error_pitch *  P_hor +  I_hor * sum_pitch_error);
+  BoundAbs( pitch_cmd , RadOfDeg( 10.0 ) );
+  float roll_cmd = RadOfDeg(of_landing_ctrl.roll_trim + error_roll *  P_hor +  I_hor * sum_roll_error);
+  BoundAbs( roll_cmd , RadOfDeg( 10.0 ) );
+  float psi_cmd = attitude->psi; // control of psi in simulation is still a bit enthusiastic! Increase the associated control effectiveness.
+  struct Int32Eulers rpy = { .phi = (int32_t)ANGLE_BFP_OF_REAL(roll_cmd),
 	.theta = (int32_t)ANGLE_BFP_OF_REAL(pitch_cmd), .psi = (int32_t)ANGLE_BFP_OF_REAL(psi_cmd) };
 
-    // set the desired roll pitch and yaw:
-    stabilization_indi_set_rpy_setpoint_i(&rpy);
-    // execute attitude stabilization:
-    stabilization_attitude_run(in_flight);
-
-  }
+  // set the desired roll pitch and yaw:
+  stabilization_indi_set_rpy_setpoint_i(&rpy);
+  // execute attitude stabilization:
+  stabilization_attitude_run(in_flight);
 }
 
 /**
