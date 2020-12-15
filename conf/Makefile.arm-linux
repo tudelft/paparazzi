@@ -39,7 +39,10 @@ else
 FLOAT_ABI ?= -mfloat-abi=softfp -mfpu=vfp
 endif
 
-ARCH_CFLAGS ?= -mtune=cortex-a8 -march=armv7-a
+# for Bebop use: ARCH_CFLAGS ?= -mtune=cortex-a8 -march=armv7-a
+# armv6l architecture on pi zero, use the following flags
+# https://www.raspberrypi.org/forums/viewtopic.php?t=11629
+ARCH_CFLAGS ?= -mcpu=arm1176jzf-s -mfpu=vfp
 
 # with armv7, unaligned data can still be read
 CFLAGS += -DPPRZLINK_UNALIGNED_ACCESS=1
