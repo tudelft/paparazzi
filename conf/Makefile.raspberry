@@ -25,12 +25,10 @@
 
 include $(PAPARAZZI_SRC)/conf/Makefile.arm-linux
 
-DRONE = $(PAPARAZZI_SRC)/sw/tools/parrot/bebop.py
-
-# Program the device and start it.
-# Tell how to upload the ELF
+# Upload and start
 upload program: $(OBJDIR)/$(TARGET).elf
-	$(Q)$(DRONE) --host=$(HOST) upload_file_and_run $(OBJDIR)/$(TARGET).elf $(SUB_DIR)
+	sshpass -p walle scp -o PubkeyAuthentication=no $(OBJDIR)/$(TARGET).elf $(USER)@$(HOST):$(TARGET_DIR)/
+	sshpass -p walle ssh -o PubkeyAuthentication=no $(USER)@$(HOST) 'chmod a+x $(TARGET_DIR)/$(TARGET).elf && $(TARGET_DIR)/$(TARGET).elf > /dev/null 2>&1 &'
 
 # Listing of phony targets.
 .PHONY : upload program

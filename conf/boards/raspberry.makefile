@@ -13,7 +13,7 @@ $(TARGET).ARCHDIR = $(ARCH)
 ap.MAKEFILE = raspberry
 
 # -----------------------------------------------------------------------
-USER=foobar
+USER=pi
 HOST?=192.168.42.1
 SUB_DIR=paparazzi
 FTP_DIR=~
