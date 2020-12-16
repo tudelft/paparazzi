@@ -167,7 +167,10 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
                               &euler_cmd.z,
                               &filt_accel_ned[0].o[0],
                               &filt_accel_ned[1].o[0],
-                              &filt_accel_ned[2].o[0]);
+                              &filt_accel_ned[2].o[0],
+                              &speed_sp.x,
+                              &speed_sp.y,
+                              &speed_sp.z);
 }
 #endif
 
