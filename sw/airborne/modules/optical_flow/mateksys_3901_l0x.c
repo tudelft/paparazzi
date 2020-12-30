@@ -56,7 +56,9 @@ static void mateksys3901l0x_send_matek(struct transport_tx *trans, struct link_d
                                     &mateksys3901l0x.motionX,
                                     &mateksys3901l0x.motionY,
                                     &mateksys3901l0x.distancemm_quality,
-                                    &mateksys3901l0x.distancemm);
+                                    &mateksys3901l0x.distancemm,
+                                    &mateksys3901l0x.velocityX,
+                                    &mateksys3901l0x.velocityY);
 }
 
 #endif
@@ -67,11 +69,16 @@ static void mateksys3901l0x_send_matek(struct transport_tx *trans, struct link_d
 void mateksys3901l0x_init(void)
 {
   mateksys3901l0x.device = &((MATEKSYS_3901_L0X_PORT).device);
+  mateksys3901l0x.parse_crc = 0;
 	mateksys3901l0x.motion_quality = 0;                                             //TODO :is this a good choice?
   mateksys3901l0x.motionX = 0;                                                    //TODO :is this a good choice?
   mateksys3901l0x.motionY = 0;                                                    //TODO :is this a good choice?
   mateksys3901l0x.distancemm_quality = 0;
 	mateksys3901l0x.distancemm = -1;                                                //TODO :is this a good choice?   
+  mateksys3901l0x.velocityX = 0;
+  mateksys3901l0x.velocityY = 0;
+  mateksys3901l0x.motion_threshold = MATEKSYS_3901_L0X_MOTION_THRES;
+  mateksys3901l0x.distance_threshold = MATEKSYS_3901_L0X_DISTANCE_THRES;
 	mateksys3901l0x.update_agl = USE_MATEKSYS_3901_L0X_AGL;
   mateksys3901l0x.compensate_rotation = MATEKSYS_3901_L0X_COMPENSATE_ROTATION;
   mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
@@ -125,6 +132,7 @@ static void mateksys3901l0x_parse(uint8_t byte)
 
     case MATEKSYS_3901_L0X_PARSE_LENGTH: // set to 0
       if (byte == 0x00) {
+        mateksys3901l0x.parse_crc += byte;
         mateksys3901l0x.parse_status++;
       } else {
         mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
@@ -134,6 +142,7 @@ static void mateksys3901l0x_parse(uint8_t byte)
     case MATEKSYS_3901_L0X_PARSE_FUNCTION_ID_B1: // 0x01 = rangefinder; 0x02 = opticalflow
       if (byte == 0x01 || byte == 0x02) { 
         mateksys3901l0x.sensor_id = byte;
+        mateksys3901l0x.parse_crc += byte;
         mateksys3901l0x.parse_status++;
       } else {
         mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
@@ -143,6 +152,7 @@ static void mateksys3901l0x_parse(uint8_t byte)
     case MATEKSYS_3901_L0X_PARSE_FUNCTION_ID_B2: // sensor id pointer
       if (byte == 0x1F) { 
         mateksys3901l0x.parse_status++;
+        mateksys3901l0x.parse_crc += byte;
       } else {
         mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
       }
@@ -151,6 +161,7 @@ static void mateksys3901l0x_parse(uint8_t byte)
     case MATEKSYS_3901_L0X_PARSE_SIZE: 
       if (byte == 0x05 || byte == 0x09) { 
         mateksys3901l0x.parse_status++;
+        mateksys3901l0x.parse_crc += byte;
       } else {
         mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
       }
@@ -174,9 +185,13 @@ static void mateksys3901l0x_parse(uint8_t byte)
       break;
 
     case MATEKSYS_3901_L0X_PARSE_DISTANCE_B1:
-      mateksys3901l0x.distancemm = byte;
-      mateksys3901l0x.parse_crc += byte;
-      mateksys3901l0x.parse_status++;
+      if (mateksys3901l0x.distancemm_quality <= mateksys3901l0x.distance_threshold) {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      } else {
+        mateksys3901l0x.distancemm = byte;
+        mateksys3901l0x.parse_crc += byte;
+        mateksys3901l0x.parse_status++;
+      }
       break;
 
     case MATEKSYS_3901_L0X_PARSE_DISTANCE_B2:
@@ -194,12 +209,41 @@ static void mateksys3901l0x_parse(uint8_t byte)
     case MATEKSYS_3901_L0X_PARSE_DISTANCE_B4:
       mateksys3901l0x.distancemm |= (byte << 24);
       mateksys3901l0x.parse_crc += byte;
-      mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_CHECKSUM;
       break;
 
     // optical flow data parsing
     case MATEKSYS_3901_L0X_PARSE_MOTIONQUALITY:
       mateksys3901l0x.motion_quality = byte;
+      mateksys3901l0x.parse_crc += byte;
+      mateksys3901l0x.parse_status++;
+      break;
+
+	  case MATEKSYS_3901_L0X_PARSE_MOTIONY_B1:
+      if (mateksys3901l0x.motion_quality <= mateksys3901l0x.motion_threshold) {
+        mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
+      } else {
+        mateksys3901l0x.motionY = byte;
+        mateksys3901l0x.parse_crc += byte;
+        mateksys3901l0x.parse_status++;
+      }
+      break;
+
+    case MATEKSYS_3901_L0X_PARSE_MOTIONY_B2:
+      mateksys3901l0x.motionY |= (byte << 8);
+      mateksys3901l0x.parse_crc += byte;
+      mateksys3901l0x.parse_status++;
+      break;
+
+		case MATEKSYS_3901_L0X_PARSE_MOTIONY_B3:
+      mateksys3901l0x.motionY |= (byte << 16);
+      mateksys3901l0x.parse_crc += byte;
+      mateksys3901l0x.parse_status++;
+      break;
+
+    case MATEKSYS_3901_L0X_PARSE_MOTIONY_B4:
+      mateksys3901l0x.motionY |= (byte << 24);
+      mateksys3901l0x.velocityY = mateksys3901l0x.distancemm * sin(mateksys3901l0x.motionY*(M_PI/180));
       mateksys3901l0x.parse_crc += byte;
       mateksys3901l0x.parse_status++;
       break;
@@ -224,32 +268,18 @@ static void mateksys3901l0x_parse(uint8_t byte)
 		
 		case MATEKSYS_3901_L0X_PARSE_MOTIONX_B4:
       mateksys3901l0x.motionX |= (byte << 24);
-      mateksys3901l0x.parse_crc += byte;
-      mateksys3901l0x.parse_status++;
-    break;
-
-	  case MATEKSYS_3901_L0X_PARSE_MOTIONY_B1:
-      mateksys3901l0x.motionY = byte;
+      mateksys3901l0x.velocityX = mateksys3901l0x.distancemm * sin(mateksys3901l0x.motionX*(M_PI/180));
       mateksys3901l0x.parse_crc += byte;
       mateksys3901l0x.parse_status++;
       break;
-
-    case MATEKSYS_3901_L0X_PARSE_MOTIONY_B2:
-      mateksys3901l0x.motionY |= (byte << 8);
-      mateksys3901l0x.parse_crc += byte;
+    
+    case MATEKSYS_3901_L0X_PARSE_CHECKSUM:
+      if (mateksys3901l0x.motionX >= 10000) {
+        mateksys3901l0x.motionX = 0;
+      } else if (mateksys3901l0x.motionY >= 10000) {
+        mateksys3901l0x.motionY = 0;
+      }
       mateksys3901l0x.parse_status++;
-      break;
-
-		case MATEKSYS_3901_L0X_PARSE_MOTIONY_B3:
-      mateksys3901l0x.motionY |= (byte << 16);
-      mateksys3901l0x.parse_crc += byte;
-      mateksys3901l0x.parse_status++;
-      break;
-
-    case MATEKSYS_3901_L0X_PARSE_MOTIONY_B4:
-      mateksys3901l0x.motionY |= (byte << 24);
-      mateksys3901l0x.parse_crc += byte;
-      mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
       break;
 
     default:

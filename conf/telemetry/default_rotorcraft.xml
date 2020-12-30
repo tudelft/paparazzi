@@ -6,6 +6,7 @@
   <process name="Main">
 
     <mode name="default" key_press="d">
+      <message name="MATEKSYS_FLOW_LIDAR"      period="0.01"/>
       <message name="AUTOPILOT_VERSION"        period="11.1"/>
       <message name="DL_VALUE"                 period="0.7"/>
       <message name="ROTORCRAFT_STATUS"        period="0.4"/>
@@ -33,7 +34,6 @@
       <message name="DIVERGENCE"               period="0.05"/>
       <message name="DRAGSPEED"                period="0.02"/>
       <message name="LOGGER_STATUS"            period="5.1"/>
-      <message name="MATEKSYS_FLOW_LIDAR"      period="0.01"/>
       <message name="INS_EKF2"                 period=".25"/>
       <message name="INS_EKF2_EXT"             period="4.25"/>
       <message name="FBW_STATUS"               period="2.1"/>

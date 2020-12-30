@@ -32,8 +32,12 @@
     <define name="$(MATEKSYS_3901_L0X_PORT_UPPER)_BAUD" value="$(MATEKSYS_3901_L0X_BAUD)"/>
     <define name="MATEKSYS_3901_L0X_PORT" value="$(MATEKSYS_3901_L0X_PORT_LOWER)"/>
 
+    <configure name="MATEKSYS_3901_L0X_MOTION_THRES" default="120"/>
+    <configure name="MATEKSYS_3901_L0X_DISTANCE_THRES" default="200"/>
     <configure name="USE_MATEKSYS_3901_L0X_AGL" default="0"/>
     <configure name="MATEKSYS_3901_L0X_COMPENSATE_ROTATION" default="0"/>
+    <define name="MATEKSYS_3901_L0X_MOTION_THRES" value="$(MATEKSYS_3901_L0X_MOTION_THRES)"/>
+    <define name="MATEKSYS_3901_L0X_DISTANCE_THRES" value="$(MATEKSYS_3901_L0X_DISTANCE_THRES)"/>
     <define name="USE_MATEKSYS_3901_L0X_AGL" value="$(USE_MATEKSYS_3901_L0X_AGL)"/>
     <define name="MATEKSYS_3901_L0X_COMPENSATE_ROTATION" value="$(MATEKSYS_3901_L0X_COMPENSATE_ROTATION)"/>
 

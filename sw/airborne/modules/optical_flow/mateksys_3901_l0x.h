@@ -60,15 +60,15 @@ enum Mateksys3901l0XParseStatus {
   MATEKSYS_3901_L0X_PARSE_DISTANCE_B3,
   MATEKSYS_3901_L0X_PARSE_DISTANCE_B4,
   MATEKSYS_3901_L0X_PARSE_MOTIONQUALITY,       // used if flow message
-  MATEKSYS_3901_L0X_PARSE_MOTIONX_B1,
-  MATEKSYS_3901_L0X_PARSE_MOTIONX_B2,
-  MATEKSYS_3901_L0X_PARSE_MOTIONX_B3,
-  MATEKSYS_3901_L0X_PARSE_MOTIONX_B4,
   MATEKSYS_3901_L0X_PARSE_MOTIONY_B1,
   MATEKSYS_3901_L0X_PARSE_MOTIONY_B2,
   MATEKSYS_3901_L0X_PARSE_MOTIONY_B3,
   MATEKSYS_3901_L0X_PARSE_MOTIONY_B4,
-  // MATEKSYS_3901_L0X_PARSE_CHECKSUM,        
+  MATEKSYS_3901_L0X_PARSE_MOTIONX_B1,
+  MATEKSYS_3901_L0X_PARSE_MOTIONX_B2,
+  MATEKSYS_3901_L0X_PARSE_MOTIONX_B3,
+  MATEKSYS_3901_L0X_PARSE_MOTIONX_B4,
+  MATEKSYS_3901_L0X_PARSE_CHECKSUM,        
 };
 
 struct Mateksys3901l0X {
@@ -80,6 +80,10 @@ struct Mateksys3901l0X {
   int32_t  motionY;
 	uint8_t  distancemm_quality;
 	int32_t  distancemm;
+  int32_t  velocityX;
+  int32_t  velocityY;
+  uint8_t  distance_threshold;
+  uint8_t  motion_threshold;
   bool     update_agl;
   bool     compensate_rotation;
 	uint8_t  parse_crc; 
