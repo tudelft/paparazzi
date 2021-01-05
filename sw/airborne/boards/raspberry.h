@@ -22,7 +22,7 @@
 #ifndef CONFIG_RASPBERRY
 #define CONFIG_RASPBERRY
 
-#define CONFIG_RASPBERRY
+#define BOARD_RASPBERRY
 
 #include "std.h"
 
@@ -50,7 +50,7 @@
 #define ActuatorsDefaultCommit() ActuatorsRaspberryCommit()
 
 /* Cameras */
-//#include "peripherals/video_device.h"
+#include "peripherals/video_device.h"
 
 #undef USE_ADC0
 #define USE_ADC0 0
@@ -60,7 +60,7 @@
 //#include "boards/bebop/mt9f002.h"
 
 //extern struct video_config_t bottom_camera;
-//extern struct video_config_t front_camera;
+extern struct video_config_t front_camera;
 
 /* ISP */
 //struct mt9f002_t mt9f002;
@@ -90,4 +90,4 @@
 */
 
 
-#endif /* CONFIG_DISCO */
+#endif /* CONFIG_RASPBERRY */

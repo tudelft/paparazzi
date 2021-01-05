@@ -26,6 +26,7 @@
 include $(PAPARAZZI_SRC)/conf/Makefile.arm-linux
 
 # Upload and start
+# TODO: find a way to "end" last command (it doesn't arrive at "DONE"); currently it works, but that would be nicer
 upload program: $(OBJDIR)/$(TARGET).elf
 	sshpass -p walle scp -o PubkeyAuthentication=no $(OBJDIR)/$(TARGET).elf $(USER)@$(HOST):$(TARGET_DIR)/
 	sshpass -p walle ssh -o PubkeyAuthentication=no $(USER)@$(HOST) 'chmod a+x $(TARGET_DIR)/$(TARGET).elf && $(TARGET_DIR)/$(TARGET).elf > /dev/null 2>&1 &'

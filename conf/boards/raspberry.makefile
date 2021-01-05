@@ -36,7 +36,7 @@ $(TARGET).CFLAGS += -DUSE_LINUX_SIGNAL -D_GNU_SOURCE
 
 # board specific init function
 # if you need specific code to run (e.g. kill parrot app)
-#$(TARGET).srcs +=  $(SRC_BOARD)/board.c
+$(TARGET).srcs +=  $(SRC_BOARD)/board.c
 
 # Link static (Done for GLIBC)
 $(TARGET).CFLAGS += -DLINUX_LINK_STATIC

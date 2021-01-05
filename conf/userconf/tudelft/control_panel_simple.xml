@@ -1,0 +1,38 @@
+<control_panel name="paparazzi control panel">
+    <section name="programs">
+        <program name="Server" command="sw/ground_segment/tmtc/server"/>
+        <program name="Data Link" command="sw/ground_segment/tmtc/link"/>
+        <program name="GCS" command="sw/ground_segment/cockpit/gcs"/>
+        <program name="Messages" command="sw/ground_segment/tmtc/messages"/>
+        <program name="Settings" command="sw/ground_segment/tmtc/settings"/>
+        <program name="Log Plotter" command="sw/logalizer/logplotter"/>
+        <program name="Real-time Plotter" command="sw/logalizer/plotter"/>
+        <program name="Log File Player" command="sw/logalizer/play"/>
+        <program name="Simulator" command="sw/simulator/pprzsim-launch"/>
+        <program name="Joystick" command="sw/ground_segment/joystick/input2ivy"/>
+        <program name="Environment Simulator" command="sw/simulator/gaia"/>
+        <program name="NatNet" command="sw/ground_segment/misc/natnet2ivy"/>
+        <program name="Gazebo" command="sw/tools/gzclient_launcher.sh"/>
+    </section>
+    <section name="sessions">
+        <session name="Flight UDP">
+            <program name="Data Link">
+                <arg flag="-d" constant="/dev/ttyUSB0"/>
+                <arg flag="-udp"/>
+            </program>
+            <program name="Server"/>
+            <program name="GCS"/>
+            <program name="NatNet" command="sw/ground_segment/misc/natnet2ivy">
+                <arg flag="-ac 1" constant="@AC_ID"/>
+            </program>
+            <!-- <program name="Real-time Plotter">
+                <arg flag="-g" constant="1000x250-1000+0"/>
+                <arg flag="-t" constant="DIVERGENCE"/>
+                <arg flag="-u" constant="0.05"/>
+                <arg flag="-c" constant="0.00"/>
+                <arg flag="-c" constant="*:telemetry:SPIKING_LANDING:D"/>
+                <arg flag="-c" constant="*:telemetry:OPTIC_FLOW_EST:D_true"/>
+            </program> -->
+        </session>
+    </section>
+</control_panel>

@@ -37,6 +37,19 @@
     <module name="bebop_ae_awb"/>
 -->
 
+  <!-- Some module for camera settings? -->
+  <!-- TODO: is this necessary? Could be made much simpler I think -->
+  <!-- <module name="bebop_cam"/> -->
+  <module name="video_thread"/>
+
+  <!-- Logging of JPEG images -->
+  <module name="video_capture">
+    <define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>
+    <define name="VIDEO_CAPTURE_PATH" value="/home/pi/paparazzi/videos/"/>
+    <define name="VIDEO_CAPTURE_FPS" value="0"/>
+    <define name="VIDEO_CAPTURE_JPEG_QUALITY" value="99"/>
+  </module>
+
   </firmware>
 
   <commands>
