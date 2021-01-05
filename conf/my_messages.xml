@@ -241,6 +241,17 @@
       <field name="south" type="float" unit="m"/>
     </message>
 
+    <message name="MATEKSYS_FLOW_LIDAR" id="28">
+      <field name="sensor_id" type="uint8"/>
+      <field name="motion_quality" type="uint8"/>
+      <field name="motionX" type="int32" unit="deg/s"/>
+      <field name="motionY" type="int32" unit="deg/s"/>
+      <field name="distance_quality" type="uint8"/>
+      <field name="distance" type="int32" unit="mm"/>
+      <field name="velocityX" type="int32" unit="mm/s"/>
+      <field name="velocityY" type="int32" unit="mm/s"/>
+    </message>
+
     <message name="RANGEFINDER" id="29">
       <field name="range" type="uint16" unit="cm"/>
       <field name="z_dot" type="float" unit="m/s"/>
@@ -2131,17 +2142,7 @@
       <field name="encrypt_err"      type="uint32"/>
     </message>
 
-    <message name="MATEKFLOW" id="28">
-      <field name="motion_quality" type="uint8_t"/>
-      <field name="motionX" type="int32_t" />
-      <field name="motionY" type="int32_t" />
-      <field name="distancemm_quality" type="uint8_t" />
-      <field name="distancemm" type="int32_t" />
-      <field name="distance" type="float" />
-      <field name="update_agl" type="bool" />
-      <field name="compensate_rotation" type="bool" />
-      <field name="parse_crc" type="uint8_t" />
-    </message>
+
 
   </msg_class>
 

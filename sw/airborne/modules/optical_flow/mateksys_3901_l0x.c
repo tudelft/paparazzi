@@ -274,12 +274,7 @@ static void mateksys3901l0x_parse(uint8_t byte)
       break;
     
     case MATEKSYS_3901_L0X_PARSE_CHECKSUM:
-      if (mateksys3901l0x.motionX >= 10000) {
-        mateksys3901l0x.motionX = 0;
-      } else if (mateksys3901l0x.motionY >= 10000) {
-        mateksys3901l0x.motionY = 0;
-      }
-      mateksys3901l0x.parse_status++;
+      mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
       break;
 
     default:
