@@ -7,15 +7,22 @@
             of Micro Air Vehicles at the TU Delft. The module causes the drone to fly forward until the divergence
             exceeds a threshold, at which point it stops.
         </description>
-        <define name="DIVERGENCE_STOP_THRESHOLD" value="10" description="divergence threshold that triggers the drone to stop"/>
+    <section name="DIVERGENCE_STOP" prefix="DIVERGENCE_STOP_">
+        <define name="THRESHOLD" value="0.06" description="divergence threshold that triggers the drone to stop"/>
+        <define name="AVOIDANCE_PITCH" value="15.0" description="divergence threshold that triggers the drone to stop"/>
+        <define name="AVOIDANCE_DURATION" value="1.0" description="divergence threshold that triggers the drone to stop"/>
+    </section>
     </doc>
   <settings>
     <dl_settings>
-      <dl_settings NAME="divergence_stop">
-         <dl_setting var="divergence_stop_threshold" min="0.0" step="0.01" max="1.0" shortname="diff_thresh" />
+      <dl_settings name="divergence_stop">
+         <dl_setting var="divergence_stop_threshold" min="0.0" step="0.01" max="0.2" shortname="threshold"/>
+         <dl_setting var="divergence_stop_avoidance_pitch" min="0.0" step="1." max="30.0" shortname="pitch"/>
+         <dl_setting var="divergence_stop_avoidance_duration" min="0.0" step=".1" max="3.0" shortname="duration"/>
       </dl_settings>
     </dl_settings>
   </settings>
+
     <header>
         <file name="divergence_stop.h"/>
     </header>

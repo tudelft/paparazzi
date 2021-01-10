@@ -29,10 +29,6 @@
       <corner name="FA1"/>
     </sector>
   </sectors>
-  <exceptions>
-    <!-- RC lost -->
-    <exception cond="(navigation_state == DIVERGENCE_MODE_STOP)"  deroute="back"/>
-  </exceptions>
   <blocks>
     <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
