@@ -36,6 +36,24 @@
 #include "pprzlink/messages.h"
 #include "subsystems/datalink/downlink.h"
 
+
+// Define configuration parameters
+#ifndef MATEKSYS_3901_L0X_MOTION_THRES
+#define MATEKSYS_3901_L0X_MOTION_THRES
+#endif
+
+#ifndef MATEKSYS_3901_L0X_DISTANCE_THRES
+#define MATEKSYS_3901_L0X_DISTANCE_THRES
+#endif
+
+#ifndef USE_MATEKSYS_3901_L0X_AGL
+#define USE_MATEKSYS_3901_L0X_AGL
+#endif
+
+#ifndef MATEKSYS_3901_L0X_COMPENSATE_ROTATION
+#define MATEKSYS_3901_L0X_COMPENSATE_ROTATION
+#endif
+
 struct Mateksys3901l0X mateksys3901l0x = {
   .parse_status = MATEKSYS_3901_L0X_INITIALIZE
 };
@@ -46,7 +64,7 @@ static void mateksys3901l0x_parse(uint8_t byte);
 #include "subsystems/datalink/telemetry.h"
 
 /**
- * Downlink message lidar
+ * Downlink message flow and lidar (included velocity estimation, not yet tested)
  */
 static void mateksys3901l0x_send_matek(struct transport_tx *trans, struct link_device *dev)
 {
@@ -70,17 +88,13 @@ void mateksys3901l0x_init(void)
 {
   mateksys3901l0x.device = &((MATEKSYS_3901_L0X_PORT).device);
   mateksys3901l0x.parse_crc = 0;
-	mateksys3901l0x.motion_quality = 0;                                             //TODO :is this a good choice?
-  mateksys3901l0x.motionX = 0;                                                    //TODO :is this a good choice?
-  mateksys3901l0x.motionY = 0;                                                    //TODO :is this a good choice?
+	mateksys3901l0x.motion_quality = 0;                                             
+  mateksys3901l0x.motionX = 0;                                                    
+  mateksys3901l0x.motionY = 0;                                                    
   mateksys3901l0x.distancemm_quality = 0;
-	mateksys3901l0x.distancemm = -1;                                                //TODO :is this a good choice?   
+	mateksys3901l0x.distancemm = -1;                                                   
   mateksys3901l0x.velocityX = 0;
   mateksys3901l0x.velocityY = 0;
-  mateksys3901l0x.motion_threshold = MATEKSYS_3901_L0X_MOTION_THRES;
-  mateksys3901l0x.distance_threshold = MATEKSYS_3901_L0X_DISTANCE_THRES;
-	mateksys3901l0x.update_agl = USE_MATEKSYS_3901_L0X_AGL;
-  mateksys3901l0x.compensate_rotation = MATEKSYS_3901_L0X_COMPENSATE_ROTATION;
   mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
 
 #if PERIODIC_TELEMETRY
@@ -185,7 +199,7 @@ static void mateksys3901l0x_parse(uint8_t byte)
       break;
 
     case MATEKSYS_3901_L0X_PARSE_DISTANCE_B1:
-      if (mateksys3901l0x.distancemm_quality <= mateksys3901l0x.distance_threshold) {
+      if (mateksys3901l0x.distancemm_quality <= MATEKSYS_3901_L0X_DISTANCE_THRES) {
         mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
       } else {
         mateksys3901l0x.distancemm = byte;
@@ -220,7 +234,7 @@ static void mateksys3901l0x_parse(uint8_t byte)
       break;
 
 	  case MATEKSYS_3901_L0X_PARSE_MOTIONY_B1:
-      if (mateksys3901l0x.motion_quality <= mateksys3901l0x.motion_threshold) {
+      if (mateksys3901l0x.motion_quality <= MATEKSYS_3901_L0X_MOTION_THRES) {
         mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
       } else {
         mateksys3901l0x.motionY = byte;
@@ -281,9 +295,6 @@ static void mateksys3901l0x_parse(uint8_t byte)
       // Error, return to start
       mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
       break;
-
-
-// //We are lazy ATM ;) for the 1st exaple...refactor plz to a better handler see e.g alhpa_ESC code
 
 //     case MATEKSYS_3901_L0X_PARSE_CHECKSUM:
 //       // When the CRC matches we can do stuff, jippy
