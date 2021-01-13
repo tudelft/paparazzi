@@ -22,6 +22,17 @@
       <module name="flap_wiggle"/>
       <module name="motor_vs_flap_slider"/>
 
+       <module name="airspeed_sdp3x">
+        <define name="USE_I2C4"/>
+        <configure name="SDP3X_I2C_DEV" value="I2C4"/>
+    <!--<define name="SDP3X_I2C_ADDR" value="0x50" description="i2c slave address (default: 0x50)"/>-->
+        <define name="SDP3X_SYNC_SEND" value="FALSE"/>
+        <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>
+        <!--<define name="SDP3X_PRESSURE_OFFSET" value="0."/>-->
+        <define name="SDP3X_AIRSPEED_SCALE" value="1.6327"/>
+        <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
+      </module>
+
       <configure name="FLASH_MODE" value="SWD"/>
 
        <!-- Logger -->
@@ -91,7 +102,10 @@
       <define name="AIRSPEED_ETS_SYNC_SEND"/>
       <define name="USE_AIRSPEED_ETS" value="TRUE"/>
     </module-->
-    <module name="air_data"/>
+    <module name="air_data">
+          <define name="USE_AIRSPEED" value="TRUE"/>
+    </module>
+
     <module name="send_imu_mag_current"/>
 
     <!-- Internal MAG -->
@@ -201,7 +215,7 @@
     <set servo="MOTOR_7"   value="(($th_hold || $fwd_hold)? $motor_7_s : motor_mixing.commands[6])"/>
     <set servo="MOTOR_8"   value="(($th_hold || $fwd_hold)? $motor_8_s : motor_mixing.commands[7])"/>
 
-<call fun="int16_vect_zero(actuators_pprz,12)"/>
+<call fun="int16_vect_zero(actuators_pprz,13)"/>
     <call fun="sys_id_chirp_add_values(TRUE,FALSE,actuators_pprz)"/>    
     
     <set servo="AIL_1"     value="-2*@PITCH + 4*@YAW + @FLAPS + wiggle_val[0]+ actuators_pprz[0]+ actuators_pprz[4]+actuators_pprz[6]+actuators_pprz[8]+actuators_pprz[9]+actuators_pprz[10]+actuators_pprz[12]-actuators_pprz[13]"/>
