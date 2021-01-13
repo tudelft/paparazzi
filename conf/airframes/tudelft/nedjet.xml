@@ -231,6 +231,7 @@
     <define name="NAV_DESCEND_VSPEED" value="-1.0"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 17.9024749557 * adc)"/>
+    <define name="DISABLE_YAW_CTRL_SWITCH" value="TRUE"/>
   </section>
 
    <section name="FORWARD">

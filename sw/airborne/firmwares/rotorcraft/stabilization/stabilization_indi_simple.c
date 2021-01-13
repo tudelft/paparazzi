@@ -373,6 +373,13 @@ static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct I
   Bound(indi.u_in.r, -indi_cmd_limit, indi_cmd_limit);
 #endif
 
+#if DISABLE_FWD_YAW_CTRL_SWITCH
+#warning "The fixedwing yaw control can be disabled with a switch on the RC!"
+  if (radio_control.values[RADIO_FMODE] > 4800) {
+    indi.u_in.p = 0;
+  }
+#endif
+
   //Propagate input filters
   //first order actuator dynamics
   indi.u_act_dyn.p = indi.u_act_dyn.p + STABILIZATION_INDI_ACT_DYN_P * (indi.u_in.p - indi.u_act_dyn.p);
