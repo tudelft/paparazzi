@@ -161,6 +161,10 @@
 #define AGL_LIDAR_TFMINI_ID 11
 #endif
 
+#ifndef AGL_LIDAR_MATEKSYS_3901_L0X_ID
+#define AGL_LIDAR_MATEKSYS_3901_L0X_ID 12
+#endif
+
 /*
  * IDs of magnetometer sensors (including IMUs with mag)
  */
@@ -324,6 +328,10 @@
  */
 #ifndef FLOW_OPTICFLOW_ID
 #define FLOW_OPTICFLOW_ID 1
+#endif
+
+#ifndef FLOW_OPTICFLOW_MATEKSYS_3901_L0X_ID
+#define FLOW_OPTICFLOW_MATEKSYS_3901_L0X_ID 2
 #endif
 
 /*

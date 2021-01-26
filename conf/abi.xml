@@ -204,6 +204,13 @@
       <field name="throttle"  type="int16_t">Throttle input in pprz_t [0;9600] or [-9600;9600] (for vertical speed control for instance)</field>
     </message>
 
+    <message name="OPTICAL_FLOW_INT32" id="29">
+      <field name="stamp" type="uint32_t" unit="us"/>
+      <field name="flow_x" type="uint32_t">Flow in x direction from the camera (in deg/sec)</field>
+      <field name="flow_y" type="uint32_t">Flow in y direction from the camera (in deg/sec)</field>
+      <field name="quality" type="uint8_t"/>
+    </message>
+
   </msg_class>
 
 </protocol>

@@ -78,14 +78,13 @@ struct Mateksys3901l0X {
 	uint8_t  motion_quality;
   int32_t  motionX;
   int32_t  motionY;
+  int32_t  motionX_clean;
+  int32_t  motionY_clean;
 	uint8_t  distancemm_quality;
 	int32_t  distancemm;
-  int32_t  velocityX;
-  int32_t  velocityY;
-  uint8_t  distance_threshold;
-  uint8_t  motion_threshold;
-  bool     update_agl;
-  bool     compensate_rotation;
+  float  distance_clean;
+  float  velocityX;
+  float  velocityY;
 	uint8_t  parse_crc; 
 };
 

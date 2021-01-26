@@ -14,6 +14,7 @@
         "getopt.h": "c",
         "numeric": "c",
         "electrical.h": "c",
-        "printf.h": "c"
+        "printf.h": "c",
+        "tensor": "cpp"
     },
 }

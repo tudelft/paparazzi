@@ -50,6 +50,10 @@
 #define USE_MATEKSYS_3901_L0X_AGL
 #endif
 
+#ifndef USE_MATEKSYS_3901_L0X_OPTICAL_FLOW
+#define USE_MATEKSYS_3901_L0X_OPTICAL_FLOW
+#endif
+
 #ifndef MATEKSYS_3901_L0X_COMPENSATE_ROTATION
 #define MATEKSYS_3901_L0X_COMPENSATE_ROTATION
 #endif
@@ -71,10 +75,10 @@ static void mateksys3901l0x_send_matek(struct transport_tx *trans, struct link_d
   pprz_msg_send_MATEKSYS_FLOW_LIDAR(trans, dev, AC_ID,
                                     &mateksys3901l0x.sensor_id,
                                     &mateksys3901l0x.motion_quality,
-                                    &mateksys3901l0x.motionX,
-                                    &mateksys3901l0x.motionY,
+                                    &mateksys3901l0x.motionX_clean,
+                                    &mateksys3901l0x.motionY_clean,
                                     &mateksys3901l0x.distancemm_quality,
-                                    &mateksys3901l0x.distancemm,
+                                    &mateksys3901l0x.distance_clean,
                                     &mateksys3901l0x.velocityX,
                                     &mateksys3901l0x.velocityY);
 }
@@ -90,9 +94,12 @@ void mateksys3901l0x_init(void)
   mateksys3901l0x.parse_crc = 0;
 	mateksys3901l0x.motion_quality = 0;                                             
   mateksys3901l0x.motionX = 0;                                                    
-  mateksys3901l0x.motionY = 0;                                                    
+  mateksys3901l0x.motionY = 0;    
+  mateksys3901l0x.motionX_clean = 0;                                                    
+  mateksys3901l0x.motionY_clean = 0;                                                 
   mateksys3901l0x.distancemm_quality = 0;
-	mateksys3901l0x.distancemm = -1;                                                   
+	mateksys3901l0x.distancemm = 0;  
+  mateksys3901l0x.distance_clean = 0;                                                 
   mateksys3901l0x.velocityX = 0;
   mateksys3901l0x.velocityY = 0;
   mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
@@ -172,7 +179,7 @@ static void mateksys3901l0x_parse(uint8_t byte)
       }
       break;
 
-    case MATEKSYS_3901_L0X_PARSE_SIZE: 
+    case MATEKSYS_3901_L0X_PARSE_SIZE: // two fixed sizes are expected if message is
       if (byte == 0x05 || byte == 0x09) { 
         mateksys3901l0x.parse_status++;
         mateksys3901l0x.parse_crc += byte;
@@ -257,7 +264,6 @@ static void mateksys3901l0x_parse(uint8_t byte)
 
     case MATEKSYS_3901_L0X_PARSE_MOTIONY_B4:
       mateksys3901l0x.motionY |= (byte << 24);
-      mateksys3901l0x.velocityY = mateksys3901l0x.distancemm * sin(mateksys3901l0x.motionY*(M_PI/180));
       mateksys3901l0x.parse_crc += byte;
       mateksys3901l0x.parse_status++;
       break;
@@ -282,12 +288,51 @@ static void mateksys3901l0x_parse(uint8_t byte)
 		
 		case MATEKSYS_3901_L0X_PARSE_MOTIONX_B4:
       mateksys3901l0x.motionX |= (byte << 24);
-      mateksys3901l0x.velocityX = mateksys3901l0x.distancemm * sin(mateksys3901l0x.motionX*(M_PI/180));
       mateksys3901l0x.parse_crc += byte;
       mateksys3901l0x.parse_status++;
       break;
-    
+
     case MATEKSYS_3901_L0X_PARSE_CHECKSUM:
+
+      // When the distance and motion info are valid (max values based on sensor specifications)...
+      if (mateksys3901l0x.distancemm > 0 && mateksys3901l0x.distancemm <= 3000 && abs(mateksys3901l0x.motionX) <= 300 && abs(mateksys3901l0x.motionY) <= 300) {
+        // ... compensate AGL measurement for body rotation
+        if (MATEKSYS_3901_L0X_COMPENSATE_ROTATION) {
+          float phi = stateGetNedToBodyEulers_f()->phi;
+          float theta = stateGetNedToBodyEulers_f()->theta;
+          float gain = (float)fabs((double)(cosf(phi) * cosf(theta)));
+          mateksys3901l0x.distancemm = mateksys3901l0x.distancemm * gain;
+        }
+
+        // send messages with no error measurements
+        mateksys3901l0x.distance_clean = mateksys3901l0x.distancemm/1000.f;
+        mateksys3901l0x.motionX_clean = mateksys3901l0x.motionX;
+        mateksys3901l0x.motionY_clean = mateksys3901l0x.motionY;
+
+        // estimate velocity and send it to telemetry
+        mateksys3901l0x.velocityX = mateksys3901l0x.distance_clean * sin(RadOfDeg(mateksys3901l0x.motionX_clean));
+        mateksys3901l0x.velocityY = mateksys3901l0x.distance_clean * sin(RadOfDeg(mateksys3901l0x.motionY_clean));
+
+        // get ticks
+        uint32_t now_ts = get_sys_time_usec();
+
+        // send AGL (if requested)
+        if (USE_MATEKSYS_3901_L0X_AGL) {
+          AbiSendMsgAGL(AGL_LIDAR_MATEKSYS_3901_L0X_ID, 
+                        now_ts, 
+                        mateksys3901l0x.distance_clean);
+        }
+
+        // send optical flow (if requested)
+        if (USE_MATEKSYS_3901_L0X_OPTICAL_FLOW) {
+          AbiSendMsgOPTICAL_FLOW_INT32(FLOW_OPTICFLOW_MATEKSYS_3901_L0X_ID, 
+                                       now_ts, 
+                                       mateksys3901l0x.motionX_clean,
+                                       mateksys3901l0x.motionY_clean,
+                                       mateksys3901l0x.motion_quality);
+        }
+      }
+      // Start reading again
       mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
       break;
 
@@ -295,33 +340,6 @@ static void mateksys3901l0x_parse(uint8_t byte)
       // Error, return to start
       mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
       break;
-
-//     case MATEKSYS_3901_L0X_PARSE_CHECKSUM:
-//       // When the CRC matches we can do stuff, jippy
-//       if (mateksys3901l0x.parse_crc == byte) {
-//         uint32_t now_ts = get_sys_time_usec();
-//         mateksys3901l0x.distance = mateksys3901l0x.distance / 100.f;
-//         mateksys3901l0x.quality = 222;  //TODO:remove after ebugging
-
-//         // When the distance is valid
-//         if (mateksys3901l0x.distance >=0 ) {
-//           // compensate AGL measurement for body rotation
-//           if (mateksys3901l0x.compensate_rotation) {
-//             float phi = stateGetNedToBodyEulers_f()->phi;
-//             float theta = stateGetNedToBodyEulers_f()->theta;
-//             float gain = (float)fabs((double)(cosf(phi) * cosf(theta)));
-//             mateksys3901l0x.distance = mateksys3901l0x.distance * gain;
-//           }
-
-//           // send message (if requested)
-//           if (mateksys3901l0x.update_agl) {
-//             //TODO: correct message of mis-use anothe AGL sensor ID
-// 						//AbiSendMsgAGL(AGL_LIDAR_MATEKSYS_3901_L0X_ID, now_ts, mateksys3901l0x.distance);
-//           }
-//         }
-//       // Start reading again
-//       mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
-//       break;
 
  }   
 }
