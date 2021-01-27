@@ -24,7 +24,7 @@
         <define name="USE_I2C4"/>
         <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>
         <define name="AIRSPEED_ETS_SYNC_SEND"/>
-        <define name="USE_AIRSPEED_ETS" value="FALSE"/>
+        <define name="USE_AIRSPEED_ETS" value="TRUE"/>
         <define name="AIRSPEED_ETS_SCALE" value="1.24"/>
       </module>
 
@@ -278,13 +278,13 @@
     <define name= "MAG_Y_CURRENT_COEF" value="-0.7696784114750511"/>
     <define name= "MAG_Z_CURRENT_COEF" value="1.1626106815908253"/-->
 
-    <!-- Calibrated at valkenburg 20-05-2020 -->
-    <define name="MAG_X_NEUTRAL" value="866"/>
-    <define name="MAG_Y_NEUTRAL" value="-1530"/>
-    <define name="MAG_Z_NEUTRAL" value="-3313"/>
-    <define name="MAG_X_SENS" value="0.6067461130451115" integer="16"/>
-    <define name="MAG_Y_SENS" value="0.6544292255627779" integer="16"/>
-    <define name="MAG_Z_SENS" value="0.6352539557433349" integer="16"/>
+    <!-- Calibrated at valkenburg 27-01-2021 -->
+    <define name="MAG_X_NEUTRAL" value="1398"/>
+    <define name="MAG_Y_NEUTRAL" value="-1970"/>
+    <define name="MAG_Z_NEUTRAL" value="-4129"/>
+    <define name="MAG_X_SENS" value="0.5891123720832061" integer="16"/>
+    <define name="MAG_Y_SENS" value="0.6326073475459207" integer="16"/>
+    <define name="MAG_Z_SENS" value="0.6231717613866319" integer="16"/>
 
 
 
