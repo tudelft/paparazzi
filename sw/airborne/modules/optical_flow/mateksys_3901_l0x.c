@@ -70,17 +70,18 @@ static void mateksys3901l0x_parse(uint8_t byte);
 /**
  * Downlink message flow and lidar (included velocity estimation, not yet tested)
  */
-static void mateksys3901l0x_send_matek(struct transport_tx *trans, struct link_device *dev)
+static void mateksys3901l0x_send_optical_flow(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_MATEKSYS_FLOW_LIDAR(trans, dev, AC_ID,
+  pprz_msg_send_OPTICAL_FLOW(trans, dev, AC_ID,
+                                    &mateksys3901l0x.time_sec,
                                     &mateksys3901l0x.sensor_id,
-                                    &mateksys3901l0x.motion_quality,
                                     &mateksys3901l0x.motionX_clean,
                                     &mateksys3901l0x.motionY_clean,
-                                    &mateksys3901l0x.distancemm_quality,
-                                    &mateksys3901l0x.distance_clean,
                                     &mateksys3901l0x.velocityX,
-                                    &mateksys3901l0x.velocityY);
+                                    &mateksys3901l0x.velocityY,
+                                    &mateksys3901l0x.motion_quality,
+                                    &mateksys3901l0x.distance_clean,
+                                    &mateksys3901l0x.distancemm_quality);
 }
 
 #endif
@@ -94,18 +95,13 @@ void mateksys3901l0x_init(void)
   mateksys3901l0x.parse_crc = 0;
 	mateksys3901l0x.motion_quality = 0;                                             
   mateksys3901l0x.motionX = 0;                                                    
-  mateksys3901l0x.motionY = 0;    
-  mateksys3901l0x.motionX_clean = 0;                                                    
-  mateksys3901l0x.motionY_clean = 0;                                                 
+  mateksys3901l0x.motionY = 0;                                                
   mateksys3901l0x.distancemm_quality = 0;
-	mateksys3901l0x.distancemm = 0;  
-  mateksys3901l0x.distance_clean = 0;                                                 
-  mateksys3901l0x.velocityX = 0;
-  mateksys3901l0x.velocityY = 0;
+	mateksys3901l0x.distancemm = 0;
   mateksys3901l0x.parse_status = MATEKSYS_3901_L0X_PARSE_HEAD;
 
 #if PERIODIC_TELEMETRY
-	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MATEKSYS_FLOW_LIDAR, mateksys3901l0x_send_matek);
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_OPTICAL_FLOW, mateksys3901l0x_send_optical_flow);
 #endif
 }
 
@@ -315,6 +311,7 @@ static void mateksys3901l0x_parse(uint8_t byte)
 
         // get ticks
         uint32_t now_ts = get_sys_time_usec();
+        mateksys3901l0x.time_sec = now_ts*1e-6;
 
         // send AGL (if requested)
         if (USE_MATEKSYS_3901_L0X_AGL) {

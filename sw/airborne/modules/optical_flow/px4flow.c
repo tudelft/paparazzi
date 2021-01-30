@@ -162,6 +162,7 @@ void px4flow_init(void)
 void px4flow_downlink(void)
 {
   static float timestamp = 0;
+  uint8_t distance_quality = 0;
   timestamp = ((float)optical_flow.time_usec) * 0.000001;
   DOWNLINK_SEND_PX4FLOW(DefaultChannel, DefaultDevice,
                         &timestamp,
@@ -171,6 +172,7 @@ void px4flow_downlink(void)
                         &optical_flow.flow_comp_m_x,
                         &optical_flow.flow_comp_m_y,
                         &optical_flow.quality,
-                        &optical_flow.ground_distance);
+                        &optical_flow.ground_distance,
+                        &distance_quality);
 }
 
