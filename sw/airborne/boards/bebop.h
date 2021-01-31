@@ -27,7 +27,6 @@
 
 #include "std.h"
 #include "peripherals/video_device.h"
-#include "boards/bebop/mt9f002.h"
 
 /** uart connected to GPS internally */
 #define UART1_DEV /dev/ttyPA1
@@ -51,17 +50,16 @@
 #endif
 
 /* Default actuators driver */
+#ifndef DEFAULT_ACTUATORS
 #define DEFAULT_ACTUATORS "boards/bebop/actuators.h"
 #define ActuatorDefaultSet(_x,_y) ActuatorsBebopSet(_x,_y)
 #define ActuatorsDefaultInit() ActuatorsBebopInit()
 #define ActuatorsDefaultCommit() ActuatorsBebopCommit()
+#endif
 
 /* Cameras */
 extern struct video_config_t bottom_camera;
 extern struct video_config_t front_camera;
-
-/* ISP */
-struct mt9f002_t mt9f002;
 
 /* by default activate onboard baro */
 #ifndef USE_BARO_BOARD

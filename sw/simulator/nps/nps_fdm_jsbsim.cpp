@@ -61,7 +61,7 @@
 #include "math/pprz_algebra.h"
 #include "math/pprz_algebra_float.h"
 
-#include "math/pprz_geodetic_wmm2015.h"
+#include "math/pprz_geodetic_wmm2020.h"
 
 #include "generated/airframe.h"
 #include "generated/flight_plan.h"
@@ -72,6 +72,13 @@
 
 #define PascalOfPsf(_p) ((_p) * 47.8802588889)
 #define CelsiusOfRankine(_r) (((_r) - 491.67) / 1.8)
+
+/// Macro to build file path according to the lib version
+#if NPS_JSBSIM_USE_SGPATH
+#define JSBSIM_PATH(_x) SGPath(_x)
+#else
+#define JSBSIM_PATH(_x) _x
+#endif
 
 /** Name of the JSBSim model.
  *  Defaults to the AIRFRAME_NAME
@@ -179,6 +186,10 @@ void nps_fdm_init(double dt)
   init_jsbsim(dt);
 
   FDMExec->RunIC();
+
+  // Fix getting initial incorrect accel measurements
+  for(uint16_t i = 0; i < 1500; i++)
+    FDMExec->Run();
 
   init_ltp();
 
@@ -554,9 +565,9 @@ static void init_jsbsim(double dt)
   FDMExec->DisableOutput();
   FDMExec->SetDebugLevel(0); // No DEBUG messages
 
-  if (! FDMExec->LoadModel(rootdir + "aircraft",
-                           rootdir + "engine",
-                           rootdir + "systems",
+  if (! FDMExec->LoadModel(JSBSIM_PATH(rootdir + "aircraft"),
+                           JSBSIM_PATH(rootdir + "engine"),
+                           JSBSIM_PATH(rootdir + "systems"),
                            NPS_JSBSIM_MODEL,
                            false)) {
 #ifdef DEBUG
@@ -576,7 +587,7 @@ static void init_jsbsim(double dt)
 
   FGInitialCondition *IC = FDMExec->GetIC();
   if (!jsbsim_ic_name.empty()) {
-    if (! IC->Load(jsbsim_ic_name)) {
+    if (! IC->Load(JSBSIM_PATH(jsbsim_ic_name))) {
 #ifdef DEBUG
       cerr << "Initialization unsuccessful" << endl;
 #endif
@@ -679,7 +690,7 @@ static void init_ltp(void)
 
   /* Current date in decimal year, for example 2012.68 */
   /** @FIXME properly get current time */
-  double sdate = 2014.5;
+  double sdate = 2019.0;
 
   llh_from_jsbsim(&fdm.lla_pos, propagate);
   /* LLA Position in decimal degrees and altitude in km */

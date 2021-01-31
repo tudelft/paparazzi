@@ -117,7 +117,7 @@ PRINT_CONFIG_MSG("USE_INS_NAV_INIT defaulting to TRUE")
 #endif
 PRINT_CONFIG_VAR(INS_INT_BARO_ID)
 abi_event baro_ev;
-static void baro_cb(uint8_t sender_id, float pressure);
+static void baro_cb(uint8_t sender_id, uint32_t stamp, float pressure);
 
 /** ABI binding for IMU data.
  * Used accel ABI messages.
@@ -161,7 +161,7 @@ static void pos_est_cb(uint8_t sender_id,
 #define INS_INT_AGL_ID ABI_BROADCAST
 #endif
 static abi_event agl_ev;                 ///< The agl ABI event
-static void agl_cb(uint8_t sender_id, float distance);
+static void agl_cb(uint8_t sender_id, uint32_t stamp, float distance);
 
 struct InsInt ins_int;
 
@@ -334,7 +334,7 @@ void ins_int_propagate(struct Int32Vect3 *accel, float dt)
   }
 }
 
-static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
+static void baro_cb(uint8_t __attribute__((unused)) sender_id, __attribute__((unused)) uint32_t stamp, float pressure)
 {
   if (pressure < 1.f)
   {
@@ -476,7 +476,7 @@ void ins_int_update_gps(struct GpsState *gps_s __attribute__((unused))) {}
  * This is only used with the extended version of the vertical float filter
  */
 #if USE_VFF_EXTENDED
-static void agl_cb(uint8_t __attribute__((unused)) sender_id, float distance) {
+static void agl_cb(uint8_t __attribute__((unused)) sender_id, __attribute__((unused)) uint32_t stamp, float distance) {
   if (distance <= 0 || !(ins_int.baro_initialized)) {
     return;
   }
@@ -507,7 +507,7 @@ static void agl_cb(uint8_t __attribute__((unused)) sender_id, float distance) {
     ins_int.propagation_cnt = 0;
 }
 #else
-static void agl_cb(uint8_t __attribute__((unused)) sender_id, __attribute__((unused)) float distance) {}
+static void agl_cb(uint8_t __attribute__((unused)) sender_id, __attribute__((unused)) uint32_t stamp, __attribute__((unused)) float distance) {}
 #endif
 
 /** copy position and speed to state interface */
@@ -605,7 +605,7 @@ static void vel_est_cb(uint8_t sender_id __attribute__((unused)),
     if (last_stamp_x > 0)
     {
       float dt = (float)(stamp - last_stamp_x) * 1e-6;
-      ins_int.ltp_pos.x += POS_BFP_OF_REAL(dt * vel_ned.x);
+      ins_int.ltp_pos.x += lround(POS_BFP_OF_REAL(dt * vel_ned.x));
     }
     last_stamp_x = stamp;
   }
@@ -615,7 +615,7 @@ static void vel_est_cb(uint8_t sender_id __attribute__((unused)),
     if (last_stamp_y > 0)
     {
       float dt = (float)(stamp - last_stamp_y) * 1e-6;
-      ins_int.ltp_pos.y += POS_BFP_OF_REAL(dt * vel_ned.y);
+      ins_int.ltp_pos.y += lround(POS_BFP_OF_REAL(dt * vel_ned.y));
     }
     last_stamp_y = stamp;
   }

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016 Freek van Tienen <freek.v.tienen@gmail.com>
+ *               2020 Rohan Chotalal 
  *
  * This file is part of paparazzi.
  *
@@ -26,12 +27,7 @@
 #ifndef STABILIZATION_RATE_INDI
 #define STABILIZATION_RATE_INDI
 
-#include "math/pprz_algebra_int.h"
-
-extern void stabilization_rate_init(void);
-extern void stabilization_rate_read_rc(void);
-extern void stabilization_rate_read_rc_switched_sticks(void);
-extern void stabilization_rate_run(bool in_flight);
-extern void stabilization_rate_enter(void);
+/* access declarations of basic functions from "stabilization_rate.h" file */
+#include "firmwares/rotorcraft/stabilization/stabilization_rate.h"
 
 #endif /* STABILIZATION_RATE_INDI */

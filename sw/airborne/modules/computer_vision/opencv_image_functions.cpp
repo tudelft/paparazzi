@@ -45,6 +45,7 @@ void coloryuv_opencv_to_yuv422(Mat image, char *img, int width, int height)
   int byte_index = 0;
   for(int r = 0; r < nRows; ++r) {
     for(int c = 0; c < nCols; ++c) {
+<<<<<<< HEAD
       Vec3b yvu = image.at<Vec3b>(r, c);
       if((byte_index % 4) == 0) {
         img[byte_index++] = yvu.val[1]; // U
@@ -52,6 +53,15 @@ void coloryuv_opencv_to_yuv422(Mat image, char *img, int width, int height)
         img[byte_index++] = yvu.val[2]; // V
       }
       img[byte_index++] = yvu.val[0]; // Y
+=======
+      Vec3b yuv = image.at<Vec3b>(r, c);
+      if((byte_index % 4) == 0) {
+        img[byte_index++] = yuv.val[1]; // U
+      } else {
+        img[byte_index++] = yuv.val[2]; // V
+      }
+      img[byte_index++] = yuv.val[0]; // Y
+>>>>>>> upstream/master
     }
   }
 }

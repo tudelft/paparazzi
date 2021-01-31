@@ -271,21 +271,6 @@ void send_ivy(void)
 //  IvySendMsg("%d NAVIGATION %d 0 0 0 0 0 0 0 \n", remote_uav.ac_id, remote_uav.block);
 
 /*
-   <message name="BAT" id="12">
-     <field name="throttle" type="int16" unit="pprz"/>
-     <field name="voltage" type="uint16" unit="1e-1V" alt_unit="V" alt_unit_coef="0.1"/>
-     <field name="amps" type="int16" unit="A" alt_unit="A" />
-     <field name="flight_time" type="uint16" unit="s"/>
-     <field name="kill_auto_throttle" type="uint8" unit="bool"/>
-     <field name="block_time" type="uint16" unit="s"/>
-     <field name="stage_time" type="uint16" unit="s"/>
-     <field name="energy" type="int16" unit="mAh"/>
-   </message>
-*/
-
-  // IvySendMsg("%d BAT 0 81 0 %ld 0 0 0 0\n", remote_uav.ac_id, count_serial);
-
-/*
    <message name="PPRZ_MODE" id="11">
      <field name="ap_mode" type="uint8" values="MANUAL|AUTO1|AUTO2|HOME|NOGPS|FAILSAFE"/>
      <field name="ap_gaz" type="uint8" values="MANUAL|AUTO_THROTTLE|AUTO_CLIMB|AUTO_ALT"/>
@@ -313,9 +298,6 @@ void send_ivy(void)
 //    IvySendMsg("%d NAVIGATION_REF %d %d %d\n", remote_uav.ac_id, remote_uav.utm_east, remote_uav.utm_north, remote_uav.utm_zone);
     delayer = 0;
   }
-
-
-
 
   count_serial++;
 
@@ -394,7 +376,7 @@ int handle_api(void)
   static int step = 0;
   int bytes;
   int i=0;
-  char buff[32];
+  char buff[48];
 
   // ATPL4 = power level 4
   // ATMT0 = zero retry on broadcast
@@ -798,14 +780,14 @@ int main ( int argc, char** argv)
   IvyStart("127.255.255.255");
 
   // Add Timer
-  gtk_timeout_add(delay / 4, timeout_callback, NULL);
+  g_timeout_add(delay / 4, timeout_callback, NULL);
 
   // GTK Window
   GtkWidget *window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title (GTK_WINDOW (window), "IVY_Serial_Bridge");
 
-  gtk_signal_connect (GTK_OBJECT (window), "delete_event",
-                        GTK_SIGNAL_FUNC (delete_event), NULL);
+  g_signal_connect (GTK_OBJECT (window), "delete_event",
+                        G_CALLBACK (delete_event), NULL);
 
   GtkWidget *box = gtk_vbox_new(TRUE, 1);
   gtk_container_add (GTK_CONTAINER (window), box);

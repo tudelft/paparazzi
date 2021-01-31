@@ -66,10 +66,19 @@ class DistanceCounterFrame(wx.Frame):
             wx.CallAfter(self.update)
         if msg.name == "ROTORCRAFT_STATUS":
             self.msg_count_time = self.msg_count_time + 1
+<<<<<<< HEAD
             time_new = float(msg.get_field(12))
             if time_new > self.time_old and self.time_old != 0 and self.running:
                 self.time_elapsed += time_new - self.time_old
             self.time_old = time_new
+=======
+            time_new = float(msg['cpu_time'])
+            if time_new > self.time_old and self.time_old != 0 and self.running:
+                self.time_elapsed += time_new - self.time_old
+            self.time_old = time_new
+            # graphical update
+            wx.CallAfter(self.update)
+>>>>>>> upstream/master
 
     def update(self):
         self.Refresh()
@@ -94,14 +103,20 @@ class DistanceCounterFrame(wx.Frame):
         dc.DrawText("Data: " + str(self.ins_msg_x) + ", " + str(self.ins_msg_y) + ", " + str(self.ins_msg_z) + ".",2,22)
         dc.DrawText("Distance: " + str(round(float(self.distance)/1.0,2)) + " m",2,22+20)
         dc.DrawText("Time elapsed: " + str(self.time_elapsed) + "s",2,22+20+20)
+<<<<<<< HEAD
         print("jo")
+=======
+>>>>>>> upstream/master
         if self.running:
             dc.DrawText("Counter running", 150, 22+20)
         else:
             dc.DrawText("Counter paused", 150, 22+20)
 
     def onStartStop(self, event):
+<<<<<<< HEAD
         print(self.running)
+=======
+>>>>>>> upstream/master
         self.running = not self.running
         self.Refresh()
 
@@ -155,4 +170,8 @@ class DistanceCounterFrame(wx.Frame):
         self.Destroy()
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     raise Exception('This is not the main script. Please run dist.py instead of distance_counter.py')
+=======
+    raise Exception('This is not the main script. Please run dist.py instead of distance_counter.py')
+>>>>>>> upstream/master

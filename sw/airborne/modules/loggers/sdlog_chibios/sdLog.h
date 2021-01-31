@@ -99,6 +99,10 @@ extern "C" {
 #define SDLOG_NEED_QUEUE
 #endif
 
+#define LOG_PREALLOCATION_ENABLED true
+#define LOG_PREALLOCATION_DISABLED false
+#define LOG_APPEND_TAG_AT_CLOSE_ENABLED true
+#define LOG_APPEND_TAG_AT_CLOSE_DISABLED false
 
 #ifdef SDLOG_NEED_QUEUE
 typedef struct LogMessage LogMessage;
@@ -185,7 +189,7 @@ SdioError sdLogFinish(void);
  * @details always open new file with numeric index
  * @param[out] fileObject : file descriptor : small integer between 0 and _FS_REENTRANT-1
  * @param[in] directoryName : name of directory just under ROOT, created if nonexistant
- * @param[in] fileName : the name will be appended with 3 digits number
+ * @param[in] prefix : the name will be appended with 3 digits number
  * @param[in] autoFlushPeriod : if non 0, period in second at which flush to mass storage is done
  *                              if 0, no autoflush is done.
  * @param[in] appendTagAtClose : at close, a marker will be added to prove that the file is complete
@@ -196,11 +200,13 @@ SdioError sdLogFinish(void);
  *                          but take room on storage ans is not easy to manipulate afterward because 
  *                          of big files
  *                          even if no log id recorded on file
+ * @param[out] fileName : buffer where the new filename will be created
+ * @param[in] nameLength : maximum length of the previous buffer
  * @return  status (always check status)
  */
-SdioError sdLogOpenLog(FileDes *fileObject, const char *directoryName, const char *fileName,
+SdioError sdLogOpenLog(FileDes *fileObject, const char *directoryName, const char *prefix,
                        const uint32_t autoFlushPeriod, const bool appendTagAtClose,
-		       const size_t sizeInMo, const bool preallocate);
+		       const size_t sizeInMo, const bool preallocate, char *fileName, const size_t nameLength);
 
 
 

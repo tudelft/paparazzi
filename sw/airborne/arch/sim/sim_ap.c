@@ -41,6 +41,9 @@ float roll_rate_pgain;
 uint16_t datalink_time = 0;
 uint16_t datalink_nb_msgs = 0;
 
+#ifndef SIM_UPDATE_DL
+#define SIM_UPDATE_DL TRUE
+#endif
 
 uint8_t ac_id;
 
@@ -109,7 +112,7 @@ value sim_init(value unit)
 
 value update_bat(value bat)
 {
-  electrical.vsupply = Int_val(bat);
+  electrical.vsupply = (float)Int_val(bat) / 10.;
   return Val_unit;
 }
 
@@ -143,7 +146,7 @@ value set_datalink_message(value s)
   }
 
   dl_msg_available = true;
-  DlCheckAndParse(&(DOWNLINK_DEVICE).device, &ivy_tp.trans_tx, dl_buffer, &dl_msg_available);
+  DlCheckAndParse(&(DOWNLINK_DEVICE).device, &ivy_tp.trans_tx, dl_buffer, &dl_msg_available, SIM_UPDATE_DL);
 
   return Val_unit;
 }

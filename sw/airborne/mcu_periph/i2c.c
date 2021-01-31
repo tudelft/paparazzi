@@ -206,6 +206,57 @@ static void send_i2c3_err(struct transport_tx *trans, struct link_device *dev)
 
 #endif /* USE_I2C3 */
 
+#if USE_I2C4
+
+struct i2c_periph i2c4;
+
+void i2c4_init(void)
+{
+  i2c_init(&i2c4);
+  i2c4_hw_init();
+}
+
+#if PERIODIC_TELEMETRY
+static void send_i2c4_err(struct transport_tx *trans, struct link_device *dev)
+{
+  uint16_t i2c4_wd_reset_cnt          = i2c4.errors->wd_reset_cnt;
+  uint16_t i2c4_queue_full_cnt        = i2c4.errors->queue_full_cnt;
+  uint16_t i2c4_ack_fail_cnt          = i2c4.errors->ack_fail_cnt;
+  uint16_t i2c4_miss_start_stop_cnt   = i2c4.errors->miss_start_stop_cnt;
+  uint16_t i2c4_arb_lost_cnt          = i2c4.errors->arb_lost_cnt;
+  uint16_t i2c4_over_under_cnt        = i2c4.errors->over_under_cnt;
+  uint16_t i2c4_pec_recep_cnt         = i2c4.errors->pec_recep_cnt;
+  uint16_t i2c4_timeout_tlow_cnt      = i2c4.errors->timeout_tlow_cnt;
+  uint16_t i2c4_smbus_alert_cnt       = i2c4.errors->smbus_alert_cnt;
+  uint16_t i2c4_unexpected_event_cnt  = i2c4.errors->unexpected_event_cnt;
+  uint32_t i2c4_last_unexpected_event = i2c4.errors->last_unexpected_event;
+  uint8_t _bus4 = 4;
+  pprz_msg_send_I2C_ERRORS(trans, dev, AC_ID,
+                           &i2c4_wd_reset_cnt,
+                           &i2c4_queue_full_cnt,
+                           &i2c4_ack_fail_cnt,
+                           &i2c4_miss_start_stop_cnt,
+                           &i2c4_arb_lost_cnt,
+                           &i2c4_over_under_cnt,
+                           &i2c4_pec_recep_cnt,
+                           &i2c4_timeout_tlow_cnt,
+                           &i2c4_smbus_alert_cnt,
+                           &i2c4_unexpected_event_cnt,
+                           &i2c4_last_unexpected_event,
+                           &_bus4);
+}
+#endif
+
+#endif /* USE_I2C4 */
+
+#if USE_SOFTI2C0
+extern void send_softi2c0_err(struct transport_tx *trans, struct link_device *dev);
+#endif /* USE_SOFTI2C0 */
+
+#if USE_SOFTI2C1
+extern void send_softi2c1_err(struct transport_tx *trans, struct link_device *dev);
+#endif /* USE_SOFTI2C1 */
+
 #if PERIODIC_TELEMETRY
 static void send_i2c_err(struct transport_tx *trans __attribute__((unused)),
                          struct link_device *dev __attribute__((unused)))
@@ -232,11 +283,24 @@ static void send_i2c_err(struct transport_tx *trans __attribute__((unused)),
       send_i2c3_err(trans, dev);
 #endif
       break;
+    case 4:
+#if USE_I2C4
+      send_i2c4_err(trans, dev);
+#endif
+    case 5:
+#if USE_SOFTI2C0
+      send_softi2c0_err(trans, dev);
+#endif
+    case 6:
+#if USE_SOFTI2C1
+      send_softi2c1_err(trans, dev);
+#endif
+      break;
     default:
       break;
   }
   _i2c_nb_cnt++;
-  if (_i2c_nb_cnt == 4) {
+  if (_i2c_nb_cnt == 7) {
     _i2c_nb_cnt = 0;
   }
 }
@@ -306,6 +370,7 @@ bool i2c_blocking_transmit(struct i2c_periph *p, struct i2c_transaction *t,
   // Wait for transaction to complete
   float start_t = get_sys_time_float();
   while (t->status == I2CTransPending || t->status == I2CTransRunning) {
+    if (p->spin) p->spin(p);
     if (get_sys_time_float() - start_t > I2C_BLOCKING_TIMEOUT) {
       break;  // timeout after 1 second
     }
@@ -327,6 +392,7 @@ bool i2c_blocking_receive(struct i2c_periph *p, struct i2c_transaction *t,
   // Wait for transaction to complete
   float start_t = get_sys_time_float();
   while (t->status == I2CTransPending || t->status == I2CTransRunning) {
+    if (p->spin) p->spin(p);
     if (get_sys_time_float() - start_t > I2C_BLOCKING_TIMEOUT) {
       break;  // timeout after 1 second
     }
@@ -348,6 +414,7 @@ bool i2c_blocking_transceive(struct i2c_periph *p, struct i2c_transaction *t,
   // Wait for transaction to complete
   float start_t = get_sys_time_float();
   while (t->status == I2CTransPending || t->status == I2CTransRunning) {
+    if (p->spin) p->spin(p);
     if (get_sys_time_float() - start_t > I2C_BLOCKING_TIMEOUT) {
       break;  // timeout after 1 second
     }

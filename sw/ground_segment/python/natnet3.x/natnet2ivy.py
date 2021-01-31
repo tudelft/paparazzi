@@ -114,15 +114,15 @@ def compute_velocity(ac_id):
                 dt = t2 - t1
                 if dt < 1e-5:
                     continue
-                vel[0] = (p2[0] - p1[0]) / dt
-                vel[1] = (p2[1] - p1[1]) / dt
-                vel[2] = (p2[2] - p1[2]) / dt
+                vel[0] += (p2[0] - p1[0]) / dt
+                vel[1] += (p2[1] - p1[1]) / dt
+                vel[2] += (p2[2] - p1[2]) / dt
                 p1 = p2
                 t1 = t2
         if nb > 0:
-            vel[0] / nb
-            vel[1] / nb
-            vel[2] / nb
+            vel[0] /= nb
+            vel[1] /= nb
+            vel[2] /= nb
     return vel
 
 def receiveRigidBodyList( rigidBodyList, stamp ):
@@ -152,7 +152,7 @@ def receiveRigidBodyList( rigidBodyList, stamp ):
         msg['enu_xd'] = vel[0]
         msg['enu_yd'] = vel[1]
         msg['enu_zd'] = vel[2]
-        msg['tow'] = int(stamp) # TODO convert to GPS itow ?
+        msg['tow'] = int(1000. * stamp) # TODO convert to GPS itow ?
         # convert quaternion to psi euler angle
         dcm_0_0 = 1.0 - 2.0 * (quat[1] * quat[1] + quat[2] * quat[2])
         dcm_1_0 = 2.0 * (quat[0] * quat[1] - quat[3] * quat[2])

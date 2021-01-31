@@ -32,8 +32,14 @@
 #if USE_USB_SERIAL
 #include "mcu_periph/usb_serial.h"
 #endif
+#if USE_FRSKY_X_SERIAL
+#include "subsystems/datalink/frsky_x.h"
+#endif
 #if USE_UDP
 #include "mcu_periph/udp.h"
+#endif
+#if USE_SYSLINK
+#include "modules/datalink/bitcraze/syslink_dl.h"
 #endif
 
 /** PPRZ transport structure */

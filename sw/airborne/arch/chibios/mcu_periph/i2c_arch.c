@@ -41,8 +41,18 @@
 #include "mcu_periph/ram_arch.h"
 #include "string.h"
 
+// Default stack size
+#ifndef I2C_THREAD_STACK_SIZE
+#define I2C_THREAD_STACK_SIZE 512
+#endif
 
-#if USE_I2C1 || USE_I2C2 || USE_I2C3
+
+static bool i2c_chibios_idle(struct i2c_periph *p) __attribute__((unused));
+static bool i2c_chibios_submit(struct i2c_periph *p, struct i2c_transaction *t) __attribute__((unused));
+static void i2c_chibios_setbitrate(struct i2c_periph *p, int bitrate) __attribute__((unused));
+
+
+#if USE_I2C1 || USE_I2C2 || USE_I2C3 || USE_I2C4
 
 // private I2C init structure
 struct i2c_init {
@@ -173,7 +183,7 @@ static void handle_i2c_thd(struct i2c_periph *p)
       break;
   }
 }
-#endif /* USE_I2C1 || USE_I2C2 || USE_I2C3 */
+#endif /* USE_I2C1 || USE_I2C2 || USE_I2C3 || USE_I2C4 */
 
 #if USE_I2C1
 // I2C1 config
@@ -198,13 +208,17 @@ static struct i2c_init i2c1_init_s = {
 struct i2c_errors i2c1_errors;
 // Thread
 static __attribute__((noreturn)) void thd_i2c1(void *arg);
-static THD_WORKING_AREA(wa_thd_i2c1, 128);
+static THD_WORKING_AREA(wa_thd_i2c1, I2C_THREAD_STACK_SIZE);
 
 /*
  * I2C1 init
  */
 void i2c1_hw_init(void)
 {
+  i2c1.idle = i2c_chibios_idle;
+  i2c1.submit = i2c_chibios_submit;
+  i2c1.setbitrate = i2c_chibios_setbitrate;
+
   i2cStart(&I2CD1, &i2cfg1);
   i2c1.reg_addr = &I2CD1;
   i2c1.errors = &i2c1_errors;
@@ -252,13 +266,17 @@ static struct i2c_init i2c2_init_s = {
 struct i2c_errors i2c2_errors;
 // Thread
 static __attribute__((noreturn)) void thd_i2c2(void *arg);
-static THD_WORKING_AREA(wa_thd_i2c2, 128);
+static THD_WORKING_AREA(wa_thd_i2c2, I2C_THREAD_STACK_SIZE);
 
 /*
  * I2C2 init
  */
 void i2c2_hw_init(void)
 {
+  i2c2.idle = i2c_chibios_idle;
+  i2c2.submit = i2c_chibios_submit;
+  i2c2.setbitrate = i2c_chibios_setbitrate;
+
   i2cStart(&I2CD2, &i2cfg2);
   i2c2.reg_addr = &I2CD2;
   i2c2.errors = &i2c2_errors;
@@ -306,13 +324,17 @@ static struct i2c_init i2c3_init_s = {
 struct i2c_errors i2c3_errors;
 // Thread
 static __attribute__((noreturn)) void thd_i2c3(void *arg);
-static THD_WORKING_AREA(wa_thd_i2c3, 128);
+static THD_WORKING_AREA(wa_thd_i2c3, I2C_THREAD_STACK_SIZE);
 
 /*
  * I2C3 init
  */
 void i2c3_hw_init(void)
 {
+  i2c3.idle = i2c_chibios_idle;
+  i2c3.submit = i2c_chibios_submit;
+  i2c3.setbitrate = i2c_chibios_setbitrate;
+
   i2cStart(&I2CD3, &i2cfg3);
   i2c3.reg_addr = &I2CD3;
   i2c3.init_struct = NULL;
@@ -338,6 +360,65 @@ static void thd_i2c3(void *arg)
 }
 #endif /* USE_I2C3 */
 
+#if USE_I2C4
+// I2C4 config
+PRINT_CONFIG_VAR(I2C4_CLOCK_SPEED)
+static SEMAPHORE_DECL(i2c4_sem, 0);
+static I2CConfig i2cfg4 = I2C4_CFG_DEF;
+#if defined STM32F7
+// We need a special buffer for DMA operations
+static IN_DMA_SECTION(uint8_t i2c4_dma_buf[I2C_BUF_LEN]);
+static struct i2c_init i2c4_init_s = {
+  .sem = &i2c4_sem,
+  .cfg = &i2cfg4,
+  .dma_buf = i2c4_dma_buf
+};
+#else
+static struct i2c_init i2c4_init_s = {
+  .sem = &i2c4_sem,
+  .cfg = &i2cfg4
+};
+#endif
+// Errors
+struct i2c_errors i2c4_errors;
+// Thread
+static __attribute__((noreturn)) void thd_i2c4(void *arg);
+static THD_WORKING_AREA(wa_thd_i2c4, 128);
+
+/*
+ * I2C4 init
+ */
+void i2c4_hw_init(void)
+{
+  i2c4.idle = i2c_chibios_idle;
+  i2c4.submit = i2c_chibios_submit;
+  i2c4.setbitrate = i2c_chibios_setbitrate;
+
+  i2cStart(&I2CD4, &i2cfg4);
+  i2c4.reg_addr = &I2CD4;
+  i2c4.init_struct = NULL;
+  i2c4.errors = &i2c4_errors;
+  i2c4.init_struct = &i2c4_init_s;
+  // Create thread
+  chThdCreateStatic(wa_thd_i2c4, sizeof(wa_thd_i2c4),
+                    NORMALPRIO + 1, thd_i2c4, NULL);
+}
+
+/*
+ * I2C4 thread
+ *
+ */
+static void thd_i2c4(void *arg)
+{
+  (void) arg;
+  chRegSetThreadName("i2c4");
+
+  while (TRUE) {
+    handle_i2c_thd(&i2c4);
+  }
+}
+#endif /* USE_I2C4 */
+
 
 /**
  * i2c_event() function
@@ -352,7 +433,7 @@ void i2c_event(void) {}
  * Empty, for paparazzi compatibility only. Bitrate is already
  * set in i2cX_hw_init()
  */
-void i2c_setbitrate(struct i2c_periph *p __attribute__((unused)), int bitrate __attribute__((unused))) {}
+static void i2c_chibios_setbitrate(struct i2c_periph *p __attribute__((unused)), int bitrate __attribute__((unused))) {}
 
 /**
  * i2c_submit() function
@@ -371,9 +452,9 @@ void i2c_setbitrate(struct i2c_periph *p __attribute__((unused)), int bitrate __
  * @param[in] p pointer to a @p i2c_periph struct
  * @param[in] t pointer to a @p i2c_transaction struct
  */
-bool i2c_submit(struct i2c_periph *p, struct i2c_transaction *t)
+static bool i2c_chibios_submit(struct i2c_periph *p, struct i2c_transaction *t)
 {
-#if USE_I2C1 || USE_I2C2 || USE_I2C3
+#if USE_I2C1 || USE_I2C2 || USE_I2C3 || USE_I2C4
   // sys lock
   chSysLock();
   uint8_t temp;
@@ -402,7 +483,7 @@ bool i2c_submit(struct i2c_periph *p, struct i2c_transaction *t)
   (void)p;
   (void)t;
   return FALSE;
-#endif /* USE_I2C1 || USE_I2C2 || USE_I2C3 */
+#endif /* USE_I2C1 || USE_I2C2 || USE_I2C3 || USE_I2C4 */
 }
 
 /**
@@ -410,7 +491,7 @@ bool i2c_submit(struct i2c_periph *p, struct i2c_transaction *t)
  *
  * Empty, for paparazzi compatibility only
  */
-bool i2c_idle(struct i2c_periph *p __attribute__((unused)))
+static bool i2c_chibios_idle(struct i2c_periph *p __attribute__((unused)))
 {
   return FALSE;
 }

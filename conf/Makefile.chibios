@@ -75,6 +75,13 @@ $(TARGET).CFLAGS += -DCH_DBG_THREADS_PROFILING=TRUE
 endif
 
 #
+# Add syscalls and c++ new/delete operators
+#
+$(TARGET).srcs += c++.cpp pprz_syscalls.c
+$(TARGET).CXXFLAGS += -fno-sized-deallocation
+$(TARGET).CXXFLAGS += $(CXXSTANDARD)
+
+#
 # General rules
 #
 $(TARGET).srcsnd = $(notdir $($(TARGET).srcs))
@@ -89,7 +96,7 @@ $(TARGET).objs	= $($(TARGET).objso:%.S=$(OBJDIR)/%.o)
 
 # Paparazzi options here.
 ifeq ($(PPRZ_DEFINITION),)
-  PPRZ_DEFINITION = -DUSE_CHIBIOS_RTOS -DUSE_ADC_WATCHDOG
+  PPRZ_DEFINITION = -DUSE_CHIBIOS_RTOS -DUSE_ADC_WATCHDOG -DPPRZLINK_UNALIGNED_ACCESS=1
 endif
 
 # Compiler options here.
@@ -312,6 +319,9 @@ CPPWARN = -Wall -Wextra
 # List all user C define here, like -D_DEBUG=1
 UDEFS = $($(TARGET).CFLAGS) $(USER_CFLAGS) $(BOARD_CFLAGS)
 
+# List all extra user CPP define here
+UPDEFS = $($(TARGET).CXXFLAGS)
+
 # Define ASM defines here
 UADEFS = $($(TARGET).CFLAGS) $(USER_CFLAGS) $(BOARD_CFLAGS)
 
@@ -344,6 +354,9 @@ endif
 
 # Settings for GDB
 GDB = $(shell which arm-none-eabi-gdb)
+ifeq ($(GDB),)
+GDB = $(shell which gdb-multiarch)
+endif
 
 
 # Settings for OOCD

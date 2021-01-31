@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from __future__ import absolute_import, print_function, division
 from mesonh_atmosphere import MesoNHAtmosphere
 import os
@@ -122,7 +124,7 @@ def main():
     ivy.subscribe(worldenv_cb,'(.* WORLD_ENV_REQ .*)')
 
     # wait for ivy to stop
-    from ivy.std_api import IvyMainLoop
+    from ivy.std_api import IvyMainLoop  # noqa
 
     signal.pause()
 

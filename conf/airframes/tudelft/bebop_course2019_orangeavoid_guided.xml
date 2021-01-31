@@ -10,6 +10,7 @@
       <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000/log"/>
       
       <!-- Detect orange -->
+<<<<<<< HEAD
       <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="40"/>
       <define name="COLOR_OBJECT_DETECTOR_LUM_MAX1" value="145"/>
       <define name="COLOR_OBJECT_DETECTOR_CB_MIN1" value="65"/>
@@ -24,6 +25,22 @@
       <define name="COLOR_OBJECT_DETECTOR_CB_MAX2" value="130"/>
       <define name="COLOR_OBJECT_DETECTOR_CR_MIN2" value="120"/>
       <define name="COLOR_OBJECT_DETECTOR_CR_MAX2" value="132"/>
+=======
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN1" value="30"/>
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX1" value="170"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MIN1" value="70"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MAX1" value="130"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MIN1" value="150"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MAX1" value="190"/>
+      
+      <!-- Detect green -->
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN2" value="60"/>
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX2" value="130"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MIN2" value="75"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MAX2" value="110"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MIN2" value="120"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MAX2" value="140"/>
+>>>>>>> upstream/master
     </target>
     <target name="nps" board="pc">
       <module name="fdm" type="gazebo"/>
@@ -46,6 +63,7 @@
       <define name="COLOR_OBJECT_DETECTOR_CR_MIN2" value="0"/>
       <define name="COLOR_OBJECT_DETECTOR_CR_MAX2" value="130"/>
     </target>
+<<<<<<< HEAD
     
     <!-- Front Camera parameters -->
     <define name="MT9F002_INITIAL_OFFSET_X" value="0.09" /> <!-- Offset from center position [-0.5..0.5]. Set to 0.09 to center horizon. -->
@@ -59,6 +77,8 @@
     <define name="MT9F002_GAIN_RED" value="5.0" />
     <define name="MT9F002_GAIN_BLUE" value="5.0" />
     <define name="MT9F002_OUTPUT_SCALER" value="0.25"/>
+=======
+>>>>>>> upstream/master
 
   <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
@@ -78,9 +98,14 @@
     <module name="logger_file"/>
 
     <!-- Video/Camera modules -->
+<<<<<<< HEAD
     <module name="video_thread" />
     <!--module name="cv_ae_awb">
       <define name="CV_AE_AWB_AV" value="1" />
+=======
+    <module name="bebop_cam"/>
+    <!--module name="bebop_ae_awb">
+>>>>>>> upstream/master
       <define name="CV_AE_AWB_VERBOSE" value="0" />
     </module-->
     <module name="video_capture">
@@ -136,6 +161,21 @@
     <set servo="BOTTOM_RIGHT" value="motor_mixing.commands[MOTOR_BACK_RIGHT]"/>
     <set servo="BOTTOM_LEFT" value="motor_mixing.commands[MOTOR_BACK_LEFT]"/>
   </command_laws>
+<<<<<<< HEAD
+=======
+  
+  <section name="BEBOP_FRONT_CAMERA" prefix="MT9F002_">
+    <define name="OUTPUT_HEIGHT" value="520" />
+    <define name="OUTPUT_WIDTH" value="240" />
+    <define name="OFFSET_X" value="0.09" />
+    <define name="ZOOM" value="1.25"/>
+    <define name="GAIN_GREEN1" value="10.0"/>
+    <define name="GAIN_GREEN2" value="10.0"/>
+    <define name="GAIN_BLUE" value="12.5"/>
+    <define name="GAIN_RED" value="9.0"/>
+    <define name="TARGET_EXPOSURE" value="30" />
+  </section>
+>>>>>>> upstream/master
 
   <section name="AIR_DATA" prefix="AIR_DATA_">
     <define name="CALC_AIRSPEED" value="FALSE"/>
@@ -268,6 +308,10 @@
     <define name="ACTUATOR_NAMES" value="nw_motor, ne_motor, se_motor, sw_motor" type="string[]"/>
     <define name="JSBSIM_MODEL" value="bebop" type="string"/>
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
+<<<<<<< HEAD
+=======
+    <define name="MT9F002_SENSOR_RES_DIVIDER" value="4"/>
+>>>>>>> upstream/master
   </section>
   <include href="conf/simulator/gazebo/airframes/bebop.xml"/>
 

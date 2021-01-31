@@ -39,6 +39,7 @@
 #include <Ivy/ivyglibloop.h>
 #include <rtcm3.h>              // Used to decode RTCM3 messages
 #include <CRC24Q.h>             // Used to verify CRC checks
+#include <time.h>
 #include <math/pprz_geodetic_float.h>
 
 #include "std.h"
@@ -52,6 +53,8 @@ msg_state_t msg_state;
 rtcm3_msg_callbacks_node_t rtcm3_1005_node;
 rtcm3_msg_callbacks_node_t rtcm3_1077_node;
 rtcm3_msg_callbacks_node_t rtcm3_1087_node;
+rtcm3_msg_callbacks_node_t rtcm3_4072_node;
+rtcm3_msg_callbacks_node_t rtcm3_1230_node;
 
 rtcm3_msg_callbacks_node_t ubx_nav_svin_node;
 
@@ -59,7 +62,7 @@ rtcm3_msg_callbacks_node_t ubx_nav_svin_node;
 uint8_t ac_id         = 0;
 uint32_t msg_cnt      = 0;
 char *serial_device   = "/dev/ttyACM0";
-uint32_t serial_baud  = B9600;
+uint32_t serial_baud  = B115200;
 uint32_t packet_size  = 100;    // 802.15.4 (Series 1) XBee 100 Bytes payload size
 uint32_t ivy_size     = 0;
 
@@ -95,6 +98,8 @@ static uint32_t uart_read(unsigned char(*buff)[], uint32_t n)  //, void *context
   }
 }
 
+static struct timespec wait = { .tv_sec = 0, .tv_nsec = 50000000 }; // 0.05 seconds wait between messages to awoid saturation
+
 static void ivy_send_message(uint8_t packet_id, uint8_t len, uint8_t msg[])
 {
   char number[5];
@@ -115,6 +120,7 @@ static void ivy_send_message(uint8_t packet_id, uint8_t len, uint8_t msg[])
       cpt++;
     }
 
+    nanosleep(&wait, NULL);
     printf_debug("%s\n\n", gps_packet);
     IvySendMsg("%s", gps_packet);
     offset += (packet_size-6);
@@ -195,6 +201,40 @@ static void rtcm3_1087_callback(uint8_t len, uint8_t msg[])
     }
   }
   printf_debug("Parsed 1087 callback\n");
+}
+
+/*
+ * Callback for the 4072 message to send it trough RTCM_INJECT
+ */
+static void rtcm3_4072_callback(uint8_t len, uint8_t msg[])
+{
+  if (len > 0) {
+    if (crc24q(msg, len - 3) == RTCMgetbitu(msg, (len - 3) * 8, 24)) {
+      ivy_send_message(RTCM3_MSG_4072, len, msg);
+      msg_cnt++;
+    } else {
+      ivy_send_message(RTCM3_MSG_4072, len, msg);
+      printf("Skipping 4072 message (CRC check failed)\n");
+    }
+  }
+  printf_debug("Parsed 4072 callback\n");
+}
+
+/*
+ * Callback for the 1230 message to send it trough RTCM_INJECT
+ */
+static void rtcm3_1230_callback(uint8_t len, uint8_t msg[])
+{
+  if (len > 0) {
+    if (crc24q(msg, len - 3) == RTCMgetbitu(msg, (len - 3) * 8, 24)) {
+      ivy_send_message(RTCM3_MSG_1230, len, msg);
+      msg_cnt++;
+    } else {
+      ivy_send_message(RTCM3_MSG_1230, len, msg);
+      printf("Skipping 1230 message (CRC check failed)\n");
+    }
+  }
+  printf_debug("Parsed 1230 callback\n");
 }
 
 
@@ -319,10 +359,11 @@ int main(int argc, char **argv)
   // Setup RTCM3 callbacks
   printf_debug("Setup RTCM3 callbacks...\n");
   msg_state_init(&msg_state);
+  rtcm3_register_callback(&msg_state, RTCM3_MSG_4072, &rtcm3_4072_callback, &rtcm3_4072_node);
+  rtcm3_register_callback(&msg_state, RTCM3_MSG_1230, &rtcm3_1230_callback, &rtcm3_1230_node);
   rtcm3_register_callback(&msg_state, RTCM3_MSG_1005, &rtcm3_1005_callback, &rtcm3_1005_node);
   rtcm3_register_callback(&msg_state, RTCM3_MSG_1077, &rtcm3_1077_callback, &rtcm3_1077_node);
   rtcm3_register_callback(&msg_state, RTCM3_MSG_1087, &rtcm3_1087_callback, &rtcm3_1087_node);
-
   rtcm3_register_callback(&msg_state, UBX_NAV_SVIN, &ubx_navsvin_callback, &ubx_nav_svin_node);
 
 

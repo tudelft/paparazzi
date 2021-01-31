@@ -35,11 +35,23 @@
 #include "math/pprz_algebra_int.h"
 #include "state.h"
 
+/** explicitly define to zero to disable feed-forward rate term by default */
+#ifndef STABILIZATION_ATTITUDE_PHI_FFDGAIN
+#define STABILIZATION_ATTITUDE_PHI_FFDGAIN 0
+#endif
+#ifndef STABILIZATION_ATTITUDE_THETA_FFDGAIN
+#define STABILIZATION_ATTITUDE_THETA_FFDGAIN 0
+#endif
+#ifndef STABILIZATION_ATTITUDE_PSI_FFDGAIN
+#define STABILIZATION_ATTITUDE_PSI_FFDGAIN 0
+#endif
+
 struct Int32AttitudeGains stabilization_gains = {
   {STABILIZATION_ATTITUDE_PHI_PGAIN, STABILIZATION_ATTITUDE_THETA_PGAIN, STABILIZATION_ATTITUDE_PSI_PGAIN },
   {STABILIZATION_ATTITUDE_PHI_DGAIN, STABILIZATION_ATTITUDE_THETA_DGAIN, STABILIZATION_ATTITUDE_PSI_DGAIN },
   {STABILIZATION_ATTITUDE_PHI_DDGAIN, STABILIZATION_ATTITUDE_THETA_DDGAIN, STABILIZATION_ATTITUDE_PSI_DDGAIN },
-  {STABILIZATION_ATTITUDE_PHI_IGAIN, STABILIZATION_ATTITUDE_THETA_IGAIN, STABILIZATION_ATTITUDE_PSI_IGAIN }
+  {STABILIZATION_ATTITUDE_PHI_IGAIN, STABILIZATION_ATTITUDE_THETA_IGAIN, STABILIZATION_ATTITUDE_PSI_IGAIN },
+  {STABILIZATION_ATTITUDE_PHI_FFDGAIN, STABILIZATION_ATTITUDE_THETA_FFDGAIN, STABILIZATION_ATTITUDE_PSI_FFDGAIN }
 };
 
 /* warn if some gains are still negative */
@@ -153,7 +165,9 @@ void stabilization_attitude_enter(void)
   /* reset psi setpoint to current psi angle */
   stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
 
-  attitude_ref_quat_int_enter(&att_ref_quat_i, stab_att_sp_euler.psi);
+  struct Int32Quat *state_quat = stateGetNedToBodyQuat_i();
+
+  attitude_ref_quat_int_enter(&att_ref_quat_i, state_quat);
 
   int32_quat_identity(&stabilization_att_sum_err_quat);
 

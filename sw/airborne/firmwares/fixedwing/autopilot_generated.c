@@ -82,9 +82,10 @@ void autopilot_generated_set_mode(uint8_t new_autopilot_mode)
 }
 
 
-void autopilot_generated_set_motors_on(bool motors_on __attribute__((unused)))
+void autopilot_generated_set_motors_on(bool motors_on)
 {
-  // Do nothing on fixedwing ?
+  // only needed for consistency with other firmwares
+  autopilot.motors_on = motors_on;
 }
 
 static inline void copy_from_to_fbw(void)
@@ -104,7 +105,7 @@ void autopilot_generated_on_rc_frame(void)
 {
 
   // update electrical from FBW
-  imcu_get_electrical(&vsupply, &current, &energy);
+  imcu_get_electrical(&ap_electrical);
 
   // FIXME what to do here ?
   copy_from_to_fbw();

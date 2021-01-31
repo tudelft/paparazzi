@@ -139,14 +139,24 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   return img;
 }
 
+<<<<<<< HEAD
 struct image_t *object_detector1(struct image_t *img);
 struct image_t *object_detector1(struct image_t *img)
+=======
+struct image_t *object_detector1(struct image_t *img, uint8_t camera_id);
+struct image_t *object_detector1(struct image_t *img, uint8_t camera_id)
+>>>>>>> upstream/master
 {
   return object_detector(img, 1);
 }
 
+<<<<<<< HEAD
 struct image_t *object_detector2(struct image_t *img);
 struct image_t *object_detector2(struct image_t *img)
+=======
+struct image_t *object_detector2(struct image_t *img, uint8_t camera_id);
+struct image_t *object_detector2(struct image_t *img, uint8_t camera_id)
+>>>>>>> upstream/master
 {
   return object_detector(img, 2);
 }
@@ -168,7 +178,11 @@ void color_object_detector_init(void)
   cod_draw1 = COLOR_OBJECT_DETECTOR_DRAW1;
 #endif
 
+<<<<<<< HEAD
   cv_add_to_device(&COLOR_OBJECT_DETECTOR_CAMERA1, object_detector1, COLOR_OBJECT_DETECTOR_FPS1);
+=======
+  cv_add_to_device(&COLOR_OBJECT_DETECTOR_CAMERA1, object_detector1, COLOR_OBJECT_DETECTOR_FPS1, 0);
+>>>>>>> upstream/master
 #endif
 
 #ifdef COLOR_OBJECT_DETECTOR_CAMERA2
@@ -184,7 +198,11 @@ void color_object_detector_init(void)
   cod_draw2 = COLOR_OBJECT_DETECTOR_DRAW2;
 #endif
 
+<<<<<<< HEAD
   cv_add_to_device(&COLOR_OBJECT_DETECTOR_CAMERA2, object_detector2, COLOR_OBJECT_DETECTOR_FPS2);
+=======
+  cv_add_to_device(&COLOR_OBJECT_DETECTOR_CAMERA2, object_detector2, COLOR_OBJECT_DETECTOR_FPS2, 1);
+>>>>>>> upstream/master
 #endif
 }
 

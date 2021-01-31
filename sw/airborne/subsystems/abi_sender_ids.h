@@ -72,6 +72,10 @@
 #define BARO_SIM_SENDER_ID 19
 #endif
 
+#ifndef BARO_BMP3_SENDER_ID
+#define BARO_BMP3_SENDER_ID 20
+#endif
+
 #ifndef METEO_STICK_SENDER_ID
 #define METEO_STICK_SENDER_ID 30
 #endif
@@ -84,6 +88,10 @@
 #define MS45XX_SENDER_ID 40
 #endif
 
+#ifndef SDP3X_SENDER_ID
+#define SDP3X_SENDER_ID 41
+#endif
+
 /*
  * IDs of airspeed sensors (message 14)
  */
@@ -93,6 +101,10 @@
 
 #ifndef AIRSPEED_ADC_ID
 #define AIRSPEED_ADC_ID 2
+#endif
+
+#ifndef AIRSPEED_SDP3X_ID
+#define AIRSPEED_SDP3X_ID 3
 #endif
 
 /*
@@ -111,7 +123,7 @@
 #endif
 
 /*
- * IDs of AGL measurment modules that can be loaded (sonars,...) (message 2)
+ * IDs of AGL measurment modules that can be loaded (sonars, lidars,...) (message 2)
  */
 #ifndef AGL_SONAR_ADC_ID
 #define AGL_SONAR_ADC_ID 1
@@ -153,12 +165,40 @@
 #define AGL_RAY_SENSOR_GAZEBO_ID 10
 #endif
 
+#ifndef AGL_LIDAR_TFMINI_ID
+#define AGL_LIDAR_TFMINI_ID 11
+#endif
+
+#ifndef AGL_VL53L1X_ID
+#define AGL_VL53L1X_ID 12
+#endif
+
+#ifndef AGL_SONAR_PWM_ID
+#define AGL_SONAR_PWM_ID 13
+#endif
+
+#ifndef AGL_LIDAR_TFMINI_I2C_ID
+#define AGL_LIDAR_TFMINI_I2C_ID 14
+#endif
+
+#ifndef AGL_LIDAR_MATEKSYS_3901_L0X_ID
+#define AGL_LIDAR_MATEKSYS_3901_L0X_ID 15
+#endif
+
 /*
  * IDs of magnetometer sensors (including IMUs with mag)
  */
 
 #ifndef MAG_HMC58XX_SENDER_ID
 #define MAG_HMC58XX_SENDER_ID 2
+#endif
+
+#ifndef MAG_LIS3MDL_SENDER_ID
+#define MAG_LIS3MDL_SENDER_ID 3
+#endif
+
+#ifndef MAG_IST8310_SENDER_ID
+#define MAG_IST8310_SENDER_ID 4
 #endif
 
 #ifndef IMU_MAG_PITOT_ID
@@ -303,11 +343,36 @@
 #define IMU_VECTORNAV_ID 18
 #endif
 
+#ifndef IMU_BMI088_ID
+#define IMU_BMI088_ID 19
+#endif
+
+// prefiltering with OneEuro filter
+#ifndef IMU_F1E_ID
+#define IMU_F1E_ID 30
+#endif
+
 /*
  * IDs of OPTICFLOW estimates (message 11)
  */
 #ifndef FLOW_OPTICFLOW_ID
 #define FLOW_OPTICFLOW_ID 1
+#endif
+
+#ifndef FLOW_OPTICFLOW_CAM1_ID
+#define FLOW_OPTICFLOW_CAM1_ID 1
+#endif
+
+#ifndef FLOW_OPTICFLOW_CAM2_ID
+#define FLOW_OPTICFLOW_CAM2_ID 2
+#endif
+
+#ifndef FLOW_OPTICFLOW_PMW3901_ID
+#define FLOW_OPTICFLOW_PMW3901_ID 3
+#endif
+
+#ifndef FLOW_OPTICFLOW_MATEKSYS_3901_L0X_ID
+#define FLOW_OPTICFLOW_MATEKSYS_3901_L0X_ID 4
 #endif
 
 /*
@@ -325,8 +390,20 @@
 #define VEL_OPTICFLOW_ID 3
 #endif
 
+#ifndef VEL_OPTICFLOW_CAM1_ID
+#define VEL_OPTICFLOW_CAM1_ID 3
+#endif
+
+#ifndef VEL_OPTICFLOW_CAM2_ID
+#define VEL_OPTICFLOW_CAM2_ID 4
+#endif
+
 #ifndef VEL_STEREOCAM_ID
-#define VEL_STEREOCAM_ID 4
+#define VEL_STEREOCAM_ID 5
+#endif
+
+#ifndef VEL_OPTICFLOW_PMW3901_ID
+#define VEL_OPTICFLOW_PMW3901_ID 6
 #endif
 
 /*
@@ -377,6 +454,10 @@
 #define OBS_DETECTION_RANGE_ARRAY_NPS_ID 3
 #endif
 
+#ifndef OBS_DETECTION_MULTI_RANGER_DECK_ID
+#define OBS_DETECTION_MULTI_RANGER_DECK_ID 4
+#endif
+
 /*
  * ID's of forcefield generating type functions
  */
@@ -423,4 +504,14 @@
 #define COLOR_OBJECT_DETECTION2_ID 2
 #endif
 
+<<<<<<< HEAD
+=======
+/*
+ * JOYSTICK message (used for payload or control, but not as a RC)
+ */
+#ifndef JOYSTICK_ID
+#define JOYSTICK_ID 1
+#endif
+
+>>>>>>> upstream/master
 #endif /* ABI_SENDER_IDS_H */

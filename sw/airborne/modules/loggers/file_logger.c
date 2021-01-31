@@ -35,6 +35,11 @@
 
 #include "mcu_periph/sys_time.h"
 #include "state.h"
+<<<<<<< HEAD
+=======
+#include "generated/airframe.h"
+#ifdef COMMAND_THRUST
+>>>>>>> upstream/master
 #include "firmwares/rotorcraft/stabilization.h"
 
 
@@ -61,7 +66,15 @@ static void file_logger_write_header(FILE *file) {
   fprintf(file, "vel_x,vel_y,vel_z,");
   fprintf(file, "att_phi,att_theta,att_psi,");
   fprintf(file, "rate_p,rate_q,rate_r,");
+<<<<<<< HEAD
   fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
+=======
+#ifdef COMMAND_THRUST
+  fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
+#else
+  fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
+#endif
+>>>>>>> upstream/master
 }
 
 /** Write CSV row
@@ -81,9 +94,19 @@ static void file_logger_write_row(FILE *file) {
   fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
   fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
+<<<<<<< HEAD
   fprintf(file, "%d,%d,%d,%d\n",
       stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
       stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
+=======
+#ifdef COMMAND_THRUST
+  fprintf(file, "%d,%d,%d,%d\n",
+      stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
+      stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
+#else
+  fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
+#endif
+>>>>>>> upstream/master
 }
 
 
@@ -95,7 +118,11 @@ void file_logger_start(void)
     char save_dir_cmd[256];
     sprintf(save_dir_cmd, "mkdir -p %s", STRINGIFY(FILE_LOGGER_PATH));
     if (system(save_dir_cmd) != 0) {
+<<<<<<< HEAD
       printf("[video_capture] Could not create images directory %s.\n", STRINGIFY(FILE_LOGGER_PATH));
+=======
+      printf("[file_logger] Could not create log file directory %s.\n", STRINGIFY(FILE_LOGGER_PATH));
+>>>>>>> upstream/master
       return;
     }
   }

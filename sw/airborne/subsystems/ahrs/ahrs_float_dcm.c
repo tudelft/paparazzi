@@ -117,14 +117,20 @@ void ahrs_dcm_init(void)
 }
 
 bool ahrs_dcm_align(struct FloatRates *lp_gyro, struct FloatVect3 *lp_accel,
-                      struct FloatVect3 *lp_mag)
+                      struct FloatVect3 *lp_mag __attribute__((unused)))
 {
-  /* Compute an initial orientation using euler angles */
-  ahrs_float_get_euler_from_accel_mag(&ahrs_dcm.ltp_to_imu_euler, lp_accel, lp_mag);
+  /* Compute an initial orientation in quaternion (and then back to euler angles) so it works upside-down as well */
+  struct FloatQuat quat;
+#if USE_MAGNETOMETER
+  ahrs_float_get_quat_from_accel_mag(&quat, lp_accel, lp_mag);
+#else
+  ahrs_float_get_quat_from_accel(&quat, lp_accel);
+#endif
+  float_eulers_of_quat(&ahrs_dcm.ltp_to_imu_euler, &quat);
 
-  /* Convert initial orientation in quaternion and rotation matrice representations. */
+  /* Convert initial orientation from quaternion to rotation matrix representations. */
   struct FloatRMat ltp_to_imu_rmat;
-  float_rmat_of_eulers(&ltp_to_imu_rmat, &ahrs_dcm.ltp_to_imu_euler);
+  float_rmat_of_quat(&ltp_to_imu_rmat, &quat);
 
   /* set filter dcm */
   set_dcm_matrix_from_rmat(&ltp_to_imu_rmat);
@@ -175,7 +181,7 @@ void ahrs_dcm_update_gps(struct GpsState *gps_s)
     ahrs_dcm.gps_age = 0;
     ahrs_dcm.gps_speed = gps_s->speed_3d / 100.;
 
-    if (gps_s->gspeed >= 500) { //got a 3d fix and ground speed is more than 5.0 m/s
+    if (gps_s->gspeed >= 500) { //got a 3d fix and ground speed is more than 5.0 m/s //FIXME: Should be settable
       ahrs_dcm.gps_course = ((float)gps_s->course) / 1.e7;
       ahrs_dcm.gps_course_valid = true;
     } else {
@@ -357,12 +363,25 @@ void Normalize(void)
   }
 }
 
+// strong structural vibrations can prevent to perform the drift correction
+// so accel magnitude is filtered before computing the weighting heuristic
+#ifndef ACCEL_WEIGHT_FILTER
+#define ACCEL_WEIGHT_FILTER 8
+#endif
+
+// the weigthing is function of the length of a band of 1G by default
+// so <0.5G = 0.0, 1G = 1.0 , >1.5G = 0.0
+// adjust the band size if needed, the value should be >0
+#ifndef ACCEL_WEIGHT_BAND
+#define ACCEL_WEIGHT_BAND 1.f
+#endif
 
 void Drift_correction()
 {
   //Compensation the Roll, Pitch and Yaw drift.
   static float Scaled_Omega_P[3];
   static float Scaled_Omega_I[3];
+  static float Accel_filtered = 0.f;
   float Accel_magnitude;
   float Accel_weight;
   float Integrator_magnitude;
@@ -377,9 +396,14 @@ void Drift_correction()
   // Calculate the magnitude of the accelerometer vector
   Accel_magnitude = sqrtf(accel_float.x * accel_float.x + accel_float.y * accel_float.y + accel_float.z * accel_float.z);
   Accel_magnitude = Accel_magnitude / GRAVITY; // Scale to gravity.
+#if ACCEL_WEIGHT_FILTER
+  Accel_filtered = (Accel_magnitude + (ACCEL_WEIGHT_FILTER - 1) * Accel_filtered) / ACCEL_WEIGHT_FILTER;
+#else // set ACCEL_WEIGHT_FILTER to 0 to disable filter
+  Accel_filtered = Accel_magnitude;
+#endif
   // Dynamic weighting of accelerometer info (reliability filter)
-  // Weight for accelerometer info (<0.5G = 0.0, 1G = 1.0 , >1.5G = 0.0)
-  Accel_weight = Clip(1 - 2 * fabsf(1 - Accel_magnitude), 0, 1); //
+  // Weight for accelerometer info according to band size (min value is 0.1 to prevent division by zero)
+  Accel_weight = Clip(1.f - (2.f / Max(0.1f,ACCEL_WEIGHT_BAND)) * fabsf(1.f - Accel_filtered), 0.f, 1.f);
 
 
 #if PERFORMANCE_REPORTING == 1

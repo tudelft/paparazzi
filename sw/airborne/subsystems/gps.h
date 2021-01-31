@@ -54,7 +54,7 @@
 #define GPS_VALID_COURSE_BIT   6
 
 #ifndef GPS_NB_CHANNELS
-#define GPS_NB_CHANNELS 16
+#define GPS_NB_CHANNELS 40
 #endif
 
 #define GPS_MODE_AUTO 0
@@ -64,6 +64,12 @@
 #ifndef MULTI_GPS_MODE
 #define MULTI_GPS_MODE GPS_MODE_AUTO
 #endif
+
+/* expand GpsId(PRIMARY_GPS) to e.g. GPS_UBX_ID */
+#define __GpsId(_x) _x ## _ID
+#define _GpsId(_x) __GpsId(_x)
+#define GpsId(_x) _GpsId(_x)
+
 
 extern uint8_t multi_gps_mode;
 
@@ -92,6 +98,8 @@ struct GpsState {
   uint16_t speed_3d;             ///< norm of 3d speed in cm/s
   int32_t course;                ///< GPS course over ground in rad*1e7, [0, 2*Pi]*1e7 (CW/north)
   uint32_t pacc;                 ///< position accuracy in cm
+  uint32_t hacc;                 ///< horizontal accuracy in cm
+  uint32_t vacc;                 ///< vertical accuracy in cm
   uint32_t sacc;                 ///< speed accuracy in cm/s
   uint32_t cacc;                 ///< course accuracy in rad*1e7
   uint16_t pdop;                 ///< position dilution of precision scaled by 100
@@ -213,5 +221,23 @@ extern struct UtmCoor_f utm_float_from_gps(struct GpsState *gps_s, uint8_t zone)
  * @return utm position in fixed point (cm), altitude hmsl (mm).
  */
 extern struct UtmCoor_i utm_int_from_gps(struct GpsState *gps_s, uint8_t zone);
+
+/**
+ * Number of days since navigation epoch (6 January 1980)
+ * @param[in] year current year
+ * @param[in] month current month
+ * @param[in] day current day
+ * @return number of days since navigation epoch
+ */
+extern uint16_t gps_day_number(uint16_t year, uint8_t month, uint8_t day);
+
+/**
+ * Number of weeks since navigation epoch (6 January 1980)
+ * @param[in] year current year
+ * @param[in] month current month
+ * @param[in] day current day
+ * @return number of weeks since navigation epoch
+ */
+extern uint16_t gps_week_number(uint16_t year, uint8_t month, uint8_t day);
 
 #endif /* GPS_H */

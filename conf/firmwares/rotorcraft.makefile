@@ -31,12 +31,13 @@ SRC_MODULES=modules
 
 SRC_ARCH=arch/$(ARCH)
 
-ROTORCRAFT_INC = -I$(SRC_FIRMWARE) -I$(SRC_BOARD)
+ROTORCRAFT_INC = -DROTORCRAFT_FIRMWARE -I$(SRC_FIRMWARE) -I$(SRC_BOARD)
 
 ap.ARCHDIR = $(ARCH)
 
 
 VPATH += $(PAPARAZZI_HOME)/var/share
+VPATH += $(PAPARAZZI_HOME)/sw/ext
 
 ######################################################################
 ##
@@ -135,6 +136,7 @@ endif # TARGET == fbw
 
 ifneq ($(TARGET), fbw)
 $(TARGET).srcs += mcu_periph/i2c.c
+$(TARGET).srcs += mcu_periph/softi2c.c
 $(TARGET).srcs += $(SRC_ARCH)/mcu_periph/i2c_arch.c
 endif
 

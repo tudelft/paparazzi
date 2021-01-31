@@ -298,8 +298,7 @@ static void __attribute__((unused)) uart_receive_handler(struct uart_periph *per
 
   pthread_mutex_lock(&uart_mutex);
 
-  if (read(fd, &c, 1) > 0) {
-    //printf("r %x %c\n",c,c);
+  while (read(fd, &c, 1) > 0) {
     uint16_t temp = (periph->rx_insert_idx + 1) % UART_RX_BUFFER_SIZE;
     // check for more room in queue
     if (temp != periph->rx_extract_idx) {
@@ -321,15 +320,15 @@ uint8_t uart_getch(struct uart_periph *p)
   return ret;
 }
 
-uint16_t uart_char_available(struct uart_periph *p)
+int uart_char_available(struct uart_periph *p)
 {
   pthread_mutex_lock(&uart_mutex);
-  int16_t available = p->rx_insert_idx - p->rx_extract_idx;
+  int available = p->rx_insert_idx - p->rx_extract_idx;
   if (available < 0) {
     available += UART_RX_BUFFER_SIZE;
   }
   pthread_mutex_unlock(&uart_mutex);
-  return (uint16_t)available;
+  return available;
 }
 
 #if USE_UART0

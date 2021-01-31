@@ -34,6 +34,12 @@
 #include "std.h"
 
 #include "mcu_periph/spi_arch.h"
+#include "mcu_periph/sys_time.h"
+
+#ifndef SPI_BLOCKING_TIMEOUT
+#define SPI_BLOCKING_TIMEOUT 1.f
+#endif
+
 
 /**
  * @addtogroup mcu_periph
@@ -241,6 +247,18 @@ extern void spi3_arch_init(void);
 
 #endif // USE_SPI3
 
+#if USE_SPI4
+
+extern struct spi_periph spi4;
+extern void spi4_init(void);
+
+/** Architecture dependent SPI4 initialization.
+ * Must be implemented by underlying architecture
+ */
+extern void spi4_arch_init(void);
+
+#endif // USE_SPI4
+
 /** Initialize a spi peripheral.
  * @param p spi peripheral to be configured
  */
@@ -257,6 +275,25 @@ extern void spi_init_slaves(void);
  * @return TRUE if insertion to the transaction queue succeeded
  */
 extern bool spi_submit(struct spi_periph *p, struct spi_transaction *t);
+
+/** Perform a spi transaction (blocking).
+ * @param p spi peripheral to be used
+ * @param t spi transaction
+ * @return TRUE if transaction completed (success or failure)
+ */
+static inline bool spi_blocking_transceive(struct spi_periph *p, struct spi_transaction *t) {
+  if (!spi_submit(p, t)) {
+    return false;
+  }
+  // Wait for transaction to complete
+  float start_t = get_sys_time_float();
+  while (t->status == SPITransPending || t->status == SPITransRunning) {
+    if (get_sys_time_float() - start_t > SPI_BLOCKING_TIMEOUT) {
+      break;
+    }
+  }
+  return true;
+}
 
 /** Select a slave.
  * @param slave slave id

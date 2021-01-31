@@ -1,4 +1,4 @@
-.. tutorials main_tutorials intermediate 
+.. tutorials intermediate 
 
 ======================
 Intermediate
@@ -8,5 +8,6 @@ TBD
 
 .. toctree ::
 	write_module
-
+	create_radio
+	create_joystick
 

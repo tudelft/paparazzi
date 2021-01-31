@@ -61,6 +61,13 @@
 
 extern void jevois_init(void);
 extern void jevois_event(void);
+extern void jevois_report(void);
+
+/**
+ * Generic function to send a string command to Jevois
+ * @param[in] s string command to send
+ */
+extern void jevois_send_string(char *s);
 
 /** Start and stop streaming
  * @param[in] activate enable or disable streaming
@@ -77,6 +84,10 @@ extern void jevois_setmapping(int number);
 
 // dummy variable to change mapping from setting
 extern int jevois_mapping_setting;
+
+/** Send state to camera
+ */
+extern void jevois_send_state(void);
 
 #endif
 

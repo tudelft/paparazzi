@@ -28,6 +28,7 @@
  */
 
 #include "autopilot.h"
+#include "autopilot_arming.h"
 
 #include "subsystems/radio_control.h"
 #include "subsystems/commands.h"
@@ -45,7 +46,6 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_rate.h"
 #endif
 
-#include "firmwares/rotorcraft/autopilot_rc_helpers.h"
 #include "firmwares/rotorcraft/autopilot_guided.h"
 
 #include "generated/settings.h"
@@ -58,17 +58,6 @@
 #else
 #define GpsIsLost() TRUE
 #endif
-#endif
-
-#if USE_KILL_SWITCH_FOR_MOTOR_ARMING
-#include "autopilot_arming_switch.h"
-PRINT_CONFIG_MSG("Using kill switch for motor arming")
-#elif USE_THROTTLE_FOR_MOTOR_ARMING
-#include "autopilot_arming_throttle.h"
-PRINT_CONFIG_MSG("Using throttle for motor arming")
-#else
-#include "autopilot_arming_yaw.h"
-PRINT_CONFIG_MSG("Using 2 sec yaw for motor arming")
 #endif
 
 /* Geofence exceptions */
@@ -176,6 +165,7 @@ void autopilot_static_periodic(void)
     guidance_h_run(autopilot_in_flight());
     SetRotorcraftCommands(stabilization_cmd, autopilot.in_flight, autopilot.motors_on);
   }
+  autopilot.throttle = commands[COMMAND_THRUST];
 
 }
 
@@ -358,8 +348,9 @@ void autopilot_static_on_rc_frame(void)
       if (new_autopilot_mode == MODE_MANUAL) {
         autopilot_static_set_mode(new_autopilot_mode);
       }
-      /* if in HOME mode, don't allow switching to non-manual modes */
-      else if ((autopilot.mode != AP_MODE_HOME)
+      /* if in HOME or FAILSAFE mode, don't allow switching to non-manual modes */
+      else if (((autopilot.mode != AP_MODE_HOME) && (autopilot.mode != AP_MODE_FAILSAFE))
+
 #if UNLOCKED_HOME_MODE
                /* Allowed to leave home mode when UNLOCKED_HOME_MODE */
                || !too_far_from_home
@@ -400,4 +391,3 @@ void autopilot_static_on_rc_frame(void)
   }
 
 }
-

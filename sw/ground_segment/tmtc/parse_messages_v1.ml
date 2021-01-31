@@ -24,7 +24,7 @@
 
 open Printf
 open Server_globals
-open Aircraft
+open Aircraft_server
 open Latlong
 module LL = Latlong
 module U = Unix
@@ -69,13 +69,13 @@ let foi32value = fun x ->
     | _ -> failwith "Receive.log_and_parse: int32 expected"
 
 let format_string_field = fun s ->
-  let s = Compat.bytes_copy s in
-  for i = 0 to Compat.bytes_length s - 1 do
-    match s.[i] with
-        ' ' -> Compat.bytes_set s i '_'
+  let s = Bytes.of_string s in
+  for i = 0 to Bytes.length s - 1 do
+    match Bytes.get s i with
+        ' ' -> Bytes.set s i '_'
       | _ -> ()
   done;
-  s
+  Bytes.to_string s
 
 let check_index = fun i t where ->
   if i < 0 || i >= Array.length t then begin
@@ -132,7 +132,7 @@ let hmsl_of_ref = fun nav_ref d_hmsl ->
 
 let heading_from_course = ref false
 
-let log_and_parse = fun ac_name (a:Aircraft.aircraft) msg values ->
+let log_and_parse = fun ac_name (a:Aircraft_server.aircraft) msg values ->
   let value = fun x -> try PprzLink.assoc x values with Not_found -> failwith (sprintf "Error: field '%s' not found\n" x) in
 
   let fvalue = fun x ->
@@ -207,7 +207,7 @@ let log_and_parse = fun ac_name (a:Aircraft.aircraft) msg values ->
             let desired_east  = foi32value "carrot_east" /. pos_frac
             and desired_north = foi32value "carrot_north" /. pos_frac
             and desired_alt = foi32value "carrot_up" /. pos_frac in
-            a.desired_pos <- Aircraft.add_pos_to_nav_ref nav_ref ~z:desired_alt (desired_east, desired_north);
+            a.desired_pos <- Aircraft_server.add_pos_to_nav_ref nav_ref ~z:desired_alt (desired_east, desired_north);
             a.desired_altitude <- desired_alt +. (hmsl_of_ref nav_ref a.d_hmsl);
             a.desired_course   <- foi32value "carrot_psi" /. angle_frac
             (* a.desired_climb <-  ?? *)
@@ -246,7 +246,7 @@ let log_and_parse = fun ac_name (a:Aircraft.aircraft) msg values ->
           Some nav_ref ->
             let x = (try fvalue "x" with _ -> fvalue "desired_x")
             and y = (try fvalue "y" with _ -> fvalue "desired_y") in
-            a.desired_pos <- Aircraft.add_pos_to_nav_ref nav_ref (x, y);
+            a.desired_pos <- Aircraft_server.add_pos_to_nav_ref nav_ref (x, y);
         | None -> ()
       end;
       a.desired_altitude <- (try fvalue "altitude" with _ -> fvalue "desired_altitude");
@@ -292,9 +292,13 @@ let log_and_parse = fun ac_name (a:Aircraft.aircraft) msg values ->
         a.heading  <- norm_course (fvalue "psi")
       end
     | "NAVIGATION" ->
+      a.flight_time <- ivalue "flight_time";
+      a.block_time <- ivalue "block_time";
+      a.stage_time <- ivalue "stage_time";
       a.cur_block <- ivalue "cur_block";
       a.cur_stage <- ivalue "cur_stage";
       a.dist_to_wp <- (try sqrt (fvalue "dist2_wp") with _ -> fvalue "dist_wp");
+      a.kill_mode <- ivalue "kill_auto_throttle" <> 0;
     | "ROTORCRAFT_NAV_STATUS" ->
       a.block_time <- ivalue "block_time";
       a.stage_time <- ivalue "stage_time";
@@ -302,17 +306,15 @@ let log_and_parse = fun ac_name (a:Aircraft.aircraft) msg values ->
       a.cur_stage <- ivalue "cur_stage";
       a.horizontal_mode <- check_index (ivalue "horizontal_mode") horiz_modes "AP_HORIZ";
       a.dist_to_wp <- (try fvalue "dist_wp" with _ -> 0.);
-    | "BAT" ->
-      a.throttle <- fvalue "throttle" /. 9600. *. 100.;
-      a.kill_mode <- ivalue "kill_auto_throttle" <> 0;
-      a.flight_time <- ivalue "flight_time";
-      a.rpm <- a.throttle *. 100.;
-      a.bat <- fvalue "voltage" /. 10.;
-      a.stage_time <- ivalue "stage_time";
-      a.block_time <- ivalue "block_time";
-      a.energy <- ivalue "energy"
+    | "ENERGY" ->
+      a.throttle <- fvalue "throttle";
+      a.bat <- fvalue "voltage";
+      a.amp <- fvalue "current";
+      a.power <- fvalue "power";
+      a.charge <- fvalue "charge";
+      a.energy <- fvalue "energy";
     | "FBW_STATUS" ->
-      a.fbw.fbw_bat <- fvalue "vsupply" /. 10.;
+      a.fbw.fbw_bat <- fvalue "vsupply";
       a.fbw.pprz_mode_msgs_since_last_fbw_status_msg <- 0;
       a.fbw.rc_rate <- ivalue "frame_rate";
       let fbw_rc_mode = ivalue "rc_status" in
@@ -363,7 +365,7 @@ let log_and_parse = fun ac_name (a:Aircraft.aircraft) msg values ->
       a.gps_mode      <- check_index (ivalue "gps_status") gps_modes "GPS_MODE";
       a.ap_mode       <- check_index (ivalue "ap_mode") (modes_of_aircraft a) "ROTORCRAFT_AP_MODE";
       a.kill_mode     <- ivalue "ap_motors_on" == 0;
-      a.bat           <- fvalue "vsupply" /. 10.
+      a.bat           <- fvalue "vsupply"
     | "ROVER_STATUS" ->
       a.vehicle_type  <- Rover;
       a.fbw.rc_status <- get_rc_status (ivalue "rc_status");
@@ -371,7 +373,7 @@ let log_and_parse = fun ac_name (a:Aircraft.aircraft) msg values ->
       a.gps_mode      <- check_index (ivalue "gps_status") gps_modes "GPS_MODE";
       a.ap_mode       <- check_index (ivalue "ap_mode") (modes_of_aircraft a) "ROVER_AP_MODE";
       a.kill_mode     <- ivalue "ap_motors_on" == 0;
-      a.bat           <- fvalue "vsupply" /. 10.
+      a.bat           <- fvalue "vsupply"
     | "STATE_FILTER_STATUS" ->
       a.state_filter_mode <- check_index (ivalue "state_filter_mode") state_filter_modes "STATE_FILTER_MODES"
     | "DATALINK_REPORT" ->
@@ -399,7 +401,7 @@ let log_and_parse = fun ac_name (a:Aircraft.aircraft) msg values ->
       begin
         match a.nav_ref, a.horizontal_mode with
             Some nav_ref, 2 -> (** FIXME *)
-              a.horiz_mode <- Circle (Aircraft.add_pos_to_nav_ref nav_ref (fvalue "center_east", fvalue "center_north"), truncate (fvalue "radius"));
+              a.horiz_mode <- Circle (Aircraft_server.add_pos_to_nav_ref nav_ref (fvalue "center_east", fvalue "center_north"), truncate (fvalue "radius"));
               if !Kml.enabled then Kml.update_horiz_mode a
           | _ -> ()
       end
@@ -407,8 +409,8 @@ let log_and_parse = fun ac_name (a:Aircraft.aircraft) msg values ->
       begin
         match a.nav_ref, a.horizontal_mode with
             Some nav_ref, 1 -> (** FIXME *)
-              let p1 = Aircraft.add_pos_to_nav_ref nav_ref (fvalue "segment_east_1", fvalue "segment_north_1")
-              and p2 = Aircraft.add_pos_to_nav_ref nav_ref (fvalue "segment_east_2", fvalue "segment_north_2") in
+              let p1 = Aircraft_server.add_pos_to_nav_ref nav_ref (fvalue "segment_east_1", fvalue "segment_north_1")
+              and p2 = Aircraft_server.add_pos_to_nav_ref nav_ref (fvalue "segment_east_2", fvalue "segment_north_2") in
               a.horiz_mode <- Segment (p1, p2);
               if !Kml.enabled then Kml.update_horiz_mode a
           | _ -> ()
@@ -421,8 +423,8 @@ let log_and_parse = fun ac_name (a:Aircraft.aircraft) msg values ->
         a.time_since_last_survey_msg <- 0.;
         match a.nav_ref with
             Some nav_ref ->
-              let p1 = Aircraft.add_pos_to_nav_ref nav_ref (fvalue "west", fvalue "south")
-              and p2 = Aircraft.add_pos_to_nav_ref nav_ref (fvalue "east", fvalue "north") in
+              let p1 = Aircraft_server.add_pos_to_nav_ref nav_ref (fvalue "west", fvalue "south")
+              and p2 = Aircraft_server.add_pos_to_nav_ref nav_ref (fvalue "east", fvalue "north") in
               a.survey <- Some (p1, p2)
           | None -> ()
       end
@@ -478,7 +480,7 @@ let log_and_parse = fun ac_name (a:Aircraft.aircraft) msg values ->
           a.heading <- a.course;
         a.agl <- a.alt -. (try float (Srtm.of_wgs84 a.pos) with _ -> a.ground_alt);
         a.bat <- fvalue "vsupply" /. 10.;
-        a.energy <- ivalue "energy" * 100;
+        a.charge <- fvalue "charge" /. 10.;
         a.throttle <- fvalue "throttle";
         a.ap_mode <- check_index (ivalue "ap_mode") (modes_of_aircraft a) "AP_MODE";
         a.cur_block <- ivalue "nav_block";
