@@ -183,7 +183,7 @@
     <!-- backright right (CW), brackright left (CCW), backleft right (CW), backleft left (CCW) -->
     <define name="NB_MOTOR"    value="12"/>
     <define name="SCALE"       value="256"/>
-    <define name="ROLL_COEF"   value="{  162,   162,  -162, -256, -256, -162,  162,  256}"/>
+    <define name="ROLL_COEF"   value="{  256,  162, -162, -256, -256, -162,  162,  256}"/>
     <define name="PITCH_COEF"  value="{  256,  256,  256,  256, -256, -256, -256, -256}"/>
     <define name="YAW_COEF"    value="{ -256,  256, -256,  256, -256,  256, -256,  256}"/>
     <define name="THRUST_COEF" value="{  256,  256,  256,  256,  256,  256,  256,  256}"/>
