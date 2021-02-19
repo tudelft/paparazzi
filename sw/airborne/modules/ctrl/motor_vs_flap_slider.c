@@ -45,7 +45,7 @@ void motor_vs_flap_slider_periodic(void)
   float pitch_deg = DegOfRad(eulers_zxy.theta);
   float airspeed = stateGetAirspeed_f();
 
-  if (airspeed > 15.0 &&
+  if (airspeed > 8.0 &&
       pitch_deg < -60.0 &&
       autopilot.mode != AP_MODE_FORWARD &&
       autopilot.mode != AP_MODE_ATTITUDE_DIRECT)

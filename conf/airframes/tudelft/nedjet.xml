@@ -128,7 +128,7 @@
       <define name="GUIDANCE_INDI_PITCH_LIFT_EFF" value="0.12"/>
       <define name="GUIDANCE_INDI_PITCH_EFF_SCALING" value="1.0"/>
       <define name="GUIDANCE_H_REF_MAX_SPEED" value="18.0"/> <!--not used-->
-      <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="16.0"/>
+      <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="12.0"/>
       <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/> <!--heading can not be set by navigation-->
       <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="5"/>
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-600.0"/>
@@ -247,24 +247,25 @@
   </section>
 
   <section name="IMU" prefix="IMU_">
-    <!-- Calibrated in the MAVLab 30-06-2020 -->
-    <define name="ACCEL_X_NEUTRAL" value="288"/>
-    <define name="ACCEL_Y_NEUTRAL" value="35"/>
+    <!-- Calibrated at Valkenburg 04-02-2021 -->
+    <define name="ACCEL_X_NEUTRAL" value="303"/>
+    <define name="ACCEL_Y_NEUTRAL" value="39"/>
     <define name="ACCEL_Z_NEUTRAL" value="4"/>
-    <define name="ACCEL_X_SENS" value="4.673951013338723" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.894723576293424" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.827893909253872" integer="16"/>
+    <define name="ACCEL_X_SENS" value="4.65967080398" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="4.8884659997" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="4.82106803194" integer="16"/>
 
     <!--define name= "MAG_X_CURRENT_COEF" value="-1.7139708082316483"/>
     <define name= "MAG_Y_CURRENT_COEF" value="-0.7696784114750511"/>
     <define name= "MAG_Z_CURRENT_COEF" value="1.1626106815908253"/-->
 
-    <define name="MAG_X_NEUTRAL" value="-11"/>
-    <define name="MAG_Y_NEUTRAL" value="-7"/>
-    <define name="MAG_Z_NEUTRAL" value="18"/>
-    <define name="MAG_X_SENS" value="12.3485994563" integer="16"/>
-    <define name="MAG_Y_SENS" value="12.6504395923" integer="16"/>
-    <define name="MAG_Z_SENS" value="12.5141980811" integer="16"/>
+    <!-- Calibrated at Valkenburg 04-02-2021 -->
+    <define name="MAG_X_NEUTRAL" value="-15"/>
+    <define name="MAG_Y_NEUTRAL" value="-10"/>
+    <define name="MAG_Z_NEUTRAL" value="16"/>
+    <define name="MAG_X_SENS" value="12.6070178951" integer="16"/>
+    <define name="MAG_Y_SENS" value="13.1105886043" integer="16"/>
+    <define name="MAG_Z_SENS" value="12.6505862201" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI"   value="-90." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
