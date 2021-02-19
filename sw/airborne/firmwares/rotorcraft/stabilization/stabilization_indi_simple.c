@@ -81,6 +81,9 @@ static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct I
 static inline void lms_estimation(void);
 static void indi_init_filters(void);
 
+float cutoff_rdot = STABILIZATION_INDI_FILT_CUTOFF_RDOT;
+float cutoff_r = STABILIZATION_INDI_FILT_CUTOFF_R;
+
 //The G values are scaled to avoid numerical problems during the estimation
 #define INDI_EST_SCALE 0.001
 
@@ -170,10 +173,10 @@ void indi_init_filters(void)
 {
   // tau = 1/(2*pi*Fc)
   float tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_FILT_CUTOFF);
-  float tau_r = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_R);
-  float tau_axis[3] = {tau, tau, tau_r};
+  float tau_rdot = 1.0 / (2.0 * M_PI * cutoff_rdot);
+  float tau_axis[3] = {tau, tau, tau_rdot};
   float tau_est = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_ESTIMATION_FILT_CUTOFF);
-  float tau_yaw = 1.0 / (2.0 * M_PI * 4.0);
+  float tau_r = 1.0 / (2.0 * M_PI * cutoff_r);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
   // Filtering of gyroscope and actuators
   for (int8_t i = 0; i < 3; i++) {
@@ -181,9 +184,24 @@ void indi_init_filters(void)
     init_butterworth_2_low_pass(&indi.rate[i], tau_axis[i], sample_time, 0.0);
     init_butterworth_2_low_pass(&indi.est.u[i], tau_est, sample_time, 0.0);
     init_butterworth_2_low_pass(&indi.est.rate[i], tau_est, sample_time, 0.0);
-
-    init_butterworth_2_low_pass(&indi.filt_r, tau_yaw, sample_time, 0.0);
   }
+  init_butterworth_2_low_pass(&indi.filt_r, tau_r, sample_time, 0.0);
+}
+
+// Callback function for setting cutoff frequency for rdot
+void stabilization_indi_simple_reset_rdot_filter_cutoff(float new_cutoff) {
+  float sample_time = 1.0 / PERIODIC_FREQUENCY;
+  cutoff_rdot = new_cutoff;
+  float tau_rdot = 1.0 / (2.0 * M_PI * cutoff_rdot);
+  init_butterworth_2_low_pass(&indi.rate[2], tau_rdot, sample_time, 0.0);
+}
+//
+// Callback function for setting cutoff frequency for r
+void stabilization_indi_simple_reset_r_filter_cutoff(float new_cutoff) {
+  float sample_time = 1.0 / PERIODIC_FREQUENCY;
+  cutoff_r = new_cutoff;
+  float tau_r = 1.0 / (2.0 * M_PI * cutoff_r);
+  init_butterworth_2_low_pass(&indi.filt_r, tau_r, sample_time, 0.0);
 }
 
 void stabilization_indi_enter(void)

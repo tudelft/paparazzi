@@ -41,6 +41,8 @@ extern struct Int32Quat   stab_att_sp_quat;  ///< with #INT32_QUAT_FRAC
 extern struct Int32Eulers stab_att_sp_euler; ///< with #INT32_ANGLE_FRAC
 
 extern int32_t indi_cmd_limit;
+extern float cutoff_rdot;
+extern float cutoff_r;
 
 struct ReferenceSystem {
   float err_p;
@@ -93,6 +95,10 @@ extern void stabilization_indi_set_rpy_setpoint_i(struct Int32Eulers *rpy);
 extern void stabilization_indi_set_earth_cmd_i(struct Int32Vect2 *cmd, int32_t heading);
 extern void stabilization_indi_run(bool enable_integrator, bool rate_control);
 extern void stabilization_indi_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn);
+
+
+extern void stabilization_indi_simple_reset_rdot_filter_cutoff(float new_cutoff);
+extern void stabilization_indi_simple_reset_r_filter_cutoff(float new_cutoff);
 
 #endif /* STABILIZATION_INDI_SIMPLE_H */
 

@@ -64,7 +64,8 @@
         <dl_setting var="indi.max_rate" min="0" step="0.01" max="400.0" shortname="max_rate" param="STABILIZATION_INDI_MAX_RATE" unit="rad/s" alt_unit="deg/s"/>
         <dl_setting var="indi.attitude_max_yaw_rate" min="0" step="0.01" max="400.0" shortname="max_yaw_rate_attitude" param="STABILIZATION_INDI_MAX_R" unit="rad/s" alt_unit="deg/s"/>
         <dl_setting var="indi_cmd_limit" min="4500" step="100" max="9600" shortname="indi_cmd_lim"/>
-      </dl_settings>
+        <dl_setting var="cutoff_rdot" min="0.2" step="0.01" max="10.0" shortname="rdot_cutoff_hz" handler="reset_rdot_filter_cutoff" type="float" module="stabilization/stabilization_indi_simple"/>
+        <dl_setting var="cutoff_r" min="0.2" step="0.1" max="30.0" shortname="r_cutoff_hz" handler="reset_r_filter_cutoff" type="float" module="stabilization/stabilization_indi_simple"/>      </dl_settings>
     </dl_settings>
   </settings>
   <autoload name="stabilization" type="rotorcraft"/>
