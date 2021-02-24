@@ -20,7 +20,7 @@
 /**
  * @file "modules/system_identification/pprz_chirp.c"
  * @author Joost Meulenbeld
- * 
+ *
  * Mathematical implementation of the chirp
  * A "chirp" or frequency sweep is a sine wave with in time increasing frequency, and can be
  * used for system identification purposes. This registers a broad frequency spectrum.
@@ -51,34 +51,25 @@
 #ifndef PPRZ_CHIRP_H
 #define PPRZ_CHIRP_H
 
-#include <math.h>
-#include <std.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include "mcu_periph/sys_time.h"
-
-// Values for exponential chirp (See [2]). C2 is based on C1 s.t. the frequency range exactly covers the required range
-#define CHIRP_C1 4.0f
-#define CHIRP_C2 1.0f / (expf(CHIRP_C1) - 1)
+#include "std.h"
 
 /**
  * Initialize with chirp_init
  */
 struct chirp_t {
-    float f0_hz;
-    float f1_hz;
-    float start_time_s;
-    float length_s; // Amount of seconds of the chirp, excluding fade-in if applicable
-    float total_length_s; // Amount of seconds of the chirp, including fade-in if applicable
+  float f0_hz;
+  float f1_hz;
+  float start_time_s;
+  float length_s; // Amount of seconds of the chirp, excluding fade-in if applicable
+  float total_length_s; // Amount of seconds of the chirp, including fade-in if applicable
 
-    float current_frequency_hz;
-    float current_value; // Value is [-1, 1]
-    float current_time_s;
-    float percentage_done; // t / total_length: [0, 1]
+  float current_frequency_hz;
+  float current_value; // Value is [-1, 1]
+  float current_time_s;
+  float percentage_done; // t / total_length: [0, 1]
 
-    bool exponential_chirp;
-    bool fade_in;
+  bool exponential_chirp;
+  bool fade_in;
 };
 
 /**

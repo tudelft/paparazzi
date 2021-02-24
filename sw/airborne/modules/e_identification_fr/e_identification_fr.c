@@ -34,47 +34,41 @@
 #include "subsystems/navigation/waypoints.h"
 #endif
 
-#define MAX_BUF_LEN 74
+#define MAX_BUF_LEN 50
 
-#define LEN_ID_FR 30
-#define LEN_ID_SERIAL 24
 
 static struct uart_periph *dev = &(E_ID_DEV);
-static char id_fr[LEN_ID_FR];
-
-static int put_ID(uint8_t *buf)
-{
-  buf[0] = E_ID_ID_FR;
-  buf[1] = strlen(id_fr);
-  memcpy(buf + 2, id_fr, LEN_ID_FR);
-  return LEN_ID_FR + 2;
-}
+bool e_identification_started = false;
 
 static int put_lat(uint8_t *buf)
 {
   int32_t lat = stateGetPositionLla_i()->lat / 1e2;
+  /// warning! strong dependency over GCC!
+  int32_t belat = __builtin_bswap32(lat);
   buf[0] = E_ID_LAT;
-  buf[1] = sizeof(lat);
-  memcpy(buf + 2, &lat, sizeof(lat));
-  return sizeof(lat) + 2;
+  buf[1] = sizeof(belat);
+  memcpy(buf + 2, &belat, sizeof(belat));
+  return sizeof(belat) + 2;
 }
 
 static int put_lon(uint8_t *buf)
 {
   int32_t lon = stateGetPositionLla_i()->lon / 1e2;
+  int32_t belon = __builtin_bswap32(lon);
   buf[0] = E_ID_LON;
-  buf[1] = sizeof(lon);
-  memcpy(buf + 2, &lon, sizeof(lon));
-  return sizeof(lon) + 2;
+  buf[1] = sizeof(belon);
+  memcpy(buf + 2, &belon, sizeof(belon));
+  return sizeof(belon) + 2;
 }
 
 static int put_alt(uint8_t *buf)
 {
   int16_t alt = gps.hmsl / 1e3;
+  int16_t bealt = __builtin_bswap16(alt);
   buf[0] = E_ID_HMSL;
-  buf[1] = sizeof(alt);
-  memcpy(buf + 2, &alt, sizeof(alt));
-  return sizeof(alt) + 2;
+  buf[1] = sizeof(bealt);
+  memcpy(buf + 2, &bealt, sizeof(bealt));
+  return sizeof(bealt) + 2;
 }
 
 static int put_horizontal_speed(uint8_t *buf)
@@ -88,17 +82,18 @@ static int put_horizontal_speed(uint8_t *buf)
 
 static int put_route(uint8_t *buf)
 {
-  int32_t route_normalized = INT32_DEG_OF_RAD(stateGetHorizontalSpeedDir_f());
+  int32_t route_normalized = DegOfRad(stateGetHorizontalSpeedDir_f());
   uint16_t route;
   if (route_normalized >= 0) {
     route = (uint16_t) route_normalized;
   } else {
     route = (uint16_t)(360 + route_normalized);
   }
+  uint16_t beroute = __builtin_bswap16(route);
   buf[0] = E_ID_ROUTE;
-  buf[1] = sizeof(route);
-  memcpy(buf + 2, &route, sizeof(route));
-  return sizeof(route) + 2;
+  buf[1] = sizeof(beroute);
+  memcpy(buf + 2, &beroute, sizeof(beroute));
+  return sizeof(beroute) + 2;
 }
 
 static int put_lat_lon_home(uint8_t *buf)
@@ -127,44 +122,46 @@ static int put_lat_lon_home(uint8_t *buf)
 
   int32_t lat_home = ptr_home_lla_i->lat / 1e2;
   int32_t lon_home = ptr_home_lla_i->lon / 1e2;
+  int32_t belat_home = __builtin_bswap32(lat_home);
+  int32_t belon_home = __builtin_bswap32(lon_home);
 
   int offset = 0;
   buf[offset++] = E_ID_LAT_TO;
-  buf[offset++] = sizeof(lat_home);
-  memcpy(buf + offset, &lat_home, sizeof(lat_home));
-  offset += sizeof(lat_home);
+  buf[offset++] = sizeof(belat_home);
+  memcpy(buf + offset, &belat_home, sizeof(belat_home));
+  offset += sizeof(belat_home);
 
   buf[offset++] = E_ID_LON_TO;
-  buf[offset++] = sizeof(lon_home);
-  memcpy(buf + offset, &lon_home, sizeof(lon_home));
-  offset += sizeof(lon_home);
+  buf[offset++] = sizeof(belon_home);
+  memcpy(buf + offset, &belon_home, sizeof(belon_home));
+  offset += sizeof(belon_home);
 
   return offset;
 }
 
 void e_identification_fr_init()
 {
-  for (int i = 0; i < LEN_ID_FR; i++) {
-    id_fr[i] = '0';
-  }
-
-  memcpy(id_fr, ID_MANUFACTURER, 3);
-  memcpy(id_fr + 3, ID_MODEL, 3);
-  int id_len = Min(strlen(ID_SERIAL), LEN_ID_SERIAL);
-  memcpy(id_fr + LEN_ID_SERIAL + 6 - id_len, ID_SERIAL, id_len);
 }
 
 
 void e_identification_fr_periodic()
 {
-
-  if (gps.fix) {
+#if defined(FIXEDWING_FIRMWARE)
+  if (autopilot.launch) {
+#elif defined(ROTORCRAFT_FIRMWARE)
+  if (autopilot_in_flight()) {
+#else
+#error "firmware unsupported!"
+#endif
+    e_identification_started = true;
+  }
+  
+  if (GpsFixValid() && e_identification_started) {
     uint8_t buf[MAX_BUF_LEN];
     buf[0] = 0X99;  //PPRZ_STX
     buf[1] = 0;   //filled later with message length
     uint8_t offset = 2;
 
-    offset += put_ID(buf + offset);
     offset += put_lat(buf + offset);
     offset += put_lon(buf + offset);
     offset += put_alt(buf + offset);

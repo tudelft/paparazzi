@@ -23,7 +23,7 @@
     </dl_settings>
   </settings>
   
-  <depends>laser_range_array</depends>
+  <depends>laser_range_array|cf_deck_multi_ranger</depends>
 
   <header>
     <file name="range_forcefield.h"/>
@@ -32,5 +32,7 @@
   <periodic fun="range_forcefield_periodic()" freq="10"/>
   <makefile>
     <file name="range_forcefield.c"/>
+    <test>
+    </test>
   </makefile>
 </module>

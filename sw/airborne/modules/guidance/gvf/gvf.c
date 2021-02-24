@@ -40,6 +40,9 @@ gvf_con gvf_control;
 gvf_tra gvf_trajectory;
 gvf_seg gvf_segment;
 
+// Time variables to check if GVF is active
+uint32_t gvf_t0 = 0;
+
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 static void send_gvf(struct transport_tx *trans, struct link_device *dev)
@@ -65,27 +68,39 @@ static void send_gvf(struct transport_tx *trans, struct link_device *dev)
 
   uint8_t traj_type = (uint8_t)gvf_trajectory.type;
 
-  pprz_msg_send_GVF(trans, dev, AC_ID, &gvf_control.error, &traj_type,
-                    &gvf_control.s, &gvf_control.ke, plen, gvf_trajectory.p);
+  uint32_t now = get_sys_time_msec();
+  uint32_t delta_T = now - gvf_t0;
+
+  if (delta_T < 200)
+    pprz_msg_send_GVF(trans, dev, AC_ID, &gvf_control.error, &traj_type,
+                      &gvf_control.s, &gvf_control.ke, plen, gvf_trajectory.p);
 }
 
 static void send_circle(struct transport_tx *trans, struct link_device *dev)
 {
-  if (gvf_trajectory.type == ELLIPSE &&
-      (gvf_trajectory.p[2] == gvf_trajectory.p[3])) {
-    pprz_msg_send_CIRCLE(trans, dev, AC_ID,
-                         &gvf_trajectory.p[0], &gvf_trajectory.p[1],
-                         &gvf_trajectory.p[2]);
-  }
+  uint32_t now = get_sys_time_msec();
+  uint32_t delta_T = now - gvf_t0;
+
+  if (delta_T < 200)
+    if (gvf_trajectory.type == ELLIPSE &&
+        (gvf_trajectory.p[2] == gvf_trajectory.p[3])) {
+      pprz_msg_send_CIRCLE(trans, dev, AC_ID,
+                           &gvf_trajectory.p[0], &gvf_trajectory.p[1],
+                           &gvf_trajectory.p[2]);
+    }
 }
 
 static void send_segment(struct transport_tx *trans, struct link_device *dev)
 {
-  if (gvf_trajectory.type == LINE && gvf_segment.seg == 1) {
-    pprz_msg_send_SEGMENT(trans, dev, AC_ID,
-                          &gvf_segment.x1, &gvf_segment.y1,
-                          &gvf_segment.x2, &gvf_segment.y2);
-  }
+  uint32_t now = get_sys_time_msec();
+  uint32_t delta_T = now - gvf_t0;
+
+  if (delta_T < 200)
+    if (gvf_trajectory.type == LINE && gvf_segment.seg == 1) {
+      pprz_msg_send_SEGMENT(trans, dev, AC_ID,
+                            &gvf_segment.x1, &gvf_segment.y1,
+                            &gvf_segment.x2, &gvf_segment.y2);
+    }
 }
 
 #endif
@@ -139,6 +154,8 @@ void gvf_init(void)
 void gvf_control_2D(float ke, float kn, float e,
                     struct gvf_grad *grad, struct gvf_Hess *hess)
 {
+  gvf_t0 = get_sys_time_msec();
+
   struct FloatEulers *att = stateGetNedToBodyEulers_f();
   float ground_speed = stateGetHorizontalSpeedNorm_f();
   float course = stateGetHorizontalSpeedDir_f();
@@ -232,9 +249,9 @@ static void gvf_line(float a, float b, float heading)
 
 bool gvf_line_XY_heading(float a, float b, float heading)
 {
-    gvf_set_direction(1);
-    gvf_line(a, b, heading);
-    return true;
+  gvf_set_direction(1);
+  gvf_line(a, b, heading);
+  return true;
 }
 
 bool gvf_line_XY1_XY2(float x1, float y1, float x2, float y2)
@@ -242,19 +259,7 @@ bool gvf_line_XY1_XY2(float x1, float y1, float x2, float y2)
   float zx = x2 - x1;
   float zy = y2 - y1;
 
-  float alpha = atanf(zx / zy);
-
-  float beta = atan2f(zy, zx);
-  float cosb = cosf(-beta);
-  float sinb = sinf(-beta);
-  float zxr = zx * cosb - zy * sinb;
-  if((zxr > 0 && zy > 0) || (zxr < 0 && zy < 0)) {
-      gvf_set_direction(1);
-  } else {
-      gvf_set_direction(-1);
-  }
-
-  gvf_line(x1, y1, alpha);
+  gvf_line_XY_heading(x1, y1, atan2f(zx, zy));
 
   horizontal_mode = HORIZONTAL_MODE_ROUTE;
   gvf_segment.seg = 1;
@@ -324,8 +329,8 @@ bool gvf_segment_XY1_XY2(float x1, float y1, float x2, float y2)
   float zxr = zx * cosb - zy * sinb;
   float pxr = px * cosb - py * sinb;
 
-  if((zxr > 0 && pxr > zxr) || (zxr < 0 && pxr < zxr)) {
-      return false;
+  if ((zxr > 0 && pxr > zxr) || (zxr < 0 && pxr < zxr)) {
+    return false;
   }
 
   return gvf_line_XY1_XY2(x1, y1, x2, y2);

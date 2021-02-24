@@ -142,11 +142,13 @@ ground_segment.opt: ground_segment cockpit.opt tmtc.opt
 
 static: cockpit tmtc generators sim_static joystick static_h
 
-libpprzlink:
+libpprzlink.update:
 	$(MAKE) -C $(EXT) pprzlink.update
+
+libpprzlink.install:
 	$(Q)Q=$(Q) MAKEFLAGS=-j1 DESTDIR=$(PPRZLINK_INSTALL) PPRZLINK_LIB_VERSION=${PPRZLINK_LIB_VERSION} $(MAKE) -C $(PPRZLINK_DIR) libpprzlink-install
 
-libpprz: libpprzlink _save_build_version
+libpprz: libpprzlink.update libpprzlink.install _save_build_version
 	$(MAKE) -C $(LIB)/ocaml
 
 cockpit: libpprz
@@ -274,6 +276,7 @@ clean:
 	$(Q)$(MAKE) -C $(EXT) clean
 	$(Q)find . -name '*~' -exec rm -f {} \;
 	$(Q)find . -name '*.pyc' -exec rm -f {} \;
+	$(Q)find . -name 'Cargo.lock' -exec rm -f {} \;
 
 cleanspaces:
 	find sw -path sw/ext -prune -o -type f -name '*.[ch]' -exec sed -i {} -e 's/[ \t]*$$//' \;
@@ -299,7 +302,7 @@ ab_clean:
 #
 # Tests
 #
-test: test_math test_examples
+test: test_math test_examples test_modules
 
 # subset of airframes for coverity test to pass the limited build time on travis
 test_coverity: all
@@ -321,6 +324,10 @@ test_tudelft: all
 test_examples: all
 	CONF_XML=conf/conf_tests.xml prove tests/aircrafts/
 
+# test compilation of modules
+test_modules: all
+	prove -v tests/modules/test_modules.py
+
 test_all_confs: all opencv_bebop
 	$(Q)$(eval $CONFS:=$(shell ./find_confs.py))
 	@echo "************\nFound $(words $($CONFS)) config files: $($CONFS)"
@@ -337,7 +344,7 @@ test_sim: all
 	prove tests/sim
 
 .PHONY: all print_build_version _print_building _save_build_version update_google_version init dox ground_segment ground_segment.opt \
-subdirs $(SUBDIRS) conf ext libpprz libpprzlink cockpit cockpit.opt tmtc tmtc.opt generators\
+subdirs $(SUBDIRS) conf ext libpprz libpprzlink.update libpprzlink.install cockpit cockpit.opt tmtc tmtc.opt generators\
 static sim_static lpctools opencv_bebop\
 clean cleanspaces ab_clean dist_clean distclean dist_clean_irreversible \
 test test_examples test_math test_sim test_all_confs

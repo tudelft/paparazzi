@@ -74,8 +74,6 @@
 struct Int32Eulers stab_att_sp_euler;
 struct Int32Quat   stab_att_sp_quat;
 
-static int32_t stabilization_att_indi_cmd[COMMANDS_NB];
-static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct Int32Quat *att_err, bool rate_control);
 static inline void lms_estimation(void);
 static void indi_init_filters(void);
 
@@ -88,13 +86,17 @@ struct IndiVariables indi = {
 
   .g1 = {STABILIZATION_INDI_G1_P, STABILIZATION_INDI_G1_Q, STABILIZATION_INDI_G1_R},
   .g2 = STABILIZATION_INDI_G2_R,
-  .reference_acceleration = {
-    STABILIZATION_INDI_REF_ERR_P,
-    STABILIZATION_INDI_REF_ERR_Q,
-    STABILIZATION_INDI_REF_ERR_R,
-    STABILIZATION_INDI_REF_RATE_P,
-    STABILIZATION_INDI_REF_RATE_Q,
-    STABILIZATION_INDI_REF_RATE_R
+  .gains = {
+    .att = {
+      STABILIZATION_INDI_REF_ERR_P,
+      STABILIZATION_INDI_REF_ERR_Q,
+      STABILIZATION_INDI_REF_ERR_R
+    },
+    .rate = {
+      STABILIZATION_INDI_REF_RATE_P,
+      STABILIZATION_INDI_REF_RATE_Q,
+      STABILIZATION_INDI_REF_RATE_R
+    },
   },
 
   /* Estimation parameters for adaptive INDI */
@@ -286,9 +288,8 @@ static inline void finite_difference(float output[3], float new[3], float old[3]
  *
  * @param indi_commands[] Array of commands that the function will write to
  * @param att_err quaternion attitude error
- * @param rate_control rate control enabled, otherwise attitude control
  */
-static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct Int32Quat *att_err, bool rate_control)
+void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight __attribute__((unused)))
 {
   // Propagate the filter on the gyroscopes and actuators
   struct FloatRates *body_rates = stateGetBodyRates_f();
@@ -299,38 +300,28 @@ static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct I
   finite_difference_from_filter(indi.rate_d, indi.rate);
 
   //The rates used for feedback are by default the measured rates. If needed they can be filtered (see below)
-  struct FloatRates rates_for_feedback;
-  RATES_COPY(rates_for_feedback, (*body_rates));
+  struct FloatRates rates_filt_fo;
+  RATES_COPY(rates_filt_fo, (*body_rates));
 
   //If there is a lot of noise on the gyroscope, it might be good to use the filtered value for feedback.
   //Note that due to the delay, the PD controller can not be as aggressive.
 #if STABILIZATION_INDI_FILTER_ROLL_RATE
-  rates_for_feedback.p = indi.rate[0].o[0];
+  rates_filt_fo.p = (rates_filt_fo.p*3+body_rates->p)/4;
 #endif
 #if STABILIZATION_INDI_FILTER_PITCH_RATE
-  rates_for_feedback.q = indi.rate[1].o[0];
+  rates_filt_fo.q = (rates_filt_fo.q*3+body_rates->q)/4;
 #endif
 #if STABILIZATION_INDI_FILTER_YAW_RATE
-  rates_for_feedback.r = indi.rate[2].o[0];
+  rates_filt_fo.r = (rates_filt_fo.r*3+body_rates->r)/4;
 #endif
 
-  indi.angular_accel_ref.p = indi.reference_acceleration.err_p * QUAT1_FLOAT_OF_BFP(att_err->qx)
-                             - indi.reference_acceleration.rate_p * rates_for_feedback.p;
-
-  indi.angular_accel_ref.q = indi.reference_acceleration.err_q * QUAT1_FLOAT_OF_BFP(att_err->qy)
-                             - indi.reference_acceleration.rate_q * rates_for_feedback.q;
-
   //This separates the P and D controller and lets you impose a maximum yaw rate.
-  float rate_ref_r = indi.reference_acceleration.err_r * QUAT1_FLOAT_OF_BFP(att_err->qz) / indi.reference_acceleration.rate_r;
-  BoundAbs(rate_ref_r, indi.attitude_max_yaw_rate);
-  indi.angular_accel_ref.r = indi.reference_acceleration.rate_r * (rate_ref_r - rates_for_feedback.r);
+  BoundAbs(rate_sp.r, indi.attitude_max_yaw_rate);
 
-  /* Check if we are running the rate controller and overwrite */
-  if (rate_control) {
-    indi.angular_accel_ref.p =  indi.reference_acceleration.rate_p * ((float)radio_control.values[RADIO_ROLL]  / MAX_PPRZ * indi.max_rate - body_rates->p);
-    indi.angular_accel_ref.q =  indi.reference_acceleration.rate_q * ((float)radio_control.values[RADIO_PITCH] / MAX_PPRZ * indi.max_rate - body_rates->q);
-    indi.angular_accel_ref.r =  indi.reference_acceleration.rate_r * ((float)radio_control.values[RADIO_YAW]   / MAX_PPRZ * indi.max_rate - body_rates->r);
-  }
+  // Compute reference angular acceleration:
+  indi.angular_accel_ref.p = (rate_sp.p - rates_filt_fo.p) * indi.gains.rate.p;
+  indi.angular_accel_ref.q = (rate_sp.q - rates_filt_fo.q) * indi.gains.rate.q;
+  indi.angular_accel_ref.r = (rate_sp.r - rates_filt_fo.r) * indi.gains.rate.r;
 
   //Increment in angular acceleration requires increment in control input
   //G1 is the control effectiveness. In the yaw axis, we need something additional: G2.
@@ -377,9 +368,14 @@ static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct I
   }
 
   /*  INDI feedback */
-  indi_commands[COMMAND_ROLL] = indi.u_in.p;
-  indi_commands[COMMAND_PITCH] = indi.u_in.q;
-  indi_commands[COMMAND_YAW] = indi.u_in.r;
+  stabilization_cmd[COMMAND_ROLL] = indi.u_in.p;
+  stabilization_cmd[COMMAND_PITCH] = indi.u_in.q;
+  stabilization_cmd[COMMAND_YAW] = indi.u_in.r;
+
+  /* bound the result */
+  BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PPRZ);
+  BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PPRZ);
+  BoundAbs(stabilization_cmd[COMMAND_YAW], MAX_PPRZ);
 }
 
 /**
@@ -388,28 +384,24 @@ static inline void stabilization_indi_calc_cmd(int32_t indi_commands[], struct I
  * @param in_flight not used
  * @param rate_control rate control enabled, otherwise attitude control
  */
-void stabilization_indi_run(bool in_flight __attribute__((unused)), bool rate_control)
+void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight __attribute__((unused)))
 {
   /* attitude error                          */
   struct Int32Quat att_err;
   struct Int32Quat *att_quat = stateGetNedToBodyQuat_i();
-  int32_quat_inv_comp(&att_err, att_quat, &stab_att_sp_quat);
+  int32_quat_inv_comp(&att_err, att_quat, &quat_sp);
   /* wrap it in the shortest direction       */
   int32_quat_wrap_shortest(&att_err);
   int32_quat_normalize(&att_err);
 
+  struct FloatRates rate_sp;
+  // Divide by rate gain to make it equivalent to a parallel structure
+  rate_sp.p = indi.gains.att.p * QUAT1_FLOAT_OF_BFP(att_err.qx) / indi.gains.rate.p;
+  rate_sp.q = indi.gains.att.q * QUAT1_FLOAT_OF_BFP(att_err.qy) / indi.gains.rate.q;
+  rate_sp.r = indi.gains.att.r * QUAT1_FLOAT_OF_BFP(att_err.qz) / indi.gains.rate.r;
+
   /* compute the INDI command */
-  stabilization_indi_calc_cmd(stabilization_att_indi_cmd, &att_err, rate_control);
-
-  /* copy the INDI command */
-  stabilization_cmd[COMMAND_ROLL] = stabilization_att_indi_cmd[COMMAND_ROLL];
-  stabilization_cmd[COMMAND_PITCH] = stabilization_att_indi_cmd[COMMAND_PITCH];
-  stabilization_cmd[COMMAND_YAW] = stabilization_att_indi_cmd[COMMAND_YAW];
-
-  /* bound the result */
-  BoundAbs(stabilization_cmd[COMMAND_ROLL], MAX_PPRZ);
-  BoundAbs(stabilization_cmd[COMMAND_PITCH], MAX_PPRZ);
-  BoundAbs(stabilization_cmd[COMMAND_YAW], MAX_PPRZ);
+  stabilization_indi_rate_run(rate_sp, in_flight);
 }
 
 /**

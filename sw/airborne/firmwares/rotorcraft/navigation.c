@@ -76,6 +76,10 @@
 #define CLOSE_TO_WAYPOINT (15 << INT32_POS_FRAC)
 #define CARROT_DIST (12 << INT32_POS_FRAC)
 
+bool force_forward = false;
+
+struct FloatVect2 line_vect, to_end_vect;
+
 const float max_dist_from_home = MAX_DIST_FROM_HOME;
 const float max_dist2_from_home = MAX_DIST_FROM_HOME * MAX_DIST_FROM_HOME;
 float failsafe_mode_dist2 = FAILSAFE_MODE_DISTANCE * FAILSAFE_MODE_DISTANCE;
@@ -118,9 +122,7 @@ int32_t nav_circle_radius, nav_circle_qdr, nav_circle_radians;
 /* nav_route variables */
 struct EnuCoor_i nav_segment_start, nav_segment_end;
 
-
 static inline void nav_set_altitude(void);
-
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -208,6 +210,9 @@ void nav_init(void)
   too_far_from_home = false;
   dist2_to_home = 0;
   dist2_to_wp = 0;
+
+  FLOAT_VECT2_ZERO(line_vect);
+  FLOAT_VECT2_ZERO(to_end_vect);
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_NAV_STATUS, send_nav_status);
@@ -592,7 +597,7 @@ void nav_route(struct EnuCoor_i *wp_start, struct EnuCoor_i *wp_end)
   INT32_VECT2_RSHIFT(pos_diff, pos_diff, INT32_POS_FRAC);
   uint32_t leg_length2 = Max((wp_diff.x * wp_diff.x + wp_diff.y * wp_diff.y), 1);
   nav_leg_length = int32_sqrt(leg_length2);
-  nav_leg_progress = (pos_diff.x * wp_diff.x + pos_diff.y * wp_diff.y) / nav_leg_length;
+  nav_leg_progress = (pos_diff.x * wp_diff.x + pos_diff.y * wp_diff.y) / (int32_t)nav_leg_length;
   int32_t progress = Max((CARROT_DIST >> INT32_POS_FRAC), 0);
   nav_leg_progress += progress;
   int32_t prog_2 = nav_leg_length;

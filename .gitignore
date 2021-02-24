@@ -25,6 +25,7 @@
 *.gdb_history
 
 .cache.xml
+.directory
 
 # Eclipse IDE project files
 *.cproject
@@ -51,6 +52,9 @@ paparazzi.sublime-workspace
 # Vagrant VM files
 /.vagrant
 
+# Rust
+Cargo.lock
+
 /var
 /dox
 
@@ -65,6 +69,7 @@ paparazzi.sublime-workspace
 /conf/maps.xml
 /conf/gps/ublox_conf
 !/conf/simulator/gazebo/**/*.config
+/conf/tools/blacklisted
 
 # /doc/pprz_algebra/
 /doc/pprz_algebra/headfile.log

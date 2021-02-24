@@ -21,16 +21,16 @@
  * @file "modules/helicopter/sys_id_chirp.h"
  * @author Joost Meulenbeld
  * System identification chirp
- * 
+ *
  * This is the module implementation for the chirp maneuver. The mathematical definition of the chirp
  * can be found in pprz_chirp.h. Use sys_id_chirp by adding the module to your airframe file and
  * adding the following line to the top of the <command_laws> section of your airframe file:
- * 
+ *
  * <call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,values)"/>
- * 
+ *
  * In the GCS you can then start and stop the chirp, change frequencies and choose which axis it should
  * be applied to. Documentation of the specific options can be found in the module xml file.
- * 
+ *
  * The axes to which noise is applied is set in the xml file with the variable CHIRP_AXES. The axis that
  * is selected in the GCS to apply the chirp on is the index in the CHIRP_AXES array
  */
@@ -38,35 +38,8 @@
 #ifndef SYS_ID_CHIRP_H
 #define SYS_ID_CHIRP_H
 
-#include <std.h>
-#include <stdbool.h>
 #include "paparazzi.h"
-#include "modules/system_identification/pprz_chirp.h"
-#include "generated/airframe.h"
-#include "mcu_periph/sys_time.h"
-#include "filters/low_pass_filter.h"
-#include "random.h"
 
-
-#ifndef CHIRP_AXES
-#define CHIRP_AXES {COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW}
-#endif
-
-#ifndef CHIRP_ENABLED
-#define CHIRP_ENABLED TRUE
-#endif
-
-#ifndef CHIRP_USE_NOISE
-#define CHIRP_USE_NOISE TRUE
-#endif
-
-#ifndef CHIRP_EXPONENTIAL
-#define CHIRP_EXPONENTIAL TRUE
-#endif
-
-#ifndef CHIRP_FADEIN
-#define CHIRP_FADEIN TRUE
-#endif
 
 extern uint8_t chirp_active;
 extern pprz_t chirp_amplitude;
@@ -77,7 +50,8 @@ extern float chirp_fstart_hz;
 extern float chirp_fstop_hz;
 extern float chirp_length_s;
 
-extern uint8_t chirp_axis; // Index of chirp axis in ACTIVE_CHIRP_AXES
+// Index of chirp axis in ACTIVE_CHIRP_AXES
+extern uint8_t chirp_axis;
 
 extern void sys_id_chirp_init(void);
 

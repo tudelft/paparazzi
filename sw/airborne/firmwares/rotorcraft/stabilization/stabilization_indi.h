@@ -32,26 +32,26 @@
 extern struct Int32Quat   stab_att_sp_quat;  ///< with #INT32_QUAT_FRAC
 extern struct Int32Eulers stab_att_sp_euler; ///< with #INT32_ANGLE_FRAC
 extern float g1g2[INDI_OUTPUTS][INDI_NUM_ACT];
+extern float actuator_state_filt_vect[INDI_NUM_ACT];
 
 extern bool indi_use_adaptive;
 
-struct ReferenceSystem {
-  float err_p;
-  float err_q;
-  float err_r;
-  float rate_p;
-  float rate_q;
-  float rate_r;
+extern float *Bwls[INDI_OUTPUTS];
+
+struct Indi_gains {
+  struct FloatRates att;
+  struct FloatRates rate;
 };
 
-extern struct ReferenceSystem reference_acceleration;
+extern struct Indi_gains indi_gains;
 
 extern void stabilization_indi_init(void);
 extern void stabilization_indi_enter(void);
 extern void stabilization_indi_set_failsafe_setpoint(void);
 extern void stabilization_indi_set_rpy_setpoint_i(struct Int32Eulers *rpy);
 extern void stabilization_indi_set_earth_cmd_i(struct Int32Vect2 *cmd, int32_t heading);
-extern void stabilization_indi_run(bool in_flight, bool rate_control);
+extern void stabilization_indi_rate_run(struct FloatRates rate_ref, bool in_flight);
+extern void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight);
 extern void stabilization_indi_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn);
 
 #endif /* STABILIZATION_INDI */

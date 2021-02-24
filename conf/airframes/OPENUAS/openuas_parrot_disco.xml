@@ -83,6 +83,8 @@
 
     <target name="ap" board="disco">
 
+      <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>
+
       <!-- Towards better kind of aligner initial conditions -->
       <!--
       <define name="AHRS_ALIGNER_SAMPLES_NB" value="600"/>
@@ -119,8 +121,7 @@
       <configure name="TELEMETRY_FREQUENCY" value="60"/> <!--  unit="Hz" -->
       <configure name="MODULES_FREQUENCY" value="512"/> <!--  unit="Hz" -->
 
-      <module name="imu" type="disco">
-      </module>
+      <module name="imu" type="disco"/>
 
       <module name="sonar_bebop"><!-- already in IMU as autoload but we need to set a few things-->
         <define name="SONAR_BEBOP_FILTER_NARROW_OBSTACLES" value="FALSE"/><!-- activate later if all works and test GLS autoland with it -->
@@ -153,7 +154,7 @@
       <!--<module name="flight_benchmark">
         <define name="BENCHMARK_AIRSPEED value="TRUE"/>
         <define name="BENCHMARK_ALTITUDE value="TRUE"/>
-        <define name="BENCHMARK_P/mnt/ad9c1acf-3293-427b-9b65-3f121f8e1d3d/develop/allthings_paparazzi/paparazzi/sw/ground_segment/tmtc/gpsd2ivy OSITION value="TRUE"/>
+        <define name="BENCHMARK_POSITION value="TRUE"/>
         <define name="BENCHMARK_TOLERANCE_AIRSPEED" value="1" unit="m/s"/>
         <define name="BENCHMARK_TOLERANCE_ALTITUDE" value="4" unit="m"/>
         <define name="BENCHMARK_TOLERANCE_POSITION" value="6" unit="m"/>
@@ -295,7 +296,7 @@
     <module name="gps" type="ublox"/>
     <module name="tune_airspeed"/> <!-- Enable if one want to perform airspeed tuning -->
 
-    <module name="ahrs" type="float_cmpl_quat"> <!-- Compare e.g. float_dcm -->
+    <module name="ahrs" type="float_cmpl_quat"> <!-- Compare e.g.cmpl_quat  float_dcm -->
         <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/> <!-- as in USE it for values in the AHRS -->
         <!--<configure name="AHRS_ALIGNER_LED" value="2"/>--><!-- Which color you want sir? ;) -->
         <define name="AHRS_MAG_UPDATE_ALL_AXES" value="TRUE"/> <!-- if TRUE with those high roll n pith angles magneto should be calibrated well or use UKF autocalib -->
@@ -307,8 +308,8 @@
         <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="3.0"/> <!--unit="m/s"--> <!-- CAREFULL,  Don't update heading from GPS course if GPS ground speed is below is this threshold in m/s" -->
         <!-- Some insights https://lists.nongnu.org/archive/html/paparazzi-devel/2013-10/msg00126.html -->
         <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="0.5"/> <!-- TODO: determine Default is 30. Reduce accelerometer cut-off frequency when the vehicle is accelerating: norm(ax,ay,az) 9,81 m/s2. WARNING: when the IMU is not well damped, the norm of accelerometers never equals to 9,81 m/s2. As a result, the GRAVITY_HEURISTIC_FACTOR will reduce the accelerometer bandwith even if the vehicle is not accelerating. -->
-        <define name="AHRS_ICQ_IMU_ID" value="ABI_BROADCAST"/> <!-- ABI sender id of IMU to use -->
-        <define name="AHRS_ICQ_MAG_ID" value="MAG_CALIB_UKF_ID" /><!-- for when using the mag_clib_ukf -->
+        <define name="AHRS_FC_IMU_ID" value="ABI_BROADCAST"/> <!-- ABI sender id of IMU to use -->
+        <define name="AHRS_FC_MAG_ID" value="MAG_CALIB_UKF_ID" /><!-- for when using the mag_clib_ukf -->
     </module>
 
     <module name="ins" type="alt_float"/>  <!--Does not work in SIM: extended thus use alt_float"/> -->
@@ -341,13 +342,9 @@
     <module name="nav" type="flower"/>
 
     <!-- can be used in flightplan during takeoff/landing or lowflyby with default sonar -->
-    <!--<module name="agl_dist">
-    </module>-->
-        <!-- can be used in flightplan during takeoff/landing or lowflyby with default sonar -->
     <module name="agl_dist">
         <define name="USE_SONAR"/>
     </module>
-
 
     <!-- Propellor spinup of Disco is to slow with direct handlaunch, "catapult" module not all to usable -->
     <!-- <module name="nav" type="catapult"/>-->
@@ -480,7 +477,7 @@
     <!-- <set command="CALIB" value="@GAIN2"/> -->
   </rc_commands>
 
-<!-- ************************ AUTO RC COMMANDS ***************************** -->
+<!-- ************************ AUTO RC COMMANDS ********************* -->
   <auto_rc_commands>
     <!--**TEMPorary for heading change steering if someting not OK with course in Autonomous flight **-->
     <set command="YAW" value="@YAW"/>
@@ -493,7 +490,7 @@
     <!--<set command="PITCH" value="@PITCH"/>-->
   </auto_rc_commands>
 
-<!-- ************************ COMMANDS ***************************** -->
+<!-- *************************** COMMANDS ************************** -->
   <commands>
     <axis name="THROTTLE" failsafe_value="0"/>
     <axis name="ROLL" failsafe_value="5"/>
@@ -501,7 +498,7 @@
     <axis name="YAW" failsafe_value="0"/>
   </commands>
 
-<!-- ************************ AUTO1 ***************************** -->
+<!-- *************************** AUTO1 ***************************** -->
   <!-- Do not set MAX_ROLL, MAX_PITCH to small of a value, otherwise one can NOT control the plane very well manually -->
   <!-- If you have dual rate swith it of with same swtch as mode switch thus auto1 means dualrate is switched off also -->
   <section name="AUTO1" prefix="AUTO1_">
@@ -509,7 +506,7 @@
     <define name="MAX_PITCH" value="45" unit="deg"/> <!-- More autority while testflying for first time -->
   </section>
 
-<!-- ************************ TRIM ***************************** -->
+<!-- **************************** TRIM ***************************** -->
   <section name="TRIM" prefix="COMMAND_">
     <define name="ROLL_TRIM" value="0.0"/>
     <define name="PITCH_TRIM" value="0.0"/>
@@ -524,10 +521,10 @@
     <define name="DELAY_WITHOUT_GPS" value="5" unit="s"/>
   </section>
 
-<!-- ************************* IMU ************************* -->
+<!-- **************************** IMU ****************************** -->
   <section name="IMU" prefix="IMU_">
 
-    <!-- ***************** GYRO *****************-->
+    <!-- ********************* GYRO ********************-->
     <define name="GYRO_P_SENS" value=" 1.01" integer="16"/>
     <define name="GYRO_Q_SENS" value=" 1.01" integer="16"/>
     <define name="GYRO_R_SENS" value=" 1.01" integer="16"/>
@@ -608,18 +605,19 @@ The most crucial part for the magnetometer calibration:
 
 <!-- ************************* AHRS ************************* -->
   <section name="AHRS" prefix="AHRS_">
-    <!-- Values used if no GNSS fix, on 3D fix is update by geo_mag module -->
-    <!-- Better keep geo_mag module ifyou have a GNSDS, else replace the values with your local magnetic field -->
+    <!-- Values used if no GNSS fix, on 3D fix is updated by geo_mag module -->
+    <!-- Better use the geo_mag module if you have a GNSS, else replace the values with your local magnetic field -->
 
-    <!-- Local Magnetic field DE2019 -->
-    <define name="H_X" value="0.38644"/>
-    <define name="H_Y" value="0.02054"/>
-    <define name="H_Z" value="0.92209"/>
+    <!--North, East and Vertical Components do: Normalize[{19738.7, 899.5, 44845.6}] -->
+    <!-- Local Magnetic field DE2020 -->
+    <define name="H_X" value="0.402784"/>
+    <define name="H_Y" value="0.018355"/>
+    <define name="H_Z" value="0.915111"/>
   </section>
 
 <!-- ************************* INS ************************* -->
   <section name="INS">
-    <!--  For those super precice target landings ;) well better build in a uBLox M8P-->
+    <!--  For those super precise target landings ;) well better build in a uBLox M8P-->
     <define name="INS_BODY_TO_GPS_X" value="0.11" unit="m"/>
     <define name="INS_BODY_TO_GPS_Y" value="0.0" unit="m"/>
     <define name="INS_BODY_TO_GPS_Z" value="0.03" unit="m"/>
@@ -763,6 +761,9 @@ The most crucial part for the magnetometer calibration:
     <define name="AUTO_GROUNDSPEED_IGAIN" value="0.2"/>
 
     <define name="AIRSPEED_PGAIN" value="0.19"/>
+
+    <!-- For control classic as in not new or enegry etc.-->
+    <define name="AUTO_AIRSPEED_PGAIN" value="0.18" unit="%/(m/s)"/>
 
     <!-- outer loop saturation -->
     <define name="ALTITUDE_MAX_CLIMB" value="3.0" unit="m/s"/> <!-- TODO: Determine -->

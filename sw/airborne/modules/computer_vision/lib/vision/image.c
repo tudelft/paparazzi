@@ -54,12 +54,18 @@ void image_create(struct image_t *img, uint16_t width, uint16_t height, enum ima
     img->buf_size = sizeof(uint8_t) * 2 * width * height;  // At maximum quality this is enough
   } else if (type == IMAGE_GRADIENT) {
     img->buf_size = sizeof(int16_t) * width * height;
+  } else if (type == IMAGE_INT16) {
+    img->buf_size = sizeof(int16_t) * width * height;
   } else {
     img->buf_size = sizeof(uint8_t) * width * height;
   }
 
+#if __GLIBC__ > 2 || (__GLIBC__ >= 2 && __GLIBC_MINOR__ >= 16)
   // aligned memory slightly speeds up any later copies
   img->buf = aligned_alloc(CACHE_LINE_LENGTH, img->buf_size + (CACHE_LINE_LENGTH - img->buf_size % CACHE_LINE_LENGTH) % CACHE_LINE_LENGTH);
+#else
+  img->buf = malloc(img->buf_size);
+#endif
 }
 
 /**

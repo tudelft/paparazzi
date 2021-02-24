@@ -23,5 +23,5 @@
  *)
 
 type alert_level = string option
-val check_airprox : Aircraft.aircraft -> Aircraft.aircraft -> alert_level
+val check_airprox : Aircraft_server.aircraft -> Aircraft_server.aircraft -> alert_level
 (** [check_airprox ac1 ac2] Returns airprox level *)

@@ -35,7 +35,7 @@
 void stabilization_attitude_init(void)
 {
   // Check if the indi init is already done for rate control
-#ifndef STABILIZATION_RATE_INDI
+#ifndef USE_STABILIZATION_RATE_INDI
   stabilization_indi_init();
 #endif
 }
@@ -62,7 +62,7 @@ void stabilization_attitude_set_earth_cmd_i(struct Int32Vect2 *cmd, int32_t head
 
 void stabilization_attitude_run(bool in_flight)
 {
-  stabilization_indi_run(in_flight, FALSE);
+  stabilization_indi_attitude_run(stab_att_sp_quat, in_flight);
 }
 
 void stabilization_attitude_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn)
