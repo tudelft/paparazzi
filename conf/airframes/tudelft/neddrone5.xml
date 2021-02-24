@@ -21,12 +21,9 @@
         <configure name="SBUS_PORT" value="UART3"/>
       </module>
 
-      <module name="airspeed_ets.xml">
+      <module name="airspeed" type="ms45xx_i2c">
         <define name="USE_I2C4"/>
-        <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>
-        <define name="AIRSPEED_ETS_SYNC_SEND"/>
-        <define name="USE_AIRSPEED_ETS" value="TRUE"/>
-        <define name="AIRSPEED_ETS_SCALE" value="1.24"/>
+        <define name="MS45XX_I2C_DEV" value="i2c4"/>
       </module>
 
       <module name="scheduling_indi_simple"/>
@@ -244,14 +241,13 @@
     <define name="ACCEL_Y_SENS" value="4.893565542871982" integer="16"/>
     <define name="ACCEL_Z_SENS" value="4.817473728672114" integer="16"/>
 
-    <!-- TODO (internal) -->
-    <define name="MAG_X_NEUTRAL" value="18"/>
-    <define name="MAG_Y_NEUTRAL" value="-4"/>
-    <define name="MAG_Z_NEUTRAL" value="28"/>
-    <define name="MAG_X_SENS" value="9.656192813345159" integer="16"/>
-    <define name="MAG_Y_SENS" value="9.909601938430631" integer="16"/>
-    <define name="MAG_Z_SENS" value="9.66728965768088" integer="16"/>
-
+    <!-- Calibrated 23-02-2021 at Valkenburg (internal magnetometer) -->
+    <define name="MAG_X_NEUTRAL" value="-13"/>
+    <define name="MAG_Y_NEUTRAL" value="-15"/>
+    <define name="MAG_Z_NEUTRAL" value="12"/>
+    <define name="MAG_X_SENS" value="12.823826623678" integer="16"/>
+    <define name="MAG_Y_SENS" value="12.86305350064853" integer="16"/>
+    <define name="MAG_Z_SENS" value="12.512614596093622" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="90." unit="deg"/>
