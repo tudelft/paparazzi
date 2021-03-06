@@ -38,6 +38,8 @@
 // optical flow module and textons module:
 #include "modules/ctrl/optical_flow_landing.h"
 #include "modules/computer_vision/textons.h"
+
+#include "modules/computer_vision/video_thread.h"
 // reading the pressuremeter:
 #include "subsystems/abi.h"
 #ifndef LOGGER_BARO_ID
@@ -68,6 +70,52 @@ static void logger_sonar_cb(uint8_t sender_id __attribute__((unused)), float hei
 static void logger_sonar_cb(uint8_t sender_id, float height)
 {
   logger_sonar = height;
+}
+
+// reading OF info:
+#ifndef LOGGER_OF_ID
+#define LOGGER_OF_ID ABI_BROADCAST
+#endif
+PRINT_CONFIG_VAR(LOGGER_OF_ID)
+uint32_t OF_stamp;
+int16_t OF_flow_x;
+int16_t OF_flow_y;
+int16_t OF_flow_der_x;
+int16_t OF_flow_der_y;
+float OF_quality;
+float OF_size_divergence;
+static abi_event OF_ev; ///< The sonar ABI event
+static void logger_optical_flow_cb(uint8_t sender_id __attribute__((unused)),uint32_t stamp, int16_t flow_x,
+                                   int16_t flow_y, int16_t flow_der_x, int16_t flow_der_y, float quality, float size_divergence);
+
+static void logger_optical_flow_cb(uint8_t sender_id, uint32_t stamp, int16_t flow_x,
+                                   int16_t flow_y, int16_t flow_der_x, int16_t flow_der_y, float quality, float size_divergence)
+{
+  OF_stamp = stamp;
+  OF_flow_x = flow_x;
+  OF_flow_y = flow_y;
+  OF_flow_der_x = flow_der_x;
+  OF_flow_der_y = flow_der_y;
+  OF_quality = quality;
+  OF_size_divergence = size_divergence;
+}
+
+// reading RPMs:
+#ifndef LOGGER_RPM_ID
+#define LOGGER_RPM_ID ABI_BROADCAST
+#endif
+PRINT_CONFIG_VAR(LOGGER_RPM_ID)
+uint16_t RPM[8]; // max an octocopter
+uint8_t RPM_num_act;
+static abi_event RPM_ev; ///< The sonar ABI event
+static void logger_rpm_cb(uint8_t sender_id, uint16_t * rpm, uint8_t num_act);
+
+static void logger_rpm_cb(uint8_t sender_id, uint16_t * rpm, uint8_t num_act)
+{
+  RPM_num_act = num_act;
+  for(int i = 0; i < num_act; i++) {
+      RPM[i] = rpm[i];
+  }
 }
 
 
@@ -123,16 +171,8 @@ void file_logger_start(void)
   if (file_logger != NULL) {
     fprintf(
           file_logger,
-          "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,"
-          "mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz,"
-          "shot,pressure,sonar,phi_f,theta_f,psi_f,pstate,cov_div,div,z,zd"
+          "time,accel_x,accel_y,accel_z,gyro_p,gyro_q,gyro_r,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z,att_phi,att_theta,att_psi,rate_p,rate_q,rate_r,OF_time,flow_x, flow_y,flow_der_x, flow_der_y, div_size, div,noise, fps,cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw,rpm1_abi,rpm2_abi,rpm3_abi,rpm4_abi,num_act"
         );
-    for(int i = 0; i < n_textons-1; i++) {
-          fprintf(file_logger, "texton_%d,", i);
-      }
-    fprintf(file_logger, "texton_%d\n", n_textons-1);
-    logger_pressure = 0.0f;
-    logger_sonar = 0.0f;
   }
   else {
       printf("Could not open log!\n");
@@ -141,6 +181,8 @@ void file_logger_start(void)
   // Subscribe to the altitude above ground level ABI messages
   AbiBindMsgBARO_ABS(LOGGER_BARO_ID, &baro_ev, logger_baro_cb);
   AbiBindMsgAGL(LOGGER_SONAR_ID, &sonar_ev, logger_sonar_cb);
+  AbiSendMsgOPTICAL_FLOW(LOGGER_OF_ID, &OF_ev, logger_optical_flow_cb);
+  AbiBindMsgRPM(LOGGER_RPM_ID, &RPM_ev, logger_rpm_cb);
 }
 
 /** Stop the logger an nicely close the file */
@@ -162,7 +204,7 @@ void file_logger_periodic(void)
   struct Int32Quat *quat = stateGetNedToBodyQuat_i();
 
   //timing
-  gettimeofday(&stop, 0);
+/*  gettimeofday(&stop, 0);
   double curr_time = (double)(stop.tv_sec + stop.tv_usec / 1000000.0);
   double time_stamp = curr_time - (double)(start.tv_sec + start.tv_usec / 1000000.0);
   if((time_stamp - prev_ss_time) > 0.2) // for 5hz
@@ -175,48 +217,67 @@ void file_logger_periodic(void)
   else
   {
     take_shot = -1;
-  }
+  }*/
 
   struct FloatEulers *eulers = stateGetNedToBodyEulers_f();
   struct NedCoor_f *velocities = stateGetSpeedNed_f();
   struct NedCoor_f *position = stateGetPositionNed_f();
+  struct FloatRates *rates = stateGetBodyRates_f();
 
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,",
+  float GT_divergence = 0.0f;
+  if(position->z >= 1E-3) {
+      GT_divergence = velocities->z / position->z;
+  }
+  float noise = 0.0f; // what was this?
+
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
           counter,
-          imu.gyro_unscaled.p,
-          imu.gyro_unscaled.q,
-          imu.gyro_unscaled.r,
-          imu.accel_unscaled.x,
-          imu.accel_unscaled.y,
-          imu.accel_unscaled.z,
-          imu.mag_unscaled.x,
-          imu.mag_unscaled.y,
-          imu.mag_unscaled.z,
+/*
+	  imu.accel_unscaled.x,
+	  imu.accel_unscaled.y,
+	  imu.accel_unscaled.z,
+	  imu.gyro_unscaled.p,
+	  imu.gyro_unscaled.q,
+	  imu.gyro_unscaled.r,
+*/
+          imu.accel.x, // m/s^2 scaled with 10
+          imu.accel.y,
+          imu.accel.z,
+	  imu.gyro.p, // rad/s scaled with 12
+	  imu.gyro.q,
+	  imu.gyro.r,
+          position->x,
+	  position->y,
+	  position->z,
+	  velocities->x,
+	  velocities->y,
+	  velocities->z,
+	  eulers->phi,
+	  eulers->theta,
+	  eulers->psi,
+	  rates->p,
+	  rates->q,
+	  rates->r,
+	  OF_stamp,
+	  OF_flow_x,
+	  OF_flow_y,
+	  OF_flow_der_x,
+	  OF_flow_der_y,
+	  OF_quality,
+	  OF_size_divergence,
+	  GT_divergence,
+	  noise,
+	  vid->fps,
           stabilization_cmd[COMMAND_THRUST],
           stabilization_cmd[COMMAND_ROLL],
           stabilization_cmd[COMMAND_PITCH],
           stabilization_cmd[COMMAND_YAW],
-          quat->qi,
-          quat->qx,
-          quat->qy,
-          quat->qz,
-          take_shot,
-          logger_pressure,
-          logger_sonar,
-          eulers->phi,
-          eulers->theta,
-          eulers->psi,
-          pstate,
-          cov_div,
-	  divergence_vision,
-	  position->z,
-	  velocities->z
+	  RPM[0],
+	  RPM[1],
+	  RPM[2],
+	  RPM[3],
+	  RPM_num_act
          );
-
-  for(int i = 0; i < n_textons-1; i++) {
-      fprintf(file_logger, "%f,", texton_distribution[i]);
-  }
-  fprintf(file_logger, "%f\n", texton_distribution[n_textons-1]);
 
   counter++;
 }
