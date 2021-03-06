@@ -181,7 +181,7 @@ void file_logger_start(void)
   // Subscribe to the altitude above ground level ABI messages
   AbiBindMsgBARO_ABS(LOGGER_BARO_ID, &baro_ev, logger_baro_cb);
   AbiBindMsgAGL(LOGGER_SONAR_ID, &sonar_ev, logger_sonar_cb);
-  AbiSendMsgOPTICAL_FLOW(LOGGER_OF_ID, &OF_ev, logger_optical_flow_cb);
+  AbiBindMsgOPTICAL_FLOW(LOGGER_OF_ID, &OF_ev, logger_optical_flow_cb);
   AbiBindMsgRPM(LOGGER_RPM_ID, &RPM_ev, logger_rpm_cb);
 }
 
@@ -229,8 +229,8 @@ void file_logger_periodic(void)
       GT_divergence = velocities->z / position->z;
   }
   float noise = 0.0f; // what was this?
-
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+  int fps = 30; // how to get this from the video thread?
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
           counter,
 /*
 	  imu.accel_unscaled.x,
@@ -267,7 +267,7 @@ void file_logger_periodic(void)
 	  OF_size_divergence,
 	  GT_divergence,
 	  noise,
-	  vid->fps,
+	  fps,
           stabilization_cmd[COMMAND_THRUST],
           stabilization_cmd[COMMAND_ROLL],
           stabilization_cmd[COMMAND_PITCH],
