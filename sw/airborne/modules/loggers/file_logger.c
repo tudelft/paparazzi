@@ -38,7 +38,7 @@
 // optical flow module and textons module:
 #include "modules/ctrl/optical_flow_landing.h"
 #include "modules/computer_vision/textons.h"
-
+#include "mcu_periph/sys_time.h"
 #include "modules/computer_vision/video_thread.h"
 // reading the pressuremeter:
 #include "subsystems/abi.h"
@@ -204,6 +204,7 @@ void file_logger_periodic(void)
   struct Int32Quat *quat = stateGetNedToBodyQuat_i();
 
   //timing
+  float time = get_sys_time_float();
 /*  gettimeofday(&stop, 0);
   double curr_time = (double)(stop.tv_sec + stop.tv_usec / 1000000.0);
   double time_stamp = curr_time - (double)(start.tv_sec + start.tv_usec / 1000000.0);
@@ -230,8 +231,8 @@ void file_logger_periodic(void)
   }
   float noise = 0.0f; // what was this?
   int fps = 30; // how to get this from the video thread?
-  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
-          counter,
+  fprintf(file_logger, "%f,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+          time,
 /*
 	  imu.accel_unscaled.x,
 	  imu.accel_unscaled.y,
