@@ -175,7 +175,7 @@
 
   <commands>
     <axis name="ROLL"   failsafe_value="0"/>
-    <axis name="PITCH"  failsafe_value="0"/>
+    <axis name="PITCH"  failsafe_value="-300"/>
     <axis name="YAW"    failsafe_value="0"/>
     <axis name="THRUST" failsafe_value="0"/>
     <axis name="FLAPS" failsafe_value="0"/>
