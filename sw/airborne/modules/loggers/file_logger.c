@@ -35,6 +35,7 @@
 
 // #include "subsystems/electrical.h"
 #include "modules/computer_vision/video_capture.h"
+
 // optical flow module and textons module:
 #include "modules/ctrl/optical_flow_landing.h"
 #include "modules/computer_vision/textons.h"
@@ -77,7 +78,8 @@ static void logger_sonar_cb(uint8_t sender_id, float height)
 #define LOGGER_OF_ID ABI_BROADCAST
 #endif
 PRINT_CONFIG_VAR(LOGGER_OF_ID)
-uint32_t OF_stamp;
+uint32_t OF_stamp=0;
+uint32_t OF_previous_stamp=0;
 int16_t OF_flow_x;
 int16_t OF_flow_y;
 int16_t OF_flow_der_x;
@@ -91,6 +93,7 @@ static void logger_optical_flow_cb(uint8_t sender_id __attribute__((unused)),uin
 static void logger_optical_flow_cb(uint8_t sender_id, uint32_t stamp, int16_t flow_x,
                                    int16_t flow_y, int16_t flow_der_x, int16_t flow_der_y, float quality, float size_divergence)
 {
+  OF_previous_stamp = OF_stamp;
   OF_stamp = stamp;
   OF_flow_x = flow_x;
   OF_flow_y = flow_y;
@@ -171,7 +174,7 @@ void file_logger_start(void)
   if (file_logger != NULL) {
     fprintf(
           file_logger,
-          "time,accel_x,accel_y,accel_z,gyro_p,gyro_q,gyro_r,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z,att_phi,att_theta,att_psi,rate_p,rate_q,rate_r,OF_time,flow_x, flow_y,flow_der_x, flow_der_y, div_size, div,noise, fps,cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw,rpm1_abi,rpm2_abi,rpm3_abi,rpm4_abi,num_act"
+          "time,accel_x,accel_y,accel_z,gyro_p,gyro_q,gyro_r,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z,att_phi,att_theta,att_psi,rate_p,rate_q,rate_r,OF_time,flow_x, flow_y,flow_der_x, flow_der_y, div_size, div,noise, fps,cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw,rpm1_abi,rpm2_abi,rpm3_abi,rpm4_abi,num_act\n"
         );
   }
   else {
@@ -225,13 +228,35 @@ void file_logger_periodic(void)
   struct NedCoor_f *position = stateGetPositionNed_f();
   struct FloatRates *rates = stateGetBodyRates_f();
 
+  // Optical flow, calculate the ground truth divergence:
   float GT_divergence = 0.0f;
-  if(position->z >= 1E-3) {
+  if(position->z <= 1E-3) {
       GT_divergence = velocities->z / position->z;
   }
-  float noise = 0.0f; // what was this?
-  int fps = 30; // how to get this from the video thread?
-  fprintf(file_logger, "%f,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+  // calculate fps from time stamps optical flow:
+  uint32_t ms_frame = (OF_stamp - OF_previous_stamp) / 1000;
+  float fps;
+  float sec_frame = ((float)ms_frame) / 1000.0f;
+  if(sec_frame < 10.0f && sec_frame > 1E-5) {
+      fps = 1 / sec_frame;
+  }
+  else {
+      // probably initialization:
+      fps = 0;
+      OF_previous_stamp = OF_stamp;
+  }
+
+  fprintf(file_logger, "%f,"
+      "%d,%d,%d,"
+      "%d,%d,%d,"
+      "%f,%f,%f,"
+      "%f,%f,%f,"
+      "%f,%f,%f,"
+      "%f,%f,%f," // rates
+      "%d,%d,%d,%d,%d," // optical flow ints
+      "%f,%f,%f,%f," // OF_size_divergence to fps
+      "%d,%d,%d,%d,"
+      "%d,%d,%d,%d,%d\n",
           time,
 /*
 	  imu.accel_unscaled.x,
@@ -264,10 +289,9 @@ void file_logger_periodic(void)
 	  OF_flow_y,
 	  OF_flow_der_x,
 	  OF_flow_der_y,
-	  OF_quality,
 	  OF_size_divergence,
 	  GT_divergence,
-	  noise,
+	  OF_quality,
 	  fps,
           stabilization_cmd[COMMAND_THRUST],
           stabilization_cmd[COMMAND_ROLL],
