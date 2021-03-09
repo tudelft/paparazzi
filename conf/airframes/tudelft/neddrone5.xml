@@ -150,10 +150,10 @@
     <servo name="MOTOR_10" no="13" min="-8191" neutral="1500" max="8191"/>
     <servo name="MOTOR_11" no="14" min="-8191" neutral="1500" max="8191"/>
     <servo name="MOTOR_12" no="15" min="-8191" neutral="1500" max="8191"/>
-    <servo name="FLAP_3" no="16" min="-6000" neutral="0" max="6000"/>
-    <servo name="AIL_3" no="17" min="-6000" neutral="0" max="6000"/>
-    <servo name="AIL_4" no="18" min="6000" neutral="0" max="-6000"/>
-    <servo name="FLAP_4" no="19" min="6000" neutral="0" max="-6000"/>
+    <servo name="AIL_3" no="16" min="-6000" neutral="0" max="6000"/>
+    <servo name="FLAP_3" no="17" min="-6000" neutral="0" max="6000"/>
+    <servo name="FLAP_4" no="18" min="6000" neutral="0" max="-6000"/>
+    <servo name="AIL_4" no="19" min="6000" neutral="0" max="-6000"/>
   </servos>
 
   <commands>
@@ -233,15 +233,15 @@
   </section>
 
   <section name="IMU" prefix="IMU_">
-    <!-- Calibrated 17-02-2021 in MAVLab outside body -->
-    <define name="ACCEL_X_NEUTRAL" value="189"/>
-    <define name="ACCEL_Y_NEUTRAL" value="43"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-13"/>
-    <define name="ACCEL_X_SENS" value="4.648016276784333" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.893565542871982" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.817473728672114" integer="16"/>
+    <!-- Calibrated 09-03-2021 in MAVLab outside body -->
+    <define name="ACCEL_X_NEUTRAL" value="16"/>
+    <define name="ACCEL_Y_NEUTRAL" value="31"/>
+    <define name="ACCEL_Z_NEUTRAL" value="10"/>
+    <define name="ACCEL_X_SENS" value="4.793311542012962" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="4.893892083504835" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="4.791159603565934" integer="16"/>
 
-    <!-- Calibrated 23-02-2021 at Valkenburg (internal magnetometer) -->
+    <!-- NOT CALIBRATED (internal magnetometer) -->
     <!--define name="MAG_X_NEUTRAL" value="-13"/>
     <define name="MAG_Y_NEUTRAL" value="-15"/>
     <define name="MAG_Z_NEUTRAL" value="12"/>
@@ -249,7 +249,7 @@
     <define name="MAG_Y_SENS" value="12.86305350064853" integer="16"/>
     <define name="MAG_Z_SENS" value="12.512614596093622" integer="16"/-->
 
-    <!-- Calibrated 25-02-2021 at Valkenburg (external magnetometer) -->
+    <!-- NOT CALIBRATED (external magnetometer) -->
     <define name="MAG_X_NEUTRAL" value="2457"/>
     <define name="MAG_Y_NEUTRAL" value="-1123"/>
     <define name="MAG_Z_NEUTRAL" value="-1843"/>
