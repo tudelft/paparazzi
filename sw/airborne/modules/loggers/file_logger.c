@@ -234,8 +234,8 @@ void file_logger_periodic(void)
 
   // Optical flow, calculate the ground truth divergence:
   float GT_divergence = 0.0f;
-  if(position->z <= 1E-3) {
-      GT_divergence = velocities->z / position->z;
+  if(position->z <= -1E-3) {
+      GT_divergence = -velocities->z / position->z;
   }
   // calculate fps from time stamps optical flow:
   uint32_t ms_frame = (OF_stamp - OF_previous_stamp) / 1000;
