@@ -116,9 +116,13 @@ static void logger_rpm_cb(uint8_t sender_id, uint16_t * rpm, uint8_t num_act);
 static void logger_rpm_cb(uint8_t sender_id, uint16_t * rpm, uint8_t num_act)
 {
   RPM_num_act = num_act;
+  //printf("RPM = ");
   for(int i = 0; i < num_act; i++) {
       RPM[i] = rpm[i];
+      //printf("%d, ", RPM[i]);
   }
+  //printf("%d", num_act);
+  //printf("\n");
 }
 
 
