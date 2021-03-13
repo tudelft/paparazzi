@@ -40,7 +40,6 @@
       <module name="pprzlog"/>
       <module name="logger" type="sd_chibios"/>
       <module name="flight_recorder"/>
-
       <!-- WINDTUNNEL -->
       <module name="ctrl_windtunnel"/>
 
@@ -368,7 +367,8 @@
 
     <!-- second order filter parameters -->
     <define name="FILT_CUTOFF" value="1.5"/>
-    <define name="FILT_CUTOFF_R" value="0.5"/>
+    <define name="FILT_CUTOFF_R" value="4.0"/>
+     <define name="FILT_CUTOFF_RDOT" value="0.5"/>
     <define name="ESTIMATION_FILT_CUTOFF" value="5.0"/>
 
     <define name="FILTER_YAW_RATE" value="TRUE"/>
