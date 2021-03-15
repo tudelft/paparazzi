@@ -22,15 +22,20 @@
 /**
  * @file subsystems/ins/ins_flow.c
  *
- * "Inertial" navigation system, which is actually mostly based on optical flow measurements.
- * Goal is actually to make it work in the end without any inertial sensors (with the possibility for using gyros).
- * Starting point should be the ahrs_*_wrappers
+ * "Inertial" navigation system.
  */
 
+#include "ins_flow.h"
 #include "subsystems/abi.h"
 #include "generated/airframe.h"
 #include "mcu_periph/sys_time.h"
 #include "autopilot.h"
+#include "math/pprz_algebra_float.h"
+
+#ifndef AHRS_ICQ_OUTPUT_ENABLED
+#define AHRS_ICQ_OUTPUT_ENABLED TRUE
+#endif
+PRINT_CONFIG_VAR(AHRS_ICQ_OUTPUT_ENABLED)
 
 /* default Gyro to use in INS */
 #ifndef INS_FLOW_GYRO_ID
@@ -55,7 +60,6 @@ static abi_event gyro_ev;
 static abi_event accel_ev;
 static abi_event gps_ev;
 static abi_event body_to_imu_ev;
-struct gps_message gps_msg = {};
 
 /* All ABI callbacks */
 static void gyro_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates *gyro);
@@ -63,31 +67,11 @@ static void accel_cb(uint8_t sender_id, uint32_t stamp, struct Int32Vect3 *accel
 static void body_to_imu_cb(uint8_t sender_id, struct FloatQuat *q_b2i_f);
 static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
 
-/* Main FLOW structure for keeping track of the status - for now unused */
-struct ins_flow_t {
-  uint32_t gyro_stamp;
-  uint32_t gyro_dt;
-  uint32_t accel_stamp;
-  uint32_t accel_dt;
-  FloatRates gyro;
-  FloatVect3 accel;
-  bool gyro_valid;
-  bool accel_valid;
-
-  uint8_t quat_reset_counter;
-
-  uint64_t ltp_stamp;
-  struct LtpDef_i ltp_def;
-
-  struct OrientationReps body_to_imu;
-  bool got_imu_data;
-};
 
 /* Static local functions */
 static bool ahrs_icq_output_enabled;
 static uint32_t ahrs_icq_last_stamp;
 static uint8_t ahrs_flow_id = AHRS_COMP_ID_FLOW;  ///< Component ID for FLOW
-struct ins_flow_t ins_flow;
 
 static void set_body_state_from_quat(void);
 
@@ -109,16 +93,6 @@ void ins_flow_init(void)
   ahrs_icq_output_enabled = AHRS_ICQ_OUTPUT_ENABLED;
   ahrs_icq_init();
   ahrs_register_impl(ahrs_icq_enable_output);
-
-  /* Initialize struct */
-  ins_flow.ltp_stamp = 0;
-  ins_flow.accel_stamp = 0;
-  ins_flow.gyro_stamp = 0;
-  ins_flow.gyro_valid = false;
-  ins_flow.accel_valid = false;
-  ins_flow.got_imu_data = false;
-  ins_flow.quat_reset_counter = 0;
-
 
 #if PERIODIC_TELEMETRY
  // ...
@@ -224,6 +198,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp,
                    struct GpsState *gps_s)
 {
+  /*
   uint32_t time_usec = stamp;
   int32_t lat = gps_s->lla_pos.lat;
   int32_t lon = gps_s->lla_pos.lon;
@@ -233,6 +208,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   float epv = gps_s->vacc / 100.0;
   float sacc = gps_s->sacc / 100.0;
   float vel_m_s = gps_s->gspeed / 100.0;
+  */
 
   struct NedCoor_i ned_pos;
   ned_of_ecef_point_i(&ned_pos, &state.ned_origin_i, &gps_s->ecef_pos);
@@ -245,14 +221,15 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   vel_ned.z = (gps_s->ned_vel.z) / 100.0;
   stateSetSpeedNed_f(&vel_ned);
 
+  /*
   bool vel_ned_valid = bit_is_set(gps_s->valid_fields, GPS_VALID_VEL_NED_BIT);
   uint8_t nsats = gps_s->num_sv;
-
+  */
 }
 
 /* Save the Body to IMU information */
 static void body_to_imu_cb(uint8_t sender_id __attribute__((unused)),
                            struct FloatQuat *q_b2i_f)
 {
-  orientationSetQuat_f(&ins_flow.body_to_imu, q_b2i_f);
+  ahrs_icq_set_body_to_imu_quat(q_b2i_f);
 }

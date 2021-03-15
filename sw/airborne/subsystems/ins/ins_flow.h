@@ -22,9 +22,7 @@
 /**
  * @file subsystems/ins/ins_flow.h
  *
- * "Inertial" navigation system, which is actually mostly based on optical flow measurements.
- * Goal is actually to make it work in the end without any inertial sensors (with the possibility for using gyros).
- * Initially, we make a wrapper for the int_cmpl_quat ahrs filter.
+ * "Inertial" navigation system.
  */
 
 #ifndef INS_FLOW_H
@@ -34,7 +32,7 @@
 extern "C" {
 #endif
 
-#include "subsystems/ahrs.h"
+//#include "subsystems/ahrs.h"
 #include "subsystems/ahrs/ahrs_int_cmpl_quat.h"
 #include "subsystems/ins.h"
 
