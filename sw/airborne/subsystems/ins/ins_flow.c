@@ -31,6 +31,8 @@
 #include "mcu_periph/sys_time.h"
 #include "autopilot.h"
 #include "math/pprz_algebra_float.h"
+#include "generated/airframe.h"
+#include "generated/flight_plan.h"
 
 #ifndef AHRS_ICQ_OUTPUT_ENABLED
 #define AHRS_ICQ_OUTPUT_ENABLED TRUE
@@ -69,9 +71,9 @@ static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
 
 
 /* Static local functions */
-static bool ahrs_icq_output_enabled;
+//static bool ahrs_icq_output_enabled;
 static uint32_t ahrs_icq_last_stamp;
-static uint8_t ahrs_flow_id = AHRS_COMP_ID_FLOW;  ///< Component ID for FLOW
+//static uint8_t ahrs_flow_id = AHRS_COMP_ID_FLOW;  ///< Component ID for FLOW
 
 static void set_body_state_from_quat(void);
 
@@ -80,19 +82,32 @@ static void set_body_state_from_quat(void);
 // No telemetry yet...
 #endif
 
+/*
 static bool ahrs_icq_enable_output(bool enable)
 {
   ahrs_icq_output_enabled = enable;
   return ahrs_icq_output_enabled;
-}
+}*/
 
 /* Initialize the flow ins */
 void ins_flow_init(void)
 {
 
-  ahrs_icq_output_enabled = AHRS_ICQ_OUTPUT_ENABLED;
+  //ahrs_icq_output_enabled = AHRS_ICQ_OUTPUT_ENABLED;
   ahrs_icq_init();
-  ahrs_register_impl(ahrs_icq_enable_output);
+  //ahrs_register_impl(ahrs_icq_enable_output);
+
+  struct LlaCoor_i llh_nav0; /* Height above the ellipsoid */
+  llh_nav0.lat = NAV_LAT0;
+  llh_nav0.lon = NAV_LON0;
+  /* NAV_ALT0 = ground alt above msl, NAV_MSL0 = geoid-height (msl) over ellipsoid */
+  llh_nav0.alt = NAV_ALT0 + NAV_MSL0;
+  struct EcefCoor_i ecef_nav0;
+  ecef_of_lla_i(&ecef_nav0, &llh_nav0);
+  struct LtpDef_i ltp_def;
+  ltp_def_from_ecef_i(&ltp_def, &ecef_nav0);
+  ltp_def.hmsl = NAV_ALT0;
+  stateSetLocalOrigin_i(&ltp_def);
 
 #if PERIODIC_TELEMETRY
  // ...
@@ -176,21 +191,19 @@ static void accel_cb(uint8_t __attribute__((unused)) sender_id,
 /** Rotate angles and rates from imu to body frame and set state */
 static void set_body_state_from_quat(void)
 {
-  if (ahrs_icq_output_enabled) {
-    /* Compute LTP to BODY quaternion */
-    struct Int32Quat ltp_to_body_quat;
-    struct Int32Quat *body_to_imu_quat = orientationGetQuat_i(&ahrs_icq.body_to_imu);
-    int32_quat_comp_inv(&ltp_to_body_quat, &ahrs_icq.ltp_to_imu_quat, body_to_imu_quat);
-    /* Set state */
-    stateSetNedToBodyQuat_i(&ltp_to_body_quat);
+  /* Compute LTP to BODY quaternion */
+  struct Int32Quat ltp_to_body_quat;
+  struct Int32Quat *body_to_imu_quat = orientationGetQuat_i(&ahrs_icq.body_to_imu);
+  int32_quat_comp_inv(&ltp_to_body_quat, &ahrs_icq.ltp_to_imu_quat, body_to_imu_quat);
+  /* Set state */
+  stateSetNedToBodyQuat_i(&ltp_to_body_quat);
 
-    /* compute body rates */
-    struct Int32Rates body_rate;
-    struct Int32RMat *body_to_imu_rmat = orientationGetRMat_i(&ahrs_icq.body_to_imu);
-    int32_rmat_transp_ratemult(&body_rate, body_to_imu_rmat, &ahrs_icq.imu_rate);
-    /* Set state */
-    stateSetBodyRates_i(&body_rate);
-  }
+  /* compute body rates */
+  struct Int32Rates body_rate;
+  struct Int32RMat *body_to_imu_rmat = orientationGetRMat_i(&ahrs_icq.body_to_imu);
+  int32_rmat_transp_ratemult(&body_rate, body_to_imu_rmat, &ahrs_icq.imu_rate);
+  /* Set state */
+  stateSetBodyRates_i(&body_rate);
 }
 
 /* Update INS based on GPS information */
@@ -212,6 +225,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 
   struct NedCoor_i ned_pos;
   ned_of_ecef_point_i(&ned_pos, &state.ned_origin_i, &gps_s->ecef_pos);
+  printf("pos = %f, %f, %f\n", ned_pos.x, ned_pos.y, ned_pos.z);
   stateSetPositionNed_i(&ned_pos);
 
   // immediately believe velocity and publish it:

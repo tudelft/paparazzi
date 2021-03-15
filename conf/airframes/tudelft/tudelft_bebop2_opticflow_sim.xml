@@ -29,7 +29,8 @@
       <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
     </module> 
     <module name="ins" type="extended"/> -->
-
+    
+    <!-- <define name="AHRS_USE_GPS_HEADING" value="TRUE"/> -->
     <module name="ins" type="flow"/>
 
     <!-- Disable use of GPS: -->
@@ -69,10 +70,10 @@
     </module>
 
     <module name="cv_textons.xml">
-      <define name="TEXTONS_FPS" value="30"/> <!-- TODO: can this be higher? -->
+      <define name="TEXTONS_FPS" value="30"/> 
       <define name="TEXTONS_CAMERA" value="bottom_camera"/>
       <define name="TEXTONS_N_TEXTONS" value="20"/>
-      <define name="TEXTONS_DICTIONARY_PATH" value="./"/> <!-- TODO: is there a way to make this depend on nps / ap? -->
+      <define name="TEXTONS_DICTIONARY_PATH" value="./"/>
     </module>
 
     <module name="optical_flow_landing.xml"/>
@@ -131,18 +132,17 @@
     <define name="MAG_Z_SENS" value="7.57102035692" integer="16"/>
   </section>
 
-  <!-- local magnetic field -->
-  <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
+<!--
   <section name="AHRS" prefix="AHRS_">
-    <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
+    
     <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
     <define name="GRAVITY_HEURISTIC_FACTOR" value="0"/> 
-    <!-- Delft -->
+    
     <define name="H_X" value="0.3892503"/>
     <define name="H_Y" value="0.0017972"/>
     <define name="H_Z" value="0.9211303"/>
   </section>
-
+-->
   <section name="INS" prefix="INS_">
     <define name="USE_GPS_ALT" value="1"/>
     <!-- trust GPS a lot: -->
@@ -151,7 +151,6 @@
     <define name="SONAR_MIN_RANGE" value="0.0"/>
     <define name="SONAR_MAX_RANGE" value="2.2"/>
     <define name="SONAR_UPDATE_ON_AGL" value="FALSE"/>
-
   </section>
 
 

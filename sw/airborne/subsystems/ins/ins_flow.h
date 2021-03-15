@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-//#include "subsystems/ahrs.h"
+#include "subsystems/ahrs.h"
 #include "subsystems/ahrs/ahrs_int_cmpl_quat.h"
 #include "subsystems/ins.h"
 
