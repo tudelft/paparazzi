@@ -57,17 +57,26 @@ PRINT_CONFIG_VAR(INS_FLOW_ACCEL_ID)
 #endif
 PRINT_CONFIG_VAR(INS_FLOW_GPS_ID)
 
+/* Use optical flow estimates */
+#ifndef INS_OPTICAL_FLOW_ID
+#define INS_OPTICAL_FLOW_ID ABI_BROADCAST
+#endif
+PRINT_CONFIG_VAR(INS_OPTICAL_FLOW_ID)
+
 /* All registered ABI events */
 static abi_event gyro_ev;
 static abi_event accel_ev;
 static abi_event gps_ev;
 static abi_event body_to_imu_ev;
+static abi_event ins_optical_flow_ev;
 
 /* All ABI callbacks */
 static void gyro_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates *gyro);
 static void accel_cb(uint8_t sender_id, uint32_t stamp, struct Int32Vect3 *accel);
 static void body_to_imu_cb(uint8_t sender_id, struct FloatQuat *q_b2i_f);
 static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
+void ins_optical_flow_cb(uint8_t sender_id, uint32_t stamp, int16_t flow_x,
+                                   int16_t flow_y, int16_t flow_der_x, int16_t flow_der_y, float quality, float size_divergence);
 
 
 /* Static local functions */
@@ -78,6 +87,8 @@ static uint8_t ahrs_flow_id = AHRS_COMP_ID_FLOW;  ///< Component ID for FLOW
 static void set_body_state_from_quat(void);
 
 struct InsFlow {
+
+  // data elements for gps passthrough:
   struct LtpDef_i  ltp_def;
   bool           ltp_initialized;
 
@@ -85,6 +96,12 @@ struct InsFlow {
   struct NedCoor_i ltp_pos;
   struct NedCoor_i ltp_speed;
   struct NedCoor_i ltp_accel;
+
+  float optical_flow_x;
+  float optical_flow_y;
+  float divergence;
+  float vision_time; // perhaps better to use microseconds (us) instead of float in seconds
+
 };
 
 struct InsFlow ins_flow;
@@ -233,6 +250,7 @@ void ins_flow_init(void)
   AbiBindMsgIMU_ACCEL_INT32(INS_FLOW_ACCEL_ID, &accel_ev, accel_cb);
   AbiBindMsgGPS(INS_FLOW_GPS_ID, &gps_ev, gps_cb);
   AbiBindMsgBODY_TO_IMU_QUAT(ABI_BROADCAST, &body_to_imu_ev, body_to_imu_cb);
+  AbiBindMsgOPTICAL_FLOW(INS_OPTICAL_FLOW_ID, &ins_optical_flow_ev, ins_optical_flow_cb);
 }
 
 void ins_reset_local_origin(void)
@@ -243,6 +261,19 @@ void ins_reset_local_origin(void)
   stateSetLocalOrigin_i(&ins_flow.ltp_def);
   ins_flow.ltp_initialized = true;
 }
+
+void ins_optical_flow_cb(uint8_t sender_id UNUSED, uint32_t stamp, int16_t flow_x UNUSED,
+                                   int16_t flow_y UNUSED,
+                                   int16_t flow_der_x, int16_t flow_der_y, float quality UNUSED, float size_divergence)
+{
+
+  ins_flow.optical_flow_x = ((float)flow_der_x)/10.0;
+  ins_flow.optical_flow_y = ((float)flow_der_y)/10.0;
+  ins_flow.divergence = size_divergence;
+  //printf("Reading %f, %f, %f\n", optical_flow_x, optical_flow_y, divergence_vision);
+  ins_flow.vision_time = ((float)stamp) / 1e6;
+}
+
 
 void ins_flow_update(void)
 {
