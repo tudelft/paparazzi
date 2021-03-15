@@ -63,12 +63,19 @@ PRINT_CONFIG_VAR(INS_FLOW_GPS_ID)
 #endif
 PRINT_CONFIG_VAR(INS_OPTICAL_FLOW_ID)
 
+// reading RPMs:
+#ifndef INS_RPM_ID
+#define INS_RPM_ID ABI_BROADCAST
+#endif
+PRINT_CONFIG_VAR(INS_RPM_ID)
+
 /* All registered ABI events */
 static abi_event gyro_ev;
 static abi_event accel_ev;
 static abi_event gps_ev;
 static abi_event body_to_imu_ev;
 static abi_event ins_optical_flow_ev;
+static abi_event ins_RPM_ev; ///< The sonar ABI event
 
 /* All ABI callbacks */
 static void gyro_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates *gyro);
@@ -77,7 +84,7 @@ static void body_to_imu_cb(uint8_t sender_id, struct FloatQuat *q_b2i_f);
 static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
 void ins_optical_flow_cb(uint8_t sender_id, uint32_t stamp, int16_t flow_x,
                                    int16_t flow_y, int16_t flow_der_x, int16_t flow_der_y, float quality, float size_divergence);
-
+static void ins_rpm_cb(uint8_t sender_id, uint16_t * rpm, uint8_t num_act);
 
 /* Static local functions */
 //static bool ahrs_icq_output_enabled;
@@ -90,21 +97,35 @@ struct InsFlow {
 
   // data elements for gps passthrough:
   struct LtpDef_i  ltp_def;
-  bool           ltp_initialized;
+  bool ltp_initialized;
 
   /* output LTP NED */
   struct NedCoor_i ltp_pos;
   struct NedCoor_i ltp_speed;
   struct NedCoor_i ltp_accel;
 
+  // vision measurements:
   float optical_flow_x;
   float optical_flow_y;
   float divergence;
   float vision_time; // perhaps better to use microseconds (us) instead of float in seconds
+  bool new_flow_measurement;
+
+  // RPMs:
+  uint16_t RPM[8]; // max an octocopter
+  uint8_t RPM_num_act;
 
 };
-
 struct InsFlow ins_flow;
+
+struct InsFlowState {
+  float v;
+  float angle;
+  float angle_dot;
+  float z;
+  float z_dot;
+};
+struct InsFlowState ins_flow_state;
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -231,6 +252,14 @@ void ins_flow_init(void)
   ins_flow.ltp_def.hmsl = NAV_ALT0;
   stateSetLocalOrigin_i(&ins_flow.ltp_def);
   ins_flow.ltp_initialized = true;
+  ins_flow.new_flow_measurement = false;
+
+  // initialize the state:
+  ins_flow_state.angle = 0;
+  ins_flow_state.angle_dot = 0;
+  ins_flow_state.v = 0;
+  ins_flow_state.z = 0;
+  ins_flow_state.z_dot = 0;
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_QUAT_INT, send_quat);
@@ -251,6 +280,7 @@ void ins_flow_init(void)
   AbiBindMsgGPS(INS_FLOW_GPS_ID, &gps_ev, gps_cb);
   AbiBindMsgBODY_TO_IMU_QUAT(ABI_BROADCAST, &body_to_imu_ev, body_to_imu_cb);
   AbiBindMsgOPTICAL_FLOW(INS_OPTICAL_FLOW_ID, &ins_optical_flow_ev, ins_optical_flow_cb);
+  AbiBindMsgRPM(INS_RPM_ID, &ins_RPM_ev, ins_rpm_cb);
 }
 
 void ins_reset_local_origin(void)
@@ -272,23 +302,15 @@ void ins_optical_flow_cb(uint8_t sender_id UNUSED, uint32_t stamp, int16_t flow_
   ins_flow.divergence = size_divergence;
   //printf("Reading %f, %f, %f\n", optical_flow_x, optical_flow_y, divergence_vision);
   ins_flow.vision_time = ((float)stamp) / 1e6;
+  ins_flow.new_flow_measurement = true;
 }
 
 
 void ins_flow_update(void)
 {
-  /*
-      // Normally, run the EKF with the sensor measurements buffered with the associated time stamps.
+  // we first make the simplest version, i.e., no gyro measurement, no moment estimate:
 
-      // Publish to the state
-      stateSetPositionNed_f(&pos);
 
-      // Publish to state
-      stateSetSpeedNed_f(&speed);
-
-      // Publish to state
-      stateSetAccelNed_f(&accel);
-  */
 }
 
 static void gyro_cb(uint8_t __attribute__((unused)) sender_id,
@@ -358,6 +380,15 @@ static void set_body_state_from_quat(void)
   /* Set state */
   stateSetBodyRates_i(&body_rate);
 }
+
+static void ins_rpm_cb(uint8_t sender_id, uint16_t * rpm, uint8_t num_act)
+{
+  ins_flow.RPM_num_act = num_act;
+  for(int i = 0; i < num_act; i++) {
+      ins_flow.RPM[i] = rpm[i];
+  }
+}
+
 
 /* Update INS based on GPS information */
 static void gps_cb(uint8_t sender_id __attribute__((unused)),
