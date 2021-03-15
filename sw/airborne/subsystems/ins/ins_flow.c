@@ -135,9 +135,9 @@ struct InsFlow ins_flow;
 #define OF_DIV_FLOW_IND 1
 
 float OF_X[N_STATES_OF_KF] = {0.};
-float OF_Q[N_STATES_OF_KF][N_STATES_OF_KF] = {0.};
-float OF_P[N_STATES_OF_KF][N_STATES_OF_KF] = {0.};
-float OF_R[N_MEAS_OF_KF][N_MEAS_OF_KF] = {0.};
+float OF_Q[N_STATES_OF_KF][N_STATES_OF_KF] = {{0.}};
+float OF_P[N_STATES_OF_KF][N_STATES_OF_KF] = {{0.}};
+float OF_R[N_MEAS_OF_KF][N_MEAS_OF_KF] = {{0.}};
 
 #define OF_N_ROTORS 4
 float RPM_FACTORS[OF_N_ROTORS];
@@ -372,8 +372,11 @@ void ins_flow_update(void)
 
   // predict the thrust and moment:
   float thrust = 0.0f;
+  for(int i = 0; i < OF_N_ROTORS; i++) {
+      thrust += RPM_FACTORS[i] * ins_flow.RPM[i]*ins_flow.RPM[i];
+  }
   float mass = 0.400; // TODO: make parameter
-  float moment = 0.0f;
+  float moment = 0.0f; // for now assumed to be 0
   float Ix = 0.0018244; // TODO: make parameter
   float g = 9.81; // TODO: get a good definition from pprz
 
@@ -393,7 +396,7 @@ void ins_flow_update(void)
   // prepare the update and correction step:
   // we have to recompute these all the time, as they depend on the state:
   // discrete version of state transition matrix F: (ignoring t^2)
-  float F[N_STATES_OF_KF][N_STATES_OF_KF] = {0.};
+  float F[N_STATES_OF_KF][N_STATES_OF_KF] = {{0.}};
   for(int i = 0; i < N_STATES_OF_KF; i++) {
       F[i][i] = 1.0f;
   }
@@ -403,13 +406,13 @@ void ins_flow_update(void)
   F[OF_Z_DOT_IND][OF_ANGLE_IND] = dt*(-thrust*sin(OF_X[OF_ANGLE_IND])/mass);
 
   // G matrix (whatever it may be):
-  float G[N_STATES_OF_KF][N_STATES_OF_KF] = {0.};
+  float G[N_STATES_OF_KF][N_STATES_OF_KF] = {{0.}};
   for(int i = 0; i < N_STATES_OF_KF; i++) {
         G[i][i] = dt;
   }
 
   // Jacobian observation matrix H:
-  float H[N_MEAS_OF_KF][N_STATES_OF_KF] = {0.};
+  float H[N_MEAS_OF_KF][N_STATES_OF_KF] = {{0.}};
   // lateral flow:
   H[OF_LAT_FLOW_IND][OF_V_IND] = -cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/ OF_X[OF_Z_IND];
   H[OF_LAT_FLOW_IND][OF_ANGLE_IND] = OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
@@ -478,7 +481,7 @@ void ins_flow_update(void)
 
   float _S[N_MEAS_OF_KF][N_MEAS_OF_KF];
   MAKE_MATRIX_PTR(S, _S, N_MEAS_OF_KF);
-  float_mat_sum(S, JacPJacT, R);
+  float_mat_sum(S, JacPJacT, R, N_MEAS_OF_KF, N_MEAS_OF_KF);
 
   // if new measurement, correct state:
   if(ins_flow.new_flow_measurement) {
@@ -504,18 +507,18 @@ void ins_flow_update(void)
 				  -OF_X[OF_Z_DOT_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
 
     //  i_k1 = Z - Z_expected;
-    float innovation[N_MEAS_OF_KF];
+    float innovation[N_MEAS_OF_KF][1];
     // TODO: should this be optical_flow_x or y for roll?
-    innovation[OF_LAT_FLOW_IND] = ins_flow.optical_flow_x - Z_expected[OF_LAT_FLOW_IND];
-    innovation[OF_DIV_FLOW_IND] = ins_flow.divergence - Z_expected[OF_DIV_FLOW_IND];
+    innovation[OF_LAT_FLOW_IND][0] = ins_flow.optical_flow_x - Z_expected[OF_LAT_FLOW_IND];
+    innovation[OF_DIV_FLOW_IND][0] = ins_flow.divergence - Z_expected[OF_DIV_FLOW_IND];
     MAKE_MATRIX_PTR(I, innovation, N_MEAS_OF_KF);
 
     // X_k1_k1 = X_k1_k + K_k1*(i_k1);
-    float _KI[N_STATES_OF_KF];
+    float _KI[N_STATES_OF_KF][1];
     MAKE_MATRIX_PTR(KI, _KI, N_STATES_OF_KF);
     float_mat_mul(KI, K, I, N_STATES_OF_KF, N_MEAS_OF_KF, 1);
     for(int i = 0; i < N_STATES_OF_KF; i++) {
-	OF_X[i] += KI[i];
+	OF_X[i] += KI[i][0];
     }
 
     // P_k1_k1 = (eye(Nx) - K_k1*Hx)*P_k1_k*(eye(Nx) - K_k1*Hx)' + K_k1*R*K_k1'; % Joseph form of the covariance update equation
@@ -527,7 +530,7 @@ void ins_flow_update(void)
     float_mat_diagonal_scal(eye, 1.0, N_STATES_OF_KF);
     float _eKJac[N_STATES_OF_KF][N_STATES_OF_KF];
     MAKE_MATRIX_PTR(eKJac, _eKJac, N_STATES_OF_KF);
-    float_mat_diff(eKJac, eye, KJac, N_STATES_OF_KF);
+    float_mat_diff(eKJac, eye, KJac, N_STATES_OF_KF, N_STATES_OF_KF);
     float _eKJacT[N_STATES_OF_KF][N_STATES_OF_KF];
     MAKE_MATRIX_PTR(eKJacT, _eKJacT, N_STATES_OF_KF);
     float_mat_transpose(eKJacT, eKJac, N_STATES_OF_KF, N_STATES_OF_KF);
