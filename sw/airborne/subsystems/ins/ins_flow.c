@@ -35,6 +35,18 @@
 #include "generated/flight_plan.h"
 #include "mcu_periph/sys_time.h"
 
+#define DEBUG_INS_FLOW 1
+#if DEBUG_INS_FLOW
+#include "stdio.h"
+#include "math/pprz_simple_matrix.h"
+#define DEBUG_PRINT  printf
+#define DEBUG_MAT_PRINT MAT_PRINT
+//#define DEBUG_MAT_PRINT(...)
+#else
+#define DEBUG_PRINT(...)
+#define DEBUG_MAT_PRINT(...)
+#endif
+
 #ifndef AHRS_ICQ_OUTPUT_ENABLED
 #define AHRS_ICQ_OUTPUT_ENABLED TRUE
 #endif
@@ -304,10 +316,10 @@ void ins_flow_init(void)
   OF_P[OF_Z_DOT_IND][OF_Z_DOT_IND] = 1.0;
 
   // based on a fit, factor * rpm^2:
-  RPM_FACTORS[0] = 0.15;
-  RPM_FACTORS[1] = 0.17;
-  RPM_FACTORS[2] = 0.10;
-  RPM_FACTORS[3] = 0.12;
+  RPM_FACTORS[0] = 0.15*1E-7;
+  RPM_FACTORS[1] = 0.17*1E-7;
+  RPM_FACTORS[2] = 0.10*1E-7;
+  RPM_FACTORS[3] = 0.12*1E-7;
 
   of_time = get_sys_time_float();
   of_prev_time = get_sys_time_float();
@@ -362,29 +374,45 @@ void ins_optical_flow_cb(uint8_t sender_id UNUSED, uint32_t stamp, int16_t flow_
 
 }
 
+void print_ins_flow_state(void) {
+  printf("v = %f, angle = %f, angle_dot = %f, z = %f, z+_dot = %f.\n",
+	 OF_X[OF_V_IND], OF_X[OF_ANGLE_IND], OF_X[OF_ANGLE_DOT_IND], OF_X[OF_Z_IND], OF_X[OF_Z_DOT_IND]);
+}
 
 void ins_flow_update(void)
 {
   // we first make the simplest version, i.e., no gyro measurement, no moment estimate:
 
-  struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
-  printf("Angles (deg): ahrs = %f, ekf = %f.\n", (180.0f/M_PI)*eulers->phi, (180.0f/M_PI)*OF_X[OF_ANGLE_IND]);
+  if(!autopilot_in_flight()) {
+      return;
+  }
+
+
 
   // get the new time:
   of_time = get_sys_time_float();
   float dt = of_time - of_prev_time;
+  DEBUG_PRINT("dt = %f.\n", dt);
+  if(dt > 1.0f) {
+      dt = 0.01f;
+  }
 
   // predict the thrust and moment:
   float thrust = 0.0f;
   for(int i = 0; i < OF_N_ROTORS; i++) {
       thrust += RPM_FACTORS[i] * ins_flow.RPM[i]*ins_flow.RPM[i];
   }
+  thrust -= 3.5f;
+  DEBUG_PRINT("Thrust = %f\n", thrust);
+
   float mass = 0.400; // TODO: make parameter
   float moment = 0.0f; // for now assumed to be 0
   float Ix = 0.0018244; // TODO: make parameter
   float g = 9.81; // TODO: get a good definition from pprz
 
   // propagate the state with Euler integration:
+  printf("Before prediction: ");
+  print_ins_flow_state();
   // make sure that the right hand state terms appear before they change:
   OF_X[OF_V_IND] += dt * (thrust * sin(OF_X[OF_ANGLE_IND]) / mass);
   OF_X[OF_Z_IND] += dt * OF_X[OF_Z_DOT_IND];
@@ -396,6 +424,9 @@ void ins_flow_update(void)
   if(OF_X[OF_Z_IND] < 1e-3) {
       OF_X[OF_Z_IND] = 1e-3;
   }
+
+  printf("After prediction: ");
+  print_ins_flow_state();
 
   // prepare the update and correction step:
   // we have to recompute these all the time, as they depend on the state:
@@ -440,8 +471,26 @@ void ins_flow_update(void)
   MAKE_MATRIX_PTR(P, OF_P, N_STATES_OF_KF);
   MAKE_MATRIX_PTR(Gamma, G, N_STATES_OF_KF);
   MAKE_MATRIX_PTR(Q, OF_Q, N_STATES_OF_KF);
-  MAKE_MATRIX_PTR(R, OF_R, N_STATES_OF_KF);
+  MAKE_MATRIX_PTR(R, OF_R, N_MEAS_OF_KF);
   MAKE_MATRIX_PTR(Jac, H, N_MEAS_OF_KF);
+
+  DEBUG_PRINT("Phi:\n");
+  DEBUG_MAT_PRINT(N_STATES_OF_KF, N_STATES_OF_KF, Phi);
+
+  DEBUG_PRINT("P:\n");
+  DEBUG_MAT_PRINT(N_STATES_OF_KF, N_STATES_OF_KF, P);
+
+  DEBUG_PRINT("Gamma:\n");
+  DEBUG_MAT_PRINT(N_STATES_OF_KF, N_STATES_OF_KF, G);
+
+  DEBUG_PRINT("Q:\n");
+  DEBUG_MAT_PRINT(N_STATES_OF_KF, N_STATES_OF_KF, Q);
+
+  DEBUG_PRINT("R:\n");
+  DEBUG_MAT_PRINT(N_MEAS_OF_KF, N_MEAS_OF_KF, R);
+
+  DEBUG_PRINT("Jacobian:\n");
+  DEBUG_MAT_PRINT(N_MEAS_OF_KF, N_STATES_OF_KF, Jac);
 
   // Corresponding MATLAB statement:    :O
   // P_k1_k = Phi_k1_k*P*Phi_k1_k' + Gamma_k1_k*Q*Gamma_k1_k';
@@ -456,6 +505,9 @@ void ins_flow_update(void)
   float_mat_mul(PPhiT, P, PhiT, N_STATES_OF_KF, N_STATES_OF_KF, N_STATES_OF_KF);
   float_mat_mul(PhiPPhiT, Phi, PPhiT, N_STATES_OF_KF, N_STATES_OF_KF, N_STATES_OF_KF);
 
+  DEBUG_PRINT("Phi*P*PhiT:\n");
+  DEBUG_MAT_PRINT(N_STATES_OF_KF, N_STATES_OF_KF, PhiPPhiT);
+
   float _GT[N_STATES_OF_KF][N_STATES_OF_KF];
   MAKE_MATRIX_PTR(GT, _GT, N_STATES_OF_KF);
   float _Q_GT[N_STATES_OF_KF][N_STATES_OF_KF];
@@ -467,28 +519,39 @@ void ins_flow_update(void)
   float_mat_mul(QGT, Q, GT, N_STATES_OF_KF, N_STATES_OF_KF, N_STATES_OF_KF);
   float_mat_mul(GQGT, Gamma, QGT, N_STATES_OF_KF, N_STATES_OF_KF, N_STATES_OF_KF);
 
+  DEBUG_PRINT("Gamma*Q*GammaT:\n");
+  DEBUG_MAT_PRINT(N_STATES_OF_KF, N_STATES_OF_KF, GQGT);
+
   float_mat_sum(P, PhiPPhiT, GQGT, N_STATES_OF_KF, N_STATES_OF_KF);
-
-  // determine Kalman gain:
-  // MATLAB statement:
-  // S_k = Hx*P_k1_k*Hx' + R;
-  float _JacT[N_STATES_OF_KF][N_MEAS_OF_KF];
-  MAKE_MATRIX_PTR(JacT, _JacT, N_STATES_OF_KF);
-  float _P_JacT[N_STATES_OF_KF][N_MEAS_OF_KF];
-  MAKE_MATRIX_PTR(PJacT, _P_JacT, N_STATES_OF_KF);
-  float _Jac_P_JacT[N_MEAS_OF_KF][N_MEAS_OF_KF];
-  MAKE_MATRIX_PTR(JacPJacT, _Jac_P_JacT, N_MEAS_OF_KF);
-
-  float_mat_transpose(JacT, Jac, N_MEAS_OF_KF, N_STATES_OF_KF);
-  float_mat_mul(PJacT, P, JacT, N_STATES_OF_KF, N_STATES_OF_KF, N_MEAS_OF_KF);
-  float_mat_mul(JacPJacT, Jac, PJacT, N_MEAS_OF_KF, N_STATES_OF_KF, N_MEAS_OF_KF);
-
-  float _S[N_MEAS_OF_KF][N_MEAS_OF_KF];
-  MAKE_MATRIX_PTR(S, _S, N_MEAS_OF_KF);
-  float_mat_sum(S, JacPJacT, R, N_MEAS_OF_KF, N_MEAS_OF_KF);
+  DEBUG_PRINT("P:\n");
+  DEBUG_MAT_PRINT(N_STATES_OF_KF, N_STATES_OF_KF, P);
 
   // if new measurement, correct state:
   if(ins_flow.new_flow_measurement) {
+
+    // determine Kalman gain:
+    // MATLAB statement:
+    // S_k = Hx*P_k1_k*Hx' + R;
+    float _JacT[N_STATES_OF_KF][N_MEAS_OF_KF];
+    MAKE_MATRIX_PTR(JacT, _JacT, N_STATES_OF_KF);
+    float _P_JacT[N_STATES_OF_KF][N_MEAS_OF_KF];
+    MAKE_MATRIX_PTR(PJacT, _P_JacT, N_STATES_OF_KF);
+    float _Jac_P_JacT[N_MEAS_OF_KF][N_MEAS_OF_KF];
+    MAKE_MATRIX_PTR(JacPJacT, _Jac_P_JacT, N_MEAS_OF_KF);
+
+    float_mat_transpose(JacT, Jac, N_MEAS_OF_KF, N_STATES_OF_KF);
+    float_mat_mul(PJacT, P, JacT, N_STATES_OF_KF, N_STATES_OF_KF, N_MEAS_OF_KF);
+    float_mat_mul(JacPJacT, Jac, PJacT, N_MEAS_OF_KF, N_STATES_OF_KF, N_MEAS_OF_KF);
+
+    DEBUG_PRINT("Jac*P*JacT:\n");
+    DEBUG_MAT_PRINT(N_MEAS_OF_KF, N_MEAS_OF_KF, JacPJacT);
+
+    float _S[N_MEAS_OF_KF][N_MEAS_OF_KF];
+    MAKE_MATRIX_PTR(S, _S, N_MEAS_OF_KF);
+    float_mat_sum(S, JacPJacT, R, N_MEAS_OF_KF, N_MEAS_OF_KF);
+
+    DEBUG_PRINT("S:\n");
+    DEBUG_MAT_PRINT(N_MEAS_OF_KF, N_MEAS_OF_KF, S);
 
     // MATLAB statement:
     // K_k1 = P_k1_k*Hx' * inv(S_k);
@@ -498,6 +561,9 @@ void ins_flow_update(void)
     MAKE_MATRIX_PTR(INVS, _INVS, N_MEAS_OF_KF);
     float_mat_invert(INVS, S, N_MEAS_OF_KF);
     float_mat_mul(K, PJacT, INVS, N_STATES_OF_KF, N_MEAS_OF_KF, N_MEAS_OF_KF);
+
+    DEBUG_PRINT("K:\n");
+    DEBUG_MAT_PRINT(N_STATES_OF_KF, N_MEAS_OF_KF, K);
 
     // Correct the state:
     // MATLAB:
@@ -514,16 +580,27 @@ void ins_flow_update(void)
     float innovation[N_MEAS_OF_KF][1];
     // TODO: should this be optical_flow_x or y for roll?
     innovation[OF_LAT_FLOW_IND][0] = ins_flow.optical_flow_x - Z_expected[OF_LAT_FLOW_IND];
+    DEBUG_PRINT("Expected flow: %f, Real flow: %f.\n", Z_expected[OF_LAT_FLOW_IND], ins_flow.optical_flow_x);
     innovation[OF_DIV_FLOW_IND][0] = ins_flow.divergence - Z_expected[OF_DIV_FLOW_IND];
     MAKE_MATRIX_PTR(I, innovation, N_MEAS_OF_KF);
+    DEBUG_PRINT("Expected div: %f, Real div: %f.\n", Z_expected[OF_DIV_FLOW_IND], ins_flow.divergence);
 
     // X_k1_k1 = X_k1_k + K_k1*(i_k1);
     float _KI[N_STATES_OF_KF][1];
     MAKE_MATRIX_PTR(KI, _KI, N_STATES_OF_KF);
     float_mat_mul(KI, K, I, N_STATES_OF_KF, N_MEAS_OF_KF, 1);
+
+    DEBUG_PRINT("K*innovation:\n");
+    DEBUG_MAT_PRINT(N_STATES_OF_KF, 1, KI);
+
+    printf("PRE: v = %f, angle = %f\n", OF_X[OF_V_IND], OF_X[OF_ANGLE_IND]);
     for(int i = 0; i < N_STATES_OF_KF; i++) {
 	OF_X[i] += KI[i][0];
     }
+    printf("POST v: %f, angle = %f\n", OF_X[OF_V_IND], OF_X[OF_ANGLE_IND]);
+
+    struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
+    printf("Angles (deg): ahrs = %f, ekf = %f.\n", (180.0f/M_PI)*eulers->phi, (180.0f/M_PI)*OF_X[OF_ANGLE_IND]);
 
     // P_k1_k1 = (eye(Nx) - K_k1*Hx)*P_k1_k*(eye(Nx) - K_k1*Hx)' + K_k1*R*K_k1'; % Joseph form of the covariance update equation
     float _KJac[N_STATES_OF_KF][N_STATES_OF_KF];
@@ -556,6 +633,9 @@ void ins_flow_update(void)
 
     // summing the two parts:
     float_mat_sum(P, P, KRKT, N_STATES_OF_KF, N_STATES_OF_KF);
+
+    DEBUG_PRINT("P corrected:\n");
+    DEBUG_MAT_PRINT(N_STATES_OF_KF, N_STATES_OF_KF, P);
 
     // indicate that the measurement has been used:
     ins_flow.new_flow_measurement = false;
