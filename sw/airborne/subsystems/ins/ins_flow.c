@@ -519,7 +519,36 @@ void ins_flow_update(void)
     }
 
     // P_k1_k1 = (eye(Nx) - K_k1*Hx)*P_k1_k*(eye(Nx) - K_k1*Hx)' + K_k1*R*K_k1'; % Joseph form of the covariance update equation
+    float _KJac[N_STATES_OF_KF][N_STATES_OF_KF];
+    MAKE_MATRIX_PTR(KJac, _KJac, N_STATES_OF_KF);
+    float_mat_mul(KJac, K, Jac, N_STATES_OF_KF, N_MEAS_OF_KF, N_STATES_OF_KF);
+    float _eye[N_STATES_OF_KF][N_STATES_OF_KF];
+    MAKE_MATRIX_PTR(eye, _eye, N_STATES_OF_KF);
+    float_mat_diagonal_scal(eye, 1.0, N_STATES_OF_KF);
+    float _eKJac[N_STATES_OF_KF][N_STATES_OF_KF];
+    MAKE_MATRIX_PTR(eKJac, _eKJac, N_STATES_OF_KF);
+    float_mat_diff(eKJac, eye, KJac, N_STATES_OF_KF);
+    float _eKJacT[N_STATES_OF_KF][N_STATES_OF_KF];
+    MAKE_MATRIX_PTR(eKJacT, _eKJacT, N_STATES_OF_KF);
+    float_mat_transpose(eKJacT, eKJac, N_STATES_OF_KF, N_STATES_OF_KF);
+    // (eye(Nx) - K_k1*Hx)*P_k1_k*(eye(Nx) - K_k1*Hx)'
+    float_mat_mul(P, P, eKJacT, N_STATES_OF_KF, N_STATES_OF_KF, N_STATES_OF_KF);
+    float_mat_mul(P, eKJac, P, N_STATES_OF_KF, N_STATES_OF_KF, N_STATES_OF_KF);
 
+    // K_k1*R*K_k1'
+    // TODO: check all MAKE_MATRIX that they mention the number of ROWS!
+    float _KT[N_MEAS_OF_KF][N_STATES_OF_KF];
+    MAKE_MATRIX_PTR(KT, _KT, N_MEAS_OF_KF);
+    float_mat_transpose(KT, K, N_STATES_OF_KF, N_MEAS_OF_KF);
+    float _RKT[N_MEAS_OF_KF][N_STATES_OF_KF];
+    MAKE_MATRIX_PTR(RKT, _RKT, N_MEAS_OF_KF);
+    float_mat_mul(RKT, R, KT, N_MEAS_OF_KF, N_MEAS_OF_KF, N_STATES_OF_KF);
+    float _KRKT[N_STATES_OF_KF][N_STATES_OF_KF];
+    MAKE_MATRIX_PTR(KRKT, _KRKT, N_STATES_OF_KF);
+    float_mat_mul(KRKT, K, RKT, N_STATES_OF_KF, N_MEAS_OF_KF, N_STATES_OF_KF);
+
+    // summing the two parts:
+    float_mat_sum(P, P, KRKT, N_STATES_OF_KF, N_STATES_OF_KF);
 
     // indicate that the measurement has been used:
     ins_flow.new_flow_measurement = false;
