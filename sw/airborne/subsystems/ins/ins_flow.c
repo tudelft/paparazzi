@@ -77,11 +77,24 @@ static uint8_t ahrs_flow_id = AHRS_COMP_ID_FLOW;  ///< Component ID for FLOW
 
 static void set_body_state_from_quat(void);
 
+struct InsFlow {
+  struct LtpDef_i  ltp_def;
+  bool           ltp_initialized;
+
+  /* output LTP NED */
+  struct NedCoor_i ltp_pos;
+  struct NedCoor_i ltp_speed;
+  struct NedCoor_i ltp_accel;
+};
+
+struct InsFlow ins_flow;
+
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 #include "mcu_periph/sys_time.h"
 #include "state.h"
 
+// attitude part:
 static void send_quat(struct transport_tx *trans, struct link_device *dev)
 {
   struct Int32Quat *quat = stateGetNedToBodyQuat_i();
@@ -141,6 +154,35 @@ static void send_filter_status(struct transport_tx *trans, struct link_device *d
   pprz_msg_send_STATE_FILTER_STATUS(trans, dev, AC_ID, &ahrs_flow_id, &mde, &val);
 }
 
+// ins part
+static void send_ins(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_INS(trans, dev, AC_ID,
+                    &ins_flow.ltp_pos.x, &ins_flow.ltp_pos.y, &ins_flow.ltp_pos.z,
+                    &ins_flow.ltp_speed.x, &ins_flow.ltp_speed.y, &ins_flow.ltp_speed.z,
+                    &ins_flow.ltp_accel.x, &ins_flow.ltp_accel.y, &ins_flow.ltp_accel.z);
+}
+
+/*static void send_ins_z(struct transport_tx *trans, struct link_device *dev)
+{
+  static float fake_baro_z = 0.0;
+  pprz_msg_send_INS_Z(trans, dev, AC_ID,
+                      (float *)&fake_baro_z, &ins_flow.ltp_pos.z,
+                      &ins_flow.ltp_speed.z, &ins_flow.ltp_accel.z);
+}*/
+
+static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
+{
+  static float fake_qfe = 0.0;
+  if (ins_flow.ltp_initialized) {
+    pprz_msg_send_INS_REF(trans, dev, AC_ID,
+                          &ins_flow.ltp_def.ecef.x, &ins_flow.ltp_def.ecef.y, &ins_flow.ltp_def.ecef.z,
+                          &ins_flow.ltp_def.lla.lat, &ins_flow.ltp_def.lla.lon, &ins_flow.ltp_def.lla.alt,
+                          &ins_flow.ltp_def.hmsl, (float *)&fake_qfe);
+  }
+}
+
+
 #endif
 
 /*
@@ -167,8 +209,11 @@ void ins_flow_init(void)
   ecef_of_lla_i(&ecef_nav0, &llh_nav0);
   struct LtpDef_i ltp_def;
   ltp_def_from_ecef_i(&ltp_def, &ecef_nav0);
-  ltp_def.hmsl = NAV_ALT0;
-  stateSetLocalOrigin_i(&ltp_def);
+
+  ltp_def_from_ecef_i(&ins_flow.ltp_def, &ecef_nav0);
+  ins_flow.ltp_def.hmsl = NAV_ALT0;
+  stateSetLocalOrigin_i(&ins_flow.ltp_def);
+  ins_flow.ltp_initialized = true;
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_QUAT_INT, send_quat);
@@ -176,6 +221,9 @@ void ins_flow_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_GYRO_BIAS_INT, send_bias);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GEO_MAG, send_geo_mag);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STATE_FILTER_STATUS, send_filter_status);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS, send_ins);
+  //register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_Z, send_ins_z);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);
 #endif
 
   /*
@@ -185,6 +233,15 @@ void ins_flow_init(void)
   AbiBindMsgIMU_ACCEL_INT32(INS_FLOW_ACCEL_ID, &accel_ev, accel_cb);
   AbiBindMsgGPS(INS_FLOW_GPS_ID, &gps_ev, gps_cb);
   AbiBindMsgBODY_TO_IMU_QUAT(ABI_BROADCAST, &body_to_imu_ev, body_to_imu_cb);
+}
+
+void ins_reset_local_origin(void)
+{
+  ltp_def_from_ecef_i(&ins_flow.ltp_def, &gps.ecef_pos);
+  ins_flow.ltp_def.lla.alt = gps.lla_pos.alt;
+  ins_flow.ltp_def.hmsl = gps.hmsl;
+  stateSetLocalOrigin_i(&ins_flow.ltp_def);
+  ins_flow.ltp_initialized = true;
 }
 
 void ins_flow_update(void)
@@ -276,29 +333,26 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp,
                    struct GpsState *gps_s)
 {
-  /*
-  uint32_t time_usec = stamp;
-  int32_t lat = gps_s->lla_pos.lat;
-  int32_t lon = gps_s->lla_pos.lon;
-  int32_t alt = gps_s->hmsl;
-  uint8_t fix_type = gps_s->fix;
-  float eph = gps_s->hacc / 100.0;
-  float epv = gps_s->vacc / 100.0;
-  float sacc = gps_s->sacc / 100.0;
-  float vel_m_s = gps_s->gspeed / 100.0;
-  */
 
-  struct NedCoor_i ned_pos;
-  ned_of_ecef_point_i(&ned_pos, &state.ned_origin_i, &gps_s->ecef_pos);
-  printf("pos = %d, %d, %d\n", ned_pos.x, ned_pos.y, ned_pos.z);
-  stateSetPositionNed_i(&ned_pos);
+  if (gps_s->fix < GPS_FIX_3D) {
+    return;
+  }
+  if (!ins_flow.ltp_initialized) {
+    ins_reset_local_origin();
+  }
 
-  // immediately believe velocity and publish it:
-  struct NedCoor_f vel_ned;
-  vel_ned.x = (gps_s->ned_vel.x) / 100.0;
-  vel_ned.y = (gps_s->ned_vel.y) / 100.0;
-  vel_ned.z = (gps_s->ned_vel.z) / 100.0;
-  stateSetSpeedNed_f(&vel_ned);
+  /* simply scale and copy pos/speed from gps */
+  struct NedCoor_i gps_pos_cm_ned;
+  ned_of_ecef_point_i(&gps_pos_cm_ned, &ins_flow.ltp_def, &gps_s->ecef_pos);
+  INT32_VECT3_SCALE_2(ins_flow.ltp_pos, gps_pos_cm_ned,
+                      INT32_POS_OF_CM_NUM, INT32_POS_OF_CM_DEN);
+  stateSetPositionNed_i(&ins_flow.ltp_pos);
+
+  struct NedCoor_i gps_speed_cm_s_ned;
+  ned_of_ecef_vect_i(&gps_speed_cm_s_ned, &ins_flow.ltp_def, &gps_s->ecef_vel);
+  INT32_VECT3_SCALE_2(ins_flow.ltp_speed, gps_speed_cm_s_ned,
+                      INT32_SPEED_OF_CM_S_NUM, INT32_SPEED_OF_CM_S_DEN);
+  stateSetSpeedNed_i(&ins_flow.ltp_speed);
 
   /*
   bool vel_ned_valid = bit_is_set(gps_s->valid_fields, GPS_VALID_VEL_NED_BIT);
