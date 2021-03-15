@@ -190,6 +190,7 @@ static void send_euler(struct transport_tx *trans, struct link_device *dev)
                                &(eulers->theta),
                                &(eulers->psi),
                                &ahrs_flow_id);
+
 }
 
 static void send_bias(struct transport_tx *trans, struct link_device *dev)
@@ -365,6 +366,9 @@ void ins_optical_flow_cb(uint8_t sender_id UNUSED, uint32_t stamp, int16_t flow_
 void ins_flow_update(void)
 {
   // we first make the simplest version, i.e., no gyro measurement, no moment estimate:
+
+  struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
+  printf("Angles (deg): ahrs = %f, ekf = %f.\n", (180.0f/M_PI)*eulers->phi, (180.0f/M_PI)*OF_X[OF_ANGLE_IND]);
 
   // get the new time:
   of_time = get_sys_time_float();
