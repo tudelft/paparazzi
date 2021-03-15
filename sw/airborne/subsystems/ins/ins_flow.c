@@ -73,13 +73,74 @@ static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
 /* Static local functions */
 //static bool ahrs_icq_output_enabled;
 static uint32_t ahrs_icq_last_stamp;
-//static uint8_t ahrs_flow_id = AHRS_COMP_ID_FLOW;  ///< Component ID for FLOW
+static uint8_t ahrs_flow_id = AHRS_COMP_ID_FLOW;  ///< Component ID for FLOW
 
 static void set_body_state_from_quat(void);
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
-// No telemetry yet...
+#include "mcu_periph/sys_time.h"
+#include "state.h"
+
+static void send_quat(struct transport_tx *trans, struct link_device *dev)
+{
+  struct Int32Quat *quat = stateGetNedToBodyQuat_i();
+  pprz_msg_send_AHRS_QUAT_INT(trans, dev, AC_ID,
+                              &ahrs_icq.weight,
+                              &ahrs_icq.ltp_to_imu_quat.qi,
+                              &ahrs_icq.ltp_to_imu_quat.qx,
+                              &ahrs_icq.ltp_to_imu_quat.qy,
+                              &ahrs_icq.ltp_to_imu_quat.qz,
+                              &(quat->qi),
+                              &(quat->qx),
+                              &(quat->qy),
+                              &(quat->qz),
+                              &ahrs_flow_id);
+}
+
+static void send_euler(struct transport_tx *trans, struct link_device *dev)
+{
+  struct Int32Eulers ltp_to_imu_euler;
+  int32_eulers_of_quat(&ltp_to_imu_euler, &ahrs_icq.ltp_to_imu_quat);
+  struct Int32Eulers *eulers = stateGetNedToBodyEulers_i();
+  pprz_msg_send_AHRS_EULER_INT(trans, dev, AC_ID,
+                               &ltp_to_imu_euler.phi,
+                               &ltp_to_imu_euler.theta,
+                               &ltp_to_imu_euler.psi,
+                               &(eulers->phi),
+                               &(eulers->theta),
+                               &(eulers->psi),
+                               &ahrs_flow_id);
+}
+
+static void send_bias(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_AHRS_GYRO_BIAS_INT(trans, dev, AC_ID,
+                                   &ahrs_icq.gyro_bias.p, &ahrs_icq.gyro_bias.q,
+                                   &ahrs_icq.gyro_bias.r, &ahrs_flow_id);
+}
+
+static void send_geo_mag(struct transport_tx *trans, struct link_device *dev)
+{
+  struct FloatVect3 h_float;
+  h_float.x = MAG_FLOAT_OF_BFP(ahrs_icq.mag_h.x);
+  h_float.y = MAG_FLOAT_OF_BFP(ahrs_icq.mag_h.y);
+  h_float.z = MAG_FLOAT_OF_BFP(ahrs_icq.mag_h.z);
+  pprz_msg_send_GEO_MAG(trans, dev, AC_ID,
+                        &h_float.x, &h_float.y, &h_float.z, &ahrs_flow_id);
+}
+
+static void send_filter_status(struct transport_tx *trans, struct link_device *dev)
+{
+  uint8_t mde = 3;
+  uint16_t val = 0;
+  if (!ahrs_icq.is_aligned) { mde = 2; }
+  uint32_t t_diff = get_sys_time_usec() - ahrs_icq_last_stamp;
+  /* set lost if no new gyro measurements for 50ms */
+  if (t_diff > 50000) { mde = 5; }
+  pprz_msg_send_STATE_FILTER_STATUS(trans, dev, AC_ID, &ahrs_flow_id, &mde, &val);
+}
+
 #endif
 
 /*
@@ -110,7 +171,11 @@ void ins_flow_init(void)
   stateSetLocalOrigin_i(&ltp_def);
 
 #if PERIODIC_TELEMETRY
- // ...
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_QUAT_INT, send_quat);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_EULER_INT, send_euler);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_GYRO_BIAS_INT, send_bias);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GEO_MAG, send_geo_mag);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STATE_FILTER_STATUS, send_filter_status);
 #endif
 
   /*
@@ -225,7 +290,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 
   struct NedCoor_i ned_pos;
   ned_of_ecef_point_i(&ned_pos, &state.ned_origin_i, &gps_s->ecef_pos);
-  printf("pos = %f, %f, %f\n", ned_pos.x, ned_pos.y, ned_pos.z);
+  printf("pos = %d, %d, %d\n", ned_pos.x, ned_pos.y, ned_pos.z);
   stateSetPositionNed_i(&ned_pos);
 
   // immediately believe velocity and publish it:
