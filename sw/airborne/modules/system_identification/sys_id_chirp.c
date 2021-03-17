@@ -87,10 +87,10 @@ static void set_current_chirp_values(void)
       amplitude = chirp_axis == i ? chirp_noise_stdv_onaxis_ratio * chirp_amplitude : chirp_noise_stdv_offaxis;
       current_chirp_values[i] = (int32_t)(noise * amplitude);
     }
-
-#endif
-
     current_chirp_values[chirp_axis] += (int32_t)(chirp_amplitude * chirp.current_value);
+#else 
+    current_chirp_values[chirp_axis] = (int32_t)(chirp_amplitude * chirp.current_value);
+#endif
   } else {
     for (uint8_t i = 0; i < CHIRP_NB_AXES; i++) {
       current_chirp_values[i] = 0;
