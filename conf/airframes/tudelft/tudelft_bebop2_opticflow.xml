@@ -262,7 +262,7 @@
     <define name="REF_MAX_SPEED" value="2" unit="m/s"/>
     <define name="MAX_BANK" value="35" unit="deg"/>
     <define name="PGAIN" value="82"/> <!-- GPS: 120 no GPS: 0--> 
-    <define name="DGAIN" value="68"/> <!-- GPS: 80 no GPS: 302-->
+    <define name="DGAIN" value="102"/> <!-- GPS: 80 no GPS: 302-->
     <define name="IGAIN" value="10"/> <!-- GPS: 30 no GPS: 0-->
   </section>
 
@@ -277,7 +277,7 @@
     <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_NAV"/>
-    <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/>
+    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
 
 <!--
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>

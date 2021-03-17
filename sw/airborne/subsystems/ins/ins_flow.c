@@ -321,6 +321,7 @@ void ins_flow_init(void)
   OF_P[OF_Z_DOT_IND][OF_Z_DOT_IND] = 1.0;
 
   // based on a fit, factor * rpm^2:
+#if USE_NPS
   // K = [0.152163; 0.170734; 0.103436; 0.122109] * 1E-7;
   // K = [0.222949; 0.160458; 0.114227; 0.051396] * 1E-7;
   // rpm:
@@ -329,7 +330,14 @@ void ins_flow_init(void)
   RPM_FACTORS[1] = 0.17*1E-7;
   RPM_FACTORS[2] = 0.10*1E-7;
   RPM_FACTORS[3] = 0.12*1E-7;
-
+#else
+  // % Bebop 2, #45
+  // K = [0.108068; 0.115448; 0.201207; 0.208834] * 1E-7
+  RPM_FACTORS[0] = 0.11*1E-7;
+  RPM_FACTORS[1] = 0.12*1E-7;
+  RPM_FACTORS[2] = 0.20*1E-7;
+  RPM_FACTORS[3] = 0.21*1E-7;
+#endif
   of_time = get_sys_time_float();
   of_prev_time = get_sys_time_float();
 
@@ -396,10 +404,11 @@ void ins_flow_update(void)
 {
   // we first make the simplest version, i.e., no gyro measurement, no moment estimate:
   struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
-
+  struct NedCoor_f* position = stateGetPositionNed_f();
   // TODO: record when starting from the ground: does that screw up the filter?
 
-  if(!autopilot_in_flight()) {
+  // only start estimation when flying and above 1 meter
+  if(!autopilot_in_flight() || position->z > -1.0f) {
       return;
   }
 
