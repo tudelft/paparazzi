@@ -19,6 +19,7 @@
 struct image_t *width_function(struct image_t *img){
     //This will print out the width of an image
     printf("the width of the image is %d\n",img->w);
+    //Testing
 
 
     return img;
