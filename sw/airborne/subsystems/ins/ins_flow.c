@@ -35,7 +35,7 @@
 #include "generated/flight_plan.h"
 #include "mcu_periph/sys_time.h"
 
-#define DEBUG_INS_FLOW 1
+#define DEBUG_INS_FLOW 0
 #if DEBUG_INS_FLOW
 #include "stdio.h"
 #include "math/pprz_simple_matrix.h"
@@ -88,7 +88,8 @@ static abi_event accel_ev;
 static abi_event gps_ev;
 static abi_event body_to_imu_ev;
 static abi_event ins_optical_flow_ev;
-static abi_event ins_RPM_ev; ///< The sonar ABI event
+static abi_event ins_RPM_ev;
+static abi_event aligner_ev;
 
 /* All ABI callbacks */
 static void gyro_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates *gyro);
@@ -98,6 +99,10 @@ static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
 void ins_optical_flow_cb(uint8_t sender_id, uint32_t stamp, int16_t flow_x,
                                    int16_t flow_y, int16_t flow_der_x, int16_t flow_der_y, float quality, float size_divergence);
 static void ins_rpm_cb(uint8_t sender_id, uint16_t * rpm, uint8_t num_act);
+static void aligner_cb(uint8_t __attribute__((unused)) sender_id,
+                       uint32_t stamp __attribute__((unused)),
+                       struct Int32Rates *lp_gyro, struct Int32Vect3 *lp_accel,
+                       struct Int32Vect3 *lp_mag);
 
 /* Static local functions */
 //static bool ahrs_icq_output_enabled;
@@ -316,6 +321,10 @@ void ins_flow_init(void)
   OF_P[OF_Z_DOT_IND][OF_Z_DOT_IND] = 1.0;
 
   // based on a fit, factor * rpm^2:
+  // K = [0.152163; 0.170734; 0.103436; 0.122109] * 1E-7;
+  // K = [0.222949; 0.160458; 0.114227; 0.051396] * 1E-7;
+  // rpm:
+  // [2708.807954; 2587.641476; -379.728916; -501.203388]
   RPM_FACTORS[0] = 0.15*1E-7;
   RPM_FACTORS[1] = 0.17*1E-7;
   RPM_FACTORS[2] = 0.10*1E-7;
@@ -323,6 +332,9 @@ void ins_flow_init(void)
 
   of_time = get_sys_time_float();
   of_prev_time = get_sys_time_float();
+
+  // align the AHRS:
+  ahrs_aligner_init();
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_QUAT_INT, send_quat);
@@ -344,6 +356,7 @@ void ins_flow_init(void)
   AbiBindMsgBODY_TO_IMU_QUAT(ABI_BROADCAST, &body_to_imu_ev, body_to_imu_cb);
   AbiBindMsgOPTICAL_FLOW(INS_OPTICAL_FLOW_ID, &ins_optical_flow_ev, ins_optical_flow_cb);
   AbiBindMsgRPM(INS_RPM_ID, &ins_RPM_ev, ins_rpm_cb);
+  AbiBindMsgIMU_LOWPASSED(ABI_BROADCAST, &aligner_ev, aligner_cb);
 }
 
 void ins_reset_local_origin(void)
@@ -382,12 +395,13 @@ void print_ins_flow_state(void) {
 void ins_flow_update(void)
 {
   // we first make the simplest version, i.e., no gyro measurement, no moment estimate:
+  struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
+
+  // TODO: record when starting from the ground: does that screw up the filter?
 
   if(!autopilot_in_flight()) {
       return;
   }
-
-
 
   // get the new time:
   of_time = get_sys_time_float();
@@ -397,18 +411,18 @@ void ins_flow_update(void)
       dt = 0.01f;
   }
 
+  float mass = 0.400; // TODO: make parameter
+  float moment = 0.0f; // for now assumed to be 0
+  float Ix = 0.0018244; // TODO: make parameter
+  float g = 9.81; // TODO: get a good definition from pprz
+
   // predict the thrust and moment:
   float thrust = 0.0f;
   for(int i = 0; i < OF_N_ROTORS; i++) {
       thrust += RPM_FACTORS[i] * ins_flow.RPM[i]*ins_flow.RPM[i];
   }
-  thrust -= 3.5f;
-  DEBUG_PRINT("Thrust = %f\n", thrust);
-
-  float mass = 0.400; // TODO: make parameter
-  float moment = 0.0f; // for now assumed to be 0
-  float Ix = 0.0018244; // TODO: make parameter
-  float g = 9.81; // TODO: get a good definition from pprz
+  thrust += 1.0f * mass;
+  DEBUG_PRINT("Thrust = %f, thrust acceleration = %f, g = %f\n", thrust, thrust/mass, g);
 
   // propagate the state with Euler integration:
   printf("Before prediction: ");
@@ -599,7 +613,6 @@ void ins_flow_update(void)
     }
     printf("POST v: %f, angle = %f\n", OF_X[OF_V_IND], OF_X[OF_ANGLE_IND]);
 
-    struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
     printf("Angles (deg): ahrs = %f, ekf = %f.\n", (180.0f/M_PI)*eulers->phi, (180.0f/M_PI)*OF_X[OF_ANGLE_IND]);
 
     // P_k1_k1 = (eye(Nx) - K_k1*Hx)*P_k1_k*(eye(Nx) - K_k1*Hx)' + K_k1*R*K_k1'; % Joseph form of the covariance update equation
@@ -711,6 +724,7 @@ static void set_body_state_from_quat(void)
   int32_rmat_transp_ratemult(&body_rate, body_to_imu_rmat, &ahrs_icq.imu_rate);
   /* Set state */
   stateSetBodyRates_i(&body_rate);
+
 }
 
 static void ins_rpm_cb(uint8_t sender_id, uint16_t * rpm, uint8_t num_act)
@@ -753,6 +767,19 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   uint8_t nsats = gps_s->num_sv;
   */
 }
+
+static void aligner_cb(uint8_t __attribute__((unused)) sender_id,
+                       uint32_t stamp __attribute__((unused)),
+                       struct Int32Rates *lp_gyro, struct Int32Vect3 *lp_accel,
+                       struct Int32Vect3 *lp_mag)
+{
+  if (!ahrs_icq.is_aligned) {
+    if (ahrs_icq_align(lp_gyro, lp_accel, lp_mag)) {
+      set_body_state_from_quat();
+    }
+  }
+}
+
 
 /* Save the Body to IMU information */
 static void body_to_imu_cb(uint8_t sender_id __attribute__((unused)),

@@ -286,9 +286,13 @@ void motor_mixing_run(bool motors_on, bool override_on, pprz_t in_cmd[])
     }
   }
 
+  // TODO: Only do this in simulation!!!
+#if USE_NPS
   uint16_t motors[4];
   for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
+      printf("motor mixing = %d, motors = %d\n", motor_mixing.commands[i], motors[i]);
       motors[i] = (uint16_t) (motor_mixing.commands[i] + MAX_PPRZ) / 2; // / 2 to scale like bebop sensors
   }
   AbiSendMsgRPM(RPM_SENSOR_ID, motors, 4);
+#endif
 }
