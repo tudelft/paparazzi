@@ -77,7 +77,7 @@ struct color_object_t {
   uint32_t color_count;
   bool updated;
 };
-struct color_object_t global_filters[2];
+struct color_object_t global_filters[2]; //declare color_object_t structure  that can hold 2 values
 
 // Function
 uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,

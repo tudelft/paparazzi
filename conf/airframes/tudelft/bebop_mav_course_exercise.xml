@@ -52,6 +52,7 @@
 
     <!-- Video/Camera modules -->
     <module name="bebop_cam"/>
+    <module name="mav_course_exercise"/>
     <!--module name="bebop_ae_awb">
       <define name="CV_AE_AWB_AV" value="1" />
       <define name="CV_AE_AWB_VERBOSE" value="0" />

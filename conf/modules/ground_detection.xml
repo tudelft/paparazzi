@@ -1,0 +1,28 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="ground_detection">
+    <doc>
+        <description>
+            Exercise module for Autonomous Flight of MAV Course
+        </description>
+
+    </doc>
+    <depends>cv_ground_detection</depends>
+
+    <header>
+        <file name="ground_detector.h"/>
+    </header>
+
+    <init fun="get_signal_init()"/>
+    <periodic fun="get_signal_periodic()" freq="4"/>
+
+    <makefile target="ap">
+        <file name="ground_detector.c"/>
+
+
+    </makefile>
+    <makefile target="nps">
+        <file name="ground_detector.c"/>
+
+    </makefile>
+</module>

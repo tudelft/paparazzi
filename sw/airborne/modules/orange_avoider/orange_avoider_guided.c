@@ -141,7 +141,7 @@ void orange_avoider_guided_periodic(void)
   // bound obstacle_free_confidence
   Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
 
-  float speed_sp = fminf(oag_max_speed, 0.2f * obstacle_free_confidence);
+  float speed_sp = fminf(oag_max_speed, 0.2f * obstacle_free_confidence); //Makes sure that we don't fly too fast into an object
 
   switch (navigation_state){
     case SAFE:
