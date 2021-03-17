@@ -26,7 +26,7 @@ struct image_t *cv_ground_detection_func(struct image_t *img)
 
     }
 
-    printf("hello");
+
 // opencv_example(NULL, 10,10);
 
     return img;

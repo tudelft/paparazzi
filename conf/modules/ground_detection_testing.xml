@@ -1,9 +1,9 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="ground_detection">
+<module name="ground_detection_testing" dir = "computer_vision">
     <doc>
         <description>
-            Exercise module for Autonomous Flight of MAV Course
+            Testing Ground Detection
         </description>
 
     </doc>
@@ -13,16 +13,15 @@
         <file name="ground_detection_testing.h"/>
     </header>
 
-    <init fun="get_signal_init()"/>
-
+    <init fun="image_width_printer_init()"/>
 
     <makefile target="ap">
-        <file name="ground_detector.c"/>
+        <file name="ground_detection_testing.c"/>
 
 
     </makefile>
     <makefile target="nps">
-        <file name="ground_detector.c"/>
+        <file name="ground_detection_testing.c"/>
 
     </makefile>
 </module>

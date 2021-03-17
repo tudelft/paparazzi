@@ -57,8 +57,12 @@
             <define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>
             <define name="VIDEO_CAPTURE_FPS" value="10"/>
         </module>
-        <module name="cv_ground_detection" dir="computer_vision"/>
-        <module name="ground_detection"/>
+
+        <module name="ground_detection_testing">
+            <define name="WIDTH_CAMERA" value="front_camera"/>
+            <define name="FPS_WIDTH" value="10"/>
+        </module>
+
         <!--module name="bebop_ae_awb">
           <define name="CV_AE_AWB_AV" value="1" />
           <define name="CV_AE_AWB_VERBOSE" value="0" />

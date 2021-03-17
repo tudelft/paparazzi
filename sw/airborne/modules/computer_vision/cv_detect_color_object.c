@@ -91,7 +91,7 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
  * @param filter - which detection filter to process
  * @return img
  */
-static struct image_t *object_detector(struct image_t *img, uint8_t filter)
+static struct image_t *object_detector(struct image_t *img, uint8_t filter) //Image processor
 {
   uint8_t lum_min, lum_max;
   uint8_t cb_min, cb_max;
