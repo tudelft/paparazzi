@@ -24,8 +24,8 @@ static uint8_t cb_max  = 110;
 static uint8_t cr_min  = 0;
 static uint8_t cr_max  = 130;
 
-static double percent_w = 0.50; //rectangle width in percentage of image
-static double percent_h = 0.25;
+static double percent_w = 0.1; //rectangle width in percentage of image
+static double percent_h = 0.1;
 
 volatile int cnt = 0;
 
@@ -34,7 +34,7 @@ volatile int cnt = 0;
 
 struct image_t *check_rect(struct image_t *img){ //In this function we want to look at the amount of green pixels in a given rectangle
 
-    printf("Working");
+    //printf("Working\n");
     uint8_t *buffer = img->buf;
 
     //Go trough the pixels in the rectangle
@@ -70,8 +70,8 @@ struct image_t *check_rect(struct image_t *img){ //In this function we want to l
                 //}
             }
             else{
-                printf("NO GO");
-                //printf("NOT SAFE @ row %d and column %d\n",y,x);
+
+                printf("NOT SAFE @ row %d and column %d\n",y,x);
         }
     }
 
