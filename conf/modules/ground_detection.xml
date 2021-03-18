@@ -10,10 +10,12 @@
     <depends>video_thread</depends>
 
     <header>
-        <file name="ground_detection_testing.h"/>
+        <file name="ground_detector.h"/>
     </header>
 
     <init fun="get_signal_init()"/>
+
+    <periodic fun="get_signal_periodic()" freq="4"/>
 
 
     <makefile target="ap">
