@@ -27,6 +27,6 @@
     <file name="opencv_example.cpp"/>
     <file name="opencv_image_functions.cpp"/>
     <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_pc/include"/>
-    <flag name="LDFLAGS" value="L$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_pc/lib -lopencv_world -L$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_pc/share/OpenCV/3rdparty/lib -llibprotobuf -llibjpeg-turbo -llibpng -llibtiff -lzlib -lquirc -ldc1394 -L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5 -L/usr/lib/x86_64-linux-gnu -lpthread -lsz -lz -ldl -lm -lfreetype -lharfbuzz -lrt"/>
+    <flag name="LDFLAGS" value="L$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_pc/lib -lopencv_world -L$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_pc/share/OpenCV/3rdparty/lib -llibprotobuf -lquirc -L/usr/lib/x86_64-linux-gnu -ljpeg -lpng -ltiff -ldc1394 -L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5 -lpthread -lsz -lz -ldl -lm -lfreetype -lharfbuzz -lrt"/>
   </makefile>
 </module>
