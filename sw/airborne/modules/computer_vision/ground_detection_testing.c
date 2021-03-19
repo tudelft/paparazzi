@@ -16,6 +16,8 @@
 #ifndef FPS_WIDTH
 #define FPS_WIDTH 0
 #endif
+//This makes sure we can print in structures and voids
+
 
 static uint8_t lum_min = 0;
 static uint8_t lum_max = 255;
@@ -28,15 +30,14 @@ static uint8_t cr_max  = 130;
 volatile int go_no_go;
 
 //Remember image is rotated. Width is longer of the two dimensions
-//TODO: Later add to XML so they can be adjusted as settings during testing
 //Length of the rectangle most to the left as percentage of image length (height)
-static double BOTTOM_LENGTH_PERCENTAGE = 0.5;
+double BOTTOM_LENGTH_PERCENTAGE = 0.5;
 //Length of the rectangle most to the right as percentage of image length (height)
-static double TOP_LENGTH_PERCENTAGE = 0.25;
+double TOP_LENGTH_PERCENTAGE = 0.25;
 //How far to the left the rectangles extend as a percentage of image width
-static double TOP_WIDTH_PERCENTAGE = 0.75;
+double TOP_WIDTH_PERCENTAGE = 0.75;
 //#width in pixels of each rectangle
-static int WIDTH_RECT = 5;
+int WIDTH_RECT = 5;
 
 
 int check_for_green(struct image_t *img, int right_corner_row, int right_corner_column, int rect_length) {
@@ -46,13 +47,13 @@ int check_for_green(struct image_t *img, int right_corner_row, int right_corner_
     uint8_t *buffer = img->buf;
 
     //Go trough the pixels in the rectangle
-    //TODO: Instead of checking whole rectangle just check horizontal lines through rectangle
-    /*TODO: Instead of rectangles move towards checking triangle consisting of horizontal lines that get smaller the
-     * higher in the image*/
+    //TODO: Check squares within the rectangles to know if the object is on the left or on the right
+
     for (uint16_t y = right_corner_row;y <= right_corner_row + rect_length ; y++){
         //This now goes trough a certain percentage pf the image
         //for (uint16_t x = (1-percent_w)*0.5* img->w; x < (1-((1-percent_w)*0.5))* img->w; x ++)
-        for (uint16_t x = right_corner_column ; x <= right_corner_column + WIDTH_RECT; x++) {
+        for (uint16_t x = right_corner_column ; x >= right_corner_column - WIDTH_RECT; x--) {
+            //printf("The coordinates are row %d and column %d)\n",y,x);
             // Check if the color is inside the specified values
             uint8_t *yp, *up, *vp;
             if (x % 2 == 0) {
@@ -68,7 +69,7 @@ int check_for_green(struct image_t *img, int right_corner_row, int right_corner_
                 vp = &buffer[y * 2 * img->w + 2 * x];      // V
                 yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
             }
-            //TODO: make this an if not statement instead of a dummy statement
+
             if (!((*yp >= lum_min) && (*yp <= lum_max) &&
                 (*up >= cb_min) && (*up <= cb_max) &&
                 (*vp >= cr_min) && (*vp <= cr_max)) ){
@@ -95,7 +96,7 @@ int check_for_green(struct image_t *img, int right_corner_row, int right_corner_
 }
 
 struct image_t *get_rect(struct image_t *img){ //In this function we want to look at the amount of green pixels in a given rectangle
-    printf("Working \n");
+    //printf("Working \n");
 
     int rows = img->h;
     int columns = img->w;
@@ -103,17 +104,21 @@ struct image_t *get_rect(struct image_t *img){ //In this function we want to loo
     //The number of rectangles which are considered. It is set so that the space
     //up to TOP_WIDTH_PERCENTAGE is filled with non-overlapping rectangles
     int num_rect = ceil(TOP_WIDTH_PERCENTAGE*columns/WIDTH_RECT);
-
+    //printf("num_rect is equal to %d\n",num_rect);
     //The difference in length between 2 adjacent rectangles in percentage of image length (height)
     double rect_length_increment = (BOTTOM_LENGTH_PERCENTAGE-TOP_LENGTH_PERCENTAGE)/num_rect;
-
+    //printf("rect_length_increment is equal to %lf \n",rect_length_increment);
     //Go through rectangles starting from smallest (most to the right)
     for (int rect_num = 0; rect_num < num_rect; rect_num++) {
+
         //The length of the rectangle for this iteration pixels
-        int rect_length = floor((BOTTOM_LENGTH_PERCENTAGE - rect_num * rect_length_increment)*rows);
+        int rect_length = floor((TOP_LENGTH_PERCENTAGE + rect_num * rect_length_increment)*rows);
         //Coordinates of right corner
-        int right_corner_row = TOP_WIDTH_PERCENTAGE*columns - rect_num*WIDTH_RECT;
-        int right_corner_column = 0.5*(rows-rect_length);
+        int right_corner_row = 0.5*(rows-rect_length);
+        int right_corner_column = TOP_WIDTH_PERCENTAGE*columns - rect_num*WIDTH_RECT;
+
+        //go_no_go = check_for_green(img, right_corner_row, right_corner_column, rect_length);
+        //printf("Rectangle at (%d,%d) of length (%d) is a %d \n", right_corner_column, right_corner_row, rect_length,go_no_go);
 
         //Check if this rectangle is completely green and if so we are good to go straight ahead
         if (check_for_green(img, right_corner_row, right_corner_column, rect_length) == 1) {

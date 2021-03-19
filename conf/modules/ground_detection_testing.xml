@@ -7,6 +7,18 @@
         </description>
 
     </doc>
+
+    <settings>
+        <dl_settings>
+            <dl_settings name="Get_Rect_Size">
+                <dl_setting var="BOTTOM_LENGTH_PERCENTAGE" min="0" step ="0.05" max="1.0" shortname="length_bottom_rect"/>
+                <dl_setting var="TOP_LENGTH_PERCENTAGE" min="0" step ="0.05" max="1.0" shortname="length_top_rect"/>
+                <dl_setting var="TOP_WIDTH_PERCENTAGE" min="0" step ="0.05" max="1.0" shortname="width_top_rect"/>
+                <dl_setting var="WIDTH_RECT" min="1" step ="1" max="15" shortname="width_rect"/>
+            </dl_settings>
+        </dl_settings>
+    </settings>
+
     <depends>video_thread</depends>
 
     <header>
