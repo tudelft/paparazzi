@@ -139,18 +139,20 @@ void nav_survey_rectangle_rotorcraft_setup(uint8_t wp1, uint8_t wp2, float grid,
   nav_survey_shift = grid;
   survey_uturn = false;
   nav_survey_rectangle_active = false;
+  survey_from.z = waypoints[wp1].enu_f.z;
+  survey_to.z = waypoints[wp1].enu_f.z;
 
   //go to start position
   ENU_BFP_OF_REAL(survey_from_i, survey_from);
-  horizontal_mode = HORIZONTAL_MODE_ROUTE;
+  horizontal_mode = HORIZONTAL_MODE_WAYPOINT;
   VECT3_COPY(navigation_target, survey_from_i);
   LINE_STOP_FUNCTION;
   NavVerticalAltitudeMode(waypoints[wp1].enu_f.z, 0.);
-  if (survey_orientation == NS) {
-    nav_set_heading_deg(0);
-  } else {
-    nav_set_heading_deg(90);
-  }
+  /*if (survey_orientation == NS) {*/
+    /*nav_set_heading_deg(0);*/
+  /*} else {*/
+    /*nav_set_heading_deg(90);*/
+  /*}*/
 }
 
 
@@ -162,7 +164,7 @@ bool nav_survey_rectangle_rotorcraft_run(uint8_t wp1, uint8_t wp2)
 
   /* entry scan */ // wait for start position and altitude be reached
   if (!nav_survey_rectangle_active && ((!nav_approaching_from(&survey_from_i, NULL, 0))
-                                     || (fabsf(stateGetPositionEnu_f()->z - waypoints[wp1].enu_f.z)) > 1.)) {
+                                     || (fabsf(stateGetPositionEnu_f()->z - waypoints[wp1].enu_f.z)) > 5.)) {
   } else {
     if (!nav_survey_rectangle_active) {
       nav_survey_rectangle_active = true;
@@ -203,7 +205,10 @@ bool nav_survey_rectangle_rotorcraft_run(uint8_t wp1, uint8_t wp2)
         ENU_BFP_OF_REAL(survey_from_i, survey_from);
 
         horizontal_mode = HORIZONTAL_MODE_ROUTE;
-        nav_route(&survey_from_i, &survey_to_i);
+        /*nav_route(&survey_from_i, &survey_to_i);*/
+        VECT2_DIFF(line_vect, survey_to, survey_from);
+        VECT2_DIFF(to_end_vect, survey_to, *stateGetPositionEnu_f());
+        VECT3_COPY(navigation_target, survey_to_i);
 
       } else {
         if (survey_orientation == NS) {
@@ -362,12 +367,22 @@ bool nav_survey_rectangle_rotorcraft_run(uint8_t wp1, uint8_t wp2)
           ENU_BFP_OF_REAL(survey_to_i, waypoints[0].enu_f);
         }
 
+        survey_to_i.z = waypoints[wp1].enu_i.z;
+
+        struct EnuCoor_f survey_to_f, survey_from_f;
+        ENU_FLOAT_OF_BFP(survey_to_f, survey_to_i);
+        ENU_FLOAT_OF_BFP(survey_from_f, survey_from_i);
+
         horizontal_mode = HORIZONTAL_MODE_ROUTE;
-        nav_route(&survey_from_i, &survey_to_i);
+        /*nav_route(&survey_from_i, &survey_to_i);*/
+        VECT2_DIFF(line_vect, survey_to_f, survey_from_f);
+        VECT2_DIFF(to_end_vect, survey_to_f, *stateGetPositionEnu_f());
+        VECT3_COPY(navigation_target, survey_to_i);
       }
     } /* END turn */
 
   } /* END entry scan  */
+
   return true;
 
 }// /* END survey_retangle */
