@@ -122,7 +122,7 @@ struct image_t *get_rect(struct image_t *img){ //In this function we want to loo
 
         //Check if this rectangle is completely green and if so we are good to go straight ahead
         if (check_for_green(img, right_corner_row, right_corner_column, rect_length) == 1) {
-            printf("Rectangle at (%d,%d) of length (%d) is a go \n", right_corner_column, right_corner_row, rect_length);
+            //printf("Rectangle at (%d,%d) of length (%d) is a go \n", right_corner_column, right_corner_row, rect_length);
             go_no_go = 1;
             return img;
         }

@@ -62,7 +62,7 @@
             <define name="VIDEO_CAPTURE_FPS" value="10" description="The (maximum) frequency to run the calculations at. If zero, it will max out at the camera frame rate"/>
         </module>-->
 
-        <!--module name = "ground_detection"/-->
+        <module name = "ground_detection"/>
 
         <module name="ground_detection_testing">
             <define name="WIDTH_CAMERA" value="front_camera"/>
