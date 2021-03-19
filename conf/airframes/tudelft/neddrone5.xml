@@ -66,9 +66,6 @@
     </target>
 
     <module name="fbw_settings"/>
-    <module name="nav" type="survey_rectangle_rotorcraft">
-      <define name="RECTANGLE_SURVEY_DEFAULT_SWEEP" value="100"/>
-    </module>
 
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B115200"/>

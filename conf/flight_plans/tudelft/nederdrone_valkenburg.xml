@@ -42,6 +42,9 @@
   </sectors>
   <modules>
     <module name="follow_me"/>
+    <module name="nav" type="survey_rectangle_rotorcraft">
+      <define name="RECTANGLE_SURVEY_DEFAULT_SWEEP" value="100"/>
+    </module>
   </modules>
   <exceptions>
     <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 1500) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
