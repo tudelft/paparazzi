@@ -59,16 +59,10 @@
     -->
     <define name="ADC_CHANNEL_VSUPPLY" value="ADC_1"/><!-- TODO to boardfile, if default remove define-->
 
-
     <!-- <configure name="CPU_LED" value="1"/>--> <!-- Change to whatever you like -->
 
     <!-- Note that PERIODIC_FREQUENCY should be least equal or greater than AHRS_PROPAGATE_FREQUENCY -->
     <configure name="PERIODIC_FREQUENCY" value="512"/> <!--  unit="Hz" -->
-
-    <!--<define name="DISCO_GYRO_RANGE" value="MPU60X0_GYRO_RANGE_1000"/>-->
-    <!--<define name="DISCO_ACCEL_RANGE" value="MPU60X0_ACCEL_RANGE_16G"/>--><!-- Set to 8G maybe possible -->
-    <!--<define name="DISCO_LOWPASS_FILTER" value="MPU60X0_DLPF_256HZ"/>-->
-    <!--<define name="DISCO_SMPLRT_DIV" value="3"/>--><!-- Do not change randomly ;) -->
 
     <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/><!--  unit="Hz" -->
     <configure name="AHRS_CORRECT_FREQUENCY" value="500"/> <!--  unit="Hz" -->
@@ -82,7 +76,7 @@
     <module name="imu" type="mpu9250_spi">
       <configure name="IMU_MPU9250_SPI_DEV" value="spi1"/>
       <configure name="IMU_MPU9250_SPI_SLAVE_IDX" value="SPI_SLAVE2"/>
-      <define name="IMU_MPU9250_READ_MAG" value="FALSE"/>
+      <define name="IMU_MPU9250_READ_MAG" value="TRUE"/>
 
       <define name="IMU_MPU9250_GYRO_RANGE" value="MPU9250_GYRO_RANGE_2000" />
       <!-- To be able (for now) to set AP IMU orientation -->
@@ -92,24 +86,6 @@
       <define name="IMU_MPU9250_X_SIGN" value="-1"/>
       <define name="IMU_MPU9250_Y_SIGN" value="-1"/>
       <define name="IMU_MPU9250_Z_SIGN" value="-1"/> -->
-    </module>
-
-    <module name="mag" type="hmc58xx">
-      <!-- We will use the magnetometer that is available on our GPS board
-         Thi one is temperature compensated and furthest away from all other devices
-         so less influence (still to measure raw mag values to check this though )
-         In case we where sloppy building in the GPS+mag combo , we always are ;)
-         we need to compensate this a bit e.g. the pitch
-         lucky the tree axis are aligned already in hardware ;) -->
-      <!-- <define name="MAG_TO_IMU_THETA" value="6" unit="deg"/>-->
-      <configure name="MAG_HMC58XX_I2C_DEV" value="i2c1"/>
-      <define name="MODULE_HMC58XX_UPDATE_AHRS" value="FALSE"/><!-- When all calib and works to TRUE -->
-      <define name="HMC58XX_CHAN_X" value="1"/>
-      <define name="HMC58XX_CHAN_Y" value="0"/>
-      <define name="HMC58XX_CHAN_Z" value="2"/>
-      <define name="HMC58XX_CHAN_X_SIGN" value="-"/>
-      <define name="HMC58XX_CHAN_Y_SIGN" value="+"/>
-      <define name="HMC58XX_CHAN_Z_SIGN" value="+"/>
     </module>
 
     <!-- If you build in your GPS where the MAGNETOMETER resides on the board
@@ -132,9 +108,6 @@
 
     <!-- SBUS out is AETR by default but our transmitter sends TAER -->
     <module name="radio_control" type="sbus"/>
-    <!--    The output type of RX, over the air it can can be all kinds e.g. DSMX-->
-    <!--  <define name="RADIO_CONTROL_NB_CHANNEL" value="7"/>
-    </module>-->
 
     <module name="current_sensor">
       <define name="USE_ADC_3"/>
@@ -200,13 +173,6 @@
     <!--<module name="imu_quality_assessment"/>--><!--needs fixing for FW fix test then disable after initial tuning-->
     <module name="send_imu_mag_current"/> <!-- Can be Disabled after one time calibration, quite the same for all Discos -->
 
-    <!-- Also used if QNH needed -->
-    <module name="air_data">
-      <define name="CALC_AIRSPEED" value="FALSE"/><!--  we set use airspeed elsewhere-->
-      <define name="CALC_TAS_FACTOR" value="FALSE"/>
-      <define name="CALC_AMSL_BARO" value="TRUE"/>
-    </module>
-
     <module name="geo_mag"/>
     <module name="nav" type="line"/>
 
@@ -259,20 +225,6 @@
     <!-- Map flat-spin landing to RC switch -->
     <set command="FS_LANDING" value="@AUX2" />
   </rc_commands>
-
-  <!-- ************************ AUTO RC COMMANDS ***************************** -->
-  <!-- TODO Check is this section is necessary -->
-  <auto_rc_commands>
-    <!--**TEMPorary for heading change steering if something not OK with course in Autonomous flight **-->
-    <set command="YAW" value="@YAW"/>
-    <!-- To be able to set gain values via RC Transmitter these ones below.
-     This way the can keep his eye on a fast moving plane and set some gain values
-     makes life of a single test piloted AC much easier -->
-    <!--<set command="GAIN1"    value="@GAIN1"/>
-    <set command="CALIB"    value="@GAIN2"/>-->
-    <!-- Todo to determine best pitch for flare in auto2 one can add Pitch command temporary also-->
-    <!--<set command="PITCH" value="@PITCH"/>-->
-  </auto_rc_commands>
 
   <!-- ************************ COMMAND LAWS ***************************** -->
   <command_laws>
@@ -334,7 +286,7 @@
     <define name="GYRO_R_SENS" value="4.5" integer="16"/>
 
     <!-- ***************** ACCELO *****************-->
-    <!-- Replace these values with your own calibration, on the correct sensor -->
+    <!-- TODO Replace these values with your own calibration, on the correct sensor -->
     <define name="ACCEL_X_NEUTRAL" value="-72"/>
     <define name="ACCEL_Y_NEUTRAL" value="-3"/>
     <define name="ACCEL_Z_NEUTRAL" value="16"/>
@@ -345,7 +297,7 @@
 
     <!-- ***************** MAGNETO *****************-->
     <!--define name="MAG_OFFSET" value="-?.0" unit="deg"--> <!--  TODO: at least 3 axis in worst case -->
-
+    <!-- TODO -->
     <define name="MAG_X_NEUTRAL" value="-76"/>
     <define name="MAG_Y_NEUTRAL" value="-148"/>
     <define name="MAG_Z_NEUTRAL" value="-544"/>
@@ -382,7 +334,6 @@
     <define name="INS_BODY_TO_GPS_Z" value="0.03" unit="m"/>
 
     <!-- <define name="USE_INS_MODULE"/> -->
-
     <define name="ROLL_NEUTRAL_DEFAULT" value="0." unit="deg"/>
     <define name="PITCH_NEUTRAL_DEFAULT" value="0." unit="deg"/><!-- not taken into account -->
 
@@ -392,6 +343,7 @@
   </section>
 
   <!-- ************************* MAG_CALIB_UKF ************************* -->
+  <!-- TODO Fix calibration -->
   <section name="MAG_CALIB_UKF" prefix="MAG_CALIB_UKF_">
     <define name="HOTSTART" value="FALSE"/><!-- for faster convergence flights to flight -->
     <define name="HOTSTART_SAVE_FILE" value=""/><!--<define name="HOTSTART_SAVE_FILE" value="/data/ftp/internal_000/mag_ukf_calib.txt"/>-->
@@ -435,7 +387,7 @@
     <define name="PITCH_KFFD" value="0."/>
 
     <define name="ELEVATOR_OF_ROLL" value="1500" unit="PPRZ_MAX"/>
-    <define name="ROLL_SLEW" value="0.5"/><!-- TODO: Determine best value-->
+    <define name="ROLL_SLEW" value="0.5"/> <!-- TODO: Determine best value-->
     <define name="ROLL_ATTITUDE_GAIN" value="11000."/>
     <define name="ROLL_RATE_GAIN" value="1400"/>
     <define name="ROLL_IGAIN" value="100."/>
