@@ -63,7 +63,7 @@ void get_signal_init(void){
 }
 
 void get_signal_periodic(void){
-    //TODO: Add (periodic) navigation logic
+
     VERBOSE_PRINT("%d \n", go_no_go); /*This prints the go_no_go variable in paparazzi. This variable is 1 if the drone
                                         can fly straight ahead and 0 otherwise*/
     //if (go_no_go ==1){

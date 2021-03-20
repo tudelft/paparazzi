@@ -16,6 +16,15 @@
                 <dl_setting var="TOP_WIDTH_PERCENTAGE" min="0" step ="0.05" max="1.0" shortname="width_top_rect"/>
                 <dl_setting var="WIDTH_RECT" min="1" step ="1" max="15" shortname="width_rect"/>
             </dl_settings>
+
+            <dl_settings name ="Color_Filter">
+                <dl_setting var="lum_min" min="0" step = "1" max="255" shortname="Y_lb"/>
+                <dl_setting var="lum_max" min="0" step = "1" max="255" shortname="Y_ub"/>
+                <dl_setting var="cb_min" min="0" step = "1" max="255" shortname="U_lb"/>
+                <dl_setting var="cb_max" min="0" step = "1" max="255" shortname="U_ub"/>
+                <dl_setting var="cr_min" min="0" step = "1" max="255" shortname="V_lb"/>
+                <dl_setting var="cr_max" min="0" step = "1" max="255" shortname="V_ub"/>
+            </dl_settings>
         </dl_settings>
     </settings>
 

@@ -16,15 +16,15 @@
 #ifndef FPS_WIDTH
 #define FPS_WIDTH 0
 #endif
-//This makes sure we can print in structures and voids
 
-
-static uint8_t lum_min = 0;
-static uint8_t lum_max = 255;
-static uint8_t cb_min  = 0;
-static uint8_t cb_max  = 110;
-static uint8_t cr_min  = 0;
-static uint8_t cr_max  = 130;
+//These are initialised as zero but using the image_width_printer_init they are changed to the
+//proper settings for a green filter
+uint8_t lum_min = 0;
+uint8_t lum_max = 0;
+uint8_t cb_min  = 0;
+uint8_t cb_max  = 0;
+uint8_t cr_min  = 0;
+uint8_t cr_max  = 0;
 
 //TODO: make either boolean or integer with less bits
 volatile int go_no_go;
@@ -140,7 +140,18 @@ struct image_t *get_rect(struct image_t *img){ //In this function we want to loo
 
 void image_width_printer_init(void) {
 
+
 #ifdef WIDTH_CAMERA
+    //Here we define the filter settings for the check_for_green function, all the uppercase variables
+    //are defined in bebop_ground_detector and they have different values for the ap mode and nps mode
+    #ifdef GROUND_DETECTOR_LUM_MIN
+  lum_min = GROUND_DETECTOR_LUM_MIN;
+  lum_max = GROUND_DETECTOR_LUM_MAX;
+  cb_min = GROUND_DETECTOR_CB_MIN;
+  cb_max = GROUND_DETECTOR_CB_MAX;
+  cr_min = GROUND_DETECTOR_CR_MIN;
+  cr_max = GROUND_DETECTOR_CR_MAX;
+#endif
     cv_add_to_device(&WIDTH_CAMERA, get_rect, FPS_WIDTH);
 #endif
 }
