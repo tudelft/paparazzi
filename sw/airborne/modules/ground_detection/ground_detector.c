@@ -43,8 +43,10 @@ enum navigation_state_t {
 };
 
 // Define settings - also ComputerVision ones?
-float oag_max_speed = 0.5f;               // max flight speed [m/s]
-float oag_heading_rate = RadOfDeg(20.f);  // heading change setpoint for avoidance [rad/s]
+float GD_MAX_SPEED = 0.5f;               // max flight speed [m/s]
+float GD_HEADING_RATE = RadOfDeg(20.f);  // heading change setpoint for avoidance [rad/s]
+float GD_SLOW_FACTOR_FOUND = 0.2f;
+float GD_SLOW_FACTOR_SEARCH = 0.2f;
 
 
 // Define and initialise global variables
@@ -71,7 +73,7 @@ void get_signal_periodic(void){
 
     //float speed_sp = fminf(oag_max_speed, 0.2f * obstacle_free_confidence); //Makes sure that we don't fly too fast into an object
 
-    float speed_sp = oag_max_speed; //Makes sure that we don't fly too fast into an object
+    float speed_sp = GD_MAX_SPEED; //Makes sure that we don't fly too fast into an object
 
 
     switch (navigation_state){
@@ -83,14 +85,14 @@ void get_signal_periodic(void){
             }
             break;
         case OBSTACLE_FOUND:
-            guidance_h_set_guided_body_vel(0.2*speed_sp, 0); //slow down
+            guidance_h_set_guided_body_vel(GD_SLOW_FACTOR_FOUND*speed_sp, 0); //slow down
         
             chooseRandomIncrementAvoidance(); // randomly select new search direction
             navigation_state = SEARCH_FOR_SAFE_HEADING;
             break;
         case SEARCH_FOR_SAFE_HEADING:
             //guidance_h_set_guided_heading_rate(avoidance_heading_direction * oag_heading_rate); //ROTATE
-            guidance_h_nav_new((avoidance_heading_direction * oag_heading_rate), 0.2f*speed_sp, 0); 
+            guidance_h_nav_new((avoidance_heading_direction * GD_HEADING_RATE), GD_SLOW_FACTOR_SEARCH*speed_sp, 0); 
 
             //NEED A LOOP HERE THAT ENDS WITH SAFE ONCE WE HAVE A 1
             if (go_no_go ==1){
@@ -115,10 +117,10 @@ uint8_t chooseRandomIncrementAvoidance(void)
   // Randomly choose CW or CCW avoiding direction
   if (rand() % 2 == 0) {
     avoidance_heading_direction = 1.f;
-    VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
+    VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * GD_HEADING_RATE);
   } else {
     avoidance_heading_direction = -1.f;
-    VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
+    VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * GD_HEADING_RATE);
   }
   return false;
 }
@@ -136,10 +138,10 @@ uint8_t chooseRandomIncrementAvoidance(void)
   //}
   //if (navigation_state == OBSTACLE_FOUND_L) { 
     //avoidance_heading_direction = 1.f; 	   // if obstacle on left, turn right
-    //VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate); //this is only a print, the real thing is in SEARCH_FOR_NEW_HEADING
+    //VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * OAG_HEADING_RATE); //this is only a print, the real thing is in SEARCH_FOR_NEW_HEADING
   //} else{
     //avoidance_heading_direction = -1.f;    // if obstacle on the right, turn left
-    //VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
+    //VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * OAG_HEADING_RATE);
   //}
   
   //return false;

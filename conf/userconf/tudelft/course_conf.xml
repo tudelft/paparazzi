@@ -7,7 +7,7 @@
    telemetry="telemetry/default_rotorcraft.xml"
    flight_plan="flight_plans/tudelft/course_orangeavoid_cyberzoo_guided.xml"
    settings="settings/rotorcraft_basic.xml"
-   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/bebop_cam.xml modules/gps.xml modules/ground_detection_testing.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi_simple.xml modules/video_capture.xml modules/video_rtp_stream.xml"
+   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/bebop_cam.xml modules/gps.xml modules/ground_detection.xml modules/ground_detection_testing.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi_simple.xml modules/video_capture.xml modules/video_rtp_stream.xml"
    gui_color="white"
    release="c3090b6692780d8b3ad4b32cb9cef06f4186360c"
   />
