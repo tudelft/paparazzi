@@ -9,7 +9,8 @@
                 "limitSymbolsToIncludedHeaders": true
             },
             "includePath": [
-                "${workspaceFolder}"
+                "${workspaceFolder}",
+                "${workspaceFolder}/sw/airborne/test/ahrs"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/arm-none-eabi-gcc",

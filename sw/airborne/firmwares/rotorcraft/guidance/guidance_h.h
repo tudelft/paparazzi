@@ -167,6 +167,12 @@ extern bool guidance_h_set_guided_heading_rate(float rate);
  */
 extern const struct Int32Vect2 *guidance_h_get_pos_err(void);
 
+
+extern bool guidance_h_nav_new(float rate, float vx, float vy);
+
+
+
+
 /* Make sure that ref can only be temporarily disabled for testing,
  * but not enabled if GUIDANCE_H_USE_REF was defined to FALSE.
  */
