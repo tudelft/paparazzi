@@ -11,8 +11,8 @@
     <settings>
         <dl_settings>
             <dl_settings name="Navigation">
-                <dl_setting var="GD_MAX_SPEED" min="0" step ="0.05" max="1.0" shortname="oag_max_speed"/>
-                <dl_setting var="GD_HEADING_RATE" min="0" step ="0.01" max="1.5" shortname="oag_heading_rate"/>
+                <dl_setting var="GD_MAX_SPEED" min="0" step ="0.05" max="1.0" shortname="gd_max_speed"/>
+                <dl_setting var="GD_HEADING_RATE" min="0" step ="0.01" max="1.5" shortname="gd_heading_rate"/>
                 <dl_setting var="GD_SLOW_FACTOR_FOUND" min="0" step ="0.05" max="1.5" shortname="slow_factor_found"/>
                 <dl_setting var="GD_SLOW_FACTOR_SEARCH" min="0" step ="0.05" max="1.5" shortname="slow_factor_search"/>
             </dl_settings>

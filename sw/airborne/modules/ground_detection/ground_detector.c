@@ -16,8 +16,7 @@
 #include "firmwares/rotorcraft/navigation.h"
 #include "generated/flight_plan.h"
 
-#define NAV_C // needed to get the nav functions like Inside... ???
-
+#define NAV_C // needed to get the nav functions like Inside... 
 
 #define GROUND_DETECTOR_VERBOSE TRUE
 
@@ -43,10 +42,10 @@ enum navigation_state_t {
 };
 
 // Define settings - also ComputerVision ones?
-float GD_MAX_SPEED = 0.5f;               // max flight speed [m/s]
-float GD_HEADING_RATE = RadOfDeg(20.f);  // heading change setpoint for avoidance [rad/s]
-float GD_SLOW_FACTOR_FOUND = 0.2f;
-float GD_SLOW_FACTOR_SEARCH = 0.2f;
+float GD_MAX_SPEED = 0.6f;               // max flight speed [m/s]
+float GD_HEADING_RATE = RadOfDeg(30.f);  // heading change setpoint for avoidance [rad/s]
+float GD_SLOW_FACTOR_FOUND = 0.3f;
+float GD_SLOW_FACTOR_SEARCH = 0.3f;
 
 
 // Define and initialise global variables
@@ -112,10 +111,24 @@ void get_signal_periodic(void){
 /*
  * Sets the variable 'incrementForAvoidance' randomly positive/negative
  */
+//uint8_t chooseRandomIncrementAvoidance(void)
+//{
+  // Randomly choose CW or CCW avoiding direction
+  //if (rand() % 2 == 0) {
+    //avoidance_heading_direction = 1.f;
+    //VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * GD_HEADING_RATE);
+  //} else {
+    //avoidance_heading_direction = -1.f;
+    //VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * GD_HEADING_RATE);
+ //}
+  //return false;
+//}
+
+// This makes it an 80% chance of going right
 uint8_t chooseRandomIncrementAvoidance(void)
 {
   // Randomly choose CW or CCW avoiding direction
-  if (rand() % 2 == 0) {
+  if (rand() % 100 < 80) {
     avoidance_heading_direction = 1.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * GD_HEADING_RATE);
   } else {
@@ -125,9 +138,7 @@ uint8_t chooseRandomIncrementAvoidance(void)
   return false;
 }
 
-
-
-
+// In case we have L/R detection, start with this
 //uint8_t chooseRandomIncrementAvoidance2(void) //don't want this one to be random
 //{
   // Randomly choose CW or CCW avoiding direction
