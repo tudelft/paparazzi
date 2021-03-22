@@ -507,8 +507,8 @@ void ins_flow_update(void)
   DEBUG_PRINT("Thrust = %f, thrust acceleration = %f, g = %f\n", thrust, thrust/mass, g);
 
   // propagate the state with Euler integration:
-  printf("Before prediction: ");
-  print_ins_flow_state();
+  DEBUG_PRINT("Before prediction: ");
+  if(DEBUG_INS_FLOW) print_ins_flow_state();
   // make sure that the right hand state terms appear before they change:
   OF_X[OF_V_IND] += dt * (thrust * sin(OF_X[OF_ANGLE_IND]) / mass);
   OF_X[OF_Z_IND] += dt * OF_X[OF_Z_DOT_IND];
@@ -521,8 +521,8 @@ void ins_flow_update(void)
       OF_X[OF_Z_IND] = 1e-3;
   }
 
-  printf("After prediction: ");
-  print_ins_flow_state();
+  DEBUG_PRINT("After prediction: ");
+  if(DEBUG_INS_FLOW) print_ins_flow_state();
 
   // prepare the update and correction step:
   // we have to recompute these all the time, as they depend on the state:
