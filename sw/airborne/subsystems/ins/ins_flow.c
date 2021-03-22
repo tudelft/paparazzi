@@ -133,6 +133,8 @@ struct InsFlow {
   uint16_t RPM[8]; // max an octocopter
   uint8_t RPM_num_act;
 
+  float lp_gyro_roll;
+
 };
 struct InsFlow ins_flow;
 
@@ -146,10 +148,14 @@ struct InsFlow ins_flow;
 #define OF_Z_IND 3
 #define OF_Z_DOT_IND 4
 
-#define N_MEAS_OF_KF 2
+#ifndef N_MEAS_OF_KF
+// 2 means only optical flow, 3 means also gyro:
+#define N_MEAS_OF_KF 3
+#endif
 
 #define OF_LAT_FLOW_IND 0
 #define OF_DIV_FLOW_IND 1
+#define OF_RATE_IND 2
 
 float OF_X[N_STATES_OF_KF] = {0.};
 float OF_Q[N_STATES_OF_KF][N_STATES_OF_KF] = {{0.}};
@@ -161,6 +167,7 @@ float RPM_FACTORS[OF_N_ROTORS];
 
 float of_time;
 float of_prev_time;
+float lp_factor;
 
 /*
 struct InsFlowState {
@@ -299,6 +306,8 @@ void ins_flow_init(void)
   stateSetLocalOrigin_i(&ins_flow.ltp_def);
   ins_flow.ltp_initialized = true;
   ins_flow.new_flow_measurement = false;
+  ins_flow.lp_gyro_roll = 0.0f;
+  lp_factor = 0.95;
 
   // Extended Kalman filter:
   // initialize the state:
@@ -307,6 +316,9 @@ void ins_flow_init(void)
   // R-matrix, measurement noise (TODO: make params)
   OF_R[OF_LAT_FLOW_IND][OF_LAT_FLOW_IND] = 0.02;
   OF_R[OF_DIV_FLOW_IND][OF_DIV_FLOW_IND] = 0.02;
+  if(N_MEAS_OF_KF == 3) {
+      OF_R[OF_RATE_IND][OF_RATE_IND] = 10.0 * (M_PI / 180.0f);
+  }
   // Q-matrix, actuation noise (TODO: make params)
   OF_Q[OF_V_IND][OF_V_IND] = 0.1;
   OF_Q[OF_ANGLE_IND][OF_ANGLE_IND] = 1.0 * (M_PI / 180.0f);
@@ -332,6 +344,7 @@ void ins_flow_init(void)
   RPM_FACTORS[3] = 0.12*1E-7;
 #else
   // % Bebop 2, #45
+  // From fit_TM_2 script:
   // K = [0.108068; 0.115448; 0.201207; 0.208834] * 1E-7
   RPM_FACTORS[0] = 0.11*1E-7;
   RPM_FACTORS[1] = 0.12*1E-7;
@@ -487,6 +500,14 @@ void ins_flow_update(void)
   H[OF_DIV_FLOW_IND][OF_Z_IND] = OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]*OF_X[OF_Z_IND])
 				  + OF_X[OF_Z_DOT_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/(OF_X[OF_Z_IND]*OF_X[OF_Z_IND]);
   H[OF_DIV_FLOW_IND][OF_Z_DOT_IND] = -cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
+  // rate measurement:
+  if(N_MEAS_OF_KF == 3) {
+      H[OF_RATE_IND][OF_V_IND] = 0.0f;
+      H[OF_RATE_IND][OF_ANGLE_IND] = 0.0f;
+      H[OF_RATE_IND][OF_ANGLE_DOT_IND] = 1.0f;
+      H[OF_RATE_IND][OF_Z_IND] = 0.0f;
+      H[OF_RATE_IND][OF_Z_DOT_IND] = 0.0f;
+  }
 
   // propagate uncertainty:
   // TODO: make pointers that don't change to init:
@@ -598,6 +619,9 @@ void ins_flow_update(void)
 				   + OF_X[OF_ANGLE_DOT_IND];
     Z_expected[OF_DIV_FLOW_IND] = -OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND])
 				  -OF_X[OF_Z_DOT_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
+    if(N_MEAS_OF_KF == 3) {
+	Z_expected[OF_RATE_IND] = OF_X[OF_ANGLE_DOT_IND];
+    }
 
     //  i_k1 = Z - Z_expected;
     float innovation[N_MEAS_OF_KF][1];
@@ -605,8 +629,15 @@ void ins_flow_update(void)
     innovation[OF_LAT_FLOW_IND][0] = ins_flow.optical_flow_x - Z_expected[OF_LAT_FLOW_IND];
     DEBUG_PRINT("Expected flow: %f, Real flow: %f.\n", Z_expected[OF_LAT_FLOW_IND], ins_flow.optical_flow_x);
     innovation[OF_DIV_FLOW_IND][0] = ins_flow.divergence - Z_expected[OF_DIV_FLOW_IND];
-    MAKE_MATRIX_PTR(I, innovation, N_MEAS_OF_KF);
     DEBUG_PRINT("Expected div: %f, Real div: %f.\n", Z_expected[OF_DIV_FLOW_IND], ins_flow.divergence);
+    if(N_MEAS_OF_KF == 3) {
+	innovation[OF_RATE_IND][0] = ins_flow.lp_gyro_roll - Z_expected[OF_RATE_IND];
+	DEBUG_PRINT("Expected rate: %f, Real rate: %f.\n", Z_expected[OF_RATE_IND], ins_flow.lp_gyro_roll);
+    }
+
+    MAKE_MATRIX_PTR(I, innovation, N_MEAS_OF_KF);
+
+
 
     // X_k1_k1 = X_k1_k + K_k1*(i_k1);
     float _KI[N_STATES_OF_KF][1];
@@ -616,11 +647,11 @@ void ins_flow_update(void)
     DEBUG_PRINT("K*innovation:\n");
     DEBUG_MAT_PRINT(N_STATES_OF_KF, 1, KI);
 
-    printf("PRE: v = %f, angle = %f\n", OF_X[OF_V_IND], OF_X[OF_ANGLE_IND]);
+    DEBUG_PRINT("PRE: v = %f, angle = %f\n", OF_X[OF_V_IND], OF_X[OF_ANGLE_IND]);
     for(int i = 0; i < N_STATES_OF_KF; i++) {
 	OF_X[i] += KI[i][0];
     }
-    printf("POST v: %f, angle = %f\n", OF_X[OF_V_IND], OF_X[OF_ANGLE_IND]);
+    DEBUG_PRINT("POST v: %f, angle = %f\n", OF_X[OF_V_IND], OF_X[OF_ANGLE_IND]);
 
     printf("Angles (deg): ahrs = %f, ekf = %f.\n", (180.0f/M_PI)*eulers->phi, (180.0f/M_PI)*OF_X[OF_ANGLE_IND]);
 
@@ -680,6 +711,12 @@ static void gyro_cb(uint8_t __attribute__((unused)) sender_id,
     float dt = (float)(stamp - last_stamp) * 1e-6;
     ahrs_icq_propagate(gyro, dt);
     set_body_state_from_quat();
+
+    // TODO: filter all gyro values
+    // For now only filter the roll gyro:
+    float current_rate = ((float)gyro->p) / INT32_RATE_FRAC;
+    ins_flow.lp_gyro_roll = lp_factor * ins_flow.lp_gyro_roll + (1-lp_factor) * current_rate;
+
   }
   last_stamp = stamp;
 #else
