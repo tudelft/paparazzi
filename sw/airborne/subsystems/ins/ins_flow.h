@@ -34,11 +34,13 @@ extern "C" {
 
 #include "subsystems/ahrs.h"
 #include "subsystems/ahrs/ahrs_int_cmpl_quat.h"
+#include "subsystems/ahrs/ahrs_aligner.h"
 #include "subsystems/ins.h"
 
 extern void ins_flow_init(void);
 extern void ins_flow_update(void);
 
+extern bool reset_filter;
 
 #ifdef __cplusplus
 }

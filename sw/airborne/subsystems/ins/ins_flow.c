@@ -108,8 +108,8 @@ static void aligner_cb(uint8_t __attribute__((unused)) sender_id,
 //static bool ahrs_icq_output_enabled;
 static uint32_t ahrs_icq_last_stamp;
 static uint8_t ahrs_flow_id = AHRS_COMP_ID_FLOW;  ///< Component ID for FLOW
-
 static void set_body_state_from_quat(void);
+static void ins_reset_filter(void);
 
 struct InsFlow {
 
@@ -167,7 +167,7 @@ float RPM_FACTORS[OF_N_ROTORS];
 float of_time;
 float of_prev_time;
 float lp_factor;
-
+bool reset_filter;
 // Define parameters for the filter, fitted in MATLAB:
 #if USE_NPS
   #if N_MEAS_OF_KF == 3
@@ -316,12 +316,28 @@ static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
 
 #endif
 
-/*
-static bool ahrs_icq_enable_output(bool enable)
-{
-  ahrs_icq_output_enabled = enable;
-  return ahrs_icq_output_enabled;
-}*/
+
+void ins_reset_filter(void) {
+
+  // (re-)initialize the state:
+  for(int i = 0; i < N_STATES_OF_KF; i++) {
+      OF_X[i] = 0.0f;
+  }
+  OF_X[OF_Z_IND] = 1.0; // nonzero z
+
+  // P-matrix:
+  for(int i = 0; i < N_STATES_OF_KF; i++) {
+      for(int j = 0; j < N_STATES_OF_KF; j++) {
+	  OF_P[i][j] = 0.0f;
+    }
+  }
+  OF_P[OF_V_IND][OF_V_IND] = parameters[PAR_P0];
+  OF_P[OF_ANGLE_IND][OF_ANGLE_IND] = parameters[PAR_P1];
+  OF_P[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = parameters[PAR_P2];
+  OF_P[OF_Z_IND][OF_Z_IND] = parameters[PAR_P3];
+  OF_P[OF_Z_DOT_IND][OF_Z_DOT_IND] = parameters[PAR_P4];
+}
+
 
 /* Initialize the flow ins */
 void ins_flow_init(void)
@@ -350,8 +366,8 @@ void ins_flow_init(void)
   lp_factor = 0.95;
 
   // Extended Kalman filter:
-  // initialize the state:
-  OF_X[OF_Z_IND] = 1.0; // nonzero z
+  // reset the state and P matrix:
+  ins_reset_filter();
 
   // R-matrix, measurement noise (TODO: make params)
   OF_R[OF_LAT_FLOW_IND][OF_LAT_FLOW_IND] = parameters[PAR_R0];
@@ -365,12 +381,7 @@ void ins_flow_init(void)
   OF_Q[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = parameters[PAR_Q2];
   OF_Q[OF_Z_IND][OF_Z_IND] = parameters[PAR_Q3];
   OF_Q[OF_Z_DOT_IND][OF_Z_DOT_IND] = parameters[PAR_Q4];
-  // P-matrix:
-  OF_P[OF_V_IND][OF_V_IND] = parameters[PAR_P0];
-  OF_P[OF_ANGLE_IND][OF_ANGLE_IND] = parameters[PAR_P1];
-  OF_P[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = parameters[PAR_P2];
-  OF_P[OF_Z_IND][OF_Z_IND] = parameters[PAR_P3];
-  OF_P[OF_Z_DOT_IND][OF_Z_DOT_IND] = parameters[PAR_P4];
+
 
   // based on a fit, factor * rpm^2:
 #if USE_NPS
@@ -391,6 +402,9 @@ void ins_flow_init(void)
   RPM_FACTORS[2] = parameters[PAR_K2]*1E-7;
   RPM_FACTORS[3] = parameters[PAR_K3]*1E-7;
 #endif
+
+  reset_filter = false;
+
   of_time = get_sys_time_float();
   of_prev_time = get_sys_time_float();
 
@@ -418,6 +432,7 @@ void ins_flow_init(void)
   AbiBindMsgOPTICAL_FLOW(INS_OPTICAL_FLOW_ID, &ins_optical_flow_ev, ins_optical_flow_cb);
   AbiBindMsgRPM(INS_RPM_ID, &ins_RPM_ev, ins_rpm_cb);
   AbiBindMsgIMU_LOWPASSED(ABI_BROADCAST, &aligner_ev, aligner_cb);
+
 }
 
 void ins_reset_local_origin(void)
@@ -455,6 +470,11 @@ void print_ins_flow_state(void) {
 
 void ins_flow_update(void)
 {
+  if(reset_filter) {
+      ins_reset_filter();
+      reset_filter = false;
+  }
+
   // we first make the simplest version, i.e., no gyro measurement, no moment estimate:
   struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
   struct NedCoor_f* position = stateGetPositionNed_f();
