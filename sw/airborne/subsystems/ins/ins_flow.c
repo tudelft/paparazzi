@@ -138,7 +138,6 @@ struct InsFlow {
 };
 struct InsFlow ins_flow;
 
-
 // Kalman filter parameters and variables:
 #define N_STATES_OF_KF 5
 
@@ -168,6 +167,47 @@ float RPM_FACTORS[OF_N_ROTORS];
 float of_time;
 float of_prev_time;
 float lp_factor;
+
+// Define parameters for the filter, fitted in MATLAB:
+#if USE_NPS
+  #if N_MEAS_OF_KF == 3
+  // with rate measurement:
+  float parameters[20] = {1.234994e-01, 3.603662e-01, 8.751691e-02, 1.636867e-01, 1.561769e-01, 1.856140e-01, 1.601066e-02, 1.187989e-01, 1.507075e-01, 2.471644e-01, 7.934140e-02, 1.770048e+00, 1.345862e-01, 2.881410e+00, 1.003584e+00, 1.280523e-01, 7.549402e-02, 9.640423e-01, 1.078312e+00, 3.468849e-01};
+  #else
+  // without rate measurement:
+  float parameters[20] = {4.370754e-02, 3.770587e-01, 1.187542e-01, 1.174995e-01, 1.419432e-01, 6.950201e-02, 2.251078e-01, 9.113943e-02, 2.230198e-01, 5.767389e-02, 1.855676e-02, 1.676359e+00, 5.822681e-02, 2.869468e+00, 1.140625e+00, 6.831383e-02, 1.600776e-01, 9.853843e-01, 1.000381e+00, 5.081224e-01};
+  #endif
+#else
+  #if N_MEAS_OF_KF == 3
+  // with rate measurement
+  float parameters[20] = {0.041001,1.015066,-0.058495,0.498353,-0.156362,0.383511,0.924635,0.681918,0.318947,0.298235,0.224906,1.371037,0.008888,3.045428,0.893953,0.529789,0.295028,1.297515,0.767550,0.334040};
+  #else
+  // without rate measurement:
+  float parameters[20] = {4.098677e-01, 7.766318e-01, 3.614751e-01, 4.745865e-01, 5.144065e-01, 3.113647e-01, -8.737287e-03, 6.370274e-01, 3.863760e-01, -3.527670e-01, 4.873666e-01, 1.688456e+00, -6.037967e-02, 2.759148e+00, 1.385455e+00, 1.044881e-01, -1.170409e-01, 1.126136e+00, 1.097562e+00, 2.680243e-01};
+  #endif
+#endif
+// parameter indices (TODO: how important are these numbers? Some are not used, others, like P may be not so important).
+#define PAR_IX 0
+#define PAR_MASS 1
+#define PAR_BASE 2
+#define PAR_K0 3
+#define PAR_K1 4
+#define PAR_K2 5
+#define PAR_K3 6
+#define PAR_R0 7
+#define PAR_R1 8
+#define PAR_Q0 9
+#define PAR_Q1 10
+#define PAR_Q2 11
+#define PAR_Q3 12
+#define PAR_Q4 13
+#define PAR_P0 14
+#define PAR_P1 15
+#define PAR_P2 16
+#define PAR_P3 17
+#define PAR_P4 18
+#define PAR_KD 19
+
 
 /*
 struct InsFlowState {
@@ -314,23 +354,23 @@ void ins_flow_init(void)
   OF_X[OF_Z_IND] = 1.0; // nonzero z
 
   // R-matrix, measurement noise (TODO: make params)
-  OF_R[OF_LAT_FLOW_IND][OF_LAT_FLOW_IND] = 0.02;
-  OF_R[OF_DIV_FLOW_IND][OF_DIV_FLOW_IND] = 0.02;
+  OF_R[OF_LAT_FLOW_IND][OF_LAT_FLOW_IND] = parameters[PAR_R0];
+  OF_R[OF_DIV_FLOW_IND][OF_DIV_FLOW_IND] = parameters[PAR_R1];
   if(N_MEAS_OF_KF == 3) {
-      OF_R[OF_RATE_IND][OF_RATE_IND] = 10.0 * (M_PI / 180.0f);
+      OF_R[OF_RATE_IND][OF_RATE_IND] = 10.0 * (M_PI / 180.0f); // not a param yet
   }
   // Q-matrix, actuation noise (TODO: make params)
-  OF_Q[OF_V_IND][OF_V_IND] = 0.1;
-  OF_Q[OF_ANGLE_IND][OF_ANGLE_IND] = 1.0 * (M_PI / 180.0f);
-  OF_Q[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = 100.0 * (M_PI / 180.0f);
-  OF_Q[OF_Z_IND][OF_Z_IND] = 0.1;
-  OF_Q[OF_Z_DOT_IND][OF_Z_DOT_IND] = 3.0;
+  OF_Q[OF_V_IND][OF_V_IND] = parameters[PAR_Q0];
+  OF_Q[OF_ANGLE_IND][OF_ANGLE_IND] = parameters[PAR_Q1];
+  OF_Q[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = parameters[PAR_Q2];
+  OF_Q[OF_Z_IND][OF_Z_IND] = parameters[PAR_Q3];
+  OF_Q[OF_Z_DOT_IND][OF_Z_DOT_IND] = parameters[PAR_Q4];
   // P-matrix:
-  OF_P[OF_V_IND][OF_V_IND] = 1.0;
-  OF_P[OF_ANGLE_IND][OF_ANGLE_IND] = 10.0 * (M_PI / 180.0f);
-  OF_P[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = 10.0 * (M_PI / 180.0f);
-  OF_P[OF_Z_IND][OF_Z_IND] = 1.0;
-  OF_P[OF_Z_DOT_IND][OF_Z_DOT_IND] = 1.0;
+  OF_P[OF_V_IND][OF_V_IND] = parameters[PAR_P0];
+  OF_P[OF_ANGLE_IND][OF_ANGLE_IND] = parameters[PAR_P1];
+  OF_P[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = parameters[PAR_P2];
+  OF_P[OF_Z_IND][OF_Z_IND] = parameters[PAR_P3];
+  OF_P[OF_Z_DOT_IND][OF_Z_DOT_IND] = parameters[PAR_P4];
 
   // based on a fit, factor * rpm^2:
 #if USE_NPS
@@ -338,18 +378,18 @@ void ins_flow_init(void)
   // K = [0.222949; 0.160458; 0.114227; 0.051396] * 1E-7;
   // rpm:
   // [2708.807954; 2587.641476; -379.728916; -501.203388]
-  RPM_FACTORS[0] = 0.15*1E-7;
-  RPM_FACTORS[1] = 0.17*1E-7;
-  RPM_FACTORS[2] = 0.10*1E-7;
-  RPM_FACTORS[3] = 0.12*1E-7;
+  RPM_FACTORS[0] = parameters[PAR_K0]*1E-7;
+  RPM_FACTORS[1] = parameters[PAR_K1]*1E-7;
+  RPM_FACTORS[2] = parameters[PAR_K2]*1E-7;
+  RPM_FACTORS[3] = parameters[PAR_K3]*1E-7;
 #else
   // % Bebop 2, #45
   // From fit_TM_2 script:
   // K = [0.108068; 0.115448; 0.201207; 0.208834] * 1E-7
-  RPM_FACTORS[0] = 0.11*1E-7;
-  RPM_FACTORS[1] = 0.12*1E-7;
-  RPM_FACTORS[2] = 0.20*1E-7;
-  RPM_FACTORS[3] = 0.21*1E-7;
+  RPM_FACTORS[0] = parameters[PAR_K0]*1E-7;
+  RPM_FACTORS[1] = parameters[PAR_K1]*1E-7;
+  RPM_FACTORS[2] = parameters[PAR_K2]*1E-7;
+  RPM_FACTORS[3] = parameters[PAR_K3]*1E-7;
 #endif
   of_time = get_sys_time_float();
   of_prev_time = get_sys_time_float();
@@ -433,9 +473,9 @@ void ins_flow_update(void)
       dt = 0.01f;
   }
 
-  float mass = 0.400; // TODO: make parameter
+  float mass = parameters[PAR_MASS]; // 0.400;
   float moment = 0.0f; // for now assumed to be 0
-  float Ix = 0.0018244; // TODO: make parameter
+  float Ix = parameters[PAR_IX]; // 0.0018244;
   float g = 9.81; // TODO: get a good definition from pprz
 
   // predict the thrust and moment:
