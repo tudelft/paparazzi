@@ -503,7 +503,7 @@ void ins_flow_update(void)
   for(int i = 0; i < OF_N_ROTORS; i++) {
       thrust += RPM_FACTORS[i] * ins_flow.RPM[i]*ins_flow.RPM[i];
   }
-  thrust += 1.0f * mass;
+  //thrust += 1.0f * mass; // TODO: why was this here?
   DEBUG_PRINT("Thrust = %f, thrust acceleration = %f, g = %f\n", thrust, thrust/mass, g);
 
   // propagate the state with Euler integration:
