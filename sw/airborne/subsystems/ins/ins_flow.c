@@ -103,7 +103,7 @@ static void aligner_cb(uint8_t __attribute__((unused)) sender_id,
                        uint32_t stamp __attribute__((unused)),
                        struct Int32Rates *lp_gyro, struct Int32Vect3 *lp_accel,
                        struct Int32Vect3 *lp_mag);
-
+static void print_ins_flow_state(void);
 /* Static local functions */
 //static bool ahrs_icq_output_enabled;
 static uint32_t ahrs_icq_last_stamp;
@@ -142,13 +142,28 @@ struct InsFlow {
 struct InsFlow ins_flow;
 
 // Kalman filter parameters and variables:
-#define N_STATES_OF_KF 5
 
-#define OF_V_IND 0
-#define OF_ANGLE_IND 1
-#define OF_ANGLE_DOT_IND 2
-#define OF_Z_IND 3
-#define OF_Z_DOT_IND 4
+#define CONSTANT_ALT_FILTER 1
+
+#if CONSTANT_ALT_FILTER == 1
+  #define N_STATES_OF_KF 3
+
+  #define OF_V_IND 0
+  #define OF_ANGLE_IND 1
+  #define OF_Z_IND 2
+
+  #define OF_ANGLE_DOT_IND -1
+  #define OF_Z_DOT_IND -1
+
+#else
+  #define N_STATES_OF_KF 5
+
+  #define OF_V_IND 0
+  #define OF_ANGLE_IND 1
+  #define OF_ANGLE_DOT_IND 2
+  #define OF_Z_IND 3
+  #define OF_Z_DOT_IND 4
+#endif
 
 #ifndef N_MEAS_OF_KF
 // 2 means only optical flow, 3 means also gyro:
@@ -338,14 +353,21 @@ void ins_reset_filter(void) {
 	  OF_P[i][j] = 0.0f;
     }
   }
-  OF_P[OF_V_IND][OF_V_IND] = parameters[PAR_P0];
-  OF_P[OF_ANGLE_IND][OF_ANGLE_IND] = parameters[PAR_P1];
-  OF_P[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = parameters[PAR_P2];
-  OF_P[OF_Z_IND][OF_Z_IND] = parameters[PAR_P3];
-  OF_P[OF_Z_DOT_IND][OF_Z_DOT_IND] = parameters[PAR_P4];
+  if(CONSTANT_ALT_FILTER == 1) {
+      OF_P[OF_V_IND][OF_V_IND] = parameters[PAR_P0];
+      OF_P[OF_ANGLE_IND][OF_ANGLE_IND] = parameters[PAR_P1];
+      OF_P[OF_Z_IND][OF_Z_IND] = parameters[PAR_P3];
+  }
+  else {
+      OF_P[OF_V_IND][OF_V_IND] = parameters[PAR_P0];
+      OF_P[OF_ANGLE_IND][OF_ANGLE_IND] = parameters[PAR_P1];
+      OF_P[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = parameters[PAR_P2];
+      OF_P[OF_Z_IND][OF_Z_IND] = parameters[PAR_P3];
+      OF_P[OF_Z_DOT_IND][OF_Z_DOT_IND] = parameters[PAR_P4];
+  }
+
 
   // TODO: what to do with thrust and gyro bias?
-
 
 }
 
@@ -393,9 +415,11 @@ void ins_flow_init(void)
   // Q-matrix, actuation noise (TODO: make params)
   OF_Q[OF_V_IND][OF_V_IND] = parameters[PAR_Q0];
   OF_Q[OF_ANGLE_IND][OF_ANGLE_IND] = parameters[PAR_Q1];
-  OF_Q[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = parameters[PAR_Q2];
   OF_Q[OF_Z_IND][OF_Z_IND] = parameters[PAR_Q3];
-  OF_Q[OF_Z_DOT_IND][OF_Z_DOT_IND] = parameters[PAR_Q4];
+  if(!CONSTANT_ALT_FILTER) {
+      OF_Q[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = parameters[PAR_Q2];
+      OF_Q[OF_Z_DOT_IND][OF_Z_DOT_IND] = parameters[PAR_Q4];
+  }
 
 
   // based on a fit, factor * rpm^2:
@@ -471,8 +495,8 @@ void ins_optical_flow_cb(uint8_t sender_id UNUSED, uint32_t stamp, int16_t flow_
   float focal_x = 347.22;
   float new_time = ((float)stamp) / 1e6;
   float fps = 1.0f/(new_time-ins_flow.vision_time);
-  ins_flow.optical_flow_x = (((float)flow_der_x)*fps)/(subpixel_factor*focal_x);
-  ins_flow.optical_flow_y = (((float)flow_der_y)*fps)/(subpixel_factor*focal_x);
+  ins_flow.optical_flow_x = (((float)flow_x)*fps)/(subpixel_factor*focal_x);
+  ins_flow.optical_flow_y = (((float)flow_y)*fps)/(subpixel_factor*focal_x);
   ins_flow.divergence = 1.27*size_divergence*fps;
   //printf("Reading %f, %f, %f\n", optical_flow_x, optical_flow_y, divergence_vision);
   ins_flow.vision_time = new_time;
@@ -481,8 +505,15 @@ void ins_optical_flow_cb(uint8_t sender_id UNUSED, uint32_t stamp, int16_t flow_
 }
 
 void print_ins_flow_state(void) {
-  printf("v = %f, angle = %f, angle_dot = %f, z = %f, z+_dot = %f.\n",
-	 OF_X[OF_V_IND], OF_X[OF_ANGLE_IND], OF_X[OF_ANGLE_DOT_IND], OF_X[OF_Z_IND], OF_X[OF_Z_DOT_IND]);
+  if(CONSTANT_ALT_FILTER) {
+      printf("v = %f, angle = %f, z = %f.\n",
+      	 OF_X[OF_V_IND], OF_X[OF_ANGLE_IND], OF_X[OF_Z_IND]);
+  }
+  else {
+      printf("v = %f, angle = %f, angle_dot = %f, z = %f, z_dot = %f.\n",
+      	 OF_X[OF_V_IND], OF_X[OF_ANGLE_IND], OF_X[OF_ANGLE_DOT_IND], OF_X[OF_Z_IND], OF_X[OF_Z_DOT_IND]);
+  }
+
 }
 
 void ins_flow_update(void)
@@ -558,12 +589,20 @@ void ins_flow_update(void)
   // propagate the state with Euler integration:
   DEBUG_PRINT("Before prediction: ");
   if(DEBUG_INS_FLOW) print_ins_flow_state();
-  // make sure that the right hand state terms appear before they change:
-  OF_X[OF_V_IND] += dt * (thrust * sin(OF_X[OF_ANGLE_IND]) / mass);
-  OF_X[OF_Z_IND] += dt * OF_X[OF_Z_DOT_IND];
-  OF_X[OF_Z_DOT_IND] += dt * (thrust * cos(OF_X[OF_ANGLE_IND]) / mass - g);
-  OF_X[OF_ANGLE_IND] += dt * OF_X[OF_ANGLE_DOT_IND];
-  OF_X[OF_ANGLE_DOT_IND] += dt * (moment / Ix);
+  if(CONSTANT_ALT_FILTER) {
+      OF_X[OF_V_IND] += dt * (g * tan(OF_X[OF_ANGLE_IND]));
+      //OF_X[OF_ANGLE_IND] += dt * ins_flow.lp_gyro_roll;
+  }
+  else {
+    // make sure that the right hand state terms appear before they change:
+    OF_X[OF_V_IND] += dt * (thrust * sin(OF_X[OF_ANGLE_IND]) / mass);
+    OF_X[OF_ANGLE_IND] += dt * OF_X[OF_ANGLE_DOT_IND];
+    OF_X[OF_ANGLE_DOT_IND] += dt * (moment / Ix);
+    OF_X[OF_Z_IND] += dt * OF_X[OF_Z_DOT_IND];
+    OF_X[OF_Z_DOT_IND] += dt * (thrust * cos(OF_X[OF_ANGLE_IND]) / mass - g);
+  }
+
+
 
   // ensure that z is not 0 (or lower)
   if(OF_X[OF_Z_IND] < 1e-2) {
@@ -580,10 +619,15 @@ void ins_flow_update(void)
   for(int i = 0; i < N_STATES_OF_KF; i++) {
       F[i][i] = 1.0f;
   }
-  F[OF_V_IND][OF_ANGLE_IND] = dt*(thrust*cos(OF_X[OF_ANGLE_IND])/mass);
-  F[OF_ANGLE_IND][OF_ANGLE_DOT_IND] = dt*1.0f;
-  F[OF_Z_IND][OF_Z_DOT_IND] = dt*1.0f;
-  F[OF_Z_DOT_IND][OF_ANGLE_IND] = dt*(-thrust*sin(OF_X[OF_ANGLE_IND])/mass);
+  if(CONSTANT_ALT_FILTER) {
+    F[OF_V_IND][OF_ANGLE_IND] = dt*(g/(cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])));
+  }
+  else {
+    F[OF_V_IND][OF_ANGLE_IND] = dt*(thrust*cos(OF_X[OF_ANGLE_IND])/mass);
+    F[OF_ANGLE_IND][OF_ANGLE_DOT_IND] = dt*1.0f;
+    F[OF_Z_IND][OF_Z_DOT_IND] = dt*1.0f;
+    F[OF_Z_DOT_IND][OF_ANGLE_IND] = dt*(-thrust*sin(OF_X[OF_ANGLE_IND])/mass);
+  }
 
   // G matrix (whatever it may be):
   float G[N_STATES_OF_KF][N_STATES_OF_KF] = {{0.}};
@@ -593,31 +637,45 @@ void ins_flow_update(void)
 
   // Jacobian observation matrix H:
   float H[N_MEAS_OF_KF][N_STATES_OF_KF] = {{0.}};
-  // lateral flow:
-  H[OF_LAT_FLOW_IND][OF_V_IND] = -cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/ OF_X[OF_Z_IND];
-  H[OF_LAT_FLOW_IND][OF_ANGLE_IND] = OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
-					+ OF_X[OF_Z_DOT_IND]*cos(2*OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
-  H[OF_LAT_FLOW_IND][OF_ANGLE_DOT_IND] = 1.0f;
-  H[OF_LAT_FLOW_IND][OF_Z_IND] = OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/(OF_X[OF_Z_IND]*OF_X[OF_Z_IND])
-				  - OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]*OF_X[OF_Z_IND]);
-  H[OF_LAT_FLOW_IND][OF_Z_DOT_IND] = sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
-  // divergence:
-  H[OF_DIV_FLOW_IND][OF_V_IND] = -sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
-  H[OF_DIV_FLOW_IND][OF_ANGLE_IND] = -OF_X[OF_V_IND]*cos(2*OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
-					+ OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND]) / OF_X[OF_Z_IND];
-  H[OF_DIV_FLOW_IND][OF_ANGLE_DOT_IND] = 0.0f;
-  H[OF_DIV_FLOW_IND][OF_Z_IND] = OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]*OF_X[OF_Z_IND])
-				  + OF_X[OF_Z_DOT_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/(OF_X[OF_Z_IND]*OF_X[OF_Z_IND]);
-  H[OF_DIV_FLOW_IND][OF_Z_DOT_IND] = -cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
-  // rate measurement:
-  if(N_MEAS_OF_KF == 3) {
-      H[OF_RATE_IND][OF_V_IND] = 0.0f;
-      H[OF_RATE_IND][OF_ANGLE_IND] = 0.0f;
-      H[OF_RATE_IND][OF_ANGLE_DOT_IND] = 1.0f;
-      H[OF_RATE_IND][OF_Z_IND] = 0.0f;
-      H[OF_RATE_IND][OF_Z_DOT_IND] = 0.0f;
-  }
 
+  if(CONSTANT_ALT_FILTER) {
+      // Hx = [-cos(theta)^2/z, (v*sin(theta))/ z, (v* cos(theta)^2)/z^2];
+    // lateral flow:
+    H[OF_LAT_FLOW_IND][OF_V_IND] = -cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/ OF_X[OF_Z_IND];
+    H[OF_LAT_FLOW_IND][OF_ANGLE_IND] = OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
+    H[OF_LAT_FLOW_IND][OF_Z_IND] = OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/(OF_X[OF_Z_IND]*OF_X[OF_Z_IND]);
+    // divergence:
+    H[OF_DIV_FLOW_IND][OF_V_IND] = -sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
+    H[OF_DIV_FLOW_IND][OF_ANGLE_IND] = -OF_X[OF_V_IND]*cos(2*OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
+    H[OF_DIV_FLOW_IND][OF_Z_IND] = OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]*OF_X[OF_Z_IND]);
+  }
+  else {
+    // lateral flow:
+    H[OF_LAT_FLOW_IND][OF_V_IND] = -cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/ OF_X[OF_Z_IND];
+    H[OF_LAT_FLOW_IND][OF_ANGLE_IND] = OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
+					  + OF_X[OF_Z_DOT_IND]*cos(2*OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
+    H[OF_LAT_FLOW_IND][OF_ANGLE_DOT_IND] = 1.0f;
+    H[OF_LAT_FLOW_IND][OF_Z_IND] = OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/(OF_X[OF_Z_IND]*OF_X[OF_Z_IND])
+				    - OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]*OF_X[OF_Z_IND]);
+    H[OF_LAT_FLOW_IND][OF_Z_DOT_IND] = sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
+    // divergence:
+    H[OF_DIV_FLOW_IND][OF_V_IND] = -sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
+    H[OF_DIV_FLOW_IND][OF_ANGLE_IND] = -OF_X[OF_V_IND]*cos(2*OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
+					  + OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND]) / OF_X[OF_Z_IND];
+    H[OF_DIV_FLOW_IND][OF_ANGLE_DOT_IND] = 0.0f;
+    H[OF_DIV_FLOW_IND][OF_Z_IND] = OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]*OF_X[OF_Z_IND])
+				    + OF_X[OF_Z_DOT_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/(OF_X[OF_Z_IND]*OF_X[OF_Z_IND]);
+    H[OF_DIV_FLOW_IND][OF_Z_DOT_IND] = -cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
+
+    // rate measurement:
+    if(N_MEAS_OF_KF == 3) {
+	H[OF_RATE_IND][OF_V_IND] = 0.0f;
+	H[OF_RATE_IND][OF_ANGLE_IND] = 0.0f;
+	H[OF_RATE_IND][OF_ANGLE_DOT_IND] = 1.0f;
+	H[OF_RATE_IND][OF_Z_IND] = 0.0f;
+	H[OF_RATE_IND][OF_Z_DOT_IND] = 0.0f;
+    }
+  }
   // propagate uncertainty:
   // TODO: make pointers that don't change to init:
   MAKE_MATRIX_PTR(Phi, F, N_STATES_OF_KF);
@@ -723,22 +781,40 @@ void ins_flow_update(void)
     // Z_expected = [-v*cos(theta)*cos(theta)/z + zd*sin(2*theta)/(2*z) + thetad;
     //			(-v*sin(2*theta)/(2*z)) - zd*cos(theta)*cos(theta)/z];
     float Z_expected[N_MEAS_OF_KF];
-    Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
-				   + OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND])
-				   + OF_X[OF_ANGLE_DOT_IND];
-    Z_expected[OF_DIV_FLOW_IND] = -OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND])
-				  -OF_X[OF_Z_DOT_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
+
+    float Z_expect_GT_angle;
+
+    if(CONSTANT_ALT_FILTER) {
+      Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
+
+      Z_expected[OF_DIV_FLOW_IND] = -OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
+
+      Z_expect_GT_angle = -OF_X[OF_V_IND]*cos(eulers->phi)*cos(eulers->phi)/OF_X[OF_Z_IND];
+    }
+    else {
+      Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
+				     + OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND])
+				     + OF_X[OF_ANGLE_DOT_IND];
+
+      Z_expected[OF_DIV_FLOW_IND] = -OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND])
+				    -OF_X[OF_Z_DOT_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
+
+      Z_expect_GT_angle = -OF_X[OF_V_IND]*cos(eulers->phi)*cos(eulers->phi)/OF_X[OF_Z_IND]
+					     + OF_X[OF_Z_DOT_IND]*sin(2*eulers->phi)/(2*OF_X[OF_Z_IND])
+					     + OF_X[OF_ANGLE_DOT_IND];
+    }
+
     if(N_MEAS_OF_KF == 3) {
 	Z_expected[OF_RATE_IND] = OF_X[OF_ANGLE_DOT_IND];
     }
 
     //  i_k1 = Z - Z_expected;
     float innovation[N_MEAS_OF_KF][1];
-    // TODO: should this be optical_flow_x or y for roll?
+    print_ins_flow_state();
     innovation[OF_LAT_FLOW_IND][0] = ins_flow.optical_flow_x - Z_expected[OF_LAT_FLOW_IND];
-    DEBUG_PRINT("Expected flow: %f, Real flow: %f.\n", Z_expected[OF_LAT_FLOW_IND], ins_flow.optical_flow_x);
+    printf("Expected flow filter: %f, Expected flow ground truth = %f, Real flow x: %f, Real flow y: %f.\n", Z_expected[OF_LAT_FLOW_IND], Z_expect_GT_angle, ins_flow.optical_flow_x, ins_flow.optical_flow_y);
     innovation[OF_DIV_FLOW_IND][0] = ins_flow.divergence - Z_expected[OF_DIV_FLOW_IND];
-    DEBUG_PRINT("Expected div: %f, Real div: %f.\n", Z_expected[OF_DIV_FLOW_IND], ins_flow.divergence);
+    printf("Expected div: %f, Real div: %f.\n", Z_expected[OF_DIV_FLOW_IND], ins_flow.divergence);
     if(N_MEAS_OF_KF == 3) {
 	float gyro_meas_roll = ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll;
 	innovation[OF_RATE_IND][0] = gyro_meas_roll - Z_expected[OF_RATE_IND];
@@ -746,8 +822,6 @@ void ins_flow_update(void)
     }
 
     MAKE_MATRIX_PTR(I, innovation, N_MEAS_OF_KF);
-
-
 
     // X_k1_k1 = X_k1_k + K_k1*(i_k1);
     float _KI[N_STATES_OF_KF][1];
