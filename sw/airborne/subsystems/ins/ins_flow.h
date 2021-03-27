@@ -41,6 +41,8 @@ extern void ins_flow_init(void);
 extern void ins_flow_update(void);
 
 extern bool reset_filter;
+extern bool run_filter;
+extern bool use_filter;
 
 #ifdef __cplusplus
 }

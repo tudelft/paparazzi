@@ -134,6 +134,9 @@ struct InsFlow {
   uint8_t RPM_num_act;
 
   float lp_gyro_roll;
+  float lp_gyro_bias_roll; // determine the bias before take-off
+  float thrust_factor; // determine the additional required scale factor to have unbiased thrust estimates
+  float lp_thrust;
 
 };
 struct InsFlow ins_flow;
@@ -149,7 +152,7 @@ struct InsFlow ins_flow;
 
 #ifndef N_MEAS_OF_KF
 // 2 means only optical flow, 3 means also gyro:
-#define N_MEAS_OF_KF 3
+#define N_MEAS_OF_KF 2
 #endif
 
 #define OF_LAT_FLOW_IND 0
@@ -167,7 +170,11 @@ float RPM_FACTORS[OF_N_ROTORS];
 float of_time;
 float of_prev_time;
 float lp_factor;
+float lp_factor_strong;
 bool reset_filter;
+bool use_filter;
+bool run_filter;
+
 // Define parameters for the filter, fitted in MATLAB:
 #if USE_NPS
   #if N_MEAS_OF_KF == 3
@@ -336,6 +343,10 @@ void ins_reset_filter(void) {
   OF_P[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = parameters[PAR_P2];
   OF_P[OF_Z_IND][OF_Z_IND] = parameters[PAR_P3];
   OF_P[OF_Z_DOT_IND][OF_Z_DOT_IND] = parameters[PAR_P4];
+
+  // TODO: what to do with thrust and gyro bias?
+
+
 }
 
 
@@ -363,7 +374,11 @@ void ins_flow_init(void)
   ins_flow.ltp_initialized = true;
   ins_flow.new_flow_measurement = false;
   ins_flow.lp_gyro_roll = 0.0f;
+  ins_flow.thrust_factor = 1.0f;
+  ins_flow.lp_thrust = 0.0f;
+  ins_flow.lp_gyro_bias_roll = 0.0f;
   lp_factor = 0.95;
+  lp_factor_strong = 1-1E-3;
 
   // Extended Kalman filter:
   // reset the state and P matrix:
@@ -404,6 +419,8 @@ void ins_flow_init(void)
 #endif
 
   reset_filter = false;
+  use_filter = false;
+  run_filter = false;
 
   of_time = get_sys_time_float();
   of_prev_time = get_sys_time_float();
@@ -470,6 +487,11 @@ void print_ins_flow_state(void) {
 
 void ins_flow_update(void)
 {
+  float mass = parameters[PAR_MASS]; // 0.400;
+  float moment = 0.0f; // for now assumed to be 0
+  float Ix = parameters[PAR_IX]; // 0.0018244;
+  float g = 9.81; // TODO: get a good definition from pprz
+
   if(reset_filter) {
       ins_reset_filter();
       reset_filter = false;
@@ -480,10 +502,42 @@ void ins_flow_update(void)
   struct NedCoor_f* position = stateGetPositionNed_f();
   // TODO: record when starting from the ground: does that screw up the filter?
 
+  if(!autopilot_in_flight()) {
+      // assuming no rotation, we can estimate the (initial) bias of the gyro:
+      ins_flow.lp_gyro_bias_roll = lp_factor_strong * ins_flow.lp_gyro_bias_roll + (1-lp_factor_strong) * ins_flow.lp_gyro_roll;
+      //printf("lp gyro bias = %f\n", ins_flow.lp_gyro_bias_roll);
+  }
+
   // only start estimation when flying and above 1 meter
   if(!autopilot_in_flight() || position->z > -1.0f) {
       return;
   }
+
+  if(!run_filter) {
+      // Drone is flying but not yet running the filter, in order to obtain unbiased thrust estimates we estimate an additional factor.
+      // Assumption is that the drone is hovering, which means that over a longer period of time, the thrust should equal gravity.
+      // If the low pass thrust is lower than the one expected by gravity, then it needs to be increased and viceversa.
+      float thrust = 0.0f;
+      for(int i = 0; i < OF_N_ROTORS; i++) {
+          thrust += RPM_FACTORS[i] * ins_flow.RPM[i]*ins_flow.RPM[i];
+      }
+      if(ins_flow.lp_thrust < 1E-3) {
+	  // first time directly initialize with thrust to get quicker convergence:
+	  ins_flow.lp_thrust = thrust;
+      }
+      else {
+	  ins_flow.lp_thrust = lp_factor_strong * ins_flow.lp_thrust + (1-lp_factor_strong) * thrust;
+      }
+      float actual_lp_thrust = mass * g;
+      ins_flow.thrust_factor = actual_lp_thrust / ins_flow.lp_thrust;
+      printf("Low pass predicted thrust = %f. Expected thrust = %f. Thrust factor = %f.\n", ins_flow.lp_thrust, actual_lp_thrust, ins_flow.thrust_factor);
+      // don't run the filter just yet:
+      return;
+  }
+
+  // in the sim, the gyro bias wanders so fast, that this does not seem to be useful:
+  // TODO: verify how this is in reality, and if not useful, remove all code to estimate this bias (or do it differently)
+  ins_flow.lp_gyro_bias_roll = 0.0f;
 
   // get the new time:
   of_time = get_sys_time_float();
@@ -493,18 +547,13 @@ void ins_flow_update(void)
       dt = 0.01f;
   }
 
-  float mass = parameters[PAR_MASS]; // 0.400;
-  float moment = 0.0f; // for now assumed to be 0
-  float Ix = parameters[PAR_IX]; // 0.0018244;
-  float g = 9.81; // TODO: get a good definition from pprz
-
   // predict the thrust and moment:
   float thrust = 0.0f;
   for(int i = 0; i < OF_N_ROTORS; i++) {
       thrust += RPM_FACTORS[i] * ins_flow.RPM[i]*ins_flow.RPM[i];
   }
-  //thrust += 1.0f * mass; // TODO: why was this here?
-  DEBUG_PRINT("Thrust = %f, thrust acceleration = %f, g = %f\n", thrust, thrust/mass, g);
+  thrust *= ins_flow.thrust_factor;
+  DEBUG_PRINT("Thrust acceleration = %f, g = %f\n", thrust/mass, g);
 
   // propagate the state with Euler integration:
   DEBUG_PRINT("Before prediction: ");
@@ -517,8 +566,8 @@ void ins_flow_update(void)
   OF_X[OF_ANGLE_DOT_IND] += dt * (moment / Ix);
 
   // ensure that z is not 0 (or lower)
-  if(OF_X[OF_Z_IND] < 1e-3) {
-      OF_X[OF_Z_IND] = 1e-3;
+  if(OF_X[OF_Z_IND] < 1e-2) {
+      OF_X[OF_Z_IND] = 1e-2;
   }
 
   DEBUG_PRINT("After prediction: ");
@@ -550,11 +599,11 @@ void ins_flow_update(void)
 					+ OF_X[OF_Z_DOT_IND]*cos(2*OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
   H[OF_LAT_FLOW_IND][OF_ANGLE_DOT_IND] = 1.0f;
   H[OF_LAT_FLOW_IND][OF_Z_IND] = OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/(OF_X[OF_Z_IND]*OF_X[OF_Z_IND])
-				  - OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
+				  - OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]*OF_X[OF_Z_IND]);
   H[OF_LAT_FLOW_IND][OF_Z_DOT_IND] = sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
   // divergence:
   H[OF_DIV_FLOW_IND][OF_V_IND] = -sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
-  H[OF_DIV_FLOW_IND][OF_ANGLE_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
+  H[OF_DIV_FLOW_IND][OF_ANGLE_IND] = -OF_X[OF_V_IND]*cos(2*OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
 					+ OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND]) / OF_X[OF_Z_IND];
   H[OF_DIV_FLOW_IND][OF_ANGLE_DOT_IND] = 0.0f;
   H[OF_DIV_FLOW_IND][OF_Z_IND] = OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]*OF_X[OF_Z_IND])
@@ -691,7 +740,8 @@ void ins_flow_update(void)
     innovation[OF_DIV_FLOW_IND][0] = ins_flow.divergence - Z_expected[OF_DIV_FLOW_IND];
     DEBUG_PRINT("Expected div: %f, Real div: %f.\n", Z_expected[OF_DIV_FLOW_IND], ins_flow.divergence);
     if(N_MEAS_OF_KF == 3) {
-	innovation[OF_RATE_IND][0] = ins_flow.lp_gyro_roll - Z_expected[OF_RATE_IND];
+	float gyro_meas_roll = ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll;
+	innovation[OF_RATE_IND][0] = gyro_meas_roll - Z_expected[OF_RATE_IND];
 	DEBUG_PRINT("Expected rate: %f, Real rate: %f.\n", Z_expected[OF_RATE_IND], ins_flow.lp_gyro_roll);
     }
 
@@ -823,6 +873,16 @@ static void set_body_state_from_quat(void)
   int32_quat_comp_inv(&ltp_to_body_quat, &ahrs_icq.ltp_to_imu_quat, body_to_imu_quat);
   /* Set state */
   stateSetNedToBodyQuat_i(&ltp_to_body_quat);
+
+  // TODO: does this work?
+  if(use_filter) {
+    struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
+    // set part of the state with the filter:
+    eulers->phi = OF_X[OF_ANGLE_IND];
+    stateSetNedToBodyEulers_f(eulers);
+    // TODO: print in the stabilization loop what eulers it receives as well
+    printf("Set Euler roll angle to %f\n", eulers->phi);
+  }
 
   /* compute body rates */
   struct Int32Rates body_rate;
