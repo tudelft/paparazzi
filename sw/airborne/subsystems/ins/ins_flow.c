@@ -35,7 +35,7 @@
 #include "generated/flight_plan.h"
 #include "mcu_periph/sys_time.h"
 
-#define DEBUG_INS_FLOW 0
+#define DEBUG_INS_FLOW 1
 #if DEBUG_INS_FLOW
 #include "stdio.h"
 #include "math/pprz_simple_matrix.h"
@@ -104,6 +104,7 @@ static void aligner_cb(uint8_t __attribute__((unused)) sender_id,
                        struct Int32Rates *lp_gyro, struct Int32Vect3 *lp_accel,
                        struct Int32Vect3 *lp_mag);
 static void print_ins_flow_state(void);
+static void print_true_state(void);
 /* Static local functions */
 //static bool ahrs_icq_output_enabled;
 static uint32_t ahrs_icq_last_stamp;
@@ -190,22 +191,45 @@ bool reset_filter;
 bool use_filter;
 bool run_filter;
 
-// Define parameters for the filter, fitted in MATLAB:
-#if USE_NPS
-  #if N_MEAS_OF_KF == 3
-  // with rate measurement:
-  float parameters[20] = {1.234994e-01, 3.603662e-01, 8.751691e-02, 1.636867e-01, 1.561769e-01, 1.856140e-01, 1.601066e-02, 1.187989e-01, 1.507075e-01, 2.471644e-01, 7.934140e-02, 1.770048e+00, 1.345862e-01, 2.881410e+00, 1.003584e+00, 1.280523e-01, 7.549402e-02, 9.640423e-01, 1.078312e+00, 3.468849e-01};
+
+#define USE_STANDARD_PARAMS 0
+
+#if USE_STANDARD_PARAMS
+  // Note that not all of the values are used.
+  // Moment of Inertia, mass, distance motors from center of gravity, 4 params for thrust and moment generation,
+  // measurement noise R (2), actuation noise Q(5),
+  // initial P (5), linear drag factor
+  #if USE_NPS
+    float parameters[20] = {0.0018244, 0.400, 0.085, 0.152163; 0.170734; 0.103436; 0.122109,
+			    0.1, 0.1, 0.1, 1.0f*M_PI/180.0f, 100.0f*M_PI/180.0f, 0.1f, 3.0f,
+			    1.0f, 10.0f*M_PI/180.0f, 10.0f*M_PI/180.0f, 1.0f, 1.0f, 0.5f};
   #else
-  // without rate measurement:
-  float parameters[20] = {4.370754e-02, 3.770587e-01, 1.187542e-01, 1.174995e-01, 1.419432e-01, 6.950201e-02, 2.251078e-01, 9.113943e-02, 2.230198e-01, 5.767389e-02, 1.855676e-02, 1.676359e+00, 5.822681e-02, 2.869468e+00, 1.140625e+00, 6.831383e-02, 1.600776e-01, 9.853843e-01, 1.000381e+00, 5.081224e-01};
+    float parameters[20] = {0.0018244, 0.400, 0.085, 0.108068 0.115448 0.201207 0.208834,
+			    0.1, 0.1, 0.1, 1.0f*M_PI/180.0f, 100.0f*M_PI/180.0f, 0.1f, 3.0f,
+			    1.0f, 10.0f*M_PI/180.0f, 10.0f*M_PI/180.0f, 1.0f, 1.0f, 0.5f};
   #endif
 #else
-  #if N_MEAS_OF_KF == 3
-  // with rate measurement
-  float parameters[20] = {0.041001,1.015066,-0.058495,0.498353,-0.156362,0.383511,0.924635,0.681918,0.318947,0.298235,0.224906,1.371037,0.008888,3.045428,0.893953,0.529789,0.295028,1.297515,0.767550,0.334040};
+  // Define parameters for the filter, fitted in MATLAB:
+  #if USE_NPS
+    #if N_MEAS_OF_KF == 3
+      // with rate measurement:
+      float parameters[20] = {1.234994e-01, 3.603662e-01, 8.751691e-02, 1.636867e-01, 1.561769e-01, 1.856140e-01, 1.601066e-02, 1.187989e-01, 1.507075e-01, 2.471644e-01, 7.934140e-02, 1.770048e+00, 1.345862e-01, 2.881410e+00, 1.003584e+00, 1.280523e-01, 7.549402e-02, 9.640423e-01, 1.078312e+00, 3.468849e-01};
+    #else
+      // without rate state / measurement:
+      #if CONSTANT_ALT_FILTER
+	float parameters[20] = {3.363769e-01, 4.917425e-01, 1.903805e-01, 2.945672e-01, 1.258647e-01, 1.513736e-01, 5.894541e-01, 2.162745e-01, 5.527361e-01, 1.385623e-01, 8.307731e-01, 1.488212e+00, 2.439721e-01, 3.052758e+00, 8.246426e-01, 9.988101e-02, 1.247046e-01, 8.834364e-01, 7.971876e-01, 1.112319e+00};
+      #else
+	float parameters[20] = {4.370754e-02, 3.770587e-01, 1.187542e-01, 1.174995e-01, 1.419432e-01, 6.950201e-02, 2.251078e-01, 9.113943e-02, 2.230198e-01, 5.767389e-02, 1.855676e-02, 1.676359e+00, 5.822681e-02, 2.869468e+00, 1.140625e+00, 6.831383e-02, 1.600776e-01, 9.853843e-01, 1.000381e+00, 5.081224e-01};
+      #endif
+    #endif
   #else
-  // without rate measurement:
-  float parameters[20] = {4.098677e-01, 7.766318e-01, 3.614751e-01, 4.745865e-01, 5.144065e-01, 3.113647e-01, -8.737287e-03, 6.370274e-01, 3.863760e-01, -3.527670e-01, 4.873666e-01, 1.688456e+00, -6.037967e-02, 2.759148e+00, 1.385455e+00, 1.044881e-01, -1.170409e-01, 1.126136e+00, 1.097562e+00, 2.680243e-01};
+    #if N_MEAS_OF_KF == 3
+    // with rate measurement
+    float parameters[20] = {0.041001,1.015066,-0.058495,0.498353,-0.156362,0.383511,0.924635,0.681918,0.318947,0.298235,0.224906,1.371037,0.008888,3.045428,0.893953,0.529789,0.295028,1.297515,0.767550,0.334040};
+    #else
+    // without rate measurement:
+    float parameters[20] = {4.098677e-01, 7.766318e-01, 3.614751e-01, 4.745865e-01, 5.144065e-01, 3.113647e-01, -8.737287e-03, 6.370274e-01, 3.863760e-01, -3.527670e-01, 4.873666e-01, 1.688456e+00, -6.037967e-02, 2.759148e+00, 1.385455e+00, 1.044881e-01, -1.170409e-01, 1.126136e+00, 1.097562e+00, 2.680243e-01};
+    #endif
   #endif
 #endif
 // parameter indices (TODO: how important are these numbers? Some are not used, others, like P may be not so important).
@@ -516,6 +540,16 @@ void print_ins_flow_state(void) {
 
 }
 
+void print_true_state(void) {
+  struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
+  struct NedCoor_f* position = stateGetPositionNed_f();
+  struct NedCoor_f *velocities = stateGetSpeedNed_f();
+  struct FloatRates *rates = stateGetBodyRates_f();
+
+  printf("True: v = %f, angle = %f, angle_dot = %f, z = %f, z_dot = %f.\n",
+	 velocities->y, eulers->phi, rates->p, -position->z, -velocities->z);
+}
+
 void ins_flow_update(void)
 {
   float mass = parameters[PAR_MASS]; // 0.400;
@@ -528,10 +562,13 @@ void ins_flow_update(void)
       reset_filter = false;
   }
 
-  // we first make the simplest version, i.e., no gyro measurement, no moment estimate:
+  // get ground truth data:
   struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
   struct NedCoor_f* position = stateGetPositionNed_f();
-  // TODO: record when starting from the ground: does that screw up the filter?
+  struct NedCoor_f *velocities = stateGetSpeedNed_f();
+  struct FloatRates *rates = stateGetBodyRates_f();
+
+  // TODO: record when starting from the ground: does that screw up the filter? Yes it does : )
 
   if(!autopilot_in_flight()) {
       // assuming no rotation, we can estimate the (initial) bias of the gyro:
@@ -566,6 +603,8 @@ void ins_flow_update(void)
       return;
   }
 
+  if(DEBUG_INS_FLOW) print_true_state();
+
   // in the sim, the gyro bias wanders so fast, that this does not seem to be useful:
   // TODO: verify how this is in reality, and if not useful, remove all code to estimate this bias (or do it differently)
   ins_flow.lp_gyro_bias_roll = 0.0f;
@@ -591,7 +630,7 @@ void ins_flow_update(void)
   if(DEBUG_INS_FLOW) print_ins_flow_state();
   if(CONSTANT_ALT_FILTER) {
       OF_X[OF_V_IND] += dt * (g * tan(OF_X[OF_ANGLE_IND]));
-      //OF_X[OF_ANGLE_IND] += dt * ins_flow.lp_gyro_roll;
+      // OF_X[OF_ANGLE_IND] += dt * ins_flow.lp_gyro_roll;
   }
   else {
     // make sure that the right hand state terms appear before they change:
@@ -601,8 +640,6 @@ void ins_flow_update(void)
     OF_X[OF_Z_IND] += dt * OF_X[OF_Z_DOT_IND];
     OF_X[OF_Z_DOT_IND] += dt * (thrust * cos(OF_X[OF_ANGLE_IND]) / mass - g);
   }
-
-
 
   // ensure that z is not 0 (or lower)
   if(OF_X[OF_Z_IND] < 1e-2) {
@@ -632,7 +669,7 @@ void ins_flow_update(void)
   // G matrix (whatever it may be):
   float G[N_STATES_OF_KF][N_STATES_OF_KF] = {{0.}};
   for(int i = 0; i < N_STATES_OF_KF; i++) {
-        G[i][i] = dt;
+	G[i][i] = dt;
   }
 
   // Jacobian observation matrix H:
@@ -737,8 +774,12 @@ void ins_flow_update(void)
   DEBUG_PRINT("P:\n");
   DEBUG_MAT_PRINT(N_STATES_OF_KF, N_STATES_OF_KF, P);
 
-  // if new measurement, correct state:
+  // correct state when there is a new vision measurement:
   if(ins_flow.new_flow_measurement) {
+
+    DEBUG_PRINT("*********************\n");
+    DEBUG_PRINT("   NEW MEASUREMENT   \n");
+    DEBUG_PRINT("*********************\n");
 
     // determine Kalman gain:
     // MATLAB statement:
@@ -752,6 +793,9 @@ void ins_flow_update(void)
 
     float_mat_transpose(JacT, Jac, N_MEAS_OF_KF, N_STATES_OF_KF);
     float_mat_mul(PJacT, P, JacT, N_STATES_OF_KF, N_STATES_OF_KF, N_MEAS_OF_KF);
+    DEBUG_PRINT("P*JacT:\n");
+    DEBUG_MAT_PRINT(N_STATES_OF_KF, N_MEAS_OF_KF, PJacT);
+
     float_mat_mul(JacPJacT, Jac, PJacT, N_MEAS_OF_KF, N_STATES_OF_KF, N_MEAS_OF_KF);
 
     DEBUG_PRINT("Jac*P*JacT:\n");
@@ -771,8 +815,16 @@ void ins_flow_update(void)
     float _INVS[N_MEAS_OF_KF][N_MEAS_OF_KF];
     MAKE_MATRIX_PTR(INVS, _INVS, N_MEAS_OF_KF);
     float_mat_invert(INVS, S, N_MEAS_OF_KF);
-    float_mat_mul(K, PJacT, INVS, N_STATES_OF_KF, N_MEAS_OF_KF, N_MEAS_OF_KF);
+    if(DEBUG_INS_FLOW) {
+	// This should be the identity matrix:
+	float _SINVS[N_MEAS_OF_KF][N_MEAS_OF_KF];
+	MAKE_MATRIX_PTR(SINVS, _SINVS, N_MEAS_OF_KF);
+	float_mat_mul(SINVS, S, INVS, N_MEAS_OF_KF, N_MEAS_OF_KF, N_MEAS_OF_KF);
+	DEBUG_PRINT("S*Inv(S):\n");
+	DEBUG_MAT_PRINT(N_MEAS_OF_KF, N_MEAS_OF_KF, SINVS);
+    }
 
+    float_mat_mul(K, PJacT, INVS, N_STATES_OF_KF, N_MEAS_OF_KF, N_MEAS_OF_KF);
     DEBUG_PRINT("K:\n");
     DEBUG_MAT_PRINT(N_STATES_OF_KF, N_MEAS_OF_KF, K);
 
@@ -822,6 +874,8 @@ void ins_flow_update(void)
     }
 
     MAKE_MATRIX_PTR(I, innovation, N_MEAS_OF_KF);
+    DEBUG_PRINT("Innovation:");
+    DEBUG_MAT_PRINT(N_MEAS_OF_KF, 1, I);
 
     // X_k1_k1 = X_k1_k + K_k1*(i_k1);
     float _KI[N_STATES_OF_KF][1];
@@ -880,6 +934,7 @@ void ins_flow_update(void)
 
   // update the time:
   of_prev_time = of_time;
+
 }
 
 static void gyro_cb(uint8_t __attribute__((unused)) sender_id,
