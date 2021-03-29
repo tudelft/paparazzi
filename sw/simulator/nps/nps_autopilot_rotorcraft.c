@@ -186,8 +186,8 @@ void sim_overwrite_ahrs(void)
 
   struct FloatQuat quat_f;
   QUAT_COPY(quat_f, fdm.ltp_to_body_quat);
-  stateSetNedToBodyQuat_f(&quat_f);
-  /*
+  //stateSetNedToBodyQuat_f(&quat_f);
+
   printf("SIM 0: qi = %f, qx = %f, qy = %f, qz = %f.\n", quat_f.qi, quat_f.qx, quat_f.qy, quat_f.qz);
   struct OrientationReps orient;
   // SetBit(orient.status, ORREP_QUAT_F);
@@ -208,10 +208,12 @@ void sim_overwrite_ahrs(void)
 
   struct OrientationReps orient_euler;
   orient_euler.status = 1 << ORREP_EULER_F;
+  orient_euler.eulers_f = (*eulers);
   struct FloatQuat* quat_f_adapted = orientationGetQuat_f(&orient_euler);
-  printf("SIM 4: qi = %f, qx = %f, qy = %f, qz = %f.\n", quat_f_adapted.qi, quat_f_adapted.qx, quat_f_adapted.qy, quat_f_adapted.qz);
+
+  printf("SIM 4: qi = %f, qx = %f, qy = %f, qz = %f.\n", quat_f_adapted->qi, quat_f_adapted->qx, quat_f_adapted->qy, quat_f_adapted->qz);
   stateSetNedToBodyQuat_f(quat_f_adapted);
-  */
+
 
   struct FloatRates rates_f;
   RATES_COPY(rates_f, fdm.body_ecef_rotvel);
