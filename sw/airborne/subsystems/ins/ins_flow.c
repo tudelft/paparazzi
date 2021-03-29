@@ -624,13 +624,13 @@ void ins_flow_update(void)
 
   // This module needs to run at the autopilot speed when not yet using this filter. Plus it needs to estimate thrust and gyro bias at that speed.
   // However, the updates of the filter themselves should be slower:
-  counter++;
+  /*counter++;
   if(counter < 5) {
       return;
   }
   else {
       counter = 0;
-  }
+  }*/
 
   // get the new time:
   of_time = get_sys_time_float();
@@ -894,7 +894,8 @@ void ins_flow_update(void)
     DEBUG_PRINT("Expected div: %f, Real div: %f.\n", Z_expected[OF_DIV_FLOW_IND], ins_flow.divergence);
     if(N_MEAS_OF_KF == 3) {
 	float gyro_meas_roll = (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f;
-	innovation[OF_RATE_IND][0] = gyro_meas_roll - Z_expected[OF_RATE_IND];
+	//innovation[OF_RATE_IND][0] = gyro_meas_roll - Z_expected[OF_RATE_IND];
+	innovation[OF_RATE_IND][0] = rates->p - Z_expected[OF_RATE_IND];
 	DEBUG_PRINT("Expected rate: %f, Real rate: %f.\n", Z_expected[OF_RATE_IND], ins_flow.lp_gyro_roll);
     }
 
