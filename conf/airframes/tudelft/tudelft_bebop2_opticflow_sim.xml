@@ -32,6 +32,10 @@
     
     <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
     <module name="ins" type="flow"/>
+<!-- These are already defined in fdm_gazebo
+    <define name="NPS_BYPASS_AHRS" value="FALSE"/>
+    <define name="NPS_BYPASS_INS" value="FALSE"/>
+-->
 
     <!-- Disable use of GPS: -->
     <!--    <define name="INS_INT_GPS_ID" value="ABI_DISABLE"/>
@@ -143,16 +147,17 @@
     <define name="H_Z" value="0.9211303"/>
   </section>
 -->
+
+<!--
   <section name="INS" prefix="INS_">
     <define name="USE_GPS_ALT" value="1"/>
-    <!-- trust GPS a lot: -->
     <define name="VFF_R_GPS" value="0.01"/> 
     <define name="VFF_VZ_R_GPS" value="0.01"/>     
     <define name="SONAR_MIN_RANGE" value="0.0"/>
     <define name="SONAR_MAX_RANGE" value="2.2"/>
     <define name="SONAR_UPDATE_ON_AGL" value="FALSE"/>
   </section>
-
+-->
 
   <section name="RC_SETPOINT" prefix="STABILIZATION_ATTITUDE_">
     <!-- setpoint limits for attitude stabilization rc flight -->

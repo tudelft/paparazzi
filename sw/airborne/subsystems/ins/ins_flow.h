@@ -32,6 +32,36 @@
 extern "C" {
 #endif
 
+#define CONSTANT_ALT_FILTER 1
+
+#if CONSTANT_ALT_FILTER == 1
+  #define N_STATES_OF_KF 3
+
+  #define OF_V_IND 0
+  #define OF_ANGLE_IND 1
+  #define OF_Z_IND 2
+
+  #define OF_ANGLE_DOT_IND -1
+  #define OF_Z_DOT_IND -1
+#else
+  #define N_STATES_OF_KF 5
+
+  #define OF_V_IND 0
+  #define OF_ANGLE_IND 1
+  #define OF_ANGLE_DOT_IND 2
+  #define OF_Z_IND 3
+  #define OF_Z_DOT_IND 4
+#endif
+
+#ifndef N_MEAS_OF_KF
+// 2 means only optical flow, 3 means also gyro:
+#define N_MEAS_OF_KF 2
+#endif
+
+#define OF_LAT_FLOW_IND 0
+#define OF_DIV_FLOW_IND 1
+#define OF_RATE_IND 2
+
 #include "subsystems/ahrs.h"
 #include "subsystems/ahrs/ahrs_int_cmpl_quat.h"
 #include "subsystems/ahrs/ahrs_aligner.h"
@@ -40,6 +70,7 @@ extern "C" {
 extern void ins_flow_init(void);
 extern void ins_flow_update(void);
 
+extern float OF_X[N_STATES_OF_KF];
 extern bool reset_filter;
 extern bool run_filter;
 extern bool use_filter;

@@ -52,6 +52,10 @@
 #include "subsystems/datalink/datalink.h"
 #include "subsystems/actuators.h"
 
+// TODO: arrange this the other way around - fix the INS in the sim
+// for experiments in the sim:
+#include "subsystems/ins/ins_flow.h"
+
 struct NpsAutopilot nps_autopilot;
 bool nps_bypass_ahrs;
 bool nps_bypass_ins;
@@ -154,11 +158,13 @@ void nps_autopilot_run_step(double time)
 #endif
 
   if (nps_bypass_ahrs) {
-    sim_overwrite_ahrs();
+  //    printf("bypass ahrs!\n");
+      sim_overwrite_ahrs();
   }
 
   if (nps_bypass_ins) {
-    sim_overwrite_ins();
+  //    printf("bypass ins!\n");
+      sim_overwrite_ins();
   }
 
   handle_periodic_tasks();
@@ -181,6 +187,31 @@ void sim_overwrite_ahrs(void)
   struct FloatQuat quat_f;
   QUAT_COPY(quat_f, fdm.ltp_to_body_quat);
   stateSetNedToBodyQuat_f(&quat_f);
+  /*
+  printf("SIM 0: qi = %f, qx = %f, qy = %f, qz = %f.\n", quat_f.qi, quat_f.qx, quat_f.qy, quat_f.qz);
+  struct OrientationReps orient;
+  // SetBit(orient.status, ORREP_QUAT_F);
+  orient.status = 1 << ORREP_QUAT_F;
+  orient.quat_f = quat_f;
+  struct FloatEulers* eulers = orientationGetEulers_f(&orient);
+  printf("SIM 1: phi = %f, theta = %f, psi = %f.\n", (180.0f/M_PI)*eulers->phi, (180.0f/M_PI)*eulers->theta, (180.0f/M_PI)*eulers->psi);
+
+  if(use_filter) {
+    // struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
+    // set part of the state with the filter:
+    eulers->phi = OF_X[OF_ANGLE_IND];
+    // printf("Set Euler roll angle to %f\n", eulers->phi);
+  }
+  printf("SIM 2: phi = %f, theta = %f, psi = %f.\n", (180.0f/M_PI)*eulers->phi, (180.0f/M_PI)*eulers->theta, (180.0f/M_PI)*eulers->psi);
+
+  // stateSetNedToBodyEulers_f(eulers);
+
+  struct OrientationReps orient_euler;
+  orient_euler.status = 1 << ORREP_EULER_F;
+  struct FloatQuat* quat_f_adapted = orientationGetQuat_f(&orient_euler);
+  printf("SIM 4: qi = %f, qx = %f, qy = %f, qz = %f.\n", quat_f_adapted.qi, quat_f_adapted.qx, quat_f_adapted.qy, quat_f_adapted.qz);
+  stateSetNedToBodyQuat_f(quat_f_adapted);
+  */
 
   struct FloatRates rates_f;
   RATES_COPY(rates_f, fdm.body_ecef_rotvel);

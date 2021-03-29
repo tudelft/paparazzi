@@ -90,10 +90,16 @@ static abi_event body_to_imu_ev;
 static abi_event ins_optical_flow_ev;
 static abi_event ins_RPM_ev;
 static abi_event aligner_ev;
+static abi_event mag_ev;
+static abi_event geo_mag_ev;
 
 /* All ABI callbacks */
 static void gyro_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates *gyro);
 static void accel_cb(uint8_t sender_id, uint32_t stamp, struct Int32Vect3 *accel);
+static void mag_cb(uint8_t __attribute__((unused)) sender_id,
+                   uint32_t __attribute__((unused)) stamp,
+                   struct Int32Vect3 *mag);
+static void geo_mag_cb(uint8_t sender_id __attribute__((unused)), struct FloatVect3 *h);
 static void body_to_imu_cb(uint8_t sender_id, struct FloatQuat *q_b2i_f);
 static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
 void ins_optical_flow_cb(uint8_t sender_id, uint32_t stamp, int16_t flow_x,
@@ -144,36 +150,7 @@ struct InsFlow ins_flow;
 
 // Kalman filter parameters and variables:
 
-#define CONSTANT_ALT_FILTER 1
 
-#if CONSTANT_ALT_FILTER == 1
-  #define N_STATES_OF_KF 3
-
-  #define OF_V_IND 0
-  #define OF_ANGLE_IND 1
-  #define OF_Z_IND 2
-
-  #define OF_ANGLE_DOT_IND -1
-  #define OF_Z_DOT_IND -1
-
-#else
-  #define N_STATES_OF_KF 5
-
-  #define OF_V_IND 0
-  #define OF_ANGLE_IND 1
-  #define OF_ANGLE_DOT_IND 2
-  #define OF_Z_IND 3
-  #define OF_Z_DOT_IND 4
-#endif
-
-#ifndef N_MEAS_OF_KF
-// 2 means only optical flow, 3 means also gyro:
-#define N_MEAS_OF_KF 2
-#endif
-
-#define OF_LAT_FLOW_IND 0
-#define OF_DIV_FLOW_IND 1
-#define OF_RATE_IND 2
 
 float OF_X[N_STATES_OF_KF] = {0.};
 float OF_Q[N_STATES_OF_KF][N_STATES_OF_KF] = {{0.}};
@@ -504,6 +481,8 @@ void ins_flow_init(void)
 
   // align the AHRS:
   ahrs_aligner_init();
+  // set the initial attitude:
+  set_body_state_from_quat();
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_QUAT_INT, send_quat);
@@ -526,6 +505,8 @@ void ins_flow_init(void)
   AbiBindMsgOPTICAL_FLOW(INS_OPTICAL_FLOW_ID, &ins_optical_flow_ev, ins_optical_flow_cb);
   AbiBindMsgRPM(INS_RPM_ID, &ins_RPM_ev, ins_rpm_cb);
   AbiBindMsgIMU_LOWPASSED(ABI_BROADCAST, &aligner_ev, aligner_cb);
+  AbiBindMsgIMU_MAG_INT32(ABI_BROADCAST, &mag_ev, mag_cb);
+  AbiBindMsgGEO_MAG(ABI_BROADCAST, &geo_mag_ev, geo_mag_cb);
 
   // Telemetry:
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_FLOW_INFO, send_ins_flow);
@@ -605,7 +586,7 @@ void ins_flow_update(void)
   //if(!autopilot_in_flight()) {
       // assuming that the typical case is no rotation, we can estimate the (initial) bias of the gyro:
       ins_flow.lp_gyro_bias_roll = lp_factor_strong * ins_flow.lp_gyro_bias_roll + (1-lp_factor_strong) * ins_flow.lp_gyro_roll;
-      printf("lp gyro bias = %f\n", ins_flow.lp_gyro_bias_roll);
+      //printf("lp gyro bias = %f\n", ins_flow.lp_gyro_bias_roll);
   //}
 
   // only start estimation when flying and above 1 meter
@@ -630,7 +611,7 @@ void ins_flow_update(void)
       }
       float actual_lp_thrust = mass * g;
       ins_flow.thrust_factor = actual_lp_thrust / ins_flow.lp_thrust;
-      printf("Low pass predicted thrust = %f. Expected thrust = %f. Thrust factor = %f.\n", ins_flow.lp_thrust, actual_lp_thrust, ins_flow.thrust_factor);
+      //printf("Low pass predicted thrust = %f. Expected thrust = %f. Thrust factor = %f.\n", ins_flow.lp_thrust, actual_lp_thrust, ins_flow.thrust_factor);
       // don't run the filter just yet:
       return;
   }
@@ -1058,6 +1039,36 @@ static void accel_cb(uint8_t __attribute__((unused)) sender_id,
 #endif
 }
 
+static void mag_cb(uint8_t __attribute__((unused)) sender_id,
+                   uint32_t __attribute__((unused)) stamp,
+                   struct Int32Vect3 *mag)
+{
+#if USE_AUTO_AHRS_FREQ || !defined(AHRS_MAG_CORRECT_FREQUENCY)
+  PRINT_CONFIG_MSG("Calculating dt for AHRS int_cmpl_quat mag update.")
+  static uint32_t last_stamp = 0;
+  if (last_stamp > 0 && ahrs_icq.is_aligned) {
+    float dt = (float)(stamp - last_stamp) * 1e-6;
+    ahrs_icq_update_mag(mag, dt);
+    set_body_state_from_quat();
+  }
+  last_stamp = stamp;
+#else
+  PRINT_CONFIG_MSG("Using fixed AHRS_MAG_CORRECT_FREQUENCY for AHRS int_cmpl_quat mag update.")
+  PRINT_CONFIG_VAR(AHRS_MAG_CORRECT_FREQUENCY)
+  if (ahrs_icq.is_aligned) {
+    const float dt = 1. / (AHRS_MAG_CORRECT_FREQUENCY);
+    ahrs_icq_update_mag(mag, dt);
+    set_body_state_from_quat();
+  }
+#endif
+}
+
+static void geo_mag_cb(uint8_t sender_id __attribute__((unused)), struct FloatVect3 *h)
+{
+  VECT3_ASSIGN(ahrs_icq.mag_h, MAG_BFP_OF_REAL(h->x), MAG_BFP_OF_REAL(h->y),
+               MAG_BFP_OF_REAL(h->z));
+}
+
 /** Rotate angles and rates from imu to body frame and set state */
 static void set_body_state_from_quat(void)
 {
@@ -1065,18 +1076,24 @@ static void set_body_state_from_quat(void)
   struct Int32Quat ltp_to_body_quat;
   struct Int32Quat *body_to_imu_quat = orientationGetQuat_i(&ahrs_icq.body_to_imu);
   int32_quat_comp_inv(&ltp_to_body_quat, &ahrs_icq.ltp_to_imu_quat, body_to_imu_quat);
-  /* Set state */
-  stateSetNedToBodyQuat_i(&ltp_to_body_quat);
 
-  // TODO: does this work?
+  /* Set state */
+  // stateSetNedToBodyQuat_i(&ltp_to_body_quat);
+
+  struct OrientationReps orient;
+  orient.status = 1 << ORREP_QUAT_I;
+  orient.quat_i = ltp_to_body_quat;
+  struct FloatEulers* eulers = orientationGetEulers_f(&orient);
+
+  // printf("phi = %f, theta = %f, psi = %f.\n", (180.0f/M_PI)*eulers->phi, (180.0f/M_PI)*eulers->theta, (180.0f/M_PI)*eulers->psi);
+
   if(use_filter) {
-    struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
+    // struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
     // set part of the state with the filter:
     eulers->phi = OF_X[OF_ANGLE_IND];
-    stateSetNedToBodyEulers_f(eulers);
-    // TODO: print in the stabilization loop what eulers it receives as well
-    printf("Set Euler roll angle to %f\n", eulers->phi);
+    // printf("Set Euler roll angle to %f\n", eulers->phi);
   }
+  //stateSetNedToBodyEulers_f(eulers);
 
   /* compute body rates */
   struct Int32Rates body_rate;
