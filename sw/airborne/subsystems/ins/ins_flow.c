@@ -35,7 +35,7 @@
 #include "generated/flight_plan.h"
 #include "mcu_periph/sys_time.h"
 
-#define DEBUG_INS_FLOW 1
+#define DEBUG_INS_FLOW 0
 #if DEBUG_INS_FLOW
 #include "stdio.h"
 #include "math/pprz_simple_matrix.h"
@@ -363,6 +363,33 @@ static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
 
 #endif
 
+static void send_ins_flow(struct transport_tx *trans, struct link_device *dev)
+{
+  struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
+  struct NedCoor_f* position = stateGetPositionNed_f();
+  struct NedCoor_f *velocities = stateGetSpeedNed_f();
+  struct FloatRates *rates = stateGetBodyRates_f();
+
+
+  float phi = (180.0/M_PI)*OF_X[OF_ANGLE_IND];
+  float phi_dot = 0.0f;
+  float z_dot = 0.0f;
+  if(!CONSTANT_ALT_FILTER) {
+    phi_dot = (180.0/M_PI)*OF_X[OF_ANGLE_DOT_IND];
+    z_dot = OF_X[OF_Z_DOT_IND];
+  }
+
+
+  float v_GT = velocities->y;
+  float phi_GT = (180.0/M_PI)*eulers->phi;
+  float p_GT = rates->p;
+  float z_GT = -position->z;
+  float vz_GT = -velocities->z;
+
+  pprz_msg_send_INS_FLOW_INFO(trans, dev, AC_ID,
+	&OF_X[OF_V_IND], &phi, &phi_dot, &OF_X[OF_Z_IND], &z_dot,
+	&v_GT, &phi_GT, &p_GT, &z_GT, &vz_GT);
+}
 
 void ins_reset_filter(void) {
 
@@ -499,6 +526,9 @@ void ins_flow_init(void)
   AbiBindMsgOPTICAL_FLOW(INS_OPTICAL_FLOW_ID, &ins_optical_flow_ev, ins_optical_flow_cb);
   AbiBindMsgRPM(INS_RPM_ID, &ins_RPM_ev, ins_rpm_cb);
   AbiBindMsgIMU_LOWPASSED(ABI_BROADCAST, &aligner_ev, aligner_cb);
+
+  // Telemetry:
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_FLOW_INFO, send_ins_flow);
 
 }
 
@@ -878,9 +908,9 @@ void ins_flow_update(void)
     float innovation[N_MEAS_OF_KF][1];
     print_ins_flow_state();
     innovation[OF_LAT_FLOW_IND][0] = ins_flow.optical_flow_x - Z_expected[OF_LAT_FLOW_IND];
-    printf("Expected flow filter: %f, Expected flow ground truth = %f, Real flow x: %f, Real flow y: %f.\n", Z_expected[OF_LAT_FLOW_IND], Z_expect_GT_angle, ins_flow.optical_flow_x, ins_flow.optical_flow_y);
+    DEBUG_PRINT("Expected flow filter: %f, Expected flow ground truth = %f, Real flow x: %f, Real flow y: %f.\n", Z_expected[OF_LAT_FLOW_IND], Z_expect_GT_angle, ins_flow.optical_flow_x, ins_flow.optical_flow_y);
     innovation[OF_DIV_FLOW_IND][0] = ins_flow.divergence - Z_expected[OF_DIV_FLOW_IND];
-    printf("Expected div: %f, Real div: %f.\n", Z_expected[OF_DIV_FLOW_IND], ins_flow.divergence);
+    DEBUG_PRINT("Expected div: %f, Real div: %f.\n", Z_expected[OF_DIV_FLOW_IND], ins_flow.divergence);
     if(N_MEAS_OF_KF == 3) {
 	float gyro_meas_roll = (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f;
 	innovation[OF_RATE_IND][0] = gyro_meas_roll - Z_expected[OF_RATE_IND];
@@ -905,24 +935,38 @@ void ins_flow_update(void)
     }
     DEBUG_PRINT("POST v: %f, angle = %f\n", OF_X[OF_V_IND], OF_X[OF_ANGLE_IND]);
 
-    printf("Angles (deg): ahrs = %f, ekf = %f.\n", (180.0f/M_PI)*eulers->phi, (180.0f/M_PI)*OF_X[OF_ANGLE_IND]);
+    DEBUG_PRINT("Angles (deg): ahrs = %f, ekf = %f.\n", (180.0f/M_PI)*eulers->phi, (180.0f/M_PI)*OF_X[OF_ANGLE_IND]);
+
+    DEBUG_PRINT("P before correction:\n");
+    DEBUG_MAT_PRINT(N_STATES_OF_KF, N_STATES_OF_KF, P);
 
     // P_k1_k1 = (eye(Nx) - K_k1*Hx)*P_k1_k*(eye(Nx) - K_k1*Hx)' + K_k1*R*K_k1'; % Joseph form of the covariance update equation
     float _KJac[N_STATES_OF_KF][N_STATES_OF_KF];
     MAKE_MATRIX_PTR(KJac, _KJac, N_STATES_OF_KF);
     float_mat_mul(KJac, K, Jac, N_STATES_OF_KF, N_MEAS_OF_KF, N_STATES_OF_KF);
+
     float _eye[N_STATES_OF_KF][N_STATES_OF_KF];
     MAKE_MATRIX_PTR(eye, _eye, N_STATES_OF_KF);
     float_mat_diagonal_scal(eye, 1.0, N_STATES_OF_KF);
+    DEBUG_PRINT("eye:\n");
+    DEBUG_MAT_PRINT(N_STATES_OF_KF, N_STATES_OF_KF, eye);
+
     float _eKJac[N_STATES_OF_KF][N_STATES_OF_KF];
     MAKE_MATRIX_PTR(eKJac, _eKJac, N_STATES_OF_KF);
     float_mat_diff(eKJac, eye, KJac, N_STATES_OF_KF, N_STATES_OF_KF);
+    DEBUG_PRINT("eKJac:\n");
+    DEBUG_MAT_PRINT(N_STATES_OF_KF, N_STATES_OF_KF, eKJac);
+
     float _eKJacT[N_STATES_OF_KF][N_STATES_OF_KF];
     MAKE_MATRIX_PTR(eKJacT, _eKJacT, N_STATES_OF_KF);
     float_mat_transpose(eKJacT, eKJac, N_STATES_OF_KF, N_STATES_OF_KF);
     // (eye(Nx) - K_k1*Hx)*P_k1_k*(eye(Nx) - K_k1*Hx)'
-    float_mat_mul(P, P, eKJacT, N_STATES_OF_KF, N_STATES_OF_KF, N_STATES_OF_KF);
-    float_mat_mul(P, eKJac, P, N_STATES_OF_KF, N_STATES_OF_KF, N_STATES_OF_KF);
+    float _P_pre[N_STATES_OF_KF][N_STATES_OF_KF];
+    MAKE_MATRIX_PTR(P_pre, _P_pre, N_STATES_OF_KF);
+    float_mat_mul(P_pre, P, eKJacT, N_STATES_OF_KF, N_STATES_OF_KF, N_STATES_OF_KF);
+    float_mat_mul(P, eKJac, P_pre, N_STATES_OF_KF, N_STATES_OF_KF, N_STATES_OF_KF);
+    DEBUG_PRINT("eKJac * P *eKJacT:\n");
+    DEBUG_MAT_PRINT(N_STATES_OF_KF, N_STATES_OF_KF, P);
 
     // K_k1*R*K_k1'
     // TODO: check all MAKE_MATRIX that they mention the number of ROWS!
@@ -935,12 +979,19 @@ void ins_flow_update(void)
     float _KRKT[N_STATES_OF_KF][N_STATES_OF_KF];
     MAKE_MATRIX_PTR(KRKT, _KRKT, N_STATES_OF_KF);
     float_mat_mul(KRKT, K, RKT, N_STATES_OF_KF, N_MEAS_OF_KF, N_STATES_OF_KF);
+    DEBUG_PRINT("KRKT:\n");
+    DEBUG_MAT_PRINT(N_STATES_OF_KF, N_STATES_OF_KF, KRKT);
 
     // summing the two parts:
     float_mat_sum(P, P, KRKT, N_STATES_OF_KF, N_STATES_OF_KF);
 
     DEBUG_PRINT("P corrected:\n");
     DEBUG_MAT_PRINT(N_STATES_OF_KF, N_STATES_OF_KF, P);
+    float trace_P = 0.0f;
+    for(int i = 0; i < N_STATES_OF_KF; i++) {
+	trace_P += P[i][i];
+    }
+    DEBUG_PRINT("trace P = %f\n", trace_P);
 
     // indicate that the measurement has been used:
     ins_flow.new_flow_measurement = false;

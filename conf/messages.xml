@@ -636,11 +636,11 @@
       <field name="p"  type="float" unit="deg/s"/>
       <field name="z"  type="float" unit="m"/>
       <field name="vz"  type="float" unit="m/s"/>
-      <field name="v*"  type="float" unit="m/s"/>
-      <field name="phi*"  type="float" unit="deg"/>
-      <field name="p*"  type="float" unit="deg/s"/>
-      <field name="z*"  type="float" unit="m"/>
-      <field name="vz*"  type="float" unit="m/s"/>
+      <field name="v_GT"  type="float" unit="m/s"/>
+      <field name="phi_GT"  type="float" unit="deg"/>
+      <field name="p_GT"  type="float" unit="deg/s"/>
+      <field name="z_GT"  type="float" unit="m"/>
+      <field name="vz_GT"  type="float" unit="m/s"/>
     </message>
 
     <!-- 76 is free -->
