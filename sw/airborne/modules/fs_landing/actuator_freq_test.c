@@ -5,9 +5,9 @@
 #include "actuator_freq_test.h"
 #include "subsystems/datalink/downlink.h"
 
-#define MAX_TEST_FREQ 15
+#define MAX_TEST_FREQ 20
 #define TEST_STEP_DUR 2
-#define FREQ_DELTA 0.2
+#define FREQ_DELTA 0.25
 
 #define CAL_STEP_DUR 2
 #define CAL_STEPS 20

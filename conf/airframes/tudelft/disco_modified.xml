@@ -188,8 +188,8 @@
   <!-- ************************* ACTUATORS ************************* -->
   <servos>
     <servo name="S_THROTTLE_LEFT" no="0" min="1100" neutral="1500" max="1900"/>  <!-- TODO Test reverse -->
-    <servo name="S_ELEVON_LEFT" no="1" min="1000" neutral="1500" max="2000"/> <!-- max is upward deflection-->
-    <servo name="S_ELEVON_RIGHT" no="2" min="1960" neutral="1460" max="960"/> <!-- min is downward deflection-->
+    <servo name="S_ELEVON_LEFT" no="1" min="1050" neutral="1425" max="1950"/> <!-- max is upward deflection-->
+    <servo name="S_ELEVON_RIGHT" no="2" min="1950" neutral="1600" max="1050"/> <!-- min is downward deflection-->
     <servo name="S_THROTTLE_RIGHT" no="3" min="1100" neutral="1500" max="1900"/>
   </servos>
 
