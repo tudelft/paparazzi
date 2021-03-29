@@ -274,7 +274,7 @@ void file_logger_periodic(void)
           imu.accel.y,
           imu.accel.z,
 	  imu.gyro.p, // rad/s scaled with 12
-	  imu.gyro.q,
+	  imu.gyro.q, // TODO: log the gyro as received in the ins_flow file!
 	  imu.gyro.r,
           position->x,
 	  position->y,

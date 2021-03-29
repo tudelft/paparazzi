@@ -190,6 +190,7 @@ float lp_factor_strong;
 bool reset_filter;
 bool use_filter;
 bool run_filter;
+uint32_t counter;
 
 
 #define USE_STANDARD_PARAMS 0
@@ -390,6 +391,7 @@ void ins_reset_filter(void) {
       OF_P[OF_Z_DOT_IND][OF_Z_DOT_IND] = parameters[PAR_P4];
   }
 
+  counter = 0;
 
   // TODO: what to do with thrust and gyro bias?
 
@@ -570,11 +572,11 @@ void ins_flow_update(void)
 
   // TODO: record when starting from the ground: does that screw up the filter? Yes it does : )
 
-  if(!autopilot_in_flight()) {
-      // assuming no rotation, we can estimate the (initial) bias of the gyro:
+  //if(!autopilot_in_flight()) {
+      // assuming that the typical case is no rotation, we can estimate the (initial) bias of the gyro:
       ins_flow.lp_gyro_bias_roll = lp_factor_strong * ins_flow.lp_gyro_bias_roll + (1-lp_factor_strong) * ins_flow.lp_gyro_roll;
-      //printf("lp gyro bias = %f\n", ins_flow.lp_gyro_bias_roll);
-  }
+      printf("lp gyro bias = %f\n", ins_flow.lp_gyro_bias_roll);
+  //}
 
   // only start estimation when flying and above 1 meter
   if(!autopilot_in_flight() || position->z > -1.0f) {
@@ -607,7 +609,17 @@ void ins_flow_update(void)
 
   // in the sim, the gyro bias wanders so fast, that this does not seem to be useful:
   // TODO: verify how this is in reality, and if not useful, remove all code to estimate this bias (or do it differently)
-  ins_flow.lp_gyro_bias_roll = 0.0f;
+  // ins_flow.lp_gyro_bias_roll = 0.0f;
+
+  // This module needs to run at the autopilot speed when not yet using this filter. Plus it needs to estimate thrust and gyro bias at that speed.
+  // However, the updates of the filter themselves should be slower:
+  counter++;
+  if(counter < 5) {
+      return;
+  }
+  else {
+      counter = 0;
+  }
 
   // get the new time:
   of_time = get_sys_time_float();
@@ -630,7 +642,9 @@ void ins_flow_update(void)
   if(DEBUG_INS_FLOW) print_ins_flow_state();
   if(CONSTANT_ALT_FILTER) {
       OF_X[OF_V_IND] += dt * (g * tan(OF_X[OF_ANGLE_IND]));
-      // OF_X[OF_ANGLE_IND] += dt * ins_flow.lp_gyro_roll;
+      OF_X[OF_ANGLE_IND] += dt * rates->p; // TODO: replace this with gyro!!!
+	  // dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f; // Code says scaled by 12, but... that does not fit...
+      DEBUG_PRINT("Rate p = %f, gyro p = %f\n", rates->p, (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f);
   }
   else {
     // make sure that the right hand state terms appear before they change:
@@ -868,7 +882,7 @@ void ins_flow_update(void)
     innovation[OF_DIV_FLOW_IND][0] = ins_flow.divergence - Z_expected[OF_DIV_FLOW_IND];
     printf("Expected div: %f, Real div: %f.\n", Z_expected[OF_DIV_FLOW_IND], ins_flow.divergence);
     if(N_MEAS_OF_KF == 3) {
-	float gyro_meas_roll = ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll;
+	float gyro_meas_roll = (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f;
 	innovation[OF_RATE_IND][0] = gyro_meas_roll - Z_expected[OF_RATE_IND];
 	DEBUG_PRINT("Expected rate: %f, Real rate: %f.\n", Z_expected[OF_RATE_IND], ins_flow.lp_gyro_roll);
     }
@@ -953,7 +967,7 @@ static void gyro_cb(uint8_t __attribute__((unused)) sender_id,
 
     // TODO: filter all gyro values
     // For now only filter the roll gyro:
-    float current_rate = ((float)gyro->p) / INT32_RATE_FRAC;
+    float current_rate = ((float)gyro->p); // TODO: is this correct? / INT32_RATE_FRAC;
     ins_flow.lp_gyro_roll = lp_factor * ins_flow.lp_gyro_roll + (1-lp_factor) * current_rate;
 
   }
