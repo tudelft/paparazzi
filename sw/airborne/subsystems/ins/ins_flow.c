@@ -1078,23 +1078,27 @@ static void set_body_state_from_quat(void)
   struct Int32Quat *body_to_imu_quat = orientationGetQuat_i(&ahrs_icq.body_to_imu);
   int32_quat_comp_inv(&ltp_to_body_quat, &ahrs_icq.ltp_to_imu_quat, body_to_imu_quat);
 
-  /* Set state */
-  // stateSetNedToBodyQuat_i(&ltp_to_body_quat);
-
-  struct OrientationReps orient;
-  orient.status = 1 << ORREP_QUAT_I;
-  orient.quat_i = ltp_to_body_quat;
-  struct FloatEulers* eulers = orientationGetEulers_f(&orient);
-
-  // printf("phi = %f, theta = %f, psi = %f.\n", (180.0f/M_PI)*eulers->phi, (180.0f/M_PI)*eulers->theta, (180.0f/M_PI)*eulers->psi);
-
-  if(use_filter) {
-    // struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
-    // set part of the state with the filter:
-    eulers->phi = OF_X[OF_ANGLE_IND];
-    // printf("Set Euler roll angle to %f\n", eulers->phi);
+  if(!use_filter) {
+      // Use the orientation as is:
+      stateSetNedToBodyQuat_i(&ltp_to_body_quat);
   }
-  //stateSetNedToBodyEulers_f(eulers);
+  else {
+    // get Euler angles:
+    struct OrientationReps orient;
+    orient.status = 1 << ORREP_QUAT_I;
+    orient.quat_i = ltp_to_body_quat;
+    struct FloatEulers* eulers = orientationGetEulers_f(&orient);
+
+    // set roll angle with value from the filter:
+    eulers->phi = OF_X[OF_ANGLE_IND];
+
+    // Transform the Euler representation to Int32Quat and set the state:
+    struct OrientationReps orient_euler;
+    orient_euler.status = 1 << ORREP_EULER_F;
+    orient_euler.eulers_f = (*eulers);
+    struct Int32Quat* quat_i_adapted = orientationGetQuat_i(&orient_euler);
+    stateSetNedToBodyQuat_i(quat_i_adapted);
+  }
 
   /* compute body rates */
   struct Int32Rates body_rate;
