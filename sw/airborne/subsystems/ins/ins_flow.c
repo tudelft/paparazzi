@@ -894,7 +894,7 @@ void ins_flow_update(void)
 
     //  i_k1 = Z - Z_expected;
     float innovation[N_MEAS_OF_KF][1];
-    print_ins_flow_state();
+    //print_ins_flow_state();
     innovation[OF_LAT_FLOW_IND][0] = ins_flow.optical_flow_x - Z_expected[OF_LAT_FLOW_IND];
     DEBUG_PRINT("Expected flow filter: %f, Expected flow ground truth = %f, Real flow x: %f, Real flow y: %f.\n", Z_expected[OF_LAT_FLOW_IND], Z_expect_GT_angle, ins_flow.optical_flow_x, ins_flow.optical_flow_y);
     innovation[OF_DIV_FLOW_IND][0] = ins_flow.divergence - Z_expected[OF_DIV_FLOW_IND];
@@ -1144,6 +1144,12 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   INT32_VECT3_SCALE_2(ins_flow.ltp_pos, gps_pos_cm_ned,
                       INT32_POS_OF_CM_NUM, INT32_POS_OF_CM_DEN);
   stateSetPositionNed_i(&ins_flow.ltp_pos);
+
+  // TODO: before using Z, we need to convert it well to the format used here:
+
+  struct NedCoor_f* position = stateGetPositionNed_f();
+  int32_t z_Ned_i = - (int32_t) ((OF_X[OF_Z_IND] * INT32_POS_OF_CM_NUM * 100) / INT32_POS_OF_CM_DEN);
+  printf("Z true: %f / %d, Z filter: %f / %d. (float / int32_t)\n", position->z, ins_flow.ltp_pos.z, OF_X[OF_Z_IND], z_Ned_i);
 
   struct NedCoor_i gps_speed_cm_s_ned;
   ned_of_ecef_vect_i(&gps_speed_cm_s_ned, &ins_flow.ltp_def, &gps_s->ecef_vel);
