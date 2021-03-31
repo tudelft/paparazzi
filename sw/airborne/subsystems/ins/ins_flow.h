@@ -62,6 +62,12 @@ extern "C" {
 #define OF_DIV_FLOW_IND 1
 #define OF_RATE_IND 2
 
+// use filter to different extents:
+#define USE_ANGLE 1
+#define USE_VELOCITY 2
+#define USE_HEIGHT 3
+
+
 #include "subsystems/ahrs.h"
 #include "subsystems/ahrs/ahrs_int_cmpl_quat.h"
 #include "subsystems/ahrs/ahrs_aligner.h"
@@ -73,7 +79,7 @@ extern void ins_flow_update(void);
 extern float OF_X[N_STATES_OF_KF];
 extern bool reset_filter;
 extern bool run_filter;
-extern bool use_filter;
+extern int use_filter;
 
 #ifdef __cplusplus
 }

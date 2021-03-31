@@ -226,10 +226,44 @@ void sim_overwrite_ins(void)
 
   struct NedCoor_f ltp_pos;
   VECT3_COPY(ltp_pos, fdm.ltpprz_pos);
+  if(use_filter >= USE_HEIGHT) {
+      printf("Z true: %f, ", ltp_pos.z);
+      // replace the z-coordinate:
+      ltp_pos.z = -OF_X[OF_Z_IND];
+      printf("Z filter: %f.\n", ltp_pos.z);
+  }
   stateSetPositionNed_f(&ltp_pos);
 
   struct NedCoor_f ltp_speed;
   VECT3_COPY(ltp_speed, fdm.ltpprz_ecef_vel);
+
+  if(use_filter >= USE_VELOCITY) {
+
+    // get NED to body rotation matrix:
+    struct FloatRMat* NTB = stateGetNedToBodyRMat_f();
+    // get transpose (inverse):
+    struct FloatRMat BTN;
+    float_rmat_inv(&BTN, NTB);
+
+    // the velocities from the filter are rotated from the body to the inertial frame:
+    struct FloatVect3 NED_velocities, body_velocities;
+    body_velocities.x = 0.0f; // filter does not determine this yet
+    body_velocities.y = OF_X[OF_V_IND];
+    if(CONSTANT_ALT_FILTER) {
+	body_velocities.z = 0.0f;
+    }
+    else {
+	body_velocities.z = -OF_X[OF_Z_DOT_IND];
+    }
+    float_rmat_vmult(&NED_velocities, &BTN, &body_velocities);
+    // TODO: also estimate vx, so that we can just use the rotated vector:
+    // For now, we need to keep the x, and y body axes aligned with the global ones.
+    //printf("Original speed y = %f, ", ltp_speed.y);
+    ltp_speed.y = NED_velocities.y;
+    if(!CONSTANT_ALT_FILTER) ltp_speed.z =  NED_velocities.z;
+    //printf("Changed speed y = %f\n", ltp_speed.y);
+
+  }
   stateSetSpeedNed_f(&ltp_speed);
 
   struct NedCoor_f ltp_accel;

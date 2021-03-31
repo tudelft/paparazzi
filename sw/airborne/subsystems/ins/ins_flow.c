@@ -165,7 +165,7 @@ float of_prev_time;
 float lp_factor;
 float lp_factor_strong;
 bool reset_filter;
-bool use_filter;
+int use_filter;
 bool run_filter;
 uint32_t counter;
 
@@ -1143,18 +1143,49 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   ned_of_ecef_point_i(&gps_pos_cm_ned, &ins_flow.ltp_def, &gps_s->ecef_pos);
   INT32_VECT3_SCALE_2(ins_flow.ltp_pos, gps_pos_cm_ned,
                       INT32_POS_OF_CM_NUM, INT32_POS_OF_CM_DEN);
+
+  if(use_filter >= USE_HEIGHT) {
+      //struct NedCoor_f* position = stateGetPositionNed_f();
+      int32_t z_Ned_i_filter = - (int32_t) ((OF_X[OF_Z_IND] * INT32_POS_OF_CM_NUM * 100) / INT32_POS_OF_CM_DEN);
+      //printf("Z true: %f / %d, Z filter: %f / %d. (float / int32_t)\n", position->z, ins_flow.ltp_pos.z, OF_X[OF_Z_IND], z_Ned_i);
+      ins_flow.ltp_pos.z = z_Ned_i_filter;
+  }
+
   stateSetPositionNed_i(&ins_flow.ltp_pos);
 
-  // TODO: before using Z, we need to convert it well to the format used here:
 
-  struct NedCoor_f* position = stateGetPositionNed_f();
-  int32_t z_Ned_i = - (int32_t) ((OF_X[OF_Z_IND] * INT32_POS_OF_CM_NUM * 100) / INT32_POS_OF_CM_DEN);
-  printf("Z true: %f / %d, Z filter: %f / %d. (float / int32_t)\n", position->z, ins_flow.ltp_pos.z, OF_X[OF_Z_IND], z_Ned_i);
 
   struct NedCoor_i gps_speed_cm_s_ned;
   ned_of_ecef_vect_i(&gps_speed_cm_s_ned, &ins_flow.ltp_def, &gps_s->ecef_vel);
   INT32_VECT3_SCALE_2(ins_flow.ltp_speed, gps_speed_cm_s_ned,
                       INT32_SPEED_OF_CM_S_NUM, INT32_SPEED_OF_CM_S_DEN);
+
+  if(use_filter >= USE_VELOCITY) {
+      // get NED to body rotation matrix:
+      struct FloatRMat* NTB = stateGetNedToBodyRMat_f();
+      // get transpose (inverse):
+      struct FloatRMat BTN;
+      float_rmat_inv(&BTN, NTB);
+
+      // the velocities from the filter are rotated from the body to the inertial frame:
+      struct FloatVect3 NED_velocities, body_velocities;
+      body_velocities.x = 0.0f; // filter does not determine this yet
+      body_velocities.y = OF_X[OF_V_IND];
+      if(CONSTANT_ALT_FILTER) {
+	  body_velocities.z = 0.0f;
+      }
+      else {
+	  body_velocities.z = -OF_X[OF_Z_DOT_IND];
+      }
+      float_rmat_vmult(&NED_velocities, &BTN, &body_velocities);
+      // TODO: also estimate vx, so that we can just use the rotated vector:
+      // For now, we need to keep the x, and y body axes aligned with the global ones.
+      // printf("Original speed y = %d, ", ins_flow.ltp_speed.y);
+      ins_flow.ltp_speed.y = (int32_t) ((NED_velocities.y * INT32_SPEED_OF_CM_S_NUM * 100) / INT32_SPEED_OF_CM_S_DEN);
+      if(!CONSTANT_ALT_FILTER) ins_flow.ltp_speed.z =  -(int32_t) ((NED_velocities.z * INT32_SPEED_OF_CM_S_NUM * 100) / INT32_SPEED_OF_CM_S_DEN);
+      // printf("Changed speed y = %d (%f in float)\n", ins_flow.ltp_speed.y, NED_velocities.y);
+  }
+
   stateSetSpeedNed_i(&ins_flow.ltp_speed);
 
   /*
