@@ -357,7 +357,14 @@ static void send_ins_flow(struct transport_tx *trans, struct link_device *dev)
   }
 
 
-  float v_GT = velocities->y;
+  struct FloatRMat* NTB = stateGetNedToBodyRMat_f();
+  struct FloatVect3 NED_velocities, body_velocities;
+  NED_velocities.x = velocities->x;
+  NED_velocities.y = velocities->y;
+  NED_velocities.z = velocities->z;
+  float_rmat_vmult(&body_velocities, NTB, &NED_velocities);
+
+  float v_GT = body_velocities.y;
   float phi_GT = (180.0/M_PI)*eulers->phi;
   float p_GT = rates->p;
   float z_GT = -position->z;
