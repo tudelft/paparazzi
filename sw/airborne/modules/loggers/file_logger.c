@@ -41,6 +41,9 @@
 #include "modules/computer_vision/textons.h"
 #include "mcu_periph/sys_time.h"
 #include "modules/computer_vision/video_thread.h"
+
+#include "math/pprz_algebra_float.h"
+
 // reading the pressuremeter:
 #include "subsystems/abi.h"
 #ifndef LOGGER_BARO_ID
@@ -178,7 +181,7 @@ void file_logger_start(void)
   if (file_logger != NULL) {
     fprintf(
           file_logger,
-          "time,accel_x,accel_y,accel_z,gyro_p,gyro_q,gyro_r,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z,att_phi,att_theta,att_psi,rate_p,rate_q,rate_r,OF_time,flow_x, flow_y,flow_der_x, flow_der_y, div_size, div,noise, fps,cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw,rpm1_abi,rpm2_abi,rpm3_abi,rpm4_abi,num_act\n"
+          "time,accel_x,accel_y,accel_z,gyro_p,gyro_q,gyro_r,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z,att_phi,att_theta,att_psi,rate_p,rate_q,rate_r,OF_time,flow_x, flow_y,flow_der_x, flow_der_y, div_size, div,noise, fps,cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw,rpm1_abi,rpm2_abi,rpm3_abi,rpm4_abi,num_act,body_vel_x,body_vel_y,body_vel_z\n"
         );
   }
   else {
@@ -232,6 +235,14 @@ void file_logger_periodic(void)
   struct NedCoor_f *position = stateGetPositionNed_f();
   struct FloatRates *rates = stateGetBodyRates_f();
 
+  // Obtain body velocities:
+  struct FloatRMat* NTB = stateGetNedToBodyRMat_f();
+  struct FloatVect3 NED_velocities, body_velocities;
+  NED_velocities.x = velocities->x;
+  NED_velocities.y = velocities->y;
+  NED_velocities.z = velocities->z;
+  float_rmat_vmult(&body_velocities, NTB, &NED_velocities);
+
   // Optical flow, calculate the ground truth divergence:
   float GT_divergence = 0.0f;
   if(position->z <= -1E-3) {
@@ -260,7 +271,8 @@ void file_logger_periodic(void)
       "%d,%d,%d,%d,%d," // optical flow ints
       "%f,%f,%f,%f," // OF_size_divergence to fps
       "%d,%d,%d,%d,"
-      "%d,%d,%d,%d,%d\n",
+      "%d,%d,%d,%d,%d,"
+      "%f,%f,%f\n",
           time,
 /*
 	  imu.accel_unscaled.x,
@@ -284,7 +296,7 @@ void file_logger_periodic(void)
 	  velocities->z,
 	  eulers->phi,
 	  eulers->theta,
-	  eulers->psi,
+	  eulers->psi, // TODO: can we use this to rotate the NED velocities to body velocities?
 	  rates->p,
 	  rates->q,
 	  rates->r,
@@ -305,7 +317,10 @@ void file_logger_periodic(void)
 	  RPM[1],
 	  RPM[2],
 	  RPM[3],
-	  RPM_num_act
+	  RPM_num_act,
+	  body_velocities.x,
+	  body_velocities.y,
+	  body_velocities.z
          );
 
   counter++;
