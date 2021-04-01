@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-#define CONSTANT_ALT_FILTER 1
+#define CONSTANT_ALT_FILTER 0
 
 #if CONSTANT_ALT_FILTER == 1
   #define N_STATES_OF_KF 3
@@ -40,6 +40,8 @@ extern "C" {
   #define OF_V_IND 0
   #define OF_ANGLE_IND 1
   #define OF_Z_IND 2
+
+  #define N_MEAS_OF_KF 2
 
   #define OF_ANGLE_DOT_IND -1
   #define OF_Z_DOT_IND -1
@@ -51,11 +53,8 @@ extern "C" {
   #define OF_ANGLE_DOT_IND 2
   #define OF_Z_IND 3
   #define OF_Z_DOT_IND 4
-#endif
 
-#ifndef N_MEAS_OF_KF
-// 2 means only optical flow, 3 means also gyro:
-#define N_MEAS_OF_KF 2
+  #define N_MEAS_OF_KF 3
 #endif
 
 #define OF_LAT_FLOW_IND 0
@@ -80,6 +79,7 @@ extern float OF_X[N_STATES_OF_KF];
 extern bool reset_filter;
 extern bool run_filter;
 extern int use_filter;
+extern float thrust_factor;
 
 #ifdef __cplusplus
 }

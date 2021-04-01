@@ -96,10 +96,10 @@ static abi_event geo_mag_ev;
 /* All ABI callbacks */
 static void gyro_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates *gyro);
 static void accel_cb(uint8_t sender_id, uint32_t stamp, struct Int32Vect3 *accel);
-static void mag_cb(uint8_t __attribute__((unused)) sender_id,
+/*static void mag_cb(uint8_t __attribute__((unused)) sender_id,
                    uint32_t __attribute__((unused)) stamp,
                    struct Int32Vect3 *mag);
-static void geo_mag_cb(uint8_t sender_id __attribute__((unused)), struct FloatVect3 *h);
+static void geo_mag_cb(uint8_t sender_id __attribute__((unused)), struct FloatVect3 *h);*/
 static void body_to_imu_cb(uint8_t sender_id, struct FloatQuat *q_b2i_f);
 static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
 void ins_optical_flow_cb(uint8_t sender_id, uint32_t stamp, int16_t flow_x,
@@ -168,6 +168,7 @@ bool reset_filter;
 int use_filter;
 bool run_filter;
 uint32_t counter;
+float thrust_factor;
 
 
 #define USE_STANDARD_PARAMS 0
@@ -512,8 +513,8 @@ void ins_flow_init(void)
   AbiBindMsgOPTICAL_FLOW(INS_OPTICAL_FLOW_ID, &ins_optical_flow_ev, ins_optical_flow_cb);
   AbiBindMsgRPM(INS_RPM_ID, &ins_RPM_ev, ins_rpm_cb);
   AbiBindMsgIMU_LOWPASSED(ABI_BROADCAST, &aligner_ev, aligner_cb);
-  AbiBindMsgIMU_MAG_INT32(ABI_BROADCAST, &mag_ev, mag_cb);
-  AbiBindMsgGEO_MAG(ABI_BROADCAST, &geo_mag_ev, geo_mag_cb);
+  // AbiBindMsgIMU_MAG_INT32(ABI_BROADCAST, &mag_ev, mag_cb);
+  // AbiBindMsgGEO_MAG(ABI_BROADCAST, &geo_mag_ev, geo_mag_cb);
 
   // Telemetry:
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_FLOW_INFO, send_ins_flow);
@@ -618,6 +619,7 @@ void ins_flow_update(void)
       }
       float actual_lp_thrust = mass * g;
       ins_flow.thrust_factor = actual_lp_thrust / ins_flow.lp_thrust;
+      thrust_factor = ins_flow.thrust_factor;
       //printf("Low pass predicted thrust = %f. Expected thrust = %f. Thrust factor = %f.\n", ins_flow.lp_thrust, actual_lp_thrust, ins_flow.thrust_factor);
       // don't run the filter just yet:
       return;
@@ -642,7 +644,7 @@ void ins_flow_update(void)
   // get the new time:
   of_time = get_sys_time_float();
   float dt = of_time - of_prev_time;
-  DEBUG_PRINT("dt = %f.\n", dt);
+  //printf("dt = %f.\n", dt);
   if(dt > 1.0f) {
       dt = 0.01f;
   }
@@ -652,7 +654,7 @@ void ins_flow_update(void)
   for(int i = 0; i < OF_N_ROTORS; i++) {
       thrust += RPM_FACTORS[i] * ins_flow.RPM[i]*ins_flow.RPM[i];
   }
-  thrust *= ins_flow.thrust_factor;
+  thrust *= thrust_factor; // ins_flow.thrust_factor;
   DEBUG_PRINT("Thrust acceleration = %f, g = %f\n", thrust/mass, g);
 
   // propagate the state with Euler integration:
@@ -660,8 +662,8 @@ void ins_flow_update(void)
   if(DEBUG_INS_FLOW) print_ins_flow_state();
   if(CONSTANT_ALT_FILTER) {
       OF_X[OF_V_IND] += dt * (g * tan(OF_X[OF_ANGLE_IND]));
-      OF_X[OF_ANGLE_IND] += dt * rates->p; // TODO: replace this with gyro!!!
-	  // dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f; // Code says scaled by 12, but... that does not fit...
+      //OF_X[OF_ANGLE_IND] += dt * rates->p; // TODO: replace this with gyro!!!
+      OF_X[OF_ANGLE_IND] += dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f; // Code says scaled by 12, but... that does not fit...
       DEBUG_PRINT("Rate p = %f, gyro p = %f\n", rates->p, (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f);
   }
   else {
@@ -1047,6 +1049,7 @@ static void accel_cb(uint8_t __attribute__((unused)) sender_id,
 #endif
 }
 
+/*
 static void mag_cb(uint8_t __attribute__((unused)) sender_id,
                    uint32_t __attribute__((unused)) stamp,
                    struct Int32Vect3 *mag)
@@ -1056,8 +1059,8 @@ static void mag_cb(uint8_t __attribute__((unused)) sender_id,
   static uint32_t last_stamp = 0;
   if (last_stamp > 0 && ahrs_icq.is_aligned) {
     float dt = (float)(stamp - last_stamp) * 1e-6;
-    ahrs_icq_update_mag(mag, dt);
-    set_body_state_from_quat();
+    //ahrs_icq_update_mag(mag, dt);
+    //set_body_state_from_quat();
   }
   last_stamp = stamp;
 #else
@@ -1073,9 +1076,10 @@ static void mag_cb(uint8_t __attribute__((unused)) sender_id,
 
 static void geo_mag_cb(uint8_t sender_id __attribute__((unused)), struct FloatVect3 *h)
 {
-  VECT3_ASSIGN(ahrs_icq.mag_h, MAG_BFP_OF_REAL(h->x), MAG_BFP_OF_REAL(h->y),
-               MAG_BFP_OF_REAL(h->z));
+  //VECT3_ASSIGN(ahrs_icq.mag_h, MAG_BFP_OF_REAL(h->x), MAG_BFP_OF_REAL(h->y),
+  //             MAG_BFP_OF_REAL(h->z));
 }
+*/
 
 /** Rotate angles and rates from imu to body frame and set state */
 static void set_body_state_from_quat(void)
@@ -1137,6 +1141,8 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   if (!ins_flow.ltp_initialized) {
     ins_reset_local_origin();
   }
+
+  ahrs_icq_update_gps(gps_s);
 
   /* simply scale and copy pos/speed from gps */
   struct NedCoor_i gps_pos_cm_ned;

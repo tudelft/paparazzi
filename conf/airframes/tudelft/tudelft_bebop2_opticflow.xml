@@ -32,6 +32,8 @@
 -->
 
     <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
+    <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
+
     <module name="ins" type="flow"/>
 
     <!-- Disable use of GPS: -->
@@ -302,6 +304,10 @@
 -->
     
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
+  </section>
+
+  <section name="GCS">
+    <define name="AC_ICON"             value="quadrotor_x"/>
   </section>
 
   <section name="BAT">

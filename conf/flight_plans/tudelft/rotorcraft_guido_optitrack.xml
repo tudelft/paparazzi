@@ -46,12 +46,12 @@
       !(nav_block >= IndexOfBlock('land here')) &&
       (autopilot_in_flight() == true) )" deroute="land here"/> -->
     <!-- Geofencing Z 4.5 -->
-    <exception cond="((GetPosAlt() > 4.5) &&
+    <exception cond="((GetPosAlt() > 3.0) &&
       !(IndexOfBlock('Holding point') > nav_block) &&
       !(nav_block >= IndexOfBlock('land here')) &&
       (autopilot_in_flight() == true) )" deroute="land here"/>
     <!-- Geofencing Z 6.0 (kill throttle?)-->
-    <exception cond="((GetPosAlt() > 6.0) &&
+    <exception cond="((GetPosAlt() > 5.0) &&
       !(IndexOfBlock('Holding point') > nav_block) &&
       (autopilot_in_flight() == true) )" deroute="landed"/>
     <!-- Bat low -->
