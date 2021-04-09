@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2014 Freek van Tienen <freek.v.tienen@gmail.com>
- *               2019 Tom van Dijk <tomvand@users.noreply.github.com>
  *
  * This file is part of paparazzi.
  *
@@ -28,21 +27,56 @@
 #include "file_logger.h"
 
 #include <stdio.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <unistd.h>
 #include "std.h"
 
-#include "mcu_periph/sys_time.h"
-#include "state.h"
-#include "generated/airframe.h"
-#ifdef COMMAND_THRUST
+#include "subsystems/imu.h"
 #include "firmwares/rotorcraft/stabilization.h"
-#else
-#include "firmwares/fixedwing/stabilization/stabilization_attitude.h"
-#include "firmwares/fixedwing/stabilization/stabilization_adaptive.h"
-#endif
+#include "state.h"
 
+// #include "subsystems/electrical.h"
+#include "modules/computer_vision/video_capture.h"
+// optical flow module and textons module:
+#include "modules/ctrl/optical_flow_landing.h"
+#include "modules/computer_vision/textons.h"
+// reading the pressuremeter:
+#include "subsystems/abi.h"
+#ifndef LOGGER_BARO_ID
+#define LOGGER_BARO_ID ABI_BROADCAST
+#endif
+PRINT_CONFIG_VAR(LOGGER_BARO_ID)
+float logger_pressure;
+static abi_event baro_ev; ///< The baro ABI event
+/// Callback function of the ground altitude
+static void logger_baro_cb(uint8_t sender_id __attribute__((unused)), float pressure);
+// Reading from "sensors":
+static void logger_baro_cb(uint8_t sender_id, float pressure)
+{
+  logger_pressure = pressure;
+}
+
+// reading the pressuremeter:
+//#include "subsystems/abi.h"
+#ifndef LOGGER_SONAR_ID
+#define LOGGER_SONAR_ID ABI_BROADCAST
+#endif
+PRINT_CONFIG_VAR(LOGGER_SONAR_ID)
+float logger_sonar;
+static abi_event sonar_ev; ///< The sonar ABI event
+/// Callback function of the ground altitude
+static void logger_sonar_cb(uint8_t sender_id __attribute__((unused)), float height);
+// Reading from "sensors":
+static void logger_sonar_cb(uint8_t sender_id, float height)
+{
+  logger_sonar = height;
+}
+
+
+// timing the video snapshots:
+struct timeval stop, start;
+//float time_stamp = 0;
+float prev_ss_time = 0;
+int take_shot = 0;
+int shots = 0;
 
 /** Set the default File logger path to the USB drive */
 #ifndef FILE_LOGGER_PATH
@@ -52,96 +86,61 @@
 /** The file pointer */
 static FILE *file_logger = NULL;
 
-
-/** Logging functions */
-
-/** Write CSV header
- * Write column names at the top of the CSV file. Make sure that the columns
- * match those in file_logger_write_row! Don't forget the \n at the end of the
- * line.
- * @param file Log file pointer
- */
-static void file_logger_write_header(FILE *file) {
-  fprintf(file, "time,");
-  fprintf(file, "pos_x,pos_y,pos_z,");
-  fprintf(file, "vel_x,vel_y,vel_z,");
-  fprintf(file, "att_phi,att_theta,att_psi,");
-  fprintf(file, "rate_p,rate_q,rate_r,");
-#ifdef COMMAND_THRUST
-  fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
-#else
-  fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
-#endif
-}
-
-/** Write CSV row
- * Write values at this timestamp to log file. Make sure that the printf's match
- * the column headers of file_logger_write_header! Don't forget the \n at the
- * end of the line.
- * @param file Log file pointer
- */
-static void file_logger_write_row(FILE *file) {
-  struct NedCoor_f *pos = stateGetPositionNed_f();
-  struct NedCoor_f *vel = stateGetSpeedNed_f();
-  struct FloatEulers *att = stateGetNedToBodyEulers_f();
-  struct FloatRates *rates = stateGetBodyRates_f();
-
-  fprintf(file, "%f,", get_sys_time_float());
-  fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
-  fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
-  fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
-  fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
-#ifdef COMMAND_THRUST
-  fprintf(file, "%d,%d,%d,%d\n",
-      stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
-      stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
-#else
-  fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
-#endif
-}
-
-
 /** Start the file logger and open a new file */
 void file_logger_start(void)
 {
-  // Create output folder if necessary
-  if (access(STRINGIFY(FILE_LOGGER_PATH), F_OK)) {
-    char save_dir_cmd[256];
-    sprintf(save_dir_cmd, "mkdir -p %s", STRINGIFY(FILE_LOGGER_PATH));
-    if (system(save_dir_cmd) != 0) {
-      printf("[file_logger] Could not create log file directory %s.\n", STRINGIFY(FILE_LOGGER_PATH));
-      return;
-    }
-  }
-
-  // Get current date/time for filename
-  char date_time[80];
-  time_t now = time(0);
-  struct tm  tstruct;
-  tstruct = *localtime(&now);
-  strftime(date_time, sizeof(date_time), "%Y%m%d-%H%M%S", &tstruct);
 
   uint32_t counter = 0;
   char filename[512];
+  shots = 0;
 
   // Check for available files
-  sprintf(filename, "%s/%s.csv", STRINGIFY(FILE_LOGGER_PATH), date_time);
+  sprintf(filename, "%s/%05d.csv", STRINGIFY(FILE_LOGGER_PATH), counter);
+  printf("Logging to file name = %s\n", filename);
   while ((file_logger = fopen(filename, "r"))) {
     fclose(file_logger);
 
-    sprintf(filename, "%s/%s_%05d.csv", STRINGIFY(FILE_LOGGER_PATH), date_time, counter);
     counter++;
+    sprintf(filename, "%s/%05d.csv", STRINGIFY(FILE_LOGGER_PATH), counter);
   }
+
+  // start timer:
+  gettimeofday(&start, 0);
 
   file_logger = fopen(filename, "w");
-  if(!file_logger) {
-    printf("[file_logger] ERROR opening log file %s!\n", filename);
-    return;
+
+  /*char str[n_textons * 4];
+  char add_str[4];
+  for(int i = 0; i < n_textons-1; i++)
+  {
+      sprintf(add_str, "t%2d,", i);
+  }
+  sprintf(add_str, "t%2d", n_textons-1);
+  strcat(str, add_str);
+  printf("\n\n\nTexton entries: %s\n\n\n", str);
+  */
+
+  if (file_logger != NULL) {
+    fprintf(
+          file_logger,
+          "counter,gyro_unscaled_p,gyro_unscaled_q,gyro_unscaled_r,accel_unscaled_x,accel_unscaled_y,accel_unscaled_z,mag_unscaled_x,"
+          "mag_unscaled_y,mag_unscaled_z,COMMAND_THRUST,COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,qi,qx,qy,qz,"
+          "shot,pressure,sonar,phi_f,theta_f,psi_f,pstate,cov_div,div,z,zd"
+        );
+    for(int i = 0; i < n_textons-1; i++) {
+          fprintf(file_logger, "texton_%d,", i);
+      }
+    fprintf(file_logger, "texton_%d\n", n_textons-1);
+    logger_pressure = 0.0f;
+    logger_sonar = 0.0f;
+  }
+  else {
+      printf("Could not open log!\n");
   }
 
-  printf("[file_logger] Start logging to %s...\n", filename);
-
-  file_logger_write_header(file_logger);
+  // Subscribe to the altitude above ground level ABI messages
+  AbiBindMsgBARO_ABS(LOGGER_BARO_ID, &baro_ev, logger_baro_cb);
+  AbiBindMsgAGL(LOGGER_SONAR_ID, &sonar_ev, logger_sonar_cb);
 }
 
 /** Stop the logger an nicely close the file */
@@ -153,11 +152,71 @@ void file_logger_stop(void)
   }
 }
 
-/** Log the values to a csv file    */
+/** Log the values to a csv file */
 void file_logger_periodic(void)
 {
   if (file_logger == NULL) {
     return;
   }
-  file_logger_write_row(file_logger);
+  static uint32_t counter;
+  struct Int32Quat *quat = stateGetNedToBodyQuat_i();
+
+  //timing
+  gettimeofday(&stop, 0);
+  double curr_time = (double)(stop.tv_sec + stop.tv_usec / 1000000.0);
+  double time_stamp = curr_time - (double)(start.tv_sec + start.tv_usec / 1000000.0);
+  if((time_stamp - prev_ss_time) > 0.2) // for 5hz
+  {
+    video_capture_shoot();
+    prev_ss_time = time_stamp;
+    take_shot = shots;
+    shots +=1;
+  }
+  else
+  {
+    take_shot = -1;
+  }
+
+  struct FloatEulers *eulers = stateGetNedToBodyEulers_f();
+  struct NedCoor_f *velocities = stateGetSpeedNed_f();
+  struct NedCoor_f *position = stateGetPositionNed_f();
+
+  fprintf(file_logger, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,",
+          counter,
+          imu.gyro_unscaled.p,
+          imu.gyro_unscaled.q,
+          imu.gyro_unscaled.r,
+          imu.accel_unscaled.x,
+          imu.accel_unscaled.y,
+          imu.accel_unscaled.z,
+          imu.mag_unscaled.x,
+          imu.mag_unscaled.y,
+          imu.mag_unscaled.z,
+          stabilization_cmd[COMMAND_THRUST],
+          stabilization_cmd[COMMAND_ROLL],
+          stabilization_cmd[COMMAND_PITCH],
+          stabilization_cmd[COMMAND_YAW],
+          quat->qi,
+          quat->qx,
+          quat->qy,
+          quat->qz,
+          take_shot,
+          logger_pressure,
+          logger_sonar,
+          eulers->phi,
+          eulers->theta,
+          eulers->psi,
+          pstate,
+          cov_div,
+	  divergence_vision,
+	  position->z,
+	  velocities->z
+         );
+
+  for(int i = 0; i < n_textons-1; i++) {
+      fprintf(file_logger, "%f,", texton_distribution[i]);
+  }
+  fprintf(file_logger, "%f\n", texton_distribution[n_textons-1]);
+
+  counter++;
 }

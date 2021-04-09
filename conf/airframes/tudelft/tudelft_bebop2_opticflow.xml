@@ -1,16 +1,19 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
 <airframe name="bebop2_opticflow">
-  <description>?
-  </description>
 
   <firmware name="rotorcraft">
-    <target name="ap" board="bebop2"/>
+    <target name="ap" board="bebop">
+      <define name="VIDEO_CAPTURE_PATH" value="/data/ftp/internal_000/images"/>
+      <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000/log"/> <!-- we did not include log before -->
+    </target>
     <target name="nps" board="pc">
       <module name="fdm" type="gazebo"/>
+      <define name="VIDEO_CAPTURE_PATH" value="/tmp/paparazzi/images"/>
+      <define name="FILE_LOGGER_PATH" value="/tmp/paparazzi/log"/>
     </target>
-    <define name="USE_SONAR"/>
 
+    <define name="USE_SONAR"/>
     <module name="telemetry" type="transparent_udp"/>
     <module name="radio_control" type="datalink"/>
     <module name="motor_mixing"/>
@@ -23,43 +26,65 @@
       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
       <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
     </module>
-    <module name="ins" type="hff_extended"/>
+    <module name="ins" type="extended"/>
     <!-- Disable use of GPS: -->
     <!--    <define name="INS_INT_GPS_ID" value="ABI_DISABLE"/>
     </module> -->
     
+  </firmware>
+
+  <modules main_freq="512">
     <!-- <module name="geo_mag"/>
     <module name="send_imu_mag_current"/> -->
     <module name="air_data"/>
     <!-- <module name="gps" type="ubx_ucenter"/> -->
-    <module name="logger_file">
-      <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
-    </module>
 
+    <!-- <module name="video_thread"/> -->
     <module name="bebop_cam"/>
     <module name="pose_history"/>
 
     <module name="cv_opticflow">
       <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
       <define name="MAX_HORIZON" value="10"/>
+      <define name="OPTICFLOW_FX" value="347.22222222"/> <!-- 2.5 / (3.6 * 2.0) * 1000 -->
+      <define name="OPTICFLOW_FY" value="347.22222222"/> <!-- 2.5 / (3.6 * 2.0) * 1000 -->
+      <define name="OPTICFLOW_FOV_W" value="0.665499265"/> <!-- 2 * arctan(240 / (2*347.22222222)) -->
+      <define name="OPTICFLOW_FOV_H" value="0.665499265"/> <!-- 2 * arctan(240 / (2*347.22222222)) -->
       <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="0.8"/> <!--Obtained from a linefit--> 
       <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.85"/> <!--Obtained from a linefit--> 
     </module>
 
     <module name="video_capture">
       <define name="VIDEO_CAPTURE_CAMERA" value="bottom_camera"/>
-      <!-- <define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/> -->
-      <define name="VIDEO_CAPTURE_PATH" value="/data/ftp/internal_000/images"/>
     </module>
 
-    <module name="optical_flow_landing.xml"/>
+    <!-- TODO: perhaps grey because of placement after optical flow? -->
+    <module name="cv_textons.xml">
+      <define name="TEXTONS_FPS" value="0"/>
+      <define name="TEXTONS_CAMERA" value="bottom_camera"/>
+      <define name="TEXTONS_N_TEXTONS" value="20"/>
+      <define name="TEXTONS_DICTIONARY_PATH" value="/data/ftp/internal_000"/>
+    </module>
 
-    <!-- <module name="video_rtp_stream">
+    <!--
+    <module name="video_rtp_stream">
       <define name="VIEWVIDEO_CAMERA" value="bottom_camera"/>
       <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="1"/>
       <define name="VIEWVIDEO_QUALITY_FACTOR" value="60"/>
-    </module> -->
-  </firmware>
+    </module>
+    -->
+
+    <module name="optical_flow_landing.xml">
+	<define name="OFL_COV_SETPOINT" value="-0.075"/>
+	<define name="OFL_PGAIN" value="0.50"/>
+	<define name="OFL_LP_CONST" value="0.033"/>
+	<define name="OFL_CLOSE_TO_EDGE" value="0.025"/>
+	<define name="OFL_IGAIN_ADAPTIVE" value="0.10"/>
+	<define name="OFL_CONTROL_METHOD" value="0"/> <!-- 1 is adaptive gain -->
+	<define name="OFL_P_LAND_THRESHOLD" value="0.25"/> 
+    </module>
+
+  </modules>
 
   <commands>
     <axis name="PITCH" failsafe_value="0"/>
@@ -126,6 +151,7 @@
     <define name="VFF_VZ_R_GPS" value="0.01"/>     
     <define name="SONAR_MIN_RANGE" value="0.0"/>
     <define name="SONAR_MAX_RANGE" value="2.2"/>
+    <define name="SONAR_UPDATE_ON_AGL" value="FALSE"/>
 
   </section>
 
@@ -139,6 +165,14 @@
     <define name="DEADBAND_E" value="0"/>
     <define name="DEADBAND_R" value="50"/>
   </section>
+
+  <section name="SIMULATOR" prefix="NPS_">
+    <define name="ACTUATOR_NAMES" value="nw_motor, ne_motor, se_motor, sw_motor" type="string[]"/>
+    <define name="JSBSIM_MODEL" value="bebop" type="string"/>
+    <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
+    <define name="MT9F002_SENSOR_RES_DIVIDER" value="4"/>
+  </section>
+  <include href="conf/simulator/gazebo/airframes/bebop.xml"/>
 
   <section name="ATTITUDE_REFERENCE" prefix="STABILIZATION_ATTITUDE_">
     <!-- attitude reference generation model -->
@@ -228,26 +262,27 @@
     <define name="DESCEND_VSPEED" value="-0.75"/>
   </section>
 
-  <section name="SIMULATOR" prefix="NPS_">
-    <define name="ACTUATOR_NAMES" value="nw_motor, ne_motor, se_motor, sw_motor" type="string[]"/>
-    <define name="JSBSIM_MODEL" value="bebop" type="string"/>
-    <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
-    <define name="MT9F002_SENSOR_RES_DIVIDER" value="4"/>
-  </section>
-  <include href="conf/simulator/gazebo/airframes/bebop.xml"/>
-
   <section name="AUTOPILOT">
+
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
     <define name="MODE_MANUAL" value="AP_MODE_MODULE"/>
     <define name="MODE_AUTO1" value="AP_MODE_MODULE"/>
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+<!--
+    <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
+    <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
+    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
+    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+-->
+    
+<!--
 
-    <!--
     <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_MANUAL" value="AP_MODE_MODULE"/>
-    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
+    <define name="MODE_AUTO1" value="AP_MODE_MODULE"/>
     <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/>
-    -->
+-->
+    
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>
 

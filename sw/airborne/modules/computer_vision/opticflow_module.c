@@ -152,6 +152,7 @@ void opticflow_module_run(void)
       }
       opticflow_got_result[idx_camera] = false;
     }
+    opticflow_got_result = false;
   }
   pthread_mutex_unlock(&opticflow_mutex);
 }
