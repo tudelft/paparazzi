@@ -196,18 +196,29 @@ float thrust_factor;
     #else
       // without rate state / measurement:
       #if CONSTANT_ALT_FILTER
-	float parameters[20] = {3.363769e-01, 4.917425e-01, 1.903805e-01, 2.945672e-01, 1.258647e-01, 1.513736e-01, 5.894541e-01, 2.162745e-01, 5.527361e-01, 1.385623e-01, 8.307731e-01, 1.488212e+00, 2.439721e-01, 3.052758e+00, 8.246426e-01, 9.988101e-02, 1.247046e-01, 8.834364e-01, 7.971876e-01, 1.112319e+00};
+	#if OF_DRAG
+	  float parameters[20] = {1.396428e-01, 2.517970e-01, 3.575834e-02, 2.626194e-01, 1.078661e-01, 3.126137e-01, 4.621823e-02, 3.258048e-01, 8.456147e-02, 2.275105e-01, 2.820394e-02, 1.937395e+00, -4.259889e-02, 2.755648e+00, 1.000810e+00, -3.474577e-03, 3.146387e-01, 8.809383e-01, 9.878757e-01, 6.741976e-01};
+	#else
+	  float parameters[20] = {3.363769e-01, 4.917425e-01, 1.903805e-01, 2.945672e-01, 1.258647e-01, 1.513736e-01, 5.894541e-01, 2.162745e-01, 5.527361e-01, 1.385623e-01, 8.307731e-01, 1.488212e+00, 2.439721e-01, 3.052758e+00, 8.246426e-01, 9.988101e-02, 1.247046e-01, 8.834364e-01, 7.971876e-01, 1.112319e+00};
+	#endif
       #else
 	float parameters[20] = {4.370754e-02, 3.770587e-01, 1.187542e-01, 1.174995e-01, 1.419432e-01, 6.950201e-02, 2.251078e-01, 9.113943e-02, 2.230198e-01, 5.767389e-02, 1.855676e-02, 1.676359e+00, 5.822681e-02, 2.869468e+00, 1.140625e+00, 6.831383e-02, 1.600776e-01, 9.853843e-01, 1.000381e+00, 5.081224e-01};
       #endif
     #endif
   #else
-    #if N_MEAS_OF_KF == 3
-    // with rate measurement
-    float parameters[20] = {0.041001,1.015066,-0.058495,0.498353,-0.156362,0.383511,0.924635,0.681918,0.318947,0.298235,0.224906,1.371037,0.008888,3.045428,0.893953,0.529789,0.295028,1.297515,0.767550,0.334040};
+	// TODO: train constant alt filter without drag, also with and without measuring the gyro.
+    #if CONSTANT_ALT_FILTER
+      #if OF_DRAG
+	float parameters[20] = {1.557784e-01, 3.186275e-01, 8.341852e-02, 9.320449e-02, 1.706694e-01, 3.950497e-01, 3.338107e-01, 1.947852e-01, 2.429782e-01, 1.216562e-01, 2.885142e-01, 1.765480e+00, 2.427392e-01, 3.014556e+00, 1.004227e+00, 1.798174e-01, 2.821081e-01, 9.314043e-01, 1.005090e+00, 2.630276e-01};
+      #endif
     #else
-    // without rate measurement:
-    float parameters[20] = {4.098677e-01, 7.766318e-01, 3.614751e-01, 4.745865e-01, 5.144065e-01, 3.113647e-01, -8.737287e-03, 6.370274e-01, 3.863760e-01, -3.527670e-01, 4.873666e-01, 1.688456e+00, -6.037967e-02, 2.759148e+00, 1.385455e+00, 1.044881e-01, -1.170409e-01, 1.126136e+00, 1.097562e+00, 2.680243e-01};
+      #if N_MEAS_OF_KF == 3
+      // with rate measurement
+      float parameters[20] = {0.041001,1.015066,-0.058495,0.498353,-0.156362,0.383511,0.924635,0.681918,0.318947,0.298235,0.224906,1.371037,0.008888,3.045428,0.893953,0.529789,0.295028,1.297515,0.767550,0.334040};
+      #else
+      // without rate measurement:
+      float parameters[20] = {4.098677e-01, 7.766318e-01, 3.614751e-01, 4.745865e-01, 5.144065e-01, 3.113647e-01, -8.737287e-03, 6.370274e-01, 3.863760e-01, -3.527670e-01, 4.873666e-01, 1.688456e+00, -6.037967e-02, 2.759148e+00, 1.385455e+00, 1.044881e-01, -1.170409e-01, 1.126136e+00, 1.097562e+00, 2.680243e-01};
+      #endif
     #endif
   #endif
 #endif
@@ -576,7 +587,9 @@ void ins_flow_update(void)
   float mass = parameters[PAR_MASS]; // 0.400;
   float moment = 0.0f; // for now assumed to be 0
   float Ix = parameters[PAR_IX]; // 0.0018244;
-  float g = 9.81; // TODO: get a good definition from pprz
+  float g = 9.81; // TODO: get a more accurate definition from pprz
+  float kd = parameters[PAR_KD]; // 0.5
+  float drag = 0.0f;
 
   if(reset_filter) {
       ins_reset_filter();
@@ -662,6 +675,13 @@ void ins_flow_update(void)
   if(DEBUG_INS_FLOW) print_ins_flow_state();
   if(CONSTANT_ALT_FILTER) {
       OF_X[OF_V_IND] += dt * (g * tan(OF_X[OF_ANGLE_IND]));
+      if(OF_DRAG) {
+	  // quadratic drag acceleration:
+	  drag = dt * kd * (OF_X[OF_V_IND]*OF_X[OF_V_IND]) / mass;
+	  // apply it in the right direction:
+	  if(OF_X[OF_V_IND] > 0) OF_X[OF_V_IND] -= drag;
+	  else OF_X[OF_V_IND] += drag;
+      }
       //OF_X[OF_ANGLE_IND] += dt * rates->p; // TODO: replace this with gyro!!!
       OF_X[OF_ANGLE_IND] += dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f; // Code says scaled by 12, but... that does not fit...
       DEBUG_PRINT("Rate p = %f, gyro p = %f\n", rates->p, (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f);
@@ -699,9 +719,14 @@ void ins_flow_update(void)
     F[OF_Z_IND][OF_Z_DOT_IND] = dt*1.0f;
     F[OF_Z_DOT_IND][OF_ANGLE_IND] = dt*(-thrust*sin(OF_X[OF_ANGLE_IND])/mass);
   }
+  if(OF_DRAG) {
+      // In MATLAB: -sign(v)*2*kd*v/m (always minus, whether v is positive or negative):
+      F[OF_V_IND][OF_V_IND] -=  dt * 2 * kd * abs(OF_X[OF_V_IND]) / mass;
+  }
 
   // G matrix (whatever it may be):
   float G[N_STATES_OF_KF][N_STATES_OF_KF] = {{0.}};
+  // TODO: we miss an off-diagonal element here (compare with MATLAB)
   for(int i = 0; i < N_STATES_OF_KF; i++) {
 	G[i][i] = dt;
   }

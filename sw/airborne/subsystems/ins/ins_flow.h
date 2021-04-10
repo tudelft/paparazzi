@@ -33,6 +33,7 @@ extern "C" {
 #endif
 
 #define CONSTANT_ALT_FILTER 0
+#define OF_DRAG 1
 
 #if CONSTANT_ALT_FILTER == 1
   #define N_STATES_OF_KF 3
