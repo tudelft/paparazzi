@@ -140,6 +140,8 @@ struct InsFlow {
   uint16_t RPM[8]; // max an octocopter
   uint8_t RPM_num_act;
 
+  float lp_gyro_pitch;
+  float lp_gyro_bias_pitch; // determine the bias before take-off
   float lp_gyro_roll;
   float lp_gyro_bias_roll; // determine the bias before take-off
   float thrust_factor; // determine the additional required scale factor to have unbiased thrust estimates
@@ -355,13 +357,21 @@ static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
 
 static void send_ins_flow(struct transport_tx *trans, struct link_device *dev)
 {
+  // TODO: add sending of theta:
   struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
   struct NedCoor_f* position = stateGetPositionNed_f();
   struct NedCoor_f *velocities = stateGetSpeedNed_f();
   struct FloatRates *rates = stateGetBodyRates_f();
 
+  // TODO: remove inclusion of theta in phi:
+  float phi;
+  if(!OF_TWO_DIM) {
+      phi = (180.0/M_PI)*OF_X[OF_ANGLE_IND];
+  }
+  else {
+      phi = (180.0/M_PI)*OF_X[OF_THETA_IND];
+  }
 
-  float phi = (180.0/M_PI)*OF_X[OF_ANGLE_IND];
   float phi_dot = 0.0f;
   float z_dot = 0.0f;
   if(!CONSTANT_ALT_FILTER) {
@@ -378,7 +388,13 @@ static void send_ins_flow(struct transport_tx *trans, struct link_device *dev)
   float_rmat_vmult(&body_velocities, NTB, &NED_velocities);
 
   float v_GT = body_velocities.y;
-  float phi_GT = (180.0/M_PI)*eulers->phi;
+  float phi_GT;
+  if(!OF_TWO_DIM) {
+      phi_GT = (180.0/M_PI)*eulers->phi;
+  }
+  else {
+      phi_GT = (180.0/M_PI)*eulers->theta;
+  }
   float p_GT = rates->p;
   float z_GT = -position->z;
   float vz_GT = -velocities->z;
@@ -406,6 +422,10 @@ void ins_reset_filter(void) {
       OF_P[OF_V_IND][OF_V_IND] = parameters[PAR_P0];
       OF_P[OF_ANGLE_IND][OF_ANGLE_IND] = parameters[PAR_P1];
       OF_P[OF_Z_IND][OF_Z_IND] = parameters[PAR_P3];
+      if(OF_TWO_DIM) {
+	  OF_P[OF_THETA_IND][OF_THETA_IND] = parameters[PAR_P1];
+	  OF_P[OF_VX_IND][OF_VX_IND] = parameters[PAR_P0];
+      }
   }
   else {
       OF_P[OF_V_IND][OF_V_IND] = parameters[PAR_P0];
@@ -445,10 +465,12 @@ void ins_flow_init(void)
   stateSetLocalOrigin_i(&ins_flow.ltp_def);
   ins_flow.ltp_initialized = true;
   ins_flow.new_flow_measurement = false;
+  ins_flow.lp_gyro_pitch = 0.0f;
+  ins_flow.lp_gyro_bias_pitch = 0.0f;
   ins_flow.lp_gyro_roll = 0.0f;
+  ins_flow.lp_gyro_bias_roll = 0.0f;
   ins_flow.thrust_factor = 1.0f;
   ins_flow.lp_thrust = 0.0f;
-  ins_flow.lp_gyro_bias_roll = 0.0f;
   lp_factor = 0.95;
   lp_factor_strong = 1-1E-3;
 
@@ -459,7 +481,10 @@ void ins_flow_init(void)
   // R-matrix, measurement noise (TODO: make params)
   OF_R[OF_LAT_FLOW_IND][OF_LAT_FLOW_IND] = parameters[PAR_R0];
   OF_R[OF_DIV_FLOW_IND][OF_DIV_FLOW_IND] = parameters[PAR_R1];
-  if(N_MEAS_OF_KF == 3) {
+  if(OF_TWO_DIM) {
+      OF_R[OF_LAT_FLOW_X_IND][OF_LAT_FLOW_X_IND] = parameters[PAR_R0];
+  }
+  else if(N_MEAS_OF_KF == 3) {
       OF_R[OF_RATE_IND][OF_RATE_IND] = 10.0 * (M_PI / 180.0f); // not a param yet
   }
   // Q-matrix, actuation noise (TODO: make params)
@@ -469,6 +494,10 @@ void ins_flow_init(void)
   if(!CONSTANT_ALT_FILTER) {
       OF_Q[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = parameters[PAR_Q2];
       OF_Q[OF_Z_DOT_IND][OF_Z_DOT_IND] = parameters[PAR_Q4];
+  }
+  else if(OF_TWO_DIM) {
+      OF_Q[OF_VX_IND][OF_VX_IND] = parameters[PAR_Q0];
+      OF_Q[OF_THETA_IND][OF_THETA_IND] = parameters[PAR_Q1];
   }
 
 
@@ -494,7 +523,7 @@ void ins_flow_init(void)
 #endif
 
   reset_filter = false;
-  use_filter = false;
+  use_filter = 0;
   run_filter = false;
 
   of_time = get_sys_time_float();
@@ -564,8 +593,15 @@ void ins_optical_flow_cb(uint8_t sender_id UNUSED, uint32_t stamp, int16_t flow_
 
 void print_ins_flow_state(void) {
   if(CONSTANT_ALT_FILTER) {
-      printf("v = %f, angle = %f, z = %f.\n",
-      	 OF_X[OF_V_IND], OF_X[OF_ANGLE_IND], OF_X[OF_Z_IND]);
+      if(!OF_TWO_DIM) {
+	  printf("v = %f, angle = %f, z = %f.\n",
+		 OF_X[OF_V_IND], OF_X[OF_ANGLE_IND], OF_X[OF_Z_IND]);
+      }
+      else {
+	  printf("v = %f, angle = %f, z = %f, vx = %f, theta = %f.\n",
+		 OF_X[OF_V_IND], OF_X[OF_ANGLE_IND], OF_X[OF_Z_IND], OF_X[OF_VX_IND], OF_X[OF_THETA_IND]);
+      }
+
   }
   else {
       printf("v = %f, angle = %f, angle_dot = %f, z = %f, z_dot = %f.\n",
@@ -575,6 +611,8 @@ void print_ins_flow_state(void) {
 }
 
 void print_true_state(void) {
+  // TODO: rotate velocities to body frame:
+  // TODO: add also the theta axis:
   struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
   struct NedCoor_f* position = stateGetPositionNed_f();
   struct NedCoor_f *velocities = stateGetSpeedNed_f();
@@ -609,6 +647,9 @@ void ins_flow_update(void)
   //if(!autopilot_in_flight()) {
       // assuming that the typical case is no rotation, we can estimate the (initial) bias of the gyro:
       ins_flow.lp_gyro_bias_roll = lp_factor_strong * ins_flow.lp_gyro_bias_roll + (1-lp_factor_strong) * ins_flow.lp_gyro_roll;
+      if(OF_TWO_DIM) {
+	  ins_flow.lp_gyro_bias_pitch = lp_factor_strong * ins_flow.lp_gyro_bias_pitch + (1-lp_factor_strong) * ins_flow.lp_gyro_pitch;
+      }
       //printf("lp gyro bias = %f\n", ins_flow.lp_gyro_bias_roll);
   //}
 
@@ -685,8 +726,21 @@ void ins_flow_update(void)
 	  if(OF_X[OF_V_IND] > 0) OF_X[OF_V_IND] -= drag;
 	  else OF_X[OF_V_IND] += drag;
       }
-      //OF_X[OF_ANGLE_IND] += dt * rates->p; // TODO: replace this with gyro!!!
       OF_X[OF_ANGLE_IND] += dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f; // Code says scaled by 12, but... that does not fit...
+
+      if(OF_TWO_DIM) {
+	  // Second axis, decoupled formulation:
+	  OF_X[OF_VX_IND] += dt * (g * tan(OF_X[OF_THETA_IND]));
+	  if(OF_DRAG) {
+	    // quadratic drag acceleration:
+	    drag = dt * kd * (OF_X[OF_VX_IND]*OF_X[OF_VX_IND]) / mass;
+	    // apply it in the right direction:
+	    if(OF_X[OF_VX_IND] > 0) OF_X[OF_VX_IND] -= drag;
+	    else OF_X[OF_VX_IND] += drag;
+	  }
+	  OF_X[OF_THETA_IND] += dt * (ins_flow.lp_gyro_pitch - ins_flow.lp_gyro_bias_pitch) * (M_PI/180.0f) / 74.0f; // Code says scaled by 12, but... that does not fit...
+      }
+
       DEBUG_PRINT("Rate p = %f, gyro p = %f\n", rates->p, (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f);
   }
   else {
@@ -715,6 +769,9 @@ void ins_flow_update(void)
   }
   if(CONSTANT_ALT_FILTER) {
     F[OF_V_IND][OF_ANGLE_IND] = dt*(g/(cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])));
+    if(OF_TWO_DIM) {
+	F[OF_VX_IND][OF_THETA_IND] = dt*(g/(cos(OF_X[OF_THETA_IND])*cos(OF_X[OF_THETA_IND])));
+    }
   }
   else {
     F[OF_V_IND][OF_ANGLE_IND] = dt*(thrust*cos(OF_X[OF_ANGLE_IND])/mass);
@@ -725,6 +782,9 @@ void ins_flow_update(void)
   if(OF_DRAG) {
       // In MATLAB: -sign(v)*2*kd*v/m (always minus, whether v is positive or negative):
       F[OF_V_IND][OF_V_IND] -=  dt * 2 * kd * abs(OF_X[OF_V_IND]) / mass;
+      if(OF_TWO_DIM) {
+	  F[OF_VX_IND][OF_VX_IND] -=  dt * 2 * kd * abs(OF_X[OF_VX_IND]) / mass;
+      }
   }
 
   // G matrix (whatever it may be):
@@ -747,6 +807,17 @@ void ins_flow_update(void)
     H[OF_DIV_FLOW_IND][OF_V_IND] = -sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
     H[OF_DIV_FLOW_IND][OF_ANGLE_IND] = -OF_X[OF_V_IND]*cos(2*OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
     H[OF_DIV_FLOW_IND][OF_Z_IND] = OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]*OF_X[OF_Z_IND]);
+
+    if(OF_TWO_DIM) {
+	// divergence measurement couples the two axes actually...:
+	H[OF_DIV_FLOW_IND][OF_VX_IND] = -sin(2*OF_X[OF_THETA_IND])/(2*OF_X[OF_Z_IND]);
+	H[OF_DIV_FLOW_IND][OF_THETA_IND] = -OF_X[OF_VX_IND]*cos(2*OF_X[OF_THETA_IND])/OF_X[OF_Z_IND];
+
+	// lateral flow in x direction:
+	H[OF_LAT_FLOW_X_IND][OF_VX_IND] = -cos(OF_X[OF_THETA_IND])*cos(OF_X[OF_THETA_IND])/ OF_X[OF_Z_IND];
+	H[OF_LAT_FLOW_X_IND][OF_THETA_IND] = OF_X[OF_VX_IND]*sin(2*OF_X[OF_THETA_IND])/OF_X[OF_Z_IND];
+	H[OF_LAT_FLOW_X_IND][OF_Z_IND] = OF_X[OF_VX_IND]*cos(OF_X[OF_THETA_IND])*cos(OF_X[OF_THETA_IND])/(OF_X[OF_Z_IND]*OF_X[OF_Z_IND]);
+    }
   }
   else {
     // lateral flow:
@@ -896,12 +967,17 @@ void ins_flow_update(void)
     //			(-v*sin(2*theta)/(2*z)) - zd*cos(theta)*cos(theta)/z];
     float Z_expected[N_MEAS_OF_KF];
 
+    // TODO: take this var out? It was meant for debugging...
     float Z_expect_GT_angle;
 
     if(CONSTANT_ALT_FILTER) {
       Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
 
       Z_expected[OF_DIV_FLOW_IND] = -OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
+
+      if(OF_TWO_DIM) {
+	  Z_expected[OF_LAT_FLOW_X_IND] = -OF_X[OF_VX_IND]*cos(OF_X[OF_THETA_IND])*cos(OF_X[OF_THETA_IND])/OF_X[OF_Z_IND];
+      }
 
       Z_expect_GT_angle = -OF_X[OF_V_IND]*cos(eulers->phi)*cos(eulers->phi)/OF_X[OF_Z_IND];
     }
@@ -916,10 +992,9 @@ void ins_flow_update(void)
       Z_expect_GT_angle = -OF_X[OF_V_IND]*cos(eulers->phi)*cos(eulers->phi)/OF_X[OF_Z_IND]
 					     + OF_X[OF_Z_DOT_IND]*sin(2*eulers->phi)/(2*OF_X[OF_Z_IND])
 					     + OF_X[OF_ANGLE_DOT_IND];
-    }
-
-    if(N_MEAS_OF_KF == 3) {
-	Z_expected[OF_RATE_IND] = OF_X[OF_ANGLE_DOT_IND];
+      if(N_MEAS_OF_KF == 3) {
+      	Z_expected[OF_RATE_IND] = OF_X[OF_ANGLE_DOT_IND];
+      }
     }
 
     //  i_k1 = Z - Z_expected;
@@ -929,7 +1004,12 @@ void ins_flow_update(void)
     DEBUG_PRINT("Expected flow filter: %f, Expected flow ground truth = %f, Real flow x: %f, Real flow y: %f.\n", Z_expected[OF_LAT_FLOW_IND], Z_expect_GT_angle, ins_flow.optical_flow_x, ins_flow.optical_flow_y);
     innovation[OF_DIV_FLOW_IND][0] = ins_flow.divergence - Z_expected[OF_DIV_FLOW_IND];
     DEBUG_PRINT("Expected div: %f, Real div: %f.\n", Z_expected[OF_DIV_FLOW_IND], ins_flow.divergence);
-    if(N_MEAS_OF_KF == 3) {
+    if(CONSTANT_ALT_FILTER && N_MEAS_OF_KF == 3) {
+	innovation[OF_LAT_FLOW_X_IND][0] = ins_flow.optical_flow_y - Z_expected[OF_LAT_FLOW_X_IND];
+	DEBUG_PRINT("Expected flow in body X direction filter: %f, Real flow in corresponding y direction: %f, gyro = %f, expected velocity = %f, real velocity = %f, expected theta = %f, real theta = %f.\n",
+	       Z_expected[OF_LAT_FLOW_X_IND], ins_flow.optical_flow_y, ins_flow.lp_gyro_pitch - ins_flow.lp_gyro_bias_pitch, OF_X[OF_VX_IND], velocities->x, OF_X[OF_THETA_IND], eulers->theta);
+    }
+    else if(N_MEAS_OF_KF == 3) {
 	float gyro_meas_roll = (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f;
 	//innovation[OF_RATE_IND][0] = gyro_meas_roll - Z_expected[OF_RATE_IND];
 	innovation[OF_RATE_IND][0] = rates->p - Z_expected[OF_RATE_IND];
@@ -1039,7 +1119,8 @@ static void gyro_cb(uint8_t __attribute__((unused)) sender_id,
     // For now only filter the roll gyro:
     float current_rate = ((float)gyro->p); // TODO: is this correct? / INT32_RATE_FRAC;
     ins_flow.lp_gyro_roll = lp_factor * ins_flow.lp_gyro_roll + (1-lp_factor) * current_rate;
-
+    current_rate = ((float)gyro->q);
+    ins_flow.lp_gyro_pitch = lp_factor * ins_flow.lp_gyro_pitch + (1-lp_factor) * current_rate;
   }
   last_stamp = stamp;
 #else
@@ -1117,7 +1198,7 @@ static void set_body_state_from_quat(void)
   struct Int32Quat *body_to_imu_quat = orientationGetQuat_i(&ahrs_icq.body_to_imu);
   int32_quat_comp_inv(&ltp_to_body_quat, &ahrs_icq.ltp_to_imu_quat, body_to_imu_quat);
 
-  if(!use_filter) {
+  if(use_filter < USE_ANGLE) {
       // Use the orientation as is:
       stateSetNedToBodyQuat_i(&ltp_to_body_quat);
   }
@@ -1130,11 +1211,16 @@ static void set_body_state_from_quat(void)
 
     // set roll angle with value from the filter:
     eulers->phi = OF_X[OF_ANGLE_IND];
+    if(OF_TWO_DIM) {
+	//printf("Real theta = %f, setting theta to %f.\n", eulers->theta, OF_X[OF_THETA_IND]);
+	eulers->theta = OF_X[OF_THETA_IND];
+    }
 
     // Transform the Euler representation to Int32Quat and set the state:
     struct OrientationReps orient_euler;
     orient_euler.status = 1 << ORREP_EULER_F;
     orient_euler.eulers_f = (*eulers);
+
     struct Int32Quat* quat_i_adapted = orientationGetQuat_i(&orient_euler);
     stateSetNedToBodyQuat_i(quat_i_adapted);
   }

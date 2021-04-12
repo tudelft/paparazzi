@@ -34,15 +34,26 @@ extern "C" {
 
 #define CONSTANT_ALT_FILTER 1
 #define OF_DRAG 1
+#define OF_TWO_DIM 1
 
 #if CONSTANT_ALT_FILTER == 1
-  #define N_STATES_OF_KF 3
 
-  #define OF_V_IND 0
-  #define OF_ANGLE_IND 1
-  #define OF_Z_IND 2
+  #if OF_TWO_DIM == 0
+    #define N_STATES_OF_KF 3
 
-  #define N_MEAS_OF_KF 2
+    #define OF_V_IND 0
+    #define OF_ANGLE_IND 1
+    #define OF_Z_IND 2
+    #define N_MEAS_OF_KF 2
+  #else
+    #define N_STATES_OF_KF 5
+    #define OF_V_IND 0
+    #define OF_ANGLE_IND 1
+    #define OF_Z_IND 2
+    #define OF_THETA_IND 3
+    #define OF_VX_IND 4
+    #define N_MEAS_OF_KF 3
+  #endif
 
   #define OF_ANGLE_DOT_IND -1
   #define OF_Z_DOT_IND -1
@@ -61,6 +72,8 @@ extern "C" {
 #define OF_LAT_FLOW_IND 0
 #define OF_DIV_FLOW_IND 1
 #define OF_RATE_IND 2
+#define OF_LAT_FLOW_X_IND 2
+
 
 // use filter to different extents:
 #define USE_ANGLE 1
