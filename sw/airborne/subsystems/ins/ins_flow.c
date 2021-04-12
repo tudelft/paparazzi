@@ -363,13 +363,14 @@ static void send_ins_flow(struct transport_tx *trans, struct link_device *dev)
   struct NedCoor_f *velocities = stateGetSpeedNed_f();
   struct FloatRates *rates = stateGetBodyRates_f();
 
-  // TODO: remove inclusion of theta in phi:
-  float phi;
-  if(!OF_TWO_DIM) {
-      phi = (180.0/M_PI)*OF_X[OF_ANGLE_IND];
+  float phi = (180.0/M_PI)*OF_X[OF_ANGLE_IND];
+  float theta;
+  if(OF_TWO_DIM) {
+      theta = (180.0/M_PI)*OF_X[OF_THETA_IND];
   }
   else {
-      phi = (180.0/M_PI)*OF_X[OF_THETA_IND];
+      // if not filtering the second dimension, just take the ground truth
+      theta = (180.0/M_PI)*eulers->theta;
   }
 
   float phi_dot = 0.0f;
@@ -379,7 +380,6 @@ static void send_ins_flow(struct transport_tx *trans, struct link_device *dev)
     z_dot = OF_X[OF_Z_DOT_IND];
   }
 
-
   struct FloatRMat* NTB = stateGetNedToBodyRMat_f();
   struct FloatVect3 NED_velocities, body_velocities;
   NED_velocities.x = velocities->x;
@@ -387,21 +387,39 @@ static void send_ins_flow(struct transport_tx *trans, struct link_device *dev)
   NED_velocities.z = velocities->z;
   float_rmat_vmult(&body_velocities, NTB, &NED_velocities);
 
-  float v_GT = body_velocities.y;
-  float phi_GT;
-  if(!OF_TWO_DIM) {
-      phi_GT = (180.0/M_PI)*eulers->phi;
-  }
-  else {
-      phi_GT = (180.0/M_PI)*eulers->theta;
-  }
+  float vy_GT = body_velocities.y;
+  float phi_GT = (180.0/M_PI)*eulers->phi;
+  float vx_GT = body_velocities.x;
+  float theta_GT = (180.0/M_PI)*eulers->theta;
   float p_GT = rates->p;
+  float q_GT = rates->q;
   float z_GT = -position->z;
   float vz_GT = -velocities->z;
 
+  float vy = OF_X[OF_V_IND];
+  float vx;
+  if(OF_TWO_DIM) {
+      vx = OF_X[OF_VX_IND];
+  }
+  else {
+      vx = vx_GT;
+  }
+  float z = OF_X[OF_Z_IND];
+  float p, q;
+  if(!CONSTANT_ALT_FILTER) {
+      p = phi_dot;
+      // TODO: expand the full filter later as well, to include q:
+      q = q_GT;
+  }
+  else {
+      p = ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll;
+      q = ins_flow.lp_gyro_pitch - ins_flow.lp_gyro_bias_pitch;
+  }
+
   pprz_msg_send_INS_FLOW_INFO(trans, dev, AC_ID,
-	&OF_X[OF_V_IND], &phi, &phi_dot, &OF_X[OF_Z_IND], &z_dot,
-	&v_GT, &phi_GT, &p_GT, &z_GT, &vz_GT);
+	&vy, &phi, &p, &vx, &theta, &q, &z, &z_dot,
+	&vy_GT, &phi_GT, &p_GT, &vx_GT, &theta_GT, &q_GT,
+	&z_GT, &vz_GT);
 }
 
 void ins_reset_filter(void) {

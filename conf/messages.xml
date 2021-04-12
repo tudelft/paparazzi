@@ -631,14 +631,20 @@
 
 
     <message name="INS_FLOW_INFO" id="75">
-      <field name="v"  type="float" unit="m/s"/>
+      <field name="vy"  type="float" unit="m/s"/>
       <field name="phi"  type="float" unit="deg"/>
       <field name="p"  type="float" unit="deg/s"/>
+      <field name="vx"  type="float" unit="m/s"/>
+      <field name="theta"  type="float" unit="deg"/>
+      <field name="q"  type="float" unit="deg/s"/>
       <field name="z"  type="float" unit="m"/>
       <field name="vz"  type="float" unit="m/s"/>
-      <field name="v_GT"  type="float" unit="m/s"/>
+      <field name="vy_GT"  type="float" unit="m/s"/>
       <field name="phi_GT"  type="float" unit="deg"/>
       <field name="p_GT"  type="float" unit="deg/s"/>
+      <field name="vx_GT"  type="float" unit="m/s"/>
+      <field name="theta_GT"  type="float" unit="deg"/>
+      <field name="q_GT"  type="float" unit="deg/s"/>
       <field name="z_GT"  type="float" unit="m"/>
       <field name="vz_GT"  type="float" unit="m/s"/>
     </message>
