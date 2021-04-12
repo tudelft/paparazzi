@@ -89,7 +89,8 @@
 
     <module name="optical_flow_landing.xml">
 	<define name="OFL_COV_SETPOINT" value="-0.075"/>
-	<define name="OFL_PGAIN" value="0.50"/>
+	<define name="OFL_PGAIN" value="0.25"/>
+	<define name="OFL_IGAIN" value="0.005"/>
 	<define name="OFL_LP_CONST" value="0.033"/>
 	<define name="OFL_CLOSE_TO_EDGE" value="0.025"/>
 	<define name="OFL_IGAIN_ADAPTIVE" value="0.10"/>
@@ -276,10 +277,13 @@
   <section name="AUTOPILOT">
 
 
+<!--
     <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_NAV"/>
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+-->
+
 
 <!--
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
@@ -295,13 +299,12 @@
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
 -->
     
-<!--
+
 
     <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_MANUAL" value="AP_MODE_MODULE"/>
     <define name="MODE_AUTO1" value="AP_MODE_MODULE"/>
     <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/>
--->
     
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>

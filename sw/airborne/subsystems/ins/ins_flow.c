@@ -473,6 +473,7 @@ void ins_flow_init(void)
 
 
   // based on a fit, factor * rpm^2:
+  // TODO: with the parameters, we don't need this if / else any more.
 #if USE_NPS
   // K = [0.152163; 0.170734; 0.103436; 0.122109] * 1E-7;
   // K = [0.222949; 0.160458; 0.114227; 0.051396] * 1E-7;
@@ -611,8 +612,9 @@ void ins_flow_update(void)
       //printf("lp gyro bias = %f\n", ins_flow.lp_gyro_bias_roll);
   //}
 
-  // only start estimation when flying and above 1 meter
-  if(!autopilot_in_flight() || position->z > -1.0f) {
+  // only start estimation when flying (and above 1 meter: || position->z > -1.0f )
+  // I removed the condition on height, since (1) we need to start the filter anyway explicitly now, and (2) it created a dependence on GPS fix.
+  if(!autopilot_in_flight()) {
       return;
   }
 

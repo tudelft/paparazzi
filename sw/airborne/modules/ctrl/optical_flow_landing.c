@@ -852,6 +852,7 @@ void vertical_ctrl_module_run(bool in_flight)
   //printf("flow x, y = %f, %f\n", new_flow_x, new_flow_y);
   // negative command is flying forward, positive back.
 
+  // TODO: introduce possibility to have a desired flow!
   float error_pitch = new_flow_y;
   float error_roll = new_flow_x;
   // TODO: introduce trim commands and make the P and I gain sliders!
