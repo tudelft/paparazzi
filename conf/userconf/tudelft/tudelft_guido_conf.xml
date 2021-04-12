@@ -9,6 +9,7 @@
    settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/control/stabilization_indi.xml settings/control/rotorcraft_speed.xml"
    settings_modules="modules/optical_flow_landing.xml modules/cv_textons.xml modules/video_capture.xml modules/cv_opticflow.xml modules/bebop_cam.xml modules/air_data.xml modules/ins_flow.xml modules/stabilization_indi_simple.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/gps.xml modules/imu_common.xml"
    gui_color="red"
+   release="8adf74df3f8c993600ed57e9ea3371162ec612fc"
   />
   <aircraft
    name="Bebop2_opticflow_sim"
