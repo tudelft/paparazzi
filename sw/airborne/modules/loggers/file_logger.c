@@ -44,6 +44,8 @@
 
 #include "math/pprz_algebra_float.h"
 
+#include "subsystems/actuators/motor_mixing.h"
+
 // reading the pressuremeter:
 #include "subsystems/abi.h"
 #ifndef LOGGER_BARO_ID
@@ -181,7 +183,7 @@ void file_logger_start(void)
   if (file_logger != NULL) {
     fprintf(
           file_logger,
-          "time,accel_x,accel_y,accel_z,gyro_p,gyro_q,gyro_r,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z,att_phi,att_theta,att_psi,rate_p,rate_q,rate_r,OF_time,flow_x, flow_y,flow_der_x, flow_der_y, div_size, div,noise, fps,cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw,rpm1_abi,rpm2_abi,rpm3_abi,rpm4_abi,num_act,body_vel_x,body_vel_y,body_vel_z\n"
+          "time,accel_x,accel_y,accel_z,gyro_p,gyro_q,gyro_r,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z,att_phi,att_theta,att_psi,rate_p,rate_q,rate_r,OF_time,flow_x, flow_y,flow_der_x, flow_der_y, div_size, div,noise, fps,cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw,rpm1_abi,rpm2_abi,rpm3_abi,rpm4_abi,num_act,body_vel_x,body_vel_y,body_vel_z,motor_comm_1,motor_comm_2,motor_comm_3,motor_comm_4\n"
         );
   }
   else {
@@ -272,7 +274,8 @@ void file_logger_periodic(void)
       "%f,%f,%f,%f," // OF_size_divergence to fps
       "%d,%d,%d,%d,"
       "%d,%d,%d,%d,%d,"
-      "%f,%f,%f\n",
+      "%f,%f,%f,"
+      "%d,%d,%d,%d\n", // motor commands
           time,
 /*
 	  imu.accel_unscaled.x,
@@ -320,7 +323,11 @@ void file_logger_periodic(void)
 	  RPM_num_act,
 	  body_velocities.x,
 	  body_velocities.y,
-	  body_velocities.z
+	  body_velocities.z,
+	  motor_mixing.commands[0],
+	  motor_mixing.commands[1],
+	  motor_mixing.commands[2],
+	  motor_mixing.commands[3]
          );
 
   counter++;

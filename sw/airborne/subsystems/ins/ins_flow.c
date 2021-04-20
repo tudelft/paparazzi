@@ -416,10 +416,18 @@ static void send_ins_flow(struct transport_tx *trans, struct link_device *dev)
       q = ins_flow.lp_gyro_pitch - ins_flow.lp_gyro_bias_pitch;
   }
 
+  float thrust_bias;
+  if(!OF_THRUST_BIAS || CONSTANT_ALT_FILTER) {
+      thrust_bias = 0.0f;
+  }
+  else {
+      thrust_bias = OF_X[OF_THRUST_BIAS_IND];
+  }
+
   pprz_msg_send_INS_FLOW_INFO(trans, dev, AC_ID,
 	&vy, &phi, &p, &vx, &theta, &q, &z, &z_dot,
 	&vy_GT, &phi_GT, &p_GT, &vx_GT, &theta_GT, &q_GT,
-	&z_GT, &vz_GT);
+	&z_GT, &vz_GT, &thrust_bias);
 }
 
 void ins_reset_filter(void) {
@@ -451,6 +459,9 @@ void ins_reset_filter(void) {
       OF_P[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = parameters[PAR_P2];
       OF_P[OF_Z_IND][OF_Z_IND] = parameters[PAR_P3];
       OF_P[OF_Z_DOT_IND][OF_Z_DOT_IND] = parameters[PAR_P4];
+      if(OF_THRUST_BIAS) {
+	  OF_P[OF_THRUST_BIAS_IND][OF_THRUST_BIAS_IND] = OF_TB_P;
+      }
   }
 
   counter = 0;
@@ -516,6 +527,9 @@ void ins_flow_init(void)
   else if(OF_TWO_DIM) {
       OF_Q[OF_VX_IND][OF_VX_IND] = parameters[PAR_Q0];
       OF_Q[OF_THETA_IND][OF_THETA_IND] = parameters[PAR_Q1];
+  }
+  if(OF_THRUST_BIAS) {
+      OF_Q[OF_THRUST_BIAS_IND][OF_THRUST_BIAS_IND] = OF_TB_Q;
   }
 
 
@@ -622,8 +636,15 @@ void print_ins_flow_state(void) {
 
   }
   else {
-      printf("v = %f, angle = %f, angle_dot = %f, z = %f, z_dot = %f.\n",
-      	 OF_X[OF_V_IND], OF_X[OF_ANGLE_IND], OF_X[OF_ANGLE_DOT_IND], OF_X[OF_Z_IND], OF_X[OF_Z_DOT_IND]);
+      if(!OF_THRUST_BIAS) {
+	  printf("v = %f, angle = %f, angle_dot = %f, z = %f, z_dot = %f.\n",
+	         OF_X[OF_V_IND], OF_X[OF_ANGLE_IND], OF_X[OF_ANGLE_DOT_IND], OF_X[OF_Z_IND], OF_X[OF_Z_DOT_IND]);
+      }
+      else {
+	  printf("v = %f, angle = %f, angle_dot = %f, z = %f, z_dot = %f, thrust bias = %f.\n",
+	         OF_X[OF_V_IND], OF_X[OF_ANGLE_IND], OF_X[OF_ANGLE_DOT_IND], OF_X[OF_Z_IND], OF_X[OF_Z_DOT_IND], OF_X[OF_THRUST_BIAS_IND]);
+      }
+
   }
 
 }
@@ -678,6 +699,9 @@ void ins_flow_update(void)
   }
 
   if(!run_filter) {
+
+      // TODO: should we do this if we have a thrust bias?
+
       // Drone is flying but not yet running the filter, in order to obtain unbiased thrust estimates we estimate an additional factor.
       // Assumption is that the drone is hovering, which means that over a longer period of time, the thrust should equal gravity.
       // If the low pass thrust is lower than the one expected by gravity, then it needs to be increased and viceversa.
@@ -730,6 +754,9 @@ void ins_flow_update(void)
       thrust += RPM_FACTORS[i] * ins_flow.RPM[i]*ins_flow.RPM[i];
   }
   thrust *= thrust_factor; // ins_flow.thrust_factor;
+  if(OF_THRUST_BIAS && !CONSTANT_ALT_FILTER) {
+      thrust -= OF_X[OF_THRUST_BIAS_IND];
+  }
   DEBUG_PRINT("Thrust acceleration = %f, g = %f\n", thrust/mass, g);
 
   // propagate the state with Euler integration:
@@ -768,6 +795,7 @@ void ins_flow_update(void)
     OF_X[OF_ANGLE_DOT_IND] += dt * (moment / Ix);
     OF_X[OF_Z_IND] += dt * OF_X[OF_Z_DOT_IND];
     OF_X[OF_Z_DOT_IND] += dt * (thrust * cos(OF_X[OF_ANGLE_IND]) / mass - g);
+    // thrust bias does not change over time according to our model
   }
 
   // ensure that z is not 0 (or lower)
@@ -796,6 +824,10 @@ void ins_flow_update(void)
     F[OF_ANGLE_IND][OF_ANGLE_DOT_IND] = dt*1.0f;
     F[OF_Z_IND][OF_Z_DOT_IND] = dt*1.0f;
     F[OF_Z_DOT_IND][OF_ANGLE_IND] = dt*(-thrust*sin(OF_X[OF_ANGLE_IND])/mass);
+    if(OF_THRUST_BIAS) {
+	F[OF_V_IND][OF_THRUST_BIAS_IND] =  -dt*sin(OF_X[OF_ANGLE_IND]) / mass;
+	F[OF_Z_DOT_IND][OF_THRUST_BIAS_IND] = -dt*cos(OF_X[OF_ANGLE_IND]) / mass;
+    }
   }
   if(OF_DRAG) {
       // In MATLAB: -sign(v)*2*kd*v/m (always minus, whether v is positive or negative):

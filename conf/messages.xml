@@ -647,6 +647,7 @@
       <field name="q_GT"  type="float" unit="deg/s"/>
       <field name="z_GT"  type="float" unit="m"/>
       <field name="vz_GT"  type="float" unit="m/s"/>
+      <field name="thrust_bias"  type="float" unit="N"/>
     </message>
 
     <!-- 76 is free -->

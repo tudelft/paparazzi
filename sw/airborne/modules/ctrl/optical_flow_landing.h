@@ -91,6 +91,8 @@ struct OpticalFlowLanding {
   float igain_horizontal_factor;///< factor multiplied with the vertical I-gain for horizontal ventral-flow-based control
   float roll_trim;		///< Roll trim angle in degrees
   float pitch_trim;		///< Pitch trim angle in degrees
+  float omega_LR;		///< Set point for the left-right ventral flow
+  float omega_FB;		///< Set point for the front-back ventral flow
 };
 
 extern struct OpticalFlowLanding of_landing_ctrl;

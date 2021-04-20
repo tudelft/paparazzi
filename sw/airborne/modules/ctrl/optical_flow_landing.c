@@ -157,6 +157,14 @@ PRINT_CONFIG_VAR(OFL_OPTICAL_FLOW_ID)
 #define OFL_DGAIN_ADAPTIVE 0.50
 #endif
 
+#ifndef OFL_OMEGA_LR
+#define OFL_OMEGA_LR 0.0
+#endif
+
+#ifndef OFL_OMEGA_FB
+#define OFL_OMEGA_FB 0.0
+#endif
+
 
 // Constants
 // minimum value of the P-gain for divergence control
@@ -316,6 +324,10 @@ void vertical_ctrl_module_init(void)
   of_landing_ctrl.elc_oscillate = OFL_ELC_OSCILLATE;
   of_landing_ctrl.close_to_edge = OFL_CLOSE_TO_EDGE;
   of_landing_ctrl.lp_factor_prediction = 0.95;
+
+  of_landing_ctrl.omega_FB = OFL_OMEGA_FB;
+  of_landing_ctrl.omega_LR = OFL_OMEGA_LR;
+
   // TODO: not freed!
   int i;
   if(of_landing_ctrl.use_bias) {
@@ -852,9 +864,8 @@ void vertical_ctrl_module_run(bool in_flight)
   //printf("flow x, y = %f, %f\n", new_flow_x, new_flow_y);
   // negative command is flying forward, positive back.
 
-  // TODO: introduce possibility to have a desired flow!
-  float error_pitch = new_flow_y;
-  float error_roll = new_flow_x;
+  float error_pitch = new_flow_y - of_landing_ctrl.omega_FB;
+  float error_roll = new_flow_x - of_landing_ctrl.omega_LR;
   // TODO: introduce trim commands and make the P and I gain sliders!
   sum_pitch_error += error_pitch;
   sum_roll_error += error_roll;
