@@ -423,6 +423,18 @@ static void send_ins_flow(struct transport_tx *trans, struct link_device *dev)
   else {
       thrust_bias = OF_X[OF_THRUST_BIAS_IND];
   }
+  // This code is to actually compare the unbiased thrust with gravity:
+  // TODO: code copied from below, put in a function?
+  float thrust = 0.0f;
+  for(int i = 0; i < OF_N_ROTORS; i++) {
+      thrust += RPM_FACTORS[i] * ins_flow.RPM[i]*ins_flow.RPM[i];
+  }
+  thrust *= thrust_factor; // ins_flow.thrust_factor;
+  thrust -= thrust_bias;
+  float mass = parameters[PAR_MASS];
+  float g = 9.81;
+  float actual_lp_thrust = mass * g;
+  thrust_bias = thrust-actual_lp_thrust;
 
   pprz_msg_send_INS_FLOW_INFO(trans, dev, AC_ID,
 	&vy, &phi, &p, &vx, &theta, &q, &z, &z_dot,
@@ -514,7 +526,7 @@ void ins_flow_init(void)
       OF_R[OF_LAT_FLOW_X_IND][OF_LAT_FLOW_X_IND] = parameters[PAR_R0];
   }
   else if(N_MEAS_OF_KF == 3) {
-      OF_R[OF_RATE_IND][OF_RATE_IND] = 10.0 * (M_PI / 180.0f); // not a param yet
+      OF_R[OF_RATE_IND][OF_RATE_IND] = 1.0 * (M_PI / 180.0f); // not a param yet, used to be 10, but we could trust it more
   }
   // Q-matrix, actuation noise (TODO: make params)
   OF_Q[OF_V_IND][OF_V_IND] = parameters[PAR_Q0];
@@ -796,6 +808,14 @@ void ins_flow_update(void)
     OF_X[OF_Z_IND] += dt * OF_X[OF_Z_DOT_IND];
     OF_X[OF_Z_DOT_IND] += dt * (thrust * cos(OF_X[OF_ANGLE_IND]) / mass - g);
     // thrust bias does not change over time according to our model
+
+    if(OF_DRAG) {
+      // quadratic drag acceleration:
+      drag = dt * kd * (OF_X[OF_V_IND]*OF_X[OF_V_IND]) / mass;
+      // apply it in the right direction:
+      if(OF_X[OF_V_IND] > 0) OF_X[OF_V_IND] -= drag;
+      else OF_X[OF_V_IND] += drag;
+    }
   }
 
   // ensure that z is not 0 (or lower)
@@ -1021,20 +1041,20 @@ void ins_flow_update(void)
     float Z_expect_GT_angle;
 
     if(CONSTANT_ALT_FILTER) {
-      Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
+      Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]; // TODO: no p?
 
       Z_expected[OF_DIV_FLOW_IND] = -OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
 
       if(OF_TWO_DIM) {
-	  Z_expected[OF_LAT_FLOW_X_IND] = -OF_X[OF_VX_IND]*cos(OF_X[OF_THETA_IND])*cos(OF_X[OF_THETA_IND])/OF_X[OF_Z_IND];
+	  Z_expected[OF_LAT_FLOW_X_IND] = -OF_X[OF_VX_IND]*cos(OF_X[OF_THETA_IND])*cos(OF_X[OF_THETA_IND])/OF_X[OF_Z_IND]; // TODO: no q?
       }
 
       Z_expect_GT_angle = -OF_X[OF_V_IND]*cos(eulers->phi)*cos(eulers->phi)/OF_X[OF_Z_IND];
     }
     else {
       Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
-				     + OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND])
-				     + OF_X[OF_ANGLE_DOT_IND];
+				     + OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
+				     //+ OF_X[OF_ANGLE_DOT_IND]; // TODO: We first had this but not for the constant alt filter.
 
       Z_expected[OF_DIV_FLOW_IND] = -OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND])
 				    -OF_X[OF_Z_DOT_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
@@ -1043,7 +1063,7 @@ void ins_flow_update(void)
 					     + OF_X[OF_Z_DOT_IND]*sin(2*eulers->phi)/(2*OF_X[OF_Z_IND])
 					     + OF_X[OF_ANGLE_DOT_IND];
       if(N_MEAS_OF_KF == 3) {
-      	Z_expected[OF_RATE_IND] = OF_X[OF_ANGLE_DOT_IND];
+      	Z_expected[OF_RATE_IND] = OF_X[OF_ANGLE_DOT_IND]; // TODO: is this even in the right direction?
       }
     }
 

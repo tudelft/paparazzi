@@ -35,7 +35,7 @@ extern "C" {
 #define CONSTANT_ALT_FILTER 0
 #define OF_DRAG 1
 #define OF_TWO_DIM 0
-#define OF_THRUST_BIAS 1
+#define OF_THRUST_BIAS 0
 
 #if CONSTANT_ALT_FILTER == 1
 
@@ -63,13 +63,15 @@ extern "C" {
 #else
   #if OF_THRUST_BIAS == 0
     #define N_STATES_OF_KF 5
+    #define OF_THRUST_BIAS_IND -1
   #else
     #define N_STATES_OF_KF 6
     #define OF_THRUST_BIAS_IND 5
-    // TODO: make these parameters in the estimation scheme:
-    #define OF_TB_Q 0.02
-    #define OF_TB_P 0.5
   #endif
+
+  // TODO: make these parameters in the estimation scheme:
+  #define OF_TB_Q 0.02
+  #define OF_TB_P 0.5
 
   #define OF_V_IND 0
   #define OF_ANGLE_IND 1
@@ -79,6 +81,8 @@ extern "C" {
 
   #define OF_THETA_IND -1
   #define OF_VX_IND -1
+
+
 
   #define N_MEAS_OF_KF 3
 #endif
