@@ -3,10 +3,6 @@
 
 
 
-float estimator_time[3] = {0.285600580827510, -0.022035744273907, -0.012053303063961};
-float estimator_pos[3] = {0.164209236667037, 0.120797076901804, 0.162129652187799}; 
-float estimator_vel[3] = {-0.149450000852137, 0.613672580954269, -0.099748395433426};
-
 
 // f=e[0]+e[1]*delta_angle+e[2]*Vi
 // pitch forward: delta_angle>0, Vi>0, delta_t>0, delta_pos >0  ,delta_v both

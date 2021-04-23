@@ -75,3 +75,38 @@ Flight
 ------
 
 1.  From the Paparazzi Center, select the flight session and ... do the same as in simulation !
+
+# Bang-Bang Controller
+This MPC approaches time-optimal principles by saturating the roll or pitch angle and optimizing the time at which it switches from acceleration to braking such that it reaches the positional target at a predefined desired speed. 
+
+##Define quadcopter model parameters 
+In [bangbang.c](sw/airborne/modules/ctrl/dronerace/bangbang.c):
+- Drag coefficient: `Cd`
+- Mass : `mass` 
+
+### Compensation Estimators
+In [compensation.c](sw/airborne/modules/ctrl/dronerace/compensation.c) define estimator values for pitch forward, pitch backward and roll.
+Currently configured for first order polynomials to estimate time, position and velocity changes during the transition from accelerating to braking. 
+
+## Define flightplan
+The native paparazzi flightplan functionality is not used. Instead, the flightplan is defined in [flightplan_Bang.c](sw/airborne/modules/ctrl/dronerace/flightplan_Bang.c).
+The elements of `bangbang_fp_struct` are indicated below. Each row of this struct corresponds with a single waypoint.
+1. gate number 
+2. x position
+3. y position
+4. z position
+5. gate heading 
+   * Commanded heading while flying to this gate
+6. desired speed at gate
+7. gate type
+   * Choose `STARTGATE`,`GATE`or `ENDGATE` 
+8.  Controller type
+     * Select which controller must be used `BANGBANG`, `PID` or  `HIGHPID` (pid with higher gain values)
+9. turning 
+    * This variable indicates whether the drone is turning, which puts the bangbang controller temporarily on pause. This variable is assigned automatically.
+10. Forced heading
+     * give a forced heading. Only used when `overwrite_psi` is active (next element)
+11. `overwrite_psi` 
+     * boolean that enables the use of a forced heading. If `false` the heading will automatically be calculated such the the nose faces the target
+12.  Saturation angle
+       * Set maximum absolute angle for the critical axis
