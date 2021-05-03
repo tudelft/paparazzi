@@ -31,7 +31,7 @@
       <!-- Forward FuelCell data back to the GCS -->
       <module name="generic_uart_sensor"/>
 
-       <!-- Logger -->
+      <!-- Logger -->
       <module name="tlsf"/>
       <module name="pprzlog"/>
       <module name="logger" type="sd_chibios"/>
@@ -175,9 +175,9 @@
     <!-- backleft left (CCW), backleft mid (CW), backleft right (CCW), backright left (CW), backright mid (CCW), backright right (CW) -->
     <define name="NB_MOTOR"    value="12"/>
     <define name="SCALE"       value="256"/>
-    <define name="ROLL_COEF"   value="{256,  253,  159, -159, -253, -256,  256,  157,   56,  -56, -157, -256}"/>
+    <define name="ROLL_COEF"   value="{256,  157,   56,  -56, -157, -256,  256,  157,   56,  -56, -157, -256}"/>
     <define name="PITCH_COEF"  value="{256,  256,  256,  256,  256,  256, -256, -256, -256, -256, -256, -256}"/>
-    <define name="YAW_COEF"    value="{251, -256,  252, -252,  256, -251, -256,  252, -254,  254, -252,  256}"/>
+    <define name="YAW_COEF"    value="{256, -256,  256, -256,  256, -256, -256,  256, -256,  256, -256,  256}"/>
     <!--<define name="YAW_COEF"    value="{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}"/>-->
     <define name="THRUST_COEF" value="{256,  256,  256,  256,  256,  256,  256,  256,  256,  256,  256,  256}"/>
   </section>
@@ -186,7 +186,7 @@
     <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
     <let var="th_hold"     value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
 
-    <set servo="MOTOR_1"   value="($th_hold? -9600 : motor_mixing.commands[0])"/> 
+    <set servo="MOTOR_1"   value="($th_hold? -9600 : motor_mixing.commands[0])"/>
     <set servo="MOTOR_2"   value="($th_hold? -9600 : motor_mixing.commands[1])"/>
     <set servo="MOTOR_3"   value="($th_hold? -9600 : motor_mixing.commands[2])"/>
     <set servo="MOTOR_4"   value="($th_hold? -9600 : motor_mixing.commands[3])"/>
@@ -199,14 +199,14 @@
     <set servo="MOTOR_11"  value="($th_hold? -9600 : motor_mixing.commands[10])"/>
     <set servo="MOTOR_12"  value="($th_hold? -9600 : motor_mixing.commands[11])"/>
  
-    <set servo="AIL_1"     value="-2*@PITCH + ApplyDiff(  2*@YAW)"/>      
-    <set servo="AIL_2"     value="-2*@PITCH + ApplyDiff(- 2*@YAW)"/>                                            
-    <set servo="AIL_3"     value=" 2*@PITCH + ApplyDiff(- 2*@YAW)"/>                                            
-    <set servo="AIL_4"     value=" 2*@PITCH + ApplyDiff(  2*@YAW)"/>       
-    <set servo="FLAP_1"    value="-2*@PITCH + ApplyDiff(  2*@YAW)"/>                                                             
-    <set servo="FLAP_2"    value="-2*@PITCH + ApplyDiff(- 2*@YAW)"/>                                                                                
-    <set servo="FLAP_3"    value=" 2*@PITCH + ApplyDiff(- 2*@YAW)"/>                                                                                
-    <set servo="FLAP_4"    value=" 2*@PITCH + ApplyDiff(  2*@YAW)"/>                                                             
+    <set servo="AIL_1"     value="-2*@PITCH + ApplyDiff(  2*@YAW)"/>
+    <set servo="AIL_2"     value="-2*@PITCH + ApplyDiff(- 2*@YAW)"/>
+    <set servo="AIL_3"     value=" 2*@PITCH + ApplyDiff(- 2*@YAW)"/>
+    <set servo="AIL_4"     value=" 2*@PITCH + ApplyDiff(  2*@YAW)"/>
+    <set servo="FLAP_1"    value="-2*@PITCH + ApplyDiff(  2*@YAW)"/>
+    <set servo="FLAP_2"    value="-2*@PITCH + ApplyDiff(- 2*@YAW)"/>
+    <set servo="FLAP_3"    value=" 2*@PITCH + ApplyDiff(- 2*@YAW)"/>
+    <set servo="FLAP_4"    value=" 2*@PITCH + ApplyDiff(  2*@YAW)"/>
   </command_laws>
 
   <section name="MISC">
@@ -221,7 +221,7 @@
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
   </section>
 
-   <section name="FORWARD">
+  <section name="FORWARD">
     <!--The Quadshot uses a slightly different axis system for the setpoint, to make both hovering and flying forward intuitive-->
     <define name="USE_EARTH_BOUND_RC_SETPOINT" value="TRUE"/>
     <!-- This is the pitch angle that the Quadshot will have in forward flight, where 0 degrees is hover-->
