@@ -353,7 +353,7 @@
     <define name="FORWARD_G1_P_FEW_PROPS" value="STABILIZATION_INDI_FORWARD_G1_P"/>
     <!--Part of yaw eff that comes from motors-->
     <define name="MOT_YAW_EFF" value="0.0"/>
-    <define name="MOT_PITCH_EFF" value="0.003"/>
+    <define name="MOT_PITCH_EFF" value="0.0055"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="30.0"/>
