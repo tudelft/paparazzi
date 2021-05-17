@@ -226,6 +226,7 @@
       <message name="PPM"                      period="0.05"/>
       <message name="INDI_G"                   period="0.1"/>
       <message name="CHIRP"                    period="0.1"/>
+      <message name="AOA"                      period="0.2"/>
       <!--<message name="WINDTUNNEL_MEAS"          period="0.005"/>-->
     </mode>
   </process>
