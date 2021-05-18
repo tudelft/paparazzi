@@ -503,11 +503,35 @@ void guidance_indi_calcg_wing(struct FloatMat33 *Gmat) {
 #define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
 #endif
 
-  /*Amount of lift produced by the wing*/
+  // This piece of code is added START ----------------------------
+  //float lift_coeff[5] = {0.0355, -6.6078, 33.1969, 3.1121, 36.7535}; // These coefficients are determined for a speed of 11.8 m/s
+  float lift_coeff[5] = {0.0164, -4.5969, 7.2094, 3.6057, 0.7710};
+  float speed = stateGetAirspeed_f();
+  float flight_path_lift = atan2((stateGetSpeedNed_i()->z),speed);
   float pitch_lift = eulers_zxy.theta;
   Bound(pitch_lift,-M_PI_2,0);
-  float lift = sinf(pitch_lift)*9.81;
+  float roll_lift = eulers_zxy.phi;
+  float aoa_lift = pitch_lift - flight_path_lift;
+
+  /*Amount of lift produced by the wing*/
+  Bound(pitch_lift,-M_PI_2,0);  // -90 to 0
+  Bound(roll_lift, -M_PI_2/2, M_PI_2/2);  // -45 to 45
+  Bound(aoa_lift, -M_PI_2, 0);  // -90 to 0
+  Bound(speed, 4, 50);  // in case an errorneous speed would be encountered
+
+  float lift = lift_coeff[0]*speed*speed + lift_coeff[1]*pitch_lift + lift_coeff[2]*roll_lift + lift_coeff[3]*aoa_lift + lift_coeff[4];
+  //Bound(lift,-M_PI_2,0);  // in case a errorneous speed would be encountered
+
   float T = cosf(pitch_lift)*-9.81;
+  // This piece of code is added END ----------------------------
+
+
+  // THIS IS THE OLD CODE
+  // /*Amount of lift produced by the wing*/
+  // float pitch_lift = eulers_zxy.theta;
+  // Bound(pitch_lift,-M_PI_2,0);
+  // float lift = sinf(pitch_lift)*9.81;
+  // float T = cosf(pitch_lift)*-9.81;
 
   // get the derivative of the lift wrt to theta
   float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
@@ -539,17 +563,24 @@ void guidance_indi_calcg_wing(struct FloatMat33 *Gmat) {
  * @return The derivative of lift w.r.t. pitch
  */
 float guidance_indi_get_liftd(float airspeed, float theta) {
-  float liftd = 0.0;
-  if(airspeed < 12) {
-    float pitch_interp = DegOfRad(theta);
-    Bound(pitch_interp, -80.0, -40.0);
-    float ratio = (pitch_interp + 40.0)/(-40.);
-    liftd = -24.0*ratio*lift_pitch_eff/0.12*lift_eff_scaling;
-  } else {
-    liftd = -(airspeed - 8.5)*lift_pitch_eff/M_PI*180.0*lift_eff_scaling;
-  }
-  //TODO: bound liftd
-  return liftd;
+  
+  // NEW CODE START
+  float lifd = -0.9912; 
+  return lifd; 
+  // NEW CODE END
+
+  // THIS IS THE OLD CODE
+  // float liftd = 0.0;
+  // if(airspeed < 12) {
+  //   float pitch_interp = DegOfRad(theta);
+  //   Bound(pitch_interp, -80.0, -40.0);
+  //   float ratio = (pitch_interp + 40.0)/(-40.);
+  //   liftd = -24.0*ratio*lift_pitch_eff/0.12*lift_eff_scaling;
+  // } else {
+  //   liftd = -(airspeed - 8.5)*lift_pitch_eff/M_PI*180.0*lift_eff_scaling;
+  // }
+  // //TODO: bound liftd
+  // return liftd;
 }
 
 /**
