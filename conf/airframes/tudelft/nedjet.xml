@@ -19,6 +19,15 @@
         <configure name="SBUS_PORT" value="UART3"/>
       </module>
 
+      <module name="pwm_meas">
+        <define name="USE_PWM_INPUT1" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>
+        <!--<define name="USE_PWM_INPUT2" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>-->
+      </module>
+
+      <module name="AOA_pwm">
+        <define name="AOA_PWM_CHANNEL" value="PWM_INPUT1"/>
+      </module>
+
       <module name="airspeed_sdp3x">
         <define name="USE_I2C4"/>
         <configure name="SDP3X_I2C_DEV" value="I2C4"/>

@@ -273,6 +273,16 @@
   0 \
 }
 
+/*
+ * PWM input
+ */
+// PWM_INPUT 1 on PA0 (AUX3)
+#define PWM_INPUT1_ICU            ICUD4
+#define PWM_INPUT1_CHANNEL        ICU_CHANNEL_1
+#define PWM_INPUT1_GPIO_PORT      PAL_PORT(LINE_SERVO5)
+#define PWM_INPUT1_GPIO_PIN       PAL_PAD(LINE_SERVO5)
+#define PWM_INPUT1_GPIO_AF        AF_LINE_SERVO5
+
 /**
  * UART defines
  */
