@@ -519,7 +519,7 @@ void guidance_indi_calcg_wing(struct FloatMat33 *Gmat) {
   Bound(aoa_lift, -M_PI_2, 0);  // -90 to 0
   Bound(speed, 4, 50);  // in case an errorneous speed would be encountered
 
-  float lift = lift_coeff[0]*speed*speed + lift_coeff[1]*pitch_lift + lift_coeff[2]*roll_lift + lift_coeff[3]*aoa_lift + lift_coeff[4];
+  float lift = lift_coeff[0]*speed*speed + lift_coeff[1]*aoa_lift + lift_coeff[2]*pitch_lift + lift_coeff[3]*roll_lift + lift_coeff[4];
   //Bound(lift,-M_PI_2,0);  // in case a errorneous speed would be encountered
 
   float T = cosf(pitch_lift)*-9.81;
