@@ -86,7 +86,7 @@ bool log_started;
 #endif
 // Enable SD card logging
 #ifndef LOG_AOA
-#define LOG_AOA TRUE
+#define LOG_AOA FALSE
 #endif
 
 struct Aoa_Pwm aoa_pwm;
