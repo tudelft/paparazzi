@@ -206,10 +206,14 @@
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness, can be obtained by switching on "adaptive" in the indi settings -->
+    <!-- Bebop 45 -->
     <define name="G1_P" value="0.100"/>
     <define name="G1_Q" value="0.050"/>
     <define name="G1_R" value="0.0010"/>
     <define name="G2_R" value="0.236"/>
+
+    <!-- Bebop 48 -->
+
 
     <!-- Here it is assumed that your removed the damping from your bebop2!
          The dampers do not really damp, but cause oscillation. By removing/
@@ -276,12 +280,12 @@
 
   <section name="AUTOPILOT">
 
-
+<!--
     <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_NAV"/>
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
-
+-->
 
 <!--
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
@@ -298,12 +302,12 @@
 -->
     
 
-<!--
+
     <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_MANUAL" value="AP_MODE_MODULE"/>
     <define name="MODE_AUTO1" value="AP_MODE_MODULE"/>
     <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/>
--->
+
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>
 

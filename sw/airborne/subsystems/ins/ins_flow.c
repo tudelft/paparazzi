@@ -172,6 +172,9 @@ bool run_filter;
 uint32_t counter;
 float thrust_factor;
 
+float GT_phi;
+float GT_theta;
+
 
 #define USE_STANDARD_PARAMS 0
 
@@ -388,9 +391,22 @@ static void send_ins_flow(struct transport_tx *trans, struct link_device *dev)
   float_rmat_vmult(&body_velocities, NTB, &NED_velocities);
 
   float vy_GT = body_velocities.y;
-  float phi_GT = (180.0/M_PI)*eulers->phi;
+
+  float phi_GT;
+  if(use_filter < USE_ANGLE) {
+      phi_GT = (180.0/M_PI)*eulers->phi;
+  }
+  else {
+      phi_GT = (180.0/M_PI)*GT_phi;
+  }
   float vx_GT = body_velocities.x;
-  float theta_GT = (180.0/M_PI)*eulers->theta;
+  float theta_GT;
+  if(use_filter < USE_ANGLE) {
+      theta_GT = (180.0/M_PI)*eulers->theta;
+  }
+  else if(OF_TWO_DIM) {
+      theta_GT = (180.0/M_PI)*GT_theta;
+  }
   float p_GT = rates->p;
   float q_GT = rates->q;
   float z_GT = -position->z;
@@ -514,6 +530,9 @@ void ins_flow_init(void)
   ins_flow.lp_thrust = 0.0f;
   lp_factor = 0.95;
   lp_factor_strong = 1-1E-3;
+
+  GT_phi = 0.0f;
+  GT_theta = 0.0f;
 
   // Extended Kalman filter:
   // reset the state and P matrix:
@@ -1273,6 +1292,7 @@ static void set_body_state_from_quat(void)
       stateSetNedToBodyQuat_i(&ltp_to_body_quat);
   }
   else {
+
     // get Euler angles:
     struct OrientationReps orient;
     orient.status = 1 << ORREP_QUAT_I;
@@ -1280,8 +1300,10 @@ static void set_body_state_from_quat(void)
     struct FloatEulers* eulers = orientationGetEulers_f(&orient);
 
     // set roll angle with value from the filter:
+    GT_phi = eulers->phi;
     eulers->phi = OF_X[OF_ANGLE_IND];
     if(OF_TWO_DIM) {
+	GT_theta = eulers->theta;
 	//printf("Real theta = %f, setting theta to %f.\n", eulers->theta, OF_X[OF_THETA_IND]);
 	eulers->theta = OF_X[OF_THETA_IND];
     }

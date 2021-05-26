@@ -196,6 +196,7 @@ void sim_overwrite_ahrs(void)
   struct FloatEulers* eulers = orientationGetEulers_f(&orient);
   //printf("SIM 1: phi = %f, theta = %f, psi = %f.\n", (180.0f/M_PI)*eulers->phi, (180.0f/M_PI)*eulers->theta, (180.0f/M_PI)*eulers->psi);
 
+  GT_phi = eulers->phi;
   if(use_filter) {
     // struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
     // set part of the state with the filter:
