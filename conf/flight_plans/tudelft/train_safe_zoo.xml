@@ -141,6 +141,7 @@
     </block>
     <block name="Sbinnala">
       <set value="AP_MODE_ATTITUDE_DIRECT" var="autopilot_mode_auto2"/>
+      <stay wp="STDBY"/>
     </block>
     <block name="Landed">
       <call_once fun="NavKillThrottle()"/>
