@@ -80,12 +80,12 @@
   <aircraft
    name="Bebop_Smeur"
    ac_id="21"
-   airframe="airframes/tudelft/bebop_indi.xml"
+   airframe="airframes/tudelft/bebop_optitrack.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"
-   flight_plan="flight_plans/tudelft/delft_basic.xml"
+   flight_plan="flight_plans/tudelft/train_safe_zoo.xml"
    settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_speed.xml"
-   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/air_data.xml [modules/geo_mag.xml] modules/gps.xml modules/guidance_indi.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi_simple.xml"
+   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/gps.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi.xml"
    gui_color="#ffffcccaccca"
   />
   <aircraft
@@ -528,9 +528,9 @@
    airframe="airframes/tudelft/bebop_opticflow_indoor.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"
-   flight_plan="flight_plans/tudelft/train_safe_zoo.xml"
+   flight_plan="flight_plans/tudelft/rotorcraft_cyberzoo_no_gps.xml"
    settings="settings/rotorcraft_basic.xml"
-   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/bebop_cam.xml modules/cv_opticflow.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_hff_extended.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi.xml modules/video_capture.xml modules/video_rtp_stream.xml"
+   settings_modules="modules/video_rtp_stream.xml modules/video_capture.xml modules/cv_opticflow.xml modules/bebop_cam.xml modules/ins_hff_extended.xml modules/ahrs_int_cmpl_quat.xml modules/stabilization_indi.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/imu_common.xml"
    gui_color="blue"
    release="398071ca8f7c8dc24becbe76bc5628b6ea604248"
   />
