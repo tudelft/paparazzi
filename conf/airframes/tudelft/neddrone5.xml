@@ -204,7 +204,7 @@
   </command_laws>
 
   <section name="MISC">
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 18.9040120162 * adc)"/><!-- TODO: verify/calibrate -->
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 18.1824848397 * adc)"/><!-- TODO: verify/calibrate -->
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
 
     <!-- Basic navigation settings -->
