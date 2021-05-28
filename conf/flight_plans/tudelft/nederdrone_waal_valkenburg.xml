@@ -1,0 +1,138 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="120" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="20000" name="Nederdrone Waal" security_height="2">
+  <header>
+    #include "autopilot.h"
+    #include "subsystems/datalink/datalink.h"
+</header>
+  <waypoints>
+    <waypoint name="HOME" x="12.6" y="-48.7"/>
+    <waypoint name="CLIMB" x="15.4" y="95.8"/>
+    <waypoint name="TD" x="45.6" y="39.3"/>
+    <waypoint name="STDBY" x="106.0" y="-55.1"/>
+    <waypoint name="p1" x="181.6" y="-100.2"/>
+    <waypoint name="p2" x="365.5" y="-263.5"/>
+    <waypoint name="p3" x="671.7" y="-186.1"/>
+    <waypoint name="p4" x="725.7" y="99.7"/>
+    <waypoint name="p5" x="644.4" y="108.1"/>
+    <waypoint lat="52.169649" lon="4.410723" name="C1"/>
+    <waypoint lat="52.168643" lon="4.405858" name="C2"/>
+    <waypoint lat="52.166307" lon="4.406662" name="C3"/>
+    <waypoint lat="52.162973" lon="4.406458" name="C4"/>
+    <waypoint lat="52.161262" lon="4.409973" name="C5"/>
+    <waypoint lat="52.161862" lon="4.417319" name="C6"/>
+    <waypoint lat="52.164713" lon="4.428405" name="C7"/>
+    <waypoint lat="52.170621" lon="4.428543" name="C8"/>
+    <waypoint lat="52.172699" lon="4.424047" name="C9"/>
+    <waypoint lat="52.171720" lon="4.419511" name="C10"/>
+    <waypoint lat="52.169233" lon="4.410965" name="S1"/>
+    <waypoint lat="52.168183" lon="4.406923" name="S2"/>
+    <waypoint lat="52.166485" lon="4.408259" name="S3"/>
+    <waypoint lat="52.163344" lon="4.407862" name="S4"/>
+    <waypoint lat="52.162509" lon="4.410336" name="S5"/>
+    <waypoint lat="52.163034" lon="4.416968" name="S6"/>
+    <waypoint lat="52.164913" lon="4.427074" name="S7"/>
+    <waypoint lat="52.170288" lon="4.427148" name="S8"/>
+    <waypoint lat="52.171927" lon="4.424229" name="S9"/>
+    <waypoint lat="52.171230" lon="4.419861" name="S10"/>
+  </waypoints>
+  <sectors>
+    <sector color="red" name="Flyzone">
+      <corner name="C1"/>
+      <corner name="C2"/>
+      <corner name="C3"/>
+      <corner name="C4"/>
+      <corner name="C5"/>
+      <corner name="C6"/>
+      <corner name="C7"/>
+      <corner name="C8"/>
+      <corner name="C9"/>
+      <corner name="C10"/>
+    </sector>
+    <sector color="orange" name="Softzone">
+      <corner name="S1"/>
+      <corner name="S2"/>
+      <corner name="S3"/>
+      <corner name="S4"/>
+      <corner name="S5"/>
+      <corner name="S6"/>
+      <corner name="S7"/>
+      <corner name="S8"/>
+      <corner name="S9"/>
+      <corner name="S10"/>
+    </sector>
+  </sectors>
+  <exceptions>
+    <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 1500) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('land here')) && !(nav_block == IndexOfBlock('land')) && !(nav_block == IndexOfBlock('descend')) && !(nav_block == IndexOfBlock('flare')) && !(nav_block == IndexOfBlock('landed'))" deroute="land here"/>
+    <exception cond="Or(!InsideSoftzone(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 1000) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('land here')) && !(nav_block == IndexOfBlock('land')) && !(nav_block == IndexOfBlock('descend')) && !(nav_block == IndexOfBlock('flare')) && !(nav_block == IndexOfBlock('landed')) && !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+    <exception cond="datalink_time > 25 && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('land here')) && !(nav_block == IndexOfBlock('land')) && !(nav_block == IndexOfBlock('descend')) && !(nav_block == IndexOfBlock('flare')) && !(nav_block == IndexOfBlock('landed')) && !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+  </exceptions>
+  <blocks>
+    <block name="Wait GPS">
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid() || !state.ned_initialized_i"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetAltitudeReferenceHere()"/>
+    </block>
+    <block name="Holding point">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Start Engine">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="NavResurrect()"/>
+      <call_once fun="nav_set_heading_current()"/>
+      <attitude pitch="-65" roll="0" throttle="0" until="stage_time>1" vmode="throttle"/>
+    </block>
+    <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
+      <exception cond="stateGetPositionEnu_f()->z > 18.0" deroute="Takeoff"/>
+      <call_once fun="nav_set_heading_current()"/>
+      <attitude pitch="-45." roll="0" throttle="0.8" vmode="throttle"/>
+    </block>
+    <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+      <exception cond="stateGetPositionEnu_f()->z > 40.0" deroute="Standby"/>
+      <call_once fun="nav_set_heading_current()"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
+    </block>
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <set value="FALSE" var="force_forward"/>
+      <stay wp="STDBY"/>
+    </block>
+    <block name="stay_p1">
+      <set value="FALSE" var="force_forward"/>
+      <stay wp="p1"/>
+    </block>
+    <block name="route">
+      <set value="TRUE" var="force_forward"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p3"/>
+      <go from="p3" hmode="route" wp="p4"/>
+      <go from="p4" hmode="route" wp="p5"/>
+      <go from="p5" hmode="route" wp="p3"/>
+      <go from="p3" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p1"/>
+      <deroute block="Standby"/>
+    </block>
+    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+    </block>
+    <block name="land">
+      <go wp="TD"/>
+    </block>
+    <block name="descend">
+      <set value="FALSE" var="force_forward"/>
+      <exception cond="LessThan(stateGetPositionEnu_f()->z, 15.0)" deroute="flare"/>
+      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="flare">
+      <set value="FALSE" var="force_forward"/>
+      <stay climb="-0.5" vmode="climb" wp="TD"/>
+    </block>
+    <block name="landed">
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>
