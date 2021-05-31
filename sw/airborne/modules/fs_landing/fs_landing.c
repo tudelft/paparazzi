@@ -7,12 +7,13 @@
 #include "pilot_test.h"
 #include "actuator_id.h"
 #include "cyclic_control.h"
+#include "impulse_control.h"
 #include "actuator_freq_test.h"
 
 #include "subsystems/datalink/downlink.h"
 
 #ifndef FS_LANDING_FREQ_TEST
-#define FS_LANDING_FREQ_TEST TRUE
+#define FS_LANDING_FREQ_TEST FALSE
 #endif
 
 #ifndef FS_LANDING_DEBUG
@@ -26,6 +27,7 @@ uint8_t is_spinning = false;
 uint8_t pilot_has_control = false;
 uint8_t act_identification_active = false;
 uint8_t cyclic_control_active = false;
+uint8_t impulse_control_active = false;
 uint8_t has_ff_started = false;
 uint8_t freq_test_active = false;
 float ff_start_time = 0;
@@ -72,6 +74,9 @@ void fs_landing_run()
         add_chirp(&current_actuator_values);  // +- sinusoidally varying delta to one of the actuators
       } else if (cyclic_control_active) {
         cyclic_control_values(&current_actuator_values);
+      }
+      if (impulse_control_active) {
+        impulse_control_values(&current_actuator_values);
       }
     } else {
       if (use_pre_spin) {

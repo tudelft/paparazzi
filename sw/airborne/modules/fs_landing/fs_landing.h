@@ -33,6 +33,8 @@ extern struct fs_landing_t fs_landing;
 extern uint8_t pilot_has_control;
 extern uint8_t act_identification_active;
 extern uint8_t cyclic_control_active;
+extern uint8_t impulse_control_active;
+
 extern uint8_t use_pre_spin;
 extern float pre_spin_pitch_coeff;
 extern float pre_spin_speed_setpoint;
