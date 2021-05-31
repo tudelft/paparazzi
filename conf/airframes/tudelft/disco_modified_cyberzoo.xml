@@ -76,7 +76,7 @@
     <module name="imu" type="mpu9250_spi">
       <configure name="IMU_MPU9250_SPI_DEV" value="spi1"/>
       <configure name="IMU_MPU9250_SPI_SLAVE_IDX" value="SPI_SLAVE2"/>
-      <define name="IMU_MPU9250_READ_MAG" value="TRUE"/>
+      <define name="IMU_MPU9250_READ_MAG" value="FALSE"/>
 
       <define name="IMU_MPU9250_GYRO_RANGE" value="MPU9250_GYRO_RANGE_2000" />
       <!-- To be able (for now) to set AP IMU orientation -->
@@ -101,10 +101,6 @@
 <!--    </module>-->
 
 <!--    <module name="actuators" type="pwm"/>-->  <!-- TODO Necessary? -->
-    <!-- This GPS is a real ublox M8N, so setting can be saved, no need
-    for ubx_ucenter one has can set it oneself since we have all kinds
-    of nifty Galileo setting we rather keep that, but for now, laziness -->
-    <module name="gps" type="ubx_ucenter"/>
 
     <!-- SBUS out is AETR by default but our transmitter sends TAER -->
     <module name="radio_control" type="sbus"/>
@@ -120,16 +116,14 @@
       <configure name="MODEM_BAUD" value="B57600"/>
     </module>
 
-    <module name="gps" type="ublox">
-      <configure name="GPS_BAUD" value="B57600"/>
-    </module>
+    <module name="gps" type="datalink"/>
 
     <define name="AGR_CLIMB"/> <!--Has aggressive mode handy for testing purposes -->
     <define name="TUNE_AGRESSIVE_CLIMB"/>
 
-    <define name="STRONG_WIND"/>
-    <define name="WIND_INFO"/>
-    <define name="WIND_INFO_RET"/>
+<!--    <define name="STRONG_WIND"/>-->
+<!--    <define name="WIND_INFO"/>-->
+<!--    <define name="WIND_INFO_RET"/>-->
 
     <define name="autopilot_motors_on" value="FALSE"/><!-- TODO: choose ;) -->
     <!-- temp fix for geomag, normally only used for rotorcraft -->
@@ -145,25 +139,16 @@
     <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410" unit="s/10"/> <!-- in tenth of seconds for engine kill or in ELECTRICAL_PERIODIC_FREQ-->
 
     <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
-    <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/> <!-- forward acceleration compensation from GPS speed -->
-    <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/> <!--DEFINE only used if float_dcm Use magnetic compensation before takeoff only while GPS course not good -->
+    <define name="USE_AHRS_GPS_ACCELERATIONS" value="FALSE"/> <!-- forward acceleration compensation from GPS speed -->
+    <define name="USE_MAGNETOMETER_ONGROUND" value="FALSE"/> <!--DEFINE only used if float_dcm Use magnetic compensation before takeoff only while GPS course not good -->
 
-    <configure name="USE_MAGNETOMETER" value="TRUE"/><!-- should be as in USE the device -->
+<!--    <configure name="USE_MAGNETOMETER" value="TRUE"/>&lt;!&ndash; should be as in USE the device &ndash;&gt;-->
+    <configure name="USE_MAGNETOMETER" value="FALSE"/><!-- should be as in USE the device -->
 
-    <module name="ahrs" type="float_cmpl_quat"> <!-- Compare e.g. float_dcm -->
-      <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/> <!-- as in USE it for values in the AHRS -->
-      <configure name="AHRS_ALIGNER_LED" value="2"/>
-      <define name="AHRS_MAG_UPDATE_ALL_AXES" value="TRUE"/> <!-- if TRUE with those high roll n pith angles magneto should be calibrated well or use UKF autocalib -->
+    <module name="ahrs" type="int_cmpl_quat"> <!-- Compare e.g. float_dcm -->
+      <configure name="AHRS_USE_MAGNETOMETER" value="FALSE"/> <!-- as in USE it for values in the AHRS -->
       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/><!-- TRUE by default Use GPS course to update heading for time being,if FALSE data from magneto only -->
       <!-- <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="FALSE"/>--> <!--Already TRUE by default Compensation of centrifugal force via GPS speed (to fly in circles with a fixedwing)"-->
-      <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/> <!-- AHRS_GRAVITY_UPDATE_COORDINATED_TURN assumes the GPS speed is in the X axis direction. Quadshot, DelftaCopter and other hybrids can have the GPS speed in the negative Z direction" -->
-      <define name="AHRS_PROPAGATE_LOW_PASS_RATES" value="FALSE"/> <!-- apply a low pass filter on rotational velocity"-->
-      <define name="AHRS_BIAS_UPDATE_HEADING_THRESHOLD" value="0.174533" unit="rad"/> <!-- don't update gyro bias if heading deviation is above this rotation threshold"-->
-      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="3.0" unit="m/s"/> <!-- CAREFULL,  Don't update heading from GPS course if GPS ground speed is below is this threshold in m/s" -->
-      <!-- Some insights https://lists.nongnu.org/archive/html/paparazzi-devel/2013-10/msg00126.html -->
-      <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="10"/> <!-- TODO: determine Default is 30. Reduce accelerometer cut-off frequency when the vehicle is accelerating: norm(ax,ay,az) 9,81 m/s2. WARNING: when the IMU is not well damped, the norm of accelerometers never equals to 9,81 m/s2. As a result, the GRAVITY_HEURISTIC_FACTOR will reduce the accelerometer bandwith even if the vehicle is not accelerating. -->
-      <define name="AHRS_ICQ_IMU_ID" value="ABI_BROADCAST"/> <!-- ABI sender id of IMU to use -->
-      <define name="AHRS_ICQ_MAG_ID" value="MAG_CALIB_UKF_ID"/><!-- for when using the mag_clib_ukf -->
     </module>
 
     <module name="ins" type="alt_float"/>
@@ -317,13 +302,14 @@
 
   <!-- ************************* AHRS ************************* -->
   <section name="AHRS" prefix="AHRS_">
-    <!-- Values used if no GNSS fix, on 3D fix is update by geo_mag module -->
-    <!-- Better keep geo_mag module ifyou have a GNSDS, else replace the values with your local magnetic field -->
+    <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
+    <!-- Delft -->
+    <define name="H_X" value="0.3892503"/>
+    <define name="H_Y" value="0.0017972"/>
+    <define name="H_Z" value="0.9211303"/>
 
-    <!-- Local Magnetic field DE2018 -->
-    <define name="H_X" value="0.403761"/>
-    <define name="H_Y" value="0.014826"/>
-    <define name="H_Z" value="0.914744"/>
+    <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
+    <define name="GRAVITY_HEURISTIC_FACTOR" value="0"/>
   </section>
 
   <!-- ************************* INS ************************* -->
