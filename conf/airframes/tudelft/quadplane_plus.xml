@@ -21,10 +21,10 @@
         <configure name="SBUS_PORT" value="UART3"/>
       </module>
 
-      <module name="airspeed_ets.xml">
-        <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>
-        <define name="AIRSPEED_ETS_SCALE" value="1.24"/>
-      </module>
+<!--      <module name="airspeed_ets.xml">-->
+<!--        <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>-->
+<!--        <define name="AIRSPEED_ETS_SCALE" value="1.24"/>-->
+<!--      </module>-->
 
 <!--      <module name="scheduling_indi_simple"/>-->
 
@@ -39,28 +39,33 @@
 
       <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
 
+      <define name="USE_PWM9" value="TRUE"/>
+      <define name="USE_PWM10" value="TRUE"/>
+      <define name="USE_PWM11" value="TRUE"/>
+      <define name="USE_PWM12" value="TRUE"/>
+
       <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
       <define name="RADIO_FMODE"       value="RADIO_AUX2"/> <!-- Throttle curve select -->
       <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> <!-- Switch between AP and FBW control -->
       <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
     </target>
 
-    <target name="nps" board="pc">
-      <module name="radio_control" type="datalink"/>
-      <module name="fdm" type="jsbsim"/>
+<!--    <target name="nps" board="pc">-->
+<!--      <module name="radio_control" type="datalink"/>-->
+<!--      <module name="fdm" type="jsbsim"/>-->
 
-      <module name="scheduling_indi_simple"/>
+<!--      <module name="scheduling_indi_simple"/>-->
 
-      <module name="logger_file">
-        <define name="FILE_LOGGER_PATH" value="/home/ewoud/Documents"/>
-      </module>
+<!--      <module name="logger_file">-->
+<!--        <define name="FILE_LOGGER_PATH" value="/home/ewoud/Documents"/>-->
+<!--      </module>-->
 
-      <!--Not dealing with these in the simulation-->
-      <define name="RADIO_TH_HOLD"     value="0"/> <!-- Throttle hold in command laws -->
-      <define name="RADIO_FMODE"       value="0"/> <!-- Throttle curve select -->
-      <define name="RADIO_FBW_MODE"    value="0"/> <!-- Switch between AP and FBW control -->
-      <define name="RADIO_KILL_SWITCH" value="0"/>
-    </target>
+<!--      &lt;!&ndash;Not dealing with these in the simulation&ndash;&gt;-->
+<!--      <define name="RADIO_TH_HOLD"     value="0"/> &lt;!&ndash; Throttle hold in command laws &ndash;&gt;-->
+<!--      <define name="RADIO_FMODE"       value="0"/> &lt;!&ndash; Throttle curve select &ndash;&gt;-->
+<!--      <define name="RADIO_FBW_MODE"    value="0"/> &lt;!&ndash; Switch between AP and FBW control &ndash;&gt;-->
+<!--      <define name="RADIO_KILL_SWITCH" value="0"/>-->
+<!--    </target>-->
 
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B115200"/>
@@ -111,21 +116,22 @@
     </module>
 
     <module name="motor_mixing"/>
+    <module name="Overactuated_mixing"/>
   </firmware>
 
-  <servos driver="pwm">
+  <servos>
     <servo name="MOTOR_1" no="0" min="1000" neutral="1050" max="2000"/>
-    <servo name="MOTOR_2" no="1" min="-8191" neutral="1500" max="8191"/>
-    <servo name="MOTOR_3" no="2" min="-8191" neutral="1500" max="8191"/>
-    <servo name="MOTOR_4" no="3" min="-8191" neutral="1500" max="8191"/>
-    <servo name="EL_1" no="4" min="6000" neutral="1500" max="-6000"/>
-    <servo name="AZ_1" no="5" min="6000" neutral="0" max="-6000"/>
-    <servo name="EL_2" no="6" min="-6000" neutral="0" max="6000"/>
-    <servo name="AZ_2" no="7" min="-6000" neutral="0" max="6000"/>
-    <servo name="EL_3" no="8" min="6000" neutral="0" max="-6000"/>
-    <servo name="AZ_3" no="9" min="6000" neutral="0" max="-6000"/>
-    <servo name="EL_4" no="10" min="-6000" neutral="0" max="6000"/>
-    <servo name="AZ_4" no="11" min="-6000" neutral="0" max="6000"/>
+    <servo name="MOTOR_2" no="1" min="1000" neutral="1050" max="2000"/>
+    <servo name="MOTOR_3" no="2" min="1000" neutral="1050" max="2000"/>
+    <servo name="MOTOR_4" no="3" min="1000" neutral="1500" max="2000"/>
+    <servo name="EL_1" no="4" min="850" neutral="1500" max="2200"/>
+    <servo name="AZ_1" no="5" min="850" neutral="1500" max="2200"/>
+    <servo name="EL_2" no="6" min="850" neutral="1500" max="2200"/>
+    <servo name="AZ_2" no="7" min="850" neutral="1500" max="2200"/>
+    <servo name="EL_3" no="8" min="850" neutral="1500" max="2200"/>
+    <servo name="AZ_3" no="9" min="850" neutral="1500" max="2200"/>
+    <servo name="EL_4" no="10" min="850" neutral="1500" max="2200"/>
+    <servo name="AZ_4" no="11" min="850" neutral="1500" max="2200"/>
   </servos>
 
   <commands>
@@ -138,48 +144,42 @@
   <rc_commands>
     <set command="THRUST" value="@THROTTLE" />
     <set command="ROLL" value="@YAW" />
-    <set command="PITCH" value="@PITCH/2" />
-    <set command="YAW" value="-@ROLL/4" />
+    <set command="PITCH" value="@PITCH" />
+    <set command="YAW" value="-@ROLL" />
   </rc_commands>
 
   <section name="MIXING" prefix="MOTOR_MIXING_">
-    <!-- frontleft left (CCW), frontleft mid (CW), frontleft right (CCW), frontright left (CW), frontright mid (CCW), frontright right (CW) -->
-    <!-- backleft left (CW), backleft mid (CCW), backleft right (CW), backright left (CCW), backright mid (CW), backright right (CCW) -->
-    <define name="NB_MOTOR"    value="12"/>
+    <define name="NB_MOTOR"    value="4"/>
     <define name="SCALE"       value="256"/>
-    <define name="ROLL_COEF"   value="{256,  157,   56,  -56, -157, -256,  256,  157,   56,  -56, -157, -256}"/>
-    <define name="PITCH_COEF"  value="{256,  256,  256,  256,  256,  256, -256, -256, -256, -256, -256, -256}"/>
-    <define name="YAW_COEF"    value="{256, -256,  256, -256,  256, -256, -256,  256, -256,  256, -256,  256}"/>
-    <!--<define name="YAW_COEF"    value="{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}"/>-->
-    <define name="THRUST_COEF" value="{256,  256,  256,  256,  256,  256,  256,  256,  256,  256,  256,  256}"/>
+    <define name="ROLL_COEF"   value="{256,  157,   56,  -56}"/>
+    <define name="PITCH_COEF"  value="{256,  256,  256,  256}"/>
+    <define name="YAW_COEF"    value="{256, -256,  256, -256}"/>
+    <define name="THRUST_COEF" value="{256,  256,  256,  256}"/>
   </section>
 
   <command_laws>
     <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
     <let var="th_hold"     value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
+    <let var="switch_overactuated"     value="LessThan(RadioControlValues(RADIO_FMODE), -4800)"/>
 
     <set servo="MOTOR_1"   value="($th_hold? -9600 : motor_mixing.commands[0])"/>
     <set servo="MOTOR_2"   value="($th_hold? -9600 : motor_mixing.commands[1])"/>
     <set servo="MOTOR_3"   value="($th_hold? -9600 : motor_mixing.commands[2])"/>
     <set servo="MOTOR_4"   value="($th_hold? -9600 : motor_mixing.commands[3])"/>
-    <set servo="MOTOR_5"   value="($th_hold? -9600 : motor_mixing.commands[4])"/>
-    <set servo="MOTOR_6"   value="($th_hold? -9600 : motor_mixing.commands[5])"/>
-    <set servo="MOTOR_7"   value="($th_hold? -9600 : motor_mixing.commands[6])"/>
-    <set servo="MOTOR_8"   value="($th_hold? -9600 : motor_mixing.commands[7])"/>
-    <set servo="MOTOR_9"   value="($th_hold? -9600 : motor_mixing.commands[8])"/>
-    <set servo="MOTOR_10"  value="($th_hold? -9600 : motor_mixing.commands[9])"/>
-    <set servo="MOTOR_11"  value="($th_hold? -9600 : motor_mixing.commands[10])"/>
-    <set servo="MOTOR_12"  value="($th_hold? -9600 : motor_mixing.commands[11])"/>
+    <!--
+    Adding the control laws for servos
+    TBD with servos
+    -->
+    <call fun="overactuated_mixing_run()"/>
+    <set servo="EL_1"   value="($switch_overactuated? 1800 : overactuated_mixing.commands[0])"/>
+    <set servo="AZ_1"   value="($switch_overactuated? 1500 : overactuated_mixing.commands[1])"/>
+    <set servo="EL_2"   value="($switch_overactuated? 1800 : overactuated_mixing.commands[2])"/>
+    <set servo="AZ_2"   value="($switch_overactuated? 1500 : overactuated_mixing.commands[3])"/>
+    <set servo="EL_3"   value="($switch_overactuated? 1800 : overactuated_mixing.commands[4])"/>
+    <set servo="AZ_3"   value="($switch_overactuated? 1500 : overactuated_mixing.commands[5])"/>
+    <set servo="EL_4"   value="($switch_overactuated? 1800 : overactuated_mixing.commands[6])"/>
+    <set servo="AZ_4"   value="($switch_overactuated? 1500 : overactuated_mixing.commands[7])"/>
 
-    <!-- Removed ApplyDiff for differential control -->
-    <set servo="AIL_1"     value="-2*@PITCH + (  2*@YAW)"/>
-    <set servo="AIL_2"     value="-2*@PITCH + (- 2*@YAW)"/>
-    <set servo="AIL_3"     value=" 2*@PITCH + (  2*@YAW)"/>
-    <set servo="AIL_4"     value=" 2*@PITCH + (- 2*@YAW)"/>
-    <set servo="FLAP_1"    value="-2*@PITCH + (  2*@YAW)"/>
-    <set servo="FLAP_2"    value="-2*@PITCH + (- 2*@YAW)"/>
-    <set servo="FLAP_3"    value=" 2*@PITCH + (  2*@YAW)"/>
-    <set servo="FLAP_4"    value=" 2*@PITCH + (- 2*@YAW)"/>
   </command_laws>
 
   <section name="MISC">
@@ -189,7 +189,7 @@
     <!-- Basic navigation settings -->
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>
     <define name="NAV_DESCEND_VSPEED" value="-0.5"/>
-    <define name="ARRIVED_AT_WAYPOINT" value="50.0"/>
+    <define name="ARRIVED_AT_WAYPOINT" value="10.0"/>
 
     <!-- Avoid GPS loss behavior when having RC or datalink -->
     <define name="NO_GPS_LOST_WITH_DATALINK_TIME" value="20"/>
@@ -200,7 +200,7 @@
     <!--The Nederdrone uses a slightly different axis system for the setpoint, to make both hovering and flying forward intuitive-->
     <define name="USE_EARTH_BOUND_RC_SETPOINT" value="TRUE"/>
     <!-- This is the pitch angle that the Nederdrone will have in forward flight, where 0 degrees is hover-->
-    <define name="TRANSITION_MAX_OFFSET" value="-80.0" unit="deg"/>
+    <define name="TRANSITION_MAX_OFFSET" value="0.0" unit="deg"/>
     <!-- For RC coordinated turns, lower because the yawing was too slow -->
     <define name="MAX_FWD_SPEED" value="20.0"/>
     <!-- For hybrid guidance -->
@@ -211,20 +211,20 @@
 
   <section name="IMU" prefix="IMU_">
     <!-- Rotate the IMU (for Pixhawk 4) -->
-    <define name="MPU_CHAN_X" value="1"/>
-    <define name="MPU_CHAN_Y" value="0"/>
-    <define name="MPU_CHAN_Z" value="2"/>
-    <define name="MPU_X_SIGN" value="1"/>
-    <define name="MPU_Y_SIGN" value="1"/>
-    <define name="MPU_Z_SIGN" value="-1"/>
+<!--    <define name="MPU_CHAN_X" value="1"/>-->
+<!--    <define name="MPU_CHAN_Y" value="0"/>-->
+<!--    <define name="MPU_CHAN_Z" value="2"/>-->
+<!--    <define name="MPU_X_SIGN" value="1"/>-->
+<!--    <define name="MPU_Y_SIGN" value="1"/>-->
+<!--    <define name="MPU_Z_SIGN" value="-1"/>-->
 
     <!-- Calibrated in the MAVLab 14-05-2020 -->
-    <define name="ACCEL_X_NEUTRAL" value="-337"/>
-    <define name="ACCEL_Y_NEUTRAL" value="64"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-25"/>
-    <define name="ACCEL_X_SENS" value="4.670307671109528" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.9016250738902425" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.846689188075245" integer="16"/>
+<!--    <define name="ACCEL_X_NEUTRAL" value="-337"/>-->
+<!--    <define name="ACCEL_Y_NEUTRAL" value="64"/>-->
+<!--    <define name="ACCEL_Z_NEUTRAL" value="-25"/>-->
+<!--    <define name="ACCEL_X_SENS" value="4.670307671109528" integer="16"/>-->
+<!--    <define name="ACCEL_Y_SENS" value="4.9016250738902425" integer="16"/>-->
+<!--    <define name="ACCEL_Z_SENS" value="4.846689188075245" integer="16"/>-->
 
     <!-- Calibrated at valkenburg 20-05-2020 (external magnetometer) -->
     <define name="MAG_X_NEUTRAL" value="866"/>
@@ -236,14 +236,14 @@
 
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
-    <define name="BODY_TO_IMU_THETA" value="90." unit="deg"/>
+    <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
     <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
   </section>
 
   <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
     <!-- setpoints -->
-    <define name="SP_MAX_PHI" value="60." unit="deg"/>
-    <define name="SP_MAX_THETA" value="80." unit="deg"/>
+    <define name="SP_MAX_PHI" value="40." unit="deg"/>
+    <define name="SP_MAX_THETA" value="40." unit="deg"/>
     <define name="SP_MAX_R" value="90." unit="deg/s"/>
     <define name="DEADBAND_R" value="200"/>
     <define name="SP_PSI_DELTA_LIMIT" value="45" unit="deg"/>
@@ -324,11 +324,11 @@
   </section>
 
   <section name="BAT">
-    <define name="CATASTROPHIC_BAT_LEVEL" value="18.0" unit="V"/>
-    <define name="CRITIC_BAT_LEVEL" value="18.6" unit="V"/>
-    <define name="LOW_BAT_LEVEL" value="19.2" unit="V"/>
-    <define name="MAX_BAT_LEVEL" value="25.2" unit="V"/>
-    <define name="BAT_NB_CELLS" value="6"/>
+    <define name="CATASTROPHIC_BAT_LEVEL" value="10.0" unit="V"/>
+    <define name="CRITIC_BAT_LEVEL" value="10.5" unit="V"/>
+    <define name="LOW_BAT_LEVEL" value="10.9" unit="V"/>
+    <define name="MAX_BAT_LEVEL" value="12.6" unit="V"/>
+    <define name="BAT_NB_CELLS" value="3"/>
   </section>
 
 </airframe>
