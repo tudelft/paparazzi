@@ -5,15 +5,15 @@
 #include "actuator_freq_test.h"
 #include "subsystems/datalink/downlink.h"
 
-#define MAX_TEST_FREQ 20
-#define TEST_STEP_DUR 2
+#define MAX_TEST_FREQ 15
+#define TEST_STEP_DUR 3
 #define FREQ_DELTA 0.25
 
 #define CAL_STEP_DUR 2
 #define CAL_STEPS 20
 
 float test_freq = 0.;
-float test_min_value = -10000;  // -9600 lowest val possible
+float test_min_value = 1000;  // -9600 lowest val possible
 float test_max_value = 10000 ;  // 9600 highest val possible
 uint8_t actuator_idx = 1;  // Actuator being tested
 uint8_t automatic_f = false;  // If true, freq will increase without user input
