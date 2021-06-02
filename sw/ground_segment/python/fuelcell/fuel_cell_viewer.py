@@ -518,7 +518,7 @@ class FuelCellFrame(wx.Frame):
         self.cell = BatteryCell()
         self.motors = MotorList()
         self.fuelcell = FuelCellStatus()
-        self.fuelcell.update('<0,0,0,0x08020000>')
+        self.fuelcell.update('<0,0,0,0x00000000>')
      
         self.interface = IvyMessagesInterface("fuelcellframe")
         self.interface.subscribe(self.message_recv)
