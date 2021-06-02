@@ -9,7 +9,7 @@
     <waypoint name="HOME" x="12.6" y="-48.7"/>
     <waypoint name="CLIMB" x="15.4" y="95.8"/>
     <waypoint name="TD" x="45.6" y="39.3"/>
-    <waypoint lat="51.8640027" lon="5.8279937" name="STDBY"/>
+    <waypoint lat="51.863323" lon="5.830006" name="STDBY"/>
     <waypoint lat="51.8655101" lon="5.8281043" name="p1"/>
     <waypoint lat="51.8718005" lon="5.8126884" name="p2"/>
     <waypoint lat="51.8764653" lon="5.7896681" name="p3"/>
