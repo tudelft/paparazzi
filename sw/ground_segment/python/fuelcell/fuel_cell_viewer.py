@@ -213,10 +213,12 @@ class PayloadMessage(object):
 
 
 class FuelCellStatus(object):
-    def _init_(self):
+    def __init__(self):
         self.blink = 0
+        self.has_data = False
 
     def update(self,msg):
+        self.has_data = True
         self.msg = msg
         if hasattr(self, 'blink'):
             self.blink = 1 - self.blink
@@ -444,23 +446,24 @@ class FuelCellFrame(wx.Frame):
         self.StatusBox(dc, dx, dy, 2, 0, self.cell.get_power_text(), self.cell.get_power_perc(), self.cell.get_power_color())
         self.StatusBox(dc, dx, dy, 3, 0, self.cell.get_energy(), self.cell.get_energy_perc(), self.cell.get_energy_color() )
 
-        dx = int(0.43*w)
-        dy = int(0.15*h)
-        self.StatusBox(dc, dx, dy, 0, 0, self.fuelcell.get_raw(), 0, self.fuelcell.get_raw_color())
-        self.StatusBox(dc, dx, dy, 1, 0, self.fuelcell.get_tank(), self.fuelcell.get_tank_perc(), self.fuelcell.get_tank_color())
-        self.StatusBox(dc, dx, dy, 2, 0, self.fuelcell.get_battery(), self.fuelcell.get_battery_perc(), self.fuelcell.get_battery_color())
-        self.StatusBox(dc, dx, dy, 3, 0, self.fuelcell.get_status(), self.fuelcell.get_status_perc(), self.fuelcell.get_status_color())
-        self.StatusBox(dc, dx, dy, 4, 0, self.fuelcell.get_error(), self.fuelcell.get_error_perc(), self.fuelcell.get_error_color())
+        if self.fuelcell.has_data:
+            dx = int(0.43*w)
+            dy = int(0.15*h)
+            self.StatusBox(dc, dx, dy, 0, 0, self.fuelcell.get_raw(), 0, self.fuelcell.get_raw_color())
+            self.StatusBox(dc, dx, dy, 1, 0, self.fuelcell.get_tank(), self.fuelcell.get_tank_perc(), self.fuelcell.get_tank_color())
+            self.StatusBox(dc, dx, dy, 2, 0, self.fuelcell.get_battery(), self.fuelcell.get_battery_perc(), self.fuelcell.get_battery_color())
+            self.StatusBox(dc, dx, dy, 3, 0, self.fuelcell.get_status(), self.fuelcell.get_status_perc(), self.fuelcell.get_status_color())
+            self.StatusBox(dc, dx, dy, 4, 0, self.fuelcell.get_error(), self.fuelcell.get_error_perc(), self.fuelcell.get_error_color())
 
-        # Warnings
-        self.stat = int(0.14*w)
-        dc.SetBrush(wx.Brush(wx.Colour(70,70,40))) 
-        dc.DrawRectangle(int(0.36*w), int(0.63*h),int(0.28*w), int(0.35*h))
-        dx = int(0.36*w)
-        dy = int(0.63*h)
-        for i in range(0,8,1):
-            self.StatusBox(dc, dx, dy,i, 0, self.fuelcell.get_error_nr(i*2), 1, self.fuelcell.get_error_nr_color(i*2))
-            self.StatusBox(dc, int(0.5*w), dy,i, 0, self.fuelcell.get_error_nr(i*2+1), 1, self.fuelcell.get_error_nr_color(i*2+1))
+            # Warnings
+            self.stat = int(0.14*w)
+            dc.SetBrush(wx.Brush(wx.Colour(70,70,40))) 
+            dc.DrawRectangle(int(0.36*w), int(0.63*h),int(0.28*w), int(0.35*h))
+            dx = int(0.36*w)
+            dy = int(0.63*h)
+            for i in range(0,8,1):
+                self.StatusBox(dc, dx, dy,i, 0, self.fuelcell.get_error_nr(i*2), 1, self.fuelcell.get_error_nr_color(i*2))
+                self.StatusBox(dc, int(0.5*w), dy,i, 0, self.fuelcell.get_error_nr(i*2+1), 1, self.fuelcell.get_error_nr_color(i*2+1))
 
         # Motors
         self.stat = int(0.10*w)
@@ -518,7 +521,7 @@ class FuelCellFrame(wx.Frame):
         self.cell = BatteryCell()
         self.motors = MotorList()
         self.fuelcell = FuelCellStatus()
-        self.fuelcell.update('<0,0,0,0x00000000>')
+        #self.fuelcell.update('<0,0,0,0x00000000>')
      
         self.interface = IvyMessagesInterface("fuelcellframe")
         self.interface.subscribe(self.message_recv)
