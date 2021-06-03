@@ -121,6 +121,23 @@ class MotorList(object):
         if not added:
             self.mot.append(esc)
 
+class EKFStatus(object):
+    def __init__(self):
+        self.mag = -1
+    def update(self,_mag):
+        self.mag = _mag
+    def get_text(self):
+        return "EKF Mag Cov = " +str(round(self.mag,2))
+    def get_perc(self):
+        return self.mag * 0.5
+    def get_color(self):
+        if self.mag < 0:
+            return 0
+        elif self.mag < 0.15:
+            return 1
+        elif self.mag < 0.3:
+            return 0.5
+        return 0.1
 
 class BatteryCell(object):
     def __init__(self):
@@ -348,6 +365,8 @@ class FuelCellFrame(wx.Frame):
             self.fuelcell.update(self.payload.values)
             #print("Payload: " + self.payload.values)
 
+        elif msg.name == "INS_EKF2":
+            self.ekf.mag = float(msg['innov_mag'])
 
     def update(self):
         self.Refresh()
@@ -433,11 +452,19 @@ class FuelCellFrame(wx.Frame):
         # Back Wing
         dc.DrawRectangle(int(0.01*w), int(0.65*h),int(0.98*w), int(0.15*h))
 
+
         # Fuel Cell
         dc.SetBrush(wx.Brush(wx.Colour(100,100,100))) 
         dc.DrawRoundedRectangle(int(0.39*w), int(0.07*h),int(0.22*w), int(0.35*h), int(0.08*w))
 
         self.stat = int(0.14*w)
+
+        # EKF status
+        dx = int(0.05*w)
+        dy = int(0.05*h)
+        self.StatusBox(dc, dx, dy, 0, 0, self.ekf.get_text(), self.ekf.get_perc(), self.ekf.get_color())
+
+
 
         dx = int(0.43*w)
         dy = int(0.43*h)
@@ -518,6 +545,7 @@ class FuelCellFrame(wx.Frame):
 
         self.bat = {}
         self.temp = {}
+        self.ekf = EKFStatus()
         self.cell = BatteryCell()
         self.motors = MotorList()
         self.fuelcell = FuelCellStatus()
