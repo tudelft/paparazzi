@@ -26,6 +26,8 @@
 
 #include "actuators_uavcan.h"
 #include "subsystems/electrical.h"
+#include "math/pprz_random.h"
+
 
 /* By default enable the usage of the current sensing in the ESC telemetry */
 #ifndef UAVCAN_ACTUATORS_USE_CURRENT
@@ -102,7 +104,11 @@ static void actuators_uavcan_send_esc(struct transport_tx *trans, struct link_de
   float energy = telem[i].energy;
   pprz_msg_send_ESC(trans, dev, AC_ID, &telem[i].current, &electrical.vsupply, &power,
                     &rpm, &telem[i].voltage, &energy, &esc_idx);
-  esc_idx++;
+  
+  if (rand_uniform() > 0.05) {
+    esc_idx++;
+  }
+
 
   if (esc_idx >= max_id) {
     esc_idx = 0;
@@ -182,6 +188,9 @@ void actuators_uavcan_init(struct uavcan_iface_t *iface __attribute__((unused)))
 
   // Set initialization
   actuators_uavcan_initialized = true;
+
+  // Initialize Random
+  init_random();
 }
 
 /**
