@@ -48,10 +48,10 @@ void overactuated_mixing_init() {
         overactuated_mixing.commands[i] = 0;
         if (i % 2 != 0)   //Odd value --> (elevation angle)
         {
-            overactuated_mixing.commands[i] = radio_control.values[RADIO_PITCH];
+            overactuated_mixing.commands[i] = radio_control.values[RADIO_ROLL];
         } else           //Even value --> (azimuth angle)
         {
-            overactuated_mixing.commands[i] = radio_control.values[RADIO_ROLL];
+            overactuated_mixing.commands[i] = radio_control.values[RADIO_PITCH];
         }
     }
 }
@@ -70,10 +70,10 @@ void overactuated_mixing_run()
         overactuated_mixing.commands[i] = 0;
         if (i % 2 != 0)   //Odd value --> (elevation angle)
         {
-            overactuated_mixing.commands[i] = radio_control.values[RADIO_PITCH];
+            overactuated_mixing.commands[i] = radio_control.values[RADIO_ROLL];
         } else           //Even value --> (azimuth angle)
         {
-            overactuated_mixing.commands[i] = radio_control.values[RADIO_ROLL];
+            overactuated_mixing.commands[i] = radio_control.values[RADIO_PITCH];
         }
         BoundAbs(overactuated_mixing.commands[i], MAX_PPRZ);
     }
