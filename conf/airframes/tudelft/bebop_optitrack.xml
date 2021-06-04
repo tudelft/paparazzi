@@ -103,8 +103,14 @@
     <define name="G1_PITCH" value="{8.5 , 8.5, -8.5 , -8.5}"/>
     <define name="G1_YAW" value="{-0.50, 0.50, -0.50, 0.50}"/>
     <define name="G1_THRUST" value="{-.40, -.40, -.40, -.40}"/>
+    
+    <!-- <define name="G1_ROLL" value="{10.0, -10.0, -10.0 , 10.0 }"/>
+    <define name="G1_PITCH" value="{7.5 , 7.5, -7.5 , -7.5}"/>
+    <define name="G1_YAW" value="{-0.50, 0.50, -0.50, 0.50}"/>
+    <define name="G1_THRUST" value="{-.30, -.30, -.30, -.30}"/>-->
+
     <!--Counter torque effect of spinning up a rotor-->
-    <define name="G2" value="{-48.0,   48.0,  -48.0,   48.0}"/>
+    <define name="G2" value="{-48.0,   48.0,  -48.0,   48.0}"/> 
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="600.0"/>

@@ -11,10 +11,10 @@
   <waypoints>
     <waypoint lat="51.990631" lon="4.376796" name="HOME"/>
     <waypoint name="CLIMB" x="1.9" y="1.0"/>
-    <waypoint name="STDBY" x="1.9" y="1.0"/>
+    <waypoint name="STDBY" x="0.5" y="0.3"/>
     <waypoint name="TD" x="0.8" y="-1.7"/>
-    <waypoint name="GOAL" x="1.9" y="1.0"/>
-    <waypoint name="TRAJECTORY" x="1.9" y="1.0"/>
+    <waypoint name="GOAL" x="2.5" y="-0.0"/>
+    <waypoint name="TRAJECTORY" x="0.4" y="1.4"/>
     <waypoint lat="51.9905834" lon="4.3767710" name="_CZ1"/>
     <waypoint lat="51.9906440" lon="4.3767060" name="_CZ2"/>
     <waypoint lat="51.9906860" lon="4.3768080" name="_CZ3"/>
@@ -23,10 +23,10 @@
     <waypoint lat="51.9906430" lon="4.3767110" name="_OZ2"/>
     <waypoint lat="51.9906830" lon="4.3768048" name="_OZ3"/>
     <waypoint lat="51.9906239" lon="4.3768684" name="_OZ4"/>
-    <waypoint name="p1" x="-3.9" y="0.5"/>
-    <waypoint name="p2" x="1.1" y="3.9"/>
+    <waypoint name="p1" x="-4.3" y="0.7"/>
+    <waypoint name="p2" x="0.9" y="4.6"/>
     <waypoint name="p3" x="4.5" y="-0.9"/>
-    <waypoint name="p4" x="-0.7" y="-4.1"/>
+    <waypoint name="p4" x="-1.0" y="-4.5"/>
   </waypoints>
   <sectors>
     <sector color="blue" name="CyberZoo">
@@ -49,31 +49,7 @@
     </sector>
   </sectors>
   <exceptions>
-    <!-- <exception cond="((datalink_time > 5) &&
-      !(IndexOfBlock('Holding point') > nav_block) &&
-      !(nav_block >= IndexOfBlock('land here')) &&
-      (autopilot_in_flight() == true) )" deroute="land here"/>
-    <exception cond="(!InsideCyberZoo(GetPosX(), GetPosY()) &&
-      !(IndexOfBlock('Holding point') > nav_block) &&
-      !(nav_block >= IndexOfBlock('land here')) &&
-      (autopilot_in_flight() == true) )" deroute="land here"/>
-    <exception cond="((GetPosAlt() > 3.5) &&
-      !(IndexOfBlock('Holding point') > nav_block) &&
-      !(nav_block >= IndexOfBlock('land here')) &&
-      (autopilot_in_flight() == true) )" deroute="land here"/>
-    <exception cond="((GetPosAlt() > 4.5) &&
-      !(IndexOfBlock('Holding point') > nav_block) &&
-      (autopilot_in_flight() == true) )" deroute="Landed"/>
-    <exception cond="(electrical.bat_low &&
-      !(IndexOfBlock('Holding point') > nav_block) &&
-      !(nav_block >= IndexOfBlock('land here')) &&
-      (autopilot_in_flight() == true) )" deroute="land here"/>
-    <exception cond="(electrical.bat_critical &&
-      !(IndexOfBlock('Holding point') > nav_block) &&
-      !(nav_block >= IndexOfBlock('land here')) &&
-      (autopilot_in_flight() == true) )" deroute="land here"/> -->
     <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosAlt() > 2.2) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init'))" deroute="safe"/>
-    <!-- && !(nav_block == IndexOfBlock('Holding point')) -->
   </exceptions>
   <blocks>
     <block name="Wait GPS">
@@ -102,7 +78,7 @@
       <set value="AP_MODE_NAV" var="autopilot_mode_auto2"/>
       <go wp="STDBY"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
-      <deroute block="Pit Stop"/> 
+      <deroute block="Pit Stop"/>
     </block>
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
@@ -132,14 +108,13 @@
       <call_once fun="NavStartDetectGround()"/>
       <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
     </block>
-    <block name="Pit Stop">
+    <block name="Safe landing">
       <exception cond="!nav_is_in_flight()" deroute="Sbinnala"/>
       <exception cond="0.10 > GetPosAlt()" deroute="Sbinnala"/>
       <call_once fun="NavStartDetectGround()"/>
       <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
-      <!-- <exception cond="NavDetectGround()" deroute="Holding point"/> -->
     </block>
-    <block name="Sbinnala">
+    <block name="Manual">
       <set value="AP_MODE_ATTITUDE_DIRECT" var="autopilot_mode_auto2"/>
       <stay wp="STDBY"/>
     </block>
