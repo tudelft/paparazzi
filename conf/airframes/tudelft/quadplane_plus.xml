@@ -170,6 +170,8 @@
     -->
     <call fun="overactuated_mixing_run()"/>
     <set servo="EL_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 6400 + overactuated_mixing.commands[0] : 6400)"/>
+<!--    <let var="EL_1_log" value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 6400 + overactuated_mixing.commands[0] : 6400)"/>-->
+<!--    <let var="EL_1_log" value="3432"/>-->
     <set servo="AZ_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (300 + overactuated_mixing.commands[1] + @YAW) : 300 + @YAW)"/>
     <set servo="EL_2"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 5500 + overactuated_mixing.commands[2] : 5500)"/>
     <set servo="AZ_2"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (overactuated_mixing.commands[3] + @YAW)  : @YAW)"/>
@@ -251,7 +253,7 @@
     <!-- control effectiveness (hover) -->
     <define name="G1_P" value="0.0030"/>
     <define name="G1_Q" value="0.0035"/>
-    <define name="G1_R" value="0.0004"/>
+    <define name="G1_R" value="0.001"/>
     <define name="G2_R" value="0.00015"/>
 
     <!-- control effectiveness (forward) -->
