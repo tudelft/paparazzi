@@ -25,7 +25,8 @@
       </module>
 
       <module name="AOA_pwm">
-        <define name="AOA_PWM_CHANNEL" value="PWM_INPUT1"/>
+        <define name="USE_PWM5" value="FALSE"/>
+        <configure name="AOA_PWM_CHANNEL" value="PWM_INPUT1"/>
       </module>
 
       <module name="airspeed_sdp3x">

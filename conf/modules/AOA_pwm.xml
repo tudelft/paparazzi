@@ -43,7 +43,7 @@
   </header>
 
   <init fun="aoa_pwm_init()" />
-  <periodic fun="aoa_pwm_update()" freq="20" />
+  <periodic fun="aoa_pwm_update()" freq="250" />
 
   <makefile target="ap">
     <file name="aoa_pwm.c" />
