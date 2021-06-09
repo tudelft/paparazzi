@@ -89,17 +89,19 @@ void cyclic_control_values(struct fs_landing_t *actuator_values) {
   int32_t elevon_r = (int32_t) (9600 * (er_avg + er_delta * cos_val));
 
   cos_val = cosf(current_yaw + mt_phase_rad);
+  int32_t motor_l = 0;
+  int32_t motor_r = 0;
   if (use_square_sig) {
     if (cos_val > 0) {
-      int32_t motor_l = (int32_t) (9600 * (ml_avg + ml_delta));
-      int32_t motor_r = (int32_t) (9600 * (mr_avg + mr_delta));
+      motor_l = (int32_t) (9600 * (ml_avg + ml_delta));
+      motor_r = (int32_t) (9600 * (mr_avg + mr_delta));
     } else {
-      int32_t motor_l = (int32_t) (9600 * (ml_avg - ml_delta));
-      int32_t motor_r = (int32_t) (9600 * (mr_avg - mr_delta));
+      motor_l = (int32_t) (9600 * (ml_avg - ml_delta));
+      motor_r = (int32_t) (9600 * (mr_avg - mr_delta));
     }
   } else {
-    int32_t motor_l = (int32_t) (9600 * (ml_avg + ml_delta * cos_val));
-    int32_t motor_r = (int32_t) (9600 * (mr_avg + mr_delta * cos_val));
+    motor_l = (int32_t) (9600 * (ml_avg + ml_delta * cos_val));
+    motor_r = (int32_t) (9600 * (mr_avg + mr_delta * cos_val));
   }
 
   if (use_elevon_l) {

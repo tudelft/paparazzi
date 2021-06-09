@@ -6,6 +6,7 @@
 #define PAPARAZZI_FS_LANDING_H
 
 #include "paparazzi.h"
+#include "std.h"
 #include "state.h"
 #include "generated/airframe.h"
 #include "subsystems/radio_control.h"
@@ -44,6 +45,8 @@ extern float err_test;
 /* External used functions */
 extern void fs_landing_init(void);
 extern void fs_landing_run(void);
+
+int32_t get_matching_motl_val(int32_t val);
 
 // Handlers for changing gcs variables
 extern void fs_landing_pilot_control_handler(uint8_t active);

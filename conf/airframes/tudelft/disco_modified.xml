@@ -300,10 +300,6 @@
     <define name="DELAY_WITHOUT_GPS" value="5" unit="s"/>
   </section>
 
-  <section name="RADIO" prefix="RADIO_">
-    <define name="KILL_SWITCH" value="RADIO_AUX1"/>
-  </section>
-
   <!-- ************************* IMU ************************* -->
   <section name="IMU" prefix="IMU_">
 
@@ -321,7 +317,7 @@
     <define name="ACCEL_Z_SENS" value="2.4425224747" integer="16"/>
 
     <!-- ***************** MAGNETO *****************-->
-    <!--define name="MAG_OFFSET" value="-?.0" unit="deg"--> <!--  TODO: at least 3 axis in worst case -->
+    <!--define name="MAG_OFFSET" value="-?.0" unit="deg"-->
     <!-- TODO -->
     <define name="MAG_X_NEUTRAL" value="-76"/>
     <define name="MAG_Y_NEUTRAL" value="-148"/>
