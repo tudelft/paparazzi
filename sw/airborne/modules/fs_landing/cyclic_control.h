@@ -30,6 +30,7 @@ extern float er_delta;
 extern float mt_phase;  // phase offset in degrees
 extern float el_phase;
 
+extern uint8_t use_square_sig;
 extern uint8_t phase_pilot_control;
 
 void cyclic_control_values(struct fs_landing_t *actuator_values);
