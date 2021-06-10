@@ -359,6 +359,9 @@
     <define name="FORWARD_G1_Q" value="0.0080"/>
     <define name="FORWARD_G1_R" value="0.0040"/>
 
+    <define name="TAS_EFF_2" value="18*18"/>
+    <!--<define name="USE_SPEED_INCREMENT" value="false"/>-->
+
     <!--P effectiveness if center props are switched off-->
     <define name="FORWARD_G1_P_FEW_PROPS" value="STABILIZATION_INDI_FORWARD_G1_P"/>
     <!--Part of yaw eff that comes from motors-->

@@ -30,6 +30,7 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_indi_simple.h"
 
 extern int32_t use_scheduling;
+extern uint8_t use_speed_increment;
 
 /**
  * Initialises periodic loop;

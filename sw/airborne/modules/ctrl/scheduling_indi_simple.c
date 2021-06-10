@@ -36,6 +36,7 @@
 #define INDI_SCHEDULING_LOWER_BOUND_G1 0.0001
 
 int32_t use_scheduling = 1;
+uint8_t use_speed_increment = 0;
 
 static float g_forward[3] = {STABILIZATION_INDI_FORWARD_G1_P, STABILIZATION_INDI_FORWARD_G1_Q, STABILIZATION_INDI_FORWARD_G1_R};
 
@@ -63,11 +64,14 @@ void ctrl_eff_scheduling_periodic(void)
   } else {
     g_forward[0] = STABILIZATION_INDI_FORWARD_G1_P;
   }
-
-  // When using the pitch slider to take the props out of the mix, adjust the pitch effectiveness
-    g_forward[1] = STABILIZATION_INDI_FORWARD_G1_Q - (1.0 - pitch_slider) * STABILIZATION_INDI_MOT_PITCH_EFF;
-  // When using the yaw slider to take the props out of the mix, adjust the yaw effectiveness
-    g_forward[2] = STABILIZATION_INDI_FORWARD_G1_R - (1.0 - yaw_slider) * STABILIZATION_INDI_MOT_YAW_EFF;
+  float airspeed = stateGetAirspeed_f();
+  Bound(airspeed, 8.0, 20.0);
+  float speed_factor = 0.0;
+  speed_factor = 1.0 + (airspeed * airspeed / STABILIZATION_INDI_TAS_EFF_2 -1.0) * use_speed_increment;
+  // When using the pitch slider to take the props out of the mix, adjust the pitch effectiveness. In addition quadratically increase effectiveness with airspeed.
+    g_forward[1] = (STABILIZATION_INDI_FORWARD_G1_Q - (1.0 - pitch_slider) * STABILIZATION_INDI_MOT_PITCH_EFF)*speed_factor;
+  // When using the yaw slider to take the props out of the mix, adjust the yaw effectiveness. In addition quadratically increase effectiveness with airspeed.
+    g_forward[2] = (STABILIZATION_INDI_FORWARD_G1_R - (1.0 - yaw_slider) * STABILIZATION_INDI_MOT_YAW_EFF)*speed_factor;
 
   indi.g1.p = g_hover[0] * (1.0 - ratio) + g_forward[0] * ratio;
   indi.g1.q = g_hover[1] * (1.0 - ratio) + g_forward[1] * ratio;
@@ -85,8 +89,6 @@ void ctrl_eff_scheduling_periodic(void)
   }
 
   float ratio_spec_force = 0.0;
-  float airspeed = stateGetAirspeed_f();
-  Bound(airspeed, 8.0, 20.0);
   ratio_spec_force = (airspeed-8.0) / 12.0;
   thrust_in_specific_force_gain = GUIDANCE_INDI_SPECIFIC_FORCE_GAIN * (1.0 - ratio_spec_force)
                                   + GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_FWD * ratio_spec_force;
