@@ -31,6 +31,7 @@
 
 extern int32_t use_scheduling;
 extern uint8_t use_speed_increment;
+extern uint8_t use_vspeed_increment;
 
 /**
  * Initialises periodic loop;

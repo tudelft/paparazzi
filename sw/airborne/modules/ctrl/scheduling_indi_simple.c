@@ -37,6 +37,7 @@
 
 int32_t use_scheduling = 1;
 uint8_t use_speed_increment = 0;
+uint8_t use_vspeed_increment = 0;
 
 static float g_forward[3] = {STABILIZATION_INDI_FORWARD_G1_P, STABILIZATION_INDI_FORWARD_G1_Q, STABILIZATION_INDI_FORWARD_G1_R};
 
@@ -64,6 +65,12 @@ void ctrl_eff_scheduling_periodic(void)
   } else {
     g_forward[0] = STABILIZATION_INDI_FORWARD_G1_P;
   }
+  float vspeed = stateGetSpeedEnu_f()->z;
+  float reverse_flow_factor = 0.0;
+  Bound(vspeed, -20.0,0.0)
+  reverse_flow_factor = 1+(fabs(vspeed)/ STABILIZATION_INDI_TV_TAS_EFF_2-1)* use_vspeed_increment;
+  g_hover[2] = reverse_flow_factor * STABILIZATION_INDI_TV_G1_R + (1-reverse_flow_factor) * STABILIZATION_INDI_G1_R;
+
   float airspeed = stateGetAirspeed_f();
   Bound(airspeed, 8.0, 20.0);
   float speed_factor = 0.0;
