@@ -26,7 +26,17 @@
 
 #include "Overactuated_mixing.h"
 #include "subsystems/radio_control.h"
+#include "subsystems/radio_control.h"
+#include "state.h"
+#include "subsystems/abi.h"
+
 struct overactuated_mixing_t overactuated_mixing;
+
+
+
+
+
+// const struct NedCoor_i my_pos = stateGetPositionNed_i();
 
 /* Coeficients per motor  --> MANUAL MODE *//*
 
@@ -42,6 +52,12 @@ static const float coll_coef[SW_NB]   = SW_MIXING_COLL_COEF;
  */
 void overactuated_mixing_init() {
     uint8_t i;
+    float phi = stateGetNedToBodyEulers_f()->phi;
+    float theta = stateGetNedToBodyEulers_f()->theta;
+    float psi = stateGetNedToBodyEulers_f()->psi;
+    float x = stateGetPositionNed_i()->x;
+    float y = stateGetPositionNed_i()->y;
+    float z = stateGetPositionNed_i()->z;
 
     // Go trough all the motors and calculate the trim value and set the initial command
     for (i = 0; i < N_ACT; i++) {
