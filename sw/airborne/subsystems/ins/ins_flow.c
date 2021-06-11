@@ -476,6 +476,7 @@ void ins_reset_filter(void) {
       OF_P[OF_V_IND][OF_V_IND] = parameters[PAR_P0];
       OF_P[OF_ANGLE_IND][OF_ANGLE_IND] = parameters[PAR_P1];
       OF_P[OF_Z_IND][OF_Z_IND] = parameters[PAR_P3];
+      OF_P[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = parameters[PAR_P2];
       if(OF_TWO_DIM) {
 	  OF_P[OF_THETA_IND][OF_THETA_IND] = parameters[PAR_P1];
 	  OF_P[OF_VX_IND][OF_VX_IND] = parameters[PAR_P0];
@@ -551,8 +552,8 @@ void ins_flow_init(void)
   OF_Q[OF_V_IND][OF_V_IND] = parameters[PAR_Q0];
   OF_Q[OF_ANGLE_IND][OF_ANGLE_IND] = parameters[PAR_Q1];
   OF_Q[OF_Z_IND][OF_Z_IND] = parameters[PAR_Q3];
+  OF_Q[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = parameters[PAR_Q2];
   if(!CONSTANT_ALT_FILTER) {
-      OF_Q[OF_ANGLE_DOT_IND][OF_ANGLE_DOT_IND] = parameters[PAR_Q2];
       OF_Q[OF_Z_DOT_IND][OF_Z_DOT_IND] = parameters[PAR_Q4];
   }
   else if(OF_TWO_DIM) {
@@ -657,12 +658,12 @@ void ins_optical_flow_cb(uint8_t sender_id UNUSED, uint32_t stamp, int16_t flow_
 void print_ins_flow_state(void) {
   if(CONSTANT_ALT_FILTER) {
       if(!OF_TWO_DIM) {
-	  printf("v = %f, angle = %f, z = %f.\n",
-		 OF_X[OF_V_IND], OF_X[OF_ANGLE_IND], OF_X[OF_Z_IND]);
+	  printf("v = %f, angle = %f, angle_dot = %f, z = %f.\n",
+		 OF_X[OF_V_IND], OF_X[OF_ANGLE_IND], OF_X[OF_ANGLE_DOT_IND], OF_X[OF_Z_IND]);
       }
       else {
-	  printf("v = %f, angle = %f, z = %f, vx = %f, theta = %f.\n",
-		 OF_X[OF_V_IND], OF_X[OF_ANGLE_IND], OF_X[OF_Z_IND], OF_X[OF_VX_IND], OF_X[OF_THETA_IND]);
+	  printf("v = %f, angle = %f, angle_dot = %f, z = %f, vx = %f, theta = %f.\n",
+		 OF_X[OF_V_IND], OF_X[OF_ANGLE_IND], OF_X[OF_ANGLE_DOT_IND], OF_X[OF_Z_IND], OF_X[OF_VX_IND], OF_X[OF_THETA_IND]);
       }
 
   }
@@ -802,7 +803,14 @@ void ins_flow_update(void)
 	  if(OF_X[OF_V_IND] > 0) OF_X[OF_V_IND] -= drag;
 	  else OF_X[OF_V_IND] += drag;
       }
-      OF_X[OF_ANGLE_IND] += dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f; // Code says scaled by 12, but... that does not fit...
+
+      if(USE_GYROS) {
+	  OF_X[OF_ANGLE_IND] += dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f; // Code says scaled by 12, but... that does not fit...
+      }
+      else {
+	  OF_X[OF_ANGLE_IND] += dt * OF_X[OF_ANGLE_DOT_IND];
+      }
+      OF_X[OF_ANGLE_DOT_IND] += dt * (moment / Ix);
 
       if(OF_TWO_DIM) {
 	  // Second axis, decoupled formulation:
@@ -814,6 +822,7 @@ void ins_flow_update(void)
 	    if(OF_X[OF_VX_IND] > 0) OF_X[OF_VX_IND] -= drag;
 	    else OF_X[OF_VX_IND] += drag;
 	  }
+	  // TODO: here also a moment estimate?
 	  OF_X[OF_THETA_IND] += dt * (ins_flow.lp_gyro_pitch - ins_flow.lp_gyro_bias_pitch) * (M_PI/180.0f) / 74.0f; // Code says scaled by 12, but... that does not fit...
       }
 
@@ -822,7 +831,12 @@ void ins_flow_update(void)
   else {
     // make sure that the right hand state terms appear before they change:
     OF_X[OF_V_IND] += dt * (thrust * sin(OF_X[OF_ANGLE_IND]) / mass);
-    OF_X[OF_ANGLE_IND] += dt * OF_X[OF_ANGLE_DOT_IND];
+    if(!USE_GYROS) {
+	OF_X[OF_ANGLE_IND] += dt * OF_X[OF_ANGLE_DOT_IND];
+    }
+    else {
+	OF_X[OF_ANGLE_IND] += dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f;
+    }
     OF_X[OF_ANGLE_DOT_IND] += dt * (moment / Ix);
     OF_X[OF_Z_IND] += dt * OF_X[OF_Z_DOT_IND];
     OF_X[OF_Z_DOT_IND] += dt * (thrust * cos(OF_X[OF_ANGLE_IND]) / mass - g);
@@ -854,6 +868,7 @@ void ins_flow_update(void)
   }
   if(CONSTANT_ALT_FILTER) {
     F[OF_V_IND][OF_ANGLE_IND] = dt*(g/(cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])));
+    F[OF_ANGLE_IND][OF_ANGLE_DOT_IND] = dt*1.0f;
     if(OF_TWO_DIM) {
 	F[OF_VX_IND][OF_THETA_IND] = dt*(g/(cos(OF_X[OF_THETA_IND])*cos(OF_X[OF_THETA_IND])));
     }
@@ -892,10 +907,12 @@ void ins_flow_update(void)
     H[OF_LAT_FLOW_IND][OF_V_IND] = -cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/ OF_X[OF_Z_IND];
     H[OF_LAT_FLOW_IND][OF_ANGLE_IND] = OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
     H[OF_LAT_FLOW_IND][OF_Z_IND] = OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/(OF_X[OF_Z_IND]*OF_X[OF_Z_IND]);
+    H[OF_LAT_FLOW_IND][OF_ANGLE_DOT_IND] = 1.0f;
     // divergence:
     H[OF_DIV_FLOW_IND][OF_V_IND] = -sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
     H[OF_DIV_FLOW_IND][OF_ANGLE_IND] = -OF_X[OF_V_IND]*cos(2*OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
     H[OF_DIV_FLOW_IND][OF_Z_IND] = OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]*OF_X[OF_Z_IND]);
+    H[OF_DIV_FLOW_IND][OF_ANGLE_DOT_IND] = 0.0f;
 
     if(OF_TWO_DIM) {
 	// divergence measurement couples the two axes actually...:
@@ -1060,7 +1077,7 @@ void ins_flow_update(void)
     float Z_expect_GT_angle;
 
     if(CONSTANT_ALT_FILTER) {
-      Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]; // TODO: no p?
+      Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]; // TODO: no p? // TODO: try to predict the optical flow measurement from a log in this way
 
       Z_expected[OF_DIV_FLOW_IND] = -OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
 
