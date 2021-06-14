@@ -25,26 +25,44 @@
  */
 
 #include "Overactuated_mixing.h"
-#include "subsystems/radio_control.h"
+#include <math.h>
 #include "subsystems/radio_control.h"
 #include "state.h"
-#include "subsystems/abi.h"
+#include "subsystems/datalink/telemetry.h"
+
 
 struct overactuated_mixing_t overactuated_mixing;
+struct overactuated_mixing_t overactuated_mixing;
+
+float phi, theta, psi, x, y, z;
+
+// PID and general settings from slider
+float P_az_gain = 1 ;
+float I_az_gain = 1 ;
+float D_az_gain = 1 ;
+float P_el_gain = 1 ;
+float I_el_gain = 1 ;
+float D_el_gain = 1 ;
+int Deadband_stick = 100;
+float Stick_gain_position = 0.1; // Stick to position gain
 
 
+float desired_position_x=0;
+float desired_position_y=0;
 
 
+static void send_overactuated_variables( struct transport_tx *trans , struct link_device * dev ) {
 
-// const struct NedCoor_i my_pos = stateGetPositionNed_i();
+// Send telemetry message
+    int16_t actuators[8];
+    for (uint8_t i = 0; i < 8; i++)
+    {
+        actuators[i] = (int16_t)overactuated_mixing.commands[i];
+    }
+    float psi_deg = psi*180/3.14;
 
-/* Coeficients per motor  --> MANUAL MODE *//*
-
-static const float roll_coef[SW_NB]   = SW_MIXING_ROLL_COEF;
-static const float pitch_coef[SW_NB]  = SW_MIXING_PITCH_COEF;
-static const float coll_coef[SW_NB]   = SW_MIXING_COLL_COEF;
-
-*/
+    pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID , & x, & y, & psi_deg, & x, & y, 8, actuators );
+}
 
 
 /**
@@ -52,34 +70,44 @@ static const float coll_coef[SW_NB]   = SW_MIXING_COLL_COEF;
  */
 void overactuated_mixing_init() {
     uint8_t i;
-    float phi = stateGetNedToBodyEulers_f()->phi;
-    float theta = stateGetNedToBodyEulers_f()->theta;
-    float psi = stateGetNedToBodyEulers_f()->psi;
-    float x = stateGetPositionNed_i()->x;
-    float y = stateGetPositionNed_i()->y;
-    float z = stateGetPositionNed_i()->z;
+    phi = stateGetNedToBodyEulers_f()->phi;
+    theta = stateGetNedToBodyEulers_f()->theta;
+    psi = stateGetNedToBodyEulers_f()->psi;
+    x = stateGetPositionNed_i()->x;
+    y = stateGetPositionNed_i()->y;
+    z = stateGetPositionNed_i()->z;
+
 
     // Go trough all the motors and calculate the trim value and set the initial command
     for (i = 0; i < N_ACT; i++) {
         overactuated_mixing.commands[i] = 0;
         if (i % 2 != 0)   //Odd value --> (elevation angle)
         {
+
             overactuated_mixing.commands[i] = radio_control.values[RADIO_ROLL];
-        } else           //Even value --> (azimuth angle)
+        }
+        else             //Even value --> (azimuth angle)
         {
             overactuated_mixing.commands[i] = radio_control.values[RADIO_PITCH];
         }
     }
+    register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_OVERACTUATED_VARIABLES , send_overactuated_variables );
 }
 
 /*
- * Run the swashplate mixing
+ * Run the overactuated mixing
  * This depends on the ROLL and PITCH command
  * It also depends on the throttle_curve.collective
  */
 void overactuated_mixing_run()
 {
     uint8_t i;
+    phi = stateGetNedToBodyEulers_f()->phi;
+    theta = stateGetNedToBodyEulers_f()->theta;
+    psi = stateGetNedToBodyEulers_f()->psi;
+    x = stateGetPositionNed_i()->x;
+    y = stateGetPositionNed_i()->y;
+    z = stateGetPositionNed_i()->z;
 
     // Go trough all the motors and calculate the trim value and set the initial command
     for (i = 0; i < N_ACT; i++) {
@@ -94,3 +122,4 @@ void overactuated_mixing_run()
         BoundAbs(overactuated_mixing.commands[i], MAX_PPRZ);
     }
 }
+

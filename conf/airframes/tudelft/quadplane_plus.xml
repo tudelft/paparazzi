@@ -3,7 +3,7 @@
 <!-- This is a Nedderdrone
      * Airframe:    TUD00289
      * Autopilot:   Pixhawk 4
-     * Actuators:   12x T-Motor ESC + Motors and 8x Servos (all CAN)
+     * Actuators:   2x BLHELI32 ESC (PWM) + 8x SAVOX servos (PWM)
      * Datalink:    Herelink
      * GPS:         UBlox F9P
      * RC:          SBUS Crossfire
@@ -36,6 +36,7 @@
       <module name="pprzlog"/>
       <module name="logger" type="sd_chibios"/>
       <module name="flight_recorder"/>
+      <define name="SDLOG_AUTO_FLUSH_PERIOD" value="1" unit="s"/>
 
       <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
 
@@ -129,14 +130,15 @@
     <servo name="MOTOR_2" no="1" min="1000" neutral="1050" max="2000"/>
     <servo name="MOTOR_3" no="2" min="1000" neutral="1050" max="2000"/>
     <servo name="MOTOR_4" no="3" min="1000" neutral="1050" max="2000"/>
-    <servo name="EL_1" no="4" min="1500" neutral="1500" max="2200"/>
-    <servo name="AZ_1" no="5" min="1200" neutral="1500" max="1800"/>
-    <servo name="EL_2" no="8" min="1500" neutral="1500" max="2200"/>
-    <servo name="AZ_2" no="9" min="1200" neutral="1500" max="1800"/>
-    <servo name="EL_3" no="10" min="1500" neutral="1500" max="2200"/>
-    <servo name="AZ_3" no="11" min="1200" neutral="1500" max="1800"/>
-    <servo name="EL_4" no="6" min="1500" neutral="1500" max="2200"/>
-    <servo name="AZ_4" no="7" min="1200" neutral="1500" max="1800"/>
+
+    <servo name="EL_1" no="4" min="1750" neutral="2015" max="2250"/>
+    <servo name="AZ_1" no="5" min="1095" neutral="1475" max="1875"/>
+    <servo name="EL_2" no="8" min="1700" neutral="1950" max="2190"/>
+    <servo name="AZ_2" no="9" min="1110" neutral="1500" max="1850"/>
+    <servo name="EL_3" no="10" min="1670" neutral="1940" max="2190"/>
+    <servo name="AZ_3" no="11" min="1090" neutral="1480" max="1875"/>
+    <servo name="EL_4" no="6" min="1590" neutral="1875" max="2130"/>
+    <servo name="AZ_4" no="7" min="1050" neutral="1435" max="1850"/>
   </servos>
 
   <commands>
@@ -173,16 +175,24 @@
     TBD with servos
     -->
     <call fun="overactuated_mixing_run()"/>
-    <set servo="EL_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 6400 + overactuated_mixing.commands[0] : 6400)"/>
-<!--    <let var="EL_1_log" value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 6400 + overactuated_mixing.commands[0] : 6400)"/>-->
-<!--    <let var="EL_1_log" value="3432"/>-->
-    <set servo="AZ_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (300 + overactuated_mixing.commands[1] + @YAW) : 300 + @YAW)"/>
-    <set servo="EL_2"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 5500 + overactuated_mixing.commands[2] : 5500)"/>
-    <set servo="AZ_2"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (overactuated_mixing.commands[3] + @YAW)  : @YAW)"/>
-    <set servo="EL_3"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 6200 + overactuated_mixing.commands[4] : 6200)"/>
-    <set servo="AZ_3"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (1000 -overactuated_mixing.commands[5] + @YAW ) : 1000 + @YAW)"/>
-    <set servo="EL_4"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 5300 + overactuated_mixing.commands[6] : 5300)"/>
-    <set servo="AZ_4"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (-1200 -overactuated_mixing.commands[7] + @YAW ) : -1200 + @YAW)"/>
+<!--    <set servo="EL_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 6400 + overactuated_mixing.commands[0] : 6400)"/>-->
+<!--&lt;!&ndash;    <let var="EL_1_log" value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 6400 + overactuated_mixing.commands[0] : 6400)"/>&ndash;&gt;-->
+<!--&lt;!&ndash;    <let var="EL_1_log" value="3432"/>&ndash;&gt;-->
+<!--    <set servo="AZ_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (300 + overactuated_mixing.commands[1] + @YAW) : 300 + @YAW)"/>-->
+<!--    <set servo="EL_2"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 5500 + overactuated_mixing.commands[2] : 5500)"/>-->
+<!--    <set servo="AZ_2"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (overactuated_mixing.commands[3] + @YAW)  : @YAW)"/>-->
+<!--    <set servo="EL_3"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 6200 + overactuated_mixing.commands[4] : 6200)"/>-->
+<!--    <set servo="AZ_3"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (1000 -overactuated_mixing.commands[5] + @YAW ) : 1000 + @YAW)"/>-->
+<!--    <set servo="EL_4"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 5300 + overactuated_mixing.commands[6] : 5300)"/>-->
+<!--    <set servo="AZ_4"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (-1200 -overactuated_mixing.commands[7] + @YAW ) : -1200 + @YAW)"/>-->
+    <set servo="EL_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? overactuated_mixing.commands[0] : 0)"/>
+    <set servo="AZ_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? overactuated_mixing.commands[1] + @YAW : @YAW)"/>
+    <set servo="EL_2"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? overactuated_mixing.commands[2] : 0)"/>
+    <set servo="AZ_2"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? overactuated_mixing.commands[3] + @YAW  : @YAW)"/>
+    <set servo="EL_3"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? overactuated_mixing.commands[4] : 0)"/>
+    <set servo="AZ_3"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? -overactuated_mixing.commands[5] + @YAW : @YAW)"/>
+    <set servo="EL_4"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? overactuated_mixing.commands[6] : 0)"/>
+    <set servo="AZ_4"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? -overactuated_mixing.commands[7] + @YAW  : @YAW)"/>
   </command_laws>
 
   <section name="MISC">

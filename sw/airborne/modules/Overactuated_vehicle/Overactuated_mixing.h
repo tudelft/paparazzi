@@ -37,11 +37,22 @@
  */
 #define N_ACT 8
 
-/* Swashplate mixing structure */
+/* Overactuated mixing structure */
 struct overactuated_mixing_t {
   int32_t commands[N_ACT];      ///< The output commands
 };
+
 extern struct overactuated_mixing_t overactuated_mixing;
+
+// Variables for slider
+extern float P_az_gain;
+extern float I_az_gain;
+extern float D_az_gain;
+extern float P_el_gain;
+extern float I_el_gain;
+extern float D_el_gain;
+extern int Deadband_stick;
+extern float Stick_gain_position;
 
 /* External used functions */
 extern void overactuated_mixing_init(void);
