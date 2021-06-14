@@ -41,7 +41,7 @@ extern "C" {
 // Whether to use gyros:
   // constant altitude filter: in the propagation only
   // full motion model: both in propagation and observation model
-#define USE_GYROS 0
+#define USE_GYROS 1
 
 #if CONSTANT_ALT_FILTER == 1
 

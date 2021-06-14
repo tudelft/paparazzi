@@ -1077,7 +1077,8 @@ void ins_flow_update(void)
     float Z_expect_GT_angle;
 
     if(CONSTANT_ALT_FILTER) {
-      Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]; // TODO: no p? // TODO: try to predict the optical flow measurement from a log in this way
+      Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
+				//+OF_X[OF_ANGLE_DOT_IND]; // TODO: first there was no p? // TODO: try to predict the optical flow measurement from a log in this way
 
       Z_expected[OF_DIV_FLOW_IND] = -OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
 
