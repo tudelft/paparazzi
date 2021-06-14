@@ -1084,7 +1084,7 @@ void ins_flow_update(void)
       float Z_exp_no_rate = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
       float Z_exp_with_rate = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]+OF_X[OF_ANGLE_DOT_IND];
       printf("Z_exp_no_rate = %f, Z_exp_with_rate = %f, measured = %f, angle dot = %f, p = %f: ", Z_exp_no_rate, Z_exp_with_rate,
-	     ins_flow.optical_flow_x, OF_X[OF_ANGLE_DOT_IND], dt * (ins_flow.lp_gyro_pitch - ins_flow.lp_gyro_bias_pitch) * (M_PI/180.0f) / 74.0f);
+	     ins_flow.optical_flow_x, OF_X[OF_ANGLE_DOT_IND], dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f);
       if(fabs(ins_flow.optical_flow_x - Z_exp_no_rate) < fabs(ins_flow.optical_flow_x - Z_exp_with_rate)) {
 	  printf("NO RATE WINS!");
       }
@@ -1104,8 +1104,9 @@ void ins_flow_update(void)
     }
     else {
       Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
-				     + OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
-				     //+ OF_X[OF_ANGLE_DOT_IND]; // TODO: We first had this but not for the constant alt filter.
+				     + OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND])
+				     + OF_X[OF_ANGLE_DOT_IND]; // TODO: We first had this rate term but not for the constant alt filter.
+							       // Simulation and data analysis from real flights shows that including it is better. CHECK IN REALITY!
 
       Z_expected[OF_DIV_FLOW_IND] = -OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND])
 				    -OF_X[OF_Z_DOT_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
@@ -1116,6 +1117,21 @@ void ins_flow_update(void)
       if(N_MEAS_OF_KF == 3) {
       	Z_expected[OF_RATE_IND] = OF_X[OF_ANGLE_DOT_IND]; // TODO: is this even in the right direction?
       }
+
+
+      float Z_exp_no_rate = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
+			    + OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
+      float Z_exp_with_rate = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
+			      + OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND])
+			      + OF_X[OF_ANGLE_DOT_IND];
+
+      /*
+      printf("Z_exp_no_rate = %f, Z_exp_with_rate = %f, measured = %f, angle dot = %f, p = %f: ", Z_exp_no_rate, Z_exp_with_rate,
+       ins_flow.optical_flow_x, OF_X[OF_ANGLE_DOT_IND], dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f);
+      if(fabs(ins_flow.optical_flow_x - Z_exp_no_rate) < fabs(ins_flow.optical_flow_x - Z_exp_with_rate)) {
+	  printf("NO RATE WINS!");
+      }
+      printf("\n");*/
     }
 
     //  i_k1 = Z - Z_expected;
