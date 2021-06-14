@@ -804,12 +804,11 @@ void ins_flow_update(void)
 	  else OF_X[OF_V_IND] += drag;
       }
 
-      if(USE_GYROS) {
-	  OF_X[OF_ANGLE_IND] += dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f; // Code says scaled by 12, but... that does not fit...
-      }
-      else {
-	  OF_X[OF_ANGLE_IND] += dt * OF_X[OF_ANGLE_DOT_IND];
-      }
+      /* // if we use gyros here, the angle dot estimate is ignored:
+       * if(OF_USE_GYROS) {
+	  // OF_X[OF_ANGLE_IND] += dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f; // Code says scaled by 12, but... that does not fit...
+      } */
+      OF_X[OF_ANGLE_IND] += dt * OF_X[OF_ANGLE_DOT_IND];
       OF_X[OF_ANGLE_DOT_IND] += dt * (moment / Ix);
 
       if(OF_TWO_DIM) {
@@ -831,12 +830,12 @@ void ins_flow_update(void)
   else {
     // make sure that the right hand state terms appear before they change:
     OF_X[OF_V_IND] += dt * (thrust * sin(OF_X[OF_ANGLE_IND]) / mass);
-    if(!USE_GYROS) {
-	OF_X[OF_ANGLE_IND] += dt * OF_X[OF_ANGLE_DOT_IND];
-    }
+    OF_X[OF_ANGLE_IND] += dt * OF_X[OF_ANGLE_DOT_IND];
+    /*
+     * // TODO: We now only keep this here because it worked on the real drone. It also worked without it. So to be deleted if it works as is.
     else {
 	OF_X[OF_ANGLE_IND] += dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f;
-    }
+    }*/
     OF_X[OF_ANGLE_DOT_IND] += dt * (moment / Ix);
     OF_X[OF_Z_IND] += dt * OF_X[OF_Z_DOT_IND];
     OF_X[OF_Z_DOT_IND] += dt * (thrust * cos(OF_X[OF_ANGLE_IND]) / mass - g);
@@ -942,16 +941,17 @@ void ins_flow_update(void)
     H[OF_DIV_FLOW_IND][OF_Z_IND] = OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]*OF_X[OF_Z_IND])
 				    + OF_X[OF_Z_DOT_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/(OF_X[OF_Z_IND]*OF_X[OF_Z_IND]);
     H[OF_DIV_FLOW_IND][OF_Z_DOT_IND] = -cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
-
-    // rate measurement:
-    if(N_MEAS_OF_KF == 3) {
-	H[OF_RATE_IND][OF_V_IND] = 0.0f;
-	H[OF_RATE_IND][OF_ANGLE_IND] = 0.0f;
-	H[OF_RATE_IND][OF_ANGLE_DOT_IND] = 1.0f;
-	H[OF_RATE_IND][OF_Z_IND] = 0.0f;
-	H[OF_RATE_IND][OF_Z_DOT_IND] = 0.0f;
-    }
   }
+
+  // rate measurement:
+  if(OF_USE_GYROS) {
+    H[OF_RATE_IND][OF_V_IND] = 0.0f;
+    H[OF_RATE_IND][OF_ANGLE_IND] = 0.0f;
+    H[OF_RATE_IND][OF_ANGLE_DOT_IND] = 1.0f;
+    H[OF_RATE_IND][OF_Z_IND] = 0.0f;
+    H[OF_RATE_IND][OF_Z_DOT_IND] = 0.0f;
+  }
+
   // propagate uncertainty:
   // TODO: make pointers that don't change to init:
   MAKE_MATRIX_PTR(Phi, F, N_STATES_OF_KF);
@@ -1077,8 +1077,18 @@ void ins_flow_update(void)
     float Z_expect_GT_angle;
 
     if(CONSTANT_ALT_FILTER) {
-      Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
-				//+OF_X[OF_ANGLE_DOT_IND]; // TODO: first there was no p? // TODO: try to predict the optical flow measurement from a log in this way
+      Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
+				+OF_X[OF_ANGLE_DOT_IND]; // TODO: Currently, no p works better than using p here. Analyze!
+
+      /* TODO: remove later, just for debugging:
+      float Z_exp_no_rate = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
+      float Z_exp_with_rate = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]+OF_X[OF_ANGLE_DOT_IND];
+      printf("Z_exp_no_rate = %f, Z_exp_with_rate = %f, measured = %f, angle dot = %f, p = %f: ", Z_exp_no_rate, Z_exp_with_rate,
+	     ins_flow.optical_flow_x, OF_X[OF_ANGLE_DOT_IND], dt * (ins_flow.lp_gyro_pitch - ins_flow.lp_gyro_bias_pitch) * (M_PI/180.0f) / 74.0f);
+      if(fabs(ins_flow.optical_flow_x - Z_exp_no_rate) < fabs(ins_flow.optical_flow_x - Z_exp_with_rate)) {
+	  printf("NO RATE WINS!");
+      }
+      printf("\n");*/
 
       Z_expected[OF_DIV_FLOW_IND] = -OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
 
@@ -1087,6 +1097,10 @@ void ins_flow_update(void)
       }
 
       Z_expect_GT_angle = -OF_X[OF_V_IND]*cos(eulers->phi)*cos(eulers->phi)/OF_X[OF_Z_IND];
+
+      if(OF_USE_GYROS) {
+	  Z_expected[OF_RATE_IND] = OF_X[OF_ANGLE_DOT_IND]; // TODO: is this even in the right direction?
+      }
     }
     else {
       Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
@@ -1097,8 +1111,8 @@ void ins_flow_update(void)
 				    -OF_X[OF_Z_DOT_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
 
       Z_expect_GT_angle = -OF_X[OF_V_IND]*cos(eulers->phi)*cos(eulers->phi)/OF_X[OF_Z_IND]
-					     + OF_X[OF_Z_DOT_IND]*sin(2*eulers->phi)/(2*OF_X[OF_Z_IND])
-					     + OF_X[OF_ANGLE_DOT_IND];
+					     + OF_X[OF_Z_DOT_IND]*sin(2*eulers->phi)/(2*OF_X[OF_Z_IND]);
+					     //+ OF_X[OF_ANGLE_DOT_IND];
       if(N_MEAS_OF_KF == 3) {
       	Z_expected[OF_RATE_IND] = OF_X[OF_ANGLE_DOT_IND]; // TODO: is this even in the right direction?
       }
@@ -1111,12 +1125,12 @@ void ins_flow_update(void)
     DEBUG_PRINT("Expected flow filter: %f, Expected flow ground truth = %f, Real flow x: %f, Real flow y: %f.\n", Z_expected[OF_LAT_FLOW_IND], Z_expect_GT_angle, ins_flow.optical_flow_x, ins_flow.optical_flow_y);
     innovation[OF_DIV_FLOW_IND][0] = ins_flow.divergence - Z_expected[OF_DIV_FLOW_IND];
     DEBUG_PRINT("Expected div: %f, Real div: %f.\n", Z_expected[OF_DIV_FLOW_IND], ins_flow.divergence);
-    if(CONSTANT_ALT_FILTER && N_MEAS_OF_KF == 3) {
+    if(CONSTANT_ALT_FILTER && OF_TWO_DIM) {
 	innovation[OF_LAT_FLOW_X_IND][0] = ins_flow.optical_flow_y - Z_expected[OF_LAT_FLOW_X_IND];
 	DEBUG_PRINT("Expected flow in body X direction filter: %f, Real flow in corresponding y direction: %f, gyro = %f, expected velocity = %f, real velocity = %f, expected theta = %f, real theta = %f.\n",
 	       Z_expected[OF_LAT_FLOW_X_IND], ins_flow.optical_flow_y, ins_flow.lp_gyro_pitch - ins_flow.lp_gyro_bias_pitch, OF_X[OF_VX_IND], velocities->x, OF_X[OF_THETA_IND], eulers->theta);
     }
-    else if(N_MEAS_OF_KF == 3) {
+    if(OF_USE_GYROS) {
 	float gyro_meas_roll = (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f;
 	//innovation[OF_RATE_IND][0] = gyro_meas_roll - Z_expected[OF_RATE_IND];
 	innovation[OF_RATE_IND][0] = rates->p - Z_expected[OF_RATE_IND];

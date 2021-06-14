@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-#define CONSTANT_ALT_FILTER 1
+#define CONSTANT_ALT_FILTER 0
 #define OF_DRAG 1
 // Only for constant alt for now!
 #define OF_TWO_DIM 0
@@ -41,7 +41,7 @@ extern "C" {
 // Whether to use gyros:
   // constant altitude filter: in the propagation only
   // full motion model: both in propagation and observation model
-#define USE_GYROS 1
+#define OF_USE_GYROS 1
 
 #if CONSTANT_ALT_FILTER == 1
 
@@ -52,7 +52,14 @@ extern "C" {
     #define OF_ANGLE_IND 1
     #define OF_Z_IND 2
     #define OF_ANGLE_DOT_IND 3
-    #define N_MEAS_OF_KF 2
+    #if OF_USE_GYROS == 1
+      // gyros used in the prediction and measurement
+      #define N_MEAS_OF_KF 3
+    #else
+      // gyros not used at all
+      #define N_MEAS_OF_KF 2
+    #endif
+
     #define OF_THETA_IND -1
     #define OF_VX_IND -1
 
@@ -76,7 +83,13 @@ extern "C" {
     // TODO: also a theta dot ind?
 
     // the third measurement here is the other lateral flow:
-    #define N_MEAS_OF_KF 3
+    #if OF_USE_GYROS == 1
+      // gyros used in the prediction and measurement
+      #define N_MEAS_OF_KF 4
+    #else
+      // gyros not used at all
+      #define N_MEAS_OF_KF 3
+    #endif
   #endif
 
   #define OF_Z_DOT_IND -1
@@ -99,7 +112,7 @@ extern "C" {
   #define OF_VX_IND -1
 
 
-  #if USE_GYROS == 1
+  #if OF_USE_GYROS == 1
     // gyros used in the prediction and measurement
     #define N_MEAS_OF_KF 3
   #else
@@ -117,7 +130,11 @@ extern "C" {
 #define OF_LAT_FLOW_IND 0
 #define OF_DIV_FLOW_IND 1
 #define OF_RATE_IND 2
-#define OF_LAT_FLOW_X_IND 2
+#if OF_USE_GYROS == 1
+  #define OF_LAT_FLOW_X_IND 3
+#else
+  #define OF_LAT_FLOW_X_IND 2
+#endif
 
 
 // use filter to different extents:

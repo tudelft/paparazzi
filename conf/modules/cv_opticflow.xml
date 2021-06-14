@@ -29,7 +29,7 @@
       <define name="SEARCH_DISTANCE" value="10" description="Maximum search distance for blockmatching (pixels)"/>
       <define name="SUBPIXEL_FACTOR" value="10" description="Amount of subpixels per pixel, used for more precise (subpixel) calculations of the flow"/>
       <define name="RESOLUTION_FACTOR" value="1000" description="The resolution factor needed to calculate the divergence without floats"/>
-      <define name="DEROTATION" value="1" description="Derotation either turned on or off (depended on gyroscope measurements)"/>
+      <define name="DEROTATION" value="1" description="Derotation either turned on or off (dependent on gyroscope measurements)"/>
       <define name="MEDIAN_FILTER" value="0" description="A median filter on the resulting velocities to be turned on or off (last 5 measurements)"/>
       <define name="FEATURE_MANAGEMENT" value="1" description="Whether to keep already tracked corners in memory for the next frame or re-detect new ones every time"/>
       <define name="FPS" value="0" description="The (maximum) frequency to run the calculations at. If zero, it will max out at the camera frame rate"/>

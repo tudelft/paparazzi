@@ -565,7 +565,7 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
 
     } else {
 
-      // determine the roll, pitch, yaw differencces between the images.
+      // determine the roll, pitch, yaw differences between the images.
       float phi_diff = opticflow->img_gray.eulers.phi - opticflow->prev_img_gray.eulers.phi;
       float theta_diff = opticflow->img_gray.eulers.theta - opticflow->prev_img_gray.eulers.theta;
       float psi_diff = opticflow->img_gray.eulers.psi - opticflow->prev_img_gray.eulers.psi;
