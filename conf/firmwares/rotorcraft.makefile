@@ -167,6 +167,10 @@ ifeq ($(ARCH), chibios)
 ns_srcs       += $(SRC_ARCH)/mcu_periph/gpio_arch.c
 endif
 
+ifeq ($(ARCH), linux)
+  ns_srcs       += $(SRC_ARCH)/mcu_periph/gpio_arch.c
+endif
+
 #
 # LEDs
 #
