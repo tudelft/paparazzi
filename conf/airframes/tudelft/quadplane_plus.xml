@@ -176,8 +176,6 @@
     -->
     <call fun="overactuated_mixing_run()"/>
 <!--    <set servo="EL_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 6400 + overactuated_mixing.commands[0] : 6400)"/>-->
-<!--&lt;!&ndash;    <let var="EL_1_log" value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 6400 + overactuated_mixing.commands[0] : 6400)"/>&ndash;&gt;-->
-<!--&lt;!&ndash;    <let var="EL_1_log" value="3432"/>&ndash;&gt;-->
 <!--    <set servo="AZ_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (300 + overactuated_mixing.commands[1] + @YAW) : 300 + @YAW)"/>-->
 <!--    <set servo="EL_2"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 5500 + overactuated_mixing.commands[2] : 5500)"/>-->
 <!--    <set servo="AZ_2"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (overactuated_mixing.commands[3] + @YAW)  : @YAW)"/>-->
@@ -185,14 +183,15 @@
 <!--    <set servo="AZ_3"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (1000 -overactuated_mixing.commands[5] + @YAW ) : 1000 + @YAW)"/>-->
 <!--    <set servo="EL_4"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 5300 + overactuated_mixing.commands[6] : 5300)"/>-->
 <!--    <set servo="AZ_4"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (-1200 -overactuated_mixing.commands[7] + @YAW ) : -1200 + @YAW)"/>-->
-    <set servo="EL_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? overactuated_mixing.commands[0] : 0)"/>
-    <set servo="AZ_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? overactuated_mixing.commands[1] + @YAW : @YAW)"/>
-    <set servo="EL_2"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? overactuated_mixing.commands[2] : 0)"/>
-    <set servo="AZ_2"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? overactuated_mixing.commands[3] + @YAW  : @YAW)"/>
-    <set servo="EL_3"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? overactuated_mixing.commands[4] : 0)"/>
-    <set servo="AZ_3"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? -overactuated_mixing.commands[5] + @YAW : @YAW)"/>
-    <set servo="EL_4"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? overactuated_mixing.commands[6] : 0)"/>
-    <set servo="AZ_4"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? -overactuated_mixing.commands[7] + @YAW  : @YAW)"/>
+
+    <set servo="EL_1"   value="(AP_MODE == AP_MODE_NAV  ? overactuated_mixing.commands[0] : 0)"/>
+    <set servo="AZ_1"   value="(AP_MODE == AP_MODE_NAV  ? overactuated_mixing.commands[1] + @YAW : @YAW)"/>
+    <set servo="EL_2"   value="(AP_MODE == AP_MODE_NAV  ? overactuated_mixing.commands[2] : 0)"/>
+    <set servo="AZ_2"   value="(AP_MODE == AP_MODE_NAV  ? overactuated_mixing.commands[3] + @YAW  : @YAW)"/>
+    <set servo="EL_3"   value="(AP_MODE == AP_MODE_NAV  ? overactuated_mixing.commands[4] : 0)"/>
+    <set servo="AZ_3"   value="(AP_MODE == AP_MODE_NAV  ? -overactuated_mixing.commands[5] + @YAW : @YAW)"/>
+    <set servo="EL_4"   value="(AP_MODE == AP_MODE_NAV  ? overactuated_mixing.commands[6] : 0)"/>
+    <set servo="AZ_4"   value="(AP_MODE == AP_MODE_NAV  ? -overactuated_mixing.commands[7] + @YAW  : @YAW)"/>
   </command_laws>
 
   <section name="MISC">
@@ -353,8 +352,8 @@
 
   <section name="AUTOPILOT">
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO1"  value="AP_MODE_HOVER_DIRECT"/>
-    <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>
+    <define name="MODE_AUTO1"  value="AP_MODE_NAV "/>
+    <define name="MODE_AUTO2"  value="AP_MODE_NAV "/>
     <define name="MODE_STARTUP"  value="AP_MODE_NAV"/>
   </section>
 
