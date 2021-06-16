@@ -29,15 +29,9 @@
         <configure name="AOA_PWM_CHANNEL" value="PWM_INPUT1"/>
       </module>
 
-      <module name="airspeed_sdp3x">
+            <module name="airspeed" type="ms45xx_i2c">
         <define name="USE_I2C4"/>
-        <configure name="SDP3X_I2C_DEV" value="I2C4"/>
-    <!--<define name="SDP3X_I2C_ADDR" value="0x50" description="i2c slave address (default: 0x50)"/>-->
-        <define name="SDP3X_SYNC_SEND" value="FALSE"/>
-        <define name="SDP3X_PRESSURE_SCALE" value="SDP3X_SCALE_PRESSURE_SDP33"/>
-        <!--<define name="SDP3X_PRESSURE_OFFSET" value="0."/>-->
-        <define name="SDP3X_AIRSPEED_SCALE" value="1.6327"/>
-        <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>
+        <define name="MS45XX_I2C_DEV" value="i2c4"/>
       </module>
 
       <configure name="FLASH_MODE" value="SWD"/>
@@ -197,7 +191,7 @@
     <define name="ROLL_COEF"   value="{  256,  162, -162, -256, -256, -162,  162,  256}"/>
     <define name="PITCH_COEF"  value="{  256,  256,  256,  256, -256, -256, -256, -256}"/>
     <define name="YAW_COEF"    value="{ -256,  256, -256,  256, -256,  256, -256,  256}"/>
-    <define name="THRUST_COEF" value="{  256,  256,  256,  256,  256,  256,  256,  256}"/>
+    <define name="THRUST_COEF" value="{ 256,  256,  256,  256,  256,  256,  256,  256}"/>
   </section>
 
   <command_laws>
