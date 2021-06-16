@@ -18,11 +18,11 @@ float er_value = 0.;
 // impulse at this azimuth value [degrees]
 float elevon_activate_at = 0;
 uint8_t change_e_az_n = 0;
-float elevon_activate_arr[4] = {-1, -1, -1, -1};
+float elevon_activate_arr[4] = {0, -1, -1, -1};
 
 float motor_activate_at = 0;
 uint8_t change_m_az_n = 0;
-float motor_activate_arr[4] = {-1, -1, -1, -1};
+float motor_activate_arr[4] = {0, -1, -1, -1};
 
 // Turn impulse into step (activate within azimuth arc) [degrees]
 float elevon_half_arc = 2;
@@ -36,7 +36,7 @@ void impulse_control_values(struct fs_landing_t *actuator_values) {
 
   if (impulse_use_elevon_l) {
     for (int i = 0; i < 4; i++) {
-      if (elevon_activate_arr[i] < 0) {
+      if (elevon_activate_arr[i] >= 0) {
         float ele_az = RadOfDeg(elevon_activate_arr[i]);
         if (ele_az - ele_h_arc < current_yaw && current_yaw < ele_az + ele_h_arc) {
           int32_t elevon_l = (int32_t)(el_value);
@@ -47,7 +47,7 @@ void impulse_control_values(struct fs_landing_t *actuator_values) {
   }
   if (impulse_use_elevon_r) {
     for (int i = 0; i < 4; i++) {
-      if (elevon_activate_arr[i] < 0) {
+      if (elevon_activate_arr[i] >= 0) {
         float ele_az = RadOfDeg(elevon_activate_arr[i]);
         if (ele_az - ele_h_arc < current_yaw && current_yaw < ele_az + ele_h_arc) {
           int32_t elevon_r = (int32_t)(er_value);
@@ -58,7 +58,7 @@ void impulse_control_values(struct fs_landing_t *actuator_values) {
   }
   if (impulse_use_motor_l) {
     for (int i = 0; i < 4; i++) {
-      if (motor_activate_arr[i] < 0) {
+      if (motor_activate_arr[i] >= 0) {
         float mot_az = RadOfDeg(motor_activate_arr[i]);
         if (mot_az - mot_h_arc < current_yaw && current_yaw < mot_az + mot_h_arc) {
           int32_t motor_l = (int32_t)(ml_value);
@@ -69,7 +69,7 @@ void impulse_control_values(struct fs_landing_t *actuator_values) {
   }
   if (impulse_use_motor_r) {
     for (int i = 0; i < 4; i++) {
-      if (motor_activate_arr[i] < 0) {
+      if (motor_activate_arr[i] >= 0) {
         float mot_az = RadOfDeg(motor_activate_arr[i]);
         if (mot_az - mot_h_arc < current_yaw && current_yaw < mot_az + mot_h_arc) {
           int32_t motor_r = (int32_t)(mr_value);

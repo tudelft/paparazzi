@@ -32,6 +32,7 @@ extern float el_phase;
 
 extern uint8_t use_square_sig;
 extern uint8_t phase_pilot_control;
+extern uint8_t balance_motor_forces;
 
 void cyclic_control_values(struct fs_landing_t *actuator_values);
 void get_max_roll_yaw(void);

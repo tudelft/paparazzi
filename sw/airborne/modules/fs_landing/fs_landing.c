@@ -156,7 +156,7 @@ int32_t get_matching_motl_val(int32_t val) {
   // calculate [0, 1] value of reverse motor from thrust
   float m = (-b_rev + sqrtf(pow(b_rev,2 )- 4. * a_rev * (c_rev - thr))) / (2. * a_rev);
   // remap to pprz value
-  float p = (int32_t) (m * 9600);
+  float p = (int32_t) (m * -9600);
   return p;
 }
 

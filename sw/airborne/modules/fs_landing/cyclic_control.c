@@ -54,6 +54,7 @@ float er_delta = 0.;
 float mt_phase = 0.;  // phase offset in degrees
 float el_phase = 0.;
 
+uint8_t balance_motor_forces = true;
 uint8_t use_square_sig = true;
 uint8_t phase_pilot_control = false;
 
@@ -88,6 +89,9 @@ void cyclic_control_values(struct fs_landing_t *actuator_values) {
   int32_t elevon_l = (int32_t) (9600 * (el_avg + el_delta * cos_val));
   int32_t elevon_r = (int32_t) (9600 * (er_avg + er_delta * cos_val));
 
+  if (balance_motor_forces) {
+    ml_avg = get_matching_motl_val(abs(mr_avg) * 9600) / 9600;
+  }
   cos_val = cosf(current_yaw + mt_phase_rad);
   int32_t motor_l = 0;
   int32_t motor_r = 0;
