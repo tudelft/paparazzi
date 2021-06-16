@@ -152,7 +152,7 @@
     <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410" unit="s/10"/> <!-- in tenth of seconds for engine kill or in ELECTRICAL_PERIODIC_FREQ-->
 
     <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
-    <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/> <!-- forward acceleration compensation from GPS speed -->
+    <define name="USE_AHRS_GPS_ACCELERATIONS" value="FALSE"/> <!-- forward acceleration compensation from GPS speed -->
     <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/> <!--DEFINE only used if float_dcm Use magnetic compensation before takeoff only while GPS course not good -->
 
     <configure name="USE_MAGNETOMETER" value="TRUE"/><!-- should be as in USE the device -->
@@ -309,22 +309,29 @@
     <define name="GYRO_R_SENS" value="4.5" integer="16"/>
 
     <!-- ***************** ACCELO *****************-->
-    <define name="ACCEL_X_NEUTRAL" value="0"/>
-    <define name="ACCEL_Y_NEUTRAL" value="0"/>
-    <define name="ACCEL_Z_NEUTRAL" value="0"/>
-    <define name="ACCEL_X_SENS" value="2.44717990354" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="2.41787653186" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="2.4425224747" integer="16"/>
+    <define name="ACCEL_X_NEUTRAL" value="47"/>
+    <define name="ACCEL_Y_NEUTRAL" value="51"/>
+    <define name="ACCEL_Z_NEUTRAL" value="-162"/>
+    <define name="ACCEL_X_SENS" value="2.4436676094255545" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="2.44481857275968" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.425259654841266" integer="16"/>
 
     <!-- ***************** MAGNETO *****************-->
     <!--define name="MAG_OFFSET" value="-?.0" unit="deg"-->
-    <!-- TODO -->
-    <define name="MAG_X_NEUTRAL" value="-76"/>
-    <define name="MAG_Y_NEUTRAL" value="-148"/>
-    <define name="MAG_Z_NEUTRAL" value="-544"/>
-    <define name="MAG_X_SENS" value="9.32170888384" integer="16"/>
-    <define name="MAG_Y_SENS" value="9.08947221668" integer="16"/>
-    <define name="MAG_Z_SENS" value="9.38604192016" integer="16"/>
+<!--    <define name="MAG_X_NEUTRAL" value="-76"/>-->
+<!--    <define name="MAG_Y_NEUTRAL" value="-148"/>-->
+<!--    <define name="MAG_Z_NEUTRAL" value="-544"/>-->
+<!--    <define name="MAG_X_SENS" value="9.32170888384" integer="16"/>-->
+<!--    <define name="MAG_Y_SENS" value="9.08947221668" integer="16"/>-->
+<!--    <define name="MAG_Z_SENS" value="9.38604192016" integer="16"/>-->
+
+    <define name="MAG_X_NEUTRAL" value="217"/>
+    <define name="MAG_Y_NEUTRAL" value="30"/>
+    <define name="MAG_Z_NEUTRAL" value="-517"/>
+    <define name="MAG_X_SENS" value="7.8416468785602484" integer="16"/>
+    <define name="MAG_Y_SENS" value="8.348726309178065" integer="16"/>
+    <define name="MAG_Z_SENS" value="6.583446581070574" integer="16"/>
+
 
     <!-- Should be same for everyone -->
     <define name="MAG_X_CURRENT_COEF" value="0.000321738038902"/>
