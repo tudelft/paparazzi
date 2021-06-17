@@ -29,12 +29,11 @@
 #include "subsystems/radio_control.h"
 #include "state.h"
 #include "subsystems/datalink/telemetry.h"
-
-
+#include "subsystems/navigation/waypoints.h"
+#include "generated/flight_plan.h"
 struct overactuated_mixing_t overactuated_mixing;
-struct overactuated_mixing_t overactuated_mixing;
 
-float phi, theta, psi, x, y, z, u, v, w;
+float phi, theta, psi, x, y, u, v;
 
 // PID and general settings from slider
 float P_az_gain = 12.7 ;
@@ -51,7 +50,7 @@ float desired_x_e = 0;
 float desired_y_e = 0;
 float lateral_cmd_old = 0;
 float longitudinal_cmd_old = 0;
-
+float x_stb, y_stb;
 static void send_overactuated_variables( struct transport_tx *trans , struct link_device * dev ) {
 
 // Send telemetry message
@@ -76,10 +75,10 @@ void overactuated_mixing_init() {
     psi = stateGetNedToBodyEulers_f()->psi;
     x = stateGetPositionNed_i()->x;
     y = stateGetPositionNed_i()->y;
-    z = stateGetPositionNed_i()->z;
     u = stateGetSpeedNed_i()->x;
     v = stateGetSpeedNed_i()->y;
-    w = stateGetSpeedNed_i()->z;
+    x_stb = waypoint_get_y(WP_STDBY);
+    y_stb = waypoint_get_x(WP_STDBY);
 
     // Case of Manual direct mode
     if(radio_control.values[RADIO_MODE] < 500 && radio_control.values[RADIO_MODE] > -500)
@@ -105,13 +104,15 @@ void overactuated_mixing_init() {
     // Case of Position hold mode
     if(radio_control.values[RADIO_MODE] > 500)
     {
-        //Calculate the desired position considering the RC input
-        if( abs(radio_control.values[RADIO_PITCH]) > Deadband_stick ){
-            desired_x_e += radio_control.values[RADIO_PITCH]*Stick_gain_position*-0.0002;
-        }
-        if( abs(radio_control.values[RADIO_ROLL]) > Deadband_stick ){
-            desired_y_e += radio_control.values[RADIO_ROLL]*Stick_gain_position*0.0002;
-        }
+//        //Calculate the desired position considering the RC input
+//        if( abs(radio_control.values[RADIO_PITCH]) > Deadband_stick ){
+//            desired_x_e += radio_control.values[RADIO_PITCH]*Stick_gain_position*-0.002;
+//        }
+//        if( abs(radio_control.values[RADIO_ROLL]) > Deadband_stick ){
+//            desired_y_e += radio_control.values[RADIO_ROLL]*Stick_gain_position*0.002;
+//        }
+        desired_x_e = x_stb*100; //Get the wp goal x-position in cm
+        desired_y_e = y_stb*100; //Get the wp goal y-position in cm
 
         float longitudinal_cmd = cos(psi) * (desired_x_e - x) + sin(psi)*(desired_y_e - y);
         float longitudinal_speed = cos(psi) * u + sin(psi)*v;
@@ -159,10 +160,10 @@ void overactuated_mixing_run()
     psi = stateGetNedToBodyEulers_f()->psi;
     x = stateGetPositionNed_i()->x;
     y = stateGetPositionNed_i()->y;
-    z = stateGetPositionNed_i()->z;
     u = stateGetSpeedNed_i()->x;
     v = stateGetSpeedNed_i()->y;
-    w = stateGetSpeedNed_i()->z;
+    x_stb = waypoint_get_y(WP_STDBY);
+    y_stb = waypoint_get_x(WP_STDBY);
 
     // Case of Manual direct mode
     if(radio_control.values[RADIO_MODE] < 500 && radio_control.values[RADIO_MODE] > -500)
@@ -188,14 +189,15 @@ void overactuated_mixing_run()
     // Case of Position hold mode
     if(radio_control.values[RADIO_MODE] > 500)
     {
-        //Calculate the desired position considering the RC input
-        if( abs(radio_control.values[RADIO_PITCH]) > Deadband_stick ){
-            desired_x_e += radio_control.values[RADIO_PITCH]*Stick_gain_position*-0.002;
-        }
-        if( abs(radio_control.values[RADIO_ROLL]) > Deadband_stick ){
-            desired_y_e += radio_control.values[RADIO_ROLL]*Stick_gain_position*0.002;
-        }
-
+//        //Calculate the desired position considering the RC input
+//        if( abs(radio_control.values[RADIO_PITCH]) > Deadband_stick ){
+//            desired_x_e += radio_control.values[RADIO_PITCH]*Stick_gain_position*-0.002;
+//        }
+//        if( abs(radio_control.values[RADIO_ROLL]) > Deadband_stick ){
+//            desired_y_e += radio_control.values[RADIO_ROLL]*Stick_gain_position*0.002;
+//        }
+        desired_x_e = x_stb*100; //Get the wp goal x-position in cm
+        desired_y_e = y_stb*100; //Get the wp goal y-position in cm
         float longitudinal_cmd = cos(psi) * (desired_x_e - x) + sin(psi)*(desired_y_e - y);
         float longitudinal_speed = cos(psi) * u + sin(psi)*v;
 

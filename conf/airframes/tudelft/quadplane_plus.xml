@@ -191,7 +191,7 @@
     <set servo="EL_3"   value="(AP_MODE == AP_MODE_NAV  ? overactuated_mixing.commands[4] : 0)"/>
     <set servo="AZ_3"   value="(AP_MODE == AP_MODE_NAV  ? -overactuated_mixing.commands[5] + @YAW : @YAW)"/>
     <set servo="EL_4"   value="(AP_MODE == AP_MODE_NAV  ? overactuated_mixing.commands[6] : 0)"/>
-    <set servo="AZ_4"   value="(AP_MODE == AP_MODE_NAV  ? -overactuated_mixing.commands[7] + @YAW  : @YAW)"/>
+    <set servo="AZ_4"   value="(AP_MODE == AP_MODE_NAV ? -overactuated_mixing.commands[7] + @YAW  : @YAW)"/>
   </command_laws>
 
   <section name="MISC">
@@ -352,8 +352,8 @@
 
   <section name="AUTOPILOT">
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO1"  value="AP_MODE_NAV "/>
-    <define name="MODE_AUTO2"  value="AP_MODE_NAV "/>
+    <define name="MODE_AUTO1"  value="AP_MODE_NAV"/>
+    <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>
     <define name="MODE_STARTUP"  value="AP_MODE_NAV"/>
   </section>
 
