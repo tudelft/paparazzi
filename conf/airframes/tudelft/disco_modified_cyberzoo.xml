@@ -274,6 +274,12 @@
     <define name="ACCEL_Z_SENS" value="2.425259654841266" integer="16"/>
 
     <!-- ***************** MAGNETO *****************-->
+    <define name="MAG_X_NEUTRAL" value="217"/>
+    <define name="MAG_Y_NEUTRAL" value="30"/>
+    <define name="MAG_Z_NEUTRAL" value="-517"/>
+    <define name="MAG_X_SENS" value="7.8416468785602484" integer="16"/>
+    <define name="MAG_Y_SENS" value="8.348726309178065" integer="16"/>
+    <define name="MAG_Z_SENS" value="6.583446581070574" integer="16"/>
     <!-- Should be same for everyone -->
     <define name="MAG_X_CURRENT_COEF" value="0.000321738038902"/>
     <define name="MAG_Y_CURRENT_COEF" value="-0.000820010304048"/>

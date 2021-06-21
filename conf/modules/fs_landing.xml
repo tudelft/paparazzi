@@ -68,16 +68,14 @@
         <dl_setting min="0" max="1" step="1" var="impulse_use_motor_r" type="uint8_t" module="fs_landing/impulse_control"/>
         <dl_setting min="0" max="1" step="1" var="impulse_use_elevon_l" type="uint8_t" module="fs_landing/impulse_control"/>
         <dl_setting min="0" max="1" step="1" var="impulse_use_elevon_r" type="uint8_t" module="fs_landing/impulse_control"/>
-        <dl_setting min="-1" max="360" step="1" var="elevon_activate_at" type="float" module="fs_landing/impulse_control"/>
-        <dl_setting min="-1" max="360" step="1" var="motor_activate_at" type="float" module="fs_landing/impulse_control"/>
+        <dl_setting min="-180" max="180" step="1" var="elevon_activate_at" type="uint16_t" module="fs_landing/impulse_control"/>
+        <dl_setting min="-180" max="180" step="1" var="motor_activate_at" type="uint16_t" module="fs_landing/impulse_control"/>
         <dl_setting min="0" max="180" step="1" var="elevon_half_arc" type="float" module="fs_landing/impulse_control"/>
         <dl_setting min="0" max="180" step="1" var="motor_half_arc" type="float" module="fs_landing/impulse_control"/>
         <dl_setting min="-9600" max="9600" step="1" var="ml_value" type="float" module="fs_landing/impulse_control"/>
         <dl_setting min="-9600" max="9600" step="1" var="mr_value" type="float" module="fs_landing/impulse_control"/>
         <dl_setting min="-9600" max="9600" step="1" var="el_value" type="float" module="fs_landing/impulse_control"/>
         <dl_setting min="-9600" max="9600" step="1" var="er_value" type="float" module="fs_landing/impulse_control"/>
-        <dl_setting min="0" max="4" step="1" var="change_m_az_n" type="float" module="fs_landing/impulse_control" handler="activate_motor_at_handler"/>
-        <dl_setting min="0" max="4" step="1" var="change_e_az_n" type="float" module="fs_landing/impulse_control" handler="activate_elevon_at_handler"/>
       </dl_settings>
       <dl_settings name="Act Frequency Test">
         <dl_setting min="0" step="0.01" max="20" var="test_freq" shortname="Frequency" type="float" module="fs_landing/actuator_freq_test"/>

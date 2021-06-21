@@ -17,16 +17,12 @@ extern float mr_value;
 extern float el_value;
 extern float er_value;
 
-extern float elevon_activate_at;
-extern uint8_t change_e_az_n;
-extern float motor_activate_at;
-extern uint8_t change_m_az_n;
+extern uint16_t elevon_activate_at;
+extern uint16_t motor_activate_at;
 
 extern float elevon_half_arc;
 extern float motor_half_arc;
 
 void impulse_control_values(struct fs_landing_t *actuator_values);
-extern void impulse_control_activate_elevon_at_handler(uint8_t idx);
-extern void impulse_control_activate_motor_at_handler(uint8_t idx);
 
 #endif //PAPARAZZI_IMPULSE_CONTROL_H
