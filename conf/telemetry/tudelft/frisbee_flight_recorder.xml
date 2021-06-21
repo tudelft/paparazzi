@@ -122,7 +122,7 @@
     <mode name="default">
       <message name="ENERGY"              period="0.5"/>
       <message name="GPS"                 period="0.05"/>
-      <message name="ATTITUDE"            period="0.05"/>
+      <message name="ATTITUDE"            period="0.01"/>
       <message name="DESIRED"             period="0.05"/>
       <message name="IMU_ACCEL"           period=".02"/>
       <message name="IMU_GYRO"            period=".02"/>
