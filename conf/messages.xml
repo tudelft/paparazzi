@@ -1735,6 +1735,7 @@
     </message>
 
      <message name="OVERACTUATED_VARIABLES" id="212">
+         <field name="wind_speed" type="float" >Actual wind speed from the control room</field>
          <field name="act_x_pos" type="float" >Actual x position [cm]</field>
          <field name="act_y_pos" type="float" >Actual y position [cm]</field>
          <field name="act_psi" type="float" >Actual Psi angle [deg]</field>

@@ -49,7 +49,8 @@ float Stick_gain_position = 0.1; // Stick to position gain
 bool activate_longitudinal_over = 1;
 bool activate_lateral_over = 1;
 bool activate_yaw_over = 1;
-bool manual_yaw_overactuated = 1;
+bool manual_yaw_overactuated = 0;
+float wind_speed = 0;
 
 float desired_x_e = 0;
 float desired_y_e = 0;
@@ -70,7 +71,7 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
     }
     float psi_deg = psi*180/3.14;
 
-    pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID , & x, & y, & psi_deg, & desired_x_e, & desired_y_e, & yaw_cmd, & elevation_cmd, & azimuth_cmd, 8, actuators );
+    pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID , & x, & y, & wind_speed, & psi_deg, & desired_x_e, & desired_y_e, & yaw_cmd, & elevation_cmd, & azimuth_cmd, 8, actuators );
 }
 
 
@@ -255,7 +256,8 @@ void overactuated_mixing_run(pprz_t in_cmd[])
         if (activate_yaw_over) {
             if (i == 5 || i == 7) {
                 overactuated_mixing.commands[i] -= yaw_cmd;
-            } else {
+            }
+            if (i == 1 || i == 3) {
                 overactuated_mixing.commands[i] += yaw_cmd;
             }
         }

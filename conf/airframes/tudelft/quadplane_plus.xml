@@ -50,6 +50,8 @@
       <define name="RADIO_FMODE"       value="RADIO_AUX2"/> <!-- Throttle curve select -->
       <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> <!-- Switch between AP and FBW control -->
       <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
+
+      <configure name="USE_BARO_BOARD" value="FALSE"/><!-- To use in cyberzoo and OJF -->
     </target>
 
 <!--    <target name="nps" board="pc">-->
@@ -131,14 +133,22 @@
     <servo name="MOTOR_3" no="2" min="1000" neutral="1050" max="2000"/>
     <servo name="MOTOR_4" no="3" min="1000" neutral="1050" max="2000"/>
 
-    <servo name="EL_1" no="4" min="1750" neutral="2015" max="2250"/>
-    <servo name="AZ_1" no="5" min="1095" neutral="1475" max="1875"/>
-    <servo name="EL_2" no="8" min="1700" neutral="1950" max="2190"/>
-    <servo name="AZ_2" no="9" min="1110" neutral="1500" max="1850"/>
-    <servo name="EL_3" no="10" min="1670" neutral="1940" max="2190"/>
-    <servo name="AZ_3" no="11" min="1090" neutral="1480" max="1875"/>
-    <servo name="EL_4" no="6" min="1590" neutral="1875" max="2130"/>
-    <servo name="AZ_4" no="7" min="1050" neutral="1435" max="1850"/>
+<!--    <servo name="EL_1" no="4" min="1750" neutral="2015" max="2250"/>-->
+<!--    <servo name="AZ_1" no="5" min="1095" neutral="1475" max="1875"/>-->
+<!--    <servo name="EL_2" no="8" min="1700" neutral="1950" max="2190"/>-->
+<!--    <servo name="AZ_2" no="9" min="1110" neutral="1500" max="1850"/>-->
+<!--    <servo name="EL_3" no="10" min="1670" neutral="1940" max="2190"/>-->
+<!--    <servo name="AZ_3" no="11" min="1090" neutral="1480" max="1875"/>-->
+<!--    <servo name="EL_4" no="6" min="1590" neutral="1875" max="2130"/>-->
+<!--    <servo name="AZ_4" no="7" min="1050" neutral="1435" max="1850"/>-->
+    <servo name="EL_1" no="4" min="1650" neutral="2015" max="2250"/>
+    <servo name="AZ_1" no="5" min="1095" neutral="1455" max="1875"/>
+    <servo name="EL_2" no="8" min="1600" neutral="1950" max="2190"/>
+    <servo name="AZ_2" no="9" min="1110" neutral="1480" max="1850"/>
+    <servo name="EL_3" no="10" min="1570" neutral="1940" max="2190"/>
+    <servo name="AZ_3" no="11" min="1090" neutral="1460" max="1875"/>
+    <servo name="EL_4" no="6" min="1690" neutral="1875" max="2130"/>
+    <servo name="AZ_4" no="7" min="1050" neutral="1415" max="1850"/>
   </servos>
 
   <commands>
@@ -285,7 +295,7 @@
     <!-- control effectiveness (hover) [conventional + yaw tilting] -->
     <define name="G1_P" value="0.004"/>
     <define name="G1_Q" value="0.01"/>
-    <define name="G1_R" value="0.001"/>
+    <define name="G1_R" value="0.024"/>
     <define name="G2_R" value="0.00015"/>
 
     <!-- control effectiveness (forward) -->

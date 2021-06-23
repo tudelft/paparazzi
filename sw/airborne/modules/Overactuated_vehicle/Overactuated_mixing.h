@@ -45,6 +45,7 @@ struct overactuated_mixing_t {
 extern struct overactuated_mixing_t overactuated_mixing;
 
 // Variables for slider
+extern float wind_speed;
 extern float P_az_gain;
 extern float I_az_gain;
 extern float D_az_gain;

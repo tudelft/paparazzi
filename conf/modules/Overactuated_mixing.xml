@@ -8,6 +8,7 @@
   <settings>
     <dl_settings>
       <dl_settings NAME="Overactuated_settings">
+        <dl_setting var="wind_speed"  min="0" step="1" max="20" shortname="wind_speed" />
         <dl_setting var="activate_longitudinal_over" min="0" step="1" max="1" shortname="long_active" values="FALSE|TRUE" />
         <dl_setting var="activate_lateral_over" min="0" step="1" max="1" shortname="lat_active" values="FALSE|TRUE" />
         <dl_setting var="activate_yaw_over" min="0" step="1" max="1" shortname="yaw_active_overactuated" values="FALSE|TRUE" />
