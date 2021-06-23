@@ -36,6 +36,11 @@
             <module name="airspeed" type="ms45xx_i2c">
         <define name="USE_I2C4"/>
         <define name="MS45XX_I2C_DEV" value="i2c4"/>
+        <define name="MS45XX_SYNC_SEND" value="TRUE"/>
+        <!--Gives cut-off freq of 1/(2*pi*tau) in 1Hz -->
+        <define name="MS45XX_LOWPASS_TAU" value="0.25"/> <!-- TODO: find optimum value-->  
+        <define name="MS45XX_AIRSPEED_SCALE" value="4.8"/>
+          
       </module>
 
       <configure name="FLASH_MODE" value="SWD"/>
@@ -108,9 +113,9 @@
       <define name="USE_I2C4"/>
       <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>
     </module-->
-    <module name="air_data">
+    <!-- <module name="air_data">
       <define name="USE_AIRSPEED" value="TRUE"/>
-    </module>
+    </module> -->
     <module name="send_imu_mag_current"/>
 
     <!-- Internal MAG -->
