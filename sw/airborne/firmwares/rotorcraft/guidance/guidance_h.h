@@ -97,6 +97,7 @@ struct HorizontalGuidance {
   /* configuration options */
   bool use_ref;
   bool approx_force_by_thrust;
+
   /* gains */
   struct HorizontalGuidanceGains gains;
 
@@ -110,6 +111,10 @@ extern struct HorizontalGuidance guidance_h;
 
 extern int32_t transition_percentage;
 
+// Add variables for wind tunnel experiment Alessandro Mancinelli
+extern bool activate_lateral_conventional;
+extern bool activate_longitudinal_conventional;
+
 extern void guidance_h_init(void);
 extern void guidance_h_mode_changed(uint8_t new_mode);
 extern void guidance_h_read_rc(bool in_flight);
@@ -117,6 +122,7 @@ extern void guidance_h_run(bool in_flight);
 
 extern void guidance_h_hover_enter(void);
 extern void guidance_h_nav_enter(void);
+
 
 /** Set horizontal guidance from NAV and run control loop
  */

@@ -53,9 +53,12 @@ extern float I_el_gain;
 extern float D_el_gain;
 extern int Deadband_stick;
 extern float Stick_gain_position;
-
+extern bool activate_longitudinal_over;
+extern bool activate_lateral_over;
+extern bool activate_yaw_over;
+extern bool manual_yaw_overactuated;
 /* External used functions */
 extern void overactuated_mixing_init(void);
-extern void overactuated_mixing_run(void);
+extern void overactuated_mixing_run(pprz_t in_cmd[]);
 
 #endif

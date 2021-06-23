@@ -30,7 +30,7 @@
  * http://arc.aiaa.org/doi/pdf/10.2514/1.G001490
  */
 
-#include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
+#include "firmwares/rotorcraft/stabilization/stabilization_indi_overactuated.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_quat_transformations.h"
@@ -65,48 +65,48 @@ static void bound_g_mat(void);
 int32_t stabilization_att_indi_cmd[COMMANDS_NB];
 struct Indi_gains indi_gains = {
   .att = {
-    STABILIZATION_INDI_REF_ERR_P,
-    STABILIZATION_INDI_REF_ERR_Q,
-    STABILIZATION_INDI_REF_ERR_R
+    STABILIZATION_INDI_OVER_REF_ERR_P,
+    STABILIZATION_INDI_OVER_REF_ERR_Q,
+    STABILIZATION_INDI_OVER_REF_ERR_R
   },
   .rate = {
-    STABILIZATION_INDI_REF_RATE_P,
-    STABILIZATION_INDI_REF_RATE_Q,
-    STABILIZATION_INDI_REF_RATE_R
+    STABILIZATION_INDI_OVER_REF_RATE_P,
+    STABILIZATION_INDI_OVER_REF_RATE_Q,
+    STABILIZATION_INDI_OVER_REF_RATE_R
   },
 };
 
-#if STABILIZATION_INDI_USE_ADAPTIVE
+#if STABILIZATION_INDI_OVER_USE_ADAPTIVE
 bool indi_use_adaptive = true;
 #else
 bool indi_use_adaptive = false;
 #endif
 
-#ifdef STABILIZATION_INDI_ACT_RATE_LIMIT
-float act_rate_limit[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_RATE_LIMIT;
+#ifdef STABILIZATION_INDI_OVER_ACT_RATE_LIMIT
+float act_rate_limit[INDI_NUM_ACT] = STABILIZATION_INDI_OVER_ACT_RATE_LIMIT;
 #endif
 
-#ifdef STABILIZATION_INDI_ACT_IS_SERVO
-bool act_is_servo[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_IS_SERVO;
+#ifdef STABILIZATION_INDI_OVER_ACT_IS_SERVO
+bool act_is_servo[INDI_NUM_ACT] = STABILIZATION_INDI_OVER_ACT_IS_SERVO;
 #else
 bool act_is_servo[INDI_NUM_ACT] = {0};
 #endif
 
-#ifdef STABILIZATION_INDI_ACT_PREF
+#ifdef STABILIZATION_INDI_OVER_ACT_PREF
 // Preferred (neutral, least energy) actuator value
-float act_pref[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_PREF;
+float act_pref[INDI_NUM_ACT] = STABILIZATION_INDI_OVER_ACT_PREF;
 #else
 // Assume 0 is neutral
 float act_pref[INDI_NUM_ACT] = {0.0};
 #endif
 
-float act_dyn[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_DYN;
+float act_dyn[INDI_NUM_ACT] = STABILIZATION_INDI_OVER_ACT_DYN;
 
-#ifdef STABILIZATION_INDI_WLS_PRIORITIES
-static float Wv[INDI_OUTPUTS] = STABILIZATION_INDI_WLS_PRIORITIES;
+#ifdef STABILIZATION_INDI_OVER_WLS_PRIORITIES
+static float Wv[INDI_OUTPUTS] = STABILIZATION_INDI_OVER_WLS_PRIORITIES;
 #else
 //State prioritization {W Roll, W pitch, W yaw, TOTAL THRUST}
-static float Wv[INDI_OUTPUTS] = {1000, 1000, 1, 100};
+static float Wv[INDI_OUTPUTS] = {1000, 1000, 1, 100, 100, 100};
 #endif
 
 // variables needed for control
@@ -154,9 +154,9 @@ float indi_thrust_increment;
 bool indi_thrust_increment_set = false;
 
 float g1g2_pseudo_inv[INDI_NUM_ACT][INDI_OUTPUTS];
-float g2[INDI_NUM_ACT] = STABILIZATION_INDI_G2; //scaled by INDI_G_SCALING
-float g1[INDI_OUTPUTS][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL,
-                                        STABILIZATION_INDI_G1_PITCH, STABILIZATION_INDI_G1_YAW, STABILIZATION_INDI_G1_THRUST
+float g2[INDI_NUM_ACT] = STABILIZATION_INDI_OVER_G2; //scaled by INDI_G_SCALING
+float g1[INDI_OUTPUTS][INDI_NUM_ACT] = {STABILIZATION_INDI_OVER_G1_ROLL,
+                                        STABILIZATION_INDI_OVER_G1_PITCH, STABILIZATION_INDI_OVER_G1_YAW, STABILIZATION_INDI_OVER_G1_THRUST
                                        };
 float g1g2[INDI_OUTPUTS][INDI_NUM_ACT];
 float g1_est[INDI_OUTPUTS][INDI_NUM_ACT];
@@ -268,8 +268,8 @@ void stabilization_indi_enter(void)
 void init_filters(void)
 {
   // tau = 1/(2*pi*Fc)
-  float tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_FILT_CUTOFF);
-  float tau_est = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_ESTIMATION_FILT_CUTOFF);
+  float tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_OVER_FILT_CUTOFF);
+  float tau_est = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_OVER_ESTIMATION_FILT_CUTOFF);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
   // Filtering of the gyroscope
   int8_t i;
@@ -407,7 +407,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   indi_v[4] = ;
   indi_v[5] = ;
 
-#if STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
+#if STABILIZATION_INDI_OVER_ALLOCATION_PSEUDO_INVERSE
   // Calculate the increment for each actuator
   for (i = 0; i < INDI_NUM_ACT; i++) {
     indi_du[i] = (g1g2_pseudo_inv[i][0] * indi_v[0])
@@ -556,7 +556,7 @@ void get_actuator_state(void)
     actuator_state[i] = actuator_state[i]
                         + act_dyn[i] * (indi_u[i] - actuator_state[i]);
 
-#ifdef STABILIZATION_INDI_ACT_RATE_LIMIT
+#ifdef STABILIZATION_INDI_OVER_ACT_RATE_LIMIT
     if ((actuator_state[i] - prev_actuator_state) > act_rate_limit[i]) {
       actuator_state[i] = prev_actuator_state + act_rate_limit[i];
     } else if ((actuator_state[i] - prev_actuator_state) < -act_rate_limit[i]) {
@@ -664,7 +664,7 @@ void lms_estimation(void)
   float_vect_copy(g1[0], g1_est[0], INDI_OUTPUTS * INDI_NUM_ACT);
   float_vect_copy(g2, g2_est, INDI_NUM_ACT);
 
-#if STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
+#if STABILIZATION_INDI_OVER_ALLOCATION_PSEUDO_INVERSE
   // Calculate the inverse of (G1+G2)
   calc_g1g2_pseudo_inv();
 #endif

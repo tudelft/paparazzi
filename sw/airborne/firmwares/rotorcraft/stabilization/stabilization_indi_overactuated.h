@@ -20,8 +20,8 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#ifndef STABILIZATION_INDI
-#define STABILIZATION_INDI
+#ifndef STABILIZATION_INDI_OVERACTUATED
+#define STABILIZATION_INDI_OVERACTUATED
 
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_common_int.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_ref_quat_int.h"
@@ -54,5 +54,5 @@ extern void stabilization_indi_rate_run(struct FloatRates rate_ref, bool in_flig
 extern void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight);
 extern void stabilization_indi_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn);
 
-#endif /* STABILIZATION_INDI */
+#endif /* STABILIZATION_INDI_OVERACTUATED */
 
