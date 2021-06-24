@@ -6,6 +6,7 @@
       Actuators Driver for Disco plane
     </description>
   </doc>
+  <autoload name="actuators" type="nps"/>
   <header>
     <file name="actuators.h" dir="boards/disco"/>
   </header>
