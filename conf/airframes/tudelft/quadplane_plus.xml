@@ -90,6 +90,10 @@
 <!--    <module name="air_data"/>-->
     <module name="send_imu_mag_current"/>
 
+    <module name="actuators" type="pwm">
+      <define name="SERVO_HZ" value="400"/>
+    </module>
+
     <!-- Internal MAG -->
     <module name="mag_ist8310">
       <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>
@@ -345,7 +349,7 @@
     <define name="HOVER_KP"    value="310"/>
     <define name="HOVER_KD"    value="130"/>
     <define name="HOVER_KI"    value="10"/>
-    <define name="NOMINAL_HOVER_THROTTLE" value="0.42"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value="0.5"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>
   </section>
 
@@ -378,7 +382,7 @@
   <section name="AUTOPILOT">
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1"  value="AP_MODE_HOVER_DIRECT"/>
-    <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>
+    <define name="MODE_AUTO2"  value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_STARTUP"  value="AP_MODE_NAV"/>
   </section>
 
