@@ -51,7 +51,7 @@
       <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> <!-- Switch between AP and FBW control -->
       <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
 
-      <configure name="USE_BARO_BOARD" value="FALSE"/><!-- To use in cyberzoo and OJF -->
+                      <configure name="USE_BARO_BOARD" value="FALSE"/><!-- To use in cyberzoo and OJF -->
     </target>
 
 <!--    <target name="nps" board="pc">-->
@@ -218,6 +218,12 @@
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
   </section>
 
+  <section name="INS" prefix="INS_">
+    <!-- Use GPS altitude measurments and set the R gain -->
+    <define name="USE_GPS_ALT" value="1"/>
+    <define name="VFF_R_GPS" value="0.01"/>
+  </section>
+
   <section name="FORWARD">
     <!--The Nederdrone uses a slightly different axis system for the setpoint, to make both hovering and flying forward intuitive-->
     <define name="USE_EARTH_BOUND_RC_SETPOINT" value="TRUE"/>
@@ -295,7 +301,7 @@
     <!-- control effectiveness (hover) [conventional + yaw tilting] -->
     <define name="G1_P" value="0.004"/>
     <define name="G1_Q" value="0.01"/>
-    <define name="G1_R" value="0.024"/>
+    <define name="G1_R" value="0.001"/>
     <define name="G2_R" value="0.00015"/>
 
     <!-- control effectiveness (forward) -->

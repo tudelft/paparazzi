@@ -33,9 +33,11 @@
 #include "subsystems/navigation/waypoints.h"
 #include "generated/flight_plan.h"
 #include "generated/airframe.h"
+#include "subsystems/actuators/motor_mixing.h"
+
 struct overactuated_mixing_t overactuated_mixing;
 
-float phi, theta, psi, x, y, u, v;
+float phi, theta, psi, x, y, z, u, v, w;
 
 // PID and general settings from slider
 float P_az_gain = 12.7 ;
@@ -54,9 +56,10 @@ float wind_speed = 0;
 
 float desired_x_e = 0;
 float desired_y_e = 0;
+float desired_z_e = 0;
 float lateral_cmd_old = 0;
 float longitudinal_cmd_old = 0;
-float x_stb, y_stb;
+float x_stb, y_stb, z_stb;
 float elevation_cmd = 0;
 float azimuth_cmd = 0;
 float yaw_cmd = 0;
@@ -64,14 +67,20 @@ float yaw_cmd = 0;
 static void send_overactuated_variables( struct transport_tx *trans , struct link_device * dev ) {
 
 // Send telemetry message
-    int16_t actuators[8];
-    for (uint8_t i = 0; i < 8; i++)
+    int16_t actuators[12];
+    for (uint8_t i = 0; i < 12; i++)
     {
-        actuators[i] = (int16_t)overactuated_mixing.commands[i];
+        if (i < 8){
+            actuators[i] = (int16_t) overactuated_mixing.commands[i];
+        }
+        else {
+            actuators[i] = (int16_t) motor_mixing.commands[i-8];
+        }
+
     }
     float psi_deg = psi*180/3.14;
 
-    pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID , & x, & y, & wind_speed, & psi_deg, & desired_x_e, & desired_y_e, & yaw_cmd, & elevation_cmd, & azimuth_cmd, 8, actuators );
+    pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID , & wind_speed, & x, & y, & z, & u, & v, & w, & psi_deg, & desired_x_e, & desired_y_e, & desired_z_e, & yaw_cmd, & elevation_cmd, & azimuth_cmd, 12, actuators );
 }
 
 
@@ -85,10 +94,13 @@ void overactuated_mixing_init() {
     psi = stateGetNedToBodyEulers_f()->psi;
     x = stateGetPositionNed_i()->x;
     y = stateGetPositionNed_i()->y;
+    z = stateGetPositionNed_i()->z;
     u = stateGetSpeedNed_i()->x;
     v = stateGetSpeedNed_i()->y;
+    w = stateGetSpeedNed_i()->z;
     x_stb = waypoint_get_y(WP_STDBY);
     y_stb = waypoint_get_x(WP_STDBY);
+    z_stb = waypoint_get_alt(WP_STDBY);
 
     // Case of Manual direct mode
     if(radio_control.values[RADIO_MODE] < 500 && radio_control.values[RADIO_MODE] > -500)
@@ -123,6 +135,7 @@ void overactuated_mixing_init() {
 //        }
         desired_x_e = x_stb*100; //Get the wp goal x-position in cm
         desired_y_e = y_stb*100; //Get the wp goal y-position in cm
+        desired_z_e = z_stb*100; //Get the wp goal z-position in cm
 
         float longitudinal_cmd = cos(psi) * (desired_x_e - x) + sin(psi)*(desired_y_e - y);
         float longitudinal_speed = cos(psi) * u + sin(psi)*v;
@@ -170,10 +183,13 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     psi = stateGetNedToBodyEulers_f()->psi;
     x = stateGetPositionNed_i()->x;
     y = stateGetPositionNed_i()->y;
+    z = stateGetPositionNed_i()->z;
     u = stateGetSpeedNed_i()->x;
     v = stateGetSpeedNed_i()->y;
+    w = stateGetSpeedNed_i()->z;
     x_stb = waypoint_get_y(WP_STDBY);
     y_stb = waypoint_get_x(WP_STDBY);
+    z_stb = waypoint_get_alt(WP_STDBY);
 
     yaw_cmd = 0;
     elevation_cmd = 0;
@@ -211,6 +227,8 @@ void overactuated_mixing_run(pprz_t in_cmd[])
 //        }
         desired_x_e = x_stb*100; //Get the wp goal x-position in cm
         desired_y_e = y_stb*100; //Get the wp goal y-position in cm
+        desired_z_e = z_stb*100; //Get the wp goal z-position in cm
+
         float longitudinal_cmd = cos(psi) * (desired_x_e - x) + sin(psi)*(desired_y_e - y);
         float longitudinal_speed = cos(psi) * u + sin(psi)*v;
 
