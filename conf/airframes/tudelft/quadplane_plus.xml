@@ -145,13 +145,22 @@
 <!--    <servo name="AZ_3" no="11" min="1090" neutral="1480" max="1875"/>-->
 <!--    <servo name="EL_4" no="6" min="1590" neutral="1875" max="2130"/>-->
 <!--    <servo name="AZ_4" no="7" min="1050" neutral="1435" max="1850"/>-->
-    <servo name="EL_1" no="4" min="1650" neutral="2015" max="2250"/>
+
+<!--    <servo name="EL_1" no="4" min="1650" neutral="2015" max="2250"/>-->
+<!--    <servo name="AZ_1" no="5" min="1095" neutral="1455" max="1875"/>-->
+<!--    <servo name="EL_2" no="8" min="1600" neutral="1950" max="2190"/>-->
+<!--    <servo name="AZ_2" no="9" min="1110" neutral="1480" max="1850"/>-->
+<!--    <servo name="EL_3" no="10" min="1570" neutral="1940" max="2190"/>-->
+<!--    <servo name="AZ_3" no="11" min="1090" neutral="1460" max="1875"/>-->
+<!--    <servo name="EL_4" no="6" min="1690" neutral="1875" max="2130"/>-->
+<!--    <servo name="AZ_4" no="7" min="1050" neutral="1415" max="1850"/>-->
+    <servo name="EL_1" no="4" min="1350" neutral="2015" max="2250"/>
     <servo name="AZ_1" no="5" min="1095" neutral="1455" max="1875"/>
-    <servo name="EL_2" no="8" min="1600" neutral="1950" max="2190"/>
+    <servo name="EL_2" no="8" min="1300" neutral="1950" max="2190"/>
     <servo name="AZ_2" no="9" min="1110" neutral="1480" max="1850"/>
-    <servo name="EL_3" no="10" min="1570" neutral="1940" max="2190"/>
+    <servo name="EL_3" no="10" min="1270" neutral="1940" max="2190"/>
     <servo name="AZ_3" no="11" min="1090" neutral="1460" max="1875"/>
-    <servo name="EL_4" no="6" min="1690" neutral="1875" max="2130"/>
+    <servo name="EL_4" no="6" min="1390" neutral="1875" max="2130"/>
     <servo name="AZ_4" no="7" min="1050" neutral="1415" max="1850"/>
   </servos>
 
@@ -225,7 +234,7 @@
   <section name="INS" prefix="INS_">
     <!-- Use GPS altitude measurments and set the R gain -->
     <define name="USE_GPS_ALT" value="1"/>
-    <define name="VFF_R_GPS" value="0.01"/>
+    <define name="VFF_R_GPS" value="0.09"/>
   </section>
 
   <section name="FORWARD">
@@ -382,7 +391,7 @@
   <section name="AUTOPILOT">
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1"  value="AP_MODE_HOVER_DIRECT"/>
-    <define name="MODE_AUTO2"  value="AP_MODE_ATTITUDE_DIRECT"/>
+    <define name="MODE_AUTO2"  value="AP_MODE_ATTITUDE_RC_CLIMB"/>
     <define name="MODE_STARTUP"  value="AP_MODE_NAV"/>
   </section>
 

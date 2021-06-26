@@ -32,6 +32,8 @@
 #include "firmwares/rotorcraft/autopilot_rc_helpers.h"
 #include "mcu_periph/sys_time.h"
 
+#include "modules/Overactuated_vehicle/Overactuated_mixing.h"
+
 #ifndef STABILIZATION_ATTITUDE_DEADBAND_A
 #define STABILIZATION_ATTITUDE_DEADBAND_A 0
 #endif
@@ -57,6 +59,11 @@
 float care_free_heading = 0;
 int32_t transition_theta_offset = 0;
 
+bool manual_roll_setpoint = 0;
+bool manual_pitch_setpoint = 0;
+int32_t manual_roll_overactuated_module = 0;
+int32_t manual_pitch_overactuated_module = 0;
+
 static int32_t get_rc_roll(void)
 {
   const int32_t max_rc_phi = (int32_t) ANGLE_BFP_OF_REAL(STABILIZATION_ATTITUDE_SP_MAX_PHI);
@@ -72,7 +79,9 @@ static int32_t get_rc_roll(void)
 static int32_t get_rc_pitch(void)
 {
   const int32_t max_rc_theta = (int32_t) ANGLE_BFP_OF_REAL(STABILIZATION_ATTITUDE_SP_MAX_THETA);
+
   int32_t pitch = radio_control.values[RADIO_PITCH];
+
 #if STABILIZATION_ATTITUDE_DEADBAND_E
   DeadBand(pitch, STABILIZATION_ATTITUDE_DEADBAND_E);
   return pitch * max_rc_theta / (MAX_PPRZ - STABILIZATION_ATTITUDE_DEADBAND_E);
@@ -91,7 +100,15 @@ static int32_t get_rc_yaw(void)
 
 static float get_rc_roll_f(void)
 {
-  int32_t roll = radio_control.values[RADIO_ROLL];
+    int32_t roll = 0;
+
+    if(manual_roll_setpoint){
+        roll = manual_roll_overactuated_module;
+    }
+    else{
+        roll = radio_control.values[RADIO_ROLL];
+    }
+
 #if STABILIZATION_ATTITUDE_DEADBAND_A
   DeadBand(roll, STABILIZATION_ATTITUDE_DEADBAND_A);
   return roll * STABILIZATION_ATTITUDE_SP_MAX_PHI / (MAX_PPRZ - STABILIZATION_ATTITUDE_DEADBAND_A);
@@ -102,7 +119,15 @@ static float get_rc_roll_f(void)
 
 static float get_rc_pitch_f(void)
 {
-  int32_t pitch = radio_control.values[RADIO_PITCH];
+  int32_t pitch = 0;
+
+    if(manual_pitch_setpoint){
+        pitch = manual_pitch_overactuated_module;
+    }
+    else{
+        pitch = radio_control.values[RADIO_PITCH];
+    }
+
 #if STABILIZATION_ATTITUDE_DEADBAND_E
   DeadBand(pitch, STABILIZATION_ATTITUDE_DEADBAND_E);
   return pitch * STABILIZATION_ATTITUDE_SP_MAX_THETA / (MAX_PPRZ - STABILIZATION_ATTITUDE_DEADBAND_E);

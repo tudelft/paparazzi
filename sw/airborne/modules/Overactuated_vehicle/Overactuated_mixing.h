@@ -58,6 +58,13 @@ extern bool activate_longitudinal_over;
 extern bool activate_lateral_over;
 extern bool activate_yaw_over;
 extern bool manual_yaw_overactuated;
+
+// For external module
+extern bool manual_roll_setpoint;
+extern bool manual_pitch_setpoint;
+extern int32_t manual_roll_overactuated_module;
+extern int32_t manual_pitch_overactuated_module;
+
 /* External used functions */
 extern void overactuated_mixing_init(void);
 extern void overactuated_mixing_run(pprz_t in_cmd[]);
