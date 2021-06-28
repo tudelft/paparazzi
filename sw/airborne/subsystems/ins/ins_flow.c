@@ -34,6 +34,7 @@
 #include "generated/airframe.h"
 #include "generated/flight_plan.h"
 #include "mcu_periph/sys_time.h"
+#include "subsystems/actuators/motor_mixing.h"
 
 #define DEBUG_INS_FLOW 0
 #if DEBUG_INS_FLOW
@@ -146,6 +147,7 @@ struct InsFlow {
   float lp_gyro_bias_roll; // determine the bias before take-off
   float thrust_factor; // determine the additional required scale factor to have unbiased thrust estimates
   float lp_thrust;
+  float lp_roll_command;
 
 };
 struct InsFlow ins_flow;
@@ -223,7 +225,8 @@ float GT_theta;
       float parameters[20] = {0.041001,1.015066,-0.058495,0.498353,-0.156362,0.383511,0.924635,0.681918,0.318947,0.298235,0.224906,1.371037,0.008888,3.045428,0.893953,0.529789,0.295028,1.297515,0.767550,0.334040};
       #else
       // without rate measurement:
-      float parameters[20] = {4.098677e-01, 7.766318e-01, 3.614751e-01, 4.745865e-01, 5.144065e-01, 3.113647e-01, -8.737287e-03, 6.370274e-01, 3.863760e-01, -3.527670e-01, 4.873666e-01, 1.688456e+00, -6.037967e-02, 2.759148e+00, 1.385455e+00, 1.044881e-01, -1.170409e-01, 1.126136e+00, 1.097562e+00, 2.680243e-01};
+      // float parameters[20] = {4.098677e-01, 7.766318e-01, 3.614751e-01, 4.745865e-01, 5.144065e-01, 3.113647e-01, -8.737287e-03, 6.370274e-01, 3.863760e-01, -3.527670e-01, 4.873666e-01, 1.688456e+00, -6.037967e-02, 2.759148e+00, 1.385455e+00, 1.044881e-01, -1.170409e-01, 1.126136e+00, 1.097562e+00, 2.680243e-01};
+      float parameters[22] = {0.219033,0.376572,0.184002,0.096388,0.240843,0.172390,0.133111,0.495885,0.357086,0.233624,0.125611,1.661682,0.136735,2.812652,0.715887,0.166932,0.371409,1.043920,0.840683,0.567703,0.192238,0.301966};
       #endif
     #endif
   #endif
@@ -249,6 +252,9 @@ float GT_theta;
 #define PAR_P3 17
 #define PAR_P4 18
 #define PAR_KD 19
+#define PAR_Q_TB 20
+#define PAR_P_TB 21
+
 
 
 /*
@@ -489,13 +495,13 @@ void ins_reset_filter(void) {
       OF_P[OF_Z_IND][OF_Z_IND] = parameters[PAR_P3];
       OF_P[OF_Z_DOT_IND][OF_Z_DOT_IND] = parameters[PAR_P4];
       if(OF_THRUST_BIAS) {
-	  OF_P[OF_THRUST_BIAS_IND][OF_THRUST_BIAS_IND] = OF_TB_P;
+	  OF_P[OF_THRUST_BIAS_IND][OF_THRUST_BIAS_IND] = parameters[PAR_P_TB];//OF_TB_P;
       }
   }
 
   counter = 0;
 
-  // TODO: what to do with thrust and gyro bias?
+  // TODO: what to do with thrust, gyro bias, and low-passed roll command?
 
 }
 
@@ -529,6 +535,8 @@ void ins_flow_init(void)
   ins_flow.lp_gyro_bias_roll = 0.0f;
   ins_flow.thrust_factor = 1.0f;
   ins_flow.lp_thrust = 0.0f;
+  ins_flow.lp_roll_command = 0.0f;
+
   lp_factor = 0.95;
   lp_factor_strong = 1-1E-3;
 
@@ -561,7 +569,7 @@ void ins_flow_init(void)
       OF_Q[OF_THETA_IND][OF_THETA_IND] = parameters[PAR_Q1];
   }
   if(OF_THRUST_BIAS) {
-      OF_Q[OF_THRUST_BIAS_IND][OF_THRUST_BIAS_IND] = OF_TB_Q;
+      OF_Q[OF_THRUST_BIAS_IND][OF_THRUST_BIAS_IND] = parameters[PAR_Q_TB];//OF_TB_Q;
   }
 
 
@@ -698,6 +706,7 @@ void ins_flow_update(void)
   float mass = parameters[PAR_MASS]; // 0.400;
   float moment = 0.0f; // for now assumed to be 0
   float Ix = parameters[PAR_IX]; // 0.0018244;
+  float b = parameters[PAR_BASE];
   float g = 9.81; // TODO: get a more accurate definition from pprz
   float kd = parameters[PAR_KD]; // 0.5
   float drag = 0.0f;
@@ -715,14 +724,14 @@ void ins_flow_update(void)
 
   // TODO: record when starting from the ground: does that screw up the filter? Yes it does : )
 
-  //if(!autopilot_in_flight()) {
-      // assuming that the typical case is no rotation, we can estimate the (initial) bias of the gyro:
-      ins_flow.lp_gyro_bias_roll = lp_factor_strong * ins_flow.lp_gyro_bias_roll + (1-lp_factor_strong) * ins_flow.lp_gyro_roll;
-      if(OF_TWO_DIM) {
-	  ins_flow.lp_gyro_bias_pitch = lp_factor_strong * ins_flow.lp_gyro_bias_pitch + (1-lp_factor_strong) * ins_flow.lp_gyro_pitch;
-      }
-      //printf("lp gyro bias = %f\n", ins_flow.lp_gyro_bias_roll);
-  //}
+
+  // assuming that the typical case is no rotation, we can estimate the (initial) bias of the gyro:
+  ins_flow.lp_gyro_bias_roll = lp_factor_strong * ins_flow.lp_gyro_bias_roll + (1-lp_factor_strong) * ins_flow.lp_gyro_roll;
+  if(OF_TWO_DIM) {
+      ins_flow.lp_gyro_bias_pitch = lp_factor_strong * ins_flow.lp_gyro_bias_pitch + (1-lp_factor_strong) * ins_flow.lp_gyro_pitch;
+  }
+  // same assumption for the roll command: assuming a close-to-hover situation and roll trim for staying in place:
+  ins_flow.lp_roll_command = lp_factor_strong * ins_flow.lp_roll_command + (1-lp_factor_strong) * stabilization_cmd[COMMAND_ROLL];
 
   // only start estimation when flying (and above 1 meter: || position->z > -1.0f )
   // I removed the condition on height, since (1) we need to start the filter anyway explicitly now, and (2) it created a dependence on GPS fix.
@@ -790,6 +799,23 @@ void ins_flow_update(void)
       thrust -= OF_X[OF_THRUST_BIAS_IND];
   }
   DEBUG_PRINT("Thrust acceleration = %f, g = %f\n", thrust/mass, g);
+
+  // TODO: do we have an optimization that used the moment?
+  /*moment = b * RPM_FACTORS[0] * ins_flow.RPM[0]*ins_flow.RPM[0] -
+           b * RPM_FACTORS[1] * ins_flow.RPM[1]*ins_flow.RPM[1] -
+	   b * RPM_FACTORS[2] * ins_flow.RPM[2]*ins_flow.RPM[2] +
+	   b * RPM_FACTORS[3] * ins_flow.RPM[3]*ins_flow.RPM[3];*/
+  // M_est = Ix * (-0.000553060716181365 * cmd_roll(k) -3.23315441805895 * Xe(3, k));
+#if USE_NPS
+  // TODO: moment in simulation is very easy to estimate with the roll command, so add that:
+    moment = 0;
+#else
+    // moment = Ix *(-0.000553060716181365 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command) -3.23315441805895 * OF_X[OF_ANGLE_DOT_IND]);
+    moment = 0;
+#endif
+
+  // printf("Predicted moment = %f, gyro = %f\n", moment, dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f);
+
 
   // propagate the state with Euler integration:
   DEBUG_PRINT("Before prediction: ");
@@ -1147,7 +1173,13 @@ void ins_flow_update(void)
 	       Z_expected[OF_LAT_FLOW_X_IND], ins_flow.optical_flow_y, ins_flow.lp_gyro_pitch - ins_flow.lp_gyro_bias_pitch, OF_X[OF_VX_IND], velocities->x, OF_X[OF_THETA_IND], eulers->theta);
     }
     if(OF_USE_GYROS) {
-	float gyro_meas_roll = (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f;
+	float gyro_meas_roll;
+	// gyro_meas_roll = (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f;
+
+	// TODO: You can fake gyros here by estimating them as follows:
+	// rate_p_filt_est = -1.8457e-04 * cmd_roll;
+	gyro_meas_roll = -1.8457e-04 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
+
 	//innovation[OF_RATE_IND][0] = gyro_meas_roll - Z_expected[OF_RATE_IND];
 	innovation[OF_RATE_IND][0] = rates->p - Z_expected[OF_RATE_IND];
 	DEBUG_PRINT("Expected rate: %f, Real rate: %f.\n", Z_expected[OF_RATE_IND], ins_flow.lp_gyro_roll);
