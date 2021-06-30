@@ -46,7 +46,7 @@
     <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
       <!-- <exception cond="GetPosHeight() @GT 0.8" deroute="Takeoff"/> -->
       <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="-10." roll="0" throttle="0.88" until="stage_time>2" vmode="throttle"/>
+      <attitude pitch="-15." roll="0" throttle="0.90" until="stage_time>1" vmode="throttle"/>
     </block>
     <!-- <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="GetPosHeight() @GT 1.2" deroute="Standby"/>
