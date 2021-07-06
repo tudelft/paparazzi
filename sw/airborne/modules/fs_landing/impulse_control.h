@@ -20,6 +20,8 @@ extern float er_value;
 extern uint16_t elevon_activate_at;
 extern uint16_t motor_activate_at;
 
+extern float heading_weight;
+
 extern float elevon_half_arc;
 extern float motor_half_arc;
 
