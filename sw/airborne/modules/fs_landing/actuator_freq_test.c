@@ -12,6 +12,8 @@
 #define CAL_STEP_DUR 2
 #define CAL_STEPS 20
 
+#define DEBUG FALSE
+
 float test_freq = 0.;
 float test_min_value = 1000;  // -9600 lowest val possible
 float test_max_value = 10000 ;  // 9600 highest val possible
@@ -21,8 +23,9 @@ uint8_t is_input_sin = false;  // If true, chirp is sine wave instead of square
 uint8_t calibrate = false;  // Calibration procedure (activate before turning on module)
 uint8_t cal_reverse = false;  // To test reverse thrust (calibration)
 
-// Debug
+#if DEBUG
 float send_values[4];
+#endif
 
 // Spin the motors in steps to match % power to frequency with FFT
 void motor_freq_calibration(struct fs_landing_t *actuator_values, float time_from_start);
@@ -45,9 +48,10 @@ void motor_freq_calibration(struct fs_landing_t *actuator_values, float time_fro
     test_current_value = 0;
   }
   actuator_values->commands[actuator_idx] = (int32_t) test_current_value;
-
+#if DEBUG
   send_values[1] = cal_phase;
   send_values[2] = test_current_value;
+#endif
 }
 
 void freq_test(struct fs_landing_t *actuator_values, float start_t)
@@ -88,10 +92,13 @@ void freq_test(struct fs_landing_t *actuator_values, float start_t)
       }
     }
     actuator_values->commands[actuator_idx] = (int32_t) test_current_value;
-
+#if DEBUG
     send_values[1] = test_step;
     send_values[2] = test_current_value;
+#endif
   }
+#if DEBUG
   send_values[0] = test_freq;
   DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 8, send_values);
+#endif
 }
