@@ -86,6 +86,8 @@ float nav_max_speed = NAV_MAX_SPEED;
 
 /*Boolean to force the heading to a static value (only use for specific experiments)*/
 bool take_heading_control = false;
+/*Boolean to activate moving rope landing controller*/
+bool approaching_rope = false;
 
 struct FloatVect3 sp_accel = {0.0,0.0,0.0};
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
@@ -327,12 +329,28 @@ void guidance_indi_run(float *heading_sp) {
         speed_sp_b_x = guidance_indi_max_airspeed + groundspeed_x - airspeed;
       }
     }
-    speed_sp.x = cosf(psi) * speed_sp_b_x - sinf(psi) * speed_sp_b_y;
-    speed_sp.y = sinf(psi) * speed_sp_b_x + cosf(psi) * speed_sp_b_y;
+    struct FloatVect3 speed_ship = {0.0, 0.0, 0.0};
+    struct FloatVect3 acc_ship = {0.0, 0.0, 0.0};
 
-    sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain;
-    sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain;
-    sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
+    if(approaching_rope) {
+    // speed_ship = {1.0, 1.0, 1.0}; //Local place holder for velocity output RTK GPS
+    // acc_ship = {1.0, 1.0, 1.0}; //Local place holder for acceleration output RTK GPS (diff speed)
+    speed_ship.x = 0.0;
+    speed_ship.y = 0.0;
+    speed_ship.z = 0.0;
+    acc_ship.x = 0.0;
+    acc_ship.y = 0.0;
+    acc_ship.z = 0.0;
+    }
+    
+    speed_sp.x = cosf(psi) * speed_sp_b_x - sinf(psi) * speed_sp_b_y + speed_ship.x;
+    speed_sp.y = sinf(psi) * speed_sp_b_x + cosf(psi) * speed_sp_b_y + speed_ship.y;
+    speed_sp.z = speed_sp.z + speed_ship.z;
+
+    
+    sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain + acc_ship.x;
+    sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain + acc_ship.y;
+    sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz + acc_ship.z;
   }
 
   // Bound the acceleration setpoint
