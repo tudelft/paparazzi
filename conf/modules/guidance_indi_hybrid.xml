@@ -18,6 +18,7 @@
         <dl_setting var="nav_max_speed" min="1.0" step="1.0" max="50.0" shortname="nav_max_speed"/>
         <dl_setting var="guidance_indi_max_bank" min="10.0" step="1.0" max="50.0" shortname="max_bank"/>
         <dl_setting var="take_heading_control" min="0" step="1" max="1" values="OFF|ON" shortname="take_heading"/>
+        <dl_setting var="approaching_rope" min="0" step="1" max="1" values="OFF|ON" shortname="approach_rope"/>
       </dl_settings>
     </dl_settings>
   </settings>
