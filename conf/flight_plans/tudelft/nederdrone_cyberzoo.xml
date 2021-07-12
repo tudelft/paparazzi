@@ -55,7 +55,7 @@
       <call_once fun="nav_set_heading_current()"/>
       <!-- <set value="DegOfRad(stateGetNedToBodyEulers_f()->psi)" var="rope_heading"/> -->
       <set var="rope_heading" value="stateGetNedToBodyEulers_f()->psi"/>
-      <attitude pitch="-15." roll="0" throttle="0.90" until="stage_time>1" vmode="throttle"/>
+      <attitude pitch="-20." roll="0" throttle="0.85" until="stage_time>1" vmode="throttle"/>
     </block>
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
@@ -63,8 +63,9 @@
     </block>
     <block name="Approach Rope">
       <set value="1" var="approaching_rope"/>
-      <stay alt="0.15+WaypointAlt(WP_ROPE)" wp="ROPE"/>
+      <set value="1" var="take_heading_control"/>
       <call_once fun="nav_set_heading_rad(rope_heading)"/>
+      <stay alt="0.15+WaypointAlt(WP_ROPE)" wp="ROPE"/>
     </block>
     <block name="Landed">
       <call_once fun="NavKillThrottle()"/>
