@@ -19,6 +19,13 @@
       <define name="THRUST_COEF" value="{ 256, 256, 256, 256 }" description="array of thurst coefficient"/>
     </section>
   </doc>
+    <settings>
+    <dl_settings>
+      <dl_settings NAME="motor_mixing">
+       <dl_setting var="pitch_control" min="0" step="1" max="1" values="OFF|ON" shortname="Pitch_control_enabled"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
   <header>
     <file name="motor_mixing.h" dir="subsystems/actuators"/>
   </header>

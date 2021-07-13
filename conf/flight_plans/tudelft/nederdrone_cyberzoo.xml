@@ -8,6 +8,7 @@
     #include "subsystems/ahrs.h"
     #include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
     #include "firmwares/rotorcraft/navigation.h"
+    #include "subsystems/actuators/motor_mixing.h"
 </header>
   <waypoints>
     <waypoint lat="51.990631" lon="4.376808" name="HOME"/>
@@ -55,9 +56,12 @@
       <call_once fun="nav_set_heading_current()"/>
       <!-- <set value="DegOfRad(stateGetNedToBodyEulers_f()->psi)" var="rope_heading"/> -->
       <set var="rope_heading" value="stateGetNedToBodyEulers_f()->psi"/>
-      <attitude pitch="-20." roll="0" throttle="0.85" until="stage_time>1" vmode="throttle"/>
+      <set value="0" var="pitch_control"/>
+       <attitude roll="0" throttle="0.85" until="stage_time>1" vmode="throttle"/>
+      <!-- <attitude pitch="-20." roll="0" throttle="0.85" until="stage_time>1" vmode="throttle"/> -->
     </block>
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
+      <set value="1" var="pitch_control"/>
       <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
       <stay wp="STDBY"/>
     </block>
