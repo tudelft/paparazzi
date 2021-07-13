@@ -86,6 +86,9 @@
 */
 #endif
 
+/*Boolean to deactivate pitch control in take off*/
+bool pitch_control = true;
+
 static const int32_t roll_coef[MOTOR_MIXING_NB_MOTOR]   = MOTOR_MIXING_ROLL_COEF;
 static const int32_t pitch_coef[MOTOR_MIXING_NB_MOTOR]  = MOTOR_MIXING_PITCH_COEF;
 static const int32_t yaw_coef[MOTOR_MIXING_NB_MOTOR]    = MOTOR_MIXING_YAW_COEF;
@@ -202,6 +205,11 @@ void motor_mixing_run(bool motors_on, bool override_on, pprz_t in_cmd[])
     int32_t tmp_cmd;
     int32_t max_overflow = 0;
 
+    /* Override pitch control disabled in take off by the flight plan if the drone is hovering
+    */
+    float pitch_angle = stateGetNedToBodyEulers_f()->theta;
+    if (pitch_angle > -5.0*M_PI/180.0 ){pitch_control = 1;}
+
     /* first calculate the highest priority part of the command:
      * - add trim + roll + pitch + thrust for each motor
      * - calc max saturation/overflow when yaw command is also added
@@ -209,7 +217,7 @@ void motor_mixing_run(bool motors_on, bool override_on, pprz_t in_cmd[])
     for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
       motor_mixing.commands[i] = motor_mixing.trim[i] +
         roll_coef[i] * in_cmd[COMMAND_ROLL] +
-        pitch_coef[i] * in_cmd[COMMAND_PITCH] +
+        pitch_coef[i] * in_cmd[COMMAND_PITCH] * pitch_control +
         thrust_coef[i] * in_cmd[COMMAND_THRUST];
 
       /* compute the command with yaw for each motor to check how much it would saturate */

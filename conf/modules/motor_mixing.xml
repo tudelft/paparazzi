@@ -23,6 +23,13 @@
     <depends>@commands</depends>
     <provides>mixing</provides>
   </dep>
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="motor_mixing">
+       <dl_setting var="pitch_control" min="0" step="1" max="1" values="OFF|ON" shortname="Pitch_control_enabled"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
   <header>
     <file name="motor_mixing.h" dir="subsystems/actuators"/>
   </header>
