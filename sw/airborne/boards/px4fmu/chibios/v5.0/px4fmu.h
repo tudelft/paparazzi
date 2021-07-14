@@ -413,6 +413,14 @@
 }
 
 /**
+ * PPM radio defines
+ */
+#define RC_PPM_TICKS_PER_USEC 2
+#define PPM_TIMER_FREQUENCY 2000000
+#define PPM_CHANNEL ICU_CHANNEL_1
+#define PPM_TIMER ICUD8
+
+/**
  * UART defines
  */
 #if defined(LINE_UART1_TX)
