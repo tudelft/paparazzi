@@ -165,6 +165,9 @@ PRINT_CONFIG_VAR(OFL_OPTICAL_FLOW_ID)
 #define OFL_OMEGA_FB 0.0
 #endif
 
+// Normally, horizontal control is done via sending angle commands to INDI, so 0 (false)
+// When this is 1 (true),a change in angle will be commanded instead.
+#define HORIZONTAL_RATE_CONTROL 0
 
 // Constants
 // minimum value of the P-gain for divergence control
@@ -874,9 +877,20 @@ void vertical_ctrl_module_run(bool in_flight)
   float I_hor = of_landing_ctrl.igain_horizontal_factor * of_landing_ctrl.igain;
   //printf("error = %f, P cmd = %f, integrated error = %f, I cmd = %f\n", error_pitch, error_pitch *  P_hor,
   //								  sum_pitch_error, I_hor * sum_pitch_error);
-  float pitch_cmd = RadOfDeg(of_landing_ctrl.pitch_trim + error_pitch *  P_hor +  I_hor * sum_pitch_error);
+  float pitch_cmd;
+  float roll_cmd;
+  if(!HORIZONTAL_RATE_CONTROL) {
+      // normal operation:
+      pitch_cmd = RadOfDeg(of_landing_ctrl.pitch_trim + error_pitch *  P_hor +  I_hor * sum_pitch_error);
+      roll_cmd = RadOfDeg(of_landing_ctrl.roll_trim + error_roll *  P_hor +  I_hor * sum_roll_error);
+  }
+  else {
+      struct FloatEulers *eulers = stateGetNedToBodyEulers_f();
+      pitch_cmd = eulers->theta + RadOfDeg(of_landing_ctrl.pitch_trim + error_pitch *  P_hor +  I_hor * sum_pitch_error);
+      roll_cmd = eulers->phi + RadOfDeg(of_landing_ctrl.roll_trim + error_roll *  P_hor +  I_hor * sum_roll_error);
+      printf("Current roll = %f, commanded roll = %f\n", eulers->phi, roll_cmd);
+  }
   BoundAbs( pitch_cmd , RadOfDeg( 10.0 ) );
-  float roll_cmd = RadOfDeg(of_landing_ctrl.roll_trim + error_roll *  P_hor +  I_hor * sum_roll_error);
   BoundAbs( roll_cmd , RadOfDeg( 10.0 ) );
   float psi_cmd = attitude->psi; // control of psi in simulation is still a bit enthusiastic! Increase the associated control effectiveness.
   struct Int32Eulers rpy = { .phi = (int32_t)ANGLE_BFP_OF_REAL(roll_cmd),

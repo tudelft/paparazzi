@@ -431,12 +431,17 @@ static void send_ins_flow(struct transport_tx *trans, struct link_device *dev)
   float z = OF_X[OF_Z_IND];
   float p, q;
   if(!CONSTANT_ALT_FILTER) {
-      p = phi_dot;
+      // normally:
+      // p = phi_dot;
+      // when estimating the gyros:
+      // p = -1.8457e-04 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
+      p = -2.0e-03 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
       // TODO: expand the full filter later as well, to include q:
       q = q_GT;
   }
   else {
-      p = ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll;
+      // p = ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll;
+      p = -2.0e-03 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
       q = ins_flow.lp_gyro_pitch - ins_flow.lp_gyro_bias_pitch;
   }
 
@@ -815,6 +820,7 @@ void ins_flow_update(void)
     moment = 0;
 #else
 
+    /*
     moments[moment_ind] = Ix *(-0.000553060716181365 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command) -3.23315441805895 * OF_X[OF_ANGLE_DOT_IND]);
 
     int select_ind = moment_ind - MOMENT_DELAY;
@@ -830,6 +836,9 @@ void ins_flow_update(void)
     if(moment_ind >= MOMENT_DELAY) {
 	moment_ind = 0;
     }
+    */
+    // moment = Ix *(-0.000553060716181365 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command) -3.23315441805895 * OF_X[OF_ANGLE_DOT_IND]);
+    moment = 0;
 #endif
 
   // printf("Predicted moment = %f, gyro = %f\n", moment, dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f);
@@ -852,6 +861,10 @@ void ins_flow_update(void)
        * if(OF_USE_GYROS) {
 	  // OF_X[OF_ANGLE_IND] += dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f; // Code says scaled by 12, but... that does not fit...
       } */
+
+      // temporary insertion of gyro estimate here, for quicker effect:
+      // OF_X[OF_ANGLE_IND] += dt * -2.0e-03 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
+
       OF_X[OF_ANGLE_IND] += dt * OF_X[OF_ANGLE_DOT_IND];
       OF_X[OF_ANGLE_DOT_IND] += dt * (moment / Ix);
 
@@ -1192,14 +1205,15 @@ void ins_flow_update(void)
     }
     if(OF_USE_GYROS) {
 	float gyro_meas_roll;
-	// gyro_meas_roll = (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f;
+	gyro_meas_roll = (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f;
 
 	// TODO: You can fake gyros here by estimating them as follows:
 	// rate_p_filt_est = -1.8457e-04 * cmd_roll;
-	gyro_meas_roll = -1.8457e-04 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
+	// gyro_meas_roll = -1.8457e-04 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
+	// gyro_meas_roll = -2.0e-03 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
 
-	//innovation[OF_RATE_IND][0] = gyro_meas_roll - Z_expected[OF_RATE_IND];
-	innovation[OF_RATE_IND][0] = rates->p - Z_expected[OF_RATE_IND];
+	innovation[OF_RATE_IND][0] = gyro_meas_roll - Z_expected[OF_RATE_IND];
+	//innovation[OF_RATE_IND][0] = rates->p - Z_expected[OF_RATE_IND];
 	DEBUG_PRINT("Expected rate: %f, Real rate: %f.\n", Z_expected[OF_RATE_IND], ins_flow.lp_gyro_roll);
     }
 
@@ -1481,12 +1495,14 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
       struct FloatVect3 NED_velocities, body_velocities;
       body_velocities.x = 0.0f; // filter does not determine this yet
       body_velocities.y = OF_X[OF_V_IND];
+      body_velocities.z = 0.0f;
+      /*
       if(CONSTANT_ALT_FILTER) {
 	  body_velocities.z = 0.0f;
       }
       else {
-	  body_velocities.z = -OF_X[OF_Z_DOT_IND];
-      }
+	  body_velocities.z = OF_X[OF_Z_DOT_IND];
+      }*/
       float_rmat_vmult(&NED_velocities, &BTN, &body_velocities);
       // TODO: also estimate vx, so that we can just use the rotated vector:
       // For now, we need to keep the x, and y body axes aligned with the global ones.
