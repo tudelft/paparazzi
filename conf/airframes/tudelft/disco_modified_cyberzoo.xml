@@ -134,16 +134,16 @@
 
     <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
     <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/> <!-- forward acceleration compensation from GPS speed -->
-    <define name="USE_MAGNETOMETER_ONGROUND" value="FALSE"/> <!--DEFINE only used if float_dcm Use magnetic compensation before takeoff only while GPS course not good -->
 
 <!--    <configure name="USE_MAGNETOMETER" value="TRUE"/>&lt;!&ndash; should be as in USE the device &ndash;&gt;-->
     <configure name="USE_MAGNETOMETER" value="FALSE"/><!-- should be as in USE the device -->
 
     <module name="ahrs" type="float_cmpl_quat"> <!-- Compare e.g. float_dcm -->
       <configure name="AHRS_USE_MAGNETOMETER" value="FALSE"/> <!-- as in USE it for values in the AHRS -->
+      <define name="AHRS_MAG_UPDATE_ALL_AXIS" value="FALSE"/>
       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
       <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0" unit="m/s"/>
-      <!-- <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="FALSE"/>--> <!--Already TRUE by default Compensation of centrifugal force via GPS speed (to fly in circles with a fixedwing)"-->
+      <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="FALSE"/> <!--Already TRUE by default Compensation of centrifugal force via GPS speed (to fly in circles with a fixedwing)" -->
     </module>
 
     <module name="ins" type="extended"/>
@@ -155,6 +155,21 @@
 
     <module name="geo_mag"/>
     <module name="nav" type="line"/>
+
+    <module name="mag" type="hmc58xx">
+      <!-- <define name="MAG_TO_IMU_THETA" value="6" unit="deg"/>-->
+      <!--<define name="HMC58XX_STARTUP_DELAY" value="1.4"/>--><!-- If you mag somehow does not work, Enable this line, and maybe even change it to a higher value if it still does not work e.g. 1.9 -->
+      <configure name="MAG_HMC58XX_I2C_DEV" value="i2c1"/>
+      <!--<define name="MODULE_HMC58XX_SYNC_SEND" value="TRUE"/>--><!-- temporary for debugging external magneto and setup orientation sign and Body to Magneto angles-->
+      <define name="MODULE_HMC58XX_UPDATE_AHRS" value="TRUE"/> <!-- When all calib and works to TRUE -->
+
+      <define name="HMC58XX_CHAN_X" value="1"/>
+      <define name="HMC58XX_CHAN_Y" value="0"/>
+      <define name="HMC58XX_CHAN_Z" value="2"/>
+      <define name="HMC58XX_CHAN_X_SIGN" value="-"/>
+      <define name="HMC58XX_CHAN_Y_SIGN" value="+"/>
+      <define name="HMC58XX_CHAN_Z_SIGN" value="+"/>
+    </module>
 
     <module name="tlsf"/>
     <module name="pprzlog"/>
