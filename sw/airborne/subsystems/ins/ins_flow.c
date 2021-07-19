@@ -154,7 +154,9 @@ struct InsFlow ins_flow;
 
 // Kalman filter parameters and variables:
 
-
+#define MOMENT_DELAY 20
+float moments[MOMENT_DELAY] = {0.};
+int moment_ind;
 
 float OF_X[N_STATES_OF_KF] = {0.};
 float OF_Q[N_STATES_OF_KF][N_STATES_OF_KF] = {{0.}};
@@ -633,6 +635,8 @@ void ins_flow_init(void)
   // Telemetry:
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_FLOW_INFO, send_ins_flow);
 
+  moment_ind = 0;
+
 }
 
 void ins_reset_local_origin(void)
@@ -810,8 +814,22 @@ void ins_flow_update(void)
   // TODO: moment in simulation is very easy to estimate with the roll command, so add that:
     moment = 0;
 #else
-    // moment = Ix *(-0.000553060716181365 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command) -3.23315441805895 * OF_X[OF_ANGLE_DOT_IND]);
-    moment = 0;
+
+    moments[moment_ind] = Ix *(-0.000553060716181365 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command) -3.23315441805895 * OF_X[OF_ANGLE_DOT_IND]);
+
+    int select_ind = moment_ind - MOMENT_DELAY;
+    if(select_ind < 0) {
+	select_ind += MOMENT_DELAY;
+    }
+
+    // current moment is a delayed version:
+    moment = moments[select_ind];
+
+    // update the moment's ind:
+    moment_ind++;
+    if(moment_ind >= MOMENT_DELAY) {
+	moment_ind = 0;
+    }
 #endif
 
   // printf("Predicted moment = %f, gyro = %f\n", moment, dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f);

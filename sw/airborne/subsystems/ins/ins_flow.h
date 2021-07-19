@@ -39,7 +39,7 @@ extern "C" {
 // Only for changing alt
 #define OF_THRUST_BIAS 1
 // Whether to use gyros:
-#define OF_USE_GYROS 1
+#define OF_USE_GYROS 0
 
 #if CONSTANT_ALT_FILTER == 1
 
