@@ -39,8 +39,16 @@ float pre_spin_speed_setpoint = 8;
 float pre_spin_trim_percentage = 0.20;
 float err_test = 5;
 
-#if FS_LANDING_DEBUG
-float dbg_msg[4];
+#if PERIODIC_TELEMETRY
+float fs_landing_dbg_values[N_DBG_VALUES] = {0};
+#endif
+
+#if PERIODIC_TELEMETRY
+#include "subsystems/datalink/telemetry.h"
+static void send_payload_float(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_PAYLOAD_FLOAT(trans, dev, AC_ID, (uint8_t)N_DBG_VALUES, fs_landing_dbg_values);
+}
 #endif
 
 void fs_landing_init()
@@ -50,6 +58,10 @@ void fs_landing_init()
     fs_landing.commands[i] = 0;
     current_actuator_values.commands[i] = 0;
   }
+#if PERIODIC_TELEMETRY
+  #include "subsystems/datalink/telemetry.h"
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_PAYLOAD_FLOAT, send_payload_float);
+#endif
 }
 
 // TODO Make sure all files agree on direction of spin (e.g. assume anti-clockwise rotation)

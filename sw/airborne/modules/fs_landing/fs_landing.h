@@ -25,6 +25,11 @@
 #error "Airframe servo name must match module source (S_ELEVON_RIGHT)"
 #endif
 
+#if PERIODIC_TELEMETRY
+#define N_DBG_VALUES 4
+extern float fs_landing_dbg_values[N_DBG_VALUES];
+#endif
+
 struct fs_landing_t {
     int32_t commands[ACTUATORS_NB];
 };

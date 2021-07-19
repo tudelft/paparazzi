@@ -120,13 +120,12 @@
   </process>
   <process name="FlightRecorder">
     <mode name="default">
-      <message name="GPS"                 period="0.001"/>
-      <message name="ATTITUDE"            period="0.01"/>
+      <message name="GPS"                 period="0.02"/>
+      <message name="ATTITUDE"            period="0.02"/>
       <message name="PAYLOAD_FLOAT"       period="0.02"/>
-<!--      <message name="DESIRED"             period="0.05"/>-->
       <message name="IMU_ACCEL"           period=".02"/>
       <message name="IMU_GYRO"            period=".02"/>
-<!--      <message name="IMU_MAG"             period=".02"/>-->
+      <message name="IMU_MAG"             period=".02"/>
       <message name="RC"                  period="0.1"/>
       <message name="COMMANDS"            period="0.05"/>
       <message name="ACTUATORS"           period="0.05"/>
