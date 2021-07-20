@@ -41,6 +41,8 @@
 #include "subsystems/radio_control.h"
 #include "filters/low_pass_filter.h"
 
+#include "subsystems/actuators/motor_mixing.h"
+
 #if !defined(STABILIZATION_INDI_ACT_DYN_P) && !defined(STABILIZATION_INDI_ACT_DYN_Q) && !defined(STABILIZATION_INDI_ACT_DYN_R)
 #error You have to define the first order time constant of the actuator dynamics!
 #endif
@@ -387,7 +389,14 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight __att
     indi.u_in.p = indi.du.p;
     indi.u_in.q = indi.du.q;
     indi.u_in.r = indi.du.r;
-  } else {
+  } 
+  else if (!pitch_control) {
+    // if taking off do not increment error in pitch
+    indi.u_in.p = indi.u[0].o[0] + indi.du.p;
+    indi.u_in.q = indi.du.q;
+    indi.u_in.r = indi.u[2].o[0] + indi.du.r;
+  }
+  else {
     //add the increment to the total control input
     indi.u_in.p = indi.u[0].o[0] + indi.du.p;
     indi.u_in.q = indi.u[1].o[0] + indi.du.q;
