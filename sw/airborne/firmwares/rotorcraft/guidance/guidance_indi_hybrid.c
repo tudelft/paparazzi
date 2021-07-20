@@ -241,13 +241,18 @@ void guidance_indi_run(float *heading_sp) {
   float pos_x_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.x) - stateGetPositionNed_f()->x;
   float pos_y_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y) - stateGetPositionNed_f()->y;
   float pos_z_err = POS_FLOAT_OF_BFP(guidance_v_z_ref - stateGetPositionNed_i()->z);
-
+  float scheduled_pos_gain = gih_params.pos_gain + approaching_rope * 0.3;
+  float scheduled_pos_gainz = gih_params.pos_gainz + approaching_rope * 0.3;
   if(autopilot.mode == AP_MODE_NAV) {
-    speed_sp = nav_get_speed_setpoint(gih_params.pos_gain);
+    // speed_sp = nav_get_speed_setpoint(gih_params.pos_gain);
+    speed_sp = nav_get_speed_setpoint(scheduled_pos_gain);
   } else{
-    speed_sp.x = pos_x_err * gih_params.pos_gain;
-    speed_sp.y = pos_y_err * gih_params.pos_gain;
-    speed_sp.z = pos_z_err * gih_params.pos_gainz;
+    // speed_sp.x = pos_x_err * gih_params.pos_gain;
+    // speed_sp.y = pos_y_err * gih_params.pos_gain;
+    // speed_sp.z = pos_z_err * gih_params.pos_gainz;
+    speed_sp.x = pos_x_err * scheduled_pos_gain;
+    speed_sp.y = pos_y_err * scheduled_pos_gain;
+    speed_sp.z = pos_z_err * scheduled_pos_gainz;
   }
 
   //for rc control horizontal, rotate from body axes to NED
