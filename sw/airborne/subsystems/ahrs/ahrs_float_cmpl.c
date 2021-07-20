@@ -408,8 +408,9 @@ void ahrs_fc_update_gps(struct GpsState *gps_s __attribute__((unused)))
 
 #if AHRS_USE_GPS_HEADING && USE_GPS
   //got a 3d fix, ground speed > 0.5 m/s and course accuracy is better than 10deg
-  if (gps_s->fix >= GPS_FIX_3D && gps_s->gspeed >= 500 &&
-      gps_s->cacc <= RadOfDeg(10 * 1e7)) {
+//  if (gps_s->fix >= GPS_FIX_3D && gps_s->gspeed >= 500 &&
+//      gps_s->cacc <= RadOfDeg(10 * 1e7)) {
+  if (gps_s->fix >= GPS_FIX_3D) {
 
     // gps_s->course is in rad * 1e7, we need it in rad
     float course = gps_s->course / 1e7;
@@ -451,7 +452,7 @@ void ahrs_fc_update_heading(float heading)
   struct FloatVect3 residual_imu;
   float_rmat_vmult(&residual_imu, &ahrs_fc.ltp_to_imu_rmat, &residual_ltp);
 
-  const float heading_rate_update_gain = 2.5;
+  const float heading_rate_update_gain = 5 * 2.5;  // TODO increase? Test decrease too
   RATES_ADD_SCALED_VECT(ahrs_fc.rate_correction, residual_imu, heading_rate_update_gain);
 
   float heading_bias_update_gain;
@@ -461,11 +462,13 @@ void ahrs_fc_update_heading(float heading)
    * the gps course information you get once you have a gps fix.
    * Otherwise the bias will be falsely "corrected".
    */
-  if (fabs(residual_ltp.z) < sinf(RadOfDeg(5.))) {
-    heading_bias_update_gain = -2.5e-4;
-  } else {
-    heading_bias_update_gain = 0.0;
-  }
+//  if (fabs(residual_ltp.z) < sinf(RadOfDeg(5.))) {
+//    heading_bias_update_gain = -2.5e-4;
+//  } else {
+//    heading_bias_update_gain = 0.0;
+//  }
+//  heading_bias_update_gain = -heading_rate_update_gain * 1e-4;
+  heading_bias_update_gain = -heading_rate_update_gain * 1e-5;
   RATES_ADD_SCALED_VECT(ahrs_fc.gyro_bias, residual_imu, heading_bias_update_gain);
 }
 
