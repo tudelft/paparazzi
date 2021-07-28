@@ -61,6 +61,15 @@
 #define GUIDANCE_INDI_POS_GAINZ 0.5
 #endif
 
+#ifndef GUIDANCE_INDI_DELTA_KP
+#define GUIDANCE_INDI_DELTA_KP 0.8
+#endif
+
+#ifndef GUIDANCE_INDI_DELTA_KD
+#define GUIDANCE_INDI_DELTA_KD 2.0
+#endif
+
+
 struct guidance_indi_hybrid_params gih_params = {
   .pos_gain = GUIDANCE_INDI_POS_GAIN,
   .pos_gainz = GUIDANCE_INDI_POS_GAINZ,
@@ -71,6 +80,10 @@ struct guidance_indi_hybrid_params gih_params = {
   .heading_bank_gain = GUIDANCE_INDI_HEADING_BANK_GAIN,
 };
 
+float scheduled_pos_gain = 0.;
+float scheduled_pos_gainz= 0.;
+float scheduled_speed_gain= 0.;
+float scheduled_speed_gainz= 0.;
 #ifndef GUIDANCE_INDI_MAX_AIRSPEED
 #error "You must have an airspeed sensor to use this guidance"
 #endif
@@ -241,8 +254,12 @@ void guidance_indi_run(float *heading_sp) {
   float pos_x_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.x) - stateGetPositionNed_f()->x;
   float pos_y_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y) - stateGetPositionNed_f()->y;
   float pos_z_err = POS_FLOAT_OF_BFP(guidance_v_z_ref - stateGetPositionNed_i()->z);
-  float scheduled_pos_gain = gih_params.pos_gain + approaching_rope * 0.3;
-  float scheduled_pos_gainz = gih_params.pos_gainz + approaching_rope * 0.3;
+  
+  // float scheduled_pos_gain = gih_params.pos_gain + approaching_rope * 0.8;
+  // float scheduled_pos_gainz = gih_params.pos_gainz + approaching_rope * 0.8;
+  scheduled_pos_gain = gih_params.pos_gain + approaching_rope * GUIDANCE_INDI_DELTA_KP;
+  scheduled_pos_gainz = gih_params.pos_gainz + approaching_rope * GUIDANCE_INDI_DELTA_KP;
+
   if(autopilot.mode == AP_MODE_NAV) {
     // speed_sp = nav_get_speed_setpoint(gih_params.pos_gain);
     speed_sp = nav_get_speed_setpoint(scheduled_pos_gain);
@@ -352,10 +369,18 @@ void guidance_indi_run(float *heading_sp) {
     speed_sp.y = sinf(psi) * speed_sp_b_x + cosf(psi) * speed_sp_b_y + speed_ship.y;
     speed_sp.z = speed_sp.z + speed_ship.z;
 
+    // float scheduled_speed_gain = gih_params.speed_gain + approaching_rope * 2.0;
+    // float scheduled_speed_gainz = gih_params.speed_gainz + approaching_rope * 2.0;
+    scheduled_speed_gain = gih_params.speed_gain + approaching_rope * GUIDANCE_INDI_DELTA_KD;
+    scheduled_speed_gainz = gih_params.speed_gainz + approaching_rope * GUIDANCE_INDI_DELTA_KD;
     
-    sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain + acc_ship.x;
-    sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain + acc_ship.y;
-    sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz + acc_ship.z;
+    // sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain + acc_ship.x;
+    // sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain + acc_ship.y;
+    // sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz + acc_ship.z;
+
+    sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * scheduled_speed_gain + acc_ship.x;
+    sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * scheduled_speed_gain + acc_ship.y;
+    sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * scheduled_speed_gainz + acc_ship.z;
   }
 
   // Bound the acceleration setpoint
@@ -670,7 +695,7 @@ struct FloatVect3 nav_get_speed_sp_from_line(struct FloatVect2 line_v_enu, struc
   struct FloatVect2 final_vector;
   VECT2_SMUL(final_vector, direction, desired_speed/length_direction);
 
-  struct FloatVect3 speed_sp_return = {final_vector.x, final_vector.y, gih_params.pos_gainz*(ned_target.z - stateGetPositionNed_f()->z)};
+  struct FloatVect3 speed_sp_return = {final_vector.x, final_vector.y, (gih_params.pos_gainz + approaching_rope * 0.8)*(ned_target.z - stateGetPositionNed_f()->z)};
   if((guidance_v_mode == GUIDANCE_V_MODE_NAV) && (vertical_mode == VERTICAL_MODE_CLIMB)) {
     speed_sp_return.z = SPEED_FLOAT_OF_BFP(guidance_v_zd_sp);
   }
@@ -705,7 +730,7 @@ struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_ga
   VECT3_DIFF(pos_error, ned_target, *pos);
 
   VECT3_SMUL(speed_sp_return, pos_error, pos_gain);
-  speed_sp_return.z = gih_params.pos_gainz*pos_error.z;
+  speed_sp_return.z = (gih_params.pos_gainz + approaching_rope * 0.8)*pos_error.z;
 
   if((guidance_v_mode == GUIDANCE_V_MODE_NAV) && (vertical_mode == VERTICAL_MODE_CLIMB)) {
     speed_sp_return.z = SPEED_FLOAT_OF_BFP(guidance_v_zd_sp);

@@ -50,6 +50,10 @@ struct guidance_indi_hybrid_params {
 };
 
 extern struct guidance_indi_hybrid_params gih_params;
+extern float scheduled_pos_gain;
+extern float scheduled_pos_gainz;
+extern float scheduled_speed_gain;
+extern float scheduled_speed_gainz;
 extern float guidance_indi_specific_force_gain;
 extern float guidance_indi_max_airspeed;
 extern float nav_max_speed;
