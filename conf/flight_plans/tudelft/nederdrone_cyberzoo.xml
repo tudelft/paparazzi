@@ -13,7 +13,7 @@
   <waypoints>
     <waypoint lat="51.990631" lon="4.376808" name="HOME"/>
     <waypoint name="CLIMB" x="-0.7" y="-0.6"/>
-    <waypoint name="STDBY" x="0.5" y="0.3"/>
+    <waypoint alt="2.0" name="STDBY" x="2.0" y="1.1"/>
     <waypoint name="ROPE" x="-2.4" y="1.3"/>
     <waypoint name="TD" x="0.6" y="-1.3"/>
     <waypoint lat="51.9905834" lon="4.3767710" name="_CZ1"/>
@@ -30,8 +30,8 @@
     </sector>
   </sectors>
   <variables>
-    <!-- <variable var="rope_heading" init="0.0f" type="float" min="-180.0" max="180.0" step="0.1"/> -->
-    <variable var="rope_heading" init="0.0f" type="float" min="0." max="10." step="0.1"/>
+    <variable init="0.0f" max="1.57" min="-1.57" step="0.01" type="float" var="rope_heading"/>
+    <variable init="0.0f" max="1.57" min="-1.57" step="0.01" type="float" var="takeoff_pitch"/>
   </variables>
   <blocks>
     <block name="Wait GPS">
@@ -44,21 +44,19 @@
     </block>
     <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
-      <call_once fun="NavSetWaypointHere(WP_ROPE)"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block key="r" name="Start Engine">
       <call_once fun="NavResurrect()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <call_once fun="NavSetWaypointHere(WP_ROPE)"/>
+      <set value="stateGetNedToBodyEulers_f()->theta" var="takeoff_pitch"/>
+      <attitude pitch="0" roll="0" throttle="0.1" until="FALSE" vmode="throttle"/>
       <call_once fun="NavResurrect()"/>
     </block>
     <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
       <call_once fun="nav_set_heading_current()"/>
-      <!-- <set value="DegOfRad(stateGetNedToBodyEulers_f()->psi)" var="rope_heading"/> -->
-      <set var="rope_heading" value="stateGetNedToBodyEulers_f()->psi"/>
-      <set value="0" var="pitch_control"/>
-       <attitude roll="0" throttle="0.85" until="stage_time>1" vmode="throttle"/>
-      <!-- <attitude pitch="-20." roll="0" throttle="0.85" until="stage_time>1" vmode="throttle"/> -->
+      <set value="stateGetNedToBodyEulers_f()->psi" var="rope_heading"/>
+      <attitude pitch="takeoff_pitch" roll="0" throttle="0.9" until="stage_time>1" vmode="throttle"/>
     </block>
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="1" var="pitch_control"/>
