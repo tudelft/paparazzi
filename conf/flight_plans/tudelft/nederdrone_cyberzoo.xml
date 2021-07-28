@@ -32,7 +32,7 @@
   <variables>
     <variable init="0.0f" max="1.57" min="-1.57" step="0.01" type="float" var="rope_heading"/>
     <variable init="0.0f" max="1.57" min="-1.57" step="0.01" type="float" var="takeoff_pitch"/>
-    <variable init="0.15f" max="10.00" min="0.00" step="0.01" type="float" var="hook_lenght"/>
+    <variable init="0.15f" max="10.00" min="0.00" step="0.01" type="float" var="hook_length"/>
   </variables>
   <blocks>
     <block name="Wait GPS">
@@ -68,7 +68,7 @@
       <set value="1" var="approaching_rope"/>
       <set value="1" var="take_heading_control"/>
       <call_once fun="nav_set_heading_rad(rope_heading)"/>
-      <stay wp="ROPE" height="WaypointAlt(WP_ROPE)+hook_lenght"/>
+      <stay wp="ROPE" height="WaypointAlt(WP_ROPE)+hook_length"/>
     </block>
     <block name="Landed">
       <call_once fun="NavKillThrottle()"/>
