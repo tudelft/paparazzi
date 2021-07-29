@@ -68,7 +68,7 @@
       <set value="1" var="approaching_rope"/>
       <set value="1" var="take_heading_control"/>
       <call_once fun="nav_set_heading_rad(rope_heading)"/>
-      <stay wp="ROPE" height="WaypointAlt(WP_ROPE)+hook_length"/>
+      <stay wp="ROPE" alt="WaypointAlt(WP_ROPE)+hook_length"/>
     </block>
     <block name="Landed">
       <call_once fun="NavKillThrottle()"/>
