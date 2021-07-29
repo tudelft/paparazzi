@@ -13,7 +13,7 @@
   <waypoints>
     <waypoint lat="51.990631" lon="4.376808" name="HOME"/>
     <waypoint name="CLIMB" x="-0.7" y="-0.6"/>
-    <waypoint alt="2.0" name="STDBY" x="2.0" y="1.1"/>
+    <waypoint alt="3.5" name="STDBY" x="2.0" y="1.1"/>
     <waypoint name="ROPE" x="-2.4" y="1.3"/>
     <waypoint name="TD" x="0.6" y="-1.3"/>
     <waypoint lat="51.9905834" lon="4.3767710" name="_CZ1"/>
@@ -57,7 +57,7 @@
     <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
       <call_once fun="nav_set_heading_current()"/>
       <set value="stateGetNedToBodyEulers_f()->psi" var="rope_heading"/>
-      <attitude pitch="takeoff_pitch" roll="0" throttle="0.9" until="stage_time>1" vmode="throttle"/>
+      <attitude pitch="takeoff_pitch" roll="0" throttle="0.8" until="stage_time>1" vmode="throttle"/>
     </block>
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="1" var="pitch_control"/>
