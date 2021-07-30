@@ -51,13 +51,13 @@
       <call_once fun="NavResurrect()"/>
       <call_once fun="NavSetWaypointHere(WP_ROPE)"/>
       <set value="stateGetNedToBodyEulers_f()->theta" var="takeoff_pitch"/>
-      <attitude pitch="0" roll="0" throttle="0.1" until="FALSE" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0.0" until="stage_time>0" vmode="throttle"/>
       <call_once fun="NavResurrect()"/>
     </block>
     <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
       <call_once fun="nav_set_heading_current()"/>
       <set value="stateGetNedToBodyEulers_f()->psi" var="rope_heading"/>
-      <attitude pitch="takeoff_pitch" roll="0" throttle="0.8" until="stage_time>1" vmode="throttle"/>
+      <attitude pitch="takeoff_pitch/3.14*180.0" roll="0" throttle="0.85" until="stage_time>0" vmode="throttle"/>
     </block>
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="1" var="pitch_control"/>
