@@ -56,6 +56,17 @@
    gui_color="#fffff996b847"
   />
   <aircraft
+   name="Altura1_indi_simple"
+   ac_id="1"
+   airframe="airframes/tudelft/altura_indi_simple1.xml"
+   radio="radios/crossfire_sbus.xml"
+   telemetry="telemetry/highspeed_rotorcraft.xml"
+   flight_plan="flight_plans/tudelft/Altura_Valkenburg_FP.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/geo_mag.xml modules/gps.xml modules/gps_ubx_ucenter.xml modules/guidance_indi.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_ekf2.xml modules/lidar_lite.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi_simple.xml"
+   gui_color="#ffffffffffff"
+  />
+  <aircraft
    name="BebopMavlink"
    ac_id="9"
    airframe="airframes/tudelft/bebop_mavlink.xml"
