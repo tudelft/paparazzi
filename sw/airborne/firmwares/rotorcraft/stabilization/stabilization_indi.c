@@ -46,7 +46,10 @@
 #include <stdio.h>
 
 // Factor that the estimated G matrix is allowed to deviate from initial one
+#ifndef INDI_ALLOWED_G_FACTOR
 #define INDI_ALLOWED_G_FACTOR 2.0
+#endif
+float indi_allowed_g_factor_setting = INDI_ALLOWED_G_FACTOR;
 
 #ifdef STABILIZATION_INDI_FILT_CUTOFF_P
 #define STABILIZATION_INDI_FILTER_ROLL_RATE TRUE
@@ -96,6 +99,9 @@ struct Indi_gains indi_gains = {
 
 #if STABILIZATION_INDI_USE_ADAPTIVE
 bool indi_use_adaptive = true;
+#ifndef INDI_ADAPTIVE_FALLBACK_RC_CHANNEL
+#error "You need to define an RC channel to switch between adaptive INDI and fixed G matrix INDI"
+#endif
 #else
 bool indi_use_adaptive = false;
 #endif
@@ -497,7 +503,9 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   //Don't increment if not flying (not armed)
   if (!in_flight) {
     float_vect_zero(indi_u, INDI_NUM_ACT);
-    float_vect_zero(indi_du, INDI_NUM_ACT);
+    
+    // If on the gournd, no increments, just proportional control
+    float_vect_copy(indi_u, indi_du, INDI_NUM_ACT);
   }
 
   // Propagate actuator filters
@@ -789,8 +797,17 @@ static void thrust_cb(uint8_t UNUSED sender_id, float thrust_increment)
 
 static void bound_g_mat(void)
 {
+  float indi_allowed_g_factor;
   int8_t i;
   int8_t j;
+
+  // Check RC switch if G factor needs to be one or macro value
+  if(radio_control.values[INDI_ADAPTIVE_FALLBACK_RC_CHANNEL] > 0) {
+    indi_allowed_g_factor = indi_allowed_g_factor_setting;
+  } else {
+    indi_allowed_g_factor = 1.0;
+  }
+
   for (j = 0; j < INDI_NUM_ACT; j++) {
     float max_limit;
     float min_limit;
@@ -798,11 +815,11 @@ static void bound_g_mat(void)
     // Limit the values of the estimated G1 matrix
     for (i = 0; i < INDI_OUTPUTS; i++) {
       if (g1_init[i][j] > 0.0) {
-        max_limit = g1_init[i][j] * INDI_ALLOWED_G_FACTOR;
-        min_limit = g1_init[i][j] / INDI_ALLOWED_G_FACTOR;
+        max_limit = g1_init[i][j] * indi_allowed_g_factor;
+        min_limit = g1_init[i][j] / indi_allowed_g_factor;
       } else {
-        max_limit = g1_init[i][j] / INDI_ALLOWED_G_FACTOR;
-        min_limit = g1_init[i][j] * INDI_ALLOWED_G_FACTOR;
+        max_limit = g1_init[i][j] / indi_allowed_g_factor;
+        min_limit = g1_init[i][j] * indi_allowed_g_factor;
       }
 
       if (g1_est[i][j] > max_limit) {
@@ -815,11 +832,11 @@ static void bound_g_mat(void)
 
     // Do the same for the G2 matrix
     if (g2_init[j] > 0.0) {
-      max_limit = g2_init[j] * INDI_ALLOWED_G_FACTOR;
-      min_limit = g2_init[j] / INDI_ALLOWED_G_FACTOR;
+      max_limit = g2_init[j] * indi_allowed_g_factor;
+      min_limit = g2_init[j] / indi_allowed_g_factor;
     } else {
-      max_limit = g2_init[j] / INDI_ALLOWED_G_FACTOR;
-      min_limit = g2_init[j] * INDI_ALLOWED_G_FACTOR;
+      max_limit = g2_init[j] / indi_allowed_g_factor;
+      min_limit = g2_init[j] * indi_allowed_g_factor;
     }
 
     if (g2_est[j] > max_limit) {

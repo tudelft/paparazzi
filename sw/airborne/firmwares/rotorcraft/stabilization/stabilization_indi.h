@@ -29,6 +29,8 @@
 // Scaling for the control effectiveness to make it readible
 #define INDI_G_SCALING 1000.0
 
+extern float indi_allowed_g_factor_setting;
+
 extern struct Int32Quat   stab_att_sp_quat;  ///< with #INT32_QUAT_FRAC
 extern struct Int32Eulers stab_att_sp_euler; ///< with #INT32_ANGLE_FRAC
 extern float g1g2[INDI_OUTPUTS][INDI_NUM_ACT];
