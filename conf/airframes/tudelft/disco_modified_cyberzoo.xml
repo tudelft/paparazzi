@@ -76,7 +76,7 @@
     <module name="imu" type="mpu9250_spi">
       <configure name="IMU_MPU9250_SPI_DEV" value="spi1"/>
       <configure name="IMU_MPU9250_SPI_SLAVE_IDX" value="SPI_SLAVE2"/>
-      <define name="IMU_MPU9250_READ_MAG" value="TRUE"/>
+      <define name="IMU_MPU9250_READ_MAG" value="FALSE"/>
 
       <define name="IMU_MPU9250_GYRO_RANGE" value="MPU9250_GYRO_RANGE_2000" />
       <!-- To be able (for now) to set AP IMU orientation -->
@@ -100,14 +100,16 @@
 <!--      <define name="SENSOR_SYNC_SEND"/>-->
 <!--    </module>-->
 
-<!--    <module name="actuators" type="pwm"/>-->  <!-- TODO Necessary? -->
+    <module name="actuators" type="pwm">
+      <define name="SERVO_HZ" value="400"/>
+    </module>
 
     <!-- SBUS out is AETR by default but our transmitter sends TAER -->
     <module name="radio_control" type="sbus"/>
 
     <module name="telemetry" type="transparent">
       <configure name="MODEM_PORT" value="UART2"/> <!--  Telem1 on pixracer -->
-      <configure name="MODEM_BAUD" value="B57600"/>
+      <configure name="MODEM_BAUD" value="B115200"/>
     </module>
 
     <module name="gps" type="datalink"/>
@@ -121,7 +123,7 @@
 
     <define name="autopilot_motors_on" value="FALSE"/><!-- TODO: choose ;) -->
     <!-- temp fix for geomag, normally only used for rotorcraft -->
-    <define name="SENSOR_SYNC_SEND"/> <!-- Temp for debugging Baro -->
+<!--    <define name="SENSOR_SYNC_SEND"/> &lt;!&ndash; Temp for debugging Baro &ndash;&gt;-->
     <configure name="USE_BARO_BOARD" value="TRUE"/>
 
     <!-- amount of time it take for the bat to trigger check -->
@@ -144,6 +146,7 @@
       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
       <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0" unit="m/s"/>
       <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="FALSE"/> <!--Already TRUE by default Compensation of centrifugal force via GPS speed (to fly in circles with a fixedwing)" -->
+      <define name="AHRS_FC_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/><!-- MAG_CALIB_UKF_ID for when using the mag_clib_ukf  change your AHRS type-->
     </module>
 
     <module name="ins" type="extended"/>
@@ -161,7 +164,9 @@
       <!--<define name="HMC58XX_STARTUP_DELAY" value="1.4"/>--><!-- If you mag somehow does not work, Enable this line, and maybe even change it to a higher value if it still does not work e.g. 1.9 -->
       <configure name="MAG_HMC58XX_I2C_DEV" value="i2c1"/>
       <!--<define name="MODULE_HMC58XX_SYNC_SEND" value="TRUE"/>--><!-- temporary for debugging external magneto and setup orientation sign and Body to Magneto angles-->
-
+      <configure name="MAG_HMC58XX_I2C_DEV" value="i2c1"/>
+      <define name="MODULE_HMC58XX_SYNC_SEND" value="TRUE"/>
+<!--      <define name="MODULE_HMC58XX_UPDATE_AHRS" value="TRUE"/>-->
       <!--      <define name="MODULE_HMC58XX_UPDATE_AHRS" value="TRUE"/> &lt;!&ndash; When all calib and works to TRUE &ndash;&gt;-->
 
       <define name="HMC58XX_CHAN_X" value="1"/>
@@ -182,7 +187,7 @@
   </firmware>
 
   <!-- ************************* ACTUATORS ************************* -->
-  <servos>
+  <servos driver="Pwm">
     <servo name="S_THROTTLE_LEFT" no="0" min="1100" neutral="1500" max="1900"/>  <!-- TODO Test reverse -->
     <servo name="S_ELEVON_LEFT" no="1" min="1800" neutral="1400" max="1000"/> <!-- max is upward deflection-->
     <servo name="S_ELEVON_RIGHT" no="2" min="1200" neutral="1550" max="1900"/> <!-- min is downward deflection-->

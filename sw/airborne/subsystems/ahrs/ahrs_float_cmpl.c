@@ -79,6 +79,8 @@ void ahrs_fc_update_mag_2d_dumb(struct FloatVect3 *mag);
 
 struct AhrsFloatCmpl ahrs_fc;
 
+float heading_rate_update_gain = 25;
+
 void ahrs_fc_init(void)
 {
   ahrs_fc.status = AHRS_FC_UNINIT;
@@ -452,7 +454,7 @@ void ahrs_fc_update_heading(float heading)
   struct FloatVect3 residual_imu;
   float_rmat_vmult(&residual_imu, &ahrs_fc.ltp_to_imu_rmat, &residual_ltp);
 
-  const float heading_rate_update_gain = 5 * 2.5;  // TODO increase? Test decrease too
+  //  const float heading_rate_update_gain = 2.5;
   RATES_ADD_SCALED_VECT(ahrs_fc.rate_correction, residual_imu, heading_rate_update_gain);
 
   float heading_bias_update_gain;

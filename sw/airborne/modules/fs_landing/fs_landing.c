@@ -33,7 +33,7 @@ uint8_t freq_test_active = false;
 float ff_start_time = 0;
 float ft_start_time = 0;
 
-uint8_t use_pre_spin = true;
+uint8_t use_pre_spin = false;
 float pre_spin_pitch_coeff = 0.05;
 float pre_spin_speed_setpoint = 8;
 float pre_spin_trim_percentage = 0.20;

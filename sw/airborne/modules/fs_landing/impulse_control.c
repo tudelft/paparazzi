@@ -4,13 +4,8 @@
 
 #include "subsystems/gps.h"
 #include "stdlib.h"
-#include "math/pprz_algebra_float.h"
 
-#include "state.h"
-#include "mcu_periph/sys_time.h"
-
-#include "subsystems/datalink/downlink.h"
-
+#include "my_complementary_filter.h"
 #include "impulse_control.h"
 
 #define IMPULSE_CONTROL_DEBUG TRUE
@@ -33,46 +28,9 @@ uint16_t motor_activate_at = 0;
 float elevon_half_arc = 2;
 float motor_half_arc = 2;
 
-float old_t = 0;
-float old_r = 0;
-double old_gps_yaw = 0;
-float filtered_yaw;
-
-float heading_weight = 0.20;
-
-float complementary_filter(void);
-
-float complementary_filter() {
-  double current_gps_yaw = (double)gps.course / 1e7;  // rad [0, 2pi]
-  FLOAT_ANGLE_NORMALIZE(current_gps_yaw);  // rad [-pi, pi]
-  // First check for optitrack update
-  if (current_gps_yaw != old_gps_yaw) {
-    old_t = get_sys_time_float();
-    old_gps_yaw = current_gps_yaw;
-    float angle_diff = current_gps_yaw - filtered_yaw;
-    FLOAT_ANGLE_NORMALIZE(angle_diff);
-    filtered_yaw += angle_diff * heading_weight;
-  } else {
-    float t = get_sys_time_float();
-    float dt = t - old_t;
-    filtered_yaw += dt * stateGetBodyRates_f()->r;
-    old_t = t;
-  }
-  FLOAT_ANGLE_NORMALIZE(filtered_yaw);
-#if IMPULSE_CONTROL_DEBUG
-#if PERIODIC_TELEMETRY
-  fs_landing_dbg_values[0] = current_gps_yaw;
-  fs_landing_dbg_values[1] = stateGetBodyRates_f()->r;
-  fs_landing_dbg_values[2] = filtered_yaw;
-  DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, N_DBG_VALUES, fs_landing_dbg_values);
-#endif
-#endif
-  return filtered_yaw;
-}
-
 void impulse_control_values(struct fs_landing_t *actuator_values) {
   float current_yaw = stateGetNedToBodyEulers_f() -> psi;
-  float filt_yaw = complementary_filter();
+  float filt_yaw = my_complementary_filter((double)gps.course / 1e7);
 
   float ele_h_arc = RadOfDeg(elevon_half_arc);
   float mot_h_arc = RadOfDeg(motor_half_arc);
