@@ -11,6 +11,7 @@
       <!-- EKF2 Configuration parameters -->
       <dl_settings name="ekf2">
         <dl_setting var="ekf2_params.mag_fusion_type" min="0" step="1" max="5" shortname="mag_fusion" values="AUTO|HEADING|3D|AUTOFW|INDOOR|NONE" module="subsystems/ins/ins_ekf2" handler="change_param"/>
+        <dl_setting var="ekf2_params.vdist_sensor_type" min="0" step="1" max="3" shortname="vdist_source" values="BARO|GPS|RANGE|EXT_VISION" module="subsystems/ins/ins_ekf2" handler="change_param_vdist"/>
       </dl_settings>
     </dl_settings>
   </settings>

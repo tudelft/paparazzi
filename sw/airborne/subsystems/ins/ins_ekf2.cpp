@@ -369,6 +369,10 @@ void ins_ekf2_change_param(int32_t unk) {
   ekf_params->mag_fusion_type = ekf2_params.mag_fusion_type = unk;
 }
 
+void ins_ekf2_change_param_vdist(int32_t unk) {
+  ekf_params->vdist_sensor_type = ekf2_params.vdist_sensor_type = unk;
+}
+
 /** Publish the attitude and get the new state
  * Directly called after a succeslfull gyro+accel reading
  */
