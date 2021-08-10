@@ -13,7 +13,7 @@
   <waypoints>
     <waypoint lat="51.990631" lon="4.376808" name="HOME"/>
     <waypoint name="CLIMB" x="-0.7" y="-0.6"/>
-    <waypoint alt="3.5" name="STDBY" x="2.0" y="1.1"/>
+    <waypoint alt="2.5" name="STDBY" x="2.0" y="1.1"/>
     <waypoint name="ROPE" x="-2.4" y="1.3"/>
     <waypoint name="TD" x="0.6" y="-1.3"/>
     <waypoint lat="51.9905834" lon="4.3767710" name="_CZ1"/>
@@ -61,7 +61,6 @@
     </block>
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="1" var="pitch_control"/>
-      <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
       <stay wp="STDBY"/>
     </block>
     <block name="Approach Rope">
