@@ -1,0 +1,15 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="random_excitation" dir="random_excitation">
+  <doc>
+    <description>This module will provide random excitation to each axis in order to make sure also the null space is excited for parameter estimation (online or offline).</description>
+  </doc>
+  <header>
+    <file name="random_excitation.h"/>
+  </header>
+  <init fun="random_excitation_init()"/>
+  <periodic fun="random_excitation_periodic()" freq="1.0" autorun="TRUE"/>
+  <makefile>
+    <file name="random_excitation.c"/>
+    <test/>
+  </makefile>
+</module>
