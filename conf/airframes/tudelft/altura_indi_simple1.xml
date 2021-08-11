@@ -1,4 +1,4 @@
-<!-- This is a Octocopter Coaxial frame equiped with 
+<!-- This is a Octocopter Coaxial frame equiped with
   * Autopilot:  Pixhawk 4
   * IMU:        MPU6000
   * Actuators:  PWM motor controllers
@@ -25,6 +25,10 @@
       <module name="flight_recorder"/>
 
       <define name="STABILIZATION_INDI_G2_R" value="0.00035358"/>
+
+      <module name="lidar_lite">
+        <configure name="LIDAR_LITE_I2C_DEV" value="I2C4"/>
+      </module>
     </target>
 
     <target name="nps" board="pc">
@@ -70,7 +74,7 @@
     <module name="gps" type="ubx_ucenter" />
 
     <module name="stabilization" type="indi_simple"/>
-    
+
     <!--<module name="ahrs" type="float_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="TRUE"/>
       <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
@@ -102,10 +106,6 @@
       <define name="LIS3MDL_CHAN_X_SIGN" value="-"/>
       <define name="LIS3MDL_CHAN_Y_SIGN" value="+"/>
       <define name="LIS3MDL_CHAN_Z_SIGN" value="-"/>
-    </module>
-
-    <module name="lidar_lite">
-        <configure name="LIDAR_LITE_I2C_DEV" value="I2C4"/>
     </module>
 
     <module name="motor_mixing"/>
@@ -328,7 +328,7 @@
 
     <!-- Measured:16.8 Shown:1115-->
     <!-- Measured:12.6 Shown:820-->
-    
+
   </section>
 
   <section name="GCS">
