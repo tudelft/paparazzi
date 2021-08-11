@@ -1,0 +1,656 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="http://jsbsim.sourceforge.net/JSBSim.xsl"?>
+<fdm_config name="QUAD COMPLETE EXT" version="2.0" release="BETA" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://jsbsim.sourceforge.net/JSBSim.xsd">
+
+  <fileheader>
+    <author>Dennis van Wijngaarden</author>
+    <filecreationdate>15-03-2021</filecreationdate>
+    <version>Version 0.9 - beta</version>
+    <description>Altura without rotor dynamic UPPER: (NE/SW turning CCW, NW/SE CW)</description>
+  </fileheader>
+
+  <metrics>
+    <wingarea unit="IN2"> 78.53 </wingarea>
+    <wingspan unit="IN"> 10 </wingspan>
+    <chord unit="IN"> 6.89 </chord>
+    <htailarea unit="FT2"> 0 </htailarea>
+    <htailarm unit="FT"> 0 </htailarm>
+    <vtailarea unit="FT2"> 0 </vtailarea>
+    <vtailarm unit="FT"> 0 </vtailarm>
+    <location name="AERORP" unit="IN">
+      <x> 0 </x>
+      <y> 0 </y>
+      <z> 0 </z>
+    </location>
+    <location name="EYEPOINT" unit="IN">
+      <x> 0 </x>
+      <y> 0 </y>
+      <z> 0 </z>
+    </location>
+    <location name="VRP" unit="IN">
+      <x> 0 </x>
+      <y> 0 </y>
+      <z> 0 </z>
+    </location>
+  </metrics>
+
+  <mass_balance>
+    <ixx unit="SLUG*FT2"> 0.0623 </ixx> <!--5 * 0.13^2-->
+    <iyy unit="SLUG*FT2"> 0.0623 </iyy> <!--5 * 0.13^2-->
+    <izz unit="SLUG*FT2"> 0.1246 </izz> <!--2 * Ixx + 2 * Iyy-->
+    <ixy unit="SLUG*FT2"> 0. </ixy>
+    <ixz unit="SLUG*FT2"> 0. </ixz>
+    <iyz unit="SLUG*FT2"> 0. </iyz>
+        <emptywt unit="LBS"> 11.02 </emptywt> <!--5kg-->
+    <location name="CG" unit="M">
+      <x> 0 </x>
+      <y> 0 </y>
+      <z> 0 </z>
+    </location>
+  </mass_balance>
+
+  <ground_reactions>
+    <contact type="STRUCTURE" name="CONTACT_FRONT">
+      <location unit="M">
+        <x>-0.15 </x>
+        <y> 0 </y>
+        <z>-0.1 </z>
+      </location>
+      <static_friction>  0.8 </static_friction>
+      <dynamic_friction> 0.5 </dynamic_friction>
+      <spring_coeff unit="N/M"> 500 </spring_coeff>
+      <damping_coeff unit="N/M/SEC"> 100 </damping_coeff>
+      <damping_coeff_rebound type="SQUARE" unit="N/M2/SEC2"> 1000 </damping_coeff_rebound>
+      <max_steer unit="DEG"> 0.0 </max_steer>
+      <brake_group> NONE </brake_group>
+      <retractable>0</retractable>
+    </contact>
+
+    <contact type="STRUCTURE" name="CONTACT_BACK">
+      <location unit="M">
+        <x> 0.15</x>
+        <y> 0   </y>
+        <z>-0.1 </z>
+      </location>
+      <static_friction>  0.8 </static_friction>
+      <dynamic_friction> 0.5 </dynamic_friction>
+      <spring_coeff unit="N/M"> 500 </spring_coeff>
+      <damping_coeff unit="N/M/SEC"> 100 </damping_coeff>
+      <damping_coeff_rebound type="SQUARE" unit="N/M2/SEC2"> 1000 </damping_coeff_rebound>
+      <max_steer unit="DEG"> 0.0 </max_steer>
+      <brake_group> NONE </brake_group>
+      <retractable>0</retractable>
+    </contact>
+
+    <contact type="STRUCTURE" name="CONTACT_RIGHT">
+      <location unit="M">
+        <x> 0.  </x>
+        <y> 0.15</y>
+        <z>-0.1 </z>
+      </location>
+      <static_friction>  0.8 </static_friction>
+      <dynamic_friction> 0.5 </dynamic_friction>
+      <spring_coeff unit="N/M"> 500 </spring_coeff>
+      <damping_coeff unit="N/M/SEC"> 100 </damping_coeff>
+      <damping_coeff_rebound type="SQUARE" unit="N/M2/SEC2"> 1000 </damping_coeff_rebound>
+      <max_steer unit="DEG"> 0.0 </max_steer>
+      <brake_group> NONE </brake_group>
+      <retractable>0</retractable>
+    </contact>
+
+    <contact type="STRUCTURE" name="CONTACT_LEFT">
+      <location unit="M">
+        <x> 0.  </x>
+        <y>-0.15</y>
+        <z>-0.1 </z>
+      </location>
+      <static_friction>  0.8 </static_friction>
+      <dynamic_friction> 0.5 </dynamic_friction>
+      <spring_coeff unit="N/M"> 500 </spring_coeff>
+      <damping_coeff unit="N/M/SEC"> 100 </damping_coeff>
+      <damping_coeff_rebound type="SQUARE" unit="N/M2/SEC2"> 1000 </damping_coeff_rebound>
+      <max_steer unit="DEG"> 0.0 </max_steer>
+      <brake_group> NONE </brake_group>
+      <retractable>0</retractable>
+    </contact>
+  </ground_reactions>
+
+  <flight_control name="actuator_dynamics">
+    <channel name="filtering">
+      <lag_filter name="neu_motor_lag">
+        <input>fcs/neu_motor</input>
+        <c1> 20.41 </c1>
+        <output> fcs/neu_motor_lag </output>
+      </lag_filter>
+      <lag_filter name="nel_motor_lag">
+        <input>fcs/nel_motor</input>
+        <c1> 20.41 </c1>
+        <output> fcs/nel_motor_lag </output>
+      </lag_filter>
+      <lag_filter name="seu_motor_lag">
+        <input>fcs/seu_motor</input>
+        <c1> 20.41 </c1>
+        <output> fcs/seu_motor_lag </output>
+      </lag_filter>
+      <lag_filter name="sel_motor_lag">
+        <input>fcs/sel_motor</input>
+        <c1> 20.41 </c1>
+        <output> fcs/sel_motor_lag </output>
+      </lag_filter>
+      <lag_filter name="swu_motor_lag">
+        <input>fcs/swu_motor</input>
+        <c1> 20.41 </c1>
+        <output> fcs/swu_motor_lag </output>
+      </lag_filter>
+      <lag_filter name="swl_motor_lag">
+        <input>fcs/swl_motor</input>
+        <c1> 20.41 </c1>
+        <output> fcs/swl_motor_lag </output>
+      </lag_filter>
+      <lag_filter name="nwu_motor_lag">
+        <input>fcs/nwu_motor</input>
+        <c1> 20.41 </c1>
+        <output> fcs/nwu_motor_lag </output>
+      </lag_filter>
+      <lag_filter name="nwl_motor_lag">
+        <input>fcs/nwl_motor</input>
+        <c1> 20.41 </c1>
+        <output> fcs/nwl_motor_lag </output>
+      </lag_filter>
+    </channel>
+  </flight_control>
+
+  <external_reactions>
+
+    <property>fcs/neu_motor</property>
+    <property>fcs/nel_motor</property>
+    <property>fcs/seu_motor</property>
+    <property>fcs/sel_motor</property>
+    <property>fcs/swu_motor</property>
+    <property>fcs/swl_motor</property>
+    <property>fcs/nwu_motor</property>
+    <property>fcs/nwl_motor</property>
+
+    <!-- First the lift forces produced by each propeller -->
+
+    <force name="neu_motor" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/neu_motor_lag</property>
+          <value> 2.205 </value> <!--1 kg-->
+        </product>
+      </function>
+      <location unit="IN">
+        <x>-10.63</x>
+        <y>10.63</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>0</x>
+        <y>0</y>
+        <z>-1</z>
+      </direction>
+    </force>
+
+    <force name="nel_motor" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/nel_motor_lag</property>
+          <value> 2.205 </value> <!--1 kg-->
+        </product>
+      </function>
+      <location unit="IN">
+        <x>-10.63</x>
+        <y>10.63</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>0</x>
+        <y>0</y>
+        <z>-1</z>
+      </direction>
+    </force>
+
+    <force name="swu_motor" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/swu_motor_lag</property>
+          <value> 2.205 </value> <!--1 kg-->
+        </product>
+      </function>
+      <location unit="IN">
+        <x>10.63</x>
+        <y>-10.63</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>0</x>
+        <y>0</y>
+        <z>-1</z>
+      </direction>
+    </force>
+
+    <force name="swl_motor" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/swl_motor_lag</property>
+          <value> 2.205 </value> <!--1 kg-->
+        </product>
+      </function>
+      <location unit="IN">
+        <x>10.63</x>
+        <y>-10.63</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>0</x>
+        <y>0</y>
+        <z>-1</z>
+      </direction>
+    </force>
+
+    <force name="seu_motor" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/seu_motor_lag</property>
+          <value> 2.205 </value> <!--1 kg-->
+        </product>
+      </function>
+      <location unit="IN">
+        <x>10.63</x>
+        <y>10.63</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>0</x>
+        <y>0</y>
+        <z>-1</z>
+      </direction>
+    </force>
+
+    <force name="sel_motor" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/sel_motor_lag</property>
+          <value> 2.205 </value> <!--1 kg-->
+        </product>
+      </function>
+      <location unit="IN">
+        <x>10.63</x>
+        <y>10.63</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>0</x>
+        <y>0</y>
+        <z>-1</z>
+      </direction>
+    </force>
+
+    <force name="nwu_motor" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/nwu_motor_lag</property>
+          <value> 2.205 </value> <!--1 kg-->
+        </product>
+      </function>
+      <location unit="IN">
+        <x>-10.63</x>
+        <y>-10.63</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>0</x>
+        <y>0</y>
+        <z>-1</z>
+      </direction>
+    </force>
+
+    <force name="nwl_motor" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/nwl_motor_lag</property>
+          <value> 2.205 </value> <!--1 kg-->
+        </product>
+      </function>
+      <location unit="IN">
+        <x>-10.63</x>
+        <y>-10.63</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>0</x>
+        <y>0</y>
+        <z>-1</z>
+      </direction>
+    </force>
+
+    <!-- Then the Moment Couples -->
+
+    <force name="neu_couple1" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/neu_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <!-- Necessary arm in IN to produce a moment ten times
+        "weaker" then the force when both are measured in the SI is 1.9685 in. -->
+        <x>-10.63</x>
+        <y>12.5985</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>-1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+    <force name="neu_couple2" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/neu_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <x>-10.63</x>
+        <y>8.6615</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+    <force name="nel_couple1" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/nel_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <x>-10.63</x>
+        <y>12.5985</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+    <force name="nel_couple2" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/nel_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <x>-10.63</x>
+        <y>8.6615</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>-1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+    <force name="seu_couple1" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/seu_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <x>10.63</x>
+        <y>12.5985</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+    <force name="seu_couple2" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/seu_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <x>10.63</x>
+        <y>8.6615</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>-1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+    <force name="sel_couple1" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/sel_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <x>10.63</x>
+        <y>12.5985</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>-1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+    <force name="sel_couple2" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/sel_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <x>10.63</x>
+        <y>8.6615</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+    <force name="swu_couple1" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/swu_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <x>10.63</x>
+        <y>-8.6615</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>-1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+    <force name="swu_couple2" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/swu_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <x>10.63</x>
+        <y>-12.5985</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+    <force name="swl_couple1" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/swl_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <x>10.63</x>
+        <y>-8.6615</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+    <force name="swl_couple2" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/swl_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <x>10.63</x>
+        <y>-12.5985</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>-1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+    <force name="nwu_couple1" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/nwu_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <x>-10.63</x>
+        <y>-8.6615</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+    <force name="nwu_couple2" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/nwu_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <x>-10.63</x>
+        <y>-12.5985</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>-1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+    <force name="nwl_couple1" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/nwl_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <x>-10.63</x>
+        <y>-8.6615</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>-1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+    <force name="nwl_couple2" frame="BODY" unit="LBS">
+      <function>
+        <product>
+          <property>fcs/nwl_motor_lag</property>
+          <value> 2.205 </value>
+        </product>
+      </function>
+      <location unit="IN">
+        <x>-10.63</x>
+        <y>-12.5985</y>
+        <z>0</z>
+      </location>
+      <direction>
+        <x>1</x>
+        <y>0</y>
+        <z>0</z>
+      </direction>
+    </force>
+
+  </external_reactions>
+
+  <propulsion/>
+
+  <flight_control name="FGFCS"/>
+
+  <aerodynamics>
+    <axis name="DRAG">
+      <function name="aero/coefficient/CD">
+        <description>Drag</description>
+        <product>
+          <property>aero/qbar-psf</property>
+          <value>47.9</value> <!-- Conversion to pascals -->
+          <value>0.0151</value> <!-- CD x Area (m^2) -->
+          <value>0.224808943</value> <!-- N to LBS -->
+        </product>
+      </function>
+    </axis>
+  </aerodynamics>
+
+</fdm_config>
