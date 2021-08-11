@@ -726,9 +726,7 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   // The speed sp that will be returned
   struct FloatVect3 speed_sp_return;
   struct NedCoor_f ned_target_wp;
-  struct NedCoor_f ned_target_err;
-  float target_altitude;
-
+  
   // Target in NED instead of ENU and altitude relative controller
   VECT3_ASSIGN(ned_target_wp, POS_FLOAT_OF_BFP(target.y), POS_FLOAT_OF_BFP(target.x), POS_FLOAT_OF_BFP(-nav_flight_altitude));
   
@@ -737,37 +735,57 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   struct NedCoor_f *pos = stateGetPositionNed_f();
   VECT3_DIFF(pos_error, ned_target_wp, *pos);
 
-  // Calculate distance to waypoint
-  float dist_to_wp = FLOAT_VECT2_NORM(pos_error);
+  // Calculate normal vecotor to rope
+  // Rope Heading in degrees
+  struct FloatVect3 n_I;
+  float n_I_N = cosf(RadOfDeg(rope_heading));
+  float n_I_E = sinf(RadOfDeg(rope_heading));
+  float n_I_D = 0;
+  VECT3_ASSIGN(n_I,n_I_N,n_I_E,n_I_D);
 
-  target_altitude = -nav_flight_altitude - tanf(RadOfDeg(landing_slope))*dist_to_wp ;
-  float altitude_err = target_altitude-*pos.z;
-  VECT3_ASSIGN(ned_target_err, pos_error.x, pos_error.y, altitude_err);
-  VECT3_SMUL(speed_sp_return, ned_target_err, pos_gain);
+  // Rotate vector to have a glideslope angle
+  struct FloatVect3 l_I;
+  float c_omega = cosf(RadOfDeg(landing_slope));
+  float s_omega = sinf(RadOfDeg(landing_slope));
+  float l_I_N = -n_I.x * c_omega;
+  float l_I_E = -n_I.y * c_omega;
+  float l_I_D = -n_I.z * c_omega+s_omega;
+  VECT3_ASSIGN(l_I,l_I_N , l_I_E , l_I_D);
+
+  // Calculate Vector from projection of drone on GS (Glide Slope) to the rope
+  struct FloatVect3 f_I;
+  float f_ratio = (pos_error.x*l_I.x + pos_error.y*l_I.y+ pos_error.z*l_I.z)/ FLOAT_VECT3_NORM(l_I);
+  float f_I_N = f_ratio * l_I.x;
+  float f_I_E = f_ratio * l_I.y;
+  float f_I_D = f_ratio * l_I.z;
+  VECT3_ASSIGN(f_I, f_I_N , f_I_E , f_I_D);
+
+  // Calculate Vector from Drone to Projection on GS
+  struct FloatVect3 d_p;
+  VECT3_DIFF(d_p, pos_error, f_I);
+
+  // Calculate constant component of velocity SP parallel to GS
+  struct FloatVect3 speed_par;
+  float constant_par = 0.5;
+  VECT3_SMUL(speed_par, l_I, constant_par);
+
+  // Calculate proportional component of velocity SP perpendicular to GS
+  struct FloatVect3 speed_perp;
+  VECT3_SMUL(speed_perp, d_p, pos_gain);  
+
+  // Calculate total velocity SP
+  VECT3_ADD(speed_sp_return, speed_par);
+  VECT3_ADD(speed_sp_return, speed_perp);
+
+  // Shall we have a different gain for the z direction?
+  speed_sp_return.z = speed_par.z + scheduled_pos_gainz/pos_gain * speed_perp.z;
   
-  //speed_sp_return.z = (gih_params.pos_gainz + approaching_rope * 0.8)*pos_error.z;
-  speed_sp_return.z = scheduled_pos_gainz * pos_error.z;
-  
-  // Calculate max speed to decelerate from
-
-  // dist_to_wp can only be positive, but just in case
-  float max_speed_decel2 = 2*dist_to_wp*MAX_DECELERATION;
-  if(max_speed_decel2 < 0.0) {
-    max_speed_decel2 = fabs(max_speed_decel2);
-  }
-  float max_speed_decel = sqrtf(max_speed_decel2);
-
-  // Bound the setpoint velocity vector
-  float max_h_speed = Min(nav_max_speed, max_speed_decel);
+  // Bound horizontal speed setpoint
+  float max_h_speed = 3.0;
   vect_bound_in_2d(&speed_sp_return, max_h_speed);
   
-
   // Bound vertical speed setpoint
-  if(stateGetAirspeed_f() > 13.0) {
-    Bound(speed_sp_return.z, -4.0, 5.0);
-  } else {
-    Bound(speed_sp_return.z, -nav_climb_vspeed, -nav_descend_vspeed);
-  }
+  Bound(speed_sp_return.z, -2, 2);
 
   return speed_sp_return;
 }
