@@ -45,7 +45,7 @@
     </block>
     <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
-      <set value="0" var="approaching_rope"/>
+      <set value="0.0" var="approaching_rope"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block key="r" name="Start Engine">
@@ -65,7 +65,7 @@
       <stay wp="STDBY"/>
     </block>
     <block name="Approach Rope">
-      <set value="1" var="approaching_rope"/>
+      <set value="1.0" var="approaching_rope"/>
       <set value="1" var="take_heading_control"/>
       <call_once fun="nav_set_heading_rad(rope_heading)"/>
       <stay wp="ROPE" alt="WaypointAlt(WP_ROPE)+hook_length"/>
