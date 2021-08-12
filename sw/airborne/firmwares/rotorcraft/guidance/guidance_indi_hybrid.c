@@ -85,6 +85,8 @@ float scheduled_pos_gainz= 0.;
 float scheduled_speed_gain= 0.;
 float scheduled_speed_gainz= 0.;
 float landing_slope= 15.0;
+// remeber to connect it to the flight plan rope heading when using horizontal control
+float rope_heading = 0.0;
 #ifndef GUIDANCE_INDI_MAX_AIRSPEED
 #error "You must have an airspeed sensor to use this guidance"
 #endif
@@ -255,6 +257,7 @@ void guidance_indi_run(float *heading_sp) {
   if(autopilot.mode == AP_MODE_NAV) {
     // speed_sp = nav_get_speed_setpoint(gih_params.pos_gain);
     speed_sp = nav_get_speed_setpoint(scheduled_pos_gain);
+    printf("speed_sp=%f,%f,%f\n",speed_sp.x,speed_sp.y,speed_sp.z);
   } else{
     // speed_sp.x = pos_x_err * gih_params.pos_gain;
     // speed_sp.y = pos_y_err * gih_params.pos_gain;
@@ -609,8 +612,6 @@ struct FloatVect3 nav_get_speed_setpoint(float pos_gain) {
   if(horizontal_mode == HORIZONTAL_MODE_ROUTE) {
     speed_sp = nav_get_speed_sp_from_line(line_vect, to_end_vect, navigation_target, pos_gain);
   } else if(approaching_rope){
-    // remeber to connect it to the flight plan rope heading when using horizontal control
-    float rope_heading = 0.0;
     speed_sp = nav_get_speed_sp_from_diagonal(navigation_target, pos_gain, rope_heading);
   } else {
     speed_sp = nav_get_speed_sp_from_go(navigation_target, pos_gain);
@@ -710,7 +711,7 @@ struct FloatVect3 nav_get_speed_sp_from_line(struct FloatVect2 line_v_enu, struc
  *
  * @param target the target waypoint
  *
- * @param rope_heading heading in degrees of the landing rope calculated from the north
+ * @param rope_heading heading in radians of the landing rope calculated from the north
  * 
  * @return desired speed FloatVect3
  */
@@ -730,8 +731,8 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   // Calculate normal vecotor to rope
   // Rope Heading in degrees
   struct FloatVect3 n_I;
-  float n_I_N = cosf(RadOfDeg(rope_heading));
-  float n_I_E = sinf(RadOfDeg(rope_heading));
+  float n_I_N = cosf(rope_heading);
+  float n_I_E = sinf(rope_heading);
   float n_I_D = 0;
   VECT3_ASSIGN(n_I,n_I_N,n_I_E,n_I_D);
 
@@ -739,9 +740,9 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   struct FloatVect3 l_I;
   float c_omega = cosf(RadOfDeg(landing_slope));
   float s_omega = sinf(RadOfDeg(landing_slope));
-  float l_I_N = -n_I.x * c_omega;
-  float l_I_E = -n_I.y * c_omega;
-  float l_I_D = -n_I.z * c_omega+s_omega;
+  float l_I_N = -1*n_I.x * c_omega;
+  float l_I_E = -1*n_I.y * c_omega;
+  float l_I_D = -1*n_I.z * c_omega + s_omega;
   VECT3_ASSIGN(l_I,l_I_N , l_I_E , l_I_D);
 
   // Calculate Vector from projection of drone on GS (Glide Slope) to the rope
@@ -775,7 +776,11 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   // Bound horizontal speed setpoint
   float max_h_speed = 3.0;
   vect_bound_in_2d(&speed_sp_return, max_h_speed);
-  
+  printf("n_I=%f,%f,%f\n",n_I.x,n_I.y,n_I.z);
+  printf("l_I=%f,%f,%f\n",l_I.x,l_I.y,l_I.z);
+  printf("s_I=%f,%f,%f\n",pos_error.x,pos_error.y,pos_error.z);
+  printf("f_I=%f,%f,%f\n",f_I.x,f_I.y,f_I.z);
+  printf("d_p=%f,%f,%f\n",d_p.x,d_p.y,d_p.z);
   // Bound vertical speed setpoint
   Bound(speed_sp_return.z, -2, 2);
 
