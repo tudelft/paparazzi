@@ -265,8 +265,8 @@ void guidance_indi_run(float *heading_sp) {
   scheduled_pos_gainz = gih_params.pos_gainz + approaching_rope * GUIDANCE_INDI_DELTA_KP;
 
   if(autopilot.mode == AP_MODE_NAV) {
-    // speed_sp = nav_get_speed_setpoint(gih_params.pos_gain);
-    speed_sp = nav_get_speed_setpoint(scheduled_pos_gain);
+    speed_sp = nav_get_speed_setpoint(gih_params.pos_gain);
+    //speed_sp = nav_get_speed_setpoint(scheduled_pos_gain);
     // printf("speed_sp=%f,%f,%f\n",speed_sp.x,speed_sp.y,speed_sp.z);
   } else{
     // speed_sp.x = pos_x_err * gih_params.pos_gain;
@@ -379,13 +379,13 @@ void guidance_indi_run(float *heading_sp) {
     scheduled_speed_gain = gih_params.speed_gain + approaching_rope * GUIDANCE_INDI_DELTA_KD;
     scheduled_speed_gainz = gih_params.speed_gainz + approaching_rope * GUIDANCE_INDI_DELTA_KD;
     
-    // sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain + acc_ship.x;
-    // sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain + acc_ship.y;
-    // sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz + acc_ship.z;
+    sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain + acc_ship.x;
+    sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain + acc_ship.y;
+    sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz + acc_ship.z;
 
-    sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * scheduled_speed_gain + acc_ship.x;
-    sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * scheduled_speed_gain + acc_ship.y;
-    sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * scheduled_speed_gainz + acc_ship.z;
+    // sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * scheduled_speed_gain + acc_ship.x;
+    // sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * scheduled_speed_gain + acc_ship.y;
+    // sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * scheduled_speed_gainz + acc_ship.z;
   }
 
   // Bound the acceleration setpoint
@@ -781,7 +781,9 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   VECT3_ADD(speed_sp_return, speed_perp);
 
   // Shall we have a different gain for the z direction?
-  speed_sp_return.z = speed_par.z + scheduled_pos_gainz/pos_gain * speed_perp.z;
+  // speed_sp_return.z = speed_par.z + scheduled_pos_gainz/pos_gain * speed_perp.z;
+  speed_sp_return.z = speed_par.z + gih_params.pos_gain * speed_perp.z;
+  
   
   // Bound horizontal speed setpoint
   float max_h_speed = 3.0;
