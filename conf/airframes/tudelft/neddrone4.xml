@@ -99,10 +99,10 @@
 
     <module name="guidance" type="indi_hybrid">
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
-      <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>
-      <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
-      <define name="GUIDANCE_INDI_POS_GAINZ" value="0.2"/>
-      <define name="GUIDANCE_INDI_SPEED_GAINZ" value="1.0"/>
+      <define name="GUIDANCE_INDI_POS_GAIN" value="1.0"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN" value="3.0"/>
+      <define name="GUIDANCE_INDI_POS_GAINZ" value="1.0"/>
+      <define name="GUIDANCE_INDI_SPEED_GAINZ" value="3.0"/>
       <define name="GUIDANCE_INDI_DELTA_KP" value="0.8"/>
       <define name="GUIDANCE_INDI_DELTA_KD" value="2.0"/>
       <define name="GUIDANCE_INDI_PITCH_LIFT_EFF" value="0.12"/>
