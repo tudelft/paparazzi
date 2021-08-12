@@ -22,7 +22,7 @@
         <dl_setting var="nav_max_speed" min="1.0" step="1.0" max="50.0" shortname="nav_max_speed"/>
         <dl_setting var="guidance_indi_max_bank" min="10.0" step="1.0" max="50.0" shortname="max_bank"/>
         <dl_setting var="take_heading_control" min="0" step="1" max="1" values="OFF|ON" shortname="take_heading"/>
-        <dl_setting var="approaching_rope" min="0" step="1" max="1" values="OFF|ON" shortname="approach_rope"/>
+        <dl_setting var="approaching_rope" min="0.0" step="1.0" max="1.0" values="0|1" shortname="approach_rope"/>
         <dl_setting var="landing_slope" min="0.0" step="0.5" max="50.0" shortname="slope"/>
         <dl_setting var="rope_heading" min="-3.150" step="0.001" max="3.150" shortname="psi_r"/>
       </dl_settings>

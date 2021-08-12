@@ -103,7 +103,7 @@ float nav_max_speed = NAV_MAX_SPEED;
 /*Boolean to force the heading to a static value (only use for specific experiments)*/
 bool take_heading_control = false;
 /*Boolean to activate moving rope landing controller*/
-bool approaching_rope = false;
+float approaching_rope = 0.0;
 
 struct FloatVect3 sp_accel = {0.0,0.0,0.0};
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
@@ -349,7 +349,7 @@ void guidance_indi_run(float *heading_sp) {
     struct FloatVect3 speed_ship = {0.0, 0.0, 0.0};
     struct FloatVect3 acc_ship = {0.0, 0.0, 0.0};
 
-    if(approaching_rope) {
+    if(approaching_rope>0.0) {
     // speed_ship = {1.0, 1.0, 1.0}; //Local place holder for velocity output RTK GPS
     // acc_ship = {1.0, 1.0, 1.0}; //Local place holder for acceleration output RTK GPS (diff speed)
     speed_ship.x = 0.0;
@@ -611,7 +611,7 @@ struct FloatVect3 nav_get_speed_setpoint(float pos_gain) {
   struct FloatVect3 speed_sp;
   if(horizontal_mode == HORIZONTAL_MODE_ROUTE) {
     speed_sp = nav_get_speed_sp_from_line(line_vect, to_end_vect, navigation_target, pos_gain);
-  } else if(approaching_rope){
+  } else if(approaching_rope >0.0){
     speed_sp = nav_get_speed_sp_from_diagonal(navigation_target, pos_gain, rope_heading);
   } else {
     speed_sp = nav_get_speed_sp_from_go(navigation_target, pos_gain);
