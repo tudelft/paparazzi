@@ -716,17 +716,19 @@ struct FloatVect3 nav_get_speed_sp_from_line(struct FloatVect2 line_v_enu, struc
   return speed_sp_return;
 }
 /**
- * @brief Go to a waypoint following a controlled descend 
+ * @brief Go to a waypoint following a controlled diagonal descend towards a rope
  *
  * @param target the target waypoint
  *
+ * @param rope_heading heading in degrees of the landing rope calculated from the north
+ * 
  * @return desired speed FloatVect3
  */
 struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float pos_gain, float rope_heading) {
   // The speed sp that will be returned
   struct FloatVect3 speed_sp_return;
   struct NedCoor_f ned_target_wp;
-  
+
   // Target in NED instead of ENU and altitude relative controller
   VECT3_ASSIGN(ned_target_wp, POS_FLOAT_OF_BFP(target.y), POS_FLOAT_OF_BFP(target.x), POS_FLOAT_OF_BFP(-nav_flight_altitude));
   
