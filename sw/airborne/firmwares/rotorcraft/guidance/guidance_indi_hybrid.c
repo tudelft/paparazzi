@@ -267,7 +267,7 @@ void guidance_indi_run(float *heading_sp) {
   if(autopilot.mode == AP_MODE_NAV) {
     // speed_sp = nav_get_speed_setpoint(gih_params.pos_gain);
     speed_sp = nav_get_speed_setpoint(scheduled_pos_gain);
-    printf("speed_sp=%f,%f,%f\n",speed_sp.x,speed_sp.y,speed_sp.z);
+    // printf("speed_sp=%f,%f,%f\n",speed_sp.x,speed_sp.y,speed_sp.z);
   } else{
     // speed_sp.x = pos_x_err * gih_params.pos_gain;
     // speed_sp.y = pos_y_err * gih_params.pos_gain;
@@ -752,7 +752,7 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   float s_omega = sinf(RadOfDeg(landing_slope));
   float l_I_N = -1*n_I.x * c_omega;
   float l_I_E = -1*n_I.y * c_omega;
-  float l_I_D = -1*n_I.z * c_omega + s_omega;
+  float l_I_D =  s_omega;
   VECT3_ASSIGN(l_I,l_I_N , l_I_E , l_I_D);
 
   // Calculate Vector from projection of drone on GS (Glide Slope) to the rope
@@ -786,11 +786,13 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   // Bound horizontal speed setpoint
   float max_h_speed = 3.0;
   vect_bound_in_2d(&speed_sp_return, max_h_speed);
-  printf("n_I=%f,%f,%f\n",n_I.x,n_I.y,n_I.z);
-  printf("l_I=%f,%f,%f\n",l_I.x,l_I.y,l_I.z);
-  printf("s_I=%f,%f,%f\n",pos_error.x,pos_error.y,pos_error.z);
-  printf("f_I=%f,%f,%f\n",f_I.x,f_I.y,f_I.z);
-  printf("d_p=%f,%f,%f\n",d_p.x,d_p.y,d_p.z);
+
+  // printf("n_I=%f,%f,%f\n",n_I.x,n_I.y,n_I.z);
+  // printf("l_I=%f,%f,%f\n",l_I.x,l_I.y,l_I.z);
+  // printf("s_I=%f,%f,%f\n",pos_error.x,pos_error.y,pos_error.z);
+  // printf("f_I=%f,%f,%f\n",f_I.x,f_I.y,f_I.z);
+  // printf("d_p=%f,%f,%f\n",d_p.x,d_p.y,d_p.z);
+  
   // Bound vertical speed setpoint
   Bound(speed_sp_return.z, -2, 2);
 
