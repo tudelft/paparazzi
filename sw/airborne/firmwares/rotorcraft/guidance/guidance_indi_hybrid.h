@@ -61,5 +61,6 @@ extern bool take_heading_control;
 extern float guidance_indi_max_bank;
 extern bool approaching_rope;
 extern float landing_slope;
+extern float rope_heading;
 
 #endif /* GUIDANCE_INDI_HYBRID_H */
