@@ -26,6 +26,13 @@
 #ifndef RANDOM_EXCITATION_H
 #define RANDOM_EXCITATION_H
 
+#include "std.h"
+#include "math/pprz_random.h"
+
+extern float rand_excitation_cutoff_frequency;
+extern uint32_t amplitude;
+extern uint32_t rand_excitation_amp;
+
 extern void random_excitation_init(void);
 extern void random_excitation_periodic(void);
 
