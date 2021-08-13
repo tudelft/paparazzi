@@ -129,6 +129,8 @@
       <define name="SERVO_HZ" value="400"/>
     </module>
 
+    <module name="random_excitation"/>
+
     <!-- To get the signs (and channels) right, show a realtime plot scaled IMU_MAG mx, my, mz then:
     - [x] When you align your IMU with the direction of north, you should see x>0, y=~0, z>0.
     - [x] When pitching the IMU down, the magnetic vector is aligning with x,
