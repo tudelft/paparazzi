@@ -40,12 +40,12 @@
 #include <stdbool.h>
 
 // Initialize the random number generator (call this before using the other functions)
-void init_random(void);
+extern void init_random(void);
 
 // Random number from uniform[0,1] distribution
-double rand_uniform(void);
+extern double rand_uniform(void);
 
 // Random number from gaussian(0, 1) distribution
-double rand_gaussian(void);
+extern double rand_gaussian(void);
 
 #endif // RANDOM_H

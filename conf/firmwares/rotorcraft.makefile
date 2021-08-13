@@ -81,7 +81,7 @@ endif
 # Math functions
 #
 ifneq ($(TARGET), fbw)
-$(TARGET).srcs += math/pprz_geodetic_int.c math/pprz_geodetic_float.c math/pprz_geodetic_double.c math/pprz_trig_int.c math/pprz_orientation_conversion.c math/pprz_algebra_int.c math/pprz_algebra_float.c math/pprz_algebra_double.c math/pprz_stat.c
+$(TARGET).srcs += math/pprz_geodetic_int.c math/pprz_geodetic_float.c math/pprz_geodetic_double.c math/pprz_trig_int.c math/pprz_orientation_conversion.c math/pprz_algebra_int.c math/pprz_algebra_float.c math/pprz_algebra_double.c math/pprz_stat.c math/pprz_random.c
 
 $(TARGET).srcs += subsystems/settings.c
 $(TARGET).srcs += $(SRC_ARCH)/subsystems/settings_arch.c
