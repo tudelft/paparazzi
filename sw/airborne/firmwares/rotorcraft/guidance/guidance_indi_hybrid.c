@@ -84,7 +84,7 @@ float scheduled_pos_gain = 0.;
 float scheduled_pos_gainz= 0.;
 float scheduled_speed_gain= 0.;
 float scheduled_speed_gainz= 0.;
-float landing_slope= 15.0;
+float landing_slope= 30.0;
 // remeber to connect it to the flight plan rope heading when using horizontal control
 float rope_heading = 0.0;
 #ifndef GUIDANCE_INDI_MAX_AIRSPEED
