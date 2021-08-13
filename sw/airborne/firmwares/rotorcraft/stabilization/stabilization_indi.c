@@ -223,6 +223,12 @@ static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *d
                               &(quat->qy),
                               &(quat->qz));
 }
+
+static void send_actuators(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_ACTUATORS(trans, dev, AC_ID,
+                              INDI_NUM_ACT, actuators_pprz);
+}
 #endif
 
 /**
@@ -267,6 +273,7 @@ void stabilization_indi_init(void)
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_G, send_indi_g);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATORS, send_actuators);
 #endif
 }
 
