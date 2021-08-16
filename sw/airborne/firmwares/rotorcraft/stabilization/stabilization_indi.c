@@ -555,6 +555,9 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   /* attitude error                          */
   struct Int32Quat att_err;
   struct Int32Quat *att_quat = stateGetNedToBodyQuat_i();
+  #ifdef CHIRP_ENABLED
+    sys_id_chirp_full_indi_add_values(&quat_sp);
+  #endif
   int32_quat_inv_comp(&att_err, att_quat, &quat_sp);
   /* wrap it in the shortest direction       */
   int32_quat_wrap_shortest(&att_err);
