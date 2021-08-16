@@ -46,13 +46,16 @@
     <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
       <set value="0.0" var="approaching_rope"/>
+      <set value="0" var="take_heading_control"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block key="r" name="Start Engine">
       <call_once fun="NavResurrect()"/>
       <call_once fun="NavSetWaypointHere(WP_ROPE)"/>
       <set value="stateGetNedToBodyEulers_f()->theta" var="takeoff_pitch"/>
+      <!--FIX FOR SIMULATION PLS UNCOMMENT ME FOR REAL TEST
       <set value="stateGetNedToBodyEulers_f()->psi" var="rope_heading"/>
+      End-->
       <attitude pitch="0" roll="0" throttle="0.0" until="stage_time>0" vmode="throttle"/>
       <call_once fun="NavResurrect()"/>
     </block>
@@ -62,12 +65,18 @@
     </block>
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="1" var="pitch_control"/>
+      <set value="0" var="take_heading_control"/>
+      <set value="0.0" var="approaching_rope"/>
       <stay wp="STDBY"/>
+    </block>
+    <block name="Take Heading control">
+      <set value="1" var="take_heading_control"/>
+      <call_once fun="nav_set_heading_rad(rope_heading)"/>
+      <stay wp="STDBY"/>
+      <exception cond="fabs(stateGetNedToBodyEulers_f()->psi-rope_heading) @LT 0.001" deroute="Approach Rope"/>
     </block>
     <block name="Approach Rope">
       <set value="1.0" var="approaching_rope"/>
-      <set value="1" var="take_heading_control"/>
-      <call_once fun="nav_set_heading_rad(rope_heading)"/>
       <stay wp="ROPE" alt="WaypointAlt(WP_ROPE)+hook_length"/>
     </block>
     <block name="Landed">
