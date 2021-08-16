@@ -773,12 +773,12 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   float d_p_norm = FLOAT_VECT3_NORM(d_p);
   // Calculate constant component of velocity SP parallel to GS
   struct FloatVect3 speed_par;
-  float constant_par = f_I_norm/(f_I_norm+d_p_norm);//0.01
+  float constant_par = f_I_norm/(f_I_norm+d_p_norm)*pos_gain;//0.01
   VECT3_SMUL(speed_par, l_I, constant_par);
 
   // Calculate proportional component of velocity SP perpendicular to GS
   struct FloatVect3 speed_perp;
-  float test_gain = d_p_norm/(f_I_norm+d_p_norm);//0.1
+  float test_gain = d_p_norm/(f_I_norm+d_p_norm)*pos_gain;//0.1
   VECT3_SMUL(speed_perp, d_p, test_gain);
   //VECT3_SMUL(speed_perp, d_p, pos_gain);  
 
