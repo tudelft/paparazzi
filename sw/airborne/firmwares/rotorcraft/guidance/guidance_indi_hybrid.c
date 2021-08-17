@@ -743,14 +743,20 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   struct FloatVect3 d_p;
   VECT3_DIFF(d_p, pos_error, f_I);
   float d_p_norm = FLOAT_VECT3_NORM(d_p);
+  
+  // Make sure Denominator is not zero
+  float fIdp_norm = f_I_norm + d_p_norm;
+  if(fIdp_norm < 0.01) {
+    fIdp_norm = 0.01;
+  }
   // Calculate constant component of velocity SP parallel to GS
   struct FloatVect3 speed_par;
-  float gain_par = f_I_norm/(f_I_norm+d_p_norm)*pos_gain;//0.01
+  float gain_par = f_I_norm/fIdp_norm*pos_gain;//0.01
   VECT3_SMUL(speed_par, l_I, gain_par);
   speed_par.z *= gih_params.pos_gainz/pos_gain; 
   // Calculate proportional component of velocity SP perpendicular to GS
   struct FloatVect3 speed_perp;
-  float gain_perp = d_p_norm/(f_I_norm+d_p_norm)*pos_gain;//0.1
+  float gain_perp = d_p_norm/fIdp_norm*pos_gain;//0.1
   VECT3_SMUL(speed_perp, d_p, gain_perp);
   //VECT3_SMUL(speed_perp, d_p, pos_gain);
   speed_perp.z *= gih_params.pos_gainz/pos_gain;  
@@ -759,11 +765,6 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   VECT3_ADD(speed_sp_return, speed_par);
   VECT3_ADD(speed_sp_return, speed_perp);
 
-  // Shall we have a different gain for the z direction?
-  // speed_sp_return.z = speed_par.z + scheduled_pos_gainz/pos_gain * speed_perp.z;
-  //speed_sp_return.z = speed_par.z + gih_params.pos_gainz * speed_perp.z;
-
-  
   // Bound horizontal speed setpoint
   float max_h_speed = 4.0;
   vect_bound_in_2d(&speed_sp_return, max_h_speed);
