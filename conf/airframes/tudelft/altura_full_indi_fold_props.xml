@@ -133,6 +133,7 @@
     <module name="sys_id_chirp_full_indi">
       <define name="CHIRP_ENABLED" value="TRUE"/>
     </module>
+    <module name="raw_imu_gyro"/>
 
     <!-- To get the signs (and channels) right, show a realtime plot scaled IMU_MAG mx, my, mz then:
     - [x] When you align your IMU with the direction of north, you should see x>0, y=~0, z>0.

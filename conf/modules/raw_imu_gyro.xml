@@ -1,0 +1,15 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="raw_imu_gyro" dir="raw_sensors">
+  <doc>
+    <description>This module reads the imu gyro angular acceleration and converts it to the body reference frame. To be used for direct feedback by INDI.</description>
+  </doc>
+  <header>
+    <file name="raw_imu_gyro.h"/>
+  </header>
+  <init fun="init_raw_imu_gyro()"/>
+  <makefile>
+    <file name="raw_imu_gyro.c"/>
+    <define name="RAW_IMU_GYRO_BODY_ENABLED" value="TRUE"/>
+    <test/>
+  </makefile>
+</module>

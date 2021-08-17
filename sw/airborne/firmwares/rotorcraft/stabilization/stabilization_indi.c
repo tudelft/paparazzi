@@ -322,9 +322,15 @@ void init_filters(void)
   // Init rate filter for feedback
   float time_constants[3] = {1.0/(2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_P), 1.0/(2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_Q), 1.0/(2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_R)};
 
+  #ifdef RAW_IMU_GYRO_BODY_ENABLED
+  init_first_order_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, raw_imu_gyro_GetBodyRates_f()->p);
+  init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, raw_imu_gyro_GetBodyRates_f()->q);
+  init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, raw_imu_gyro_GetBodyRates_f()->r);
+  #else
   init_first_order_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
   init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
   init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
+  #endif
 }
 
 /**
@@ -386,7 +392,11 @@ void stabilization_indi_set_earth_cmd_i(struct Int32Vect2 *cmd, int32_t heading)
 void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 {
   /* Propagate the filter on the gyroscopes */
+  #ifdef RAW_IMU_GYRO_BODY_ENABLED
+  struct FloatRates *body_rates = raw_imu_gyro_GetBodyRates_f();
+  #else
   struct FloatRates *body_rates = stateGetBodyRates_f();
+  #endif
   float rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
   int8_t i;
   for (i = 0; i < 3; i++) {
