@@ -375,7 +375,8 @@ void ins_ekf2_init(void)
 {
   /* Get the ekf parameters */
   ekf_params = ekf.getParamHandle();
-  ekf_params->mag_fusion_type = MAG_FUSE_TYPE_HEADING;
+  ekf_params->mag_fusion_type = MAG_FUSE_TYPE_INDOOR;
+  ekf_params->fusion_mode = INS_EKF2_FUSION_MODE;
   ekf_params->is_moving_scaler = 0.8f;
   ekf_params->fusion_mode = INS_EKF2_FUSION_MODE;
   ekf_params->vdist_sensor_type = INS_EKF2_VDIST_SENSOR_TYPE;
