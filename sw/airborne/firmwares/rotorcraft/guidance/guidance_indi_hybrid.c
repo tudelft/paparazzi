@@ -84,7 +84,7 @@ float scheduled_pos_gain = 0.;
 float scheduled_pos_gainz= 0.;
 float scheduled_speed_gain= 0.;
 float scheduled_speed_gainz= 0.;
-float landing_slope= 15.0;
+float landing_slope_deg= 15.0;
 bool debug_speed_sp = true;
 float rope_heading = 0.785; //0.0
 
@@ -704,7 +704,7 @@ struct FloatVect3 nav_get_speed_sp_from_line(struct FloatVect2 line_v_enu, struc
   struct FloatVect2 final_vector;
   VECT2_SMUL(final_vector, direction, desired_speed/length_direction);
 
-  struct FloatVect3 speed_sp_return = {final_vector.x, final_vector.y, (gih_params.pos_gainz)*(ned_target.z - stateGetPositionNed_f()->z)};
+  struct FloatVect3 speed_sp_return = {final_vector.x, final_vector.y, gih_params.pos_gainz*(ned_target.z - stateGetPositionNed_f()->z)};
   if((guidance_v_mode == GUIDANCE_V_MODE_NAV) && (vertical_mode == VERTICAL_MODE_CLIMB)) {
     speed_sp_return.z = SPEED_FLOAT_OF_BFP(guidance_v_zd_sp);
   }
@@ -751,8 +751,8 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
 
   // Rotate vector to have a glideslope angle
   struct FloatVect3 l_I;
-  float c_omega = cosf(RadOfDeg(landing_slope));
-  float s_omega = sinf(RadOfDeg(landing_slope));
+  float c_omega = cosf(RadOfDeg(landing_slope_deg));
+  float s_omega = sinf(RadOfDeg(landing_slope_deg));
   float l_I_N = -1*n_I.x * c_omega;
   float l_I_E = -1*n_I.y * c_omega;
   float l_I_D =  s_omega;
@@ -773,13 +773,13 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   float d_p_norm = FLOAT_VECT3_NORM(d_p);
   // Calculate constant component of velocity SP parallel to GS
   struct FloatVect3 speed_par;
-  float constant_par = f_I_norm/(f_I_norm+d_p_norm)*pos_gain;//0.01
-  VECT3_SMUL(speed_par, l_I, constant_par);
+  float gain_par = f_I_norm/(f_I_norm+d_p_norm)*pos_gain;//0.01
+  VECT3_SMUL(speed_par, l_I, gain_par);
   speed_par.z *= gih_params.pos_gainz/pos_gain; 
   // Calculate proportional component of velocity SP perpendicular to GS
   struct FloatVect3 speed_perp;
-  float test_gain = d_p_norm/(f_I_norm+d_p_norm)*pos_gain;//0.1
-  VECT3_SMUL(speed_perp, d_p, test_gain);
+  float gain_perp = d_p_norm/(f_I_norm+d_p_norm)*pos_gain;//0.1
+  VECT3_SMUL(speed_perp, d_p, gain_perp);
   //VECT3_SMUL(speed_perp, d_p, pos_gain);
   speed_perp.z *= gih_params.pos_gainz/pos_gain;  
 
@@ -801,8 +801,8 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   printf("s_I=%f,%f,%f\n",pos_error.x,pos_error.y,pos_error.z);
   printf("f_I=%f,%f,%f\n",f_I.x,f_I.y,f_I.z);
   printf("d_p=%f,%f,%f\n",d_p.x,d_p.y,d_p.z);
-  printf("par_gain=%f\n",constant_par);
-  printf("perp_gain=%f\n",test_gain);
+  printf("par_gain=%f\n",gain_par);
+  printf("perp_gain=%f\n",gain_perp);
   }
   // Bound vertical speed setpoint
   Bound(speed_sp_return.z, -1, 2);
