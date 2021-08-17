@@ -775,12 +775,13 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   struct FloatVect3 speed_par;
   float constant_par = f_I_norm/(f_I_norm+d_p_norm)*pos_gain;//0.01
   VECT3_SMUL(speed_par, l_I, constant_par);
-
+  speed_par.z *= gih_params.pos_gainz/pos_gain; 
   // Calculate proportional component of velocity SP perpendicular to GS
   struct FloatVect3 speed_perp;
   float test_gain = d_p_norm/(f_I_norm+d_p_norm)*pos_gain;//0.1
   VECT3_SMUL(speed_perp, d_p, test_gain);
-  //VECT3_SMUL(speed_perp, d_p, pos_gain);  
+  //VECT3_SMUL(speed_perp, d_p, pos_gain);
+  speed_perp.z *= gih_params.pos_gainz/pos_gain;  
 
   // Calculate total velocity SP
   VECT3_ADD(speed_sp_return, speed_par);
@@ -804,7 +805,7 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   printf("perp_gain=%f\n",test_gain);
   }
   // Bound vertical speed setpoint
-  Bound(speed_sp_return.z, -2, 2);
+  Bound(speed_sp_return.z, -1, 2);
 
   return speed_sp_return;
 }
