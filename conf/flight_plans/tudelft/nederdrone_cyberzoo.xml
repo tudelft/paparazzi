@@ -46,7 +46,7 @@
     </block>
     <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
-      <set value="0.0" var="approaching_rope"/>
+      <set value="false" var="approaching_rope"/>
       <set value="0" var="take_heading_control"/>
 
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
@@ -70,7 +70,7 @@
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="1" var="pitch_control"/>
       <set value="0" var="take_heading_control"/>
-      <set value="0.0" var="approaching_rope"/>
+      <set value="false" var="approaching_rope"/>
       <stay wp="STDBY"/>
     </block>
     <block name="Take Heading control">
@@ -80,7 +80,7 @@
       <exception cond="fabs(stateGetNedToBodyEulers_f()->psi-rope_heading) @LT 0.03" deroute="Approach Rope"/>
     </block>
     <block name="Approach Rope">
-      <set value="1.0" var="approaching_rope"/>
+      <set value="true" var="approaching_rope"/>
       <stay wp="ROPE" alt="WaypointAlt(WP_ROPE)+hook_length"/>
     </block>
     <block name="Landed">
