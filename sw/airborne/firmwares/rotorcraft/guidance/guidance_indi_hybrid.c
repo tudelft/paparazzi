@@ -359,34 +359,17 @@ void guidance_indi_run(float *heading_sp) {
         speed_sp_b_x = guidance_indi_max_airspeed + groundspeed_x - airspeed;
       }
     }
-    struct FloatVect3 speed_ship = {0.0, 0.0, 0.0};
-    struct FloatVect3 acc_ship = {0.0, 0.0, 0.0};
 
-    if(approaching_rope) {
-    // speed_ship = {1.0, 1.0, 1.0}; //Local place holder for velocity output RTK GPS
-    // acc_ship = {1.0, 1.0, 1.0}; //Local place holder for acceleration output RTK GPS (diff speed)
-    speed_ship.x = 0.0;
-    speed_ship.y = 0.0;
-    speed_ship.z = 0.0;
-    acc_ship.x = 0.0;
-    acc_ship.y = 0.0;
-    acc_ship.z = 0.0;
-    }
-    
-    speed_sp.x = cosf(psi) * speed_sp_b_x - sinf(psi) * speed_sp_b_y + speed_ship.x;
-    speed_sp.y = sinf(psi) * speed_sp_b_x + cosf(psi) * speed_sp_b_y + speed_ship.y;
-    speed_sp.z = speed_sp.z + speed_ship.z;
+    speed_sp.x = cosf(psi) * speed_sp_b_x - sinf(psi) * speed_sp_b_y;
+    speed_sp.y = sinf(psi) * speed_sp_b_x + cosf(psi) * speed_sp_b_y;
+    speed_sp.z = speed_sp.z;
 
     scheduled_speed_gain = GUIDANCE_INDI_DELTA_KD;
     scheduled_speed_gainz = GUIDANCE_INDI_DELTA_KD;
     
-    sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain + acc_ship.x;
-    sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain + acc_ship.y;
-    sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz + acc_ship.z;
-
-    // sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * scheduled_speed_gain + acc_ship.x;
-    // sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * scheduled_speed_gain + acc_ship.y;
-    // sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * scheduled_speed_gainz + acc_ship.z;
+    sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain;
+    sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain;
+    sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
   }
 
   // Bound the acceleration setpoint
