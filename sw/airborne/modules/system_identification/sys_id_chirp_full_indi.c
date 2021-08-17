@@ -157,9 +157,9 @@ void sys_id_chirp_full_indi_add_values(struct Int32Quat *quat_sp)
     EULERS_FLOAT_OF_BFP(eulers_sp_float, eulers_sp_int);
 
     // Add chirp eulers to each axis
-    eulers_sp_float.phi += current_chirp_values[0] / M_PI * 180.;
-    eulers_sp_float.theta += current_chirp_values[1] / M_PI * 180.;
-    eulers_sp_float.psi += current_chirp_values[2] / M_PI * 180.;
+    eulers_sp_float.phi += current_chirp_values[0] / 180. * M_PI;
+    eulers_sp_float.theta += current_chirp_values[1] / 180. * M_PI;
+    eulers_sp_float.psi += current_chirp_values[2] / 180. * M_PI;
 
     // Bound al setpoints 
     BoundAbs(eulers_sp_float.phi, STABILIZATION_ATTITUDE_SP_MAX_PHI);
