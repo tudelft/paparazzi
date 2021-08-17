@@ -60,7 +60,7 @@ extern float nav_max_speed;
 extern bool take_heading_control;
 extern float guidance_indi_max_bank;
 extern float approaching_rope;
-extern float landing_slope;
+extern float landing_slope_deg;
 extern float rope_heading;
 
 #endif /* GUIDANCE_INDI_HYBRID_H */
