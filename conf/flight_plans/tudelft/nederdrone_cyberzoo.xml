@@ -6,6 +6,7 @@
     #include "subsystems/electrical.h"
     #include "subsystems/radio_control.h"
     #include "subsystems/ahrs.h"
+    <!-- #include "subsystems/navigation/common_nav.h" -->
     #include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
     #include "firmwares/rotorcraft/navigation.h"
     #include "subsystems/actuators/motor_mixing.h"
@@ -47,11 +48,14 @@
       <call_once fun="NavKillThrottle()"/>
       <set value="0.0" var="approaching_rope"/>
       <set value="0" var="take_heading_control"/>
+
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block key="r" name="Start Engine">
       <call_once fun="NavResurrect()"/>
+      <!-- <call_once fun="NavSetWaypointPosAndAltHere(WP_ROPE)"/> -->
       <call_once fun="NavSetWaypointHere(WP_ROPE)"/>
+      <call_once fun="waypoint_set_alt(WP_ROPE, GetPosAlt())"/>
       <set value="stateGetNedToBodyEulers_f()->theta" var="takeoff_pitch"/>
       <!--FIX FOR SIMULATION PLS UNCOMMENT ME FOR REAL TEST
       <set value="stateGetNedToBodyEulers_f()->psi" var="rope_heading"/>
@@ -70,10 +74,10 @@
       <stay wp="STDBY"/>
     </block>
     <block name="Take Heading control">
-      <set value="1" var="take_heading_control"/>
       <call_once fun="nav_set_heading_rad(rope_heading)"/>
+      <set value="1" var="take_heading_control"/>
       <stay wp="STDBY"/>
-      <exception cond="fabs(stateGetNedToBodyEulers_f()->psi-rope_heading) @LT 0.001" deroute="Approach Rope"/>
+      <exception cond="fabs(stateGetNedToBodyEulers_f()->psi-rope_heading) @LT 0.03" deroute="Approach Rope"/>
     </block>
     <block name="Approach Rope">
       <set value="1.0" var="approaching_rope"/>
