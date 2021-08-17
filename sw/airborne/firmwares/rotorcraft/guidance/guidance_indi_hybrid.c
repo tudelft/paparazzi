@@ -89,7 +89,7 @@ float scheduled_speed_gain= 0.;
 float scheduled_speed_gainz= 0.;
 float landing_slope_deg= 15.0;
 bool debug_speed_sp = NPS_DEBUG_SPEED_SP;
-float rope_heading = 0.785; //0.0
+float rope_heading = 0.0; //0.785
 
 #ifndef GUIDANCE_INDI_MAX_AIRSPEED
 #error "You must have an airspeed sensor to use this guidance"

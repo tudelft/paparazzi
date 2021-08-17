@@ -57,9 +57,7 @@
       <call_once fun="NavSetWaypointHere(WP_ROPE)"/>
       <call_once fun="waypoint_set_alt(WP_ROPE, GetPosAlt())"/>
       <set value="stateGetNedToBodyEulers_f()->theta" var="takeoff_pitch"/>
-      <!--FIX FOR SIMULATION PLS UNCOMMENT ME FOR REAL TEST
       <set value="stateGetNedToBodyEulers_f()->psi" var="rope_heading"/>
-      End-->
       <attitude pitch="0" roll="0" throttle="0.0" until="stage_time>0" vmode="throttle"/>
       <call_once fun="NavResurrect()"/>
     </block>
