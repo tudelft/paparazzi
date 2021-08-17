@@ -213,11 +213,22 @@ static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
 static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *dev)
 {
   struct Int32Quat *quat = stateGetNedToBodyQuat_i();
+  struct Int32Quat sp_quat;
+  sp_quat.qi = stab_att_sp_quat.qi;
+  sp_quat.qx = stab_att_sp_quat.qx;
+  sp_quat.qy = stab_att_sp_quat.qy;
+  sp_quat.qz = stab_att_sp_quat.qz;
+
+  // Add chirp to sp quat if chirp module activated
+  #ifdef CHIRP_ENABLED
+    sys_id_chirp_full_indi_add_values(&sp_quat);
+  #endif
+
   pprz_msg_send_AHRS_REF_QUAT(trans, dev, AC_ID,
-                              &stab_att_sp_quat.qi,
-                              &stab_att_sp_quat.qx,
-                              &stab_att_sp_quat.qy,
-                              &stab_att_sp_quat.qz,
+                              &sp_quat.qi,
+                              &sp_quat.qx,
+                              &sp_quat.qy,
+                              &sp_quat.qz,
                               &(quat->qi),
                               &(quat->qx),
                               &(quat->qy),
