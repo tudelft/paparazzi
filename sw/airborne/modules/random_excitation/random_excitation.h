@@ -33,6 +33,12 @@ extern float rand_excitation_cutoff_frequency;
 extern uint32_t amplitude;
 extern uint32_t rand_excitation_amp;
 
+extern uint8_t excitation_group1[]; // Group1 of actuators for which the prefered excitation can differ from the other actuators
+extern uint32_t excitation_group1_amp; // How much higher is the preffered state of the excitation group1
+
+extern uint8_t excitation_group2[]; // Group2 of actuators for which the prefered excitation can differ from the other actuators
+extern uint32_t excitation_group2_amp; // How much higher is the preffered state of the excitation group2
+
 extern void random_excitation_init(void);
 extern void random_excitation_periodic(void);
 
