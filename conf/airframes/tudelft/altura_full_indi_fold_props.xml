@@ -129,7 +129,10 @@
       <define name="SERVO_HZ" value="400"/>
     </module>
 
-    <module name="random_excitation"/>
+    <module name="random_excitation">
+      <define name="RANDOM_EXCITATION_GROUP1" value="{0,1,2,3}"/>
+      <define name="RANDOM_EXCITATION_GROUP2" value="{4,5,6,7}"/>
+    </module>
     <module name="sys_id_chirp_full_indi">
       <define name="CHIRP_ENABLED" value="TRUE"/>
     </module>
