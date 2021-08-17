@@ -69,6 +69,9 @@
 #define GUIDANCE_INDI_DELTA_KD 2.0
 #endif
 
+#ifndef NPS_DEBUG_SPEED_SP
+#define NPS_DEBUG_SPEED_SP false
+#endif
 
 struct guidance_indi_hybrid_params gih_params = {
   .pos_gain = GUIDANCE_INDI_POS_GAIN,
@@ -85,7 +88,7 @@ float scheduled_pos_gainz= 0.;
 float scheduled_speed_gain= 0.;
 float scheduled_speed_gainz= 0.;
 float landing_slope_deg= 15.0;
-bool debug_speed_sp = true;
+bool debug_speed_sp = NPS_DEBUG_SPEED_SP;
 float rope_heading = 0.785; //0.0
 
 #ifndef GUIDANCE_INDI_MAX_AIRSPEED
