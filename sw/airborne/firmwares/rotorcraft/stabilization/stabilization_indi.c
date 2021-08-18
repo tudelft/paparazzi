@@ -823,7 +823,7 @@ static void bound_g_mat(void)
   int8_t j;
 
   // Check RC switch if G factor needs to be one or macro value
-  if(radio_control.values[INDI_ADAPTIVE_FALLBACK_RC_CHANNEL] > 0) {
+  if(radio_control.values[INDI_ADAPTIVE_FALLBACK_RC_CHANNEL] > INDI_ADAPTIVE_FALLBACK_RC_THRESHOLD) {
     indi_allowed_g_factor = indi_allowed_g_factor_setting;
   } else {
     indi_allowed_g_factor = 1.0;

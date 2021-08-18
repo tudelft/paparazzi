@@ -78,6 +78,7 @@
       <configure name="INDI_NUM_ACT" value="8"/>
       <define name="INDI_ALLOWED_G_FACTOR" value="1.35"/>
       <define name="INDI_ADAPTIVE_FALLBACK_RC_CHANNEL" value="6"/>
+      <define name="INDI_ADAPTIVE_FALLBACK_RC_THRESHOLD" value="0"/>
     </module>
 
     <!--<module name="ahrs" type="float_cmpl_quat">
