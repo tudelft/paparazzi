@@ -40,6 +40,30 @@
 #define RANDOM_EXCITATION_CUTOFF_FREQUENCY 5.0 // HZ
 #endif
 
+#ifdef RANDOM_EXCITATION_GROUP1
+  uint8_t excitation_group1[] = RANDOM_EXCITATION_GROUP1;
+#else
+  uint8_t excitation_group1[] = {};
+#endif
+
+#ifdef RANDOM_EXCITATION_GROUP1_AMP
+  uint32_t excitation_group1_amp = RANDOM_EXCITATION_GROUP1_AMP;
+#else
+  uint32_t excitation_group1_amp = 0;
+#endif
+
+#ifdef RANDOM_EXCITATION_GROUP2
+  uint8_t excitation_group2[] = RANDOM_EXCITATION_GROUP2;
+#else
+  uint8_t excitation_group2[] = {};
+#endif
+
+#ifdef RANDOM_EXCITATION_GROUP2_AMP
+  uint32_t excitation_group2_amp = RANDOM_EXCITATION_GROUP1_AMP;
+#else
+  uint32_t excitation_group2_amp = 0;
+#endif
+
 float rand_excitation_cutoff_frequency = RANDOM_EXCITATION_CUTOFF_FREQUENCY;
 uint32_t amplitude_bound = 1000; // bounding value of amplitude for Random excitation
 uint32_t rand_excitation_amp = RANDOM_EXCITATION_AMPLITUDE;
@@ -77,6 +101,21 @@ void random_excitation_periodic(void)
     update_butterworth_2_low_pass(&random_control_lowpass_filters[i], rand_number);
     // Update prefered actuator state
     act_pref[i] = rand_number * rand_excitation_amp;
+  }
+
+  // Loop through excitation groups to add amplitude to prefered state
+  for (i = 0; i < sizeof(excitation_group1); i++) {
+    // Check if motor number in range
+    if (excitation_group1[i] < INDI_NUM_ACT) {
+      act_pref[excitation_group1[i]] += excitation_group1_amp;
+    }
+  }
+
+  for (i = 0; i < sizeof(excitation_group2); i++) {
+    // Check if motor number in range
+    if (excitation_group2[i] < INDI_NUM_ACT) {
+      act_pref[excitation_group2[i]] += excitation_group2_amp;
+    }
   }
 }
 
