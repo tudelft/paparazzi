@@ -70,6 +70,7 @@
       <configure name="UAVCAN_USE_CAN1" value="TRUE"/>
       <configure name="UAVCAN_USE_CAN2" value="TRUE"/>
     </module>
+    <module name="actuators"     type="fport"/>
     <module name="imu"           type="mpu6000"/>
     <module name="gps"           type="ublox"/>
     <module name="gps"           type="ubx_ucenter"/>
@@ -146,6 +147,10 @@
     <servo name="FLAP_3" no="7" min="6000" neutral="0" max="-6000"/>
     <servo name="FLAP_4" no="8" min="-6000" neutral="0" max="6000"/>
     <servo name="AIL_4" no="9" min="-6000" neutral="0" max="6000"/>
+  </servos>
+
+  <servos driver="Fport">
+    <servo name="TEST" no="0" min="1023" neutral="1023" max="1023"/>
   </servos>
 
   <commands>
