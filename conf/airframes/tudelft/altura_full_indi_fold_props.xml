@@ -273,11 +273,11 @@
     <!--<define name="G1_THRUST" value="{-0.7, -0.7, -0.7, -0.7, -0.7, -0.7, -0.7, -0.7}"/>-->
     <define name="G2" value="{ 0.03, -0.03,  0.03, -0.03,  0.03, -0.03,  0.03, -0.03}"/>
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="100.0"/>
-    <define name="REF_ERR_Q" value="100.0"/>
+    <define name="REF_ERR_P" value="150.0"/>
+    <define name="REF_ERR_Q" value="150.0"/>
     <define name="REF_ERR_R" value="20.0"/>
-    <define name="REF_RATE_P" value="12.0"/>
-    <define name="REF_RATE_Q" value="12.0"/>
+    <define name="REF_RATE_P" value="18.0"/>
+    <define name="REF_RATE_Q" value="18.0"/>
     <define name="REF_RATE_R" value="5.0"/>
 
     <!--Maxium yaw rate, to avoid instability-->
