@@ -27,6 +27,7 @@
 #include "pprz_chirp.h"
 
 #include "subsystems/datalink/telemetry.h"
+#include "subsystems/radio_control.h"
 #include "generated/airframe.h"
 #include "mcu_periph/sys_time.h"
 
@@ -55,6 +56,8 @@ float chirp_fstop_hz = 5.0;  // Stop frequency of chrirp
 float chirp_length_s = 5.0;  // Length of chirp
 
 static float current_chirp_values[CHIRP_NB_AXES];
+
+bool rc_chirp_on = false; // Gives the state of the chirp switch
 
 static void set_current_chirp_values(void)
 {
@@ -133,6 +136,25 @@ void sys_id_chirp_full_indi_init(void)
 void sys_id_chirp_full_indi_run(void)
 {
 #if CHIRP_ENABLED
+
+  // Check if chirp needs to be activated by RC
+  #ifdef CHIRP_ACTIVATE_RC_CHANNEL
+  #ifdef CHIRP_ACTIVATE_RC_THRESHOLD
+    // If the switch was not switched before:
+    if (!rc_chirp_on) {
+      // If switch has been switched
+      if (radio_control.values[CHIRP_ACTIVATE_RC_CHANNEL] > CHIRP_ACTIVATE_RC_THRESHOLD) {
+        rc_chirp_on = true;
+        start_chirp();
+      }
+    } else { // If the switch switches back
+      if (radio_control.values[CHIRP_ACTIVATE_RC_CHANNEL] < CHIRP_ACTIVATE_RC_THRESHOLD) {
+        rc_chirp_on = false;
+        stop_chirp();
+      }
+    }
+  #endif
+  #endif
 
   if (chirp_active) {
     if (!chirp_is_running(&chirp, get_sys_time_float())) {

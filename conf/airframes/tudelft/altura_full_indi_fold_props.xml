@@ -136,6 +136,8 @@
     </module>
     <module name="sys_id_chirp_full_indi">
       <define name="CHIRP_ENABLED" value="TRUE"/>
+      <define name="CHIRP_ACTIVATE_RC_CHANNEL" value="6"/>
+      <define name="CHIRP_ACTIVATE_RC_THRESHOLD" value="0"/>
     </module>
 
     <!-- To get the signs (and channels) right, show a realtime plot scaled IMU_MAG mx, my, mz then:
