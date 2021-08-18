@@ -89,6 +89,7 @@
 
     <module name="ins" type="ekf2">
       <define name="INS_SONAR_MAX_RANGE" value="40.0"/>
+      <define name="EKF2_IMU_FILTER_CUTOFF" value="250"/>
     </module>
 
     <module name="guidance" type="indi">

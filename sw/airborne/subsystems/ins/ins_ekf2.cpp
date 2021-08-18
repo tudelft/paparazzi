@@ -35,6 +35,7 @@
 #include "math/pprz_isa.h"
 #include "mcu_periph/sys_time.h"
 #include "autopilot.h"
+#include "filters/low_pass_filter.h"
 
 /** For SITL and NPS we need special includes */
 #if defined SITL && USE_NPS
@@ -135,6 +136,10 @@ static void accel_cb(uint8_t sender_id, uint32_t stamp, struct Int32Vect3 *accel
 static void mag_cb(uint8_t sender_id, uint32_t stamp, struct Int32Vect3 *mag);
 static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
 static void body_to_imu_cb(uint8_t sender_id, struct FloatQuat *q_b2i_f);
+
+/* Filters */
+Butterworth2LowPass rate_lowpass_filters[3];
+Butterworth2LowPass accel_lowpass_filters[3];
 
 /* Main EKF2 structure for keeping track of the status */
 struct ekf2_t {
@@ -266,6 +271,13 @@ static void send_ahrs_bias(struct transport_tx *trans, struct link_device *dev)
 /* Initialize the EKF */
 void ins_ekf2_init(void)
 {
+  /* Init filters */
+  float tau = 1.0 / (2.0 * M_PI * EKF2_IMU_FILTER_CUTOFF);
+  float sample_time = 1.0 / PERIODIC_FREQUENCY;
+  for (uint8_t i = 0; i < 3; i++) {
+    init_butterworth_2_low_pass(&rate_lowpass_filters[i], tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&accel_lowpass_filters[i], tau, sample_time, 0.0);
+  }
   /* Get the ekf parameters */
   ekf_params = ekf.getParamHandle();
   ekf_params->mag_fusion_type = MAG_FUSE_TYPE_HEADING;
@@ -495,7 +507,14 @@ static void gyro_cb(uint8_t __attribute__((unused)) sender_id,
 
   // Convert Gyro information to float
   RATES_FLOAT_OF_BFP(imu_rate, *gyro);
-
+  /* Propagate filter */
+  float rate_vect[3] = {imu_rate.p, imu_rate.q, imu_rate.r};
+  for (uint8_t i = 0; i < 3; i++) {
+    update_butterworth_2_low_pass(&rate_lowpass_filters[i], rate_vect[i]);
+  }
+  imu_rate.p = rate_lowpass_filters[0].o[0];
+  imu_rate.q = rate_lowpass_filters[1].o[0];
+  imu_rate.r = rate_lowpass_filters[2].o[0];
   // Rotate with respect to Body To IMU
   float_rmat_transp_ratemult(&ekf2.gyro, body_to_imu_rmat, &imu_rate);
 
@@ -521,6 +540,14 @@ static void accel_cb(uint8_t sender_id __attribute__((unused)),
 
   // Convert Accelerometer information to float
   ACCELS_FLOAT_OF_BFP(accel_imu, *accel);
+  /* Propagate filter */
+  float accel_vect[3] = {accel_imu.x, accel_imu.y, accel_imu.z};
+  for (uint8_t i = 0; i < 3; i++) {
+    update_butterworth_2_low_pass(&accel_lowpass_filters[i], accel_vect[i]);
+  }
+  accel_imu.x = accel_lowpass_filters[0].o[0];
+  accel_imu.y = accel_lowpass_filters[1].o[0];
+  accel_imu.z = accel_lowpass_filters[2].o[0];
 
   // Rotate with respect to Body To IMU
   float_rmat_transp_vmult(&ekf2.accel, body_to_imu_rmat, &accel_imu);
