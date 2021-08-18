@@ -47,6 +47,10 @@
 #define CHIRP_FADEIN TRUE
 #endif
 
+#ifndef CHIRP_DELAY_S // Chirp Delay s
+#define CHIRP_DELAY_S 2.0
+#endif
+
 static struct chirp_t chirp;
 uint8_t chirp_active = false;  // Boolean to check if chirp is active
 uint8_t chirp_axis = 0;    // Chrip axis (roll, pitch, yaw)
@@ -57,7 +61,10 @@ float chirp_length_s = 5.0;  // Length of chirp
 
 static float current_chirp_values[CHIRP_NB_AXES];
 
-bool rc_chirp_on = false; // Gives the state of the chirp switch
+static bool rc_chirp_on = false; // Gives the state of the chirp switch
+static bool delayed_chirp_activated = false;
+static float delayed_chirp_time = 0;
+
 
 static void set_current_chirp_values(void)
 {
@@ -85,11 +92,30 @@ static void start_chirp(void)
   set_current_chirp_values();
 }
 
+static void start_chirp_delayed(void)
+{
+  delayed_chirp_activated = true;
+  delayed_chirp_time = get_sys_time_float();
+}
+
+static void check_chirp_delayed(void)
+{
+  if (delayed_chirp_activated) {
+    if ((get_sys_time_float() - delayed_chirp_time) > CHIRP_DELAY_S) {
+      chirp_init(&chirp, chirp_fstart_hz, chirp_fstop_hz, chirp_length_s, get_sys_time_float(), CHIRP_EXPONENTIAL,
+               CHIRP_FADEIN);
+      start_chirp();
+      delayed_chirp_activated = false;
+    }
+  }
+}
+
 static void stop_chirp(void)
 {
   chirp_reset(&chirp, get_sys_time_float());
   chirp_active = false;
   set_current_chirp_values();
+  delayed_chirp_activated = false;
 }
 
 void sys_id_chirp_full_indi_activate_handler(uint8_t activate)
@@ -145,7 +171,7 @@ void sys_id_chirp_full_indi_run(void)
       // If switch has been switched
       if (radio_control.values[CHIRP_ACTIVATE_RC_CHANNEL] > CHIRP_ACTIVATE_RC_THRESHOLD) {
         rc_chirp_on = true;
-        start_chirp();
+        start_chirp_delayed();
       }
     } else { // If the switch switches back
       if (radio_control.values[CHIRP_ACTIVATE_RC_CHANNEL] < CHIRP_ACTIVATE_RC_THRESHOLD) {
@@ -155,6 +181,7 @@ void sys_id_chirp_full_indi_run(void)
     }
   #endif
   #endif
+  check_chirp_delayed();
 
   if (chirp_active) {
     if (!chirp_is_running(&chirp, get_sys_time_float())) {
