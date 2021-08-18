@@ -288,7 +288,7 @@
     <define name="FILTER_YAW_RATE" value="TRUE"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN" value="{0.04, 0.04, 0.04, 0.04, 0.04, 0.04, 0.04, 0.04}"/>
+    <define name="ACT_DYN" value="{0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03}"/>
 
     <define name="WLS_PRIORITIES" value="{1000.f, 1000.f, 1.f, 100.f}"/>
 
