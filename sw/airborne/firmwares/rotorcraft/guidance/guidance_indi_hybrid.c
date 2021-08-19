@@ -763,27 +763,30 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   struct FloatVect3 speed_par;
   float gain_par = f_I_norm/fIdp_norm*pos_gain;//0.01
   VECT3_SMUL(speed_par, l_I, gain_par);
-  speed_par.z *= gih_params.pos_gainz/pos_gain; 
+  speed_par.z *= gih_params.pos_gainz/pos_gain;
+  float max_diag_par_speed = 0.5; 
+  vect_bound_in_3d(&speed_par, max_diag_par_speed);
   // Calculate proportional component of velocity SP perpendicular to GS
   struct FloatVect3 speed_perp;
   float gain_perp = d_p_norm/fIdp_norm*pos_gain;//0.1
   VECT3_SMUL(speed_perp, d_p, gain_perp);
   //VECT3_SMUL(speed_perp, d_p, pos_gain);
   speed_perp.z *= gih_params.pos_gainz/pos_gain;  
-
   // Calculate total velocity SP
   VECT3_ADD(speed_sp_return, speed_par);
   VECT3_ADD(speed_sp_return, speed_perp);
 
   // Bound horizontal speed setpoint
-  float max_h_speed = 4.0;
+  float max_h_speed = 2.0;
   vect_bound_in_2d(&speed_sp_return, max_h_speed);
   if(debug_speed_sp){
+  float speed_par_norm = FLOAT_VECT3_NORM(speed_par);
   printf("n_I=%f,%f,%f\n",n_I.x,n_I.y,n_I.z);
   printf("l_I=%f,%f,%f\n",l_I.x,l_I.y,l_I.z);
   printf("s_I=%f,%f,%f\n",pos_error.x,pos_error.y,pos_error.z);
   printf("f_I=%f,%f,%f\n",f_I.x,f_I.y,f_I.z);
   printf("d_p=%f,%f,%f\n",d_p.x,d_p.y,d_p.z);
+  printf("speed_par_norm=%f\n",speed_par_norm);
   printf("par_gain=%f\n",gain_par);
   printf("perp_gain=%f\n",gain_perp);
   }
