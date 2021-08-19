@@ -62,5 +62,9 @@ extern float guidance_indi_max_bank;
 extern bool approaching_rope;
 extern float landing_slope_deg;
 extern float rope_heading;
+extern float max_diag_par_speed;
+extern float max_h_speed_diag;
+extern float min_z_speed_diag;
+extern float max_z_speed_diag;
 
 #endif /* GUIDANCE_INDI_HYBRID_H */
