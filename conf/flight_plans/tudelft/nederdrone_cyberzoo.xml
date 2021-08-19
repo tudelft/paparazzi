@@ -60,7 +60,7 @@
     </block>
     <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
       <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="takeoff_pitch/3.14*180.0" roll="0" throttle="0.90" until="stage_time>0" vmode="throttle"/> <!--0.77-->
+      <attitude pitch="takeoff_pitch/3.14*180.0" roll="0" throttle="0.77" until="stage_time>0" vmode="throttle"/> 
     </block>
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="1" var="pitch_control"/>
