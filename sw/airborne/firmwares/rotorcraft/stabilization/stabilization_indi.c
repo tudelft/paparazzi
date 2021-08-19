@@ -235,6 +235,18 @@ static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *d
                               &(quat->qz));
 }
 
+static void send_stab_attitude_indi(struct transport_tx *trans, struct link_device *dev) 
+{
+  pprz_msg_send_STAB_ATTITUDE_INDI(trans, dev, AC_ID,
+                                    &angular_acceleration[0],
+                                    &angular_acceleration[1],
+                                    &angular_acceleration[2],
+                                    &angular_accel_ref.p,
+                                    &angular_accel_ref.q,
+                                    &angular_accel_ref.r,
+                                    0,0,0,0);
+}
+
 static void send_actuators(struct transport_tx *trans, struct link_device *dev)
 {
   int16_t actuator_inputs[INDI_NUM_ACT];
@@ -288,6 +300,7 @@ void stabilization_indi_init(void)
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_G, send_indi_g);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_INDI, send_stab_attitude_indi);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATORS, send_actuators);
 #endif
 }
