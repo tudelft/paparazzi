@@ -90,6 +90,10 @@ float scheduled_speed_gainz= 0.;
 float landing_slope_deg= 15.0;
 bool debug_speed_sp = NPS_DEBUG_SPEED_SP;
 float rope_heading = 0.0; //0.785
+float max_diag_par_speed = 0.5;
+float max_h_speed_diag = 2.0;
+float min_z_speed_diag = -1.0;
+float max_z_speed_diag = 2.0;
 
 #ifndef GUIDANCE_INDI_MAX_AIRSPEED
 #error "You must have an airspeed sensor to use this guidance"
@@ -715,8 +719,8 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   struct NedCoor_f ned_target_wp;
 
   // Target in NED instead of ENU and altitude relative controller
-  VECT3_ASSIGN(ned_target_wp, POS_FLOAT_OF_BFP(target.y), POS_FLOAT_OF_BFP(target.x), -POS_FLOAT_OF_BFP(target.z));
-  //VECT3_ASSIGN(ned_target_wp, POS_FLOAT_OF_BFP(target.y), POS_FLOAT_OF_BFP(target.x), POS_FLOAT_OF_BFP(-nav_flight_altitude));
+  VECT3_ASSIGN(ned_target_wp, POS_FLOAT_OF_BFP(target.y), POS_FLOAT_OF_BFP(target.x), -POS_FLOAT_OF_BFP(nav_flight_altitude));
+  //VECT3_ASSIGN(ned_target_wp, POS_FLOAT_OF_BFP(target.y), POS_FLOAT_OF_BFP(target.x), POS_FLOAT_OF_BFP(-nav_flight_altitude)); target.z
   
   // Calculate position error
   struct FloatVect3 pos_error;
@@ -764,7 +768,7 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   float gain_par = f_I_norm/fIdp_norm*pos_gain;//0.01
   VECT3_SMUL(speed_par, l_I, gain_par);
   speed_par.z *= gih_params.pos_gainz/pos_gain;
-  float max_diag_par_speed = 0.5; 
+
   vect_bound_in_3d(&speed_par, max_diag_par_speed);
   // Calculate proportional component of velocity SP perpendicular to GS
   struct FloatVect3 speed_perp;
@@ -777,8 +781,7 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   VECT3_ADD(speed_sp_return, speed_perp);
 
   // Bound horizontal speed setpoint
-  float max_h_speed = 2.0;
-  vect_bound_in_2d(&speed_sp_return, max_h_speed);
+  vect_bound_in_2d(&speed_sp_return, max_h_speed_diag);
   if(debug_speed_sp){
   float speed_par_norm = FLOAT_VECT3_NORM(speed_par);
   printf("n_I=%f,%f,%f\n",n_I.x,n_I.y,n_I.z);
@@ -791,7 +794,7 @@ struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float 
   printf("perp_gain=%f\n",gain_perp);
   }
   // Bound vertical speed setpoint
-  Bound(speed_sp_return.z, -1, 2);
+  Bound(speed_sp_return.z, min_z_speed_diag, max_z_speed_diag);
 
   return speed_sp_return;
 }

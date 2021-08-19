@@ -6,7 +6,6 @@
     #include "subsystems/electrical.h"
     #include "subsystems/radio_control.h"
     #include "subsystems/ahrs.h"
-    <!-- #include "subsystems/navigation/common_nav.h" -->
     #include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
     #include "firmwares/rotorcraft/navigation.h"
     #include "subsystems/actuators/motor_mixing.h"
@@ -31,7 +30,6 @@
     </sector>
   </sectors>
   <variables>
-    <!-- <variable init="0.0f" max="1.57" min="-1.57" step="0.01" type="float" var="rope_heading"/> -->
     <variable init="0.0f" max="1.57" min="-1.57" step="0.01" type="float" var="takeoff_pitch"/>
     <variable init="0.15f" max="10.00" min="0.00" step="0.01" type="float" var="hook_length"/>
   </variables>
@@ -53,7 +51,6 @@
     </block>
     <block key="r" name="Start Engine">
       <call_once fun="NavResurrect()"/>
-      <!-- <call_once fun="NavSetWaypointPosAndAltHere(WP_ROPE)"/> -->
       <call_once fun="NavSetWaypointHere(WP_ROPE)"/>
       <call_once fun="waypoint_set_alt(WP_ROPE, GetPosAlt())"/>
       <set value="stateGetNedToBodyEulers_f()->theta" var="takeoff_pitch"/>
