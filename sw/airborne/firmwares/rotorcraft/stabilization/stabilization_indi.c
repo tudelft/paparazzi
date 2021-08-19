@@ -237,8 +237,12 @@ static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *d
 
 static void send_actuators(struct transport_tx *trans, struct link_device *dev)
 {
+  int16_t actuator_inputs[INDI_NUM_ACT];
+  for (uint8_t i = 0; i < INDI_NUM_ACT; i++) {
+    actuator_inputs[i] = (int16_t) indi_u[i];
+  }
   pprz_msg_send_ACTUATORS(trans, dev, AC_ID,
-                              INDI_NUM_ACT, actuators_pprz);
+                              INDI_NUM_ACT, actuator_inputs);
 }
 #endif
 

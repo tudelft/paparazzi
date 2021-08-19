@@ -78,6 +78,7 @@
       <configure name="INDI_NUM_ACT" value="8"/>
       <define name="INDI_ALLOWED_G_FACTOR" value="1.35"/>
       <define name="INDI_ADAPTIVE_FALLBACK_RC_CHANNEL" value="6"/>
+      <define name="INDI_ADAPTIVE_FALLBACK_RC_THRESHOLD" value="-500"/>
     </module>
 
     <!--<module name="ahrs" type="float_cmpl_quat">
@@ -127,6 +128,16 @@
 
     <module name="actuators" type="pwm">
       <define name="SERVO_HZ" value="400"/>
+    </module>
+
+    <module name="random_excitation">
+      <define name="RANDOM_EXCITATION_GROUP1" value="{0,1,2,3}"/>
+      <define name="RANDOM_EXCITATION_GROUP2" value="{4,5,6,7}"/>
+    </module>
+    <module name="sys_id_chirp_full_indi">
+      <define name="CHIRP_ENABLED" value="TRUE"/>
+      <define name="CHIRP_ACTIVATE_RC_CHANNEL" value="6"/>
+      <define name="CHIRP_ACTIVATE_RC_THRESHOLD" value="9000"/>
     </module>
 
     <!-- To get the signs (and channels) right, show a realtime plot scaled IMU_MAG mx, my, mz then:
@@ -329,8 +340,8 @@
   <section name="AUTOPILOT">
     <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO1" value="AP_MODE_HOVER_Z_HOLD"/> <!--"AP_MODE_HOVER_Z_HOLD"-->
-    <define name="MODE_AUTO2" value="AP_MODE_NAV"/> <!--"AP_MODE_NAV"-->
+    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/> <!--"AP_MODE_HOVER_Z_HOLD"-->
+    <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/> <!--"AP_MODE_NAV"-->
     <define name="NO_RC_THRUST_LIMIT" value="TRUE" />
   </section>
 
