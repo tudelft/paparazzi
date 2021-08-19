@@ -50,6 +50,18 @@
 
       <!-- Use the external mag (not in NPS target as then it needs to listen to all) -->
       <define name="INS_EKF2_MAG_ID" value="MAG_LIS3MDL_SENDER_ID"/>
+      <!-- <module name="ahrs" type="int_cmpl_quat"> -->
+        <!-- Use the optitrack heading instead of magnetometer -->
+        <!-- <configure name="USE_MAGNETOMETER" value="FALSE"/>
+        <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
+        <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
+      </module> -->
+      
+      <!-- <module name="ins" type="extended">
+        <define name="INS_USE_GPS_ALT" value="1"/>
+        <define name="INS_USE_GPS_ALT_SPEED" value="1"/>
+        <define name="INS_VFF_R_GPS" value="0.01"/>
+      </module> -->
     </target>
 
     <target name="nps" board="pc">
@@ -82,18 +94,9 @@
     <!-- <module name="gps"           type="ubx_ucenter"/> -->
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
-    <module name="ahrs" type="int_cmpl_quat">
-      <!-- Use the optitrack heading instead of magnetometer -->
-      <configure name="USE_MAGNETOMETER" value="FALSE"/>
-      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
-      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
-    </module>
-    <module name="ins" type="extended">
-      <define name="INS_USE_GPS_ALT" value="1"/>
-      <define name="INS_USE_GPS_ALT_SPEED" value="1"/>
-      <define name="INS_VFF_R_GPS" value="0.01"/>
-    </module>
-    
+
+    <module name="ins"           type="ekf2" />
+
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
 
