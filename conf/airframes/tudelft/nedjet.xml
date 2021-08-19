@@ -205,8 +205,12 @@
 
   <command_laws>
     <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
-    <let var="th_hold"     value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
-    <let var="fwd_hold"    value="RadioControlValues(RADIO_FMODE)> 4800"/>
+    <!--et var="th_hold"     value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
+    <let var="fwd_hold"    value="RadioControlValues(RADIO_FMODE)> 4800"/-->
+
+     <let var="th_hold" value="false"/>
+     <let var="fwd_hold" value="false"/>
+
 
     <let var="motor_1_s"   value="((LessThan(actuators[SERVO_MOTOR_1_IDX], 1) || $th_hold)? -9600 : ((actuators[SERVO_MOTOR_1_IDX]-1500)*9600/6691-2))"/>
     <let var="motor_2_s"   value="((LessThan(actuators[SERVO_MOTOR_2_IDX], 1) || $th_hold)? -9600 : ((actuators[SERVO_MOTOR_2_IDX]-1500)*9600/6691-2))"/>
