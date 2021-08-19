@@ -233,7 +233,7 @@ extern "C" {
     if ((_v).y > (_v_max).y) (_v).y = (_v_max).y; else if ((_v).y < (_v_min).y) (_v).y = (_v_min).y; \
     if ((_v).z > (_v_max).z) (_v).z = (_v_max).z; else if ((_v).z < (_v_min).z) (_v).z = (_v_min).z; \
   }
-
+  
 /*  */
 #define VECT3_ABS(_vo, _vi) { \
     (_vo).x = ABS((_vi).x);   \
