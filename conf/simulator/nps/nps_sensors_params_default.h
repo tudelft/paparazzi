@@ -94,8 +94,8 @@
  *  Magnetometer
  */
  /* HMC5843 has 12 bit resolution */
-#define NPS_MAG_MIN -2047
-#define NPS_MAG_MAX  2047
+#define NPS_MAG_MIN -20470000
+#define NPS_MAG_MAX  20470000
 
 #define NPS_MAG_IMU_TO_SENSOR_PHI    0.
 #define NPS_MAG_IMU_TO_SENSOR_THETA  0.
