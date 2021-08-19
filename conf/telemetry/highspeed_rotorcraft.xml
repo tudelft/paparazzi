@@ -47,6 +47,7 @@
       <message name="AHRS_REF_QUAT"            period="0.1"/>
       <message name="INDI_G"                   period="0.1"/>
       <message name="ACTUATORS"	               period="0.1"/>
+      <message name="RAND_EXCITATION"	       period="1.0"/>
     </mode>
 
     <mode name="ppm">
@@ -227,6 +228,7 @@
       <message name="INDI_G"                   period="0.1"/>
       <!--<message name="WINDTUNNEL_MEAS"          period="0.005"/>-->
       <message name="ACTUATORS"	               period="0.002"/>
+      <message name="RAND_EXCITATION"	       period="1.0"/>
     </mode>
   </process>
 

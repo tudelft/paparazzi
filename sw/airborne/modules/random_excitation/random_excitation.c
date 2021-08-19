@@ -37,7 +37,7 @@
 #endif
 
 #ifndef RANDOM_EXCITATION_CUTOFF_FREQUENCY
-#define RANDOM_EXCITATION_CUTOFF_FREQUENCY 5.0 // HZ
+#define RANDOM_EXCITATION_CUTOFF_FREQUENCY 0.25 // HZ
 #endif
 
 #ifdef RANDOM_EXCITATION_GROUP1
@@ -71,6 +71,18 @@ uint32_t rand_excitation_amp = RANDOM_EXCITATION_AMPLITUDE;
 // Define filters
 Butterworth2LowPass random_control_lowpass_filters[INDI_NUM_ACT];
 
+#if PERIODIC_TELEMETRY
+#include "subsystems/datalink/telemetry.h"
+static void send_rand_excitation(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_RAND_EXCITATION(trans, dev, AC_ID, 
+                                  INDI_NUM_ACT, act_pref,
+                                  &rand_excitation_amp,
+                                  &excitation_group1_amp,
+                                  &excitation_group2_amp);
+}
+#endif // PERIODIC_TELEMETRY
+
 void random_excitation_init(void)
 {
   // Init 2nd order butterworth filter
@@ -88,6 +100,10 @@ void random_excitation_init(void)
 
   // Init randomizer
   init_random();
+
+  #if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RAND_EXCITATION, send_rand_excitation);
+  #endif
 }
 
 void random_excitation_periodic(void)
@@ -100,21 +116,21 @@ void random_excitation_periodic(void)
     // Propagate filter
     update_butterworth_2_low_pass(&random_control_lowpass_filters[i], rand_number);
     // Update prefered actuator state
-    act_pref[i] = rand_number * rand_excitation_amp;
+    act_pref[i] = (float) (rand_number * rand_excitation_amp);
   }
 
   // Loop through excitation groups to add amplitude to prefered state
   for (i = 0; i < sizeof(excitation_group1); i++) {
     // Check if motor number in range
     if (excitation_group1[i] < INDI_NUM_ACT) {
-      act_pref[excitation_group1[i]] += excitation_group1_amp;
+      act_pref[excitation_group1[i]] += (float) excitation_group1_amp;
     }
   }
 
   for (i = 0; i < sizeof(excitation_group2); i++) {
     // Check if motor number in range
     if (excitation_group2[i] < INDI_NUM_ACT) {
-      act_pref[excitation_group2[i]] += excitation_group2_amp;
+      act_pref[excitation_group2[i]] += (float) excitation_group2_amp;
     }
   }
 }
