@@ -4,6 +4,12 @@
   <header>
     #include "autopilot.h"
     #include "subsystems/datalink/datalink.h"
+    #include "subsystems/electrical.h"
+    #include "subsystems/radio_control.h"
+    #include "subsystems/ahrs.h"
+    #include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
+    #include "firmwares/rotorcraft/navigation.h"
+    #include "subsystems/actuators/motor_mixing.h"
 </header>
   <waypoints>
     <waypoint name="HOME" x="12.6" y="-48.7"/>
@@ -15,6 +21,7 @@
     <waypoint name="p4" x="238.6" y="-48.5"/>
     <waypoint name="TD" x="-4.1" y="-23.7"/>
     <waypoint name="FOLLOW" x="123.2" y="-87.8"/>
+    <waypoint name="ROPE" x="13.6" y="-50.0"/>
     <waypoint name="S1" lat="52.1669450" lon="4.4174372"/>
     <waypoint name="S2" lat="52.1689871" lon="4.4208804"/>
     <waypoint lat="52.169189" lon="4.410820" name="C1"/>
@@ -40,6 +47,10 @@
       <corner name="C9"/>
     </sector>
   </sectors>
+  <variables>
+    <variable init="0.0f" max="1.57" min="-1.57" step="0.01" type="float" var="takeoff_pitch"/>
+    <variable init="0.15" max="2.00" min="0.00" step="0.01" type="float" var="hook_length"/>
+  </variables>
   <modules>
     <!--module name="follow_me"/-->
     <module name="nav" type="survey_rectangle_rotorcraft">
@@ -61,9 +72,44 @@
     </block>
     <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
+      <set value="false" var="approaching_rope"/>
+      <set value="0" var="take_heading_control"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
-    <block name="Start Engine">
+    <block key="r" name="Start Engine">
+      <call_once fun="NavResurrect()"/>
+      <call_once fun="NavSetWaypointHere(WP_ROPE)"/>
+      <call_once fun="waypoint_set_alt(WP_ROPE, GetPosAlt()+hook_length)"/>
+      <set value="stateGetNedToBodyEulers_f()->theta" var="takeoff_pitch"/>
+      <set value="stateGetNedToBodyEulers_f()->psi" var="rope_heading"/>
+      <attitude pitch="0" roll="0" throttle="0.0" until="stage_time>0" vmode="throttle"/>
+      <call_once fun="NavResurrect()"/>
+    </block>
+    <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
+      <call_once fun="nav_set_heading_current()"/>
+      <attitude pitch="takeoff_pitch/3.14*180.0" roll="0" throttle="0.77" until="stage_time>0" vmode="throttle"/> 
+    </block>
+    <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
+      <set value="1" var="pitch_control"/>
+      <set value="0" var="take_heading_control"/>
+      <set value="false" var="approaching_rope"/>
+      <stay wp="STDBY"/>
+    </block>
+    <block name="Take Heading control">
+      <call_once fun="nav_set_heading_rad(rope_heading)"/>
+      <set value="1" var="take_heading_control"/>
+      <stay wp="STDBY"/>
+      <exception cond="fabs(stateGetNedToBodyEulers_f()->psi-rope_heading) @LT 0.03" deroute="Approach Rope"/>
+    </block>
+    <block name="Approach Rope">
+      <set value="true" var="approaching_rope"/>
+      <stay wp="ROPE" alt="WaypointAlt(WP_ROPE)"/>
+    </block>
+    <!-- <block name="Holding point">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block> -->
+    <!-- <block name="Start Engine">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="nav_set_heading_current()"/>
@@ -79,7 +125,7 @@
       <call_once fun="nav_set_heading_current()"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
-    </block>
+    </block> -->
     <!--block name="follow_module">
       <set value="FALSE" var="force_forward"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
@@ -96,10 +142,10 @@
       <set value="FALSE" var="force_forward"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block-->
-    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+    <!-- <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="FALSE" var="force_forward"/>
       <stay wp="STDBY"/>
-    </block>
+    </block> -->
     <block name="stay_p1">
       <set value="FALSE" var="force_forward"/>
       <stay wp="p1"/>
