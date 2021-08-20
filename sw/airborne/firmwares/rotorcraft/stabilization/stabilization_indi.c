@@ -247,15 +247,6 @@ static void send_stab_attitude_indi(struct transport_tx *trans, struct link_devi
                                     0,0,0,0);
 }
 
-static void send_actuators(struct transport_tx *trans, struct link_device *dev)
-{
-  int16_t actuator_inputs[INDI_NUM_ACT];
-  for (uint8_t i = 0; i < INDI_NUM_ACT; i++) {
-    actuator_inputs[i] = (int16_t) indi_u[i];
-  }
-  pprz_msg_send_ACTUATORS(trans, dev, AC_ID,
-                              INDI_NUM_ACT, actuator_inputs);
-}
 #endif
 
 /**
@@ -301,7 +292,6 @@ void stabilization_indi_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_G, send_indi_g);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_INDI, send_stab_attitude_indi);
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATORS, send_actuators);
 #endif
 }
 
