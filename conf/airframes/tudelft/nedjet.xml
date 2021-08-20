@@ -363,14 +363,14 @@
     <define name="G2_R" value="0.000"/>
 
     <define name="FORWARD_G1_P" value="0.0048"/>
-    <define name="FORWARD_G1_Q" value="0.0080"/>
+    <define name="FORWARD_G1_Q" value="0.0076"/>
     <define name="FORWARD_G1_R" value="0.0040"/>
 
     <!--P effectiveness if center props are switched off-->
     <define name="FORWARD_G1_P_FEW_PROPS" value="STABILIZATION_INDI_FORWARD_G1_P"/>
     <!--Part of yaw eff that comes from motors-->
     <define name="MOT_YAW_EFF" value="0.0"/>
-    <define name="MOT_PITCH_EFF" value="0.0055"/>
+    <define name="MOT_PITCH_EFF" value="0.0059"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="30.0"/>
