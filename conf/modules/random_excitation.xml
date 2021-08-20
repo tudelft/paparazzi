@@ -7,8 +7,8 @@
     <dl_settings>
       <dl_settings NAME="RandExcit">
         <dl_setting MAX="1000" MIN="0" STEP="1" VAR="rand_excitation_amp" shortname="amplitude" module="modules/random_excitation/random_excitation"/>
-        <dl_setting MAX="1000" MIN="0" STEP="1" VAR="excitation_group1_amp" shortname="group1_amp" module="modules/random_excitation/random_excitation"/>
-        <dl_setting MAX="1000" MIN="0" STEP="1" VAR="excitation_group2_amp" shortname="group2_amp" module="modules/random_excitation/random_excitation"/>
+        <dl_setting MAX="3000" MIN="0" STEP="1" VAR="excitation_group1_amp" shortname="group1_amp" module="modules/random_excitation/random_excitation"/>
+        <dl_setting MAX="3000" MIN="0" STEP="1" VAR="excitation_group2_amp" shortname="group2_amp" module="modules/random_excitation/random_excitation"/>
       </dl_settings>
     </dl_settings>
   </settings>
@@ -19,7 +19,7 @@
   <periodic fun="random_excitation_periodic()" freq="1.0" autorun="TRUE"/>
   <makefile>
     <file name="random_excitation.c"/>
-    <define name="RANDOM_EXCITATION_AMPLITUDE" value="100"/>
+    <define name="RANDOM_EXCITATION_AMPLITUDE" value="500"/>
     <define name="RANDOM_EXCITATION_CUTOFF_FREQUENCY" value="0.25"/>
     <test/>
   </makefile>
