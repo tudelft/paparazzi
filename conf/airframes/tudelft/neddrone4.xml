@@ -73,6 +73,7 @@
       <define name="RADIO_FMODE"       value="0"/> <!-- Throttle curve select -->
       <define name="RADIO_FBW_MODE"    value="0"/> <!-- Switch between AP and FBW control -->
       <define name="RADIO_KILL_SWITCH" value="0"/>
+      <module name="ins"           type="ekf2" />
     </target>
 
     <module name="telemetry"     type="transparent">
@@ -89,7 +90,6 @@
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
 
-    <module name="ins"           type="ekf2" />
 
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>

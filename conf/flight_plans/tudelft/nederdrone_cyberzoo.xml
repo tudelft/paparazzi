@@ -46,13 +46,12 @@
       <call_once fun="NavKillThrottle()"/>
       <set value="false" var="approaching_rope"/>
       <set value="0" var="take_heading_control"/>
-
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block key="r" name="Start Engine">
       <call_once fun="NavResurrect()"/>
       <call_once fun="NavSetWaypointHere(WP_ROPE)"/>
-      <call_once fun="waypoint_set_alt(WP_ROPE, GetPosAlt())"/>
+      <call_once fun="waypoint_set_alt(WP_ROPE, GetPosAlt()+hook_length)"/>
       <set value="stateGetNedToBodyEulers_f()->theta" var="takeoff_pitch"/>
       <set value="stateGetNedToBodyEulers_f()->psi" var="rope_heading"/>
       <attitude pitch="0" roll="0" throttle="0.0" until="stage_time>0" vmode="throttle"/>
@@ -76,7 +75,7 @@
     </block>
     <block name="Approach Rope">
       <set value="true" var="approaching_rope"/>
-      <stay wp="ROPE" alt="WaypointAlt(WP_ROPE)+hook_length"/>
+      <stay wp="ROPE" alt="WaypointAlt(WP_ROPE)"/>
     </block>
     <block name="Landed">
       <call_once fun="NavKillThrottle()"/>
