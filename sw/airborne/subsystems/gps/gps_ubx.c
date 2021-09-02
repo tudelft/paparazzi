@@ -83,13 +83,13 @@ extern struct GpsRelposNED gps_relposned;
 extern struct RtcmMan rtcm_man;
 
 #ifndef INJECT_BUFF_SIZE
-#define INJECT_BUFF_SIZE 512
+#define INJECT_BUFF_SIZE 1024 + 6
 #endif
 /* RTCM control struct type */
 struct rtcm_t {
   uint32_t nbyte;                     ///< number of bytes in message buffer
   uint32_t len;                       ///< message length (bytes)
-  uint8_t buff[INJECT_BUFF_SIZE + 1]; ///< message buffer
+  uint8_t buff[INJECT_BUFF_SIZE];     ///< message buffer
 };
 struct rtcm_t rtcm = { 0 };
 
