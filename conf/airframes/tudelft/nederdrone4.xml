@@ -93,7 +93,10 @@
     </module>
     <module name="imu"           type="mpu6000"/>
     <!--module name="gps"           type="datalink"/-->
-    <module name="gps"           type="ubx_ucenter"/>
+    <module name="gps"           type="ublox">
+      <configure name="UBX_GPS_BAUD" value="B460800"/>
+      <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
+    </module>
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
 

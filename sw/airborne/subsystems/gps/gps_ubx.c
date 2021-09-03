@@ -60,7 +60,7 @@
 #define GOT_CHECKSUM1 8
 
 #define RXM_RTCM_VERSION        0x02
-#define NAV_RELPOSNED_VERSION   0x00
+#define NAV_RELPOSNED_VERSION   0x01
 /* last error type */
 #define GPS_UBX_ERR_NONE         0
 #define GPS_UBX_ERR_OVERRUN      1
