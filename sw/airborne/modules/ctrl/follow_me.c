@@ -80,8 +80,10 @@ static float ground_speed;
 static float ground_climb;
 static float ground_course;
 
-float dist = FOLLOW_ME_DISTANCE;
-float height = FOLLOW_ME_HEIGHT;
+uint32_t follow_me_last_time_ms = 0;
+
+// Speed of the target point
+struct NedCoor_f target_speed;
 
 void follow_me_init(void)
 {
@@ -154,12 +156,12 @@ void follow_me_set_wp(uint8_t wp_id, float speed)
   }
 
   static float gc_cos_filt = 0, gc_sin_filt = 0;
+  // Filter the cosine and sine of the ground course because the course may wrap around
+  gc_cos_filt = gc_cos_filt * follow_me_filt + cosf(ground_course/180.*M_PI) * (1 - follow_me_filt);
+  gc_sin_filt = gc_sin_filt * follow_me_filt + sinf(ground_course/180.*M_PI) * (1 - follow_me_filt);
 
   // Integrate NE over the time (only if information from the ground is valid)
   if(target_valid && ground_set && ground_time_msec+FOLLOW_ME_GROUND_TIMEOUT > get_sys_time_msec() && (diff_time_ms > 0 || follow_me_advance_ms > 0)) {
-    // Filter the cosine and sine of the ground course because the course may wrap around
-    gc_cos_filt = gc_cos_filt * follow_me_filt + cosf(ground_course/180.*M_PI) * (1 - follow_me_filt);
-    gc_sin_filt = gc_sin_filt * follow_me_filt + sinf(ground_course/180.*M_PI) * (1 - follow_me_filt);
 
     // Add an advance and the difference in measured time multiplied by the speed
     float int_dist_m = (follow_me_advance_ms + diff_time_ms) / 1000.f * ground_speed;
@@ -167,14 +169,22 @@ void follow_me_set_wp(uint8_t wp_id, float speed)
     target_pos.y += int_dist_m * gc_sin_filt;
   }
 
-  static uint32_t last_time_ms = 0;
+  if ((ground_set && state.ned_initialized_i && ground_time_msec+FOLLOW_ME_GROUND_TIMEOUT > get_sys_time_msec())) {
+    // Calculate speed in NED in m/s
+    target_speed.x = ground_speed * gc_cos_filt;
+    target_speed.y = ground_speed * gc_sin_filt;
+    target_speed.z = ground_climb;
+  }
+
+  static float dist = FOLLOW_ME_DISTANCE;
+  static float height = FOLLOW_ME_HEIGHT;
   static float fmh_cos_filt = 0, fmh_sin_filt = 0;
 
   // Update the waypoint only when target is valid
   if(target_valid) {
     // Move the distance and height according to the given speed
-    if(last_time_ms != 0 && speed != 0) {
-      float time_diff = (get_sys_time_msec() - last_time_ms) / 1000.f;
+    if(follow_me_last_time_ms != 0 && speed != 0) {
+      float time_diff = (get_sys_time_msec() - follow_me_last_time_ms) / 1000.f;
       dist   -= speed * time_diff;
       height -= speed * time_diff;
 
@@ -209,6 +219,6 @@ void follow_me_set_wp(uint8_t wp_id, float speed)
   }
 
   // Allways update the time to avoid big jumps in distance and height
-  last_time_ms = get_sys_time_msec();
+  follow_me_last_time_ms = get_sys_time_msec();
 }
 
