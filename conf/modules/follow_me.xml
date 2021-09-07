@@ -3,7 +3,7 @@
 <module name="follow_me" dir="ctrl">
   <doc>
     <description>
-      Follow a ground based object which is transmitting the TARGET_POS datalink message or using RTK GPS.
+      Follow a ground based object which is transmitting the TARGET_POS datalink message.
       This can be done using gpsd2ivy.
     </description>
     <section name="FOLLOW_ME" prefix="FOLLOW_ME_">
