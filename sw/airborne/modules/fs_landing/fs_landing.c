@@ -5,7 +5,6 @@
 #include "fs_landing.h"
 #include "feed_forward.h"
 #include "pilot_test.h"
-#include "actuator_id.h"
 #include "cyclic_control.h"
 #include "impulse_control.h"
 #include "actuator_freq_test.h"
@@ -25,7 +24,6 @@ struct fs_landing_t current_actuator_values;
 
 uint8_t is_spinning = false;
 uint8_t pilot_has_control = false;
-uint8_t act_identification_active = false;
 uint8_t cyclic_control_active = false;
 uint8_t impulse_control_active = false;
 uint8_t has_ff_started = false;
@@ -41,9 +39,7 @@ float err_test = 5;
 
 #if PERIODIC_TELEMETRY
 float fs_landing_dbg_values[N_DBG_VALUES] = {0};
-#endif
 
-#if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 static void send_payload_float(struct transport_tx *trans, struct link_device *dev)
 {
@@ -82,11 +78,9 @@ void fs_landing_run()
 //            add_chirp(&current_actuator_values);
       if (pilot_has_control) {
         pilot_actuator_values(&current_actuator_values);  // RC Channels control actuator deflection
-      } else if (act_identification_active) {
-        add_chirp(&current_actuator_values);  // +- sinusoidally varying delta to one of the actuators
       } else if (cyclic_control_active) {
         cyclic_control_values(&current_actuator_values);
-      }
+      }  // TODO Add controller here
       if (impulse_control_active) {
         impulse_control_values(&current_actuator_values);
       }
@@ -105,7 +99,6 @@ void fs_landing_run()
   } else {
     is_spinning = false;
     has_ff_started = false;
-    act_identification_active = false;
     freq_test_active = false;
   }
   return;
@@ -175,15 +168,6 @@ int32_t get_matching_motl_val(int32_t val) {
 void fs_landing_pilot_control_handler(uint8_t active)
 {
   pilot_has_control = active;
-}
-
-void fs_landing_actuator_id_handler(uint8_t active)
-{
-  if (is_spinning) {
-    act_identification_active = active;
-  } else {
-    act_identification_active = false;
-  }
 }
 
 void fs_landing_set_actuator_values()

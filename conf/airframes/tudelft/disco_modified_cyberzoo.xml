@@ -157,7 +157,7 @@
     <module name="send_imu_mag_current"/> <!-- Can be Disabled after one time calibration, quite the same for all Discos -->
 
 <!--    <module name="geo_mag"/>-->
-    <module name="nav" type="line"/>
+<!--    <module name="nav" type="line"/>-->
 
     <module name="mag" type="hmc58xx">
       <!-- <define name="MAG_TO_IMU_THETA" value="6" unit="deg"/>-->

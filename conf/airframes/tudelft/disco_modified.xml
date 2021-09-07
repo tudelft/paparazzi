@@ -97,9 +97,9 @@
 
     <!-- If you build in your GPS where the MAGNETOMETER resides on the board
   not aligned with the Accelerometer/Gyro axis then set these values -->
-    <define name="MAG_TO_IMU_PHI" value="0.0" unit="deg"/>
-    <define name="MAG_TO_IMU_PSI" value="0.0" unit="deg"/>
-    <define name="MAG_TO_IMU_THETA" value="0.0" unit="deg"/>
+<!--    <define name="MAG_TO_IMU_PHI" value="0.0" unit="deg"/>-->
+<!--    <define name="MAG_TO_IMU_PSI" value="0.0" unit="deg"/>-->
+<!--    <define name="MAG_TO_IMU_THETA" value="0.0" unit="deg"/>-->
 
 <!--    <module name="baro_ms5611_spi" >-->
 <!--      <configure name="MS5611_SPI_DEV" value="spi1"/>-->
@@ -124,7 +124,7 @@
 
     <module name="telemetry" type="transparent">
       <configure name="MODEM_PORT" value="UART2"/> <!--  Telem1 on pixracer -->
-      <configure name="MODEM_BAUD" value="B57600"/>
+      <configure name="MODEM_BAUD" value="B115200"/>
     </module>
 
     <module name="gps" type="ublox">
@@ -181,7 +181,7 @@
     <!--<module name="imu_quality_assessment"/>--><!--needs fixing for FW fix test then disable after initial tuning-->
     <module name="send_imu_mag_current"/> <!-- Can be Disabled after one time calibration, quite the same for all Discos -->
 
-    <module name="geo_mag"/>
+    <module name="geo_mag"/>  <!-- TODO Comment? -->
     <module name="nav" type="line"/>
 
     <module name="mag" type="hmc58xx">

@@ -17,7 +17,7 @@ double old_gps_yaw = 0;
 float filtered_yaw = 0;
 
 float heading_weight = 0.20;
-int ctr = 0;
+int cmpl_dbg_ctr = 0;
 
 void is_measurement_delayed(float heading);
 
@@ -44,11 +44,11 @@ float my_complementary_filter(float heading) {
   fs_landing_dbg_values[0] = heading;
   fs_landing_dbg_values[1] = stateGetBodyRates_f()->r;
   fs_landing_dbg_values[2] = filtered_yaw;
-  if (ctr == 20) {
-    ctr = 0;
+  if (cmpl_dbg_ctr == 20) {
+    cmpl_dbg_ctr = 0;
     DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, N_DBG_VALUES, fs_landing_dbg_values);
   } else {
-    ctr++;
+    cmpl_dbg_ctr++;
   }
   #endif
 #endif
