@@ -589,7 +589,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
           double lon = UBX_NAV_PVT_lon(gps_ubx.msg_buf) / 1e7;
           float gSpeed = UBX_NAV_PVT_gSpeed(gps_ubx.msg_buf) / 1000.;
           float headMot = UBX_NAV_PVT_headMot(gps_ubx.msg_buf) / 1e5;
-          float alt = UBX_NAV_PVT_hMSL(gps_ubx.msg_buf) / 1000.;
+          float alt = UBX_NAV_PVT_heigth(gps_ubx.msg_buf) / 1000.;
           float velD = UBX_NAV_PVT_velD(gps_ubx.msg_buf) / 1000.;
           uint32_t iTOW = UBX_NAV_PVT_iTOW(gps_ubx.msg_buf);
 

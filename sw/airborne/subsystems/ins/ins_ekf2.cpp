@@ -520,7 +520,6 @@ void ins_ekf2_change_param(int32_t unk)
   ekf_params->mag_fusion_type = ekf2_params.mag_fusion_type = unk;
 }
 
-<<<<<<< HEAD
 void ins_ekf2_remove_gps(int32_t mode)
 {
   if (mode) {
@@ -528,10 +527,10 @@ void ins_ekf2_remove_gps(int32_t mode)
   } else {
     ekf_params->fusion_mode = ekf2_params.fusion_mode = INS_EKF2_FUSION_MODE;
   }
-=======
+}
+
 void ins_ekf2_change_param_vdist(int32_t unk) {
   ekf_params->vdist_sensor_type = ekf2_params.vdist_sensor_type = unk;
->>>>>>> Add setting to change main vdist sensor
 }
 
 /** Publish the attitude and get the new state

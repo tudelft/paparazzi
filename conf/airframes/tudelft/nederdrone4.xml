@@ -83,7 +83,7 @@
 
     <module name="follow_me">
       <define name="FOLLOW_ME_DISTANCE" value="40"/>
-      <define name="FOLLOW_ME_HEIGHT" value="27"/>
+      <define name="FOLLOW_ME_HEIGHT" value="15"/>
     </module>
 
     <module name="telemetry"     type="transparent">
