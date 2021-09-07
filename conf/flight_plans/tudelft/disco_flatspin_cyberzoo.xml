@@ -1,0 +1,50 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="8" name="Disco FlatSpin TU Delft Cyberzoo" security_height="0.4">
+  <header>
+    #include "subsystems/datalink/datalink.h"
+    #include "subsystems/electrical.h"
+    #include "subsystems/radio_control.h"
+    #include "subsystems/ahrs.h"
+</header>
+  <waypoints>
+    <waypoint lat="51.990631" lon="4.376796" name="HOME"/>
+    <waypoint name="GOAL" x="1.9" y="1.0"/>
+    <waypoint name="STDBY" x="1.9" y="1.0"/>
+    <waypoint lat="51.9905834" lon="4.3767710" name="_CZ1"/>
+    <waypoint lat="51.9906465" lon="4.3767025" name="_CZ2"/>
+    <waypoint lat="51.9906882" lon="4.376805" name="_CZ3"/>
+    <waypoint lat="51.9906238" lon="4.3768729" name="_CZ4"/>
+
+    <waypoint lat="51.9906430" lon="4.3767918" name="_OZ1"/>
+    <waypoint lat="51.9906349" lon="4.3767708" name="_OZ2"/>
+    <waypoint lat="51.9906231" lon="4.3767826" name="_OZ3"/>
+    <waypoint lat="51.9906256" lon="4.3767996" name="_OZ4"/>
+  </waypoints>
+  <sectors>
+    <sector color="red" name="CyberZoo">
+      <corner name="_CZ1"/>
+      <corner name="_CZ2"/>
+      <corner name="_CZ3"/>
+      <corner name="_CZ4"/>
+    </sector>
+    <sector color="#FF9922" name="Grid">
+      <corner name="_OZ1"/>
+      <corner name="_OZ2"/>
+      <corner name="_OZ3"/>
+      <corner name="_OZ4"/>
+    </sector>
+  </sectors>
+  <exceptions>
+  </exceptions>
+  <blocks>
+    <block key="g" name="START" strip_button="Go" strip_icon="lookfore.png">
+      <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
+      <stay wp="GOAL"/>
+    </block>
+    <block name="STOP">
+      <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
+      <stay wp="STDBY"/>
+    </block>
+  </blocks>
+</flight_plan>

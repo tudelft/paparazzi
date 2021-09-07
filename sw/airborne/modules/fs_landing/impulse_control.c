@@ -8,7 +8,7 @@
 #include "my_complementary_filter.h"
 #include "impulse_control.h"
 
-#define IMPULSE_CONTROL_DEBUG TRUE
+#define IMPULSE_CONTROL_DEBUG FALSE
 
 uint8_t impulse_use_motor_l = false;
 uint8_t impulse_use_motor_r = false;

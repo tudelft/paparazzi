@@ -27,23 +27,24 @@
         <dl_setting min="-9600" max="9600" step="50" shortname="ELEV_L Spin" var="elev_l_spinning" type="float" module="fs_landing/feed_forward" />
         <dl_setting min="-9600" max="9600" step="50" shortname="ELEV_R Spin" var="elev_r_spinning" type="float" module="fs_landing/feed_forward" />
       </dl_settings>
-      <dl_settings name="Pilot Control">
-        <dl_setting min="0" max="1" step="1" shortname="Active" var="pilot_has_control" type="uint8_t" module="fs_landing/fs_landing" handler="pilot_control_handler" />
-      </dl_settings>
-      <dl_settings name="Actuator Identification">
-        <dl_setting min="0" max="5" step="1" var="selected_actuator" shortname="Actuator No" type="uint8_t" module="fs_landing/actuator_id"/>
-        <dl_setting min="0" max="19400" step="10" var="max_delta_amplitude" shortname="Max Act Delta" type="float" module="fs_landing/actuator_id"/>
-        <dl_setting min="0" max="1" step="1" values="Inactive|Active" var="act_identification_active" shortname="Activate ID" type="uint8_t" module="fs_landing/fs_landing" handler="actuator_id_handler">
-          <strip_button name="Act_ID Start" value="1"/>
-          <strip_button name="Act_ID Stop" value="0"/>
-        </dl_setting>
+<!--      <dl_settings name="Pilot Control">-->
+<!--        <dl_setting min="0" max="1" step="1" shortname="Active" var="pilot_has_control" type="uint8_t" module="fs_landing/fs_landing" handler="pilot_control_handler" />-->
+<!--      </dl_settings>-->
+<!--      <dl_settings name="Actuator Identification">-->
+<!--        <dl_setting min="0" max="5" step="1" var="selected_actuator" shortname="Actuator No" type="uint8_t" module="fs_landing/actuator_id"/>-->
+<!--        <dl_setting min="0" max="19400" step="10" var="max_delta_amplitude" shortname="Max Act Delta" type="float" module="fs_landing/actuator_id"/>-->
+<!--        <dl_setting min="0" max="1" step="1" values="Inactive|Active" var="act_identification_active" shortname="Activate ID" type="uint8_t" module="fs_landing/fs_landing" handler="actuator_id_handler">-->
+<!--          <strip_button name="Act_ID Start" value="1"/>-->
+<!--          <strip_button name="Act_ID Stop" value="0"/>-->
+<!--        </dl_setting>-->
+<!--      </dl_settings>-->
+      <dl_settings name="CController">
+        <dl_setting min="0" max="10" step="0.01" var="cc_kp_gain" shortname="P Gain" type="float" module="fs_landing/cyclic_controller"/>
+        <dl_setting min="0" max="10" step="0.01" var="cc_kd_gain" shortname="D Gain" type="float" module="fs_landing/cyclic_controller"/>
+        <dl_setting min="0" max="1" step="0.05" var="max_amplitude" shortname="Ampl" type="float" module="fs_landing/cyclic_controller"/>
       </dl_settings>
       <dl_settings name="Cyclic Control">
-<!--        <dl_setting min="0" max="1" var="both_actuators" step="1" type="uint8_t" module="fs_landing/cyclic_control" />-->
         <dl_setting min="0" max="1" var="cyclic_control_active" step="1" type="uint8_t" module="fs_landing/fs_landing" />
-<!--        <dl_setting min="0" max="5" step="0.01" var="kr" type="float" module="fs_landing/cyclic_control" />-->
-<!--        <dl_setting min="0" max="5" step="0.01" var="kp" type="float" module="fs_landing/cyclic_control" />-->
-<!--        <dl_setting min="0" max="180" step="1" var="phase_lead" type="float" module="fs_landing/cyclic_control" />-->
         <dl_setting min="0" max="1" step="1" var="use_motor_l" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="use_motor_r" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="use_elevon_l" type="uint8_t" module="fs_landing/cyclic_control"/>
@@ -51,6 +52,7 @@
         <dl_setting min="0" max="1" step="1" var="use_square_sig" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="phase_pilot_control" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="balance_motor_forces" type="uint8_t" module="fs_landing/cyclic_control"/>
+        <dl_setting min="0" max="1" step="1" var="use_controller" type="uint8_t" module="fs_landing/cyclic_control" handler="use_controller_handler" />
         <dl_setting min="-1" max="1" step="0.1" var="ml_avg" shortname="Avg ML" type="float" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="0.1" var="ml_delta" shortname="Half Amp ML" type="float" module="fs_landing/cyclic_control"/>
         <dl_setting min="-1" max="1" step="0.1" var="mr_avg" shortname="Avg MR" type="float" module="fs_landing/cyclic_control"/>
@@ -105,8 +107,8 @@
     <file name="fs_landing.c"/>
     <file name="feed_forward.c"/>
     <file name="pilot_test.c"/>
-    <file name="actuator_id.c"/>
     <file name="cyclic_control.c"/>
+    <file name="cyclic_controller.c"/>
     <file name="impulse_control.c"/>
     <file name="actuator_freq_test.c"/>
     <file name="my_complementary_filter.c"/>
