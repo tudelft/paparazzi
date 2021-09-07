@@ -22,12 +22,12 @@
  *
  */
 
-#include <stdio.h>  
+#include <stdio.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <arpa/inet.h> 
+#include <arpa/inet.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -157,7 +157,7 @@ void *udp_endpoint(void *arg) {
   /* Enable broadcasting */
   int one = 1;
   setsockopt(ep->fd, SOL_SOCKET, SO_BROADCAST, &one, sizeof(one));
-  
+
   /* Create the input address */
 	struct sockaddr_in server;
 	server.sin_family = AF_INET;
@@ -182,7 +182,7 @@ void *udp_endpoint(void *arg) {
       continue;
 
     if(verbose) printf("Got packet at endpoint [%s:%d] with length %d\r\n", ep->server_addr, ep->server_port, n);
-    
+
     // Send the message to the handler
     packet_handler(ep, buffer, n);
   }
@@ -347,7 +347,7 @@ void *uart_endpoint(void *arg) {
     // We succsfully received some bytes
     else if(len > 0) {
       if(verbose) printf("Got packet at endpoint [%s:%d] with length %d\r\n", ep->devname, ep->baudrate, len);
-    
+
       // Send the message to the handler
       packet_handler(ep, buffer, len);
     }
@@ -487,6 +487,7 @@ void gps_ubx_parse(uint8_t c)
     case GOT_LEN1:
       gps_ubx.len |= (c << 8);
       if (gps_ubx.len > GPS_UBX_MAX_PAYLOAD) {
+        gps_ubx.len = 0;
         if(verbose) printf("GPS Ublox message to long\r\n");
         goto error;
       }
@@ -668,10 +669,10 @@ int main(int argc, char** argv) {
     "   -e --endpoint [endpoint_str]           Endpoint address of the GPS\n"
     "   -h --help                              Display this help\n"
     "   -v --verbose                           Print verbose information\n";
-  
+
   int c;
   int option_index = 0;
-  while((c = getopt_long(argc, argv, "e:hv", long_options, &option_index)) != -1) {  
+  while((c = getopt_long(argc, argv, "e:hv", long_options, &option_index)) != -1) {
     switch (c) {
       case 'e':
         // Parse the endpoint argument UDP
@@ -720,6 +721,6 @@ int main(int argc, char** argv) {
   /*while(true) {
     usleep(50000);
   }*/
-  
+
   return 0;
 }
