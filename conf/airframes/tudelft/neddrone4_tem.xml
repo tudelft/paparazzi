@@ -1,6 +1,6 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
-<!-- This is a Nedderdrone
+<!-- This is a Nedderdrone with Trailing edge motors
      * Airframe:    TUD00289
      * Autopilot:   Pixhawk 4
      * Actuators:   12x T-Motor ESC + Motors and 8x Servos (all CAN)
@@ -21,9 +21,9 @@
         <configure name="SBUS_PORT" value="UART3"/>
       </module>
 
-      <module name="airspeed" type="ms45xx_i2c">
-        <define name="USE_I2C4"/>
-        <define name="MS45XX_I2C_DEV" value="i2c4"/>
+      <module name="airspeed_ets.xml">
+        <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>
+        <define name="AIRSPEED_ETS_SCALE" value="1.24"/>
       </module>
 
       <module name="scheduling_indi_simple"/>
@@ -38,30 +38,23 @@
       <module name="flight_recorder"/>
 
       <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
-      <module name="adc_generic">
-        <configure name="ADC_CHANNEL_GENERIC1" value="ADC_5"/>
-        <configure name="ADC_CHANNEL_GENERIC2" value="ADC_6"/>
-      </module>
 
       <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
       <define name="RADIO_FMODE"       value="RADIO_AUX2"/> <!-- Throttle curve select -->
       <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> <!-- Switch between AP and FBW control -->
       <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
 
-      <!-- Use the external mag (not in NPS target as then it needs to listen to all) -->
-      <define name="INS_EKF2_MAG_ID" value="MAG_LIS3MDL_SENDER_ID"/>
-      <!-- <module name="ahrs" type="int_cmpl_quat"> -->
-        <!-- Use the optitrack heading instead of magnetometer -->
-        <!-- <configure name="USE_MAGNETOMETER" value="FALSE"/>
+      <!-- <module name="ahrs" type="int_cmpl_quat">
+        <configure name="USE_MAGNETOMETER" value="FALSE"/>
         <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
         <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
       </module> -->
-
-      <!-- <module name="ins" type="extended">
+      
+      <!--module name="ins" type="extended">
         <define name="INS_USE_GPS_ALT" value="1"/>
         <define name="INS_USE_GPS_ALT_SPEED" value="1"/>
         <define name="INS_VFF_R_GPS" value="0.01"/>
-      </module> -->
+      </module-->
     </target>
 
     <target name="nps" board="pc">
@@ -80,11 +73,6 @@
       <define name="RADIO_FBW_MODE"    value="0"/> <!-- Switch between AP and FBW control -->
       <define name="RADIO_KILL_SWITCH" value="0"/>
     </target>
-
-    <module name="follow_me">
-      <define name="FOLLOW_ME_DISTANCE" value="40"/>
-      <define name="FOLLOW_ME_HEIGHT" value="27"/>
-    </module>
 
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B115200"/>
@@ -159,10 +147,10 @@
     <servo name="MOTOR_4" no="3" min="-8191" neutral="1500" max="8191"/>
     <servo name="MOTOR_5" no="4" min="-8191" neutral="1500" max="8191"/>
     <servo name="MOTOR_6" no="5" min="-8191" neutral="1500" max="8191"/>
-    <servo name="AIL_1" no="6" min="6000" neutral="0" max="-6000"/>
-    <servo name="FLAP_1" no="7" min="6000" neutral="0" max="-6000"/>
-    <servo name="FLAP_2" no="8" min="-6000" neutral="0" max="6000"/>
-    <servo name="AIL_2" no="9" min="-6000" neutral="0" max="6000"/>
+    <servo name="AIL_1" no="6" min="-3000" neutral="0" max="3000"/>
+    <servo name="FLAP_1" no="7" min="-3000" neutral="0" max="3000"/>
+    <servo name="FLAP_2" no="8" min="3000" neutral="0" max="-3000"/>
+    <servo name="AIL_2" no="9" min="3000" neutral="0" max="-3000"/>
   </servos>
 
   <!-- CAN BUS 2 (Back Wing) -->
@@ -198,9 +186,9 @@
     <!-- backleft left (CW), backleft mid (CCW), backleft right (CW), backright left (CCW), backright mid (CW), backright right (CCW) -->
     <define name="NB_MOTOR"    value="12"/>
     <define name="SCALE"       value="256"/>
-    <define name="ROLL_COEF"   value="{256,  157,   56,  -56, -157, -256,  256,  157,   56,  -56, -157, -256}"/>
+    <define name="ROLL_COEF"   value="{256,  253,  159, -159, -253, -256,  256,  157,   56,  -56, -157, -256}"/>
     <define name="PITCH_COEF"  value="{256,  256,  256,  256,  256,  256, -256, -256, -256, -256, -256, -256}"/>
-    <define name="YAW_COEF"    value="{256, -256,  256, -256,  256, -256, -256,  256, -256,  256, -256,  256}"/>
+    <define name="YAW_COEF"    value="{251, -256,  252, -252,  256, -251, -256,  252, -254,  254, -252,  256}"/>
     <!--<define name="YAW_COEF"    value="{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}"/>-->
     <define name="THRUST_COEF" value="{256,  256,  256,  256,  256,  256,  256,  256,  256,  256,  256,  256}"/>
   </section>
@@ -223,14 +211,14 @@
     <set servo="MOTOR_12"  value="($th_hold? -9600 : motor_mixing.commands[11])"/>
 
     <!-- Removed ApplyDiff for differential control -->
-    <set servo="AIL_1"     value="-2*@PITCH + (  2*@YAW)"/>
-    <set servo="AIL_2"     value="-2*@PITCH + (- 2*@YAW)"/>
-    <set servo="AIL_3"     value=" 2*@PITCH + (  2*@YAW)"/>
-    <set servo="AIL_4"     value=" 2*@PITCH + (- 2*@YAW)"/>
-    <set servo="FLAP_1"    value="-2*@PITCH + (  2*@YAW)"/>
-    <set servo="FLAP_2"    value="-2*@PITCH + (- 2*@YAW)"/>
-    <set servo="FLAP_3"    value=" 2*@PITCH + (  2*@YAW)"/>
-    <set servo="FLAP_4"    value=" 2*@PITCH + (- 2*@YAW)"/>
+    <set servo="AIL_1"     value=" 2*@YAW"/>
+    <set servo="AIL_2"     value="-2*@YAW"/>
+    <set servo="AIL_3"     value=" 2*@YAW"/>
+    <set servo="AIL_4"     value="-2*@YAW"/>
+    <set servo="FLAP_1"    value=" 2*@YAW"/>
+    <set servo="FLAP_2"    value="-2*@YAW"/>
+    <set servo="FLAP_3"    value=" 2*@YAW"/>
+    <set servo="FLAP_4"    value="-2*@YAW"/>
   </command_laws>
 
   <section name="MISC">
@@ -365,7 +353,7 @@
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
     <!-- mode switch on joystick channel 5 (axis numbering starting at zero) -->
     <define name="JS_AXIS_MODE" value="4"/>
-    <define name="DEBUG_SPEED_SP" value="false"/>
+    <define name="DEBUG_SPEED_SP" value="true"/>
   </section>
 
   <section name="AUTOPILOT">
