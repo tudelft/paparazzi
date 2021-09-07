@@ -151,7 +151,7 @@
     </block>
     <block name="Approach Rope">
       <set value="true" var="approaching_rope"/>
-      <stay wp="ROPE" alt="WaypointAlt(WP_ROPE)"/>
+      <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed*0.5)" wp="ROPE" alt="WaypointAlt(WP_ROPE)"/>
     </block>
 
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">

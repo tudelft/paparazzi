@@ -28,6 +28,11 @@
 
 #include "std.h"
 
+// Speed of the target point
+extern struct NedCoor_f target_speed;
+
+extern uint32_t follow_me_last_time_ms;
+
 /** distance from the ground gps
  */
 extern float follow_me_distance;

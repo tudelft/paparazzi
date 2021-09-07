@@ -46,6 +46,8 @@
 #include "subsystems/abi.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 
+#include "modules/ctrl/follow_me.h"
+
 
 // The acceleration reference is calculated with these gains. If you use GPS,
 // they are probably limited by the update rate of your GPS. The default
@@ -835,6 +837,10 @@ struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_ga
     // Bound the setpoint velocity vector
     float max_h_speed = Min(nav_max_speed, max_speed_decel);
     vect_bound_in_2d(&speed_sp_return, max_h_speed);
+  }
+
+  if(follow_me_last_time_ms + 500 > get_sys_time_msec()) {
+    VECT3_ADD(speed_sp_return, target_speed);
   }
 
   // Bound vertical speed setpoint
