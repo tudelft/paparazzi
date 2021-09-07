@@ -93,10 +93,12 @@
     </block>
 
     <block name="follow_module">
+      <call_once fun="nav_set_heading_deg(follow_me_heading)"/>
       <set var="force_forward" value="FALSE"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
     </block>
     <block name="follow_module_diag">
+      <call_once fun="nav_set_heading_deg(follow_me_heading)"/>
       <set var="force_forward" value="FALSE"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed)" wp="FOLLOW"/>
     </block>
