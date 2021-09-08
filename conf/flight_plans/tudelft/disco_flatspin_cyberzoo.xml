@@ -16,10 +16,10 @@
     <waypoint lat="51.9906882" lon="4.376805" name="_CZ3"/>
     <waypoint lat="51.9906238" lon="4.3768729" name="_CZ4"/>
 
-    <waypoint lat="51.9906430" lon="4.3767918" name="_OZ1"/>
-    <waypoint lat="51.9906349" lon="4.3767708" name="_OZ2"/>
-    <waypoint lat="51.9906231" lon="4.3767826" name="_OZ3"/>
-    <waypoint lat="51.9906256" lon="4.3767996" name="_OZ4"/>
+    <waypoint lat="51.9906199" lon="4.3767856" name="_OZ1"/>  <!-- bottom left-->
+    <waypoint lat="51.9906271" lon="4.3768053" name="_OZ2"/>  <!-- bottom right-->
+    <waypoint lat="51.9906370" lon="4.3767947" name="_OZ3"/>  <!-- top right-->
+    <waypoint lat="51.9906312" lon="4.3767758" name="_OZ4"/>  <!-- top left-->
   </waypoints>
   <sectors>
     <sector color="red" name="CyberZoo">
