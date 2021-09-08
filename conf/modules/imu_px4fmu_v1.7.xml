@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="imu_px4fmu_v1.7" dir="imu">
+<module name="imu_px4fmu_v1.7" dir="imu" task="sensors">
   <doc>
     <description>
       MPU6000 via SPI and HMC5883 via I2C on the PX4FMU v1.7 board
@@ -10,8 +10,12 @@
     <define name="PX4FMU_GYRO_RANGE" value="MPU60X0_GYRO_RANGE_2000" description="gyroscope range setting of the MPU"/>
     <define name="PX4FMU_ACCEL_RANGE" value="MPU60X0_ACCEL_RANGE_16G" description="accelerometer range setting of the MPU"/>
   </doc>
-  <autoload name="imu_common"/>
+  <dep>
+    <depends>spi_master,i2c,imu_common</depends>
+    <provides>imu,mag</provides>
+  </dep>
   <autoload name="imu_nps"/>
+  <autoload name="imu_sim"/>
   <header>
     <file name="imu_px4fmu.h" dir="subsystems/imu"/>
   </header>
@@ -31,9 +35,6 @@
     <file name="mpu60x0_spi.c" dir="peripherals"/>
     <file name="hmc58xx.c" dir="peripherals"/>
     <file name="imu_px4fmu.c" dir="subsystems/imu"/>
-    <raw>
-      include $(CFG_SHARED)/spi_master.makefile
-    </raw>
     <test>
       <define name="IMU_TYPE_H" value="imu/imu_px4fmu.h" type="string"/>
       <define name="SPI_MASTER"/>

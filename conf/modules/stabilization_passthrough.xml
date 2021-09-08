@@ -1,12 +1,15 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="stabilization_passthrough" dir="stabilization">
+<module name="stabilization_passthrough" dir="stabilization" task="control">
   <doc>
     <description>
       Passthrough controller for rotorcraft
     </description>
   </doc>
-  <autoload name="stabilization" type="rotorcraft"/>
+  <dep>
+    <depends>stabilization_rotorcraft,@attitude_command</depends>
+    <provides>commands</provides>
+  </dep>
   <header>
     <file name="stabilization_attitude_passthrough.h"/>
   </header>

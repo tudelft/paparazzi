@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="imu_krooz_sd_memsic" dir="imu">
+<module name="imu_krooz_sd_memsic" dir="imu" task="sensors">
   <doc>
     <description>
       IMU on KroozSD board.
@@ -17,8 +17,12 @@
       <define name="MAG_Z_SENS" value="4.90788848" integer="16"/>
     </section>
   </doc>
-  <autoload name="imu_common"/>
+  <dep>
+    <depends>spi_master,i2c,imu_common</depends>
+    <provides>imu,mag</provides>
+  </dep>
   <autoload name="imu_nps"/>
+  <autoload name="imu_sim"/>
   <header>
     <file name="imu_krooz.h" dir="boards/krooz"/>
   </header>
@@ -42,8 +46,5 @@
     <file name="hmc58xx.c" dir="peripherals"/>
     <file name="imu_krooz_memsic.c" dir="boards/krooz"/>
     <file_arch name="imu_krooz_sd_arch.c" dir="subsystems/imu"/>
-    <raw>
-include $(CFG_SHARED)/spi_master.makefile
-    </raw>
   </makefile>
 </module>

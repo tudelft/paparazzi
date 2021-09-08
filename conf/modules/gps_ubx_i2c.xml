@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="gps_ubx_i2c" dir="gps">
+<module name="gps_ubx_i2c" dir="gps" task="sensors">
   <doc>
     <description>
       U-blox GPS (I2C)
@@ -9,8 +9,12 @@
     <configure name="GPS_UBX_I2C_DEV" value="i2cX" description="set i2c peripheral (default: i2c1)"/>
   </doc>
 
-  <depends>gps_ublox</depends>
-  <autoload name="gps_ublox"/>
+  <dep>
+    <depends>i2c,gps_ublox</depends>
+    <provides>gps</provides>
+  </dep>
+  <autoload name="gps_nps"/>
+  <autoload name="gps_sim"/>
   <header>
     <file name="gps_ubx_i2c.h"/>
   </header>

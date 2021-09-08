@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="stabilization_rotorcraft" dir="stabilization">
+<module name="stabilization_rotorcraft" dir="stabilization" task="control">
   <doc>
     <description>
       Base stabilization code for rotorcraft
@@ -15,7 +15,9 @@
 	  <define name="YAW_CUTOFF" value="20.0" description="yaw command filter cut-off" unit="Hz"/>	
     </section>
   </doc>
-  <autoload name="nav_basic_rotorcraft"/>
+  <dep>
+    <depends>nav_basic_rotorcraft</depends>
+  </dep>
   <header>
     <file name="stabilization.h" dir="firmwares/rotorcraft"/>
     <file name="stabilization_none.h"/>

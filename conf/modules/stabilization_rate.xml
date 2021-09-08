@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="stabilization_rate" dir="stabilization">
+<module name="stabilization_rate" dir="stabilization" task="control">
   <doc>
     <description>
       Rate controller for rotorcraft
@@ -32,7 +32,10 @@
       </dl_settings>
     </dl_settings>
   </settings>
-  <autoload name="stabilization" type="rotorcraft"/>
+  <dep>
+    <depends>stabilization_rotorcraft</depends>
+    <provides>commands</provides>
+  </dep>
   <header>
     <file name="stabilization_rate.h"/>
   </header>

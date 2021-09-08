@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="radio_control_superbitrf_rc" dir="radio_control">
+<module name="radio_control_superbitrf_rc" dir="radio_control" task="radio_control">
   <doc>
     <description>
       Radio control based on the SuperbitRF chip
@@ -19,6 +19,10 @@
       </dl_settings>
     </dl_settings>
   </settings>
+  <dep>
+    <depends>spi_master</depends>
+    <provides>radio_control</provides>
+  </dep>
   <header>
     <file name="superbitrf_rc.h" dir="subsystems/radio_control"/>
   </header>

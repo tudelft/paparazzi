@@ -94,13 +94,15 @@ let raw2mk = fun f raw ->
 
 let file2mk = fun f ?(arch = false) dir_name target file ->
   let name = file.Module.filename in
-  let dir_name = match file.Module.directory with Some d -> d
-    | None -> "$(" ^ dir_name ^ ")" in
+  let dir_name = match file.Module.directory with
+    | Some "." -> ""
+    | Some d -> d^"/"
+    | None -> "$(" ^ dir_name ^ ")/" in
   let cond, cond_end = match file.Module.filecond with None -> "", ""
     | Some c -> "\n"^c^"\n", "\nendif" in
   let fmt =
-    if arch then format_of_string "%s%s.srcs += arch/$(ARCH)/%s/%s%s\n"
-    else format_of_string "%s%s.srcs += %s/%s%s\n" in
+    if arch then format_of_string "%s%s.srcs += arch/$(ARCH)/%s%s%s\n"
+    else format_of_string "%s%s.srcs += %s%s%s\n" in
   fprintf f fmt cond target dir_name name cond_end
 
 (* module files and flags except configuration flags *)
@@ -114,7 +116,7 @@ let module2mk = fun f target firmware m ->
       begin match mk.Module.condition with Some c -> fprintf f "%s\n" c | None -> () end;
       List.iter (define2mk f ~target) mk.Module.defines;
       List.iter (include2mk f ~target (*FIXME vpath*)) mk.Module.inclusions;
-      List.iter (flag2mk f ~target) mk.Module.flags;
+      List.iter (flag2mk f ~target) (List.rev mk.Module.flags) (* reverse list to restore original order, it matters for flags *);
       List.iter (file2mk f dir_name target) mk.Module.files;
       List.iter (file2mk f ~arch:true dir_name target) mk.Module.files_arch;
       List.iter (raw2mk f) mk.Module.raws;
@@ -145,7 +147,7 @@ let dump_target_conf = fun out target conf ->
   List.iter (define2mk out) conf.AC.defines;
   fprintf out "\n";
   List.iter (fun (l, m) -> match l with
-              | AC.UserLoad | AC.AutoLoad -> module2mk out target conf.AC.firmware_name m
+              | AC.UserLoad | AC.AutoLoad | AC.Depend -> module2mk out target conf.AC.firmware_name m
               | _ -> ()
   ) conf.AC.modules;
   fprintf out "\nendif # end of target '%s'\n\n" target

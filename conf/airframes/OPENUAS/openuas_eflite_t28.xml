@@ -309,7 +309,6 @@ NOTES:
 
     <module name="ins" type="alt_float">  <!--Does not work in SIM: extended thus use alt_float"/> -->
       <define name="SONAR_COMPENSATE_ROTATION" value="TRUE"/><!-- compensate AGL for body rotation -->
-      <!--<define name="SONAR_UPDATE_ON_AGL" value="TRUE"/>-->
     </module>
 
     <!-- See http://wiki.paparazziuav.org/wiki/EnergyControl -->
@@ -1108,7 +1107,7 @@ The most crucial part for the magnetometer calibration:
     <define name="COMMANDS_NB" value="4"/>
     <define name="ACTUATOR_NAMES" value="throttle-cmd-norm, aileron-cmd-norm, elevator-cmd-norm, rudder-cmd-norm" type="string[]"/>
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
-    <!-- <define name="SENSORS_PARAMS" value="nps_sensors_params_invariant.h" type="string"/>-->
+    <!-- <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>-->
     <define name="JS_AXIS_MODE" value="4"/>
     <define name="BYPASS_AHRS" value="TRUE"/>
     <define name="BYPASS_INS" value="TRUE"/>

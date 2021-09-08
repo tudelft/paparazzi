@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="radio_control_cc2500_frsky" dir="radio_control/cc2500_frsky">
+<module name="radio_control_cc2500_frsky" dir="radio_control/cc2500_frsky" task="radio_control">
   <doc>
     <description>
       Software implementation of Frsky radio control protocol for onboard CC2500 receiver.
@@ -35,6 +35,10 @@
       </dl_settings>
     </dl_settings>
   </settings>
+  <dep>
+    <depends>spi_master</depends>
+    <provides>radio_control</provides>
+  </dep>
   <header>
     <file name="cc2500.h" dir="peripherals"/>
     <file name="cc2500_paparazzi.h" dir="subsystems/radio_control/cc2500_frsky"/>
@@ -64,9 +68,6 @@
     <file name="cc2500_frsky_shared.c" dir="subsystems/radio_control/cc2500_frsky"/>
     <file name="cc2500_frsky_x.c" dir="subsystems/radio_control/cc2500_frsky"/>
     <file name="cc2500_smartport.c" dir="subsystems/radio_control/cc2500_frsky"/>
-    <raw>
-      include $(CFG_SHARED)/spi_master.makefile
-    </raw>
     <test>
       <define name="RADIO_CONTROL"/>
       <define name="RADIO_CONTROL_TYPE_H" value="subsystems/radio_control/cc2500_frsky/cc2500_paparazzi.h" type="string"/>

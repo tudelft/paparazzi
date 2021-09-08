@@ -115,6 +115,24 @@
 #endif
 #endif
 
+#if defined(LINE_ADC5)
+#if USE_ADC_5
+#define AD1_5_CHANNEL     ADC_CHANNEL_IN4
+#define ADC_5             AD1_5
+#define ADC_5_GPIO_PORT   PAL_PORT(LINE_ADC5)
+#define ADC_5_GPIO_PIN    PAL_PAD(LINE_ADC5)
+#endif
+#endif
+
+#if defined(LINE_ADC6)
+#if USE_ADC_6
+#define AD1_6_CHANNEL     ADC_CHANNEL_IN14
+#define ADC_6             AD1_6
+#define ADC_6_GPIO_PORT   PAL_PORT(LINE_ADC6)
+#define ADC_6_GPIO_PIN    PAL_PAD(LINE_ADC6)
+#endif
+#endif
+
 /* allow to define ADC_CHANNEL_VSUPPLY in the airframe file*/
 #ifndef ADC_CHANNEL_VSUPPLY
 #define ADC_CHANNEL_VSUPPLY ADC_1
@@ -227,10 +245,44 @@
 #define PWM_SERVO_6_PIN     PAL_PAD(LINE_SERVO6)
 #define PWM_SERVO_6_AF      AF_LINE_SERVO6
 #define PWM_SERVO_6_DRIVER  PWMD4
-#define PWM_SERVO_6_CHANNEL 3
+#define PWM_SERVO_6_CHANNEL 3-1
 #define PWM_SERVO_6_ACTIVE  PWM_OUTPUT_ACTIVE_HIGH
 #else
 #define PWM_SERVO_6_ACTIVE  PWM_OUTPUT_DISABLED
+#endif
+#endif
+
+#if defined(LINE_SERVO7)
+#ifndef USE_PWM7
+#define USE_PWM7 1
+#endif
+#if USE_PWM7
+#define PWM_SERVO_7 6
+#define PWM_SERVO_7_GPIO    PAL_PORT(LINE_SERVO7)
+#define PWM_SERVO_7_PIN     PAL_PAD(LINE_SERVO7)
+#define PWM_SERVO_7_AF      AF_LINE_SERVO7
+#define PWM_SERVO_7_DRIVER  PWMD12
+#define PWM_SERVO_7_CHANNEL 1-1
+#define PWM_SERVO_7_ACTIVE  PWM_OUTPUT_ACTIVE_HIGH
+#else
+#define PWM_SERVO_7_ACTIVE  PWM_OUTPUT_DISABLED
+#endif
+#endif
+
+#if defined(LINE_SERVO8)
+#ifndef USE_PWM8
+#define USE_PWM8 1
+#endif
+#if USE_PWM8
+#define PWM_SERVO_8 7
+#define PWM_SERVO_8_GPIO    PAL_PORT(LINE_SERVO8)
+#define PWM_SERVO_8_PIN     PAL_PAD(LINE_SERVO8)
+#define PWM_SERVO_8_AF      AF_LINE_SERVO8
+#define PWM_SERVO_8_DRIVER  PWMD12
+#define PWM_SERVO_8_CHANNEL 2-1
+#define PWM_SERVO_8_ACTIVE  PWM_OUTPUT_ACTIVE_HIGH
+#else
+#define PWM_SERVO_8_ACTIVE  PWM_OUTPUT_DISABLED
 #endif
 #endif
 
@@ -272,6 +324,33 @@
   0, \
   0 \
 }
+
+#ifdef STM32_PWM_USE_TIM12
+#define PWM_CONF_TIM12 STM32_PWM_USE_TIM12
+#else
+#define PWM_CONF_TIM12 1
+#endif
+#define PWM_CONF12_DEF { \
+  PWM_FREQUENCY, \
+  PWM_FREQUENCY/TIM12_SERVO_HZ, \
+  NULL, \
+  { \
+    { PWM_SERVO_7_ACTIVE, NULL }, \
+    { PWM_SERVO_8_ACTIVE, NULL }, \
+    { PWM_OUTPUT_DISABLED, NULL }, \
+    { PWM_OUTPUT_DISABLED, NULL }, \
+  }, \
+  0, \
+  0 \
+}
+
+/**
+ * PPM radio defines
+ */
+#define RC_PPM_TICKS_PER_USEC 2
+#define PPM_TIMER_FREQUENCY 2000000
+#define PPM_CHANNEL ICU_CHANNEL_1
+#define PPM_TIMER ICUD8
 
 /**
  * UART defines

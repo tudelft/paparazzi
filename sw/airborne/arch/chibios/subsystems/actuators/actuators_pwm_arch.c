@@ -36,7 +36,7 @@
 
 
 /**
- * CMD_TO_US() is depending on architecture (e.g STM32 vs LPC),
+ * CMD_TO_US() is depending on architecture
  * and on the hardware settings (clock speed etc.). Hence it has to be
  * defined separately for each board.
  *
@@ -80,6 +80,15 @@ static PWMConfig pwmcfg8 = PWM_CONF8_DEF;
 #endif
 #if PWM_CONF_TIM9
 static PWMConfig pwmcfg9 = PWM_CONF9_DEF;
+#endif
+#if PWM_CONF_TIM10
+static PWMConfig pwmcfg10 = PWM_CONF10_DEF;
+#endif
+#if PWM_CONF_TIM11
+static PWMConfig pwmcfg11 = PWM_CONF11_DEF;
+#endif
+#if PWM_CONF_TIM12
+static PWMConfig pwmcfg12 = PWM_CONF12_DEF;
 #endif
 
 
@@ -163,6 +172,15 @@ void actuators_pwm_arch_init(void)
 #endif
 #if PWM_CONF_TIM9
   pwmStart(&PWMD9, &pwmcfg9);
+#endif
+#if PWM_CONF_TIM10
+  pwmStart(&PWMD10, &pwmcfg10);
+#endif
+#if PWM_CONF_TIM11
+  pwmStart(&PWMD11, &pwmcfg11);
+#endif
+#if PWM_CONF_TIM12
+  pwmStart(&PWMD12, &pwmcfg12);
 #endif
 }
 

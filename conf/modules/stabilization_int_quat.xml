@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="stabilization_int_quat" dir="stabilization">
+<module name="stabilization_int_quat" dir="stabilization" task="control">
   <doc>
     <description>
       Stabilization controller for rotorcraft using integer quaternion implementation
@@ -60,7 +60,10 @@
       </dl_settings>
     </dl_settings>
   </settings>
-  <autoload name="stabilization" type="rotorcraft"/>
+  <dep>
+    <depends>stabilization_rotorcraft,@attitude_command</depends>
+    <provides>commands</provides>
+  </dep>
   <header>
     <file name="stabilization_attitude.h"/>
     <file name="stabilization_attitude_quat_int.h"/>

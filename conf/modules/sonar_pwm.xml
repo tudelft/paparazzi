@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="sonar_pwm" dir="sonar">
+<module name="sonar_pwm" dir="sonar" task="sensors">
   <doc>
     <description>
       Driver for a PWM based sonar range sensor
@@ -26,7 +26,10 @@
     <define name="SENSOR_SYNC_SEND_SONAR" description="If defined, sends raw and scaled sonar values, useful for debugging sensor issues"/>
   </doc>
 
-  <depends>pwm_meas</depends>
+  <dep>
+    <depends>pwm_meas</depends>
+    <provides>sonar</provides>
+  </dep>
   <header>
     <file name="sonar_pwm.h" />
   </header>

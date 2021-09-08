@@ -144,7 +144,8 @@ type periodic = {
     delay: float option;
     start: string option;
     stop: string option;
-    autorun: autorun
+    autorun: autorun;
+    cond: string option
   }
 
 let parse_periodic = fun xml ->
@@ -177,30 +178,59 @@ let parse_periodic = fun xml ->
       end
    in
   { call; fname; period_freq; delay = getf "delay";
-    start = get "start"; stop = get "stop";
+    start = get "start"; stop = get "stop"; cond = get "cond";
     autorun = match get "autorun" with
       | None -> Lock
       | Some "TRUE" | Some "true" -> True
       | Some "FALSE" | Some "false" -> False
       | Some "LOCK" | Some "lock" -> Lock
-      | Some _ -> failwith "Module.parse_periodic: unreachable" }
+      | Some a -> failwith ("Module.parse_periodic: unknown autorun: " ^ a) }
 
-type event = { ev: string; handlers: string list }
+type init = { iname: string; cond: string option }
 
-let make_event = fun f handlers ->
+let make_init = fun f cond ->
+  { iname = f;
+    cond = cond
+  }
+
+type event = { ev: string; cond: string option }
+
+let make_event = fun f cond ->
   { ev = f;
-    handlers = List.map
-      (function
-        | Xml.Element ("handler", _, []) as xml -> Xml.attrib xml "fun"
-        | _ -> failwith "Module.make_event: unreachable"
-      ) handlers }
+    cond = cond
+  }
 
-let fprint_event = fun ch e -> Printf.fprintf ch "%s;\n" e.ev
 
 type datalink = { message: string; func: string }
 
 let fprint_datalink = fun ch d ->
   Printf.fprintf ch "(msg_id == DL_%s) { %s; }\n" d.message d.func
+
+type dependencies = {
+    requires: GC.bool_expr list;
+    conflicts: string list;
+    provides: string list;
+  }
+
+(* comma separated values *)
+let parse_comma_list = Str.split (Str.regexp "[ \t]*,[ \t]*")
+(* comma separated functionalities (add '@' in front of functionality name) *)
+let parse_func_list = fun l -> List.map (fun x -> "@"^x) (Str.split (Str.regexp "[ \t]*,[ \t]*") l)
+(* pipe separated values *)
+let parse_module_options = Str.split (Str.regexp "[ \t]*|[ \t]*")
+
+let empty_dep = { requires = []; conflicts = []; provides = [] }
+
+let rec parse_dependencies dep = function
+  | Xml.Element ("dep", _, children) ->
+      List.fold_left parse_dependencies dep children
+  | Xml.Element ("depends", _, [Xml.PCData depends]) ->
+    { dep with requires = List.map (fun x -> GC.bool_expr_of_string (Some x)) (parse_comma_list depends) }
+  | Xml.Element ("conflicts", _, [Xml.PCData conflicts]) ->
+    { dep with conflicts = parse_comma_list conflicts }
+  | Xml.Element ("provides", _, [Xml.PCData provides]) ->
+    { dep with provides = parse_func_list provides }
+  | _ -> failwith "Module.parse_dependencies: unreachable"
 
 type autoload = {
     aname: string;
@@ -231,13 +261,11 @@ type t = {
   task: string option;
   path: string;
   doc: Xml.xml;
-  requires: string list;
-  conflicts: string list;
-  provides: string list;
+  dependencies: dependencies option;
   autoloads: autoload list;
   settings: Settings.t list;
   headers: file list;
-  inits: string list;
+  inits: init list;
   periodics: periodic list;
   events: event list;
   datalinks: datalink list;
@@ -248,11 +276,9 @@ type t = {
 let empty =
   { xml_filename = ""; name = ""; dir = None;
     task = None; path = ""; doc = Xml.Element ("doc", [], []);
-    requires = []; conflicts = []; provides = []; autoloads = []; settings = [];
+    dependencies = None; autoloads = []; settings = [];
     headers = []; inits = []; periodics = []; events = []; datalinks = [];
     makefiles = []; xml = Xml.Element ("module", [], []) }
-
-let parse_module_list = Str.split (Str.regexp "[ \t]*,[ \t]*")
 
 let rec parse_xml m = function
   | Xml.Element ("module", _, children) as xml ->
@@ -260,16 +286,12 @@ let rec parse_xml m = function
     and dir = ExtXml.attrib_opt xml "dir"
     and task = ExtXml.attrib_opt xml "task" in
     List.fold_left parse_xml { m with name; dir; task; xml } children
-  | Xml.Element ("doc", _, _) as xml -> { m with doc = xml }
-  (*| Xml.Element ("settings_file", [("name", name)], files) -> m (* TODO : remove unused *)*)
+  | Xml.Element ("doc", _, _) as xml ->
+    { m with doc = xml }
   | Xml.Element ("settings", _, _) as xml ->
     { m with settings = Settings.from_xml xml :: m.settings }
-  | Xml.Element ("depends", _, [Xml.PCData depends]) ->
-    { m with requires = parse_module_list depends }
-  | Xml.Element ("conflicts", _, [Xml.PCData conflicts]) ->
-    { m with conflicts = parse_module_list conflicts }
-  | Xml.Element ("provides", _, [Xml.PCData provides]) ->
-    { m with provides = parse_module_list provides }
+  | Xml.Element ("dep", _, _) as xml ->
+    { m with dependencies = Some (parse_dependencies empty_dep xml) }
   | Xml.Element ("autoload", _, []) as xml ->
     let aname = find_name xml
     and atype = ExtXml.attrib_opt xml "type" in
@@ -279,12 +301,15 @@ let rec parse_xml m = function
                List.fold_left (fun acc f -> parse_file f :: acc) m.headers files
     }
   | Xml.Element ("init", _, []) as xml ->
-    { m with inits = Xml.attrib xml "fun" :: m.inits }
+    let f = Xml.attrib xml "fun"
+    and c = ExtXml.attrib_opt xml "cond" in
+    { m with inits = make_init f c :: m.inits }
   | Xml.Element ("periodic", _, []) as xml ->
     { m with periodics = parse_periodic xml :: m.periodics }
-  | Xml.Element ("event", _, handlers) as xml ->
-    let f = Xml.attrib xml "fun" in
-    { m with events = make_event f handlers :: m.events }
+  | Xml.Element ("event", _, []) as xml ->
+    let f = Xml.attrib xml "fun"
+    and c = ExtXml.attrib_opt xml "cond" in
+    { m with events = make_event f c :: m.events }
   | Xml.Element ("datalink", _, []) as xml ->
     let message = Xml.attrib xml "message"
     and func = Xml.attrib xml "fun" in
@@ -333,7 +358,7 @@ let from_module_name = fun name mtype ->
 (** check if a makefile node is compatible with a target and a firmware
  * TODO add 'board' type filter ? *)
 let check_mk = fun target firmware mk ->
-  (mk.firmware = (Some firmware) || mk.firmware = None) && GC.test_targets target (GC.targets_of_string mk.targets)
+  (mk.firmware = (Some firmware) || mk.firmware = None || firmware = "none") && GC.test_targets target (GC.bool_expr_of_string mk.targets)
 
 (** check if a module is compatible with a target and a firmware *)
 let check_loading = fun target firmware m ->

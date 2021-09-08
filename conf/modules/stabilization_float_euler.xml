@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="stabilization_float_euler" dir="stabilization">
+<module name="stabilization_float_euler" dir="stabilization" task="control">
   <doc>
     <description>
       Stabilization controller for rotorcraft using float euler implementation
@@ -57,7 +57,10 @@
       </dl_settings>
     </dl_settings>
   </settings>
-  <autoload name="stabilization" type="rotorcraft"/>
+  <dep>
+    <depends>stabilization_rotorcraft,@attitude_command</depends>
+    <provides>commands</provides>
+  </dep>
   <header>
     <file name="stabilization_attitude.h"/>
     <file name="stabilization_attitude_euler_float.h"/>

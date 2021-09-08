@@ -39,7 +39,6 @@
   </command_laws>
 
   <section name="INS_BASE" prefix="INS_">
-    <define name="SONAR_UPDATE_ON_AGL" value="TRUE"/>
     <define name="SONAR_MAX_RANGE" value="4.0"/>
     <define name="SONAR_MIN_RANGE" value="0.01"/>
   </section>
@@ -121,7 +120,7 @@
   <section name="SIMULATOR" prefix="NPS_">
     <define name="ACTUATOR_NAMES" value="nw_motor, ne_motor, se_motor, sw_motor" type="string[]"/>
     <define name="JSBSIM_MODEL" value="simple_ardrone2" type="string"/>
-    <define name="SENSORS_PARAMS" value="nps_sensors_params_invariant.h" type="string"/>
+    <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
   </section>
 
   <section name="AUTOPILOT">

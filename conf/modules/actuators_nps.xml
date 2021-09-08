@@ -1,0 +1,17 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="actuators_nps" dir="actuators" task="actuators">
+  <doc>
+    <description>
+      Actuators for NPS (dummy pwm)
+    </description>
+  </doc>
+  <dep>
+    <depends>actuators</depends>
+    <provides>actuators</provides>
+  </dep>
+  <makefile target="nps">
+    <file_arch name="actuators_pwm_arch.c" dir="subsystems/actuators"/>
+  </makefile>
+</module>
+
