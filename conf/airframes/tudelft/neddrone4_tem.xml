@@ -21,9 +21,9 @@
         <configure name="SBUS_PORT" value="UART3"/>
       </module>
 
-      <module name="airspeed_ets.xml">
-        <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>
-        <define name="AIRSPEED_ETS_SCALE" value="1.24"/>
+      <module name="airspeed" type="ms45xx_i2c">
+        <define name="USE_I2C4"/>
+        <define name="MS45XX_I2C_DEV" value="i2c4"/>
       </module>
 
       <module name="scheduling_indi_simple"/>
@@ -49,7 +49,7 @@
         <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
         <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
       </module> -->
-      
+
       <!--module name="ins" type="extended">
         <define name="INS_USE_GPS_ALT" value="1"/>
         <define name="INS_USE_GPS_ALT_SPEED" value="1"/>
@@ -73,6 +73,11 @@
       <define name="RADIO_FBW_MODE"    value="0"/> <!-- Switch between AP and FBW control -->
       <define name="RADIO_KILL_SWITCH" value="0"/>
     </target>
+
+    <module name="follow_me">
+      <define name="FOLLOW_ME_DISTANCE" value="40"/>
+      <define name="FOLLOW_ME_HEIGHT" value="15"/>
+    </module>
 
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B115200"/>
@@ -211,14 +216,14 @@
     <set servo="MOTOR_12"  value="($th_hold? -9600 : motor_mixing.commands[11])"/>
 
     <!-- Removed ApplyDiff for differential control -->
-    <set servo="AIL_1"     value=" 2*@YAW"/>
-    <set servo="AIL_2"     value="-2*@YAW"/>
-    <set servo="AIL_3"     value=" 2*@YAW"/>
-    <set servo="AIL_4"     value="-2*@YAW"/>
-    <set servo="FLAP_1"    value=" 2*@YAW"/>
-    <set servo="FLAP_2"    value="-2*@YAW"/>
-    <set servo="FLAP_3"    value=" 2*@YAW"/>
-    <set servo="FLAP_4"    value="-2*@YAW"/>
+    <set servo="AIL_1"     value=" 2*@YAW - 2*@PITCH"/>
+    <set servo="AIL_2"     value="-2*@YAW - 2*@PITCH"/>
+    <set servo="AIL_3"     value=" 2*@YAW + 2*@PITCH"/>
+    <set servo="AIL_4"     value="-2*@YAW + 2*@PITCH"/>
+    <set servo="FLAP_1"    value=" 2*@YAW - 2*@PITCH"/>
+    <set servo="FLAP_2"    value="-2*@YAW - 2*@PITCH"/>
+    <set servo="FLAP_3"    value=" 2*@YAW + 2*@PITCH"/>
+    <set servo="FLAP_4"    value="-2*@YAW + 2*@PITCH"/>
   </command_laws>
 
   <section name="MISC">
@@ -353,7 +358,7 @@
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
     <!-- mode switch on joystick channel 5 (axis numbering starting at zero) -->
     <define name="JS_AXIS_MODE" value="4"/>
-    <define name="DEBUG_SPEED_SP" value="true"/>
+    <define name="DEBUG_SPEED_SP" value="false"/>
   </section>
 
   <section name="AUTOPILOT">
