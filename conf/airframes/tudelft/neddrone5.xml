@@ -64,7 +64,7 @@
     </target>
 
     <module name="telemetry"     type="transparent">
-      <configure name="MODEM_BAUD" value="B460800"/>
+      <configure name="MODEM_BAUD" value="B115200"/>
     </module>
 
     <module name="actuators"     type="uavcan">
@@ -72,7 +72,10 @@
       <configure name="UAVCAN_USE_CAN2" value="TRUE"/>
     </module>
     <module name="imu"           type="mpu6000"/>
-    <module name="gps"           type="ublox"/>
+    <module name="gps"           type="ublox">
+      <configure name="GPS_BAUD" value="B460800"/>
+      <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
+    </module>
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
     <module name="ins"           type="ekf2" />
