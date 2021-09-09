@@ -79,7 +79,7 @@ static bool verbose = false;
 static struct endpoint_t gps_ep;
 static struct gps_ubx_t gps_ubx;
 static struct gps_rtcm_t gps_rtcm;
-static uint8_t ac_id = 14;
+static uint8_t ac_id = 27;
 
 void packet_handler(void *ep, uint8_t *data, uint16_t len);
 
