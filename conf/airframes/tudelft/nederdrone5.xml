@@ -262,13 +262,13 @@
     <define name="MAG_Y_SENS" value="12.86305350064853" integer="16"/>
     <define name="MAG_Z_SENS" value="12.512614596093622" integer="16"/-->
 
-    <!-- NOT CALIBRATED (external magnetometer) -->
-    <define name="MAG_X_NEUTRAL" value="2457"/>
-    <define name="MAG_Y_NEUTRAL" value="-1123"/>
-    <define name="MAG_Z_NEUTRAL" value="-1843"/>
-    <define name="MAG_X_SENS" value="0.590610116730755" integer="16"/>
-    <define name="MAG_Y_SENS" value="0.6411943049128617" integer="16"/>
-    <define name="MAG_Z_SENS" value="0.6279536066632421" integer="16"/>
+    <!--Calibrated at Valkenburg (20-08-2021) -->
+    <define name="MAG_X_NEUTRAL" value="1626"/>
+    <define name="MAG_Y_NEUTRAL" value="-891"/>
+    <define name="MAG_Z_NEUTRAL" value="-1914"/>
+    <define name="MAG_X_SENS" value="0.6030731853875553" integer="16"/>
+    <define name="MAG_Y_SENS" value="0.6383220764943797" integer="16"/>
+    <define name="MAG_Z_SENS" value="0.6432550558870971" integer="16"/>
 
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
