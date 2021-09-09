@@ -71,7 +71,6 @@
 
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B115200"/>
-      <configure name="MODEM_PORT" value="UART7"/>
     </module>
 
     <module name="actuators"     type="pwm"/>
