@@ -193,14 +193,14 @@
     <set servo="MOTOR_12"  value="($th_hold? -9600 : motor_mixing.commands[11])"/>
 
     <!-- Removed ApplyDiff for differential control -->
-    <set servo="AIL_1"     value=" 2*@YAW"/>
-    <set servo="AIL_2"     value="-2*@YAW"/>
-    <set servo="AIL_3"     value=" 2*@YAW"/>
-    <set servo="AIL_4"     value="-2*@YAW"/>
-    <set servo="FLAP_1"    value=" 2*@YAW"/>
-    <set servo="FLAP_2"    value="-2*@YAW"/>
-    <set servo="FLAP_3"    value=" 2*@YAW"/>
-    <set servo="FLAP_4"    value="-2*@YAW"/>
+    <set servo="AIL_1"     value=" 2*@YAW - 2*@PITCH"/>
+    <set servo="AIL_2"     value="-2*@YAW - 2*@PITCH"/>
+    <set servo="AIL_3"     value=" 2*@YAW + 2*@PITCH"/>
+    <set servo="AIL_4"     value="-2*@YAW + 2*@PITCH"/>
+    <set servo="FLAP_1"    value=" 2*@YAW - 2*@PITCH"/>
+    <set servo="FLAP_2"    value="-2*@YAW - 2*@PITCH"/>
+    <set servo="FLAP_3"    value=" 2*@YAW + 2*@PITCH"/>
+    <set servo="FLAP_4"    value="-2*@YAW + 2*@PITCH"/>
   </command_laws>
 
   <section name="MISC">
