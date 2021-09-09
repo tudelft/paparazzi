@@ -1,0 +1,12 @@
+<!-- (c) 2021 Alessandro Mancinelli-->
+<!DOCTYPE radio SYSTEM "radio.dtd">
+<radio name="Alessandro_TGY-i6_PPM" data_min="900" data_max="2100" sync_min="5000" sync_max="15000" pulse_type="POSITIVE">
+ <channel function="ROLL" min="1100" neutral="1500" max="2000" average="0"/>
+ <channel function="PITCH" min="1100" neutral="1500" max="2000" average="0"/>
+ <channel function="THROTTLE" min="1000" neutral="1000" max="2000" average="0"/>
+ <channel function="YAW" min="1000" neutral="1500" max="2000" average="0"/>
+ <channel function="MODE" min="1000" neutral="1500" max="2000" average="1"/>
+ <channel function="AUX1" min="1000" neutral="1500" max="2000" average="1"/> <!-- TH_HOLD -->
+ <channel function="AUX2" min="1000" neutral="1500" max="2000" average="1"/> <!-- NOT USED -->
+ <channel function="AUX3" min="1000" neutral="1500" max="2000" average="1"/> <!-- NOT USED -->
+</radio>

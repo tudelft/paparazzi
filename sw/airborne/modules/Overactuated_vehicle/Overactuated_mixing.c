@@ -46,7 +46,7 @@ float D_az_gain = 0.002 ;
 float P_el_gain = 12.9 ;
 float I_el_gain = 1 ;
 float D_el_gain = 0.002 ;
-int Deadband_stick = 100;
+int Deadband_stick = 500;
 float Stick_gain_position = 0.1; // Stick to position gain
 bool activate_longitudinal_over = 1;
 bool activate_lateral_over = 1;
@@ -126,16 +126,18 @@ void overactuated_mixing_init() {
     // Case of Position hold mode
     if(radio_control.values[RADIO_MODE] > 500)
     {
-//        //Calculate the desired position considering the RC input
-//        if( abs(radio_control.values[RADIO_PITCH]) > Deadband_stick ){
-//            desired_x_e += radio_control.values[RADIO_PITCH]*Stick_gain_position*-0.002;
-//        }
-//        if( abs(radio_control.values[RADIO_ROLL]) > Deadband_stick ){
-//            desired_y_e += radio_control.values[RADIO_ROLL]*Stick_gain_position*0.002;
-//        }
-        desired_x_e = x_stb*100; //Get the wp goal x-position in cm
-        desired_y_e = y_stb*100; //Get the wp goal y-position in cm
-        desired_z_e = z_stb*100; //Get the wp goal z-position in cm
+        //Calculate the desired position considering the RC input
+        if( abs(radio_control.values[RADIO_PITCH]) > Deadband_stick ){
+            desired_x_e += radio_control.values[RADIO_PITCH]*Stick_gain_position*-0.002;
+        }
+        if( abs(radio_control.values[RADIO_ROLL]) > Deadband_stick ){
+            desired_y_e += radio_control.values[RADIO_ROLL]*Stick_gain_position*0.002;
+        }
+
+//        //Calculate the desired position considering the STANDBY point
+//        desired_x_e = x_stb*100; //Get the wp goal x-position in cm
+//        desired_y_e = y_stb*100; //Get the wp goal y-position in cm
+//        desired_z_e = z_stb*100; //Get the wp goal z-position in cm
 
         float longitudinal_cmd = cos(psi) * (desired_x_e - x) + sin(psi)*(desired_y_e - y);
         float longitudinal_speed = cos(psi) * u + sin(psi)*v;
@@ -218,16 +220,18 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     // Case of Position hold mode
     if(radio_control.values[RADIO_MODE] > 500)
     {
-//        //Calculate the desired position considering the RC input
-//        if( abs(radio_control.values[RADIO_PITCH]) > Deadband_stick ){
-//            desired_x_e += radio_control.values[RADIO_PITCH]*Stick_gain_position*-0.002;
-//        }
-//        if( abs(radio_control.values[RADIO_ROLL]) > Deadband_stick ){
-//            desired_y_e += radio_control.values[RADIO_ROLL]*Stick_gain_position*0.002;
-//        }
-        desired_x_e = x_stb*100; //Get the wp goal x-position in cm
-        desired_y_e = y_stb*100; //Get the wp goal y-position in cm
-        desired_z_e = z_stb*100; //Get the wp goal z-position in cm
+        //Calculate the desired position considering the RC input
+        if( abs(radio_control.values[RADIO_PITCH]) > Deadband_stick ){
+            desired_x_e += radio_control.values[RADIO_PITCH]*Stick_gain_position*-0.002;
+        }
+        if( abs(radio_control.values[RADIO_ROLL]) > Deadband_stick ){
+            desired_y_e += radio_control.values[RADIO_ROLL]*Stick_gain_position*0.002;
+        }
+
+//        //Calculate the desired position considering the STANDBY point
+//        desired_x_e = x_stb*100; //Get the wp goal x-position in cm
+//        desired_y_e = y_stb*100; //Get the wp goal y-position in cm
+//        desired_z_e = z_stb*100; //Get the wp goal z-position in cm
 
         float longitudinal_cmd = cos(psi) * (desired_x_e - x) + sin(psi)*(desired_y_e - y);
         float longitudinal_speed = cos(psi) * u + sin(psi)*v;

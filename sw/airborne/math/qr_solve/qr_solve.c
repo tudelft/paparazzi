@@ -1545,7 +1545,7 @@ void dswap ( int n, float x[], int incx, float y[], int incy )
 }
 /******************************************************************************/
 
-void qr_solve ( int m, int n, float a[], float b[], float x[]  )
+void qr_solve ( int m, int n, float a[], float b[], float x[] )
 
 /******************************************************************************/
 /*
