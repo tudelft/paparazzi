@@ -36,6 +36,9 @@
  * DEFINE VEHICLE PROPERTIES
  */
 #define N_ACT 8
+#define INDI_CONTROLLER_OVERACTUATED
+#define INDI_OUTPUTS 6
+#define INDI_NUM_ACT 12
 
 /* Overactuated mixing structure */
 struct overactuated_mixing_t {

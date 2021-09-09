@@ -71,6 +71,7 @@
 
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B115200"/>
+      <configure name="MODEM_PORT" value="UART7"/>
     </module>
 
     <module name="actuators"     type="pwm"/>
@@ -95,7 +96,7 @@
     
 <!--    <module name="air_data"/>-->
     <module name="send_imu_mag_current"/>
-
+    <module name="sys_mon"/>
     <module name="actuators" type="pwm">
       <define name="SERVO_HZ" value="400"/>
     </module>
@@ -200,6 +201,9 @@
   </section>
 
   <command_laws>
+    <call fun="overactuated_mixing_run(values)"/>
+<!--    <let var="activate_INDI"     value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>-->
+
     <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
     <let var="th_hold"     value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
 
@@ -212,7 +216,7 @@
     Adding the control laws for servos
     TBD with servos
     -->
-    <call fun="overactuated_mixing_run(values)"/>
+
 <!--    <set servo="EL_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 6400 + overactuated_mixing.commands[0] : 6400)"/>-->
 <!--    <set servo="AZ_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (300 + overactuated_mixing.commands[1] + @YAW) : 300 + @YAW)"/>-->
 <!--    <set servo="EL_2"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 5500 + overactuated_mixing.commands[2] : 5500)"/>-->
