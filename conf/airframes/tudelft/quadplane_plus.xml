@@ -3,7 +3,7 @@
 <!-- This is a Nedderdrone
      * Airframe:    TUD00289
      * Autopilot:   Pixhawk 4
-     * Actuators:   2x BLHELI32 ESC (PWM) + 8x SAVOX servos (PWM)
+     * Actuators:   4x BLHELI32 ESC (PWM) + 8x SAVOX servos (PWM)
      * Datalink:    Herelink
      * GPS:         UBlox F9P
      * RC:          SBUS Crossfire
@@ -422,7 +422,7 @@
     <define name="CRITIC_BAT_LEVEL" value="10.5" unit="V"/>
     <define name="LOW_BAT_LEVEL" value="10.9" unit="V"/>
     <define name="MAX_BAT_LEVEL" value="12.6" unit="V"/>
-    <define name="BAT_NB_CELLS" value="3"/>
+<!--    <define name="BAT_NB_CELLS" value="3"/>-->
   </section>
 
 </airframe>
