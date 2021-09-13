@@ -254,7 +254,6 @@ void Compute_B_matrix(float **B_matrix, float I_xx,float I_yy,float I_zz,float J
 }
 
 
-
 static void send_overactuated_variables( struct transport_tx *trans , struct link_device * dev ) {
 
 // Send telemetry message
@@ -365,8 +364,6 @@ void overactuated_mixing_init() {
 
 /*
  * Run the overactuated mixing
- * This depends on the ROLL and PITCH command
- * It also depends on the throttle_curve.collective
  */
 void overactuated_mixing_run(pprz_t in_cmd[])
 {
@@ -379,12 +376,14 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     /* Propagate the filter on the gyroscopes */
     float rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
     for (i = 0; i < 3; i++) {
+
         update_butterworth_2_low_pass(&measurement_lowpass_filters[i], rate_vect[i]);
         update_butterworth_2_low_pass(&estimation_output_lowpass_filters[i], rate_vect[i]);
 
         //Calculate the angular acceleration via finite difference
         angular_acceleration[i] = (measurement_lowpass_filters[i].o[0]
                                    - measurement_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY;
+    }
     i = 0;
 
     ax = stateGetAccelNed_f()->x;
@@ -407,9 +406,8 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     elevation_cmd = 0;
     azimuth_cmd = 0;
 
-//    #ifdef INDI_CONTROLLER_OVERACTUATED
     float command[INDI_NUM_ACT];
-    //Append yaw command in every cases if the bool is active:
+    //Append yaw command in every case if the bool is active:
     if(manual_yaw_overactuated){
         yaw_cmd = radio_control.values[RADIO_YAW]*1.f;
     }
@@ -433,7 +431,6 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     if(radio_control.values[RADIO_MODE] > 500)
     {
         float Desired_acceleration[INDI_OUTPUTS] = { 1, 0, 0, 0, 0, 0};
-
         float B_matrix_in[INDI_OUTPUTS][INDI_NUM_ACT];
 
         int i, j;
@@ -550,100 +547,5 @@ void overactuated_mixing_run(pprz_t in_cmd[])
         overactuated_mixing.commands[i] = command[i+4]*100;
         BoundAbs(overactuated_mixing.commands[i], MAX_PPRZ);
     }
-//    #endif
-
-//
-//    #ifndef INDI_CONTROLLER_OVERACTUATED
-//    //Append yaw command in every cases if the bool is active:
-//    if(manual_yaw_overactuated){
-//        yaw_cmd = radio_control.values[RADIO_YAW]*1.f;
-//    }
-//    else{
-//        yaw_cmd = in_cmd[COMMAND_YAW]*1.f;
-//    }
-//
-//    // Case of Manual direct mode
-//    if(radio_control.values[RADIO_MODE] < 500 && radio_control.values[RADIO_MODE] > -500)
-//    {
-//        //Compute cmd in manual mode:
-//        elevation_cmd = - radio_control.values[RADIO_PITCH];
-//        azimuth_cmd = radio_control.values[RADIO_ROLL];
-//
-//        // Reset variables for the next mode to avoid bump.
-//        desired_x_e = x;
-//        desired_y_e = y;
-//    }
-//
-//    // Case of Position hold mode
-//    if(radio_control.values[RADIO_MODE] > 500)
-//    {
-//        //Calculate the desired position considering the RC input
-//        if( abs(radio_control.values[RADIO_PITCH]) > Deadband_stick ){
-//            desired_x_e += radio_control.values[RADIO_PITCH]*Stick_gain_position*-0.002;
-//        }
-//        if( abs(radio_control.values[RADIO_ROLL]) > Deadband_stick ){
-//            desired_y_e += radio_control.values[RADIO_ROLL]*Stick_gain_position*0.002;
-//        }
-//
-////        //Calculate the desired position considering the STANDBY point
-////        desired_x_e = x_stb*100; //Get the wp goal x-position in cm
-////        desired_y_e = y_stb*100; //Get the wp goal y-position in cm
-////        desired_z_e = z_stb*100; //Get the wp goal z-position in cm
-//
-//        float longitudinal_cmd = cos(psi) * (desired_x_e - x) + sin(psi)*(desired_y_e - y);
-//        float longitudinal_speed = cos(psi) * u + sin(psi)*v;
-//
-//        float lateral_cmd = cos(psi) * (desired_y_e - y) -sin(psi) * (desired_x_e - x);
-//        float lateral_speed = cos(psi) * v - sin(psi) * u;
-//
-//        // Applying PID to command to get the servo deflection values:
-//        azimuth_cmd = 5*(P_az_gain*lateral_cmd - D_az_gain*lateral_speed);
-//        elevation_cmd = 5*(P_el_gain*longitudinal_cmd - D_el_gain*longitudinal_speed);
-//        if(manual_yaw_overactuated){
-//            yaw_cmd = radio_control.values[RADIO_YAW]*1.f;
-//        }
-//        else{
-//            yaw_cmd = in_cmd[COMMAND_YAW]*1.f;
-//        }
-//
-//    }
-//
-//    // Write values to servos
-//    for (i = 0; i < N_ACT; i++) {
-//        overactuated_mixing.commands[i] = 0;
-//        if (i % 2 != 0)   //Odd value --> (azimuth angle)
-//        {
-//            if(activate_lateral_over) {
-//
-//                overactuated_mixing.commands[i] = azimuth_cmd;
-//            }
-//            else{
-//                overactuated_mixing.commands[i] = 0;
-//            }
-//        }
-//        else           //Even value --> (elevation angle)
-//        {
-//            if(activate_longitudinal_over) {
-//                overactuated_mixing.commands[i] = -elevation_cmd;
-//            }
-//            else{
-//                overactuated_mixing.commands[i] = 0;
-//            }
-//        }
-//
-//        //Add eventual yaw order:
-//        if (activate_yaw_over) {
-//            if (i == 5 || i == 7) {
-//                overactuated_mixing.commands[i] -= yaw_cmd;
-//            }
-//            if (i == 1 || i == 3) {
-//                overactuated_mixing.commands[i] += yaw_cmd;
-//            }
-//        }
-//
-//        BoundAbs(overactuated_mixing.commands[i], MAX_PPRZ);
-//    }
-//    #endif
-
 }
 
