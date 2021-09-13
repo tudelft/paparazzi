@@ -43,7 +43,7 @@ extern struct GpsRelposNED gps_relposned;
 
 // Minimum speed in m/s which the ground needs to have in order to update the heading
 #ifndef FOLLOW_ME_MIN_SPEED
-#define FOLLOW_ME_MIN_SPEED 1.0f
+#define FOLLOW_ME_MIN_SPEED 0.5f
 #endif
 
 // The relative position GPS timeout in ms
@@ -66,12 +66,12 @@ float follow_me_height = FOLLOW_ME_HEIGHT;
 float follow_me_heading = 0.;
 float follow_me_min_speed = FOLLOW_ME_MIN_SPEED;
 float follow_me_filt = FOLLOW_ME_FILT;
-float follow_me_diag_speed = 1.0;
+float follow_me_diag_speed = 0.5;
 float follow_me_gps_delay = 200;
 float follow_me_datalink_delay = 600;
 float follow_me_advance_ms = 800;
 float follow_me_min_dist = 1;
-float follow_me_min_height = 30;
+float follow_me_min_height = 2;
 
 static uint32_t ground_time_msec = 0;
 static bool ground_set = false;
@@ -95,7 +95,7 @@ void follow_me_parse_target_pos(uint8_t *buf)
 {
   if(DL_TARGET_POS_ac_id(buf) != AC_ID)
     return;
-  
+
   // Save the received values
   ground_time_msec = get_sys_time_msec();
   ground_lla.lat = DL_TARGET_POS_lat(buf);
