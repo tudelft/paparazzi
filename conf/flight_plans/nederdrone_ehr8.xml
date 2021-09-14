@@ -95,12 +95,12 @@
     <block name="follow_module">
       <call_once fun="nav_set_heading_deg(follow_me_heading)"/>
       <set var="force_forward" value="FALSE"/>
-      <set value="1" var="take_heading_control"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
     </block>
     <block name="follow_module_diag">
       <call_once fun="nav_set_heading_deg(follow_me_heading)"/>
       <set var="force_forward" value="FALSE"/>
+      <set value="1" var="take_heading_control"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed)" wp="FOLLOW"/>
     </block>
     <block name="follow_module_land">
@@ -123,15 +123,18 @@
 
     <block name="stay_p1">
       <set var="force_forward" value="FALSE"/>
+      <set value="0" var="take_heading_control"/>
       <stay wp="p1"/>
     </block>
     <block name="go_p2">
       <set var="force_forward" value="TRUE"/>
+      <set value="0" var="take_heading_control"/>
       <call_once fun="nav_set_heading_deg(90)"/>
       <go wp="p2"/>
       <deroute block="stay_p1"/>
     </block>
     <block name="line_p1_p2">
+    <set value="0" var="take_heading_control"/>
       <set var="force_forward" value="TRUE"/>
       <go from="p1" hmode="route" wp="p2"/>
       <stay wp="p2" until="stage_time>10"/>
@@ -139,6 +142,7 @@
       <deroute block="line_p1_p2"/>
     </block>
     <block name="route">
+    <set value="0" var="take_heading_control"/>
       <set var="force_forward" value="TRUE"/>
       <go from="p1" hmode="route" wp="p3"/>
       <go from="p3" hmode="route" wp="p4"/>
@@ -159,6 +163,7 @@
 
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <set var="force_forward" value="FALSE"/>
+      <set value="0" var="take_heading_control"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>
     <block name="land">
