@@ -46,8 +46,9 @@ class UAV:
     def __init__(self, ac_id):
         self.initialized = False
         self.id = ac_id
-        self.X = np.zeros(3)
-        self.V = np.zeros(3)
+        self.lat = 0
+        self.lon = 0
+        self.alt = 0
         self.timeout = 0
 
 class Base:
@@ -68,18 +69,15 @@ class Base:
         # Start IVY interface
         self._interface = IvyMessagesInterface("Moving Base")
 
-        # bind to INS message
+        # bind to GPS_INT message
         def ins_cb(ac_id, msg):
-            if ac_id in self.ids and msg.name == "INS":
+            if ac_id in self.ids and msg.name == "GPS_INT":
                 uav = self.uavs[self.ids.index(ac_id)]
                 i2p = 1. / 2**8     # integer to position
                 i2v = 1. / 2**19    # integer to velocity
-                uav.X[0] = float(msg['ins_x']) * i2p
-                uav.X[1] = float(msg['ins_y']) * i2p
-                uav.X[2] = float(msg['ins_z']) * i2p
-                uav.V[0] = float(msg['ins_xd']) * i2v
-                uav.V[1] = float(msg['ins_yd']) * i2v
-                uav.V[2] = float(msg['ins_zd']) * i2v
+                uav.lat[0] = float(msg['lat']) / 1e7
+                uav.lon[1] = float(msg['lon']) / 1e7
+                uav.alt[2] = float(msg['alt']) / 100
                 uav.timeout = 0
                 uav.initialized = True
         if not self.use_ground_ref:
@@ -153,6 +151,42 @@ class Base:
             msg['course'] = self.course
             self._interface.send(msg)
 
+
+    def send_relpos(self):
+        '''
+        Send position of base sation
+        '''
+        ready = True
+        for uav in self.uavs:
+            if not uav.initialized:
+                if self.verbose:
+                    print("Waiting for state of rotorcraft ", uav.id)
+                    sys.stdout.flush()
+                ready = False
+            if uav.timeout > 0.5:
+                if self.verbose:
+                    print("The state msg of rotorcraft ", uav.id, " stopped")
+                    sys.stdout.flush()
+                ready = False
+
+        for ac in self.uavs:
+            ned = pm.geodetic2ned(ac.lat, ac.lon, ac.alt, self.lat, self.lon, self.alt)
+            msg = PprzMessage("datalink", "GPS_RTK")
+            msg['iTOW'] = 0
+            msg['ac_id'] = ac.id
+            msg['refStationId'] = ac.id
+            msg['relPosN'] = int(ned[0]*100)
+            msg['relPosE'] = int(ned[1]*100)
+            msg['relPosD'] = int(ned[2]*100)
+            msg['relPosHPN'] = 0
+            msg['relPosHPE'] = 0
+            msg['relPosHPD'] = 0
+            msg['carrSoln'] = 0
+            msg['relPosValid'] = 1
+            msg['diffSoln'] = 0
+            msg['gnssFixOK'] = 1
+            self._interface.send(msg)
+
     def run(self):
         try:
             # The main loop
@@ -168,7 +202,8 @@ class Base:
                     dn = self.speed*m.cos(self.course/180.0*m.pi)
                     de = self.speed*m.sin(self.course/180.0*m.pi)
                     self.move_base(self.step*dn,self.step*de)
-                    self.send_pos()
+                    # self.send_pos()
+                    self.send_relpos()
 
         except KeyboardInterrupt:
             self.stop()
