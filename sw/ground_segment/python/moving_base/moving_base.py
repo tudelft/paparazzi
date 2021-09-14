@@ -151,42 +151,6 @@ class Base:
             msg['course'] = self.course
             self._interface.send(msg)
 
-
-    def send_relpos(self):
-        '''
-        Send position of base sation
-        '''
-        ready = True
-        for uav in self.uavs:
-            if not uav.initialized:
-                if self.verbose:
-                    print("Waiting for state of rotorcraft ", uav.id)
-                    sys.stdout.flush()
-                ready = False
-            if uav.timeout > 0.5:
-                if self.verbose:
-                    print("The state msg of rotorcraft ", uav.id, " stopped")
-                    sys.stdout.flush()
-                ready = False
-
-        for ac in self.uavs:
-            ned = pm.geodetic2ned(ac.lat, ac.lon, ac.alt, self.lat, self.lon, self.alt)
-            msg = PprzMessage("datalink", "GPS_RTK")
-            msg['iTOW'] = 0
-            msg['ac_id'] = ac.id
-            msg['refStationId'] = ac.id
-            msg['relPosN'] = int(ned[0]*100)
-            msg['relPosE'] = int(ned[1]*100)
-            msg['relPosD'] = int(ned[2]*100)
-            msg['relPosHPN'] = 0
-            msg['relPosHPE'] = 0
-            msg['relPosHPD'] = 0
-            msg['carrSoln'] = 0
-            msg['relPosValid'] = 1
-            msg['diffSoln'] = 0
-            msg['gnssFixOK'] = 1
-            self._interface.send(msg)
-
     def run(self):
         try:
             # The main loop
@@ -202,8 +166,7 @@ class Base:
                     dn = self.speed*m.cos(self.course/180.0*m.pi)
                     de = self.speed*m.sin(self.course/180.0*m.pi)
                     self.move_base(self.step*dn,self.step*de)
-                    # self.send_pos()
-                    self.send_relpos()
+                    self.send_pos()
 
         except KeyboardInterrupt:
             self.stop()
