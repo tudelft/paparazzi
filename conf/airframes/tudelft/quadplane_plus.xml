@@ -211,19 +211,7 @@
     <set servo="MOTOR_2"   value="($th_hold? -9600 : motor_mixing.commands[1])"/>
     <set servo="MOTOR_3"   value="($th_hold? -9600 : motor_mixing.commands[2])"/>
     <set servo="MOTOR_4"   value="($th_hold? -9600 : motor_mixing.commands[3])"/>
-    <!--
-    Adding the control laws for servos
-    TBD with servos
-    -->
 
-<!--    <set servo="EL_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 6400 + overactuated_mixing.commands[0] : 6400)"/>-->
-<!--    <set servo="AZ_1"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (300 + overactuated_mixing.commands[1] + @YAW) : 300 + @YAW)"/>-->
-<!--    <set servo="EL_2"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 5500 + overactuated_mixing.commands[2] : 5500)"/>-->
-<!--    <set servo="AZ_2"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (overactuated_mixing.commands[3] + @YAW)  : @YAW)"/>-->
-<!--    <set servo="EL_3"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 6200 + overactuated_mixing.commands[4] : 6200)"/>-->
-<!--    <set servo="AZ_3"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (1000 -overactuated_mixing.commands[5] + @YAW ) : 1000 + @YAW)"/>-->
-<!--    <set servo="EL_4"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? 5300 + overactuated_mixing.commands[6] : 5300)"/>-->
-<!--    <set servo="AZ_4"   value="(AP_MODE == AP_MODE_HOVER_DIRECT ? (-1200 -overactuated_mixing.commands[7] + @YAW ) : -1200 + @YAW)"/>-->
 
     <set servo="EL_1"   value="(overactuated_mixing.commands[0])"/>
     <set servo="AZ_1"   value="(overactuated_mixing.commands[1])"/>
@@ -234,6 +222,42 @@
     <set servo="EL_4"   value="(overactuated_mixing.commands[6])"/>
     <set servo="AZ_4"   value="(-overactuated_mixing.commands[7])"/>
   </command_laws>
+
+  <section name="OVERACTUATED_VARIABLES" prefix="OVERACTUATED_MIXING_">
+
+    <!-- INDI proportional gains -->
+    <define name="INDI_REF_ERR_P" value="0.05" />
+    <define name="INDI_REF_ERR_Q" value="0.05" />
+    <define name="INDI_REF_ERR_R" value="0.05" />
+    <define name="INDI_REF_ERR_X" value="0.8" />
+    <define name="INDI_REF_ERR_Y" value="0.8" />
+    <define name="INDI_REF_ERR_Z" value="0.5" />
+
+    <!-- INDI derivative gains -->
+    <define name="INDI_REF_RATE_P" value="3." />
+    <define name="INDI_REF_RATE_Q" value="3." />
+    <define name="INDI_REF_RATE_R" value="3." />
+    <define name="INDI_REF_RATE_X" value="1." />
+    <define name="INDI_REF_RATE_Y" value="1." />
+    <define name="INDI_REF_RATE_Z" value="1.5" />
+
+    <!-- INDI actuator dynamics -->
+    <define name="INDI_ACT_DYN_MOTOR" value="0.052" unit="seconds"/>
+    <define name="INDI_ACT_DYN_EL" value="0.04" unit="seconds"/>
+    <define name="INDI_ACT_DYN_AZ" value="0.032" unit="seconds"/>
+
+    <!-- Filters properties -->
+    <define name="FILT_CUTOFF_P" value="30" unit="rad/s"/>
+    <define name="FILT_CUTOFF_Q" value="30" unit="rad/s"/>
+    <define name="FILT_CUTOFF_R" value="30" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACC_X" value="25" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACC_Y" value="25" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACC_Z" value="25" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_EL" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="20" unit="rad/s"/>
+
+  </section>
 
   <section name="MISC">
     <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 17.9024749557 * adc)"/><!-- TODO: verify/calibrate -->
@@ -307,6 +331,8 @@
     <define name="H_Z" value="0.9211303"/>
     <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
   </section>
+
+
 
   <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
     <!-- setpoints -->

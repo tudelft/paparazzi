@@ -404,7 +404,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   indi_v[1] = (angular_accel_ref.q - angular_acceleration[1]);
   indi_v[2] = (angular_accel_ref.r - angular_acceleration[2] + g2_times_du);
   indi_v[3] = v_thrust;
-  indi_v[4] =
+
 #if STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
   // Calculate the increment for each actuator
   for (i = 0; i < INDI_NUM_ACT; i++) {

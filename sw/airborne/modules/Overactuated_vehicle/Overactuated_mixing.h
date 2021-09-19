@@ -35,8 +35,8 @@
 /**
  * DEFINE VEHICLE PROPERTIES
  */
-#define N_ACT 8
-#define INDI_OUTPUTS 6
+#define N_ACT 12
+#define INDI_INPUTS 6
 #define INDI_NUM_ACT 12
 
 /* Overactuated mixing structure */
@@ -69,6 +69,6 @@ extern int32_t manual_pitch_overactuated_module;
 
 /* External used functions */
 extern void overactuated_mixing_init(void);
-extern void overactuated_mixing_run(pprz_t in_cmd[]);
+extern void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight);
 
 #endif
