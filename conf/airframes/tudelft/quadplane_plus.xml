@@ -200,31 +200,27 @@
   </section>
 
   <command_laws>
-    <call fun="overactuated_mixing_run(values)"/>
-<!--    <let var="activate_INDI"     value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>-->
-
     <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
-    <let var="th_hold"     value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
 
+    <call fun="overactuated_mixing_run(values,autopilot_in_flight())"/>
+
+    <let var="th_hold"     value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
 
     <set servo="MOTOR_1"   value="($th_hold? -9600 : motor_mixing.commands[0])"/>
     <set servo="MOTOR_2"   value="($th_hold? -9600 : motor_mixing.commands[1])"/>
     <set servo="MOTOR_3"   value="($th_hold? -9600 : motor_mixing.commands[2])"/>
     <set servo="MOTOR_4"   value="($th_hold? -9600 : motor_mixing.commands[3])"/>
-
-
-    <set servo="EL_1"   value="(overactuated_mixing.commands[0])"/>
-    <set servo="AZ_1"   value="(overactuated_mixing.commands[1])"/>
-    <set servo="EL_2"   value="(overactuated_mixing.commands[2])"/>
-    <set servo="AZ_2"   value="(overactuated_mixing.commands[3])"/>
-    <set servo="EL_3"   value="(overactuated_mixing.commands[4])"/>
-    <set servo="AZ_3"   value="(-overactuated_mixing.commands[5])"/>
-    <set servo="EL_4"   value="(overactuated_mixing.commands[6])"/>
-    <set servo="AZ_4"   value="(-overactuated_mixing.commands[7])"/>
+    <set servo="EL_1"   value="(overactuated_mixing.commands[4])"/>
+    <set servo="EL_2"   value="(overactuated_mixing.commands[5])"/>
+    <set servo="EL_3"   value="(overactuated_mixing.commands[6])"/>
+    <set servo="EL_4"   value="(overactuated_mixing.commands[7])"/>
+    <set servo="AZ_1"   value="(overactuated_mixing.commands[8])"/>
+    <set servo="AZ_2"   value="(overactuated_mixing.commands[9])"/>
+    <set servo="AZ_3"   value="(-overactuated_mixing.commands[10])"/>
+    <set servo="AZ_4"   value="(-overactuated_mixing.commands[11])"/>
   </command_laws>
 
   <section name="OVERACTUATED_VARIABLES" prefix="OVERACTUATED_MIXING_">
-
     <!-- INDI proportional gains -->
     <define name="INDI_REF_ERR_P" value="0.05" />
     <define name="INDI_REF_ERR_Q" value="0.05" />
@@ -232,7 +228,6 @@
     <define name="INDI_REF_ERR_X" value="0.8" />
     <define name="INDI_REF_ERR_Y" value="0.8" />
     <define name="INDI_REF_ERR_Z" value="0.5" />
-
     <!-- INDI derivative gains -->
     <define name="INDI_REF_RATE_P" value="3." />
     <define name="INDI_REF_RATE_Q" value="3." />
@@ -240,12 +235,29 @@
     <define name="INDI_REF_RATE_X" value="1." />
     <define name="INDI_REF_RATE_Y" value="1." />
     <define name="INDI_REF_RATE_Z" value="1.5" />
-
-    <!-- INDI actuator dynamics -->
+    <!-- INDI maximum orders -->
+    <define name="INDI_MAX_PHI" value="40" unit="deg"/>
+    <define name="INDI_MAX_THETA" value="40" unit="deg"/>
+    <define name="INDI_MAX_PSI_ERROR" value="40" unit="deg"/>
+    <define name="INDI_MAX_P" value="100" unit="deg/s"/>
+    <define name="INDI_MAX_Q" value="100" unit="deg/s"/>
+    <define name="INDI_MAX_R" value="400" unit="deg/s"/>
+    <define name="INDI_MAX_P_DOT" value="500" unit="deg/s^2"/>
+    <define name="INDI_MAX_Q_DOT" value="500" unit="deg/s^2"/>
+    <define name="INDI_MAX_R_DOT" value="1000" unit="deg/s^2"/>
+    <define name="INDI_MAX_X_ERR" value="5" unit="m"/>
+    <define name="INDI_MAX_Y_ERR" value="5" unit="m"/>
+    <define name="INDI_MAX_Z_ERR" value="5" unit="m"/>
+    <define name="INDI_MAX_VX" value="5" unit="m/s"/>
+    <define name="INDI_MAX_VY" value="5" unit="m/s"/>
+    <define name="INDI_MAX_VZ" value="2" unit="m/s"/>
+    <define name="INDI_MAX_AX" value="2" unit="m/s^2"/>
+    <define name="INDI_MAX_AY" value="2" unit="m/s^2"/>
+    <define name="INDI_MAX_AZ" value="2" unit="m/s^2"/>
+    <!-- Actuator dynamics -->
     <define name="INDI_ACT_DYN_MOTOR" value="0.052" unit="seconds"/>
     <define name="INDI_ACT_DYN_EL" value="0.04" unit="seconds"/>
     <define name="INDI_ACT_DYN_AZ" value="0.032" unit="seconds"/>
-
     <!-- Filters properties -->
     <define name="FILT_CUTOFF_P" value="30" unit="rad/s"/>
     <define name="FILT_CUTOFF_Q" value="30" unit="rad/s"/>
@@ -256,7 +268,22 @@
     <define name="FILT_CUTOFF_ACTUATORS_EL" value="20" unit="rad/s"/>
     <define name="FILT_CUTOFF_ACTUATORS_AZ" value="20" unit="rad/s"/>
     <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="20" unit="rad/s"/>
+  </section>
 
+  <!-- Vehicle properties, see documentation for notation -->
+  <section name="VEHICLE_PROPERTIES" prefix="VEHICLE_">
+    <define name="I_XX" value="0.1" unit="Kg*m^2"/>
+    <define name="I_YY" value="0.15" unit="Kg*m^2"/>
+    <define name="I_ZZ" value="0.2" unit="Kg*m^2"/>
+    <define name="MASS" value="2.3" unit="Kg"/>
+    <define name="L1" value="0.185" unit="m"/>
+    <define name="L2" value="0.185" unit="m"/>
+    <define name="L3" value="0.36" unit="m"/>
+    <define name="L4" value="0.29" unit="m"/>
+    <define name="LZ" value="0." unit="m"/>
+    <define name="PROPELLER_INERTIA" value="1.984e-5" unit="Kg*m^2"/>
+    <define name="MOTOR_KT" value="9.5e-6" unit="N*s^2/rad^2"/>
+    <define name="MOTOR_KM" value="1.5e-7" unit="N*m*s^2/rad^2"/>
   </section>
 
   <section name="MISC">

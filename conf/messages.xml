@@ -1736,16 +1736,16 @@
 
      <message name="OVERACTUATED_VARIABLES" id="212">
          <field name="wind_speed" type="float" >Actual wind speed from the control room</field>
-         <field name="act_x_pos" type="float" >Actual x position [cm]</field>
-         <field name="act_y_pos" type="float" >Actual y position [cm]</field>
-         <field name="act_z_pos" type="float" >Actual z position [cm]</field>
-         <field name="act_u" type="float" >Actual x speed [cm/s]</field>
-         <field name="act_v" type="float" >Actual y speed [cm/s]</field>
-         <field name="act_w" type="float" >Actual z speed [cm/s]</field>
+         <field name="act_x_pos" type="float" >Actual x position [m]</field>
+         <field name="act_y_pos" type="float" >Actual y position [m]</field>
+         <field name="act_z_pos" type="float" >Actual z position [m]</field>
+         <field name="act_u" type="float" >Actual x speed [m/s]</field>
+         <field name="act_v" type="float" >Actual y speed [m/s]</field>
+         <field name="act_w" type="float" >Actual z speed [m/s]</field>
          <field name="act_psi" type="float" >Actual Psi angle [deg]</field>
-         <field name="des_x_pos" type="float" >Desired position x [cm]</field>
-         <field name="des_y_pos" type="float" >Desired position y [cm]</field>
-         <field name="des_z_pos" type="float" >Desired alt [cm]</field>
+         <field name="des_x_pos" type="float" >Desired position x [m]</field>
+         <field name="des_y_pos" type="float" >Desired position y [m]</field>
+         <field name="des_z_pos" type="float" >Desired alt [m]</field>
          <field name="yaw_action" type="float" >Yaw action on azimuth [ppz]</field>
          <field name="elev_action" type="float" >elevation action [ppz]</field>
          <field name="azimuth_action" type="float" >azimuth action [ppz]</field>
