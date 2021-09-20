@@ -41,6 +41,8 @@
 #include "subsystems/radio_control.h"
 #include "filters/low_pass_filter.h"
 
+float rate_sp_r_msg = 0.0;
+
 #include "subsystems/actuators/motor_mixing.h"
 
 #if !defined(STABILIZATION_INDI_ACT_DYN_P) && !defined(STABILIZATION_INDI_ACT_DYN_Q) && !defined(STABILIZATION_INDI_ACT_DYN_R)
@@ -153,7 +155,7 @@ static void send_att_indi(struct transport_tx *trans, struct link_device *dev)
 
   pprz_msg_send_STAB_ATTITUDE_INDI(trans, dev, AC_ID,
                                    &indi.rate_d[0],
-                                   &indi.rate_d[1],
+                                   &rate_sp_r_msg,
                                    &indi.rate_d[2],
                                    &indi.angular_accel_ref.p,
                                    &indi.angular_accel_ref.q,
@@ -367,6 +369,8 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight __att
   //This lets you impose a maximum yaw rate.
   BoundAbs(rate_sp.r, indi.attitude_max_yaw_rate);
 
+  rate_sp_r_msg = rate_sp.r;
+
   // Compute reference angular acceleration:
   indi.angular_accel_ref.p = (rate_sp.p - rates_filt.p) * indi.gains.rate.p;
   indi.angular_accel_ref.q = (rate_sp.q - rates_filt.q) * indi.gains.rate.q;
@@ -389,7 +393,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight __att
     indi.u_in.p = indi.du.p;
     indi.u_in.q = indi.du.q;
     indi.u_in.r = indi.du.r;
-  } 
+  }
   else if (!pitch_control) {
     // if taking off do not increment error in pitch
     indi.u_in.p = indi.u[0].o[0] + indi.du.p;
