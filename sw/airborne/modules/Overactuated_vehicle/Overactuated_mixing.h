@@ -54,7 +54,7 @@ extern float D_az_gain;
 extern float P_el_gain;
 extern float I_el_gain;
 extern float D_el_gain;
-extern int Deadband_stick;
+extern int Deadband_stick_yaw;
 extern float Stick_gain_position;
 extern bool activate_longitudinal_over;
 extern bool activate_lateral_over;
