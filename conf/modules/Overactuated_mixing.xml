@@ -8,7 +8,7 @@
 
   <settings>
     <dl_settings>
-      <dl_settings NAME="General over set">
+      <dl_settings NAME="General overact">
         <dl_setting var="wind_speed"  min="0" step="1" max="20" shortname="wind_speed" />
         <dl_setting var="activate_tilting_az" min="0" step="1" max="1" shortname="tilt_az_active" values="FALSE|TRUE" />
         <dl_setting var="activate_tilting_el" min="0" step="1" max="1" shortname="tilt_el_active" values="FALSE|TRUE" />
@@ -23,7 +23,9 @@
 
         <dl_setting var="deadband_stick_yaw"  min="0" step="100" max="5000" shortname="Deadband yaw" />
         <dl_setting var="deadband_stick_throttle"  min="0" step="100" max="5000" shortname="Deadband throttle" />
-        <dl_setting var="stick_gain_position"  min="0" step=".01" max="1" shortname="Stick gain" />
+        <dl_setting var="stick_gain_yaw"  min="0" step=".01" max="1" shortname="Stick gain yaw" />
+        <dl_setting var="stick_gain_throttle"  min="0" step=".01" max="1" shortname="Stick gain thr" />
+
 
       </dl_settings>
     </dl_settings>
@@ -31,7 +33,7 @@
 
   <settings>
     <dl_settings>
-      <dl_settings NAME="PID set over">
+      <dl_settings NAME="PID overact">
 
         <dl_setting var="pid_gains_over.p.phi" min="0" step=".1" max="5" shortname="PID_kp_roll" persistent="true"/>
         <dl_setting var="pid_gains_over.i.phi" min="0" step=".1" max="5" shortname="PID_ki_roll" persistent="true"/>
@@ -63,7 +65,7 @@
 
   <settings>
     <dl_settings>
-      <dl_settings NAME="INDI set over">
+      <dl_settings NAME="INDI overact">
         <dl_setting var="indi_gains_over.p.phi" min="0" step=".1" max="5" shortname="INDI_kp_roll" persistent="true"/>
         <dl_setting var="indi_gains_over.d.phi" min="0" step=".1" max="5" shortname="INDI_kd_roll" persistent="true"/>
 
@@ -73,14 +75,19 @@
         <dl_setting var="indi_gains_over.p.psi" min="0" step=".1" max="5" shortname="INDI_kp_yaw" persistent="true"/>
         <dl_setting var="indi_gains_over.d.psi" min="0" step=".1" max="5" shortname="INDI_kd_yaw" persistent="true"/>
 
-        <dl_setting var="indi_gains_over.p.x" min="0" step=".1" max="5" shortname="INDI_kp_x" persistent="true"/>
-        <dl_setting var="indi_gains_over.d.x" min="0" step=".1" max="5" shortname="INDI_kd_x" persistent="true"/>
+        <dl_setting var="indi_gains_over.p.x" min="0" step=".01" max="3" shortname="INDI_kp_x" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.x" min="0" step=".01" max="3" shortname="INDI_kd_x" persistent="true"/>
 
-        <dl_setting var="indi_gains_over.p.y" min="0" step=".1" max="5" shortname="INDI_kp_y" persistent="true"/>
-        <dl_setting var="indi_gains_over.d.y" min="0" step=".1" max="5" shortname="INDI_kd_y" persistent="true"/>
+        <dl_setting var="indi_gains_over.p.y" min="0" step=".01" max="3" shortname="INDI_kp_y" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.y" min="0" step=".01" max="3" shortname="INDI_kd_y" persistent="true"/>
 
-        <dl_setting var="indi_gains_over.p.z" min="0" step=".1" max="5" shortname="INDI_kp_z" persistent="true"/>
-        <dl_setting var="indi_gains_over.d.z" min="0" step=".1" max="5" shortname="INDI_kd_z" persistent="true"/>
+        <dl_setting var="indi_gains_over.p.z" min="0" step=".01" max="3" shortname="INDI_kp_z" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.z" min="0" step=".01" max="3" shortname="INDI_kd_z" persistent="true"/>
+
+        <dl_setting var="act_dyn_struct.motor" min="0" step=".001" max=".5" shortname="act_dyn_thr" persistent="true"/>
+        <dl_setting var="act_dyn_struct.elevation" min="0" step=".001" max=".5" shortname="act_dyn_el" persistent="true"/>
+        <dl_setting var="act_dyn_struct.azimuth" min="0" step=".001" max=".5" shortname="ect_dyn_az" persistent="true"/>
+
 
       </dl_settings>
     </dl_settings>

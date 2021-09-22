@@ -51,6 +51,12 @@ struct FloatEulersPosition {
     float z;
 };
 
+struct ActuatorsStruct {
+    float motor;
+    float elevation;
+    float azimuth;
+};
+
 struct PID_over {
     struct FloatEulersPosition p;
     struct FloatEulersPosition i;
@@ -67,10 +73,9 @@ struct overactuated_mixing_t {
 };
 
 extern struct overactuated_mixing_t overactuated_mixing;
-
-
 extern struct PID_over pid_gains_over;
 extern struct PD_indi_over indi_gains_over;
+extern struct ActuatorsStruct act_dyn_struct;
 
 // Variables for slider
 extern float wind_speed;
@@ -83,7 +88,8 @@ extern float D_el_gain;
 extern int deadband_stick_yaw;
 extern int deadband_stick_throttle;
 extern float test_ale;
-extern float stick_gain_position;
+extern float stick_gain_yaw;
+extern float stick_gain_throttle;
 extern bool activate_tilting_az;
 extern bool activate_tilting_el;
 extern bool yaw_with_tilting;
