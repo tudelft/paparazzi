@@ -39,12 +39,38 @@
 #define INDI_INPUTS 6
 #define INDI_NUM_ACT 12
 
-/* Overactuated mixing structure */
+/**
+ * DEFINE SOME USEFUL STRUCT
+ */
+struct FloatEulersPosition {
+    float phi;
+    float theta;
+    float psi;
+    float x;
+    float y;
+    float z;
+};
+
+struct PID_over {
+    struct FloatEulersPosition p;
+    struct FloatEulersPosition i;
+    struct FloatEulersPosition d;
+};
+struct PD_indi_over {
+    struct FloatEulersPosition p;
+    struct FloatEulersPosition d;
+};
+
+/* overactuated mixing structure */
 struct overactuated_mixing_t {
-  int32_t commands[N_ACT];      ///< The output commands
+    int32_t commands[N_ACT];      ///< The output commands
 };
 
 extern struct overactuated_mixing_t overactuated_mixing;
+
+
+extern struct PID_over pid_gains_over;
+extern struct PD_indi_over indi_gains_over;
 
 // Variables for slider
 extern float wind_speed;
@@ -54,12 +80,14 @@ extern float D_az_gain;
 extern float P_el_gain;
 extern float I_el_gain;
 extern float D_el_gain;
-extern int Deadband_stick_yaw;
-extern float Stick_gain_position;
-extern bool activate_longitudinal_over;
-extern bool activate_lateral_over;
-extern bool activate_yaw_over;
-extern bool manual_yaw_overactuated;
+extern int deadband_stick_yaw;
+extern int deadband_stick_throttle;
+extern float test_ale;
+extern float stick_gain_position;
+extern bool activate_tilting_az;
+extern bool activate_tilting_el;
+extern bool yaw_with_tilting;
+extern bool yaw_with_motors;
 
 // For external module
 extern bool manual_roll_setpoint;

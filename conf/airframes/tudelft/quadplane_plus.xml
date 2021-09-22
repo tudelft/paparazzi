@@ -203,6 +203,33 @@
   </command_laws>
 
   <section name="OVERACTUATED_VARIABLES" prefix="OVERACTUATED_MIXING_">
+
+    <!-- PID gains -->
+    <define name="PID_P_GAIN_PHI" value="2.86" />
+    <define name="PID_I_GAIN_PHI" value="2.86" />
+    <define name="PID_D_GAIN_PHI" value="2.86" />
+    <define name="PID_P_GAIN_THETA" value="2.86" />
+    <define name="PID_I_GAIN_THETA" value="2.86" />
+    <define name="PID_D_GAIN_THETA" value="2.86" />
+    <define name="PID_P_GAIN_PSI" value="2.86" />
+    <define name="PID_I_GAIN_PSI" value="2.86" />
+    <define name="PID_D_GAIN_PSI" value="2.86" />
+    <define name="PID_P_GAIN_POS_X" value="2.86" />
+    <define name="PID_I_GAIN_POS_X" value="2.86" />
+    <define name="PID_D_GAIN_POS_X" value="2.86" />
+    <define name="PID_P_GAIN_POS_Y" value="2.86" />
+    <define name="PID_I_GAIN_POS_Y" value="2.86" />
+    <define name="PID_D_GAIN_POS_Y" value="2.86" />
+    <define name="PID_P_GAIN_POS_Z" value="2.86" />
+    <define name="PID_I_GAIN_POS_Z" value="2.86" />
+    <define name="PID_D_GAIN_POS_Z" value="2.86" />
+    <!-- PID maximum orders -->
+    <define name="PID_MAX_PHI" value="40" unit="deg"/>
+    <define name="PID_MAX_THETA" value="40" unit="deg"/>
+    <define name="PID_MAX_PSI_ERR" value="40" unit="deg"/>
+    <define name="PID_MAX_X_ERR" value="3" unit="m"/>
+    <define name="PID_MAX_Y_ERR" value="3" unit="m"/>
+    <define name="PID_MAX_Z_ERR" value="3" unit="m"/>
     <!-- INDI proportional gains -->
     <define name="INDI_REF_ERR_P" value="2.86" />
     <define name="INDI_REF_ERR_Q" value="2.86" />
@@ -220,7 +247,7 @@
     <!-- INDI maximum orders -->
     <define name="INDI_MAX_PHI" value="40" unit="deg"/>
     <define name="INDI_MAX_THETA" value="40" unit="deg"/>
-    <define name="INDI_MAX_PSI_ERROR" value="40" unit="deg"/>
+    <define name="INDI_MAX_PSI_ERR" value="40" unit="deg"/>
     <define name="INDI_MAX_P" value="100" unit="deg/s"/>
     <define name="INDI_MAX_Q" value="100" unit="deg/s"/>
     <define name="INDI_MAX_R" value="400" unit="deg/s"/>
@@ -249,7 +276,6 @@
     <define name="SERVO_AZ_MAX_ANGLE" value="45" unit="deg"/>
     <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>
     <define name="SERVO_EL_MIN_ANGLE" value="-40" unit="deg"/>
-
     <!-- Filters properties -->
     <define name="FILT_CUTOFF_P" value="30" unit="rad/s"/>
     <define name="FILT_CUTOFF_Q" value="30" unit="rad/s"/>
@@ -275,6 +301,7 @@
     <define name="LZ" value="0." unit="m"/>
     <define name="PROPELLER_INERTIA" value="1.984e-5" unit="Kg*m^2"/>
   </section>
+
 
   <section name="MISC">
     <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 17.9024749557 * adc)"/><!-- TODO: verify/calibrate -->

@@ -5,14 +5,15 @@
     <description>Overactuated Vehicle Mixing</description>
   </doc>
 
+
   <settings>
     <dl_settings>
-      <dl_settings NAME="Overactuated_settings">
+      <dl_settings NAME="General over set">
         <dl_setting var="wind_speed"  min="0" step="1" max="20" shortname="wind_speed" />
-        <dl_setting var="activate_longitudinal_over" min="0" step="1" max="1" shortname="long_active" values="FALSE|TRUE" />
-        <dl_setting var="activate_lateral_over" min="0" step="1" max="1" shortname="lat_active" values="FALSE|TRUE" />
-        <dl_setting var="activate_yaw_over" min="0" step="1" max="1" shortname="yaw_active_overactuated" values="FALSE|TRUE" />
-        <dl_setting var="manual_yaw_overactuated" min="0" step="1" max="1" shortname="man_yaw_ctl_overactuated" values="FALSE|TRUE" />
+        <dl_setting var="activate_tilting_az" min="0" step="1" max="1" shortname="tilt_az_active" values="FALSE|TRUE" />
+        <dl_setting var="activate_tilting_el" min="0" step="1" max="1" shortname="tilt_el_active" values="FALSE|TRUE" />
+        <dl_setting var="yaw_with_tilting" min="0" step="1" max="1" shortname="use_tilt_to_yaw" values="FALSE|TRUE" />
+        <dl_setting var="yaw_with_motors" min="0" step="1" max="1" shortname="use_motor_to_yaw" values="FALSE|TRUE" />
 
         <dl_setting var="manual_roll_setpoint" min="0" step="1" max="1" shortname="man_roll_set" values="FALSE|TRUE" />
         <dl_setting var="manual_roll_overactuated_module"  min="-9600" step="960" max="9600" shortname="roll_setpoint" />
@@ -20,17 +21,71 @@
         <dl_setting var="manual_pitch_setpoint" min="0" step="1" max="1" shortname="man_pitch_set" values="FALSE|TRUE" />
         <dl_setting var="manual_pitch_overactuated_module"  min="-9600" step="960" max="9600" shortname="pitch_setpoint" />
 
-        <dl_setting var="P_az_gain" min="0" step=".1" max="15" shortname="P_lat" />
-        <dl_setting var="I_az_gain" min="0" step=".1" max="15" shortname="I_lat" />
-        <dl_setting var="D_az_gain"  min="0" step=".0005" max=".01" shortname="D_lat" />
-        <dl_setting var="P_el_gain" min="0" step=".1" max="15" shortname="P_long" />
-        <dl_setting var="I_el_gain" min="0" step=".1" max="15" shortname="I_long" />
-        <dl_setting var="D_el_gain"  min="0" step=".0005" max=".01" shortname="D_long" />
-        <dl_setting var="Deadband_stick_yaw"  min="0" step="100" max="5000" shortname="Deadband" />
-        <dl_setting var="Stick_gain_position"  min="0" step=".01" max="1" shortname="Stick_gain" />
+        <dl_setting var="deadband_stick_yaw"  min="0" step="100" max="5000" shortname="Deadband yaw" />
+        <dl_setting var="deadband_stick_throttle"  min="0" step="100" max="5000" shortname="Deadband throttle" />
+        <dl_setting var="stick_gain_position"  min="0" step=".01" max="1" shortname="Stick gain" />
+
       </dl_settings>
     </dl_settings>
   </settings>
+
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="PID set over">
+
+        <dl_setting var="pid_gains_over.p.phi" min="0" step=".1" max="5" shortname="PID_kp_roll" persistent="true"/>
+        <dl_setting var="pid_gains_over.i.phi" min="0" step=".1" max="5" shortname="PID_ki_roll" persistent="true"/>
+        <dl_setting var="pid_gains_over.d.phi" min="0" step=".1" max="5" shortname="PID_kd_roll" persistent="true"/>
+
+        <dl_setting var="pid_gains_over.p.theta" min="0" step=".1" max="5" shortname="PID_kp_pitch" persistent="true"/>
+        <dl_setting var="pid_gains_over.i.theta" min="0" step=".1" max="5" shortname="PID_ki_pitch" persistent="true"/>
+        <dl_setting var="pid_gains_over.d.theta" min="0" step=".1" max="5" shortname="PID_kd_pitch" persistent="true"/>
+
+        <dl_setting var="pid_gains_over.p.psi" min="0" step=".1" max="5" shortname="PID_kp_yaw" persistent="true"/>
+        <dl_setting var="pid_gains_over.i.psi" min="0" step=".1" max="5" shortname="PID_ki_yaw" persistent="true"/>
+        <dl_setting var="pid_gains_over.d.psi" min="0" step=".1" max="5" shortname="PID_kd_yaw" persistent="true"/>
+
+        <dl_setting var="pid_gains_over.p.x" min="0" step=".1" max="5" shortname="PID_kp_x" persistent="true"/>
+        <dl_setting var="pid_gains_over.i.x" min="0" step=".1" max="5" shortname="PID_ki_x" persistent="true"/>
+        <dl_setting var="pid_gains_over.d.x" min="0" step=".1" max="5" shortname="PID_kd_x" persistent="true"/>
+
+        <dl_setting var="pid_gains_over.p.y" min="0" step=".1" max="5" shortname="PID_kp_y" persistent="true"/>
+        <dl_setting var="pid_gains_over.i.y" min="0" step=".1" max="5" shortname="PID_ki_y" persistent="true"/>
+        <dl_setting var="pid_gains_over.d.y" min="0" step=".1" max="5" shortname="PID_kd_y" persistent="true"/>
+
+        <dl_setting var="pid_gains_over.p.z" min="0" step=".1" max="5" shortname="PID_kp_z" persistent="true"/>
+        <dl_setting var="pid_gains_over.i.z" min="0" step=".1" max="5" shortname="PID_ki_z" persistent="true"/>
+        <dl_setting var="pid_gains_over.d.z" min="0" step=".1" max="5" shortname="PID_kd_z" persistent="true"/>
+
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="INDI set over">
+        <dl_setting var="indi_gains_over.p.phi" min="0" step=".1" max="5" shortname="INDI_kp_roll" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.phi" min="0" step=".1" max="5" shortname="INDI_kd_roll" persistent="true"/>
+
+        <dl_setting var="indi_gains_over.p.theta" min="0" step=".1" max="5" shortname="INDI_kp_pitch" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.theta" min="0" step=".1" max="5" shortname="INDI_kd_pitch" persistent="true"/>
+
+        <dl_setting var="indi_gains_over.p.psi" min="0" step=".1" max="5" shortname="INDI_kp_yaw" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.psi" min="0" step=".1" max="5" shortname="INDI_kd_yaw" persistent="true"/>
+
+        <dl_setting var="indi_gains_over.p.x" min="0" step=".1" max="5" shortname="INDI_kp_x" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.x" min="0" step=".1" max="5" shortname="INDI_kd_x" persistent="true"/>
+
+        <dl_setting var="indi_gains_over.p.y" min="0" step=".1" max="5" shortname="INDI_kp_y" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.y" min="0" step=".1" max="5" shortname="INDI_kd_y" persistent="true"/>
+
+        <dl_setting var="indi_gains_over.p.z" min="0" step=".1" max="5" shortname="INDI_kp_z" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.z" min="0" step=".1" max="5" shortname="INDI_kd_z" persistent="true"/>
+
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
 
   <header>
     <file name="Overactuated_mixing.h"/>

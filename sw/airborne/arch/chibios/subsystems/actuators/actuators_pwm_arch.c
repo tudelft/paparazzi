@@ -33,7 +33,7 @@
 #include "subsystems/actuators/actuators_pwm_arch.h"
 #include "subsystems/actuators/actuators_pwm.h"
 #include "mcu_periph/gpio.h"
-
+#include "subsystems/radio_control.h"
 
 /**
  * CMD_TO_US() is depending on architecture
@@ -202,30 +202,60 @@ void actuators_pwm_commit(void)
 #ifdef PWM_SERVO_4
   pwmEnableChannel(&PWM_SERVO_4_DRIVER, PWM_SERVO_4_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_4]));
 #endif
-#ifdef PWM_SERVO_5
-  pwmEnableChannel(&PWM_SERVO_5_DRIVER, PWM_SERVO_5_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_5]));
-#endif
-#ifdef PWM_SERVO_6
-  pwmEnableChannel(&PWM_SERVO_6_DRIVER, PWM_SERVO_6_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_6]));
-#endif
-#ifdef PWM_SERVO_7
-  pwmEnableChannel(&PWM_SERVO_7_DRIVER, PWM_SERVO_7_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_7]));
-#endif
-#ifdef PWM_SERVO_8
-  pwmEnableChannel(&PWM_SERVO_8_DRIVER, PWM_SERVO_8_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_8]));
-#endif
-#ifdef PWM_SERVO_9
-  pwmEnableChannel(&PWM_SERVO_9_DRIVER, PWM_SERVO_9_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_9]));
-#endif
-#ifdef PWM_SERVO_10
-  pwmEnableChannel(&PWM_SERVO_10_DRIVER, PWM_SERVO_10_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_10]));
-#endif
-#ifdef PWM_SERVO_11
-  pwmEnableChannel(&PWM_SERVO_11_DRIVER, PWM_SERVO_11_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_11]));
-#endif
-#ifdef PWM_SERVO_12
-  pwmEnableChannel(&PWM_SERVO_12_DRIVER, PWM_SERVO_12_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_12]));
-#endif
+    if(RadioControlValues(RADIO_TH_HOLD) < - 4800 ){
+        #ifdef PWM_SERVO_5
+                pwmEnableChannel(&PWM_SERVO_5_DRIVER, PWM_SERVO_5_CHANNEL, PWM_CMD_TO_US(500));
+        #endif
+        #ifdef PWM_SERVO_6
+                pwmEnableChannel(&PWM_SERVO_6_DRIVER, PWM_SERVO_6_CHANNEL, PWM_CMD_TO_US(500));
+        #endif
+        #ifdef PWM_SERVO_7
+                pwmEnableChannel(&PWM_SERVO_7_DRIVER, PWM_SERVO_7_CHANNEL, PWM_CMD_TO_US(500));
+        #endif
+        #ifdef PWM_SERVO_8
+                pwmEnableChannel(&PWM_SERVO_8_DRIVER, PWM_SERVO_8_CHANNEL, PWM_CMD_TO_US(500));
+        #endif
+        #ifdef PWM_SERVO_9
+                pwmEnableChannel(&PWM_SERVO_9_DRIVER, PWM_SERVO_9_CHANNEL, PWM_CMD_TO_US(500));
+        #endif
+        #ifdef PWM_SERVO_10
+                pwmEnableChannel(&PWM_SERVO_10_DRIVER, PWM_SERVO_10_CHANNEL, PWM_CMD_TO_US(500));
+        #endif
+        #ifdef PWM_SERVO_11
+                pwmEnableChannel(&PWM_SERVO_11_DRIVER, PWM_SERVO_11_CHANNEL, PWM_CMD_TO_US(500));
+        #endif
+        #ifdef PWM_SERVO_12
+                pwmEnableChannel(&PWM_SERVO_12_DRIVER, PWM_SERVO_12_CHANNEL, PWM_CMD_TO_US(500));
+        #endif
+    }
+    else{
+        #ifdef PWM_SERVO_5
+                pwmEnableChannel(&PWM_SERVO_5_DRIVER, PWM_SERVO_5_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_5]));
+        #endif
+        #ifdef PWM_SERVO_6
+                pwmEnableChannel(&PWM_SERVO_6_DRIVER, PWM_SERVO_6_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_6]));
+        #endif
+        #ifdef PWM_SERVO_7
+                pwmEnableChannel(&PWM_SERVO_7_DRIVER, PWM_SERVO_7_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_7]));
+        #endif
+        #ifdef PWM_SERVO_8
+                pwmEnableChannel(&PWM_SERVO_8_DRIVER, PWM_SERVO_8_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_8]));
+        #endif
+        #ifdef PWM_SERVO_9
+                pwmEnableChannel(&PWM_SERVO_9_DRIVER, PWM_SERVO_9_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_9]));
+        #endif
+        #ifdef PWM_SERVO_10
+                pwmEnableChannel(&PWM_SERVO_10_DRIVER, PWM_SERVO_10_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_10]));
+        #endif
+        #ifdef PWM_SERVO_11
+                pwmEnableChannel(&PWM_SERVO_11_DRIVER, PWM_SERVO_11_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_11]));
+        #endif
+        #ifdef PWM_SERVO_12
+                pwmEnableChannel(&PWM_SERVO_12_DRIVER, PWM_SERVO_12_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_12]));
+        #endif
+    }
+
+
 #ifdef PWM_SERVO_13
   pwmEnableChannel(&PWM_SERVO_13_DRIVER, PWM_SERVO_13_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_13]));
 #endif
