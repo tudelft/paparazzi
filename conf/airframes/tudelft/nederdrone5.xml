@@ -79,7 +79,9 @@
       <configure name="GPS_BAUD" value="B460800"/>
       <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
     </module>
-    <module name="stabilization" type="indi_simple"/>
+    <module name="stabilization" type="indi_simple">
+      <define name="TILT_TWIST_CTRL" value="TRUE"/>
+    </module>
     <module name="stabilization" type="rate_indi"/>
     <module name="ins"           type="ekf2" />
     
