@@ -468,7 +468,7 @@ static void send_ins_flow(struct transport_tx *trans, struct link_device *dev)
   pprz_msg_send_INS_FLOW_INFO(trans, dev, AC_ID,
 	&vy, &phi, &p, &vx, &theta, &q, &z, &z_dot,
 	&vy_GT, &phi_GT, &p_GT, &vx_GT, &theta_GT, &q_GT,
-	&z_GT, &vz_GT, &thrust_bias);
+	&z_GT, &vz_GT, &thrust_bias, &use_filter);
 }
 
 void ins_reset_filter(void) {

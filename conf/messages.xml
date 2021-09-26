@@ -648,6 +648,7 @@
       <field name="z_GT"  type="float" unit="m"/>
       <field name="vz_GT"  type="float" unit="m/s"/>
       <field name="thrust_bias"  type="float" unit="N"/>
+      <field name="use_filter"  type="int32" unit="-"/>
     </message>
 
     <!-- 76 is free -->
