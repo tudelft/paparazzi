@@ -79,6 +79,7 @@ struct opticflow_t {
   int actfast_min_gradient;       ///< Threshold that decides when there is sufficient texture for edge following
   int actfast_gradient_method;    ///< Whether to use a simple or Sobel filter
 
+  uint16_t fps;
 
 };
 

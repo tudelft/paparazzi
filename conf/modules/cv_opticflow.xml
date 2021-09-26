@@ -64,8 +64,9 @@
 	<dl_settings NAME="Vision stabilization">
       <!-- Optical flow calculations parameters -->
       <dl_settings name="vision_calc">
-      <dl_setting var="opticflow.method" min="0" step="1" max="1" module="computer_vision/opticflow_module" shortname="method" values="LK_Fast9|EdgeFlow" param="METHOD"/>
-      <dl_setting var="opticflow.corner_method" min="0" step="1" max="1" module="computer_vision/opticflow_module" shortname="corner_method" values="exhaustive-FAST|ACT-FAST" param="CORNER_METHOD"/>
+        <dl_setting var="opticflow.fps" min="1" step="1" max="90" module="computer_vision/opticflow_module" shortname="fps" param="FPS_OF"/>
+        <dl_setting var="opticflow.method" min="0" step="1" max="1" module="computer_vision/opticflow_module" shortname="method" values="LK_Fast9|EdgeFlow" param="METHOD"/>
+        <dl_setting var="opticflow.corner_method" min="0" step="1" max="1" module="computer_vision/opticflow_module" shortname="corner_method" values="exhaustive-FAST|ACT-FAST" param="CORNER_METHOD"/>
         <dl_setting var="opticflow.window_size" module="computer_vision/opticflow_module" min="0" step="1" max="20" shortname="window_size" param="OPTICFLOW_WINDOW_SIZE"/>
         <dl_setting var="opticflow.search_distance" module="computer_vision/opticflow_module" min="0" step="1" max="50" shortname="search_distance" param="SEARCH_DISTANCE"/>
         <dl_setting var="opticflow.subpixel_factor" module="computer_vision/opticflow_module" min="0" step="10" max="1000" shortname="subpixel_factor" param="OPTICFLOW_SUBPIXEL_FACTOR"/>
