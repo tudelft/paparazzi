@@ -170,11 +170,15 @@ void rm3100_event(struct Rm3100 *mag)
       break;
 
     default:
+//      if (mag->i2c_trans.status == I2CTransSuccess) {
       if (mag->i2c_trans.status == I2CTransSuccess || mag->i2c_trans.status == I2CTransFailed) {
         // Goto idle
         mag->i2c_trans.status = I2CTransDone;
         mag->status = RM3100_STATUS_IDLE;
       }
+//      } else {
+//        mag->initialized = false;
+//      }
       break;
   }
 }

@@ -66,7 +66,7 @@
 
     <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/><!--  unit="Hz" -->
     <configure name="AHRS_CORRECT_FREQUENCY" value="500"/> <!--  unit="Hz" -->
-    <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/><!-- TODO: best value unit="Hz" -->
+<!--    <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/>&lt;!&ndash; TODO: best value unit="Hz" &ndash;&gt;-->
 
     <configure name="NAVIGATION_FREQUENCY" value="16"/> <!--  unit="Hz" -->
     <configure name="CONTROL_FREQUENCY" value="120"/> <!--  unit="Hz" -->
@@ -135,10 +135,13 @@
     <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410" unit="s/10"/> <!-- in tenth of seconds for engine kill or in ELECTRICAL_PERIODIC_FREQ-->
 
     <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
+
     <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/> <!-- forward acceleration compensation from GPS speed -->
 
-<!--    <configure name="USE_MAGNETOMETER" value="TRUE"/>&lt;!&ndash; should be as in USE the device &ndash;&gt;-->
-<!--    <configure name="USE_MAGNETOMETER" value="FALSE"/>&lt;!&ndash; should be as in USE the device &ndash;&gt;-->
+    <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/>
+    <configure name="USE_MAGNETOMETER" value="TRUE"/>
+    <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/>
+    <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID" />
 
     <module name="ahrs" type="float_cmpl_quat"> <!-- Compare e.g. float_dcm -->
       <configure name="AHRS_USE_MAGNETOMETER" value="FALSE"/> <!-- as in USE it for values in the AHRS -->
@@ -146,7 +149,6 @@
       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
       <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0" unit="m/s"/>
       <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="FALSE"/> <!--Already TRUE by default Compensation of centrifugal force via GPS speed (to fly in circles with a fixedwing)" -->
-      <define name="AHRS_FC_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/><!-- MAG_CALIB_UKF_ID for when using the mag_clib_ukf  change your AHRS type-->
     </module>
 
     <module name="ins" type="extended"/>
@@ -159,22 +161,18 @@
 <!--    <module name="geo_mag"/>-->
 <!--    <module name="nav" type="line"/>-->
 
-    <module name="mag" type="hmc58xx">
-      <!-- <define name="MAG_TO_IMU_THETA" value="6" unit="deg"/>-->
-      <!--<define name="HMC58XX_STARTUP_DELAY" value="1.4"/>--><!-- If you mag somehow does not work, Enable this line, and maybe even change it to a higher value if it still does not work e.g. 1.9 -->
-      <configure name="MAG_HMC58XX_I2C_DEV" value="i2c1"/>
-      <!--<define name="MODULE_HMC58XX_SYNC_SEND" value="TRUE"/>--><!-- temporary for debugging external magneto and setup orientation sign and Body to Magneto angles-->
-      <configure name="MAG_HMC58XX_I2C_DEV" value="i2c1"/>
-      <define name="MODULE_HMC58XX_SYNC_SEND" value="TRUE"/>
-<!--      <define name="MODULE_HMC58XX_UPDATE_AHRS" value="TRUE"/>-->
-      <!--      <define name="MODULE_HMC58XX_UPDATE_AHRS" value="TRUE"/> &lt;!&ndash; When all calib and works to TRUE &ndash;&gt;-->
+    <module name="mag" type="rm3100">
+      <define name="USE_I2C1"/>
+      <configure name="MAG_RM3100_I2C_DEV" value="i2c1"/>
 
-      <define name="HMC58XX_CHAN_X" value="1"/>
-      <define name="HMC58XX_CHAN_Y" value="0"/>
-      <define name="HMC58XX_CHAN_Z" value="2"/>
-      <define name="HMC58XX_CHAN_X_SIGN" value="-"/>
-      <define name="HMC58XX_CHAN_Y_SIGN" value="+"/>
-      <define name="HMC58XX_CHAN_Z_SIGN" value="+"/>
+      <define name="RM3100_CHAN_X_SIGN" value="+"/>
+      <define name="RM3100_CHAN_Y_SIGN" value="+"/>
+      <define name="RM3100_CHAN_Z_SIGN" value="+"/>
+      <define name="RM3100_CHAN_X" value="0"/>
+      <define name="RM3100_CHAN_Y" value="1"/>
+      <define name="RM3100_CHAN_Z" value="2"/>
+      <define name="MODULE_RM3100_SYNC_SEND" value="TRUE"/>
+      <define name="MODULE_RM3100_UPDATE_AHRS" value="FALSE"/>
     </module>
 
     <module name="tlsf"/>
@@ -295,6 +293,10 @@
     <define name="ACCEL_Z_SENS" value="2.425259654841266" integer="16"/>
 
     <!-- ***************** MAGNETO *****************-->
+    <define name="MAG_X_SIGN" value="1"/>
+    <define name="MAG_Y_SIGN" value="-1"/>
+    <define name="MAG_Z_SIGN" value="-1"/>
+
     <define name="MAG_X_NEUTRAL" value="191"/>
     <define name="MAG_Y_NEUTRAL" value="52"/>
     <define name="MAG_Z_NEUTRAL" value="-512"/>
@@ -310,6 +312,18 @@
     <define name="BODY_TO_IMU_PHI" value="0.0" unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0.0" unit="deg"/><!-- TODO: validate -->
     <define name="BODY_TO_IMU_PSI" value="0.0" unit="deg"/>
+
+    <define name="TO_MAG_PHI"   value="0." unit="deg"/>
+    <define name="TO_MAG_THETA" value="0." unit="deg"/>
+    <define name="TO_MAG_PSI"   value="0." unit="deg"/>
+  </section>
+
+  <!-- ************************* MAG EXTERNAL ************************* -->
+  <section name="MAG_RM3100" prefix="RM3100_">
+    <define name="MAG_TO_IMU_PHI" value="0.0"/>
+    <define name="MAG_TO_IMU_THETA" value="0.0"/>
+    <define name="MAG_TO_IMU_PSI" value="0.0"/>
+    <define name="DATA_RATE" value="RM3100_RATE_75"/>
   </section>
 
   <!-- ************************* AHRS ************************* -->
