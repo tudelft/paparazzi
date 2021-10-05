@@ -79,6 +79,7 @@ struct AhrsFloatCmpl {
 extern struct AhrsFloatCmpl ahrs_fc;
 
 extern float heading_rate_update_gain;
+extern float mag_update_gain_weight;
 
 extern void ahrs_fc_init(void);
 extern void ahrs_fc_set_body_to_imu(struct OrientationReps *body_to_imu);
