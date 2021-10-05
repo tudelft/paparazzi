@@ -30,7 +30,7 @@
     <file name="mag_rm3100.h"/>
   </header>
   <init fun="mag_rm3100_module_init()"/>
-  <periodic fun="mag_rm3100_module_periodic()" freq="120"/>
+  <periodic fun="mag_rm3100_module_periodic()" freq="512"/>
   <periodic fun="mag_rm3100_report()" freq="10" autorun="FALSE"/>
   <event fun="mag_rm3100_module_event()"/>
   <makefile target="ap">
