@@ -25,9 +25,9 @@
       <module name="flight_recorder"/>
       <module name="sys_mon"/>
 
-      <!--<module name="lidar_lite">
+      <module name="lidar_lite">
         <configure name="LIDAR_LITE_I2C_DEV" value="I2C4"/>
-      </module>-->
+      </module>
 
       <!--<define name="STABILIZATION_INDI_G2_R" value="0.00035358"/>-->
     </target>
@@ -134,11 +134,11 @@
       <define name="RANDOM_EXCITATION_GROUP1" value="{0,1,2,3}"/>
       <define name="RANDOM_EXCITATION_GROUP2" value="{4,5,6,7}"/>
     </module>
-    <module name="sys_id_chirp_full_indi">
+    <!--<module name="sys_id_chirp_full_indi">
       <define name="CHIRP_ENABLED" value="TRUE"/>
       <define name="CHIRP_ACTIVATE_RC_CHANNEL" value="6"/>
       <define name="CHIRP_ACTIVATE_RC_THRESHOLD" value="9000"/>
-    </module>
+    </module>-->
 
     <!-- To get the signs (and channels) right, show a realtime plot scaled IMU_MAG mx, my, mz then:
     - [x] When you align your IMU with the direction of north, you should see x>0, y=~0, z>0.
@@ -269,7 +269,7 @@
     <define name="G1_ROLL"   value="{-3.40,  3.40,  3.40, -3.40,  3.40, -3.40, -3.40,  3.40}"/>
     <define name="G1_PITCH"  value="{ 3.25,  3.25, -3.25, -3.25,  3.25,  3.25, -3.25, -3.25}"/>
     <define name="G1_YAW"    value="{ 0.23, -0.23,  0.23, -0.23,  0.23, -0.23,  0.23, -0.23}"/>
-    <define name="G1_THRUST" value="{-0.31, -0.31, -0.31, -0.31, -0.31, -0.31, -0.31, -0.31}"/>
+    <define name="G1_THRUST" value="{-0.38, -0.38, -0.38, -0.38, -0.38, -0.38, -0.38, -0.38}"/>
     <!--<define name="G1_THRUST" value="{-0.7, -0.7, -0.7, -0.7, -0.7, -0.7, -0.7, -0.7}"/>-->
     <define name="G2" value="{ 0.07, -0.07,  0.07, -0.07,  0.07, -0.07,  0.07, -0.07}"/>
     <!-- reference acceleration for attitude control -->
@@ -340,8 +340,8 @@
   <section name="AUTOPILOT">
     <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/> <!--"AP_MODE_HOVER_Z_HOLD"-->
-    <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_DIRECT"/> <!--"AP_MODE_NAV"-->
+    <define name="MODE_AUTO1" value="AP_MODE_HOVER_Z_HOLD"/> <!--"AP_MODE_HOVER_Z_HOLD"-->
+    <define name="MODE_AUTO2" value="AP_MODE_NAV"/> <!--"AP_MODE_NAV"-->
     <define name="NO_RC_THRUST_LIMIT" value="TRUE" />
   </section>
 

@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="40" ground_alt="0" lat0="52.1681954" lon0="4.4128" max_dist_from_home="500" name="Altura fp Valkenburg" security_height="10">
+<flight_plan alt="50" ground_alt="0" lat0="52.1681954" lon0="4.4128" max_dist_from_home="500" name="Altura fp Valkenburg" security_height="10">
   <header>
     #include "autopilot.h"
     #include "subsystems/datalink/datalink.h"
@@ -68,7 +68,7 @@
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="stateGetPositionEnu_f()->z > 10.0" deroute="Standby"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
-      <stay climb="4.0" vmode="climb" wp="CLIMB"/>
+      <stay climb="2.0" vmode="climb" wp="CLIMB"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <stay wp="STDBY"/>
@@ -115,7 +115,7 @@
     </block>
     <block name="descend">
       <exception cond="!(stateGetPositionEnu_f()->z > 20.0)" deroute="flare"/>
-      <stay climb="-1.5" vmode="climb" wp="TD"/>
+      <stay climb="-1.0" vmode="climb" wp="TD"/>
     </block>
     <block name="flare">
       <stay climb="-0.4" vmode="climb" wp="TD"/>
