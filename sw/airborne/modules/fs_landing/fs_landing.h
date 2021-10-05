@@ -36,10 +36,10 @@ struct fs_landing_t {
 extern struct fs_landing_t fs_landing;
 
 // GCS Variables
-extern uint8_t pilot_has_control;
-extern uint8_t act_identification_active;
+//extern uint8_t pilot_has_control;
+//extern uint8_t act_identification_active;
 extern uint8_t cyclic_control_active;
-extern uint8_t impulse_control_active;
+//extern uint8_t impulse_control_active;
 
 extern uint8_t use_pre_spin;
 extern float pre_spin_pitch_coeff;
@@ -54,8 +54,8 @@ extern void fs_landing_run(void);
 int32_t get_matching_motl_val(int32_t val);
 
 // Handlers for changing gcs variables
-extern void fs_landing_pilot_control_handler(uint8_t active);
-extern void fs_landing_actuator_id_handler(uint8_t active);
+//extern void fs_landing_pilot_control_handler(uint8_t active);
+//extern void fs_landing_actuator_id_handler(uint8_t active);
 
 extern void fs_landing_set_actuator_values(void);
 
