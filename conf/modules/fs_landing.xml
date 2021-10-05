@@ -53,14 +53,14 @@
         <dl_setting min="0" max="1" step="1" var="phase_pilot_control" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="balance_motor_forces" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="use_controller" type="uint8_t" module="fs_landing/cyclic_control" handler="use_controller_handler" />
-        <dl_setting min="-1" max="1" step="0.1" var="ml_avg" shortname="Avg ML" type="float" module="fs_landing/cyclic_control"/>
-        <dl_setting min="0" max="1" step="0.1" var="ml_delta" shortname="Half Amp ML" type="float" module="fs_landing/cyclic_control"/>
-        <dl_setting min="-1" max="1" step="0.1" var="mr_avg" shortname="Avg MR" type="float" module="fs_landing/cyclic_control"/>
-        <dl_setting min="0" max="1" step="0.1" var="mr_delta" shortname="Half Amp MR" type="float" module="fs_landing/cyclic_control"/>
-        <dl_setting min="-1" max="1" step="0.1" var="el_avg" shortname="Avg EL" type="float" module="fs_landing/cyclic_control"/>
-        <dl_setting min="0" max="1" step="0.1" var="el_delta" shortname="Half Amp EL" type="float" module="fs_landing/cyclic_control"/>
-        <dl_setting min="-1" max="1" step="0.1" var="er_avg" shortname="Avg ER" type="float" module="fs_landing/cyclic_control"/>
-        <dl_setting min="0" max="1" step="0.1" var="er_delta" shortname="Half Amp ER" type="float" module="fs_landing/cyclic_control"/>
+        <dl_setting min="-1" max="1" step="0.05" var="ml_avg" shortname="Avg ML" type="float" module="fs_landing/cyclic_control"/>
+        <dl_setting min="0" max="1" step="0.05" var="ml_delta" shortname="Half Amp ML" type="float" module="fs_landing/cyclic_control"/>
+        <dl_setting min="-1" max="1" step="0.05" var="mr_avg" shortname="Avg MR" type="float" module="fs_landing/cyclic_control"/>
+        <dl_setting min="0" max="1" step="0.05" var="mr_delta" shortname="Half Amp MR" type="float" module="fs_landing/cyclic_control"/>
+        <dl_setting min="-1" max="1" step="0.05" var="el_avg" shortname="Avg EL" type="float" module="fs_landing/cyclic_control"/>
+        <dl_setting min="0" max="1" step="0.05" var="el_delta" shortname="Half Amp EL" type="float" module="fs_landing/cyclic_control"/>
+        <dl_setting min="-1" max="1" step="0.05" var="er_avg" shortname="Avg ER" type="float" module="fs_landing/cyclic_control"/>
+        <dl_setting min="0" max="1" step="0.05" var="er_delta" shortname="Half Amp ER" type="float" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="360" step="1" var="el_phase" shortname="Phase Elevon" type="float" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="360" step="1" var="mt_phase" shortname="Phase Motor" type="float" module="fs_landing/cyclic_control"/>
       </dl_settings>
