@@ -10,14 +10,14 @@ float ff_duration = 3.;
 // TODO Determine
 float thr_l_ff = 0; //-7000;
 float thr_r_ff = 0; //7000;
-float elev_l_ff = -9600;
-float elev_r_ff = 9600;
+float elev_l_ff = 0; //-9600;
+float elev_r_ff = 0; //9600;
 
 // TODO Determine
 float thr_l_spinning = 0; //-7000;
 float thr_r_spinning = 0; //7000;
-float elev_l_spinning = -9600;
-float elev_r_spinning = 9600;
+float elev_l_spinning = 0; //-9600;
+float elev_r_spinning = 0; //9600;
 
 uint8_t ff_actuator_values(struct fs_landing_t *actuator_values, float ff_start_time)
 {
@@ -41,41 +41,4 @@ void spin_actuator_values(struct fs_landing_t *actuator_values)
     actuator_values->commands[SERVO_S_ELEVON_LEFT] = elev_l_spinning;
     actuator_values->commands[SERVO_S_ELEVON_RIGHT] = elev_r_spinning;
 }
-
-//void feed_forward_ff_duration_handler(float dur)
-//{
-//    ff_duration = dur;
-//}
-//void feed_forward_thr_l_ff_handler(float val)
-//{
-//    thr_l_ff = val;
-//}
-//void feed_forward_thr_r_ff_handler(float val)
-//{
-//    thr_r_ff = val;
-//}
-//void feed_forward_elev_l_ff_handler(float val)
-//{
-//    elev_l_ff = val;
-//}
-//void feed_forward_elev_r_ff_handler(float val)
-//{
-//    elev_r_ff = val;
-//}
-//void feed_forward_thr_l_spin_handler(float val)
-//{
-//    thr_l_spinning = val;
-//}
-//void feed_forward_thr_r_spin_handler(float val)
-//{
-//    thr_r_spinning = val;
-//}
-//void feed_forward_elev_l_spin_handler(float val)
-//{
-//    elev_l_spinning = val;
-//}
-//void feed_forward_elev_r_spin_handler(float val)
-//{
-//    elev_r_spinning = val;
-//}
 
