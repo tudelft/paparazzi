@@ -33,12 +33,16 @@ extern float el_phase;
 extern uint8_t use_square_sig;
 extern uint8_t phase_pilot_control;
 extern uint8_t balance_motor_forces;
+extern uint8_t cc_feed_forward;
 extern uint8_t use_controller;
+
+extern float cc_ff_side_time;
 
 void cyclic_control_values(struct fs_landing_t *actuator_values);
 void get_max_roll_yaw(void);
 void get_max_pitch_yaw(void);
 
+extern void cyclic_control_cc_feed_forward_handler(uint8_t value);
 extern void cyclic_control_use_controller_handler(uint8_t value);
 
 #endif //PAPARAZZI_CYCLIC_CONTROL_H

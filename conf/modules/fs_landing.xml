@@ -43,6 +43,10 @@
         <dl_setting min="0" max="10" step="0.01" var="cc_kd_gain" shortname="D Gain" type="float" module="fs_landing/cyclic_controller"/>
         <dl_setting min="0" max="1" step="0.05" var="max_amplitude" shortname="Ampl" type="float" module="fs_landing/cyclic_controller"/>
       </dl_settings>
+      <dl_settings name="CC FF Square Loop">
+        <dl_setting min="0" max="1" step="1" var="cc_feed_forward" shortname="cc_ff_start" type="uint8_t" module="fs_landing/cyclic_control" handler="cc_feed_forward_handler"/>
+        <dl_setting min="0" max="10" step="0.1" var="cc_ff_side_time" shortname="side_time" type="float" module="fs_landing/cyclic_control"/>
+      </dl_settings>
       <dl_settings name="Cyclic Control">
         <dl_setting min="0" max="1" var="cyclic_control_active" step="1" type="uint8_t" module="fs_landing/fs_landing" />
         <dl_setting min="0" max="1" step="1" var="use_motor_l" type="uint8_t" module="fs_landing/cyclic_control"/>

@@ -35,12 +35,17 @@ float el_phase = 0.;
 uint8_t balance_motor_forces = true;
 uint8_t use_square_sig = true;
 uint8_t phase_pilot_control = false;
+uint8_t cc_feed_forward = false;
 uint8_t use_controller = false;
+
+uint8_t has_cc_ff_started = false;
+float cc_ff_start_time;
+float cc_ff_side_time = 2;  // 2 seconds per square loop "side"
 
 int cyclic_dbg_ctr = 0;  // For debug telemetry
 
 void cyclic_control_values(struct fs_landing_t *actuator_values) {
-  float current_yaw = stateGetNedToBodyEulers_f() -> psi;
+  float current_yaw = stateGetNedToBodyEulers_f()->psi;
 
   float mt_phase_rad = RadOfDeg(mt_phase);
   float el_phase_rad = RadOfDeg(el_phase);
@@ -54,11 +59,11 @@ void cyclic_control_values(struct fs_landing_t *actuator_values) {
       radio_pitch = 0;
     }
     float pilot_phase_rad = atan2f(radio_pitch, radio_roll);
-    mt_phase_rad = pilot_phase_rad;
-    el_phase_rad = pilot_phase_rad;
+    mt_phase_rad += pilot_phase_rad;
+    el_phase_rad += pilot_phase_rad;
 
 #if CYCLIC_CONTROL_DEBUG
-  #if PERIODIC_TELEMETRY
+#if PERIODIC_TELEMETRY
     fs_landing_dbg_values[0] = radio_roll;
     fs_landing_dbg_values[1] = radio_pitch;
     fs_landing_dbg_values[2] = DegOfRad(pilot_phase_rad);
@@ -68,8 +73,32 @@ void cyclic_control_values(struct fs_landing_t *actuator_values) {
     } else {
       cyclic_dbg_ctr++;
     }
-  #endif
 #endif
+#endif
+  } else if (cc_feed_forward) {
+    // Fly a feed-forward square loop by changing phase by 90deg every cc_ff_side_time seconds
+    if (!has_cc_ff_started) {
+      cc_ff_start_time = get_sys_time_float();
+      has_cc_ff_started = true;
+    } else {
+      float cc_ff_dt = get_sys_time_float() - cc_ff_start_time;
+      if (0 < cc_ff_dt & cc_ff_dt <= cc_ff_side_time) {
+//        mt_phase_rad += 0;
+        el_phase_rad += 0;
+      } else if (cc_ff_side_time < cc_ff_dt & cc_ff_dt <= 2 * cc_ff_side_time) {
+//        mt_phase_rad += M_PI_2;
+        el_phase_rad += M_PI_2;
+      } else if (2 * cc_ff_side_time < cc_ff_dt & cc_ff_dt <= 3 * cc_ff_side_time) {
+//        mt_phase_rad += M_PI;
+        el_phase_rad += M_PI;
+      } else if (3 * cc_ff_side_time < cc_ff_dt & cc_ff_dt <= 4 * cc_ff_side_time) {
+//        mt_phase_rad += M_PI + M_PI_2;
+        el_phase_rad += M_PI + M_PI_2;
+      } else {  // Test end, disable cyclic
+        ml_delta = 0;
+        mr_delta = 0;
+      }
+    }
   } else if (use_controller) {
     cyclic_controller_run();
     ml_delta = cyclic_controller.cyclic_amplitude;
@@ -125,6 +154,15 @@ void cyclic_control_values(struct fs_landing_t *actuator_values) {
   }
   if (use_motor_r) {
     actuator_values -> commands[SERVO_S_THROTTLE_RIGHT] = motor_r;
+  }
+}
+
+void cyclic_control_cc_feed_forward_handler(uint8_t value) {
+  if (value) {
+    cc_feed_forward = true;
+    has_cc_ff_started = false;
+  } else {
+    cc_feed_forward = false;
   }
 }
 
