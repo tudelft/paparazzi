@@ -648,6 +648,24 @@ gboolean timeout_transmit_callback(gpointer data)
                  aircrafts[rigidBodies[i].id].ac_id); // uint8 rigid body ID (1 byte)
 
     } else {
+
+	    // TODO: include the ground truth angles in the GPS message:
+	    // ONLY USE THIS OPTION IF *NOT* USING NAV MODE
+	/*IvySendMsg("0 REMOTE_GPS %d %d %d %d %d %d %d %d %d %d %d %d %d %d", aircrafts[rigidBodies[i].id].ac_id,
+	                 rigidBodies[i].nMarkers,                //uint8 Number of markers (sv_num)
+	                 (int)(ecef_pos.x * 100.0),              //int32 ECEF X in CM
+	                 (int)(ecef_pos.y * 100.0),              //int32 ECEF Y in CM
+	                 (int)(ecef_pos.z * 100.0),              //int32 ECEF Z in CM
+	                 (int)(DegOfRad(lla_pos.lat) * 10000000.0),        //int32 LLA latitude in deg*1e7
+	                 (int)(DegOfRad(lla_pos.lon) * 10000000.0),        //int32 LLA longitude in deg*1e7
+	                 (int)(lla_pos.alt * 1000.0),            //int32 LLA altitude in mm above elipsoid
+	                 (int)(rigidBodies[i].z * 1000.0),       //int32 HMSL height above mean sea level in mm
+	                 (int)(DegOfRad(orient_eulers.phi) * 100.0), // 100 * degrees of roll
+	                 (int)(DegOfRad(orient_eulers.theta) * 100.0), // pitch
+	                 (int)(DegOfRad(orient_eulers.psi) * 100.0), // yaw
+	                 tow,
+	                 (int)(heading * 10000000.0));           //int32 Course in rad*1e7*/
+
       IvySendMsg("0 REMOTE_GPS %d %d %d %d %d %d %d %d %d %d %d %d %d %d", aircrafts[rigidBodies[i].id].ac_id,
                  rigidBodies[i].nMarkers,                //uint8 Number of markers (sv_num)
                  (int)(ecef_pos.x * 100.0),              //int32 ECEF X in CM

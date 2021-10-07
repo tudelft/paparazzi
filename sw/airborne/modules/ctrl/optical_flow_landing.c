@@ -169,6 +169,10 @@ PRINT_CONFIG_VAR(OFL_OPTICAL_FLOW_ID)
 // When this is 1 (true),a change in angle will be commanded instead.
 #define HORIZONTAL_RATE_CONTROL 0
 
+// Normally, ACTIVE_RATES = 0, and the estimated angle is immediately used for controlling the error to 0
+// If ACTIVE_RATES = 1, a sine is actively added to the commanded rates, so that there is often a rate
+#define ACTIVE_RATES 0
+
 // Constants
 // minimum value of the P-gain for divergence control
 // adaptive control / exponential gain control will not be able to go lower
@@ -879,10 +883,20 @@ void vertical_ctrl_module_run(bool in_flight)
   //								  sum_pitch_error, I_hor * sum_pitch_error);
   float pitch_cmd;
   float roll_cmd;
+  float add_active_sine = 0.0f;
+
+  if(ACTIVE_RATES) {
+      float sine_period = 2;
+      float sine_amplitude = RadOfDeg(1.0);
+      float sine_time = get_sys_time_float();
+      add_active_sine = sine_amplitude * sinf((1.0f/sine_period) * sine_time * 2 * M_PI);
+      printf("add_active_sine = %f\n", add_active_sine);
+  }
   if(!HORIZONTAL_RATE_CONTROL) {
       // normal operation:
       pitch_cmd = RadOfDeg(of_landing_ctrl.pitch_trim + error_pitch *  P_hor +  I_hor * sum_pitch_error);
-      roll_cmd = RadOfDeg(of_landing_ctrl.roll_trim + error_roll *  P_hor +  I_hor * sum_roll_error);
+      // add_active_sine = 0.0f in normal operation:
+      roll_cmd = RadOfDeg(of_landing_ctrl.roll_trim + error_roll *  P_hor +  I_hor * sum_roll_error) + add_active_sine;
   }
   else {
       struct FloatEulers *eulers = stateGetNedToBodyEulers_f();
