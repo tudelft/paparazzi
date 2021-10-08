@@ -151,28 +151,18 @@
     <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
 
     <define name="USE_AHRS_GPS_ACCELERATIONS" value="FALSE"/> <!-- forward acceleration compensation from GPS speed -->
-<!--    <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/> &lt;!&ndash;DEFINE only used if float_dcm Use magnetic compensation before takeoff only while GPS course not good &ndash;&gt;-->
-<!--    <configure name="USE_MAGNETOMETER" value="TRUE"/>&lt;!&ndash; should be as in USE the device &ndash;&gt;-->
-    <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/>
     <configure name="USE_MAGNETOMETER" value="TRUE"/>
-    <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/>
     <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID" />
 
-    <!-- FIXME -->
     <module name="ahrs" type="float_cmpl_quat"> <!-- Compare e.g. float_dcm -->
       <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/> <!-- as in USE it for values in the AHRS -->
-      <configure name="AHRS_ALIGNER_LED" value="2"/>
-      <define name="AHRS_MAG_UPDATE_ALL_AXES" value="FALSE"/> <!-- TODO if TRUE with those high roll n pith angles magneto should be calibrated well or use UKF autocalib -->
+      <define name="AHRS_MAG_UPDATE_ALL_AXES" value="FALSE"/> <!-- if TRUE with those high roll n pith angles magneto should be calibrated well or use UKF autocalib -->
       <define name="AHRS_USE_GPS_HEADING" value="FALSE"/><!-- TRUE by default Use GPS course to update heading for time being,if FALSE data from magneto only -->
-      <!-- <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="FALSE"/>--> <!--Already TRUE by default Compensation of centrifugal force via GPS speed (to fly in circles with a fixedwing)"-->
+      <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/> <!-- TRUE by default Compensation of centrifugal force via GPS speed (to fly in circles with a fixedwing)" -->
       <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/> <!-- AHRS_GRAVITY_UPDATE_COORDINATED_TURN assumes the GPS speed is in the X axis direction. Quadshot, DelftaCopter and other hybrids can have the GPS speed in the negative Z direction" -->
       <define name="AHRS_PROPAGATE_LOW_PASS_RATES" value="FALSE"/> <!-- apply a low pass filter on rotational velocity"-->
-      <define name="AHRS_BIAS_UPDATE_HEADING_THRESHOLD" value="0.174533" unit="rad"/> <!-- don't update gyro bias if heading deviation is above this rotation threshold"-->
-      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="1.0" unit="m/s"/> <!-- CAREFULL,  Don't update heading from GPS course if GPS ground speed is below is this threshold in m/s" -->
-      <!-- Some insights https://lists.nongnu.org/archive/html/paparazzi-devel/2013-10/msg00126.html -->
-      <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="0"/> <!-- TODO: determine Default is 30. Reduce accelerometer cut-off frequency when the vehicle is accelerating: norm(ax,ay,az) 9,81 m/s2. WARNING: when the IMU is not well damped, the norm of accelerometers never equals to 9,81 m/s2. As a result, the GRAVITY_HEURISTIC_FACTOR will reduce the accelerometer bandwith even if the vehicle is not accelerating. -->
-      <!--      <define name="AHRS_ICQ_IMU_ID" value="ABI_BROADCAST"/> &lt;!&ndash; ABI sender id of IMU to use &ndash;&gt;-->
-<!--      <define name="AHRS_ICQ_MAG_ID" value="MAG_CALIB_UKF_ID"/>&lt;!&ndash; for when using the mag_clib_ukf &ndash;&gt;-->
+<!--      <define name="AHRS_BIAS_UPDATE_HEADING_THRESHOLD" value="0.174533" unit="rad"/> ONLY IN int_cmpl_quat!!! don't update gyro bias if heading deviation is above this rotation threshold"&ndash;&gt;-->
+      <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="30"/> <!-- TODO: determine Default is 30. Reduce accelerometer cut-off frequency when the vehicle is accelerating: norm(ax,ay,az) 9,81 m/s2. WARNING: when the IMU is not well damped, the norm of accelerometers never equals to 9,81 m/s2. As a result, the GRAVITY_HEURISTIC_FACTOR will reduce the accelerometer bandwith even if the vehicle is not accelerating. -->
     </module>
 
     <module name="ins" type="extended"/>
@@ -332,17 +322,17 @@
 
     <!-- ***************** MAGNETO *****************-->
     <define name="MAG_X_SIGN" value="1"/>
-    <define name="MAG_Y_SIGN" value="-1"/>
-    <define name="MAG_Z_SIGN" value="-1"/>
+    <define name="MAG_Y_SIGN" value="1"/>
+    <define name="MAG_Z_SIGN" value="1"/>
 
     <!-- FIXME Redo calibration-->
-    <define name="MAG_X_NEUTRAL" value="217"/>
-    <define name="MAG_Y_NEUTRAL" value="30"/>
-    <define name="MAG_Z_NEUTRAL" value="-517"/>
+    <define name="MAG_X_NEUTRAL" value="9067"/>
+    <define name="MAG_Y_NEUTRAL" value="-7965"/>
+    <define name="MAG_Z_NEUTRAL" value="-10900"/>
 
-    <define name="MAG_X_SENS" value="7.8416468785602484" integer="16"/>
-    <define name="MAG_Y_SENS" value="8.348726309178065" integer="16"/>
-    <define name="MAG_Z_SENS" value="6.583446581070574" integer="16"/>
+    <define name="MAG_X_SENS" value="0.5845317312329568" integer="16"/>
+    <define name="MAG_Y_SENS" value="0.6394795522738707" integer="16"/>
+    <define name="MAG_Z_SENS" value="0.6260140729123805" integer="16"/>
 
     <!-- Should be same for everyone -->
     <define name="MAG_X_CURRENT_COEF" value="0.000321738038902"/>
@@ -360,10 +350,10 @@
 
   <!-- ************************* MAG EXTERNAL ************************* -->
   <section name="MAG_RM3100" prefix="RM3100_">
-    <define name="MAG_TO_IMU_PHI" value="0.0"/>
-    <define name="MAG_TO_IMU_THETA" value="0.0"/>
-    <define name="MAG_TO_IMU_PSI" value="0.0"/>
-    <define name="DATA_RATE" value="RM3100_RATE_75"/>
+    <define name="MAG_TO_IMU_PHI" value="180.0" unit="deg"/>
+    <define name="MAG_TO_IMU_THETA" value="0.0" unit="deg"/>
+    <define name="MAG_TO_IMU_PSI" value="-90.0" unit="deg"/>
+    <define name="DATA_RATE" value="RM3100_RATE_600"/>
   </section>
 
   <!-- ************************* AHRS ************************* -->
@@ -372,6 +362,7 @@
     <!-- Better keep geo_mag module ifyou have a GNSDS, else replace the values with your local magnetic field -->
 
     <!-- Local Magnetic field DE2018 -->
+    <!-- FIXME https://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
     <define name="H_X" value="0.403761"/>
     <define name="H_Y" value="0.014826"/>
     <define name="H_Z" value="0.914744"/>
