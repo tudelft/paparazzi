@@ -361,11 +361,11 @@
     <!-- Values used if no GNSS fix, on 3D fix is update by geo_mag module -->
     <!-- Better keep geo_mag module ifyou have a GNSDS, else replace the values with your local magnetic field -->
 
-    <!-- Local Magnetic field DE2018 -->
-    <!-- FIXME https://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
-    <define name="H_X" value="0.403761"/>
-    <define name="H_Y" value="0.014826"/>
-    <define name="H_Z" value="0.914744"/>
+    <!-- Local Magnetic field WMM2020 -->
+    <!-- https://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
+    <define name="H_X" value="0.386580"/>
+    <define name="H_Y" value="0.012384"/>
+    <define name="H_Z" value="0.922173"/>
   </section>
 
   <!-- ************************* INS ************************* -->
