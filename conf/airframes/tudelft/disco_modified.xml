@@ -50,27 +50,9 @@
   <firmware name="fixedwing">
     <!-- ********************** For in the real flying hardware ******************** -->
     <target name="ap" board="px4fmu_4.0_chibios"/>
-<!--    <target name="ap" board="px4fmu_4.0"/>-->
-
-    <!-- Towards a better and no messing it all up kind of aligner -->
-    <!--
-    <define name="AHRS_ALIGNER_SAMPLES_NB" value="200"/>
-    <define name="LOW_NOISE_THRESHOLD" value="30000"/>
-    <define name="LOW_NOISE_TIME" value="10"/>
-    -->
-<!--    <configure name="USE_ADC_2" value="FALSE"/> &lt;!&ndash; For external PowerBrick Voltage measure&ndash;&gt;-->
-<!--    <define name="ADC_CHANNEL_VSUPPLY" value="ADC_2"/>-->
-
-<!--    <module name="current_sensor">&lt;!&ndash; For external PowerBrick Current measurement&ndash;&gt;-->
-<!--      <configure name="USE_ADC_3" value="TRUE"/>-->
-<!--      <configure name="ADC_CURRENT_SENSOR" value="ADC_3"/>-->
-<!--      <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.01"/>&lt;!&ndash; Set a good value if your linearity is not so linear as our sensor was &ndash;&gt;-->
-<!--    </module>-->
-    <!-- <configure name="CPU_LED" value="1"/>--> <!-- Change to whatever you like -->
 
     <!-- Note that PERIODIC_FREQUENCY should be least equal or greater than AHRS_PROPAGATE_FREQUENCY -->
     <configure name="PERIODIC_FREQUENCY" value="512"/> <!--  unit="Hz" -->
-    <!--  TODO check higher periodic frequency but other settings may change too (filtering)  -->
 
     <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/><!--  unit="Hz" -->
     <configure name="AHRS_CORRECT_FREQUENCY" value="500"/> <!--  unit="Hz" -->
@@ -95,12 +77,6 @@
 <!--      <define name="IMU_MPU9250_Y_SIGN" value="-1"/>-->
 <!--      <define name="IMU_MPU9250_Z_SIGN" value="-1"/>-->
     </module>
-
-    <!-- If you build in your GPS where the MAGNETOMETER resides on the board
-  not aligned with the Accelerometer/Gyro axis then set these values -->
-<!--    <define name="MAG_TO_IMU_PHI" value="0.0" unit="deg"/>-->
-<!--    <define name="MAG_TO_IMU_PSI" value="0.0" unit="deg"/>-->
-<!--    <define name="MAG_TO_IMU_THETA" value="0.0" unit="deg"/>-->
 
 <!--    <module name="baro_ms5611_spi" >-->
 <!--      <configure name="MS5611_SPI_DEV" value="spi1"/>-->
@@ -131,10 +107,6 @@
 
     <define name="AGR_CLIMB"/> <!--Has aggressive mode handy for testing purposes -->
     <define name="TUNE_AGRESSIVE_CLIMB"/>
-
-<!--    <define name="STRONG_WIND"/>-->
-<!--    <define name="WIND_INFO"/>-->
-<!--    <define name="WIND_INFO_RET"/>-->
 
     <define name="autopilot_motors_on" value="FALSE"/><!-- TODO: choose ;) -->
     <!-- temp fix for geomag, normally only used for rotorcraft -->
@@ -340,7 +312,7 @@
     <define name="MAG_Z_CURRENT_COEF" value="0.00139218924958"/>
 
     <define name="BODY_TO_IMU_PHI" value="0.0" unit="deg"/>
-    <define name="BODY_TO_IMU_THETA" value="0.0" unit="deg"/><!-- TODO: validate -->
+    <define name="BODY_TO_IMU_THETA" value="0.0" unit="deg"/>
     <define name="BODY_TO_IMU_PSI" value="0.0" unit="deg"/>
 
     <define name="TO_MAG_PHI"   value="0." unit="deg"/>
@@ -383,18 +355,6 @@
     <define name="USE_GPS_ALT" value="1"/>
     <define name="VFF_R_GPS" value="0.02"/>
   </section>
-
-  <!-- ************************* MAG_CALIB_UKF ************************* -->
-  <!-- FIXME Fix calibration -->
-<!--  <section name="MAG_CALIB_UKF" prefix="MAG_CALIB_UKF_">-->
-<!--    <define name="HOTSTART" value="FALSE"/>&lt;!&ndash; for faster convergence flights to flight &ndash;&gt;-->
-<!--    <define name="HOTSTART_SAVE_FILE" value=""/>&lt;!&ndash;<define name="HOTSTART_SAVE_FILE" value="/data/ftp/internal_000/mag_ukf_calib.txt"/>&ndash;&gt;-->
-<!--    <define name="NORM" value="1.0f"/>-->
-<!--    <define name="NOISE_RMS" value="5e-2f"/>-->
-<!--    <define name="GEO_MAG_TIMEOUT" value="0"/>-->
-<!--    <define name="INITIAL_STATE" value="0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0" type="float[]"/>-->
-<!--    <define name="VERBOSE" value="FALSE"/>&lt;!&ndash; Disable after testing &ndash;&gt;-->
-<!--  </section>-->
 
   <!-- ************************* GAINS ************************* -->
   <!-- ************************* H ************************* -->
@@ -594,11 +554,6 @@
     or  fly a long range mission you define the wanted mode behaviour here.
     If you do not define it, it defaults to flying to the flightplan HOME -->
     <define name="RC_LOST_MODE" value="AP_MODE_AUTO2"/>
-
-    <!-- TODO: SET some modem values with multipoint also the $AC_ID -->
-    <!--  Here XBEE init will be misused to set SiK Si10xx based modems as the Hope and RFdesign -->
-    <!--  <define name="XBEE_INIT" value="ATS17=$AC_ID\rATS16=134\rAT&W\rATZ\r" type="string"/>  -->
-    <!--  <define name="NO_XBEE_API_INIT" value="TRUE"/> -->
   </section>
 
   <!-- ************************ GLS_APPROACH ************************* -->
