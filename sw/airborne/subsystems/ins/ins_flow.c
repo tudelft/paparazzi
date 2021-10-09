@@ -432,16 +432,16 @@ static void send_ins_flow(struct transport_tx *trans, struct link_device *dev)
   float p, q;
   if(!CONSTANT_ALT_FILTER) {
       // normally:
-      // p = phi_dot;
+      p = phi_dot;
       // when estimating the gyros:
-      // p = -1.8457e-04 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
-      p = -2.0e-03 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
+      // // p = -1.8457e-04 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
+      // p = -2.0e-03 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
       // TODO: expand the full filter later as well, to include q:
       q = q_GT;
   }
   else {
-      // p = ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll;
-      p = -2.0e-03 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
+      p = ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll;
+      // p = -2.0e-03 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
       q = ins_flow.lp_gyro_pitch - ins_flow.lp_gyro_bias_pitch;
   }
 
@@ -666,7 +666,7 @@ void ins_optical_flow_cb(uint8_t sender_id UNUSED, uint32_t stamp, int16_t flow_
   ins_flow.optical_flow_x = (((float)flow_x)*fps)/(subpixel_factor*focal_x);
   ins_flow.optical_flow_y = (((float)flow_y)*fps)/(subpixel_factor*focal_x);
   ins_flow.divergence = 1.27*size_divergence*fps;
-  //printf("Reading %f, %f, %f\n", optical_flow_x, optical_flow_y, divergence_vision);
+  //printf("Reading %f, %f, %f\n", ins_flow.optical_flow_x, ins_flow.optical_flow_y, ins_flow.divergence);
   ins_flow.vision_time = new_time;
   ins_flow.new_flow_measurement = true;
 
@@ -887,6 +887,8 @@ void ins_flow_update(void)
   else {
     // make sure that the right hand state terms appear before they change:
     OF_X[OF_V_IND] += dt * (thrust * sin(OF_X[OF_ANGLE_IND]) / mass);
+    OF_X[OF_Z_IND] += dt * OF_X[OF_Z_DOT_IND];
+    OF_X[OF_Z_DOT_IND] += dt * (thrust * cos(OF_X[OF_ANGLE_IND]) / mass - g);
     OF_X[OF_ANGLE_IND] += dt * OF_X[OF_ANGLE_DOT_IND];
     /*
      * // TODO: We now only keep this here because it worked on the real drone. It also worked without it. So to be deleted if it works as is.
@@ -894,8 +896,7 @@ void ins_flow_update(void)
 	OF_X[OF_ANGLE_IND] += dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f;
     }*/
     OF_X[OF_ANGLE_DOT_IND] += dt * (moment / Ix);
-    OF_X[OF_Z_IND] += dt * OF_X[OF_Z_DOT_IND];
-    OF_X[OF_Z_DOT_IND] += dt * (thrust * cos(OF_X[OF_ANGLE_IND]) / mass - g);
+
     // thrust bias does not change over time according to our model
 
     if(OF_DRAG) {
