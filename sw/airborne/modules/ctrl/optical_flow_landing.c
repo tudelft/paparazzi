@@ -186,6 +186,8 @@ PRINT_CONFIG_VAR(OFL_OPTICAL_FLOW_ID)
 // horizontal loop:
 float optical_flow_x;
 float optical_flow_y;
+float lp_flow_x;
+float lp_flow_y;
 float sum_roll_error;
 float sum_pitch_error;
 
@@ -395,6 +397,9 @@ void vertical_ctrl_module_init(void)
   delta_setpoint = 0.0f;
   ramp_start_time = 0.0f;
   start_setpoint_ramp = 0.0f;
+
+  lp_flow_x = 0.0f;
+  lp_flow_y = 0.0f;
 }
 
 /**
@@ -453,6 +458,9 @@ static void reset_all_vars(void)
   delta_setpoint = 0.0f;
   ramp_start_time = 0.0f;
   start_setpoint_ramp = 0.0f;
+
+  lp_flow_x = 0.0f;
+  lp_flow_y = 0.0f;
 }
 
 /**
@@ -871,8 +879,13 @@ void vertical_ctrl_module_run(bool in_flight)
   //printf("flow x, y = %f, %f\n", new_flow_x, new_flow_y);
   // negative command is flying forward, positive back.
 
+  lp_flow_x += (new_flow_x - lp_flow_x) * lp_factor;
+  lp_flow_y += (new_flow_y - lp_flow_y) * lp_factor;
+
   float error_pitch = new_flow_y - of_landing_ctrl.omega_FB;
   float error_roll = new_flow_x - of_landing_ctrl.omega_LR;
+  //float error_pitch = lp_flow_y - of_landing_ctrl.omega_FB;
+  //float error_roll = lp_flow_x - of_landing_ctrl.omega_LR;
   // TODO: introduce trim commands and make the P and I gain sliders!
   sum_pitch_error += error_pitch;
   sum_roll_error += error_roll;
@@ -886,7 +899,7 @@ void vertical_ctrl_module_run(bool in_flight)
   float add_active_sine = 0.0f;
 
   if(ACTIVE_RATES) {
-      float sine_period = 2;
+      float sine_period = 0.05;
       float sine_amplitude = RadOfDeg(1.0);
       float sine_time = get_sys_time_float();
       add_active_sine = sine_amplitude * sinf((1.0f/sine_period) * sine_time * 2 * M_PI);

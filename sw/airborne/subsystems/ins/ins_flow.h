@@ -32,12 +32,12 @@
 extern "C" {
 #endif
 
-#define CONSTANT_ALT_FILTER 0
+#define CONSTANT_ALT_FILTER 1
 #define OF_DRAG 1
 // Only for constant alt for now!
 #define OF_TWO_DIM 0
 // Only for changing alt
-#define OF_THRUST_BIAS 1
+#define OF_THRUST_BIAS 0
 // Whether to use gyros:
 #define OF_USE_GYROS 1
 
@@ -51,7 +51,6 @@ extern "C" {
     #define OF_Z_IND 2
     #define OF_ANGLE_DOT_IND 3
     #if OF_USE_GYROS == 1
-      // gyros used in the prediction and measurement
       #define N_MEAS_OF_KF 3
     #else
       // gyros not used at all

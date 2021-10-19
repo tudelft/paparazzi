@@ -44,6 +44,7 @@
 #include "arch/linux/udp_socket.h"
 #include "math/pprz_geodetic_double.h"
 #include "math/pprz_algebra_double.h"
+//#include "sys_time.h"
 
 /** Debugging options */
 uint8_t verbose = 0;
@@ -579,6 +580,13 @@ gboolean timeout_transmit_callback(gpointer data)
     uint32_t tow = ts->tm_wday * (24 * 60 * 60 * 1000) + ts->tm_hour * (60 * 60 * 1000) + ts->tm_min *
                    (60 * 1000) + ts->tm_sec * 1000 + now.tv_usec / 1000 ;
 
+
+    // Small logger of only ground truth angles:
+    // TODO: This part of the code does not seem to be reached... (can't see it...)
+    // float time_orientation = get_sys_time_float();
+    // printf("Time = %f, Phi = %f, theta = %f, psi = %f\n", DegOfRad(orient_eulers.phi), DegOfRad(orient_eulers.theta), DegOfRad(orient_eulers.psi));
+
+
     // Transmit the REMOTE_GPS packet on the ivy bus (either small or big)
     if (small_packets) {
       /* The local position is an int32 and the 11 LSBs of the (signed) x and y axis are compressed into
@@ -649,22 +657,6 @@ gboolean timeout_transmit_callback(gpointer data)
 
     } else {
 
-	    // TODO: include the ground truth angles in the GPS message:
-	    // ONLY USE THIS OPTION IF *NOT* USING NAV MODE
-	/*IvySendMsg("0 REMOTE_GPS %d %d %d %d %d %d %d %d %d %d %d %d %d %d", aircrafts[rigidBodies[i].id].ac_id,
-	                 rigidBodies[i].nMarkers,                //uint8 Number of markers (sv_num)
-	                 (int)(ecef_pos.x * 100.0),              //int32 ECEF X in CM
-	                 (int)(ecef_pos.y * 100.0),              //int32 ECEF Y in CM
-	                 (int)(ecef_pos.z * 100.0),              //int32 ECEF Z in CM
-	                 (int)(DegOfRad(lla_pos.lat) * 10000000.0),        //int32 LLA latitude in deg*1e7
-	                 (int)(DegOfRad(lla_pos.lon) * 10000000.0),        //int32 LLA longitude in deg*1e7
-	                 (int)(lla_pos.alt * 1000.0),            //int32 LLA altitude in mm above elipsoid
-	                 (int)(rigidBodies[i].z * 1000.0),       //int32 HMSL height above mean sea level in mm
-	                 (int)(DegOfRad(orient_eulers.phi) * 100.0), // 100 * degrees of roll
-	                 (int)(DegOfRad(orient_eulers.theta) * 100.0), // pitch
-	                 (int)(DegOfRad(orient_eulers.psi) * 100.0), // yaw
-	                 tow,
-	                 (int)(heading * 10000000.0));           //int32 Course in rad*1e7*/
 
       IvySendMsg("0 REMOTE_GPS %d %d %d %d %d %d %d %d %d %d %d %d %d %d", aircrafts[rigidBodies[i].id].ac_id,
                  rigidBodies[i].nMarkers,                //uint8 Number of markers (sv_num)
