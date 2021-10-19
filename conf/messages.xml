@@ -651,7 +651,15 @@
       <field name="use_filter"  type="int32" unit="-"/>
     </message>
 
-    <!-- 76 is free -->
+
+    <message name="OPTITRACK_ATTITUDE" id="76">
+      <field name="phi"  type="float" unit="deg/s"/>
+      <field name="theta"  type="float" unit="deg"/>
+      <field name="psi"  type="float" unit="deg/s"/>
+      <field name="rigid_body_ID"  type="int32" unit="-"/>
+    </message>
+
+
     <!-- 77 is free -->
 
     <!--message for Invariant filter with position-->

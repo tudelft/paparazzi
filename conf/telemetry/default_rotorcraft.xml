@@ -36,7 +36,8 @@
       <message name="LIDAR"                    period="1.2"/>
       <message name="INS_EKF2"                 period=".25"/>
       <message name="AHRS_REF_QUAT" 	       period="0.05"/>
-      <message name="INS_FLOW_INFO"	       period="0.05"/>       
+      <message name="INS_FLOW_INFO"	       period="0.05"/>    
+      <message name="OPTITRACK_ATTITUDE"       period="0.05"/>   
     </mode>
 
     <mode name="ppm">

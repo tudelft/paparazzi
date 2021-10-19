@@ -44,7 +44,6 @@
 #include "arch/linux/udp_socket.h"
 #include "math/pprz_geodetic_double.h"
 #include "math/pprz_algebra_double.h"
-//#include "sys_time.h"
 
 /** Debugging options */
 uint8_t verbose = 0;
@@ -583,8 +582,15 @@ gboolean timeout_transmit_callback(gpointer data)
 
     // Small logger of only ground truth angles:
     // TODO: This part of the code does not seem to be reached... (can't see it...)
-    // float time_orientation = get_sys_time_float();
-    // printf("Time = %f, Phi = %f, theta = %f, psi = %f\n", DegOfRad(orient_eulers.phi), DegOfRad(orient_eulers.theta), DegOfRad(orient_eulers.psi));
+    //printf("Phi = %f, theta = %f, psi = %f\n", DegOfRad(orient_eulers.phi), DegOfRad(orient_eulers.theta), DegOfRad(orient_eulers.psi));
+    //fprintf(stderr, "Phi = %f, theta = %f, psi = %f\n", DegOfRad(orient_eulers.phi), DegOfRad(orient_eulers.theta), DegOfRad(orient_eulers.psi));
+    IvySendMsg("%d OPTITRACK_ATTITUDE %f %f %f %d",
+	       aircrafts[rigidBodies[i].id].ac_id,
+	       DegOfRad(orient_eulers.phi),
+	       DegOfRad(orient_eulers.theta),
+	       DegOfRad(orient_eulers.psi),
+	       aircrafts[rigidBodies[i].id].ac_id);
+
 
 
     // Transmit the REMOTE_GPS packet on the ivy bus (either small or big)
