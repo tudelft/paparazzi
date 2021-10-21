@@ -389,7 +389,7 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
     }
     for (uint8_t i = 0; i < 6; i++)
     {
-        actuators[i] = INDI_acceleration_inputs[i] * 100;
+        actuators[i] = indi_du[i] * 100;
     }
 
 //actuators[0] = 100 * INDI_acceleration_inputs[2];
@@ -485,6 +485,65 @@ void overactuated_mixing_init() {
     //Startup the init variables of the INDI
     init_filters();
 
+}
+void compute_pseudoinverse(float **B_matrix, float **Pseudoinverse, int n_row, int n_column){
+
+    uint8_t i,j,k;
+    //Transpose matrix B_in
+    float B_matrix_transposed[n_column][n_row];
+    float * B_matrix_[n_column];
+    for (uint8_t i = 0; i < n_row; i++) {
+        for (j = 0; j < n_column; j++) {
+            B_matrix_transposed[j][i] = B_matrix[i][j];
+            B_matrix_[j] = &B_matrix_transposed[j][0];
+        }
+    }
+
+    // Pre-assign the matrices for the SVD decomposition
+    float w_in[n_row];
+    float v_in[n_row][n_row];
+    float * v_in_[n_row];
+    for (i = 0; i < n_row; i++) {
+        v_in_[i] = &v_in[i][0];
+    }
+
+    //Decompose the B matrix with the SVD decomposition module
+    pprz_svd_float(B_matrix_, &w_in[0], v_in_, n_column, n_row);
+
+    //Transpose matrix U
+    float U_transposed[n_row][n_column];
+    for (i = 0; i < n_column; i++) {
+        for (j = 0; j < n_row; j++) {
+            U_transposed[j][i] = B_matrix_[i][j];
+        }
+    }
+
+    // Invert the diag values
+    float w_inverted[n_row][n_row];
+    for (i = 0; i < n_row; i++) {
+        w_inverted[i][i] = 1/w_in[i];
+    }
+
+    //Multiply the diagonal matrix with U_transposed
+    float out_1[n_row][n_column];
+    for (i = 0; i < n_row; i++) {
+        for (j = 0; j < n_column; j++) {
+            out_1[i][j] = 0.;
+            for (k = 0; k < n_row; k++) {
+                out_1[i][j] += w_inverted[i][k] * U_transposed[k][j];
+            }
+        }
+    }
+
+    //Multiply V with out_1
+    for (i = 0; i < n_row; i++) {
+        for (j = 0; j < n_column; j++) {
+            Pseudoinverse[i][j] = 0.;
+            for (k = 0; k < n_row; k++) {
+                Pseudoinverse[i][j] += v_in_[i][k] * out_1[k][j];
+            }
+        }
+    }
 }
 
 /**
@@ -916,29 +975,45 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         INDI_acceleration_inputs[2] = acc_setpoint[2] - acc_vect_filt[2];
 
 
-        // Compute the B matrix and invert it
-        float B_matrix_in[INDI_INPUTS][INDI_NUM_ACT];
-        float * B_matrix_in_[INDI_INPUTS];
-        for (i = 0; i < INDI_INPUTS; i++) {
-            B_matrix_in_[i] = &B_matrix_in[i][0];
-        }
+//        // Compute the B matrix and invert it
+//        float B_matrix_in[INDI_INPUTS][INDI_NUM_ACT];
+//        float * B_matrix_in_[INDI_INPUTS];
+//        for (i = 0; i < INDI_INPUTS; i++) {
+//            B_matrix_in_[i] = &B_matrix_in[i][0];
+//        }
+//
+//        Compute_B_matrix(B_matrix_in_,VEHICLE_I_XX,VEHICLE_I_YY,VEHICLE_I_ZZ,VEHICLE_PROPELLER_INERTIA,VEHICLE_L1,
+//                         VEHICLE_L2,VEHICLE_L3,VEHICLE_L4,VEHICLE_LZ,VEHICLE_MASS,OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ,
+//                         OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ, &actuator_state_filt[0],&actuator_state_filt[4],
+//                         &actuator_state_filt[8], &actuator_state_filt_dot[0],&actuator_state_filt_dot[4],
+//                         &actuator_state_filt_dot[8],&euler_vect[0],&rate_vect_filt[0]);
 
-        Compute_B_matrix(B_matrix_in_,VEHICLE_I_XX,VEHICLE_I_YY,VEHICLE_I_ZZ,VEHICLE_PROPELLER_INERTIA,VEHICLE_L1,
-                         VEHICLE_L2,VEHICLE_L3,VEHICLE_L4,VEHICLE_LZ,VEHICLE_MASS,OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ,
-                         OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ, &actuator_state_filt[0],&actuator_state_filt[4],
-                         &actuator_state_filt[8], &actuator_state_filt_dot[0],&actuator_state_filt_dot[4],
-                         &actuator_state_filt_dot[8],&euler_vect[0],&rate_vect_filt[0]);
-        
-        B_matrix[INDI_OUTPUTS][INDI_NUM_ACT] = {
+        float B_matrix[INDI_INPUTS][INDI_NUM_ACT] = {
                 {0, 0, 0, 0, -2.4525, -2.4525, -2.4525, -2.4525, 0, 0, 0, 0},
                 {0, 0, 0, 0, 0, 0, 0, 0, 2.4525, 2.4525, 2.4525, 2.4525},
                 {-0.0062, -0.0062, -0.0062, -0.0062, 0, 0, 0, 0, 0, 0, 0, 0},
                 {0.0265, -0.0265, -0.0265, 0.0265, 0, 0, 0, 0, 0, 0, 0, 0},
                 {0.0277, 0.0277, -0.0344, -0.0344, 0, 0, 0, 0, 0, 0, 0, 0},
-                {0.0010, -0.0010, 0.0010, -0.0010, 0, 0, 0, 0, 8.1791, 8.1791, -10.1533, -10.1533},
+                {0.0010, -0.0010, 0.0010, -0.0010, 0, 0, 0, 0, 8.1791, 8.1791, -10.1533, -10.1533}};
+        float * B_matrix_in_[INDI_INPUTS];
+        for (i = 0; i < INDI_INPUTS; i++) {
+            B_matrix_in_[i] = &B_matrix[i][0];
+        }
 
-        float B_matrix[INDI_INPUTS][INDI_NUM_ACT];
-        memcpy(B_matrix, B_matrix_in, INDI_INPUTS * INDI_NUM_ACT * sizeof(float));
+//        float B_matrix[INDI_INPUTS][INDI_NUM_ACT];
+//        memcpy(B_matrix, B_matrix_in, INDI_INPUTS * INDI_NUM_ACT * sizeof(float));
+
+        float INDI_acceleration_inputs_2[6] = {0, 0, 1, 0, 0, 0};
+
+
+//        float Pseudoinverse[INDI_INPUTS][INDI_NUM_ACT];
+//        float * Pseudoinverse_[INDI_INPUTS];
+//        for (i = 0; i < INDI_INPUTS; i++) {
+//            Pseudoinverse_[i] = &Pseudoinverse[i][0];
+//        }
+//        compute_pseudoinverse(B_matrix_in_,Pseudoinverse_,INDI_INPUTS,INDI_NUM_ACT);
+
+
 
         //Transpose matrix B_in
         float B_matrix_transposed[INDI_NUM_ACT][INDI_INPUTS];
@@ -997,12 +1072,15 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
             }
         }
 
+
+
+
         //Compute the actuation increment command by multiplying desired acceleration with the pseudoinverse matrix
         for (j = 0; j < INDI_NUM_ACT; j++) {
             //Cleanup previous value
             indi_du[j] = 0.;
             for (k = 0; k < INDI_INPUTS; k++) {
-                indi_du[j] += INDI_acceleration_inputs[k] * Pseudoinverse[k][j];
+                indi_du[j] += INDI_acceleration_inputs_2[k] * Pseudoinverse[k][j];
             }
         }
 
