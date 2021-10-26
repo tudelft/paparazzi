@@ -1,0 +1,26 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="approach_moving_target" dir="ctrl">
+  <doc>
+    <description>
+      Approach a moving target (e.g. ship) along a diagonal.
+    </description>
+  </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="Approach">
+        <dl_setting var="approach_moving_target_angle_deg" min="0." max="50." step="1.0" shortname="angle" unit="degrees"/>
+        <dl_setting var="amt.speed" min="-5.0" max="5." step="0.1" shortname="speed" unit="m/s"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <header>
+    <file name="approach_moving_target.h"/>
+  </header>
+  <init fun="approach_moving_target_init()"/>
+  <periodic fun="follow_diagonal_approach()" freq="100.0"/>
+  <makefile>
+    <file name="approach_moving_target.c"/>
+  </makefile>
+</module>
+

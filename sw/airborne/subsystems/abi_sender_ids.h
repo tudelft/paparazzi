@@ -495,6 +495,14 @@
 #endif
 
 /*
+ * IDs of VEL_SP senders (message 29)
+ */
+
+#ifndef VEL_SP_FCR_ID
+#define VEL_SP_FCR_ID 1 // Approach Moving Target
+#endif
+
+/*
  * RELATIVE_LOCALIZATION communication (message 24)
 */
 #ifndef RELATIVE_LOCALIZATION_ID

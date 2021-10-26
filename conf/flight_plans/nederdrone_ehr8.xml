@@ -120,7 +120,6 @@
       <set value="1" var="pitch_control"/>
       <set value="0" var="take_heading_control"/>
       <set var="force_forward" value="FALSE"/>
-      <set value="false" var="approaching_rope"/>
       <stay wp="STDBY"/>
     </block>
 
@@ -155,13 +154,12 @@
     </block>
 
     <block name="Take Heading control">
-      <call_once fun="nav_set_heading_rad(rope_heading)"/>
+      <!-- <call_once fun="nav_set_heading_rad(rope_heading)"/> -->
       <set value="1" var="take_heading_control"/>
       <stay wp="STDBY"/>
-      <exception cond="fabs(stateGetNedToBodyEulers_f()->psi-rope_heading) @LT 0.03" deroute="Approach Rope"/>
+      <!-- <exception cond="fabs(stateGetNedToBodyEulers_f()->psi-rope_heading) @LT 0.03" deroute="Approach Rope"/> -->
     </block>
     <block name="Approach Rope">
-      <set value="true" var="approaching_rope"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed*0.5)" wp="ROPE" alt="WaypointAlt(WP_ROPE)"/>
     </block>
 

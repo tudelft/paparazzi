@@ -14,21 +14,10 @@
         <dl_setting var="gih_params.speed_gain" min="0" step="0.1" max="10.0" shortname="kd" param="GUIDANCE_INDI_SPEED_GAIN" persistent="true"/>
         <dl_setting var="gih_params.speed_gainz" min="0" step="0.1" max="10.0" shortname="kd_z" param="GUIDANCE_INDI_SPEED_GAINZ" persistent="true"/>
         <dl_setting var="gih_params.heading_bank_gain" min="0" step="0.1" max="30.0" shortname="bank gain" param="GUIDANCE_INDI_HEADING_BANK_GAIN" persistent="true"/>
-        <dl_setting var="scheduled_pos_gain" min="0" step="0.1" max="10.0" shortname="kp_s" param="GUIDANCE_INDI_POS_GAIN" persistent="true"/>
-        <dl_setting var="scheduled_pos_gainz" min="0" step="0.1" max="10.0" shortname="kp_z_s" param="GUIDANCE_INDI_POS_GAINZ" persistent="true"/>
-        <dl_setting var="scheduled_speed_gain" min="0" step="0.1" max="10.0" shortname="kd_s" param="GUIDANCE_INDI_SPEED_GAIN" persistent="true"/>
-        <dl_setting var="scheduled_speed_gainz" min="0" step="0.1" max="10.0" shortname="kd_z_s" param="GUIDANCE_INDI_SPEED_GAINZ" persistent="true"/>
         <dl_setting var="guidance_indi_max_airspeed" min="12.0" step="1.0" max="30.0" shortname="cruise_airspeed"/>
         <dl_setting var="nav_max_speed" min="1.0" step="1.0" max="50.0" shortname="nav_max_speed"/>
         <dl_setting var="guidance_indi_max_bank" min="10.0" step="1.0" max="50.0" shortname="max_bank"/>
         <dl_setting var="take_heading_control" min="0" step="1" max="1" values="OFF|ON" shortname="take_heading"/>
-        <dl_setting var="approaching_rope" min="0" step="1" max="1" values="OFF|ON" shortname="approach_rope"/>
-        <dl_setting var="landing_slope_deg" min="0.0" step="0.5" max="50.0" shortname="slope"/>
-        <dl_setting var="rope_heading" min="-3.150" step="0.001" max="3.150" shortname="psi_r"/>
-        <dl_setting var="max_diag_par_speed" min="0.0" step="0.1" max="5.0" shortname="max_par"/>
-        <dl_setting var="max_h_speed_diag" min="0.0" step="0.1" max="5.0" shortname="max_h"/>
-        <dl_setting var="min_z_speed_diag" min="-5.0" step="0.1" max="0.0" shortname="min_z"/>
-        <dl_setting var="max_z_speed_diag" min="0.0" step="0.1" max="5.0" shortname="max_z"/>
       </dl_settings>
     </dl_settings>
   </settings>

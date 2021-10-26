@@ -204,6 +204,10 @@
       <field name="throttle"  type="int16_t">Throttle input in pprz_t [0;9600] or [-9600;9600] (for vertical speed control for instance)</field>
     </message>
 
+    <message name="VEL_SP" id="29">
+      <field name="vel_sp" type="struct FloatVect3 *" unit="m/s"/>
+    </message>
+
   </msg_class>
 
 </protocol>

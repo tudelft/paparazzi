@@ -71,10 +71,6 @@
 #define GUIDANCE_INDI_DELTA_KD 2.0
 #endif
 
-#ifndef NPS_DEBUG_SPEED_SP
-#define NPS_DEBUG_SPEED_SP false
-#endif
-
 struct guidance_indi_hybrid_params gih_params = {
   .pos_gain = GUIDANCE_INDI_POS_GAIN,
   .pos_gainz = GUIDANCE_INDI_POS_GAINZ,
@@ -84,18 +80,6 @@ struct guidance_indi_hybrid_params gih_params = {
 
   .heading_bank_gain = GUIDANCE_INDI_HEADING_BANK_GAIN,
 };
-
-float scheduled_pos_gain = 0.;
-float scheduled_pos_gainz= 0.;
-float scheduled_speed_gain= 0.;
-float scheduled_speed_gainz= 0.;
-float landing_slope_deg= 15.0;
-bool debug_speed_sp = NPS_DEBUG_SPEED_SP;
-float rope_heading = 0.0; //0.785
-float max_diag_par_speed = 0.5;
-float max_h_speed_diag = 2.0;
-float min_z_speed_diag = -1.0;
-float max_z_speed_diag = 2.0;
 
 #ifndef GUIDANCE_INDI_MAX_AIRSPEED
 #error "You must have an airspeed sensor to use this guidance"
@@ -112,8 +96,6 @@ float nav_max_speed = NAV_MAX_SPEED;
 
 /*Boolean to force the heading to a static value (only use for specific experiments)*/
 bool take_heading_control = false;
-/*Boolean to activate moving rope landing controller*/
-bool approaching_rope = false;
 
 struct FloatVect3 sp_accel = {0.0,0.0,0.0};
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
@@ -174,11 +156,18 @@ float thrust_in;
 
 struct FloatVect3 speed_sp = {0.0, 0.0, 0.0};
 
+#ifndef GUIDANCE_INDI_VEL_SP_ID
+#define GUIDANCE_INDI_VEL_SP_ID ABI_BROADCAST
+#endif
+abi_event vel_sp_ev;
+static void vel_sp_cb(uint8_t sender_id, struct FloatVect3 *vel_sp);
+struct FloatVect3 indi_vel_sp = {0.0, 0.0, 0.0};
+float time_of_vel_sp = 0.0;
+
 void guidance_indi_propagate_filters(void);
 static void guidance_indi_calcg_wing(struct FloatMat33 *Gmat);
 static float guidance_indi_get_liftd(float pitch, float theta);
 struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_gain);
-struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float pos_gain, float rope_heading);
 struct FloatVect3 nav_get_speed_sp_from_line(struct FloatVect2 line_v_enu, struct FloatVect2 to_end_v_enu, struct EnuCoor_i target, float pos_gain);
 struct FloatVect3 nav_get_speed_setpoint(float pos_gain);
 
@@ -218,6 +207,8 @@ void guidance_indi_init(void)
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
+
+  AbiBindMsgVEL_SP(GUIDANCE_INDI_VEL_SP_ID, &vel_sp_ev, vel_sp_cb);
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE_INDI_HYBRID, send_guidance_indi_hybrid);
@@ -268,22 +259,22 @@ void guidance_indi_run(float *heading_sp) {
   float pos_x_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.x) - stateGetPositionNed_f()->x;
   float pos_y_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y) - stateGetPositionNed_f()->y;
   float pos_z_err = POS_FLOAT_OF_BFP(guidance_v_z_ref - stateGetPositionNed_i()->z);
-  
-  scheduled_pos_gain = GUIDANCE_INDI_DELTA_KP;
-  scheduled_pos_gainz = GUIDANCE_INDI_DELTA_KP;
-  if(autopilot.mode == AP_MODE_NAV) {
-    speed_sp = nav_get_speed_setpoint(gih_params.pos_gain);
-    //speed_sp = nav_get_speed_setpoint(scheduled_pos_gain);
-    if(debug_speed_sp){
-      printf("speed_sp=%f,%f,%f\n",speed_sp.x,speed_sp.y,speed_sp.z);
+
+  // First check for velocity setpoint from module
+  float dt = get_sys_time_float() - time_of_vel_sp;
+  // If the input command is not updated after a timeout, switch back to flight plan control
+  if (dt < 0.5) {
+    speed_sp.x = indi_vel_sp.x;
+    speed_sp.y = indi_vel_sp.y;
+    speed_sp.z = indi_vel_sp.z;
+  } else {
+    if(autopilot.mode == AP_MODE_NAV) {
+      speed_sp = nav_get_speed_setpoint(gih_params.pos_gain);
+    } else{
+      speed_sp.x = pos_x_err * gih_params.pos_gain;
+      speed_sp.y = pos_y_err * gih_params.pos_gain;
+      speed_sp.z = pos_z_err * gih_params.pos_gainz;
     }
-  } else{
-    // speed_sp.x = pos_x_err * gih_params.pos_gain;
-    // speed_sp.y = pos_y_err * gih_params.pos_gain;
-    // speed_sp.z = pos_z_err * gih_params.pos_gainz;
-    speed_sp.x = pos_x_err * scheduled_pos_gain;
-    speed_sp.y = pos_y_err * scheduled_pos_gain;
-    speed_sp.z = pos_z_err * scheduled_pos_gainz;
   }
 
   //for rc control horizontal, rotate from body axes to NED
@@ -369,9 +360,6 @@ void guidance_indi_run(float *heading_sp) {
     speed_sp.x = cosf(psi) * speed_sp_b_x - sinf(psi) * speed_sp_b_y;
     speed_sp.y = sinf(psi) * speed_sp_b_x + cosf(psi) * speed_sp_b_y;
     speed_sp.z = speed_sp.z;
-
-    scheduled_speed_gain = GUIDANCE_INDI_DELTA_KD;
-    scheduled_speed_gainz = GUIDANCE_INDI_DELTA_KD;
     
     sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain;
     sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain;
@@ -611,8 +599,6 @@ struct FloatVect3 nav_get_speed_setpoint(float pos_gain) {
   struct FloatVect3 speed_sp;
   if(horizontal_mode == HORIZONTAL_MODE_ROUTE) {
     speed_sp = nav_get_speed_sp_from_line(line_vect, to_end_vect, navigation_target, pos_gain);
-  } else if(approaching_rope){
-    speed_sp = nav_get_speed_sp_from_diagonal(navigation_target, pos_gain, rope_heading);
   } else {
     speed_sp = nav_get_speed_sp_from_go(navigation_target, pos_gain);
   }
@@ -706,102 +692,6 @@ struct FloatVect3 nav_get_speed_sp_from_line(struct FloatVect2 line_v_enu, struc
 
   return speed_sp_return;
 }
-/**
- * @brief Go to a waypoint following a controlled diagonal descend towards a rope
- *
- * @param target the target waypoint
- *
- * @param rope_heading heading in radians of the landing rope calculated from the north
- * 
- * @return desired speed FloatVect3
- */
-struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float pos_gain, float rope_heading) {
-  // The speed sp that will be returned
-  struct FloatVect3 speed_sp_return = {0, 0, 0};
-  struct NedCoor_f ned_target_wp;
-
-  // Target in NED instead of ENU and altitude relative controller
-  VECT3_ASSIGN(ned_target_wp, POS_FLOAT_OF_BFP(target.y), POS_FLOAT_OF_BFP(target.x), -POS_FLOAT_OF_BFP(nav_flight_altitude));
-  //VECT3_ASSIGN(ned_target_wp, POS_FLOAT_OF_BFP(target.y), POS_FLOAT_OF_BFP(target.x), POS_FLOAT_OF_BFP(-nav_flight_altitude)); target.z
-  
-  // Calculate position error
-  struct FloatVect3 pos_error;
-  struct NedCoor_f *pos = stateGetPositionNed_f();
-  VECT3_DIFF(pos_error, ned_target_wp, *pos);
-
-  // Calculate normal vecotor to rope
-  // Rope Heading in degrees
-  struct FloatVect3 n_I;
-  float n_I_N = cosf(rope_heading);
-  float n_I_E = sinf(rope_heading);
-  float n_I_D = 0;
-  VECT3_ASSIGN(n_I,n_I_N,n_I_E,n_I_D);
-
-  // Rotate vector to have a glideslope angle
-  struct FloatVect3 l_I;
-  float c_omega = cosf(RadOfDeg(landing_slope_deg));
-  float s_omega = sinf(RadOfDeg(landing_slope_deg));
-  float l_I_N = -1*n_I.x * c_omega;
-  float l_I_E = -1*n_I.y * c_omega;
-  float l_I_D =  s_omega;
-  VECT3_ASSIGN(l_I,l_I_N , l_I_E , l_I_D);
-
-  // Calculate Vector from projection of drone on GS (Glide Slope) to the rope
-  struct FloatVect3 f_I;
-  float l_I_norm = FLOAT_VECT3_NORM(l_I);
-  float f_ratio = (pos_error.x*l_I.x + pos_error.y*l_I.y+ pos_error.z*l_I.z)/ (l_I_norm * l_I_norm) ;
-  float f_I_N = f_ratio * l_I.x;
-  float f_I_E = f_ratio * l_I.y;
-  float f_I_D = f_ratio * l_I.z;
-  VECT3_ASSIGN(f_I, f_I_N , f_I_E , f_I_D);
-  float f_I_norm = FLOAT_VECT3_NORM(f_I);
-  // Calculate Vector from Drone to Projection on GS
-  struct FloatVect3 d_p;
-  VECT3_DIFF(d_p, pos_error, f_I);
-  float d_p_norm = FLOAT_VECT3_NORM(d_p);
-  
-  // Make sure Denominator is not zero
-  float fIdp_norm = f_I_norm + d_p_norm;
-  if(fIdp_norm < 0.01) {
-    fIdp_norm = 0.01;
-  }
-  // Calculate constant component of velocity SP parallel to GS
-  struct FloatVect3 speed_par;
-  float gain_par = f_I_norm/fIdp_norm*pos_gain;//0.01
-  VECT3_SMUL(speed_par, l_I, gain_par);
-  speed_par.z *= gih_params.pos_gainz/pos_gain;
-
-  vect_bound_in_3d(&speed_par, max_diag_par_speed);
-  // Calculate proportional component of velocity SP perpendicular to GS
-  struct FloatVect3 speed_perp;
-  float gain_perp = pos_gain;//d_p_norm/fIdp_norm*pos_gain;//0.1
-  VECT3_SMUL(speed_perp, d_p, gain_perp);
-  //VECT3_SMUL(speed_perp, d_p, pos_gain);
-  speed_perp.z *= gih_params.pos_gainz/pos_gain;  
-  // Calculate total velocity SP
-  VECT3_ADD(speed_sp_return, speed_par);
-  VECT3_ADD(speed_sp_return, speed_perp);
-
-  // Bound horizontal speed setpoint
-  vect_bound_in_2d(&speed_sp_return, max_h_speed_diag);
-  if(debug_speed_sp){
-  float speed_par_norm = FLOAT_VECT3_NORM(speed_par);
-  printf("n_I=%f,%f,%f\n",n_I.x,n_I.y,n_I.z);
-  printf("l_I=%f,%f,%f\n",l_I.x,l_I.y,l_I.z);
-  printf("s_I=%f,%f,%f\n",pos_error.x,pos_error.y,pos_error.z);
-  printf("f_I=%f,%f,%f\n",f_I.x,f_I.y,f_I.z);
-  printf("d_p=%f,%f,%f\n",d_p.x,d_p.y,d_p.z);
-  printf("speed_par_norm=%f\n",speed_par_norm);
-  printf("par_gain=%f\n",gain_par);
-  printf("perp_gain=%f\n",gain_perp);
-  }
-  // Bound vertical speed setpoint
-  Bound(speed_sp_return.z, min_z_speed_diag, max_z_speed_diag);
-
-  return speed_sp_return;
-}
-
-
 
 /**
  * @brief Go to a waypoint in the shortest way
@@ -861,4 +751,17 @@ struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_ga
   }
 
   return speed_sp_return;
+}
+
+/**
+ * ABI callback that obtains the velocity setpoint from a module
+  */
+static void vel_sp_cb(uint8_t sender_id __attribute__((unused)), struct FloatVect3 *vel_sp)
+{
+  indi_vel_sp.x = vel_sp->x;
+  indi_vel_sp.y = vel_sp->y;
+  indi_vel_sp.z = vel_sp->z;
+  time_of_vel_sp = get_sys_time_float();
+
+  RunOnceEvery(20, {printf("rec vel sp\n");} );
 }

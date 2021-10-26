@@ -66,6 +66,8 @@
       <define name="RADIO_KILL_SWITCH" value="0"/>
     </target>
 
+    <module name="approach_moving_target"/>
+
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B115200"/>
     </module>
