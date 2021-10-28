@@ -37,7 +37,8 @@ struct Amt amt = {
   .distance = 40,
   .speed = -1.0,
   .pos_gain = 1.0,
-  .enabled_time = 0.0,
+  .enabled_time = 0,
+  .wp_id = 0,
 };
 
 struct SHIP {
@@ -53,33 +54,47 @@ struct SHIP ship = {
 bool approach_moving_target_enabled = false;
 
 struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float pos_gain, float rope_heading);
-void get_rel_pos(void);
+void update_waypoint(uint8_t wp_id, struct FloatVect3 * target_ned);
 
 void approach_moving_target_init(void)
 {
-
+  // nothing to do here
 }
 
 // interface with ship position module?
 
 // Update a waypoint such that you can see on the GCS where the drone wants to go
-void update_waypoint();
+void update_waypoint(uint8_t wp_id, struct FloatVect3 * target_ned) {
+
+  // Update the waypoint
+  struct EnuCoor_f target_enu;
+  ENU_OF_TO_NED(target_enu, *target_ned);
+  waypoint_set_enu(wp_id, &target_enu);
+
+  // Send waypoint update every half second
+  RunOnceEvery(100/2, {
+    // Send to the GCS that the waypoint has been moved
+    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+                                &waypoints[wp_id].enu_i.x,
+                                &waypoints[wp_id].enu_i.y,
+                                &waypoints[wp_id].enu_i.z);
+  } );
+}
 
 // Function to enable from flight plan (call repeatedly!)
-void approach_moving_target_enable(void) {
-  amt.enabled_time = get_sys_time_float();
+void approach_moving_target_enable(uint8_t wp_id) {
+  amt.enabled_time = get_sys_time_msec();
+  amt.wp_id = wp_id;
 }
 
 void follow_diagonal_approach(void) {
 
   // Check if the flight plan recently called the enable function
-  if ( (get_sys_time_float() - amt.enabled_time) > (2.0 / NAV_FREQ)) {
+  if ( (get_sys_time_msec() - amt.enabled_time) > (2000 / NAV_FREQ)) {
     return;
   }
 
   // Reference model
-
-  // amt.speed = -1.0; // m/s
 
   float gamma_ref = DegOfRad(20.0);
   float psi_ref = DegOfRad(20.0);
@@ -118,6 +133,9 @@ void follow_diagonal_approach(void) {
   vect_bound_in_3d(&des_vel, 10.0);
 
   AbiSendMsgVEL_SP(VEL_SP_FCR_ID, &des_vel);
+
+  // For display purposes
+  update_waypoint(amt.wp_id, &des_pos);
 
   // RunOnceEvery(20, {printf("des_vel=%f,%f,%f,%f\n", des_vel.x, des_vel.y, des_vel.z, amt.speed);} );
 }

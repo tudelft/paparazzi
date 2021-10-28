@@ -37,14 +37,15 @@ struct Amt {
   float distance;
   float speed;
   float pos_gain;
-  float enabled_time;
+  int32_t enabled_time;
+  uint8_t wp_id;
 };
 
 extern struct Amt amt;
 
 extern void approach_moving_target_init(void);
 extern void follow_diagonal_approach(void);
-extern void approach_moving_target_enable(void);
+extern void approach_moving_target_enable(uint8_t wp_id);
 
 #endif // APPROACH_MOVING_TARGET_H
 
