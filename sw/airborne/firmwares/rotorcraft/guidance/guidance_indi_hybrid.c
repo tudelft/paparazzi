@@ -41,7 +41,6 @@
 #include "autopilot.h"
 #include "stabilization/stabilization_attitude_ref_quat_int.h"
 #include "firmwares/rotorcraft/stabilization.h"
-#include "stdio.h"
 #include "filters/low_pass_filter.h"
 #include "subsystems/abi.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"

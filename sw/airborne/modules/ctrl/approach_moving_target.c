@@ -43,6 +43,13 @@ struct Amt amt = {
   .wp_id = 0,
 };
 
+struct AmtTelem {
+  struct FloatVect3 des_pos;
+  struct FloatVect3 des_vel;
+};
+
+struct AmtTelem amt_telem;
+
 struct SHIP {
   struct FloatVect3 pos;
   struct FloatVect3 vel;
@@ -58,9 +65,27 @@ bool approach_moving_target_enabled = false;
 struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float pos_gain, float rope_heading);
 void update_waypoint(uint8_t wp_id, struct FloatVect3 * target_ned);
 
+#if PERIODIC_TELEMETRY
+#include "subsystems/datalink/telemetry.h"
+static void send_approach_moving_target(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_APPROACH_MOVING_TARGET(trans, dev, AC_ID,
+                              &amt_telem.des_pos.x,
+                              &amt_telem.des_pos.y,
+                              &amt_telem.des_pos.z,
+                              &amt_telem.des_vel.x,
+                              &amt_telem.des_vel.y,
+                              &amt_telem.des_vel.z,
+                              &amt.distance
+                              );
+}
+#endif
+
 void approach_moving_target_init(void)
 {
-  // nothing to do here
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_APPROACH_MOVING_TARGET, send_approach_moving_target);
+#endif
 }
 
 // interface with ship position module?
@@ -161,6 +186,8 @@ void follow_diagonal_approach(void) {
 
   // For display purposes
   update_waypoint(amt.wp_id, &des_pos);
+
+  // Update values for telemetry
+  VECT3_COPY(amt_telem.des_pos, des_pos);
+  VECT3_COPY(amt_telem.des_vel, des_vel);
 }
-
-

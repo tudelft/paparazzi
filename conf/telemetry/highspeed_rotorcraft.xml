@@ -47,6 +47,7 @@
       <!--message name="WINDTUNNEL_MEAS"          period="0.1"/-->
       <message name="AHRS_REF_QUAT"            period="0.1"/>
       <message name="GPS_RTK"                  period="0.2"/>
+      <message name="APPROACH_MOVING_TARGET"   period="0.5"/>
     </mode>
 
     <mode name="ppm">
