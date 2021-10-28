@@ -37,6 +37,8 @@ struct Amt {
   float distance;
   float speed;
   float pos_gain;
+  float psi_ref;
+  float slope_ref;
   int32_t enabled_time;
   uint8_t wp_id;
 };

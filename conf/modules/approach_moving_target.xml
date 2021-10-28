@@ -9,7 +9,8 @@
   <settings>
     <dl_settings>
       <dl_settings NAME="Approach">
-        <dl_setting var="approach_moving_target_angle_deg" min="0." max="50." step="1.0" shortname="angle" unit="degrees"/>
+        <dl_setting var="amt.psi_ref" min="-180." max="180." step="1.0" shortname="psi_app" unit="degrees"/>
+        <dl_setting var="amt.slope_ref" min="0." max="50." step="1.0" shortname="slope_app" unit="degrees"/>
         <dl_setting var="amt.speed" min="-5.0" max="5." step="0.1" shortname="speed" unit="m/s"/>
       </dl_settings>
     </dl_settings>

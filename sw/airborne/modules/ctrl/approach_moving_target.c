@@ -37,6 +37,8 @@ struct Amt amt = {
   .distance = 40,
   .speed = -1.0,
   .pos_gain = 1.0,
+  .psi_ref = 0.0,
+  .slope_ref = 30.0,
   .enabled_time = 0,
   .wp_id = 0,
 };
@@ -96,10 +98,13 @@ void follow_diagonal_approach(void) {
 
   // Reference model
 
-  float gamma_ref = DegOfRad(20.0);
-  float psi_ref = DegOfRad(20.0);
+  float gamma_ref = RadOfDeg(amt.slope_ref);
+  float psi_ref = RadOfDeg(amt.psi_ref);
 
-  float dt = 0.01;
+  // float gamma_ref = amt.slope_ref;
+  // float psi_ref = amt.psi_ref;
+
+  float dt = FOLLOW_DIAGONAL_APPROACH_PERIOD;
 
   amt.distance += amt.speed*dt;
 
