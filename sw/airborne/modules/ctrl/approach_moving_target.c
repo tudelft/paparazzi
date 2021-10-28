@@ -89,6 +89,10 @@ void approach_moving_target_enable(uint8_t wp_id) {
   amt.wp_id = wp_id;
 }
 
+/**
+ * @brief Generates a velocity reference from a diagonal approach path
+ *
+ */
 void follow_diagonal_approach(void) {
 
   // Check if the flight plan recently called the enable function
@@ -100,8 +104,21 @@ void follow_diagonal_approach(void) {
   float gamma_ref = RadOfDeg(amt.slope_ref);
   float psi_ref = RadOfDeg(amt.psi_ref);
 
-  float dt = FOLLOW_DIAGONAL_APPROACH_PERIOD;
+  /* limit the speed such that the vertical component is small enough
+   * and doesn't outrun the vehicle
+   */
+  float min_speed;
+  if (gamma_ref > 0.05) {
+    min_speed = (nav_descend_vspeed+0.1) / sinf(gamma_ref);
+  } else {
+    min_speed = -5.0; // prevent dividing by zero
+  }
 
+  // The upper bound is not very important
+  Bound(amt.speed, min_speed, 4.0);
+
+  // integrate speed to get the distance
+  float dt = FOLLOW_DIAGONAL_APPROACH_PERIOD;
   amt.distance += amt.speed*dt;
 
   amt.rel_unit_vec.x = cosf(gamma_ref) * cosf(psi_ref);
@@ -132,6 +149,13 @@ void follow_diagonal_approach(void) {
   };
 
   vect_bound_in_3d(&des_vel, 10.0);
+
+  // Bound vertical speed setpoint
+  if(stateGetAirspeed_f() > 13.0) {
+    Bound(des_vel.z, -4.0, 5.0);
+  } else {
+    Bound(des_vel.z, -nav_climb_vspeed, -nav_descend_vspeed);
+  }
 
   AbiSendMsgVEL_SP(VEL_SP_FCR_ID, &des_vel);
 
