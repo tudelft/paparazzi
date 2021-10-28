@@ -49,17 +49,6 @@ struct AmtTelem {
 };
 
 struct AmtTelem amt_telem;
-
-struct SHIP {
-  struct FloatVect3 pos;
-  struct FloatVect3 vel;
-};
-
-struct SHIP ship = {
-  .pos = {4.0, 2.0, 0.0},
-  .vel = {-2.0, 0.0, 0.0},
-};
-
 bool approach_moving_target_enabled = false;
 
 struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float pos_gain, float rope_heading);
@@ -125,6 +114,15 @@ void follow_diagonal_approach(void) {
     return;
   }
 
+  // Get the target position, velocity and heading
+  struct NedCoor_f target_pos, target_vel = {0};
+  float target_heading;
+  if(!target_get_pos(&target_pos, &target_heading)) {
+    // TODO: What to do? Same can be checked for the velocity
+    return;
+  }
+  target_get_vel(&target_vel);
+
   // Reference model
   float gamma_ref = RadOfDeg(amt.slope_ref);
   float psi_ref = RadOfDeg(amt.psi_ref);
@@ -150,12 +148,12 @@ void follow_diagonal_approach(void) {
   amt.rel_unit_vec.y = cosf(gamma_ref) * sinf(psi_ref);
   amt.rel_unit_vec.z = -sinf(gamma_ref);
   
-  // desired position = rel_pos + ship_pos
+  // desired position = rel_pos + target_pos
   struct FloatVect3 relpos;
   VECT3_SMUL(relpos, amt.rel_unit_vec, amt.distance);
 
   struct FloatVect3 des_pos;
-  VECT3_SUM(des_pos, relpos, ship.pos);
+  VECT3_SUM(des_pos, relpos, target_pos);
 
   struct FloatVect3 relvel;
   VECT3_SMUL(relvel, amt.rel_unit_vec, amt.speed);
@@ -166,11 +164,11 @@ void follow_diagonal_approach(void) {
   VECT3_DIFF(ec_vel, des_pos, *drone_pos);
   VECT3_SMUL(ec_vel, ec_vel, amt.pos_gain);
 
-  // desired velocity = rel_vel + ship_vel + error_controller(using NED position)
+  // desired velocity = rel_vel + target_vel + error_controller(using NED position)
   struct FloatVect3 des_vel = {
-    relvel.x + ship.vel.x + ec_vel.x,
-    relvel.y + ship.vel.y + ec_vel.y,
-    relvel.z + ship.vel.z + ec_vel.z,
+    relvel.x + target_vel.x + ec_vel.x,
+    relvel.y + target_vel.y + ec_vel.y,
+    relvel.z + target_vel.z + ec_vel.z,
   };
 
   vect_bound_in_3d(&des_vel, 10.0);

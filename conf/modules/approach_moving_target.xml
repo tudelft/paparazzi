@@ -15,6 +15,9 @@
       </dl_settings>
     </dl_settings>
   </settings>
+  <dep>
+    <depends>target_pos</depends>
+  </dep>
   <header>
     <file name="approach_moving_target.h"/>
   </header>
