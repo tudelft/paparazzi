@@ -97,12 +97,8 @@ void follow_diagonal_approach(void) {
   }
 
   // Reference model
-
   float gamma_ref = RadOfDeg(amt.slope_ref);
   float psi_ref = RadOfDeg(amt.psi_ref);
-
-  // float gamma_ref = amt.slope_ref;
-  // float psi_ref = amt.psi_ref;
 
   float dt = FOLLOW_DIAGONAL_APPROACH_PERIOD;
 
@@ -141,8 +137,6 @@ void follow_diagonal_approach(void) {
 
   // For display purposes
   update_waypoint(amt.wp_id, &des_pos);
-
-  // RunOnceEvery(20, {printf("des_vel=%f,%f,%f,%f\n", des_vel.x, des_vel.y, des_vel.z, amt.speed);} );
 }
 
 
