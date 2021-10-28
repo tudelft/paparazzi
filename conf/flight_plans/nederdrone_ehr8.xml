@@ -160,7 +160,8 @@
       <!-- <exception cond="fabs(stateGetNedToBodyEulers_f()->psi-rope_heading) @LT 0.03" deroute="Approach Rope"/> -->
     </block>
     <block name="Approach Rope">
-      <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed*0.5)" wp="ROPE" alt="WaypointAlt(WP_ROPE)"/>
+      <!-- <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed*0.5)" wp="ROPE" alt="WaypointAlt(WP_ROPE)"/> -->
+      <stay pre_call="approach_moving_target_enable()" wp="ROPE" alt="WaypointAlt(WP_ROPE)"/>
     </block>
 
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">

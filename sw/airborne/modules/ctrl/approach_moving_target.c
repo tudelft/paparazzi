@@ -37,6 +37,7 @@ struct Amt amt = {
   .distance = 40,
   .speed = -1.0,
   .pos_gain = 1.0,
+  .enabled_time = 0.0,
 };
 
 struct SHIP {
@@ -48,6 +49,8 @@ struct SHIP ship = {
   .pos = {4.0, 2.0, 0.0},
   .vel = {-2.0, 0.0, 0.0},
 };
+
+bool approach_moving_target_enabled = false;
 
 struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float pos_gain, float rope_heading);
 void get_rel_pos(void);
@@ -62,7 +65,17 @@ void approach_moving_target_init(void)
 // Update a waypoint such that you can see on the GCS where the drone wants to go
 void update_waypoint();
 
+// Function to enable from flight plan (call repeatedly!)
+void approach_moving_target_enable(void) {
+  amt.enabled_time = get_sys_time_float();
+}
+
 void follow_diagonal_approach(void) {
+
+  // Check if the flight plan recently called the enable function
+  if ( (get_sys_time_float() - amt.enabled_time) > (2.0 / NAV_FREQ)) {
+    return;
+  }
 
   // Reference model
 

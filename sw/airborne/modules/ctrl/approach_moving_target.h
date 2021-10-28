@@ -37,12 +37,14 @@ struct Amt {
   float distance;
   float speed;
   float pos_gain;
+  float enabled_time;
 };
 
 extern struct Amt amt;
 
 extern void approach_moving_target_init(void);
 extern void follow_diagonal_approach(void);
+extern void approach_moving_target_enable(void);
 
 #endif // APPROACH_MOVING_TARGET_H
 
