@@ -104,7 +104,7 @@
     </block>
     <block name="Approach Rope">
       <set value="true" var="approaching_rope"/>
-      <stay wp="ROPE" alt="WaypointAlt(WP_ROPE)"/>
+      <stay pre_call="approach_moving_target_enable(WP_ROPE)" wp="ROPE" alt="WaypointAlt(WP_ROPE)"/>
     </block>
     <!-- <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
