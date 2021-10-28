@@ -762,6 +762,4 @@ static void vel_sp_cb(uint8_t sender_id __attribute__((unused)), struct FloatVec
   indi_vel_sp.y = vel_sp->y;
   indi_vel_sp.z = vel_sp->z;
   time_of_vel_sp = get_sys_time_float();
-
-  RunOnceEvery(20, {printf("rec vel sp\n");} );
 }
