@@ -101,11 +101,11 @@ void target_parse_target_pos(uint8_t *buf)
  */
 bool target_get_pos(struct NedCoor_f *pos, float *heading) {
   float time_diff = 0;
-  
+
   // /* When we have a valid relative position from the RTK GPS and no timeout update the position */
   // if((gps_relposned.relPosValid != 0) && (gps_relposned.iTOW+target.rtk_timeout) > gps_tow_from_sys_ticks(sys_time.nb_tick)) {
   //   struct NedCoor_f cur_pos = *stateGetPositionNed_f();
-    
+
   //   // Convert the relative postion to a postion in the NED frame of the UAV
   //   pos->x = cur_pos.x - gps_relposned.relPosN / 100.0f;
   //   pos->y = cur_pos.y - gps_relposned.relPosE / 100.0f;
@@ -145,7 +145,7 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
     // Offset the target
     pos->x += target.offset.distance * cosf((*heading + target.offset.heading)/180.*M_PI);
     pos->y += target.offset.distance * sinf((*heading + target.offset.heading)/180.*M_PI);
-    pos->z += target.offset.height;
+    pos->z -= target.offset.height;
 
     return true;
   }
@@ -189,8 +189,8 @@ bool target_pos_set_current_offset(float unk __attribute__((unused))) {
     pos.z = target_pos_cm.z * 0.01;
 
     target.offset.distance = sqrtf(powf(uav_pos.x - pos.x, 2) + powf(uav_pos.y - pos.y, 2));
-    target.offset.height = uav_pos.z - pos.z;
-    target.offset.heading = atan2f((uav_pos.y - pos.y), (uav_pos.x - pos.x)) - target.pos.course;
+    target.offset.height = -(uav_pos.z - pos.z);
+    target.offset.heading = atan2f((uav_pos.y - pos.y), (uav_pos.x - pos.x))*180.0/M_PI - target.pos.course;
   }
 
   return false;
