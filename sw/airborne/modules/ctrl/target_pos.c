@@ -33,6 +33,11 @@
 #define TARGET_POS_TIMEOUT 5000
 #endif
 
+// The timeout when recceiving an RTK gps message from the GPS
+#ifndef TARGET_RTK_TIMEOUT
+#define TARGET_RTK_TIMEOUT 1000
+#endif
+
 #ifndef TARGET_OFFSET_HEADING
 #define TARGET_OFFSET_HEADING 180.0
 #endif
@@ -45,8 +50,12 @@
 #define TARGET_OFFSET_HEIGHT 10.0
 #endif
 
-#ifndef TARGET_INTEGRATE
-#define TARGET_INTEGRATE true
+#ifndef TARGET_INTEGRATE_XY
+#define TARGET_INTEGRATE_XY true
+#endif
+
+#ifndef TARGET_INTEGRATE_Z
+#define TARGET_INTEGRATE_Z true
 #endif
 
 /* Initialize the main structure */
@@ -58,8 +67,13 @@ struct target_t target = {
     .height = TARGET_OFFSET_HEIGHT,
   },
   .target_pos_timeout = TARGET_POS_TIMEOUT,
-  .integrate = TARGET_INTEGRATE
+  .rtk_timeout = TARGET_RTK_TIMEOUT,
+  .integrate_xy = TARGET_INTEGRATE_XY,
+  .integrate_z = TARGET_INTEGRATE_Z
 };
+
+/* Get the Relative postion from the RTK */
+extern struct GpsRelposNED gps_relposned;
 
 /**
  * Receive a TARGET_POS message from the ground
@@ -85,6 +99,17 @@ void target_parse_target_pos(uint8_t *buf)
  * Get the current target position (NED) and heading
  */
 bool target_get_pos(struct NedCoor_f *pos, float *heading) {
+  float time_diff = 0;
+  
+  // /* When we have a valid relative position from the RTK GPS and no timeout update the position */
+  // if((gps_relposned.relPosValid != 0) && (gps_relposned.iTOW+target.rtk_timeout) > gps_tow_from_sys_ticks(sys_time.nb_tick)) {
+  //   struct NedCoor_f cur_pos = *stateGetPositionNed_f();
+    
+  //   // Convert the relative postion to a postion in the NED frame of the UAV
+  //   pos->x = cur_pos.x - gps_relposned.relPosN / 100.0f;
+  //   pos->y = cur_pos.y - gps_relposned.relPosE / 100.0f;
+  //   pos->z = cur_pos.z - gps_relposned.relPosD / 100.0f;
+  // }
 
   /* When we have a valid target_pos message, state ned is initialized and no timeout */
   if(target.pos.valid && state.ned_initialized_i && (target.pos.recv_time+target.target_pos_timeout) > get_sys_time_msec()) {
@@ -98,25 +123,28 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
     pos->y = target_pos_cm.y * 0.01;
     pos->z = target_pos_cm.z * 0.01;
 
-    // If we have a velocity measurement try to integrate the position when enabled
-    struct NedCoor_f vel = {0};
-    if(target.integrate && target_get_vel(&vel)) {
-      // In seconds, overflow uint32_t in 49,7 days
-      float time_diff = (get_sys_time_msec() - target.pos.recv_time) * 0.001; // FIXME: should be based on TOW of ground gps
+    // In seconds, overflow uint32_t in 49,7 days
+    time_diff = (get_sys_time_msec() - target.pos.recv_time) * 0.001; // FIXME: should be based on TOW of ground gps
 
-      // Integrate
+    // Return the course as heading (FIXME)
+    *heading = target.pos.course;
+
+    // If we have a velocity measurement try to integrate the x-y position when enabled
+    struct NedCoor_f vel = {0};
+    bool got_vel = target_get_vel(&vel);
+    if(target.integrate_xy && got_vel) {
       pos->x = pos->x + vel.x * time_diff;
       pos->y = pos->y + vel.y * time_diff;
+    }
+
+    if(target.integrate_z && got_vel) {
       pos->z = pos->z + vel.z * time_diff;
     }
 
     // Offset the target
-    pos->x += target.offset.distance * cosf((target.pos.course + target.offset.heading)/180.*M_PI);
-    pos->y += target.offset.distance * sinf((target.pos.course + target.offset.heading)/180.*M_PI);
+    pos->x += target.offset.distance * cosf((*heading + target.offset.heading)/180.*M_PI);
+    pos->y += target.offset.distance * sinf((*heading + target.offset.heading)/180.*M_PI);
     pos->z += target.offset.height;
-
-    // Return the course as heading (FIXME)
-    *heading = target.pos.course;
 
     return true;
   }

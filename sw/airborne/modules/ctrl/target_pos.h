@@ -50,7 +50,9 @@ struct target_t {
   struct target_pos_t pos;                  ///< The target position message
   struct target_offset_t offset;            ///< The target offset relative to ground heading
   uint32_t target_pos_timeout;              ///< Ground target position message timeout [msec]
-  bool integrate;                           ///< Enable integration of the position
+  uint32_t rtk_timeout;                     ///< RTK message timeout [msec]
+  bool integrate_xy;                        ///< Enable integration of the position in X-Y (North/East) frame
+  bool integrate_z;                         ///< Enable integration of the position in Z (Up) frame
 };
 
 extern struct target_t target;
