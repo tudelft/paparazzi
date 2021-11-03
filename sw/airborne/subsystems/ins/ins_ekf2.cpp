@@ -35,6 +35,7 @@
 #include "math/pprz_isa.h"
 #include "mcu_periph/sys_time.h"
 #include "autopilot.h"
+#include "math/pprz_geodetic_wgs84.h"
 
 /** For SITL and NPS we need special includes */
 #if defined SITL && USE_NPS
@@ -494,7 +495,7 @@ void ins_ekf2_update(void)
       if (ekf_origin_valid && (origin_time > ekf2.ltp_stamp)) {
         lla_ref.lat = ekf_origin.lat_rad * 180.0 / M_PI * 1e7; // Reference point latitude in degrees
         lla_ref.lon = ekf_origin.lon_rad * 180.0 / M_PI * 1e7; // Reference point longitude in degrees
-        lla_ref.alt = ref_alt * 1000.0;
+        lla_ref.alt = ref_alt * 1000.0 - wgs84_ellipsoid_to_geoid_i(lla_ref.lat, lla_ref.lon); // Convert hMSL to geoid
         ltp_def_from_lla_i(&ekf2.ltp_def, &lla_ref);
         stateSetLocalOrigin_i(&ekf2.ltp_def);
 
