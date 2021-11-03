@@ -495,7 +495,7 @@ void ins_ekf2_update(void)
       if (ekf_origin_valid && (origin_time > ekf2.ltp_stamp)) {
         lla_ref.lat = ekf_origin.lat_rad * 180.0 / M_PI * 1e7; // Reference point latitude in degrees
         lla_ref.lon = ekf_origin.lon_rad * 180.0 / M_PI * 1e7; // Reference point longitude in degrees
-        lla_ref.alt = ref_alt * 1000.0 - wgs84_ellipsoid_to_geoid_i(lla_ref.lat, lla_ref.lon); // Convert hMSL to geoid
+        lla_ref.alt = ref_alt * 1000.0; // Convert hMSL to geoid
         ltp_def_from_lla_i(&ekf2.ltp_def, &lla_ref);
         stateSetLocalOrigin_i(&ekf2.ltp_def);
 
@@ -717,7 +717,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   gps_msg.time_usec = stamp;
   gps_msg.lat = gps_s->lla_pos.lat;
   gps_msg.lon = gps_s->lla_pos.lon;
-  gps_msg.alt = gps_s->hmsl;
+  gps_msg.alt = gps_s->lla_pos.alt;
 #if INS_EKF2_GPS_COURSE_YAW
   gps_msg.yaw = wrap_pi((float)gps_s->course / 1e7);
   gps_msg.yaw_offset = 0;
@@ -762,7 +762,7 @@ static void optical_flow_cb(uint8_t sender_id __attribute__((unused)),
   ekf2.flow_stamp = stamp;
 
   /* Build integrated flow and gyro messages for filter
-  NOTE: pure rotations should result in same flow_x and 
+  NOTE: pure rotations should result in same flow_x and
   gyro_roll and same flow_y and gyro_pitch */
   ekf2.flow_quality = quality;
   ekf2.flow_x = RadOfDeg(flow_y) * (1e-6 * ekf2.flow_dt);                       // INTEGRATED FLOW AROUND Y AXIS (RIGHT -X, LEFT +X)
@@ -771,7 +771,7 @@ static void optical_flow_cb(uint8_t sender_id __attribute__((unused)),
   ekf2.gyro_pitch = NAN;
   ekf2.gyro_yaw = NAN;
 
-  /* once callback initiated, build the 
+  /* once callback initiated, build the
   optical flow message with what is received */
   flow_msg.quality = quality;                                                   // quality indicator between 0 and 255
   flow_msg.flowdata = Vector2f(ekf2.flow_x, ekf2.flow_y);                       // measured delta angle of the image about the X and Y body axes (rad), RH rotaton is positive
