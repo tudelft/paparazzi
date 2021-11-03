@@ -44,6 +44,7 @@ struct Amt {
 };
 
 extern struct Amt amt;
+extern float amt_err_slowdown_gain;
 
 extern void approach_moving_target_init(void);
 extern void follow_diagonal_approach(void);

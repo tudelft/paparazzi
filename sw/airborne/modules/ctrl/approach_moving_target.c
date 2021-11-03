@@ -28,6 +28,8 @@
 #include "generated/modules.h"
 #include "subsystems/abi.h"
 
+float amt_err_slowdown_gain = AMT_ERR_SLOWDOWN_GAIN;
+
 float approach_moving_target_angle_deg;
 
 #define DEBUG_AMT TRUE
@@ -127,48 +129,32 @@ void follow_diagonal_approach(void) {
   float gamma_ref = RadOfDeg(amt.slope_ref);
   float psi_ref = RadOfDeg(amt.psi_ref);
 
-  /* limit the speed such that the vertical component is small enough
-   * and doesn't outrun the vehicle
-   */
-  float min_speed;
-  if (gamma_ref > 0.05) {
-    min_speed = (nav_descend_vspeed+0.1) / sinf(gamma_ref);
-  } else {
-    min_speed = -5.0; // prevent dividing by zero
-  }
-
-  // The upper bound is not very important
-  Bound(amt.speed, min_speed, 4.0);
-
-  // integrate speed to get the distance
-  float dt = FOLLOW_DIAGONAL_APPROACH_PERIOD;
-  amt.distance += amt.speed*dt;
-
   amt.rel_unit_vec.x = cosf(gamma_ref) * cosf(psi_ref);
   amt.rel_unit_vec.y = cosf(gamma_ref) * sinf(psi_ref);
   amt.rel_unit_vec.z = -sinf(gamma_ref);
   
   // desired position = rel_pos + target_pos
-  struct FloatVect3 relpos;
-  VECT3_SMUL(relpos, amt.rel_unit_vec, amt.distance);
+  struct FloatVect3 ref_relpos;
+  VECT3_SMUL(ref_relpos, amt.rel_unit_vec, amt.distance);
 
   struct FloatVect3 des_pos;
-  VECT3_SUM(des_pos, relpos, target_pos);
+  VECT3_SUM(des_pos, ref_relpos, target_pos);
 
-  struct FloatVect3 relvel;
-  VECT3_SMUL(relvel, amt.rel_unit_vec, amt.speed);
+  struct FloatVect3 ref_relvel;
+  VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt.speed);
 
   // error controller
+  struct FloatVect3 pos_err;
   struct FloatVect3 ec_vel;
   struct NedCoor_f *drone_pos = stateGetPositionNed_f();
-  VECT3_DIFF(ec_vel, des_pos, *drone_pos);
-  VECT3_SMUL(ec_vel, ec_vel, amt.pos_gain);
+  VECT3_DIFF(pos_err, des_pos, *drone_pos);
+  VECT3_SMUL(ec_vel, pos_err, amt.pos_gain);
 
   // desired velocity = rel_vel + target_vel + error_controller(using NED position)
   struct FloatVect3 des_vel = {
-    relvel.x + target_vel.x + ec_vel.x,
-    relvel.y + target_vel.y + ec_vel.y,
-    relvel.z + target_vel.z + ec_vel.z,
+    ref_relvel.x + target_vel.x + ec_vel.x,
+    ref_relvel.y + target_vel.y + ec_vel.y,
+    ref_relvel.z + target_vel.z + ec_vel.z,
   };
 
   vect_bound_in_3d(&des_vel, 10.0);
@@ -181,6 +167,28 @@ void follow_diagonal_approach(void) {
   }
 
   AbiSendMsgVEL_SP(VEL_SP_FCR_ID, &des_vel);
+
+  /* limit the speed such that the vertical component is small enough
+  * and doesn't outrun the vehicle
+  */
+  float min_speed;
+  float sin_gamma_ref = sinf(gamma_ref);
+  if (sin_gamma_ref > 0.05) {
+    min_speed = (nav_descend_vspeed+0.1) / sin_gamma_ref;
+  } else {
+    min_speed = -5.0; // prevent dividing by zero
+  }
+
+  // The upper bound is not very important
+  Bound(amt.speed, min_speed, 4.0);
+
+  // Reduce approach speed if the error is large
+  float norm_pos_err_sq = VECT3_NORM2(pos_err);
+  float int_speed = amt.speed / (norm_pos_err_sq * amt_err_slowdown_gain + 1.0);
+
+  // integrate speed to get the distance
+  float dt = FOLLOW_DIAGONAL_APPROACH_PERIOD;
+  amt.distance += int_speed*dt;
 
   // For display purposes
   update_waypoint(amt.wp_id, &des_pos);
