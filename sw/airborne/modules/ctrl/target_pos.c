@@ -95,7 +95,7 @@ void target_parse_target_pos(uint8_t *buf)
   target.pos.course = DL_TARGET_POS_course(buf);
   target.pos.valid = true;
 }
-
+extern struct LlaCoor_i gps_lla;
 /**
  * Get the current target position (NED) and heading
  */
@@ -114,15 +114,17 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
 
   /* When we have a valid target_pos message, state ned is initialized and no timeout */
   if(target.pos.valid && state.ned_initialized_i && (target.pos.recv_time+target.target_pos_timeout) > get_sys_time_msec()) {
-    struct NedCoor_i target_pos_cm;
+    struct NedCoor_i target_pos_cm, drone_pos_cm;
 
     // Convert from LLA to NED using origin from the UAV
     ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &target.pos.lla);
+       // Convert from LLA to NED using origin from the UAV
+    ned_of_lla_point_i(&drone_pos_cm, &state.ned_origin_i, &gps_lla);
 
     // Convert to floating point (cm to meters)
-    pos->x = target_pos_cm.x * 0.01;
-    pos->y = target_pos_cm.y * 0.01;
-    pos->z = target_pos_cm.z * 0.01;
+    pos->x = (target_pos_cm.x - drone_pos_cm.x) * 0.01;
+    pos->y = (target_pos_cm.y - drone_pos_cm.y) * 0.01;
+    pos->z = (target_pos_cm.z - drone_pos_cm.z) * 0.01;
 
     // In seconds, overflow uint32_t in 49,7 days
     time_diff = (get_sys_time_msec() - target.pos.recv_time) * 0.001; // FIXME: should be based on TOW of ground gps

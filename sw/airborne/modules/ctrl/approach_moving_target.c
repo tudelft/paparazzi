@@ -53,6 +53,9 @@ struct AmtTelem {
 struct AmtTelem amt_telem;
 bool approach_moving_target_enabled = false;
 
+static abi_event gps_ev;
+static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
+
 struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float pos_gain, float rope_heading);
 void update_waypoint(uint8_t wp_id, struct FloatVect3 * target_ned);
 
@@ -72,11 +75,26 @@ static void send_approach_moving_target(struct transport_tx *trans, struct link_
 }
 #endif
 
+struct LlaCoor_i gps_lla;
+
 void approach_moving_target_init(void)
 {
+
+    AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_APPROACH_MOVING_TARGET, send_approach_moving_target);
 #endif
+}
+
+
+/* Update INS based on GPS information */
+static void gps_cb(uint8_t sender_id __attribute__((unused)),
+                   uint32_t stamp,
+                   struct GpsState *gps_s)
+{
+  gps_lla.lat = gps_s->lla_pos.lat;
+  gps_lla.lon = gps_s->lla_pos.lon;
+  gps_lla.alt = gps_s->lla_pos.alt;
 }
 
 // interface with ship position module?
@@ -147,7 +165,8 @@ void follow_diagonal_approach(void) {
   struct FloatVect3 pos_err;
   struct FloatVect3 ec_vel;
   struct NedCoor_f *drone_pos = stateGetPositionNed_f();
-  VECT3_DIFF(pos_err, des_pos, *drone_pos);
+  // VECT3_DIFF(pos_err, des_pos, *drone_pos);
+  VECT3_COPY(pos_err, des_pos);
   VECT3_SMUL(ec_vel, pos_err, amt.pos_gain);
 
   // desired velocity = rel_vel + target_vel + error_controller(using NED position)
