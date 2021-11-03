@@ -193,6 +193,9 @@ void follow_diagonal_approach(void) {
   // For display purposes
   update_waypoint(amt.wp_id, &des_pos);
 
+  // Debug target pos:
+  VECT3_DIFF(amt_telem.des_pos, *drone_pos, target_pos);
+
   // Update values for telemetry
   VECT3_COPY(amt_telem.des_pos, des_pos);
   VECT3_COPY(amt_telem.des_vel, des_vel);
