@@ -25,6 +25,7 @@
  */
 
 #include "target_pos.h"
+#include <math.h>
 
 #include "subsystems/datalink/telemetry.h"
 
@@ -165,6 +166,31 @@ bool target_get_vel(struct NedCoor_f *vel) {
     vel->z = -target.pos.climb;
 
     return true;
+  }
+
+  return false;
+}
+
+/**
+ * Set the current measured distance and heading as offset
+ */
+bool target_pos_set_current_offset(float unk __attribute__((unused))) {
+  if(target.pos.valid && state.ned_initialized_i && (target.pos.recv_time+target.target_pos_timeout) > get_sys_time_msec()) {
+    struct NedCoor_i target_pos_cm;
+    struct NedCoor_f uav_pos = *stateGetPositionNed_f();
+
+    // Convert from LLA to NED using origin from the UAV
+    ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &target.pos.lla);
+
+    // Convert to floating point (cm to meters)
+    struct NedCoor_f pos;
+    pos.x = target_pos_cm.x * 0.01;
+    pos.y = target_pos_cm.y * 0.01;
+    pos.z = target_pos_cm.z * 0.01;
+
+    target.offset.distance = sqrtf(powf(uav_pos.x - pos.x, 2) + powf(uav_pos.y - pos.y, 2));
+    target.offset.height = uav_pos.z - pos.z;
+    target.offset.heading = atan2f((uav_pos.y - pos.y), (uav_pos.x - pos.x)) - target.pos.course;
   }
 
   return false;

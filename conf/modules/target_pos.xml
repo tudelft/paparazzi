@@ -23,6 +23,7 @@
         <dl_setting var="target.integrate_xy" min="0" max="1" step="1" shortname="integrate_xy" values="OFF|ON"/>
         <dl_setting var="target.target_pos_timeout" min="0" max="30000" step="100" shortname="target_pos_timeout"/>
         <dl_setting var="target.rtk_timeout" min="0" max="30000" step="100" shortname="rtk_timeout"/>
+        <dl_setting var="target.offset.heading" min="0." max="360." step="1.0" type="float" shortname ="set_current" module="modules/ctrl/target_pos" handler="set_current_offset"/>
       </dl_settings>
     </dl_settings>
   </settings>
