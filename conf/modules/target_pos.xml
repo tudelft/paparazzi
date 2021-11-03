@@ -18,7 +18,7 @@
     <dl_settings>
       <dl_settings NAME="TargetPos">
         <dl_setting var="target.offset.distance" min="0." max="50." step="0.1" shortname="distance" unit="m"/>
-        <dl_setting var="target.offset.height" min="0." max="100." step="0.1" shortname="height" unit="m"/>
+        <dl_setting var="target.offset.height" min="-10." max="100." step="0.1" shortname="height" unit="m"/>
         <dl_setting var="target.offset.heading" min="0." max="360." step="1.0" shortname="heading"/>
         <dl_setting var="target.integrate_xy" min="0" max="1" step="1" shortname="integrate_xy" values="OFF|ON"/>
         <dl_setting var="target.target_pos_timeout" min="0" max="30000" step="100" shortname="target_pos_timeout"/>
