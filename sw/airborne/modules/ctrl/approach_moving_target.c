@@ -38,7 +38,7 @@ float approach_moving_target_angle_deg;
 struct Amt amt = {
   .distance = 40,
   .speed = -1.0,
-  .pos_gain = 1.0,
+  .pos_gain = 0.3,
   .psi_ref = 0.0,
   .slope_ref = 30.0,
   .enabled_time = 0,
