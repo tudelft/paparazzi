@@ -117,7 +117,8 @@ type aircraft = {
   mutable airspeed : float;
   mutable version : string;
   mutable last_gps_acc : gps_acc_level;
-  mutable last_bat_warn_time : float
+  mutable last_bat_warn_time : float;
+  time_link_lost: (string, float) Hashtbl.t
 }
 
 let list_separator = Str.regexp ","
@@ -348,7 +349,7 @@ let mark = fun (geomap:G.widget) ac_id track plugin_frame ->
 let attributes_pretty_printer = fun attribs ->
   (* Remove the optional attributes *)
   let valid = fun a ->
-    let a = Compat.lowercase_ascii a in
+    let a = String.lowercase_ascii a in
     a <> "no" && a <> "strip_icon" && a <> "strip_button" && a <> "pre_call"
     && a <> "post_call" && a <> "key" && a <> "group" in
 
@@ -739,7 +740,8 @@ let create_ac = fun ?(confirm_kill=true) alert (geomap:G.widget) (acs_notebook:G
              airspeed = 0.;
              version = "";
              last_gps_acc = GPS_NO_ACC;
-             last_bat_warn_time = 0.
+             last_bat_warn_time = 0.;
+             time_link_lost = Hashtbl.create 1
            } in
   Hashtbl.add aircrafts ac_id ac;
   select_ac acs_notebook ac_id;
@@ -913,13 +915,13 @@ let get_telemetry_status = fun alarm _sender vs ->
   let ac = get_ac vs in
   let link_id = PprzLink.string_assoc "link_id" vs in
   let link_id = try if int_of_string link_id = -1 then "single" else link_id with _ -> link_id in
-  (* Update color and lost time in the strip *)
-  let time_lost = PprzLink.float_assoc "time_since_last_msg" vs in
-  let (links_up, total_links) = ac.link_page#links_ratio () in
-  let link_ratio_string =
-    if ac.link_page#multiple_links () then sprintf "%i/%i" links_up total_links else "" in
-  ac.strip#set_label "telemetry_status" (if time_lost > 2. then sprintf "%.0f" time_lost else link_ratio_string);
-  ac.strip#set_color "telemetry_status" (if time_lost > 5. then alert_color else if links_up < total_links then warning_color else ok_color);
+  let time_link_lost = PprzLink.float_assoc "time_since_last_msg" vs in
+  Hashtbl.replace ac.time_link_lost link_id time_link_lost; 
+  if link_id <> "no_id" then
+          Hashtbl.remove ac.time_link_lost "no_id";
+  let time_lost = Hashtbl.fold (fun link_id time best ->
+          if time < best then time else best
+    ) ac.time_link_lost 9999.0 in
   (* Update link page *)
   let rx_msgs_rate = PprzLink.float_assoc "rx_bytes_rate" vs
   and downlink_bytes_rate = PprzLink.int_assoc "downlink_rate" vs
@@ -929,8 +931,13 @@ let get_telemetry_status = fun alarm _sender vs ->
       ac.link_page#add_link link_id;
       log_and_say alarm ac.ac_name (sprintf "%s, link %s detected" ac.ac_speech_name link_id)
     end;
-  let link_changed = ac.link_page#update_link link_id time_lost ping_time rx_msgs_rate downlink_bytes_rate uplink_lost_time in
-  let (links_up, _) = ac.link_page#links_ratio () in
+  let link_changed = ac.link_page#update_link link_id time_link_lost ping_time rx_msgs_rate downlink_bytes_rate uplink_lost_time in
+  (* Update color and lost time in the strip *)
+  let (links_up, total_links) = ac.link_page#links_ratio () in
+  let link_ratio_string =
+    if ac.link_page#multiple_links () then sprintf "%i/%i" links_up total_links else "" in
+  ac.strip#set_label "telemetry_status" (if time_lost > 2. then sprintf "%.0f" time_lost else link_ratio_string);
+  ac.strip#set_color "telemetry_status" (if time_lost > 5. then alert_color else if links_up < total_links then warning_color else ok_color);
   match (link_changed, links_up) with
     (_, 0) -> log_and_say alarm ac.ac_name (sprintf "%s, all links lost" ac.ac_speech_name)
   | (Pages.Linkup, _)-> log_and_say alarm ac.ac_name (sprintf "%s, link %s re-connected" ac.ac_speech_name link_id)
@@ -994,17 +1001,6 @@ let highlight_fp = fun ac b s ->
     ac.last_stage <- (b, s);
     ac.fp_group#highlight_stage b s
   end
-
-
-let check_approaching = fun ac geo1 geo2 alert ->
-  match ac.track#last with
-      None -> ()
-    | Some ac_pos ->
-      let s_len = LL.wgs84_distance geo1 geo2 in (* length of the segment *)
-      let d = LL.wgs84_distance ac_pos geo2 in (* distance to end of the segment *)
-      (* only log_and_say "approaching" if close enough but not too much and when flying long segments *)
-      if d < ac.speed *. approaching_alert_time && d > approaching_alert_dmin && s_len > approaching_alert_slmin then
-        log_and_say alert ac.ac_name (sprintf "%s, approaching" ac.ac_speech_name)
 
 
 let ac_alt_graph = [14,0;-5,0;-7,-6]
@@ -1314,9 +1310,6 @@ let listen_flight_params = fun geomap auto_center_new_ac auto_center_ac alert al
     let geo1 = { posn_lat = (Deg>>Rad)(a "segment1_lat"); posn_long = (Deg>>Rad)(a "segment1_long") }
     and geo2 = { posn_lat = (Deg>>Rad)(a "segment2_lat"); posn_long = (Deg>>Rad)(a "segment2_long") } in
     ac.track#draw_segment geo1 geo2;
-
-    (* Check if approaching the end of the segment *)
-    check_approaching ac geo1 geo2 alert
   in
   safe_bind "SEGMENT_STATUS" get_segment_status;
 
