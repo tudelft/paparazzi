@@ -46,6 +46,9 @@
             <configure VALUE="I2C3" NAME="MAG_IST8310_I2C_DEV"/>
         </module>
 
+        <module NAME="ctrl_effectiveness_scheduling_rotating_wing_drone"/>
+
+
     </firmware>
 
     <servos>
@@ -197,6 +200,11 @@
         <define name="USE_ADAPTIVE" value="FALSE"/>
         <define name="ADAPTIVE_MU" value="0.0001"/>
     </section>
+
+    <section name="ROT_WING_EFF_SCHEDULING" prefix="ROT_WING_SCHED_">
+        <define name="G1_Q_90" value="{-4.43, 4.43}"/>
+        <define name="Y_ARM_LENGTH" value="0.31"/>
+    </section> 
 
     <section PREFIX="GUIDANCE_V_" NAME="GUIDANCE_V">
         <define VALUE="310" NAME="HOVER_KP"/>
