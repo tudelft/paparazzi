@@ -73,9 +73,9 @@
 
     <rc_commands>
         <set VALUE="@THROTTLE" COMMAND="THRUST"/>
-        <set VALUE="@YAW" COMMAND="ROLL"/>
-        <set VALUE="@PITCH/2" COMMAND="PITCH"/>
-        <set VALUE="-@ROLL/4" COMMAND="YAW"/>
+        <set VALUE="@YAW" COMMAND="YAW"/>
+        <set VALUE="@PITCH" COMMAND="PITCH"/>
+        <set VALUE="@ROLL" COMMAND="ROLL"/>
     </rc_commands>
 
     <section PREFIX="MOTOR_MIXING_" NAME="MIXING">
@@ -86,16 +86,17 @@
     </section>
 
     <command_laws>
-        <let VAR="th_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[0])" SERVO="MOTOR_FRONT"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
+        <!--<let VAR="th_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>-->
+        <set VALUE="autopilot_get_motors_on() ? actuators_pprz[0] : -MAX_PPRZ" SERVO="MOTOR_FRONT"/>
+        <set VALUE="autopilot_get_motors_on() ? actuators_pprz[1] : -MAX_PPRZ" SERVO="MOTOR_RIGHT"/>
+        <set VALUE="autopilot_get_motors_on() ? actuators_pprz[2] : -MAX_PPRZ" SERVO="MOTOR_BACK"/>
+        <set VALUE="autopilot_get_motors_on() ? actuators_pprz[3] : -MAX_PPRZ" SERVO="MOTOR_LEFT"/>
         <set VALUE="0" SERVO="AIL_LEFT"/>
         <set VALUE="0" SERVO="AIL_RIGHT"/>
         <set VALUE="0" SERVO="VTAIL_LEFT"/>
         <set VALUE="0" SERVO="VTAIL_RIGHT"/>
-        <set VALUE="-9600" SERVO="WING_ROT"/>
+        <set VALUE="-MAX_PPRZ" SERVO="MOTOR_FWD"/>
+        <set VALUE="-MAX_PPRZ" SERVO="WING_ROT"/>
     </command_laws>
 
     <section NAME="MISC">
@@ -108,13 +109,13 @@
         <define VALUE="TRUE" NAME="NO_GPS_LOST_WITH_RC_VALID"/>
     </section>
 
-    <section NAME="FORWARD">
+    <!--<section NAME="FORWARD">
         <define VALUE="TRUE" NAME="USE_EARTH_BOUND_RC_SETPOINT"/>
         <define VALUE="0.0" UNIT="deg" NAME="TRANSITION_MAX_OFFSET"/>
         <define VALUE="20.0" NAME="MAX_FWD_SPEED"/>
         <define VALUE="20.0" NAME="MAX_AIRSPEED"/>
         <define VALUE="FALSE" NAME="USE_AIRSPEED"/>
-    </section>
+    </section>-->
 
     <section PREFIX="IMU_" NAME="IMU">
         <define VALUE="1" NAME="MPU_CHAN_X"/>
