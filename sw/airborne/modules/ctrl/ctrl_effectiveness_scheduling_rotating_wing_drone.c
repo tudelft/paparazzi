@@ -63,11 +63,11 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
   float c_rot_wing_angle = cos(rot_wing_angle_rad);
   float s_rot_wing_angle = sin(rot_wing_angle_rad);
 
-  g1g2[0][1] = c_rot_wing_angle * rot_wing_g1_p_0[0]; // Roll eff right motor
-  g1g2[0][3] = c_rot_wing_angle * rot_wing_g1_p_0[1]; // Roll eff left motor
+  g1g2[0][1] = c_rot_wing_angle * rot_wing_g1_p_0[0] / INDI_G_SCALING; // Roll eff right motor
+  g1g2[0][3] = c_rot_wing_angle * rot_wing_g1_p_0[1] / INDI_G_SCALING; // Roll eff left motor
 
-  g1g2[1][1] = s_rot_wing_angle * rot_wing_g1_q_90[0]; // Pitch eff right motor
-  g1g2[1][3] = s_rot_wing_angle * rot_wing_g1_q_90[1]; // Pitch eff left motor
+  g1g2[1][1] = s_rot_wing_angle * rot_wing_g1_q_90[0] / INDI_G_SCALING; // Pitch eff right motor
+  g1g2[1][3] = s_rot_wing_angle * rot_wing_g1_q_90[1] / INDI_G_SCALING; // Pitch eff left motor
 }
 
 
