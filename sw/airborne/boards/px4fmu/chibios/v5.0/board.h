@@ -87,7 +87,8 @@
 #define	PC01_SCALED_3V3_SENSORS        1U
 #define	PC02_HW_VER_SENSE              2U
 #define	PC03_HW_REV_SENSE              3U
-#define	PC04_ADC1_SPARE1               4U
+#define	PC04_ADC1_SPARE1		4U
+//#define	PC04_ADC6              4U
 #define	PC05_DRDY4_ICM20602            5U
 #define	PC06_LED2                      6U
 #define	PC07_LED3                      7U
