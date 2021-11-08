@@ -120,7 +120,7 @@
     <!-- Only one main battery so CATASTROPHIC_BATTERY kill should be somewhat delayed -->
     <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410" unit="s/10"/> <!-- in tenth of seconds for engine kill or in ELECTRICAL_PERIODIC_FREQ-->
 
-<!--    <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>-->
+<!--    <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>-->  <!-- BROKEN!!! -->
 
     <define name="USE_AHRS_GPS_ACCELERATIONS" value="FALSE"/> <!-- forward acceleration compensation from GPS speed -->
     <configure name="USE_MAGNETOMETER" value="TRUE"/>
