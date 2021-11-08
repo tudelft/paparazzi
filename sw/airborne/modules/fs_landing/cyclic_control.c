@@ -35,6 +35,7 @@ float el_phase = 0.;
 uint8_t balance_motor_forces = true;
 uint8_t use_square_sig = true;
 uint8_t phase_pilot_control = false;
+<<<<<<< Updated upstream
 uint8_t cc_feed_forward = false;
 uint8_t use_controller = false;
 
@@ -46,6 +47,14 @@ int cyclic_dbg_ctr = 0;  // For debug telemetry
 
 void cyclic_control_values(struct fs_landing_t *actuator_values) {
   float current_yaw = stateGetNedToBodyEulers_f()->psi;
+=======
+uint8_t use_controller = false;
+
+int cyclic_dbg_ctr = 0;  // For debug telemetry
+
+void cyclic_control_values(struct fs_landing_t *actuator_values) {
+  float current_yaw = stateGetNedToBodyEulers_f() -> psi;
+>>>>>>> Stashed changes
 
   float mt_phase_rad = RadOfDeg(mt_phase);
   float el_phase_rad = RadOfDeg(el_phase);
@@ -59,11 +68,19 @@ void cyclic_control_values(struct fs_landing_t *actuator_values) {
       radio_pitch = 0;
     }
     float pilot_phase_rad = atan2f(radio_pitch, radio_roll);
+<<<<<<< Updated upstream
     mt_phase_rad += pilot_phase_rad;
     el_phase_rad += pilot_phase_rad;
 
 #if CYCLIC_CONTROL_DEBUG
 #if PERIODIC_TELEMETRY
+=======
+    mt_phase_rad = pilot_phase_rad;
+    el_phase_rad = pilot_phase_rad;
+
+#if CYCLIC_CONTROL_DEBUG
+  #if PERIODIC_TELEMETRY
+>>>>>>> Stashed changes
     fs_landing_dbg_values[0] = radio_roll;
     fs_landing_dbg_values[1] = radio_pitch;
     fs_landing_dbg_values[2] = DegOfRad(pilot_phase_rad);

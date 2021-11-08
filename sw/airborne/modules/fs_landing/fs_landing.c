@@ -4,6 +4,7 @@
 
 #include "fs_landing.h"
 #include "feed_forward.h"
+<<<<<<< Updated upstream
 //#include "pilot_test.h"
 #include "cyclic_control.h"
 //#include "impulse_control.h"
@@ -14,6 +15,18 @@
 //#ifndef FS_LANDING_FREQ_TEST
 //#define FS_LANDING_FREQ_TEST FALSE
 //#endif
+=======
+#include "pilot_test.h"
+#include "cyclic_control.h"
+#include "impulse_control.h"
+#include "actuator_freq_test.h"
+
+#include "subsystems/datalink/downlink.h"
+
+#ifndef FS_LANDING_FREQ_TEST
+#define FS_LANDING_FREQ_TEST FALSE
+#endif
+>>>>>>> Stashed changes
 
 #ifndef FS_LANDING_DEBUG
 #define FS_LANDING_DEBUG FALSE
@@ -23,11 +36,19 @@ struct fs_landing_t fs_landing;
 struct fs_landing_t current_actuator_values;
 
 uint8_t is_spinning = false;
+<<<<<<< Updated upstream
 //uint8_t pilot_has_control = false;
 uint8_t cyclic_control_active = false;
 //uint8_t impulse_control_active = false;
 uint8_t has_ff_started = false;
 //uint8_t freq_test_active = false;
+=======
+uint8_t pilot_has_control = false;
+uint8_t cyclic_control_active = false;
+uint8_t impulse_control_active = false;
+uint8_t has_ff_started = false;
+uint8_t freq_test_active = false;
+>>>>>>> Stashed changes
 float ff_start_time = 0;
 float ft_start_time = 0;
 

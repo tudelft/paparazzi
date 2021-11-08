@@ -120,7 +120,7 @@
     <!-- Only one main battery so CATASTROPHIC_BATTERY kill should be somewhat delayed -->
     <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410" unit="s/10"/> <!-- in tenth of seconds for engine kill or in ELECTRICAL_PERIODIC_FREQ-->
 
-    <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
+<!--    <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>-->
 
     <define name="USE_AHRS_GPS_ACCELERATIONS" value="FALSE"/> <!-- forward acceleration compensation from GPS speed -->
     <configure name="USE_MAGNETOMETER" value="TRUE"/>
@@ -508,7 +508,7 @@
     <!--<define name="MilliAmpereOfAdc(_adc)" value="(_adc-632)*4.14"/>--> <!-- TODO: calibrate even better -->
     <!-- tested at V 11.7 the avg -->  <!-- 1idel RPM then 1.0A half throttle 4A-->
     <define name="MILLIAMP_AT_IDLE_THROTTLE" value="600" unit="mA"/>  <!-- 500mA, with additional RC receiver ~600mA -->
-    <define name="MILLIAMP_AT_FULL_THROTTLE" value="11000" unit="mA"/> <!-- At 11.7 10.6 A at 12.2v 11.0A rounded then to 11000 to be at safe side-->
+    <define name="MILLIAMP_AT_FULL_THROTTLE" value="22000" unit="mA"/> <!-- At 11.7 10.6 A at 12.2v 11.0A rounded then to 11000 to be at safe side-->
     <define name="MAX_BAT_LEVEL" value="12.6" unit="V"/> <!-- 3S lipo 3x4.2 = 12.6 -->
     <define name="LOW_BAT_LEVEL" value="10.6" unit="V"/>
     <define name="CRITIC_BAT_LEVEL" value="10.0" unit="V"/>
