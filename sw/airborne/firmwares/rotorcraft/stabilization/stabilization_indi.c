@@ -497,7 +497,8 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   //Don't increment if not flying (not armed)
   if (!in_flight) {
     float_vect_zero(indi_u, INDI_NUM_ACT);
-    float_vect_zero(indi_du, INDI_NUM_ACT);
+    // If on the gournd, no increments, just proportional control
+    float_vect_copy(indi_u, indi_du, INDI_NUM_ACT);
   }
 
   // Propagate actuator filters
