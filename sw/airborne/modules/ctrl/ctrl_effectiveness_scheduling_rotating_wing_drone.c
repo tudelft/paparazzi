@@ -44,6 +44,14 @@ float rot_wing_y_length = ROT_WING_SCHED_Y_ARM_LENGTH;
 float rot_wing_g1_p_0[2];
 float rot_wing_g1_q_90[2] = ROT_WING_SCHED_G1_Q_90; 
 
+#if PERIODIC_TELEMETRY
+#include "subsystems/datalink/telemetry.h"
+static void send_rot_wing(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_ROT_WING(trans, dev, AC_ID, &rot_wing_angle_deg);
+}
+#endif
+
 void ctrl_eff_scheduling_rotating_wing_drone_init(void)
 {
   // init scheduling
@@ -51,6 +59,10 @@ void ctrl_eff_scheduling_rotating_wing_drone_init(void)
   // Copy initial effectiveness on roll for side motors
   rot_wing_g1_p_0[0] = g1g2[0][1];
   rot_wing_g1_p_0[1] = g1g2[1][3];
+
+  #if PERIODIC_TELEMETRY
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROT_WING, send_rot_wing);
+  #endif
   
 }
 
