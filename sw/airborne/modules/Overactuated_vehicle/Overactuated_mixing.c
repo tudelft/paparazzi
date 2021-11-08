@@ -72,6 +72,9 @@ float psi_order_motor;
 float rate_vect_filt_deg[3];
 float rate_vect_filt_dot_deg[3];
 
+float euler_error_dot_filt[3];
+float pos_error_dot_filt[3];
+
 //Flight states variables:
 bool INDI_engaged = 0;
 bool FAILSAFE_engaged = 0;
@@ -113,11 +116,27 @@ float rate_setpoint[3];
 float acc_setpoint[6];
 float INDI_acceleration_inputs[INDI_INPUTS];
 
+// Try to make all the matrices global
+float w_in[INDI_INPUTS];
+float v_in[INDI_INPUTS][INDI_INPUTS];
+
+float B_matrix_in[INDI_INPUTS][INDI_NUM_ACT];
+float * B_matrix_in_[INDI_INPUTS];
+float B_matrix_transposed[INDI_NUM_ACT][INDI_INPUTS];
+float * B_matrix_[INDI_NUM_ACT];
+float * v_in_[INDI_INPUTS];
+float out_1_multiply[INDI_INPUTS][INDI_NUM_ACT];
+float w_inverted[INDI_INPUTS][INDI_INPUTS];
+float Pseudoinverse_over[INDI_INPUTS][INDI_NUM_ACT];
+float U_transposed[INDI_INPUTS][INDI_NUM_ACT];
 
 //Variables needed for the filters:
 Butterworth2LowPass measurement_rates_filters[3]; //Filter of pqr
-Butterworth2LowPass measurement_acc_filters[3]; //Filter of acceleration
-Butterworth2LowPass actuator_state_filters[12]; //Filter of actuators
+Butterworth2LowPass measurement_acc_filters[3];   //Filter of acceleration
+Butterworth2LowPass actuator_state_filters[12];   //Filter of actuators
+
+Butterworth2LowPass angular_error_dot_filters[3]; //Filter of angular error
+Butterworth2LowPass position_error_dot_filters[3];//Filter of position error
 
 struct PID_over pid_gains_over = {
         .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
@@ -162,7 +181,6 @@ struct PD_indi_over indi_gains_over = {
                OVERACTUATED_MIXING_INDI_REF_RATE_Z
         }
 };
-
 
 struct FloatEulersPosition max_value_error = {  OVERACTUATED_MIXING_INDI_MAX_PHI,
                                                 OVERACTUATED_MIXING_INDI_MAX_THETA,
@@ -389,12 +407,9 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
     }
     for (uint8_t i = 0; i < 6; i++)
     {
-        actuators[i] = indi_du[i] * 100;
+//        actuators[i] = w_in[i];
     }
 
-//actuators[0] = 100 * INDI_acceleration_inputs[2];
-//    actuators[10] = speed_vect[2] * 100;
-//    actuators[11] = acc_vect_filt[2] * 100;
 
     pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID ,
                                          & wind_speed,
@@ -425,6 +440,8 @@ void init_filters(void){
     float tau_el = 1.0 / (OVERACTUATED_MIXING_FILT_CUTOFF_ACTUATORS_EL);
     float tau_az = 1.0 / ( OVERACTUATED_MIXING_FILT_CUTOFF_ACTUATORS_AZ);
     float tau_motor = 1.0 / (OVERACTUATED_MIXING_FILT_CUTOFF_ACTUATORS_MOTOR);
+    float tau_ang_err = 1.0 / (OVERACTUATED_MIXING_FILT_CUTOFF_ANG_ERR);
+    float tau_pos_err = 1.0 / (OVERACTUATED_MIXING_FILT_CUTOFF_POS_ERR);
 
     // Initialize filters for the actuators
     for (uint8_t i = 0; i < INDI_NUM_ACT; i++) {
@@ -447,6 +464,13 @@ void init_filters(void){
     init_butterworth_2_low_pass(&measurement_acc_filters[1], tau_acc_y, sample_time, 0.0);
     init_butterworth_2_low_pass(&measurement_acc_filters[2], tau_acc_z, sample_time, 0.0);
 
+    // Initialize filters for the derivative of the position and angular error
+    init_butterworth_2_low_pass(&angular_error_dot_filters[0], tau_ang_err, sample_time, 0.0);
+    init_butterworth_2_low_pass(&angular_error_dot_filters[1], tau_ang_err, sample_time, 0.0);
+    init_butterworth_2_low_pass(&angular_error_dot_filters[2], tau_ang_err, sample_time, 0.0);
+    init_butterworth_2_low_pass(&position_error_dot_filters[0], tau_pos_err, sample_time, 0.0);
+    init_butterworth_2_low_pass(&position_error_dot_filters[1], tau_pos_err, sample_time, 0.0);
+    init_butterworth_2_low_pass(&position_error_dot_filters[2], tau_pos_err, sample_time, 0.0);
 }
 
 /**
@@ -485,62 +509,61 @@ void overactuated_mixing_init() {
     //Startup the init variables of the INDI
     init_filters();
 
+    //Assign pointers:
+    for (int i = 0; i < INDI_INPUTS; i++) {
+        B_matrix_in_[i] = &B_matrix_in[i][0];
+    }
+    for (int j = 0; j < INDI_NUM_ACT; j++) {
+        B_matrix_[j] = &B_matrix_transposed[j][0];
+    }
 }
-void compute_pseudoinverse(float **B_matrix, float **Pseudoinverse, int n_row, int n_column){
+void compute_pseudoinverse(void){
 
     uint8_t i,j,k;
+
     //Transpose matrix B_in
-    float B_matrix_transposed[n_column][n_row];
-    float * B_matrix_[n_column];
-    for (uint8_t i = 0; i < n_row; i++) {
-        for (j = 0; j < n_column; j++) {
-            B_matrix_transposed[j][i] = B_matrix[i][j];
-            B_matrix_[j] = &B_matrix_transposed[j][0];
+    for (i = 0; i < INDI_INPUTS; i++) {
+        for (j = 0; j < INDI_NUM_ACT; j++) {
+            B_matrix_transposed[j][i] = B_matrix_in[i][j];
         }
     }
 
     // Pre-assign the matrices for the SVD decomposition
-    float w_in[n_row];
-    float v_in[n_row][n_row];
-    float * v_in_[n_row];
-    for (i = 0; i < n_row; i++) {
+    for (i = 0; i < INDI_INPUTS; i++) {
         v_in_[i] = &v_in[i][0];
     }
 
     //Decompose the B matrix with the SVD decomposition module
-    pprz_svd_float(B_matrix_, &w_in[0], v_in_, n_column, n_row);
+    pprz_svd_float(B_matrix_, &w_in[0], v_in_, INDI_NUM_ACT, INDI_INPUTS);
 
     //Transpose matrix U
-    float U_transposed[n_row][n_column];
-    for (i = 0; i < n_column; i++) {
-        for (j = 0; j < n_row; j++) {
+    for (i = 0; i < INDI_NUM_ACT; i++) {
+        for (j = 0; j < INDI_INPUTS; j++) {
             U_transposed[j][i] = B_matrix_[i][j];
         }
     }
 
     // Invert the diag values
-    float w_inverted[n_row][n_row];
-    for (i = 0; i < n_row; i++) {
+    for (i = 0; i < INDI_INPUTS; i++) {
         w_inverted[i][i] = 1/w_in[i];
     }
 
     //Multiply the diagonal matrix with U_transposed
-    float out_1[n_row][n_column];
-    for (i = 0; i < n_row; i++) {
-        for (j = 0; j < n_column; j++) {
-            out_1[i][j] = 0.;
-            for (k = 0; k < n_row; k++) {
-                out_1[i][j] += w_inverted[i][k] * U_transposed[k][j];
+    for (i = 0; i < INDI_INPUTS; i++) {
+        for (j = 0; j < INDI_NUM_ACT; j++) {
+            out_1_multiply[i][j] = 0.;
+            for (k = 0; k < INDI_INPUTS; k++) {
+                out_1_multiply[i][j] += w_inverted[i][k] * U_transposed[k][j];
             }
         }
     }
 
     //Multiply V with out_1
-    for (i = 0; i < n_row; i++) {
-        for (j = 0; j < n_column; j++) {
-            Pseudoinverse[i][j] = 0.;
-            for (k = 0; k < n_row; k++) {
-                Pseudoinverse[i][j] += v_in_[i][k] * out_1[k][j];
+    for (i = 0; i < INDI_INPUTS; i++) {
+        for (j = 0; j < INDI_NUM_ACT; j++) {
+            Pseudoinverse_over[i][j] = 0.;
+            for (k = 0; k < INDI_INPUTS; k++) {
+                Pseudoinverse_over[i][j] += v_in_[i][k] * out_1_multiply[k][j];
             }
         }
     }
@@ -684,7 +707,7 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         //Calculate the error on the euler angles
         euler_error[0] = euler_setpoint[0] - euler_vect[0];
         euler_error[1] = euler_setpoint[1] - euler_vect[1];
-        euler_error[2] = euler_setpoint[2] + euler_vect[2];
+        euler_error[2] = euler_setpoint[2] - euler_vect[2];
         //Add logic for the psi control:
         if(euler_error[2] > M_PI){
             euler_error[2] -= 2 * M_PI;
@@ -704,12 +727,16 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
             pos_error_dot[i] = (pos_error[i] - pos_error_old[i]) * PERIODIC_FREQUENCY;
             euler_error_old[i] = euler_error[i];
             pos_error_old[i] = pos_error[i];
-            if( abs(euler_error_integrated[i]) < OVERACTUATED_MIXING_PID_MAX_EULER_ERR_INTEGRATIVE){
-                euler_error_integrated[i] += euler_error[i] / PERIODIC_FREQUENCY;
-            }
-            if( abs(pos_error_integrated[i]) < OVERACTUATED_MIXING_PID_MAX_POS_ERR_INTEGRATIVE){
-                pos_error_integrated[i] += pos_error[i] / PERIODIC_FREQUENCY;
-            }
+            euler_error_integrated[i] += euler_error[i] / PERIODIC_FREQUENCY;
+            pos_error_integrated[i] += pos_error[i] / PERIODIC_FREQUENCY;
+        }
+
+        /* Propagate the filter on the angular and position error derivative therms */
+        for (i = 0; i < 3; i++) {
+            update_butterworth_2_low_pass(&angular_error_dot_filters[i], euler_error_dot[i]);
+            update_butterworth_2_low_pass(&position_error_dot_filters[i], pos_error_dot[i]);
+            euler_error_dot_filt[i] = angular_error_dot_filters[i].o[0];
+            pos_error_dot_filt[i] = position_error_dot_filters[i].o[0];
         }
 
         //Now bound the error within the defined ranges:
@@ -717,14 +744,19 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         BoundAbs(pos_error[0],OVERACTUATED_MIXING_PID_MAX_X_ERR);
         BoundAbs(pos_error[1],OVERACTUATED_MIXING_PID_MAX_Y_ERR);
         BoundAbs(pos_error[2],OVERACTUATED_MIXING_PID_MAX_Z_ERR);
+        //Bound integrative therms
+        for (i = 0; i < 3; i++) {
+            BoundAbs(euler_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_EULER_ERR_INTEGRATIVE);
+            BoundAbs(pos_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_POS_ERR_INTEGRATIVE);
+        }
 
         //Calculate the orders with the PID gain defined:
         pos_order_earth[0] = pid_gains_over.p.x * pos_error[0] + pid_gains_over.i.x * pos_error_integrated[0] +
-                             pid_gains_over.d.x * pos_error_dot[0];
+                             pid_gains_over.d.x * pos_error_dot_filt[0];
         pos_order_earth[1] = pid_gains_over.p.y * pos_error[1] + pid_gains_over.i.y * pos_error_integrated[1] +
-                             pid_gains_over.d.y * pos_error_dot[1];
+                             pid_gains_over.d.y * pos_error_dot_filt[1];
         pos_order_earth[2] = pid_gains_over.p.z * pos_error[2] + pid_gains_over.i.z * pos_error_integrated[2] +
-                             pid_gains_over.d.z * pos_error_dot[2] + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM;
+                             pid_gains_over.d.z * pos_error_dot_filt[2] + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000;
 //        pos_order_earth[0] = pid_gains_over.p.x * pos_error[0] + pid_gains_over.i.x * pos_error_integrated[0] +
 //                             pid_gains_over.d.x * speed_vect[0];
 //        pos_order_earth[1] = pid_gains_over.p.y * pos_error[1] + pid_gains_over.i.y * pos_error_integrated[1] +
@@ -735,16 +767,16 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
 
 
         euler_order[0] = pid_gains_over.p.phi * euler_error[0] + pid_gains_over.i.phi * euler_error_integrated[0] +
-                         pid_gains_over.d.phi * euler_error_dot[0];
+                         pid_gains_over.d.phi * euler_error_dot_filt[0];
         euler_order[1] = pid_gains_over.p.theta * euler_error[1] + pid_gains_over.i.theta * euler_error_integrated[1] +
-                         pid_gains_over.d.theta * euler_error_dot[1];
+                         pid_gains_over.d.theta * euler_error_dot_filt[1];
 
 
 
         //Compute the yaw order only when needed:
         if(yaw_with_tilting) {
             euler_order[2] = pid_gains_over.p.psi * euler_error[2] + pid_gains_over.i.psi * euler_error_integrated[2] +
-                             pid_gains_over.d.psi * euler_error_dot[2];
+                             pid_gains_over.d.psi * euler_error_dot_filt[2];
         }
         else{
             euler_order[2] = 0;
@@ -752,7 +784,7 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         if(yaw_with_motors) {
             psi_order_motor =
                     PID_gain_psi_motor[0] * euler_error[2] + PID_gain_psi_motor[1] * euler_error_integrated[2] +
-                    PID_gain_psi_motor[2] * euler_error_dot[2];
+                    PID_gain_psi_motor[2] * euler_error_dot_filt[2];
         }
         else{
             psi_order_motor = 0;
@@ -770,27 +802,45 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         pos_order_body[2] = pos_order_earth[2];
 
         //Compute orders:
+//        //Motor 1:
+//        overactuated_mixing.commands[0] = (int16_t) ((pos_order_body[2] + euler_order[0] + euler_order[1] + psi_order_motor) - 1000 ) * 9.6;
+//        Bound(overactuated_mixing.commands[0],0,9600);
+//
+//        //Motor 2:
+//        overactuated_mixing.commands[1] = (int16_t) ((pos_order_body[2] - euler_order[0] + euler_order[1] - psi_order_motor) - 1000 ) * 9.6;
+//        Bound(overactuated_mixing.commands[1],0,9600);
+//
+//        //Motor 3:
+//        overactuated_mixing.commands[2] = (int16_t) ((pos_order_body[2] - euler_order[0] - euler_order[1] + psi_order_motor) - 1000 ) * 9.6;
+//        Bound(overactuated_mixing.commands[2],0,9600);
+//
+//        //Motor 4:
+//        overactuated_mixing.commands[3] = (int16_t) ((pos_order_body[2] + euler_order[0] - euler_order[1] - psi_order_motor) - 1000 ) * 9.6;
+//        Bound(overactuated_mixing.commands[3],0,9600);
+
+        //Manual throttle
         //Motor 1:
-        overactuated_mixing.commands[0] = (int16_t) ((pos_order_body[2] + euler_order[0] + euler_order[1] +psi_order_motor) - 1000 ) * 9.6;
+        overactuated_mixing.commands[0] = (int16_t) ((euler_order[0] + euler_order[1] + psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
         Bound(overactuated_mixing.commands[0],0,9600);
 
         //Motor 2:
-        overactuated_mixing.commands[1] = (int16_t) ((pos_order_body[2] - euler_order[0] + euler_order[1] - psi_order_motor) - 1000 ) * 9.6;
+        overactuated_mixing.commands[1] = (int16_t) ((- euler_order[0] + euler_order[1] - psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
         Bound(overactuated_mixing.commands[1],0,9600);
 
         //Motor 3:
-        overactuated_mixing.commands[2] = (int16_t) ((pos_order_body[2] - euler_order[0] - euler_order[1] + psi_order_motor) - 1000 ) * 9.6;
+        overactuated_mixing.commands[2] = (int16_t) ((-euler_order[0] - euler_order[1] + psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
         Bound(overactuated_mixing.commands[2],0,9600);
 
         //Motor 4:
-        overactuated_mixing.commands[3] = (int16_t) ((pos_order_body[2] + euler_order[0] - euler_order[1] - psi_order_motor) - 1000 ) * 9.6;
+        overactuated_mixing.commands[3] = (int16_t) ((euler_order[0] - euler_order[1] - psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
         Bound(overactuated_mixing.commands[3],0,9600);
+
 
         //Elevation servos:
         int16_t local_el_order = 0;
         if(activate_tilting_el) {
             if (pos_order_body[0] >= 0) {
-                local_el_order = (int16_t)( pos_order_body[0] * 9600 / OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE);
+                local_el_order = (int16_t)( pos_order_body[0] * 9600 / -OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE);
             } else {
                 local_el_order = (int16_t)( pos_order_body[0] * 9600 / OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE);
             }
@@ -921,9 +971,9 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         BoundAbs(rate_setpoint[2],OVERACTUATED_MIXING_INDI_MAX_R);
 
         //Compute the angular acceleration setpoint:
-        acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * indi_gains_over.d.phi;
-        acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * indi_gains_over.d.theta;
-        acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * indi_gains_over.d.psi;
+        acc_setpoint[3] = (rate_setpoint[0] - rate_vect[0]) * indi_gains_over.d.phi;
+        acc_setpoint[4] = (rate_setpoint[1] - rate_vect[1]) * indi_gains_over.d.theta;
+        acc_setpoint[5] = (rate_setpoint[2] - rate_vect[2]) * indi_gains_over.d.psi;
         BoundAbs(acc_setpoint[3],OVERACTUATED_MIXING_INDI_MAX_P_DOT * M_PI / 180);
         BoundAbs(acc_setpoint[4],OVERACTUATED_MIXING_INDI_MAX_Q_DOT * M_PI / 180);
         BoundAbs(acc_setpoint[5],OVERACTUATED_MIXING_INDI_MAX_R_DOT * M_PI / 180);
@@ -975,112 +1025,37 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         INDI_acceleration_inputs[2] = acc_setpoint[2] - acc_vect_filt[2];
 
 
-//        // Compute the B matrix and invert it
-//        float B_matrix_in[INDI_INPUTS][INDI_NUM_ACT];
+        // Compute the B matrix and invert it
+
+
+
+        Compute_B_matrix(B_matrix_in_,VEHICLE_I_XX,VEHICLE_I_YY,VEHICLE_I_ZZ,VEHICLE_PROPELLER_INERTIA,VEHICLE_L1,
+                         VEHICLE_L2,VEHICLE_L3,VEHICLE_L4,VEHICLE_LZ,VEHICLE_MASS,OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ,
+                         OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ, &actuator_state_filt[0],&actuator_state_filt[4],
+                         &actuator_state_filt[8], &actuator_state_filt_dot[0],&actuator_state_filt_dot[4],
+                         &actuator_state_filt_dot[8],&euler_vect[0],&rate_vect_filt[0]);
+
+//        float B_matrix[INDI_INPUTS][INDI_NUM_ACT] = {
+//                {0, 0, 0, 0, -2.4525, -2.4525, -2.4525, -2.4525, 0, 0, 0, 0},
+//                {0, 0, 0, 0, 0, 0, 0, 0, 2.4525, 2.4525, 2.4525, 2.4525},
+//                {-0.0062, -0.0062, -0.0062, -0.0062, 0, 0, 0, 0, 0, 0, 0, 0},
+//                {0.0265, -0.0265, -0.0265, 0.0265, 0, 0, 0, 0, 0, 0, 0, 0},
+//                {0.0277, 0.0277, -0.0344, -0.0344, 0, 0, 0, 0, 0, 0, 0, 0},
+//                {0.0010, -0.0010, 0.0010, -0.0010, 0, 0, 0, 0, 8.1791, 8.1791, -10.1533, -10.1533}};
 //        float * B_matrix_in_[INDI_INPUTS];
 //        for (i = 0; i < INDI_INPUTS; i++) {
-//            B_matrix_in_[i] = &B_matrix_in[i][0];
+//            B_matrix_in_[i] = &B_matrix[i][0];
 //        }
-//
-//        Compute_B_matrix(B_matrix_in_,VEHICLE_I_XX,VEHICLE_I_YY,VEHICLE_I_ZZ,VEHICLE_PROPELLER_INERTIA,VEHICLE_L1,
-//                         VEHICLE_L2,VEHICLE_L3,VEHICLE_L4,VEHICLE_LZ,VEHICLE_MASS,OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ,
-//                         OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ, &actuator_state_filt[0],&actuator_state_filt[4],
-//                         &actuator_state_filt[8], &actuator_state_filt_dot[0],&actuator_state_filt_dot[4],
-//                         &actuator_state_filt_dot[8],&euler_vect[0],&rate_vect_filt[0]);
-
-        float B_matrix[INDI_INPUTS][INDI_NUM_ACT] = {
-                {0, 0, 0, 0, -2.4525, -2.4525, -2.4525, -2.4525, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0, 0, 0, 0, 2.4525, 2.4525, 2.4525, 2.4525},
-                {-0.0062, -0.0062, -0.0062, -0.0062, 0, 0, 0, 0, 0, 0, 0, 0},
-                {0.0265, -0.0265, -0.0265, 0.0265, 0, 0, 0, 0, 0, 0, 0, 0},
-                {0.0277, 0.0277, -0.0344, -0.0344, 0, 0, 0, 0, 0, 0, 0, 0},
-                {0.0010, -0.0010, 0.0010, -0.0010, 0, 0, 0, 0, 8.1791, 8.1791, -10.1533, -10.1533}};
-        float * B_matrix_in_[INDI_INPUTS];
-        for (i = 0; i < INDI_INPUTS; i++) {
-            B_matrix_in_[i] = &B_matrix[i][0];
-        }
-
-//        float B_matrix[INDI_INPUTS][INDI_NUM_ACT];
-//        memcpy(B_matrix, B_matrix_in, INDI_INPUTS * INDI_NUM_ACT * sizeof(float));
-
-        float INDI_acceleration_inputs_2[6] = {0, 0, 1, 0, 0, 0};
 
 
-//        float Pseudoinverse[INDI_INPUTS][INDI_NUM_ACT];
-//        float * Pseudoinverse_[INDI_INPUTS];
-//        for (i = 0; i < INDI_INPUTS; i++) {
-//            Pseudoinverse_[i] = &Pseudoinverse[i][0];
-//        }
-//        compute_pseudoinverse(B_matrix_in_,Pseudoinverse_,INDI_INPUTS,INDI_NUM_ACT);
-
-
-
-        //Transpose matrix B_in
-        float B_matrix_transposed[INDI_NUM_ACT][INDI_INPUTS];
-        float * B_matrix_[INDI_NUM_ACT];
-        for (i = 0; i < INDI_INPUTS; i++) {
-            for (j = 0; j < INDI_NUM_ACT; j++) {
-                B_matrix_transposed[j][i] = B_matrix[i][j];
-                B_matrix_[j] = &B_matrix_transposed[j][0];
-            }
-        }
-
-        // Pre-assign the matrices for the SVD decomposition
-        float w_in[INDI_INPUTS];
-        float v_in[INDI_INPUTS][INDI_INPUTS];
-        float * v_in_[INDI_INPUTS];
-        for (i = 0; i < INDI_INPUTS; i++) {
-            v_in_[i] = &v_in[i][0];
-        }
-
-        //Decompose the B matrix with the SVD decomposition module
-        pprz_svd_float(B_matrix_, &w_in[0], v_in_, INDI_NUM_ACT, INDI_INPUTS);
-
-        //Transpose matrix U
-        float U_transposed[INDI_INPUTS][INDI_NUM_ACT];
-        for (i = 0; i < INDI_NUM_ACT; i++) {
-            for (j = 0; j < INDI_INPUTS; j++) {
-                U_transposed[j][i] = B_matrix_[i][j];
-            }
-        }
-
-        // Invert the diag values
-        float w_inverted[INDI_INPUTS][INDI_INPUTS];
-        for (i = 0; i < INDI_INPUTS; i++) {
-            w_inverted[i][i] = 1/w_in[i];
-        }
-
-        //Multiply the diagonal matrix with U_transposed
-        float out_1[INDI_INPUTS][INDI_NUM_ACT];
-        for (i = 0; i < INDI_INPUTS; i++) {
-            for (j = 0; j < INDI_NUM_ACT; j++) {
-                out_1[i][j] = 0.;
-                for (k = 0; k < INDI_INPUTS; k++) {
-                    out_1[i][j] += w_inverted[i][k] * U_transposed[k][j];
-                }
-            }
-        }
-
-        //Multiply V with out_1
-        float Pseudoinverse[INDI_INPUTS][INDI_NUM_ACT];
-        for (i = 0; i < INDI_INPUTS; i++) {
-            for (j = 0; j < INDI_NUM_ACT; j++) {
-                Pseudoinverse[i][j] = 0.;
-                for (k = 0; k < INDI_INPUTS; k++) {
-                    Pseudoinverse[i][j] += v_in_[i][k] * out_1[k][j];
-                }
-            }
-        }
-
-
-
+        compute_pseudoinverse();
 
         //Compute the actuation increment command by multiplying desired acceleration with the pseudoinverse matrix
         for (j = 0; j < INDI_NUM_ACT; j++) {
             //Cleanup previous value
             indi_du[j] = 0.;
             for (k = 0; k < INDI_INPUTS; k++) {
-                indi_du[j] += INDI_acceleration_inputs_2[k] * Pseudoinverse[k][j];
+                indi_du[j] += INDI_acceleration_inputs[k] * Pseudoinverse_over[k][j];
             }
         }
 
@@ -1101,7 +1076,6 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
 
         // Write values to servos and motor
         for (i = 0; i < N_ACT; i++) {
-
             if(i < 4){ //Motors
                 //Transpose the motor command from SI to PPZ:
                 overactuated_mixing.commands[i] = (int16_t) (indi_u[i] * 1/OVERACTUATED_MIXING_MOTOR_K_PWM_OMEGA * 9.6f);

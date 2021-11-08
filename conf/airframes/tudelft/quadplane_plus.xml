@@ -73,13 +73,14 @@
       <configure name="MODEM_BAUD" value="B115200"/>
     </module>
 
+    <!--     For OUTSIDE -->
 <!--    <module name="actuators"     type="pwm"/>-->
 <!--    <module name="imu"           type="mpu6000"/>-->
 <!--    <module name="gps"           type="ublox"/>-->
 <!--    <module name="gps"           type="ubx_ucenter"/>-->
 <!--    <module name="stabilization" type="indi_simple"/>-->
 <!--    <module name="stabilization" type="rate_indi"/>-->
-    <module name="ins"           type="ekf2" />
+<!--    <module name="ins"           type="ekf2" />-->
 
 <!--     For OPTITRACK -->
     <module name="actuators"     type="pwm"/>
@@ -91,11 +92,11 @@
     </module>
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
-<!--    <module name="ins"           type="extended" />-->
-<!--    <module name="ahrs" type="int_cmpl_quat">-->
-<!--      <configure name="USE_MAGNETOMETER" value="FALSE"/>-->
-<!--      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>-->
-<!--    </module>-->
+    <module name="ins"           type="extended" />
+    <module name="ahrs" type="int_cmpl_quat">
+      <configure name="USE_MAGNETOMETER" value="FALSE"/>
+      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
+    </module>
     
 <!--    <module name="air_data"/>-->
     <module name="send_imu_mag_current"/>
@@ -219,18 +220,18 @@
     <define name="PID_I_GAIN_PSI_AZ" value="0" />
     <define name="PID_D_GAIN_PSI_AZ" value=".5" />
 
-    <define name="PID_P_GAIN_POS_X" value="0.8" />
+    <define name="PID_P_GAIN_POS_X" value="0.08" />
     <define name="PID_I_GAIN_POS_X" value="0.1" />
-    <define name="PID_D_GAIN_POS_X" value=".5" />
+    <define name="PID_D_GAIN_POS_X" value="0.02" />
 
     <define name="PID_P_GAIN_POS_Y" value="0.08" />
     <define name="PID_I_GAIN_POS_Y" value="0.1" />
-    <define name="PID_D_GAIN_POS_Y" value=".5" />
+    <define name="PID_D_GAIN_POS_Y" value="0.02" />
 
     <define name="PID_P_GAIN_POS_Z" value="500" />
     <define name="PID_I_GAIN_POS_Z" value="50" />
     <define name="PID_D_GAIN_POS_Z" value="300" />
-    <define name="PID_THR_NEUTRAL_PWM" value="1700" unit="uS"/>
+    <define name="PID_THR_NEUTRAL_PWM" value="1000" unit="uS"/>
 
     <!-- PID maximum orders -->
     <define name="PID_MAX_PHI" value="40" unit="deg"/>
@@ -287,21 +288,25 @@
     <define name="MOTOR_K_M_OMEGASQ" value="1.5e-7" unit="N*m/(rad/s)^2"/>
     <define name="MOTOR_K_PWM_OMEGA" value="1" unit="PWM/(rad/s)"/>
     <define name="MOTOR_MAX_OMEGA" value="1000" unit="rad/s"/>
-    <define name="MOTOR_MIN_OMEGA" value="200" unit="rad/s"/><!-- Needed to make the INDi works-->
+    <define name="MOTOR_MIN_OMEGA" value="200" unit="rad/s"/><!-- Needed to make the INDI to work-->
     <define name="SERVO_AZ_MIN_ANGLE" value="-45" unit="deg"/><!-- Always remember to update the PWM range as well-->
     <define name="SERVO_AZ_MAX_ANGLE" value="45" unit="deg"/>
     <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>
     <define name="SERVO_EL_MIN_ANGLE" value="-40" unit="deg"/>
-    <!-- Filters properties -->
-    <define name="FILT_CUTOFF_P" value="10" unit="rad/s"/>
-    <define name="FILT_CUTOFF_Q" value="10" unit="rad/s"/>
-    <define name="FILT_CUTOFF_R" value="10" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACC_X" value="30" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACC_Y" value="30" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACC_Z" value="30" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_EL" value="30" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="30" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="30" unit="rad/s"/>
+    <!-- Filters properties for INDI-->
+    <define name="FILT_CUTOFF_P" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_Q" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_R" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACC_X" value="5" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACC_Y" value="5" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACC_Z" value="5" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_EL" value="5" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="5" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="15" unit="rad/s"/>
+    <!-- Filters properties for PID-->
+    <define name="FILT_CUTOFF_ANG_ERR" value="40" unit="rad/s"/>
+    <define name="FILT_CUTOFF_POS_ERR" value="20" unit="rad/s"/>
+
   </section>
 
   <!-- Vehicle properties, see documentation for notation -->

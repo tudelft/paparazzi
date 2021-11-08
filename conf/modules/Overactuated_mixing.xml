@@ -35,17 +35,17 @@
     <dl_settings>
       <dl_settings NAME="PID overact">
 
-        <dl_setting var="pid_gains_over.p.phi" min="0" step=".1" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_PHI" shortname="PID_kp_roll" persistent="true"/>
+        <dl_setting var="pid_gains_over.p.phi" min="0" step="1" max="700" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_PHI" shortname="PID_kp_roll" persistent="true"/>
         <dl_setting var="pid_gains_over.i.phi" min="0" step=".1" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_PHI" shortname="PID_ki_roll" persistent="true"/>
-        <dl_setting var="pid_gains_over.d.phi" min="0" step=".1" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_PHI" shortname="PID_kd_roll" persistent="true"/>
+        <dl_setting var="pid_gains_over.d.phi" min="0" step="1" max="45" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_PHI" shortname="PID_kd_roll" persistent="true"/>
 
-        <dl_setting var="pid_gains_over.p.theta" min="0" step=".1" max="5"  module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_THETA" shortname="PID_kp_pitch" persistent="true"/>
+        <dl_setting var="pid_gains_over.p.theta" min="0" step="1" max="500"  module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_THETA" shortname="PID_kp_pitch" persistent="true"/>
         <dl_setting var="pid_gains_over.i.theta" min="0" step=".1" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_THETA" shortname="PID_ki_pitch" persistent="true"/>
-        <dl_setting var="pid_gains_over.d.theta" min="0" step=".1" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_THETA" shortname="PID_kd_pitch" persistent="true"/>
+        <dl_setting var="pid_gains_over.d.theta" min="0" step="1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_THETA" shortname="PID_kd_pitch" persistent="true"/>
 
-        <dl_setting var="pid_gains_over.p.psi" min="0" step=".1" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_PSI" shortname="PID_kp_yaw" persistent="true"/>
+        <dl_setting var="pid_gains_over.p.psi" min="0" step=".1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_PSI" shortname="PID_kp_yaw" persistent="true"/>
         <dl_setting var="pid_gains_over.i.psi" min="0" step=".1" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_PSI" shortname="PID_ki_yaw" persistent="true"/>
-        <dl_setting var="pid_gains_over.d.psi" min="0" step=".1" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_PSI" shortname="PID_kd_yaw" persistent="true"/>
+        <dl_setting var="pid_gains_over.d.psi" min="0" step=".1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_PSI" shortname="PID_kd_yaw" persistent="true"/>
 
         <dl_setting var="pid_gains_over.p.x" min="0" step=".1" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_POS_X" shortname="PID_kp_x" persistent="true"/>
         <dl_setting var="pid_gains_over.i.x" min="0" step=".1" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_POS_X" shortname="PID_ki_x" persistent="true"/>
@@ -66,28 +66,27 @@
   <settings>
     <dl_settings>
       <dl_settings NAME="INDI overact">
-        <dl_setting var="indi_gains_over.p.phi" min="0" step=".001" max="5" shortname="INDI_kp_roll" persistent="true"/>
-        <dl_setting var="indi_gains_over.d.phi" min="0" step=".001" max="5" shortname="INDI_kd_roll" persistent="true"/>
+        <dl_setting var="indi_gains_over.p.phi" min="0" step=".001" max="5" shortname="INDI_kp_roll" param="OVERACTUATED_MIXING_PID_P_GAIN_PHI" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.phi" min="0" step=".001" max="5" shortname="INDI_kd_roll" param="OVERACTUATED_MIXING_PID_D_GAIN_PHI" persistent="true"/>
 
-        <dl_setting var="indi_gains_over.p.theta" min="0" step=".001" max="5" shortname="INDI_kp_pitch" persistent="true"/>
-        <dl_setting var="indi_gains_over.d.theta" min="0" step=".001" max="5" shortname="INDI_kd_pitch" persistent="true"/>
+        <dl_setting var="indi_gains_over.p.theta" min="0" step=".001" max="5" shortname="INDI_kp_pitch" param="OVERACTUATED_MIXING_PID_P_GAIN_THETA" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.theta" min="0" step=".001" max="5" shortname="INDI_kd_pitch" param="OVERACTUATED_MIXING_PID_D_GAIN_THETA" persistent="true"/>
 
-        <dl_setting var="indi_gains_over.p.psi" min="0" step=".001" max="5" shortname="INDI_kp_yaw" persistent="true"/>
-        <dl_setting var="indi_gains_over.d.psi" min="0" step=".001" max="5" shortname="INDI_kd_yaw" persistent="true"/>
+        <dl_setting var="indi_gains_over.p.psi" min="0" step=".001" max="5" shortname="INDI_kp_yaw" param="OVERACTUATED_MIXING_PID_P_GAIN_PSI_AZ" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.psi" min="0" step=".001" max="5" shortname="INDI_kd_yaw" param="OVERACTUATED_MIXING_PID_D_GAIN_PSI_AZ" persistent="true"/>
 
-        <dl_setting var="indi_gains_over.p.x" min="0" step=".001" max="3" shortname="INDI_kp_x" persistent="true"/>
-        <dl_setting var="indi_gains_over.d.x" min="0" step=".001" max="3" shortname="INDI_kd_x" persistent="true"/>
+        <dl_setting var="indi_gains_over.p.x" min="0" step=".001" max="3" shortname="INDI_kp_x" param="OVERACTUATED_MIXING_PID_P_GAIN_POS_X" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.x" min="0" step=".001" max="3" shortname="INDI_kd_x" param="OVERACTUATED_MIXING_PID_D_GAIN_POS_X" persistent="true"/>
 
-        <dl_setting var="indi_gains_over.p.y" min="0" step=".001" max="3" shortname="INDI_kp_y" persistent="true"/>
-        <dl_setting var="indi_gains_over.d.y" min="0" step=".001" max="3" shortname="INDI_kd_y" persistent="true"/>
+        <dl_setting var="indi_gains_over.p.y" min="0" step=".001" max="3" shortname="INDI_kp_y" param="OVERACTUATED_MIXING_PID_P_GAIN_POS_Y" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.y" min="0" step=".001" max="3" shortname="INDI_kd_y" param="OVERACTUATED_MIXING_PID_D_GAIN_POS_Y" persistent="true"/>
 
-        <dl_setting var="indi_gains_over.p.z" min="0" step=".001" max="30" shortname="INDI_kp_z" persistent="true"/>
-        <dl_setting var="indi_gains_over.d.z" min="0" step=".001" max="30" shortname="INDI_kd_z" persistent="true"/>
+        <dl_setting var="indi_gains_over.p.z" min="0" step=".001" max="30" shortname="INDI_kp_z" param="OVERACTUATED_MIXING_PID_P_GAIN_POS_Z" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.z" min="0" step=".001" max="30" shortname="INDI_kd_z" param="OVERACTUATED_MIXING_PID_D_GAIN_POS_Z" persistent="true"/>
 
-        <dl_setting var="act_dyn_struct.motor" min="0" step=".001" max=".5" shortname="act_dyn_thr" persistent="true"/>
-        <dl_setting var="act_dyn_struct.elevation" min="0" step=".001" max=".5" shortname="act_dyn_el" persistent="true"/>
-        <dl_setting var="act_dyn_struct.azimuth" min="0" step=".001" max=".5" shortname="ect_dyn_az" persistent="true"/>
-
+        <dl_setting var="act_dyn_struct.motor" min="0" step=".001" max=".5" shortname="act_dyn_thr" param="OVERACTUATED_MIXING_INDI_ACT_DYN_MOTOR" persistent="true"/>
+        <dl_setting var="act_dyn_struct.elevation" min="0" step=".001" max=".5" shortname="act_dyn_el" param="OVERACTUATED_MIXING_INDI_ACT_DYN_EL" persistent="true"/>
+        <dl_setting var="act_dyn_struct.azimuth" min="0" step=".001" max=".5" shortname="ect_dyn_az" param="OVERACTUATED_MIXING_INDI_ACT_DYN_AZ" persistent="true"/>
 
       </dl_settings>
     </dl_settings>
