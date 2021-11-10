@@ -78,11 +78,18 @@
 <!--      <define name="IMU_MPU9250_Z_SIGN" value="-1"/>-->
     </module>
 
-<!--    <module name="baro_ms5611_spi" >-->
-<!--      <configure name="MS5611_SPI_DEV" value="spi1"/>-->
-<!--      <configure name="MS5611_SLAVE_IDX" value="SPI_SLAVE3"/>-->
+    <configure name="USE_BARO_BOARD" value="TRUE"/>
+    <module name="baro_ms5611_spi" >
+      <configure name="MS5611_SPI_DEV" value="spi1"/>
+      <configure name="MS5611_SLAVE_IDX" value="SPI_SLAVE3"/>
 <!--      <define name="SENSOR_SYNC_SEND"/>-->
-<!--    </module>-->
+    </module>
+
+    <module name="air_data">
+      <define name="CALC_AIRSPEED" value="FALSE" />
+      <define name="CALC_TAS_FACTOR" value="FALSE" />
+      <define name="CALC_AMSL_BARO" value="TRUE" />
+    </module>
 
     <module name="actuators" type="pwm">
       <define name="SERVO_HZ" value="400"/>
@@ -109,35 +116,29 @@
     <define name="TUNE_AGRESSIVE_CLIMB"/>
 
     <define name="autopilot_motors_on" value="FALSE"/><!-- TODO: choose ;) -->
-    <!-- temp fix for geomag, normally only used for rotorcraft -->
-    <configure name="USE_BARO_BOARD" value="TRUE"/>
 
-    <!-- amount of time it take for the bat to trigger check -->
-    <!-- to avoid bat low spike detection when strong pullup which draws short sudden power-->
-    <!-- TODO: specificaly test for Disco see if needed or which value -->
-    <define name="BAT_CHECKER_DELAY" value="80" unit="s/10"/> <!-- in tenth of seconds per default use ELECTRICAL_PERIODIC_FREQ if you for some reason want it differently-->
-
-    <!-- Only one main battery so CATASTROPHIC_BATTERY kill should be somewhat delayed -->
-    <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410" unit="s/10"/> <!-- in tenth of seconds for engine kill or in ELECTRICAL_PERIODIC_FREQ-->
-
-<!--    <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>-->  <!-- BROKEN!!! -->
+<!--    <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>   &lt;!&ndash; BROKEN!!! &ndash;&gt;-->
 
     <define name="USE_AHRS_GPS_ACCELERATIONS" value="FALSE"/> <!-- forward acceleration compensation from GPS speed -->
+    <configure name="USE_AIRSPEED" value="FALSE"/>
+    <configure name="USE_SONAR" value="FALSE"/>
     <configure name="USE_MAGNETOMETER" value="TRUE"/>
-    <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID" />
 
     <module name="ahrs" type="float_cmpl_quat"> <!-- Compare e.g. float_dcm -->
       <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/> <!-- as in USE it for values in the AHRS -->
       <define name="AHRS_MAG_UPDATE_ALL_AXES" value="FALSE"/> <!-- if TRUE with those high roll n pith angles magneto should be calibrated well or use UKF autocalib -->
       <define name="AHRS_USE_GPS_HEADING" value="FALSE"/><!-- TRUE by default Use GPS course to update heading for time being,if FALSE data from magneto only -->
-      <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/> <!-- TRUE by default Compensation of centrifugal force via GPS speed (to fly in circles with a fixedwing)" -->
+      <configure name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/> <!-- TRUE by default Compensation of centrifugal force via GPS speed (to fly in circles with a fixedwing)" -->
       <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/> <!-- AHRS_GRAVITY_UPDATE_COORDINATED_TURN assumes the GPS speed is in the X axis direction. Quadshot, DelftaCopter and other hybrids can have the GPS speed in the negative Z direction" -->
       <define name="AHRS_PROPAGATE_LOW_PASS_RATES" value="FALSE"/> <!-- apply a low pass filter on rotational velocity"-->
 <!--      <define name="AHRS_BIAS_UPDATE_HEADING_THRESHOLD" value="0.174533" unit="rad"/> ONLY IN int_cmpl_quat!!! don't update gyro bias if heading deviation is above this rotation threshold"&ndash;&gt;-->
       <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="30"/> <!-- TODO: determine Default is 30. Reduce accelerometer cut-off frequency when the vehicle is accelerating: norm(ax,ay,az) 9,81 m/s2. WARNING: when the IMU is not well damped, the norm of accelerometers never equals to 9,81 m/s2. As a result, the GRAVITY_HEURISTIC_FACTOR will reduce the accelerometer bandwith even if the vehicle is not accelerating. -->
+      <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID" />
     </module>
 
-    <module name="ins" type="extended"/>
+    <module name="ins" type="extended">
+      <define name="USE_INS_NAV_INIT" value="FALSE"/>
+    </module>
 
     <module name="control"/>
     <module name="navigation"/>
@@ -160,20 +161,6 @@
       <define name="MODULE_RM3100_SYNC_SEND" value="FALSE"/>
       <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
     </module>
-<!--    <module name="mag" type="hmc58xx">-->
-<!--      &lt;!&ndash; <define name="MAG_TO_IMU_THETA" value="6" unit="deg"/>&ndash;&gt;-->
-<!--      &lt;!&ndash;<define name="HMC58XX_STARTUP_DELAY" value="1.4"/>&ndash;&gt;&lt;!&ndash; If you mag somehow does not work, Enable this line, and maybe even change it to a higher value if it still does not work e.g. 1.9 &ndash;&gt;-->
-<!--      <configure name="MAG_HMC58XX_I2C_DEV" value="i2c1"/>-->
-<!--      &lt;!&ndash;<define name="MODULE_HMC58XX_SYNC_SEND" value="TRUE"/>&ndash;&gt;&lt;!&ndash; temporary for debugging external magneto and setup orientation sign and Body to Magneto angles&ndash;&gt;-->
-<!--      <define name="MODULE_HMC58XX_UPDATE_AHRS" value="TRUE"/> &lt;!&ndash; When all calib and works to TRUE &ndash;&gt;-->
-
-<!--      <define name="HMC58XX_CHAN_X" value="1"/>-->
-<!--      <define name="HMC58XX_CHAN_Y" value="0"/>-->
-<!--      <define name="HMC58XX_CHAN_Z" value="2"/>-->
-<!--      <define name="HMC58XX_CHAN_X_SIGN" value="-"/>-->
-<!--      <define name="HMC58XX_CHAN_Y_SIGN" value="+"/>-->
-<!--      <define name="HMC58XX_CHAN_Z_SIGN" value="+"/>-->
-<!--    </module>-->
 
     <module name="tlsf"/>
     <module name="pprzlog"/>
@@ -407,7 +394,7 @@
   <!-- ****************************** V ****************************** -->
   <section name="VERTICAL CONTROL" prefix="V_CTL_">
     <!-- power -->
-    <define name="POWER_CTL_BAT_NOMINAL" value="11.5" unit="volt"/>
+    <define name="POWER_CTL_BAT_NOMINAL" value="15.3" unit="volt"/>
 
     <!-- Classic -->
     <!-- outer loop proportional gain -->
@@ -509,11 +496,11 @@
     <!-- tested at V 11.7 the avg -->  <!-- 1idel RPM then 1.0A half throttle 4A-->
     <define name="MILLIAMP_AT_IDLE_THROTTLE" value="600" unit="mA"/>  <!-- 500mA, with additional RC receiver ~600mA -->
     <define name="MILLIAMP_AT_FULL_THROTTLE" value="22000" unit="mA"/> <!-- At 11.7 10.6 A at 12.2v 11.0A rounded then to 11000 to be at safe side-->
-    <define name="MAX_BAT_LEVEL" value="12.6" unit="V"/> <!-- 3S lipo 3x4.2 = 12.6 -->
-    <define name="LOW_BAT_LEVEL" value="10.6" unit="V"/>
-    <define name="CRITIC_BAT_LEVEL" value="10.0" unit="V"/>
-    <define name="CATASTROPHIC_BAT_LEVEL" value="9.3" unit="V"/> <!-- TODO: test when AP board switches off -->
-    <define name="MIN_BAT_LEVEL" value="9.0" unit="V"/><!-- Get rid if this one maybe? -->
+    <define name="MAX_BAT_LEVEL" value="16.8" unit="V"/> <!-- 3S lipo 3x4.2 = 12.6 -->
+    <define name="LOW_BAT_LEVEL" value="14.1" unit="V"/>
+    <define name="CRITIC_BAT_LEVEL" value="13.3" unit="V"/>
+    <define name="CATASTROPHIC_BAT_LEVEL" value="12.4" unit="V"/> <!-- TODO: test when AP board switches off -->
+    <define name="MIN_BAT_LEVEL" value="12.0" unit="V"/><!-- Get rid if this one maybe? -->
   </section>
 
   <!-- ***************************** MISC **************************** -->
