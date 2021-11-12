@@ -38,6 +38,7 @@
       <message name="AHRS_REF_QUAT" 	       period=".25"/>
       <message name="ACTUATORS" 	       period=".25"/>
       <message name="ROT_WING" 	               period=".25"/>
+      <message name="INDI_G" 	               period=".25"/>
     </mode>	
 
     <mode name="ppm">
