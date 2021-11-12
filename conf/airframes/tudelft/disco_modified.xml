@@ -292,7 +292,6 @@
     <define name="MAG_Y_SENS" value="0.602383071455361" integer="16"/>
     <define name="MAG_Z_SENS" value="0.5938907189154259" integer="16"/>
 
-
     <!-- Should be same for everyone -->
     <define name="MAG_X_CURRENT_COEF" value="0.000321738038902"/>
     <define name="MAG_Y_CURRENT_COEF" value="-0.000820010304048"/>

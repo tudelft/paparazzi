@@ -51,16 +51,6 @@
     <!-- ********************** For in the real flying hardware ******************** -->
     <target name="ap" board="px4fmu_4.0_chibios"/>
 
-    <!-- Towards a better and no messing it all up kind of aligner -->
-    <!--
-    <define name="AHRS_ALIGNER_SAMPLES_NB" value="200"/>
-    <define name="LOW_NOISE_THRESHOLD" value="30000"/>
-    <define name="LOW_NOISE_TIME" value="10"/>
-    -->
-<!--    <define name="ADC_CHANNEL_VSUPPLY" value="ADC_1"/>&lt;!&ndash; TODO to boardfile, if default remove define&ndash;&gt;-->
-
-    <!-- <configure name="CPU_LED" value="1"/>--> <!-- Change to whatever you like -->
-
     <!-- Note that PERIODIC_FREQUENCY should be least equal or greater than AHRS_PROPAGATE_FREQUENCY -->
     <configure name="PERIODIC_FREQUENCY" value="512"/> <!--  unit="Hz" -->
 
@@ -100,6 +90,20 @@
 <!--      <define name="SENSOR_SYNC_SEND"/>-->
 <!--    </module>-->
 
+    <configure name="USE_BARO_BOARD" value="TRUE"/>
+    <module name="baro_ms5611_spi" >
+      <configure name="MS5611_SPI_DEV" value="spi1"/>
+      <configure name="MS5611_SLAVE_IDX" value="SPI_SLAVE3"/>
+      <!--      <define name="SENSOR_SYNC_SEND"/>-->
+    </module>
+
+    <module name="air_data">
+      <define name="CALC_AIRSPEED" value="FALSE" />
+      <define name="CALC_TAS_FACTOR" value="FALSE" />
+      <define name="CALC_AMSL_BARO" value="TRUE" />
+    </module>
+
+
     <module name="actuators" type="pwm">
       <define name="SERVO_HZ" value="400"/>
     </module>
@@ -126,20 +130,12 @@
 <!--    <define name="SENSOR_SYNC_SEND"/> &lt;!&ndash; Temp for debugging Baro &ndash;&gt;-->
     <configure name="USE_BARO_BOARD" value="TRUE"/>
 
-    <!-- amount of time it take for the bat to trigger check -->
-    <!-- to avoid bat low spike detection when strong pullup which draws short sudden power-->
-    <!-- TODO: specificaly test for Disco see if needed or which value -->
-    <define name="BAT_CHECKER_DELAY" value="80" unit="s/10"/> <!-- in tenth of seconds per default use ELECTRICAL_PERIODIC_FREQ if you for some reason want it differently-->
-
-    <!-- Only one main battery so CATASTROPHIC_BATTERY kill should be somewhat delayed -->
-    <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410" unit="s/10"/> <!-- in tenth of seconds for engine kill or in ELECTRICAL_PERIODIC_FREQ-->
-
-    <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
-
     <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/> <!-- forward acceleration compensation from GPS speed -->
 
     <define name="USE_MAGNETOMETER_ONGROUND" value="FALSE"/>
     <configure name="USE_MAGNETOMETER" value="FALSE"/>
+    <configure name="USE_AIRSPEED" value="FALSE"/>
+    <configure name="USE_SONAR" value="FALSE"/>
     <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID" />
 
     <module name="ahrs" type="float_cmpl_quat"> <!-- Compare e.g. float_dcm -->
@@ -152,15 +148,12 @@
       <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="0"/>
     </module>
 
-    <module name="ins" type="extended"/>
+    <module name="ins" type="extended">
+      <define name="USE_INS_NAV_INIT" value="FALSE"/>
+    </module>
 
     <module name="control"/>
     <module name="navigation"/>
-    <!--<module name="imu_quality_assessment"/>--><!--needs fixing for FW fix test then disable after initial tuning-->
-<!--    <module name="send_imu_mag_current"/> &lt;!&ndash; Can be Disabled after one time calibration, quite the same for all Discos &ndash;&gt;-->
-
-<!--    <module name="geo_mag"/>-->
-<!--    <module name="nav" type="line"/>-->
 
     <module name="mag" type="rm3100">
       <define name="USE_I2C1"/>
@@ -173,7 +166,7 @@
       <define name="RM3100_CHAN_Y" value="0"/>
       <define name="RM3100_CHAN_Z" value="2"/>
       <define name="MODULE_RM3100_SYNC_SEND" value="FALSE"/>
-      <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
+      <define name="MODULE_RM3100_UPDATE_AHRS" value="FALSE"/>
     </module>
 
     <module name="tlsf"/>
@@ -189,7 +182,7 @@
   <servos driver="Pwm">
     <servo name="S_THROTTLE_LEFT" no="0" min="1100" neutral="1500" max="1900"/>  <!-- TODO Test reverse -->
     <servo name="S_ELEVON_LEFT" no="1" min="1800" neutral="1400" max="1000"/> <!-- max is upward deflection-->
-    <servo name="S_ELEVON_RIGHT" no="2" min="1200" neutral="1550" max="1900"/> <!-- min is downward deflection-->
+    <servo name="S_ELEVON_RIGHT" no="2" min="1100" neutral="1500" max="1900"/> <!-- min is downward deflection-->
     <servo name="S_THROTTLE_RIGHT" no="3" min="1100" neutral="1500" max="1900"/>
   </servos>
 
@@ -298,12 +291,13 @@
     <define name="MAG_Y_SIGN" value="-1"/>
     <define name="MAG_Z_SIGN" value="1"/>
 
-    <define name="MAG_X_NEUTRAL" value="2432"/>
-    <define name="MAG_Y_NEUTRAL" value="-1575"/>
-    <define name="MAG_Z_NEUTRAL" value="7258"/>
-    <define name="MAG_X_SENS" value="0.6145883246916419" integer="16"/>
-    <define name="MAG_Y_SENS" value="0.6256322243564831" integer="16"/>
-    <define name="MAG_Z_SENS" value="0.6196249307522513" integer="16"/>
+    <define name="MAG_X_NEUTRAL" value="119"/>
+    <define name="MAG_Y_NEUTRAL" value="-92"/>
+    <define name="MAG_Z_NEUTRAL" value="-770"/>
+
+    <define name="MAG_X_SENS" value="0.6098492293614708" integer="16"/>
+    <define name="MAG_Y_SENS" value="0.602383071455361" integer="16"/>
+    <define name="MAG_Z_SENS" value="0.5938907189154259" integer="16"/>
 
     <!-- Should be same for everyone -->
     <define name= "MAG_X_CURRENT_COEF" value="-1.3533459310822753"/>
@@ -321,9 +315,9 @@
 
   <!-- ************************* MAG EXTERNAL ************************* -->
   <section name="MAG_RM3100" prefix="RM3100_">
-    <define name="MAG_TO_IMU_PHI" value="0.0"/>
+    <define name="MAG_TO_IMU_PHI" value="180.0"/>
     <define name="MAG_TO_IMU_THETA" value="0.0"/>
-    <define name="MAG_TO_IMU_PSI" value="0.0"/>
+    <define name="MAG_TO_IMU_PSI" value="-90.0"/>
     <define name="DATA_RATE" value="RM3100_RATE_600"/>
 <!-- TODO test 600hz and 512hz module rate (max it out) -->
   </section>
@@ -416,7 +410,7 @@
   <!-- ****************************** V ****************************** -->
   <section name="VERTICAL CONTROL" prefix="V_CTL_">
     <!-- power -->
-    <define name="POWER_CTL_BAT_NOMINAL" value="11.5" unit="volt"/>
+    <define name="POWER_CTL_BAT_NOMINAL" value="15.3" unit="volt"/>
 
     <!-- Classic -->
     <!-- outer loop proportional gain -->
@@ -517,12 +511,12 @@
     <!--<define name="MilliAmpereOfAdc(_adc)" value="(_adc-632)*4.14"/>--> <!-- TODO: calibrate even better -->
     <!-- tested at V 11.7 the avg -->  <!-- 1idel RPM then 1.0A half throttle 4A-->
     <define name="MILLIAMP_AT_IDLE_THROTTLE" value="600" unit="mA"/>  <!-- 500mA, with additional RC receiver ~600mA -->
-    <define name="MILLIAMP_AT_FULL_THROTTLE" value="11000" unit="mA"/> <!-- At 11.7 10.6 A at 12.2v 11.0A rounded then to 11000 to be at safe side-->
-    <define name="MAX_BAT_LEVEL" value="12.6" unit="V"/> <!-- 3S lipo 3x4.2 = 12.6 -->
-    <define name="LOW_BAT_LEVEL" value="10.6" unit="V"/>
-    <define name="CRITIC_BAT_LEVEL" value="10.0" unit="V"/>
-    <define name="CATASTROPHIC_BAT_LEVEL" value="9.3" unit="V"/> <!-- TODO: test when AP board switches off -->
-    <define name="MIN_BAT_LEVEL" value="9.0" unit="V"/><!-- Get rid if this one maybe? -->
+    <define name="MILLIAMP_AT_FULL_THROTTLE" value="22000" unit="mA"/> <!-- At 11.7 10.6 A at 12.2v 11.0A rounded then to 11000 to be at safe side-->
+    <define name="MAX_BAT_LEVEL" value="16.8" unit="V"/> <!-- 3S lipo 3x4.2 = 12.6 -->
+    <define name="LOW_BAT_LEVEL" value="14.1" unit="V"/>
+    <define name="CRITIC_BAT_LEVEL" value="13.3" unit="V"/>
+    <define name="CATASTROPHIC_BAT_LEVEL" value="12.4" unit="V"/> <!-- TODO: test when AP board switches off -->
+    <define name="MIN_BAT_LEVEL" value="12.0" unit="V"/><!-- Get rid if this one maybe? -->
   </section>
 
   <!-- ***************************** MISC **************************** -->
