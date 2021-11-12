@@ -57,6 +57,12 @@ struct ActuatorsStruct {
     float azimuth;
 };
 
+struct PID_over_simple {
+    float p;
+    float i;
+    float d;
+};
+
 struct PID_over {
     struct FloatEulersPosition p;
     struct FloatEulersPosition i;
@@ -74,6 +80,7 @@ struct overactuated_mixing_t {
 
 extern struct overactuated_mixing_t overactuated_mixing;
 extern struct PID_over pid_gains_over;
+extern struct PID_over_simple pid_gain_psi_motor;
 extern struct PD_indi_over indi_gains_over;
 extern struct ActuatorsStruct act_dyn_struct;
 
@@ -94,6 +101,7 @@ extern bool activate_tilting_az;
 extern bool activate_tilting_el;
 extern bool yaw_with_tilting;
 extern bool yaw_with_motors;
+extern bool position_with_attitude;
 
 // For external module
 extern bool manual_roll_setpoint;

@@ -1720,11 +1720,6 @@
       <field name="gr" type="float" unit="rad/s"/>
     </message>
 
-  <!-- Do we need this? Used only in misc/log_parser/09_05_13__14_38_13.log -->
-    <message name="IMU_PRESSURE" id="210">
-      <field name="p" type="float" unit="pascal"/>
-    </message>
-
     <message name="WINDTUNNEL_MEAS" id="211">
       <field name="aoa" type="float" unit="deg">Angle of attack</field>
       <field name="airspeed" type="float" unit="m/s">Airspeed measured</field>
@@ -1733,6 +1728,57 @@
       <field name="power" type="float" unit="W">Calculated power (Voltage * Current)</field>
       <field name="commands" type="int32[]">Commands send to actuators</field>
     </message>
+
+     <message name="GAINS_OVERACTUATED" id="210">
+         <!--PID GAINS-->
+         <field name="p_gain_phi_PID" type="float">Proportional gain roll error PID</field>
+         <field name="i_gain_phi_PID" type="float">Integrative gain roll error PID</field>
+         <field name="d_gain_phi_PID" type="float">Derivative gain roll error PID</field>
+
+         <field name="p_gain_theta_PID" type="float">Proportional gain pitch error PID</field>
+         <field name="i_gain_theta_PID" type="float">Integrative gain pitch error PID</field>
+         <field name="d_gain_theta_PID" type="float">Derivative gain pitch error PID</field>
+
+         <field name="p_gain_psi_tilt_PID" type="float">Proportional gain yaw error on tilt PID</field>
+         <field name="i_gain_psi_tilt_PID" type="float">Integrative gain yaw error on tilt PID</field>
+         <field name="d_gain_psi_tilt_PID" type="float">Derivative gain yaw error on tilt PID</field>
+
+         <field name="p_gain_psi_motor_PID" type="float">Proportional gain yaw error on motor PID</field>
+         <field name="i_gain_psi_motor_PID" type="float">Integrative gain yaw error on motor PID</field>
+         <field name="d_gain_psi_motor_PID" type="float">Derivative gain yaw error on motor PID</field>
+
+         <field name="p_gain_pos_x_PID" type="float">Proportional gain pos x error PID</field>
+         <field name="i_gain_pos_x_PID" type="float">Integrative gain pos x error PID</field>
+         <field name="d_gain_pos_x_PID" type="float">Derivative gain pos x error PID</field>
+
+         <field name="p_gain_pos_y_PID" type="float">Proportional gain pos y error PID</field>
+         <field name="i_gain_pos_y_PID" type="float">Integrative gain pos y error PID</field>
+         <field name="d_gain_pos_y_PID" type="float">Derivative gain pos y error PID</field>
+
+         <field name="p_gain_pos_z_PID" type="float">Proportional gain pos z error PID</field>
+         <field name="i_gain_pos_z_PID" type="float">Integrative gain pos z error PID</field>
+         <field name="d_gain_pos_z_PID" type="float">Derivative gain pos z error PID</field>
+
+         <!--INDI GAINS-->
+         <field name="p_gain_phi_INDI" type="float">Proportional gain roll error INDI</field>
+         <field name="d_gain_phi_INDI" type="float">Derivative gain roll error INDI</field>
+
+         <field name="p_gain_theta_INDI" type="float">Proportional gain pitch error INDI</field>
+         <field name="d_gain_theta_INDI" type="float">Derivative gain pitch error INDI</field>
+
+         <field name="p_gain_psi_INDI" type="float">Proportional gain yaw error INDI</field>
+         <field name="d_gain_psi_INDI" type="float">Derivative gain yaw error INDI</field>
+
+         <field name="p_gain_pos_x_INDI" type="float">Proportional gain pos x error INDI</field>
+         <field name="d_gain_pos_x_INDI" type="float">Derivative gain pos x error INDI</field>
+
+         <field name="p_gain_pos_y_INDI" type="float">Proportional gain pos y error INDI</field>
+         <field name="d_gain_pos_y_INDI" type="float">Derivative gain pos y error INDI</field>
+
+         <field name="p_gain_pos_z_INDI" type="float">Proportional gain pos z error INDI</field>
+         <field name="d_gain_pos_z_INDI" type="float">Derivative gain pos z error INDI</field>
+
+     </message>
 
      <message name="OVERACTUATED_VARIABLES" id="212">
          <field name="wind_speed" type="float" >Actual wind speed from the control room</field>

@@ -204,68 +204,53 @@
   <section name="OVERACTUATED_VARIABLES" prefix="OVERACTUATED_MIXING_">
 
     <!-- PID gains wrt the SI units -->
-    <define name="PID_P_GAIN_PHI" value="548"/>
-    <define name="PID_I_GAIN_PHI" value="0.5"/>
-    <define name="PID_D_GAIN_PHI" value="35"/>
+    <define name="PID_P_GAIN_PHI" value="700"/>
+    <define name="PID_I_GAIN_PHI" value="2.8"/>
+    <define name="PID_D_GAIN_PHI" value="45"/>
 
-    <define name="PID_P_GAIN_THETA" value="315"/>
-    <define name="PID_I_GAIN_THETA" value="8"/>
-    <define name="PID_D_GAIN_THETA" value="54"/>
+    <define name="PID_P_GAIN_THETA" value="500"/>
+    <define name="PID_I_GAIN_THETA" value="2.8"/>
+    <define name="PID_D_GAIN_THETA" value="100"/>
 
-    <define name="PID_P_GAIN_PSI_MOTOR" value="900"/>
+    <define name="PID_P_GAIN_PSI_MOTOR" value="1254"/>
     <define name="PID_I_GAIN_PSI_MOTOR" value="0"/>
-    <define name="PID_D_GAIN_PSI_MOTOR" value="250"/>
+    <define name="PID_D_GAIN_PSI_MOTOR" value="313"/>
 
-    <define name="PID_P_GAIN_PSI_AZ" value="1.4"/>
+    <define name="PID_P_GAIN_PSI_AZ" value=".6"/>
     <define name="PID_I_GAIN_PSI_AZ" value="0"/>
-    <define name="PID_D_GAIN_PSI_AZ" value="0.2"/>
+    <define name="PID_D_GAIN_PSI_AZ" value=".5"/>
 
-    <define name="PID_P_GAIN_POS_X" value="0.7"/>
+    <define name="PID_P_GAIN_POS_X" value="0.08"/>
     <define name="PID_I_GAIN_POS_X" value="0.1"/>
-    <define name="PID_D_GAIN_POS_X" value="0.5"/>
+    <define name="PID_D_GAIN_POS_X" value="0.02"/>
 
-    <define name="PID_P_GAIN_POS_Y" value="0.7"/>
+    <define name="PID_P_GAIN_POS_Y" value="0.08"/>
     <define name="PID_I_GAIN_POS_Y" value="0.1"/>
-    <define name="PID_D_GAIN_POS_Y" value="0.5"/>
+    <define name="PID_D_GAIN_POS_Y" value="0.02"/>
 
-    <define name="PID_P_GAIN_POS_Z" value="800"/>
+    <define name="PID_P_GAIN_POS_Z" value="500"/>
     <define name="PID_I_GAIN_POS_Z" value="50"/>
     <define name="PID_D_GAIN_POS_Z" value="300"/>
     <define name="PID_THR_NEUTRAL_PWM" value="1000" unit="uS"/>
 
-    <!-- Maximum orders -->
-    <!-- General -->
-    <define name="MAX_PHI" value="40" unit="deg"/>
-    <define name="MAX_THETA" value="40" unit="deg"/>
-    <define name="MAX_PSI_ERR" value="40" unit="deg"/>
-    <define name="MAX_X_ERR" value="3" unit="m"/>
-    <define name="MAX_Y_ERR" value="3" unit="m"/>
-    <define name="MAX_Z_ERR" value="3" unit="m"/>
-    <!-- INDI specific-->
-    <define name="INDI_MAX_P" value="100" unit="deg/s"/>
-    <define name="INDI_MAX_Q" value="100" unit="deg/s"/>
-    <define name="INDI_MAX_R" value="400" unit="deg/s"/>
-    <define name="INDI_MAX_P_DOT" value="500" unit="deg/s^2"/>
-    <define name="INDI_MAX_Q_DOT" value="500" unit="deg/s^2"/>
-    <define name="INDI_MAX_R_DOT" value="1000" unit="deg/s^2"/>
-    <define name="INDI_MAX_VX" value="100" unit="m/s"/>
-    <define name="INDI_MAX_VY" value="100" unit="m/s"/>
-    <define name="INDI_MAX_VZ" value="100" unit="m/s"/>
-    <define name="INDI_MAX_AX" value="100" unit="m/s^2"/>
-    <define name="INDI_MAX_AY" value="100" unit="m/s^2"/>
-    <define name="INDI_MAX_AZ" value="100" unit="m/s^2"/>
-    <!-- PID specific-->
-    <define name="PID_MAX_EULER_ERR_INTEGRATIVE" value="40" unit="deg"/>
+    <!-- PID maximum orders -->
+    <define name="PID_MAX_PHI" value="40" unit="deg"/>
+    <define name="PID_MAX_THETA" value="40" unit="deg"/>
+    <define name="PID_MAX_PSI_ERR" value="40" unit="deg"/>
+    <define name="PID_MAX_X_ERR" value="3" unit="m"/>
+    <define name="PID_MAX_Y_ERR" value="3" unit="m"/>
+    <define name="PID_MAX_Z_ERR" value="3" unit="m"/>
+    <define name="PID_MAX_EULER_ERR_INTEGRATIVE" value="10" unit="deg"/>
     <define name="PID_MAX_POS_ERR_INTEGRATIVE" value="3" unit="m"/>
     <define name="PID_MAX_ROLL_ORDER_PWM" value="350" unit="uS"/>
     <define name="PID_MAX_PITCH_ORDER_PWM" value="350" unit="uS"/>
-    <define name="PID_MAX_YAW_ORDER_MOTOR_PWM" value="250" unit="uS"/>
+    <define name="PID_MAX_YAW_ORDER_MOTOR_PWM" value="350" unit="uS"/>
     <define name="PID_MAX_YAW_ORDER_AZ" value="40" unit="deg"/><!--MAX order for el servos are the physical one-->
 
     <!-- INDI proportional gains -->
     <define name="INDI_REF_ERR_P" value="2.86"/>
-    <define name="INDI_REF_ERR_Q" value="2.86"/>
-    <define name="INDI_REF_ERR_R" value="3.307"/>
+    <define name="INDI_REF_ERR_Q" value="3."/>
+    <define name="INDI_REF_ERR_R" value="3.072"/>
     <define name="INDI_REF_ERR_X" value="0.8"/>
     <define name="INDI_REF_ERR_Y" value="0.8"/>
     <define name="INDI_REF_ERR_Z" value="2.5"/>
@@ -276,6 +261,25 @@
     <define name="INDI_REF_RATE_X" value=".01"/>
     <define name="INDI_REF_RATE_Y" value=".01"/>
     <define name="INDI_REF_RATE_Z" value="1.0"/>
+    <!-- INDI maximum orders -->
+    <define name="INDI_MAX_PHI" value="40" unit="deg"/>
+    <define name="INDI_MAX_THETA" value="40" unit="deg"/>
+    <define name="INDI_MAX_PSI_ERR" value="40" unit="deg"/>
+    <define name="INDI_MAX_P" value="100" unit="deg/s"/>
+    <define name="INDI_MAX_Q" value="100" unit="deg/s"/>
+    <define name="INDI_MAX_R" value="400" unit="deg/s"/>
+    <define name="INDI_MAX_P_DOT" value="500" unit="deg/s^2"/>
+    <define name="INDI_MAX_Q_DOT" value="500" unit="deg/s^2"/>
+    <define name="INDI_MAX_R_DOT" value="1000" unit="deg/s^2"/>
+    <define name="INDI_MAX_X_ERR" value="5" unit="m"/>
+    <define name="INDI_MAX_Y_ERR" value="5" unit="m"/>
+    <define name="INDI_MAX_Z_ERR" value="5" unit="m"/>
+    <define name="INDI_MAX_VX" value="100" unit="m/s"/>
+    <define name="INDI_MAX_VY" value="100" unit="m/s"/>
+    <define name="INDI_MAX_VZ" value="100" unit="m/s"/>
+    <define name="INDI_MAX_AX" value="100" unit="m/s^2"/>
+    <define name="INDI_MAX_AY" value="100" unit="m/s^2"/>
+    <define name="INDI_MAX_AZ" value="100" unit="m/s^2"/>
     <!-- Actuator dynamics and mapping-->
     <define name="INDI_ACT_DYN_MOTOR" value="0.052" unit="seconds"/>
     <define name="INDI_ACT_DYN_EL" value="0.04" unit="seconds"/>
@@ -289,10 +293,6 @@
     <define name="SERVO_AZ_MAX_ANGLE" value="45" unit="deg"/>
     <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>
     <define name="SERVO_EL_MIN_ANGLE" value="-40" unit="deg"/>
-
-    <!-- Filters properties for PID-->
-    <define name="FILT_CUTOFF_ANG_ERR" value="30" unit="rad/s"/>
-    <define name="FILT_CUTOFF_POS_ERR" value="30" unit="rad/s"/>
     <!-- Filters properties for INDI-->
     <define name="FILT_CUTOFF_P" value="15" unit="rad/s"/>
     <define name="FILT_CUTOFF_Q" value="15" unit="rad/s"/>
@@ -303,6 +303,9 @@
     <define name="FILT_CUTOFF_ACTUATORS_EL" value="15" unit="rad/s"/>
     <define name="FILT_CUTOFF_ACTUATORS_AZ" value="15" unit="rad/s"/>
     <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="15" unit="rad/s"/>
+    <!-- Filters properties for PID-->
+    <define name="FILT_CUTOFF_ANG_ERR" value="40" unit="rad/s"/>
+    <define name="FILT_CUTOFF_POS_ERR" value="20" unit="rad/s"/>
 
   </section>
 
@@ -428,7 +431,7 @@
     <define name="REF_ERR_P" value="60.0"/>
     <define name="REF_ERR_Q" value="60.0"/>
     <define name="REF_ERR_R" value="44.0"/>
-    <define name="REF_RATE_P" value="6.5"/>
+    <define name="REF_RATE_P" value="5.4"/>
     <define name="REF_RATE_Q" value="6.5"/>
     <define name="REF_RATE_R" value="5.4"/>
 

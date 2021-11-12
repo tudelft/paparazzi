@@ -301,10 +301,10 @@ static void send_ins_ekf2(struct transport_tx *trans, struct link_device *dev)
     dead_reckoning = 0;
   }
 
-  pprz_msg_send_INS_EKF2(trans, dev, AC_ID,
-                         &fix_status, &filter_fault_status, &gps_check_status, &soln_status,
-                         &innov_test_status, &mag, &vel, &pos, &hgt, &tas, &hagl, &flow, &beta,
-                         &mag_decl, &terrain_valid, &dead_reckoning);
+//  pprz_msg_send_INS_EKF2(trans, dev, AC_ID,
+//                         &fix_status, &filter_fault_status, &gps_check_status, &soln_status,
+//                         &innov_test_status, &mag, &vel, &pos, &hgt, &tas, &hagl, &flow, &beta,
+//                         &mag_decl, &terrain_valid, &dead_reckoning);
 }
 
 static void send_ins_ekf2_ext(struct transport_tx *trans, struct link_device *dev)
