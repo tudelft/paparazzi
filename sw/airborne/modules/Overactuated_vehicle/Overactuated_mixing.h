@@ -80,6 +80,8 @@ struct overactuated_mixing_t {
 
 extern struct overactuated_mixing_t overactuated_mixing;
 extern struct PID_over pid_gains_over;
+extern struct PID_over_simple pid_pos_x_att;
+extern struct PID_over_simple pid_pos_y_att;
 extern struct PID_over_simple pid_gain_psi_motor;
 extern struct PD_indi_over indi_gains_over;
 extern struct ActuatorsStruct act_dyn_struct;
@@ -102,12 +104,15 @@ extern bool activate_tilting_el;
 extern bool yaw_with_tilting;
 extern bool yaw_with_motors;
 extern bool position_with_attitude;
+extern bool soft_PID; //The derivative gain is fed without computing the error derivative (just act on rates or speed).
+extern bool manual_motor_stick;
 
-// For external module
-extern bool manual_roll_setpoint;
-extern bool manual_pitch_setpoint;
-extern int32_t manual_roll_overactuated_module;
-extern int32_t manual_pitch_overactuated_module;
+//Variables for PID failsafe mode:
+
+extern float P_az_gain;
+extern float D_az_gain;
+extern float P_el_gain;
+extern float D_el_gain;
 
 /* External used functions */
 extern void overactuated_mixing_init(void);

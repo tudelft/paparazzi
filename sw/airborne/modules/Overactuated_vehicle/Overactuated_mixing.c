@@ -80,6 +80,7 @@ bool INDI_engaged = 0;
 bool FAILSAFE_engaged = 0;
 bool PID_engaged = 0;
 
+
 // PID and general settings from slider
 int deadband_stick_yaw = 500;
 int deadband_stick_throttle = 1500;
@@ -90,10 +91,11 @@ bool activate_tilting_el = 0;
 bool yaw_with_tilting = 1;
 bool yaw_with_motors = 0;
 bool position_with_attitude = 0;
+bool soft_PID = 1;
+bool manual_motor_stick = 0;
+
 float wind_speed = 0;
 
-float lateral_cmd_old = 0;
-float longitudinal_cmd_old = 0;
 float x_stb, y_stb, z_stb;
 float elevation_cmd = 0;
 float azimuth_cmd = 0;
@@ -125,6 +127,12 @@ float w_inverted[INDI_INPUTS][INDI_INPUTS];
 float Pseudoinverse_over[INDI_INPUTS][INDI_NUM_ACT];
 float U_transposed[INDI_INPUTS][INDI_NUM_ACT];
 
+//Variables for failsafe mode
+float P_az_gain = 12371;
+float D_az_gain = 6075;
+float P_el_gain = 12426;
+float D_el_gain = 6144;
+
 //Variables needed for the filters:
 Butterworth2LowPass measurement_rates_filters[3]; //Filter of pqr
 Butterworth2LowPass measurement_acc_filters[3];   //Filter of acceleration
@@ -137,22 +145,22 @@ struct PID_over pid_gains_over = {
         .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
                OVERACTUATED_MIXING_PID_P_GAIN_THETA,
                OVERACTUATED_MIXING_PID_P_GAIN_PSI_AZ, //It natively uses the azimuth, specific pid for motor are defined below
-               OVERACTUATED_MIXING_PID_P_GAIN_POS_X,
-               OVERACTUATED_MIXING_PID_P_GAIN_POS_Y,
+               OVERACTUATED_MIXING_PID_P_GAIN_POS_X_TILT,
+               OVERACTUATED_MIXING_PID_P_GAIN_POS_Y_TILT,
                OVERACTUATED_MIXING_PID_P_GAIN_POS_Z
         },
         .i = { OVERACTUATED_MIXING_PID_I_GAIN_PHI,
                OVERACTUATED_MIXING_PID_I_GAIN_THETA,
                OVERACTUATED_MIXING_PID_I_GAIN_PSI_AZ,
-               OVERACTUATED_MIXING_PID_I_GAIN_POS_X,
-               OVERACTUATED_MIXING_PID_I_GAIN_POS_Y,
+               OVERACTUATED_MIXING_PID_I_GAIN_POS_X_TILT,
+               OVERACTUATED_MIXING_PID_I_GAIN_POS_Y_TILT,
                OVERACTUATED_MIXING_PID_I_GAIN_POS_Z
         },
         .d = { OVERACTUATED_MIXING_PID_D_GAIN_PHI,
                OVERACTUATED_MIXING_PID_D_GAIN_THETA,
                OVERACTUATED_MIXING_PID_D_GAIN_PSI_AZ,
-               OVERACTUATED_MIXING_PID_D_GAIN_POS_X,
-               OVERACTUATED_MIXING_PID_D_GAIN_POS_Y,
+               OVERACTUATED_MIXING_PID_D_GAIN_POS_X_TILT,
+               OVERACTUATED_MIXING_PID_D_GAIN_POS_Y_TILT,
                OVERACTUATED_MIXING_PID_D_GAIN_POS_Z
         }
 };
@@ -160,6 +168,18 @@ struct PID_over_simple pid_gain_psi_motor = {
         .p = OVERACTUATED_MIXING_PID_P_GAIN_PSI_MOTOR,
         .i = OVERACTUATED_MIXING_PID_I_GAIN_PSI_MOTOR,
         .d = OVERACTUATED_MIXING_PID_D_GAIN_PSI_MOTOR
+};
+
+struct PID_over_simple pid_pos_x_att = {
+        .p = OVERACTUATED_MIXING_PID_P_GAIN_POS_X_ATT,
+        .i = OVERACTUATED_MIXING_PID_I_GAIN_POS_X_ATT,
+        .d = OVERACTUATED_MIXING_PID_D_GAIN_POS_X_ATT
+};
+
+struct PID_over_simple pid_pos_y_att = {
+        .p = OVERACTUATED_MIXING_PID_P_GAIN_POS_Y_ATT,
+        .i = OVERACTUATED_MIXING_PID_I_GAIN_POS_Y_ATT,
+        .d = OVERACTUATED_MIXING_PID_D_GAIN_POS_Y_ATT
 };
 
 struct PD_indi_over indi_gains_over = {
@@ -538,10 +558,6 @@ void overactuated_mixing_init() {
         B_matrix_[j] = &B_matrix_transposed[j][0];
     }
 
-    //Init the stb waypoints to zero:
-    x_stb = 0;
-    y_stb = 0;
-    z_stb = 0;
 }
 void compute_pseudoinverse(void){
 
@@ -657,7 +673,7 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
     elevation_cmd = 0;
     azimuth_cmd = 0;
 
-    // Case of Manual direct mode [FAILSAFE]
+    /// Case of Manual direct mode [FAILSAFE]
     if(radio_control.values[RADIO_MODE] < -500){
 
         //INIT AND BOOLEAN RESET
@@ -670,10 +686,26 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
             PID_engaged = 0;
         }
 
-        //Compute cmd in manual mode:
+//        //Compute cmd in manual mode:
         elevation_cmd = radio_control.values[RADIO_PITCH];
         azimuth_cmd = radio_control.values[RADIO_ROLL];
         yaw_cmd = in_cmd[COMMAND_YAW]*1.f;
+
+        // Compute cmd in auto mode
+
+        // Calculate the desired position considering the STANDBY point
+//        pos_setpoint[0] = x_stb; //Get the wp goal x-position in m
+//        pos_setpoint[1] = y_stb; //Get the wp goal y-position in m
+//
+//        float longitudinal_cmd = cos(euler_vect[2]) * (pos_setpoint[0] - pos_vect[0]) + sin(euler_vect[2]) * (pos_setpoint[1] - pos_vect[1]);
+//        float longitudinal_speed = cos(euler_vect[2]) * speed_vect[0] + sin(euler_vect[2]) * speed_vect[1];
+//
+//        float lateral_cmd = cos(euler_vect[2]) * (pos_setpoint[1] - pos_vect[1]) - sin(euler_vect[2]) * (pos_setpoint[0] - pos_vect[0]);
+//        float lateral_speed = cos(euler_vect[2]) * speed_vect[1] - sin(euler_vect[2]) * speed_vect[0];
+//
+//        //Applying PID to command to get the servo deflection values:
+//        azimuth_cmd = P_az_gain * lateral_cmd - D_az_gain * lateral_speed;
+//        elevation_cmd = -1 * (P_el_gain * longitudinal_cmd - D_el_gain * longitudinal_speed);
 
         // Write values to servos and motors
         for (i = 0; i < N_ACT; i++) {
@@ -685,11 +717,11 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
                 overactuated_mixing.commands[i] = elevation_cmd;
                 BoundAbs(overactuated_mixing.commands[i], MAX_PPRZ);
             }
-            else if(i>7 && i<10){ //ELEVATOR SERVOS
+            else if(i>7 && i<10){ //AZIMUTH SERVOS 1,2
                 overactuated_mixing.commands[i] = azimuth_cmd + yaw_cmd;
                 BoundAbs(overactuated_mixing.commands[i], MAX_PPRZ);
             }
-            else {  //AZIMUTH SERVOS
+            else {  //AZIMUTH SERVOS 3,4
                 overactuated_mixing.commands[i] = azimuth_cmd - yaw_cmd;
                 BoundAbs(overactuated_mixing.commands[i], MAX_PPRZ);
             }
@@ -697,11 +729,10 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
 
     }
 
-    // Case of PID control as on simulink
-    if(radio_control.values[RADIO_MODE] < 500 && radio_control.values[RADIO_MODE] > -500)
-    {
+    /// Case of PID control as on simulink
+    if(radio_control.values[RADIO_MODE] < 500 && radio_control.values[RADIO_MODE] > -500) {
         //INIT AND BOOLEAN RESET
-        if(PID_engaged == 0){
+        if (PID_engaged == 0) {
             /*
             INIT CODE FOR THE PID GOES HERE
              */
@@ -716,8 +747,12 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
 
         ////Position error computation
 //        //Compute the position setpoints through slider and RC stick:
-//        pos_setpoint[0] = manual_pitch_overactuated_module / 1000;
-//        pos_setpoint[1] = manual_roll_overactuated_module / 1000;
+//         if ( abs(radio_control.values[RADIO_PITCH]) > deadband_stick_throttle){
+//             pos_setpoint[0] = pos_setpoint[0] + stick_gain_throttle * radio_control.values[RADIO_PITCH] * .0001;
+//         }
+//         if ( abs(radio_control.values[RADIO_ROLL]) > deadband_stick_throttle){
+//             pos_setpoint[1] = pos_setpoint[1] + stick_gain_throttle * radio_control.values[RADIO_ROLL] * .0001;
+//         }
 //        if( abs(radio_control.values[RADIO_THROTTLE] - 4800) > deadband_stick_throttle && abs(pos_error[2]) < max_value_error.z ){
 //            pos_setpoint[2]  = pos_setpoint[2]  + stick_gain_throttle * (radio_control.values[RADIO_THROTTLE] - 4800) * .00001;
 //            Bound(pos_setpoint[2] ,-1,1000);
@@ -725,10 +760,13 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         //Compute the position setpoints through STB point:
         pos_setpoint[0] = x_stb;
         pos_setpoint[1] = y_stb;
-        if( abs(radio_control.values[RADIO_THROTTLE] - 4800) > deadband_stick_throttle && abs(pos_error[2]) < max_value_error.z ){
-            pos_setpoint[2]  = pos_setpoint[2]  + stick_gain_throttle * (radio_control.values[RADIO_THROTTLE] - 4800) * .00001;
-            Bound(pos_setpoint[2] ,-1,1000);
-        }
+        pos_setpoint[2] = z_stb;
+//        if (abs(radio_control.values[RADIO_THROTTLE] - 4800) > deadband_stick_throttle &&
+//            abs(pos_error[2]) < max_value_error.z) {
+//            pos_setpoint[2] =
+//                    pos_setpoint[2] + stick_gain_throttle * (radio_control.values[RADIO_THROTTLE] - 4800) * .00001;
+//            Bound(pos_setpoint[2], -1, 1000);
+//        }
 
         //Calculate the error on the position
         pos_error[0] = pos_setpoint[0] - pos_vect[0];
@@ -736,7 +774,7 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         pos_error[2] = pos_setpoint[2] + pos_vect[2];
 
         //Calculate the position error derivative and integration
-        for(i = 0 ; i < 3 ; i++){
+        for (i = 0; i < 3; i++) {
             pos_error_dot[i] = (pos_error[i] - pos_error_old[i]) * PERIODIC_FREQUENCY;
             pos_error_old[i] = pos_error[i];
             pos_error_integrated[i] += pos_error[i] / PERIODIC_FREQUENCY;
@@ -749,52 +787,82 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         }
 
         //Now bound the error within the defined ranges:
-        BoundAbs(pos_error[0],max_value_error.x);
-        BoundAbs(pos_error[1],max_value_error.y);
-        BoundAbs(pos_error[2],max_value_error.z);
+        BoundAbs(pos_error[0], max_value_error.x);
+        BoundAbs(pos_error[1], max_value_error.y);
+        BoundAbs(pos_error[2], max_value_error.z);
         for (i = 0; i < 3; i++) {
             BoundAbs(pos_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_POS_ERR_INTEGRATIVE);
+            BoundAbs(pos_error_dot_filt[i], OVERACTUATED_MIXING_PID_MAX_SPEED_ORD);
         }
 
         //Calculate the orders with the PID gain defined:
-        pos_order_earth[0] = pid_gains_over.p.x * pos_error[0] + pid_gains_over.i.x * pos_error_integrated[0] +
-                             pid_gains_over.d.x * pos_error_dot_filt[0];
-        pos_order_earth[1] = pid_gains_over.p.y * pos_error[1] + pid_gains_over.i.y * pos_error_integrated[1] +
-                             pid_gains_over.d.y * pos_error_dot_filt[1];
-        pos_order_earth[2] = pid_gains_over.p.z * pos_error[2] + pid_gains_over.i.z * pos_error_integrated[2] +
-                             pid_gains_over.d.z * pos_error_dot_filt[2] + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000;
+        if(soft_PID){
+            if(position_with_attitude){
+                pos_order_earth[0] = pid_pos_x_att.p * pos_error[0] + pid_pos_x_att.i * pos_error_integrated[0] -
+                                     pid_pos_x_att.d * speed_vect[0];
+                pos_order_earth[1] = pid_pos_y_att.p * pos_error[1] + pid_pos_y_att.i * pos_error_integrated[1] -
+                                     pid_pos_y_att.d * speed_vect[1];
+            }
+            else{
+                pos_order_earth[0] = pid_gains_over.p.x * pos_error[0] + pid_gains_over.i.x * pos_error_integrated[0] -
+                                     pid_gains_over.d.x * speed_vect[0];
+                pos_order_earth[1] = pid_gains_over.p.y * pos_error[1] + pid_gains_over.i.y * pos_error_integrated[1] -
+                                     pid_gains_over.d.y * speed_vect[1];
+            }
+            pos_order_earth[2] = pid_gains_over.p.z * pos_error[2] + pid_gains_over.i.z * pos_error_integrated[2] +
+                                 pid_gains_over.d.z * speed_vect[2] + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM;
+        }
+        else{
+            if(position_with_attitude){
+                pos_order_earth[0] = pid_pos_x_att.p * pos_error[0] + pid_pos_x_att.i * pos_error_integrated[0] +
+                                     pid_pos_x_att.d * pos_error_dot_filt[0];
+                pos_order_earth[1] = pid_pos_y_att.p * pos_error[1] + pid_pos_y_att.i * pos_error_integrated[1] +
+                                     pid_pos_y_att.d * pos_error_dot_filt[1];
+            }
+            else{
+                pos_order_earth[0] = pid_gains_over.p.x * pos_error[0] + pid_gains_over.i.x * pos_error_integrated[0] -
+                                     pid_gains_over.d.x * pos_error_dot_filt[0];
+                pos_order_earth[1] = pid_gains_over.p.y * pos_error[1] + pid_gains_over.i.y * pos_error_integrated[1] +
+                                     pid_gains_over.d.y * pos_error_dot_filt[1];
+            }
+            pos_order_earth[2] = pid_gains_over.p.z * pos_error[2] + pid_gains_over.i.z * pos_error_integrated[2] +
+                                 pid_gains_over.d.z * pos_error_dot_filt[2] + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM;
+        }
+
 
         //Transpose the position errors in the body frame:
-        pos_order_body[0] =  cos(euler_vect[2]) * pos_order_earth[0] + sin(euler_vect[2])*pos_order_earth[1];
-        pos_order_body[1] =  cos(euler_vect[2]) * pos_order_earth[1] - sin(euler_vect[2])*pos_order_earth[0];
+        pos_order_body[0] = cos(euler_vect[2]) * pos_order_earth[0] + sin(euler_vect[2]) * pos_order_earth[1];
+        pos_order_body[1] = cos(euler_vect[2]) * pos_order_earth[1] - sin(euler_vect[2]) * pos_order_earth[0];
         pos_order_body[2] = pos_order_earth[2];
 
         ////Angular error computation
         //Calculate the setpoints:
-        if(position_with_attitude){
+        if (position_with_attitude) {
             //The idea of the position body order is to have a radiant change of tilting, use the same idea with theta and psi
             euler_setpoint[0] = pos_order_body[1]; //A roll change is referred to a body y variation
             euler_setpoint[1] = -pos_order_body[0]; //A pitch change is referred to a body x variation
-        }
-        else{
+        } else {
             euler_setpoint[0] = max_value_error.phi * radio_control.values[RADIO_ROLL] / 9600;
             euler_setpoint[1] = max_value_error.theta * radio_control.values[RADIO_PITCH] / 9600;
+//        euler_setpoint[0] = 0;
+//        euler_setpoint[1] = 0;
         }
         //Integrate the stick yaw position to get the psi set point including psi saturation value
-        if( abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw && abs(euler_error[2]) < max_value_error.psi){
-            euler_setpoint[2] = euler_setpoint[2] + stick_gain_yaw * radio_control.values[RADIO_YAW] * M_PI / 180 * .001;
+        if (abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw && abs(euler_error[2]) < max_value_error.psi) {
+            euler_setpoint[2] =
+                    euler_setpoint[2] + stick_gain_yaw * radio_control.values[RADIO_YAW] * M_PI / 180 * .001;
             //Correct the setpoint in order to always be within -pi and pi
-            if(euler_setpoint[2] > M_PI){
+            if (euler_setpoint[2] > M_PI) {
                 euler_setpoint[2] -= 2 * M_PI;
-            }
-            else if(euler_setpoint[2] < - M_PI){
+            } else if (euler_setpoint[2] < -M_PI) {
                 euler_setpoint[2] += 2 * M_PI;
             }
         }
 
+
         //Bound the setpoints within maximum angular values
-        BoundAbs(euler_setpoint[0],max_value_error.phi);
-        BoundAbs(euler_setpoint[1],max_value_error.theta);
+        BoundAbs(euler_setpoint[0], max_value_error.phi);
+        BoundAbs(euler_setpoint[1], max_value_error.theta);
 
         euler_error[0] = euler_setpoint[0] - euler_vect[0];
         euler_error[1] = euler_setpoint[1] - euler_vect[1];
@@ -816,14 +884,13 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
 
 
         //Add logic for the psi control:
-        if(euler_error[2] > M_PI){
+        if (euler_error[2] > M_PI) {
             euler_error[2] -= 2 * M_PI;
-        }
-        else if(euler_error[2] < -M_PI){
+        } else if (euler_error[2] < -M_PI) {
             euler_error[2] += 2 * M_PI;
         }
         //Calculate the angular error derivative and integration term for the PID
-        for(i = 0 ; i < 3 ; i++){
+        for (i = 0; i < 3; i++) {
             euler_error_dot[i] = (euler_error[i] - euler_error_old[i]) * PERIODIC_FREQUENCY;
             euler_error_old[i] = euler_error[i];
             euler_error_integrated[i] += euler_error[i] / PERIODIC_FREQUENCY;
@@ -835,123 +902,154 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         }
 
         //Now bound the error within the defined ranges:
-        BoundAbs(euler_error[2],max_value_error.psi);
+        BoundAbs(euler_error[2], max_value_error.psi);
         //Bound integrative terms
         for (i = 0; i < 3; i++) {
             BoundAbs(euler_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_POS_ERR_INTEGRATIVE);
         }
 
-        euler_order[0] = pid_gains_over.p.phi * euler_error[0] + pid_gains_over.i.phi * euler_error_integrated[0] +
-                         pid_gains_over.d.phi * euler_error_dot_filt[0];
-        euler_order[1] = pid_gains_over.p.theta * euler_error[1] + pid_gains_over.i.theta * euler_error_integrated[1] +
-                         pid_gains_over.d.theta * euler_error_dot_filt[1];
-
-
-        //Compute the yaw order:
-        if(yaw_with_tilting) {
-            euler_order[2] = pid_gains_over.p.psi * euler_error[2] + pid_gains_over.i.psi * euler_error_integrated[2] +
-                             pid_gains_over.d.psi * euler_error_dot_filt[2];
+        psi_order_motor = 0;
+        euler_order[2] = 0;
+        if(soft_PID){
+            euler_order[0] = pid_gains_over.p.phi * euler_error[0] + pid_gains_over.i.phi * euler_error_integrated[0] -
+                             pid_gains_over.d.phi * rate_vect[0];
+            euler_order[1] = pid_gains_over.p.theta * euler_error[1] + pid_gains_over.i.theta * euler_error_integrated[1] -
+                             pid_gains_over.d.theta * rate_vect[1];
+            //Compute the yaw order:
+            if (yaw_with_tilting) {
+                euler_order[2] = pid_gains_over.p.psi * euler_error[2] + pid_gains_over.i.psi * euler_error_integrated[2] -
+                                 pid_gains_over.d.psi * rate_vect[2];
+            }
+            if (yaw_with_motors) {
+                psi_order_motor = pid_gain_psi_motor.p * euler_error[2] + pid_gain_psi_motor.i * euler_error_integrated[2] -
+                                  pid_gain_psi_motor.d * rate_vect[2];
+            }
         }
         else{
-            euler_order[2] = 0;
-        }
-        if(yaw_with_motors) {
-            psi_order_motor = pid_gain_psi_motor.p * euler_error[2] + pid_gain_psi_motor.i * euler_error_integrated[2] +
-                              pid_gain_psi_motor.d * euler_error_dot_filt[2];
-        }
-        else{
-            psi_order_motor = 0;
+            euler_order[0] = pid_gains_over.p.phi * euler_error[0] + pid_gains_over.i.phi * euler_error_integrated[0] +
+                             pid_gains_over.d.phi * euler_error_dot_filt[0];
+            euler_order[1] = pid_gains_over.p.theta * euler_error[1] + pid_gains_over.i.theta * euler_error_integrated[1] +
+                             pid_gains_over.d.theta * euler_error_dot_filt[1];
+            //Compute the yaw order:
+            if (yaw_with_tilting) {
+                euler_order[2] = pid_gains_over.p.psi * euler_error[2] + pid_gains_over.i.psi * euler_error_integrated[2] +
+                                 pid_gains_over.d.psi * euler_error_dot_filt[2];
+            }
+            if (yaw_with_motors) {
+                psi_order_motor = pid_gain_psi_motor.p * euler_error[2] + pid_gain_psi_motor.i * euler_error_integrated[2] +
+                                  pid_gain_psi_motor.d * euler_error_dot_filt[2];
+            }
         }
 
         //Bound euler angle orders:
-        BoundAbs(euler_order[0],OVERACTUATED_MIXING_PID_MAX_ROLL_ORDER_PWM);
-        BoundAbs(euler_order[1],OVERACTUATED_MIXING_PID_MAX_PITCH_ORDER_PWM);
-        BoundAbs(euler_order[2],OVERACTUATED_MIXING_PID_MAX_YAW_ORDER_AZ);
-        BoundAbs(psi_order_motor,OVERACTUATED_MIXING_PID_MAX_YAW_ORDER_MOTOR_PWM);
+        BoundAbs(euler_order[0], OVERACTUATED_MIXING_PID_MAX_ROLL_ORDER_PWM);
+        BoundAbs(euler_order[1], OVERACTUATED_MIXING_PID_MAX_PITCH_ORDER_PWM);
+        BoundAbs(euler_order[2], OVERACTUATED_MIXING_PID_MAX_YAW_ORDER_AZ);
+        BoundAbs(psi_order_motor, OVERACTUATED_MIXING_PID_MAX_YAW_ORDER_MOTOR_PWM);
 
 
 
         //Submit motor orders:
-        //Motor 1:
-        overactuated_mixing.commands[0] = (int16_t) ((pos_order_body[2] + euler_order[0] + euler_order[1] + psi_order_motor) - 1000 ) * 9.6;
-        Bound(overactuated_mixing.commands[0],0,9600);
+        if(manual_motor_stick){
+            //Motor 1:
+            overactuated_mixing.commands[0] = (int16_t) ((euler_order[0] + euler_order[1] + psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
+            //Motor 2:
+            overactuated_mixing.commands[1] = (int16_t) ((- euler_order[0] + euler_order[1] - psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
+            //Motor 3:
+            overactuated_mixing.commands[2] = (int16_t) ((-euler_order[0] - euler_order[1] + psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
+            //Motor 4:
+            overactuated_mixing.commands[3] = (int16_t) ((euler_order[0] - euler_order[1] - psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
+        }
+        else{
+            //Motor 1:
+            overactuated_mixing.commands[0] =
+                    (int16_t)((pos_order_body[2] + euler_order[0] + euler_order[1] + psi_order_motor) - 1000) * 9.6;
+            //Motor 2:
+            overactuated_mixing.commands[1] =
+                    (int16_t)((pos_order_body[2] - euler_order[0] + euler_order[1] - psi_order_motor) - 1000) * 9.6;
+            //Motor 3:
+            overactuated_mixing.commands[2] =
+                    (int16_t)((pos_order_body[2] - euler_order[0] - euler_order[1] + psi_order_motor) - 1000) * 9.6;
+            //Motor 4:
+            overactuated_mixing.commands[3] =
+                    (int16_t)((pos_order_body[2] + euler_order[0] - euler_order[1] - psi_order_motor) - 1000) * 9.6;
+        }
 
-        //Motor 2:
-        overactuated_mixing.commands[1] = (int16_t) ((pos_order_body[2] - euler_order[0] + euler_order[1] - psi_order_motor) - 1000 ) * 9.6;
-        Bound(overactuated_mixing.commands[1],0,9600);
+        //Bound the motor commands
+        Bound(overactuated_mixing.commands[0], 0, 9600);
+        Bound(overactuated_mixing.commands[1], 0, 9600);
+        Bound(overactuated_mixing.commands[2], 0, 9600);
+        Bound(overactuated_mixing.commands[3], 0, 9600);
 
-        //Motor 3:
-        overactuated_mixing.commands[2] = (int16_t) ((pos_order_body[2] - euler_order[0] - euler_order[1] + psi_order_motor) - 1000 ) * 9.6;
-        Bound(overactuated_mixing.commands[2],0,9600);
 
-        //Motor 4:
-        overactuated_mixing.commands[3] = (int16_t) ((pos_order_body[2] + euler_order[0] - euler_order[1] - psi_order_motor) - 1000 ) * 9.6;
-        Bound(overactuated_mixing.commands[3],0,9600);
-
-//        //Submit motor orders:
-//        //Motor 1:
-//        overactuated_mixing.commands[0] = (int16_t) ((euler_order[0] + euler_order[1] + psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
-//        Bound(overactuated_mixing.commands[0],0,9600);
-//        //Motor 2:
-//        overactuated_mixing.commands[1] = (int16_t) ((- euler_order[0] + euler_order[1] - psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
-//        Bound(overactuated_mixing.commands[1],0,9600);
-//        //Motor 3:
-//        overactuated_mixing.commands[2] = (int16_t) ((-euler_order[0] - euler_order[1] + psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
-//        Bound(overactuated_mixing.commands[2],0,9600);
-//        //Motor 4:
-//        overactuated_mixing.commands[3] = (int16_t) ((euler_order[0] - euler_order[1] - psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
-//        Bound(overactuated_mixing.commands[3],0,9600);
 
 
         //Elevation servos:
         int16_t local_el_order = 0;
-        if(activate_tilting_el) {
+        if (activate_tilting_el) {
             if (pos_order_body[0] >= 0) {
-                local_el_order = (int16_t)( pos_order_body[0] * 9600 / -OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE);
+                local_el_order = (int16_t)(pos_order_body[0] * 9600 / -OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE);
             } else {
-                local_el_order = (int16_t)( pos_order_body[0] * 9600 / OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE);
+                local_el_order = (int16_t)(pos_order_body[0] * 9600 / OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE);
             }
-            BoundAbs(local_el_order, MAX_PPRZ);
-        }
-        else{
+        } else {
             local_el_order = 0;
         }
 
         //Azimuth servos:
         int16_t local_az_order_12 = 0;
-        if(activate_tilting_az) {
-            if(yaw_with_tilting){
-                local_az_order_12 = (int16_t)( (pos_order_body[1] + euler_order[2]) * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE);
+        if (activate_tilting_az) {
+            if (pos_order_body[1] >= 0) {
+                local_az_order_12 = (int16_t)(pos_order_body[1] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE);
+            } else {
+                local_az_order_12 = (int16_t)(pos_order_body[1] * 9600 / -OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE);
             }
-            else{
-                if (pos_order_body[1] >= 0) {
-                    local_az_order_12 = (int16_t)( pos_order_body[1] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE);
-                } else {
-                    local_az_order_12 = (int16_t)( pos_order_body[1] * 9600 / -OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE);
-                }
-            }
-            BoundAbs(local_az_order_12, MAX_PPRZ);
-        }
-        else{
+        } else {
             local_az_order_12 = 0;
         }
-        int16_t local_az_order_34 = 0;
-        if(activate_tilting_az) {
-            if(yaw_with_tilting){
-                local_az_order_34 = (int16_t)( (pos_order_body[1] - euler_order[2]) * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE);
-            }
-            else{
-                if (pos_order_body[1] >= 0) {
-                    local_az_order_34 = (int16_t)( pos_order_body[1] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE);
-                } else {
-                    local_az_order_34 = (int16_t)( pos_order_body[1] * 9600 / -OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE);
-                }
-            }
-            BoundAbs(local_az_order_34, MAX_PPRZ);
+        if (yaw_with_tilting) {
+            local_az_order_12 += euler_order[2] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE;
         }
-        else{
+
+
+        int16_t local_az_order_34 = 0;
+        if (activate_tilting_az) {
+                if (pos_order_body[1] >= 0) {
+                    local_az_order_34 = (int16_t)(pos_order_body[1] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE);
+                } else {
+                    local_az_order_34 = (int16_t)(pos_order_body[1] * 9600 / -OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE);
+                }
+        } else {
             local_az_order_34 = 0;
         }
+        if (yaw_with_tilting) {
+            local_az_order_34 -= euler_order[2] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE;
+        }
+        local_el_order += OVERACTUATED_MIXING_NEUTRAL_EL_ORDER;
+        local_az_order_12 += OVERACTUATED_MIXING_NEUTRAL_AZ_ORDER + OVERACTUATED_MIXING_NEUTRAL_YAW_ORDER;
+        local_az_order_34 += OVERACTUATED_MIXING_NEUTRAL_AZ_ORDER - OVERACTUATED_MIXING_NEUTRAL_YAW_ORDER;
+        BoundAbs(local_el_order, MAX_PPRZ);
+        BoundAbs(local_az_order_12, MAX_PPRZ);
+        BoundAbs(local_az_order_34, MAX_PPRZ);
+
+//dirty modification:
+//        if(soft_PID){
+//            float longitudinal_cmd = cos(euler_vect[2]) * (pos_setpoint[0] - pos_vect[0] + pid_gains_over.i.x * pos_error_integrated[0]) +
+//                                     sin(euler_vect[2]) * (pos_setpoint[1] - pos_vect[1] + + pid_gains_over.i.y * pos_error_integrated[1]);
+//            float longitudinal_speed = cos(euler_vect[2]) * speed_vect[0] + sin(euler_vect[2]) * speed_vect[1];
+//
+//            float lateral_cmd = cos(euler_vect[2]) * (pos_setpoint[1] - pos_vect[1] + pid_gains_over.i.y * pos_error_integrated[1]) -
+//                                sin(euler_vect[2]) * (pos_setpoint[0] - pos_vect[0] + pid_gains_over.i.x * pos_error_integrated[0]);
+//            float lateral_speed = cos(euler_vect[2]) * speed_vect[1] - sin(euler_vect[2]) * speed_vect[0];
+//
+//            //Applying PID to command to get the servo deflection values:
+//            local_az_order_12 = P_az_gain * lateral_cmd - D_az_gain * lateral_speed +
+//                                euler_order[2] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE;
+//            local_el_order = -1 * (P_el_gain * longitudinal_cmd - D_el_gain * longitudinal_speed);
+//            local_az_order_34 = P_az_gain * lateral_cmd - D_az_gain * lateral_speed -
+//                                euler_order[2] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE;
+//         }
+//dirty modification.
 
         //Submit tilting orders:
         overactuated_mixing.commands[4] = local_el_order;
@@ -965,7 +1063,7 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
 
     }
 
-    // Case of INDI control mode as on simulink
+    /// Case of INDI control mode as on simulink
     if(radio_control.values[RADIO_MODE] > 500)
     {
         //INIT AND BOOLEAN RESET
@@ -985,6 +1083,8 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
 
 
         //Calculate the euler angle error to be fed into the PD for the INDI loop
+//        euler_setpoint[0] = 0;
+//        euler_setpoint[1] = 0;
         euler_setpoint[0] = max_value_error.phi * radio_control.values[RADIO_ROLL] / 9600;
         euler_setpoint[1] = max_value_error.theta * radio_control.values[RADIO_PITCH] / 9600;
         //Integrate the stick yaw position to get the psi set point
@@ -998,6 +1098,7 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
                 euler_setpoint[2] += 2 * M_PI;
             }
         }
+
         BoundAbs(euler_setpoint[0],max_value_error.phi);
         BoundAbs(euler_setpoint[1],max_value_error.theta);
         euler_error[0] = euler_setpoint[0] - euler_vect[0];
@@ -1023,17 +1124,17 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         rate_setpoint[0] = angular_body_error[0] * indi_gains_over.p.phi;
         rate_setpoint[1] = angular_body_error[1] * indi_gains_over.p.theta;
         rate_setpoint[2] = angular_body_error[2] * indi_gains_over.p.psi;
-        BoundAbs(rate_setpoint[0],OVERACTUATED_MIXING_INDI_MAX_P);
-        BoundAbs(rate_setpoint[1],OVERACTUATED_MIXING_INDI_MAX_Q);
-        BoundAbs(rate_setpoint[2],OVERACTUATED_MIXING_INDI_MAX_R);
+        BoundAbs(rate_setpoint[0],OVERACTUATED_MIXING_INDI_MAX_P_ORD);
+        BoundAbs(rate_setpoint[1],OVERACTUATED_MIXING_INDI_MAX_Q_ORD);
+        BoundAbs(rate_setpoint[2],OVERACTUATED_MIXING_INDI_MAX_R_ORD);
 
         //Compute the angular acceleration setpoint:
         acc_setpoint[3] = (rate_setpoint[0] - rate_vect[0]) * indi_gains_over.d.phi;
         acc_setpoint[4] = (rate_setpoint[1] - rate_vect[1]) * indi_gains_over.d.theta;
         acc_setpoint[5] = (rate_setpoint[2] - rate_vect[2]) * indi_gains_over.d.psi;
-        BoundAbs(acc_setpoint[3],OVERACTUATED_MIXING_INDI_MAX_P_DOT * M_PI / 180);
-        BoundAbs(acc_setpoint[4],OVERACTUATED_MIXING_INDI_MAX_Q_DOT * M_PI / 180);
-        BoundAbs(acc_setpoint[5],OVERACTUATED_MIXING_INDI_MAX_R_DOT * M_PI / 180);
+        BoundAbs(acc_setpoint[3],OVERACTUATED_MIXING_INDI_MAX_P_DOT_ORD * M_PI / 180);
+        BoundAbs(acc_setpoint[4],OVERACTUATED_MIXING_INDI_MAX_Q_DOT_ORD * M_PI / 180);
+        BoundAbs(acc_setpoint[5],OVERACTUATED_MIXING_INDI_MAX_R_DOT_ORD * M_PI / 180);
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
         // ANGULAR ACCELERATION
@@ -1043,17 +1144,22 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
 //        INDI_acceleration_inputs[5] = 0;
 
         //Calculate the position error to be fed into the PD for the INDI loop
-//        pos_setpoint[0] = x_stb;
-//        pos_setpoint[1] = y_stb;
-//        pos_setpoint[2] = z_stb;
-        pos_setpoint[0] = manual_pitch_overactuated_module / 1000;
-        pos_setpoint[1] = manual_roll_overactuated_module / 1000;
+        pos_setpoint[0] = x_stb;
+        pos_setpoint[1] = y_stb;
+//         if ( abs(radio_control.values[RADIO_PITCH]) > deadband_stick_throttle){
+//             pos_setpoint[0] = pos_setpoint[0] + stick_gain_throttle * radio_control.values[RADIO_PITCH] * .0001;
+//         }
+//         if ( abs(radio_control.values[RADIO_ROLL]) > deadband_stick_throttle){
+//             pos_setpoint[1] = pos_setpoint[1] + stick_gain_throttle * radio_control.values[RADIO_ROLL] * .0001;
+//         }
+
+//        pos_setpoint[2] = -z_stb;
         //Integrate the stick engine position to get the z set point WARNING NED CONVENTION
         if( abs(radio_control.values[RADIO_THROTTLE] - 4800) > deadband_stick_throttle &&
             abs(pos_error[2]) < max_value_error.z ){
             pos_setpoint[2]  = pos_setpoint[2]  - stick_gain_throttle * (radio_control.values[RADIO_THROTTLE] - 4800) * .00001;
-            Bound(pos_setpoint[2] ,-1000,4);
         }
+        Bound(pos_setpoint[2] ,-1000,4);
 
         pos_error[0] = pos_setpoint[0] - pos_vect[0];
         pos_error[1] = pos_setpoint[1] - pos_vect[1];
@@ -1066,17 +1172,17 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         speed_setpoint[0] = pos_error[0] * indi_gains_over.p.x;
         speed_setpoint[1] = pos_error[1] * indi_gains_over.p.y;
         speed_setpoint[2] = pos_error[2] * indi_gains_over.p.z;
-        BoundAbs(speed_setpoint[0],OVERACTUATED_MIXING_INDI_MAX_VX);
-        BoundAbs(speed_setpoint[1],OVERACTUATED_MIXING_INDI_MAX_VY);
-        BoundAbs(speed_setpoint[2],OVERACTUATED_MIXING_INDI_MAX_VZ);
+        BoundAbs(speed_setpoint[0],OVERACTUATED_MIXING_INDI_MAX_VX_ORD);
+        BoundAbs(speed_setpoint[1],OVERACTUATED_MIXING_INDI_MAX_VY_ORD);
+        BoundAbs(speed_setpoint[2],OVERACTUATED_MIXING_INDI_MAX_VZ_ORD);
 
         //Compute the linear accel setpoint
         acc_setpoint[0] = (speed_setpoint[0] - speed_vect[0]) * indi_gains_over.d.x;
         acc_setpoint[1] = (speed_setpoint[1] - speed_vect[1]) * indi_gains_over.d.y;
         acc_setpoint[2] = (speed_setpoint[2] - speed_vect[2]) * indi_gains_over.d.z;
-        BoundAbs(acc_setpoint[0],OVERACTUATED_MIXING_INDI_MAX_AX);
-        BoundAbs(acc_setpoint[1],OVERACTUATED_MIXING_INDI_MAX_AY);
-        BoundAbs(acc_setpoint[2],OVERACTUATED_MIXING_INDI_MAX_AZ);
+        BoundAbs(acc_setpoint[0],OVERACTUATED_MIXING_INDI_MAX_AX_ORD);
+        BoundAbs(acc_setpoint[1],OVERACTUATED_MIXING_INDI_MAX_AY_ORD);
+        BoundAbs(acc_setpoint[2],OVERACTUATED_MIXING_INDI_MAX_AZ_ORD);
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
         // LINEAR ACCELERATION
