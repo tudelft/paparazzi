@@ -115,12 +115,12 @@
 #endif
 #endif
 
-#if defined(LINE_ADC5)
+#if defined(LINE_ADC1_SPARE2)
 #if USE_ADC_5
 #define AD1_5_CHANNEL     ADC_CHANNEL_IN4
 #define ADC_5             AD1_5
-#define ADC_5_GPIO_PORT   PAL_PORT(LINE_ADC5)
-#define ADC_5_GPIO_PIN    PAL_PAD(LINE_ADC5)
+#define ADC_5_GPIO_PORT   PAL_PORT(LINE_ADC1_SPARE2)
+#define ADC_5_GPIO_PIN    PAL_PAD(LINE_ADC1_SPARE2)
 #endif
 #endif
 
