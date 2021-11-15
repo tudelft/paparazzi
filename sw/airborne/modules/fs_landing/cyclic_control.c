@@ -82,16 +82,16 @@ void cyclic_control_values(struct fs_landing_t *actuator_values) {
       has_cc_ff_started = true;
     } else {
       float cc_ff_dt = get_sys_time_float() - cc_ff_start_time;
-      if (0 < cc_ff_dt & cc_ff_dt <= cc_ff_side_time) {
+      if ((0 < cc_ff_dt) & (cc_ff_dt <= cc_ff_side_time)) {
 //        mt_phase_rad += 0;
         el_phase_rad += 0;
-      } else if (cc_ff_side_time < cc_ff_dt & cc_ff_dt <= 2 * cc_ff_side_time) {
+      } else if ((cc_ff_side_time < cc_ff_dt) & (cc_ff_dt <= 2 * cc_ff_side_time)) {
 //        mt_phase_rad += M_PI_2;
         el_phase_rad += M_PI_2;
-      } else if (2 * cc_ff_side_time < cc_ff_dt & cc_ff_dt <= 3 * cc_ff_side_time) {
+      } else if ((2 * cc_ff_side_time < cc_ff_dt) & (cc_ff_dt <= 3 * cc_ff_side_time)) {
 //        mt_phase_rad += M_PI;
         el_phase_rad += M_PI;
-      } else if (3 * cc_ff_side_time < cc_ff_dt & cc_ff_dt <= 4 * cc_ff_side_time) {
+      } else if ((3 * cc_ff_side_time < cc_ff_dt) & (cc_ff_dt <= 4 * cc_ff_side_time)) {
 //        mt_phase_rad += M_PI + M_PI_2;
         el_phase_rad += M_PI + M_PI_2;
       } else {  // Test end, disable cyclic
