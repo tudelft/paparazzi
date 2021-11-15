@@ -1032,24 +1032,6 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         BoundAbs(local_az_order_12, MAX_PPRZ);
         BoundAbs(local_az_order_34, MAX_PPRZ);
 
-//dirty modification:
-//        if(soft_PID){
-//            float longitudinal_cmd = cos(euler_vect[2]) * (pos_setpoint[0] - pos_vect[0] + pid_gains_over.i.x * pos_error_integrated[0]) +
-//                                     sin(euler_vect[2]) * (pos_setpoint[1] - pos_vect[1] + + pid_gains_over.i.y * pos_error_integrated[1]);
-//            float longitudinal_speed = cos(euler_vect[2]) * speed_vect[0] + sin(euler_vect[2]) * speed_vect[1];
-//
-//            float lateral_cmd = cos(euler_vect[2]) * (pos_setpoint[1] - pos_vect[1] + pid_gains_over.i.y * pos_error_integrated[1]) -
-//                                sin(euler_vect[2]) * (pos_setpoint[0] - pos_vect[0] + pid_gains_over.i.x * pos_error_integrated[0]);
-//            float lateral_speed = cos(euler_vect[2]) * speed_vect[1] - sin(euler_vect[2]) * speed_vect[0];
-//
-//            //Applying PID to command to get the servo deflection values:
-//            local_az_order_12 = P_az_gain * lateral_cmd - D_az_gain * lateral_speed +
-//                                euler_order[2] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE;
-//            local_el_order = -1 * (P_el_gain * longitudinal_cmd - D_el_gain * longitudinal_speed);
-//            local_az_order_34 = P_az_gain * lateral_cmd - D_az_gain * lateral_speed -
-//                                euler_order[2] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE;
-//         }
-//dirty modification.
 
         //Submit tilting orders:
         overactuated_mixing.commands[4] = local_el_order;

@@ -88,14 +88,6 @@ extern struct ActuatorsStruct act_dyn_struct;
 
 // Variables for slider
 extern float wind_speed;
-extern float P_az_gain;
-extern float I_az_gain;
-extern float D_az_gain;
-extern float P_el_gain;
-extern float I_el_gain;
-extern float D_el_gain;
-extern int deadband_stick_yaw;
-extern int deadband_stick_throttle;
 extern float test_ale;
 extern float stick_gain_yaw;
 extern float stick_gain_throttle;

@@ -155,13 +155,13 @@
 <!--    <servo name="AZ_3" no="11" min="1090" neutral="1470" max="1875"/>-->
 <!--    <servo name="EL_4" no="6" min="1390" neutral="1875" max="2130"/>-->
 <!--    <servo name="AZ_4" no="7" min="1050" neutral="1420" max="1850"/>-->
-    <servo name="EL_1" no="4" min="1350" neutral="2015" max="2250"/>
+    <servo name="EL_1" no="4" min="1780" neutral="2015" max="2250"/>
     <servo name="AZ_1" no="5" min="1095" neutral="1447" max="1875"/>
-    <servo name="EL_2" no="8" min="1300" neutral="1950" max="2190"/>
+    <servo name="EL_2" no="8" min="1710" neutral="1950" max="2190"/>
     <servo name="AZ_2" no="9" min="1110" neutral="1474" max="1850"/>
-    <servo name="EL_3" no="10" min="1270" neutral="1940" max="2190"/>
+    <servo name="EL_3" no="10" min="1690" neutral="1940" max="2190"/>
     <servo name="AZ_3" no="11" min="1090" neutral="1470" max="1875"/>
-    <servo name="EL_4" no="6" min="1390" neutral="1875" max="2130"/>
+    <servo name="EL_4" no="6" min="1620" neutral="1875" max="2130"/>
     <servo name="AZ_4" no="7" min="1050" neutral="1420" max="1850"/>
   </servos>
 
@@ -212,21 +212,21 @@
   <section name="OVERACTUATED_VARIABLES" prefix="OVERACTUATED_MIXING_">
 
     <!-- PID gains wrt the SI units -->
-    <define name="PID_P_GAIN_PHI" value="548"/>
-    <define name="PID_I_GAIN_PHI" value="0.5"/>
-    <define name="PID_D_GAIN_PHI" value="75"/>
+    <define name="PID_P_GAIN_PHI" value="959"/>
+    <define name="PID_I_GAIN_PHI" value="5"/>
+    <define name="PID_D_GAIN_PHI" value="109"/>
 
-    <define name="PID_P_GAIN_THETA" value="315"/>
-    <define name="PID_I_GAIN_THETA" value="16"/>
-    <define name="PID_D_GAIN_THETA" value="54"/>
+    <define name="PID_P_GAIN_THETA" value="683"/>
+    <define name="PID_I_GAIN_THETA" value="20"/>
+    <define name="PID_D_GAIN_THETA" value="79"/>
 
     <define name="PID_P_GAIN_PSI_MOTOR" value="900"/>
     <define name="PID_I_GAIN_PSI_MOTOR" value="0"/>
     <define name="PID_D_GAIN_PSI_MOTOR" value="250"/>
 
-    <define name="PID_P_GAIN_PSI_AZ" value="1.4"/>
-    <define name="PID_I_GAIN_PSI_AZ" value="0"/>
-    <define name="PID_D_GAIN_PSI_AZ" value="0.2"/>
+    <define name="PID_P_GAIN_PSI_AZ" value="5"/>
+    <define name="PID_I_GAIN_PSI_AZ" value="0.5"/>
+    <define name="PID_D_GAIN_PSI_AZ" value="1"/>
 
     <define name="PID_P_GAIN_POS_X_TILT" value="0.7"/>
     <define name="PID_I_GAIN_POS_X_TILT" value="0.1"/>
@@ -238,16 +238,17 @@
 
     <define name="PID_P_GAIN_POS_X_ATT" value="0.36"/>
     <define name="PID_I_GAIN_POS_X_ATT" value="0.06"/>
-    <define name="PID_D_GAIN_POS_X_ATT" value="0.24"/>
+    <define name="PID_D_GAIN_POS_X_ATT" value="0.3"/>
 
     <define name="PID_P_GAIN_POS_Y_ATT" value="0.3"/>
     <define name="PID_I_GAIN_POS_Y_ATT" value="0.06"/>
-    <define name="PID_D_GAIN_POS_Y_ATT" value="0.22"/>
+    <define name="PID_D_GAIN_POS_Y_ATT" value="0.28"/>
 
     <define name="PID_P_GAIN_POS_Z" value="450"/>
     <define name="PID_I_GAIN_POS_Z" value="50"/>
     <define name="PID_D_GAIN_POS_Z" value="300"/>
-    <define name="PID_THR_NEUTRAL_PWM" value="1500"/>
+
+    <define name="PID_THR_NEUTRAL_PWM" value="1650"/>
 
     <!-- Maximum orders -->
     <!-- General -->
@@ -277,8 +278,8 @@
     <define name="PID_MAX_POS_ERR_INTEGRATIVE" value="3" unit="m"/>
     <define name="PID_MAX_ROLL_ORDER_PWM" value="350"/>
     <define name="PID_MAX_PITCH_ORDER_PWM" value="350"/>
-    <define name="PID_MAX_YAW_ORDER_MOTOR_PWM" value="350"/>
-    <define name="PID_MAX_YAW_ORDER_AZ" value="40" unit="deg"/><!--MAX order for el servos are the physical one-->
+    <define name="PID_MAX_YAW_ORDER_MOTOR_PWM" value="250"/>
+    <define name="PID_MAX_YAW_ORDER_AZ" value="30" unit="deg"/><!--MAX order for el servos are the physical one-->
 
     <!-- INDI proportional gains -->
     <define name="INDI_REF_ERR_P" value="2.86"/>
@@ -306,8 +307,10 @@
     <define name="SERVO_AZ_MIN_ANGLE" value="-45" unit="deg"/><!-- Always remember to update the PWM range as well-->
     <define name="SERVO_AZ_MAX_ANGLE" value="45" unit="deg"/>
 <!--    <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>-->
-    <define name="SERVO_EL_MAX_ANGLE" value="40" unit="deg"/>
-    <define name="SERVO_EL_MIN_ANGLE" value="-40" unit="deg"/>
+<!--    <define name="SERVO_EL_MAX_ANGLE" value="40" unit="deg"/>-->
+<!--    <define name="SERVO_EL_MIN_ANGLE" value="-40" unit="deg"/>-->
+    <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>
+    <define name="SERVO_EL_MIN_ANGLE" value="-25" unit="deg"/>
 
     <!-- NEUTRAL ORDERS-->
     <define name="NEUTRAL_EL_ORDER" value="540" unit="PPZ"/>
