@@ -559,6 +559,10 @@ void overactuated_mixing_init() {
     }
 
 }
+
+/**
+ * Set of commands acting on global variables to compute the pseudoinverse
+ */
 void compute_pseudoinverse(void){
 
     uint8_t i,j,k;
@@ -761,12 +765,6 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         pos_setpoint[0] = x_stb;
         pos_setpoint[1] = y_stb;
         pos_setpoint[2] = z_stb;
-//        if (abs(radio_control.values[RADIO_THROTTLE] - 4800) > deadband_stick_throttle &&
-//            abs(pos_error[2]) < max_value_error.z) {
-//            pos_setpoint[2] =
-//                    pos_setpoint[2] + stick_gain_throttle * (radio_control.values[RADIO_THROTTLE] - 4800) * .00001;
-//            Bound(pos_setpoint[2], -1, 1000);
-//        }
 
         //Calculate the error on the position
         pos_error[0] = pos_setpoint[0] - pos_vect[0];
@@ -1025,24 +1023,37 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         if (yaw_with_tilting) {
             local_az_order_34 -= euler_order[2] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE;
         }
-        local_el_order += OVERACTUATED_MIXING_NEUTRAL_EL_ORDER;
+
         local_az_order_12 += OVERACTUATED_MIXING_NEUTRAL_AZ_ORDER + OVERACTUATED_MIXING_NEUTRAL_YAW_ORDER;
         local_az_order_34 += OVERACTUATED_MIXING_NEUTRAL_AZ_ORDER - OVERACTUATED_MIXING_NEUTRAL_YAW_ORDER;
-        BoundAbs(local_el_order, MAX_PPRZ);
         BoundAbs(local_az_order_12, MAX_PPRZ);
         BoundAbs(local_az_order_34, MAX_PPRZ);
 
+//        local_el_order += OVERACTUATED_MIXING_NEUTRAL_EL_ORDER;
+//        BoundAbs(local_el_order, MAX_PPRZ);
+        int local_el_order_1 = local_el_order + OVERACTUATED_MIXING_NEUTRAL_EL_ORDER_1;
+        int local_el_order_2 = local_el_order + OVERACTUATED_MIXING_NEUTRAL_EL_ORDER_2;
+        int local_el_order_3 = local_el_order + OVERACTUATED_MIXING_NEUTRAL_EL_ORDER_3;
+        int local_el_order_4 = local_el_order + OVERACTUATED_MIXING_NEUTRAL_EL_ORDER_4;
+        BoundAbs(local_el_order_1, MAX_PPRZ);
+        BoundAbs(local_el_order_2, MAX_PPRZ);
+        BoundAbs(local_el_order_3, MAX_PPRZ);
+        BoundAbs(local_el_order_4, MAX_PPRZ);
+
 
         //Submit tilting orders:
-        overactuated_mixing.commands[4] = local_el_order;
-        overactuated_mixing.commands[5] = local_el_order;
-        overactuated_mixing.commands[6] = local_el_order;
-        overactuated_mixing.commands[7] = local_el_order;
+//        overactuated_mixing.commands[4] = local_el_order;
+//        overactuated_mixing.commands[5] = local_el_order;
+//        overactuated_mixing.commands[6] = local_el_order;
+//        overactuated_mixing.commands[7] = local_el_order;
+        overactuated_mixing.commands[4] = local_el_order_1;
+        overactuated_mixing.commands[5] = local_el_order_2;
+        overactuated_mixing.commands[6] = local_el_order_3;
+        overactuated_mixing.commands[7] = local_el_order_4;
         overactuated_mixing.commands[8] = local_az_order_12;
         overactuated_mixing.commands[9] = local_az_order_12;
         overactuated_mixing.commands[10] = local_az_order_34;
         overactuated_mixing.commands[11] = local_az_order_34;
-
     }
 
     /// Case of INDI control mode as on simulink
