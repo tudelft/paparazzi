@@ -1,0 +1,53 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="motor_mixing" dir="actuators" task="actuators">
+  <doc>
+    <description>
+      Motor mixing for multi-rotor systems
+
+      see http://wiki.paparazziuav.org/wiki/Rotorcraft_Configuration#Motor_Mixing
+    </description>
+    <section name="MIXING" prefix="MOTOR_MIXING_">
+      <define name="TRIM_ROLL" value="0" description="roll trim"/>
+      <define name="TRIM_PITCH" value="0" description="pitch trim"/>
+      <define name="TRIM_YAW" value="0" description="yaw trim"/>
+      <define name="NB_MOTOR" value="4" description="number of motors"/>
+      <define name="SCALE" value="256" description="scaling factor"/>
+<!--      <define name="ROLL_COEF" value="{ 0, 0, -256, 256 }" description="array of roll coefficient"/>-->
+<!--      <define name="PITCH_COEF" value="{ 256, -256, 0, 0 }" description="array of pitch coefficient"/>-->
+<!--      <define name="YAW_COEF" value="{ -256, 0, -256, 0 }" description="array of yaw coefficient"/>-->
+<!--      <define name="THRUST_COEF" value="{ 256, 256, 256, 256 }" description="array of thurst coefficient"/>-->
+      <define name="ROLL_COEF"   value="{  181, -181, -181,  181 }"/>
+      <define name="PITCH_COEF"  value="{  181,  181, -181, -181 }"/>
+      <define name="YAW_COEF"    value="{  128, -128,  128,  128 }"/>
+      <define name="THRUST_COEF" value="{  256,  256,  256,  256 }"/>
+    </section>
+  </doc>
+<<<<<<< HEAD
+
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="Motor_mixing_value">
+        <dl_setting var="use_yaw_motor" min="0" step="1" max="1" shortname="motor_for_yaw" values="FALSE|TRUE" />
+        <dl_setting var="compensate_motor_power" min="0" step="1" max="1" shortname="compensate_tilt_pwr" values="FALSE|TRUE" />
+        <dl_setting var="gain_azimuth_motor" min="0" step=".001" max="1" shortname="mot_gain_az" />
+        <dl_setting var="gain_elevation_motor" min="0" step=".001" max="1" shortname="mot_gain_el" />
+      </dl_settings>
+    </dl_settings>
+  </settings>
+=======
+  <dep>
+    <depends>@commands</depends>
+    <provides>mixing</provides>
+  </dep>
+>>>>>>> 360b6a82f95b3d10f127411f2467c82904b9799b
+  <header>
+    <file name="motor_mixing.h" dir="subsystems/actuators"/>
+  </header>
+  <init fun="motor_mixing_init()"/>
+  <makefile target="!sim">
+    <define name="USE_MOTOR_MIXING"/>
+    <file name="motor_mixing.c" dir="subsystems/actuators"/>
+  </makefile>
+</module>
+

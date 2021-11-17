@@ -43,6 +43,10 @@ struct MotorMixing {
 };
 
 extern struct MotorMixing motor_mixing;
+extern bool use_yaw_motor;
+extern bool compensate_motor_power;
+extern float gain_azimuth_motor;
+extern float gain_elevation_motor;
 
 extern void motor_mixing_init(void);
 extern void motor_mixing_run(bool motors_on, bool override_on, pprz_t in_cmd[]);

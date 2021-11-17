@@ -27,6 +27,9 @@
 
 #include "subsystems/actuators/motor_mixing.h"
 #include "paparazzi.h"
+#include "subsystems/radio_control.h"
+#include "Overactuated_vehicle/Overactuated_mixing.h"
+#include "subsystems/datalink/telemetry.h"
 
 //#include <stdint.h>
 #ifndef INT32_MIN
@@ -93,8 +96,13 @@ static const int32_t thrust_coef[MOTOR_MIXING_NB_MOTOR] = MOTOR_MIXING_THRUST_CO
 
 struct MotorMixing motor_mixing;
 
-#if PERIODIC_TELEMETRY
-#include "subsystems/datalink/telemetry.h"
+bool use_yaw_motor = 0;
+bool compensate_motor_power = 0;
+float gain_azimuth_motor = 0;
+float gain_elevation_motor = 0;
+
+
+
 static void send_motor_mixing(struct transport_tx *trans, struct link_device *dev)
 {
   int16_t motors[MOTOR_MIXING_NB_MOTOR];
@@ -104,7 +112,6 @@ static void send_motor_mixing(struct transport_tx *trans, struct link_device *de
   }
   pprz_msg_send_MOTOR_MIXING(trans, dev, AC_ID , MOTOR_MIXING_NB_MOTOR, motors);
 }
-#endif
 
 void motor_mixing_init(void)
 {
@@ -120,9 +127,7 @@ void motor_mixing_init(void)
   }
   motor_mixing.nb_failure = 0;
   motor_mixing.nb_saturation = 0;
-#if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MOTOR_MIXING, send_motor_mixing);
-#endif
 }
 
 static void offset_commands(int32_t offset)
@@ -207,10 +212,11 @@ void motor_mixing_run(bool motors_on, bool override_on, pprz_t in_cmd[])
      * - calc max saturation/overflow when yaw command is also added
      */
     for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
+
       motor_mixing.commands[i] = motor_mixing.trim[i] +
         roll_coef[i] * in_cmd[COMMAND_ROLL] +
         pitch_coef[i] * in_cmd[COMMAND_PITCH] +
-        thrust_coef[i] * in_cmd[COMMAND_THRUST];
+        thrust_coef[i] * in_cmd[COMMAND_THRUST] + (gain_azimuth_motor * abs(overactuated_mixing.commands[(int) (i*2+1)])) + (gain_elevation_motor * abs(overactuated_mixing.commands[(int) (i*2)]));
 
       /* compute the command with yaw for each motor to check how much it would saturate */
       tmp_cmd = motor_mixing.commands[i] + yaw_coef[i] * in_cmd[COMMAND_YAW];
@@ -237,7 +243,9 @@ void motor_mixing_run(bool motors_on, bool override_on, pprz_t in_cmd[])
 
     /* add the bounded yaw command and scale */
     for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
-      motor_mixing.commands[i] += yaw_coef[i] * bounded_yaw_cmd;
+        if(use_yaw_motor){
+            motor_mixing.commands[i] += yaw_coef[i] * bounded_yaw_cmd;
+        }
       motor_mixing.commands[i] /= MOTOR_MIXING_SCALE;
 
       /* remember min/max */
