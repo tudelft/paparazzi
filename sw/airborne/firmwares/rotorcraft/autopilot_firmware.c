@@ -126,6 +126,15 @@ static void send_fp(struct transport_tx *trans, struct link_device *dev)
 #else
   int32_t state_psi = stateGetNedToBodyEulers_i()->psi;
 #endif
+  
+  printf("send position 1,2,3");
+  struct NedCoor_f pos;
+  pos.x = 1.0f;
+  pos.y = 2.0f;
+  pos.z = 3.0f;
+  stateSetPositionNed_f(&pos);
+  printf("P=%d,%d,%d\n",stateGetPositionEnu_i()->x, stateGetPositionEnu_i()->y,stateGetPositionEnu_i()->z);
+
   pprz_msg_send_ROTORCRAFT_FP(trans, dev, AC_ID,
                               &(stateGetPositionEnu_i()->x),
                               &(stateGetPositionEnu_i()->y),

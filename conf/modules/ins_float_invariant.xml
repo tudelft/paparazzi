@@ -35,7 +35,7 @@
   <init fun="ins_float_invariant_wrapper_init()"/>
   <makefile target="ap|nps">
     <define name="AHRS_ALIGNER_LED" value="$(AHRS_ALIGNER_LED)" cond="ifneq ($(AHRS_ALIGNER_LED),none)"/>
-    <configure name="USE_MAGNETOMETER" default="TRUE"/>
+    <configure name="USE_MAGNETOMETER" default="FALSE"/>
     <define name="USE_MAGNETOMETER" cond="ifeq (,$(findstring $(USE_MAGNETOMETER),0 FALSE))"/>
 
     <file name="ahrs_aligner.c" dir="subsystems/ahrs"/>

@@ -24,6 +24,7 @@
  * @file boards/bebop/actuators.c
  * Actuator driver for the bebop and bebop 2
  */
+#include <time.h>
 
 #include "subsystems/actuators.h"
 #include "subsystems/electrical.h"
@@ -138,7 +139,7 @@ void actuators_bebop_commit(void)
     actuators_bebop.led = led_hw_values & 0x3;
   }
   // Send ABI message
-  AbiSendMsgRPM(RPM_SENSOR_ID, actuators_bebop.rpm_obs, 4);
+  AbiSendMsgRPM(RPM_SENSOR_ID, actuators_bebop.rpm_obs, actuators_bebop.rpm_ref, 4);
 }
 
 static uint8_t actuators_bebop_checksum(uint8_t *bytes, uint8_t size)

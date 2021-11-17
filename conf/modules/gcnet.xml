@@ -1,0 +1,33 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="gcnet">
+  <doc>
+    <description>
+    This module is used to test the gcnet controller.
+    </description>
+  </doc>
+
+  <!--settings>
+    <dl_settings name="setting gcnet">
+      <dl_settings name="gcnet settings">
+        <dl_setting min="3" max="5" step="0.5" type="float" var="desired_X" module="gcnet/gcnet_main"/>
+      </dl_settings>
+    </dl_settings>
+  </settings-->
+
+  <header>
+    <file name="nn_parameters.h"/>
+    <file name="nn_operations.h"/>
+    <file name="ekf_gps.h"/>
+    <file name="gcnet_main.h"/>
+  </header>
+  <init fun="gcnet_init()"/>
+  <periodic fun="gcnet_run()" freq="512" />
+
+  <makefile>
+    <file name="nn_parameters.c"/>
+    <file name="nn_operations.c"/>
+    <file name="ekf_gps.c"/>
+    <file name="gcnet_main.c"/>
+  </makefile>
+</module>

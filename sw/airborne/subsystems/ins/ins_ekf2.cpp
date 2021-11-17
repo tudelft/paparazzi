@@ -298,6 +298,7 @@ void ins_ekf2_update(void)
 
     // Only publish position after successful alignment
     if (control_status.flags.tilt_align) {
+	
       /* Get the position */
       float pos_f[3] = {};
       struct NedCoor_f pos;
@@ -305,6 +306,8 @@ void ins_ekf2_update(void)
       pos.x = pos_f[0];
       pos.y = pos_f[1];
       pos.z = pos_f[2];
+
+      // printf("P=%f,%f,%f\n",pos.x,pos.y,pos.z);
 
       // Publish to the state
       stateSetPositionNed_f(&pos);
@@ -341,6 +344,7 @@ void ins_ekf2_update(void)
       // Only update the origin when the state estimator has updated the origin
       bool ekf_origin_valid = ekf.get_ekf_origin(&origin_time, &ekf_origin, &ref_alt);
       if (ekf_origin_valid && (origin_time > ekf2.ltp_stamp)) {
+	printf("!!!!");
         lla_ref.lat = ekf_origin.lat_rad * 180.0 / M_PI * 1e7; // Reference point latitude in degrees
         lla_ref.lon = ekf_origin.lon_rad * 180.0 / M_PI * 1e7; // Reference point longitude in degrees
         lla_ref.alt = ref_alt * 1000.0;

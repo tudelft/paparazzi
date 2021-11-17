@@ -1,7 +1,7 @@
 <conf>
   <aircraft
    name="bebop_orange_avoid"
-   ac_id="42"
+   ac_id="55"
    airframe="airframes/tudelft/bebop_course_orangeavoid.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"
