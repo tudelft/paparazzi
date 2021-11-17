@@ -28,6 +28,7 @@
       </module>
 
       <module name="scheduling_indi_simple"/>
+      <module name="ctrl_windtunnel"/>
 
       <!-- Forward FuelCell data back to the GCS -->
       <!--module name="generic_uart_sensor"/-->
@@ -74,6 +75,7 @@
       <configure name="UAVCAN_USE_CAN1" value="TRUE"/>
       <configure name="UAVCAN_USE_CAN2" value="TRUE"/>
     </module>
+
     <module name="imu"           type="mpu6000"/>
     <module name="gps"           type="ublox"/>
     <module name="gps"           type="ubx_ucenter"/>
@@ -124,6 +126,16 @@
     <module name="motor_mixing"/>
   </firmware>
 
+  <section name="WINDTUNNEL" prefix="CTRL_WINDTUNNEL_">
+      <define name="STEPTIME" value="8.0"/>
+      <define name="THR_MIN" value="0"/>
+      <define name="THR_MAX" value="0"/>
+      <define name="THR_STEP" value="1200"/>
+      <define name="FLAP_MIN" value="-7200"/>
+      <define name="FLAP_MAX" value="0"/>
+      <define name="FLAP_STEP" value="2400"/>
+  </section>
+
   <!-- CAN BUS 1 (Front Wing) -->
   <servos driver="Uavcan1">
     <servo name="MOTOR_1" no="0" min="-8191" neutral="1500" max="8191"/>
@@ -157,6 +169,7 @@
     <axis name="PITCH"  failsafe_value="-300"/>
     <axis name="YAW"    failsafe_value="0"/>
     <axis name="THRUST" failsafe_value="0"/>
+    <axis name="FLAPS"  failsafe_value="0"/>
   </commands>
 
   <rc_commands>
@@ -164,6 +177,7 @@
     <set command="ROLL" value="@YAW" />
     <set command="PITCH" value="@PITCH/2" />
     <set command="YAW" value="-@ROLL/4" />
+    <set command="FLAPS" value="@PITCH" />
   </rc_commands>
 
   <section name="MIXING" prefix="MOTOR_MIXING_">
