@@ -37,6 +37,7 @@
       <message name="MOTOR_MIXING"             period=".2"/>
       <message name="OVERACTUATED_VARIABLES"   period=".2"/>
       <message name="GAINS_OVERACTUATED"       period=".2"/>
+      <message name="ACTUATORS_OUTPUT"         period=".05"/>
     </mode>
 
     <mode name="ppm">
@@ -205,8 +206,9 @@
       <message name="RC"                       period="0.5"/>
       <message name="ROTORCRAFT_RADIO_CONTROL" period="0.5"/>
       <message name="ROTORCRAFT_STATUS"        period="1"/>
-      <message name="OVERACTUATED_VARIABLES"   period="0.005"/>
-      <message name="GAINS_OVERACTUATED"   period="0.05"/>
+      <message name="OVERACTUATED_VARIABLES"   period=".005"/>
+      <message name="ACTUATORS_OUTPUT"         period=".005"/>
+      <message name="GAINS_OVERACTUATED"       period="0.05"/>
     </mode>
   </process>
 

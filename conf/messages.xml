@@ -1713,13 +1713,6 @@
       <field name="bus_number" type="uint8"/>
     </message>
 
-  <!-- Do we need this? Used only in misc/log_parser/09_05_13__14_38_13.log -->
-    <message name="IMU_GYRO_LP" id="209">
-      <field name="gp" type="float" unit="rad/s"/>
-      <field name="gq" type="float" unit="rad/s"/>
-      <field name="gr" type="float" unit="rad/s"/>
-    </message>
-
     <message name="WINDTUNNEL_MEAS" id="211">
       <field name="aoa" type="float" unit="deg">Angle of attack</field>
       <field name="airspeed" type="float" unit="m/s">Airspeed measured</field>
@@ -1728,6 +1721,25 @@
       <field name="power" type="float" unit="W">Calculated power (Voltage * Current)</field>
       <field name="commands" type="int32[]">Commands send to actuators</field>
     </message>
+
+     <message name="ACTUATORS_OUTPUT" id="209">
+
+         <field name="Motor_1_cmd" type="int32">Motor 1 command [PPZ]</field>
+         <field name="Motor_2_cmd" type="int32">Motor 2 command [PPZ]</field>
+         <field name="Motor_3_cmd" type="int32">Motor 3 command [PPZ]</field>
+         <field name="Motor_4_cmd" type="int32">Motor 4 command [PPZ]</field>
+
+         <field name="Tilt_el_1_cmd" type="int32">Tilting elevator servo 1 command [PPZ]</field>
+         <field name="Tilt_el_2_cmd" type="int32">Tilting elevator servo 2 command [PPZ]</field>
+         <field name="Tilt_el_3_cmd" type="int32">Tilting elevator servo 3 command [PPZ]</field>
+         <field name="Tilt_el_4_cmd" type="int32">Tilting elevator servo 4 command [PPZ]</field>
+
+         <field name="Tilt_az_1_cmd" type="int32">Tilting azimuth servo 1 command [PPZ]</field>
+         <field name="Tilt_az_2_cmd" type="int32">Tilting azimuth servo 2 command [PPZ]</field>
+         <field name="Tilt_az_3_cmd" type="int32">Tilting azimuth servo 3 command [PPZ]</field>
+         <field name="Tilt_az_4_cmd" type="int32">Tilting azimuth servo 4 command [PPZ]</field>
+
+     </message>
 
      <message name="GAINS_OVERACTUATED" id="210">
          <!--PID GAINS-->
@@ -1815,7 +1827,11 @@
          <field name="des_y_pos" type="float" unit="m">Desired position y [m]</field>
          <field name="des_z_pos" type="float" unit="m">Desired position z [m]</field>
 
-         <field name="yaw_action" type="float" >Yaw action on azimuth [ppz]</field>
+         <field name="alt_action" type="float" >Altitude action on motor [ppz]</field>
+         <field name="pitch_action" type="float" >Pitch action on motor [ppz]</field>
+         <field name="roll_action" type="float" >Roll action on motor [ppz]</field>
+         <field name="yaw_action_motor" type="float" >Yaw action on motor [ppz]</field>
+         <field name="yaw_action_tilt" type="float" >Yaw action on azimuth [ppz]</field>
          <field name="elev_action" type="float" >elevation action [ppz]</field>
          <field name="azimuth_action" type="float" >azimuth action [ppz]</field>
 

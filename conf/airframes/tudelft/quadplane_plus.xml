@@ -239,24 +239,24 @@
     <define name="PID_D_GAIN_PSI_AZ" value="1"/>
 
     <define name="PID_P_GAIN_POS_X_TILT" value="0.7"/>
-    <define name="PID_I_GAIN_POS_X_TILT" value="0.5"/>
+    <define name="PID_I_GAIN_POS_X_TILT" value="0.05"/>
     <define name="PID_D_GAIN_POS_X_TILT" value="0.5"/>
 
     <define name="PID_P_GAIN_POS_Y_TILT" value="0.7"/>
-    <define name="PID_I_GAIN_POS_Y_TILT" value="0.5"/>
+    <define name="PID_I_GAIN_POS_Y_TILT" value="0.1"/>
     <define name="PID_D_GAIN_POS_Y_TILT" value="0.5"/>
 
     <define name="PID_P_GAIN_POS_X_ATT" value="0.36"/>
-    <define name="PID_I_GAIN_POS_X_ATT" value="0.06"/>
+    <define name="PID_I_GAIN_POS_X_ATT" value="0.1"/>
     <define name="PID_D_GAIN_POS_X_ATT" value="0.3"/>
 
     <define name="PID_P_GAIN_POS_Y_ATT" value="0.3"/>
     <define name="PID_I_GAIN_POS_Y_ATT" value="0.06"/>
     <define name="PID_D_GAIN_POS_Y_ATT" value="0.28"/>
 
-    <define name="PID_P_GAIN_POS_Z" value="450"/>
-    <define name="PID_I_GAIN_POS_Z" value="150"/>
-    <define name="PID_D_GAIN_POS_Z" value="300"/>
+    <define name="PID_P_GAIN_POS_Z" value="1000"/>
+    <define name="PID_I_GAIN_POS_Z" value="50"/>
+    <define name="PID_D_GAIN_POS_Z" value="490"/>
 
     <define name="PID_THR_NEUTRAL_PWM" value="1650"/>
 
@@ -265,9 +265,9 @@
     <define name="MAX_PHI" value="25" unit="deg"/>
     <define name="MAX_THETA" value="25" unit="deg"/>
     <define name="MAX_PSI_ERR" value="80" unit="deg"/>
-    <define name="MAX_X_ERR" value="3" unit="m"/>
-    <define name="MAX_Y_ERR" value="3" unit="m"/>
-    <define name="MAX_Z_ERR" value="3" unit="m"/>
+    <define name="MAX_X_ERR" value="0.5" unit="m"/>
+    <define name="MAX_Y_ERR" value="0.5" unit="m"/>
+    <define name="MAX_Z_ERR" value="0.9" unit="m"/>
     <!-- PID specific-->
     <define name="PID_MAX_SPEED_ORD" value="15" unit="m/s"/>
     <!-- INDI specific-->
@@ -329,13 +329,23 @@
 
     <!-- NEUTRAL ORDERS-->
 <!--    <define name="NEUTRAL_EL_ORDER" value="540" unit="PPZ"/>-->
-    <define name="NEUTRAL_EL_ORDER_1" value="5066" unit="PPZ"/>
-    <define name="NEUTRAL_EL_ORDER_2" value="4724" unit="PPZ"/>
-    <define name="NEUTRAL_EL_ORDER_3" value="4675" unit="PPZ"/>
-    <define name="NEUTRAL_EL_ORDER_4" value="3347" unit="PPZ"/>
+<!--    <define name="NEUTRAL_EL_ORDER_1" value="5066" unit="PPZ"/>-->
+<!--    <define name="NEUTRAL_EL_ORDER_2" value="4724" unit="PPZ"/>-->
+<!--    <define name="NEUTRAL_EL_ORDER_3" value="4675" unit="PPZ"/>-->
+<!--    <define name="NEUTRAL_EL_ORDER_4" value="3347" unit="PPZ"/>-->
 
-    <define name="NEUTRAL_AZ_ORDER" value="-161" unit="PPZ"/>
-    <define name="NEUTRAL_YAW_ORDER" value="-600" unit="PPZ"/>
+<!--    <define name="NEUTRAL_AZ_ORDER" value="-161" unit="PPZ"/>-->
+<!--    <define name="NEUTRAL_YAW_ORDER" value="-600" unit="PPZ"/>-->
+
+    <define name="NEUTRAL_EL_ORDER_1" value="5066 + 710" unit="PPZ"/>
+    <define name="NEUTRAL_EL_ORDER_2" value="4724 + 710" unit="PPZ"/>
+    <define name="NEUTRAL_EL_ORDER_3" value="4675 + 710" unit="PPZ"/>
+    <define name="NEUTRAL_EL_ORDER_4" value="3347 + 710" unit="PPZ"/>
+
+    <define name="NEUTRAL_AZ_ORDER" value="-310" unit="PPZ"/>
+    <define name="NEUTRAL_YAW_ORDER" value="-600 + 600" unit="PPZ"/>
+
+
 
     <!-- Filters properties for PID-->
     <define name="FILT_CUTOFF_ANG_ERR" value="30" unit="rad/s"/>
