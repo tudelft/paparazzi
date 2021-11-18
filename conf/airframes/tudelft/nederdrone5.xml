@@ -16,10 +16,13 @@
   <firmware name="rotorcraft">
     <target name="ap" board="px4fmu_5.0_chibios">
       <configure name="PERIODIC_FREQUENCY"  value="500"/>
-      <configure name="FLASH_MODE" value="SWD"/>
+      <configure name="FLASH_MODE" value="SWD_NOPWR"/>
 
-      <module name="radio_control" type="sbus">
+      <!-- <module name="radio_control" type="sbus">
         <configure name="SBUS_PORT" value="UART3"/>
+      </module> -->
+
+      <module name="radio_control" type="datalink">
       </module>
 
       <module name="airspeed" type="ms45xx_i2c">
@@ -40,31 +43,16 @@
 
       <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
 
-      <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
-      <define name="RADIO_FMODE"       value="RADIO_AUX2"/> <!-- Throttle curve select -->
-      <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> <!-- Switch between AP and FBW control -->
-      <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
+    <define name="RADIO_TH_HOLD"     value="5"/> <!-- Throttle hold in command laws -->
+    <define name="RADIO_FMODE"       value="5"/> <!-- Throttle curve select -->
+     <define name="RADIO_FBW_MODE"    value="5"/> <!-- Switch between AP and FBW control -->
+    <define name="RADIO_KILL_SWITCH" value="5"/>
 
       <!-- Use the external mag (not in NPS target as then it needs to listen to all) -->
       <define name="INS_EKF2_MAG_ID" value="MAG_LIS3MDL_SENDER_ID"/>
     </target>
 
-    <target name="nps" board="pc">
-      <module name="radio_control" type="datalink"/>
-      <module name="fdm" type="jsbsim"/>
 
-      <module name="scheduling_indi_simple"/>
-
-      <module name="logger_file">
-        <define name="FILE_LOGGER_PATH" value="/home/ewoud/Documents"/>
-      </module>
-
-      <!--Not dealing with these in the simulation-->
-      <define name="RADIO_TH_HOLD"     value="0"/> <!-- Throttle hold in command laws -->
-      <define name="RADIO_FMODE"       value="0"/> <!-- Throttle curve select -->
-      <define name="RADIO_FBW_MODE"    value="0"/> <!-- Switch between AP and FBW control -->
-      <define name="RADIO_KILL_SWITCH" value="0"/>
-    </target>
 
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B115200"/>
@@ -132,10 +120,10 @@
     <servo name="MOTOR_4" no="3" min="-8191" neutral="1500" max="8191"/>
     <servo name="MOTOR_5" no="4" min="-8191" neutral="1500" max="8191"/>
     <servo name="MOTOR_6" no="5" min="-8191" neutral="1500" max="8191"/>
-    <servo name="AIL_1" no="6" min="6000" neutral="0" max="-6000"/>
-    <servo name="FLAP_1" no="7" min="6000" neutral="0" max="-6000"/>
-    <servo name="FLAP_2" no="8" min="-6000" neutral="0" max="6000"/>
-    <servo name="AIL_2" no="9" min="-6000" neutral="0" max="6000"/>
+    <servo name="AIL_1" no="6" min="0" neutral="0" max="0"/>
+    <servo name="FLAP_1" no="7" min="0" neutral="0" max="0"/>
+    <servo name="FLAP_2" no="8" min="0" neutral="0" max="0"/>
+    <servo name="AIL_2" no="9" min="0" neutral="0" max="0"/>
   </servos>
 
   <!-- CAN BUS 2 (Back Wing) -->
@@ -146,10 +134,10 @@
     <servo name="MOTOR_10" no="3" min="-8191" neutral="1500" max="8191"/>
     <servo name="MOTOR_11" no="4" min="-8191" neutral="1500" max="8191"/>
     <servo name="MOTOR_12" no="5" min="-8191" neutral="1500" max="8191"/>
-    <servo name="AIL_3" no="6" min="6000" neutral="0" max="-6000"/>
-    <servo name="FLAP_3" no="7" min="6000" neutral="0" max="-6000"/>
-    <servo name="FLAP_4" no="8" min="-6000" neutral="0" max="6000"/>
-    <servo name="AIL_4" no="9" min="-6000" neutral="0" max="6000"/>
+    <servo name="AIL_3" no="6" min="0" neutral="0" max="0"/>
+    <servo name="FLAP_3" no="7" min="0" neutral="0" max="0"/>
+    <servo name="FLAP_4" no="8" min="0" neutral="0" max="0"/>
+    <servo name="AIL_4" no="9" min="0" neutral="0" max="0"/>
   </servos>
 
   <commands>
@@ -160,10 +148,10 @@
   </commands>
 
   <rc_commands>
-    <set command="THRUST" value="@THROTTLE" />
-    <set command="ROLL" value="@YAW" />
+    <set command="THRUST" value="@PITCH" />
+    <set command="ROLL" value="@PITCH" />
     <set command="PITCH" value="@PITCH/2" />
-    <set command="YAW" value="-@ROLL/4" />
+    <set command="YAW" value="@PITCH" />
   </rc_commands>
 
   <section name="MIXING" prefix="MOTOR_MIXING_">
@@ -182,7 +170,7 @@
     <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
     <let var="th_hold"     value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
 
-    <set servo="MOTOR_1"   value="($th_hold? -9600 : motor_mixing.commands[0])"/>
+    <!-- <set servo="MOTOR_1"   value="($th_hold? -9600 : motor_mixing.commands[0])"/>
     <set servo="MOTOR_2"   value="($th_hold? -9600 : motor_mixing.commands[1])"/>
     <set servo="MOTOR_3"   value="($th_hold? -9600 : motor_mixing.commands[2])"/>
     <set servo="MOTOR_4"   value="($th_hold? -9600 : motor_mixing.commands[3])"/>
@@ -193,7 +181,20 @@
     <set servo="MOTOR_9"   value="($th_hold? -9600 : motor_mixing.commands[8])"/>
     <set servo="MOTOR_10"  value="($th_hold? -9600 : motor_mixing.commands[9])"/>
     <set servo="MOTOR_11"  value="($th_hold? -9600 : motor_mixing.commands[10])"/>
-    <set servo="MOTOR_12"  value="($th_hold? -9600 : motor_mixing.commands[11])"/>
+    <set servo="MOTOR_12"  value="($th_hold? -9600 : motor_mixing.commands[11])"/> -->
+
+    <set servo="MOTOR_1"   value="(motor_mixing.commands[0])"/>
+    <set servo="MOTOR_2"   value="(motor_mixing.commands[1])"/>
+    <set servo="MOTOR_3"   value="(motor_mixing.commands[2])"/>
+    <set servo="MOTOR_4"   value="(motor_mixing.commands[3])"/>
+    <set servo="MOTOR_5"   value="(motor_mixing.commands[4])"/>
+    <set servo="MOTOR_6"   value="(motor_mixing.commands[5])"/>
+    <set servo="MOTOR_7"   value="(motor_mixing.commands[6])"/>
+    <set servo="MOTOR_8"   value="(motor_mixing.commands[7])"/>
+    <set servo="MOTOR_9"   value="(motor_mixing.commands[8])"/>
+    <set servo="MOTOR_10"  value="(motor_mixing.commands[9])"/>
+    <set servo="MOTOR_11"  value="(motor_mixing.commands[10])"/>
+    <set servo="MOTOR_12"  value="(motor_mixing.commands[11])"/>
  
     <!-- Removed ApplyDiff for differential control -->
     <set servo="AIL_1"     value="-2*@PITCH + (  2*@YAW)"/>
@@ -349,10 +350,10 @@
   </section>
 
   <section name="AUTOPILOT">
-    <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO1"  value="AP_MODE_FORWARD"/>
-    <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>
-    <define name="MODE_STARTUP"  value="AP_MODE_NAV"/>
+    <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
+    <define name="MODE_AUTO1"  value="AP_MODE_RC_DIRECT"/>
+    <define name="MODE_AUTO2"  value="AP_MODE_RC_DIRECT"/>
+    <define name="MODE_STARTUP"  value="AP_MODE_RC_DIRECT"/>
   </section>
 
   <section name="BAT">
