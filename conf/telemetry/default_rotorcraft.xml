@@ -37,8 +37,10 @@
       <message name="INS_EKF2"                 period=".25"/>
       <message name="AHRS_REF_QUAT" 	       period=".25"/>
       <message name="ACTUATORS" 	       period=".25"/>
-      <message name="ROT_WING" 	               period=".25"/>
+      <message name="ROT_WING_EFF" 	       period=".25"/>
+      <message name="ROT_WING_CONTROLLER"      period=".25"/>
       <message name="INDI_G" 	               period=".25"/>
+      <message name="AIRSPEED_MS45XX" 	       period=".25"/>
     </mode>	
 
     <mode name="ppm">
@@ -218,8 +220,10 @@
 		<message name="STAB_ATTITUDE_INDI" period="0.002"/>
 		<message name="PPM" period="0.05"/>
 		<message name="INDI_G" period="0.1"/>
-		<message name="ROT_WING" period="1.0"/>
+		<message name="ROT_WING_EFF" period="1.0"/>
+		<message name="ROT_WING_CONTROLLER"      period=".25"/>
 		<!-- <message name="WINDTUNNEL_MEAS"          period="0.005"/> -->
+		<message name="AIRSPEED_MS45XX" 	       period=".25"/>
 	</mode>
 </process>
 
