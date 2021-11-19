@@ -28,9 +28,6 @@
 
 #include "stdint.h"
 
-// Define module settings
-extern uint8_t rot_wing_angle_deg;
-
 // Define module functions
 extern void ctrl_eff_scheduling_rotating_wing_drone_init(void);
 extern void ctrl_eff_scheduling_rotating_wing_drone_periodic(void);
