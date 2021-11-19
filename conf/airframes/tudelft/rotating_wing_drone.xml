@@ -46,7 +46,22 @@
             <configure VALUE="I2C3" NAME="MAG_IST8310_I2C_DEV"/>
         </module>
 
+        <module name="airspeed" type="ms45xx_i2c">
+            <define name="USE_I2C4"/>
+            <define name="MS45XX_I2C_DEV" value="i2c4"/>
+            <define name="USE_AIRSPEED" value="TRUE"/>
+        </module>
+
         <module NAME="ctrl_effectiveness_scheduling_rotating_wing_drone"/>
+        <module NAME="wing_rotation_controller">
+            <define VALUE="3190" NAME="WING_ROTATION_POSITION_ADC_0"/>
+            <define VALUE="550"  NAME="WING_ROTATION_POSITION_ADC_90"/>
+            <define VALUE="-20000"  NAME="WING_ROTATION_P_GAIN"/>
+            <define VALUE="9600"  NAME="WING_ROTATION_MAX_CMD"/>
+            <define VALUe="300" NAME="WING_ROTATION_DEADZONE_PPRZ_CMD"/>
+            <define VALUE="TRUE" NAME="USE_ADC_5"/>
+            <define VALUE="TRUE" NAME="USE_ADC_6"/>
+        </module>
 
 
     </firmware>
@@ -60,8 +75,8 @@
         <servo NO="5" NEUTRAL="1500" NAME="AIL_RIGHT" MIN="1100" MAX="1900"/>
         <servo NO="6" NEUTRAL="1500" NAME="VTAIL_LEFT" MIN="1100" MAX="1900"/>
         <servo NO="7" NEUTRAL="1500" NAME="VTAIL_RIGHT" MIN="1100" MAX="1900"/>
-        <servo NO="8" NEUTRAL="1100" NAME="MOTOR_FWD" MIN="1000" MAX="2000"/>
-        <servo NO="9" NEUTRAL="1100" NAME="WING_ROT" MIN="1100" MAX="1900"/>
+        <servo NO="8" NEUTRAL="1000" NAME="MOTOR_FWD" MIN="1000" MAX="2000"/>
+        <servo NO="9" NEUTRAL="1507" NAME="WING_ROT" MIN="1000" MAX="2000"/>
     </servos>
 
     <commands>
@@ -95,8 +110,8 @@
         <set VALUE="0" SERVO="AIL_RIGHT"/>
         <set VALUE="0" SERVO="VTAIL_LEFT"/>
         <set VALUE="0" SERVO="VTAIL_RIGHT"/>
-        <set VALUE="-MAX_PPRZ" SERVO="MOTOR_FWD"/>
-        <set VALUE="-MAX_PPRZ" SERVO="WING_ROT"/>
+        <set VALUE="autopilot_get_motors_on() ? RadioControlValues(RADIO_AUX3) : -MAX_PPRZ" SERVO="MOTOR_FWD"/>
+        <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="WING_ROT"/>
     </command_laws>
 
     <section NAME="MISC">
@@ -130,12 +145,12 @@
         <define VALUE="4.700654855386415" NAME="ACCEL_X_SENS" INTEGER="16"/>
         <define VALUE="4.898790938271689" NAME="ACCEL_Y_SENS" INTEGER="16"/>
         <define VALUE="4.84846920056402" NAME="ACCEL_Z_SENS" INTEGER="16"/>
-        <define VALUE="7" NAME="MAG_X_NEUTRAL"/>
-        <define VALUE="5" NAME="MAG_Y_NEUTRAL"/>
-        <define VALUE="-6" NAME="MAG_Z_NEUTRAL"/>
-        <define VALUE="12.877116122504509" NAME="MAG_X_SENS" INTEGER="16"/>
-        <define VALUE="13.120879701323037" NAME="MAG_Y_SENS" INTEGER="16"/>
-        <define VALUE="15.522979897859624" NAME="MAG_Z_SENS" INTEGER="16"/>
+        <define name="MAG_X_NEUTRAL" value="-10"/>
+	<define name="MAG_Y_NEUTRAL" value="-2"/>
+	<define name="MAG_Z_NEUTRAL" value="15"/>
+	<define name="MAG_X_SENS" value="13.381846583778266" integer="16"/>
+	<define name="MAG_Y_SENS" value="11.574542838155065" integer="16"/>
+	<define name="MAG_Z_SENS" value="10.328369665473552" integer="16"/>
         <define VALUE="0." UNIT="deg" NAME="BODY_TO_IMU_PHI"/>
         <define VALUE="0." UNIT="deg" NAME="BODY_TO_IMU_THETA"/>
         <define VALUE="0." UNIT="deg" NAME="BODY_TO_IMU_PSI"/>
@@ -168,11 +183,11 @@
     </section>
 
     <section PREFIX="STABILIZATION_INDI_" NAME="STABILIZATION_ATTITUDE_INDI">
-        <define name="G1_ROLL"      value="{0.00 , -2.50,   0.00,   2.50}"/>
-        <define name="G1_PITCH"     value="{5.00,   0.00,   -5.00,  0.00}"/>
-        <define name="G1_YAW"       value="{-0.125,  0.125,   -0.125,  0.125}"/>
+        <define name="G1_ROLL"      value="{0.00 , -12.8,   0.00,   12.8}"/>
+        <define name="G1_PITCH"     value="{2.7,   0.00,   -2.7,  0.00}"/>
+        <define name="G1_YAW"       value="{-0.115,  0.115,   -0.115,  0.115}"/>
         <define name="G1_THRUST"    value="{-0.3,  -0.3,    -0.3,  -0.3 }"/>
-        <define name="G2"           value="{-0.0375, 0.0375, -0.0375, 0.0375}"/>
+        <define name="G2"           value="{-0.06, 0.06, -0.06, 0.06}"/>
 
         <!-- reference acceleration for attitude control -->
         <define name="REF_ERR_P" value="150.0"/>
@@ -198,13 +213,13 @@
         <define name="WLS_PRIORITIES" value="{1000.f, 1000.f, 1.f, 100.f}"/>
 
         <!-- Adaptive Learning Rate -->
-        <define name="USE_ADAPTIVE" value="FALSE"/>
-        <define name="ADAPTIVE_MU" value="0.0001"/>
+        <define name="USE_ADAPTIVE" value="TRUE"/>
+        <define name="ADAPTIVE_MU" value="0.001"/>
     </section>
 
     <section name="ROT_WING_EFF_SCHEDULING" prefix="ROT_WING_SCHED_">
-        <define name="G1_Q_90" value="{-4.43, 4.43}"/>
-        <define name="Y_ARM_LENGTH" value="0.31"/>
+        <define name="G1_Q_90" value="{-2.77, 2.77}"/>
+        <define name="Y_ARM_LENGTH" value="0.365"/>
     </section> 
 
     <section PREFIX="GUIDANCE_V_" NAME="GUIDANCE_V">
@@ -226,9 +241,9 @@
 
     <section NAME="AUTOPILOT">
         <define VALUE="AP_MODE_ATTITUDE_DIRECT" NAME="MODE_MANUAL"/>
-        <define VALUE="AP_MODE_FORWARD" NAME="MODE_AUTO1"/>
-        <define VALUE="AP_MODE_NAV" NAME="MODE_AUTO2"/>
-        <define VALUE="AP_MODE_NAV" NAME="MODE_STARTUP"/>
+        <define VALUE="AP_MODE_ATTITUDE_DIRECT" NAME="MODE_AUTO1"/>
+        <define VALUE="AP_MODE_ATTITUDE_DIRECT" NAME="MODE_AUTO2"/>
+        <define VALUE="AP_MODE_ATTITUDE_DIRECT" NAME="MODE_STARTUP"/>
     </section>
 
     <section NAME="GCS">
