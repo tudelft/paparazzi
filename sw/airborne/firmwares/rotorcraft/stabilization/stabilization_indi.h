@@ -29,9 +29,16 @@
 // Scaling for the control effectiveness to make it readible
 #define INDI_G_SCALING 1000.0
 
+extern float indi_g_factor;
+
 extern struct Int32Quat   stab_att_sp_quat;  ///< with #INT32_QUAT_FRAC
 extern struct Int32Eulers stab_att_sp_euler; ///< with #INT32_ANGLE_FRAC
+extern float g1[INDI_OUTPUTS][INDI_NUM_ACT];
+extern float g2[INDI_NUM_ACT];
 extern float g1g2[INDI_OUTPUTS][INDI_NUM_ACT];
+extern float g1_est[INDI_OUTPUTS][INDI_NUM_ACT];
+extern float g2_est[INDI_NUM_ACT];
+extern float g1_init[INDI_OUTPUTS][INDI_NUM_ACT];
 extern float actuator_state_filt_vect[INDI_NUM_ACT];
 
 extern bool indi_use_adaptive;

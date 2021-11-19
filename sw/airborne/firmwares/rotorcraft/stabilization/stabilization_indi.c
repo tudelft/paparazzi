@@ -47,6 +47,7 @@
 
 // Factor that the estimated G matrix is allowed to deviate from initial one
 #define INDI_ALLOWED_G_FACTOR 2.0
+float indi_g_factor = INDI_ALLOWED_G_FACTOR;
 
 #ifdef STABILIZATION_INDI_FILT_CUTOFF_P
 #define STABILIZATION_INDI_FILTER_ROLL_RATE TRUE
@@ -723,6 +724,17 @@ void lms_estimation(void)
 #if STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
   // Calculate the inverse of (G1+G2)
   calc_g1g2_pseudo_inv();
+#else
+  //sum of G1 and G2
+  for (i = 0; i < INDI_OUTPUTS; i++) {
+    for (int8_t j = 0; j < INDI_NUM_ACT; j++) {
+      if (i != 2) {
+        g1g2[i][j] = g1[i][j] / INDI_G_SCALING;
+      } else {
+        g1g2[i][j] = (g1[i][j] + g2[j]) / INDI_G_SCALING;
+      }
+    }
+  }
 #endif
 }
 
@@ -814,11 +826,11 @@ static void bound_g_mat(void)
     // Limit the values of the estimated G1 matrix
     for (i = 0; i < INDI_OUTPUTS; i++) {
       if (g1_init[i][j] > 0.0) {
-        max_limit = g1_init[i][j] * INDI_ALLOWED_G_FACTOR;
-        min_limit = g1_init[i][j] / INDI_ALLOWED_G_FACTOR;
+        max_limit = g1_init[i][j] * indi_g_factor;
+        min_limit = g1_init[i][j] / indi_g_factor;
       } else {
-        max_limit = g1_init[i][j] / INDI_ALLOWED_G_FACTOR;
-        min_limit = g1_init[i][j] * INDI_ALLOWED_G_FACTOR;
+        max_limit = g1_init[i][j] / indi_g_factor;
+        min_limit = g1_init[i][j] * indi_g_factor;
       }
 
       if (g1_est[i][j] > max_limit) {
@@ -831,11 +843,11 @@ static void bound_g_mat(void)
 
     // Do the same for the G2 matrix
     if (g2_init[j] > 0.0) {
-      max_limit = g2_init[j] * INDI_ALLOWED_G_FACTOR;
-      min_limit = g2_init[j] / INDI_ALLOWED_G_FACTOR;
+      max_limit = g2_init[j] * indi_g_factor;
+      min_limit = g2_init[j] / indi_g_factor;
     } else {
-      max_limit = g2_init[j] / INDI_ALLOWED_G_FACTOR;
-      min_limit = g2_init[j] * INDI_ALLOWED_G_FACTOR;
+      max_limit = g2_init[j] / indi_g_factor;
+      min_limit = g2_init[j] * indi_g_factor;
     }
 
     if (g2_est[j] > max_limit) {
