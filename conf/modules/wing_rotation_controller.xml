@@ -1,0 +1,28 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="wing_rotation_controller" dir="rot_wing_drone">
+  <doc>
+    <description>Module that controls the wing rotation of the rotating wing drone</description>
+  </doc>
+  <settings>
+    <dl_settings NAME="wing_rotation">
+      <dl_settings NAME="wing_rot">
+        <dl_setting MAX="9600" MIN="0" STEP="1" VAR="wing_rotation.pprz_cmd_deadzone" shortname="pprz_cmd_deadzone"/>
+        <dl_setting MAX="90" MIN="0" STEP="1" VAR="wing_rotation.wing_angle_deg_sp" shortname="wing_sp_deg"/>
+        <dl_setting MAX="1000" MIN="0" STEP="1" VAR="wing_rotation.cmd_threshold_0" shortname="cmd_thr_0"/>
+        <dl_setting MAX="2000" MIN="0" STEP="1" VAR="wing_rotation.cmd_threshold_90" shortname="cmd_thr_90"/>
+        <dl_setting MAX="0.5" MIN="0" STEP="0.001" VAR="wing_rotation.threshold_servo_rate_limit" shortname="thr_rate"/>
+        <dl_setting MAX="30000" MIN="-30000" STEP="1" VAR="wing_rotation.p_gain" shortname="p_gain"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <header>
+    <file name="wing_rotation_controller.h"/>
+  </header>
+  <init fun="wing_rotation_init()"/>
+  <periodic fun="wing_rotation_periodic()" freq="1.0" autorun="TRUE"/>
+  <event fun="wing_rotation_event()"/>
+  <makefile>
+    <file name="wing_rotation_controller.c"/>
+    <test/>
+  </makefile>
+</module>
