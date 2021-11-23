@@ -92,7 +92,7 @@
     </module>
 
     <module name="actuators" type="pwm">
-      <define name="SERVO_HZ" value="400"/>
+      <define name="SERVO_HZ" value="200"/>
     </module>
 
     <!-- SBUS out is AETR by default but our transmitter sends TAER -->
@@ -144,6 +144,7 @@
 
     <module name="control"/>
     <module name="navigation"/>
+    <!--    <module name="auto1_commands"/>-->
     <!--<module name="imu_quality_assessment"/>--><!--needs fixing for FW fix test then disable after initial tuning-->
     <module name="send_imu_mag_current"/> <!-- Can be Disabled after one time calibration, quite the same for all Discos -->
 
@@ -248,7 +249,7 @@
   <section name="AUTO1" prefix="AUTO1_">
     <define name="MAX_ROLL" value="45" unit="deg"/> <!-- More authority while test flying for first time -->
     <define name="MAX_PITCH" value="40" unit="deg"/> <!-- More authority while test flying for first time -->
-    <define name="MAX_YAW_RATE" value="50" unit="deg/s"/>  <!-- TODO Tune -->
+    <define name="MAX_YAW_RATE" value="RaddOfDeg(100)"/>  <!-- TODO Tune -->
   </section>
 
   <!-- ************************ TRIM ***************************** -->
@@ -349,8 +350,6 @@
   <!-- ************************* H ************************* -->
   <section name="HORIZONTAL CONTROL" prefix="H_CTL_">
 
-    <define name="YAW_LOOP" value="TRUE"/>
-
     <define name="COURSE_PGAIN" value="1.25"/><!-- TODO: Tune values -->
     <define name="COURSE_DGAIN" value="0.2"/><!-- TODO: Tune values -->
     <define name="COURSE_TAU" value="0.5"/><!-- TODO: Tune values -->
@@ -379,6 +378,12 @@
     <define name="PITCH_KFFA" value="10."/>
     <define name="PITCH_KFFD" value="0."/>
 
+    <define name="YAW_LOOP" value="TRUE"/>
+    <define name="YAW_DGAIN" value="5000."/>
+
+    <define name="YAW_TRIM_NY" value="TRUE"/>
+    <define name="YAW_NY_IGAIN" value="5000."/>
+
     <define name="ELEVATOR_OF_ROLL" value="1500" unit="PPRZ_MAX"/>
     <define name="ROLL_SLEW" value="0.5"/> <!-- TODO: Determine best value-->
     <define name="ROLL_ATTITUDE_GAIN" value="11000."/>
@@ -388,7 +393,8 @@
     <define name="ROLL_KFFD" value="0"/>
 
     <!--<define name="PITCH_OF_ROLL" value="4." unit="deg"/>--><!-- TODO: : ?-->
-    <define name="AILERON_OF_THROTTLE" value="0.0"/><!-- TODO: : ?-->
+    <define name="AILERON_OF_THROTTLE" value="0"/><!-- TODO: : ?-->
+    <define name="COMMAND_YAW_TRIM" value="0"/>
 
   </section>
 
@@ -428,13 +434,13 @@
     <!-- airspeed control -->
     <!-- Best to never set AUTO_AIRSPEED_SETPOINT lower than airframe stall speed if you hate repairs ;) -->
     <!-- investigate: howto if higher then _AIRSPEED_SETPOINT then airframe tries to maintain a constand ground speed UNKNOWN -->
-    <define name="AUTO_AIRSPEED_SETPOINT" value="15.0" unit="m/s"/>
-    <define name="AUTO_AIRSPEED_THROTTLE_PGAIN" value="0.12" unit="%/(m/s)"/>
-    <define name="AUTO_AIRSPEED_THROTTLE_DGAIN" value="0.09"/>
-    <define name="AUTO_AIRSPEED_THROTTLE_IGAIN" value="0.02"/>
-    <define name="AUTO_AIRSPEED_PITCH_PGAIN" value="0.12" unit="degree/(m/s)"/>
-    <define name="AUTO_AIRSPEED_PITCH_DGAIN" value="0.0"/>
-    <define name="AUTO_AIRSPEED_PITCH_IGAIN" value="0.06"/>
+<!--    <define name="AUTO_AIRSPEED_SETPOINT" value="15.0" unit="m/s"/>-->
+<!--    <define name="AUTO_AIRSPEED_THROTTLE_PGAIN" value="0.12" unit="%/(m/s)"/>-->
+<!--    <define name="AUTO_AIRSPEED_THROTTLE_DGAIN" value="0.09"/>-->
+<!--    <define name="AUTO_AIRSPEED_THROTTLE_IGAIN" value="0.02"/>-->
+<!--    <define name="AUTO_AIRSPEED_PITCH_PGAIN" value="0.12" unit="degree/(m/s)"/>-->
+<!--    <define name="AUTO_AIRSPEED_PITCH_DGAIN" value="0.0"/>-->
+<!--    <define name="AUTO_AIRSPEED_PITCH_IGAIN" value="0.06"/>-->
 
     <define name="AIRSPEED_MAX" value="23.0" unit="m/s"/>
     <define name="AIRSPEED_MIN" value="9.0" unit="m/s"/>
