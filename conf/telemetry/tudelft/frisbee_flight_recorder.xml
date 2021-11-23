@@ -129,6 +129,7 @@
 <!--      <message name="FBW_STATUS"          period="1.0"/>-->
       <message name="DATALINK_REPORT"     period="1.0"/>
       <message name="ESC"                 period="0.1"/>
+      <message name="ENERGY"              period="0.05"/>
     </mode>
   </process>
 </telemetry>
