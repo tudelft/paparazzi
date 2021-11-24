@@ -207,20 +207,21 @@
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness, can be obtained by switching on "adaptive" in the indi settings -->
     <!-- Bebop 45 -->
-<!--
+
     <define name="G1_P" value="0.100"/>
     <define name="G1_Q" value="0.050"/>
     <define name="G1_R" value="0.0010"/>
     <define name="G2_R" value="0.236"/>
--->
+
 
     <!-- Bebop 48 -->
 
+<!--
     <define name="G1_P" value="0.05783"/>
     <define name="G1_Q" value="0.048"/>
     <define name="G1_R" value="0.00091"/>
     <define name="G2_R" value="0.2746"/>
-
+-->
 
     <!-- Here it is assumed that your removed the damping from your bebop2!
          The dampers do not really damp, but cause oscillation. By removing/

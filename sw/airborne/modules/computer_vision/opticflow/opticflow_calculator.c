@@ -508,6 +508,22 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
 
     result->divergence = fit_info.divergence;
     result->surface_roughness = fit_info.surface_roughness;
+
+    // Flow fit with rotations:
+    error_threshold = 10.0f;
+    n_iterations_RANSAC = 20;
+    n_samples_RANSAC = 5;
+    success_fit = analyze_flow_field(vectors, result->tracked_cnt, error_threshold, n_iterations_RANSAC,
+                                     n_samples_RANSAC, img->w, img->h, OPTICFLOW_CAMERA.camera_intrinsics.focal_x, &fit_info);
+
+    // Get differences to compare with rotations:
+    float phi_diff = opticflow->img_gray.eulers.phi - opticflow->prev_img_gray.eulers.phi;
+    float theta_diff = opticflow->img_gray.eulers.theta - opticflow->prev_img_gray.eulers.theta;
+    float psi_diff = opticflow->img_gray.eulers.psi - opticflow->prev_img_gray.eulers.psi;
+
+
+
+
   } else {
     result->divergence = 0.0f;
     result->surface_roughness = 0.0f;
