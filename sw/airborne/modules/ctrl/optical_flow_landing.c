@@ -879,8 +879,11 @@ void vertical_ctrl_module_run(bool in_flight)
   //printf("flow x, y = %f, %f\n", new_flow_x, new_flow_y);
   // negative command is flying forward, positive back.
 
-  lp_flow_x += (new_flow_x - lp_flow_x) * lp_factor;
-  lp_flow_y += (new_flow_y - lp_flow_y) * lp_factor;
+  //lp_flow_x += (optical_flow_x - lp_flow_x) * lp_factor;
+  //lp_flow_y += (optical_flow_y - lp_flow_y) * lp_factor;
+  lp_flow_x = of_landing_ctrl.lp_factor_prediction *lp_flow_x + (1.0f - of_landing_ctrl.lp_factor_prediction) * optical_flow_x;
+  lp_flow_y = of_landing_ctrl.lp_factor_prediction *lp_flow_y + (1.0f - of_landing_ctrl.lp_factor_prediction) * optical_flow_y;
+
 
   float error_pitch = new_flow_y - of_landing_ctrl.omega_FB;
   float error_roll = new_flow_x - of_landing_ctrl.omega_LR;
@@ -897,26 +900,26 @@ void vertical_ctrl_module_run(bool in_flight)
   float pitch_cmd;
   float roll_cmd;
   float add_active_sine = 0.0f;
-
+/*
   if(ACTIVE_RATES) {
       float sine_period = 0.05;
       float sine_amplitude = RadOfDeg(1.0);
       float sine_time = get_sys_time_float();
       add_active_sine = sine_amplitude * sinf((1.0f/sine_period) * sine_time * 2 * M_PI);
       printf("add_active_sine = %f\n", add_active_sine);
-  }
+  }*/
   if(!HORIZONTAL_RATE_CONTROL) {
       // normal operation:
       pitch_cmd = RadOfDeg(of_landing_ctrl.pitch_trim + error_pitch *  P_hor +  I_hor * sum_pitch_error);
       // add_active_sine = 0.0f in normal operation:
       roll_cmd = RadOfDeg(of_landing_ctrl.roll_trim + error_roll *  P_hor +  I_hor * sum_roll_error) + add_active_sine;
-  }
+  }/*
   else {
       struct FloatEulers *eulers = stateGetNedToBodyEulers_f();
       pitch_cmd = eulers->theta + RadOfDeg(of_landing_ctrl.pitch_trim + error_pitch *  P_hor +  I_hor * sum_pitch_error);
       roll_cmd = eulers->phi + RadOfDeg(of_landing_ctrl.roll_trim + error_roll *  P_hor +  I_hor * sum_roll_error);
       printf("Current roll = %f, commanded roll = %f\n", eulers->phi, roll_cmd);
-  }
+  }*/
   BoundAbs( pitch_cmd , RadOfDeg( 10.0 ) );
   BoundAbs( roll_cmd , RadOfDeg( 10.0 ) );
   float psi_cmd = attitude->psi; // control of psi in simulation is still a bit enthusiastic! Increase the associated control effectiveness.

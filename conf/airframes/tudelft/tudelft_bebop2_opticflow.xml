@@ -213,7 +213,9 @@
     <define name="G1_R" value="0.0010"/>
     <define name="G2_R" value="0.236"/>
 -->
+
     <!-- Bebop 48 -->
+
     <define name="G1_P" value="0.05783"/>
     <define name="G1_Q" value="0.048"/>
     <define name="G1_R" value="0.00091"/>
@@ -305,6 +307,7 @@
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
 -->
+
 
 
     <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
