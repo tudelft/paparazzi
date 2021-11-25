@@ -86,14 +86,14 @@
         <dl_setting var="indi_gains_over.p.theta" min="0" step=".001" max="30" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_ERR_Q" shortname="INDI_kp_pitch" persistent="true"/>
         <dl_setting var="indi_gains_over.d.theta" min="0" step=".001" max="30" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_ERR_Q" shortname="INDI_kd_pitch" persistent="true"/>
 
-        <dl_setting var="indi_gains_over.p.psi" min="0" step=".001" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_ERR_R" shortname="INDI_kp_yaw" persistent="true"/>
-        <dl_setting var="indi_gains_over.d.psi" min="0" step=".001" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_ERR_R" shortname="INDI_kd_yaw" persistent="true"/>
+        <dl_setting var="indi_gains_over.p.psi" min="0" step=".001" max="10" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_ERR_R" shortname="INDI_kp_yaw" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.psi" min="0" step=".001" max="10" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_ERR_R" shortname="INDI_kd_yaw" persistent="true"/>
 
-        <dl_setting var="indi_gains_over.p.x" min="0" step=".001" max="3" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_ERR_X" shortname="INDI_kp_x" persistent="true"/>
-        <dl_setting var="indi_gains_over.d.x" min="0" step=".001" max="3" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_RATE_X" shortname="INDI_kd_x" persistent="true"/>
+        <dl_setting var="indi_gains_over.p.x" min="0" step=".001" max="10" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_ERR_X" shortname="INDI_kp_x" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.x" min="0" step=".001" max="10" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_RATE_X" shortname="INDI_kd_x" persistent="true"/>
 
-        <dl_setting var="indi_gains_over.p.y" min="0" step=".001" max="3" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_ERR_Y" shortname="INDI_kp_y" persistent="true"/>
-        <dl_setting var="indi_gains_over.d.y" min="0" step=".001" max="3" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_RATE_Y" shortname="INDI_kd_y" persistent="true"/>
+        <dl_setting var="indi_gains_over.p.y" min="0" step=".001" max="10" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_ERR_Y" shortname="INDI_kp_y" persistent="true"/>
+        <dl_setting var="indi_gains_over.d.y" min="0" step=".001" max="10" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_RATE_Y" shortname="INDI_kd_y" persistent="true"/>
 
         <dl_setting var="indi_gains_over.p.z" min="0" step=".001" max="30" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_ERR_Z" shortname="INDI_kp_z" persistent="true"/>
         <dl_setting var="indi_gains_over.d.z" min="0" step=".001" max="30" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_RATE_Z" shortname="INDI_kd_z" persistent="true"/>
