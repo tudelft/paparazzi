@@ -39,7 +39,7 @@ float rot_wing_y_length = ROT_WING_SCHED_Y_ARM_LENGTH;
 #endif
 
 // Define g1 p and q values for roll and pitch for 0 and 90 degrees rotation angles for the right and left motors
-float rot_wing_initial_g1_p[INDI_OUTPUTS] = STABILIZATION_INDI_G1_ROLL;
+float rot_wing_initial_g1_p[INDI_NUM_ACT] = STABILIZATION_INDI_G1_ROLL;
 
 float rot_wing_g1_p_0[2];
 float rot_wing_g1_q_90[2] = ROT_WING_SCHED_G1_Q_90; 
