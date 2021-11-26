@@ -196,6 +196,31 @@ void init_filters(void);
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
+static void send_att_full_indi(struct transport_tx *trans, struct link_device *dev)
+{
+  struct FloatRates *body_rates = stateGetBodyRates_f();
+  struct Int32Vect3 *body_accel_i = stateGetAccelBody_i();
+  struct FloatVect3 body_accel_f_telem;
+  ACCELS_FLOAT_OF_BFP(body_accel_f_telem, *body_accel_i);
+
+  int16_t actuators_telem[INDI_NUM_ACT]; 
+  for (int8_t i = 0; i < INDI_NUM_ACT; i++)
+  {
+    actuators_telem[i] = (int16_t) indi_u[i];
+  }
+
+  pprz_msg_send_STAB_ATTITUDE_FULL_INDI(trans, dev, AC_ID,
+                                        &body_rates->p,
+                                        &body_rates->q,
+                                        &body_rates->r,
+                                        &body_accel_f_telem.z,
+                                        &angular_accel_ref.p,
+                                        &angular_accel_ref.q,
+                                        &angular_accel_ref.r,
+                                        INDI_NUM_ACT, actuators_telem
+                                        );
+}
+
 static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_INDI_G(trans, dev, AC_ID, INDI_NUM_ACT, g1_est[0],
@@ -260,6 +285,7 @@ void stabilization_indi_init(void)
   }
 
 #if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_FULL_INDI, send_att_full_indi);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_G, send_indi_g);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
 #endif
