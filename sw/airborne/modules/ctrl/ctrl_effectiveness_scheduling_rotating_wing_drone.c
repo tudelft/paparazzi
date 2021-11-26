@@ -26,6 +26,7 @@
 #include "modules/ctrl/ctrl_effectiveness_scheduling_rotating_wing_drone.h"
 #include "modules/rot_wing_drone/wing_rotation_controller.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
+#include "state.h"
 
 // Define arm length
 #ifndef ROT_WING_SCHED_Y_ARM_LENGTH // Length of rotating arm from CG to side motor [m]
@@ -47,6 +48,28 @@ float rot_wing_side_motors_g1_q_90[2] = ROT_WING_SCHED_G1_Q_90;
 // Define control effectiveness variables in roll and pitch for side motors
 float rot_wing_g1_p_side_motors[2];
 float rot_wing_g1_q_side_motors[2];
+
+// Define polynomial constants for effectiveness values for aerodynamic surfaces
+#ifndef ROT_WING_SCHED_G1_AERO_CONST_P
+#error "ROT_WING_SCHED_AERO_CONST_P should be defined"
+#endif
+
+#ifndef ROT_WING_SCHED_G1_AERO_CONST_Q
+#error "ROT_WING_SCHED_AERO_CONST_Q should be defined"
+#endif
+
+#ifndef ROT_WING_SCHED_G1_AERO_CONST_R
+#error "ROT_WING_SCHED_AERO_CONST_R should be defined"
+#endif
+
+float rot_wing_aerodynamic_eff_const_g1_p[4] = ROT_WING_SCHED_G1_AERO_CONST_P;
+float rot_wing_aerodynamic_eff_const_g1_q[4] = ROT_WING_SCHED_G1_AERO_CONST_Q;
+float rot_wing_aerodynamic_eff_const_g1_r[4] = ROT_WING_SCHED_G1_AERO_CONST_R;
+
+// Define control effectiveness variables in roll, pitch and yaw for aerodynamic surfaces {AIL_LEFT, AIL_RIGHT, VTAIL_LEFT, VTAIL_RIGHT}
+float rot_wing_g1_p_aerodynamic_surf[4] = {0.0, 0.0, 0.0, 0.0};
+float rot_wing_g1_q_aerodynamic_surf[4] = {0.0, 0.0, 0.0, 0.0};
+float rot_wing_g1_r_aerodynamic_surf[4] = {0.0, 0.0, 0.0, 0.0};
 
 // Define initialization values
 float g2_startup[INDI_NUM_ACT] = STABILIZATION_INDI_G2; //scaled by INDI_G_SCALING
@@ -87,35 +110,65 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
   float c_rot_wing_angle = cosf(rot_wing_angle_rad);
   float s_rot_wing_angle = sinf(rot_wing_angle_rad);
 
-  rot_wing_g1_p_side_motors[0] = c_rot_wing_angle * rot_wing_side_motors_g1_p_0[0] / INDI_G_SCALING;
-  rot_wing_g1_p_side_motors[1] = c_rot_wing_angle * rot_wing_side_motors_g1_p_0[1] / INDI_G_SCALING;
+  rot_wing_g1_p_side_motors[0] = c_rot_wing_angle * rot_wing_side_motors_g1_p_0[0];
+  rot_wing_g1_p_side_motors[1] = c_rot_wing_angle * rot_wing_side_motors_g1_p_0[1];
 
-  rot_wing_g1_q_side_motors[0] = s_rot_wing_angle * rot_wing_side_motors_g1_q_90[0] / INDI_G_SCALING;
-  rot_wing_g1_q_side_motors[1] = s_rot_wing_angle * rot_wing_side_motors_g1_q_90[1] / INDI_G_SCALING;
+  rot_wing_g1_q_side_motors[0] = s_rot_wing_angle * rot_wing_side_motors_g1_q_90[0];
+  rot_wing_g1_q_side_motors[1] = s_rot_wing_angle * rot_wing_side_motors_g1_q_90[1];
+
+  // Effectiveness values of aerodynamic surfaces based on airspeed
+  float airspeed = stateGetAirspeed_f();
+  float airspeed2 = airspeed * airspeed;
+
+  for (int i = 0; i < 4; i++) {
+    rot_wing_g1_p_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[i];
+    rot_wing_g1_q_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[i];
+    rot_wing_g1_r_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_r[i];
+  }
 
   // Update init matrix if adaptive switched on to adapt to rotating wing effectiveness
   #ifdef STABILIZATION_INDI_USE_ADAPTIVE
     if (autopilot_in_flight())
     {
       // add delta g1 to g1_est to compensate for wing rotation
-      g1_est[0][1] = (g1_est[0][1] + (rot_wing_g1_p_side_motors[0] * INDI_G_SCALING - g1_init[0][1]));
-      g1_est[0][3] = (g1_est[0][3] + (rot_wing_g1_p_side_motors[1] * INDI_G_SCALING - g1_init[0][3]));
-      g1_est[1][1] = (g1_est[1][1] + (rot_wing_g1_q_side_motors[0] * INDI_G_SCALING - g1_init[1][1]));
-      g1_est[1][3] = (g1_est[1][3] + (rot_wing_g1_q_side_motors[1] * INDI_G_SCALING - g1_init[1][3]));
+      g1_est[0][1] = (g1_est[0][1] + (rot_wing_g1_p_side_motors[0] - g1_init[0][1]));
+      g1_est[0][3] = (g1_est[0][3] + (rot_wing_g1_p_side_motors[1] - g1_init[0][3]));
+      g1_est[1][1] = (g1_est[1][1] + (rot_wing_g1_q_side_motors[0] - g1_init[1][1]));
+      g1_est[1][3] = (g1_est[1][3] + (rot_wing_g1_q_side_motors[1] - g1_init[1][3]));
 
       // Update g1 init matrices to current values
-      g1_init[0][1] = rot_wing_g1_p_side_motors[0] * INDI_G_SCALING; // Roll eff right motor
-      g1_init[0][3] = rot_wing_g1_p_side_motors[1] * INDI_G_SCALING; // Roll eff left motor
+      g1_init[0][1] = rot_wing_g1_p_side_motors[0]; // Roll eff right motor
+      g1_init[0][3] = rot_wing_g1_p_side_motors[1]; // Roll eff left motor
 
-      g1_init[1][1] = rot_wing_g1_q_side_motors[0] * INDI_G_SCALING; // Pitch eff right motor
-      g1_init[1][3] = rot_wing_g1_q_side_motors[1] * INDI_G_SCALING; // Pitch eff left motor
+      g1_init[1][1] = rot_wing_g1_q_side_motors[0]; // Pitch eff right motor
+      g1_init[1][3] = rot_wing_g1_q_side_motors[1]; // Pitch eff left motor
+
+      // Update values for aerodynamic surfaces
+      for (int i = 4; i < 8; i++) {
+        uint8_t j = i-4; // Index of actuator
+        g1_est[0][i] = (g1_est[0][i] + (rot_wing_g1_p_aerodynamic_surf[j] - g1_init[0][i]));
+        g1_est[1][i] = (g1_est[1][i] + (rot_wing_g1_q_aerodynamic_surf[j] - g1_init[1][i]));
+        g1_est[2][i] = (g1_est[2][i] + (rot_wing_g1_r_aerodynamic_surf[j] - g1_init[2][i]));
+
+        g1_init[0][i] = rot_wing_g1_p_aerodynamic_surf[j];
+        g1_init[1][i] = rot_wing_g1_q_aerodynamic_surf[j];
+        g1_init[2][i] = rot_wing_g1_r_aerodynamic_surf[j];
+      }
+
     } else { 
       // Update g1 init matrices to current values
-      g1_init[0][1] = rot_wing_g1_p_side_motors[0] * INDI_G_SCALING; // Roll eff right motor
-      g1_init[0][3] = rot_wing_g1_p_side_motors[1] * INDI_G_SCALING; // Roll eff left motor
+      g1_init[0][1] = rot_wing_g1_p_side_motors[0]; // Roll eff right motor
+      g1_init[0][3] = rot_wing_g1_p_side_motors[1]; // Roll eff left motor
 
-      g1_init[1][1] = rot_wing_g1_q_side_motors[0] * INDI_G_SCALING; // Pitch eff right motor
-      g1_init[1][3] = rot_wing_g1_q_side_motors[1] * INDI_G_SCALING; // Pitch eff left motor
+      g1_init[1][1] = rot_wing_g1_q_side_motors[0]; // Pitch eff right motor
+      g1_init[1][3] = rot_wing_g1_q_side_motors[1]; // Pitch eff left motor
+
+      for (int i = 4; i < 8; i++) {
+        uint8_t j = i-4; // Index of actuator
+        g1_init[0][i] = rot_wing_g1_p_aerodynamic_surf[j];
+        g1_init[1][i] = rot_wing_g1_q_aerodynamic_surf[j];
+        g1_init[2][i] = rot_wing_g1_r_aerodynamic_surf[j];
+      }
 
       // Direclty update g1g2 if not in flight ad adaptive INDI not activated if !in_flight
       //sum of G1 and G2
@@ -132,25 +185,45 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
       float_vect_copy(g1_est[0], g1_startup[0], INDI_OUTPUTS * INDI_NUM_ACT);
       float_vect_copy(g2_est, g2_startup, INDI_NUM_ACT);
 
-      g1g2[0][1] = rot_wing_g1_p_side_motors[0]; // Roll eff right motor
-      g1g2[0][3] = rot_wing_g1_p_side_motors[1]; // Roll eff left motor
+      g1g2[0][1] = rot_wing_g1_p_side_motors[0] / INDI_G_SCALING; // Roll eff right motor
+      g1g2[0][3] = rot_wing_g1_p_side_motors[1] / INDI_G_SCALING; // Roll eff left motor
 
-      g1g2[1][1] = rot_wing_g1_q_side_motors[0]; // Pitch eff right motor
-      g1g2[1][3] = rot_wing_g1_q_side_motors[1]; // Pitch eff left motor
+      g1g2[1][1] = rot_wing_g1_q_side_motors[0] / INDI_G_SCALING; // Pitch eff right motor
+      g1g2[1][3] = rot_wing_g1_q_side_motors[1] / INDI_G_SCALING; // Pitch eff left motor
 
-      g1_est[0][1] = rot_wing_g1_p_side_motors[0] * INDI_G_SCALING; // Roll eff right motor
-      g1_est[0][3] = rot_wing_g1_p_side_motors[1] * INDI_G_SCALING; // Roll eff left motor
+      g1_est[0][1] = rot_wing_g1_p_side_motors[0]; // Roll eff right motor
+      g1_est[0][3] = rot_wing_g1_p_side_motors[1]; // Roll eff left motor
 
-      g1_est[1][1] = rot_wing_g1_q_side_motors[0] * INDI_G_SCALING; // Pitch eff right motor
-      g1_est[1][3] = rot_wing_g1_q_side_motors[1] * INDI_G_SCALING; // Pitch eff left motor
+      g1_est[1][1] = rot_wing_g1_q_side_motors[0]; // Pitch eff right motor
+      g1_est[1][3] = rot_wing_g1_q_side_motors[1]; // Pitch eff left motor
+
+      // Update values for aerodynamic surfaces
+      for (int i = 4; i < 8; i++) {
+        uint8_t j = i-4; // Index of actuator
+        g1g2[0][i] = rot_wing_g1_p_aerodynamic_surf[j] / INDI_G_SCALING;
+        g1g2[1][i] = rot_wing_g1_q_aerodynamic_surf[j] / INDI_G_SCALING;
+        g1g2[2][i] = rot_wing_g1_r_aerodynamic_surf[j] / INDI_G_SCALING;
+
+        g1_est[0][i] = rot_wing_g1_p_aerodynamic_surf[j];
+        g1_est[1][i] = rot_wing_g1_q_aerodynamic_surf[j];
+        g1_est[2][i] = rot_wing_g1_r_aerodynamic_surf[j];
+      }
     }
 
     
   #else // Direclty update g1g2 matrix without adaptive
-    g1g2[0][1] = rot_wing_g1_p_side_motors[0]; // Roll eff right motor
-    g1g2[0][3] = rot_wing_g1_p_side_motors[1]; // Roll eff left motor
+    g1g2[0][1] = rot_wing_g1_p_side_motors[0] / INDI_G_SCALING; // Roll eff right motor
+    g1g2[0][3] = rot_wing_g1_p_side_motors[1] / INDI_G_SCALING; // Roll eff left motor
 
-    g1g2[1][1] = rot_wing_g1_q_side_motors[0]; // Pitch eff right motor
-    g1g2[1][3] = rot_wing_g1_q_side_motors[1]; // Pitch eff left motor
+    g1g2[1][1] = rot_wing_g1_q_side_motors[0] / INDI_G_SCALING; // Pitch eff right motor
+    g1g2[1][3] = rot_wing_g1_q_side_motors[1] / INDI_G_SCALING; // Pitch eff left motor
+
+    // Update values for aerodynamic surfaces
+    for (int i = 4; i < 8; i++) {
+      uint8_t j = i-4; // Index of actuator
+      g1g2[0][i] = rot_wing_g1_p_aerodynamic_surf[j] / INDI_G_SCALING;
+      g1g2[1][i] = rot_wing_g1_q_aerodynamic_surf[j] / INDI_G_SCALING;
+      g1g2[2][i] = rot_wing_g1_r_aerodynamic_surf[j] / INDI_G_SCALING;
+    }
   #endif // STABILIZATION_INDI_USE_ADAPTIVE
 }
