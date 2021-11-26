@@ -41,8 +41,8 @@ float rot_wing_y_length = ROT_WING_SCHED_Y_ARM_LENGTH;
 // Define g1 p and q values for roll and pitch for 0 and 90 degrees rotation angles for the right and left motors
 float rot_wing_initial_g1_p[INDI_NUM_ACT] = STABILIZATION_INDI_G1_ROLL;
 
-float rot_wing_g1_p_0[2];
-float rot_wing_g1_q_90[2] = ROT_WING_SCHED_G1_Q_90; 
+float rot_wing_side_motors_g1_p_0[2];
+float rot_wing_side_motors_g1_q_90[2] = ROT_WING_SCHED_G1_Q_90; 
 
 // Define control effectiveness variables in roll and pitch for side motors
 float rot_wing_g1_p_side_motors[2];
@@ -69,8 +69,8 @@ void ctrl_eff_scheduling_rotating_wing_drone_init(void)
   // init scheduling
 
   // Copy initial effectiveness on roll for side motors
-  rot_wing_g1_p_0[0] = rot_wing_initial_g1_p[1];
-  rot_wing_g1_p_0[1] = rot_wing_initial_g1_p[3];
+  rot_wing_side_motors_g1_p_0[0] = rot_wing_initial_g1_p[1];
+  rot_wing_side_motors_g1_p_0[1] = rot_wing_initial_g1_p[3];
 
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROT_WING_EFF, send_rot_wing_eff);
@@ -87,11 +87,11 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
   float c_rot_wing_angle = cosf(rot_wing_angle_rad);
   float s_rot_wing_angle = sinf(rot_wing_angle_rad);
 
-  rot_wing_g1_p_side_motors[0] = c_rot_wing_angle * rot_wing_g1_p_0[0] / INDI_G_SCALING;
-  rot_wing_g1_p_side_motors[1] = c_rot_wing_angle * rot_wing_g1_p_0[1] / INDI_G_SCALING;
+  rot_wing_g1_p_side_motors[0] = c_rot_wing_angle * rot_wing_side_motors_g1_p_0[0] / INDI_G_SCALING;
+  rot_wing_g1_p_side_motors[1] = c_rot_wing_angle * rot_wing_side_motors_g1_p_0[1] / INDI_G_SCALING;
 
-  rot_wing_g1_q_side_motors[0] = s_rot_wing_angle * rot_wing_g1_q_90[0] / INDI_G_SCALING;
-  rot_wing_g1_q_side_motors[1] = s_rot_wing_angle * rot_wing_g1_q_90[1] / INDI_G_SCALING;
+  rot_wing_g1_q_side_motors[0] = s_rot_wing_angle * rot_wing_side_motors_g1_q_90[0] / INDI_G_SCALING;
+  rot_wing_g1_q_side_motors[1] = s_rot_wing_angle * rot_wing_side_motors_g1_q_90[1] / INDI_G_SCALING;
 
   // Update init matrix if adaptive switched on to adapt to rotating wing effectiveness
   #ifdef STABILIZATION_INDI_USE_ADAPTIVE
