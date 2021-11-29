@@ -203,12 +203,6 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
   struct FloatVect3 body_accel_f_telem;
   ACCELS_FLOAT_OF_BFP(body_accel_f_telem, *body_accel_i);
 
-  int16_t actuators_telem[INDI_NUM_ACT]; 
-  for (int8_t i = 0; i < INDI_NUM_ACT; i++)
-  {
-    actuators_telem[i] = (int16_t) indi_u[i];
-  }
-
   pprz_msg_send_STAB_ATTITUDE_FULL_INDI(trans, dev, AC_ID,
                                         &body_rates->p,
                                         &body_rates->q,
@@ -217,7 +211,7 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
                                         &angular_accel_ref.p,
                                         &angular_accel_ref.q,
                                         &angular_accel_ref.r,
-                                        INDI_NUM_ACT, actuators_telem
+                                        ACTUATORS_NB, actuators
                                         );
 }
 
