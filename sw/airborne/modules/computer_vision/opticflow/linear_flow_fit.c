@@ -396,22 +396,16 @@ bool analyze_flow_field(struct flow_t *vectors, int count, float error_threshold
     // return that no fit was made:
     return false;
   }
+  return true;
 
-
-
+/*
   // fit linear flow field:
   //float parameters_u[N_PAR_TR_FIT], parameters_v[N_PAR_TR_FIT], min_error_u, min_error_v;
   float parameters_comb[N_PAR_TR_FIT], min_error_comb;
 
   // normalize the flow vectors. Is supposed to be better for the fit and the parameters will be easier to interpret:
-  struct flow_t *normalized_vectors = (struct flow_t *) malloc(count);
+  struct flow_t *normalized_vectors = (struct flow_t *) malloc(count *sizeof(struct flow_t));
 
-  /*
-  float *targets_x = (float*) malloc(count);
-  float *targets_y = (float*) malloc(count);
-  float **D_x = malloc(N_PAR_TR_FIT * count * sizeof(float));
-  float **D_y = malloc(N_PAR_TR_FIT * count * sizeof(float));
-   */
 
   //float targets_x[count];
   //float targets_y[count];
@@ -433,22 +427,6 @@ bool analyze_flow_field(struct flow_t *vectors, int count, float error_threshold
       normalized_vectors[i].flow_x = vectors[i].flow_x / focal_length;
       normalized_vectors[i].flow_y = vectors[i].flow_y / focal_length;
 
-      /*
-      // set flow targets:
-      targets_x[i] = normalized_vectors[i].flow_x;
-      targets_y[i] = normalized_vectors[i].flow_y;
-
-      // set data matrices:
-      D_x[i][0] = normalized_vectors[i].pos.x;
-      D_x[i][1] = normalized_vectors[i].pos.y;
-      D_x[i][2] = normalized_vectors[i].pos.x * normalized_vectors[i].pos.y;
-      D_x[i][3] = normalized_vectors[i].pos.x * normalized_vectors[i].pos.x;
-
-      D_y[i][0] = normalized_vectors[i].pos.x;
-      D_y[i][1] = normalized_vectors[i].pos.y;
-      D_y[i][2] = normalized_vectors[i].pos.x * normalized_vectors[i].pos.y;
-      D_y[i][3] = normalized_vectors[i].pos.y * normalized_vectors[i].pos.y;
-       */
 
       // Combine vertical and horizontal flow in one system:
       // As in "Estimation of Visual Motion Parameters Used for Bio-inspired Navigation", by Alkowatly et al.
@@ -501,4 +479,5 @@ bool analyze_flow_field(struct flow_t *vectors, int count, float error_threshold
 
   // return successful fit:
   return true;
+  */
 }

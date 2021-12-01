@@ -879,6 +879,7 @@ void ins_flow_update(void)
 	    else OF_X[OF_VX_IND] += drag;
 	  }
 	  // TODO: here also a moment estimate?
+	  // TODO: add a THETA_DOT_IND
 	  OF_X[OF_THETA_IND] += dt * (ins_flow.lp_gyro_pitch - ins_flow.lp_gyro_bias_pitch) * (M_PI/180.0f) / 74.0f; // Code says scaled by 12, but... that does not fit...
       }
 

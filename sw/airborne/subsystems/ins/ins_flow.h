@@ -79,6 +79,9 @@ extern "C" {
     #define OF_ANGLE_DOT_IND 5
     // TODO: also a theta dot ind?
 
+
+    #define OF_THRUST_BIAS_IND -1
+
     // the third measurement here is the other lateral flow:
     #if OF_USE_GYROS == 1
       // gyros used in the prediction and measurement
