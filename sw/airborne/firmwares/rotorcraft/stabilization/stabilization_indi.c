@@ -202,6 +202,7 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
   struct Int32Vect3 *body_accel_i = stateGetAccelBody_i();
   struct FloatVect3 body_accel_f_telem;
   ACCELS_FLOAT_OF_BFP(body_accel_f_telem, *body_accel_i);
+  float airspeed = stateGetAirspeed_f();
 
   pprz_msg_send_STAB_ATTITUDE_FULL_INDI(trans, dev, AC_ID,
                                         &body_rates->p,
@@ -211,6 +212,7 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
                                         &angular_accel_ref.p,
                                         &angular_accel_ref.q,
                                         &angular_accel_ref.r,
+                                        &airspeed,
                                         ACTUATORS_NB, actuators
                                         );
 }
