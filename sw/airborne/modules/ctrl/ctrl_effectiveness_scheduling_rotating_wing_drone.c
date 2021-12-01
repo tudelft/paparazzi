@@ -27,6 +27,7 @@
 #include "modules/rot_wing_drone/wing_rotation_controller.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #include "state.h"
+#include "filters/low_pass_filter.h"
 
 // Define arm length
 #ifndef ROT_WING_SCHED_Y_ARM_LENGTH // Length of rotating arm from CG to side motor [m]
@@ -77,6 +78,13 @@ float g1_startup[INDI_OUTPUTS][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL,
                                                 STABILIZATION_INDI_G1_PITCH, STABILIZATION_INDI_G1_YAW, STABILIZATION_INDI_G1_THRUST
                                                 };
 
+// Define filters
+#ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
+#define ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF 1.5
+#endif
+
+Butterworth2LowPass airspeed_lowpass_filter;
+
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
 static void send_rot_wing_eff(struct transport_tx *trans, struct link_device *dev)
@@ -94,6 +102,12 @@ void ctrl_eff_scheduling_rotating_wing_drone_init(void)
   // Copy initial effectiveness on roll for side motors
   rot_wing_side_motors_g1_p_0[0] = rot_wing_initial_g1_p[1];
   rot_wing_side_motors_g1_p_0[1] = rot_wing_initial_g1_p[3];
+
+  // Init filters
+  float tau = 1.0 / (2.0 * M_PI * ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF);
+  float sample_time = 1.0 / PERIODIC_FREQUENCY;
+
+  init_butterworth_2_low_pass(&airspeed_lowpass_filter, tau, sample_time, 0.0);
 
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROT_WING_EFF, send_rot_wing_eff);
@@ -118,9 +132,16 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
 
   // Effectiveness values of aerodynamic surfaces based on airspeed
   float airspeed = stateGetAirspeed_f();
-  float airspeed2 = airspeed * airspeed;
-
-  for (int i = 0; i < 4; i++) {
+  update_butterworth_2_low_pass(&airspeed_lowpass_filter, airspeed);
+  float airspeed2 = airspeed_lowpass_filter.o[0] * airspeed_lowpass_filter.o[0];
+  // Perform analysis on rotating ailerons
+  for (int i = 0; i < 2; i++) {
+    rot_wing_g1_p_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[i] * s_rot_wing_angle; // roll effectieness scales with rotation
+    rot_wing_g1_q_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[i];
+    rot_wing_g1_r_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_r[i];
+  }
+  // Perform analysis on fixed tail
+  for (int i = 2; i < 4; i++) {
     rot_wing_g1_p_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[i];
     rot_wing_g1_q_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[i];
     rot_wing_g1_r_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_r[i];
