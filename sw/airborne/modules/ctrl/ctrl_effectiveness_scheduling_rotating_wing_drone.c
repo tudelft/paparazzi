@@ -90,8 +90,9 @@ Butterworth2LowPass airspeed_lowpass_filter;
 static void send_rot_wing_eff(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_ROT_WING_EFF(trans, dev, AC_ID,
-                          2, rot_wing_g1_p_side_motors,
-                          2, rot_wing_g1_q_side_motors);
+                          INDI_NUM_ACT, g1_init[0],
+                          INDI_NUM_ACT, g1_init[1],
+                          INDI_NUM_ACT, g1_init[2]);
 }
 #endif
 
