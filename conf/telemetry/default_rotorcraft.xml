@@ -224,6 +224,7 @@
 		<message name="ROT_WING_CONTROLLER"      period=".25"/>
 		<!-- <message name="WINDTUNNEL_MEAS"          period="0.005"/> -->
 		<message name="AIRSPEED_MS45XX" 	       period=".25"/>
+		<message name="STAB_ATTITUDE_FULL_INDI" period="0.002"/>
 	</mode>
 </process>
 
