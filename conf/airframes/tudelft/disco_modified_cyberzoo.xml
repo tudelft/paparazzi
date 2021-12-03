@@ -182,10 +182,10 @@
 
   <!-- ************************* ACTUATORS ************************* -->
   <servos driver="Pwm">
-    <servo name="S_THROTTLE_LEFT" no="0" min="1100" neutral="1500" max="1900"/>  <!-- TODO Test reverse -->
+    <servo name="S_THROTTLE_LEFT" no="0" min="1200" neutral="1500" max="1800"/>  <!-- Overpowered motors need to be limited -->
     <servo name="S_ELEVON_LEFT" no="1" min="1800" neutral="1400" max="1000"/> <!-- max is upward deflection-->
-    <servo name="S_ELEVON_RIGHT" no="2" min="1100" neutral="1500" max="1900"/> <!-- min is downward deflection-->
-    <servo name="S_THROTTLE_RIGHT" no="3" min="1100" neutral="1500" max="1900"/>
+    <servo name="S_ELEVON_RIGHT" no="2" min="1100" neutral="1500" max="1900"/>
+    <servo name="S_THROTTLE_RIGHT" no="3" min="1200" neutral="1500" max="1800"/>
   </servos>
 
   <section name="ServoPositions">
