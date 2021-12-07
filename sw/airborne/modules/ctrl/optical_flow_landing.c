@@ -165,6 +165,10 @@ PRINT_CONFIG_VAR(OFL_OPTICAL_FLOW_ID)
 #define OFL_OMEGA_FB 0.0
 #endif
 
+#ifndef OFL_ACTIVE_MOTION
+#define OFL_ACTIVE_MOTION 0
+#endif
+
 // Normally, horizontal control is done via sending angle commands to INDI, so 0 (false)
 // When this is 1 (true),a change in angle will be commanded instead.
 #define HORIZONTAL_RATE_CONTROL 0
@@ -336,6 +340,7 @@ void vertical_ctrl_module_init(void)
 
   of_landing_ctrl.omega_FB = OFL_OMEGA_FB;
   of_landing_ctrl.omega_LR = OFL_OMEGA_LR;
+  of_landing_ctrl.active_motion = OFL_ACTIVE_MOTION;
 
   // TODO: not freed!
   int i;
@@ -884,6 +889,39 @@ void vertical_ctrl_module_run(bool in_flight)
   lp_flow_x = of_landing_ctrl.lp_factor_prediction *lp_flow_x + (1.0f - of_landing_ctrl.lp_factor_prediction) * optical_flow_x;
   lp_flow_y = of_landing_ctrl.lp_factor_prediction *lp_flow_y + (1.0f - of_landing_ctrl.lp_factor_prediction) * optical_flow_y;
 
+
+  if(of_landing_ctrl.active_motion == 1) {
+      // Active motion through varying ventral flow commands
+      float period_factor = 0.2;
+      float sine_threshold = 0.75;
+      float omega_set_point = 20;
+
+      if(sinf(period_factor * module_active_time_sec) > sine_threshold) {
+	  of_landing_ctrl.omega_LR = omega_set_point;
+      }
+      else if (sinf(period_factor * module_active_time_sec) < -sine_threshold) {
+	  of_landing_ctrl.omega_LR = -omega_set_point;
+      }
+      else {
+	  of_landing_ctrl.omega_LR = 0.0f;
+      }
+  }
+  else if(of_landing_ctrl.active_motion == 2) {
+      // Active motion through varying roll trim commands
+      float period_factor = 0.2;
+      float sine_threshold = 0.9;
+      float trim_set_point = 2.0f;
+
+      if(sinf(period_factor * module_active_time_sec) > sine_threshold) {
+	  of_landing_ctrl.roll_trim = trim_set_point;
+      }
+      else if (sinf(period_factor * module_active_time_sec) < -sine_threshold) {
+	  of_landing_ctrl.roll_trim = -trim_set_point;
+      }
+      else {
+	  of_landing_ctrl.roll_trim = 0.0f;
+      }
+  }
 
   float error_pitch = new_flow_y - of_landing_ctrl.omega_FB;
   float error_roll = new_flow_x - of_landing_ctrl.omega_LR;

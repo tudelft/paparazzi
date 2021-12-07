@@ -1223,8 +1223,13 @@ void ins_flow_update(void)
 	    // rate_p_filt_est = -1.8457e-04 * cmd_roll;
 	    // gyro_meas_roll = -1.8457e-04 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
 	    // gyro_meas_roll = -2.0e-03 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
-	    gyro_meas_roll = 1e-04 * parameters[PAR_PRED_ROLL_1] * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
-	    gyro_meas_roll = parameters[PAR_PRED_ROLL_2] * gyro_meas_roll + 1E-3 * parameters[PAR_PRED_ROLL_3] * ins_flow.optical_flow_x;
+
+	    // gyro_meas_roll = 1e-04 * parameters[PAR_PRED_ROLL_1] * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
+	    // gyro_meas_roll = parameters[PAR_PRED_ROLL_2] * gyro_meas_roll + 1E-3 * parameters[PAR_PRED_ROLL_3] * ins_flow.optical_flow_x;
+
+	    // only flow:
+	    gyro_meas_roll = 2E-3 * parameters[PAR_PRED_ROLL_3] * ins_flow.optical_flow_x;
+
 	    //printf("Predicted roll: %f, real measured roll: %f.\n", gyro_meas_roll, (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f);
 	}
 

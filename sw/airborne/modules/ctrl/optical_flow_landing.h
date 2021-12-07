@@ -93,6 +93,7 @@ struct OpticalFlowLanding {
   float pitch_trim;		///< Pitch trim angle in degrees
   float omega_LR;		///< Set point for the left-right ventral flow
   float omega_FB;		///< Set point for the front-back ventral flow
+  uint32_t active_motion;	///< Method for actively inducing motion
 };
 
 extern struct OpticalFlowLanding of_landing_ctrl;
