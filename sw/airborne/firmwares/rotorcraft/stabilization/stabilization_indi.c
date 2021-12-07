@@ -47,7 +47,9 @@
 
 // Factor that the estimated G matrix is allowed to deviate from initial one
 #define INDI_ALLOWED_G_FACTOR 2.0
-float indi_g_factor = INDI_ALLOWED_G_FACTOR;
+float indi_g_factor_motor = INDI_ALLOWED_G_FACTOR;
+#define INDI_ALLOWED_G_FACTOR_SERVO 5.0
+float indi_g_factor_servo = INDI_ALLOWED_G_FACTOR_SERVO;
 
 #ifdef STABILIZATION_INDI_FILT_CUTOFF_P
 #define STABILIZATION_INDI_FILTER_ROLL_RATE TRUE
@@ -844,6 +846,12 @@ static void bound_g_mat(void)
   for (j = 0; j < INDI_NUM_ACT; j++) {
     float max_limit;
     float min_limit;
+    float indi_g_factor;
+    if (act_is_servo[j]) {
+      indi_g_factor = indi_g_factor_servo;
+    } else {
+      indi_g_factor = indi_g_factor_motor;
+    }
 
     // Limit the values of the estimated G1 matrix
     for (i = 0; i < INDI_OUTPUTS; i++) {
