@@ -223,8 +223,13 @@ float GT_theta;
       #endif
     #else
       #if N_MEAS_OF_KF == 3
-      // with rate measurement
-      float parameters[20] = {0.041001,1.015066,-0.058495,0.498353,-0.156362,0.383511,0.924635,0.681918,0.318947,0.298235,0.224906,1.371037,0.008888,3.045428,0.893953,0.529789,0.295028,1.297515,0.767550,0.334040};
+        #if PREDICT_GYROS == 0
+	  // with rate measurement
+	  float parameters[20] = {0.041001,1.015066,-0.058495,0.498353,-0.156362,0.383511,0.924635,0.681918,0.318947,0.298235,0.224906,1.371037,0.008888,3.045428,0.893953,0.529789,0.295028,1.297515,0.767550,0.334040};
+	#else
+	    // Estimate gyro directly instead of moment:
+            float parameters[26] = {1.065019,0.270407,0.164520,0.008321,0.083628,0.261853,0.210707,0.204501,0.164267,0.097979,0.053705,1.640180,0.151171,3.086366,1.025684,0.011813,0.177164,0.995710,1.050374,0.617920,0.028360,0.447258,0.077277,0.360559,0.555940,0.133979};
+	#endif
       #else
       // without rate measurement:
       // float parameters[20] = {4.098677e-01, 7.766318e-01, 3.614751e-01, 4.745865e-01, 5.144065e-01, 3.113647e-01, -8.737287e-03, 6.370274e-01, 3.863760e-01, -3.527670e-01, 4.873666e-01, 1.688456e+00, -6.037967e-02, 2.759148e+00, 1.385455e+00, 1.044881e-01, -1.170409e-01, 1.126136e+00, 1.097562e+00, 2.680243e-01};
@@ -256,6 +261,9 @@ float GT_theta;
 #define PAR_KD 19
 #define PAR_Q_TB 20
 #define PAR_P_TB 21
+#define PAR_PRED_ROLL_1 22
+#define PAR_PRED_ROLL_2 23
+#define PAR_PRED_ROLL_3 24
 
 
 
@@ -1207,12 +1215,18 @@ void ins_flow_update(void)
     }
     if(OF_USE_GYROS) {
 	float gyro_meas_roll;
-	gyro_meas_roll = (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f;
-
-	// TODO: You can fake gyros here by estimating them as follows:
-	// rate_p_filt_est = -1.8457e-04 * cmd_roll;
-	// gyro_meas_roll = -1.8457e-04 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
-	// gyro_meas_roll = -2.0e-03 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
+	if(!PREDICT_GYROS) {
+	    gyro_meas_roll = (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f;
+	}
+	else {
+	    // TODO: You can fake gyros here by estimating them as follows:
+	    // rate_p_filt_est = -1.8457e-04 * cmd_roll;
+	    // gyro_meas_roll = -1.8457e-04 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
+	    // gyro_meas_roll = -2.0e-03 * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
+	    gyro_meas_roll = 1e-04 * parameters[PAR_PRED_ROLL_1] * (stabilization_cmd[COMMAND_ROLL]-ins_flow.lp_roll_command);
+	    gyro_meas_roll = parameters[PAR_PRED_ROLL_2] * gyro_meas_roll + 1E-3 * parameters[PAR_PRED_ROLL_3] * ins_flow.optical_flow_x;
+	    //printf("Predicted roll: %f, real measured roll: %f.\n", gyro_meas_roll, (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f);
+	}
 
 	innovation[OF_RATE_IND][0] = gyro_meas_roll - Z_expected[OF_RATE_IND];
 	//innovation[OF_RATE_IND][0] = rates->p - Z_expected[OF_RATE_IND];
