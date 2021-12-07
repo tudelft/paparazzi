@@ -187,7 +187,7 @@
 
     <section PREFIX="STABILIZATION_INDI_" NAME="STABILIZATION_ATTITUDE_INDI">
         <define name="G1_ROLL"      value="{0.00,   -12.8,   0.00,  12.8,  0.0, 0.0, 0.0, 0.0}"/>
-        <define name="G1_PITCH"     value="{2.7,    0.00,   -2.7,   0.00,  0.0, 0.0, 0.0, 0.0}"/>
+        <define name="G1_PITCH"     value="{1.7,    0.00,   -1.7,   0.00,  0.0, 0.0, 0.0, 0.0}"/>
         <define name="G1_YAW"       value="{-0.115, 0.115,  -0.115, 0.115, 0.0, 0.0, 0.0, 0.0}"/>
         <define name="G1_THRUST"    value="{-0.3,   -0.3,   -0.3,   -0.3,  0.0, 0.0, 0.0, 0.0}"/>
         <define name="G2"           value="{-0.06,  0.06,   -0.06,  0.06,  0.0, 0.0, 0.0, 0.0}"/>
@@ -222,7 +222,7 @@
     </section>
 
     <section name="ROT_WING_EFF_SCHEDULING" prefix="ROT_WING_SCHED_">
-        <define name="G1_Q_90" value="{-2.77, 2.77}"/>
+        <define name="G1_Q_90" value="{-2.45, 2.45}"/>
         <define name="Y_ARM_LENGTH" value="0.365"/>
         <define name="G1_AERO_CONST_P" value="{-0.1, -0.1, 0.0, 0.0}"/> <!--Wing rotation dependency on pitch not scheduled yet-->
         <define name="G1_AERO_CONST_Q" value="{0.0, 0.0, -0.02, 0.0}"/> <!--estimated value, use adaptive for real value-->
