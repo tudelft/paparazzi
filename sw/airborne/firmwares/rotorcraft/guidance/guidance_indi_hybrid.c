@@ -138,6 +138,7 @@ struct FloatVect2 desired_airspeed;
 struct FloatMat33 Ga;
 struct FloatMat33 Ga_inv;
 struct FloatVect3 euler_cmd;
+float acc_x_T_bx;
 
 float filter_cutoff = GUIDANCE_INDI_FILTER_CUTOFF;
 
@@ -148,6 +149,7 @@ struct FloatVect3 speed_sp = {0.0, 0.0, 0.0};
 
 void guidance_indi_propagate_filters(void);
 static void guidance_indi_calcg_wing(struct FloatMat33 *Gmat);
+static void guidance_indi_calcg_rot_wing(void);
 static float guidance_indi_get_liftd(float pitch, float theta);
 struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_gain);
 struct FloatVect3 nav_get_speed_sp_from_line(struct FloatVect2 line_v_enu, struct FloatVect2 to_end_v_enu, struct EnuCoor_i target, float pos_gain);
@@ -164,6 +166,7 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
                               &euler_cmd.x,
                               &euler_cmd.y,
                               &euler_cmd.z,
+                              &acc_x_T_bx,
                               &filt_accel_ned[0].o[0],
                               &filt_accel_ned[1].o[0],
                               &filt_accel_ned[2].o[0],
@@ -172,6 +175,11 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
                               &speed_sp.z);
 }
 #endif
+
+float Gmat_rot_wing[3][4];
+float Gmat_rot_wing_trans_mult[4][4];
+float Gmat_rot_winginv[4][4];
+float Gmat_rot_wing_pseudo_inv[4][3];
 
 /**
  * @brief Init function
@@ -354,11 +362,16 @@ void guidance_indi_run(float *heading_sp) {
   //for rc vertical control
   sp_accel.z = -(radio_control.values[RADIO_THROTTLE]-4500)*8.0/9600.0;
 #endif
+#ifdef GUIDANCE_INDI_HYBRID_ROT_WING
+  //Calculate matrix of partial derivatives and invert matrix
+  guidance_indi_calcg_rot_wing();
+#else
 
   //Calculate matrix of partial derivatives
   guidance_indi_calcg_wing(&Ga);
   //Invert this matrix
   MAT33_INV(Ga_inv, Ga);
+#endif
 
   struct FloatVect3 accel_filt;
   accel_filt.x = filt_accel_ned[0].o[0];
@@ -384,7 +397,16 @@ void guidance_indi_run(float *heading_sp) {
 #endif
 
   //Calculate roll,pitch and thrust command
+#ifdef GUIDANCE_INDI_HYBRID_ROT_WING
+  // Matrix multiplication
+  // Calculate the increment in euler commands for each output
+  euler_cmd.x = Gmat_rot_wing_pseudo_inv[0][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[0][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[0][2] * a_diff.z;
+  euler_cmd.y = Gmat_rot_wing_pseudo_inv[1][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[1][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[1][2] * a_diff.z;
+  euler_cmd.z = Gmat_rot_wing_pseudo_inv[2][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[2][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[2][2] * a_diff.z;
+  acc_x_T_bx = Gmat_rot_wing_pseudo_inv[3][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[3][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[3][2] * a_diff.z;
+#else
   MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
+#endif
 
   AbiSendMsgTHRUST(THRUST_INCREMENT_ID, euler_cmd.z);
 
@@ -532,6 +554,85 @@ void guidance_indi_calcg_wing(struct FloatMat33 *Gmat) {
   RMAT_ELMT(*Gmat, 0, 2) = stheta*cpsi + sphi*ctheta*spsi;
   RMAT_ELMT(*Gmat, 1, 2) = stheta*spsi - sphi*ctheta*cpsi;
   RMAT_ELMT(*Gmat, 2, 2) = cphi*ctheta;
+}
+
+/**
+ * Calculate the matrix of partial derivatives of the roll, pitch and thrust
+ * w.r.t. the NED accelerations, taking into account the lift of a wing that is
+ * horizontal at 0 degrees pitch
+ *
+ */
+void guidance_indi_calcg_rot_wing(void) {
+  /*Pre-calculate sines and cosines*/
+  float sphi = sinf(eulers_zxy.phi);
+  float cphi = cosf(eulers_zxy.phi);
+  float stheta = sinf(eulers_zxy.theta);
+  float ctheta = cosf(eulers_zxy.theta);
+  float spsi = sinf(eulers_zxy.psi);
+  float cpsi = cosf(eulers_zxy.psi);
+  //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
+
+#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
+#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
+#endif
+
+  float lift_thrust_bz = -9.81; // Sum of lift and thrust in boxy z axis (level flight)
+  float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta - M_PI_2); // Convert to correct pitch angle
+
+  Gmat_rot_wing[0][0] = cphi*spsi*lift_thrust_bz;
+  Gmat_rot_wing[1][0] = -cphi*cpsi*lift_thrust_bz;
+  Gmat_rot_wing[2][0] = -sphi*lift_thrust_bz;
+
+  Gmat_rot_wing[0][1] = (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
+  Gmat_rot_wing[1][1] = (ctheta*sphi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
+  Gmat_rot_wing[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+
+  Gmat_rot_wing[0][2] = stheta*cpsi + sphi*ctheta*spsi;
+  Gmat_rot_wing[1][2] = stheta*spsi - sphi*ctheta*cpsi;
+  Gmat_rot_wing[2][2] = cphi*ctheta;
+
+  Gmat_rot_wing[0][3] = ctheta*cpsi - sphi*stheta*spsi;
+  Gmat_rot_wing[1][3] = ctheta*spsi + sphi*stheta*cpsi;
+  Gmat_rot_wing[2][3] = -cphi*stheta;
+
+  // Invert Gmat_rot_wing
+
+  //transpose()*Gmat_rot_wing
+  //calculate matrix multiplication of its transpose num_act*HYBRID_INDI_OUTPUTS x HYBRID_INDI_OUTPUTS*num_act
+  float element = 0;
+  int8_t row;
+  int8_t col;
+  int8_t i;
+  for (row = 0; row < 4; row++) {
+    for (col = 0; col < 4; col++) {
+      element = 0;
+      for (i = 0; i < 3; i++) {
+        element = element + Gmat_rot_wing[i][col] * Gmat_rot_wing[i][row];
+      }
+      Gmat_rot_wing_trans_mult[row][col] = element;
+    }
+  }
+
+  //there are numerical errors if the scaling is not right.
+  float_vect_scale(Gmat_rot_wing_trans_mult[0], 100.0, 4*4);
+
+  //inverse of 4x4 matrix
+  float_mat_inv_4d(Gmat_rot_winginv[0], Gmat_rot_wing_trans_mult[0]);
+
+  //scale back
+  float_vect_scale(Gmat_rot_winginv[0], 100.0, 4*4);
+
+  //Gmatinv*Gmat'
+  //calculate matrix multiplication INDI_NUM_ACTxINDI_NUM_ACT x HYBRID_INDI_
+  for (row = 0; row < 4; row++) {
+    for (col = 0; col < 3; col++) {
+      element = 0;
+      for (i = 0; i < 4; i++) {
+        element = element + Gmat_rot_winginv[row][i] * Gmat_rot_wing[col][i];
+      }
+      Gmat_rot_wing_pseudo_inv[row][col] = element;
+    }
+  }
 }
 
 /**
