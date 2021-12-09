@@ -1,5 +1,4 @@
 /*
- * Copyright (C) Joost Meulenbeld
  *
  * This file is part of paparazzi
  *
