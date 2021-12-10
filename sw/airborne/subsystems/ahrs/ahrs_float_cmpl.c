@@ -444,15 +444,15 @@ void ahrs_fc_update_heading(float heading)
   // row 0 of ltp_to_body_rmat = body x-axis in ltp frame
   // we only consider x and y
   struct FloatVect2 expected_ltp = {
-    RMAT_ELMT(*ltp_to_body_rmat, 0, 0),
-    RMAT_ELMT(*ltp_to_body_rmat, 0, 1)
+      RMAT_ELMT(*ltp_to_body_rmat, 0, 0),
+      RMAT_ELMT(*ltp_to_body_rmat, 0, 1)
   };
 
   // expected_heading cross measured_heading
   struct FloatVect3 residual_ltp = {
-    0,
-    0,
-    expected_ltp.x * sinf(heading) - expected_ltp.y * cosf(heading)
+      0,
+      0,
+      expected_ltp.x * sinf(heading) - expected_ltp.y * cosf(heading)
   };
 
   struct FloatVect3 residual_imu;
@@ -468,13 +468,17 @@ void ahrs_fc_update_heading(float heading)
    * the gps course information you get once you have a gps fix.
    * Otherwise the bias will be falsely "corrected".
    */
-//  if (fabs(residual_ltp.z) < sinf(RadOfDeg(5.))) {
-//    heading_bias_update_gain = -2.5e-4;
-//  } else {
-//    heading_bias_update_gain = 0.0;
-//  }
-//  heading_bias_update_gain = -heading_rate_update_gain * 1e-4;
-  heading_bias_update_gain = -heading_rate_update_gain * 1e-5;
+  if (AC_ID == 186) {
+    heading_bias_update_gain = -heading_rate_update_gain * 1e-5;
+  } else {
+    if (fabs(residual_ltp.z) < sinf(RadOfDeg(5.))) {
+    heading_bias_update_gain = -2.5e-4;
+    } else {
+      heading_bias_update_gain = 0.0;
+    }
+    heading_bias_update_gain = -heading_rate_update_gain * 1e-4;
+  }
+
   RATES_ADD_SCALED_VECT(ahrs_fc.gyro_bias, residual_imu, heading_bias_update_gain);
 }
 
