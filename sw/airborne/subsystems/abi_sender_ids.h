@@ -439,6 +439,10 @@
 #define THRUST_INCREMENT_ID 1
 #endif
 
+#ifndef THRUST_BX_INCREMENT_ID
+#define THRUST_BX_INCREMENT_ID 2
+#endif
+
 #ifndef MAG_CALIB_UKF_ID
 #define MAG_CALIB_UKF_ID 20
 #endif
