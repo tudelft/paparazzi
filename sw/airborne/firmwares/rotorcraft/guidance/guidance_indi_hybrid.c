@@ -36,6 +36,7 @@
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
 #include "firmwares/rotorcraft/guidance/guidance_v.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
+#include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #include "firmwares/rotorcraft/autopilot_rc_helpers.h"
 #include "mcu_periph/sys_time.h"
 #include "autopilot.h"
@@ -45,6 +46,7 @@
 #include "filters/low_pass_filter.h"
 #include "subsystems/abi.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
+#include "stabilization/wls/wls_alloc.h"
 
 
 // The acceleration reference is calculated with these gains. If you use GPS,
@@ -138,7 +140,8 @@ struct FloatVect2 desired_airspeed;
 struct FloatMat33 Ga;
 struct FloatMat33 Ga_inv;
 struct FloatVect3 euler_cmd;
-float acc_x_T_bx;
+float acc_T_bx;
+bool T_bx_effective = false;
 
 float filter_cutoff = GUIDANCE_INDI_FILTER_CUTOFF;
 
@@ -166,7 +169,7 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
                               &euler_cmd.x,
                               &euler_cmd.y,
                               &euler_cmd.z,
-                              &acc_x_T_bx,
+                              &acc_T_bx,
                               &filt_accel_ned[0].o[0],
                               &filt_accel_ned[1].o[0],
                               &filt_accel_ned[2].o[0],
@@ -400,15 +403,21 @@ void guidance_indi_run(float *heading_sp) {
 #ifdef GUIDANCE_INDI_HYBRID_ROT_WING
   // Matrix multiplication
   // Calculate the increment in euler commands for each output
-  euler_cmd.x = Gmat_rot_wing_pseudo_inv[0][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[0][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[0][2] * a_diff.z;
-  euler_cmd.y = Gmat_rot_wing_pseudo_inv[1][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[1][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[1][2] * a_diff.z;
-  euler_cmd.z = Gmat_rot_wing_pseudo_inv[2][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[2][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[2][2] * a_diff.z;
-  acc_x_T_bx = Gmat_rot_wing_pseudo_inv[3][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[3][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[3][2] * a_diff.z;
+  if (T_bx_effective) {
+    euler_cmd.x = Gmat_rot_wing_pseudo_inv[0][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[0][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[0][2] * a_diff.z;
+    euler_cmd.y = Gmat_rot_wing_pseudo_inv[1][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[1][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[1][2] * a_diff.z;
+    euler_cmd.z = Gmat_rot_wing_pseudo_inv[2][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[2][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[2][2] * a_diff.z;
+    acc_T_bx =    Gmat_rot_wing_pseudo_inv[3][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[3][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[3][2] * a_diff.z;
+  } else {
+     MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
+     acc_T_bx = -MAX_PPRZ;
+  }
 #else
   MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
 #endif
 
   AbiSendMsgTHRUST(THRUST_INCREMENT_ID, euler_cmd.z);
+  AbiSendMsgTHRUST(THRUST_BX_INCREMENT_ID, acc_T_bx);
 
   //Coordinated turn
   //feedforward estimate angular rotation omega = g*tan(phi)/v
@@ -579,58 +588,84 @@ void guidance_indi_calcg_rot_wing(void) {
   float lift_thrust_bz = -9.81; // Sum of lift and thrust in boxy z axis (level flight)
   float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta - M_PI_2); // Convert to correct pitch angle
 
-  Gmat_rot_wing[0][0] = cphi*spsi*lift_thrust_bz;
-  Gmat_rot_wing[1][0] = -cphi*cpsi*lift_thrust_bz;
-  Gmat_rot_wing[2][0] = -sphi*lift_thrust_bz;
+  // Calc assumed body acceleration setpoint and error
+  float accel_bx_sp = cpsi * sp_accel.x + spsi * sp_accel.y;
+  float accel_bx = cpsi * filt_accel_ned[0].o[0] + spsi * filt_accel_ned[1].o[0];
+  float accel_bx_err = accel_bx_sp - accel_bx;
 
-  Gmat_rot_wing[0][1] = (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
-  Gmat_rot_wing[1][1] = (ctheta*sphi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
-  Gmat_rot_wing[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+  if (accel_bx_err < 0 && actuator_thrust_bx_pprz <= 0) {
+    RMAT_ELMT(Ga, 0, 0) = cphi*spsi*lift_thrust_bz;
+    RMAT_ELMT(Ga, 1, 0) = -cphi*cpsi*lift_thrust_bz;
+    RMAT_ELMT(Ga, 2, 0) = -sphi*lift_thrust_bz;
+    RMAT_ELMT(Ga, 0, 1) = (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
+    RMAT_ELMT(Ga, 1, 1) = (ctheta*sphi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;;
+    RMAT_ELMT(Ga, 2, 1) = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+    RMAT_ELMT(Ga, 0, 2) = stheta*cpsi + sphi*ctheta*spsi;
+    RMAT_ELMT(Ga, 1, 2) = stheta*spsi - sphi*ctheta*cpsi;
+    RMAT_ELMT(Ga, 2, 2) = cphi*ctheta;
 
-  Gmat_rot_wing[0][2] = stheta*cpsi + sphi*ctheta*spsi;
-  Gmat_rot_wing[1][2] = stheta*spsi - sphi*ctheta*cpsi;
-  Gmat_rot_wing[2][2] = cphi*ctheta;
+    //Calculate matrix of partial derivatives
+    //Invert this matrix
+    MAT33_INV(Ga_inv, Ga);
 
-  Gmat_rot_wing[0][3] = ctheta*cpsi - sphi*stheta*spsi;
-  Gmat_rot_wing[1][3] = ctheta*spsi + sphi*stheta*cpsi;
-  Gmat_rot_wing[2][3] = -cphi*stheta;
+    T_bx_effective = false;
 
-  // Invert Gmat_rot_wing
+  } else {
+    Gmat_rot_wing[0][0] = cphi*spsi*lift_thrust_bz;
+    Gmat_rot_wing[1][0] = -cphi*cpsi*lift_thrust_bz;
+    Gmat_rot_wing[2][0] = -sphi*lift_thrust_bz;
 
-  //transpose()*Gmat_rot_wing
-  //calculate matrix multiplication of its transpose num_act*HYBRID_INDI_OUTPUTS x HYBRID_INDI_OUTPUTS*num_act
-  float element = 0;
-  int8_t row;
-  int8_t col;
-  int8_t i;
-  for (row = 0; row < 4; row++) {
-    for (col = 0; col < 4; col++) {
-      element = 0;
-      for (i = 0; i < 3; i++) {
-        element = element + Gmat_rot_wing[i][col] * Gmat_rot_wing[i][row];
+    Gmat_rot_wing[0][1] = (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
+    Gmat_rot_wing[1][1] = (ctheta*sphi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
+    Gmat_rot_wing[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+
+    Gmat_rot_wing[0][2] = stheta*cpsi + sphi*ctheta*spsi;
+    Gmat_rot_wing[1][2] = stheta*spsi - sphi*ctheta*cpsi;
+    Gmat_rot_wing[2][2] = cphi*ctheta;
+
+    Gmat_rot_wing[0][3] = ctheta*cpsi - sphi*stheta*spsi;
+    Gmat_rot_wing[1][3] = ctheta*spsi + sphi*stheta*cpsi;
+    Gmat_rot_wing[2][3] = -cphi*stheta;
+
+    T_bx_effective = true;
+
+    // Invert Gmat_rot_wing
+
+    //transpose()*Gmat_rot_wing
+    //calculate matrix multiplication of its transpose num_act*HYBRID_INDI_OUTPUTS x HYBRID_INDI_OUTPUTS*num_act
+    float element = 0;
+    int8_t row;
+    int8_t col;
+    int8_t i;
+    for (row = 0; row < 4; row++) {
+      for (col = 0; col < 4; col++) {
+        element = 0;
+        for (i = 0; i < 3; i++) {
+          element = element + Gmat_rot_wing[i][col] * Gmat_rot_wing[i][row];
+        }
+        Gmat_rot_wing_trans_mult[row][col] = element;
       }
-      Gmat_rot_wing_trans_mult[row][col] = element;
     }
-  }
 
-  //there are numerical errors if the scaling is not right.
-  float_vect_scale(Gmat_rot_wing_trans_mult[0], 100.0, 4*4);
+    //there are numerical errors if the scaling is not right.
+    float_vect_scale(Gmat_rot_wing_trans_mult[0], 100.0, 4*4);
 
-  //inverse of 4x4 matrix
-  float_mat_inv_4d(Gmat_rot_winginv[0], Gmat_rot_wing_trans_mult[0]);
+    //inverse of 4x4 matrix
+    float_mat_inv_4d(Gmat_rot_winginv[0], Gmat_rot_wing_trans_mult[0]);
 
-  //scale back
-  float_vect_scale(Gmat_rot_winginv[0], 100.0, 4*4);
+    //scale back
+    float_vect_scale(Gmat_rot_winginv[0], 100.0, 4*4);
 
-  //Gmatinv*Gmat'
-  //calculate matrix multiplication INDI_NUM_ACTxINDI_NUM_ACT x HYBRID_INDI_
-  for (row = 0; row < 4; row++) {
-    for (col = 0; col < 3; col++) {
-      element = 0;
-      for (i = 0; i < 4; i++) {
-        element = element + Gmat_rot_winginv[row][i] * Gmat_rot_wing[col][i];
+    //Gmatinv*Gmat'
+    //calculate matrix multiplication INDI_NUM_ACTxINDI_NUM_ACT x HYBRID_INDI_
+    for (row = 0; row < 4; row++) {
+      for (col = 0; col < 3; col++) {
+        element = 0;
+        for (i = 0; i < 4; i++) {
+          element = element + Gmat_rot_winginv[row][i] * Gmat_rot_wing[col][i];
+        }
+        Gmat_rot_wing_pseudo_inv[row][col] = element;
       }
-      Gmat_rot_wing_pseudo_inv[row][col] = element;
     }
   }
 }
