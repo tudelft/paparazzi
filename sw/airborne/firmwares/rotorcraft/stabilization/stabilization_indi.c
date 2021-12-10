@@ -170,9 +170,28 @@ abi_event rpm_ev;
 static void rpm_cb(uint8_t sender_id, uint16_t *rpm, uint8_t num_act);
 
 abi_event thrust_ev;
+abi_event thrust_bx_ev;
 static void thrust_cb(uint8_t sender_id, float thrust_increment);
+static void thrust_bx_cb(uint8_t sender_id, float thrust_bx_increment);
 float indi_thrust_increment;
 bool indi_thrust_increment_set = false;
+float indi_thrust_bx_increment;
+bool indi_thrust_bx_increment_set = false;
+
+#ifndef THRUST_BX_EFF
+#define THRUST_BX_EFF 0.0016
+#endif
+#ifndef THRUST_BX_ACT_DYN
+#define THRUST_BX_ACT_DYN 0.06
+#endif
+
+float thrust_bx_eff = THRUST_BX_EFF;
+float thrust_bx_state;
+float thrust_bx_act_dyn = THRUST_BX_ACT_DYN;
+float thrust_bx_state_filt;
+float actuator_thrust_bx_pprz;
+Butterworth2LowPass acceleration_bx_lowpass_filter;
+Butterworth2LowPass thrust_bx_act_lowpass_filter;
 
 float g1g2_pseudo_inv[INDI_NUM_ACT][INDI_OUTPUTS];
 float g2[INDI_NUM_ACT] = STABILIZATION_INDI_G2; //scaled by INDI_G_SCALING
@@ -253,12 +272,16 @@ void stabilization_indi_init(void)
 
   AbiBindMsgRPM(RPM_SENSOR_ID, &rpm_ev, rpm_cb);
   AbiBindMsgTHRUST(THRUST_INCREMENT_ID, &thrust_ev, thrust_cb);
+  AbiBindMsgTHRUST(THRUST_BX_INCREMENT_ID, &thrust_bx_ev, thrust_bx_cb);
 
   float_vect_zero(actuator_state_filt_vectd, INDI_NUM_ACT);
   float_vect_zero(actuator_state_filt_vectdd, INDI_NUM_ACT);
   float_vect_zero(estimation_rate_d, INDI_NUM_ACT);
   float_vect_zero(estimation_rate_dd, INDI_NUM_ACT);
   float_vect_zero(actuator_state_filt_vect, INDI_NUM_ACT);
+  actuator_thrust_bx_pprz = -MAX_PPRZ;
+  thrust_bx_state_filt = 0;
+  thrust_bx_state = 0;
 
   //Calculate G1G2_PSEUDO_INVERSE
   calc_g1g2_pseudo_inv();
@@ -328,8 +351,13 @@ void init_filters(void)
     init_butterworth_2_low_pass(&estimation_input_lowpass_filters[i], tau_est, sample_time, 0.0);
   }
 
+  init_butterworth_2_low_pass(&thrust_bx_act_lowpass_filter, tau, sample_time, 0.0);
+
   // Filtering of the accel body z
   init_butterworth_2_low_pass(&acceleration_lowpass_filter, tau_est, sample_time, 0.0);
+
+  // Filtering of the accel body x
+  init_butterworth_2_low_pass(&acceleration_bx_lowpass_filter, tau, sample_time, 0.0);
 
   // Init rate filter for feedback
   float time_constants[3] = {1.0/(2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_P), 1.0/(2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_Q), 1.0/(2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_R)};
@@ -465,6 +493,41 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
         (stabilization_cmd[COMMAND_THRUST] - actuator_state_filt_vect[i]) * Bwls[3][i];
     }
   }
+
+  // Add pusher motor for rotating wing drone
+#ifdef GUIDANCE_INDI_HYBRID_ROT_WING
+  float v_thrust_bx = 0.0;
+  if (indi_thrust_bx_increment_set && in_flight) {
+    v_thrust_bx = indi_thrust_bx_increment;
+
+    // Calculate command
+    float du_thrust_bx = 1./thrust_bx_eff * v_thrust_bx;
+    // Increment thrust_bx
+    actuator_thrust_bx_pprz = thrust_bx_state_filt + du_thrust_bx;
+    Bound(actuator_thrust_bx_pprz, 0, MAX_PPRZ);
+  } else {
+    // Copy radio cmd
+    actuator_thrust_bx_pprz = RadioControlValues(RADIO_AUX3);
+  }
+
+  actuators_pprz[INDI_NUM_ACT] = (int16_t) actuator_thrust_bx_pprz;
+  
+  // Propagate state filters
+  // Get the acceleration in body axes
+  struct Int32Vect3 *body_accel_i;
+  body_accel_i = stateGetAccelBody_i();
+  ACCELS_FLOAT_OF_BFP(body_accel_f, *body_accel_i);
+
+  thrust_bx_state = thrust_bx_state + thrust_bx_act_dyn * (actuator_thrust_bx_pprz - thrust_bx_state);
+
+  update_butterworth_2_low_pass(&thrust_bx_act_lowpass_filter, thrust_bx_state);
+  update_butterworth_2_low_pass(&acceleration_bx_lowpass_filter, body_accel_f.x);
+
+  thrust_bx_state_filt = thrust_bx_act_lowpass_filter.o[0];
+
+  
+  
+#endif
 
   // The control objective in array format
   indi_v[0] = (angular_accel_ref.p - angular_acceleration[0]);
@@ -602,6 +665,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 
   // Reset thrust increment boolean
   indi_thrust_increment_set = false;
+  indi_thrust_bx_increment_set = false;
 }
 
 // This function reads rc commands
@@ -837,6 +901,15 @@ static void thrust_cb(uint8_t UNUSED sender_id, float thrust_increment)
 {
   indi_thrust_increment = thrust_increment;
   indi_thrust_increment_set = true;
+}
+
+/**
+ * ABI callback that obtains the thrust_bx increment from guidance INDI
+ */
+static void thrust_bx_cb(uint8_t UNUSED sender_id, float thrust_bx_increment)
+{
+  indi_thrust_bx_increment = thrust_bx_increment;
+  indi_thrust_bx_increment_set = true;
 }
 
 static void bound_g_mat(void)
