@@ -142,7 +142,7 @@
       <define name="INS_INT_IMU_ID" value="IMU_MPU9250_ID"/>
     </module>
 
-    <module name="control"/>
+    <module name="control_adaptive"/>
     <module name="navigation"/>
     <!--    <module name="auto1_commands"/>-->
     <!--<module name="imu_quality_assessment"/>--><!--needs fixing for FW fix test then disable after initial tuning-->
@@ -249,7 +249,7 @@
   <section name="AUTO1" prefix="AUTO1_">
     <define name="MAX_ROLL" value="45" unit="deg"/> <!-- More authority while test flying for first time -->
     <define name="MAX_PITCH" value="40" unit="deg"/> <!-- More authority while test flying for first time -->
-    <define name="MAX_YAW_RATE" value="RaddOfDeg(100)"/>  <!-- TODO Tune -->
+    <define name="MAX_YAW_RATE" value="RadOfDeg(100)"/>  <!-- TODO Tune -->
   </section>
 
   <!-- ************************ TRIM ***************************** -->
@@ -379,10 +379,10 @@
     <define name="PITCH_KFFD" value="0."/>
 
     <define name="YAW_LOOP" value="TRUE"/>
-    <define name="YAW_DGAIN" value="5000."/>
+    <define name="YAW_DGAIN" value="1000."/>
 
-    <define name="YAW_TRIM_NY" value="TRUE"/>
-    <define name="YAW_NY_IGAIN" value="5000."/>
+    <define name="YAW_TRIM_NY" value="FALSE"/>
+    <define name="YAW_NY_IGAIN" value="1000."/>
 
     <define name="ELEVATOR_OF_ROLL" value="1500" unit="PPRZ_MAX"/>
     <define name="ROLL_SLEW" value="0.5"/> <!-- TODO: Determine best value-->
