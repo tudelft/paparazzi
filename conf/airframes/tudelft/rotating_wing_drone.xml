@@ -18,7 +18,7 @@
         </target>
 
         <module TYPE="transparent" NAME="telemetry">
-            <configure VALUE="B57600" NAME="MODEM_BAUD"/>
+            <configure VALUE="B115200" NAME="MODEM_BAUD"/>
         </module>
 
         <module TYPE="pwm" NAME="actuators"/>
