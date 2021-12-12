@@ -45,6 +45,8 @@ extern float doublet_length_s;
 // Index of doublet axis in ACTIVE_DOUBLET_AXES
 extern uint8_t doublet_axis;
 
+extern pprz_t current_doublet_values[];
+
 extern void sys_id_doublet_init(void);
 
 // If doublet is running, update its values

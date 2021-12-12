@@ -32,11 +32,7 @@
 #include "mcu_periph/sys_time.h"
 #include "filters/low_pass_filter.h"
 #include "math/pprz_random.h"
-
-
-#ifndef DOUBLET_AXES
-#define DOUBLET_AXES {COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW}
-#endif
+#include "subsystems/actuators.h"
 
 #ifndef DOUBLET_ENABLED
 #define DOUBLET_ENABLED TRUE
@@ -49,12 +45,12 @@ pprz_t doublet_amplitude = 0;
 float doublet_length_s = 20;
 
 // The axes on which noise and doublet values can be applied
-static const int8_t ACTIVE_DOUBLET_AXES[] = DOUBLET_AXES;
-#define DOUBLET_NB_AXES sizeof ACTIVE_DOUBLET_AXES / sizeof ACTIVE_DOUBLET_AXES[0] // Number of items in ACTIVE_DOUBLET_AXES
+#define DOUBLET_NB_AXES INDI_NUM_ACT // Number of items in ACTIVE_DOUBLET_AXES
 
 
 // Chirp and noise values for all axes (indices correspond to the axes given in DOUBLET_AXES)
-static pprz_t current_doublet_values[DOUBLET_NB_AXES];
+pprz_t current_doublet_values[DOUBLET_NB_AXES];
+bool doublet_act_is_servo[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_IS_SERVO;
 
 static void set_current_doublet_values(void)
 {
@@ -128,7 +124,7 @@ void sys_id_doublet_run(void)
 #endif
 }
 
-void sys_id_doublet_add_values(bool motors_on, bool override_on, pprz_t in_cmd[])
+void sys_id_doublet_add_values(bool motors_on, bool override_on, __attribute__((__unused__)) pprz_t in_cmd[])
 {
   (void)(override_on); // Suppress unused parameter warnings
 
@@ -136,8 +132,12 @@ void sys_id_doublet_add_values(bool motors_on, bool override_on, pprz_t in_cmd[]
 
   if (motors_on) {
     for (uint8_t i = 0; i < DOUBLET_NB_AXES; i++) {
-      in_cmd[ACTIVE_DOUBLET_AXES[i]] += current_doublet_values[i];
-      BoundAbs(in_cmd[ACTIVE_DOUBLET_AXES[i]], MAX_PPRZ);
+      actuators_pprz[i] += current_doublet_values[i];
+      if (doublet_act_is_servo[i]) {
+        BoundAbs(actuators_pprz[i], MAX_PPRZ);
+      } else {
+        Bound(actuators_pprz[i], 0, MAX_PPRZ);
+      }
     }
   }
 
