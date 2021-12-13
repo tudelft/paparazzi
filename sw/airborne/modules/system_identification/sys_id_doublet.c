@@ -143,3 +143,10 @@ void sys_id_doublet_add_values(bool motors_on, bool override_on, __attribute__((
 
 #endif
 }
+
+extern void sys_id_doublet_set_param (float amp, float time, uint8_t axis)
+{
+doublet_axis = axis;
+doublet_amplitude = amp;
+doublet_length_s = time;
+} 

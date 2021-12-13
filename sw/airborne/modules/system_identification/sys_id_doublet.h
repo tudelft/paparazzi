@@ -53,10 +53,10 @@ extern void sys_id_doublet_init(void);
 extern void sys_id_doublet_run(void);
 
 // Handlers for changing gcs variables
-extern void sys_id_doublet_activate_handler(uint8_t activate); // Activate the chirp
+extern void sys_id_doublet_activate_handler(uint8_t activate); // Activate the doublet
 extern void sys_id_doublet_axis_handler(uint8_t axis); // Check if new axis is valid
 
 // Add the current chirp values to the in_cmd values if motors_on is true
 extern void sys_id_doublet_add_values(bool motors_on, bool override_on, pprz_t in_cmd[]);
-
+extern void sys_id_doublet_set_param (float amp, float time, uint8_t axis);
 #endif // SYS_ID_DOUBLET_H
