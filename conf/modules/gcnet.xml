@@ -18,7 +18,6 @@
   <header>
     <file name="nn_parameters.h"/>
     <file name="nn_operations.h"/>
-    <file name="ekf_gps.h"/>
     <file name="gcnet_main.h"/>
   </header>
   <init fun="gcnet_init()"/>
@@ -27,7 +26,6 @@
   <makefile>
     <file name="nn_parameters.c"/>
     <file name="nn_operations.c"/>
-    <file name="ekf_gps.c"/>
     <file name="gcnet_main.c"/>
   </makefile>
 </module>

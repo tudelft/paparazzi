@@ -290,9 +290,9 @@ void motor_mixing_run(bool motors_on, bool override_on, pprz_t in_cmd[])
   }
   
   // bypass motor mixing for gcnet
-  //if (autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) {
-  //  for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
-  //    motor_mixing.commands[i] = 9600*(control_nn[i] - 3000)/(9800-3000);
-  //  }
-  //}
+  if (autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) {
+    for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
+      motor_mixing.commands[i] = 9600*(control_nn[i] - 3000)/(9800-3000);
+    }
+  }
 }

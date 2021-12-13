@@ -255,20 +255,21 @@ void gcnet_run(void)
 	
 	state_nn[6] = att->phi;
 	state_nn[7] = att->theta;
+        state_nn[8] = att->psi;
 
-	state_nn[8] = rates->p;
-	state_nn[9] = rates->q;
-	state_nn[10] = rates->r;
+	state_nn[9] = rates->p;
+	state_nn[10] = rates->q;
+	state_nn[11] = rates->r;
 
-	state_nn[11] = nn_rpm_obs[0];
-	state_nn[12] = nn_rpm_obs[1];
-	state_nn[13] = nn_rpm_obs[2];
-	state_nn[14] = nn_rpm_obs[3];
+	state_nn[12] = nn_rpm_obs[0];
+	state_nn[13] = nn_rpm_obs[1];
+	state_nn[14] = nn_rpm_obs[2];
+	state_nn[15] = nn_rpm_obs[3];
 
-	state_nn[15] = Mx_measured - Mx_modeled;     //  9.00431696e-03;
-	state_nn[16] = My_measured - My_modeled;     // -8.49446691e-03;
-	state_nn[17] = Mz_measured - Mz_modeled;     // -2.41474717e-03;
-	state_nn[18] = 0.0; //az_measured - az_modeled;
+	state_nn[16] = Mx_measured - Mx_modeled;     //  9.00431696e-03;
+	state_nn[17] = My_measured - My_modeled;     // -8.49446691e-03;
+	state_nn[18] = Mz_measured - Mz_modeled;     // -2.41474717e-03;
+	state_nn[19] = 0.0; //az_measured - az_modeled;
 	
 	// calcuate neural network output
 	nn_control(state_nn, control_nn);

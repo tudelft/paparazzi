@@ -51,7 +51,6 @@
 
 // Add neural network library 
 #include "modules/gcnet/gcnet_main.h"
-#include "modules/gcnet/ekf_gps.h"
 
 // For autopilot mode
 #include "firmwares/rotorcraft/navigation.h"
@@ -119,7 +118,6 @@ static void file_logger_write_header(FILE *file) {
   fprintf(file, "nn_in_1,nn_in_2,nn_in_3,nn_in_4,nn_in_5,nn_in_6,nn_in_7,nn_in_8,nn_in_9,nn_in_10,nn_in_11,nn_in_12,nn_in_13,nn_in_14,nn_in_15,nn_in_16,nn_in_17,nn_in_18,nn_in_19,");
   fprintf(file, "Mx_measured,My_measured,Mz_measured,az_measured,");
   fprintf(file, "Mx_modeled,My_modeled,Mz_modeled,az_modeled,");
-  fprintf(file, "ekf_X1,ekf_X2,ekf_X3,ekf_X4,ekf_X5,ekf_X6,ekf_X7,ekf_X8,ekf_X9,ekf_X10,ekf_X11,ekf_X12,ekf_X13,ekf_X14,ekf_X15,");
 #ifdef COMMAND_THRUST
   fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
 #else
@@ -179,7 +177,6 @@ static void file_logger_write_row(FILE *file) {
   fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,",state_nn[0], state_nn[1], state_nn[2], state_nn[3], state_nn[4], state_nn[5], state_nn[6], state_nn[7], state_nn[8], state_nn[9], state_nn[10], state_nn[11], state_nn[12], state_nn[13], state_nn[14], state_nn[15], state_nn[16], state_nn[17], state_nn[18]);
   fprintf(file, "%f,%f,%f,%f,", Mx_measured, My_measured, Mz_measured, az_measured);
   fprintf(file, "%f,%f,%f,%f,", Mx_modeled, My_modeled, Mz_modeled, az_modeled);
-  fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,", ekf_X[0], ekf_X[1], ekf_X[2], ekf_X[3], ekf_X[4], ekf_X[5], ekf_X[6], ekf_X[7], ekf_X[8], ekf_X[9], ekf_X[10], ekf_X[11], ekf_X[12], ekf_X[13], ekf_X[14]);
   
 #ifdef COMMAND_THRUST
   fprintf(file, "%d,%d,%d,%d\n",
