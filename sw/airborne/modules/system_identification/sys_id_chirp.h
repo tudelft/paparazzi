@@ -42,7 +42,7 @@
 
 
 extern uint8_t chirp_active;
-extern pprz_t chirp_amplitude;
+extern float chirp_amplitude;
 extern float chirp_noise_stdv_onaxis_ratio; // On-axis noise is amplitude times this value
 extern float chirp_noise_stdv_offaxis; // Off-axis noise (the axes that the chirp is not applied to)
 
