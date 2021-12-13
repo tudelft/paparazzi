@@ -23,14 +23,25 @@
 
         <module TYPE="pwm" NAME="actuators"/>
         <module TYPE="mpu6000" NAME="imu"/>
-        <module TYPE="ublox" NAME="gps"/>
-        <module TYPE="ubx_ucenter" NAME="gps"/>
+        <!--<module TYPE="ublox" NAME="gps"/>
+        <module TYPE="ubx_ucenter" NAME="gps"/>-->
+
+        <module name="gps" type="datalink"/>
 
         <module TYPE="indi" NAME="stabilization">
             <configure name="INDI_NUM_ACT" value="8"/>
         </module>
 
-        <module TYPE="ekf2" NAME="ins"/>
+        <!--<module TYPE="ekf2" NAME="ins"/>-->
+
+        <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/>
+        <module name="ahrs" type="int_cmpl_quat"> 
+            <configure name="AHRS_USE_MAGNETOMETER" value="FALSE"/> 
+            <define name="AHRS_MAG_UPDATE_ALL_AXIS" value="FALSE"/>
+            <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0" unit="m/s"/>
+        </module>
+        <module name="ins" type="extended"/>
+
         <module name="geo_mag"/>
         <module NAME="send_imu_mag_current"/>
 
@@ -157,6 +168,17 @@
         <define VALUE="0." UNIT="deg" NAME="BODY_TO_IMU_PHI"/>
         <define VALUE="0." UNIT="deg" NAME="BODY_TO_IMU_THETA"/>
         <define VALUE="0." UNIT="deg" NAME="BODY_TO_IMU_PSI"/>
+    </section>
+
+    <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
+    <section name="AHRS" prefix="AHRS_">
+        <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
+        <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
+        <define name="GRAVITY_HEURISTIC_FACTOR" value="0"/> 
+        <!-- Delft -->
+        <define name="H_X" value="0.3892503"/>
+        <define name="H_Y" value="0.0017972"/>
+        <define name="H_Z" value="0.9211303"/>
     </section>
 
       <section name="ATTITUDE_REFERENCE" prefix="STABILIZATION_ATTITUDE_">
