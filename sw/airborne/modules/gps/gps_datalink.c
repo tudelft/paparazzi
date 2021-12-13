@@ -186,7 +186,8 @@ static void parse_gps_datalink(uint8_t numsv, int32_t ecef_x, int32_t ecef_y, in
   gps_datalink.course = course;
   SetBit(gps_datalink.valid_fields, GPS_VALID_COURSE_BIT);
 
-  gps_datalink.num_sv = numsv;
+  gps_datalink.num_sv = 7; //numsv;
+
   gps_datalink.tow = tow;
   gps_datalink.fix = GPS_FIX_3D;
 

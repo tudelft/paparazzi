@@ -605,23 +605,26 @@ static void ins_ekf2_publish_attitude(uint32_t stamp)
   ekf2.got_imu_data = true;
 }
 
-/* Update INS based on Baro information */
+/* Update INS based on Baro information (BYPASSED BY DATA FROM GPS MESSAGE)*/
 static void baro_cb(uint8_t __attribute__((unused)) sender_id, uint32_t stamp, float pressure)
 {
+  float height_amsl_m = (float) gps_msg.alt * 1e-3f;
+  
   // Calculate the air density
-  float rho = pprz_isa_density_of_pressure(pressure,
-                                           20.0f); // TODO: add temperature compensation now set to 20 degree celcius
-  ekf.set_air_density(rho);
+  // float rho = pprz_isa_density_of_pressure(pressure, 20.0f); // TODO: add temperature compensation now set to 20 degree celcius
+
+  // ekf.set_air_density(rho);
 
   // Calculate the height above mean sea level based on pressure
-  float height_amsl_m = pprz_isa_height_of_pressure_full(pressure,
-                                                         101325.0); //101325.0 defined as PPRZ_ISA_SEA_LEVEL_PRESSURE in pprz_isa.h
+  // float height_amsl_m = pprz_isa_height_of_pressure_full(pressure, 101325.0); //101325.0 defined as PPRZ_ISA_SEA_LEVEL_PRESSURE in pprz_isa.h
+  
   ekf.setBaroData(stamp, height_amsl_m);
 }
 
 /* Update INS based on AGL information */
 static void agl_cb(uint8_t __attribute__((unused)) sender_id, uint32_t stamp, float distance)
 {
+  printf("agl update \n");
   ekf.setRangeData(stamp, distance);
 }
 
@@ -709,6 +712,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp,
                    struct GpsState *gps_s)
 {
+  printf("height= %f \n", (float) gps_s->hmsl*1e-3f);
   gps_msg.time_usec = stamp;
   gps_msg.lat = gps_s->lla_pos.lat;
   gps_msg.lon = gps_s->lla_pos.lon;
