@@ -133,7 +133,7 @@
         <set VALUE="autopilot_get_motors_on() ? actuators_pprz[5] : 0" SERVO="AIL_RIGHT"/>
         <set VALUE="autopilot_get_motors_on() ? actuators_pprz[6] : 0" SERVO="VTAIL_LEFT"/>
         <set VALUE="autopilot_get_motors_on() ? actuators_pprz[7] : 0" SERVO="VTAIL_RIGHT"/>
-        <set VALUE="autopilot_get_motors_on() ? RadioControlValues(RADIO_AUX3) : -MAX_PPRZ" SERVO="MOTOR_FWD"/>
+        <set VALUE="autopilot_get_motors_on() ? actuator_thrust_bx_pprz : -MAX_PPRZ" SERVO="MOTOR_FWD"/>
         <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="WING_ROT"/>
     </command_laws>
 
