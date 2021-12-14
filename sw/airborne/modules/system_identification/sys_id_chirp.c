@@ -200,3 +200,13 @@ void sys_id_chirp_add_values(bool motors_on, bool override_on, __attribute__((un
 
 #endif
 }
+extern void sys_id_chirp_set_param (float amp, float time, uint8_t axis, float fs, float fe, float n_on, float n_off)
+{
+chirp_axis = axis;
+chirp_amplitude = amp;
+chirp_length_s = time;
+chirp_fstart_hz = fs;
+chirp_fstop_hz = fe;
+chirp_noise_stdv_onaxis_ratio = n_on;
+chirp_noise_stdv_offaxis = n_off;
+} 

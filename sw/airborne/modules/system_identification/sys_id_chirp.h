@@ -68,5 +68,6 @@ extern void sys_id_chirp_fstop_handler(float fstop); // Check if fend is higher 
 
 // Add the current chirp values to the in_cmd values if motors_on is true
 extern void sys_id_chirp_add_values(bool motors_on, bool override_on, pprz_t in_cmd[]);
+extern void sys_id_chirp_set_param (float amp, float time, uint8_t axis, float fs, float fe, float n_on, float n_off);
 
 #endif // SYS_ID_CHIRP_H
