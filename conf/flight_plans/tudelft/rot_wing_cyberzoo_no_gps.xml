@@ -49,20 +49,1974 @@
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <stay wp="STDBY"/>
     </block>
-    <block name="Rotating wing">
-      <set var="wing_rotation.wing_angle_deg_sp" value="10"/>
+    <block name="Rotating wing0">
+      <set var="wing_rotation.wing_angle_deg_sp" value="0.0"/>
     </block> 
-    <block name="Doublet" > 
-      <call_once fun="sys_id_doublet_set_param(100.0,1.0,0)"/>
+    <block name="Doublet1" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,0)"/>
       <set var="doublet_active" value="1"/>
-      <!-- <exception cond="!doublet_active" deroute="Cool Down"/> -->
       <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
-      <!-- <stay wp="STDBY"/> -->
-    </block>   
-    <block name="Cool Down" >
+    </block>
+    <block name="Cool Down1" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>2" deroute="Standby"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet2" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down2" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet3" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down3" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet4" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down4" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet5" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down5" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet6" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down6" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet7" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down7" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet8" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down8" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet9" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down9" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet10" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down10" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet11" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down11" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet12" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down12" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet13" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down13" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet14" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down14" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet15" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down15" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet16" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down16" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet17" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down17" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet18" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down18" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet19" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down19" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet20" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down20" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet21" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down21" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet22" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down22" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet23" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down23" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet24" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down24" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Chirp1" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,0)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp1" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp2" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,1)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp2" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp3" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,2)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp3" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14" deroute="Standby"/>
+    </block>
+    <block name="Rotating wing10">
+      <set var="wing_rotation.wing_angle_deg_sp" value="10.0"/>
     </block> 
+    <block name="Doublet25" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down25" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet26" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down26" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet27" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down27" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet28" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down28" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet29" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down29" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet30" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down30" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet31" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down31" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet32" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down32" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet33" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down33" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet34" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down34" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet35" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down35" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet36" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down36" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet37" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down37" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet38" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down38" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet39" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down39" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet40" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down40" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet41" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down41" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet42" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down42" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet43" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down43" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet44" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down44" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet45" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down45" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet46" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down46" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet47" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down47" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet48" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down48" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Chirp4" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,0)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp4" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp5" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,1)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp5" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp6" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,2)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp6" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14" deroute="Standby"/>
+    </block>
+    <block name="Rotating wing20">
+      <set var="wing_rotation.wing_angle_deg_sp" value="20.0"/>
+    </block> 
+    <block name="Doublet49" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down49" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet50" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down50" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet51" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down51" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet52" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down52" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet53" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down53" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet54" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down54" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet55" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down55" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet56" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down56" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet57" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down57" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet58" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down58" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet59" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down59" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet60" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down60" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet61" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down61" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet62" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down62" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet63" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down63" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet64" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down64" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet65" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down65" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet66" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down66" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet67" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down67" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet68" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down68" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet69" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down69" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet70" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down70" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet71" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down71" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet72" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down72" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Chirp7" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,0)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp7" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp8" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,1)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp8" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp9" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,2)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp9" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14" deroute="Standby"/>
+    </block>
+    <block name="Rotating wing30">
+      <set var="wing_rotation.wing_angle_deg_sp" value="30.0"/>
+    </block> 
+    <block name="Doublet73" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down73" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet74" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down74" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet75" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down75" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet76" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down76" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet77" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down77" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet78" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down78" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet79" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down79" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet80" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down80" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet81" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down81" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet82" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down82" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet83" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down83" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet84" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down84" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet85" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down85" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet86" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down86" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet87" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down87" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet88" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down88" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet89" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down89" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet90" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down90" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet91" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down91" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet92" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down92" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet93" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down93" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet94" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down94" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet95" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down95" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet96" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down96" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Chirp10" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,0)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp10" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp11" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,1)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp11" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp12" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,2)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp12" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14" deroute="Standby"/>
+    </block>
+    <block name="Rotating wing40">
+      <set var="wing_rotation.wing_angle_deg_sp" value="40.0"/>
+    </block> 
+    <block name="Doublet97" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down97" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet98" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down98" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet99" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down99" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet100" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down100" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet101" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down101" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet102" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down102" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet103" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down103" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet104" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down104" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet105" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down105" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet106" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down106" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet107" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down107" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet108" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down108" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet109" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down109" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet110" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down110" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet111" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down111" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet112" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down112" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet113" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down113" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet114" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down114" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet115" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down115" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet116" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down116" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet117" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down117" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet118" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down118" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet119" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down119" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet120" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down120" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Chirp13" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,0)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp13" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp14" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,1)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp14" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp15" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,2)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp15" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14" deroute="Standby"/>
+    </block>
+    <block name="Rotating wing50">
+      <set var="wing_rotation.wing_angle_deg_sp" value="50.0"/>
+    </block> 
+    <block name="Doublet121" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down121" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet122" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down122" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet123" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down123" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet124" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down124" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet125" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down125" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet126" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down126" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet127" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down127" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet128" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down128" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet129" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down129" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet130" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down130" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet131" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down131" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet132" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down132" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet133" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down133" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet134" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down134" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet135" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down135" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet136" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down136" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet137" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down137" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet138" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down138" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet139" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down139" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet140" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down140" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet141" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down141" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet142" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down142" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet143" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down143" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet144" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down144" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Chirp16" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,0)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp16" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp17" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,1)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp17" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp18" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,2)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp18" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14" deroute="Standby"/>
+    </block>
+    <block name="Rotating wing60">
+      <set var="wing_rotation.wing_angle_deg_sp" value="60.0"/>
+    </block> 
+    <block name="Doublet145" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down145" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet146" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down146" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet147" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down147" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet148" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down148" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet149" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down149" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet150" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down150" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet151" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down151" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet152" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down152" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet153" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down153" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet154" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down154" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet155" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down155" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet156" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down156" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet157" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down157" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet158" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down158" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet159" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down159" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet160" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down160" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet161" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down161" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet162" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down162" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet163" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down163" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet164" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down164" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet165" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down165" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet166" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down166" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet167" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down167" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet168" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down168" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Chirp19" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,0)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp19" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp20" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,1)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp20" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp21" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,2)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp21" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14" deroute="Standby"/>
+    </block>
+    <block name="Rotating wing70">
+      <set var="wing_rotation.wing_angle_deg_sp" value="70.0"/>
+    </block> 
+    <block name="Doublet169" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down169" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet170" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down170" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet171" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,0)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down171" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet172" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down172" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet173" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down173" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet174" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,1)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down174" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet175" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down175" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet176" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down176" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet177" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,2)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down177" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet178" >
+      <call_once fun="sys_id_doublet_set_param(100.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down178" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet179" >
+      <call_once fun="sys_id_doublet_set_param(200.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down179" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet180" >
+      <call_once fun="sys_id_doublet_set_param(300.0,2.0,3)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down180" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>6"/>
+    </block>
+    <block name="Doublet181" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down181" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet182" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down182" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet183" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,4)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down183" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet184" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down184" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet185" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down185" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet186" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,5)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down186" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet187" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down187" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet188" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down188" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet189" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,6)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down189" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet190" >
+      <call_once fun="sys_id_doublet_set_param(50.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down190" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet191" >
+      <call_once fun="sys_id_doublet_set_param(100.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down191" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Doublet192" >
+      <call_once fun="sys_id_doublet_set_param(150.0,0.5,7)"/>
+      <set var="doublet_active" value="1"/>
+      <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down192" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>5"/>
+    </block>
+    <block name="Chirp22" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,0)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp22" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp23" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,1)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp23" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14"/>
+    </block>
+    <block name="Chirp24" >
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,5.0,0.1,20.0,2)"/>
+      <set var="chirp_active" value="1"/>
+      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+    </block>
+    <block name="Cool Down Chirp24" >
+      <stay wp="STDBY"/>
+      <exception cond="stage_time>14" deroute="Standby"/>
+    </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>
