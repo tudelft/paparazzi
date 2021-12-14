@@ -268,7 +268,7 @@
         <define name="HEADING_BANK_GAIN" value="1."/>
         <define name="NAV_SPEED_MARGIN" value="0."/>
         <define name="MAX_AIRSPEED" value="4."/>
-        <define name="PITCH_LIFT_EFF" value="0.0"/>
+        <define name="PITCH_LIFT_EFF" value="0.12"/>
         <define name="MIN_THROTTLE" value="0."/>
         <define name="MIN_PITCH" value="-35."/>
         <define name="MAX_PITCH" value="35."/>
