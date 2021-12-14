@@ -53,7 +53,7 @@
       <set var="wing_rotation.wing_angle_deg_sp" value="0.0"/>
     </block> 
     <block name="Wait for wing0">
-      <exception cond="stage_time>5"/>
+      <while cond="5>stage_time"/>
     </block> 
     <block name="Doublet1" >
       <call_once fun="sys_id_doublet_set_param(240.0,1.0,0)"/>
@@ -62,7 +62,7 @@
     </block>
     <block name="Cool Down1" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Doublet2" >
       <call_once fun="sys_id_doublet_set_param(300.0,0.7,0)"/>
@@ -71,7 +71,7 @@
     </block>
     <block name="Cool Down2" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Doublet3" >
       <call_once fun="sys_id_doublet_set_param(70.0,1.0,1)"/>
@@ -80,7 +80,7 @@
     </block>
     <block name="Cool Down3" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Doublet4" >
       <call_once fun="sys_id_doublet_set_param(90.0,0.7,1)"/>
@@ -89,7 +89,7 @@
     </block>
     <block name="Cool Down4" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Doublet5" >
       <call_once fun="sys_id_doublet_set_param(240.0,1.0,2)"/>
@@ -98,7 +98,7 @@
     </block>
     <block name="Cool Down5" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Doublet6" >
       <call_once fun="sys_id_doublet_set_param(300.0,0.7,2)"/>
@@ -107,7 +107,7 @@
     </block>
     <block name="Cool Down6" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Doublet7" >
       <call_once fun="sys_id_doublet_set_param(70.0,1.0,3)"/>
@@ -116,7 +116,7 @@
     </block>
     <block name="Cool Down7" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Doublet8" >
       <call_once fun="sys_id_doublet_set_param(90.0,0.7,3)"/>
@@ -125,21 +125,21 @@
     </block>
     <block name="Cool Down8" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Chirp1" >
       <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,3.5,0.0,0.0,0)"/>
       <set var="chirp_active" value="1"/>
-      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+      <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
     </block>
     <block name="Cool Down Chirp1" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>15"/>
+      <while cond="15>stage_time"/>
     </block>
     <block name="Chirp2" >
       <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,3.5,0.0,0.0,1)"/>
       <set var="chirp_active" value="1"/>
-      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+      <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
     </block>
     <block name="Cool Down Chirp2" >
       <stay wp="STDBY"/>
@@ -149,7 +149,7 @@
       <set var="wing_rotation.wing_angle_deg_sp" value="20.0"/>
     </block> 
     <block name="Wait for wing20">
-      <exception cond="stage_time>5"/>
+      <while cond="5>stage_time"/>
     </block> 
     <block name="Doublet9" >
       <call_once fun="sys_id_doublet_set_param(240.0,1.0,0)"/>
@@ -158,7 +158,7 @@
     </block>
     <block name="Cool Down9" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Doublet10" >
       <call_once fun="sys_id_doublet_set_param(300.0,0.7,0)"/>
@@ -167,7 +167,7 @@
     </block>
     <block name="Cool Down10" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Doublet11" >
       <call_once fun="sys_id_doublet_set_param(70.0,1.0,1)"/>
@@ -176,7 +176,7 @@
     </block>
     <block name="Cool Down11" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Doublet12" >
       <call_once fun="sys_id_doublet_set_param(90.0,0.7,1)"/>
@@ -185,7 +185,7 @@
     </block>
     <block name="Cool Down12" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Doublet13" >
       <call_once fun="sys_id_doublet_set_param(240.0,1.0,2)"/>
@@ -194,7 +194,7 @@
     </block>
     <block name="Cool Down13" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Doublet14" >
       <call_once fun="sys_id_doublet_set_param(300.0,0.7,2)"/>
@@ -203,7 +203,7 @@
     </block>
     <block name="Cool Down14" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Doublet15" >
       <call_once fun="sys_id_doublet_set_param(70.0,1.0,3)"/>
@@ -212,7 +212,7 @@
     </block>
     <block name="Cool Down15" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Doublet16" >
       <call_once fun="sys_id_doublet_set_param(90.0,0.7,3)"/>
@@ -221,21 +221,21 @@
     </block>
     <block name="Cool Down16" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>6"/>
+      <while cond="6>stage_time"/>
     </block>
     <block name="Chirp3" >
       <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,3.5,0.0,0.0,0)"/>
       <set var="chirp_active" value="1"/>
-      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+      <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
     </block>
     <block name="Cool Down Chirp3" >
       <stay wp="STDBY"/>
-      <exception cond="stage_time>15"/>
+      <while cond="15>stage_time"/>
     </block>
     <block name="Chirp4" >
       <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,3.5,0.0,0.0,1)"/>
       <set var="chirp_active" value="1"/>
-      <call_once fun="sys_id_chirp_activate_handler(doublet_active)"/> 
+      <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
     </block>
     <block name="Cool Down Chirp4" >
       <stay wp="STDBY"/>
