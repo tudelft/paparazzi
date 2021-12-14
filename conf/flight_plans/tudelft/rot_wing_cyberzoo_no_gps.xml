@@ -3,8 +3,11 @@
 <flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="20" name="RotWingDrone Cyberzoo (Delft) no GPS" security_height="0.3">
   <header>
 #include "autopilot.h"
-#include "modules/system_identification/sys_id_chirp.h"
+#include "modules/system_identification/sys_id_doublet.h"
 #include "modules/system_identification/pprz_doublet.h"
+#include "modules/system_identification/sys_id_chirp.h"
+#include "modules/system_identification/pprz_chirp.h"
+#include "modules/rot_wing_drone/wing_rotation_controller.h"
 </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
@@ -46,6 +49,9 @@
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <stay wp="STDBY"/>
     </block>
+    <block name="Rotating wing">
+      <set var="wing_rotation.wing_angle_deg_sp" value="10"/>
+    </block> 
     <block name="Doublet" > 
       <call_once fun="sys_id_doublet_set_param(100.0,1.0,0)"/>
       <set var="doublet_active" value="1"/>
