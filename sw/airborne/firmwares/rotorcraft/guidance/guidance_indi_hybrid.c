@@ -47,6 +47,9 @@
 #include "subsystems/abi.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "stabilization/wls/wls_alloc.h"
+#include "modules/system_identification/sys_id_chirp.h"
+
+#include "wls/wls_alloc.h"
 
 
 // The acceleration reference is calculated with these gains. If you use GPS,
@@ -87,7 +90,7 @@ float nav_max_speed = NAV_MAX_SPEED;
 #endif
 
 /*Boolean to force the heading to a static value (only use for specific experiments)*/
-bool take_heading_control = false;
+bool take_heading_control = true;
 
 struct FloatVect3 sp_accel = {0.0,0.0,0.0};
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
@@ -150,9 +153,30 @@ float thrust_in;
 
 struct FloatVect3 speed_sp = {0.0, 0.0, 0.0};
 
+// Rot wing specific matrices
+float Gmat_rot_wing[3][4];
+float Gmat_rot_wing_trans_mult[3][3];
+float Gmat_rot_winginv[4][4];
+float Gmat_rot_wing_pseudo_inv[4][3];
+
+// WLS implementation for Rot wing
+float du_min_hybrid[4];
+float du_max_hybrid[4];
+float du_pref_hybrid[4];
+float indi_v_hybrid[3];
+float *Bwls_hybrid[3];
+int num_iter_hybrid = 0;
+float hybrid_du[4];
+float hybrid_v[3];
+float Wv_hybrid[3] = {1., 1., 1.};
+
+float hybrid_roll_limit = 0.785; // 45 deg
+float hybrid_pitch_limit = 0.349; // 15 deg
+
 void guidance_indi_propagate_filters(void);
 static void guidance_indi_calcg_wing(struct FloatMat33 *Gmat);
 static void guidance_indi_calcg_rot_wing(void);
+static void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff);
 static float guidance_indi_get_liftd(float pitch, float theta);
 struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_gain);
 struct FloatVect3 nav_get_speed_sp_from_line(struct FloatVect2 line_v_enu, struct FloatVect2 to_end_v_enu, struct EnuCoor_i target, float pos_gain);
@@ -179,11 +203,6 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
 }
 #endif
 
-float Gmat_rot_wing[3][4];
-float Gmat_rot_wing_trans_mult[4][4];
-float Gmat_rot_winginv[4][4];
-float Gmat_rot_wing_pseudo_inv[4][3];
-
 /**
  * @brief Init function
  */
@@ -200,6 +219,12 @@ void guidance_indi_init(void)
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
+
+  // Initialize the array of pointers to the rows of g1g2
+  uint8_t i;
+  for (i = 0; i < 3; i++) {
+    Bwls_hybrid[i] = Gmat_rot_wing[i];
+  }
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE_INDI_HYBRID, send_guidance_indi_hybrid);
@@ -367,7 +392,7 @@ void guidance_indi_run(float *heading_sp) {
 #endif
 #ifdef GUIDANCE_INDI_HYBRID_ROT_WING
   //Calculate matrix of partial derivatives and invert matrix
-  guidance_indi_calcg_rot_wing();
+  //guidance_indi_calcg_rot_wing();
 #else
 
   //Calculate matrix of partial derivatives
@@ -401,20 +426,18 @@ void guidance_indi_run(float *heading_sp) {
 
   //Calculate roll,pitch and thrust command
 #ifdef GUIDANCE_INDI_HYBRID_ROT_WING
-  // Matrix multiplication
-  // Calculate the increment in euler commands for each output
-  if (T_bx_effective) {
-    euler_cmd.x = Gmat_rot_wing_pseudo_inv[0][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[0][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[0][2] * a_diff.z;
-    euler_cmd.y = Gmat_rot_wing_pseudo_inv[1][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[1][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[1][2] * a_diff.z;
-    euler_cmd.z = Gmat_rot_wing_pseudo_inv[2][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[2][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[2][2] * a_diff.z;
-    acc_T_bx =    Gmat_rot_wing_pseudo_inv[3][0] * a_diff.x + Gmat_rot_wing_pseudo_inv[3][1] * a_diff.y + Gmat_rot_wing_pseudo_inv[3][2] * a_diff.z;
-  } else {
-     MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
-     acc_T_bx = -MAX_PPRZ;
-  }
+  guidance_indi_calcg_rot_wing_wls(a_diff);
+  euler_cmd.x = hybrid_du[0];
+  euler_cmd.y = hybrid_du[1];
+  euler_cmd.z = hybrid_du[2];
+  acc_T_bx = hybrid_du[3];
 #else
   MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
 #endif
+
+  // add chirp values to euler cmd
+  euler_cmd.x += current_chirp_values[0];
+  euler_cmd.y += current_chirp_values[1];
 
   AbiSendMsgTHRUST(THRUST_INCREMENT_ID, euler_cmd.z);
   AbiSendMsgTHRUST(THRUST_BX_INCREMENT_ID, acc_T_bx);
@@ -456,7 +479,8 @@ void guidance_indi_run(float *heading_sp) {
 // For experiments, it is possible to fix the heading to a different value.
 #ifndef KNIFE_EDGE_TEST
   if(take_heading_control) {
-    *heading_sp = ANGLE_FLOAT_OF_BFP(nav_heading);
+    *heading_sp = ANGLE_FLOAT_OF_BFP(nav_heading) + current_chirp_values[2];
+    FLOAT_ANGLE_NORMALIZE(*heading_sp);
   } else {
     *heading_sp += omega / PERIODIC_FREQUENCY;
     FLOAT_ANGLE_NORMALIZE(*heading_sp);
@@ -593,12 +617,13 @@ void guidance_indi_calcg_rot_wing(void) {
   float accel_bx = cpsi * filt_accel_ned[0].o[0] + spsi * filt_accel_ned[1].o[0];
   float accel_bx_err = accel_bx_sp - accel_bx;
 
-  if (accel_bx_err < 0 && actuator_thrust_bx_pprz <= 0) {
+  if (true) {
+  //if (accel_bx_err < 0 && actuator_thrust_bx_pprz <= 0) {
     RMAT_ELMT(Ga, 0, 0) = cphi*spsi*lift_thrust_bz;
     RMAT_ELMT(Ga, 1, 0) = -cphi*cpsi*lift_thrust_bz;
     RMAT_ELMT(Ga, 2, 0) = -sphi*lift_thrust_bz;
     RMAT_ELMT(Ga, 0, 1) = (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
-    RMAT_ELMT(Ga, 1, 1) = (ctheta*sphi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;;
+    RMAT_ELMT(Ga, 1, 1) = (ctheta*spsi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;;
     RMAT_ELMT(Ga, 2, 1) = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
     RMAT_ELMT(Ga, 0, 2) = stheta*cpsi + sphi*ctheta*spsi;
     RMAT_ELMT(Ga, 1, 2) = stheta*spsi - sphi*ctheta*cpsi;
@@ -616,7 +641,7 @@ void guidance_indi_calcg_rot_wing(void) {
     Gmat_rot_wing[2][0] = -sphi*lift_thrust_bz;
 
     Gmat_rot_wing[0][1] = (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
-    Gmat_rot_wing[1][1] = (ctheta*sphi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
+    Gmat_rot_wing[1][1] = (ctheta*spsi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
     Gmat_rot_wing[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
 
     Gmat_rot_wing[0][2] = stheta*cpsi + sphi*ctheta*spsi;
@@ -627,47 +652,140 @@ void guidance_indi_calcg_rot_wing(void) {
     Gmat_rot_wing[1][3] = ctheta*spsi + sphi*stheta*cpsi;
     Gmat_rot_wing[2][3] = -cphi*stheta;
 
+    // Don't pitch down if acc bx_err > 0 and pitch is greater than 0
+    if (accel_bx_err > 0 && eulers_zxy.theta < 0) {
+      Gmat_rot_wing[0][1] = 0;
+      Gmat_rot_wing[1][1] = 0;
+    }
+
+    if (accel_bx_err < 0 && eulers_zxy.theta > 0 && actuator_thrust_bx_pprz > 0) {
+      Gmat_rot_wing[0][1] = Gmat_rot_wing[0][1];
+      Gmat_rot_wing[1][1] = Gmat_rot_wing[1][1];
+      Gmat_rot_wing[0][3] = Gmat_rot_wing[0][3];
+      Gmat_rot_wing[1][3] = Gmat_rot_wing[0][3];
+    }
+
+    if (accel_bx_err < 0 && actuator_thrust_bx_pprz <= 0) {
+      Gmat_rot_wing[0][3] = 0;
+      Gmat_rot_wing[1][3] = 0;
+    }
+
     T_bx_effective = true;
 
     // Invert Gmat_rot_wing
 
-    //transpose()*Gmat_rot_wing
+    //Gmat_rot_wing * transpose()
     //calculate matrix multiplication of its transpose num_act*HYBRID_INDI_OUTPUTS x HYBRID_INDI_OUTPUTS*num_act
     float element = 0;
     int8_t row;
     int8_t col;
     int8_t i;
-    for (row = 0; row < 4; row++) {
-      for (col = 0; col < 4; col++) {
+    for (row = 0; row < 3; row++) {
+      for (col = 0; col < 3; col++) {
         element = 0;
-        for (i = 0; i < 3; i++) {
-          element = element + Gmat_rot_wing[i][col] * Gmat_rot_wing[i][row];
+        for (i = 0; i < 4; i++) {
+          element = element + Gmat_rot_wing[row][i] * Gmat_rot_wing[col][i];
         }
         Gmat_rot_wing_trans_mult[row][col] = element;
       }
     }
 
-    //there are numerical errors if the scaling is not right.
-    float_vect_scale(Gmat_rot_wing_trans_mult[0], 100.0, 4*4);
+    for (row = 0; row < 3; row++) {
+      for (col = 0; col < 3; col++) {
+         RMAT_ELMT(Ga, row, col) = Gmat_rot_wing_trans_mult[row][col];
+      }
+    }
 
-    //inverse of 4x4 matrix
-    float_mat_inv_4d(Gmat_rot_winginv[0], Gmat_rot_wing_trans_mult[0]);
+    MAT33_INV(Ga_inv, Ga);
 
-    //scale back
-    float_vect_scale(Gmat_rot_winginv[0], 100.0, 4*4);
-
-    //Gmatinv*Gmat'
+    //Gmat' * Ga_inv
     //calculate matrix multiplication INDI_NUM_ACTxINDI_NUM_ACT x HYBRID_INDI_
     for (row = 0; row < 4; row++) {
       for (col = 0; col < 3; col++) {
         element = 0;
-        for (i = 0; i < 4; i++) {
-          element = element + Gmat_rot_winginv[row][i] * Gmat_rot_wing[col][i];
+        for (i = 0; i < 3; i++) {
+          element = element + Ga_inv.m[i*3+col] * Gmat_rot_wing[i][row];
         }
         Gmat_rot_wing_pseudo_inv[row][col] = element;
       }
     }
   }
+}
+
+/**
+ * Calculate the matrix of partial derivatives of the roll, pitch and thrust
+ * w.r.t. the NED accelerations, taking into account the lift of a wing that is
+ * horizontal at 0 degrees pitch
+ *
+ */
+void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
+  /*Pre-calculate sines and cosines*/
+  float sphi = sinf(eulers_zxy.phi);
+  float cphi = cosf(eulers_zxy.phi);
+  float stheta = sinf(eulers_zxy.theta);
+  float ctheta = cosf(eulers_zxy.theta);
+  float spsi = sinf(eulers_zxy.psi);
+  float cpsi = cosf(eulers_zxy.psi);
+  //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
+
+#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
+#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
+#endif
+
+  float lift_thrust_bz = -9.81; // Sum of lift and thrust in boxy z axis (level flight)
+  float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta - M_PI_2); // Convert to correct pitch angle
+
+  // Calc assumed body acceleration setpoint and error
+  float accel_bx_sp = cpsi * sp_accel.x + spsi * sp_accel.y;
+  float accel_bx = cpsi * filt_accel_ned[0].o[0] + spsi * filt_accel_ned[1].o[0];
+  float accel_bx_err = accel_bx_sp - accel_bx;
+
+  Gmat_rot_wing[0][0] = cphi*spsi*lift_thrust_bz;
+  Gmat_rot_wing[1][0] = -cphi*cpsi*lift_thrust_bz;
+  Gmat_rot_wing[2][0] = -sphi*lift_thrust_bz;
+
+  Gmat_rot_wing[0][1] = (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
+  Gmat_rot_wing[1][1] = (ctheta*spsi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
+  Gmat_rot_wing[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+
+  Gmat_rot_wing[0][2] = stheta*cpsi + sphi*ctheta*spsi;
+  Gmat_rot_wing[1][2] = stheta*spsi - sphi*ctheta*cpsi;
+  Gmat_rot_wing[2][2] = cphi*ctheta;
+
+  Gmat_rot_wing[0][3] = ctheta*cpsi - sphi*stheta*spsi;
+  Gmat_rot_wing[1][3] = ctheta*spsi + sphi*stheta*cpsi;
+  Gmat_rot_wing[2][3] = -cphi*stheta;
+
+  // Perform WLS
+  // WLS Control Allocator
+
+  hybrid_v[0] = a_diff.x;
+  hybrid_v[1] = a_diff.y;
+  hybrid_v[2] = a_diff.z;
+
+  // Set lower limits
+  du_min_hybrid[0] = -hybrid_roll_limit + eulers_zxy.phi; //roll
+  du_min_hybrid[1] = -hybrid_pitch_limit + eulers_zxy.theta; // pitch
+  du_min_hybrid[2] = -100.;
+  du_min_hybrid[3] = -actuator_thrust_bx_pprz*THRUST_BX_EFF;
+  // Set upper limits limits
+  du_max_hybrid[0] = hybrid_roll_limit - eulers_zxy.phi; //roll
+  du_max_hybrid[1] = hybrid_pitch_limit - eulers_zxy.theta; // pitch
+  du_max_hybrid[2] = 100.;
+  du_max_hybrid[3] = (MAX_PPRZ - actuator_thrust_bx_pprz) * THRUST_BX_EFF;
+
+  // Set prefered states
+  du_pref_hybrid[0] = -eulers_zxy.phi + current_chirp_values[0]; // 0 roll angle
+  du_pref_hybrid[1] = -eulers_zxy.theta + current_chirp_values[1]; // 0 pitch angle
+  du_pref_hybrid[2] = 0;
+  if (current_chirp_values[1] != 0) {
+    du_pref_hybrid[3] = 0;// - 0.25 * (9.81 * stheta); // Try to decaccelerate with pusher prop
+  } else {
+    du_pref_hybrid[3] = accel_bx_err - 0.25 * (9.81 * stheta);
+  }
+
+  num_iter_hybrid =
+    wls_alloc_hybrid(hybrid_du, hybrid_v, du_min_hybrid, du_max_hybrid, Bwls_hybrid, 0, 0, Wv_hybrid, 0, du_pref_hybrid, 10000, 10);
 }
 
 /**
