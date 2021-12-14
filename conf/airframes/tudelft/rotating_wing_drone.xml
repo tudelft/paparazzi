@@ -275,6 +275,10 @@
         <define name="MIN_THROTTLE_FWD" value="0."/>
     </section>
 
+    <section name= "PUSHER">
+        <define name="THRUST_BX_EFF" value="0.0016"/>
+    </section>
+
     <section PREFIX="GUIDANCE_V_" NAME="GUIDANCE_V">
         <define VALUE="310" NAME="HOVER_KP"/>
         <define VALUE="130" NAME="HOVER_KD"/>
