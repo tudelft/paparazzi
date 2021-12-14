@@ -51,6 +51,7 @@
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
     <module name="sys_id_doublet"/>
+    <module name="sys_id_chirp"/>
   </firmware>
   
   <commands>
@@ -211,6 +212,10 @@
     <define name="MIN_PITCH" value="-35."/>
     <define name="MAX_PITCH" value="35."/>
     <define name="MIN_THROTTLE_FWD" value="0."/>
+  </section>
+
+  <section name= "PUSHER">
+    <define name="THRUST_BX_EFF" value="0.0016"/>
   </section>
 
   <section name="FORWARD">

@@ -42,6 +42,7 @@ extern float g2_est[INDI_NUM_ACT];
 extern float g1_init[INDI_OUTPUTS][INDI_NUM_ACT];
 extern float actuator_state_filt_vect[INDI_NUM_ACT];
 extern float actuator_thrust_bx_pprz;
+extern float thrust_bx_eff;
 
 extern bool indi_use_adaptive;
 

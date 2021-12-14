@@ -40,10 +40,17 @@
           <strip_button name="Chirp start" value="1" group="System identification"/>
           <strip_button name="Chirp stop"  value="0" group="System identification"/>
         </dl_setting>
+<<<<<<< HEAD
         <dl_setting min="0"    max="5"    step="1"    shortname="Chirp axis"     var="chirp_axis"                    type="uint8_t" module="system_identification/sys_id_chirp" handler="axis_handler"/>
         <dl_setting min="-1.57"    max="1.57" step="0.01"  shortname="Amplitude"      var="chirp_amplitude"               type="int32_t" module="system_identification/sys_id_chirp"/>
         <dl_setting min="0"    max="0.1"    step="0.001" shortname="on-axis noise"  var="chirp_noise_stdv_onaxis_ratio" type="float"   module="system_identification/sys_id_chirp"/>
         <dl_setting min="-1.57"    max="1.57" step="0.001"   shortname="off-axis noise" var="chirp_noise_stdv_offaxis"      type="float"   module="system_identification/sys_id_chirp"/>
+=======
+        <dl_setting min="0"    max="2"    step="1"    shortname="Chirp axis"     var="chirp_axis"                    type="uint8_t" module="system_identification/sys_id_chirp" handler="axis_handler"/>
+        <dl_setting min="0"    max="1.57" step="0.01"  shortname="Amplitude"      var="chirp_amplitude"               type="int32_t" module="system_identification/sys_id_chirp"/>
+        <dl_setting min="0"    max="0.1"    step="0.001" shortname="on-axis noise"  var="chirp_noise_stdv_onaxis_ratio" type="float"   module="system_identification/sys_id_chirp"/>
+        <dl_setting min="0"    max="1.57" step="0.001"   shortname="off-axis noise" var="chirp_noise_stdv_offaxis"      type="float"   module="system_identification/sys_id_chirp"/>
+>>>>>>> 3d2902ebb364332991efeff46dec97b619ebdb84
         <dl_setting min="0.05" max="20"    step="0.05" shortname="Fstart_hz"      var="chirp_fstart_hz"                   type="float"   module="system_identification/sys_id_chirp" handler="fstart_handler"/>
         <dl_setting min="0.1"  max="20"   step="0.1"  shortname="Fend_hz"        var="chirp_fstop_hz"                   type="float"   module="system_identification/sys_id_chirp" handler="fstop_handler"/>
         <dl_setting min="0"    max="100"  step="0.5"  shortname="Length_s"       var="chirp_length_s"                type="float"   module="system_identification/sys_id_chirp"/>

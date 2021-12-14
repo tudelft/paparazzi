@@ -26,6 +26,7 @@
 #include "modules/ctrl/ctrl_effectiveness_scheduling_rotating_wing_drone.h"
 #include "modules/rot_wing_drone/wing_rotation_controller.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
+#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
 #include "state.h"
 #include "filters/low_pass_filter.h"
 
@@ -125,6 +126,9 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
   float c_rot_wing_angle = cosf(rot_wing_angle_rad);
   float s_rot_wing_angle = sinf(rot_wing_angle_rad);
 
+  // scale lift_pitch_eff with wing angle:
+  lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF * s_rot_wing_angle;
+
   rot_wing_g1_p_side_motors[0] = c_rot_wing_angle * rot_wing_side_motors_g1_p_0[0];
   rot_wing_g1_p_side_motors[1] = c_rot_wing_angle * rot_wing_side_motors_g1_p_0[1];
 
@@ -138,7 +142,7 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
   // Perform analysis on rotating ailerons
   for (int i = 0; i < 2; i++) {
     rot_wing_g1_p_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[i] * s_rot_wing_angle; // roll effectieness scales with rotation
-    rot_wing_g1_q_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[i];
+    rot_wing_g1_q_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[i] * c_rot_wing_angle;
     rot_wing_g1_r_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_r[i];
   }
   // Perform analysis on fixed tail
