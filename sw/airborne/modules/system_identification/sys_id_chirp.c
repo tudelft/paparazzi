@@ -34,11 +34,6 @@
 #include "filters/low_pass_filter.h"
 #include "math/pprz_random.h"
 
-
-#ifndef CHIRP_AXES
-#define CHIRP_AXES {COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW}
-#endif
-
 #ifndef CHIRP_ENABLED
 #define CHIRP_ENABLED TRUE
 #endif
@@ -59,22 +54,21 @@
 static struct chirp_t chirp;
 uint8_t chirp_active = false;
 uint8_t chirp_axis = 0;
-pprz_t chirp_amplitude = 0;
+float chirp_amplitude = 0;
 float chirp_noise_stdv_onaxis_ratio = 0.1;
-float chirp_noise_stdv_offaxis = 200;
+float chirp_noise_stdv_offaxis = 0.032;
 float chirp_fstart_hz = 1.0f;
 float chirp_fstop_hz = 5.0f;
 float chirp_length_s = 20;
 
 // The axes on which noise and chirp values can be applied
-static const int8_t ACTIVE_CHIRP_AXES[] = CHIRP_AXES;
-#define CHIRP_NB_AXES sizeof ACTIVE_CHIRP_AXES / sizeof ACTIVE_CHIRP_AXES[0] // Number of items in ACTIVE_CHIRP_AXES
+#define CHIRP_NB_AXES 3 // Number of items in ACTIVE_CHIRP_AXES
 
 // Filters used to cut-off the gaussian noise fed into the actuator channels
 static struct FirstOrderLowPass filters[CHIRP_NB_AXES];
 
 // Chirp and noise values for all axes (indices correspond to the axes given in CHIRP_AXES)
-static pprz_t current_chirp_values[CHIRP_NB_AXES];
+float current_chirp_values[CHIRP_NB_AXES];
 
 static void set_current_chirp_values(void)
 {
@@ -85,12 +79,12 @@ static void set_current_chirp_values(void)
     for (uint8_t i = 0; i < CHIRP_NB_AXES; i++) {
       noise = update_first_order_low_pass(&filters[i], rand_gaussian());
       amplitude = chirp_axis == i ? chirp_noise_stdv_onaxis_ratio * chirp_amplitude : chirp_noise_stdv_offaxis;
-      current_chirp_values[i] = (int32_t)(noise * amplitude);
+      current_chirp_values[i] = (noise * amplitude);
     }
 
 #endif
 
-    current_chirp_values[chirp_axis] += (int32_t)(chirp_amplitude * chirp.current_value);
+    current_chirp_values[chirp_axis] += (chirp_amplitude * chirp.current_value);
   } else {
     for (uint8_t i = 0; i < CHIRP_NB_AXES; i++) {
       current_chirp_values[i] = 0;
@@ -191,7 +185,7 @@ void sys_id_chirp_run(void)
 #endif
 }
 
-void sys_id_chirp_add_values(bool motors_on, bool override_on, pprz_t in_cmd[])
+void sys_id_chirp_add_values(bool motors_on, bool override_on, __attribute__((unused)) pprz_t in_cmd[])
 {
   (void)(override_on); // Suppress unused parameter warnings
 
@@ -199,8 +193,8 @@ void sys_id_chirp_add_values(bool motors_on, bool override_on, pprz_t in_cmd[])
 
   if (motors_on) {
     for (uint8_t i = 0; i < CHIRP_NB_AXES; i++) {
-      in_cmd[ACTIVE_CHIRP_AXES[i]] += current_chirp_values[i];
-      BoundAbs(in_cmd[ACTIVE_CHIRP_AXES[i]], MAX_PPRZ);
+      //in_cmd[ACTIVE_CHIRP_AXES[i]] += current_chirp_values[i];
+      //BoundAbs(in_cmd[ACTIVE_CHIRP_AXES[i]], MAX_PPRZ);
     }
   }
 

@@ -53,6 +53,8 @@ extern float chirp_length_s;
 // Index of chirp axis in ACTIVE_CHIRP_AXES
 extern uint8_t chirp_axis;
 
+extern float current_chirp_values[];
+
 extern void sys_id_chirp_init(void);
 
 // If chirp is running, update its values
