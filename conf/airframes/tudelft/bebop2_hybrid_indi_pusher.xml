@@ -51,6 +51,7 @@
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
     <module name="sys_id_doublet"/>
+    <module name="sys_id_chirp"/>
   </firmware>
   
   <commands>
@@ -216,7 +217,7 @@
   <section name="FORWARD">
     <!-- This is the pitch angle that the drone will have in forward flight, where 0 degrees is hover-->
     <define name="TRANSITION_MAX_OFFSET" value="0.0" unit="deg"/>
-    <define name="GUIDANCE_HEADING_IS_FREE" value="TRUE"/> <!--heading can not be set by navigation-->
+    <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/> <!--heading can not be set by navigation-->
   </section>
 
   <section name="NAVIGATION" prefix="NAV_">
