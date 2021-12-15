@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="20" name="RotWingDrone Cyberzoo (Delft) no GPS" security_height="0.3">
+<flight_plan alt="3.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="20" name="RotWingDrone Cyberzoo (Delft) no GPS" security_height="0.3">
   <header>
 #include "autopilot.h"
 #include "modules/system_identification/sys_id_doublet.h"
@@ -10,7 +10,7 @@
 #include "modules/rot_wing_drone/wing_rotation_controller.h"
 </header>
   <waypoints>
-    <waypoint name="HOME" x="0.0" y="0.0"/>
+    <waypoint name="HOME" x="0.0" y="0.0" height="0.0"/>
     <waypoint name="CLIMB" x="1.2" y="-0.6"/>
     <waypoint name="GOAL" x="2.0" y="2.0"/>
     <waypoint name="STDBY" x="-0.7" y="-0.8"/>
@@ -128,7 +128,7 @@
       <while cond="LessThan(NavBlockTime(),6)"/>
     </block>
     <block name="Chirp1" >
-      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,3.5,0.0,0.0,0)"/>
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,0,1.0,3.5,0.0,0.0)"/>
       <set var="chirp_active" value="1"/>
       <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
     </block>
@@ -137,7 +137,7 @@
       <while cond="LessThan(NavBlockTime(),15)"/>
     </block>
     <block name="Chirp2" >
-      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,3.5,0.0,0.0,1)"/>
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1,1.0,3.5,0.0,0.0)"/>
       <set var="chirp_active" value="1"/>
       <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
     </block>
@@ -224,7 +224,7 @@
       <while cond="LessThan(NavBlockTime(),6)"/>
     </block>
     <block name="Chirp3" >
-      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,3.5,0.0,0.0,0)"/>
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,0,1.0,3.5,0.0,0.0)"/>
       <set var="chirp_active" value="1"/>
       <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
     </block>
@@ -233,7 +233,7 @@
       <while cond="LessThan(NavBlockTime(),15)"/>
     </block>
     <block name="Chirp4" >
-      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1.0,3.5,0.0,0.0,1)"/>
+      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1,1.0,3.5,0.0,0.0)"/>
       <set var="chirp_active" value="1"/>
       <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
     </block>
