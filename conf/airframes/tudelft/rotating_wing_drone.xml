@@ -83,8 +83,14 @@
         </module>
 
         <module NAME="sys_mon"/>
+        <module name="sys_id_chirp">
+            <define name="CHIRP_ENABLED"     value="TRUE"/>
+            <define name="CHIRP_USE_NOISE"   value="FALSE"/>
+            <define name="CHIRP_EXPONENTIAL" value="FALSE"/>
+            <define name="CHIRP_FADEIN"      value="TRUE"/>
+         </module>
         <module name="sys_id_doublet"/>
-        <module name="sys_id_chirp"/>
+        
 
     </firmware>
 
