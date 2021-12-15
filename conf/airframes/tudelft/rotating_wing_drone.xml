@@ -145,6 +145,8 @@
         <define VALUE="10.0" NAME="ARRIVED_AT_WAYPOINT"/>
         <define VALUE="20" NAME="NO_GPS_LOST_WITH_DATALINK_TIME"/>
         <define VALUE="TRUE" NAME="NO_GPS_LOST_WITH_RC_VALID"/>
+        <define VALUE="TRUE" NAME="USE_KILL_SWITCH_FOR_MOTOR_ARMING"/>
+        <define VALUE="TRUE" NAME="NO_RC_THRUST_LIMIT"/>
     </section>
 
     <section PREFIX="IMU_" NAME="IMU">
@@ -218,7 +220,7 @@
         <define name="G1_ROLL"      value="{0.00,   -12.8,   0.00,  12.8,  0.0, 0.0, 0.0, 0.0}"/>
         <define name="G1_PITCH"     value="{1.7,    0.00,   -1.7,   0.00,  0.0, 0.0, 0.0, 0.0}"/>
         <define name="G1_YAW"       value="{-0.115, 0.115,  -0.115, 0.115, 0.0, 0.0, 0.0, 0.0}"/>
-        <define name="G1_THRUST"    value="{-0.3,   -0.3,   -0.3,   -0.3,  0.0, 0.0, 0.0, 0.0}"/>
+        <define name="G1_THRUST"    value="{-0.34,   -0.34,   -0.34,   -0.34,  0.0, 0.0, 0.0, 0.0}"/>
         <define name="G2"           value="{-0.06,  0.06,   -0.06,  0.06,  0.0, 0.0, 0.0, 0.0}"/>
 
         <!-- reference acceleration for attitude control -->
@@ -246,16 +248,16 @@
         <define name="WLS_PRIORITIES" value="{1000.f, 1000.f, 1.f, 100.f}"/>
 
         <!-- Adaptive Learning Rate -->
-        <define name="USE_ADAPTIVE" value="TRUE"/>
+        <define name="USE_ADAPTIVE" value="FALSE"/>
         <define name="ADAPTIVE_MU" value="0.001"/>
     </section>
 
     <section name="ROT_WING_EFF_SCHEDULING" prefix="ROT_WING_SCHED_">
         <define name="G1_Q_90" value="{-2.45, 2.45}"/>
         <define name="Y_ARM_LENGTH" value="0.365"/>
-        <define name="G1_AERO_CONST_P" value="{-0.1, -0.1, 0.0, 0.0}"/> <!--Wing rotation dependency on pitch not scheduled yet-->
-        <define name="G1_AERO_CONST_Q" value="{-0.01, -0.01, -0.02, 0.0}"/> <!--estimated value, use adaptive for real value-->
-        <define name="G1_AERO_CONST_R" value="{0.0, 0.0, 0.0, 0.02}"/> <!--estimated value, use adaptive for real value-->
+        <define name="G1_AERO_CONST_P" value="{-0.03, -0.03, 0.0, 0.0}"/> <!--Wing rotation dependency on pitch not scheduled yet-->
+        <define name="G1_AERO_CONST_Q" value="{-0.0001, -0.0001, -0.03, 0.0}"/> <!--estimated value, use adaptive for real value-->
+        <define name="G1_AERO_CONST_R" value="{0.0, 0.0, 0.0, 0.03}"/> <!--estimated value, use adaptive for real value-->
         <define name="ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF" value="1.5"/>
     </section> 
 
@@ -274,7 +276,7 @@
         <define name="HEADING_BANK_GAIN" value="1."/>
         <define name="NAV_SPEED_MARGIN" value="0."/>
         <define name="MAX_AIRSPEED" value="4."/>
-        <define name="PITCH_LIFT_EFF" value="0.12"/>
+        <define name="PITCH_LIFT_EFF" value="0.0"/>
         <define name="MIN_THROTTLE" value="0."/>
         <define name="MIN_PITCH" value="-35."/>
         <define name="MAX_PITCH" value="35."/>
