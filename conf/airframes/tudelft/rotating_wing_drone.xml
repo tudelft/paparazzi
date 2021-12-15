@@ -63,7 +63,7 @@
             <define name="USE_I2C4"/>
             <define name="MS45XX_I2C_DEV" value="i2c4"/>
             <define name="MS45XX_PRESSURE_OFFSET" value="8469.572266"/>
-            <define name="MS45XX_AIRSPEED_SCALE" value="1.0"/>
+            <define name="MS45XX_AIRSPEED_SCALE" value="2.0"/>
             <define name="USE_AIRSPEED" value="TRUE"/>
         </module>
 
@@ -181,6 +181,12 @@
         <define name="H_Y" value="0.0017972"/>
         <define name="H_Z" value="0.9211303"/>
     </section>
+
+    <section name="INS" prefix="INS_">
+        <define name="USE_GPS_ALT" value="1"/>
+        <define name="USE_GPS_ALT_SPEED" value="1"/>
+        <define name="VFF_R_GPS" value="0.01"/>
+    </section>    
 
       <section name="ATTITUDE_REFERENCE" prefix="STABILIZATION_ATTITUDE_">
         <!-- setpoints -->

@@ -766,22 +766,22 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   // Set lower limits
   du_min_hybrid[0] = -hybrid_roll_limit + eulers_zxy.phi; //roll
   du_min_hybrid[1] = -hybrid_pitch_limit + eulers_zxy.theta; // pitch
-  du_min_hybrid[2] = -100.;
+  du_min_hybrid[2] = (actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])*(g1g2[3][0] + g1g2[3][1] + g1g2[3][2] + g1g2[3][3]);
   du_min_hybrid[3] = -actuator_thrust_bx_pprz*THRUST_BX_EFF;
   // Set upper limits limits
   du_max_hybrid[0] = hybrid_roll_limit - eulers_zxy.phi; //roll
   du_max_hybrid[1] = hybrid_pitch_limit - eulers_zxy.theta; // pitch
-  du_max_hybrid[2] = 100.;
+  du_max_hybrid[2] = -(4*MAX_PPRZ - actuators_pprz[0] - actuators_pprz[1] - actuators_pprz[2] - actuators_pprz[3])*(g1g2[3][0] + g1g2[3][1] + g1g2[3][2] + g1g2[3][3]);
   du_max_hybrid[3] = (MAX_PPRZ - actuator_thrust_bx_pprz) * THRUST_BX_EFF;
 
   // Set prefered states
   du_pref_hybrid[0] = -eulers_zxy.phi + current_chirp_values[0]; // 0 roll angle
   du_pref_hybrid[1] = -eulers_zxy.theta + current_chirp_values[1]; // 0 pitch angle
-  du_pref_hybrid[2] = 0;
+  du_pref_hybrid[2] = (actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])*(g1g2[3][0] + g1g2[3][1] + g1g2[3][2] + g1g2[3][3]);
   if (current_chirp_values[1] != 0) {
     du_pref_hybrid[3] = 0;// - 0.25 * (9.81 * stheta); // Try to decaccelerate with pusher prop
   } else {
-    du_pref_hybrid[3] = accel_bx_err - 0.25 * (9.81 * stheta);
+    du_pref_hybrid[3] = accel_bx_err - 0.15 * (9.81 * stheta);
   }
 
   num_iter_hybrid =
