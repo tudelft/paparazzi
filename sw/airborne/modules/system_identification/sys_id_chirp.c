@@ -39,7 +39,7 @@
 #endif
 
 #ifndef CHIRP_USE_NOISE
-#define CHIRP_USE_NOISE TRUE
+#define CHIRP_USE_NOISE FALSE
 #endif
 
 #ifndef CHIRP_EXPONENTIAL
@@ -84,7 +84,7 @@ static void set_current_chirp_values(void)
 
 #endif
 
-    current_chirp_values[chirp_axis] += (chirp_amplitude * chirp.current_value);
+    current_chirp_values[chirp_axis] = (chirp_amplitude * chirp.current_value);
   } else {
     for (uint8_t i = 0; i < CHIRP_NB_AXES; i++) {
       current_chirp_values[i] = 0;

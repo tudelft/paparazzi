@@ -49,14 +49,14 @@
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <stay wp="STDBY"/>
     </block>
-    <block name="Rotating wing0">
+   <!-- <block name="Rotating wing0">
       <set var="wing_rotation.wing_angle_deg_sp" value="0.0"/>
-    </block> 
+    </block> -->
     <block name="Wait for wing0">
       <while cond="LessThan(NavBlockTime(),5)"/>
-    </block> 
+    </block>
     <block name="Doublet1" >
-      <call_once fun="sys_id_doublet_set_param(140.0,1.0,0)"/>
+      <call_once fun="sys_id_doublet_set_param(110.0,1.0,0)"/>
       <set var="doublet_active" value="1"/>
       <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
     </block>
@@ -65,7 +65,7 @@
       <while cond="LessThan(NavBlockTime(),6)"/>
     </block>
     <block name="Doublet2" >
-      <call_once fun="sys_id_doublet_set_param(200.0,0.7,0)"/>
+      <call_once fun="sys_id_doublet_set_param(160.0,0.7,0)"/>
       <set var="doublet_active" value="1"/>
       <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
     </block>
@@ -92,7 +92,7 @@
       <while cond="LessThan(NavBlockTime(),6)"/>
     </block>
     <block name="Doublet5" >
-      <call_once fun="sys_id_doublet_set_param(140.0,1.0,2)"/>
+      <call_once fun="sys_id_doublet_set_param(110.0,1.0,2)"/>
       <set var="doublet_active" value="1"/>
       <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
     </block>
@@ -101,7 +101,7 @@
       <while cond="LessThan(NavBlockTime(),6)"/>
     </block>
     <block name="Doublet6" >
-      <call_once fun="sys_id_doublet_set_param(200.0,0.7,2)"/>
+      <call_once fun="sys_id_doublet_set_param(160.0,0.7,2)"/>
       <set var="doublet_active" value="1"/>
       <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
     </block>
@@ -128,31 +128,31 @@
       <while cond="LessThan(NavBlockTime(),6)"/>
     </block>
     <block name="Chirp1" >
-      <call_once fun="sys_id_chirp_set_param(0.1,10.0,0,1.0,3.5,0.0,0.0)"/>
+      <call_once fun="sys_id_chirp_set_param(0.08,15.0,0,0.2,0.8,0.0,0.0)"/>
       <set var="chirp_active" value="1"/>
       <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
     </block>
     <block name="Cool Down Chirp1" >
       <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),15)"/>
+      <while cond="LessThan(NavBlockTime(),20)"/>
     </block>
     <block name="Chirp2" >
-      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1,1.0,3.5,0.0,0.0)"/>
+      <call_once fun="sys_id_chirp_set_param(0.08,15.0,1,0.2,0.8,0.0,0.0)"/>
       <set var="chirp_active" value="1"/>
       <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
     </block>
     <block name="Cool Down Chirp2" >
       <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),15)"/>
+      <while cond="LessThan(NavBlockTime(),20)"/>
     </block>
-    <block name="Rotating wing20">
+   <!-- <block name="Rotating wing20">
       <set var="wing_rotation.wing_angle_deg_sp" value="20.0"/>
-    </block> 
+    </block> -->
     <block name="Wait for wing20">
       <while cond="LessThan(NavBlockTime(),5)"/>
-    </block> 
+    </block>
     <block name="Doublet9" >
-      <call_once fun="sys_id_doublet_set_param(140.0,1.0,0)"/>
+      <call_once fun="sys_id_doublet_set_param(110.0,1.0,0)"/>
       <set var="doublet_active" value="1"/>
       <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
     </block>
@@ -161,7 +161,7 @@
       <while cond="LessThan(NavBlockTime(),6)"/>
     </block>
     <block name="Doublet10" >
-      <call_once fun="sys_id_doublet_set_param(200.0,0.7,0)"/>
+      <call_once fun="sys_id_doublet_set_param(160.0,0.7,0)"/>
       <set var="doublet_active" value="1"/>
       <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
     </block>
@@ -188,7 +188,7 @@
       <while cond="LessThan(NavBlockTime(),6)"/>
     </block>
     <block name="Doublet13" >
-      <call_once fun="sys_id_doublet_set_param(140.0,1.0,2)"/>
+      <call_once fun="sys_id_doublet_set_param(110.0,1.0,2)"/>
       <set var="doublet_active" value="1"/>
       <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
     </block>
@@ -197,7 +197,7 @@
       <while cond="LessThan(NavBlockTime(),6)"/>
     </block>
     <block name="Doublet14" >
-      <call_once fun="sys_id_doublet_set_param(200.0,0.7,2)"/>
+      <call_once fun="sys_id_doublet_set_param(160.0,0.7,2)"/>
       <set var="doublet_active" value="1"/>
       <call_once fun="sys_id_doublet_activate_handler(doublet_active)"/> 
     </block>
@@ -224,22 +224,22 @@
       <while cond="LessThan(NavBlockTime(),6)"/>
     </block>
     <block name="Chirp3" >
-      <call_once fun="sys_id_chirp_set_param(0.1,10.0,0,1.0,3.5,0.0,0.0)"/>
+      <call_once fun="sys_id_chirp_set_param(0.08,15.0,0,0.2,0.8,0.0,0.0)"/>
       <set var="chirp_active" value="1"/>
       <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
     </block>
     <block name="Cool Down Chirp3" >
       <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),15)"/>
+      <while cond="LessThan(NavBlockTime(),20)"/>
     </block>
     <block name="Chirp4" >
-      <call_once fun="sys_id_chirp_set_param(0.1,10.0,1,1.0,3.5,0.0,0.0)"/>
+      <call_once fun="sys_id_chirp_set_param(0.08,15.0,1,0.2,0.8,0.0,0.0)"/>
       <set var="chirp_active" value="1"/>
       <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
     </block>
     <block name="Cool Down Chirp4" >
       <go wp="STDBY"/>
-      <exception cond="LessThan(NavBlockTime(),15)" deroute="Standby"/>
+      <exception cond="LessThan(NavBlockTime(),20)" deroute="Standby"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>

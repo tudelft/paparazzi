@@ -21,6 +21,12 @@
 
 	  <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
+    <module name="sys_id_chirp">
+      <define name="CHIRP_ENABLED"     value="TRUE"/>
+      <define name="CHIRP_USE_NOISE"   value="FALSE"/>
+      <define name="CHIRP_EXPONENTIAL" value="FALSE"/>
+      <define name="CHIRP_FADEIN"      value="TRUE"/>
+    </module>
     <module name="radio_control" type="datalink"/>
     <module name="actuators" type="bebop"/>
     <module name="imu" type="bebop">
@@ -51,7 +57,12 @@
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
     <module name="sys_id_doublet"/>
-    <module name="sys_id_chirp"/>
+    <!-- <module name="sys_id_chirp"/>
+      <define name="CHIRP_USE_NOISE" value="FALSE"/>
+      <define name="CHIRP_EXPONENTIAL" value="FALSE"/>
+      <define name="CHIRP_FADEIN" value="FALSE"/>
+    </module> -->
+
   </firmware>
   
   <commands>
