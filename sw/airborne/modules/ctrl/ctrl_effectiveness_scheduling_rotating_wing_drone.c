@@ -127,7 +127,7 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
   float s_rot_wing_angle = sinf(rot_wing_angle_rad);
 
   // scale lift_pitch_eff with wing angle:
-  lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF * s_rot_wing_angle;
+  //lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF * s_rot_wing_angle;
 
   rot_wing_g1_p_side_motors[0] = c_rot_wing_angle * rot_wing_side_motors_g1_p_0[0];
   rot_wing_g1_p_side_motors[1] = c_rot_wing_angle * rot_wing_side_motors_g1_p_0[1];
