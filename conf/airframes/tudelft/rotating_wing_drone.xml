@@ -254,7 +254,7 @@
         <define name="G1_Q_90" value="{-2.45, 2.45}"/>
         <define name="Y_ARM_LENGTH" value="0.365"/>
         <define name="G1_AERO_CONST_P" value="{-0.1, -0.1, 0.0, 0.0}"/> <!--Wing rotation dependency on pitch not scheduled yet-->
-        <define name="G1_AERO_CONST_Q" value="{0.0, 0.0, -0.02, 0.0}"/> <!--estimated value, use adaptive for real value-->
+        <define name="G1_AERO_CONST_Q" value="{-0.01, -0.01, -0.02, 0.0}"/> <!--estimated value, use adaptive for real value-->
         <define name="G1_AERO_CONST_R" value="{0.0, 0.0, 0.0, 0.02}"/> <!--estimated value, use adaptive for real value-->
         <define name="ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF" value="1.5"/>
     </section> 
