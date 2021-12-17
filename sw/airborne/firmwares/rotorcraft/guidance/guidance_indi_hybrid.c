@@ -169,6 +169,7 @@ int num_iter_hybrid = 0;
 float hybrid_du[4];
 float hybrid_v[3];
 float Wv_hybrid[3] = {1., 1., 1.};
+float Wu_hybrid[4] = {1.,1.,1.,1.};
 
 float hybrid_roll_limit = 0.785; // 45 deg
 float hybrid_pitch_limit = 0.349; // 15 deg
@@ -764,28 +765,25 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   hybrid_v[2] = a_diff.z;
 
   // Set lower limits
-  du_min_hybrid[0] = -hybrid_roll_limit + eulers_zxy.phi; //roll
-  du_min_hybrid[1] = -hybrid_pitch_limit + eulers_zxy.theta; // pitch
-  du_min_hybrid[2] = (actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])*(g1g2[3][0] + g1g2[3][1] + g1g2[3][2] + g1g2[3][3]);
+  du_min_hybrid[0] = -hybrid_roll_limit - roll_filt.o[0]; //roll
+  du_min_hybrid[1] = -hybrid_pitch_limit - pitch_filt.o[0]; // pitch
+  du_min_hybrid[2] = (4*MAX_PPRZ - actuators_pprz[0] - actuators_pprz[1] - actuators_pprz[2] - actuators_pprz[3])*(g1g2[3][0] + g1g2[3][1] + g1g2[3][2] + g1g2[3][3]);
   du_min_hybrid[3] = -actuator_thrust_bx_pprz*THRUST_BX_EFF;
   // Set upper limits limits
-  du_max_hybrid[0] = hybrid_roll_limit - eulers_zxy.phi; //roll
-  du_max_hybrid[1] = hybrid_pitch_limit - eulers_zxy.theta; // pitch
-  du_max_hybrid[2] = -(4*MAX_PPRZ - actuators_pprz[0] - actuators_pprz[1] - actuators_pprz[2] - actuators_pprz[3])*(g1g2[3][0] + g1g2[3][1] + g1g2[3][2] + g1g2[3][3]);
+  du_max_hybrid[0] = hybrid_roll_limit - roll_filt.o[0]; //roll
+  du_max_hybrid[1] = hybrid_pitch_limit - pitch_filt.o[0]; // pitch
+  du_max_hybrid[2] = -(actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])*(g1g2[3][0] + g1g2[3][1] + g1g2[3][2] + g1g2[3][3]);
   du_max_hybrid[3] = (MAX_PPRZ - actuator_thrust_bx_pprz) * THRUST_BX_EFF;
 
   // Set prefered states
-  du_pref_hybrid[0] = -eulers_zxy.phi + current_chirp_values[0]; // 0 roll angle
-  du_pref_hybrid[1] = -eulers_zxy.theta + current_chirp_values[1]; // 0 pitch angle
-  du_pref_hybrid[2] = (actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])*(g1g2[3][0] + g1g2[3][1] + g1g2[3][2] + g1g2[3][3]);
-  if (current_chirp_values[1] != 0) {
-    du_pref_hybrid[3] = 0;// - 0.25 * (9.81 * stheta); // Try to decaccelerate with pusher prop
-  } else {
-    du_pref_hybrid[3] = accel_bx_err - 0.15 * (9.81 * stheta);
-  }
+  du_pref_hybrid[0] = -roll_filt.o[0];
+  du_pref_hybrid[1] = -pitch_filt.o[0];
+  du_pref_hybrid[2] = 0;
+  du_pref_hybrid[3] = accel_bx_err - 9.81 * sinf(pitch_filt.o[0]);
+  Bound(du_pref_hybrid[3], du_min_hybrid[3], du_max_hybrid[3]);
 
   num_iter_hybrid =
-    wls_alloc_hybrid(hybrid_du, hybrid_v, du_min_hybrid, du_max_hybrid, Bwls_hybrid, 0, 0, Wv_hybrid, 0, du_pref_hybrid, 10000, 10);
+    wls_alloc_hybrid(hybrid_du, hybrid_v, du_min_hybrid, du_max_hybrid, Bwls_hybrid, 0, 0, Wv_hybrid, Wu_hybrid, du_pref_hybrid, 10000, 10);
 }
 
 /**
