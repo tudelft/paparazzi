@@ -58,4 +58,6 @@ extern float guidance_indi_max_bank;
 
 extern float lift_pitch_eff;
 
+extern float pitch_pref_deg;
+
 #endif /* GUIDANCE_INDI_HYBRID_H */

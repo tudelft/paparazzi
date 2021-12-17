@@ -170,6 +170,8 @@ float hybrid_du[4];
 float hybrid_v[3];
 float Wv_hybrid[3] = {1., 1., 1.};
 float Wu_hybrid[4] = {1.,1.,1.,1.};
+float pitch_pref_deg = 0;
+float pitch_pref_rad = 0;
 
 float hybrid_roll_limit = 0.785; // 45 deg
 float hybrid_pitch_limit = 0.349; // 15 deg
@@ -776,10 +778,12 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   du_max_hybrid[3] = (MAX_PPRZ - actuator_thrust_bx_pprz) * THRUST_BX_EFF;
 
   // Set prefered states
+  pitch_pref_rad = pitch_pref_deg / 180. * M_PI;
+
   du_pref_hybrid[0] = -roll_filt.o[0];
-  du_pref_hybrid[1] = -pitch_filt.o[0];
+  du_pref_hybrid[1] = -pitch_filt.o[0] + pitch_pref_rad;
   du_pref_hybrid[2] = 0;
-  du_pref_hybrid[3] = accel_bx_err - 9.81 * sinf(pitch_filt.o[0]);
+  du_pref_hybrid[3] = accel_bx_err * cosf(pitch_pref_rad) - 9.81 * sinf(pitch_filt.o[0] - pitch_pref_rad);
   Bound(du_pref_hybrid[3], du_min_hybrid[3], du_max_hybrid[3]);
 
   num_iter_hybrid =
