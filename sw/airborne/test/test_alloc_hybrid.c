@@ -35,6 +35,7 @@
 #define MAX_PPRZ 9600
 
 void test_input_output_hybrid_indi(void);
+float guidance_indi_get_liftd(float airspeed, float theta, float lift_pitch_eff);
 
 int main(int argc, char **argv) {
   printf("Hello World\n");
@@ -52,7 +53,7 @@ void test_input_output_hybrid_indi(void) {
   float *Bwls_hybrid[3];
   float hybrid_du[4];
   float Wv_hybrid[3] = {1., 1., 1.};
-  float Wu_hybrid[4] = {1000., 1000., 1., 1.};
+  float Wu_hybrid[4] = {1., 1., 1., 1.};
 
   // Parameters to configure
   float thrust_bz_eff = -0.00136;
@@ -62,12 +63,15 @@ void test_input_output_hybrid_indi(void) {
 
   // input data to configure
   float phi = 0.00000;
-  float theta = 0.436;
+  float theta = 0.0;
   float psi = 0.00000;
   float thrust_bz = 4800.;
-  float thrust_bx = 9600.;
-  float sp_accel_ned[3] = {0.0, 0.0, -1.5};
+  float thrust_bx = 4800.;
+  float sp_accel_ned[3] = {0.75, 0.0, -1.5};
   float accel_ned[3] = {0., 0., 0.};
+  float airspeed = 0.;
+  float pitch_pref_rad = 0.;
+  float lift_pitch_eff = 0.12;
 
   // Point BWls to Gmat
   uint8_t i;
@@ -91,14 +95,15 @@ void test_input_output_hybrid_indi(void) {
   float accel_bx_sp = cpsi * sp_accel_ned[0] + spsi * sp_accel_ned[1];
   float accel_bx = cpsi * accel_ned[0] + spsi * accel_ned[1];
   float accel_bx_err = accel_bx_sp - accel_bx;
+  float liftd = guidance_indi_get_liftd(airspeed, theta - 3.14159/2., lift_pitch_eff);
 
   Gmat[0][0] = cphi*spsi*lift_thrust_bz;
   Gmat[1][0] = -cphi*cpsi*lift_thrust_bz;
   Gmat[2][0] = -sphi*lift_thrust_bz;
 
-  Gmat[0][1] = (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz;
-  Gmat[1][1] = (ctheta*spsi + sphi*stheta*cpsi)*lift_thrust_bz;
-  Gmat[2][1] = -cphi*stheta*lift_thrust_bz;
+  Gmat[0][1] = (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz + sphi*spsi*liftd;
+  Gmat[1][1] = (ctheta*spsi + sphi*stheta*cpsi)*lift_thrust_bz - sphi*cpsi*liftd;
+  Gmat[2][1] = -cphi*stheta*lift_thrust_bz + cphi*liftd;
 
   Gmat[0][2] = stheta*cpsi + sphi*ctheta*spsi;
   Gmat[1][2] = stheta*spsi - sphi*ctheta*cpsi;
@@ -130,7 +135,8 @@ void test_input_output_hybrid_indi(void) {
   du_pref_hybrid[0] = -phi;
   du_pref_hybrid[1] = -theta;
   du_pref_hybrid[2] = 0.0;
-  du_pref_hybrid[3] = 0.0;//9.81 * stheta; 
+  du_pref_hybrid[3] = accel_bx_err * cosf(theta) - 9.81 * sinf(theta - pitch_pref_rad);
+  Bound(du_pref_hybrid[3], du_min_hybrid[3], du_max_hybrid[3]);
 
   printf("du_pref_roll: %f\ndu_pref_pitch: %f\ndu_pref_Tbz: %f\ndu_pref_Tbx: %f\n\n", 
           du_pref_hybrid[0], du_pref_hybrid[1], du_pref_hybrid[2], du_pref_hybrid[3]);
@@ -151,3 +157,16 @@ void test_input_output_hybrid_indi(void) {
               du_roll_out, du_pitch_out, du_Tbz_out, du_Tbx_out);
 }
 
+float guidance_indi_get_liftd(float airspeed, float theta, float lift_pitch_eff) {
+  float liftd = 0.0;
+  if(airspeed < 12) {
+    float pitch_interp = DegOfRad(theta);
+    Bound(pitch_interp, -80.0, -40.0);
+    float ratio = (pitch_interp + 40.0)/(-40.);
+    liftd = -24.0*ratio*lift_pitch_eff/0.12;
+  } else {
+    liftd = -(airspeed - 8.5)*lift_pitch_eff/3.14159*180.0;
+  }
+  //TODO: bound liftd
+  return liftd;
+}
