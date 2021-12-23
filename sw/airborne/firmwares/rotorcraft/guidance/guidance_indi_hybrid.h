@@ -57,6 +57,7 @@ extern bool take_heading_control;
 extern float guidance_indi_max_bank;
 
 extern float lift_pitch_eff;
+extern float pitch_priority_factor;
 
 extern float pitch_pref_deg;
 

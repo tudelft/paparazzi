@@ -169,6 +169,7 @@ int num_iter_hybrid = 0;
 float hybrid_du[4];
 float hybrid_v[3];
 float Wv_hybrid[3] = {1., 1., 1.};
+float pitch_priority_factor = 1.;
 float Wu_hybrid[4] = {1.,1.,1.,1.};
 float pitch_pref_deg = 0;
 float pitch_pref_rad = 0;
@@ -785,6 +786,8 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   du_pref_hybrid[2] = 0;
   du_pref_hybrid[3] = accel_bx_err * cosf(pitch_pref_rad) - 9.81 * sinf(pitch_filt.o[0] - pitch_pref_rad);
   Bound(du_pref_hybrid[3], du_min_hybrid[3], du_max_hybrid[3]);
+
+  Wu_hybrid[1] = pitch_priority_factor;
 
   num_iter_hybrid =
     wls_alloc_hybrid(hybrid_du, hybrid_v, du_min_hybrid, du_max_hybrid, Bwls_hybrid, 0, 0, Wv_hybrid, Wu_hybrid, du_pref_hybrid, 10000, 10);
