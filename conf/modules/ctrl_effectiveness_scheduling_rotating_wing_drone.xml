@@ -6,6 +6,15 @@
       Calculates control effectiveness for rotating wing drone
     </description>
   </doc>
+  <settings>
+    <dl_settings NAME="crtl_eff_scheduling">
+      <dl_settings NAME="eff_sched">
+        <dl_setting MAX="1.0" MIN="0" STEP="0.001" VAR="rot_wing_aero_eff_const_p" shortname="aero_eff_p"/>
+        <dl_setting MAX="1.0" MIN="0" STEP="0.001" VAR="rot_wing_aero_eff_const_q" shortname="aero_eff_q"/>
+        <dl_setting MAX="1.0" MIN="0" STEP="0.001" VAR="rot_wing_aero_eff_const_r" shortname="aero_eff_r"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
   <header>
     <file name="ctrl_effectiveness_scheduling_rotating_wing_drone.h"/>
   </header>

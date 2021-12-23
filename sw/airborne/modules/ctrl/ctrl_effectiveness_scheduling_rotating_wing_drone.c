@@ -68,6 +68,11 @@ float rot_wing_aerodynamic_eff_const_g1_p[4] = ROT_WING_SCHED_G1_AERO_CONST_P;
 float rot_wing_aerodynamic_eff_const_g1_q[4] = ROT_WING_SCHED_G1_AERO_CONST_Q;
 float rot_wing_aerodynamic_eff_const_g1_r[4] = ROT_WING_SCHED_G1_AERO_CONST_R;
 
+// For quick testing and tuning
+float rot_wing_aero_eff_const_p; 
+float rot_wing_aero_eff_const_q; 
+float rot_wing_aero_eff_const_r; 
+
 // Define control effectiveness variables in roll, pitch and yaw for aerodynamic surfaces {AIL_LEFT, AIL_RIGHT, VTAIL_LEFT, VTAIL_RIGHT}
 float rot_wing_g1_p_aerodynamic_surf[4] = {0.0, 0.0, 0.0, 0.0};
 float rot_wing_g1_q_aerodynamic_surf[4] = {0.0, 0.0, 0.0, 0.0};
@@ -105,6 +110,11 @@ void ctrl_eff_scheduling_rotating_wing_drone_init(void)
   rot_wing_side_motors_g1_p_0[0] = rot_wing_initial_g1_p[1];
   rot_wing_side_motors_g1_p_0[1] = rot_wing_initial_g1_p[3];
 
+  // Init testing settings
+  rot_wing_aero_eff_const_p = -rot_wing_aerodynamic_eff_const_g1_p[0];
+  rot_wing_aero_eff_const_q = -rot_wing_aerodynamic_eff_const_g1_q[2];
+  rot_wing_aero_eff_const_r = rot_wing_aerodynamic_eff_const_g1_r[3];
+
   // Init filters
   float tau = 1.0 / (2.0 * M_PI * ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
@@ -139,6 +149,15 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
   float airspeed = stateGetAirspeed_f();
   update_butterworth_2_low_pass(&airspeed_lowpass_filter, airspeed);
   float airspeed2 = airspeed_lowpass_filter.o[0] * airspeed_lowpass_filter.o[0];
+
+  #ifdef ROT_WING_SCHED_AERO_EFF_TUNING
+    rot_wing_aerodynamic_eff_const_g1_p[0] = -rot_wing_aero_eff_const_p;
+    rot_wing_aerodynamic_eff_const_g1_p[1] = -rot_wing_aero_eff_const_p;
+    rot_wing_aerodynamic_eff_const_g1_q[2] = -rot_wing_aero_eff_const_q;
+    rot_wing_aerodynamic_eff_const_g1_r[3] = rot_wing_aero_eff_const_r;
+  #endif
+
+
   // Perform analysis on rotating ailerons
   for (int i = 0; i < 2; i++) {
     rot_wing_g1_p_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[i] * s_rot_wing_angle; // roll effectieness scales with rotation
