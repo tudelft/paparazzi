@@ -53,3 +53,6 @@
 [submodule "sw/ext/libcanard"]
 	path = sw/ext/libcanard
 	url = https://github.com/UAVCAN/libcanard.git
+[submodule "sw/ext/puav"]
+	path = sw/ext/puav
+	url = git@github.com:tudelft/PUAV.git
