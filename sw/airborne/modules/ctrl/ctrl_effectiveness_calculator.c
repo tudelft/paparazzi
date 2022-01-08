@@ -41,7 +41,7 @@ void ctrl_eff(void)
     float I_ZZ = 0.020337; // kg m2
 
     /**
-     * Some definitions for ease of reading. In the future I want to use angular acceleration of motor so labels as omega already
+     * Some definitions for ease of reading. In the future I want to use angular acceleration of motor so labeled as omega already
      */
     float theta_l0 = ab_to_cd(actuator_state_filt_vect[0]);
     float theta_r0 = ab_to_cd(actuator_state_filt_vect[1]);
