@@ -1,0 +1,16 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="ctrl_effectiveness_calculator" dir="ctrl">
+  <doc>
+    <description>
+      Function which calculates the control effectiveness matrix on the fly
+    </description>
+  </doc>
+  <header>
+    <file name="ctrl_effectiveness_calculator.h"/>
+  </header>
+  <periodic fun="ctrl_eff()" freq="500"/>
+  <makefile>
+    <file name="ctrl_effectiveness_calculator.c"/>
+  </makefile>
+</module>
