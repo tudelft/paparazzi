@@ -1,0 +1,393 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="http://jsbsim.sourceforge.net/JSBSim.xsl"?>
+<fdm_config name="QUAD COMPLETE EXT" version="2.0" release="BETA" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://jsbsim.sourceforge.net/JSBSim.xsd">
+
+	<fileheader>
+		<author>Gervase Lovell-Prescod</author>
+		<filecreationdate>2020-07-10</filecreationdate>
+		<version>Version 1</version>
+		<description>Simulation model of a tilting propeller tailsitter UAV using the Skywalker x5 foam airframe</description>
+	</fileheader>
+	
+<!--**********************************************
+	 			METRICS
+	**********************************************	-->	
+	
+	<!--	
+	<metrics>
+		<wingarea unit="IN2"> 403 </wingarea>
+	    <wingspan unit="IN"> 47.24 </wingspan>
+	    <chord unit="IN"> 8.53 </chord>
+	    <htailarea unit="FT2"> 0 </htailarea>
+	    <htailarm unit="FT"> 0 </htailarm>
+	    <vtailarea unit="FT2"> 0 </vtailarea>
+	    <vtailarm unit="FT"> 0 </vtailarm>
+	    <wing_incidence unit="DEG"> 90 </wing_incidence>
+	    <location name="AERORP" unit="IN">
+	      <x> 0 </x>
+	      <y> 0 </y>
+	      <z> 0 </z>
+	    </location>
+	    <location name="EYEPOINT" unit="IN">
+	      <x> 0 </x>
+	      <y> 0 </y>
+	      <z> 0 </z>
+	    </location>
+	    <location name="VRP" unit="IN">
+	      <x> 0 </x>
+	      <y> 0 </y>
+	      <z> 0 </z>
+	    </location>
+	</metrics>
+	-->
+	
+	<metrics>
+		<wingarea unit="IN2"> 115 </wingarea>
+		<wingspan unit="IN"> 35.4 </wingspan>
+		<chord unit="IN"> 7.09 </chord>
+		<htailarea unit="FT2"> 0 </htailarea>
+		<htailarm unit="FT"> 0 </htailarm>
+		<vtailarea unit="FT2"> 0 </vtailarea>
+		<vtailarm unit="FT"> 0 </vtailarm>
+		<wing_incidence unit="DEG"> 90 </wing_incidence>
+		<location name="AERORP" unit="IN">
+			<x> 0 </x>
+			<y> 0 </y>
+			<z> 0 </z>
+		</location>
+		<location name="EYEPOINT" unit="IN">
+			<x> 0 </x>
+			<y> 0 </y>
+			<z> 0 </z>
+		</location>
+		<location name="VRP" unit="IN">
+			<x> 0 </x>
+			<y> 0 </y>
+			<z> 0 </z>
+		</location>
+	</metrics>
+
+<!--**********************************************
+	 			MASS BALANCE
+	**********************************************	-->
+	
+	<mass_balance>
+	<!--
+		<ixx unit="SLUG*FT2"> 0.0056452996 </ixx>
+		<iyy unit="SLUG*FT2"> 0.02407556 </iyy>
+		<izz unit="SLUG*FT2"> 0.0029480072 </izz> -->
+	
+		<ixx unit="SLUG*FT2"> 0.0132 </ixx>
+		<iyy unit="SLUG*FT2"> 0.00250 </iyy>
+		<izz unit="SLUG*FT2"> 0.0150 </izz>  <!-- These are cyclone values -->
+		<ixy unit="SLUG*FT2"> 0. </ixy>
+		<ixz unit="SLUG*FT2"> 0. </ixz>
+		<iyz unit="SLUG*FT2"> 0. </iyz>
+		<emptywt unit="LBS"> 2.65 </emptywt>
+		<location name="CG" unit="M">
+			<x> 0 </x>
+			<y> 0 </y>
+			<z> 0 </z>
+		</location>
+	</mass_balance>
+	
+	
+<!--**********************************************
+	 			GROUND CONTACTS
+	**********************************************
+	The locations in this section are given in the
+	structural coordinate system					-->
+	<ground_reactions>
+		
+	    <contact type="STRUCTURE" name="CONTACT_FRONT">
+	      <location unit="M">
+	        <x> -0.15 </x>
+	        <y> 0 </y>
+	        <z>-0.1 </z>
+	      </location>
+	      <static_friction>  0.8 </static_friction>
+	      <dynamic_friction> 0.5 </dynamic_friction>
+	      <spring_coeff unit="N/M"> 500 </spring_coeff>
+	      <damping_coeff unit="N/M/SEC"> 100 </damping_coeff>
+	      <damping_coeff_rebound type="SQUARE" unit="N/M2/SEC2"> 1000 </damping_coeff_rebound>
+	      <max_steer unit="DEG"> 0.0 </max_steer>
+	      <brake_group> NONE </brake_group>
+	      <retractable>0</retractable>
+	    </contact>
+		
+		
+	    <contact type="STRUCTURE" name="CONTACT_BACK">
+	      <location unit="M">
+	        <x> 0.15</x>
+	        <y> 0   </y>
+	        <z>-0.1 </z>
+	      </location>
+	      <static_friction>  0.8 </static_friction>
+	      <dynamic_friction> 0.5 </dynamic_friction>
+	      <spring_coeff unit="N/M"> 500 </spring_coeff>
+	      <damping_coeff unit="N/M/SEC"> 100 </damping_coeff>
+	      <damping_coeff_rebound type="SQUARE" unit="N/M2/SEC2"> 1000 </damping_coeff_rebound>
+	      <max_steer unit="DEG"> 0.0 </max_steer>
+	      <brake_group> NONE </brake_group>
+	      <retractable>0</retractable>
+	    </contact>
+		
+		
+	    <contact type="STRUCTURE" name="CONTACT_RIGHT">
+	      <location unit="M">
+	        <x> 0.0  </x>
+	        <y> 0.15</y>
+	        <z>-0.1 </z>
+	      </location>
+	      <static_friction>  0.8 </static_friction>
+	      <dynamic_friction> 0.5 </dynamic_friction>
+	      <spring_coeff unit="N/M"> 500 </spring_coeff>
+	      <damping_coeff unit="N/M/SEC"> 100 </damping_coeff>
+	      <damping_coeff_rebound type="SQUARE" unit="N/M2/SEC2"> 1000 </damping_coeff_rebound>
+	      <max_steer unit="DEG"> 0.0 </max_steer>
+	      <brake_group> NONE </brake_group>
+	      <retractable>0</retractable>
+	    </contact>
+	
+		<contact type="STRUCTURE" name="CONTACT_LEFT">
+	      <location unit="M">
+	        <x> 0.0  </x>
+	        <y>-0.15</y>
+	        <z>-0.1 </z>
+	      </location>
+	      <static_friction>  0.8 </static_friction>
+	      <dynamic_friction> 0.5 </dynamic_friction>
+	      <spring_coeff unit="N/M"> 500 </spring_coeff>
+	      <damping_coeff unit="N/M/SEC"> 100 </damping_coeff>
+	      <damping_coeff_rebound type="SQUARE" unit="N/M2/SEC2"> 1000 </damping_coeff_rebound>
+	      <max_steer unit="DEG"> 0.0 </max_steer>
+	      <brake_group> NONE </brake_group>
+	      <retractable>0</retractable>
+	    </contact>
+	</ground_reactions>
+
+<!--**********************************************
+	 			FLIGHT CONTROLS
+	**********************************************	-->		
+
+	<flight_control name="actuator_dynamics">
+		<channel name="filtering">
+		<!-- First order filter represents actuator dynamics -->
+			<lag_filter name="tilt_left_lag">
+				<input> fcs/tilt_left </input>
+				<c1> 54 </c1> <!-- 54 from cyclone file -->
+				<output> fcs/tilt_left_lag</output>
+			</lag_filter>
+			<lag_filter name="tilt_right_lag">
+				<input> fcs/tilt_right </input>
+				<c1> 54 </c1>
+				<output> fcs/tilt_right_lag </output>
+			</lag_filter>
+			<lag_filter name="mot_right_lag">
+				<input> fcs/mot_right </input>
+				<c1> 31.7 </c1> <!-- 31.7 from cyclone file -->
+				<output> fcs/mot_right_lag </output>
+			</lag_filter>
+			<lag_filter name="mot_left_lag">
+				<input> fcs/mot_left </input>
+				<c1> 31.7 </c1>
+				<output> fcs/mot_left_lag </output>
+			</lag_filter>
+		</channel>
+	</flight_control>
+	
+<!--**********************************************
+	 			EXTERNAL REACTIONS
+	**********************************************	-->	
+	<!-- Same order as in the above section -->
+	<external_reactions>
+		<property> fcs/tilt_left </property>
+		<property> fcs/tilt_left_lag </property>
+		<property> fcs/tilt_right </property>
+		<property> fcs/tilt_right_lag </property>
+		<property> fcs/mot_right </property>
+		<property> fcs/mot_right_lag </property>
+		<property> fcs/mot_left </property>
+		<property> fcs/mot_left_lag </property>
+	
+		
+
+		
+		<!-- Lift motors: force couples motors -->
+		
+		<!--
+			Left motor
+		-->
+		<force name="mot_left_1" frame="BODY" unit="LBS">
+			<function>
+				<product>
+					<property> fcs/mot_left_lag </property>
+					<value> 2.0 </value>
+					<sin>
+						<!-- ___ Maps to range [a, b] ___ -->
+						<sum>
+							<value> -0.785398163 </value> <!-- a, -pi/4 (-45 degrees) -->
+							<product>
+								<quotient>
+									<difference>
+										<value> 0.785398163 </value> <!-- b, pi/4 (45) -->
+										<value> -0.785398163 </value> <!-- a, -pi/4 (-45 degrees) -->
+									</difference>
+									<value> 2.0 </value> <!-- denominator, "2" in this case as property is originally on range [-1,1] -->
+								</quotient>
+								<difference>
+									<property> fcs/tilt_left_lag </property>
+									<value> -1.0 </value> <!-- min(x), this is the minimum actuator value -->
+								</difference>
+							</product>
+						</sum>
+						<!-- ____________________________ -->
+					</sin>
+				</product>
+			</function>
+			<location unit="IN">
+				<x> 0 </x>
+				<y> -12 </y>
+				<z> 6 </z>
+			</location>
+			<direction>
+				<x> -1 </x>
+				<y> 0 </y>
+				<z> 0 </z>
+			</direction>
+		</force>
+		
+		<force name="mot_left_2" frame="BODY" unit="LBS">
+			<function>
+				<product>
+					<property> fcs/mot_left_lag </property>
+					<value> 2.0 </value>
+					<cos>
+						<!-- ___ Maps to range [a, b] ___ -->
+						<sum>
+							<value> -0.785398163 </value> <!-- a, -pi/4 (-90 degrees) -->
+							<product>
+								<quotient>
+									<difference>
+										<value> 0.785398163 </value> <!-- b, pi/4 (45) -->
+										<value> -0.785398163 </value> <!-- a, -pi/4 (-45 degrees) -->
+									</difference>
+									<value> 2.0 </value> <!-- denominator, "2" in this case as property is originally on range [-1,1] -->
+								</quotient>
+								<difference>
+									<property> fcs/tilt_left_lag </property>
+									<value> -1.0 </value> <!-- min(x), this is the minimum actuator value -->
+								</difference>
+							</product>
+						</sum>
+						<!-- ____________________________ -->
+					</cos>
+				</product>
+			</function>
+			<location unit="IN">
+				<x> 0 </x>
+				<y> -12 </y>
+				<z> 6 </z>
+			</location>
+			<direction>
+				<x> 0 </x>
+				<y> 0 </y>
+				<z> -1 </z>
+			</direction>
+		</force>
+		
+		<!--
+			Right motor
+		-->
+		<force name="mot_right_1" frame="BODY" unit="LBS">
+			<function>
+				<product>
+					<property> fcs/mot_right_lag </property>
+					<value> 2.0 </value>
+					<sin>
+						<!-- ___ Maps to range [a, b] ___ -->
+						<sum>
+							<value> -0.785398163 </value> <!-- a, -pi/4 (-45 degrees) -->
+							<product>
+								<quotient>
+									<difference>
+										<value> 0.785398163 </value> <!-- b, pi/4 (45) -->
+										<value> -0.785398163 </value> <!-- a, -pi/4 (-45 degrees) -->
+									</difference>
+									<value> 2.0 </value> <!-- denominator, "2" in this case as property is originally on range [-1,1] -->
+								</quotient>
+								<difference>
+									<property> fcs/tilt_right_lag </property>
+									<value> -1.0 </value> <!-- min(x), this is the minimum actuator value -->
+								</difference>
+							</product>
+						</sum>
+						<!-- ____________________________ -->
+					</sin>
+				</product>
+			</function>
+			<location unit="IN">
+				<x> 0 </x>
+				<y> 12 </y>
+				<z> 6 </z>
+			</location>
+			<direction>
+				<x> -1 </x>
+				<y> 0 </y>
+				<z> 0 </z>
+			</direction>
+		</force>
+		
+		<force name="mot_right_2" frame="BODY" unit="LBS">
+			<function>
+				<product>
+					<property> fcs/mot_right_lag </property>
+					<value> 2.0 </value>
+					<cos>
+						<!-- ___ Maps to range [a, b] ___ -->
+						<sum>
+							<value> -0.785398163 </value> <!-- a, -pi/4 (-90 degrees) -->
+							<product>
+								<quotient>
+									<difference>
+										<value> 0.785398163 </value> <!-- b, pi/4 (45) -->
+										<value> -0.785398163 </value> <!-- a, -pi/4 (-45 degrees) -->
+									</difference>
+									<value> 2.0 </value> <!-- denominator, "2" in this case as property is originally on range [-1,1] -->
+								</quotient>
+								<difference>
+									<property> fcs/tilt_right_lag </property>
+									<value> -1.0 </value> <!-- min(x), this is the minimum actuator value -->
+								</difference>
+							</product>
+						</sum>
+						<!-- ____________________________ -->
+					</cos>
+				</product>
+			</function>
+			<location unit="IN">
+				<x> 0 </x>
+				<y> 12 </y>
+				<z> 6 </z>
+			</location>
+			<direction>
+				<x> 0 </x>
+				<y> 0 </y>
+				<z> -1 </z>
+			</direction>
+		</force>
+		
+		
+	</external_reactions>
+	
+	<!-- The below "<propulsion/> was commented out by me -->
+	<!--    <propulsion/> -->
+	
+	<flight_control name="FGFCS"/>
+
+	<aerodynamics file="Systems/aerodynamics_tiltprop_tailsitter.xml"/>
+	
+	
+</fdm_config>
+
+
