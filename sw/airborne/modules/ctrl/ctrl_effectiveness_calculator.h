@@ -11,6 +11,7 @@
 
 #include "generated/airframe.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
+#include "paparazzi.h"
 
 extern void ctrl_eff(void);
 
