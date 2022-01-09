@@ -8,10 +8,8 @@
 
 #include "modules/ctrl/ctrl_effectiveness_calculator.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
-#include "firmwares/rotorcraft/guidance/guidance_h.h"
 #include "generated/airframe.h"
 #include "state.h"
-#include "subsystems/radio_control.h"
 #include "math/pprz_algebra_float.h"
 
 static float ab_to_cd(float x);
