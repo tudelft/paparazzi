@@ -202,18 +202,21 @@
   <firmware name="rotorcraft">
 
 <!-- ****************************** This is from Durafly ***************************** -->
-
+<!-- 																					
+ v 			these are the comments I added to comment out this section								v
+ 			or ones which are preceeded immediately with ### -->
+<!--
     <target name="ap" board="px4fmu_4.0">
       <define name="FLASH_MODE" value="PX4_BOOTLOADER"/>
 
-      <configure name="CPU_LED" value="1"/>
+      <configure name="CPU_LED" value="1"/>															-->
       <!--  TODO: After first flights try to find optimum value -->
       <!-- PERIODIC_FREQUENCY should be least equal or greater than AHRS_PROPAGATE_FREQUENCY -->
-      <configure name="PERIODIC_FREQUENCY" value="512"/> <!--  unit="Hz" -->
-      <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/><!--  unit="Hz" -->
-      <configure name="AHRS_CORRECT_FREQUENCY" value="500"/> <!--  unit="Hz" -->
+<!--      <configure name="PERIODIC_FREQUENCY" value="512"/> ###--><!--  unit="Hz" -->
+<!--      <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/> ###--><!--  unit="Hz" -->
+<!--      <configure name="AHRS_CORRECT_FREQUENCY" value="500"/> ###--><!--  unit="Hz" -->
 
-      <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/>
+<!--      <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/>
       <configure name="NAVIGATION_FREQUENCY" value="16"/>
       <configure name="CONTROL_FREQUENCY" value="120"/>
       <configure name="TELEMETRY_FREQUENCY" value="60"/>
@@ -222,7 +225,7 @@
       <module name="imu" type="mpu9250_spi">
         <configure name="IMU_MPU9250_SPI_DEV" value="spi1"/>
         <configure name="IMU_MPU9250_SPI_SLAVE_IDX" value="SPI_SLAVE2"/>
-        <define name="IMU_MPU9250_READ_MAG" value="FALSE"/>
+        <define name="IMU_MPU9250_READ_MAG" value="FALSE"/>											-->
         <!-- To be able (for now) to set AP IMU orientaion -->
         <!-- <define name="IMU_MPU9250_CHAN_X" value="1"/>
         <define name="IMU_MPU9250_CHAN_Y" value="0"/>
@@ -230,16 +233,16 @@
         <define name="IMU_MPU9250_X_SIGN" value="-1"/>
         <define name="IMU_MPU9250_Y_SIGN" value="-1"/>
         <define name="IMU_MPU9250_Z_SIGN" value="-1"/> -->
-      </module>
+<!--      </module>
 
       <module name="radio_control" type="sbus">
         <define name="RADIO_STARTER" value="RADIO_AUX1"/>
       </module>
 
-      <module name="sys_mon"/>
+      <module name="sys_mon"/>																		-->
        <!--  <module name="mag_calib_ukf"/> Not used yet -->
 
-      <module name="mag" type="hmc58xx">
+<!--      <module name="mag" type="hmc58xx">														-->
         <!--
         We will use the magnetometor that is available on our GPS board,
         furtherest away from all other devices that could cause interference.
@@ -247,14 +250,14 @@
         and log and determine if the results are really better.
         -->
 
-        <configure name="MAG_HMC58XX_I2C_DEV" value="i2c1"/>
-        <define name="MODULE_HMC58XX_UPDATE_AHRS" value="TRUE"/>
-        <define name="HMC58XX_CHAN_X" value="2"/> <!-- TODO Check -->
-        <define name="HMC58XX_CHAN_Y" value="0"/> <!-- TODO Check -->
-        <define name="HMC58XX_CHAN_Z" value="1"/> <!-- TODO Check -->
-        <define name="HMC58XX_CHAN_X_SIGN" value="+"/>  <!-- TODO Check -->
-        <define name="HMC58XX_CHAN_Y_SIGN" value="-"/>  <!-- TODO Check -->
-        <define name="HMC58XX_CHAN_Z_SIGN" value="-"/>  <!-- TODO Check -->
+<!--        <configure name="MAG_HMC58XX_I2C_DEV" value="i2c1"/>
+        <define name="MODULE_HMC58XX_UPDATE_AHRS" value="TRUE"/>									-->
+<!--        <define name="HMC58XX_CHAN_X" value="2"/> ###--><!-- TODO Check -->
+<!--        <define name="HMC58XX_CHAN_Y" value="0"/> ###--><!-- TODO Check -->
+<!--        <define name="HMC58XX_CHAN_Z" value="1"/> ###--><!-- TODO Check -->
+<!--        <define name="HMC58XX_CHAN_X_SIGN" value="+"/>  ###--><!-- TODO Check -->
+<!--        <define name="HMC58XX_CHAN_Y_SIGN" value="-"/>  ###--><!-- TODO Check -->
+<!--        <define name="HMC58XX_CHAN_Z_SIGN" value="-"/>  ###--><!-- TODO Check -->
         <!-- We need to compensate magnet a bit for the pitch since it is
         build in a bit angled about 20 deg
         The Build in your GPS where the MAGNETOMETER resides on the board
@@ -262,46 +265,46 @@
         Even if zero we MUST define all 3 axis else they are not taken
         into consideration-->
 
-        <define name="HMC58XX_MAG_TO_IMU_PHI" value="0.0"/>
-        <define name="HMC58XX_MAG_TO_IMU_PSI" value="0.0"/>
-        <define name="HMC58XX_MAG_TO_IMU_THETA" value="0.349066"/> <!--unit RADians ... RAD 0,349066 ~ DEG 20 -->
-      </module>
+<!--         <define name="HMC58XX_MAG_TO_IMU_PHI" value="0.0"/>
+        <define name="HMC58XX_MAG_TO_IMU_PSI" value="0.0"/>											-->
+<!--        <define name="HMC58XX_MAG_TO_IMU_THETA" value="0.349066"/> ###--><!--unit RADians ... RAD 0,349066 ~ DEG 20 -->
+<!--      </module>
 
-      <module name="lidar" type="tfmini">
-      <configure name="TFMINI_PORT" value="UART3"/> <!--  Telem2 on pixracer -->
-      <configure name="TFMINI_BAUD" value="B115200"/>
+      <module name="lidar" type="tfmini">															-->
+<!--      <configure name="TFMINI_PORT" value="UART3"/> ###--><!--  Telem2 on pixracer -->
+<!--      <configure name="TFMINI_BAUD" value="B115200"/>
       <configure name="USE_TFMINI_AGL" value="TRUE"/>
       <configure name="TFMINI_COMPENSATE_ROTATION" value="TRUE"/>
     </module>
-    </target>
+    </target>																						-->
 <!-- *********************************************************************************** -->
   
 
 <!-- ************** Code between these two markers are for the Cyclone ***************** -->
 <!-- 
  v						These comments I added								 v			 -->
- <!-- <firmware name="rotorcraft">
+ <!-- <firmware name="rotorcraft">											--> <!-- This remains commented out because it is already above -->
     <target name="ap" board="chimera_1.0">
       <configure name="PERIODIC_FREQUENCY" value="500"/>
-      <module name="radio_control" type="sbus">								-->
+      <module name="radio_control" type="sbus">								
         <!--[> Put the mode on channel AUX1<]-->
-<!--        <define name="RADIO_KILL_SWITCH" value="5"/>
+        <define name="RADIO_KILL_SWITCH" value="5"/>
       </module>
 
       <module name="ctrl_effectiveness_scheduling">
         <define name="SQUARED_ROLL_EFF" value="0.0018"/>
         <define name="PITCH_EFF_AT_60" value="4.0"/>
-        <define name="YAW_EFF_AT_60" value="8.0"/>							-->
+        <define name="YAW_EFF_AT_60" value="8.0"/>							
         <!--function of the form: A + B*airspeed^2-->
-<!--        <define name="CE_PITCH_A" value="4.5"/>
+        <define name="CE_PITCH_A" value="4.5"/>
         <define name="CE_PITCH_B" value="0.01"/>
         <define name="CE_YAW_A" value="5.631"/>
         <define name="CE_YAW_B" value="0.0515"/>
-      </module>																-->
+      </module>																
 
       <!--Switch advanced INDI scheduling functions on or off-->
-<!--      <define name="INDI_FUNCTIONS_RC_CHANNEL" value="6"/>
-    </target>																-->
+      <define name="INDI_FUNCTIONS_RC_CHANNEL" value="6"/>
+    </target>																
 <!-- ************** Code between these two markers are for the Cyclone ***************** -->
 
     <target name="nps"          board="pc">
