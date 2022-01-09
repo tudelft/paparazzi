@@ -200,11 +200,18 @@
   </section>
   
   <firmware name="rotorcraft">
+<!-- ****************************** This is from Splash3 ****************************** -->  
+    <configure name="PERIODIC_FREQUENCY"  value="500"/>
+    <target name="ap" board="px4fmu_4.0_chibios">
+      <module name="radio_control" type="sbus">
+        <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
+      </module>
+    </target>
 
 <!-- ****************************** This is from Durafly ***************************** -->
 <!-- 																					
  v 			these are the comments I added to comment out this section								v
- 			or ones which are preceeded immediately with ### -->
+ 			or ones which are immediately preceeded by ### -->
 <!--
     <target name="ap" board="px4fmu_4.0">
       <define name="FLASH_MODE" value="PX4_BOOTLOADER"/>
@@ -284,27 +291,27 @@
 <!-- 
  v						These comments I added								 v			 -->
  <!-- <firmware name="rotorcraft">											--> <!-- This remains commented out because it is already above -->
-    <target name="ap" board="chimera_1.0">
+ <!--   <target name="ap" board="chimera_1.0">
       <configure name="PERIODIC_FREQUENCY" value="500"/>
-      <module name="radio_control" type="sbus">								
+      <module name="radio_control" type="sbus">								-->						
         <!--[> Put the mode on channel AUX1<]-->
-        <define name="RADIO_KILL_SWITCH" value="5"/>
+<!--        <define name="RADIO_KILL_SWITCH" value="5"/>
       </module>
 
       <module name="ctrl_effectiveness_scheduling">
         <define name="SQUARED_ROLL_EFF" value="0.0018"/>
         <define name="PITCH_EFF_AT_60" value="4.0"/>
-        <define name="YAW_EFF_AT_60" value="8.0"/>							
+        <define name="YAW_EFF_AT_60" value="8.0"/>							-->							
         <!--function of the form: A + B*airspeed^2-->
-        <define name="CE_PITCH_A" value="4.5"/>
+<!--        <define name="CE_PITCH_A" value="4.5"/>
         <define name="CE_PITCH_B" value="0.01"/>
         <define name="CE_YAW_A" value="5.631"/>
         <define name="CE_YAW_B" value="0.0515"/>
-      </module>																
+      </module>																-->															
 
       <!--Switch advanced INDI scheduling functions on or off-->
-      <define name="INDI_FUNCTIONS_RC_CHANNEL" value="6"/>
-    </target>																
+<!--      <define name="INDI_FUNCTIONS_RC_CHANNEL" value="6"/>
+    </target>																-->																
 <!-- ************** Code between these two markers are for the Cyclone ***************** -->
 
     <target name="nps"          board="pc">
