@@ -257,7 +257,13 @@
     
     <module name="sys_mon"/>
 
-    <module name="telemetry"     type="xbee_api"/>
+<!--    <module name="telemetry"     type="transparent"/>				-->
+    
+    <module name="telemetry" type="transparent">
+       <configure name="MODEM_PORT" value="UART2"/>
+       <configure name="MODEM_BAUD" value="B57600"/>
+    </module>
+    
     <module name="imu" type="mpu9250_spi">
       <configure name="IMU_MPU9250_SPI_DEV" value="spi1"/>
       <configure name="IMU_MPU9250_SPI_SLAVE_IDX" value="SPI_SLAVE2"/>
