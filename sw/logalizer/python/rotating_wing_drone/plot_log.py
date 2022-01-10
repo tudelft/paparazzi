@@ -11,11 +11,13 @@ sys.path.append(PPRZ_HOME + "/sw/logalizer/python/log_parser") # pprzlink
 from log_parser import LogParser
 
 parsed_log = LogParser()
-#parsed_log.plot_variable('STAB_ATTITUDE_FULL_INDI', ['angular_rate_p'], [[]])
+parsed_log.plot_variable('STAB_ATTITUDE_FULL_INDI', ['angular_rate_p', 'angular_rate_q', 'angular_rate_r'], [[]])
 #parsed_log.plot_variable('STAB_ATTITUDE_FULL_INDI', ['u'], [[0,1,2,3]])
+parsed_log.plot_variable('ROTORCRAFT_STATUS', ['ap_in_flight'])
+parsed_log.plot_variable('ROTORCRAFT_FP', ['phi', 'theta', 'psi'])
 #parsed_log.plot_variable('STAB_ATTITUDE_FULL_INDI', ['airspeed'])
 #parsed_log.plot_variable('IMU_ACCEL_SCALED', ['ax', 'ay', 'az'])
 #parsed_log.plot_variable('IMU_ACCEL_SCALED', ['ax', 'ay', 'az'])
-parsed_log.plot_variable('INDI_G', ['G1_pitch'], [[0,1,2,3,4]])
+#parsed_log.plot_variable('INDI_G', ['G1_pitch'], [[0,1,2,3,4]])
 parsed_log.plot_variable('ROT_WING_CONTROLLER', ['wing_angle_deg'])
 plt.show()
