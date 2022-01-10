@@ -11,10 +11,14 @@ import xml.etree.ElementTree as ET
 import matplotlib.pyplot as plt
 
 class LogParser(object):
-    def __init__(self):
+    def __init__(self, t_start = None, t_end = None):
         '''
         Init function for the python LogParser class
         '''
+        # Copy t_start and t_end
+        self.t_start = t_start
+        self.t_end = t_end
+
         # If creating a LogParser object, open a file dialog box to open a logile (.data)
         root = tk.Tk()
         root.withdraw()
@@ -90,6 +94,14 @@ class LogParser(object):
             ########################
 
             # Append timestamp-
+            if self.t_start is not None:
+                if float(splitted_line[0]) < self.t_start:
+                    continue
+
+            if self.t_end is not None:
+                if float(splitted_line[0]) > self.t_end:
+                    continue
+
             self.log_dict[msg_name]['t'].append(float(splitted_line[0]))
 
             # Append data
@@ -142,6 +154,13 @@ class LogParser(object):
 
         log_lines.close()
 
+    def get_message_dict(self, msg_name):
+        '''
+        Function that returns the dict of a specific message
+        '''
+        message_dict = self.log_dict[msg_name]
+        return message_dict
+
     def plot_variable(self, msg_name, variable_names = [], idx = []):
         '''
         Function that can plot a variable from the log
@@ -158,7 +177,6 @@ class LogParser(object):
                         label = variable +'[' + str(i) + ']' + ' ' + self.log_dict[msg_name][variable]['unit']
                     else:
                         label = variable +'[' + str(i) + ']'
-                    print(self.log_dict[msg_name][variable]['data'][i])
                     plt.plot(self.log_dict[msg_name]['t'], np.array(self.log_dict[msg_name][variable]['data'])[:,i], label=label)
 
             else:
@@ -173,4 +191,3 @@ class LogParser(object):
             variable_counter += 1
 
         plt.legend()
-        plt.show()
