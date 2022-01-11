@@ -260,7 +260,7 @@
 <!--    <module name="telemetry"     type="transparent"/>				-->
     
     <module name="telemetry" type="transparent">
-       <configure name="MODEM_PORT" value="UART2"/>
+       <configure name="MODEM_PORT" value="UART3"/>
        <configure name="MODEM_BAUD" value="B57600"/>
     </module>
     
