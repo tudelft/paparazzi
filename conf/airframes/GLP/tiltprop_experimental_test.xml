@@ -179,10 +179,11 @@
     <target name="ap" board="px4fmu_4.0_chibios">
       <!--<define name="FLASH_MODE" value="PX4_BOOTLOADER"/>-->
       <configure name="PERIODIC_FREQUENCY" value="500"/>
-      <module name="radio_control" type="sbus">						
-        <!--[> Put the mode on channel AUX1<]-->
+      
+      <module name="radio_control" type="datalink"/>
+<!--      <module name="radio_control" type="sbus">				
         <define name="RADIO_KILL_SWITCH" value="5"/>
-      </module>
+      </module>														-->
     </target>															
 
 <!-- ****************** Simulation Target ****************** -->
