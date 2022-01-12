@@ -31,12 +31,12 @@ void ctrl_eff(void)
 	/**
 	 * Drone specific metrics
 	 */
-	float b = 0.3;
-	float l = 0.1;
-    float m = 1.3; // kg
-    float I_XX = 0.017897; // kg m2
-    float I_YY = 0.003390; // kg m2
-    float I_ZZ = 0.020337; // kg m2
+	float b = 0.3;			// distance in y-axis from c.g. [m]
+	float l = 0.1;			// distance in x-axis from c.g.	[m]
+    float m = 1.3;			// Mass							[kg]
+    float I_XX = 0.017897;	// Moment of Inertia 			[kg m2]
+    float I_YY = 0.003390;	// 			"					[kg m2]
+    float I_ZZ = 0.020337;	// 			"					[kg m2]
 
     /**
      * Some definitions for ease of reading. In the future I want to use angular acceleration of motor so labeled as omega already
@@ -46,20 +46,20 @@ void ctrl_eff(void)
     float omega_r0 = actuator_state_filt_vect[2];
     float omega_l0 = actuator_state_filt_vect[3];
 
-    float ctrl_deriv_00 = -b * sinf(theta_l0) * (k1 * omega_l0 * omega_l0 + k2 * omega_l0 + k3) * (1 / I_XX) * (1/9600.0);
-    float ctrl_deriv_01 =  b * sinf(theta_r0) * (k1 * omega_r0 * omega_r0 + k2 * omega_r0 + k3) * (1 / I_XX) * (1/9600.0);
+    float ctrl_deriv_00 = -b * sinf(theta_l0) * (k1 * omega_l0 * omega_l0 + k2 * omega_l0 + k3) * (1 / I_XX) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_01 =  b * sinf(theta_r0) * (k1 * omega_r0 * omega_r0 + k2 * omega_r0 + k3) * (1 / I_XX) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_02 = -b * cosf(theta_r0) * (2 * k1 * omega_r0 + k2) * (1 / I_XX);
     float ctrl_deriv_03 =  b * cosf(theta_l0) * (2 * k1 * omega_l0 + k2) * (1 / I_XX);
-    float ctrl_deriv_10 =  l * cosf(theta_l0) * (k1 * omega_l0 * omega_l0 + k2 * omega_l0 + k3) * (1 / I_YY) * (1/9600.0);
-    float ctrl_deriv_11 =  l * cosf(theta_r0) * (k1 * omega_r0 * omega_r0 + k2 * omega_r0 + k3) * (1 / I_YY) * (1/9600.0);
+    float ctrl_deriv_10 =  l * cosf(theta_l0) * (k1 * omega_l0 * omega_l0 + k2 * omega_l0 + k3) * (1 / I_YY) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_11 =  l * cosf(theta_r0) * (k1 * omega_r0 * omega_r0 + k2 * omega_r0 + k3) * (1 / I_YY) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_12 =  l * sinf(theta_r0) * (2 * k1 * omega_r0 + k2) * (1 / I_YY);
     float ctrl_deriv_13 =  l * sinf(theta_l0) * (2 * k1 * omega_l0 + k2) * (1 / I_YY);
-    float ctrl_deriv_20 = -b * cosf(theta_l0) * (k1 * omega_l0 * omega_l0 + k2 * omega_l0 + k3) * (1 / I_ZZ) * (1/9600.0);
-    float ctrl_deriv_21 =  b * cosf(theta_r0) * (k1 * omega_r0 * omega_r0 + k2 * omega_r0 + k3) * (1 / I_ZZ) * (1/9600.0);
+    float ctrl_deriv_20 = -b * cosf(theta_l0) * (k1 * omega_l0 * omega_l0 + k2 * omega_l0 + k3) * (1 / I_ZZ) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_21 =  b * cosf(theta_r0) * (k1 * omega_r0 * omega_r0 + k2 * omega_r0 + k3) * (1 / I_ZZ) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_22 =  b * sinf(theta_r0) * (2 * k1 * omega_r0 + k2) * (1 / I_ZZ);
     float ctrl_deriv_23 = -b * sinf(theta_l0) * (2 * k1 * omega_l0 + k2) * (1 / I_ZZ);
-    float ctrl_deriv_30 = (k1 * omega_l0 * omega_l0 + k2 * omega_l0 + k3) * sinf(theta_l0) * (1/m) * (1/9600.0);
-    float ctrl_deriv_31 = (k1 * omega_r0 * omega_r0 + k2 * omega_r0 + k3) * sinf(theta_r0) * (1/m) * (1/9600.0);
+    float ctrl_deriv_30 = (k1 * omega_l0 * omega_l0 + k2 * omega_l0 + k3) * sinf(theta_l0) * (1/m) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_31 = (k1 * omega_r0 * omega_r0 + k2 * omega_r0 + k3) * sinf(theta_r0) * (1/m) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_32 =  -(2 * k1 * omega_r0 + k2) * cosf(theta_r0) * (1/m);
     float ctrl_deriv_33 =  -(2 * k1 * omega_l0 + k2) * cosf(theta_l0) * (1/m);
 
