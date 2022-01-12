@@ -1,8 +1,7 @@
-<!--Mini-Cyclone EPP Airframe
-  Chimera AP
-	Xbee API 
-	Ublox M8T
-	SBUS Futaba -->
+<!-- Tiltprop Skywalker Airframe File
+  		* Autopilot: 	PX4FMU 4.0 aka Pixracer v1.0 R15
+		* GPS:			Ublox M8N
+-->
 
 <airframe name="tiltprop tailsitter experimental">
 
@@ -147,16 +146,15 @@
     <define name="INS_FINV_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>
     </module>-->
 
-    <!-- Control effectiveness calculator that calculates
-		 the control effectiveness matrix on the fly	 -->
+    <!-- Control effectiveness calculator that calculates the control effectiveness matrix on the fly	 -->
     <module name="ctrl_effectiveness_calculator"/>
 
   </firmware>
 
   <servos driver="Pwm">
-    <servo name="TILT_LEFT" no="0" min="1000" neutral="1500" max="2000"/>
+    <servo name="TILT_LEFT" no="0" min="900" neutral="1500" max="2100"/>
     <!--neutral 1526-->
-    <servo name="TILT_RIGHT" no="1" min="1000" neutral="1500" max="2000"/>
+    <servo name="TILT_RIGHT" no="1" min="2100" neutral="1500" max="900"/>
     <!--neutral 1515-->
     <servo name="RM" no="2" min="1000" neutral="1100" max="2000"/>
     <servo name="LM" no="3" min="1000" neutral="1100" max="2000"/>
@@ -254,7 +252,7 @@
     <define name="MAX_R" value="100.0" unit="deg/s"/>
 
     <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
-    <define name="FILT_CUTOFF" value="5.0"/>
+    <define name="FILT_CUTOFF" value="5.0"/> 			<!-- Lowering this lowers the cutoff frequency, could prevent the jittering -->
 
     <!-- first order actuator dynamics -->
     <define name="ACT_DYN" value="{0.1, 0.1, 0.045, 0.045}"/>
