@@ -146,17 +146,14 @@
     <define name="INS_FINV_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>
     </module>-->
 
-    <!-- Control effectiveness calculator that calculates
-		 the control effectiveness matrix on the fly	 -->
+    <!-- Control effectiveness calculator that calculates the control effectiveness matrix on the fly	 -->
     <module name="ctrl_effectiveness_calculator"/>
 
   </firmware>
 
   <servos driver="Pwm">
-    <servo name="TILT_LEFT" no="0" min="1000" neutral="1500" max="2000"/>
-    <!--neutral 1526-->
-    <servo name="TILT_RIGHT" no="1" min="1000" neutral="1500" max="2000"/>
-    <!--neutral 1515-->
+    <servo name="TILT_LEFT" no="0" min="900" neutral="1500" max="2100"/>
+    <servo name="TILT_RIGHT" no="1" min="2100" neutral="1500" max="900"/>
     <servo name="RM" no="2" min="1000" neutral="1100" max="2000"/>
     <servo name="LM" no="3" min="1000" neutral="1100" max="2000"/>
     <!--<servo name="SERVO_TEST" no="4" min="1000" neutral="1500" max="2000"/>-->
