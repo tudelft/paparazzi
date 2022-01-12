@@ -66,6 +66,7 @@
     <!--<module name="mag" type="hmc58xx">
       <configure name="MAG_HMC58XX_I2C_DEV" value="i2c1"/>
       <define name="MODULE_HMC58XX_UPDATE_AHRS"/>
+<<<<<<< HEAD
       <define name="HMC58XX_CHAN_X" value="1"/>
       <define name="HMC58XX_CHAN_Y" value="0"/>
       <define name="HMC58XX_CHAN_Z" value="2"/>
@@ -73,6 +74,19 @@
       <define name="HMC58XX_CHAN_Y_SIGN" value="+"/>
       <define name="HMC58XX_CHAN_Z_SIGN" value="+"/>
       <define name="MPU9250_MAG_PRESCALER" value="32768"/>
+=======
+
+      <define name="HMC58XX_CHAN_X" value="1"/>
+      <define name="HMC58XX_CHAN_Y" value="0"/>
+      <define name="HMC58XX_CHAN_Z" value="2"/>
+
+      <define name="HMC58XX_CHAN_X_SIGN" value="-"/>
+      <define name="HMC58XX_CHAN_Y_SIGN" value="+"/>
+      <define name="HMC58XX_CHAN_Z_SIGN" value="+"/>
+
+      <define name="MPU9250_MAG_PRESCALER" value="32768"/>
+
+>>>>>>> 44e30699485a739b70361f8f329374fe9706493a
       <define name="HMC58XX_MAG_TO_IMU_PHI" value="RadOfDeg\(6.5\)"/>
       <define name="HMC58XX_MAG_TO_IMU_THETA" value="RadOfDeg\(28.5\)"/>
       <define name="HMC58XX_MAG_TO_IMU_PSI" value="RadOfDeg\(181.0\)"/>
@@ -146,15 +160,26 @@
     <define name="INS_FINV_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>
     </module>-->
 
+<<<<<<< HEAD
     <!-- Control effectiveness calculator that calculates the control effectiveness matrix on the fly	 -->
+=======
+    <!-- Control effectiveness calculator that calculates
+		 the control effectiveness matrix on the fly	 -->
+>>>>>>> 44e30699485a739b70361f8f329374fe9706493a
     <module name="ctrl_effectiveness_calculator"/>
 
   </firmware>
 
   <servos driver="Pwm">
+<<<<<<< HEAD
     <servo name="TILT_LEFT" no="0" min="900" neutral="1500" max="2100"/>
     <!--neutral 1526-->
     <servo name="TILT_RIGHT" no="1" min="2100" neutral="1500" max="900"/>
+=======
+    <servo name="TILT_LEFT" no="0" min="1000" neutral="1500" max="2000"/>
+    <!--neutral 1526-->
+    <servo name="TILT_RIGHT" no="1" min="1000" neutral="1500" max="2000"/>
+>>>>>>> 44e30699485a739b70361f8f329374fe9706493a
     <!--neutral 1515-->
     <servo name="RM" no="2" min="1000" neutral="1100" max="2000"/>
     <servo name="LM" no="3" min="1000" neutral="1100" max="2000"/>
@@ -325,4 +350,8 @@
     <define name="NO_MOTOR_MIXING" value="TRUE"/>
   </section>
 
+<<<<<<< HEAD
 </airframe>
+=======
+</airframe>
+>>>>>>> 44e30699485a739b70361f8f329374fe9706493a
