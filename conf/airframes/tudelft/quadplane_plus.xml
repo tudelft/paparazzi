@@ -17,10 +17,27 @@
       <configure name="PERIODIC_FREQUENCY" value="500"/>
       <configure name="FLASH_MODE" value="SWD"/>
 
-      <module name="radio_control" type="ppm"/>
+<!--      <module name="radio_control" type="ppm"/>-->
+
+      <module name="radio_control" type="sbus"> <!-- The output type of RX, over the air it can can be all kinds e.g. DSMX, FRSky-->
+        <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>  <!-- Set the OpenRXSR receiver to maximum channel output of 8 9ms -->
+        <configure name="SBUS_PORT" value="UART3"/>  <!--Default use UART2  on FMU4 -->
+        <!-- Mode set one a three way switch -->
+        <!--  Per default already GEAR if not defined  <define name="RADIO_MODE" value="RADIO_GEAR"/> --><!-- yes, already done by default if not redefined to something else-->
+        <define name="RADIO_GEAR" value="RADIO_AUX2"/>
+        <define name="RADIO_FLAP" value="RADIO_AUX3"/>
+      </module>
+
+<!--      Air speed sensor-->
+      <module name="airspeed" type="ms45xx_i2c">
+        <define name="MS45XX_I2C_DEV" value="i2c1"/>
+        <define name="MS45XX_AIRSPEED_SCALE" value="2.4"/>
+        <define name="USE_AIRSPEED_MS45XX" value="TRUE"/>
+      </module>
+
 
 <!--      <module name="airspeed_ets.xml">-->
-<!--        <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>-->
+
 <!--        <define name="AIRSPEED_ETS_SCALE" value="1.24"/>-->
 <!--      </module>-->
 

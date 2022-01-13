@@ -1351,7 +1351,8 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         //Compute the actuator value (incremental part of the INDI)
         for (i = 0; i < INDI_NUM_ACT; i++) {
 //            indi_u[i] = indi_du[i] + actuator_state_filt[i];
-            indi_u[i] = indi_du[i];
+            //Add the reference actuator position back to the actuator array:
+            indi_u[i] = indi_du[i] + prioritized_actuator_states[i];
         }
 
         // Write values to servos and motor
