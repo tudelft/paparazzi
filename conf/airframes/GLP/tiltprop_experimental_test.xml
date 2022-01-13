@@ -239,9 +239,9 @@
     <define name="G2" value="{0, 0, 0, 0}"/>
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="107.0"/>
-    <define name="REF_ERR_Q" value="100.0"/>
-    <define name="REF_ERR_R" value="100.0"/>
+    <define name="REF_ERR_P" value="57.0"/> <!-- 107 -->
+    <define name="REF_ERR_Q" value="50.0"/> <!-- 100 -->
+    <define name="REF_ERR_R" value="50.0"/> <!-- 100 -->
     <define name="REF_RATE_P" value="14.0"/>
     <define name="REF_RATE_Q" value="15.0"/>
     <define name="REF_RATE_R" value="15.0"/>
@@ -250,7 +250,7 @@
     <define name="MAX_R" value="100.0" unit="deg/s"/>
 
     <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
-    <define name="FILT_CUTOFF" value="5.0"/> 			<!-- Lowering this lowers the cutoff frequency, could prevent the jittering -->
+    <define name="FILT_CUTOFF" value="1.0"/> 			<!-- Lowering this lowers the cutoff frequency, could prevent the jittering -->
 
     <!-- first order actuator dynamics -->
     <define name="ACT_DYN" value="{0.1, 0.1, 0.045, 0.045}"/>
