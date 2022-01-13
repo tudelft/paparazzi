@@ -178,7 +178,8 @@ void init_filters(void);
 #include "subsystems/datalink/telemetry.h"
 static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_INDI_G(trans, dev, AC_ID, INDI_NUM_ACT, g1_est[0],
+  pprz_msg_send_INDI_G(trans, dev, AC_ID,
+                       INDI_NUM_ACT, g1_est[0],
                        INDI_NUM_ACT, g1_est[1],
                        INDI_NUM_ACT, g1_est[2],
                        INDI_NUM_ACT, g1_est[3],

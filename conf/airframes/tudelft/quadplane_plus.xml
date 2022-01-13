@@ -17,10 +17,27 @@
       <configure name="PERIODIC_FREQUENCY" value="500"/>
       <configure name="FLASH_MODE" value="SWD"/>
 
-      <module name="radio_control" type="ppm"/>
+<!--      <module name="radio_control" type="ppm"/>-->
+
+      <module name="radio_control" type="sbus"> <!-- The output type of RX, over the air it can can be all kinds e.g. DSMX, FRSky-->
+        <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>  <!-- Set the OpenRXSR receiver to maximum channel output of 8 9ms -->
+        <configure name="SBUS_PORT" value="UART3"/>  <!--Default use UART2  on FMU4 -->
+        <!-- Mode set one a three way switch -->
+        <!--  Per default already GEAR if not defined  <define name="RADIO_MODE" value="RADIO_GEAR"/> --><!-- yes, already done by default if not redefined to something else-->
+        <define name="RADIO_GEAR" value="RADIO_AUX2"/>
+        <define name="RADIO_FLAP" value="RADIO_AUX3"/>
+      </module>
+
+<!--      Air speed sensor-->
+      <module name="airspeed" type="ms45xx_i2c">
+        <define name="MS45XX_I2C_DEV" value="i2c1"/>
+        <define name="MS45XX_AIRSPEED_SCALE" value="2.4"/>
+        <define name="USE_AIRSPEED_MS45XX" value="TRUE"/>
+      </module>
+
 
 <!--      <module name="airspeed_ets.xml">-->
-<!--        <configure name="AIRSPEED_ETS_I2C_DEV" value="I2C4"/>-->
+
 <!--        <define name="AIRSPEED_ETS_SCALE" value="1.24"/>-->
 <!--      </module>-->
 
@@ -50,6 +67,7 @@
       <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
 
       <configure name="USE_BARO_BOARD" value="FALSE"/><!-- To use in cyberzoo and OJF -->
+
     </target>
 
 <!--    <target name="nps" board="pc">-->
@@ -80,6 +98,7 @@
 <!--    <module name="gps"           type="ubx_ucenter"/>-->
 <!--    <module name="stabilization" type="indi_simple"/>-->
 <!--    <module name="stabilization" type="rate_indi"/>-->
+
 <!--    <module name="ins" type="ekf2"/>-->
 
 <!--     For OPTITRACK -->
@@ -92,10 +111,11 @@
     </module>
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
+
     <module name="ins"           type="extended" />
     <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="FALSE"/>
-      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
+<!--      <configure name="USE_MAGNETOMETER" value="FALSE"/>-->
+<!--      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>-->
     </module>
     
 <!--    <module name="air_data"/>-->
@@ -231,27 +251,32 @@
     <define name="PID_D_GAIN_THETA" value="79"/>
 
     <define name="PID_P_GAIN_PSI_MOTOR" value="630"/>
-    <define name="PID_I_GAIN_PSI_MOTOR" value="15"/>
+    <define name="PID_I_GAIN_PSI_MOTOR" value="50"/>
     <define name="PID_D_GAIN_PSI_MOTOR" value="250"/>
 
     <define name="PID_P_GAIN_PSI_AZ" value="5"/>
-    <define name="PID_I_GAIN_PSI_AZ" value="0.5"/>
+    <define name="PID_I_GAIN_PSI_AZ" value="1"/>
     <define name="PID_D_GAIN_PSI_AZ" value="1"/>
 
     <define name="PID_P_GAIN_POS_X_TILT" value="0.7"/>
-    <define name="PID_I_GAIN_POS_X_TILT" value="0.05"/>
+    <define name="PID_I_GAIN_POS_X_TILT" value="0.2"/>
     <define name="PID_D_GAIN_POS_X_TILT" value="0.5"/>
 
     <define name="PID_P_GAIN_POS_Y_TILT" value="0.7"/>
-    <define name="PID_I_GAIN_POS_Y_TILT" value="0.1"/>
+    <define name="PID_I_GAIN_POS_Y_TILT" value="0.2"/>
     <define name="PID_D_GAIN_POS_Y_TILT" value="0.5"/>
 
-    <define name="PID_P_GAIN_POS_X_ATT" value="0.36"/>
+<!--    <define name="PID_P_GAIN_POS_X_ATT" value="0.36"/>-->
+<!--    <define name="PID_I_GAIN_POS_X_ATT" value="0.1"/>-->
+<!--    <define name="PID_D_GAIN_POS_X_ATT" value="0.3"/>-->
+
+<!--    Modified the 22/11/2021: the dynamics must be the same since is computed before the body projection!!-->
+    <define name="PID_P_GAIN_POS_X_ATT" value="0.3"/>
     <define name="PID_I_GAIN_POS_X_ATT" value="0.1"/>
-    <define name="PID_D_GAIN_POS_X_ATT" value="0.3"/>
+    <define name="PID_D_GAIN_POS_X_ATT" value="0.28"/>
 
     <define name="PID_P_GAIN_POS_Y_ATT" value="0.3"/>
-    <define name="PID_I_GAIN_POS_Y_ATT" value="0.06"/>
+    <define name="PID_I_GAIN_POS_Y_ATT" value="0.1"/>
     <define name="PID_D_GAIN_POS_Y_ATT" value="0.28"/>
 
     <define name="PID_P_GAIN_POS_Z" value="1000"/>
@@ -277,12 +302,12 @@
     <define name="INDI_MAX_P_DOT_ORD" value="500" unit="deg/s^2"/>
     <define name="INDI_MAX_Q_DOT_ORD" value="500" unit="deg/s^2"/>
     <define name="INDI_MAX_R_DOT_ORD" value="1000" unit="deg/s^2"/>
-    <define name="INDI_MAX_VX_ORD" value="15" unit="m/s"/>
-    <define name="INDI_MAX_VY_ORD" value="15" unit="m/s"/>
-    <define name="INDI_MAX_VZ_ORD" value="15" unit="m/s"/>
-    <define name="INDI_MAX_AX_ORD" value="100" unit="m/s^2"/>
-    <define name="INDI_MAX_AY_ORD" value="100" unit="m/s^2"/>
-    <define name="INDI_MAX_AZ_ORD" value="100" unit="m/s^2"/>
+    <define name="INDI_MAX_VX_ORD" value="5" unit="m/s"/>
+    <define name="INDI_MAX_VY_ORD" value="5" unit="m/s"/>
+    <define name="INDI_MAX_VZ_ORD" value="5" unit="m/s"/>
+    <define name="INDI_MAX_AX_ORD" value="3" unit="m/s^2"/>
+    <define name="INDI_MAX_AY_ORD" value="3" unit="m/s^2"/>
+    <define name="INDI_MAX_AZ_ORD" value="3" unit="m/s^2"/>
     <!-- PID specific-->
     <define name="PID_MAX_EULER_ERR_INTEGRATIVE" value="40" unit="deg"/>
     <define name="PID_MAX_POS_ERR_INTEGRATIVE" value="3" unit="m"/>
@@ -292,28 +317,28 @@
     <define name="PID_MAX_YAW_ORDER_AZ" value="30" unit="deg"/><!--MAX order for el servos are the physical one-->
 
     <!-- INDI proportional gains -->
-    <define name="INDI_REF_ERR_P" value="2.86"/>
-    <define name="INDI_REF_ERR_Q" value="2.86"/>
-    <define name="INDI_REF_ERR_R" value="3.307"/>
-    <define name="INDI_REF_ERR_X" value="0.8"/>
-    <define name="INDI_REF_ERR_Y" value="0.8"/>
-    <define name="INDI_REF_ERR_Z" value="2.5"/>
+    <define name="INDI_REF_ERR_P" value="5.5"/>
+    <define name="INDI_REF_ERR_Q" value="6"/>
+    <define name="INDI_REF_ERR_R" value="3.8"/>
+    <define name="INDI_REF_ERR_X" value="1.5"/>
+    <define name="INDI_REF_ERR_Y" value="1.5"/>
+    <define name="INDI_REF_ERR_Z" value="1.3"/>
     <!-- INDI derivative gains -->
-    <define name="INDI_REF_RATE_P" value="3"/>
-    <define name="INDI_REF_RATE_Q" value="3"/>
-    <define name="INDI_REF_RATE_R" value=".001"/>
-    <define name="INDI_REF_RATE_X" value=".01"/>
-    <define name="INDI_REF_RATE_Y" value=".01"/>
-    <define name="INDI_REF_RATE_Z" value="1.0"/>
+    <define name="INDI_REF_RATE_P" value="8"/>
+    <define name="INDI_REF_RATE_Q" value="10"/>
+    <define name="INDI_REF_RATE_R" value="6.8"/>
+    <define name="INDI_REF_RATE_X" value="2.35"/>
+    <define name="INDI_REF_RATE_Y" value="2.35"/>
+    <define name="INDI_REF_RATE_Z" value="8.85"/>
     <!-- Actuator dynamics and mapping-->
     <define name="INDI_ACT_DYN_MOTOR" value="0.052" unit="seconds"/>
     <define name="INDI_ACT_DYN_EL" value="0.04" unit="seconds"/>
     <define name="INDI_ACT_DYN_AZ" value="0.032" unit="seconds"/>
     <define name="MOTOR_K_T_OMEGASQ" value="9.5e-6" unit="N/(rad/s)^2"/>
-    <define name="MOTOR_K_M_OMEGASQ" value="1.5e-7" unit="N*m/(rad/s)^2"/>
+    <define name="MOTOR_K_M_OMEGASQ" value="1.3e-7" unit="N*m/(rad/s)^2"/>
     <define name="MOTOR_K_PWM_OMEGA" value="1" unit="PWM/(rad/s)"/>
     <define name="MOTOR_MAX_OMEGA" value="1000" unit="rad/s"/>
-    <define name="MOTOR_MIN_OMEGA" value="200" unit="rad/s"/><!-- Needed to make the INDI to work-->
+    <define name="MOTOR_MIN_OMEGA" value="300" unit="rad/s"/><!-- Needed to make the INDI to work-->
     <define name="SERVO_AZ_MIN_ANGLE" value="-45" unit="deg"/><!-- Always remember to update the PWM range as well-->
     <define name="SERVO_AZ_MAX_ANGLE" value="45" unit="deg"/>
 <!--    <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>-->
@@ -343,37 +368,36 @@
     <define name="NEUTRAL_EL_ORDER_4" value="3347 + 710" unit="PPZ"/>
 
     <define name="NEUTRAL_AZ_ORDER" value="-310" unit="PPZ"/>
-    <define name="NEUTRAL_YAW_ORDER" value="-600 + 600" unit="PPZ"/>
-
-
+    <define name="NEUTRAL_YAW_ORDER" value="0" unit="PPZ"/>
 
     <!-- Filters properties for PID-->
     <define name="FILT_CUTOFF_ANG_ERR" value="30" unit="rad/s"/>
 <!--    <define name="FILT_CUTOFF_POS_ERR" value="30" unit="rad/s"/>-->
     <define name="FILT_CUTOFF_POS_ERR" value="20" unit="rad/s"/>
+
     <!-- Filters properties for INDI-->
-    <define name="FILT_CUTOFF_P" value="15" unit="rad/s"/>
-    <define name="FILT_CUTOFF_Q" value="15" unit="rad/s"/>
-    <define name="FILT_CUTOFF_R" value="15" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACC_X" value="15" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACC_Y" value="15" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACC_Z" value="15" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_EL" value="15" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="15" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_P" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_Q" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_R" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACC_X" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACC_Y" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACC_Z" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_EL" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="20" unit="rad/s"/>
 
   </section>
 
   <!-- Vehicle properties, see documentation for notation -->
   <section name="VEHICLE_PROPERTIES" prefix="VEHICLE_">
-    <define name="I_XX" value="0.1" unit="Kg*m^2"/>
-    <define name="I_YY" value="0.15" unit="Kg*m^2"/>
+    <define name="I_XX" value="0.15" unit="Kg*m^2"/>
+    <define name="I_YY" value="0.115" unit="Kg*m^2"/>
     <define name="I_ZZ" value="0.2" unit="Kg*m^2"/>
-    <define name="MASS" value="2.3" unit="Kg"/>
-    <define name="L1" value="0.185" unit="m"/>
-    <define name="L2" value="0.185" unit="m"/>
+    <define name="MASS" value="2.4" unit="Kg"/>
+    <define name="L1" value="0.183" unit="m"/>
+    <define name="L2" value="0.183" unit="m"/>
     <define name="L3" value="0.36" unit="m"/>
-    <define name="L4" value="0.29" unit="m"/>
+    <define name="L4" value="0.25" unit="m"/>
     <define name="LZ" value="0." unit="m"/>
     <define name="PROPELLER_INERTIA" value="1.984e-5" unit="Kg*m^2"/>
   </section>

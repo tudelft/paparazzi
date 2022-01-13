@@ -1630,7 +1630,6 @@
 
     <!-- 194 is free -->
     <!-- 195 is free -->
-    <!-- 196 is free -->
 
     <message name="NPS_SENSORS_SCALED" id="197">
       <field name="acc_x"    type="float" />
@@ -1652,8 +1651,6 @@
       <field name="ins_ydd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
       <field name="ins_zdd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
     </message>
-
-    <!-- 199 is free -->
 
     <message name="IMU_GYRO" id="200">
       <field name="gp" type="float" unit="rad/s" alt_unit="deg/s" alt_unit_coef="57.29578"/>
@@ -1721,6 +1718,45 @@
       <field name="power" type="float" unit="W">Calculated power (Voltage * Current)</field>
       <field name="commands" type="int32[]">Commands send to actuators</field>
     </message>
+
+     <message name="B_MATRIX_SEND" id="199">
+         <field name="B_5" type="float[]" unit="none"/>
+         <field name="B_6" type="float[]" unit="none"/>
+         <field name="B_7" type="float[]" unit="none"/>
+         <field name="B_8" type="float[]" unit="none"/>
+         <field name="B_9" type="float[]" unit="none"/>
+         <field name="B_10" type="float[]" unit="none"/>
+         <field name="B_11" type="float[]" unit="none"/>
+         <field name="B_12" type="float[]" unit="none"/>
+<!--         <field name="B_9" type="float[]" unit="none"/>-->
+<!--         <field name="B_10" type="float[]" unit="none"/>-->
+<!--         <field name="B_11" type="float[]" unit="none"/>-->
+<!--         <field name="B_12" type="float[]" unit="none"/>-->
+     </message>
+
+     <message name="INDI_CMD" id="196">
+         <field name="INDI_cmd_acc_x" type="float" />
+         <field name="INDI_cmd_acc_y" type="float" />
+         <field name="INDI_cmd_acc_z" type="float" />
+         <field name="INDI_cmd_p_dot" type="float" />
+         <field name="INDI_cmd_q_dot" type="float" />
+         <field name="INDI_cmd_r_dot" type="float" />
+
+         <field name="INDI_increment_motor_1" type="float" />
+         <field name="INDI_increment_motor_2" type="float" />
+         <field name="INDI_increment_motor_3" type="float" />
+         <field name="INDI_increment_motor_4" type="float" />
+
+         <field name="INDI_increment_el_1_servo" type="float" />
+         <field name="INDI_increment_el_2_servo" type="float" />
+         <field name="INDI_increment_el_3_servo" type="float" />
+         <field name="INDI_increment_el_4_servo" type="float" />
+
+         <field name="INDI_increment_az_1_servo" type="float" />
+         <field name="INDI_increment_az_2_servo" type="float" />
+         <field name="INDI_increment_az_3_servo" type="float" />
+         <field name="INDI_increment_az_4_servo" type="float" />
+     </message>
 
      <message name="ACTUATORS_OUTPUT" id="209">
 
@@ -1793,6 +1829,7 @@
      </message>
 
      <message name="OVERACTUATED_VARIABLES" id="212">
+
          <field name="wind_speed" type="float" >Actual wind speed from the control room</field>
 
          <field name="act_x_pos" type="float" unit="m">Actual x position [m]</field>
@@ -1834,8 +1871,6 @@
          <field name="yaw_action_tilt" type="float" >Yaw action on azimuth [ppz]</field>
          <field name="elev_action" type="float" >elevation action [ppz]</field>
          <field name="azimuth_action" type="float" >azimuth action [ppz]</field>
-
-         <field name="commands" type="int16[]">Commands send to actuators [ppz]</field>
      </message>
 
     <message name="TUNE_VERT" id="213">

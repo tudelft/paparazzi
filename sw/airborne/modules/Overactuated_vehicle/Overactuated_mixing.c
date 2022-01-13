@@ -80,6 +80,8 @@ bool INDI_engaged = 0;
 bool FAILSAFE_engaged = 0;
 bool PID_engaged = 0;
 
+//Variable to store the INDI cmd.
+int32_t INDI_commands[12];
 
 // PID and general settings from slider
 int deadband_stick_yaw = 500;
@@ -114,6 +116,7 @@ float azimuth_cmd = 0;
 
 
 // INDI VARIABLES
+float prioritized_actuator_states[INDI_NUM_ACT] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 float indi_du[INDI_NUM_ACT];
 float indi_u[INDI_NUM_ACT];
 float R_matrix[3][3];
@@ -313,10 +316,10 @@ void Compute_B_matrix(float **B_matrix, float I_xx,float I_yy,float I_zz,float J
     B_matrix[0][6] = (K_p_T*Omega_3*Omega_3*cos(g_3)*sin(b_3)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - K_p_T*Omega_3*Omega_3*cos(Psi)*cos(Theta)*cos(b_3) + K_p_T*Omega_3*Omega_3*sin(b_3)*sin(g_3)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
     B_matrix[0][7] = (K_p_T*Omega_4*Omega_4*cos(g_4)*sin(b_4)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - K_p_T*Omega_4*Omega_4*cos(Psi)*cos(Theta)*cos(b_4) + K_p_T*Omega_4*Omega_4*sin(b_4)*sin(g_4)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
 
-    B_matrix[0][8] = 0;
-    B_matrix[0][9] = 0;
-    B_matrix[0][10] = 0;
-    B_matrix[0][11] = 0;
+    B_matrix[0][8] = -(K_p_T*Omega_1*Omega_1*cos(b_1)*cos(g_1)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)) - K_p_T*Omega_1*Omega_1*cos(b_1)*sin(g_1)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)))/m;
+    B_matrix[0][9] = -(K_p_T*Omega_2*Omega_2*cos(b_2)*cos(g_2)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)) - K_p_T*Omega_2*Omega_2*cos(b_2)*sin(g_2)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)))/m;
+    B_matrix[0][10] = -(K_p_T*Omega_3*Omega_3*cos(b_2)*cos(g_2)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)) - K_p_T*Omega_3*Omega_3*cos(b_2)*sin(g_2)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)))/m;
+    B_matrix[0][11] = -(K_p_T*Omega_4*Omega_4*cos(b_2)*cos(g_2)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)) - K_p_T*Omega_4*Omega_4*cos(b_2)*sin(g_2)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)))/m;
 
     // Second row
     B_matrix[1][0] = 0;
@@ -324,10 +327,10 @@ void Compute_B_matrix(float **B_matrix, float I_xx,float I_yy,float I_zz,float J
     B_matrix[1][2] = 0;
     B_matrix[1][3] = 0;
 
-    B_matrix[1][4] = 0;
-    B_matrix[1][5] = 0;
-    B_matrix[1][6] = 0;
-    B_matrix[1][7] = 0;
+    B_matrix[1][4] = -(K_p_T*Omega_1*Omega_1*cos(Theta)*sin(Psi)*cos(b_1) + K_p_T*Omega_1*Omega_1*cos(g_1)*sin(b_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_1*Omega_1*sin(b_1)*sin(g_1)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix[1][5] = -(K_p_T*Omega_1*Omega_1*cos(Theta)*sin(Psi)*cos(b_1) + K_p_T*Omega_2*Omega_2*cos(g_1)*sin(b_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_2*Omega_2*sin(b_1)*sin(g_1)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix[1][6] = -(K_p_T*Omega_1*Omega_1*cos(Theta)*sin(Psi)*cos(b_1) + K_p_T*Omega_3*Omega_3*cos(g_1)*sin(b_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_3*Omega_3*sin(b_1)*sin(g_1)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix[1][7] = -(K_p_T*Omega_1*Omega_1*cos(Theta)*sin(Psi)*cos(b_1) + K_p_T*Omega_4*Omega_4*cos(g_1)*sin(b_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_4*Omega_4*sin(b_1)*sin(g_1)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
 
     B_matrix[1][8] = (K_p_T*Omega_1*Omega_1*cos(b_1)*cos(g_1)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)) - K_p_T*Omega_1*Omega_1*cos(b_1)*sin(g_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
     B_matrix[1][9] = (K_p_T*Omega_2*Omega_2*cos(b_2)*cos(g_2)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)) - K_p_T*Omega_2*Omega_2*cos(b_2)*sin(g_2)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
@@ -418,26 +421,56 @@ void Compute_B_matrix(float **B_matrix, float I_xx,float I_yy,float I_zz,float J
 }
 
 /**
+ * Function for the message B_MATRIX
+ */
+static void send_B_matrix( struct transport_tx *trans , struct link_device * dev ) {
+
+    pprz_msg_send_B_MATRIX_SEND(trans , dev , AC_ID ,
+                           12, B_matrix_in[0],
+                           12, B_matrix_in[1],
+                           12, B_matrix_in[2],
+                           12, B_matrix_in[3],
+                           1, B_matrix_in[4],
+                           1, B_matrix_transposed[9],
+                           1, B_matrix_transposed[10],
+                           1, B_matrix_transposed[11]);
+}
+
+/**
+ * Function for the message INDI_CMD
+ */
+static void send_indi_cmd( struct transport_tx *trans , struct link_device * dev ) {
+    // Send telemetry message
+    float INDI_increment[12];
+    for(uint8_t j = 0; j < 12; j++){
+        if(j<4){
+            INDI_increment[j] = indi_du[j];
+        }
+        else{
+            INDI_increment[j] = indi_du[j];
+        }
+    }
+
+    pprz_msg_send_INDI_CMD(trans , dev , AC_ID ,
+                                         & INDI_acceleration_inputs[0],& INDI_acceleration_inputs[1],& INDI_acceleration_inputs[2],
+                                         & INDI_acceleration_inputs[3],& INDI_acceleration_inputs[4],& INDI_acceleration_inputs[5],
+                                         & INDI_increment[0],& INDI_increment[1],& INDI_increment[2],& INDI_increment[3],
+                                         & INDI_increment[4],& INDI_increment[5],& INDI_increment[6],& INDI_increment[7],
+                                         & INDI_increment[8],& INDI_increment[9],& INDI_increment[10],& INDI_increment[11]);
+}
+
+/**
  * Function for the message overactuated_variables
  */
 static void send_overactuated_variables( struct transport_tx *trans , struct link_device * dev ) {
     // Send telemetry message
-    int16_t actuators[12];
     float euler_deg[3], euler_des_deg[3];
     for(uint8_t i = 0 ; i < 3 ; i++){
-        rate_vect_filt_deg[i] = rate_vect_filt[i]*180/3.14;
-        rate_vect_filt_dot_deg[i] = rate_vect_filt_dot[i]*180/3.14;
+        //Updated from filtered to unfiltered values the 21/11/2021.
+        rate_vect_filt_deg[i] = rate_vect[i]*180/3.14;
+        rate_vect_filt_dot_deg[i] = rate_vect[i]*180/3.14;
         euler_deg[i] = euler_vect[i]*180/3.14;
         euler_des_deg[i] = euler_setpoint[i]*180/3.14;
-    }
-
-    for (uint8_t i = 0; i < 12; i++)
-    {
-        actuators[i] = overactuated_mixing.commands[i];
-    }
-    for (uint8_t i = 0; i < 6; i++)
-    {
-//        actuators[i] = w_in[i];
     }
 
 
@@ -451,8 +484,7 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
                                          & euler_deg[0], & euler_deg[1], & euler_deg[2],
                                          & euler_des_deg[0], & euler_des_deg[1], & euler_des_deg[2],
                                          & pos_setpoint[0], & pos_setpoint[1], & pos_setpoint[2],
-                                         & alt_cmd, & pitch_cmd, & roll_cmd, & yaw_motor_cmd, & yaw_tilt_cmd, & elevation_cmd, & azimuth_cmd,
-                                         12, actuators );
+                                         & alt_cmd, & pitch_cmd, & roll_cmd, & yaw_motor_cmd, & yaw_tilt_cmd, & elevation_cmd, & azimuth_cmd);
 }
 
 /**
@@ -553,12 +585,16 @@ void get_actuator_state(void)
     //actuator dynamics
     for (uint8_t i = 0; i < INDI_NUM_ACT; i++) {
         actuator_state[i] = actuator_state[i] + act_dyn[i] * (indi_u[i] - actuator_state[i]);
+        //Motors
         if(i < 4){
             Bound(actuator_state[i],OVERACTUATED_MIXING_MOTOR_MIN_OMEGA,OVERACTUATED_MIXING_MOTOR_MAX_OMEGA);
         }
-        else if(i > 3 && i < 8){
-            Bound(actuator_state[i],OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE,OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE);
+        // Elevator angles
+        else if(i < 8){
+//            Bound(actuator_state[i],OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE,OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE);
+            Bound(actuator_state[i],-40 * M_PI/180, 25 * M_PI/180);
         }
+        //Azimuth angles
         else {
             Bound(actuator_state[i],OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE,OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE);
         }
@@ -579,6 +615,8 @@ void overactuated_mixing_init() {
     register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_OVERACTUATED_VARIABLES , send_overactuated_variables );
     register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_GAINS_OVERACTUATED , send_PID_variables );
     register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_ACTUATORS_OUTPUT , send_actuator_variables );
+    register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_INDI_CMD , send_indi_cmd );
+    register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_B_MATRIX_SEND , send_B_matrix );
 
     //Startup the init variables of the INDI
     init_filters();
@@ -676,8 +714,6 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         act_dyn[i+8] = act_dyn_struct.azimuth;
     }
 
-    // Get an estimate of the actuator state using the first order dynamics given by the user
-    get_actuator_state();
 
     /* Propagate the filter on the gyroscopes and accelerometers */
     for (i = 0; i < 3; i++) {
@@ -790,7 +826,7 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
 //            pos_setpoint[2]  = pos_setpoint[2]  + stick_gain_throttle * (radio_control.values[RADIO_THROTTLE] - 4800) * .00001;
 //            Bound(pos_setpoint[2] ,-1,1000);
 //        }
-        //Compute the position setpoints through STB point:
+        //Get the position setpoints through STB point:
         pos_setpoint[0] = x_stb;
         pos_setpoint[1] = y_stb;
         pos_setpoint[2] = z_stb;
@@ -814,7 +850,6 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         }
 
         //Now bound the error within the defined ranges:
-
         BoundAbs(pos_error[0], max_value_error.x);
         BoundAbs(pos_error[1], max_value_error.y);
         BoundAbs(pos_error[2], max_value_error.z);
@@ -934,6 +969,7 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
 
         //Now bound the error within the defined ranges:
         BoundAbs(euler_error[2], max_value_error.psi);
+
         //Bound integrative terms
         for (i = 0; i < 3; i++) {
             BoundAbs(euler_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_EULER_ERR_INTEGRATIVE);
@@ -982,20 +1018,20 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         //Submit motor orders:
         if(manual_motor_stick){
             //Motor 1:
-            overactuated_mixing.commands[0] = (int32_t) ((euler_order[0] + euler_order[1] + psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
+            overactuated_mixing.commands[0] = (int32_t) (( euler_order[0] + euler_order[1] + psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
             //Motor 2:
-            overactuated_mixing.commands[1] = (int32_t) ((- euler_order[0] + euler_order[1] - psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
+            overactuated_mixing.commands[1] = (int32_t) ((-euler_order[0] + euler_order[1] - psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
             //Motor 3:
             overactuated_mixing.commands[2] = (int32_t) ((-euler_order[0] - euler_order[1] + psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
             //Motor 4:
-            overactuated_mixing.commands[3] = (int32_t) ((euler_order[0] - euler_order[1] - psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
+            overactuated_mixing.commands[3] = (int32_t) (( euler_order[0] - euler_order[1] - psi_order_motor) ) * 9.6 + radio_control.values[RADIO_THROTTLE];
             //Compute the command for the PPZ message
             alt_cmd = radio_control.values[RADIO_THROTTLE];
         }
         else{
             //Protection control for altitude saturation on the pitch authority:
             //Compute the maximum allowable order considering as constraint the front motors:
-            float max_alt_order = 1000 - Max(overactuated_mixing.commands[0]/9.6,overactuated_mixing.commands[1]/9.6);
+            float max_alt_order = 1000 - Min(overactuated_mixing.commands[0]/9.6,overactuated_mixing.commands[1]/9.6);
             float order_alt_12 = Min(pos_order_body[2],max_alt_order);
             float order_alt_34 = 0;
             if(order_alt_12 >= 0){
@@ -1031,7 +1067,7 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
 
 
         //Elevation servos:
-        int16_t local_el_order = 0;
+        int32_t local_el_order = 0;
 
         if (activate_tilting_el) {
             if (pos_order_body[0] >= 0) {
@@ -1039,14 +1075,14 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
             } else {
                 local_el_order = (int32_t)(pos_order_body[0] * 9600 / OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE);
             }
-//            local_el_order = (int16_t)(- pos_order_body[0] * 9600 / OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE);
+//            local_el_order = (int32_t)(- pos_order_body[0] * 9600 / OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE);
         }
 
 
 
         //Azimuth servos:
-        int16_t local_az_order_12 = 0;
-        int16_t local_az_order_34 = 0;
+        int32_t local_az_order_12 = 0;
+        int32_t local_az_order_34 = 0;
 
         if (activate_tilting_az) {
             if (pos_order_body[1] >= 0) {
@@ -1070,10 +1106,10 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         //Write the order on the message variables:
         roll_cmd = euler_order[0] * 9.6;
         pitch_cmd = euler_order[1] * 9.6;
-        yaw_motor_cmd = psi_order_motor * 9.6;
-        yaw_tilt_cmd = euler_order[2] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE;
-        elevation_cmd = local_el_order;
-        azimuth_cmd = local_az_order_12;
+        yaw_motor_cmd = psi_order_motor * 9.6f;
+        yaw_tilt_cmd = euler_order[2] * 9600.0f / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE;
+        elevation_cmd = local_el_order * 1.0f;
+        azimuth_cmd = local_az_order_12 * 1.0f;
 
 
 //        local_az_order_12 += OVERACTUATED_MIXING_NEUTRAL_AZ_ORDER + OVERACTUATED_MIXING_NEUTRAL_YAW_ORDER;
@@ -1163,8 +1199,17 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
             INDI_engaged = 1;
             PID_engaged = 0;
             FAILSAFE_engaged = 0;
+
+            //Reset actuator states position:
+            for(i = 0; i < 12; i++) {
+                actuator_state[i] = 0;
+                indi_u[i] = 0;
+            }
+
         }
 
+        // Get an estimate of the actuator state using the first order dynamics given by the user
+        get_actuator_state();
 
         //Calculate the euler angle error to be fed into the PD for the INDI loop
 //        euler_setpoint[0] = 0;
@@ -1172,7 +1217,10 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         euler_setpoint[0] = max_value_error.phi * radio_control.values[RADIO_ROLL] / 9600;
         euler_setpoint[1] = max_value_error.theta * radio_control.values[RADIO_PITCH] / 9600;
         //Integrate the stick yaw position to get the psi set point
-        if( abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw && abs(euler_error[2]) < max_value_error.psi){
+        if(manual_heading){
+            euler_setpoint[2] = manual_heading_value_rad;
+        }
+        else if( abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw && abs(euler_error[2]) < max_value_error.psi){
             euler_setpoint[2] = euler_setpoint[2] + stick_gain_yaw * radio_control.values[RADIO_YAW] * M_PI / 180 * .001;
             //Correct the setpoint in order to always be within -pi and pi
             if(euler_setpoint[2] > M_PI){
@@ -1208,24 +1256,23 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         rate_setpoint[0] = angular_body_error[0] * indi_gains_over.p.phi;
         rate_setpoint[1] = angular_body_error[1] * indi_gains_over.p.theta;
         rate_setpoint[2] = angular_body_error[2] * indi_gains_over.p.psi;
-        BoundAbs(rate_setpoint[0],OVERACTUATED_MIXING_INDI_MAX_P_ORD);
-        BoundAbs(rate_setpoint[1],OVERACTUATED_MIXING_INDI_MAX_Q_ORD);
-        BoundAbs(rate_setpoint[2],OVERACTUATED_MIXING_INDI_MAX_R_ORD);
+//        BoundAbs(rate_setpoint[0],OVERACTUATED_MIXING_INDI_MAX_P_ORD);
+//        BoundAbs(rate_setpoint[1],OVERACTUATED_MIXING_INDI_MAX_Q_ORD);
+//        BoundAbs(rate_setpoint[2],OVERACTUATED_MIXING_INDI_MAX_R_ORD);
 
         //Compute the angular acceleration setpoint:
         acc_setpoint[3] = (rate_setpoint[0] - rate_vect[0]) * indi_gains_over.d.phi;
         acc_setpoint[4] = (rate_setpoint[1] - rate_vect[1]) * indi_gains_over.d.theta;
         acc_setpoint[5] = (rate_setpoint[2] - rate_vect[2]) * indi_gains_over.d.psi;
-        BoundAbs(acc_setpoint[3],OVERACTUATED_MIXING_INDI_MAX_P_DOT_ORD * M_PI / 180);
-        BoundAbs(acc_setpoint[4],OVERACTUATED_MIXING_INDI_MAX_Q_DOT_ORD * M_PI / 180);
-        BoundAbs(acc_setpoint[5],OVERACTUATED_MIXING_INDI_MAX_R_DOT_ORD * M_PI / 180);
+//        BoundAbs(acc_setpoint[3],OVERACTUATED_MIXING_INDI_MAX_P_DOT_ORD * M_PI / 180);
+//        BoundAbs(acc_setpoint[4],OVERACTUATED_MIXING_INDI_MAX_Q_DOT_ORD * M_PI / 180);
+//        BoundAbs(acc_setpoint[5],OVERACTUATED_MIXING_INDI_MAX_R_DOT_ORD * M_PI / 180);
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
         // ANGULAR ACCELERATION
         INDI_acceleration_inputs[3] = acc_setpoint[3] - rate_vect_filt_dot[0];
         INDI_acceleration_inputs[4] = acc_setpoint[4] - rate_vect_filt_dot[1];
         INDI_acceleration_inputs[5] = acc_setpoint[5] - rate_vect_filt_dot[2];
-//        INDI_acceleration_inputs[5] = 0;
 
         //Calculate the position error to be fed into the PD for the INDI loop
         pos_setpoint[0] = x_stb;
@@ -1239,62 +1286,56 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
 
 //        pos_setpoint[2] = -z_stb;
         //Integrate the stick engine position to get the z set point WARNING NED CONVENTION
-        if( abs(radio_control.values[RADIO_THROTTLE] - 4800) > deadband_stick_throttle &&
-            abs(pos_error[2]) < max_value_error.z ){
+        if( abs(radio_control.values[RADIO_THROTTLE] - 4800) > deadband_stick_throttle ){
             pos_setpoint[2]  = pos_setpoint[2]  - stick_gain_throttle * (radio_control.values[RADIO_THROTTLE] - 4800) * .00001;
         }
-        Bound(pos_setpoint[2] ,-1000,4);
+        Bound(pos_setpoint[2] ,-1000,1);
 
         pos_error[0] = pos_setpoint[0] - pos_vect[0];
         pos_error[1] = pos_setpoint[1] - pos_vect[1];
         pos_error[2] = pos_setpoint[2] - pos_vect[2];
-        BoundAbs(pos_error[0],max_value_error.x);
-        BoundAbs(pos_error[1],max_value_error.y);
-        BoundAbs(pos_error[2],max_value_error.z);
+//        pos_error[0] = pos_setpoint[0];
+//        pos_error[1] = pos_setpoint[1];
+//        pos_error[2] = pos_setpoint[2];
+//        BoundAbs(pos_error[0],max_value_error.x);
+//        BoundAbs(pos_error[1],max_value_error.y);
+//        BoundAbs(pos_error[2],max_value_error.z);
 
         //Compute the speed setpoint
         speed_setpoint[0] = pos_error[0] * indi_gains_over.p.x;
         speed_setpoint[1] = pos_error[1] * indi_gains_over.p.y;
         speed_setpoint[2] = pos_error[2] * indi_gains_over.p.z;
-        BoundAbs(speed_setpoint[0],OVERACTUATED_MIXING_INDI_MAX_VX_ORD);
-        BoundAbs(speed_setpoint[1],OVERACTUATED_MIXING_INDI_MAX_VY_ORD);
-        BoundAbs(speed_setpoint[2],OVERACTUATED_MIXING_INDI_MAX_VZ_ORD);
+//        BoundAbs(speed_setpoint[0],OVERACTUATED_MIXING_INDI_MAX_VX_ORD);
+//        BoundAbs(speed_setpoint[1],OVERACTUATED_MIXING_INDI_MAX_VY_ORD);
+//        BoundAbs(speed_setpoint[2],OVERACTUATED_MIXING_INDI_MAX_VZ_ORD);
 
         //Compute the linear accel setpoint
         acc_setpoint[0] = (speed_setpoint[0] - speed_vect[0]) * indi_gains_over.d.x;
         acc_setpoint[1] = (speed_setpoint[1] - speed_vect[1]) * indi_gains_over.d.y;
         acc_setpoint[2] = (speed_setpoint[2] - speed_vect[2]) * indi_gains_over.d.z;
-        BoundAbs(acc_setpoint[0],OVERACTUATED_MIXING_INDI_MAX_AX_ORD);
-        BoundAbs(acc_setpoint[1],OVERACTUATED_MIXING_INDI_MAX_AY_ORD);
-        BoundAbs(acc_setpoint[2],OVERACTUATED_MIXING_INDI_MAX_AZ_ORD);
+//        BoundAbs(acc_setpoint[0],OVERACTUATED_MIXING_INDI_MAX_AX_ORD);
+//        BoundAbs(acc_setpoint[1],OVERACTUATED_MIXING_INDI_MAX_AY_ORD);
+//        BoundAbs(acc_setpoint[2],OVERACTUATED_MIXING_INDI_MAX_AZ_ORD);
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
         // LINEAR ACCELERATION
         INDI_acceleration_inputs[0] = acc_setpoint[0] - acc_vect_filt[0];
         INDI_acceleration_inputs[1] = acc_setpoint[1] - acc_vect_filt[1];
         INDI_acceleration_inputs[2] = acc_setpoint[2] - acc_vect_filt[2];
-//        INDI_acceleration_inputs[0] = 0;
-//        INDI_acceleration_inputs[1] = 0;
 
         // Compute the B matrix and invert it
         Compute_B_matrix(B_matrix_in_,VEHICLE_I_XX,VEHICLE_I_YY,VEHICLE_I_ZZ,VEHICLE_PROPELLER_INERTIA,VEHICLE_L1,
                          VEHICLE_L2,VEHICLE_L3,VEHICLE_L4,VEHICLE_LZ,VEHICLE_MASS,OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ,
                          OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ, &actuator_state_filt[0],&actuator_state_filt[4],
                          &actuator_state_filt[8], &actuator_state_filt_dot[0],&actuator_state_filt_dot[4],
-                         &actuator_state_filt_dot[8],&euler_vect[0],&rate_vect_filt[0]);
+                         &actuator_state_filt_dot[8],&euler_vect[0],&rate_vect[0]);
 
-//        float B_matrix[INDI_INPUTS][INDI_NUM_ACT] = {
-//                {0, 0, 0, 0, -2.4525, -2.4525, -2.4525, -2.4525, 0, 0, 0, 0},
-//                {0, 0, 0, 0, 0, 0, 0, 0, 2.4525, 2.4525, 2.4525, 2.4525},
-//                {-0.0062, -0.0062, -0.0062, -0.0062, 0, 0, 0, 0, 0, 0, 0, 0},
-//                {0.0265, -0.0265, -0.0265, 0.0265, 0, 0, 0, 0, 0, 0, 0, 0},
-//                {0.0277, 0.0277, -0.0344, -0.0344, 0, 0, 0, 0, 0, 0, 0, 0},
-//                {0.0010, -0.0010, 0.0010, -0.0010, 0, 0, 0, 0, 8.1791, 8.1791, -10.1533, -10.1533}};
-//        float * B_matrix_in_[INDI_INPUTS];
-//        for (i = 0; i < INDI_INPUTS; i++) {
-//            B_matrix_in_[i] = &B_matrix[i][0];
-//        }
-
+        //Add the equalization of the actuator status:
+        for (k = 0; k < INDI_INPUTS; k++) {
+            for (i = 0; i < INDI_NUM_ACT; i++) {
+                INDI_acceleration_inputs[k] += (actuator_state_filt[i] - prioritized_actuator_states[i]) * B_matrix_in[k][i];
+            }
+        }
 
         compute_pseudoinverse();
 
@@ -1309,62 +1350,86 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
 
         //Compute the actuator value (incremental part of the INDI)
         for (i = 0; i < INDI_NUM_ACT; i++) {
-            indi_u[i] = indi_du[i] + actuator_state_filt[i];
-            //Add saturation to avoid overflow
-            if(i < 4){
-                Bound(indi_u[i],0,OVERACTUATED_MIXING_MOTOR_MAX_OMEGA);
-            }
-            else if( i > 3 && i < 8){
-                Bound(indi_u[i],OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE,OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE);
-            }
-            else {
-                Bound(indi_u[i],OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE,OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE);
-            }
+//            indi_u[i] = indi_du[i] + actuator_state_filt[i];
+            //Add the reference actuator position back to the actuator array:
+            indi_u[i] = indi_du[i] + prioritized_actuator_states[i];
         }
 
         // Write values to servos and motor
-        for (i = 0; i < N_ACT; i++) {
-            if(i < 4){ //Motors
-                //Transpose the motor command from SI to PPZ:
-                overactuated_mixing.commands[i] = (int32_t) (indi_u[i] * 1/OVERACTUATED_MIXING_MOTOR_K_PWM_OMEGA * 9.6f);
-                Bound(overactuated_mixing.commands[i],0, MAX_PPRZ);
-            }
-            else if(i < 8){ //Elevator servos
-                if(activate_tilting_el) {
-                    if (indi_u[i] >= 0) {
-                        overactuated_mixing.commands[i] = (int32_t)(
-                                indi_u[i] * 9600 / OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE);
-                    } else {
-                        overactuated_mixing.commands[i] = (int32_t)(
-                                indi_u[i] * 9600 / -OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE);
-                    }
-                    BoundAbs(overactuated_mixing.commands[i], MAX_PPRZ);
-                }
-                else{
-                    overactuated_mixing.commands[i] = 0;
-                }
-            }
-            else{ //Azimuth servos
-                if(activate_tilting_az) {
-                    if (indi_u[i] >= 0) {
-                        overactuated_mixing.commands[i] = (int32_t)(
-                                indi_u[i] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE);
-                    } else {
-                        overactuated_mixing.commands[i] = (int32_t)(
-                                indi_u[i] * 9600 / -OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE);
-                    }
-                    BoundAbs(overactuated_mixing.commands[i], MAX_PPRZ);
-                }
-                else{
-                    if(i < 10){
-                        overactuated_mixing.commands[i] = in_cmd[COMMAND_YAW]*1.f;
-                    }
-                    else{
-                        overactuated_mixing.commands[i] = - in_cmd[COMMAND_YAW]*1.f;
-                    }
-                }
-            }
+        //Motors:
+        overactuated_mixing.commands[0] = (int32_t) (indi_u[0] * 1/OVERACTUATED_MIXING_MOTOR_K_PWM_OMEGA * 9.6f);
+        overactuated_mixing.commands[1] = (int32_t) (indi_u[1] * 1/OVERACTUATED_MIXING_MOTOR_K_PWM_OMEGA * 9.6f);
+        overactuated_mixing.commands[2] = (int32_t) (indi_u[2] * 1/OVERACTUATED_MIXING_MOTOR_K_PWM_OMEGA * 9.6f);
+        overactuated_mixing.commands[3] = (int32_t) (indi_u[3] * 1/OVERACTUATED_MIXING_MOTOR_K_PWM_OMEGA * 9.6f);
+
+        //Elevator servos:
+        if(activate_tilting_el) {
+            overactuated_mixing.commands[4] = (int32_t) (indi_u[4] * 9600 / OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE + OVERACTUATED_MIXING_NEUTRAL_EL_ORDER_1);
+            overactuated_mixing.commands[5] = (int32_t) (indi_u[5] * 9600 / OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE + OVERACTUATED_MIXING_NEUTRAL_EL_ORDER_2);
+            overactuated_mixing.commands[6] = (int32_t) (indi_u[6] * 9600 / OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE + OVERACTUATED_MIXING_NEUTRAL_EL_ORDER_3);
+            overactuated_mixing.commands[7] = (int32_t) (indi_u[7] * 9600 / OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE + OVERACTUATED_MIXING_NEUTRAL_EL_ORDER_4);
         }
+
+        //Azimuth servos:
+        if(activate_tilting_az) {
+            overactuated_mixing.commands[8] = (int32_t) (indi_u[8] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE);
+            overactuated_mixing.commands[9] = (int32_t) (indi_u[9] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE);
+            overactuated_mixing.commands[10] = (int32_t) (indi_u[10] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE);
+            overactuated_mixing.commands[11] = (int32_t) (indi_u[11] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE);
+        }
+        else if(yaw_with_tilting){
+            overactuated_mixing.commands[8] = (int32_t) (in_cmd[COMMAND_YAW]);
+            overactuated_mixing.commands[9] = (int32_t) (in_cmd[COMMAND_YAW]);
+            overactuated_mixing.commands[10] = (int32_t) (- in_cmd[COMMAND_YAW]);
+            overactuated_mixing.commands[11] = (int32_t) (- in_cmd[COMMAND_YAW]);
+        }
+
+        //Bound values:
+        Bound(overactuated_mixing.commands[0], 0, MAX_PPRZ);
+        Bound(overactuated_mixing.commands[1], 0, MAX_PPRZ);
+        Bound(overactuated_mixing.commands[2], 0, MAX_PPRZ);
+        Bound(overactuated_mixing.commands[3], 0, MAX_PPRZ);
+
+        BoundAbs(overactuated_mixing.commands[4], MAX_PPRZ);
+        BoundAbs(overactuated_mixing.commands[5], MAX_PPRZ);
+        BoundAbs(overactuated_mixing.commands[6], MAX_PPRZ);
+        BoundAbs(overactuated_mixing.commands[7], MAX_PPRZ);
+
+        BoundAbs(overactuated_mixing.commands[8], MAX_PPRZ);
+        BoundAbs(overactuated_mixing.commands[9], MAX_PPRZ);
+        BoundAbs(overactuated_mixing.commands[10], MAX_PPRZ);
+        BoundAbs(overactuated_mixing.commands[11], MAX_PPRZ);
+
+
+//        for (i = 0; i < N_ACT; i++) {
+//            overactuated_mixing.commands[i] = 0;
+//            if(i < 4){ //Motors
+//                //Transpose the motor command from SI to PPZ:
+//                overactuated_mixing.commands[i] = (int32_t) (indi_u[i] * 1/OVERACTUATED_MIXING_MOTOR_K_PWM_OMEGA * 9.6f);
+//            }
+//            else if(i < 8){ //Elevator servos
+//                if(activate_tilting_el) {
+//                    overactuated_mixing.commands[i] = (int32_t)(
+//                            indi_u[i] * 9600 / OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE);
+//                }
+//            }
+//            else{ //Azimuth servos
+//                if(activate_tilting_az) {
+//                    overactuated_mixing.commands[i] = (int32_t)(
+//                            indi_u[i] * 9600 / OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE);
+//                }
+//                else{
+//                    if(i < 10){
+//                        overactuated_mixing.commands[i] = in_cmd[COMMAND_YAW];
+//                    }
+//                    else{
+//                        overactuated_mixing.commands[i] = - in_cmd[COMMAND_YAW];
+//                    }
+//                }
+//            }
+//            Bound(overactuated_mixing.commands[i],0, MAX_PPRZ);
+//        }
+
     }
 
 }

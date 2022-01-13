@@ -2,7 +2,6 @@
 <!DOCTYPE telemetry SYSTEM "telemetry.dtd">
 <telemetry>
 
-
   <process name="Main">
 
     <mode name="default" key_press="d">
@@ -37,7 +36,9 @@
       <message name="MOTOR_MIXING"             period=".2"/>
       <message name="OVERACTUATED_VARIABLES"   period=".2"/>
       <message name="GAINS_OVERACTUATED"       period=".2"/>
-      <message name="ACTUATORS_OUTPUT"         period=".05"/>
+      <message name="ACTUATORS_OUTPUT"         period=".2"/>
+      <message name="INDI_CMD"                 period=".2"/>
+      <message name="B_MATRIX_SEND"                 period=".2"/>
     </mode>
 
     <mode name="ppm">
@@ -209,6 +210,8 @@
       <message name="OVERACTUATED_VARIABLES"   period=".005"/>
       <message name="ACTUATORS_OUTPUT"         period=".005"/>
       <message name="GAINS_OVERACTUATED"       period="0.05"/>
+      <message name="INDI_CMD"                 period=".005"/>
+      <message name="B_MATRIX_SEND"                 period=".2"/>
     </mode>
   </process>
 
