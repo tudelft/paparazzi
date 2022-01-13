@@ -99,8 +99,8 @@ float ab_to_cd(float x)
 {
     float a = -MAX_PPRZ;
     float b = MAX_PPRZ;
-    float c = -1 * M_PI / 4; // Min tilt
-    float d = M_PI / 4;		 // Max tilt
+    float c = -1 * M_PI / 2; // Min tilt
+    float d = M_PI / 2;		 // Max tilt
     return c + ((d - c) / (b - a)) * (x - a);
 }
 
