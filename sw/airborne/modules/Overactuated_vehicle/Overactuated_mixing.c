@@ -692,6 +692,8 @@ void compute_pseudoinverse(void){
 void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
 {
     //Assign variables
+
+    in_flight =in_flight;
     uint8_t i, j, k;
     rate_vect[0] = stateGetBodyRates_f()->p;
     rate_vect[1] = stateGetBodyRates_f()->q;
@@ -914,7 +916,7 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         if(manual_heading){
             euler_setpoint[2] = manual_heading_value_rad;
         }
-        else if (abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw && abs(euler_error[2]) < max_value_error.psi) {
+        else if (abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw && fabs(euler_error[2]) < max_value_error.psi) {
             euler_setpoint[2] =
                     euler_setpoint[2] + stick_gain_yaw * radio_control.values[RADIO_YAW] * M_PI / 180 * .001;
             //Correct the setpoint in order to always be within -pi and pi
@@ -1220,7 +1222,7 @@ void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight)
         if(manual_heading){
             euler_setpoint[2] = manual_heading_value_rad;
         }
-        else if( abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw && abs(euler_error[2]) < max_value_error.psi){
+        else if( abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw && fabs(euler_error[2]) < max_value_error.psi){
             euler_setpoint[2] = euler_setpoint[2] + stick_gain_yaw * radio_control.values[RADIO_YAW] * M_PI / 180 * .001;
             //Correct the setpoint in order to always be within -pi and pi
             if(euler_setpoint[2] > M_PI){

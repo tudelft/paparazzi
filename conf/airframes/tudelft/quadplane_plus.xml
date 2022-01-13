@@ -30,12 +30,9 @@
 
 <!--      Air speed sensor-->
       <module name="airspeed" type="ms45xx_i2c">
-        <define name="MS45XX_I2C_DEV" value="i2c1"/>
-        <define name="MS45XX_AIRSPEED_SCALE" value="2.4"/>
-        <define name="USE_AIRSPEED_MS45XX" value="TRUE"/>
+        <define name="USE_I2C4"/>
+        <define name="MS45XX_I2C_DEV" value="i2c4"/>
       </module>
-
-
 <!--      <module name="airspeed_ets.xml">-->
 
 <!--        <define name="AIRSPEED_ETS_SCALE" value="1.24"/>-->
@@ -52,6 +49,15 @@
       <module name="logger" type="sd_chibios"/>
       <module name="flight_recorder"/>
       <define name="SDLOG_AUTO_FLUSH_PERIOD" value="1" unit="s"/>
+
+         <!-- Also used if QNH needed -->
+      <module name="air_data">
+        <define name="CALC_AIRSPEED" value="TRUE"/>
+        <define name="CALC_TAS_FACTOR" value="FALSE"/>
+        <define name="CALC_AMSL_BARO" value="TRUE"/>
+      </module>
+
+      <module name="geo_mag"/>
 
       <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
 
@@ -137,6 +143,7 @@
 <!--      <define name="LIS3MDL_CHAN_X_SIGN" value="-"/>-->
 <!--      <define name="LIS3MDL_CHAN_Y_SIGN" value="-"/>-->
 <!--    </module>-->
+
 
 <!--    <module name="guidance" type="indi_hybrid">-->
 <!--      <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>-->
