@@ -110,14 +110,13 @@
 <!--     For OPTITRACK -->
     <module name="actuators"     type="pwm"/>
     <module name="imu"           type="mpu6000"/>
-    <module name="gps" type="datalink">
+    <module name="gps"           type="datalink">
       <define name="INS_USE_GPS_ALT" value="1"/>
       <define name="INS_VFF_R_GPS" value="0.09"/>
       <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
     </module>
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
-
     <module name="ins"           type="extended" />
     <module name="ahrs" type="int_cmpl_quat">
 <!--      <configure name="USE_MAGNETOMETER" value="FALSE"/>-->
