@@ -314,8 +314,6 @@
       <field name="temp" type="int8" unit="deg"/>
     </message>
 
-    <!-- 38 is free -->
-
     <message name="DRAGSPEED" id="38">
       <description>
         Velocities in body axes (assuming small pitch/roll angles) as measured
@@ -442,7 +440,6 @@
       <field name="groundspeed_sp" type="float" unit="m/s"/>
     </message>
 
-    <!-- 55 is free -->
 
     <message name="BARO_ETS" id="56">
       <field name="adc" type="uint16"/>
@@ -495,8 +492,6 @@
       <field name="theta" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
       <field name="elevator_sp"  type="int16" unit="pprz"/>
     </message>
-
-    <!-- 61 is free -->
 
     <message name="TURB_PRESSURE_VOLTAGE" id="62">
       <field name="ch_1_p" type="float"/>
@@ -1719,19 +1714,16 @@
       <field name="commands" type="int32[]">Commands send to actuators</field>
     </message>
 
-     <message name="B_MATRIX_SEND" id="199">
+     <message name="B_MATRIX_SEND_LINEAR" id="199">
+         <field name="B_1" type="float[]" unit="none"/>
+         <field name="B_2" type="float[]" unit="none"/>
+         <field name="B_3" type="float[]" unit="none"/>
+     </message>
+
+     <message name="B_MATRIX_SEND_ANGULAR" id="61">
+         <field name="B_4" type="float[]" unit="none"/>
          <field name="B_5" type="float[]" unit="none"/>
          <field name="B_6" type="float[]" unit="none"/>
-         <field name="B_7" type="float[]" unit="none"/>
-         <field name="B_8" type="float[]" unit="none"/>
-         <field name="B_9" type="float[]" unit="none"/>
-         <field name="B_10" type="float[]" unit="none"/>
-         <field name="B_11" type="float[]" unit="none"/>
-         <field name="B_12" type="float[]" unit="none"/>
-<!--         <field name="B_9" type="float[]" unit="none"/>-->
-<!--         <field name="B_10" type="float[]" unit="none"/>-->
-<!--         <field name="B_11" type="float[]" unit="none"/>-->
-<!--         <field name="B_12" type="float[]" unit="none"/>-->
      </message>
 
      <message name="INDI_CMD" id="196">
@@ -1756,6 +1748,9 @@
          <field name="INDI_increment_az_2_servo" type="float" />
          <field name="INDI_increment_az_3_servo" type="float" />
          <field name="INDI_increment_az_4_servo" type="float" />
+
+         <field name="INDI_increment_theta_virtual" type="float" />
+         <field name="INDI_increment_psi_virtual" type="float" />
      </message>
 
      <message name="ACTUATORS_OUTPUT" id="209">

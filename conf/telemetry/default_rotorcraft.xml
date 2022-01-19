@@ -38,7 +38,8 @@
       <message name="GAINS_OVERACTUATED"       period=".2"/>
       <message name="ACTUATORS_OUTPUT"         period=".2"/>
       <message name="INDI_CMD"                 period=".2"/>
-      <message name="B_MATRIX_SEND"                 period=".2"/>
+      <message name="B_MATRIX_SEND_LINEAR"     period=".2"/>
+      <message name="B_MATRIX_SEND_ANGULAR"    period=".2"/>
     </mode>
 
     <mode name="ppm">
@@ -211,7 +212,8 @@
       <message name="ACTUATORS_OUTPUT"         period=".005"/>
       <message name="GAINS_OVERACTUATED"       period="0.05"/>
       <message name="INDI_CMD"                 period=".005"/>
-      <message name="B_MATRIX_SEND"                 period=".2"/>
+      <message name="B_MATRIX_SEND_LINEAR"     period=".2"/>
+      <message name="B_MATRIX_SEND_ANGULAR"     period=".2"/>
     </mode>
   </process>
 

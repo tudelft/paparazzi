@@ -35,9 +35,9 @@
 /**
  * DEFINE VEHICLE PROPERTIES
  */
-#define N_ACT 12
+#define N_ACT_REAL 12
 #define INDI_INPUTS 6
-#define INDI_NUM_ACT 12
+#define INDI_NUM_ACT 14
 
 /**
  * DEFINE SOME USEFUL STRUCT
@@ -75,7 +75,7 @@ struct PD_indi_over {
 
 /* overactuated mixing structure */
 struct overactuated_mixing_t {
-    int32_t commands[N_ACT];      ///< The output commands
+    int32_t commands[N_ACT_REAL];      ///< The output commands
 };
 
 extern struct overactuated_mixing_t overactuated_mixing;

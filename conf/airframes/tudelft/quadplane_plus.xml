@@ -118,7 +118,7 @@
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
     <module name="ins"           type="extended" />
-    <module name="ahrs" type="int_cmpl_quat">
+    <module name="ahrs"          type="int_cmpl_quat">
 <!--      <configure name="USE_MAGNETOMETER" value="FALSE"/>-->
 <!--      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>-->
     </module>
@@ -173,23 +173,6 @@
     <servo name="MOTOR_2" no="1" min="1000" neutral="1050" max="2000"/>
     <servo name="MOTOR_3" no="2" min="1000" neutral="1050" max="2000"/>
     <servo name="MOTOR_4" no="3" min="1000" neutral="1050" max="2000"/>
-<!--    <servo name="EL_1" no="4" min="1350" neutral="2015" max="2250"/>-->
-<!--    <servo name="AZ_1" no="5" min="1095" neutral="1447" max="1875"/>-->
-<!--    <servo name="EL_2" no="8" min="1300" neutral="1950" max="2190"/>-->
-<!--    <servo name="AZ_2" no="9" min="1110" neutral="1474" max="1850"/>-->
-<!--    <servo name="EL_3" no="10" min="1270" neutral="1940" max="2190"/>-->
-<!--    <servo name="AZ_3" no="11" min="1090" neutral="1470" max="1875"/>-->
-<!--    <servo name="EL_4" no="6" min="1390" neutral="1875" max="2130"/>-->
-<!--    <servo name="AZ_4" no="7" min="1050" neutral="1420" max="1850"/>-->
-
-<!--    <servo name="EL_1" no="4" min="1780" neutral="2015" max="2250"/>-->
-<!--    <servo name="AZ_1" no="5" min="1095" neutral="1447" max="1875"/>-->
-<!--    <servo name="EL_2" no="8" min="1710" neutral="1950" max="2190"/>-->
-<!--    <servo name="AZ_2" no="9" min="1110" neutral="1474" max="1850"/>-->
-<!--    <servo name="EL_3" no="10" min="1690" neutral="1940" max="2190"/>-->
-<!--    <servo name="AZ_3" no="11" min="1090" neutral="1470" max="1875"/>-->
-<!--    <servo name="EL_4" no="6" min="1620" neutral="1875" max="2130"/>-->
-<!--    <servo name="AZ_4" no="7" min="1050" neutral="1420" max="1850"/>-->
 
     <servo name="EL_1" no="4" min="1350" neutral="1780" max="2250"/>
     <servo name="EL_2" no="8" min="1300" neutral="1745" max="2190"/>
@@ -199,6 +182,15 @@
     <servo name="AZ_2" no="9" min="1110" neutral="1474" max="1850"/>
     <servo name="AZ_3" no="11" min="1090" neutral="1470" max="1875"/>
     <servo name="AZ_4" no="7" min="1050" neutral="1420" max="1850"/>
+
+<!--    <servo name="EL_1" no="4" min="893" neutral="1982" max="2254"/>-->
+<!--    <servo name="AZ_1" no="5" min="952" neutral="1400" max="1848"/>-->
+<!--    <servo name="EL_2" no="8" min="863" neutral="1923" max="2188"/>-->
+<!--    <servo name="AZ_2" no="9" min="1013" neutral="1444" max="1875"/>-->
+<!--    <servo name="EL_3" no="10" min="902" neutral="1949" max="2211"/>-->
+<!--    <servo name="AZ_3" no="11" min="988" neutral="1425" max="1862"/>-->
+<!--    <servo name="EL_4" no="6" min="827" neutral="1905" max="2175"/>-->
+<!--    <servo name="AZ_4" no="7" min="984" neutral="1423" max="1862"/>-->
   </servos>
 
   <commands>
@@ -272,10 +264,6 @@
     <define name="PID_I_GAIN_POS_Y_TILT" value="0.2"/>
     <define name="PID_D_GAIN_POS_Y_TILT" value="0.5"/>
 
-<!--    <define name="PID_P_GAIN_POS_X_ATT" value="0.36"/>-->
-<!--    <define name="PID_I_GAIN_POS_X_ATT" value="0.1"/>-->
-<!--    <define name="PID_D_GAIN_POS_X_ATT" value="0.3"/>-->
-
 <!--    Modified the 22/11/2021: the dynamics must be the same since is computed before the body projection!!-->
     <define name="PID_P_GAIN_POS_X_ATT" value="0.3"/>
     <define name="PID_I_GAIN_POS_X_ATT" value="0.1"/>
@@ -347,26 +335,20 @@
     <define name="MOTOR_MIN_OMEGA" value="300" unit="rad/s"/><!-- Needed to make the INDI to work-->
     <define name="SERVO_AZ_MIN_ANGLE" value="-45" unit="deg"/><!-- Always remember to update the PWM range as well-->
     <define name="SERVO_AZ_MAX_ANGLE" value="45" unit="deg"/>
-<!--    <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>-->
-<!--    <define name="SERVO_EL_MAX_ANGLE" value="40" unit="deg"/>-->
-<!--    <define name="SERVO_EL_MIN_ANGLE" value="-40" unit="deg"/>-->
 
 <!--    <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>-->
-<!--    <define name="SERVO_EL_MIN_ANGLE" value="-25" unit="deg"/>-->
+<!--    <define name="SERVO_EL_MIN_ANGLE" value="-100" unit="deg"/>-->
+
 
     <define name="SERVO_EL_MAX_ANGLE" value="32.5" unit="deg"/>
     <define name="SERVO_EL_MIN_ANGLE" value="-32.5" unit="deg"/>
 
 
-    <!-- NEUTRAL ORDERS-->
-<!--    <define name="NEUTRAL_EL_ORDER" value="540" unit="PPZ"/>-->
-<!--    <define name="NEUTRAL_EL_ORDER_1" value="5066" unit="PPZ"/>-->
-<!--    <define name="NEUTRAL_EL_ORDER_2" value="4724" unit="PPZ"/>-->
-<!--    <define name="NEUTRAL_EL_ORDER_3" value="4675" unit="PPZ"/>-->
-<!--    <define name="NEUTRAL_EL_ORDER_4" value="3347" unit="PPZ"/>-->
+    <define name="MAX_THETA_FWD" value="15" unit="deg"/>
+    <define name="MIN_THETA_FWD" value="-15" unit="deg"/>
+    <define name="MAX_PHI_FWD" value="30" unit="deg"/>
 
-<!--    <define name="NEUTRAL_AZ_ORDER" value="-161" unit="PPZ"/>-->
-<!--    <define name="NEUTRAL_YAW_ORDER" value="-600" unit="PPZ"/>-->
+    <!-- NEUTRAL ORDERS-->
 
     <define name="NEUTRAL_EL_ORDER_1" value="5066 + 710" unit="PPZ"/>
     <define name="NEUTRAL_EL_ORDER_2" value="4724 + 710" unit="PPZ"/>
