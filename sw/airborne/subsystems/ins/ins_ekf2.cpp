@@ -283,8 +283,6 @@ static void send_ins_ekf2(struct transport_tx *trans, struct link_device *dev)
   //ekf.get_flow_innov(&flow); TODO
   ekf.get_mag_decl_deg(&mag_decl);
 
-  uint32_t fix_status = (control_mode >> 2) & 1;
-
   if (ekf.isTerrainEstimateValid()) {
     terrain_valid = 1;
   } else {
@@ -298,7 +296,7 @@ static void send_ins_ekf2(struct transport_tx *trans, struct link_device *dev)
   }
 
   pprz_msg_send_INS_EKF2(trans, dev, AC_ID,
-                         &fix_status, &filter_fault_status, &gps_check_status, &soln_status,
+                         &control_mode, &filter_fault_status, &gps_check_status, &soln_status,
                          &innov_test_status, &mag, &vel, &pos, &hgt, &tas, &hagl, &flow, &beta,
                          &mag_decl, &terrain_valid, &dead_reckoning);
 }
@@ -534,6 +532,7 @@ static void ins_ekf2_publish_attitude(uint32_t stamp)
   imu_sample.delta_ang = Vector3f{ekf2.gyro.p, ekf2.gyro.q, ekf2.gyro.r} * imu_sample.delta_ang_dt;
   imu_sample.delta_vel_dt = ekf2.accel_dt * 1.e-6f;
   imu_sample.delta_vel = Vector3f{ekf2.accel.x, ekf2.accel.y, ekf2.accel.z} * imu_sample.delta_vel_dt;
+  //imu_sample.delta_vel_clipping = {false, false, false}; // TODO fix clipping
   ekf.setIMUData(imu_sample);
 
   if (ekf.attitude_valid()) {

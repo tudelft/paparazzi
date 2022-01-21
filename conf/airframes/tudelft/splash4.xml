@@ -73,6 +73,12 @@
       <configure name="MODEM_BAUD" value="B115200"/>
     </module>
 
+    <!--module name="ahrs" type="int_cmpl_quat" >
+      <configure name="USE_MAGNETOMETER" value="TRUE"/>
+      <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
+    </module>
+    <module name="ins" type="extended" /-->
+
     <module name="ins"           type="ekf2"/>
     <module name="actuators"     type="pwm">
         <define name="SERVO_HZ" value="400" />
@@ -83,33 +89,20 @@
       <configure name="UBX_GPS_BAUD" value="B460800"/>
       <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
     </module>
-    <module name="stabilization" type="indi_simple">
-      <define name="TILT_TWIST_CTRL" value="TRUE"/>
+    <module name="stabilization" type="indi">
+      <!--define name="TILT_TWIST_CTRL" value="TRUE"/-->
     </module>
     <module name="stabilization" type="rate_indi"/>
     <!--module name="stabilization" type="int_quat"/-->
 
-    <module name="guidance" type="indi_hybrid">
-      <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
-      <define name="GUIDANCE_INDI_POS_GAIN" value="0.3"/>
-      <define name="GUIDANCE_INDI_SPEED_GAIN" value="2.0"/>
-      <define name="GUIDANCE_INDI_POS_GAINZ" value="0.3"/>
-      <define name="GUIDANCE_INDI_SPEED_GAINZ" value="2.0"/>
-      <define name="GUIDANCE_INDI_DELTA_KP" value="0.8"/>
-      <define name="GUIDANCE_INDI_DELTA_KD" value="2.0"/>
-      <define name="GUIDANCE_INDI_PITCH_LIFT_EFF" value="0.12"/>
-      <define name="GUIDANCE_INDI_PITCH_EFF_SCALING" value="1.0"/>
-      <define name="GUIDANCE_H_REF_MAX_SPEED" value="18.0"/> <!--not used-->
-      <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="16.0"/>
-      <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/> <!--heading can not be set by navigation-->
-      <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="5"/>
-      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-943.0"/>
-      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_45" value="-500.0"/>
-      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_FWD" value="-1600.0"/>
-      <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="0.5"/>
-      <define name="GUIDANCE_INDI_LINE_GAIN" value="0.2"/>
-      <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>
+    <module name="guidance" type="indi">
+      <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.0"/>
+      <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
+      <define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.0354"/>
     </module>
+
+    <module name="air_data"/>
 
     <module name="send_imu_mag_current"/>
 
@@ -162,10 +155,15 @@
     <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
     <let var="th_hold"     value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
 
-    <set servo="MOTOR_1"   value="($th_hold? -9600 : motor_mixing.commands[0])"/>
+    <!--set servo="MOTOR_1"   value="($th_hold? -9600 : motor_mixing.commands[0])"/>
     <set servo="MOTOR_2"   value="($th_hold? -9600 : motor_mixing.commands[1])"/>
     <set servo="MOTOR_3"   value="($th_hold? -9600 : motor_mixing.commands[2])"/>
-    <set servo="MOTOR_4"   value="($th_hold? -9600 : motor_mixing.commands[3])"/>
+    <set servo="MOTOR_4"   value="($th_hold? -9600 : motor_mixing.commands[3])"/-->
+
+    <set servo="MOTOR_1"   value="(Or($th_hold, !autopilot_get_motors_on())? -9600 : actuators_pprz[0])"/>
+    <set servo="MOTOR_2"   value="(Or($th_hold, !autopilot_get_motors_on())? -9600 : actuators_pprz[1])"/>
+    <set servo="MOTOR_3"   value="(Or($th_hold, !autopilot_get_motors_on())? -9600 : actuators_pprz[2])"/>
+    <set servo="MOTOR_4"   value="(Or($th_hold, !autopilot_get_motors_on())? -9600 : actuators_pprz[3])"/>
   </command_laws>
 
   <section name="MISC">
@@ -180,6 +178,16 @@
     <!-- Avoid GPS loss behavior when having RC or datalink -->
     <define name="NO_GPS_LOST_WITH_DATALINK_TIME" value="20"/>
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
+  </section>
+
+  <section name="AHRS" prefix="AHRS_">
+    <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
+    <!-- Delft -->
+    <define name="H_X" value="0.3892503" />
+    <define name="H_Y" value="0.0017972" />
+    <define name="H_Z" value="0.9211303" />
+    <!-- For vibrating airfames -->
+    <define name="GRAVITY_HEURISTIC_FACTOR" value="0"/>
   </section>
 
   <section name="IMU" prefix="IMU_">
@@ -199,13 +207,13 @@
     <define name="ACCEL_Y_SENS" value="4.749315335111977" integer="16"/>
     <define name="ACCEL_Z_SENS" value="4.811925698324739" integer="16"/>
 
-    <!-- NOT calibrated -->
-    <define name="MAG_X_NEUTRAL" value="-177"/>
-    <define name="MAG_Y_NEUTRAL" value="2605"/>
-    <define name="MAG_Z_NEUTRAL" value="3234"/>
-    <define name="MAG_X_SENS" value="0.5575029772714517" integer="16"/>
-    <define name="MAG_Y_SENS" value="0.5881542593421916" integer="16"/>
-    <define name="MAG_Z_SENS" value="0.5934499941589344" integer="16"/>
+    <!-- Calibrated in the lab -->
+    <define name="MAG_X_NEUTRAL" value="-26"/>
+    <define name="MAG_Y_NEUTRAL" value="2693"/>
+    <define name="MAG_Z_NEUTRAL" value="3245"/>
+    <define name="MAG_X_SENS" value="0.7426490384668201" integer="16"/>
+    <define name="MAG_Y_SENS" value="0.8031539469082686" integer="16"/>
+    <define name="MAG_Z_SENS" value="0.7985190286913114" integer="16"/>
 
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
@@ -251,42 +259,40 @@
     <define name="PSI_DDGAIN" value="0"/>
   </section>
 
-   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
-    <!-- control effectiveness (hover) -->
-    <define name="G1_P" value="0.027" />
-    <define name="G1_Q" value="0.029" />
-    <define name="G1_R" value="0.0014" />
-    <define name="G2_R" value="0.00031" />
+  <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
+    <define name="G1_ROLL"   value="{8.,  -8., -8., 8.}"/>
+    <define name="G1_PITCH"  value="{8.,  8., -8., -8.}"/>
+    <define name="G1_YAW"    value="{ -1.0, 1.0,  -1.0, 1.0}"/>
+    <define name="G1_THRUST" value="{-0.55, -0.55, -0.55, -0.55}"/>
+    <define name="G2" value="{ -0.155, 0.155,  -0.155, 0.155}"/>
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="160.0" />
-    <define name="REF_ERR_Q" value="160.0" />
-    <define name="REF_ERR_R" value="160.0" />
-    <define name="REF_RATE_P" value="14.0" />
-    <define name="REF_RATE_Q" value="14.0" />
-    <define name="REF_RATE_R" value="14.0" />
+    <define name="REF_ERR_P" value="160.0"/>
+    <define name="REF_ERR_Q" value="160.0"/>
+    <define name="REF_ERR_R" value="20.0"/>
+    <define name="REF_RATE_P" value="14.0"/>
+    <define name="REF_RATE_Q" value="14.0"/>
+    <define name="REF_RATE_R" value="5.0"/>
 
     <!--Maxium yaw rate, to avoid instability-->
-    <define name="MAX_R" value="200" unit="deg/s"/>
-
-    <!-- Maximum rate setpoint in rate control mode -->
-    <define name="MAX_RATE" value="343.77" unit="deg/s"/>
+    <define name="MAX_R" value="50.0" unit="deg/s"/>
 
     <!-- second order filter parameters -->
-    <define name="FILT_CUTOFF" value="4"/>
-    <define name="FILT_CUTOFF_RDOT" value="0.5"/>
-    <define name="ESTIMATION_FILT_CUTOFF" value="5.0"/>
-    <define name="FILT_CUTOFF_R" value="4.0"/>
+    <define name="FILT_CUTOFF" value="2.5"/>
+    <define name="FILT_CUTOFF_RDOT" value="2.5"/>
+    <define name="ESTIMATION_FILT_CUTOFF" value="2.5"/>
+
+    <define name="FILTER_YAW_RATE" value="TRUE"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN_P" value="0.0354"/>
-    <define name="ACT_DYN_Q" value="0.0354"/>
-    <define name="ACT_DYN_R" value="0.0354"/>
+    <define name="ACT_DYN" value="{0.0354, 0.0354, 0.0354, 0.0354}"/>
+
+    <define name="WLS_PRIORITIES" value="{1000.f, 1000.f, 1.f, 100.f}"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
     <define name="ADAPTIVE_MU" value="0.0001"/>
-  </section>
+</section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
     <define name="HOVER_KP"    value="310"/>
@@ -316,7 +322,7 @@
 
   <section name="AUTOPILOT">
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO1"  value="AP_MODE_FORWARD"/>
+    <define name="MODE_AUTO1"  value="AP_MODE_HOVER_Z_HOLD"/>
     <define name="MODE_AUTO2"  value="AP_MODE_NAV"/>
     <define name="MODE_STARTUP"  value="AP_MODE_NAV"/>
   </section>

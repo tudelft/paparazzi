@@ -46,7 +46,7 @@
 #include <stdio.h>
 
 // Factor that the estimated G matrix is allowed to deviate from initial one
-#define INDI_ALLOWED_G_FACTOR 2.0
+#define INDI_ALLOWED_G_FACTOR 20.0
 
 #ifdef STABILIZATION_INDI_FILT_CUTOFF_P
 #define STABILIZATION_INDI_FILTER_ROLL_RATE TRUE
@@ -716,8 +716,8 @@ void lms_estimation(void)
 
   // Save the calculated matrix to G1 and G2
   // until thrust is included, first part of the array
-  float_vect_copy(g1[0], g1_est[0], INDI_OUTPUTS * INDI_NUM_ACT);
-  float_vect_copy(g2, g2_est, INDI_NUM_ACT);
+  //float_vect_copy(g1[0], g1_est[0], INDI_OUTPUTS * INDI_NUM_ACT);
+  //float_vect_copy(g2, g2_est, INDI_NUM_ACT);
 
 #if STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
   // Calculate the inverse of (G1+G2)
