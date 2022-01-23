@@ -36,316 +36,907 @@
 #include "math/pprz_algebra_float.h"
 #include "math/pprz_matrix_decomp_float.h"
 
-#define INDI_OUTPUTS 6
-#define INDI_NUM_ACT 12
-void test_overdetermined(void);
-void calc_nu_out(float** Bwls, float* du, float* nu_out);
-void test_qr_solver_output(void);
-void test_SVD_decomposition(void);
-void test_pseudoinverse(void);
-void Compute_commands_test(void);
+#define INDI_INPUTS 6
+#define INDI_NUM_ACT 14
+
+void test_RSPI(void);
+void compute_pseudoinverse(void);
+void compute_B_matrix_extended(float * B_matrix);
+void compute_pseudoinverse_fcn(int num_row, int num_column, float * B_matrix, float * B_inv);
+
+// PARAMETERS FOR THE TEST :
+float Omega_1 = 800;
+float Omega_2 = 800;
+float Omega_3 = 800;
+float Omega_4 = 800;
+
+float b_1 = 0;
+float b_2 = 0;
+float b_3 = 0;
+float b_4 = 0;
+
+float g_1 = 0;
+float g_2 = 0;
+float g_3 = 0;
+float g_4 = 0;
+
+float Phi = 0;
+float Theta = 0;
+float Psi = 0;
+
+float l_1 = .185;
+float l_2 = .185;
+float l_3 = .36;
+float l_4 = .29;
+float l_z = 0.;
+
+float I_xx = 0.15;
+float I_yy = 0.115;
+float I_zz = 0.2;
+float m = 2.35;
+
+float K_p_T = 0.9e-5;
+float K_p_M = 1.31e-7;
+
+float V = 0;
+
+//Aerodynamic variables:
+float Cl_alpha = 5.18;
+float Cm_alpha = -.1;
+float rho = 1.22;
+float Cd_zero = 0.38;
+float K_Cd = 0.2;
+float S = 0.57;
+float wing_chord = 0.3325;
+
+//Max and min values:
+float max_omega = 1000;
+float min_omega = 200;
+float max_b = 25 * M_PI/180;
+float min_b = -100 * M_PI/180;
+float max_g = 45 * M_PI/180;
+float min_g = -45 * M_PI/180;
+float max_theta_fwd = 15 * M_PI/180;
+float min_theta_fwd = -15 * M_PI/180;
+float max_phi_fwd = 30 * M_PI/180;
+
+//RSPI properties
+float sensibility_pseudo_control = 0.01;
+float sensibility_locked_actuator = 0.01;
+float max_iter_RSPI = 5;
+
+float prioritized_actuator_states[INDI_NUM_ACT] = {0, 0, 0, 0,
+                                                   0, 0, 0, 0,
+                                                   0, 0, 0, 0,
+                                                   0, 0 };
+
+float INDI_acceleration_inputs[INDI_INPUTS];
+
+float pseudo_control[INDI_INPUTS] = {0, 2, +16,
+                                      0,4, 0 };
+
+int conventional_analysis = 1;
+int verbose = 1;
 
 int main(int argc, char **argv)
 {
-//  test_overdetermined();
-/*#define INDI_NUM_ACT 4*/
-  /*test_four_by_four();*/
+    test_RSPI();
 
- // test_qr_solver_output();
-// test_SVD_decomposition();
-//    test_pseudoinverse();
-    Compute_commands_test();
 }
 
-/*
- * function to test wls with 4x4 (outputs x inputs) system
- */
-void test_four_by_four(void)
+void test_RSPI(void)
 {
-  float u_min[INDI_NUM_ACT] = { -107, -19093, 0, -95, };
-  float u_max[INDI_NUM_ACT] = {19093, 107, 4600, 4505, };
-
-  float g1g2[INDI_OUTPUTS][INDI_NUM_ACT] = {
-    {      0,         0,  -0.0105,  0.0107016},
-    { -0.0030044, 0.0030044, 0.035, 0.035},
-    { -0.004856, -0.004856, 0, 0},
-    {       0,         0,   -0.0011,   -0.0011}
-  };
-
-  //State prioritization {W Roll, W pitch, W yaw, TOTAL THRUST}
-  static float Wv[INDI_OUTPUTS] = {100, 1000, 0.1, 10};
-  /*static float Wv[INDI_OUTPUTS] = {10, 10, 0.1, 1};*/
-
-  // The control objective in array format
-  float indi_v[INDI_OUTPUTS] = {10.8487,  -10.5658,    6.8383,    1.8532};
-  float indi_du[INDI_NUM_ACT];
-
-  // Initialize the array of pointers to the rows of g1g2
-  float *Bwls[INDI_OUTPUTS];
-  uint8_t i;
-  for (i = 0; i < INDI_OUTPUTS; i++) {
-    Bwls[i] = g1g2[i];
-  }
-
-  // WLS Control Allocator
-  int num_iter =
-    wls_alloc(indi_du, indi_v, u_min, u_max, Bwls, 0, 0, Wv, 0, 0, 10000, 10);
-
-  printf("finished in %d iterations\n", num_iter);
-  printf("du = %f, %f, %f, %f\n", indi_du[0], indi_du[1], indi_du[2], indi_du[3]);
-}
-
-void test_qr_solver_output(void)
-{
-    float B_matrix[INDI_OUTPUTS][INDI_NUM_ACT] = {
-            {0, 0, 0, 0, -2.4525, -2.4525, -2.4525, -2.4525, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0, 0, 2.4525, 2.4525, 2.4525, 2.4525},
-            {-0.0062, -0.0062, -0.0062, -0.0062, 0, 0, 0, 0, 0, 0, 0, 0},
-            {0.0265, -0.0265, -0.0265, 0.0265, 0, 0, 0, 0, 0, 0, 0, 0},
-            {0.0277, 0.0277, -0.0344, -0.0344, 0, 0, 0, 0, 0, 0, 0, 0},
-            {0.0010, -0.0010, 0.0010, -0.0010, 0, 0, 0, 0, 8.1791, 8.1791, -10.1533, -10.1533},
-    };
-
-
-    // The qr solution
-
-    float indi_v[INDI_OUTPUTS] = {0, 0, 0, 1, 0, 0};
+    //Initialize the variables for the RSPI
+    int locked_actuator[INDI_NUM_ACT] = {0,0,0,0,
+                                         0,0,0,0,
+                                         0,0,0,0,
+                                         0,0};
+    float scaling_array[INDI_NUM_ACT] = {1,1,1,1,
+                                         1,1,1,1,
+                                         1,1,1,1,
+                                         1,1};
+    int sum_locked_actuator = 0;
+    float min_scaling_array = 1;
+    float indi_u_scaled_iter[INDI_NUM_ACT];
+    float indi_u_scaled_init[INDI_NUM_ACT];
+    float achieved_dv[INDI_INPUTS];
+    float residual_dv[INDI_INPUTS];
+    float sum_residual_dv = 0;
+    float max_du_scaled_iter[INDI_NUM_ACT];
+    float min_du_scaled_iter[INDI_NUM_ACT];
+    float max_u_scaled[INDI_NUM_ACT];
+    float min_u_scaled[INDI_NUM_ACT];
+    float indi_u_scaled[INDI_NUM_ACT];
+    float indi_u[INDI_NUM_ACT];
     float indi_du[INDI_NUM_ACT];
+    float indi_du_conv[INDI_NUM_ACT];
 
+    float B_matrix[INDI_INPUTS][INDI_NUM_ACT];
+    float B_matrix_inv[INDI_NUM_ACT][INDI_INPUTS];
+    float B_matrix_scaled[INDI_INPUTS][INDI_NUM_ACT];
+    float B_matrix_scaled_iter[INDI_INPUTS][INDI_NUM_ACT];
 
-    qr_solve(INDI_OUTPUTS,INDI_NUM_ACT,&B_matrix[0][0],&indi_v[0],&indi_du[0]);
+    //Evaluate B matrix :
+    compute_B_matrix_extended(B_matrix[0]);
 
-    printf("du = %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n", indi_du[0], indi_du[1], indi_du[2], indi_du[3], indi_du[4], indi_du[5], indi_du[6], indi_du[7],indi_du[8], indi_du[9], indi_du[10], indi_du[11]);
-}
-
-void test_SVD_decomposition(void)
-{
-    float B_matrix_in[INDI_OUTPUTS][INDI_NUM_ACT] = {
-            {0, 0, 0, 0, -2.4525, -2.4525, -2.4525, -2.4525, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0, 0, 2.4525, 2.4525, 2.4525, 2.4525},
-            {-0.0062, -0.0062, -0.0062, -0.0062, 0, 0, 0, 0, 0, 0, 0, 0},
-            {0.0265, -0.0265, -0.0265, 0.0265, 0, 0, 0, 0, 0, 0, 0, 0},
-            {0.0277, 0.0277, -0.0344, -0.0344, 0, 0, 0, 0, 0, 0, 0, 0},
-            {0.0010, -0.0010, 0.0010, -0.0010, 0, 0, 0, 0, 8.1791, 8.1791, -10.1533, -10.1533},
-    };
-    float B_matrix[INDI_OUTPUTS][INDI_NUM_ACT];
-    memcpy(B_matrix, B_matrix_in, INDI_OUTPUTS * INDI_NUM_ACT * sizeof(float));
-
-    float B_matrix_transposed[INDI_NUM_ACT][INDI_OUTPUTS];
-    float * B_matrix_[INDI_NUM_ACT];
-
-    //Transpose matrix B_in
-    int i, j;
-    for (i = 0; i < INDI_OUTPUTS; i++) {
-        for (j = 0; j < INDI_NUM_ACT; j++) {
-            B_matrix_transposed[j][i] = B_matrix[i][j];
-            B_matrix_[j] = &B_matrix_transposed[j][0];
-        }
-    }
-
-    float w_in[INDI_OUTPUTS];
-
-    float v_in[INDI_OUTPUTS][INDI_OUTPUTS];
-    float * v_in_[INDI_OUTPUTS];
-    i = 0;
-    for (i = 0; i < INDI_OUTPUTS; i++) {
-        v_in_[i] = &v_in[i][0];
-    }
-    i = 0;
-    j = 0;
-//    MAKE_MATRIX_PTR(v_in_, v_in, INDI_OUTPUTS);
-
-    pprz_svd_float(B_matrix_, &w_in[0], v_in_, INDI_NUM_ACT, INDI_OUTPUTS);
-
-    //Print the U matrix
-    printf("U = %f, %f, %f, %f, %f, %f\n", B_matrix_[0][0], B_matrix_[0][1],B_matrix_[0][2],B_matrix_[0][3],B_matrix_[0][4],B_matrix_[0][5]);
-    for (i = 1; i < INDI_NUM_ACT; i++) {
-        for (j = 0; j < INDI_OUTPUTS; j++) {
-            printf("%f, ", B_matrix_[i][j]);
+    //Print the computed effectiveness matrix
+    if(verbose){
+        printf("B_matrix not scaled= \n");
+        for (int i = 0; i < INDI_INPUTS ; i++) {
+            for (int j = 0; j < INDI_NUM_ACT; j++) {
+                printf("%f, ", B_matrix[i][j]);
+            }
+            printf("\n");
         }
         printf("\n");
     }
-    i = 0;
-    j = 0;
 
-    //Print the diagonal matrix (/Sum)
-    printf("diag = %f, %f, %f, %f, %f, %f\n", w_in[0], w_in[1], w_in[2], w_in[3], w_in[4], w_in[5]);
+    //Generate the control input status array
+    float control_input_INDI_state[INDI_NUM_ACT];
+    control_input_INDI_state[0] = Omega_1;
+    control_input_INDI_state[1] = Omega_2;
+    control_input_INDI_state[2] = Omega_3;
+    control_input_INDI_state[3] = Omega_4;
 
-    //Print the V matrix
-    printf("V = %f, %f, %f, %f, %f, %f\n", v_in_[0][0], v_in_[0][1],v_in_[0][2],v_in_[0][3],v_in_[0][4],v_in_[0][5]);
-    for (i = 1; i < INDI_OUTPUTS; i++) {
-        for (j = 0; j < INDI_OUTPUTS; j++) {
-            printf("%f, ", v_in_[i][j]);
+    control_input_INDI_state[4] = b_1;
+    control_input_INDI_state[5] = b_2;
+    control_input_INDI_state[6] = b_3;
+    control_input_INDI_state[7] = b_4;
+
+    control_input_INDI_state[8] = g_1;
+    control_input_INDI_state[9] = g_2;
+    control_input_INDI_state[10] = g_3;
+    control_input_INDI_state[11] = g_4;
+
+    control_input_INDI_state[12] = Theta;
+    control_input_INDI_state[13] = Phi;
+
+
+
+    //Make a copy of the pseudo control array to add the increment inside the inversion:
+    memcpy(& INDI_acceleration_inputs[0], & pseudo_control[0], INDI_INPUTS * sizeof(float));
+
+    //Add the actual actuator position and the prioritized actuator states to the pseudo-control input through the effectiveness matrix:
+    for (int k = 0; k < INDI_INPUTS; k++) {
+        for (int i = 0; i < INDI_NUM_ACT; i++) {
+            INDI_acceleration_inputs[k] += (control_input_INDI_state[i] - prioritized_actuator_states[i]) * B_matrix[k][i];
+        }
+    }
+
+    //Print the new pseudo-control array
+    if(verbose){
+        printf("Pseudo-control array new = \n");
+        for (int j = 0; j < INDI_INPUTS; j++) {
+            printf("%f, ", INDI_acceleration_inputs[j]);
+        }
+        printf("\n\n");
+    }
+
+    //If requested, run a simple analysis on the control increment computation using the classic inversion method.
+    if(conventional_analysis) {
+
+        //Compute the pseudoinverse
+        compute_pseudoinverse_fcn(INDI_INPUTS, INDI_NUM_ACT, B_matrix[0], B_matrix_inv[0]);
+
+        //Print the Pseudoinverse
+        if(verbose){
+            printf("Pseudoinverse conventional = \n");
+            for (int j = 0; j < INDI_NUM_ACT; j++) {
+                for (int i = 0; i < INDI_INPUTS; i++) {
+                    printf("%f, ", B_matrix_inv[j][i]);
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+
+        //Compute the initial actuation increment command by multiplying desired acceleration with the pseudo-inverse matrix
+        for (int j = 0; j < INDI_NUM_ACT; j++) {
+            //Cleanup previous value
+            indi_du_conv[j] = 0.;
+            for (int k = 0; k < INDI_INPUTS; k++) {
+                indi_du_conv[j] += INDI_acceleration_inputs[k] * B_matrix_inv[j][k];
+            }
+            indi_du_conv[j] += - control_input_INDI_state[j] + prioritized_actuator_states[j];
+        }
+
+        //Compute and print the residuals of the conventional inversion
+        float residuals_conventional[INDI_NUM_ACT];
+        for (int j = 0; j < INDI_INPUTS; j++) {
+            residuals_conventional[j] = 0.f;
+            for (int i = 0; i < INDI_NUM_ACT; i++) {
+                residuals_conventional[j] += indi_du_conv[i] * B_matrix[j][i];
+            }
+            residuals_conventional[j] = pseudo_control[j] - residuals_conventional[j];
+        }
+
+        //Print the control increment and the residuals
+        if(verbose){
+            printf("Computed control increment with simple inversion= \n");
+            for (int j = 0; j < INDI_NUM_ACT; j++) {
+                printf("%f, ", indi_du_conv[j]);
+                if (j == 3 || j == 7 || j == 11) {
+                    printf("\n");
+                }
+            }
+            printf("\n\n");
+            printf("Computed residuals with simple inversion= \n");
+            for (int j = 0; j < INDI_INPUTS; j++) {
+                printf("%f, ", residuals_conventional[j]);
+            }
+            printf("\n\n");
+        }
+    }
+
+    //Compute the gains for the B matrix with minimum and maximum actuator position
+    float gain_motor = (max_omega - min_omega)/2;
+    float gain_el = (max_b - min_b)/2;
+    float gain_az = (max_g - min_g)/2;
+    float gain_aoa = (max_theta_fwd - min_theta_fwd)/2;
+    float gain_phi = max_phi_fwd;
+
+    //Print gains
+    if(verbose){
+        printf("Gain motor = %f \n", gain_motor);
+        printf("Gain el tilting = %f \n", gain_el);
+        printf("Gain az tilting = %f \n", gain_az);
+        printf("Gain aoa = %f \n", gain_aoa);
+        printf("Gain phi = %f \n", gain_phi);
+        printf("\n");
+    }
+
+    //Scale the effectiveness matrix with the actuator gains
+    for (int j = 0; j < INDI_INPUTS; j++) {
+        for (int i = 0; i < 4; i++) {
+            B_matrix_scaled[j][i] = B_matrix[j][i] * gain_motor;
+            B_matrix_scaled[j][i + 4] = B_matrix[j][i + 4] * gain_el;
+            B_matrix_scaled[j][i + 8] = B_matrix[j][i + 8] * gain_az;
+        }
+        B_matrix_scaled[j][12] = B_matrix[j][12] * gain_aoa;
+        B_matrix_scaled[j][13] = B_matrix[j][13] * gain_phi;
+    }
+
+    //Print the scaled B matrix
+    if(verbose) {
+        printf("Scaled B_matrix = \n");
+        for (int i = 0; i < INDI_INPUTS; i++) {
+            for (int j = 0; j < INDI_NUM_ACT; j++) {
+                printf("%f, ", B_matrix[i][j]);
+            }
+            printf("\n");
         }
         printf("\n");
     }
-}
 
-void test_pseudoinverse(void)
-{
-    float B_matrix_in[INDI_OUTPUTS][INDI_NUM_ACT] = {
-            {0, 0, 0, 0, -2.4525, -2.4525, -2.4525, -2.4525, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0, 0, 2.4525, 2.4525, 2.4525, 2.4525},
-            {-0.0062, -0.0062, -0.0062, -0.0062, 0, 0, 0, 0, 0, 0, 0, 0},
-            {0.0265, -0.0265, -0.0265, 0.0265, 0, 0, 0, 0, 0, 0, 0, 0},
-            {0.0277, 0.0277, -0.0344, -0.0344, 0, 0, 0, 0, 0, 0, 0, 0},
-            {0.0010, -0.0010, 0.0010, -0.0010, 0, 0, 0, 0, 8.1791, 8.1791, -10.1533, -10.1533},
-    };
+    //Save a copy of the scaled effectiveness matrix, so then later we can modify it for the RSPI
+    memcpy(&B_matrix_scaled_iter[0], &B_matrix_scaled[0], INDI_INPUTS * INDI_NUM_ACT * sizeof(float));
 
-    float B_matrix[INDI_OUTPUTS][INDI_NUM_ACT];
-    memcpy(B_matrix, B_matrix_in, INDI_OUTPUTS * INDI_NUM_ACT * sizeof(float));
+    //Compute the maximum and minimum actuator values:
+    float max_u[INDI_NUM_ACT] = {max_omega, max_omega, max_omega, max_omega,
+                                 max_b, max_b,max_b,max_b,
+                                 max_g, max_g, max_g, max_g,
+                                 max_theta_fwd, max_phi_fwd};
+    float min_u[INDI_NUM_ACT] = {min_omega, min_omega, min_omega, min_omega,
+                                 min_b, min_b,min_b,min_b,
+                                 min_g, min_g, min_g, min_g,
+                                 min_theta_fwd, - max_phi_fwd};
 
-    float B_matrix_transposed[INDI_NUM_ACT][INDI_OUTPUTS];
-    float * B_matrix_[INDI_NUM_ACT];
+    //Compute the maximum and minimum scaled actuator values:
+    for (int i = 0; i < 4; i++) {
+        max_u_scaled[i] = max_omega / gain_motor;
+        max_u_scaled[i + 4] = max_b / gain_el;
+        max_u_scaled[i + 8] = max_g / gain_az;
+        min_u_scaled[i] = min_omega / gain_motor;
+        min_u_scaled[i + 4] = min_b / gain_el;
+        min_u_scaled[i + 8] = min_g / gain_az;
+    }
+    max_u_scaled[12] = max_theta_fwd / gain_aoa;
+    max_u_scaled[13] = max_phi_fwd / gain_phi;
+    min_u_scaled[12] = min_theta_fwd / gain_aoa;
+    min_u_scaled[13] = -max_phi_fwd / gain_phi;
 
-    //Transpose matrix B_in
-    int i, j;
-    for (i = 0; i < INDI_OUTPUTS; i++) {
-        for (j = 0; j < INDI_NUM_ACT; j++) {
-            B_matrix_transposed[j][i] = B_matrix[i][j];
-            B_matrix_[j] = &B_matrix_transposed[j][0];
+    //print the maximum and minimum scaled and not scaled actuator saturation points:
+    if(verbose) {
+        printf("Maximum u = \n");
+        for (int i = 0; i < INDI_NUM_ACT; i++) {
+            printf("%f, ", max_u[i]);
         }
+        printf("\n \n");
+
+        printf("Scaled maximum u = \n");
+        for (int i = 0; i < INDI_NUM_ACT; i++) {
+            printf("%f, ", max_u_scaled[i]);
+        }
+        printf("\n \n");
+
+        printf("Minimum u = \n");
+        for (int i = 0; i < INDI_NUM_ACT; i++) {
+            printf("%f, ", min_u[i]);
+        }
+        printf("\n \n");
+
+        printf("Scaled minimum u = \n");
+        for (int i = 0; i < INDI_NUM_ACT; i++) {
+            printf("%f, ", min_u_scaled[i]);
+        }
+        printf("\n \n");
+
     }
 
-    float w_in[INDI_OUTPUTS];
+    //Compute again the pseudoinverse for the scaled B matrix
+    compute_pseudoinverse_fcn(INDI_INPUTS, INDI_NUM_ACT, B_matrix_scaled[0], B_matrix_inv[0]);
 
-    float v_in[INDI_OUTPUTS][INDI_OUTPUTS];
-    float * v_in_[INDI_OUTPUTS];
-    i = 0;
-    for (i = 0; i < INDI_OUTPUTS; i++) {
-        v_in_[i] = &v_in[i][0];
-    }
-    i = 0;
-    j = 0;
-
-    pprz_svd_float(B_matrix_, &w_in[0], v_in_, INDI_NUM_ACT, INDI_OUTPUTS);
-
-    //Print the U matrix
-    printf("U = \n");
-    for (i = 0; i < INDI_NUM_ACT; i++) {
-        for (j = 0; j < INDI_OUTPUTS; j++) {
-            printf("%f, ", B_matrix_[i][j]);
+    //Print the scaled Pseudoinverse
+    if(verbose) {
+        printf("Pseudoinverse with scaled B matrix = \n");
+        for (int j = 0; j < INDI_NUM_ACT; j++) {
+            for (int i = 0; i < INDI_INPUTS; i++) {
+                printf("%f, ", B_matrix_inv[j][i]);
+            }
+            printf("\n");
         }
         printf("\n");
     }
-    i = 0;
-    j = 0;
 
-    //Print the diagonal matrix (/Sum)
-    printf("diag = \n%f, %f, %f, %f, %f, %f\n", w_in[0], w_in[1], w_in[2], w_in[3], w_in[4], w_in[5]);
-
-    //Print the V matrix
-    printf("V = \n");
-    for (i = 0; i < INDI_OUTPUTS; i++) {
-        for (j = 0; j < INDI_OUTPUTS; j++) {
-            printf("%f, ", v_in_[i][j]);
-        }
-        printf("\n");
-    }
-    i = 0;
-    j = 0;
-
-    //Transpose matrix U
-    float U_transposed[INDI_OUTPUTS][INDI_NUM_ACT];
-    for (i = 0; i < INDI_NUM_ACT; i++) {
-        for (j = 0; j < INDI_OUTPUTS; j++) {
-            U_transposed[j][i] = B_matrix_[i][j];
+    //Compute the initial actuation increment scaled command by multiplying desired acceleration with the pseudo-inverse matrix
+    for (int j = 0; j < INDI_NUM_ACT; j++) {
+        //Cleanup previous value
+        indi_u_scaled_init[j] = 0.;
+        for (int k = 0; k < INDI_INPUTS; k++) {
+            indi_u_scaled_init[j] += INDI_acceleration_inputs[k] * B_matrix_inv[j][k];
         }
     }
-    i = 0;
-    j = 0;
 
-    // Invert the diag values
-    float w_inverted[INDI_OUTPUTS][INDI_OUTPUTS];
-    for (i = 0; i < INDI_OUTPUTS; i++) {
-        w_inverted[i][i] = 1/w_in[i];
+    //Print initial computed actuator input
+    if(verbose) {
+        printf("Initial computed control input scaled = \n");
+        for (int i = 0; i < INDI_NUM_ACT; i++) {
+            printf("%f, ", indi_u_scaled_init[i]);
+        }
+        printf("\n \n");
     }
-    i = 0;
 
-    //Multiply the diagonal matrix with U_transposed
-    float out_1[INDI_OUTPUTS][INDI_NUM_ACT];
-    int k;
-    for (i = 0; i < INDI_OUTPUTS; i++) {
-        for (j = 0; j < INDI_NUM_ACT; j++) {
-            out_1[i][j] = 0.;
-            for (k = 0; k < INDI_OUTPUTS; k++) {
-                out_1[i][j] += w_inverted[i][k] * U_transposed[k][j];
+    //Build the scaling array:
+    for (int i = 0; i < INDI_NUM_ACT; i++) {
+        if(indi_u_scaled_init[i] > 0){
+            scaling_array[i] = fmin(1,max_u_scaled[i] / indi_u_scaled_init[i]);
+        }
+        else if(indi_u_scaled_init[i] < 0){
+            scaling_array[i] = fmin(1,min_u_scaled[i] / indi_u_scaled_init[i]);
+        }
+        if(scaling_array[i] < 0){
+            scaling_array[i] = 0;
+        }
+        //Find the minimum of the scaling_array to get the scaling parameter for the whole control input array:
+        if (scaling_array[i] < min_scaling_array) {
+            min_scaling_array = scaling_array[i];
+        }
+    }
+
+
+    // Check for saturation and compute the scaling array accordingly
+    for (int i = 0; i < INDI_NUM_ACT; i++) {
+        if ( fabs(scaling_array[i] - min_scaling_array) < sensibility_locked_actuator) {
+            locked_actuator[i] = 1;
+            sum_locked_actuator ++;
+            for (int j = 0; j < INDI_INPUTS; j++) {
+                B_matrix_scaled_iter[j][i] = 0;
             }
         }
     }
-    i = 0;
-    j = 0;
-    k = 0;
 
-    //Multiply V with out_1
-    float Pseudoinverse[INDI_OUTPUTS][INDI_NUM_ACT];
-    for (i = 0; i < INDI_OUTPUTS; i++) {
-        for (j = 0; j < INDI_NUM_ACT; j++) {
-            Pseudoinverse[i][j] = 0.;
-            for (k = 0; k < INDI_OUTPUTS; k++) {
-                Pseudoinverse[i][j] += v_in_[i][k] * out_1[k][j];
-            }
+    //Print the scaling_array and the saturated actuator
+    if(verbose){
+        printf("Scaling_array first computation = \n");
+        for (int j = 0; j < INDI_NUM_ACT; j++) {
+            printf("%f, ", scaling_array[j]);
         }
+        printf("\n");
+        printf("Minimum computed value of scaling array = %f \n",min_scaling_array);
+        printf("\n");
     }
-    i = 0;
-    j = 0;
-    k = 0;
 
-    //Print the Pseudoinverse matrix
-    printf("Pseudoinverse = \n");
-    for (i = 0; i < INDI_OUTPUTS; i++) {
-        for (j = 0; j < INDI_NUM_ACT; j++) {
-            printf("%f, ", Pseudoinverse[i][j]);
+//    //Understand which actuators are locked(saturated) and register them into the locked_actuator array, also update the new B matrix:
+//    for (int i = 0; i < INDI_NUM_ACT; i++) {
+//        if (fabs(scaling_array[i] - min_scaling_array) < sensibility_locked_actuator) {
+//            locked_actuator[i] = 1;
+//            sum_locked_actuator ++;
+//            for (int j = 0; j < INDI_INPUTS; j++) {
+//                B_matrix_scaled_iter[j][i] = 0;
+//            }
+//        }
+//    }
+
+    //Print the locked actuator status and the new B matrix associated
+    if(verbose){
+        printf("Locked actuator array = \n");
+        for (int j = 0; j < INDI_NUM_ACT; j++) {
+            printf("%d, ", locked_actuator[j]);
+        }
+        printf("\n\n");
+        printf("New Scaled B_matrix with saturated actuators = \n");
+        for (int i = 0; i < INDI_INPUTS; i++) {
+            for (int j = 0; j < INDI_NUM_ACT; j++) {
+                printf("%f, ", B_matrix_scaled_iter[i][j]);
+            }
+            printf("\n");
         }
         printf("\n");
     }
-    i = 0;
-    j = 0;
 
+    //If we do have saturation, scale the actuator position to the allowed one and recalculate the achieved pseudo-control:
+    if (sum_locked_actuator > 0) {
+        for (int i = 0; i < INDI_NUM_ACT; i++) {
+            indi_u_scaled_iter[i] = indi_u_scaled_init[i] * min_scaling_array;
+            indi_u_scaled[i] = indi_u_scaled_iter[i];
+        }
+
+        //Calculate the associated pseudo control achieved with the constrained control input:
+        for (int j = 0; j < INDI_INPUTS; j++) {
+            //Cleanup previous value
+            achieved_dv[j] = 0.;
+            for (int k = 0; k < INDI_NUM_ACT; k++) {
+                achieved_dv[j] += B_matrix_scaled[j][k] * indi_u_scaled[k];
+            }
+            //Compute the residual with the main pseudo-control commanded:
+            residual_dv[j] = INDI_acceleration_inputs[j] - achieved_dv[j];
+            sum_residual_dv += fabs(residual_dv[j]);
+        }
+
+        //Print the first iteration residuals
+        if(verbose){
+            printf("First iteration pseudo-control residuals = \n");
+            for (int j = 0; j < INDI_INPUTS; j++) {
+                printf("%f, ", residual_dv[j]);
+            }
+            printf("\n");
+            printf("Sum of absolute residuals = %f \n",sum_residual_dv);
+            printf("\n\n");
+        }
+
+    }
+    //If no saturation occurs just return the control inputs as they are.
+    else {
+        for (int i = 0; i < INDI_NUM_ACT; i++) {
+            indi_u_scaled[i] = indi_u_scaled_init[i];
+        }
+    }
+
+    //Print the first iteration scaled control input
+    if(verbose){
+        printf("First iteration computed scaled control input = \n");
+        for (int j = 0; j < INDI_NUM_ACT; j++) {
+            printf("%f, ", indi_u_scaled[j]);
+        }
+        printf("\n\n");
+    }
+
+    //Initialize the variable for the iterative part of the RSPI
+    int iter_count = 1;
+
+    //If we are saturated, and we didn't reach the pseudo-control target, begin the iterative process:
+    while (sum_locked_actuator < INDI_NUM_ACT && iter_count < max_iter_RSPI &&
+           sum_residual_dv > sensibility_pseudo_control) {
+
+        //Increase the counter:
+        iter_count++;
+
+        //Compute the pseudoinverse with the modified B matrix
+        compute_pseudoinverse_fcn(INDI_INPUTS, INDI_NUM_ACT, B_matrix_scaled_iter[0], B_matrix_inv[0]);
+
+        //Print the new scaled Pseudoinverse
+        if(verbose) {
+            printf("Pseudoinverse with scaled B matrix, iteration number %d = \n", iter_count);
+            for (int j = 0; j < INDI_NUM_ACT; j++) {
+                for (int i = 0; i < INDI_INPUTS; i++) {
+                    printf("%f, ", B_matrix_inv[j][i]);
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+
+        //Compute the new control input associated with the residual of the pseudo-control of the previous iteration with the modified B matrix inverted
+        for (int j = 0; j < INDI_NUM_ACT; j++) {
+            //Cleanup previous value
+            indi_u_scaled_init[j] = 0.;
+            for (int k = 0; k < INDI_INPUTS; k++) {
+                indi_u_scaled_init[j] += residual_dv[k] * B_matrix_inv[j][k];
+            }
+        }
+
+        //Print initial actuator input increment
+        if(verbose) {
+            printf("Initial proposed scaled control input increment iteration number %d = \n", iter_count);
+            for (int i = 0; i < INDI_NUM_ACT; i++) {
+                printf("%f, ", indi_u_scaled_init[i]);
+            }
+            printf("\n \n");
+        }
+
+        //Reduce the new maximum control input position of the previously allocated value.
+        //Notice that we pass from a global to an incremental problem.
+        for (int i = 0; i < INDI_NUM_ACT; i++) {
+            max_du_scaled_iter[i] = max_u_scaled[i] - indi_u_scaled[i];
+            min_du_scaled_iter[i] = min_u_scaled[i] - indi_u_scaled[i];
+            scaling_array[i] = 1;
+        }
+        min_scaling_array = 1;
+
+        //print the maximum and minimum scaled increment at each iteration:
+        if(verbose) {
+            printf("Max scaled increment at iteration number %d = \n",iter_count);
+            for (int i = 0; i < INDI_NUM_ACT; i++) {
+                printf("%f, ", max_du_scaled_iter[i]);
+            }
+            printf("\n \n");
+
+            printf("Min scaled increment at iteration number %d = \n",iter_count);
+            for (int i = 0; i < INDI_NUM_ACT; i++) {
+                printf("%f, ", min_du_scaled_iter[i]);
+            }
+            printf("\n \n");
+        }
+
+        //Build again the scaling array, this time with the new maximum actuator values:
+        for (int i = 0; i < INDI_NUM_ACT; i++) {
+            if (indi_u_scaled_init[i] > 0 && locked_actuator[i] == 0) {
+                scaling_array[i] = fmin(1, max_du_scaled_iter[i] / indi_u_scaled_init[i]);
+            } else if (indi_u_scaled_init[i] < 0 && locked_actuator[i] == 0) {
+                scaling_array[i] = fmin(1, min_du_scaled_iter[i] / indi_u_scaled_init[i]);
+            }
+            if (scaling_array[i] < 0) {
+                scaling_array[i] = 0;
+            }
+            //Find the minimum of the scaling_array to get the scaling parameter for the whole control input array:
+            if (scaling_array[i] < min_scaling_array) {
+                min_scaling_array = scaling_array[i];
+            }
+        }
+
+        //Print the scaling_array at each iteration
+        if(verbose){
+            printf("Scaling_array at iteration number %d = \n", iter_count);
+            for (int j = 0; j < INDI_NUM_ACT; j++) {
+                printf("%f, ", scaling_array[j]);
+            }
+            printf("\n");
+            printf("Minimum computed value of scaling array at iteration number %d = %f \n",iter_count,min_scaling_array);
+            printf("\n");
+        }
+
+        //Understand which actuators are locked(saturated) and register them into the locked_actuator array, also update the new B matrix:
+        for (int i = 0; i < INDI_NUM_ACT; i++) {
+            if (fabs(scaling_array[i] - min_scaling_array) < sensibility_locked_actuator && min_scaling_array < 1) {
+                locked_actuator[i] = 1;
+                sum_locked_actuator ++;
+                for (int j = 0; j < INDI_INPUTS; j++) {
+                    B_matrix_scaled_iter[j][i] = 0;
+                }
+            }
+        }
+
+        //Print the locked actuator status and the new B matrix associated at each iteration
+        if(verbose){
+            printf("Locked actuator array at iteration number %d = \n",iter_count);
+            for (int j = 0; j < INDI_NUM_ACT; j++) {
+                printf("%d, ", locked_actuator[j]);
+            }
+            printf("\n\n");
+            printf("New Scaled B_matrix with saturated actuators at iteration number %d = \n",iter_count);
+            for (int i = 0; i < INDI_INPUTS; i++) {
+                for (int j = 0; j < INDI_NUM_ACT; j++) {
+                    printf("%f, ", B_matrix_scaled_iter[i][j]);
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+
+        //Scale the actuator position to the allowed one and re-calculate the achieved pseudo-control:
+        for (int i = 0; i < INDI_NUM_ACT; i++) {
+            indi_u_scaled_iter[i] = indi_u_scaled_init[i] * min_scaling_array;
+            indi_u_scaled[i] += indi_u_scaled_iter[i];
+        }
+
+        //Calculate the associated pseudo control achieved with the constrained control input:
+        sum_residual_dv = 0.; //Cleanup previous value
+        for (int j = 0; j < INDI_INPUTS; j++) {
+            achieved_dv[j] = 0.; //Cleanup previous value
+            for (int k = 0; k < INDI_NUM_ACT; k++) {
+                achieved_dv[j] += B_matrix_scaled[j][k] * indi_u_scaled[k];
+            }
+            //Compute the residual with the main pseudo-control commanded:
+            residual_dv[j] = INDI_acceleration_inputs[j] - achieved_dv[j];
+            sum_residual_dv += fabs(residual_dv[j]);
+        }
+
+        //Print the residuals at each iteration
+        if(verbose){
+            printf("Pseudo-control residuals at iteration number %d = \n",iter_count);
+            for (int j = 0; j < INDI_INPUTS; j++) {
+                printf("%f, ", residual_dv[j]);
+            }
+            printf("\n");
+            printf("Sum of absolute residuals at iteration number %d = %f \n",iter_count,sum_residual_dv);
+            printf("\n\n");
+        }
+
+//        if (min_scaling_array < 1.f ) {
+//            for (int i = 0; i < INDI_NUM_ACT; i++) {
+//                indi_u_scaled_iter[i] = indi_u_scaled_init[i] * min_scaling_array;
+//                indi_u_scaled[i] += indi_u_scaled_iter[i];
+//            }
+//
+//            //Calculate the associated pseudo control achieved with the constrained control input:
+//            sum_residual_dv = 0.; //Cleanup previous value
+//            for (int j = 0; j < INDI_INPUTS; j++) {
+//                achieved_dv[j] = 0.; //Cleanup previous value
+//                for (int k = 0; k < INDI_NUM_ACT; k++) {
+//                    achieved_dv[j] += B_matrix_scaled[j][k] * indi_u_scaled[k];
+//                }
+//                //Compute the residual with the main pseudo-control commanded:
+//                residual_dv[j] = INDI_acceleration_inputs[j] - achieved_dv[j];
+//                sum_residual_dv += fabs(residual_dv[j]);
+//            }
+//
+//            //Print the residuals at each iteration
+//            if(verbose){
+//                printf("Pseudo-control residuals at iteration number %d = \n",iter_count);
+//                for (int j = 0; j < INDI_INPUTS; j++) {
+//                    printf("%f, ", residual_dv[j]);
+//                }
+//                printf("\n");
+//                printf("Sum of absolute residuals at iteration number %d = %f \n",iter_count,sum_residual_dv);
+//                printf("\n\n");
+//            }
+//        }
+//        //If no saturation occurs just return the control inputs as they are.
+//        else {
+//            for (int i = 0; i < INDI_NUM_ACT; i++) {
+//                indi_u_scaled[i] += indi_u_scaled_iter[i];
+//            }
+//        }
+
+        //Print the computed scaled control input at each iteration
+        if(verbose){
+            printf("Scaled control input computed at iteration number %d = \n",iter_count);
+            for (int j = 0; j < INDI_NUM_ACT; j++) {
+                printf("%f, ", indi_u_scaled[j]);
+            }
+            printf("\n\n");
+        }
+
+    }
+
+    //Multiply the scaled actuator position with the gains and get the real actuator commands, also subtract the prioritized position:
+    for (int i = 0; i < 4; i++) {
+        indi_u[i] = indi_u_scaled[i] * gain_motor;
+        indi_u[i+4] = indi_u_scaled[i+4] * gain_el;
+        indi_u[i+8] = indi_u_scaled[i+8] * gain_az;
+    }
+    indi_u[12] = indi_u_scaled[12] * gain_aoa;
+    indi_u[13] = indi_u_scaled[13] * gain_phi;
+
+    //Now subtract the prioritized actuator position to the computed actuator value and also compute the increment.
+    for (int i = 0; i < INDI_NUM_ACT; i++) {
+        indi_u[i] += prioritized_actuator_states[i];
+        indi_du[i] = indi_u[i] - control_input_INDI_state[i];
+    }
+
+    //Print the output of the RSPI
+    printf("Computed control increment with RSPI= \n");
+    for (int j = 0; j < INDI_NUM_ACT; j++){
+        printf("%f, ", indi_du[j]);
+        if(j == 3 || j == 7 || j == 11){
+            printf("\n");
+        }
+    }
+    printf("\n\n");
+    printf("Computed actuator position with RSPI= \n");
+    for (int j = 0; j < INDI_NUM_ACT; j++){
+        printf("%f, ", indi_u[j]);
+        if(j == 3 || j == 7 || j == 11){
+            printf("\n");
+        }
+    }
+    printf("\n\n");
+
+    printf("finished in %d out of %d iterations\n", iter_count, (int) max_iter_RSPI);
 }
 
-//This function computes the simplified B matrix 6x12
-void Compute_B_matrix_simple(float **B_matrix, float I_xx,float I_yy,float I_zz,float J_r,float l_1,float l_2,float l_3,float l_4,float l_z,float m,float K_p_T,float K_p_M,float *Omega_sens,float *b_sens,float *g_sens,float *Omega_dot_sens,float *b_dot_sens,float *g_dot_sens, float *Euler_rad, float *pqr_rad_s){
-    //Transpose pointer to local variables:
-    float Omega_1, Omega_2, Omega_3, Omega_4;
-    Omega_1 = Omega_sens[0];
-    Omega_2 = Omega_sens[1];
-    Omega_3 = Omega_sens[2];
-    Omega_4 = Omega_sens[3];
-    float b_1, b_2, b_3, b_4, g_1, g_2, g_3, g_4;
-    b_1 = b_sens[0];
-    b_2 = b_sens[1];
-    b_3 = b_sens[2];
-    b_4 = b_sens[3];
-    g_1 = g_sens[0];
-    g_2 = g_sens[1];
-    g_3 = g_sens[2];
-    g_4 = g_sens[3];
+/** Moore–Penrose pseudo-inverse
+ *
+ * Given a matrix B(num_row,num_column), with num_row < num_column, this routine computes its Moore–Penrose inverse,
+ * The Moore–Penrose inverse is based on the SVD decomposition.
+ *
+ * @param num_row number of rows of input the matrix B_matrix
+ * @param num_column number of column of input the matrix B_matrix
+ * @param B_matrix pointer to the Matrix to invert
+ * @param B_inv pointer of the resulting inverted matrix. B_inv(num_column,num_row)
+ */
+void compute_pseudoinverse_fcn(int num_row, int num_column, float * B_matrix, float * B_inv){
 
-    float Omega_1_dot, Omega_2_dot, Omega_3_dot, Omega_4_dot;
-    Omega_1_dot = Omega_dot_sens[0];
-    Omega_2_dot = Omega_dot_sens[1];
-    Omega_3_dot = Omega_dot_sens[2];
-    Omega_4_dot = Omega_dot_sens[3];
-    float b_1_dot, b_2_dot, b_3_dot, b_4_dot, g_1_dot, g_2_dot, g_3_dot, g_4_dot;
-    b_1_dot = b_dot_sens[0];
-    b_2_dot = b_dot_sens[1];
-    b_3_dot = b_dot_sens[2];
-    b_4_dot = b_dot_sens[3];
-    g_1_dot = g_dot_sens[0];
-    g_2_dot = g_dot_sens[1];
-    g_3_dot = g_dot_sens[2];
-    g_4_dot = g_dot_sens[3];
+    //Print the B matrix
+    float B_matrix_local[num_row][num_column];
+    //Make a local copy of the B matrix
+    memcpy(&B_matrix_local[0], &B_matrix[0], num_row * num_column * sizeof(float));
+
+    //Declare all the necessary variables:
+    float W_diag_array[num_row];
+    float V_matrix[num_row][num_row];
+    float B_matrix_transposed[num_column][num_row];
+    float * B_matrix_ptr[num_column];
+    float * V_matrix_ptr[num_row];
+    float out_local[num_row][num_row];
+    float B_inv_local[num_column][num_row];
+    float W_diag_inverted[num_row][num_row];
+    float U_transposed[num_row][num_column];
+
+    //Transpose matrix B_in
+    for (int i = 0; i < num_row; i++) {
+        for (int j = 0; j < num_column; j++) {
+            B_matrix_transposed[j][i] = B_matrix_local[i][j];
+        }
+    }
+
+    //Assign the pointer of B_matrix_transposed into B_matrix_ptr
+    for (int j = 0; j < num_column; j++) {
+        B_matrix_ptr[j] = &B_matrix_transposed[j][0];
+    }
+
+    // Pre-assign the matrices for the SVD decomposition
+    for (int i = 0; i < num_row; i++) {
+        V_matrix_ptr[i] = &V_matrix[i][0];
+    }
+
+    //Decompose the B matrix with the SVD decomposition module
+    pprz_svd_float(B_matrix_ptr, & W_diag_array[0] , V_matrix_ptr, num_column, num_row);
+
+    //Sort the eigenvalues and the V and U matrices with bubblesort algorithm:
+    //Note that U is B_matrix_transposed;
+    //FIXME need to improve speed!!!!
+    float temp_W = 0;
+    float temp_U = 0;
+    float temp_V = 0;
+    for (int j = 0; j < num_row; j++)
+    {
+        for (int i = 0; i < num_row - 1; i++)
+        {
+            if (W_diag_array[i] < W_diag_array[i + 1])
+            {
+                //Swap W
+                temp_W = W_diag_array[i + 1];
+                W_diag_array[i + 1] = W_diag_array[i];
+                W_diag_array[i] = temp_W;
+                //Swap U
+                for(int k = 0; k < num_column ; k++){
+                    temp_U = B_matrix_transposed[k][i + 1];
+                    B_matrix_transposed[k][i + 1] = B_matrix_transposed[k][i];
+                    B_matrix_transposed[k][i] = temp_U;
+                }
+                //Swap V
+                for(int k = 0; k < num_row ; k++){
+                    temp_V = V_matrix[k][i + 1];
+                    V_matrix[k][i + 1] = V_matrix[k][i];
+                    V_matrix[k][i] = temp_V;
+                }
+            }
+        }
+    }
+
+    //Transpose matrix U from the SVD output
+    for (int i = 0; i < num_column; i++) {
+        for (int j = 0; j < num_row; j++) {
+            U_transposed[j][i] = B_matrix_transposed[i][j];
+        }
+    }
+
+    int num_row_mod = num_row;
+    //Decrease the number of row if some eigenvalues are too small to avoid instabilities:
+    for (int i = num_row - 1; i > 0; i--) {
+        if(W_diag_array[i] < 0.00001 * W_diag_array[0]){
+            num_row_mod--;
+        }
+    }
+
+    // Invert the diag values and create the diagonal matrix
+    for (int i = 0; i < num_row_mod; i++) {
+        for (int j = 0; j < num_row_mod; j++) {
+            if(i == j){
+                W_diag_inverted[j][i] = 1/W_diag_array[i];
+            }
+            else{
+                W_diag_inverted[j][i] = 0;
+            }
+        }
+    }
+
+    //Multiply V_matrix with the diagonal matrix W_diag_inverted
+    for (int i = 0; i < num_row; i++) {
+        for (int j = 0; j < num_row_mod; j++) {
+            out_local[i][j] = 0.;
+            for (int k = 0; k < num_row_mod; k++) {
+                out_local[i][j] += V_matrix[i][k] * W_diag_inverted[j][k];
+            }
+        }
+    }
+
+    //Multiply out_local with the matrix U_transposed
+    for (int i = 0; i < num_row; i++) {
+        for (int j = 0; j < num_column; j++) {
+            B_inv_local[j][i] = 0.;
+            for (int k = 0; k < num_row_mod; k++) {
+                B_inv_local[j][i] += out_local[i][k] * U_transposed[k][j];
+            }
+        }
+    }
+
+//    printf("U_transposed = \n");
+//    for (int j = 0; j < num_row_mod; j++) {
+//        for (int i = 0; i < num_column; i++) {
+//            printf("%f, ", U_transposed[j][i]);
+//        }
+//        printf("\n");
+//    }
+//    printf("\n\n");
+//
+//    printf("V_matrix = \n");
+//    for (int j = 0; j < num_row_mod; j++) {
+//        for (int i = 0; i < num_row; i++) {
+//            printf("%f, ", V_matrix[j][i]);
+//        }
+//        printf("\n");
+//    }
+//    printf("\n\n");
+//
+//    printf("W_diag_inverted = \n");
+//    for (int j = 0; j < num_row_mod; j++) {
+//        for (int i = 0; i < num_row_mod; i++) {
+//            printf("%f, ", W_diag_inverted[j][i]);
+//        }
+//        printf("\n");
+//    }
+//    printf("\n\n");
+
+//    printf("Computed pseudoinverse = \n");
+//    for (int j = 0; j < num_column; j++) {
+//        for (int i = 0; i < num_row_mod; i++) {
+//            printf("%f, ", B_inv_local[j][i]);
+//        }
+//        printf("\n");
+//    }
+//    printf("\n\n");
 
 
-    float Phi, Theta, Psi, p, q, r;
-    Phi = Euler_rad[0];
-    Theta = Euler_rad[1];
-    Psi = Euler_rad[2];
-    p = pqr_rad_s[0];
-    q = pqr_rad_s[1];
-    r = pqr_rad_s[2];
 
+//    //Multiply the diagonal matrix with U_transposed
+//    for (int i = 0; i < num_row; i++) {
+//        for (int j = 0; j < num_column; j++) {
+//            out_local[i][j] = 0.;
+//            for (int k = 0; k < num_row; k++) {
+//                out_local[i][j] += W_diag_inverted[i][k] * U_transposed[k][j];
+//            }
+//        }
+//    }
+//
+//    //Multiply V with out_1
+//    for (int i = 0; i < num_row; i++) {
+//        for (int j = 0; j < num_column; j++) {
+//            B_inv_local[j][i] = 0.;
+//            for (int k = 0; k < num_row; k++) {
+//                B_inv_local[j][i] += V_matrix[i][k] * out_local[k][j];
+//            }
+//        }
+//    }
+
+    memcpy(B_inv, & B_inv_local[0], num_row * num_column * sizeof(float));
+}
+
+//This function computes the full B matrix extended 6x14
+void compute_B_matrix_extended(float * B_matrix){
+
+    float B_matrix_local[6][14];
     //Motor disposition
     float l_1_x = -l_4;
     float l_2_x = -l_4;
@@ -360,370 +951,123 @@ void Compute_B_matrix_simple(float **B_matrix, float I_xx,float I_yy,float I_zz,
     float l_3_z = l_z;
     float l_4_z = l_z;
 
-    //Assumptions:
-    float I_xx_tilt, I_yy_tilt;
-    I_xx_tilt = 0;
-    I_yy_tilt = 0;
-    float b_1_ddot, b_2_ddot, b_3_ddot, b_4_ddot;
-    float g_1_ddot, g_2_ddot, g_3_ddot, g_4_ddot;
-    b_1_ddot = 0;
-    b_2_ddot = 0;
-    b_3_ddot = 0;
-    b_4_ddot = 0;
-    g_1_ddot = 0;
-    g_2_ddot = 0;
-    g_3_ddot = 0;
-    g_4_ddot = 0;
+    //First row
+    B_matrix_local[0][0] = -(2*K_p_T*Omega_1*cos(Psi)*cos(Theta)*sin(b_1) + 2*K_p_T*Omega_1*cos(b_1)*cos(g_1)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) + 2*K_p_T*Omega_1*cos(b_1)*sin(g_1)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
+    B_matrix_local[0][1] = -(2*K_p_T*Omega_2*cos(Psi)*cos(Theta)*sin(b_2) + 2*K_p_T*Omega_2*cos(b_2)*cos(g_2)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) + 2*K_p_T*Omega_2*cos(b_2)*sin(g_2)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
+    B_matrix_local[0][2] = -(2*K_p_T*Omega_3*cos(Psi)*cos(Theta)*sin(b_3) + 2*K_p_T*Omega_3*cos(b_3)*cos(g_3)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) + 2*K_p_T*Omega_3*cos(b_3)*sin(g_3)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
+    B_matrix_local[0][3] = -(2*K_p_T*Omega_4*cos(Psi)*cos(Theta)*sin(b_4) + 2*K_p_T*Omega_4*cos(b_4)*cos(g_4)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) + 2*K_p_T*Omega_4*cos(b_4)*sin(g_4)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
 
-    // First row
-    B_matrix[0][0] = 0;
-    B_matrix[0][1] = 0;
-    B_matrix[0][2] = 0;
-    B_matrix[0][3] = 0;
+    B_matrix_local[0][4] = (K_p_T*Omega_1*Omega_1*cos(g_1)*sin(b_1)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - K_p_T*Omega_1*Omega_1*cos(Psi)*cos(Theta)*cos(b_1) + K_p_T*Omega_1*Omega_1*sin(b_1)*sin(g_1)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
+    B_matrix_local[0][5] = (K_p_T*Omega_2*Omega_2*cos(g_2)*sin(b_2)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - K_p_T*Omega_2*Omega_2*cos(Psi)*cos(Theta)*cos(b_2) + K_p_T*Omega_2*Omega_2*sin(b_2)*sin(g_2)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
+    B_matrix_local[0][6] = (K_p_T*Omega_3*Omega_3*cos(g_3)*sin(b_3)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - K_p_T*Omega_3*Omega_3*cos(Psi)*cos(Theta)*cos(b_3) + K_p_T*Omega_3*Omega_3*sin(b_3)*sin(g_3)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
+    B_matrix_local[0][7] = (K_p_T*Omega_4*Omega_4*cos(g_4)*sin(b_4)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - K_p_T*Omega_4*Omega_4*cos(Psi)*cos(Theta)*cos(b_4) + K_p_T*Omega_4*Omega_4*sin(b_4)*sin(g_4)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
 
-    B_matrix[0][4] = (K_p_T*Omega_1*Omega_1*cos(g_1)*sin(b_1)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - K_p_T*Omega_1*Omega_1*cos(Psi)*cos(Theta)*cos(b_1) + K_p_T*Omega_1*Omega_1*sin(b_1)*sin(g_1)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
-    B_matrix[0][5] = (K_p_T*Omega_2*Omega_2*cos(g_2)*sin(b_2)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - K_p_T*Omega_2*Omega_2*cos(Psi)*cos(Theta)*cos(b_2) + K_p_T*Omega_2*Omega_2*sin(b_2)*sin(g_2)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
-    B_matrix[0][6] = (K_p_T*Omega_3*Omega_3*cos(g_3)*sin(b_3)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - K_p_T*Omega_3*Omega_3*cos(Psi)*cos(Theta)*cos(b_3) + K_p_T*Omega_3*Omega_3*sin(b_3)*sin(g_3)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
-    B_matrix[0][7] = (K_p_T*Omega_4*Omega_4*cos(g_4)*sin(b_4)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - K_p_T*Omega_4*Omega_4*cos(Psi)*cos(Theta)*cos(b_4) + K_p_T*Omega_4*Omega_4*sin(b_4)*sin(g_4)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
+    B_matrix_local[0][8] = -(K_p_T*Omega_1*Omega_1*cos(b_1)*cos(g_1)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)) - K_p_T*Omega_1*Omega_1*cos(b_1)*sin(g_1)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)))/m;
+    B_matrix_local[0][9] = -(K_p_T*Omega_2*Omega_2*cos(b_2)*cos(g_2)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)) - K_p_T*Omega_2*Omega_2*cos(b_2)*sin(g_2)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)))/m;
+    B_matrix_local[0][10] = -(K_p_T*Omega_3*Omega_3*cos(b_3)*cos(g_3)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)) - K_p_T*Omega_3*Omega_3*cos(b_3)*sin(g_3)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)))/m;
+    B_matrix_local[0][11] = -(K_p_T*Omega_4*Omega_4*cos(b_4)*cos(g_4)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)) - K_p_T*Omega_4*Omega_4*cos(b_4)*sin(g_4)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)))/m;
 
-    B_matrix[0][8] = 0;
-    B_matrix[0][9] = 0;
-    B_matrix[0][10] = 0;
-    B_matrix[0][11] = 0;
+    B_matrix_local[0][12] = -(cos(Phi)*cos(Psi)*cos(Theta)*(K_p_T*cos(b_1)*cos(g_1)*Omega_1*Omega_1 + K_p_T*cos(b_2)*cos(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*cos(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*cos(g_4)*Omega_4*Omega_4) - cos(Psi)*sin(Theta)*(K_p_T*sin(b_1)*Omega_1*Omega_1 + K_p_T*sin(b_2)*Omega_2*Omega_2 + K_p_T*sin(b_3)*Omega_3*Omega_3 + K_p_T*sin(b_4)*Omega_4*Omega_4) - cos(Psi)*cos(Theta)*sin(Phi)*(K_p_T*cos(b_1)*sin(g_1)*Omega_1*Omega_1 + K_p_T*cos(b_2)*sin(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*sin(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*sin(g_4)*Omega_4*Omega_4) + (Cl_alpha*S*V*V*rho*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)))/2 - (S*V*V*rho*cos(Psi)*sin(Theta)*(K_Cd*Cl_alpha*Cl_alpha*Theta*Theta + Cd_zero))/2 + Cl_alpha*Cl_alpha*K_Cd*S*Theta*V*V*rho*cos(Psi)*cos(Theta) + (Cl_alpha*S*Theta*V*V*rho*cos(Phi)*cos(Psi)*cos(Theta))/2)/m;
+    B_matrix_local[0][13] = -((Cl_alpha*S*Theta*rho*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta))*V*V)/2 + (cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta))*(K_p_T*cos(b_1)*cos(g_1)*Omega_1*Omega_1 + K_p_T*cos(b_2)*cos(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*cos(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*cos(g_4)*Omega_4*Omega_4) - (sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta))*(K_p_T*cos(b_1)*sin(g_1)*Omega_1*Omega_1 + K_p_T*cos(b_2)*sin(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*sin(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*sin(g_4)*Omega_4*Omega_4))/m;
 
-    // Second row
-    B_matrix[1][0] = 0;
-    B_matrix[1][1] = 0;
-    B_matrix[1][2] = 0;
-    B_matrix[1][3] = 0;
 
-    B_matrix[1][4] = 0;
-    B_matrix[1][5] = 0;
-    B_matrix[1][6] = 0;
-    B_matrix[1][7] = 0;
+    //Second row
+    B_matrix_local[1][0] = (2*K_p_T*Omega_1*cos(b_1)*cos(g_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) - 2*K_p_T*Omega_1*cos(Theta)*sin(Psi)*sin(b_1) + 2*K_p_T*Omega_1*cos(b_1)*sin(g_1)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][1] = (2*K_p_T*Omega_2*cos(b_2)*cos(g_2)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) - 2*K_p_T*Omega_2*cos(Theta)*sin(Psi)*sin(b_2) + 2*K_p_T*Omega_2*cos(b_2)*sin(g_2)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][2] = (2*K_p_T*Omega_3*cos(b_3)*cos(g_3)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) - 2*K_p_T*Omega_3*cos(Theta)*sin(Psi)*sin(b_3) + 2*K_p_T*Omega_3*cos(b_3)*sin(g_3)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][3] = (2*K_p_T*Omega_4*cos(b_4)*cos(g_4)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) - 2*K_p_T*Omega_4*cos(Theta)*sin(Psi)*sin(b_4) + 2*K_p_T*Omega_4*cos(b_4)*sin(g_4)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
 
-    B_matrix[1][8] = (K_p_T*Omega_1*Omega_1*cos(b_1)*cos(g_1)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)) - K_p_T*Omega_1*Omega_1*cos(b_1)*sin(g_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
-    B_matrix[1][9] = (K_p_T*Omega_2*Omega_2*cos(b_2)*cos(g_2)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)) - K_p_T*Omega_2*Omega_2*cos(b_2)*sin(g_2)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
-    B_matrix[1][10] = (K_p_T*Omega_3*Omega_3*cos(b_3)*cos(g_3)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)) - K_p_T*Omega_3*Omega_3*cos(b_3)*sin(g_3)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
-    B_matrix[1][11] = (K_p_T*Omega_4*Omega_4*cos(b_4)*cos(g_4)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)) - K_p_T*Omega_4*Omega_4*cos(b_4)*sin(g_4)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][4] = -(K_p_T*Omega_1*Omega_1*cos(Theta)*sin(Psi)*cos(b_1) + K_p_T*Omega_1*Omega_1*cos(g_1)*sin(b_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_1*Omega_1*sin(b_1)*sin(g_1)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][5] = -(K_p_T*Omega_2*Omega_2*cos(Theta)*sin(Psi)*cos(b_2) + K_p_T*Omega_2*Omega_2*cos(g_2)*sin(b_2)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_2*Omega_2*sin(b_2)*sin(g_2)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][6] = -(K_p_T*Omega_3*Omega_3*cos(Theta)*sin(Psi)*cos(b_3) + K_p_T*Omega_3*Omega_3*cos(g_3)*sin(b_3)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_3*Omega_3*sin(b_3)*sin(g_3)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][7] = -(K_p_T*Omega_4*Omega_4*cos(Theta)*sin(Psi)*cos(b_4) + K_p_T*Omega_4*Omega_4*cos(g_4)*sin(b_4)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_4*Omega_4*sin(b_4)*sin(g_4)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
 
-    // Third row
-    B_matrix[2][0] = (2*K_p_T*Omega_1*sin(b_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + 2*K_p_T*Omega_1*cos(Theta)*sin(Phi)*cos(b_1)*sin(g_1) - 2*K_p_T*Omega_1*cos(Phi)*cos(Theta)*cos(b_1)*cos(g_1))/m;
-    B_matrix[2][1] = (2*K_p_T*Omega_2*sin(b_2)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + 2*K_p_T*Omega_2*cos(Theta)*sin(Phi)*cos(b_2)*sin(g_2) - 2*K_p_T*Omega_2*cos(Phi)*cos(Theta)*cos(b_2)*cos(g_2))/m;
-    B_matrix[2][2] = (2*K_p_T*Omega_3*sin(b_3)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + 2*K_p_T*Omega_3*cos(Theta)*sin(Phi)*cos(b_3)*sin(g_3) - 2*K_p_T*Omega_3*cos(Phi)*cos(Theta)*cos(b_3)*cos(g_3))/m;
-    B_matrix[2][3] = (2*K_p_T*Omega_4*sin(b_4)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + 2*K_p_T*Omega_4*cos(Theta)*sin(Phi)*cos(b_4)*sin(g_4) - 2*K_p_T*Omega_4*cos(Phi)*cos(Theta)*cos(b_4)*cos(g_4))/m;
+    B_matrix_local[1][8] = (K_p_T*Omega_1*Omega_1*cos(b_1)*cos(g_1)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)) - K_p_T*Omega_1*Omega_1*cos(b_1)*sin(g_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][9] = (K_p_T*Omega_2*Omega_2*cos(b_2)*cos(g_2)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)) - K_p_T*Omega_2*Omega_2*cos(b_2)*sin(g_2)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][10] = (K_p_T*Omega_3*Omega_3*cos(b_3)*cos(g_3)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)) - K_p_T*Omega_3*Omega_3*cos(b_3)*sin(g_3)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][11] = (K_p_T*Omega_4*Omega_4*cos(b_4)*cos(g_4)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)) - K_p_T*Omega_4*Omega_4*cos(b_4)*sin(g_4)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
 
-    B_matrix[2][4] = 0;
-    B_matrix[2][5] = 0;
-    B_matrix[2][6] = 0;
-    B_matrix[2][7] = 0;
+    B_matrix_local[1][12] = (sin(Psi)*sin(Theta)*(K_p_T*sin(b_1)*Omega_1*Omega_1 + K_p_T*sin(b_2)*Omega_2*Omega_2 + K_p_T*sin(b_3)*Omega_3*Omega_3 + K_p_T*sin(b_4)*Omega_4*Omega_4) - cos(Phi)*cos(Theta)*sin(Psi)*(K_p_T*cos(b_1)*cos(g_1)*Omega_1*Omega_1 + K_p_T*cos(b_2)*cos(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*cos(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*cos(g_4)*Omega_4*Omega_4) + cos(Theta)*sin(Phi)*sin(Psi)*(K_p_T*cos(b_1)*sin(g_1)*Omega_1*Omega_1 + K_p_T*cos(b_2)*sin(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*sin(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*sin(g_4)*Omega_4*Omega_4) + (Cl_alpha*S*V*V*rho*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/2 + (S*V*V*rho*sin(Psi)*sin(Theta)*(K_Cd*Cl_alpha*Cl_alpha*Theta*Theta + Cd_zero))/2 - Cl_alpha*Cl_alpha*K_Cd*S*Theta*V*V*rho*cos(Theta)*sin(Psi) - (Cl_alpha*S*Theta*V*V*rho*cos(Phi)*cos(Theta)*sin(Psi))/2)/m;
+    B_matrix_local[1][13] = ((Cl_alpha*S*Theta*rho*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta))*V*V)/2 + (cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta))*(K_p_T*cos(b_1)*cos(g_1)*Omega_1*Omega_1 + K_p_T*cos(b_2)*cos(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*cos(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*cos(g_4)*Omega_4*Omega_4) - (cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta))*(K_p_T*cos(b_1)*sin(g_1)*Omega_1*Omega_1 + K_p_T*cos(b_2)*sin(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*sin(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*sin(g_4)*Omega_4*Omega_4))/m;
 
-    B_matrix[2][8] = 0;
-    B_matrix[2][9] = 0;
-    B_matrix[2][10] = 0;
-    B_matrix[2][11] = 0;
+    //Third row
+    B_matrix_local[2][0] = (2*K_p_T*Omega_1*sin(b_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + 2*K_p_T*Omega_1*cos(Theta)*sin(Phi)*cos(b_1)*sin(g_1) - 2*K_p_T*Omega_1*cos(Phi)*cos(Theta)*cos(b_1)*cos(g_1))/m;
+    B_matrix_local[2][1] = (2*K_p_T*Omega_2*sin(b_2)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + 2*K_p_T*Omega_2*cos(Theta)*sin(Phi)*cos(b_2)*sin(g_2) - 2*K_p_T*Omega_2*cos(Phi)*cos(Theta)*cos(b_2)*cos(g_2))/m;
+    B_matrix_local[2][2] = (2*K_p_T*Omega_3*sin(b_3)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + 2*K_p_T*Omega_3*cos(Theta)*sin(Phi)*cos(b_3)*sin(g_3) - 2*K_p_T*Omega_3*cos(Phi)*cos(Theta)*cos(b_3)*cos(g_3))/m;
+    B_matrix_local[2][3] = (2*K_p_T*Omega_4*sin(b_4)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + 2*K_p_T*Omega_4*cos(Theta)*sin(Phi)*cos(b_4)*sin(g_4) - 2*K_p_T*Omega_4*cos(Phi)*cos(Theta)*cos(b_4)*cos(g_4))/m;
 
-    // Fourth row
-    B_matrix[3][0] = (2*K_p_M*Omega_1*sin(b_1) + J_r*b_1_dot*cos(b_1) + J_r*q*cos(b_1)*cos(g_1) + J_r*r*cos(b_1)*sin(g_1) + 2*K_p_T*Omega_1*l_1_z*cos(b_1)*sin(g_1) + 2*K_p_T*Omega_1*l_1_y*cos(b_1)*cos(g_1))/I_xx;
-    B_matrix[3][1] = -(2*K_p_M*Omega_2*sin(b_2) + J_r*b_2_dot*cos(b_2) + J_r*q*cos(b_2)*cos(g_2) + J_r*r*cos(b_2)*sin(g_2) - 2*K_p_T*Omega_2*l_2_z*cos(b_2)*sin(g_2) - 2*K_p_T*Omega_2*l_2_y*cos(b_2)*cos(g_2))/I_xx;
-    B_matrix[3][2] = (2*K_p_M*Omega_3*sin(b_3) + J_r*b_3_dot*cos(b_3) + J_r*q*cos(b_3)*cos(g_3) + J_r*r*cos(b_3)*sin(g_3) + 2*K_p_T*Omega_3*l_3_z*cos(b_3)*sin(g_3) + 2*K_p_T*Omega_3*l_3_y*cos(b_3)*cos(g_3))/I_xx;
-    B_matrix[3][3] = -(2*K_p_M*Omega_4*sin(b_4) + J_r*b_4_dot*cos(b_4) + J_r*q*cos(b_4)*cos(g_4) + J_r*r*cos(b_4)*sin(g_4) - 2*K_p_T*Omega_4*l_4_z*cos(b_4)*sin(g_4) - 2*K_p_T*Omega_4*l_4_y*cos(b_4)*cos(g_4))/I_xx;
+    B_matrix_local[2][4] = (K_p_T*Omega_1*Omega_1*cos(b_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_1*Omega_1*cos(Phi)*cos(Theta)*cos(g_1)*sin(b_1) - K_p_T*Omega_1*Omega_1*cos(Theta)*sin(Phi)*sin(b_1)*sin(g_1))/m;
+    B_matrix_local[2][5] = (K_p_T*Omega_2*Omega_2*cos(b_2)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_2*Omega_2*cos(Phi)*cos(Theta)*cos(g_2)*sin(b_2) - K_p_T*Omega_2*Omega_2*cos(Theta)*sin(Phi)*sin(b_2)*sin(g_2))/m;
+    B_matrix_local[2][6] = (K_p_T*Omega_3*Omega_3*cos(b_3)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_3*Omega_3*cos(Phi)*cos(Theta)*cos(g_3)*sin(b_3) - K_p_T*Omega_3*Omega_3*cos(Theta)*sin(Phi)*sin(b_3)*sin(g_3))/m;
+    B_matrix_local[2][7] = (K_p_T*Omega_4*Omega_4*cos(b_4)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_4*Omega_4*cos(Phi)*cos(Theta)*cos(g_4)*sin(b_4) - K_p_T*Omega_4*Omega_4*cos(Theta)*sin(Phi)*sin(b_4)*sin(g_4))/m;
 
-    B_matrix[3][4] = 0;
-    B_matrix[3][5] = 0;
-    B_matrix[3][6] = 0;
-    B_matrix[3][7] = 0;
+    B_matrix_local[2][8] = (K_p_T*Omega_1*Omega_1*cos(Phi)*cos(Theta)*cos(b_1)*sin(g_1) + K_p_T*Omega_1*Omega_1*cos(Theta)*sin(Phi)*cos(b_1)*cos(g_1))/m;
+    B_matrix_local[2][9] = (K_p_T*Omega_2*Omega_2*cos(Phi)*cos(Theta)*cos(b_2)*sin(g_2) + K_p_T*Omega_2*Omega_2*cos(Theta)*sin(Phi)*cos(b_2)*cos(g_2))/m;
+    B_matrix_local[2][10] = (K_p_T*Omega_3*Omega_3*cos(Phi)*cos(Theta)*cos(b_3)*sin(g_3) + K_p_T*Omega_3*Omega_3*cos(Theta)*sin(Phi)*cos(b_3)*cos(g_3))/m;
+    B_matrix_local[2][11] = (K_p_T*Omega_4*Omega_4*cos(Phi)*cos(Theta)*cos(b_4)*sin(g_4) + K_p_T*Omega_4*Omega_4*cos(Theta)*sin(Phi)*cos(b_4)*cos(g_4))/m;
 
-    B_matrix[3][8] = 0;
-    B_matrix[3][9] = 0;
-    B_matrix[3][10] = 0;
-    B_matrix[3][11] = 0;
+    B_matrix_local[2][12] = -(sin(Phi)*sin(Theta)*(K_p_T*cos(b_1)*sin(g_1)*Omega_1*Omega_1 + K_p_T*cos(b_2)*sin(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*sin(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*sin(g_4)*Omega_4*Omega_4) - cos(Phi)*sin(Theta)*(K_p_T*cos(b_1)*cos(g_1)*Omega_1*Omega_1 + K_p_T*cos(b_2)*cos(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*cos(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*cos(g_4)*Omega_4*Omega_4) + cos(Phi)*cos(Theta)*sin(Psi)*(K_p_T*sin(b_1)*Omega_1*Omega_1 + K_p_T*sin(b_2)*Omega_2*Omega_2 + K_p_T*sin(b_3)*Omega_3*Omega_3 + K_p_T*sin(b_4)*Omega_4*Omega_4) + (Cl_alpha*S*V*V*rho*cos(Phi)*cos(Theta))/2 + (S*V*V*rho*cos(Phi)*cos(Theta)*sin(Psi)*(K_Cd*Cl_alpha*Cl_alpha*Theta*Theta + Cd_zero))/2 - (Cl_alpha*S*Theta*V*V*rho*cos(Phi)*sin(Theta))/2 - Cl_alpha*Cl_alpha*K_Cd*S*Theta*V*V*rho*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[2][13] = ((cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta))*(K_p_T*sin(b_1)*Omega_1*Omega_1 + K_p_T*sin(b_2)*Omega_2*Omega_2 + K_p_T*sin(b_3)*Omega_3*Omega_3 + K_p_T*sin(b_4)*Omega_4*Omega_4) + cos(Phi)*cos(Theta)*(K_p_T*cos(b_1)*sin(g_1)*Omega_1*Omega_1 + K_p_T*cos(b_2)*sin(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*sin(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*sin(g_4)*Omega_4*Omega_4) + cos(Theta)*sin(Phi)*(K_p_T*cos(b_1)*cos(g_1)*Omega_1*Omega_1 + K_p_T*cos(b_2)*cos(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*cos(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*cos(g_4)*Omega_4*Omega_4) + (S*V*V*rho*(K_Cd*Cl_alpha*Cl_alpha*Theta*Theta + Cd_zero)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/2 + (Cl_alpha*S*Theta*V*V*rho*cos(Theta)*sin(Phi))/2)/m;
 
-    // Fifth row
-    B_matrix[4][0] = -(J_r*g_1_dot*cos(g_1) - J_r*r*sin(b_1) - 2*K_p_T*Omega_1*l_1_z*sin(b_1) + 2*K_p_M*Omega_1*cos(b_1)*sin(g_1) + J_r*p*cos(b_1)*cos(g_1) - J_r*b_1_dot*sin(b_1)*sin(g_1) + 2*K_p_T*Omega_1*l_1_x*cos(b_1)*cos(g_1))/I_yy;
-    B_matrix[4][1] = (J_r*g_2_dot*cos(g_2) - J_r*r*sin(b_2) + 2*K_p_T*Omega_2*l_2_z*sin(b_2) + 2*K_p_M*Omega_2*cos(b_2)*sin(g_2) + J_r*p*cos(b_2)*cos(g_2) - J_r*b_2_dot*sin(b_2)*sin(g_2) - 2*K_p_T*Omega_2*l_2_x*cos(b_2)*cos(g_2))/I_yy;
-    B_matrix[4][2] = -(J_r*g_3_dot*cos(g_3) - J_r*r*sin(b_3) - 2*K_p_T*Omega_3*l_3_z*sin(b_3) + 2*K_p_M*Omega_3*cos(b_3)*sin(g_3) + J_r*p*cos(b_3)*cos(g_3) - J_r*b_3_dot*sin(b_3)*sin(g_3) + 2*K_p_T*Omega_3*l_3_x*cos(b_3)*cos(g_3))/I_yy;
-    B_matrix[4][3] = (J_r*g_4_dot*cos(g_4) - J_r*r*sin(b_4) + 2*K_p_T*Omega_4*l_4_z*sin(b_4) + 2*K_p_M*Omega_4*cos(b_4)*sin(g_4) + J_r*p*cos(b_4)*cos(g_4) - J_r*b_4_dot*sin(b_4)*sin(g_4) - 2*K_p_T*Omega_4*l_4_x*cos(b_4)*cos(g_4))/I_yy;
 
-    B_matrix[4][4] = 0;
-    B_matrix[4][5] = 0;
-    B_matrix[4][6] = 0;
-    B_matrix[4][7] = 0;
+    //Fourth row
+    B_matrix_local[3][0] = (2*K_p_M*Omega_1*sin(b_1) + 2*K_p_T*Omega_1*l_1_z*cos(b_1)*sin(g_1) + 2*K_p_T*Omega_1*l_1_y*cos(b_1)*cos(g_1))/I_xx;
+    B_matrix_local[3][1] = (2*K_p_T*Omega_2*l_2_z*cos(b_2)*sin(g_2) - 2*K_p_M*Omega_2*sin(b_2) + 2*K_p_T*Omega_2*l_2_y*cos(b_2)*cos(g_2))/I_xx;
+    B_matrix_local[3][2] = (2*K_p_M*Omega_3*sin(b_3) + 2*K_p_T*Omega_3*l_3_z*cos(b_3)*sin(g_3) + 2*K_p_T*Omega_3*l_3_y*cos(b_3)*cos(g_3))/I_xx;
+    B_matrix_local[3][3] = (2*K_p_T*Omega_4*l_4_z*cos(b_4)*sin(g_4) - 2*K_p_M*Omega_4*sin(b_4) + 2*K_p_T*Omega_4*l_4_y*cos(b_4)*cos(g_4))/I_xx;
 
-    B_matrix[4][8] = 0;
-    B_matrix[4][9] = 0;
-    B_matrix[4][10] = 0;
-    B_matrix[4][11] = 0;
+    B_matrix_local[3][4] = -(K_p_T*Omega_1*Omega_1*l_1_y*cos(g_1)*sin(b_1) - K_p_M*Omega_1*Omega_1*cos(b_1) + K_p_T*Omega_1*Omega_1*l_1_z*sin(b_1)*sin(g_1))/I_xx;
+    B_matrix_local[3][5] = -(K_p_M*Omega_2*Omega_2*cos(b_2) + K_p_T*Omega_2*Omega_2*l_2_y*cos(g_2)*sin(b_2) + K_p_T*Omega_2*Omega_2*l_2_z*sin(b_2)*sin(g_2))/I_xx;
+    B_matrix_local[3][6] = -(K_p_T*Omega_3*Omega_3*l_3_y*cos(g_3)*sin(b_3) - K_p_M*Omega_3*Omega_3*cos(b_3) + K_p_T*Omega_3*Omega_3*l_3_z*sin(b_3)*sin(g_3))/I_xx;
+    B_matrix_local[3][7] = -(K_p_M*Omega_4*Omega_4*cos(b_4) + K_p_T*Omega_4*Omega_4*l_4_y*cos(g_4)*sin(b_4) + K_p_T*Omega_4*Omega_4*l_4_z*sin(b_4)*sin(g_4))/I_xx;
+
+    B_matrix_local[3][8] = (K_p_T*Omega_1*Omega_1*l_1_z*cos(b_1)*cos(g_1) - K_p_T*Omega_1*Omega_1*l_1_y*cos(b_1)*sin(g_1))/I_xx;
+    B_matrix_local[3][9] = (K_p_T*Omega_2*Omega_2*l_2_z*cos(b_2)*cos(g_2) - K_p_T*Omega_2*Omega_2*l_2_y*cos(b_2)*sin(g_2))/I_xx;
+    B_matrix_local[3][10] = (K_p_T*Omega_3*Omega_3*l_3_z*cos(b_3)*cos(g_3) - K_p_T*Omega_3*Omega_3*l_3_y*cos(b_3)*sin(g_3))/I_xx;
+    B_matrix_local[3][11] = (K_p_T*Omega_4*Omega_4*l_4_z*cos(b_4)*cos(g_4) - K_p_T*Omega_4*Omega_4*l_4_y*cos(b_4)*sin(g_4))/I_xx;
+
+    B_matrix_local[3][12] = 0.f;
+    B_matrix_local[3][13] = 0.f;
+
+    //Fifth row
+    B_matrix_local[4][0] = -(2*K_p_M*Omega_1*cos(b_1)*sin(g_1) - 2*K_p_T*Omega_1*l_1_z*sin(b_1) + 2*K_p_T*Omega_1*l_1_x*cos(b_1)*cos(g_1))/I_yy;
+    B_matrix_local[4][1] = (2*K_p_T*Omega_2*l_2_z*sin(b_2) + 2*K_p_M*Omega_2*cos(b_2)*sin(g_2) - 2*K_p_T*Omega_2*l_2_x*cos(b_2)*cos(g_2))/I_yy;
+    B_matrix_local[4][2] = -(2*K_p_M*Omega_3*cos(b_3)*sin(g_3) - 2*K_p_T*Omega_3*l_3_z*sin(b_3) + 2*K_p_T*Omega_3*l_3_x*cos(b_3)*cos(g_3))/I_yy;
+    B_matrix_local[4][3] = (2*K_p_T*Omega_4*l_4_z*sin(b_4) + 2*K_p_M*Omega_4*cos(b_4)*sin(g_4) - 2*K_p_T*Omega_4*l_4_x*cos(b_4)*cos(g_4))/I_yy;
+
+    B_matrix_local[4][4] = (K_p_M*Omega_1*Omega_1*sin(b_1)*sin(g_1) + K_p_T*Omega_1*Omega_1*l_1_z*cos(b_1) + K_p_T*Omega_1*Omega_1*l_1_x*cos(g_1)*sin(b_1))/I_yy;
+    B_matrix_local[4][5] = (K_p_T*Omega_2*Omega_2*l_2_z*cos(b_2) - K_p_M*Omega_2*Omega_2*sin(b_2)*sin(g_2) + K_p_T*Omega_2*Omega_2*l_2_x*cos(g_2)*sin(b_2))/I_yy;
+    B_matrix_local[4][6] = (K_p_M*Omega_3*Omega_3*sin(b_3)*sin(g_3) + K_p_T*Omega_3*Omega_3*l_3_z*cos(b_3) + K_p_T*Omega_3*Omega_3*l_3_x*cos(g_3)*sin(b_3))/I_yy;
+    B_matrix_local[4][7] = (K_p_T*Omega_4*Omega_4*l_4_z*cos(b_4) - K_p_M*Omega_4*Omega_4*sin(b_4)*sin(g_4) + K_p_T*Omega_4*Omega_4*l_4_x*cos(g_4)*sin(b_4))/I_yy;
+
+    B_matrix_local[4][8] = -(K_p_M*Omega_1*Omega_1*cos(b_1)*cos(g_1) - K_p_T*Omega_1*Omega_1*l_1_x*cos(b_1)*sin(g_1))/I_yy;
+    B_matrix_local[4][9] = (K_p_M*Omega_2*Omega_2*cos(b_2)*cos(g_2) + K_p_T*Omega_2*Omega_2*l_2_x*cos(b_2)*sin(g_2))/I_yy;
+    B_matrix_local[4][10] = -(K_p_M*Omega_3*Omega_3*cos(b_3)*cos(g_3) - K_p_T*Omega_3*Omega_3*l_3_x*cos(b_3)*sin(g_3))/I_yy;
+    B_matrix_local[4][11] = (K_p_M*Omega_4*Omega_4*cos(b_4)*cos(g_4) + K_p_T*Omega_4*Omega_4*l_4_x*cos(b_4)*sin(g_4))/I_yy;
+
+    B_matrix_local[4][12] = (Cm_alpha * S * V*V* rho * wing_chord) / (2 * I_yy);
+    B_matrix_local[4][13] = 0.f;
+
 
     // Sixth row
-    B_matrix[5][0] = -(J_r*g_1_dot*sin(g_1) + J_r*q*sin(b_1) + 2*K_p_T*Omega_1*l_1_y*sin(b_1) - 2*K_p_M*Omega_1*cos(b_1)*cos(g_1) + J_r*b_1_dot*cos(g_1)*sin(b_1) + J_r*p*cos(b_1)*sin(g_1) + 2*K_p_T*Omega_1*l_1_x*cos(b_1)*sin(g_1))/I_zz;
-    B_matrix[5][1] = (J_r*g_2_dot*sin(g_2) + J_r*q*sin(b_2) - 2*K_p_T*Omega_2*l_2_y*sin(b_2) - 2*K_p_M*Omega_2*cos(b_2)*cos(g_2) + J_r*b_2_dot*cos(g_2)*sin(b_2) + J_r*p*cos(b_2)*sin(g_2) - 2*K_p_T*Omega_2*l_2_x*cos(b_2)*sin(g_2))/I_zz;
-    B_matrix[5][2] = -(J_r*g_3_dot*sin(g_3) + J_r*q*sin(b_3) + 2*K_p_T*Omega_3*l_3_y*sin(b_3) - 2*K_p_M*Omega_3*cos(b_3)*cos(g_3) + J_r*b_3_dot*cos(g_3)*sin(b_3) + J_r*p*cos(b_3)*sin(g_3) + 2*K_p_T*Omega_3*l_3_x*cos(b_3)*sin(g_3))/I_zz;
-    B_matrix[5][3] = (J_r*g_4_dot*sin(g_4) + J_r*q*sin(b_4) - 2*K_p_T*Omega_4*l_4_y*sin(b_4) - 2*K_p_M*Omega_4*cos(b_4)*cos(g_4) + J_r*b_4_dot*cos(g_4)*sin(b_4) + J_r*p*cos(b_4)*sin(g_4) - 2*K_p_T*Omega_4*l_4_x*cos(b_4)*sin(g_4))/I_zz;
+    B_matrix_local[5][0] = -(2*K_p_T*Omega_1*l_1_y*sin(b_1) - 2*K_p_M*Omega_1*cos(b_1)*cos(g_1) + 2*K_p_T*Omega_1*l_1_x*cos(b_1)*sin(g_1))/I_zz;
+    B_matrix_local[5][1] = -(2*K_p_T*Omega_2*l_2_y*sin(b_2) + 2*K_p_M*Omega_2*cos(b_2)*cos(g_2) + 2*K_p_T*Omega_2*l_2_x*cos(b_2)*sin(g_2))/I_zz;
+    B_matrix_local[5][2] = -(2*K_p_T*Omega_3*l_3_y*sin(b_3) - 2*K_p_M*Omega_3*cos(b_3)*cos(g_3) + 2*K_p_T*Omega_3*l_3_x*cos(b_3)*sin(g_3))/I_zz;
+    B_matrix_local[5][3] = -(2*K_p_T*Omega_4*l_4_y*sin(b_4) + 2*K_p_M*Omega_4*cos(b_4)*cos(g_4) + 2*K_p_T*Omega_4*l_4_x*cos(b_4)*sin(g_4))/I_zz;
 
-//    B_matrix[5][4] = -(J_r*Omega_1*q*cos(b_1) + K_p_T*Omega_1^2*l_1_y*cos(b_1) + J_r*Omega_1_dot*cos(g_1)*sin(b_1) + I_xx_tilt*g_1_ddot*cos(b_1)*cos(g_1) + K_p_M*Omega_1^2*cos(g_1)*sin(b_1) - J_r*Omega_1*p*sin(b_1)*sin(g_1) - K_p_T*Omega_1^2*l_1_x*sin(b_1)*sin(g_1) + J_r*Omega_1*b_1_dot*cos(b_1)*cos(g_1))/I_zz;
-//    B_matrix[5][5] = (J_r*Omega_2*q*cos(b_2) - K_p_T*Omega_2^2*l_2_y*cos(b_2) - J_r*Omega_2_dot*cos(g_2)*sin(b_2) - I_xx_tilt*g_2_ddot*cos(b_2)*cos(g_2) + K_p_M*Omega_2^2*cos(g_2)*sin(b_2) - J_r*Omega_2*p*sin(b_2)*sin(g_2) + K_p_T*Omega_2^2*l_2_x*sin(b_2)*sin(g_2) + J_r*Omega_2*b_2_dot*cos(b_2)*cos(g_2))/I_zz;
-//    B_matrix[5][6] = -(J_r*Omega_3*q*cos(b_3) + K_p_T*Omega_3^2*l_3_y*cos(b_3) + J_r*Omega_3_dot*cos(g_3)*sin(b_3) + I_xx_tilt*g_3_ddot*cos(b_3)*cos(g_3) + K_p_M*Omega_3^2*cos(g_3)*sin(b_3) - J_r*Omega_3*p*sin(b_3)*sin(g_3) - K_p_T*Omega_3^2*l_3_x*sin(b_3)*sin(g_3) + J_r*Omega_3*b_3_dot*cos(b_3)*cos(g_3))/I_zz;
-//    B_matrix[5][7] = (J_r*Omega_4*q*cos(b_4) - K_p_T*Omega_4^2*l_4_y*cos(b_4) - J_r*Omega_4_dot*cos(g_4)*sin(b_4) - I_xx_tilt*g_4_ddot*cos(b_4)*cos(g_4) + K_p_M*Omega_4^2*cos(g_4)*sin(b_4) - J_r*Omega_4*p*sin(b_4)*sin(g_4) + K_p_T*Omega_4^2*l_4_x*sin(b_4)*sin(g_4) + J_r*Omega_4*b_4_dot*cos(b_4)*cos(g_4))/I_zz;
+    B_matrix_local[5][4] = -(K_p_T*Omega_1*Omega_1*l_1_y*cos(b_1) + K_p_M*Omega_1*Omega_1*cos(g_1)*sin(b_1) - K_p_T*Omega_1*Omega_1*l_1_x*sin(b_1)*sin(g_1))/I_zz;
+    B_matrix_local[5][5] = (K_p_M*Omega_2*Omega_2*cos(g_2)*sin(b_2) - K_p_T*Omega_2*Omega_2*l_2_y*cos(b_2) + K_p_T*Omega_2*Omega_2*l_2_x*sin(b_2)*sin(g_2))/I_zz;
+    B_matrix_local[5][6] = -(K_p_T*Omega_3*Omega_3*l_3_y*cos(b_3) + K_p_M*Omega_3*Omega_3*cos(g_3)*sin(b_3) - K_p_T*Omega_3*Omega_3*l_3_x*sin(b_3)*sin(g_3))/I_zz;
+    B_matrix_local[5][7] = (K_p_M*Omega_4*Omega_4*cos(g_4)*sin(b_4) - K_p_T*Omega_4*Omega_4*l_4_y*cos(b_4) + K_p_T*Omega_4*Omega_4*l_4_x*sin(b_4)*sin(g_4))/I_zz;
 
-    B_matrix[5][4] = 0;
-    B_matrix[5][5] = 0;
-    B_matrix[5][6] = 0;
-    B_matrix[5][7] = 0;
+    B_matrix_local[5][8] = -(K_p_M*Omega_1*Omega_1*cos(b_1)*sin(g_1) + K_p_T*Omega_1*Omega_1*l_1_x*cos(b_1)*cos(g_1))/I_zz;
+    B_matrix_local[5][9] = (K_p_M*Omega_2*Omega_2*cos(b_2)*sin(g_2) - K_p_T*Omega_2*Omega_2*l_2_x*cos(b_2)*cos(g_2))/I_zz;
+    B_matrix_local[5][10] = -(K_p_M*Omega_3*Omega_3*cos(b_3)*sin(g_3) + K_p_T*Omega_3*Omega_3*l_3_x*cos(b_3)*cos(g_3))/I_zz;
+    B_matrix_local[5][11] = (K_p_M*Omega_4*Omega_4*cos(b_4)*sin(g_4) - K_p_T*Omega_4*Omega_4*l_4_x*cos(b_4)*cos(g_4))/I_zz;
 
-    B_matrix[5][8] = -(J_r*Omega_1*g_1_dot*cos(g_1) - I_yy_tilt*b_1_ddot*cos(g_1) + J_r*Omega_1_dot*cos(b_1)*sin(g_1) - I_xx_tilt*g_1_ddot*sin(b_1)*sin(g_1) + K_p_M*Omega_1*Omega_1*cos(b_1)*sin(g_1) - J_r*Omega_1*b_1_dot*sin(b_1)*sin(g_1) + K_p_T*Omega_1*Omega_1*l_1_x*cos(b_1)*cos(g_1) + J_r*Omega_1*p*cos(b_1)*cos(g_1))/I_zz;
-    B_matrix[5][9] = (I_yy_tilt*b_2_ddot*cos(g_2) + J_r*Omega_2*g_2_dot*cos(g_2) - J_r*Omega_2_dot*cos(b_2)*sin(g_2) + I_xx_tilt*g_2_ddot*sin(b_2)*sin(g_2) + K_p_M*Omega_2*Omega_2*cos(b_2)*sin(g_2) - J_r*Omega_2*b_2_dot*sin(b_2)*sin(g_2) - K_p_T*Omega_2*Omega_2*l_2_x*cos(b_2)*cos(g_2) + J_r*Omega_2*p*cos(b_2)*cos(g_2))/I_zz;
-    B_matrix[5][10] = -(J_r*Omega_3*g_3_dot*cos(g_3) - I_yy_tilt*b_3_ddot*cos(g_3) + J_r*Omega_3_dot*cos(b_3)*sin(g_3) - I_xx_tilt*g_3_ddot*sin(b_3)*sin(g_3) + K_p_M*Omega_3*Omega_3*cos(b_3)*sin(g_3) - J_r*Omega_3*b_3_dot*sin(b_3)*sin(g_3) + K_p_T*Omega_3*Omega_3*l_3_x*cos(b_3)*cos(g_3) + J_r*Omega_3*p*cos(b_3)*cos(g_3))/I_zz;
-    B_matrix[5][11] = (I_yy_tilt*b_4_ddot*cos(g_4) + J_r*Omega_4*g_4_dot*cos(g_4) - J_r*Omega_4_dot*cos(b_4)*sin(g_4) + I_xx_tilt*g_4_ddot*sin(b_4)*sin(g_4) + K_p_M*Omega_4*Omega_4*cos(b_4)*sin(g_4) - J_r*Omega_4*b_4_dot*sin(b_4)*sin(g_4) - K_p_T*Omega_4*Omega_4*l_4_x*cos(b_4)*cos(g_4) + J_r*Omega_4*p*cos(b_4)*cos(g_4))/I_zz;
+    B_matrix_local[5][12] = 0.f;
+    B_matrix_local[5][13] = 0.f;
 
-//    //Print the B matrix
-//    printf("B_matrix = \n");
-//    int i = 0;
-//    int j = 0;
-//    for (i = 0; i < INDI_OUTPUTS ; i++) {
-//        for (j = 0; j < INDI_NUM_ACT; j++) {
-//            printf("%f, ", B_matrix[i][j]);
-//        }
-//        printf("\n");
-//    }
-
-}
-
-void Compute_commands_test(void)
-{
-//    float B_matrix_in[INDI_OUTPUTS][INDI_NUM_ACT] = {
-//            {0, 0, 0, 0, -2.4525, -2.4525, -2.4525, -2.4525, 0, 0, 0, 0},
-//            {0, 0, 0, 0, 0, 0, 0, 0, 2.4525, 2.4525, 2.4525, 2.4525},
-//            {-0.0062, -0.0062, -0.0062, -0.0062, 0, 0, 0, 0, 0, 0, 0, 0},
-//            {0.0265, -0.0265, -0.0265, 0.0265, 0, 0, 0, 0, 0, 0, 0, 0},
-//            {0.0277, 0.0277, -0.0344, -0.0344, 0, 0, 0, 0, 0, 0, 0, 0},
-//            {0.0010, -0.0010, 0.0010, -0.0010, 0, 0, 0, 0, 8.1791, 8.1791, -10.1533, -10.1533},
-//    };
-
-    float Desired_acceleration[INDI_OUTPUTS] = { 0, 0, 0, 0, 1, 0};
-
-    float B_matrix_in[INDI_OUTPUTS][INDI_NUM_ACT];
-
-    int i, j;
-    float * B_matrix_in_[INDI_OUTPUTS];
-    for (i = 0; i < INDI_OUTPUTS; i++) {
-        B_matrix_in_[i] = &B_matrix_in[i][0];
-    }
-    i = 0;
-    float Omega_sens[4] = {787,787,787,787};
-    float Omega_dot_sens[4] = {0,0,0,0};
-    float b_sens[4] = {0,0,0,0};
-    float b_dot_sens[4] = {0,0,0,0};
-    float g_sens[4] = {0,0,0,0};
-    float g_dot_sens[4] = {0,0,0,0};
-
-    float Euler_rad[3] = {0,0,0};
-    float pqr_rad_s[3] = {0,0,0};
-
-    Compute_B_matrix_simple(B_matrix_in_,0.1,.15,.2,1.984e-5,0.185,0.185,0.36,0.29,0,2.3,0.91e-5,1.3e-7,&Omega_sens[0],&b_sens[0],&g_sens[0],&Omega_dot_sens[0],&b_dot_sens[0],&g_dot_sens[0],&Euler_rad[0],&pqr_rad_s[0]);
-
-
-
-    float B_matrix[INDI_OUTPUTS][INDI_NUM_ACT];
-    memcpy(B_matrix, B_matrix_in, INDI_OUTPUTS * INDI_NUM_ACT * sizeof(float));
-
-    float B_matrix_transposed[INDI_NUM_ACT][INDI_OUTPUTS];
-    float * B_matrix_[INDI_NUM_ACT];
-
-    //Transpose matrix B_in
-
-    for (i = 0; i < INDI_OUTPUTS; i++) {
-        for (j = 0; j < INDI_NUM_ACT; j++) {
-            B_matrix_transposed[j][i] = B_matrix[i][j];
-            B_matrix_[j] = &B_matrix_transposed[j][0];
-        }
-    }
-    i = 0;
-    j = 0;
-
-    float w_in[INDI_OUTPUTS];
-
-    float v_in[INDI_OUTPUTS][INDI_OUTPUTS];
-    float * v_in_[INDI_OUTPUTS];
-    for (i = 0; i < INDI_OUTPUTS; i++) {
-        v_in_[i] = &v_in[i][0];
-    }
-    i = 0;
-
-    pprz_svd_float(B_matrix_, &w_in[0], v_in_, INDI_NUM_ACT, INDI_OUTPUTS);
-
-//    //Print the U matrix
-//    printf("U = %f, %f, %f, %f, %f, %f\n", B_matrix_[0][0], B_matrix_[0][1],B_matrix_[0][2],B_matrix_[0][3],B_matrix_[0][4],B_matrix_[0][5]);
-//    for (i = 1; i < INDI_NUM_ACT; i++) {
-//        for (j = 0; j < INDI_OUTPUTS; j++) {
-//            printf("%f, ", B_matrix_[i][j]);
-//        }
-//        printf("\n");
-//    }
-//    i = 0;
-//    j = 0;
-//
-//    //Print the diagonal matrix (/Sum)
-//    printf("diag = %f, %f, %f, %f, %f, %f\n", w_in[0], w_in[1], w_in[2], w_in[3], w_in[4], w_in[5]);
-//
-//    //Print the V matrix
-//    printf("V = %f, %f, %f, %f, %f, %f\n", v_in_[0][0], v_in_[0][1],v_in_[0][2],v_in_[0][3],v_in_[0][4],v_in_[0][5]);
-//    for (i = 1; i < INDI_OUTPUTS; i++) {
-//        for (j = 0; j < INDI_OUTPUTS; j++) {
-//            printf("%f, ", v_in_[i][j]);
-//        }
-//        printf("\n");
-//    }
-//    i = 0;
-//    j = 0;
-
-    //Transpose matrix U
-    float U_transposed[INDI_OUTPUTS][INDI_NUM_ACT];
-    for (i = 0; i < INDI_NUM_ACT; i++) {
-        for (j = 0; j < INDI_OUTPUTS; j++) {
-            U_transposed[j][i] = B_matrix_[i][j];
-        }
-    }
-    i = 0;
-    j = 0;
-
-    // Invert the diag values
-    float w_inverted[INDI_OUTPUTS][INDI_OUTPUTS];
-    for (i = 0; i < INDI_OUTPUTS; i++) {
-        w_inverted[i][i] = 1/w_in[i];
-    }
-    i = 0;
-
-    //Multiply the diagonal matrix with U_transposed
-    float out_1[INDI_OUTPUTS][INDI_NUM_ACT];
-    int k;
-    for (i = 0; i < INDI_OUTPUTS; i++) {
-        for (j = 0; j < INDI_NUM_ACT; j++) {
-            out_1[i][j] = 0.;
-            for (k = 0; k < INDI_OUTPUTS; k++) {
-                out_1[i][j] += w_inverted[i][k] * U_transposed[k][j];
-            }
-        }
-    }
-    i = 0;
-    j = 0;
-    k = 0;
-
-    //Multiply V with out_1
-    float Pseudoinverse[INDI_OUTPUTS][INDI_NUM_ACT];
-    for (i = 0; i < INDI_OUTPUTS; i++) {
-        for (j = 0; j < INDI_NUM_ACT; j++) {
-            Pseudoinverse[i][j] = 0.;
-            for (k = 0; k < INDI_OUTPUTS; k++) {
-                Pseudoinverse[i][j] += v_in_[i][k] * out_1[k][j];
-            }
-        }
-    }
-    i = 0;
-    j = 0;
-    k = 0;
-
-    //Get the final actuation command by multiplying desired acceleration with the out matrix
-    float command[INDI_NUM_ACT];
-    for (j = 0; j < INDI_NUM_ACT; j++) {
-        command[j] = 0.;
-        for (k = 0; k < INDI_OUTPUTS; k++) {
-            command[j] += Desired_acceleration[k] * Pseudoinverse[k][j];
-        }
-    }
-    i = 0;
-    j = 0;
-    k = 0;
-
-    // Display the commands:
-    printf("Commands = %f, ", command[0]);
-    for (i = 1; i < INDI_NUM_ACT; i++) {
-        printf("%f, ", command[i]);
-    }
-    i = 0;
-    printf("\n");
-}
-
-
-/*
- * function to test wls for an overdetermined 4x6 (outputs x inputs) system
- */
-void test_overdetermined(void)
-{
-  float u_min[INDI_NUM_ACT] = {0};
-  float u_max[INDI_NUM_ACT] = {0};
-  float du_min[INDI_NUM_ACT] = {0};
-  float du_max[INDI_NUM_ACT] = {0};
-
-  float u_p[INDI_NUM_ACT] = {0};
-
-  float u_c[INDI_NUM_ACT] = {4614, 4210, 4210, 4614, 4210, 4210};
-
-  printf("lower and upper bounds for du:\n");
-
-  uint8_t k;
-  for(k=0; k<INDI_NUM_ACT; k++) {
-    u_max[k] = 9600 - u_min[k];
-
-    du_min[k] = u_min[k] - u_c[k];
-    du_max[k] = u_max[k] - u_c[k];
-
-    u_p[k] = du_min[k];
-
-    printf("%f ", du_min[k]);
-    printf("%f \n", du_max[k]);
-  }
-
-  printf("\n");
-
-  float g1g2[INDI_OUTPUTS][INDI_NUM_ACT] = {
-    {  0.0,  -0.015,  0.015,  0.0,  -0.015,   0.015 },
-    {  0.015,   -0.010, -0.010,   0.015,  -0.010,   -0.010 },
-    {   0.103,   0.103,    0.103,   -0.103,    -0.103,    -0.103 },
-    {-0.0009, -0.0009, -0.0009, -0.0009, -0.0009, -0.0009 }
-  };
-
-  //State prioritization {W Roll, W pitch, W yaw, TOTAL THRUST}
-  static float Wv[INDI_OUTPUTS] = {100, 100, 1, 10};
-
-  // The control objective in array format
-  float indi_v[INDI_OUTPUTS] = {240,  -240.5658,    600.0,    1.8532};
-  float indi_du[INDI_NUM_ACT];
-
-  // Initialize the array of pointers to the rows of g1g2
-  float *Bwls[INDI_OUTPUTS];
-  uint8_t i;
-  for (i = 0; i < INDI_OUTPUTS; i++) {
-    Bwls[i] = g1g2[i];
-  }
-
-  // WLS Control Allocator
-  int num_iter =
-    wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, 0, u_p, 0, 10);
-
-  printf("finished in %d iterations\n", num_iter);
-
-  float nu_out[4] = {0.0f};
-  calc_nu_out(Bwls, indi_du, nu_out);
-
-  printf("du                 = %f, %f, %f, %f, %f, %f\n", indi_du[0], indi_du[1], indi_du[2], indi_du[3], indi_du[4], indi_du[5]);
-  // Precomputed solution' in Matlab for this problem using lsqlin:
-  printf("du (matlab_lsqlin) = %f, %f, %f, %f, %f, %f\n", -4614.0, 426.064612091305, 5390.0, -4614.0, -4210.0, 5390.0);
-  printf("u = %f, %f, %f, %f, %f, %f\n", indi_du[0]+u_c[0], indi_du[1]+u_c[1], indi_du[2]+u_c[2], indi_du[3]+u_c[3], indi_du[4]+u_c[4], indi_du[5]+u_c[5]);
-  printf("nu_in = %f, %f, %f, %f\n", indi_v[0], indi_v[1], indi_v[2], indi_v[3]);
-  printf("nu_out = %f, %f, %f, %f\n", nu_out[0], nu_out[1], nu_out[2], nu_out[3]);
-}
-
-/*
- * Calculate the achieved control objective for some calculated control input
- */
-void calc_nu_out(float** Bwls, float* du, float* nu_out) {
-
-  for(int i=0; i<4; i++) {
-    nu_out[i] = 0;
-    for(int j=0; j<INDI_NUM_ACT; j++) {
-      nu_out[i] += Bwls[i][j] * du[j];
-    }
-  }
+    memcpy(& B_matrix[0], & B_matrix_local[0], 14*6*sizeof(float) );
 }
 
