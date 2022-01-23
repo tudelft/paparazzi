@@ -416,7 +416,7 @@ void test_RSPI(void)
 
     // Check for saturation and compute the scaling array accordingly
     for (int i = 0; i < INDI_NUM_ACT; i++) {
-        if ( fabs(scaling_array[i] - min_scaling_array) < sensibility_locked_actuator) {
+        if ( fabs(scaling_array[i] - min_scaling_array) < sensibility_locked_actuator && min_scaling_array < 1) {
             locked_actuator[i] = 1;
             sum_locked_actuator ++;
             for (int j = 0; j < INDI_INPUTS; j++) {
@@ -465,7 +465,7 @@ void test_RSPI(void)
     }
 
     //If we do have saturation, scale the actuator position to the allowed one and recalculate the achieved pseudo-control:
-    if (sum_locked_actuator > 0) {
+    if (min_scaling_array < 1) {
         for (int i = 0; i < INDI_NUM_ACT; i++) {
             indi_u_scaled_iter[i] = indi_u_scaled_init[i] * min_scaling_array;
             indi_u_scaled[i] = indi_u_scaled_iter[i];
@@ -515,7 +515,7 @@ void test_RSPI(void)
     int iter_count = 1;
 
     //If we are saturated, and we didn't reach the pseudo-control target, begin the iterative process:
-    while (sum_locked_actuator < INDI_NUM_ACT && iter_count < max_iter_RSPI &&
+    while (min_scaling_array < 1 && iter_count < max_iter_RSPI &&
            sum_residual_dv > sensibility_pseudo_control) {
 
         //Increase the counter:
