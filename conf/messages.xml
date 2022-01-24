@@ -1751,6 +1751,7 @@
 
          <field name="INDI_increment_theta_virtual" type="float" />
          <field name="INDI_increment_psi_virtual" type="float" />
+
      </message>
 
      <message name="ACTUATORS_OUTPUT" id="209">

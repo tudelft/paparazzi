@@ -81,8 +81,8 @@ float prioritized_actuator_states[INDI_NUM_ACT] = {0, 0, 0, 0,
                                                    0, 0, 0, 0,
                                                    0, 0 };
 
-float pseudo_control[INDI_INPUTS] = {0, 0, -20,
-                                      0,0, 0 };
+float pseudo_control[INDI_INPUTS] = {0, 0, -160,
+                                      0,0,90 };
 
 int conventional_analysis = 1;
 int verbose = 1;
@@ -100,7 +100,7 @@ void CA_function(void)
 
     float Omega_1 = 800; float Omega_2 = 800; float Omega_3 = 800; float Omega_4 = 800;
     float b_1 = 0; float b_2 = 0; float b_3 = 0; float b_4 = 0; float g_1 = 0; float g_2 = 0; float g_3 = 0; float g_4 = 0;
-    float Phi = 0; float Theta = 0; float Psi = 0;
+    float Phi = 0; float Theta = 0.2; float Psi = 0;
     float l_1 = .185; float l_2 = .185; float l_3 = .36; float l_4 = .29; float l_z = 0.;
     float I_xx = 0.15; float I_yy = 0.115; float I_zz = 0.2; float m = 2.35; float K_p_T = 0.9e-5; float K_p_M = 1.31e-7;
     //Aerodynamic variables:
