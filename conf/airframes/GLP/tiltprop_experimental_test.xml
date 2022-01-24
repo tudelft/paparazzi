@@ -152,9 +152,9 @@
     
     	<!-- Motor coefficients. Thrust as a function of ESC command (on range [0, 9600])
     	 	 Thrust equation of the form: T = k1 x^2 + k2 x + k3 -->
-    	<define name="K1" value="0.00000002"/>
-    	<define name="K2" value="0.0003"/>
-    	<define name="K3" value="-0.2157"/>
+    	<define name="K1" value="0.00000004"/>
+    	<define name="K2" value="0.0004"/>
+    	<define name="K3" value="0.5712"/>
     	
     	<!-- Location of the Motors w.r.t. the c.g. -->
     	<define name="Y_DIST" value="0.3"/>		<!--[m]-->
@@ -166,7 +166,7 @@
     	<define name="I_YY" value="0.003390"/>	<!--[kg m2]-->
     	<define name="I_ZZ" value="0.020337"/>	<!--[kg m2]-->
     </module>
-
+    <!-- ******************************************************* -->
   </firmware>
 
   <servos driver="Pwm">
@@ -249,10 +249,10 @@
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
     <!-- Actuators					 tilt_l tilt_r  m_r  m_l						-->
-    <define name="G1_ROLL" value="{0.0, 0.0, -5.029, 5.029}"/>
-    <define name="G1_PITCH" value="{-0.663,	-0.663,	0.0, 0.}"/>
-    <define name="G1_YAW" value="{0.331, -0.331, 0.0, 0.0}"/>
-    <define name="G1_THRUST" value="{0.0, 0.0, -0.231, -0.231}"/>
+    <define name="G1_ROLL" value="{0.0, 0.0, -6.705, 6.705}"/>
+    <define name="G1_PITCH" value="{1.755, 1.755, 0.0, 0.0}"/>
+    <define name="G1_YAW" value="{-0.878, 0.878, 0.0, 0.0}"/>
+    <define name="G1_THRUST" value="{0.0, 0.0, -0.308, -0.308}"/>
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{0, 0, 0, 0}"/>
 
