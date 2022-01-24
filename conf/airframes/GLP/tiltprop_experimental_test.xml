@@ -146,8 +146,26 @@
     <define name="INS_FINV_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>
     </module>-->
 
-    <!-- Control effectiveness calculator that calculates the control effectiveness matrix on the fly	 -->
-    <module name="ctrl_effectiveness_calculator"/>
+    <!-- Control effectiveness calculator that calculates
+    	 the control effectiveness matrix on the fly	 -->
+    <module name="ctrl_effectiveness_calculator">
+    
+    	<!-- Motor coefficients. Thrust as a function of ESC command (on range [0, 9600])
+    	 	 Thrust equation of the form: T = k1 x^2 + k2 x + k3 -->
+    	<define name="K1" value="0.00000002"/>
+    	<define name="K2" value="0.0003"/>
+    	<define name="K3" value="-0.2157"/>
+    	
+    	<!-- Location of the Motors w.r.t. the c.g. -->
+    	<define name="Y_DIST" value="0.3"/>		<!--[m]-->
+    	<define name="X_DIST" value="0.1"/>		<!--[m]-->
+    	
+    	<!-- Drone specific metrics -->
+    	<define name="MASS" value="1.3"/>		<!--[kg]-->
+    	<define name="I_XX" value="0.017897"/>	<!--[kg m2]-->
+    	<define name="I_YY" value="0.003390"/>	<!--[kg m2]-->
+    	<define name="I_ZZ" value="0.020337"/>	<!--[kg m2]-->
+    </module>
 
   </firmware>
 
@@ -231,10 +249,10 @@
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
     <!-- Actuators					 tilt_l tilt_r  m_r  m_l						-->
-    <define name="G1_ROLL" value="{  0.0,  0.0,  0.0,  0.0}"/>
-    <define name="G1_PITCH" value="{  0.0,  0.0,  0.0,  0.0}"/>
-    <define name="G1_YAW" value="{  0.0,  0.0,  0.0,  0.0}"/>
-    <define name="G1_THRUST" value="{  0.0,  0.0,  0.0,  0.0}"/>
+    <define name="G1_ROLL" value="{0.0, 0.0, -5.029, 5.029}"/>
+    <define name="G1_PITCH" value="{-0.663,	-0.663,	0.0, 0.}"/>
+    <define name="G1_YAW" value="{0.331, -0.331, 0.0, 0.0}"/>
+    <define name="G1_THRUST" value="{0.0, 0.0, -0.231, -0.231}"/>
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{0, 0, 0, 0}"/>
 
