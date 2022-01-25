@@ -8,7 +8,7 @@
   <firmware name="rotorcraft">
     <!-- ****************** Autopilot Target ******************* -->
     <target name="ap" board="px4fmu_4.0_chibios">
-      <!--<define name="FLASH_MODE" value="PX4_BOOTLOADER"/>-->
+      <define name="FLASH_MODE" value="PX4_BOOTLOADER"/>
       <configure name="PERIODIC_FREQUENCY" value="500"/>
 
       <!-- <module name="radio_control" type="datalink"/>-->
