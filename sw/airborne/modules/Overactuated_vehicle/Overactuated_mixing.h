@@ -88,15 +88,14 @@ extern struct ActuatorsStruct act_dyn_struct;
 
 // Variables for slider
 extern float wind_speed;
-extern float test_ale;
+extern bool mode_1_control;
 extern float stick_gain_yaw;
 extern float stick_gain_throttle;
-extern bool activate_tilting_az;
-extern bool activate_tilting_el;
-extern bool yaw_with_tilting;
-extern bool yaw_with_motors;
+extern bool activate_tilting_az_PID;
+extern bool activate_tilting_el_PID;
+extern bool yaw_with_tilting_PID;
+extern bool yaw_with_motors_PID;
 extern bool position_with_attitude;
-extern bool soft_PID; //The derivative gain is fed without computing the error derivative (just act on rates or speed).
 extern bool manual_motor_stick;
 
 extern bool static_tilt_motor_for_yaw;
@@ -105,15 +104,8 @@ extern int static_tilt_angle;
 extern bool manual_heading;
 extern int manual_heading_value_rad;
 
-//Variables for PID failsafe mode:
-
-extern float P_az_gain;
-extern float D_az_gain;
-extern float P_el_gain;
-extern float D_el_gain;
-
 /* External used functions */
 extern void overactuated_mixing_init(void);
-extern void overactuated_mixing_run(pprz_t in_cmd[], bool in_flight);
+extern void overactuated_mixing_run(pprz_t in_cmd[]);
 
 #endif

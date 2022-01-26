@@ -72,7 +72,7 @@
       <define name="RADIO_FBW_MODE" value="RADIO_AUX3"/> <!-- Switch between AP and FBW control -->
       <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
 
-      <configure name="USE_BARO_BOARD" value="FALSE"/><!-- To use in cyberzoo and OJF -->
+<!--      <configure name="USE_BARO_BOARD" value="FALSE"/>&lt;!&ndash; To use in cyberzoo and OJF &ndash;&gt;-->
 
     </target>
 
@@ -105,7 +105,7 @@
 <!--    <module name="stabilization" type="indi_simple"/>-->
 <!--    <module name="stabilization" type="rate_indi"/>-->
 
-<!--    <module name="ins" type="ekf2"/>-->
+    <module name="ins" type="ekf2"/>
 
 <!--     For OPTITRACK -->
     <module name="actuators"     type="pwm"/>
@@ -117,7 +117,7 @@
     </module>
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
-    <module name="ins"           type="extended" />
+<!--    <module name="ins"           type="extended" />-->
     <module name="ahrs"          type="int_cmpl_quat">
 <!--      <configure name="USE_MAGNETOMETER" value="FALSE"/>-->
 <!--      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>-->
@@ -228,7 +228,7 @@
   <command_laws>
     <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
 
-    <call fun="overactuated_mixing_run(values,autopilot_in_flight())"/>
+    <call fun="overactuated_mixing_run(values)"/>
 
     <let var="th_hold" value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
 
@@ -357,6 +357,10 @@
     <define name="SERVO_EL_3_ZERO_VALUE" value="-42.9" unit="deg"/>
     <define name="SERVO_EL_4_ZERO_VALUE" value="-37.6" unit="deg"/>
 
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="2" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="2" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="2" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="2" unit="deg"/>
 
     <define name="MAX_THETA_FWD" value="15" unit="deg"/>
     <define name="MIN_THETA_FWD" value="-15" unit="deg"/>

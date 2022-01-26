@@ -10,12 +10,12 @@
     <dl_settings>
       <dl_settings NAME="General overact">
         <dl_setting var="wind_speed"  min="0" step="1" max="20" shortname="wind_speed" />
-        <dl_setting var="activate_tilting_az" min="0" step="1" max="1" shortname="tilt_az_active" values="FALSE|TRUE" />
-        <dl_setting var="activate_tilting_el" min="0" step="1" max="1" shortname="tilt_el_active" values="FALSE|TRUE" />
-        <dl_setting var="yaw_with_tilting" min="0" step="1" max="1" shortname="use_tilt_to_yaw" values="FALSE|TRUE" />
-        <dl_setting var="yaw_with_motors" min="0" step="1" max="1" shortname="use_motor_to_yaw" values="FALSE|TRUE" />
+        <dl_setting var="mode_1_control"  min="0" step="1" max="1" shortname="mode_1_control" values="FALSE|TRUE" />
+        <dl_setting var="activate_tilting_az_PID" min="0" step="1" max="1" shortname="tilt_az_active_PID" values="FALSE|TRUE" />
+        <dl_setting var="activate_tilting_el_PID" min="0" step="1" max="1" shortname="tilt_el_active_PID" values="FALSE|TRUE" />
+        <dl_setting var="yaw_with_tilting_PID" min="0" step="1" max="1" shortname="use_tilt_to_yaw_PID" values="FALSE|TRUE" />
+        <dl_setting var="yaw_with_motors_PID" min="0" step="1" max="1" shortname="use_motor_to_yaw_PID" values="FALSE|TRUE" />
 
-        <dl_setting var="soft_PID" min="0" step="1" max="1" shortname="soft_PID" values="FALSE|TRUE" />
 
         <dl_setting var="position_with_attitude" min="0" step="1" max="1" shortname="out_loop_pos" values="FALSE|TRUE" />
         <dl_setting var="manual_motor_stick" min="0" step="1" max="1" shortname="manual_motor_stick" values="FALSE|TRUE" />
