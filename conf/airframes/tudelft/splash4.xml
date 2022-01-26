@@ -263,7 +263,7 @@
     <define name="G1_ROLL"   value="{8.,  -8., -8., 8.}"/>
     <define name="G1_PITCH"  value="{8.,  8., -8., -8.}"/>
     <define name="G1_YAW"    value="{ -1.0, 1.0,  -1.0, 1.0}"/>
-    <define name="G1_THRUST" value="{-0.55, -0.55, -0.55, -0.55}"/>
+    <define name="G1_THRUST" value="{-0.83, -0.83, -0.83, -0.83}"/>
     <define name="G2" value="{ -0.155, 0.155,  -0.155, 0.155}"/>
 
     <!-- reference acceleration for attitude control -->
