@@ -158,8 +158,8 @@
     <servo name="MOTOR_4" no="3" min="-8191" neutral="1500" max="7372"/>
     <servo name="MOTOR_5" no="4" min="-8191" neutral="1500" max="7372"/>
     <servo name="MOTOR_6" no="5" min="-8191" neutral="1500" max="7372"/>
-    <servo name="AIL_1" no="6" min="-3000" neutral="0" max="3000"/>
-    <servo name="AIL_2" no="7" min="3000" neutral="0" max="-3000"/>
+    <servo name="AIL_1" no="6" min="-6000" neutral="0" max="6000"/>
+    <servo name="AIL_2" no="7" min="6000" neutral="0" max="-6000"/>
   </servos>
 
   <!-- CAN BUS 2 (Back Wing) -->
@@ -170,8 +170,8 @@
     <servo name="MOTOR_10" no="3" min="-8191" neutral="1500" max="7372"/>
     <servo name="MOTOR_11" no="4" min="-8191" neutral="1500" max="7372"/>
     <servo name="MOTOR_12" no="5" min="-8191" neutral="1500" max="7372"/>
-    <servo name="AIL_3" no="6" min="-3000" neutral="0" max="3000"/>
-    <servo name="AIL_4" no="7" min="3000" neutral="0" max="-3000"/>
+    <servo name="AIL_3" no="6" min="-6000" neutral="0" max="6000"/>
+    <servo name="AIL_4" no="7" min="6000" neutral="0" max="-6000"/>
   </servos>
 
   <commands>
@@ -201,8 +201,7 @@
   </section>
 
   <command_laws>
-    <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
-    <let var="th_hold"     value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
+    <let var="th_hold"     value="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
 
     <!-- Tip props always at 80% -->
     <call fun="actuators_pprz[6] = (LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)? -9600 : 9600/10*8);"/>
@@ -289,9 +288,9 @@
     <!-- setpoints -->
     <define name="SP_MAX_PHI" value="60." unit="deg"/>
     <define name="SP_MAX_THETA" value="80." unit="deg"/>
-    <define name="SP_MAX_R" value="90." unit="deg/s"/>
+    <define name="SP_MAX_R" value="180." unit="deg/s"/>
     <define name="DEADBAND_R" value="200"/>
-    <define name="SP_PSI_DELTA_LIMIT" value="45" unit="deg"/>
+    <define name="SP_PSI_DELTA_LIMIT" value="60" unit="deg"/>
   </section>
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
@@ -312,7 +311,7 @@
     <define name="REF_RATE_R" value="6.0"/>
 
     <!--Maxium yaw rate, to avoid instability-->
-    <define name="MAX_R" value="50.0" unit="deg/s"/>
+    <define name="MAX_R" value="180.0" unit="deg/s"/>
 
     <!-- Maximum rate setpoint in rate control mode -->
     <define name="MAX_RATE" value="3.0" unit="rad/s"/>
