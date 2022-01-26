@@ -6,8 +6,8 @@ Q=@
 CC = gcc
 CFLAGS = -std=c99 -I.. -I../../include -Wall
 #CFLAGS += -DDEBUG
-CFLAGS += -DCA_N_U=6
-CFLAGS += -DCA_N_V=4
+CFLAGS += -DCA_N_U=14
+CFLAGS += -DCA_N_V=6
 LDFLAGS = -lm
 
 

@@ -357,11 +357,6 @@
     <define name="SERVO_EL_3_ZERO_VALUE" value="-42.9" unit="deg"/>
     <define name="SERVO_EL_4_ZERO_VALUE" value="-37.6" unit="deg"/>
 
-<!--    <define name="SERVO_EL_1_ZERO_VALUE" value="-20.23" unit="deg"/>-->
-<!--    <define name="SERVO_EL_2_ZERO_VALUE" value="-20.9" unit="deg"/>-->
-<!--    <define name="SERVO_EL_3_ZERO_VALUE" value="-20.9" unit="deg"/>-->
-<!--    <define name="SERVO_EL_4_ZERO_VALUE" value="-20.6" unit="deg"/>-->
-
 
     <define name="MAX_THETA_FWD" value="15" unit="deg"/>
     <define name="MIN_THETA_FWD" value="-15" unit="deg"/>
@@ -383,15 +378,15 @@
     <define name="FILT_CUTOFF_POS_ERR" value="20" unit="rad/s"/>
 
     <!-- Filters properties for INDI was 20 before -->
-    <define name="FILT_CUTOFF_P" value="17" unit="rad/s"/>
-    <define name="FILT_CUTOFF_Q" value="17" unit="rad/s"/>
-    <define name="FILT_CUTOFF_R" value="17" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACC_X" value="17" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACC_Y" value="17" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACC_Z" value="17" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_EL" value="17" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="17" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="17" unit="rad/s"/>
+    <define name="FILT_CUTOFF_P" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_Q" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_R" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACC_X" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACC_Y" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACC_Z" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_EL" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="15" unit="rad/s"/>
 
   </section>
 
