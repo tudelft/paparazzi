@@ -96,7 +96,7 @@ bool manual_motor_stick = 1;
 bool activate_tilting_az_PID = 0;
 bool activate_tilting_el_PID = 0;
 bool yaw_with_tilting_PID = 1;
-bool mode_1_control = 1;
+bool mode_1_control = 0;
 
 bool static_tilt_motor_for_yaw = 0;
 int static_tilt_angle = 0;
