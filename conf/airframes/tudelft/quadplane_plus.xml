@@ -1,16 +1,14 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
-
-<!-- This is a Nedderdrone
-     * Airframe:    TUD00289
+<airframe name="quadplane_plus">
+  <description>
+A blended wing type as overactuated vehicle 
+     * Airframe:    Custom
      * Autopilot:   Pixhawk 4
      * Actuators:   4x BLHELI32 ESC (PWM) + 8x SAVOX servos (PWM)
      * Datalink:    Herelink
      * GPS:         UBlox F9P
-     * RC:          SBUS Crossfire
--->
-
-<airframe name="quadplane_plus">
-  <description>Overactuated vehicle</description>
+     * RC:          SBUS Crossfire 
+  </description>
 
   <firmware name="rotorcraft">
     <target name="ap" board="px4fmu_5.0_chibios">
@@ -33,15 +31,8 @@
         <define name="USE_I2C4"/>
         <define name="MS45XX_I2C_DEV" value="i2c4"/>
       </module>
-<!--      <module name="airspeed_ets.xml">-->
-
-<!--        <define name="AIRSPEED_ETS_SCALE" value="1.24"/>-->
-<!--      </module>-->
 
 <!--      <module name="scheduling_indi_simple"/>-->
-
-      <!-- Forward FuelCell data back to the GCS -->
-      <!--module name="generic_uart_sensor"/-->
 
       <!-- Logger -->
       <module name="tlsf"/>
