@@ -36,13 +36,13 @@
 #include "mcu_periph/uart.h"
 #include "mcu_periph/sys_time.h"
 #include "mcu_periph/gpio.h"
-#include "subsystems/radio_control.h"
-#include "subsystems/commands.h"
-#include "subsystems/actuators.h"
-//#include "subsystems/electrical.h"
-#include "subsystems/datalink/telemetry.h"
+#include "modules/radio_control/radio_control.h"
+#include "modules/core/commands.h"
+#include "modules/actuators/actuators.h"
+//#include "modules/energy/electrical.h"
+#include "modules/datalink/telemetry.h"
 
-#include "subsystems/settings.h"
+#include "modules/core/settings.h"
 #include "generated/settings.h"
 
 #include "pprz_version.h"
@@ -87,6 +87,25 @@ static void send_actuators(struct transport_tx *trans, struct link_device *dev)
 }
 #endif
 
+static void send_minimal_com(struct transport_tx *trans, struct link_device *dev)
+{
+  float lat = DegOfRad(stateGetPositionLla_f()->lat);
+  float lon = DegOfRad(stateGetPositionLla_f()->lon);
+  float hmsl = stateGetPositionUtm_f()->alt;
+  float gspeed = stateGetHorizontalSpeedNorm_f();
+  float course = stateGetHorizontalSpeedDir_f();
+  float climb = stateGetSpeedEnu_f()->z;
+  uint8_t throttle = (uint8_t)(100 * autopilot.throttle / MAX_PPRZ);
+#if USE_GPS
+  uint8_t gps_fix = gps.fix;
+#else
+  uint8_t gps_fix = 0;
+#endif
+  pprz_msg_send_MINIMAL_COM(trans, dev, AC_ID,
+      &lat, &lon, &hmsl, &gspeed, &course, &climb,
+      &electrical.vsupply, &throttle, &autopilot.mode,
+      &nav_block, &gps_fix, &autopilot.flight_time);
+}
 
 void autopilot_init(void)
 {
@@ -114,8 +133,14 @@ void autopilot_init(void)
   // call firmware specific init
   autopilot_firmware_init();
 
-  // static / generated AP init part is called later by main program
-  // and will set the correct initial mode
+  // call autopilot implementation init after guidance modules init
+  // (should be guaranteed by modules dependencies)
+  // it will set startup mode
+#if USE_GENERATED_AUTOPILOT
+  autopilot_generated_init();
+#else
+  autopilot_static_init();
+#endif
 
   // register messages
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AUTOPILOT_VERSION, send_autopilot_version);
@@ -128,6 +153,7 @@ void autopilot_init(void)
 #ifdef RADIO_CONTROL
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RC, send_rc);
 #endif
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MINIMAL_COM, send_minimal_com);
 }
 
 /** AP periodic call
@@ -160,12 +186,13 @@ void autopilot_on_rc_frame(void)
  */
 bool autopilot_set_mode(uint8_t new_autopilot_mode)
 {
+  uint8_t mode = autopilot.mode;
 #if USE_GENERATED_AUTOPILOT
   autopilot_generated_set_mode(new_autopilot_mode);
 #else
   autopilot_static_set_mode(new_autopilot_mode);
 #endif
-  return (autopilot.mode != new_autopilot_mode);
+  return (autopilot.mode != mode);
 }
 
 /** AP mode setting handler

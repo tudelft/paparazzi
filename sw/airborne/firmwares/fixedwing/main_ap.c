@@ -37,12 +37,12 @@
 #include "firmwares/fixedwing/main_ap.h"
 #include "mcu.h"
 #include "mcu_periph/sys_time.h"
-#include "inter_mcu.h"
-#include "link_mcu.h"
+#include "modules/intermcu/inter_mcu.h"
+#include "modules/intermcu/link_mcu.h"
 
 #include "generated/airframe.h"
 #include "generated/modules.h"
-#include "subsystems/abi.h"
+#include "modules/core/abi.h"
 
 #include "led.h"
 
@@ -115,14 +115,6 @@ void init_ap(void)
   modules_actuators_init();
   modules_datalink_init();
   modules_default_init();
-
-  // call autopilot implementation init after guidance modules init
-  // it will set startup mode
-#if USE_GENERATED_AUTOPILOT
-  autopilot_generated_init();
-#else
-  autopilot_static_init();
-#endif
 
   // register timers with temporal dependencies
   modules_sensors_tid = sys_time_register_timer(SENSORS_PERIOD, NULL);

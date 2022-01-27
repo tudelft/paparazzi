@@ -30,8 +30,8 @@
 #include "firmwares/rover/navigation.h"
 
 #include "pprz_debug.h"
-#include "subsystems/gps.h" // needed by auto_nav from the flight plan
-#include "subsystems/ins.h"
+#include "modules/gps/gps.h" // needed by auto_nav from the flight plan
+#include "modules/ins/ins.h"
 #include "state.h"
 
 #include "autopilot.h"
@@ -40,11 +40,12 @@
 
 #include "math/pprz_algebra_int.h"
 
-#include "subsystems/datalink/downlink.h"
+#include "modules/datalink/downlink.h"
 #include "pprzlink/messages.h"
 #include "mcu_periph/uart.h"
 
 
+PRINT_CONFIG_VAR(NAVIGATION_FREQUENCY)
 
 struct RoverNavigation nav;
 
@@ -62,7 +63,7 @@ void set_exception_flag(uint8_t flag_num)
 
 
 #if PERIODIC_TELEMETRY
-#include "subsystems/datalink/telemetry.h"
+#include "modules/datalink/telemetry.h"
 
 static void send_wp_moved(struct transport_tx *trans, struct link_device *dev)
 {
@@ -175,7 +176,7 @@ void nav_init_stage(void)
 
 void nav_periodic_task(void)
 {
-  RunOnceEvery(NAV_FREQ, { stage_time++;  block_time++; });
+  RunOnceEvery(NAVIGATION_FREQUENCY, { stage_time++;  block_time++; });
 
   //nav.dist2_to_wp = 0; FIXME
 

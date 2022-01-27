@@ -37,10 +37,15 @@
 #ifdef CTRL_TYPE_H
 #include CTRL_TYPE_H
 #endif
-#include "subsystems/navigation/nav_survey_rectangle.h"
-#include "subsystems/navigation/common_flight_plan.h"
-#include "subsystems/navigation/common_nav.h"
+#include "modules/nav/nav_survey_rectangle.h"
+#include "modules/nav/common_flight_plan.h"
+#include "modules/nav/common_nav.h"
 #include "autopilot.h"
+
+/** Default fixedwing navigation frequency */
+#ifndef NAVIGATION_FREQUENCY
+#define NAVIGATION_FREQUENCY 20
+#endif
 
 #define NAV_GRAVITY 9.806
 #define Square(_x) ((_x)*(_x))

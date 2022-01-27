@@ -31,8 +31,8 @@
 #include "firmwares/rotorcraft/navigation.h"
 
 #include "pprz_debug.h"
-#include "subsystems/gps.h" // needed by auto_nav from the flight plan
-#include "subsystems/ins.h"
+#include "modules/gps/gps.h" // needed by auto_nav from the flight plan
+#include "modules/ins/ins.h"
 #include "state.h"
 
 #include "autopilot.h"
@@ -44,11 +44,12 @@
 
 #include "math/pprz_algebra_int.h"
 
-#include "subsystems/datalink/downlink.h"
+#include "modules/datalink/downlink.h"
 #include "pprzlink/messages.h"
 #include "mcu_periph/uart.h"
 
 
+PRINT_CONFIG_VAR(NAVIGATION_FREQUENCY)
 
 /** default nav_circle_radius in meters */
 #ifndef DEFAULT_CIRCLE_RADIUS
@@ -125,7 +126,7 @@ struct EnuCoor_i nav_segment_start, nav_segment_end;
 static inline void nav_set_altitude(void);
 
 #if PERIODIC_TELEMETRY
-#include "subsystems/datalink/telemetry.h"
+#include "modules/datalink/telemetry.h"
 
 void set_exception_flag(uint8_t flag_num)
 {
@@ -373,7 +374,7 @@ void nav_init_stage(void)
 #include <stdio.h>
 void nav_periodic_task(void)
 {
-  RunOnceEvery(NAV_FREQ, { stage_time++;  block_time++; });
+  RunOnceEvery(NAVIGATION_FREQUENCY, { stage_time++;  block_time++; });
 
   nav_survey_active = false;
 
@@ -384,30 +385,6 @@ void nav_periodic_task(void)
 
   /* run carrot loop */
   nav_run();
-}
-
-void navigation_update_wp_from_speed(uint8_t wp, struct Int16Vect3 speed_sp, int16_t heading_rate_sp)
-{
-  //  MY_ASSERT(wp < nb_waypoint); FIXME
-  int32_t s_heading, c_heading;
-  PPRZ_ITRIG_SIN(s_heading, nav_heading);
-  PPRZ_ITRIG_COS(c_heading, nav_heading);
-  // FIXME : scale POS to SPEED
-  struct Int32Vect3 delta_pos;
-  VECT3_SDIV(delta_pos, speed_sp, NAV_FREQ); /* fixme :make sure the division is really a >> */
-  INT32_VECT3_RSHIFT(delta_pos, delta_pos, (INT32_SPEED_FRAC - INT32_POS_FRAC));
-  waypoints[wp].enu_i.x += (s_heading * delta_pos.x + c_heading * delta_pos.y) >> INT32_TRIG_FRAC;
-  waypoints[wp].enu_i.y += (c_heading * delta_pos.x - s_heading * delta_pos.y) >> INT32_TRIG_FRAC;
-  waypoints[wp].enu_i.z += delta_pos.z;
-  int32_t delta_heading = heading_rate_sp / NAV_FREQ;
-  delta_heading = delta_heading >> (INT32_SPEED_FRAC - INT32_POS_FRAC);
-  nav_heading += delta_heading;
-
-  INT32_COURSE_NORMALIZE(nav_heading);
-  RunOnceEvery(10, DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp,
-               &(waypoints[wp].enu_i.x),
-               &(waypoints[wp].enu_i.y),
-               &(waypoints[wp].enu_i.z)));
 }
 
 bool nav_detect_ground(void)

@@ -33,7 +33,7 @@
 #include <inttypes.h>
 #include "led.h"
 
-#include "subsystems/radio_control.h"
+#include "modules/radio_control/radio_control.h"
 
 #include "firmwares/rotorcraft/main_ap.h"
 
@@ -42,7 +42,7 @@
 #endif
 
 #include "generated/modules.h"
-#include "subsystems/abi.h"
+#include "modules/core/abi.h"
 
 /* if PRINT_CONFIG is defined, print some config options */
 PRINT_CONFIG_VAR(PERIODIC_FREQUENCY)
@@ -91,14 +91,6 @@ void main_init(void)
   modules_actuators_init();
   modules_datalink_init();
   modules_default_init();
-
-  // call autopilot implementation init after guidance modules init
-  // it will set startup mode
-#if USE_GENERATED_AUTOPILOT
-  autopilot_generated_init();
-#else
-  autopilot_static_init();
-#endif
 
   // register timers with temporal dependencies
   modules_sensors_tid = sys_time_register_timer(SENSORS_PERIOD, NULL);

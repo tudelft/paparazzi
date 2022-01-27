@@ -13,12 +13,12 @@
       <include name="generated/airframe.h"/>
       <include name="autopilot.h"/>
       <include name="autopilot_rc_helpers.h"/>
-      <include name="inter_mcu.h"/>
+      <include name="modules/intermcu/inter_mcu.h"/>
       <include name="nav.h"/>
       <include name="guidance/guidance_common.h"/>
       <include name="guidance/guidance_h.h"/>
       <include name="stabilization/stabilization_attitude.h"/>
-      <include name="subsystems/gps.h"/>
+      <include name="modules/gps/gps.h"/>
 
       <!-- We have to manually include the module's header files, so 
       we can use the provided functions -->
@@ -60,8 +60,8 @@
 
     <mode name="MANUAL" gcs_name="MANU">
       <select cond="RCMode0()"/>
-      <control freq="4"> <!-- only for display -->
-        <call fun="common_nav_periodic_task_4Hz()"/>
+      <control freq="NAVIGATION_FREQUENCY"> <!-- only for display -->
+        <call fun="common_nav_periodic_task()"/>
         <call fun="nav_periodic_task()"/>
       </control>
       <control> <!-- only for display -->
@@ -72,8 +72,8 @@
 
     <mode name="AUTO1">
       <select cond="RCMode1()"/>
-      <control freq="4"> <!-- only for display -->
-        <call fun="common_nav_periodic_task_4Hz()"/>
+      <control freq="NAVIGATION_FREQUENCY"> <!-- only for display -->
+        <call fun="common_nav_periodic_task()"/>
         <call fun="nav_periodic_task()"/>
         <call fun="rust_periodic()"/>
       </control>
@@ -88,8 +88,8 @@
     <mode name="AUTO2">
       <select cond="$DEFAULT_MODE"/>
       <select cond="RCMode2()" exception="HOME"/>
-      <control freq="4">
-        <call fun="common_nav_periodic_task_4Hz()"/>
+      <control freq="NAVIGATION_FREQUENCY">
+        <call fun="common_nav_periodic_task()"/>
         <call fun="nav_periodic_task()"/>
       </control>
       <control>
@@ -101,8 +101,8 @@
     </mode>
 
     <mode name="HOME" settings="hide">
-      <control freq="4">
-        <call fun="common_nav_periodic_task_4Hz()"/>
+      <control freq="NAVIGATION_FREQUENCY">
+        <call fun="common_nav_periodic_task()"/>
         <call fun="nav_home()"/>
       </control>
       <control>
@@ -114,8 +114,8 @@
     </mode>
 
     <mode name="GPS_LOST" gcs_name="NOGPS" settings="hide">
-      <control freq="4">
-        <call fun="common_nav_periodic_task_4Hz()"/>
+      <control freq="NAVIGATION_FREQUENCY">
+        <call fun="common_nav_periodic_task()"/>
         <call fun="nav_without_gps()"/>
       </control>
       <control>

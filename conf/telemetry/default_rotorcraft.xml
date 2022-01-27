@@ -2,6 +2,7 @@
 <!DOCTYPE telemetry SYSTEM "telemetry.dtd">
 <telemetry>
 
+
   <process name="Main">
 
     <mode name="default" key_press="d">
@@ -32,7 +33,9 @@
       <message name="DIVERGENCE"               period="0.05"/>
       <message name="DRAGSPEED"                period="0.02"/>
       <message name="LOGGER_STATUS"            period="5.1"/>
-      <message name="LIDAR"                    period="1.2"/>
+      <message name="LIDAR"  		       period="1.2"/>
+   <   message name="INS_EKF2"                 period=".25"/>
+      <message name="WIND_INFO_RET"            period="1."/>                  
       <message name="MOTOR_MIXING"             period=".2"/>
       <message name="OVERACTUATED_VARIABLES"   period=".2"/>
       <message name="GAINS_OVERACTUATED"       period=".2"/>

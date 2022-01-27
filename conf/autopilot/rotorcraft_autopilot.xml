@@ -11,10 +11,10 @@
       <include name="navigation.h"/>
       <include name="guidance.h"/>
       <include name="stabilization/stabilization_attitude.h"/>
-      <include name="subsystems/radio_control.h"/>
-      <include name="subsystems/gps.h"/>
-      <include name="subsystems/actuators.h"/>
-      <include name="subsystems/actuators/motor_mixing.h"/>
+      <include name="modules/radio_control/radio_control.h"/>
+      <include name="modules/gps/gps.h"/>
+      <include name="modules/actuators/actuators.h"/>
+      <include name="modules/actuators/motor_mixing.h"/>
       <!--define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT" cond="ifndef MODE_MANUAL"/>
       <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD" cond="ifndef MODE_AUTO1"/-->
       <define name="MODE_AUTO2" value="AP_MODE_NAV" cond="ifndef MODE_AUTO2"/>
@@ -60,7 +60,7 @@
       <on_enter>
         <call fun="stabilization_attitude_enter()"/>
       </on_enter>
-      <control freq="NAV_FREQ">
+      <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
       </control>
       <control>
@@ -77,7 +77,7 @@
         <call fun="stabilization_attitude_enter()"/>
         <call fun="guidance_v_z_enter()"/>
       </on_enter>
-      <control freq="NAV_FREQ">
+      <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
       </control>
       <control>
@@ -95,7 +95,7 @@
         <call fun="stabilization_attitude_enter()"/>
         <call fun="guidance_v_z_enter()"/>
       </on_enter>
-      <control freq="NAV_FREQ">
+      <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
       </control>
       <control>
@@ -116,7 +116,7 @@
         <call fun="guidance_v_mode = GUIDANCE_V_MODE_GUIDED"/>
         <call fun="guidance_v_guided_enter()"/>
       </on_enter>
-      <control freq="NAV_FREQ">
+      <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_periodic_task()"/>
       </control>
       <control>
@@ -135,7 +135,7 @@
         <call fun="stabilization_attitude_enter()"/>
         <call fun="guidance_v_z_enter()"/>
       </on_enter>
-      <control freq="NAV_FREQ">
+      <control freq="NAVIGATION_FREQUENCY">
         <call fun="nav_home()"/>
       </control>
       <control>
