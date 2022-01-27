@@ -26,13 +26,13 @@
 #include "generated/airframe.h"
 #include "Overactuated_mixing.h"
 #include <math.h>
-#include "subsystems/radio_control.h"
+#include "modules/radio_control/radio_control.h"
 #include "state.h"
 #include "paparazzi.h"
-#include "subsystems/datalink/telemetry.h"
-#include "subsystems/navigation/waypoints.h"
+#include "modules/datalink/telemetry.h"
+#include "modules/nav/waypoints.h"
 #include "generated/flight_plan.h"
-#include "subsystems/actuators/motor_mixing.h"
+#include "modules/actuators/motor_mixing.h"
 #include "math/pprz_algebra_float.h"
 #include "math/pprz_matrix_decomp_float.c"
 //#include "wls/wls_alloc.h"
@@ -1959,7 +1959,7 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     init_variables();
 
     /// Case of PID control as on simulink [FAILSAFE]
-    if(radio_control.values[RADIO_MODE] > -500) {
+    if(radio_control.values[RADIO_MODE] < 500) {
         //INIT AND BOOLEAN RESET
         if (PID_engaged == 0) {
             /*
@@ -2229,7 +2229,7 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     }
 
     /// Case of INDI control mode as on simulink
-    if(radio_control.values[RADIO_MODE] < -500){
+    if(radio_control.values[RADIO_MODE] > 500){
 
         //INIT AND BOOLEAN RESET
         if(INDI_engaged == 0){

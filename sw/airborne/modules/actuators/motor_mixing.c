@@ -27,9 +27,9 @@
 
 #include "modules/actuators/motor_mixing.h"
 #include "paparazzi.h"
-#include "subsystems/radio_control.h"
+#include "modules/radio_control/radio_control.h"
 #include "Overactuated_vehicle/Overactuated_mixing.h"
-#include "subsystems/datalink/telemetry.h"
+#include "modules/datalink/telemetry.h"
 
 //#include <stdint.h>
 #ifndef INT32_MIN
