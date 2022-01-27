@@ -64,11 +64,11 @@ void ctrl_eff(void)
     g1g2[3][3] = ctrl_deriv_33;
 
 
-//    printf("\n");
-//    printf("\n%f\t%f\t%f\t%f", ctrl_deriv_00, ctrl_deriv_01, ctrl_deriv_02, ctrl_deriv_03);
-//    printf("\n%f\t%f\t%f\t%f", ctrl_deriv_10, ctrl_deriv_11, ctrl_deriv_12, ctrl_deriv_13);
-//    printf("\n%f\t%f\t%f\t%f", ctrl_deriv_20, ctrl_deriv_21, ctrl_deriv_22, ctrl_deriv_23);
-//    printf("\n%f\t%f\t%f\t%f", ctrl_deriv_30, ctrl_deriv_31, ctrl_deriv_32, ctrl_deriv_33);
+    printf("\n");
+    printf("\n%f\t%f\t%f\t%f", ctrl_deriv_00, ctrl_deriv_01, ctrl_deriv_02, ctrl_deriv_03);
+    printf("\n%f\t%f\t%f\t%f", ctrl_deriv_10, ctrl_deriv_11, ctrl_deriv_12, ctrl_deriv_13);
+    printf("\n%f\t%f\t%f\t%f", ctrl_deriv_20, ctrl_deriv_21, ctrl_deriv_22, ctrl_deriv_23);
+    printf("\n%f\t%f\t%f\t%f", ctrl_deriv_30, ctrl_deriv_31, ctrl_deriv_32, ctrl_deriv_33);
 
 }
 
