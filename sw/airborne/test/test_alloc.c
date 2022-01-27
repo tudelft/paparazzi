@@ -93,7 +93,7 @@ float prioritized_actuator_states[INDI_NUM_ACT] = {0, 0, 0, 0,
                                                    0, 0, 0, 0,
                                                    0, 0 };
 
-float pseudo_control[INDI_INPUTS] = {0, 4, 0,
+float pseudo_control[INDI_INPUTS] = {0, 0, -15,
                                       0,0,0 };
 
 int conventional_analysis = 1;
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
 void CA_function(void)
 {
     float B_matrix[INDI_INPUTS][INDI_NUM_ACT];
-    float Omega_1 = 800; float Omega_2 = 800; float Omega_3 = 800; float Omega_4 = 800;
+    float Omega_1 = 300; float Omega_2 = 300; float Omega_3 = 300; float Omega_4 = 300;
     float b_1 = 0; float b_2 = 0; float b_3 = 0; float b_4 = 0; float g_1 = 0; float g_2 = 0; float g_3 = 0; float g_4 = 0;
     float Phi = 0; float Theta = 0; float Psi = 0;
     float l_1 = .183; float l_2 = .183; float l_3 = .36; float l_4 = .25; float l_z = 0.;
@@ -151,14 +151,294 @@ void CA_function(void)
 //                    prioritized_actuator_states, actual_u, pseudo_control);
 
 
-    int iter_count = RSPI_optimization(B_matrix[0], INDI_INPUTS, INDI_NUM_ACT, max_u, min_u, indi_du,
+//    int iter_count = RSPI_optimization(B_matrix[0], INDI_INPUTS, INDI_NUM_ACT, max_u, min_u, indi_du,
+//                                       indi_u, prioritized_actuator_states, actual_u, max_iter, pseudo_control);
+
+    int iter_count = RSPI_optimization_incremental(B_matrix[0], INDI_INPUTS, INDI_NUM_ACT, max_u, min_u, indi_du,
                                        indi_u, prioritized_actuator_states, actual_u, max_iter, pseudo_control);
+
 
 //    float Wv[INDI_INPUTS] = {1, 1, 1, 1, 1, 1};
 //    int iter_count = wls_optimization(B_matrix[0], INDI_INPUTS, INDI_NUM_ACT, max_u, min_u, indi_du, indi_u,
 //                                      prioritized_actuator_states, actual_u, pseudo_control, Wv, max_iter);
 
     printf("Optimization finished in %d out of %d iterations\n", iter_count, max_iter);
+}
+
+int RSPI_optimization_incremental(float * B_matrix_in, int num_row, int num_column, float * max_u, float * min_u, float * out_du,
+                                  float * out_u, float * des_u, float * actual_u, int max_iter, float * pseudo_control){
+
+    float B_matrix_local[num_row][num_column];
+    memcpy(& B_matrix_local[0], B_matrix_in, num_row * num_column * sizeof(float));
+    //Initialize some variables for the RSPI
+    int locked_actuator[num_column];
+    float scaling_array[num_column];
+    for (int k = 0; k < num_column; k++){
+        locked_actuator[k] = 0;
+        scaling_array[k] = 1;
+    }
+    float min_scaling_array = 1;
+    int sum_locked_actuator = 0;
+    float sensibility_lock_actuator = 0.01;
+    float sensibility_pseudo_control = 0.01;
+
+    float max_du[num_column];
+    float min_du[num_column];
+    float max_du_scaled_iter[num_column];
+    float min_du_scaled_iter[num_column];
+
+
+    //Compute the gains for the B matrix with minimum and maximum actuator position
+    float gain_motor = (max_u[0] - min_u[0])/2;
+    float gain_el = (max_u[4] - min_u[4])/2;
+    float gain_az = (max_u[8] - min_u[8])/2;
+    float gain_aoa = (max_u[12] - min_u[12])/2;
+    float gain_phi = max_u[13];
+
+
+    //Scale the effectiveness matrix with the actuator gains
+    float B_matrix_scaled[num_row][num_column];
+    for (int j = 0; j < num_row; j++) {
+        for (int i = 0; i < 4; i++) {
+            B_matrix_scaled[j][i] = B_matrix_local[j][i] * gain_motor;
+            B_matrix_scaled[j][i + 4] = B_matrix_local[j][i + 4] * gain_el;
+            B_matrix_scaled[j][i + 8] = B_matrix_local[j][i + 8] * gain_az;
+        }
+        B_matrix_scaled[j][12] = B_matrix_local[j][12] * gain_aoa;
+        B_matrix_scaled[j][13] = B_matrix_local[j][13] * gain_phi;
+    }
+
+    //Save a copy of the scaled effectiveness matrix, so then later we can modify it for the RSPI
+    float B_matrix_scaled_iter[num_row][num_column];
+    memcpy(&B_matrix_scaled_iter[0], &B_matrix_scaled[0], num_row * num_column * sizeof(float));
+
+    //Compute the maximum and minimum local increment:
+    for (int i = 0; i < num_column; i++) {
+        max_du[i] = max_u[i] - actual_u[i];
+        min_du[i] = min_u[i] - actual_u[i];
+    }
+
+//    //Compute the maximum and minimum local increment with servo rates:
+//    for (int i = 0; i < num_column; i++) {
+//        if(i>3){
+//            max_du[i] = max_u[i] - actual_u[i];
+//            min_du[i] = min_u[i] - actual_u[i];
+//        }
+//        else{
+//            max_du[i] = max_u[i] - actual_u[i];
+//            min_du[i] = min_u[i] - actual_u[i];
+//        }
+//
+//    }
+
+    //Now scale the max and min values with the gains:
+    float max_du_scaled[num_column];
+    float min_du_scaled[num_column];
+    for (int i = 0; i < 4; i++) {
+        max_du_scaled[i] = max_du[0] / gain_motor;
+        max_du_scaled[i + 4] = max_du[4] / gain_el;
+        max_du_scaled[i + 8] = max_du[8] / gain_az;
+        min_du_scaled[i] = min_du[0] / gain_motor;
+        min_du_scaled[i + 4] = min_du[4] / gain_el;
+        min_du_scaled[i + 8] = min_du[8] / gain_az;
+    }
+    max_du_scaled[12] = max_du[12] / gain_aoa;
+    max_du_scaled[13] = max_du[13] / gain_phi;
+    min_du_scaled[12] = min_du[12] / gain_aoa;
+    min_du_scaled[13] = -max_du[13] / gain_phi;
+
+    //Compute the pseudoinverse for the scaled B matrix
+    float B_matrix_inv[num_column][num_row];
+    compute_pseudoinverse_fcn(num_row, num_column, B_matrix_scaled[0], B_matrix_inv[0]);
+
+
+    //Compute the initial actuation increment scaled command by multiplying desired acceleration with the pseudo-inverse matrix
+    float indi_du_scaled_init[num_column];
+    for (int j = 0; j < num_column; j++) {
+        //Cleanup previous value
+        indi_du_scaled_init[j] = 0.;
+        for (int k = 0; k < num_row; k++) {
+            indi_du_scaled_init[j] += pseudo_control[k] * B_matrix_inv[j][k];
+        }
+    }
+
+    //Build the scaling array:
+    for (int i = 0; i < num_column; i++) {
+        if(indi_du_scaled_init[i] > 0){
+            scaling_array[i] = fmin(1,max_du_scaled[i] / indi_du_scaled_init[i]);
+        }
+        else if(indi_du_scaled_init[i] < 0){
+            scaling_array[i] = fmin(1,min_du_scaled[i] / indi_du_scaled_init[i]);
+        }
+        if(scaling_array[i] < 0){
+            scaling_array[i] = 0;
+        }
+        //Find the minimum of the scaling_array to get the scaling parameter for the whole control input array:
+        if (scaling_array[i] < min_scaling_array) {
+            min_scaling_array = scaling_array[i];
+        }
+    }
+
+    // Check for saturation and compute the scaling array accordingly
+    for (int i = 0; i < num_column; i++) {
+        if ( fabs(scaling_array[i] - min_scaling_array) < sensibility_lock_actuator && min_scaling_array < 1) {
+            locked_actuator[i] = 1;
+            sum_locked_actuator ++;
+            for (int j = 0; j < num_row; j++) {
+                B_matrix_scaled_iter[j][i] = 0;
+            }
+        }
+    }
+
+    //If we do have saturation, scale the actuator position to the allowed one and recalculate the achieved pseudo-control:
+    float indi_du_scaled_iter[num_column];
+    float indi_du_scaled[num_column];
+    float achieved_dv[num_row];
+    float residual_dv[num_row];
+    float sum_residual_dv = 0;
+    if (min_scaling_array < 1) {
+        for (int i = 0; i < num_column; i++) {
+            indi_du_scaled_iter[i] = indi_du_scaled_init[i] * min_scaling_array;
+            indi_du_scaled[i] = indi_du_scaled_iter[i];
+        }
+
+        //Calculate the associated pseudo control achieved with the constrained control input:
+        for (int j = 0; j < num_row; j++) {
+            //Cleanup previous value
+            achieved_dv[j] = 0.;
+            for (int k = 0; k < num_column; k++) {
+                achieved_dv[j] += B_matrix_scaled[j][k] * indi_du_scaled[k];
+            }
+            //Compute the residual with the main pseudo-control commanded:
+            residual_dv[j] = pseudo_control[j] - achieved_dv[j];
+            sum_residual_dv += fabs(residual_dv[j]);
+        }
+
+    }
+        //If no saturation occurs just return the control inputs as they are.
+    else {
+        for (int i = 0; i < num_column; i++) {
+            indi_du_scaled[i] = indi_du_scaled_init[i];
+        }
+    }
+
+    //Initialize the variable for the iterative part of the RSPI
+    int iter_count = 1;
+
+    //If we are saturated, and we didn't reach the pseudo-control target, begin the iterative process:
+    while (min_scaling_array < 1 && iter_count < max_iter &&
+           sum_residual_dv > sensibility_pseudo_control) {
+
+        //Increase the counter:
+        iter_count++;
+
+        //Compute the pseudoinverse with the modified B matrix
+        compute_pseudoinverse_fcn(num_row, num_column, B_matrix_scaled_iter[0], B_matrix_inv[0]);
+
+        //Compute the new control input associated with the residual of the pseudo-control of the previous iteration with the modified B matrix inverted
+        for (int j = 0; j < num_column; j++) {
+            //Cleanup previous value
+            indi_du_scaled_init[j] = 0.;
+            for (int k = 0; k < num_row; k++) {
+                indi_du_scaled_init[j] += residual_dv[k] * B_matrix_inv[j][k];
+            }
+        }
+
+        //Reduce the new maximum control input position of the previously allocated value.
+        //Notice that we pass from a global to an incremental problem.
+        for (int i = 0; i < num_column; i++) {
+            max_du_scaled_iter[i] = max_du_scaled[i] - indi_du_scaled[i];
+            min_du_scaled_iter[i] = min_du_scaled[i] - indi_du_scaled[i];
+            scaling_array[i] = 1;
+        }
+        min_scaling_array = 1;
+
+        //Build again the scaling array, this time with the new maximum actuator values:
+        for (int i = 0; i < num_column; i++) {
+            if (indi_du_scaled_init[i] > 0 && locked_actuator[i] == 0) {
+                scaling_array[i] = fmin(1, max_du_scaled_iter[i] / indi_du_scaled_init[i]);
+            } else if (indi_du_scaled_init[i] < 0 && locked_actuator[i] == 0) {
+                scaling_array[i] = fmin(1, min_du_scaled_iter[i] / indi_du_scaled_init[i]);
+            }
+            if (scaling_array[i] < 0) {
+                scaling_array[i] = 0;
+            }
+            //Find the minimum of the scaling_array to get the scaling parameter for the whole control input array:
+            if (scaling_array[i] < min_scaling_array) {
+                min_scaling_array = scaling_array[i];
+            }
+        }
+
+        //Understand which actuators are locked(saturated) and register them into the locked_actuator array, also update the new B matrix:
+        for (int i = 0; i < num_column; i++) {
+            if (fabs(scaling_array[i] - min_scaling_array) < sensibility_locked_actuator && min_scaling_array < 1) {
+                locked_actuator[i] = 1;
+                sum_locked_actuator ++;
+                for (int j = 0; j < num_row; j++) {
+                    B_matrix_scaled_iter[j][i] = 0;
+                }
+            }
+        }
+
+        //Scale the actuator position to the allowed one and re-calculate the achieved pseudo-control:
+        for (int i = 0; i < num_column; i++) {
+            indi_du_scaled_iter[i] = indi_du_scaled_init[i] * min_scaling_array;
+            indi_du_scaled[i] += indi_du_scaled_iter[i];
+        }
+
+        //Calculate the associated pseudo control achieved with the constrained control input:
+        sum_residual_dv = 0.; //Cleanup previous value
+        for (int j = 0; j < num_row; j++) {
+            achieved_dv[j] = 0.; //Cleanup previous value
+            for (int k = 0; k < num_column; k++) {
+                achieved_dv[j] += B_matrix_scaled[j][k] * indi_du_scaled[k];
+            }
+            //Compute the residual with the main pseudo-control commanded:
+            residual_dv[j] = pseudo_control[j] - achieved_dv[j];
+            sum_residual_dv += fabs(residual_dv[j]);
+        }
+
+    }
+
+    //Multiply the scaled actuator position with the gains and get the real actuator commands, also subtract the prioritized position:
+    for (int i = 0; i < 4; i++) {
+        out_du[i] = indi_du_scaled[i] * gain_motor;
+        out_du[i+4] = indi_du_scaled[i+4] * gain_el;
+        out_du[i+8] = indi_du_scaled[i+8] * gain_az;
+    }
+    out_du[12] = indi_du_scaled[12] * gain_aoa;
+    out_du[13] = indi_du_scaled[13] * gain_phi;
+
+    //Now subtract the prioritized actuator position to the computed actuator value and also compute the increment.
+    //ALSO FILTER NAN ISSUES
+    for (int i = 0; i < num_column; i++) {
+        if(isnan(out_du[i])){
+            out_du[i] = 0;
+        }
+        out_u[i] = out_du[i] + actual_u[i];
+    }
+
+    //Print the output of the RSPI
+    if(verbose){
+        printf("Computed control increment with RSPI incremental= \n");
+        for (int j = 0; j < INDI_NUM_ACT; j++){
+            printf("%f, ", out_du[j]);
+            if(j == 3 || j == 7 || j == 11){
+                printf("\n");
+            }
+        }
+        printf("\n\n");
+        printf("Computed actuator position with RSPI incremental= \n");
+        for (int j = 0; j < INDI_NUM_ACT; j++){
+            printf("%f, ", out_u[j]);
+            if(j == 3 || j == 7 || j == 11){
+                printf("\n");
+            }
+        }
+        printf("\n\n");
+    }
+
+    return iter_count;
 }
 
 

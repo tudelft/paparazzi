@@ -1297,10 +1297,23 @@ int RSPI_optimization_incremental(float * B_matrix_in, int num_row, int num_colu
     memcpy(&B_matrix_scaled_iter[0], &B_matrix_scaled[0], num_row * num_column * sizeof(float));
 
     //Compute the maximum and minimum local increment:
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < num_column; i++) {
         max_du[i] = max_u[i] - actual_u[i];
         min_du[i] = min_u[i] - actual_u[i];
     }
+
+//    //Compute the maximum and minimum local increment with servo rates:
+//    for (int i = 0; i < num_column; i++) {
+//        if(i>3){
+//            max_du[i] = max_u[i] - actual_u[i];
+//            min_du[i] = min_u[i] - actual_u[i];
+//        }
+//        else{
+//            max_du[i] = max_u[i] - actual_u[i];
+//            min_du[i] = min_u[i] - actual_u[i];
+//        }
+//
+//    }
 
     //Now scale the max and min values with the gains:
     float max_du_scaled[num_column];
@@ -2366,7 +2379,7 @@ void overactuated_mixing_run(pprz_t in_cmd[])
         INDI_acceleration_inputs[1] = acc_setpoint[1] - acc_vect_filt[1];
         INDI_acceleration_inputs[2] = acc_setpoint[2] - acc_vect_filt[2];
 
-        //Local testing the CA algorithms:
+//        //Local testing the CA algorithms:
 //        euler_vect[0] = 0; euler_vect[1] = 0; euler_vect[2] = 0;
 //        actuator_state_filt[0] = 300; actuator_state_filt[1] = 300; actuator_state_filt[2] = 300; actuator_state_filt[3] = 300;
 //        actuator_state_filt[4] = 0; actuator_state_filt[5] = 0; actuator_state_filt[6] = 0; actuator_state_filt[7] = 0;
