@@ -68,6 +68,8 @@
         </module>
 
         <module NAME="mag_ist8310">
+            <define name="IST8310_CHAN_X_SIGN" value="-"/>
+            <define name="IST8310_CHAN_Z_SIGN" value="-"/>
             <define VALUE="TRUE" NAME="MODULE_IST8310_UPDATE_AHRS"/>
             <configure VALUE="I2C3" NAME="MAG_IST8310_I2C_DEV"/>
         </module>
@@ -161,6 +163,7 @@
         <define VALUE="20" NAME="NO_GPS_LOST_WITH_DATALINK_TIME"/>
         <define VALUE="TRUE" NAME="NO_GPS_LOST_WITH_RC_VALID"/>
         <define VALUE="TRUE" NAME="NO_RC_THRUST_LIMIT"/>
+        <define name="GUIDANCE_INDI" value="TRUE"/>
     </section>
 
     <section PREFIX="IMU_" NAME="IMU">
@@ -176,12 +179,15 @@
         <define VALUE="4.700654855386415" NAME="ACCEL_X_SENS" INTEGER="16"/>
         <define VALUE="4.898790938271689" NAME="ACCEL_Y_SENS" INTEGER="16"/>
         <define VALUE="4.84846920056402" NAME="ACCEL_Z_SENS" INTEGER="16"/>
-        <define name="MAG_X_NEUTRAL" value="-10"/>
-	<define name="MAG_Y_NEUTRAL" value="-2"/>
-	<define name="MAG_Z_NEUTRAL" value="15"/>
-	<define name="MAG_X_SENS" value="13.381846583778266" integer="16"/>
-	<define name="MAG_Y_SENS" value="11.574542838155065" integer="16"/>
-	<define name="MAG_Z_SENS" value="10.328369665473552" integer="16"/>
+        <define name="MAG_X_NEUTRAL" value="12"/>
+<define name="MAG_Y_NEUTRAL" value="1"/>
+<define name="MAG_Z_NEUTRAL" value="-23"/>
+<define name="MAG_X_SENS" value="13.33589802677865" integer="16"/>
+<define name="MAG_Y_SENS" value="11.761077152899478" integer="16"/>
+<define name="MAG_Z_SENS" value="10.648520805398183" integer="16"/>
+
+
+
         <define VALUE="0." UNIT="deg" NAME="BODY_TO_IMU_PHI"/>
         <define VALUE="0." UNIT="deg" NAME="BODY_TO_IMU_THETA"/>
         <define VALUE="0." UNIT="deg" NAME="BODY_TO_IMU_PSI"/>
@@ -198,11 +204,11 @@
         <define name="H_Z" value="0.9211303"/>
     </section>
 
-    <section name="INS" prefix="INS_">
+    <!--<section name="INS" prefix="INS_">
         <define name="USE_GPS_ALT" value="1"/>
         <define name="USE_GPS_ALT_SPEED" value="1"/>
         <define name="VFF_R_GPS" value="0.01"/>
-    </section>    
+    </section>-->    
 
       <section name="ATTITUDE_REFERENCE" prefix="STABILIZATION_ATTITUDE_">
         <!-- setpoints -->
@@ -317,11 +323,12 @@
         <define VALUE="100" NAME="DGAIN"/>
         <define VALUE="0" NAME="AGAIN"/>
         <define VALUE="20" NAME="IGAIN"/>
+        <define VALUE="TRUE" NAME="USE_REF"/>
     </section>
 
     <section NAME="AUTOPILOT">
         <define VALUE="AP_MODE_ATTITUDE_DIRECT" NAME="MODE_MANUAL"/>
-        <define VALUE="AP_MODE_ATTITUDE_DIRECT" NAME="MODE_AUTO1"/>
+        <define VALUE="AP_MODE_HOVER_Z_HOLD" NAME="MODE_AUTO1"/>
         <define VALUE="AP_MODE_NAV" NAME="MODE_AUTO2"/>
         <define VALUE="AP_MODE_ATTITUDE_DIRECT" NAME="MODE_STARTUP"/>
     </section>
