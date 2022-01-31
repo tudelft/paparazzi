@@ -10,6 +10,8 @@ import xml.etree.ElementTree as ET
 # Functions for plotter
 import matplotlib.pyplot as plt
 
+from lxml import etree
+
 class LogParser(object):
     def __init__(self, t_start = None, t_end = None):
         '''
@@ -38,7 +40,13 @@ class LogParser(object):
         '''
         Function that imports message definitions from .log file
         '''
-        tree = ET.parse(self.log_path)
+        print(self.log_path)
+        parser = etree.XMLParser(recover=True)
+        xmlfile= open(self.log_path, 'r')
+        xmlstring = xmlfile.read()
+        xmlfile.close()
+        tree = etree.fromstring(xmlstring, parser=parser)
+        #tree = ET.parse(self.log_path)
         protocol = tree.find('protocol')
 
         for message in protocol.iter('message'):
