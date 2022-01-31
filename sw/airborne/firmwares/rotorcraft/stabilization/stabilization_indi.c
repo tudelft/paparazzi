@@ -179,10 +179,10 @@ float indi_thrust_bx_increment;
 bool indi_thrust_bx_increment_set = false;
 
 #ifndef THRUST_BX_EFF
-#define THRUST_BX_EFF 0.0016
+#define THRUST_BX_EFF 0.00085
 #endif
 #ifndef THRUST_BX_ACT_DYN
-#define THRUST_BX_ACT_DYN 0.06
+#define THRUST_BX_ACT_DYN 0.047
 #endif
 
 float thrust_bx_eff = THRUST_BX_EFF;
@@ -499,7 +499,6 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   float v_thrust_bx = 0.0;
   if (indi_thrust_bx_increment_set && in_flight) {
     v_thrust_bx = indi_thrust_bx_increment;
-
     // Calculate command
     float du_thrust_bx = 1./thrust_bx_eff * v_thrust_bx;
     // Increment thrust_bx
