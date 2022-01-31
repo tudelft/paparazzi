@@ -366,7 +366,13 @@ void guidance_indi_run(float *heading_sp) {
       if((speed_increment + airspeed) > guidance_indi_max_airspeed) {
         speed_sp_b_x = guidance_indi_max_airspeed + groundspeed_x - airspeed;
       }
+    } else {
+      // Groundspeed vector in body frame
+      float groundspeed_x = cosf(psi) * stateGetSpeedNed_f()->x + sinf(psi) * stateGetSpeedNed_f()->y;
+      float windspeed_x = 0;//cosf(psi) * windspeed.x + sinf(psi) * windspeed.y;
+      speed_sp_b_x = Min(guidance_indi_max_airspeed + groundspeed_x - airspeed - windspeed_x, speed_sp_b_x);
     }
+
     speed_sp.x = cosf(psi) * speed_sp_b_x - sinf(psi) * speed_sp_b_y;
     speed_sp.y = sinf(psi) * speed_sp_b_x + cosf(psi) * speed_sp_b_y;
 
@@ -482,7 +488,9 @@ void guidance_indi_run(float *heading_sp) {
 // For a hybrid it is important to reduce the sideslip, which is done by changing the heading.
 // For experiments, it is possible to fix the heading to a different value.
 #ifndef KNIFE_EDGE_TEST
-  if(take_heading_control) {
+  if (guidance_h.mode == GUIDANCE_H_MODE_HOVER) {
+    // Dont change heading setpoint
+  } else if(take_heading_control) {
     *heading_sp = ANGLE_FLOAT_OF_BFP(nav_heading) + current_chirp_values[2];
     FLOAT_ANGLE_NORMALIZE(*heading_sp);
   } else {
