@@ -41,7 +41,7 @@
     <module name="logger" type="sd_chibios"/>
     <module name="flight_recorder"/>
     <define name="SDLOG_AUTO_FLUSH_PERIOD" value="1" unit="s"/>
-    <!--<module name="flight_recorder"/>-->
+
 
     <!--Use an airspeed sensor and get the measured airspeed in the messages-->
 
