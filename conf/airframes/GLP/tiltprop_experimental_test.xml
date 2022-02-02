@@ -24,7 +24,7 @@
       <module name="udp"/>
       <module name="radio_control" type="datalink"/>
       <module name="logger_file">
-        <define name="FILE_LOGGER_PATH" value="/home/gervaselovellprescod/Documents/Logs"/>
+        <define name="FILE_LOGGER_PATH" value="/home/gervaselovellprescod/Documents/Logs/SIM_logs"/>
       </module>
 
       <!--Switch advanced INDI scheduling functions on or off-->
@@ -37,10 +37,10 @@
     <!--<module name="gps" type="ubx_ucenter"/>-->
     
     <module name="tlsf"/>
-    <module name="pprzlog">
-      <define name="SDLOG_START_DELAY" value="10"/>
-    </module>
+    <module name="pprzlog"/>
     <module name="logger" type="sd_chibios"/>
+    <module name="flight_recorder"/>
+    <define name="SDLOG_AUTO_FLUSH_PERIOD" value="1" unit="s"/>
     <!--<module name="flight_recorder"/>-->
 
     <!--Use an airspeed sensor and get the measured airspeed in the messages-->
@@ -267,7 +267,7 @@
     <!--Maxium yaw rate, to avoid instability-->
     <define name="MAX_R" value="100.0" unit="deg/s"/>
 
-    <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
+    <define name="ESTIMATION_FILT_CUTOFF" value="1.0"/>
     <define name="FILT_CUTOFF" value="1.0"/> 			<!-- Lowering this lowers the cutoff frequency, could prevent the jittering -->
 
     <!-- first order actuator dynamics -->
