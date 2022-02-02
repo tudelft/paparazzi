@@ -351,14 +351,35 @@ static void send_wind_info_ret(struct transport_tx *trans, struct link_device *d
   pprz_msg_send_WIND_INFO_RET(trans, dev, AC_ID, &flags, &wind(1), &wind(0), &f_zero, &tas);
 }
 
+#include "filters/low_pass_filter.h"
+extern Butterworth2LowPass filt_accel_ned[3];
 static void send_ahrs_bias(struct transport_tx *trans, struct link_device *dev)
 {
-  Vector3f accel_bias = ekf.getAccelBias();
+  /*Vector3f accel_bias = ekf.getAccelBias();
   Vector3f gyro_bias = ekf.getGyroBias();
   Vector3f mag_bias = ekf.getMagBias();
 
   pprz_msg_send_AHRS_BIAS(trans, dev, AC_ID, &accel_bias(0), &accel_bias(1), &accel_bias(2),
-                          &gyro_bias(0), &gyro_bias(1), &gyro_bias(2), &mag_bias(0), &mag_bias(1), &mag_bias(2));
+                          &gyro_bias(0), &gyro_bias(1), &gyro_bias(2), &mag_bias(0), &mag_bias(1), &mag_bias(2));*/
+
+  struct NedCoor_f *nedAccel = stateGetAccelNed_f();
+  struct Int32Vect3 *bodyAccel_i = stateGetAccelBody_i();
+
+  struct FloatVect3 bodyAccel, ltpAccel;
+  ACCELS_FLOAT_OF_BFP(bodyAccel, *bodyAccel_i);
+  float_rmat_transp_vmult(&ltpAccel, stateGetNedToBodyRMat_f(), &bodyAccel);
+  ltpAccel.z = ltpAccel.z + 9.81;
+
+  pprz_msg_send_AHRS_BIAS(trans, dev, AC_ID, 
+    &nedAccel->x,
+    &nedAccel->y,
+    &nedAccel->z,
+    &filt_accel_ned[0].o[0],
+    &filt_accel_ned[1].o[0],
+    &filt_accel_ned[2].o[0],
+    &ltpAccel.x,
+    &ltpAccel.y,
+    &ltpAccel.z);
 }
 #endif
 
@@ -372,6 +393,7 @@ void ins_ekf2_init(void)
   ekf_params->fusion_mode = INS_EKF2_FUSION_MODE;
   ekf_params->vdist_sensor_type = INS_EKF2_VDIST_SENSOR_TYPE;
   ekf_params->gps_check_mask = INS_EKF2_GPS_CHECK_MASK;
+  //ekf_params->accel_noise = 3.5f;
 
   /* Set optical flow parameters */
   ekf_params->flow_qual_min = INS_EKF2_MIN_FLOW_QUALITY;
@@ -399,12 +421,19 @@ void ins_ekf2_init(void)
   ekf2.accel_valid = false;
   ekf2.got_imu_data = false;
   ekf2.quat_reset_counter = 0;
+  // ekf2.reset_origin = false;
+  // ekf2.reset_origin_alt = false;
 
   /* Initialize the range sensor limits */
   ekf.set_rangefinder_limits(INS_EKF2_SONAR_MIN_RANGE, INS_EKF2_SONAR_MAX_RANGE);
 
   /* Initialize the flow sensor limits */
   ekf.set_optical_flow_limits(INS_EKF2_MAX_FLOW_RATE, INS_EKF2_SONAR_MIN_RANGE, INS_EKF2_SONAR_MAX_RANGE);
+
+  /* Initialize the origin from flight plan */
+#if USE_INS_NAV_INIT
+  ekf.setEkfGlobalOrigin(NAV_LAT0*1e-7, NAV_LON0*1e-7, (NAV_ALT0 + NAV_MSL0)*1e-3);
+#endif
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);
@@ -435,13 +464,14 @@ void ins_ekf2_update(void)
   ekf.set_in_air_status(autopilot_in_flight());
 
   /* Update the EKF */
-  if (ekf2.got_imu_data && ekf.update()) {
+  if (ekf2.got_imu_data) {
+    ekf.update();
     filter_control_status_u control_status = ekf.control_status();
 
     // Only publish position after successful alignment
     if (control_status.flags.tilt_align) {
       /* Get the position */
-      Vector3f pos_f = ekf.getPosition();
+      const Vector3f pos_f{ekf.getPosition()};
       struct NedCoor_f pos;
       pos.x = pos_f(0);
       pos.y = pos_f(1);
@@ -451,7 +481,7 @@ void ins_ekf2_update(void)
       stateSetPositionNed_f(&pos);
 
       /* Get the velocity in NED frame */
-      Vector3f vel_f = ekf.getVelocity();
+      const Vector3f vel_f{ekf.getVelocity()};
       struct NedCoor_f speed;
       speed.x = vel_f(0);
       speed.y = vel_f(1);
@@ -461,7 +491,7 @@ void ins_ekf2_update(void)
       stateSetSpeedNed_f(&speed);
 
       /* Get the accelrations in NED frame */
-      Vector3f vel_deriv_f = ekf.getVelocityDerivative();
+      const Vector3f vel_deriv_f{ekf.getVelocityDerivative()};
       struct NedCoor_f accel;
       accel.x = vel_deriv_f(0);
       accel.y = vel_deriv_f(1);
@@ -482,7 +512,7 @@ void ins_ekf2_update(void)
       if (ekf_origin_valid && (origin_time > ekf2.ltp_stamp)) {
         lla_ref.lat = ekf_origin_lat * 1e7; // WGS-84 lat
         lla_ref.lon = ekf_origin_lon * 1e7; // WGS-84 lon
-        lla_ref.alt = ref_alt * 1000.0; // WGS-84 height
+        lla_ref.alt = ref_alt * 1e3; // WGS-84 height
         ltp_def_from_lla_i(&ekf2.ltp_def, &lla_ref);
         stateSetLocalOrigin_i(&ekf2.ltp_def);
 
@@ -520,6 +550,18 @@ void ins_ekf2_remove_gps(int32_t mode)
 void ins_ekf2_change_param_vdist(int32_t unk) {
   ekf_params->vdist_sensor_type = ekf2_params.vdist_sensor_type = unk;
 }
+
+// /** Overwrite weak reset origin function */
+// void ins_reset_local_origin(void)
+// {
+//   ekf2.reset_origin = true;
+// }
+
+// /** Overwrite weak reset origin altitude function */
+// void ins_reset_altitude_ref(void)
+// {
+//   ekf2.reset_origin_alt = true;
+// }
 
 /** Publish the attitude and get the new state
  *  Directly called after a succeslfull gyro+accel reading

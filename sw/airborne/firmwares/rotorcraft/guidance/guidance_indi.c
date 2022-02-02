@@ -96,6 +96,7 @@ static void guidance_indi_filter_thrust(void);
 #define GUIDANCE_INDI_FILTER_CUTOFF 3.0
 #endif
 #endif
+PRINT_CONFIG_VAR(GUIDANCE_INDI_FILTER_CUTOFF)
 
 float thrust_act = 0;
 Butterworth2LowPass filt_accel_ned[3];

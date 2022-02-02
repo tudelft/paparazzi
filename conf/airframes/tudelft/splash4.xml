@@ -96,7 +96,7 @@
     <!--module name="stabilization" type="int_quat"/-->
 
     <module name="guidance" type="indi">
-      <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.0"/>
+      <!--define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.0"/-->
       <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>
       <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
       <define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.0354"/>
@@ -262,8 +262,8 @@
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <define name="G1_ROLL"   value="{8.,  -8., -8., 8.}"/>
     <define name="G1_PITCH"  value="{8.,  8., -8., -8.}"/>
-    <define name="G1_YAW"    value="{ -1.0, 1.0,  -1.0, 1.0}"/>
-    <define name="G1_THRUST" value="{-0.83, -0.83, -0.83, -0.83}"/>
+    <define name="G1_YAW"    value="{-1.0, 1.0,  -1.0, 1.0}"/>
+    <define name="G1_THRUST" value="{-0.63, -0.63, -0.63, -0.63}"/>
     <define name="G2" value="{ -0.155, 0.155,  -0.155, 0.155}"/>
 
     <!-- reference acceleration for attitude control -->

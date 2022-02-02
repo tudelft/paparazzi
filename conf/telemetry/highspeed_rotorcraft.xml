@@ -196,7 +196,7 @@
       <message name="GPS"                      period="11.1"/>
       <message name="DL_VALUE"                 period="2.5"/>
       <message name="ROTORCRAFT_STATUS"        period="1.2"/>
-      <message name="ROTORCRAFT_FP"            period="0.02"/>
+      <message name="ROTORCRAFT_FP"            period="0.002"/>
       <message name="ROTORCRAFT_CMD"           period=".002"/>
       <message name="COMMANDS"                 period=".02"/>
       <message name="INS_REF"                  period="5.1"/>
@@ -219,10 +219,10 @@
       <message name="INS_EKF2"                 period="0.05"/>
       <message name="INS_EKF2_EXT"             period="0.1"/>
       <message name="WIND_INFO_RET"            period="0.2"/>
-      <message name="AHRS_BIAS"                period="0.5"/>
+      <message name="AHRS_BIAS"                period="0.002"/>
       <message name="AHRS_REF_QUAT"            period="0.01"/>
       <message name="GUIDANCE_H_REF_INT"       period="0.02"/>
-      <message name="GUIDANCE_INDI_HYBRID"     period="0.02"/>
+      <message name="GUIDANCE_INDI_HYBRID"     period="0.002"/>
       <message name="HYBRID_GUIDANCE"          period="0.02"/>
       <message name="ESC"                      period="0.02"/>
       <message name="STAB_ATTITUDE_INDI"       period="0.002"/>
