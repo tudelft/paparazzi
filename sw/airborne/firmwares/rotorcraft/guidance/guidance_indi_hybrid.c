@@ -369,8 +369,7 @@ void guidance_indi_run(float *heading_sp) {
     } else {
       // Groundspeed vector in body frame
       float groundspeed_x = cosf(psi) * stateGetSpeedNed_f()->x + sinf(psi) * stateGetSpeedNed_f()->y;
-      float windspeed_x = 0;//cosf(psi) * windspeed.x + sinf(psi) * windspeed.y;
-      speed_sp_b_x = Min(guidance_indi_max_airspeed + groundspeed_x - airspeed - windspeed_x, speed_sp_b_x);
+      speed_sp_b_x = Min(guidance_indi_max_airspeed + groundspeed_x - airspeed, speed_sp_b_x);
     }
 
     speed_sp.x = cosf(psi) * speed_sp_b_x - sinf(psi) * speed_sp_b_y;
