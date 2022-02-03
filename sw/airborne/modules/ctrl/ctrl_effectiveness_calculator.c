@@ -3,7 +3,7 @@
  */
 
 /** @file modules/ctrl/ctrl_effectiveness_calculator.c
- * Module that calculates ctrl effectiveness matrix for tiltprop tailsitter
+ * Module that calculates control effectiveness matrix for a tiltprop tailsitter
  */
 
 #include "modules/ctrl/ctrl_effectiveness_calculator.h"
