@@ -152,13 +152,13 @@
     
     	<!-- Motor coefficients. Thrust as a function of ESC command (on range [0, 9600])
     	 	 Thrust equation of the form: T = k1 x^2 + k2 x + k3 -->
-    	<define name="K1" value="0.00000004"/>
+    	<define name="K1" value="0.00000001"/>
     	<define name="K2" value="0.0004"/>
-    	<define name="K3" value="0.5712"/>
+    	<define name="K3" value="3.506"/>
     	
     	<!-- Location of the Motors w.r.t. the c.g. -->
     	<define name="Y_DIST" value="0.3"/>		<!--[m]-->
-    	<define name="X_DIST" value="0.1"/>		<!--[m]-->
+    	<define name="X_DIST" value="0.12"/>	<!--[m]-->
     	
     	<!-- Drone specific metrics -->
     	<define name="MASS" value="1.3"/>		<!--[kg]-->
@@ -257,9 +257,9 @@
     <define name="G2" value="{0, 0, 0, 0}"/>
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="57.0"/> <!-- 107 -->
-    <define name="REF_ERR_Q" value="50.0"/> <!-- 100 -->
-    <define name="REF_ERR_R" value="50.0"/> <!-- 100 -->
+    <define name="REF_ERR_P" value="107.0"/> <!-- 107 -->
+    <define name="REF_ERR_Q" value="200.0"/> <!-- 100 -->
+    <define name="REF_ERR_R" value="200.0"/> <!-- 100 -->
     <define name="REF_RATE_P" value="14.0"/>
     <define name="REF_RATE_Q" value="15.0"/>
     <define name="REF_RATE_R" value="15.0"/>
@@ -267,7 +267,7 @@
     <!--Maxium yaw rate, to avoid instability-->
     <define name="MAX_R" value="100.0" unit="deg/s"/>
 
-    <define name="ESTIMATION_FILT_CUTOFF" value="1.0"/>
+    <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
     <define name="FILT_CUTOFF" value="1.0"/> 			<!-- Lowering this lowers the cutoff frequency, could prevent the jittering -->
 
     <!-- first order actuator dynamics -->
@@ -278,6 +278,7 @@
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
     <define name="ADAPTIVE_MU" value="0.0001"/>
+    <define name="WLS_PRIORITIES" value="{1.0,1.0,1.0,1.0}"/>
   </section>
 
   <!-- Gains for vertical navigation -->
