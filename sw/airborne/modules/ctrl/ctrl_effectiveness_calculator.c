@@ -25,11 +25,13 @@ void ctrl_eff(void)
      */
     float theta_l0 = ab_to_cd(actuator_state_filt_vect[0]);
     float theta_r0 = ab_to_cd(actuator_state_filt_vect[1]);
-    float omega_r0 = actuator_state_filt_vect[2];
-    float omega_l0 = actuator_state_filt_vect[3];
+    float omega_r0 = actuator_state_filt_vect[2] < 3000 ? 3000 : actuator_state_filt_vect[2];
+    float omega_l0 = actuator_state_filt_vect[3] < 3000 ? 3000 : actuator_state_filt_vect[3];;
 
-    float ctrl_deriv_00 = -Y_DIST * sinf(theta_l0) * (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * (1 / I_XX) * (1/(float)MAX_PPRZ);
-    float ctrl_deriv_01 =  Y_DIST * sinf(theta_r0) * (K1 * omega_r0 * omega_r0 + K2 * omega_r0 + K3) * (1 / I_XX) * (1/(float)MAX_PPRZ);
+//    float ctrl_deriv_00 = -Y_DIST * sinf(theta_l0) * (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * (1 / I_XX) * (1/(float)MAX_PPRZ);
+//    float ctrl_deriv_01 =  Y_DIST * sinf(theta_r0) * (K1 * omega_r0 * omega_r0 + K2 * omega_r0 + K3) * (1 / I_XX) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_00 = 0;
+	float ctrl_deriv_01 = 0;
     float ctrl_deriv_02 = -Y_DIST * cosf(theta_r0) * (2 * K1 * omega_r0 + K2) * (1 / I_XX);
     float ctrl_deriv_03 =  Y_DIST * cosf(theta_l0) * (2 * K1 * omega_l0 + K2) * (1 / I_XX);
     float ctrl_deriv_10 =  X_DIST * cosf(theta_l0) * (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * (1 / I_YY) * (1/(float)MAX_PPRZ);
