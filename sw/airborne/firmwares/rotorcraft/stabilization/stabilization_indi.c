@@ -218,13 +218,14 @@ static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *d
                               &(quat->qz));
 }
 
-//static void send_indi_g1g2(struct transport_tx *trans, struct link_device *dev)
-//{
-//  pprz_msg_send_INDI_G1G2(trans, dev, AC_ID, INDI_NUM_ACT, g1g2[0],
-//                       	  INDI_NUM_ACT, g1g2[1],
-//						  INDI_NUM_ACT, g1g2[2],
-//						  INDI_NUM_ACT, g1g2[3]);
-//}
+static void send_ctrl_effectiveness_calc(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_CTRL_EFFECTIVENESS_CALC(trans, dev, AC_ID, INDI_NUM_ACT, indi_u,
+		  	  	  	  	  INDI_NUM_ACT, g1g2[0],
+                       	  INDI_NUM_ACT, g1g2[1],
+						  INDI_NUM_ACT, g1g2[2],
+						  INDI_NUM_ACT, g1g2[3]);
+}
 #endif
 
 /**
@@ -269,7 +270,7 @@ void stabilization_indi_init(void)
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_G, send_indi_g);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
-//  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_G1G2, send_indi_g1g2);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_CTRL_EFFECTIVENESS_CALC, send_ctrl_effectiveness_calc);
 #endif
 }
 
@@ -493,7 +494,9 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #endif
 
   // Add the increments to the actuators
-  float_vect_sum(indi_u, actuator_state_filt_vect, indi_du, INDI_NUM_ACT);
+//  float_vect_sum(indi_u, actuator_state_filt_vect, indi_du, INDI_NUM_ACT);
+  float_vect_copy(indi_u, indi_du, INDI_NUM_ACT);
+
 
   // Bound the inputs to the actuators
   for (i = 0; i < INDI_NUM_ACT; i++) {
