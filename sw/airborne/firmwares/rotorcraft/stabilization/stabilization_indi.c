@@ -130,6 +130,14 @@ static float Wv[INDI_OUTPUTS] = STABILIZATION_INDI_WLS_PRIORITIES;
 static float Wv[INDI_OUTPUTS] = {1000, 1000, 1, 100};
 #endif
 
+#ifdef STABILIZATION_INDI_WLS_WU_MOTOR
+float indi_Wu_motor = STABILIZATION_INDI_WLS_WU_MOTOR;
+#else
+float indi_Wu_motor = 1;
+#endif
+
+static float Wu[INDI_NUM_ACT];
+
 // variables needed for control
 float actuator_state_filt_vect[INDI_NUM_ACT];
 struct FloatRates angular_accel_ref = {0., 0., 0.};
@@ -229,6 +237,8 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
                                         &body_rates->p,
                                         &body_rates->q,
                                         &body_rates->r,
+                                        &body_accel_f_telem.x,
+                                        &body_accel_f_telem.y,
                                         &body_accel_f_telem.z,
                                         &angular_accel_ref.p,
                                         &angular_accel_ref.q,
@@ -564,9 +574,17 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #endif
   }
 
+  for (i = 0; i < INDI_NUM_ACT; i++) {
+    if (!act_is_servo[i]) {
+      Wu[i] = indi_Wu_motor;
+    } else {
+      Wu[i] = 1;
+    }
+  }
+
   // WLS Control Allocator
   num_iter =
-    wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, 0, du_pref, 10000, 10);
+    wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, Wu, du_pref, 10000, 10);
 #endif
 
   // Add the increments to the actuators
