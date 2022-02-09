@@ -73,6 +73,9 @@ float rot_wing_aero_eff_const_p;
 float rot_wing_aero_eff_const_q; 
 float rot_wing_aero_eff_const_r; 
 
+float rot_wing_min_lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF;
+float rot_wing_max_lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF;
+
 // Define control effectiveness variables in roll, pitch and yaw for aerodynamic surfaces {AIL_LEFT, AIL_RIGHT, VTAIL_LEFT, VTAIL_RIGHT}
 float rot_wing_g1_p_aerodynamic_surf[4] = {0.0, 0.0, 0.0, 0.0};
 float rot_wing_g1_q_aerodynamic_surf[4] = {0.0, 0.0, 0.0, 0.0};
@@ -170,6 +173,10 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
     rot_wing_g1_q_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[i];
     rot_wing_g1_r_aerodynamic_surf[i] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_r[i];
   }
+
+  // Update pitch lift effectiveness
+  float lift_pitch_eff_diff = rot_wing_max_lift_pitch_eff - rot_wing_min_lift_pitch_eff;
+  lift_pitch_eff = rot_wing_min_lift_pitch_eff + s_rot_wing_angle * lift_pitch_eff_diff;
 
   // Update init matrix if adaptive switched on to adapt to rotating wing effectiveness
   #ifdef STABILIZATION_INDI_USE_ADAPTIVE

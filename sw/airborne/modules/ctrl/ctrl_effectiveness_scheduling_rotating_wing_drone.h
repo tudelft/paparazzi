@@ -32,6 +32,9 @@ extern float rot_wing_aero_eff_const_p;
 extern float rot_wing_aero_eff_const_q;
 extern float rot_wing_aero_eff_const_r;
 
+extern float rot_wing_min_lift_pitch_eff;
+extern float rot_wing_max_lift_pitch_eff;
+
 // Define module functions
 extern void ctrl_eff_scheduling_rotating_wing_drone_init(void);
 extern void ctrl_eff_scheduling_rotating_wing_drone_periodic(void);
