@@ -494,8 +494,8 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #endif
 
   // Add the increments to the actuators
-//  float_vect_sum(indi_u, actuator_state_filt_vect, indi_du, INDI_NUM_ACT);
-  float_vect_copy(indi_u, indi_du, INDI_NUM_ACT);
+  float_vect_sum(indi_u, actuator_state_filt_vect, indi_du, INDI_NUM_ACT);
+//  float_vect_copy(indi_u, indi_du, INDI_NUM_ACT);
 
 
   // Bound the inputs to the actuators
