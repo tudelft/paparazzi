@@ -1800,7 +1800,7 @@
          <field name="B_6" type="float[]" unit="none"/>
      </message>
 
-     <message name="INDI_CMD" id="196">
+     <message name="INDI_CMD" id="210">
          <field name="INDI_cmd_acc_x" type="float" />
          <field name="INDI_cmd_acc_y" type="float" />
          <field name="INDI_cmd_acc_z" type="float" />
@@ -1827,7 +1827,6 @@
          <field name="INDI_increment_psi_virtual" type="float" />
 
          <field name="Number_of_iteration" type="int32" />
-
      </message>
 
      <message name="ACTUATORS_OUTPUT" id="209">
@@ -1849,56 +1848,7 @@
 
      </message>
 
-     <message name="GAINS_OVERACTUATED" id="210">
-         <!--PID GAINS-->
-         <field name="p_gain_phi_PID" type="float">Proportional gain roll error PID</field>
-         <field name="i_gain_phi_PID" type="float">Integrative gain roll error PID</field>
-         <field name="d_gain_phi_PID" type="float">Derivative gain roll error PID</field>
-
-         <field name="p_gain_theta_PID" type="float">Proportional gain pitch error PID</field>
-         <field name="i_gain_theta_PID" type="float">Integrative gain pitch error PID</field>
-         <field name="d_gain_theta_PID" type="float">Derivative gain pitch error PID</field>
-
-         <field name="p_gain_psi_tilt_PID" type="float">Proportional gain yaw error on tilt PID</field>
-         <field name="i_gain_psi_tilt_PID" type="float">Integrative gain yaw error on tilt PID</field>
-         <field name="d_gain_psi_tilt_PID" type="float">Derivative gain yaw error on tilt PID</field>
-
-         <field name="p_gain_psi_motor_PID" type="float">Proportional gain yaw error on motor PID</field>
-         <field name="i_gain_psi_motor_PID" type="float">Integrative gain yaw error on motor PID</field>
-         <field name="d_gain_psi_motor_PID" type="float">Derivative gain yaw error on motor PID</field>
-
-         <field name="p_gain_pos_x_PID" type="float">Proportional gain pos x error PID</field>
-         <field name="i_gain_pos_x_PID" type="float">Integrative gain pos x error PID</field>
-         <field name="d_gain_pos_x_PID" type="float">Derivative gain pos x error PID</field>
-
-         <field name="p_gain_pos_y_PID" type="float">Proportional gain pos y error PID</field>
-         <field name="i_gain_pos_y_PID" type="float">Integrative gain pos y error PID</field>
-         <field name="d_gain_pos_y_PID" type="float">Derivative gain pos y error PID</field>
-
-         <field name="p_gain_pos_z_PID" type="float">Proportional gain pos z error PID</field>
-         <field name="i_gain_pos_z_PID" type="float">Integrative gain pos z error PID</field>
-         <field name="d_gain_pos_z_PID" type="float">Derivative gain pos z error PID</field>
-
-         <!--INDI GAINS-->
-         <field name="p_gain_phi_INDI" type="float">Proportional gain roll error INDI</field>
-         <field name="d_gain_phi_INDI" type="float">Derivative gain roll error INDI</field>
-
-         <field name="p_gain_theta_INDI" type="float">Proportional gain pitch error INDI</field>
-         <field name="d_gain_theta_INDI" type="float">Derivative gain pitch error INDI</field>
-
-         <field name="p_gain_psi_INDI" type="float">Proportional gain yaw error INDI</field>
-         <field name="d_gain_psi_INDI" type="float">Derivative gain yaw error INDI</field>
-
-         <field name="p_gain_pos_x_INDI" type="float">Proportional gain pos x error INDI</field>
-         <field name="d_gain_pos_x_INDI" type="float">Derivative gain pos x error INDI</field>
-
-         <field name="p_gain_pos_y_INDI" type="float">Proportional gain pos y error INDI</field>
-         <field name="d_gain_pos_y_INDI" type="float">Derivative gain pos y error INDI</field>
-
-         <field name="p_gain_pos_z_INDI" type="float">Proportional gain pos z error INDI</field>
-         <field name="d_gain_pos_z_INDI" type="float">Derivative gain pos z error INDI</field>
-
-     </message>
+<!--     196 is free -->
 
      <message name="OVERACTUATED_VARIABLES" id="212">
 

@@ -40,8 +40,6 @@
  * Variables declaration
  */
 
-
-
 //Array which contains all the actuator values (sent to motor and servos)
 struct overactuated_mixing_t overactuated_mixing;
 
@@ -60,6 +58,9 @@ float control_input_INDI[INDI_NUM_ACT];
 float control_input_INDI_state[INDI_NUM_ACT];
 float actuator_state_filt[INDI_NUM_ACT];
 float actuator_state_filt_dot[N_ACT_REAL];
+float actuator_state_filt_ddot[N_ACT_REAL];
+float actuator_state_filt_dot_old[N_ACT_REAL];
+
 float euler_error[3];
 float euler_error_dot[3];
 float euler_error_integrated[3];
@@ -224,11 +225,13 @@ struct FloatEulersPosition max_value_error = {  OVERACTUATED_MIXING_MAX_PHI,
                                                 OVERACTUATED_MIXING_MAX_Y_ERR,
                                                 OVERACTUATED_MIXING_MAX_Z_ERR
 };
+
 struct ActuatorsStruct act_dyn_struct = {
         OVERACTUATED_MIXING_INDI_ACT_DYN_MOTOR,
         OVERACTUATED_MIXING_INDI_ACT_DYN_EL,
         OVERACTUATED_MIXING_INDI_ACT_DYN_AZ
 };
+
 // Variables needed for the actuators:
 float act_dyn[N_ACT_REAL];
 
@@ -376,6 +379,152 @@ void compute_B_matrix_extended_fcn_try(float * B_matrix, float I_xx, float I_yy,
 
 //    B_matrix_local[5][12] = 0.f;
 //    B_matrix_local[5][13] = 0.f;
+
+    memcpy(& B_matrix[0], & B_matrix_local[0], 14*6*sizeof(float) );
+}
+
+// This function computes the full B matrix extended 6x14 in earth reference frame
+void compute_B_matrix_extended_fcn_with_tilt_inertia(float * B_matrix, float I_xx, float I_yy, float I_zz, float I_xx_tilt, float I_yy_tilt, float m, float K_p_T, float K_p_M,
+                                       float Phi, float Theta, float Psi, float l_1, float l_2, float l_3, float l_4, float l_z,
+                                       float Cl_alpha, float Cm_alpha, float rho, float Cd_zero, float K_Cd, float S, float wing_chord,
+                                       float V, float Omega_1, float Omega_2, float Omega_3, float Omega_4,
+                                       float b_1, float b_2, float b_3, float b_4, float g_1, float g_2, float g_3, float g_4,
+                                       float b_1_ddot, float b_2_ddot, float b_3_ddot, float b_4_ddot,
+                                       float g_1_ddot, float g_2_ddot, float g_3_ddot, float g_4_ddot){
+
+    float B_matrix_local[6][14];
+    for(int i = 0; i < 14; i++){
+        for(int j = 0; j < 6; j++){
+            B_matrix_local[j][i] = 0;
+        }
+    }
+    //Motor disposition
+    float l_1_x = -l_4;
+    float l_2_x = -l_4;
+    float l_3_x = l_3;
+    float l_4_x = l_3;
+    float l_1_y = l_1;
+    float l_2_y = -l_1;
+    float l_3_y = -l_2;
+    float l_4_y = l_2;
+    float l_1_z = l_z;
+    float l_2_z = l_z;
+    float l_3_z = l_z;
+    float l_4_z = l_z;
+
+    //First row
+    B_matrix_local[0][0] = -(2*K_p_T*Omega_1*cos(Psi)*cos(Theta)*sin(b_1) + 2*K_p_T*Omega_1*cos(b_1)*cos(g_1)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) + 2*K_p_T*Omega_1*cos(b_1)*sin(g_1)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
+    B_matrix_local[0][1] = -(2*K_p_T*Omega_2*cos(Psi)*cos(Theta)*sin(b_2) + 2*K_p_T*Omega_2*cos(b_2)*cos(g_2)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) + 2*K_p_T*Omega_2*cos(b_2)*sin(g_2)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
+    B_matrix_local[0][2] = -(2*K_p_T*Omega_3*cos(Psi)*cos(Theta)*sin(b_3) + 2*K_p_T*Omega_3*cos(b_3)*cos(g_3)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) + 2*K_p_T*Omega_3*cos(b_3)*sin(g_3)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
+    B_matrix_local[0][3] = -(2*K_p_T*Omega_4*cos(Psi)*cos(Theta)*sin(b_4) + 2*K_p_T*Omega_4*cos(b_4)*cos(g_4)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) + 2*K_p_T*Omega_4*cos(b_4)*sin(g_4)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
+
+    B_matrix_local[0][4] = (K_p_T*Omega_1*Omega_1 *cos(g_1)*sin(b_1)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - K_p_T*Omega_1*Omega_1 *cos(Psi)*cos(Theta)*cos(b_1) + K_p_T*Omega_1*Omega_1 *sin(b_1)*sin(g_1)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
+    B_matrix_local[0][5] = (K_p_T*Omega_2*Omega_2*cos(g_2)*sin(b_2)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - K_p_T*Omega_2*Omega_2*cos(Psi)*cos(Theta)*cos(b_2) + K_p_T*Omega_2*Omega_2*sin(b_2)*sin(g_2)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
+    B_matrix_local[0][6] = (K_p_T*Omega_3*Omega_3*cos(g_3)*sin(b_3)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - K_p_T*Omega_3*Omega_3*cos(Psi)*cos(Theta)*cos(b_3) + K_p_T*Omega_3*Omega_3*sin(b_3)*sin(g_3)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
+    B_matrix_local[0][7] = (K_p_T*Omega_4*Omega_4*cos(g_4)*sin(b_4)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)) - K_p_T*Omega_4*Omega_4*cos(Psi)*cos(Theta)*cos(b_4) + K_p_T*Omega_4*Omega_4*sin(b_4)*sin(g_4)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)))/m;
+
+    B_matrix_local[0][8] = -(K_p_T*Omega_1*Omega_1 *cos(b_1)*cos(g_1)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)) - K_p_T*Omega_1*Omega_1 *cos(b_1)*sin(g_1)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)))/m;
+    B_matrix_local[0][9] = -(K_p_T*Omega_2*Omega_2*cos(b_2)*cos(g_2)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)) - K_p_T*Omega_2*Omega_2*cos(b_2)*sin(g_2)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)))/m;
+    B_matrix_local[0][10] = -(K_p_T*Omega_3*Omega_3*cos(b_3)*cos(g_3)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)) - K_p_T*Omega_3*Omega_3*cos(b_3)*sin(g_3)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)))/m;
+    B_matrix_local[0][11] = -(K_p_T*Omega_4*Omega_4*cos(b_4)*cos(g_4)*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta)) - K_p_T*Omega_4*Omega_4*cos(b_4)*sin(g_4)*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)))/m;
+
+//    B_matrix_local[0][12] = -(cos(Phi)*cos(Psi)*cos(Theta)*(K_p_T*cos(b_1)*cos(g_1)*Omega_1*Omega_1  + K_p_T*cos(b_2)*cos(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*cos(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*cos(g_4)*Omega_4*Omega_4) - cos(Psi)*sin(Theta)*(K_p_T*sin(b_1)*Omega_1*Omega_1  + K_p_T*sin(b_2)*Omega_2*Omega_2 + K_p_T*sin(b_3)*Omega_3*Omega_3 + K_p_T*sin(b_4)*Omega_4*Omega_4) - cos(Psi)*cos(Theta)*sin(Phi)*(K_p_T*cos(b_1)*sin(g_1)*Omega_1*Omega_1  + K_p_T*cos(b_2)*sin(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*sin(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*sin(g_4)*Omega_4*Omega_4) + (Cl_alpha*S*V*V*rho*(sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta)))/2 - (S*V*V*rho*cos(Psi)*sin(Theta)*(K_Cd*Cl_alpha*Cl_alpha*Theta*Theta + Cd_zero))/2 + Cl_alpha*Cl_alpha*K_Cd*S*Theta*V*V*rho*cos(Psi)*cos(Theta) + (Cl_alpha*S*Theta*V*V*rho*cos(Phi)*cos(Psi)*cos(Theta))/2)/m;
+//    B_matrix_local[0][13] = -((Cl_alpha*S*Theta*rho*(cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta))*V*V)/2 + (cos(Phi)*sin(Psi) - cos(Psi)*sin(Phi)*sin(Theta))*(K_p_T*cos(b_1)*cos(g_1)*Omega_1*Omega_1  + K_p_T*cos(b_2)*cos(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*cos(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*cos(g_4)*Omega_4*Omega_4) - (sin(Phi)*sin(Psi) + cos(Phi)*cos(Psi)*sin(Theta))*(K_p_T*cos(b_1)*sin(g_1)*Omega_1*Omega_1  + K_p_T*cos(b_2)*sin(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*sin(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*sin(g_4)*Omega_4*Omega_4))/m;
+
+    //Second row
+    B_matrix_local[1][0] = (2*K_p_T*Omega_1*cos(b_1)*cos(g_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) - 2*K_p_T*Omega_1*cos(Theta)*sin(Psi)*sin(b_1) + 2*K_p_T*Omega_1*cos(b_1)*sin(g_1)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][1] = (2*K_p_T*Omega_2*cos(b_2)*cos(g_2)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) - 2*K_p_T*Omega_2*cos(Theta)*sin(Psi)*sin(b_2) + 2*K_p_T*Omega_2*cos(b_2)*sin(g_2)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][2] = (2*K_p_T*Omega_3*cos(b_3)*cos(g_3)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) - 2*K_p_T*Omega_3*cos(Theta)*sin(Psi)*sin(b_3) + 2*K_p_T*Omega_3*cos(b_3)*sin(g_3)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][3] = (2*K_p_T*Omega_4*cos(b_4)*cos(g_4)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) - 2*K_p_T*Omega_4*cos(Theta)*sin(Psi)*sin(b_4) + 2*K_p_T*Omega_4*cos(b_4)*sin(g_4)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+
+    B_matrix_local[1][4] = -(K_p_T*Omega_1*Omega_1 *cos(Theta)*sin(Psi)*cos(b_1) + K_p_T*Omega_1*Omega_1 *cos(g_1)*sin(b_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_1*Omega_1 *sin(b_1)*sin(g_1)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][5] = -(K_p_T*Omega_2*Omega_2*cos(Theta)*sin(Psi)*cos(b_2) + K_p_T*Omega_2*Omega_2*cos(g_2)*sin(b_2)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_2*Omega_2*sin(b_2)*sin(g_2)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][6] = -(K_p_T*Omega_3*Omega_3*cos(Theta)*sin(Psi)*cos(b_3) + K_p_T*Omega_3*Omega_3*cos(g_3)*sin(b_3)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_3*Omega_3*sin(b_3)*sin(g_3)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][7] = -(K_p_T*Omega_4*Omega_4*cos(Theta)*sin(Psi)*cos(b_4) + K_p_T*Omega_4*Omega_4*cos(g_4)*sin(b_4)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_4*Omega_4*sin(b_4)*sin(g_4)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/m;
+
+    B_matrix_local[1][8] = (K_p_T*Omega_1*Omega_1 *cos(b_1)*cos(g_1)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)) - K_p_T*Omega_1*Omega_1 *cos(b_1)*sin(g_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][9] = (K_p_T*Omega_2*Omega_2*cos(b_2)*cos(g_2)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)) - K_p_T*Omega_2*Omega_2*cos(b_2)*sin(g_2)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][10] = (K_p_T*Omega_3*Omega_3*cos(b_3)*cos(g_3)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)) - K_p_T*Omega_3*Omega_3*cos(b_3)*sin(g_3)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
+    B_matrix_local[1][11] = (K_p_T*Omega_4*Omega_4*cos(b_4)*cos(g_4)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)) - K_p_T*Omega_4*Omega_4*cos(b_4)*sin(g_4)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
+
+//    B_matrix_local[1][12] = (sin(Psi)*sin(Theta)*(K_p_T*sin(b_1)*Omega_1*Omega_1  + K_p_T*sin(b_2)*Omega_2*Omega_2 + K_p_T*sin(b_3)*Omega_3*Omega_3 + K_p_T*sin(b_4)*Omega_4*Omega_4) - cos(Phi)*cos(Theta)*sin(Psi)*(K_p_T*cos(b_1)*cos(g_1)*Omega_1*Omega_1  + K_p_T*cos(b_2)*cos(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*cos(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*cos(g_4)*Omega_4*Omega_4) + cos(Theta)*sin(Phi)*sin(Psi)*(K_p_T*cos(b_1)*sin(g_1)*Omega_1*Omega_1  + K_p_T*cos(b_2)*sin(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*sin(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*sin(g_4)*Omega_4*Omega_4) + (Cl_alpha*S*V*V*rho*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/2 + (S*V*V*rho*sin(Psi)*sin(Theta)*(K_Cd*Cl_alpha*Cl_alpha*Theta*Theta + Cd_zero))/2 - Cl_alpha*Cl_alpha*K_Cd*S*Theta*V*V*rho*cos(Theta)*sin(Psi) - (Cl_alpha*S*Theta*V*V*rho*cos(Phi)*cos(Theta)*sin(Psi))/2)/m;
+//    B_matrix_local[1][13] = ((Cl_alpha*S*Theta*rho*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta))*V*V)/2 + (cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta))*(K_p_T*cos(b_1)*cos(g_1)*Omega_1*Omega_1  + K_p_T*cos(b_2)*cos(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*cos(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*cos(g_4)*Omega_4*Omega_4) - (cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta))*(K_p_T*cos(b_1)*sin(g_1)*Omega_1*Omega_1  + K_p_T*cos(b_2)*sin(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*sin(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*sin(g_4)*Omega_4*Omega_4))/m;
+
+    //Third row
+    B_matrix_local[2][0] = (2*K_p_T*Omega_1*sin(b_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + 2*K_p_T*Omega_1*cos(Theta)*sin(Phi)*cos(b_1)*sin(g_1) - 2*K_p_T*Omega_1*cos(Phi)*cos(Theta)*cos(b_1)*cos(g_1))/m;
+    B_matrix_local[2][1] = (2*K_p_T*Omega_2*sin(b_2)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + 2*K_p_T*Omega_2*cos(Theta)*sin(Phi)*cos(b_2)*sin(g_2) - 2*K_p_T*Omega_2*cos(Phi)*cos(Theta)*cos(b_2)*cos(g_2))/m;
+    B_matrix_local[2][2] = (2*K_p_T*Omega_3*sin(b_3)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + 2*K_p_T*Omega_3*cos(Theta)*sin(Phi)*cos(b_3)*sin(g_3) - 2*K_p_T*Omega_3*cos(Phi)*cos(Theta)*cos(b_3)*cos(g_3))/m;
+    B_matrix_local[2][3] = (2*K_p_T*Omega_4*sin(b_4)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + 2*K_p_T*Omega_4*cos(Theta)*sin(Phi)*cos(b_4)*sin(g_4) - 2*K_p_T*Omega_4*cos(Phi)*cos(Theta)*cos(b_4)*cos(g_4))/m;
+
+//    B_matrix_local[2][4] = (K_p_T*Omega_1*Omega_1 *cos(b_1)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_1*Omega_1 *cos(Phi)*cos(Theta)*cos(g_1)*sin(b_1) - K_p_T*Omega_1*Omega_1 *cos(Theta)*sin(Phi)*sin(b_1)*sin(g_1))/m;
+//    B_matrix_local[2][5] = (K_p_T*Omega_2*Omega_2*cos(b_2)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_2*Omega_2*cos(Phi)*cos(Theta)*cos(g_2)*sin(b_2) - K_p_T*Omega_2*Omega_2*cos(Theta)*sin(Phi)*sin(b_2)*sin(g_2))/m;
+//    B_matrix_local[2][6] = (K_p_T*Omega_3*Omega_3*cos(b_3)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_3*Omega_3*cos(Phi)*cos(Theta)*cos(g_3)*sin(b_3) - K_p_T*Omega_3*Omega_3*cos(Theta)*sin(Phi)*sin(b_3)*sin(g_3))/m;
+//    B_matrix_local[2][7] = (K_p_T*Omega_4*Omega_4*cos(b_4)*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)) + K_p_T*Omega_4*Omega_4*cos(Phi)*cos(Theta)*cos(g_4)*sin(b_4) - K_p_T*Omega_4*Omega_4*cos(Theta)*sin(Phi)*sin(b_4)*sin(g_4))/m;
+//
+//    B_matrix_local[2][8] = (K_p_T*Omega_1*Omega_1 *cos(Phi)*cos(Theta)*cos(b_1)*sin(g_1) + K_p_T*Omega_1*Omega_1 *cos(Theta)*sin(Phi)*cos(b_1)*cos(g_1))/m;
+//    B_matrix_local[2][9] = (K_p_T*Omega_2*Omega_2*cos(Phi)*cos(Theta)*cos(b_2)*sin(g_2) + K_p_T*Omega_2*Omega_2*cos(Theta)*sin(Phi)*cos(b_2)*cos(g_2))/m;
+//    B_matrix_local[2][10] = (K_p_T*Omega_3*Omega_3*cos(Phi)*cos(Theta)*cos(b_3)*sin(g_3) + K_p_T*Omega_3*Omega_3*cos(Theta)*sin(Phi)*cos(b_3)*cos(g_3))/m;
+//    B_matrix_local[2][11] = (K_p_T*Omega_4*Omega_4*cos(Phi)*cos(Theta)*cos(b_4)*sin(g_4) + K_p_T*Omega_4*Omega_4*cos(Theta)*sin(Phi)*cos(b_4)*cos(g_4))/m;
+
+//    B_matrix_local[2][12] = -(sin(Phi)*sin(Theta)*(K_p_T*cos(b_1)*sin(g_1)*Omega_1*Omega_1  + K_p_T*cos(b_2)*sin(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*sin(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*sin(g_4)*Omega_4*Omega_4) - cos(Phi)*sin(Theta)*(K_p_T*cos(b_1)*cos(g_1)*Omega_1*Omega_1  + K_p_T*cos(b_2)*cos(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*cos(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*cos(g_4)*Omega_4*Omega_4) + cos(Phi)*cos(Theta)*sin(Psi)*(K_p_T*sin(b_1)*Omega_1*Omega_1  + K_p_T*sin(b_2)*Omega_2*Omega_2 + K_p_T*sin(b_3)*Omega_3*Omega_3 + K_p_T*sin(b_4)*Omega_4*Omega_4) + (Cl_alpha*S*V*V*rho*cos(Phi)*cos(Theta))/2 + (S*V*V*rho*cos(Phi)*cos(Theta)*sin(Psi)*(K_Cd*Cl_alpha*Cl_alpha*Theta*Theta + Cd_zero))/2 - (Cl_alpha*S*Theta*V*V*rho*cos(Phi)*sin(Theta))/2 - Cl_alpha*Cl_alpha*K_Cd*S*Theta*V*V*rho*(cos(Psi)*sin(Phi) - cos(Phi)*sin(Psi)*sin(Theta)))/m;
+//    B_matrix_local[2][13] = ((cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta))*(K_p_T*sin(b_1)*Omega_1*Omega_1  + K_p_T*sin(b_2)*Omega_2*Omega_2 + K_p_T*sin(b_3)*Omega_3*Omega_3 + K_p_T*sin(b_4)*Omega_4*Omega_4) + cos(Phi)*cos(Theta)*(K_p_T*cos(b_1)*sin(g_1)*Omega_1*Omega_1  + K_p_T*cos(b_2)*sin(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*sin(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*sin(g_4)*Omega_4*Omega_4) + cos(Theta)*sin(Phi)*(K_p_T*cos(b_1)*cos(g_1)*Omega_1*Omega_1  + K_p_T*cos(b_2)*cos(g_2)*Omega_2*Omega_2 + K_p_T*cos(b_3)*cos(g_3)*Omega_3*Omega_3 + K_p_T*cos(b_4)*cos(g_4)*Omega_4*Omega_4) + (S*V*V*rho*(K_Cd*Cl_alpha*Cl_alpha*Theta*Theta + Cd_zero)*(cos(Phi)*cos(Psi) + sin(Phi)*sin(Psi)*sin(Theta)))/2 + (Cl_alpha*S*Theta*V*V*rho*cos(Theta)*sin(Phi))/2)/m;
+
+    //Fourth row:
+    B_matrix_local[3][0] = (2*K_p_M*Omega_1*sin(b_1) + 2*K_p_T*Omega_1*l_1_z*cos(b_1)*sin(g_1) + 2*K_p_T*Omega_1*l_1_y*cos(b_1)*cos(g_1))/I_xx;
+    B_matrix_local[3][1] = (2*K_p_T*Omega_2*l_2_z*cos(b_2)*sin(g_2) - 2*K_p_M*Omega_2*sin(b_2) + 2*K_p_T*Omega_2*l_2_y*cos(b_2)*cos(g_2))/I_xx;
+    B_matrix_local[3][2] = (2*K_p_M*Omega_3*sin(b_3) + 2*K_p_T*Omega_3*l_3_z*cos(b_3)*sin(g_3) + 2*K_p_T*Omega_3*l_3_y*cos(b_3)*cos(g_3))/I_xx;
+    B_matrix_local[3][3] = (2*K_p_T*Omega_4*l_4_z*cos(b_4)*sin(g_4) - 2*K_p_M*Omega_4*sin(b_4) + 2*K_p_T*Omega_4*l_4_y*cos(b_4)*cos(g_4))/I_xx;
+
+    B_matrix_local[3][4] = -(I_xx_tilt*g_1_ddot*sin(b_1) - K_p_M*Omega_1*Omega_1 *cos(b_1) + K_p_T*Omega_1*Omega_1 *l_1_y*cos(g_1)*sin(b_1) + K_p_T*Omega_1*Omega_1 *l_1_z*sin(b_1)*sin(g_1))/I_xx;
+    B_matrix_local[3][5] = -(K_p_M*Omega_2*Omega_2*cos(b_2) + I_xx_tilt*g_2_ddot*sin(b_2) + K_p_T*Omega_2*Omega_2*l_2_y*cos(g_2)*sin(b_2) + K_p_T*Omega_2*Omega_2*l_2_z*sin(b_2)*sin(g_2))/I_xx;
+    B_matrix_local[3][6] = -(I_xx_tilt*g_3_ddot*sin(b_3) - K_p_M*Omega_3*Omega_3*cos(b_3) + K_p_T*Omega_3*Omega_3*l_3_y*cos(g_3)*sin(b_3) + K_p_T*Omega_3*Omega_3*l_3_z*sin(b_3)*sin(g_3))/I_xx;
+    B_matrix_local[3][7] = -(K_p_M*Omega_4*Omega_4*cos(b_4) + I_xx_tilt*g_4_ddot*sin(b_4) + K_p_T*Omega_4*Omega_4*l_4_y*cos(g_4)*sin(b_4) + K_p_T*Omega_4*Omega_4*l_4_z*sin(b_4)*sin(g_4))/I_xx;
+
+    B_matrix_local[3][8] = (K_p_T*Omega_1*Omega_1 *l_1_z*cos(b_1)*cos(g_1) - K_p_T*Omega_1*Omega_1 *l_1_y*cos(b_1)*sin(g_1))/I_xx;
+    B_matrix_local[3][9] = (K_p_T*Omega_2*Omega_2*l_2_z*cos(b_2)*cos(g_2) - K_p_T*Omega_2*Omega_2*l_2_y*cos(b_2)*sin(g_2))/I_xx;
+    B_matrix_local[3][10] = (K_p_T*Omega_3*Omega_3*l_3_z*cos(b_3)*cos(g_3) - K_p_T*Omega_3*Omega_3*l_3_y*cos(b_3)*sin(g_3))/I_xx;
+    B_matrix_local[3][11] = (K_p_T*Omega_4*Omega_4*l_4_z*cos(b_4)*cos(g_4) - K_p_T*Omega_4*Omega_4*l_4_y*cos(b_4)*sin(g_4))/I_xx;
+
+//    B_matrix_local[3][12] = 0;
+//    B_matrix_local[3][13] = 0;
+
+    //Fifth row:
+    B_matrix_local[4][0] = -(2*K_p_M*Omega_1*cos(b_1)*sin(g_1) - 2*K_p_T*Omega_1*l_1_z*sin(b_1) + 2*K_p_T*Omega_1*l_1_x*cos(b_1)*cos(g_1))/I_yy;
+    B_matrix_local[4][1] = (2*K_p_T*Omega_2*l_2_z*sin(b_2) + 2*K_p_M*Omega_2*cos(b_2)*sin(g_2) - 2*K_p_T*Omega_2*l_2_x*cos(b_2)*cos(g_2))/I_yy;
+    B_matrix_local[4][2] = -(2*K_p_M*Omega_3*cos(b_3)*sin(g_3) - 2*K_p_T*Omega_3*l_3_z*sin(b_3) + 2*K_p_T*Omega_3*l_3_x*cos(b_3)*cos(g_3))/I_yy;
+    B_matrix_local[4][3] = (2*K_p_T*Omega_4*l_4_z*sin(b_4) + 2*K_p_M*Omega_4*cos(b_4)*sin(g_4) - 2*K_p_T*Omega_4*l_4_x*cos(b_4)*cos(g_4))/I_yy;
+
+    B_matrix_local[4][4] = (K_p_M*Omega_1*Omega_1 *sin(b_1)*sin(g_1) + K_p_T*Omega_1*Omega_1 *l_1_z*cos(b_1) + I_xx_tilt*g_1_ddot*cos(b_1)*sin(g_1) + K_p_T*Omega_1*Omega_1 *l_1_x*cos(g_1)*sin(b_1))/I_yy;
+    B_matrix_local[4][5] = (K_p_T*Omega_2*Omega_2*l_2_z*cos(b_2) - K_p_M*Omega_2*Omega_2*sin(b_2)*sin(g_2) + I_xx_tilt*g_2_ddot*cos(b_2)*sin(g_2) + K_p_T*Omega_2*Omega_2*l_2_x*cos(g_2)*sin(b_2))/I_yy;
+    B_matrix_local[4][6] = (K_p_M*Omega_3*Omega_3*sin(b_3)*sin(g_3) + K_p_T*Omega_3*Omega_3*l_3_z*cos(b_3) + I_xx_tilt*g_3_ddot*cos(b_3)*sin(g_3) + K_p_T*Omega_3*Omega_3*l_3_x*cos(g_3)*sin(b_3))/I_yy;
+    B_matrix_local[4][7] = (K_p_T*Omega_4*Omega_4*l_4_z*cos(b_4) - K_p_M*Omega_4*Omega_4*sin(b_4)*sin(g_4) + I_xx_tilt*g_4_ddot*cos(b_4)*sin(g_4) + K_p_T*Omega_4*Omega_4*l_4_x*cos(g_4)*sin(b_4))/I_yy;
+
+    B_matrix_local[4][8] = -(I_yy_tilt*b_1_ddot*sin(g_1) - I_xx_tilt*g_1_ddot*cos(g_1)*sin(b_1) + K_p_M*Omega_1*Omega_1 *cos(b_1)*cos(g_1) - K_p_T*Omega_1*Omega_1 *l_1_x*cos(b_1)*sin(g_1))/I_yy;
+    B_matrix_local[4][9] = (I_xx_tilt*g_2_ddot*cos(g_2)*sin(b_2) - I_yy_tilt*b_2_ddot*sin(g_2) + K_p_M*Omega_2*Omega_2*cos(b_2)*cos(g_2) + K_p_T*Omega_2*Omega_2*l_2_x*cos(b_2)*sin(g_2))/I_yy;
+    B_matrix_local[4][10] = -(I_yy_tilt*b_3_ddot*sin(g_3) - I_xx_tilt*g_3_ddot*cos(g_3)*sin(b_3) + K_p_M*Omega_3*Omega_3*cos(b_3)*cos(g_3) - K_p_T*Omega_3*Omega_3*l_3_x*cos(b_3)*sin(g_3))/I_yy;
+    B_matrix_local[4][11] = (I_xx_tilt*g_4_ddot*cos(g_4)*sin(b_4) - I_yy_tilt*b_4_ddot*sin(g_4) + K_p_M*Omega_4*Omega_4*cos(b_4)*cos(g_4) + K_p_T*Omega_4*Omega_4*l_4_x*cos(b_4)*sin(g_4))/I_yy;
+
+//    B_matrix_local[4][12] = (Cm_alpha*S*V*V*rho*wing_chord)/(2*I_yy);
+//    B_matrix_local[4][13] = 0;
+
+    //Sixth row:
+    B_matrix_local[5][0] = -(2*K_p_T*Omega_1*l_1_y*sin(b_1) - 2*K_p_M*Omega_1*cos(b_1)*cos(g_1) + 2*K_p_T*Omega_1*l_1_x*cos(b_1)*sin(g_1))/I_zz;
+    B_matrix_local[5][1] = -(2*K_p_T*Omega_2*l_2_y*sin(b_2) + 2*K_p_M*Omega_2*cos(b_2)*cos(g_2) + 2*K_p_T*Omega_2*l_2_x*cos(b_2)*sin(g_2))/I_zz;
+    B_matrix_local[5][2] = -(2*K_p_T*Omega_3*l_3_y*sin(b_3) - 2*K_p_M*Omega_3*cos(b_3)*cos(g_3) + 2*K_p_T*Omega_3*l_3_x*cos(b_3)*sin(g_3))/I_zz;
+    B_matrix_local[5][3] = -(2*K_p_T*Omega_4*l_4_y*sin(b_4) + 2*K_p_M*Omega_4*cos(b_4)*cos(g_4) + 2*K_p_T*Omega_4*l_4_x*cos(b_4)*sin(g_4))/I_zz;
+
+    B_matrix_local[5][4] = -(K_p_T*Omega_1*Omega_1*l_1_y*cos(b_1) + I_xx_tilt*g_1_ddot*cos(b_1)*cos(g_1) + K_p_M*Omega_1*Omega_1*cos(g_1)*sin(b_1) - K_p_T*Omega_1*Omega_1*l_1_x*sin(b_1)*sin(g_1))/I_zz;
+    B_matrix_local[5][5] = -(K_p_T*Omega_2*Omega_2*l_2_y*cos(b_2) + I_xx_tilt*g_2_ddot*cos(b_2)*cos(g_2) - K_p_M*Omega_2*Omega_2*cos(g_2)*sin(b_2) - K_p_T*Omega_2*Omega_2*l_2_x*sin(b_2)*sin(g_2))/I_zz;
+    B_matrix_local[5][6] = -(K_p_T*Omega_3*Omega_3*l_3_y*cos(b_3) + I_xx_tilt*g_3_ddot*cos(b_3)*cos(g_3) + K_p_M*Omega_3*Omega_3*cos(g_3)*sin(b_3) - K_p_T*Omega_3*Omega_3*l_3_x*sin(b_3)*sin(g_3))/I_zz;
+    B_matrix_local[5][7] = -(K_p_T*Omega_4*Omega_4*l_4_y*cos(b_4) + I_xx_tilt*g_4_ddot*cos(b_4)*cos(g_4) - K_p_M*Omega_4*Omega_4*cos(g_4)*sin(b_4) - K_p_T*Omega_4*Omega_4*l_4_x*sin(b_4)*sin(g_4))/I_zz;
+
+    B_matrix_local[5][8] = (I_yy_tilt*b_1_ddot*cos(g_1) + I_xx_tilt*g_1_ddot*sin(b_1)*sin(g_1) - K_p_M*Omega_1*Omega_1 *cos(b_1)*sin(g_1) - K_p_T*Omega_1*Omega_1 *l_1_x*cos(b_1)*cos(g_1))/I_zz;
+    B_matrix_local[5][9] = (I_yy_tilt*b_2_ddot*cos(g_2) + I_xx_tilt*g_2_ddot*sin(b_2)*sin(g_2) + K_p_M*Omega_2*Omega_2*cos(b_2)*sin(g_2) - K_p_T*Omega_2*Omega_2*l_2_x*cos(b_2)*cos(g_2))/I_zz;
+    B_matrix_local[5][10] = (I_yy_tilt*b_3_ddot*cos(g_3) + I_xx_tilt*g_3_ddot*sin(b_3)*sin(g_3) - K_p_M*Omega_3*Omega_3*cos(b_3)*sin(g_3) - K_p_T*Omega_3*Omega_3*l_3_x*cos(b_3)*cos(g_3))/I_zz;
+    B_matrix_local[5][11] = (I_yy_tilt*b_4_ddot*cos(g_4) + I_xx_tilt*g_4_ddot*sin(b_4)*sin(g_4) + K_p_M*Omega_4*Omega_4*cos(b_4)*sin(g_4) - K_p_T*Omega_4*Omega_4*l_4_x*cos(b_4)*cos(g_4))/I_zz;
+
+//    B_matrix_local[5][12] = 0;
+//    B_matrix_local[5][13] = 0;
 
     memcpy(& B_matrix[0], & B_matrix_local[0], 14*6*sizeof(float) );
 }
@@ -531,7 +680,6 @@ void compute_B_matrix_extended_fcn(float * B_matrix, float I_xx, float I_yy, flo
 
     memcpy(& B_matrix[0], & B_matrix_local[0], 14*6*sizeof(float) );
 }
-
 
 // This function computes the old full B matrix extended 6x14 in earth reference frame
 void compute_B_matrix_extended_fcn_old(float * B_matrix, float I_xx, float I_yy, float I_zz, float m, float K_p_T, float K_p_M,
@@ -1713,7 +1861,7 @@ static void send_indi_cmd( struct transport_tx *trans , struct link_device * dev
     N_iter_local = (int32_t) N_iter;
 
     pprz_msg_send_INDI_CMD(trans , dev , AC_ID ,
-                                         & INDI_acceleration_inputs[0],& INDI_acceleration_inputs[1],& INDI_acceleration_inputs[2],
+                                         & INDI_acceleration_inputs[0], & INDI_acceleration_inputs[1],& INDI_acceleration_inputs[2],
                                          & INDI_acceleration_inputs[3],& INDI_acceleration_inputs[4],& INDI_acceleration_inputs[5],
                                          & INDI_increment[0],& INDI_increment[1],& INDI_increment[2],& INDI_increment[3],
                                          & INDI_increment[4],& INDI_increment[5],& INDI_increment[6],& INDI_increment[7],
@@ -1767,28 +1915,6 @@ static void send_actuator_variables( struct transport_tx *trans , struct link_de
                                          & overactuated_mixing.commands[9],
                                          & overactuated_mixing.commands[10],
                                          & overactuated_mixing.commands[11]);
-}
-
-/**
- * Function for the message PID_variables
- */
-static void send_PID_variables( struct transport_tx *trans , struct link_device * dev ) {
-    // Send telemetry message containing the PID values
-
-    pprz_msg_send_GAINS_OVERACTUATED(trans , dev , AC_ID ,
-                                         & pid_gains_over.p.phi, & pid_gains_over.i.phi, & pid_gains_over.d.phi,
-                                         & pid_gains_over.p.theta, & pid_gains_over.i.theta, & pid_gains_over.d.theta,
-                                         & pid_gains_over.p.psi, & pid_gains_over.i.psi, & pid_gains_over.d.psi,
-                                         & pid_gain_psi_motor.p, & pid_gain_psi_motor.i, & pid_gain_psi_motor.d,
-                                         & pid_gains_over.p.x, & pid_gains_over.i.x, & pid_gains_over.d.x,
-                                         & pid_gains_over.p.y, & pid_gains_over.i.y, & pid_gains_over.d.y,
-                                         & pid_gains_over.p.z, & pid_gains_over.i.z, & pid_gains_over.d.z,
-                                         & indi_gains_over.p.phi, & indi_gains_over.d.phi,
-                                         & indi_gains_over.p.theta, & indi_gains_over.d.theta,
-                                         & indi_gains_over.p.psi, & indi_gains_over.d.psi,
-                                         & indi_gains_over.p.x, & indi_gains_over.d.x,
-                                         & indi_gains_over.p.y, & indi_gains_over.d.y,
-                                         & indi_gains_over.p.z, & indi_gains_over.d.z);
 }
 
 /**
@@ -1866,6 +1992,9 @@ void get_actuator_state(void)
         actuator_state_filt[i] = actuator_state_filters[i].o[0];
         actuator_state_filt_dot[i] = (actuator_state_filters[i].o[0]
                                       - actuator_state_filters[i].o[1]) * PERIODIC_FREQUENCY;
+        actuator_state_filt_ddot[i] = (actuator_state_filt_dot[i]
+                                      - actuator_state_filt_dot_old[i]) * PERIODIC_FREQUENCY;
+        actuator_state_filt_dot_old[i] = actuator_state_filt_dot[i];
         //Add extra states (theta and phi)
         actuator_state_filt[12] = euler_vect[1];
         actuator_state_filt[13] = euler_vect[0];
@@ -1879,7 +2008,6 @@ void get_actuator_state(void)
 void overactuated_mixing_init(void) {
 
     register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_OVERACTUATED_VARIABLES , send_overactuated_variables );
-    register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_GAINS_OVERACTUATED , send_PID_variables );
     register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_ACTUATORS_OUTPUT , send_actuator_variables );
     register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_INDI_CMD , send_indi_cmd );
     register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_B_MATRIX_SEND_LINEAR , send_B_matrix_linear );
@@ -2400,16 +2528,27 @@ void overactuated_mixing_run(pprz_t in_cmd[])
         BoundAbs(INDI_acceleration_inputs[4],300);
         BoundAbs(INDI_acceleration_inputs[5],10);
 
-        //Apply the RSPI algorithm:
         //Compute the effectiveness matrix
-        compute_B_matrix_extended_fcn_try( B_matrix[0], VEHICLE_I_XX , VEHICLE_I_YY, VEHICLE_I_ZZ, VEHICLE_MASS,
-                                       OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ,  OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ,
+
+//        compute_B_matrix_extended_fcn_try( B_matrix[0], VEHICLE_I_XX , VEHICLE_I_YY, VEHICLE_I_ZZ,
+//                                                         VEHICLE_MASS, OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ,  OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ,
+//                                                         euler_vect[0],  euler_vect[1],  euler_vect[2],  VEHICLE_L1,  VEHICLE_L2,
+//                                                         VEHICLE_L3,  VEHICLE_L4,  VEHICLE_LZ,  VEHICLE_Cl_alpha, VEHICLE_Cm_alpha,
+//                                                         1.225,  VEHICLE_Cd_zero,  VEHICLE_K_Cd,  VEHICLE_S,  VEHICLE_wing_chord, airspeed,
+//                                                         actuator_state_filt[0] ,  actuator_state_filt[1],  actuator_state_filt[2], actuator_state_filt[3],
+//                                                         actuator_state_filt[4],  actuator_state_filt[5],  actuator_state_filt[6],  actuator_state_filt[7],
+//                                                         actuator_state_filt[8],  actuator_state_filt[9],  actuator_state_filt[10],  actuator_state_filt[11]);
+
+        compute_B_matrix_extended_fcn_with_tilt_inertia( B_matrix[0], VEHICLE_I_XX , VEHICLE_I_YY, VEHICLE_I_ZZ, VEHICLE_I_TILT, VEHICLE_I_TILT,
+                                           VEHICLE_MASS, OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ,  OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ,
                                        euler_vect[0],  euler_vect[1],  euler_vect[2],  VEHICLE_L1,  VEHICLE_L2,
                                        VEHICLE_L3,  VEHICLE_L4,  VEHICLE_LZ,  VEHICLE_Cl_alpha, VEHICLE_Cm_alpha,
                                        1.225,  VEHICLE_Cd_zero,  VEHICLE_K_Cd,  VEHICLE_S,  VEHICLE_wing_chord, airspeed,
                                        actuator_state_filt[0] ,  actuator_state_filt[1],  actuator_state_filt[2], actuator_state_filt[3],
                                        actuator_state_filt[4],  actuator_state_filt[5],  actuator_state_filt[6],  actuator_state_filt[7],
-                                       actuator_state_filt[8],  actuator_state_filt[9],  actuator_state_filt[10],  actuator_state_filt[11]);
+                                       actuator_state_filt[8],  actuator_state_filt[9],  actuator_state_filt[10],  actuator_state_filt[11],
+                                       actuator_state_filt_ddot[4], actuator_state_filt_ddot[5], actuator_state_filt_ddot[6], actuator_state_filt_ddot[7],
+                                       actuator_state_filt_ddot[8], actuator_state_filt_ddot[9], actuator_state_filt_ddot[10], actuator_state_filt_ddot[11]);
 
 
         //Compute the maximum and minimum actuator values:
@@ -2423,18 +2562,20 @@ void overactuated_mixing_run(pprz_t in_cmd[])
                                      OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE, OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE, OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE, OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE,
                                      OVERACTUATED_MIXING_MIN_THETA_FWD, - OVERACTUATED_MIXING_MAX_PHI_FWD};
 
+        //CA algorithms:
+
 //        //BASIC INVERSION
 //        basic_inversion(B_matrix[0], INDI_INPUTS, INDI_NUM_ACT, indi_du, indi_u,
 //                        prioritized_actuator_states, actuator_state_filt, INDI_acceleration_inputs);
 
-//        //BASIC INVERSION WITH SCALED B - So far the best one
-//        basic_inversion_scaled_B(B_matrix[0], INDI_INPUTS, INDI_NUM_ACT, max_u, min_u, indi_du, indi_u,
-//                                 prioritized_actuator_states, actuator_state_filt, INDI_acceleration_inputs);
+        //BASIC INVERSION WITH SCALED B - So far the best one
+        basic_inversion_scaled_B(B_matrix[0], INDI_INPUTS, INDI_NUM_ACT, max_u, min_u, indi_du, indi_u,
+                                 prioritized_actuator_states, actuator_state_filt, INDI_acceleration_inputs);
 
-        //RSPI
-        N_iter = RSPI_optimization(B_matrix[0], INDI_INPUTS, INDI_NUM_ACT, max_u, min_u, indi_du,
-                                           indi_u, prioritized_actuator_states, actuator_state_filt, max_iter,
-                                           INDI_acceleration_inputs);
+//        //RSPI
+//        N_iter = RSPI_optimization(B_matrix[0], INDI_INPUTS, INDI_NUM_ACT, max_u, min_u, indi_du,
+//                                           indi_u, prioritized_actuator_states, actuator_state_filt, max_iter,
+//                                           INDI_acceleration_inputs);
 
 //        //RSPI incremental
 //        N_iter = RSPI_optimization_incremental(B_matrix[0], INDI_INPUTS, INDI_NUM_ACT, max_u, min_u, indi_du,
