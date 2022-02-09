@@ -28,6 +28,7 @@
             <module name="udp"/>
             <configure VALUE="500" NAME="PERIODIC_FREQUENCY"/>
             <module TYPE="datalink" NAME="radio_control"/>
+	    <module NAME="ctrl_effectiveness_scheduling_rotating_wing_drone"/>
         </target>
 
         <module TYPE="transparent" NAME="telemetry">
@@ -69,7 +70,7 @@
         <module NAME="mag_ist8310">
             <define name="IST8310_CHAN_X_SIGN" value="-"/>
             <define name="IST8310_CHAN_Z_SIGN" value="-"/>
-            <define VALUE="TRUE" NAME="MODULE_IST8310_UPDATE_AHRS"/>
+            <define VALUE="FALSE" NAME="MODULE_IST8310_UPDATE_AHRS"/>
             <configure VALUE="I2C3" NAME="MAG_IST8310_I2C_DEV"/>
         </module>
 
@@ -102,6 +103,7 @@
             <define name="CHIRP_FADEIN"      value="TRUE"/>
          </module>
         <module name="sys_id_doublet"/>
+        <!--<module name="project_target"/>-->
         
 
     </firmware>
@@ -266,8 +268,10 @@
 
         <define name="WLS_PRIORITIES" value="{1000.f, 1000.f, 1.f, 100.f}"/>
 
+        <define name="WLS_WU_MOTOR" value="9.0"/>
+
         <!-- Adaptive Learning Rate -->
-        <define name="USE_ADAPTIVE" value="FALSE"/>
+        <define name="USE_ADAPTIVE" value="TRUE"/>
         <define name="ADAPTIVE_MU" value="0.001"/>
     </section>
 
@@ -293,7 +297,7 @@
         <define name="SPEED_GAIN" value="3.0"/> <!--FWD 1.2-->
         <define name="SPEED_GAINZ" value="3.0"/>
         <define name="FILTER_CUTOFF" value="1.0"/>
-        <define name="HEADING_BANK_GAIN" value="1."/>
+        <define name="HEADING_BANK_GAIN" value="36."/>
         <define name="NAV_SPEED_MARGIN" value="0."/>
         <define name="MAX_AIRSPEED" value="25."/>
         <define name="PITCH_LIFT_EFF" value="0.0"/>
