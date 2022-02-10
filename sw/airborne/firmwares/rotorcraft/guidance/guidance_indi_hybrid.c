@@ -815,7 +815,10 @@ float guidance_indi_get_liftd(float airspeed, float theta) {
     float ratio = (pitch_interp + 40.0)/(-40.);
     liftd = -24.0*ratio*lift_pitch_eff/0.12;
   } else {
-    liftd = -(airspeed - 8.5)*lift_pitch_eff/M_PI*180.0;
+    liftd = -airspeed*lift_pitch_eff/M_PI*180.0;
+    if (liftd > 0) {
+      liftd = 0;
+    }
   }
   //TODO: bound liftd
   return liftd;
