@@ -1853,20 +1853,17 @@ static void send_B_matrix_angular( struct transport_tx *trans , struct link_devi
  */
 static void send_indi_cmd( struct transport_tx *trans , struct link_device * dev ) {
     // Send telemetry message
-    float INDI_increment[INDI_NUM_ACT];
-    for(uint8_t j = 0; j < INDI_NUM_ACT; j++){
-        INDI_increment[j] = indi_du[j];
-    }
     int32_t N_iter_local;
     N_iter_local = (int32_t) N_iter;
+    float local_zero = 0.;
 
     pprz_msg_send_INDI_CMD(trans , dev , AC_ID ,
-                                         & INDI_acceleration_inputs[0], & INDI_acceleration_inputs[1],& INDI_acceleration_inputs[2],
-                                         & INDI_acceleration_inputs[3],& INDI_acceleration_inputs[4],& INDI_acceleration_inputs[5],
-                                         & INDI_increment[0],& INDI_increment[1],& INDI_increment[2],& INDI_increment[3],
-                                         & INDI_increment[4],& INDI_increment[5],& INDI_increment[6],& INDI_increment[7],
-                                         & INDI_increment[8],& INDI_increment[9],& INDI_increment[10],& INDI_increment[11],
-                                         & INDI_increment[12],& INDI_increment[13], & N_iter_local);
+                           & prioritized_actuator_states[0],& prioritized_actuator_states[4],& local_zero,
+                           & INDI_acceleration_inputs[0],& INDI_acceleration_inputs[1],& INDI_acceleration_inputs[2],
+                           & indi_du[0],& indi_du[1],& indi_du[2],& indi_du[3],
+                           & indi_du[4],& indi_du[5],& indi_du[6],& indi_du[7],
+                           & indi_du[8],& indi_du[9],& indi_du[10],& indi_du[11],
+                           & local_zero,& local_zero, & N_iter_local);
 }
 
 /**
@@ -1874,25 +1871,16 @@ static void send_indi_cmd( struct transport_tx *trans , struct link_device * dev
  */
 static void send_overactuated_variables( struct transport_tx *trans , struct link_device * dev ) {
     // Send telemetry message
-    float euler_deg[3], euler_des_deg[3];
-    for(uint8_t i = 0 ; i < 3 ; i++){
-        //Updated from filtered to unfiltered values the 21/11/2021.
-        rate_vect_filt_deg[i] = rate_vect[i]*180/3.14;
-        rate_vect_filt_dot_deg[i] = rate_vect[i]*180/3.14;
-        euler_deg[i] = euler_vect[i]*180/3.14;
-        euler_des_deg[i] = euler_setpoint[i]*180/3.14;
-    }
-
 
     pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID ,
                                          & wind_speed,
                                          & pos_vect[0], & pos_vect[1], & pos_vect[2],
                                          & speed_vect[0], & speed_vect[1], & speed_vect[2],
                                          & acc_vect_filt[0], & acc_vect_filt[1], & acc_vect_filt[2],
-                                         & rate_vect_filt_dot_deg[0], & rate_vect_filt_dot_deg[1], & rate_vect_filt_dot_deg[2],
-                                         & rate_vect_filt_deg[0], & rate_vect_filt_deg[1], & rate_vect_filt_deg[2],
-                                         & euler_deg[0], & euler_deg[1], & euler_deg[2],
-                                         & euler_des_deg[0], & euler_des_deg[1], & euler_des_deg[2],
+                                         & rate_vect_filt_dot[0], & rate_vect_filt_dot[1], & rate_vect_filt_dot[2],
+                                         & rate_vect_filt[0], & rate_vect_filt[1], & rate_vect_filt[2],
+                                         & euler_vect[0], & euler_vect[1], & euler_vect[2],
+                                         & euler_setpoint[0], & euler_setpoint[1], & euler_setpoint[2],
                                          & pos_setpoint[0], & pos_setpoint[1], & pos_setpoint[2],
                                          & alt_cmd, & pitch_cmd, & roll_cmd, & yaw_motor_cmd, & yaw_tilt_cmd, & elevation_cmd, & azimuth_cmd);
 }
