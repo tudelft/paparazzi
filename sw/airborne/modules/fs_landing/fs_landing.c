@@ -56,6 +56,7 @@ void fs_landing_init()
   #include "subsystems/datalink/telemetry.h"
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_PAYLOAD_FLOAT, send_payload_float);
 #endif
+  cyclic_controller_init();
 }
 
 // TODO Make sure all files agree on direction of spin (e.g. assume anti-clockwise rotation)

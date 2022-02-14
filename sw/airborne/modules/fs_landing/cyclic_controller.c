@@ -13,15 +13,15 @@
 
 struct cyclic_controller_t cyclic_controller;
 
-int32_t x_ned, y_ned, x_ecef, y_ecef;
-int32_t vx_ned, vy_ned, vx_ecef, vy_ecef;
-uint32_t hor_norm;
-int32_t hor_dir;
+int32_t cc_x_ned, cc_y_ned, cc_x_ecef, cc_y_ecef;
+int32_t cc_vx_ned, cc_vy_ned, cc_vx_ecef, cc_vy_ecef;
+uint32_t cc_hor_norm;
+int32_t cc_hor_dir;
 
 // GCS settings
-float cc_kp_gain = 1;
-float cc_kd_gain = 1;
-float max_amplitude = 0.3;
+//float cc_kp_gain = 1;
+//float cc_kd_gain = 1;
+//float max_amplitude = 0.3;
 
 /*
  * <message name="FRISBEE_CONTROL" id="55">
@@ -38,40 +38,40 @@ float max_amplitude = 0.3;
    </message>
  */
 static void send_frisbee_control(struct transport_tx *trans, struct link_device *dev) {
-  pprz_msg_send_FRISBEE_CONTROL(trans, dev, AC_ID, &x_ned, &y_ned, &x_ecef, &y_ecef, &vx_ned, &vy_ned, &vx_ecef, &vy_ecef, &hor_norm, &hor_dir);
+  pprz_msg_send_FRISBEE_CONTROL(trans, dev, AC_ID, &cc_x_ned, &cc_y_ned, &cc_x_ecef, &cc_y_ecef, &cc_vx_ned, &cc_vy_ned, &cc_vx_ecef, &cc_vy_ecef, &cc_hor_norm, &cc_hor_dir);
 }
 
 void cyclic_controller_init() {
   NavSetWaypointHere(WP_STDBY);
 
-  x_ned = stateGetPositionNed_i() -> x;
-  y_ned = stateGetPositionNed_i() -> y;
-  x_ecef = stateGetPositionEcef_i() -> x;
-  y_ecef = stateGetPositionEcef_i() -> y;
+  cc_x_ned = stateGetPositionNed_i() -> x;
+  cc_y_ned = stateGetPositionNed_i() -> y;
+  cc_x_ecef = stateGetPositionEcef_i() -> x;
+  cc_y_ecef = stateGetPositionEcef_i() -> y;
 
-  vx_ned = stateGetSpeedNed_i() -> x;
-  vy_ned = stateGetSpeedNed_i() -> y;
-  vx_ecef = stateGetSpeedEcef_i() -> x;
-  vy_ecef = stateGetSpeedEcef_i() -> y;
+  cc_vx_ned = stateGetSpeedNed_i() -> x;
+  cc_vy_ned = stateGetSpeedNed_i() -> y;
+  cc_vx_ecef = stateGetSpeedEcef_i() -> x;
+  cc_vy_ecef = stateGetSpeedEcef_i() -> y;
 
-  hor_norm = stateGetHorizontalSpeedNorm_i();
-  hor_dir  = stateGetHorizontalSpeedDir_i();  // rad
+  cc_hor_norm = stateGetHorizontalSpeedNorm_i();
+  cc_hor_dir  = stateGetHorizontalSpeedDir_i();  // rad
 
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FRISBEE_CONTROL, send_frisbee_control);
 }
 
 void cyclic_controller_run() {
-  x_ned = stateGetPositionNed_i() -> x;
-  y_ned = stateGetPositionNed_i() -> y;
-  x_ecef = stateGetPositionEcef_i() -> x;
-  y_ecef = stateGetPositionEcef_i() -> y;
+  cc_x_ned = stateGetPositionNed_i() -> x;
+  cc_y_ned = stateGetPositionNed_i() -> y;
+  cc_x_ecef = stateGetPositionEcef_i() -> x;
+  cc_y_ecef = stateGetPositionEcef_i() -> y;
 
-  vx_ned = stateGetSpeedNed_i() -> x;
-  vy_ned = stateGetSpeedNed_i() -> y;
-  vx_ecef = stateGetSpeedEcef_i() -> x;
-  vy_ecef = stateGetSpeedEcef_i() -> y;
+  cc_vx_ned = stateGetSpeedNed_i() -> x;
+  cc_vy_ned = stateGetSpeedNed_i() -> y;
+  cc_vx_ecef = stateGetSpeedEcef_i() -> x;
+  cc_vy_ecef = stateGetSpeedEcef_i() -> y;
 
-  hor_norm = stateGetHorizontalSpeedNorm_i();
-  hor_dir  = stateGetHorizontalSpeedDir_i();  // rad
+  cc_hor_norm = stateGetHorizontalSpeedNorm_i();
+  cc_hor_dir  = stateGetHorizontalSpeedDir_i();  // rad
 }
 

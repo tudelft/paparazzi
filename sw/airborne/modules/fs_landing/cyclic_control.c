@@ -7,7 +7,7 @@
 #include "subsystems/radio_control.h"
 #include "state.h"
 
-#include "cyclic_controller.h"
+//#include "cyclic_controller.h"
 #include "cyclic_control.h"
 
 #include "subsystems/datalink/downlink.h"
@@ -100,24 +100,7 @@ void cyclic_control_values(struct fs_landing_t *actuator_values) {
       }
     }
   } else if (use_controller) {
-    cyclic_controller_run();
-    ml_delta = cyclic_controller.cyclic_amplitude;
-    mr_delta = cyclic_controller.cyclic_amplitude;
-    mt_phase_rad = cyclic_controller.cyclic_phase;
-#if CYCLIC_CONTROL_DEBUG
-  #if PERIODIC_TELEMETRY
-    fs_landing_dbg_values[0] = cyclic_controller.cyclic_amplitude;
-    fs_landing_dbg_values[1] = cyclic_controller.cyclic_phase;
-    fs_landing_dbg_values[2] = cyclic_controller.d;
-    fs_landing_dbg_values[3] = cyclic_controller.vel;
-    if (cyclic_dbg_ctr == 20) {
-      cyclic_dbg_ctr = 0;
-      DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, N_DBG_VALUES, fs_landing_dbg_values);
-    } else {
-      cyclic_dbg_ctr++;
-    }
-  #endif
-#endif
+//    cyclic_controller_run();
   }
 
   float cos_val = cosf(current_yaw - el_phase_rad);
@@ -168,7 +151,7 @@ void cyclic_control_cc_feed_forward_handler(uint8_t value) {
 
 void cyclic_control_use_controller_handler(uint8_t value) {
   if (!use_controller && value) {
-    cyclic_controller_init();
+//    cyclic_controller_init();
     use_controller = true;
   } else {
     use_controller = value;

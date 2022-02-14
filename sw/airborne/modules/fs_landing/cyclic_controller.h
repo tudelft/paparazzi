@@ -12,11 +12,11 @@ struct cyclic_controller_t {
   float vel;
 };
 
-extern struct cyclic_controller_t cyclic_controller;
-
-extern float cc_kp_gain;
-extern float cc_kd_gain;
-extern float max_amplitude;
+//extern struct cyclic_controller_t cyclic_controller;
+//
+//extern float cc_kp_gain;
+//extern float cc_kd_gain;
+//extern float max_amplitude;
 
 void cyclic_controller_init(void);
 void cyclic_controller_run(void);
