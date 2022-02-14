@@ -5,6 +5,7 @@
 #include "state.h"
 
 #include "subsystems/navigation/common_nav.h"
+#include "subsystems/datalink/telemetry.h"
 #include "generated/flight_plan.h"
 #include "generated/airframe.h"
 
@@ -12,44 +13,65 @@
 
 struct cyclic_controller_t cyclic_controller;
 
-float psi;
-float x, y;
-float vx, vy;
-float x_stb, y_stb;
+int32_t x_ned, y_ned, x_ecef, y_ecef;
+int32_t vx_ned, vy_ned, vx_ecef, vy_ecef;
+uint32_t hor_norm;
+int32_t hor_dir;
 
 // GCS settings
 float cc_kp_gain = 1;
 float cc_kd_gain = 1;
 float max_amplitude = 0.3;
 
+/*
+ * <message name="FRISBEE_CONTROL" id="55">
+     <field name="x_ned" type="int32_t">State x position NED</field>
+     <field name="y_ned" type="int32_t">State y position NED</field>
+     <field name="x_ecef" type="int32_t">State x position ECEF</field>
+     <field name="y_ecef" type="int32_t">State y position ECEF</field>
+     <field name="vx_ned" type="int32_t">State x velocity NED</field>
+     <field name="vy_ned" type="int32_t">State y velocity NED</field>
+     <field name="vx_ecef" type="int32_t">State x velocity ECEF</field>
+     <field name="vy_ecef" type="int32_t">State y velocity ECEF</field>
+     <field name="hor_norm" type="uint32_t">Horizontal ground speed norm</field>
+     <field name="hor_dir" type="int32_t">Horizontal ground speed direction</field>
+   </message>
+ */
+static void send_frisbee_control(struct transport_tx *trans, struct link_device *dev) {
+  pprz_msg_send_FRISBEE_CONTROL(trans, dev, AC_ID, &x_ned, &y_ned, &x_ecef, &y_ecef, &vx_ned, &vy_ned, &vx_ecef, &vy_ecef, &hor_norm, &hor_dir);
+}
+
 void cyclic_controller_init() {
   NavSetWaypointHere(WP_STDBY);
+
+  x_ned = stateGetPositionNed_i() -> x;
+  y_ned = stateGetPositionNed_i() -> y;
+  x_ecef = stateGetPositionEcef_i() -> x;
+  y_ecef = stateGetPositionEcef_i() -> y;
+
+  vx_ned = stateGetSpeedNed_i() -> x;
+  vy_ned = stateGetSpeedNed_i() -> y;
+  vx_ecef = stateGetSpeedEcef_i() -> x;
+  vy_ecef = stateGetSpeedEcef_i() -> y;
+
+  hor_norm = stateGetHorizontalSpeedNorm_i();
+  hor_dir  = stateGetHorizontalSpeedDir_i();  // rad
+
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FRISBEE_CONTROL, send_frisbee_control);
 }
 
 void cyclic_controller_run() {
-  psi = stateGetNedToBodyEulers_f() -> psi;
-  x = stateGetPositionNed_f() -> x;
-  y = stateGetPositionNed_f() -> y;
-  vx = stateGetSpeedNed_f() -> x;
-  vy = stateGetSpeedNed_f() -> y;
-  x_stb = WaypointX(WP_STDBY);
-  y_stb = WaypointY(WP_STDBY);
+  x_ned = stateGetPositionNed_i() -> x;
+  y_ned = stateGetPositionNed_i() -> y;
+  x_ecef = stateGetPositionEcef_i() -> x;
+  y_ecef = stateGetPositionEcef_i() -> y;
 
-  float x_err = x_stb - x;
-  float y_err = y_stb - y;
-  float desired_heading = atan2(y_err, x_err);
+  vx_ned = stateGetSpeedNed_i() -> x;
+  vy_ned = stateGetSpeedNed_i() -> y;
+  vx_ecef = stateGetSpeedEcef_i() -> x;
+  vy_ecef = stateGetSpeedEcef_i() -> y;
 
-  // FIXME velocity angles etc
-  float d_err = x_err * sqrtf(1 + (y_err / x_err) * (y_err / x_err));
-  float vel = (vx * cosf(psi) + vy * sinf(psi)) * cosf(desired_heading) + (vx * sinf(psi) + vy * cosf(psi))* sinf(desired_heading);
-
-  float cmd = 4 * (cc_kp_gain * d_err - cc_kd_gain * vel);
-  Bound(cmd, 0, 1);
-  float ampl = cmd * max_amplitude;
-
-  cyclic_controller.cyclic_phase = desired_heading;
-  cyclic_controller.cyclic_amplitude = ampl;
-  cyclic_controller.d = d_err;
-  cyclic_controller.vel = vel;
+  hor_norm = stateGetHorizontalSpeedNorm_i();
+  hor_dir  = stateGetHorizontalSpeedDir_i();  // rad
 }
 

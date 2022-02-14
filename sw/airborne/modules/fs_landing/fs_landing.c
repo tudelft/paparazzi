@@ -4,10 +4,8 @@
 
 #include "fs_landing.h"
 #include "feed_forward.h"
-//#include "pilot_test.h"
 #include "cyclic_control.h"
-//#include "impulse_control.h"
-//#include "actuator_freq_test.h"
+#include "cyclic_controller.h"
 
 #include "subsystems/datalink/downlink.h"
 
@@ -81,6 +79,7 @@ void fs_landing_run()
 //      } else if (cyclic_control_active) {
       if (cyclic_control_active) {
         cyclic_control_values(&current_actuator_values);
+        cyclic_controller_run();
       }  // TODO Add controller here
 //      if (impulse_control_active) {
 //        impulse_control_values(&current_actuator_values);
