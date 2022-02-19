@@ -3,7 +3,7 @@
  */
 
 /**
- * @file modules/ctrl/ctrl_effectiveness_scheduling.h
+ * @file modules/ctrl/ctrl_effectiveness_calculator.h
  */
 
 #ifndef CTRL_EFFECTIVENESS_CALCULATOR_H
@@ -14,5 +14,6 @@
 #include "paparazzi.h"
 
 extern void ctrl_eff(void);
+//extern void ctrl_eff_ground_contact(void);
 
 #endif  /* CTRL_EFFECTIVENESS_CALCULATOR_H */
