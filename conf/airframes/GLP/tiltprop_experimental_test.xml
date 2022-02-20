@@ -165,6 +165,8 @@
     	<define name="I_XX" value="0.017897"/>	<!--[kg m2]-->
     	<define name="I_YY" value="0.003390"/>	<!--[kg m2]-->
     	<define name="I_ZZ" value="0.020337"/>	<!--[kg m2]-->
+    	
+    	<define name="GROUND_CONTACT" value="0"/>
     </module>
     <!-- ******************************************************* -->
   </firmware>
