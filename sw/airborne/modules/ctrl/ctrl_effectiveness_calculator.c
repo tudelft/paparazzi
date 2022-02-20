@@ -13,9 +13,15 @@
 #include "math/pprz_algebra_float.h"
 
 static float ab_to_cd(float x);
-//static void ctrl_eff(void);
-//static void ctrl_eff_ground_contact(void);
 
+void ctrl_eff_periodic(void)
+{
+	if(GROUND_CONTACT == 0) {
+		ctrl_eff();
+	} else {
+		ctrl_eff_ground_contact();
+	}
+}
 
 /**
  * Function that calculates the control effectiveness matrix
@@ -78,34 +84,51 @@ void ctrl_eff(void)
 
 }
 
-//void ctrl_eff_ground_contact(void)
-//{
-//    float delta_l0 = ab_to_cd(actuator_state_filt_vect[0]);
-//    float delta_r0 = ab_to_cd(actuator_state_filt_vect[1]);
-//    float omega_r0 = actuator_state_filt_vect[2];
-//    float omega_l0 = actuator_state_filt_vect[3];
-//
-//    float X_DIST_GC = 0.275; 		//[m]
-//    float C = X_DIST_GC + X_DIST; 	//[m]
-//    float I_YY_GC = I_YY + MASS * X_DIST_GC * X_DIST_GC;
-//
-//    float ctrl_deriv_gc_00 =  0;
-//    float ctrl_deriv_gc_01 =  0;
-//    float ctrl_deriv_gc_02 =  0;
-//    float ctrl_deriv_gc_03 =  0;
-//    float ctrl_deriv_gc_10 =  C * cosf(delta_l0) * (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * (1 / I_YY_GC) * (1/(float)MAX_PPRZ);
-//    float ctrl_deriv_gc_11 =  C * cosf(delta_r0) * (K1 * omega_r0 * omega_r0 + K2 * omega_r0 + K3) * (1 / I_YY_GC) * (1/(float)MAX_PPRZ);
-//    float ctrl_deriv_gc_12 =  C * sinf(delta_r0) * (2 * K1 * omega_r0 + K2) * (1 / I_YY_GC);
-//    float ctrl_deriv_gc_13 =  C * sinf(delta_l0) * (2 * K1 * omega_l0 + K2) * (1 / I_YY_GC);
-//    float ctrl_deriv_gc_20 =  0;
-//    float ctrl_deriv_gc_21 =  0;
-//    float ctrl_deriv_gc_22 =  0;
-//    float ctrl_deriv_gc_23 =  0;
-//    float ctrl_deriv_gc_30 =  0;
-//    float ctrl_deriv_gc_31 =  0;
-//    float ctrl_deriv_gc_32 =  0;
-//    float ctrl_deriv_gc_33 =  0;
-//}
+void ctrl_eff_ground_contact(void)
+{
+    float delta_l0 = ab_to_cd(actuator_state_filt_vect[0]);
+    float delta_r0 = ab_to_cd(actuator_state_filt_vect[1]);
+    float omega_r0 = actuator_state_filt_vect[2];
+    float omega_l0 = actuator_state_filt_vect[3];
+
+    float X_DIST_GC = 0.275; 		//[m]
+    float C = X_DIST_GC + X_DIST; 	//[m]
+    float I_YY_GC = I_YY + MASS * X_DIST_GC * X_DIST_GC;
+
+    float ctrl_deriv_gc_00 =  0;
+    float ctrl_deriv_gc_01 =  0;
+    float ctrl_deriv_gc_02 =  0;
+    float ctrl_deriv_gc_03 =  0;
+    float ctrl_deriv_gc_10 =  C * cosf(delta_l0) * (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * (1 / I_YY_GC) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_gc_11 =  C * cosf(delta_r0) * (K1 * omega_r0 * omega_r0 + K2 * omega_r0 + K3) * (1 / I_YY_GC) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_gc_12 =  C * sinf(delta_r0) * (2 * K1 * omega_r0 + K2) * (1 / I_YY_GC);
+    float ctrl_deriv_gc_13 =  C * sinf(delta_l0) * (2 * K1 * omega_l0 + K2) * (1 / I_YY_GC);
+    float ctrl_deriv_gc_20 =  0;
+    float ctrl_deriv_gc_21 =  0;
+    float ctrl_deriv_gc_22 =  0;
+    float ctrl_deriv_gc_23 =  0;
+    float ctrl_deriv_gc_30 =  0;
+    float ctrl_deriv_gc_31 =  0;
+    float ctrl_deriv_gc_32 =  0;
+    float ctrl_deriv_gc_33 =  0;
+
+	g1g2[0][0] = ctrl_deriv_gc_00;
+	g1g2[0][1] = ctrl_deriv_gc_01;
+	g1g2[0][2] = ctrl_deriv_gc_02;
+	g1g2[0][3] = ctrl_deriv_gc_03;
+	g1g2[1][0] = ctrl_deriv_gc_10;
+	g1g2[1][1] = ctrl_deriv_gc_11;
+	g1g2[1][2] = ctrl_deriv_gc_12;
+	g1g2[1][3] = ctrl_deriv_gc_13;
+	g1g2[2][0] = ctrl_deriv_gc_20;
+	g1g2[2][1] = ctrl_deriv_gc_21;
+	g1g2[2][2] = ctrl_deriv_gc_22;
+	g1g2[2][3] = ctrl_deriv_gc_23;
+	g1g2[3][0] = ctrl_deriv_gc_30;
+	g1g2[3][1] = ctrl_deriv_gc_31;
+	g1g2[3][2] = ctrl_deriv_gc_32;
+	g1g2[3][3] = ctrl_deriv_gc_33;
+}
 
 
 

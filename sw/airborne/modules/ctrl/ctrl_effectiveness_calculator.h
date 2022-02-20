@@ -13,7 +13,8 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #include "paparazzi.h"
 
+extern void ctrl_eff_periodic(void);
 extern void ctrl_eff(void);
-//extern void ctrl_eff_ground_contact(void);
+extern void ctrl_eff_ground_contact(void);
 
 #endif  /* CTRL_EFFECTIVENESS_CALCULATOR_H */
