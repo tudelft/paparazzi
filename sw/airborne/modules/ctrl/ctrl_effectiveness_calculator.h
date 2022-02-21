@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 20121 Gervase Lovell-Prescod <gervase.prescod@gmail.com>
+ * Copyright (C) 2021 Gervase Lovell-Prescod <gervase.prescod@gmail.com>
  */
 
 /**
