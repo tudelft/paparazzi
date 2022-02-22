@@ -103,6 +103,7 @@
             <define name="CHIRP_FADEIN"      value="TRUE"/>
          </module>
         <module name="sys_id_doublet"/>
+        <module name="extended_eff_message"/>
         <!--<module name="project_target"/>-->
         
 
