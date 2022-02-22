@@ -30,6 +30,7 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_quat_transformations.h"
 #include "subsystems/actuators.h"
 #include "modules/system_identification/sys_id_doublet.h"
+#include "modules/system_identification/sys_id_chirp.h"
 
 
 #ifndef EFFECTIVENESS_FULL_ID
@@ -74,6 +75,12 @@ pprz_msg_send_EFF_FULL_INDI(trans, dev, AC_ID,
                                         INDI_NUM_ACT, current_doublet_values,
                                         &doublet_axis, 
                                         &doublet_amplitude,
+                                        &chirp_active,                    
+                                        &chirp_axis, 
+                                        &chirp_amplitude, 
+                                        &chirp_fstart_hz, 
+                                        &chirp_fstop_hz, 
+                                        3, current_chirp_values,
                                         ACTUATORS_NB, actuators
                                         );
 }
