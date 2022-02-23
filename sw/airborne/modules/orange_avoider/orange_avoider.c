@@ -52,7 +52,7 @@ enum navigation_state_t {
 
 // define settings
 float oa_color_count_frac = 0.18f;
-
+// TEST
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
 int32_t color_count = 0;                // orange color count from color filter for obstacle detection
