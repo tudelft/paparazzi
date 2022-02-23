@@ -31,7 +31,7 @@
 #include "subsystems/actuators.h"
 #include "modules/system_identification/sys_id_doublet.h"
 #include "modules/system_identification/sys_id_chirp.h"
-
+#include "modules/rot_wing_drone/wing_rotation_controller.h"
 
 #ifndef EFFECTIVENESS_FULL_ID
 #define EFFECTIVENESS_FULL_ID ABI_BROADCAST
@@ -61,7 +61,9 @@ float airspeed = stateGetAirspeed_f();
 //body_rates_full
 //body_accel_i_full = stateGetAccelBody_i();
 ACCELS_FLOAT_OF_BFP(body_accel_f_telem_full, *body_accel_i_full);
-
+struct FloatEulers eulers_zxy;
+float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+int32_t state_psi = ANGLE_BFP_OF_REAL(eulers_zxy.psi);
 
 pprz_msg_send_EFF_FULL_INDI(trans, dev, AC_ID,
                                         &body_rates_full->p,
@@ -81,6 +83,12 @@ pprz_msg_send_EFF_FULL_INDI(trans, dev, AC_ID,
                                         &chirp_fstart_hz, 
                                         &chirp_fstop_hz, 
                                         3, current_chirp_values,
+                                        &wing_rotation.wing_angle_deg,
+                                        &wing_rotation.wing_angle_deg_sp,
+                                        &(stateGetNedToBodyEulers_i()->phi),
+                                        &(stateGetNedToBodyEulers_i()->theta),
+                                        &state_psi,
+                                        &actuator_thrust_bx_pprz,
                                         ACTUATORS_NB, actuators
                                         );
 }

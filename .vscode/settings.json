@@ -13,6 +13,8 @@
         "stdlib.h": "c",
         "iterator": "cpp",
         "tensor": "cpp",
-        "random": "c"
+        "random": "c",
+        "atomic": "c",
+        "cstdint": "c"
     },
 }
