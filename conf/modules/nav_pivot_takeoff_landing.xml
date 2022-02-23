@@ -1,0 +1,20 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="nav_pivot_takeoff_landing" dir="nav" task="control">
+  <doc>
+    <description>
+    	---
+    </description>
+  </doc>
+  <dep>
+    <depends>@navigation</depends>
+  </dep>
+  <header>
+    <file name="nav_pivot_takeoff_landing.h"/>
+  </header>
+  <makefile>
+    <file name="nav_pivot_takeoff_landing.c"/>
+    <test firmware="rotorcraft">
+    </test>
+  </makefile>
+</module>
