@@ -11,6 +11,8 @@
 #include "generated/airframe.h"
 #include "state.h"
 #include "math/pprz_algebra_float.h"
+//#include "modules/nav/common_flight_plan.h"
+//#include "modules/nav/nav_pivot_takeoff_landing.h"
 
 static float ab_to_cd(float x);
 
@@ -75,6 +77,28 @@ void ctrl_eff(void)
     g1g2[3][2] = ctrl_deriv_32;
     g1g2[3][3] = ctrl_deriv_33;
 
+//#ifndef PIVOT_DURATION
+//#define PIVOT_DURATION 15.0
+//#endif
+//
+//#ifndef PIVOT_GOAL
+//#define PIVOT_GOAL 0.0
+//#endif
+//
+//#ifndef PIVOT_INITIAL
+//#define PIVOT_INITIAL -70.0
+//#endif
+//
+//	float pivot_time;
+//	if (block_time < PIVOT_DURATION){
+//		pivot_time = block_time;
+//	} else {
+//		pivot_time = PIVOT_DURATION;
+//	}
+//	float pitch = RadOfDeg(((PIVOT_GOAL - PIVOT_INITIAL) / PIVOT_DURATION) * pivot_time + PIVOT_INITIAL);
+//	printf("pitch command: %f\n", pitch);
+
+
 
 //    printf("\n");
 //    printf("\n%f\t%f\t%f\t%f", ctrl_deriv_00, ctrl_deriv_01, ctrl_deriv_02, ctrl_deriv_03);
@@ -107,10 +131,14 @@ void ctrl_eff_ground_contact(void)
     float ctrl_deriv_gc_21 =  0;
     float ctrl_deriv_gc_22 =  0;
     float ctrl_deriv_gc_23 =  0;
-    float ctrl_deriv_gc_30 =  0;
-    float ctrl_deriv_gc_31 =  0;
-    float ctrl_deriv_gc_32 =  0;
-    float ctrl_deriv_gc_33 =  0;
+//    float ctrl_deriv_gc_30 =  0;
+//    float ctrl_deriv_gc_31 =  0;
+//    float ctrl_deriv_gc_32 =  0;
+//    float ctrl_deriv_gc_33 =  0;
+    float ctrl_deriv_gc_30 = (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * sinf(delta_l0) * (1/MASS) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_gc_31 = (K1 * omega_r0 * omega_r0 + K2 * omega_r0 + K3) * sinf(delta_r0) * (1/MASS) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_gc_32 =  -(2 * K1 * omega_r0 + K2) * cosf(delta_r0) * (1/MASS);
+    float ctrl_deriv_gc_33 =  -(2 * K1 * omega_l0 + K2) * cosf(delta_l0) * (1/MASS);
 
 	g1g2[0][0] = ctrl_deriv_gc_00;
 	g1g2[0][1] = ctrl_deriv_gc_01;
@@ -128,6 +156,8 @@ void ctrl_eff_ground_contact(void)
 	g1g2[3][1] = ctrl_deriv_gc_31;
 	g1g2[3][2] = ctrl_deriv_gc_32;
 	g1g2[3][3] = ctrl_deriv_gc_33;
+
+//	printf("guidance theta: %f\n", guidance_euler_cmd.theta);
 }
 
 
