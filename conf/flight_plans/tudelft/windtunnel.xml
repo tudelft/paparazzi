@@ -1,0 +1,81 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="0" ground_alt="0" lat0="43.5640917" lon0="1.4829201" max_dist_from_home="20" name="Windtunnel" security_height="0.3">
+  <header>
+#ifdef NAV_C
+
+#endif
+  </header>
+  <waypoints>
+    <waypoint name="HOME" x="0.0" y="0.0"/>
+  </waypoints>
+  <sectors>
+  </sectors>
+  <variables>
+	  <variable var="motor1" init="0" type="int32_t" min="0" max="9600" step="1"/>
+	  <variable var="motor2" init="0" type="int32_t" min="0" max="9600" step="1"/>
+      <variable var="motor3" init="0" type="int32_t" min="0" max="9600" step="1"/>
+      <variable var="flap" init="0" type="int32_t" min="-9600" max="9600" step="1"/>
+      <variable var="aileron" init="0" type="int32_t" min="-9600" max="9600" step="1"/>
+	</variables>
+
+  <blocks>
+    <block name="Safe">
+      <call_once fun="NavKillThrottle()"/>
+      <set var = "motor1" value="0"/>
+      <set var = "motor2" value="0"/>
+      <set var = "motor3" value="0"/>
+      <set var = "flap" value="0"/>
+      <set var = "aileron" value="0"/>
+      <while cond="TRUE"/>
+    </block>
+    <block name="Start Engine" strip_button="Start Engine" strip_icon="resurrect.png" group="home">
+      <call_once fun="NavResurrect()"/>
+      <set var = "motor1" value="0"/>
+      <set var = "motor2" value="0"/>
+      <set var = "motor3" value="0"/>
+      <while cond="TRUE"/>
+    </block>
+    <block name="RunSettings" strip_button="Standby" strip_icon="home.png" group="home">
+      <while cond="TRUE">
+        <set var = "motor_mixing.commands[0]" value="motor1"/>
+        <set var = "motor_mixing.commands[1]" value="motor2"/>
+        <set var = "motor_mixing.commands[2]" value="motor3"/>
+        <set var = "motor_mixing.commands[3]" value="flap"/>
+        <set var = "motor_mixing.commands[4]" value="aileron"/>
+      </while>
+    </block>
+    <block name="Test1" >
+      <set var = "motor1" value="4500"/>
+      <set var = "motor2" value="-9600"/>
+      <set var = "motor3" value="0"/>
+      <set var = "flap" value="4500"/>
+      <set var = "aileron" value="-4500"/>
+      <while cond="block_time @LT 5">
+        <set var = "motor_mixing.commands[0]" value="motor1"/>
+        <set var = "motor_mixing.commands[1]" value="motor2"/>
+        <set var = "motor_mixing.commands[2]" value="motor3"/>
+        <set var = "motor_mixing.commands[3]" value="flap"/>
+        <set var = "motor_mixing.commands[4]" value="aileron"/>
+      </while>
+    </block>
+    <block name="Test2" >
+      <set var = "motor1" value="0"/>
+      <set var = "motor2" value="0"/>
+      <set var = "motor3" value="0"/>
+      <set var = "flap" value="-4500"/>
+      <set var = "aileron" value="4500"/>
+      <while cond="block_time @LT 5">
+        <set var = "motor_mixing.commands[0]" value="motor1"/>
+        <set var = "motor_mixing.commands[1]" value="motor2"/>
+        <set var = "motor_mixing.commands[2]" value="motor3"/>
+        <set var = "motor_mixing.commands[3]" value="flap"/>
+        <set var = "motor_mixing.commands[4]" value="aileron"/>
+      </while>
+    </block>
+    <block name="End">
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="TRUE"/>
+    </block>
+  </blocks>
+</flight_plan>
