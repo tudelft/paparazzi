@@ -72,6 +72,9 @@
       <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="1"/>
       <define name="VIEWVIDEO_QUALITY_FACTOR" value="40"/>
     </module>
+
+    <!-- Add mav_course_exercise module-->
+    <module name="mav_course_exercise"/>
   </firmware>
 
   <commands>
