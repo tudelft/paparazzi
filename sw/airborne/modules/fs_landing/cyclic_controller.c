@@ -25,16 +25,16 @@ int32_t cc_hor_dir;
 
 /*
  * <message name="FRISBEE_CONTROL" id="55">
-     <field name="x_ned" type="int32_t">State x position NED</field>
-     <field name="y_ned" type="int32_t">State y position NED</field>
-     <field name="x_ecef" type="int32_t">State x position ECEF</field>
-     <field name="y_ecef" type="int32_t">State y position ECEF</field>
-     <field name="vx_ned" type="int32_t">State x velocity NED</field>
-     <field name="vy_ned" type="int32_t">State y velocity NED</field>
-     <field name="vx_ecef" type="int32_t">State x velocity ECEF</field>
-     <field name="vy_ecef" type="int32_t">State y velocity ECEF</field>
-     <field name="hor_norm" type="uint32_t">Horizontal ground speed norm</field>
-     <field name="hor_dir" type="int32_t">Horizontal ground speed direction</field>
+     <field name="x_ned" type="int32">State x position NED</field>
+     <field name="y_ned" type="int32">State y position NED</field>
+     <field name="x_ecef" type="int32">State x position ECEF</field>
+     <field name="y_ecef" type="int32">State y position ECEF</field>
+     <field name="vx_ned" type="int32">State x velocity NED</field>
+     <field name="vy_ned" type="int32">State y velocity NED</field>
+     <field name="vx_ecef" type="int32">State x velocity ECEF</field>
+     <field name="vy_ecef" type="int32">State y velocity ECEF</field>
+     <field name="hor_norm" type="uint32">Horizontal ground speed norm</field>
+     <field name="hor_dir" type="int32">Horizontal ground speed direction</field>
    </message>
  */
 static void send_frisbee_control(struct transport_tx *trans, struct link_device *dev) {

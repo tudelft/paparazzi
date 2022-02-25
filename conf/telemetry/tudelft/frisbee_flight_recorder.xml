@@ -12,7 +12,7 @@
       <message name="ESTIMATOR"           period="0.65"/>
       <message name="ENERGY"              period="1.1"/>
       <message name="WP_MOVED"            period="0.5"/>
-      <message name="DESIRED"             period="1.02"/>
+      <message name="DESIRED"             period="1.2"/>
       <message name="NAVIGATION_REF"      period="9."/>
       <message name="PPRZ_MODE"           period="4.9"/>
       <message name="SETTINGS"            period="5."/>
@@ -25,12 +25,12 @@
       <message name="IMU_MAG"             period=".81"/>
       <message name="INS"                 period=".27"/>
       <message name="INS_REF"             period="5.2"/>
-      <message name="COMMANDS"            period="5"/>
+      <message name="COMMANDS"            period="4.8"/>
       <message name="RC"                  period="0.1"/>
-      <message name="FBW_STATUS"          period="2"/>
+      <message name="FBW_STATUS"          period="2.3"/>
       <message name="ESC"                 period="0.9"/>
-      <message name="LOGGER_STATUS"       period="5.1"/>
-      <message name="FRISBEE_CONTROL"     period="0.11"/>
+      <message name="LOGGER_STATUS"       period="5.4"/>
+      <message name="FRISBEE_CONTROL"     period="0.15"/>
     </mode>
     <mode name="minimal">
       <message name="ALIVE"               period="5"/>
@@ -124,7 +124,7 @@
       <message name="ACTUATORS"           period="0.05"/>
       <message name="PPRZ_MODE"           period="1.0"/>
       <message name="INS"                 period=".02"/>
-      <message name="INS_REF"             period="5"/>
+      <message name="INS_REF"             period="1"/>
       <message name="DATALINK_REPORT"     period="1.0"/>
       <message name="ESC"                 period="0.1"/>
       <message name="ENERGY"              period="0.05"/>
