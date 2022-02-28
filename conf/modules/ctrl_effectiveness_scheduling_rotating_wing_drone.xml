@@ -9,6 +9,10 @@
   <settings>
     <dl_settings NAME="crtl_eff_scheduling">
       <dl_settings NAME="eff_sched">
+        <dl_setting MAX="90" MIN="0" STEP="1.0" VAR="rot_wing_aileron_limit_deg" shortname="angle_limit_ailerons"/>
+        <dl_setting MAX="100" MIN="0" STEP="1.0" VAR="rot_wing_roll_prop_limit_deg" shortname="roll_prop_angle_lim"/>
+        <dl_setting MAX="100" MIN="0" STEP="1.0" VAR="rot_wing_pitch_prop_limit_deg" shortname="pitch_prop_angle_lim"/>
+        <dl_setting MAX="100" MIN="0" STEP="1.0" VAR="rot_wing_yaw_prop_limit_deg" shortname="yaw_prop_angle_lim"/>
         <dl_setting MAX="0.24" MIN="0" STEP="0.001" VAR="rot_wing_min_lift_pitch_eff" shortname="min_lift_pitch_eff"/>
         <dl_setting MAX="0.24" MIN="0" STEP="0.001" VAR="rot_wing_max_lift_pitch_eff" shortname="max_lift_pitch_eff"/>
         <dl_setting MAX="1.0" MIN="0" STEP="0.001" VAR="rot_wing_aero_eff_const_p" shortname="aero_eff_p"/>
