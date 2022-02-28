@@ -112,8 +112,8 @@ Butterworth2LowPass airspeed_lowpass_filter;
 // Scheduler function to activate ailerons / roll motors bases
 inline void init_active_actuators(void);
 inline void evaluate_actuator_active(void);
-inline void schedule_motor_effectiveness(float rot_wing_angle_rad, float c_rot_wing_angle, float s_rot_wing_angle);
-inline void schedule_aero_effectiveness(float rot_wing_angle_rad, float c_rot_wing_angle, float s_rot_wing_angle, float airspeed2);
+inline void schedule_motor_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle);
+inline void schedule_aero_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle, float airspeed2);
 inline void update_g1g2_matrix(void);
 inline void schedule_lift_pitch_eff(float rot_wing_angle_rad);
 
@@ -181,10 +181,10 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
   evaluate_actuator_active();
 
   // Update motor effectiveness
-  schedule_motor_effectiveness(rot_wing_angle_rad, c_rot_wing_angle, s_rot_wing_angle);
+  schedule_motor_effectiveness(c_rot_wing_angle, s_rot_wing_angle);
 
   // Update aerodynamic effectiveness
-  schedule_aero_effectiveness(rot_wing_angle_rad, c_rot_wing_angle, s_rot_wing_angle, airspeed2);
+  schedule_aero_effectiveness(c_rot_wing_angle, s_rot_wing_angle, airspeed2);
 
   // Update pitch lift effectiveness
   schedule_lift_pitch_eff(rot_wing_angle_rad);
@@ -281,7 +281,7 @@ void evaluate_actuator_active(void)
   }
 }
 
-void schedule_motor_effectiveness(float rot_wing_angle_rad, float c_rot_wing_angle, float s_rot_wing_angle)
+void schedule_motor_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle)
 {
   // Calculate roll, pitch, yaw effectiveness values
   // roll
@@ -335,7 +335,7 @@ void schedule_motor_effectiveness(float rot_wing_angle_rad, float c_rot_wing_ang
   g1_init[2][3] = rot_wing_g1_r[3];
 }
 
-void schedule_aero_effectiveness(float rot_wing_angle_rad, float c_rot_wing_angle, float s_rot_wing_angle, float airspeed2)
+void schedule_aero_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle, float airspeed2)
 {
   // Calculate roll, pitch, yaw effectiveness values
   // roll
@@ -392,7 +392,7 @@ void schedule_aero_effectiveness(float rot_wing_angle_rad, float c_rot_wing_angl
 void update_g1g2_matrix(void)
 {
   #ifdef STABILIZATION_INDI_USE_ADAPTIVE
-  if (!autopilot_in_flight) {
+  if (!autopilot_in_flight()) {
     for (int i = 0; i < 8; i++) {
         g1g2[0][i] = rot_wing_g1_p[i] / INDI_G_SCALING;
         g1g2[1][i] = rot_wing_g1_q[i] / INDI_G_SCALING;
