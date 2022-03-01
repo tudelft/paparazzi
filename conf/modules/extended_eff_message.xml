@@ -1,0 +1,14 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="extended_eff_message" dir="system_identification" task="estimation">
+  <doc>
+    <description>Module to create a comprehensive module which encompasses all the required data to perform effectiveness estimations. This is done to synchronize all signals.</description>
+  </doc>
+  <header>
+    <file name="extended_eff_message.h"/>
+  </header>
+  <init fun="extended_eff_message_init()"/>
+  <makefile>
+    <file name="extended_eff_message.c"/>
+    <test/>
+  </makefile>
+</module>
