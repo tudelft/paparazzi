@@ -55,7 +55,7 @@ bool doublet_act_is_servo[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_IS_SERVO;
 static void set_current_doublet_values(void)
 {
   if (doublet_active) {
-    current_doublet_values[doublet_axis] += (int32_t)(doublet_amplitude * doublet.current_value);
+    current_doublet_values[doublet_axis] = (int32_t)(doublet_amplitude * doublet.current_value); //removed +=
   } else {
     for (uint8_t i = 0; i < DOUBLET_NB_AXES; i++) {
       current_doublet_values[i] = 0;
