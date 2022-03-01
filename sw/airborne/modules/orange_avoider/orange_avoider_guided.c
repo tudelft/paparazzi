@@ -215,5 +215,9 @@ uint8_t chooseRandomIncrementAvoidance(void)
     avoidance_heading_direction = -1.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
   }
+
+  // avoidance_heading_direction = 1.f;
+  // VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
+  
   return false;
 }
