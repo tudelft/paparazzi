@@ -98,8 +98,6 @@ extern bool yaw_with_motors_PID;
 extern bool position_with_attitude;
 extern bool manual_motor_stick;
 
-extern bool static_tilt_motor_for_yaw;
-extern int static_tilt_angle;
 
 extern bool manual_heading;
 extern int manual_heading_value_rad;

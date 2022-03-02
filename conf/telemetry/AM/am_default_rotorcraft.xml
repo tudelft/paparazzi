@@ -187,7 +187,7 @@
   <process name="FlightRecorder">
     <mode name="default">
       <message name="AUTOPILOT_VERSION"        period="11.1"/>
-      <message name="ROTORCRAFT_FP"            period=".005"/>
+      <message name="ROTORCRAFT_FP"            period=".01"/>
       <message name="INS_REF"                  period="5.1"/>
       <message name="ROTORCRAFT_NAV_STATUS"    period="1.6"/>
       <message name="WP_MOVED"                 period="1.3"/>
@@ -195,7 +195,7 @@
       <message name="INS"                      period=".1"/>
       <message name="I2C_ERRORS"               period="4.1"/>
       <message name="UART_ERRORS"              period="3.1"/>
-      <message name="ENERGY"                   period=".005"/>
+      <message name="ENERGY"                   period=".01"/>
       <message name="DATALINK_REPORT"          period="5.1"/>
       <message name="STATE_FILTER_STATUS"      period="3.2"/>
       <message name="AIR_DATA"                 period="1.3"/>
@@ -207,15 +207,15 @@
       <message name="MOTOR_MIXING"             period="0.5"/>
       <message name="DL_VALUE"                 period="0.5"/>
       <message name="ROTORCRAFT_CMD"           period=".5"/>
-      <message name="PPM"                      period="0.5"/>
-      <message name="RC"                       period="0.5"/>
-      <message name="ROTORCRAFT_RADIO_CONTROL" period="0.5"/>
+      <message name="PPM"                      period="0.4"/>
+      <message name="RC"                       period="0.4"/>
+      <message name="ROTORCRAFT_RADIO_CONTROL" period="0.4"/>
       <message name="ROTORCRAFT_STATUS"        period="1"/>
-      <message name="OVERACTUATED_VARIABLES"   period=".005"/>
-      <message name="ACTUATORS_OUTPUT"         period=".0049"/>
-      <message name="INDI_CMD"                 period=".0049"/>
-      <message name="B_MATRIX_SEND_LINEAR"     period=".006"/>
-      <message name="B_MATRIX_SEND_ANGULAR"    period=".005"/>
+      <message name="OVERACTUATED_VARIABLES"   period=".004"/>
+      <message name="ACTUATORS_OUTPUT"         period=".004"/>
+      <message name="INDI_CMD"                 period=".004"/>
+      <message name="B_MATRIX_SEND_LINEAR"     period=".004"/>
+      <message name="B_MATRIX_SEND_ANGULAR"    period=".004"/>
       <message name="AIR_DATA"                 period=".5"/>
     </mode>
   </process>
