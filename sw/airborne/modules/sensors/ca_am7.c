@@ -47,21 +47,21 @@ static struct am7_data myam7_data;
 #include "modules/datalink/telemetry.h"
 static void am7_downlink(struct transport_tx *trans, struct link_device *dev)
 {
-	  // pprz_msg_send_AM7(trans, dev, AC_ID, &myam7_data.bale_no, &myam7_data.rx_throttle, &myam7_data.output_throttle,
-		// 	  &myam7_data.rpm, &myam7_data.voltage, &myam7_data.busbar_current, &myam7_data.phase_wire_current, &myam7_data.mosfet_temp,
-		// 	  &myam7_data.capacitor_temp, &myam7_data.status_code,  &myam7_data.verify_code );
+	   pprz_msg_send_AM7(trans, dev, AC_ID, &myam7_data.bale_no, &myam7_data.rx_throttle, &myam7_data.output_throttle,
+		 	  &myam7_data.rpm, &myam7_data.voltage, &myam7_data.busbar_current, &myam7_data.phase_wire_current, &myam7_data.mosfet_temp,
+		 	  &myam7_data.capacitor_temp, &myam7_data.status_code,  &myam7_data.verify_code );
 }
 #endif
 
 void am7_init() 
 {
 
-// 	//pprz_transport_init(&am7.transport);
-// 	uart_periph_set_baudrate(&uart1, B115200);
-// 	myam7_data.buffer_counter = 0;
-// #if PERIODIC_TELEMETRY
-//   //register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AM7, am7_downlink);
-// #endif
+ 	pprz_transport_init(&am7.transport);
+ 	uart_periph_set_baudrate(&uart1, B115200);
+ 	myam7_data.buffer_counter = 0;
+ #if PERIODIC_TELEMETRY
+   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AM7, am7_downlink);
+ #endif
 }
 
 /* Parse the InterMCU message */
@@ -113,26 +113,26 @@ void am7_parse_msg(void)
 /* We need to wait for incoming messages */
 void am7_event()
 {	
-	// uint8_t am7_byte;
-	// am7_byte = uart_getch(&uart1);
-	// if ((am7_byte == START_BYTE)|| (myam7_data.buffer_counter > 0)) {
-	// 	am7_msg_buf[myam7_data.buffer_counter] = am7_byte;
-	// 	myam7_data.buffer_counter = 	myam7_data.buffer_counter + 1;
-	// }
+	 uint8_t am7_byte;
+	 am7_byte = uart_getch(&uart1);
+	 if ((am7_byte == START_BYTE)|| (myam7_data.buffer_counter > 0)) {
+	 	am7_msg_buf[myam7_data.buffer_counter] = am7_byte;
+	 	myam7_data.buffer_counter = 	myam7_data.buffer_counter + 1;
+	 }
 
-	// if (myam7_data.buffer_counter > 24){
-	// 	check_sum = am7_msg_buf[0] + am7_msg_buf[1] + am7_msg_buf[2] + am7_msg_buf[3] + am7_msg_buf[4] +
-	// 			am7_msg_buf[5] + am7_msg_buf[6] + am7_msg_buf[7] + am7_msg_buf[8] + am7_msg_buf[9] +
-	// 			am7_msg_buf[10] + am7_msg_buf[11] + am7_msg_buf[12] + am7_msg_buf[13] + am7_msg_buf[14] +
-	// 			am7_msg_buf[15] + am7_msg_buf[16] + am7_msg_buf[17] + am7_msg_buf[18] + am7_msg_buf[19]+
-	// 			am7_msg_buf[20] + am7_msg_buf[21] ;
+	 if (myam7_data.buffer_counter > 24){
+	 	check_sum = am7_msg_buf[0] + am7_msg_buf[1] + am7_msg_buf[2] + am7_msg_buf[3] + am7_msg_buf[4] +
+	 			am7_msg_buf[5] + am7_msg_buf[6] + am7_msg_buf[7] + am7_msg_buf[8] + am7_msg_buf[9] +
+	 			am7_msg_buf[10] + am7_msg_buf[11] + am7_msg_buf[12] + am7_msg_buf[13] + am7_msg_buf[14] +
+	 			am7_msg_buf[15] + am7_msg_buf[16] + am7_msg_buf[17] + am7_msg_buf[18] + am7_msg_buf[19]+
+	 			am7_msg_buf[20] + am7_msg_buf[21] ;
 
-	// 	verify_bytes = (uint16_t)((am7_msg_buf[22]) | (am7_msg_buf[23]<<8));
-	// 	myam7_data.buffer_counter = 0;
-	// 	if ((am7_msg_buf[1]==22) && (am7_msg_buf[2]== 1) && (am7_msg_buf[3]== 2) && (verify_bytes == check_sum) )
-	// 	{
-	// 		am7_parse_msg();
-	// 	}
-	// }
+	 	verify_bytes = (uint16_t)((am7_msg_buf[22]) | (am7_msg_buf[23]<<8));
+	 	myam7_data.buffer_counter = 0;
+	 	if ((am7_msg_buf[1]==22) && (am7_msg_buf[2]== 1) && (am7_msg_buf[3]== 2) && (verify_bytes == check_sum) )
+	 	{
+	 		am7_parse_msg();
+	 	}
+	 }
 }
 

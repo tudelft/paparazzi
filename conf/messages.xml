@@ -1686,7 +1686,6 @@
     </message>
 
     <!-- 194 is free -->
-    <!-- 195 is free -->
 
     <message name="NPS_SENSORS_SCALED" id="197">
       <field name="acc_x"    type="float" />
@@ -1787,6 +1786,21 @@
       <field name="power" type="float" unit="W">Calculated power (Voltage * Current)</field>
       <field name="commands" type="int32[]">Commands send to actuators</field>
     </message>
+
+     <message name= "AM7" id = "195">
+         <description>Live data consisting of various Alpha ESC output values</description>
+         <field name = "bale_no" type="uint16" unit="pprz"/>
+         <field name = "rx_throttle" type="uint16" unit="pprz"/>
+         <field name = "output_throttle" type="uint16" unit="pprz"/>
+         <field name = "rpm" type="uint16" unit="rpm"/>
+         <field name = "voltage" type="uint16" unit="1e1V" alt_unit="V"  alt_unit_coef="0.1"/>
+         <field name = "busbar_current" type="int16" unit="64A" alt_unit="A" alt_unit_coef = "0.015625"/>
+         <field name = "phase_wire_current" type="int16" unit="64A" alt_unit="A" alt_unit_coef = "0.015625"/>
+         <field name="capacitor_temp"      type="uint8" unit="dC"/>
+         <field name="mosfet_temp"      type="uint8" unit="dC"/>
+         <field name="status_code"   type="uint16" unit="pprz"/>
+         <field name="verify_code"   type="uint16" unit="pprz"/>
+     </message>
 
      <message name="B_MATRIX_SEND_LINEAR" id="199">
          <field name="B_1" type="float[]" unit="none"/>
