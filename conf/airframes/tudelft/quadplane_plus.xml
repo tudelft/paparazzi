@@ -35,6 +35,11 @@
         <define name="MS45XX_PRESSURE_OFFSET" value="2119"/>
         <define name="MS45XX_PRESSURE_RANGE" value="1"/>
       </module>
+
+      <module name="ca_am7">
+        <configure name="AM7_PORT" value="UART1"/>
+        <configure name="AM7_BAUD" value="115200"/>
+      </module> 
 <!--      <module name="airspeed_ets.xml">-->
 
 <!--        <define name="AIRSPEED_ETS_SCALE" value="1.24"/>-->
