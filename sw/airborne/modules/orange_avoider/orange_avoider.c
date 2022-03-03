@@ -60,6 +60,13 @@ int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that 
 float heading_increment = 5.f;          // heading angle increment [deg]
 float maxDistance = 2.25;               // max waypoint displacement [m]
 
+// global vars for logging distance covered
+float last_pos_x = 0;
+float last_pos_y = 0;
+float x_covered = 0;
+float y_covered = 0;
+
+
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
 
 /*
@@ -97,6 +104,8 @@ void orange_avoider_init(void)
 /*
  * Function that checks it is safe to move forwards, and then moves a waypoint forward or changes the heading
  */
+
+
 void orange_avoider_periodic(void)
 {
   // only evaluate our state machine if we are flying
@@ -104,10 +113,28 @@ void orange_avoider_periodic(void)
     return;
   }
 
+  
+
   // compute current color thresholds
   int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
 
-  VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
+  // VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
+
+
+  // calculate distance covered
+
+  VERBOSE_PRINT("current position: x = %f, y = %f \n", stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y);
+
+  x_covered = x_covered + fabs(stateGetPositionEnu_f()->x - last_pos_x);
+  y_covered = y_covered + fabs(stateGetPositionEnu_f()->y - last_pos_y);
+
+  VERBOSE_PRINT("distance covered: d_x = %f, d_y = %f \n", x_covered, y_covered);
+
+  VERBOSE_PRINT("distance covered: d = %f \n", sqrt(x_covered*x_covered+y_covered*y_covered));
+
+
+  last_pos_x = stateGetPositionEnu_f()->x;
+  last_pos_y = stateGetPositionEnu_f()->y;
 
   // update our safe confidence using color threshold
   if(color_count < color_count_threshold){
@@ -188,7 +215,7 @@ uint8_t increase_nav_heading(float incrementDegrees)
   // for performance reasons the navigation variables are stored and processed in Binary Fixed-Point format
   nav_heading = ANGLE_BFP_OF_REAL(new_heading);
 
-  VERBOSE_PRINT("Increasing heading to %f\n", DegOfRad(new_heading));
+  // VERBOSE_PRINT("Increasing heading to %f\n", DegOfRad(new_heading));
   return false;
 }
 
@@ -213,9 +240,9 @@ uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
   // Now determine where to place the waypoint you want to go to
   new_coor->x = stateGetPositionEnu_i()->x + POS_BFP_OF_REAL(sinf(heading) * (distanceMeters));
   new_coor->y = stateGetPositionEnu_i()->y + POS_BFP_OF_REAL(cosf(heading) * (distanceMeters));
-  VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,	
-                POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y),
-                stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
+  // VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,	
+  //               POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y),
+  //               stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
   return false;
 }
 
@@ -224,8 +251,8 @@ uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
  */
 uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 {
-  VERBOSE_PRINT("Moving waypoint %d to x:%f y:%f\n", waypoint, POS_FLOAT_OF_BFP(new_coor->x),
-                POS_FLOAT_OF_BFP(new_coor->y));
+  // VERBOSE_PRINT("Moving waypoint %d to x:%f y:%f\n", waypoint, POS_FLOAT_OF_BFP(new_coor->x),
+  //               POS_FLOAT_OF_BFP(new_coor->y));
   waypoint_move_xy_i(waypoint, new_coor->x, new_coor->y);
   return false;
 }
@@ -245,7 +272,7 @@ uint8_t chooseRandomIncrementAvoidance(void)
   // }
 
   heading_increment = 5.f;
-  VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  // VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   return false;
 }
 
