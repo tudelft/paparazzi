@@ -64,6 +64,13 @@ float maxDistance = 2.25;               // max waypoint displacement [m]
 
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
 
+// global vars for logging distance covered
+float last_pos_x = 0;
+float last_pos_y = 0;
+float dx = 0;
+float dy = 0;
+float d_covered = 0;
+
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
  * any time data calculated in another module needs to be accessed. Including the file where this external
@@ -174,6 +181,19 @@ void orange_avoider_periodic(void)
       break;
   }
   return;
+}
+
+void log_distance_covered_periodic(void)
+{
+  // calculate distance covered
+  dx = fabs(stateGetPositionEnu_f()->x - last_pos_x);
+  dy = fabs(stateGetPositionEnu_f()->y - last_pos_y);
+  d_covered = d_covered + sqrt(dx*dx+dy*dy);
+  VERBOSE_PRINT("distance covered: d = %f \n", d_covered);
+
+  // Update position
+  last_pos_x = stateGetPositionEnu_f()->x;
+  last_pos_y = stateGetPositionEnu_f()->y;
 }
 
 /*
