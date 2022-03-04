@@ -63,8 +63,9 @@ float maxDistance = 2.25;               // max waypoint displacement [m]
 // global vars for logging distance covered
 float last_pos_x = 0;
 float last_pos_y = 0;
-float x_covered = 0;
-float y_covered = 0;
+float dx = 0;
+float dy = 0;
+float d_covered = 0;
 
 
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
@@ -120,21 +121,6 @@ void orange_avoider_periodic(void)
 
   // VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
 
-
-  // calculate distance covered
-
-  VERBOSE_PRINT("current position: x = %f, y = %f \n", stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y);
-
-  x_covered = x_covered + fabs(stateGetPositionEnu_f()->x - last_pos_x);
-  y_covered = y_covered + fabs(stateGetPositionEnu_f()->y - last_pos_y);
-
-  VERBOSE_PRINT("distance covered: d_x = %f, d_y = %f \n", x_covered, y_covered);
-
-  VERBOSE_PRINT("distance covered: d = %f \n", sqrt(x_covered*x_covered+y_covered*y_covered));
-
-
-  last_pos_x = stateGetPositionEnu_f()->x;
-  last_pos_y = stateGetPositionEnu_f()->y;
 
   // update our safe confidence using color threshold
   if(color_count < color_count_threshold){
@@ -199,6 +185,19 @@ void orange_avoider_periodic(void)
       break;
   }
   return;
+}
+
+void log_distance_covered_periodic(void)
+{
+  // calculate distance covered
+  dx = fabs(stateGetPositionEnu_f()->x - last_pos_x);
+  dy = fabs(stateGetPositionEnu_f()->y - last_pos_y);
+  d_covered = d_covered + sqrt(dx*dx+dy*dy);
+  VERBOSE_PRINT("distance covered: d = %f \n", d_covered);
+
+  // Update position
+  last_pos_x = stateGetPositionEnu_f()->x;
+  last_pos_y = stateGetPositionEnu_f()->y;
 }
 
 /*

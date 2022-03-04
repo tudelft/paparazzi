@@ -19,6 +19,7 @@ extern float oa_color_count_frac;
 // functions
 extern void orange_avoider_init(void);
 extern void orange_avoider_periodic(void);
+void log_distance_covered_periodic(void);
 
 #endif
 
