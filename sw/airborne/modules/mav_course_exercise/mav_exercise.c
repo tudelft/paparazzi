@@ -30,6 +30,9 @@
 
 #define PRINT(string, ...) fprintf(stderr, "[mav_exercise->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 
+float angle_increment = 20;
+float div_threshhold = 0.1;
+
 uint8_t increase_nav_heading(float incrementDegrees);
 uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
 uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
@@ -49,6 +52,7 @@ int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that 
 float moveDistance = 2;                 // waypoint displacement [m]
 float oob_haeding_increment = 5.f;      // heading angle increment if out of bounds [deg]
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
+float divergence = 0;
 
 
 // needed to receive output from a separate module running on a parallel process
@@ -64,9 +68,27 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
   color_count = quality;
 }
 
+#ifndef ORANGE_AVOIDER_OPTICAL_FLOW_ID
+#define ORANGE_AVOIDER_OPTICAL_FLOW_ID ABI_BROADCAST
+#endif
+static abi_event optical_flow_ev;
+static void optical_flow_cb(uint8_t __attribute__((unused)) sender_id,
+                            uint32_t __attribute__((unused)) now_ts,
+                            int32_t __attribute__((unused)) flow_x, 
+                            int32_t __attribute__((unused)) flow_y,
+                            int32_t __attribute__((unused)) flow_der_x,
+                            int32_t __attribute__((unused)) flow_der_y,
+                            float __attribute__((unused)) quality,
+                            float div_size )
+{
+  divergence = div_size;
+  PRINT("divergence: %f", divergence);
+}
+
 void mav_exercise_init(void) {
   // bind our colorfilter callbacks to receive the color filter outputs
   AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
+  AbiBindMsgOPTICAL_FLOW(ORANGE_AVOIDER_OPTICAL_FLOW_ID, &optical_flow_ev, optical_flow_cb);
 }
 
 void mav_exercise_periodic(void) {
@@ -96,8 +118,10 @@ void mav_exercise_periodic(void) {
       moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
         navigation_state = OUT_OF_BOUNDS;
-      } else if (obstacle_free_confidence == 0) {
-        navigation_state = OBSTACLE_FOUND;
+      // } else if (obstacle_free_confidence == 0) {
+      //   navigation_state = OBSTACLE_FOUND;
+      } else if (divergence > div_threshhold) {
+        navigation_state = OBSTACLE_FOUND;      
       } else {
         moveWaypointForward(WP_GOAL, moveDistance);
       }
@@ -107,8 +131,13 @@ void mav_exercise_periodic(void) {
       // stop as soon as obstacle is found
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
+      
+      float new_heading = stateGetNedToBodyEulers_f()->psi + RadOfDeg(angle_increment);
+      // normalize heading to [-pi, pi]
+      FLOAT_ANGLE_NORMALIZE(new_heading);
+      nav_heading = ANGLE_BFP_OF_REAL(new_heading);
 
-      navigation_state = HOLD;
+      navigation_state = SAFE;
       break;
     case OUT_OF_BOUNDS:
       // stop

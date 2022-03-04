@@ -6,6 +6,27 @@
     Exercise module for Autonomous Flight of MAV Course
     </description>
   </doc>
-  <depends>cv_detect_color_object</depends>
+
+  <settings>
+    <dl_settings>
+      <dl_settings name="EXERCISE_SETTINGS">
+        <dl_setting var="div_threshhold" min="0" step="0.1" max="1" shortname="div_t"/>
+        <dl_setting var="angle_increment" min="0" step="1" max ="180" shortname="ang_inc"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+
+  <dep>
+    <depends>cv_detect_color_object</depends>
+  </dep>
   <!-- TODO Specify header, init, periodic, makefile sections  -->
+  <header>
+    <file name="mav_exercise.h"/>
+  </header>
+  <init fun="mav_exercise_init()"/>
+  <periodic fun="mav_exercise_periodic()" freq="4"/>
+  <makefile target="ap|nps">
+    <file name="mav_exercise.c"/>
+  </makefile>
 </module>

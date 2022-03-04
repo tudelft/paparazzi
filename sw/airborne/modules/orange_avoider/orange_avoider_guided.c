@@ -30,8 +30,10 @@
 #include "generated/airframe.h"
 #include "state.h"
 #include "modules/core/abi.h"
-#include <stdio.h>
+#include <stdio.h>/home/jessica/paparazzi/sw/airborne/
 #include <time.h>
+
+#include "firmwares/rotorcraft/guidance/guidance_indi.h"
 
 #define ORANGE_AVOIDER_VERBOSE TRUE
 
@@ -56,7 +58,7 @@ enum navigation_state_t {
 float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a fraction of total of image
 float oag_floor_count_frac = 0.05f;       // floor detection threshold as a fraction of total of image
 float oag_max_speed = 0.5f;               // max flight speed [m/s]
-float oag_heading_rate = RadOfDeg(20.f);  // heading change setpoint for avoidance [rad/s]
+float oag_heading_rate = RadOfDeg(30.f);  // heading change setpoint for avoidance [rad/s]
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;   // current state in state machine
@@ -141,7 +143,7 @@ void orange_avoider_guided_periodic(void)
   // bound obstacle_free_confidence
   Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
 
-  float speed_sp = fminf(oag_max_speed, 0.2f * obstacle_free_confidence);
+  float speed_sp = fminf(oag_max_speed, 0.4f * obstacle_free_confidence);
 
   switch (navigation_state){
     case SAFE:
@@ -156,7 +158,7 @@ void orange_avoider_guided_periodic(void)
       break;
     case OBSTACLE_FOUND:
       // stop
-      guidance_h_set_guided_body_vel(0, 0);
+      guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
 
       // randomly select new search direction
       chooseRandomIncrementAvoidance();
@@ -166,7 +168,7 @@ void orange_avoider_guided_periodic(void)
       break;
     case SEARCH_FOR_SAFE_HEADING:
       guidance_h_set_guided_heading_rate(avoidance_heading_direction * oag_heading_rate);
-
+      guidance_h_set_guided_body_vel(0.0f, avoidance_heading_direction*0.4);
       // make sure we have a couple of good readings before declaring the way safe
       if (obstacle_free_confidence >= 2){
         guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
@@ -175,10 +177,10 @@ void orange_avoider_guided_periodic(void)
       break;
     case OUT_OF_BOUNDS:
       // stop
-      guidance_h_set_guided_body_vel(0, 0);
+      guidance_h_set_guided_body_vel(0.0f, avoidance_heading_direction*0.4);
 
       // start turn back into arena
-      guidance_h_set_guided_heading_rate(avoidance_heading_direction * RadOfDeg(15));
+      guidance_h_set_guided_heading_rate(avoidance_heading_direction * RadOfDeg(55));
 
       navigation_state = REENTER_ARENA;
 
@@ -188,6 +190,7 @@ void orange_avoider_guided_periodic(void)
       if (floor_count >= floor_count_threshold && avoidance_heading_direction * floor_centroid_frac >= 0.f){
         // return to heading mode
         guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
+        guidance_h_set_guided_body_vel(0.5f, 0.0f);
 
         // reset safe counter
         obstacle_free_confidence = 0;

@@ -21,6 +21,9 @@
 #ifndef PAPARAZZI_MAV_EXERCISE_H
 #define PAPARAZZI_MAV_EXERCISE_H
 
+extern float angle_increment;
+extern float div_threshhold;
+
 extern void mav_exercise_init(void);
 extern void mav_exercise_periodic(void);
 

@@ -66,12 +66,23 @@
       <define name="COLOR_OBJECT_DETECTOR_FPS1" value="0"/>
       <define name="COLOR_OBJECT_DETECTOR_DRAW1" value="1"/>
     </module>
+    <module name="cv_opticflow">
+      <define name="OPTICFLOW_CAMERA" value="front_camera"/>
+      <define name="MAX_HORIZON" value="10"/>
+      <define name="OPTICFLOW_MAX_TRACK_CORNERS" value="10"/>
+      <define name="OPTICFLOW_SUBPIXEL_FACTOR" value="200"/>
+      <define name="OPTICFLOW_CORNER_METHOD" value="0"/>
+      <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="0.8"/>
+      <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.85"/>
+      <define name="MAX_TRACK_CORNERS" value="10"/>
+    </module>
     <module name="video_rtp_stream">
       <define name="VIEWVIDEO_CAMERA" value="front_camera"/>
       <define name="VIEWVIDEO_CAMERA2" value="bottom_camera"/>
       <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="1"/>
       <define name="VIEWVIDEO_QUALITY_FACTOR" value="40"/>
     </module>
+    <module name="mav_course_exercise"/>
   </firmware>
 
   <commands>
@@ -269,4 +280,5 @@
     <define name="LOW_BAT_LEVEL" value="11.1" unit="V"/>
     <define name="MAX_BAT_LEVEL" value="12.4" unit="V"/>
   </section>
+
 </airframe>
