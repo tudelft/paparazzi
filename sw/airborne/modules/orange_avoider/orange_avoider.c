@@ -71,6 +71,10 @@ float dx = 0;
 float dy = 0;
 float d_covered = 0;
 
+// global vars for object center identification
+int16_t object_center_x = 0;
+int16_t object_center_y = 0;
+
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
  * any time data calculated in another module needs to be accessed. Including the file where this external
@@ -81,13 +85,18 @@ float d_covered = 0;
 #ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
 #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
+
+// extracts color_count and center_pixel from object
 static abi_event color_detection_ev;
 static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
-                               int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
+                               int16_t pixel_x, int16_t pixel_y,
                                int16_t __attribute__((unused)) pixel_width, int16_t __attribute__((unused)) pixel_height,
                                int32_t quality, int16_t __attribute__((unused)) extra)
 {
   color_count = quality;
+  object_center_x = pixel_x;
+  object_center_y = pixel_y;
+
 }
 
 /*
@@ -108,6 +117,9 @@ void orange_avoider_init(void)
  */
 void orange_avoider_periodic(void)
 {
+  VERBOSE_PRINT("center of object  x = %i\n", object_center_x);
+  VERBOSE_PRINT("center of object  y = %i\n", object_center_y);
+  
   // only evaluate our state machine if we are flying
   if(!autopilot_in_flight()){
     return;
@@ -150,8 +162,11 @@ void orange_avoider_periodic(void)
 
       // randomly select new search direction
       chooseRandomIncrementAvoidance();
-	  increase_nav_heading(heading_increment);
-	  moveWaypointForward(WP_TRAJECTORY, 1.5f * 0.1f);
+
+      // What does this do exactly?
+      increase_nav_heading(heading_increment);
+      // moveWaypointForward(WP_TRAJECTORY, 1.5f * 0.1f);
+      moveWaypointAcross(WP_TRAJECTORY, 0.5f* 0.1f , heading_increment);
       navigation_state = SEARCH_FOR_SAFE_HEADING;
 
       break;
@@ -165,7 +180,11 @@ void orange_avoider_periodic(void)
       break;
     case OUT_OF_BOUNDS:
 
-      moveWaypointForward(WP_TRAJECTORY, 0.2f);
+      // moveWaypointForward(WP_TRAJECTORY, 0.2f);
+
+      increase_nav_heading(heading_increment);
+      moveWaypointForward(WP_TRAJECTORY, 1.5f);
+
       if (InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         // add offset to head back into arena
         increase_nav_heading(heading_increment);
@@ -185,6 +204,9 @@ void orange_avoider_periodic(void)
 
 void log_distance_covered_periodic(void)
 {
+  if(!autopilot_in_flight()){
+    return;
+  }
   // calculate distance covered
   dx = fabs(stateGetPositionEnu_f()->x - last_pos_x);
   dy = fabs(stateGetPositionEnu_f()->y - last_pos_y);
@@ -277,7 +299,18 @@ uint8_t chooseRandomIncrementAvoidance(void)
 {
   // Randomly choose CW or CCW avoiding direction
 
-  if (rand() % 2 == 0) {
+  // if (rand() % 2 == 0) {
+  //   heading_increment = 5.f;
+  //   VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  // } else {
+  //   heading_increment = -5.f;
+  //   VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  // }
+
+
+  // If object is in the left part of the image (object_center_y > 0), yaw right and vice versa
+  // Note that the image is rotated by 90 degrees (x=y)
+  if (object_center_y > 0 ) {
     heading_increment = 5.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   } else {
