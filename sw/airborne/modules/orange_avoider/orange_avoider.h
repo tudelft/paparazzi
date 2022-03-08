@@ -15,6 +15,7 @@
 
 // settings
 extern float oa_color_count_frac;
+extern float d_covered;
 
 // functions
 extern void orange_avoider_init(void);
