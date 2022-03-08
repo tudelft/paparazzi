@@ -254,8 +254,8 @@ void uart_periph_set_baudrate(struct uart_periph *periph, uint32_t baud)
   if (periph->reg_addr == NULL) {
     // periph not started, do nothiing
     return;
-  }
-  struct SerialPort *port = (struct SerialPort *)(periph->reg_addr);
+  } 7
+  -struct SerialPort *port = (struct SerialPort *)(periph->reg_addr);
   serial_port_set_baudrate(port, baud);
 }
 

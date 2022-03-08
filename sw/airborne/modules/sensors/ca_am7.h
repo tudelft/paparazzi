@@ -31,7 +31,8 @@
 #define THIRD_BYTE 0x01  //3rd Start block identifier byte
 #define FOURTH_BYTE 0x02 //4rd Start block identifier byte
 
-#define MESSAGE_LENGTH 24 // 24 bytes is the message length according to the protocol def
+#define MESSAGE_LENGTH_IN 24 // 24 bytes
+#define MESSAGE_LENGTH_OUT 24 // 24 bytes
 
 #include "std.h"
 #include <stdbool.h>
@@ -46,23 +47,53 @@ struct am7_t {
   bool msg_available;                 ///< If we received a message
 };
 
-static struct am7_data {
-	uint16_t bale_no;
-	uint16_t rx_throttle;
-	uint16_t output_throttle;
-	uint16_t rpm;
-	uint16_t voltage;
-	int16_t busbar_current; // data type might need to be changed later
-	int16_t phase_wire_current;
-	uint8_t mosfet_temp;// data type might need to be changed later
-	uint8_t capacitor_temp;// data type might need to be changed later
-	uint16_t status_code;
-	uint16_t verify_code;
-	uint8_t buffer_counter ;
+struct   __attribute__((__packed__)) am7_data_in {
+    //Motor command
+	int16_t motor_1_cmd_int;
+	int16_t motor_2_cmd_int;
+	int16_t motor_3_cmd_int;
+	int16_t motor_4_cmd_int;
+	int16_t el_1_cmd_int;
+	int16_t el_2_cmd_int;
+	int16_t el_3_cmd_int;
+    int16_t el_4_cmd_int;
+    int16_t az_1_cmd_int;
+    int16_t az_2_cmd_int;
+    int16_t az_3_cmd_int;
+    int16_t az_4_cmd_int;
+    int16_t theta_cmd_int;
+    int16_t phi_cmd_int;
+    //Optimization info
+    uint8_t n_iteration;
+    uint8_t n_evaluation;
+    //Residuals
+    int16_t residual_ax_int;
+    int16_t residual_ay_int;
+    int16_t residual_az_int;
+    int16_t residual_p_dot_int;
+    int16_t residual_q_dot_int;
+    int16_t residual_r_dot_int;
+};
+
+struct   __attribute__((__packed__)) am7_data_out {
+    //Motor command
+    int16_t motor_1_state_int;
+    int16_t motor_2_state_int;
+    int16_t motor_3_state_int;
+    int16_t motor_4_state_int;
+    int16_t el_1_state_int;
+    int16_t el_2_state_int;
+    int16_t el_3_state_int;
+    int16_t el_4_state_int;
+    int16_t az_1_state_int;
+    int16_t az_2_state_int;
+    int16_t az_3_state_int;
+    int16_t az_4_state_int;
 };
 
 extern void am7_init(void);
 extern void am7_event(void);
+extern void am7_periodic(void);
 
 #endif
 

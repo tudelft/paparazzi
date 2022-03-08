@@ -36,14 +36,8 @@
         <define name="MS45XX_PRESSURE_RANGE" value="1"/>
       </module>
 
-      <module name="ca_am7">
-        <configure name="AM7_PORT" value="UART1"/>
-        <configure name="AM7_BAUD" value="115200"/>
-      </module> 
-<!--      <module name="airspeed_ets.xml">-->
-
-<!--        <define name="AIRSPEED_ETS_SCALE" value="1.24"/>-->
-<!--      </module>-->
+<!--      Module needed for the communication between the raspberry pi and the pixhawk-->
+      <module name="ca_am7"/>
 
 <!--      <module name="scheduling_indi_simple"/>-->
 

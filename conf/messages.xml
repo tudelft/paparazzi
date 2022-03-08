@@ -1685,8 +1685,6 @@
       <field name="mz"    type="float" />
     </message>
 
-    <!-- 194 is free -->
-
     <message name="NPS_SENSORS_SCALED" id="197">
       <field name="acc_x"    type="float" />
       <field name="acc_y"    type="float" />
@@ -1787,19 +1785,60 @@
       <field name="commands" type="int32[]">Commands send to actuators</field>
     </message>
 
-     <message name= "AM7" id = "195">
-         <description>Live data consisting of various Alpha ESC output values</description>
-         <field name = "bale_no" type="uint16" unit="pprz"/>
-         <field name = "rx_throttle" type="uint16" unit="pprz"/>
-         <field name = "output_throttle" type="uint16" unit="pprz"/>
-         <field name = "rpm" type="uint16" unit="rpm"/>
-         <field name = "voltage" type="uint16" unit="1e1V" alt_unit="V"  alt_unit_coef="0.1"/>
-         <field name = "busbar_current" type="int16" unit="64A" alt_unit="A" alt_unit_coef = "0.015625"/>
-         <field name = "phase_wire_current" type="int16" unit="64A" alt_unit="A" alt_unit_coef = "0.015625"/>
-         <field name="capacitor_temp"      type="uint8" unit="dC"/>
-         <field name="mosfet_temp"      type="uint8" unit="dC"/>
-         <field name="status_code"   type="uint16" unit="pprz"/>
-         <field name="verify_code"   type="uint16" unit="pprz"/>
+     <message name= "AM7_OUT" id = "196">
+         <description>Control allocation TX data running on a companion computer</description>
+         <field name = "motor_1_state" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1"/>
+         <field name = "motor_2_state" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1"/>
+         <field name = "motor_3_state" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1"/>
+         <field name = "motor_4_state" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1"/>
+         <field name = "el_1_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "el_2_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "el_3_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "el_4_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "az_1_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "az_2_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "az_3_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "az_4_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+<!--         <field name = "theta_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>-->
+<!--         <field name = "phi_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>-->
+<!--         <field name = "psi_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>-->
+<!--         <field name = "gamma_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>&lt;!&ndash;flight path angle&ndash;&gt;-->
+<!--         <field name = "p_state" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1"/>-->
+<!--         <field name = "q_state" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1"/>-->
+<!--         <field name = "r_state" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1"/>-->
+<!--         <field name = "airspeed_state" type="int16" unit="1e2_m_s" alt_unit="m_s"  alt_unit_coef="0.01"/>-->
+<!--         <field name = "pseudo_control_ax" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01"/>-->
+<!--         <field name = "pseudo_control_ay" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01"/>-->
+<!--         <field name = "pseudo_control_az" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01"/>-->
+<!--         <field name = "pseudo_control_p_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1"/>-->
+<!--         <field name = "pseudo_control_q_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1"/>-->
+<!--         <field name = "pseudo_control_r_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1"/>-->
+     </message>
+
+     <message name= "AM7_IN" id = "195">
+         <description>Control allocation RX data running on a companion computer</description>
+         <field name = "motor_1_cmd" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1"/>
+         <field name = "motor_2_cmd" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1"/>
+         <field name = "motor_3_cmd" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1"/>
+         <field name = "motor_4_cmd" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1"/>
+         <field name = "el_1_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "el_2_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "el_3_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "el_4_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "az_1_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "az_2_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "az_3_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "az_4_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+<!--         <field name = "theta_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>-->
+<!--         <field name = "phi_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>-->
+<!--         <field name = "n_iteration" type="uint8"/>-->
+<!--         <field name = "n_evaluation" type="uint8"/>-->
+<!--         <field name = "residual_ax" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01"/>-->
+<!--         <field name = "residual_ay" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01"/>-->
+<!--         <field name = "residual_az" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01"/>-->
+<!--         <field name = "residual_p_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1"/>-->
+<!--         <field name = "residual_q_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1"/>-->
+<!--         <field name = "residual_r_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1"/>-->
      </message>
 
      <message name="B_MATRIX_SEND_LINEAR" id="199">
@@ -1861,8 +1900,6 @@
          <field name="Tilt_az_4_cmd" type="int32">Tilting azimuth servo 4 command [PPZ]</field>
 
      </message>
-
-<!--     196 is free -->
 
      <message name="OVERACTUATED_VARIABLES" id="212">
 
