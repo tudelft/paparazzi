@@ -146,6 +146,7 @@ void orange_avoider_periodic(void)
     case SAFE:
       // Move waypoint forward
       moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
+
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0){
@@ -171,6 +172,7 @@ void orange_avoider_periodic(void)
 
       break;
     case SEARCH_FOR_SAFE_HEADING:
+      
       increase_nav_heading(heading_increment);
       moveWaypointAcross(WP_TRAJECTORY, 0.5f , heading_increment);
       // make sure we have a couple of good readings before declaring the way safe
@@ -182,7 +184,10 @@ void orange_avoider_periodic(void)
 
       // moveWaypointForward(WP_TRAJECTORY, 0.2f);
 
+      // Test
+      heading_increment = 5;
       increase_nav_heading(heading_increment);
+
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
 
       if (InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
@@ -310,13 +315,40 @@ uint8_t chooseRandomIncrementAvoidance(void)
 
   // If object is in the left part of the image (object_center_y > 0), yaw right and vice versa
   // Note that the image is rotated by 90 degrees (x=y)
-  if (object_center_y > 0 ) {
+
+
+  // if (object_center_y > 0 ) {
+  //   heading_increment = 5.f;
+  //   VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  // } else {
+  //   heading_increment = -5.f;
+  //   VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  // }
+
+  // If an obstacle found, change heading incre
+
+  
+  if (object_center_y > 0 && object_center_y < 130) {
+    heading_increment = 20.f;
+    VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  }
+  
+  if (object_center_y > 130 && object_center_y < 260){
     heading_increment = 5.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
-  } else {
+  }
+
+  if (object_center_y < 0 && object_center_y > -130) {
+    heading_increment = -20.f;
+    VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  }
+  
+  if (object_center_y < -130 && object_center_y > -260){
     heading_increment = -5.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
+
+
   return false;
 }
 
