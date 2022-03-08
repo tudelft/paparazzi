@@ -172,11 +172,11 @@ void orange_avoider_periodic(void)
 
       break;
     case SEARCH_FOR_SAFE_HEADING:
-      
+      heading_increment = heading_increment/abs(heading_increment)*5;
       increase_nav_heading(heading_increment);
-      moveWaypointAcross(WP_TRAJECTORY, 0.5f , heading_increment);
+      moveWaypointAcross(WP_TRAJECTORY, 1.5f , heading_increment+10);
       // make sure we have a couple of good readings before declaring the way safe
-      if (obstacle_free_confidence >= 2){
+      if (obstacle_free_confidence >= 1){
         navigation_state = SAFE;
       }
       break;
@@ -185,7 +185,7 @@ void orange_avoider_periodic(void)
       // moveWaypointForward(WP_TRAJECTORY, 0.2f);
 
       // Test
-      heading_increment = 5;
+      heading_increment = heading_increment/abs(heading_increment)*5;
       increase_nav_heading(heading_increment);
 
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
