@@ -152,9 +152,12 @@
     
     	<!-- Motor coefficients. Thrust as a function of ESC command (on range [0, 9600])
     	 	 Thrust equation of the form: T = k1 x^2 + k2 x + k3 -->
-    	<define name="K1" value="0.00000001"/>
+    	<define name="K1" value="0.00000007"/>
+    	<define name="K2" value="0.0003"/>
+    	<define name="K3" value="-0.2157"/>
+<!--    	<define name="K1" value="0.00000001"/>
     	<define name="K2" value="0.0004"/>
-    	<define name="K3" value="3.506"/>
+    	<define name="K3" value="3.506"/>				-->
     	
     	<!-- Location of the Motors w.r.t. the c.g. -->
     	<define name="Y_DIST" value="0.3"/>		<!--[m]-->
@@ -163,7 +166,7 @@
     	<!-- Drone specific metrics -->
     	<define name="MASS" value="1.3"/>		<!--[kg]-->
     	<define name="I_XX" value="0.017897"/>	<!--[kg m2]-->
-    	<define name="I_YY" value="0.003390"/>	<!--[kg m2]-->
+    	<define name="I_YY" value="0.008475"/>	<!--[kg m2] The cyclone value from jsbsim is 0.003390, currently multiplying by 2.5 -->
     	<define name="I_ZZ" value="0.020337"/>	<!--[kg m2]-->
     	
     	<define name="GROUND_CONTACT" value="0"/>
