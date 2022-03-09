@@ -75,6 +75,11 @@ float d_covered = 0;
 int16_t object_center_x = 0;
 int16_t object_center_y = 0;
 
+// global vars for FPS logging
+float current_time = 0;
+float last_time = 0;
+float FPS_orange_avoider = 0;
+
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
  * any time data calculated in another module needs to be accessed. Including the file where this external
@@ -86,7 +91,7 @@ int16_t object_center_y = 0;
 #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
 
-// extracts color_count and center_pixel from object
+// callback - extracts color_count and center pixels from object
 static abi_event color_detection_ev;
 static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int16_t pixel_x, int16_t pixel_y,
@@ -97,7 +102,13 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
   object_center_x = pixel_x;
   object_center_y = pixel_y;
 
+  // Get FPS
+  current_time = get_sys_time_float();
+  FPS_orange_avoider = 1/(current_time-last_time);
+  last_time = current_time;
+
 }
+
 
 /*
  * Initialisation function, setting the colour filter, random seed and heading_increment
@@ -119,7 +130,8 @@ void orange_avoider_periodic(void)
 {
   VERBOSE_PRINT("center of object  x = %i\n", object_center_x);
   VERBOSE_PRINT("center of object  y = %i\n", object_center_y);
-  
+  VERBOSE_PRINT("FPS = %f\n", FPS_orange_avoider);
+
   // only evaluate our state machine if we are flying
   if(!autopilot_in_flight()){
     return;
@@ -176,7 +188,7 @@ void orange_avoider_periodic(void)
       increase_nav_heading(heading_increment);
       moveWaypointAcross(WP_TRAJECTORY, 1.5f , heading_increment+10);
       // make sure we have a couple of good readings before declaring the way safe
-      if (obstacle_free_confidence >= 1){
+      if (obstacle_free_confidence >= 2){
         navigation_state = SAFE;
       }
       break;
