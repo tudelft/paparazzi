@@ -27,11 +27,13 @@
 
 #include "modules/orange_avoider/orange_avoider_guided.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
+#include "firmwares/rotorcraft/navigation.h"
 #include "generated/airframe.h"
 #include "state.h"
 #include "modules/core/abi.h"
 #include <stdio.h>/home/jessica/paparazzi/sw/airborne/
 #include <time.h>
+#include <math.h>
 
 #include "firmwares/rotorcraft/guidance/guidance_indi.h"
 
@@ -44,7 +46,12 @@
 #define VERBOSE_PRINT(...)
 #endif
 
+
+static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
+static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
+static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 uint8_t chooseRandomIncrementAvoidance(void);
+static inline bool InsideObstacleZone(float _x, float _y);
 
 enum navigation_state_t {
   SAFE,
@@ -59,6 +66,12 @@ float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a f
 float oag_floor_count_frac = 0.05f;       // floor detection threshold as a fraction of total of image
 float oag_max_speed = 0.5f;               // max flight speed [m/s]
 float oag_heading_rate = RadOfDeg(30.f);  // heading change setpoint for avoidance [rad/s]
+
+float oag_oob_vx = 0.0f;
+float oag_oob_vy = 0.4f;
+float oag_oob_rate = 30.0f;
+
+
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;   // current state in state machine
@@ -146,8 +159,11 @@ void orange_avoider_guided_periodic(void)
   float speed_sp = fminf(oag_max_speed, 0.4f * obstacle_free_confidence);
 
   switch (navigation_state){
-    case SAFE:
-      if (floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
+    case SAFE: ;
+      struct EnuCoor_i new_coor;
+      calculateForwards(&new_coor, 1.0f);
+
+      if (!InsideObstacleZone(new_coor.x, new_coor.y)){//(floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0){
         navigation_state = OBSTACLE_FOUND;
@@ -175,17 +191,19 @@ void orange_avoider_guided_periodic(void)
         navigation_state = SAFE;
       }
       break;
-    case OUT_OF_BOUNDS:
+    case OUT_OF_BOUNDS: 
+      VERBOSE_PRINT("Out of bounds");
       // stop
-      guidance_h_set_guided_body_vel(0.0f, avoidance_heading_direction*0.4);
+      guidance_h_set_guided_body_vel(oag_oob_vx, avoidance_heading_direction*oag_oob_vy);
 
       // start turn back into arena
-      guidance_h_set_guided_heading_rate(avoidance_heading_direction * RadOfDeg(55));
+      guidance_h_set_guided_heading_rate(avoidance_heading_direction * RadOfDeg(oag_oob_rate));
 
       navigation_state = REENTER_ARENA;
 
       break;
     case REENTER_ARENA:
+      VERBOSE_PRINT("Reenter");
       // force floor center to opposite side of turn to head back into arena
       if (floor_count >= floor_count_threshold && avoidance_heading_direction * floor_centroid_frac >= 0.f){
         // return to heading mode
@@ -219,4 +237,60 @@ uint8_t chooseRandomIncrementAvoidance(void)
     VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
   }
   return false;
+}
+
+/*
+ * Calculates coordinates of distance forward and sets waypoint 'waypoint' to those coordinates
+ */
+uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters)
+{
+  struct EnuCoor_i new_coor;
+  calculateForwards(&new_coor, distanceMeters);
+  moveWaypoint(waypoint, &new_coor);
+  return false;
+}
+
+/*
+ * Calculates coordinates of a distance of 'distanceMeters' forward w.r.t. current position and heading
+ */
+uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
+{
+  float heading  = stateGetNedToBodyEulers_f()->psi;
+
+  // Now determine where to place the waypoint you want to go to
+  new_coor->x = stateGetPositionEnu_i()->x + POS_BFP_OF_REAL(sinf(heading) * (distanceMeters));
+  new_coor->y = stateGetPositionEnu_i()->y + POS_BFP_OF_REAL(cosf(heading) * (distanceMeters));
+  VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,	
+                POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y),
+                stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
+  return false;
+}
+
+/*
+ * Sets waypoint 'waypoint' to the coordinates of 'new_coor'
+ */
+uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
+{
+  VERBOSE_PRINT("Moving waypoint %d to x:%f y:%f\n", waypoint, POS_FLOAT_OF_BFP(new_coor->x),
+                POS_FLOAT_OF_BFP(new_coor->y));
+  waypoint_move_xy_i(waypoint, new_coor->x, new_coor->y);
+  return false;
+}
+
+
+#define SECTOR_OBSTACLEZONE_NB 4
+#define SECTOR_OBSTACLEZONE { 11, 12, 13, 14 }
+static inline bool InsideObstacleZone(float _x, float _y) {
+  uint8_t i, j;
+  bool c = false;
+  const uint8_t nb_pts = SECTOR_OBSTACLEZONE_NB;
+  const uint8_t wps_id[] = SECTOR_OBSTACLEZONE;
+
+  for (i = 0, j = nb_pts - 1; i < nb_pts; j = i++) {
+    if (((WaypointY(wps_id[i]) > _y) != (WaypointY(wps_id[j]) > _y)) &&
+       (_x < (WaypointX(wps_id[j])-WaypointX(wps_id[i])) * (_y-WaypointY(wps_id[i])) / (WaypointY(wps_id[j])-WaypointY(wps_id[i])) + WaypointX(wps_id[i]))) {
+      if (c == TRUE) { c = FALSE; } else { c = TRUE; }
+    }
+  }
+  return c;
 }
