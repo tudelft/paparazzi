@@ -11,7 +11,7 @@
 #include "modules/nav/nav_pivot_takeoff_landing.h"
 #include "autopilot.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
-#include "firmwares/rotorcraft/stabilization/stabilization_"
+//#include "firmwares/rotorcraft/stabilization/stabilization_"
 #include "modules/nav/common_flight_plan.h"
 #include "navigation.h"
 #include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
