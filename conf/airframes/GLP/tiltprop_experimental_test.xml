@@ -344,6 +344,7 @@
   <section name="SIMULATOR" prefix="NPS_">
     <define name="ACTUATOR_NAMES" value="tilt_left, tilt_right, mot_right, mot_left" type="string[]"/>
     <define name="JSBSIM_MODEL" value="tiltprop_skywalker_flat" type="string"/>
+    <!--<define name="JSBSIM_INIT" value="initialise_tiltprop_skywalker" type="string"/> -->
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
     <define name="NO_MOTOR_MIXING" value="TRUE"/>
   </section>
