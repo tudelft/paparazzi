@@ -576,6 +576,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
       } else {
         du_pref[i] = 0;
       }
+      
     } else {
       doub_init = FALSE;
       val_init = 0;
