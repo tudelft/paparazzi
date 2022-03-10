@@ -103,7 +103,6 @@
             <define name="CHIRP_FADEIN"      value="TRUE"/>
          </module>
         <module name="sys_id_doublet"/>
-        <module name="extended_eff_message"/>
         <!--<module name="project_target"/>-->
         
 
@@ -145,7 +144,7 @@
 
     <command_laws>
         <!--<let VAR="th_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>-->
-        <!--<call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,values)"/>-->
+        <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,values)"/>
         <set VALUE="autopilot_get_motors_on() ? actuators_pprz[0] : -MAX_PPRZ" SERVO="MOTOR_FRONT"/>
         <set VALUE="autopilot_get_motors_on() ? actuators_pprz[1] : -MAX_PPRZ" SERVO="MOTOR_RIGHT"/>
         <set VALUE="autopilot_get_motors_on() ? actuators_pprz[2] : -MAX_PPRZ" SERVO="MOTOR_BACK"/>
@@ -251,7 +250,7 @@
         <define name="REF_ERR_R" value="85.0"/>
         <define name="REF_RATE_P" value="18.0"/>
         <define name="REF_RATE_Q" value="18.0"/>
-        <define name="REF_RATE_R" value="9.7"/>
+        <define name="REF_RATE_R" value=".0"/>
 
         <!--Maxium yaw rate, to avoid instability-->
         <define name="MAX_R" value="50.0" unit="deg/s"/>
