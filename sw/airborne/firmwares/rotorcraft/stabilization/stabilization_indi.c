@@ -516,7 +516,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     Bound(actuator_thrust_bx_pprz, 0, MAX_PPRZ);
   } else {
     // Copy radio cmd
-    actuator_thrust_bx_pprz = RadioControlValues(RADIO_AUX3);
+    actuator_thrust_bx_pprz = 0;//RadioControlValues(RADIO_AUX3);
   }
 
   actuators_pprz[INDI_NUM_ACT] = (int16_t) actuator_thrust_bx_pprz;
@@ -557,7 +557,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   for (i = 0; i < INDI_NUM_ACT; i++) {
     du_min[i] = -MAX_PPRZ * act_is_servo[i] - actuator_state_filt_vect[i];
     du_max[i] = MAX_PPRZ - actuator_state_filt_vect[i];
-    du_pref[i] = act_pref[i] - actuator_state_filt_vect[i];
+    du_pref[i] = 0; // act_pref[i] - actuator_state_filt_vect[i];
     if (act_is_servo[i])
     {
       du_pref[i] = 0;

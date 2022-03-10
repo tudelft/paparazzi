@@ -250,7 +250,7 @@
         <define name="REF_ERR_R" value="85.0"/>
         <define name="REF_RATE_P" value="18.0"/>
         <define name="REF_RATE_Q" value="18.0"/>
-        <define name="REF_RATE_R" value=".0"/>
+        <define name="REF_RATE_R" value="28.0"/>
 
         <!--Maxium yaw rate, to avoid instability-->
         <define name="MAX_R" value="50.0" unit="deg/s"/>
@@ -266,7 +266,8 @@
         <define name="ACT_DYN" value="{0.047, 0.047, 0.047, 0.047, 0.1, 0.1, 0.1, 0.1}"/>
         <define name="ACT_IS_SERVO" value="{0, 0, 0, 0, 1, 1, 1, 1}"/>
 
-        <define name="WLS_PRIORITIES" value="{1000.f, 1000.f, 1.f, 100.f}"/>
+        <define name="WLS_PRIORITIES" value="{100.f, 100.f, 1.f, 1000.f}"/>
+        <define name="WU_MOTOR" value="10"/>
 
         <define name="WLS_WU_MOTOR_PITCH" value="9.0"/>
         <define name="WLS_WU_MOTOR_ROLL" value="9.0"/>

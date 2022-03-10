@@ -58,6 +58,9 @@ extern float guidance_indi_max_bank;
 
 extern float lift_pitch_eff;
 extern float pitch_priority_factor;
+extern float roll_priority_factor;
+extern float thrust_priority_factor;
+extern float pusher_priority_factor;
 
 extern float pitch_pref_deg;
 
