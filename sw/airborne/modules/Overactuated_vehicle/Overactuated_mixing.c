@@ -35,6 +35,7 @@
 #include "modules/actuators/motor_mixing.h"
 #include "math/pprz_algebra_float.h"
 #include "math/pprz_matrix_decomp_float.c"
+//#include "modules/sensors/ca_am7.c"
 //#include "wls/wls_alloc.h"
 
 /**
@@ -2048,6 +2049,7 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     init_variables();
 
     assign_var_to_am7();
+
     /// Case of PID control as on simulink [FAILSAFE]
     if(radio_control.values[RADIO_MODE] < 500) {
         //INIT AND BOOLEAN RESET
