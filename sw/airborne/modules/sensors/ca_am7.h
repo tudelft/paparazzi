@@ -31,8 +31,8 @@
 #define THIRD_BYTE 0x01  //3rd Start block identifier byte
 #define FOURTH_BYTE 0x02 //4rd Start block identifier byte
 
-#define MESSAGE_LENGTH_IN 24 // 24 bytes
-#define MESSAGE_LENGTH_OUT 24 // 24 bytes
+//#define MESSAGE_LENGTH_IN 24 // 24 bytes
+//#define MESSAGE_LENGTH_OUT 24 // 24 bytes
 
 #include "std.h"
 #include <stdbool.h>
@@ -47,7 +47,7 @@ struct am7_t {
   bool msg_available;                 ///< If we received a message
 };
 
-struct   __attribute__((__packed__)) am7_data_in {
+struct __attribute__((__packed__)) am7_data_in {
     //Motor command
 	int16_t motor_1_cmd_int;
 	int16_t motor_2_cmd_int;
@@ -64,8 +64,9 @@ struct   __attribute__((__packed__)) am7_data_in {
     int16_t theta_cmd_int;
     int16_t phi_cmd_int;
     //Optimization info
-    uint8_t n_iteration;
-    uint8_t n_evaluation;
+    uint16_t n_iteration;
+    uint16_t n_evaluation;
+    uint16_t elapsed_time_us;
     //Residuals
     int16_t residual_ax_int;
     int16_t residual_ay_int;
@@ -73,10 +74,14 @@ struct   __attribute__((__packed__)) am7_data_in {
     int16_t residual_p_dot_int;
     int16_t residual_q_dot_int;
     int16_t residual_r_dot_int;
+    float rolling_msg_in;
+    uint8_t rolling_msg_in_id;
+    uint16_t msg_counter_in;
+    uint8_t checksum_in;
 };
 
-struct   __attribute__((__packed__)) am7_data_out {
-    //Motor command
+struct __attribute__((__packed__)) am7_data_out {
+    //Actuator state
     int16_t motor_1_state_int;
     int16_t motor_2_state_int;
     int16_t motor_3_state_int;
@@ -89,6 +94,26 @@ struct   __attribute__((__packed__)) am7_data_out {
     int16_t az_2_state_int;
     int16_t az_3_state_int;
     int16_t az_4_state_int;
+    //Variable states
+    int16_t theta_state_int;
+    int16_t phi_state_int;
+    int16_t psi_state_int;
+    int16_t gamma_state_int;
+    int16_t p_state_int;
+    int16_t q_state_int;
+    int16_t r_state_int;
+    int16_t airspeed_state_int;
+    //Pseudo-control cmd
+    int16_t pseudo_control_ax_int;
+    int16_t pseudo_control_ay_int;
+    int16_t pseudo_control_az_int;
+    int16_t pseudo_control_p_dot_int;
+    int16_t pseudo_control_q_dot_int;
+    int16_t pseudo_control_r_dot_int;
+    float rolling_msg_out;
+    uint8_t rolling_msg_out_id;
+    uint16_t msg_counter_out;
+    uint8_t checksum_out;
 };
 
 extern void am7_init(void);

@@ -2,8 +2,6 @@
 <module name="ca_am7">
   <doc>
     <description>Transfers telemetry data X to the autopilot and if you wish groundstation</description>
-    <configure name="AM7_PORT" value="UART4" description="Set to which UART serial stream pin is connected to"/>
-    <configure name="AM7_BAUD" value="115200" description="Sets the baudrate of the UART"/>
   </doc>
   <header>
     <file name="ca_am7.h" dir="modules/sensors"/>
