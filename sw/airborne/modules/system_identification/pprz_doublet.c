@@ -64,7 +64,7 @@ float doublet_update(struct doublet_t *doublet, float current_time_s)
   if (t <= doublet->length_s/2.0) {
     doublet->current_value = 1.0;
   } else{
-    doublet->current_value = -2.0;
+    doublet->current_value = -1.0;
   }
   return doublet->current_value;
 }

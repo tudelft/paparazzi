@@ -32,10 +32,9 @@
           <strip_button name="Doublet start" value="1" group="System identification"/>
           <strip_button name="Doublet stop"  value="0" group="System identification"/>
         </dl_setting>
-        <dl_setting min="0" max="5" step="1" shortname="Doublet axis" var="doublet_axis" type="uint8_t" module="system_identification/sys_id_doublet" handler="axis_handler"/>
-        <dl_setting min="0"    max="5"    step="1"    shortname="Doublet axis"     var="doublet_axis"                    type="uint8_t" module="system_identification/sys_id_doublet" handler="axis_handler"/>
+        <dl_setting min="0" max="7" step="1" shortname="Doublet axis" var="doublet_axis" type="uint8_t" module="system_identification/sys_id_doublet" handler="axis_handler"/>
         <dl_setting min="0"    max="9600" step="100"  shortname="Amplitude"      var="doublet_amplitude"               type="int32_t" module="system_identification/sys_id_doublet"/>
-        <dl_setting min="0"    max="100"  step="0.5"  shortname="Length_s"       var="doublet_length_s"                type="float"   module="system_identification/sys_id_doublet"/>
+        <dl_setting min="0"    max="30"  step="0.1"  shortname="Length_s"       var="doublet_length_s"                type="float"   module="system_identification/sys_id_doublet"/>
       </dl_settings>
     </dl_settings>
   </settings>

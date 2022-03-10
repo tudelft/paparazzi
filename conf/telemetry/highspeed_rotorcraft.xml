@@ -50,7 +50,8 @@
       <message name="AHRS_REF_QUAT"            period="0.1"/>
       <message name="INDI_G"            period="0.25"/>
       <message name="STAB_ATTITUDE_FULL_INDI"            period="0.1"/>
-      <message name="DOUBLET"            period="0.25"/>
+      <!-- <message name="EFF_FULL_INDI"            period="0.1"/> -->
+      <!-- <message name="DOUBLET"            period="0.25"/> -->
       <message name="ACTUATORS"            period="0.1"/>
       <message name="DOUBLET"            period="0.25"/>
       <message name="CHIRP"            period="0.25"/>
@@ -239,6 +240,7 @@
 		  <message name="ROT_WING_CONTROLLER"      period="0.002"/>
 		  <message name="AIRSPEED_MS45XX" 	       period=".25"/>
 		  <message name="STAB_ATTITUDE_FULL_INDI" period="0.002"/>
+      <message name="EFF_FULL_INDI" period="0.002"/>
       <message name="DOUBLET"            period="0.002"/>
       <message name="CHIRP"            period="0.002"/>
     </mode>
