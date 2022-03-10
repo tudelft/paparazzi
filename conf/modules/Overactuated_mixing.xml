@@ -5,7 +5,6 @@
     <description>Overactuated Vehicle Mixing</description>
   </doc>
 
-
   <settings>
     <dl_settings>
       <dl_settings NAME="General overact">
@@ -107,6 +106,7 @@
   <init fun="overactuated_mixing_init()"/>
   <makefile>
     <file name="Overactuated_mixing.c"/>
+    <file name="modules/ca_am7.h"/>
     <file name="wls_alloc.c" dir="$(SRC_FIRMWARE)/stabilization/wls"/>
     <file name="qr_solve.c" dir="math/qr_solve"/>
     <file name="r8lib_min.c" dir="math/qr_solve"/>

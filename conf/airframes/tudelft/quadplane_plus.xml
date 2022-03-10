@@ -312,7 +312,7 @@
     <define name="MOTOR_K_M_OMEGASQ" value="1.3e-7" unit="N*m/(rad/s)^2"/>
     <define name="MOTOR_K_PWM_OMEGA" value="0.9" unit="PWM/(rad/s)"/>
     <define name="MOTOR_MAX_OMEGA" value="900" unit="rad/s"/>
-    <define name="MOTOR_MIN_OMEGA" value="200" unit="rad/s"/><!-- Needed to make the INDI to work-->
+    <define name="MOTOR_MIN_OMEGA" value="100" unit="rad/s"/><!-- Needed to make the INDI to work-->
     <define name="SERVO_AZ_MIN_ANGLE" value="-45" unit="deg"/><!-- Always remember to update the PWM range as well-->
     <define name="SERVO_AZ_MAX_ANGLE" value="45" unit="deg"/>
 

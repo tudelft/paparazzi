@@ -1815,7 +1815,6 @@
          <field name = "pseudo_control_r_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1"/>
          <field name = "rolling_msg_out" type="float"/>
          <field name = "rolling_msg_out_id" type="uint8"/>
-         <field name = "packet_id_out" type="uint16"/>
      </message>
 
      <message name= "AM7_IN" id = "195">
@@ -1847,7 +1846,6 @@
          <field name = "message_frequency" type="uint16"/>
          <field name = "rolling_msg_in" type="float"/>
          <field name = "rolling_msg_in_id" type="uint8"/>
-         <field name = "packet_id_in" type="uint16"/>
      </message>
 
      <message name="B_MATRIX_SEND_LINEAR" id="199">

@@ -27,12 +27,7 @@
 #define AM7_H
 
 #define START_BYTE 0x9B  //1st start block identifier byte
-#define SECOND_BYTE 0x16 //2nd Start block identifier byte
-#define THIRD_BYTE 0x01  //3rd Start block identifier byte
-#define FOURTH_BYTE 0x02 //4rd Start block identifier byte
 
-//#define MESSAGE_LENGTH_IN 24 // 24 bytes
-//#define MESSAGE_LENGTH_OUT 24 // 24 bytes
 
 #include "std.h"
 #include <stdbool.h>
@@ -40,14 +35,8 @@
 #include "generated/airframe.h"
 #include "pprzlink/pprz_transport.h"
 
-/* Main AM7 strcuture */
-struct am7_t {
-  struct link_device *device;           ///< The device which is used for communication
-  struct pprz_transport transport;      ///< The transport layer (PPRZ)
-  bool msg_available;                 ///< If we received a message
-};
 
-struct __attribute__((__packed__)) am7_data_in {
+extern struct __attribute__((__packed__)) am7_data_in {
     //Motor command
 	int16_t motor_1_cmd_int;
 	int16_t motor_2_cmd_int;
@@ -76,11 +65,10 @@ struct __attribute__((__packed__)) am7_data_in {
     int16_t residual_r_dot_int;
     float rolling_msg_in;
     uint8_t rolling_msg_in_id;
-    uint16_t msg_counter_in;
     uint8_t checksum_in;
 };
 
-struct __attribute__((__packed__)) am7_data_out {
+extern struct __attribute__((__packed__)) am7_data_out {
     //Actuator state
     int16_t motor_1_state_int;
     int16_t motor_2_state_int;
@@ -112,7 +100,6 @@ struct __attribute__((__packed__)) am7_data_out {
     int16_t pseudo_control_r_dot_int;
     float rolling_msg_out;
     uint8_t rolling_msg_out_id;
-    uint16_t msg_counter_out;
     uint8_t checksum_out;
 };
 

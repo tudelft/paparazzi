@@ -1973,6 +1973,13 @@ void overactuated_mixing_init(void) {
 }
 
 /**
+ * Drop states and necessary variables to the am7 module for the communication to the raspberry pi
+ */
+void assign_var_to_am7(void){
+
+}
+
+/**
  * Ad each iteration upload global variables
  */
 void init_variables(void){
@@ -2040,6 +2047,7 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     uint8_t i, j, k;
     init_variables();
 
+    assign_var_to_am7();
     /// Case of PID control as on simulink [FAILSAFE]
     if(radio_control.values[RADIO_MODE] < 500) {
         //INIT AND BOOLEAN RESET

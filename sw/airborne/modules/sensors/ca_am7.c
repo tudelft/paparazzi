@@ -37,7 +37,6 @@ uint32_t missed_packets = 0;
 uint16_t ca7_message_frequency_RX = 0;
 uint32_t received_packets = 0;
 float last_ts = 0;
-
 static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((aligned));   ///< The message buffer for the device chosen to be 2* message_size total
 
 #if PERIODIC_TELEMETRY
@@ -50,7 +49,7 @@ static void am7_downlink(struct transport_tx *trans, struct link_device *dev)
               &myam7_data_in.az_4_cmd_int, &myam7_data_in.theta_cmd_int, &myam7_data_in.phi_cmd_int,&myam7_data_in.n_iteration,
               &myam7_data_in.n_evaluation, &myam7_data_in.elapsed_time_us, &myam7_data_in.residual_ax_int,&myam7_data_in.residual_ay_int, &myam7_data_in.residual_az_int,
               &myam7_data_in.residual_p_dot_int, &myam7_data_in.residual_q_dot_int,&myam7_data_in.residual_r_dot_int, &missed_packets, &ca7_message_frequency_RX,
-              &myam7_data_in.rolling_msg_in, &myam7_data_in.rolling_msg_in_id, &myam7_data_in.msg_counter_in);
+              &myam7_data_in.rolling_msg_in, &myam7_data_in.rolling_msg_in_id);
 }
 static void am7_uplink(struct transport_tx *trans, struct link_device *dev)
 {
@@ -61,7 +60,7 @@ static void am7_uplink(struct transport_tx *trans, struct link_device *dev)
               &myam7_data_out.gamma_state_int, &myam7_data_out.p_state_int, &myam7_data_out.q_state_int, &myam7_data_out.r_state_int,
               &myam7_data_out.airspeed_state_int, &myam7_data_out.pseudo_control_ax_int, &myam7_data_out.pseudo_control_ay_int, &myam7_data_out.pseudo_control_az_int,
               &myam7_data_out.pseudo_control_p_dot_int,&myam7_data_out.pseudo_control_q_dot_int, &myam7_data_out.pseudo_control_r_dot_int,
-              &myam7_data_out.rolling_msg_out, &myam7_data_out.rolling_msg_out_id, &myam7_data_out.msg_counter_out );
+              &myam7_data_out.rolling_msg_out, &myam7_data_out.rolling_msg_out_id);
 
 }
 #endif
@@ -69,7 +68,7 @@ static void am7_uplink(struct transport_tx *trans, struct link_device *dev)
 void am7_init() 
 {
     buffer_in_counter = 0;
-    myam7_data_out.msg_counter_out = 0;
+    myam7_data_out.rolling_msg_out_id = 0;
  #if PERIODIC_TELEMETRY
    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AM7_IN, am7_downlink);
    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AM7_OUT, am7_uplink);
@@ -114,11 +113,11 @@ void assign_variables(void){
     myam7_data_out.pseudo_control_q_dot_int = 1034;
     myam7_data_out.pseudo_control_r_dot_int = 11342;
     myam7_data_out.rolling_msg_out = 2.54;
-    myam7_data_out.rolling_msg_out_id = 1;
+
     //Increase the counter to track the sending messages:
-    myam7_data_out.msg_counter_out++;
-    if(myam7_data_out.msg_counter_out == 32000){
-        myam7_data_out.msg_counter_out = 0;
+    myam7_data_out.rolling_msg_out_id++;
+    if(myam7_data_out.rolling_msg_out_id == 255){
+        myam7_data_out.rolling_msg_out_id = 0;
     }
 }
 
