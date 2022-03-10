@@ -30,8 +30,8 @@
 #include <time.h>
 #include <sys/time.h>
 
-static struct am7_data_in myam7_data_in;
-static struct am7_data_out myam7_data_out;
+struct am7_data_in myam7_data_in;
+struct am7_data_out myam7_data_out;
 float extra_data_in[255], extra_data_out[255];
 uint16_t buffer_in_counter = 0;
 uint32_t missed_packets = 0;

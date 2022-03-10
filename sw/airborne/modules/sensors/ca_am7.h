@@ -36,7 +36,7 @@
 #include "pprzlink/pprz_transport.h"
 
 
-struct __attribute__((__packed__)) am7_data_in {
+extern struct __attribute__((__packed__)) am7_data_in {
     //Motor command
 	int16_t motor_1_cmd_int;
 	int16_t motor_2_cmd_int;
@@ -68,7 +68,7 @@ struct __attribute__((__packed__)) am7_data_in {
     uint8_t checksum_in;
 };
 
-struct __attribute__((__packed__)) am7_data_out {
+extern struct __attribute__((__packed__)) am7_data_out {
     //Actuator state
     int16_t motor_1_state_int;
     int16_t motor_2_state_int;
