@@ -105,7 +105,6 @@ struct __attribute__((__packed__)) am7_data_out {
 
 extern void am7_init(void);
 extern void am7_event(void);
-extern void am7_periodic(void);
 
 #endif
 

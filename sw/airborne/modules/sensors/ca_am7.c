@@ -156,25 +156,6 @@ void assign_variables(void){
 
 }
 
-void am7_periodic(){
-
-    assign_variables();
-
-//    uint8_t *buf_send = (uint8_t *)&myam7_data_out;
-//    //Calculating the checksum
-//    uint8_t checksum_out_local = 0;
-//    for(uint16_t i = 0; i < sizeof(struct am7_data_out) - 1; i++){
-//        checksum_out_local += buf_send[i];
-//    }
-//    myam7_data_out.checksum_out = checksum_out_local;
-//    //Send bytes
-//    uart_put_byte(&(AM7_PORT), 0, START_BYTE);
-//    for(uint8_t i = 0; i < sizeof(struct am7_data_out) ; i++){
-//        uart_put_byte(&(AM7_PORT), 0, buf_send[i]);
-//    }
-
-
-}
 /* We need to wait for incoming messages */
 void am7_event()
 {

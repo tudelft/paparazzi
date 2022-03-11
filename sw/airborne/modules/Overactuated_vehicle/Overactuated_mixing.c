@@ -2041,254 +2041,254 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     uint8_t i, j, k;
     init_variables();
 
-
     /// Case of PID control as on simulink [FAILSAFE]
 //    if(radio_control.values[RADIO_MODE] < 500) {
-//        //INIT AND BOOLEAN RESET
-//        if (PID_engaged == 0) {
-//            /*
-//            INIT CODE FOR THE PID GOES HERE
-//             */
-//            pos_setpoint[0] = pos_vect[0];
-//            pos_setpoint[1] = pos_vect[1];
-//            pos_setpoint[2] = pos_vect[2];
-//            //Reset the status boolean in accordance with the actual flight state
-//            PID_engaged = 1;
-//            INDI_engaged = 0;
-//            FAILSAFE_engaged = 0;
-//        }
-//
-//        ////Position error computation
-//        //Compute the position setpoints through slider and RC stick:
-//         if ( abs(radio_control.values[RADIO_PITCH]) > deadband_stick_throttle){
-//             pos_setpoint_body[0] += stick_gain_throttle * radio_control.values[RADIO_PITCH] * .0001;
-//         }
-//         if ( abs(radio_control.values[RADIO_ROLL]) > deadband_stick_throttle){
-//             pos_setpoint_body[1] += stick_gain_throttle * radio_control.values[RADIO_ROLL] * .0001;
-//         }
-//        if( abs(radio_control.values[RADIO_THROTTLE] - 4800) > deadband_stick_throttle && abs(pos_error[2]) < max_value_error.z ){
-//            pos_setpoint[2]  += stick_gain_throttle * (radio_control.values[RADIO_THROTTLE] - 4800) * .00001;
-//            Bound(pos_setpoint[2] ,-5,1000);
-//        }
-//
-//        pos_setpoint[0] = pos_setpoint_body[0] * cos(euler_vect[2]) - pos_setpoint_body[1] * sin(euler_vect[2]);
-//        pos_setpoint[1] = pos_setpoint_body[0] * sin(euler_vect[2]) + pos_setpoint_body[1] * cos(euler_vect[2]);
-//
-//        //Get the position setpoints through STB point:
-//        pos_setpoint[0] = x_stb;
-//        pos_setpoint[1] = y_stb;
-//        pos_setpoint[2] = z_stb;
-//
-//        //Calculate the error on the position
-//        pos_error[0] = pos_setpoint[0] - pos_vect[0];
-//        pos_error[1] = pos_setpoint[1] - pos_vect[1];
-//        pos_error[2] = pos_setpoint[2] + pos_vect[2];
-//
-//        //Calculate and bound the position error integration
-//        for (i = 0; i < 3; i++) {
-//            pos_error_integrated[i] += pos_error[i] / PERIODIC_FREQUENCY;
-//            BoundAbs(pos_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_POS_ERR_INTEGRATIVE);
-//        }
-//
-//        //Now bound the error within the defined ranges:
-//        BoundAbs(pos_error[0], max_value_error.x);
-//        BoundAbs(pos_error[1], max_value_error.y);
-//        BoundAbs(pos_error[2], max_value_error.z);
-//
-//        //Calculate the orders with the PID gain defined:
-//        if(position_with_attitude){
-//            pos_order_earth[0] = pid_pos_x_att.p * pos_error[0] + pid_pos_x_att.i * pos_error_integrated[0] -
-//                                 pid_pos_x_att.d * speed_vect[0];
-//            pos_order_earth[1] = pid_pos_y_att.p * pos_error[1] + pid_pos_y_att.i * pos_error_integrated[1] -
-//                                 pid_pos_y_att.d * speed_vect[1];
-//        }
-//        else{
-//            pos_order_earth[0] = pid_gains_over.p.x * pos_error[0] + pid_gains_over.i.x * pos_error_integrated[0] -
-//                                 pid_gains_over.d.x * speed_vect[0];
-//            pos_order_earth[1] = pid_gains_over.p.y * pos_error[1] + pid_gains_over.i.y * pos_error_integrated[1] -
-//                                 pid_gains_over.d.y * speed_vect[1];
-//        }
-//        pos_order_earth[2] = pid_gains_over.p.z * pos_error[2] + pid_gains_over.i.z * pos_error_integrated[2] +
-//                             pid_gains_over.d.z * speed_vect[2];
-//
-//        //Transpose the position errors in the body frame:
-//        pos_order_body[0] = cos(euler_vect[2]) * pos_order_earth[0] + sin(euler_vect[2]) * pos_order_earth[1];
-//        pos_order_body[1] = cos(euler_vect[2]) * pos_order_earth[1] - sin(euler_vect[2]) * pos_order_earth[0];
-//        pos_order_body[2] = pos_order_earth[2];
-//
-//        ////Angular error computation
-//        //Calculate the setpoints:
-//        if (position_with_attitude) {
-//            //The idea of the position body order is to have a radiant change of tilting, use the same idea with theta and psi
-//            euler_setpoint[0] = pos_order_body[1]; //A roll change is referred to a body y variation
-//            euler_setpoint[1] = -pos_order_body[0]; //A pitch change is referred to a body x variation
-//        }
-//        else {
-//            if(mode_1_control){
-//                euler_setpoint[0] = max_value_error.phi * radio_control.values[RADIO_ROLL] / 9600;
-//                euler_setpoint[1] = max_value_error.theta * radio_control.values[RADIO_PITCH] / 9600;
-//            }
-//            else{
-//                euler_setpoint[0] = 0;
-//                euler_setpoint[1] = 0;
-//            }
-//
-//        }
-//        //Integrate the stick yaw position to get the psi set point including psi saturation value
-//        if(manual_heading){
-//            euler_setpoint[2] = manual_heading_value_rad;
-//        }
-//        else if (abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw && fabs(euler_error[2]) < max_value_error.psi) {
-//            euler_setpoint[2] =
-//                    euler_setpoint[2] + stick_gain_yaw * radio_control.values[RADIO_YAW] * M_PI / 180 * .001;
-//            //Correct the setpoint in order to always be within -pi and pi
-//            if (euler_setpoint[2] > M_PI) {
-//                euler_setpoint[2] -= 2 * M_PI;
-//            }
-//            else if (euler_setpoint[2] < -M_PI) {
-//                euler_setpoint[2] += 2 * M_PI;
-//            }
-//        }
-//
-//        //Bound the setpoints within maximum angular values
-//        BoundAbs(euler_setpoint[0], max_value_error.phi);
-//        BoundAbs(euler_setpoint[1], max_value_error.theta);
-//
-//        euler_error[0] = euler_setpoint[0] - euler_vect[0];
-//        euler_error[1] = euler_setpoint[1] - euler_vect[1];
-//        euler_error[2] = euler_setpoint[2] - euler_vect[2];
-//
-//        //Add logic for the psi control:
-//        if (euler_error[2] > M_PI) {
-//            euler_error[2] -= 2 * M_PI;
-//        }
-//        else if (euler_error[2] < -M_PI) {
-//            euler_error[2] += 2 * M_PI;
-//        }
-//
-//        //Calculate and bound the angular error integration term for the PID
-//        for (i = 0; i < 3; i++) {
-//            euler_error_integrated[i] += euler_error[i] / PERIODIC_FREQUENCY;
-//            BoundAbs(euler_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_EULER_ERR_INTEGRATIVE);
-//        }
-//
-//        //Now bound the error within the defined ranges:
-//        BoundAbs(euler_error[2], max_value_error.psi);
-//
-//        euler_order[0] = pid_gains_over.p.phi * euler_error[0] + pid_gains_over.i.phi * euler_error_integrated[0] -
-//                         pid_gains_over.d.phi * rate_vect[0];
-//        euler_order[1] = pid_gains_over.p.theta * euler_error[1] + pid_gains_over.i.theta * euler_error_integrated[1] -
-//                         pid_gains_over.d.theta * rate_vect[1];
-//
-//        euler_order[2] = 0;
-//        //Compute the yaw order for the tilting system (if needed):
-//        if (yaw_with_tilting_PID) {
-//            euler_order[2] = pid_gains_over.p.psi * euler_error[2] + pid_gains_over.i.psi * euler_error_integrated[2] -
-//                             pid_gains_over.d.psi * rate_vect[2];
-//        }
-//
-//        //Compute the yaw order for the differential motor (if needed)
-//        psi_order_motor = 0;
-//        if (yaw_with_motors_PID) {
-//            psi_order_motor = pid_gain_psi_motor.p * euler_error[2] + pid_gain_psi_motor.i * euler_error_integrated[2] -
-//                              pid_gain_psi_motor.d * rate_vect[2];
-//        }
-//
-//        //Bound euler angle orders:
-//        BoundAbs(euler_order[0], OVERACTUATED_MIXING_PID_MAX_ROLL_ORDER_PWM);
-//        BoundAbs(euler_order[1], OVERACTUATED_MIXING_PID_MAX_PITCH_ORDER_PWM);
-//        BoundAbs(euler_order[2], OVERACTUATED_MIXING_PID_MAX_YAW_ORDER_AZ);
-//        BoundAbs(psi_order_motor, OVERACTUATED_MIXING_PID_MAX_YAW_ORDER_MOTOR_PWM);
-//
-//        //Submit motor orders:
-//        if(manual_motor_stick){
-//            //Motor 1:
-//            overactuated_mixing.commands[0] = (int32_t) (( euler_order[0] + euler_order[1] + psi_order_motor)) * 9.6 + radio_control.values[RADIO_THROTTLE];
-//            //Motor 2:
-//            overactuated_mixing.commands[1] = (int32_t) ((-euler_order[0] + euler_order[1] - psi_order_motor)) * 9.6 + radio_control.values[RADIO_THROTTLE];
-//            //Motor 3:
-//            overactuated_mixing.commands[2] = (int32_t) ((-euler_order[0] - euler_order[1] + psi_order_motor)) * 9.6 + radio_control.values[RADIO_THROTTLE];
-//            //Motor 4:
-//            overactuated_mixing.commands[3] = (int32_t) (( euler_order[0] - euler_order[1] - psi_order_motor)) * 9.6 + radio_control.values[RADIO_THROTTLE];
-//            //Compute the command for the PPZ message
-//            alt_cmd = radio_control.values[RADIO_THROTTLE];
-//            //Also add position computation if we are in this mode:
-//            pos_order_body[0] = - radio_control.values[RADIO_PITCH]/K_ppz_angle_el;
-//            pos_order_body[1] =  radio_control.values[RADIO_ROLL]/K_ppz_angle_az;
-//        }
-//        else{
-//            //Protection control for altitude saturation on the pitch authority:
-//            //Compute the maximum allowable order considering as constraint the front motors:
-//            float max_alt_order = 1000 - Min(overactuated_mixing.commands[0]/9.6,overactuated_mixing.commands[1]/9.6);
-//            float order_alt_12 = Min(pos_order_body[2],max_alt_order);
-//            float order_alt_34 = 0;
-//            if(order_alt_12 >= 0){
-//                order_alt_34 = sqrt(order_alt_12 * order_alt_12 * VEHICLE_L4 / VEHICLE_L3);
-//            }
-//            else{
-//                order_alt_34 = -sqrt(order_alt_12 * order_alt_12 * VEHICLE_L3 / VEHICLE_L4);
-//            }
-//            //Compute the command for the PPZ message
-//            alt_cmd = ((order_alt_12 + order_alt_34)/2 + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000) * 9.6;
-//
-//            //Motor 1:
-//            overactuated_mixing.commands[0] =
-//                    (int32_t) (order_alt_12 + euler_order[0] + euler_order[1] + psi_order_motor + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000) * 9.6;
-//            //Motor 2:
-//            overactuated_mixing.commands[1] =
-//                    (int32_t) (order_alt_12 - euler_order[0] + euler_order[1] - psi_order_motor + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000) * 9.6;
-//            //Motor 3:
-//            overactuated_mixing.commands[2] =
-//                    (int32_t) (order_alt_34 - euler_order[0] - euler_order[1] + psi_order_motor + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000) * 9.6;
-//            //Motor 4:
-//            overactuated_mixing.commands[3] =
-//                    (int32_t) (order_alt_34 + euler_order[0] - euler_order[1] - psi_order_motor + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000) * 9.6;
-//        }
-//
-//        //Elevation servos:
-//        if (activate_tilting_el_PID || mode_1_control == 0) {
-//            overactuated_mixing.commands[4] = (int32_t) ((-pos_order_body[0] - OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE) * K_ppz_angle_el);
-//            overactuated_mixing.commands[5] = (int32_t) ((-pos_order_body[0] - OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE) * K_ppz_angle_el);
-//            overactuated_mixing.commands[6] = (int32_t) ((-pos_order_body[0] - OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE) * K_ppz_angle_el);
-//            overactuated_mixing.commands[7] = (int32_t) ((-pos_order_body[0] - OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE) * K_ppz_angle_el);
-//        }
-//        else{
-//            overactuated_mixing.commands[4] = (int32_t) (-OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE * K_ppz_angle_el);
-//            overactuated_mixing.commands[5] = (int32_t) (-OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE * K_ppz_angle_el);
-//            overactuated_mixing.commands[6] = (int32_t) (-OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE * K_ppz_angle_el);
-//            overactuated_mixing.commands[7] = (int32_t) (-OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE * K_ppz_angle_el);
-//        }
-//
-//        //Azimuth servos:
-//        if (activate_tilting_az_PID || mode_1_control == 0) {
-//            overactuated_mixing.commands[8] = (int32_t) ((pos_order_body[1] - OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE) * K_ppz_angle_az);
-//            overactuated_mixing.commands[9] = (int32_t) ((pos_order_body[1] - OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE) * K_ppz_angle_az);
-//            overactuated_mixing.commands[10] = (int32_t) ((pos_order_body[1] - OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE) * K_ppz_angle_az);
-//            overactuated_mixing.commands[11] = (int32_t) ((pos_order_body[1] - OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * K_ppz_angle_az);
-//        }
-//        else{
-//            overactuated_mixing.commands[8] = (int32_t) (-OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE * K_ppz_angle_az);
-//            overactuated_mixing.commands[9] = (int32_t) (-OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE * K_ppz_angle_az);
-//            overactuated_mixing.commands[10] = (int32_t) (-OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE * K_ppz_angle_az);
-//            overactuated_mixing.commands[11] = (int32_t) (-OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE * K_ppz_angle_az);
-//        }
-//
-//        if (yaw_with_tilting_PID) {
-//            overactuated_mixing.commands[8] += (int32_t) (euler_order[2] * K_ppz_angle_az);
-//            overactuated_mixing.commands[9] += (int32_t) (euler_order[2] * K_ppz_angle_az);
-//            overactuated_mixing.commands[10] -= (int32_t) (euler_order[2] * K_ppz_angle_az);
-//            overactuated_mixing.commands[11] -= (int32_t) (euler_order[2] * K_ppz_angle_az);
-//        }
-//
-//        //Write the orders on the message variables:
-//        roll_cmd = euler_order[0] * 180 / M_PI;
-//        pitch_cmd = euler_order[1] * 180 / M_PI;
-//        yaw_motor_cmd = psi_order_motor;
-//        yaw_tilt_cmd = euler_order[2];
-//        elevation_cmd = pos_order_body[0] * 180 / M_PI;
-//        azimuth_cmd = pos_order_body[1] * 180 / M_PI;
-//
-//    }
+    if(0) {
+        //INIT AND BOOLEAN RESET
+        if (PID_engaged == 0) {
+            /*
+            INIT CODE FOR THE PID GOES HERE
+             */
+            pos_setpoint[0] = pos_vect[0];
+            pos_setpoint[1] = pos_vect[1];
+            pos_setpoint[2] = pos_vect[2];
+            //Reset the status boolean in accordance with the actual flight state
+            PID_engaged = 1;
+            INDI_engaged = 0;
+            FAILSAFE_engaged = 0;
+        }
+
+        ////Position error computation
+        //Compute the position setpoints through slider and RC stick:
+         if ( abs(radio_control.values[RADIO_PITCH]) > deadband_stick_throttle){
+             pos_setpoint_body[0] += stick_gain_throttle * radio_control.values[RADIO_PITCH] * .0001;
+         }
+         if ( abs(radio_control.values[RADIO_ROLL]) > deadband_stick_throttle){
+             pos_setpoint_body[1] += stick_gain_throttle * radio_control.values[RADIO_ROLL] * .0001;
+         }
+        if( abs(radio_control.values[RADIO_THROTTLE] - 4800) > deadband_stick_throttle && abs(pos_error[2]) < max_value_error.z ){
+            pos_setpoint[2]  += stick_gain_throttle * (radio_control.values[RADIO_THROTTLE] - 4800) * .00001;
+            Bound(pos_setpoint[2] ,-5,1000);
+        }
+
+        pos_setpoint[0] = pos_setpoint_body[0] * cos(euler_vect[2]) - pos_setpoint_body[1] * sin(euler_vect[2]);
+        pos_setpoint[1] = pos_setpoint_body[0] * sin(euler_vect[2]) + pos_setpoint_body[1] * cos(euler_vect[2]);
+
+        //Get the position setpoints through STB point:
+        pos_setpoint[0] = x_stb;
+        pos_setpoint[1] = y_stb;
+        pos_setpoint[2] = z_stb;
+
+        //Calculate the error on the position
+        pos_error[0] = pos_setpoint[0] - pos_vect[0];
+        pos_error[1] = pos_setpoint[1] - pos_vect[1];
+        pos_error[2] = pos_setpoint[2] + pos_vect[2];
+
+        //Calculate and bound the position error integration
+        for (i = 0; i < 3; i++) {
+            pos_error_integrated[i] += pos_error[i] / PERIODIC_FREQUENCY;
+            BoundAbs(pos_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_POS_ERR_INTEGRATIVE);
+        }
+
+        //Now bound the error within the defined ranges:
+        BoundAbs(pos_error[0], max_value_error.x);
+        BoundAbs(pos_error[1], max_value_error.y);
+        BoundAbs(pos_error[2], max_value_error.z);
+
+        //Calculate the orders with the PID gain defined:
+        if(position_with_attitude){
+            pos_order_earth[0] = pid_pos_x_att.p * pos_error[0] + pid_pos_x_att.i * pos_error_integrated[0] -
+                                 pid_pos_x_att.d * speed_vect[0];
+            pos_order_earth[1] = pid_pos_y_att.p * pos_error[1] + pid_pos_y_att.i * pos_error_integrated[1] -
+                                 pid_pos_y_att.d * speed_vect[1];
+        }
+        else{
+            pos_order_earth[0] = pid_gains_over.p.x * pos_error[0] + pid_gains_over.i.x * pos_error_integrated[0] -
+                                 pid_gains_over.d.x * speed_vect[0];
+            pos_order_earth[1] = pid_gains_over.p.y * pos_error[1] + pid_gains_over.i.y * pos_error_integrated[1] -
+                                 pid_gains_over.d.y * speed_vect[1];
+        }
+        pos_order_earth[2] = pid_gains_over.p.z * pos_error[2] + pid_gains_over.i.z * pos_error_integrated[2] +
+                             pid_gains_over.d.z * speed_vect[2];
+
+        //Transpose the position errors in the body frame:
+        pos_order_body[0] = cos(euler_vect[2]) * pos_order_earth[0] + sin(euler_vect[2]) * pos_order_earth[1];
+        pos_order_body[1] = cos(euler_vect[2]) * pos_order_earth[1] - sin(euler_vect[2]) * pos_order_earth[0];
+        pos_order_body[2] = pos_order_earth[2];
+
+        ////Angular error computation
+        //Calculate the setpoints:
+        if (position_with_attitude) {
+            //The idea of the position body order is to have a radiant change of tilting, use the same idea with theta and psi
+            euler_setpoint[0] = pos_order_body[1]; //A roll change is referred to a body y variation
+            euler_setpoint[1] = -pos_order_body[0]; //A pitch change is referred to a body x variation
+        }
+        else {
+            if(mode_1_control){
+                euler_setpoint[0] = max_value_error.phi * radio_control.values[RADIO_ROLL] / 9600;
+                euler_setpoint[1] = max_value_error.theta * radio_control.values[RADIO_PITCH] / 9600;
+            }
+            else{
+                euler_setpoint[0] = 0;
+                euler_setpoint[1] = 0;
+            }
+
+        }
+        //Integrate the stick yaw position to get the psi set point including psi saturation value
+        if(manual_heading){
+            euler_setpoint[2] = manual_heading_value_rad;
+        }
+        else if (abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw && fabs(euler_error[2]) < max_value_error.psi) {
+            euler_setpoint[2] =
+                    euler_setpoint[2] + stick_gain_yaw * radio_control.values[RADIO_YAW] * M_PI / 180 * .001;
+            //Correct the setpoint in order to always be within -pi and pi
+            if (euler_setpoint[2] > M_PI) {
+                euler_setpoint[2] -= 2 * M_PI;
+            }
+            else if (euler_setpoint[2] < -M_PI) {
+                euler_setpoint[2] += 2 * M_PI;
+            }
+        }
+
+        //Bound the setpoints within maximum angular values
+        BoundAbs(euler_setpoint[0], max_value_error.phi);
+        BoundAbs(euler_setpoint[1], max_value_error.theta);
+
+        euler_error[0] = euler_setpoint[0] - euler_vect[0];
+        euler_error[1] = euler_setpoint[1] - euler_vect[1];
+        euler_error[2] = euler_setpoint[2] - euler_vect[2];
+
+        //Add logic for the psi control:
+        if (euler_error[2] > M_PI) {
+            euler_error[2] -= 2 * M_PI;
+        }
+        else if (euler_error[2] < -M_PI) {
+            euler_error[2] += 2 * M_PI;
+        }
+
+        //Calculate and bound the angular error integration term for the PID
+        for (i = 0; i < 3; i++) {
+            euler_error_integrated[i] += euler_error[i] / PERIODIC_FREQUENCY;
+            BoundAbs(euler_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_EULER_ERR_INTEGRATIVE);
+        }
+
+        //Now bound the error within the defined ranges:
+        BoundAbs(euler_error[2], max_value_error.psi);
+
+        euler_order[0] = pid_gains_over.p.phi * euler_error[0] + pid_gains_over.i.phi * euler_error_integrated[0] -
+                         pid_gains_over.d.phi * rate_vect[0];
+        euler_order[1] = pid_gains_over.p.theta * euler_error[1] + pid_gains_over.i.theta * euler_error_integrated[1] -
+                         pid_gains_over.d.theta * rate_vect[1];
+
+        euler_order[2] = 0;
+        //Compute the yaw order for the tilting system (if needed):
+        if (yaw_with_tilting_PID) {
+            euler_order[2] = pid_gains_over.p.psi * euler_error[2] + pid_gains_over.i.psi * euler_error_integrated[2] -
+                             pid_gains_over.d.psi * rate_vect[2];
+        }
+
+        //Compute the yaw order for the differential motor (if needed)
+        psi_order_motor = 0;
+        if (yaw_with_motors_PID) {
+            psi_order_motor = pid_gain_psi_motor.p * euler_error[2] + pid_gain_psi_motor.i * euler_error_integrated[2] -
+                              pid_gain_psi_motor.d * rate_vect[2];
+        }
+
+        //Bound euler angle orders:
+        BoundAbs(euler_order[0], OVERACTUATED_MIXING_PID_MAX_ROLL_ORDER_PWM);
+        BoundAbs(euler_order[1], OVERACTUATED_MIXING_PID_MAX_PITCH_ORDER_PWM);
+        BoundAbs(euler_order[2], OVERACTUATED_MIXING_PID_MAX_YAW_ORDER_AZ);
+        BoundAbs(psi_order_motor, OVERACTUATED_MIXING_PID_MAX_YAW_ORDER_MOTOR_PWM);
+
+        //Submit motor orders:
+        if(manual_motor_stick){
+            //Motor 1:
+            overactuated_mixing.commands[0] = (int32_t) (( euler_order[0] + euler_order[1] + psi_order_motor)) * 9.6 + radio_control.values[RADIO_THROTTLE];
+            //Motor 2:
+            overactuated_mixing.commands[1] = (int32_t) ((-euler_order[0] + euler_order[1] - psi_order_motor)) * 9.6 + radio_control.values[RADIO_THROTTLE];
+            //Motor 3:
+            overactuated_mixing.commands[2] = (int32_t) ((-euler_order[0] - euler_order[1] + psi_order_motor)) * 9.6 + radio_control.values[RADIO_THROTTLE];
+            //Motor 4:
+            overactuated_mixing.commands[3] = (int32_t) (( euler_order[0] - euler_order[1] - psi_order_motor)) * 9.6 + radio_control.values[RADIO_THROTTLE];
+            //Compute the command for the PPZ message
+            alt_cmd = radio_control.values[RADIO_THROTTLE];
+            //Also add position computation if we are in this mode:
+            pos_order_body[0] = - radio_control.values[RADIO_PITCH]/K_ppz_angle_el;
+            pos_order_body[1] =  radio_control.values[RADIO_ROLL]/K_ppz_angle_az;
+        }
+        else{
+            //Protection control for altitude saturation on the pitch authority:
+            //Compute the maximum allowable order considering as constraint the front motors:
+            float max_alt_order = 1000 - Min(overactuated_mixing.commands[0]/9.6,overactuated_mixing.commands[1]/9.6);
+            float order_alt_12 = Min(pos_order_body[2],max_alt_order);
+            float order_alt_34 = 0;
+            if(order_alt_12 >= 0){
+                order_alt_34 = sqrt(order_alt_12 * order_alt_12 * VEHICLE_L4 / VEHICLE_L3);
+            }
+            else{
+                order_alt_34 = -sqrt(order_alt_12 * order_alt_12 * VEHICLE_L3 / VEHICLE_L4);
+            }
+            //Compute the command for the PPZ message
+            alt_cmd = ((order_alt_12 + order_alt_34)/2 + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000) * 9.6;
+
+            //Motor 1:
+            overactuated_mixing.commands[0] =
+                    (int32_t) (order_alt_12 + euler_order[0] + euler_order[1] + psi_order_motor + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000) * 9.6;
+            //Motor 2:
+            overactuated_mixing.commands[1] =
+                    (int32_t) (order_alt_12 - euler_order[0] + euler_order[1] - psi_order_motor + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000) * 9.6;
+            //Motor 3:
+            overactuated_mixing.commands[2] =
+                    (int32_t) (order_alt_34 - euler_order[0] - euler_order[1] + psi_order_motor + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000) * 9.6;
+            //Motor 4:
+            overactuated_mixing.commands[3] =
+                    (int32_t) (order_alt_34 + euler_order[0] - euler_order[1] - psi_order_motor + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000) * 9.6;
+        }
+
+        //Elevation servos:
+        if (activate_tilting_el_PID || mode_1_control == 0) {
+            overactuated_mixing.commands[4] = (int32_t) ((-pos_order_body[0] - OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE) * K_ppz_angle_el);
+            overactuated_mixing.commands[5] = (int32_t) ((-pos_order_body[0] - OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE) * K_ppz_angle_el);
+            overactuated_mixing.commands[6] = (int32_t) ((-pos_order_body[0] - OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE) * K_ppz_angle_el);
+            overactuated_mixing.commands[7] = (int32_t) ((-pos_order_body[0] - OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE) * K_ppz_angle_el);
+        }
+        else{
+            overactuated_mixing.commands[4] = (int32_t) (-OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE * K_ppz_angle_el);
+            overactuated_mixing.commands[5] = (int32_t) (-OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE * K_ppz_angle_el);
+            overactuated_mixing.commands[6] = (int32_t) (-OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE * K_ppz_angle_el);
+            overactuated_mixing.commands[7] = (int32_t) (-OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE * K_ppz_angle_el);
+        }
+
+        //Azimuth servos:
+        if (activate_tilting_az_PID || mode_1_control == 0) {
+            overactuated_mixing.commands[8] = (int32_t) ((pos_order_body[1] - OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE) * K_ppz_angle_az);
+            overactuated_mixing.commands[9] = (int32_t) ((pos_order_body[1] - OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE) * K_ppz_angle_az);
+            overactuated_mixing.commands[10] = (int32_t) ((pos_order_body[1] - OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE) * K_ppz_angle_az);
+            overactuated_mixing.commands[11] = (int32_t) ((pos_order_body[1] - OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * K_ppz_angle_az);
+        }
+        else{
+            overactuated_mixing.commands[8] = (int32_t) (-OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE * K_ppz_angle_az);
+            overactuated_mixing.commands[9] = (int32_t) (-OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE * K_ppz_angle_az);
+            overactuated_mixing.commands[10] = (int32_t) (-OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE * K_ppz_angle_az);
+            overactuated_mixing.commands[11] = (int32_t) (-OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE * K_ppz_angle_az);
+        }
+
+        if (yaw_with_tilting_PID) {
+            overactuated_mixing.commands[8] += (int32_t) (euler_order[2] * K_ppz_angle_az);
+            overactuated_mixing.commands[9] += (int32_t) (euler_order[2] * K_ppz_angle_az);
+            overactuated_mixing.commands[10] -= (int32_t) (euler_order[2] * K_ppz_angle_az);
+            overactuated_mixing.commands[11] -= (int32_t) (euler_order[2] * K_ppz_angle_az);
+        }
+
+        //Write the orders on the message variables:
+        roll_cmd = euler_order[0] * 180 / M_PI;
+        pitch_cmd = euler_order[1] * 180 / M_PI;
+        yaw_motor_cmd = psi_order_motor;
+        yaw_tilt_cmd = euler_order[2];
+        elevation_cmd = pos_order_body[0] * 180 / M_PI;
+        azimuth_cmd = pos_order_body[1] * 180 / M_PI;
+
+    }
 
     /// Case of INDI control mode as on simulink
 //    if(radio_control.values[RADIO_MODE] > 500){
@@ -2534,7 +2534,24 @@ void overactuated_mixing_run(pprz_t in_cmd[])
         AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &am7_data_out_local, &extra_data_out_local);
 
 
+        //Collect the last available data on the AM7 bus to be communicated to the servos.
+        indi_u[0] =  (myam7_data_in_local.motor_1_cmd_int * 1e1);
+        indi_u[1] =  (myam7_data_in_local.motor_2_cmd_int * 1e1);
+        indi_u[2] =  (myam7_data_in_local.motor_3_cmd_int * 1e1);
+        indi_u[3] =  (myam7_data_in_local.motor_4_cmd_int * 1e1);
 
+        indi_u[4] =  (myam7_data_in_local.el_1_cmd_int * 1e2 * M_PI/180);
+        indi_u[5] =  (myam7_data_in_local.el_2_cmd_int * 1e2 * M_PI/180);
+        indi_u[6] =  (myam7_data_in_local.el_3_cmd_int * 1e2 * M_PI/180);
+        indi_u[7] =  (myam7_data_in_local.el_4_cmd_int * 1e2 * M_PI/180);
+
+        indi_u[8] =  (myam7_data_in_local.az_1_cmd_int * 1e2 * M_PI/180);
+        indi_u[9] =  (myam7_data_in_local.az_2_cmd_int * 1e2 * M_PI/180);
+        indi_u[10] =  (myam7_data_in_local.az_3_cmd_int * 1e2 * M_PI/180);
+        indi_u[11] =  (myam7_data_in_local.az_4_cmd_int * 1e2 * M_PI/180);
+
+        indi_u[12] =  (myam7_data_in_local.theta_cmd_int * 1e2 * M_PI/180);
+        indi_u[13] =  (myam7_data_in_local.phi_cmd_int * 1e2 * M_PI/180);
 
 
         // Write values to servos and motor

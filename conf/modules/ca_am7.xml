@@ -7,7 +7,7 @@
     <file name="ca_am7.h" dir="modules/sensors"/>
   </header>
   <init fun="am7_init()"/>
-  <periodic fun="am7_periodic()" autorun="TRUE" freq="500"/>
+<!--  <periodic fun="am7_periodic()" autorun="TRUE" freq="500"/>-->
   <event fun="am7_event()"/>
   <makefile>
 <!--       Configure default UART port and baudrate-->
