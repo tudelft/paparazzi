@@ -74,6 +74,12 @@ static void file_logger_write_header(FILE *file) {
 #endif
 }
 
+extern float estimation_rate_dd[INDI_NUM_ACT];
+extern float g1_est[INDI_OUTPUTS][INDI_NUM_ACT];
+float g2_est[INDI_NUM_ACT];
+
+#include "modules/actuators/actuators.h"
+
 /** Write CSV row
  * Write values at this timestamp to log file. Make sure that the printf's match
  * the column headers of file_logger_write_header! Don't forget the \n at the
@@ -87,10 +93,11 @@ static void file_logger_write_row(FILE *file) {
   struct FloatRates *rates = stateGetBodyRates_f();
 
   fprintf(file, "%f,", get_sys_time_float());
-  fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
-  fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
-  fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
+  fprintf(file, "%d,%d,%d,%d,", actuators_pprz[0],actuators_pprz[1],actuators_pprz[2],actuators_pprz[3]);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
+  fprintf(file, "%f,%f,%f,", estimation_rate_dd[0], estimation_rate_dd[1],estimation_rate_dd[2]);
+  fprintf(file, "%f,%f,%f,%f", g2_est[0], g2_est[1],g2_est[2],g2_est[3]);
+  fprintf(file, "%f,%f,%f,%f", g1_est[2][0], g1_est[2][1],g1_est[2][2],g1_est[2][3]);
 #ifdef COMMAND_THRUST
   fprintf(file, "%d,%d,%d,%d\n",
       stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
