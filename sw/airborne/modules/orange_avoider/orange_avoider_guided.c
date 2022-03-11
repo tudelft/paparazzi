@@ -206,9 +206,9 @@ void orange_avoider_guided_periodic(void)
     case REENTER_ARENA:
       VERBOSE_PRINT("Reenter");
       // force floor center to opposite side of turn to head back into arena
-      struct EnuCoor_i new_coor;
-      calculateForwards(&new_coor, 6.0f);
-      if (InsideObstacleZone(&new_coor)){
+      struct EnuCoor_i new_coor2;
+      calculateForwards(&new_coor2, 6.0f);
+      if (InsideObstacleZone(&new_coor2)){
         // return to heading mode
         guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
         guidance_h_set_guided_body_vel(0.5f, 0.0f);
