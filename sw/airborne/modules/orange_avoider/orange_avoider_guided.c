@@ -168,7 +168,7 @@ void orange_avoider_guided_periodic(void)
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0){
         navigation_state = OBSTACLE_FOUND;
-      } else {SAFE
+      } else {
         guidance_h_set_guided_body_vel(speed_sp, 0);
       }
 
