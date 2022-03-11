@@ -24,12 +24,14 @@
 
 #include "modules/sensors/ca_am7.h"
 #include "pprzlink/pprz_transport.h"
-//#include "pprzlink/intermcu_msg.h"
 #include "mcu_periph/uart.h"
 #include "mcu_periph/sys_time.h"
 #include <time.h>
 #include <sys/time.h>
+#include "modules/core/abi.h"
 
+static abi_event AM7_out;
+uint8_t sending_msg_id;
 struct am7_data_in myam7_data_in;
 struct am7_data_out myam7_data_out;
 float extra_data_in[255], extra_data_out[255];
@@ -39,6 +41,7 @@ uint16_t ca7_message_frequency_RX = 0;
 uint32_t received_packets = 0;
 float last_ts = 0;
 static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((aligned));   ///< The message buffer for the device chosen to be 2* message_size total
+
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -66,66 +69,20 @@ static void am7_uplink(struct transport_tx *trans, struct link_device *dev)
 }
 #endif
 
-void am7_init() 
-{
-    buffer_in_counter = 0;
-    myam7_data_out.rolling_msg_out_id = 0;
- #if PERIODIC_TELEMETRY
-   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AM7_IN, am7_downlink);
-   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AM7_OUT, am7_uplink);
- #endif
-}
+static void data_AM7_out(uint8_t sender_id __attribute__((unused)), float * myam7_data_out_ptr, float * extra_data_out_ptr){
 
-/* Parse the InterMCU message */
-void am7_parse_msg_in(void)
-{
-    memcpy(&myam7_data_in, &am7_msg_buf_in[1], sizeof(struct am7_data_in));
-}
-
-void assign_variables(void){
-
-    myam7_data_out.motor_1_state_int =  1000;
-    myam7_data_out.motor_2_state_int =  1000;
-    myam7_data_out.motor_3_state_int =  1000;
-    myam7_data_out.motor_4_state_int = 1000;
-
-    myam7_data_out.el_1_state_int = 0;
-    myam7_data_out.el_2_state_int = 0;
-    myam7_data_out.el_3_state_int = 0;
-    myam7_data_out.el_4_state_int = 0;
-
-    myam7_data_out.az_1_state_int = 0;
-    myam7_data_out.az_2_state_int = 0;
-    myam7_data_out.az_3_state_int = 0;
-    myam7_data_out.az_4_state_int = 0;
-
-    myam7_data_out.theta_state_int = 0;
-    myam7_data_out.phi_state_int = 0;
-    myam7_data_out.psi_state_int = 0;
-    myam7_data_out.gamma_state_int = 0;
-    myam7_data_out.p_state_int = 0;
-    myam7_data_out.q_state_int = 0;
-    myam7_data_out.r_state_int = 0;
-    myam7_data_out.airspeed_state_int = 0;
-    myam7_data_out.pseudo_control_ax_int = 5670;
-    myam7_data_out.pseudo_control_ay_int = 1046;
-    myam7_data_out.pseudo_control_az_int = 1675;
-    myam7_data_out.pseudo_control_p_dot_int = 1073;
-    myam7_data_out.pseudo_control_q_dot_int = 1034;
-    myam7_data_out.pseudo_control_r_dot_int = 11342;
-    myam7_data_out.rolling_msg_out = 2.54;
+    memcpy(&myam7_data_out,myam7_data_out_ptr,sizeof(struct am7_data_out));
+    memcpy(&extra_data_out,extra_data_out_ptr, sizeof(extra_data_out) );
 
     //Increase the counter to track the sending messages:
-    myam7_data_out.rolling_msg_out_id++;
-    if(myam7_data_out.rolling_msg_out_id == 255){
-        myam7_data_out.rolling_msg_out_id = 0;
+    myam7_data_out.rolling_msg_out = extra_data_out[sending_msg_id];
+    myam7_data_out.rolling_msg_out_id = sending_msg_id;
+    sending_msg_id++;
+    if(sending_msg_id == 255){
+        sending_msg_id = 0;
     }
-}
 
-void am7_periodic(){
-
-    assign_variables();
-
+    //Send the message over serial to the Raspberry pi:
     uint8_t *buf_send = (uint8_t *)&myam7_data_out;
     //Calculating the checksum
     uint8_t checksum_out_local = 0;
@@ -138,6 +95,83 @@ void am7_periodic(){
     for(uint8_t i = 0; i < sizeof(struct am7_data_out) ; i++){
         uart_put_byte(&(AM7_PORT), 0, buf_send[i]);
     }
+}
+
+void am7_init() 
+{
+    buffer_in_counter = 0;
+    sending_msg_id = 0;
+
+    //Init abi bind msg:
+    AbiBindMsgAM7_DATA_OUT(ABI_BROADCAST, &AM7_out, data_AM7_out);
+
+ #if PERIODIC_TELEMETRY
+   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AM7_IN, am7_downlink);
+   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AM7_OUT, am7_uplink);
+ #endif
+}
+
+/* Parse the InterMCU message */
+void am7_parse_msg_in(void)
+{
+    memcpy(&myam7_data_in, &am7_msg_buf_in[1], sizeof(struct am7_data_in));
+    //Assign the rolling message:
+    extra_data_in[myam7_data_in.rolling_msg_in_id] = myam7_data_in.rolling_msg_in;
+    //Send msg through ABI:
+    AbiSendMsgAM7_DATA_IN(ABI_AM7_DATA_IN_ID, &myam7_data_in, &extra_data_in[0]);
+}
+
+void assign_variables(void){
+
+//    myam7_data_out.motor_1_state_int =  1000;
+//    myam7_data_out.motor_2_state_int =  1000;
+//    myam7_data_out.motor_3_state_int =  1000;
+//    myam7_data_out.motor_4_state_int = 1000;
+//
+//    myam7_data_out.el_1_state_int = 0;
+//    myam7_data_out.el_2_state_int = 0;
+//    myam7_data_out.el_3_state_int = 0;
+//    myam7_data_out.el_4_state_int = 0;
+//
+//    myam7_data_out.az_1_state_int = 0;
+//    myam7_data_out.az_2_state_int = 0;
+//    myam7_data_out.az_3_state_int = 0;
+//    myam7_data_out.az_4_state_int = 0;
+//
+//    myam7_data_out.theta_state_int = 0;
+//    myam7_data_out.phi_state_int = 0;
+//    myam7_data_out.psi_state_int = 0;
+//    myam7_data_out.gamma_state_int = 0;
+//    myam7_data_out.p_state_int = 0;
+//    myam7_data_out.q_state_int = 0;
+//    myam7_data_out.r_state_int = 0;
+//    myam7_data_out.airspeed_state_int = 0;
+//    myam7_data_out.pseudo_control_ax_int = 5670;
+//    myam7_data_out.pseudo_control_ay_int = 1046;
+//    myam7_data_out.pseudo_control_az_int = 1675;
+//    myam7_data_out.pseudo_control_p_dot_int = 1073;
+//    myam7_data_out.pseudo_control_q_dot_int = 1034;
+//    myam7_data_out.pseudo_control_r_dot_int = 11342;
+//    myam7_data_out.rolling_msg_out = 2.54;
+
+}
+
+void am7_periodic(){
+
+    assign_variables();
+
+//    uint8_t *buf_send = (uint8_t *)&myam7_data_out;
+//    //Calculating the checksum
+//    uint8_t checksum_out_local = 0;
+//    for(uint16_t i = 0; i < sizeof(struct am7_data_out) - 1; i++){
+//        checksum_out_local += buf_send[i];
+//    }
+//    myam7_data_out.checksum_out = checksum_out_local;
+//    //Send bytes
+//    uart_put_byte(&(AM7_PORT), 0, START_BYTE);
+//    for(uint8_t i = 0; i < sizeof(struct am7_data_out) ; i++){
+//        uart_put_byte(&(AM7_PORT), 0, buf_send[i]);
+//    }
 
 
 }

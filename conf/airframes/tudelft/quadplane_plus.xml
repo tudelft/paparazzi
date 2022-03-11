@@ -24,6 +24,7 @@
         <configure name="SBUS_PORT" value="UART3"/>  <!--Default use UART2  on FMU4 -->
         <!-- Mode set one a three way switch -->
         <!--  Per default already GEAR if not defined  <define name="RADIO_MODE" value="RADIO_GEAR"/> --><!-- yes, already done by default if not redefined to something else-->
+        <define name="RADIO_AUX1" value="5"/>
         <define name="RADIO_GEAR" value="RADIO_AUX2"/>
         <define name="RADIO_FLAP" value="RADIO_AUX3"/>
       </module>
@@ -329,9 +330,9 @@
     <define name="SERVO_AZ_3_ZERO_VALUE" value="8" unit="deg"/>
     <define name="SERVO_AZ_4_ZERO_VALUE" value="6" unit="deg"/>
 
-    <define name="MAX_THETA_FWD" value="15" unit="deg"/>
-    <define name="MIN_THETA_FWD" value="-15" unit="deg"/>
-    <define name="MAX_PHI_FWD" value="30" unit="deg"/>
+    <define name="MAX_THETA_INDI" value="100" unit="deg"/>
+    <define name="MIN_THETA_INDI" value="-30" unit="deg"/>
+    <define name="MAX_PHI_INDI" value="40" unit="deg"/>
 
 
     <!-- Filters properties for INDI -->
@@ -363,12 +364,13 @@
     <define name="L4" value="0.39" unit="m"/>
     <define name="LZ" value="0." unit="m"/>
 
-    <define name="Cl_alpha" value="5.18"/>
-    <define name="Cm_alpha" value="-0.1"/>
-    <define name="Cd_zero" value="0.38"/>
-    <define name="K_Cd" value="0.2"/>
+    <define name="CL_ALPHA" value="5.18"/>
+    <define name="CM_ZERO" value="0.01"/>
+    <define name="CM_ALPHA" value="-0.1"/>
+    <define name="CD_ZERO" value="0.38"/>
+    <define name="K_CD" value="0.2"/>
     <define name="S" value="0.57"/>
-    <define name="wing_chord" value="0.3325"/>
+    <define name="WING_CHORD" value="0.3325"/>
   </section>
 
 
