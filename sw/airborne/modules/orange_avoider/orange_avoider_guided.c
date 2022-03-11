@@ -35,6 +35,8 @@
 #include <time.h>
 #include <math.h>
 
+#include "generated/flight_plan.h"
+
 #include "firmwares/rotorcraft/guidance/guidance_indi.h"
 
 #define ORANGE_AVOIDER_VERBOSE TRUE
@@ -51,7 +53,7 @@ static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
 static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
 static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 uint8_t chooseRandomIncrementAvoidance(void);
-static inline bool InsideObstacleZone(struct EnuCoor_i *new_coor);
+// static inline bool InsideObstacleZone(struct EnuCoor_i *new_coor);
 
 enum navigation_state_t {
   SAFE,
@@ -163,7 +165,7 @@ void orange_avoider_guided_periodic(void)
       struct EnuCoor_i new_coor;
       calculateForwards(&new_coor, 1.0f);
 
-      if (!InsideObstacleZone(&new_coor)){//(floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
+      if (!InsideObstacleZone(POS_FLOAT_OF_BFP(new_coor.x),POS_FLOAT_OF_BFP(new_coor.y))){//(floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
         // VERBOSE_PRINT("x/y: %s %s", new_coor.x, new_coor.y);
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0){
@@ -196,9 +198,15 @@ void orange_avoider_guided_periodic(void)
       VERBOSE_PRINT("Out of bounds");
       // stop
       guidance_h_set_guided_body_vel(oag_oob_vx, avoidance_heading_direction*oag_oob_vy);
-
+      
+      float heading  = stateGetNedToBodyEulers_f()->psi;
+      if (fmod(DegOfRad(heading),90.0)>45.0){
+        guidance_h_set_guided_heading(heading+M_PI/2);
+      }else{
+          guidance_h_set_guided_heading(heading-M_PI/2);
+      }
       // start turn back into arena
-      guidance_h_set_guided_heading_rate(avoidance_heading_direction * RadOfDeg(oag_oob_rate));
+      // guidance_h_set_guided_heading_rate(avoidance_heading_direction * RadOfDeg(oag_oob_rate));
 
       navigation_state = REENTER_ARENA;
 
@@ -208,7 +216,7 @@ void orange_avoider_guided_periodic(void)
       // force floor center to opposite side of turn to head back into arena
       struct EnuCoor_i new_coor2;
       calculateForwards(&new_coor2, 6.0f);
-      if (InsideObstacleZone(&new_coor2)){
+      if (InsideObstacleZone(POS_FLOAT_OF_BFP(new_coor2.x), POS_FLOAT_OF_BFP(new_coor2.y))){
         // return to heading mode
         guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
         guidance_h_set_guided_body_vel(0.5f, 0.0f);
@@ -281,14 +289,14 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 }
 
 
-static inline bool InsideObstacleZone(struct EnuCoor_i *new_coor) {
-  float x = POS_FLOAT_OF_BFP(new_coor->x);
-  float y = POS_FLOAT_OF_BFP(new_coor->y);
-  bool c = FALSE;
-  float lim = 4.0;
+// static inline bool InsideObstacleZone(struct EnuCoor_i *new_coor) {
+//   float x = POS_FLOAT_OF_BFP(new_coor->x);
+//   float y = POS_FLOAT_OF_BFP(new_coor->y);
+//   bool c = FALSE;
+//   float lim = 4.0;
 
-  if ((x<lim) && (x>-lim) && (y<lim) && (y>-lim)){
-    c = TRUE;
-  }  
-  return c;
-}
+//   if ((x<lim) && (x>-lim) && (y<lim) && (y>-lim)){
+//     c = TRUE;
+//   }  
+//   return c;
+// }
