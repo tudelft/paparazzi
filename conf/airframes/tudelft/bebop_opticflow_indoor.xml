@@ -6,6 +6,8 @@
   </description>
   <firmware name="rotorcraft">
     <target name="ap" board="bebop"/>
+      <configure name="OPT" value="fast"/>
+      <configure name="DEBUG_FLAGS" value=""/>
       <define name="USE_SONAR"/>
     <!--target name="nps" board="pc">
       <module name="fdm" type="jsbsim"/>
@@ -52,18 +54,18 @@
       <define name="OPTICFLOW_SHOW_FLOW_CAMERA2" value="0"/>
     </module>
 
-    <module name="video_capture">
-      <define name="VIDEO_CAPTURE_CAMERA" value="bottom_camera"/>
-      <define name="VIDEO_CAPTURE_PATH" value="/data/ftp/internal_000/images"/>
-      <define name="VIDEO_CAPTURE_FPS" value="5"/>
-    </module>
+<!--    <module name="video_capture">-->
+<!--      <define name="VIDEO_CAPTURE_CAMERA" value="bottom_camera"/>-->
+<!--      <define name="VIDEO_CAPTURE_PATH" value="/data/ftp/internal_000/images"/>-->
+<!--      <define name="VIDEO_CAPTURE_FPS" value="5"/>-->
+<!--    </module>-->
 
-    <module name="video_rtp_stream">
-      <define name="VIEWVIDEO_CAMERA" value="bottom_camera"/>
-      <define name="VIEWVIDEO_CAMERA2" value="front_camera"/>
-      <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="2"/>
-      <define name="VIEWVIDEO_QUALITY_FACTOR" value="40"/>
-    </module>
+<!--    <module name="video_rtp_stream">-->
+<!--      <define name="VIEWVIDEO_CAMERA" value="bottom_camera"/>-->
+<!--      <define name="VIEWVIDEO_CAMERA2" value="front_camera"/>-->
+<!--      <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="2"/>-->
+<!--      <define name="VIEWVIDEO_QUALITY_FACTOR" value="40"/>-->
+<!--    </module>-->
   </firmware>
 
   <commands>

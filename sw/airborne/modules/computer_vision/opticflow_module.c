@@ -128,7 +128,7 @@ void opticflow_module_init(void)
  */
 void opticflow_module_run(void)
 {
-  pthread_mutex_lock(&opticflow_mutex);
+//  pthread_mutex_lock(&opticflow_mutex);
   // Update the stabilization loops on the current calculation
   for (int idx_camera = 0; idx_camera < ACTIVE_CAMERAS; idx_camera++) {
     if (opticflow_got_result[idx_camera]) {
@@ -154,7 +154,7 @@ void opticflow_module_run(void)
       opticflow_got_result[idx_camera] = false;
     }
   }
-  pthread_mutex_unlock(&opticflow_mutex);
+//  pthread_mutex_unlock(&opticflow_mutex);
 }
 
 /**
@@ -177,10 +177,10 @@ struct image_t *opticflow_module_calc(struct image_t *img, uint8_t camera_id)
   static struct opticflow_result_t temp_result[ACTIVE_CAMERAS]; // static so that the number of corners is kept between frames
   if(opticflow_calc_frame(&opticflow[camera_id], img, &temp_result[camera_id])){
     // Copy the result if finished
-    pthread_mutex_lock(&opticflow_mutex);
+//    pthread_mutex_lock(&opticflow_mutex);
     opticflow_result[camera_id] = temp_result[camera_id];
     opticflow_got_result[camera_id] = true;
-    pthread_mutex_unlock(&opticflow_mutex);
+//    pthread_mutex_unlock(&opticflow_mutex);
   }
   return img;
 }
