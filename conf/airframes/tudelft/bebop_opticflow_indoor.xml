@@ -8,6 +8,7 @@
     <target name="ap" board="bebop"/>
       <configure name="OPT" value="fast"/>
       <configure name="DEBUG_FLAGS" value=""/>
+      <define name="LIMIT_EVENT_POLLING" value="TRUE"/>  <!-- TODO Check if default is TRUE -->
       <define name="USE_SONAR"/>
     <!--target name="nps" board="pc">
       <module name="fdm" type="jsbsim"/>
@@ -31,6 +32,9 @@
 
     <module name="bebop_cam">
       <!-- IMPORTANT to limit these or FPS drops significantly -->
+      <define name="MT9F002_OUTPUT_WIDTH" value="512"/>
+      <define name="MT9F002_OUTPUT_HEIGHT" value="512"/>
+
       <define name="MT9F002_TARGET_FPS" value="30"/> <!-- Front cam -->
       <define name="MT9V117_TARGET_FPS" value="60"/> <!-- Bottom cam -->
     </module>
@@ -49,7 +53,7 @@
       <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y_CAMERA2" value="0.85"/> <!--Obtained from a linefit-->
       <configure name="OPTICFLOW_MAX_TRACK_CORNERS_CAMERA2" value="30"/>
       <define name="OPTICFLOW_FEATURE_MANAGEMENT_CAMERA2" value="0"/>
-      <define name="OPTICFLOW_FPS_CAMERA2" value="20"/>
+      <define name="OPTICFLOW_FPS_CAMERA2" value="30"/>
       <define name="OPTICFLOW_PYRAMID_LEVEL_CAMERA2" value="0"/>
       <define name="OPTICFLOW_SHOW_FLOW_CAMERA2" value="0"/>
     </module>
