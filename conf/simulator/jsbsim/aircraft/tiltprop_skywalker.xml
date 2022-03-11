@@ -76,10 +76,13 @@
 		<ixx unit="SLUG*FT2"> 0.0056452996 </ixx>
 		<iyy unit="SLUG*FT2"> 0.02407556 </iyy>
 		<izz unit="SLUG*FT2"> 0.0029480072 </izz> -->
-	
+		<ixx unit="SLUG*FT2"> 0.03960 </ixx>
+		<iyy unit="SLUG*FT2"> 0.00625 </iyy>
+		<izz unit="SLUG*FT2"> 0.04500 </izz>
+<!--  These are cyclone values	
 		<ixx unit="SLUG*FT2"> 0.0132 </ixx>
 		<iyy unit="SLUG*FT2"> 0.00250 </iyy>
-		<izz unit="SLUG*FT2"> 0.0150 </izz>  <!-- These are cyclone values -->
+		<izz unit="SLUG*FT2"> 0.0150 </izz>   -->
 		<ixy unit="SLUG*FT2"> 0. </ixy>
 		<ixz unit="SLUG*FT2"> 0. </ixz>
 		<iyz unit="SLUG*FT2"> 0. </iyz>
