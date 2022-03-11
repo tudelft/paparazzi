@@ -51,7 +51,7 @@ static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
 static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
 static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 uint8_t chooseRandomIncrementAvoidance(void);
-static inline bool InsideObstacleZone(float _x, float _y);
+static inline bool InsideObstacleZone(struct EnuCoor_i *new_coor);
 
 enum navigation_state_t {
   SAFE,
@@ -142,9 +142,9 @@ void orange_avoider_guided_periodic(void)
   int32_t floor_count_threshold = oag_floor_count_frac * front_camera.output_size.w * front_camera.output_size.h;
   float floor_centroid_frac = floor_centroid / (float)front_camera.output_size.h / 2.f;
 
-  VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
-  VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
-  VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
+  // VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
+  // VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
+  // VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
 
   // update our safe confidence using color threshold
   if(color_count < color_count_threshold){
@@ -163,11 +163,12 @@ void orange_avoider_guided_periodic(void)
       struct EnuCoor_i new_coor;
       calculateForwards(&new_coor, 1.0f);
 
-      if (!InsideObstacleZone(new_coor.x, new_coor.y)){//(floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
+      if (!InsideObstacleZone(&new_coor)){//(floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
+        // VERBOSE_PRINT("x/y: %s %s", new_coor.x, new_coor.y);
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0){
         navigation_state = OBSTACLE_FOUND;
-      } else {
+      } else {SAFE
         guidance_h_set_guided_body_vel(speed_sp, 0);
       }
 
@@ -205,7 +206,9 @@ void orange_avoider_guided_periodic(void)
     case REENTER_ARENA:
       VERBOSE_PRINT("Reenter");
       // force floor center to opposite side of turn to head back into arena
-      if (floor_count >= floor_count_threshold && avoidance_heading_direction * floor_centroid_frac >= 0.f){
+      struct EnuCoor_i new_coor;
+      calculateForwards(&new_coor, 6.0f);
+      if (InsideObstacleZone(&new_coor)){
         // return to heading mode
         guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
         guidance_h_set_guided_body_vel(0.5f, 0.0f);
@@ -231,10 +234,10 @@ uint8_t chooseRandomIncrementAvoidance(void)
   // Randomly choose CW or CCW avoiding direction
   if (rand() % 2 == 0) {
     avoidance_heading_direction = 1.f;
-    VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
+    // VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
   } else {
     avoidance_heading_direction = -1.f;
-    VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
+    // VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
   }
   return false;
 }
@@ -278,19 +281,14 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 }
 
 
-#define SECTOR_OBSTACLEZONE_NB 4
-#define SECTOR_OBSTACLEZONE { 11, 12, 13, 14 }
-static inline bool InsideObstacleZone(float _x, float _y) {
-  uint8_t i, j;
-  bool c = false;
-  const uint8_t nb_pts = SECTOR_OBSTACLEZONE_NB;
-  const uint8_t wps_id[] = SECTOR_OBSTACLEZONE;
+static inline bool InsideObstacleZone(struct EnuCoor_i *new_coor) {
+  float x = POS_FLOAT_OF_BFP(new_coor->x);
+  float y = POS_FLOAT_OF_BFP(new_coor->y);
+  bool c = FALSE;
+  float lim = 4.0;
 
-  for (i = 0, j = nb_pts - 1; i < nb_pts; j = i++) {
-    if (((WaypointY(wps_id[i]) > _y) != (WaypointY(wps_id[j]) > _y)) &&
-       (_x < (WaypointX(wps_id[j])-WaypointX(wps_id[i])) * (_y-WaypointY(wps_id[i])) / (WaypointY(wps_id[j])-WaypointY(wps_id[i])) + WaypointX(wps_id[i]))) {
-      if (c == TRUE) { c = FALSE; } else { c = TRUE; }
-    }
-  }
+  if ((x<lim) && (x>-lim) && (y<lim) && (y>-lim)){
+    c = TRUE;
+  }  
   return c;
 }
