@@ -2042,8 +2042,8 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     init_variables();
 
     /// Case of PID control as on simulink [FAILSAFE]
-//    if(radio_control.values[RADIO_MODE] < 500) {
-    if(0) {
+    if(radio_control.values[RADIO_MODE] < 500) {
+//    if(0) {
         //INIT AND BOOLEAN RESET
         if (PID_engaged == 0) {
             /*
@@ -2291,8 +2291,8 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     }
 
     /// Case of INDI control mode as on simulink
-//    if(radio_control.values[RADIO_MODE] > 500){
-    if(1){
+    if(radio_control.values[RADIO_MODE] > 500){
+//    if(1){
 
         //INIT AND BOOLEAN RESET
         if(INDI_engaged == 0){
@@ -2521,37 +2521,59 @@ void overactuated_mixing_run(pprz_t in_cmd[])
         extra_data_out_local[16] = (OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE * 180/M_PI);
         extra_data_out_local[17] = (OVERACTUATED_MIXING_MAX_THETA_INDI * 180/M_PI);
         extra_data_out_local[18] = (OVERACTUATED_MIXING_MIN_THETA_INDI * 180/M_PI);
-        extra_data_out_local[19] = (OVERACTUATED_MIXING_MAX_PHI_INDI * 180/M_PI);
-        extra_data_out_local[20] = VEHICLE_CM_ZERO;
-        extra_data_out_local[21] = VEHICLE_CM_ALPHA;
-        extra_data_out_local[22] = VEHICLE_CL_ALPHA;
-        extra_data_out_local[23] = VEHICLE_CD_ZERO;
-        extra_data_out_local[24] = VEHICLE_K_CD;
-        extra_data_out_local[25] = VEHICLE_S;
-        extra_data_out_local[26] = VEHICLE_WING_CHORD;
-        extra_data_out_local[27] = 1.225; //rho value at MSL
+        extra_data_out_local[19] = (OVERACTUATED_MIXING_MAX_AOA_INDI * 180/M_PI);
+        extra_data_out_local[20] = (OVERACTUATED_MIXING_MIN_AOA_INDI * 180/M_PI);
+        extra_data_out_local[21] = (OVERACTUATED_MIXING_MAX_PHI_INDI * 180/M_PI);
+        extra_data_out_local[22] = VEHICLE_CM_ZERO;
+        extra_data_out_local[23] = VEHICLE_CM_ALPHA;
+        extra_data_out_local[24] = VEHICLE_CL_ALPHA;
+        extra_data_out_local[25] = VEHICLE_CD_ZERO;
+        extra_data_out_local[26] = VEHICLE_K_CD;
+        extra_data_out_local[27] = VEHICLE_S;
+        extra_data_out_local[28] = VEHICLE_WING_CHORD;
+        extra_data_out_local[29] = 1.225; //rho value at MSL
+
+        extra_data_out_local[30] = OVERACTUATED_MIXING_W_ACT_MOTOR_CONST;
+        extra_data_out_local[31] = OVERACTUATED_MIXING_W_ACT_MOTOR_SPEED;
+        extra_data_out_local[32] = OVERACTUATED_MIXING_W_ACT_EL_CONST;
+        extra_data_out_local[33] = OVERACTUATED_MIXING_W_ACT_EL_SPEED;
+        extra_data_out_local[34] = OVERACTUATED_MIXING_W_ACT_AZ_CONST;
+        extra_data_out_local[35] = OVERACTUATED_MIXING_W_ACT_AZ_SPEED;
+        extra_data_out_local[36] = OVERACTUATED_MIXING_W_ACT_THETA_CONST;
+        extra_data_out_local[37] = OVERACTUATED_MIXING_W_ACT_THETA_SPEED;
+        extra_data_out_local[38] = OVERACTUATED_MIXING_W_ACT_PHI_CONST;
+        extra_data_out_local[39] = OVERACTUATED_MIXING_W_ACT_PHI_SPEED;
+
+        extra_data_out_local[40] = OVERACTUATED_MIXING_W_DV_1;
+        extra_data_out_local[41] = OVERACTUATED_MIXING_W_DV_2;
+        extra_data_out_local[42] = OVERACTUATED_MIXING_W_DV_3;
+        extra_data_out_local[43] = OVERACTUATED_MIXING_W_DV_4;
+        extra_data_out_local[44] = OVERACTUATED_MIXING_W_DV_5;
+        extra_data_out_local[45] = OVERACTUATED_MIXING_W_DV_6;
+
+        extra_data_out_local[46] = OVERACTUATED_MIXING_GAMMA_QUADRATIC;
 
         AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &am7_data_out_local, &extra_data_out_local);
 
 
         //Collect the last available data on the AM7 bus to be communicated to the servos.
-        indi_u[0] =  (myam7_data_in_local.motor_1_cmd_int * 1e1);
-        indi_u[1] =  (myam7_data_in_local.motor_2_cmd_int * 1e1);
-        indi_u[2] =  (myam7_data_in_local.motor_3_cmd_int * 1e1);
-        indi_u[3] =  (myam7_data_in_local.motor_4_cmd_int * 1e1);
+        indi_u[0] =  (myam7_data_in_local.motor_1_cmd_int * 1e-1);
+        indi_u[1] =  (myam7_data_in_local.motor_2_cmd_int * 1e-1);
+        indi_u[2] =  (myam7_data_in_local.motor_3_cmd_int * 1e-1);
+        indi_u[3] =  (myam7_data_in_local.motor_4_cmd_int * 1e-1);
 
-        indi_u[4] =  (myam7_data_in_local.el_1_cmd_int * 1e2 * M_PI/180);
-        indi_u[5] =  (myam7_data_in_local.el_2_cmd_int * 1e2 * M_PI/180);
-        indi_u[6] =  (myam7_data_in_local.el_3_cmd_int * 1e2 * M_PI/180);
-        indi_u[7] =  (myam7_data_in_local.el_4_cmd_int * 1e2 * M_PI/180);
+        indi_u[4] =  (myam7_data_in_local.el_1_cmd_int * 1e-2 * M_PI/180);
+        indi_u[5] =  (myam7_data_in_local.el_2_cmd_int * 1e-2 * M_PI/180);
+        indi_u[6] =  (myam7_data_in_local.el_3_cmd_int * 1e-2 * M_PI/180);
+        indi_u[7] =  (myam7_data_in_local.el_4_cmd_int * 1e-2 * M_PI/180);
 
-        indi_u[8] =  (myam7_data_in_local.az_1_cmd_int * 1e2 * M_PI/180);
-        indi_u[9] =  (myam7_data_in_local.az_2_cmd_int * 1e2 * M_PI/180);
-        indi_u[10] =  (myam7_data_in_local.az_3_cmd_int * 1e2 * M_PI/180);
-        indi_u[11] =  (myam7_data_in_local.az_4_cmd_int * 1e2 * M_PI/180);
+        indi_u[8] =  (myam7_data_in_local.az_1_cmd_int * 1e-2 * M_PI/180);
+        indi_u[9] =  (myam7_data_in_local.az_2_cmd_int * 1e-2 * M_PI/180);
+        indi_u[10] =  (myam7_data_in_local.az_3_cmd_int * 1e-2 * M_PI/180);
+        indi_u[11] =  (myam7_data_in_local.az_4_cmd_int * 1e-2 * M_PI/180);
 
-        indi_u[12] =  (myam7_data_in_local.theta_cmd_int * 1e2 * M_PI/180);
-        indi_u[13] =  (myam7_data_in_local.phi_cmd_int * 1e2 * M_PI/180);
+        indi_u[12] =  (myam7_data_in_local.theta_cmd_int * 1e-2 * M_PI/180);
+        indi_u[13] =  (myam7_data_in_local.phi_cmd_int * 1e-2 * M_PI/180);
 
 
         // Write values to servos and motor

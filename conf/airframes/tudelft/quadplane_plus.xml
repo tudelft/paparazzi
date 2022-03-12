@@ -333,7 +333,8 @@
     <define name="MAX_THETA_INDI" value="100" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-30" unit="deg"/>
     <define name="MAX_PHI_INDI" value="40" unit="deg"/>
-
+    <define name="MAX_AOA_INDI" value="15" unit="deg"/>
+    <define name="MIN_AOA_INDI" value="-15" unit="deg"/>
 
     <!-- Filters properties for INDI -->
     <define name="FILT_CUTOFF_ANG_RATES" value="15" unit="rad/s"/>
@@ -341,6 +342,27 @@
     <define name="FILT_CUTOFF_ACTUATORS_EL" value="15" unit="rad/s"/>
     <define name="FILT_CUTOFF_ACTUATORS_AZ" value="15" unit="rad/s"/>
     <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="15" unit="rad/s"/>
+
+    <!-- INDI properties [weights] -->
+    <define name="W_ACT_MOTOR_CONST" value="1"/>
+    <define name="W_ACT_MOTOR_SPEED" value="1"/>
+    <define name="W_ACT_EL_CONST" value="1"/>
+    <define name="W_ACT_EL_SPEED" value="0"/>
+    <define name="W_ACT_AZ_CONST" value="1"/>
+    <define name="W_ACT_AZ_SPEED" value="100"/>
+    <define name="W_ACT_THETA_CONST" value="400"/>
+    <define name="W_ACT_THETA_SPEED" value="-50"/>
+    <define name="W_ACT_PHI_CONST" value="500"/>
+    <define name="W_ACT_PHI_SPEED" value="-60"/>
+
+    <define name="W_DV_1" value="0.01"/>
+    <define name="W_DV_2" value="0.01"/>
+    <define name="W_DV_3" value="0.01"/>
+    <define name="W_DV_4" value="0.1"/>
+    <define name="W_DV_5" value="0.1"/>
+    <define name="W_DV_6" value="0.01"/>
+
+    <define name="GAMMA_QUADRATIC" value="1e-7"/>
 
   </section>
 
@@ -351,12 +373,6 @@
     <define name="I_ZZ" value="0.2" unit="Kg*m^2"/>
     <define name="I_TILT" value="0.000216" unit="Kg*m^2"/>
     <define name="PROPELLER_INERTIA" value="1.984e-5" unit="Kg*m^2"/>
-<!--        <define name="MASS" value="2.4" unit="Kg"/>-->
-<!--        <define name="L1" value="0.183" unit="m"/>-->
-<!--        <define name="L2" value="0.183" unit="m"/>-->
-<!--        <define name="L3" value="0.25" unit="m"/>-->
-<!--        <define name="L4" value="0.30" unit="m"/>-->
-<!--        <define name="LZ" value="0." unit="m"/>-->
     <define name="MASS" value="2.33" unit="Kg"/>
     <define name="L1" value="0.231" unit="m"/>
     <define name="L2" value="0.231" unit="m"/>
