@@ -56,6 +56,7 @@ struct __attribute__((__packed__)) am7_data_in {
     uint16_t n_iteration;
     uint16_t n_evaluation;
     uint16_t elapsed_time_us;
+    int16_t exit_flag_optimizer;
     //Residuals
     int16_t residual_ax_int;
     int16_t residual_ay_int;
@@ -98,6 +99,12 @@ struct __attribute__((__packed__)) am7_data_out {
     int16_t pseudo_control_p_dot_int;
     int16_t pseudo_control_q_dot_int;
     int16_t pseudo_control_r_dot_int;
+    //Desired actuator value:
+    int16_t desired_motor_value_int;
+    int16_t desired_el_value_int;
+    int16_t desired_az_value_int;
+    int16_t desired_theta_value_int;
+    int16_t desired_phi_value_int;
     float rolling_msg_out;
     uint8_t rolling_msg_out_id;
     uint8_t checksum_out;

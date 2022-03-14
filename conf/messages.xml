@@ -1813,6 +1813,11 @@
          <field name = "pseudo_control_p_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1"/>
          <field name = "pseudo_control_q_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1"/>
          <field name = "pseudo_control_r_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1"/>
+         <field name = "desired_motor_value" type="int16" unit="1e1_rad_s" alt_unit="rad_s"  alt_unit_coef="0.1"/>
+         <field name = "desired_el_value" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "desired_az_value" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "desired_theta_value" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
+         <field name = "desired_phi_value" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01"/>
          <field name = "rolling_msg_out" type="float"/>
          <field name = "rolling_msg_out_id" type="uint8"/>
      </message>
@@ -1836,6 +1841,7 @@
          <field name = "n_iteration" type="uint16"/>
          <field name = "n_evaluation" type="uint16"/>
          <field name = "elapsed_time_us" type="uint16"/>
+         <field name = "exit_flag_optimizer" type="int16"/>
          <field name = "residual_ax" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01"/>
          <field name = "residual_ay" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01"/>
          <field name = "residual_az" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01"/>

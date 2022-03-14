@@ -285,9 +285,9 @@
 <!--    <define name="INDI_REF_ERR_Q" value="6"/>-->
 <!--    <define name="INDI_REF_ERR_R" value="3.8"/>-->
 
-    <define name="INDI_REF_ERR_P" value="1"/>
-    <define name="INDI_REF_ERR_Q" value="1"/>
-    <define name="INDI_REF_ERR_R" value="1"/>
+    <define name="INDI_REF_ERR_P" value="2"/>
+    <define name="INDI_REF_ERR_Q" value="2"/>
+    <define name="INDI_REF_ERR_R" value="2"/>
 
     <define name="INDI_REF_ERR_X" value="1.5"/>
     <define name="INDI_REF_ERR_Y" value="1.5"/>
@@ -297,9 +297,9 @@
 <!--    <define name="INDI_REF_RATE_Q" value="10"/>-->
 <!--    <define name="INDI_REF_RATE_R" value="6.8"/>-->
 
-    <define name="INDI_REF_RATE_P" value="2.5"/>
-    <define name="INDI_REF_RATE_Q" value="2.5"/>
-    <define name="INDI_REF_RATE_R" value="6"/>
+    <define name="INDI_REF_RATE_P" value="10"/>
+    <define name="INDI_REF_RATE_Q" value="10"/>
+    <define name="INDI_REF_RATE_R" value="5"/>
 
 
     <define name="INDI_REF_RATE_X" value="2.35"/>

@@ -2042,8 +2042,8 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     init_variables();
 
     /// Case of PID control as on simulink [FAILSAFE]
-    if(radio_control.values[RADIO_MODE] < 500) {
-//    if(0) {
+//    if(radio_control.values[RADIO_MODE] < 500) {
+    if(0) {
         //INIT AND BOOLEAN RESET
         if (PID_engaged == 0) {
             /*
@@ -2291,8 +2291,8 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     }
 
     /// Case of INDI control mode as on simulink
-    if(radio_control.values[RADIO_MODE] > 500){
-//    if(1){
+//    if(radio_control.values[RADIO_MODE] > 500){
+    if(1){
 
         //INIT AND BOOLEAN RESET
         if(INDI_engaged == 0){
@@ -2337,10 +2337,14 @@ void overactuated_mixing_run(pprz_t in_cmd[])
 
         //Calculate the euler angle error to be fed into the PD for the INDI loop
 
-        euler_setpoint[0] = max_value_error.phi * radio_control.values[RADIO_ROLL] / 9600;
-        euler_setpoint[1] = max_value_error.theta * radio_control.values[RADIO_PITCH] / 9600;
-        euler_setpoint[0] += indi_u[13];
-        euler_setpoint[1] += indi_u[12];
+        float manual_motor_value = 0;
+        float manual_el_value = 0;
+        float manual_az_value = 0;
+        float manual_theta_value = max_value_error.phi * radio_control.values[RADIO_ROLL] / 9600;
+        float manual_phi_value = max_value_error.theta * radio_control.values[RADIO_PITCH] / 9600;
+
+        euler_setpoint[0] = indi_u[13];
+        euler_setpoint[1] = indi_u[12];
         //Give a specific heading value to keep
         if(manual_heading){
             euler_setpoint[2] = manual_heading_value_rad;
@@ -2501,6 +2505,12 @@ void overactuated_mixing_run(pprz_t in_cmd[])
         am7_data_out_local.pseudo_control_p_dot_int = (int16_t) (INDI_acceleration_inputs[3] * 1e1 * 180/M_PI);
         am7_data_out_local.pseudo_control_q_dot_int = (int16_t) (INDI_acceleration_inputs[4] * 1e1 * 180/M_PI);
         am7_data_out_local.pseudo_control_r_dot_int = (int16_t) (INDI_acceleration_inputs[5] * 1e1 * 180/M_PI);
+
+        am7_data_out_local.desired_motor_value_int = (int16_t) (manual_motor_value * 1e1);
+        am7_data_out_local.desired_el_value_int = (int16_t) (manual_el_value * 1e2 * 180/M_PI);
+        am7_data_out_local.desired_az_value_int = (int16_t) (manual_az_value * 1e2 * 180/M_PI);
+        am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
+        am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
 
         extra_data_out_local[0] = OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ;
         extra_data_out_local[1] = OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ;

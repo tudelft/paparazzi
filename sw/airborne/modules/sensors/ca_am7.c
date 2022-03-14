@@ -50,8 +50,8 @@ static void am7_downlink(struct transport_tx *trans, struct link_device *dev)
 	   pprz_msg_send_AM7_IN(trans, dev, AC_ID, &myam7_data_in.motor_1_cmd_int, &myam7_data_in.motor_2_cmd_int, &myam7_data_in.motor_3_cmd_int,
 		 	  &myam7_data_in.motor_4_cmd_int, &myam7_data_in.el_1_cmd_int, &myam7_data_in.el_2_cmd_int, &myam7_data_in.el_3_cmd_int,
 		 	  &myam7_data_in.el_4_cmd_int, &myam7_data_in.az_1_cmd_int,  &myam7_data_in.az_2_cmd_int, &myam7_data_in.az_3_cmd_int,
-              &myam7_data_in.az_4_cmd_int, &myam7_data_in.theta_cmd_int, &myam7_data_in.phi_cmd_int,&myam7_data_in.n_iteration,
-              &myam7_data_in.n_evaluation, &myam7_data_in.elapsed_time_us, &myam7_data_in.residual_ax_int,&myam7_data_in.residual_ay_int, &myam7_data_in.residual_az_int,
+              &myam7_data_in.az_4_cmd_int, &myam7_data_in.theta_cmd_int, &myam7_data_in.phi_cmd_int,&myam7_data_in.n_iteration, &myam7_data_in.n_evaluation,
+              &myam7_data_in.elapsed_time_us, &myam7_data_in.exit_flag_optimizer, &myam7_data_in.residual_ax_int,&myam7_data_in.residual_ay_int, &myam7_data_in.residual_az_int,
               &myam7_data_in.residual_p_dot_int, &myam7_data_in.residual_q_dot_int,&myam7_data_in.residual_r_dot_int, &missed_packets, &ca7_message_frequency_RX,
               &myam7_data_in.rolling_msg_in, &myam7_data_in.rolling_msg_in_id);
 }
@@ -64,6 +64,8 @@ static void am7_uplink(struct transport_tx *trans, struct link_device *dev)
               &myam7_data_out.gamma_state_int, &myam7_data_out.p_state_int, &myam7_data_out.q_state_int, &myam7_data_out.r_state_int,
               &myam7_data_out.airspeed_state_int, &myam7_data_out.pseudo_control_ax_int, &myam7_data_out.pseudo_control_ay_int, &myam7_data_out.pseudo_control_az_int,
               &myam7_data_out.pseudo_control_p_dot_int,&myam7_data_out.pseudo_control_q_dot_int, &myam7_data_out.pseudo_control_r_dot_int,
+              &myam7_data_out.desired_motor_value_int, &myam7_data_out.desired_el_value_int, &myam7_data_out.desired_az_value_int,
+              &myam7_data_out.desired_theta_value_int, &myam7_data_out.desired_phi_value_int,
               &myam7_data_out.rolling_msg_out, &myam7_data_out.rolling_msg_out_id);
 
 }
