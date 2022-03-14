@@ -140,6 +140,7 @@ static float Wu[INDI_NUM_ACT];
 
 bool doub_init = FALSE ;
 pprz_t val_init = 0;
+int doub_number = 0;
 
 // variables needed for control
 float actuator_state_filt_vect[INDI_NUM_ACT];
@@ -571,6 +572,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
       if(!doub_init){
         val_init = actuator_state_filt_vect[i];
         doub_init = TRUE;
+        doub_number += 1;
         }
       du_pref[i] = val_init + current_doublet_values[i] - actuator_state_filt_vect[i];
       } else {
