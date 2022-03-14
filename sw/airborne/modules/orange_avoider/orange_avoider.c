@@ -38,6 +38,8 @@
 #endif
 
 static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
+static uint8_t moveWaypointAcross(uint8_t waypoint, float distanceMeters, float heading_increment);
+static uint8_t calculateAcross(struct EnuCoor_i *new_coor, float distanceMeters, float heading_increment);
 static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
 static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 static uint8_t increase_nav_heading(float incrementDegrees);
@@ -62,6 +64,22 @@ float maxDistance = 2.25;               // max waypoint displacement [m]
 
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
 
+// global vars for logging distance covered
+float last_pos_x = 0;
+float last_pos_y = 0;
+float dx = 0;
+float dy = 0;
+float d_covered = 0;
+
+// global vars for object center identification
+int16_t object_center_x = 0;
+int16_t object_center_y = 0;
+
+// global vars for FPS logging
+float current_time = 0;
+float last_time = 0;
+float FPS_orange_avoider = 0;
+
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
  * any time data calculated in another module needs to be accessed. Including the file where this external
@@ -72,14 +90,25 @@ const int16_t max_trajectory_confidence = 5; // number of consecutive negative o
 #ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
 #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
+
+// callback - extracts color_count and center pixels from object
 static abi_event color_detection_ev;
 static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
-                               int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
+                               int16_t pixel_x, int16_t pixel_y,
                                int16_t __attribute__((unused)) pixel_width, int16_t __attribute__((unused)) pixel_height,
                                int32_t quality, int16_t __attribute__((unused)) extra)
 {
   color_count = quality;
+  object_center_x = pixel_x;
+  object_center_y = pixel_y;
+
+  // Get FPS
+  current_time = get_sys_time_float();
+  FPS_orange_avoider = 1/(current_time-last_time);
+  last_time = current_time;
+
 }
+
 
 /*
  * Initialisation function, setting the colour filter, random seed and heading_increment
@@ -99,6 +128,10 @@ void orange_avoider_init(void)
  */
 void orange_avoider_periodic(void)
 {
+  VERBOSE_PRINT("center of object  x = %i\n", object_center_x);
+  VERBOSE_PRINT("center of object  y = %i\n", object_center_y);
+  VERBOSE_PRINT("FPS = %f\n", FPS_orange_avoider);
+
   // only evaluate our state machine if we are flying
   if(!autopilot_in_flight()){
     return;
@@ -119,12 +152,13 @@ void orange_avoider_periodic(void)
   // bound obstacle_free_confidence
   Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
 
-  float moveDistance = fminf(maxDistance, 0.2f * obstacle_free_confidence);
+  float moveDistance = fminf(maxDistance, (0.2f * obstacle_free_confidence) + 0.2);
 
   switch (navigation_state){
     case SAFE:
       // Move waypoint forward
       moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
+
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0){
@@ -136,25 +170,36 @@ void orange_avoider_periodic(void)
       break;
     case OBSTACLE_FOUND:
       // stop
-      waypoint_move_here_2d(WP_GOAL);
-      waypoint_move_here_2d(WP_TRAJECTORY);
+      //waypoint_move_here_2d(WP_GOAL);
+      //waypoint_move_here_2d(WP_TRAJECTORY);
 
       // randomly select new search direction
       chooseRandomIncrementAvoidance();
 
+      // What does this do exactly?
+      increase_nav_heading(heading_increment);
+      // moveWaypointForward(WP_TRAJECTORY, 1.5f * 0.1f);
+      moveWaypointAcross(WP_TRAJECTORY, 0.5f* 0.1f , heading_increment);
       navigation_state = SEARCH_FOR_SAFE_HEADING;
 
       break;
     case SEARCH_FOR_SAFE_HEADING:
+      heading_increment = heading_increment/abs(heading_increment)*5;
       increase_nav_heading(heading_increment);
-
+      moveWaypointAcross(WP_TRAJECTORY, 1.5f , heading_increment+10);
       // make sure we have a couple of good readings before declaring the way safe
       if (obstacle_free_confidence >= 2){
         navigation_state = SAFE;
       }
       break;
     case OUT_OF_BOUNDS:
+
+      // moveWaypointForward(WP_TRAJECTORY, 0.2f);
+
+      // Test
+      heading_increment = heading_increment/abs(heading_increment)*5;
       increase_nav_heading(heading_increment);
+
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
 
       if (InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
@@ -172,6 +217,22 @@ void orange_avoider_periodic(void)
       break;
   }
   return;
+}
+
+void log_distance_covered_periodic(void)
+{
+  if(!autopilot_in_flight()){
+    return;
+  }
+  // calculate distance covered
+  dx = fabs(stateGetPositionEnu_f()->x - last_pos_x);
+  dy = fabs(stateGetPositionEnu_f()->y - last_pos_y);
+  d_covered = d_covered + sqrt(dx*dx+dy*dy);
+  VERBOSE_PRINT("distance covered: d = %f \n", d_covered);
+
+  // Update position
+  last_pos_x = stateGetPositionEnu_f()->x;
+  last_pos_y = stateGetPositionEnu_f()->y;
 }
 
 /*
@@ -202,6 +263,13 @@ uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters)
   moveWaypoint(waypoint, &new_coor);
   return false;
 }
+uint8_t moveWaypointAcross(uint8_t waypoint, float distanceMeters, float heading_increment)
+{
+  struct EnuCoor_i new_coor;
+  calculateAcross(&new_coor, distanceMeters, heading_increment);
+  moveWaypoint(waypoint, &new_coor);
+  return false;
+}
 
 /*
  * Calculates coordinates of a distance of 'distanceMeters' forward w.r.t. current position and heading
@@ -213,7 +281,18 @@ uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
   // Now determine where to place the waypoint you want to go to
   new_coor->x = stateGetPositionEnu_i()->x + POS_BFP_OF_REAL(sinf(heading) * (distanceMeters));
   new_coor->y = stateGetPositionEnu_i()->y + POS_BFP_OF_REAL(cosf(heading) * (distanceMeters));
-  VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,	
+  VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,
+                POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y),
+                stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
+  return false;
+}
+uint8_t calculateAcross(struct EnuCoor_i *new_coor, float distanceMeters, float heading_increment)
+{
+  float heading  = stateGetNedToBodyEulers_f()->psi + RadOfDeg(heading_increment*0.5f);
+  // Now determine where to place the waypoint you want to go to
+  new_coor->x = stateGetPositionEnu_i()->x + POS_BFP_OF_REAL(sinf(heading) * (distanceMeters));
+  new_coor->y = stateGetPositionEnu_i()->y + POS_BFP_OF_REAL(cosf(heading) * (distanceMeters));
+  VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,
                 POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y),
                 stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
   return false;
@@ -236,13 +315,52 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 uint8_t chooseRandomIncrementAvoidance(void)
 {
   // Randomly choose CW or CCW avoiding direction
-  if (rand() % 2 == 0) {
+
+  // if (rand() % 2 == 0) {
+  //   heading_increment = 5.f;
+  //   VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  // } else {
+  //   heading_increment = -5.f;
+  //   VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  // }
+
+
+  // If object is in the left part of the image (object_center_y > 0), yaw right and vice versa
+  // Note that the image is rotated by 90 degrees (x=y)
+
+
+  // if (object_center_y > 0 ) {
+  //   heading_increment = 5.f;
+  //   VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  // } else {
+  //   heading_increment = -5.f;
+  //   VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  // }
+
+  // If an obstacle found, change heading incre
+
+  
+  if (object_center_y > 0 && object_center_y < 130) {
+    heading_increment = 20.f;
+    VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  }
+  
+  if (object_center_y > 130 && object_center_y < 260){
     heading_increment = 5.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
-  } else {
+  }
+
+  if (object_center_y < 0 && object_center_y > -130) {
+    heading_increment = -20.f;
+    VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  }
+  
+  if (object_center_y < -130 && object_center_y > -260){
     heading_increment = -5.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
+
+
   return false;
 }
 
