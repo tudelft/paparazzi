@@ -31,13 +31,11 @@
 #include "generated/airframe.h"
 #include "state.h"
 #include "modules/core/abi.h"
-#include <stdio.h>/home/jessica/paparazzi/sw/airborne/
+#include <stdio.h>
 #include <time.h>
 #include <math.h>
 
 #include "generated/flight_plan.h"
-
-#include "firmwares/rotorcraft/guidance/guidance_indi.h"
 
 #define ORANGE_AVOIDER_VERBOSE TRUE
 
@@ -53,6 +51,10 @@ static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
 static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
 static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 uint8_t chooseRandomIncrementAvoidance(void);
+uint8_t chooseIncrementAvoidance(void);
+uint8_t CheckWall(struct EnuCoor_i new_coor);
+uint8_t RotationOperation(float *x, float *y, float *psi);
+
 // static inline bool InsideObstacleZone(struct EnuCoor_i *new_coor);
 
 enum navigation_state_t {
@@ -66,12 +68,14 @@ enum navigation_state_t {
 // define settings
 float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a fraction of total of image
 float oag_floor_count_frac = 0.05f;       // floor detection threshold as a fraction of total of image
-float oag_max_speed = 0.5f;               // max flight speed [m/s]
+float oag_max_speed = 1.f;               // max flight speed [m/s]
 float oag_heading_rate = RadOfDeg(30.f);  // heading change setpoint for avoidance [rad/s]
 
-float oag_oob_vx = 0.0f;
-float oag_oob_vy = 0.4f;
-float oag_oob_rate = 30.0f;
+float oag_oob_vx = 0.1f;
+float oag_oob_vy = 0.7f;
+float oag_oob_rate = 90.0f;
+
+int wall;
 
 
 
@@ -160,6 +164,8 @@ void orange_avoider_guided_periodic(void)
 
   float speed_sp = fminf(oag_max_speed, 0.4f * obstacle_free_confidence);
 
+  // VERBOSE_PRINT("x/y/psi: %f/%f/%f\n", POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x),POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y), DegOfRad(stateGetNedToBodyEulers_f()->psi));
+
   switch (navigation_state){
     case SAFE: ;
       struct EnuCoor_i new_coor;
@@ -167,6 +173,7 @@ void orange_avoider_guided_periodic(void)
 
       if (!InsideObstacleZone(POS_FLOAT_OF_BFP(new_coor.x),POS_FLOAT_OF_BFP(new_coor.y))){//(floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
         // VERBOSE_PRINT("x/y: %s %s", new_coor.x, new_coor.y);
+        CheckWall(new_coor);
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0){
         navigation_state = OBSTACLE_FOUND;
@@ -194,32 +201,28 @@ void orange_avoider_guided_periodic(void)
         navigation_state = SAFE;
       }
       break;
-    case OUT_OF_BOUNDS: 
-      VERBOSE_PRINT("Out of bounds");
+    case OUT_OF_BOUNDS: ;
+      // VERBOSE_PRINT("Out of bounds");
       // stop
+
+      chooseIncrementAvoidance();
+
       guidance_h_set_guided_body_vel(oag_oob_vx, avoidance_heading_direction*oag_oob_vy);
-      
-      float heading  = stateGetNedToBodyEulers_f()->psi;
-      if (fmod(DegOfRad(heading),90.0)>45.0){
-        guidance_h_set_guided_heading(heading+M_PI/2);
-      }else{
-          guidance_h_set_guided_heading(heading-M_PI/2);
-      }
       // start turn back into arena
-      // guidance_h_set_guided_heading_rate(avoidance_heading_direction * RadOfDeg(oag_oob_rate));
+      guidance_h_set_guided_heading_rate(avoidance_heading_direction * RadOfDeg(oag_oob_rate));
 
       navigation_state = REENTER_ARENA;
 
       break;
-    case REENTER_ARENA:
-      VERBOSE_PRINT("Reenter");
+    case REENTER_ARENA: ;
+      // VERBOSE_PRINT("Reenter");
       // force floor center to opposite side of turn to head back into arena
       struct EnuCoor_i new_coor2;
-      calculateForwards(&new_coor2, 6.0f);
+      calculateForwards(&new_coor2, 5.0f);
       if (InsideObstacleZone(POS_FLOAT_OF_BFP(new_coor2.x), POS_FLOAT_OF_BFP(new_coor2.y))){
         // return to heading mode
         guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
-        guidance_h_set_guided_body_vel(0.5f, 0.0f);
+        guidance_h_set_guided_body_vel(1.0f, 0.0f);
 
         // reset safe counter
         obstacle_free_confidence = 0;
@@ -251,15 +254,115 @@ uint8_t chooseRandomIncrementAvoidance(void)
 }
 
 /*
- * Calculates coordinates of distance forward and sets waypoint 'waypoint' to those coordinates
+ * Chooses a way for the drone to turn. Usually the shortest turn away from the wall, but in the corners the decision making is more complex.
  */
-uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters)
+uint8_t chooseIncrementAvoidance(void)
 {
-  struct EnuCoor_i new_coor;
-  calculateForwards(&new_coor, distanceMeters);
-  moveWaypoint(waypoint, &new_coor);
+  float x = POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x);
+  float y = POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y);
+  float psi = DegOfRad(stateGetNedToBodyEulers_f()->psi);
+
+  RotationOperation(&x, &y, &psi);
+
+  if (psi<0){
+    psi = psi+360;
+  }else if (psi>360){
+    psi = psi-360;
+  }
+  
+  int quad; // What quadrant does the heading point to
+  if (0 <= psi && psi <= 90){
+    quad = 1;
+  }else if (90 <= psi && psi <= 180){
+    quad = 2;
+  }else if (180 <= psi && psi <= 270){
+    quad = 3;
+  } else if (270 <= psi && psi <= 360){
+    quad = 4;
+  }
+
+  int corner; // In what quadrant is the drone
+  if (x>0 && y>0){
+    corner = 1;
+  }else if (x>0 && y<0){
+    corner = 2;
+  }else if (x<0 && y<0){
+    corner = 3;
+  }else if (x<0 && y>0){
+    corner = 4;
+  }
+
+  float rest = fmod(psi, 90.0);
+  
+  if (wall == quad){
+    avoidance_heading_direction = 1.f;
+  }else if (((wall-quad) == 1) || (wall==1 && quad==4)){
+    avoidance_heading_direction = -1.f;
+  }else{
+    avoidance_heading_direction = 0.f;
+  }
+
+  // VERBOSE_PRINT("wall/quad/corner: %i/%i/%i\n", wall, quad, corner);
+
+  if (fabs(x)>2.0 && fabs(y)>2.0){
+    // VERBOSE_PRINT("In corner %i\n", corner);
+    if(corner == quad){
+      if (!(30 <= rest && rest <= 60)){
+        if (rest <= 30){
+          avoidance_heading_direction = -1.f;
+        }else{
+          avoidance_heading_direction = 1.f;
+        }
+      }
+    }
+  }
   return false;
 }
+
+/*
+ * Checks what wall of the cyberzoo the drone would collide with 
+ */
+
+uint8_t CheckWall(struct EnuCoor_i new_coor)
+{
+  float x = POS_FLOAT_OF_BFP(new_coor.x);
+  float y = POS_FLOAT_OF_BFP(new_coor.y);
+  float psi = 0.0;
+
+  RotationOperation(&x, &y, &psi);
+
+  if (fabs(y)>fabs(x)){
+    if (y>0){
+      wall = 1;
+    }else{
+      wall = 3;
+    }
+  }else{
+    if (x>0){
+      wall = 2; 
+    }else{
+      wall = 4;
+    }
+  }
+  return false;
+}
+
+/*
+ * Transforms the coordinates to an inertial reference frame for ease of calculations
+ */
+uint8_t RotationOperation(float *x, float *y, float *psi){
+  float rot_angle = RadOfDeg(33.04506153);
+
+  float x_old = *x;
+  float y_old = *y;
+
+  *x = cosf(rot_angle)* x_old+sinf(rot_angle)* y_old;
+  *y = (-sinf(rot_angle)* x_old+cosf(rot_angle)* y_old)+0.365;
+  *psi = *psi+DegOfRad(rot_angle);
+
+  return false;
+}
+
 
 /*
  * Calculates coordinates of a distance of 'distanceMeters' forward w.r.t. current position and heading
@@ -271,32 +374,8 @@ uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
   // Now determine where to place the waypoint you want to go to
   new_coor->x = stateGetPositionEnu_i()->x + POS_BFP_OF_REAL(sinf(heading) * (distanceMeters));
   new_coor->y = stateGetPositionEnu_i()->y + POS_BFP_OF_REAL(cosf(heading) * (distanceMeters));
-  VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,	
-                POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y),
-                stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
+  // VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,	
+                // POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y),
+                // stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
   return false;
 }
-
-/*
- * Sets waypoint 'waypoint' to the coordinates of 'new_coor'
- */
-uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
-{
-  VERBOSE_PRINT("Moving waypoint %d to x:%f y:%f\n", waypoint, POS_FLOAT_OF_BFP(new_coor->x),
-                POS_FLOAT_OF_BFP(new_coor->y));
-  waypoint_move_xy_i(waypoint, new_coor->x, new_coor->y);
-  return false;
-}
-
-
-// static inline bool InsideObstacleZone(struct EnuCoor_i *new_coor) {
-//   float x = POS_FLOAT_OF_BFP(new_coor->x);
-//   float y = POS_FLOAT_OF_BFP(new_coor->y);
-//   bool c = FALSE;
-//   float lim = 4.0;
-
-//   if ((x<lim) && (x>-lim) && (y<lim) && (y>-lim)){
-//     c = TRUE;
-//   }  
-//   return c;
-// }
