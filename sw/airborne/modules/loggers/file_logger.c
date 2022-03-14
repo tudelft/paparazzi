@@ -71,6 +71,7 @@ static void file_logger_write_header(FILE *file) {
   fprintf(file, "att_phi,att_theta,att_psi,");
   fprintf(file, "rate_p,rate_q,rate_r,");
   fprintf(file, "distance,");
+  fprintf(file, "FPS_images,");
 #ifdef COMMAND_THRUST
   fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
 #else
@@ -96,6 +97,7 @@ static void file_logger_write_row(FILE *file) {
   fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
   fprintf(file, "%f,", d_covered);
+  fprintf(file, "%f,", FPS_orange_avoider);
 #ifdef COMMAND_THRUST
   fprintf(file, "%d,%d,%d,%d\n",
       stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
