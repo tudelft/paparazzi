@@ -52,8 +52,8 @@ enum navigation_state_t {
   OUT_OF_BOUNDS
 };
 
-// define settings
-float oa_color_count_frac = 0.18f;
+// define settings - change this for green detection. confidence increases if 19% is green
+float oa_color_count_frac = 0.19f;
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
