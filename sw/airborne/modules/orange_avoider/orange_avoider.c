@@ -143,7 +143,7 @@ void orange_avoider_periodic(void)
   VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
 
   // update our safe confidence using color threshold
-  if(color_count < color_count_threshold){
+  if(color_count > color_count_threshold){
     obstacle_free_confidence++;
   } else {
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
@@ -170,8 +170,8 @@ void orange_avoider_periodic(void)
       break;
     case OBSTACLE_FOUND:
       // stop
-      //waypoint_move_here_2d(WP_GOAL);
-      //waypoint_move_here_2d(WP_TRAJECTORY);
+      waypoint_move_here_2d(WP_GOAL);
+      waypoint_move_here_2d(WP_TRAJECTORY);
 
       // randomly select new search direction
       chooseRandomIncrementAvoidance();
@@ -179,7 +179,7 @@ void orange_avoider_periodic(void)
       // What does this do exactly?
       increase_nav_heading(heading_increment);
       // moveWaypointForward(WP_TRAJECTORY, 1.5f * 0.1f);
-      moveWaypointAcross(WP_TRAJECTORY, 0.5f* 0.1f , heading_increment);
+      // moveWaypointAcross(WP_TRAJECTORY, 0.5f* 0.1f , heading_increment);
       navigation_state = SEARCH_FOR_SAFE_HEADING;
 
       break;
@@ -340,23 +340,23 @@ uint8_t chooseRandomIncrementAvoidance(void)
   // If an obstacle found, change heading incre
 
   
-  if (object_center_y > 0 && object_center_y < 130) {
-    heading_increment = 20.f;
-    VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
-  }
-  
-  if (object_center_y > 130 && object_center_y < 260){
-    heading_increment = 5.f;
-    VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
-  }
-
-  if (object_center_y < 0 && object_center_y > -130) {
+  if (object_center_y > 0 && object_center_y < 50) {
     heading_increment = -20.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
   
-  if (object_center_y < -130 && object_center_y > -260){
+  if (object_center_y > 50 && object_center_y < 100){
     heading_increment = -5.f;
+    VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  }
+
+  if (object_center_y < 0 && object_center_y > -50) {
+    heading_increment = 20.f;
+    VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  }
+  
+  if (object_center_y < -50 && object_center_y > -100){
+    heading_increment = 5.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
 
