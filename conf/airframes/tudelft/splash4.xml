@@ -282,6 +282,9 @@
     <define name="FILT_CUTOFF_RDOT" value="2.5"/>
     <define name="ESTIMATION_FILT_CUTOFF" value="2.5"/>
 
+    <!-- Filter rates with the default 20 Hz cutoff first order filter -->
+    <define name="FILTER_ROLL_RATE" value="TRUE"/>
+    <define name="FILTER_PITCH_RATE" value="TRUE"/>
     <define name="FILTER_YAW_RATE" value="TRUE"/>
 
     <!-- first order actuator dynamics -->
