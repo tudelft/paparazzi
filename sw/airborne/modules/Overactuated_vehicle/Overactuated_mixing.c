@@ -2042,8 +2042,8 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     init_variables();
 
     /// Case of PID control as on simulink [FAILSAFE]
-//    if(radio_control.values[RADIO_MODE] < 500) {
-    if(0) {
+    if(radio_control.values[RADIO_MODE] < 500) {
+//    if(0) {
         //INIT AND BOOLEAN RESET
         if (PID_engaged == 0) {
             /*
@@ -2291,8 +2291,8 @@ void overactuated_mixing_run(pprz_t in_cmd[])
     }
 
     /// Case of INDI control mode as on simulink
-//    if(radio_control.values[RADIO_MODE] > 500){
-    if(1){
+    if(radio_control.values[RADIO_MODE] > 500){
+//    if(1){
 
         //INIT AND BOOLEAN RESET
         if(INDI_engaged == 0){
@@ -2340,8 +2340,8 @@ void overactuated_mixing_run(pprz_t in_cmd[])
         float manual_motor_value = 0;
         float manual_el_value = 0;
         float manual_az_value = 0;
-        float manual_theta_value = max_value_error.phi * radio_control.values[RADIO_ROLL] / 9600;
-        float manual_phi_value = max_value_error.theta * radio_control.values[RADIO_PITCH] / 9600;
+        float manual_phi_value = max_value_error.phi * radio_control.values[RADIO_ROLL] / 9600;
+        float manual_theta_value = max_value_error.theta * radio_control.values[RADIO_PITCH] / 9600;
 
         euler_setpoint[0] = indi_u[13];
         euler_setpoint[1] = indi_u[12];

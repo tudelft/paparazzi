@@ -215,8 +215,8 @@
       <message name="OVERACTUATED_VARIABLES"   period=".005"/>
       <message name="ACTUATORS_OUTPUT"         period=".005"/>
       <message name="INDI_CMD"                 period=".005"/>
-      <message name="AM7_IN" 		       period=".005"/>
-      <message name="AM7_OUT" 		       period=".005"/>
+      <message name="AM7_IN" 		       period=".004"/>
+      <message name="AM7_OUT" 		       period=".004"/>
       <message name="AIR_DATA"                 period=".5"/>
     </mode>
   </process>
