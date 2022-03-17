@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
+#include <unistd.h> 
 
 #define NAV_C
 #include "generated/flight_plan.h"
@@ -48,22 +49,25 @@
 #endif
 
 
-static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
 static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
-static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 uint8_t chooseRandomIncrementAvoidance(void);
 uint8_t chooseIncrementAvoidance(void);
 uint8_t CheckWall(struct EnuCoor_i new_coor);
 uint8_t RotationOperation(float *x, float *y, float *psi);
-
-// static inline bool InsideObstacleZone(struct EnuCoor_i *new_coor);
 
 enum navigation_state_t {
   SAFE,
   OBSTACLE_FOUND,
   SEARCH_FOR_SAFE_HEADING,
   OUT_OF_BOUNDS,
-  REENTER_ARENA
+  REENTER_ARENA,
+  OPTIC_FLOW
+};
+
+enum OF_cal_state_t{
+  RIGHT,
+  LEFT,
+  MID
 };
 
 // define settings
@@ -79,13 +83,14 @@ float oag_oob_dist = 5.0f;
 
 int wall;
 
+int count;
+
 
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;   // current state in state machine
+enum OF_cal_state_t OF_cal_state = RIGHT;
 int32_t color_count = 0;                // orange color count from color filter for obstacle detection
-int32_t floor_count = 0;                // green color count from color filter for floor detection
-int32_t floor_centroid = 0;             // floor detector centroid in y direction (along the horizon)
 float avoidance_heading_direction = 0;  // heading change direction for avoidance [rad/s]
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
 
@@ -105,18 +110,15 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
   color_count = quality;
 }
 
-#ifndef FLOOR_VISUAL_DETECTION_ID
-#error This module requires two color filters, as such you have to define FLOOR_VISUAL_DETECTION_ID to the orange filter
-#error Please define FLOOR_VISUAL_DETECTION_ID to be COLOR_OBJECT_DETECTION1_ID or COLOR_OBJECT_DETECTION2_ID in your airframe
+
+#ifndef OPTIC_FLOW_OBSTACLE_DATA_ID
+#define OPTIC_FLOW_OBSTACLE_DATA_ID ABI_BROADCAST
 #endif
-static abi_event floor_detection_ev;
-static void floor_detection_cb(uint8_t __attribute__((unused)) sender_id,
-                               int16_t __attribute__((unused)) pixel_x, int16_t pixel_y,
-                               int16_t __attribute__((unused)) pixel_width, int16_t __attribute__((unused)) pixel_height,
-                               int32_t quality, int16_t __attribute__((unused)) extra)
+static abi_event optic_flow_obstacle_data_ev;
+static void optic_flow_obstacle_data_cb(uint8_t __attribute__((unused))sender_id,
+					float data_matrix)
 {
-  floor_count = quality;
-  floor_centroid = pixel_y;
+  //do stuff with data matrix
 }
 
 /*
@@ -130,7 +132,7 @@ void orange_avoider_guided_init(void)
 
   // bind our colorfilter callbacks to receive the color filter outputs
   AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
-  AbiBindMsgVISUAL_DETECTION(FLOOR_VISUAL_DETECTION_ID, &floor_detection_ev, floor_detection_cb);
+  AbiBindMsgOF_OBSTACLE_DATA(OPTIC_FLOW_OBSTACLE_DATA_ID, &optic_flow_obstacle_data_ev, optic_flow_obstacle_data_cb);
 }
 
 /*
@@ -147,12 +149,7 @@ void orange_avoider_guided_periodic(void)
 
   // compute current color thresholds
   int32_t color_count_threshold = oag_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
-  int32_t floor_count_threshold = oag_floor_count_frac * front_camera.output_size.w * front_camera.output_size.h;
-  float floor_centroid_frac = floor_centroid / (float)front_camera.output_size.h / 2.f;
-
   // VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
-  // VERBOSE_PRINT("Floor count: %d, threshold: %d\n", floor_count, floor_count_threshold);
-  // VERBOSE_PRINT("Floor centroid: %f\n", floor_centroid_frac);
 
   // update our safe confidence using color threshold
   if(color_count < color_count_threshold){
@@ -170,7 +167,9 @@ void orange_avoider_guided_periodic(void)
 
   switch (navigation_state){
     case SAFE: ;
+      count = 0;
       VERBOSE_PRINT("Safe\n");
+      VERBOSE_PRINT("ofc: %f\n", obstacle_free_confidence);
       struct EnuCoor_i new_coor;
       calculateForwards(&new_coor, 1.0f);
 
@@ -190,29 +189,30 @@ void orange_avoider_guided_periodic(void)
       // stop
       guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
 
-      // randomly select new search direction
-      chooseRandomIncrementAvoidance();
-
-      navigation_state = SEARCH_FOR_SAFE_HEADING;
-
-      break;
-    case SEARCH_FOR_SAFE_HEADING:
-      VERBOSE_PRINT("Search for safe heading\n");
       guidance_h_set_guided_heading_rate(avoidance_heading_direction * oag_heading_rate);
-      guidance_h_set_guided_body_vel(0.0f, avoidance_heading_direction*0.4);
+      guidance_h_set_guided_body_vel(0.0f, avoidance_heading_direction*1.0);
       // make sure we have a couple of good readings before declaring the way safe
       if (obstacle_free_confidence >= 2){
         guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
         navigation_state = SAFE;
       }
+
+      break;
+    case SEARCH_FOR_SAFE_HEADING:
+      VERBOSE_PRINT("Search for safe heading\n")
+      // put the stuff here that sues the data matrix to find clear path to other side of cyberzoo
+
+      // if no path is found, rotat a bit more, or fly a bit and try again
+
+      navigation_state = SAFE;
+      
       break;
     case OUT_OF_BOUNDS: ;
       VERBOSE_PRINT("Out of bounds\n");
       // stop
 
       chooseIncrementAvoidance();
-
-      guidance_h_set_guided_body_vel(oag_oob_vx, avoidance_heading_direction*oag_oob_vy);
+      guidance_h_set_guided_body_vel(0.0f, 0.0f);//oag_oob_vx, avoidance_heading_direction*oag_oob_vy);
       // start turn back into arena
       guidance_h_set_guided_heading_rate(avoidance_heading_direction * RadOfDeg(oag_oob_rate));
 
@@ -221,20 +221,52 @@ void orange_avoider_guided_periodic(void)
       break;
     case REENTER_ARENA: ;
       VERBOSE_PRINT("Reenter\n");
-      // force floor center to opposite side of turn to head back into arena
+      // Check if coords a couple meters in front are still in the arena
       struct EnuCoor_i new_coor2;
       calculateForwards(&new_coor2, oag_oob_dist);
       if (InsideObstacleZone(POS_FLOAT_OF_BFP(new_coor2.x), POS_FLOAT_OF_BFP(new_coor2.y))){
         // return to heading mode
         guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
-        guidance_h_set_guided_body_vel(oag_max_speed, 0.0f);
+        guidance_h_set_guided_body_vel(0.0f,0.0f);//oag_max_speed, 0.0f);
 
-        // reset safe counter
-        obstacle_free_confidence = 0;
-
-        // ensure direction is safe before continuing
-        navigation_state = SAFE;
+        OF_cal_state = RIGHT;
+        navigation_state = OPTIC_FLOW;
       }
+
+      break;
+    case OPTIC_FLOW:
+      count = count+1;
+      switch (OF_cal_state){
+        case RIGHT:
+          VERBOSE_PRINT("right\n");
+          guidance_h_set_guided_body_vel(0.0f,1.0f);
+          if (count>2){
+            guidance_h_set_guided_body_vel(0.0f,0.0f);
+            AbiSendMsgOF_CALIBRATION(OPTIC_FLOW_CALIBRATION1_ID, 1, POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x), POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y));
+            OF_cal_state = LEFT;
+          }
+          break;
+        case LEFT:
+          VERBOSE_PRINT("left\n");
+          guidance_h_set_guided_body_vel(0.0f,-1.0f);
+          if (count>6){
+            guidance_h_set_guided_body_vel(0.0f,0.0f);
+            AbiSendMsgOF_CALIBRATION(OPTIC_FLOW_CALIBRATION1_ID, 2, POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x), POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y));
+            OF_cal_state = MID;
+          }
+          break;
+        case MID:
+          VERBOSE_PRINT("mid\n");
+          guidance_h_set_guided_body_vel(0.0f,1.0f);
+          if (count>8){
+            guidance_h_set_guided_body_vel(0.0f,0.0f);
+            AbiSendMsgOF_CALIBRATION(OPTIC_FLOW_CALIBRATION1_ID, 3, POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x), POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y));
+            navigation_state = SEARCH_FOR_SAFE_HEADING;
+          }
+          break;
+        default:
+          break;
+      }      
       break;
     default:
       break;
