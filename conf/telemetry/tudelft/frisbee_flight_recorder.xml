@@ -114,21 +114,21 @@
   </process>
   <process name="FlightRecorder">
     <mode name="default">
-      <message name="GPS"                 period="0.02"/>
-      <message name="ATTITUDE"            period="0.02"/>
+      <message name="GPS"                 period="0.05"/>
+      <message name="ATTITUDE"            period="0.01"/>
       <message name="IMU_ACCEL"           period=".02"/>
       <message name="IMU_GYRO"            period=".02"/>
-      <message name="IMU_MAG"             period=".02"/>
+      <message name="IMU_MAG"             period=".01"/>
       <message name="RC"                  period="0.1"/>
       <message name="COMMANDS"            period="0.05"/>
       <message name="ACTUATORS"           period="0.05"/>
       <message name="PPRZ_MODE"           period="1.0"/>
-      <message name="INS"                 period=".02"/>
+      <message name="INS"                 period=".01"/>
       <message name="INS_REF"             period="1"/>
       <message name="DATALINK_REPORT"     period="1.0"/>
       <message name="ESC"                 period="0.1"/>
       <message name="ENERGY"              period="0.05"/>
-      <message name="FRISBEE_CONTROL"     period="0.02"/>
+      <message name="FRISBEE_CONTROL"     period="0.01"/>
     </mode>
   </process>
 </telemetry>

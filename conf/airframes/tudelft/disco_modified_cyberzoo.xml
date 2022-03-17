@@ -128,15 +128,11 @@
     <define name="autopilot_motors_on" value="FALSE"/><!-- TODO: choose ;) -->
     <!-- temp fix for geomag, normally only used for rotorcraft -->
 <!--    <define name="SENSOR_SYNC_SEND"/> &lt;!&ndash; Temp for debugging Baro &ndash;&gt;-->
-    <configure name="USE_BARO_BOARD" value="TRUE"/>
 
     <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/> <!-- forward acceleration compensation from GPS speed -->
-
-    <define name="USE_MAGNETOMETER_ONGROUND" value="FALSE"/>
     <configure name="USE_MAGNETOMETER" value="FALSE"/>
     <configure name="USE_AIRSPEED" value="FALSE"/>
     <configure name="USE_SONAR" value="FALSE"/>
-    <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID" />
 
     <module name="ahrs" type="float_cmpl_quat"> <!-- Compare e.g. float_dcm -->
       <configure name="AHRS_USE_MAGNETOMETER" value="FALSE"/> <!-- as in USE it for values in the AHRS -->
@@ -146,15 +142,17 @@
       <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0" unit="m/s"/>
       <configure name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="FALSE"/> <!--Already TRUE by default Compensation of centrifugal force via GPS speed (to fly in circles with a fixedwing)" -->
       <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="0"/>
+      <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID" />
     </module>
 
     <module name="ins" type="extended">
       <define name="USE_INS_NAV_INIT" value="FALSE"/>
       <define name="INS_INT_BARO_ID" value="BARO_MS5611_SENDER_ID"/>
       <define name="INS_INT_IMU_ID" value="IMU_MPU9250_ID"/>
+      <configure name="USE_VFF_EXTENDED" value="TRUE"/>
     </module>
 
-    <module name="control"/>
+    <module name="control_adaptive"/>
     <module name="navigation"/>
 
     <module name="mag" type="rm3100">
@@ -164,8 +162,8 @@
       <define name="RM3100_CHAN_X_SIGN" value="+"/>
       <define name="RM3100_CHAN_Y_SIGN" value="+"/>
       <define name="RM3100_CHAN_Z_SIGN" value="+"/>
-      <define name="RM3100_CHAN_X" value="1"/>  <!-- FIXME -->
-      <define name="RM3100_CHAN_Y" value="0"/>
+      <define name="RM3100_CHAN_X" value="0"/>  <!-- FIXME -->
+      <define name="RM3100_CHAN_Y" value="1"/>
       <define name="RM3100_CHAN_Z" value="2"/>
       <define name="MODULE_RM3100_SYNC_SEND" value="FALSE"/>
       <define name="MODULE_RM3100_UPDATE_AHRS" value="FALSE"/>
@@ -255,6 +253,7 @@
   <section name="AUTO1" prefix="AUTO1_">
     <define name="MAX_ROLL" value="45" unit="deg"/> <!-- More authority while test flying for first time -->
     <define name="MAX_PITCH" value="40" unit="deg"/> <!-- More authority while test flying for first time -->
+<!--    <define name="MAX_YAW_RATE" value="RadOfDeg(100)"/>-->
   </section>
 
   <!-- ************************ TRIM ***************************** -->
@@ -290,7 +289,7 @@
 
     <!-- ***************** MAGNETO *****************-->
     <define name="MAG_X_SIGN" value="1"/>  <!-- FIXME -->
-    <define name="MAG_Y_SIGN" value="-1"/>
+    <define name="MAG_Y_SIGN" value="1"/>
     <define name="MAG_Z_SIGN" value="1"/>
 
     <define name="MAG_X_NEUTRAL" value="119"/>
@@ -302,9 +301,9 @@
     <define name="MAG_Z_SENS" value="0.5938907189154259" integer="16"/>
 
     <!-- Should be same for everyone -->
-    <define name= "MAG_X_CURRENT_COEF" value="-1.3533459310822753"/>
-    <define name= "MAG_Y_CURRENT_COEF" value="-7.869486527872117"/>
-    <define name= "MAG_Z_CURRENT_COEF" value="-0.1619204368456521"/>
+    <define name="MAG_X_CURRENT_COEF" value="0.000321738038902"/>
+    <define name="MAG_Y_CURRENT_COEF" value="-0.000820010304048"/>
+    <define name="MAG_Z_CURRENT_COEF" value="0.00139218924958"/>
 
     <define name="BODY_TO_IMU_PHI" value="0.0" unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0.0" unit="deg"/><!-- TODO: validate -->
@@ -393,6 +392,12 @@
     <define name="PITCH_KFFA" value="10."/>
     <define name="PITCH_KFFD" value="0."/>
 
+<!--    <define name="YAW_LOOP" value="TRUE"/>-->
+<!--    <define name="YAW_DGAIN" value="1000."/>-->
+
+<!--    <define name="YAW_TRIM_NY" value="FALSE"/>-->
+<!--    <define name="YAW_NY_IGAIN" value="1000."/>-->
+
     <define name="ELEVATOR_OF_ROLL" value="1500" unit="PPRZ_MAX"/>
     <define name="ROLL_SLEW" value="0.5"/> <!-- TODO: Determine best value-->
     <define name="ROLL_ATTITUDE_GAIN" value="11000."/>
@@ -403,6 +408,7 @@
 
     <!--<define name="PITCH_OF_ROLL" value="4." unit="deg"/>--><!-- TODO: : ?-->
     <define name="AILERON_OF_THROTTLE" value="0.0"/><!-- TODO: : ?-->
+<!--    <define name="COMMAND_YAW_TRIM" value="0"/>-->
 
   </section>
 
