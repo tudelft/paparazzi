@@ -92,7 +92,7 @@
     </module>
 
     <module name="actuators" type="pwm">
-      <define name="SERVO_HZ" value="200"/>
+      <define name="SERVO_HZ" value="400"/>
     </module>
 
     <!-- SBUS out is AETR by default but our transmitter sends TAER -->

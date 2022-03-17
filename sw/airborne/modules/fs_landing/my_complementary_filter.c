@@ -10,7 +10,7 @@
 
 #include "my_complementary_filter.h"
 
-#define IMPULSE_CONTROL_DEBUG TRUE
+#define IMPULSE_CONTROL_DEBUG FALSE
 
 float old_t = 0;
 double old_gps_yaw = 0;

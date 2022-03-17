@@ -56,6 +56,7 @@
 
     <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/><!--  unit="Hz" -->
     <configure name="AHRS_CORRECT_FREQUENCY" value="500"/> <!--  unit="Hz" -->
+    <configure name="INS_PROPAGATE_FREQUENCY" value="500"/>
 <!--    <configure name="AHRS_MAG_CORRECT_FREQUENCY" value="50"/>&lt;!&ndash; TODO: best value unit="Hz" &ndash;&gt;-->
 
     <configure name="NAVIGATION_FREQUENCY" value="16"/> <!--  unit="Hz" -->
@@ -128,34 +129,30 @@
     <define name="autopilot_motors_on" value="FALSE"/><!-- TODO: choose ;) -->
     <!-- temp fix for geomag, normally only used for rotorcraft -->
 <!--    <define name="SENSOR_SYNC_SEND"/> &lt;!&ndash; Temp for debugging Baro &ndash;&gt;-->
-    <configure name="USE_BARO_BOARD" value="TRUE"/>
 
-    <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/> <!-- forward acceleration compensation from GPS speed -->
-
-    <define name="USE_MAGNETOMETER_ONGROUND" value="FALSE"/>
+    <define name="USE_AHRS_GPS_ACCELERATIONS" value="FALSE"/> <!-- forward acceleration compensation from GPS speed -->
     <configure name="USE_MAGNETOMETER" value="TRUE"/>
     <configure name="USE_AIRSPEED" value="FALSE"/>
     <configure name="USE_SONAR" value="FALSE"/>
-    <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID" />
 
     <module name="ahrs" type="float_cmpl_quat"> <!-- Compare e.g. float_dcm -->
-      <configure name="AHRS_USE_MAGNETOMETER" value="FALSE"/> <!-- as in USE it for values in the AHRS -->
+      <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/> <!-- as in USE it for values in the AHRS -->
       <define name="AHRS_MAG_UPDATE_ALL_AXIS" value="FALSE"/>
-      <configure name="AHRS_USE_GPS_HEADING" value="TRUE"/>
+      <configure name="AHRS_USE_GPS_HEADING" value="FALSE"/>
       <define name="AHRS_PROPAGATE_LOW_PASS_RATES" value="FALSE"/>
-      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0" unit="m/s"/>
       <configure name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="FALSE"/> <!--Already TRUE by default Compensation of centrifugal force via GPS speed (to fly in circles with a fixedwing)" -->
       <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="0"/>
+      <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID" />
     </module>
 
     <module name="ins" type="extended">
       <define name="USE_INS_NAV_INIT" value="FALSE"/>
       <define name="INS_INT_BARO_ID" value="BARO_MS5611_SENDER_ID"/>
       <define name="INS_INT_IMU_ID" value="IMU_MPU9250_ID"/>
-      <define name="USE_VFF_EXTENDED" value="TRUE"/>
+      <configure name="USE_VFF_EXTENDED" value="TRUE"/>
     </module>
 
-    <module name="control"/>
+    <module name="control_adaptive"/>
     <module name="navigation"/>
 
     <module name="mag" type="rm3100">
@@ -165,11 +162,11 @@
       <define name="RM3100_CHAN_X_SIGN" value="+"/>
       <define name="RM3100_CHAN_Y_SIGN" value="+"/>
       <define name="RM3100_CHAN_Z_SIGN" value="+"/>
-      <define name="RM3100_CHAN_X" value="1"/>  <!-- FIXME -->
-      <define name="RM3100_CHAN_Y" value="0"/>
+      <define name="RM3100_CHAN_X" value="0"/>  <!-- FIXME -->
+      <define name="RM3100_CHAN_Y" value="1"/>
       <define name="RM3100_CHAN_Z" value="2"/>
       <define name="MODULE_RM3100_SYNC_SEND" value="FALSE"/>
-      <define name="MODULE_RM3100_UPDATE_AHRS" value="FALSE"/>
+      <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
     </module>
 
     <module name="tlsf"/>
@@ -291,7 +288,7 @@
 
     <!-- ***************** MAGNETO *****************-->
     <define name="MAG_X_SIGN" value="1"/>  <!-- FIXME -->
-    <define name="MAG_Y_SIGN" value="-1"/>
+    <define name="MAG_Y_SIGN" value="1"/>
     <define name="MAG_Z_SIGN" value="1"/>
 
     <define name="MAG_X_NEUTRAL" value="119"/>
