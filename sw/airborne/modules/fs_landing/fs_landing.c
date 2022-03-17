@@ -71,11 +71,12 @@ void fs_landing_run()
     return;
 #endif
     if (is_spinning) {
+      horizontal_velocity_filter();
       spin_actuator_values(&current_actuator_values);  // Constant actuator values to maintain spin
 
       if (cyclic_control_active) {
         cyclic_control_values(&current_actuator_values);
-        cyclic_controller_run();
+//        cyclic_controller_run();
       }  // TODO Add controller here
 
     } else {
@@ -96,6 +97,14 @@ void fs_landing_run()
     is_spinning = false;
     has_ff_started = false;
     freq_test_active = false;
+
+    // Reset horizontal velocity filter
+    is_horizontal_velocity_filter_initialized = false;
+    for (int i = 0; i < SEASONAL_L; i++) {
+      seasonal_arr[i] = CT_DEFAULT;
+    }
+    bt = 0;
+    ctr = 0;
   }
   return;
 }
@@ -161,10 +170,35 @@ int32_t get_matching_motl_val(int32_t val) {
   return p;
 }
 
-//void fs_landing_pilot_control_handler(uint8_t active)
-//{
-//  pilot_has_control = active;
-//}
+/*
+ * Triple Exponential Smoothing (Holt-Winters) filter for horizontal velocity norm
+ * Hyper-parameters ALPHA, BETA, GAMMA tuned by hand
+ * Seasonal array initialized incorrectly to some value that seems to work
+ */
+void horizontal_velocity_filter() {
+  float ins_vx = stateGetSpeedNed_f()->x;
+  float ins_vy = stateGetSpeedNed_f()->y;
+  ins_v = sqrtf(pow(ins_vx, 2) + pow(ins_vy, 2));
+
+  // Prevent potential overflow
+  if (ctr >= SEASONAL_L * 1000) {
+    ctr = 0;
+  }
+
+  if (!is_horizontal_velocity_filter_initialized) {
+    prev_v_filt = ins_v;
+    is_horizontal_velocity_filter_initialized = true;
+  } else {
+    float ct = seasonal_arr[ctr % SEASONAL_L];
+
+    v_filt = FS_V_FILT_ALPHA * (ins_v - ct) + (1 - FS_V_FILT_ALPHA) * (prev_v_filt + bt);
+    bt = FS_V_FILT_BETA * (v_filt - prev_v_filt) + (1 - FS_V_FILT_BETA) * bt;
+    seasonal_arr[ctr % SEASONAL_L] = FS_V_FILT_GAMMA * (ins_v - v_filt - bt) + (1 - FS_V_FILT_GAMMA) * ct;
+
+    prev_v_filt = v_filt;
+    ctr++;
+  }
+}
 
 void fs_landing_set_actuator_values()
 {

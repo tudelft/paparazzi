@@ -47,10 +47,13 @@ extern float pre_spin_speed_setpoint;
 extern float pre_spin_trim_percentage;
 extern float err_test;
 
+extern float v_filt;
+
 /* External used functions */
 extern void fs_landing_init(void);
 extern void fs_landing_run(void);
 
+void horizontal_velocity_filter(void);
 int32_t get_matching_motl_val(int32_t val);
 
 // Handlers for changing gcs variables
