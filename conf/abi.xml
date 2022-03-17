@@ -211,6 +211,16 @@
       <field name="data" type="uint8_t *">Pointer to an array of bytes, or any structure depending on the sender and the type of data</field>
     </message>
 
+     <message name="OF_CALIBRATION" id="30">
+      <field name="im_nr" type="uint8_t">Number of the image to be taken (1:left, 2:right, 3:center)</field>
+      <field name="ENU_x" type="float">Optitrack ENU x coordinate of drone at instant of image capture</field>
+      <field name="ENU_y" type="float">Optitrack ENU y coordinate of drone at instant of image capture</field>
+    </message>
+
+    <message name="OF_OBSTACLE_DATA" id="31">
+      <field name="data_matrix" type="float *">Array of obstacle data from optic flow module</field>
+    </message>
+
   </msg_class>
 
 </protocol>

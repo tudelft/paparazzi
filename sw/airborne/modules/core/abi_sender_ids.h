@@ -521,6 +521,31 @@
 #endif
 
 /*
+ *OF_CALIBRATION (message 30)
+*/
+#ifndef OPTIC_FLOW_CALIBRATION1_ID
+#define OPTIC_FLOW_CALIBRATION1_ID 1
+#endif
+
+#ifndef OPTIC_FLOW_CALIBRATION2_ID
+#define OPTIC_FLOW_CALIBRATION2_ID 2
+#endif
+
+/*
+ *OF_OBSTACLE_DATA (message 31)
+*/
+#ifndef OPTIC_FLOW_OBSTACLE_DATA1_ID
+#define OPTIC_FLOW_OBSTACLE_DATA1_ID 1
+#endif
+
+#ifndef OPTIC_FLOW_OBSTACLE_DATA2_ID
+#define OPTIC_FLOW_OBSTACLE_DATA2_ID 2
+#endif
+
+
+
+
+/*
  * JOYSTICK message (used for payload or control, but not as a RC)
  */
 #ifndef JOYSTICK_ID
