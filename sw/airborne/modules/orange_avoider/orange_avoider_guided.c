@@ -35,6 +35,7 @@
 #include <time.h>
 #include <math.h>
 
+#define NAV_C
 #include "generated/flight_plan.h"
 
 #define ORANGE_AVOIDER_VERBOSE TRUE
@@ -74,6 +75,7 @@ float oag_heading_rate = RadOfDeg(30.f);  // heading change setpoint for avoidan
 float oag_oob_vx = 0.1f;
 float oag_oob_vy = 0.7f;
 float oag_oob_rate = 90.0f;
+float oag_oob_dist = 5.0f;
 
 int wall;
 
@@ -168,6 +170,7 @@ void orange_avoider_guided_periodic(void)
 
   switch (navigation_state){
     case SAFE: ;
+      VERBOSE_PRINT("Safe\n");
       struct EnuCoor_i new_coor;
       calculateForwards(&new_coor, 1.0f);
 
@@ -183,6 +186,7 @@ void orange_avoider_guided_periodic(void)
 
       break;
     case OBSTACLE_FOUND:
+      VERBOSE_PRINT("Obstacle found\n");
       // stop
       guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
 
@@ -193,6 +197,7 @@ void orange_avoider_guided_periodic(void)
 
       break;
     case SEARCH_FOR_SAFE_HEADING:
+      VERBOSE_PRINT("Search for safe heading\n");
       guidance_h_set_guided_heading_rate(avoidance_heading_direction * oag_heading_rate);
       guidance_h_set_guided_body_vel(0.0f, avoidance_heading_direction*0.4);
       // make sure we have a couple of good readings before declaring the way safe
@@ -202,7 +207,7 @@ void orange_avoider_guided_periodic(void)
       }
       break;
     case OUT_OF_BOUNDS: ;
-      // VERBOSE_PRINT("Out of bounds");
+      VERBOSE_PRINT("Out of bounds\n");
       // stop
 
       chooseIncrementAvoidance();
@@ -215,14 +220,14 @@ void orange_avoider_guided_periodic(void)
 
       break;
     case REENTER_ARENA: ;
-      // VERBOSE_PRINT("Reenter");
+      VERBOSE_PRINT("Reenter\n");
       // force floor center to opposite side of turn to head back into arena
       struct EnuCoor_i new_coor2;
-      calculateForwards(&new_coor2, 5.0f);
+      calculateForwards(&new_coor2, oag_oob_dist);
       if (InsideObstacleZone(POS_FLOAT_OF_BFP(new_coor2.x), POS_FLOAT_OF_BFP(new_coor2.y))){
         // return to heading mode
         guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
-        guidance_h_set_guided_body_vel(1.0f, 0.0f);
+        guidance_h_set_guided_body_vel(oag_max_speed, 0.0f);
 
         // reset safe counter
         obstacle_free_confidence = 0;
@@ -304,11 +309,11 @@ uint8_t chooseIncrementAvoidance(void)
 
   // VERBOSE_PRINT("wall/quad/corner: %i/%i/%i\n", wall, quad, corner);
 
-  if (fabs(x)>2.0 && fabs(y)>2.0){
+  if (fabs(x)>2.8 && fabs(y)>2.8){
     // VERBOSE_PRINT("In corner %i\n", corner);
     if(corner == quad){
-      if (!(30 <= rest && rest <= 60)){
-        if (rest <= 30){
+      if (!(40 <= rest && rest <= 50)){
+        if (rest <= 40){
           avoidance_heading_direction = -1.f;
         }else{
           avoidance_heading_direction = 1.f;
@@ -351,13 +356,13 @@ uint8_t CheckWall(struct EnuCoor_i new_coor)
  * Transforms the coordinates to an inertial reference frame for ease of calculations
  */
 uint8_t RotationOperation(float *x, float *y, float *psi){
-  float rot_angle = RadOfDeg(33.04506153);
+  float rot_angle = RadOfDeg(35.18285188);
 
   float x_old = *x;
   float y_old = *y;
 
   *x = cosf(rot_angle)* x_old+sinf(rot_angle)* y_old;
-  *y = (-sinf(rot_angle)* x_old+cosf(rot_angle)* y_old)+0.365;
+  *y = (-sinf(rot_angle)* x_old+cosf(rot_angle)* y_old);
   *psi = *psi+DegOfRad(rot_angle);
 
   return false;
