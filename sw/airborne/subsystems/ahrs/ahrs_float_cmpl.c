@@ -80,7 +80,7 @@ void ahrs_fc_update_mag_2d_dumb(struct FloatVect3 *mag);
 struct AhrsFloatCmpl ahrs_fc;
 
 float heading_rate_update_gain = 25;
-float mag_update_gain_weight = 1;
+float mag_update_gain_weight = 10;
 
 void ahrs_fc_init(void)
 {
