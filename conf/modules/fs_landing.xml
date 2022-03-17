@@ -17,19 +17,16 @@
         <dl_setting min="-1" max="15" step="0.5" var="err_test" type="float" module="fs_landing/fs_landing" />
       </dl_settings>
       <dl_settings name="Feed Forward Settings">
-        <dl_setting min="0.1" max="10" step="0.1" shortname="FF Duration" var="ff_duration" type="float" module="fs_landing/feed_forward" />
-        <dl_setting min="-9600" max="9600" step="50" shortname="THR_L FF" var="thr_l_ff" type="float" module="fs_landing/feed_forward" />
-        <dl_setting min="-9600" max="9600" step="50" shortname="THR_R FF" var="thr_r_ff" type="float" module="fs_landing/feed_forward" />
-        <dl_setting min="-9600" max="9600" step="50" shortname="ELEV_L FF" var="elev_l_ff" type="float" module="fs_landing/feed_forward" />
-        <dl_setting min="-9600" max="9600" step="50" shortname="ELEV_R FF" var="elev_r_ff" type="float" module="fs_landing/feed_forward" />
-        <dl_setting min="-9600" max="9600" step="50" shortname="THR_L Spin" var="thr_l_spinning" type="float" module="fs_landing/feed_forward" />
-        <dl_setting min="-9600" max="9600" step="50" shortname="THR_R Spin" var="thr_r_spinning" type="float" module="fs_landing/feed_forward" />
-        <dl_setting min="-9600" max="9600" step="50" shortname="ELEV_L Spin" var="elev_l_spinning" type="float" module="fs_landing/feed_forward" />
-        <dl_setting min="-9600" max="9600" step="50" shortname="ELEV_R Spin" var="elev_r_spinning" type="float" module="fs_landing/feed_forward" />
+        <dl_setting min="0" max="10" step="0.1" shortname="FF Duration" var="ff_duration" type="float" module="fs_landing/feed_forward" />
+        <dl_setting min="-1" max="1" step="0.05" shortname="THR_L FF" var="thr_l_ff" type="float" module="fs_landing/feed_forward" />
+        <dl_setting min="-1" max="1" step="0.05" shortname="THR_R FF" var="thr_r_ff" type="float" module="fs_landing/feed_forward" />
+        <dl_setting min="-1" max="1" step="0.05" shortname="ELEV_L FF" var="elev_l_ff" type="float" module="fs_landing/feed_forward" />
+        <dl_setting min="-1" max="1" step="0.05" shortname="ELEV_R FF" var="elev_r_ff" type="float" module="fs_landing/feed_forward" />
+        <dl_setting min="-1" max="1" step="0.05" shortname="THR_L Spin" var="thr_l_spinning" type="float" module="fs_landing/feed_forward" />
+        <dl_setting min="-1" max="1" step="0.05" shortname="THR_R Spin" var="thr_r_spinning" type="float" module="fs_landing/feed_forward" />
+        <dl_setting min="-1" max="1" step="0.05" shortname="ELEV_L Spin" var="elev_l_spinning" type="float" module="fs_landing/feed_forward" />
+        <dl_setting min="-1" max="1" step="0.05" shortname="ELEV_R Spin" var="elev_r_spinning" type="float" module="fs_landing/feed_forward" />
       </dl_settings>
-<!--      <dl_settings name="Pilot Control">-->
-<!--        <dl_setting min="0" max="1" step="1" shortname="Active" var="pilot_has_control" type="uint8_t" module="fs_landing/fs_landing" handler="pilot_control_handler" />-->
-<!--      </dl_settings>-->
 <!--      <dl_settings name="Actuator Identification">-->
 <!--        <dl_setting min="0" max="5" step="1" var="selected_actuator" shortname="Actuator No" type="uint8_t" module="fs_landing/actuator_id"/>-->
 <!--        <dl_setting min="0" max="19400" step="10" var="max_delta_amplitude" shortname="Max Act Delta" type="float" module="fs_landing/actuator_id"/>-->
@@ -53,10 +50,12 @@
         <dl_setting min="0" max="1" step="1" var="use_motor_r" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="use_elevon_l" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="use_elevon_r" type="uint8_t" module="fs_landing/cyclic_control"/>
-        <dl_setting min="0" max="1" step="1" var="use_square_sig" type="uint8_t" module="fs_landing/cyclic_control"/>
+        <dl_setting min="0" max="1" step="1" var="use_elevon_r" type="uint8_t" module="fs_landing/cyclic_control"/>
+        <dl_setting min="0" max="1" step="1" var="elevon_delta_active" type="uint8_t" module="fs_landing/cyclic_control"/>
+        <dl_setting min="0" max="1" step="1" var="motor_delta_active" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="phase_pilot_control" type="uint8_t" module="fs_landing/cyclic_control"/>
-        <dl_setting min="0" max="1" step="1" var="balance_motor_forces" type="uint8_t" module="fs_landing/cyclic_control"/>
-        <dl_setting min="0" max="1" step="1" var="use_controller" type="uint8_t" module="fs_landing/cyclic_control" handler="use_controller_handler" />
+<!--        <dl_setting min="0" max="1" step="1" var="balance_motor_forces" type="uint8_t" module="fs_landing/cyclic_control"/>-->
+<!--        <dl_setting min="0" max="1" step="1" var="use_controller" type="uint8_t" module="fs_landing/cyclic_control" handler="use_controller_handler" />-->
         <dl_setting min="-1" max="1" step="0.05" var="ml_avg" shortname="Avg ML" type="float" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="0.05" var="ml_delta" shortname="Half Amp ML" type="float" module="fs_landing/cyclic_control"/>
         <dl_setting min="-1" max="1" step="0.05" var="mr_avg" shortname="Avg MR" type="float" module="fs_landing/cyclic_control"/>
@@ -68,31 +67,19 @@
         <dl_setting min="0" max="360" step="1" var="el_phase" shortname="Phase Elevon" type="float" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="360" step="1" var="mt_phase" shortname="Phase Motor" type="float" module="fs_landing/cyclic_control"/>
       </dl_settings>
-<!--      <dl_settings name="Impulse Control">-->
-<!--        <dl_setting min="0" max="1" var="impulse_control_active" step="1" type="uint8_t" module="fs_landing/fs_landing" />-->
-<!--        <dl_setting min="0" max="1" step="1" var="impulse_use_motor_l" type="uint8_t" module="fs_landing/impulse_control"/>-->
-<!--        <dl_setting min="0" max="1" step="1" var="impulse_use_motor_r" type="uint8_t" module="fs_landing/impulse_control"/>-->
-<!--        <dl_setting min="0" max="1" step="1" var="impulse_use_elevon_l" type="uint8_t" module="fs_landing/impulse_control"/>-->
-<!--        <dl_setting min="0" max="1" step="1" var="impulse_use_elevon_r" type="uint8_t" module="fs_landing/impulse_control"/>-->
-<!--        <dl_setting min="0" max="360" step="1" var="elevon_activate_at" type="uint16_t" module="fs_landing/impulse_control"/>-->
-<!--        <dl_setting min="0" max="360" step="1" var="motor_activate_at" type="uint16_t" module="fs_landing/impulse_control"/>-->
-<!--        <dl_setting min="0" max="180" step="1" var="elevon_half_arc" type="float" module="fs_landing/impulse_control"/>-->
-<!--        <dl_setting min="0" max="180" step="1" var="motor_half_arc" type="float" module="fs_landing/impulse_control"/>-->
-<!--        <dl_setting min="-9600" max="9600" step="1" var="ml_value" type="float" module="fs_landing/impulse_control"/>-->
-<!--        <dl_setting min="-9600" max="9600" step="1" var="mr_value" type="float" module="fs_landing/impulse_control"/>-->
-<!--        <dl_setting min="-9600" max="9600" step="1" var="el_value" type="float" module="fs_landing/impulse_control"/>-->
-<!--        <dl_setting min="-9600" max="9600" step="1" var="er_value" type="float" module="fs_landing/impulse_control"/>-->
-<!--      </dl_settings>-->
-<!--      <dl_settings name="Act Frequency Test">-->
-<!--        <dl_setting min="0" step="0.01" max="20" var="test_freq" shortname="Frequency" type="float" module="fs_landing/actuator_freq_test"/>-->
-<!--        <dl_setting min="-10000" max="10000" step="1" var="test_min_value" shortname="Min Value" type="float" module="fs_landing/actuator_freq_test"/>-->
-<!--        <dl_setting min="-10000" max="10000" step="1" var="test_max_value" shortname="Max Value" type="float" module="fs_landing/actuator_freq_test"/>-->
-<!--        <dl_setting min="0" max="3" step="1" values="THR_LEFT|ELE_LEFT|ELE_RIGHT|THR_RIGHT" var="actuator_idx" shortname="Actuator" type="uint8_t" module="fs_landing/actuator_freq_test"/>-->
-<!--        <dl_setting min="0" max="1" step="1" values="NO|YES" var="automatic_f" shortname="Automatic input" type="uint8_t" module="fs_landing/actuator_freq_test" />-->
-<!--        <dl_setting min="0" max="1" step="1" values="NO|YES" var="is_input_sin" shortname="Sinusoidal chirp" type="uint8_t" module="fs_landing/actuator_freq_test" />-->
-<!--        <dl_setting min="0" max="1" step="1" values="INACTIVE|ACTIVE" var="calibrate" shortname="Motor Calibration" type="uint8_t" module="fs_landing/actuator_freq_test" />-->
-<!--        <dl_setting min="0" max="1" step="1" values="NO|YES" var="cal_reverse" shortname="Thrust reversed" type="uint8_t" module="fs_landing/actuator_freq_test" />-->
-<!--      </dl_settings>-->
+      <dl_settings name="Act Frequency Test">
+        <dl_setting min="0" step="0.01" max="20" var="test_freq" shortname="Frequency" type="float" module="fs_landing/actuator_freq_test"/>
+        <dl_setting min="-10000" max="10000" step="1" var="test_min_value" shortname="Min Value" type="float" module="fs_landing/actuator_freq_test"/>
+        <dl_setting min="-10000" max="10000" step="1" var="test_max_value" shortname="Max Value" type="float" module="fs_landing/actuator_freq_test"/>
+        <dl_setting min="0" max="3" step="1" values="THR_LEFT|ELE_LEFT|ELE_RIGHT|THR_RIGHT" var="actuator_idx" shortname="Actuator" type="uint8_t" module="fs_landing/actuator_freq_test"/>
+        <dl_setting min="0" max="1" step="1" values="NO|YES" var="automatic_f" shortname="Automatic input" type="uint8_t" module="fs_landing/actuator_freq_test" />
+        <dl_setting min="0" max="1" step="1" values="NO|YES" var="is_input_sin" shortname="Sinusoidal chirp" type="uint8_t" module="fs_landing/actuator_freq_test" />
+        <dl_setting min="0" max="2" step="1" values="CALIBRATE|DISCRETE|CONTINUOUS" var="freq_test_mode" shortname="Mode" type="test_mode" module="fs_landing/actuator_freq_test" />
+        <dl_setting min="0" max="1" step="1" values="NO|YES" var="cal_reverse" shortname="Thrust reversed" type="uint8_t" module="fs_landing/actuator_freq_test" />
+        <dl_setting min="0.1" max="20" step="0.1" var="ramp_min_freq" shortname="r_min_f" type="float" module="fs_landing/actuator_freq_test"/>
+        <dl_setting min="0.1" max="20" step="0.1" var="ramp_max_freq" shortname="r_max_f" type="float" module="fs_landing/actuator_freq_test"/>
+        <dl_setting min="60" max="300" step="1" var="ramp_duration" shortname="r_dur" type="float" module="fs_landing/actuator_freq_test"/>
+      </dl_settings>
       <dl_settings name="Cmpl Filter">
 <!--        <dl_setting min="0" max="1" step="0.005" var="heading_weight" type="float" module="fs_landing/my_complementary_filter"/>-->
         <dl_setting min="0" max="75" step="0.01" var="heading_rate_update_gain" shortname="ahrs_gps_gain" type="float" module="subsystems/ahrs/ahrs_float_cmpl"/>
@@ -111,11 +98,9 @@
   <makefile>
     <file name="fs_landing.c"/>
     <file name="feed_forward.c"/>
-<!--    <file name="pilot_test.c"/>-->
     <file name="cyclic_control.c"/>
     <file name="cyclic_controller.c"/>
-<!--    <file name="impulse_control.c"/>-->
-<!--    <file name="actuator_freq_test.c"/>-->
+    <file name="actuator_freq_test.c"/>
 <!--    <file name="my_complementary_filter.c"/>-->
   </makefile>
 

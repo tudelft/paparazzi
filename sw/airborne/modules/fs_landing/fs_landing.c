@@ -6,16 +6,14 @@
 #include "feed_forward.h"
 #include "cyclic_control.h"
 #include "cyclic_controller.h"
+#include "actuator_freq_test.h"
 
 #include "subsystems/datalink/downlink.h"
 
-//#ifndef FS_LANDING_FREQ_TEST
-//#define FS_LANDING_FREQ_TEST FALSE
-//#endif
-
-#ifndef FS_LANDING_DEBUG
-#define FS_LANDING_DEBUG FALSE
+#ifndef FS_LANDING_FREQ_TEST
+#define FS_LANDING_FREQ_TEST TRUE
 #endif
+uint8_t freq_test_active = false;
 
 struct fs_landing_t fs_landing;
 struct fs_landing_t current_actuator_values;
@@ -25,7 +23,7 @@ uint8_t is_spinning = false;
 uint8_t cyclic_control_active = false;
 //uint8_t impulse_control_active = false;
 uint8_t has_ff_started = false;
-//uint8_t freq_test_active = false;
+
 float ff_start_time = 0;
 float ft_start_time = 0;
 
@@ -63,44 +61,41 @@ void fs_landing_init()
 void fs_landing_run()
 {
   if (is_fs_landing_active()) {
-//#if FS_LANDING_FREQ_TEST
-//    if (freq_test_active) {
-//    freq_test(&current_actuator_values, ft_start_time);
-//    } else {
-//      ft_start_time = get_sys_time_float();
-//      freq_test_active = true;
-//    }
-//    return;
-//#endif
+#if FS_LANDING_FREQ_TEST
+    if (freq_test_active) {
+    freq_test(&current_actuator_values, ft_start_time);
+    } else {
+      ft_start_time = get_sys_time_float();
+      freq_test_active = true;
+    }
+    return;
+#endif
     if (is_spinning) {
       spin_actuator_values(&current_actuator_values);  // Constant actuator values to maintain spin
-//            add_chirp(&current_actuator_values);
-//      if (pilot_has_control) {
-//        pilot_actuator_values(&current_actuator_values);  // RC Channels control actuator deflection
-//      } else if (cyclic_control_active) {
+
       if (cyclic_control_active) {
         cyclic_control_values(&current_actuator_values);
         cyclic_controller_run();
       }  // TODO Add controller here
-//      if (impulse_control_active) {
-//        impulse_control_values(&current_actuator_values);
-//      }
+
     } else {
       if (use_pre_spin) {
         is_spinning = pre_spin_actuator_values();
       } else {
+
         if (has_ff_started) {
           is_spinning = ff_actuator_values(&current_actuator_values, ff_start_time);
         } else {
           ff_start_time = get_sys_time_float();
           has_ff_started = true;
         }
+
       }
     }
   } else {
     is_spinning = false;
     has_ff_started = false;
-//    freq_test_active = false;
+    freq_test_active = false;
   }
   return;
 }
