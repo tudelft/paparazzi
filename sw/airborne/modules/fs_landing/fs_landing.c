@@ -33,15 +33,53 @@ float pre_spin_speed_setpoint = 8;
 float pre_spin_trim_percentage = 0.20;
 float err_test = 5;
 
-#if PERIODIC_TELEMETRY
-float fs_landing_dbg_values[N_DBG_VALUES] = {0};
+// Horizontal velocity filter
+bool is_horizontal_velocity_filter_initialized = false;
+float prev_v_filt;
+float v_filt, ins_v;
 
+#define FS_V_FILT_ALPHA 0.0012
+#define FS_V_FILT_BETA 0.07
+#define FS_V_FILT_GAMMA 0.7
+#define SEASONAL_L 120  // 2 * pi * module_frequency / (w_z average)
+#define CT_DEFAULT 0.1
+float seasonal_arr[SEASONAL_L] = {CT_DEFAULT};
+int ctr = 0;
+float bt = 0;
+
+/*
+ * <message name="FRISBEE_CONTROL" id="55">
+ *   <field name="is_spinning" type="uint8">Is module currently active</field>
+ *   <field name="v_filt" type="float" unit="m/s">Filtered horizontal velocity norm NED</field>
+ *   <field name="ml_avg" type="float">Motor LEFT cyclic average</field>
+ *   <field name="mr_avg" type="float">Motor RIGHT cyclic average</field>
+ *   <field name="ml_delta" type="float">Motor LEFT cyclic half amplitude</field>
+ *   <field name="mr_delta" type="float">Motor RIGHT cyclic half amplitude</field>
+ *   <field name="el_avg" type="float">Elevon LEFT cyclic average</field>
+ *   <field name="er_avg" type="float">Elevon RIGHT cyclic average</field>
+ *   <field name="el_delta" type="float">Elevon LEFT cyclic half amplitude</field>
+ *   <field name="er_delta" type="float">Elevon RIGHT cyclic half amplitude</field>
+ * </message>
+ */
 #include "subsystems/datalink/telemetry.h"
-static void send_payload_float(struct transport_tx *trans, struct link_device *dev)
-{
-  pprz_msg_send_PAYLOAD_FLOAT(trans, dev, AC_ID, (uint8_t)N_DBG_VALUES, fs_landing_dbg_values);
+static void send_frisbee_control(struct transport_tx *trans, struct link_device *dev) {
+  // Multiply with boolean to only send the value when variables are actually being used
+  float fs_msg_ml_avg = cyclic_control_active * ml_avg;
+  float fs_msg_ml_delta = motor_delta_active * ml_delta;
+  float fs_msg_mr_avg = cyclic_control_active * mr_avg;
+  float fs_msg_mr_delta = motor_delta_active * mr_delta;
+  float fs_msg_el_avg = cyclic_control_active * el_avg;
+  float fs_msg_el_delta = elevon_delta_active * el_delta;
+  float fs_msg_er_avg = cyclic_control_active * er_avg;
+  float fs_msg_er_delta = elevon_delta_active * er_delta;
+  pprz_msg_send_FRISBEE_CONTROL(trans, dev, AC_ID,
+                                &is_spinning,
+                                &v_filt,
+                                &fs_msg_ml_avg, &fs_msg_ml_delta,
+                                &fs_msg_mr_avg, &fs_msg_mr_delta,
+                                &fs_msg_el_avg, &fs_msg_el_delta,
+                                &fs_msg_er_avg, &fs_msg_er_delta);
 }
-#endif
 
 void fs_landing_init()
 {
@@ -50,11 +88,9 @@ void fs_landing_init()
     fs_landing.commands[i] = 0;
     current_actuator_values.commands[i] = 0;
   }
-#if PERIODIC_TELEMETRY
-  #include "subsystems/datalink/telemetry.h"
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_PAYLOAD_FLOAT, send_payload_float);
-#endif
-  cyclic_controller_init();
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FRISBEE_CONTROL, send_frisbee_control);
+
+//  cyclic_controller_init();
 }
 
 // TODO Make sure all files agree on direction of spin (e.g. assume anti-clockwise rotation)
@@ -112,11 +148,6 @@ void fs_landing_run()
 bool pre_spin_actuator_values()
 {
   float err = pre_spin_speed_setpoint - stateGetHorizontalSpeedNorm_f();
-#if FS_LANDING_DEBUG
-  dbg_msg[0] = stateGetHorizontalSpeedNorm_f();
-  dbg_msg[1] = err;
-  DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 4, dbg_msg);
-#endif
 //    err = err_test;
   if (err > 0) {
     // Assuming max value is upward elevon deflection

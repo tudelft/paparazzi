@@ -35,6 +35,8 @@ extern uint8_t phase_pilot_control;
 extern uint8_t balance_motor_forces;
 extern uint8_t cc_feed_forward;
 extern uint8_t use_controller;
+extern uint8_t elevon_delta_active;
+extern uint8_t motor_delta_active;
 
 extern float cc_ff_side_time;
 

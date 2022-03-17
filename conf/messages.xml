@@ -456,16 +456,16 @@
     </message>
 
    <message name="FRISBEE_CONTROL" id="55">
-     <field name="x_ned" type="int32">State x position NED</field>
-     <field name="y_ned" type="int32">State y position NED</field>
-     <field name="x_ecef" type="int32">State x position ECEF</field>
-     <field name="y_ecef" type="int32">State y position ECEF</field>
-     <field name="vx_ned" type="int32">State x velocity NED</field>
-     <field name="vy_ned" type="int32">State y velocity NED</field>
-     <field name="vx_ecef" type="int32">State x velocity ECEF</field>
-     <field name="vy_ecef" type="int32">State y velocity ECEF</field>
-     <field name="hor_norm" type="uint32">Horizontal ground speed norm</field>
-     <field name="hor_dir" type="int32">Horizontal ground speed direction</field>
+     <field name="is_spinning" type="uint8">Is module currently active</field>
+     <field name="v_filt" type="float" unit="m/s">Filtered horizontal velocity norm NED</field>
+     <field name="ml_avg" type="float">Motor LEFT cyclic average</field>
+     <field name="ml_delta" type="float">Motor LEFT cyclic half amplitude</field>
+     <field name="mr_avg" type="float">Motor RIGHT cyclic average</field>
+     <field name="mr_delta" type="float">Motor RIGHT cyclic half amplitude</field>
+     <field name="el_avg" type="float">Elevon LEFT cyclic average</field>
+     <field name="el_delta" type="float">Elevon LEFT cyclic half amplitude</field>
+     <field name="er_avg" type="float">Elevon RIGHT cyclic average</field>
+     <field name="er_delta" type="float">Elevon RIGHT cyclic half amplitude</field>
    </message>
 
     <message name="BARO_ETS" id="56">

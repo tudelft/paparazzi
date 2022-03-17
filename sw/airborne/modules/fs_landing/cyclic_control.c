@@ -12,7 +12,7 @@
 
 #include "subsystems/datalink/downlink.h"
 
-#define CYCLIC_CONTROL_DEBUG TRUE
+#define CYCLIC_CONTROL_DEBUG FALSE
 
 uint8_t use_motor_l = false;
 uint8_t use_motor_r = false;
@@ -32,11 +32,13 @@ float er_delta = 0.;
 float mt_phase = 0.;  // phase offset in degrees
 float el_phase = 0.;
 
-uint8_t balance_motor_forces = true;
+uint8_t balance_motor_forces = false;
 uint8_t use_square_sig = true;
 uint8_t phase_pilot_control = false;
 uint8_t cc_feed_forward = false;
 uint8_t use_controller = false;
+uint8_t elevon_delta_active = false;
+uint8_t motor_delta_active = false;
 
 uint8_t has_cc_ff_started = false;
 float cc_ff_start_time;
@@ -99,13 +101,18 @@ void cyclic_control_values(struct fs_landing_t *actuator_values) {
         mr_delta = 0;
       }
     }
-  } else if (use_controller) {
-//    cyclic_controller_run();
   }
 
   float cos_val = cosf(current_yaw - el_phase_rad);
-  int32_t elevon_l = (int32_t) (9600 * (el_avg + el_delta * cos_val));
-  int32_t elevon_r = (int32_t) (9600 * (er_avg + er_delta * cos_val));
+
+  float _el_delta = 0;
+  float _er_delta = 0;
+  if (elevon_delta_active) {
+    _el_delta = el_delta;
+    _er_delta = er_delta;
+  }
+  int32_t elevon_l = (int32_t) (9600 * (el_avg + _el_delta * cos_val));
+  int32_t elevon_r = (int32_t) (9600 * (er_avg + _er_delta * cos_val));
 
   if (balance_motor_forces) {
     ml_avg = get_matching_motl_val(abs(mr_avg) * 9600) / 9600;
@@ -113,17 +120,24 @@ void cyclic_control_values(struct fs_landing_t *actuator_values) {
   cos_val = cosf(current_yaw + mt_phase_rad);
   int32_t motor_l = 0;
   int32_t motor_r = 0;
+
+  float _ml_delta = 0;
+  float _mr_delta = 0;
+  if (motor_delta_active) {
+    _ml_delta = ml_delta;
+    _mr_delta = mr_delta;
+  }
   if (use_square_sig) {
     if (cos_val > 0) {
-      motor_l = (int32_t) (9600 * (ml_avg + ml_delta));
-      motor_r = (int32_t) (9600 * (mr_avg + mr_delta));
+      motor_l = (int32_t) (9600 * (ml_avg + _ml_delta));
+      motor_r = (int32_t) (9600 * (mr_avg + _mr_delta));
     } else {
-      motor_l = (int32_t) (9600 * (ml_avg - ml_delta));
-      motor_r = (int32_t) (9600 * (mr_avg - mr_delta));
+      motor_l = (int32_t) (9600 * (ml_avg - _ml_delta));
+      motor_r = (int32_t) (9600 * (mr_avg - _mr_delta));
     }
   } else {
-    motor_l = (int32_t) (9600 * (ml_avg + ml_delta * cos_val));
-    motor_r = (int32_t) (9600 * (mr_avg + mr_delta * cos_val));
+    motor_l = (int32_t) (9600 * (ml_avg + _ml_delta * cos_val));
+    motor_r = (int32_t) (9600 * (mr_avg + _mr_delta * cos_val));
   }
 
   if (use_elevon_l) {
