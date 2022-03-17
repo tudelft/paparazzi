@@ -107,7 +107,7 @@
       <message name="STAB_ATTITUDE_FLOAT"     period=".03"/>
       <message name="STAB_ATTITUDE_REF_FLOAT" period=".03"/>
       <message name="STAB_ATTITUDE_INDI"      period=".25"/>
-      <message name="INDI_G"            period="2.0"/>
+      <message name="INDI_G"            period="1.0"/>
     </mode>
 
     <mode name="vert_loop" key_press="v">
