@@ -72,12 +72,9 @@ enum OF_cal_state_t{
 
 // define settings
 float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a fraction of total of image
-float oag_floor_count_frac = 0.05f;       // floor detection threshold as a fraction of total of image
 float oag_max_speed = 1.f;               // max flight speed [m/s]
 float oag_heading_rate = RadOfDeg(30.f);  // heading change setpoint for avoidance [rad/s]
 
-float oag_oob_vx = 0.1f;
-float oag_oob_vy = 0.7f;
 float oag_oob_rate = 90.0f;
 float oag_oob_dist = 5.0f;
 
@@ -158,7 +155,7 @@ void orange_avoider_guided_periodic(void)
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
   }
 
-  // bound obstacle_free_confidence
+  // bound obstacle_free_esconfidence
   Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
 
   float speed_sp = fminf(oag_max_speed, 0.4f * obstacle_free_confidence);
@@ -178,9 +175,10 @@ void orange_avoider_guided_periodic(void)
         CheckWall(new_coor);
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0){
+        guidance_h_set_guided_body_vel(0.0f,0.0f);
         navigation_state = OBSTACLE_FOUND;
       } else {
-        guidance_h_set_guided_body_vel(speed_sp, 0);
+        guidance_h_set_guided_body_vel(oag_max_speed, 0);
       }
 
       break;
@@ -199,7 +197,7 @@ void orange_avoider_guided_periodic(void)
 
       break;
     case SEARCH_FOR_SAFE_HEADING:
-      VERBOSE_PRINT("Search for safe heading\n")
+      VERBOSE_PRINT("Search for safe heading\n");
       // put the stuff here that sues the data matrix to find clear path to other side of cyberzoo
 
       // if no path is found, rotat a bit more, or fly a bit and try again
