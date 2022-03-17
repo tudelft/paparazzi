@@ -216,9 +216,14 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   uint32_t tot_y = 0;
   uint8_t *buffer = img->buf;
 
+  VERBOSE_PRINT("height = %i\n", img->h);
+  VERBOSE_PRINT("width = %i\n", img->w);
+
   // Go through all the pixels
-  for (uint16_t y = 0; y < img->h; y++) {
-    for (uint16_t x = 0; x < img->w; x ++) {
+  // for (uint16_t y = 0; y < img->h; y++) { // OLD CPDE
+  for (uint16_t y = 50; y < 470; y++) {
+    // for (uint16_t x = 0; x < img->w; x ++) { // OLD CODE
+    for (uint16_t x = 0; x < 10; x ++) { // NEW CODE
       // Check if the color is inside the specified values
       uint8_t *yp, *up, *vp;
       if (x % 2 == 0) {

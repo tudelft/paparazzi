@@ -52,8 +52,8 @@ enum navigation_state_t {
   OUT_OF_BOUNDS
 };
 
-// define settings - change this for green detection. confidence increases if 19% is green
-float oa_color_count_frac = 0.19f;
+// define settings - change this for green detection.
+float oa_color_count_frac = 0.8f;
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
@@ -131,6 +131,7 @@ void orange_avoider_periodic(void)
   VERBOSE_PRINT("center of object  x = %i\n", object_center_x);
   VERBOSE_PRINT("center of object  y = %i\n", object_center_y);
   VERBOSE_PRINT("FPS = %f\n", FPS_orange_avoider);
+  VERBOSE_PRINT("obstacle_free_confidence = %i\n", obstacle_free_confidence);
 
   // only evaluate our state machine if we are flying
   if(!autopilot_in_flight()){
@@ -138,7 +139,8 @@ void orange_avoider_periodic(void)
   }
 
   // compute current color thresholds
-  int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
+  // int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
+  int32_t color_count_threshold = oa_color_count_frac * 10 * 420;
 
   VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
 
@@ -146,7 +148,7 @@ void orange_avoider_periodic(void)
   if(color_count > color_count_threshold){
     obstacle_free_confidence++;
   } else {
-    obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
+    obstacle_free_confidence -= 1;  // be more cautious with positive obstacle detections
   }
 
   // bound obstacle_free_confidence
@@ -340,22 +342,22 @@ uint8_t chooseRandomIncrementAvoidance(void)
   // If an obstacle found, change heading incre
 
   
-  if (object_center_y > 0 && object_center_y < 50) {
+  if (object_center_y > 0 && object_center_y < 10) {
     heading_increment = -20.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
   
-  if (object_center_y > 50 && object_center_y < 100){
+  if (object_center_y > 10 && object_center_y < 20){
     heading_increment = -5.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
 
-  if (object_center_y < 0 && object_center_y > -50) {
+  if (object_center_y < 0 && object_center_y > -10) {
     heading_increment = 20.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
   
-  if (object_center_y < -50 && object_center_y > -100){
+  if (object_center_y < -10 && object_center_y > -20){
     heading_increment = 5.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
