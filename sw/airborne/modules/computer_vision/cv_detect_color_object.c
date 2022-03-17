@@ -221,7 +221,8 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
 
   // Go through all the pixels
   // for (uint16_t y = 0; y < img->h; y++) { // OLD CPDE
-  for (uint16_t y = 50; y < 470; y++) {
+  //50,470 works
+  for (uint16_t y = 100; y < 420; y++) {
     // for (uint16_t x = 0; x < img->w; x ++) { // OLD CODE
     for (uint16_t x = 0; x < 10; x ++) { // NEW CODE
       // Check if the color is inside the specified values
@@ -245,6 +246,10 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
         cnt ++;
         tot_x += x;
         tot_y += y;
+
+        // if y green for several center points, send safe msg.
+        // if center is safe, always go from SFSH->SAFE
+
         if (draw){
           *yp = 255;  // make pixel brighter in image
         }

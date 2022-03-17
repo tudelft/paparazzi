@@ -44,6 +44,7 @@ static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeter
 static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 static uint8_t increase_nav_heading(float incrementDegrees);
 static uint8_t chooseRandomIncrementAvoidance(void);
+static uint8_t MeanderIncrement(void);
 
 enum navigation_state_t {
   SAFE,
@@ -53,7 +54,7 @@ enum navigation_state_t {
 };
 
 // define settings - change this for green detection.
-float oa_color_count_frac = 0.8f;
+float oa_color_count_frac = 0.85f;
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
@@ -62,7 +63,7 @@ int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that 
 float heading_increment = 5.f;          // heading angle increment [deg]
 float maxDistance = 2.25;               // max waypoint displacement [m]
 
-const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
+const int16_t max_trajectory_confidence = 6; // number of consecutive negative object detections to be sure we are obstacle free
 
 // global vars for logging distance covered
 float last_pos_x = 0;
@@ -79,6 +80,9 @@ int16_t object_center_y = 0;
 float current_time = 0;
 float last_time = 0;
 float FPS_orange_avoider = 0;
+
+// global var for 
+bool safeflight = false;
 
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
@@ -140,16 +144,27 @@ void orange_avoider_periodic(void)
 
   // compute current color thresholds
   // int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
-  int32_t color_count_threshold = oa_color_count_frac * 10 * 420;
+  int32_t color_count_threshold = oa_color_count_frac * 10 * 320;
 
   VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
+  VERBOSE_PRINT("0.4*threshold = %f\n",0.4*color_count_threshold);
+
 
   // update our safe confidence using color threshold
   if(color_count > color_count_threshold){
-    obstacle_free_confidence++;
+    obstacle_free_confidence += 2;
+  } else if(color_count > 0.97*color_count_threshold && safeflight == true){
+    MeanderIncrement();
+    increase_nav_heading(heading_increment);
+    safeflight = false;
+  } else if(color_count < 10)
+  {
+    VERBOSE_PRINT("TURN 90");
+    increase_nav_heading(heading_increment/abs(heading_increment)*90);
   } else {
-    obstacle_free_confidence -= 1;  // be more cautious with positive obstacle detections
+    obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
   }
+  
 
   // bound obstacle_free_confidence
   Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
@@ -187,10 +202,12 @@ void orange_avoider_periodic(void)
       break;
     case SEARCH_FOR_SAFE_HEADING:
       heading_increment = heading_increment/abs(heading_increment)*5;
+
       increase_nav_heading(heading_increment);
-      moveWaypointAcross(WP_TRAJECTORY, 1.5f , heading_increment+10);
+      moveWaypointAcross(WP_TRAJECTORY, 1.5f , heading_increment); // check +10
       // make sure we have a couple of good readings before declaring the way safe
-      if (obstacle_free_confidence >= 2){
+      if (obstacle_free_confidence >= 2){ // tweak
+        safeflight = true;
         navigation_state = SAFE;
       }
       break;
@@ -342,27 +359,42 @@ uint8_t chooseRandomIncrementAvoidance(void)
   // If an obstacle found, change heading incre
 
   
-  if (object_center_y > 0 && object_center_y < 10) {
-    heading_increment = -20.f;
+  if (object_center_y > 0 && object_center_y < 25) {
+    heading_increment = -10.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
   
-  if (object_center_y > 10 && object_center_y < 20){
+  if (object_center_y > 25 && object_center_y < 50){
     heading_increment = -5.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
 
-  if (object_center_y < 0 && object_center_y > -10) {
-    heading_increment = 20.f;
+  if (object_center_y < 0 && object_center_y > -25) {
+    heading_increment = 10.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
   
-  if (object_center_y < -10 && object_center_y > -20){
+  if (object_center_y < -25 && object_center_y > -50){
     heading_increment = 5.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
 
 
+  return false;
+}
+
+
+uint8_t MeanderIncrement(void)
+{
+  // Randomly choose CW or CCW avoiding direction
+
+  if (object_center_y > 0) {
+    heading_increment = -5.f;
+    VERBOSE_PRINT("Meander increment to: %f\n", heading_increment);
+  } else {
+    heading_increment = 5.f;
+    VERBOSE_PRINT("Meander increment to: %f\n", heading_increment);
+  }
   return false;
 }
 
