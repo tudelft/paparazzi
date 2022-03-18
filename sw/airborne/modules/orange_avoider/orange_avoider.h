@@ -17,6 +17,7 @@
 extern float oa_color_count_frac;
 extern float d_covered;
 extern float FPS_orange_avoider;
+extern int color_count;
 
 // functions
 extern void orange_avoider_init(void);
