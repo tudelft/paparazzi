@@ -40,8 +40,6 @@
       <message name="OVERACTUATED_VARIABLES"   period=".2"/>
       <message name="ACTUATORS_OUTPUT"         period=".2"/>
       <message name="INDI_CMD"                 period=".2"/>
-      <message name="B_MATRIX_SEND_LINEAR"     period=".2"/>
-      <message name="B_MATRIX_SEND_ANGULAR"    period=".2"/>
       <message name="AIRSPEED_MS45XX"          period=".2"/>
       <message name="AM7_IN"        	       period=".2"/>
       <message name="AM7_OUT"        	       period=".2"/>

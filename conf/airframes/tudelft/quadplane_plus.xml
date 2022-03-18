@@ -251,26 +251,6 @@
     <define name="MAX_PHI" value="20" unit="deg"/>
     <define name="MAX_THETA" value="20" unit="deg"/>
     <define name="MAX_PSI_ERR" value="80" unit="deg"/>
-    <define name="MAX_X_ERR" value="0.5" unit="m"/>
-    <define name="MAX_Y_ERR" value="0.5" unit="m"/>
-    <define name="MAX_Z_ERR" value="0.9" unit="m"/>
-
-    <!-- PID specific-->
-    <define name="PID_MAX_SPEED_ORD" value="15" unit="m/s"/>
-
-    <!-- INDI specific-->
-    <define name="INDI_MAX_P_ORD" value="100" unit="deg/s"/>
-    <define name="INDI_MAX_Q_ORD" value="100" unit="deg/s"/>
-    <define name="INDI_MAX_R_ORD" value="600" unit="deg/s"/>
-    <define name="INDI_MAX_P_DOT_ORD" value="500" unit="deg/s^2"/>
-    <define name="INDI_MAX_Q_DOT_ORD" value="500" unit="deg/s^2"/>
-    <define name="INDI_MAX_R_DOT_ORD" value="1000" unit="deg/s^2"/>
-    <define name="INDI_MAX_VX_ORD" value="5" unit="m/s"/>
-    <define name="INDI_MAX_VY_ORD" value="5" unit="m/s"/>
-    <define name="INDI_MAX_VZ_ORD" value="5" unit="m/s"/>
-    <define name="INDI_MAX_AX_ORD" value="3" unit="m/s^2"/>
-    <define name="INDI_MAX_AY_ORD" value="3" unit="m/s^2"/>
-    <define name="INDI_MAX_AZ_ORD" value="3" unit="m/s^2"/>
 
     <!-- PID specific-->
     <define name="PID_MAX_EULER_ERR_INTEGRATIVE" value="40" unit="deg"/>
@@ -281,9 +261,6 @@
     <define name="PID_MAX_YAW_ORDER_AZ" value="30" unit="deg"/><!--MAX order for el servos are the physical one-->
 
     <!-- INDI proportional gains -->
-<!--    <define name="INDI_REF_ERR_P" value="5.5"/>-->
-<!--    <define name="INDI_REF_ERR_Q" value="6"/>-->
-<!--    <define name="INDI_REF_ERR_R" value="3.8"/>-->
 
     <define name="INDI_REF_ERR_P" value="2"/>
     <define name="INDI_REF_ERR_Q" value="2"/>
@@ -292,19 +269,16 @@
     <define name="INDI_REF_ERR_X" value="1.5"/>
     <define name="INDI_REF_ERR_Y" value="1.5"/>
     <define name="INDI_REF_ERR_Z" value="1.3"/>
-    <!-- INDI derivative gains -->
-<!--    <define name="INDI_REF_RATE_P" value="8"/>-->
-<!--    <define name="INDI_REF_RATE_Q" value="10"/>-->
-<!--    <define name="INDI_REF_RATE_R" value="6.8"/>-->
 
+    <!-- INDI derivative gains -->
     <define name="INDI_REF_RATE_P" value="10"/>
     <define name="INDI_REF_RATE_Q" value="10"/>
     <define name="INDI_REF_RATE_R" value="5"/>
 
-
     <define name="INDI_REF_RATE_X" value="2.35"/>
     <define name="INDI_REF_RATE_Y" value="2.35"/>
     <define name="INDI_REF_RATE_Z" value="8.85"/>
+
     <!-- Actuator dynamics and mapping-->
     <define name="INDI_ACT_DYN_MOTOR" value="0.038" unit="seconds"/><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
     <define name="INDI_ACT_DYN_EL" value="0.0511" unit="seconds"/><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->

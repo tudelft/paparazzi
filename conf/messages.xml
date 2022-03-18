@@ -1854,17 +1854,10 @@
          <field name = "rolling_msg_in_id" type="uint8"/>
      </message>
 
-     <message name="B_MATRIX_SEND_LINEAR" id="199">
-         <field name="B_1" type="float[]" unit="none"/>
-         <field name="B_2" type="float[]" unit="none"/>
-         <field name="B_3" type="float[]" unit="none"/>
-     </message>
 
-     <message name="B_MATRIX_SEND_ANGULAR" id="194">
-         <field name="B_4" type="float[]" unit="none"/>
-         <field name="B_5" type="float[]" unit="none"/>
-         <field name="B_6" type="float[]" unit="none"/>
-     </message>
+<!--     message 199 is free -->
+
+<!--     message 194 is free -->
 
      <message name="INDI_CMD" id="210">
          <field name="INDI_cmd_acc_x" type="float" />
@@ -1892,7 +1885,6 @@
          <field name="INDI_increment_theta_virtual" type="float" />
          <field name="INDI_increment_psi_virtual" type="float" />
 
-         <field name="Number_of_iteration" type="int32" />
      </message>
 
      <message name="ACTUATORS_OUTPUT" id="209">
