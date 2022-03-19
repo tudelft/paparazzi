@@ -49,11 +49,15 @@
 #endif
 
 
-static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
+static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters, float heading_inc);
 uint8_t chooseRandomIncrementAvoidance(void);
 uint8_t chooseIncrementAvoidance(void);
 uint8_t CheckWall(struct EnuCoor_i new_coor);
 uint8_t RotationOperation(float *x, float *y, float *psi);
+float findGap(int Nobs, float obstacles[Nobs][4]);
+bool gapWideEnough(float Lx, float Lz, float Rx, float Rz, float heading);
+float calcHeading(float Lx, float Lz, float Rx, float Rz);
+float calcDistance(float heading);
 
 enum navigation_state_t {
   SAFE,
@@ -78,9 +82,13 @@ float oag_heading_rate = RadOfDeg(30.f);  // heading change setpoint for avoidan
 float oag_oob_rate = 90.0f;
 float oag_oob_dist = 5.0f;
 
-int wall;
 
+// global variables
+int wall;
 int count;
+bool succes;
+int Nobs = 3;
+float obstacles[3][4] = {{-1.7,2.1,-1.4,2.1},{-0.5,4.5,-0.1,4.8},{0.3,3.6,0.6,3.4}};
 
 
 
@@ -112,10 +120,15 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
 #define OPTIC_FLOW_OBSTACLE_DATA_ID ABI_BROADCAST
 #endif
 static abi_event optic_flow_obstacle_data_ev;
-static void optic_flow_obstacle_data_cb(uint8_t __attribute__((unused))sender_id,
-					float data_matrix)
+static void optic_flow_obstacle_data_cb(uint8_t __attribute__((unused)) sender_id,
+          uint8_t __attribute__((unused)) num_obstacles,
+					float __attribute__((unused)) data_matrix)
 {
-  //do stuff with data matrix
+  // Nobs = num_obstacles;
+  // obstacles = data_matrix;
+  // Nobs = 3;
+  // obstacles[3][4] = {{-1.7,2.1,-1.4,2.1},{-0.5,4.5,-0.1,4.8},{0.3,3.6,0.6,3.4}};
+ // order objects maybe from low x to hgh x
 }
 
 /*
@@ -168,7 +181,7 @@ void orange_avoider_guided_periodic(void)
       VERBOSE_PRINT("Safe\n");
       VERBOSE_PRINT("ofc: %f\n", obstacle_free_confidence);
       struct EnuCoor_i new_coor;
-      calculateForwards(&new_coor, 1.0f);
+      calculateForwards(&new_coor, 1.0f, 0.f);
 
       if (!InsideObstacleZone(POS_FLOAT_OF_BFP(new_coor.x),POS_FLOAT_OF_BFP(new_coor.y))){//(floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
         // VERBOSE_PRINT("x/y: %s %s", new_coor.x, new_coor.y);
@@ -198,12 +211,19 @@ void orange_avoider_guided_periodic(void)
       break;
     case SEARCH_FOR_SAFE_HEADING:
       VERBOSE_PRINT("Search for safe heading\n");
-      // put the stuff here that sues the data matrix to find clear path to other side of cyberzoo
-
-      // if no path is found, rotat a bit more, or fly a bit and try again
-
-      navigation_state = SAFE;
-      
+      if (Nobs==0){
+        navigation_state = SAFE;
+      }else{
+        float heading = findGap(Nobs, obstacles);
+        if (succes){
+          guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi + heading);
+          navigation_state = SAFE;
+        }else{
+          guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi + avoidance_heading_direction * RadOfDeg(30.f));
+          count = 0;
+          navigation_state = OPTIC_FLOW;
+        }           
+      }      
       break;
     case OUT_OF_BOUNDS: ;
       VERBOSE_PRINT("Out of bounds\n");
@@ -221,7 +241,7 @@ void orange_avoider_guided_periodic(void)
       VERBOSE_PRINT("Reenter\n");
       // Check if coords a couple meters in front are still in the arena
       struct EnuCoor_i new_coor2;
-      calculateForwards(&new_coor2, oag_oob_dist);
+      calculateForwards(&new_coor2, oag_oob_dist, 0.f);
       if (InsideObstacleZone(POS_FLOAT_OF_BFP(new_coor2.x), POS_FLOAT_OF_BFP(new_coor2.y))){
         // return to heading mode
         guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
@@ -402,9 +422,9 @@ uint8_t RotationOperation(float *x, float *y, float *psi){
 /*
  * Calculates coordinates of a distance of 'distanceMeters' forward w.r.t. current position and heading
  */
-uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
+uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters, float heading_inc)
 {
-  float heading  = stateGetNedToBodyEulers_f()->psi;
+  float heading  = stateGetNedToBodyEulers_f()->psi+heading_inc;
 
   // Now determine where to place the waypoint you want to go to
   new_coor->x = stateGetPositionEnu_i()->x + POS_BFP_OF_REAL(sinf(heading) * (distanceMeters));
@@ -414,3 +434,87 @@ uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
                 // stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
   return false;
 }
+
+
+
+float findGap(int Nobs, float obstacles[Nobs][4]){
+  float heading = 0;
+  float distance = 0;
+  float pot_heading;
+  float pot_distance;
+
+  for (int i = 0; i<=Nobs; ++i){
+    if (i==0){
+      pot_heading = calcHeading(-5.f, 1.f, obstacles[i][0], obstacles[i][1]);
+      if (gapWideEnough(-5.f, 1.f, obstacles[i][0], obstacles[i][1], pot_heading)){
+        pot_distance = calcDistance(pot_heading);
+      }else{
+        pot_heading = 0;
+        pot_distance = 0;
+      }
+    }else if (i==Nobs){
+      pot_heading = calcHeading(obstacles[i-1][2], obstacles[i-1][3], 5.f, 1.f);
+      if (gapWideEnough(obstacles[i-1][2], obstacles[i-1][3], 5.f, 1.f, pot_heading)){
+        pot_distance = calcDistance(pot_heading);
+      }else{
+        pot_heading = 0;
+        pot_distance = 0;
+      }
+    }else{
+      pot_heading = calcHeading(obstacles[i-1][2], obstacles[i-1][3], obstacles[i][0], obstacles[i][1]);
+      if (gapWideEnough(obstacles[i-1][2], obstacles[i-1][3], obstacles[i][0], obstacles[i][1], pot_heading)){
+        pot_distance = calcDistance(pot_heading);
+      }else{
+        pot_heading = 0;
+        pot_distance = 0;
+      }
+    }
+
+    if (pot_distance>distance){
+      heading = pot_heading;
+      distance = pot_distance;
+    }
+  }
+
+  if (heading==0 && distance==0){
+    // what if no valid heading is found?
+    succes = false;
+  }else{
+    succes = true;
+  }
+  return heading;
+}
+
+bool gapWideEnough(float Lx, float Lz, float Rx, float Rz, float heading){
+  float absolute_gap = sqrtf((Rx-Lx)*(Rx-Lx)+(Rz-Lz)*(Rz-Lz));
+  float correction_angle = heading+atanf((Rz-Lz)/(Rx-Lx));
+  float gap = cosf(correction_angle)*absolute_gap;
+  if (fabs(gap) > 0.5){
+    return true;
+  }else{
+    return false;
+  }  
+}
+
+float calcHeading(float Lx, float Lz, float Rx, float Rz){
+    float heading1 = atanf(Lx/Lz);
+    float heading2 = atanf(Rx/Rz);
+    float heading = 0.5*(heading1+heading2);
+  return heading;
+}
+
+float calcDistance(float heading){
+  struct EnuCoor_i new_coor;
+  float distance = 0.5;
+  calculateForwards(&new_coor, distance, heading);
+  while (InsideObstacleZone(POS_FLOAT_OF_BFP(new_coor.x),POS_FLOAT_OF_BFP(new_coor.y))){
+    distance = distance+0.5;
+    calculateForwards(&new_coor, distance, heading);
+  }
+  distance = distance-0.5;
+  return distance;
+}
+
+
+
+
