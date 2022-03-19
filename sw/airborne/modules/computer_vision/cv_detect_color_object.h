@@ -49,6 +49,12 @@ extern uint8_t cod_cr_max2;
 extern bool cod_draw1;
 extern bool cod_draw2;
 
+// filter box settings
+extern int16_t filterbox_ymin;
+extern int16_t filterbox_ymax;
+extern int16_t filterbox_xmin;
+extern int16_t filterbox_xmax;
+
 // Module functions
 extern void color_object_detector_init(void);
 extern void color_object_detector_periodic(void);

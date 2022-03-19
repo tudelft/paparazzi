@@ -44,6 +44,10 @@
          <dl_setting var="cod_cr_min2"   min="0" step="1" max="255" shortname="v_min2"/>
          <dl_setting var="cod_cr_max2"   min="0" step="1" max="255" shortname="v_max2"/>
          <dl_setting var="cod_draw2"  min="0" step="1" max="1" values="False|True" shortname="draw 2" />
+         <dl_setting var="filterbox_ymin" min="0" step="1" max="260" shortname="filterbox_ymin"/>
+         <dl_setting var="filterbox_ymax" min="260" step="1" max="520" shortname="filterbox_ymax"/>
+         <dl_setting var="filterbox_xmin" min="0" step="1" max="250" shortname="filterbox_xmin"/>
+         <dl_setting var="filterbox_xmax" min="0" step="1" max="240" shortname="filterbox_xmax"/>
       </dl_settings>
     </dl_settings>
   </settings>

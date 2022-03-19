@@ -16,7 +16,8 @@ so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTI
     <settings>
     <dl_settings>
       <dl_settings name="OrangeAvoider">
-         <dl_setting var="oa_color_count_frac" min="0" step="0.01" max="0.5"/>
+         <dl_setting var="oa_color_count_frac" min="0" step="0.01" max="1.0"/>
+         <dl_setting var="meander_frac" min="0" step="0.01" max="1.0"/>
       </dl_settings>
     </dl_settings>
   </settings>
@@ -28,7 +29,7 @@ so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTI
     <file name="orange_avoider.h"/>
   </header>
   <init fun="orange_avoider_init()"/>
-  <periodic fun="orange_avoider_periodic()" freq="8"/>
+  <periodic fun="orange_avoider_periodic()" freq="4"/> <!-- tweak -->
   <periodic fun="log_distance_covered_periodic()" freq="1"/>
   <makefile target="ap|nps">
     <file name="orange_avoider.c"/>

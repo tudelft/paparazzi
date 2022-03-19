@@ -43,8 +43,8 @@
 #include "firmwares/fixedwing/stabilization/stabilization_adaptive.h"
 #endif
 
-// include orange_avoider for distance logging
-#include "modules/orange_avoider/orange_avoider.h"
+// include green_attractor for distance logging
+#include "modules/green_attractor/green_attractor.h"
 
 
 /** Set the default File logger path to the USB drive */
@@ -98,7 +98,7 @@ static void file_logger_write_row(FILE *file) {
   fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
   fprintf(file, "%f,", d_covered);
-  fprintf(file, "%f,", FPS_orange_avoider);
+  fprintf(file, "%f,", FPS_green_attractor);
   fprintf(file, "%f,", color_count);
 
 #ifdef COMMAND_THRUST

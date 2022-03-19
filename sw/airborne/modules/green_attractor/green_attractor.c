@@ -5,19 +5,18 @@
  *
  */
 /**
- * @file "modules/orange_avoider/orange_avoider.c"
- * @author Roland Meertens
- * Example on how to use the colours detected to avoid orange pole in the cyberzoo
- * This module is an example module for the course AE4317 Autonomous Flight of Micro Air Vehicles at the TU Delft.
+ * @file "modules/green_attractor/green_attractor.c"
+ * @author Group2
+ * Example on how to use the colours detected to avoid obstacles in the cyberzoo
  * This module is used in combination with a color filter (cv_detect_color_object) and the navigation mode of the autopilot.
- * The avoidance strategy is to simply count the total number of orange pixels. When above a certain percentage threshold,
+ * The avoidance strategy is to simply count the total number of green pixels. When above a certain percentage threshold,
  * (given by color_count_frac) we assume that there is an obstacle and we turn.
  *
  * The color filter settings are set using the cv_detect_color_object. This module can run multiple filters simultaneously
  * so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTION_ID setting.
  */
 
-#include "modules/orange_avoider/orange_avoider.h"
+#include "modules/green_attractor/green_attractor.h"
 #include "firmwares/rotorcraft/navigation.h"
 #include "generated/airframe.h"
 #include "state.h"
@@ -28,10 +27,12 @@
 #define NAV_C // needed to get the nav functions like Inside...
 #include "generated/flight_plan.h"
 
-#define ORANGE_AVOIDER_VERBOSE TRUE
+// #define ORANGE_AVOIDER_VERBOSE TRUE
+#define GREEN_ATTRACTOR_VERBOSE TRUE
 
-#define PRINT(string,...) fprintf(stderr, "[orange_avoider->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
-#if ORANGE_AVOIDER_VERBOSE
+
+#define PRINT(string,...) fprintf(stderr, "[green_attractor->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
+#if GREEN_ATTRACTOR_VERBOSE
 #define VERBOSE_PRINT PRINT
 #else
 #define VERBOSE_PRINT(...)
@@ -62,7 +63,7 @@ float meander_frac = 0.65f;
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
-int32_t color_count = 0;                // orange color count from color filter for obstacle detection
+int32_t color_count = 0;                // green color count from color filter for obstacle detection
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
 float heading_increment = 5.f;          // heading angle increment [deg]
 float maxDistance = 2.25;               // max waypoint displacement [m]
@@ -83,7 +84,7 @@ int16_t object_center_y = 0;
 // global vars for FPS logging
 float current_time = 0;
 float last_time = 0;
-float FPS_orange_avoider = 0;
+float FPS_green_attractor = 0;
 
 // global var for meander maneuvre
 bool safeflight = false;
@@ -95,6 +96,8 @@ bool safeflight = false;
  * in different threads. The ABI event is triggered every time new data is sent out, and as such the function
  * defined in this file does not need to be explicitly called, only bound in the init function
  */
+
+// Decide later whether to add a new msg for green_attractor
 #ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
 #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
@@ -112,7 +115,7 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
 
   // Get FPS
   current_time = get_sys_time_float();
-  FPS_orange_avoider = 1/(current_time-last_time);
+  FPS_green_attractor = 1/(current_time-last_time);
   last_time = current_time;
 
 }
@@ -121,7 +124,7 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
 /*
  * Initialisation function, setting the colour filter, random seed and heading_increment
  */
-void orange_avoider_init(void)
+void green_attractor_init(void)
 {
   // Initialise random values
   srand(time(NULL));
@@ -134,11 +137,11 @@ void orange_avoider_init(void)
 /*
  * Function that checks it is safe to move forwards, and then moves a waypoint forward or changes the heading
  */
-void orange_avoider_periodic(void)
+void green_attractor_periodic(void)
 {
   VERBOSE_PRINT("center of object  x = %i\n", object_center_x);
   VERBOSE_PRINT("center of object  y = %i\n", object_center_y);
-  VERBOSE_PRINT("FPS = %f\n", FPS_orange_avoider);
+  VERBOSE_PRINT("FPS = %f\n", FPS_green_attractor);
   VERBOSE_PRINT("obstacle_free_confidence = %i\n", obstacle_free_confidence);
 
   // only evaluate our state machine if we are flying
