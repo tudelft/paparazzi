@@ -13,7 +13,7 @@
  * (given by color_count_frac) we assume that there is an obstacle and we turn.
  *
  * The color filter settings are set using the cv_detect_color_object. This module can run multiple filters simultaneously
- * so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTION_ID setting.
+ * so you have to define which filter to use with the GREEN_ATTRACTOR_VISUAL_DETECTION_ID setting.
  */
 
 #include "modules/green_attractor/green_attractor.h"
@@ -78,8 +78,8 @@ float dy = 0;
 float d_covered = 0;
 
 // global vars for object center identification
-int16_t object_center_x = 0;
-int16_t object_center_y = 0;
+int16_t green_center_x = 0;
+int16_t green_center_y = 0;
 
 // global vars for FPS logging
 float current_time = 0;
@@ -98,8 +98,8 @@ bool safeflight = false;
  */
 
 // Decide later whether to add a new msg for green_attractor
-#ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
-#define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
+#ifndef GREEN_ATTRACTOR_VISUAL_DETECTION_ID
+#define GREEN_ATTRACTOR_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
 
 // callback - extracts color_count and center pixels from object
@@ -110,8 +110,8 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int32_t quality, int16_t __attribute__((unused)) extra)
 {
   color_count = quality;
-  object_center_x = pixel_x;
-  object_center_y = pixel_y;
+  green_center_x = pixel_x;
+  green_center_y = pixel_y;
 
   // Get FPS
   current_time = get_sys_time_float();
@@ -131,7 +131,7 @@ void green_attractor_init(void)
   chooseRandomIncrementAvoidance();
 
   // bind our colorfilter callbacks to receive the color filter outputs
-  AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
+  AbiBindMsgVISUAL_DETECTION(GREEN_ATTRACTOR_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
 }
 
 /*
@@ -139,8 +139,8 @@ void green_attractor_init(void)
  */
 void green_attractor_periodic(void)
 {
-  VERBOSE_PRINT("center of object  x = %i\n", object_center_x);
-  VERBOSE_PRINT("center of object  y = %i\n", object_center_y);
+  VERBOSE_PRINT("center of green  x = %i\n", green_center_x);
+  VERBOSE_PRINT("center of green  y = %i\n", green_center_y);
   VERBOSE_PRINT("FPS = %f\n", FPS_green_attractor);
   VERBOSE_PRINT("obstacle_free_confidence = %i\n", obstacle_free_confidence);
 
@@ -338,22 +338,22 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
  */
 uint8_t chooseRandomIncrementAvoidance(void)
 { 
-  if (object_center_y > 0 && object_center_y < 25) {
+  if (green_center_y > 0 && green_center_y < 25) {
     heading_increment = -10.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
   
-  if (object_center_y > 25 && object_center_y < 50){
+  if (green_center_y > 25 && green_center_y < 50){
     heading_increment = -5.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
 
-  if (object_center_y < 0 && object_center_y > -25) {
+  if (green_center_y < 0 && green_center_y > -25) {
     heading_increment = 10.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
   
-  if (object_center_y < -25 && object_center_y > -50){
+  if (green_center_y < -25 && green_center_y > -50){
     heading_increment = 5.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
@@ -364,7 +364,7 @@ uint8_t chooseRandomIncrementAvoidance(void)
 
 uint8_t MeanderIncrement(void)
 {
-  if (object_center_y > 0) {
+  if (green_center_y > 0) {
     heading_increment = -5.f;
     VERBOSE_PRINT("Meander increment to: %f\n", heading_increment);
   } else {
