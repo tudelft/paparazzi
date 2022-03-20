@@ -117,7 +117,26 @@
 
     <flight_control name="actuator_dynamics">
         <channel name="filtering">
-
+            <lag_filter name="ail_left_lag">
+                <input> fcs/ail_left </input>
+                <c1> 52.8 </c1>
+                <output> fcs/ail_left_lag</output>
+            </lag_filter>
+            <lag_filter name="ail_right_lag">
+                <input> fcs/ail_right </input>
+                <c1> 52.8 </c1>
+                <output> fcs/ail_right_lag</output>
+            </lag_filter>
+             <lag_filter name="elev_lag">
+                <input> fcs/elev </input>
+                <c1> 52.8 </c1>
+                <output> fcs/elev_lag</output>
+            </lag_filter>
+            <lag_filter name="rud_lag">
+                <input> fcs/rud </input>
+                <c1> 52.8 </c1>
+                <output> fcs/rud_lag</output>
+            </lag_filter>                                   
             <lag_filter name="front_motor_lag">
                 <input> fcs/front_motor </input>
                 <c1> 24.07 </c1>
@@ -159,6 +178,10 @@
         <property>fcs/ail_right</property>
         <property>fcs/elev</property>
         <property>fcs/rud</property>
+        <property>fcs/ail_left_lag</property>
+        <property>fcs/ail_right_lag</property>
+        <property>fcs/elev_lag</property>
+        <property>fcs/rud_lag</property>
         <property>fcs/pusher</property>
         <property>fcs/pusher_lag</property>
         <property>fcs/wing_rotation</property>
@@ -258,7 +281,7 @@
             </direction>
         </force>
 
-        <!-- Thrust Bz created by motors-->
+        <!-- Thrust Bz created by motors
         <force name="thrust_bz" frame="BODY" unit="LBS">
             <function>
                 <sum>
@@ -290,20 +313,20 @@
                 <y>0</y>
                 <z>-1</z>
             </direction>
-        </force>
+        </force> -->
 
         <!-- Roll moments created by motors -->
-        <force name="roll_right_couple1" frame="BODY" unit="LBS">
+        <force name="roll_right_motor" frame="BODY" unit="LBS">
             <function>
                 <product>
                     <property>fcs/right_motor_lag</property>
-                    <value>49</value>
+                    <value>3.5598</value>
                     <cos><product><v>1.5708</v><property>fcs/wing_rotation</property></product></cos>
                 </product>
             </function>
             <location unit="IN">
                 <x>0</x>
-                <y>0.5</y>
+                <y>13.78</y>
                 <z>0</z>
             </location>
             <direction>
@@ -313,76 +336,36 @@
             </direction>
         </force>
 
-        <force name="roll_right_couple2" frame="BODY" unit="LBS">
-            <function>
-                <product>
-                    <property>fcs/right_motor_lag</property>
-                    <value>49</value>
-                    <cos><product><v>1.5708</v><property>fcs/wing_rotation</property></product></cos>
-                </product>
-            </function>
-            <location unit="IN">
-                <x>0</x>
-                <y>-0.5</y>
-                <z>0</z>
-            </location>
-            <direction>
-                <x>0</x>
-                <y>0</y>
-                <z>1</z>
-            </direction>
-        </force>
-
-        <force name="roll_left_couple1" frame="BODY" unit="LBS">
+        <force name="roll_left_motor" frame="BODY" unit="LBS">
             <function>
                 <product>
                     <property>fcs/left_motor_lag</property>
-                    <value>49</value>
+                    <value>3.5598</value>
                     <cos><product><v>1.5708</v><property>fcs/wing_rotation</property></product></cos>
                 </product>
             </function>
             <location unit="IN">
                 <x>0</x>
-                <y>-0.5</y>
+                <y>-13.78</y>
                 <z>0</z>
             </location>
             <direction>
                 <x>0</x>
                 <y>0</y>
                 <z>-1</z>
-            </direction>
-        </force>
-
-        <force name="roll_left_couple2" frame="BODY" unit="LBS">
-            <function>
-                <product>
-                    <property>fcs/left_motor_lag</property>
-                    <value>49</value>
-                    <cos><product><v>1.5708</v><property>fcs/wing_rotation</property></product></cos>
-                </product>
-            </function>
-            <location unit="IN">
-                <x>0</x>
-                <y>0.5</y>
-                <z>0</z>
-            </location>
-            <direction>
-                <x>0</x>
-                <y>0</y>
-                <z>1</z>
             </direction>
         </force>
 
         <!-- Pitch moments created by motors-->
-        <force name="pitch_front_couple1" frame="BODY" unit="LBS">
+        <force name="pitch_front_motor" frame="BODY" unit="LBS">
             <function>
                 <product>
                     <property>fcs/front_motor_lag</property>
-                    <value>49</value>
+                    <value>3.5598</value>
                 </product>
             </function>
             <location unit="IN">
-                <x>-0.5</x>
+                <x>-13.78</x>
                 <y>0</y>
                 <z>0</z>
             </location>
@@ -393,35 +376,16 @@
             </direction>
         </force>
 
-        <force name="pitch_front_couple2" frame="BODY" unit="LBS">
-            <function>
-                <product>
-                    <property>fcs/front_motor_lag</property>
-                    <value>49</value>
-                </product>
-            </function>
-            <location unit="IN">
-                <x>0.5</x>
-                <y>0</y>
-                <z>0</z>
-            </location>
-            <direction>
-                <x>0</x>
-                <y>0</y>
-                <z>1</z>
-            </direction>
-        </force>
-
-        <force name="pitch_right_couple1" frame="BODY" unit="LBS">
+        <force name="pitch_right_motor" frame="BODY" unit="LBS">
             <function>
                 <product>
                     <property>fcs/right_motor_lag</property>
-                    <value>49</value>
+                    <value>3.5598</value>
                     <sin><product><v>1.5708</v><property>fcs/wing_rotation</property></product></sin>
                 </product>
             </function>
             <location unit="IN">
-                <x>0.5</x>
+                <x>13.78</x>
                 <y>0</y>
                 <z>0</z>
             </location>
@@ -432,35 +396,15 @@
             </direction>
         </force>
 
-        <force name="pitch_right_couple2" frame="BODY" unit="LBS">
-            <function>
-                <product>
-                    <property>fcs/right_motor_lag</property>
-                    <value>49</value>
-                    <sin><product><v>1.5708</v><property>fcs/wing_rotation</property></product></sin>
-                </product>
-            </function>
-            <location unit="IN">
-                <x>-0.5</x>
-                <y>0</y>
-                <z>0</z>
-            </location>
-            <direction>
-                <x>0</x>
-                <y>0</y>
-                <z>1</z>
-            </direction>
-        </force>
-
-        <force name="pitch_back_couple1" frame="BODY" unit="LBS">
+        <force name="pitch_back_motor" frame="BODY" unit="LBS">
             <function>
                 <product>
                     <property>fcs/back_motor_lag</property>
-                    <value>49</value>
+                    <value>3.5598</value>
                 </product>
             </function>
             <location unit="IN">
-                <x>0.5</x>
+                <x>13.78</x>
                 <y>0</y>
                 <z>0</z>
             </location>
@@ -471,35 +415,16 @@
             </direction>
         </force>
 
-        <force name="pitch_back_couple2" frame="BODY" unit="LBS">
-            <function>
-                <product>
-                    <property>fcs/back_motor_lag</property>
-                    <value>49</value>
-                </product>
-            </function>
-            <location unit="IN">
-                <x>-0.5</x>
-                <y>0</y>
-                <z>0</z>
-            </location>
-            <direction>
-                <x>0</x>
-                <y>0</y>
-                <z>1</z>
-            </direction>
-        </force>
-
-        <force name="pitch_left_couple1" frame="BODY" unit="LBS">
+        <force name="pitch_left_motor" frame="BODY" unit="LBS">
             <function>
                 <product>
                     <property>fcs/left_motor_lag</property>
-                    <value>49</value>
+                    <value>3.5598</value>
                     <sin><product><v>1.5708</v><property>fcs/wing_rotation</property></product></sin>
                 </product>
             </function>
             <location unit="IN">
-                <x>-0.5</x>
+                <x>-13.78</x>
                 <y>0</y>
                 <z>0</z>
             </location>
@@ -507,26 +432,6 @@
                 <x>0</x>
                 <y>0</y>
                 <z>-1</z>
-            </direction>
-        </force>
-
-        <force name="pitch_left_couple2" frame="BODY" unit="LBS">
-            <function>
-                <product>
-                    <property>fcs/left_motor_lag</property>
-                    <value>49</value>
-                    <sin><product><v>1.5708</v><property>fcs/wing_rotation</property></product></sin>
-                </product>
-            </function>
-            <location unit="IN">
-                <x>0.5</x>
-                <y>0</y>
-                <z>0</z>
-            </location>
-            <direction>
-                <x>0</x>
-                <y>0</y>
-                <z>1</z>
             </direction>
         </force>
 
@@ -685,19 +590,6 @@
     <propulsion/>
 
     <flight_control name="FGFCS"/>
-    <aerodynamics>
-    <axis name="DRAG">
-      <function name="aero/coefficient/CD">
-        <description>Drag</description>
-        <product>
-          <property>aero/qbar-psf</property>
-          <value>47.9</value> <!-- Conversion to pascals -->
-          <value>0.0151</value> <!-- CD x Area (m^2) -->
-          <value>0.224808943</value> <!-- N to LBS -->
-        </product>
-      </function>
-    </axis>
-    </aerodynamics>
-
+    <aerodynamics file="Systems/aerodynamics_rotwing.xml"/>
 </fdm_config>
  

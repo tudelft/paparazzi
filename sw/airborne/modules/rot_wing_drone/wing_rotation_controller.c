@@ -147,8 +147,8 @@ void wing_rotation_init(void)
   wing_rotation.adc_wing_servo = 0;
   wing_rotation.wing_angle_rad = 0;
   wing_rotation.wing_angle_deg = 0;
-  wing_rotation.wing_angle_rad_sp = 0;
-  wing_rotation.wing_angle_deg_sp = 0;
+  wing_rotation.wing_angle_rad_sp = 0.785398;
+  wing_rotation.wing_angle_deg_sp = 45.0;
   wing_rotation.servo_angle_rad = 0;
   wing_rotation.servo_rate = 0;
 

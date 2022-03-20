@@ -1,0 +1,142 @@
+ <aerodynamics>
+  <axis name="YAW">
+    <function name="rud_yaw" frame="BODY" unit="FT*LBS">
+      <product>
+        <property>fcs/rud_lag</property>
+        <property>aero/qbar-psf</property>
+        <value>47.9</value> <!--Conversion to pascals -->
+        <value> 0.094 </value>
+        <value>0.224808943</value> <!-- N to LBS -->
+      </product>
+    </function>
+  </axis>
+
+  <axis name="PITCH">
+    <function name="elev_pitch" frame="BODY" unit="FT*LBS">
+      <product>
+        <property>fcs/elev_lag</property>
+        <property>aero/qbar-psf</property>
+        <value>47.9</value> <!--Conversion to pascals -->
+        <value> -0.157 </value>
+        <value>0.224808943</value> <!-- N to LBS -->
+      </product>
+    </function>
+  </axis> 
+
+  <axis name="ROLL">
+    <function name="ail_roll" frame="BODY" unit="FT*LBS">
+      <sum>
+        <product>
+          <property>fcs/ail_left_lag</property>
+          <property>aero/qbar-psf</property>
+          <value>47.9</value> <!--Conversion to pascals -->
+          <value> 0.204 </value>
+          <value> 10.0 </value>
+          <value>0.224808943</value> <!-- N to LBS -->
+        </product>
+
+        <product>
+          <property>fcs/ail_right_lag</property>
+          <property>aero/qbar-psf</property>
+          <value>47.9</value> <!--Conversion to pascals -->
+          <value> 0.204 </value>
+          <value> 10.0 </value>
+          <value>0.224808943</value> <!-- N to LBS -->
+        </product>
+      </sum>
+    </function>
+  </axis>
+
+  <axis name="LIFT">
+    <function name="aero/force/Lift_alpha">
+      <description>Lift due to alpha</description>
+      <product>
+          <property>aero/qbar-psf</property>
+          <value>47.9</value> <!--Conversion to pascals -->
+          <!--<property>metrics/Sw-sqft</property>-->
+          <value>0.578</value>
+          <sin><product><v>1.5708</v><property>fcs/wing_rotation</property></product></sin>
+          <table>
+            <independentVar lookup="row">aero/alpha-deg</independentVar>
+            <tableData>
+              -90   0.0
+              -50  -0.80
+              -20  -0.63
+              -12  -0.74
+              -8  -0.64
+              0  0.07
+              11  1.15
+              14  1.2
+              18  1.3
+              45  0.8
+              90   0.0
+              135  0.8
+              180  0.0
+              225 -0.8
+              270 0.0
+            </tableData>
+          </table>
+          <value>0.224808943</value> <!-- N to LBS -->
+          <value>2.0</value>
+      </product>
+    </function>
+
+  </axis>
+
+  <!-- <axis name="DRAG">
+
+    <function name="aero/force/Drag_basic">
+       <description>Drag</description>
+       <product>
+          <property>aero/qbar-psf</property>
+          <property>metrics/Sw-sqft</property>
+          <sin><product><v>1.5708</v><property>fcs/wing_rotation</property></product></sin>
+          <table>
+            <independentVar lookup="row">aero/alpha-deg</independentVar>
+            <tableData>
+             -90    1.7
+             -70    1.62
+             -10    0.4
+             -5     0.27
+             -2     0.24
+             2     0.225
+             7     0.235
+             12     0.29
+             25     0.6128
+             70     1.36
+             86      1.45
+             105      1.35
+             120      1.12
+            </tableData>
+          </table>
+          <value>3.0</value>
+       </product>
+    </function>
+
+  </axis> -->
+    <axis name="DRAG">
+      <function name="aero/coefficient/CD">
+        <description>Drag</description>
+        <product>
+          <property>aero/qbar-psf</property>
+          <value>47.9</value> <!-- Conversion to pascals -->
+          <value>0.05102</value> <!-- CD x Area (m^2) original:0.0151, new value saturation at 28 m/s--> 
+          <value>0.224808943</value> <!-- N to LBS -->
+        </product>
+      </function>
+    </axis>
+  <!-- <axis name="SIDE">
+
+    <function name="aero/force/Side_beta">
+       <description>Side force due to beta</description>
+       <product>
+           <property>aero/qbar-psf</property>
+           <property>metrics/Sw-sqft</property>
+           <property>aero/beta-rad</property>
+           <value>-4</value>
+       </product>
+    </function>
+
+  </axis> -->
+
+ </aerodynamics>
