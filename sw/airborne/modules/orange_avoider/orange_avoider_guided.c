@@ -88,6 +88,7 @@ int wall;
 int count;
 bool succes;
 int Nobs = 3;
+// float obstacles;
 float obstacles[3][4] = {{-1.7,2.1,-1.4,2.1},{-0.5,4.5,-0.1,4.8},{0.3,3.6,0.6,3.4}};
 
 
@@ -121,14 +122,43 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
 #endif
 static abi_event optic_flow_obstacle_data_ev;
 static void optic_flow_obstacle_data_cb(uint8_t __attribute__((unused)) sender_id,
-          uint8_t __attribute__((unused)) num_obstacles,
-					float __attribute__((unused)) data_matrix)
+          uint8_t num_obstacles,
+					float data_matrix,
+          uint8_t imax,
+          uint8_t jmax)
 {
   // Nobs = num_obstacles;
-  // obstacles = data_matrix;
-  // Nobs = 3;
-  // obstacles[3][4] = {{-1.7,2.1,-1.4,2.1},{-0.5,4.5,-0.1,4.8},{0.3,3.6,0.6,3.4}};
- // order objects maybe from low x to hgh x
+  // float obstacles_pixels[100][8] = data_matrix;
+
+  // float obstacles[100][4];
+
+  // for (i=0; i<100; i++){
+  //   float z1 = 9.527(1-(obstacles_pixels[i][0]/imax))+1.9;
+  //   float w1 = -27.8*(1-(obstacles_pixels[i][0]/imax))+32.6;
+  //   float x1 = (obstacles_pixels[i][1]/jmax)*w1 - w1/2;
+  //   float z2 = 9.527(1-(obstacles_pixels[i][2]/imax))+1.9;
+  //   float w2 = -27.8*(1-(obstacles_pixels[i][2]/imax))+32.6;
+  //   float x2 = (obstacles_pixels[i][3]/jmax)*w2 - w2/2;  
+
+  //   obstacles[i][0] = x1;
+  //   obstacles[i][0] = z1;
+  //   obstacles[i][0] = x2;
+  //   obstacles[i][0] = z2;  
+
+  //   float temp[4];
+
+  //   for (int i=0; i<100; ++i){
+  //       for (int k=i+1; k<100; ++k){
+  //           if(obstacles[i][0] > obstacles[k][0]) {   
+  //               for (int j=0; j<4; ++j){
+  //                   temp[j] = obstacles[i][j];    
+  //                   obstacles[i][j] = obstacles[k][j];    
+  //                   obstacles[k][j] = temp[j];  
+  //               }
+  //           }
+  //       }
+  //   }
+  // }
 }
 
 /*
