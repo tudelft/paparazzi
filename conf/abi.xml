@@ -220,6 +220,8 @@
     <message name="OF_OBSTACLE_DATA" id="31">
       <field name="num_obstacles" type="uint8_t">Number of obstacles</field>
       <field name="data_matrix" type="float *">Array of obstacle data from optic flow module</field>
+      <field name="imax" type="uint8_t">amount of vertical pixesl</field>
+      <field name="jmax" type="uint8_t">amount of horizontal pixesl</field>
     </message>
 
   </msg_class>
