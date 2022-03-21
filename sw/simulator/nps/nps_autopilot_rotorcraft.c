@@ -168,7 +168,12 @@ void nps_autopilot_run_step(double time)
   for (uint8_t i = 0; i < NPS_COMMANDS_NB; i++) {
 #if NPS_NO_MOTOR_MIXING
     actuators_pprz[i] = autopilot_get_motors_on() ? actuators_pprz[i] : 0;
-    nps_autopilot.commands[i] = (double)actuators_pprz[i] / MAX_PPRZ;
+    if(i==9){
+      nps_autopilot.commands[i] = (double)actuators_pprz[i] / 4800.0;
+      printf("wing rot = %f\n",nps_autopilot.commands[i]);
+    } else {
+      nps_autopilot.commands[i] = (double)actuators_pprz[i] / MAX_PPRZ;
+    }
 #else
     nps_autopilot.commands[i] = (double)motor_mixing.commands[i] / MAX_PPRZ;
 #endif

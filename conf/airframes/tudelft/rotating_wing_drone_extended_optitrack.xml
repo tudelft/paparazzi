@@ -363,7 +363,7 @@
         <define name="JSBSIM_MODEL" value="rotating_wing_drone_tomaso" type="string"/>
         <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
         <define name="NO_MOTOR_MIXING" value="TRUE"/>
-        <define name="COMMANDS_NB" value="9"/>
+        <define name="COMMANDS_NB" value="10"/>
     </section>
     
 </airframe>

@@ -105,6 +105,10 @@ static void guidance_indi_filter_thrust(void);
 #endif
 #endif //GUIDANCE_INDI_THRUST_DYNAMICS
 
+//#else
+//#define GUIDANCE_INDI_SPECIFIC_FORCE_GAIN -943.0
+//#define GUIDANCE_INDI_THRUST_DYNAMICS 0.1
+//float guidance_indi_specific_force_gain = GUIDANCE_INDI_SPECIFIC_FORCE_GAIN;
 #endif //GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
 
 #ifndef GUIDANCE_INDI_FILTER_CUTOFF
@@ -443,6 +447,7 @@ void guidance_indi_run(float *heading_sp) {
   euler_cmd.y = hybrid_du[1];
   euler_cmd.z = -1.0*hybrid_du[2];
   acc_T_bx = hybrid_du[3];
+  printf("Commanded Delta T = %f\n", euler_cmd.z);
 #else
   MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
 #endif
@@ -795,6 +800,7 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   printf("liftd %f\n", liftd);
   printf("Gmat_rot_wing[2][2] %f\n", Gmat_rot_wing[2][2]);
   printf("Lift estimated %f\n", lift_approx);
+  
   // Set prefered states
   pitch_pref_rad = pitch_pref_deg / 180. * M_PI;
 

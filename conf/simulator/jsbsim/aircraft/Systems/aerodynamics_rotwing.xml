@@ -55,7 +55,7 @@
           <value>47.9</value> <!--Conversion to pascals -->
           <!--<property>metrics/Sw-sqft</property>-->
           <value>0.578</value>
-          <sin><product><v>1.5708</v><property>fcs/wing_rotation</property></product></sin>
+          <sin><product><value>1.5708</value><property>fcs/wing_rotation</property></product></sin>
           <table>
             <independentVar lookup="row">aero/alpha-deg</independentVar>
             <tableData>
