@@ -27,7 +27,7 @@
 #define NAV_C // needed to get the nav functions like Inside...
 #include "generated/flight_plan.h"
 
-// #define ORANGE_AVOIDER_VERBOSE TRUE
+// #define GREEN_AVOIDER_VERBOSE TRUE
 #define GREEN_ATTRACTOR_VERBOSE TRUE
 
 
@@ -93,6 +93,13 @@ float FPS_green_attractor = 0;
 // global var for meander maneuvre
 bool safeflight = false;
 
+// global vars for confidence tuning
+int confidence_increment = 2;
+int confidence_decrement = 2;
+
+// track state
+int current_state = 2;
+
 
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
@@ -143,9 +150,11 @@ void green_attractor_init(void)
  */
 void green_attractor_periodic(void)
 {
+  current_state = (int)navigation_state;
   VERBOSE_PRINT("center of green  y = %i\n", green_center_y);
   VERBOSE_PRINT("FPS = %f\n", FPS_green_attractor);
   VERBOSE_PRINT("obstacle_free_confidence = %i\n", obstacle_free_confidence);
+  VERBOSE_PRINT("current_state = %i\n", current_state);
 
   // only evaluate our state machine if we are flying
   if(!autopilot_in_flight()){
@@ -162,7 +171,7 @@ void green_attractor_periodic(void)
 
   // update our safe confidence using color threshold
   if(color_count > color_count_threshold){
-    obstacle_free_confidence += 2;
+    obstacle_free_confidence += confidence_increment;
   } else if(color_count > meander_frac*color_count_threshold && safeflight == true){ // if we already see object, start yawing in flight
     MeanderIncrement();
     increase_nav_heading(heading_increment);
@@ -174,7 +183,7 @@ void green_attractor_periodic(void)
     VERBOSE_PRINT("TURN 90");
     increase_nav_heading(heading_increment/abs(heading_increment)*90);
   } else {
-    obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
+    obstacle_free_confidence -= confidence_decrement;  // be more cautious with positive obstacle detections
   }
   
 

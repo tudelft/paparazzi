@@ -73,6 +73,7 @@ static void file_logger_write_header(FILE *file) {
   fprintf(file, "distance,");
   fprintf(file, "FPS_images,");
   fprintf(file, "color_count,");
+  fprintf(file, "current_state,");
 #ifdef COMMAND_THRUST
   fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
 #else
@@ -99,7 +100,8 @@ static void file_logger_write_row(FILE *file) {
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
   fprintf(file, "%f,", d_covered);
   fprintf(file, "%f,", FPS_green_attractor);
-  fprintf(file, "%f,", color_count);
+  fprintf(file, "%i,", color_count);
+  fprintf(file, "%i,", current_state);
 
 #ifdef COMMAND_THRUST
   fprintf(file, "%d,%d,%d,%d\n",

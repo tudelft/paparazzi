@@ -22,6 +22,9 @@ extern int meander_increment;
 extern float d_covered;
 extern float FPS_green_attractor;
 extern int color_count;
+extern int confidence_increment;
+extern int confidence_decrement;
+extern int current_state;
 
 // functions
 extern void green_attractor_init(void);
