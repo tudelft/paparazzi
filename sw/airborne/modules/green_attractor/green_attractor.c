@@ -44,8 +44,10 @@ static uint8_t calculateAcross(struct EnuCoor_i *new_coor, float distanceMeters,
 static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
 static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 static uint8_t increase_nav_heading(float incrementDegrees);
-static uint8_t chooseRandomIncrementAvoidance(void);
+static uint8_t chooseIncrementAvoidance(void);
 static uint8_t MeanderIncrement(void);
+static int8_t chooseIncrementSign(void);
+
 
 enum navigation_state_t {
   SAFE,
@@ -117,7 +119,6 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
   current_time = get_sys_time_float();
   FPS_green_attractor = 1/(current_time-last_time);
   last_time = current_time;
-
 }
 
 
@@ -128,7 +129,7 @@ void green_attractor_init(void)
 {
   // Initialise random values
   srand(time(NULL));
-  chooseRandomIncrementAvoidance();
+  chooseIncrementAvoidance();
 
   // bind our colorfilter callbacks to receive the color filter outputs
   AbiBindMsgVISUAL_DETECTION(GREEN_ATTRACTOR_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
@@ -143,6 +144,7 @@ void green_attractor_periodic(void)
   VERBOSE_PRINT("center of green  y = %i\n", green_center_y);
   VERBOSE_PRINT("FPS = %f\n", FPS_green_attractor);
   VERBOSE_PRINT("obstacle_free_confidence = %i\n", obstacle_free_confidence);
+  VERBOSE_PRINT("last increment sign = %d\n", chooseIncrementSign());
 
   // only evaluate our state machine if we are flying
   if(!autopilot_in_flight()){
@@ -163,6 +165,7 @@ void green_attractor_periodic(void)
   } else if(color_count > meander_frac*color_count_threshold && safeflight == true){ // if we already see object, start yawing in flight
     MeanderIncrement();
     increase_nav_heading(heading_increment);
+    moveWaypointForward(WP_TRAJECTORY, 1.5f * fminf(maxDistance, (0.2f * 6) + 0.2));
     // moveWaypointAcross(WP_TRAJECTORY, 1.5f , heading_increment);
     safeflight = false;
   } else if(color_count < 10)
@@ -199,7 +202,7 @@ void green_attractor_periodic(void)
       waypoint_move_here_2d(WP_TRAJECTORY);
 
       // select new search direction
-      chooseRandomIncrementAvoidance();
+      chooseIncrementAvoidance();
       increase_nav_heading(heading_increment);
       navigation_state = SEARCH_FOR_SAFE_HEADING;
 
@@ -315,7 +318,7 @@ uint8_t calculateAcross(struct EnuCoor_i *new_coor, float distanceMeters, float 
   // Now determine where to place the waypoint you want to go to
   new_coor->x = stateGetPositionEnu_i()->x + POS_BFP_OF_REAL(sinf(heading) * (distanceMeters));
   new_coor->y = stateGetPositionEnu_i()->y + POS_BFP_OF_REAL(cosf(heading) * (distanceMeters));
-  VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,
+  VERBOSE_PRINT("Calculated %f m across position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,
                 POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y),
                 stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
   return false;
@@ -336,7 +339,7 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
  * Sets the variable 'heading_increment' to positive/negative.
  * if 
  */
-uint8_t chooseRandomIncrementAvoidance(void)
+uint8_t chooseIncrementAvoidance(void)
 { 
   if (green_center_y > 0 && green_center_y < 25) {
     heading_increment = -10.f;
@@ -374,3 +377,7 @@ uint8_t MeanderIncrement(void)
   return false;
 }
 
+int8_t chooseIncrementSign(void)
+{
+  return (green_center_y <= 0) ? 1 : -1;
+}
