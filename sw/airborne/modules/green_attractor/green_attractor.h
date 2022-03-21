@@ -18,6 +18,7 @@
 // settings
 extern float oa_color_count_frac;
 extern float meander_frac;
+extern int meander_increment;
 extern float d_covered;
 extern float FPS_green_attractor;
 extern int color_count;

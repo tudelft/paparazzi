@@ -59,9 +59,11 @@ enum navigation_state_t {
 /* Green Detection
  * oa_color_count_frac: threshold fraction of green that triggers loss in confidence
  * meander_frac: threshold fraction ar which to already change heading regardless of confidence
+ * meander_increment: heading increment for meandering 
  */
 float oa_color_count_frac = 0.87f;
 float meander_frac = 0.65f;
+int meander_increment = 5;
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
@@ -90,6 +92,7 @@ float FPS_green_attractor = 0;
 
 // global var for meander maneuvre
 bool safeflight = false;
+
 
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
@@ -140,11 +143,9 @@ void green_attractor_init(void)
  */
 void green_attractor_periodic(void)
 {
-  VERBOSE_PRINT("center of green  x = %i\n", green_center_x);
   VERBOSE_PRINT("center of green  y = %i\n", green_center_y);
   VERBOSE_PRINT("FPS = %f\n", FPS_green_attractor);
   VERBOSE_PRINT("obstacle_free_confidence = %i\n", obstacle_free_confidence);
-  VERBOSE_PRINT("last increment sign = %d\n", chooseIncrementSign());
 
   // only evaluate our state machine if we are flying
   if(!autopilot_in_flight()){
@@ -152,8 +153,8 @@ void green_attractor_periodic(void)
   }
 
   // compute current color thresholds
-  // int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
-  // int32_t color_count_threshold = oa_color_count_frac * 10 * 320;
+  // for entire image: int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
+  // for current filterbox: int32_t color_count_threshold = oa_color_count_frac * 10 * 320;
   int32_t color_count_threshold = oa_color_count_frac * (filterbox_ymax-filterbox_ymin) * (filterbox_xmax-filterbox_xmin);
 
   VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
@@ -180,7 +181,7 @@ void green_attractor_periodic(void)
   // bound obstacle_free_confidence
   Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
 
-  float moveDistance = fminf(maxDistance, (0.2f * obstacle_free_confidence) + 0.2);
+  float moveDistance = fminf(maxDistance, (0.2f * obstacle_free_confidence)); // what's the 0.2? (was added to 2nd argument)
 
   switch (navigation_state){
     case SAFE:
@@ -368,10 +369,10 @@ uint8_t chooseIncrementAvoidance(void)
 uint8_t MeanderIncrement(void)
 {
   if (green_center_y > 0) {
-    heading_increment = -5.f;
+    heading_increment = -1*meander_increment;
     VERBOSE_PRINT("Meander increment to: %f\n", heading_increment);
   } else {
-    heading_increment = 5.f;
+    heading_increment = meander_increment;
     VERBOSE_PRINT("Meander increment to: %f\n", heading_increment);
   }
   return false;
