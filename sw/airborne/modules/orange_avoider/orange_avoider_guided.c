@@ -285,37 +285,42 @@ void orange_avoider_guided_periodic(void)
       break;
     case OPTIC_FLOW:
       count = count+1;
-      switch (OF_cal_state){
-        case RIGHT:
-          VERBOSE_PRINT("right\n");
-          guidance_h_set_guided_body_vel(0.0f,1.0f);
-          if (count>2){
-            guidance_h_set_guided_body_vel(0.0f,0.0f);
-            AbiSendMsgOF_CALIBRATION(OPTIC_FLOW_CALIBRATION1_ID, 1, POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x), POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y));
-            OF_cal_state = LEFT;
-          }
-          break;
-        case LEFT:
-          VERBOSE_PRINT("left\n");
-          guidance_h_set_guided_body_vel(0.0f,-1.0f);
-          if (count>6){
-            guidance_h_set_guided_body_vel(0.0f,0.0f);
-            AbiSendMsgOF_CALIBRATION(OPTIC_FLOW_CALIBRATION1_ID, 2, POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x), POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y));
-            OF_cal_state = MID;
-          }
-          break;
-        case MID:
-          VERBOSE_PRINT("mid\n");
-          guidance_h_set_guided_body_vel(0.0f,1.0f);
-          if (count>8){
-            guidance_h_set_guided_body_vel(0.0f,0.0f);
-            AbiSendMsgOF_CALIBRATION(OPTIC_FLOW_CALIBRATION1_ID, 3, POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x), POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y));
-            navigation_state = SEARCH_FOR_SAFE_HEADING;
-          }
-          break;
-        default:
-          break;
-      }      
+      // switch (OF_cal_state){
+      //   case RIGHT:
+      //     VERBOSE_PRINT("right\n");
+      //     guidance_h_set_guided_body_vel(0.0f,1.0f);
+      //     if (count>2){
+      //       guidance_h_set_guided_body_vel(0.0f,0.0f);
+      //       AbiSendMsgOF_CALIBRATION(OPTIC_FLOW_CALIBRATION1_ID, 1, POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x), POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y));
+      //       OF_cal_state = LEFT;
+      //     }
+      //     break;
+      //   case LEFT:
+      //     VERBOSE_PRINT("left\n");
+      //     guidance_h_set_guided_body_vel(0.0f,-1.0f);
+      //     if (count>6){
+      //       guidance_h_set_guided_body_vel(0.0f,0.0f);
+      //       AbiSendMsgOF_CALIBRATION(OPTIC_FLOW_CALIBRATION1_ID, 2, POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x), POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y));
+      //       OF_cal_state = MID;
+      //     }
+      //     break;
+      //   case MID:
+      //     VERBOSE_PRINT("mid\n");
+      //     guidance_h_set_guided_body_vel(0.0f,1.0f);
+      //     if (count>8){
+      //       guidance_h_set_guided_body_vel(0.0f,0.0f);
+      //       AbiSendMsgOF_CALIBRATION(OPTIC_FLOW_CALIBRATION1_ID, 3, POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x), POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y));
+      //       navigation_state = SEARCH_FOR_SAFE_HEADING;
+      //     }
+      //     break;
+      //   default:
+      //     break;
+      // }      
+
+      // read obstacle matrix
+
+      navigation_state = SEARCH_FOR_SAFE_HEADING;
+
       break;
     default:
       break;

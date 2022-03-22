@@ -45,9 +45,9 @@
 
 static pthread_mutex_t mutex;
 
-#ifndef COLOR_OBJECT_DETECTOR_FPS1
-#define COLOR_OBJECT_DETECTOR_FPS1 0 ///< Default FPS (zero means run at camera fps)
-#endif
+// #ifndef COLOR_OBJECT_DETECTOR_FPS1
+// #define COLOR_OBJECT_DETECTOR_FPS1 0 ///< Default FPS (zero means run at camera fps)
+// #endif
 #ifndef COLOR_OBJECT_DETECTOR_FPS2
 #define COLOR_OBJECT_DETECTOR_FPS2 0 ///< Default FPS (zero means run at camera fps)
 #endif
@@ -139,11 +139,11 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   return img;
 }
 
-struct image_t *object_detector1(struct image_t *img, uint8_t camera_id);
-struct image_t *object_detector1(struct image_t *img, uint8_t camera_id __attribute__((unused)))
-{
-  return object_detector(img, 1);
-}
+// struct image_t *object_detector1(struct image_t *img, uint8_t camera_id);
+// struct image_t *object_detector1(struct image_t *img, uint8_t camera_id __attribute__((unused)))
+// {
+//   return object_detector(img, 1);
+// }
 
 struct image_t *object_detector2(struct image_t *img, uint8_t camera_id);
 struct image_t *object_detector2(struct image_t *img, uint8_t camera_id __attribute__((unused)))
@@ -155,21 +155,21 @@ void color_object_detector_init(void)
 {
   memset(global_filters, 0, 2*sizeof(struct color_object_t));
   pthread_mutex_init(&mutex, NULL);
-#ifdef COLOR_OBJECT_DETECTOR_CAMERA1
-#ifdef COLOR_OBJECT_DETECTOR_LUM_MIN1
-  cod_lum_min1 = COLOR_OBJECT_DETECTOR_LUM_MIN1;
-  cod_lum_max1 = COLOR_OBJECT_DETECTOR_LUM_MAX1;
-  cod_cb_min1 = COLOR_OBJECT_DETECTOR_CB_MIN1;
-  cod_cb_max1 = COLOR_OBJECT_DETECTOR_CB_MAX1;
-  cod_cr_min1 = COLOR_OBJECT_DETECTOR_CR_MIN1;
-  cod_cr_max1 = COLOR_OBJECT_DETECTOR_CR_MAX1;
-#endif
-#ifdef COLOR_OBJECT_DETECTOR_DRAW1
-  cod_draw1 = COLOR_OBJECT_DETECTOR_DRAW1;
-#endif
+// #ifdef COLOR_OBJECT_DETECTOR_CAMERA1
+// #ifdef COLOR_OBJECT_DETECTOR_LUM_MIN1
+//   cod_lum_min1 = COLOR_OBJECT_DETECTOR_LUM_MIN1;
+//   cod_lum_max1 = COLOR_OBJECT_DETECTOR_LUM_MAX1;
+//   cod_cb_min1 = COLOR_OBJECT_DETECTOR_CB_MIN1;
+//   cod_cb_max1 = COLOR_OBJECT_DETECTOR_CB_MAX1;
+//   cod_cr_min1 = COLOR_OBJECT_DETECTOR_CR_MIN1;
+//   cod_cr_max1 = COLOR_OBJECT_DETECTOR_CR_MAX1;
+// #endif
+// #ifdef COLOR_OBJECT_DETECTOR_DRAW1
+//   cod_draw1 = COLOR_OBJECT_DETECTOR_DRAW1;
+// #endif
 
-  cv_add_to_device(&COLOR_OBJECT_DETECTOR_CAMERA1, object_detector1, COLOR_OBJECT_DETECTOR_FPS1, 0);
-#endif
+//   cv_add_to_device(&COLOR_OBJECT_DETECTOR_CAMERA1, object_detector1, COLOR_OBJECT_DETECTOR_FPS1, 0);
+// #endif
 
 #ifdef COLOR_OBJECT_DETECTOR_CAMERA2
 #ifdef COLOR_OBJECT_DETECTOR_LUM_MIN2
@@ -216,32 +216,84 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   uint32_t tot_y = 0;
   uint8_t *buffer = img->buf;
 
+  uint8_t count_obstacle = 0;
+  uint8_t count_green = 0;
+
+  int y_pix_left;
+  int y_pix_right;
+  int x_pix_left;
+  int x_pix_right;
+
+  int Nobs = 0;
+  int obstacle_data[100][4];
+
   // Go through all the pixels
-  for (uint16_t y = 0; y < img->h; y++) {
-    for (uint16_t x = 0; x < img->w; x ++) {
+  for (uint16_t x = 0; x < (img->w)/2; x ++) {
+    bool in_zoo = false;
+    bool obstacle = false;
+    bool skip = false;
+    uint8_t count_green = 0;
+    uint8_t count_obstacle = 0;
+    for (uint16_t y = 0; y < img->h; y++) {
       // Check if the color is inside the specified values
       uint8_t *yp, *up, *vp;
-      if (x % 2 == 0) {
-        // Even x
-        up = &buffer[y * 2 * img->w + 2 * x];      // U
-        yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
-        vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
-        //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
-      } else {
-        // Uneven x
-        up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
-        //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
-        vp = &buffer[y * 2 * img->w + 2 * x];      // V
-        yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+
+      skip = false;
+      for (int i=0; i<Nobs; ++i){
+        if (y>obstacle_data[i][1]-10 && y<obstacle_data[i][3]+10){
+          skip = true;
+        }
       }
-      if ( (*yp >= lum_min) && (*yp <= lum_max) &&
-           (*up >= cb_min ) && (*up <= cb_max ) &&
-           (*vp >= cr_min ) && (*vp <= cr_max )) {
-        cnt ++;
-        tot_x += x;
-        tot_y += y;
-        if (draw){
-          *yp = 255;  // make pixel brighter in image
+      if (!skip){
+        if (x % 2 == 0) {
+          // Even x
+          up = &buffer[y * 2 * img->w + 2 * x];      // U
+          yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
+          vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+          //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
+        } else {
+          // Uneven x
+          up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+          //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
+          vp = &buffer[y * 2 * img->w + 2 * x];      // V
+          yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+        }
+        if ( (*yp >= lum_min) && (*yp <= lum_max) &&
+            (*up >= cb_min ) && (*up <= cb_max ) &&
+            (*vp >= cr_min ) && (*vp <= cr_max )) {
+          cnt ++;
+          tot_x += x;
+          tot_y += y;
+          // if (draw){
+          //   *yp = 255;  // make pixel brighter in image
+          // }
+          count_green ++;
+          if (count_green==3 && !in_zoo){
+            count_obstacle = 0;
+            in_zoo = true;
+          }
+          if (count_green==3 && obstacle && in_zoo){
+            count_obstacle = 0;
+            obstacle = false;
+            *yp = 255;
+            Nobs ++;
+            y_pix_right = y;
+            x_pix_right = x;
+            obstacle_data[Nobs-1][0] = x_pix_left;
+            obstacle_data[Nobs-1][1] = y_pix_left;
+            obstacle_data[Nobs-1][2] = x_pix_right;
+            obstacle_data[Nobs-1][3] = y_pix_right;
+          }
+        }
+        else{
+          count_obstacle ++;
+          if (count_obstacle==3 && !obstacle && in_zoo){
+            count_green = 0;
+            obstacle = true;
+            *yp = 255;
+            y_pix_left = y;
+            x_pix_left = x;
+          }
         }
       }
     }
@@ -263,14 +315,15 @@ void color_object_detector_periodic(void)
   memcpy(local_filters, global_filters, 2*sizeof(struct color_object_t));
   pthread_mutex_unlock(&mutex);
 
-  if(local_filters[0].updated){
-    AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION1_ID, local_filters[0].x_c, local_filters[0].y_c,
-        0, 0, local_filters[0].color_count, 0);
-    local_filters[0].updated = false;
-  }
+  // if(local_filters[0].updated){
+  //   AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION1_ID, local_filters[0].x_c, local_filters[0].y_c,
+  //       0, 0, local_filters[0].color_count, 0);
+  //   local_filters[0].updated = false;
+  // }
   if(local_filters[1].updated){
     AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION2_ID, local_filters[1].x_c, local_filters[1].y_c,
         0, 0, local_filters[1].color_count, 1);
     local_filters[1].updated = false;
   }
+  return;
 }
