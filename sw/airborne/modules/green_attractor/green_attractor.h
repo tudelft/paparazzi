@@ -25,6 +25,8 @@ extern int color_count;
 extern int confidence_increment;
 extern int confidence_decrement;
 extern int current_state;
+extern float strong_turn_threshold;
+extern int SFSH_increment;
 
 // functions
 extern void green_attractor_init(void);

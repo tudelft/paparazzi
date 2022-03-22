@@ -61,9 +61,11 @@ enum navigation_state_t {
  * meander_frac: threshold fraction ar which to already change heading regardless of confidence
  * meander_increment: heading increment for meandering 
  */
+
+
 float oa_color_count_frac = 0.87f;
-float meander_frac = 0.65f;
-int meander_increment = 5;
+float meander_frac = 0.57f;
+int meander_increment = 7;
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
@@ -95,10 +97,15 @@ bool safeflight = false;
 
 // global vars for confidence tuning
 int confidence_increment = 2;
-int confidence_decrement = 2;
+int confidence_decrement = 4;
 
 // track state
 int current_state = 2;
+
+// turn 90 deg when losing all color
+float strong_turn_threshold = 0.1;
+
+int SFSH_increment = 5;
 
 
 /*
@@ -160,11 +167,11 @@ void green_attractor_periodic(void)
   if(!autopilot_in_flight()){
     return;
   }
-
+  int px_filterbox = (filterbox_ymax-filterbox_ymin) * (filterbox_xmax-filterbox_xmin);
   // compute current color thresholds
   // for entire image: int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
   // for current filterbox: int32_t color_count_threshold = oa_color_count_frac * 10 * 320;
-  int32_t color_count_threshold = oa_color_count_frac * (filterbox_ymax-filterbox_ymin) * (filterbox_xmax-filterbox_xmin);
+  int32_t color_count_threshold = oa_color_count_frac * px_filterbox;
 
   VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
 
@@ -172,16 +179,12 @@ void green_attractor_periodic(void)
   // update our safe confidence using color threshold
   if(color_count > color_count_threshold){
     obstacle_free_confidence += confidence_increment;
-  } else if(color_count > meander_frac*color_count_threshold && safeflight == true){ // if we already see object, start yawing in flight
+  } else if(color_count > meander_frac*px_filterbox && safeflight == true){ // if we already see object, start yawing in flight
     MeanderIncrement();
     increase_nav_heading(heading_increment);
     moveWaypointForward(WP_TRAJECTORY, 1.5f * fminf(maxDistance, (0.2f * 6) + 0.2));
     // moveWaypointAcross(WP_TRAJECTORY, 1.5f , heading_increment);
     safeflight = false;
-  } else if(color_count < 10)
-  {
-    VERBOSE_PRINT("TURN 90");
-    increase_nav_heading(heading_increment/abs(heading_increment)*90);
   } else {
     obstacle_free_confidence -= confidence_decrement;  // be more cautious with positive obstacle detections
   }
@@ -218,11 +221,21 @@ void green_attractor_periodic(void)
 
       break;
     case SEARCH_FOR_SAFE_HEADING:
-      heading_increment = heading_increment/abs(heading_increment)*5;
 
-      increase_nav_heading(heading_increment);
-      moveWaypointAcross(WP_TRAJECTORY, 1.5f , heading_increment); // check +10
-      // make sure we have a couple of good readings before declaring the way safe
+      if(color_count < strong_turn_threshold*px_filterbox)
+      {
+        VERBOSE_PRINT("TURN 90");
+        increase_nav_heading(heading_increment/abs(heading_increment)*90);
+      }
+      else{
+        heading_increment = heading_increment/abs(heading_increment)*SFSH_increment;
+
+        increase_nav_heading(heading_increment);
+        moveWaypointAcross(WP_TRAJECTORY, 1.5f , heading_increment); // check +10
+        // make sure we have a couple of good readings before declaring the way safe
+      }
+
+
       if (obstacle_free_confidence >= 2){ // tweak
         safeflight = true;
         navigation_state = SAFE;
@@ -352,22 +365,22 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 uint8_t chooseIncrementAvoidance(void)
 { 
   if (green_center_y > 0 && green_center_y < 25) {
-    heading_increment = -10.f;
+    heading_increment = -15.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
   
   if (green_center_y > 25 && green_center_y < 50){
-    heading_increment = -5.f;
+    heading_increment = -10.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
 
   if (green_center_y < 0 && green_center_y > -25) {
-    heading_increment = 10.f;
+    heading_increment = 15.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
   
   if (green_center_y < -25 && green_center_y > -50){
-    heading_increment = 5.f;
+    heading_increment = 10.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
 
