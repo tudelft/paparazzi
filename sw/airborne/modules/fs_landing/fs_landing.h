@@ -54,7 +54,8 @@ extern void fs_landing_init(void);
 extern void fs_landing_run(void);
 
 void horizontal_velocity_filter(void);
-int32_t get_matching_motl_val(int32_t val);
+void my_psi_from_mag(void);
+float get_matching_motl_val(int32_t val);
 
 // Handlers for changing gcs variables
 //extern void fs_landing_pilot_control_handler(uint8_t active);

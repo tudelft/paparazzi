@@ -8,6 +8,9 @@
 #include "cyclic_controller.h"
 #include "actuator_freq_test.h"
 
+#include "math/pprz_algebra_float.h"
+#include "math/pprz_algebra_int.h"
+#include "subsystems/abi.h"
 #include "subsystems/datalink/downlink.h"
 
 #ifndef FS_LANDING_FREQ_TEST
@@ -46,6 +49,19 @@ float v_filt, ins_v;
 float seasonal_arr[SEASONAL_L] = {CT_DEFAULT};
 int ctr = 0;
 float bt = 0;
+struct Int32Vect3 *_mag;
+float my_psi = 0;
+
+#ifndef MAG_RM3100_SENDER_ID
+#define MAG_RM3100_SENDER_ID ABI_BROADCAST
+#endif
+static abi_event mag_rm3100_ev;
+static void mag_rm3100_cb(uint8_t __attribute__((unused)) sender_id,
+                          uint32_t __attribute__((unused)) stamp,
+                          struct Int32Vect3 *mag)
+{
+  _mag = mag;
+}
 
 /*
  * <message name="FRISBEE_CONTROL" id="55">
@@ -89,7 +105,7 @@ void fs_landing_init()
     current_actuator_values.commands[i] = 0;
   }
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FRISBEE_CONTROL, send_frisbee_control);
-
+  AbiBindMsgIMU_MAG_INT32(MAG_RM3100_SENDER_ID, &mag_rm3100_ev, mag_rm3100_cb);
 //  cyclic_controller_init();
 }
 
@@ -108,6 +124,7 @@ void fs_landing_run()
 #endif
     if (is_spinning) {
       horizontal_velocity_filter();
+      my_psi_from_mag();
       spin_actuator_values(&current_actuator_values);  // Constant actuator values to maintain spin
 
       if (cyclic_control_active) {
@@ -228,6 +245,32 @@ void horizontal_velocity_filter() {
     prev_v_filt = v_filt;
     ctr++;
   }
+}
+
+void my_psi_from_mag() {
+  float phi = stateGetNedToBodyEulers_f()->phi;
+  float theta = stateGetNedToBodyEulers_f()->theta;
+
+  float sin_phi = sinf(phi);
+  float cos_phi = cosf(phi);
+  float sin_theta = sinf(theta);
+  float cos_theta = cosf(theta);
+
+  float m_00 = cos_theta;
+  float m_01 = sin_phi * sin_theta;
+  float m_02 = cos_phi * sin_theta;
+  // float m_10 = 0;
+  float m_11 = cos_phi;
+  float m_12 = -sin_phi;
+
+  float mx = _mag->x;
+  float my = _mag->y;
+  float mz = _mag->z;
+
+  float mx_prime = m_00 * mx + m_01 * my + m_02 * mz;
+  float my_prime = m_11 * my + m_12 * mz;
+
+  my_psi = atan2(my_prime, mx_prime);
 }
 
 void fs_landing_set_actuator_values()
