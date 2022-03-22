@@ -104,6 +104,6 @@ extern int manual_heading_value_rad;
 
 /* External used functions */
 extern void overactuated_mixing_init(void);
-extern void overactuated_mixing_run(pprz_t in_cmd[]);
+extern void overactuated_mixing_run(void);
 
 #endif

@@ -88,18 +88,20 @@ float x_stb, y_stb, z_stb;
 
 float alt_cmd = 0, pitch_cmd = 0, roll_cmd = 0, yaw_motor_cmd = 0, yaw_tilt_cmd = 0, elevation_cmd = 0, azimuth_cmd = 0;
 
-// Actuators variables:
+// Actuators gains:
 float K_ppz_rads_motor = 9.6 / OVERACTUATED_MIXING_MOTOR_K_PWM_OMEGA;
 float K_ppz_angle_el = (9600 * 2) / (OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE);
 float K_ppz_angle_az = (9600 * 2) / (OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE);
 
-// INDI VARIABLES
+// Priotirized actuator states with extra theta and phi states 
 float prioritized_actuator_states[INDI_NUM_ACT] = {0, 0, 0, 0,
                                                    0, 0, 0, 0,
                                                    0, 0, 0, 0,
                                                    0, 0};
-
+//Incremental INDI variables
 float indi_du[INDI_NUM_ACT], indi_u[INDI_NUM_ACT], indi_u_scaled[INDI_NUM_ACT];
+
+//Matrix for the coordinate transformation from euler angle derivative to rates:
 float R_matrix[3][3];
 
 //Setpoints and pseudocontrol
@@ -108,7 +110,7 @@ float speed_setpoint[3];
 float euler_setpoint[3];
 float rate_setpoint[3];
 float acc_setpoint[6];
-float INDI_acceleration_inputs[INDI_INPUTS];
+float INDI_pseudocontrol[INDI_INPUTS];
 
 
 float B_matrix[INDI_INPUTS][INDI_NUM_ACT];
@@ -126,7 +128,6 @@ float airspeed_transition = 3;
 Butterworth2LowPass measurement_rates_filters[3]; //Filter of pqr
 Butterworth2LowPass measurement_acc_filters[3];   //Filter of acceleration
 Butterworth2LowPass actuator_state_filters[N_ACT_REAL];   //Filter of actuators
-
 Butterworth2LowPass angular_error_dot_filters[3]; //Filter of angular error
 Butterworth2LowPass position_error_dot_filters[3];//Filter of position error
 
@@ -151,27 +152,19 @@ struct PID_over pid_gains_over = {
                OVERACTUATED_MIXING_PID_D_GAIN_POS_X_TILT,
                OVERACTUATED_MIXING_PID_D_GAIN_POS_Y_TILT,
                OVERACTUATED_MIXING_PID_D_GAIN_POS_Z
-        }
-};
-
+        } };
 struct PID_over_simple pid_gain_psi_motor = {
         .p = OVERACTUATED_MIXING_PID_P_GAIN_PSI_MOTOR,
         .i = OVERACTUATED_MIXING_PID_I_GAIN_PSI_MOTOR,
-        .d = OVERACTUATED_MIXING_PID_D_GAIN_PSI_MOTOR
-};
-
+        .d = OVERACTUATED_MIXING_PID_D_GAIN_PSI_MOTOR };
 struct PID_over_simple pid_pos_x_att = {
         .p = OVERACTUATED_MIXING_PID_P_GAIN_POS_X_ATT,
         .i = OVERACTUATED_MIXING_PID_I_GAIN_POS_X_ATT,
-        .d = OVERACTUATED_MIXING_PID_D_GAIN_POS_X_ATT
-};
-
+        .d = OVERACTUATED_MIXING_PID_D_GAIN_POS_X_ATT };
 struct PID_over_simple pid_pos_y_att = {
         .p = OVERACTUATED_MIXING_PID_P_GAIN_POS_Y_ATT,
         .i = OVERACTUATED_MIXING_PID_I_GAIN_POS_Y_ATT,
-        .d = OVERACTUATED_MIXING_PID_D_GAIN_POS_Y_ATT
-};
-
+        .d = OVERACTUATED_MIXING_PID_D_GAIN_POS_Y_ATT };
 struct PD_indi_over indi_gains_over = {
         .p = { OVERACTUATED_MIXING_INDI_REF_ERR_P,
                OVERACTUATED_MIXING_INDI_REF_ERR_Q,
@@ -186,19 +179,15 @@ struct PD_indi_over indi_gains_over = {
                OVERACTUATED_MIXING_INDI_REF_RATE_X,
                OVERACTUATED_MIXING_INDI_REF_RATE_Y,
                OVERACTUATED_MIXING_INDI_REF_RATE_Z
-        }
-};
-
-struct FloatEulers max_value_error = {  OVERACTUATED_MIXING_MAX_PHI,
-                                                OVERACTUATED_MIXING_MAX_THETA,
-                                                OVERACTUATED_MIXING_MAX_PSI_ERR
-};
-
+        } };
+struct FloatEulers max_value_error = {
+        OVERACTUATED_MIXING_MAX_PHI,
+        OVERACTUATED_MIXING_MAX_THETA,
+        OVERACTUATED_MIXING_MAX_PSI_ERR };
 struct ActuatorsStruct act_dyn_struct = {
         OVERACTUATED_MIXING_INDI_ACT_DYN_MOTOR,
         OVERACTUATED_MIXING_INDI_ACT_DYN_EL,
-        OVERACTUATED_MIXING_INDI_ACT_DYN_AZ
-};
+        OVERACTUATED_MIXING_INDI_ACT_DYN_AZ };
 
 // Variables needed for the actuators:
 float act_dyn[N_ACT_REAL];
@@ -207,7 +196,6 @@ static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), float * m
     memcpy(&myam7_data_in_local,myam7_data_in_ptr,sizeof(struct am7_data_in));
     memcpy(&extra_data_in_local,extra_data_in_ptr,sizeof(extra_data_in_local));
 }
-
 
 /** Moore–Penrose pseudo-inverse
  *
@@ -347,8 +335,8 @@ static void send_indi_cmd( struct transport_tx *trans , struct link_device * dev
     // Send telemetry message
 
     pprz_msg_send_INDI_CMD(trans , dev , AC_ID ,
-                           & INDI_acceleration_inputs[0],& INDI_acceleration_inputs[1],& INDI_acceleration_inputs[2],
-                           & INDI_acceleration_inputs[3],& INDI_acceleration_inputs[4],& INDI_acceleration_inputs[5],
+                           & INDI_pseudocontrol[0],& INDI_pseudocontrol[1],& INDI_pseudocontrol[2],
+                           & INDI_pseudocontrol[3],& INDI_pseudocontrol[4],& INDI_pseudocontrol[5],
                            & indi_du[0],& indi_du[1],& indi_du[2],& indi_du[3],
                            & indi_du[4],& indi_du[5],& indi_du[6],& indi_du[7],
                            & indi_du[8],& indi_du[9],& indi_du[10],& indi_du[11],
@@ -553,7 +541,7 @@ void init_variables(void){
 /**
  * Run the overactuated mixing
  */
-void overactuated_mixing_run(pprz_t in_cmd[])
+void overactuated_mixing_run()
 {
     //Assign variables
     uint8_t i, j, k;
@@ -919,9 +907,9 @@ void overactuated_mixing_run(pprz_t in_cmd[])
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
         // ANGULAR ACCELERATION
-        INDI_acceleration_inputs[3] = acc_setpoint[3] - rate_vect_filt_dot[0];
-        INDI_acceleration_inputs[4] = acc_setpoint[4] - rate_vect_filt_dot[1];
-        INDI_acceleration_inputs[5] = acc_setpoint[5] - rate_vect_filt_dot[2];
+        INDI_pseudocontrol[3] = acc_setpoint[3] - rate_vect_filt_dot[0];
+        INDI_pseudocontrol[4] = acc_setpoint[4] - rate_vect_filt_dot[1];
+        INDI_pseudocontrol[5] = acc_setpoint[5] - rate_vect_filt_dot[2];
 
         //Calculate the position error to be fed into the PD for the INDI loop
         pos_setpoint[0] = x_stb;
@@ -956,9 +944,9 @@ void overactuated_mixing_run(pprz_t in_cmd[])
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
         // LINEAR ACCELERATION
-        INDI_acceleration_inputs[0] = acc_setpoint[0] - acc_vect_filt[0];
-        INDI_acceleration_inputs[1] = acc_setpoint[1] - acc_vect_filt[1];
-        INDI_acceleration_inputs[2] = acc_setpoint[2] - acc_vect_filt[2];
+        INDI_pseudocontrol[0] = acc_setpoint[0] - acc_vect_filt[0];
+        INDI_pseudocontrol[1] = acc_setpoint[1] - acc_vect_filt[1];
+        INDI_pseudocontrol[2] = acc_setpoint[2] - acc_vect_filt[2];
 
 //        //Local testing the CA algorithms:
 //        euler_vect[0] = 0; euler_vect[1] = 0; euler_vect[2] = 0;
@@ -966,12 +954,12 @@ void overactuated_mixing_run(pprz_t in_cmd[])
 //        actuator_state_filt[4] = 0; actuator_state_filt[5] = 0; actuator_state_filt[6] = 0; actuator_state_filt[7] = 0;
 //        actuator_state_filt[8] = 0; actuator_state_filt[9] = 0; actuator_state_filt[10] = 0; actuator_state_filt[11] = 0;
 //        actuator_state_filt[12] = 0; actuator_state_filt[13] = 0;
-//        INDI_acceleration_inputs[0] = 0;
-//        INDI_acceleration_inputs[1] = 0;
-//        INDI_acceleration_inputs[2] = -15;
-//        INDI_acceleration_inputs[3] = 0;
-//        INDI_acceleration_inputs[4] = 0;
-//        INDI_acceleration_inputs[5] = 0;
+//        INDI_pseudocontrol[0] = 0;
+//        INDI_pseudocontrol[1] = 0;
+//        INDI_pseudocontrol[2] = -15;
+//        INDI_pseudocontrol[3] = 0;
+//        INDI_pseudocontrol[4] = 0;
+//        INDI_pseudocontrol[5] = 0;
 
         //Compute and transmit the messages to the AM7 module:
         struct am7_data_out am7_data_out_local;
@@ -1003,12 +991,12 @@ void overactuated_mixing_run(pprz_t in_cmd[])
 
         am7_data_out_local.airspeed_state_int = (int16_t) (airspeed * 1e2);
 
-        am7_data_out_local.pseudo_control_ax_int = (int16_t) (INDI_acceleration_inputs[0] * 1e2);
-        am7_data_out_local.pseudo_control_ay_int = (int16_t) (INDI_acceleration_inputs[1] * 1e2);
-        am7_data_out_local.pseudo_control_az_int = (int16_t) (INDI_acceleration_inputs[2] * 1e2);
-        am7_data_out_local.pseudo_control_p_dot_int = (int16_t) (INDI_acceleration_inputs[3] * 1e1 * 180/M_PI);
-        am7_data_out_local.pseudo_control_q_dot_int = (int16_t) (INDI_acceleration_inputs[4] * 1e1 * 180/M_PI);
-        am7_data_out_local.pseudo_control_r_dot_int = (int16_t) (INDI_acceleration_inputs[5] * 1e1 * 180/M_PI);
+        am7_data_out_local.pseudo_control_ax_int = (int16_t) (INDI_pseudocontrol[0] * 1e2);
+        am7_data_out_local.pseudo_control_ay_int = (int16_t) (INDI_pseudocontrol[1] * 1e2);
+        am7_data_out_local.pseudo_control_az_int = (int16_t) (INDI_pseudocontrol[2] * 1e2);
+        am7_data_out_local.pseudo_control_p_dot_int = (int16_t) (INDI_pseudocontrol[3] * 1e1 * 180/M_PI);
+        am7_data_out_local.pseudo_control_q_dot_int = (int16_t) (INDI_pseudocontrol[4] * 1e1 * 180/M_PI);
+        am7_data_out_local.pseudo_control_r_dot_int = (int16_t) (INDI_pseudocontrol[5] * 1e1 * 180/M_PI);
 
         am7_data_out_local.desired_motor_value_int = (int16_t) (manual_motor_value * 1e1);
         am7_data_out_local.desired_el_value_int = (int16_t) (manual_el_value * 1e2 * 180/M_PI);

@@ -186,8 +186,7 @@
   </section>
 
   <command_laws>
-    <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
-    <call fun="overactuated_mixing_run(values)"/>
+    <call fun="overactuated_mixing_run()"/>
     <let var="th_hold" value="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
     <set servo="MOTOR_1" value="($th_hold? -9600 : overactuated_mixing.commands[0])"/>
     <set servo="MOTOR_2" value="($th_hold? -9600 : overactuated_mixing.commands[1])"/>
