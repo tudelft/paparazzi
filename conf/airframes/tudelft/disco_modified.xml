@@ -288,13 +288,13 @@
     <define name="MAG_Y_SIGN" value="1"/>
     <define name="MAG_Z_SIGN" value="1"/>
 
-    <define name="MAG_X_NEUTRAL" value="119"/>
-    <define name="MAG_Y_NEUTRAL" value="-92"/>
-    <define name="MAG_Z_NEUTRAL" value="-770"/>
+    <define name="MAG_X_NEUTRAL" value="134"/>
+    <define name="MAG_Y_NEUTRAL" value="-17"/>
+    <define name="MAG_Z_NEUTRAL" value="24"/>
 
-    <define name="MAG_X_SENS" value="0.6098492293614708" integer="16"/>
-    <define name="MAG_Y_SENS" value="0.602383071455361" integer="16"/>
-    <define name="MAG_Z_SENS" value="0.5938907189154259" integer="16"/>
+    <define name="MAG_X_SENS" value="0.6253230410896893" integer="16"/>
+    <define name="MAG_Y_SENS" value="0.6136356727595016" integer="16"/>
+    <define name="MAG_Z_SENS" value="0.6138620486048812" integer="16"/>
 
     <!-- Should be same for everyone -->
     <define name="MAG_X_CURRENT_COEF" value="0.000321738038902"/>
