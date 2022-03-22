@@ -179,26 +179,25 @@ bool is_fs_landing_active()
   return is_active;
 }
 
-// Compute matching paparazzi actuator signal value for motor left
-// given motor right value so that the rotation axis is at the center
-int32_t get_matching_motl_val(int32_t val) {
-  float a_rev = 0.1765237;
-  float b_rev = 0.1014789;
-  float c_rev = -0.0280731;
+// Compute matching paparazzi actuator signal value for motor left (reverse)
+// given motor right (forward) pprz value so that the rotation axis is at the center
+float get_matching_motl_val(int32_t val) {
+  float a_rev = -1.967;    // y-intercept
+  float b_rev = 0.001243;  // slope
 
-  float a_fwd = 0.2359004;
-  float b_fwd = 0.2339600;
-  float c_fwd = -0.0156445;
+  float a_fwd = -4.013;    // y-intercept
+  float b_fwd = 0.002553;  // slope
 
-  // map pprz val to [0, 1]
-  float k = val / 9600.;
+  // pprz to pwm
+  float pwm_f = 1500 + (1 / 24.) * val;
   // approximate fwd thrust
-  float thr = a_fwd * pow(k, 2) + b_fwd * k + c_fwd;
-  // calculate [0, 1] value of reverse motor from thrust
-  float m = (-b_rev + sqrtf(pow(b_rev,2 )- 4. * a_rev * (c_rev - thr))) / (2. * a_rev);
+  float thr = a_fwd + b_fwd * pwm_f;
+  // calculate pwm of reverse motor from thrust
+  float pwm_r = (thr - a_rev) / b_rev;
   // remap to pprz value
-  float p = (int32_t) (m * -9600);
-  return p;
+  float pprz_r = 36000 - 24 * pwm_r;
+  // motor value returned should always be negative (for reverse motor)
+  return pprz_r;
 }
 
 /*

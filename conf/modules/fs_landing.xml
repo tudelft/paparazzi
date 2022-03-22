@@ -54,7 +54,7 @@
         <dl_setting min="0" max="1" step="1" var="elevon_delta_active" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="motor_delta_active" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="phase_pilot_control" type="uint8_t" module="fs_landing/cyclic_control"/>
-<!--        <dl_setting min="0" max="1" step="1" var="balance_motor_forces" type="uint8_t" module="fs_landing/cyclic_control"/>-->
+        <dl_setting min="0" max="1" step="1" var="balance_motor_forces" type="uint8_t" module="fs_landing/cyclic_control"/>
 <!--        <dl_setting min="0" max="1" step="1" var="use_controller" type="uint8_t" module="fs_landing/cyclic_control" handler="use_controller_handler" />-->
         <dl_setting min="-1" max="1" step="0.05" var="ml_avg" shortname="Avg ML" type="float" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="0.05" var="ml_delta" shortname="Half Amp ML" type="float" module="fs_landing/cyclic_control"/>

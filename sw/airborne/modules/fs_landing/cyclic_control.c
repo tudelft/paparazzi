@@ -114,9 +114,6 @@ void cyclic_control_values(struct fs_landing_t *actuator_values) {
   int32_t elevon_l = (int32_t) (9600 * (el_avg + _el_delta * cos_val));
   int32_t elevon_r = (int32_t) (9600 * (er_avg + _er_delta * cos_val));
 
-  if (balance_motor_forces) {
-    ml_avg = get_matching_motl_val(abs(mr_avg) * 9600) / 9600;
-  }
   cos_val = cosf(current_yaw + mt_phase_rad);
   int32_t motor_l = 0;
   int32_t motor_r = 0;
@@ -138,6 +135,13 @@ void cyclic_control_values(struct fs_landing_t *actuator_values) {
   } else {
     motor_l = (int32_t) (9600 * (ml_avg + _ml_delta * cos_val));
     motor_r = (int32_t) (9600 * (mr_avg + _mr_delta * cos_val));
+  }
+  if (balance_motor_forces) {
+    // Should always give forward motor value as input
+    // Will return negative value
+    if (motor_r > 0) {
+      motor_l = get_matching_motl_val(motor_r);
+    }
   }
 
   if (use_elevon_l) {
