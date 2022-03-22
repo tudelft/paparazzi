@@ -49,6 +49,9 @@ float v_filt, ins_v;
 float seasonal_arr[SEASONAL_L] = {CT_DEFAULT};
 int ctr = 0;
 float bt = 0;
+float filt_init_start_t = 0;
+#define FILT_INIT_TIME 1.5
+
 struct Int32Vect3 *_mag;
 float my_psi = 0;
 
@@ -235,15 +238,18 @@ void horizontal_velocity_filter() {
   if (!is_horizontal_velocity_filter_initialized) {
     prev_v_filt = ins_v;
     is_horizontal_velocity_filter_initialized = true;
+    filt_init_start_t = get_sys_time_float();
   } else {
-    float ct = seasonal_arr[ctr % SEASONAL_L];
+    if (get_sys_time_float() - filt_init_start_t > FILT_INIT_TIME) {
+      float ct = seasonal_arr[ctr % SEASONAL_L];
 
-    v_filt = FS_V_FILT_ALPHA * (ins_v - ct) + (1 - FS_V_FILT_ALPHA) * (prev_v_filt + bt);
-    bt = FS_V_FILT_BETA * (v_filt - prev_v_filt) + (1 - FS_V_FILT_BETA) * bt;
-    seasonal_arr[ctr % SEASONAL_L] = FS_V_FILT_GAMMA * (ins_v - v_filt - bt) + (1 - FS_V_FILT_GAMMA) * ct;
+      v_filt = FS_V_FILT_ALPHA * (ins_v - ct) + (1 - FS_V_FILT_ALPHA) * (prev_v_filt + bt);
+      bt = FS_V_FILT_BETA * (v_filt - prev_v_filt) + (1 - FS_V_FILT_BETA) * bt;
+      seasonal_arr[ctr % SEASONAL_L] = FS_V_FILT_GAMMA * (ins_v - v_filt - bt) + (1 - FS_V_FILT_GAMMA) * ct;
 
-    prev_v_filt = v_filt;
-    ctr++;
+      prev_v_filt = v_filt;
+      ctr++;
+    }
   }
 }
 
