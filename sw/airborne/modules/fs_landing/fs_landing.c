@@ -14,7 +14,7 @@
 #include "subsystems/datalink/downlink.h"
 
 #ifndef FS_LANDING_FREQ_TEST
-#define FS_LANDING_FREQ_TEST TRUE
+#define FS_LANDING_FREQ_TEST FALSE
 #endif
 uint8_t freq_test_active = false;
 
@@ -78,6 +78,9 @@ static void mag_rm3100_cb(uint8_t __attribute__((unused)) sender_id,
  *   <field name="er_avg" type="float">Elevon RIGHT cyclic average</field>
  *   <field name="el_delta" type="float">Elevon LEFT cyclic half amplitude</field>
  *   <field name="er_delta" type="float">Elevon RIGHT cyclic half amplitude</field>
+ *   <field name="phase_mot" type="float">Motor cyclic phase</field>
+     <field name="phase_el" type="float">Elevon cyclic phase</field>
+     <field name="my_psi" type="float">Psi from MAG</field>
  * </message>
  */
 #include "subsystems/datalink/telemetry.h"
@@ -97,7 +100,9 @@ static void send_frisbee_control(struct transport_tx *trans, struct link_device 
                                 &fs_msg_ml_avg, &fs_msg_ml_delta,
                                 &fs_msg_mr_avg, &fs_msg_mr_delta,
                                 &fs_msg_el_avg, &fs_msg_el_delta,
-                                &fs_msg_er_avg, &fs_msg_er_delta);
+                                &fs_msg_er_avg, &fs_msg_er_delta,
+                                &mt_phase, &el_phase,
+                                &my_psi);
 }
 
 void fs_landing_init()

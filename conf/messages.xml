@@ -466,6 +466,9 @@
      <field name="el_delta" type="float">Elevon LEFT cyclic half amplitude</field>
      <field name="er_avg" type="float">Elevon RIGHT cyclic average</field>
      <field name="er_delta" type="float">Elevon RIGHT cyclic half amplitude</field>
+     <field name="phase_mot" type="float">Motor cyclic phase</field>
+     <field name="phase_el" type="float">Elevon cyclic phase</field>
+     <field name="my_psi" type="float">Psi from MAG</field>
    </message>
 
     <message name="BARO_ETS" id="56">
