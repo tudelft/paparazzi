@@ -72,15 +72,16 @@ bool cod_draw2 = false;
 
 // define global variables
 struct color_object_t {
-  int32_t x_c;
-  int32_t y_c;
-  uint32_t color_count;
+  int32_t Nobs;
+  int32_t obstacle_data[100][4];
+  uint32_t y_max;
+  uint32_t x_max;
   bool updated;
 };
 struct color_object_t global_filters[2];
 
 // Function
-uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
+uint32_t find_object_centroid(int (*obstacle_data)[4], struct image_t *img, bool draw,
                               uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max);
@@ -124,15 +125,22 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   int32_t x_c, y_c;
 
   // Filter and find centroid
-  uint32_t count = find_object_centroid(img, &x_c, &y_c, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
+  int obstacle_data[100][4];
+  uint32_t Nobs = find_object_centroid(obstacle_data, img, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
   VERBOSE_PRINT("Color count %d: %u, threshold %u, x_c %d, y_c %d\n", camera, object_count, count_threshold, x_c, y_c);
   VERBOSE_PRINT("centroid %d: (%d, %d) r: %4.2f a: %4.2f\n", camera, x_c, y_c,
         hypotf(x_c, y_c) / hypotf(img->w * 0.5, img->h * 0.5), RadOfDeg(atan2f(y_c, x_c)));
 
+  uint32_t count = 0;
   pthread_mutex_lock(&mutex);
-  global_filters[filter-1].color_count = count;
-  global_filters[filter-1].x_c = x_c;
-  global_filters[filter-1].y_c = y_c;
+  global_filters[filter-1].Nobs = Nobs;
+  for (int i=0; i<100; ++i){
+    for (int j=0; j<4; ++j){
+      global_filters[filter-1].obstacle_data[i][j] = obstacle_data[i][j];
+    }
+  }
+  global_filters[filter-1].y_max = img->h;
+  global_filters[filter-1].x_max = img->w;
   global_filters[filter-1].updated = true;
   pthread_mutex_unlock(&mutex);
 
@@ -206,14 +214,14 @@ void color_object_detector_init(void)
  * @param draw - whether or not to draw on image
  * @return number of pixels of image within the filter bounds.
  */
-uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
+uint32_t find_object_centroid(int (*obstacle_data)[4], struct image_t *img, bool draw,
                               uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max)
 {
-  uint32_t cnt = 0;
-  uint32_t tot_x = 0;
-  uint32_t tot_y = 0;
+  // uint32_t cnt = 0;
+  // uint32_t tot_x = 0;
+  // uint32_t tot_y = 0;
   uint8_t *buffer = img->buf;
 
   uint8_t count_obstacle = 0;
@@ -224,8 +232,7 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   int x_pix_left;
   int x_pix_right;
 
-  int Nobs = 0;
-  int obstacle_data[100][4];
+  uint32_t Nobs = 0;
 
   // Go through all the pixels
   for (uint16_t x = 0; x < (img->w)/2; x ++) {
@@ -261,9 +268,9 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
         if ( (*yp >= lum_min) && (*yp <= lum_max) &&
             (*up >= cb_min ) && (*up <= cb_max ) &&
             (*vp >= cr_min ) && (*vp <= cr_max )) {
-          cnt ++;
-          tot_x += x;
-          tot_y += y;
+          // cnt ++;
+          // tot_x += x;
+          // tot_y += y;
           // if (draw){
           //   *yp = 255;  // make pixel brighter in image
           // }
@@ -275,7 +282,7 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
           if (count_green==3 && obstacle && in_zoo){
             count_obstacle = 0;
             obstacle = false;
-            *yp = 255;
+            // *yp = 255;
             Nobs ++;
             y_pix_right = y;
             x_pix_right = x;
@@ -290,7 +297,7 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
           if (count_obstacle==3 && !obstacle && in_zoo){
             count_green = 0;
             obstacle = true;
-            *yp = 255;
+            // *yp = 255;
             y_pix_left = y;
             x_pix_left = x;
           }
@@ -298,14 +305,44 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
       }
     }
   }
-  if (cnt > 0) {
-    *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
-    *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
-  } else {
-    *p_xc = 0;
-    *p_yc = 0;
-  }
-  return cnt;
+  // for (uint16_t x = 0; x < (img->w)/2; x ++) {
+  //   for (uint16_t y = 0; y < img->h; y++) {
+  //     uint8_t *yp, *up, *vp;
+  //     if (x % 2 == 0) {
+  //       // Even x
+  //       up = &buffer[y * 2 * img->w + 2 * x];      // U
+  //       yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
+  //       vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+  //       //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
+  //     } else {
+  //       // Uneven x
+  //       up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+  //       //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
+  //       vp = &buffer[y * 2 * img->w + 2 * x];      // V
+  //       yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+  //     }
+
+  //     for (int i=0; i<Nobs; ++i){
+  //       if (abs(y-obstacle_data[i][1]) < 4 && abs(x-obstacle_data[i][0]) < 4){
+  //         *yp = 255;
+  //       }else if (abs(y-obstacle_data[i][3]) < 4 && abs(x-obstacle_data[i][2]) < 4){
+  //         *yp = 255;
+  //       }
+  //     }
+  //   }
+  // }
+
+
+  // if (cnt > 0) {
+  //   *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
+  //   *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
+  // } else {
+  //   *p_xc = 0;
+  //   *p_yc = 0;
+  // }
+
+
+  return Nobs;
 }
 
 void color_object_detector_periodic(void)
@@ -321,8 +358,9 @@ void color_object_detector_periodic(void)
   //   local_filters[0].updated = false;
   // }
   if(local_filters[1].updated){
-    AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION2_ID, local_filters[1].x_c, local_filters[1].y_c,
-        0, 0, local_filters[1].color_count, 1);
+    // AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION2_ID, local_filters[1].x_c, local_filters[1].y_c,
+    //     0, 0, local_filters[1].color_count, 1);
+    AbiSendMsgOF_OBSTACLE_DATA(OPTIC_FLOW_OBSTACLE_DATA1_ID, &local_filters[1]);
     local_filters[1].updated = false;
   }
   return;
