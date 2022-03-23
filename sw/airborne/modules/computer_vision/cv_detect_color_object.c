@@ -235,7 +235,7 @@ uint32_t find_object_centroid(int (*obstacle_data)[4], struct image_t *img, bool
   uint32_t Nobs = 0;
 
   // Go through all the pixels
-  for (uint16_t x = 0; x < (img->w)/2; x ++) {
+  for (uint16_t x = 0; x < (0.75*(img->w)); x ++) {
     bool in_zoo = false;
     bool obstacle = false;
     bool skip = false;
@@ -305,32 +305,32 @@ uint32_t find_object_centroid(int (*obstacle_data)[4], struct image_t *img, bool
       }
     }
   }
-  // for (uint16_t x = 0; x < (img->w)/2; x ++) {
-  //   for (uint16_t y = 0; y < img->h; y++) {
-  //     uint8_t *yp, *up, *vp;
-  //     if (x % 2 == 0) {
-  //       // Even x
-  //       up = &buffer[y * 2 * img->w + 2 * x];      // U
-  //       yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
-  //       vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
-  //       //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
-  //     } else {
-  //       // Uneven x
-  //       up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
-  //       //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
-  //       vp = &buffer[y * 2 * img->w + 2 * x];      // V
-  //       yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
-  //     }
+  for (uint16_t x = 0; x < (0.75*(img->w)); x ++) {
+    for (uint16_t y = 0; y < img->h; y++) {
+      uint8_t *yp, *up, *vp;
+      if (x % 2 == 0) {
+        // Even x
+        up = &buffer[y * 2 * img->w + 2 * x];      // U
+        yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
+        vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+        //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
+      } else {
+        // Uneven x
+        up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+        //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
+        vp = &buffer[y * 2 * img->w + 2 * x];      // V
+        yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+      }
 
-  //     for (int i=0; i<Nobs; ++i){
-  //       if (abs(y-obstacle_data[i][1]) < 4 && abs(x-obstacle_data[i][0]) < 4){
-  //         *yp = 255;
-  //       }else if (abs(y-obstacle_data[i][3]) < 4 && abs(x-obstacle_data[i][2]) < 4){
-  //         *yp = 255;
-  //       }
-  //     }
-  //   }
-  // }
+      for (int i=0; i<Nobs; ++i){
+        if (abs(y-obstacle_data[i][1]) < 4 && abs(x-obstacle_data[i][0]) < 4){
+          *yp = 255;
+        }else if (abs(y-obstacle_data[i][3]) < 4 && abs(x-obstacle_data[i][2]) < 4){
+          *yp = 255;
+        }
+      }
+    }
+  }
 
 
   // if (cnt > 0) {

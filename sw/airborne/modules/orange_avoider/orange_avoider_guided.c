@@ -63,6 +63,7 @@ enum navigation_state_t {
   SAFE,
   OBSTACLE_FOUND,
   SEARCH_FOR_SAFE_HEADING,
+  LAST_CHECK,
   OUT_OF_BOUNDS,
   REENTER_ARENA,
   OPTIC_FLOW
@@ -136,20 +137,32 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
 #endif
 static abi_event optic_flow_obstacle_data_ev;
 static void optic_flow_obstacle_data_cb(uint8_t __attribute__((unused)) sender_id,
-          struct color_object_t cv_data)
+          struct color_object_t *cv_data)
 {
-  Nobs = cv_data.Nobs;
+  Nobs = cv_data->Nobs;
   float obstacles_pixels[100][4];// = data_matrix
-  for (int i=0; i<100; ++i){
+  // RunOnceEvery(100, {
+  //   for (int i=0; i<Nobs; ++i){ 
+  //     VERBOSE_PRINT("od: %d %d %d %d [%d] \n", cv_data->obstacle_data[i][0], cv_data->obstacle_data[i][1], cv_data->obstacle_data[i][2], cv_data->obstacle_data[i][3], i);
+  //   }
+  //   VERBOSE_PRINT("\n");
+  // });
+      
+  for (int i=0; i<Nobs; ++i){
     for (int j=0; j<4; ++j){
       
-      obstacles_pixels[i][j] = cv_data.obstacle_data[i][j];
+      obstacles_pixels[i][j] = cv_data->obstacle_data[i][j];
+      
     }
   }
-  int imax = cv_data.x_max;
-  int jmax = cv_data.y_max;
+  int imax = cv_data->x_max;
+  int jmax = cv_data->y_max;
 
-  float obstacles[100][4];
+  // RunOnceEvery(100, {
+  //   VERBOSE_PRINT("imax/jmax: %d/%d\n", imax, jmax);
+  // });
+
+  // float obstacles[100][4];
 
   for (int i=0; i<Nobs; i++){
     float z1 = 9.527*(obstacles_pixels[i][0]/imax)+1.9;
@@ -160,10 +173,12 @@ static void optic_flow_obstacle_data_cb(uint8_t __attribute__((unused)) sender_i
     float x2 = (obstacles_pixels[i][3]/jmax)*w2 - w2/2;  
 
     obstacles[i][0] = x1;
-    obstacles[i][0] = z1;
-    obstacles[i][0] = x2;
-    obstacles[i][0] = z2;  
+    obstacles[i][1] = z1;
+    obstacles[i][2] = x2;
+    obstacles[i][3] = z2;  
   }
+
+
 
   float temp[4];
 
@@ -178,6 +193,13 @@ static void optic_flow_obstacle_data_cb(uint8_t __attribute__((unused)) sender_i
           }
       }
   }
+  // RunOnceEvery(100, {
+  //   for (int i=0; i<Nobs; ++i){ 
+  //     VERBOSE_PRINT("obs: %f %f %f %f [%d] \n", obstacles[i][0], obstacles[i][1], obstacles[i][2], obstacles[i][3], i);
+  //   }
+  //   VERBOSE_PRINT("\n");
+  // });
+
 }
 
 /*
@@ -226,7 +248,7 @@ void orange_avoider_guided_periodic(void)
 
   switch (navigation_state){
     case SAFE: ;
-      VERBOSE_PRINT("Safe\n");
+      // VERBOSE_PRINT("Safe\n");
       // VERBOSE_PRINT("ofc: %f\n", obstacle_free_confidence);
       struct EnuCoor_i new_coor;
       calculateForwards(&new_coor, 1.0f, 0.f);
@@ -244,7 +266,7 @@ void orange_avoider_guided_periodic(void)
 
       break;
     case OBSTACLE_FOUND:
-      VERBOSE_PRINT("Obstacle found\n");
+      // VERBOSE_PRINT("Obstacle found\n");
       // stop
       guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
 
@@ -259,12 +281,12 @@ void orange_avoider_guided_periodic(void)
       break;
     case SEARCH_FOR_SAFE_HEADING:
       VERBOSE_PRINT("Search for safe heading\n");
-      VERBOSE_PRINT("Nobs: \n", Nobs);
-      for (int i=0; i<100; ++i){
-        for (int j=0; j<4; ++j){
-          VERBOSE_PRINT("obstacle [%i][%i]: %f", i, j, obstacles[i][j]);
-        }
-      }
+      VERBOSE_PRINT("Nobs: %d \n", Nobs);
+      // for (int i=0; i<100; ++i){
+      //   for (int j=0; j<4; ++j){
+      //     VERBOSE_PRINT("obstacle [%i][%i]: %f", i, j, obstacles[i][j]);
+      //   }
+      // }
 
       if (Nobs==0){
         navigation_state = SAFE;
@@ -272,7 +294,7 @@ void orange_avoider_guided_periodic(void)
         float heading = findGap(Nobs, obstacles);
         if (succes){
           guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi + heading);
-          navigation_state = SAFE;
+          navigation_state = LAST_CHECK;
         }else{
           guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi + avoidance_heading_direction * RadOfDeg(30.f));
           count = 0;
@@ -280,8 +302,38 @@ void orange_avoider_guided_periodic(void)
         }           
       }      
       break;
+
+    case LAST_CHECK: ;
+      for (int i=0; i<Nobs; ++i){ 
+        VERBOSE_PRINT("obs: %f %f %f %f\n", obstacles[i][0], obstacles[i][1], obstacles[i][2], obstacles[i][3]);
+      }
+      VERBOSE_PRINT("\n");
+
+      bool clear = true;
+      for (int i=0; i<Nobs; ++i){
+        if (obstacles[i][0]*obstacles[i][2] < 0){
+          VERBOSE_PRINT("case 1\n");
+          clear = false;
+        } else if (fabs(obstacles[i][0])<1.0){
+          VERBOSE_PRINT("case 2\n");
+          clear = false;
+        } else if (fabs(obstacles[i][2])<1.0){
+          VERBOSE_PRINT("case 3\n");
+          clear = false;
+        }
+      }
+
+      VERBOSE_PRINT("clear: %d\n", clear);
+
+      if (clear) {
+        navigation_state = SAFE;
+      }else{
+        guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi + avoidance_heading_direction * RadOfDeg(10.f));
+      }
+      break;
+
     case OUT_OF_BOUNDS: ;
-      VERBOSE_PRINT("Out of bounds\n");
+      // VERBOSE_PRINT("Out of bounds\n");
       // stop
 
       chooseIncrementAvoidance();
@@ -505,18 +557,25 @@ float findGap(int Nobs, float obstacles[100][4]){
   float pot_heading;
   float pot_distance;
 
+  VERBOSE_PRINT("Nobs: %d\n", Nobs);
+ 
+  // for (int i=0; i<Nobs; ++i){ 
+  //   VERBOSE_PRINT("obs: %f %f %f %f\n", obstacles[i][0], obstacles[i][1], obstacles[i][2], obstacles[i][3]);
+  // }
+  // VERBOSE_PRINT("\n");
+
   for (int i = 0; i<=Nobs; ++i){
     if (i==0){
-      pot_heading = calcHeading(-5.f, 1.f, obstacles[i][0], obstacles[i][1]);
-      if (gapWideEnough(-5.f, 1.f, obstacles[i][0], obstacles[i][1], pot_heading)){
+      pot_heading = calcHeading(-0.8f, 1.f, obstacles[i][0], obstacles[i][1]);
+      if (gapWideEnough(-0.8f, 1.f, obstacles[i][0], obstacles[i][1], pot_heading)){
         pot_distance = calcDistance(pot_heading);
       }else{
         pot_heading = 0;
         pot_distance = 0;
       }
     }else if (i==Nobs){
-      pot_heading = calcHeading(obstacles[i-1][2], obstacles[i-1][3], 5.f, 1.f);
-      if (gapWideEnough(obstacles[i-1][2], obstacles[i-1][3], 5.f, 1.f, pot_heading)){
+      pot_heading = calcHeading(obstacles[i-1][2], obstacles[i-1][3], 0.8f, 1.f);
+      if (gapWideEnough(obstacles[i-1][2], obstacles[i-1][3], 0.8f, 1.f, pot_heading)){
         pot_distance = calcDistance(pot_heading);
       }else{
         pot_heading = 0;
@@ -544,6 +603,7 @@ float findGap(int Nobs, float obstacles[100][4]){
   }else{
     succes = true;
   }
+  VERBOSE_PRINT("Chosen heading increment: %f\n", heading);
   return heading;
 }
 
@@ -551,7 +611,7 @@ bool gapWideEnough(float Lx, float Lz, float Rx, float Rz, float heading){
   float absolute_gap = sqrtf((Rx-Lx)*(Rx-Lx)+(Rz-Lz)*(Rz-Lz));
   float correction_angle = heading+atanf((Rz-Lz)/(Rx-Lx));
   float gap = cosf(correction_angle)*absolute_gap;
-  if (fabs(gap) > 0.5){
+  if (fabs(gap) > 1.5){
     return true;
   }else{
     return false;
