@@ -18,8 +18,8 @@ so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTI
     <dl_settings>
       <dl_settings name="GreenAttractor">
          <dl_setting var="oa_color_count_frac" min="0" step="0.01" max="1.0"/>
-         <dl_setting var="meander_frac" min="0" step="0.01" max="1.0" shortname="meand+"/>
-         <dl_setting var="meander_increment" min="0" step="1" max="20" shortname="meand-"/>
+         <dl_setting var="meander_frac" min="0" step="0.01" max="1.0" shortname="meandfrac"/>
+         <dl_setting var="meander_increment" min="0" step="1" max="20" shortname="meand+"/>
          <dl_setting var="confidence_increment" min="0" step="1" max="6" shortname="conf+"/>
          <dl_setting var="confidence_decrement" min="0" step="1" max="6" shortname="conf-"/>
          <dl_setting var="strong_turn_threshold" min="0.0" step="0.01" max="1.0" shortname="strong"/>

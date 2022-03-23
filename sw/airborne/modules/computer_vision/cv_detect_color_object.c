@@ -71,8 +71,8 @@ bool cod_draw1 = false;
 bool cod_draw2 = false;
 
 // global variables for filter box settings
-int16_t filterbox_ymin = 100;
-int16_t filterbox_ymax = 420;
+int16_t filterbox_ymin = 120;
+int16_t filterbox_ymax = 400;
 int16_t filterbox_xmin = 0;
 int16_t filterbox_xmax = 10;
 
@@ -225,9 +225,7 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   VERBOSE_PRINT("height = %i\n", img->h);
   VERBOSE_PRINT("width = %i\n", img->w);
 
-  // Go through all the pixels
-  // for (uint16_t y = 0; y < img->h; y++) { // OLD CODE
-  //50,470 works
+  // Filter only first x pixels from below and the middle y pixels
 
   for (uint16_t y = filterbox_ymin; y < filterbox_ymax; y++) {
     // for (uint16_t x = 0; x < img->w; x ++) { // OLD CODE

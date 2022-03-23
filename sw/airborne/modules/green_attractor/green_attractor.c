@@ -64,7 +64,7 @@ enum navigation_state_t {
 
 
 float oa_color_count_frac = 0.87f;
-float meander_frac = 0.57f;
+float meander_frac = 0.75f;
 int meander_increment = 7;
 
 // define and initialise global variables
@@ -103,9 +103,9 @@ int confidence_decrement = 4;
 int current_state = 2;
 
 // turn 90 deg when losing all color
-float strong_turn_threshold = 0.1;
+float strong_turn_threshold = 0.07;
 
-int SFSH_increment = 5;
+int SFSH_increment = 7;
 
 
 /*
