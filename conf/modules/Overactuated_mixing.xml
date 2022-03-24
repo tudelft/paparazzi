@@ -8,6 +8,18 @@
   <settings>
     <dl_settings>
       <dl_settings NAME="General overact">
+
+        <dl_setting var="start_auto" min="0" step="1" max="1" shortname="start_auto" values="FALSE|TRUE" />
+        <dl_setting var="ax_point"  min="-5" step=".1" max="5" shortname="ax_point" />
+        <dl_setting var="ay_point"  min="-5" step=".1" max="5" shortname="ay_point" />
+        <dl_setting var="bx_point"  min="-5" step=".1" max="5" shortname="bx_point" />
+        <dl_setting var="by_point"  min="-5" step=".1" max="5" shortname="by_point" />
+        <dl_setting var="cx_point"  min="-5" step=".1" max="5" shortname="cx_point" />
+        <dl_setting var="cy_point"  min="-5" step=".1" max="5" shortname="cy_point" />
+        <dl_setting var="z_test"  min="0" step=".1" max="5" shortname="z_test" />
+        <dl_setting var="pitch_angle_test"  min="0" step="1" max="40" shortname="pitch_angle_test" />
+        <dl_setting var="roll_angle_test"  min="0" step="1" max="40" shortname="roll_angle_test" />
+
         <dl_setting var="wind_speed"  min="0" step="1" max="20" shortname="wind_speed" />
         <dl_setting var="mode_1_control"  min="0" step="1" max="1" shortname="mode_1_control" values="FALSE|TRUE" />
         <dl_setting var="activate_tilting_az_PID" min="0" step="1" max="1" shortname="tilt_az_active_PID" values="FALSE|TRUE" />
@@ -106,9 +118,9 @@
   <init fun="overactuated_mixing_init()"/>
   <makefile>
     <file name="Overactuated_mixing.c"/>
-    <file name="wls_alloc.c" dir="$(SRC_FIRMWARE)/stabilization/wls"/>
-    <file name="qr_solve.c" dir="math/qr_solve"/>
-    <file name="r8lib_min.c" dir="math/qr_solve"/>
+<!--    <file name="wls_alloc.c" dir="$(SRC_FIRMWARE)/stabilization/wls"/>-->
+<!--    <file name="qr_solve.c" dir="math/qr_solve"/>-->
+<!--    <file name="r8lib_min.c" dir="math/qr_solve"/>-->
     <define name="CA_N_V" value="6" />
     <define name="CA_N_U" value="14" />
   </makefile>

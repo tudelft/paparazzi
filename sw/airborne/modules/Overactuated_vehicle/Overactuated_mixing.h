@@ -68,6 +68,7 @@ struct PID_over {
     struct FloatEulersPosition i;
     struct FloatEulersPosition d;
 };
+
 struct PD_indi_over {
     struct FloatEulersPosition p;
     struct FloatEulersPosition d;
@@ -98,6 +99,9 @@ extern bool yaw_with_motors_PID;
 extern bool position_with_attitude;
 extern bool manual_motor_stick;
 
+//Variables for autonomous maneuver:
+extern int start_auto;
+extern float ax_point, ay_point, bx_point, by_point, cx_point, cy_point, z_test, pitch_angle_test, roll_angle_test;
 
 extern bool manual_heading;
 extern int manual_heading_value_rad;
