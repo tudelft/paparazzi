@@ -265,6 +265,11 @@ void orange_avoider_guided_periodic(void)
         navigation_state = OBSTACLE_FOUND;
       } else {
         guidance_h_set_guided_body_vel(oag_max_speed, 0);
+        RunOnceEvery(10, {
+          VERBOSE_PRINT("Rechecking\n");
+          count = 0;
+          navigation_state = LAST_CHECK;
+        });
       }
 
       break;
@@ -297,6 +302,7 @@ void orange_avoider_guided_periodic(void)
         float heading = findGap(Nobs, obstacles);
         if (succes){
           guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi + heading);
+          count = 0;
           navigation_state = LAST_CHECK;
         }else{
           guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi + avoidance_heading_direction * RadOfDeg(30.f));
@@ -307,32 +313,37 @@ void orange_avoider_guided_periodic(void)
       break;
 
     case LAST_CHECK: ;
-      sleep(1);
-      for (int i=0; i<Nobs; ++i){ 
-        VERBOSE_PRINT("obs: %f %f %f %f\n", obstacles[i][0], obstacles[i][1], obstacles[i][2], obstacles[i][3]);
-      }
-      VERBOSE_PRINT("\n");
+      count ++;
+      if (count > 3){
 
-      bool clear = true;
-      for (int i=0; i<Nobs; ++i){
-        if (obstacles[i][0]*obstacles[i][2] < 0){
-          VERBOSE_PRINT("case 1\n");
-          clear = false;
-        } else if (fabs(obstacles[i][0])<min_clearance){
-          VERBOSE_PRINT("case 2\n");
-          clear = false;
-        } else if (fabs(obstacles[i][2])<min_clearance){
-          VERBOSE_PRINT("case 3\n");
-          clear = false;
+        for (int i=0; i<Nobs; ++i){ 
+          VERBOSE_PRINT("obs: %f %f %f %f\n", obstacles[i][0], obstacles[i][1], obstacles[i][2], obstacles[i][3]);
         }
-      }
+        VERBOSE_PRINT("\n");
 
-      VERBOSE_PRINT("clear: %d\n", clear);
+        bool clear = true;
+        for (int i=0; i<Nobs; ++i){
+          if (obstacles[i][0]*obstacles[i][2] < 0){
+            VERBOSE_PRINT("case 1\n");
+            clear = false;
+          } else if (fabs(obstacles[i][0])<min_clearance){
+            VERBOSE_PRINT("case 2\n");
+            clear = false;
+          } else if (fabs(obstacles[i][2])<min_clearance){
+            VERBOSE_PRINT("case 3\n");
+            clear = false;
+          }
+        }
 
-      if (clear) {
-        navigation_state = SAFE;
-      }else{
-        guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi + avoidance_heading_direction * RadOfDeg(10.f));
+        VERBOSE_PRINT("clear: %d\n", clear);
+
+        if (clear) {
+          navigation_state = SAFE;
+        }else{
+          guidance_h_set_guided_body_vel(0.0f, 0.0f);
+          guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi + avoidance_heading_direction * RadOfDeg(10.f));
+          count = 0;
+        }
       }
       break;
 
