@@ -557,7 +557,7 @@ void overactuated_mixing_run()
     //Assign variables
     init_variables();
 
-    
+
     if(start_auto){
         if(bool_start_auto_on == 0) {
             start_time_auto = get_sys_time_float();
