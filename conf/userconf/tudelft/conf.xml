@@ -438,7 +438,7 @@
   />
   <aircraft
    name="bebop2_22"
-   ac_id="22"
+   ac_id="103"
    airframe="airframes/examples/bebop2_indi.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"

@@ -1,12 +1,16 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
 <airframe name="bebop2_indi">
-  <description>Bebop2, Outdoor
+  <description>
+  Bebop2, Outdoor have some fun and sun
   </description>
 
   <firmware name="rotorcraft">
     <target name="ap" board="bebop2"/>
 
+       <configure name="HOST" value="192.168.1.$(AC_ID)"/>
+       <configure name="MODEM_HOST" value="192.168.1.105"/>
+       <configure name="MODEM_BROADCAST" value="FALSE"/>
     <!--target name="nps" board="pc">
       <module name="fdm" type="jsbsim"/>
       <module name="udp"/>
@@ -65,24 +69,9 @@
 
   <include href="conf/airframes/tudelft/calibrations/bebop2_$AC_ID.xml" />
 
-  <!-- local magnetic field -->
-  <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
-  <section name="AHRS" prefix="AHRS_">
-    <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
-    <!-- Toulouse -->
-    <!--define name="H_X" value="0.513081"/>
-    <define name="H_Y" value="-0.00242783"/>
-    <define name="H_Z" value="0.858336"/-->
-    <!-- Delft -->
-    <define name="H_X" value="0.3892503"/>
-    <define name="H_Y" value="0.0017972"/>
-    <define name="H_Z" value="0.9211303"/>
-  </section>
-
   <section name="INS" prefix="INS_">
     <define name="SONAR_MAX_RANGE" value="2.2"/>
   </section>
-
 
   <section name="RC_SETPOINT" prefix="STABILIZATION_ATTITUDE_">
     <!-- setpoint limits for attitude stabilization rc flight -->
