@@ -39,6 +39,9 @@ extern float oag_max_speed;         // max flight speed [m/s]
 extern float oag_oob_rate;
 extern float oag_oob_dist;
 
+extern float min_gap;
+extern float min_clearance;
+
 extern void orange_avoider_guided_init(void);
 extern void orange_avoider_guided_periodic(void);
 

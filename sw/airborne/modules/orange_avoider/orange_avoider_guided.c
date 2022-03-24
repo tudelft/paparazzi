@@ -91,11 +91,18 @@ float oag_heading_rate = RadOfDeg(30.f);  // heading change setpoint for avoidan
 float oag_oob_rate = 90.0f;
 float oag_oob_dist = 5.0f;
 
+float min_gap = 1.5;
+float min_clearance = 1.2;
+
+bool twodata = false;
+
 
 // global variables
 int wall;
 int count;
 bool succes;
+int Nobs1=0;
+int Nobs2=0;
 int Nobs=0;
 float obstacles[100][4];
 // for (int i=0; i<100; ++i){
@@ -139,6 +146,10 @@ static abi_event optic_flow_obstacle_data_ev;
 static void optic_flow_obstacle_data_cb(uint8_t __attribute__((unused)) sender_id,
           struct color_object_t *cv_data)
 {
+  // if switch{
+  //   Nobs1 = cv_data->Nobs;
+  //   switch = false;
+  // } else
   Nobs = cv_data->Nobs;
   float obstacles_pixels[100][4];// = data_matrix
   // RunOnceEvery(100, {
@@ -304,6 +315,7 @@ void orange_avoider_guided_periodic(void)
       break;
 
     case LAST_CHECK: ;
+      sleep(1);
       for (int i=0; i<Nobs; ++i){ 
         VERBOSE_PRINT("obs: %f %f %f %f\n", obstacles[i][0], obstacles[i][1], obstacles[i][2], obstacles[i][3]);
       }
@@ -314,10 +326,10 @@ void orange_avoider_guided_periodic(void)
         if (obstacles[i][0]*obstacles[i][2] < 0){
           VERBOSE_PRINT("case 1\n");
           clear = false;
-        } else if (fabs(obstacles[i][0])<1.0){
+        } else if (fabs(obstacles[i][0])<min_clearance){
           VERBOSE_PRINT("case 2\n");
           clear = false;
-        } else if (fabs(obstacles[i][2])<1.0){
+        } else if (fabs(obstacles[i][2])<min_clearance){
           VERBOSE_PRINT("case 3\n");
           clear = false;
         }
@@ -611,7 +623,7 @@ bool gapWideEnough(float Lx, float Lz, float Rx, float Rz, float heading){
   float absolute_gap = sqrtf((Rx-Lx)*(Rx-Lx)+(Rz-Lz)*(Rz-Lz));
   float correction_angle = heading+atanf((Rz-Lz)/(Rx-Lx));
   float gap = cosf(correction_angle)*absolute_gap;
-  if (fabs(gap) > 1.5){
+  if (fabs(gap) > min_gap){
     return true;
   }else{
     return false;
