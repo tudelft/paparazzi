@@ -49,8 +49,8 @@
 #endif
 
 
+// Initialise functions
 static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters, float heading_inc);
-uint8_t chooseRandomIncrementAvoidance(void);
 uint8_t chooseIncrementAvoidance(void);
 uint8_t CheckWall(struct EnuCoor_i new_coor);
 uint8_t RotationOperation(float *x, float *y, float *psi);
@@ -59,22 +59,18 @@ bool gapWideEnough(float Lx, float Lz, float Rx, float Rz, float heading);
 float calcHeading(float Lx, float Lz, float Rx, float Rz);
 float calcDistance(float heading);
 
+
+// List of navigation states
 enum navigation_state_t {
   SAFE,
-  OBSTACLE_FOUND,
   SEARCH_FOR_SAFE_HEADING,
   LAST_CHECK,
   OUT_OF_BOUNDS,
   REENTER_ARENA,
-  OPTIC_FLOW
 };
 
-enum OF_cal_state_t{
-  RIGHT,
-  LEFT,
-  MID
-};
 
+// Struct type from the ABI message, ideally moved to header file
 struct color_object_t {
   int32_t Nobs;
   int32_t obstacle_data[100][4];
@@ -83,16 +79,15 @@ struct color_object_t {
   bool updated;
 };
 
+
 // define settings
-float oag_color_count_frac = 0.18f;       // obstacle detection threshold as a fraction of total of image
-float oag_max_speed = 1.f;               // max flight speed [m/s]
-float oag_heading_rate = RadOfDeg(30.f);  // heading change setpoint for avoidance [rad/s]
+float oag_max_speed = 1.f;                // max flight speed [m/s]
 
-float oag_oob_rate = 90.0f;
-float oag_oob_dist = 5.0f;
+float oag_oob_rate = 90.0f;               // turning rate when turning back to arena [deg/s]
+float oag_oob_dist = 5.0f;                // minimum distance to fly when turning back to arena [m]
 
-float min_gap = 1.5;
-float min_clearance = 1.2;
+float min_gap = 1.5;                      // minimum gap between obstacles
+float min_clearance = 1.2;                // minimum clearance past an obstacle
 
 
 // global variables
@@ -101,40 +96,14 @@ int count;
 bool succes;
 int Nobs=0;
 float obstacles[100][4];
-// for (int i=0; i<100; ++i){
-//   for (int j=0; j<4; ++j){
-//     obstacles[i][j] = 0;
-//   }
-// }
-// int Nobs = 3;
-// float obstacles[3][4] = {{-1.7,2.1,-1.4,2.1},{-0.5,4.5,-0.1,4.8},{0.3,3.6,0.6,3.4}};
-
 
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;   // current state in state machine
-enum OF_cal_state_t OF_cal_state = RIGHT;
-int32_t color_count = 0;                // orange color count from color filter for obstacle detection
 float avoidance_heading_direction = 0;  // heading change direction for avoidance [rad/s]
-int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead if safe.
-
-const int16_t max_trajectory_confidence = 5;  // number of consecutive negative object detections to be sure we are obstacle free
-
-// This call back will be used to receive the color count from the orange detector
-#ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
-#error This module requires two color filters, as such you have to define ORANGE_AVOIDER_VISUAL_DETECTION_ID to the orange filter
-#error Please define ORANGE_AVOIDER_VISUAL_DETECTION_ID to be COLOR_OBJECT_DETECTION1_ID or COLOR_OBJECT_DETECTION2_ID in your airframe
-#endif
-static abi_event color_detection_ev;
-static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
-                               int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
-                               int16_t __attribute__((unused)) pixel_width, int16_t __attribute__((unused)) pixel_height,
-                               int32_t quality, int16_t __attribute__((unused)) extra)
-{
-  color_count = quality;
-}
 
 
+// This callback processes the obstacle data from the cv_detect_color_object module
 #ifndef OPTIC_FLOW_OBSTACLE_DATA1_ID
 #define OPTIC_FLOW_OBSTACLE_DATA1_ID ABI_BROADCAST
 #endif
@@ -144,6 +113,9 @@ static void optic_flow_obstacle_data_cb(uint8_t __attribute__((unused)) sender_i
 {
   Nobs = cv_data->Nobs;
   float obstacles_pixels[100][4];// = data_matrix
+  int imax = cv_data->x_max;
+  int jmax = cv_data->y_max;
+
   // RunOnceEvery(100, {
   //   for (int i=0; i<Nobs; ++i){ 
   //     VERBOSE_PRINT("od: %d %d %d %d [%d] \n", cv_data->obstacle_data[i][0], cv_data->obstacle_data[i][1], cv_data->obstacle_data[i][2], cv_data->obstacle_data[i][3], i);
@@ -153,19 +125,9 @@ static void optic_flow_obstacle_data_cb(uint8_t __attribute__((unused)) sender_i
       
   for (int i=0; i<Nobs; ++i){
     for (int j=0; j<4; ++j){
-      
       obstacles_pixels[i][j] = cv_data->obstacle_data[i][j];
-      
     }
   }
-  int imax = cv_data->x_max;
-  int jmax = cv_data->y_max;
-
-  // RunOnceEvery(100, {
-  //   VERBOSE_PRINT("imax/jmax: %d/%d\n", imax, jmax);
-  // });
-
-  // float obstacles[100][4];
 
   for (int i=0; i<Nobs; i++){
     float z1 = 9.527*(obstacles_pixels[i][0]/imax)+1.9;
@@ -182,7 +144,7 @@ static void optic_flow_obstacle_data_cb(uint8_t __attribute__((unused)) sender_i
   }
 
 
-
+  // Now sort the obstacle matrix
   float temp[4];
 
   for (int i=0; i<Nobs; ++i){
@@ -196,13 +158,6 @@ static void optic_flow_obstacle_data_cb(uint8_t __attribute__((unused)) sender_i
           }
       }
   }
-  // RunOnceEvery(100, {
-  //   for (int i=0; i<Nobs; ++i){ 
-  //     VERBOSE_PRINT("obs: %f %f %f %f [%d] \n", obstacles[i][0], obstacles[i][1], obstacles[i][2], obstacles[i][3], i);
-  //   }
-  //   VERBOSE_PRINT("\n");
-  // });
-
 }
 
 /*
@@ -212,130 +167,96 @@ void orange_avoider_guided_init(void)
 {
   // Initialise random values
   srand(time(NULL));
-  chooseRandomIncrementAvoidance();
 
   // bind our colorfilter callbacks to receive the color filter outputs
-  AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
   AbiBindMsgOF_OBSTACLE_DATA(OPTIC_FLOW_OBSTACLE_DATA1_ID, &optic_flow_obstacle_data_ev, optic_flow_obstacle_data_cb);
 }
 
 /*
- * Function that checks it is safe to move forwards, and then sets a forward velocity setpoint or changes the heading
+ * Periodic function that flies to the edge of the zoo and then chooses the longest path between obstacles
  */
 void orange_avoider_guided_periodic(void)
 {
   // Only run the mudule if we are in the correct flight mode
   if (guidance_h.mode != GUIDANCE_H_MODE_GUIDED) {
     navigation_state = SEARCH_FOR_SAFE_HEADING;
-    obstacle_free_confidence = 0;
     return;
   }
 
-  // compute current color thresholds
-  int32_t color_count_threshold = oag_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
-  // VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
-
-  // update our safe confidence using color threshold
-  if(color_count < color_count_threshold){
-    obstacle_free_confidence++;
-  } else {
-    obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
-  }
-
-  // bound obstacle_free_esconfidence
-  Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
-
-  float speed_sp = fminf(oag_max_speed, 0.4f * obstacle_free_confidence);
-
   // VERBOSE_PRINT("x/y/psi: %f/%f/%f\n", POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x),POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y), DegOfRad(stateGetNedToBodyEulers_f()->psi));
 
+
+  // State machine
   switch (navigation_state){
     case SAFE: ;
       // VERBOSE_PRINT("Safe\n");
-      // VERBOSE_PRINT("ofc: %f\n", obstacle_free_confidence);
       struct EnuCoor_i new_coor;
       calculateForwards(&new_coor, 1.0f, 0.f);
 
-      if (!InsideObstacleZone(POS_FLOAT_OF_BFP(new_coor.x),POS_FLOAT_OF_BFP(new_coor.y))){//(floor_count < floor_count_threshold || fabsf(floor_centroid_frac) > 0.12){
-        // VERBOSE_PRINT("x/y: %s %s", new_coor.x, new_coor.y);
+      if (!InsideObstacleZone(POS_FLOAT_OF_BFP(new_coor.x),POS_FLOAT_OF_BFP(new_coor.y))){ // Checks if the drone will fly out of the obstacle zone
+        // VERBOSE_PRINT("x/y: %s %s\n", new_coor.x, new_coor.y);
         CheckWall(new_coor);
         navigation_state = OUT_OF_BOUNDS;
-      } else if (obstacle_free_confidence == 0){
-        guidance_h_set_guided_body_vel(0.0f,0.0f);
-        navigation_state = OBSTACLE_FOUND;
       } else {
         guidance_h_set_guided_body_vel(oag_max_speed, 0);
         RunOnceEvery(10, {
-          VERBOSE_PRINT("Rechecking\n");
+          // VERBOSE_PRINT("Rechecking\n");
           count = 0;
           navigation_state = LAST_CHECK;
         });
       }
 
       break;
-    case OBSTACLE_FOUND:
-      // VERBOSE_PRINT("Obstacle found\n");
-      // stop
-      guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
-
-      guidance_h_set_guided_heading_rate(avoidance_heading_direction * oag_heading_rate);
-      guidance_h_set_guided_body_vel(0.0f, avoidance_heading_direction*1.0);
-      // make sure we have a couple of good readings before declaring the way safe
-      if (obstacle_free_confidence >= 2){
-        guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
-        navigation_state = SAFE;
-      }
-
-      break;
     case SEARCH_FOR_SAFE_HEADING:
-      VERBOSE_PRINT("Search for safe heading\n");
-      VERBOSE_PRINT("Nobs: %d \n", Nobs);
+      // VERBOSE_PRINT("Search for safe heading\n");
+      // VERBOSE_PRINT("Nobs: %d \n", Nobs);
       // for (int i=0; i<100; ++i){
       //   for (int j=0; j<4; ++j){
       //     VERBOSE_PRINT("obstacle [%i][%i]: %f", i, j, obstacles[i][j]);
       //   }
       // }
+      count ++;
 
-      if (Nobs==0){
-        navigation_state = SAFE;
-      }else{
-        float heading = findGap(Nobs, obstacles);
-        if (succes){
-          guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi + heading);
-          count = 0;
-          navigation_state = LAST_CHECK;
+      if (count > 3){
+        if (Nobs==0){
+          navigation_state = SAFE;
         }else{
-          guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi + avoidance_heading_direction * RadOfDeg(30.f));
-          count = 0;
-          navigation_state = OPTIC_FLOW;
-        }           
-      }      
-      break;
+          float heading = findGap(Nobs, obstacles);
+          if (succes){
+            guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi + heading);
+            count = 0;
+            navigation_state = LAST_CHECK;
+          }else{
+            guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi + avoidance_heading_direction * RadOfDeg(30.f));
+            count = 0;
+            navigation_state = SEARCH_FOR_SAFE_HEADING;
+          }           
+        }      
+      }
 
+      break;
     case LAST_CHECK: ;
       count ++;
+
       if (count > 3){
-
         for (int i=0; i<Nobs; ++i){ 
-          VERBOSE_PRINT("obs: %f %f %f %f\n", obstacles[i][0], obstacles[i][1], obstacles[i][2], obstacles[i][3]);
+          // VERBOSE_PRINT("obs: %f %f %f %f\n", obstacles[i][0], obstacles[i][1], obstacles[i][2], obstacles[i][3]);
         }
-        VERBOSE_PRINT("\n");
-
+        // VERBOSE_PRINT("\n");
         bool clear = true;
         for (int i=0; i<Nobs; ++i){
           if (obstacles[i][0]*obstacles[i][2] < 0){
-            VERBOSE_PRINT("case 1\n");
+            // VERBOSE_PRINT("case 1\n");
             clear = false;
           } else if (fabs(obstacles[i][0])<min_clearance){
-            VERBOSE_PRINT("case 2\n");
+            // VERBOSE_PRINT("case 2\n");
             clear = false;
           } else if (fabs(obstacles[i][2])<min_clearance){
-            VERBOSE_PRINT("case 3\n");
+            // VERBOSE_PRINT("case 3\n");
             clear = false;
           }
         }
-
-        VERBOSE_PRINT("clear: %d\n", clear);
+        // VERBOSE_PRINT("clear: %d\n", clear);
 
         if (clear) {
           navigation_state = SAFE;
@@ -345,74 +266,31 @@ void orange_avoider_guided_periodic(void)
           count = 0;
         }
       }
-      break;
 
+      break;
     case OUT_OF_BOUNDS: ;
       // VERBOSE_PRINT("Out of bounds\n");
       // stop
 
       chooseIncrementAvoidance();
-      guidance_h_set_guided_body_vel(0.0f, 0.0f);//oag_oob_vx, avoidance_heading_direction*oag_oob_vy);
+      guidance_h_set_guided_body_vel(0.0f, 0.0f);
       // start turn back into arena
       guidance_h_set_guided_heading_rate(avoidance_heading_direction * RadOfDeg(oag_oob_rate));
-
       navigation_state = REENTER_ARENA;
 
       break;
     case REENTER_ARENA: ;
-      VERBOSE_PRINT("Reenter\n");
+      // VERBOSE_PRINT("Reenter\n");
       // Check if coords a couple meters in front are still in the arena
       struct EnuCoor_i new_coor2;
       calculateForwards(&new_coor2, oag_oob_dist, 0.f);
       if (InsideObstacleZone(POS_FLOAT_OF_BFP(new_coor2.x), POS_FLOAT_OF_BFP(new_coor2.y))){
         // return to heading mode
         guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
-        guidance_h_set_guided_body_vel(0.0f,0.0f);//oag_max_speed, 0.0f);
-
-        OF_cal_state = RIGHT;
+        guidance_h_set_guided_body_vel(0.0f,0.0f);
         count = 0;
-        navigation_state = OPTIC_FLOW;
-      }
-
-      break;
-    case OPTIC_FLOW:
-      count = count+1;
-      // switch (OF_cal_state){
-      //   case RIGHT:
-      //     VERBOSE_PRINT("right\n");
-      //     guidance_h_set_guided_body_vel(0.0f,1.0f);
-      //     if (count>2){
-      //       guidance_h_set_guided_body_vel(0.0f,0.0f);
-      //       AbiSendMsgOF_CALIBRATION(OPTIC_FLOW_CALIBRATION1_ID, 1, POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x), POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y));
-      //       OF_cal_state = LEFT;
-      //     }
-      //     break;
-      //   case LEFT:
-      //     VERBOSE_PRINT("left\n");
-      //     guidance_h_set_guided_body_vel(0.0f,-1.0f);
-      //     if (count>6){
-      //       guidance_h_set_guided_body_vel(0.0f,0.0f);
-      //       AbiSendMsgOF_CALIBRATION(OPTIC_FLOW_CALIBRATION1_ID, 2, POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x), POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y));
-      //       OF_cal_state = MID;
-      //     }
-      //     break;
-      //   case MID:
-      //     VERBOSE_PRINT("mid\n");
-      //     guidance_h_set_guided_body_vel(0.0f,1.0f);
-      //     if (count>8){
-      //       guidance_h_set_guided_body_vel(0.0f,0.0f);
-      //       AbiSendMsgOF_CALIBRATION(OPTIC_FLOW_CALIBRATION1_ID, 3, POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x), POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y));
-      //       navigation_state = SEARCH_FOR_SAFE_HEADING;
-      //     }
-      //     break;
-      //   default:
-      //     break;
-      // }      
-
-      // read obstacle matrix
-      if (count > 6){
         navigation_state = SEARCH_FOR_SAFE_HEADING;
-      }     
+      }
 
       break;
     default:
@@ -421,21 +299,7 @@ void orange_avoider_guided_periodic(void)
   return;
 }
 
-/*
- * Sets the variable 'incrementForAvoidance' randomly positive/negative
- */
-uint8_t chooseRandomIncrementAvoidance(void)
-{
-  // Randomly choose CW or CCW avoiding direction
-  if (rand() % 2 == 0) {
-    avoidance_heading_direction = 1.f;
-    // VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
-  } else {
-    avoidance_heading_direction = -1.f;
-    // VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
-  }
-  return false;
-}
+
 
 /*
  * Chooses a way for the drone to turn. Usually the shortest turn away from the wall, but in the corners the decision making is more complex.
@@ -503,10 +367,11 @@ uint8_t chooseIncrementAvoidance(void)
   return false;
 }
 
+
+
 /*
  * Checks what wall of the cyberzoo the drone would collide with 
  */
-
 uint8_t CheckWall(struct EnuCoor_i new_coor)
 {
   float x = POS_FLOAT_OF_BFP(new_coor.x);
@@ -531,6 +396,8 @@ uint8_t CheckWall(struct EnuCoor_i new_coor)
   return false;
 }
 
+
+
 /*
  * Transforms the coordinates to an inertial reference frame for ease of calculations
  */
@@ -546,6 +413,8 @@ uint8_t RotationOperation(float *x, float *y, float *psi){
 
   return false;
 }
+
+
 
 
 /*
@@ -566,6 +435,10 @@ uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters, floa
 
 
 
+
+/*
+ * Finds the gap between obstacles that will allow the drone to travel the greatest distance to the other side of the zoo
+*/
 float findGap(int Nobs, float obstacles[100][4]){
   float heading = 0;
   float distance = 0;
@@ -618,10 +491,15 @@ float findGap(int Nobs, float obstacles[100][4]){
   }else{
     succes = true;
   }
-  VERBOSE_PRINT("Chosen heading increment: %f\n", heading);
+  // VERBOSE_PRINT("Chosen heading increment: %f\n", heading);
   return heading;
 }
 
+
+
+/*
+ * Calculates if the gap between obstacles is wide enough for the drone
+*/
 bool gapWideEnough(float Lx, float Lz, float Rx, float Rz, float heading){
   float absolute_gap = sqrtf((Rx-Lx)*(Rx-Lx)+(Rz-Lz)*(Rz-Lz));
   float correction_angle = heading+atanf((Rz-Lz)/(Rx-Lx));
@@ -633,6 +511,11 @@ bool gapWideEnough(float Lx, float Lz, float Rx, float Rz, float heading){
   }  
 }
 
+
+
+/*
+ * Calculates heading in the middle of two obstacles
+*/
 float calcHeading(float Lx, float Lz, float Rx, float Rz){
     float heading1 = atanf(Lx/Lz);
     float heading2 = atanf(Rx/Rz);
@@ -640,6 +523,11 @@ float calcHeading(float Lx, float Lz, float Rx, float Rz){
   return heading;
 }
 
+
+
+/*
+ * Calculates the distance to the other side of the cyberzoo
+*/
 float calcDistance(float heading){
   struct EnuCoor_i new_coor;
   float distance = 0.5;
