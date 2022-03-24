@@ -191,7 +191,7 @@ uint32_t create_obstacle_matrix(int (*obstacle_data)[4], struct image_t *img, bo
 
       skip = false;
       for (int i=0; i<Nobs; ++i){
-        if (y>obstacle_data[i][1]-5 && y<obstacle_data[i][3]+5){
+        if (y>obstacle_data[i][1]-6 && y<obstacle_data[i][3]+6){
           skip = true;
         }
       }
