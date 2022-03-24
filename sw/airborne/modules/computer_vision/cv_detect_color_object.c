@@ -36,6 +36,7 @@
 #include <math.h>
 #include "pthread.h"
 
+
 #define PRINT(string,...) fprintf(stderr, "[object_detector->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 #if OBJECT_DETECTOR_VERBOSE
 #define VERBOSE_PRINT PRINT
@@ -101,7 +102,6 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   int obstacle_data[100][4];
   uint32_t Nobs = create_obstacle_matrix(obstacle_data, img, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
 
-  uint32_t count = 0;
   pthread_mutex_lock(&mutex);
   global_filters[filter-1].Nobs = Nobs;
   for (int i=0; i<100; ++i){
@@ -176,7 +176,7 @@ uint32_t create_obstacle_matrix(int (*obstacle_data)[4], struct image_t *img, bo
   int x_pix_left;
   int x_pix_right;
 
-  uint32_t Nobs = 0;
+  int Nobs = 0;
 
   // Go through all the pixels
   for (uint16_t x = 0; x < (0.75*(img->w)); x ++) {

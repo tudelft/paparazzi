@@ -79,7 +79,6 @@ struct color_object_t {
   bool updated;
 };
 
-
 // define settings
 float oag_max_speed = 1.f;                // max flight speed [m/s]
 
