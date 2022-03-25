@@ -335,7 +335,9 @@
     <define name="W_DV_5" value="0.1"/>
     <define name="W_DV_6" value="0.01"/>
 
-    <define name="GAMMA_QUADRATIC" value="1e-7"/>
+    <define name="GAMMA_QUADRATIC_DV" value="100"/>
+    <define name="GAMMA_QUADRATIC_DU" value="1e-3"/>
+    <define name="GAMMA_QUADRATIC_WLS" value="10000"/>
 
   </section>
 

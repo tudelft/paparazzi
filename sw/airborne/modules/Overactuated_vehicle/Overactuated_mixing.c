@@ -89,7 +89,6 @@ float psi_order_motor;
 bool INDI_engaged = 0, FAILSAFE_engaged = 0, PID_engaged = 0;
 
 // PID and general settings from slider
-float pos_setpoint_body[2] = {0,0};
 int deadband_stick_yaw = 500, deadband_stick_throttle = 2500;
 float stick_gain_yaw = 0.01, stick_gain_throttle = 0.03; //  Stick to yaw and throttle gain (for the integral part)
 bool yaw_with_motors_PID = 0, position_with_attitude = 0, manual_motor_stick = 1, activate_tilting_az_PID = 0;
@@ -127,9 +126,7 @@ float rate_setpoint[3];
 float acc_setpoint[6];
 float INDI_pseudocontrol[INDI_INPUTS];
 
-
 float B_matrix[INDI_INPUTS][INDI_NUM_ACT];
-
 
 //AM7 variables:
 float manual_motor_value = 0, manual_el_value = 0, manual_az_value = 0, manual_phi_value = 0, manual_theta_value = 0;
@@ -205,137 +202,6 @@ float act_dyn[N_ACT_REAL];
 static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), float * myam7_data_in_ptr, float * extra_data_in_ptr){
     memcpy(&myam7_data_in_local,myam7_data_in_ptr,sizeof(struct am7_data_in));
     memcpy(&extra_data_in_local,extra_data_in_ptr,sizeof(extra_data_in_local));
-}
-
-/** Moore–Penrose pseudo-inverse
- *
- * Given a matrix B(num_row,num_column), with num_row < num_column, this routine computes its Moore–Penrose inverse,
- * The Moore–Penrose inverse is based on the SVD decomposition.
- *
- * @param num_row number of rows of input the matrix B_matrix
- * @param num_column number of column of input the matrix B_matrix
- * @param B_matrix pointer to the Matrix to invert
- * @param B_inv pointer of the resulting inverted matrix. B_inv(num_column,num_row)
- */
-void compute_pseudoinverse_fcn(int num_row, int num_column, float * B_matrix, float * B_inv){
-
-    //Print the B matrix
-    float B_matrix_local[num_row][num_column];
-    //Make a local copy of the B matrix
-    memcpy(&B_matrix_local[0], &B_matrix[0], num_row * num_column * sizeof(float));
-
-    //Declare all the necessary variables:
-    float W_diag_array[num_row];
-    float V_matrix[num_row][num_row];
-    float B_matrix_transposed[num_column][num_row];
-    float * B_matrix_ptr[num_column];
-    float * V_matrix_ptr[num_row];
-    float out_local[num_row][num_row];
-    float B_inv_local[num_column][num_row];
-    float W_diag_inverted[num_row][num_row];
-    float U_transposed[num_row][num_column];
-
-    //Transpose matrix B_in
-    for (int i = 0; i < num_row; i++) {
-        for (int j = 0; j < num_column; j++) {
-            B_matrix_transposed[j][i] = B_matrix_local[i][j];
-        }
-    }
-
-    //Assign the pointer of B_matrix_transposed into B_matrix_ptr
-    for (int j = 0; j < num_column; j++) {
-        B_matrix_ptr[j] = &B_matrix_transposed[j][0];
-    }
-
-    // Pre-assign the matrices for the SVD decomposition
-    for (int i = 0; i < num_row; i++) {
-        V_matrix_ptr[i] = &V_matrix[i][0];
-    }
-
-    //Decompose the B matrix with the SVD decomposition module
-    pprz_svd_float(B_matrix_ptr, & W_diag_array[0] , V_matrix_ptr, num_column, num_row);
-
-    //Sort the eigenvalues and the V and U matrices with bubblesort algorithm:
-    //Note that U is B_matrix_transposed;
-    //FIXME need to improve speed!!!!
-    float temp_W = 0;
-    float temp_U = 0;
-    float temp_V = 0;
-    for (int j = 0; j < num_row; j++)
-    {
-        for (int i = 0; i < num_row - 1; i++)
-        {
-            if (W_diag_array[i] < W_diag_array[i + 1])
-            {
-                //Swap W
-                temp_W = W_diag_array[i + 1];
-                W_diag_array[i + 1] = W_diag_array[i];
-                W_diag_array[i] = temp_W;
-                //Swap U
-                for(int k = 0; k < num_column ; k++){
-                    temp_U = B_matrix_transposed[k][i + 1];
-                    B_matrix_transposed[k][i + 1] = B_matrix_transposed[k][i];
-                    B_matrix_transposed[k][i] = temp_U;
-                }
-                //Swap V
-                for(int k = 0; k < num_row ; k++){
-                    temp_V = V_matrix[k][i + 1];
-                    V_matrix[k][i + 1] = V_matrix[k][i];
-                    V_matrix[k][i] = temp_V;
-                }
-            }
-        }
-    }
-
-    //Transpose matrix U from the SVD output
-    for (int i = 0; i < num_column; i++) {
-        for (int j = 0; j < num_row; j++) {
-            U_transposed[j][i] = B_matrix_transposed[i][j];
-        }
-    }
-
-
-    int num_row_mod = num_row;
-    //Decrease the number of row if some eigenvalues are too small to avoid instabilities:
-    for (int i = num_row - 1; i > 0; i--) {
-        if(W_diag_array[i] < 0.0000001 * W_diag_array[0]){
-            num_row_mod--;
-        }
-    }
-
-    // Invert the diag values and create the diagonal matrix
-    for (int i = 0; i < num_row_mod; i++) {
-        for (int j = 0; j < num_row_mod; j++) {
-            if(i == j){
-                W_diag_inverted[j][i] = 1/W_diag_array[i];
-            }
-            else{
-                W_diag_inverted[j][i] = 0;
-            }
-        }
-    }
-
-    //Multiply V_matrix with the diagonal matrix W_diag_inverted
-    for (int i = 0; i < num_row; i++) {
-        for (int j = 0; j < num_row_mod; j++) {
-            out_local[i][j] = 0.;
-            for (int k = 0; k < num_row_mod; k++) {
-                out_local[i][j] += V_matrix[i][k] * W_diag_inverted[j][k];
-            }
-        }
-    }
-
-    //Multiply out_local with the matrix U_transposed
-    for (int i = 0; i < num_row; i++) {
-        for (int j = 0; j < num_column; j++) {
-            B_inv_local[j][i] = 0.;
-            for (int k = 0; k < num_row_mod; k++) {
-                B_inv_local[j][i] += out_local[i][k] * U_transposed[k][j];
-            }
-        }
-    }
-
-    memcpy(B_inv, & B_inv_local[0], num_row * num_column * sizeof(float));
 }
 
 /**
@@ -484,7 +350,7 @@ void overactuated_mixing_init(void) {
 /**
  * Ad each iteration upload global variables
  */
-void init_variables(void){
+void assign_variables(void){
     rate_vect[0] = stateGetBodyRates_f()->p;
     rate_vect[1] = stateGetBodyRates_f()->q;
     rate_vect[2] = stateGetBodyRates_f()->r;
@@ -555,8 +421,7 @@ void init_variables(void){
 void overactuated_mixing_run()
 {
     //Assign variables
-    init_variables();
-
+    assign_variables();
 
     if(start_auto){
         if(bool_start_auto_on == 0) {
@@ -647,7 +512,7 @@ void overactuated_mixing_run()
     }
 
     /// Case of manual PID control [FAILSAFE]
-    if(1) {
+    if(0) {
 
         ////Angular error computation
         //Calculate the setpoints manually:
@@ -727,7 +592,10 @@ void overactuated_mixing_run()
     }
 
     /// Case of auto PID control
-    if(radio_control.values[RADIO_MODE] < 500 && radio_control.values[RADIO_MODE] > -500 && bool_start_auto_on) {
+//    if(radio_control.values[RADIO_MODE] < 500 && radio_control.values[RADIO_MODE] > -500 && bool_start_auto_on)
+    if(1)
+
+    {
 
         ////Position error computation
         pos_error[0] = pos_setpoint[0] - pos_vect[0];
@@ -830,19 +698,16 @@ void overactuated_mixing_run()
 
     }
 
-    /// Case of INDI control mode as on simulink
-    if(radio_control.values[RADIO_MODE] > 500 && bool_start_auto_on){
-//    if(1){
+    /// Case of INDI control mode with external am7 function:
+//    if(radio_control.values[RADIO_MODE] > 500 && bool_start_auto_on)
+    if(1)
+    {
 
         //INIT AND BOOLEAN RESET
         if(INDI_engaged == 0){
             /*
             INIT CODE FOR THE INDI GOES HERE
              */
-            euler_setpoint[2] = euler_vect[2];
-            pos_setpoint[0] = pos_vect[0];
-            pos_setpoint[1] = pos_vect[1];
-            pos_setpoint[2] = pos_vect[2];
             init_filters();
             INDI_engaged = 1;
             PID_engaged = 0;
@@ -880,23 +745,20 @@ void overactuated_mixing_run()
 //        manual_phi_value = max_value_error.phi * radio_control.values[RADIO_ROLL] / 9600;
 //        manual_theta_value = max_value_error.theta * radio_control.values[RADIO_PITCH] / 9600;
 
-        euler_setpoint[0] = indi_u[13];
-        euler_setpoint[1] = indi_u[12];
+        euler_setpoint[0] = manual_phi_value;
+        euler_setpoint[1] = manual_theta_value;
         //Give a specific heading value to keep
         if(manual_heading){
             euler_setpoint[2] = manual_heading_value_rad;
         }
-        //Integrate the stick yaw position to get the psi set point
-        else if( abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw && fabs(euler_error[2]) < max_value_error.psi){
-            euler_setpoint[2] = euler_setpoint[2] + stick_gain_yaw * radio_control.values[RADIO_YAW] * M_PI / 180 * .001;
-            //Correct the setpoint in order to always be within -pi and pi
-            if(euler_setpoint[2] > M_PI){
-                euler_setpoint[2] -= 2 * M_PI;
-            }
-            else if(euler_setpoint[2] < - M_PI){
-                euler_setpoint[2] += 2 * M_PI;
-            }
+
+        if(euler_setpoint[2] > M_PI){
+            euler_setpoint[2] -= 2 * M_PI;
         }
+        else if(euler_setpoint[2] < - M_PI){
+            euler_setpoint[2] += 2 * M_PI;
+        }
+
 
         BoundAbs(euler_setpoint[0],max_value_error.phi);
         BoundAbs(euler_setpoint[1],max_value_error.theta);
@@ -948,21 +810,6 @@ void overactuated_mixing_run()
         INDI_pseudocontrol[5] = acc_setpoint[5] - rate_vect_filt_dot[2];
 
         //Calculate the position error to be fed into the PD for the INDI loop
-        pos_setpoint[0] = x_stb;
-        pos_setpoint[1] = y_stb;
-//         if ( abs(radio_control.values[RADIO_PITCH]) > deadband_stick_throttle){
-//             pos_setpoint[0] = pos_setpoint[0] + stick_gain_throttle * radio_control.values[RADIO_PITCH] * .0001;
-//         }
-//         if ( abs(radio_control.values[RADIO_ROLL]) > deadband_stick_throttle){
-//             pos_setpoint[1] = pos_setpoint[1] + stick_gain_throttle * radio_control.values[RADIO_ROLL] * .0001;
-//         }
-
-//        pos_setpoint[2] = -z_stb;
-        //Integrate the stick engine position to get the z set point WARNING NED CONVENTION
-        if( abs(radio_control.values[RADIO_THROTTLE] - 4800) > deadband_stick_throttle ){
-            pos_setpoint[2]  = pos_setpoint[2]  - stick_gain_throttle * (radio_control.values[RADIO_THROTTLE] - 4800) * .00001;
-        }
-        Bound(pos_setpoint[2] ,-1000,1);
 
         pos_error[0] = pos_setpoint[0] - pos_vect[0];
         pos_error[1] = pos_setpoint[1] - pos_vect[1];
@@ -984,18 +831,6 @@ void overactuated_mixing_run()
         INDI_pseudocontrol[1] = acc_setpoint[1] - acc_vect_filt[1];
         INDI_pseudocontrol[2] = acc_setpoint[2] - acc_vect_filt[2];
 
-//        //Local testing the CA algorithms:
-//        euler_vect[0] = 0; euler_vect[1] = 0; euler_vect[2] = 0;
-//        actuator_state_filt[0] = 300; actuator_state_filt[1] = 300; actuator_state_filt[2] = 300; actuator_state_filt[3] = 300;
-//        actuator_state_filt[4] = 0; actuator_state_filt[5] = 0; actuator_state_filt[6] = 0; actuator_state_filt[7] = 0;
-//        actuator_state_filt[8] = 0; actuator_state_filt[9] = 0; actuator_state_filt[10] = 0; actuator_state_filt[11] = 0;
-//        actuator_state_filt[12] = 0; actuator_state_filt[13] = 0;
-//        INDI_pseudocontrol[0] = 0;
-//        INDI_pseudocontrol[1] = 0;
-//        INDI_pseudocontrol[2] = -15;
-//        INDI_pseudocontrol[3] = 0;
-//        INDI_pseudocontrol[4] = 0;
-//        INDI_pseudocontrol[5] = 0;
 
         //Compute and transmit the messages to the AM7 module:
         struct am7_data_out am7_data_out_local;
@@ -1089,10 +924,11 @@ void overactuated_mixing_run()
         extra_data_out_local[44] = OVERACTUATED_MIXING_W_DV_5;
         extra_data_out_local[45] = OVERACTUATED_MIXING_W_DV_6;
 
-        extra_data_out_local[46] = OVERACTUATED_MIXING_GAMMA_QUADRATIC;
+        extra_data_out_local[46] = OVERACTUATED_MIXING_GAMMA_QUADRATIC_DV;
+        extra_data_out_local[47] = OVERACTUATED_MIXING_GAMMA_QUADRATIC_DU;
+        extra_data_out_local[48] = OVERACTUATED_MIXING_GAMMA_QUADRATIC_WLS;
 
         AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &am7_data_out_local, &extra_data_out_local);
-
 
         //Collect the last available data on the AM7 bus to be communicated to the servos.
         indi_u[0] =  (myam7_data_in_local.motor_1_cmd_int * 1e-1);

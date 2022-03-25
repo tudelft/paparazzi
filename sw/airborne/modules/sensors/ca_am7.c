@@ -123,41 +123,6 @@ void am7_parse_msg_in(void)
     AbiSendMsgAM7_DATA_IN(ABI_AM7_DATA_IN_ID, &myam7_data_in, &extra_data_in[0]);
 }
 
-void assign_variables(void){
-
-//    myam7_data_out.motor_1_state_int =  1000;
-//    myam7_data_out.motor_2_state_int =  1000;
-//    myam7_data_out.motor_3_state_int =  1000;
-//    myam7_data_out.motor_4_state_int = 1000;
-//
-//    myam7_data_out.el_1_state_int = 0;
-//    myam7_data_out.el_2_state_int = 0;
-//    myam7_data_out.el_3_state_int = 0;
-//    myam7_data_out.el_4_state_int = 0;
-//
-//    myam7_data_out.az_1_state_int = 0;
-//    myam7_data_out.az_2_state_int = 0;
-//    myam7_data_out.az_3_state_int = 0;
-//    myam7_data_out.az_4_state_int = 0;
-//
-//    myam7_data_out.theta_state_int = 0;
-//    myam7_data_out.phi_state_int = 0;
-//    myam7_data_out.psi_state_int = 0;
-//    myam7_data_out.gamma_state_int = 0;
-//    myam7_data_out.p_state_int = 0;
-//    myam7_data_out.q_state_int = 0;
-//    myam7_data_out.r_state_int = 0;
-//    myam7_data_out.airspeed_state_int = 0;
-//    myam7_data_out.pseudo_control_ax_int = 5670;
-//    myam7_data_out.pseudo_control_ay_int = 1046;
-//    myam7_data_out.pseudo_control_az_int = 1675;
-//    myam7_data_out.pseudo_control_p_dot_int = 1073;
-//    myam7_data_out.pseudo_control_q_dot_int = 1034;
-//    myam7_data_out.pseudo_control_r_dot_int = 11342;
-//    myam7_data_out.rolling_msg_out = 2.54;
-
-}
-
 /* We need to wait for incoming messages */
 void am7_event()
 {
