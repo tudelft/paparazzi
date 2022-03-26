@@ -318,11 +318,11 @@
 
     <!-- INDI properties [weights] -->
     <define name="W_ACT_MOTOR_CONST" value="1"/>
-    <define name="W_ACT_MOTOR_SPEED" value="1"/>
+    <define name="W_ACT_MOTOR_SPEED" value="0"/>
     <define name="W_ACT_EL_CONST" value="1"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
     <define name="W_ACT_AZ_CONST" value="1"/>
-    <define name="W_ACT_AZ_SPEED" value="100"/>
+    <define name="W_ACT_AZ_SPEED" value="0"/>
     <define name="W_ACT_THETA_CONST" value="400"/>
     <define name="W_ACT_THETA_SPEED" value="-50"/>
     <define name="W_ACT_PHI_CONST" value="500"/>
@@ -331,13 +331,15 @@
     <define name="W_DV_1" value="0.01"/>
     <define name="W_DV_2" value="0.01"/>
     <define name="W_DV_3" value="0.01"/>
-    <define name="W_DV_4" value="0.1"/>
-    <define name="W_DV_5" value="0.1"/>
+    <define name="W_DV_4" value="1"/>
+    <define name="W_DV_5" value="1"/>
     <define name="W_DV_6" value="0.01"/>
 
-    <define name="GAMMA_QUADRATIC_DV" value="100"/>
-    <define name="GAMMA_QUADRATIC_DU" value="1e-3"/>
+    <define name="GAMMA_QUADRATIC_DV" value="1"/>
+    <define name="GAMMA_QUADRATIC_DU" value="1e-7"/>
     <define name="GAMMA_QUADRATIC_WLS" value="10000"/>
+
+    <define name="MAX_ITER_WLS" value="100"/>
 
   </section>
 

@@ -48,15 +48,17 @@ int start_auto = 0;
 float start_time_auto = 0;
 int bool_start_auto_on = 0;
 
-float ax_point = -1;
-float ay_point = -1;
-float bx_point = 1;
-float by_point = -1;
-float cx_point = 1;
-float cy_point = 1;
-float z_test = 3;
-float pitch_angle_test = 30;
-float roll_angle_test = 30;
+float ax_point = 0;
+float ay_point = 0;
+float bx_point = 0;
+float by_point = 0;
+float cx_point = 0;
+float cy_point = 0;
+float ox_point = 0;
+float oy_point = 0;
+float z_test = 1.5;
+float pitch_angle_test = 0;
+float roll_angle_test = 0;
 
 //Communication with AM& variables
 static abi_event AM7_in;
@@ -501,9 +503,9 @@ void overactuated_mixing_run()
             manual_phi_value = roll_angle_test * M_PI/180;
             euler_setpoint[2] = 0;
         }
-        if(get_sys_time_float() - start_time_auto > 45 && get_sys_time_float() - start_time_auto <= 50){
-            pos_setpoint[0] = 0;
-            pos_setpoint[1] = 0;
+        if(get_sys_time_float() - start_time_auto > 45 ){
+            pos_setpoint[0] = ox_point;
+            pos_setpoint[1] = oy_point;
             pos_setpoint[2] = - z_test;
             manual_theta_value = 0;
             manual_phi_value = 0;
@@ -512,7 +514,7 @@ void overactuated_mixing_run()
     }
 
     /// Case of manual PID control [FAILSAFE]
-    if(0) {
+    if(1) {
 
         ////Angular error computation
         //Calculate the setpoints manually:
@@ -592,8 +594,8 @@ void overactuated_mixing_run()
     }
 
     /// Case of auto PID control
-//    if(radio_control.values[RADIO_MODE] < 500 && radio_control.values[RADIO_MODE] > -500 && bool_start_auto_on)
-    if(1)
+    if(radio_control.values[RADIO_MODE] < 500 && radio_control.values[RADIO_MODE] > -500 && bool_start_auto_on)
+//    if(1)
 
     {
 
@@ -699,8 +701,8 @@ void overactuated_mixing_run()
     }
 
     /// Case of INDI control mode with external am7 function:
-//    if(radio_control.values[RADIO_MODE] > 500 && bool_start_auto_on)
-    if(1)
+    if(radio_control.values[RADIO_MODE] > 500 && bool_start_auto_on)
+//    if(1)
     {
 
         //INIT AND BOOLEAN RESET
@@ -742,8 +744,8 @@ void overactuated_mixing_run()
 
         //Calculate the euler angle error to be fed into the PD for the INDI loop
 
-//        manual_phi_value = max_value_error.phi * radio_control.values[RADIO_ROLL] / 9600;
-//        manual_theta_value = max_value_error.theta * radio_control.values[RADIO_PITCH] / 9600;
+        manual_phi_value = max_value_error.phi * radio_control.values[RADIO_ROLL] / 9600;
+        manual_theta_value = max_value_error.theta * radio_control.values[RADIO_PITCH] / 9600;
 
         euler_setpoint[0] = manual_phi_value;
         euler_setpoint[1] = manual_theta_value;
@@ -927,6 +929,7 @@ void overactuated_mixing_run()
         extra_data_out_local[46] = OVERACTUATED_MIXING_GAMMA_QUADRATIC_DV;
         extra_data_out_local[47] = OVERACTUATED_MIXING_GAMMA_QUADRATIC_DU;
         extra_data_out_local[48] = OVERACTUATED_MIXING_GAMMA_QUADRATIC_WLS;
+        extra_data_out_local[49] = OVERACTUATED_MIXING_MAX_ITER_WLS;
 
         AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &am7_data_out_local, &extra_data_out_local);
 

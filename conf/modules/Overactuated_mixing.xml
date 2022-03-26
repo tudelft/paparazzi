@@ -16,7 +16,9 @@
         <dl_setting var="by_point"  min="-5" step=".1" max="5" shortname="by_point" />
         <dl_setting var="cx_point"  min="-5" step=".1" max="5" shortname="cx_point" />
         <dl_setting var="cy_point"  min="-5" step=".1" max="5" shortname="cy_point" />
-        <dl_setting var="z_test"  min="0" step=".1" max="5" shortname="z_test" />
+        <dl_setting var="ox_point"  min="-5" step=".1" max="5" shortname="ox_point" />
+        <dl_setting var="oy_point"  min="-5" step=".1" max="5" shortname="oy_point" />
+        <dl_setting var="z_test"  min="-2" step=".1" max="5" shortname="z_test" />
         <dl_setting var="pitch_angle_test"  min="0" step="1" max="40" shortname="pitch_angle_test" />
         <dl_setting var="roll_angle_test"  min="0" step="1" max="40" shortname="roll_angle_test" />
 
