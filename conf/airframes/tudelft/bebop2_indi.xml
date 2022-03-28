@@ -6,15 +6,17 @@
   </description>
 
   <firmware name="rotorcraft">
-    <target name="ap" board="bebop2"/>
+    <target name="ap" board="bebop2">
+      <configure name="HOST" value="192.168.1.$(AC_ID)"/>
+      <configure name="MODEM_HOST" value="192.168.1.86"/>
+      <configure name="MODEM_BROADCAST" value="FALSE"/>
+      <define name="INDI_RPM_FEEDBACK" value="TRUE"/>
+    </target>
 
-       <configure name="HOST" value="192.168.1.$(AC_ID)"/>
-       <configure name="MODEM_HOST" value="192.168.1.105"/>
-       <configure name="MODEM_BROADCAST" value="FALSE"/>
-    <!--target name="nps" board="pc">
+    <target name="nps" board="pc">
       <module name="fdm" type="jsbsim"/>
       <module name="udp"/>
-    </target-->
+    </target>
 
 	  <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
@@ -23,7 +25,6 @@
     <module name="imu" type="bebop"/>
     <module name="gps" type="ublox"/>
     <module name="stabilization" type="indi">
-      <define name="INDI_RPM_FEEDBACK" value="TRUE"/>
     </module>
     <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="TRUE"/>
@@ -90,7 +91,8 @@
     <define name="G1_YAW" value="{0.65f, -0.65f, 0.65f, -0.65f}"/>
     <define name="G1_THRUST" value="{-.7f, -.7f, -.7f, -.7f}"/>
     <!--Counter torque effect of spinning up a rotor-->
-    <define name="G2" value="{ 110.f,   -110.f,   110.f,   -110.f}"/>
+    <!-- <define name="G2" value="{ 110.f,   -110.f,   110.f,   -110.f}"/> -->
+    <define name="G2" value="{0.f, 0.f, 0.f, 0.f}"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="380.f"/>
@@ -143,6 +145,7 @@
     <define name="ACTUATOR_NAMES" value="nw_motor, ne_motor, se_motor, sw_motor" type="string[]"/>
     <define name="JSBSIM_MODEL" value="simple_x_quad_ccw" type="string"/>
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
+    <define name="NO_MOTOR_MIXING" value="TRUE"/>
   </section>
 
   <section name="AUTOPILOT">

@@ -138,6 +138,7 @@
       <message name="ALIVE"                 period="0.9"/>
       <message name="HOVER_LOOP"            period="0.062"/>
       <message name="GUIDANCE_H_REF_INT"    period="0.062"/>
+      <message name="GUIDANCE_INDI_HYBRID" period="0.062"/>
       <message name="STAB_ATTITUDE_INT"     period="0.4"/>
       <message name="STAB_ATTITUDE_FLOAT"   period="0.4"/>
       <!--<message name="STAB_ATTITUDE_REF_INT" period="0.4"/>-->
