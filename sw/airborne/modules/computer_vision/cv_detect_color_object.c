@@ -70,11 +70,11 @@ uint8_t cod_cr_max2 = 0;
 bool cod_draw1 = false;
 bool cod_draw2 = false;
 
-// global variables for filter box settings
-int16_t filterbox_ymin = 120;
-int16_t filterbox_ymax = 400;
+// Filter box Settings
+int16_t filterbox_ymin = 0;
+int16_t filterbox_ymax = 0;
 int16_t filterbox_xmin = 0;
-int16_t filterbox_xmax = 10;
+int16_t filterbox_xmax = 0;
 
 // define global variables
 struct color_object_t {
@@ -169,6 +169,11 @@ void color_object_detector_init(void)
   cod_cb_max1 = COLOR_OBJECT_DETECTOR_CB_MAX1;
   cod_cr_min1 = COLOR_OBJECT_DETECTOR_CR_MIN1;
   cod_cr_max1 = COLOR_OBJECT_DETECTOR_CR_MAX1;
+  filterbox_ymin = FILTERBOX_YMIN;
+  filterbox_ymax = FILTERBOX_YMAX;
+  filterbox_xmin = FILTERBOX_XMIN;
+  filterbox_xmax = FILTERBOX_XMAX;
+
 #endif
 #ifdef COLOR_OBJECT_DETECTOR_DRAW1
   cod_draw1 = COLOR_OBJECT_DETECTOR_DRAW1;
@@ -185,6 +190,10 @@ void color_object_detector_init(void)
   cod_cb_max2 = COLOR_OBJECT_DETECTOR_CB_MAX2;
   cod_cr_min2 = COLOR_OBJECT_DETECTOR_CR_MIN2;
   cod_cr_max2 = COLOR_OBJECT_DETECTOR_CR_MAX2;
+  filterbox_ymin = FILTERBOX_YMIN;
+  filterbox_ymax = FILTERBOX_YMAX;
+  filterbox_xmin = FILTERBOX_XMIN;
+  filterbox_xmax = FILTERBOX_XMAX;
 #endif
 #ifdef COLOR_OBJECT_DETECTOR_DRAW2
   cod_draw2 = COLOR_OBJECT_DETECTOR_DRAW2;
@@ -228,8 +237,7 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   // Filter only first x pixels from below and the middle y pixels
 
   for (uint16_t y = filterbox_ymin; y < filterbox_ymax; y++) {
-    // for (uint16_t x = 0; x < img->w; x ++) { // OLD CODE
-    for (uint16_t x = filterbox_xmin; x < filterbox_xmax; x ++) { // NEW CODE
+    for (uint16_t x = filterbox_xmin; x < filterbox_xmax; x++) {
       // Check if the color is inside the specified values
       uint8_t *yp, *up, *vp;
       if (x % 2 == 0) {
@@ -252,11 +260,8 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
         tot_x += x;
         tot_y += y;
 
-        // if y green for several center points, send safe msg.
-        // if center is safe, always go from SFSH->SAFE
-
         if (draw){
-          *yp = 255;  // make pixel brighter in image
+          *yp = 255;  // make detected pixel brighter in image
         }
       }
     }

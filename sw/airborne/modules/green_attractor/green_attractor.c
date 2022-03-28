@@ -27,7 +27,6 @@
 #define NAV_C // needed to get the nav functions like Inside...
 #include "generated/flight_plan.h"
 
-// #define GREEN_AVOIDER_VERBOSE TRUE
 #define GREEN_ATTRACTOR_VERBOSE TRUE
 
 
@@ -45,8 +44,8 @@ static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeter
 static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 static uint8_t increase_nav_heading(float incrementDegrees);
 static uint8_t chooseIncrementAvoidance(void);
-static uint8_t MeanderIncrement(void);
-static int8_t chooseIncrementSign(void);
+static uint8_t chooseMeanderIncrement(void);
+static int8_t signOf(float variable);
 
 
 enum navigation_state_t {
@@ -56,19 +55,17 @@ enum navigation_state_t {
   OUT_OF_BOUNDS
 };
 
-/* Green Detection
- * oa_color_count_frac: threshold fraction of green that triggers loss in confidence
+/* Green Detection Parameters
+ * ga_color_count_frac: threshold fraction of green that triggers loss in confidence
  * meander_frac: threshold fraction ar which to already change heading regardless of confidence
- * meander_increment: heading increment for meandering 
+ * meander_increment: heading increment for avoidance while in forward flight
  */
-
-
-float oa_color_count_frac = 0.87f;
+float ga_color_count_frac = 0.87f;
 float meander_frac = 0.75f;
-int meander_increment = 7;
+uint8_t meander_increment = 7;           
 
 // define and initialise global variables
-enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
+enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING; // start at SFSH
 int32_t color_count = 0;                // green color count from color filter for obstacle detection
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
 float heading_increment = 5.f;          // heading angle increment [deg]
@@ -96,16 +93,16 @@ float FPS_green_attractor = 0;
 bool safeflight = false;
 
 // global vars for confidence tuning
-int confidence_increment = 2;
-int confidence_decrement = 4;
+uint8_t confidence_increment = 2;
+uint8_t confidence_decrement = 4;
 
 // track state
-int current_state = 2;
+uint8_t current_state = 2;
 
 // turn 90 deg when losing all color
 float strong_turn_threshold = 0.07;
 
-int SFSH_increment = 7;
+uint8_t SFSH_increment = 7;
 
 
 /*
@@ -116,7 +113,6 @@ int SFSH_increment = 7;
  * defined in this file does not need to be explicitly called, only bound in the init function
  */
 
-// Decide later whether to add a new msg for green_attractor
 #ifndef GREEN_ATTRACTOR_VISUAL_DETECTION_ID
 #define GREEN_ATTRACTOR_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
@@ -140,12 +136,11 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
 
 
 /*
- * Initialisation function, setting the colour filter, random seed and heading_increment
+ * Initialisation function, setting the colour filter and heading_increment
  */
 void green_attractor_init(void)
 {
-  // Initialise random values
-  srand(time(NULL));
+  // Initialise increment
   chooseIncrementAvoidance();
 
   // bind our colorfilter callbacks to receive the color filter outputs
@@ -158,46 +153,52 @@ void green_attractor_init(void)
 void green_attractor_periodic(void)
 {
   current_state = (int)navigation_state;
-  VERBOSE_PRINT("center of green  y = %i\n", green_center_y);
-  VERBOSE_PRINT("FPS = %f\n", FPS_green_attractor);
-  VERBOSE_PRINT("obstacle_free_confidence = %i\n", obstacle_free_confidence);
-  VERBOSE_PRINT("current_state = %i\n", current_state);
+  /*
+  * Use the following print statements for debugging
+  *
+  * VERBOSE_PRINT("center of green  y = %i\n", green_center_y);
+  * VERBOSE_PRINT("FPS = %f\n", FPS_green_attractor);
+  * VERBOSE_PRINT("obstacle_free_confidence = %i\n", obstacle_free_confidence);
+  * VERBOSE_PRINT("current_state = %i\n", current_state);
+  */
 
   // only evaluate our state machine if we are flying
   if(!autopilot_in_flight()){
     return;
   }
   int px_filterbox = (filterbox_ymax-filterbox_ymin) * (filterbox_xmax-filterbox_xmin);
-  // compute current color thresholds
-  // for entire image: int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
-  // for current filterbox: int32_t color_count_threshold = oa_color_count_frac * 10 * 320;
-  int32_t color_count_threshold = oa_color_count_frac * px_filterbox;
+  // compute color thresholds for this filterbox, ga_color_count_frac and meander_frac
+  int32_t color_count_threshold = ga_color_count_frac * px_filterbox;
+  int32_t meander_threshold = meander_frac * px_filterbox;
 
-  VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
+  VERBOSE_PRINT("Color_count: %d, meander threshold: %d, threshold: %d state: %d \n", color_count, meander_threshold, color_count_threshold, navigation_state);
 
 
   // update our safe confidence using color threshold
   if(color_count > color_count_threshold){
     obstacle_free_confidence += confidence_increment;
-  } else if(color_count > meander_frac*px_filterbox && safeflight == true){ // if we already see object, start yawing in flight
-    MeanderIncrement();
+
+    // if we already see object, start yawing in flight
+  } else if(color_count > meander_threshold && safeflight == true){
+    chooseMeanderIncrement();
     increase_nav_heading(heading_increment);
-    moveWaypointForward(WP_TRAJECTORY, 1.5f * fminf(maxDistance, (0.2f * 6) + 0.2));
-    // moveWaypointAcross(WP_TRAJECTORY, 1.5f , heading_increment);
+    // move waypoint far forward to make in-flight avoidance fast
+    moveWaypointForward(WP_TRAJECTORY, 1.5f * fminf(maxDistance, 0.2f*max_trajectory_confidence));
     safeflight = false;
+
   } else {
-    obstacle_free_confidence -= confidence_decrement;  // be more cautious with positive obstacle detections
+    // be more cautious with insufficient green detection
+    obstacle_free_confidence -= confidence_decrement;
   }
-  
 
   // bound obstacle_free_confidence
   Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
 
-  float moveDistance = fminf(maxDistance, (0.2f * obstacle_free_confidence)); // what's the 0.2? (was added to 2nd argument)
+  float moveDistance = fminf(maxDistance, (0.2f * obstacle_free_confidence));
 
   switch (navigation_state){
     case SAFE:
-      // Move waypoint forward
+      // move waypoint forward
       moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
 
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
@@ -214,7 +215,7 @@ void green_attractor_periodic(void)
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
 
-      // select new search direction
+      // select new search direction based on green centre
       chooseIncrementAvoidance();
       increase_nav_heading(heading_increment);
       navigation_state = SEARCH_FOR_SAFE_HEADING;
@@ -222,31 +223,30 @@ void green_attractor_periodic(void)
       break;
     case SEARCH_FOR_SAFE_HEADING:
 
+      // if a lot of green count is lost, assume you arrived at boundary; turn 90 degrees
       if(color_count < strong_turn_threshold*px_filterbox)
       {
         VERBOSE_PRINT("TURN 90");
-        increase_nav_heading(heading_increment/abs(heading_increment)*90);
+        increase_nav_heading(signOf(heading_increment)*90);
       }
       else{
-        heading_increment = heading_increment/abs(heading_increment)*SFSH_increment;
-
+        heading_increment = signOf(heading_increment)*SFSH_increment;
         increase_nav_heading(heading_increment);
-        moveWaypointAcross(WP_TRAJECTORY, 1.5f , heading_increment); // check +10
-        // make sure we have a couple of good readings before declaring the way safe
+        moveWaypointAcross(WP_TRAJECTORY, 1.5f , heading_increment);
       }
-
-
-      if (obstacle_free_confidence >= 2){ // tweak
+      // make sure we have a couple of good readings before declaring the way safe
+      if (obstacle_free_confidence >= 2){
         safeflight = true;
         navigation_state = SAFE;
       }
       break;
+    /*
+    * OUT_OF_BOUNDS state is kept for safety
+    * State machine most likely never reaches OOB
+    * Boundary is detected as an obstacle (low green count) 
+    */
     case OUT_OF_BOUNDS:
-
-      // moveWaypointForward(WP_TRAJECTORY, 0.2f);
-
-      // Test
-      heading_increment = heading_increment/abs(heading_increment)*5;
+      heading_increment = signOf(heading_increment)*5;
       increase_nav_heading(heading_increment);
 
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
@@ -276,7 +276,7 @@ void log_distance_covered_periodic(void)
   // calculate distance covered
   dx = fabs(stateGetPositionEnu_f()->x - last_pos_x);
   dy = fabs(stateGetPositionEnu_f()->y - last_pos_y);
-  d_covered = d_covered + sqrt(dx*dx+dy*dy);
+  d_covered += sqrt(dx*dx+dy*dy);
   VERBOSE_PRINT("distance covered: d = %f \n", d_covered);
 
   // Update position
@@ -364,7 +364,7 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
  */
 uint8_t chooseIncrementAvoidance(void)
 { 
-  if (green_center_y > 0 && green_center_y < 25) {
+  if (green_center_y > 0 && green_center_y <= 25) {
     heading_increment = -15.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
@@ -374,7 +374,7 @@ uint8_t chooseIncrementAvoidance(void)
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
 
-  if (green_center_y < 0 && green_center_y > -25) {
+  if (green_center_y < 0 && green_center_y >= -25) {
     heading_increment = 15.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
@@ -384,23 +384,20 @@ uint8_t chooseIncrementAvoidance(void)
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
 
+  // if green center outside sections or == 0, don't change heading_increment
+
   return false;
 }
 
 
-uint8_t MeanderIncrement(void)
+uint8_t chooseMeanderIncrement(void)
 {
-  if (green_center_y > 0) {
-    heading_increment = -1*meander_increment;
-    VERBOSE_PRINT("Meander increment to: %f\n", heading_increment);
-  } else {
-    heading_increment = meander_increment;
-    VERBOSE_PRINT("Meander increment to: %f\n", heading_increment);
-  }
+  heading_increment = -1*signOf(green_center_y)*meander_increment;
+  VERBOSE_PRINT("Set meander increment to: %f\n", heading_increment);
   return false;
 }
 
-int8_t chooseIncrementSign(void)
+int8_t signOf(float variable)
 {
-  return (green_center_y <= 0) ? 1 : -1;
+  return (variable >= 0) ? 1 : -1;
 }

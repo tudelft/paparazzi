@@ -25,6 +25,11 @@
     <define name="COLOR_OBJECT_DETECTOR_CR_MIN2" value="0" description="Filter 2 min red chroma"/>
     <define name="COLOR_OBJECT_DETECTOR_CR_MAX2" value="0" description="Filter 2 max red chroma"/>
     <define name="COLOR_OBJECT_DETECTOR_DRAW2" value="FALSE|TRUE" description="Whether or not to draw on image"/>
+
+    <define name="FILTERBOX_YMIN" value="0" description="The y-pixel at which to start filter box"/>
+    <define name="FILTERBOX_YMAX" value="0" description="The y-pixel at which to end filter box"/>
+    <define name="FILTERBOX_XMIN" value="0" description="The x-pixel at which to start filter box"/>
+    <define name="FILTERBOX_XMAX" value="0" description="The x-pixel at which to end filter box"/>
   </doc>
 
   <settings>
