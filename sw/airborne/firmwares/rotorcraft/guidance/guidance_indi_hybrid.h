@@ -60,5 +60,6 @@ extern float lift_pitch_eff;
 extern float pitch_priority_factor;
 
 extern float pitch_pref_deg;
+extern int chirp_number;
 
 #endif /* GUIDANCE_INDI_HYBRID_H */

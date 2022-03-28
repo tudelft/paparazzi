@@ -458,6 +458,7 @@ void guidance_indi_run(float *heading_sp) {
               if(i==0){chirp_val_init = roll_filt.o[0];}
               if(i==1){chirp_val_init = pitch_filt.o[0];}
               chirp_init_check = TRUE;
+              chirp_number += 1;
             }
             if(i==0){euler_cmd.x = chirp_val_init+current_chirp_values[0]-roll_filt.o[0];}
             if(i==1){euler_cmd.y = chirp_val_init+current_chirp_values[1]-pitch_filt.o[0];}
