@@ -331,8 +331,8 @@
     <define name="W_DV_1" value="0.01"/>
     <define name="W_DV_2" value="0.01"/>
     <define name="W_DV_3" value="0.01"/>
-    <define name="W_DV_4" value="1"/>
-    <define name="W_DV_5" value="1"/>
+    <define name="W_DV_4" value=".1"/>
+    <define name="W_DV_5" value=".1"/>
     <define name="W_DV_6" value="0.01"/>
 
     <define name="GAMMA_QUADRATIC_DV" value="1"/>

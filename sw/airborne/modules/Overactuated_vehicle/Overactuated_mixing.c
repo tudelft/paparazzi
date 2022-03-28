@@ -59,6 +59,7 @@ float oy_point = 0;
 float z_test = 1.5;
 float pitch_angle_test = 0;
 float roll_angle_test = 0;
+int controller_id = 1;
 
 //Communication with AM& variables
 static abi_event AM7_in;
@@ -701,8 +702,8 @@ void overactuated_mixing_run()
     }
 
     /// Case of INDI control mode with external am7 function:
-    if(radio_control.values[RADIO_MODE] > 500 && bool_start_auto_on)
-//    if(1)
+//    if(radio_control.values[RADIO_MODE] > 500 && bool_start_auto_on)
+    if(1)
     {
 
         //INIT AND BOOLEAN RESET
@@ -930,6 +931,8 @@ void overactuated_mixing_run()
         extra_data_out_local[47] = OVERACTUATED_MIXING_GAMMA_QUADRATIC_DU;
         extra_data_out_local[48] = OVERACTUATED_MIXING_GAMMA_QUADRATIC_WLS;
         extra_data_out_local[49] = OVERACTUATED_MIXING_MAX_ITER_WLS;
+
+        extra_data_out_local[50] = controller_id;
 
         AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &am7_data_out_local, &extra_data_out_local);
 
