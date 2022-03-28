@@ -46,6 +46,9 @@ extern float actuator_state_filt_vect[INDI_NUM_ACT];
 extern float actuator_thrust_bx_pprz;
 extern float thrust_bx_eff;
 extern int doub_number;
+extern float ap_ref_save;
+extern float aq_ref_save;
+extern float ar_ref_save;
 
 extern bool indi_use_adaptive;
 

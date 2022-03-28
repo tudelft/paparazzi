@@ -164,6 +164,10 @@ float estimation_rate_dd[INDI_NUM_ACT];
 float du_estimation[INDI_NUM_ACT];
 float ddu_estimation[INDI_NUM_ACT];
 
+float ap_ref_save;
+float aq_ref_save;
+float ar_ref_save;
+
 // The learning rate per axis (roll, pitch, yaw, thrust)
 float mu1[INDI_OUTPUTS] = {0.00001, 0.00001, 0.000003, 0.000002};
 // The learning rate for the propeller inertia (scaled by 512 wrt mu1)
@@ -481,6 +485,10 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   angular_accel_ref.p = (rate_sp.p - rates_filt.p) * indi_gains.rate.p;
   angular_accel_ref.q = (rate_sp.q - rates_filt.q) * indi_gains.rate.q;
   angular_accel_ref.r = (rate_sp.r - rates_filt.r) * indi_gains.rate.r;
+
+  ap_ref_save = angular_accel_ref.p;
+  aq_ref_save = angular_accel_ref.q;
+  ar_ref_save = angular_accel_ref.r;
 
   g2_times_du = 0.0;
   for (i = 0; i < INDI_NUM_ACT; i++) {
