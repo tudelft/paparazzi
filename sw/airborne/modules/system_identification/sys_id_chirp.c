@@ -27,7 +27,7 @@
 
 #include "sys_id_chirp.h"
 #include "pprz_chirp.h"
-
+#include "autopilot.h"
 #include "subsystems/datalink/telemetry.h"
 #include "generated/airframe.h"
 #include "mcu_periph/sys_time.h"
@@ -174,7 +174,7 @@ void sys_id_chirp_run(void)
 #if CHIRP_ENABLED
 
   if (chirp_active) {
-    if (!chirp_is_running(&chirp, get_sys_time_float())) {
+    if ((!chirp_is_running(&chirp, get_sys_time_float()))||(autopilot.mode!= AP_MODE_HOVER_Z_HOLD)) {
       stop_chirp();
     } else {
       chirp_update(&chirp, get_sys_time_float());
