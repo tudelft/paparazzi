@@ -101,7 +101,7 @@ extern bool manual_motor_stick;
 
 //Variables for autonomous maneuver:
 extern int start_auto;
-extern float ax_point, ay_point, bx_point, by_point, cx_point, cy_point, ox_point, oy_point, z_test, pitch_angle_test, roll_angle_test;
+extern float ax_point, ay_point, bx_point, by_point, cx_point, cy_point, ox_point, oy_point, z_test, pitch_angle_test, roll_angle_test, z_end;
 extern int controller_id;
 
 extern bool manual_heading;

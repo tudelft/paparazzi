@@ -216,12 +216,12 @@
     </message>
 
     <message name="AM7_DATA_OUT" id="31">
-      <field name="myam7_data_out_ptr" type="float *">Pointer pointing at the myam7_data_out struct</field>
+      <field name="myam7_data_out_ptr" type="struct am7_data_out *">Pointer pointing at the myam7_data_out struct</field>
       <field name="extra_data_out_ptr" type="float *">Pointer pointing at the extra_data_out array</field>
     </message>
 
     <message name="AM7_DATA_IN" id="32">
-      <field name="myam7_data_in_ptr" type="float *">Pointer pointing at the myam7_data_in struct</field>
+      <field name="myam7_data_in_ptr" type="struct am7_data_in *">Pointer pointing at the myam7_data_in struct</field>
       <field name="extra_data_in_ptr" type="float *">Pointer pointing at the extra_data_in array</field>
     </message>
 

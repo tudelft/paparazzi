@@ -1907,7 +1907,7 @@
 
      <message name="OVERACTUATED_VARIABLES" id="212">
 
-         <field name="test_started" type="float" >test boolean active</field>
+         <field name="test_started" type="int32" >test boolean active</field>
          <field name="wind_speed" type="float" >Actual wind speed from the control room</field>
 
          <field name="act_x_pos" type="float" unit="m">Actual x position [m]</field>

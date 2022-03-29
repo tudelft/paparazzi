@@ -261,17 +261,17 @@
 
     <!-- INDI proportional gains -->
 
-    <define name="INDI_REF_ERR_P" value="2"/>
-    <define name="INDI_REF_ERR_Q" value="2"/>
-    <define name="INDI_REF_ERR_R" value="2"/>
+    <define name="INDI_REF_ERR_P" value="1.5"/>
+    <define name="INDI_REF_ERR_Q" value="1.5"/>
+    <define name="INDI_REF_ERR_R" value="1.5"/>
 
     <define name="INDI_REF_ERR_X" value="1.5"/>
     <define name="INDI_REF_ERR_Y" value="1.5"/>
     <define name="INDI_REF_ERR_Z" value="1.3"/>
 
     <!-- INDI derivative gains -->
-    <define name="INDI_REF_RATE_P" value="10"/>
-    <define name="INDI_REF_RATE_Q" value="10"/>
+    <define name="INDI_REF_RATE_P" value="8"/>
+    <define name="INDI_REF_RATE_Q" value="8"/>
     <define name="INDI_REF_RATE_R" value="5"/>
 
     <define name="INDI_REF_RATE_X" value="2.35"/>
@@ -330,7 +330,7 @@
 
     <define name="W_DV_1" value="0.01"/>
     <define name="W_DV_2" value="0.01"/>
-    <define name="W_DV_3" value="0.01"/>
+    <define name="W_DV_3" value="0.015"/>
     <define name="W_DV_4" value=".1"/>
     <define name="W_DV_5" value=".1"/>
     <define name="W_DV_6" value="0.01"/>

@@ -46,19 +46,20 @@
 // Variable for the autonomous maneuver in Cyberzoo to compare different CA algorithm
 int start_auto = 0;
 float start_time_auto = 0;
-int bool_start_auto_on = 0;
+int32_t bool_start_auto_on = 0;
 
-float ax_point = 0;
-float ay_point = 0;
-float bx_point = 0;
-float by_point = 0;
-float cx_point = 0;
-float cy_point = 0;
+float ax_point = -1;
+float ay_point = -1;
+float bx_point = 1;
+float by_point = -1;
+float cx_point = 1;
+float cy_point = 1;
 float ox_point = 0;
 float oy_point = 0;
-float z_test = 1.5;
-float pitch_angle_test = 0;
-float roll_angle_test = 0;
+float z_test = 1.8;
+float z_end = 3;
+float pitch_angle_test = 30;
+float roll_angle_test = 30;
 int controller_id = 1;
 
 //Communication with AM& variables
@@ -133,6 +134,8 @@ float B_matrix[INDI_INPUTS][INDI_NUM_ACT];
 
 //AM7 variables:
 float manual_motor_value = 0, manual_el_value = 0, manual_az_value = 0, manual_phi_value = 0, manual_theta_value = 0;
+struct am7_data_out am7_data_out_local;
+float extra_data_out_local[255];
 
 //Variables needed for the filters:
 Butterworth2LowPass measurement_rates_filters[3]; //Filter of pqr
@@ -202,9 +205,9 @@ struct ActuatorsStruct act_dyn_struct = {
 // Variables needed for the actuators:
 float act_dyn[N_ACT_REAL];
 
-static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), float * myam7_data_in_ptr, float * extra_data_in_ptr){
+static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am7_data_in * myam7_data_in_ptr, float * extra_data_in_ptr){
     memcpy(&myam7_data_in_local,myam7_data_in_ptr,sizeof(struct am7_data_in));
-    memcpy(&extra_data_in_local,extra_data_in_ptr,sizeof(extra_data_in_local));
+    memcpy(&extra_data_in_local,extra_data_in_ptr,255 * sizeof(float));
 }
 
 /**
@@ -426,6 +429,13 @@ void overactuated_mixing_run()
     //Assign variables
     assign_variables();
 
+    pos_setpoint[0] = ox_point;
+    pos_setpoint[1] = oy_point;
+    pos_setpoint[2] = - z_test;
+    manual_theta_value = 0;
+    manual_phi_value = 0;
+    euler_setpoint[2] = 0;
+
     if(start_auto){
         if(bool_start_auto_on == 0) {
             start_time_auto = get_sys_time_float();
@@ -504,7 +514,7 @@ void overactuated_mixing_run()
             manual_phi_value = roll_angle_test * M_PI/180;
             euler_setpoint[2] = 0;
         }
-        if(get_sys_time_float() - start_time_auto > 45 ){
+        if(get_sys_time_float() - start_time_auto > 45 && get_sys_time_float() - start_time_auto <= 55){
             pos_setpoint[0] = ox_point;
             pos_setpoint[1] = oy_point;
             pos_setpoint[2] = - z_test;
@@ -512,10 +522,18 @@ void overactuated_mixing_run()
             manual_phi_value = 0;
             euler_setpoint[2] = 0;
         }
+        if(get_sys_time_float() - start_time_auto > 55 ){
+            pos_setpoint[0] = ox_point;
+            pos_setpoint[1] = oy_point;
+            pos_setpoint[2] = - z_end;
+            manual_theta_value = 0;
+            manual_phi_value = 0;
+            euler_setpoint[2] = 0;
+        }
     }
 
     /// Case of manual PID control [FAILSAFE]
-    if(1) {
+    if(radio_control.values[RADIO_MODE] < -500) {
 
         ////Angular error computation
         //Calculate the setpoints manually:
@@ -595,11 +613,19 @@ void overactuated_mixing_run()
     }
 
     /// Case of auto PID control
-    if(radio_control.values[RADIO_MODE] < 500 && radio_control.values[RADIO_MODE] > -500 && bool_start_auto_on)
+    if(radio_control.values[RADIO_MODE] < 500 && radio_control.values[RADIO_MODE] > -500 )
 //    if(1)
-
     {
-
+        //INIT AND BOOLEAN RESET
+        if(PID_engaged == 0 ){
+            PID_engaged = 1;
+            INDI_engaged = 0;
+            FAILSAFE_engaged = 0;
+            for (int i = 0; i < 3; i++) {
+                euler_error_integrated[i] = 0;
+                pos_error_integrated[i] = 0;
+            }
+        }
         ////Position error computation
         pos_error[0] = pos_setpoint[0] - pos_vect[0];
         pos_error[1] = pos_setpoint[1] - pos_vect[1];
@@ -607,8 +633,10 @@ void overactuated_mixing_run()
 
         //Calculate and bound the position error integration
         for (int i = 0; i < 3; i++) {
-            pos_error_integrated[i] += pos_error[i] / PERIODIC_FREQUENCY;
-            BoundAbs(pos_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_POS_ERR_INTEGRATIVE);
+            if(radio_control.values[RADIO_TH_HOLD] < - 4800) {
+                pos_error_integrated[i] += pos_error[i] / PERIODIC_FREQUENCY;
+//                BoundAbs(pos_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_POS_ERR_INTEGRATIVE);
+            }
         }
 
         //Calculate the orders with the PID gain defined:
@@ -643,8 +671,10 @@ void overactuated_mixing_run()
 
         //Calculate and bound the angular error integration term for the PID
         for (int i = 0; i < 3; i++) {
-            euler_error_integrated[i] += euler_error[i] / PERIODIC_FREQUENCY;
-            BoundAbs(euler_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_EULER_ERR_INTEGRATIVE);
+            if(radio_control.values[RADIO_TH_HOLD] < - 4800) {
+                euler_error_integrated[i] += euler_error[i] / PERIODIC_FREQUENCY;
+//                BoundAbs(euler_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_EULER_ERR_INTEGRATIVE);
+            }
         }
 
         //Now bound the error within the defined ranges:
@@ -702,15 +732,31 @@ void overactuated_mixing_run()
     }
 
     /// Case of INDI control mode with external am7 function:
-//    if(radio_control.values[RADIO_MODE] > 500 && bool_start_auto_on)
-    if(1)
+    if(radio_control.values[RADIO_MODE] > 500 )
+//    if(1)
     {
 
         //INIT AND BOOLEAN RESET
-        if(INDI_engaged == 0){
+        if(INDI_engaged == 0 ){
             /*
             INIT CODE FOR THE INDI GOES HERE
              */
+
+            actuator_state_filt[0] = 100;
+            actuator_state_filt[1] = 100;
+            actuator_state_filt[2] = 100;
+            actuator_state_filt[3] = 100;
+
+            actuator_state_filt[4] = 0;
+            actuator_state_filt[5] = 0;
+            actuator_state_filt[6] = 0;
+            actuator_state_filt[7] = 0;
+
+            actuator_state_filt[8] = 0;
+            actuator_state_filt[9] = 0;
+            actuator_state_filt[10] = 0;
+            actuator_state_filt[11] = 0;
+
             init_filters();
             INDI_engaged = 1;
             PID_engaged = 0;
@@ -735,9 +781,6 @@ void overactuated_mixing_run()
             rate_vect_filt[0] = 0;
             rate_vect_filt[1] = 0;
             rate_vect_filt[2] = 0;
-
-            indi_u[12] = 0;
-            indi_u[13] = 0;
         }
 
         // Get an estimate of the actuator state using the first order dynamics given by the user
@@ -745,8 +788,8 @@ void overactuated_mixing_run()
 
         //Calculate the euler angle error to be fed into the PD for the INDI loop
 
-        manual_phi_value = max_value_error.phi * radio_control.values[RADIO_ROLL] / 9600;
-        manual_theta_value = max_value_error.theta * radio_control.values[RADIO_PITCH] / 9600;
+//        manual_phi_value = max_value_error.phi * radio_control.values[RADIO_ROLL] / 9600;
+//        manual_theta_value = max_value_error.theta * radio_control.values[RADIO_PITCH] / 9600;
 
         euler_setpoint[0] = manual_phi_value;
         euler_setpoint[1] = manual_theta_value;
@@ -793,10 +836,6 @@ void overactuated_mixing_run()
 //        BoundAbs(rate_setpoint[2],OVERACTUATED_MIXING_INDI_MAX_R_ORD);
 
         //Compute the angular acceleration setpoint:
-//        acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * indi_gains_over.d.phi;
-//        acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * indi_gains_over.d.theta;
-//        acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * indi_gains_over.d.psi;
-
         acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * indi_gains_over.d.phi;
         acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * indi_gains_over.d.theta;
         acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * indi_gains_over.d.psi;
@@ -834,10 +873,22 @@ void overactuated_mixing_run()
         INDI_pseudocontrol[1] = acc_setpoint[1] - acc_vect_filt[1];
         INDI_pseudocontrol[2] = acc_setpoint[2] - acc_vect_filt[2];
 
+//        actuator_state_filt[0] = 100;
+//        actuator_state_filt[1] = 100;
+//        actuator_state_filt[2] = 100;
+//        actuator_state_filt[3] = 100;
+//
+//        actuator_state_filt[4] = 0;
+//        actuator_state_filt[5] = 0;
+//        actuator_state_filt[6] = 0;
+//        actuator_state_filt[7] = 0;
+//
+//        actuator_state_filt[8] = 0;
+//        actuator_state_filt[9] = 0;
+//        actuator_state_filt[10] = 0;
+//        actuator_state_filt[11] = 0;
 
         //Compute and transmit the messages to the AM7 module:
-        struct am7_data_out am7_data_out_local;
-        float extra_data_out_local[255];
         am7_data_out_local.motor_1_state_int = (int16_t) (actuator_state_filt[0] * 1e1);
         am7_data_out_local.motor_2_state_int = (int16_t) (actuator_state_filt[1] * 1e1);
         am7_data_out_local.motor_3_state_int = (int16_t) (actuator_state_filt[2] * 1e1);
@@ -934,9 +985,9 @@ void overactuated_mixing_run()
 
         extra_data_out_local[50] = controller_id;
 
-        AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &am7_data_out_local, &extra_data_out_local);
-
         //Collect the last available data on the AM7 bus to be communicated to the servos.
+        AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &am7_data_out_local, extra_data_out_local);
+
         indi_u[0] =  (myam7_data_in_local.motor_1_cmd_int * 1e-1);
         indi_u[1] =  (myam7_data_in_local.motor_2_cmd_int * 1e-1);
         indi_u[2] =  (myam7_data_in_local.motor_3_cmd_int * 1e-1);
@@ -952,29 +1003,55 @@ void overactuated_mixing_run()
         indi_u[10] =  (myam7_data_in_local.az_3_cmd_int * 1e-2 * M_PI/180);
         indi_u[11] =  (myam7_data_in_local.az_4_cmd_int * 1e-2 * M_PI/180);
 
-        indi_u[12] =  (myam7_data_in_local.theta_cmd_int * 1e-2 * M_PI/180);
-        indi_u[13] =  (myam7_data_in_local.phi_cmd_int * 1e-2 * M_PI/180);
-
 
         // Write values to servos and motor
-        //Motors:
-        overactuated_mixing.commands[0] = (int32_t) (indi_u[0] * K_ppz_rads_motor);
-        overactuated_mixing.commands[1] = (int32_t) (indi_u[1] * K_ppz_rads_motor);
-        overactuated_mixing.commands[2] = (int32_t) (indi_u[2] * K_ppz_rads_motor);
-        overactuated_mixing.commands[3] = (int32_t) (indi_u[3] * K_ppz_rads_motor);
 
-        //Elevator servos:
-        overactuated_mixing.commands[4] = (int32_t) ( (indi_u[4] - OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE) * K_ppz_angle_el );
-        overactuated_mixing.commands[5] = (int32_t) ( (indi_u[5] - OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE) * K_ppz_angle_el );
-        overactuated_mixing.commands[6] = (int32_t) ( (indi_u[6] - OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE) * K_ppz_angle_el );
-        overactuated_mixing.commands[7] = (int32_t) ( (indi_u[7] - OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE) * K_ppz_angle_el );
+        if(RadioControlValues(RADIO_TH_HOLD) > - 4500) {
+            //Motors:
+            overactuated_mixing.commands[0] = (int32_t)(indi_u[0] * K_ppz_rads_motor);
+            overactuated_mixing.commands[1] = (int32_t)(indi_u[1] * K_ppz_rads_motor);
+            overactuated_mixing.commands[2] = (int32_t)(indi_u[2] * K_ppz_rads_motor);
+            overactuated_mixing.commands[3] = (int32_t)(indi_u[3] * K_ppz_rads_motor);
 
-        //Azimuth servos:
-        overactuated_mixing.commands[8] = (int32_t) (indi_u[8] * K_ppz_angle_az);
-        overactuated_mixing.commands[9] = (int32_t) (indi_u[9] * K_ppz_angle_az);
-        overactuated_mixing.commands[10] = (int32_t) (indi_u[10] * K_ppz_angle_az);
-        overactuated_mixing.commands[11] = (int32_t) (indi_u[11] * K_ppz_angle_az);
+            //Elevator servos:
+            overactuated_mixing.commands[4] = (int32_t)(
+                    (indi_u[4] - OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE) * K_ppz_angle_el);
+            overactuated_mixing.commands[5] = (int32_t)(
+                    (indi_u[5] - OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE) * K_ppz_angle_el);
+            overactuated_mixing.commands[6] = (int32_t)(
+                    (indi_u[6] - OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE) * K_ppz_angle_el);
+            overactuated_mixing.commands[7] = (int32_t)(
+                    (indi_u[7] - OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE) * K_ppz_angle_el);
 
+            //Azimuth servos:
+            overactuated_mixing.commands[8] = (int32_t)(
+                    (indi_u[8]  - OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE) * K_ppz_angle_az);
+            overactuated_mixing.commands[9] = (int32_t)(
+                    (indi_u[9]  - OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE) * K_ppz_angle_az);
+            overactuated_mixing.commands[10] = (int32_t)(
+                    (indi_u[10]  - OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE) * K_ppz_angle_az);
+            overactuated_mixing.commands[11] = (int32_t)(
+                    (indi_u[11]  - OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * K_ppz_angle_az);
+        }
+        else{
+            //Motors:
+            overactuated_mixing.commands[0] = 0;
+            overactuated_mixing.commands[1] = 0;
+            overactuated_mixing.commands[2] = 0;
+            overactuated_mixing.commands[3] = 0;
+
+            //Elevator servos:
+            overactuated_mixing.commands[4] = (int32_t)((-OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE) * K_ppz_angle_el);
+            overactuated_mixing.commands[5] = (int32_t)((-OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE) * K_ppz_angle_el);
+            overactuated_mixing.commands[6] = (int32_t)((-OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE) * K_ppz_angle_el);
+            overactuated_mixing.commands[7] = (int32_t)((-OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE) * K_ppz_angle_el);
+
+            //Azimuth servos:
+            overactuated_mixing.commands[8] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE) * K_ppz_angle_az);
+            overactuated_mixing.commands[9] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE) * K_ppz_angle_az);
+            overactuated_mixing.commands[10] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE) * K_ppz_angle_az);
+            overactuated_mixing.commands[11] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * K_ppz_angle_az);
+        }
     }
 
     //Bound values:

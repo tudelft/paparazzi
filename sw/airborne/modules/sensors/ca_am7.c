@@ -71,7 +71,7 @@ static void am7_uplink(struct transport_tx *trans, struct link_device *dev)
 }
 #endif
 
-static void data_AM7_out(uint8_t sender_id __attribute__((unused)), float * myam7_data_out_ptr, float * extra_data_out_ptr){
+static void data_AM7_out(uint8_t sender_id __attribute__((unused)), struct am7_data_out * myam7_data_out_ptr, float * extra_data_out_ptr){
 
     memcpy(&myam7_data_out,myam7_data_out_ptr,sizeof(struct am7_data_out));
     memcpy(&extra_data_out,extra_data_out_ptr, sizeof(extra_data_out) );

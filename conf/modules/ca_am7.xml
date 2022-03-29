@@ -1,10 +1,10 @@
 <!DOCTYPE module SYSTEM "module.dtd">
-<module name="ca_am7">
+<module name="ca_am7" dir="sensors">
   <doc>
     <description>Transfers telemetry data X to the autopilot and if you wish groundstation</description>
   </doc>
   <header>
-    <file name="ca_am7.h" dir="modules/sensors"/>
+    <file name="ca_am7.h"/>
   </header>
   <init fun="am7_init()"/>
 <!--  <periodic fun="am7_periodic()" autorun="TRUE" freq="500"/>-->
