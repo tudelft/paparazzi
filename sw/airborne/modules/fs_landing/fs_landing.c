@@ -280,9 +280,12 @@ void my_psi_from_mag() {
   float m_11 = cos_phi;
   float m_12 = -sin_phi;
 
-  float mx = _mag->x;
-  float my = _mag->y;
-  float mz = _mag->z;
+  struct FloatVect3 mag_f;
+  MAGS_FLOAT_OF_BFP(mag_f, *_mag);
+
+  float mx = mag_f.x;
+  float my = mag_f.y;
+  float mz = mag_f.z;
 
   float mx_prime = m_00 * mx + m_01 * my + m_02 * mz;
   float my_prime = m_11 * my + m_12 * mz;
