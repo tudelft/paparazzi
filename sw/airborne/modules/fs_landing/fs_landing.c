@@ -13,6 +13,10 @@
 #include "subsystems/abi.h"
 #include "subsystems/datalink/downlink.h"
 
+#include "generated/airframe.h"
+
+#define MAX_PPRZ 9600
+
 #ifndef FS_LANDING_FREQ_TEST
 #define FS_LANDING_FREQ_TEST FALSE
 #endif
@@ -204,8 +208,8 @@ bool is_fs_landing_active()
   return is_active;
 }
 
-// Compute matching paparazzi actuator signal value for motor left (reverse)
-// given motor right (forward) pprz value so that the rotation axis is at the center
+// Compute matching paparazzi actuator signal value for motor right (forward)
+// given motor left (reverse) pprz value so that the rotation axis is at the center
 float get_matching_motl_val(int32_t val) {
   float a_rev = -1.967;    // y-intercept
   float b_rev = 0.001243;  // slope
@@ -214,15 +218,15 @@ float get_matching_motl_val(int32_t val) {
   float b_fwd = 0.002553;  // slope
 
   // pprz to pwm
-  float pwm_f = 1500 + (1 / 24.) * val;
+  float pwm_r = SERVO_S_THROTTLE_LEFT_NEUTRAL + ((SERVO_S_THROTTLE_LEFT_MAX - SERVO_S_THROTTLE_LEFT_NEUTRAL) / (float)MAX_PPRZ) * abs(val);
   // approximate fwd thrust
-  float thr = a_fwd + b_fwd * pwm_f;
-  // calculate pwm of reverse motor from thrust
-  float pwm_r = (thr - a_rev) / b_rev;
+  float thr = a_rev + b_rev * pwm_r;
+  // calculate pwm of forward motor from thrust
+  float pwm_f = (thr - a_fwd) / b_fwd;
   // remap to pprz value
-  float pprz_r = 36000 - 24 * pwm_r;
-  // motor value returned should always be negative (for reverse motor)
-  return pprz_r;
+  // motor value returned should always be positive (for forward motor)
+  float pprz_f = (MAX_PPRZ / (SERVO_S_THROTTLE_RIGHT_MAX - SERVO_S_THROTTLE_RIGHT_NEUTRAL)) * (pwm_f - SERVO_S_THROTTLE_RIGHT_NEUTRAL);
+  return pprz_f;
 }
 
 /*

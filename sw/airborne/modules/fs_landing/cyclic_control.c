@@ -139,8 +139,8 @@ void cyclic_control_values(struct fs_landing_t *actuator_values) {
   if (balance_motor_forces) {
     // Should always give forward motor value as input
     // Will return negative value
-    if (motor_r > 0) {
-      motor_l = get_matching_motl_val(motor_r);
+    if (motor_l < 0) {
+      motor_r = get_matching_motl_val(motor_l);
     }
   }
 
