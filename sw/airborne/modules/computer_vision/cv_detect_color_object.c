@@ -76,6 +76,8 @@ int16_t filterbox_ymax = 0;
 int16_t filterbox_xmin = 0;
 int16_t filterbox_xmax = 0;
 
+// Toggle the use of the second filter box which is beneficial for mat detection
+bool mat_detection_toggle = true ;
 // Filter box 2 setting
 int16_t filterbox2_ymin = 0;
 int16_t filterbox2_ymax = 0;
@@ -307,54 +309,54 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
       }
     }
   }
+  if (mat_detection_toggle){
+    for (uint16_t y2 = filterbox2_ymin; y2 < filterbox2_ymax; y2++) {
+      for (uint16_t x2 = filterbox2_xmin; x2 < filterbox2_xmax; x2 ++) { // NEW CODE
+        // Check if the color is inside the specified values
+        uint8_t *yp, *up, *vp;
+        if (x2 % 2 == 0) {
+          // Even x2
+          up = &buffer[y2 * 2 * img->w + 2 * x2];      // U
+          yp = &buffer[y2 * 2 * img->w + 2 * x2 + 1];  // Y1
+          vp = &buffer[y2 * 2 * img->w + 2 * x2 + 2];  // V
+          //yp = &buffer[y2 * 2 * img->w + 2 * x2 + 3]; // Y2
+        } else {
+          // Uneven x2
+          up = &buffer[y2 * 2 * img->w + 2 * x2 - 2];  // U
+          //yp = &buffer[y2 * 2 * img->w + 2 * x2 - 1]; // Y1
+          vp = &buffer[y2 * 2 * img->w + 2 * x2];      // V
+          yp = &buffer[y2 * 2 * img->w + 2 * x2 + 1];  // Y2
+        }
+        if ( (*yp >= lum_min) && (*yp <= lum_max) &&
+            (*up >= cb_min ) && (*up <= cb_max ) &&
+            (*vp >= cr_min ) && (*vp <= cr_max )) {
+          cnt_above ++;
+          tot_x += x2;
+          tot_y += y2;
 
-  for (uint16_t y2 = filterbox2_ymin; y2 < filterbox2_ymax; y2++) {
-    for (uint16_t x2 = filterbox2_xmin; x2 < filterbox2_xmax; x2 ++) { // NEW CODE
-      // Check if the color is inside the specified values
-      uint8_t *yp, *up, *vp;
-      if (x2 % 2 == 0) {
-        // Even x2
-        up = &buffer[y2 * 2 * img->w + 2 * x2];      // U
-        yp = &buffer[y2 * 2 * img->w + 2 * x2 + 1];  // Y1
-        vp = &buffer[y2 * 2 * img->w + 2 * x2 + 2];  // V
-        //yp = &buffer[y2 * 2 * img->w + 2 * x2 + 3]; // Y2
-      } else {
-        // Uneven x2
-        up = &buffer[y2 * 2 * img->w + 2 * x2 - 2];  // U
-        //yp = &buffer[y2 * 2 * img->w + 2 * x2 - 1]; // Y1
-        vp = &buffer[y2 * 2 * img->w + 2 * x2];      // V
-        yp = &buffer[y2 * 2 * img->w + 2 * x2 + 1];  // Y2
-      }
-      if ( (*yp >= lum_min) && (*yp <= lum_max) &&
-           (*up >= cb_min ) && (*up <= cb_max ) &&
-           (*vp >= cr_min ) && (*vp <= cr_max )) {
-        cnt_above ++;
-        tot_x += x2;
-        tot_y += y2;
+          // if y green for several center points, send safe msg.
+          // if center is safe, always go from SFSH->SAFE
 
-        // if y green for several center points, send safe msg.
-        // if center is safe, always go from SFSH->SAFE
-
-        if (draw){
-          *yp = 255;  // make pixel brighter in image
+          if (draw){
+            *yp = 255;  // make pixel brighter in image
+          }
         }
       }
     }
-  }
-  if (cnt > 30) {
-      *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
-      *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
-    } 
-  else{
-    if (cnt_above > 30) {
-      *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
-      *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
-    } else {
-      *p_xc = 0;
-      *p_yc = 0;
+    if (cnt > 30) {
+        *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
+        *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
+      } 
+    else{
+      if (cnt_above > 30) {
+        *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
+        *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
+      } else {
+        *p_xc = 0;
+        *p_yc = 0;
+      }
     }
   }
-
   return cnt;
 }
 
