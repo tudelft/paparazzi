@@ -1,14 +1,78 @@
-# MAIN README
+# Green Attractor
+
+## Demo
+The testing location has different obstacles.
+![Obstacles in the CyberZoo](/images/obstacles.png)
+The navigation for the drone is decided using this state diagram.
+![Flowchart](/images/flowchart.png)
+The detection for competition is done using a vertical green colorfilter that navigates on the availablity of green in the detection box.
+![Horizontal colorfilter box](/images/horizontal_bar.png)
+The extension for detecting a mat is a vertical bar with the same green filter, that looks over the mat in order keep flying. It looks ahead and takes over when the horizontal bar fails.
+![Vertical colorfilter box](/images/vertical_bar.png)
+## Videos showing the flight in simulation
+
+[![Standaard Video](/imagegs/standaard.png)](https://youtu.be/LPpJ-rpNmqc "Mat avoidance")
+[![Mat avoidance ](/imagegs/mat.png)](https://youtu.be/DE0FiWiZbzM "Mat avoidance")
+[![Orange Maze ](/imagegs/orange_maze.png)](https://youtu.be/Ya5rIKcP2Ik "Orange Maze")
+
+
+
+## Setup for execution
+
+### Clone the code
+```console
+mkdir paparazzi
+cd ~/paparazzi
+git remote add origin https://github.com/dirkdefuijk/paparazzi
+git fetch tudelft green_attractor_refactored
+git checkout green_attractor_refactored
+```
+
+### Sync the modules
+```console
+git submodule init
+git submodule sync
+git submodule update
+```
+
+### Build Paparazzi by using:
+```console
+make clean
+make
+```
+
+### Starting paparazzi
+```console
+python start.py
+```
+Select:
+Conf: userconf/tudelft/course conf.xml
+Controlpanel: userconf/tudelft/course control panel.xml .
+Click ‘Set active’ and close the dialog.
+
+```console
+sudo apt install ffmpeg vlc cmake jstest-gtk default-jre
+sudo apt install gazebo9 libgazebo9-dev
+```
+
+Build OpenCV for the Bebop and install requirements
+```console
+cd ~/paparazzi/sw/ext/opencv_bebop
+sudo apt install libjpeg-turbo8-dev libpng-dev libtiff-dev zlib1g-dev libdc1394-22-dev
+make
+```
+
+Run paparazzi
+```console
+cd ~/paparazzi
+./paparazzi
+```
 
 Paparazzi UAS
 =============
 
-[![Build Status](https://travis-ci.org/paparazzi/paparazzi.png?branch=master)](https://travis-ci.org/paparazzi/paparazzi) [![Gitter chat](https://badges.gitter.im/paparazzi/discuss.svg)](https://gitter.im/paparazzi/discuss)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/811c4398588f435fa8bc926f53d40e9f)](https://app.codacy.com/app/gautierhattenberger/paparazzi?utm_source=github.com&utm_medium=referral&utm_content=paparazzi/paparazzi&utm_campaign=Badge_Grade_Dashboard)
-<a href="https://scan.coverity.com/projects/paparazzi-paparazzi">
-  <img alt="Coverity Scan Build Status"
-       src="https://scan.coverity.com/projects/4928/badge.svg"/>
-</a>
+[![Build Status](https://travis-ci.org/paparazzi/paparazzi.png?branch=master)](https://travis-ci.org/paparazzi/paparazzi)
+
 
 Paparazzi is a free open source software package for Unmanned (Air) Vehicle Systems.
 For many years, the system has been used successfuly by hobbyists, universities and companies all over the world, on vehicles of various sizes (11.9g to 25kg).
