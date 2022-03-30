@@ -76,6 +76,12 @@ int16_t filterbox_ymax = 0;
 int16_t filterbox_xmin = 0;
 int16_t filterbox_xmax = 0;
 
+// Filter box 2 setting
+int16_t filterbox2_ymin = 0;
+int16_t filterbox2_ymax = 0;
+int16_t filterbox2_xmin = 0;
+int16_t filterbox2_xmax = 0;
+
 // define global variables
 struct color_object_t {
   int32_t x_c;
@@ -89,7 +95,10 @@ struct color_object_t global_filters[2];
 uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
                               uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
-                              uint8_t cr_min, uint8_t cr_max);
+                              uint8_t cr_min, uint8_t cr_max,
+                              uint8_t lum_min2, uint8_t lum_max2,
+                              uint8_t cb_min2, uint8_t cb_max2,
+                              uint8_t cr_min2, uint8_t cr_max2);
 
 /*
  * object_detector
@@ -102,6 +111,9 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   uint8_t lum_min, lum_max;
   uint8_t cb_min, cb_max;
   uint8_t cr_min, cr_max;
+  uint8_t lum_min2, lum_max2;
+  uint8_t cb_min2, cb_max2;
+  uint8_t cr_min2, cr_max2;
   bool draw;
 
   switch (filter){
@@ -112,6 +124,14 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
       cb_max = cod_cb_max1;
       cr_min = cod_cr_min1;
       cr_max = cod_cr_max1;
+
+      lum_min2 = cod_lum_min1;
+      lum_max2 = cod_lum_max1;
+      cb_min2 = cod_cb_min1;
+      cb_max2 = cod_cb_max1;
+      cr_min2 = cod_cr_min1;
+      cr_max2 = cod_cr_max1;
+
       draw = cod_draw1;
       break;
     case 2:
@@ -121,6 +141,14 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
       cb_max = cod_cb_max2;
       cr_min = cod_cr_min2;
       cr_max = cod_cr_max2;
+
+      lum_min2 = cod_lum_min2;
+      lum_max2 = cod_lum_max2;
+      cb_min2 = cod_cb_min2;
+      cb_max2 = cod_cb_max2;
+      cr_min2 = cod_cr_min2;
+      cr_max2 = cod_cr_max2;
+
       draw = cod_draw2;
       break;
     default:
@@ -130,7 +158,8 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   int32_t x_c, y_c;
 
   // Filter and find centroid
-  uint32_t count = find_object_centroid(img, &x_c, &y_c, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
+  uint32_t count = find_object_centroid(img, &x_c, &y_c, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max, 
+                                                               lum_min2, lum_max2, cb_min2, cb_max2, cr_min2, cr_max2);
   VERBOSE_PRINT("Color count %d: %u, threshold %u, x_c %d, y_c %d\n", camera, object_count, count_threshold, x_c, y_c);
   VERBOSE_PRINT("centroid %d: (%d, %d) r: %4.2f a: %4.2f\n", camera, x_c, y_c,
         hypotf(x_c, y_c) / hypotf(img->w * 0.5, img->h * 0.5), RadOfDeg(atan2f(y_c, x_c)));
@@ -173,6 +202,11 @@ void color_object_detector_init(void)
   filterbox_ymax = FILTERBOX_YMAX;
   filterbox_xmin = FILTERBOX_XMIN;
   filterbox_xmax = FILTERBOX_XMAX;
+
+  filterbox2_ymin = FILTERBOX2_YMIN;
+  filterbox2_ymax = FILTERBOX2_YMAX;
+  filterbox2_xmin = FILTERBOX2_XMIN;
+  filterbox2_xmax = FILTERBOX2_XMAX;
 
 #endif
 #ifdef COLOR_OBJECT_DETECTOR_DRAW1
@@ -224,9 +258,13 @@ void color_object_detector_init(void)
 uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
                               uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
-                              uint8_t cr_min, uint8_t cr_max)
+                              uint8_t cr_min, uint8_t cr_max,
+                              uint8_t lum_min2, uint8_t lum_max2,
+                              uint8_t cb_min2, uint8_t cb_max2,
+                              uint8_t cr_min2, uint8_t cr_max2)
 {
   uint32_t cnt = 0;
+  uint32_t cnt_above = 0;
   uint32_t tot_x = 0;
   uint32_t tot_y = 0;
   uint8_t *buffer = img->buf;
@@ -237,7 +275,7 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   // Filter only first x pixels from below and the middle y pixels
 
   for (uint16_t y = filterbox_ymin; y < filterbox_ymax; y++) {
-    for (uint16_t x = filterbox_xmin; x < filterbox_xmax; x++) {
+    for (uint16_t x = filterbox_xmin; x < filterbox_xmax; x ++) { // NEW CODE
       // Check if the color is inside the specified values
       uint8_t *yp, *up, *vp;
       if (x % 2 == 0) {
@@ -260,19 +298,63 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
         tot_x += x;
         tot_y += y;
 
+        // if y green for several center points, send safe msg.
+        // if center is safe, always go from SFSH->SAFE
+
         if (draw){
-          *yp = 255;  // make detected pixel brighter in image
+          *yp = 255;  // make pixel brighter in image
         }
       }
     }
   }
-  if (cnt > 0) {
-    *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
-    *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
-  } else {
-    *p_xc = 0;
-    *p_yc = 0;
+
+  for (uint16_t y2 = filterbox2_ymin; y2 < filterbox2_ymax; y2++) {
+    for (uint16_t x2 = filterbox2_xmin; x2 < filterbox2_xmax; x2 ++) { // NEW CODE
+      // Check if the color is inside the specified values
+      uint8_t *yp, *up, *vp;
+      if (x2 % 2 == 0) {
+        // Even x2
+        up = &buffer[y2 * 2 * img->w + 2 * x2];      // U
+        yp = &buffer[y2 * 2 * img->w + 2 * x2 + 1];  // Y1
+        vp = &buffer[y2 * 2 * img->w + 2 * x2 + 2];  // V
+        //yp = &buffer[y2 * 2 * img->w + 2 * x2 + 3]; // Y2
+      } else {
+        // Uneven x2
+        up = &buffer[y2 * 2 * img->w + 2 * x2 - 2];  // U
+        //yp = &buffer[y2 * 2 * img->w + 2 * x2 - 1]; // Y1
+        vp = &buffer[y2 * 2 * img->w + 2 * x2];      // V
+        yp = &buffer[y2 * 2 * img->w + 2 * x2 + 1];  // Y2
+      }
+      if ( (*yp >= lum_min) && (*yp <= lum_max) &&
+           (*up >= cb_min ) && (*up <= cb_max ) &&
+           (*vp >= cr_min ) && (*vp <= cr_max )) {
+        cnt_above ++;
+        tot_x += x2;
+        tot_y += y2;
+
+        // if y green for several center points, send safe msg.
+        // if center is safe, always go from SFSH->SAFE
+
+        if (draw){
+          *yp = 255;  // make pixel brighter in image
+        }
+      }
+    }
   }
+  if (cnt > 30) {
+      *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
+      *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
+    } 
+  else{
+    if (cnt_above > 30) {
+      *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
+      *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
+    } else {
+      *p_xc = 0;
+      *p_yc = 0;
+    }
+  }
+
   return cnt;
 }
 

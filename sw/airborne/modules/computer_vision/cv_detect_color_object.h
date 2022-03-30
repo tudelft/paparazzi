@@ -55,6 +55,12 @@ extern int16_t filterbox_ymax;
 extern int16_t filterbox_xmin;
 extern int16_t filterbox_xmax;
 
+// filter box 2 settings
+extern int16_t filterbox2_ymin;
+extern int16_t filterbox2_ymax;
+extern int16_t filterbox2_xmin;
+extern int16_t filterbox2_xmax;
+
 // Module functions
 extern void color_object_detector_init(void);
 extern void color_object_detector_periodic(void);

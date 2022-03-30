@@ -20,6 +20,13 @@
       <define name="COLOR_OBJECT_DETECTOR_CR_MIN1" value="0"/>
       <define name="COLOR_OBJECT_DETECTOR_CR_MAX1" value="150"/>
 
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN2" value="100"/>
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX2" value="180"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MIN2" value="0"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MAX2" value="120"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MIN2" value="0"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MAX2" value="150"/>
+
     </target>
     <target name="nps" board="pc">
       <module name="fdm" type="gazebo"/>
@@ -33,6 +40,13 @@
       <define name="COLOR_OBJECT_DETECTOR_CB_MAX1" value="120"/>
       <define name="COLOR_OBJECT_DETECTOR_CR_MIN1" value="0"/>
       <define name="COLOR_OBJECT_DETECTOR_CR_MAX1" value="150"/>
+
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MIN2" value="50"/>
+      <define name="COLOR_OBJECT_DETECTOR_LUM_MAX2" value="180"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MIN2" value="0"/>
+      <define name="COLOR_OBJECT_DETECTOR_CB_MAX2" value="120"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MIN2" value="0"/>
+      <define name="COLOR_OBJECT_DETECTOR_CR_MAX2" value="150"/>
     </target>
     
     <define name="ARRIVED_AT_WAYPOINT" value="0.5"/><!-- Detect arrival at waypoint when within 0.5m -->
@@ -67,10 +81,16 @@
       <define name="COLOR_OBJECT_DETECTOR_CAMERA1" value="front_camera"/>
       <define name="COLOR_OBJECT_DETECTOR_FPS1" value="0"/>
       <define name="COLOR_OBJECT_DETECTOR_DRAW1" value="1"/>
-      <define name="FILTERBOX_YMIN" value="120"/>
-      <define name="FILTERBOX_YMAX" value="400"/>
+      <define name="FILTERBOX_YMIN" value="175"/> <!--100-->
+      <define name="FILTERBOX_YMAX" value="325"/> <!--400-->
       <define name="FILTERBOX_XMIN" value="0"/>
       <define name="FILTERBOX_XMAX" value="10"/>
+
+      <define name="FILTERBOX2_YMIN" value="245"/>
+      <define name="FILTERBOX2_YMAX" value="255"/>
+      <define name="FILTERBOX2_XMIN" value="20"/>
+      <define name="FILTERBOX2_XMAX" value="120"/>
+
     </module>
     <module name="green_attractor">
       <define name="ORANGE_AVOIDER_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION1_ID"/>
