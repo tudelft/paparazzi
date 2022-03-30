@@ -49,7 +49,7 @@ float v_filt, ins_v;
 #define FS_V_FILT_BETA 0.07
 #define FS_V_FILT_GAMMA 0.7
 #define SEASONAL_L 120  // 2 * pi * module_frequency / (w_z average)
-#define CT_DEFAULT 0.1
+#define CT_DEFAULT 0.01
 float seasonal_arr[SEASONAL_L] = {CT_DEFAULT};
 int ctr = 0;
 float bt = 0;
@@ -245,11 +245,13 @@ void horizontal_velocity_filter() {
   }
 
   if (!is_horizontal_velocity_filter_initialized) {
-    prev_v_filt = ins_v;
     is_horizontal_velocity_filter_initialized = true;
     filt_init_start_t = get_sys_time_float();
   } else {
-    if (get_sys_time_float() - filt_init_start_t > FILT_INIT_TIME) {
+    if (get_sys_time_float() - filt_init_start_t < FILT_INIT_TIME) {
+      prev_v_filt = ins_v;
+    }
+    else {
       float ct = seasonal_arr[ctr % SEASONAL_L];
 
       v_filt = FS_V_FILT_ALPHA * (ins_v - ct) + (1 - FS_V_FILT_ALPHA) * (prev_v_filt + bt);
