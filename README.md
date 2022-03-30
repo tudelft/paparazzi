@@ -11,9 +11,12 @@ The extension for detecting a mat is a vertical bar with the same green filter, 
 ![Vertical colorfilter box](/images/vertical_bar.png)
 ## Videos showing the flight in simulation
 
-[![Standaard Video](/imagegs/standaard.png)](https://youtu.be/LPpJ-rpNmqc "Mat avoidance")
-[![Mat avoidance ](/imagegs/mat.png)](https://youtu.be/DE0FiWiZbzM "Mat avoidance")
-[![Orange Maze ](/imagegs/orange_maze.png)](https://youtu.be/Ya5rIKcP2Ik "Orange Maze")
+### Video showing the standaard world flight
+[![Standaard Video](/images/standaard.png)](https://youtu.be/LPpJ-rpNmqc "Mat avoidance")
+### Video showing the mat avoidance extension
+[![Mat avoidance ](/images/mat.png)](https://youtu.be/DE0FiWiZbzM "Mat avoidance")
+### Video showing the orange maze
+[![Orange Maze ](/images/orange_maze.png)](https://youtu.be/Ya5rIKcP2Ik "Orange Maze")
 
 
 
