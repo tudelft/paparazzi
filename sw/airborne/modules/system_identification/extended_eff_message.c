@@ -63,9 +63,35 @@ float airspeed = stateGetAirspeed_f();
 ACCELS_FLOAT_OF_BFP(body_accel_f_telem_full, *body_accel_i_full);
 struct FloatEulers eulers_zxy;
 float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+float pos_N;
+float pos_E;
+float pos_D;
+pos_N = stateGetPositionNed_f()->x;
+pos_E = stateGetPositionNed_f()->y;
+pos_D = stateGetPositionNed_f()->z;
+
+float speed_N;
+float speed_E;
+float speed_D;
+speed_N = stateGetSpeedNed_f()->x;
+speed_E = stateGetSpeedNed_f()->y;
+speed_D = stateGetSpeedNed_f()->z;
+
 int32_t state_psi = ANGLE_BFP_OF_REAL(eulers_zxy.psi);
 
 pprz_msg_send_EFF_FULL_INDI(trans, dev, AC_ID,
+                                        &pos_N,
+                                        &pos_E,
+                                        &pos_D,
+                                        &pos_ref_c.x,
+                                        &pos_ref_c.y,
+                                        &pos_ref_c.z,
+                                        &speed_N,
+                                        &speed_E,
+                                        &speed_D,
+                                        &speed_ref_c.x,
+                                        &speed_ref_c.y,
+                                        &speed_ref_c.z,
                                         &body_rates_full->p,
                                         &body_rates_full->q,
                                         &body_rates_full->r,
@@ -93,6 +119,9 @@ pprz_msg_send_EFF_FULL_INDI(trans, dev, AC_ID,
                                         &(stateGetNedToBodyEulers_i()->phi),
                                         &(stateGetNedToBodyEulers_i()->theta),
                                         &state_psi,
+                                        &phi_ref_c,
+                                        &theta_ref_c,
+                                        &psi_ref_c,
                                         &actuator_thrust_bx_pprz,
                                         ACTUATORS_NB, actuators
                                         );
