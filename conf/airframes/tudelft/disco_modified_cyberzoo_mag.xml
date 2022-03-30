@@ -162,7 +162,7 @@
       <define name="RM3100_CHAN_X_SIGN" value="+"/>
       <define name="RM3100_CHAN_Y_SIGN" value="+"/>
       <define name="RM3100_CHAN_Z_SIGN" value="+"/>
-      <define name="RM3100_CHAN_X" value="0"/>  <!-- FIXME -->
+      <define name="RM3100_CHAN_X" value="0"/>
       <define name="RM3100_CHAN_Y" value="1"/>
       <define name="RM3100_CHAN_Z" value="2"/>
       <define name="MODULE_RM3100_SYNC_SEND" value="FALSE"/>

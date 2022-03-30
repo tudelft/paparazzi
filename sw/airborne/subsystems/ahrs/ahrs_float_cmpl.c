@@ -80,7 +80,8 @@ void ahrs_fc_update_mag_2d_dumb(struct FloatVect3 *mag);
 struct AhrsFloatCmpl ahrs_fc;
 
 float heading_rate_update_gain = 25;
-float mag_update_gain_weight = 10;
+float mag_update_gain_weight = 0.9;
+float scaling_factor = 0.001;
 
 void ahrs_fc_init(void)
 {
@@ -315,7 +316,8 @@ void ahrs_fc_update_mag_full(struct FloatVect3 *mag, float dt)
    */
 
 //  const float mag_rate_update_gain = 2 * ahrs_fc.mag_zeta * ahrs_fc.mag_omega * ahrs_fc.mag_cnt;
-  const float mag_rate_update_gain = 2 * ahrs_fc.mag_zeta * ahrs_fc.mag_omega * mag_update_gain_weight * ahrs_fc.mag_cnt;
+//  const float mag_rate_update_gain = 2 * ahrs_fc.mag_zeta * ahrs_fc.mag_omega * mag_update_gain_weight * ahrs_fc.mag_cnt;
+  const float mag_rate_update_gain = mag_update_gain_weight;
   RATES_ADD_SCALED_VECT(ahrs_fc.rate_correction, residual_imu, mag_rate_update_gain);
 
   /* Complementary filter integral gain
@@ -323,7 +325,8 @@ void ahrs_fc_update_mag_full(struct FloatVect3 *mag, float dt)
    * Ki = (omega*weight)^2 * dt
    */
 //  const float mag_bias_update_gain = -(ahrs_fc.mag_omega * ahrs_fc.mag_omega) * dt;
-  const float mag_bias_update_gain = -(ahrs_fc.mag_omega * ahrs_fc.mag_omega * mag_update_gain_weight * mag_update_gain_weight) * dt;
+//  const float mag_bias_update_gain = -(ahrs_fc.mag_omega * ahrs_fc.mag_omega * mag_update_gain_weight) * dt;
+  const float mag_bias_update_gain = -(scaling_factor * mag_update_gain_weight) * dt;
   RATES_ADD_SCALED_VECT(ahrs_fc.gyro_bias, residual_imu, mag_bias_update_gain);
 
 }
@@ -362,7 +365,8 @@ void ahrs_fc_update_mag_2d(struct FloatVect3 *mag, float dt)
    * with ahrs_fc.mag_cnt beeing the number of propagations since last update
    */
 //  const float mag_rate_update_gain = 2 * ahrs_fc.mag_zeta * ahrs_fc.mag_omega * ahrs_fc.mag_cnt;
-  const float mag_rate_update_gain = 2 * ahrs_fc.mag_zeta * ahrs_fc.mag_omega * mag_update_gain_weight * ahrs_fc.mag_cnt;
+//  const float mag_rate_update_gain = 2 * ahrs_fc.mag_zeta * ahrs_fc.mag_omega * mag_update_gain_weight * ahrs_fc.mag_cnt;
+  const float mag_rate_update_gain = mag_update_gain_weight;
   RATES_ADD_SCALED_VECT(ahrs_fc.rate_correction, residual_imu, mag_rate_update_gain);
 
   /* Complementary filter integral gain
@@ -370,7 +374,8 @@ void ahrs_fc_update_mag_2d(struct FloatVect3 *mag, float dt)
    * Ki = (omega*weight)^2 * dt
    */
 //  const float mag_bias_update_gain = -(ahrs_fc.mag_omega * ahrs_fc.mag_omega) * dt;
-  const float mag_bias_update_gain = -(ahrs_fc.mag_omega * ahrs_fc.mag_omega * mag_update_gain_weight * mag_update_gain_weight) * dt;
+//  const float mag_bias_update_gain = -(ahrs_fc.mag_omega * ahrs_fc.mag_omega * mag_update_gain_weight) * dt;
+  const float mag_bias_update_gain = -(0.001 * mag_update_gain_weight);
   RATES_ADD_SCALED_VECT(ahrs_fc.gyro_bias, residual_imu, mag_bias_update_gain);
 }
 
