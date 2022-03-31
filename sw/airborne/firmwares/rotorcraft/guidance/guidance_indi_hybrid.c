@@ -471,7 +471,7 @@ void guidance_indi_run(float *heading_sp) {
               chirp_number += 1;
             }
             if(i==0){euler_cmd.x = chirp_val_init+current_chirp_values[0]-roll_filt.o[0];}
-            if(i==1){euler_cmd.y = chirp_val_init+current_chirp_values[1]-pitch_filt.o[0];
+            if(i==1){euler_cmd.y = pitch_pref_rad+current_chirp_values[1]-pitch_filt.o[0];
             acc_T_bx=0.0;}
           }   
         } else {
