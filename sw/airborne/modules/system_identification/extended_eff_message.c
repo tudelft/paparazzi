@@ -76,7 +76,9 @@ float speed_D;
 speed_N = stateGetSpeedNed_f()->x;
 speed_E = stateGetSpeedNed_f()->y;
 speed_D = stateGetSpeedNed_f()->z;
-
+// &body_accel_f_telem_full.x,
+//                                         &body_accel_f_telem_full.y,
+//                                         &body_accel_f_telem_full.z,
 int32_t state_psi = ANGLE_BFP_OF_REAL(eulers_zxy.psi);
 
 pprz_msg_send_EFF_FULL_INDI(trans, dev, AC_ID,
@@ -98,9 +100,12 @@ pprz_msg_send_EFF_FULL_INDI(trans, dev, AC_ID,
                                         &ap_ref_save,
                                         &aq_ref_save,
                                         &ar_ref_save,
-                                        &body_accel_f_telem_full.x,
-                                        &body_accel_f_telem_full.y,
-                                        &body_accel_f_telem_full.z,
+                                        &acc_body_c.x,
+                                        &acc_body_c.y,
+                                        &acc_body_c.z,                                        
+                                        &acc_body_ref_c.x,
+                                        &acc_body_ref_c.y,
+                                        &acc_body_ref_c.z,
                                         &airspeed,
                                         &doublet_active, 
                                         INDI_NUM_ACT, current_doublet_values,

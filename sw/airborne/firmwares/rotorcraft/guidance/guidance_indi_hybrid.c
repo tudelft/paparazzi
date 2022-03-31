@@ -185,6 +185,8 @@ float theta_ref_c;
 float psi_ref_c;
 struct NedCoor_f pos_ref_c;
 struct FloatVect3 speed_ref_c; 
+struct FloatVect3 acc_body_ref_c;
+struct FloatVect3 acc_body_c;
 
 void guidance_indi_propagate_filters(void);
 static void guidance_indi_calcg_wing(struct FloatMat33 *Gmat);
@@ -388,13 +390,16 @@ void guidance_indi_run(float *heading_sp) {
     sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain;
     sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
   }
-
+  
   // Bound the acceleration setpoint
   float accelbound = 3.0 + airspeed/guidance_indi_max_airspeed*5.0;
   vect_bound_in_2d(&sp_accel, accelbound);
   /*BoundAbs(sp_accel.x, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);*/
   /*BoundAbs(sp_accel.y, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);*/
   BoundAbs(sp_accel.z, 3.0);
+  acc_body_ref_c.x = cosf(psi) * sp_accel.x + sinf(psi) * sp_accel.y;
+  acc_body_ref_c.y = -sinf(psi) * sp_accel.x + cosf(psi) * sp_accel.y;
+  acc_body_ref_c.z = sp_accel.z;
 
 #if GUIDANCE_INDI_RC_DEBUG
 #warning "GUIDANCE_INDI_RC_DEBUG lets you control the accelerations via RC, but disables autonomous flight!"
@@ -423,7 +428,7 @@ void guidance_indi_run(float *heading_sp) {
   accel_filt.x = filt_accel_ned[0].o[0];
   accel_filt.y = filt_accel_ned[1].o[0];
   accel_filt.z = filt_accel_ned[2].o[0];
-
+  VECT3_ASSIGN(acc_body_c,accel_filt.x,accel_filt.y,accel_filt.z)
   struct FloatVect3 a_diff;
   a_diff.x = sp_accel.x - accel_filt.x;
   a_diff.y = sp_accel.y - accel_filt.y;
