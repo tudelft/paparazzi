@@ -178,7 +178,7 @@ float hybrid_roll_limit = 0.785; // 45 deg
 float hybrid_pitch_limit = 0.349; // 15 deg
 
 bool chirp_init_check = FALSE ;
-pprz_t chirp_val_init = 0;
+float chirp_val_init = 0;
 int chirp_number = 0;
 float phi_ref_c;
 float theta_ref_c;
@@ -457,7 +457,7 @@ void guidance_indi_run(float *heading_sp) {
 #else
   MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
 #endif
- // add chirp values to euler cmd 
+ // add chirp values to euler cmd  AP_MODE_HOVER_Z_HOLD
   if (autopilot.mode == AP_MODE_HOVER_Z_HOLD){
     //printf("AUTOPILOT check PASSED \n");
     //printf("autorpilot_mode= %s \n",autopilot.mode);
@@ -471,7 +471,7 @@ void guidance_indi_run(float *heading_sp) {
               chirp_number += 1;
             }
             if(i==0){euler_cmd.x = chirp_val_init+current_chirp_values[0]-roll_filt.o[0];}
-            if(i==1){euler_cmd.y = pitch_pref_rad+current_chirp_values[1]-pitch_filt.o[0];
+            if(i==1){euler_cmd.y = chirp_val_init+pitch_pref_rad+current_chirp_values[1]-pitch_filt.o[0];
             acc_T_bx=0.0;}
           }   
         } else {
