@@ -41,7 +41,7 @@ extern "C" {
 // Whether to use gyros:
 #define OF_USE_GYROS 1
 // Predicting gyros with roll command and optic flow (normally 0):
-#define PREDICT_GYROS 1
+#define PREDICT_GYROS 0
 
 #if CONSTANT_ALT_FILTER == 1
 
