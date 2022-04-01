@@ -63,5 +63,12 @@ extern float thrust_priority_factor;
 extern float pusher_priority_factor;
 
 extern float pitch_pref_deg;
-
+extern int chirp_number;
+extern float phi_ref_c;
+extern float theta_ref_c;
+extern float psi_ref_c;
+extern struct NedCoor_f pos_ref_c;
+extern struct FloatVect3 speed_ref_c;
+extern struct FloatVect3 acc_body_ref_c;
+extern struct FloatVect3 acc_body_c;
 #endif /* GUIDANCE_INDI_HYBRID_H */

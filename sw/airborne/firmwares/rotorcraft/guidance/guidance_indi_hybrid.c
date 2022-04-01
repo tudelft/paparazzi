@@ -184,6 +184,17 @@ float pitch_pref_rad = 0;
 float hybrid_roll_limit = 0.785; // 45 deg
 float hybrid_pitch_limit = 0.349; // 15 deg
 
+bool chirp_init_check = FALSE ;
+float chirp_val_init = 0;
+int chirp_number = 0;
+float phi_ref_c;
+float theta_ref_c;
+float psi_ref_c;
+struct NedCoor_f pos_ref_c;
+struct FloatVect3 speed_ref_c; 
+struct FloatVect3 acc_body_ref_c;
+struct FloatVect3 acc_body_c;
+
 void guidance_indi_propagate_filters(void);
 static void guidance_indi_calcg_wing(struct FloatMat33 *Gmat);
 static void guidance_indi_calcg_rot_wing(void);
@@ -294,7 +305,7 @@ void guidance_indi_run(float *heading_sp) {
     speed_sp.y = pos_y_err * gih_params.pos_gain;
     speed_sp.z = pos_z_err * gih_params.pos_gainz;
   }
-
+  VECT3_ASSIGN(pos_ref_c, POS_FLOAT_OF_BFP(navigation_target.y), POS_FLOAT_OF_BFP(navigation_target.x), -POS_FLOAT_OF_BFP(navigation_target.z));
   //for rc control horizontal, rotate from body axes to NED
   float psi = eulers_zxy.psi;
   /*NAV mode*/
@@ -381,18 +392,21 @@ void guidance_indi_run(float *heading_sp) {
 
     speed_sp.x = cosf(psi) * speed_sp_b_x - sinf(psi) * speed_sp_b_y;
     speed_sp.y = sinf(psi) * speed_sp_b_x + cosf(psi) * speed_sp_b_y;
-
+    
     sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain;
     sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain;
     sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
   }
-
+  
   // Bound the acceleration setpoint
   float accelbound = 3.0 + airspeed/guidance_indi_max_airspeed*5.0;
   vect_bound_in_2d(&sp_accel, accelbound);
   /*BoundAbs(sp_accel.x, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);*/
   /*BoundAbs(sp_accel.y, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);*/
   BoundAbs(sp_accel.z, 3.0);
+  acc_body_ref_c.x = cosf(psi) * sp_accel.x + sinf(psi) * sp_accel.y;
+  acc_body_ref_c.y = -sinf(psi) * sp_accel.x + cosf(psi) * sp_accel.y;
+  acc_body_ref_c.z = sp_accel.z;
 
 #if GUIDANCE_INDI_RC_DEBUG
 #warning "GUIDANCE_INDI_RC_DEBUG lets you control the accelerations via RC, but disables autonomous flight!"
@@ -416,12 +430,12 @@ void guidance_indi_run(float *heading_sp) {
   //Invert this matrix
   MAT33_INV(Ga_inv, Ga);
 #endif
-
+  VECT3_ASSIGN(speed_ref_c,speed_sp.x,speed_sp.y,speed_sp.z)
   struct FloatVect3 accel_filt;
   accel_filt.x = filt_accel_ned[0].o[0];
   accel_filt.y = filt_accel_ned[1].o[0];
   accel_filt.z = filt_accel_ned[2].o[0];
-
+  VECT3_ASSIGN(acc_body_c,accel_filt.x,accel_filt.y,accel_filt.z)
   struct FloatVect3 a_diff;
   a_diff.x = sp_accel.x - accel_filt.x;
   a_diff.y = sp_accel.y - accel_filt.y;
@@ -451,11 +465,29 @@ void guidance_indi_run(float *heading_sp) {
 #else
   MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
 #endif
-
-  // add chirp values to euler cmd
-  euler_cmd.x += current_chirp_values[0];
-  euler_cmd.y += current_chirp_values[1];
-
+ // add chirp values to euler cmd  AP_MODE_HOVER_Z_HOLD
+  if (autopilot.mode == AP_MODE_HOVER_Z_HOLD){
+    //printf("AUTOPILOT check PASSED \n");
+    //printf("autorpilot_mode= %s \n",autopilot.mode);
+      for (int8_t i = 0; i < 2; i++) {  
+        if (chirp_active){
+          if(i==chirp_axis){
+            if(!chirp_init_check){
+              if(i==0){chirp_val_init = roll_filt.o[0];}
+              if(i==1){chirp_val_init = pitch_filt.o[0];}
+              chirp_init_check = TRUE;
+              chirp_number += 1;
+            }
+            if(i==0){euler_cmd.x = chirp_val_init+current_chirp_values[0]-roll_filt.o[0];}
+            if(i==1){euler_cmd.y = chirp_val_init+pitch_pref_rad+current_chirp_values[1]-pitch_filt.o[0];
+            acc_T_bx=0.0;}
+          }   
+        } else {
+          chirp_init_check = FALSE;
+          chirp_val_init = 0;
+        }
+      }
+    }
   AbiSendMsgTHRUST(THRUST_INCREMENT_ID, euler_cmd.z);
   AbiSendMsgTHRUST(THRUST_BX_INCREMENT_ID, acc_T_bx);
 
@@ -507,7 +539,9 @@ void guidance_indi_run(float *heading_sp) {
 #endif
 
   guidance_euler_cmd.psi = *heading_sp;
-
+  phi_ref_c = guidance_euler_cmd.phi;
+  theta_ref_c = guidance_euler_cmd.theta;
+  psi_ref_c = guidance_euler_cmd.psi; 
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
   guidance_indi_filter_thrust();
 
@@ -964,7 +998,6 @@ struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_ga
   struct NedCoor_f ned_target;
   // Target in NED instead of ENU
   VECT3_ASSIGN(ned_target, POS_FLOAT_OF_BFP(target.y), POS_FLOAT_OF_BFP(target.x), -POS_FLOAT_OF_BFP(target.z));
-
   // Calculate position error
   struct FloatVect3 pos_error;
   struct NedCoor_f *pos = stateGetPositionNed_f();

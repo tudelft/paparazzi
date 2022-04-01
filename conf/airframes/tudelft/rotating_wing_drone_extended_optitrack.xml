@@ -251,7 +251,7 @@
         <define name="REF_ERR_R" value="85.0"/>
         <define name="REF_RATE_P" value="18.0"/>
         <define name="REF_RATE_Q" value="18.0"/>
-        <define name="REF_RATE_R" value="5.0"/>
+        <define name="REF_RATE_R" value="9.7"/>
 
         <!--Maxium yaw rate, to avoid instability-->
         <define name="MAX_R" value="50.0" unit="deg/s"/>
@@ -295,11 +295,11 @@
     </section>
 
     <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
-        <define name="POS_GAIN" value="1.0"/> <!--1.0-->
-        <define name="POS_GAINZ" value="0.5"/> <!-- FWD 1.5  1.0-->
-        <define name="SPEED_GAIN" value="2.0"/> <!--FWD 1.2 3.0-->
-        <define name="SPEED_GAINZ" value="1.2"/> <!-- 3.0-->
-       <define name="FILTER_CUTOFF" value="1.0"/>
+        <define name="POS_GAIN" value="0.5"/>
+        <define name="POS_GAINZ" value="0.5"/> <!-- FWD 1.5-->
+        <define name="SPEED_GAIN" value="1.2"/> <!--FWD 1.2-->
+        <define name="SPEED_GAINZ" value="1.2"/>
+        <define name="FILTER_CUTOFF" value="1.0"/>
         <define name="HEADING_BANK_GAIN" value="10."/>
         <define name="NAV_SPEED_MARGIN" value="0."/>
         <define name="MAX_AIRSPEED" value="25."/>

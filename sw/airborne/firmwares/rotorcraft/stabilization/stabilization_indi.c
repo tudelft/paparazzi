@@ -138,6 +138,10 @@ float indi_Wu_motor = 1;
 
 static float Wu[INDI_NUM_ACT];
 
+bool doub_init = FALSE ;
+pprz_t val_init = 0;
+int doub_number = 0;
+
 // variables needed for control
 float actuator_state_filt_vect[INDI_NUM_ACT];
 struct FloatRates angular_accel_ref = {0., 0., 0.};
@@ -159,6 +163,10 @@ float estimation_rate_d[INDI_NUM_ACT];
 float estimation_rate_dd[INDI_NUM_ACT];
 float du_estimation[INDI_NUM_ACT];
 float ddu_estimation[INDI_NUM_ACT];
+
+float ap_ref_save;
+float aq_ref_save;
+float ar_ref_save;
 
 // The learning rate per axis (roll, pitch, yaw, thrust)
 float mu1[INDI_OUTPUTS] = {0.00001, 0.00001, 0.000003, 0.000002};
@@ -478,6 +486,10 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   angular_accel_ref.q = (rate_sp.q - rates_filt.q) * indi_gains.rate.q;
   angular_accel_ref.r = (rate_sp.r - rates_filt.r) * indi_gains.rate.r;
 
+  ap_ref_save = angular_accel_ref.p;
+  aq_ref_save = angular_accel_ref.q;
+  ar_ref_save = angular_accel_ref.r;
+
   g2_times_du = 0.0;
   for (i = 0; i < INDI_NUM_ACT; i++) {
     g2_times_du += g2[i] * indi_du[i];
@@ -563,6 +575,24 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
       du_pref[i] = 0;
     }
 
+    if (doublet_active)
+    { if(i==doublet_axis){
+      if(!doub_init){
+        val_init = actuator_state_filt_vect[i];
+        doub_init = TRUE;
+        doub_number += 1;
+        }
+      du_pref[i] = val_init + current_doublet_values[i] - actuator_state_filt_vect[i];
+      } else {
+        du_pref[i] = 0;
+      }
+      
+    } else {
+      doub_init = FALSE;
+      val_init = 0;
+    }
+
+
 #ifdef GUIDANCE_INDI_MIN_THROTTLE
     float airspeed = stateGetAirspeed_f();
     //limit minimum thrust ap can give
@@ -577,6 +607,8 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     }
 #endif
   }
+  float gamma;
+
 
   for (i = 0; i < INDI_NUM_ACT; i++) {
     if (!act_is_servo[i]) {
@@ -584,11 +616,18 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     } else {
       Wu[i] = 1;
     }
+    if (doublet_active)
+    {
+      Wu[i] = 10000;
+      gamma = 10;
+    } else {
+      gamma = 10000;
+    }
   }
 
   // WLS Control Allocator
   num_iter =
-    wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, Wu, du_pref, 10000, 10);
+    wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, Wu, du_pref, gamma, 10);
 #endif
 
   // Add the increments to the actuators
