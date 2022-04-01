@@ -103,6 +103,7 @@
             <define name="CHIRP_FADEIN"      value="TRUE"/>
          </module>
         <module name="sys_id_doublet"/>
+        <module name="extended_eff_message"/>
         <!--<module name="project_target"/>-->
         
 
@@ -118,7 +119,7 @@
         <servo NO="6" NEUTRAL="1500" NAME="VTAIL_LEFT" MIN="1100" MAX="1900"/>
         <servo NO="7" NEUTRAL="1500" NAME="VTAIL_RIGHT" MIN="1100" MAX="1900"/>
         <servo NO="8" NEUTRAL="1035" NAME="MOTOR_FWD" MIN="1000" MAX="2000"/>
-        <servo NO="9" NEUTRAL="1507" NAME="WING_ROT" MIN="1000" MAX="2000"/>
+        <servo NO="9" NEUTRAL="1520" NAME="WING_ROT" MIN="1000" MAX="2000"/>
     </servos>
 
     <commands>
@@ -144,7 +145,7 @@
 
     <command_laws>
         <!--<let VAR="th_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>-->
-        <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,values)"/>
+        <!--<call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,values)"/>-->
         <set VALUE="autopilot_get_motors_on() ? actuators_pprz[0] : -MAX_PPRZ" SERVO="MOTOR_FRONT"/>
         <set VALUE="autopilot_get_motors_on() ? actuators_pprz[1] : -MAX_PPRZ" SERVO="MOTOR_RIGHT"/>
         <set VALUE="autopilot_get_motors_on() ? actuators_pprz[2] : -MAX_PPRZ" SERVO="MOTOR_BACK"/>
@@ -244,7 +245,7 @@
         <define name="G1_THRUST"    value="{-0.34,   -0.34,  -0.34,   -0.34,  0.0, 0.0, 0.0, 0.0}"/>
         <define name="G2"           value="{0.014,  -0.014,   0.014,  -0.014,  0.0, 0.0, 0.0, 0.0}"/>
 
-        <!-- reference acceleration for attitude control -->
+      <!-- reference acceleration for attitude control -->
         <define name="REF_ERR_P" value="150.0"/>
         <define name="REF_ERR_Q" value="150.0"/>
         <define name="REF_ERR_R" value="85.0"/>
@@ -285,7 +286,7 @@
         <define name="G1_AERO_CONST_R" value="{0.0, 0.0, 0.0, 0.006}"/> <!--estimated value, use adaptive for real value-->
         <define name="AIRSPEED_FILTER_CUTOFF" value="1.5"/>
         <define name="AERO_EFF_TUNING" value="TRUE"/>
-    </section> 
+     </section> 
 
     <section name="FORWARD">
     <!-- This is the pitch angle that the drone will have in forward flight, where 0 degrees is hover-->
@@ -298,7 +299,7 @@
         <define name="POS_GAINZ" value="0.5"/> <!-- FWD 1.5  1.0-->
         <define name="SPEED_GAIN" value="2.0"/> <!--FWD 1.2 3.0-->
         <define name="SPEED_GAINZ" value="1.2"/> <!-- 3.0-->
-        <define name="FILTER_CUTOFF" value="1.0"/>
+       <define name="FILTER_CUTOFF" value="1.0"/>
         <define name="HEADING_BANK_GAIN" value="10."/>
         <define name="NAV_SPEED_MARGIN" value="0."/>
         <define name="MAX_AIRSPEED" value="25."/>
