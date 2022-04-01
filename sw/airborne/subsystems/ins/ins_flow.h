@@ -32,12 +32,12 @@
 extern "C" {
 #endif
 
-#define CONSTANT_ALT_FILTER 0
+#define CONSTANT_ALT_FILTER 1
 #define OF_DRAG 1
 // Only for constant alt for now!
-#define OF_TWO_DIM 0
+#define OF_TWO_DIM 1
 // Only for changing alt
-#define OF_THRUST_BIAS 1
+#define OF_THRUST_BIAS 0
 // Whether to use gyros:
 #define OF_USE_GYROS 1
 // Predicting gyros with roll command and optic flow (normally 0):

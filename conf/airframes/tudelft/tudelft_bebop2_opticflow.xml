@@ -98,6 +98,7 @@
 	<define name="OFL_IGAIN_ADAPTIVE" value="0.10"/>
 	<define name="OFL_CONTROL_METHOD" value="0"/> <!-- 1 is adaptive gain -->
 	<define name="OFL_P_LAND_THRESHOLD" value="0.25"/> 
+	<define name="OFL_COV_LANDING_LIMIT" value="10.0"/>
     </module>
 
   </modules>
@@ -146,6 +147,13 @@
     <define name="MAG_X_SENS" value="7.28514789391" integer="16"/>
     <define name="MAG_Y_SENS" value="7.33022132691" integer="16"/>
     <define name="MAG_Z_SENS" value="7.57102035692" integer="16"/>
+
+    <define name="ACCEL_X_NEUTRAL" value="62"/>
+    <define name="ACCEL_Y_NEUTRAL" value="1"/>
+    <define name="ACCEL_Z_NEUTRAL" value="-35"/>
+    <define name="ACCEL_X_SENS" value="2.43379017884412" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="2.44705938467942" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.4327471718063234" integer="16"/>
   </section>
 
   <!-- local magnetic field -->
