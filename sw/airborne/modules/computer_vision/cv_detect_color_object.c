@@ -90,6 +90,7 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   uint8_t cr_min, cr_max;
   bool draw;
 
+  // Choose color filter for green thresholds
   lum_min = cod_lum_min2;
   lum_max = cod_lum_max2;
   cb_min = cod_cb_min2;
