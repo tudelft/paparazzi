@@ -653,12 +653,14 @@ void overactuated_mixing_run()
         pos_order_body[2] = pos_order_earth[2];
 
         ////Angular error computation
+        euler_setpoint[0] = manual_phi_value;
+        euler_setpoint[1] = manual_theta_value;
         //Bound the setpoints within maximum angular values
-        BoundAbs(manual_phi_value, max_value_error.phi);
-        BoundAbs(manual_theta_value, max_value_error.theta);
+        BoundAbs(euler_setpoint[0], max_value_error.phi);
+        BoundAbs(euler_setpoint[1], max_value_error.theta);
 
-        euler_error[0] = manual_phi_value - euler_vect[0];
-        euler_error[1] = manual_theta_value - euler_vect[1];
+        euler_error[0] = euler_setpoint[0] - euler_vect[0];
+        euler_error[1] = euler_setpoint[1] - euler_vect[1];
         euler_error[2] = euler_setpoint[2] - euler_vect[2];
 
         //Add logic for the psi control:
@@ -687,10 +689,12 @@ void overactuated_mixing_run()
         euler_order[2] = pid_gains_over.p.psi * euler_error[2] + pid_gains_over.i.psi * euler_error_integrated[2] -
                          pid_gains_over.d.psi * rate_vect[2];
 
-        //Bound euler angle orders:
+        //Bound euler angle orders and servos max angle:
         BoundAbs(euler_order[0], OVERACTUATED_MIXING_PID_MAX_ROLL_ORDER_PWM);
         BoundAbs(euler_order[1], OVERACTUATED_MIXING_PID_MAX_PITCH_ORDER_PWM);
         BoundAbs(euler_order[2], OVERACTUATED_MIXING_PID_MAX_YAW_ORDER_AZ);
+        BoundAbs(pos_order_body[0], OVERACTUATED_MIXING_PID_MAX_EL_ORDER);
+        BoundAbs(pos_order_body[1], OVERACTUATED_MIXING_PID_MAX_AZ_ORDER);
 
         //Submit motor orders:
         overactuated_mixing.commands[0] =

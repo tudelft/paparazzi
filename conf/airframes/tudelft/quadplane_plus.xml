@@ -247,8 +247,8 @@
 
     <!-- Maximum orders -->
     <!-- General -->
-    <define name="MAX_PHI" value="20" unit="deg"/>
-    <define name="MAX_THETA" value="20" unit="deg"/>
+    <define name="MAX_PHI" value="30" unit="deg"/>
+    <define name="MAX_THETA" value="30" unit="deg"/>
     <define name="MAX_PSI_ERR" value="80" unit="deg"/>
 
     <!-- PID specific-->
@@ -257,7 +257,9 @@
     <define name="PID_MAX_ROLL_ORDER_PWM" value="350"/>
     <define name="PID_MAX_PITCH_ORDER_PWM" value="350"/>
     <define name="PID_MAX_YAW_ORDER_MOTOR_PWM" value="250"/>
-    <define name="PID_MAX_YAW_ORDER_AZ" value="30" unit="deg"/><!--MAX order for el servos are the physical one-->
+    <define name="PID_MAX_YAW_ORDER_AZ" value="25" unit="deg"/> <!--max azimuth deflection in PID mode for YAW command-->
+    <define name="PID_MAX_EL_ORDER" value="35" unit="deg"/> <!--max elevator deflection in PID mode-->
+    <define name="PID_MAX_AZ_ORDER" value="35" unit="deg"/> <!--max azimuth deflection in PID mode-->
 
     <!-- INDI proportional gains -->
 
@@ -336,7 +338,7 @@
     <define name="W_DV_6" value="0.01"/>
 
     <define name="GAMMA_QUADRATIC_DV" value="1"/>
-    <define name="GAMMA_QUADRATIC_DU" value="1e-7"/>
+    <define name="GAMMA_QUADRATIC_DU" value="1e-6"/>
     <define name="GAMMA_QUADRATIC_WLS" value="10000"/>
 
     <define name="MAX_ITER_WLS" value="100"/>
@@ -345,7 +347,7 @@
 
   <!-- Vehicle properties, see documentation for notation -->
   <section name="VEHICLE_PROPERTIES" prefix="VEHICLE_">
-    <define name="I_XX" value="0.15" unit="Kg*m^2"/>
+    <define name="I_XX" value="0.14" unit="Kg*m^2"/>
     <define name="I_YY" value="0.13" unit="Kg*m^2"/>
     <define name="I_ZZ" value="0.2" unit="Kg*m^2"/>
     <define name="I_TILT" value="0.000216" unit="Kg*m^2"/>
