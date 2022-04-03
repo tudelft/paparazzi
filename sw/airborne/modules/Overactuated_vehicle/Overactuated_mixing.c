@@ -86,7 +86,7 @@ float pos_error_integrated[3];
 float pos_order_body[3];
 float pos_order_earth[3];
 float euler_order[3];
-float psi_order_motor;
+float psi_order_motor = 0;
 
 
 //Flight states variables:
@@ -631,7 +631,7 @@ void overactuated_mixing_run()
         pos_error[1] = pos_setpoint[1] - pos_vect[1];
         pos_error[2] = -pos_setpoint[2] + pos_vect[2];
 
-        //Calculate and bound the position error integration
+        //Calculate the position error integration
         for (int i = 0; i < 3; i++) {
             if(radio_control.values[RADIO_TH_HOLD] < - 4800) {
                 pos_error_integrated[i] += pos_error[i] / PERIODIC_FREQUENCY;
@@ -696,15 +696,17 @@ void overactuated_mixing_run()
         BoundAbs(pos_order_body[0], OVERACTUATED_MIXING_PID_MAX_EL_ORDER);
         BoundAbs(pos_order_body[1], OVERACTUATED_MIXING_PID_MAX_AZ_ORDER);
 
+        float alt_order = pos_order_body[2] + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000;
+        Bound(alt_order,0,1000);
         //Submit motor orders:
         overactuated_mixing.commands[0] =
-                (int32_t) (pos_order_body[2] + euler_order[0] + euler_order[1] + psi_order_motor + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000) * 9.6;
+                (int32_t) (alt_order + euler_order[0] + euler_order[1]) * 9.6;
         overactuated_mixing.commands[1] =
-                (int32_t) (pos_order_body[2] - euler_order[0] + euler_order[1] - psi_order_motor + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000) * 9.6;
+                (int32_t) (alt_order - euler_order[0] + euler_order[1]) * 9.6;
         overactuated_mixing.commands[2] =
-                (int32_t) (pos_order_body[2] - euler_order[0] - euler_order[1] + psi_order_motor + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000) * 9.6;
+                (int32_t) (alt_order - euler_order[0] - euler_order[1]) * 9.6;
         overactuated_mixing.commands[3] =
-                (int32_t) (pos_order_body[2] + euler_order[0] - euler_order[1] - psi_order_motor + OVERACTUATED_MIXING_PID_THR_NEUTRAL_PWM - 1000) * 9.6;
+                (int32_t) (alt_order + euler_order[0] - euler_order[1]) * 9.6;
 
         //Elevation servos:
         overactuated_mixing.commands[4] = (int32_t) ((-pos_order_body[0] - OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE) * K_ppz_angle_el);

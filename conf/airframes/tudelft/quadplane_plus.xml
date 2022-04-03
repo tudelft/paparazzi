@@ -218,9 +218,9 @@
     <define name="PID_I_GAIN_PSI_MOTOR" value="50"/>
     <define name="PID_D_GAIN_PSI_MOTOR" value="250"/>
 
-    <define name="PID_P_GAIN_PSI_AZ" value="2.6"/>
+    <define name="PID_P_GAIN_PSI_AZ" value="1.5"/>
     <define name="PID_I_GAIN_PSI_AZ" value="0.5"/>
-    <define name="PID_D_GAIN_PSI_AZ" value="1.1"/>
+    <define name="PID_D_GAIN_PSI_AZ" value="0.5"/>
 
     <define name="PID_P_GAIN_POS_X_TILT" value="1.4"/>
     <define name="PID_I_GAIN_POS_X_TILT" value="0.01"/>
