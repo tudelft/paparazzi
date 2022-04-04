@@ -78,7 +78,7 @@ float rot_wing_aero_eff_const_q;
 float rot_wing_aero_eff_const_r; 
 
 float rot_wing_min_lift_pitch_eff = 0.;//GUIDANCE_INDI_PITCH_LIFT_EFF;
-float rot_wing_max_lift_pitch_eff = 0.035;//GUIDANCE_INDI_PITCH_LIFT_EFF;
+float rot_wing_max_lift_pitch_eff =0.035;//GUIDANCE_INDI_PITCH_LIFT_EFF;0.035
 
 // Define control effectiveness variables in roll, pitch and yaw for aerodynamic surfaces {AIL_LEFT, AIL_RIGHT, VTAIL_LEFT, VTAIL_RIGHT}
 float rot_wing_g1_p_aerodynamic_surf[4] = {0.0, 0.0, 0.0, 0.0};

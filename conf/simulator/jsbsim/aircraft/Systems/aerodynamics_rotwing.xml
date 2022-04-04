@@ -5,8 +5,8 @@
         <property>fcs/rud_lag</property>
         <property>aero/qbar-psf</property>
         <value>47.9</value> <!--Conversion to pascals -->
-        <value> 0.094 </value>
-        <value>0.224808943</value> <!-- N to LBS -->
+        <value> 0.26122449 </value>
+        <value>0.73756</value> <!-- Nm to FT*LBS -->
       </product>
     </function>
   </axis>
@@ -17,8 +17,8 @@
         <property>fcs/elev_lag</property>
         <property>aero/qbar-psf</property>
         <value>47.9</value> <!--Conversion to pascals -->
-        <value> -0.157 </value>
-        <value>0.224808943</value> <!-- N to LBS -->
+        <value> -0.3 </value> <!-- Design value target 12 m/s-->
+        <value>0.73756</value> <!-- Nm to FT*LBS -->
       </product>
     </function>
   </axis> 
@@ -29,19 +29,19 @@
         <product>
           <property>fcs/ail_left_lag</property>
           <property>aero/qbar-psf</property>
+          <sin><product><value>1.5708</value><property>fcs/wing_rotation</property></product></sin> <!-- Scheduling with wing rotation-->
           <value>47.9</value> <!--Conversion to pascals -->
-          <value> 0.204 </value>
-          <value> 10.0 </value>
-          <value>0.224808943</value> <!-- N to LBS -->
+          <value> 0.2027 </value> <!-- Design value target 12 m/s-->
+          <value>0.73756</value> <!-- Nm to FT*LBS -->
         </product>
 
         <product>
           <property>fcs/ail_right_lag</property>
           <property>aero/qbar-psf</property>
+          <sin><product><value>1.5708</value><property>fcs/wing_rotation</property></product></sin> <!-- Scheduling with wing rotation-->
           <value>47.9</value> <!--Conversion to pascals -->
-          <value> 0.204 </value>
-          <value> 10.0 </value>
-          <value>0.224808943</value> <!-- N to LBS -->
+          <value> 0.2027 </value> <!-- Design value target 12 m/s-->
+          <value>0.73756</value> <!-- Nm to FT*LBS -->
         </product>
       </sum>
     </function>
@@ -52,9 +52,7 @@
       <description>Lift due to alpha</description>
       <product>
           <property>aero/qbar-psf</property>
-          <value>47.9</value> <!--Conversion to pascals -->
-          <!--<property>metrics/Sw-sqft</property>-->
-          <value>0.578</value>
+          <property>metrics/Sw-sqft</property>
           <sin><product><value>1.5708</value><property>fcs/wing_rotation</property></product></sin>
           <table>
             <independentVar lookup="row">aero/alpha-deg</independentVar>
@@ -64,11 +62,23 @@
               -20  -0.63
               -12  -0.74
               -8  -0.64
-              0  0.07
-              11  1.15
+              0	0.07230133
+              1	0.167412
+              2	0.2624017
+              3	0.3571986
+              4	0.4517312
+              5	0.5459285
+              6	0.6397203
+              7	0.733037
+              8	0.8258099
+              9	0.9179716
+              10	1.009455
+              11	1.100197
+              12	1.190131
+              13	1.279197
               14  1.2
-              18  1.3
-              45  0.8
+              18  0.02
+              45  0.01
               90   0.0
               135  0.8
               180  0.0
@@ -76,8 +86,7 @@
               270 0.0
             </tableData>
           </table>
-          <value>0.224808943</value> <!-- N to LBS -->
-          <value>2.0</value>
+          <value>1.0</value>
       </product>
     </function>
 
@@ -125,7 +134,7 @@
         </product>
       </function>
     </axis>
-  <!-- <axis name="SIDE">
+  <axis name="SIDE">
 
     <function name="aero/force/Side_beta">
        <description>Side force due to beta</description>
@@ -137,6 +146,6 @@
        </product>
     </function>
 
-  </axis> -->
+  </axis>
 
  </aerodynamics>

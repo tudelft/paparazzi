@@ -90,7 +90,7 @@ float nav_max_speed = NAV_MAX_SPEED;
 #endif
 
 /*Boolean to force the heading to a static value (only use for specific experiments)*/
-bool take_heading_control = true;
+bool take_heading_control = false;
 
 struct FloatVect3 sp_accel = {0.0,0.0,0.0};
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
@@ -174,7 +174,7 @@ float hybrid_du[4];
 float hybrid_v[3];
 float Wv_hybrid[3] = {10., 10., 1.};
 float pitch_priority_factor = 10.;
-float roll_priority_factor = 10.;
+float roll_priority_factor = 0.;
 float thrust_priority_factor = 10.;
 float pusher_priority_factor = 1.;
 float Wu_hybrid[4] = {10.,10.,100.,1.};//{105.,230.,250.,1.}{230.,105.,25.,1.}{24.,11.,25.,5.};
@@ -182,7 +182,7 @@ float pitch_pref_deg = 0;
 float pitch_pref_rad = 0;
 
 float hybrid_roll_limit = 0.785; // 45 deg
-float hybrid_pitch_limit = 0.349; // 15 deg
+float hybrid_pitch_limit = 0.244;//14 deg//0.349; // 20 deg
 
 bool chirp_init_check = FALSE ;
 float chirp_val_init = 0;
@@ -194,6 +194,10 @@ struct NedCoor_f pos_ref_c;
 struct FloatVect3 speed_ref_c; 
 struct FloatVect3 acc_body_ref_c;
 struct FloatVect3 acc_body_c;
+float fwd_sideslip_g = 0;
+#ifdef FWD_SIDESLIP_GAIN
+fwd_sideslip_g = FWD_SIDESLIP_GAIN;
+#endif
 
 void guidance_indi_propagate_filters(void);
 static void guidance_indi_calcg_wing(struct FloatMat33 *Gmat);
@@ -461,7 +465,7 @@ void guidance_indi_run(float *heading_sp) {
   euler_cmd.y = hybrid_du[1];
   euler_cmd.z = -1.0*hybrid_du[2];
   acc_T_bx = hybrid_du[3];
-  printf("Commanded Delta T = %f\n", euler_cmd.z);
+  //printf("Commanded Delta T = %f\n", euler_cmd.z);
 #else
   MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
 #endif
@@ -504,7 +508,7 @@ void guidance_indi_run(float *heading_sp) {
 
   //Bound euler angles to prevent flipping
   Bound(guidance_euler_cmd.phi, -guidance_indi_max_bank, guidance_indi_max_bank);
-  Bound(guidance_euler_cmd.theta, -RadOfDeg(120.0), RadOfDeg(25.0));
+  Bound(guidance_euler_cmd.theta, -RadOfDeg(25.0), RadOfDeg(25.0));
 
   // Use the current roll angle to determine the corresponding heading rate of change.
   float coordinated_turn_roll = eulers_zxy.phi;
@@ -515,13 +519,14 @@ void guidance_indi_run(float *heading_sp) {
 
   if (fabs(coordinated_turn_roll) < max_phi) {
     omega = 9.81 / airspeed_turn * tanf(coordinated_turn_roll);
+    printf("omega = %f \n", omega);
   } else { //max 60 degrees roll
     omega = 9.81 / airspeed_turn * 1.72305 * ((coordinated_turn_roll > 0.0) - (coordinated_turn_roll < 0.0));
   }
 
 #ifdef FWD_SIDESLIP_GAIN
   // Add sideslip correction
-  omega -= accely_filt.o[0]*FWD_SIDESLIP_GAIN;
+  omega -= accely_filt.o[0]*fwd_sideslip_g;
 #endif
 
 // For a hybrid it is important to reduce the sideslip, which is done by changing the heading.
@@ -787,7 +792,7 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
 
   float lift_thrust_bz = stateGetAccelNed_f()->z-9.81; // Sum of lift and thrust in boxy z axis (level flight) 
   //Bound(lift_thrust_bz,0.0,10.0)
-  float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta - M_PI_2); //IS THIS RIGHT?// Convert to correct pitch angle
+  float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta); //IS THIS RIGHT?// Convert to correct pitch angle
   float thrust_bz = (actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])*(-0.00051);//(g1g2[3][0]);
   float lift_approx = lift_thrust_bz-thrust_bz*cphi*ctheta;
   float thrust_bx = actuator_thrust_bx_pprz*THRUST_BX_EFF;
@@ -802,7 +807,7 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
 
   Gmat_rot_wing[0][1] = cpsi*ctheta*cphi*thrust_bz;//cpsi*ctheta*lift_thrust_bz-cpsi*stheta*thrust_bx+sphi*spsi*liftd;//cpsi*cphi*ctheta*thrust_bz-cpsi*stheta*thrust_bx+sphi*spsi*liftd;// (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
   Gmat_rot_wing[1][1] = spsi*cphi*ctheta*thrust_bz;//spsi*cphi*ctheta*thrust_bz-spsi*stheta*thrust_bx-cpsi*sphi*liftd;// (ctheta*spsi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
-  Gmat_rot_wing[2][1] = cphi*(-stheta*thrust_bz+liftd);// -cphi*stheta*thrust_bz-ctheta*thrust_bx+cphi*liftd;// -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+  Gmat_rot_wing[2][1] = cphi*liftd;// -cphi*stheta*thrust_bz-ctheta*thrust_bx+cphi*liftd;// -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
 
   Gmat_rot_wing[0][2] = (sphi*spsi+cphi*cpsi*stheta)*-1.0;// (stheta*cpsi + sphi*ctheta*spsi)*-1.0;
   Gmat_rot_wing[1][2] = (cphi*spsi*stheta-cpsi*sphi)*-1.0;// (stheta*spsi - sphi*ctheta*cpsi)*-1.0;
@@ -829,16 +834,17 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   du_max_hybrid[1] = hybrid_pitch_limit - pitch_filt.o[0]; // pitch
   du_max_hybrid[2] = -(4*MAX_PPRZ - actuators_pprz[0] - actuators_pprz[1] - actuators_pprz[2] - actuators_pprz[3])*(g1g2[3][0]);// + g1g2[3][1] + g1g2[3][2] + g1g2[3][3]);
   du_max_hybrid[3] = (MAX_PPRZ - actuator_thrust_bx_pprz) * THRUST_BX_EFF;
-  printf("du_min_hibrid[2] %f\n", du_min_hybrid[2]);
-  printf("Gmat_rot_wing[2][1] %f\n", Gmat_rot_wing[2][1]);
+  // printf("du_min_hibrid[2] %f\n", du_min_hybrid[2]);
+  // printf("Gmat_rot_wing[2][1] %f\n", Gmat_rot_wing[2][1]);
   printf("liftd %f\n", liftd);
-  printf("Gmat_rot_wing[2][2] %f\n", Gmat_rot_wing[2][2]);
-  printf("Lift estimated %f\n", lift_approx);
+  // printf("Gmat_rot_wing[2][2] %f\n", Gmat_rot_wing[2][2]);
+  // printf("Lift estimated %f\n", lift_approx);
   
   // Set prefered states
   pitch_pref_rad = pitch_pref_deg / 180. * M_PI;
 
   du_pref_hybrid[0] = -roll_filt.o[0];
+  printf("pref change in roll %f\n", du_pref_hybrid[0]);
   du_pref_hybrid[1] = -pitch_filt.o[0] + pitch_pref_rad;
   du_pref_hybrid[2] = du_min_hybrid[2];//du_max_hybrid[2];//0;
   du_pref_hybrid[3] = du_min_hybrid[3];//accel_bx_err * cosf(pitch_pref_rad) - 9.81 * sinf(pitch_filt.o[0] - pitch_pref_rad);
@@ -869,9 +875,13 @@ float guidance_indi_get_liftd(float airspeed, float theta) {
     // liftd = -24.0*ratio*lift_pitch_eff/0.12;
     liftd = 0.0;
   } else {
+    if(DegOfRad(theta)<14){
     liftd = -airspeed*airspeed*lift_pitch_eff/M_PI*180.0;
     if (liftd > 0) {
       liftd = 0.0;
+    }} else{
+      printf("STALL\n");
+      liftd = airspeed*airspeed*lift_pitch_eff/M_PI*180.0;
     }
   }
   //TODO: bound liftd

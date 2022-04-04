@@ -3,7 +3,7 @@
 <fdm_config name="QUAD COMPLETE EXT" version="2.0" release="BETA" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://jsbsim.sourceforge.net/JSBSim.xsd">
 
     <fileheader>
-        <author>Dennis van Wijngaarden</author>
+        <author>Tomaso De Ponti</author>
         <filecreationdate>23-12-2021</filecreationdate>
         <version>Version 0.9 - beta</version>
         <description>Rotating wing drone with actuator dynamics</description>
@@ -35,13 +35,13 @@
     </metrics>
 
     <mass_balance>
-        <ixx unit="SLUG*FT2">0.03328</ixx>
-        <iyy unit="SLUG*FT2">0.25055</iyy>
-        <izz unit="SLUG*FT2">0.1737</izz>
+        <ixx unit="SLUG*FT2">0.1526754</ixx> <!-- 0.03328-->
+        <iyy unit="SLUG*FT2">0.579724</iyy>  <!-- 0.25055-->
+        <izz unit="SLUG*FT2">0.684457</izz>  <!-- 0.1737-->
         <ixy unit="SLUG*FT2">0.</ixy>
         <ixz unit="SLUG*FT2">0.</ixz>
         <iyz unit="SLUG*FT2">0.</iyz>
-            <emptywt unit="LBS">6.614</emptywt>
+            <emptywt unit="LBS">6.614</emptywt> <!-- 6.614 12.57 -->
         <location name="CG" unit="IN">
             <x> 0 </x>
             <y> 0 </y>
@@ -265,7 +265,10 @@
         <force name="pusher" frame="BODY" unit="LBS">
             <function>
                 <product>
-                    <property>fcs/pusher_lag</property>
+                    <sum>
+                        <property>fcs/pusher_lag</property>
+                        <value> -0.035 </value>
+                    </sum>
                     <value>5.512</value>
                 </product>
             </function>
@@ -321,7 +324,7 @@
                 <product>
                     <property>fcs/right_motor_lag</property>
                     <value>3.5598</value>
-                    <cos><product><v>1.5708</v><property>fcs/wing_rotation</property></product></cos>
+                    <cos><product><value>1.5708</value><property>fcs/wing_rotation</property></product></cos>
                 </product>
             </function>
             <location unit="IN">
@@ -341,7 +344,7 @@
                 <product>
                     <property>fcs/left_motor_lag</property>
                     <value>3.5598</value>
-                    <cos><product><v>1.5708</v><property>fcs/wing_rotation</property></product></cos>
+                    <cos><product><value>1.5708</value><property>fcs/wing_rotation</property></product></cos>
                 </product>
             </function>
             <location unit="IN">
@@ -381,7 +384,7 @@
                 <product>
                     <property>fcs/right_motor_lag</property>
                     <value>3.5598</value>
-                    <sin><product><v>1.5708</v><property>fcs/wing_rotation</property></product></sin>
+                    <sin><product><value>1.5708</value><property>fcs/wing_rotation</property></product></sin>
                 </product>
             </function>
             <location unit="IN">
@@ -420,7 +423,7 @@
                 <product>
                     <property>fcs/left_motor_lag</property>
                     <value>3.5598</value>
-                    <sin><product><v>1.5708</v><property>fcs/wing_rotation</property></product></sin>
+                    <sin><product><value>1.5708</value><property>fcs/wing_rotation</property></product></sin>
                 </product>
             </function>
             <location unit="IN">
@@ -441,7 +444,8 @@
             <function>
                 <product>
                     <property>fcs/front_motor_lag</property>
-                    <value>2.3</value>
+                    <value>0.657</value>
+                    <value>2</value>
                 </product>
             </function>
             <location unit="IN">
@@ -459,7 +463,8 @@
             <function>
                 <product>
                     <property>fcs/front_motor_lag</property>
-                    <value>2.3</value>
+                    <value>0.657</value>
+                    <value>2</value>
                 </product>
             </function>
             <location unit="IN">
@@ -478,7 +483,8 @@
             <function>
                 <product>
                     <property>fcs/right_motor_lag</property>
-                    <value>2.3</value>
+                    <value>0.657</value>
+                    <value>2</value>
                 </product>
             </function>
             <location unit="IN">
@@ -496,7 +502,8 @@
             <function>
                 <product>
                     <property>fcs/right_motor_lag</property>
-                    <value>2.3</value>
+                    <value>0.657</value>
+                    <value>2</value>
                 </product>
             </function>
             <location unit="IN">
@@ -515,7 +522,8 @@
             <function>
                 <product>
                     <property>fcs/back_motor_lag</property>
-                    <value>2.3</value>
+                    <value>0.657</value>
+                    <value>2</value>
                 </product>
             </function>
             <location unit="IN">
@@ -533,7 +541,8 @@
             <function>
                 <product>
                     <property>fcs/back_motor_lag</property>
-                    <value>2.3</value>
+                    <value>0.657</value>
+                    <value>2</value>
                 </product>
             </function>
             <location unit="IN">
@@ -552,7 +561,8 @@
             <function>
                 <product>
                     <property>fcs/left_motor_lag</property>
-                    <value>2.3</value>
+                    <value>0.657</value>
+                    <value>2</value>
                 </product>
             </function>
             <location unit="IN">
@@ -570,7 +580,8 @@
             <function>
                 <product>
                     <property>fcs/left_motor_lag</property>
-                    <value>2.3</value>
+                    <value>0.657</value>
+                    <value>2</value>
                 </product>
             </function>
             <location unit="IN">

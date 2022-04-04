@@ -8,6 +8,7 @@
 #include "modules/system_identification/sys_id_chirp.h"
 #include "modules/system_identification/pprz_chirp.h"
 #include "modules/rot_wing_drone/wing_rotation_controller.h"
+#include "firmwares/rotorcraft/navigation.h"
 </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0" height="0.0"/>
@@ -47,6 +48,7 @@
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <set var="nav_heading" value="0"/>
       <stay wp="STDBY"/>
     </block>
     <block name="Rotating wing20">

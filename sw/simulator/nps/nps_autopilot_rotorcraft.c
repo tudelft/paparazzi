@@ -170,7 +170,7 @@ void nps_autopilot_run_step(double time)
     actuators_pprz[i] = autopilot_get_motors_on() ? actuators_pprz[i] : 0;
     if(i==9){
       nps_autopilot.commands[i] = (double)actuators_pprz[i] / 4800.0;
-      printf("wing rot = %f\n",nps_autopilot.commands[i]);
+      //printf("wing rot = %f\n",nps_autopilot.commands[i]);
     } else {
       nps_autopilot.commands[i] = (double)actuators_pprz[i] / MAX_PPRZ;
     }

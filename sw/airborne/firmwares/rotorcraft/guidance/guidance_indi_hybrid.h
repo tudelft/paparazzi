@@ -61,6 +61,7 @@ extern float pitch_priority_factor;
 extern float roll_priority_factor;
 extern float thrust_priority_factor;
 extern float pusher_priority_factor;
+extern float fwd_sideslip_g;
 
 extern float pitch_pref_deg;
 extern int chirp_number;

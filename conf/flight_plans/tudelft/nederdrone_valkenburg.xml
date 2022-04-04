@@ -64,22 +64,16 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="Start Engine">
-      <set value="FALSE" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="-65" roll="0" throttle="0" until="stage_time>1" vmode="throttle"/>
-    </block>
-    <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="GetPosHeight() @GT 18.0" deroute="Takeoff"/>
-      <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="-45." roll="0" throttle="0.8" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="GetPosHeight() @GT 40.0" deroute="Standby"/>
-      <call_once fun="nav_set_heading_current()"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
+
     <!--block name="follow_module">
       <set value="FALSE" var="force_forward"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
