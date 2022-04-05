@@ -90,7 +90,7 @@ float nav_max_speed = NAV_MAX_SPEED;
 #endif
 
 /*Boolean to force the heading to a static value (only use for specific experiments)*/
-bool take_heading_control = false;
+bool take_heading_control = true;
 
 struct FloatVect3 sp_accel = {0.0,0.0,0.0};
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
