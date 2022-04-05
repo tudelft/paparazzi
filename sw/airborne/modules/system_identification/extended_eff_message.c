@@ -127,6 +127,7 @@ pprz_msg_send_EFF_FULL_INDI(trans, dev, AC_ID,
                                         &phi_ref_c,
                                         &theta_ref_c,
                                         &psi_ref_c,
+                                        &pitch_pref_deg,
                                         &actuator_thrust_bx_pprz,
                                         ACTUATORS_NB, actuators
                                         );
