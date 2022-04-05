@@ -508,7 +508,7 @@ void guidance_indi_run(float *heading_sp) {
 
   //Bound euler angles to prevent flipping
   Bound(guidance_euler_cmd.phi, -guidance_indi_max_bank, guidance_indi_max_bank);
-  Bound(guidance_euler_cmd.theta, -RadOfDeg(25.0), RadOfDeg(25.0));
+  Bound(guidance_euler_cmd.theta, RadOfDeg(-25.0), RadOfDeg(25.0));
 
   // Use the current roll angle to determine the corresponding heading rate of change.
   float coordinated_turn_roll = eulers_zxy.phi;
