@@ -1,5 +1,5 @@
 {
-  "ids": [ 210, 211, 212 ],
+  "ids": [ 211, 213, 214 ],
   "topology": [
     [ 1,  0, -1],
     [-1,  1,  0],
@@ -28,12 +28,12 @@
   "gains": [ 0.27, 4.0 ],
   "geo_fence":
   {
-    "x_min": -4,
-    "x_max": 4,
-    "y_min": -4,
-    "y_max": 4,
-    "z_min": -5,
-    "z_max": 5
+    "x_min": -40,
+    "x_max": 40,
+    "y_min": -40,
+    "y_max": 40,
+    "z_min": -50,
+    "z_max": 50
   },
   "3D": false,
   "sensitivity":

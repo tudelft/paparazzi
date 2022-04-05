@@ -26,12 +26,12 @@
   <aircraft
    name="TUBB2MP214"
    ac_id="214"
-   airframe="airframes/tudelft/bebop2_indi.xml"
+   airframe="airframes/examples/bebop2_indi.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft_swarm.xml"
    flight_plan="flight_plans/tudelft/bebop_valkenburg.xml"
    settings="settings/rotorcraft_basic.xml [settings/estimation/ahrs_secondary.xml]"
-   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/air_data.xml modules/geo_mag.xml modules/gps.xml modules/gps_ubx_ucenter.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi.xml"
+   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/air_data.xml modules/gps.xml modules/gps_ubx_ucenter.xml modules/guidance_indi.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi_simple.xml"
    gui_color="#1aeeb8af0000"
    release="cde043338785efbaa7aac97e90cb272099a0c7ec"
   />
