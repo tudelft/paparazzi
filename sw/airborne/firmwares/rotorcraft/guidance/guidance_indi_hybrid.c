@@ -134,6 +134,8 @@ float guidance_indi_max_bank = GUIDANCE_H_MAX_BANK;
 
 /** state eulers in zxy order */
 struct FloatEulers eulers_zxy;
+/** state eulers in yxz order */
+struct FloatEulers eulers_yxz;
 
 float thrust_act = 0;
 Butterworth2LowPass filt_accel_ned[3];
@@ -174,7 +176,7 @@ float hybrid_du[4];
 float hybrid_v[3];
 float Wv_hybrid[3] = {10., 10., 1.};
 float pitch_priority_factor = 10.;
-float roll_priority_factor = 0.;
+float roll_priority_factor = 10.;
 float thrust_priority_factor = 10.;
 float pusher_priority_factor = 1.;
 float Wu_hybrid[4] = {10.,10.,100.,1.};//{105.,230.,250.,1.}{230.,105.,25.,1.}{24.,11.,25.,5.};
@@ -286,9 +288,10 @@ void guidance_indi_run(float *heading_sp) {
 
   /*Obtain eulers with zxy rotation order*/
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-
+  /*Obtain eulers with zxy rotation order*/
+  float_eulers_of_quat_yxz(&eulers_yxz, stateGetNedToBodyQuat_f());
   /*Calculate the transition percentage so that the ctrl_effecitveness scheduling works*/
-  transition_percentage = BFP_OF_REAL((eulers_zxy.theta/RadOfDeg(-75.0))*100,INT32_PERCENTAGE_FRAC);
+  transition_percentage = BFP_OF_REAL((eulers_yxz.theta/RadOfDeg(-75.0))*100,INT32_PERCENTAGE_FRAC);
   Bound(transition_percentage,0,BFP_OF_REAL(100.0,INT32_PERCENTAGE_FRAC));
   const int32_t max_offset = ANGLE_BFP_OF_REAL(TRANSITION_MAX_OFFSET);
   transition_theta_offset = INT_MULT_RSHIFT((transition_percentage <<
@@ -311,7 +314,7 @@ void guidance_indi_run(float *heading_sp) {
   }
   VECT3_ASSIGN(pos_ref_c, POS_FLOAT_OF_BFP(navigation_target.y), POS_FLOAT_OF_BFP(navigation_target.x), -POS_FLOAT_OF_BFP(navigation_target.z));
   //for rc control horizontal, rotate from body axes to NED
-  float psi = eulers_zxy.psi;
+  float psi = eulers_yxz.psi;
   /*NAV mode*/
   float speed_sp_b_x = cosf(psi) * speed_sp.x + sinf(psi) * speed_sp.y;
   float speed_sp_b_y =-sinf(psi) * speed_sp.x + cosf(psi) * speed_sp.y;
@@ -415,7 +418,7 @@ void guidance_indi_run(float *heading_sp) {
 #if GUIDANCE_INDI_RC_DEBUG
 #warning "GUIDANCE_INDI_RC_DEBUG lets you control the accelerations via RC, but disables autonomous flight!"
   //for rc control horizontal, rotate from body axes to NED
-  float psi = eulers_zxy.psi;
+  float psi = eulers_yxz.psi;
   float rc_x = -(radio_control.values[RADIO_PITCH]/9600.0)*8.0;
   float rc_y = (radio_control.values[RADIO_ROLL]/9600.0)*8.0;
   sp_accel.x = cosf(psi) * rc_x - sinf(psi) * rc_y;
@@ -511,7 +514,7 @@ void guidance_indi_run(float *heading_sp) {
   Bound(guidance_euler_cmd.theta, RadOfDeg(-25.0), RadOfDeg(25.0));
 
   // Use the current roll angle to determine the corresponding heading rate of change.
-  float coordinated_turn_roll = eulers_zxy.phi;
+  float coordinated_turn_roll = eulers_yxz.phi;
 
   if( (guidance_euler_cmd.theta > 0.0) && ( fabs(guidance_euler_cmd.phi) < guidance_euler_cmd.theta)) {
     coordinated_turn_roll = ((guidance_euler_cmd.phi > 0.0) - (guidance_euler_cmd.phi < 0.0))*guidance_euler_cmd.theta;
@@ -564,9 +567,9 @@ void guidance_indi_run(float *heading_sp) {
   stabilization_cmd[COMMAND_THRUST] = thrust_in;
 #endif
 
-  // Set the quaternion setpoint from eulers_zxy
+  // Set the quaternion setpoint from eulers_yxz
   struct FloatQuat sp_quat;
-  float_quat_of_eulers_zxy(&sp_quat, &guidance_euler_cmd);
+  float_quat_of_eulers_yxz(&sp_quat, &guidance_euler_cmd);
   float_quat_normalize(&sp_quat);
   QUAT_BFP_OF_REAL(stab_att_sp_quat,sp_quat);
 }
@@ -597,8 +600,8 @@ void guidance_indi_propagate_filters(void) {
   update_butterworth_2_low_pass(&filt_accel_ned[1], accel->y);
   update_butterworth_2_low_pass(&filt_accel_ned[2], accel->z);
 
-  update_butterworth_2_low_pass(&roll_filt, eulers_zxy.phi);
-  update_butterworth_2_low_pass(&pitch_filt, eulers_zxy.theta);
+  update_butterworth_2_low_pass(&roll_filt, eulers_yxz.phi);
+  update_butterworth_2_low_pass(&pitch_filt, eulers_yxz.theta);
 
   // Propagate filter for sideslip correction
   float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
@@ -778,12 +781,12 @@ void guidance_indi_calcg_rot_wing(void) {
  */
 void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   /*Pre-calculate sines and cosines*/
-  float sphi = sinf(eulers_zxy.phi);
-  float cphi = cosf(eulers_zxy.phi);
-  float stheta = sinf(eulers_zxy.theta);
-  float ctheta = cosf(eulers_zxy.theta);
-  float spsi = sinf(eulers_zxy.psi);
-  float cpsi = cosf(eulers_zxy.psi);
+  float sphi = sinf(eulers_yxz.phi);
+  float cphi = cosf(eulers_yxz.phi);
+  float stheta = sinf(eulers_yxz.theta);
+  float ctheta = cosf(eulers_yxz.theta);
+  float spsi = sinf(eulers_yxz.psi);
+  float cpsi = cosf(eulers_yxz.psi);
   //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
 
 #ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
@@ -792,8 +795,8 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
 
   float lift_thrust_bz = stateGetAccelNed_f()->z-9.81; // Sum of lift and thrust in boxy z axis (level flight) 
   //Bound(lift_thrust_bz,0.0,10.0)
-  float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta); //IS THIS RIGHT?// Convert to correct pitch angle
-  float thrust_bz = (actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])*(-0.00051);//(g1g2[3][0]);
+  float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_yxz.theta); //IS THIS RIGHT?// Convert to correct pitch angle
+  float thrust_bz = (actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])*(g1g2[3][0]);//(-0.00051);//-0.000319(g1g2[3][0]);
   float lift_approx = lift_thrust_bz-thrust_bz*cphi*ctheta;
   float thrust_bx = actuator_thrust_bx_pprz*THRUST_BX_EFF;
   // Calc assumed body acceleration setpoint and error
@@ -801,13 +804,13 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   float accel_bx = cpsi * filt_accel_ned[0].o[0] + spsi * filt_accel_ned[1].o[0];
   float accel_bx_err = accel_bx_sp - accel_bx;
 
-  Gmat_rot_wing[0][0] = (cphi*spsi-cpsi*sphi*stheta)*lift_thrust_bz;// cphi*spsi*lift_thrust_bz;
-  Gmat_rot_wing[1][0] = (-cphi*cpsi-sphi*spsi*stheta)*lift_thrust_bz;// -cphi*cpsi*lift_thrust_bz;
-  Gmat_rot_wing[2][0] = -sphi*ctheta*lift_thrust_bz;;//-sphi*ctheta*lift_thrust_bz;// -sphi*lift_thrust_bz;
+  Gmat_rot_wing[0][0] = (cphi*spsi-cpsi*sphi*stheta)*lift_thrust_bz;
+  Gmat_rot_wing[1][0] = (-cphi*cpsi-sphi*spsi*stheta)*lift_thrust_bz;
+  Gmat_rot_wing[2][0] = -sphi*ctheta*lift_thrust_bz;
 
   Gmat_rot_wing[0][1] = cpsi*ctheta*cphi*thrust_bz;//cpsi*ctheta*lift_thrust_bz-cpsi*stheta*thrust_bx+sphi*spsi*liftd;//cpsi*cphi*ctheta*thrust_bz-cpsi*stheta*thrust_bx+sphi*spsi*liftd;// (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
   Gmat_rot_wing[1][1] = spsi*cphi*ctheta*thrust_bz;//spsi*cphi*ctheta*thrust_bz-spsi*stheta*thrust_bx-cpsi*sphi*liftd;// (ctheta*spsi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
-  Gmat_rot_wing[2][1] = cphi*liftd;// -cphi*stheta*thrust_bz-ctheta*thrust_bx+cphi*liftd;// -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+  Gmat_rot_wing[2][1] = cphi*(liftd-thrust_bz*stheta);// -cphi*stheta*thrust_bz-ctheta*thrust_bx+cphi*liftd;// -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
 
   Gmat_rot_wing[0][2] = (sphi*spsi+cphi*cpsi*stheta)*-1.0;// (stheta*cpsi + sphi*ctheta*spsi)*-1.0;
   Gmat_rot_wing[1][2] = (cphi*spsi*stheta-cpsi*sphi)*-1.0;// (stheta*spsi - sphi*ctheta*cpsi)*-1.0;
@@ -856,7 +859,7 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   Wu_hybrid[3] = pusher_priority_factor * 1.0;
 
   num_iter_hybrid =
-    wls_alloc_hybrid(hybrid_du, hybrid_v, du_min_hybrid, du_max_hybrid, Bwls_hybrid, 0, 0, Wv_hybrid, Wu_hybrid, du_pref_hybrid, 1000000, 20);
+    wls_alloc_hybrid(hybrid_du, hybrid_v, du_min_hybrid, du_max_hybrid, Bwls_hybrid, 0, 0, Wv_hybrid, Wu_hybrid, du_pref_hybrid, 10000, 10);
 }
 
 /**
