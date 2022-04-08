@@ -14,7 +14,11 @@
 //#include "modules/nav/common_flight_plan.h"
 //#include "modules/nav/nav_pivot_takeoff_landing.h"
 
-static float ab_to_cd(float x);
+
+//static float ab_to_cd(float x);
+static float pprz_to_theta(float x);
+
+struct MassMomentsInertia I = {I_XX, I_YY, I_ZZ};
 
 void ctrl_eff_periodic(void)
 {
@@ -33,31 +37,27 @@ void ctrl_eff(void)
     /**
      * Some definitions for ease of reading. In the future I want to use angular acceleration of motor so labeled as omega already
      */
-    float theta_l0 = ab_to_cd(actuator_state_filt_vect[0]);
-    float theta_r0 = ab_to_cd(actuator_state_filt_vect[1]);
+//    float theta_l0 = ab_to_cd(actuator_state_filt_vect[0]);
+//    float theta_r0 = ab_to_cd(actuator_state_filt_vect[1]);
+    float theta_l0 = pprz_to_theta(actuator_state_filt_vect[0]);
+    float theta_r0 = pprz_to_theta(actuator_state_filt_vect[1]);
 //    float omega_r0 = actuator_state_filt_vect[2];
 //    float omega_l0 = actuator_state_filt_vect[3];
     float omega_r0 = actuator_state_filt_vect[2] < 4000 ? 4000 : actuator_state_filt_vect[2];
     float omega_l0 = actuator_state_filt_vect[3] < 4000 ? 4000 : actuator_state_filt_vect[3];
 
-    float ctrl_deriv_00 = -Y_DIST * sinf(theta_l0) * (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * (1 / I_XX) * (1/(float)MAX_PPRZ);
-    float ctrl_deriv_01 =  Y_DIST * sinf(theta_r0) * (K1 * omega_r0 * omega_r0 + K2 * omega_r0 + K3) * (1 / I_XX) * (1/(float)MAX_PPRZ);
-//    float ctrl_deriv_00 = 0;
-//	float ctrl_deriv_01 = 0;
+    float ctrl_deriv_00 = -Y_DIST * sinf(theta_l0) * (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * (1 / I.xx) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_01 =  Y_DIST * sinf(theta_r0) * (K1 * omega_r0 * omega_r0 + K2 * omega_r0 + K3) * (1 / I.xx) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_02 = -Y_DIST * cosf(theta_r0) * (2 * K1 * omega_r0 + K2) * (1 / I_XX);
     float ctrl_deriv_03 =  Y_DIST * cosf(theta_l0) * (2 * K1 * omega_l0 + K2) * (1 / I_XX);
-    float ctrl_deriv_10 =  X_DIST * cosf(theta_l0) * (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * (1 / I_YY) * (1/(float)MAX_PPRZ);
-    float ctrl_deriv_11 =  X_DIST * cosf(theta_r0) * (K1 * omega_r0 * omega_r0 + K2 * omega_r0 + K3) * (1 / I_YY) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_10 =  X_DIST * cosf(theta_l0) * (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * (1 / I.yy) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_11 =  X_DIST * cosf(theta_r0) * (K1 * omega_r0 * omega_r0 + K2 * omega_r0 + K3) * (1 / I.yy) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_12 =  X_DIST * sinf(theta_r0) * (2 * K1 * omega_r0 + K2) * (1 / I_YY);
     float ctrl_deriv_13 =  X_DIST * sinf(theta_l0) * (2 * K1 * omega_l0 + K2) * (1 / I_YY);
-    float ctrl_deriv_20 = -Y_DIST * cosf(theta_l0) * (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * (1 / I_ZZ) * (1/(float)MAX_PPRZ);
-    float ctrl_deriv_21 =  Y_DIST * cosf(theta_r0) * (K1 * omega_r0 * omega_r0 + K2 * omega_r0 + K3) * (1 / I_ZZ) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_20 = -Y_DIST * cosf(theta_l0) * (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * (1 / I.zz) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_21 =  Y_DIST * cosf(theta_r0) * (K1 * omega_r0 * omega_r0 + K2 * omega_r0 + K3) * (1 / I.zz) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_22 =  Y_DIST * sinf(theta_r0) * (2 * K1 * omega_r0 + K2) * (1 / I_ZZ);
     float ctrl_deriv_23 = -Y_DIST * sinf(theta_l0) * (2 * K1 * omega_l0 + K2) * (1 / I_ZZ);
-//    float ctrl_deriv_30 = (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * sinf(theta_l0) * (1/MASS) * (1/(float)MAX_PPRZ);
-//    float ctrl_deriv_31 = (K1 * omega_r0 * omega_r0 + K2 * omega_r0 + K3) * sinf(theta_r0) * (1/MASS) * (1/(float)MAX_PPRZ);
-//    float ctrl_deriv_32 =  -(2 * K1 * omega_r0 + K2) * cosf(theta_r0) * (1/MASS);
-//    float ctrl_deriv_33 =  -(2 * K1 * omega_l0 + K2) * cosf(theta_l0) * (1/MASS);
     float ctrl_deriv_30 = (K1 * actuator_state_filt_vect[3] * actuator_state_filt_vect[3] + K2 * actuator_state_filt_vect[3] + K3) * sinf(theta_l0) * (1/MASS) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_31 = (K1 * actuator_state_filt_vect[2] * actuator_state_filt_vect[2] + K2 * actuator_state_filt_vect[2] + K3) * sinf(theta_r0) * (1/MASS) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_32 =  -(2 * K1 * actuator_state_filt_vect[2] + K2) * cosf(theta_r0) * (1/MASS);
@@ -116,8 +116,8 @@ void ctrl_eff(void)
 
 void ctrl_eff_ground_contact(void)
 {
-    float delta_l0 = ab_to_cd(actuator_state_filt_vect[0]);
-    float delta_r0 = ab_to_cd(actuator_state_filt_vect[1]);
+    float delta_l0 = pprz_to_theta(actuator_state_filt_vect[0]);
+    float delta_r0 = pprz_to_theta(actuator_state_filt_vect[1]);
     float omega_r0 = actuator_state_filt_vect[2];
     float omega_l0 = actuator_state_filt_vect[3];
 
@@ -167,16 +167,29 @@ void ctrl_eff_ground_contact(void)
 }
 
 
+/*
+ * Linear function of form y = mx which maps command in pprz units
+ * to an angle based on servo mapping
+ */
+float pprz_to_theta(float x)
+{
+	// Below gradient corresponds to 55 degrees which comes from putting
+	// the max value of servo from airframe file into linear equation
+	// for servo: y = -0.0909x + 136.35 (left)	[deg]
+	//			  y = -0.0901x + 135.15 (right)	[deg]
+	float gradient = 0.000099157;	// [rad]
+	return gradient * x;
+}
 
 /*
  * Function that maps [a, b] to [c, d]
  */
-float ab_to_cd(float x)
-{
-    float a = -MAX_PPRZ;
-    float b = MAX_PPRZ;
-    float c = -1 * M_PI / 2; // Min tilt
-    float d = M_PI / 2;		 // Max tilt
-    return c + ((d - c) / (b - a)) * (x - a);
-}
+//float ab_to_cd(float x)
+//{
+//    float a = -MAX_PPRZ;
+//    float b = MAX_PPRZ;
+//    float c = -1 * M_PI / 3; // Min tilt
+//    float d = M_PI / 3;		 // Max tilt
+//    return c + ((d - c) / (b - a)) * (x - a);
+//}
 

@@ -13,6 +13,15 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #include "paparazzi.h"
 
+struct MassMomentsInertia {
+	float xx;
+	float yy;
+	float zz;
+};
+
+extern struct MassMomentsInertia I;
+
+
 extern void ctrl_eff_periodic(void);
 extern void ctrl_eff(void);
 extern void ctrl_eff_ground_contact(void);
