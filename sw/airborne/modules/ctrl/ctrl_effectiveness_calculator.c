@@ -48,16 +48,16 @@ void ctrl_eff(void)
 
     float ctrl_deriv_00 = -Y_DIST * sinf(theta_l0) * (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * (1 / I.xx) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_01 =  Y_DIST * sinf(theta_r0) * (K1 * omega_r0 * omega_r0 + K2 * omega_r0 + K3) * (1 / I.xx) * (1/(float)MAX_PPRZ);
-    float ctrl_deriv_02 = -Y_DIST * cosf(theta_r0) * (2 * K1 * omega_r0 + K2) * (1 / I_XX);
-    float ctrl_deriv_03 =  Y_DIST * cosf(theta_l0) * (2 * K1 * omega_l0 + K2) * (1 / I_XX);
+    float ctrl_deriv_02 = -Y_DIST * cosf(theta_r0) * (2 * K1 * omega_r0 + K2) * (1 / I.xx);
+    float ctrl_deriv_03 =  Y_DIST * cosf(theta_l0) * (2 * K1 * omega_l0 + K2) * (1 / I.xx);
     float ctrl_deriv_10 =  X_DIST * cosf(theta_l0) * (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * (1 / I.yy) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_11 =  X_DIST * cosf(theta_r0) * (K1 * omega_r0 * omega_r0 + K2 * omega_r0 + K3) * (1 / I.yy) * (1/(float)MAX_PPRZ);
-    float ctrl_deriv_12 =  X_DIST * sinf(theta_r0) * (2 * K1 * omega_r0 + K2) * (1 / I_YY);
-    float ctrl_deriv_13 =  X_DIST * sinf(theta_l0) * (2 * K1 * omega_l0 + K2) * (1 / I_YY);
+    float ctrl_deriv_12 =  X_DIST * sinf(theta_r0) * (2 * K1 * omega_r0 + K2) * (1 / I.yy);
+    float ctrl_deriv_13 =  X_DIST * sinf(theta_l0) * (2 * K1 * omega_l0 + K2) * (1 / I.yy);
     float ctrl_deriv_20 = -Y_DIST * cosf(theta_l0) * (K1 * omega_l0 * omega_l0 + K2 * omega_l0 + K3) * (1 / I.zz) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_21 =  Y_DIST * cosf(theta_r0) * (K1 * omega_r0 * omega_r0 + K2 * omega_r0 + K3) * (1 / I.zz) * (1/(float)MAX_PPRZ);
-    float ctrl_deriv_22 =  Y_DIST * sinf(theta_r0) * (2 * K1 * omega_r0 + K2) * (1 / I_ZZ);
-    float ctrl_deriv_23 = -Y_DIST * sinf(theta_l0) * (2 * K1 * omega_l0 + K2) * (1 / I_ZZ);
+    float ctrl_deriv_22 =  Y_DIST * sinf(theta_r0) * (2 * K1 * omega_r0 + K2) * (1 / I.zz);
+    float ctrl_deriv_23 = -Y_DIST * sinf(theta_l0) * (2 * K1 * omega_l0 + K2) * (1 / I.zz);
     float ctrl_deriv_30 = (K1 * actuator_state_filt_vect[3] * actuator_state_filt_vect[3] + K2 * actuator_state_filt_vect[3] + K3) * sinf(theta_l0) * (1/MASS) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_31 = (K1 * actuator_state_filt_vect[2] * actuator_state_filt_vect[2] + K2 * actuator_state_filt_vect[2] + K3) * sinf(theta_r0) * (1/MASS) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_32 =  -(2 * K1 * actuator_state_filt_vect[2] + K2) * cosf(theta_r0) * (1/MASS);
