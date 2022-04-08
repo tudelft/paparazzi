@@ -46,7 +46,7 @@
             <configure name="INDI_NUM_ACT" value="8"/>
         </module>
 
-        <!--<module TYPE="ekf2" NAME="ins"/>-->
+       <module TYPE="ekf2" NAME="ins"/>
 
         <define name="USE_AHRS_GPS_ACCELERATIONS" value="FALSE"/>
         <module name="ahrs" type="int_cmpl_quat"> 
@@ -55,7 +55,7 @@
             <configure name="USE_MAGNETOMETER" value="FALSE"/>
             <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0" unit="m/s"/>
         </module>
-        <module name="ins" type="extended"/>
+        <!-- <module name="ins" type="extended"/> -->
 
         <module name="geo_mag"/>
         <module NAME="send_imu_mag_current"/>
@@ -154,7 +154,7 @@
         <set VALUE="autopilot_get_motors_on() ? actuators_pprz[5] : 0" SERVO="AIL_RIGHT"/>
         <set VALUE="autopilot_get_motors_on() ? actuators_pprz[6] : 0" SERVO="VTAIL_LEFT"/>
         <set VALUE="autopilot_get_motors_on() ? actuators_pprz[7] : 0" SERVO="VTAIL_RIGHT"/>
-        <set VALUE="autopilot_get_motors_on() ? actuator_thrust_bx_pprz : -MAX_PPRZ" SERVO="MOTOR_FWD"/>
+        <set VALUE="autopilot_get_motors_on() ? actuators_pprz[8] : -MAX_PPRZ" SERVO="MOTOR_FWD"/>
         <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="WING_ROT"/>
     </command_laws>
 
@@ -313,7 +313,7 @@
     </section>
 
     <section name= "PUSHER">
-        <define name="THRUST_BX_EFF" value="0.000851562"/>
+        <define name="THRUST_BX_EFF" value="0.000851562"/> <!--0.000851562-->
     </section>
 
     <section PREFIX="GUIDANCE_V_" NAME="GUIDANCE_V">

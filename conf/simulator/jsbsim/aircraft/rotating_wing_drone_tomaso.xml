@@ -445,7 +445,7 @@
                 <product>
                     <property>fcs/front_motor_lag</property>
                     <value>0.657</value>
-                    <value>2</value>
+                    <value>20</value>
                 </product>
             </function>
             <location unit="IN">
@@ -464,7 +464,7 @@
                 <product>
                     <property>fcs/front_motor_lag</property>
                     <value>0.657</value>
-                    <value>2</value>
+                    <value>20</value>
                 </product>
             </function>
             <location unit="IN">
@@ -484,7 +484,7 @@
                 <product>
                     <property>fcs/right_motor_lag</property>
                     <value>0.657</value>
-                    <value>2</value>
+                    <value>20</value>
                 </product>
             </function>
             <location unit="IN">
@@ -503,7 +503,7 @@
                 <product>
                     <property>fcs/right_motor_lag</property>
                     <value>0.657</value>
-                    <value>2</value>
+                    <value>20</value>
                 </product>
             </function>
             <location unit="IN">
@@ -523,7 +523,7 @@
                 <product>
                     <property>fcs/back_motor_lag</property>
                     <value>0.657</value>
-                    <value>2</value>
+                    <value>20</value>
                 </product>
             </function>
             <location unit="IN">
@@ -542,7 +542,7 @@
                 <product>
                     <property>fcs/back_motor_lag</property>
                     <value>0.657</value>
-                    <value>2</value>
+                    <value>20</value>
                 </product>
             </function>
             <location unit="IN">
@@ -562,7 +562,7 @@
                 <product>
                     <property>fcs/left_motor_lag</property>
                     <value>0.657</value>
-                    <value>2</value>
+                    <value>20</value>
                 </product>
             </function>
             <location unit="IN">
@@ -581,7 +581,7 @@
                 <product>
                     <property>fcs/left_motor_lag</property>
                     <value>0.657</value>
-                    <value>2</value>
+                    <value>20</value>
                 </product>
             </function>
             <location unit="IN">

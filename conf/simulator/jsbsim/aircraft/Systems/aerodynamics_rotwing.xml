@@ -7,6 +7,7 @@
         <value>47.9</value> <!--Conversion to pascals -->
         <value> 0.26122449 </value>
         <value>0.73756</value> <!-- Nm to FT*LBS -->
+        <value>0.5</value>
       </product>
     </function>
   </axis>
@@ -19,6 +20,7 @@
         <value>47.9</value> <!--Conversion to pascals -->
         <value> -0.3 </value> <!-- Design value target 12 m/s-->
         <value>0.73756</value> <!-- Nm to FT*LBS -->
+        <value>0.5</value>
       </product>
     </function>
   </axis> 
@@ -33,6 +35,7 @@
           <value>47.9</value> <!--Conversion to pascals -->
           <value> 0.2027 </value> <!-- Design value target 12 m/s-->
           <value>0.73756</value> <!-- Nm to FT*LBS -->
+          <value>0.5</value>
         </product>
 
         <product>
@@ -42,6 +45,7 @@
           <value>47.9</value> <!--Conversion to pascals -->
           <value> 0.2027 </value> <!-- Design value target 12 m/s-->
           <value>0.73756</value> <!-- Nm to FT*LBS -->
+          <value>0.5</value>
         </product>
       </sum>
     </function>
@@ -142,7 +146,7 @@
            <property>aero/qbar-psf</property>
            <property>metrics/Sw-sqft</property>
            <property>aero/beta-rad</property>
-           <value>-4</value>
+           <value>-3</value>
        </product>
     </function>
 
