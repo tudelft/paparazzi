@@ -191,6 +191,9 @@ float min_accel=-0.5;
 float hybrid_roll_limit = 0.785; // 45 deg
 float hybrid_pitch_limit = 0.244;//14 deg//0.349; // 20 deg
 
+float proj_wp_dist = 30.;
+bool roll_zero = false;
+
 bool chirp_init_check = FALSE ;
 float chirp_val_init = 0;
 int chirp_number = 0;
@@ -480,7 +483,7 @@ void guidance_indi_run(float *heading_sp) {
     else {scaler_new[i] = 1;}
     temp_divider[i] = (float) {scaler_new[i]/scaler_old[i]};
     //divider[i] += (temp_divider[i]<0.0)*500-(temp_divider[i]>0.0);
-    //Bound(divider[i],100,1000);
+    //Bound(divider[i],500,1000);
     divider[i]=1;
     //else if (hybrid_du[i]>0){scaler_new[i] = 1;}
     //else {scaler_new[i] = 0;}
@@ -494,12 +497,13 @@ void guidance_indi_run(float *heading_sp) {
   if (autopilot.mode == AP_MODE_HOVER_Z_HOLD){
     //printf("AUTOPILOT check PASSED \n");
     //printf("autorpilot_mode= %s \n",autopilot.mode);
-      for (int8_t i = 0; i < 2; i++) {  
+      for (int8_t i = 0; i < 3; i++) {  
         if (chirp_active){
           if(i==chirp_axis){
             if(!chirp_init_check){
               if(i==0){chirp_val_init = roll_filt.o[0];}
               if(i==1){chirp_val_init = pitch_filt.o[0];}
+              if(i==2){chirp_val_init = psi;}
               chirp_init_check = TRUE;
               chirp_number += 1;
             }
@@ -515,7 +519,7 @@ void guidance_indi_run(float *heading_sp) {
     }
   AbiSendMsgTHRUST(THRUST_INCREMENT_ID, euler_cmd.z);
   AbiSendMsgTHRUST(THRUST_BX_INCREMENT_ID, acc_T_bx);
-  printf("forward cmd %f\n",actuator_thrust_bx_pprz);
+  //printf("forward cmd %f\n",actuator_thrust_bx_pprz);
   //Coordinated turn
   //feedforward estimate angular rotation omega = g*tan(phi)/v
   float omega;
@@ -526,7 +530,10 @@ void guidance_indi_run(float *heading_sp) {
 
   guidance_euler_cmd.phi = roll_filt.o[0] + euler_cmd.x;
   guidance_euler_cmd.theta = pitch_filt.o[0] + euler_cmd.y;
-
+  
+  if (roll_zero) {
+    guidance_euler_cmd.phi = 0;
+  }
   //Bound euler angles to prevent flipping
   Bound(guidance_euler_cmd.phi, -guidance_indi_max_bank, guidance_indi_max_bank);
   Bound(guidance_euler_cmd.theta, RadOfDeg(-5.0), RadOfDeg(14.0));
@@ -555,11 +562,18 @@ void guidance_indi_run(float *heading_sp) {
 #ifndef KNIFE_EDGE_TEST
   if (guidance_h.mode == GUIDANCE_H_MODE_HOVER) {
     // Dont change heading setpoint
-  } else if(take_heading_control) {
+  } else if(take_heading_control || chirp_active) {
     *heading_sp = ANGLE_FLOAT_OF_BFP(nav_heading) + current_chirp_values[2];
     FLOAT_ANGLE_NORMALIZE(*heading_sp);
   } else {
-    *heading_sp += omega / PERIODIC_FREQUENCY;
+    struct FloatVect3 pos_error_proj;
+    struct NedCoor_f *pos = stateGetPositionNed_f();
+    struct NedCoor_f ned_target_proj;
+    VECT3_ASSIGN(ned_target_proj, POS_FLOAT_OF_BFP(navigation_target.y) + proj_wp_dist, POS_FLOAT_OF_BFP(navigation_target.x), -POS_FLOAT_OF_BFP(navigation_target.z));
+    VECT3_DIFF(pos_error_proj, ned_target_proj, *pos);
+    *heading_sp = atan2(pos_error_proj.y, pos_error_proj.x);
+
+    //*heading_sp += omega / PERIODIC_FREQUENCY;
     FLOAT_ANGLE_NORMALIZE(*heading_sp);
   }
 #endif
@@ -820,7 +834,7 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta); //IS THIS RIGHT?// Convert to correct pitch angle
   float thrust_bz = (float)(actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])*(g1g2[3][0]);//(-0.00051);//-0.000319(g1g2[3][0]);
   float lift_approx = lift_thrust_bz-thrust_bz*cphi*ctheta;
-  float thrust_bx = (float) actuator_thrust_bx_pprz*THRUST_BX_EFF;
+  float thrust_bx = (float) actuators_pprz[8]*THRUST_BX_EFF;//actuator_thrust_bx_pprz
   // Calc assumed body acceleration setpoint and error
   float accel_bx_sp = cpsi * sp_accel.x + spsi * sp_accel.y;
   float accel_bx = cpsi * filt_accel_ned[0].o[0] + spsi * filt_accel_ned[1].o[0];
@@ -869,16 +883,16 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   du_min_hybrid[0] = (float) (-hybrid_roll_limit - roll_filt.o[0])/divider[0]; //roll
   du_min_hybrid[1] = (float) (-hybrid_pitch_limit - pitch_filt.o[0])/divider[1]; // pitch
   du_min_hybrid[2] = (float) (actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])*(g1g2[3][0])/divider[2];// + g1g2[3][1] + g1g2[3][2] + g1g2[3][3]);
-  du_min_hybrid[3] = (float) -actuator_thrust_bx_pprz*THRUST_BX_EFF/divider[3];
+  du_min_hybrid[3] = (float) -actuators_pprz[8]*THRUST_BX_EFF/divider[3];
   // Set upper limits limits
   du_max_hybrid[0] = (float) (hybrid_roll_limit - roll_filt.o[0])/divider[0]; //roll
   du_max_hybrid[1] = (float) (hybrid_pitch_limit - pitch_filt.o[0])/divider[1]; // pitch
   du_max_hybrid[2] = (float) -(4*MAX_PPRZ - actuators_pprz[0] - actuators_pprz[1] - actuators_pprz[2] - actuators_pprz[3])*(g1g2[3][0])/divider[2];// + g1g2[3][1] + g1g2[3][2] + g1g2[3][3]);
-  du_max_hybrid[3] = (float) (MAX_PPRZ - actuator_thrust_bx_pprz) * THRUST_BX_EFF/divider[3];
+  du_max_hybrid[3] = (float) (MAX_PPRZ - actuators_pprz[8]) * THRUST_BX_EFF/divider[3];
   // printf("du_min_hibrid[2] %f\n", du_min_hybrid[2]);
   // printf("Gmat_rot_wing[2][1] %f\n", Gmat_rot_wing[2][1]);
   // printf("liftd %f\n", liftd);
-  printf("du_min_pushprop = %f \n",du_min_hybrid[3]);
+  //printf("du_min_pushprop = %f \n",du_min_hybrid[3]);
   // printf("Gmat_rot_wing[2][2] %f\n", Gmat_rot_wing[2][2]);
   // printf("Lift estimated %f\n", lift_approx);
   
@@ -896,17 +910,17 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   Wu_hybrid[1] = pitch_priority_factor * 23.424;
   Wu_hybrid[2] = thrust_priority_factor * 0.626;
   Wu_hybrid[3] = pusher_priority_factor * 1.0;
-  if (stateGetAirspeed_f()< 3.0){Wu_hybrid[3] = 150.0;}
-  if (accel_bx_sp<0 && accel_bx_err<0 && actuator_thrust_bx_pprz<960){Wu_hybrid[3] = 150.0;}
+  //if (stateGetAirspeed_f()< 3.0){Wu_hybrid[3] = 150.0;}
+  //if (accel_bx_sp<0 && accel_bx_err<0 && actuator_thrust_bx_pprz<960 && fabs(phi_ref_c)<0.0873){Wu_hybrid[3] = 150.0;}
 
   for (int8_t i = 0; i < 4; i++) {
   scaler_old[i] = scaler_new[i];
   }
   for (int8_t i = 0; i < 3; i++) {
     //Bwls_hybrid[i] = Gmat_rot_wing[i];
-    if (i==0){
-    printf("%i =",i);
-    printf("row blws %f %f %f %f \n",Bwls_hybrid[i][0],Bwls_hybrid[i][1],Bwls_hybrid[i][2],Bwls_hybrid[i][3]);}
+    //if (i==0){
+    //printf("%i =",i);
+    //printf("row blws %f %f %f %f \n",Bwls_hybrid[i][0],Bwls_hybrid[i][1],Bwls_hybrid[i][2],Bwls_hybrid[i][3]);}
   }
   num_iter_hybrid =
     wls_alloc_hybrid(hybrid_du, hybrid_v, du_min_hybrid, du_max_hybrid, Bwls_hybrid, 0, 0, Wv_hybrid, Wu_hybrid, du_pref_hybrid, 10000.0, 10);
