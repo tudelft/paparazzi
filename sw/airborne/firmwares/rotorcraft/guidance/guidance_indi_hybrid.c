@@ -919,8 +919,8 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   for (int8_t i = 0; i < 3; i++) {
     //Bwls_hybrid[i] = Gmat_rot_wing[i];
     //if (i==0){
-    //printf("%i =",i);
-    //printf("row blws %f %f %f %f \n",Bwls_hybrid[i][0],Bwls_hybrid[i][1],Bwls_hybrid[i][2],Bwls_hybrid[i][3]);}
+    printf("%i =",i);
+    printf("row blws %f %f %f %f \n",Bwls_hybrid[i][0],Bwls_hybrid[i][1],Bwls_hybrid[i][2],Bwls_hybrid[i][3]);
   }
   num_iter_hybrid =
     wls_alloc_hybrid(hybrid_du, hybrid_v, du_min_hybrid, du_max_hybrid, Bwls_hybrid, 0, 0, Wv_hybrid, Wu_hybrid, du_pref_hybrid, 10000.0, 10);

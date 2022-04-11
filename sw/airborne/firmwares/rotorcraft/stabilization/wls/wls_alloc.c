@@ -115,7 +115,6 @@ int wls_alloc(float* u, float* v, float* umin, float* umax, float** B,
   // allocate variables, use defaults where parameters are set to 0
   if(!gamma_sq) gamma_sq = 100000;
   if(!imax) imax = 100;
-
   int n_c = CA_N_C;
   int n_u = CA_N_U;
   int n_v = CA_N_V;
@@ -226,7 +225,7 @@ int wls_alloc(float* u, float* v, float* umin, float* umax, float** B,
     // check limits
     n_infeasible = 0;
     for (int i = 0; i < n_u; i++) {
-      if (u_opt[i] >= (umax[i]+1.0) || u_opt[i] <= (umin[i]-1.0)) {
+      if (u_opt[i] >= (umax[i] +0.001 ) || u_opt[i] <= (umin[i] - 0.001  )) {
         infeasible_index[n_infeasible++] = i;
       }
     }
@@ -265,7 +264,7 @@ int wls_alloc(float* u, float* v, float* umin, float* umax, float** B,
       if (break_flag) {
 
 #if WLS_VERBOSE
-        print_final_values(1, n_u, n_v, u, B, v, umin, umax);
+        print_final_values(n_u, n_v, u, B, v, umin, umax);
 #endif
 
         // if solution is found, return number of iterations

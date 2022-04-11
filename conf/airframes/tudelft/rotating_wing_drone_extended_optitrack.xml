@@ -46,7 +46,7 @@
             <configure name="INDI_NUM_ACT" value="8"/>
         </module>
 
-       <!-- <module TYPE="ekf2" NAME="ins"/> -->
+       <module TYPE="ekf2" NAME="ins"/>
 
         <define name="USE_AHRS_GPS_ACCELERATIONS" value="FALSE"/>
         <module name="ahrs" type="int_cmpl_quat"> 
@@ -55,7 +55,7 @@
             <configure name="USE_MAGNETOMETER" value="FALSE"/>
             <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0" unit="m/s"/>
         </module>
-        <module name="ins" type="extended"/>
+        <!-- <module name="ins" type="extended"/> -->
 
         <module name="geo_mag"/>
         <module NAME="send_imu_mag_current"/>
@@ -308,7 +308,7 @@
         <define name="MIN_PITCH" value="-35."/>
         <define name="MAX_PITCH" value="35."/>
         <define name="MIN_THROTTLE_FWD" value="0."/>
-        <define name="FWD_SIDESLIP_GAIN" value="0.32"/>
+        <!-- <define name="FWD_SIDESLIP_GAIN" value="0.32"/> -->
         <define name="GUIDANCE_INDI_LINE_GAIN" value="0.1"/>
     </section>
 

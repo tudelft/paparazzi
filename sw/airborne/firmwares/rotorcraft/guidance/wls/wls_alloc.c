@@ -119,6 +119,13 @@ int wls_alloc_hybrid(float* u, float* v, float* umin, float* umax, float** B,
   if(!gamma_sq) gamma_sq = 100000;
   if(!imax) imax = 100;
 
+  printf("v = %f,%f,%f \n",v[0],v[1],v[2]);
+  printf("umin = %f,%f,%f,%f \n",umin[0],umin[1],umin[2],umin[3]);
+  printf("umax = %f,%f,%f,%f \n",umax[0],umax[1],umax[2],umax[3]);
+  printf("Wv = %f,%f,%f \n",Wv[0],Wv[1],Wv[2]);
+  printf("Wu = %f,%f,%f,%f \n",Wu[0],Wu[1],Wu[2],Wu[3]);
+  printf("up = %f,%f,%f,%f \n",up[0],up[1],up[2],up[3]);
+
   int n_c = CA_N_C_HYBRID;
   int n_u = CA_N_U_HYBRID;
   int n_v = CA_N_V_HYBRID;
@@ -229,8 +236,10 @@ int wls_alloc_hybrid(float* u, float* v, float* umin, float* umax, float** B,
     // check limits
     n_infeasible = 0;
     for (int i = 0; i < n_u; i++) {
-      if (u_opt[i] >= (umax[i] + 0.001) || u_opt[i] <= (umin[i] - 0.001)) {
-        infeasible_index[n_infeasible++] = i;
+      if (u_opt[i] >= (umax[i] + 0.00001 ) || u_opt[i] <= (umin[i] - 0.00001 )) {
+        printf("n_infeasible= %i \n",n_infeasible);
+        //infeasible_index[n_infeasible++] = i;
+        n_infeasible += 1;
       }
     }
 
