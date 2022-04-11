@@ -523,6 +523,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     v_thrust_bx = indi_thrust_bx_increment;
     // Calculate command
     float du_thrust_bx = 1./thrust_bx_eff * v_thrust_bx;
+    printf("push eff= %f \n",thrust_bx_eff);
     // Increment thrust_bx
     actuator_thrust_bx_pprz = thrust_bx_state_filt + du_thrust_bx;
     Bound(actuator_thrust_bx_pprz, 0, MAX_PPRZ);

@@ -1,5 +1,55 @@
  <aerodynamics>
- 
+  <axis name="YAW">
+    <function name="rud_yaw" frame="BODY" unit="FT*LBS">
+      <product>
+        <property>fcs/rud_lag</property>
+        <property>aero/qbar-psf</property>
+        <value>47.9</value> <!--Conversion to pascals -->
+        <value> 0.26122449 </value>
+        <value>0.73756</value> <!-- Nm to FT*LBS -->
+        <value>0.5</value>
+      </product>
+    </function>
+  </axis>
+
+  <axis name="PITCH">
+    <function name="elev_pitch" frame="BODY" unit="FT*LBS">
+      <product>
+        <property>fcs/elev_lag</property>
+        <property>aero/qbar-psf</property>
+        <value>47.9</value> <!--Conversion to pascals -->
+        <value> -0.3 </value> <!-- Design value target 12 m/s-->
+        <value>0.73756</value> <!-- Nm to FT*LBS -->
+        <value>0.5</value>
+      </product>
+    </function>
+  </axis> 
+
+  <axis name="ROLL">
+    <function name="ail_roll" frame="BODY" unit="FT*LBS">
+      <sum>
+        <product>
+          <property>fcs/ail_left_lag</property>
+          <property>aero/qbar-psf</property>
+          <sin><product><value>1.5708</value><property>fcs/wing_rotation</property></product></sin> <!-- Scheduling with wing rotation-->
+          <value>47.9</value> <!--Conversion to pascals -->
+          <value> 0.2027 </value> <!-- Design value target 12 m/s-->
+          <value>0.73756</value> <!-- Nm to FT*LBS -->
+          <value>0.5</value>
+        </product>
+
+        <product>
+          <property>fcs/ail_right_lag</property>
+          <property>aero/qbar-psf</property>
+          <sin><product><value>1.5708</value><property>fcs/wing_rotation</property></product></sin> <!-- Scheduling with wing rotation-->
+          <value>47.9</value> <!--Conversion to pascals -->
+          <value> 0.2027 </value> <!-- Design value target 12 m/s-->
+          <value>0.73756</value> <!-- Nm to FT*LBS -->
+          <value>0.5</value>
+        </product>
+      </sum>
+    </function>
+  </axis>
 
   <axis name="LIFT">
     <function name="aero/force/Lift_alpha">

@@ -225,7 +225,7 @@ int wls_alloc(float* u, float* v, float* umin, float* umax, float** B,
     // check limits
     n_infeasible = 0;
     for (int i = 0; i < n_u; i++) {
-      if (u_opt[i] >= (umax[i] +0.001 ) || u_opt[i] <= (umin[i] - 0.001  )) {
+      if (u_opt[i] >= (umax[i] + 1.0 ) || u_opt[i] <= (umin[i] - 1.0  )) {
         infeasible_index[n_infeasible++] = i;
       }
     }

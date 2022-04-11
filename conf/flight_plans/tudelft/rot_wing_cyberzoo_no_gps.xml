@@ -58,254 +58,37 @@
       <while cond="LessThan(NavBlockTime(),6)"/>
     </block>
     <block name="Pitch angle1">
-      <set var="pitch_pref_deg" value="1.0"/>
+      <set var="pitch_pref_deg" value="4.0"/>
     </block>
     <block name="Cool down angle1">
       <go wp="STDBY"/>
       <while cond="LessThan(NavBlockTime(),6)"/>
     </block>
     <block name="Pitch angle2">
-      <set var="pitch_pref_deg" value="2.0"/>
+      <set var="pitch_pref_deg" value="6.0"/>
     </block>
     <block name="Cool down angle2">
       <go wp="STDBY"/>
       <while cond="LessThan(NavBlockTime(),6)"/>
     </block>
     <block name="Pitch angle3">
-      <set var="pitch_pref_deg" value="3.0"/>
+      <set var="pitch_pref_deg" value="8.0"/>
     </block>
     <block name="Cool down angle3">
       <go wp="STDBY"/>
       <while cond="LessThan(NavBlockTime(),6)"/>
     </block>
     <block name="Pitch angle4">
-      <set var="pitch_pref_deg" value="4.0"/>
+      <set var="pitch_pref_deg" value="10.0"/>
     </block>
     <block name="Cool down angle4">
       <go wp="STDBY"/>
       <while cond="LessThan(NavBlockTime(),6)"/>
     </block>
-    <block name="Pitch angle5">
-      <set var="pitch_pref_deg" value="5.0"/>
-    </block>
-    <block name="Cool down angle5">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
     <block name="Pitch reset0">
       <set var="pitch_pref_deg" value="0.0"/>
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Chirp1" >
-      <call_once fun="sys_id_chirp_set_param(0.10,5.0,0,0.6,1.7,0.0,0.0)"/>
-      <set var="chirp_active" value="1"/>
-      <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
-    </block>
-    <block name="Cool Down Chirp1" >
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),11)"/>
-    </block>
-    <block name="Chirp2" >
-      <call_once fun="sys_id_chirp_set_param(0.10,5.0,1,0.6,1.7,0.0,0.0)"/>
-      <set var="chirp_active" value="1"/>
-      <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
-    </block>
-    <block name="Cool Down Chirp2" >
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),11)"/>
-    </block>
-    <block name="Rotating wing15">
-      <set var="wing_rotation.wing_angle_deg_sp" value="15.0"/>
-    </block>
-    <block name="Wait for wing15">
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch angle6">
-      <set var="pitch_pref_deg" value="1.0"/>
-    </block>
-    <block name="Cool down angle6">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch angle7">
-      <set var="pitch_pref_deg" value="2.0"/>
-    </block>
-    <block name="Cool down angle7">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch angle8">
-      <set var="pitch_pref_deg" value="3.0"/>
-    </block>
-    <block name="Cool down angle8">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch angle9">
-      <set var="pitch_pref_deg" value="4.0"/>
-    </block>
-    <block name="Cool down angle9">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch angle10">
-      <set var="pitch_pref_deg" value="5.0"/>
-    </block>
-    <block name="Cool down angle10">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch reset15">
-      <set var="pitch_pref_deg" value="0.0"/>
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Chirp3" >
-      <call_once fun="sys_id_chirp_set_param(0.10,5.0,0,0.6,1.7,0.0,0.0)"/>
-      <set var="chirp_active" value="1"/>
-      <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
-    </block>
-    <block name="Cool Down Chirp3" >
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),11)"/>
-    </block>
-    <block name="Chirp4" >
-      <call_once fun="sys_id_chirp_set_param(0.10,5.0,1,0.6,1.7,0.0,0.0)"/>
-      <set var="chirp_active" value="1"/>
-      <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
-    </block>
-    <block name="Cool Down Chirp4" >
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),11)"/>
-    </block>
-    <block name="Rotating wing30">
-      <set var="wing_rotation.wing_angle_deg_sp" value="30.0"/>
-    </block>
-    <block name="Wait for wing30">
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch angle11">
-      <set var="pitch_pref_deg" value="1.0"/>
-    </block>
-    <block name="Cool down angle11">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch angle12">
-      <set var="pitch_pref_deg" value="2.0"/>
-    </block>
-    <block name="Cool down angle12">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch angle13">
-      <set var="pitch_pref_deg" value="3.0"/>
-    </block>
-    <block name="Cool down angle13">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch angle14">
-      <set var="pitch_pref_deg" value="4.0"/>
-    </block>
-    <block name="Cool down angle14">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch angle15">
-      <set var="pitch_pref_deg" value="5.0"/>
-    </block>
-    <block name="Cool down angle15">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch reset30">
-      <set var="pitch_pref_deg" value="0.0"/>
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Chirp5" >
-      <call_once fun="sys_id_chirp_set_param(0.10,5.0,0,0.6,1.7,0.0,0.0)"/>
-      <set var="chirp_active" value="1"/>
-      <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
-    </block>
-    <block name="Cool Down Chirp5" >
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),11)"/>
-    </block>
-    <block name="Chirp6" >
-      <call_once fun="sys_id_chirp_set_param(0.10,5.0,1,0.6,1.7,0.0,0.0)"/>
-      <set var="chirp_active" value="1"/>
-      <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
-    </block>
-    <block name="Cool Down Chirp6" >
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),11)"/>
-    </block>
-    <block name="Rotating wing45">
-      <set var="wing_rotation.wing_angle_deg_sp" value="45.0"/>
-    </block>
-    <block name="Wait for wing45">
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch angle16">
-      <set var="pitch_pref_deg" value="1.0"/>
-    </block>
-    <block name="Cool down angle16">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch angle17">
-      <set var="pitch_pref_deg" value="2.0"/>
-    </block>
-    <block name="Cool down angle17">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch angle18">
-      <set var="pitch_pref_deg" value="3.0"/>
-    </block>
-    <block name="Cool down angle18">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch angle19">
-      <set var="pitch_pref_deg" value="4.0"/>
-    </block>
-    <block name="Cool down angle19">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch angle20">
-      <set var="pitch_pref_deg" value="5.0"/>
-    </block>
-    <block name="Cool down angle20">
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Pitch reset45">
-      <set var="pitch_pref_deg" value="0.0"/>
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),6)"/>
-    </block>
-    <block name="Chirp7" >
-      <call_once fun="sys_id_chirp_set_param(0.10,5.0,0,0.6,1.7,0.0,0.0)"/>
-      <set var="chirp_active" value="1"/>
-      <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
-    </block>
-    <block name="Cool Down Chirp7" >
-      <go wp="STDBY"/>
-      <while cond="LessThan(NavBlockTime(),11)"/>
-    </block>
-    <block name="Chirp8" >
-      <call_once fun="sys_id_chirp_set_param(0.10,5.0,1,0.6,1.7,0.0,0.0)"/>
-      <set var="chirp_active" value="1"/>
-      <call_once fun="sys_id_chirp_activate_handler(chirp_active)"/> 
-    </block>
-    <block name="Cool Down Chirp8" >
       <stay wp="STDBY"/>
-      <exception cond="MoreThan(NavBlockTime(),11)" deroute="Standby"/>
+      <exception cond="MoreThan(NavBlockTime(),6)" deroute="Standby"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>

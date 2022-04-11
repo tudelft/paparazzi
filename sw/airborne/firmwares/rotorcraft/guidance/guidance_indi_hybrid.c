@@ -90,7 +90,7 @@ float nav_max_speed = NAV_MAX_SPEED;
 #endif
 
 /*Boolean to force the heading to a static value (only use for specific experiments)*/
-bool take_heading_control = true;
+bool take_heading_control = false;
 
 struct FloatVect3 sp_accel = {0.0,0.0,0.0};
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
@@ -187,6 +187,7 @@ float temp_divider[4] = {5,5,5,5};
 int16_t scaler_new[4] = {1,1,1,1};
 int16_t scaler_old[4] = {1,1,1,1};
 float min_accel=-0.5;
+
 
 float hybrid_roll_limit = 0.785; // 45 deg
 float hybrid_pitch_limit = 0.244;//14 deg//0.349; // 20 deg
@@ -834,7 +835,7 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta); //IS THIS RIGHT?// Convert to correct pitch angle
   float thrust_bz = (float)(actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])*(g1g2[3][0]);//(-0.00051);//-0.000319(g1g2[3][0]);
   float lift_approx = lift_thrust_bz-thrust_bz*cphi*ctheta;
-  float thrust_bx = (float) actuators_pprz[8]*THRUST_BX_EFF;//actuator_thrust_bx_pprz
+  float thrust_bx = (float) actuators_pprz[8]*thrust_bx_eff;//actuator_thrust_bx_pprz
   // Calc assumed body acceleration setpoint and error
   float accel_bx_sp = cpsi * sp_accel.x + spsi * sp_accel.y;
   float accel_bx = cpsi * filt_accel_ned[0].o[0] + spsi * filt_accel_ned[1].o[0];
@@ -883,12 +884,12 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   du_min_hybrid[0] = (float) (-hybrid_roll_limit - roll_filt.o[0])/divider[0]; //roll
   du_min_hybrid[1] = (float) (-hybrid_pitch_limit - pitch_filt.o[0])/divider[1]; // pitch
   du_min_hybrid[2] = (float) (actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])*(g1g2[3][0])/divider[2];// + g1g2[3][1] + g1g2[3][2] + g1g2[3][3]);
-  du_min_hybrid[3] = (float) -actuators_pprz[8]*THRUST_BX_EFF/divider[3];
+  du_min_hybrid[3] = (float) -actuators_pprz[8]*thrust_bx_eff/divider[3];
   // Set upper limits limits
   du_max_hybrid[0] = (float) (hybrid_roll_limit - roll_filt.o[0])/divider[0]; //roll
   du_max_hybrid[1] = (float) (hybrid_pitch_limit - pitch_filt.o[0])/divider[1]; // pitch
   du_max_hybrid[2] = (float) -(4*MAX_PPRZ - actuators_pprz[0] - actuators_pprz[1] - actuators_pprz[2] - actuators_pprz[3])*(g1g2[3][0])/divider[2];// + g1g2[3][1] + g1g2[3][2] + g1g2[3][3]);
-  du_max_hybrid[3] = (float) (MAX_PPRZ - actuators_pprz[8]) * THRUST_BX_EFF/divider[3];
+  du_max_hybrid[3] = (float) (MAX_PPRZ - actuators_pprz[8]) * thrust_bx_eff/divider[3];
   // printf("du_min_hibrid[2] %f\n", du_min_hybrid[2]);
   // printf("Gmat_rot_wing[2][1] %f\n", Gmat_rot_wing[2][1]);
   // printf("liftd %f\n", liftd);
@@ -919,8 +920,8 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   for (int8_t i = 0; i < 3; i++) {
     //Bwls_hybrid[i] = Gmat_rot_wing[i];
     //if (i==0){
-    printf("%i =",i);
-    printf("row blws %f %f %f %f \n",Bwls_hybrid[i][0],Bwls_hybrid[i][1],Bwls_hybrid[i][2],Bwls_hybrid[i][3]);
+    //printf("%i =",i);
+    //printf("row blws %f %f %f %f \n",Bwls_hybrid[i][0],Bwls_hybrid[i][1],Bwls_hybrid[i][2],Bwls_hybrid[i][3]);
   }
   num_iter_hybrid =
     wls_alloc_hybrid(hybrid_du, hybrid_v, du_min_hybrid, du_max_hybrid, Bwls_hybrid, 0, 0, Wv_hybrid, Wu_hybrid, du_pref_hybrid, 10000.0, 10);
