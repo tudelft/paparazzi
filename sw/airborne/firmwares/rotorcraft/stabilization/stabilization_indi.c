@@ -46,9 +46,9 @@
 #include <stdio.h>
 
 // Factor that the estimated G matrix is allowed to deviate from initial one
-#define INDI_ALLOWED_G_FACTOR 2.0
+#define INDI_ALLOWED_G_FACTOR 1.0
 float indi_g_factor_motor = INDI_ALLOWED_G_FACTOR;
-#define INDI_ALLOWED_G_FACTOR_SERVO 5.0
+#define INDI_ALLOWED_G_FACTOR_SERVO 1.0
 float indi_g_factor_servo = INDI_ALLOWED_G_FACTOR_SERVO;
 
 #ifdef STABILIZATION_INDI_FILT_CUTOFF_P

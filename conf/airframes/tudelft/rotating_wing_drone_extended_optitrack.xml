@@ -46,7 +46,7 @@
             <configure name="INDI_NUM_ACT" value="8"/>
         </module>
 
-       <module TYPE="ekf2" NAME="ins"/>
+       <!-- <module TYPE="ekf2" NAME="ins"/> -->
 
         <define name="USE_AHRS_GPS_ACCELERATIONS" value="FALSE"/>
         <module name="ahrs" type="int_cmpl_quat"> 
@@ -55,7 +55,7 @@
             <configure name="USE_MAGNETOMETER" value="FALSE"/>
             <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0" unit="m/s"/>
         </module>
-        <!-- <module name="ins" type="extended"/> -->
+        <module name="ins" type="extended"/>
 
         <module name="geo_mag"/>
         <module NAME="send_imu_mag_current"/>
@@ -281,9 +281,9 @@
     <section name="ROT_WING_EFF_SCHEDULING" prefix="ROT_WING_SCHED_">
         <define name="G1_Q_90" value="{-1.69, 1.8}"/>
         <define name="Y_ARM_LENGTH" value="0.365"/>
-        <define name="G1_AERO_CONST_P" value="{0.6, 0.6, 0.0, 0.0}"/> <!--Wing rotation dependency on pitch not scheduled yet-->
-        <define name="G1_AERO_CONST_Q" value="{0.0, 0.0, -0.12, 0.0}"/> <!--estimated value, use adaptive for real value-->
-        <define name="G1_AERO_CONST_R" value="{0.0, 0.0, 0.0, 0.0133}"/> <!--estimated value, use adaptive for real value-->
+        <define name="G1_AERO_CONST_P" value="{0.013, 0.013, 0.0, 0.0}"/> <!--Wing rotation dependency on pitch not scheduled yet-->
+        <define name="G1_AERO_CONST_Q" value="{0.0, 0.0, -0.01, 0.0}"/> <!--estimated value, use adaptive for real value-->
+        <define name="G1_AERO_CONST_R" value="{0.0, 0.0, 0.0, 0.006}"/> <!--estimated value, use adaptive for real value-->
         <define name="AIRSPEED_FILTER_CUTOFF" value="1.5"/>
         <define name="AERO_EFF_TUNING" value="TRUE"/>
      </section> 

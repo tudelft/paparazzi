@@ -91,7 +91,7 @@ float g1_startup[INDI_OUTPUTS][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL,
                                                 STABILIZATION_INDI_G1_PITCH, STABILIZATION_INDI_G1_YAW, STABILIZATION_INDI_G1_THRUST
                                                 };
 
-float rot_wing_aileron_limit_deg = 20;//45; // Aileron is effective from this angle value onwards
+float rot_wing_aileron_limit_deg = 45;//45; // Aileron is effective from this angle value onwards
 float rot_wing_roll_prop_limit_deg = 70; // Roll props are not effective anymore from thus value onwards
 float rot_wing_pitch_prop_limit_deg = 70; // Pitch props are not effective anymore from thus value onwards
 float rot_wing_yaw_prop_limit_deg = 70; // // Yaw props are not effective anymore from thus value onwards
