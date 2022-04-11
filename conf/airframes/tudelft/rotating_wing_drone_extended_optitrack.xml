@@ -280,6 +280,7 @@
 
         <define name="WLS_WU_MOTOR_PITCH" value="9.0"/>
         <define name="WLS_WU_MOTOR_ROLL" value="9.0"/>
+        <define name="ACT_PREF" value="{0., 0., 0., 0., 0., 0., 0., 0.}"/>
 
         <!-- Adaptive Learning Rate -->
         <define name="USE_ADAPTIVE" value="TRUE"/>
