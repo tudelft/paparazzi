@@ -187,6 +187,8 @@ float temp_divider[4] = {5,5,5,5};
 int16_t scaler_new[4] = {1,1,1,1};
 int16_t scaler_old[4] = {1,1,1,1};
 float min_accel=-0.5;
+bool pusher_slowdown = false;
+
 
 
 float hybrid_roll_limit = 0.785; // 45 deg
@@ -904,7 +906,9 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   //printf("pref change in roll %f\n", du_pref_hybrid[0]);
   du_pref_hybrid[1] = -pitch_filt.o[0] + pitch_pref_rad;
   du_pref_hybrid[2] = du_min_hybrid[2];//du_max_hybrid[2];//0;
-  du_pref_hybrid[3] = du_min_hybrid[3];//accel_bx_err * cosf(pitch_pref_rad) - 9.81 * sinf(pitch_filt.o[0] - pitch_pref_rad);//
+  if (pusher_slowdown){du_pref_hybrid[3]=0;}
+  else {du_pref_hybrid[3] = du_min_hybrid[3];//accel_bx_err * cosf(pitch_pref_rad) - 9.81 * sinf(pitch_filt.o[0] - pitch_pref_rad);//
+  }
   Bound(du_pref_hybrid[3], du_min_hybrid[3], du_max_hybrid[3]);
 
   Wu_hybrid[0] = roll_priority_factor * 10.414;

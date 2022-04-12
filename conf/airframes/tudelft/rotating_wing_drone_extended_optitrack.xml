@@ -323,6 +323,7 @@
 
     <section name= "PUSHER">
         <define name="THRUST_BX_EFF" value="0.000851562"/> <!--0.000851562-->
+        <define name="THRUST_BX_ACT_DYN" value="0.047"/> <!--0.000851562-->
     </section>
 
     <section PREFIX="GUIDANCE_V_" NAME="GUIDANCE_V">
