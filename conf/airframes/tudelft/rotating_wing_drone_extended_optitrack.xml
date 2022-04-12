@@ -275,7 +275,7 @@
         <define name="ACT_DYN" value="{0.047, 0.047, 0.047, 0.047, 0.1, 0.1, 0.1, 0.1}"/>
         <define name="ACT_IS_SERVO" value="{0, 0, 0, 0, 1, 1, 1, 1}"/>
 
-        <define name="WLS_PRIORITIES" value="{1000.f, 1000.f, 1.f, 100.f}"/>
+        <define name="WLS_PRIORITIES" value="{500.f, 1000.f, 1.f, 100.f}"/>
         <define name="WLS_WU_MOTOR" value="10"/>
 
         <define name="WLS_WU_MOTOR_PITCH" value="9.0"/>

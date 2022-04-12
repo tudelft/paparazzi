@@ -571,10 +571,10 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     du_min[i] = -MAX_PPRZ * act_is_servo[i] - actuator_state_filt_vect[i];
     du_max[i] = MAX_PPRZ - actuator_state_filt_vect[i];
     du_pref[i] = act_pref[i] - actuator_state_filt_vect[i];
-    if (i==6)
-    {
-      du_pref[i] = 0;
-    }
+    // if (i==6)
+    // {
+    //   du_pref[i] = 0;
+    // }
 
     if (doublet_active)
     { if(i==doublet_axis){
