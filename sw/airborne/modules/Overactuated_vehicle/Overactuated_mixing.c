@@ -20,7 +20,7 @@
  */
 /**
  * @file "modules/Overactuated_vehicle/Overactuated_vehicle.c"
- * @author Alessandro Mancinelli
+ * @author Alessandro Mancinelli (a.mancinelli@tudelft.nl)
  * Control laws for Overactuated Vehicle
  */
 #include "generated/airframe.h"
@@ -58,14 +58,9 @@ float ox_point = 0;
 float oy_point = 0;
 float z_test = 1.8;
 float z_end = 3;
-float pitch_angle_test = 30;
-float roll_angle_test = 30;
+float pitch_angle_test = 20;
+float roll_angle_test = 20;
 int controller_id = 1;
-
-//Communication with AM& variables
-static abi_event AM7_in;
-float extra_data_in_local[255];
-struct am7_data_in myam7_data_in_local;
 
 //Array which contains all the actuator values (sent to motor and servos)
 struct overactuated_mixing_t overactuated_mixing;
@@ -88,7 +83,6 @@ float pos_order_earth[3];
 float euler_order[3];
 float psi_order_motor = 0;
 
-
 //Flight states variables:
 bool INDI_engaged = 0, FAILSAFE_engaged = 0, PID_engaged = 0;
 
@@ -102,7 +96,6 @@ bool manual_heading = 0;
 int manual_heading_value_rad = 0;
 
 float wind_speed = 0;
-float x_stb, y_stb, z_stb;
 
 float alt_cmd = 0, pitch_cmd = 0, roll_cmd = 0, yaw_motor_cmd = 0, yaw_tilt_cmd = 0, elevation_cmd = 0, azimuth_cmd = 0;
 
@@ -136,6 +129,9 @@ float B_matrix[INDI_INPUTS][INDI_NUM_ACT];
 float manual_motor_value = 0, manual_el_value = 0, manual_az_value = 0, manual_phi_value = 0, manual_theta_value = 0;
 struct am7_data_out am7_data_out_local;
 float extra_data_out_local[255];
+static abi_event AM7_in;
+float extra_data_in_local[255];
+struct am7_data_in myam7_data_in_local;
 
 //Variables needed for the filters:
 Butterworth2LowPass measurement_rates_filters[3]; //Filter of pqr
@@ -374,7 +370,7 @@ void assign_variables(void){
     pos_vect[2] = stateGetPositionNed_f()->z;
     airspeed = stateGetAirspeed_f();
     total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
-    if(total_V > 1){
+    if(total_V > 2){
         flight_path_angle = asin(-speed_vect[2]/total_V);
     }
     else{
@@ -410,10 +406,6 @@ void assign_variables(void){
     R_matrix[0][2]=0;
     R_matrix[1][2]=-sin(euler_vect[0]);
     R_matrix[2][2]=cos(euler_vect[0]) * cos(euler_vect[1]);
-
-    x_stb = waypoint_get_y(WP_STDBY);
-    y_stb = waypoint_get_x(WP_STDBY);
-    z_stb = waypoint_get_alt(WP_STDBY);
 
     //Initialize actuator commands
     for(int i = 0; i < 12; i++){
@@ -535,6 +527,17 @@ void overactuated_mixing_run()
     /// Case of manual PID control [FAILSAFE]
     if(radio_control.values[RADIO_MODE] < -500) {
 
+        //INIT AND BOOLEAN RESET
+        if(FAILSAFE_engaged == 0 ){
+            PID_engaged = 0;
+            INDI_engaged = 0;
+            FAILSAFE_engaged = 1;
+            for (int i = 0; i < 3; i++) {
+                euler_error_integrated[i] = 0;
+                pos_error_integrated[i] = 0;
+            }
+        }
+
         ////Angular error computation
         //Calculate the setpoints manually:
         euler_setpoint[0] = 0;
@@ -572,7 +575,6 @@ void overactuated_mixing_run()
             euler_error_integrated[i] += euler_error[i] / PERIODIC_FREQUENCY;
             BoundAbs(euler_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_EULER_ERR_INTEGRATIVE);
         }
-
 
         euler_order[0] = pid_gains_over.p.phi * euler_error[0] + pid_gains_over.i.phi * euler_error_integrated[0] -
                          pid_gains_over.d.phi * rate_vect[0];
@@ -626,6 +628,7 @@ void overactuated_mixing_run()
                 pos_error_integrated[i] = 0;
             }
         }
+
         ////Position error computation
         pos_error[0] = pos_setpoint[0] - pos_vect[0];
         pos_error[1] = pos_setpoint[1] - pos_vect[1];
@@ -635,7 +638,6 @@ void overactuated_mixing_run()
         for (int i = 0; i < 3; i++) {
             if(radio_control.values[RADIO_TH_HOLD] < - 4800) {
                 pos_error_integrated[i] += pos_error[i] / PERIODIC_FREQUENCY;
-//                BoundAbs(pos_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_POS_ERR_INTEGRATIVE);
             }
         }
 
@@ -675,7 +677,6 @@ void overactuated_mixing_run()
         for (int i = 0; i < 3; i++) {
             if(radio_control.values[RADIO_TH_HOLD] < - 4800) {
                 euler_error_integrated[i] += euler_error[i] / PERIODIC_FREQUENCY;
-//                BoundAbs(euler_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_EULER_ERR_INTEGRATIVE);
             }
         }
 
@@ -837,19 +838,12 @@ void overactuated_mixing_run()
         rate_setpoint[0] = angular_body_error[0] * indi_gains_over.p.phi;
         rate_setpoint[1] = angular_body_error[1] * indi_gains_over.p.theta;
         rate_setpoint[2] = angular_body_error[2] * indi_gains_over.p.psi;
-//        BoundAbs(rate_setpoint[0],OVERACTUATED_MIXING_INDI_MAX_P_ORD);
-//        BoundAbs(rate_setpoint[1],OVERACTUATED_MIXING_INDI_MAX_Q_ORD);
-//        BoundAbs(rate_setpoint[2],OVERACTUATED_MIXING_INDI_MAX_R_ORD);
 
         //Compute the angular acceleration setpoint:
         acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * indi_gains_over.d.phi;
         acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * indi_gains_over.d.theta;
         acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * indi_gains_over.d.psi;
 
-
-//        BoundAbs(acc_setpoint[3],OVERACTUATED_MIXING_INDI_MAX_P_DOT_ORD * M_PI / 180);
-//        BoundAbs(acc_setpoint[4],OVERACTUATED_MIXING_INDI_MAX_Q_DOT_ORD * M_PI / 180);
-//        BoundAbs(acc_setpoint[5],OVERACTUATED_MIXING_INDI_MAX_R_DOT_ORD * M_PI / 180);
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
         // ANGULAR ACCELERATION
