@@ -175,10 +175,10 @@ int num_iter_hybrid = 0;
 float hybrid_du[4];
 float hybrid_v[3];
 float Wv_hybrid[3] = {10., 10., 1.};
-float pitch_priority_factor = 10.;
+float pitch_priority_factor = 17.;
 float roll_priority_factor = 10.;
 float thrust_priority_factor = 10.;
-float pusher_priority_factor = 1.;
+float pusher_priority_factor = 30.;
 float Wu_hybrid[4] = {10.,10.,100.,1.};//{105.,230.,250.,1.}{230.,105.,25.,1.}{24.,11.,25.,5.};
 float pitch_pref_deg = 0;
 float pitch_pref_rad = 0;
@@ -187,7 +187,9 @@ float temp_divider[4] = {5,5,5,5};
 int16_t scaler_new[4] = {1,1,1,1};
 int16_t scaler_old[4] = {1,1,1,1};
 float min_accel=-0.5;
-bool pusher_slowdown = false;
+bool pusher_slowdown = true;
+bool div_push = false;
+
 
 
 
@@ -485,13 +487,14 @@ void guidance_indi_run(float *heading_sp) {
     if (hybrid_du[i]<0){scaler_new[i] = -1;}
     else {scaler_new[i] = 1;}
     temp_divider[i] = (float) {scaler_new[i]/scaler_old[i]};
-    //divider[i] += (temp_divider[i]<0.0)*500-(temp_divider[i]>0.0);
-    //Bound(divider[i],500,1000);
-    divider[i]=1;
+    if (i==3 && div_push){
+    divider[i] += (temp_divider[i]<0.0)*10-(temp_divider[i]>0.0);
+    Bound(divider[i],1,10);}
+    else { divider[i]=1;}
     //else if (hybrid_du[i]>0){scaler_new[i] = 1;}
     //else {scaler_new[i] = 0;}
   }
-  //printf("WLS Divider = %f,%f,%f,%f\n",divider[0],divider[1],divider[2],divider[3]);
+  printf("WLS Divider = %f,%f,%f,%f\n",divider[0],divider[1],divider[2],divider[3]);
   //printf("Commanded Delta T = %f\n", euler_cmd.z);
 #else
   MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
@@ -907,7 +910,7 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   du_pref_hybrid[1] = -pitch_filt.o[0] + pitch_pref_rad;
   du_pref_hybrid[2] = du_min_hybrid[2];//du_max_hybrid[2];//0;
   if (pusher_slowdown){du_pref_hybrid[3]=0;}
-  else {du_pref_hybrid[3] = du_min_hybrid[3];//accel_bx_err * cosf(pitch_pref_rad) - 9.81 * sinf(pitch_filt.o[0] - pitch_pref_rad);//
+  else {du_pref_hybrid[3] = accel_bx_err * cosf(pitch_pref_rad) - 9.81 * sinf(pitch_filt.o[0] - pitch_pref_rad);//
   }
   Bound(du_pref_hybrid[3], du_min_hybrid[3], du_max_hybrid[3]);
 

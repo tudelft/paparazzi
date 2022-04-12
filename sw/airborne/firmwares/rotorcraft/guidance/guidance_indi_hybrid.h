@@ -64,7 +64,7 @@ extern float pusher_priority_factor;
 extern float fwd_sideslip_g;
 extern float min_accel;
 extern bool pusher_slowdown;
-
+extern bool div_push;
 
 extern float pitch_pref_deg;
 extern int chirp_number;
