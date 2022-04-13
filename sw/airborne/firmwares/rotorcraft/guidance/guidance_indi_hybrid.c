@@ -189,6 +189,7 @@ int16_t scaler_old[4] = {1,1,1,1};
 float min_accel=-0.5;
 bool pusher_slowdown = true;
 bool div_push = false;
+float Wv_z = 10.0;
 
 
 
@@ -930,6 +931,7 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
     //printf("%i =",i);
     //printf("row blws %f %f %f %f \n",Bwls_hybrid[i][0],Bwls_hybrid[i][1],Bwls_hybrid[i][2],Bwls_hybrid[i][3]);
   }
+  Wv_hybrid[2] = Wv_z;
   num_iter_hybrid =
     wls_alloc_hybrid(hybrid_du, hybrid_v, du_min_hybrid, du_max_hybrid, Bwls_hybrid, 0, 0, Wv_hybrid, Wu_hybrid, du_pref_hybrid, 10000.0, 10);
   }
