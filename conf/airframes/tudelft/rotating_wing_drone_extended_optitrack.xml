@@ -127,7 +127,7 @@
         <servo NO="6" NEUTRAL="1500" NAME="VTAIL_LEFT" MIN="1100" MAX="1900"/>
         <servo NO="7" NEUTRAL="1500" NAME="VTAIL_RIGHT" MIN="1100" MAX="1900"/>
         <servo NO="8" NEUTRAL="1035" NAME="MOTOR_FWD" MIN="1000" MAX="2000"/>
-        <servo NO="9" NEUTRAL="1520" NAME="WING_ROT" MIN="1000" MAX="2000"/>
+        <servo NO="9" NEUTRAL="1520" NAME="WING_ROT" MIN="1420" MAX="1620"/>
     </servos>
 
     <commands>
@@ -304,10 +304,10 @@
     </section>
 
     <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
-        <define name="POS_GAIN" value="1.0"/>
-        <define name="POS_GAINZ" value="1.7"/> <!-- FWD 1.5-->
-        <define name="SPEED_GAIN" value="2.0"/> <!--FWD 1.2-->
-        <define name="SPEED_GAINZ" value="2.1"/>
+        <define name="POS_GAIN" value="1.5"/><!--tuned at 10m/s ///1.0-->
+        <define name="POS_GAINZ" value="1.0"/> <!--tuned at 10m/s ///1.7-->
+        <define name="SPEED_GAIN" value="1.4"/> <!--tuned at 10m/s ///2.0-->
+        <define name="SPEED_GAINZ" value="2.4"/> <!--tuned at 10m/s ///2.1-->
         <define name="FILTER_CUTOFF" value="1.0"/>
         <define name="HEADING_BANK_GAIN" value="10."/>
         <define name="NAV_SPEED_MARGIN" value="0."/>
@@ -349,6 +349,8 @@
         <define VALUE="AP_MODE_HOVER_Z_HOLD" NAME="MODE_AUTO1"/>
         <define VALUE="AP_MODE_NAV" NAME="MODE_AUTO2"/>
         <define VALUE="AP_MODE_ATTITUDE_DIRECT" NAME="MODE_STARTUP"/>
+        <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST" value="100"/>
+        <define name="AIRFRAME_WITH_PUSHER" /> 
     </section>
 
     <section NAME="GCS">

@@ -175,9 +175,9 @@ int num_iter_hybrid = 0;
 float hybrid_du[4];
 float hybrid_v[3];
 float Wv_hybrid[3] = {10., 10., 1.};
-float pitch_priority_factor = 17.;
+float pitch_priority_factor = 18.;
 float roll_priority_factor = 10.;
-float thrust_priority_factor = 10.;
+float thrust_priority_factor = 7.;
 float pusher_priority_factor = 30.;
 float Wu_hybrid[4] = {10.,10.,100.,1.};//{105.,230.,250.,1.}{230.,105.,25.,1.}{24.,11.,25.,5.};
 float pitch_pref_deg = 0;
@@ -190,6 +190,7 @@ float min_accel=-0.5;
 bool pusher_slowdown = true;
 bool div_push = false;
 float Wv_z = 10.0;
+bool theta_slowdown = true;
 
 
 
@@ -346,7 +347,7 @@ void guidance_indi_run(float *heading_sp) {
   float norm_des_as = FLOAT_VECT2_NORM(desired_airspeed);
 
   // Make turn instead of straight line
-  if((airspeed > 10.0) && (norm_des_as > 12.0)) {
+  if((airspeed > 100.0) && (norm_des_as > 120.0)) {
 
   // Give the wind cancellation priority.
     if (norm_des_as > guidance_indi_max_airspeed) {
@@ -398,7 +399,7 @@ void guidance_indi_run(float *heading_sp) {
     sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
   } else { // Go somewhere in the shortest way
 
-    if(airspeed > 10.0) {
+    if(airspeed > 100.0) {
       // Groundspeed vector in body frame
       float groundspeed_x = cosf(psi) * stateGetSpeedNed_f()->x + sinf(psi) * stateGetSpeedNed_f()->y;
       float speed_increment = speed_sp_b_x - groundspeed_x;
@@ -904,11 +905,14 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   // printf("Lift estimated %f\n", lift_approx);
   
   // Set prefered states
-  pitch_pref_rad = pitch_pref_deg / 180. * M_PI;
-
-  du_pref_hybrid[0] = -roll_filt.o[0];
+  du_pref_hybrid[0] = 0;//-roll_filt.o[0];
   //printf("pref change in roll %f\n", du_pref_hybrid[0]);
-  du_pref_hybrid[1] = -pitch_filt.o[0] + pitch_pref_rad;
+  if (theta_slowdown){du_pref_hybrid[1]=0;
+  pitch_pref_rad = pitch_pref_deg / 180. * M_PI;}
+  else {
+    pitch_pref_deg = -2;
+    pitch_pref_rad = pitch_pref_deg / 180. * M_PI;
+    du_pref_hybrid[1] = -pitch_filt.o[0] + pitch_pref_rad;}
   du_pref_hybrid[2] = du_min_hybrid[2];//du_max_hybrid[2];//0;
   if (pusher_slowdown){du_pref_hybrid[3]=0;}
   else {du_pref_hybrid[3] = accel_bx_err * cosf(pitch_pref_rad) - 9.81 * sinf(pitch_filt.o[0] - pitch_pref_rad);//
@@ -916,7 +920,7 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   Bound(du_pref_hybrid[3], du_min_hybrid[3], du_max_hybrid[3]);
 
   Wu_hybrid[0] = roll_priority_factor * 10.414;
-  Wu_hybrid[1] = pitch_priority_factor * 23.424;
+  Wu_hybrid[1] = pitch_priority_factor * 27.53;//23.424;
   Wu_hybrid[2] = thrust_priority_factor * 0.626;
   Wu_hybrid[3] = pusher_priority_factor * 1.0;
   //if (stateGetAirspeed_f()< 3.0){Wu_hybrid[3] = 150.0;}
@@ -946,7 +950,7 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
  */
 float guidance_indi_get_liftd(float airspeed, float theta) {
   float liftd;// = 0.0;
-  if(airspeed < 12) {
+  if(airspeed < 5) {
     //float pitch_interp = DegOfRad(theta);
     //Bound(pitch_interp, -80.0, -40.0);
     //float ratio = (pitch_interp + 40.0)/(-40.);
@@ -954,12 +958,12 @@ float guidance_indi_get_liftd(float airspeed, float theta) {
     liftd = 0.0;
   } else {
     if(DegOfRad(theta)<14){
-    liftd = -airspeed*airspeed*lift_pitch_eff/M_PI*180.0;
+    liftd = -airspeed*airspeed*0.5*1.225*(1.56*0.235)/3.5*lift_pitch_eff/M_PI*180.0;
     if (liftd > 0) {
       liftd = 0.0;
     }} else{
       printf("STALL\n");
-      liftd = airspeed*airspeed*lift_pitch_eff/M_PI*180.0;
+      liftd = airspeed*airspeed*0.5*1.225*(1.56*0.235)/3.5*lift_pitch_eff/M_PI*180.0;
     }
   }
   //TODO: bound liftd

@@ -78,7 +78,7 @@ float rot_wing_aero_eff_const_q;
 float rot_wing_aero_eff_const_r; 
 
 float rot_wing_min_lift_pitch_eff = 0.;//GUIDANCE_INDI_PITCH_LIFT_EFF;
-float rot_wing_max_lift_pitch_eff =0.035;//GUIDANCE_INDI_PITCH_LIFT_EFF;0.035
+float rot_wing_max_lift_pitch_eff =0.09;//GUIDANCE_INDI_PITCH_LIFT_EFF;0.035
 
 // Define control effectiveness variables in roll, pitch and yaw for aerodynamic surfaces {AIL_LEFT, AIL_RIGHT, VTAIL_LEFT, VTAIL_RIGHT}
 float rot_wing_g1_p_aerodynamic_surf[4] = {0.0, 0.0, 0.0, 0.0};
@@ -93,8 +93,8 @@ float g1_startup[INDI_OUTPUTS][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL,
 
 float rot_wing_aileron_limit_deg = 45;//45; // Aileron is effective from this angle value onwards
 float rot_wing_roll_prop_limit_deg = 70; // Roll props are not effective anymore from thus value onwards
-float rot_wing_pitch_prop_limit_deg = 70; // Pitch props are not effective anymore from thus value onwards
-float rot_wing_yaw_prop_limit_deg = 70; // // Yaw props are not effective anymore from thus value onwards
+float rot_wing_pitch_prop_limit_deg = 100; // Pitch props are not effective anymore from thus value onwards
+float rot_wing_yaw_prop_limit_deg = 100; // // Yaw props are not effective anymore from thus value onwards
 float rot_wing_limit_deadzone_deg = 2; // The deadzone that is put on the wing angle sensor 
 
 bool rot_wing_ailerons_activated; // will be set during initialization
