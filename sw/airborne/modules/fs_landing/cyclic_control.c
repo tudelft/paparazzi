@@ -48,6 +48,7 @@ int cyclic_dbg_ctr = 0;  // For debug telemetry
 
 void cyclic_control_values(struct fs_landing_t *actuator_values) {
   float current_yaw = stateGetNedToBodyEulers_f()->psi;
+//  float current_yaw = my_psi;
 
   float mt_phase_rad = RadOfDeg(mt_phase);
   float el_phase_rad = RadOfDeg(el_phase);

@@ -48,6 +48,7 @@ extern float pre_spin_trim_percentage;
 extern float err_test;
 
 extern float v_filt;
+extern float my_psi;
 
 /* External used functions */
 extern void fs_landing_init(void);
