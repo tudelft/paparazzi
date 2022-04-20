@@ -5,10 +5,11 @@
     <description>
       Telemetry using PPRZ protocol over UART
 
-      Currently used as a makefile wrapper over the telemetry_transparent subsystem
+      Currently used as a makefile wrapper over the telemetry_transparent modules
     </description>
     <configure name="MODEM_PORT" value="UARTx" description="UART where the modem is connected to (UART1, UART2, etc)"/>
     <configure name="MODEM_BAUD" value="B57600" description="UART baud rate"/>
+    <define name="TELEMETRY_DISABLE_RX" value="FALSE|TRUE" description="disable incoming message parsing"/>
   </doc>
   <dep>
     <depends>uart,datalink_common</depends>
@@ -20,8 +21,8 @@
     <file name="pprz_dl.h"/>
   </header>
   <init fun="pprz_dl_init()"/>
-  <event fun="pprz_dl_event()"/>
-  <makefile target="!fbw|sim|nps|hitl">
+  <event fun="pprz_dl_event()" cond="!TELEMETRY_DISABLE_RX"/>
+  <makefile target="!sim|nps|hitl">
     <configure name="MODEM_PORT" case="upper|lower"/>
     <define name="USE_$(MODEM_PORT_UPPER)"/>
     <define name="$(MODEM_PORT_UPPER)_BAUD" value="$(MODEM_BAUD)"/>
@@ -31,6 +32,10 @@
     <define name="DATALINK" value="PPRZ"/>
     <file name="pprz_dl.c"/>
     <file name="pprz_transport.c" dir="pprzlink/src"/>
+    <test>
+      <define name="DOWNLINK_DEVICE" value="uart1"/>
+      <define name="USE_UART1"/>
+    </test>
   </makefile>
 </module>
 

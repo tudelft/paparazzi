@@ -30,11 +30,11 @@
 #include "autopilot.h"
 #include "autopilot_arming.h"
 
-#include "subsystems/radio_control.h"
-#include "subsystems/commands.h"
-#include "subsystems/actuators.h"
-#include "subsystems/electrical.h"
-#include "subsystems/settings.h"
+#include "modules/radio_control/radio_control.h"
+#include "modules/core/commands.h"
+#include "modules/actuators/actuators.h"
+#include "modules/energy/electrical.h"
+#include "modules/core/settings.h"
 #include "firmwares/rotorcraft/navigation.h"
 #include "firmwares/rotorcraft/guidance.h"
 
@@ -51,7 +51,7 @@
 #include "generated/settings.h"
 
 #if USE_GPS
-#include "subsystems/gps.h"
+#include "modules/gps/gps.h"
 #else
 #if NO_GPS_NEEDED_FOR_NAV
 #define GpsIsLost() FALSE
@@ -107,7 +107,7 @@ void autopilot_static_init(void)
 }
 
 
-#define NAV_PRESCALER (PERIODIC_FREQUENCY / NAV_FREQ)
+#define NAV_PRESCALER (PERIODIC_FREQUENCY / NAVIGATION_FREQUENCY)
 void autopilot_static_periodic(void)
 {
 
@@ -391,3 +391,50 @@ void autopilot_static_on_rc_frame(void)
   }
 
 }
+
+/** mode to enter when RC is lost while using a mode with RC input (not AP_MODE_NAV) */
+#ifndef RC_LOST_MODE
+#define RC_LOST_MODE AP_MODE_FAILSAFE
+#endif
+
+void autopilot_failsafe_checks(void)
+{
+  if (radio_control.status == RC_REALLY_LOST &&
+      autopilot_get_mode() != AP_MODE_KILL &&
+      autopilot_get_mode() != AP_MODE_HOME &&
+      autopilot_get_mode() != AP_MODE_FAILSAFE &&
+      autopilot_get_mode() != AP_MODE_NAV &&
+      autopilot_get_mode() != AP_MODE_MODULE &&
+      autopilot_get_mode() != AP_MODE_FLIP &&
+      autopilot_get_mode() != AP_MODE_GUIDED) {
+    autopilot_set_mode(RC_LOST_MODE);
+  }
+
+#if FAILSAFE_ON_BAT_CRITICAL
+  if (autopilot_get_mode() != AP_MODE_KILL &&
+      electrical.bat_critical) {
+    autopilot_set_mode(AP_MODE_FAILSAFE);
+  }
+#endif
+
+#if USE_GPS
+  if (autopilot_get_mode() == AP_MODE_NAV &&
+      autopilot_get_motors_on() &&
+#if NO_GPS_LOST_WITH_RC_VALID
+      radio_control.status != RC_OK &&
+#endif
+#ifdef NO_GPS_LOST_WITH_DATALINK_TIME
+      datalink_time > NO_GPS_LOST_WITH_DATALINK_TIME &&
+#endif
+      GpsIsLost()) {
+    autopilot_set_mode(AP_MODE_FAILSAFE);
+  }
+
+  if (autopilot_get_mode() == AP_MODE_HOME &&
+      autopilot_get_motors_on() && GpsIsLost()) {
+    autopilot_set_mode(AP_MODE_FAILSAFE);
+  }
+#endif
+
+}
+

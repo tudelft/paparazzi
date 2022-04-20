@@ -34,7 +34,9 @@ Add paparazzi apt-repository and install dependencies:
 
     sudo add-apt-repository -y ppa:paparazzi-uav/ppa
     sudo apt-get update
-    sudo apt-get -f -y install paparazzi-dev paparazzi-jsbsim dfu-util
+    sudo apt-get -f -y install paparazzi-dev paparazzi-jsbsim dfu-util pprzgcs
+
+.. note:: If you are on Ubuntu 18.04, ``pprzgcs`` is not available, just remove it from the last line.
 
 Clone the repository: 
 
@@ -51,7 +53,7 @@ Clone the repository:
 
 .. code-block:: bash
 
-    git checkout -b v5.18 upstream/v5.18
+    git checkout -b v6.1 upstream/v6.1
 
 Get the submodules and build Paparazzi. This step might take a long time the first time you launch it:
 

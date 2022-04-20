@@ -28,7 +28,7 @@
 #include "std.h"
 //#include "stdio.h"
 
-#include "inter_mcu.h"
+#include "modules/core/commands.h"
 
 #include "mcu_periph/sys_time.h"
 #include "mcu_periph/gpio.h"
@@ -37,18 +37,18 @@
 #include "generated/flight_plan.h"
 #include "generated/airframe.h"
 #include "autopilot.h"
-#include "subsystems/electrical.h"
+#include "modules/energy/electrical.h"
 #include "state.h"
 
 // for GetPosAlt, include correct header until we have unified API
 #if defined(FIXEDWING_FIRMWARE)
-//#include "subsystems/navigation/nav.h"
-#include "subsystems/navigation/common_nav.h"
+//#include "modules/nav/nav.h"
+#include "modules/nav/common_nav.h"
 #elif defined(ROTORCRAFT_FIRMWARE)
 #include "firmwares/rotorcraft/navigation.h"
 #endif
 #if DOWNLINK
-#include "subsystems/datalink/telemetry.h"
+#include "modules/datalink/telemetry.h"
 #endif
 
 // Peripherials
@@ -776,7 +776,7 @@ void draw_osd(void)
 
     case (50):
 #if defined(FIXEDWING_FIRMWARE)
-      osd_sprintf(osd_string, "THR%.0f", (((float)ap_state->commands[COMMAND_THROTTLE] / (float)MAX_PPRZ) * 100.));
+      osd_sprintf(osd_string, "THR%.0f", (((float)command_get(COMMAND_THROTTLE) / (float)MAX_PPRZ) * 100.));
 #else
       osd_sprintf(osd_string, "THR%.0fTHR", (((float)stabilization_cmd[COMMAND_THRUST] / (float)MAX_PPRZ) * 100.));
 #endif

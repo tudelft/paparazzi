@@ -32,6 +32,8 @@
 #define AIR_DATA_H
 
 #include "std.h"
+#include "pprzlink/pprzlink_device.h"
+#include "pprzlink/pprzlink_transport.h"
 
 /** Air Data strucute */
 struct AirData {
@@ -68,6 +70,10 @@ extern void air_data_init(void);
  */
 extern void air_data_periodic(void);
 
+/** Parse datalink wind info message
+ */
+extern void air_data_parse_WIND_INFO(struct link_device *dev, struct transport_tx *trans, uint8_t *buf);
+
 /** Return AMSL (altitude AboveSeaLevel).
  * If AMSL from baro is valid, return that, otherwise from gps.
  */
@@ -100,6 +106,14 @@ extern float get_tas_factor(float p, float t);
  * @return true airspeed in m/s
  */
 extern float tas_from_eas(float eas);
+
+/**
+ * Calculate equivalent airspeed from true airspeed.
+ *
+ * @param tas true airspeed (TAS) in m/s
+ * @return equivalent airspeed in m/s
+ */
+extern float eas_from_tas(float tas);
 
 /**
  * Calculate true airspeed from dynamic pressure.

@@ -21,36 +21,36 @@
 
 #include "nps_autopilot.h"
 
-#include "firmwares/rotorcraft/main.h"
+#include "main_ap.h"
 #include "nps_sensors.h"
 #include "nps_radio_control.h"
 #include "nps_electrical.h"
 #include "nps_fdm.h"
 
-#include "subsystems/radio_control.h"
-#include "subsystems/imu.h"
+#include "modules/radio_control/radio_control.h"
+#include "modules/imu/imu.h"
 #include "mcu_periph/sys_time.h"
 #include "state.h"
-#include "subsystems/ahrs.h"
-#include "subsystems/ins.h"
+#include "modules/ahrs/ahrs.h"
+#include "modules/ins/ins.h"
 #include "math/pprz_algebra.h"
 
 #ifndef NPS_NO_MOTOR_MIXING
-#include "subsystems/actuators/motor_mixing.h"
+#include "modules/actuators/motor_mixing.h"
 
 #if NPS_COMMANDS_NB != MOTOR_MIXING_NB_MOTOR
 #warning "NPS_COMMANDS_NB does not match MOTOR_MIXING_NB_MOTOR!"
 #endif
 #endif
 
-#include "subsystems/abi.h"
+#include "modules/core/abi.h"
 
 #include "pprzlink/messages.h"
-#include "subsystems/datalink/downlink.h"
+#include "modules/datalink/downlink.h"
 
 // for datalink_time hack
-#include "subsystems/datalink/datalink.h"
-#include "subsystems/actuators.h"
+#include "modules/datalink/datalink.h"
+#include "modules/actuators/actuators.h"
 
 struct NpsAutopilot nps_autopilot;
 bool nps_bypass_ahrs;
@@ -78,8 +78,8 @@ void nps_autopilot_init(enum NpsRadioControlType type_rc, int num_rc_script, cha
   nps_bypass_ahrs = NPS_BYPASS_AHRS;
   nps_bypass_ins = NPS_BYPASS_INS;
 
-  main_init();
-
+  modules_mcu_init();
+  main_ap_init();
 }
 
 void nps_autopilot_run_systime_step(void)
@@ -88,7 +88,7 @@ void nps_autopilot_run_systime_step(void)
 }
 
 #include <stdio.h>
-#include "subsystems/gps.h"
+#include "modules/gps/gps.h"
 
 void nps_autopilot_run_step(double time)
 {
@@ -98,35 +98,37 @@ void nps_autopilot_run_step(double time)
 #if RADIO_CONTROL && !RADIO_CONTROL_TYPE_DATALINK
   if (nps_radio_control_available(time)) {
     radio_control_feed();
-    main_event();
+    main_ap_event();
   }
 #endif
 
   if (nps_sensors_gyro_available()) {
     imu_feed_gyro_accel();
-    main_event();
+    main_ap_event();
   }
 
   if (nps_sensors_mag_available()) {
     imu_feed_mag();
-    main_event();
+    main_ap_event();
   }
 
   if (nps_sensors_baro_available()) {
     uint32_t now_ts = get_sys_time_usec();
     float pressure = (float) sensors.baro.value;
     AbiSendMsgBARO_ABS(BARO_SIM_SENDER_ID, now_ts, pressure);
-    main_event();
+    main_ap_event();
   }
 
   if (nps_sensors_temperature_available()) {
     AbiSendMsgTEMPERATURE(BARO_SIM_SENDER_ID, (float)sensors.temp.value);
+    main_ap_event();
   }
 
 #if USE_AIRSPEED
   if (nps_sensors_airspeed_available()) {
     stateSetAirspeed_f((float)sensors.airspeed.value);
     AbiSendMsgAIRSPEED(AIRSPEED_NPS_ID, (float)sensors.airspeed.value);
+    main_ap_event();
   }
 #endif
 
@@ -143,14 +145,14 @@ void nps_autopilot_run_step(double time)
     DOWNLINK_SEND_SONAR(DefaultChannel, DefaultDevice, &foo, &dist);
 #endif
 
-    main_event();
+    main_ap_event();
   }
 #endif
 
 #if USE_GPS
   if (nps_sensors_gps_available()) {
     gps_feed_value();
-    main_event();
+    main_ap_event();
   }
 #endif
 
@@ -162,7 +164,7 @@ void nps_autopilot_run_step(double time)
     sim_overwrite_ins();
   }
 
-  handle_periodic_tasks();
+  main_ap_periodic();
 
   /* scale final motor commands to 0-1 for feeding the fdm */
   for (uint8_t i = 0; i < NPS_COMMANDS_NB; i++) {

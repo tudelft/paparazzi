@@ -29,10 +29,11 @@
  */
 
 #include "modules/air_data/air_data.h"
-#include "subsystems/abi.h"
+#include "modules/core/abi.h"
 #include "math/pprz_isa.h"
 #include "state.h"
 #include "generated/airframe.h"
+#include "pprzlink/dl_protocol.h"
 
 /** global AirData state
  */
@@ -184,7 +185,7 @@ static void incidence_cb(uint8_t __attribute__((unused)) sender_id, uint8_t flag
 }
 
 #if PERIODIC_TELEMETRY
-#include "subsystems/datalink/telemetry.h"
+#include "modules/datalink/telemetry.h"
 
 static void send_baro_raw(struct transport_tx *trans, struct link_device *dev)
 {
@@ -274,6 +275,35 @@ void air_data_periodic(void)
   }
 }
 
+void air_data_parse_WIND_INFO(struct link_device *dev __attribute__((unused)), struct transport_tx *trans __attribute__((unused)), uint8_t *buf)
+{
+  if (DL_WIND_INFO_ac_id(buf) != AC_ID) { return; }
+  uint8_t flags = DL_WIND_INFO_flags(buf);
+  struct FloatVect2 wind = { 0.f, 0.f };
+  float upwind = 0.f;
+  if (bit_is_set(flags, 0)) {
+    wind.x = DL_WIND_INFO_north(buf);
+    wind.y = DL_WIND_INFO_east(buf);
+    stateSetHorizontalWindspeed_f(&wind);
+    air_data.wind_speed = float_vect2_norm(&wind);
+    air_data.wind_dir = atan2f(wind.y, wind.x);
+  }
+  if (bit_is_set(flags, 1)) {
+    upwind = DL_WIND_INFO_up(buf);
+    stateSetVerticalWindspeed_f(upwind);
+  }
+#if !USE_AIRSPEED
+  if (bit_is_set(flags, 2)) {
+    air_data.tas = DL_WIND_INFO_airspeed(buf);
+    air_data.airspeed = eas_from_tas(air_data.tas);
+    stateSetAirspeed_f(air_data.airspeed);
+  }
+#endif
+#ifdef WIND_INFO_RET
+  float airspeed = stateGetAirspeed_f();
+  pprz_msg_send_WIND_INFO_RET(trans, dev, AC_ID, &flags, &wind.y, &wind.x, &upwind, &airspeed);
+#endif
+}
 
 /**
  * Calculate equivalent airspeed from dynamic pressure.
@@ -327,15 +357,9 @@ float get_tas_factor(float p, float t)
 }
 
 /**
- * Calculate true airspeed from equivalent airspeed.
- *
- * True airspeed (TAS) from EAS:
- * TAS = air_data.tas_factor * EAS
- *
- * @param eas equivalent airspeed (EAS) in m/s
- * @return true airspeed in m/s
+ * Internal utility function to compute current tas factor if needed
  */
-float tas_from_eas(float eas)
+static void compute_tas_factor(void)
 {
   // update tas factor if requested
   if (air_data.calc_tas_factor) {
@@ -351,7 +375,36 @@ float tas_from_eas(float eas)
       air_data.tas_factor = get_tas_factor(p, CelsiusOfKelvin(t));
     }
   }
+}
+
+/**
+ * Calculate true airspeed from equivalent airspeed.
+ *
+ * True airspeed (TAS) from EAS:
+ * TAS = air_data.tas_factor * EAS
+ *
+ * @param eas equivalent airspeed (EAS) in m/s
+ * @return true airspeed in m/s
+ */
+float tas_from_eas(float eas)
+{
+  compute_tas_factor();
   return air_data.tas_factor * eas;
+}
+
+/**
+ * Calculate equivalent airspeed from true airspeed.
+ *
+ * EAS from True airspeed (TAS):
+ * EAS = TAS / air_data.tas_factor
+ *
+ * @param tas true airspeed (TAS) in m/s
+ * @return equivalent airspeed in m/s
+ */
+float eas_from_tas(float tas)
+{
+  compute_tas_factor();
+  return tas / air_data.tas_factor;
 }
 
 /**

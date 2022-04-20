@@ -39,7 +39,7 @@
 #if HAL_USE_RTC
 #include <hal_rtc.h>
 #include <time.h>
-#include "subsystems/gps.h"
+#include "modules/gps/gps.h"
 #endif
 
 // Delay before starting SD log
@@ -69,7 +69,7 @@ static const char PPRZ_LOG_DIR[] = "PPRZ";
 /*
  * Start log thread
  */
-static THD_WORKING_AREA(wa_thd_startlog, 2048);
+static IN_DMA_SECTION(THD_WORKING_AREA(wa_thd_startlog, 4096));
 static __attribute__((noreturn)) void thd_startlog(void *arg);
 
 /*
@@ -107,7 +107,7 @@ static char chibios_sdlog_filenames[68];
 static char NO_FILE_NAME[] = "none";
 
 #if PERIODIC_TELEMETRY
-#include "subsystems/datalink/telemetry.h"
+#include "modules/datalink/telemetry.h"
 static void send_sdlog_status(struct transport_tx *trans, struct link_device *dev)
 {
   uint8_t status = (uint8_t) chibios_sdlog_status;
@@ -291,7 +291,7 @@ static void thd_startlog(void *arg)
     static uint32_t timestamp = 0;
     // FIXME this could be done somewhere else, like in sys_time
     // we sync gps time to rtc every 5 seconds
-    if (chVTGetSystemTime() - timestamp > 5000) {
+    if (chVTGetSystemTime() - timestamp > TIME_S2I(5)) {
       timestamp = chVTGetSystemTime();
       if (gps.tow != 0) {
         // Unix timestamp of the GPS epoch 1980-01-06 00:00:00 UTC
@@ -324,7 +324,10 @@ static void thd_bat_survey(void *arg)
   // in case of powerloss, we should go fast and avoid to flush ram buffer
   sdlog_chibios_finish(false);
   chThdExit(0);
-  mcu_deep_sleep();
+
+  // Only put to deep sleep in case there is no power on the USB
+  if(palReadPad(SDLOG_USB_VBUS_PORT, SDLOG_USB_VBUS_PIN) == PAL_LOW)
+    mcu_deep_sleep();
   chThdSleep(TIME_INFINITE);
   while (true); // never goes here, only to avoid compiler  warning: 'noreturn' function does return
 }
@@ -332,8 +335,8 @@ static void thd_bat_survey(void *arg)
 
 /*
   powerOutageIsr is called within a lock zone from an isr, so no lock/unlock is needed
- */
-static void  powerOutageIsr(void)
+*/
+static void powerOutageIsr(void)
 {
   chEvtBroadcastI(&powerOutageSource);
 }

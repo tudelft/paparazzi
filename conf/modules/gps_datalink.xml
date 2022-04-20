@@ -4,9 +4,8 @@
   <doc>
     <description>
       Remote GPS via datalink.
-      Parses the REMOTE_GPS and REMOTE_GPS_SMALL datalink messages and publishes it onboard via ABI.
+      Parses the EXTERNAL_POSE, EXTERNAL_POSE_SMALL and REMOTE_GPS_LOCAL datalink messages and publishes it as GPS onboard via ABI.
     </description>
-    <define name="GPS_DATALINK_USE_MAG" value="1" description="Choose to receive also GPS extracted magnetometer messages"/>
   </doc>
   <dep>
     <depends>gps,@datalink</depends>
@@ -15,28 +14,28 @@
   <autoload name="gps_nps"/>
   <autoload name="gps_sim"/>
   <header>
-    <file name="gps.h" dir="subsystems"/>
+    <file name="gps.h"/>
   </header>
   <init fun="gps_datalink_init()"/>
   <periodic fun="gps_datalink_periodic_check()" freq="1." autorun="TRUE"/>
-  <datalink message="REMOTE_GPS" fun="gps_datalink_parse_REMOTE_GPS(buf)"/>
-  <datalink message="REMOTE_GPS_SMALL" fun="gps_datalink_parse_REMOTE_GPS_SMALL(buf)"/>
+  <datalink message="EXTERNAL_POSE" fun="gps_datalink_parse_EXTERNAL_POSE(buf)"/>
+  <datalink message="EXTERNAL_POSE_SMALL" fun="gps_datalink_parse_EXTERNAL_POSE_SMALL(buf)"/>
   <datalink message="REMOTE_GPS_LOCAL" fun="gps_datalink_parse_REMOTE_GPS_LOCAL(buf)"/>
   <makefile target="ap|fbw">
-    <file name="gps_datalink.c" dir="subsystems/gps"/>
+    <file name="gps_datalink.c"/>
     <raw>
       ifdef SECONDARY_GPS
       ifneq (,$(findstring $(SECONDARY_GPS), datalink))
       # this is the secondary GPS
-      $(TARGET).CFLAGS += -DGPS_SECONDARY_TYPE_H=\"subsystems/gps/gps_datalink.h\"
+      $(TARGET).CFLAGS += -DGPS_SECONDARY_TYPE_H=\"modules/gps/gps_datalink.h\"
       $(TARGET).CFLAGS += -DSECONDARY_GPS=GPS_DATALINK
       else
-      $(TARGET).CFLAGS += -DGPS_TYPE_H=\"subsystems/gps/gps_datalink.h\"
+      $(TARGET).CFLAGS += -DGPS_TYPE_H=\"modules/gps/gps_datalink.h\"
       $(TARGET).CFLAGS += -DPRIMARY_GPS=GPS_DATALINK
       endif
       else
       # plain old single GPS usage
-      $(TARGET).CFLAGS += -DGPS_TYPE_H=\"subsystems/gps/gps_datalink.h\"
+      $(TARGET).CFLAGS += -DGPS_TYPE_H=\"modules/gps/gps_datalink.h\"
       endif
     </raw>
     <test firmware="rotorcraft">

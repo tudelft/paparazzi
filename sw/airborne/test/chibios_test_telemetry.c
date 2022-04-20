@@ -37,13 +37,13 @@
 #include "mcu.h"
 #include "mcu_periph/sys_time.h"
 #include "mcu_periph/uart.h"
-#include "subsystems/datalink/downlink.h"
+#include "modules/datalink/downlink.h"
 #include "led.h"
 
 /*
  * Red LEDs blinker thread, times are in milliseconds.
  */
-static THD_WORKING_AREA(waThdBlinker, 128);
+static THD_WORKING_AREA(waThdBlinker, 256);
 static void ThdBlinker(void *arg) {
 
   (void)arg;

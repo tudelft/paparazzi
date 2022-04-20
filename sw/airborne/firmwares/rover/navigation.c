@@ -30,8 +30,8 @@
 #include "firmwares/rover/navigation.h"
 
 #include "pprz_debug.h"
-#include "subsystems/gps.h" // needed by auto_nav from the flight plan
-#include "subsystems/ins.h"
+#include "modules/gps/gps.h" // needed by auto_nav from the flight plan
+#include "modules/ins/ins.h"
 #include "state.h"
 
 #include "autopilot.h"
@@ -40,11 +40,12 @@
 
 #include "math/pprz_algebra_int.h"
 
-#include "subsystems/datalink/downlink.h"
+#include "modules/datalink/downlink.h"
 #include "pprzlink/messages.h"
 #include "mcu_periph/uart.h"
 
 
+PRINT_CONFIG_VAR(NAVIGATION_FREQUENCY)
 
 struct RoverNavigation nav;
 
@@ -62,7 +63,7 @@ void set_exception_flag(uint8_t flag_num)
 
 
 #if PERIODIC_TELEMETRY
-#include "subsystems/datalink/telemetry.h"
+#include "modules/datalink/telemetry.h"
 
 static void send_wp_moved(struct transport_tx *trans, struct link_device *dev)
 {
@@ -111,6 +112,29 @@ void nav_run(void)
   VECT2_COPY(nav.carrot, nav.target);
 }
 
+void nav_parse_BLOCK(uint8_t *buf)
+{
+  if (DL_BLOCK_ac_id(buf) != AC_ID) { return; }
+  nav_goto_block(DL_BLOCK_block_id(buf));
+}
+
+void nav_parse_MOVE_WP(uint8_t *buf)
+{
+  uint8_t ac_id = DL_MOVE_WP_ac_id(buf);
+  if (ac_id != AC_ID) { return; }
+  if (stateIsLocalCoordinateValid()) {
+    uint8_t wp_id = DL_MOVE_WP_wp_id(buf);
+    struct LlaCoor_i lla;
+    lla.lat = DL_MOVE_WP_lat(buf);
+    lla.lon = DL_MOVE_WP_lon(buf);
+    /* WP_alt from message is alt above MSL in mm
+     * lla.alt is above ellipsoid in mm
+     */
+    lla.alt = DL_MOVE_WP_alt(buf) - state.ned_origin_i.hmsl +
+      state.ned_origin_i.lla.alt;
+    waypoint_move_lla(wp_id, &lla);
+  }
+}
 
 bool nav_check_wp_time(struct EnuCoor_f *wp, float stay_time)
 {
@@ -175,7 +199,7 @@ void nav_init_stage(void)
 
 void nav_periodic_task(void)
 {
-  RunOnceEvery(NAV_FREQ, { stage_time++;  block_time++; });
+  RunOnceEvery(NAVIGATION_FREQUENCY, { stage_time++;  block_time++; });
 
   //nav.dist2_to_wp = 0; FIXME
 

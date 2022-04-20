@@ -76,8 +76,8 @@
 #include "point.h"
 #include "autopilot.h"
 #include "generated/flight_plan.h"
-#include "subsystems/navigation/common_nav.h"
-#include "subsystems/gps.h"
+#include "modules/nav/common_nav.h"
+#include "modules/gps/gps.h"
 #include "math/pprz_geodetic_float.h"
 #include "state.h"
 
@@ -344,7 +344,7 @@ void vPoint(float fPlaneEast, float fPlaneNorth, float fPlaneAltitude,
       vMultiplyMatrixByVector(&sv_cam_projection, smRotation, sv_cam_projection_buf);
 
 #if defined(RADIO_CAM_LOCK)
-      float radio_cam_lock = imcu_get_radio(RADIO_CAM_LOCK);
+      float radio_cam_lock = radio_control_get(RADIO_CAM_LOCK);
       if ((radio_cam_lock > MAX_PPRZ / 2) && autopilot_get_mode() == AP_MODE_AUTO2) { cam_lock = true; }
       if ((radio_cam_lock < MIN_PPRZ / 2) && autopilot_get_mode() == AP_MODE_AUTO2) { cam_lock = false; }
 #endif

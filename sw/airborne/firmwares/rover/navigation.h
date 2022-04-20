@@ -30,8 +30,8 @@
 #include "std.h"
 #include "math/pprz_geodetic_float.h"
 #include "state.h"
-#include "subsystems/navigation/waypoints.h"
-#include "subsystems/navigation/common_flight_plan.h"
+#include "modules/nav/waypoints.h"
+#include "modules/nav/common_flight_plan.h"
 #include "autopilot.h"
 
 /** default approaching_time for a wp */ // FIXME
@@ -43,8 +43,13 @@
 #define CARROT_DIST 2.f
 #endif
 
-#ifndef NAV_FREQ
-#define NAV_FREQ 16
+/** default navigation frequency */
+#ifndef NAVIGATION_FREQUENCY
+#if PERIODIC_FREQUENCY == 512
+#define NAVIGATION_FREQUENCY 16
+#else // if not 512, assume a multiple of 20 (e.g. 200, 500, 1000, ...)
+#define NAVIGATION_FREQUENCY 20
+#endif
 #endif
 
 
@@ -157,6 +162,8 @@ extern uint8_t last_wp __attribute__((unused));
 
 extern void nav_init(void);
 extern void nav_run(void);
+extern void nav_parse_BLOCK(uint8_t *buf);
+extern void nav_parse_MOVE_WP(uint8_t *buf);
 
 extern void set_exception_flag(uint8_t flag_num);
 
@@ -167,6 +174,7 @@ extern void nav_home(void);
 extern void nav_set_manual(float speed, float turn);
 
 extern void nav_reset_reference(void) __attribute__((unused));
+extern void nav_reset_alt(void) __attribute__((unused));
 extern void nav_periodic_task(void);
 
 extern bool nav_is_in_flight(void);

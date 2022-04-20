@@ -30,7 +30,7 @@
 
 #include "std.h"
 #include "autopilot.h"
-#include "subsystems/electrical.h"
+#include "modules/energy/electrical.h"
 
 // FIXME, move to control
 #define LATERAL_MODE_MANUAL    0
@@ -39,13 +39,6 @@
 #define LATERAL_MODE_COURSE    3
 #define LATERAL_MODE_NB        4
 extern uint8_t lateral_mode;
-
-// ap copy of fbw readings
-extern struct Electrical ap_electrical;
-
-/** Second MCU status (FBW part)
- */
-extern uint8_t  mcu1_status;
 
 /** Init function
  */

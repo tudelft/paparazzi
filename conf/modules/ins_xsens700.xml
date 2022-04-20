@@ -8,6 +8,14 @@
     <configure name="XSENS_PORT" value="uart1" description="The (uart) port the XSens is connected to"/>
     <configure name="XSENS_BAUD" value="B115200" description="UART baud rate"/>
   </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="xsens700">
+        <dl_setting MAX="15" MIN="-15" STEP="0.5" VAR="ins_roll_neutral" shortname="roll_neutral" module="modules/ahrs/ahrs" param="INS_ROLL_NEUTRAL_DEFAULT" unit="rad" alt_unit="deg" type="float" persistent="true"/>
+        <dl_setting MAX="15" MIN="-15" STEP="0.5" VAR="ins_pitch_neutral" shortname="pitch_neutral" param="INS_PITCH_NEUTRAL_DEFAULT" unit="rad" alt_unit="deg" type="float" persistent="true"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
   <dep>
     <depends>uart,gps</depends>
     <provides>ins,ahrs,gps</provides>
@@ -25,7 +33,7 @@
     <file name="xsens700.c"/>
     <file name="xsens_parser.c"/>
     <file name="ins_xsens700.c"/>
-    <file name="ins.c" dir="subsystems"/>
+    <file name="ins.c"/>
     <configure name="XSENS_PORT" default="uart1" case="upper|lower"/>
     <configure name="XSENS_BAUD" default="B115200"/>
     <define name="USE_$(XSENS_PORT_UPPER)" value="1"/>
@@ -34,7 +42,7 @@
     <define name="XSENS_OUTPUT_MODE" value="0x1836"/>
     <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>
 
-    <file name="gps.c" dir="subsystems"/>
+    <file name="gps.c" dir="modules/gps"/>
     <define name="USE_GPS"/>
     <define name="USE_GPS_XSENS"/>
     <define name="GPS_NB_CHANNELS" value="50"/>

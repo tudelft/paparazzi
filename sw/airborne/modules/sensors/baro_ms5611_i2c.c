@@ -31,10 +31,10 @@
 
 #include "math/pprz_isa.h"
 #include "mcu_periph/sys_time.h"
-#include "subsystems/abi.h"
+#include "modules/core/abi.h"
 #include "mcu_periph/uart.h"
 #include "pprzlink/messages.h"
-#include "subsystems/datalink/downlink.h"
+#include "modules/datalink/downlink.h"
 
 
 #ifndef MS5611_I2C_DEV
@@ -50,7 +50,7 @@
 #ifndef MS5611_TYPE_MS5607
 #define MS5611_TYPE_MS5607 FALSE
 #endif
-PRINT_CONFIG_VAR(BB_MS5611_TYPE_MS5607)
+PRINT_CONFIG_VAR(MS5611_TYPE_MS5607)
 
 struct Ms5611_I2c baro_ms5611;
 

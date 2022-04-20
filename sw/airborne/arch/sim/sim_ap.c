@@ -10,17 +10,16 @@
 #include <time.h>
 #include <string.h>
 #include "std.h"
-#include "inter_mcu.h"
+#include "main_ap.h"
 #include "autopilot.h"
-#include "subsystems/gps.h"
+#include "modules/gps/gps.h"
 #include "generated/settings.h"
 #include "firmwares/fixedwing/nav.h"
 #include "firmwares/fixedwing/stabilization/stabilization_attitude.h"
 #include "firmwares/fixedwing/guidance/guidance_v.h"
-#include "subsystems/commands.h"
-#include "firmwares/fixedwing/main_ap.h"
-#include "subsystems/datalink/datalink.h"
-#include "subsystems/datalink/telemetry.h"
+#include "modules/core/commands.h"
+#include "modules/datalink/datalink.h"
+#include "modules/datalink/telemetry.h"
 #include "generated/flight_plan.h"
 
 #include "generated/modules.h"
@@ -64,9 +63,8 @@ value sim_sys_time_task(value unit)
 
 value sim_periodic_task(value unit)
 {
-  handle_periodic_tasks_ap();
-  event_task_ap();
-  event_task_fbw();
+  main_ap_periodic();
+  main_ap_event();
   return unit;
 }
 
@@ -80,8 +78,8 @@ float ftimeofday(void)
 
 value sim_init(value unit)
 {
-  init_fbw();
-  init_ap();
+  modules_mcu_init();
+  main_ap_init();
 
   return unit;
 }

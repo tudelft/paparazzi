@@ -737,6 +737,7 @@
 #if defined(LINE_USB_VBUS)
 #define SDLOG_USB_VBUS_PORT   PAL_PORT(LINE_USB_VBUS)
 #define SDLOG_USB_VBUS_PIN    PAL_PAD(LINE_USB_VBUS)
+#define SDLOG_USB_VBUS_BOOT   true
 #endif
 
 // bat monitoring for file closing
@@ -750,7 +751,7 @@
  * Actuators for fixedwing
  */
  /* Default actuators driver */
-#define DEFAULT_ACTUATORS "subsystems/actuators/actuators_pwm.h"
+#define DEFAULT_ACTUATORS "modules/actuators/actuators_pwm.h"
 #define ActuatorDefaultSet(_x,_y) ActuatorPwmSet(_x,_y)
 #define ActuatorsDefaultInit() ActuatorsPwmInit()
 #define ActuatorsDefaultCommit() ActuatorsPwmCommit()

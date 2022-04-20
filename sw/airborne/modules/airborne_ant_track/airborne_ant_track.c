@@ -19,8 +19,8 @@
 
 #include <math.h>
 #include <inttypes.h>
-#include "inter_mcu.h"
-#include "subsystems/navigation/common_nav.h"
+#include "modules/core/commands.h"
+#include "modules/nav/common_nav.h"
 #include "autopilot.h"
 #include "generated/flight_plan.h"
 #include "state.h"
@@ -170,7 +170,7 @@ void airborne_ant_point_periodic(void)
   airborne_ant_pan_servo = TRIM_PPRZ(airborne_ant_pan_servo);
 
 #ifdef COMMAND_ANT_PAN
-  imcu_set_command(COMMAND_ANT_PAN, airborne_ant_pan_servo);
+  command_set(COMMAND_ANT_PAN, airborne_ant_pan_servo);
 #endif
 
 

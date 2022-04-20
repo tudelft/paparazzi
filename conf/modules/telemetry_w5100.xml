@@ -22,11 +22,11 @@
   </dep>
   <autoload name="telemetry" type="sim"/>
   <header>
-    <file name="w5100.h" dir="subsystems/datalink"/>
+    <file name="w5100.h"/>
   </header>
   <init fun="w5100_init()"/>
   <event fun="w5100_event()"/>
-  <makefile target="!fbw|sim">
+  <makefile target="!sim">
     <configure name="W5100_SPI_DEV" default="SPI1" case="upper|lower"/>
     <configure name="W5100_SLAVE_IDX" default="1"/>
     <configure name="W5100_IP" default="192,168,25,47"/>
@@ -43,7 +43,7 @@
     <define name="DOWNLINK_TRANSPORT" value="pprz_w5100_tp"/>
     <define name="DATALINK" value="W5100"/>
     <file name="pprz_transport.c" dir="pprzlink/src"/>
-    <file name="w5100.c" dir="subsystems/datalink"/>
+    <file name="w5100.c"/>
   </makefile>
 </module>
 

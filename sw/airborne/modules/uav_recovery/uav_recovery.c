@@ -28,12 +28,12 @@
 #include "autopilot.h"
 #include "state.h"
 #include "firmwares/fixedwing/nav.h"
-#include "subsystems/navigation/common_nav.h"
+#include "modules/nav/common_nav.h"
 #include "generated/flight_plan.h"
 #include "generated/airframe.h"
-#include "inter_mcu.h"
-#include "subsystems/datalink/datalink.h"
+#include "modules/datalink/datalink.h"
 #include "modules/multi/traffic_info.h"
+#include "modules/core/commands.h"
 #include "uav_recovery.h"
 
 #if defined(USE_PARACHUTE) && USE_PARACHUTE == 1
@@ -79,7 +79,7 @@ bool   deploy_parachute_var = 0;
 bool   land_direction = 0;
 
 #if PERIODIC_TELEMETRY
-#include "subsystems/datalink/telemetry.h"
+#include "modules/datalink/telemetry.h"
 
 static void send_wind_info(struct transport_tx *trans, struct link_device *dev)
 {
@@ -100,7 +100,7 @@ void uav_recovery_init(void)
   wind_measurements_valid = true;
   wind_info_valid = true;
 #if defined(PARACHUTE_OUTPUT_COMMAND)
-  ap_state->commands[PARACHUTE_OUTPUT_COMMAND] = MIN_PPRZ;
+  command_set(PARACHUTE_OUTPUT_COMMAND, MIN_PPRZ);
 #endif
 
 #if PERIODIC_TELEMETRY
@@ -117,9 +117,9 @@ void uav_recovery_periodic(void)
 #if defined(PARACHUTE_OUTPUT_COMMAND)
   if (autopilot.mode != AP_MODE_MANUAL) {
     if (deploy_parachute_var == 1) {
-      ap_state->commands[PARACHUTE_OUTPUT_COMMAND] = MAX_PPRZ;
+      command_set(PARACHUTE_OUTPUT_COMMAND, MAX_PPRZ);
 
-    } else { ap_state->commands[PARACHUTE_OUTPUT_COMMAND] = MIN_PPRZ; }
+    } else { command_set(PARACHUTE_OUTPUT_COMMAND, MIN_PPRZ); }
   }
 #else
 #warning PARACHUTE COMMAND NOT FOUND

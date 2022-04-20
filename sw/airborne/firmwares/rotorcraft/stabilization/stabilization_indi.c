@@ -38,9 +38,9 @@
 #include "math/pprz_algebra_float.h"
 #include "state.h"
 #include "generated/airframe.h"
-#include "subsystems/radio_control.h"
-#include "subsystems/actuators.h"
-#include "subsystems/abi.h"
+#include "modules/radio_control/radio_control.h"
+#include "modules/actuators/actuators.h"
+#include "modules/core/abi.h"
 #include "filters/low_pass_filter.h"
 #include "wls/wls_alloc.h"
 #include <stdio.h>
@@ -194,7 +194,7 @@ struct FloatVect3 body_accel_f;
 void init_filters(void);
 
 #if PERIODIC_TELEMETRY
-#include "subsystems/datalink/telemetry.h"
+#include "modules/datalink/telemetry.h"
 static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_INDI_G(trans, dev, AC_ID, INDI_NUM_ACT, g1_est[0],
@@ -307,7 +307,7 @@ void init_filters(void)
   init_butterworth_2_low_pass(&acceleration_lowpass_filter, tau_est, sample_time, 0.0);
 
   // Init rate filter for feedback
-  float time_constants[3] = {1.0/(2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_P), 1.0/(2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_Q), 1.0/(2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_R)};
+  float time_constants[3] = {1.0 / (2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_P), 1.0 / (2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_Q), 1.0 / (2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_R)};
 
   init_first_order_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
   init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
@@ -386,7 +386,8 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
     // Calculate derivatives for estimation
     float estimation_rate_d_prev = estimation_rate_d[i];
-    estimation_rate_d[i] = (estimation_output_lowpass_filters[i].o[0] - estimation_output_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY;
+    estimation_rate_d[i] = (estimation_output_lowpass_filters[i].o[0] - estimation_output_lowpass_filters[i].o[1]) *
+                           PERIODIC_FREQUENCY;
     estimation_rate_dd[i] = (estimation_rate_d[i] - estimation_rate_d_prev) * PERIODIC_FREQUENCY;
   }
 
@@ -465,9 +466,9 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #ifdef GUIDANCE_INDI_MIN_THROTTLE
     float airspeed = stateGetAirspeed_f();
     //limit minimum thrust ap can give
-    if(!act_is_servo[i]) {
-      if((guidance_h.mode == GUIDANCE_H_MODE_HOVER) || (guidance_h.mode == GUIDANCE_H_MODE_NAV)) {
-        if(airspeed < 8.0) {
+    if (!act_is_servo[i]) {
+      if ((guidance_h.mode == GUIDANCE_H_MODE_HOVER) || (guidance_h.mode == GUIDANCE_H_MODE_NAV)) {
+        if (airspeed < 8.0) {
           du_min[i] = GUIDANCE_INDI_MIN_THROTTLE - actuator_state_filt_vect[i];
         } else {
           du_min[i] = GUIDANCE_INDI_MIN_THROTTLE_FWD - actuator_state_filt_vect[i];
@@ -490,7 +491,12 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     if (act_is_servo[i]) {
       BoundAbs(indi_u[i], MAX_PPRZ);
     } else {
-      Bound(indi_u[i], 0, MAX_PPRZ);
+      if (autopilot_get_motors_on()) {
+        Bound(indi_u[i], 0, MAX_PPRZ);
+      }
+      else {
+        indi_u[i] = -MAX_PPRZ;
+      }
     }
   }
 
@@ -509,7 +515,8 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
     // calculate derivatives for estimation
     float actuator_state_filt_vectd_prev = actuator_state_filt_vectd[i];
-    actuator_state_filt_vectd[i] = (estimation_input_lowpass_filters[i].o[0] - estimation_input_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY;
+    actuator_state_filt_vectd[i] = (estimation_input_lowpass_filters[i].o[0] - estimation_input_lowpass_filters[i].o[1]) *
+                                   PERIODIC_FREQUENCY;
     actuator_state_filt_vectdd[i] = (actuator_state_filt_vectd[i] - actuator_state_filt_vectd_prev) * PERIODIC_FREQUENCY;
   }
 
@@ -672,9 +679,17 @@ void lms_estimation(void)
   float indi_accel_d = (acceleration_lowpass_filter.o[0]
                         - acceleration_lowpass_filter.o[1]) * PERIODIC_FREQUENCY;
 
+  // Use xml setting for adaptive mu for lms
+  // Set default value if not defined
+  #ifndef STABILIZATION_INDI_ADAPTIVE_MU
+    float adaptive_mu_lr = 0.001;
+  #else
+    float adaptive_mu_lr = STABILIZATION_INDI_ADAPTIVE_MU;
+  #endif
+
   // scale the inputs to avoid numerical errors
-  float_vect_smul(du_estimation, actuator_state_filt_vectd, 0.001, INDI_NUM_ACT);
-  float_vect_smul(ddu_estimation, actuator_state_filt_vectdd, 0.001 / PERIODIC_FREQUENCY, INDI_NUM_ACT);
+  float_vect_smul(du_estimation, actuator_state_filt_vectd, adaptive_mu_lr, INDI_NUM_ACT);
+  float_vect_smul(ddu_estimation, actuator_state_filt_vectdd, adaptive_mu_lr / PERIODIC_FREQUENCY, INDI_NUM_ACT);
 
   float ddx_estimation[INDI_OUTPUTS] = {estimation_rate_dd[0], estimation_rate_dd[1], estimation_rate_dd[2], indi_accel_d};
 

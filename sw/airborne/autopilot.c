@@ -36,19 +36,29 @@
 #include "mcu_periph/uart.h"
 #include "mcu_periph/sys_time.h"
 #include "mcu_periph/gpio.h"
-#include "subsystems/radio_control.h"
-#include "subsystems/commands.h"
-#include "subsystems/actuators.h"
-//#include "subsystems/electrical.h"
-#include "subsystems/datalink/telemetry.h"
+#include "modules/core/commands.h"
+#include "modules/datalink/telemetry.h"
+#include "modules/core/abi.h"
 
-#include "subsystems/settings.h"
+#include "modules/core/settings.h"
 #include "generated/settings.h"
 
 #include "pprz_version.h"
 
 struct pprz_autopilot autopilot;
 
+#ifndef AUTOPILOT_RC_ID
+#define AUTOPILOT_RC_ID ABI_BROADCAST
+#endif
+PRINT_CONFIG_VAR(AUTOPILOT_RC_ID)
+static abi_event rc_ev;
+
+static void rc_cb(uint8_t __attribute__((unused)) sender_id,
+                  struct RadioControl __attribute__((unused)) *rc)
+{
+  // TODO pass the RC struct to the on_rc_frame function
+  autopilot_on_rc_frame();
+}
 
 static void send_autopilot_version(struct transport_tx *trans, struct link_device *dev)
 {
@@ -73,20 +83,25 @@ static void send_dl_value(struct transport_tx *trans, struct link_device *dev)
   PeriodicSendDlValue(trans, dev);
 }
 
-#ifdef RADIO_CONTROL
-static void send_rc(struct transport_tx *trans, struct link_device *dev)
+static void send_minimal_com(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_RC(trans, dev, AC_ID, RADIO_CONTROL_NB_CHANNEL, radio_control.values);
-}
+  float lat = DegOfRad(stateGetPositionLla_f()->lat);
+  float lon = DegOfRad(stateGetPositionLla_f()->lon);
+  float hmsl = stateGetPositionUtm_f()->alt;
+  float gspeed = stateGetHorizontalSpeedNorm_f();
+  float course = stateGetHorizontalSpeedDir_f();
+  float climb = stateGetSpeedEnu_f()->z;
+  uint8_t throttle = (uint8_t)(100 * autopilot.throttle / MAX_PPRZ);
+#if USE_GPS
+  uint8_t gps_fix = gps.fix;
+#else
+  uint8_t gps_fix = 0;
 #endif
-
-#ifdef ACTUATORS
-static void send_actuators(struct transport_tx *trans, struct link_device *dev)
-{
-  pprz_msg_send_ACTUATORS(trans, dev, AC_ID , ACTUATORS_NB, actuators);
+  pprz_msg_send_MINIMAL_COM(trans, dev, AC_ID,
+      &lat, &lon, &hmsl, &gspeed, &course, &climb,
+      &electrical.vsupply, &throttle, &autopilot.mode,
+      &nav_block, &gps_fix, &autopilot.flight_time);
 }
-#endif
-
 
 void autopilot_init(void)
 {
@@ -114,26 +129,47 @@ void autopilot_init(void)
   // call firmware specific init
   autopilot_firmware_init();
 
-  // static / generated AP init part is called later by main program
-  // and will set the correct initial mode
+  // call autopilot implementation init after guidance modules init
+  // (should be guaranteed by modules dependencies)
+  // it will set startup mode
+#if USE_GENERATED_AUTOPILOT
+  autopilot_generated_init();
+#else
+  autopilot_static_init();
+#endif
+
+  // bind ABI messages
+  AbiBindMsgRADIO_CONTROL(AUTOPILOT_RC_ID, &rc_ev, rc_cb);
 
   // register messages
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AUTOPILOT_VERSION, send_autopilot_version);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ALIVE, send_alive);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ATTITUDE, send_attitude);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_DL_VALUE, send_dl_value);
-#ifdef ACTUATORS
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ACTUATORS, send_actuators);
-#endif
-#ifdef RADIO_CONTROL
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RC, send_rc);
-#endif
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_MINIMAL_COM, send_minimal_com);
 }
 
 /** AP periodic call
  */
 void autopilot_periodic(void)
 {
+  // first check for failsafe case
+  autopilot_failsafe_checks();
+
+  // check if in flight
+  autopilot_check_in_flight(autopilot_get_motors_on());
+
+#if FIXEDWING_FIRMWARE
+  if (autopilot.flight_time) {
+#else
+  if (autopilot_in_flight()) {
+#endif
+    // flight time is incremented every second
+    // after takeoff for fixedwing
+    // when in flight for other firmwares
+    RunOnceEvery(PERIODIC_FREQUENCY, autopilot.flight_time++);
+  }
+
 #if USE_GENERATED_AUTOPILOT
   autopilot_generated_periodic();
 #else
@@ -156,16 +192,21 @@ void autopilot_on_rc_frame(void)
 #endif
 }
 
+/** Failsafe checks
+ */
+void WEAK autopilot_failsafe_checks(void) {}
+
 /** set autopilot mode
  */
 bool autopilot_set_mode(uint8_t new_autopilot_mode)
 {
+  uint8_t mode = autopilot.mode;
 #if USE_GENERATED_AUTOPILOT
   autopilot_generated_set_mode(new_autopilot_mode);
 #else
   autopilot_static_set_mode(new_autopilot_mode);
 #endif
-  return (autopilot.mode != new_autopilot_mode);
+  return (autopilot.mode != mode);
 }
 
 /** AP mode setting handler

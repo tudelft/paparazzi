@@ -28,12 +28,12 @@
 #include "mcu_periph/i2c.h"
 
 #include "state.h"
-#include "subsystems/gps.h"
-#include "subsystems/electrical.h"
+#include "modules/gps/gps.h"
+#include "modules/energy/electrical.h"
 #include "generated/airframe.h"
-#include "inter_mcu.h"
+#include "modules/core/commands.h"
 #include "autopilot.h"
-#include "subsystems/navigation/common_nav.h"
+#include "modules/nav/common_nav.h"
 
 #define NB_DATA 24
 
@@ -83,7 +83,7 @@ void generic_com_periodic(void)
   uint8_t charge  = Min(electrical.vsupply * 10.f, 255); // deciAh
   com_trans.buf[17] = vsupply;
   com_trans.buf[18] = charge;
-  com_trans.buf[19] = (uint8_t)(imcu_get_command(COMMAND_THROTTLE) * 100 / MAX_PPRZ);
+  com_trans.buf[19] = (uint8_t)(command_get(COMMAND_THROTTLE) * 100 / MAX_PPRZ);
   com_trans.buf[20] = autopilot_get_mode();
   com_trans.buf[21] = nav_block;
   FillBufWith16bit(com_trans.buf, 22, autopilot.flight_time);
