@@ -32,6 +32,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+
+
 // Own Header
 #include "opticflow_calculator.h"
 
@@ -45,6 +47,7 @@
 #include "size_divergence.h"
 #include "linear_flow_fit.h"
 #include "modules/sonar/agl_dist.h"
+#include "mcu_periph/sys_time.h"
 
 // to get the definition of front_camera / bottom_camera
 #include BOARD_CONFIG
@@ -63,7 +66,7 @@ uint16_t n_agents[2] = {25, 25};
 #define SIZE_DIV 1
 // LINEAR_FIT makes a linear optical flow field fit and extracts a lot of information:
 // relative velocities in x, y, z (divergence / time to contact), the slope of the surface, and the surface roughness.
-#define LINEAR_FIT 1
+#define LINEAR_FIT 0
 
 #ifndef OPTICFLOW_CORNER_METHOD
 #define OPTICFLOW_CORNER_METHOD ACT_FAST
@@ -492,6 +495,7 @@ void opticflow_calc_init(struct opticflow_t opticflow[])
 bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
                              struct opticflow_result_t *result)
 {
+
   if (opticflow->just_switched_method) {
     // Create the image buffers
     image_create(&opticflow->img_gray, img->w, img->h, IMAGE_GRAYSCALE);
@@ -529,6 +533,8 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
   // *************************************************************************************
   // Corner detection
   // *************************************************************************************
+
+  //float start_corner_detection = get_sys_time_float();
 
   // if feature_management is selected and tracked corners drop below a threshold, redetect
   if ((opticflow->feature_management) && (result->corner_cnt < opticflow->max_track_corners / 2)) {
@@ -598,9 +604,14 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
     return false;
   }
 
+  //float end_corner_detection = get_sys_time_float();
+  //printf("Time corner detection = %f\n", end_corner_detection-start_corner_detection);
+
   // *************************************************************************************
   // Corner Tracking
   // *************************************************************************************
+
+  //float start_OF = get_sys_time_float();
 
   // Execute a Lucas Kanade optical flow
   result->tracked_cnt = result->corner_cnt;
@@ -653,16 +664,22 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
     free(back_vectors);
   }
 
+  // float end_OF = get_sys_time_float();
+  // printf("Time corner tracking = %f.\n", end_OF-start_OF);
+
   if (opticflow->show_flow) {
     uint8_t color[4] = {0, 0, 0, 0};
     uint8_t bad_color[4] = {0, 0, 0, 0};
     image_show_flow_color(img, vectors, result->tracked_cnt, opticflow->subpixel_factor, color, bad_color);
   }
 
+  //float start_div = get_sys_time_float();
+
   static int n_samples = 100;
   // Estimate size divergence:
   if (SIZE_DIV) {
     result->div_size = get_size_divergence(vectors, result->tracked_cnt, n_samples);// * result->fps;
+    //printf("Size divergence = %f, number tracked = %d\n", result->div_size, result->tracked_cnt);
   } else {
     result->div_size = 0.0f;
   }
@@ -682,11 +699,33 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
 
     result->divergence = fit_info.divergence;
     result->surface_roughness = fit_info.surface_roughness;
+
+    // Flow fit with rotations:
+    error_threshold = 10.0f;
+    n_iterations_RANSAC = 20;
+    n_samples_RANSAC = 5;
+    success_fit = analyze_flow_field(vectors, result->tracked_cnt, error_threshold, n_iterations_RANSAC,
+                                     n_samples_RANSAC, img->w, img->h, OPTICFLOW_CAMERA.camera_intrinsics.focal_x, &fit_info);
+
+    // Get differences to compare with rotations:
+    float phi_diff = opticflow->img_gray.eulers.phi - opticflow->prev_img_gray.eulers.phi;
+    float theta_diff = opticflow->img_gray.eulers.theta - opticflow->prev_img_gray.eulers.theta;
+    float psi_diff = opticflow->img_gray.eulers.psi - opticflow->prev_img_gray.eulers.psi;
+
+
+
+
   } else {
     result->divergence = 0.0f;
     result->surface_roughness = 0.0f;
   }
 
+  //float end_div = get_sys_time_float();
+  //printf("Time divergence = %f.\n", end_div - start_div);
+  //printf("Size divergence = %f, fit divergence = %f\n", result->div_size, result->divergence);
+
+
+  //float start_median = get_sys_time_float();
   // Get the median flow
   qsort(vectors, result->tracked_cnt, sizeof(struct flow_t), cmp_flow);
   if (result->tracked_cnt == 0) {
@@ -707,11 +746,16 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
     result->flow_y = (vectors[result->tracked_cnt / 2 - 1].flow_y + vectors[result->tracked_cnt / 2].flow_y) / 2.f;
   }
 
+  //float end_median = get_sys_time_float();
+  //printf("Time median = %f.\n", end_median - start_median);
+
   // TODO scale flow to rad/s here
 
   // ***************
   // Flow Derotation
   // ***************
+
+  //float start_der = get_sys_time_float();
 
   float diff_flow_x = 0.f;
   float diff_flow_y = 0.f;
@@ -728,7 +772,7 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
 
     } else {
 
-      // determine the roll, pitch, yaw differencces between the images.
+      // determine the roll, pitch, yaw differences between the images.
       float phi_diff = opticflow->img_gray.eulers.phi - opticflow->prev_img_gray.eulers.phi;
       float theta_diff = opticflow->img_gray.eulers.theta - opticflow->prev_img_gray.eulers.theta;
       float psi_diff = opticflow->img_gray.eulers.psi - opticflow->prev_img_gray.eulers.psi;
@@ -773,6 +817,9 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
     }
   }
   result->camera_id = opticflow->id;
+
+  //float end_der = get_sys_time_float();
+  //printf("Time derotation = %f.\n", end_der - start_der);
 
   // Velocity calculation
   // Right now this formula is under assumption that the flow only exist in the center axis of the camera.

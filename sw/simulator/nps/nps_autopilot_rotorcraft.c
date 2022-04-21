@@ -52,6 +52,10 @@
 #include "modules/datalink/datalink.h"
 #include "modules/actuators/actuators.h"
 
+// TODO: arrange this the other way around - fix the INS in the sim
+// for experiments in the sim:
+#include "subsystems/ins/ins_flow.h"
+
 struct NpsAutopilot nps_autopilot;
 bool nps_bypass_ahrs;
 bool nps_bypass_ins;
@@ -157,11 +161,13 @@ void nps_autopilot_run_step(double time)
 #endif
 
   if (nps_bypass_ahrs) {
-    sim_overwrite_ahrs();
+  //    printf("bypass ahrs!\n");
+      sim_overwrite_ahrs();
   }
 
   if (nps_bypass_ins) {
-    sim_overwrite_ins();
+  //    printf("bypass ins!\n");
+      sim_overwrite_ins();
   }
 
   main_ap_periodic();
@@ -183,7 +189,35 @@ void sim_overwrite_ahrs(void)
 
   struct FloatQuat quat_f;
   QUAT_COPY(quat_f, fdm.ltp_to_body_quat);
-  stateSetNedToBodyQuat_f(&quat_f);
+  //stateSetNedToBodyQuat_f(&quat_f);
+
+  //printf("SIM 0: qi = %f, qx = %f, qy = %f, qz = %f.\n", quat_f.qi, quat_f.qx, quat_f.qy, quat_f.qz);
+  struct OrientationReps orient;
+  // SetBit(orient.status, ORREP_QUAT_F);
+  orient.status = 1 << ORREP_QUAT_F;
+  orient.quat_f = quat_f;
+  struct FloatEulers* eulers = orientationGetEulers_f(&orient);
+  //printf("SIM 1: phi = %f, theta = %f, psi = %f.\n", (180.0f/M_PI)*eulers->phi, (180.0f/M_PI)*eulers->theta, (180.0f/M_PI)*eulers->psi);
+
+  GT_phi = eulers->phi;
+  if(use_filter) {
+    // struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
+    // set part of the state with the filter:
+    eulers->phi = OF_X[OF_ANGLE_IND];
+    // printf("Set Euler roll angle to %f\n", eulers->phi);
+  }
+  //printf("SIM 2: phi = %f, theta = %f, psi = %f.\n", (180.0f/M_PI)*eulers->phi, (180.0f/M_PI)*eulers->theta, (180.0f/M_PI)*eulers->psi);
+
+  // stateSetNedToBodyEulers_f(eulers);
+
+  struct OrientationReps orient_euler;
+  orient_euler.status = 1 << ORREP_EULER_F;
+  orient_euler.eulers_f = (*eulers);
+  struct FloatQuat* quat_f_adapted = orientationGetQuat_f(&orient_euler);
+
+  //printf("SIM 4: qi = %f, qx = %f, qy = %f, qz = %f.\n", quat_f_adapted->qi, quat_f_adapted->qx, quat_f_adapted->qy, quat_f_adapted->qz);
+  stateSetNedToBodyQuat_f(quat_f_adapted);
+
 
   struct FloatRates rates_f;
   RATES_COPY(rates_f, fdm.body_ecef_rotvel);
@@ -196,10 +230,44 @@ void sim_overwrite_ins(void)
 
   struct NedCoor_f ltp_pos;
   VECT3_COPY(ltp_pos, fdm.ltpprz_pos);
+  if(use_filter >= USE_HEIGHT) {
+      printf("Z true: %f, ", ltp_pos.z);
+      // replace the z-coordinate:
+      ltp_pos.z = -OF_X[OF_Z_IND];
+      printf("Z filter: %f.\n", ltp_pos.z);
+  }
   stateSetPositionNed_f(&ltp_pos);
 
   struct NedCoor_f ltp_speed;
   VECT3_COPY(ltp_speed, fdm.ltpprz_ecef_vel);
+
+  if(use_filter >= USE_VELOCITY) {
+
+    // get NED to body rotation matrix:
+    struct FloatRMat* NTB = stateGetNedToBodyRMat_f();
+    // get transpose (inverse):
+    struct FloatRMat BTN;
+    float_rmat_inv(&BTN, NTB);
+
+    // the velocities from the filter are rotated from the body to the inertial frame:
+    struct FloatVect3 NED_velocities, body_velocities;
+    body_velocities.x = 0.0f; // filter does not determine this yet
+    body_velocities.y = OF_X[OF_V_IND];
+    if(CONSTANT_ALT_FILTER) {
+	body_velocities.z = 0.0f;
+    }
+    else {
+	body_velocities.z = -OF_X[OF_Z_DOT_IND];
+    }
+    float_rmat_vmult(&NED_velocities, &BTN, &body_velocities);
+    // TODO: also estimate vx, so that we can just use the rotated vector:
+    // For now, we need to keep the x, and y body axes aligned with the global ones.
+    //printf("Original speed y = %f, ", ltp_speed.y);
+    ltp_speed.y = NED_velocities.y;
+    if(!CONSTANT_ALT_FILTER) ltp_speed.z =  NED_velocities.z;
+    //printf("Changed speed y = %f\n", ltp_speed.y);
+
+  }
   stateSetSpeedNed_f(&ltp_speed);
 
   struct NedCoor_f ltp_accel;

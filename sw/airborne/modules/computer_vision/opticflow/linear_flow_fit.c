@@ -42,11 +42,15 @@
 #include "math/pprz_algebra_float.h"
 #include "math/pprz_matrix_decomp_float.h"
 #include "math/pprz_simple_matrix.h"
+#include "math/RANSAC.h"
+#include "std.h"
 
 // Is this still necessary?
 #define MAX_COUNT_PT 50
 
 #define MIN_SAMPLES_FIT 3
+
+#define N_PAR_TR_FIT 6
 
 /**
  * Analyze a linear flow field, retrieving information such as divergence, surface roughness, focus of expansion, etc.
@@ -372,3 +376,108 @@ void extract_information_from_parameters(float *parameters_u, float *parameters_
   } else { info->focus_of_expansion_y = 0.0f; }
 }
 
+/**
+ * Analyze a flow field, retrieving information on relative velocities and rotations, etc.
+ * @param[out] outcome If 0, there were too few vectors for a fit. If 1, the fit was successful.
+ * @param[in] vectors The optical flow vectors
+ * @param[in] count The number of optical flow vectors
+ * @param[in] error_threshold Error used to determine inliers / outliers.
+ * @param[in] n_iterations Number of RANSAC iterations.
+ * @param[in] n_samples Number of samples used for a single fit (min. 5).
+ * @param[in] im_width Image width in pixels
+ * @param[in] im_height Image height in pixels
+ * @param[in] focal_length Focal length in pixels
+ * @param[out] info Contains all info extracted from the linear flow fit.
+ */
+bool analyze_flow_field(struct flow_t *vectors, int count, float error_threshold, int n_iterations, int n_samples, int im_width, int im_height, float focal_length, struct linear_flow_fit_info *info)
+{
+  // Are there enough flow vectors to perform a fit?
+  if (count < N_PAR_TR_FIT) {
+    // return that no fit was made:
+    return false;
+  }
+  return true;
+
+/*
+  // fit linear flow field:
+  //float parameters_u[N_PAR_TR_FIT], parameters_v[N_PAR_TR_FIT], min_error_u, min_error_v;
+  float parameters_comb[N_PAR_TR_FIT], min_error_comb;
+
+  // normalize the flow vectors. Is supposed to be better for the fit and the parameters will be easier to interpret:
+  struct flow_t *normalized_vectors = (struct flow_t *) malloc(count *sizeof(struct flow_t));
+
+
+  //float targets_x[count];
+  //float targets_y[count];
+
+  // separate horizontal / vertical fit:
+  //float D_x[count][N_PAR_TR_FIT-1]; // bias is added in the RANSAC routine
+  //float D_y[count][N_PAR_TR_FIT-1];
+
+  // combined fit:
+  int total_count = 2*count;
+  float targets[total_count];
+  float D_comb[total_count][N_PAR_TR_FIT];
+  int index;
+  for (int i = 0; i < count; i++) {
+
+      // normalize vectors:
+      normalized_vectors[i].pos.x = (vectors[i].pos.x - (im_width / 2.0f)) / focal_length;
+      normalized_vectors[i].pos.y = (vectors[i].pos.y - (im_height / 2.0f)) / focal_length;
+      normalized_vectors[i].flow_x = vectors[i].flow_x / focal_length;
+      normalized_vectors[i].flow_y = vectors[i].flow_y / focal_length;
+
+
+      // Combine vertical and horizontal flow in one system:
+      // As in "Estimation of Visual Motion Parameters Used for Bio-inspired Navigation", by Alkowatly et al.
+      index = i*2;
+      targets[index] = normalized_vectors[i].flow_x;
+      D_comb[index][0] = 1.0f;
+      D_comb[index][1] = normalized_vectors[i].pos.x;
+      D_comb[index][2] = normalized_vectors[i].pos.y;
+      D_comb[index][3] = normalized_vectors[i].pos.x * normalized_vectors[i].pos.y;
+      D_comb[index][4] = normalized_vectors[i].pos.x * normalized_vectors[i].pos.x;
+      D_comb[index][5] = 0.0f;
+
+      index++;
+      targets[index] = normalized_vectors[i].flow_y;
+      D_comb[index][0] = 0.0f;
+      D_comb[index][1] = normalized_vectors[i].pos.y;
+      D_comb[index][1] = -normalized_vectors[i].pos.x;
+      D_comb[index][2] = normalized_vectors[i].pos.y * normalized_vectors[i].pos.y;
+      D_comb[index][3] = normalized_vectors[i].pos.x * normalized_vectors[i].pos.y;
+      D_comb[index][4] = 1.0f;
+
+  }
+
+  // Perform RANSAC on the horizontal flow:
+  // RANSAC_linear_model(n_samples, n_iterations, error_threshold, targets_x, N_PAR_TR_FIT, D_x, count, parameters_u, &min_error_u);
+
+  // Perform RANSAC on the combined system:
+  bool use_bias = false;
+  RANSAC_linear_model(n_samples, n_iterations, error_threshold, targets, N_PAR_TR_FIT+1, D_comb, total_count, parameters_comb, &min_error_comb, use_bias);
+
+  // extract information from the parameters:
+  info->rotation_X = parameters_comb[3];
+  info->rotation_Y = -parameters_comb[4];
+  info->rotation_Z = parameters_comb[2];
+  info->divergence = parameters_comb[1];
+  info->relative_velocity_x = -parameters_comb[0] - info->rotation_Y;
+  info->relative_velocity_y = -parameters_comb[5] + info->rotation_X;
+  if(fabs(parameters_comb[1]) > 1E-3) {
+      info->focus_of_expansion_x = info->relative_velocity_x / parameters_comb[1];
+      info->focus_of_expansion_y = info->relative_velocity_y / parameters_comb[1];
+  }
+  else {
+      // FoE in the center of the image:
+      info->focus_of_expansion_x = 0.0f;
+      info->focus_of_expansion_y = 0.0f;
+  }
+
+  // free up allocated memory:
+  free(normalized_vectors);
+
+  // return successful fit:
+  return true;
+  */
+}

@@ -40,6 +40,8 @@
 
 #include "cv.h"
 
+uint16_t fps_OF;
+
 /* ABI messages sender ID */
 #ifndef OPTICFLOW_AGL_ID
 #define OPTICFLOW_AGL_ID ABI_BROADCAST    ///< Default sonar/agl to use in opticflow visual_estimator
@@ -128,6 +130,15 @@ void opticflow_module_init(void)
  */
 void opticflow_module_run(void)
 {
+
+  if(fps_OF != opticflow.fps)
+  {
+      printf("Setting  fps to: %d.\n", opticflow.fps);
+      OPTICFLOW_CAMERA.cv_listener->maximum_fps = opticflow.fps;
+      fps_OF = opticflow.fps;
+  }
+
+
   pthread_mutex_lock(&opticflow_mutex);
   // Update the stabilization loops on the current calculation
   for (int idx_camera = 0; idx_camera < ACTIVE_CAMERAS; idx_camera++) {
