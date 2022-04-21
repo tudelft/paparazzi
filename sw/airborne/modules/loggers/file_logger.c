@@ -107,6 +107,30 @@ static void logger_optical_flow_cb(uint8_t sender_id, uint32_t stamp, int32_t fl
   OF_quality = quality;
   OF_size_divergence = size_divergence;
 }
+uint32_t OF_stamp2=0;
+uint32_t OF_previous_stamp2=0;
+int16_t OF_flow_x2;
+int16_t OF_flow_y2;
+int16_t OF_flow_der_x2;
+int16_t OF_flow_der_y2;
+float OF_quality2;
+float OF_size_divergence2;
+static abi_event OF_ev2; ///< The sonar ABI event
+static void logger_optical_flow_cb2(uint8_t sender_id __attribute__((unused)),uint32_t stamp, int32_t flow_x,
+                                   int32_t flow_y, int32_t flow_der_x, int32_t flow_der_y, float quality, float size_divergence);
+
+static void logger_optical_flow_cb2(uint8_t sender_id, uint32_t stamp, int32_t flow_x,
+                                   int32_t flow_y, int32_t flow_der_x, int32_t flow_der_y, float quality, float size_divergence)
+{
+  OF_previous_stamp2 = OF_stamp;
+  OF_stamp2 = stamp;
+  OF_flow_x2 = flow_x;
+  OF_flow_y2 = flow_y;
+  OF_flow_der_x2 = flow_der_x;
+  OF_flow_der_y2 = flow_der_y;
+  OF_quality2 = quality;
+  OF_size_divergence2 = size_divergence;
+}
 
 // reading RPMs:
 #ifndef LOGGER_RPM_ID
@@ -183,7 +207,7 @@ void file_logger_start(void)
   if (file_logger != NULL) {
     fprintf(
           file_logger,
-          "time,accel_x,accel_y,accel_z,gyro_p,gyro_q,gyro_r,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z,att_phi,att_theta,att_psi,rate_p,rate_q,rate_r,OF_time,flow_x, flow_y,flow_der_x, flow_der_y, div_size, div,noise, fps,cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw,rpm1_abi,rpm2_abi,rpm3_abi,rpm4_abi,num_act,body_vel_x,body_vel_y,body_vel_z,motor_comm_1,motor_comm_2,motor_comm_3,motor_comm_4\n"
+          "time,accel_x,accel_y,accel_z,gyro_p,gyro_q,gyro_r,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z,att_phi,att_theta,att_psi,rate_p,rate_q,rate_r,OF_time,flow_x, flow_y,flow_der_x, flow_der_y, div_size, div,noise, fps,cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw,rpm1_abi,rpm2_abi,rpm3_abi,rpm4_abi,num_act,body_vel_x,body_vel_y,body_vel_z,motor_comm_1,motor_comm_2,motor_comm_3,motor_comm_4,OF2_time,flow2_x, flow2_y,flow2_der_x, flow2_der_y, div_size2\n"
         );
   }
   else {
@@ -193,7 +217,8 @@ void file_logger_start(void)
   // Subscribe to the altitude above ground level ABI messages
   AbiBindMsgBARO_ABS(LOGGER_BARO_ID, &baro_ev, logger_baro_cb);
   AbiBindMsgAGL(LOGGER_SONAR_ID, &sonar_ev, logger_sonar_cb);
-  AbiBindMsgOPTICAL_FLOW(LOGGER_OF_ID, &OF_ev, logger_optical_flow_cb);
+  AbiBindMsgOPTICAL_FLOW(FLOW_OPTICFLOW_ID, &OF_ev, logger_optical_flow_cb);
+  AbiBindMsgOPTICAL_FLOW((uint8_t)(FLOW_OPTICFLOW_ID+1), &OF_ev2, logger_optical_flow_cb2);
   AbiBindMsgRPM(LOGGER_RPM_ID, &RPM_ev, logger_rpm_cb);
 }
 
@@ -275,7 +300,8 @@ void file_logger_periodic(void)
       "%d,%d,%d,%d,"
       "%d,%d,%d,%d,%d,"
       "%f,%f,%f,"
-      "%d,%d,%d,%d\n", // motor commands
+      "%d,%d,%d,%d," // motor mixing
+      "%d,%d,%d,%d,%d\n", // optical flow 2 ints // motor commands
           time,
 /*
 	  imu.accel_unscaled.x,
@@ -327,7 +353,12 @@ void file_logger_periodic(void)
 	  motor_mixing.commands[0],
 	  motor_mixing.commands[1],
 	  motor_mixing.commands[2],
-	  motor_mixing.commands[3]
+	  motor_mixing.commands[3],
+	  OF_stamp2,
+	  OF_flow_x2,
+	  OF_flow_y2,
+	  OF_flow_der_x2,
+	  OF_flow_der_y2
          );
 
   counter++;

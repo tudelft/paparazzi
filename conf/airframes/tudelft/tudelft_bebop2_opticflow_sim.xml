@@ -41,9 +41,7 @@
     <!--    <define name="INS_INT_GPS_ID" value="ABI_DISABLE"/>
     </module> -->
     
-  </firmware>
 
-  <modules main_freq="512">
     <!-- <module name="geo_mag"/>
     <module name="send_imu_mag_current"/> -->
     <module name="air_data"/>
@@ -88,7 +86,7 @@
       <define name="VIEWVIDEO_QUALITY_FACTOR" value="60"/>
     </module>
 
-  </modules>
+  </firmware>
 
   <commands>
     <axis name="PITCH" failsafe_value="0"/>
