@@ -50,6 +50,7 @@
 #include "paparazzi.h"
 #include "modules/core/abi.h"
 #include "firmwares/rotorcraft/stabilization.h"
+#include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 #include "firmwares/rotorcraft/guidance/guidance_v_adapt.h"
 
 // used for automated landing:

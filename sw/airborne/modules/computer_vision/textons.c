@@ -139,8 +139,8 @@ static FILE *dictionary_logger = NULL;
  * @param[out] *img The output image
  * @param[in] *img The input image (YUV422)
  */
-struct image_t *texton_func(struct image_t *img);
-struct image_t *texton_func(struct image_t *img)
+struct image_t *texton_func(struct image_t *img, uint8_t p);
+struct image_t *texton_func(struct image_t *img, uint8_t p)
 {
   // whether to execute the function:
   if(!running) return img;
@@ -587,7 +587,7 @@ void textons_init(void)
     }
   }
 
-  listener = cv_add_to_device(&TEXTONS_CAMERA, texton_func, TEXTONS_FPS);
+  listener = cv_add_to_device(&TEXTONS_CAMERA, texton_func, TEXTONS_FPS, 0);
 }
 
 void textons_stop(void)

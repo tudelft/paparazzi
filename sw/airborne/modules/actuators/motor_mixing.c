@@ -27,7 +27,7 @@
 
 #include "modules/actuators/motor_mixing.h"
 #include "paparazzi.h"
-#include "subsystems/abi.h"
+#include "modules/core/abi.h"
 
 //#include <stdint.h>
 #ifndef INT32_MIN

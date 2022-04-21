@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include "std.h"
 
-#include "subsystems/imu.h"
+#include "modules/imu/imu.h"
 #include "firmwares/rotorcraft/stabilization.h"
 #include "state.h"
 
@@ -44,10 +44,10 @@
 
 #include "math/pprz_algebra_float.h"
 
-#include "subsystems/actuators/motor_mixing.h"
+#include "modules/actuators/motor_mixing.h"
 
 // reading the pressuremeter:
-#include "subsystems/abi.h"
+#include "modules/core/abi.h"
 #ifndef LOGGER_BARO_ID
 #define LOGGER_BARO_ID ABI_BROADCAST
 #endif
@@ -55,9 +55,9 @@ PRINT_CONFIG_VAR(LOGGER_BARO_ID)
 float logger_pressure;
 static abi_event baro_ev; ///< The baro ABI event
 /// Callback function of the ground altitude
-static void logger_baro_cb(uint8_t sender_id __attribute__((unused)), float pressure);
+static void logger_baro_cb(uint8_t sender_id __attribute__((unused)), unsigned int _p __attribute__((unused)), float pressure);
 // Reading from "sensors":
-static void logger_baro_cb(uint8_t sender_id, float pressure)
+static void logger_baro_cb(uint8_t sender_id, unsigned int p, float pressure)
 {
   logger_pressure = pressure;
 }
@@ -71,9 +71,9 @@ PRINT_CONFIG_VAR(LOGGER_SONAR_ID)
 float logger_sonar;
 static abi_event sonar_ev; ///< The sonar ABI event
 /// Callback function of the ground altitude
-static void logger_sonar_cb(uint8_t sender_id __attribute__((unused)), float height);
+static void logger_sonar_cb(uint8_t sender_id __attribute__((unused)), unsigned int _p __attribute__((unused)), float height);
 // Reading from "sensors":
-static void logger_sonar_cb(uint8_t sender_id, float height)
+static void logger_sonar_cb(uint8_t sender_id, unsigned int p, float height)
 {
   logger_sonar = height;
 }
@@ -92,11 +92,11 @@ int16_t OF_flow_der_y;
 float OF_quality;
 float OF_size_divergence;
 static abi_event OF_ev; ///< The sonar ABI event
-static void logger_optical_flow_cb(uint8_t sender_id __attribute__((unused)),uint32_t stamp, int16_t flow_x,
-                                   int16_t flow_y, int16_t flow_der_x, int16_t flow_der_y, float quality, float size_divergence);
+static void logger_optical_flow_cb(uint8_t sender_id __attribute__((unused)),uint32_t stamp, int32_t flow_x,
+                                   int32_t flow_y, int32_t flow_der_x, int32_t flow_der_y, float quality, float size_divergence);
 
-static void logger_optical_flow_cb(uint8_t sender_id, uint32_t stamp, int16_t flow_x,
-                                   int16_t flow_y, int16_t flow_der_x, int16_t flow_der_y, float quality, float size_divergence)
+static void logger_optical_flow_cb(uint8_t sender_id, uint32_t stamp, int32_t flow_x,
+                                   int32_t flow_y, int32_t flow_der_x, int32_t flow_der_y, float quality, float size_divergence)
 {
   OF_previous_stamp = OF_stamp;
   OF_stamp = stamp;
@@ -213,7 +213,7 @@ void file_logger_periodic(void)
     return;
   }
   static uint32_t counter;
-  struct Int32Quat *quat = stateGetNedToBodyQuat_i();
+  //struct Int32Quat *quat = stateGetNedToBodyQuat_i();
 
   //timing
   float time = get_sys_time_float();

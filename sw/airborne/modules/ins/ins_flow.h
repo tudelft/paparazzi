@@ -145,10 +145,10 @@ extern "C" {
 #define USE_HEIGHT 3
 
 
-#include "subsystems/ahrs.h"
-#include "subsystems/ahrs/ahrs_int_cmpl_quat.h"
-#include "subsystems/ahrs/ahrs_aligner.h"
-#include "subsystems/ins.h"
+#include "modules/ahrs/ahrs.h"
+#include "modules/ahrs/ahrs_int_cmpl_quat.h"
+#include "modules/ahrs/ahrs_aligner.h"
+#include "modules/ins/ins.h"
 
 extern void ins_flow_init(void);
 extern void ins_flow_update(void);

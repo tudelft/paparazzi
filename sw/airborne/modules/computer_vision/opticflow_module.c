@@ -130,14 +130,14 @@ void opticflow_module_init(void)
  */
 void opticflow_module_run(void)
 {
-
+/*
   if(fps_OF != opticflow.fps)
   {
       printf("Setting  fps to: %d.\n", opticflow.fps);
       OPTICFLOW_CAMERA.cv_listener->maximum_fps = opticflow.fps;
       fps_OF = opticflow.fps;
   }
-
+*/
 
   pthread_mutex_lock(&opticflow_mutex);
   // Update the stabilization loops on the current calculation

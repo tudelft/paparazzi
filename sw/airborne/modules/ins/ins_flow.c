@@ -26,7 +26,7 @@
  */
 
 #include "ins_flow.h"
-#include "subsystems/abi.h"
+#include "modules/core/abi.h"
 #include "generated/airframe.h"
 #include "mcu_periph/sys_time.h"
 #include "autopilot.h"
@@ -34,11 +34,12 @@
 #include "generated/airframe.h"
 #include "generated/flight_plan.h"
 #include "mcu_periph/sys_time.h"
-#include "subsystems/actuators/motor_mixing.h"
+#include "modules/actuators/motor_mixing.h"
+#include <stdio.h>
 
 #define DEBUG_INS_FLOW 0
 #if DEBUG_INS_FLOW
-#include "stdio.h"
+#include <stdio.h>
 #include "math/pprz_simple_matrix.h"
 #define DEBUG_PRINT  printf
 #define DEBUG_MAT_PRINT MAT_PRINT
@@ -91,8 +92,8 @@ static abi_event body_to_imu_ev;
 static abi_event ins_optical_flow_ev;
 static abi_event ins_RPM_ev;
 static abi_event aligner_ev;
-static abi_event mag_ev;
-static abi_event geo_mag_ev;
+//static abi_event mag_ev;
+//static abi_event geo_mag_ev;
 
 /* All ABI callbacks */
 static void gyro_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates *gyro);
@@ -103,8 +104,8 @@ static void accel_cb(uint8_t sender_id, uint32_t stamp, struct Int32Vect3 *accel
 static void geo_mag_cb(uint8_t sender_id __attribute__((unused)), struct FloatVect3 *h);*/
 static void body_to_imu_cb(uint8_t sender_id, struct FloatQuat *q_b2i_f);
 static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
-void ins_optical_flow_cb(uint8_t sender_id, uint32_t stamp, int16_t flow_x,
-                                   int16_t flow_y, int16_t flow_der_x, int16_t flow_der_y, float quality, float size_divergence);
+void ins_optical_flow_cb(uint8_t sender_id, uint32_t stamp, int32_t flow_x,
+                                   int32_t flow_y, int32_t flow_der_x, int32_t flow_der_y, float quality, float size_divergence);
 static void ins_rpm_cb(uint8_t sender_id, uint16_t * rpm, uint8_t num_act);
 static void aligner_cb(uint8_t __attribute__((unused)) sender_id,
                        uint32_t stamp __attribute__((unused)),
@@ -278,7 +279,7 @@ struct InsFlowState ins_flow_state;
 */
 
 #if PERIODIC_TELEMETRY
-#include "subsystems/datalink/telemetry.h"
+#include "modules/datalink/telemetry.h"
 #include "mcu_periph/sys_time.h"
 #include "state.h"
 
@@ -661,9 +662,9 @@ void ins_reset_local_origin(void)
   ins_flow.ltp_initialized = true;
 }
 
-void ins_optical_flow_cb(uint8_t sender_id UNUSED, uint32_t stamp, int16_t flow_x UNUSED,
-                                   int16_t flow_y UNUSED,
-                                   int16_t flow_der_x, int16_t flow_der_y, float quality UNUSED, float size_divergence)
+void ins_optical_flow_cb(uint8_t sender_id UNUSED, uint32_t stamp, int32_t flow_x UNUSED,
+                                   int32_t flow_y UNUSED,
+                                   int32_t flow_der_x, int32_t flow_der_y, float quality UNUSED, float size_divergence)
 {
 
   // TODO: make parameters:
@@ -723,7 +724,7 @@ void ins_flow_update(void)
   float mass = parameters[PAR_MASS]; // 0.400;
   float moment = 0.0f; // for now assumed to be 0
   float Ix = parameters[PAR_IX]; // 0.0018244;
-  float b = parameters[PAR_BASE];
+  //float b = parameters[PAR_BASE];
   float g = 9.81; // TODO: get a more accurate definition from pprz
   float kd = parameters[PAR_KD]; // 0.5
   float drag = 0.0f;
@@ -734,10 +735,10 @@ void ins_flow_update(void)
   }
 
   // get ground truth data:
-  struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
-  struct NedCoor_f* position = stateGetPositionNed_f();
-  struct NedCoor_f *velocities = stateGetSpeedNed_f();
-  struct FloatRates *rates = stateGetBodyRates_f();
+  //struct FloatEulers* eulers = stateGetNedToBodyEulers_f();
+  //struct NedCoor_f* position = stateGetPositionNed_f();
+  //struct NedCoor_f *velocities = stateGetSpeedNed_f();
+  //struct FloatRates *rates = stateGetBodyRates_f();
 
   // TODO: record when starting from the ground: does that screw up the filter? Yes it does : )
 
@@ -1141,7 +1142,7 @@ void ins_flow_update(void)
     float Z_expected[N_MEAS_OF_KF];
 
     // TODO: take this var out? It was meant for debugging...
-    float Z_expect_GT_angle;
+    //float Z_expect_GT_angle;
 
     if(CONSTANT_ALT_FILTER) {
       Z_expected[OF_LAT_FLOW_IND] = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
@@ -1163,7 +1164,7 @@ void ins_flow_update(void)
 	  Z_expected[OF_LAT_FLOW_X_IND] = -OF_X[OF_VX_IND]*cos(OF_X[OF_THETA_IND])*cos(OF_X[OF_THETA_IND])/OF_X[OF_Z_IND]; // TODO: no q?
       }
 
-      Z_expect_GT_angle = -OF_X[OF_V_IND]*cos(eulers->phi)*cos(eulers->phi)/OF_X[OF_Z_IND];
+      //Z_expect_GT_angle = -OF_X[OF_V_IND]*cos(eulers->phi)*cos(eulers->phi)/OF_X[OF_Z_IND];
 
       if(OF_USE_GYROS) {
 	  Z_expected[OF_RATE_IND] = OF_X[OF_ANGLE_DOT_IND]; // TODO: is this even in the right direction?
@@ -1178,20 +1179,20 @@ void ins_flow_update(void)
       Z_expected[OF_DIV_FLOW_IND] = -OF_X[OF_V_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND])
 				    -OF_X[OF_Z_DOT_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND];
 
-      Z_expect_GT_angle = -OF_X[OF_V_IND]*cos(eulers->phi)*cos(eulers->phi)/OF_X[OF_Z_IND]
-					     + OF_X[OF_Z_DOT_IND]*sin(2*eulers->phi)/(2*OF_X[OF_Z_IND]);
+      //Z_expect_GT_angle = -OF_X[OF_V_IND]*cos(eulers->phi)*cos(eulers->phi)/OF_X[OF_Z_IND]
+	//				     + OF_X[OF_Z_DOT_IND]*sin(2*eulers->phi)/(2*OF_X[OF_Z_IND]);
 					     //+ OF_X[OF_ANGLE_DOT_IND];
       if(N_MEAS_OF_KF == 3) {
       	Z_expected[OF_RATE_IND] = OF_X[OF_ANGLE_DOT_IND]; // TODO: is this even in the right direction?
       }
 
-
+/*
       float Z_exp_no_rate = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
 			    + OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND]);
       float Z_exp_with_rate = -OF_X[OF_V_IND]*cos(OF_X[OF_ANGLE_IND])*cos(OF_X[OF_ANGLE_IND])/OF_X[OF_Z_IND]
 			      + OF_X[OF_Z_DOT_IND]*sin(2*OF_X[OF_ANGLE_IND])/(2*OF_X[OF_Z_IND])
 			      + OF_X[OF_ANGLE_DOT_IND];
-
+*/
       /*
       printf("Z_exp_no_rate = %f, Z_exp_with_rate = %f, measured = %f, angle dot = %f, p = %f: ", Z_exp_no_rate, Z_exp_with_rate,
        ins_flow.optical_flow_x, OF_X[OF_ANGLE_DOT_IND], dt * (ins_flow.lp_gyro_roll - ins_flow.lp_gyro_bias_roll) * (M_PI/180.0f) / 74.0f);

@@ -39,10 +39,7 @@
     <!-- Disable use of GPS: -->
     <!--    <define name="INS_INT_GPS_ID" value="ABI_DISABLE"/>
     </module> -->
-    
-  </firmware>
 
-  <modules main_freq="512">
     <!-- <module name="geo_mag"/>
     <module name="send_imu_mag_current"/> -->
     <module name="air_data"/>
@@ -100,8 +97,9 @@
 	<define name="OFL_P_LAND_THRESHOLD" value="0.25"/> 
 	<define name="OFL_COV_LANDING_LIMIT" value="10.0"/>
     </module>
+    
+  </firmware>
 
-  </modules>
 
   <commands>
     <axis name="PITCH" failsafe_value="0"/>
@@ -238,7 +236,7 @@
          fixing them, the bebop2 will fly much better-->
     <define name="FILTER_ROLL_RATE" value="FALSE"/>
     <define name="FILTER_PITCH_RATE" value="FALSE"/>
-    <define name="FILTER_YAW_RATE" value="FALSE"/>
+    <!--define name="FILTER_YAW_RATE" value="FALSE"/-->
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="600.0"/>
