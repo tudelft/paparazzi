@@ -46,7 +46,7 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 
 #include "modules/ctrl/follow_me.h"
-
+#include "stabilization/wls/wls_alloc.h"
 
 // The acceleration reference is calculated with these gains. If you use GPS,
 // they are probably limited by the update rate of your GPS. The default
@@ -148,6 +148,8 @@ struct FloatMat33 Ga;
 struct FloatMat33 Ga_inv;
 struct FloatVect3 euler_cmd;
 
+float *Ga_wls[3];
+
 float filter_cutoff = GUIDANCE_INDI_FILTER_CUTOFF;
 
 struct FloatEulers guidance_euler_cmd;
@@ -206,6 +208,11 @@ void guidance_indi_init(void)
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
+
+  // Initialize the array of pointers to the rows of Ga
+  for (uint8_t i = 0; i < 3; i++) {
+    Ga_wls[i] = &Ga.m[i*3];
+  }
 
   AbiBindMsgVEL_SP(GUIDANCE_INDI_VEL_SP_ID, &vel_sp_ev, vel_sp_cb);
 
@@ -385,11 +392,6 @@ void guidance_indi_run(float *heading_sp) {
   sp_accel.z = -(radio_control.values[RADIO_THROTTLE]-4500)*8.0/9600.0;
 #endif
 
-  //Calculate matrix of partial derivatives
-  guidance_indi_calcg_wing(&Ga);
-  //Invert this matrix
-  MAT33_INV(Ga_inv, Ga);
-
   struct FloatVect3 accel_filt;
   accel_filt.x = filt_accel_ned[0].o[0];
   accel_filt.y = filt_accel_ned[1].o[0];
@@ -413,8 +415,29 @@ void guidance_indi_run(float *heading_sp) {
 #endif
 #endif
 
+  //Calculate matrix of partial derivatives
+  guidance_indi_calcg_wing(&Ga);
+  //Invert this matrix
+  // MAT33_INV(Ga_inv, Ga);
+
+  // [phi, theta, thrust]
+  float wls_out[3] = {.0f, .0f, .0f};
+  float ctrl_obj[3] = {a_diff.x, a_diff.y, a_diff.z};
+  float du_min[3] = {-guidance_indi_max_bank-roll_filt.o[0], -RadOfDeg(120.0)-pitch_filt.o[0], (9600-thrust_filt.o[0])/guidance_indi_specific_force_gain};
+  float du_max[3] = { guidance_indi_max_bank-roll_filt.o[0], RadOfDeg(25.0)-pitch_filt.o[0], (GUIDANCE_INDI_MIN_THROTTLE-thrust_filt.o[0])/guidance_indi_specific_force_gain};
+  float du_pref[3] = {.0f, .0f, .0f};
+  static float weighting_guidance[3] = {1, 1, 1000};
+
+  // WLS Control Allocator
+  UNUSED int num_iter =
+    wls_alloc(wls_out, ctrl_obj, du_min, du_max, Ga_wls, 0, 0, weighting_guidance, 0, du_pref, 10000, 10);
+
+  euler_cmd.x = wls_out[0];
+  euler_cmd.y = wls_out[1];
+  euler_cmd.z = wls_out[2];
+
   //Calculate roll,pitch and thrust command
-  MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
+  // MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
 
   AbiSendMsgTHRUST(THRUST_INCREMENT_ID, euler_cmd.z);
 

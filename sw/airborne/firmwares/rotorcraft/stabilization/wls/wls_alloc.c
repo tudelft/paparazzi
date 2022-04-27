@@ -226,8 +226,9 @@ int wls_alloc(float* u, float* v, float* umin, float* umax, float** B,
     // check limits
     n_infeasible = 0;
     for (int i = 0; i < n_u; i++) {
-      if (u_opt[i] >= (umax[i] + 1.0) || u_opt[i] <= (umin[i] - 1.0)) {
-        infeasible_index[n_infeasible++] = i;
+      if (u_opt[i] >= (umax[i] + 0.000001) || u_opt[i] <= (umin[i] - 0.0000001)) {
+        // infeasible_index[n_infeasible++] = i;
+        n_infeasible++;
       }
     }
 
@@ -265,7 +266,7 @@ int wls_alloc(float* u, float* v, float* umin, float* umax, float** B,
       if (break_flag) {
 
 #if WLS_VERBOSE
-        print_final_values(1, n_u, n_v, u, B, v, umin, umax);
+        print_final_values(n_u, n_v, u, B, v, umin, umax);
 #endif
 
         // if solution is found, return number of iterations
@@ -279,7 +280,7 @@ int wls_alloc(float* u, float* v, float* umin, float* umax, float** B,
       // find the lowest distance from the limit among the free variables
       for (int i = 0; i < n_free; i++) {
         int id = free_index[i];
-        if(fabs(p[id]) > FLT_EPSILON) {
+        if(fabsf(p[id]) > FLT_EPSILON) {
           alpha_tmp = (p[id] < 0) ? (umin[id] - u[id]) / p[id]
             : (umax[id] - u[id]) / p[id];
         } else {
@@ -289,6 +290,15 @@ int wls_alloc(float* u, float* v, float* umin, float* umax, float** B,
           alpha = alpha_tmp;
           id_alpha = id;
         }
+      }
+
+      if (alpha == INFINITY) {
+#if WLS_VERBOSE
+        print_final_values(n_u, n_v, u, B, v, umin, umax);
+#endif
+
+        // if no alpha can be found to make the solution feasible, return number of iterations
+        return iter;
       }
 
       // update input u = u + alpha*p

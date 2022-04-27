@@ -73,44 +73,9 @@
     </block>
     <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
-      <set value="false" var="approaching_rope"/>
-      <set value="0" var="take_heading_control"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
-    <block key="r" name="Start Engine">
-      <call_once fun="NavResurrect()"/>
-      <call_once fun="NavSetWaypointHere(WP_ROPE)"/>
-      <call_once fun="waypoint_set_alt(WP_ROPE, GetPosAlt()+hook_length)"/>
-      <set value="stateGetNedToBodyEulers_f()->theta" var="takeoff_pitch"/>
-      <set value="stateGetNedToBodyEulers_f()->psi" var="rope_heading"/>
-      <attitude pitch="0" roll="0" throttle="0.0" until="stage_time>0" vmode="throttle"/>
-      <call_once fun="NavResurrect()"/>
-    </block>
-    <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
-      <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="takeoff_pitch/3.14*180.0" roll="0" throttle="0.85" until="stage_time>0" vmode="throttle"/> 
-    </block>
-    <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
-      <set value="1" var="pitch_control"/>
-      <set value="0" var="take_heading_control"/>
-      <set value="false" var="approaching_rope"/>
-      <stay wp="STDBY"/>
-    </block>
-    <block name="Take Heading control">
-      <call_once fun="nav_set_heading_rad(rope_heading)"/>
-      <set value="1" var="take_heading_control"/>
-      <stay wp="STDBY"/>
-      <exception cond="fabs(stateGetNedToBodyEulers_f()->psi-rope_heading) @LT 0.03" deroute="Approach Rope"/>
-    </block>
-    <block name="Approach Rope">
-      <set value="true" var="approaching_rope"/>
-      <stay pre_call="approach_moving_target_enable(WP_ROPE)" wp="ROPE" alt="WaypointAlt(WP_ROPE)"/>
-    </block>
-    <!-- <block name="Holding point">
-      <call_once fun="NavKillThrottle()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block> -->
-    <!-- <block name="Start Engine">
+    <block name="Start Engine">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="nav_set_heading_current()"/>
@@ -126,8 +91,8 @@
       <call_once fun="nav_set_heading_current()"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
-    </block> -->
-    <block name="follow_module">
+    </block>
+    <!-- <block name="follow_module">
       <set value="FALSE" var="force_forward"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
     </block>
@@ -142,11 +107,11 @@
     <block name="follow_landed">
       <set value="FALSE" var="force_forward"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block>
-    <!-- <block name="Standby" strip_button="Standby" strip_icon="home.png">
+    </block> -->
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="FALSE" var="force_forward"/>
       <stay wp="STDBY"/>
-    </block> -->
+    </block>
     <block name="stay_p1">
       <set value="FALSE" var="force_forward"/>
       <stay wp="p1"/>
