@@ -76,7 +76,7 @@
     </block>
     <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
-      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+      <attitude pre_call="follow_me_set_wp(WP_FOLLOW, 0)" pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
     </block>
     <block key="r" name="Start Engine">
       <call_once fun="NavResurrect()"/>
@@ -89,7 +89,7 @@
     </block>
     <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
       <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="takeoff_pitch/3.14*180.0" roll="0" throttle="0.85" until="stage_time>0" vmode="throttle"/>
+      <attitude pre_call="follow_me_set_wp(WP_FOLLOW, 0)" pitch="takeoff_pitch/3.14*180.0" roll="0" throttle="0.85" until="stage_time>2" vmode="throttle"/>
     </block>
 
     <block name="follow_module">
@@ -133,7 +133,7 @@
       <deroute block="stay_p1"/>
     </block>
     <block name="line_p1_p2">
-    <set value="0" var="take_heading_control"/>
+      <set value="0" var="take_heading_control"/>
       <set var="force_forward" value="TRUE"/>
       <go from="p1" hmode="route" wp="p2"/>
       <stay wp="p2" until="stage_time>10"/>
@@ -141,11 +141,11 @@
       <deroute block="line_p1_p2"/>
     </block>
     <block name="route">
-    <set value="0" var="take_heading_control"/>
+      <set value="0" var="take_heading_control"/>
       <set var="force_forward" value="TRUE"/>
-      <go from="p1" hmode="route" wp="p3"/>
-      <go from="p3" hmode="route" wp="p4"/>
-      <go from="p4" hmode="route" wp="p1"/>
+      <go pre_call="follow_me_set_wp(WP_FOLLOW, 0)" from="p1" hmode="route" wp="p3"/>
+      <go pre_call="follow_me_set_wp(WP_FOLLOW, 0)" from="p3" hmode="route" wp="p4"/>
+      <go pre_call="follow_me_set_wp(WP_FOLLOW, 0)" from="p4" hmode="route" wp="p1"/>
       <deroute block="route"/>
     </block>
 
