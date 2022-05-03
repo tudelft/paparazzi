@@ -131,15 +131,15 @@ class WindFrame(wx.Frame):
         dc.SetBrush(wx.Brush(wx.Colour(0, 0, 255), wx.SOLID))
         for i in range(0,MSG_BUFFER_SIZE):
             gx = self.ground_gs_x[i]
-            gy = self.ground_gs_y[i]
+            gy = -self.ground_gs_y[i]
 
             dc.DrawCircle(int(gx * diameter / MAX_AIRSPEED + self.mid + self.click_x), int(gy * diameter / MAX_AIRSPEED + self.mid + self.click_y), 2)
 
         # Airspeed in function of heading
         dc.SetBrush(wx.Brush(wx.Colour(255, 0, 0), wx.SOLID))
         for i in range(0,MSG_BUFFER_SIZE):
-            gx = self.airspeed[i] * math.cos(self.heading[i])
-            gy = self.airspeed[i] * math.sin(self.heading[i])
+            gx = self.airspeed[i] * math.sin(self.heading[i])
+            gy = -self.airspeed[i] * math.cos(self.heading[i])
 
             dc.DrawCircle(int(gx * diameter / MAX_AIRSPEED + self.mid), int(gy * diameter / MAX_AIRSPEED + self.mid), 2)
 
