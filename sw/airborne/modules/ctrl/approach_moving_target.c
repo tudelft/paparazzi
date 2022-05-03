@@ -155,6 +155,7 @@ void follow_diagonal_approach(void) {
   struct FloatVect3 ref_relpos;
   VECT3_SMUL(ref_relpos, amt.rel_unit_vec, amt.distance);
 
+  // ATTENTION, target_pos is already relative now!
   struct FloatVect3 des_pos;
   VECT3_SUM(des_pos, ref_relpos, target_pos);
 
@@ -165,6 +166,7 @@ void follow_diagonal_approach(void) {
   struct FloatVect3 pos_err;
   struct FloatVect3 ec_vel;
   struct NedCoor_f *drone_pos = stateGetPositionNed_f();
+  // ATTENTION, target_pos is already relative now!
   // VECT3_DIFF(pos_err, des_pos, *drone_pos);
   VECT3_COPY(pos_err, des_pos);
   VECT3_SMUL(ec_vel, pos_err, amt.pos_gain);
@@ -210,7 +212,9 @@ void follow_diagonal_approach(void) {
   amt.distance += int_speed*dt;
 
   // For display purposes
-  update_waypoint(amt.wp_id, &des_pos);
+  struct FloatVect3 disp_pos_target;
+  VECT3_SUM(disp_pos_target, des_pos, *drone_pos);
+  update_waypoint(amt.wp_id, &disp_pos_target);
 
   // Debug target pos:
   VECT3_DIFF(amt_telem.des_pos, *drone_pos, target_pos);
