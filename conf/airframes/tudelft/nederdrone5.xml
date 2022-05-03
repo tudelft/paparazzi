@@ -89,7 +89,9 @@
     <module name="stabilization" type="rate_indi"/>
     <module name="ins"           type="ekf2" />
     
-    <module name="air_data"/>
+    <module name="air_data">
+      <define name="AIR_DATA_CALC_AMSL_BARO" value="TRUE"/>
+    </module>
     <module name="send_imu_mag_current"/>
 
     <!-- Internal MAG -->
