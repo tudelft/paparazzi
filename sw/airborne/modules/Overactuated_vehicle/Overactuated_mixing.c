@@ -48,16 +48,16 @@ int start_auto = 0;
 float start_time_auto = 0;
 int32_t bool_start_auto_on = 0;
 
-float ax_point = -1;
-float ay_point = -1;
-float bx_point = 1;
-float by_point = -1;
-float cx_point = 1;
-float cy_point = 1;
+float ax_point = -2;
+float ay_point = 0;
+float bx_point = -2;
+float by_point = -0.5;
+float cx_point = 1.5;
+float cy_point = 0.5;
 float ox_point = 0;
 float oy_point = 0;
-float z_test = 1.8;
-float z_end = 3;
+float z_test = 1.2;
+float z_end = 3.2;
 float pitch_angle_test = 20;
 float roll_angle_test = 20;
 int controller_id = 1;
@@ -111,6 +111,17 @@ float prioritized_actuator_states[INDI_NUM_ACT] = {0, 0, 0, 0,
                                                    0, 0};
 //Incremental INDI variables
 float indi_du[INDI_NUM_ACT], indi_u[INDI_NUM_ACT], indi_u_scaled[INDI_NUM_ACT];
+
+//Variables for the actuator model v2:
+#define actuator_mem_buf_size 10
+float indi_u_memory[INDI_NUM_ACT][actuator_mem_buf_size];
+float actuator_state_old[INDI_NUM_ACT];
+float actuator_state_old_old[INDI_NUM_ACT];
+int delay_ts_motor = (int) (OVERACTUATED_MIXING_INDI_MOTOR_FIRST_ORD_DELAY * PERIODIC_FREQUENCY);
+int delay_ts_az = (int) (OVERACTUATED_MIXING_INDI_AZ_SECOND_ORD_DELAY * PERIODIC_FREQUENCY);
+int delay_ts_el = (int) (OVERACTUATED_MIXING_INDI_EL_SECOND_ORD_DELAY * PERIODIC_FREQUENCY);
+float max_rate_az = OVERACTUATED_MIXING_INDI_AZ_SECOND_ORD_RATE_LIMIT / PERIODIC_FREQUENCY;
+float max_rate_el = OVERACTUATED_MIXING_INDI_EL_SECOND_ORD_RATE_LIMIT / PERIODIC_FREQUENCY;
 
 //Matrix for the coordinate transformation from euler angle derivative to rates:
 float R_matrix[3][3];
@@ -292,6 +303,14 @@ void init_filters(void){
         init_butterworth_2_low_pass(&measurement_acc_filters[i], tau_lin_acc, sample_time, 0.0);
     }
 
+    //Initialize to zero the variables of get_actuator_state_v2:
+    for(int i = 0; i < INDI_NUM_ACT; i++){
+        for(int j = 0; j < actuator_mem_buf_size; j++ ){
+            indi_u_memory[i][j] = 0;
+        }
+        actuator_state_old_old[i] = 0;
+        actuator_state_old[i] = 0;
+    }
 }
 
 /**
@@ -329,6 +348,75 @@ void get_actuator_state(void)
         //Add extra states (theta and phi)
         actuator_state_filt[12] = euler_vect[1];
         actuator_state_filt[13] = euler_vect[0];
+
+    }
+}
+
+/**
+ * Get actuator state based on second order dynamics
+ */
+void get_actuator_state_v2(void)
+{
+    //actuator dynamics
+    for (int i = 0; i < N_ACT_REAL; i++) {
+
+        //Motors
+        if(i < 4){
+            actuator_state[i] = - OVERACTUATED_MIXING_INDI_MOTOR_FIRST_ORD_DEN_2 * actuator_state_old[i] +
+                    OVERACTUATED_MIXING_INDI_MOTOR_FIRST_ORD_NUM_2 * indi_u_memory[i][actuator_mem_buf_size - delay_ts_motor - 1];
+            Bound(actuator_state[i],OVERACTUATED_MIXING_MOTOR_MIN_OMEGA,OVERACTUATED_MIXING_MOTOR_MAX_OMEGA);
+        }
+        // Elevator angles
+        else if(i < 8){
+            actuator_state[i] = - OVERACTUATED_MIXING_INDI_EL_SECOND_ORD_DEN_2 * actuator_state_old[i] -
+                                  OVERACTUATED_MIXING_INDI_EL_SECOND_ORD_DEN_3 * actuator_state_old_old[i] +
+                                  OVERACTUATED_MIXING_INDI_EL_SECOND_ORD_NUM_2 * indi_u_memory[i][actuator_mem_buf_size - delay_ts_el - 1] +
+                                  OVERACTUATED_MIXING_INDI_EL_SECOND_ORD_NUM_3 * indi_u_memory[i][actuator_mem_buf_size - delay_ts_el - 2];
+            //Apply saturation
+            if(actuator_state[i] - actuator_state_old[i] > max_rate_el){
+                actuator_state[i] = actuator_state_old[i] + max_rate_el;
+            } else if(actuator_state[i] - actuator_state_old[i] < -max_rate_el){
+                actuator_state[i] = actuator_state_old[i] - max_rate_el;
+            }
+            // Bound for max and minimum physical values:
+            Bound(actuator_state[i],OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE,OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE);
+        }
+        //Azimuth angles
+        else{
+            actuator_state[i] = - OVERACTUATED_MIXING_INDI_AZ_SECOND_ORD_DEN_2 * actuator_state_old[i] -
+                                OVERACTUATED_MIXING_INDI_AZ_SECOND_ORD_DEN_3 * actuator_state_old_old[i] +
+                                OVERACTUATED_MIXING_INDI_AZ_SECOND_ORD_NUM_2 * indi_u_memory[i][actuator_mem_buf_size - delay_ts_az - 1] +
+                                OVERACTUATED_MIXING_INDI_AZ_SECOND_ORD_NUM_3 * indi_u_memory[i][actuator_mem_buf_size - delay_ts_az - 2];
+            //Apply saturation
+            if(actuator_state[i] - actuator_state_old[i] > max_rate_az){
+                actuator_state[i] = actuator_state_old[i] + max_rate_az;
+            } else if(actuator_state[i] - actuator_state_old[i] < -max_rate_az){
+                actuator_state[i] = actuator_state_old[i] - max_rate_az;
+            }
+            // Bound for max and minimum physical values:
+            Bound(actuator_state[i],OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE,OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE);
+        }
+
+        //Propagate the actuator values into the filters and calculate the derivative
+        update_butterworth_2_low_pass(&actuator_state_filters[i], actuator_state[i]);
+        actuator_state_filt[i] = actuator_state_filters[i].o[0];
+        actuator_state_filt_dot[i] = (actuator_state_filters[i].o[0]
+                                      - actuator_state_filters[i].o[1]) * PERIODIC_FREQUENCY;
+        actuator_state_filt_ddot[i] = (actuator_state_filt_dot[i]
+                                       - actuator_state_filt_dot_old[i]) * PERIODIC_FREQUENCY;
+        actuator_state_filt_dot_old[i] = actuator_state_filt_dot[i];
+        //Add extra states (theta and phi)
+        actuator_state_filt[12] = euler_vect[1];
+        actuator_state_filt[13] = euler_vect[0];
+
+        //Assign the memory variables:
+        actuator_state_old_old[i] = actuator_state_old[i];
+        actuator_state_old[i] = actuator_state[i];
+        for (int j = 1; j < actuator_mem_buf_size ; j++){
+            indi_u_memory[i][j-1] = indi_u_memory[i][j];
+        }
+        indi_u_memory[i][actuator_mem_buf_size-1] = indi_u[i];
+
     }
 }
 
@@ -459,70 +547,73 @@ void overactuated_mixing_run()
             euler_setpoint[2] = 0;
         }
         if(get_sys_time_float() - start_time_auto > 15 && get_sys_time_float() - start_time_auto <= 20){
-            pos_setpoint[0] = cx_point;
-            pos_setpoint[1] = cy_point;
+            pos_setpoint[0] = bx_point;
+            pos_setpoint[1] = by_point;
             pos_setpoint[2] = - z_test;
-            manual_theta_value = 0;
-            manual_phi_value = 0;
+            manual_theta_value = pitch_angle_test * M_PI/180;
+            manual_phi_value = roll_angle_test * M_PI/180;
             euler_setpoint[2] = 0;
         }
         if(get_sys_time_float() - start_time_auto > 20 && get_sys_time_float() - start_time_auto <= 25){
-            pos_setpoint[0] = ax_point;
-            pos_setpoint[1] = ay_point;
-            pos_setpoint[2] = - z_test;
-            manual_theta_value = 0;
-            manual_phi_value = 0;
+            pos_setpoint[0] = cx_point;
+            pos_setpoint[1] = cy_point;
+            pos_setpoint[2] = - z_end;
+            manual_theta_value = pitch_angle_test * M_PI/180;
+            manual_phi_value = roll_angle_test * M_PI/180;
             euler_setpoint[2] = 0;
         }
         if(get_sys_time_float() - start_time_auto > 25 && get_sys_time_float() - start_time_auto <= 30){
-            pos_setpoint[0] = 0;
-            pos_setpoint[1] = 0;
-            pos_setpoint[2] = - z_test;
-            manual_theta_value = 0;
-            manual_phi_value = 0;
+            pos_setpoint[0] = cx_point;
+            pos_setpoint[1] = cy_point;
+            pos_setpoint[2] = - z_end;
+            manual_theta_value = pitch_angle_test * M_PI/180;
+            manual_phi_value = roll_angle_test * M_PI/180;
             euler_setpoint[2] = 0;
         }
         if(get_sys_time_float() - start_time_auto > 30 && get_sys_time_float() - start_time_auto <= 35){
-            pos_setpoint[0] = 0;
-            pos_setpoint[1] = 0;
-            pos_setpoint[2] = - z_test;
-            manual_theta_value = pitch_angle_test * M_PI/180;
-            manual_phi_value = 0;
-            euler_setpoint[2] = 0;
-        }
-        if(get_sys_time_float() - start_time_auto > 35 && get_sys_time_float() - start_time_auto <= 40){
-            pos_setpoint[0] = 0;
-            pos_setpoint[1] = 0;
-            pos_setpoint[2] = - z_test;
-            manual_theta_value = pitch_angle_test * M_PI/180;
-            manual_phi_value = roll_angle_test * M_PI/180;
-            euler_setpoint[2] = 0;
-        }
-        if(get_sys_time_float() - start_time_auto > 40 && get_sys_time_float() - start_time_auto <= 45){
-            pos_setpoint[0] = 0;
-            pos_setpoint[1] = 0;
-            pos_setpoint[2] = - z_test;
-            manual_theta_value = 0;
-            manual_phi_value = roll_angle_test * M_PI/180;
-            euler_setpoint[2] = 0;
-        }
-        if(get_sys_time_float() - start_time_auto > 45 && get_sys_time_float() - start_time_auto <= 55){
-            pos_setpoint[0] = ox_point;
-            pos_setpoint[1] = oy_point;
-            pos_setpoint[2] = - z_test;
-            manual_theta_value = 0;
-            manual_phi_value = 0;
-            euler_setpoint[2] = 0;
-        }
-        if(get_sys_time_float() - start_time_auto > 55 ){
-            pos_setpoint[0] = ox_point;
-            pos_setpoint[1] = oy_point;
+            pos_setpoint[0] = cx_point;
+            pos_setpoint[1] = cy_point;
             pos_setpoint[2] = - z_end;
             manual_theta_value = 0;
             manual_phi_value = 0;
             euler_setpoint[2] = 0;
         }
+        if(get_sys_time_float() - start_time_auto > 35 && get_sys_time_float() - start_time_auto <= 40){
+            pos_setpoint[0] = cx_point;
+            pos_setpoint[1] = cy_point;
+            pos_setpoint[2] = - z_end;
+            manual_theta_value = 0;
+            manual_phi_value = 0;
+            euler_setpoint[2] = 0;
+        }
+        if(get_sys_time_float() - start_time_auto > 40 && get_sys_time_float() - start_time_auto <= 45){
+            pos_setpoint[0] = cx_point;
+            pos_setpoint[1] = cy_point;
+            pos_setpoint[2] = - z_end;
+            manual_theta_value = 0;
+            manual_phi_value = 0;
+            euler_setpoint[2] = 0;
+        }
+        if(get_sys_time_float() - start_time_auto > 45 && get_sys_time_float() - start_time_auto <= 55){
+            pos_setpoint[0] = cx_point;
+            pos_setpoint[1] = cy_point;
+            pos_setpoint[2] = - z_end;
+            manual_theta_value = 0;
+            manual_phi_value = 0;
+            euler_setpoint[2] = 0;
+        }
+        if(get_sys_time_float() - start_time_auto > 55 ){
+            pos_setpoint[0] = cx_point;
+            pos_setpoint[1] = cy_point;
+            pos_setpoint[2] = - z_end;
+            manual_theta_value = 0;
+            manual_phi_value = 0;
+            euler_setpoint[2] = 0;
+        }
+    } else{
+        bool_start_auto_on = 0;
     }
+
 
     /// Case of manual PID control [FAILSAFE]
     if(radio_control.values[RADIO_MODE] < -500) {
@@ -790,8 +881,11 @@ void overactuated_mixing_run()
             rate_vect_filt[2] = 0;
         }
 
-        // Get an estimate of the actuator state using the first order dynamics given by the user
-        get_actuator_state();
+//        // Get an estimate of the actuator state using the first order dynamics given by the user
+//        get_actuator_state();
+
+        // Get an estimate of the actuator state using the second order dynamics
+        get_actuator_state_v2();
 
         //Calculate the euler angle error to be fed into the PD for the INDI loop
 

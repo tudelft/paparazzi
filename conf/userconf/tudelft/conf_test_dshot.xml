@@ -1,0 +1,13 @@
+<conf>
+  <aircraft
+   name="fly_ta_dshot"
+   ac_id="66"
+   airframe="airframes/tudelft/fly_ta_dshot.xml"
+   radio="radios/sbus_delft.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/rotorcraft_basic.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/air_data.xml modules/geo_mag.xml modules/gps.xml modules/gps_ubx_ucenter.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/nav_basic_rotorcraft.xml modules/servo_tester.xml modules/stabilization_int_quat.xml modules/stabilization_rate.xml"
+   gui_color="yellow"
+  />
+</conf>

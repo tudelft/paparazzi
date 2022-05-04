@@ -281,13 +281,32 @@
     <define name="INDI_REF_RATE_Z" value="8.85"/>
 
     <!-- Actuator dynamics and mapping-->
-    <define name="INDI_ACT_DYN_MOTOR" value="0.038" unit="seconds"/><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
-    <define name="INDI_ACT_DYN_EL" value="0.0511" unit="seconds"/><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
-    <define name="INDI_ACT_DYN_AZ" value="0.0596" unit="seconds"/><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
-    <define name="MOTOR_K_T_OMEGASQ" value="9.0e-6" unit="N/(rad/s)^2"/>
+    <define name="INDI_ACT_DYN_MOTOR" value="0.038" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
+    <define name="INDI_ACT_DYN_EL" value="0.0511" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
+    <define name="INDI_ACT_DYN_AZ" value="0.0596" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
+
+    <define name="INDI_MOTOR_FIRST_ORD_NUM_2" value="0.05824" />
+    <define name="INDI_MOTOR_FIRST_ORD_DEN_2" value="-0.9418" />
+    <define name="INDI_MOTOR_FIRST_ORD_DELAY" value="0.002" />
+
+    <define name="INDI_AZ_SECOND_ORD_NUM_2" value="0.00386" />
+    <define name="INDI_AZ_SECOND_ORD_NUM_3" value="0.003679" />
+    <define name="INDI_AZ_SECOND_ORD_DEN_2" value="-1.858" />
+    <define name="INDI_AZ_SECOND_ORD_DEN_3" value="0.8659" />
+    <define name="INDI_AZ_SECOND_ORD_DELAY" value="0.015" />
+    <define name="INDI_AZ_SECOND_ORD_RATE_LIMIT" value="9.95" />
+
+    <define name="INDI_EL_SECOND_ORD_NUM_2" value="0.006779" />
+    <define name="INDI_EL_SECOND_ORD_NUM_3" value="0.006384" />
+    <define name="INDI_EL_SECOND_ORD_DEN_2" value="-1.822" />
+    <define name="INDI_EL_SECOND_ORD_DEN_3" value="0.8353" />
+    <define name="INDI_EL_SECOND_ORD_DELAY" value="0.015" />
+    <define name="INDI_EL_SECOND_ORD_RATE_LIMIT" value="11.34" />
+
+    <define name="MOTOR_K_T_OMEGASQ" value="0.88e-5" unit="N/(rad/s)^2"/>
     <define name="MOTOR_K_M_OMEGASQ" value="1.3e-7" unit="N*m/(rad/s)^2"/>
-    <define name="MOTOR_K_PWM_OMEGA" value="1" unit="PWM/(rad/s)"/>
-    <define name="MOTOR_MAX_OMEGA" value="1000" unit="rad/s"/>
+    <define name="MOTOR_K_PWM_OMEGA" value=".95" unit="PWM/(rad/s)"/>
+    <define name="MOTOR_MAX_OMEGA" value="950" unit="rad/s"/>
     <define name="MOTOR_MIN_OMEGA" value="100" unit="rad/s"/><!-- Needed to make the INDI to work-->
     <define name="SERVO_AZ_MIN_ANGLE" value="-45" unit="deg"/><!-- Always remember to update the PWM range as well-->
     <define name="SERVO_AZ_MAX_ANGLE" value="45" unit="deg"/>
@@ -296,14 +315,14 @@
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
     <define name="SERVO_EL_1_ZERO_VALUE" value="-53" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="-56" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="-53.5" unit="deg"/>
     <define name="SERVO_EL_3_ZERO_VALUE" value="-53" unit="deg"/>
     <define name="SERVO_EL_4_ZERO_VALUE" value="-51" unit="deg"/>
 
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="-3" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="2" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="8" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="6" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="0" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="0" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="0" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="0" unit="deg"/>
 
     <define name="MAX_THETA_INDI" value="100" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-30" unit="deg"/>
@@ -332,13 +351,13 @@
 
     <define name="W_DV_1" value="0.01"/>
     <define name="W_DV_2" value="0.01"/>
-    <define name="W_DV_3" value="0.015"/>
+    <define name="W_DV_3" value="0.01"/>
     <define name="W_DV_4" value=".1"/>
     <define name="W_DV_5" value=".1"/>
     <define name="W_DV_6" value="0.01"/>
 
     <define name="GAMMA_QUADRATIC_DV" value="1"/>
-    <define name="GAMMA_QUADRATIC_DU" value="1e-6"/>
+    <define name="GAMMA_QUADRATIC_DU" value="1e-5"/>
     <define name="GAMMA_QUADRATIC_WLS" value="10000"/>
 
     <define name="MAX_ITER_WLS" value="100"/>
