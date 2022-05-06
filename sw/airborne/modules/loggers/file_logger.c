@@ -91,12 +91,13 @@ int16_t OF_flow_der_x;
 int16_t OF_flow_der_y;
 float OF_quality;
 float OF_size_divergence;
+uint8_t OF_camera_id;
 static abi_event OF_ev; ///< The sonar ABI event
 static void logger_optical_flow_cb(uint8_t sender_id __attribute__((unused)),uint32_t stamp, int32_t flow_x,
-                                   int32_t flow_y, int32_t flow_der_x, int32_t flow_der_y, float quality, float size_divergence);
+                                   int32_t flow_y, int32_t flow_der_x, int32_t flow_der_y, float quality, float size_divergence, uint8_t camera_id);
 
 static void logger_optical_flow_cb(uint8_t sender_id, uint32_t stamp, int32_t flow_x,
-                                   int32_t flow_y, int32_t flow_der_x, int32_t flow_der_y, float quality, float size_divergence)
+                                   int32_t flow_y, int32_t flow_der_x, int32_t flow_der_y, float quality, float size_divergence, uint8_t camera_id)
 {
   OF_previous_stamp = OF_stamp;
   OF_stamp = stamp;
@@ -106,6 +107,7 @@ static void logger_optical_flow_cb(uint8_t sender_id, uint32_t stamp, int32_t fl
   OF_flow_der_y = flow_der_y;
   OF_quality = quality;
   OF_size_divergence = size_divergence;
+  OF_camera_id = camera_id;
 }
 uint32_t OF_stamp2=0;
 uint32_t OF_previous_stamp2=0;
@@ -115,12 +117,13 @@ int16_t OF_flow_der_x2;
 int16_t OF_flow_der_y2;
 float OF_quality2;
 float OF_size_divergence2;
+uint8_t OF_camera_id2;
 static abi_event OF_ev2; ///< The sonar ABI event
 static void logger_optical_flow_cb2(uint8_t sender_id __attribute__((unused)),uint32_t stamp, int32_t flow_x,
-                                   int32_t flow_y, int32_t flow_der_x, int32_t flow_der_y, float quality, float size_divergence);
+                                   int32_t flow_y, int32_t flow_der_x, int32_t flow_der_y, float quality, float size_divergence, uint8_t camera_id);
 
 static void logger_optical_flow_cb2(uint8_t sender_id, uint32_t stamp, int32_t flow_x,
-                                   int32_t flow_y, int32_t flow_der_x, int32_t flow_der_y, float quality, float size_divergence)
+                                   int32_t flow_y, int32_t flow_der_x, int32_t flow_der_y, float quality, float size_divergence, uint8_t camera_id)
 {
   OF_previous_stamp2 = OF_stamp;
   OF_stamp2 = stamp;
@@ -130,6 +133,7 @@ static void logger_optical_flow_cb2(uint8_t sender_id, uint32_t stamp, int32_t f
   OF_flow_der_y2 = flow_der_y;
   OF_quality2 = quality;
   OF_size_divergence2 = size_divergence;
+  OF_camera_id2 = camera_id;
 }
 
 // reading RPMs:
