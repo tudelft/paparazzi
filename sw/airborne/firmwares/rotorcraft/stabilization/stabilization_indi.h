@@ -53,6 +53,16 @@ extern float ar_ref_save;
 
 extern bool indi_use_adaptive;
 
+extern bool static_test;
+extern int16_t mot0_static;
+extern int16_t mot1_static;
+extern int16_t mot2_static;
+extern int16_t mot3_static;
+extern int16_t ailL_static;
+extern int16_t ailR_static;
+extern int16_t ele_static ;
+extern int16_t rud_static ;
+
 extern float *Bwls[INDI_OUTPUTS];
 
 struct Indi_gains {

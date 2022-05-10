@@ -41,7 +41,7 @@
         <ixy unit="SLUG*FT2">0.</ixy>
         <ixz unit="SLUG*FT2">0.</ixz>
         <iyz unit="SLUG*FT2">0.</iyz>
-            <emptywt unit="LBS">6.614</emptywt> <!-- 6.614 12.57 -->
+            <emptywt unit="LBS">66.14</emptywt> <!-- 6.614 12.57 -->
         <location name="CG" unit="IN">
             <x> 0 </x>
             <y> 0 </y>

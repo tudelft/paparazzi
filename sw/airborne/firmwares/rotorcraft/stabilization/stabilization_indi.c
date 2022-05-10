@@ -76,6 +76,18 @@ float indi_v[INDI_OUTPUTS];
 float *Bwls[INDI_OUTPUTS];
 int num_iter = 0;
 
+bool static_test = true;
+
+int16_t actuators_pprz_static[INDI_NUM_ACT] ;
+int16_t mot0_static = 0 ;
+int16_t mot1_static = 0 ;
+int16_t mot2_static = 0 ;
+int16_t mot3_static = 0 ;
+int16_t ailL_static = 0 ;
+int16_t ailR_static = 0 ;
+int16_t ele_static  = 0 ;
+int16_t rud_static  = 0 ;
+
 static void lms_estimation(void);
 static void get_actuator_state(void);
 static void calc_g1_element(float dx_error, int8_t i, int8_t j, float mu_extra);
@@ -584,6 +596,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
         doub_number += 1;
         }
       du_pref[i] = val_init + current_doublet_values[i] - actuator_state_filt_vect[i];
+      actuators_pprz_static[i] = (int16_t) val_init + current_doublet_values[i];
       } else {
         du_pref[i] = 0;
       }
@@ -669,8 +682,25 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   }
 
   /*Commit the actuator command*/
-  for (i = 0; i < INDI_NUM_ACT; i++) {
-    actuators_pprz[i] = (int16_t) indi_u[i];
+    if (static_test){
+    actuators_pprz_static[0] = (int16_t) mot0_static;
+    actuators_pprz_static[1] = (int16_t) mot1_static;
+    actuators_pprz_static[2] = (int16_t) mot2_static;
+    actuators_pprz_static[3] = (int16_t) mot3_static;
+    actuators_pprz_static[4] = (int16_t) ailL_static;
+    actuators_pprz_static[5] = (int16_t) ailR_static;
+    actuators_pprz_static[6] = (int16_t) ele_static;
+    actuators_pprz_static[7] = (int16_t) rud_static;
+     
+    for (i = 0; i < INDI_NUM_ACT; i++) {
+      actuators_pprz[i] = (int16_t) actuators_pprz_static[i];
+      if (doublet_active && i==doublet_axis){
+      actuators_pprz[i] += (int16_t) current_doublet_values[i];}
+      }
+    } else {
+    for (i = 0; i < INDI_NUM_ACT; i++) {
+      actuators_pprz[i] = (int16_t) indi_u[i];
+    }
   }
 
   // Set the stab_cmd to 42 to indicate that it is not used

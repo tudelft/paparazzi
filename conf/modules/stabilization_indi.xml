@@ -56,6 +56,15 @@
         <dl_setting var="indi_use_adaptive" min="0" step="1" max="1" shortname="use_adaptive" values="FALSE|TRUE" param="STABILIZATION_INDI_USE_ADAPTIVE" type="uint8"/>
         <dl_setting var="thrust_bx_eff" min="0" step="0.0001" max="0.0032" shortname="pusher_effectiveness" param="THRUST_BX_EFF"/>
         <dl_setting var="thrust_bx_act_dyn" min="0" step="0.001" max="0.1" shortname="pusher_dynamics" param="THRUST_BX_DYN"/>
+        <dl_setting var="static_test" min="0" step="1" max="1" values="OFF|ON" shortname="static_test"/>
+        <dl_setting var="mot0_static" min="0" step="1" max="9600" shortname="mot0_static" />
+        <dl_setting var="mot1_static" min="0" step="1" max="9600" shortname="mot1_static" />
+        <dl_setting var="mot2_static" min="0" step="1" max="9600" shortname="mot2_static" />
+        <dl_setting var="mot3_static" min="0" step="1" max="9600" shortname="mot3_static" />
+        <dl_setting var="ailL_static" min="-9600" step="1" max="9600" shortname="aill_static" />
+        <dl_setting var="ailR_static" min="-9600" step="1" max="9600" shortname="ailR_static" />
+        <dl_setting var="ele_static " min="-9600" step="1" max="9600" shortname="ele_static" />
+        <dl_setting var="rud_static " min="-9600" step="1" max="9600" shortname="rud_static" />
       </dl_settings>
     </dl_settings>
   </settings>
