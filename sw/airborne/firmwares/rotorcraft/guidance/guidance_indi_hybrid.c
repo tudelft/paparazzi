@@ -496,7 +496,7 @@ void guidance_indi_run(float *heading_sp) {
     //else if (hybrid_du[i]>0){scaler_new[i] = 1;}
     //else {scaler_new[i] = 0;}
   }
-  printf("WLS Divider = %f,%f,%f,%f\n",divider[0],divider[1],divider[2],divider[3]);
+  //printf("WLS Divider = %f,%f,%f,%f\n",divider[0],divider[1],divider[2],divider[3]);
   //printf("Commanded Delta T = %f\n", euler_cmd.z);
 #else
   MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);

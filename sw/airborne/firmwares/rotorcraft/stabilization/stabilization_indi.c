@@ -541,7 +541,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     Bound(actuator_thrust_bx_pprz, 0, MAX_PPRZ);
   } else {
     // Copy radio cmd
-    actuator_thrust_bx_pprz = RadioControlValues(RADIO_AUX3);
+    actuator_thrust_bx_pprz = 0;//RadioControlValues(RADIO_AUX3);
   }
 
   actuators_pprz[INDI_NUM_ACT] = (int16_t) actuator_thrust_bx_pprz;
@@ -683,14 +683,14 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
   /*Commit the actuator command*/
     if (static_test){
-    actuators_pprz_static[0] = (int16_t) mot0_static;
-    actuators_pprz_static[1] = (int16_t) mot1_static;
-    actuators_pprz_static[2] = (int16_t) mot2_static;
-    actuators_pprz_static[3] = (int16_t) mot3_static;
-    actuators_pprz_static[4] = (int16_t) ailL_static;
-    actuators_pprz_static[5] = (int16_t) ailR_static;
-    actuators_pprz_static[6] = (int16_t) ele_static;
-    actuators_pprz_static[7] = (int16_t) rud_static;
+    //actuators_pprz_static[0] = (int16_t) mot0_static;
+    //actuators_pprz_static[1] = (int16_t) mot1_static;
+    //actuators_pprz_static[2] = (int16_t) mot2_static;
+    //actuators_pprz_static[3] = (int16_t) mot3_static;
+    //actuators_pprz_static[4] = (int16_t) ailL_static;
+    //actuators_pprz_static[5] = (int16_t) ailR_static;
+    //actuators_pprz_static[6] = (int16_t) ele_static;
+    //actuators_pprz_static[7] = (int16_t) rud_static;
      
     for (i = 0; i < INDI_NUM_ACT; i++) {
       actuators_pprz[i] = (int16_t) actuators_pprz_static[i];

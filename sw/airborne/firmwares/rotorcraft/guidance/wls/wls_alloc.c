@@ -237,7 +237,7 @@ int wls_alloc_hybrid(float* u, float* v, float* umin, float* umax, float** B,
     n_infeasible = 0;
     for (int i = 0; i < n_u; i++) {
       if (u_opt[i] >= (umax[i] + 0.00001 ) || u_opt[i] <= (umin[i] - 0.00001 )) {
-        printf("n_infeasible= %i \n",n_infeasible);
+        //printf("n_infeasible= %i \n",n_infeasible);
         //infeasible_index[n_infeasible++] = i;
         n_infeasible += 1;
       }

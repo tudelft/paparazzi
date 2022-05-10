@@ -10,6 +10,7 @@
 #include "modules/rot_wing_drone/wing_rotation_controller.h"
 #include "firmwares/rotorcraft/navigation.h"
 #include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
+#include "modules/ctrl/ctrl_windtunnel_2022.h"
 </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0" height="0.0"/>
@@ -49,6 +50,12 @@
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <stay wp="STDBY"/>
+    </block>
+    <block name="Test_fun">
+      <call fun="windtunnel_control()"/>
+    </block>
+    <block name="Stop me">
       <stay wp="STDBY"/>
     </block>
     <block name="Rotating wing0">

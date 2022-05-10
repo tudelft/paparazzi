@@ -25,8 +25,16 @@
 
 #ifndef CTRL_WINDTUNNEL_2022_H
 #define CTRL_WINDTUNNEL_2022_H
+#include "firmwares/rotorcraft/stabilization/stabilization_attitude_common_int.h"
+//extern void windtunnel_control_init(void);
+extern bool windtunnel_control(void);
+bool excitation_control(void);
+bool as_control(void);
+bool mot_status_control(void);
 
+extern int16_t count;
+extern int16_t mot_status[3][4];
+extern int16_t as_static[];
 
-extern void extended_eff_message_init(void);
 
 #endif  // CTRL_WINDTUNNEL_2022_H
