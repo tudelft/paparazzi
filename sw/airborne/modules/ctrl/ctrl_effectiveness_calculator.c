@@ -60,6 +60,8 @@ void ctrl_eff(void)
     float ctrl_deriv_23 = -Y_DIST * sinf(theta_l0) * (2 * K1 * omega_l0 + K2) * (1 / I.zz);
     float ctrl_deriv_30 = (K1 * actuator_state_filt_vect[3] * actuator_state_filt_vect[3] + K2 * actuator_state_filt_vect[3] + K3) * sinf(theta_l0) * (1/MASS) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_31 = (K1 * actuator_state_filt_vect[2] * actuator_state_filt_vect[2] + K2 * actuator_state_filt_vect[2] + K3) * sinf(theta_r0) * (1/MASS) * (1/(float)MAX_PPRZ);
+//    float ctrl_deriv_30 = 0;
+//    float ctrl_deriv_31 = 0;
     float ctrl_deriv_32 =  -(2 * K1 * actuator_state_filt_vect[2] + K2) * cosf(theta_r0) * (1/MASS);
     float ctrl_deriv_33 =  -(2 * K1 * actuator_state_filt_vect[3] + K2) * cosf(theta_l0) * (1/MASS);
 
