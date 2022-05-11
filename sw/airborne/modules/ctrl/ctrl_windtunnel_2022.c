@@ -24,7 +24,6 @@
  */
 
 #include "modules/ctrl/ctrl_windtunnel_2022.h"
-#include "modules/system_identification/extended_eff_message.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
@@ -35,12 +34,17 @@
 #include "modules/rot_wing_drone/wing_rotation_controller.h"
 #include "mcu_periph/sys_time.h"
 
-int16_t count = 0;
+
+
+
+
+
+
 int16_t mot_status[3][4] = {{0,0,0,0},{6400,6400,6400,6400},{6400,6400,8533,6400}};
 int16_t as_static[5] = {-9600,-4800,1920,4800,9600};
-float dt_s = 1;//3;
-float dt_m = 3;//6;
-float dt_l = 5;//10;
+float dt_s = 1;//1-3;
+float dt_m = 1;//3-6;
+float dt_l = 2;//5-10;
 float wing_sp[7] = {0,10,30,45,60,75,90};
 static float t_excitation = 0;
 static float t_as = 0;
@@ -50,16 +54,19 @@ bool done_wing = true;
 bool done_mot_status = true;
 bool done_as = true;
 bool done_excitation = true;
-int8_t i = 0;
-int8_t j = 0;
-int8_t m = 0;
-int8_t k = 0;
-int8_t n = 0;
-
+bool test_active = false;
+int8_t i = 0; // Wing set point counter
+int8_t j = 0; // Motor status counter
+int8_t m = 0; // Motor counter
+int8_t k = 0; // Aerodynamic Surface counter
+int8_t n = 0; // Excitation signal counter
+int32_t tp = 0; // Test point counter
+int8_t p = 0; // Test number counter (Equal to number of windspeeds)
 
 bool windtunnel_control(void)
 {
  static_test = true;
+ test_active = true;
  if (i < 7){
    if(done_wing){
      t_wing = get_sys_time_float();
@@ -75,12 +82,13 @@ bool windtunnel_control(void)
    }else{
      i = 0;
      wing_rotation.wing_angle_deg_sp = 0;
+     test_active = false;
+     p += 1;
      return false;}     
    }
 
 bool mot_status_control(void)
 {
- static_test = true;
  if (j < 3){
    if(done_mot_status){
      t_mot_status = get_sys_time_float();
@@ -88,7 +96,8 @@ bool mot_status_control(void)
       actuators_pprz_static[m] = (int16_t) mot_status[j][m];
      }
      printf("Motor State = %i %i %i %i \n",actuators_pprz_static[0],actuators_pprz_static[1],actuators_pprz_static[2],actuators_pprz_static[3]);
-     done_mot_status = false;}
+     done_mot_status = false;
+     tp += 1;}
    else{
      if((get_sys_time_float() - t_mot_status) > dt_l){
      if(!as_control()){
@@ -105,7 +114,6 @@ bool mot_status_control(void)
 
 bool as_control(void)
 {
- static_test = true;
  if (k < 4){
    if(done_as){
      printf("AS = %i \n",k);
@@ -127,7 +135,8 @@ bool excitation_control(void)
      t_excitation = get_sys_time_float();
      actuators_pprz_static[k+4] = (int16_t) as_static[n];
      printf("Excitation = %i \n",as_static[n]);
-     done_excitation = false;}
+     done_excitation = false;
+      tp += 1;}
    else{
      if((get_sys_time_float() - t_excitation) > dt_m){
        done_excitation = true;
@@ -138,36 +147,33 @@ bool excitation_control(void)
      n = 0;
      return false;}
 }
-// void windtunnel_control(void)
-// {
-//  static_test = true;
-//  for ( int8_t i = 0; i < 7; i++){
-//    //for every wing set point
-//    wing_rotation.wing_angle_deg_sp = wing_sp[i];
-//    printf("Wing SP = %f \n",wing_rotation.wing_angle_deg_sp);
-//    sleep(10);
-//    for ( int8_t j = 0; j < 3; j++){
-//     //for every motor status
-//     for ( int8_t m = 0; m < 4; m++){
-//       actuators_pprz_static[m] = (int16_t) mot_status[j][m];
-//     }
-//     printf("Motor State = %i %i %i %i \n",actuators_pprz_static[0],actuators_pprz_static[1],actuators_pprz_static[2],actuators_pprz_static[3]);
-//     sleep(5);
-//     for ( int8_t k = 0; k < 4; k++){
-//       //for every aerodynamic surface
-//       printf("AS = %i \n",k);
-//       for ( int8_t n = 0; n < 5; n++){
-//        // for every excitation setting
-//        actuators_pprz_static[k+4] = (int16_t) as_static[n];
-//        printf("Excitation = %i \n",as_static[n]);
-//        sleep(5);
-//        }
-//     }
-//    } 
-//   }
-// }
 
-// void extended_eff_message_init(void)
-// {
+#if PERIODIC_TELEMETRY
+#include "subsystems/datalink/telemetry.h"
+static void send_windtunnel_static(struct transport_tx *trans, struct link_device *dev)
+{
+float airspeed = stateGetAirspeed_f();
 
-// }
+pprz_msg_send_WINDTUNNEL_STATIC(trans, dev, AC_ID,
+                                        &test_active,
+                                        &airspeed,
+                                        &wing_rotation.wing_angle_deg,
+                                        &wing_rotation.wing_angle_deg_sp,
+                                        &(stateGetNedToBodyEulers_i()->theta),
+                                        &p,
+                                        &i,
+                                        &j,
+                                        &k,
+                                        &n,
+                                        &tp,
+                                        ACTUATORS_NB, actuators
+                                        );
+}
+#endif
+
+void windtunnel_message_init(void)
+{
+  #if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WINDTUNNEL_STATIC, send_windtunnel_static);
+  #endif 
+}
