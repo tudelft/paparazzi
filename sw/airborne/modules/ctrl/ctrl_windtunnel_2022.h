@@ -35,8 +35,8 @@ bool mot_status_control(void);
 bool wing_skew_control(void);
 extern bool test_active;
 
-extern int16_t mot_status[3][4];
-extern int16_t as_static[];
+//extern int16_t mot_status[3][4];
+//extern int16_t as_static[];
 
 
 #endif  // CTRL_WINDTUNNEL_2022_H
