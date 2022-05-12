@@ -177,10 +177,10 @@
   </firmware>
 
   <servos driver="Pwm">
-    <servo name="TILT_LEFT" no="0" min="2100" neutral="1500" max="900"/>	<!-- 1360 is a good zero value but need to change that for angle function in ctrl_efff_calc -->
-    <servo name="TILT_RIGHT" no="1" min="900" neutral="1500" max="2100"/>	<!-- 1690 -->
-    <servo name="RM" no="2" min="1000" neutral="1100" max="2000"/>
-    <servo name="LM" no="3" min="1000" neutral="1100" max="2000"/>
+    <servo name="TILT_LEFT" no="0" min="2100" neutral="1500" max="900"/>
+    <servo name="TILT_RIGHT" no="1" min="900" neutral="1500" max="2100"/>
+    <servo name="RM" no="2" min="1100" neutral="1150" max="1900"/>
+    <servo name="LM" no="3" min="1100" neutral="1150" max="1900"/>
     <!--<servo name="SERVO_TEST" no="0" min="1000" neutral="1500" max="2000"/>-->
   </servos>
 
