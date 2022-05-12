@@ -62,7 +62,8 @@ extern int16_t ailL_static;
 extern int16_t ailR_static;
 extern int16_t ele_static ;
 extern int16_t rud_static ;
-extern int16_t actuators_pprz_static[INDI_NUM_ACT] ;
+extern int16_t push_static ;
+extern int16_t actuators_pprz_static[INDI_NUM_ACT+1] ;
 
 extern float *Bwls[INDI_OUTPUTS];
 

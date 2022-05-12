@@ -32,7 +32,8 @@ extern bool windtunnel_control(void);
 bool excitation_control(void);
 bool as_control(void);
 bool mot_status_control(void);
-
+bool wing_skew_control(void);
+extern bool test_active;
 
 extern int16_t mot_status[3][4];
 extern int16_t as_static[];

@@ -43,6 +43,7 @@
 #include "subsystems/abi.h"
 #include "filters/low_pass_filter.h"
 #include "wls/wls_alloc.h"
+#include "modules/ctrl/ctrl_windtunnel_2022.h"
 #include <stdio.h>
 
 // Factor that the estimated G matrix is allowed to deviate from initial one
@@ -78,7 +79,7 @@ int num_iter = 0;
 
 bool static_test = true;
 
-int16_t actuators_pprz_static[INDI_NUM_ACT] ;
+int16_t actuators_pprz_static[INDI_NUM_ACT+1] ;
 int16_t mot0_static = 0 ;
 int16_t mot1_static = 0 ;
 int16_t mot2_static = 0 ;
@@ -87,6 +88,7 @@ int16_t ailL_static = 0 ;
 int16_t ailR_static = 0 ;
 int16_t ele_static  = 0 ;
 int16_t rud_static  = 0 ;
+int16_t push_static  = 0 ;
 
 static void lms_estimation(void);
 static void get_actuator_state(void);
@@ -682,17 +684,20 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   }
 
   /*Commit the actuator command*/
-    if (static_test){
-    //actuators_pprz_static[0] = (int16_t) mot0_static;
-    //actuators_pprz_static[1] = (int16_t) mot1_static;
-    //actuators_pprz_static[2] = (int16_t) mot2_static;
-    //actuators_pprz_static[3] = (int16_t) mot3_static;
-    //actuators_pprz_static[4] = (int16_t) ailL_static;
-    //actuators_pprz_static[5] = (int16_t) ailR_static;
-    //actuators_pprz_static[6] = (int16_t) ele_static;
-    //actuators_pprz_static[7] = (int16_t) rud_static;
-     
-    for (i = 0; i < INDI_NUM_ACT; i++) {
+  
+    if (static_test ){
+      if (!test_active){
+        actuators_pprz_static[0] = (int16_t) mot0_static;
+        actuators_pprz_static[1] = (int16_t) mot1_static;
+        actuators_pprz_static[2] = (int16_t) mot2_static;
+        actuators_pprz_static[3] = (int16_t) mot3_static;
+        actuators_pprz_static[4] = (int16_t) ailL_static;
+        actuators_pprz_static[5] = (int16_t) ailR_static;
+        actuators_pprz_static[6] = (int16_t) ele_static;
+        actuators_pprz_static[7] = (int16_t) rud_static;
+        actuators_pprz_static[8] = (int16_t) push_static;}
+    
+    for (i = 0; i < INDI_NUM_ACT+1; i++) {
       actuators_pprz[i] = (int16_t) actuators_pprz_static[i];
       if (doublet_active && i==doublet_axis){
       actuators_pprz[i] += (int16_t) current_doublet_values[i];}

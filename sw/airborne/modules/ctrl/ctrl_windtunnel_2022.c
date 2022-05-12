@@ -42,6 +42,7 @@
 
 int16_t mot_status[3][4] = {{0,0,0,0},{6400,6400,6400,6400},{6400,6400,8533,6400}};
 int16_t as_static[5] = {-9600,-4800,1920,4800,9600};
+int16_t sync_cmd[6] = {800,0,1000,0,1200,0};
 float dt_s = 1;//1-3;
 float dt_m = 1;//3-6;
 float dt_l = 2;//5-10;
@@ -50,11 +51,13 @@ static float t_excitation = 0;
 static float t_as = 0;
 static float t_mot_status = 0;
 static float t_wing = 0;
+static float t_sync = 0;
 bool done_wing = true;
 bool done_mot_status = true;
 bool done_as = true;
 bool done_excitation = true;
 bool test_active = false;
+bool done_sync = true;
 int8_t i = 0; // Wing set point counter
 int8_t j = 0; // Motor status counter
 int8_t m = 0; // Motor counter
@@ -62,11 +65,38 @@ int8_t k = 0; // Aerodynamic Surface counter
 int8_t n = 0; // Excitation signal counter
 int32_t tp = 0; // Test point counter
 int8_t p = 0; // Test number counter (Equal to number of windspeeds)
+int8_t w = 0; //Sync command counter
 
 bool windtunnel_control(void)
 {
  static_test = true;
  test_active = true;
+  if (w < 6){
+   if(done_sync){
+     t_sync = get_sys_time_float();
+     actuators_pprz_static[8]= (int16_t) sync_cmd[w];
+     printf("Sync CMD = %i \n",actuators_pprz_static[8]);
+     done_sync = false;}
+   else{
+       if((get_sys_time_float() - t_sync) > dt_s){
+       done_sync = true;
+       w += 1;}}
+   return true;    
+   }else{
+     if(wing_skew_control()){return true;}
+     else{
+        //w = 0;
+        test_active = false;
+        p += 1;
+        return false;
+     }
+    }
+}
+
+bool wing_skew_control(void)
+{
+ //static_test = true;
+ //test_active = true;
  if (i < 7){
    if(done_wing){
      t_wing = get_sys_time_float();
@@ -82,8 +112,8 @@ bool windtunnel_control(void)
    }else{
      i = 0;
      wing_rotation.wing_angle_deg_sp = 0;
-     test_active = false;
-     p += 1;
+     //test_active = false;
+     //p += 1;
      return false;}     
    }
 
