@@ -73,7 +73,7 @@ int32_t tp = 0; // Test point counter
 int8_t p = 0; // Test number counter (Equal to number of windspeeds)
 int8_t w = 0; //Sync command counter
 int8_t o = 0; //Counter rot test
-int8_t p2 = 0;
+int8_t p2 = 0; // Test number counter for the skew moment test
 
 bool skew_moment(void)
 {
@@ -239,6 +239,9 @@ pprz_msg_send_WINDTUNNEL_STATIC(trans, dev, AC_ID,
                                         &k,
                                         &n,
                                         &tp,
+                                        &o,
+                                        &p2,
+                                        &max_rotation_rate,
                                         ACTUATORS_NB, actuators
                                         );
 }
