@@ -31,6 +31,7 @@
 #include "math/pprz_algebra_float.h"
 #include "subsystems/actuators.h"
 
+
 #ifndef WING_ROTATION_SERVO_IDX
 #error "No WING_ROTATION_SERVO_IDX defined"
 #endif
@@ -112,6 +113,34 @@ struct wing_rotation_controller wing_rotation;
 
 // Define filter(s)
 Butterworth2LowPass rot_wing_servo_rate_filter;
+Butterworth2LowPass airspeed_skew_filter;
+
+// Automatic Wing Rotation
+#define skew_size 17
+bool automatic_rot   = false;
+float f_cutoff = 0.2;
+float airspeed_q [skew_size] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
+float skew_q [skew_size]     = {0,0,0,10,15,25,35,45,55,65,75,80,80,85,90,90,90};
+void skew_interpoler(void)
+{
+  float airspeed = stateGetAirspeed_f();
+  // Propagate filters
+  update_butterworth_2_low_pass(&airspeed_skew_filter, airspeed);
+  float airspeed_f = airspeed_skew_filter.o[0];
+  printf("airspeed = %f \n",airspeed);
+  printf("airspeed_f= %f \n",airspeed_f);
+  if (airspeed_f > 16){wing_rotation.wing_angle_deg_sp = 90;}
+  else if(airspeed_f < 2){wing_rotation.wing_angle_deg_sp = 0;}
+  else{
+      for (int8_t i=0;i<skew_size;i++){
+        if (airspeed_f <= airspeed_q[i]){
+          wing_rotation.wing_angle_deg_sp = (skew_q[i]-skew_q[i-1])/(airspeed_q[i]-airspeed_q[i-1])*(airspeed_f-airspeed_q[i])+skew_q[i];
+          printf("i= %i \n",i);
+          break;
+        }
+      }
+    }
+}
 
 // Inline functions
 inline void wing_rotation_to_rad(void);
@@ -166,6 +195,7 @@ void wing_rotation_init(void)
   wing_rotation.cmd_threshold_90 = WING_ROTATION_ENDPOINT_CMD_THRESHOLD_90;
   wing_rotation.threshold_servo_rate_limit = WING_ROTATION_ENDPOINT_SERVO_RATE_LIMIT;
 
+
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROT_WING_CONTROLLER, send_rot_wing_controller);
   #endif
@@ -174,6 +204,10 @@ void wing_rotation_init(void)
   float tau = 1.0 / (2.0 * M_PI * ROT_WING_SERVO_CUTOFF_FREQUENCY);
   float sample_time = 1. / PERIODIC_FREQUENCY;
   init_butterworth_2_low_pass(&rot_wing_servo_rate_filter, tau, sample_time, 0.0);
+
+  // Init filters airspeed
+  float tau2 = 1.0 / (2.0 * M_PI * f_cutoff);
+  init_butterworth_2_low_pass(&airspeed_skew_filter, tau2, sample_time, 0.0);
 }
 
 void wing_rotation_periodic(void)
@@ -308,5 +342,6 @@ void wing_servo_to_rad(void)
 
 void wing_rotation_update_sp(void)
 {
+  if (automatic_rot){skew_interpoler();}
   wing_rotation.wing_angle_rad_sp = wing_rotation.wing_angle_deg_sp / 180. * M_PI;
 }

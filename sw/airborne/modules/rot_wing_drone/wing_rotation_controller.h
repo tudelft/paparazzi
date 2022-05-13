@@ -56,10 +56,11 @@ struct wing_rotation_controller {
 };
 
 extern struct wing_rotation_controller wing_rotation;
-
+extern bool automatic_rot;
+extern float f_cutoff;
 // Functions
 extern void wing_rotation_init(void);
 extern void wing_rotation_periodic(void);
 extern void wing_rotation_event(void);
-
+extern void skew_interpoler(void);
 #endif  // WING_ROTATION_CONTROLLER_H
