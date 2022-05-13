@@ -686,7 +686,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   /*Commit the actuator command*/
   
     if (static_test ){
-      if (!test_active){
+      if (!test_active && !test_skew_active){
         actuators_pprz_static[0] = (int16_t) mot0_static;
         actuators_pprz_static[1] = (int16_t) mot1_static;
         actuators_pprz_static[2] = (int16_t) mot2_static;

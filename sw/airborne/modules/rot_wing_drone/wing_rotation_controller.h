@@ -56,7 +56,7 @@ struct wing_rotation_controller {
 };
 
 extern struct wing_rotation_controller wing_rotation;
-
+extern float max_rotation_rate;
 // Functions
 extern void wing_rotation_init(void);
 extern void wing_rotation_periodic(void);

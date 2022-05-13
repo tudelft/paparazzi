@@ -48,17 +48,22 @@ int16_t as_static[nmax] = {-9600,-4800,1920,4800,9600};
 int16_t sync_cmd[6] = {800,0,1000,0,1200,0};
 int16_t push_cmd[2] = {2000,4000};
 float wing_sp[imax] = {0,10,30,45,60,75,90};
+float rotation_rate_sp[6] = {0.15,0.15,0.20,0.20,0.25,0.25};
+float boa[6] =  {90,0,90,0,90,0};
 static float t_excitation = 0;
 static float t_as = 0;
 static float t_mot_status = 0;
 static float t_wing = 0;
 static float t_sync = 0;
+static float t_skew = 0;
 bool done_wing = true;
 bool done_mot_status = true;
 bool done_as = true;
 bool done_excitation = true;
 bool test_active = false;
+bool test_skew_active = false;
 bool done_sync = true;
+bool done_skew = true;
 int8_t i = 0; // Wing set point counter
 int8_t j = 0; // Motor status counter
 int8_t m = 0; // Motor counter
@@ -67,21 +72,43 @@ int8_t n = 0; // Excitation signal counter
 int32_t tp = 0; // Test point counter
 int8_t p = 0; // Test number counter (Equal to number of windspeeds)
 int8_t w = 0; //Sync command counter
+int8_t o = 0; //Counter rot test
+int8_t p2 = 0;
 
+bool skew_moment(void)
+{
+ static_test = true;
+ test_skew_active = true;
+   if (w < 6){
+   sync_procedure();
+   return true;    
+   }else{
+     if (o < 6){
+        if(done_skew){
+          t_skew = get_sys_time_float();
+          max_rotation_rate = rotation_rate_sp[o];
+          wing_rotation.wing_angle_deg_sp = boa[o];
+          printf("Wing SP = %f \n",wing_rotation.wing_angle_deg_sp);
+          done_skew = false;}
+        else{
+          if((get_sys_time_float() - t_skew) > (1.5*3.14*0.5/max_rotation_rate)){
+            done_skew = true;
+            o += 1;}}
+        return true;    
+        }else{
+          o = 0;
+          wing_rotation.wing_angle_deg_sp = 0;
+          test_skew_active = false;
+          p2 += 1;
+          return false;}  
+    }
+}
 bool windtunnel_control(void)
 {
  static_test = true;
  test_active = true;
   if (w < 6){
-   if(done_sync){
-     t_sync = get_sys_time_float();
-     actuators_pprz_static[8]= (int16_t) sync_cmd[w];
-     printf("Sync CMD = %i \n",actuators_pprz_static[8]);
-     done_sync = false;}
-   else{
-       if((get_sys_time_float() - t_sync) > dt_s){
-       done_sync = true;
-       w += 1;}}
+   sync_procedure();
    return true;    
    }else{
      if(wing_skew_control()){return true;}
@@ -93,7 +120,18 @@ bool windtunnel_control(void)
      }
     }
 }
-
+void sync_procedure(void)
+{
+  if(done_sync){
+      t_sync = get_sys_time_float();
+      actuators_pprz_static[8]= (int16_t) sync_cmd[w];
+      printf("Sync CMD = %i \n",actuators_pprz_static[8]);
+      done_sync = false;}
+    else{
+        if((get_sys_time_float() - t_sync) > dt_s){
+        done_sync = true;
+        w += 1;}}
+}
 bool wing_skew_control(void)
 {
  //static_test = true;

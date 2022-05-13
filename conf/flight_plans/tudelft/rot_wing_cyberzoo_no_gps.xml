@@ -58,6 +58,12 @@
     <block name="Stop me">
       <stay wp="STDBY"/>
     </block>
+        <block name="Test_fun2">
+      <call fun="skew_moment()"/>
+    </block>
+    <block name="Stop me2">
+      <stay wp="STDBY"/>
+    </block>
     <block name="Rotating wing0">
       <set var="wing_rotation.wing_angle_deg_sp" value="0.0"/>
     </block>

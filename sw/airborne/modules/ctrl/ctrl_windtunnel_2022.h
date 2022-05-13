@@ -29,12 +29,14 @@
 //extern void windtunnel_control_init(void);
 extern void windtunnel_message_init(void);
 extern bool windtunnel_control(void);
+extern bool skew_moment(void);
+void sync_procedure(void);
 bool excitation_control(void);
 bool as_control(void);
 bool mot_status_control(void);
 bool wing_skew_control(void);
 extern bool test_active;
-
+extern bool test_skew_active;
 //extern int16_t mot_status[3][4];
 //extern int16_t as_static[];
 
