@@ -179,8 +179,8 @@
   <servos driver="Pwm">
     <servo name="TILT_LEFT" no="0" min="2100" neutral="1500" max="900"/>
     <servo name="TILT_RIGHT" no="1" min="900" neutral="1500" max="2100"/>
-    <servo name="RM" no="2" min="1100" neutral="1150" max="1900"/>
-    <servo name="LM" no="3" min="1100" neutral="1150" max="1900"/>
+    <servo name="RM" no="2" min="1000" neutral="1150" max="1900"/>
+    <servo name="LM" no="3" min="1000" neutral="1150" max="1900"/>
     <!--<servo name="SERVO_TEST" no="0" min="1000" neutral="1500" max="2000"/>-->
   </servos>
 
