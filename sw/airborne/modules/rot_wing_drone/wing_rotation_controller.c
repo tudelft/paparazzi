@@ -30,6 +30,7 @@
 #include "filters/low_pass_filter.h"
 #include "math/pprz_algebra_float.h"
 #include "subsystems/actuators.h"
+#include "state.h"
 
 
 #ifndef WING_ROTATION_SERVO_IDX
@@ -127,15 +128,15 @@ void skew_interpoler(void)
   // Propagate filters
   update_butterworth_2_low_pass(&airspeed_skew_filter, airspeed);
   float airspeed_f = airspeed_skew_filter.o[0];
-  printf("airspeed = %f \n",airspeed);
-  printf("airspeed_f= %f \n",airspeed_f);
+  //printf("airspeed = %f \n",airspeed);
+  //printf("airspeed_f= %f \n",airspeed_f);
   if (airspeed_f > 16){wing_rotation.wing_angle_deg_sp = 90;}
   else if(airspeed_f < 2){wing_rotation.wing_angle_deg_sp = 0;}
   else{
       for (int8_t i=0;i<skew_size;i++){
         if (airspeed_f <= airspeed_q[i]){
           wing_rotation.wing_angle_deg_sp = (skew_q[i]-skew_q[i-1])/(airspeed_q[i]-airspeed_q[i-1])*(airspeed_f-airspeed_q[i])+skew_q[i];
-          printf("i= %i \n",i);
+          //printf("i= %i \n",i);
           break;
         }
       }
