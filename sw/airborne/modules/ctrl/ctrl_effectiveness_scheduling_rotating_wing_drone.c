@@ -27,6 +27,7 @@
 #include "modules/rot_wing_drone/wing_rotation_controller.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
+#include "subsystems/actuators.h"
 #include "state.h"
 #include "filters/low_pass_filter.h"
 
@@ -91,16 +92,19 @@ float g1_startup[INDI_OUTPUTS][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL,
                                                 STABILIZATION_INDI_G1_PITCH, STABILIZATION_INDI_G1_YAW, STABILIZATION_INDI_G1_THRUST
                                                 };
 
-float rot_wing_aileron_limit_deg = 45;//45; // Aileron is effective from this angle value onwards
+float rot_wing_aileron_limit_deg = 45; // Aileron is effective from this angle value onwards
 float rot_wing_roll_prop_limit_deg = 70; // Roll props are not effective anymore from thus value onwards
 float rot_wing_pitch_prop_limit_deg = 100; // Pitch props are not effective anymore from thus value onwards
 float rot_wing_yaw_prop_limit_deg = 100; // // Yaw props are not effective anymore from thus value onwards
 float rot_wing_limit_deadzone_deg = 2; // The deadzone that is put on the wing angle sensor 
+float rot_wing_thrust_z_limit = 100; // PPRZ cmd
+float rot_wing_thrust_z_deadzone = 50; // PPRZ cmd
 
 bool rot_wing_ailerons_activated; // will be set during initialization
 bool rot_wing_roll_props_activated; // Will be set during initialization
 bool rot_wing_pitch_props_activated; // Will be set during initialization
 bool rot_wing_yaw_props_activated; // Will be set during initialization
+bool rot_wing_thrust_z_activated; // Will be set during initialization
 
 // Define filters
 #ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
@@ -220,6 +224,8 @@ void init_active_actuators(void)
   } else {
     rot_wing_yaw_props_activated = false;
   }
+
+  rot_wing_thrust_z_activated = true;
 }
 
 void evaluate_actuator_active(void)
@@ -277,6 +283,30 @@ void evaluate_actuator_active(void)
     // Check if needs to be activated
     if (rot_wing_angle_deg < (rot_wing_yaw_prop_limit_deg - rot_wing_limit_deadzone_deg)) {
       rot_wing_yaw_props_activated = true;
+    }
+  }
+
+  // Evaluate z thrust
+  if (rot_wing_thrust_z_activated)
+  {
+    // Loop over actuator 0, 1, 2, 3
+    for (uint8_t i = 0; i < 3; i++)
+    {
+      if (actuators_pprz[i] < (rot_wing_thrust_z_limit - rot_wing_thrust_z_deadzone))
+      {
+        rot_wing_thrust_z_activated = false;
+        break;
+      }
+    }
+  } else {
+    // Loop over actuator 0, 1, 2, 3
+    for (uint8_t i = 0; i < 3; i++)
+    {
+      if (actuators_pprz[i] > (rot_wing_thrust_z_limit + rot_wing_thrust_z_deadzone))
+      {
+        rot_wing_thrust_z_activated = true;
+        break;
+      }
     }
   }
 }

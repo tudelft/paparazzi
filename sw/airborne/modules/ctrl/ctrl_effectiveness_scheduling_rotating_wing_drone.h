@@ -27,6 +27,7 @@
 #define CTRL_EFFECTIVENESS_SCHEDULING_ROTATING_WING_DRONE_H
 
 #include "stdint.h"
+#include "stdbool.h"
 
 extern float rot_wing_aero_eff_const_p;
 extern float rot_wing_aero_eff_const_q;
@@ -40,6 +41,10 @@ extern float rot_wing_roll_prop_limit_deg;
 extern float rot_wing_pitch_prop_limit_deg;
 extern float rot_wing_yaw_prop_limit_deg;
 extern float rot_wing_limit_deadzone_deg;
+extern float rot_wing_thrust_z_limit;
+extern float rot_wing_thrust_z_deadzone;
+
+extern bool rot_wing_thrust_z_activated;
 
 // Define module functions
 extern void ctrl_eff_scheduling_rotating_wing_drone_init(void);

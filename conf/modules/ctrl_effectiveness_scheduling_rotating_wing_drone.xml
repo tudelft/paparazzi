@@ -9,6 +9,7 @@
   <settings>
     <dl_settings NAME="crtl_eff_scheduling">
       <dl_settings NAME="eff_sched">
+        <dl_setting MAX="1500" MIN="0" STEP="1.0" VAR="rot_wing_thrust_z_limit" shortname="PPRZ CMD limit"/>
         <dl_setting MAX="90" MIN="0" STEP="1.0" VAR="rot_wing_aileron_limit_deg" shortname="angle_limit_ailerons"/>
         <dl_setting MAX="100" MIN="0" STEP="1.0" VAR="rot_wing_roll_prop_limit_deg" shortname="roll_prop_angle_lim"/>
         <dl_setting MAX="100" MIN="0" STEP="1.0" VAR="rot_wing_pitch_prop_limit_deg" shortname="pitch_prop_angle_lim"/>
