@@ -174,6 +174,7 @@
         <define VALUE="TRUE" NAME="NO_GPS_LOST_WITH_RC_VALID"/>
         <define VALUE="TRUE" NAME="NO_RC_THRUST_LIMIT"/>
         <define name="GUIDANCE_INDI" value="TRUE"/>
+        <define name="AIRFRAME_WITH_PUSHER" value="TRUE"/> 
     </section>
 
     <section PREFIX="IMU_" NAME="IMU">
@@ -350,7 +351,6 @@
         <define VALUE="AP_MODE_NAV" NAME="MODE_AUTO2"/>
         <define VALUE="AP_MODE_ATTITUDE_DIRECT" NAME="MODE_STARTUP"/>
         <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST" value="100"/>
-        <define name="AIRFRAME_WITH_PUSHER" /> 
     </section>
 
     <section NAME="GCS">
