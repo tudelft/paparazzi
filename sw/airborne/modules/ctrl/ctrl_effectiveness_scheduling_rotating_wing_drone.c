@@ -123,6 +123,7 @@ inline void schedule_motor_effectiveness(float c_rot_wing_angle, float s_rot_win
 inline void schedule_aero_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle, float airspeed2);
 inline void update_g1g2_matrix(void);
 inline void schedule_lift_pitch_eff(float rot_wing_angle_rad);
+inline void schedule_guidance_zgains(float airspeed);
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -197,7 +198,7 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
   schedule_lift_pitch_eff(rot_wing_angle_rad);
 
   // Update gains
-  schedule_guidance_zgains(airspeed);
+  schedule_guidance_zgains(airspeed_lowpass_filter.o[0]);
 
   // Finally update g1g2 matrix
   update_g1g2_matrix();
