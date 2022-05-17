@@ -16,7 +16,9 @@
 
 
 //static float ab_to_cd(float x);
-static float pprz_to_theta(float x);
+//static float pprz_to_theta(float x);
+static float pprz_to_theta_left(float x);
+static float pprz_to_theta_right(float x);
 
 struct MassMomentsInertia I = {I_XX, I_YY, I_ZZ};
 
@@ -37,10 +39,9 @@ void ctrl_eff(void)
     /**
      * Some definitions for ease of reading. In the future I want to use angular acceleration of motor so labeled as omega already
      */
-//    float theta_l0 = ab_to_cd(actuator_state_filt_vect[0]);
-//    float theta_r0 = ab_to_cd(actuator_state_filt_vect[1]);
-    float theta_l0 = pprz_to_theta(actuator_state_filt_vect[0]);
-    float theta_r0 = pprz_to_theta(actuator_state_filt_vect[1]);
+
+    float theta_l0 = pprz_to_theta_left(actuator_state_filt_vect[0]);
+    float theta_r0 = pprz_to_theta_right(actuator_state_filt_vect[1]);
 //    float omega_r0 = actuator_state_filt_vect[2];
 //    float omega_l0 = actuator_state_filt_vect[3];
     float omega_r0 = actuator_state_filt_vect[2] < 4000 ? 4000 : actuator_state_filt_vect[2];
@@ -118,8 +119,8 @@ void ctrl_eff(void)
 
 void ctrl_eff_ground_contact(void)
 {
-    float delta_l0 = pprz_to_theta(actuator_state_filt_vect[0]);
-    float delta_r0 = pprz_to_theta(actuator_state_filt_vect[1]);
+    float delta_l0 = pprz_to_theta_left(actuator_state_filt_vect[0]);
+    float delta_r0 = pprz_to_theta_right(actuator_state_filt_vect[1]);
     float omega_r0 = actuator_state_filt_vect[2];
     float omega_l0 = actuator_state_filt_vect[3];
 
@@ -173,14 +174,34 @@ void ctrl_eff_ground_contact(void)
  * Linear function of form y = mx which maps command in pprz units
  * to an angle based on servo mapping
  */
-float pprz_to_theta(float x)
+float pprz_to_theta_left(float x)
 {
 	// Below gradient corresponds to 55 degrees which comes from putting
 	// the max value of servo from airframe file into linear equation
 	// for servo: y = -0.0909x + 136.35 (left)	[deg]
 	//			  y = -0.0901x + 135.15 (right)	[deg]
-	float gradient = 0.000099157;	// [rad]
-	return gradient * x;
+//	float gradient = 0.000099157;	// [rad]
+//	return gradient * x;
+	float m = 0.0001;
+	float c = 0.0;
+	return m * x + c;
+}
+
+/*
+ * Linear function of form y = mx which maps command in pprz units
+ * to an angle based on servo mapping
+ */
+float pprz_to_theta_right(float x)
+{
+	// Below gradient corresponds to 55 degrees which comes from putting
+	// the max value of servo from airframe file into linear equation
+	// for servo: y = -0.0909x + 136.35 (left)	[deg]
+	//			  y = -0.0901x + 135.15 (right)	[deg]
+//	float gradient = 0.000099157;	// [rad]
+//	return gradient * x;
+	float m = 0.0001;
+	float c = 0.0;
+	return m * x + c;
 }
 
 /*
