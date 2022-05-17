@@ -97,14 +97,17 @@ float rot_wing_roll_prop_limit_deg = 70; // Roll props are not effective anymore
 float rot_wing_pitch_prop_limit_deg = 100; // Pitch props are not effective anymore from thus value onwards
 float rot_wing_yaw_prop_limit_deg = 100; // // Yaw props are not effective anymore from thus value onwards
 float rot_wing_limit_deadzone_deg = 2; // The deadzone that is put on the wing angle sensor 
-float rot_wing_thrust_z_limit = 100; // PPRZ cmd
-float rot_wing_thrust_z_deadzone = 50; // PPRZ cmd
+float rot_wing_thrust_z_limit = 500; // PPRZ cmd
+float rot_wing_thrust_z_deadzone = 100; // PPRZ cmd
 
 bool rot_wing_ailerons_activated; // will be set during initialization
 bool rot_wing_roll_props_activated; // Will be set during initialization
 bool rot_wing_pitch_props_activated; // Will be set during initialization
 bool rot_wing_yaw_props_activated; // Will be set during initialization
 bool rot_wing_thrust_z_activated; // Will be set during initialization
+
+float speedz_gain_tuning_constant = GUIDANCE_INDI_SPEED_GAINZ;
+float speedz_gain_tuning_gradient = 0.114;
 
 // Define filters
 #ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
@@ -192,6 +195,9 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
 
   // Update pitch lift effectiveness
   schedule_lift_pitch_eff(rot_wing_angle_rad);
+
+  // Update gains
+  schedule_guidance_zgains(airspeed);
 
   // Finally update g1g2 matrix
   update_g1g2_matrix();
@@ -446,4 +452,15 @@ void schedule_lift_pitch_eff(float rot_wing_angle_rad)
   Bound(pitch_lift_angle_rad, 0, M_PI/2);
   float s_pitch_lift = sinf(pitch_lift_angle_rad);
   lift_pitch_eff = rot_wing_min_lift_pitch_eff + s_pitch_lift * lift_pitch_eff_diff;
+}
+
+void schedule_guidance_zgains(float airspeed)
+{
+  float speed_gainz = speedz_gain_tuning_constant - speedz_gain_tuning_gradient * airspeed;
+  // Check if speed_gain_z is not negative or too small, than enter a value of 0.2
+  if (speed_gainz < 0.2)
+  {
+    speed_gainz = 0.2;
+  }
+  gih_params.speed_gainz = speed_gainz;
 }
