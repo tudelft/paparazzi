@@ -41,13 +41,16 @@ extern float rot_wing_roll_prop_limit_deg;
 extern float rot_wing_pitch_prop_limit_deg;
 extern float rot_wing_yaw_prop_limit_deg;
 extern float rot_wing_limit_deadzone_deg;
-extern float rot_wing_thrust_z_limit;
-extern float rot_wing_thrust_z_deadzone;
+extern int16_t rot_wing_thrust_z_limit;
+extern int16_t rot_wing_thrust_z_deadzone;
 
 extern bool rot_wing_thrust_z_activated;
 
 extern float rot_wing_speedz_gain_tuning_constant;
 extern float rot_wing_speedz_gain_tuning_gradient;
+
+extern float rot_wing_speed_gain_tuning_constant;
+extern float rot_wing_speed_gain_tuning_gradient;
 
 // Define module functions
 extern void ctrl_eff_scheduling_rotating_wing_drone_init(void);
