@@ -237,7 +237,7 @@ void autopilot_check_in_flight(bool motors_on)
 {
   if (autopilot.in_flight) {
     #ifdef AIRFRAME_WITH_PUSHER
-      int32_t thrust_general = stabilization_cmd[COMMAND_THRUST] + (int32_t) actuator_thrust_bx_pprz: //replace with more universal call to pusher thrust
+      int32_t thrust_general = stabilization_cmd[COMMAND_THRUST] + (int32_t) actuator_thrust_bx_pprz; //replace with more universal call to pusher thrust
     #else
       int32_t thrust_general = stabilization_cmd[COMMAND_THRUST];
     #endif
