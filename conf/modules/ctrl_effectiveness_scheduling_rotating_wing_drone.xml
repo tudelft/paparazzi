@@ -10,9 +10,9 @@
     <dl_settings NAME="crtl_eff_scheduling">
       <dl_settings NAME="eff_sched">
         <dl_setting MAX="1500" MIN="0" STEP="1.0" VAR="rot_wing_thrust_z_limit" shortname="PPRZ CMD limit"/>
-        <dl_setting MAX="500" MIN="0" STEP="1.0" VAR="rot_wing_thrust_z_deadzone" shortname="PPRC CMD DZ"/>
-        <dl_setting MAX="20" MIN="0" STEP="0.1" VAR="speedz_gain_tuning_constant" shortume="speed_gain_z"/>
-        <dl_Setting MAX="1.0" MIN="0" STEP="0.001" VAR="speedz_gain_tuning_gradient" shortname="speed_gain_z_gradient"/>
+        <dl_setting MAX="500" MIN="0" STEP="1.0" VAR="rot_wing_thrust_z_deadzone" shortname="PPRC_CMD_DZ"/>
+        <dl_setting MAX="20" MIN="0" STEP="0.1" VAR="rot_wing_speedz_gain_tuning_constant" shortname="speed_gain_z"/>
+        <dl_setting MAX="1.0" MIN="0" STEP="0.001" VAR="rot_wing_speedz_gain_tuning_gradient" shortname="speed_gain_z_gradient"/>
         <dl_setting MAX="90" MIN="0" STEP="1.0" VAR="rot_wing_aileron_limit_deg" shortname="angle_limit_ailerons"/>
         <dl_setting MAX="100" MIN="0" STEP="1.0" VAR="rot_wing_roll_prop_limit_deg" shortname="roll_prop_angle_lim"/>
         <dl_setting MAX="100" MIN="0" STEP="1.0" VAR="rot_wing_pitch_prop_limit_deg" shortname="pitch_prop_angle_lim"/>

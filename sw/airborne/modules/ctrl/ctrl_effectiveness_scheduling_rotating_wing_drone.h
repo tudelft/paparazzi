@@ -46,6 +46,9 @@ extern float rot_wing_thrust_z_deadzone;
 
 extern bool rot_wing_thrust_z_activated;
 
+extern float rot_wing_speedz_gain_tuning_constant;
+extern float rot_wing_speedz_gain_tuning_gradient;
+
 // Define module functions
 extern void ctrl_eff_scheduling_rotating_wing_drone_init(void);
 extern void ctrl_eff_scheduling_rotating_wing_drone_periodic(void);

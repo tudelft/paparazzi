@@ -106,8 +106,8 @@ bool rot_wing_pitch_props_activated; // Will be set during initialization
 bool rot_wing_yaw_props_activated; // Will be set during initialization
 bool rot_wing_thrust_z_activated; // Will be set during initialization
 
-float speedz_gain_tuning_constant = GUIDANCE_INDI_SPEED_GAINZ;
-float speedz_gain_tuning_gradient = 0.114;
+float rot_wing_speedz_gain_tuning_constant = GUIDANCE_INDI_SPEED_GAINZ;
+float rot_wing_speedz_gain_tuning_gradient = 0.114;
 
 // Define filters
 #ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
@@ -456,7 +456,7 @@ void schedule_lift_pitch_eff(float rot_wing_angle_rad)
 
 void schedule_guidance_zgains(float airspeed)
 {
-  float speed_gainz = speedz_gain_tuning_constant - speedz_gain_tuning_gradient * airspeed;
+  float speed_gainz = rot_wing_speedz_gain_tuning_constant - rot_wing_speedz_gain_tuning_gradient * airspeed;
   // Check if speed_gain_z is not negative or too small, than enter a value of 0.2
   if (speed_gainz < 0.2)
   {
