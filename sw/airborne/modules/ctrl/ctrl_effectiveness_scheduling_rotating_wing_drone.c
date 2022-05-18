@@ -97,7 +97,7 @@ float rot_wing_roll_prop_limit_deg = 70; // Roll props are not effective anymore
 float rot_wing_pitch_prop_limit_deg = 100; // Pitch props are not effective anymore from thus value onwards
 float rot_wing_yaw_prop_limit_deg = 100; // // Yaw props are not effective anymore from thus value onwards
 float rot_wing_limit_deadzone_deg = 2; // The deadzone that is put on the wing angle sensor 
-int16_t rot_wing_thrust_z_limit = 500; // PPRZ cmd
+int16_t rot_wing_thrust_z_limit = 600; // PPRZ cmd
 int16_t rot_wing_thrust_z_deadzone = 100; // PPRZ cmd
 
 bool rot_wing_ailerons_activated; // will be set during initialization
@@ -110,7 +110,7 @@ float rot_wing_speedz_gain_tuning_constant = GUIDANCE_INDI_SPEED_GAINZ;
 float rot_wing_speedz_gain_tuning_gradient = 0.114;
 
 float rot_wing_speed_gain_tuning_constant = GUIDANCE_INDI_SPEED_GAIN;
-float rot_wing_speed_gain_tuning_gradient = 0.0333;
+float rot_wing_speed_gain_tuning_gradient = 0.026;
 
 // Define filters
 #ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
@@ -127,6 +127,7 @@ inline void schedule_aero_effectiveness(float c_rot_wing_angle, float s_rot_wing
 inline void update_g1g2_matrix(void);
 inline void schedule_lift_pitch_eff(float rot_wing_angle_rad);
 inline void schedule_guidance_zgains(float airspeed);
+inline void schedule_guidance_hgains(float airspeed);
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
