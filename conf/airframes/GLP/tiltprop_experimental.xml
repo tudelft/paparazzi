@@ -99,7 +99,7 @@
       <define name="IMU_MPU9250_READ_MAG" value="TRUE"/>
     </module>
 
-    <!--<module name="servo_tester"/>-->
+    <!-- <module name="servo_tester"/> -->
 
     <module name="air_data">
       <define name="USE_AIRSPEED_AIR_DATA" value="FALSE"/>
@@ -177,8 +177,8 @@
   </firmware>
 
   <servos driver="Pwm">
-    <servo name="TILT_LEFT" no="0" min="2100" neutral="1500" max="900"/>
-    <servo name="TILT_RIGHT" no="1" min="900" neutral="1500" max="2100"/>
+    <servo name="TILT_LEFT" no="0" min="900" neutral="1500" max="2100"/>
+    <servo name="TILT_RIGHT" no="1" min="2100" neutral="1500" max="900"/>
     <servo name="RM" no="2" min="1000" neutral="1150" max="1900"/>
     <servo name="LM" no="3" min="1000" neutral="1150" max="1900"/>
     <!--<servo name="SERVO_TEST" no="0" min="1000" neutral="1500" max="2000"/>-->
@@ -222,7 +222,7 @@
     <define name="MAG_Z_SENS" value="3.57182532939" integer="16"/>
 
     <define name="BODY_TO_IMU_PHI" value="-1" unit="deg"/>
-    <define name="BODY_TO_IMU_THETA" value="92.5" unit="deg"/>
+    <define name="BODY_TO_IMU_THETA" value="93" unit="deg"/>
     <define name="BODY_TO_IMU_PSI" value="0." unit="deg"/>
   </section>
 
