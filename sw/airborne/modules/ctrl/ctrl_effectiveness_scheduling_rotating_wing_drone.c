@@ -121,7 +121,7 @@ Butterworth2LowPass airspeed_lowpass_filter;
 
 // Scheduler function to activate ailerons / roll motors bases
 inline void init_active_actuators(void);
-inline void evaluate_actuator_active(void);
+inline void evaluate_actuator_active(float airspeed);
 inline void schedule_motor_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle);
 inline void schedule_aero_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle, float airspeed2);
 inline void update_g1g2_matrix(void);
@@ -189,7 +189,7 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
   #endif
 
   // perform function that schedules switching on and off actuators based on roll angle
-  evaluate_actuator_active();
+  evaluate_actuator_active(airspeed_lowpass_filter.o[0]);
 
   // Update motor effectiveness
   schedule_motor_effectiveness(c_rot_wing_angle, s_rot_wing_angle);
@@ -241,7 +241,7 @@ void init_active_actuators(void)
   rot_wing_thrust_z_activated = true;
 }
 
-void evaluate_actuator_active(void)
+void evaluate_actuator_active(float airspeed)
 {
   // This function checks which actuators may be used for roll
 
@@ -302,23 +302,33 @@ void evaluate_actuator_active(void)
   // Evaluate z thrust
   if (rot_wing_thrust_z_activated)
   {
-    // Loop over actuator 0, 1, 2, 3
-    for (uint8_t i = 0; i < 3; i++)
+    // only deactivate when airspeed is bigger than 5 m/s
+    if (airspeed > 5)
     {
-      if (actuators_pprz[i] < (rot_wing_thrust_z_limit - rot_wing_thrust_z_deadzone))
+      // Loop over actuator 0, 1, 2, 3
+      for (uint8_t i = 0; i < 3; i++)
       {
-        rot_wing_thrust_z_activated = false;
-        break;
+        if (actuators_pprz[i] < (rot_wing_thrust_z_limit - rot_wing_thrust_z_deadzone))
+        {
+          rot_wing_thrust_z_activated = false;
+          break;
+        }
       }
     }
   } else {
-    // Loop over actuator 0, 1, 2, 3
-    for (uint8_t i = 0; i < 3; i++)
+    // activate when below 5 m/s
+    if (airspeed < 5)
     {
-      if (actuators_pprz[i] > (rot_wing_thrust_z_limit + rot_wing_thrust_z_deadzone))
+      rot_wing_thrust_z_activated = true;
+    } else {
+      // Loop over actuator 0, 1, 2, 3
+      for (uint8_t i = 0; i < 3; i++)
       {
-        rot_wing_thrust_z_activated = true;
-        break;
+        if (actuators_pprz[i] > (rot_wing_thrust_z_limit + rot_wing_thrust_z_deadzone))
+        {
+          rot_wing_thrust_z_activated = true;
+          break;
+        }
       }
     }
   }
