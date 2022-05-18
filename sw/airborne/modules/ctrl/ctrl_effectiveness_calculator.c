@@ -180,11 +180,11 @@ float pprz_to_theta_left(float x)
 	// the max value of servo from airframe file into linear equation
 	// for servo: y = -0.0909x + 136.35 (left)	[deg]
 	//			  y = -0.0901x + 135.15 (right)	[deg]
-//	float gradient = 0.000099157;	// [rad]
-//	return gradient * x;
-	float m = 0.0001;
-	float c = 0.0;
-	return m * x + c;
+	float gradient = 0.000099157;	// [rad]
+	return gradient * x;
+//	float m = 0.0001;
+//	float c = 0.0;
+//	return m * x + c;
 }
 
 /*
@@ -197,11 +197,11 @@ float pprz_to_theta_right(float x)
 	// the max value of servo from airframe file into linear equation
 	// for servo: y = -0.0909x + 136.35 (left)	[deg]
 	//			  y = -0.0901x + 135.15 (right)	[deg]
-//	float gradient = 0.000099157;	// [rad]
-//	return gradient * x;
-	float m = 0.0001;
-	float c = 0.0;
-	return m * x + c;
+	float gradient = 0.000099157;	// [rad]
+	return gradient * x;
+//	float m = 0.0001;
+//	float c = 0.0;
+//	return m * x + c;
 }
 
 /*
