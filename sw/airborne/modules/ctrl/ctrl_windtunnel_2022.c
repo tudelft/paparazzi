@@ -35,8 +35,8 @@
 #include "mcu_periph/sys_time.h"
 
 float dt_s = 1;//1-3;
-float dt_m = 1;//3-6;
-float dt_l = 2;//5-10;
+float dt_m = 4;//3-6;
+float dt_l = 7;//5-10;
 #define imax 7 // Wing set point counter
 #define jmax 5 // Motor status counter
 #define mmax 4 // Motor counter
@@ -91,7 +91,7 @@ bool skew_moment(void)
           printf("Wing SP = %f \n",wing_rotation.wing_angle_deg_sp);
           done_skew = false;}
         else{
-          if((get_sys_time_float() - t_skew) > (1.5*3.14*0.5/max_rotation_rate)){
+          if((get_sys_time_float() - t_skew) > (2.0*3.14*0.5/max_rotation_rate)){
             done_skew = true;
             o += 1;}}
         return true;    
