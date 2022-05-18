@@ -29,6 +29,7 @@
       <message name="INDI_G"            period="0.25"/>
       <message name="EFF_FULL_INDI"            period="0.02"/> 
       <message name="AIRSPEED_MS45XX" 	       period=".25"/>
+      <message name="ACTUATORS" 	       period=".1"/>
     </mode>
 
     <mode name="ppm">
