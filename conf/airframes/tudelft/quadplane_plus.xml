@@ -202,7 +202,6 @@
     <set servo="AZ_4" value="(-overactuated_mixing.commands[11])"/>
   </command_laws>
 
-
   <section name="OVERACTUATED_VARIABLES" prefix="OVERACTUATED_MIXING_">
 
     <!-- PID gains wrt the SI units -->
@@ -262,7 +261,6 @@
     <define name="PID_MAX_AZ_ORDER" value="35" unit="deg"/> <!--max azimuth deflection in PID mode-->
 
     <!-- INDI proportional gains -->
-
     <define name="INDI_REF_ERR_P" value="1.5"/>
     <define name="INDI_REF_ERR_Q" value="1.5"/>
     <define name="INDI_REF_ERR_R" value="1.5"/>
@@ -303,7 +301,7 @@
     <define name="INDI_EL_SECOND_ORD_DELAY" value="0.015" />
     <define name="INDI_EL_SECOND_ORD_RATE_LIMIT" value="11.34" />
 
-    <define name="MOTOR_K_T_OMEGASQ" value="0.88e-5" unit="N/(rad/s)^2"/>
+    <define name="MOTOR_K_T_OMEGASQ" value="0.95e-5" unit="N/(rad/s)^2"/>
     <define name="MOTOR_K_M_OMEGASQ" value="1.3e-7" unit="N*m/(rad/s)^2"/>
     <define name="MOTOR_K_PWM_OMEGA" value=".95" unit="PWM/(rad/s)"/>
     <define name="MOTOR_MAX_OMEGA" value="950" unit="rad/s"/>
@@ -324,7 +322,7 @@
     <define name="SERVO_AZ_3_ZERO_VALUE" value="0" unit="deg"/>
     <define name="SERVO_AZ_4_ZERO_VALUE" value="0" unit="deg"/>
 
-    <define name="MAX_THETA_INDI" value="100" unit="deg"/>
+    <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-30" unit="deg"/>
     <define name="MAX_PHI_INDI" value="40" unit="deg"/>
     <define name="MAX_AOA_INDI" value="15" unit="deg"/>
@@ -339,11 +337,11 @@
 
     <!-- INDI properties [weights] -->
     <define name="W_ACT_MOTOR_CONST" value="1"/>
-    <define name="W_ACT_MOTOR_SPEED" value="0"/>
+    <define name="W_ACT_MOTOR_SPEED" value="1"/>
     <define name="W_ACT_EL_CONST" value="1"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
     <define name="W_ACT_AZ_CONST" value="1"/>
-    <define name="W_ACT_AZ_SPEED" value="0"/>
+    <define name="W_ACT_AZ_SPEED" value="100"/>
     <define name="W_ACT_THETA_CONST" value="400"/>
     <define name="W_ACT_THETA_SPEED" value="-50"/>
     <define name="W_ACT_PHI_CONST" value="500"/>
@@ -351,16 +349,12 @@
 
     <define name="W_DV_1" value="0.01"/>
     <define name="W_DV_2" value="0.01"/>
-    <define name="W_DV_3" value="0.01"/>
+    <define name="W_DV_3" value="0.015"/>
     <define name="W_DV_4" value=".1"/>
     <define name="W_DV_5" value=".1"/>
     <define name="W_DV_6" value="0.01"/>
 
-    <define name="GAMMA_QUADRATIC_DV" value="1"/>
     <define name="GAMMA_QUADRATIC_DU" value="1e-5"/>
-    <define name="GAMMA_QUADRATIC_WLS" value="10000"/>
-
-    <define name="MAX_ITER_WLS" value="100"/>
 
   </section>
 

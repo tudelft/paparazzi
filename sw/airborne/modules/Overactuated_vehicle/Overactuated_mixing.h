@@ -88,7 +88,8 @@ extern struct PD_indi_over indi_gains_over;
 extern struct ActuatorsStruct act_dyn_struct;
 
 // Variables for slider
-extern float wind_speed;
+extern float des_pos_earth_x;
+extern float des_pos_earth_y;
 extern bool mode_1_control;
 extern float stick_gain_yaw;
 extern float stick_gain_throttle;
@@ -98,11 +99,6 @@ extern bool yaw_with_tilting_PID;
 extern bool yaw_with_motors_PID;
 extern bool position_with_attitude;
 extern bool manual_motor_stick;
-
-//Variables for autonomous maneuver:
-extern int start_auto;
-extern float ax_point, ay_point, bx_point, by_point, cx_point, cy_point, ox_point, oy_point, z_test, pitch_angle_test, roll_angle_test, z_end;
-extern int controller_id;
 
 extern bool manual_heading;
 extern int manual_heading_value_rad;

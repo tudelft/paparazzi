@@ -19,7 +19,7 @@
  */
 /**
  * @file "modules/sensors/ca_am7.h"
- * @author OpenUAS
+ * @author Alessandro Mancinelli
  * Converts telemtry data from a CA device AM7 type to the autopilot
  */
 
