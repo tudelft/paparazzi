@@ -379,15 +379,18 @@
     </message>
 
     <message name="CHIRP" id="45">
-      <field name="active"        type="uint8">Chirp is active</field>
+      <field name="active"              type="uint8">Chirp is active</field>
       <field name="percentage_done"     type="float">Percentage done</field>
       <field name="current_frequency"   type="float">Current frequency</field>
-      <field name="axis"          type="uint8">Current chirp axis</field>
+      <field name="axis"                type="uint8">Current chirp axis</field>
       <field name="amplitude"           type="int16">Amplitude</field>
       <field name="fstart"              type="float">Start frequency</field>
       <field name="fstop"               type="float">Stop frequency</field>
       <field name="noise_onaxis_ratio"  type="float">Noise ratio onaxis</field>
       <field name="noise_offaxis"       type="float">Noise offaxis</field>
+      <field name="current_value"       type="int16">Current chirp value</field>
+      <field name="fade_in"             type="uint8" unit="bool">Fade in feature active</field>
+      <field name="exponential"         type="uint8" unit="bool">Exponential chirp active</field>
     </message>
 
     <message name="BARO_WORDS" id="46">
@@ -455,21 +458,19 @@
       <field name="groundspeed_sp" type="float" unit="m/s"/>
     </message>
 
-   <message name="FRISBEE_CONTROL" id="55">
-     <field name="is_spinning" type="uint8">Is module currently active</field>
-     <field name="v_filt" type="float" unit="m/s">Filtered horizontal velocity norm NED</field>
-     <field name="ml_avg" type="float">Motor LEFT cyclic average</field>
-     <field name="ml_delta" type="float">Motor LEFT cyclic half amplitude</field>
-     <field name="mr_avg" type="float">Motor RIGHT cyclic average</field>
-     <field name="mr_delta" type="float">Motor RIGHT cyclic half amplitude</field>
-     <field name="el_avg" type="float">Elevon LEFT cyclic average</field>
-     <field name="el_delta" type="float">Elevon LEFT cyclic half amplitude</field>
-     <field name="er_avg" type="float">Elevon RIGHT cyclic average</field>
-     <field name="er_delta" type="float">Elevon RIGHT cyclic half amplitude</field>
-     <field name="phase_mot" type="float">Motor cyclic phase</field>
-     <field name="phase_el" type="float">Elevon cyclic phase</field>
-     <field name="my_psi" type="float">Psi from MAG</field>
-   </message>
+    <message name="METEO_STICK" id="55">
+      <description>
+        Data from the MeteoSitck sensor board
+      </description>
+      <field name="lat"   type="int32"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="lon"   type="int32"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="hmsl"  type="int32"  unit="mm" alt_unit="m">Height above Mean Sea Level (geoid)</field>
+      <field name="itow"  type="uint32" unit="ms">GPS time of week</field>
+      <field name="pressure" type="float" unit="Pa">absolute static pressure</field>
+      <field name="temperature" type="float" unit="deg C">temperature</field>
+      <field name="humidity" type="float" unit="%">relative humidity</field>
+      <field name="airspeed" type="float" unit="m/s">calibrated airspeed</field>
+    </message>
 
     <message name="BARO_ETS" id="56">
       <field name="adc" type="uint16"/>
@@ -523,7 +524,17 @@
       <field name="elevator_sp"  type="int16" unit="pprz"/>
     </message>
 
-    <!-- 61 is free -->
+    <message name="CLOUD_SENSOR" id="61">
+      <description>
+        Geolocalized and timestamped data from the meteo cloud sensor module
+      </description>
+      <field name="lat"   type="int32"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="lon"   type="int32"  unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
+      <field name="hmsl"  type="int32"  unit="mm" alt_unit="m">Height above Mean Sea Level (geoid)</field>
+      <field name="itow"  type="uint32" unit="ms">GPS time of week</field>
+      <field name="coef"  type="float">Angstrom coefficient computed on board</field>
+      <field name="raw"   type="float[]">Raw values and extra measurements data</field>
+    </message>
 
     <message name="TURB_PRESSURE_VOLTAGE" id="62">
       <field name="ch_1_p" type="float"/>
@@ -667,7 +678,21 @@
       <field name="phi" type="float[]" unit="m">Error signals</field>
     </message>
 
-    <!-- 76 is free -->
+    <message name="FRISBEE_CONTROL" id="76">
+     <field name="is_spinning" type="uint8">Is module currently active</field>
+     <field name="v_filt" type="float" unit="m/s">Filtered horizontal velocity norm NED</field>
+     <field name="ml_avg" type="float">Motor LEFT cyclic average</field>
+     <field name="ml_delta" type="float">Motor LEFT cyclic half amplitude</field>
+     <field name="mr_avg" type="float">Motor RIGHT cyclic average</field>
+     <field name="mr_delta" type="float">Motor RIGHT cyclic half amplitude</field>
+     <field name="el_avg" type="float">Elevon LEFT cyclic average</field>
+     <field name="el_delta" type="float">Elevon LEFT cyclic half amplitude</field>
+     <field name="er_avg" type="float">Elevon RIGHT cyclic average</field>
+     <field name="er_delta" type="float">Elevon RIGHT cyclic half amplitude</field>
+     <field name="phase_mot" type="float">Motor cyclic phase</field>
+     <field name="phase_el" type="float">Elevon cyclic phase</field>
+     <field name="my_psi" type="float">Psi from MAG</field>
+   </message>
 
     <message name="SWARM_FISH" id="77">
       <description>
@@ -828,7 +853,23 @@
       <field name="filenames" type="char[]">The filenames currently in use by the logger (First sdlog, second Flight recorder for chibios)</field>
     </message>
 
-    <!-- 93 is free -->
+    <message name="MINIMAL_COM" id="93">
+      <description>
+        Minimal information for correct display in the GCS, in particular the Strip
+      </description>
+      <field name="lat"         type="float" unit="deg">Lattitude</field>
+      <field name="lon"         type="float" unit="deg">Longitude</field>
+      <field name="hmsl"        type="float" unit="m">Altitude above mean sea level</field>
+      <field name="gspeed"      type="float" unit="m/s">Ground speed norm</field>
+      <field name="course"      type="float" unit="rad" alt_unit="deg">Ground speed direction</field>
+      <field name="climb"       type="float" unit="m/s">Vertical speed</field>
+      <field name="vsupply"     type="float" unit="V">Battery voltage</field>
+      <field name="throttle"    type="uint8" unit="%">Throttle level</field>
+      <field name="ap_mode"     type="uint8">Current autopilot mode</field>
+      <field name="nav_block"   type="uint8">Current navigation block</field>
+      <field name="gps_mode"    type="uint8">GPS fix flag</field>
+      <field name="flight_time" type="uint16">Flight time</field>
+    </message>
 
     <message name="MOTOR_BENCH_STATUS" id="94">
       <field name="time_ticks" type="uint32"/>
@@ -841,7 +882,11 @@
       <field name="mode" type="uint8"/>
     </message>
 
-    <!-- 95 is free -->
+    <message name="OPTI_ATT" id="95">
+      <field name="opti_phi" type="float"/>
+      <field name="opti_theta" type="float"/>
+      <field name="opti_psi" type="float"/>
+    </message>
 
     <message name="HIH_STATUS" id="96">
       <field name="humid" type="uint16"/>
@@ -2439,6 +2484,16 @@
       <field name="params" type="float[]">List of parameters, 12 max</field>
     </message>
 
+    <message name="MISSION_UPDATE" id="29" link="forwarded">
+      <description>
+        Update parameters of a mission element without changing the mission element list or current execution.
+      </description>
+      <field name="ac_id" type="uint8">Aircraft ID</field>
+      <field name="index" type="uint8">Index of mission element to update</field>
+      <field name="duration" type="float" unit="s">Duration of the element, -1 for unlimited, -9 for no change</field>
+      <field name="params" type="float[]">List of parameters, 12 max</field>
+    </message>
+
     <message name="GOTO_MISSION" id="30" link="forwarded">
       <field name="ac_id" type="uint8"/>
       <field name="mission_id" type="uint8"/>
@@ -2535,29 +2590,34 @@
       <field name="kill"        type="int8"/>
     </message>
 
-    <message name="REMOTE_GPS_SMALL" id="54" link="forwarded">
-      <field name="heading"   type="int16"  unit="1e4rad" alt_unit="deg" alt_unit_coef="0.0057296"/>
-      <field name="pos_xyz"  	type="uint32">bits 31-21 east position [cm] : bits 20-10 north position [cm] : bits 9-0 up position [cm]</field>
-      <field name="speed_xyz" type="uint32">bits 31-21 east speed [cm/s] : bits 20-10 north speed [cm/s] : bits 9-0 climb speed [cm/s]</field>
-      <field name="tow"   	type="uint32" unit="ms" alt_unit="s" alt_unit_coef="0.001"/>
-      <field name="ac_id"   	type="uint8"/>
+    <message name="EXTERNAL_POSE" id="54" link="forwarded">
+      <description>
+        Position, speed and orientation in local frame from a remote vision system
+      </description>
+      <field name="ac_id"     type="uint8">AC id for which the data is meant</field>
+      <field name="timestamp" type="uint32" unit="ms">Timestamp from the measurement</field>
+      <field name="enu_x"     type="float" unit="m">ENU x position in vision frame</field>
+      <field name="enu_y"     type="float" unit="m">ENU y position in vision frame</field>
+      <field name="enu_z"     type="float" unit="m">ENU z position in vision frame</field>
+      <field name="enu_xd"    type="float" unit="m/s">ENU x speed in vision frame</field>
+      <field name="enu_yd"    type="float" unit="m/s">ENU y speed in vision frame</field>
+      <field name="enu_zd"    type="float" unit="m/s">ENU z speed in vision frame</field>
+      <field name="body_qi"   type="float">Body quaternion i in vision frame</field>
+      <field name="body_qx"   type="float">Body quaternion x in vision frame</field>
+      <field name="body_qy"   type="float">Body quaternion y in vision frame</field>
+      <field name="body_qz"   type="float">Body quaternion z in vision frame</field>
     </message>
 
-    <message name="REMOTE_GPS" id="55" link="forwarded">
-      <field name="ac_id"   type="uint8"/>
-      <field name="numsv"   type="uint8"/>
-      <field name="ecef_x"  type="int32" unit="cm"   alt_unit="m"/>
-      <field name="ecef_y"  type="int32" unit="cm"   alt_unit="m"/>
-      <field name="ecef_z"  type="int32" unit="cm"   alt_unit="m"/>
-      <field name="lat"     type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
-      <field name="lon"     type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
-      <field name="alt"     type="int32" unit="mm"   alt_unit="m">Height above WGS84 reference ellipsoid</field>
-      <field name="hmsl"    type="int32" unit="mm"   alt_unit="m">Height above Mean Sea Level (geoid)</field>
-      <field name="ecef_xd" type="int32" unit="cm/s" alt_unit="m/s"/>
-      <field name="ecef_yd" type="int32" unit="cm/s" alt_unit="m/s"/>
-      <field name="ecef_zd" type="int32" unit="cm/s" alt_unit="m/s"/>
-      <field name="tow"     type="uint32"/>
-      <field name="course"  type="int32"  alt_unit="deg" alt_unit_coef="0.0000057296"/>
+    <message name="EXTERNAL_POSE_SMALL" id="55" link="forwarded">
+      <description>
+        Position, speed and orientation in local frame from a remote vision system
+        Smaller message where position, speed is in cm multiplied by a resolution
+      </description>
+      <field name="ac_id"     type="uint8">AC id for which the data is meant</field>
+      <field name="timestamp" type="uint32" unit="ms">Timestamp from the measurement</field>
+      <field name="enu_pos"   type="uint32">ENU position in vision frame(bits 31-21 east position [cm*pos_res] : bits 20-10 north position [cm*pos_res] : bits 9-0 up position [cm*pos_res])</field>
+      <field name="enu_speed" type="uint32">ENU speed in vision frame(bits 31-21 east position [cm*pos_res] : bits 20-10 north position [cm*pos_res] : bits 9-0 up position [cm*pos_res])</field>
+      <field name="heading"   type="int16"  unit="1e4rad" alt_unit="deg" alt_unit_coef="0.0057296">Heading in ENU vision frame</field>
     </message>
 
     <message name="REMOTE_GPS_LOCAL" id="56" link="forwarded">

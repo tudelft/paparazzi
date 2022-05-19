@@ -44,6 +44,15 @@
 #define EXTERNAL_POSE_SMALL_SPEED_RES 1.0
 #endif
 
+float opti_phi = 0;
+float opti_theta = 0;
+float opti_psi = 0;
+
+#include "modules/datalink/telemetry.h"
+static void send_opti_att(struct transport_tx *trans, struct link_device *dev) {
+  pprz_msg_send_OPTI_ATT(trans, dev, AC_ID, &opti_phi, &opti_theta, &opti_psi);
+}
+
 struct GpsState gps_datalink;
 static struct LtpDef_i ltp_def;
 
@@ -65,6 +74,8 @@ void gps_datalink_init(void)
   llh_nav0.alt = NAV_ALT0 + NAV_MSL0;
 
   ltp_def_from_lla_i(&ltp_def, &llh_nav0);
+
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_OPTI_ATT, send_opti_att);
 }
 
 /** Publish the GPS data */
@@ -143,6 +154,10 @@ void gps_datalink_parse_EXTERNAL_POSE(uint8_t *buf)
   struct FloatEulers body_e;
   float_eulers_of_quat(&body_e, &body_q);
   float heading = body_e.psi;
+
+  opti_phi = body_e.phi;
+  opti_theta = body_e.theta;
+  opti_psi = body_e.psi;
 
   gps_datalink_publish(tow, &enu_pos, &enu_speed, heading);
 }
