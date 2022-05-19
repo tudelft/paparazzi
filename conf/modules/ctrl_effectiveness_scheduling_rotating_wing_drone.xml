@@ -9,6 +9,8 @@
   <settings>
     <dl_settings NAME="crtl_eff_scheduling">
       <dl_settings NAME="eff_sched">
+        <dl_setting MAX="12" MIN="-5" STEP="0.1" VAR="rot_wing_pitch_pref_hover_deg" shortname="hover_pref_pitch"/>
+        <dl_setting MAX="12" MIN="-5" STEP="0.1" VAR="rot_wing_pitch_pref_fwd_deg" shortname="fwd_pref_pitch"/>
         <dl_setting MAX="1500" MIN="0" STEP="1" VAR="rot_wing_thrust_z_limit" shortname="PPRZ CMD limit"/>
         <dl_setting MAX="500" MIN="0" STEP="1" VAR="rot_wing_thrust_z_deadzone" shortname="PPRC_CMD_DZ"/>
         <dl_setting MAX="20" MIN="0" STEP="0.1" VAR="rot_wing_speedz_gain_tuning_constant" shortname="speed_gain_z"/>

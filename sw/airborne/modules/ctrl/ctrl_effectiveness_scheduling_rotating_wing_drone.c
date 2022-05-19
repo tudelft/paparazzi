@@ -112,6 +112,9 @@ float rot_wing_speedz_gain_tuning_gradient = 0.114;
 float rot_wing_speed_gain_tuning_constant = GUIDANCE_INDI_SPEED_GAIN;
 float rot_wing_speed_gain_tuning_gradient = 0.026;
 
+float rot_wing_pitch_pref_fwd_deg = 10.;
+float rot_wing_pitch_pref_hover_deg = -2.;
+
 // Define filters
 #ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
 #define ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF 1.5
@@ -128,6 +131,7 @@ inline void update_g1g2_matrix(void);
 inline void schedule_lift_pitch_eff(float rot_wing_angle_rad);
 inline void schedule_guidance_zgains(float airspeed);
 inline void schedule_guidance_hgains(float airspeed);
+inline void schedule_pref_pitch_angle(float s_rot_wing_angle);
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -200,6 +204,9 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
 
   // Update pitch lift effectiveness
   schedule_lift_pitch_eff(rot_wing_angle_rad);
+
+  // Schedile pitch pref
+  schedule_pref_pitch_angle(s_rot_wing_angle);
 
   // Update gains
   schedule_guidance_zgains(airspeed_lowpass_filter.o[0]);
@@ -306,14 +313,18 @@ void evaluate_actuator_active(float airspeed)
     // only deactivate when airspeed is bigger than 5 m/s
     if (airspeed > 5)
     {
-      // Loop over actuator 0, 1, 2, 3
+      // Loop over actuator 0, 1, 2, 3, if all actuators ppprz_cmds are below the threshold, switch off
+      uint8_t counter_motors = 0;
       for (uint8_t i = 0; i < 3; i++)
       {
         if (actuators_pprz[i] < (rot_wing_thrust_z_limit - rot_wing_thrust_z_deadzone))
         {
-          rot_wing_thrust_z_activated = false;
-          break;
+          counter_motors += 1;
         }
+      }
+      if (counter_motors == 4)
+      {
+        rot_wing_thrust_z_activated = false;
       }
     }
   } else {
@@ -492,4 +503,19 @@ void schedule_guidance_hgains(float airspeed)
     speed_gain = 0.2;
   }
   gih_params.speed_gain = speed_gain;
+}
+
+void schedule_pref_pitch_angle(float s_rot_wing_angle)
+{
+  float pitch_pref_range_deg = rot_wing_pitch_pref_fwd_deg - rot_wing_pitch_pref_hover_deg;
+
+  // Bound rot_wing_angle
+  if (s_rot_wing_angle < 0)
+  {
+    s_rot_wing_angle = 0;
+  }
+
+  // Schedule prefered pitch angle
+  float pitch_diff_deg = pitch_pref_range_deg * s_rot_wing_angle;
+  pitch_pref_deg = rot_wing_pitch_pref_hover_deg + pitch_diff_deg;
 }
