@@ -196,7 +196,7 @@ bool theta_slowdown = true;
 
 
 float hybrid_roll_limit = 0.785; // 45 deg
-float hybrid_pitch_limit = 0.244;//14 deg//0.349; // 20 deg
+float hybrid_pitch_limit = 0.209;//12 deg//0.349; // 20 deg
 
 float proj_wp_dist = 30.;
 bool roll_zero = false;
@@ -496,7 +496,7 @@ void guidance_indi_run(float *heading_sp) {
     //else if (hybrid_du[i]>0){scaler_new[i] = 1;}
     //else {scaler_new[i] = 0;}
   }
-  printf("WLS Divider = %f,%f,%f,%f\n",divider[0],divider[1],divider[2],divider[3]);
+  //printf("WLS Divider = %f,%f,%f,%f\n",divider[0],divider[1],divider[2],divider[3]);
   //printf("Commanded Delta T = %f\n", euler_cmd.z);
 #else
   MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
@@ -910,7 +910,7 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   if (theta_slowdown){du_pref_hybrid[1]=0;
   pitch_pref_rad = pitch_pref_deg / 180. * M_PI;}
   else {
-    pitch_pref_deg = -2;
+    //pitch_pref_deg = -2;
     pitch_pref_rad = pitch_pref_deg / 180. * M_PI;
     du_pref_hybrid[1] = -pitch_filt.o[0] + pitch_pref_rad;}
   du_pref_hybrid[2] = du_min_hybrid[2];//du_max_hybrid[2];//0;
@@ -962,7 +962,7 @@ float guidance_indi_get_liftd(float airspeed, float theta) {
     if (liftd > 0) {
       liftd = 0.0;
     }} else{
-      printf("STALL\n");
+      //printf("STALL\n");
       liftd = airspeed*airspeed*0.5*1.225*(1.56*0.235)/3.5*lift_pitch_eff/M_PI*180.0;
     }
   }

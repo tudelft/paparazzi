@@ -49,6 +49,8 @@ struct guidance_indi_hybrid_params {
   float heading_bank_gain;
 };
 
+extern float hybrid_pitch_limit;
+
 extern struct guidance_indi_hybrid_params gih_params;
 extern float guidance_indi_specific_force_gain;
 extern float guidance_indi_max_airspeed;
