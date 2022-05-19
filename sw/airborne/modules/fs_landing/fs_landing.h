@@ -9,7 +9,7 @@
 #include "std.h"
 #include "state.h"
 #include "generated/airframe.h"
-#include "subsystems/radio_control.h"
+#include "modules/radio_control/radio_control.h"
 #include "mcu_periph/sys_time.h"
 
 #ifndef SERVO_S_THROTTLE_LEFT
@@ -56,6 +56,7 @@ extern void fs_landing_run(void);
 
 void horizontal_velocity_filter(void);
 void my_psi_from_mag(void);
+void mag_psi_offset_correction(void);
 float get_matching_motl_val(int32_t val);
 
 // Handlers for changing gcs variables

@@ -10,8 +10,8 @@
 
 #include "math/pprz_algebra_float.h"
 #include "math/pprz_algebra_int.h"
-#include "subsystems/abi.h"
-#include "subsystems/datalink/downlink.h"
+#include "modules/core/abi.h"
+#include "modules/datalink/downlink.h"
 
 #include "generated/airframe.h"
 
@@ -56,8 +56,22 @@ float bt = 0;
 float filt_init_start_t = 0;
 #define FILT_INIT_TIME 1.5
 
+// Calculation of psi from mag
 struct Int32Vect3 *_mag;
 float my_psi = 0;
+
+#define N_COOLDOWN 10
+#define INIT_VALUE 2
+float mx_t = 0, mx_t1 = 0, mx_t2 = 0;
+float my_t = 0, my_t1 = 0, my_t2 = 0;
+float max_mx = INIT_VALUE, min_mx = INIT_VALUE;
+float max_my = INIT_VALUE, min_my = INIT_VALUE;
+float dmx = 0, dmx_old = 0;
+float dmy = 0, dmy_old = 0;
+float offset_mx = 0;
+float offset_my = 0;
+int32_t sign_counter_mx = 0, zero_crossing_cd_mx = 0;
+int32_t sign_counter_my = 0, zero_crossing_cd_my = 0;
 
 #ifndef MAG_RM3100_SENDER_ID
 #define MAG_RM3100_SENDER_ID ABI_BROADCAST
@@ -87,7 +101,7 @@ static void mag_rm3100_cb(uint8_t __attribute__((unused)) sender_id,
      <field name="my_psi" type="float">Psi from MAG</field>
  * </message>
  */
-#include "subsystems/datalink/telemetry.h"
+#include "modules/datalink/telemetry.h"
 static void send_frisbee_control(struct transport_tx *trans, struct link_device *dev) {
   // Multiply with boolean to only send the value when variables are actually being used
   float fs_msg_ml_avg = cyclic_control_active * ml_avg;
@@ -121,7 +135,7 @@ void fs_landing_init()
 //  cyclic_controller_init();
 }
 
-// TODO Make sure all files agree on direction of spin (e.g. assume anti-clockwise rotation)
+// TODO Make sure all files agree on direction of spin (assume anti-clockwise rotation)
 void fs_landing_run()
 {
   if (is_fs_landing_active()) {
@@ -136,7 +150,8 @@ void fs_landing_run()
 #endif
     if (is_spinning) {
       horizontal_velocity_filter();
-      my_psi_from_mag();
+//      my_psi_from_mag();
+      mag_psi_offset_correction();
       spin_actuator_values(&current_actuator_values);  // Constant actuator values to maintain spin
 
       if (cyclic_control_active) {
@@ -290,7 +305,68 @@ void my_psi_from_mag() {
   float mx_prime = m_00 * mx + m_01 * my + m_02 * mz;
   float my_prime = m_11 * my + m_12 * mz;
 
-  my_psi = atan2(my_prime, mx_prime);
+//  my_psi = atan2(my_prime, mx_prime);
+  my_psi = atan2(mag_f.y, mag_f.x);
+}
+
+void mag_psi_offset_correction() {
+  struct FloatVect3 mag_f;
+  MAGS_FLOAT_OF_BFP(mag_f, *_mag);
+
+  mx_t = mag_f.x;
+  my_t = mag_f.y;
+  dmx = mx_t - mx_t2;
+  dmy = my_t - my_t2;
+  float mx_prime = mx_t - offset_mx;
+  float my_prime = my_t - offset_my;
+
+  // check for sign change
+  if ((dmx * dmx_old < 0) & (zero_crossing_cd_mx < 0)) {
+    // max or min value?
+    if (sign_counter_mx > 0) {
+      max_mx = mx_t2;
+    } else {
+      min_mx = mx_t2;
+    }
+    // cleanup
+    zero_crossing_cd_mx = N_COOLDOWN;
+    sign_counter_mx = 0;
+    // only calculate offset if both max and min have been found
+    if ((max_mx != INIT_VALUE) & (min_mx != INIT_VALUE)) {
+      offset_mx = (max_mx + min_mx) * 0.5;
+    }
+  }
+  // check for sign change
+  if ((dmy * dmy_old < 0) & (zero_crossing_cd_my < 0)) {
+    // max or min value?
+    if (sign_counter_my > 0) {
+      max_my = my_t2;
+    } else {
+      min_my = my_t2;
+    }
+    // cleanup
+    zero_crossing_cd_my = N_COOLDOWN;
+    sign_counter_my = 0;
+    // only calculate offset if both max and min have been found
+    if ((max_my != INIT_VALUE) & (min_my != INIT_VALUE)) {
+      offset_my = (max_my + min_my) * 0.5;
+    }
+  }
+  // advance time step for mx
+  mx_t2 = mx_t1;
+  mx_t1 = mx_t;
+  dmx_old = dmx;
+  sign_counter_mx += (dmx > 0) ? 1 : -1;
+  zero_crossing_cd_mx -= 1;
+  // advance time step for my
+  my_t2 = my_t1;
+  my_t1 = my_t;
+  dmy_old = dmy;
+  sign_counter_my += (dmy > 0) ? 1 : -1;
+  zero_crossing_cd_my -= 1;
+
+  // calculate psi
+  my_psi = atan2(-my_prime, mx_prime);
 }
 
 void fs_landing_set_actuator_values()
