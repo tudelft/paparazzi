@@ -37,6 +37,7 @@ extern uint8_t cc_feed_forward;
 extern uint8_t use_controller;
 extern uint8_t elevon_delta_active;
 extern uint8_t motor_delta_active;
+extern uint8_t use_mag_psi;
 
 extern float cc_ff_side_time;
 

@@ -4,13 +4,13 @@
 
 #include <math.h>
 #include <stdlib.h>
-#include "subsystems/radio_control.h"
+#include "modules/radio_control/radio_control.h"
 #include "state.h"
 
 //#include "cyclic_controller.h"
 #include "cyclic_control.h"
 
-#include "subsystems/datalink/downlink.h"
+#include "modules/datalink/downlink.h"
 
 #define CYCLIC_CONTROL_DEBUG FALSE
 
@@ -39,6 +39,7 @@ uint8_t cc_feed_forward = false;
 uint8_t use_controller = false;
 uint8_t elevon_delta_active = false;
 uint8_t motor_delta_active = false;
+uint8_t use_mag_psi = false;
 
 uint8_t has_cc_ff_started = false;
 float cc_ff_start_time;
@@ -47,8 +48,12 @@ float cc_ff_side_time = 2;  // 2 seconds per square loop "side"
 int cyclic_dbg_ctr = 0;  // For debug telemetry
 
 void cyclic_control_values(struct fs_landing_t *actuator_values) {
-  float current_yaw = stateGetNedToBodyEulers_f()->psi;
-//  float current_yaw = my_psi;
+  float current_yaw;
+  if (use_mag_psi) {
+    current_yaw = my_psi;
+  } else {
+    current_yaw = stateGetNedToBodyEulers_f()->psi;
+  }
 
   float mt_phase_rad = RadOfDeg(mt_phase);
   float el_phase_rad = RadOfDeg(el_phase);
