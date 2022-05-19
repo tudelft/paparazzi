@@ -82,7 +82,21 @@
     <module name="baro_ms5611_spi" >
       <configure name="MS5611_SPI_DEV" value="spi1"/>
       <configure name="MS5611_SLAVE_IDX" value="SPI_SLAVE3"/>
-<!--      <define name="SENSOR_SYNC_SEND"/>-->
+      <!--      <define name="SENSOR_SYNC_SEND"/>-->
+    </module>
+
+    <module name="mag" type="rm3100">
+      <define name="USE_I2C1"/>
+      <configure name="MAG_RM3100_I2C_DEV" value="i2c1"/>
+
+      <define name="RM3100_CHAN_X_SIGN" value="+"/>
+      <define name="RM3100_CHAN_Y_SIGN" value="+"/>
+      <define name="RM3100_CHAN_Z_SIGN" value="-"/>
+      <define name="RM3100_CHAN_X" value="1"/>
+      <define name="RM3100_CHAN_Y" value="0"/>
+      <define name="RM3100_CHAN_Z" value="2"/>
+      <define name="MODULE_RM3100_SYNC_SEND" value="FALSE"/>
+      <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
     </module>
 
     <module name="air_data">
@@ -142,29 +156,16 @@
       <define name="INS_INT_IMU_ID" value="IMU_MPU9250_ID"/>
     </module>
 
-    <module name="control_adaptive"/>
-    <module name="navigation"/>
     <!--    <module name="auto1_commands"/>-->
     <!--<module name="imu_quality_assessment"/>--><!--needs fixing for FW fix test then disable after initial tuning-->
-    <module name="send_imu_mag_current"/> <!-- Can be Disabled after one time calibration, quite the same for all Discos -->
 
     <module name="geo_mag"/>  <!-- TODO Comment? -->
     <module name="nav" type="line"/>
 
-    <module name="mag" type="rm3100">
-      <define name="USE_I2C1"/>
-      <configure name="MAG_RM3100_I2C_DEV" value="i2c1"/>
+    <module name="control" type="energyadaptive"/>
+    <module name="navigation"/>
 
-      <define name="RM3100_CHAN_X_SIGN" value="+"/>
-      <define name="RM3100_CHAN_Y_SIGN" value="+"/>
-      <define name="RM3100_CHAN_Z_SIGN" value="+"/>
-      <define name="RM3100_CHAN_X" value="0"/>
-      <define name="RM3100_CHAN_Y" value="1"/>
-      <define name="RM3100_CHAN_Z" value="2"/>
-      <define name="MODULE_RM3100_SYNC_SEND" value="FALSE"/>
-      <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
-    </module>
-
+<!--    <module name="send_imu_mag_current"/>-->
     <module name="tlsf"/>
     <module name="pprzlog"/>
     <module name="logger" type="sd_chibios"/>
@@ -176,20 +177,20 @@
 
   <!-- ************************* ACTUATORS ************************* -->
   <servos driver="Pwm">
-    <servo name="S_THROTTLE_LEFT" no="0" min="1100" neutral="1500" max="1900"/>  <!-- TODO Test reverse -->
+    <servo name="S_THROTTLE_LEFT" no="0" min="1200" neutral="1500" max="1800"/>  <!-- Overpowered motors need to be limited -->
     <servo name="S_ELEVON_LEFT" no="1" min="1800" neutral="1400" max="1000"/> <!-- max is upward deflection-->
-    <servo name="S_ELEVON_RIGHT" no="2" min="1100" neutral="1500" max="1900"/> <!-- min is downward deflection-->
-    <servo name="S_THROTTLE_RIGHT" no="3" min="1100" neutral="1500" max="1900"/>
+    <servo name="S_ELEVON_RIGHT" no="2" min="1100" neutral="1500" max="1900"/>
+    <servo name="S_THROTTLE_RIGHT" no="3" min="1200" neutral="1500" max="1800"/>
   </servos>
 
   <section name="ServoPositions">
-    <define name="ThrottleHigh()" value="(command_get(COMMAND_THROTTLE)>9600/2)" />
+    <define name="ThrottleHigh()" value="(imcu_get_command(COMMAND_THROTTLE)>9600/2)"/>
   </section>
 
   <!-- ********************* SERVO MIXER *************************** -->
   <section name="MIXER">
     <define name="ELEVON_ROLL_FACTOR" value="0.7f"/>
-    <define name="ELEVON_PITCH_FACTOR" value="-1.f"/>  <!-- TODO Check sign -->
+    <define name="ELEVON_PITCH_FACTOR" value="-0.6f"/>  <!-- TODO Check sign -->
     <define name="ELEVON_YAW_FACTOR" value="0.9f"/>
     <!-- Set up/down deflection differences, needs many in flight tests to find acceptable values-->
     <define name="ELEVON_DIFF" value="0.3f"/> <!-- TODO: not used yet, not tuned yet... -->
@@ -249,7 +250,7 @@
   <section name="AUTO1" prefix="AUTO1_">
     <define name="MAX_ROLL" value="45" unit="deg"/> <!-- More authority while test flying for first time -->
     <define name="MAX_PITCH" value="40" unit="deg"/> <!-- More authority while test flying for first time -->
-    <define name="MAX_YAW_RATE" value="RadOfDeg(100)"/>  <!-- TODO Tune -->
+<!--    <define name="MAX_YAW_RATE" value="RadOfDeg(100)"/>-->
   </section>
 
   <!-- ************************ TRIM ***************************** -->
@@ -284,17 +285,18 @@
     <define name="ACCEL_Z_SENS" value="2.425259654841266" integer="16"/>
 
     <!-- ***************** MAGNETO *****************-->
-    <define name="MAG_X_SIGN" value="1"/>
+    <define name="MAG_X_SIGN" value="1"/>  <!-- FIXME -->
     <define name="MAG_Y_SIGN" value="1"/>
     <define name="MAG_Z_SIGN" value="1"/>
 
-    <define name="MAG_X_NEUTRAL" value="134"/>
-    <define name="MAG_Y_NEUTRAL" value="-17"/>
-    <define name="MAG_Z_NEUTRAL" value="24"/>
+    <!-- MAG at wingtip -->
+    <define name="MAG_X_NEUTRAL" value="-153"/>
+    <define name="MAG_Y_NEUTRAL" value="-32"/>
+    <define name="MAG_Z_NEUTRAL" value="31"/>
 
-    <define name="MAG_X_SENS" value="0.6253230410896893" integer="16"/>
-    <define name="MAG_Y_SENS" value="0.6136356727595016" integer="16"/>
-    <define name="MAG_Z_SENS" value="0.6138620486048812" integer="16"/>
+    <define name="MAG_X_SENS" value="0.6194340164254895" integer="16"/>
+    <define name="MAG_Y_SENS" value="0.6171467647985408" integer="16"/>
+    <define name="MAG_Z_SENS" value="0.6021488827954916" integer="16"/>
 
     <!-- Should be same for everyone -->
     <define name="MAG_X_CURRENT_COEF" value="0.000321738038902"/>
@@ -312,22 +314,16 @@
 
   <!-- ************************* MAG EXTERNAL ************************* -->
   <section name="MAG_RM3100" prefix="RM3100_">
-    <define name="MAG_TO_IMU_PHI" value="180.0" unit="deg"/>
-    <define name="MAG_TO_IMU_THETA" value="0.0" unit="deg"/>
-    <define name="MAG_TO_IMU_PSI" value="-90.0" unit="deg"/>
     <define name="DATA_RATE" value="RM3100_RATE_600"/>
   </section>
 
   <!-- ************************* AHRS ************************* -->
   <section name="AHRS" prefix="AHRS_">
-    <!-- Values used if no GNSS fix, on 3D fix is update by geo_mag module -->
-    <!-- Better keep geo_mag module ifyou have a GNSDS, else replace the values with your local magnetic field -->
-
-    <!-- Local Magnetic field WMM2020 -->
-    <!-- https://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
-    <define name="H_X" value="0.386580"/>
-    <define name="H_Y" value="0.012384"/>
-    <define name="H_Z" value="0.922173"/>
+    <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
+    <!-- Delft -->
+    <define name="H_X" value="0.3892503"/>
+    <define name="H_Y" value="0.0017972"/>
+    <define name="H_Z" value="0.9211303"/>
   </section>
 
   <!-- ************************* INS ************************* -->
@@ -378,11 +374,11 @@
     <define name="PITCH_KFFA" value="10."/>
     <define name="PITCH_KFFD" value="0."/>
 
-    <define name="YAW_LOOP" value="TRUE"/>
-    <define name="YAW_DGAIN" value="1000."/>
+<!--    <define name="YAW_LOOP" value="TRUE"/>-->
+<!--    <define name="YAW_DGAIN" value="1000."/>-->
 
-    <define name="YAW_TRIM_NY" value="FALSE"/>
-    <define name="YAW_NY_IGAIN" value="1000."/>
+<!--    <define name="YAW_TRIM_NY" value="FALSE"/>-->
+<!--    <define name="YAW_NY_IGAIN" value="1000."/>-->
 
     <define name="ELEVATOR_OF_ROLL" value="1500" unit="PPRZ_MAX"/>
     <define name="ROLL_SLEW" value="0.5"/> <!-- TODO: Determine best value-->
@@ -393,8 +389,8 @@
     <define name="ROLL_KFFD" value="0"/>
 
     <!--<define name="PITCH_OF_ROLL" value="4." unit="deg"/>--><!-- TODO: : ?-->
-    <define name="AILERON_OF_THROTTLE" value="0"/><!-- TODO: : ?-->
-    <define name="COMMAND_YAW_TRIM" value="0"/>
+    <define name="AILERON_OF_THROTTLE" value="0.0"/><!-- TODO: : ?-->
+<!--    <define name="COMMAND_YAW_TRIM" value="0"/>-->
 
   </section>
 
@@ -504,7 +500,7 @@
     <!-- <define name="MAX_BAT_CAPACITY" value="2700" unit="mAh"/> --> <!-- The Default Parrot Disco 2700mAh battery -->
     <!--<define name="MilliAmpereOfAdc(_adc)" value="(_adc-632)*4.14"/>--> <!-- TODO: calibrate even better -->
     <!-- tested at V 11.7 the avg -->  <!-- 1idel RPM then 1.0A half throttle 4A-->
-    <define name="MILLIAMP_AT_IDLE_THROTTLE" value="1500" unit="mA"/>  <!-- 500mA, with additional RC receiver ~600mA -->
+    <define name="MILLIAMP_AT_IDLE_THROTTLE" value="600" unit="mA"/>  <!-- 500mA, with additional RC receiver ~600mA -->
     <define name="MILLIAMP_AT_FULL_THROTTLE" value="80000" unit="mA"/> <!-- At 11.7 10.6 A at 12.2v 11.0A rounded then to 11000 to be at safe side-->
     <define name="MAX_BAT_LEVEL" value="16.8" unit="V"/> <!-- 3S lipo 3x4.2 = 12.6 -->
     <define name="LOW_BAT_LEVEL" value="14.1" unit="V"/>
