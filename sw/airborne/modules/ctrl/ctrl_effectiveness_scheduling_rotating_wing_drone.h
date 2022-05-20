@@ -55,6 +55,8 @@ extern float rot_wing_speed_gain_tuning_gradient;
 extern float rot_wing_pitch_pref_fwd_deg;
 extern float rot_wing_pitch_pref_hover_deg;
 
+extern float rot_wing_thrust_z_effectiveness_scale_factor;
+
 // Define module functions
 extern void ctrl_eff_scheduling_rotating_wing_drone_init(void);
 extern void ctrl_eff_scheduling_rotating_wing_drone_periodic(void);

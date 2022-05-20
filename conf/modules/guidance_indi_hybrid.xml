@@ -33,6 +33,7 @@
         <dl_setting var="pusher_slowdown" min="0" step="1" max="1" values="OFF|ON" shortname="pusher_slowdown"/>
         <dl_setting var="div_push" min="0" step="1" max="1" values="OFF|ON" shortname="pusher_divider"/>
         <dl_setting var="theta_slowdown" min="0" step="1" max="1" values="OFF|ON" shortname="theta_slowdown"/>
+        <dl_setting var="thrust_slowdown" min="0" step="1" max="1" values="OFF|ON" shortname="thrust_slowdown"/>
       </dl_settings>
     </dl_settings>
   </settings>

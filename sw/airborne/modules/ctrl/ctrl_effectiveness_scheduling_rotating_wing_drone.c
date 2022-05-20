@@ -55,6 +55,7 @@ float rot_wing_g1_q_side_motors[2];
 float rot_wing_g1_p[8];
 float rot_wing_g1_q[8];
 float rot_wing_g1_r[8];
+float rot_wing_g1_t[8];
 
 // Define polynomial constants for effectiveness values for aerodynamic surfaces
 #ifndef ROT_WING_SCHED_G1_AERO_CONST_P
@@ -92,13 +93,13 @@ float g1_startup[INDI_OUTPUTS][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL,
                                                 STABILIZATION_INDI_G1_PITCH, STABILIZATION_INDI_G1_YAW, STABILIZATION_INDI_G1_THRUST
                                                 };
 
-float rot_wing_aileron_limit_deg = 45; // Aileron is effective from this angle value onwards
+float rot_wing_aileron_limit_deg = 25; // Aileron is effective from this angle value onwards
 float rot_wing_roll_prop_limit_deg = 70; // Roll props are not effective anymore from thus value onwards
 float rot_wing_pitch_prop_limit_deg = 100; // Pitch props are not effective anymore from thus value onwards
 float rot_wing_yaw_prop_limit_deg = 100; // // Yaw props are not effective anymore from thus value onwards
 float rot_wing_limit_deadzone_deg = 2; // The deadzone that is put on the wing angle sensor 
-int16_t rot_wing_thrust_z_limit = 600; // PPRZ cmd
-int16_t rot_wing_thrust_z_deadzone = 100; // PPRZ cmd
+int16_t rot_wing_thrust_z_limit = 2; // PPRZ cmd
+int16_t rot_wing_thrust_z_deadzone = 0; // PPRZ cmd
 
 bool rot_wing_ailerons_activated; // will be set during initialization
 bool rot_wing_roll_props_activated; // Will be set during initialization
@@ -112,8 +113,10 @@ float rot_wing_speedz_gain_tuning_gradient = 0.114;
 float rot_wing_speed_gain_tuning_constant = GUIDANCE_INDI_SPEED_GAIN;
 float rot_wing_speed_gain_tuning_gradient = 0.026;
 
-float rot_wing_pitch_pref_fwd_deg = 10.;
-float rot_wing_pitch_pref_hover_deg = -2.;
+float rot_wing_pitch_pref_fwd_deg = 10;//;
+float rot_wing_pitch_pref_hover_deg = -2;//-2.;
+
+float rot_wing_thrust_z_effectiveness_scale_factor = 2.5;
 
 // Define filters
 #ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
@@ -315,7 +318,7 @@ void evaluate_actuator_active(float airspeed)
     {
       // Loop over actuator 0, 1, 2, 3, if all actuators ppprz_cmds are below the threshold, switch off
       uint8_t counter_motors = 0;
-      for (uint8_t i = 0; i < 3; i++)
+      for (uint8_t i = 0; i < 4; i++)
       {
         if (actuators_pprz[i] < (rot_wing_thrust_z_limit - rot_wing_thrust_z_deadzone))
         {
@@ -367,6 +370,12 @@ void schedule_motor_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle
   rot_wing_g1_r[2] = g1_startup[2][2] * rot_wing_yaw_props_activated;
   rot_wing_g1_r[3] = g1_startup[2][3] * rot_wing_yaw_props_activated;
 
+  // thrust
+  rot_wing_g1_t[0] = g1_startup[3][0] * rot_wing_thrust_z_effectiveness_scale_factor;
+  rot_wing_g1_t[1] = g1_startup[3][1] * rot_wing_thrust_z_effectiveness_scale_factor;
+  rot_wing_g1_t[2] = g1_startup[3][2] * rot_wing_thrust_z_effectiveness_scale_factor;
+  rot_wing_g1_t[3] = g1_startup[3][3] * rot_wing_thrust_z_effectiveness_scale_factor;
+
   // add delta g1 to g1_est to compensate for wing rotation
   g1_est[0][0] = (g1_est[0][0] + (rot_wing_g1_p[0] - g1_init[0][0])) * rot_wing_roll_props_activated;
   g1_est[0][1] = (g1_est[0][1] + (rot_wing_g1_p[1] - g1_init[0][1])) * rot_wing_roll_props_activated;
@@ -383,6 +392,11 @@ void schedule_motor_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle
   g1_est[2][2] = (g1_est[2][2] + (rot_wing_g1_r[2] - g1_init[2][2])) * rot_wing_yaw_props_activated;
   g1_est[2][3] = (g1_est[2][3] + (rot_wing_g1_r[3] - g1_init[2][3])) * rot_wing_yaw_props_activated;
 
+  g1_est[3][0] = (g1_est[3][0] + (rot_wing_g1_t[0] - g1_init[3][0]));
+  g1_est[3][1] = (g1_est[3][1] + (rot_wing_g1_t[1] - g1_init[3][1]));
+  g1_est[3][2] = (g1_est[3][2] + (rot_wing_g1_t[2] - g1_init[3][2]));
+  g1_est[3][3] = (g1_est[3][3] + (rot_wing_g1_t[3] - g1_init[3][3]));
+
   // Update g1 init matrices to current values
   g1_init[0][0] = rot_wing_g1_p[0];
   g1_init[0][1] = rot_wing_g1_p[1];
@@ -398,6 +412,11 @@ void schedule_motor_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle
   g1_init[2][1] = rot_wing_g1_r[1];
   g1_init[2][2] = rot_wing_g1_r[2];
   g1_init[2][3] = rot_wing_g1_r[3];
+
+  g1_init[3][0] = rot_wing_g1_t[0];
+  g1_init[3][1] = rot_wing_g1_t[1];
+  g1_init[3][2] = rot_wing_g1_t[2];
+  g1_init[3][3] = rot_wing_g1_t[3];
 }
 
 void schedule_aero_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle, float airspeed2)
@@ -470,6 +489,7 @@ void update_g1g2_matrix(void)
         g1g2[0][i] = rot_wing_g1_p[i] / INDI_G_SCALING;
         g1g2[1][i] = rot_wing_g1_q[i] / INDI_G_SCALING;
         g1g2[2][i] = (rot_wing_g1_r[i] + g2_startup[i]) / INDI_G_SCALING;
+        g1g2[3][i] = rot_wing_g1_t[i] / INDI_G_SCALING;
     }
   #endif // STABILIZATION_INDI_USE_ADAPTIVE
 } 
@@ -485,24 +505,41 @@ void schedule_lift_pitch_eff(float rot_wing_angle_rad)
 
 void schedule_guidance_zgains(float airspeed)
 {
-  float speed_gainz = rot_wing_speedz_gain_tuning_constant - rot_wing_speedz_gain_tuning_gradient * airspeed;
-  // Check if speed_gain_z is not negative or too small, than enter a value of 0.2
-  if (speed_gainz < 0.2)
+  if (airspeed < 4)
   {
-    speed_gainz = 0.2;
+    gih_params.pos_gainz = 1.5;
+    gih_params.speed_gainz= 1.3;
+  } else {
+    gih_params.pos_gainz = 1.;
+    gih_params.speed_gainz= 2.4;
   }
-  gih_params.speed_gainz = speed_gainz;
+
+  //float speed_gainz = rot_wing_speedz_gain_tuning_constant - rot_wing_speedz_gain_tuning_gradient * airspeed;
+  // Check if speed_gain_z is not negative or too small, than enter a value of 0.2
+  //if (speed_gainz < 0.2)
+  //{
+    //speed_gainz = 0.2;
+  //}
+  //gih_params.speed_gainz = speed_gainz;
 }
 
 void schedule_guidance_hgains(float airspeed)
 {
-  float speed_gain = rot_wing_speed_gain_tuning_constant - rot_wing_speed_gain_tuning_gradient * airspeed;
-  // Check if speed_gain_z is not negative or too small, than enter a value of 0.2
-  if (speed_gain < 0.2)
+  if (airspeed < 4)
   {
-    speed_gain = 0.2;
+    gih_params.pos_gain = 0.8;
+    gih_params.speed_gain= 0.6;
+  } else {
+    gih_params.pos_gain = 1.5;
+    gih_params.speed_gain= 1.4;
   }
-  gih_params.speed_gain = speed_gain;
+  //float speed_gain = rot_wing_speed_gain_tuning_constant - rot_wing_speed_gain_tuning_gradient * airspeed;
+  // Check if speed_gain_z is not negative or too small, than enter a value of 0.2
+  //if (speed_gain < 0.2)
+  //{
+    //speed_gain = 0.2;
+  //}
+  //gih_params.speed_gain = speed_gain;
 }
 
 void schedule_pref_pitch_angle(float s_rot_wing_angle)

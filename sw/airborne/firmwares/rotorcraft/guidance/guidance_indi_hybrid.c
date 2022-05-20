@@ -190,7 +190,8 @@ float min_accel=-0.5;
 bool pusher_slowdown = true;
 bool div_push = false;
 float Wv_z = 10.0;
-bool theta_slowdown = true;
+bool theta_slowdown = false;
+bool thrust_slowdown = true;
 
 
 
@@ -913,7 +914,8 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
     //pitch_pref_deg = -2;
     pitch_pref_rad = pitch_pref_deg / 180. * M_PI;
     du_pref_hybrid[1] = -pitch_filt.o[0] + pitch_pref_rad;}
-  du_pref_hybrid[2] = du_min_hybrid[2];//du_max_hybrid[2];//0;
+  if (thrust_slowdown){du_pref_hybrid[2] = 0;} 
+  else {du_pref_hybrid[2] = du_min_hybrid[2];}//du_max_hybrid[2];//0;
   if (pusher_slowdown){du_pref_hybrid[3]=0;}
   else {du_pref_hybrid[3] = accel_bx_err * cosf(pitch_pref_rad) - 9.81 * sinf(pitch_filt.o[0] - pitch_pref_rad);//
   }
