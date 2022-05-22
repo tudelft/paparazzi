@@ -337,24 +337,30 @@
 
     <!-- INDI properties [weights] -->
     <define name="W_ACT_MOTOR_CONST" value="1"/>
-    <define name="W_ACT_MOTOR_SPEED" value="1"/>
+    <define name="W_ACT_MOTOR_SPEED" value="0"/>
     <define name="W_ACT_EL_CONST" value="1"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
     <define name="W_ACT_AZ_CONST" value="1"/>
-    <define name="W_ACT_AZ_SPEED" value="100"/>
+    <define name="W_ACT_AZ_SPEED" value="1"/>
     <define name="W_ACT_THETA_CONST" value="400"/>
     <define name="W_ACT_THETA_SPEED" value="-50"/>
-    <define name="W_ACT_PHI_CONST" value="500"/>
-    <define name="W_ACT_PHI_SPEED" value="-60"/>
+    <define name="W_ACT_PHI_CONST" value="400"/>
+    <define name="W_ACT_PHI_SPEED" value="-50"/>
 
     <define name="W_DV_1" value="0.01"/>
     <define name="W_DV_2" value="0.01"/>
-    <define name="W_DV_3" value="0.015"/>
+    <define name="W_DV_3" value="0.01"/>
     <define name="W_DV_4" value=".1"/>
     <define name="W_DV_5" value=".1"/>
     <define name="W_DV_6" value="0.01"/>
 
     <define name="GAMMA_QUADRATIC_DU" value="1e-5"/>
+
+    <!-- FWD flight properties -->
+
+    <define name="MAX_YAW_RATE_MANUAL" value="100" unit="deg"/>
+    <define name="MIN_SPEED_TRANSITION" value="2.5" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION" value="5" unit="m/s"/>
 
   </section>
 
@@ -372,13 +378,16 @@
     <define name="L4" value="0.39" unit="m"/>
     <define name="LZ" value="0." unit="m"/>
 
-    <define name="CL_ALPHA" value="5.18"/>
-    <define name="CM_ZERO" value="0.01"/>
+    <define name="CL_ALPHA" value="4"/>
+    <define name="CM_ZERO" value="0.1"/>
     <define name="CM_ALPHA" value="-0.1"/>
     <define name="CD_ZERO" value="0.38"/>
     <define name="K_CD" value="0.2"/>
+    <define name="CY_BETA" value="0"/>
+    <define name="CL_BETA" value="0"/>
     <define name="S" value="0.57"/>
     <define name="WING_CHORD" value="0.3325"/>
+    <define name="WING_SPAN" value="1.7"/>
   </section>
 
 

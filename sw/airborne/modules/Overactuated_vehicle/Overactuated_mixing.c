@@ -440,8 +440,13 @@ void assign_variables(void){
     airspeed = ms45xx.airspeed;
 
     total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
-    if(total_V > 2){
+    if(total_V > 1){
         flight_path_angle = asin(-speed_vect[2]/total_V);
+        BoundAbs(flight_path_angle, M_PI/2);
+        //Negative Aoa protection in dive flight:
+        if( euler_vect[1] - flight_path_angle < (2 * M_PI/180) && euler_vect[1] < 0){
+            flight_path_angle = euler_vect[1] - 2 * M_PI/180;
+        }
     }
     else{
         flight_path_angle = 0;
@@ -491,16 +496,10 @@ void overactuated_mixing_run()
     //Assign variables
     assign_variables();
 
-    pos_setpoint[0] = 0;
-    pos_setpoint[1] = 0;
-//    pos_setpoint[2] = 0;
-    manual_theta_value = 0;
-    manual_phi_value = 0;
-    euler_setpoint[2] = 0;
-
 
     /// Case of manual PID control [FAILSAFE]
-    if(radio_control.values[RADIO_MODE] < 500) {
+//    if(radio_control.values[RADIO_MODE] < 500) {
+     if(0){
 
         //INIT AND BOOLEAN RESET
         if(FAILSAFE_engaged == 0 ){
@@ -511,6 +510,7 @@ void overactuated_mixing_run()
                 euler_error_integrated[i] = 0;
                 pos_error_integrated[i] = 0;
             }
+            euler_setpoint[2] = euler_vect[2];
         }
 
         ////Angular error computation
@@ -589,9 +589,9 @@ void overactuated_mixing_run()
 
     }
 
-    /// Case of INDI control mode with external am7 function:
-    if(radio_control.values[RADIO_MODE] > 500 )
-//    if(1)
+    /// Case of INDI control mode with external nonlinear function:
+//    if(radio_control.values[RADIO_MODE] > 500 )
+    if(1)
     {
 
         //INIT AND BOOLEAN RESET
@@ -661,31 +661,28 @@ void overactuated_mixing_run()
 
         euler_setpoint[0] = indi_u[13];
         euler_setpoint[1] = indi_u[12];
-        //Give a specific heading value to keep
-        if(manual_heading){
-            euler_setpoint[2] = manual_heading_value_rad;
-        }
-
-        if(euler_setpoint[2] > M_PI){
-            euler_setpoint[2] -= 2 * M_PI;
-        }
-        else if(euler_setpoint[2] < - M_PI){
-            euler_setpoint[2] += 2 * M_PI;
-        }
-
 
         BoundAbs(euler_setpoint[0],max_value_error.phi);
         BoundAbs(euler_setpoint[1],max_value_error.theta);
         euler_error[0] = euler_setpoint[0] - euler_vect[0];
         euler_error[1] = euler_setpoint[1] - euler_vect[1];
-        euler_error[2] = euler_setpoint[2] - euler_vect[2];
-        //Add logic for the psi control:
-        if(euler_error[2] > M_PI){
-            euler_error[2] -= 2 * M_PI;
+
+        // For the yaw, we can directly control the rates:
+
+        float yaw_rate_setpoint_manual = OVERACTUATED_MIXING_MAX_YAW_RATE_MANUAL * radio_control.values[RADIO_YAW] / 9600;
+        //Compute the yaw rate for the coordinate turn:
+        float yaw_rate_setpoint_turn = 0;
+        float fwd_multiplier_yaw = 0;
+        if(airspeed > 1){
+            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/total_V;
         }
-        else if(euler_error[2] < -M_PI){
-            euler_error[2] += 2 * M_PI;
+        if(airspeed > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
+            fwd_multiplier_yaw = OVERACTUATED_MIXING_REF_SPEED_TRANSITION - (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - total_V);
         }
+        Bound(fwd_multiplier_yaw , 0, 1);
+        yaw_rate_setpoint_turn = yaw_rate_setpoint_turn * fwd_multiplier_yaw;
+        euler_error[2] = yaw_rate_setpoint_manual + yaw_rate_setpoint_turn;
+
 
         //Link the euler error with the angular change in the body frame and calculate the rate setpoints
         for (int j = 0; j < 3; j++) {
@@ -847,6 +844,9 @@ void overactuated_mixing_run()
 
         extra_data_out_local[46] = OVERACTUATED_MIXING_GAMMA_QUADRATIC_DU;
 
+        extra_data_out_local[47] = VEHICLE_CY_BETA;
+        extra_data_out_local[48] = VEHICLE_CL_BETA;
+        extra_data_out_local[49] = VEHICLE_WING_SPAN;
 
         //Collect the last available data on the AM7 bus to be communicated to the servos.
         AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &am7_data_out_local, extra_data_out_local);
