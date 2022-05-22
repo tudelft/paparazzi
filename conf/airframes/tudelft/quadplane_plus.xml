@@ -202,6 +202,27 @@
     <set servo="AZ_4" value="(-overactuated_mixing.commands[11])"/>
   </command_laws>
 
+  <section name="MANUAL_CONTROL_OPTIONS" prefix="MANUAL_CONTROL_">
+    <!-- Maximum limits of the sticks -->
+    <define name="MAX_CMD_FWD_SPEED" value="20" unit="m/s"/>
+    <define name="MAX_CMD_LAT_SPEED" value="5" unit="m/s"/>
+    <define name="MAX_CMD_VERT_SPEED" value="5" unit="m/s"/>
+    <define name="MAX_CMD_PITCH_ANGLE" value="25" unit="deg"/>
+    <define name="MAX_CMD_ROLL_ANGLE" value="25" unit="deg"/>
+    <define name="MAX_CMD_YAW_RATE" value="150" unit="deg/s"/>
+  </section>
+
+  <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
+    <!-- Maximum limits of the vehicle in manual mode -->
+    <define name="MAX_FWD_SPEED" value="15" unit="m/s"/>
+    <define name="MIN_FWD_SPEED" value="-3" unit="m/s"/>
+    <define name="MAX_LAT_SPEED" value="5" unit="m/s"/>
+    <define name="MAX_VERT_SPEED" value="3" unit="m/s"/>
+    <define name="MAX_FWD_ACC" value="6" unit="m/s^2"/>
+    <define name="MAX_LAT_ACC" value="5" unit="m/s^2"/>
+    <define name="MAX_VERT_ACC" value="5" unit="m/s^2"/>
+  </section>
+
   <section name="OVERACTUATED_VARIABLES" prefix="OVERACTUATED_MIXING_">
 
     <!-- PID gains wrt the SI units -->
@@ -274,9 +295,9 @@
     <define name="INDI_REF_RATE_Q" value="8"/>
     <define name="INDI_REF_RATE_R" value="5"/>
 
-    <define name="INDI_REF_RATE_X" value="2.35"/>
-    <define name="INDI_REF_RATE_Y" value="2.35"/>
-    <define name="INDI_REF_RATE_Z" value="8.85"/>
+    <define name="INDI_REF_RATE_X" value="2"/>
+    <define name="INDI_REF_RATE_Y" value="1"/>
+    <define name="INDI_REF_RATE_Z" value="4"/>
 
     <!-- Actuator dynamics and mapping-->
     <define name="INDI_ACT_DYN_MOTOR" value="0.038" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
@@ -357,8 +378,6 @@
     <define name="GAMMA_QUADRATIC_DU" value="1e-5"/>
 
     <!-- FWD flight properties -->
-
-    <define name="MAX_YAW_RATE_MANUAL" value="100" unit="deg"/>
     <define name="MIN_SPEED_TRANSITION" value="2.5" unit="m/s"/>
     <define name="REF_SPEED_TRANSITION" value="5" unit="m/s"/>
 

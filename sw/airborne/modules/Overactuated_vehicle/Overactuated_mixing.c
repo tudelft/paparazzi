@@ -111,6 +111,10 @@ float R_matrix[3][3];
 //Setpoints and pseudocontrol
 float pos_setpoint[3];
 float speed_setpoint[3];
+float speed_setpoint_control_rf[3];
+float acc_setpoint_control_rf[3];
+float speed_error_vect[3];
+float speed_error_vect_control_rf[3];
 float euler_setpoint[3];
 float rate_setpoint[3];
 float acc_setpoint[6];
@@ -295,6 +299,56 @@ void init_filters(void){
 }
 
 /**
+ * Transpose an array from control reference frame to earth reference frame
+ */
+void from_control_to_earth(float * out_array, float * in_array, float Psi){
+    float R_cg_matrix[3][3];
+    R_cg_matrix[0][0] = cos(Psi);
+    R_cg_matrix[0][1] = -sin(Psi);
+    R_cg_matrix[0][2] = 0;
+    R_cg_matrix[1][0] = sin(Psi) ;
+    R_cg_matrix[1][1] = cos(Psi) ;
+    R_cg_matrix[1][2] = 0 ;
+    R_cg_matrix[2][0] = 0 ;
+    R_cg_matrix[2][1] = 0 ;
+    R_cg_matrix[2][2] = 1 ;
+
+    //Do the multiplication between the income array and the transposition matrix:
+    for (int j = 0; j < 3; j++) {
+        //Initialize value to zero:
+        out_array[j] = 0.;
+        for (int k = 0; k < 3; k++) {
+            out_array[j] += in_array[k] * R_cg_matrix[k][j];
+        }
+    }
+}
+
+/**
+ * Transpose an array from earth reference frame to control reference frame
+ */
+void from_earth_to_control(float * out_array, float * in_array, float Psi){
+    float R_gc_matrix[3][3];
+    R_gc_matrix[0][0] = cos(Psi);
+    R_gc_matrix[0][1] = sin(Psi);
+    R_gc_matrix[0][2] = 0;
+    R_gc_matrix[1][0] = -sin(Psi) ;
+    R_gc_matrix[1][1] = cos(Psi) ;
+    R_gc_matrix[1][2] = 0 ;
+    R_gc_matrix[2][0] = 0 ;
+    R_gc_matrix[2][1] = 0 ;
+    R_gc_matrix[2][2] = 1 ;
+
+    //Do the multiplication between the income array and the transposition matrix:
+    for (int j = 0; j < 3; j++) {
+        //Initialize value to zero:
+        out_array[j] = 0.;
+        for (int k = 0; k < 3; k++) {
+            out_array[j] += in_array[k] * R_gc_matrix[k][j];
+        }
+    }
+}
+
+/**
  * Get actuator state based on first order dynamics
  */
 void get_actuator_state(void)
@@ -334,7 +388,7 @@ void get_actuator_state(void)
 }
 
 /**
- * Get actuator state based on second order dynamics
+ * Get actuator state based on second order dynamics with rate limiter for servos and first order dynamics for motor
  */
 void get_actuator_state_v2(void)
 {
@@ -481,6 +535,7 @@ void assign_variables(void){
     R_matrix[0][2]=0;
     R_matrix[1][2]=-sin(euler_vect[0]);
     R_matrix[2][2]=cos(euler_vect[0]) * cos(euler_vect[1]);
+
 
     //Initialize actuator commands
     for(int i = 0; i < 12; i++){
@@ -654,10 +709,9 @@ void overactuated_mixing_run()
         // Get an estimate of the actuator state using the second order dynamics
         get_actuator_state_v2();
 
-        //Calculate the euler angle error to be fed into the PD for the INDI loop
-
-        manual_phi_value = max_value_error.phi * radio_control.values[RADIO_ROLL] / 9600;
-        manual_theta_value = max_value_error.theta * radio_control.values[RADIO_PITCH] / 9600;
+        //Calculate the desired euler angles from the auxiliary joystick channels:
+        manual_phi_value = MANUAL_CONTROL_MAX_CMD_ROLL_ANGLE * radio_control.values[RADIO_AUX2] / 9600;
+        manual_theta_value = MANUAL_CONTROL_MAX_CMD_PITCH_ANGLE * radio_control.values[RADIO_AUX3] / 9600;
 
         euler_setpoint[0] = indi_u[13];
         euler_setpoint[1] = indi_u[12];
@@ -668,8 +722,7 @@ void overactuated_mixing_run()
         euler_error[1] = euler_setpoint[1] - euler_vect[1];
 
         // For the yaw, we can directly control the rates:
-
-        float yaw_rate_setpoint_manual = OVERACTUATED_MIXING_MAX_YAW_RATE_MANUAL * radio_control.values[RADIO_YAW] / 9600;
+        float yaw_rate_setpoint_manual = MANUAL_CONTROL_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / 9600;
         //Compute the yaw rate for the coordinate turn:
         float yaw_rate_setpoint_turn = 0;
         float fwd_multiplier_yaw = 0;
@@ -682,7 +735,6 @@ void overactuated_mixing_run()
         Bound(fwd_multiplier_yaw , 0, 1);
         yaw_rate_setpoint_turn = yaw_rate_setpoint_turn * fwd_multiplier_yaw;
         euler_error[2] = yaw_rate_setpoint_manual + yaw_rate_setpoint_turn;
-
 
         //Link the euler error with the angular change in the body frame and calculate the rate setpoints
         for (int j = 0; j < 3; j++) {
@@ -702,14 +754,14 @@ void overactuated_mixing_run()
         acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * indi_gains_over.d.theta;
         acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * indi_gains_over.d.psi;
 
-
         //Compute the acceleration error and save it to the INDI input array in the right position:
         // ANGULAR ACCELERATION
         INDI_pseudocontrol[3] = acc_setpoint[3] - rate_vect_filt_dot[0];
         INDI_pseudocontrol[4] = acc_setpoint[4] - rate_vect_filt_dot[1];
         INDI_pseudocontrol[5] = acc_setpoint[5] - rate_vect_filt_dot[2];
 
-        //Calculate the position error to be fed into the PD for the INDI loop
+        //Calculate the speed error to be fed into the PD for the INDI loop
+
         pos_setpoint[0] = des_pos_earth_x;
         pos_setpoint[1] = des_pos_earth_y;
         if( abs(radio_control.values[RADIO_THROTTLE] - 4800) > deadband_stick_throttle ){
@@ -721,15 +773,39 @@ void overactuated_mixing_run()
         pos_error[1] = pos_setpoint[1] - pos_vect[1];
         pos_error[2] = pos_setpoint[2] - pos_vect[2];
 
-        //Compute the speed setpoint
-        speed_setpoint[0] = pos_error[0] * indi_gains_over.p.x;
-        speed_setpoint[1] = pos_error[1] * indi_gains_over.p.y;
-        speed_setpoint[2] = pos_error[2] * indi_gains_over.p.z;
+        //Compute the speed setpoints in the control reference frame:
+        speed_setpoint_control_rf[0] = - MANUAL_CONTROL_MAX_CMD_FWD_SPEED * radio_control.values[RADIO_PITCH]/9600;
+        speed_setpoint_control_rf[1] = MANUAL_CONTROL_MAX_CMD_LAT_SPEED * radio_control.values[RADIO_ROLL]/9600;
+        speed_setpoint_control_rf[2] = MANUAL_CONTROL_MAX_CMD_VERT_SPEED * (radio_control.values[RADIO_THROTTLE] - 4800)/4800;
 
-        //Compute the linear accel setpoint
-        acc_setpoint[0] = (speed_setpoint[0] - speed_vect[0]) * indi_gains_over.d.x;
-        acc_setpoint[1] = (speed_setpoint[1] - speed_vect[1]) * indi_gains_over.d.y;
-        acc_setpoint[2] = (speed_setpoint[2] - speed_vect[2]) * indi_gains_over.d.z;
+        //Apply saturation blocks to speed setpoints in control reference frame:
+        Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
+        BoundAbs(speed_setpoint_control_rf[1],LIMITS_FWD_MAX_LAT_SPEED);
+        BoundAbs(speed_setpoint_control_rf[2],LIMITS_FWD_MAX_VERT_SPEED);
+
+        //Compute the speed setpoints in earth rf:
+        from_control_to_earth( speed_setpoint, speed_setpoint_control_rf, euler_vect[2]);
+
+        //Compute the speed error in earth rf:
+        speed_error_vect[0] = speed_setpoint[0] - speed_vect[0];
+        speed_error_vect[1] = speed_setpoint[1] - speed_vect[1];
+        speed_error_vect[2] = speed_setpoint[2] - speed_vect[2];
+
+        //Compute the speed error in the control rf:
+        from_earth_to_control( speed_error_vect_control_rf, speed_error_vect, euler_vect[2]);
+
+        //Compute the acceleration setpoints in the control rf:
+        acc_setpoint_control_rf[0] = speed_error_vect_control_rf[0] * indi_gains_over.d.x;
+        acc_setpoint_control_rf[1] = speed_error_vect_control_rf[1] * indi_gains_over.d.y;
+        acc_setpoint_control_rf[2] = speed_error_vect_control_rf[2] * indi_gains_over.d.z;
+
+        //Apply saturation points for the accelerations in the control rf:
+        BoundAbs(acc_setpoint_control_rf[0],LIMITS_FWD_MAX_FWD_ACC);
+        BoundAbs(acc_setpoint_control_rf[1],LIMITS_FWD_MAX_LAT_ACC);
+        BoundAbs(acc_setpoint_control_rf[2],LIMITS_FWD_MAX_VERT_ACC);
+
+        //Compute the acceleration setpoints in the earth reference frame:
+        from_control_to_earth( acc_setpoint, acc_setpoint_control_rf, euler_vect[2]);
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
         // LINEAR ACCELERATION
