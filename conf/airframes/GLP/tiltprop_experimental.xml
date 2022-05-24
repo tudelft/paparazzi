@@ -99,7 +99,7 @@
       <define name="IMU_MPU9250_READ_MAG" value="TRUE"/>
     </module>
 
-    <!-- <module name="servo_tester"/> -->
+    <!--<module name="servo_tester"/>-->
 
     <module name="air_data">
       <define name="USE_AIRSPEED_AIR_DATA" value="FALSE"/>
@@ -158,10 +158,10 @@
     	
     	<!-- Location of the Motors w.r.t. the c.g. -->
     	<define name="Y_DIST" value="0.3"/>		<!--[m]-->
-    	<define name="X_DIST" value="0.12"/>	<!--[m]-->
+    	<define name="X_DIST" value="0.125"/>	<!--[m]-->
     	
     	<!-- Drone specific metrics -->
-    	<define name="MASS" value="1.168"/>		<!--[kg]-->
+    	<define name="MASS" value="1.181"/>		<!--[kg]-->
     	<define name="I_XX" value="0.06617232"/>	<!--[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
     	<!--<define name="I_YY" value="0.04914925"/>-->	<!--[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
     	<define name="I_YY" value="0.011"/> <!-- 0.006 was the previous -->
@@ -177,8 +177,8 @@
   </firmware>
 
   <servos driver="Pwm">
-    <servo name="TILT_LEFT" no="0" min="900" neutral="1500" max="2100"/>
-    <servo name="TILT_RIGHT" no="1" min="2100" neutral="1500" max="900"/>
+    <servo name="TILT_LEFT" no="0" min="2100" neutral="1500" max="900"/>
+    <servo name="TILT_RIGHT" no="1" min="900" neutral="1500" max="2100"/>
     <servo name="RM" no="2" min="1000" neutral="1150" max="1900"/>
     <servo name="LM" no="3" min="1000" neutral="1150" max="1900"/>
     <!--<servo name="SERVO_TEST" no="0" min="1000" neutral="1500" max="2000"/>-->
@@ -282,7 +282,7 @@
 
     <!-- first order actuator dynamics -->
     <!--<define name="ACT_DYN" value="{0.1, 0.1, 0.045, 0.045}"/>-->
-    <define name="ACT_DYN" value="{0.08, 0.08, 0.045, 0.045}"/> <!-- [0.05 0.05 0.045 0.045] before -->
+    <define name="ACT_DYN" value="{0.0982, 0.1192, 0.045, 0.045}"/> <!-- [0.05 0.05 0.045 0.045] before -->
     <define name="ACT_RATE_LIMIT" value="{100, 100, 9600, 9600}"/>
     <define name="ACT_IS_SERVO" value="{1, 1, 0, 0}"/>
 
