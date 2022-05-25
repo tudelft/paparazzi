@@ -491,7 +491,8 @@ void assign_variables(void){
     pos_vect[0] = stateGetPositionNed_f()->x;
     pos_vect[1] = stateGetPositionNed_f()->y;
     pos_vect[2] = stateGetPositionNed_f()->z;
-    airspeed = ms45xx.airspeed;
+//    airspeed = ms45xx.airspeed;
+    airspeed = 0;
 
     total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
     if(total_V > 1){

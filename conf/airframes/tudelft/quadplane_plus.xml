@@ -33,9 +33,20 @@
       <module name="airspeed" type="ms45xx_i2c">
         <define name="USE_I2C4"/>
         <define name="MS45XX_I2C_DEV" value="i2c4"/>
-        <define name="MS45XX_PRESSURE_OFFSET" value="2119"/>
+        <define name="MS45XX_PRESSURE_OFFSET" value="8332"/>
         <define name="MS45XX_PRESSURE_RANGE" value="1"/>
       </module>
+
+<!--      <module name="airspeed_sdp3x">-->
+<!--        <define name="SDP3X_I2C_DEV" value="i2c2"/>-->
+<!--        <define name="SDP3X_I2C_ADDR" value="0x50"/>-->
+<!--        <define name="SDP3X_SYNC_SEND" value="TRUE"/>-->
+<!--        <define name="SDP3X_PRESSURE_SCALE" value="1.0"/>-->
+<!--        <define name="SDP3X_PRESSURE_OFFSET" value="0.0"/>-->
+<!--        <define name="SDP3X_AIRSPEED_SCALE" value="1.6327"/>-->
+<!--        <define name="SDP3X_LOWPASS_TAU" value="0.15"/>-->
+<!--        <define name="USE_AIRSPEED_SDP3X" value="TRUE"/>-->
+<!--      </module>-->
 
 <!--      Module needed for the communication between the raspberry pi and the pixhawk-->
       <module name="ca_am7"/>
@@ -206,7 +217,7 @@
     <!-- Maximum limits of the sticks -->
     <define name="MAX_CMD_FWD_SPEED" value="20" unit="m/s"/>
     <define name="MAX_CMD_LAT_SPEED" value="5" unit="m/s"/>
-    <define name="MAX_CMD_VERT_SPEED" value="5" unit="m/s"/>
+    <define name="MAX_CMD_VERT_SPEED" value="2" unit="m/s"/>
     <define name="MAX_CMD_PITCH_ANGLE" value="25" unit="deg"/>
     <define name="MAX_CMD_ROLL_ANGLE" value="25" unit="deg"/>
     <define name="MAX_CMD_YAW_RATE" value="150" unit="deg/s"/>
@@ -217,7 +228,7 @@
     <define name="MAX_FWD_SPEED" value="15" unit="m/s"/>
     <define name="MIN_FWD_SPEED" value="-3" unit="m/s"/>
     <define name="MAX_LAT_SPEED" value="5" unit="m/s"/>
-    <define name="MAX_VERT_SPEED" value="3" unit="m/s"/>
+    <define name="MAX_VERT_SPEED" value="2" unit="m/s"/>
     <define name="MAX_FWD_ACC" value="6" unit="m/s^2"/>
     <define name="MAX_LAT_ACC" value="5" unit="m/s^2"/>
     <define name="MAX_VERT_ACC" value="5" unit="m/s^2"/>
@@ -385,19 +396,19 @@
 
   <!-- Vehicle properties, see documentation for notation -->
   <section name="VEHICLE_PROPERTIES" prefix="VEHICLE_">
-    <define name="I_XX" value="0.14" unit="Kg*m^2"/>
-    <define name="I_YY" value="0.13" unit="Kg*m^2"/>
-    <define name="I_ZZ" value="0.2" unit="Kg*m^2"/>
+    <define name="I_XX" value="0.1" unit="Kg*m^2"/>
+    <define name="I_YY" value="0.11" unit="Kg*m^2"/>
+    <define name="I_ZZ" value="0.15" unit="Kg*m^2"/>
     <define name="I_TILT" value="0.000216" unit="Kg*m^2"/>
     <define name="PROPELLER_INERTIA" value="1.984e-5" unit="Kg*m^2"/>
-    <define name="MASS" value="2.33" unit="Kg"/>
-    <define name="L1" value="0.231" unit="m"/>
-    <define name="L2" value="0.231" unit="m"/>
+    <define name="MASS" value="2" unit="Kg"/>
+    <define name="L1" value="0.2" unit="m"/>
+    <define name="L2" value="0.2" unit="m"/>
     <define name="L3" value="0.39" unit="m"/>
     <define name="L4" value="0.39" unit="m"/>
     <define name="LZ" value="0." unit="m"/>
 
-    <define name="CL_ALPHA" value="4"/>
+    <define name="CL_ALPHA" value="3"/>
     <define name="CM_ZERO" value="0.1"/>
     <define name="CM_ALPHA" value="-0.1"/>
     <define name="CD_ZERO" value="0.38"/>
