@@ -301,37 +301,12 @@ void init_filters(void){
 /**
  * Transpose an array from control reference frame to earth reference frame
  */
-void from_control_to_earth(float * out_array, float * in_array, float Psi){
-    float R_cg_matrix[3][3];
-    R_cg_matrix[0][0] = cos(Psi);
-    R_cg_matrix[0][1] = -sin(Psi);
-    R_cg_matrix[0][2] = 0;
-    R_cg_matrix[1][0] = sin(Psi) ;
-    R_cg_matrix[1][1] = cos(Psi) ;
-    R_cg_matrix[1][2] = 0 ;
-    R_cg_matrix[2][0] = 0 ;
-    R_cg_matrix[2][1] = 0 ;
-    R_cg_matrix[2][2] = 1 ;
-
-    //Do the multiplication between the income array and the transposition matrix:
-    for (int j = 0; j < 3; j++) {
-        //Initialize value to zero:
-        out_array[j] = 0.;
-        for (int k = 0; k < 3; k++) {
-            out_array[j] += in_array[k] * R_cg_matrix[k][j];
-        }
-    }
-}
-
-/**
- * Transpose an array from earth reference frame to control reference frame
- */
 void from_earth_to_control(float * out_array, float * in_array, float Psi){
     float R_gc_matrix[3][3];
     R_gc_matrix[0][0] = cos(Psi);
-    R_gc_matrix[0][1] = sin(Psi);
+    R_gc_matrix[0][1] = -sin(Psi);
     R_gc_matrix[0][2] = 0;
-    R_gc_matrix[1][0] = -sin(Psi) ;
+    R_gc_matrix[1][0] = sin(Psi) ;
     R_gc_matrix[1][1] = cos(Psi) ;
     R_gc_matrix[1][2] = 0 ;
     R_gc_matrix[2][0] = 0 ;
@@ -344,6 +319,31 @@ void from_earth_to_control(float * out_array, float * in_array, float Psi){
         out_array[j] = 0.;
         for (int k = 0; k < 3; k++) {
             out_array[j] += in_array[k] * R_gc_matrix[k][j];
+        }
+    }
+}
+
+/**
+ * Transpose an array from earth reference frame to control reference frame
+ */
+void from_control_to_earth(float * out_array, float * in_array, float Psi){
+    float R_cg_matrix[3][3];
+    R_cg_matrix[0][0] = cos(Psi);
+    R_cg_matrix[0][1] = sin(Psi);
+    R_cg_matrix[0][2] = 0;
+    R_cg_matrix[1][0] = -sin(Psi) ;
+    R_cg_matrix[1][1] = cos(Psi) ;
+    R_cg_matrix[1][2] = 0 ;
+    R_cg_matrix[2][0] = 0 ;
+    R_cg_matrix[2][1] = 0 ;
+    R_cg_matrix[2][2] = 1 ;
+
+    //Do the multiplication between the income array and the transposition matrix:
+    for (int j = 0; j < 3; j++) {
+        //Initialize value to zero:
+        out_array[j] = 0.;
+        for (int k = 0; k < 3; k++) {
+            out_array[j] += in_array[k] * R_cg_matrix[k][j];
         }
     }
 }
@@ -553,8 +553,8 @@ void overactuated_mixing_run()
 
 
     /// Case of manual PID control [FAILSAFE]
-//    if(radio_control.values[RADIO_MODE] < 500) {
-     if(0){
+    if(radio_control.values[RADIO_MODE] < 500) {
+//     if(0){
 
         //INIT AND BOOLEAN RESET
         if(FAILSAFE_engaged == 0 ){
@@ -637,16 +637,18 @@ void overactuated_mixing_run()
         overactuated_mixing.commands[11] = (int32_t) ((radio_control.values[RADIO_ROLL]/K_ppz_angle_az - OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * K_ppz_angle_az);
 
         //Add yaw commands on top of the azimuth commands.
-        overactuated_mixing.commands[8] += (int32_t) (euler_order[2] * K_ppz_angle_az);
-        overactuated_mixing.commands[9] += (int32_t) (euler_order[2] * K_ppz_angle_az);
-        overactuated_mixing.commands[10] -= (int32_t) (euler_order[2] * K_ppz_angle_az);
-        overactuated_mixing.commands[11] -= (int32_t) (euler_order[2] * K_ppz_angle_az);
+        if(yaw_with_tilting_PID){
+            overactuated_mixing.commands[8] += (int32_t) (euler_order[2] * K_ppz_angle_az);
+            overactuated_mixing.commands[9] += (int32_t) (euler_order[2] * K_ppz_angle_az);
+            overactuated_mixing.commands[10] -= (int32_t) (euler_order[2] * K_ppz_angle_az);
+            overactuated_mixing.commands[11] -= (int32_t) (euler_order[2] * K_ppz_angle_az);
+        }
 
     }
 
     /// Case of INDI control mode with external nonlinear function:
-//    if(radio_control.values[RADIO_MODE] > 500 )
-    if(1)
+    if(radio_control.values[RADIO_MODE] > 500 )
+//    if(1)
     {
 
         //INIT AND BOOLEAN RESET
@@ -776,7 +778,7 @@ void overactuated_mixing_run()
         //Compute the speed setpoints in the control reference frame:
         speed_setpoint_control_rf[0] = - MANUAL_CONTROL_MAX_CMD_FWD_SPEED * radio_control.values[RADIO_PITCH]/9600;
         speed_setpoint_control_rf[1] = MANUAL_CONTROL_MAX_CMD_LAT_SPEED * radio_control.values[RADIO_ROLL]/9600;
-        speed_setpoint_control_rf[2] = MANUAL_CONTROL_MAX_CMD_VERT_SPEED * (radio_control.values[RADIO_THROTTLE] - 4800)/4800;
+        speed_setpoint_control_rf[2] = -MANUAL_CONTROL_MAX_CMD_VERT_SPEED * (radio_control.values[RADIO_THROTTLE] - 4800)/4800;
 
         //Apply saturation blocks to speed setpoints in control reference frame:
         Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
