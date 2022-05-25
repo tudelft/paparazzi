@@ -162,7 +162,7 @@
     <module name="geo_mag"/>  <!-- TODO Comment? -->
     <module name="nav" type="line"/>
 
-    <module name="control" type="energyadaptive"/>
+    <module name="control" type="new"/>
     <module name="navigation"/>
 
 <!--    <module name="send_imu_mag_current"/>-->
@@ -250,7 +250,7 @@
   <section name="AUTO1" prefix="AUTO1_">
     <define name="MAX_ROLL" value="45" unit="deg"/> <!-- More authority while test flying for first time -->
     <define name="MAX_PITCH" value="40" unit="deg"/> <!-- More authority while test flying for first time -->
-<!--    <define name="MAX_YAW_RATE" value="RadOfDeg(100)"/>-->
+    <define name="MAX_YAW_RATE" value="RadOfDeg(100)"/>
   </section>
 
   <!-- ************************ TRIM ***************************** -->
@@ -374,8 +374,8 @@
     <define name="PITCH_KFFA" value="10."/>
     <define name="PITCH_KFFD" value="0."/>
 
-<!--    <define name="YAW_LOOP" value="TRUE"/>-->
-<!--    <define name="YAW_DGAIN" value="1000."/>-->
+    <define name="YAW_LOOP" value="TRUE"/>
+    <define name="YAW_DGAIN" value="1000."/>
 
 <!--    <define name="YAW_TRIM_NY" value="FALSE"/>-->
 <!--    <define name="YAW_NY_IGAIN" value="1000."/>-->

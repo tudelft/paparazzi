@@ -295,6 +295,19 @@ static void send_ctl_a(struct transport_tx *trans, struct link_device *dev)
 }
 #endif
 
+#include "modules/core/abi.h"
+static struct Int32Rates *_gyro;
+
+#ifndef IMU_MPU9250_ID
+#define IMU_MPU9250_ID ABI_BROADCAST
+#endif
+static abi_event mpu_9250_gyro_ev;
+static void mpu_9250_gyro_cb(uint8_t __attribute__((unused)) sender_id,
+                             uint32_t __attribute__((unused)) stamp,
+                             struct Int32Rates *gyro) {
+  _gyro = gyro;
+}
+
 void h_ctl_init(void)
 {
   h_ctl_ref.max_p = H_CTL_REF_MAX_P;
@@ -365,6 +378,8 @@ void h_ctl_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_TUNE_ROLL, send_tune_roll);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_H_CTL_A, send_ctl_a);
 #endif
+
+  AbiBindMsgIMU_GYRO_INT32(IMU_MPU9250_ID, &mpu_9250_gyro_ev, mpu_9250_gyro_cb);
 }
 
 /**
@@ -671,7 +686,12 @@ inline static void h_ctl_yaw_loop(void)
 
   h_ctl_ref.yaw_rate = h_ctl_yaw_rate_setpoint // set by RC
                        + 9.81f / Vo * sinf(h_ctl_roll_setpoint); // for turns
-  float d_err = h_ctl_ref.yaw_rate - stateGetBodyRates_f()->r;
+
+  struct FloatRates gyro_f;
+  RATES_FLOAT_OF_BFP(gyro_f, *_gyro);
+
+//  float d_err = h_ctl_ref.yaw_rate - stateGetBodyRates_f()->r;
+  float d_err = h_ctl_ref.yaw_rate - gyro_f.r;
 
   float cmd = + h_ctl_yaw_dgain * d_err
 #if H_CTL_YAW_TRIM_NY
