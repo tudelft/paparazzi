@@ -60,7 +60,7 @@ float filt_init_start_t = 0;
 struct Int32Vect3 *_mag;
 float my_psi = 0;
 
-#define N_COOLDOWN 10
+#define N_COOLDOWN 15
 #define INIT_VALUE 2
 float mx_t = 0, mx_t1 = 0, mx_t2 = 0;
 float my_t = 0, my_t1 = 0, my_t2 = 0;
@@ -213,8 +213,8 @@ bool pre_spin_actuator_values()
 bool is_fs_landing_active()
 {
   bool is_active;
-  // Map to command so if a different switch is used it will still work
-  // if (radio_control.values[FS_LANDING] < 4500) { TODO Check
+  // TODO Map to command so if a different switch is used it will still work
+  // if (radio_control.values[FS_LANDING] < 4500) {
   if (radio_control.values[RADIO_AUX2] < 4500) {
     is_active = false;
   } else {
@@ -280,6 +280,9 @@ void horizontal_velocity_filter() {
 }
 
 void my_psi_from_mag() {
+  // TODO This method is ideal but doesn't work due to the
+  // state sensing being too confused by the spin
+  // phi/theta are so bad it's better to just not transform
   float phi = stateGetNedToBodyEulers_f()->phi;
   float theta = stateGetNedToBodyEulers_f()->theta;
 
@@ -313,59 +316,77 @@ void mag_psi_offset_correction() {
   struct FloatVect3 mag_f;
   MAGS_FLOAT_OF_BFP(mag_f, *_mag);
 
+  // Due to a potential bug in the mag sensor or driver
+  // every value is received twice, causing issues with dx,dy
+  bool skip_mx = false;
+  bool skip_my = false;
+  if (fabsf(mx_t - mag_f.x) < 1e-10) {
+    zero_crossing_cd_mx -= 1;
+    skip_mx = true;
+  }
+  if (fabsf(my_t - mag_f.y) < 1e-10) {
+    zero_crossing_cd_my -= 1;
+    skip_my = true;
+  }
+
   mx_t = mag_f.x;
   my_t = mag_f.y;
   dmx = mx_t - mx_t2;
   dmy = my_t - my_t2;
-  float mx_prime = mx_t - offset_mx;
-  float my_prime = my_t - offset_my;
 
-  // check for sign change
-  if ((dmx * dmx_old < 0) & (zero_crossing_cd_mx < 0)) {
-    // max or min value?
-    if (sign_counter_mx > 0) {
-      max_mx = mx_t2;
-    } else {
-      min_mx = mx_t2;
+  if (!skip_mx) {
+    // check for sign change
+    if ((dmx * dmx_old <= 0) & (zero_crossing_cd_mx < 0)) {
+      // max or min value?
+      if (sign_counter_mx > 0) {
+        max_mx = mx_t2;
+      } else {
+        min_mx = mx_t2;
+      }
+      // reset counters
+      zero_crossing_cd_mx = N_COOLDOWN;
+      sign_counter_mx = 0;
+      // only calculate offset if both max and min have been found
+      if ((max_mx != INIT_VALUE) & (min_mx != INIT_VALUE)) {
+        offset_mx = (max_mx + min_mx) * 0.5;
+      }
     }
-    // cleanup
-    zero_crossing_cd_mx = N_COOLDOWN;
-    sign_counter_mx = 0;
-    // only calculate offset if both max and min have been found
-    if ((max_mx != INIT_VALUE) & (min_mx != INIT_VALUE)) {
-      offset_mx = (max_mx + min_mx) * 0.5;
-    }
+    // advance time step for mx
+    mx_t2 = mx_t1;
+    mx_t1 = mx_t;
+    dmx_old = dmx;
+    sign_counter_mx += (dmx > 0) ? 1 : -1;
+    zero_crossing_cd_mx -= 1;
   }
-  // check for sign change
-  if ((dmy * dmy_old < 0) & (zero_crossing_cd_my < 0)) {
-    // max or min value?
-    if (sign_counter_my > 0) {
-      max_my = my_t2;
-    } else {
-      min_my = my_t2;
+
+  if (!skip_my) {
+    // check for sign change
+    if ((dmy * dmy_old <= 0) & (zero_crossing_cd_my < 0)) {
+      // max or min value?
+      if (sign_counter_my > 0) {
+        max_my = my_t2;
+      } else {
+        min_my = my_t2;
+      }
+      // reset counters
+      zero_crossing_cd_my = N_COOLDOWN;
+      sign_counter_my = 0;
+      // only calculate offset if both max and min have been found
+      if ((max_my != INIT_VALUE) & (min_my != INIT_VALUE)) {
+        offset_my = (max_my + min_my) * 0.5;
+      }
     }
-    // cleanup
-    zero_crossing_cd_my = N_COOLDOWN;
-    sign_counter_my = 0;
-    // only calculate offset if both max and min have been found
-    if ((max_my != INIT_VALUE) & (min_my != INIT_VALUE)) {
-      offset_my = (max_my + min_my) * 0.5;
-    }
+    // advance time step for my
+    my_t2 = my_t1;
+    my_t1 = my_t;
+    dmy_old = dmy;
+    sign_counter_my += (dmy > 0) ? 1 : -1;
+    zero_crossing_cd_my -= 1;
   }
-  // advance time step for mx
-  mx_t2 = mx_t1;
-  mx_t1 = mx_t;
-  dmx_old = dmx;
-  sign_counter_mx += (dmx > 0) ? 1 : -1;
-  zero_crossing_cd_mx -= 1;
-  // advance time step for my
-  my_t2 = my_t1;
-  my_t1 = my_t;
-  dmy_old = dmy;
-  sign_counter_my += (dmy > 0) ? 1 : -1;
-  zero_crossing_cd_my -= 1;
 
   // calculate psi
+  float mx_prime = mx_t - offset_mx;
+  float my_prime = my_t - offset_my;
   my_psi = atan2(-my_prime, mx_prime);
 }
 
