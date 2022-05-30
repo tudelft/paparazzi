@@ -107,9 +107,9 @@
       <message name="GPS"                 period="0.05"/>
       <message name="ATTITUDE"            period="0.01"/>
       <message name="OPTI_ATT"            period="0.01"/>
-      <message name="IMU_ACCEL"           period=".02"/>
-      <message name="IMU_GYRO"            period=".02"/>
-      <message name="IMU_MAG"             period=".01"/>
+      <message name="IMU_ACCEL"           period=".002"/>
+      <message name="IMU_GYRO"            period=".002"/>
+      <message name="IMU_MAG"             period=".002"/>
       <message name="RC"                  period="0.1"/>
       <message name="ACTUATORS"           period="0.05"/>
       <message name="PPRZ_MODE"           period="1.0"/>
@@ -119,7 +119,7 @@
       <message name="STATE_FILTER_STATUS" period="1."/>
       <message name="ESC"                 period="0.1"/>
       <message name="ENERGY"              period="0.05"/>
-      <message name="FRISBEE_CONTROL"     period="0.01"/>
+      <message name="FRISBEE_CONTROL"     period="0.002"/>
     </mode>
   </process>
 </telemetry>

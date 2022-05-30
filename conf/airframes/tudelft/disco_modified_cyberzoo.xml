@@ -204,7 +204,7 @@
     <set command="PITCH" value="@PITCH"/>
     <set command="YAW" value="@YAW"/>
     <!-- Map flat-spin landing to RC switch -->
-    <set command="FS_LANDING" value="@AUX2" />
+    <set command="FS_LANDING" value="@AUX2"/>
   </rc_commands>
 
   <!-- ************************ COMMAND LAWS ***************************** -->
