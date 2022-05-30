@@ -45,6 +45,33 @@
       <message name="AM7_OUT"        	       period=".2"/>
     </mode>
 
+    <mode name="super" key_press="s">
+      <message name="AUTOPILOT_VERSION"        period="11.1"/>
+      <message name="DL_VALUE"                 period="1.1"/>
+      <message name="ALIVE"                    period="2.1"/>
+      <message name="INS_REF"                  period="5.1"/>
+      <message name="ROTORCRAFT_NAV_STATUS"    period="1.6"/>
+      <message name="WP_MOVED"                 period="1.3"/>
+      <message name="GPS_INT"                  period=".25"/>
+      <message name="INS"                      period=".25"/>
+      <message name="I2C_ERRORS"               period="4.1"/>
+      <message name="UART_ERRORS"              period="3.1"/>
+      <message name="ENERGY"                   period="2.5"/>
+      <message name="DATALINK_REPORT"          period="5.1"/>
+      <message name="STATE_FILTER_STATUS"      period="3.2"/>
+      <message name="AIR_DATA"                 period="1.3"/>
+      <message name="LOGGER_STATUS"            period="5.1"/>
+      <message name="INS_EKF2"                 period=".25"/>
+      <message name="WIND_INFO_RET"            period="1."/>                  
+      <message name="MOTOR_MIXING"             period=".5"/>
+      <message name="OVERACTUATED_VARIABLES"   period=".5"/>
+      <message name="ACTUATORS_OUTPUT"         period=".6"/>
+      <message name="INDI_CMD"                 period=".7"/>
+      <message name="AM7_IN"        	       period=".8"/>
+      <message name="AM7_OUT"        	       period=".9"/>
+    </mode>
+
+
     <mode name="ppm">
       <message name="DL_VALUE"                 period="0.5"/>
       <message name="ALIVE"                    period="2.1"/>

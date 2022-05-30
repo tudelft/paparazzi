@@ -491,8 +491,8 @@ void assign_variables(void){
     pos_vect[0] = stateGetPositionNed_f()->x;
     pos_vect[1] = stateGetPositionNed_f()->y;
     pos_vect[2] = stateGetPositionNed_f()->z;
-//    airspeed = ms45xx.airspeed;
-    airspeed = 0;
+    airspeed = ms45xx.airspeed;
+//    airspeed = 0;
 
     total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
     if(total_V > 1){
@@ -730,10 +730,10 @@ void overactuated_mixing_run()
         float yaw_rate_setpoint_turn = 0;
         float fwd_multiplier_yaw = 0;
         if(airspeed > 1){
-            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/total_V;
+            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed;
         }
         if(airspeed > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
-            fwd_multiplier_yaw = OVERACTUATED_MIXING_REF_SPEED_TRANSITION - (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - total_V);
+            fwd_multiplier_yaw = OVERACTUATED_MIXING_REF_SPEED_TRANSITION - (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - airspeed);
         }
         Bound(fwd_multiplier_yaw , 0, 1);
         yaw_rate_setpoint_turn = yaw_rate_setpoint_turn * fwd_multiplier_yaw;
@@ -779,7 +779,7 @@ void overactuated_mixing_run()
         //Compute the speed setpoints in the control reference frame:
         speed_setpoint_control_rf[0] = - MANUAL_CONTROL_MAX_CMD_FWD_SPEED * radio_control.values[RADIO_PITCH]/9600;
         speed_setpoint_control_rf[1] = MANUAL_CONTROL_MAX_CMD_LAT_SPEED * radio_control.values[RADIO_ROLL]/9600;
-        speed_setpoint_control_rf[2] = -MANUAL_CONTROL_MAX_CMD_VERT_SPEED * (radio_control.values[RADIO_THROTTLE] - 4800)/4800;
+        speed_setpoint_control_rf[2] = - MANUAL_CONTROL_MAX_CMD_VERT_SPEED * (radio_control.values[RADIO_THROTTLE] - 4800)/4800;
 
         //Apply saturation blocks to speed setpoints in control reference frame:
         Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
