@@ -729,11 +729,11 @@ void overactuated_mixing_run()
         //Compute the yaw rate for the coordinate turn:
         float yaw_rate_setpoint_turn = 0;
         float fwd_multiplier_yaw = 0;
-        if(airspeed > 1){
-            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed;
+        if(total_V > 2){
+            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/total_V;
         }
-        if(airspeed > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
-            fwd_multiplier_yaw = OVERACTUATED_MIXING_REF_SPEED_TRANSITION - (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - airspeed);
+        if(total_V > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
+            fwd_multiplier_yaw = OVERACTUATED_MIXING_REF_SPEED_TRANSITION - (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - total_V);
         }
         Bound(fwd_multiplier_yaw , 0, 1);
         yaw_rate_setpoint_turn = yaw_rate_setpoint_turn * fwd_multiplier_yaw;
