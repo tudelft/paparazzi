@@ -198,7 +198,7 @@
     <define name="MAG_Y_SENS" value="3.58800117886" integer="16"/>
     <define name="MAG_Z_SENS" value="3.57182532939" integer="16"/>
 
-    <define name="BODY_TO_IMU_PHI" value="-1" unit="deg"/>
+    <define name="BODY_TO_IMU_PHI" value="0" unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="93" unit="deg"/>
     <define name="BODY_TO_IMU_PSI" value="0." unit="deg"/>
   </section>
@@ -241,19 +241,21 @@
     <define name="G2" value="{0, 0, 0, 0}"/>
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="35"/> <!-- 107 50.0 25.0 20-->
-    <define name="REF_ERR_Q" value="20"/> <!-- 200 180.0 53.0 20-->
-    <define name="REF_ERR_R" value="20"/> <!-- 200 20.0 65.0 20-->
-    <define name="REF_RATE_P" value="8.5"/> <!-- 14.0 9.0 10-->
-    <define name="REF_RATE_Q" value="10.0"/> <!-- 15.0 14.0 10-->
-    <define name="REF_RATE_R" value="12.5"/> <!-- 15.0 10.0 10-->
+    <define name="REF_ERR_P" value="100"/> <!-- 107 50.0 25.0 20 35-->
+    <define name="REF_ERR_Q" value="100"/> <!-- 200 180.0 53.0 20 20-->
+    <define name="REF_ERR_R" value="100"/> <!-- 200 20.0 65.0 20 20-->
+    <define name="REF_RATE_P" value="9.0"/> <!-- 14.0 9.0 10 8.5-->
+    <define name="REF_RATE_Q" value="14.0"/> <!-- 15.0 14.0 10 10-->
+    <define name="REF_RATE_R" value="14.0"/> <!-- 15.0 10.0 10 12.5-->
 
     <!--Maxium yaw rate, to avoid instability-->
     <define name="MAX_R" value="100.0" unit="deg/s"/>
 
     <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
     <define name="FILT_CUTOFF" value="1.0"/>
-    <define name="FILT_CUTOFF_R" value="1.0"/>
+    <!--<define name="Filt_CUTOFF_P" value="4.0"/>-->
+    <define name="FILT_CUTOFF_Q" value="2.0"/>
+    <define name="FILT_CUTOFF_R" value="2.0"/>
     <!--<define name="FILT_CUTOFF" value="4.0"/>
     <define name="FILT_CUTOFF_R" value="3.2"/> -->
 
