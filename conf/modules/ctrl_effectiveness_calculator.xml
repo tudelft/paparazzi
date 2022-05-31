@@ -20,7 +20,7 @@
   <header>
     <file name="ctrl_effectiveness_calculator.h"/>
   </header>
-  <periodic fun="ctrl_eff_periodic()" freq="512"/>
+  <periodic fun="ctrl_eff_periodic()" freq="500"/>
   <makefile>
     <file name="ctrl_effectiveness_calculator.c"/>
   </makefile>
