@@ -260,13 +260,22 @@
     <!-- first order actuator dynamics -->
     <!--<define name="ACT_DYN" value="{0.1, 0.1, 0.045, 0.045}"/>-->
     <define name="ACT_DYN" value="{0.0982, 0.1192, 0.045, 0.045}"/> <!-- [0.05 0.05 0.045 0.045] before -->
-    <define name="ACT_RATE_LIMIT" value="{100, 100, 9600, 9600}"/>
+    <define name="ACT_RATE_LIMIT" value="{226.89, 226.89, 9600, 9600}"/>
     <define name="ACT_IS_SERVO" value="{1, 1, 0, 0}"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
     <define name="ADAPTIVE_MU" value="0.0001"/>
     <define name="WLS_PRIORITIES" value="{1.0,1.0,1.0,1.0}"/>
+    
+    <!-- Second order actuator dynamics -->
+    <define name="SERVO_DELAY" value="0.015"/>				<!-- [s] -->
+    <define name="SERVO_2ND_ORD_NUM_1" value="0.0031"/>
+    <define name="SERVO_2ND_ORD_NUM_2" value="0.0169"/>
+    <define name="SERVO_2ND_ORD_NUM_3" value="0.0026"/>
+    <define name="SERVO_2ND_ORD_DEN_2" value="-1.7516"/>
+    <define name="SERVO_2ND_ORD_DEN_3" value="0.7741"/>
+    <!--<define name="SERVO_RATE_LIMIT" value="650"/> -->			<!-- [deg/s] -->
   </section>
   
   <!-- Definitions for control effectiveness calculator module -->
