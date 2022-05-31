@@ -13,14 +13,20 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #include "paparazzi.h"
 
-struct MassMomentsInertia {
-	float xx;
-	float yy;
-	float zz;
+struct MassProperties {
+	float mass;
+	float I_xx;
+	float I_yy;
+	float I_zz;
 };
 
-extern struct MassMomentsInertia I;
+struct MotorCoefficients {
+	float k1;
+	float k2;
+	float k3;
+};
 
+extern struct MassProperties mass_property;
 
 extern void ctrl_eff_periodic(void);
 extern void ctrl_eff(void);
