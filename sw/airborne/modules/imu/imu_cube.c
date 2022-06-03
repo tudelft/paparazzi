@@ -28,8 +28,10 @@
 #include "modules/core/abi.h"
 #include "mcu_periph/spi.h"
 #include "peripherals/invensense2.h"
+#include "peripherals/mpu60x0_spi.h"
 
 
+static struct Mpu60x0_Spi imu1;
 static struct invensense2_t imu2;
 static struct invensense2_t imu3;
 
@@ -37,6 +39,23 @@ void imu_cube_init(void)
 {
   struct Int32RMat rmat;
   struct Int32Eulers eulers;
+
+  /* IMU 1 */
+  mpu60x0_spi_init(&imu1, &CUBE_IMU1_SPI_DEV, CUBE_IMU1_SPI_SLAVE_IDX);
+  // change the default configuration
+  imu1.config.smplrt_div = 3;
+  imu1.config.dlpf_cfg = MPU60X0_DLPF_256HZ;
+  imu1.config.dlpf_cfg_acc = MPU60X0_DLPF_ACC_218HZ; // only for ICM sensors
+  imu1.config.gyro_range = MPU60X0_GYRO_RANGE_2000;
+  imu1.config.accel_range = MPU60X0_ACCEL_RANGE_16G;
+
+  // Set the default scaling
+  eulers.phi = ANGLE_BFP_OF_REAL(RadOfDeg(180)),
+  eulers.theta = ANGLE_BFP_OF_REAL(0);
+  eulers.psi = ANGLE_BFP_OF_REAL(RadOfDeg(270));
+  int32_rmat_of_eulers(&rmat, &eulers);
+  imu_set_defaults_gyro(IMU_CUBE1_ID, &rmat, NULL, MPU60X0_GYRO_SENS_FRAC[MPU60X0_GYRO_RANGE_2000]);
+  imu_set_defaults_accel(IMU_CUBE1_ID, &rmat, NULL, MPU60X0_ACCEL_SENS_FRAC[MPU60X0_ACCEL_RANGE_16G]);
 
   /* IMU 2 (ICM2094) */
   imu2.abi_id = IMU_CUBE2_ID;
@@ -79,12 +98,36 @@ void imu_cube_init(void)
 
 void imu_cube_periodic(void)
 {
+  mpu60x0_spi_periodic(&imu1);
   invensense2_periodic(&imu2);
   invensense2_periodic(&imu3);
 }
 
 void imu_cube_event(void)
 {
+  mpu60x0_spi_event(&imu1);
+  if (imu1.data_available) {
+    uint32_t now_ts = get_sys_time_usec();
+
+    // set channel order
+    struct Int32Vect3 accel = {
+      (int32_t)(imu1.data_accel.value[1]),
+      (int32_t)(imu1.data_accel.value[0]),
+      -(int32_t)(imu1.data_accel.value[2])
+    };
+    struct Int32Rates rates = {
+      (int32_t)(imu1.data_rates.value[1]),
+      (int32_t)(imu1.data_rates.value[0]),
+      -(int32_t)(imu1.data_rates.value[2])
+    };
+
+    imu1.data_available = false;
+
+    // Send the scaled values over ABI
+    AbiSendMsgIMU_GYRO_RAW(IMU_CUBE1_ID, now_ts, &rates, 1);
+    AbiSendMsgIMU_ACCEL_RAW(IMU_CUBE1_ID, now_ts, &accel, 1);
+  }
+
   invensense2_event(&imu2);
   invensense2_event(&imu3);
 }

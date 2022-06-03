@@ -44,6 +44,8 @@
     <define name="USE_$(CUBE_IMU3_SPI_SLAVE_IDX)"/>
 
     <file name="invensense2.c" dir="peripherals"/>
+    <file name="mpu60x0.c" dir="peripherals"/>
+    <file name="mpu60x0_spi.c" dir="peripherals"/>
     <file name="imu_cube.c"/>
   </makefile>
 </module>

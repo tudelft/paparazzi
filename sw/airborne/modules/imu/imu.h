@@ -32,6 +32,7 @@
 #include "math/pprz_orientation_conversion.h"
 #include "generated/airframe.h"
 
+/** By default set the amount of sensors to 3 */
 #ifndef IMU_MAX_SENSORS
 #define IMU_MAX_SENSORS 3
 #endif
@@ -44,6 +45,8 @@ struct imu_gyro_t {
   struct Int32Rates unscaled;
   struct Int32Rates neutral;
   struct Int32Rates scale[2];
+  struct FloatRates integrated;
+  uint16_t dt;
   struct Int32RMat body_to_sensor;   ///< Rotation from body to sensor frame
 };
 
