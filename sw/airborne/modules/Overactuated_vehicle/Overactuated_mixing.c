@@ -68,7 +68,7 @@ float psi_order_motor = 0;
 bool INDI_engaged = 0, FAILSAFE_engaged = 0, PID_engaged = 0;
 
 // PID and general settings from slider
-int deadband_stick_yaw = 500, deadband_stick_throttle = 2500;
+int deadband_stick_yaw = 500, deadband_stick_throttle = 3000;
 float stick_gain_yaw = 0.01, stick_gain_throttle = 0.03; //  Stick to yaw and throttle gain (for the integral part)
 bool yaw_with_motors_PID = 0, position_with_attitude = 0, manual_motor_stick = 1, activate_tilting_az_PID = 0;
 bool activate_tilting_el_PID = 0, yaw_with_tilting_PID = 1, mode_1_control = 0;
@@ -527,16 +527,9 @@ void assign_variables(void){
     }
 
     //Computation of the matrix to pass from euler to body rates
-    R_matrix[0][0]=1;
-    R_matrix[1][0]=0;
-    R_matrix[2][0]=-sin(euler_vect[1]);
-    R_matrix[0][1]=0;
-    R_matrix[1][1]=cos(euler_vect[0]);
-    R_matrix[2][1]=sin(euler_vect[1]) * cos(euler_vect[1]);
-    R_matrix[0][2]=0;
-    R_matrix[1][2]=-sin(euler_vect[0]);
-    R_matrix[2][2]=cos(euler_vect[0]) * cos(euler_vect[1]);
-
+    R_matrix[0][0]=1; R_matrix[0][1]=0; R_matrix[0][2]=0;
+    R_matrix[1][0]=0; R_matrix[1][1]=cos(euler_vect[0]); R_matrix[1][2]=-sin(euler_vect[0]);
+    R_matrix[2][0]=-sin(euler_vect[1]); R_matrix[2][1]=sin(euler_vect[0]) * cos(euler_vect[1]); R_matrix[2][2]=cos(euler_vect[0]) * cos(euler_vect[1]);
 
     //Initialize actuator commands
     for(int i = 0; i < 12; i++){
@@ -715,6 +708,8 @@ void overactuated_mixing_run()
         //Calculate the desired euler angles from the auxiliary joystick channels:
         manual_phi_value = MANUAL_CONTROL_MAX_CMD_ROLL_ANGLE * radio_control.values[RADIO_AUX2] / 9600;
         manual_theta_value = MANUAL_CONTROL_MAX_CMD_PITCH_ANGLE * radio_control.values[RADIO_AUX3] / 9600;
+
+        manual_motor_value = 150;
 
         euler_setpoint[0] = indi_u[13];
         euler_setpoint[1] = indi_u[12];
