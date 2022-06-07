@@ -1,0 +1,19 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="eff_scheduling_nederdrone" dir="ctrl">
+  <doc>
+    <description>Interpolation of control effectivenss matrix 
+of the Nederdrone.
+      
+If instead using online adaptation is an option, be sure to 
+not use this module at the same time!</description>
+  </doc>
+  <header>
+    <file name="eff_scheduling_nederdrone.h"/>
+  </header>
+  <init fun="ctrl_eff_scheduling_init()"/>
+  <periodic fun="ctrl_eff_scheduling_periodic()" freq="20.0"/>
+  <makefile>
+    <file name="eff_scheduling_nederdrone.c"/>
+    <test/>
+  </makefile>
+</module>
