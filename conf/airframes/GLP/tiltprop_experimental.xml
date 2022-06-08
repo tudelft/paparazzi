@@ -240,13 +240,13 @@
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{0, 0, 0, 0}"/>
 
-    <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="100"/> <!-- 107 50.0 25.0 20 35-->
-    <define name="REF_ERR_Q" value="100"/> <!-- 200 180.0 53.0 20 20-->
-    <define name="REF_ERR_R" value="100"/> <!-- 200 20.0 65.0 20 20-->
-    <define name="REF_RATE_P" value="9.0"/> <!-- 14.0 9.0 10 8.5-->
-    <define name="REF_RATE_Q" value="14.0"/> <!-- 15.0 14.0 10 10-->
-    <define name="REF_RATE_R" value="14.0"/> <!-- 15.0 10.0 10 12.5-->
+    <!-- reference acceleration for attitude control                 v -->
+    <define name="REF_ERR_P" value="20"/> <!-- 107 50.0 25.0 20 35 100-->
+    <define name="REF_ERR_Q" value="20"/> <!-- 200 180.0 53.0 20 20 100-->
+    <define name="REF_ERR_R" value="8"/> <!-- 200 20.0 65.0 20 20 100-->
+    <define name="REF_RATE_P" value="3.5"/> <!-- 14.0 9.0 10 8.5 9.0-->
+    <define name="REF_RATE_Q" value="2.2"/> <!-- 15.0 14.0 10 10 14.0-->
+    <define name="REF_RATE_R" value="4.0"/> <!-- 15.0 10.0 10 12.5 14.0-->
 
     <!--Maxium yaw rate, to avoid instability-->
     <define name="MAX_R" value="100.0" unit="deg/s"/>
@@ -271,13 +271,18 @@
     <define name="WLS_PRIORITIES" value="{1.0,1.0,1.0,1.0}"/>
     
     <!-- Second order actuator dynamics -->
-    <define name="SERVO_DELAY" value="0.015"/>				<!-- [s] -->
-    <define name="SERVO_2ND_ORD_NUM_1" value="0.0031"/>
-    <define name="SERVO_2ND_ORD_NUM_2" value="0.0169"/>
-    <define name="SERVO_2ND_ORD_NUM_3" value="0.0026"/>
+    <define name="SERVO_DELAY" value="0.014"/> <!-- [s] -->
+    <define name="SERVO_2ND_ORD_NUM_1" value="0.0"/>
+    <define name="SERVO_2ND_ORD_NUM_2" value="0.0117"/>
+    <define name="SERVO_2ND_ORD_NUM_3" value="0.0108"/>
     <define name="SERVO_2ND_ORD_DEN_2" value="-1.7516"/>
     <define name="SERVO_2ND_ORD_DEN_3" value="0.7741"/>
     <!--<define name="SERVO_RATE_LIMIT" value="650"/> -->			<!-- [deg/s] -->
+    
+    <!-- Counter torque indifference -->
+    <define name="COUNTER_TORQUE_INDIFFERENCE" value="TRUE"/>
+    <define name="MOMENT_INERTIA_RATIO" value="0.004478"/>	<!-- ratio between MoI of tilt vs. rest of drone [total MoI minus one tilt] -->
+    <define name="GRADIENT" value="0.0001"/>				<!-- gradient in linear relationship between pprz and angle (in rad), must be same as in 'ctrl_effectiveness_calc.c' -->
   </section>
   
   <!-- Definitions for control effectiveness calculator module -->
