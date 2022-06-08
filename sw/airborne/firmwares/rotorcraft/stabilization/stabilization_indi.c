@@ -120,6 +120,7 @@ float act_pref[INDI_NUM_ACT] = {0.0};
 
 float act_dyn[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_DYN;
 
+//-------------------------------------
 // Variables for second order dynamics
 #define actuator_mem_buf_size 10
 float indi_u_memory[INDI_NUM_ACT][actuator_mem_buf_size];
@@ -127,6 +128,13 @@ float actuator_state_prev[INDI_NUM_ACT];
 float actuator_state_prev_prev[INDI_NUM_ACT];
 int servo_delay = (int) (STABILIZATION_INDI_SERVO_DELAY * PERIODIC_FREQUENCY);
 //float servo_max_rate = STABILIZATION_INDI_SERVO_RATE_LIMIT;
+
+#ifdef STABILIZATION_INDI_COUNTER_TORQUE_INDIFFERENCE
+float ratio_moi = STABILIZATION_INDI_MOMENT_INERTIA_RATIO;
+float pprz_to_rad_servo = STABILIZATION_INDI_GRADIENT;
+float actuator_state_filt_vectd_cti[INDI_NUM_ACT];
+float actuator_state_filt_vectdd_cti[INDI_NUM_ACT];
+#endif
 //-------------------------------------
 
 #ifdef STABILIZATION_INDI_WLS_PRIORITIES
@@ -250,6 +258,10 @@ void stabilization_indi_init(void)
 
   float_vect_zero(actuator_state_filt_vectd, INDI_NUM_ACT);
   float_vect_zero(actuator_state_filt_vectdd, INDI_NUM_ACT);
+#if STABILIZATION_INDI_COUNTER_TORQUE_INDIFFERENCE
+  float_vect_zero(actuator_state_filt_vectd_cti, INDI_NUM_ACT);
+  float_vect_zero(actuator_state_filt_vectdd_cti, INDI_NUM_ACT);
+#endif
   float_vect_zero(estimation_rate_d, INDI_NUM_ACT);
   float_vect_zero(estimation_rate_dd, INDI_NUM_ACT);
   float_vect_zero(actuator_state_filt_vect, INDI_NUM_ACT);
@@ -470,6 +482,15 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     }
   }
 
+#if STABILIZATION_INDI_COUNTER_TORQUE_INDIFFERENCE
+  if (actuator_state_filt_vect[2] < 4000){
+	  angular_acceleration[1] = angular_acceleration[1] - actuator_state_filt_vectdd_cti[1] * pprz_to_rad_servo * ratio_moi;
+  }
+  if (actuator_state_filt_vect[3] < 4000){
+	  angular_acceleration[1] = angular_acceleration[1] - actuator_state_filt_vectdd_cti[0] * pprz_to_rad_servo * ratio_moi;
+  }
+#endif
+
   // The control objective in array format
   indi_v[0] = (angular_accel_ref.p - angular_acceleration[0]);
   indi_v[1] = (angular_accel_ref.q - angular_acceleration[1]);
@@ -548,6 +569,13 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     actuator_state_filt_vectd[i] = (estimation_input_lowpass_filters[i].o[0] - estimation_input_lowpass_filters[i].o[1]) *
                                    PERIODIC_FREQUENCY;
     actuator_state_filt_vectdd[i] = (actuator_state_filt_vectd[i] - actuator_state_filt_vectd_prev) * PERIODIC_FREQUENCY;
+
+#if STABILIZATION_INDI_COUNTER_TORQUE_INDIFFERENCE
+    // Calculate derivative for counter torque indifference
+    float actuator_state_filt_vectd_cti_prev = actuator_state_filt_vectd_cti[i];
+    actuator_state_filt_vectd_cti[i] = (actuator_lowpass_filters[i].o[0] - actuator_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY;
+    actuator_state_filt_vectdd_cti[i] = (actuator_state_filt_vectd_cti[i] - actuator_state_filt_vectd_cti_prev) * PERIODIC_FREQUENCY;
+#endif
   }
 
   // Use online effectiveness estimation only when flying
@@ -677,6 +705,7 @@ void get_actuator_state(void)
 	  for (int j = 1; j < actuator_mem_buf_size ; j++){
 		  indi_u_memory[i][j-1] = indi_u_memory[i][j];
 	  }
+	  indi_u_memory[i][actuator_mem_buf_size-1] = indi_u[i];
   }
 
 #endif
