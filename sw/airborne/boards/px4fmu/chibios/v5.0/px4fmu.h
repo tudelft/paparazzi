@@ -115,21 +115,21 @@
 #endif
 #endif
 
-#if defined(LINE_ADC5)
+#if defined(LINE_ADC1_SPARE1)
 #if USE_ADC_5
-#define AD1_5_CHANNEL     ADC_CHANNEL_IN4
+#define AD1_5_CHANNEL     ADC_CHANNEL_IN14
 #define ADC_5             AD1_5
-#define ADC_5_GPIO_PORT   PAL_PORT(LINE_ADC5)
-#define ADC_5_GPIO_PIN    PAL_PAD(LINE_ADC5)
+#define ADC_5_GPIO_PORT   PAL_PORT(LINE_ADC1_SPARE1)
+#define ADC_5_GPIO_PIN    PAL_PAD(LINE_ADC1_SPARE1)
 #endif
 #endif
 
-#if defined(LINE_ADC6)
+#if defined(LINE_ADC1_SPARE2)
 #if USE_ADC_6
-#define AD1_6_CHANNEL     ADC_CHANNEL_IN14
+#define AD1_6_CHANNEL     ADC_CHANNEL_IN4
 #define ADC_6             AD1_6
-#define ADC_6_GPIO_PORT   PAL_PORT(LINE_ADC6)
-#define ADC_6_GPIO_PIN    PAL_PAD(LINE_ADC6)
+#define ADC_6_GPIO_PORT   PAL_PORT(LINE_ADC1_SPARE2)
+#define ADC_6_GPIO_PIN    PAL_PAD(LINE_ADC1_SPARE2)
 #endif
 #endif
 
@@ -449,6 +449,15 @@
 #define PWM_INPUT1_GPIO_PORT      PAL_PORT(LINE_RC_INPUT)
 #define PWM_INPUT1_GPIO_PIN       PAL_PAD(LINE_RC_INPUT)
 #define PWM_INPUT1_GPIO_AF        AF_LINE_RC_INPUT
+
+// PWM_INPUT 2 on ?5 (also SBUS IN)
+#define PWM_INPUT2_ICU            ICUD8
+#define PWM_INPUT2_CHANNEL        ICU_CHANNEL_1
+// PPM in (aka PI5) is used: not compatible with PPM RC receiver
+#define PWM_INPUT2_TIMER ICUD8
+#define PWM_INPUT2_GPIO_PORT      PAL_PORT(LINE_RC_INPUT)
+#define PWM_INPUT2_GPIO_PIN       PAL_PAD(LINE_RC_INPUT)
+#define PWM_INPUT2_GPIO_AF        AF_LINE_RC_INPUT
 
 /**
  * UART defines

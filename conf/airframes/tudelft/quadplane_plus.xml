@@ -56,7 +56,7 @@
 
       <module name="AOA_pwm">
 	<define name="USE_PWM_INPUT1" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>
-	<define name="USE_SIDESLIP" value="TRUE"/>
+	<!--<define name="USE_SIDESLIP" value="TRUE"/>-->
 	<define name="SEND_SYNC_AOA" value="TRUE"/>
 	<define name="AOA_ANGLE_OFFSET" value="3.1415"/>
 	<define name="AOA_PWM_PERIOD" value="4096"/>
@@ -67,14 +67,19 @@
 	<define name="SSA_OFFSET" value="0.0" />
 	<define name="SSA_REVERSE" value="FALSE" />
 	<configure name="AOA_PWM_CHANNEL" value="PWM_INPUT1" />
-	<configure name="SSA_PWM_CHANNEL" value="PWM_INPUT1" />
+	<configure name="SSA_PWM_CHANNEL" value="PWM_INPUT2" /><!-- the PPM RC INput used for PWM in -->
+      </module>
+
+      <module name="adc_generic">
+	<define name="USE_ADC_5" value="TRUE"/>
+        <configure name="ADC_CHANNEL_GENERIC1" value="ADC_5"/>
+        <configure name="ADC_CHANNEL_GENERIC2" value="ADC_6"/>
       </module>
 
 <!--      Module needed for the communication between the raspberry pi and the pixhawk-->
       <module name="ca_am7"/>
 
 <!--      <module name="scheduling_indi_simple"/>-->
-
 
       <!-- Logger -->
       <module name="tlsf"/>
