@@ -27,6 +27,7 @@ struct MotorCoefficients {
 };
 
 extern struct MassProperties mass_property;
+extern float thrust_lower_lim;
 
 extern void ctrl_eff_periodic(void);
 extern void ctrl_eff(void);
