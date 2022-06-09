@@ -281,13 +281,14 @@
     
     <!-- Counter torque indifference -->
     <define name="COUNTER_TORQUE_INDIFFERENCE" value="TRUE"/>
-    <define name="MOMENT_INERTIA_RATIO" value="0.004478"/>	<!-- ratio between MoI of tilt vs. rest of drone [total MoI minus one tilt] -->
+    <define name="MOMENT_INERTIA_RATIO" value="0.004478"/>	<!-- ratio between MoI of tilt vs. rest of drone [total MoI minus one tilt]. Both measure around axis of servo. -->
     <define name="GRADIENT" value="0.0001"/>				<!-- gradient in linear relationship between pprz and angle (in rad), must be same as in 'ctrl_effectiveness_calc.c' -->
   </section>
   
   <!-- Definitions for control effectiveness calculator module -->
   <section name="CONTROL_EFFECTIVENESS" prefix="CTRL_EFF_CALC_">
   	<define name="GROUND_CONTACT" value="0"/>
+  	<define name="THRUST_LOWER_LIM" value="4000"/>
   	
   	<!-- Drone specific metrics -->
    	<define name="MASS" value="1.181"/>		<!--[kg]-->
