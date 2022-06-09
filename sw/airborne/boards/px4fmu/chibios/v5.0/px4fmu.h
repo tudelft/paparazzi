@@ -438,6 +438,18 @@
 #define PPM_CHANNEL ICU_CHANNEL_1
 #define PPM_TIMER ICUD8
 
+/*
+ * PWM input WIP
+ */
+// PWM_INPUT 1 on PI5 (also PPM IN)
+#define PWM_INPUT1_ICU            ICUD8
+#define PWM_INPUT1_CHANNEL        ICU_CHANNEL_1
+// PPM in (aka PI5) is used: not compatible with PPM RC receiver
+#define PWM_INPUT1_TIMER ICUD8
+#define PWM_INPUT1_GPIO_PORT      PAL_PORT(LINE_RC_INPUT)
+#define PWM_INPUT1_GPIO_PIN       PAL_PAD(LINE_RC_INPUT)
+#define PWM_INPUT1_GPIO_AF        AF_LINE_RC_INPUT
+
 /**
  * UART defines
  */
@@ -568,6 +580,8 @@
 #else
 #define UART8_GPIO_AF         ((void)0)
 #endif
+
+
 
 /**
  * I2C defines
