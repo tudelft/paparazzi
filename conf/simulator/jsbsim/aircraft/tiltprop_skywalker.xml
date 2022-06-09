@@ -178,12 +178,14 @@
 		<!-- First order filter represents actuator dynamics -->
 			<lag_filter name="tilt_left_lag">
 				<input> fcs/tilt_left </input>
-				<c1> 54 </c1> <!-- 54 from cyclone file -->
+				<c1> 65 </c1> <!-- 54 from cyclone file -->
+				<delay type="time"> 0.015 </delay>
 				<output> fcs/tilt_left_lag</output>
 			</lag_filter>
 			<lag_filter name="tilt_right_lag">
 				<input> fcs/tilt_right </input>
-				<c1> 54 </c1>
+				<c1> 65 </c1>
+				<delay type="time"> 0.015 </delay>
 				<output> fcs/tilt_right_lag </output>
 			</lag_filter>
 			<lag_filter name="mot_right_lag">
