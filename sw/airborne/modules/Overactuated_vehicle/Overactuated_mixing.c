@@ -159,18 +159,6 @@ struct PID_over pid_gains_over = {
                OVERACTUATED_MIXING_PID_D_GAIN_POS_Y_TILT,
                OVERACTUATED_MIXING_PID_D_GAIN_POS_Z
         } };
-struct PID_over_simple pid_gain_psi_motor = {
-        .p = OVERACTUATED_MIXING_PID_P_GAIN_PSI_MOTOR,
-        .i = OVERACTUATED_MIXING_PID_I_GAIN_PSI_MOTOR,
-        .d = OVERACTUATED_MIXING_PID_D_GAIN_PSI_MOTOR };
-struct PID_over_simple pid_pos_x_att = {
-        .p = OVERACTUATED_MIXING_PID_P_GAIN_POS_X_ATT,
-        .i = OVERACTUATED_MIXING_PID_I_GAIN_POS_X_ATT,
-        .d = OVERACTUATED_MIXING_PID_D_GAIN_POS_X_ATT };
-struct PID_over_simple pid_pos_y_att = {
-        .p = OVERACTUATED_MIXING_PID_P_GAIN_POS_Y_ATT,
-        .i = OVERACTUATED_MIXING_PID_I_GAIN_POS_Y_ATT,
-        .d = OVERACTUATED_MIXING_PID_D_GAIN_POS_Y_ATT };
 struct PD_indi_over indi_gains_over = {
         .p = { OVERACTUATED_MIXING_INDI_REF_ERR_P,
                OVERACTUATED_MIXING_INDI_REF_ERR_Q,

@@ -45,11 +45,7 @@
         <dl_setting var="pid_gains_over.p.psi" min="0" step=".1" max="400" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_PSI" shortname="tilt_kp_yaw" persistent="true"/>
         <dl_setting var="pid_gains_over.i.psi" min="0" step=".1" max="20" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_PSI" shortname="tilt_ki_yaw" persistent="true"/>
         <dl_setting var="pid_gains_over.d.psi" min="0" step=".1" max="200" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_PSI" shortname="tilt_kd_yaw" persistent="true"/>
-
-        <dl_setting var="pid_gain_psi_motor.p" min="0" step="1" max="3000" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_PSI_MOTOR" shortname="motor_kp_yaw" persistent="true"/>
-        <dl_setting var="pid_gain_psi_motor.i" min="0" step="1" max="100" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_PSI_MOTOR" shortname="motor_ki_yaw" persistent="true"/>
-        <dl_setting var="pid_gain_psi_motor.d" min="0" step="1" max="1000" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_PSI_MOTOR" shortname="motor_kd_yaw" persistent="true"/>
-
+        
         <dl_setting var="pid_gains_over.p.x" min="0" step=".01" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_POS_X_TILT" shortname="PID_kp_x" persistent="true"/>
         <dl_setting var="pid_gains_over.i.x" min="0" step=".01" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_POS_X_TILT" shortname="PID_ki_x" persistent="true"/>
         <dl_setting var="pid_gains_over.d.x" min="0" step=".01" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_POS_X_TILT" shortname="PID_kd_x" persistent="true"/>
@@ -57,14 +53,6 @@
         <dl_setting var="pid_gains_over.p.y" min="0" step=".01" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_POS_Y_TILT" shortname="PID_kp_y" persistent="true"/>
         <dl_setting var="pid_gains_over.i.y" min="0" step=".01" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_POS_Y_TILT" shortname="PID_ki_y" persistent="true"/>
         <dl_setting var="pid_gains_over.d.y" min="0" step=".01" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_POS_Y_TILT" shortname="PID_kd_y" persistent="true"/>
-
-        <dl_setting var="pid_pos_x_att.p" min="0" step=".01" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_POS_X_ATT" shortname="kp_x_att" persistent="true"/>
-        <dl_setting var="pid_pos_x_att.i" min="0" step=".01" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_POS_X_ATT" shortname="ki_x_att" persistent="true"/>
-        <dl_setting var="pid_pos_x_att.d" min="0" step=".01" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_POS_X_ATT" shortname="kd_x_att" persistent="true"/>
-
-        <dl_setting var="pid_pos_y_att.p" min="0" step=".01" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_POS_Y_ATT" shortname="kp_y_att" persistent="true"/>
-        <dl_setting var="pid_pos_y_att.i" min="0" step=".01" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_POS_Y_ATT" shortname="ki_y_att" persistent="true"/>
-        <dl_setting var="pid_pos_y_att.d" min="0" step=".01" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_POS_Y_ATT" shortname="kd_y_att" persistent="true"/>
 
         <dl_setting var="pid_gains_over.p.z" min="0" step="1" max="1500" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_POS_Z" shortname="PID_kp_z" persistent="true"/>
         <dl_setting var="pid_gains_over.i.z" min="0" step="1" max="500" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_POS_Z" shortname="PID_ki_z" persistent="true"/>
