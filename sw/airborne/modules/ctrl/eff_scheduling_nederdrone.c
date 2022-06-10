@@ -38,6 +38,15 @@ static float g_forward[4][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL_FWD, STABI
 
 static float g_hover[4][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL, STABILIZATION_INDI_G1_PITCH, STABILIZATION_INDI_G1_YAW, STABILIZATION_INDI_G1_THRUST};
 
+// Functions to schedule switching on and of of tip props on front wing
+float sched_ratio_tip_props = 1.0;
+// If pitch lower, pitch props gradually switch off till  sched_tip_prop_lower_pitch_limit_deg (1 > sched_ratio_tip_props > 0)
+float sched_tip_prop_upper_pitch_limit_deg = -30;
+// If pitch lower, pitch props switch fully off (sched_ratio_tip_props goes to 0)
+float sched_tip_prop_lower_pitch_limit_deg = -70;
+// Setting to not switch off tip props during forward flight
+bool sched_tip_props_always_on = false;
+
 void ctrl_eff_scheduling_init(void)
 {
   // your init code here
@@ -90,6 +99,21 @@ void ctrl_eff_scheduling_periodic(void)
     // Thrust
     g1g2[3][i] = g_hover[3][i] * (1.0 - ratio_spec_force) + g_forward[3][i] * ratio_spec_force;
   }
+
+  // Tip prop ratio
+  float pitch_deg = stateGetNedToBodyEulers_f()->theta / 180. * M_PI;
+  float pitch_range_deg = sched_tip_prop_upper_pitch_limit_deg - sched_tip_prop_lower_pitch_limit_deg;
+  if (sched_tip_props_always_on) {
+    sched_ratio_tip_props = 1.0;
+  } else if (pitch_deg > sched_tip_prop_upper_pitch_limit_deg) {
+    sched_ratio_tip_props = 1.0;
+  } else if (pitch_deg < sched_tip_prop_lower_pitch_limit_deg) {
+    sched_ratio_tip_props = 0.0;
+  } else {
+    float pitch_offset = pitch_deg - sched_tip_prop_lower_pitch_limit_deg;
+    sched_ratio_tip_props = pitch_offset / pitch_range_deg;
+  }
+  Bound(sched_ratio_tip_props, 0.0, 1.0);
 }
 
 
