@@ -30,7 +30,19 @@ not use this module at the same time!
 #ifndef EFF_SCHEDULING_NEDERDRONE_H
 #define EFF_SCHEDULING_NEDERDRONE_H
 
+#include <stdio.h>
+#include <stdbool.h>
+
 extern void ctrl_eff_scheduling_init(void);
 extern void ctrl_eff_scheduling_periodic(void);
+
+// Functions to schedule switching on and of of tip props on front wing
+extern float sched_ratio_tip_props;
+// If pitch lower, pitch props gradually switch off till  sched_tip_prop_lower_pitch_limit_deg (1 > sched_ratio_tip_props > 0)
+extern float sched_tip_prop_upper_pitch_limit_deg;
+// If pitch lower, pitch props switch fully off (sched_ratio_tip_props goes to 0)
+extern float sched_tip_prop_lower_pitch_limit_deg;
+// Setting to not switch off tip props during forward flight
+extern bool sched_tip_props_always_on;
 
 #endif  // EFF_SCHEDULING_NEDERDRONE_H
