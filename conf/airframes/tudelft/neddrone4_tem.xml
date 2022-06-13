@@ -310,7 +310,7 @@
 
     <!-- Forward gains -->
     <define name="G1_ROLL_FWD"   value="{ 0.253, -0.253, 0.684, -0.684, 0.0,   0.0,   0.0,  0.0}"/>
-    <define name="G1_PITCH_FWD"  value="{ 0.3,    0.3,  -0.6,   -0.6,   1.4,   1.4,   1.4,  1.4}"/>
+    <define name="G1_PITCH_FWD"  value="{ 0.3,    0.3,  -0.6,   -0.6,  -1.4,  -1.4,  -1.4, -1.4}"/>
     <define name="G1_YAW_FWD"    value="{ 0.0,    0.0,   0.0,    0.0,   0.94, -0.94, -0.94, 0.94}"/>
     <define name="G1_THRUST_FWD" value="{-0.18   -0.18,  -0.27, -0.27,  0.0,   0.0,   0.0,  0.0}"/>
 
