@@ -224,8 +224,8 @@
     <set servo="MOTOR_12"  value="($th_hold? -9600 : actuators_pprz[3])"/>
 
     <!-- Removed ApplyDiff for differential control -->
-    <set servo="AIL_1"     value="($th_hold?  9600 : actuators_pprz[4])"/>
-    <set servo="AIL_2"     value="($th_hold? -9600 : actuators_pprz[5])"/>
+    <set servo="AIL_1"     value="($th_hold? 9600 : actuators_pprz[4])"/>
+    <set servo="AIL_2"     value="($th_hold? 9600 : actuators_pprz[5])"/>
     <set servo="AIL_3"     value="actuators_pprz[6]"/>
     <set servo="AIL_4"     value="actuators_pprz[7]"/>
     <set servo="FLAP_3"    value="actuators_pprz[6]"/>

@@ -220,8 +220,8 @@
     <set servo="MOTOR_12"  value="($th_hold? -9600 : actuators_pprz[3])"/>
 
     <!-- Removed ApplyDiff for differential control -->
-    <set servo="AIL_1"     value="($th_hold?  9600 : actuators_pprz[4])"/>
-    <set servo="AIL_2"     value="($th_hold? -9600 : actuators_pprz[5])"/>
+    <set servo="AIL_1"     value="($th_hold? 9600 : actuators_pprz[4])"/>
+    <set servo="AIL_2"     value="($th_hold? 9600 : actuators_pprz[5])"/>
     <set servo="AIL_3"     value="actuators_pprz[6]"/>
     <set servo="AIL_4"     value="actuators_pprz[7]"/>
   </command_laws>
@@ -296,7 +296,7 @@
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <define name="G1_ROLL"   value="{ 0.8, -0.8,  1.6, -1.6, 0.0,  0.0, 0.0,  0.0}"/>
     <define name="G1_PITCH"  value="{ 0.95,  0.95, -1.425, -1.425, 0.0,  0.0, 0.0,  0.0}"/>
-    <define name="G1_YAW"    value="{  0.0,   0.0,  -0.00,   0.00, 0.4, -0.4, -0.4, 0.4}"/>
+    <define name="G1_YAW"    value="{  0.00,  0.0,  -0.00,   0.00, 0.4, -0.4, -0.4, 0.4}"/>
     <define name="G1_THRUST" value="{ -0.3,  -0.3,  -0.45,  -0.45, 0.0,  0.0, 0.0,  0.0}"/>
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{0, 0, 0, 0, 0, 0, 0, 0}"/>
@@ -325,8 +325,7 @@
     <define name="FILT_CUTOFF" value="1.5"/>
     <define name="FILT_CUTOFF_RDOT" value="0.5"/>
     <define name="ESTIMATION_FILT_CUTOFF" value="5.0"/>
-    <define name="FILT_CUTOFF_R" value="4.0"/>
-
+    <define name="FILT_CUTOFF_R" value="4."/>
     <!-- first order actuator dynamics -->
     <define name="ACT_DYN" value="{0.028, 0.028, 0.028, 0.028, 0.05, 0.05, 0.05, 0.05}"/>
     <define name="ACT_RATE_LIMIT" value="{9600, 9600, 9600, 9600, 170, 170, 170, 170}"/>
