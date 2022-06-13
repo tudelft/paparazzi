@@ -303,16 +303,16 @@
     <!--Nederdrone4 without fuel cell-->
     <define name="G1_ROLL"   value="{ 0.422, -0.422,  1.14, -1.14, 0.0,  0.0, 0.0,  0.0}"/>
     <define name="G1_PITCH"  value="{ 0.5,  0.5, -1.0, -1.0, 0.0,  0.0, 0.0,  0.0}"/>
-    <define name="G1_YAW"    value="{  0.0,   0.0,  0.0,   0.0, 0.2, -0.2, -0.2, 0.2}"/>
+    <define name="G1_YAW"    value="{  0.0,   0.0,  0.0,   0.0, 0.09, -0.09, -0.09, 0.09}"/>
     <define name="G1_THRUST" value="{ -0.3,  -0.3,  -0.45,  -0.45, 0.0,  0.0, 0.0,  0.0}"/>
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{0, 0, 0, 0, 0, 0, 0, 0}"/>
 
     <!-- Forward gains -->
-    <define name="G1_ROLL_FWD"   value="{ 0.422, -0.422,  1.14, -1.14, 0.0,  0.0, 0.0,  0.0}"/>
-    <define name="G1_PITCH_FWD"  value="{ 0.5,  0.5, -1.0, -1.0, 0.0,  0.0, 0.0,  0.0}"/>
-    <define name="G1_YAW_FWD"    value="{  0.0,   0.0,  0.0,   0.0, 0.2, -0.2, -0.2, 0.2}"/>
-    <define name="G1_THRUST_FWD" value="{ -0.3,  -0.3,  -0.45,  -0.45, 0.0,  0.0, 0.0,  0.0}"/>
+    <define name="G1_ROLL_FWD"   value="{ 0.253, -0.253, 0.684, -0.684, 0.0,   0.0,   0.0,  0.0}"/>
+    <define name="G1_PITCH_FWD"  value="{ 0.3,    0.3,  -0.6,   -0.6,   1.4,   1.4,   1.4,  1.4}"/>
+    <define name="G1_YAW_FWD"    value="{ 0.0,    0.0,   0.0,    0.0,   0.94, -0.94, -0.94, 0.94}"/>
+    <define name="G1_THRUST_FWD" value="{-0.18   -0.18,  -0.27, -0.27,  0.0,   0.0,   0.0,  0.0}"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="30.0"/>
