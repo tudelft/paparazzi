@@ -71,7 +71,7 @@
       <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetAltitudeReferenceHere()"/>
     </block>
-    <block name="Holding point">
+    <!--block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
       <set value="false" var="approaching_rope"/>
       <set value="0" var="take_heading_control"/>
@@ -105,12 +105,12 @@
     <block name="Approach Rope">
       <set value="true" var="approaching_rope"/>
       <stay pre_call="approach_moving_target_enable(WP_ROPE)" wp="ROPE" alt="WaypointAlt(WP_ROPE)"/>
-    </block>
-    <!-- <block name="Holding point">
+    </block-->
+    <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block> -->
-    <!-- <block name="Start Engine">
+    </block>
+    <block name="Start Engine">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="nav_set_heading_current()"/>
@@ -126,7 +126,7 @@
       <call_once fun="nav_set_heading_current()"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
-    </block> -->
+    </block>
     <block name="follow_module">
       <set value="FALSE" var="force_forward"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
@@ -143,10 +143,10 @@
       <set value="FALSE" var="force_forward"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
-    <!-- <block name="Standby" strip_button="Standby" strip_icon="home.png">
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="FALSE" var="force_forward"/>
       <stay wp="STDBY"/>
-    </block> -->
+    </block>
     <block name="stay_p1">
       <set value="FALSE" var="force_forward"/>
       <stay wp="p1"/>
