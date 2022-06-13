@@ -20,7 +20,7 @@ struct MotorCoefficients mot_coef = {CTRL_EFF_CALC_K1, CTRL_EFF_CALC_K2, CTRL_EF
 float y_dist = CTRL_EFF_CALC_Y_DIST;
 float z_dist = CTRL_EFF_CALC_Z_DIST;
 
-float min_thrust = 1000;	// [pprz]
+float min_thrust = 1000;				// [pprz] this is mapped to PWM range
 #ifdef CTRL_EFF_CALC_THRUST_LOWER_LIM
 float thrust_lower_lim = CTRL_EFF_CALC_THRUST_LOWER_LIM;
 #else
@@ -79,8 +79,6 @@ void ctrl_eff(void)
     float ctrl_deriv_23 = -y_dist * sinf(delta_l0) * (2 * mot_coef.k1 * omega_l0 + mot_coef.k2) * (1 / mass_property.I_zz);
     float ctrl_deriv_30 = (mot_coef.k1 * omega_l0 * omega_l0 + mot_coef.k2 * omega_l0 + mot_coef.k3) * sinf(delta_l0) * (1/mass_property.mass) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_31 = (mot_coef.k1 * omega_r0 * omega_r0 + mot_coef.k2 * omega_r0 + mot_coef.k3) * sinf(delta_r0) * (1/mass_property.mass) * (1/(float)MAX_PPRZ);
-//    float ctrl_deriv_30 = (mot_coef.k1 * actuator_state_filt_vect[3] * actuator_state_filt_vect[3] + mot_coef.k2 * actuator_state_filt_vect[3] + mot_coef.k3) * sinf(delta_l0) * (1/mass_property.mass) * (1/(float)MAX_PPRZ);
-//    float ctrl_deriv_31 = (mot_coef.k1 * actuator_state_filt_vect[2] * actuator_state_filt_vect[2] + mot_coef.k2 * actuator_state_filt_vect[2] + mot_coef.k3) * sinf(delta_r0) * (1/mass_property.mass) * (1/(float)MAX_PPRZ);
     float ctrl_deriv_32 =  -(2 * mot_coef.k1 * actuator_state_filt_vect[2] + mot_coef.k2) * cosf(delta_r0) * (1/mass_property.mass);
     float ctrl_deriv_33 =  -(2 * mot_coef.k1 * actuator_state_filt_vect[3] + mot_coef.k2) * cosf(delta_l0) * (1/mass_property.mass);
 
