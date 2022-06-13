@@ -88,6 +88,8 @@ extern struct PD_indi_over indi_gains_over;
 extern struct ActuatorsStruct act_dyn_struct;
 
 // Variables for slider
+extern float K_beta;
+
 extern float des_pos_earth_x;
 extern float des_pos_earth_y;
 extern bool mode_1_control;

@@ -1807,6 +1807,7 @@
          <field name = "q_state" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1">Body rate around y axes</field>
          <field name = "r_state" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1">Body rate around z axes</field>
          <field name = "airspeed_state" type="int16" unit="1e2_m_s" alt_unit="m_s"  alt_unit_coef="0.01">Airspeed measured from airspeed sensor</field>
+         <field name = "beta_state" type="int16" unit="1e2_m_s" alt_unit="deg"  alt_unit_coef="0.01">Sideslip angle measured with the vain</field>
          <field name = "pseudo_control_ax" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01">Computed pseudo-control for the x-earth acceleration</field>
          <field name = "pseudo_control_ay" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01">Computed pseudo-control for the y-earth acceleration</field>
          <field name = "pseudo_control_az" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01">Computed pseudo-control for the z-earth acceleration</field>

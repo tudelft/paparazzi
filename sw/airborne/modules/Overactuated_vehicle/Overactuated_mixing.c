@@ -49,8 +49,8 @@
 struct overactuated_mixing_t overactuated_mixing;
 
 //General state variables:
-float rate_vect[3], rate_vect_filt[3], rate_vect_filt_dot[3], euler_vect[3], acc_vect[3], acc_vect_filt[3];
-float speed_vect[3], pos_vect[3], airspeed = 0, aoa_deg= 0, beta_deg = 0, flight_path_angle = 0, total_V = 0;
+float rate_vect[3], rate_vect_filt[3], rate_vect_filt_dot[3], euler_vect[3], acc_vect[3], acc_vect_filt[3], accel_vect_control_rf[3], speed_vect_control_rf[3];
+float speed_vect[3], pos_vect[3], airspeed = 0, aoa_deg= 0, beta_deg = 0, beta_rad = 0, flight_path_angle = 0, total_V = 0;
 float actuator_state[N_ACT_REAL];
 float actuator_state_filt[INDI_NUM_ACT];
 float actuator_state_filt_dot[N_ACT_REAL];
@@ -66,11 +66,13 @@ float pos_order_earth[3];
 float euler_order[3];
 float psi_order_motor = 0;
 
+float K_beta = 1;
+
 //Flight states variables:
 bool INDI_engaged = 0, FAILSAFE_engaged = 0, PID_engaged = 0;
 
 // PID and general settings from slider
-int deadband_stick_yaw = 500, deadband_stick_throttle = 3000;
+int deadband_stick_yaw = 500, deadband_stick_throttle = 700;
 float stick_gain_yaw = 0.01, stick_gain_throttle = 0.03; //  Stick to yaw and throttle gain (for the integral part)
 bool yaw_with_motors_PID = 0, position_with_attitude = 0, manual_motor_stick = 1, activate_tilting_az_PID = 0;
 bool activate_tilting_el_PID = 0, yaw_with_tilting_PID = 1, mode_1_control = 0;
@@ -483,26 +485,27 @@ void assign_variables(void){
     pos_vect[2] = stateGetPositionNed_f()->z;
     airspeed = ms45xx.airspeed;
     aoa_deg = adc_generic_val2;
-    beta_deg = aoa_pwm.angle * 180/M_PI;
+    beta_deg = - aoa_pwm.angle * 180/M_PI;
     if (abs(beta_deg) > 200){
         beta_deg = 0;
     }
-
-//    airspeed = 0;
+    beta_rad = beta_deg * M_PI / 180;
 
     total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
     if(total_V > 1){
         flight_path_angle = asin(-speed_vect[2]/total_V);
         BoundAbs(flight_path_angle, M_PI/2);
-        //Negative Aoa protection in dive flight:
-        if( euler_vect[1] - flight_path_angle < (2 * M_PI/180) && euler_vect[1] < 0){
-            flight_path_angle = euler_vect[1] - 2 * M_PI/180;
-        }
+//        //Negative Aoa protection in dive flight:
+//        if( euler_vect[1] - flight_path_angle < (2 * M_PI/180) && euler_vect[1] < 0){
+//            flight_path_angle = euler_vect[1] - 2 * M_PI/180;
+//        }
     }
     else{
         flight_path_angle = 0;
     }
 
+
+    /// TODO add AOA protection
 
     for (int i = 0 ; i < 4 ; i++){
         act_dyn[i] = act_dyn_struct.motor;
@@ -531,6 +534,10 @@ void assign_variables(void){
     for(int i = 0; i < 12; i++){
         overactuated_mixing.commands[0] = 0;
     }
+
+    //Determination of the accelerations in the control rf:
+    from_earth_to_control( accel_vect_control_rf, acc_vect, euler_vect[2]);
+    from_earth_to_control( speed_vect_control_rf, speed_vect, euler_vect[2]);
 }
 
 /**
@@ -720,13 +727,14 @@ void overactuated_mixing_run()
         //Compute the yaw rate for the coordinate turn:
         float yaw_rate_setpoint_turn = 0;
         float fwd_multiplier_yaw = 0;
-        if(total_V > 2){
-            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/total_V;
+        float lat_speed_multiplier = 1;
+        if(airspeed > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
+//            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/total_V;
+            yaw_rate_setpoint_turn = accel_vect_control_rf[1]/total_V + K_beta * beta_rad;
         }
-        if(total_V > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
-            fwd_multiplier_yaw = OVERACTUATED_MIXING_REF_SPEED_TRANSITION - (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - total_V);
-        }
+        fwd_multiplier_yaw = (airspeed - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION) / (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION);
         Bound(fwd_multiplier_yaw , 0, 1);
+        lat_speed_multiplier = 1 - fwd_multiplier_yaw; // 1 until min_speed and 0 above ref_speed
         yaw_rate_setpoint_turn = yaw_rate_setpoint_turn * fwd_multiplier_yaw;
         euler_error[2] = yaw_rate_setpoint_manual + yaw_rate_setpoint_turn;
 
@@ -770,7 +778,13 @@ void overactuated_mixing_run()
         //Compute the speed setpoints in the control reference frame:
         speed_setpoint_control_rf[0] = - MANUAL_CONTROL_MAX_CMD_FWD_SPEED * radio_control.values[RADIO_PITCH]/9600;
         speed_setpoint_control_rf[1] = MANUAL_CONTROL_MAX_CMD_LAT_SPEED * radio_control.values[RADIO_ROLL]/9600;
-        speed_setpoint_control_rf[2] = - MANUAL_CONTROL_MAX_CMD_VERT_SPEED * (radio_control.values[RADIO_THROTTLE] - 4800)/4800;
+        if( abs(radio_control.values[RADIO_THROTTLE] - 4800) > deadband_stick_throttle ) {
+            speed_setpoint_control_rf[2] =
+                    -MANUAL_CONTROL_MAX_CMD_VERT_SPEED * (radio_control.values[RADIO_THROTTLE] - 4800) / 4800;
+        }
+        else {
+            speed_setpoint_control_rf[2] = 0;
+        }
 
         //Apply saturation blocks to speed setpoints in control reference frame:
         Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
@@ -849,6 +863,8 @@ void overactuated_mixing_run()
         am7_data_out_local.r_state_int = (int16_t) (rate_vect_filt[2] * 1e1 * 180/M_PI);
 
         am7_data_out_local.airspeed_state_int = (int16_t) (airspeed * 1e2);
+
+        am7_data_out_local.beta_state_int = (int16_t) (beta_deg * 1e2);
 
         am7_data_out_local.pseudo_control_ax_int = (int16_t) (INDI_pseudocontrol[0] * 1e2);
         am7_data_out_local.pseudo_control_ay_int = (int16_t) (INDI_pseudocontrol[1] * 1e2);
