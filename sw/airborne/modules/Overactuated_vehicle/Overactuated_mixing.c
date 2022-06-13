@@ -38,6 +38,8 @@
 #include "modules/sensors/ca_am7.h"
 #include "modules/core/abi.h"
 #include "mcu_periph/sys_time.h"
+#include "modules/sensors/aoa_pwm.h"
+#include "modules/adcs/adc_generic.h"
 
 /**
  * Variables declaration
@@ -48,7 +50,7 @@ struct overactuated_mixing_t overactuated_mixing;
 
 //General state variables:
 float rate_vect[3], rate_vect_filt[3], rate_vect_filt_dot[3], euler_vect[3], acc_vect[3], acc_vect_filt[3];
-float speed_vect[3], pos_vect[3], airspeed = 0, flight_path_angle = 0, total_V = 0;
+float speed_vect[3], pos_vect[3], airspeed = 0, aoa_deg= 0, beta_deg = 0, flight_path_angle = 0, total_V = 0;
 float actuator_state[N_ACT_REAL];
 float actuator_state_filt[INDI_NUM_ACT];
 float actuator_state_filt_dot[N_ACT_REAL];
@@ -213,7 +215,7 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
     // Send telemetry message
 
     pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID ,
-                                         & airspeed,
+                                         & airspeed, & aoa_deg, & beta_deg,
                                          & pos_vect[0], & pos_vect[1], & pos_vect[2],
                                          & speed_vect[0], & speed_vect[1], & speed_vect[2],
                                          & acc_vect_filt[0], & acc_vect_filt[1], & acc_vect_filt[2],
@@ -480,6 +482,12 @@ void assign_variables(void){
     pos_vect[1] = stateGetPositionNed_f()->y;
     pos_vect[2] = stateGetPositionNed_f()->z;
     airspeed = ms45xx.airspeed;
+    aoa_deg = adc_generic_val2;
+    beta_deg = aoa_pwm.angle * 180/M_PI;
+    if (abs(beta_deg) > 200){
+        beta_deg = 0;
+    }
+
 //    airspeed = 0;
 
     total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);

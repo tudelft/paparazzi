@@ -31,11 +31,17 @@
 
 <!--      Air speed sensor-->
       <module name="airspeed" type="ms45xx_i2c">
-        <define name="USE_I2C4"/>
+        <define name="USE_I2C4"/><!-- 4525D5AI 001D 2126 010417094-->
         <define name="MS45XX_I2C_DEV" value="i2c4"/>
-        <define name="MS45XX_PRESSURE_OFFSET" value="8507.3"/>
-        <define name="MS45XX_AIRSPEED_SCALE" value="0.5"/>
-        <define name="MS45XX_PRESSURE_RANGE" value="1"/>
+        <!--<define name="MS45XX_PRESSURE_TYPE" value="0"/> --><!--description="Pressure Differential or Gauge, default is Differential">-->
+        <define name="MS45XX_PRESSURE_RANGE" value="1" /><!-- description="pressure range in psi (default: 1)"-->
+        <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
+        <define name="MS45XX_SYNC_SEND" value="TRUE" /> <!--description="flag to enable sending every new measurement via telemetry (default:FALSE)-->
+        <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
+        <define name="MS45XX_PRESSURE_OFFSET" value="8505.7" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
+<!--        <define name="MS45XX_AIRSPEED_SCALE" value="1.6327"/> &lt;!&ndash;description="quadratic scale factor to convert differential pressure to airspeed"&ndash;&gt;-->
+        <define name="MS45XX_LOWPASS_TAU" value="0.2"/> <!--description="Time constant for second order Butterworth low pass filter"-->
+        <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
       </module>
 
 <!--      <module name="airspeed_sdp3x">-->
@@ -67,11 +73,11 @@
 	<define name="SSA_OFFSET" value="0.0" />
 	<define name="SSA_REVERSE" value="FALSE" />
 	<configure name="AOA_PWM_CHANNEL" value="PWM_INPUT1" />
-	<configure name="SSA_PWM_CHANNEL" value="PWM_INPUT2" /><!-- the PPM RC INput used for PWM in -->
+	<configure name="SSA_PWM_CHANNEL" value="PWM_INPUT1" /><!-- the PPM RC INput used for PWM in -->
       </module>
 
       <module name="adc_generic">
-	<define name="USE_ADC_5" value="TRUE"/>
+<!--	<define name="USE_ADC_6" value="TRUE"/>-->
         <configure name="ADC_CHANNEL_GENERIC1" value="ADC_5"/>
         <configure name="ADC_CHANNEL_GENERIC2" value="ADC_6"/>
       </module>
@@ -139,15 +145,15 @@
     <module name="imu"           type="mpu6000"/>
 
     <!--     For OUTSIDE -->
-<!--    <module name="gps" type="ublox">-->
-<!--      <configure name="GPS_BAUD" value="B460800"/>&lt;!&ndash; UBX message only but rate set to ~12HZ with GPS, GLONASS, BEIDU and GALILEIO at the SAME time is lots of GNSS data&ndash;&gt;-->
-<!--    </module>-->
+    <module name="gps" type="ublox">
+      <configure name="GPS_BAUD" value="B460800"/><!-- UBX message only but rate set to ~12HZ with GPS, GLONASS, BEIDU and GALILEIO at the SAME time is lots of GNSS data-->
+    </module>
     <!--     For OPTITRACK -->
-    <module name="gps"           type="datalink">
+    <!--<module name="gps"           type="datalink">
       <define name="INS_USE_GPS_ALT" value="1"/>
       <define name="INS_VFF_R_GPS" value="0.09"/>
       <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
-    </module>
+    </module>-->
 
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>

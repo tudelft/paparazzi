@@ -1907,7 +1907,9 @@
 
      <message name="OVERACTUATED_VARIABLES" id="212">
 
-         <field name="wind_speed" type="float" >Actual wind speed from the control room</field>
+         <field name="airspeed" type="float" >Actual airspeed</field>
+         <field name="aoa_angle" type="float" >Angle of attack in degrees</field>
+         <field name="beta_angle" type="float" >Sideslip angle in degrees</field>
 
          <field name="act_x_pos" type="float" unit="m">Actual x position [m]</field>
          <field name="act_y_pos" type="float" unit="m">Actual y position [m]</field>
