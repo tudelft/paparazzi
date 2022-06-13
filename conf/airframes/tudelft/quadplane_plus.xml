@@ -406,8 +406,10 @@
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
     <define name="MAX_PHI_INDI" value="40" unit="deg"/>
-    <define name="MAX_AOA_INDI" value="13" unit="deg"/>
-    <define name="MIN_AOA_INDI" value="-13" unit="deg"/>
+    <define name="MAX_AOA_INDI" value="15" unit="deg"/>
+    <define name="MIN_AOA_INDI" value="-15" unit="deg"/>
+
+    <define name="SPEED_AOA_PROTECTION" value="6" unit="m/s"/>
 
     <!-- Filters properties for INDI -->
     <define name="FILT_CUTOFF_ANG_RATES" value="25" unit="rad/s"/>

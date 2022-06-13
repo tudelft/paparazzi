@@ -222,7 +222,7 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
                                          & speed_vect[0], & speed_vect[1], & speed_vect[2],
                                          & acc_vect_filt[0], & acc_vect_filt[1], & acc_vect_filt[2],
                                          & rate_vect_filt_dot[0], & rate_vect_filt_dot[1], & rate_vect_filt_dot[2],
-                                         & rate_vect_filt[0], & rate_vect_filt[1], & rate_vect_filt[2],
+                                         & rate_vect[0], & rate_vect[1], & rate_vect[2],
                                          & euler_vect[0], & euler_vect[1], & euler_vect[2],
                                          & euler_setpoint[0], & euler_setpoint[1], & euler_setpoint[2],
                                          & pos_setpoint[0], & pos_setpoint[1], & pos_setpoint[2],
@@ -492,13 +492,9 @@ void assign_variables(void){
     beta_rad = beta_deg * M_PI / 180;
 
     total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
-    if(total_V > 1){
+    if(total_V > 7){
         flight_path_angle = asin(-speed_vect[2]/total_V);
         BoundAbs(flight_path_angle, M_PI/2);
-//        //Negative Aoa protection in dive flight:
-//        if( euler_vect[1] - flight_path_angle < (2 * M_PI/180) && euler_vect[1] < 0){
-//            flight_path_angle = euler_vect[1] - 2 * M_PI/180;
-//        }
     }
     else{
         flight_path_angle = 0;
@@ -751,10 +747,15 @@ void overactuated_mixing_run()
         rate_setpoint[1] = angular_body_error[1] * indi_gains_over.p.theta;
         rate_setpoint[2] = angular_body_error[2] * indi_gains_over.p.psi;
 
+//        //Compute the angular acceleration setpoint:
+//        acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * indi_gains_over.d.phi;
+//        acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * indi_gains_over.d.theta;
+//        acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * indi_gains_over.d.psi;
+
         //Compute the angular acceleration setpoint:
-        acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * indi_gains_over.d.phi;
-        acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * indi_gains_over.d.theta;
-        acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * indi_gains_over.d.psi;
+        acc_setpoint[3] = (rate_setpoint[0] - rate_vect[0]) * indi_gains_over.d.phi;
+        acc_setpoint[4] = (rate_setpoint[1] - rate_vect[1]) * indi_gains_over.d.theta;
+        acc_setpoint[5] = (rate_setpoint[2] - rate_vect[2]) * indi_gains_over.d.psi;
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
         // ANGULAR ACCELERATION
@@ -763,7 +764,6 @@ void overactuated_mixing_run()
         INDI_pseudocontrol[5] = acc_setpoint[5] - rate_vect_filt_dot[2];
 
         //Calculate the speed error to be fed into the PD for the INDI loop
-
         pos_setpoint[0] = des_pos_earth_x;
         pos_setpoint[1] = des_pos_earth_y;
         if( abs(radio_control.values[RADIO_THROTTLE] - 4800) > deadband_stick_throttle ){
@@ -791,16 +791,20 @@ void overactuated_mixing_run()
         BoundAbs(speed_setpoint_control_rf[1],LIMITS_FWD_MAX_LAT_SPEED);
         BoundAbs(speed_setpoint_control_rf[2],LIMITS_FWD_MAX_VERT_SPEED);
 
-        //Compute the speed setpoints in earth rf:
-        from_control_to_earth( speed_setpoint, speed_setpoint_control_rf, euler_vect[2]);
+//        //Compute the speed setpoints in earth rf:
+//        from_control_to_earth( speed_setpoint, speed_setpoint_control_rf, euler_vect[2]);
+//
+//        //Compute the speed error in earth rf:
+//        speed_error_vect[0] = speed_setpoint[0] - speed_vect[0];
+//        speed_error_vect[1] = speed_setpoint[1] - speed_vect[1];
+//        speed_error_vect[2] = speed_setpoint[2] - speed_vect[2];
+//
+//        //Compute the speed error in the control rf:
+//        from_earth_to_control( speed_error_vect_control_rf, speed_error_vect, euler_vect[2]);
 
-        //Compute the speed error in earth rf:
-        speed_error_vect[0] = speed_setpoint[0] - speed_vect[0];
-        speed_error_vect[1] = speed_setpoint[1] - speed_vect[1];
-        speed_error_vect[2] = speed_setpoint[2] - speed_vect[2];
-
-        //Compute the speed error in the control rf:
-        from_earth_to_control( speed_error_vect_control_rf, speed_error_vect, euler_vect[2]);
+        speed_error_vect_control_rf[0] = speed_setpoint_control_rf[0] - speed_vect_control_rf[0];
+        speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1] * lat_speed_multiplier;
+        speed_error_vect_control_rf[2] = speed_setpoint_control_rf[2] - speed_vect_control_rf[2];
 
         //Compute the acceleration setpoints in the control rf:
         acc_setpoint_control_rf[0] = speed_error_vect_control_rf[0] * indi_gains_over.d.x;
@@ -933,6 +937,8 @@ void overactuated_mixing_run()
         extra_data_out_local[47] = VEHICLE_CY_BETA;
         extra_data_out_local[48] = VEHICLE_CL_BETA;
         extra_data_out_local[49] = VEHICLE_WING_SPAN;
+
+        extra_data_out_local[50] = OVERACTUATED_MIXING_SPEED_AOA_PROTECTION;
 
         //Collect the last available data on the AM7 bus to be communicated to the servos.
         AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &am7_data_out_local, extra_data_out_local);
