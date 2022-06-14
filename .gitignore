@@ -41,6 +41,7 @@ paparazzi.sublime-workspace
 
 # JetBrains (PyCharm, etc) IDE project files
 .idea
+/venv/
 
 # QtCreator IDE
 *.creator

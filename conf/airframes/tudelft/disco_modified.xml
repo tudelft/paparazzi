@@ -142,11 +142,12 @@
       <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/> <!-- as in USE it for values in the AHRS -->
       <define name="AHRS_MAG_UPDATE_ALL_AXES" value="FALSE"/> <!-- if TRUE with those high roll n pith angles magneto should be calibrated well or use UKF autocalib -->
       <define name="AHRS_USE_GPS_HEADING" value="FALSE"/><!-- TRUE by default Use GPS course to update heading for time being,if FALSE data from magneto only -->
-      <configure name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/> <!-- TRUE by default Compensation of centrifugal force via GPS speed (to fly in circles with a fixedwing)" -->
+      <configure name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="FALSE"/> <!-- TRUE by default Compensation of centrifugal force via GPS speed (to fly in circles with a fixedwing)" -->
+      <define name="AHRS_BIAS_UPDATE_HEADING_THRESHOLD" value="0.174533" unit="rad"/> <!-- don't update gyro bias if heading deviation is above this rotation threshold"-->
       <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/> <!-- AHRS_GRAVITY_UPDATE_COORDINATED_TURN assumes the GPS speed is in the X axis direction. Quadshot, DelftaCopter and other hybrids can have the GPS speed in the negative Z direction" -->
       <define name="AHRS_PROPAGATE_LOW_PASS_RATES" value="FALSE"/> <!-- apply a low pass filter on rotational velocity"-->
 <!--      <define name="AHRS_BIAS_UPDATE_HEADING_THRESHOLD" value="0.174533" unit="rad"/> ONLY IN int_cmpl_quat!!! don't update gyro bias if heading deviation is above this rotation threshold"&ndash;&gt;-->
-      <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="30"/> <!-- TODO: determine Default is 30. Reduce accelerometer cut-off frequency when the vehicle is accelerating: norm(ax,ay,az) 9,81 m/s2. WARNING: when the IMU is not well damped, the norm of accelerometers never equals to 9,81 m/s2. As a result, the GRAVITY_HEURISTIC_FACTOR will reduce the accelerometer bandwith even if the vehicle is not accelerating. -->
+      <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="10"/> <!-- TODO: determine Default is 30. Reduce accelerometer cut-off frequency when the vehicle is accelerating: norm(ax,ay,az) 9,81 m/s2. WARNING: when the IMU is not well damped, the norm of accelerometers never equals to 9,81 m/s2. As a result, the GRAVITY_HEURISTIC_FACTOR will reduce the accelerometer bandwith even if the vehicle is not accelerating. -->
       <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID" />
     </module>
 
@@ -178,8 +179,8 @@
   <!-- ************************* ACTUATORS ************************* -->
   <servos driver="Pwm">
     <servo name="S_THROTTLE_LEFT" no="0" min="1150" neutral="1500" max="1850"/>  <!-- Overpowered motors need to be limited -->
-    <servo name="S_ELEVON_LEFT" no="1" min="1850" neutral="1400" max="900"/> <!-- max value is upward deflection-->
-    <servo name="S_ELEVON_RIGHT" no="2" min="1100" neutral="1500" max="2000"/>
+    <servo name="S_ELEVON_LEFT" no="1" min="2050" neutral="1550" max="1050"/> <!-- max value is upward deflection-->
+    <servo name="S_ELEVON_RIGHT" no="2" min="1000" neutral="1500" max="2000"/>
     <servo name="S_THROTTLE_RIGHT" no="3" min="1150" neutral="1500" max="1850"/>
   </servos>
 
@@ -189,9 +190,9 @@
 
   <!-- ********************* SERVO MIXER *************************** -->
   <section name="MIXER">
-    <define name="ELEVON_ROLL_FACTOR" value="0.8f"/>
+    <define name="ELEVON_ROLL_FACTOR" value="-0.8f"/>
     <define name="ELEVON_PITCH_FACTOR" value="-0.8f"/>  <!-- TODO Check sign -->
-    <define name="ELEVON_YAW_FACTOR" value="0.9f"/>
+    <define name="ELEVON_YAW_FACTOR" value="0.8f"/>
     <!-- Set up/down deflection differences, needs many in flight tests to find acceptable values-->
     <define name="ELEVON_DIFF" value="0.3f"/> <!-- TODO: not used yet, not tuned yet... -->
   </section>

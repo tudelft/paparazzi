@@ -163,15 +163,16 @@
     <module name="flight_recorder"/>
 
     <module name="fs_landing"/>
+<!--    <module name="sys_id_chirp"/>-->
 
   </firmware>
 
   <!-- ************************* ACTUATORS ************************* -->
   <servos driver="Pwm">
-    <servo name="S_THROTTLE_LEFT" no="0" min="1200" neutral="1500" max="1800"/>  <!-- Overpowered motors need to be limited -->
-    <servo name="S_ELEVON_LEFT" no="1" min="1800" neutral="1400" max="1000"/> <!-- max is upward deflection-->
-    <servo name="S_ELEVON_RIGHT" no="2" min="1100" neutral="1500" max="1900"/>
-    <servo name="S_THROTTLE_RIGHT" no="3" min="1200" neutral="1500" max="1800"/>
+    <servo name="S_THROTTLE_LEFT" no="0" min="1150" neutral="1500" max="1850"/>  <!-- Overpowered motors need to be limited -->
+    <servo name="S_ELEVON_LEFT" no="1" min="2050" neutral="1550" max="1050"/> <!-- max value is upward deflection-->
+    <servo name="S_ELEVON_RIGHT" no="2" min="1000" neutral="1500" max="2000"/>
+    <servo name="S_THROTTLE_RIGHT" no="3" min="1150" neutral="1500" max="1850"/>
   </servos>
 
   <section name="ServoPositions">
@@ -233,6 +234,9 @@
     <set servo="S_THROTTLE_RIGHT" value="($is_spinning ? $fs_throttle_right : $throttleright)"/>
     <set servo="S_ELEVON_LEFT" value="($is_spinning ? $fs_elevon_left : $elevator + $aileron)"/>
     <set servo="S_ELEVON_RIGHT" value="($is_spinning ? $fs_elevon_right : $elevator - $aileron)"/>
+
+<!--    <call fun="sys_id_chirp_value()"/>-->
+<!--    <set servo="S_THROTTLE_RIGHT" value="actuator_command"/>-->
   </command_laws>
 
   <!-- ************************ AUTO1 ***************************** -->
