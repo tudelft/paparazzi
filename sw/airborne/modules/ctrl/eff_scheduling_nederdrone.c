@@ -72,9 +72,12 @@ void ctrl_eff_scheduling_periodic(void)
   /*float ratio = FLOAT_OF_BFP(transition_percentage, INT32_PERCENTAGE_FRAC) / 100;*/
   float ratio = 0.0;
 
+  struct FloatEulers eulers_zxy;
+  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+
   // Ratio is only based on pitch now, as the pitot tube is often not mounted.
   if (use_scheduling == 1) {
-    ratio = fabs(stateGetNedToBodyEulers_f()->theta) / M_PI_2;
+    ratio = fabs(eulers_zxy.theta) / M_PI_2;
   } else {
     ratio = 0.0;
   }
@@ -101,7 +104,7 @@ void ctrl_eff_scheduling_periodic(void)
   }
 
   // Tip prop ratio
-  float pitch_deg = stateGetNedToBodyEulers_f()->theta / 180. * M_PI;
+  float pitch_deg = eulers_zxy.theta / 180. * M_PI;
   float pitch_range_deg = sched_tip_prop_upper_pitch_limit_deg - sched_tip_prop_lower_pitch_limit_deg;
   if (sched_tip_props_always_on) {
     sched_ratio_tip_props = 1.0;

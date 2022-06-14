@@ -208,7 +208,7 @@
     <let var="th_hold"     value="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
 
     <!-- Tip props always at 80% -->
-    <call fun="actuators_pprz[8] = (LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)? -9600 : 9600/100*85*sched_ratio_tip_props);"/>
+    <call fun="actuators_pprz[8] = (Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), 0.01 > sched_ratio_tip_props)? -9600 : 9600/100*85*sched_ratio_tip_props);"/>
 
     <set servo="MOTOR_1"   value="($th_hold? -9600 : actuators_pprz[8])"/>
     <set servo="MOTOR_2"   value="($th_hold? -9600 : actuators_pprz[0])"/>
