@@ -104,7 +104,7 @@ void ctrl_eff_scheduling_periodic(void)
   }
 
   // Tip prop ratio
-  float pitch_deg = eulers_zxy.theta / 180. * M_PI;
+  float pitch_deg = eulers_zxy.theta / M_PI * 180.f;
   float pitch_range_deg = sched_tip_prop_upper_pitch_limit_deg - sched_tip_prop_lower_pitch_limit_deg;
   if (sched_tip_props_always_on) {
     sched_ratio_tip_props = 1.0;
