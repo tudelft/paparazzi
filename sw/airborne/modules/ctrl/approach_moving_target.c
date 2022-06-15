@@ -41,6 +41,8 @@ struct Amt amt = {
   .pos_gain = 0.3,
   .psi_ref = 0.0,
   .slope_ref = 30.0,
+  .speed_gain = 1.0,
+  .relvel_gain = 1.0,
   .enabled_time = 0,
   .wp_id = 0,
 };
@@ -142,6 +144,7 @@ void follow_diagonal_approach(void) {
     return;
   }
   target_get_vel(&target_vel);
+  VECT3_SMUL(target_vel, target_vel, amt.speed_gain);
 
   // Reference model
   float gamma_ref = RadOfDeg(amt.slope_ref);
@@ -160,7 +163,7 @@ void follow_diagonal_approach(void) {
   VECT3_SUM(des_pos, ref_relpos, target_pos);
 
   struct FloatVect3 ref_relvel;
-  VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt.speed);
+  VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt.speed * amt.relvel_gain);
 
   // error controller
   struct FloatVect3 pos_err;

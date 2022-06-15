@@ -566,7 +566,7 @@ float guidance_indi_get_liftd(float airspeed, float theta) {
   float liftd = 0.0;
   if(airspeed < 12) {
     float pitch_interp = DegOfRad(theta);
-    Bound(pitch_interp, -80.0, -40.0);
+    Bound(pitch_interp, -80.0, -20.0);
     float ratio = (pitch_interp + 40.0)/(-40.);
     liftd = -24.0*ratio*gih_params.lift_pitch_eff/0.12;
   } else {
