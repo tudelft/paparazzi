@@ -423,8 +423,27 @@ void guidance_indi_run(float *heading_sp) {
   // [phi, theta, thrust]
   float wls_out[3] = {.0f, .0f, .0f};
   float ctrl_obj[3] = {a_diff.x, a_diff.y, a_diff.z};
+  #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
   float du_min[3] = {-guidance_indi_max_bank-roll_filt.o[0], -RadOfDeg(120.0)-pitch_filt.o[0], (9600-thrust_filt.o[0])/guidance_indi_specific_force_gain};
   float du_max[3] = { guidance_indi_max_bank-roll_filt.o[0], RadOfDeg(25.0)-pitch_filt.o[0], (GUIDANCE_INDI_MIN_THROTTLE-thrust_filt.o[0])/guidance_indi_specific_force_gain};
+  #else
+    //update thrust command such that the current is correctly estimated
+  float spec_force = 0.f;
+  float thrust_eff_sum = 0.f;
+  int16_t i = 0;
+  for (i = 0; i < INDI_NUM_ACT; i++) {
+    // Assume linear thrust curve
+    spec_force += Bwls[3][i] * actuator_state_filt_vect[i] * -((int32_t) act_is_servo[i] - 1);
+    thrust_eff_sum += Bwls[3][i];
+  }
+  float min_spec_force = thrust_eff_sum*GUIDANCE_INDI_MIN_THROTTLE;
+  float max_spec_force = thrust_eff_sum*9600.f;
+
+  // Remember that thrust points in the negative Z axis, so du_min leads to max thrust!
+
+  float du_min[3] = {-guidance_indi_max_bank-roll_filt.o[0], -RadOfDeg(120.0)-pitch_filt.o[0], max_spec_force-spec_force};
+  float du_max[3] = { guidance_indi_max_bank-roll_filt.o[0], RadOfDeg(25.0)-pitch_filt.o[0], min_spec_force-spec_force};
+  #endif
   float du_pref[3] = {.0f, .0f, .0f};
   static float weighting_guidance[3] = {1, 1, 1000};
 
