@@ -362,8 +362,9 @@
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">
-    <define name="ACTUATOR_NAMES" value="m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12,ail1,ail2,ail3,ail4,flap1,flap2,flap3,flap4" type="string[]"/>
-    <define name="JSBSIM_MODEL" value="nederdrone" type="string"/>
+    <define name="ACTUATOR_NAMES" value="a0,a1,a2,a3,a4,a5,a6,a7,a8" type="string[]"/>
+    <define name="JSBSIM_MODEL" value="nederdrone4_tem" type="string"/>
+    <define name="NO_MOTOR_MIXING" value="TRUE"/>
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
     <!-- mode switch on joystick channel 5 (axis numbering starting at zero) -->
     <define name="JS_AXIS_MODE" value="4"/>
