@@ -35,15 +35,16 @@
 #include "mcu_periph/sys_time.h"
 
 float dt_s = 1;//1-3;
-float dt_m = 4;//3-6;
-float dt_l = 7;//5-10;
+float dt_m = 4;//4 3-6;
+float dt_l = 6;//7 5-10;
 #define imax 7 // Wing set point counter
-#define jmax 5 // Motor status counter
+#define jmax 0 // 5 Motor status counter
 #define mmax 4 // Motor counter
-#define kmax 4 // Aerodynamic Surface counter
+#define kmax 0 // 4 Aerodynamic Surface counter
 #define nmax 5 // Excitation signal counter
 
-int16_t mot_status[jmax][mmax] = {{0,0,0,0},{6400,6400,6400,6400},{6400,6400,8533,6400},{0,0,0,0},{0,0,0,0}};
+//int16_t mot_status[jmax][mmax] = {{0,0,0,0},{6400,6400,6400,6400},{6400,6400,8533,6400},{0,0,0,0},{0,0,0,0}};
+int16_t mot_status[jmax][mmax] = {{0,0,0,0},{6400,6400,6400,6400},{6400,6400,8533,6400},{8000,8000,8000,8000}};
 int16_t as_static[nmax] = {-9600,-4800,1920,4800,9600};
 int16_t sync_cmd[6] = {800,0,1000,0,1200,0};
 int16_t push_cmd[2] = {2000,4000};
@@ -143,7 +144,7 @@ bool wing_skew_control(void)
      printf("Wing SP = %f \n",wing_rotation.wing_angle_deg_sp);
      done_wing = false;}
    else{
-     if((get_sys_time_float() - t_wing) > dt_m){
+     if((get_sys_time_float() - t_wing) > dt_l){
      if(!mot_status_control()){
        done_wing = true;
        i += 1;}}} 
@@ -165,11 +166,12 @@ bool mot_status_control(void)
       actuators_pprz_static[m] = (int16_t) mot_status[j][m];
      }
      printf("Motor State = %i %i %i %i \n",actuators_pprz_static[0],actuators_pprz_static[1],actuators_pprz_static[2],actuators_pprz_static[3]);
-     if (j>2){actuators_pprz_static[8]= (int16_t) push_cmd[j-3];}
+     printf("Test Point = %i \n",tp);
+     //if (j>2){actuators_pprz_static[8]= (int16_t) push_cmd[j-3];}
      done_mot_status = false;
      tp += 1;}
    else{
-     if((get_sys_time_float() - t_mot_status) > dt_l){
+     if((get_sys_time_float() - t_mot_status) > dt_m){
      if(!as_control()){
        done_mot_status = true;
        j += 1;}}} 
