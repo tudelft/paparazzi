@@ -295,7 +295,7 @@
    	<define name="I_XX" value="0.06617232"/>	<!--[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
    	<!--<define name="I_YY" value="0.04914925"/>-->	<!--[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
    	<define name="I_YY" value="0.011"/> <!-- 0.006 was the previous -->
-   	<define name="I_ZZ" value="0.08"/>	<!--[kg m2] The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
+   	<define name="I_ZZ" value="0.06"/>	<!--[kg m2] The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
 	    <!--<define name="I_XX" value="0.017897"/>	[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
    	<!--<define name="I_YY" value="0.003390"/>	[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
    	<!--<define name="I_ZZ" value="0.020337"/>	[kg m2] The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
