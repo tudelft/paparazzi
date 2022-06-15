@@ -58,4 +58,4 @@ void qr_solve_wrapper(int m, int n, float** A, float* b, float* x);
  */
 int wls_alloc(float* u, float* v, float* umin, float* umax, float** B,
               float* u_guess, float* W_init, float* Wv, float* Wu,
-              float* ud, float gamma, int imax);
+              float* ud, float gamma, int imax, int n_u, int n_v);

@@ -132,14 +132,12 @@ void qr_solve_wrapper(int m, int n, float** A, float* b, float* x) {
  */
 int wls_alloc(float* u, float* v, float* umin, float* umax, float** B,
     float* u_guess, float* W_init, float* Wv, float* Wu, float* up,
-    float gamma_sq, int imax) {
+    float gamma_sq, int imax, int n_u, int n_v) {
   // allocate variables, use defaults where parameters are set to 0
   if(!gamma_sq) gamma_sq = 100000;
   if(!imax) imax = 100;
 
-  int n_c = CA_N_C;
-  int n_u = CA_N_U;
-  int n_v = CA_N_V;
+  int n_c = n_u + n_v;
 
   float A[CA_N_C][CA_N_U];
   float A_free[CA_N_C][CA_N_U];

@@ -447,9 +447,12 @@ void guidance_indi_run(float *heading_sp) {
   float du_pref[3] = {.0f, .0f, .0f};
   static float weighting_guidance[3] = {1, 1, 1000};
 
+  int16_t n_u = CA_N_U_OUTER;
+  int16_t n_v = CA_N_V_OUTER;
+
   // WLS Control Allocator
   UNUSED int num_iter =
-    wls_alloc(wls_out, ctrl_obj, du_min, du_max, Ga_wls, 0, 0, weighting_guidance, 0, du_pref, 10000, 10);
+    wls_alloc(wls_out, ctrl_obj, du_min, du_max, Ga_wls, 0, 0, weighting_guidance, 0, du_pref, 10000, 10, n_u, n_v);
 
   euler_cmd.x = wls_out[0];
   euler_cmd.y = wls_out[1];
