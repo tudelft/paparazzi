@@ -48,7 +48,7 @@
 #endif
 
 #ifndef TARGET_OFFSET_HEIGHT
-#define TARGET_OFFSET_HEIGHT 10.0
+#define TARGET_OFFSET_HEIGHT 0.0
 #endif
 
 #ifndef TARGET_INTEGRATE_XY

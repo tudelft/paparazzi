@@ -36,7 +36,7 @@ float approach_moving_target_angle_deg;
 #include <stdio.h>
 
 struct Amt amt = {
-  .distance = 40,
+  .distance = 60,
   .speed = -1.0,
   .pos_gain = 0.3,
   .psi_ref = 0.0,

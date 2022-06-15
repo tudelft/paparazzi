@@ -75,8 +75,8 @@
     </target>
 
     <module name="follow_me">
-      <define name="FOLLOW_ME_DISTANCE" value="40"/>
-      <define name="FOLLOW_ME_HEIGHT" value="15"/>
+      <define name="FOLLOW_ME_DISTANCE" value="60"/>
+      <define name="FOLLOW_ME_HEIGHT" value="40"/>
     </module>
 
     <module name="telemetry"     type="transparent">
@@ -132,8 +132,6 @@
       <define name="GUIDANCE_INDI_SPEED_GAIN" value="2.0"/>
       <define name="GUIDANCE_INDI_POS_GAINZ" value="0.3"/>
       <define name="GUIDANCE_INDI_SPEED_GAINZ" value="2.0"/>
-      <define name="GUIDANCE_INDI_DELTA_KP" value="0.8"/>
-      <define name="GUIDANCE_INDI_DELTA_KD" value="2.0"/>
       <define name="GUIDANCE_INDI_PITCH_LIFT_EFF" value="0.12"/>
       <define name="GUIDANCE_INDI_PITCH_EFF_SCALING" value="1.0"/>
       <define name="GUIDANCE_H_REF_MAX_SPEED" value="18.0"/> <!--not used-->

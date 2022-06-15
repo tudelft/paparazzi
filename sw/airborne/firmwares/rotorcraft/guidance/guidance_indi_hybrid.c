@@ -62,14 +62,6 @@
 #define GUIDANCE_INDI_POS_GAINZ 0.5
 #endif
 
-#ifndef GUIDANCE_INDI_DELTA_KP
-#define GUIDANCE_INDI_DELTA_KP 0.8
-#endif
-
-#ifndef GUIDANCE_INDI_DELTA_KD
-#define GUIDANCE_INDI_DELTA_KD 2.0
-#endif
-
 struct guidance_indi_hybrid_params gih_params = {
   .pos_gain = GUIDANCE_INDI_POS_GAIN,
   .pos_gainz = GUIDANCE_INDI_POS_GAINZ,
@@ -78,6 +70,7 @@ struct guidance_indi_hybrid_params gih_params = {
   .speed_gainz = GUIDANCE_INDI_SPEED_GAINZ,
 
   .heading_bank_gain = GUIDANCE_INDI_HEADING_BANK_GAIN,
+  .lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF,
 };
 
 #ifndef GUIDANCE_INDI_MAX_AIRSPEED
@@ -126,8 +119,6 @@ float guidance_indi_line_gain = 1.0;
 #endif
 
 float inv_eff[4];
-
-float lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF;
 
 // Max bank angle in radians
 float guidance_indi_max_bank = GUIDANCE_H_MAX_BANK;
@@ -577,9 +568,9 @@ float guidance_indi_get_liftd(float airspeed, float theta) {
     float pitch_interp = DegOfRad(theta);
     Bound(pitch_interp, -80.0, -40.0);
     float ratio = (pitch_interp + 40.0)/(-40.);
-    liftd = -24.0*ratio*lift_pitch_eff/0.12;
+    liftd = -24.0*ratio*gih_params.lift_pitch_eff/0.12;
   } else {
-    liftd = -(airspeed - 8.5)*lift_pitch_eff/M_PI*180.0;
+    liftd = -(airspeed - 8.5)*gih_params.lift_pitch_eff/M_PI*180.0;
   }
   //TODO: bound liftd
   return liftd;
