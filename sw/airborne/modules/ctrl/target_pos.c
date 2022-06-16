@@ -76,6 +76,30 @@ struct target_t target = {
 /* Get the Relative postion from the RTK */
 extern struct GpsRelposNED gps_relposned;
 
+#if PERIODIC_TELEMETRY
+#include "subsystems/datalink/telemetry.h"
+static void send_target_pos_info(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_TARGET_POS_INFO(trans, dev, AC_ID,
+                              &target.pos.lla.lat,
+                              &target.pos.lla.lon,
+                              &target.pos.lla.alt,
+                              &target.pos.ground_speed,
+                              &target.pos.climb,
+                              &target.pos.course,
+                              &target.offset.heading,
+                              &target.offset.distance,
+                              &target.offset.height);
+}
+#endif
+
+void target_pos_init(void)
+{
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_TARGET_POS_INFO, send_target_pos_info);
+#endif
+}
+
 /**
  * Receive a TARGET_POS message from the ground
  */

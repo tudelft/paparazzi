@@ -31,6 +31,7 @@
   <header>
     <file name="target_pos.h"/>
   </header>
+  <init fun="target_pos_init()"/>
   <datalink message="TARGET_POS" fun="target_parse_target_pos(buf)"/>
   <makefile>
     <file name="target_pos.c"/>
