@@ -534,11 +534,13 @@ void assign_variables(void){
         act_dyn[i+8] = act_dyn_struct.azimuth;
     }
 
-    //Determine the inertial accelerations based on the body rates, speed and ned body accelerations:
+    //Determine the inertial accelerations based on the body rates, speed and NED body accelerations:
     from_body_to_earth(rate_vect_ned,rate_vect,euler_vect[0],euler_vect[1],euler_vect[2]);
     acc_vect_inertial[0] = acc_vect[0] + rate_vect_ned[1] * speed_vect[2] - rate_vect_ned[2] * speed_vect[1];
     acc_vect_inertial[1] = acc_vect[1] + rate_vect_ned[2] * speed_vect[0] - rate_vect_ned[0] * speed_vect[2];
     acc_vect_inertial[2] = acc_vect[2] + rate_vect_ned[0] * speed_vect[1] - rate_vect_ned[1] * speed_vect[0];
+
+
     /* Propagate the filter on the gyroscopes and accelerometers */
     for (int i = 0; i < 3; i++) {
         update_butterworth_2_low_pass(&measurement_rates_filters[i], rate_vect[i]);
@@ -761,10 +763,11 @@ void overactuated_mixing_run()
         float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
 
         if(airspeed > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
-            yaw_rate_setpoint_turn = 9.81 / airspeed_turn * tan(euler_vect[0]) - K_beta * accely;
+//            yaw_rate_setpoint_turn = 9.81 / airspeed_turn * tan(euler_vect[0]) - K_beta * accely;
 //            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/total_V;
+//              yaw_rate_setpoint_turn = accel_vect_control_rf[1] / airspeed_turn - K_beta * accely;
 //            yaw_rate_setpoint_turn = accel_vect_control_rf[1]/total_V + K_beta * beta_rad;
-//            yaw_rate_setpoint_turn = K_beta * beta_rad;
+            yaw_rate_setpoint_turn = K_beta * beta_rad;
         }
         fwd_multiplier_yaw = (airspeed - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION) / (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION);
         Bound(fwd_multiplier_yaw , 0, 1);
