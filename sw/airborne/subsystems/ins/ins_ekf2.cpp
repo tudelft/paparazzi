@@ -288,8 +288,6 @@ static void send_ins_ekf2(struct transport_tx *trans, struct link_device *dev)
   ekf.get_flow_innov(&flow);
   ekf.get_mag_decl_deg(&mag_decl);
 
-  uint32_t fix_status = (control_mode >> 2) & 1;
-
   if (ekf.get_terrain_valid()) {
     terrain_valid = 1;
   } else {
@@ -303,7 +301,7 @@ static void send_ins_ekf2(struct transport_tx *trans, struct link_device *dev)
   }
 
   pprz_msg_send_INS_EKF2(trans, dev, AC_ID,
-                         &fix_status, &filter_fault_status, &gps_check_status, &soln_status,
+                         &control_mode, &filter_fault_status, &gps_check_status, &soln_status,
                          &innov_test_status, &mag, &vel, &pos, &hgt, &tas, &hagl, &flow, &beta,
                          &mag_decl, &terrain_valid, &dead_reckoning);
 }
