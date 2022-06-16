@@ -145,16 +145,16 @@
     <module name="imu"           type="mpu6000"/>
 
     <!--     For OUTSIDE -->
-<!--    <module name="gps" type="ublox">-->
-<!--      <configure name="GPS_BAUD" value="B460800"/>&lt;!&ndash; UBX message only but rate set to ~12HZ with GPS, GLONASS, BEIDU and GALILEIO at the SAME time is lots of GNSS data&ndash;&gt;-->
-<!--    </module>-->
+    <module name="gps" type="ublox">
+      <configure name="GPS_BAUD" value="B460800"/><!-- UBX message only but rate set to ~12HZ with GPS, GLONASS, BEIDU and GALILEIO at the SAME time is lots of GNSS data-->
+    </module>
 
     <!--     For OPTITRACK -->
-    <module name="gps"           type="datalink">
-      <define name="INS_USE_GPS_ALT" value="1"/>
-      <define name="INS_VFF_R_GPS" value="0.09"/>
-      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
-    </module>
+<!--    <module name="gps"           type="datalink">-->
+<!--      <define name="INS_USE_GPS_ALT" value="1"/>-->
+<!--      <define name="INS_VFF_R_GPS" value="0.09"/>-->
+<!--      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>-->
+<!--    </module>-->
 
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
@@ -393,7 +393,7 @@
     <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
-    <define name="SERVO_EL_1_ZERO_VALUE" value="-56" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="-57" unit="deg"/>
     <define name="SERVO_EL_2_ZERO_VALUE" value="-54" unit="deg"/>
     <define name="SERVO_EL_3_ZERO_VALUE" value="-52" unit="deg"/>
     <define name="SERVO_EL_4_ZERO_VALUE" value="-52" unit="deg"/>
