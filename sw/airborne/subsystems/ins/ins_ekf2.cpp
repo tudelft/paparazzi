@@ -444,7 +444,8 @@ void ins_ekf2_update(void)
   ekf.set_in_air_status(autopilot_in_flight());
 
   /* Update the EKF */
-  if (ekf2.got_imu_data && ekf.update()) {
+  ekf.update();
+  if (ekf2.got_imu_data) {
     filter_control_status_u control_status;
     ekf.get_control_mode(&control_status.value);
 
