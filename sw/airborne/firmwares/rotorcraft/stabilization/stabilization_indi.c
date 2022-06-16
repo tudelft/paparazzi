@@ -191,6 +191,8 @@ static struct FirstOrderLowPass rates_filt_fo[3];
 
 struct FloatVect3 body_accel_f;
 
+bool indi_init_performed = false;
+
 void init_filters(void);
 
 #if PERIODIC_TELEMETRY
@@ -247,45 +249,50 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
  */
 void stabilization_indi_init(void)
 {
-  // Initialize filters
-  init_filters();
+  if(!indi_init_performed) {
+    indi_init_performed = true;
 
-  AbiBindMsgRPM(RPM_SENSOR_ID, &rpm_ev, rpm_cb);
-  AbiBindMsgTHRUST(THRUST_INCREMENT_ID, &thrust_ev, thrust_cb);
+    // Initialize filters
+    init_filters();
 
-  float_vect_zero(actuator_state_filt_vectd, INDI_NUM_ACT);
-  float_vect_zero(actuator_state_filt_vectdd, INDI_NUM_ACT);
-  float_vect_zero(estimation_rate_d, INDI_NUM_ACT);
-  float_vect_zero(estimation_rate_dd, INDI_NUM_ACT);
-  float_vect_zero(actuator_state_filt_vect, INDI_NUM_ACT);
+    AbiBindMsgRPM(RPM_SENSOR_ID, &rpm_ev, rpm_cb);
+    AbiBindMsgTHRUST(THRUST_INCREMENT_ID, &thrust_ev, thrust_cb);
 
-  //Calculate G1G2_PSEUDO_INVERSE
-  calc_g1g2_pseudo_inv();
+    float_vect_zero(actuator_state_filt_vectd, INDI_NUM_ACT);
+    float_vect_zero(actuator_state_filt_vectdd, INDI_NUM_ACT);
+    float_vect_zero(estimation_rate_d, INDI_NUM_ACT);
+    float_vect_zero(estimation_rate_dd, INDI_NUM_ACT);
+    float_vect_zero(actuator_state_filt_vect, INDI_NUM_ACT);
 
-  // Initialize the array of pointers to the rows of g1g2
-  uint8_t i;
-  for (i = 0; i < INDI_OUTPUTS; i++) {
-    Bwls[i] = g1g2[i];
-  }
+    //Calculate G1G2_PSEUDO_INVERSE
+    calc_g1g2_pseudo_inv();
 
-  // Initialize the estimator matrices
-  float_vect_copy(g1_est[0], g1[0], INDI_OUTPUTS * INDI_NUM_ACT);
-  float_vect_copy(g2_est, g2, INDI_NUM_ACT);
-  // Remember the initial matrices
-  float_vect_copy(g1_init[0], g1[0], INDI_OUTPUTS * INDI_NUM_ACT);
-  float_vect_copy(g2_init, g2, INDI_NUM_ACT);
+    // Initialize the array of pointers to the rows of g1g2
+    uint8_t i;
+    for (i = 0; i < INDI_OUTPUTS; i++) {
+      Bwls[i] = g1g2[i];
+    }
 
-  // Assume all non-servos are delivering thrust
-  num_thrusters = INDI_NUM_ACT;
-  for (i = 0; i < INDI_NUM_ACT; i++) {
-    num_thrusters -= act_is_servo[i];
-  }
+    // Initialize the estimator matrices
+    float_vect_copy(g1_est[0], g1[0], INDI_OUTPUTS * INDI_NUM_ACT);
+    float_vect_copy(g2_est, g2, INDI_NUM_ACT);
+    // Remember the initial matrices
+    float_vect_copy(g1_init[0], g1[0], INDI_OUTPUTS * INDI_NUM_ACT);
+    float_vect_copy(g2_init, g2, INDI_NUM_ACT);
+
+    // Assume all non-servos are delivering thrust
+    num_thrusters = INDI_NUM_ACT;
+    for (i = 0; i < INDI_NUM_ACT; i++) {
+      num_thrusters -= act_is_servo[i];
+    }
 
 #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_G, send_indi_g);
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_FULL_INDI, send_att_full_indi);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_G, send_indi_g);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_FULL_INDI, send_att_full_indi);
 #endif
+  }
+
 }
 
 /**
