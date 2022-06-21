@@ -48,6 +48,7 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "stabilization/wls/wls_alloc.h"
 #include "modules/system_identification/sys_id_chirp.h"
+#include "modules/guidance/ctrl_interface.h"
 
 #include "wls/wls_alloc.h"
 
@@ -839,10 +840,11 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
 #endif
 
   float lift_thrust_bz = -9.81; // Sum of lift and thrust in boxy z axis (level flight) 
-  //Bound(lift_thrust_bz,0.0,10.0)
-  float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta); //IS THIS RIGHT?// Convert to correct pitch angle
+  float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
+  float lift_acc = lift_estimate / 3.5; 
   float thrust_bz = (float)(actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])*(g1g2[3][0]);//(-0.00051);//-0.000319(g1g2[3][0]);
-  float lift_approx = lift_thrust_bz-thrust_bz*cphi*ctheta;
+
+  //float lift_approx = lift_thrust_bz-thrust_bz*cphi*ctheta;
   float thrust_bx = (float) actuators_pprz[8]*thrust_bx_eff;//actuator_thrust_bx_pprz
   // Calc assumed body acceleration setpoint and error
   float accel_bx_sp = cpsi * sp_accel.x + spsi * sp_accel.y;
@@ -865,13 +867,21 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   // Gmat_rot_wing[1][3] = ctheta*spsi;// ctheta*spsi + sphi*stheta*cpsi;
   // Gmat_rot_wing[2][3] = -stheta;// -cphi*stheta;
 
+  // Separate T and L in guidance control
+  float guidance_indi_pitch_eff_scaling;
+  if (separate_TL) {
+  guidance_indi_pitch_eff_scaling = (lift_thrust_bz-lift_acc)/(ctheta*lift_thrust_bz);
+  Bound(guidance_indi_pitch_eff_scaling, 0.0, 3.0);}
+  else {guidance_indi_pitch_eff_scaling = GUIDANCE_INDI_PITCH_EFF_SCALING;}
+  printf("Thrust =  %f [N]\n", guidance_indi_pitch_eff_scaling*lift_thrust_bz*3.5);
+  printf("Lift =  %f [N]\n", lift_acc*3.5);
   Gmat_rot_wing[0][0] = (float) cphi*spsi*lift_thrust_bz;
   Gmat_rot_wing[1][0] = (float) -cphi*cpsi*lift_thrust_bz;
   Gmat_rot_wing[2][0] = (float) -sphi*lift_thrust_bz;
 
-  Gmat_rot_wing[0][1] = (float) (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
-  Gmat_rot_wing[1][1] = (float) (ctheta*spsi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
-  Gmat_rot_wing[2][1] = (float) -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+  Gmat_rot_wing[0][1] = (float) (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz*guidance_indi_pitch_eff_scaling + sphi*spsi*liftd;
+  Gmat_rot_wing[1][1] = (float) (ctheta*spsi + sphi*stheta*cpsi)*lift_thrust_bz*guidance_indi_pitch_eff_scaling - sphi*cpsi*liftd;
+  Gmat_rot_wing[2][1] = (float) -cphi*stheta*lift_thrust_bz*guidance_indi_pitch_eff_scaling + cphi*liftd;
 
   Gmat_rot_wing[0][2] = (float) (stheta*cpsi + sphi*ctheta*spsi)*-1.0;
   Gmat_rot_wing[1][2] = (float) (stheta*spsi - sphi*ctheta*cpsi)*-1.0;
@@ -952,11 +962,22 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
  */
 float guidance_indi_get_liftd(float airspeed, float theta) {
   float liftd;// = 0.0;
+  if (better_lpe){
+    // Use new lift model for Lift Pitch Effectiveness
+    if(airspeed < 5) {
+      liftd = 0.0;
+    } else {
+      if(DegOfRad(theta)<14){
+      liftd =lift_pitch_eff;
+      if (liftd > 0) {liftd = 0.0;}
+      } else{
+        // Above Stall point
+        liftd = -lift_pitch_eff;
+      }
+    }
+  }else{  
+    // Use old approximation of Lift Pitch Effectiveness
   if(airspeed < 5) {
-    //float pitch_interp = DegOfRad(theta);
-    //Bound(pitch_interp, -80.0, -40.0);
-    //float ratio = (pitch_interp + 40.0)/(-40.);
-    // liftd = -24.0*ratio*lift_pitch_eff/0.12;
     liftd = 0.0;
   } else {
     if(DegOfRad(theta)<14){
@@ -967,8 +988,8 @@ float guidance_indi_get_liftd(float airspeed, float theta) {
       //printf("STALL\n");
       liftd = airspeed*airspeed*0.5*1.225*(1.56*0.235)/3.5*lift_pitch_eff/M_PI*180.0;
     }
-  }
-  //TODO: bound liftd
+  }}
+  printf("Liftd =  %f \n", liftd);
   return liftd;
 }
 

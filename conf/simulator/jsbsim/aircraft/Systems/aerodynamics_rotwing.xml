@@ -51,7 +51,7 @@
     </function>
   </axis>
 
-  <axis name="LIFT">
+  <!-- <axis name="LIFT">
     <function name="aero/force/Lift_alpha">
       <description>Lift due to alpha</description>
       <product>
@@ -91,6 +91,36 @@
             </tableData>
           </table>
           <value>1.0</value>
+      </product>
+    </function>
+
+  </axis> -->
+  <axis name="LIFT">
+    <function name="aero/force/Lift_alpha">
+      <description>Lift due to alpha</description>
+      <product>
+          <property>aero/qbar-psf</property>
+          <property>metrics/Sw-sqft</property>
+          <!-- (-1.8847*eulers_zxy.theta*s2-0.2780*s2-1.5037*eulers_zxy.theta-0.0043) -->
+          <sum>
+            <product>
+              <value>1.8847</value>
+              <property>aero/alpha-rad</property>
+              <sin><product><value>1.5708</value><property>fcs/wing_rotation</property></product></sin>
+              <sin><product><value>1.5708</value><property>fcs/wing_rotation</property></product></sin>
+            </product>
+            <product>
+              <value>0.2780</value>
+              <sin><product><value>1.5708</value><property>fcs/wing_rotation</property></product></sin>
+              <sin><product><value>1.5708</value><property>fcs/wing_rotation</property></product></sin>
+            </product>
+            <product>
+              <value>1.5037</value>
+              <property>aero/alpha-rad</property>
+              <sin><product><value>1.5708</value><property>fcs/wing_rotation</property></product></sin>
+            </product>
+            <value> 0.0043</value>
+          </sum>
       </product>
     </function>
 

@@ -30,6 +30,7 @@
 #include "subsystems/actuators.h"
 #include "state.h"
 #include "filters/low_pass_filter.h"
+#include "modules/guidance/ctrl_interface.h"
 
 // Define arm length
 #ifndef ROT_WING_SCHED_Y_ARM_LENGTH // Length of rotating arm from CG to side motor [m]
@@ -118,6 +119,8 @@ float rot_wing_pitch_pref_hover_deg = -2;//-2.;
 
 float rot_wing_thrust_z_effectiveness_scale_factor = 2.5;
 
+float lift_estimate= 0.0;
+
 // Define filters
 #ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
 #define ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF 1.5
@@ -131,7 +134,7 @@ inline void evaluate_actuator_active(float airspeed);
 inline void schedule_motor_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle);
 inline void schedule_aero_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle, float airspeed2);
 inline void update_g1g2_matrix(void);
-inline void schedule_lift_pitch_eff(float rot_wing_angle_rad);
+inline void schedule_lift_pitch_eff(float rot_wing_angle_rad, float airspeed2);
 inline void schedule_guidance_zgains(float airspeed);
 inline void schedule_guidance_hgains(float airspeed);
 inline void schedule_pref_pitch_angle(float s_rot_wing_angle);
@@ -190,10 +193,28 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
   float airspeed2 = airspeed_lowpass_filter.o[0] * airspeed_lowpass_filter.o[0];
 
   #ifdef ROT_WING_SCHED_AERO_EFF_TUNING
-    rot_wing_aerodynamic_eff_const_g1_p[0] = rot_wing_aero_eff_const_p;
-    rot_wing_aerodynamic_eff_const_g1_p[1] = rot_wing_aero_eff_const_p;
-    rot_wing_aerodynamic_eff_const_g1_q[2] = -rot_wing_aero_eff_const_q;
-    rot_wing_aerodynamic_eff_const_g1_r[3] = rot_wing_aero_eff_const_r;
+    if((manual_eff)&&(!better_eff)){
+          rot_wing_aerodynamic_eff_const_g1_p[0] = roll_ail_L_eff;
+          rot_wing_aerodynamic_eff_const_g1_p[1] = roll_ail_R_eff;
+          rot_wing_aerodynamic_eff_const_g1_q[0] = pitch_ail_L_eff;
+          rot_wing_aerodynamic_eff_const_g1_q[1] = pitch_ail_R_eff;
+          rot_wing_aerodynamic_eff_const_g1_q[2] = pitch_elev_eff;
+          rot_wing_aerodynamic_eff_const_g1_r[3] = yaw_rud_eff;
+    }
+    else if (better_eff){
+          rot_wing_aerodynamic_eff_const_g1_p[0] = 0; //  PUT ESTIMATED VALUES
+          rot_wing_aerodynamic_eff_const_g1_p[1] = 0; //  PUT ESTIMATED VALUES
+          rot_wing_aerodynamic_eff_const_g1_q[0] = 0; //  PUT ESTIMATED VALUES
+          rot_wing_aerodynamic_eff_const_g1_q[1] = 0; //  PUT ESTIMATED VALUES
+          rot_wing_aerodynamic_eff_const_g1_q[2] = 0; //  PUT ESTIMATED VALUES
+          rot_wing_aerodynamic_eff_const_g1_r[3] = 0; //  PUT ESTIMATED VALUES
+    }
+    else{
+          rot_wing_aerodynamic_eff_const_g1_p[0] = rot_wing_aero_eff_const_p;
+          rot_wing_aerodynamic_eff_const_g1_p[1] = rot_wing_aero_eff_const_p;
+          rot_wing_aerodynamic_eff_const_g1_q[2] = -rot_wing_aero_eff_const_q;
+          rot_wing_aerodynamic_eff_const_g1_r[3] = rot_wing_aero_eff_const_r;
+    }
   #endif
 
   // perform function that schedules switching on and off actuators based on roll angle
@@ -206,7 +227,7 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
   schedule_aero_effectiveness(c_rot_wing_angle, s_rot_wing_angle, airspeed2);
 
   // Update pitch lift effectiveness
-  schedule_lift_pitch_eff(rot_wing_angle_rad);
+  schedule_lift_pitch_eff(rot_wing_angle_rad, airspeed2);
 
   // Schedile pitch pref
   schedule_pref_pitch_angle(s_rot_wing_angle);
@@ -421,22 +442,42 @@ void schedule_motor_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle
 
 void schedule_aero_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle, float airspeed2)
 {
+  // Define Trigonometric functions
+  float s3  = s_rot_wing_angle*s_rot_wing_angle*s_rot_wing_angle;
+  float cc3 = c_rot_wing_angle - c_rot_wing_angle*c_rot_wing_angle*c_rot_wing_angle;
+
   // Calculate roll, pitch, yaw effectiveness values
-  // roll
-  rot_wing_g1_p[4] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[0] * s_rot_wing_angle * rot_wing_ailerons_activated;
-  rot_wing_g1_p[5] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[1] * s_rot_wing_angle * rot_wing_ailerons_activated;
-  rot_wing_g1_p[6] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[2];
-  rot_wing_g1_p[7] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[3];
-  
-  // pitch
-  rot_wing_g1_q[4] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[0] * c_rot_wing_angle * rot_wing_ailerons_activated;
-  rot_wing_g1_q[5] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[1] * c_rot_wing_angle * rot_wing_ailerons_activated;
-  rot_wing_g1_q[6] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[2];
-  rot_wing_g1_q[7] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[3];
+  if (better_ail){
+    // Scheduling based on new Skew model
+    // roll
+    rot_wing_g1_p[4] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[0] * s3 * rot_wing_ailerons_activated;
+    rot_wing_g1_p[5] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[1] * s3 * rot_wing_ailerons_activated;
+    rot_wing_g1_p[6] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[2];
+    rot_wing_g1_p[7] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[3];
+    
+    // pitch
+    rot_wing_g1_q[4] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[0] * cc3 * rot_wing_ailerons_activated;
+    rot_wing_g1_q[5] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[1] * cc3 * rot_wing_ailerons_activated;
+    rot_wing_g1_q[6] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[2];
+    rot_wing_g1_q[7] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[3];
+  } else {
+    // Old scheduling  
+    // roll
+    rot_wing_g1_p[4] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[0] * s_rot_wing_angle * rot_wing_ailerons_activated;
+    rot_wing_g1_p[5] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[1] * s_rot_wing_angle * rot_wing_ailerons_activated;
+    rot_wing_g1_p[6] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[2];
+    rot_wing_g1_p[7] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_p[3];
+    
+    // pitch
+    rot_wing_g1_q[4] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[0] * c_rot_wing_angle * rot_wing_ailerons_activated;
+    rot_wing_g1_q[5] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[1] * c_rot_wing_angle * rot_wing_ailerons_activated;
+    rot_wing_g1_q[6] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[2];
+    rot_wing_g1_q[7] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_q[3];
+    }
 
   // yaw
-  rot_wing_g1_r[4] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_r[0] * s_rot_wing_angle * rot_wing_ailerons_activated;
-  rot_wing_g1_r[5] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_r[1] * s_rot_wing_angle * rot_wing_ailerons_activated;
+  rot_wing_g1_r[4] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_r[0] * s_rot_wing_angle * rot_wing_ailerons_activated; // eff is 0 so it does not matter
+  rot_wing_g1_r[5] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_r[1] * s_rot_wing_angle * rot_wing_ailerons_activated; // eff is 0 so it does not matter
   rot_wing_g1_r[6] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_r[2];
   rot_wing_g1_r[7] = airspeed2 * rot_wing_aerodynamic_eff_const_g1_r[3];
 
@@ -494,13 +535,33 @@ void update_g1g2_matrix(void)
   #endif // STABILIZATION_INDI_USE_ADAPTIVE
 } 
 
-void schedule_lift_pitch_eff(float rot_wing_angle_rad)
+void schedule_lift_pitch_eff(float rot_wing_angle_rad, float airspeed2)
 {
+  if (better_lpe){
+  // NEW CODE
+  // Lift = 1/2 rho S v^2 [m1*sin(Lambda)^2+k1][m2*theta+k2]
+  // Lift = (1/2 rho S v^2)[w1,w2,w3,w4][theta sin(Lambda)^2;sin(Lambda)^2;theta;1]
+  // gamma = (1/2 rho S v^2)
+  // dL/dtheta = gamma * [w1 sin(Lambda)^2 + w3]
+  float gamma = 0.5*1.225*(1.56*0.235)*airspeed2;
+  Bound(rot_wing_angle_rad, 0, M_PI/2);
+  float s2 = sinf(rot_wing_angle_rad)*sinf(rot_wing_angle_rad);
+  lift_pitch_eff = gamma*(-1.8847*s2-1.5037)/3.5;
+  
+  // Calculate lift if needed for guidance. Lift is NEGATIVE.
+  /** state eulers in zxy order */
+  struct FloatEulers eulers_zxy;
+  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+  lift_estimate = gamma*(-1.8847*eulers_zxy.theta*s2-0.2780*s2-1.5037*eulers_zxy.theta-0.0043); // [N]
+  } else {  
+  // OLD CODE
   float lift_pitch_eff_diff = rot_wing_max_lift_pitch_eff - rot_wing_min_lift_pitch_eff;
   float pitch_lift_angle_rad = (rot_wing_angle_rad - M_PI / 6.) * 1.5;
   Bound(pitch_lift_angle_rad, 0, M_PI/2);
   float s_pitch_lift = sinf(pitch_lift_angle_rad);
   lift_pitch_eff = rot_wing_min_lift_pitch_eff + s_pitch_lift * lift_pitch_eff_diff;
+  }
+
 }
 
 void schedule_guidance_zgains(float airspeed)
