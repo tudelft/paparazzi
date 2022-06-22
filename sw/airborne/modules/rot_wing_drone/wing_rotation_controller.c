@@ -281,15 +281,16 @@ void wing_rotation_event(void)
     if (pos_error_rad > 0)
     {
       rotational_rate = max_rotation_rate;
+      wing_angle_change = rotational_rate / PERIODIC_FREQUENCY;
+      // Bound wing angle change
+      Bound(wing_angle_change, -pos_error_rad, pos_error_rad);
     } else if (pos_error_rad < 0)
     {
       rotational_rate = -max_rotation_rate;
+      wing_angle_change = rotational_rate / PERIODIC_FREQUENCY;
+      // Bound wing angle change
+      Bound(wing_angle_change, pos_error_rad, -pos_error_rad);
     }
-
-    wing_angle_change = rotational_rate / PERIODIC_FREQUENCY;
-
-    // Bound wing angle change
-    Bound(wing_angle_change, -pos_error_rad, pos_error_rad);
 
     // Update wing angle
     wing_rotation.wing_angle_rad += wing_angle_change;
