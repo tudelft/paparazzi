@@ -195,8 +195,6 @@ bool theta_slowdown = false;
 bool thrust_slowdown = true;
 
 
-
-
 float hybrid_roll_limit = 0.785; // 45 deg
 float hybrid_pitch_limit = 0.209;//12 deg//0.349; // 20 deg
 
@@ -213,9 +211,11 @@ struct NedCoor_f pos_ref_c;
 struct FloatVect3 speed_ref_c; 
 struct FloatVect3 acc_body_ref_c;
 struct FloatVect3 acc_body_c;
+
+#ifdef GUIDANCE_INDI_FWD_SIDESLIP_GAIN
+float fwd_sideslip_g = GUIDANCE_INDI_FWD_SIDESLIP_GAIN;
+#else
 float fwd_sideslip_g = 0;
-#ifdef FWD_SIDESLIP_GAIN
-fwd_sideslip_g = FWD_SIDESLIP_GAIN;
 #endif
 
 void guidance_indi_propagate_filters(void);
@@ -349,7 +349,7 @@ void guidance_indi_run(float *heading_sp) {
   float norm_des_as = FLOAT_VECT2_NORM(desired_airspeed);
 
   // Make turn instead of straight line
-  if((airspeed > 100.0) && (norm_des_as > 120.0)) {
+  if((airspeed > 10.0) && (norm_des_as > 12.0)) {
 
   // Give the wind cancellation priority.
     if (norm_des_as > guidance_indi_max_airspeed) {
@@ -401,7 +401,7 @@ void guidance_indi_run(float *heading_sp) {
     sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
   } else { // Go somewhere in the shortest way
 
-    if(airspeed > 100.0) {
+    if(airspeed > 10.0) {
       // Groundspeed vector in body frame
       float groundspeed_x = cosf(psi) * stateGetSpeedNed_f()->x + sinf(psi) * stateGetSpeedNed_f()->y;
       float speed_increment = speed_sp_b_x - groundspeed_x;
@@ -562,7 +562,7 @@ void guidance_indi_run(float *heading_sp) {
     omega = 9.81 / airspeed_turn * 1.72305 * ((coordinated_turn_roll > 0.0) - (coordinated_turn_roll < 0.0));
   }
 
-#ifdef FWD_SIDESLIP_GAIN
+#ifdef GUIDANCE_INDI_FWD_SIDESLIP_GAIN
   // Add sideslip correction
   omega -= accely_filt.o[0]*fwd_sideslip_g;
 #endif
@@ -576,14 +576,14 @@ void guidance_indi_run(float *heading_sp) {
     *heading_sp = ANGLE_FLOAT_OF_BFP(nav_heading) + current_chirp_values[2];
     FLOAT_ANGLE_NORMALIZE(*heading_sp);
   } else {
-    struct FloatVect3 pos_error_proj;
-    struct NedCoor_f *pos = stateGetPositionNed_f();
-    struct NedCoor_f ned_target_proj;
-    VECT3_ASSIGN(ned_target_proj, POS_FLOAT_OF_BFP(navigation_target.y) + proj_wp_dist, POS_FLOAT_OF_BFP(navigation_target.x), -POS_FLOAT_OF_BFP(navigation_target.z));
-    VECT3_DIFF(pos_error_proj, ned_target_proj, *pos);
-    *heading_sp = atan2(pos_error_proj.y, pos_error_proj.x);
+    // struct FloatVect3 pos_error_proj;
+    // struct NedCoor_f *pos = stateGetPositionNed_f();
+    // struct NedCoor_f ned_target_proj;
+    // VECT3_ASSIGN(ned_target_proj, POS_FLOAT_OF_BFP(navigation_target.y) + proj_wp_dist, POS_FLOAT_OF_BFP(navigation_target.x), -POS_FLOAT_OF_BFP(navigation_target.z));
+    // VECT3_DIFF(pos_error_proj, ned_target_proj, *pos);
+    // *heading_sp = atan2(pos_error_proj.y, pos_error_proj.x);
 
-    //*heading_sp += omega / PERIODIC_FREQUENCY;
+    *heading_sp += omega / PERIODIC_FREQUENCY;
     FLOAT_ANGLE_NORMALIZE(*heading_sp);
   }
 #endif

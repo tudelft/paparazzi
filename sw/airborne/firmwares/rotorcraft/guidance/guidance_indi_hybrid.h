@@ -71,6 +71,7 @@ extern bool div_push;
 extern float Wv_z;
 extern bool theta_slowdown;
 extern bool thrust_slowdown;
+extern float guidance_indi_line_gain;
 
 extern float pitch_pref_deg;
 extern int chirp_number;

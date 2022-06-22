@@ -29,6 +29,7 @@
         <dl_setting var="thrust_priority_factor" min="1" step="1" max="300" shortname="thrust prio"/>
         <dl_setting var="pusher_priority_factor" min="1" step="1" max="300" shortname="pusher prio"/>
         <dl_setting var="fwd_sideslip_g" min="0" step="0.1" max="5" shortname="sideslip gain"/>
+        <dl_setting var="guidance_indi_line_gain" min="0" step="0.001" max="5" shortname="line_gain"/>
         <dl_setting var="min_accel" min="-5.0" step="0.01" max="5" shortname="push prop cut off"/>
         <dl_setting var="pusher_slowdown" min="0" step="1" max="1" values="OFF|ON" shortname="pusher_slowdown"/>
         <dl_setting var="div_push" min="0" step="1" max="1" values="OFF|ON" shortname="pusher_divider"/>
