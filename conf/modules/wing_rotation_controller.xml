@@ -11,7 +11,7 @@
         <dl_setting MAX="1000" MIN="0" STEP="1" VAR="wing_rotation.cmd_threshold_0" shortname="cmd_thr_0"/>
         <dl_setting MAX="2000" MIN="0" STEP="1" VAR="wing_rotation.cmd_threshold_90" shortname="cmd_thr_90"/>
         <dl_setting MAX="0.5" MIN="0" STEP="0.001" VAR="wing_rotation.threshold_servo_rate_limit" shortname="thr_rate"/>
-        <dl_setting MAX="30000" MIN="-30000" STEP="1" VAR="wing_rotation.p_gain" shortname="p_gain"/>
+        <dl_setting MAX="80000" MIN="-300000" STEP="1" VAR="wing_rotation.p_gain" shortname="p_gain"/>
       </dl_settings>
     </dl_settings>
   </settings>
