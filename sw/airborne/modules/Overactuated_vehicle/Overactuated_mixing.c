@@ -137,7 +137,7 @@ float INDI_pseudocontrol[INDI_INPUTS];
 float B_matrix[INDI_INPUTS][INDI_NUM_ACT];
 
 //AM7 variables:
-float manual_motor_value = 0, manual_el_value = 0, manual_az_value = 0, manual_phi_value = 0, manual_theta_value = 0;
+float manual_motor_value = 150, manual_el_value = 0, manual_az_value = 0, manual_phi_value = 0, manual_theta_value = 0;
 struct am7_data_out am7_data_out_local;
 float extra_data_out_local[255];
 static abi_event AM7_in;
@@ -490,7 +490,7 @@ void assign_variables(void){
     R_matrix[2][0]=-sin(euler_vect[1]);
     R_matrix[0][1]=0;
     R_matrix[1][1]=cos(euler_vect[0]);
-    R_matrix[2][1]=sin(euler_vect[1]) * cos(euler_vect[1]);
+    R_matrix[2][1]=sin(euler_vect[0]) * cos(euler_vect[1]);
     R_matrix[0][2]=0;
     R_matrix[1][2]=-sin(euler_vect[0]);
     R_matrix[2][2]=cos(euler_vect[0]) * cos(euler_vect[1]);
@@ -1023,6 +1023,8 @@ void overactuated_mixing_run()
         am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
         am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
 
+        float min_el_angle_constrained = -90; //Degrees
+
         extra_data_out_local[0] = OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ;
         extra_data_out_local[1] = OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ;
         extra_data_out_local[2] = VEHICLE_MASS;
@@ -1037,7 +1039,10 @@ void overactuated_mixing_run()
         extra_data_out_local[11] = OVERACTUATED_MIXING_MOTOR_MAX_OMEGA;
         extra_data_out_local[12] = OVERACTUATED_MIXING_MOTOR_MIN_OMEGA;
         extra_data_out_local[13] = (OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE * 180/M_PI);
-        extra_data_out_local[14] = (OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE * 180/M_PI);
+
+//        extra_data_out_local[14] = (OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE * 180/M_PI);
+        extra_data_out_local[14] = (min_el_angle_constrained);
+
         extra_data_out_local[15] = (OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE * 180/M_PI);
         extra_data_out_local[16] = (OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE * 180/M_PI);
         extra_data_out_local[17] = (OVERACTUATED_MIXING_MAX_THETA_INDI * 180/M_PI);

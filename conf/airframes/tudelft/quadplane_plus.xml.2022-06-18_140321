@@ -96,15 +96,15 @@
       <configure name="MODEM_BAUD" value="B57600"/>
     </module>
 
-    <module name="actuators" type="pwm"/>
-    <module name="imu" type="mpu6000"/>
+    <module name="actuators"     type="pwm"/>
+    <module name="imu"           type="mpu6000"/>
 
     <!--     For OUTSIDE -->
 <!--    <module name="gps" type="ublox">-->
 <!--      <configure name="GPS_BAUD" value="B460800"/>&lt;!&ndash; UBX message only but rate set to ~12HZ with GPS, GLONASS, BEIDU and GALILEIO at the SAME time is lots of GNSS data&ndash;&gt;-->
 <!--    </module>-->
     <!--     For OPTITRACK -->
-    <module name="gps" type="datalink">
+    <module name="gps"           type="datalink">
       <define name="INS_USE_GPS_ALT" value="1"/>
       <define name="INS_VFF_R_GPS" value="0.09"/>
       <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
@@ -113,10 +113,10 @@
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
 
-    <module name="ins" type="extended"/>
+    <module name="ins"           type="extended" />
     <!--    <module name="ins" type="ekf2"/>-->
 
-    <module name="ahrs" type="int_cmpl_quat">
+    <module name="ahrs"          type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
     </module>
@@ -281,27 +281,27 @@
     <define name="INDI_REF_RATE_Z" value="8.85"/>
 
     <!-- Actuator dynamics and mapping-->
-    <define name="INDI_ACT_DYN_MOTOR" value="0.038"/><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
-    <define name="INDI_ACT_DYN_EL" value="0.0511"/><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
-    <define name="INDI_ACT_DYN_AZ" value="0.0596"/><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
+    <define name="INDI_ACT_DYN_MOTOR" value="0.038" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
+    <define name="INDI_ACT_DYN_EL" value="0.0511" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
+    <define name="INDI_ACT_DYN_AZ" value="0.0596" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
 
-    <define name="INDI_MOTOR_FIRST_ORD_NUM_2" value="0.05824"/>
-    <define name="INDI_MOTOR_FIRST_ORD_DEN_2" value="-0.9418"/>
-    <define name="INDI_MOTOR_FIRST_ORD_DELAY" value="0.002"/>
+    <define name="INDI_MOTOR_FIRST_ORD_NUM_2" value="0.05824" />
+    <define name="INDI_MOTOR_FIRST_ORD_DEN_2" value="-0.9418" />
+    <define name="INDI_MOTOR_FIRST_ORD_DELAY" value="0.002" />
 
-    <define name="INDI_AZ_SECOND_ORD_NUM_2" value="0.00386"/>
-    <define name="INDI_AZ_SECOND_ORD_NUM_3" value="0.003679"/>
-    <define name="INDI_AZ_SECOND_ORD_DEN_2" value="-1.858"/>
-    <define name="INDI_AZ_SECOND_ORD_DEN_3" value="0.8659"/>
-    <define name="INDI_AZ_SECOND_ORD_DELAY" value="0.015"/>
-    <define name="INDI_AZ_SECOND_ORD_RATE_LIMIT" value="9.95"/>
+    <define name="INDI_AZ_SECOND_ORD_NUM_2" value="0.00386" />
+    <define name="INDI_AZ_SECOND_ORD_NUM_3" value="0.003679" />
+    <define name="INDI_AZ_SECOND_ORD_DEN_2" value="-1.858" />
+    <define name="INDI_AZ_SECOND_ORD_DEN_3" value="0.8659" />
+    <define name="INDI_AZ_SECOND_ORD_DELAY" value="0.015" />
+    <define name="INDI_AZ_SECOND_ORD_RATE_LIMIT" value="9.95" />
 
-    <define name="INDI_EL_SECOND_ORD_NUM_2" value="0.006779"/>
-    <define name="INDI_EL_SECOND_ORD_NUM_3" value="0.006384"/>
-    <define name="INDI_EL_SECOND_ORD_DEN_2" value="-1.822"/>
-    <define name="INDI_EL_SECOND_ORD_DEN_3" value="0.8353"/>
-    <define name="INDI_EL_SECOND_ORD_DELAY" value="0.015"/>
-    <define name="INDI_EL_SECOND_ORD_RATE_LIMIT" value="11.34"/>
+    <define name="INDI_EL_SECOND_ORD_NUM_2" value="0.006779" />
+    <define name="INDI_EL_SECOND_ORD_NUM_3" value="0.006384" />
+    <define name="INDI_EL_SECOND_ORD_DEN_2" value="-1.822" />
+    <define name="INDI_EL_SECOND_ORD_DEN_3" value="0.8353" />
+    <define name="INDI_EL_SECOND_ORD_DELAY" value="0.015" />
+    <define name="INDI_EL_SECOND_ORD_RATE_LIMIT" value="11.34" />
 
     <define name="MOTOR_K_T_OMEGASQ" value="0.88e-5" unit="N/(rad/s)^2"/>
     <define name="MOTOR_K_M_OMEGASQ" value="1.3e-7" unit="N*m/(rad/s)^2"/>
@@ -331,14 +331,14 @@
     <define name="MIN_AOA_INDI" value="-15" unit="deg"/>
 
     <!-- Filters properties for INDI -->
-    <define name="FILT_CUTOFF_ANG_RATES" value="25" unit="rad/s"/>
-    <define name="FILT_CUTOFF_LIN_ACC" value="25" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_EL" value="25" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="25" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="25" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ANG_RATES" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_LIN_ACC" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_EL" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="15" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="15" unit="rad/s"/>
 
     <!-- INDI properties [weights] -->
-    <define name="W_ACT_MOTOR_CONST" value="4"/>
+    <define name="W_ACT_MOTOR_CONST" value="1"/>
     <define name="W_ACT_MOTOR_SPEED" value="0"/>
     <define name="W_ACT_EL_CONST" value="1"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
@@ -351,13 +351,13 @@
 
     <define name="W_DV_1" value="0.01"/>
     <define name="W_DV_2" value="0.01"/>
-    <define name="W_DV_3" value="0.02"/>
-    <define name="W_DV_4" value=".2"/>
-    <define name="W_DV_5" value=".2"/>
-    <define name="W_DV_6" value="0.005"/>
+    <define name="W_DV_3" value="0.01"/>
+    <define name="W_DV_4" value=".1"/>
+    <define name="W_DV_5" value=".1"/>
+    <define name="W_DV_6" value="0.01"/>
 
     <define name="GAMMA_QUADRATIC_DV" value="1"/>
-    <define name="GAMMA_QUADRATIC_DU" value="2e-5"/>
+    <define name="GAMMA_QUADRATIC_DU" value="1e-5"/>
     <define name="GAMMA_QUADRATIC_WLS" value="10000"/>
 
     <define name="MAX_ITER_WLS" value="100"/>
@@ -451,8 +451,8 @@
 
 
     <!-- Define axis in hover frame -->
-    <define name="BODY_TO_IMU_PHI" value="-0.426337895844" unit="deg"/>
-    <define name="BODY_TO_IMU_THETA" value="2.75185899737" unit="deg"/>
+    <define name="BODY_TO_IMU_PHI" value="0." unit="deg"/>
+    <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
     <define name="BODY_TO_IMU_PSI" value="0." unit="deg"/>
   </section>
 
@@ -503,7 +503,7 @@
     <define name="REF_ERR_P" value="60.0"/>
     <define name="REF_ERR_Q" value="60.0"/>
     <define name="REF_ERR_R" value="44.0"/>
-    <define name="REF_RATE_P" value="5.4"/>
+    <define name="REF_RATE_P" value="6.5"/>
     <define name="REF_RATE_Q" value="6.5"/>
     <define name="REF_RATE_R" value="5.4"/>
 
