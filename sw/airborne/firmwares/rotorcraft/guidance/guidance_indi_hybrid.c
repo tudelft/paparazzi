@@ -873,8 +873,8 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
   guidance_indi_pitch_eff_scaling = (lift_thrust_bz-lift_acc)/(ctheta*lift_thrust_bz);
   Bound(guidance_indi_pitch_eff_scaling, 0.0, 3.0);}
   else {guidance_indi_pitch_eff_scaling = GUIDANCE_INDI_PITCH_EFF_SCALING;}
-  printf("Thrust =  %f [N]\n", guidance_indi_pitch_eff_scaling*lift_thrust_bz*3.5);
-  printf("Lift =  %f [N]\n", lift_acc*3.5);
+  //printf("Thrust =  %f [N]\n", guidance_indi_pitch_eff_scaling*lift_thrust_bz*3.5);
+  //printf("Lift =  %f [N]\n", lift_acc*3.5);
   Gmat_rot_wing[0][0] = (float) cphi*spsi*lift_thrust_bz;
   Gmat_rot_wing[1][0] = (float) -cphi*cpsi*lift_thrust_bz;
   Gmat_rot_wing[2][0] = (float) -sphi*lift_thrust_bz;
@@ -989,7 +989,7 @@ float guidance_indi_get_liftd(float airspeed, float theta) {
       liftd = airspeed*airspeed*0.5*1.225*(1.56*0.235)/3.5*lift_pitch_eff/M_PI*180.0;
     }
   }}
-  printf("Liftd =  %f \n", liftd);
+  //printf("Liftd =  %f \n", liftd);
   return liftd;
 }
 

@@ -131,7 +131,7 @@ Butterworth2LowPass airspeed_lowpass_filter;
 // Scheduler function to activate ailerons / roll motors bases
 inline void init_active_actuators(void);
 inline void evaluate_actuator_active(float airspeed);
-inline void schedule_motor_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle);
+inline void schedule_motor_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle, float airspeed);
 inline void schedule_aero_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle, float airspeed2);
 inline void update_g1g2_matrix(void);
 inline void schedule_lift_pitch_eff(float rot_wing_angle_rad, float airspeed2);
@@ -221,7 +221,7 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
   evaluate_actuator_active(airspeed_lowpass_filter.o[0]);
 
   // Update motor effectiveness
-  schedule_motor_effectiveness(c_rot_wing_angle, s_rot_wing_angle);
+  schedule_motor_effectiveness(c_rot_wing_angle, s_rot_wing_angle, airspeed);
 
   // Update aerodynamic effectiveness
   schedule_aero_effectiveness(c_rot_wing_angle, s_rot_wing_angle, airspeed2);
@@ -372,7 +372,7 @@ void evaluate_actuator_active(float airspeed)
   }
 }
 
-void schedule_motor_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle)
+void schedule_motor_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle, float airspeed)
 {
   // Calculate roll, pitch, yaw effectiveness values
   // roll
@@ -394,10 +394,19 @@ void schedule_motor_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle
   rot_wing_g1_r[3] = g1_startup[2][3] * rot_wing_yaw_props_activated;
 
   // thrust
-  rot_wing_g1_t[0] = g1_startup[3][0] * rot_wing_thrust_z_effectiveness_scale_factor;
-  rot_wing_g1_t[1] = g1_startup[3][1] * rot_wing_thrust_z_effectiveness_scale_factor;
-  rot_wing_g1_t[2] = g1_startup[3][2] * rot_wing_thrust_z_effectiveness_scale_factor;
-  rot_wing_g1_t[3] = g1_startup[3][3] * rot_wing_thrust_z_effectiveness_scale_factor;
+  if (!rot_wing_thrust_z_activated && airspeed>u_motor_free)
+    {
+      rot_wing_g1_t[0] = 0;
+      rot_wing_g1_t[1] = 0;
+      rot_wing_g1_t[2] = 0;
+      rot_wing_g1_t[3] = 0;
+    }
+  else {
+      rot_wing_g1_t[0] = g1_startup[3][0] * rot_wing_thrust_z_effectiveness_scale_factor;
+      rot_wing_g1_t[1] = g1_startup[3][1] * rot_wing_thrust_z_effectiveness_scale_factor;
+      rot_wing_g1_t[2] = g1_startup[3][2] * rot_wing_thrust_z_effectiveness_scale_factor;
+      rot_wing_g1_t[3] = g1_startup[3][3] * rot_wing_thrust_z_effectiveness_scale_factor;
+    }
 
   // add delta g1 to g1_est to compensate for wing rotation
   g1_est[0][0] = (g1_est[0][0] + (rot_wing_g1_p[0] - g1_init[0][0])) * rot_wing_roll_props_activated;
