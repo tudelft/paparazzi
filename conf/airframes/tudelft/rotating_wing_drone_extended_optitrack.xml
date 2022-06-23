@@ -89,9 +89,9 @@
         </module>
 
         <module NAME="wing_rotation_controller">
-                <define VALUE="3100" NAME="WING_ROTATION_POSITION_ADC_0"/>
-                <define VALUE="205"  NAME="WING_ROTATION_POSITION_ADC_90"/>
-                <define VALUE="-20000"  NAME="WING_ROTATION_P_GAIN"/>
+                <define VALUE="3389" NAME="WING_ROTATION_POSITION_ADC_0"/>
+                <define VALUE="774"  NAME="WING_ROTATION_POSITION_ADC_90"/>
+                <define VALUE="-170000"  NAME="WING_ROTATION_P_GAIN"/>
                 <define VALUE="9600"  NAME="WING_ROTATION_MAX_CMD"/>
                 <define VALUE="300" NAME="WING_ROTATION_DEADZONE_PPRZ_CMD"/>
                 <define VALUE="9" NAME="WING_ROTATION_SERVO_IDX"/>
