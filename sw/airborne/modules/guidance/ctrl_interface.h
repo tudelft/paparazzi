@@ -32,6 +32,7 @@ extern bool better_lpe ; //Boolean to activate Lift Pitch Effectiveness based on
 extern bool better_ail ; //Boolean to activate scheduling of aileron eff based on skew model
 extern bool manual_eff ; //Boolean to set effectiveness values manually
 extern bool better_eff ; //Boolean to switch complelty to new effectiveness values
+extern bool motor_free ; //Bolean to turn off motors above a certain airspeed
 // Values for sliders definition
 extern float roll_ail_L_eff  ;  //Effectiveness value x10-3
 extern float roll_ail_R_eff  ;  //Effectiveness value x10-3
@@ -39,6 +40,7 @@ extern float pitch_ail_L_eff ;  //Effectiveness value x10-3
 extern float pitch_ail_R_eff ;  //Effectiveness value x10-3
 extern float pitch_elev_eff  ;  //Effectiveness value x10-3
 extern float yaw_rud_eff     ;  //Effectiveness value x10-3
+extern float u_motor_free    ;  //Airspeed limit in [m/s]
 
 extern void interface_init(void);
 

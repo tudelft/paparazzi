@@ -350,12 +350,14 @@ void evaluate_actuator_active(float airspeed)
       {
         rot_wing_thrust_z_activated = false;
       }
+      if (airspeed > u_motor_free && motor_free && rot_wing_angle_deg > 80.0){rot_wing_thrust_z_activated = false;}
     }
   } else {
     // activate when below 5 m/s
     if (airspeed < 5)
     {
       rot_wing_thrust_z_activated = true;
+    } else if (airspeed > u_motor_free && motor_free && rot_wing_angle_deg > 80.0){rot_wing_thrust_z_activated = false;
     } else {
       // Loop over actuator 0, 1, 2, 3
       for (uint8_t i = 0; i < 3; i++)
