@@ -47,6 +47,7 @@ struct guidance_indi_hybrid_params {
   float speed_gain;
   float speed_gainz;
   float heading_bank_gain;
+  float lift_pitch_eff;
 };
 
 extern struct guidance_indi_hybrid_params gih_params;

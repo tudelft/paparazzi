@@ -69,6 +69,7 @@ struct guidance_indi_hybrid_params gih_params = {
   .speed_gainz = GUIDANCE_INDI_SPEED_GAINZ,
 
   .heading_bank_gain = GUIDANCE_INDI_HEADING_BANK_GAIN,
+  .lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF,
 };
 
 #ifndef GUIDANCE_INDI_MAX_AIRSPEED
@@ -118,8 +119,6 @@ float guidance_indi_line_gain = 1.0;
 
 float inv_eff[4];
 
-float lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF;
-
 // Max bank angle in radians
 float guidance_indi_max_bank = GUIDANCE_H_MAX_BANK;
 
@@ -145,6 +144,14 @@ struct FloatEulers guidance_euler_cmd;
 float thrust_in;
 
 struct FloatVect3 speed_sp = {0.0, 0.0, 0.0};
+
+#ifndef GUIDANCE_INDI_VEL_SP_ID
+#define GUIDANCE_INDI_VEL_SP_ID ABI_BROADCAST
+#endif
+abi_event vel_sp_ev;
+static void vel_sp_cb(uint8_t sender_id, struct FloatVect3 *vel_sp);
+struct FloatVect3 indi_vel_sp = {0.0, 0.0, 0.0};
+float time_of_vel_sp = 0.0;
 
 void guidance_indi_propagate_filters(void);
 static void guidance_indi_calcg_wing(struct FloatMat33 *Gmat);
@@ -189,6 +196,8 @@ void guidance_indi_init(void)
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
+
+  AbiBindMsgVEL_SP(GUIDANCE_INDI_VEL_SP_ID, &vel_sp_ev, vel_sp_cb);
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE_INDI_HYBRID, send_guidance_indi_hybrid);
@@ -240,12 +249,21 @@ void guidance_indi_run(float *heading_sp) {
   float pos_y_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y) - stateGetPositionNed_f()->y;
   float pos_z_err = POS_FLOAT_OF_BFP(guidance_v_z_ref - stateGetPositionNed_i()->z);
 
-  if(autopilot.mode == AP_MODE_NAV) {
-    speed_sp = nav_get_speed_setpoint(gih_params.pos_gain);
-  } else{
-    speed_sp.x = pos_x_err * gih_params.pos_gain;
-    speed_sp.y = pos_y_err * gih_params.pos_gain;
-    speed_sp.z = pos_z_err * gih_params.pos_gainz;
+  // First check for velocity setpoint from module
+  float dt = get_sys_time_float() - time_of_vel_sp;
+  // If the input command is not updated after a timeout, switch back to flight plan control
+  if (dt < 0.5) {
+    speed_sp.x = indi_vel_sp.x;
+    speed_sp.y = indi_vel_sp.y;
+    speed_sp.z = indi_vel_sp.z;
+  } else {
+    if(autopilot.mode == AP_MODE_NAV) {
+      speed_sp = nav_get_speed_setpoint(gih_params.pos_gain);
+    } else{
+      speed_sp.x = pos_x_err * gih_params.pos_gain;
+      speed_sp.y = pos_y_err * gih_params.pos_gain;
+      speed_sp.z = pos_z_err * gih_params.pos_gainz;
+    }
   }
 
   //for rc control horizontal, rotate from body axes to NED
@@ -327,9 +345,11 @@ void guidance_indi_run(float *heading_sp) {
         speed_sp_b_x = guidance_indi_max_airspeed + groundspeed_x - airspeed;
       }
     }
+
     speed_sp.x = cosf(psi) * speed_sp_b_x - sinf(psi) * speed_sp_b_y;
     speed_sp.y = sinf(psi) * speed_sp_b_x + cosf(psi) * speed_sp_b_y;
-
+    speed_sp.z = speed_sp.z;
+    
     sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain;
     sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain;
     sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
@@ -545,11 +565,11 @@ float guidance_indi_get_liftd(float airspeed, float theta) {
   float liftd = 0.0;
   if(airspeed < 12) {
     float pitch_interp = DegOfRad(theta);
-    Bound(pitch_interp, -80.0, -40.0);
+    Bound(pitch_interp, -80.0, -20.0);
     float ratio = (pitch_interp + 40.0)/(-40.);
-    liftd = -24.0*ratio*lift_pitch_eff/0.12;
+    liftd = -24.0*ratio*gih_params.lift_pitch_eff/0.12;
   } else {
-    liftd = -(airspeed - 8.5)*lift_pitch_eff/M_PI*180.0;
+    liftd = -(airspeed - 8.5)*gih_params.lift_pitch_eff/M_PI*180.0;
   }
   //TODO: bound liftd
   return liftd;
@@ -674,7 +694,7 @@ struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_ga
   struct FloatVect3 speed_sp_return;
   struct NedCoor_f ned_target;
   // Target in NED instead of ENU
-  VECT3_ASSIGN(ned_target, POS_FLOAT_OF_BFP(target.y), POS_FLOAT_OF_BFP(target.x), -POS_FLOAT_OF_BFP(target.z));
+  VECT3_ASSIGN(ned_target, POS_FLOAT_OF_BFP(target.y), POS_FLOAT_OF_BFP(target.x), POS_FLOAT_OF_BFP(-nav_flight_altitude));
 
   // Calculate position error
   struct FloatVect3 pos_error;
@@ -708,6 +728,10 @@ struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_ga
     vect_bound_in_2d(&speed_sp_return, max_h_speed);
   }
 
+  if(follow_me_last_time_ms + 500 > get_sys_time_msec()) {
+    VECT3_ADD(speed_sp_return, target_speed);
+  }
+
   // Bound vertical speed setpoint
   if(stateGetAirspeed_f() > 13.0) {
     Bound(speed_sp_return.z, -4.0, 5.0);
@@ -716,4 +740,15 @@ struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_ga
   }
 
   return speed_sp_return;
+}
+
+/**
+ * ABI callback that obtains the velocity setpoint from a module
+  */
+static void vel_sp_cb(uint8_t sender_id __attribute__((unused)), struct FloatVect3 *vel_sp)
+{
+  indi_vel_sp.x = vel_sp->x;
+  indi_vel_sp.y = vel_sp->y;
+  indi_vel_sp.z = vel_sp->z;
+  time_of_vel_sp = get_sys_time_float();
 }
