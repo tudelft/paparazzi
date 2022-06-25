@@ -202,12 +202,12 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
           rot_wing_aerodynamic_eff_const_g1_r[3] = yaw_rud_eff;
     }
     else if (better_eff){
-          rot_wing_aerodynamic_eff_const_g1_p[0] = 0; //  PUT ESTIMATED VALUES
-          rot_wing_aerodynamic_eff_const_g1_p[1] = 0; //  PUT ESTIMATED VALUES
-          rot_wing_aerodynamic_eff_const_g1_q[0] = 0; //  PUT ESTIMATED VALUES
-          rot_wing_aerodynamic_eff_const_g1_q[1] = 0; //  PUT ESTIMATED VALUES
-          rot_wing_aerodynamic_eff_const_g1_q[2] = 0; //  PUT ESTIMATED VALUES
-          rot_wing_aerodynamic_eff_const_g1_r[3] = 0; //  PUT ESTIMATED VALUES
+          rot_wing_aerodynamic_eff_const_g1_p[0] = 0.017; //  PUT ESTIMATED VALUES
+          rot_wing_aerodynamic_eff_const_g1_p[1] = 0.017; //  PUT ESTIMATED VALUES
+          rot_wing_aerodynamic_eff_const_g1_q[0] = -0.00294; //  PUT ESTIMATED VALUES
+          rot_wing_aerodynamic_eff_const_g1_q[1] = -0.00294; //  PUT ESTIMATED VALUES
+          rot_wing_aerodynamic_eff_const_g1_q[2] = -0.005498; //  PUT ESTIMATED VALUES
+          rot_wing_aerodynamic_eff_const_g1_r[3] = 0.001857; //  PUT ESTIMATED VALUES
     }
     else{
           rot_wing_aerodynamic_eff_const_g1_p[0] = rot_wing_aero_eff_const_p;
