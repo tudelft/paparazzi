@@ -394,7 +394,7 @@ void schedule_motor_effectiveness(float c_rot_wing_angle, float s_rot_wing_angle
   rot_wing_g1_r[3] = g1_startup[2][3] * rot_wing_yaw_props_activated;
 
   // thrust
-  if (!rot_wing_thrust_z_activated && airspeed>u_motor_free)
+  if (!rot_wing_thrust_z_activated && airspeed>u_motor_free && rot_wing_angle_deg > 80.0 && motor_free)
     {
       rot_wing_g1_t[0] = 0;
       rot_wing_g1_t[1] = 0;
