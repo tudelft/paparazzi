@@ -50,7 +50,7 @@ struct overactuated_mixing_t overactuated_mixing;
 
 //General state variables:
 float rate_vect[3], rate_vect_filt[3], rate_vect_filt_dot[3], euler_vect[3], acc_vect[3], acc_vect_filt[3], accel_vect_control_rf[3], speed_vect_control_rf[3];
-float rate_vect_ned[3], acc_vect_inertial[3];
+float rate_vect_ned[3], acc_body_real[3], acc_body_real_filt[3];
 float speed_vect[3], pos_vect[3], airspeed = 0, aoa_deg= 0, beta_deg = 0, beta_rad = 0, flight_path_angle = 0, total_V = 0;
 float actuator_state[N_ACT_REAL];
 float actuator_state_filt[INDI_NUM_ACT];
@@ -368,6 +368,31 @@ void from_body_to_earth(float * out_array, float * in_array, float Phi, float Th
     }
 }
 
+void from_earth_to_body(float * out_array, float * in_array, float Phi, float Theta, float Psi){
+    float R_bg_matrix[3][3];
+    R_bg_matrix[0][0] = cos(Theta)*cos(Psi);
+    R_bg_matrix[0][1] = -cos(Phi)*sin(Psi)+sin(Phi)*sin(Theta)*cos(Psi);
+    R_bg_matrix[0][2] = sin(Phi)*sin(Psi)+cos(Phi)*sin(Theta)*cos(Psi);
+
+    R_bg_matrix[1][0] = cos(Theta)*sin(Psi);
+    R_bg_matrix[1][1] = cos(Phi)*cos(Psi)+sin(Phi)*sin(Theta)*sin(Psi);
+    R_bg_matrix[1][2] = -sin(Phi)*cos(Psi)+cos(Phi)*sin(Theta)*sin(Psi);
+
+    R_bg_matrix[2][0] = -sin(Theta);
+    R_bg_matrix[2][1] = sin(Phi)*cos(Theta);
+    R_bg_matrix[2][2] = cos(Phi)*cos(Theta);
+
+    //Do the multiplication between the income array and the transposition matrix:
+    for (int j = 0; j < 3; j++) {
+        //Initialize value to zero:
+        out_array[j] = 0.;
+        for (int k = 0; k < 3; k++) {
+            out_array[j] += in_array[k] * R_bg_matrix[k][j];
+        }
+    }
+}
+
+
 /**
  * Get actuator state based on first order dynamics
  */
@@ -534,17 +559,12 @@ void assign_variables(void){
         act_dyn[i+8] = act_dyn_struct.azimuth;
     }
 
-    //Determine the inertial accelerations based on the body rates, speed and NED body accelerations:
-    from_body_to_earth(rate_vect_ned,rate_vect,euler_vect[0],euler_vect[1],euler_vect[2]);
-    acc_vect_inertial[0] = acc_vect[0] + rate_vect_ned[1] * speed_vect[2] - rate_vect_ned[2] * speed_vect[1];
-    acc_vect_inertial[1] = acc_vect[1] + rate_vect_ned[2] * speed_vect[0] - rate_vect_ned[0] * speed_vect[2];
-    acc_vect_inertial[2] = acc_vect[2] + rate_vect_ned[0] * speed_vect[1] - rate_vect_ned[1] * speed_vect[0];
-
+    //Determine the acceleration set in the body reference frame with gravity:
 
     /* Propagate the filter on the gyroscopes and accelerometers */
     for (int i = 0; i < 3; i++) {
         update_butterworth_2_low_pass(&measurement_rates_filters[i], rate_vect[i]);
-        update_butterworth_2_low_pass(&measurement_acc_filters[i], acc_vect_inertial[i]);
+        update_butterworth_2_low_pass(&measurement_acc_filters[i], acc_vect[i]);
 
         //Calculate the angular acceleration via finite difference
         rate_vect_filt_dot[i] = (measurement_rates_filters[i].o[0]
@@ -760,6 +780,7 @@ void overactuated_mixing_run()
         float airspeed_turn = airspeed;
         //We are dividing by the airspeed, so a lower bound is important
         Bound(airspeed_turn,10.0,30.0);
+
         float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
 
         if(airspeed > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
@@ -767,7 +788,9 @@ void overactuated_mixing_run()
 //            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/total_V;
 //              yaw_rate_setpoint_turn = accel_vect_control_rf[1] / airspeed_turn - K_beta * accely;
 //            yaw_rate_setpoint_turn = accel_vect_control_rf[1]/total_V + K_beta * beta_rad;
-            yaw_rate_setpoint_turn = K_beta * beta_rad;
+//            yaw_rate_setpoint_turn = K_beta * beta_rad;
+            //Creating the setpoint using the desired lateral acceleration and the body correction:
+            yaw_rate_setpoint_turn = acc_setpoint_control_rf[1]/airspeed_turn - K_beta * accely;
         }
         fwd_multiplier_yaw = (airspeed - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION) / (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION);
         Bound(fwd_multiplier_yaw , 0, 1);
