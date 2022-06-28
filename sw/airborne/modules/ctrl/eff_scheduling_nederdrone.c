@@ -32,6 +32,11 @@ not use this module at the same time!
 #include "state.h"
 #define INDI_SCHEDULING_LOWER_BOUND_G1 0.0001
 
+// Airspeed at which tip props should be turned on
+#ifndef INDI_SCHEDULING_LOW_AIRSPEED
+#define INDI_SCHEDULING_LOW_AIRSPEED 14.0
+#endif
+
 int32_t use_scheduling = 1;
 
 static float g_forward[4][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL_FWD, STABILIZATION_INDI_G1_PITCH_FWD, STABILIZATION_INDI_G1_YAW_FWD, STABILIZATION_INDI_G1_THRUST_FWD};
@@ -103,10 +108,12 @@ void ctrl_eff_scheduling_periodic(void)
     g1g2[3][i] = g_hover[3][i] * (1.0 - ratio_spec_force) + g_forward[3][i] * ratio_spec_force;
   }
 
+  bool low_airspeed = (stateGetAirspeed_f() < INDI_SCHEDULING_LOW_AIRSPEED);
+
   // Tip prop ratio
   float pitch_deg = eulers_zxy.theta / M_PI * 180.f;
   float pitch_range_deg = sched_tip_prop_upper_pitch_limit_deg - sched_tip_prop_lower_pitch_limit_deg;
-  if (sched_tip_props_always_on) {
+  if (sched_tip_props_always_on || low_airspeed) {
     sched_ratio_tip_props = 1.0;
   } else if (pitch_deg > sched_tip_prop_upper_pitch_limit_deg) {
     sched_ratio_tip_props = 1.0;
