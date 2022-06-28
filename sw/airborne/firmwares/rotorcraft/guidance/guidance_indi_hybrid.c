@@ -193,10 +193,11 @@ bool div_push = false;
 float Wv_z = 10.0;
 bool theta_slowdown = false;
 bool thrust_slowdown = true;
-
+float quad_pitch_limiter = 1.0;
 
 float hybrid_roll_limit = 0.785; // 45 deg
 float hybrid_pitch_limit = 0.209;//12 deg//0.349; // 20 deg
+float hybrid_pitch_limit_min = 0.0872; // 5 deg min pitch
 
 float proj_wp_dist = 30.;
 bool roll_zero = false;
@@ -482,6 +483,8 @@ void guidance_indi_run(float *heading_sp) {
 
   //Calculate roll,pitch and thrust command
 #ifdef GUIDANCE_INDI_HYBRID_ROT_WING
+  if (airspeed < 6){quad_pitch_limiter = 0.5;}
+  else{quad_pitch_limiter = 1.0;}
   guidance_indi_calcg_rot_wing_wls(a_diff);
   euler_cmd.x = hybrid_du[0];
   euler_cmd.y = hybrid_du[1];
@@ -900,12 +903,12 @@ void guidance_indi_calcg_rot_wing_wls(struct FloatVect3 a_diff) {
 
   // Set lower limits
   du_min_hybrid[0] = (float) (-hybrid_roll_limit - roll_filt.o[0])/divider[0]; //roll
-  du_min_hybrid[1] = (float) (-hybrid_pitch_limit - pitch_filt.o[0])/divider[1]; // pitch
+  du_min_hybrid[1] = (float) (-hybrid_pitch_limit_min - pitch_filt.o[0])/divider[1]; // pitch
   du_min_hybrid[2] = (float) (actuators_pprz[0] + actuators_pprz[1] + actuators_pprz[2] + actuators_pprz[3])*(g1g2[3][0])/divider[2];// + g1g2[3][1] + g1g2[3][2] + g1g2[3][3]);
   du_min_hybrid[3] = (float) -actuators_pprz[8]*thrust_bx_eff/divider[3];
   // Set upper limits limits
   du_max_hybrid[0] = (float) (hybrid_roll_limit - roll_filt.o[0])/divider[0]; //roll
-  du_max_hybrid[1] = (float) (hybrid_pitch_limit - pitch_filt.o[0])/divider[1]; // pitch
+  du_max_hybrid[1] = (float) (hybrid_pitch_limit * quad_pitch_limiter - pitch_filt.o[0])/divider[1]; // pitch
   du_max_hybrid[2] = (float) -(4*MAX_PPRZ - actuators_pprz[0] - actuators_pprz[1] - actuators_pprz[2] - actuators_pprz[3])*(g1g2[3][0])/divider[2];// + g1g2[3][1] + g1g2[3][2] + g1g2[3][3]);
   du_max_hybrid[3] = (float) (MAX_PPRZ - actuators_pprz[8]) * thrust_bx_eff/divider[3];
   // printf("du_min_hibrid[2] %f\n", du_min_hybrid[2]);
