@@ -285,13 +285,13 @@
     <define name="MAG_Z_SIGN" value="1"/>
 
     <!-- MAG at wingtip -->
-    <define name="MAG_X_NEUTRAL" value="-153"/>
+    <define name="MAG_X_NEUTRAL" value="110"/>
     <define name="MAG_Y_NEUTRAL" value="-32"/>
-    <define name="MAG_Z_NEUTRAL" value="31"/>
+    <define name="MAG_Z_NEUTRAL" value="8"/>
 
-    <define name="MAG_X_SENS" value="0.6194340164254895" integer="16"/>
-    <define name="MAG_Y_SENS" value="0.6171467647985408" integer="16"/>
-    <define name="MAG_Z_SENS" value="0.6021488827954916" integer="16"/>
+    <define name="MAG_X_SENS" value="0.5870640921151159" integer="16"/>
+    <define name="MAG_Y_SENS" value="0.5856447656135787" integer="16"/>
+    <define name="MAG_Z_SENS" value="0.5954510987259224" integer="16"/>
 
     <!--  MAG at wingtip TODO correct or telemetry had to be raw and not scaled? -->
     <define name= "MAG_X_CURRENT_COEF" value="0.0"/>

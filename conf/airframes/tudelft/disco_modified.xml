@@ -179,8 +179,8 @@
   <!-- ************************* ACTUATORS ************************* -->
   <servos driver="Pwm">
     <servo name="S_THROTTLE_LEFT" no="0" min="1150" neutral="1500" max="1850"/>  <!-- Overpowered motors need to be limited -->
-    <servo name="S_ELEVON_LEFT" no="1" min="2050" neutral="1550" max="1050"/> <!-- max value is upward deflection-->
-    <servo name="S_ELEVON_RIGHT" no="2" min="1000" neutral="1500" max="2000"/>
+    <servo name="S_ELEVON_LEFT" no="1" min="1000" neutral="1500" max="2000"/> <!-- max value is upward deflection-->
+    <servo name="S_ELEVON_RIGHT" no="2" min="2000" neutral="1500" max="1000"/>
     <servo name="S_THROTTLE_RIGHT" no="3" min="1150" neutral="1500" max="1850"/>
   </servos>
 
@@ -190,7 +190,7 @@
 
   <!-- ********************* SERVO MIXER *************************** -->
   <section name="MIXER">
-    <define name="ELEVON_ROLL_FACTOR" value="-0.8f"/>
+    <define name="ELEVON_ROLL_FACTOR" value="0.8f"/>
     <define name="ELEVON_PITCH_FACTOR" value="-0.8f"/>  <!-- TODO Check sign -->
     <define name="ELEVON_YAW_FACTOR" value="0.8f"/>
     <!-- Set up/down deflection differences, needs many in flight tests to find acceptable values-->
@@ -251,7 +251,7 @@
   <section name="AUTO1" prefix="AUTO1_">
     <define name="MAX_ROLL" value="45" unit="deg"/> <!-- More authority while test flying for first time -->
     <define name="MAX_PITCH" value="40" unit="deg"/> <!-- More authority while test flying for first time -->
-    <define name="MAX_YAW_RATE" value="RadOfDeg(100)"/>
+<!--    <define name="MAX_YAW_RATE" value="RadOfDeg(100)"/>-->
   </section>
 
   <!-- ************************ TRIM ***************************** -->
@@ -291,13 +291,13 @@
     <define name="MAG_Z_SIGN" value="1"/>
 
     <!-- MAG at wingtip -->
-    <define name="MAG_X_NEUTRAL" value="-153"/>
+    <define name="MAG_X_NEUTRAL" value="110"/>
     <define name="MAG_Y_NEUTRAL" value="-32"/>
-    <define name="MAG_Z_NEUTRAL" value="31"/>
+    <define name="MAG_Z_NEUTRAL" value="8"/>
 
-    <define name="MAG_X_SENS" value="0.6194340164254895" integer="16"/>
-    <define name="MAG_Y_SENS" value="0.6171467647985408" integer="16"/>
-    <define name="MAG_Z_SENS" value="0.6021488827954916" integer="16"/>
+    <define name="MAG_X_SENS" value="0.5870640921151159" integer="16"/>
+    <define name="MAG_Y_SENS" value="0.5856447656135787" integer="16"/>
+    <define name="MAG_Z_SENS" value="0.5954510987259224" integer="16"/>
 
     <!-- Should be same for everyone -->
     <define name="MAG_X_CURRENT_COEF" value="0.000321738038902"/>
@@ -375,10 +375,10 @@
     <define name="PITCH_KFFA" value="10."/>
     <define name="PITCH_KFFD" value="0."/>
 
-    <define name="YAW_LOOP" value="TRUE"/>
-    <define name="YAW_DGAIN" value="1000."/>
-    <define name="YAW_TRIM_NY" value="FALSE"/>
-    <define name="YAW_NY_IGAIN" value="1000."/>
+<!--    <define name="YAW_LOOP" value="TRUE"/>-->
+<!--    <define name="YAW_DGAIN" value="1000."/>-->
+<!--    <define name="YAW_TRIM_NY" value="FALSE"/>-->
+<!--    <define name="YAW_NY_IGAIN" value="1000."/>-->
 
     <define name="ELEVATOR_OF_ROLL" value="1500" unit="PPRZ_MAX"/>
     <define name="ROLL_SLEW" value="0.5"/> <!-- TODO: Determine best value-->
