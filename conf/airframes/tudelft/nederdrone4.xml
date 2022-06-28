@@ -113,7 +113,7 @@
     <module name="AOA_pwm">
       <define name="USE_PWM_INPUT1" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>
       <define name="AOA_ANGLE_OFFSET" value="3.1415"/>
-      <define name="AOA_PWM_PERIOD" value="4096"/>
+      <define name="AOA_PWM_PERIOD" value="1024"/>
       <define name="AOA_PWM_OFFSET" value="1"/>
       <configure name="AOA_PWM_CHANNEL" value="PWM_INPUT1" />
     </module>
