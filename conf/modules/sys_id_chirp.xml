@@ -29,11 +29,11 @@
     Add the message "CHIRP" to your telemetry to see chirp progress, and to your logger to automatically filter chirps in post-processing.
 
     </description>
-    <define name="CHIRP_AXES"        value="{COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,COMMAND_THRUST}" description="Which axes the chirp is applied to (specify as array with {})"/>
+<!--    <define name="CHIRP_AXES"        value="{COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW,COMMAND_THRUST}" description="Which axes the chirp is applied to (specify as array with {})"/>-->
     <!-- <define name="CHIRP_AXES"        value="{COMMAND_ROLL,COMMAND_PITCH,COMMAND_YAW}" description="Which axes the chirp is applied to (specify as array with {})"/> -->
     <define name="CHIRP_ENABLED"     value="TRUE|FALSE"  description="If false, the chirp does not run and values are not added"/>
-    <define name="CHIRP_USE_NOISE"   value="TRUE|FALSE"  description="If true, add noise to all axes (also the axes where no chirp is active)"/>
-    <define name="CHIRP_EXPONENTIAL" value="TRUE|FALSE"  description="If true, exponential-time chirp. Else, linear-time chirp"/>
+<!--    <define name="CHIRP_USE_NOISE"   value="TRUE|FALSE"  description="If true, add noise to all axes (also the axes where no chirp is active)"/>-->
+<!--    <define name="CHIRP_EXPONENTIAL" value="TRUE|FALSE"  description="If true, exponential-time chirp. Else, linear-time chirp"/>-->
     <define name="CHIRP_FADEIN"      value="TRUE|FALSE"  description="If true, start the chirp with two wavelengths of the lowest frequency"/>
   </doc>
 
@@ -42,11 +42,12 @@
       <dl_settings name="Chirp input">
         <dl_setting min="0" max="1"    step="1" values="Inactive|Active" shortname="Chirp" var="chirp_active" type="uint8_t" module="system_identification/sys_id_chirp" handler="activate_handler"/>
         <dl_setting min="0" max="1"    step="1" values="Inactive|Active" shortname="Fade in" var="chirp_fade_in" type="uint8_t" module="system_identification/sys_id_chirp" handler="fade_in_activate_handler"/>
-        <dl_setting min="0" max="1"    step="1" values="Inactive|Active" shortname="Exponential" var="chirp_exponential" type="uint8_t" module="system_identification/sys_id_chirp" handler="exponential_activate_handler"/>
-        <dl_setting min="0"    max="5"    step="1"    shortname="Chirp axis"     var="chirp_axis"                    type="uint8_t" module="system_identification/sys_id_chirp" handler="axis_handler"/>
+<!--        <dl_setting min="0" max="1"    step="1" values="Inactive|Active" shortname="Exponential" var="chirp_exponential" type="uint8_t" module="system_identification/sys_id_chirp" handler="exponential_activate_handler"/>-->
+<!--        <dl_setting min="0"    max="5"    step="1"    shortname="Chirp axis"     var="chirp_axis"                    type="uint8_t" module="system_identification/sys_id_chirp" handler="axis_handler"/>-->
+        <dl_setting min="-9600" max="9600" step="100" shortname="Chirp avg" var="chirp_average" type="float" module="system_identification/sys_id_chirp"/>
         <dl_setting min="0"    max="9600" step="100"  shortname="Amplitude"      var="chirp_amplitude"               type="int32_t" module="system_identification/sys_id_chirp"/>
-        <dl_setting min="0"    max="0.5"    step="0.01" shortname="on-axis noise"  var="chirp_noise_stdv_onaxis_ratio" type="float"   module="system_identification/sys_id_chirp"/>
-        <dl_setting min="0"    max="9600" step="50"   shortname="off-axis noise" var="chirp_noise_stdv_offaxis"      type="float"   module="system_identification/sys_id_chirp"/>
+<!--        <dl_setting min="0"    max="0.5"    step="0.01" shortname="on-axis noise"  var="chirp_noise_stdv_onaxis_ratio" type="float"   module="system_identification/sys_id_chirp"/>-->
+<!--        <dl_setting min="0"    max="9600" step="50"   shortname="off-axis noise" var="chirp_noise_stdv_offaxis"      type="float"   module="system_identification/sys_id_chirp"/>-->
         <dl_setting min="0.05" max="20"    step="0.05" shortname="Fstart_hz"      var="chirp_fstart_hz"                   type="float"   module="system_identification/sys_id_chirp" handler="fstart_handler"/>
         <dl_setting min="0.1"  max="20"   step="0.1"  shortname="Fend_hz"        var="chirp_fstop_hz"                   type="float"   module="system_identification/sys_id_chirp" handler="fstop_handler"/>
         <dl_setting min="0"    max="100"  step="0.5"  shortname="Length_s"       var="chirp_length_s"                type="float"   module="system_identification/sys_id_chirp"/>

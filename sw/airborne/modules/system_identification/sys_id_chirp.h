@@ -42,9 +42,10 @@
 
 
 extern uint8_t chirp_active;
+extern float chirp_average;
 extern pprz_t chirp_amplitude;
-extern float chirp_noise_stdv_onaxis_ratio; // On-axis noise is amplitude times this value
-extern float chirp_noise_stdv_offaxis; // Off-axis noise (the axes that the chirp is not applied to)
+//extern float chirp_noise_stdv_onaxis_ratio; // On-axis noise is amplitude times this value
+//extern float chirp_noise_stdv_offaxis; // Off-axis noise (the axes that the chirp is not applied to)
 
 extern float chirp_fstart_hz;
 extern float chirp_fstop_hz;
@@ -56,11 +57,14 @@ extern uint8_t chirp_axis;
 extern uint8_t chirp_fade_in;
 extern uint8_t chirp_exponential;
 
+extern pprz_t actuator_command;
+
 
 extern void sys_id_chirp_init(void);
+extern void sys_id_chirp_run(void);
 
 // If chirp is running, update its values
-extern void sys_id_chirp_run(void);
+extern void sys_id_chirp_value(void);
 
 // Handlers for changing gcs variables
 extern void sys_id_chirp_activate_handler(uint8_t activate); // Activate the chirp

@@ -59,9 +59,10 @@
 static struct chirp_t chirp;
 uint8_t chirp_active = FALSE;
 uint8_t chirp_axis = 0;
+float chirp_average = 0;
 pprz_t chirp_amplitude = 0;
-float chirp_noise_stdv_onaxis_ratio = 0.1;
-float chirp_noise_stdv_offaxis = 200;
+//float chirp_noise_stdv_onaxis_ratio = 0.1;
+//float chirp_noise_stdv_offaxis = 200;
 float chirp_fstart_hz = 1.0f;
 float chirp_fstop_hz = 5.0f;
 float chirp_length_s = 20;
@@ -69,64 +70,58 @@ float chirp_length_s = 20;
 uint8_t chirp_fade_in = false;
 uint8_t chirp_exponential = false;
 
+pprz_t actuator_command = 0;
+
 // The axes on which noise and chirp values can be applied
-static const int8_t ACTIVE_CHIRP_AXES[] = CHIRP_AXES;
-#define CHIRP_NB_AXES sizeof ACTIVE_CHIRP_AXES / sizeof ACTIVE_CHIRP_AXES[0] // Number of items in ACTIVE_CHIRP_AXES
+//static const int8_t ACTIVE_CHIRP_AXES[] = CHIRP_AXES;
+//#define CHIRP_NB_AXES sizeof ACTIVE_CHIRP_AXES / sizeof ACTIVE_CHIRP_AXES[0] // Number of items in ACTIVE_CHIRP_AXES
 
 // Filters used to cut-off the gaussian noise fed into the actuator channels
-static struct FirstOrderLowPass filters[CHIRP_NB_AXES];
+//static struct FirstOrderLowPass filters[CHIRP_NB_AXES];
 
 // Chirp and noise values for all axes (indices correspond to the axes given in CHIRP_AXES)
-static pprz_t current_chirp_values[CHIRP_NB_AXES];
-
-static void set_current_chirp_values(void)
-{
-    // initializing at zero the chirp input for every axis
-    for (uint8_t i = 0; i < CHIRP_NB_AXES; i++) {
-      current_chirp_values[i] = 0;
-    }  
-    // adding values if the chirp is active
-    if (chirp_active) {
-      // adding extra  on the chirp signal (both on-axis and off axis)
-      #if CHIRP_USE_NOISE
-
-          float amplitude, noise;
-          for (uint8_t i = 0; i < CHIRP_NB_AXES; i++) {
-            noise = update_first_order_low_pass(&filters[i], rand_gaussian());
-            amplitude = chirp_axis == i ? chirp_noise_stdv_onaxis_ratio * chirp_amplitude : chirp_noise_stdv_offaxis;
-            current_chirp_values[i] += (int32_t)(noise * amplitude);
-          }
-
-      #endif
-      // adding nominal chirp value
-      current_chirp_values[chirp_axis] += (int32_t)(chirp_amplitude * chirp.current_value);
-    } else {
-      for (uint8_t i = 0; i < CHIRP_NB_AXES; i++) {
-        current_chirp_values[i] = 0;
-      }
-  }
-}
-
-static void send_chirp(struct transport_tx *trans, struct link_device *dev)
-{
-  pprz_msg_send_CHIRP(trans, dev, AC_ID, &chirp_active, &chirp.percentage_done, &chirp.current_frequency_hz,
-                      &chirp_axis, &chirp_amplitude, &chirp_fstart_hz, &chirp_fstop_hz, &chirp_noise_stdv_onaxis_ratio,
-                      &chirp_noise_stdv_offaxis, &current_chirp_values[chirp_axis], &chirp_fade_in, &chirp_exponential);
-
-}
+//static pprz_t current_chirp_values[CHIRP_NB_AXES];
 
 static void start_chirp(void)
 {
   chirp_reset(&chirp, get_sys_time_float());
   chirp_active = TRUE;
-  set_current_chirp_values();
+  sys_id_chirp_value();
 }
 
 static void stop_chirp(void)
 {
   chirp_reset(&chirp, get_sys_time_float());
   chirp_active = FALSE;
-  set_current_chirp_values();
+  sys_id_chirp_value();
+}
+
+void sys_id_chirp_value(void)
+{
+  if (chirp_active) {
+    if (!chirp_is_running(&chirp, get_sys_time_float())) {
+      stop_chirp();
+    } else {
+      chirp_update(&chirp, get_sys_time_float());
+      actuator_command = 0;
+      // adding values if the chirp is active
+      if (chirp_active) {
+        // adding nominal chirp value
+        actuator_command += (int32_t)(chirp_average + chirp_amplitude * chirp.current_value);
+      }
+      BoundAbs(actuator_command, MAX_PPRZ);
+    }
+  } else {
+    actuator_command = 0;
+  }
+}
+
+static void send_chirp(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_CHIRP(trans, dev, AC_ID, &chirp_active, &chirp.percentage_done, &chirp.current_frequency_hz,
+                      &chirp_axis, &chirp_amplitude, &chirp_fstart_hz, &chirp_fstop_hz, &chirp_average,
+                      0, &actuator_command, &chirp_fade_in, 0);
+
 }
 
 void sys_id_chirp_activate_handler(uint8_t activate)
@@ -146,12 +141,6 @@ uint8_t sys_id_chirp_running(void)
   return chirp_active;
 }
 
-extern void sys_id_chirp_axis_handler(uint8_t axis)
-{
-  if (axis < CHIRP_NB_AXES) {
-    chirp_axis = axis;
-  }
-}
 
 extern void sys_id_chirp_fstart_handler(float fstart)
 {
@@ -179,53 +168,17 @@ extern void sys_id_chirp_exponential_activate_handler(uint8_t exponential)
 
 void sys_id_chirp_init(void)
 {
-#if CHIRP_USE_NOISE
-
-  init_random();
-
-#endif
-
   chirp_init(&chirp, chirp_fstart_hz, chirp_fstop_hz, chirp_length_s, get_sys_time_float(), chirp_exponential,
              chirp_fade_in);
-  set_current_chirp_values();
+  sys_id_chirp_value();
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_CHIRP, send_chirp);
-
-  // Filter cutoff frequency is the chirp maximum frequency
-  float tau = 1 / (chirp_fstop_hz * 2 * M_PI);
-  for (uint8_t i = 0; i < CHIRP_NB_AXES; i++) {
-    init_first_order_low_pass(&filters[i], tau, SYS_ID_CHIRP_RUN_PERIOD, 0);
-    current_chirp_values[i] = 0;
-  }
 }
 
 void sys_id_chirp_run(void)
 {
-#if CHIRP_ENABLED
-
   if (chirp_active) {
     if (!chirp_is_running(&chirp, get_sys_time_float())) {
       stop_chirp();
-    } else {
-      chirp_update(&chirp, get_sys_time_float());
-      set_current_chirp_values();
     }
   }
-
-#endif
-}
-
-void sys_id_chirp_add_values(bool motors_on, bool override_on, pprz_t in_cmd[])
-{
-  (void)(override_on); // Suppress unused parameter warnings
-
-#if CHIRP_ENABLED
-
-  if (motors_on) {
-    for (uint8_t i = 0; i < CHIRP_NB_AXES; i++) {
-      in_cmd[ACTIVE_CHIRP_AXES[i]] += current_chirp_values[i];
-      BoundAbs(in_cmd[ACTIVE_CHIRP_AXES[i]], MAX_PPRZ);
-    }
-  }
-
-#endif
 }
