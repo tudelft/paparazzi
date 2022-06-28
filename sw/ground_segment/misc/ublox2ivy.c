@@ -33,6 +33,7 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include <string.h>
+#include <math.h>
 #include <fcntl.h>
 #include <termios.h>
 #include <glib.h>
@@ -41,6 +42,7 @@
 #include "ublox2ivy.h"
 
 #define UDP_BUFFER_SIZE   1024
+#define NAV_RELPOSNED_VERSION   0x01
 
 /* Endpoints */
 struct endpoint_udp_t {
@@ -80,6 +82,7 @@ static struct endpoint_t gps_ep;
 static struct gps_ubx_t gps_ubx;
 static struct gps_rtcm_t gps_rtcm;
 static uint8_t ac_id = 1;
+static float ground_heading = NAN;
 
 void packet_handler(void *ep, uint8_t *data, uint16_t len);
 
@@ -598,7 +601,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
           IvySendMsg("ground FLIGHT_PARAM GCS %f %f %f %f %f %f %f %f %f %f %f %d %f",
                 0.0, // roll,
                 0.0, // pitch,
-                0.0, // heading
+                ground_heading, // heading
                 lat,
                 lon,
                 gSpeed,
@@ -610,7 +613,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
                 iTOW, // itow
                 0.0); // airspeed
 
-            IvySendMsg("ground TARGET_POS %d %d %d %d %d %f %f %f",
+            IvySendMsg("ground TARGET_POS %d %d %d %d %d %f %f %f %f",
                 ac_id,
                 ac_id,
                 (int)(lat * 1e7),
@@ -618,7 +621,25 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
                 (int)(alt * 1000),
                 gSpeed,
                 -velD,
-                headMot);
+                headMot,
+                ground_heading);
+          break;
+        }
+        case UBX_NAV_RELPOSNED_ID: {
+          /* Get the heading of the RTK base station */
+          uint8_t version = UBX_NAV_RELPOSNED_version(gps_ubx.msg_buf);
+          if(version > NAV_RELPOSNED_VERSION)
+            break;
+
+          uint8_t flags       = UBX_NAV_RELPOSNED_flags(gps_ubx.msg_buf);
+          uint8_t relPosValid = RTCMgetbitu(&flags, 5, 1);
+
+          if(relPosValid) {
+            ground_heading = UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf) * 1e-5f;
+          } else{
+            ground_heading = NAN;
+          }
+          
           break;
         }
         default:

@@ -37,6 +37,7 @@ struct target_pos_t {
   struct LlaCoor_i lla;     ///< Lat, lon and altitude position of the target
   float ground_speed;       ///< Ground speed of the target [m/s]
   float course;             ///< Ground course of the target [deg]
+  float heading;            ///< Heading of the target [deg]
   float climb;              ///< Climb speed, z-up [m/s]
 };
 

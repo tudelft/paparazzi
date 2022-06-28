@@ -56,7 +56,7 @@
 #endif
 
 #ifndef TARGET_INTEGRATE_Z
-#define TARGET_INTEGRATE_Z true
+#define TARGET_INTEGRATE_Z false
 #endif
 
 /* Initialize the main structure */
@@ -87,6 +87,7 @@ static void send_target_pos_info(struct transport_tx *trans, struct link_device 
                               &target.pos.ground_speed,
                               &target.pos.climb,
                               &target.pos.course,
+                              &target.pos.heading,
                               &target.offset.heading,
                               &target.offset.distance,
                               &target.offset.height);
@@ -117,6 +118,7 @@ void target_parse_target_pos(uint8_t *buf)
   target.pos.ground_speed = DL_TARGET_POS_speed(buf);
   target.pos.climb = DL_TARGET_POS_climb(buf);
   target.pos.course = DL_TARGET_POS_course(buf);
+  target.pos.heading = DL_TARGET_POS_heading(buf);
   target.pos.valid = true;
 }
 extern struct LlaCoor_i gps_lla;
@@ -153,8 +155,8 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
     // In seconds, overflow uint32_t in 49,7 days
     time_diff = (get_sys_time_msec() - target.pos.recv_time) * 0.001; // FIXME: should be based on TOW of ground gps
 
-    // Return the course as heading (FIXME)
-    *heading = target.pos.course;
+    // Return the heading
+    *heading = target.pos.heading;
 
     // If we have a velocity measurement try to integrate the x-y position when enabled
     struct NedCoor_f vel = {0};
