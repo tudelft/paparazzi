@@ -137,7 +137,7 @@ inline void update_g1g2_matrix(void);
 inline void schedule_lift_pitch_eff(float rot_wing_angle_rad, float airspeed2);
 inline void schedule_guidance_zgains(float airspeed);
 inline void schedule_guidance_hgains(float airspeed);
-inline void schedule_pref_pitch_angle(float s_rot_wing_angle);
+inline void schedule_pref_pitch_angle(float s_rot_wing_angle, float airspeed);
 
 #if PERIODIC_TELEMETRY
 #include "subsystems/datalink/telemetry.h"
@@ -230,7 +230,7 @@ void ctrl_eff_scheduling_rotating_wing_drone_periodic(void)
   schedule_lift_pitch_eff(rot_wing_angle_rad, airspeed2);
 
   // Schedile pitch pref
-  schedule_pref_pitch_angle(s_rot_wing_angle);
+  schedule_pref_pitch_angle(s_rot_wing_angle, airspeed);
 
   // Update gains
   schedule_guidance_zgains(airspeed_lowpass_filter.o[0]);
@@ -615,7 +615,7 @@ void schedule_guidance_hgains(float airspeed)
   //gih_params.speed_gain = speed_gain;
 }
 
-void schedule_pref_pitch_angle(float s_rot_wing_angle)
+void schedule_pref_pitch_angle(float s_rot_wing_angle, float airspeed)
 {
   float pitch_pref_range_deg = rot_wing_pitch_pref_fwd_deg - rot_wing_pitch_pref_hover_deg;
 
@@ -624,8 +624,11 @@ void schedule_pref_pitch_angle(float s_rot_wing_angle)
   {
     s_rot_wing_angle = 0;
   }
-
   // Schedule prefered pitch angle
-  float pitch_diff_deg = pitch_pref_range_deg * s_rot_wing_angle;
+  if (airspeed < 3){
+  pitch_pref_deg = 0 ;
+  }
+  else {float pitch_diff_deg = pitch_pref_range_deg * s_rot_wing_angle;
   pitch_pref_deg = rot_wing_pitch_pref_hover_deg + pitch_diff_deg;
+  }
 }
