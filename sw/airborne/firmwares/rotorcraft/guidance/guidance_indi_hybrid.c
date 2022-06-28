@@ -565,8 +565,10 @@ float guidance_indi_get_liftd(float airspeed, float theta) {
   float liftd = 0.0;
   if(airspeed < 12) {
     float pitch_interp = DegOfRad(theta);
-    Bound(pitch_interp, -80.0, -20.0);
-    float ratio = (pitch_interp + 40.0)/(-40.);
+    const float min_pitch = -80.0;
+    const float max_pitch = -20.0;
+    Bound(pitch_interp, min_pitch, max_pitch);
+    float ratio = (pitch_interp - max_pitch)/(min_pitch - max_pitch);
     liftd = -24.0*ratio*gih_params.lift_pitch_eff/0.12;
   } else {
     liftd = -(airspeed - 8.5)*gih_params.lift_pitch_eff/M_PI*180.0;
