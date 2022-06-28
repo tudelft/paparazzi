@@ -16,6 +16,7 @@
     <target name="ap" board="px4fmu_5.0_chibios">
       <configure name="PERIODIC_FREQUENCY"  value="500"/>
       <configure name="FLASH_MODE" value="SWD"/>
+      <define name="USE_BARO_BOARD" value="1"/>
 
       <module name="radio_control" type="sbus">
         <configure name="SBUS_PORT" value="UART3"/>
@@ -154,10 +155,10 @@
   <!-- CAN BUS 1 (Front Wing) -->
   <servos driver="Uavcan1">
     <servo name="MOTOR_1" no="0" min="-8191" neutral="1500" max="8191"/>
-    <servo name="MOTOR_2" no="1" min="-8191" neutral="1500" max="8191"/>
-    <servo name="MOTOR_3" no="2" min="-8191" neutral="1500" max="8191"/>
-    <servo name="MOTOR_4" no="3" min="-8191" neutral="1500" max="8191"/>
-    <servo name="MOTOR_5" no="4" min="-8191" neutral="1500" max="8191"/>
+    <servo name="MOTOR_2" no="1" min="0" neutral="600" max="8191"/>
+    <servo name="MOTOR_3" no="2" min="0" neutral="600" max="8191"/>
+    <servo name="MOTOR_4" no="3" min="0" neutral="600" max="8191"/>
+    <servo name="MOTOR_5" no="4" min="0" neutral="600" max="8191"/>
     <servo name="MOTOR_6" no="5" min="-8191" neutral="1500" max="8191"/>
     <servo name="AIL_1" no="6" min="-6000" neutral="0" max="6000"/>
     <servo name="AIL_2" no="7" min="6000" neutral="0" max="-6000"/>
@@ -165,12 +166,12 @@
 
   <!-- CAN BUS 2 (Back Wing) -->
   <servos driver="Uavcan2">
-    <servo name="MOTOR_7" no="0" min="0" neutral="200" max="8191"/>
-    <servo name="MOTOR_8" no="1" min="0" neutral="200" max="8191"/>
-    <servo name="MOTOR_9"  no="2" min="0" neutral="200" max="8191"/>
-    <servo name="MOTOR_10" no="3" min="0" neutral="200" max="8191"/>
-    <servo name="MOTOR_11" no="4" min="0" neutral="200" max="8191"/>
-    <servo name="MOTOR_12" no="5" min="0" neutral="200" max="8191"/>
+    <servo name="MOTOR_7" no="0" min="0" neutral="600" max="8191"/>
+    <servo name="MOTOR_8" no="1" min="0" neutral="600" max="8191"/>
+    <servo name="MOTOR_9"  no="2" min="0" neutral="600" max="8191"/>
+    <servo name="MOTOR_10" no="3" min="0" neutral="600" max="8191"/>
+    <servo name="MOTOR_11" no="4" min="0" neutral="600" max="8191"/>
+    <servo name="MOTOR_12" no="5" min="0" neutral="600" max="8191"/>
     <servo name="AIL_3" no="6" min="-6000" neutral="0" max="6000"/>
     <servo name="AIL_4" no="7" min="6000" neutral="0" max="-6000"/>
   </servos>
@@ -329,6 +330,7 @@
     <define name="ESTIMATION_FILT_CUTOFF" value="5.0"/>
     <define name="FILT_CUTOFF_R" value="4."/>
     <!-- first order actuator dynamics -->
+    <!--define name="ACT_DYN" value="{0.009, 0.009, 0.009, 0.009, 0.05, 0.05, 0.05, 0.05}"/-->
     <define name="ACT_DYN" value="{0.028, 0.028, 0.028, 0.028, 0.05, 0.05, 0.05, 0.05}"/>
     <define name="ACT_RATE_LIMIT" value="{9600, 9600, 9600, 9600, 170, 170, 170, 170}"/>
     <define name="ACT_IS_SERVO" value="{0, 0, 0, 0, 1, 1, 1, 1}"/>

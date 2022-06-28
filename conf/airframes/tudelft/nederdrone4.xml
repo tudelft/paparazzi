@@ -16,6 +16,7 @@
     <target name="ap" board="px4fmu_5.0_chibios">
       <configure name="PERIODIC_FREQUENCY"  value="500"/>
       <configure name="FLASH_MODE" value="SWD"/>
+      <define name="USE_BARO_BOARD" value="1"/>
 
       <module name="radio_control" type="sbus">
         <configure name="SBUS_PORT" value="UART3"/>
@@ -108,6 +109,14 @@
 
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
+    
+    <module name="AOA_pwm">
+      <define name="USE_PWM_INPUT1" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>
+      <define name="AOA_ANGLE_OFFSET" value="3.1415"/>
+      <define name="AOA_PWM_PERIOD" value="4096"/>
+      <define name="AOA_PWM_OFFSET" value="1"/>
+      <configure name="AOA_PWM_CHANNEL" value="PWM_INPUT1" />
+    </module>
 
     <!-- Internal MAG -->
     <!--module name="mag_ist8310">
