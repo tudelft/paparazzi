@@ -74,16 +74,16 @@
     </target>
 
     <module name="follow_me">
-      <define name="FOLLOW_ME_DISTANCE" value="40"/>
-      <define name="FOLLOW_ME_HEIGHT" value="15"/>
-    </module>
-
-    <module name="approach_moving_target">
-      <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/>
+      <define name="FOLLOW_ME_DISTANCE" value="60"/>
+      <define name="FOLLOW_ME_HEIGHT" value="40"/>
     </module>
 
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B115200"/>
+    </module>
+
+    <module name="approach_moving_target">
+      <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/>
     </module>
 
     <module name="ins"           type="ekf2" />
@@ -103,7 +103,6 @@
       <define name="TILT_TWIST_CTRL" value="TRUE"/>
     </module>
     <module name="stabilization" type="rate_indi"/>
-    <module name="eff_scheduling_nederdrone"/>
 
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
@@ -129,20 +128,18 @@
     <module name="guidance" type="indi_hybrid">
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
       <define name="GUIDANCE_INDI_POS_GAIN" value="0.3"/>
-      <define name="GUIDANCE_INDI_SPEED_GAIN" value="2.0"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN" value="0.5"/>
       <define name="GUIDANCE_INDI_POS_GAINZ" value="0.3"/>
-      <define name="GUIDANCE_INDI_SPEED_GAINZ" value="2.0"/>
-      <define name="GUIDANCE_INDI_DELTA_KP" value="0.8"/>
-      <define name="GUIDANCE_INDI_DELTA_KD" value="2.0"/>
+      <define name="GUIDANCE_INDI_SPEED_GAINZ" value="0.5"/>
       <define name="GUIDANCE_INDI_PITCH_LIFT_EFF" value="0.12"/>
       <define name="GUIDANCE_INDI_PITCH_EFF_SCALING" value="1.0"/>
       <define name="GUIDANCE_H_REF_MAX_SPEED" value="18.0"/> <!--not used-->
       <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="16.0"/>
       <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/> <!--heading can not be set by navigation-->
       <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="5"/>
-      <!-- <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-943.0"/> -->
-      <!-- <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_45" value="-500.0"/> -->
-      <!-- <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_FWD" value="-1600.0"/> -->
+      <!--define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-943.0"/>
+      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_45" value="-500.0"/>
+      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_FWD" value="-1600.0"/-->
       <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="0.5"/>
       <define name="GUIDANCE_INDI_LINE_GAIN" value="0.2"/>
       <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>
@@ -206,7 +203,7 @@
     <let var="th_hold"     value="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
 
     <!-- Tip props always at 80% -->
-    <call fun="actuators_pprz[8] = (Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), 0.01 > sched_ratio_tip_props)? -9600 : 9600/100*50*sched_ratio_tip_props);"/>
+    <call fun="actuators_pprz[8] = (Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), 0.01 > sched_ratio_tip_props)? -9600 : 9600/100*85*sched_ratio_tip_props);"/>
 
     <set servo="MOTOR_1"   value="($th_hold? -9600 : actuators_pprz[8])"/>
     <set servo="MOTOR_2"   value="($th_hold? -9600 : actuators_pprz[0])"/>
@@ -358,14 +355,14 @@
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">
-    <define name="ACTUATOR_NAMES" value="a1,a2,a3,a4,a5,a6,a7" type="string[]"/>
-    <define name="JSBSIM_MODEL" value="nederdrone6" type="string"/>
+    <define name="ACTUATOR_NAMES" value="a0,a1,a2,a3,a4,a5,a6,a7,a8" type="string[]"/>
+    <define name="JSBSIM_MODEL" value="nederdrone4_tem" type="string"/>
+    <define name="NO_MOTOR_MIXING" value="TRUE"/>
+    <define name="COMMANDS_NB" value="9"/>
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
     <!-- mode switch on joystick channel 5 (axis numbering starting at zero) -->
     <define name="JS_AXIS_MODE" value="4"/>
     <define name="DEBUG_SPEED_SP" value="false"/>
-    <define name="COMMANDS_NB" value="7"/>
-    <define name="NO_MOTOR_MIXING" value="TRUE"/>
   </section>
 
   <section name="AUTOPILOT">
