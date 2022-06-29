@@ -67,12 +67,12 @@
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="-65" roll="0" throttle="0" until="stage_time>1" vmode="throttle"/>
+      <attitude pitch="-50" roll="0" throttle="0.8" until="stage_time>0" vmode="throttle"/>
     </block>
     <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="GetPosHeight() @GT 18.0" deroute="Takeoff"/>
       <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="-50." roll="0" throttle="0.8" vmode="throttle"/>
+      <attitude pitch="-45." roll="0" throttle="0.9" vmode="throttle"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="GetPosHeight() @GT 40.0" deroute="Standby"/>
@@ -103,6 +103,9 @@
     <block name="stay_p1">
       <set value="FALSE" var="force_forward"/>
       <stay wp="p1"/>
+    </block>
+    <block name="Approach p1">
+      <stay pre_call="approach_moving_target_enable(WP_p1)" wp="p1" alt="WaypointAlt(WP_p1)"/>
     </block>
     <block name="go_p2">
       <set value="TRUE" var="force_forward"/>

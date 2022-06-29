@@ -81,7 +81,7 @@ static bool verbose = false;
 static struct endpoint_t gps_ep;
 static struct gps_ubx_t gps_ubx;
 static struct gps_rtcm_t gps_rtcm;
-static uint8_t ac_id = 1;
+static uint8_t ac_id = 14;
 static float ground_heading = NAN;
 
 void packet_handler(void *ep, uint8_t *data, uint16_t len);
@@ -601,7 +601,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
           IvySendMsg("ground FLIGHT_PARAM GCS %f %f %f %f %f %f %f %f %f %f %f %d %f",
                 0.0, // roll,
                 0.0, // pitch,
-                ground_heading, // heading
+                45.0, // heading
                 lat,
                 lon,
                 gSpeed,
@@ -622,7 +622,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
                 gSpeed,
                 -velD,
                 headMot,
-                ground_heading);
+                45.0);
           break;
         }
         case UBX_NAV_RELPOSNED_ID: {
@@ -657,7 +657,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
       if(verbose) printf("Got a succesfull RTCM message [%d]\r\n", RTCMgetbitu(gps_rtcm.msg_buf, 24 + 0, 12));
 
       /* Forward the message to inject into the drone */
-      send_gps_inject(gps_rtcm.msg_buf, gps_rtcm.len + 6);
+      //send_gps_inject(gps_rtcm.msg_buf, gps_rtcm.len + 6);
 
       gps_rtcm.msg_available = false;
     }
