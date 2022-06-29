@@ -194,6 +194,9 @@ float Wv_z = 10.0;
 bool theta_slowdown = false;
 bool thrust_slowdown = true;
 float quad_pitch_limiter = 1.0;
+float abx = 1.0;
+float aby = 1.0;
+float abz = 1.0;
 
 float hybrid_roll_limit = 0.785; // 45 deg
 float hybrid_pitch_limit = 0.209;//12 deg//0.349; // 20 deg
@@ -430,9 +433,12 @@ void guidance_indi_run(float *heading_sp) {
   vect_bound_in_2d(&sp_accel, accelbound);
   /*BoundAbs(sp_accel.x, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);*/
   /*BoundAbs(sp_accel.y, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);*/
-  BoundAbs(sp_accel.x, 1.0);
-  BoundAbs(sp_accel.y, 1.0);
-  BoundAbs(sp_accel.z, 1.0);
+  // BoundAbs(sp_accel.x, 1.0);
+  // BoundAbs(sp_accel.y, 1.0);
+  // BoundAbs(sp_accel.z, 1.0);
+  BoundAbs(sp_accel.x, abx);
+  BoundAbs(sp_accel.y, aby);
+  BoundAbs(sp_accel.z, abz);
   acc_body_ref_c.x = cosf(psi) * sp_accel.x + sinf(psi) * sp_accel.y;
   acc_body_ref_c.y = -sinf(psi) * sp_accel.x + cosf(psi) * sp_accel.y;
   acc_body_ref_c.z = sp_accel.z;

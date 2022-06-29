@@ -628,6 +628,10 @@ void schedule_pref_pitch_angle(float s_rot_wing_angle, float airspeed)
   if (airspeed < 3){
   pitch_pref_deg = 0 ;
   }
+  else if (airspeed >= 3 && airspeed < 6 )
+  {
+  pitch_pref_deg = -2 ;
+  }
   else {float pitch_diff_deg = pitch_pref_range_deg * s_rot_wing_angle;
   pitch_pref_deg = rot_wing_pitch_pref_hover_deg + pitch_diff_deg;
   }

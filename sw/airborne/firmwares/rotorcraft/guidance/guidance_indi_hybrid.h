@@ -83,6 +83,10 @@ extern struct FloatVect3 speed_ref_c;
 extern struct FloatVect3 acc_body_ref_c;
 extern struct FloatVect3 acc_body_c;
 
+extern float abx;
+extern float aby;
+extern float abz;
+
 extern float proj_wp_dist;
 extern bool roll_zero;
 #endif /* GUIDANCE_INDI_HYBRID_H */
