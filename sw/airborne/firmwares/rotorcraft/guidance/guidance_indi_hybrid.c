@@ -430,7 +430,9 @@ void guidance_indi_run(float *heading_sp) {
   vect_bound_in_2d(&sp_accel, accelbound);
   /*BoundAbs(sp_accel.x, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);*/
   /*BoundAbs(sp_accel.y, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);*/
-  BoundAbs(sp_accel.z, 3.0);
+  BoundAbs(sp_accel.x, 1.0);
+  BoundAbs(sp_accel.y, 1.0);
+  BoundAbs(sp_accel.z, 1.0);
   acc_body_ref_c.x = cosf(psi) * sp_accel.x + sinf(psi) * sp_accel.y;
   acc_body_ref_c.y = -sinf(psi) * sp_accel.x + cosf(psi) * sp_accel.y;
   acc_body_ref_c.z = sp_accel.z;
