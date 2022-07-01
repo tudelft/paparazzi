@@ -121,7 +121,7 @@ Butterworth2LowPass airspeed_skew_filter;
 bool automatic_rot   = false;
 float f_cutoff = 0.2;
 float airspeed_q [skew_size] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
-float skew_q [skew_size]     = {0,0,0,0,0,0,30,30,30,30,30,30,90,90,90,90,90};
+float skew_q [skew_size]     = {0,0,0,0,0,0,30,30,30,30,60,60,90,90,90,90,90};
 void skew_interpoler(void)
 {
   float airspeed = stateGetAirspeed_f();

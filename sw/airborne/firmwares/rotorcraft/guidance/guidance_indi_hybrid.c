@@ -196,7 +196,7 @@ bool thrust_slowdown = true;
 float quad_pitch_limiter = 1.0;
 // float abx = 1.0;
 // float aby = 1.0;
-float ab = 1.0;
+float ab = 0.8;
 float abz = 3.0;
 
 float hybrid_roll_limit = 0.785; // 45 deg
