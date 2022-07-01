@@ -194,8 +194,9 @@ float Wv_z = 10.0;
 bool theta_slowdown = false;
 bool thrust_slowdown = true;
 float quad_pitch_limiter = 1.0;
-float abx = 1.0;
-float aby = 1.0;
+// float abx = 1.0;
+// float aby = 1.0;
+float ab = 1.0;
 float abz = 3.0;
 
 float hybrid_roll_limit = 0.785; // 45 deg
@@ -430,19 +431,22 @@ void guidance_indi_run(float *heading_sp) {
   
   // Bound the acceleration setpoint
   float accelbound = 3.0 + airspeed/guidance_indi_max_airspeed*5.0;
-  vect_bound_in_2d(&sp_accel, accelbound);
+  //vect_bound_in_2d(&sp_accel, accelbound);
 
   // BoundAbs(sp_accel.x, 1.0);
   // BoundAbs(sp_accel.y, 1.0);
   // BoundAbs(sp_accel.z, 1.0);
-  if (airspeed > 8 && wing_rotation.wing_angle_deg > 80)
-   { BoundAbs(sp_accel.x, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);
-     BoundAbs(sp_accel.y, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);
+  if (airspeed > u_motor_free && wing_rotation.wing_angle_deg > 80)
+   { 
+    // BoundAbs(sp_accel.x, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);
+    //  BoundAbs(sp_accel.y, 3.0 + airspeed/guidance_indi_max_airspeed*6.0);
+     vect_bound_in_2d(&sp_accel, accelbound);
      BoundAbs(sp_accel.z, 3.0);
    }
    else{
-    BoundAbs(sp_accel.x, abx);
-    BoundAbs(sp_accel.y, aby);
+    vect_bound_in_2d(&sp_accel, ab);
+    // BoundAbs(sp_accel.x, abx);
+    // BoundAbs(sp_accel.y, aby);
     BoundAbs(sp_accel.z, abz);
    }
 
