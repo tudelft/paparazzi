@@ -92,14 +92,15 @@
             <define name="MS45XX_PRESSURE_OFFSET" value="8505.7" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
     <!--        <define name="MS45XX_AIRSPEED_SCALE" value="1.6327"/> &lt;!&ndash;description="quadratic scale factor to convert differential pressure to airspeed"&ndash;&gt;-->
             <define name="MS45XX_LOWPASS_TAU" value="0.2"/> <!--description="Time constant for second order Butterworth low pass filter"-->
-            <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
-            <!-- <define name="USE_AIRSPEED" value="TRUE"/> -->
+            <!-- <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> -->
+             <!--description="Set airspeed in state interface for this sensor" -->
+            <define name="USE_AIRSPEED" value="TRUE"/>
         </module>
   
         <module NAME="wing_rotation_controller">
-                <define VALUE="3330" NAME="WING_ROTATION_POSITION_ADC_0"/>
+                <define VALUE="3188" NAME="WING_ROTATION_POSITION_ADC_0"/>
                  <define VALUE="500"  NAME="WING_ROTATION_POSITION_ADC_90"/> <!--774 -->
-                <define VALUE="-170000"  NAME="WING_ROTATION_P_GAIN"/>
+                <define VALUE="170000"  NAME="WING_ROTATION_P_GAIN"/>
                 <define VALUE="9600"  NAME="WING_ROTATION_MAX_CMD"/>
                 <define VALUE="300" NAME="WING_ROTATION_DEADZONE_PPRZ_CMD"/>
                 <define VALUE="9" NAME="WING_ROTATION_SERVO_IDX"/>
@@ -136,7 +137,7 @@
         <servo NO="6" NEUTRAL="1500" NAME="VTAIL_LEFT" MIN="1100" MAX="1900"/>
         <servo NO="7" NEUTRAL="1500" NAME="VTAIL_RIGHT" MIN="1100" MAX="1900"/>
         <servo NO="8" NEUTRAL="1035" NAME="MOTOR_FWD" MIN="1000" MAX="2000"/>
-        <servo NO="9" NEUTRAL="1520" NAME="WING_ROT" MIN="1420" MAX="1620"/>
+        <servo NO="9" NEUTRAL="1520" NAME="WING_ROT" MIN="1000" MAX="2000"/>
     </servos>
 
     <commands>
