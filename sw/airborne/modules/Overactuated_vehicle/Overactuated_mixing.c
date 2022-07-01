@@ -539,7 +539,7 @@ void assign_variables(void){
     airspeed = ms45xx.airspeed;
     aoa_deg = adc_generic_val2;
     beta_deg = - aoa_pwm.angle * 180/M_PI;
-    if (abs(beta_deg) > 200){
+    if (fabs(beta_deg) > 200){
         beta_deg = 0;
     }
     beta_rad = beta_deg * M_PI / 180;
