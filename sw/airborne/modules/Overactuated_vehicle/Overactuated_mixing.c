@@ -139,8 +139,6 @@ struct am7_data_in myam7_data_in_local;
 Butterworth2LowPass measurement_rates_filters[3]; //Filter of pqr
 Butterworth2LowPass measurement_acc_filters[3];   //Filter of acceleration
 Butterworth2LowPass actuator_state_filters[N_ACT_REAL];   //Filter of actuators
-// Butterworth2LowPass angular_error_dot_filters[3]; //Filter of angular error
-// Butterworth2LowPass position_error_dot_filters[3];//Filter of position error
 
 Butterworth2LowPass accely_filt;//Filter of lateral acceleration for turn correction
 
@@ -220,7 +218,7 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
     // Send telemetry message
 
     pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID ,
-                                         & airspeed, & accely_filt.o[0], & beta_deg,
+                                         & airspeed, & aoa_deg, & beta_deg,
                                          & pos_vect[0], & pos_vect[1], & pos_vect[2],
                                          & speed_vect[0], & speed_vect[1], & speed_vect[2],
                                          & acc_vect_filt[0], & acc_vect_filt[1], & acc_vect_filt[2],
@@ -373,6 +371,9 @@ void from_body_to_earth(float * out_array, float * in_array, float Phi, float Th
     }
 }
 
+/**
+ * Transpose an array from earth reference frame to body reference frame
+ */
 void from_earth_to_body(float * out_array, float * in_array, float Phi, float Theta, float Psi){
     float R_bg_matrix[3][3];
     R_bg_matrix[0][0] = cos(Theta)*cos(Psi);
@@ -605,8 +606,8 @@ void overactuated_mixing_run()
     assign_variables();
 
     /// Case of manual PID control [FAILSAFE]
-        if(0){
-    // if(radio_control.values[RADIO_MODE] < 500) {
+        // if(0){
+    if(radio_control.values[RADIO_MODE] < 500) {
 
 
         //INIT AND BOOLEAN RESET
@@ -700,8 +701,8 @@ void overactuated_mixing_run()
     }
 
     /// Case of INDI control mode with external nonlinear function:
-       if(1)
-    // if(radio_control.values[RADIO_MODE] > 500 )
+    //    if(1)
+    if(radio_control.values[RADIO_MODE] > 500 )
     {
 
         //INIT AND BOOLEAN RESET
@@ -795,8 +796,12 @@ void overactuated_mixing_run()
 //              yaw_rate_setpoint_turn = accel_vect_control_rf[1] / airspeed_turn - K_beta * accely;
 //            yaw_rate_setpoint_turn = accel_vect_control_rf[1]/total_V + K_beta * beta_rad;
 //            yaw_rate_setpoint_turn = K_beta * beta_rad;
+
             //Creating the setpoint using the desired lateral acceleration and the body correction:
             yaw_rate_setpoint_turn = acc_setpoint_control_rf[1]/airspeed_turn - K_beta * accely_filt.o[0];
+
+            //Secpnd option, create the yaw rate setpoint based on phi and lateral body acceleration: 
+            // yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accely_filt.o[0];
         }
         fwd_multiplier_yaw = (airspeed - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION) / (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION);
         Bound(fwd_multiplier_yaw , 0, 1);
