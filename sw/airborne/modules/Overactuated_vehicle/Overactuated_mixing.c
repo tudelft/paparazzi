@@ -139,8 +139,10 @@ struct am7_data_in myam7_data_in_local;
 Butterworth2LowPass measurement_rates_filters[3]; //Filter of pqr
 Butterworth2LowPass measurement_acc_filters[3];   //Filter of acceleration
 Butterworth2LowPass actuator_state_filters[N_ACT_REAL];   //Filter of actuators
-Butterworth2LowPass angular_error_dot_filters[3]; //Filter of angular error
-Butterworth2LowPass position_error_dot_filters[3];//Filter of position error
+// Butterworth2LowPass angular_error_dot_filters[3]; //Filter of angular error
+// Butterworth2LowPass position_error_dot_filters[3];//Filter of position error
+
+Butterworth2LowPass accely_filt;//Filter of lateral acceleration for turn correction
 
 struct PID_over pid_gains_over = {
         .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
@@ -218,7 +220,7 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
     // Send telemetry message
 
     pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID ,
-                                         & airspeed, & aoa_deg, & beta_deg,
+                                         & airspeed, & accely_filt.o[0], & beta_deg,
                                          & pos_vect[0], & pos_vect[1], & pos_vect[2],
                                          & speed_vect[0], & speed_vect[1], & speed_vect[2],
                                          & acc_vect_filt[0], & acc_vect_filt[1], & acc_vect_filt[2],
@@ -280,6 +282,9 @@ void init_filters(void){
         init_butterworth_2_low_pass(&measurement_rates_filters[i], tau_ang_acc, sample_time, 0.0);
         init_butterworth_2_low_pass(&measurement_acc_filters[i], tau_lin_acc, sample_time, 0.0);
     }
+
+    //Initialize filter for the lateral acceleration to correct the turn: 
+    init_butterworth_2_low_pass(&accely_filt, tau_lin_acc, sample_time, 0.0);
 
     //Initialize to zero the variables of get_actuator_state_v2:
     for(int i = 0; i < INDI_NUM_ACT; i++){
@@ -573,6 +578,9 @@ void assign_variables(void){
         acc_vect_filt[i] = measurement_acc_filters[i].o[0];
     }
 
+    float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
+    update_butterworth_2_low_pass(&accely_filt, accely);
+
     //Computation of the matrix to pass from euler to body rates
     R_matrix[0][0]=1; R_matrix[0][1]=0; R_matrix[0][2]=0;
     R_matrix[1][0]=0; R_matrix[1][1]=cos(euler_vect[0]); R_matrix[1][2]=-sin(euler_vect[0]);
@@ -596,10 +604,10 @@ void overactuated_mixing_run()
     //Assign variables
     assign_variables();
 
-
     /// Case of manual PID control [FAILSAFE]
-    if(radio_control.values[RADIO_MODE] < 500) {
-//     if(0){
+        if(0){
+    // if(radio_control.values[RADIO_MODE] < 500) {
+
 
         //INIT AND BOOLEAN RESET
         if(FAILSAFE_engaged == 0 ){
@@ -692,8 +700,8 @@ void overactuated_mixing_run()
     }
 
     /// Case of INDI control mode with external nonlinear function:
-    if(radio_control.values[RADIO_MODE] > 500 )
-//    if(1)
+       if(1)
+    // if(radio_control.values[RADIO_MODE] > 500 )
     {
 
         //INIT AND BOOLEAN RESET
@@ -781,8 +789,6 @@ void overactuated_mixing_run()
         //We are dividing by the airspeed, so a lower bound is important
         Bound(airspeed_turn,10.0,30.0);
 
-        float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
-
         if(airspeed > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
 //            yaw_rate_setpoint_turn = 9.81 / airspeed_turn * tan(euler_vect[0]) - K_beta * accely;
 //            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/total_V;
@@ -790,7 +796,7 @@ void overactuated_mixing_run()
 //            yaw_rate_setpoint_turn = accel_vect_control_rf[1]/total_V + K_beta * beta_rad;
 //            yaw_rate_setpoint_turn = K_beta * beta_rad;
             //Creating the setpoint using the desired lateral acceleration and the body correction:
-            yaw_rate_setpoint_turn = acc_setpoint_control_rf[1]/airspeed_turn - K_beta * accely;
+            yaw_rate_setpoint_turn = acc_setpoint_control_rf[1]/airspeed_turn - K_beta * accely_filt.o[0];
         }
         fwd_multiplier_yaw = (airspeed - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION) / (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION);
         Bound(fwd_multiplier_yaw , 0, 1);
