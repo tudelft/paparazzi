@@ -331,14 +331,14 @@
     <define name="MIN_AOA_INDI" value="-15" unit="deg"/>
 
     <!-- Filters properties for INDI -->
-    <define name="FILT_CUTOFF_ANG_RATES" value="25" unit="rad/s"/>
-    <define name="FILT_CUTOFF_LIN_ACC" value="25" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_EL" value="25" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="25" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="25" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ANG_RATES" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_LIN_ACC" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_EL" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="20" unit="rad/s"/>
 
     <!-- INDI properties [weights] -->
-    <define name="W_ACT_MOTOR_CONST" value="4"/>
+    <define name="W_ACT_MOTOR_CONST" value="3"/>
     <define name="W_ACT_MOTOR_SPEED" value="0"/>
     <define name="W_ACT_EL_CONST" value="1"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
@@ -351,13 +351,13 @@
 
     <define name="W_DV_1" value="0.01"/>
     <define name="W_DV_2" value="0.01"/>
-    <define name="W_DV_3" value="0.02"/>
+    <define name="W_DV_3" value="0.01"/>
     <define name="W_DV_4" value=".2"/>
     <define name="W_DV_5" value=".2"/>
-    <define name="W_DV_6" value="0.005"/>
+    <define name="W_DV_6" value="0.01"/>
 
     <define name="GAMMA_QUADRATIC_DV" value="1"/>
-    <define name="GAMMA_QUADRATIC_DU" value="2e-5"/>
+    <define name="GAMMA_QUADRATIC_DU" value="1e-5"/>
     <define name="GAMMA_QUADRATIC_WLS" value="10000"/>
 
     <define name="MAX_ITER_WLS" value="100"/>
