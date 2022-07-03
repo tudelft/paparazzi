@@ -324,10 +324,13 @@
     <define name="SERVO_AZ_3_ZERO_VALUE" value="0" unit="deg"/>
     <define name="SERVO_AZ_4_ZERO_VALUE" value="0" unit="deg"/>
 
+        <!-- Also, notice that the MAX_AOA_INDI, if set to a value greater than 3, will be used as  -->
+        <!-- hard constraint during the wls optimization process for the tilting angles.  -->
+
     <define name="MAX_THETA_INDI" value="100" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-30" unit="deg"/>
     <define name="MAX_PHI_INDI" value="40" unit="deg"/>
-    <define name="MAX_AOA_INDI" value="15" unit="deg"/>
+    <define name="MAX_AOA_INDI" value="0" unit="deg"/>
     <define name="MIN_AOA_INDI" value="-15" unit="deg"/>
 
     <!-- Filters properties for INDI -->
