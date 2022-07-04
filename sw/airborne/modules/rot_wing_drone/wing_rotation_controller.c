@@ -107,7 +107,7 @@ static struct adc_buf buf_wing_rot_pos;
 static struct adc_buf buf_wing_rot_servo;
 #endif
 
-float max_rotation_rate = 0.1955; // rotational rate of wing rotation [rad/s]
+float max_rotation_rate = 0.105; // rotational rate of wing rotation [rad/s] OLD value 0.1955
 
 // Parameters
 struct wing_rotation_controller wing_rotation;
@@ -118,7 +118,7 @@ Butterworth2LowPass airspeed_skew_filter;
 
 // Automatic Wing Rotation
 #define skew_size 17
-bool automatic_rot   = false;
+bool automatic_rot   = true;
 float f_cutoff = 0.2;
 float airspeed_q [skew_size] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
 float skew_q [skew_size]     = {0,0,0,0,0,0,30,30,30,30,60,60,90,90,90,90,90};
