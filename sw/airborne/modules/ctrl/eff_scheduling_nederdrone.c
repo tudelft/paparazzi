@@ -30,6 +30,8 @@ not use this module at the same time!
 #include "modules/ctrl/eff_scheduling_nederdrone.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #include "state.h"
+#include "modules/radio_control/radio_control.h"
+#include "generated/radio.h"
 #define INDI_SCHEDULING_LOWER_BOUND_G1 0.0001
 
 // Airspeed at which tip props should be turned on
@@ -113,7 +115,7 @@ void ctrl_eff_scheduling_periodic(void)
   // Tip prop ratio
   float pitch_deg = eulers_zxy.theta / M_PI * 180.f;
   float pitch_range_deg = sched_tip_prop_upper_pitch_limit_deg - sched_tip_prop_lower_pitch_limit_deg;
-  if (sched_tip_props_always_on || low_airspeed) {
+  if (sched_tip_props_always_on || low_airspeed || radio_control.values[RADIO_AUX2] > 0) {
     sched_ratio_tip_props = 1.0;
   } else if (pitch_deg > sched_tip_prop_upper_pitch_limit_deg) {
     sched_ratio_tip_props = 1.0;
