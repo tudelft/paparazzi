@@ -314,7 +314,7 @@
     <!-- with big battery -->
     <!-- <define name="G1_THRUST" value="{-0.3,   -0.3,   -0.45, -0.45, 0.0,   0.0,   0.0,  0.0}"/> -->
     <!-- without big battery -->
-    <define name="G1_THRUST" value="{-0.37, -0.37,   -0.55, -0.55, 0.0,   0.0,   0.0,  0.0}"/>
+    <define name="G1_THRUST" value="{-0.37, -0.37,  -0.55, -0.55,   0.0,   0.0,   0.0,  0.0}"/>
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{0, 0, 0, 0, 0, 0, 0, 0}"/>
 
@@ -322,7 +322,10 @@
     <define name="G1_ROLL_FWD"   value="{ 0.253, -0.253, 0.684, -0.684, 0.0,   0.0,   0.0,  0.0}"/>
     <define name="G1_PITCH_FWD"  value="{ 0.3,    0.3,  -0.6,   -0.6,  -1.4,  -1.4,  -1.4, -1.4}"/>
     <define name="G1_YAW_FWD"    value="{ 0.0,    0.0,   0.0,    0.0,   0.94, -0.94, -0.94, 0.94}"/>
-    <define name="G1_THRUST_FWD" value="{-0.18   -0.18,  -0.27, -0.27,  0.0,   0.0,   0.0,  0.0}"/>
+    <!-- with big battery -->
+    <!-- <define name="G1_THRUST_FWD" value="{-0.18   -0.18,  -0.27, -0.27,  0.0,   0.0,   0.0,  0.0}"/> -->
+    <!-- without big battery -->
+    <define name="G1_THRUST_FWD" value="{-0.22   -0.22,  -0.33, -0.33,  0.0,   0.0,   0.0,  0.0}"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="30.0"/>
