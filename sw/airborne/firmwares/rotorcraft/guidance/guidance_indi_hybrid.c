@@ -445,7 +445,8 @@ void guidance_indi_run(float *heading_sp) {
    }
    else if(airspeed > (u_motor_free-2) && wing_rotation.wing_angle_deg > 70)
     {
-    float ab_smooth = (accelbound-ab) / (80-70)*(wing_rotation.wing_angle_deg-70)+ab;  
+    //float ab_smooth = (accelbound-ab) / (80-70)*(wing_rotation.wing_angle_deg-70)+ab;
+    float ab_smooth = (accelbound-ab) / (2)*(airspeed-u_motor_free+2)+ab;  
     vect_bound_in_2d(&sp_accel, ab_smooth);
     BoundAbs(sp_accel.z, abz); 
     }
