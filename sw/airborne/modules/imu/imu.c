@@ -416,6 +416,7 @@ static void imu_gyro_raw_cb(uint8_t sender_id, uint32_t stamp, struct Int32Rates
   int32_rmat_transp_ratemult(&scaled_rot, &gyro->body_to_sensor, &scaled);
 
 #if IMU_INTEGRATION
+aa
   // Only integrate if we have gotten a previous measurement and didn't overflow the timer
   if(gyro->last_stamp > 0 && stamp > gyro->last_stamp) {
     struct FloatRates integrated;
