@@ -48,6 +48,7 @@
       <message name="GPS_RTK"                  period="0.1"/>
       <message name="INDI_G"                   period="0.1"/>
       <message name="ACTUATORS"                period="0.1"/>
+      <message name="STAB_ATTITUDE_FULL_INDI"  period="0.05"/>
     </mode>
 
     <mode name="calibration">
@@ -224,8 +225,8 @@
       <message name="STATE_FILTER_STATUS"      period="3.2"/>
       <message name="AIR_DATA"                 period="0.02"/>
       <message name="SURVEY"                   period="2.5"/>
-      <message name="IMU_GYRO_SCALED"          period=".002"/>
-      <message name="IMU_ACCEL_SCALED"         period=".002"/>
+      <message name="IMU_GYRO_SCALED"          period=".0006667"/>
+      <message name="IMU_ACCEL_SCALED"         period=".0006667"/>
       <message name="IMU_MAG_SCALED"           period=".0125"/>
       <message name="LIDAR"                    period="0.05"/>
       <message name="INS_EKF2"                 period="0.05"/>
@@ -242,6 +243,7 @@
       <message name="INDI_G"                   period="0.1"/>
       <message name="ACTUATORS"                period="0.002"/>
       <message name="GPS_RTK"                  period="0.1"/>
+      <message name="STAB_ATTITUDE_FULL_INDI"  period="0.002"/>
       <!--<message name="WINDTUNNEL_MEAS"          period="0.005"/>-->
     </mode>
   </process>
