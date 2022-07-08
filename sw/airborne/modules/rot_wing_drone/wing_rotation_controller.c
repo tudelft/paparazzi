@@ -345,5 +345,7 @@ void wing_servo_to_rad(void)
 void wing_rotation_update_sp(void)
 {
   if (automatic_rot){skew_interpoler();}
+  Bound(wing_rotation.wing_angle_deg_sp,0.5,90);
   wing_rotation.wing_angle_rad_sp = wing_rotation.wing_angle_deg_sp / 180. * M_PI;
+  
 }
