@@ -314,7 +314,7 @@
     <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
-    <define name="SERVO_EL_1_ZERO_VALUE" value="-53" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="-55" unit="deg"/>
     <define name="SERVO_EL_2_ZERO_VALUE" value="-53.5" unit="deg"/>
     <define name="SERVO_EL_3_ZERO_VALUE" value="-53" unit="deg"/>
     <define name="SERVO_EL_4_ZERO_VALUE" value="-51" unit="deg"/>
@@ -339,6 +339,9 @@
     <define name="FILT_CUTOFF_ACTUATORS_EL" value="20" unit="rad/s"/>
     <define name="FILT_CUTOFF_ACTUATORS_AZ" value="20" unit="rad/s"/>
     <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="20" unit="rad/s"/>
+
+    <!-- First order filter on rates -->
+    <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0582" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
 
     <!-- INDI properties [weights] -->
     <define name="W_ACT_MOTOR_CONST" value="3"/>

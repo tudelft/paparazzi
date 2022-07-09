@@ -480,8 +480,13 @@ void assign_variables(void){
         //Calculate the angular acceleration via finite difference
         rate_vect_filt_dot[i] = (measurement_rates_filters[i].o[0]
                                  - measurement_rates_filters[i].o[1]) * PERIODIC_FREQUENCY;
-        rate_vect_filt[i] = measurement_rates_filters[i].o[0];
+        
         acc_vect_filt[i] = measurement_acc_filters[i].o[0];
+
+        // rate_vect_filt[i] = measurement_rates_filters[i].o[0];
+
+        //Use first order filter for the rates: 
+        rate_vect_filt[i] = rate_vect_filt[i] + OVERACTUATED_MIXING_FIRST_ORDER_FILTER_COEFF_ANG_RATES * (rate_vect[i] - rate_vect_filt[i]);
     }
 
     //Computation of the matrix to pass from euler to body rates
