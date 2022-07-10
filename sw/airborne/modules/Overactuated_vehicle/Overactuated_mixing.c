@@ -67,7 +67,7 @@ float pos_order_earth[3];
 float euler_order[3];
 float psi_order_motor = 0;
 
-float K_beta = 0.2;
+float K_beta = 0.1;
 
 //Flight states variables:
 bool INDI_engaged = 0, FAILSAFE_engaged = 0, PID_engaged = 0;
@@ -139,8 +139,8 @@ struct am7_data_in myam7_data_in_local;
 Butterworth2LowPass measurement_rates_filters[3]; //Filter of pqr
 Butterworth2LowPass measurement_acc_filters[3];   //Filter of acceleration
 Butterworth2LowPass actuator_state_filters[N_ACT_REAL];   //Filter of actuators
-Butterworth2LowPass angular_error_dot_filters[3]; //Filter of angular error
-Butterworth2LowPass position_error_dot_filters[3];//Filter of position error
+
+Butterworth2LowPass accely_filt;//Filter of lateral acceleration for turn correction
 
 struct PID_over pid_gains_over = {
         .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
@@ -281,6 +281,9 @@ void init_filters(void){
         init_butterworth_2_low_pass(&measurement_acc_filters[i], tau_lin_acc, sample_time, 0.0);
     }
 
+    //Initialize filter for the lateral acceleration to correct the turn: 
+    init_butterworth_2_low_pass(&accely_filt, tau_lin_acc, sample_time, 0.0);
+
     //Initialize to zero the variables of get_actuator_state_v2:
     for(int i = 0; i < INDI_NUM_ACT; i++){
         for(int j = 0; j < actuator_mem_buf_size; j++ ){
@@ -368,6 +371,9 @@ void from_body_to_earth(float * out_array, float * in_array, float Phi, float Th
     }
 }
 
+/**
+ * Transpose an array from earth reference frame to body reference frame
+ */
 void from_earth_to_body(float * out_array, float * in_array, float Phi, float Theta, float Psi){
     float R_bg_matrix[3][3];
     R_bg_matrix[0][0] = cos(Theta)*cos(Psi);
@@ -578,6 +584,9 @@ void assign_variables(void){
 
     }
 
+    float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
+    update_butterworth_2_low_pass(&accely_filt, accely);
+
     //Computation of the matrix to pass from euler to body rates
     R_matrix[0][0]=1; R_matrix[0][1]=0; R_matrix[0][2]=0;
     R_matrix[1][0]=0; R_matrix[1][1]=cos(euler_vect[0]); R_matrix[1][2]=-sin(euler_vect[0]);
@@ -601,10 +610,10 @@ void overactuated_mixing_run()
     //Assign variables
     assign_variables();
 
-
     /// Case of manual PID control [FAILSAFE]
+        // if(0){
     if(radio_control.values[RADIO_MODE] < 500) {
-//     if(0){
+
 
         //INIT AND BOOLEAN RESET
         if(FAILSAFE_engaged == 0 ){
@@ -697,8 +706,8 @@ void overactuated_mixing_run()
     }
 
     /// Case of INDI control mode with external nonlinear function:
+    //    if(1)
     if(radio_control.values[RADIO_MODE] > 500 )
-//    if(1)
     {
 
         //INIT AND BOOLEAN RESET
@@ -786,17 +795,20 @@ void overactuated_mixing_run()
         //We are dividing by the airspeed, so a lower bound is important
         Bound(airspeed_turn,10.0,30.0);
 
-        float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
-
         if(airspeed > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
 //            yaw_rate_setpoint_turn = 9.81 / airspeed_turn * tan(euler_vect[0]) - K_beta * accely;
 //            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/total_V;
 //              yaw_rate_setpoint_turn = accel_vect_control_rf[1] / airspeed_turn - K_beta * accely;
 //            yaw_rate_setpoint_turn = accel_vect_control_rf[1]/total_V + K_beta * beta_rad;
 //            yaw_rate_setpoint_turn = K_beta * beta_rad;
+
             //Creating the setpoint using the desired lateral acceleration and the body correction:
-            yaw_rate_setpoint_turn = acc_setpoint_control_rf[1]/airspeed_turn - K_beta * accely;
+            // yaw_rate_setpoint_turn = acc_setpoint_control_rf[1]/airspeed_turn - K_beta * accely_filt.o[0];
+
+            //Secpnd option, create the yaw rate setpoint based on phi and lateral body acceleration: 
+            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accely_filt.o[0];
         }
+
         fwd_multiplier_yaw = (airspeed - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION) / (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION);
         Bound(fwd_multiplier_yaw , 0, 1);
         lat_speed_multiplier = 1 - fwd_multiplier_yaw; // 1 until min_speed and 0 above ref_speed
@@ -938,7 +950,9 @@ void overactuated_mixing_run()
 
         am7_data_out_local.airspeed_state_int = (int16_t) (airspeed * 1e2);
 
-        am7_data_out_local.beta_state_int = (int16_t) (beta_deg * 1e2);
+        float fake_beta = 0;
+
+        am7_data_out_local.beta_state_int = (int16_t) (fake_beta * 1e2);
 
         am7_data_out_local.pseudo_control_ax_int = (int16_t) (INDI_pseudocontrol[0] * 1e2);
         am7_data_out_local.pseudo_control_ay_int = (int16_t) (INDI_pseudocontrol[1] * 1e2);

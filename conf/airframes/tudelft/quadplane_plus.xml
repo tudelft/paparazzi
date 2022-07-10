@@ -146,15 +146,16 @@
 
     <!--     For OUTSIDE -->
     <module name="gps" type="ublox">
-      <configure name="GPS_BAUD" value="B460800"/><!-- UBX message only but rate set to ~12HZ with GPS, GLONASS, BEIDU and GALILEIO at the SAME time is lots of GNSS data-->
+      <configure name="GPS_BAUD" value="B460800"/> 
+      <!-- UBX message only but rate set to ~12HZ with GPS, GLONASS, BEIDU and GALILEIO at the SAME time is lots of GNSS data -->
     </module>
 
     <!--     For OPTITRACK -->
-<!--    <module name="gps"           type="datalink">-->
-<!--      <define name="INS_USE_GPS_ALT" value="1"/>-->
-<!--      <define name="INS_VFF_R_GPS" value="0.09"/>-->
-<!--      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>-->
-<!--    </module>-->
+   <!-- <module name="gps"           type="datalink"> -->
+     <!-- <define name="INS_USE_GPS_ALT" value="1"/> -->
+     <!-- <define name="INS_VFF_R_GPS" value="0.09"/> -->
+     <!-- <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> -->
+   <!-- </module> -->
 
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
@@ -261,12 +262,12 @@
 
   <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
     <!-- Maximum limits of the vehicle in manual speed control mode. limits are in the control rf -->
-    <define name="MAX_FWD_SPEED" value="15.0" unit="m/s"/>
+    <define name="MAX_FWD_SPEED" value="20.0" unit="m/s"/>
     <define name="MIN_FWD_SPEED" value="-3.0" unit="m/s"/>
     <define name="MAX_LAT_SPEED" value="5.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_FWD_ACC" value="6.0" unit="m/s^2"/>
-    <define name="MAX_LAT_ACC" value="5.0" unit="m/s^2"/>
+    <define name="MAX_LAT_ACC" value="6.0" unit="m/s^2"/>
     <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/>
   </section>
 
@@ -406,7 +407,7 @@
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
     <define name="MAX_PHI_INDI" value="40" unit="deg"/>
-    <define name="MAX_AOA_INDI" value="15" unit="deg"/>
+    <define name="MAX_AOA_INDI" value="20" unit="deg"/>
     <define name="MIN_AOA_INDI" value="-15" unit="deg"/>
 
     <define name="SPEED_AOA_PROTECTION" value="6" unit="m/s"/>
@@ -435,7 +436,7 @@
 
     <define name="W_DV_1" value="0.01"/>
     <define name="W_DV_2" value="0.01"/>
-    <define name="W_DV_3" value="0.02"/>
+    <define name="W_DV_3" value="0.01"/>
     <define name="W_DV_4" value=".2"/>
     <define name="W_DV_5" value=".2"/>
     <define name="W_DV_6" value="0.005"/>
@@ -443,8 +444,8 @@
     <define name="GAMMA_QUADRATIC_DU" value="1e-5"/>
 
     <!-- FWD flight properties -->
-    <define name="MIN_SPEED_TRANSITION" value="5.0" unit="m/s"/>
-    <define name="REF_SPEED_TRANSITION" value="8.0" unit="m/s"/>
+    <define name="MIN_SPEED_TRANSITION" value="6.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION" value="9.0" unit="m/s"/>
 
   </section>
 
