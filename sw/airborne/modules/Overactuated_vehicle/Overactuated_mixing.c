@@ -223,7 +223,7 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
                                          & speed_vect[0], & speed_vect[1], & speed_vect[2],
                                          & acc_vect_filt[0], & acc_vect_filt[1], & acc_vect_filt[2],
                                          & rate_vect_filt_dot[0], & rate_vect_filt_dot[1], & rate_vect_filt_dot[2],
-                                         & rate_vect[0], & rate_vect[1], & rate_vect[2],
+                                         & rate_vect_filt[0], & rate_vect_filt[1], & rate_vect_filt[2],
                                          & euler_vect[0], & euler_vect[1], & euler_vect[2],
                                          & euler_setpoint[0], & euler_setpoint[1], & euler_setpoint[2],
                                          & pos_setpoint[0], & pos_setpoint[1], & pos_setpoint[2],
@@ -539,7 +539,7 @@ void assign_variables(void){
     airspeed = ms45xx.airspeed;
     aoa_deg = adc_generic_val2;
     beta_deg = - aoa_pwm.angle * 180/M_PI;
-    if (abs(beta_deg) > 200){
+    if (fabs(beta_deg) > 200){
         beta_deg = 0;
     }
     beta_rad = beta_deg * M_PI / 180;
@@ -569,8 +569,13 @@ void assign_variables(void){
         //Calculate the angular acceleration via finite difference
         rate_vect_filt_dot[i] = (measurement_rates_filters[i].o[0]
                                  - measurement_rates_filters[i].o[1]) * PERIODIC_FREQUENCY;
-        rate_vect_filt[i] = measurement_rates_filters[i].o[0];
+
+        // rate_vect_filt[i] = measurement_rates_filters[i].o[0];
+
         acc_vect_filt[i] = measurement_acc_filters[i].o[0];
+
+        rate_vect_filt[i] = rate_vect_filt[i] + OVERACTUATED_MIXING_FIRST_ORDER_FILTER_COEFF_ANG_RATES * (rate_vect[i] - rate_vect_filt[i]);
+
     }
 
     //Computation of the matrix to pass from euler to body rates
@@ -811,15 +816,16 @@ void overactuated_mixing_run()
         rate_setpoint[1] = angular_body_error[1] * indi_gains_over.p.theta;
         rate_setpoint[2] = angular_body_error[2] * indi_gains_over.p.psi;
 
-//        //Compute the angular acceleration setpoint:
-//        acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * indi_gains_over.d.phi;
-//        acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * indi_gains_over.d.theta;
-//        acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * indi_gains_over.d.psi;
+       //Compute the angular acceleration setpoint using the filtered rates:
+       acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * indi_gains_over.d.phi;
+       acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * indi_gains_over.d.theta;
+       acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * indi_gains_over.d.psi;
 
-        //Compute the angular acceleration setpoint:
-        acc_setpoint[3] = (rate_setpoint[0] - rate_vect[0]) * indi_gains_over.d.phi;
-        acc_setpoint[4] = (rate_setpoint[1] - rate_vect[1]) * indi_gains_over.d.theta;
-        acc_setpoint[5] = (rate_setpoint[2] - rate_vect[2]) * indi_gains_over.d.psi;
+        // //Compute the angular acceleration setpoint uing the unfiltered rates:
+        // acc_setpoint[3] = (rate_setpoint[0] - rate_vect[0]) * indi_gains_over.d.phi;
+        // acc_setpoint[4] = (rate_setpoint[1] - rate_vect[1]) * indi_gains_over.d.theta;
+        // acc_setpoint[5] = (rate_setpoint[2] - rate_vect[2]) * indi_gains_over.d.psi;
+
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
         // ANGULAR ACCELERATION
@@ -926,9 +932,9 @@ void overactuated_mixing_run()
 
         am7_data_out_local.gamma_state_int = (int16_t) (flight_path_angle * 1e2 * 180/M_PI);
 
-        am7_data_out_local.p_state_int = (int16_t) (rate_vect[0] * 1e1 * 180/M_PI);
-        am7_data_out_local.q_state_int = (int16_t) (rate_vect[1] * 1e1 * 180/M_PI);
-        am7_data_out_local.r_state_int = (int16_t) (rate_vect[2] * 1e1 * 180/M_PI);
+        am7_data_out_local.p_state_int = (int16_t) (rate_vect_filt[0] * 1e1 * 180/M_PI);
+        am7_data_out_local.q_state_int = (int16_t) (rate_vect_filt[1] * 1e1 * 180/M_PI);
+        am7_data_out_local.r_state_int = (int16_t) (rate_vect_filt[2] * 1e1 * 180/M_PI);
 
         am7_data_out_local.airspeed_state_int = (int16_t) (airspeed * 1e2);
 

@@ -418,6 +418,9 @@
     <define name="FILT_CUTOFF_ACTUATORS_AZ" value="25" unit="rad/s"/>
     <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="25" unit="rad/s"/>
 
+    <!-- First order filter on rates -->
+    <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0582" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
+
     <!-- INDI properties [weights] -->
     <define name="W_ACT_MOTOR_CONST" value="3"/>
     <define name="W_ACT_MOTOR_SPEED" value="0"/>
