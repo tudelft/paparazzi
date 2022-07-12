@@ -407,7 +407,7 @@
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
     <define name="MAX_PHI_INDI" value="40" unit="deg"/>
-    <define name="MAX_AOA_INDI" value="20" unit="deg"/>
+    <define name="MAX_AOA_INDI" value="15" unit="deg"/>
     <define name="MIN_AOA_INDI" value="-15" unit="deg"/>
 
     <define name="SPEED_AOA_PROTECTION" value="6" unit="m/s"/>
@@ -465,7 +465,7 @@
 
     <define name="CL_ALPHA" value="3.5"/>
     <define name="CM_ZERO" value="0.05"/>
-    <define name="CM_ALPHA" value="-0.1"/>
+    <define name="CM_ALPHA" value="-0.05"/>
     <define name="CD_ZERO" value="0.38"/>
     <define name="K_CD" value="0.2"/>
     <define name="CY_BETA" value="0"/>
