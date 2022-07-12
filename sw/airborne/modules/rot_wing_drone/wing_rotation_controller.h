@@ -46,6 +46,7 @@ struct wing_rotation_controller {
 
   // Control variables
   int32_t p_gain;
+  int32_t d_gain;
   uint32_t max_cmd;
 
   // Endpoint protection

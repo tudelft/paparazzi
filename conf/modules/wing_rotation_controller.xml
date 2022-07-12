@@ -12,6 +12,7 @@
         <dl_setting MAX="2000" MIN="0" STEP="1" VAR="wing_rotation.cmd_threshold_90" shortname="cmd_thr_90"/>
         <dl_setting MAX="0.5" MIN="0" STEP="0.001" VAR="wing_rotation.threshold_servo_rate_limit" shortname="thr_rate"/>
         <dl_setting MAX="300000" MIN="-300000" STEP="1" VAR="wing_rotation.p_gain" shortname="p_gain"/>
+        <dl_setting MAX="300000" MIN="-300000" STEP="1" VAR="wing_rotation.d_gain" shortname="d_gain"/>
         <dl_setting var="automatic_rot" min="0" step="1" max="1" values="OFF|ON" shortname="automatic_rot"/>
         <dl_setting var="f_cutoff" min="0" step="0.1" max="10" shortname="freq filter airspeed"/>
       </dl_settings>

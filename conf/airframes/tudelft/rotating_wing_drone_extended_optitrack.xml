@@ -81,17 +81,27 @@
         </module>
 
         <module name="airspeed" type="ms45xx_i2c">
-            <define name="MS45XX_PRESSURE_OFFSET" value="8469.572266"/>
-            <define name="MS45XX_AIRSPEED_SCALE" value="2.0"/>
-            <!--Gives cut-off freq of 1/(2*pi*tau) in 1Hz -->
-            <define name="MS45XX_LOWPASS_TAU" value="0.25"/>  
+            <!-- <define name="USE_I2C4"/> -->
+            <!-- 4525D5AI 001D 2126 010417094-->
+            <!-- <define name="MS45XX_I2C_DEV" value="i2c4"/> -->
+            <!--<define name="MS45XX_PRESSURE_TYPE" value="0"/> --><!--description="Pressure Differential or Gauge, default is Differential">-->
+            <define name="MS45XX_PRESSURE_RANGE" value="1" /><!-- description="pressure range in psi (default: 1)"-->
+            <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
+            <define name="MS45XX_SYNC_SEND" value="TRUE" /> <!--description="flag to enable sending every new measurement via telemetry (default:FALSE)-->
+            <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
+            <define name="MS45XX_PRESSURE_OFFSET" value="8505.7" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
+    <!--        <define name="MS45XX_AIRSPEED_SCALE" value="1.6327"/> &lt;!&ndash;description="quadratic scale factor to convert differential pressure to airspeed"&ndash;&gt;-->
+            <define name="MS45XX_LOWPASS_TAU" value="0.2"/> <!--description="Time constant for second order Butterworth low pass filter"-->
+            <!-- <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> -->
+             <!--description="Set airspeed in state interface for this sensor" -->
             <define name="USE_AIRSPEED" value="TRUE"/>
         </module>
 
         <module NAME="wing_rotation_controller">
-                <define VALUE="3389" NAME="WING_ROTATION_POSITION_ADC_0"/>
-                <define VALUE="774"  NAME="WING_ROTATION_POSITION_ADC_90"/>
-                <define VALUE="-170000"  NAME="WING_ROTATION_P_GAIN"/>
+                <define VALUE="3299" NAME="WING_ROTATION_POSITION_ADC_0"/>
+                <define VALUE="1104"  NAME="WING_ROTATION_POSITION_ADC_90"/> <!--774 -->
+                <define VALUE="40000"  NAME="WING_ROTATION_P_GAIN"/>
+                <define VALUE="-1000"  NAME="WING_ROTATION_D_GAIN"/>
                 <define VALUE="9600"  NAME="WING_ROTATION_MAX_CMD"/>
                 <define VALUE="300" NAME="WING_ROTATION_DEADZONE_PPRZ_CMD"/>
                 <define VALUE="9" NAME="WING_ROTATION_SERVO_IDX"/>
@@ -128,7 +138,7 @@
         <servo NO="6" NEUTRAL="1500" NAME="VTAIL_LEFT" MIN="1100" MAX="1900"/>
         <servo NO="7" NEUTRAL="1500" NAME="VTAIL_RIGHT" MIN="1100" MAX="1900"/>
         <servo NO="8" NEUTRAL="1035" NAME="MOTOR_FWD" MIN="1000" MAX="2000"/>
-        <servo NO="9" NEUTRAL="1520" NAME="WING_ROT" MIN="1420" MAX="1620"/>
+        <servo NO="9" NEUTRAL="1520" NAME="WING_ROT" MIN="1000" MAX="2000"/>
     </servos>
 
     <commands>
@@ -191,12 +201,12 @@
         <define VALUE="4.700654855386415" NAME="ACCEL_X_SENS" INTEGER="16"/>
         <define VALUE="4.898790938271689" NAME="ACCEL_Y_SENS" INTEGER="16"/>
         <define VALUE="4.84846920056402" NAME="ACCEL_Z_SENS" INTEGER="16"/>
-        <define name="MAG_X_NEUTRAL" value="12"/>
-        <define name="MAG_Y_NEUTRAL" value="1"/>
-        <define name="MAG_Z_NEUTRAL" value="-23"/>
-        <define name="MAG_X_SENS" value="13.33589802677865" integer="16"/>
-        <define name="MAG_Y_SENS" value="11.761077152899478" integer="16"/>
-        <define name="MAG_Z_SENS" value="10.648520805398183" integer="16"/>
+        <define name="MAG_X_NEUTRAL" value="16"/>
+        <define name="MAG_Y_NEUTRAL" value="0"/>
+        <define name="MAG_Z_NEUTRAL" value="-45"/>
+        <define name="MAG_X_SENS" value="12.965358419318209" integer="16"/>
+        <define name="MAG_Y_SENS" value="12.705079219722649" integer="16"/>
+        <define name="MAG_Z_SENS" value="11.1964201098035" integer="16"/>
 
 
 
@@ -315,7 +325,7 @@
         <define name="FILTER_CUTOFF" value="2.0"/>
         <define name="HEADING_BANK_GAIN" value="10."/>
         <define name="NAV_SPEED_MARGIN" value="0."/>
-        <define name="MAX_AIRSPEED" value="17."/>
+        <define name="MAX_AIRSPEED" value="16.5"/>
         <define name="PITCH_LIFT_EFF" value="0.0"/>
         <define name="MIN_THROTTLE" value="0."/>
         <define name="MIN_PITCH" value="-35."/>

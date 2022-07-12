@@ -100,7 +100,8 @@
         <module NAME="wing_rotation_controller">
                 <define VALUE="3299" NAME="WING_ROTATION_POSITION_ADC_0"/>
                  <define VALUE="1104"  NAME="WING_ROTATION_POSITION_ADC_90"/> <!--774 -->
-                <define VALUE="80000"  NAME="WING_ROTATION_P_GAIN"/>
+                <define VALUE="40000"  NAME="WING_ROTATION_P_GAIN"/>
+                <define VALUE="-1000"  NAME="WING_ROTATION_D_GAIN"/>
                 <define VALUE="9600"  NAME="WING_ROTATION_MAX_CMD"/>
                 <define VALUE="300" NAME="WING_ROTATION_DEADZONE_PPRZ_CMD"/>
                 <define VALUE="9" NAME="WING_ROTATION_SERVO_IDX"/>
@@ -324,7 +325,7 @@
         <define name="FILTER_CUTOFF" value="2.0"/>
         <define name="HEADING_BANK_GAIN" value="10."/>
         <define name="NAV_SPEED_MARGIN" value="0."/>
-        <define name="MAX_AIRSPEED" value="17."/>
+        <define name="MAX_AIRSPEED" value="16.5"/>
         <define name="PITCH_LIFT_EFF" value="0.0"/>
         <define name="MIN_THROTTLE" value="0."/>
         <define name="MIN_PITCH" value="-35."/>

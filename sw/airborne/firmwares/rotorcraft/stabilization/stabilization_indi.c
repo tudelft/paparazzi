@@ -168,6 +168,9 @@ float ap_ref_save;
 float aq_ref_save;
 float ar_ref_save;
 
+bool pitch_rate_lim_ON = false;
+float q_dot_lim = 8; //10
+
 // The learning rate per axis (roll, pitch, yaw, thrust)
 float mu1[INDI_OUTPUTS] = {0.00001, 0.00001, 0.000003, 0.000002};
 // The learning rate for the propeller inertia (scaled by 512 wrt mu1)
@@ -719,7 +722,8 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   rate_sp.r = indi_gains.att.r * att_fb.z / indi_gains.rate.r;
 
   // Possibly we can use some bounding here
-  /*BoundAbs(rate_sp.r, 5.0);*/
+  float rate_q_lim = sqrtf(fabs(2*att_fb.y*q_dot_lim));
+  if (pitch_rate_lim_ON){BoundAbs(rate_sp.q, rate_q_lim);}
 
   /* compute the INDI command */
   stabilization_indi_rate_run(rate_sp, in_flight);

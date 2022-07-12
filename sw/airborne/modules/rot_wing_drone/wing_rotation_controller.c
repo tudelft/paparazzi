@@ -78,7 +78,11 @@
 #endif
 
 #ifndef WING_ROTATION_P_GAIN
-#define WING_ROTATION_P_GAIN -100
+#define WING_ROTATION_P_GAIN 100
+#endif
+
+#ifndef WING_ROTATION_D_GAIN
+#define WING_ROTATION_D_GAIN -10
 #endif
 
 #ifndef WING_ROTATION_DEADZONE_PPRZ_CMD
@@ -118,10 +122,11 @@ Butterworth2LowPass airspeed_skew_filter;
 
 // Automatic Wing Rotation
 #define skew_size 17
-bool automatic_rot   = true;
+bool automatic_rot   = false;
 float f_cutoff = 0.2;
 float airspeed_q [skew_size] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
 float skew_q [skew_size]     = {0,0,0,0,0,0,30,30,30,30,60,60,90,90,90,90,90};
+float skew_old = 0.0;
 void skew_interpoler(void)
 {
   float airspeed = stateGetAirspeed_f();
@@ -189,6 +194,7 @@ void wing_rotation_init(void)
   wing_rotation.init_loop_count = 0;
 
   wing_rotation.p_gain = WING_ROTATION_P_GAIN;
+  wing_rotation.d_gain = WING_ROTATION_D_GAIN;
   wing_rotation.max_cmd = WING_ROTATION_MAX_CMD;
 
   // Endpoint tuning
@@ -243,7 +249,8 @@ void wing_rotation_event(void)
     // Calculate rad error
     float pos_error_rad = wing_rotation.wing_angle_rad_sp - wing_rotation.wing_angle_rad;
     float pos_error_deg = pos_error_rad / M_PI * 180.;
-
+    float vel_error_rads = (wing_rotation.wing_angle_rad-skew_old)/PERIODIC_FREQUENCY;
+    skew_old = wing_rotation.wing_angle_rad;
     int32_t servo_pprz_cmd;  // Define pprz cmd
 
     // Check if in endpoint region
@@ -302,7 +309,7 @@ void wing_rotation_event(void)
     if (!endpoint_reaching) 
     {
       // Control the wing servo using P control and bound command
-      servo_pprz_cmd = wing_rotation.p_gain * pos_error_rad;
+      servo_pprz_cmd = wing_rotation.p_gain * pos_error_rad + wing_rotation.d_gain * vel_error_rads ;
       servo_pprz_cmd = Max(servo_pprz_cmd, (int32_t)-wing_rotation.max_cmd);
       servo_pprz_cmd = Min(servo_pprz_cmd, (int32_t)wing_rotation.max_cmd);
     }

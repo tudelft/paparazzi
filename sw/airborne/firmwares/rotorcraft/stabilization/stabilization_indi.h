@@ -53,6 +53,9 @@ extern float ar_ref_save;
 
 extern bool indi_use_adaptive;
 
+extern bool pitch_rate_lim_ON;
+extern float q_dot_lim;
+
 extern float *Bwls[INDI_OUTPUTS];
 
 struct Indi_gains {
