@@ -346,12 +346,12 @@
 <!--    <define name="INDI_MOTOR_FIRST_ORD_DEN_2" value="-0.9637" />-->
 
     <!-- CF PROP-->
-    <define name="INDI_MOTOR_FIRST_ORD_NUM_2" value="0.04877" />
-    <define name="INDI_MOTOR_FIRST_ORD_DEN_2" value="-0.9512" />
+    <!-- <define name="INDI_MOTOR_FIRST_ORD_NUM_2" value="0.04877" /> -->
+    <!-- <define name="INDI_MOTOR_FIRST_ORD_DEN_2" value="-0.9512" /> -->
 
     <!-- SLOW PROP-->
-<!--    <define name="INDI_MOTOR_FIRST_ORD_NUM_2" value="0.05824" />-->
-<!--    <define name="INDI_MOTOR_FIRST_ORD_DEN_2" value="-0.9418" />-->
+   <define name="INDI_MOTOR_FIRST_ORD_NUM_2" value="0.05824" />
+   <define name="INDI_MOTOR_FIRST_ORD_DEN_2" value="-0.9418" />
 
     <define name="INDI_MOTOR_FIRST_ORD_DELAY" value="0.002" />
 
