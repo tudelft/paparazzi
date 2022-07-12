@@ -30,6 +30,7 @@ not use this module at the same time!
 #include "modules/ctrl/eff_scheduling_nederdrone.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #include "state.h"
+#include "autopilot.h"
 #include "modules/radio_control/radio_control.h"
 #include "generated/radio.h"
 #define INDI_SCHEDULING_LOWER_BOUND_G1 0.0001
@@ -48,11 +49,11 @@ static float g_hover[4][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL, STABILIZATI
 // Functions to schedule switching on and of of tip props on front wing
 float sched_ratio_tip_props = 1.0;
 // If pitch lower, pitch props gradually switch off till  sched_tip_prop_lower_pitch_limit_deg (1 > sched_ratio_tip_props > 0)
-float sched_tip_prop_upper_pitch_limit_deg = -30;
+float sched_tip_prop_upper_pitch_limit_deg = -45;
 // If pitch lower, pitch props switch fully off (sched_ratio_tip_props goes to 0)
-float sched_tip_prop_lower_pitch_limit_deg = -70;
+float sched_tip_prop_lower_pitch_limit_deg = -80;
 // Setting to not switch off tip props during forward flight
-bool sched_tip_props_always_on = true;
+bool sched_tip_props_always_on = false;
 
 void ctrl_eff_scheduling_init(void)
 {
@@ -110,7 +111,7 @@ void ctrl_eff_scheduling_periodic(void)
     g1g2[3][i] = g_hover[3][i] * (1.0 - ratio_spec_force) + g_forward[3][i] * ratio_spec_force;
   }
 
-  bool low_airspeed = (stateGetAirspeed_f() < INDI_SCHEDULING_LOW_AIRSPEED);
+  bool low_airspeed = (stateGetAirspeed_f() < INDI_SCHEDULING_LOW_AIRSPEED) && (autopilot_get_mode() != AP_MODE_NAV);
 
   // Tip prop ratio
   float pitch_deg = eulers_zxy.theta / M_PI * 180.f;
