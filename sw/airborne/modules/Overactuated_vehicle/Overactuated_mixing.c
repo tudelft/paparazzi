@@ -744,7 +744,7 @@ void overactuated_mixing_run()
         overactuated_mixing.commands[3] = (int32_t) radio_control.values[RADIO_THROTTLE];
 
         //Submit servo elevation orders for forward flight:
-        overactuated_mixing.commands[4] = (int32_t) ((-90*M_PI/180 - OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE) * K_ppz_angle_el);
+        overactuated_mixing.commands[4] = (int32_t) ((-94*M_PI/180 - OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE) * K_ppz_angle_el);
         overactuated_mixing.commands[5] = (int32_t) ((-90*M_PI/180 - OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE) * K_ppz_angle_el);
         overactuated_mixing.commands[6] = (int32_t) ((-90*M_PI/180 - OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE) * K_ppz_angle_el);
         overactuated_mixing.commands[7] = (int32_t) ((-90*M_PI/180 - OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE) * K_ppz_angle_el);
