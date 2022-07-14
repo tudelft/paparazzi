@@ -38,7 +38,7 @@
         <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
         <define name="MS45XX_SYNC_SEND" value="TRUE" /> <!--description="flag to enable sending every new measurement via telemetry (default:FALSE)-->
         <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
-        <define name="MS45XX_PRESSURE_OFFSET" value="8505.7" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
+        <define name="MS45XX_PRESSURE_OFFSET" value="8470.5" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
 <!--        <define name="MS45XX_AIRSPEED_SCALE" value="1.6327"/> &lt;!&ndash;description="quadratic scale factor to convert differential pressure to airspeed"&ndash;&gt;-->
         <define name="MS45XX_LOWPASS_TAU" value="0.2"/> <!--description="Time constant for second order Butterworth low pass filter"-->
         <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
@@ -198,15 +198,15 @@
     <servo name="MOTOR_3" no="2" min="1000" neutral="1050" max="2000"/>
     <servo name="MOTOR_4" no="3" min="1000" neutral="1050" max="2000"/>
 
-    <servo name="EL_1" no="8" min="670" neutral="1500" max="2330"/>
-    <servo name="EL_2" no="9" min="670" neutral="1500" max="2330"/>
-    <servo name="EL_3" no="10" min="670" neutral="1500" max="2330"/>
-    <servo name="EL_4" no="11" min="670" neutral="1500" max="2330"/>
+    <servo name="EL_1" no="8" min="650" neutral="1500" max="2350"/>
+    <servo name="EL_2" no="9" min="650" neutral="1500" max="2350"/>
+    <servo name="EL_3" no="10" min="650" neutral="1500" max="2350"/>
+    <servo name="EL_4" no="11" min="650" neutral="1500" max="2350"/>
 
-    <servo name="AZ_1" no="4" min="1050" neutral="1500" max="1950"/>
-    <servo name="AZ_2" no="5" min="1050" neutral="1500" max="1950"/>
-    <servo name="AZ_3" no="6" min="1050" neutral="1500" max="1950"/>
-    <servo name="AZ_4" no="7" min="1050" neutral="1500" max="1950"/>
+    <servo name="AZ_1" no="4" min="952" neutral="1400" max="1848"/>
+    <servo name="AZ_2" no="5" min="1013" neutral="1444" max="1875"/>
+    <servo name="AZ_3" no="6" min="988" neutral="1425" max="1862"/>
+    <servo name="AZ_4" no="7" min="984" neutral="1423" max="1862"/>
 
   </servos>
 
@@ -252,7 +252,7 @@
 
   <section name="MANUAL_CONTROL_OPTIONS" prefix="MANUAL_CONTROL_">
     <!-- Maximum limits of the sticks -->
-    <define name="MAX_CMD_FWD_SPEED" value="20.0" unit="m/s"/>
+    <define name="MAX_CMD_FWD_SPEED" value="18.0" unit="m/s"/>
     <define name="MAX_CMD_LAT_SPEED" value="5.0" unit="m/s"/>
     <define name="MAX_CMD_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_CMD_PITCH_ANGLE" value="25.0" unit="deg"/>
@@ -266,7 +266,7 @@
     <define name="MIN_FWD_SPEED" value="-3.0" unit="m/s"/>
     <define name="MAX_LAT_SPEED" value="5.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
-    <define name="MAX_FWD_ACC" value="6.0" unit="m/s^2"/>
+    <define name="MAX_FWD_ACC" value="4.0" unit="m/s^2"/>
     <define name="MAX_LAT_ACC" value="6.0" unit="m/s^2"/>
     <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/>
   </section>
@@ -282,9 +282,9 @@
     <define name="PID_I_GAIN_THETA" value="20"/>
     <define name="PID_D_GAIN_THETA" value="79"/>
 
-    <define name="PID_P_GAIN_PSI_AZ" value="1.1"/>
+    <define name="PID_P_GAIN_PSI_AZ" value="1.5"/>
     <define name="PID_I_GAIN_PSI_AZ" value="0.5"/>
-    <define name="PID_D_GAIN_PSI_AZ" value="0.3"/>
+    <define name="PID_D_GAIN_PSI_AZ" value="0.5"/>
 
     <define name="PID_P_GAIN_POS_X_TILT" value="1.4"/>
     <define name="PID_I_GAIN_POS_X_TILT" value="0.01"/>
@@ -304,8 +304,8 @@
 
     <!-- Maximum orders -->
     <!-- General -->
-    <define name="MAX_PHI" value="30" unit="deg"/>
-    <define name="MAX_THETA" value="30" unit="deg"/>
+    <define name="MAX_PHI" value="40" unit="deg"/>
+    <define name="MAX_THETA" value="40" unit="deg"/>
     <define name="MAX_PSI_ERR" value="80" unit="deg"/>
 
     <!-- PID specific-->
@@ -320,21 +320,21 @@
 
     <!-- INDI proportional gains -->
     <define name="INDI_REF_ERR_P" value="1.2"/>
-    <define name="INDI_REF_ERR_Q" value=".85"/>
+    <define name="INDI_REF_ERR_Q" value="1.2"/>
     <define name="INDI_REF_ERR_R" value="1.5"/>
 
-    <define name="INDI_REF_ERR_X" value="1.5"/>
-    <define name="INDI_REF_ERR_Y" value="1.5"/>
-    <define name="INDI_REF_ERR_Z" value="1.3"/>
+    <define name="INDI_REF_ERR_X" value="1"/>
+    <define name="INDI_REF_ERR_Y" value="1"/>
+    <define name="INDI_REF_ERR_Z" value="1"/>
 
     <!-- INDI derivative gains -->
-    <define name="INDI_REF_RATE_P" value="6"/>
-    <define name="INDI_REF_RATE_Q" value="8.5"/>
-    <define name="INDI_REF_RATE_R" value="3.8"/>
+    <define name="INDI_REF_RATE_P" value="8"/>
+    <define name="INDI_REF_RATE_Q" value="8"/>
+    <define name="INDI_REF_RATE_R" value="5"/>
 
     <define name="INDI_REF_RATE_X" value="2"/>
     <define name="INDI_REF_RATE_Y" value="1"/>
-    <define name="INDI_REF_RATE_Z" value="4"/>
+    <define name="INDI_REF_RATE_Z" value="8.85"/>
 
     <!-- Actuator dynamics and mapping-->
     <define name="INDI_ACT_DYN_MOTOR" value="0.038" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
@@ -376,16 +376,16 @@
 <!--    <define name="MOTOR_MAX_OMEGA" value="978" unit="rad/s"/>-->
 
     <!-- CF PROP-->
-    <define name="MOTOR_K_T_OMEGASQ" value="0.649e-5" unit="N/(rad/s)^2"/>
-    <define name="MOTOR_K_M_OMEGASQ" value="0.887e-7" unit="N*m/(rad/s)^2"/>
-    <define name="MOTOR_K_PWM_OMEGA" value="1.15" unit="(rad/s)/PWM"/>
-    <define name="MOTOR_MAX_OMEGA" value="1104" unit="rad/s"/>
+    <!-- <define name="MOTOR_K_T_OMEGASQ" value="0.649e-5" unit="N/(rad/s)^2"/> -->
+    <!-- <define name="MOTOR_K_M_OMEGASQ" value="0.887e-7" unit="N*m/(rad/s)^2"/> -->
+    <!-- <define name="MOTOR_K_PWM_OMEGA" value="1.15" unit="(rad/s)/PWM"/> -->
+    <!-- <define name="MOTOR_MAX_OMEGA" value="1104" unit="rad/s"/> -->
 
     <!-- SLOW PROP-->
-<!--    <define name="MOTOR_K_T_OMEGASQ" value="0.882e-5" unit="N/(rad/s)^2"/>-->
-<!--    <define name="MOTOR_K_M_OMEGASQ" value="1.258e-7" unit="N*m/(rad/s)^2"/>-->
-<!--    <define name="MOTOR_K_PWM_OMEGA" value="1.077" unit="(rad/s)/PWM"/>-->
-<!--    <define name="MOTOR_MAX_OMEGA" value="1037" unit="rad/s"/>-->
+   <define name="MOTOR_K_T_OMEGASQ" value="0.882e-5" unit="N/(rad/s)^2"/>
+   <define name="MOTOR_K_M_OMEGASQ" value="1.258e-7" unit="N*m/(rad/s)^2"/>
+   <define name="MOTOR_K_PWM_OMEGA" value="1.077" unit="(rad/s)/PWM"/>
+   <define name="MOTOR_MAX_OMEGA" value="1037" unit="rad/s"/>
 
     <define name="MOTOR_MIN_OMEGA" value="150" unit="rad/s"/><!-- Needed to make the INDI to work-->
     <define name="SERVO_AZ_MIN_ANGLE" value="-45" unit="deg"/><!-- Always remember to update the PWM range as well-->
@@ -394,10 +394,10 @@
     <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
-    <define name="SERVO_EL_1_ZERO_VALUE" value="-57" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="-54" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="-52" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="-52" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="-55" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="-53.5" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-53" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="-51" unit="deg"/>
 
     <define name="SERVO_AZ_1_ZERO_VALUE" value="0" unit="deg"/>
     <define name="SERVO_AZ_2_ZERO_VALUE" value="0" unit="deg"/>
@@ -420,7 +420,7 @@
     <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="20" unit="rad/s"/>
 
     <!-- First order filter on rates -->
-    <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.03921" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
+    <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0353" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
 
     <!-- INDI properties [weights] -->
     <define name="W_ACT_MOTOR_CONST" value="3"/>
@@ -444,35 +444,35 @@
     <define name="GAMMA_QUADRATIC_DU" value="1e-5"/>
 
     <!-- FWD flight properties -->
-    <define name="MIN_SPEED_TRANSITION" value="6.0" unit="m/s"/>
-    <define name="REF_SPEED_TRANSITION" value="9.0" unit="m/s"/>
+    <define name="MIN_SPEED_TRANSITION" value="5.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION" value="7.0" unit="m/s"/>
 
   </section>
 
   <!-- Vehicle properties, see documentation for notation -->
   <section name="VEHICLE_PROPERTIES" prefix="VEHICLE_">
-    <define name="I_XX" value="0.06" unit="Kg*m^2"/>
-    <define name="I_YY" value="0.1" unit="Kg*m^2"/>
-    <define name="I_ZZ" value="0.145" unit="Kg*m^2"/>
+    <define name="I_XX" value="0.14" unit="Kg*m^2"/>
+    <define name="I_YY" value="0.13" unit="Kg*m^2"/>
+    <define name="I_ZZ" value="0.2" unit="Kg*m^2"/>
     <define name="I_TILT" value="0.000216" unit="Kg*m^2"/>
     <define name="PROPELLER_INERTIA" value="1.984e-5" unit="Kg*m^2"/>
-    <define name="MASS" value="2.05" unit="Kg"/>
-    <define name="L1" value="0.185" unit="m"/>
-    <define name="L2" value="0.185" unit="m"/>
-    <define name="L3" value="0.38" unit="m"/>
-    <define name="L4" value="0.38" unit="m"/>
+    <define name="MASS" value="2.33" unit="Kg"/>
+    <define name="L1" value="0.231" unit="m"/>
+    <define name="L2" value="0.231" unit="m"/>
+    <define name="L3" value="0.39" unit="m"/>
+    <define name="L4" value="0.39" unit="m"/>
     <define name="LZ" value="0." unit="m"/>
 
-    <define name="CL_ALPHA" value="3.5"/>
+    <define name="CL_ALPHA" value="4"/>
     <define name="CM_ZERO" value="0.05"/>
-    <define name="CM_ALPHA" value="-0.05"/>
+    <define name="CM_ALPHA" value="-0.1"/>
     <define name="CD_ZERO" value="0.38"/>
     <define name="K_CD" value="0.2"/>
     <define name="CY_BETA" value="0"/>
     <define name="CL_BETA" value="0"/>
-    <define name="S" value="0.25"/>
-    <define name="WING_CHORD" value="0.257"/>
-    <define name="WING_SPAN" value="1"/>
+    <define name="S" value="0.57"/>
+    <define name="WING_CHORD" value="0.3325"/>
+    <define name="WING_SPAN" value="1.8"/>
   </section>
 
 
@@ -513,49 +513,25 @@
     <define name="MPU_Y_SIGN" value="1"/>
     <define name="MPU_Z_SIGN" value="-1"/>
 
-<!--    &lt;!&ndash; Calibrated in the MAVLab 29-06-2020 &ndash;&gt;-->
-<!--    <define name="ACCEL_X_NEUTRAL" value="-145"/>-->
-<!--    <define name="ACCEL_Y_NEUTRAL" value="52"/>-->
-<!--    <define name="ACCEL_Z_NEUTRAL" value="-9"/>-->
-<!--    <define name="ACCEL_X_SENS" value="4.700654855386415" integer="16"/>-->
-<!--    <define name="ACCEL_Y_SENS" value="4.898790938271689" integer="16"/>-->
-<!--    <define name="ACCEL_Z_SENS" value="4.84846920056402" integer="16"/>-->
+    <!-- Calibrated in the MAVLab 31-05-2022 -->
+    <define name="ACCEL_X_NEUTRAL" value="409"/>
+    <define name="ACCEL_Y_NEUTRAL" value="41"/>
+    <define name="ACCEL_Z_NEUTRAL" value="-44"/>
+    <define name="ACCEL_X_SENS" value="4.591708752198743" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="4.889060209746935" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="4.857598809380957" integer="16"/>
 
-    <!-- Calibrated in the MAVLab 30-05-2022 -->
-    <define name="ACCEL_X_NEUTRAL" value="-158"/>
-    <define name="ACCEL_Y_NEUTRAL" value="46"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-47"/>
-    <define name="ACCEL_X_SENS" value="4.676300984710756" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.897253627313201" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.8042379052498" integer="16"/>
-
-    <!-- Calibrated at TUDelft 30-06-2021 (internal magnetometer) -->
-<!--    <define name="MAG_X_NEUTRAL" value="-7"/>-->
-<!--    <define name="MAG_Y_NEUTRAL" value="5"/>-->
-<!--    <define name="MAG_Z_NEUTRAL" value="6"/>-->
-<!--    <define name="MAG_X_SENS" value="12.877116122504509" integer="16"/>-->
-<!--    <define name="MAG_Y_SENS" value="13.120879701323037" integer="16"/>-->
-<!--    <define name="MAG_Z_SENS" value="15.522979897859624" integer="16"/>-->
-
-    <!-- Calibrated at Valkemburg 28-01-2022 (internal magnetometer) -->
-<!--    <define name="MAG_X_NEUTRAL" value="-9"/>-->
-<!--    <define name="MAG_Y_NEUTRAL" value="0"/>-->
-<!--    <define name="MAG_Z_NEUTRAL" value="9"/>-->
-<!--    <define name="MAG_X_SENS" value="12.423406586020796" integer="16"/>-->
-<!--    <define name="MAG_Y_SENS" value="13.092211467953533" integer="16"/>-->
-<!--    <define name="MAG_Z_SENS" value="14.952916167817003" integer="16"/>-->
-
-    <!-- Calibrated at TUDelft 30-05-2022 (internal magnetometer) -->
-    <define name="MAG_X_NEUTRAL" value="32"/>
-    <define name="MAG_Y_NEUTRAL" value="-15"/>
-    <define name="MAG_Z_NEUTRAL" value="20"/>
-    <define name="MAG_X_SENS" value="12.964015720432243" integer="16"/>
-    <define name="MAG_Y_SENS" value="12.568092668400068" integer="16"/>
-    <define name="MAG_Z_SENS" value="12.693341287729572" integer="16"/>
+    <!-- Calibrated at Valkenburg the 12-07-2022 -->
+    <define name="MAG_X_NEUTRAL" value="-8"/>
+    <define name="MAG_Y_NEUTRAL" value="-8"/>
+    <define name="MAG_Z_NEUTRAL" value="2"/>
+    <define name="MAG_X_SENS" value="12.840443865671938" integer="16"/>
+    <define name="MAG_Y_SENS" value="11.890564124237955" integer="16"/>
+    <define name="MAG_Z_SENS" value="13.334119077510733" integer="16"/>
 
     <!-- Define axis in hover frame -->
-    <define name="BODY_TO_IMU_PHI" value="0." unit="deg"/>
-    <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
+    <define name="BODY_TO_IMU_PHI" value="-0.426337895844" unit="deg"/>
+    <define name="BODY_TO_IMU_THETA" value="2.75185899737" unit="deg"/>
     <define name="BODY_TO_IMU_PSI" value="0." unit="deg"/>
   </section>
 

@@ -67,7 +67,7 @@ float pos_order_earth[3];
 float euler_order[3];
 float psi_order_motor = 0;
 
-float K_beta = 0.1;
+float K_beta = 0.0;
 
 //Flight states variables:
 bool INDI_engaged = 0, FAILSAFE_engaged = 0, PID_engaged = 0;
@@ -803,10 +803,13 @@ void overactuated_mixing_run()
 //            yaw_rate_setpoint_turn = K_beta * beta_rad;
 
             //Creating the setpoint using the desired lateral acceleration and the body correction:
+
             // yaw_rate_setpoint_turn = acc_setpoint_control_rf[1]/airspeed_turn - K_beta * accely_filt.o[0];
 
+            yaw_rate_setpoint_turn = - K_beta * accely_filt.o[0];
+
             //Secpnd option, create the yaw rate setpoint based on phi and lateral body acceleration: 
-            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accely_filt.o[0];
+            // yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accely_filt.o[0];
         }
 
         fwd_multiplier_yaw = (airspeed - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION) / (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION);
