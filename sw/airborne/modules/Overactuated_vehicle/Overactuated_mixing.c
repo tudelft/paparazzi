@@ -70,7 +70,7 @@ float psi_order_motor = 0;
 float K_beta = 0.0;
 
 //Flight states variables:
-bool INDI_engaged = 0, FAILSAFE_engaged = 0, PID_engaged = 0;
+bool INDI_engaged = 0, FAILSAFE_engaged = 0, MANUAL_fwd_engaged = 0;
 
 // PID and general settings from slider
 int deadband_stick_yaw = 500, deadband_stick_throttle = 700;
@@ -85,6 +85,12 @@ float des_pos_earth_x = 0;
 float des_pos_earth_y = 0;
 
 float alt_cmd = 0, pitch_cmd = 0, roll_cmd = 0, yaw_motor_cmd = 0, yaw_tilt_cmd = 0, elevation_cmd = 0, azimuth_cmd = 0;
+
+//External servos variables: 
+int16_t neutral_servo_1_pwm = 1500;
+int16_t neutral_servo_2_pwm = 1500;
+int16_t gain_roll_servo = 300;
+int16_t gain_pitch_servo = 300;
 
 // Actuators gains:
 float K_ppz_rads_motor = 9.6 / OVERACTUATED_MIXING_MOTOR_K_PWM_OMEGA;
@@ -617,7 +623,7 @@ void overactuated_mixing_run()
 
         //INIT AND BOOLEAN RESET
         if(FAILSAFE_engaged == 0 ){
-            PID_engaged = 0;
+            MANUAL_fwd_engaged = 0;
             INDI_engaged = 0;
             FAILSAFE_engaged = 1;
             for (int i = 0; i < 3; i++) {
@@ -625,6 +631,9 @@ void overactuated_mixing_run()
                 pos_error_integrated[i] = 0;
             }
             euler_setpoint[2] = euler_vect[2];
+
+            am7_data_out_local.pwm_servo_1_int = (int16_t) (neutral_servo_1_pwm);
+            am7_data_out_local.pwm_servo_2_int = (int16_t) (neutral_servo_2_pwm);
         }
 
         ////Angular error computation
@@ -705,6 +714,48 @@ void overactuated_mixing_run()
 
     }
 
+    /// Case of manual mode forward:
+    if(radio_control.values[RADIO_MODE] > -500 && radio_control.values[RADIO_MODE] < 500){
+
+        //INIT AND BOOLEAN RESET
+        if(MANUAL_fwd_engaged == 0 ){
+            /*
+            INIT CODE FOR THE MANUAL_fwd GOES HERE
+             */
+            INDI_engaged = 0;
+            MANUAL_fwd_engaged = 1;
+            FAILSAFE_engaged = 0;
+        }
+
+        int servo_right_cmd = neutral_servo_1_pwm - radio_control.values[RADIO_ROLL]/9600.0*gain_roll_servo - radio_control.values[RADIO_PITCH]/9600.0*gain_pitch_servo;
+        int servo_left_cmd = neutral_servo_2_pwm - radio_control.values[RADIO_ROLL]/9600.0*gain_roll_servo + radio_control.values[RADIO_PITCH]/9600.0*gain_pitch_servo;
+
+        Bound(servo_right_cmd,1000,2000);
+        Bound(servo_left_cmd,1000,2000);
+
+        //Submit value to external servo: 
+        am7_data_out_local.pwm_servo_1_int = (int16_t) (servo_right_cmd);
+        am7_data_out_local.pwm_servo_2_int = (int16_t) (servo_left_cmd);
+
+        //Submit manual motor orders:
+        overactuated_mixing.commands[0] = (int32_t) radio_control.values[RADIO_THROTTLE];
+        overactuated_mixing.commands[1] = (int32_t) radio_control.values[RADIO_THROTTLE];
+        overactuated_mixing.commands[2] = (int32_t) radio_control.values[RADIO_THROTTLE];
+        overactuated_mixing.commands[3] = (int32_t) radio_control.values[RADIO_THROTTLE];
+
+        //Submit servo elevation orders for forward flight:
+        overactuated_mixing.commands[4] = (int32_t) ((-90*M_PI/180 - OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE) * K_ppz_angle_el);
+        overactuated_mixing.commands[5] = (int32_t) ((-90*M_PI/180 - OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE) * K_ppz_angle_el);
+        overactuated_mixing.commands[6] = (int32_t) ((-90*M_PI/180 - OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE) * K_ppz_angle_el);
+        overactuated_mixing.commands[7] = (int32_t) ((-90*M_PI/180 - OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE) * K_ppz_angle_el);
+
+        //Submit servo azimuth orders for forward flight:
+        overactuated_mixing.commands[8] = (int32_t) (- OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE * K_ppz_angle_az);
+        overactuated_mixing.commands[9] = (int32_t) (- OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE * K_ppz_angle_az);
+        overactuated_mixing.commands[10] = (int32_t) (- OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE * K_ppz_angle_az);
+        overactuated_mixing.commands[11] = (int32_t) (- OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE * K_ppz_angle_az);
+    }
+
     /// Case of INDI control mode with external nonlinear function:
     //    if(1)
     if(radio_control.values[RADIO_MODE] > 500 )
@@ -733,7 +784,7 @@ void overactuated_mixing_run()
 
             init_filters();
             INDI_engaged = 1;
-            PID_engaged = 0;
+            MANUAL_fwd_engaged = 0;
             FAILSAFE_engaged = 0;
 
             //Reset actuator states position:
@@ -762,6 +813,8 @@ void overactuated_mixing_run()
 
             pos_setpoint[2] = pos_vect[2];
 
+            am7_data_out_local.pwm_servo_1_int = (int16_t) (neutral_servo_1_pwm);
+            am7_data_out_local.pwm_servo_2_int = (int16_t) (neutral_servo_2_pwm);
         }
 
 //        // Get an estimate of the actuator state using the first order dynamics given by the user
@@ -810,6 +863,9 @@ void overactuated_mixing_run()
 
             //Secpnd option, create the yaw rate setpoint based on phi and lateral body acceleration: 
             // yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accely_filt.o[0];
+        }
+        else{
+            yaw_rate_setpoint_turn = 0;
         }
 
         fwd_multiplier_yaw = (airspeed - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION) / (OVERACTUATED_MIXING_REF_SPEED_TRANSITION - OVERACTUATED_MIXING_MIN_SPEED_TRANSITION);
@@ -1032,8 +1088,6 @@ void overactuated_mixing_run()
 
         extra_data_out_local[50] = OVERACTUATED_MIXING_SPEED_AOA_PROTECTION;
 
-        //Collect the last available data on the AM7 bus to be communicated to the servos.
-        AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &am7_data_out_local, extra_data_out_local);
 
         indi_u[0] =  (myam7_data_in_local.motor_1_cmd_int * 1e-1);
         indi_u[1] =  (myam7_data_in_local.motor_2_cmd_int * 1e-1);
@@ -1106,6 +1160,10 @@ void overactuated_mixing_run()
             overactuated_mixing.commands[11] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * K_ppz_angle_az);
         }
     }
+
+
+    //Collect the last available data on the AM7 bus to be communicated to the servos.
+    AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &am7_data_out_local, extra_data_out_local);
 
     //Bound values:
     Bound(overactuated_mixing.commands[0], 0, MAX_PPRZ);

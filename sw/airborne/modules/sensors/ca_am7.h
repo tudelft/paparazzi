@@ -93,6 +93,9 @@ struct __attribute__((__packed__)) am7_data_out {
     int16_t r_state_int;
     int16_t airspeed_state_int;
     int16_t beta_state_int;
+    //Extra servos messages 
+    int16_t pwm_servo_1_int;
+    int16_t pwm_servo_2_int;   
     //Pseudo-control cmd
     int16_t pseudo_control_ax_int;
     int16_t pseudo_control_ay_int;

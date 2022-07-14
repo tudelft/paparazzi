@@ -90,6 +90,11 @@ extern struct ActuatorsStruct act_dyn_struct;
 // Variables for slider
 extern float K_beta;
 
+extern int16_t neutral_servo_1_pwm; 
+extern int16_t neutral_servo_2_pwm; 
+extern int16_t gain_roll_servo; 
+extern int16_t gain_pitch_servo; 
+
 extern float des_pos_earth_x;
 extern float des_pos_earth_y;
 extern bool mode_1_control;
