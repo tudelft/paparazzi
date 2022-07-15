@@ -76,6 +76,8 @@ void ctrl_eff_scheduling_periodic(void)
   // your periodic code here.
   // freq = 20.0 Hz
 
+  float airspeed = stateGetAirspeed_f();
+
   // Go from transition percentage to ratio
   /*float ratio = FLOAT_OF_BFP(transition_percentage, INT32_PERCENTAGE_FRAC) / 100;*/
   float ratio = 0.0;
@@ -90,19 +92,31 @@ void ctrl_eff_scheduling_periodic(void)
     ratio = 0.0;
   }
 
+  float stall_speed = 14.0; // m/s
+  float pitch_ratio = 0.0;
+  // Assume hover or stalled conditions below 14 m/s
+  if (use_scheduling == 1) {
+    if ( (eulers_zxy.theta > -M_PI_4) || (airspeed < stall_speed) ) {
+      pitch_ratio = 0.0;
+    } else {
+      pitch_ratio = 1.0;
+    }
+  } else {
+    pitch_ratio = 0.0;
+  }
+
   for (uint8_t i = 0; i < INDI_NUM_ACT; i++) {
 
     // Roll
     g1g2[0][i] = g_hover[0][i] * (1.0 - ratio) + g_forward[0][i] * ratio;
-    //Pitch
-    g1g2[1][i] = g_hover[1][i] * (1.0 - ratio) + g_forward[1][i] * ratio;
+    //Pitch, scaled with v^2
+    g1g2[1][i] = g_hover[1][i] * (1.0 - pitch_ratio) + g_forward[1][i] * pitch_ratio * airspeed * airspeed / (16.0*16.0);
     //Yaw
     g1g2[2][i] = g_hover[2][i] * (1.0 - ratio) + g_forward[2][i] * ratio;
   }
 
   // Thrust effectiveness
   float ratio_spec_force = 0.0;
-  float airspeed = stateGetAirspeed_f();
   Bound(airspeed, 8.0, 20.0);
   ratio_spec_force = (airspeed-8.0) / 12.0;
 
