@@ -67,7 +67,7 @@ float pos_order_earth[3];
 float euler_order[3];
 float psi_order_motor = 0;
 
-float K_beta = 0.0;
+float K_beta = 0.1;
 
 //Flight states variables:
 bool INDI_engaged = 0, FAILSAFE_engaged = 0, MANUAL_fwd_engaged = 0;
@@ -873,6 +873,15 @@ void overactuated_mixing_run()
         //We are dividing by the airspeed, so a lower bound is important
         Bound(airspeed_turn,10.0,30.0);
 
+        float accel_y_filt_corrected = 0;
+
+        accel_y_filt_corrected = accely_filt.o[0] 
+                                - actuator_state_filt[0]*actuator_state_filt[0]* OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
+                                - actuator_state_filt[1]*actuator_state_filt[1]* OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
+                                - actuator_state_filt[3]*actuator_state_filt[2]* OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
+                                - actuator_state_filt[3]*actuator_state_filt[3]* OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[11])/VEHICLE_MASS;
+                                
+
         if(airspeed > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
 //            yaw_rate_setpoint_turn = 9.81 / airspeed_turn * tan(euler_vect[0]) - K_beta * accely;
 //            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/total_V;
@@ -884,7 +893,7 @@ void overactuated_mixing_run()
 
             // yaw_rate_setpoint_turn = acc_setpoint_control_rf[1]/airspeed_turn - K_beta * accely_filt.o[0];
 
-            yaw_rate_setpoint_turn = - K_beta * accely_filt.o[0];
+            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accel_y_filt_corrected;
 
             //Secpnd option, create the yaw rate setpoint based on phi and lateral body acceleration: 
             // yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accely_filt.o[0];
