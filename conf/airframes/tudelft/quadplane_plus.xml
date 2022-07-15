@@ -413,14 +413,14 @@
     <define name="SPEED_AOA_PROTECTION" value="6" unit="m/s"/>
 
     <!-- Filters properties for INDI -->
-    <define name="FILT_CUTOFF_ANG_RATES" value="20" unit="rad/s"/>
-    <define name="FILT_CUTOFF_LIN_ACC" value="20" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_EL" value="20" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="20" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ANG_RATES" value="17" unit="rad/s"/>
+    <define name="FILT_CUTOFF_LIN_ACC" value="17" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_EL" value="17" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="17" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="17" unit="rad/s"/>
 
     <!-- First order filter on rates -->
-    <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0353" /><!-- 1-exp(-cutoff_frequency/sampling_frequency)-->
+    <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.03921" /><!-- 1-exp(-cutoff_frequency/sampling_frequency) [20 rad/s]--> 
 
     <!-- INDI properties [weights] -->
     <define name="W_ACT_MOTOR_CONST" value="3"/>
