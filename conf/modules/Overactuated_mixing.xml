@@ -14,6 +14,12 @@
         <dl_setting var="neutral_servo_1_pwm"  min="1000" step="1" max="2000" shortname="neutral_servo_1_pwm" />
         <dl_setting var="neutral_servo_2_pwm"  min="1000" step="1" max="2000" shortname="neutral_servo_2_pwm" />
 
+        <dl_setting var="gain_roll_servo"  min="-500" step="1" max="500" shortname="gain_roll_servo" />
+        <dl_setting var="gain_pitch_servo"  min="-500" step="1" max="500" shortname="gain_pitch_servo" />
+
+        <dl_setting var="roll_trim_servos"  min="-500" step="1" max="500" shortname="roll_trim_servos" />
+        <dl_setting var="pitch_trim_servos"  min="-500" step="1" max="500" shortname="pitch_trim_servos" />
+
         <dl_setting var="des_pos_earth_x"  min="-100" step="1" max="100" shortname="pos_e_x" />
         <dl_setting var="des_pos_earth_y"  min="-100" step="1" max="100" shortname="pos_e_y" />
 

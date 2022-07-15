@@ -92,6 +92,12 @@ int16_t neutral_servo_2_pwm = 1500;
 int16_t gain_roll_servo = 300;
 int16_t gain_pitch_servo = 300;
 
+int16_t roll_trim_servos = 0;
+int16_t pitch_trim_servos = 0;
+
+int servo_right_cmd = 0;
+int servo_left_cmd = 0;
+
 // Actuators gains:
 float K_ppz_rads_motor = 9.6 / OVERACTUATED_MIXING_MOTOR_K_PWM_OMEGA;
 float K_ppz_angle_el = (9600 * 2) / (OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE);
@@ -632,8 +638,6 @@ void overactuated_mixing_run()
             }
             euler_setpoint[2] = euler_vect[2];
 
-            am7_data_out_local.pwm_servo_1_int = (int16_t) (neutral_servo_1_pwm);
-            am7_data_out_local.pwm_servo_2_int = (int16_t) (neutral_servo_2_pwm);
         }
 
         ////Angular error computation
@@ -712,6 +716,23 @@ void overactuated_mixing_run()
             overactuated_mixing.commands[11] -= (int32_t) (euler_order[2] * K_ppz_angle_az);
         }
 
+        //Add servos values:
+        servo_right_cmd = neutral_servo_1_pwm;
+        servo_left_cmd = neutral_servo_2_pwm;
+
+        servo_right_cmd += - roll_trim_servos - pitch_trim_servos;
+        servo_left_cmd += - roll_trim_servos + pitch_trim_servos;
+
+        Bound(servo_right_cmd,1000,2000);
+        Bound(servo_left_cmd,1000,2000);
+
+        //Submit value to external servo: 
+        am7_data_out_local.pwm_servo_1_int = (int16_t) (servo_right_cmd);
+        am7_data_out_local.pwm_servo_2_int = (int16_t) (servo_left_cmd);
+
+        roll_cmd = servo_right_cmd;
+        pitch_cmd = servo_left_cmd;
+
     }
 
     /// Case of manual mode forward:
@@ -727,8 +748,11 @@ void overactuated_mixing_run()
             FAILSAFE_engaged = 0;
         }
 
-        int servo_right_cmd = neutral_servo_1_pwm - radio_control.values[RADIO_ROLL]/9600.0*gain_roll_servo - radio_control.values[RADIO_PITCH]/9600.0*gain_pitch_servo;
-        int servo_left_cmd = neutral_servo_2_pwm - radio_control.values[RADIO_ROLL]/9600.0*gain_roll_servo + radio_control.values[RADIO_PITCH]/9600.0*gain_pitch_servo;
+        servo_right_cmd = neutral_servo_1_pwm - radio_control.values[RADIO_ROLL]/9600.0*gain_roll_servo - radio_control.values[RADIO_PITCH]/9600.0*gain_pitch_servo;
+        servo_left_cmd = neutral_servo_2_pwm - radio_control.values[RADIO_ROLL]/9600.0*gain_roll_servo + radio_control.values[RADIO_PITCH]/9600.0*gain_pitch_servo;
+
+        servo_right_cmd += - roll_trim_servos - pitch_trim_servos;
+        servo_left_cmd += - roll_trim_servos + pitch_trim_servos;
 
         Bound(servo_right_cmd,1000,2000);
         Bound(servo_left_cmd,1000,2000);
@@ -736,6 +760,9 @@ void overactuated_mixing_run()
         //Submit value to external servo: 
         am7_data_out_local.pwm_servo_1_int = (int16_t) (servo_right_cmd);
         am7_data_out_local.pwm_servo_2_int = (int16_t) (servo_left_cmd);
+
+        roll_cmd = servo_right_cmd;
+        pitch_cmd = servo_left_cmd;
 
         //Submit manual motor orders:
         overactuated_mixing.commands[0] = (int32_t) radio_control.values[RADIO_THROTTLE];
@@ -754,6 +781,7 @@ void overactuated_mixing_run()
         overactuated_mixing.commands[9] = (int32_t) (- OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE * K_ppz_angle_az);
         overactuated_mixing.commands[10] = (int32_t) (- OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE * K_ppz_angle_az);
         overactuated_mixing.commands[11] = (int32_t) (- OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE * K_ppz_angle_az);
+
     }
 
     /// Case of INDI control mode with external nonlinear function:
@@ -812,9 +840,6 @@ void overactuated_mixing_run()
             rate_vect_filt[2] = 0;
 
             pos_setpoint[2] = pos_vect[2];
-
-            am7_data_out_local.pwm_servo_1_int = (int16_t) (neutral_servo_1_pwm);
-            am7_data_out_local.pwm_servo_2_int = (int16_t) (neutral_servo_2_pwm);
         }
 
 //        // Get an estimate of the actuator state using the first order dynamics given by the user
@@ -1159,6 +1184,23 @@ void overactuated_mixing_run()
             overactuated_mixing.commands[10] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE) * K_ppz_angle_az);
             overactuated_mixing.commands[11] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * K_ppz_angle_az);
         }
+
+        //Add servos values:
+        servo_right_cmd = neutral_servo_1_pwm;
+        servo_left_cmd = neutral_servo_2_pwm;
+
+        servo_right_cmd += - roll_trim_servos - pitch_trim_servos;
+        servo_left_cmd += - roll_trim_servos + pitch_trim_servos;
+
+        Bound(servo_right_cmd,1000,2000);
+        Bound(servo_left_cmd,1000,2000);
+
+        //Submit value to external servo: 
+        am7_data_out_local.pwm_servo_1_int = (int16_t) (servo_right_cmd);
+        am7_data_out_local.pwm_servo_2_int = (int16_t) (servo_left_cmd);
+
+        roll_cmd = servo_right_cmd;
+        pitch_cmd = servo_left_cmd;
     }
 
 

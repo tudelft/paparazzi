@@ -94,6 +94,8 @@ extern int16_t neutral_servo_1_pwm;
 extern int16_t neutral_servo_2_pwm; 
 extern int16_t gain_roll_servo; 
 extern int16_t gain_pitch_servo; 
+extern int16_t roll_trim_servos;
+extern int16_t pitch_trim_servos;
 
 extern float des_pos_earth_x;
 extern float des_pos_earth_y;
