@@ -203,10 +203,10 @@
     <servo name="EL_3" no="10" min="650" neutral="1500" max="2350"/>
     <servo name="EL_4" no="11" min="650" neutral="1500" max="2350"/>
 
-    <servo name="AZ_1" no="4" min="952" neutral="1400" max="1848"/>
-    <servo name="AZ_2" no="5" min="1013" neutral="1444" max="1875"/>
-    <servo name="AZ_3" no="6" min="988" neutral="1425" max="1862"/>
-    <servo name="AZ_4" no="7" min="984" neutral="1423" max="1862"/>
+    <servo name="AZ_1" no="4" min="1050" neutral="1500" max="1950"/>
+    <servo name="AZ_2" no="5" min="1050" neutral="1500" max="1950"/>
+    <servo name="AZ_3" no="6" min="1050" neutral="1500" max="1950"/>
+    <servo name="AZ_4" no="7" min="1050" neutral="1500" max="1950"/>
 
   </servos>
 
@@ -253,7 +253,7 @@
   <section name="MANUAL_CONTROL_OPTIONS" prefix="MANUAL_CONTROL_">
     <!-- Maximum limits of the sticks -->
     <define name="MAX_CMD_FWD_SPEED" value="18.0" unit="m/s"/>
-    <define name="MAX_CMD_LAT_SPEED" value="5.0" unit="m/s"/>
+    <define name="MAX_CMD_LAT_SPEED" value="8.0" unit="m/s"/>
     <define name="MAX_CMD_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_CMD_PITCH_ANGLE" value="25.0" unit="deg"/>
     <define name="MAX_CMD_ROLL_ANGLE" value="25.0" unit="deg"/>
@@ -264,10 +264,10 @@
     <!-- Maximum limits of the vehicle in manual speed control mode. limits are in the control rf -->
     <define name="MAX_FWD_SPEED" value="20.0" unit="m/s"/>
     <define name="MIN_FWD_SPEED" value="-3.0" unit="m/s"/>
-    <define name="MAX_LAT_SPEED" value="5.0" unit="m/s"/>
+    <define name="MAX_LAT_SPEED" value="8.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_FWD_ACC" value="4.0" unit="m/s^2"/>
-    <define name="MAX_LAT_ACC" value="6.0" unit="m/s^2"/>
+    <define name="MAX_LAT_ACC" value="10.0" unit="m/s^2"/>
     <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/>
   </section>
 
@@ -319,8 +319,8 @@
     <define name="PID_MAX_AZ_ORDER" value="35" unit="deg"/> <!--max azimuth deflection in PID mode-->
 
     <!-- INDI proportional gains -->
-    <define name="INDI_REF_ERR_P" value="1.2"/>
-    <define name="INDI_REF_ERR_Q" value="1.2"/>
+    <define name="INDI_REF_ERR_P" value="1"/>
+    <define name="INDI_REF_ERR_Q" value="1"/>
     <define name="INDI_REF_ERR_R" value="1.5"/>
 
     <define name="INDI_REF_ERR_X" value="1"/>
@@ -328,8 +328,8 @@
     <define name="INDI_REF_ERR_Z" value="1"/>
 
     <!-- INDI derivative gains -->
-    <define name="INDI_REF_RATE_P" value="8"/>
-    <define name="INDI_REF_RATE_Q" value="8"/>
+    <define name="INDI_REF_RATE_P" value="5"/>
+    <define name="INDI_REF_RATE_Q" value="5"/>
     <define name="INDI_REF_RATE_R" value="5"/>
 
     <define name="INDI_REF_RATE_X" value="2"/>
@@ -346,12 +346,12 @@
 <!--    <define name="INDI_MOTOR_FIRST_ORD_DEN_2" value="-0.9637" />-->
 
     <!-- CF PROP-->
-    <!-- <define name="INDI_MOTOR_FIRST_ORD_NUM_2" value="0.04877" /> -->
-    <!-- <define name="INDI_MOTOR_FIRST_ORD_DEN_2" value="-0.9512" /> -->
+    <define name="INDI_MOTOR_FIRST_ORD_NUM_2" value="0.04877" />
+    <define name="INDI_MOTOR_FIRST_ORD_DEN_2" value="-0.9512" />
 
     <!-- SLOW PROP-->
-   <define name="INDI_MOTOR_FIRST_ORD_NUM_2" value="0.05824" />
-   <define name="INDI_MOTOR_FIRST_ORD_DEN_2" value="-0.9418" />
+   <!-- <define name="INDI_MOTOR_FIRST_ORD_NUM_2" value="0.05824" />
+   <define name="INDI_MOTOR_FIRST_ORD_DEN_2" value="-0.9418" /> -->
 
     <define name="INDI_MOTOR_FIRST_ORD_DELAY" value="0.002" />
 
@@ -376,16 +376,22 @@
 <!--    <define name="MOTOR_MAX_OMEGA" value="978" unit="rad/s"/>-->
 
     <!-- CF PROP-->
-    <!-- <define name="MOTOR_K_T_OMEGASQ" value="0.649e-5" unit="N/(rad/s)^2"/> -->
-    <!-- <define name="MOTOR_K_M_OMEGASQ" value="0.887e-7" unit="N*m/(rad/s)^2"/> -->
-    <!-- <define name="MOTOR_K_PWM_OMEGA" value="1.15" unit="(rad/s)/PWM"/> -->
-    <!-- <define name="MOTOR_MAX_OMEGA" value="1104" unit="rad/s"/> -->
+    <!-- <define name="MOTOR_K_T_OMEGASQ" value="0.649e-5" unit="N/(rad/s)^2"/>
+    <define name="MOTOR_K_M_OMEGASQ" value="0.887e-7" unit="N*m/(rad/s)^2"/>
+    <define name="MOTOR_K_PWM_OMEGA" value="1.15" unit="(rad/s)/PWM"/>
+    <define name="MOTOR_MAX_OMEGA" value="1104" unit="rad/s"/> -->
+
+    <!-- CF PROP with 4s battery-->
+    <define name="MOTOR_K_T_OMEGASQ" value="0.644623e-5" unit="N/(rad/s)^2"/>
+    <define name="MOTOR_K_M_OMEGASQ" value="0.936722e-7" unit="N*m/(rad/s)^2"/>
+    <define name="MOTOR_K_PWM_OMEGA" value="1.31" unit="(rad/s)/PWM"/>
+    <define name="MOTOR_MAX_OMEGA" value="1273" unit="rad/s"/>
 
     <!-- SLOW PROP-->
-   <define name="MOTOR_K_T_OMEGASQ" value="0.882e-5" unit="N/(rad/s)^2"/>
+   <!-- <define name="MOTOR_K_T_OMEGASQ" value="0.882e-5" unit="N/(rad/s)^2"/>
    <define name="MOTOR_K_M_OMEGASQ" value="1.258e-7" unit="N*m/(rad/s)^2"/>
    <define name="MOTOR_K_PWM_OMEGA" value="1.077" unit="(rad/s)/PWM"/>
-   <define name="MOTOR_MAX_OMEGA" value="1037" unit="rad/s"/>
+   <define name="MOTOR_MAX_OMEGA" value="1037" unit="rad/s"/> -->
 
     <define name="MOTOR_MIN_OMEGA" value="150" unit="rad/s"/><!-- Needed to make the INDI to work-->
     <define name="SERVO_AZ_MIN_ANGLE" value="-45" unit="deg"/><!-- Always remember to update the PWM range as well-->
@@ -396,8 +402,8 @@
 
     <define name="SERVO_EL_1_ZERO_VALUE" value="-55" unit="deg"/>
     <define name="SERVO_EL_2_ZERO_VALUE" value="-53.5" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="-53" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="-51" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-50.5" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="-52" unit="deg"/>
 
     <define name="SERVO_AZ_1_ZERO_VALUE" value="0" unit="deg"/>
     <define name="SERVO_AZ_2_ZERO_VALUE" value="0" unit="deg"/>
@@ -413,11 +419,11 @@
     <define name="SPEED_AOA_PROTECTION" value="6" unit="m/s"/>
 
     <!-- Filters properties for INDI -->
-    <define name="FILT_CUTOFF_ANG_RATES" value="17" unit="rad/s"/>
-    <define name="FILT_CUTOFF_LIN_ACC" value="17" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_EL" value="17" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="17" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="17" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ANG_RATES" value="18" unit="rad/s"/>
+    <define name="FILT_CUTOFF_LIN_ACC" value="18" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_EL" value="18" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="18" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="18" unit="rad/s"/>
 
     <!-- First order filter on rates -->
     <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.03921" /><!-- 1-exp(-cutoff_frequency/sampling_frequency) [20 rad/s]--> 
@@ -443,9 +449,9 @@
 
     <define name="GAMMA_QUADRATIC_DU" value="1e-5"/>
 
-    <!-- FWD flight properties -->
-    <define name="MIN_SPEED_TRANSITION" value="5.0" unit="m/s"/>
-    <define name="REF_SPEED_TRANSITION" value="7.0" unit="m/s"/>
+    <!-- FWD flight properties for yaw rate induced by controller and for removal of lateral speed term-->
+    <define name="MIN_SPEED_TRANSITION" value="4.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION" value="6.0" unit="m/s"/>
 
   </section>
 
