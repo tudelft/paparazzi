@@ -30,6 +30,7 @@
       <message name="EFF_FULL_INDI"            period="0.02"/> 
       <message name="AIRSPEED_MS45XX" 	       period=".25"/>
       <message name="ACTUATORS" 	       period=".1"/>
+      <message name="AHRS_REF_QUAT" period="0.05"/>
     </mode>
 
     <mode name="ppm">
@@ -191,6 +192,7 @@
      <message name="ESC"                      period="0.02"/>
       <message name="INDI_G"                   period="0.1"/>
       <message name="ROT_WING_EFF"             period="1.0"/>
+      <message name="AHRS_REF_QUAT" period="0.05"/>
 		  <message name="ROT_WING_CONTROLLER"      period="0.2"/>
 		  <message name="AIRSPEED_MS45XX" 	       period=".2"/>
       <message name="EFF_FULL_INDI" period="0.002"/>

@@ -168,8 +168,8 @@ float ap_ref_save;
 float aq_ref_save;
 float ar_ref_save;
 
-bool pitch_rate_lim_ON = false;
-float q_dot_lim = 8; //10
+bool pitch_rate_lim_ON = true;
+float q_dot_lim = 7; //10
 
 // The learning rate per axis (roll, pitch, yaw, thrust)
 float mu1[INDI_OUTPUTS] = {0.00001, 0.00001, 0.000003, 0.000002};

@@ -98,10 +98,10 @@
         </module>
   
         <module NAME="wing_rotation_controller">
-                <define VALUE="3299" NAME="WING_ROTATION_POSITION_ADC_0"/>
-                 <define VALUE="1104"  NAME="WING_ROTATION_POSITION_ADC_90"/> <!--774 -->
+                <define VALUE="4086" NAME="WING_ROTATION_POSITION_ADC_0"/>
+                 <define VALUE="1742"  NAME="WING_ROTATION_POSITION_ADC_90"/> <!--774 -->
                 <define VALUE="40000"  NAME="WING_ROTATION_P_GAIN"/>
-                <define VALUE="-1000"  NAME="WING_ROTATION_D_GAIN"/>
+                <define VALUE="-10000"  NAME="WING_ROTATION_D_GAIN"/>
                 <define VALUE="9600"  NAME="WING_ROTATION_MAX_CMD"/>
                 <define VALUE="300" NAME="WING_ROTATION_DEADZONE_PPRZ_CMD"/>
                 <define VALUE="9" NAME="WING_ROTATION_SERVO_IDX"/>
@@ -234,7 +234,7 @@
 
       <section name="ATTITUDE_REFERENCE" prefix="STABILIZATION_ATTITUDE_">
         <!-- setpoints -->
-        <define name="SP_MAX_PHI" value="25" unit="deg"/>
+        <define name="SP_MAX_PHI" value="40" unit="deg"/>
         <define name="SP_MAX_THETA" value="25" unit="deg"/>
         <define name="SP_MAX_R" value="45" unit="deg/s"/>
         <define name="DEADBAND_A" value="2"/>
@@ -349,7 +349,7 @@
     </section>
 
     <section PREFIX="GUIDANCE_H_" NAME="GUIDANCE_H">
-        <define VALUE="30" UNIT="deg" NAME="MAX_BANK"/>
+        <define VALUE="40" UNIT="deg" NAME="MAX_BANK"/>
         <define VALUE="TRUE" NAME="USE_SPEED_REF"/>
         <define VALUE="60" NAME="PGAIN"/>
         <define VALUE="100" NAME="DGAIN"/>
