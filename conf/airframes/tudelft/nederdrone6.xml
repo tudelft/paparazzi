@@ -269,13 +269,13 @@
     <define name="ACCEL_Y_SENS" value="4.83753590244878" integer="16"/>
     <define name="ACCEL_Z_SENS" value="4.670246691763502" integer="16"/>
 
-    <!-- Calibrated at vaalkenburg (29-06-2022) -->
-    <define name="MAG_X_NEUTRAL" value="-323"/>
-    <define name="MAG_Y_NEUTRAL" value="2457"/>
-    <define name="MAG_Z_NEUTRAL" value="3506"/>
-    <define name="MAG_X_SENS" value="0.6149187424833152" integer="16"/>
-    <define name="MAG_Y_SENS" value="0.624390823952088" integer="16"/>
-    <define name="MAG_Z_SENS" value="0.6565353107047118" integer="16"/>
+    <!-- Calibrated at valkenburg (15-07-2022) -->
+    <define name="MAG_X_NEUTRAL" value="432"/>
+    <define name="MAG_Y_NEUTRAL" value="1679"/>
+    <define name="MAG_Z_NEUTRAL" value="3433"/>
+    <define name="MAG_X_SENS" value="0.6409337832137453" integer="16"/>
+    <define name="MAG_Y_SENS" value="0.652074798089911" integer="16"/>
+    <define name="MAG_Z_SENS" value="0.6537789401490781" integer="16"/>
 
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
