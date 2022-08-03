@@ -122,6 +122,10 @@ float inv_eff[4];
 // Max bank angle in radians
 float guidance_indi_max_bank = GUIDANCE_H_MAX_BANK;
 
+float liftd_p50 = GUIDANCE_INDI_LIFTD_P50;
+float liftd_p80 = GUIDANCE_INDI_LIFTD_P80;
+float liftd_asq = GUIDANCE_INDI_LIFTD_ASQ;
+
 /** state eulers in zxy order */
 struct FloatEulers eulers_zxy;
 
@@ -572,13 +576,13 @@ float guidance_indi_get_liftd(float airspeed, float theta) {
     Bound(pitch_interp, min_pitch, max_pitch);
     if (pitch_interp > middle_pitch) {
       float ratio = (pitch_interp - max_pitch)/(middle_pitch - max_pitch);
-      liftd = -4.0*ratio;
+      liftd = -liftd_p50*ratio;
     } else {
       float ratio = (pitch_interp - middle_pitch)/(min_pitch - middle_pitch);
-      liftd = -(10.0-2.5)*ratio - 2.5;
+      liftd = -(liftd_p80-liftd_p50)*ratio - liftd_p50;
     }
   } else {
-    liftd = -0.292*airspeed*airspeed;
+    liftd = -liftd_asq*airspeed*airspeed;
   }
   //TODO: bound liftd
   return liftd;

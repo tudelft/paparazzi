@@ -50,6 +50,10 @@ struct guidance_indi_hybrid_params {
   float lift_pitch_eff;
 };
 
+extern float liftd_p50;
+extern float liftd_p80;
+extern float liftd_asq;
+
 extern struct guidance_indi_hybrid_params gih_params;
 extern float guidance_indi_specific_force_gain;
 extern float guidance_indi_max_airspeed;
