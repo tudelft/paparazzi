@@ -91,19 +91,26 @@ void ctrl_eff_scheduling_periodic(void)
   } else {
     ratio = 0.0;
   }
+  Bound(ratio,0.0,1.0);
 
   float stall_speed = 14.0; // m/s
   float pitch_ratio = 0.0;
   // Assume hover or stalled conditions below 14 m/s
   if (use_scheduling == 1) {
     if ( (eulers_zxy.theta > -M_PI_4) || (airspeed < stall_speed) ) {
-      pitch_ratio = 0.0;
+      if (eulers_zxy.theta > -M_PI_4) {
+        pitch_ratio = 0.0;
+      } else {
+        pitch_ratio = fabs(1.0 - eulers_zxy/(-M_PI_4));
+      }
+
     } else {
       pitch_ratio = 1.0;
     }
   } else {
     pitch_ratio = 0.0;
   }
+  Bound(pitch_ratio,0.0,1.0);
 
   for (uint8_t i = 0; i < INDI_NUM_ACT; i++) {
 
