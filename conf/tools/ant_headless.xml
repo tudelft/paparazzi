@@ -1,0 +1,4 @@
+<program command="sw/ground_segment/cockpit/ant_headless" name="ant_headless">
+  <arg constant="@AC_ID" flag="--ac" />
+</program>
+
