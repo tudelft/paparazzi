@@ -101,7 +101,7 @@ void ctrl_eff_scheduling_periodic(void)
       if (eulers_zxy.theta > -M_PI_4) {
         pitch_ratio = 0.0;
       } else {
-        pitch_ratio = fabs(1.0 - eulers_zxy/(-M_PI_4));
+        pitch_ratio = fabs(1.0 - eulers_zxy.theta/(-M_PI_4));
       }
 
     } else {
