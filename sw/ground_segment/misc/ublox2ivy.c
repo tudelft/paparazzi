@@ -633,9 +633,12 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
 
           uint8_t flags       = UBX_NAV_RELPOSNED_flags(gps_ubx.msg_buf);
           uint8_t relPosValid = RTCMgetbitu(&flags, 5, 1);
+          float relpos_heading = UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf) * 1e-5f;
+
+          if(verbose) printf("Got relpos %d %f\r\n", flags, relpos_heading);
 
           if(relPosValid) {
-            ground_heading = UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf) * 1e-5f;
+            ground_heading = relpos_heading;
           } else{
             ground_heading = NAN;
           }

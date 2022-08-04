@@ -104,8 +104,8 @@
       <set value="FALSE" var="force_forward"/>
       <stay wp="p1"/>
     </block>
-    <block name="Approach p1">
-      <stay pre_call="approach_moving_target_enable(WP_p1)" wp="p1" alt="WaypointAlt(WP_p1)"/>
+    <block name="Approach FOLLOW">
+      <stay pre_call="approach_moving_target_enable(WP_FOLLOW)" wp="FOLLOW" alt="WaypointAlt(WP_FOLLOW)"/>
     </block>
     <block name="go_p2">
       <set value="TRUE" var="force_forward"/>
