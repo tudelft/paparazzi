@@ -112,20 +112,24 @@ void ctrl_eff_scheduling_periodic(void)
   }
   Bound(pitch_ratio,0.0,1.0);
 
+  float airspeed_pitch_eff = airspeed;
+  Bound(airspeed_pitch_eff, 8.0, 30.0);
+
   for (uint8_t i = 0; i < INDI_NUM_ACT; i++) {
 
     // Roll
     g1g2[0][i] = g_hover[0][i] * (1.0 - ratio) + g_forward[0][i] * ratio;
     //Pitch, scaled with v^2
-    g1g2[1][i] = g_hover[1][i] * (1.0 - pitch_ratio) + g_forward[1][i] * pitch_ratio * airspeed * airspeed / (16.0*16.0);
+    g1g2[1][i] = g_hover[1][i] * (1.0 - pitch_ratio) + g_forward[1][i] * pitch_ratio * airspeed_pitch_eff * airspeed_pitch_eff / (16.0*16.0);
     //Yaw
     g1g2[2][i] = g_hover[2][i] * (1.0 - ratio) + g_forward[2][i] * ratio;
   }
 
   // Thrust effectiveness
   float ratio_spec_force = 0.0;
-  Bound(airspeed, 8.0, 20.0);
-  ratio_spec_force = (airspeed-8.0) / 12.0;
+  float airspeed_spec_force = airspeed;
+  Bound(airspeed_spec_force, 8.0, 20.0);
+  ratio_spec_force = (airspeed_spec_force-8.0) / 12.0;
 
   for (uint8_t i = 0; i < INDI_NUM_ACT; i++) {
     // Thrust
