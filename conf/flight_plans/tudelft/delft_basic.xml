@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="4" ground_alt="0" lat0="51 59 27.6" lon0="4 22 42.0" max_dist_from_home="1000" name="Delft Basic" security_height="2">
+<flight_plan alt="50" ground_alt="0" lat0="51 59 27.6" lon0="4 22 42.0" max_dist_from_home="1000" name="Delft Basic" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -39,14 +39,14 @@
       (autopilot_in_flight() == true) )" deroute="DatalinkLoss"/>
 
     <!-- Battery loss -->
-    <exception cond="(electrical.bat_low @AND
+    <!--<exception cond="(electrical.bat_low @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('land here')) @AND
       (autopilot_in_flight() == true) )" deroute="ComeBackAndLand"/>
     <exception cond="(electrical.bat_critical @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('land here')) @AND
-      (autopilot_in_flight() == true) )" deroute="land here"/>
+      (autopilot_in_flight() == true) )" deroute="land here"/>-->
   </exceptions>
 
   <blocks>
@@ -120,7 +120,7 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="ComeBackAndLand">
-      <go wp="HOME"/>
+      <go wp="TD"/>
       <deroute block="land here"/>
     </block>
     <block name="DatalinkLoss">
