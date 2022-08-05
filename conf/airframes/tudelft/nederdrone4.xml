@@ -154,7 +154,7 @@
       <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="1500"/>
       <define name="GUIDANCE_INDI_LIFTD_P50" value="6.0"/>
       <define name="GUIDANCE_INDI_LIFTD_P80" value="10.0"/>
-      <define name="GUIDANCE_INDI_LIFTD_ASQ" value="0.292"/>
+      <define name="GUIDANCE_INDI_LIFTD_ASQ" value="0.15"/>
     </module>
 
     <module name="motor_mixing"/>

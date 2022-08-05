@@ -33,6 +33,7 @@ not use this module at the same time!
 #include "autopilot.h"
 #include "modules/radio_control/radio_control.h"
 #include "generated/radio.h"
+#include "modules/actuators/actuators.h"
 #define INDI_SCHEDULING_LOWER_BOUND_G1 0.0001
 
 // Airspeed at which tip props should be turned on
@@ -123,6 +124,21 @@ void ctrl_eff_scheduling_periodic(void)
     g1g2[1][i] = g_hover[1][i] * (1.0 - pitch_ratio) + g_forward[1][i] * pitch_ratio * airspeed_pitch_eff * airspeed_pitch_eff / (16.0*16.0);
     //Yaw
     g1g2[2][i] = g_hover[2][i] * (1.0 - ratio) + g_forward[2][i] * ratio;
+
+    // Determine thrust of the wing to adjust the effectiveness of servos
+    float wing_thrust_scaling = 1.0;
+#if INDI_NUM_ACT != 8
+#error "ctfl_eff_scheduling_nederdrone is very specific and only works for one Nederdrone configuration!"
+#endif
+    if (i>3) {
+      float wing_thrust = actuators_pprz[i-4];
+      Bound(wing_thrust,3000.0,9600.0);
+      wing_thrust_scaling = wing_thrust/9600.0/0.8;
+    }
+
+    g1g2[0][i] *= wing_thrust_scaling;
+    g1g2[1][i] *= wing_thrust_scaling;
+    g1g2[2][i] *= wing_thrust_scaling;
   }
 
   // Thrust effectiveness

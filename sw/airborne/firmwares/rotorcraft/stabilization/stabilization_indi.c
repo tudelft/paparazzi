@@ -249,6 +249,7 @@ void stabilization_indi_init(void)
   calc_g1g2_pseudo_inv();
 
   // Init Wu
+  uint8_t i;
   for (i = 0; i < INDI_NUM_ACT; i++) {
     if (act_is_servo[i]) {
       Wu[i] = indi_Wu_surface;
@@ -258,7 +259,6 @@ void stabilization_indi_init(void)
   }
 
   // Initialize the array of pointers to the rows of g1g2
-  uint8_t i;
   for (i = 0; i < INDI_OUTPUTS; i++) {
     Bwls[i] = g1g2[i];
   }
