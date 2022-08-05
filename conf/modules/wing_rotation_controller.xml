@@ -1,0 +1,16 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="wing_rotation_controller" dir="rot_wing_drone">
+  <doc>
+    <description>Module to control wing rotation servo command based on prefered angle setpoint</description>
+  </doc>
+  <header>
+    <file name="wing_rotation_controller.h"/>
+  </header>
+  <init fun="wing_rotation_init()"/>
+  <periodic fun="wing_rotation_periodic()" freq="1.0"/>
+  <event fun="wing_rotation_event()"/>
+  <makefile>
+    <file name="wing_rotation_controller.c"/>
+    <test/>
+  </makefile>
+</module>

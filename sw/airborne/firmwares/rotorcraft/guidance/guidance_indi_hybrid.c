@@ -517,11 +517,23 @@ void guidance_indi_calcg_wing(struct FloatMat33 *Gmat) {
   /*Amount of lift produced by the wing*/
   float pitch_lift = eulers_zxy.theta;
   Bound(pitch_lift,-M_PI_2,0);
-  float lift = sinf(pitch_lift)*9.81;
+  float lift = 0;//sinf(pitch_lift)*9.81;
   float T = cosf(pitch_lift)*-9.81;
 
   // get the derivative of the lift wrt to theta
-  float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
+  float liftd = 0;//guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
+
+  /*
+  RMAT_ELMT(*Gmat, 0, 0) =  cphi*ctheta*spsi*T + cphi*spsi*lift;
+  RMAT_ELMT(*Gmat, 1, 0) = -cphi*ctheta*cpsi*T - cphi*cpsi*lift;
+  RMAT_ELMT(*Gmat, 2, 0) = -sphi*ctheta*T -sphi*lift;
+  RMAT_ELMT(*Gmat, 0, 1) = (ctheta*cpsi - sphi*stheta*spsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
+  RMAT_ELMT(*Gmat, 1, 1) = (ctheta*spsi + sphi*stheta*cpsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
+  RMAT_ELMT(*Gmat, 2, 1) = -cphi*stheta*T*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+  RMAT_ELMT(*Gmat, 0, 2) = stheta*cpsi + sphi*ctheta*spsi;
+  RMAT_ELMT(*Gmat, 1, 2) = stheta*spsi - sphi*ctheta*cpsi;
+  RMAT_ELMT(*Gmat, 2, 2) = cphi*ctheta;
+  */
 
   RMAT_ELMT(*Gmat, 0, 0) =  cphi*ctheta*spsi*T + cphi*spsi*lift;
   RMAT_ELMT(*Gmat, 1, 0) = -cphi*ctheta*cpsi*T - cphi*cpsi*lift;
