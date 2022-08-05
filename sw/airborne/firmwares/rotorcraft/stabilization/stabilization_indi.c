@@ -127,6 +127,15 @@ static float Wv[INDI_OUTPUTS] = STABILIZATION_INDI_WLS_PRIORITIES;
 static float Wv[INDI_OUTPUTS] = {1000, 1000, 1, 100};
 #endif
 
+#ifdef STABILIZATION_INDI_WLS_WU_PRIORITIES
+float indi_Wu_motor = STABILIZATION_INDI_WLS_WU_MOTOR;
+float indi_Wu_surface = STABILIZATION_INDI_WLS_WU_SURFACE;
+#else
+float indi_Wu_motor = 1;
+float indi_Wu_surface = 1;
+#endif
+float Wu[INDI_NUM_ACT];
+
 // variables needed for control
 float actuator_state_filt_vect[INDI_NUM_ACT];
 struct FloatRates angular_accel_ref = {0., 0., 0.};
@@ -238,6 +247,15 @@ void stabilization_indi_init(void)
 
   //Calculate G1G2_PSEUDO_INVERSE
   calc_g1g2_pseudo_inv();
+
+  // Init Wu
+  for (i = 0; i < INDI_NUM_ACT; i++) {
+    if (act_is_servo[i]) {
+      Wu[i] = indi_Wu_surface;
+    } else {
+      Wu[i] = indi_Wu_motor;
+    }
+  }
 
   // Initialize the array of pointers to the rows of g1g2
   uint8_t i;
@@ -483,10 +501,18 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     }
 #endif
   }
+  // Update Wu
+  for (i = 0; i < INDI_NUM_ACT; i++) {
+    if (act_is_servo[i]) {
+      Wu[i] = indi_Wu_surface;
+    } else {
+      Wu[i] = indi_Wu_motor;
+    }
+  }
 
   // WLS Control Allocator
   num_iter =
-    wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, 0, du_pref, 10000, 10);
+    wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, Wu, du_pref, 10000, 10);
 #endif
 
   if (in_flight) {

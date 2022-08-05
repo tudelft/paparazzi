@@ -38,6 +38,9 @@ extern bool indi_use_adaptive;
 
 extern float *Bwls[INDI_OUTPUTS];
 
+extern float indi_Wu_surface;
+extern float indi_Wu_motor;
+
 struct Indi_gains {
   struct FloatRates att;
   struct FloatRates rate;
