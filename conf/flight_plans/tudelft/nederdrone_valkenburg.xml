@@ -77,7 +77,8 @@
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="GetPosHeight() @GT 40.0" deroute="Standby"/>
       <call_once fun="nav_set_heading_current()"/>
-      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <!-- <call_once fun="NavSetWaypointHere(WP_CLIMB)"/> -->
+      <call_once fun="waypoint_set_xy_i(WP_CLIMB,POS_BFP_OF_REAL(GetPosX()+20.0*sinf(stateGetNedToBodyEulers_f()->psi)),POS_BFP_OF_REAL(GetPosY()+20.0*cosf(stateGetNedToBodyEulers_f()->psi)))"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
     <!--block name="follow_module">
