@@ -248,14 +248,14 @@
     <define name="REF_RATE_Q" value="14"/> <!-- 15.0 14.0 10 10 14.0-->
     <define name="REF_RATE_R" value="14"/> <!-- 15.0 10.0 10 12.5 14.0-->
 
-    <!--Maxium yaw rate, to avoid instability-->
+    <!--Maximum yaw rate, to avoid instability-->
     <define name="MAX_R" value="100.0" unit="deg/s"/>
 
     <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
-    <define name="FILT_CUTOFF" value="1.0"/>
+    <define name="FILT_CUTOFF" value="1.1"/>
     <!--<define name="Filt_CUTOFF_P" value="4.0"/>-->
-    <define name="FILT_CUTOFF_Q" value="2.0"/>
-    <define name="FILT_CUTOFF_R" value="2.0"/>
+    <define name="FILT_CUTOFF_Q" value="3.0"/>
+    <define name="FILT_CUTOFF_R" value="3.0"/>
     <!--<define name="FILT_CUTOFF" value="4.0"/>
     <define name="FILT_CUTOFF_R" value="3.2"/> -->
 
@@ -283,6 +283,10 @@
     <define name="COUNTER_TORQUE_INDIFFERENCE" value="FALSE"/>
     <define name="MOMENT_INERTIA_RATIO" value="0.004478"/>	<!-- ratio between MoI of tilt vs. rest of drone [total MoI minus one tilt]. Both measure around axis of servo. -->
     <define name="GRADIENT" value="0.0001"/>				<!-- gradient in linear relationship between pprz and angle (in rad), must be same as in 'ctrl_effectiveness_calc.c' -->
+
+	<!-- Minimum throttle that can be assign to motors -->
+	<define name="MIN_THROTTLE" value="3000"/>
+	<define name="MIN_THROTTLE_FWD" value="1500"/>
   </section>
   
   <!-- Definitions for control effectiveness calculator module -->
@@ -291,7 +295,7 @@
   	<define name="THRUST_LOWER_LIM" value="4000"/>
   	
   	<!-- Drone specific metrics -->
-   	<define name="MASS" value="1.250"/>		<!--[kg]-->
+   	<define name="MASS" value="1.270"/>		<!--[kg]-->
    	<define name="I_XX" value="0.06617232"/>	<!--[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
    	<!--<define name="I_YY" value="0.04914925"/>-->	<!--[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
    	<define name="I_YY" value="0.011"/> <!-- 0.006 was the previous -->
