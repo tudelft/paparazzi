@@ -158,6 +158,10 @@
     </module>
 
     <module name="motor_mixing"/>
+    <module name="sys_id_doublet">
+      <define name="DOUBLET_AXES" value="{0,1,2,3,4,5,6,7}"/>
+    </module>
+
   </firmware>
 
   <!-- CAN BUS 1 (Front Wing) -->
@@ -217,7 +221,8 @@
 
     <!-- Tip props always at 80% -->
     <call fun="actuators_pprz[8] = (Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), 0.01 > sched_ratio_tip_props)? -9600 : 9600/100*85*sched_ratio_tip_props);"/>
-
+    <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
+    
     <set servo="MOTOR_1"   value="($th_hold? -9600 : actuators_pprz[8])"/>
     <set servo="MOTOR_2"   value="($th_hold? -9600 : actuators_pprz[0])"/>
     <set servo="MOTOR_3"   value="($th_hold? -9600 : actuators_pprz[0])"/>
