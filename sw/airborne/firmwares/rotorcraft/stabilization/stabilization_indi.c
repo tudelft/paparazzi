@@ -691,6 +691,32 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #else
   stabilization_indi_set_wls_settings(use_increment);
 
+#ifdef STABILIZATION_INDI_MIN_THROTTLE
+    float airspeed = stateGetAirspeed_f();
+    // Limit minimum thrust ap can give
+    if (!act_is_servo[i]) {
+    	if (airspeed < 8.0){
+    		du_min[i] = STABILIZATION_INDI_MIN_THROTTLE - actuator_state_filt_vect[i];
+    	} else{
+    		du_min[i] = STABILIZATION_INDI_MIN_THROTTLE_FWD - actuator_state_filt_vect[i];
+    	}
+    }
+#endif
+
+#ifdef GUIDANCE_INDI_MIN_THROTTLE
+    float airspeed = stateGetAirspeed_f();
+    //limit minimum thrust ap can give
+    if (!act_is_servo[i]) {
+      if ((guidance_h.mode == GUIDANCE_H_MODE_HOVER) || (guidance_h.mode == GUIDANCE_H_MODE_NAV)) {
+        if (airspeed < INDI_HROTTLE_LIMIT_AIRSPEED_FWD) {
+          du_min[i] = GUIDANCE_INDI_MIN_THROTTLE - use_increment*actuator_state_filt_vect[i];
+        } else {
+          du_min[i] = GUIDANCE_INDI_MIN_THROTTLE_FWD - use_increment*actuator_state_filt_vect[i];
+        }
+      }
+    }
+#endif
+  }
 
   // WLS Control Allocator
   num_iter =
