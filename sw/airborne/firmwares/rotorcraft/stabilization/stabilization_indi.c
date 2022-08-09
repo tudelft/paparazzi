@@ -513,6 +513,18 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     du_max[i] = MAX_PPRZ - actuator_state_filt_vect[i];
     du_pref[i] = act_pref[i] - actuator_state_filt_vect[i];
 
+#ifdef STABILIZATION_INDI_MIN_THROTTLE
+    float airspeed = stateGetAirspeed_f();
+    // Limit minimum thrust ap can give
+    if (!act_is_servo[i]) {
+    	if (airspeed < 8.0){
+    		du_min[i] = STABILIZATION_INDI_MIN_THROTTLE - actuator_state_filt_vect[i];
+    	} else{
+    		du_min[i] = STABILIZATION_INDI_MIN_THROTTLE_FWD - actuator_state_filt_vect[i];
+    	}
+    }
+#endif
+
 #ifdef GUIDANCE_INDI_MIN_THROTTLE
     float airspeed = stateGetAirspeed_f();
     //limit minimum thrust ap can give
