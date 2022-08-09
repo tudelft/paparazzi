@@ -951,11 +951,11 @@ void overactuated_mixing_run()
         pos_error[2] = pos_setpoint[2] - pos_vect[2];
 
         //Compute the speed setpoints in the control reference frame:
-        speed_setpoint_control_rf[0] = - MANUAL_CONTROL_MAX_CMD_FWD_SPEED * radio_control.values[RADIO_PITCH]/9600;
-        speed_setpoint_control_rf[1] = MANUAL_CONTROL_MAX_CMD_LAT_SPEED * radio_control.values[RADIO_ROLL]/9600;
+        speed_setpoint_control_rf[0] = - MANUAL_CONTROL_MAX_CMD_FWD_SPEED * radio_control.values[RADIO_PITCH]/9600.0;
+        speed_setpoint_control_rf[1] = MANUAL_CONTROL_MAX_CMD_LAT_SPEED * radio_control.values[RADIO_ROLL]/9600.0;
         if( abs(radio_control.values[RADIO_THROTTLE] - 4800) > deadband_stick_throttle ) {
             speed_setpoint_control_rf[2] =
-                    -MANUAL_CONTROL_MAX_CMD_VERT_SPEED * (radio_control.values[RADIO_THROTTLE] - 4800) / 4800;
+                    -MANUAL_CONTROL_MAX_CMD_VERT_SPEED * (radio_control.values[RADIO_THROTTLE] - 4800.0) / 4800.0;
         }
         else {
             speed_setpoint_control_rf[2] = 0;

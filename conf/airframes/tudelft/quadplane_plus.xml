@@ -328,8 +328,8 @@
     <define name="INDI_REF_ERR_Z" value="1"/>
 
     <!-- INDI derivative gains -->
-    <define name="INDI_REF_RATE_P" value="5"/>
-    <define name="INDI_REF_RATE_Q" value="5"/>
+    <define name="INDI_REF_RATE_P" value="4"/>
+    <define name="INDI_REF_RATE_Q" value="4"/>
     <define name="INDI_REF_RATE_R" value="5"/>
 
     <define name="INDI_REF_RATE_X" value="2"/>
@@ -400,10 +400,10 @@
     <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
-    <define name="SERVO_EL_1_ZERO_VALUE" value="-55" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="-53.5" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="-50.5" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="-52" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="-50" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="-51" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-51" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="-54" unit="deg"/>
 
     <define name="SERVO_AZ_1_ZERO_VALUE" value="0" unit="deg"/>
     <define name="SERVO_AZ_2_ZERO_VALUE" value="0" unit="deg"/>
@@ -419,14 +419,14 @@
     <define name="SPEED_AOA_PROTECTION" value="6" unit="m/s"/>
 
     <!-- Filters properties for INDI -->
-    <define name="FILT_CUTOFF_ANG_RATES" value="18" unit="rad/s"/>
-    <define name="FILT_CUTOFF_LIN_ACC" value="18" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_EL" value="18" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="18" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="18" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ANG_RATES" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_LIN_ACC" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_EL" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="20" unit="rad/s"/>
 
     <!-- First order filter on rates -->
-    <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.03921" /><!-- 1-exp(-cutoff_frequency/sampling_frequency) [20 rad/s]--> 
+    <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0488" /><!-- 1-exp(-cutoff_frequency/sampling_frequency) [20 rad/s]--> 
 
     <!-- INDI properties [weights] -->
     <define name="W_ACT_MOTOR_CONST" value="3"/>
@@ -457,28 +457,28 @@
 
   <!-- Vehicle properties, see documentation for notation -->
   <section name="VEHICLE_PROPERTIES" prefix="VEHICLE_">
-    <define name="I_XX" value="0.14" unit="Kg*m^2"/>
-    <define name="I_YY" value="0.13" unit="Kg*m^2"/>
-    <define name="I_ZZ" value="0.2" unit="Kg*m^2"/>
+    <define name="I_XX" value="0.10" unit="Kg*m^2"/>
+    <define name="I_YY" value="0.08" unit="Kg*m^2"/>
+    <define name="I_ZZ" value="0.12" unit="Kg*m^2"/>
     <define name="I_TILT" value="0.000216" unit="Kg*m^2"/>
     <define name="PROPELLER_INERTIA" value="1.984e-5" unit="Kg*m^2"/>
-    <define name="MASS" value="2.33" unit="Kg"/>
-    <define name="L1" value="0.231" unit="m"/>
-    <define name="L2" value="0.231" unit="m"/>
+    <define name="MASS" value="2.45" unit="Kg"/>
+    <define name="L1" value="0.227" unit="m"/>
+    <define name="L2" value="0.227" unit="m"/>
     <define name="L3" value="0.39" unit="m"/>
-    <define name="L4" value="0.39" unit="m"/>
+    <define name="L4" value="0.37" unit="m"/>
     <define name="LZ" value="0." unit="m"/>
 
-    <define name="CL_ALPHA" value="4"/>
+    <define name="CL_ALPHA" value="3"/>
     <define name="CM_ZERO" value="0.05"/>
     <define name="CM_ALPHA" value="-0.1"/>
     <define name="CD_ZERO" value="0.38"/>
     <define name="K_CD" value="0.2"/>
     <define name="CY_BETA" value="0"/>
     <define name="CL_BETA" value="0"/>
-    <define name="S" value="0.57"/>
-    <define name="WING_CHORD" value="0.3325"/>
-    <define name="WING_SPAN" value="1.8"/>
+    <define name="S" value="0.43"/>
+    <define name="WING_CHORD" value="0.3"/>
+    <define name="WING_SPAN" value="1.4"/>
   </section>
 
 
@@ -666,10 +666,10 @@
   </section>
 
   <section name="BAT">
-    <define name="CATASTROPHIC_BAT_LEVEL" value="10.0" unit="V"/>
-    <define name="CRITIC_BAT_LEVEL" value="10.5" unit="V"/>
-    <define name="LOW_BAT_LEVEL" value="10.9" unit="V"/>
-    <define name="MAX_BAT_LEVEL" value="12.6" unit="V"/>
+    <define name="CATASTROPHIC_BAT_LEVEL" value="13.5" unit="V"/>
+    <define name="CRITIC_BAT_LEVEL" value="13.8" unit="V"/>
+    <define name="LOW_BAT_LEVEL" value="14" unit="V"/>
+    <define name="MAX_BAT_LEVEL" value="16.8" unit="V"/>
 <!--    <define name="BAT_NB_CELLS" value="3"/>-->
   </section>
 
