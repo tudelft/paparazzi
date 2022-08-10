@@ -601,7 +601,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
           IvySendMsg("ground FLIGHT_PARAM GCS %f %f %f %f %f %f %f %f %f %f %f %d %f",
                 0.0, // roll,
                 0.0, // pitch,
-                45.0, // heading
+                ground_heading, // heading
                 lat,
                 lon,
                 gSpeed,
@@ -622,7 +622,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
                 gSpeed,
                 -velD,
                 headMot,
-                45.0);
+                ground_heading);
           break;
         }
         case UBX_NAV_RELPOSNED_ID: {
@@ -634,8 +634,9 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
           uint8_t flags       = UBX_NAV_RELPOSNED_flags(gps_ubx.msg_buf);
           uint8_t relPosValid = RTCMgetbitu(&flags, 5, 1);
           float relpos_heading = UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf) * 1e-5f;
+          float relpos_dist = UBX_NAV_RELPOSNED_relPosLength(gps_ubx.msg_buf) * 1e-2f;
 
-          if(verbose) printf("Got relpos %d %f\r\n", flags, relpos_heading);
+          if(verbose) printf("Got relpos %d %f %f\r\n", flags, relpos_heading, relpos_dist);
 
           if(relPosValid) {
             ground_heading = relpos_heading;

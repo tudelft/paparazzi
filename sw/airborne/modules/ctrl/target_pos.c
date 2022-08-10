@@ -218,7 +218,7 @@ bool target_pos_set_current_offset(float unk __attribute__((unused))) {
 
     target.offset.distance = sqrtf(powf(uav_pos.x - pos.x, 2) + powf(uav_pos.y - pos.y, 2));
     target.offset.height = -(uav_pos.z - pos.z);
-    target.offset.heading = atan2f((uav_pos.y - pos.y), (uav_pos.x - pos.x))*180.0/M_PI - target.pos.course;
+    target.offset.heading = atan2f((uav_pos.y - pos.y), (uav_pos.x - pos.x))*180.0/M_PI - target.pos.heading;
   }
 
   return false;

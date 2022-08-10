@@ -39,7 +39,7 @@ struct Amt amt = {
   .distance = 60,
   .speed = -1.0,
   .pos_gain = 0.3,
-  .psi_ref = 0.0,
+  .psi_ref = 180.0,
   .slope_ref = 30.0,
   .speed_gain = 1.0,
   .relvel_gain = 1.0,
@@ -148,7 +148,7 @@ void follow_diagonal_approach(void) {
 
   // Reference model
   float gamma_ref = RadOfDeg(amt.slope_ref);
-  float psi_ref = RadOfDeg(amt.psi_ref);
+  float psi_ref = RadOfDeg(target_heading + amt.psi_ref);
 
   amt.rel_unit_vec.x = cosf(gamma_ref) * cosf(psi_ref);
   amt.rel_unit_vec.y = cosf(gamma_ref) * sinf(psi_ref);

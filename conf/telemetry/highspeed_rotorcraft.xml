@@ -49,6 +49,7 @@
       <message name="AHRS_REF_QUAT"            period="0.1"/>
       <message name="GPS_RTK"                  period="0.1"/>
       <message name="AOA"                      period="0.1"/>
+      <message name="TARGET_POS_INFO"          period="0.1"/>
     </mode>
 
     <mode name="ppm">
@@ -231,6 +232,7 @@
       <message name="ACTUATORS"                period="0.002"/>
       <message name="GPS_RTK"                  period="0.1"/>
       <message name="AOA"                      period="0.01"/>
+      <message name="TARGET_POS_INFO"          period="0.1"/>
       <!--<message name="WINDTUNNEL_MEAS"          period="0.005"/>-->
     </mode>
   </process>
