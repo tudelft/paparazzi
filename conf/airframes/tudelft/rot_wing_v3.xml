@@ -139,6 +139,7 @@
     </command_laws>
 
     <section NAME="MISC">
+        <define name="VoltageOfAdc(adc)" value="((3.3f/65536.0f) * 14.227 * adc)"/>
         <define VALUE="TRUE" NAME="NO_RC_THRUST_LIMIT"/>
         <define VALUE="3.5" NAME="NAV_CLIMB_VSPEED"/>
         <define VALUE="-0.5" NAME="NAV_DESCEND_VSPEED"/>
