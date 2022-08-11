@@ -84,6 +84,15 @@
             <define VALUE="TRUE" NAME="MODULE_LIS3MDL_UPDATE_AHRS"/>
             <configure VALUE="I2C1" NAME="MAG_LIS3MDL_I2C_DEV"/>
         </module>
+
+        <module name="sys_id_doublet">
+            <define name="DOUBLET_AXES" value="{0,1,2,3}"/>
+            <define name="DOUBLET_RADIO_CHANNEL" value="9"/>
+        </module>
+        <!--<module name="sys_id_chirp">
+            <define name="CHIRP_AXES" value="{0,1,2,3}"/>
+            <define name="CHIRP_RADIO_CHANNEL" value="9"/>
+        </module>-->
     </firmware>
 
     <servos DRIVER="Pwm">
@@ -121,6 +130,8 @@
     <command_laws>
         <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
         <set VALUE="-9600" SERVO="MOTOR_PUSH"/>
+        <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
+        <!--<call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>-->
         <set VALUE="($th_hold? -9600 : actuators_pprz[0])" SERVO="MOTOR_FRONT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
@@ -181,17 +192,17 @@
     </section>
 
     <section PREFIX="STABILIZATION_INDI_" NAME="STABILIZATION_ATTITUDE_INDI">
-        <define VALUE="{0.00, -6.5, 0.0,   6.5}" NAME="G1_ROLL"/>
-        <define VALUE="{2.4, 0.0,   -2.4, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-0.2, 0.2, -0.2, 0.2}" NAME="G1_YAW"/>
-        <define VALUE="{-0.5,   -0.5,  -0.5,   -0.5}" NAME="G1_THRUST"/>
+        <define VALUE="{0.00, -12, 0.0,   12}" NAME="G1_ROLL"/>
+        <define VALUE="{3.7, 0.0,   -3.7, 0.0}" NAME="G1_PITCH"/>
+        <define VALUE="{-0.49, 0.45, -0.49, 0.45}" NAME="G1_YAW"/>
+        <define VALUE="{-0.55,   -0.45,  -0.55,   -0.45}" NAME="G1_THRUST"/>
         <define VALUE="{0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
         <!--<define VALUE="{0.00, -30.0, 0.0,   30.0}" NAME="G1_ROLL"/>
         <define VALUE="{6.0, 0.0,   -6.0, 0.0}" NAME="G1_PITCH"/>
         <define VALUE="{-1.1, 1.1, -1.1, 1.1}" NAME="G1_YAW"/>
         <define VALUE="{-0.5,   -0.5,  -0.5,   -0.5}" NAME="G1_THRUST"/>
         <define VALUE="{0.0, 0.0, 0.0, 0.0}" NAME="G2"/>-->
-        <define VALUE="80.0" NAME="REF_ERR_P"/>
+        <define VALUE="50.0" NAME="REF_ERR_P"/>
         <define VALUE="30.0" NAME="REF_ERR_Q"/>
         <define VALUE="60.0" NAME="REF_ERR_R"/>
         <define VALUE="6.0" NAME="REF_RATE_P"/>
@@ -205,7 +216,7 @@
         <define VALUE="2.5" NAME="FILT_CUTOFF_RDOT"/>
         <define VALUE="2.5" NAME="ESTIMATION_FILT_CUTOFF"/>
         <define VALUE="TRUE" NAME="FILTER_YAW_RATE"/>
-        <define VALUE="{0.028, 0.028, 0.028, 0.028}" NAME="ACT_DYN"/>
+        <define VALUE="{0.03, 0.025, 0.03, 0.025}" NAME="ACT_DYN"/>
         <define VALUE="{0, 0, 0, 0}" NAME="ACT_IS_SERVO"/>
         <define VALUE="FALSE" NAME="USE_ADAPTIVE"/>
         <define VALUE="0.001" NAME="ADAPTIVE_MU"/>
