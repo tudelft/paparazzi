@@ -1,0 +1,41 @@
+ifndef OPTIM
+	OPTIM = -O0 -fno-loop-optimize -fno-aggressive-loop-optimizations
+endif
+ifndef DEBUG
+	DEBUG = -g
+endif
+ifndef WARN_FLAGS
+	WARN_FLAGS = -Wall -W -Wwrite-strings -Winline -Wstrict-prototypes -Wnested-externs -Wpointer-arith -Wcast-align -Wcast-qual -Wshadow
+endif
+
+
+CC = gcc
+AR = ar
+ARFLAGS = ruvs
+PRODUCT = chol.a
+BIN_DIR = ./bin
+
+OBJECTS = solveActiveSet.o chol_math.o
+
+#MATLAB_INCLUDES = /mnt/ArchRoot/opt/MATLAB/R2021b/extern/include
+#INCLUDE_FLAGS = -I../common -I$(MATLAB_INCLUDES)
+INCLUDE_FLAGS = -I../common
+LINK_FLAGS = -lm
+
+CC_FLAGS = -c -fstack-usage -fwrapv -fPIC $(WARN_FLAGS) $(DEBUG) $(OPTIM)
+
+all : $(PRODUCT)
+
+$(PRODUCT) : $(OBJECTS)
+	cd $(BIN_DIR) && $(AR) $(ARFLAGS) $(PRODUCT) $(OBJECTS)
+
+solveActiveSet.o : lib/solveActiveSet.c
+	@mkdir -p $(BIN_DIR)/$(dir $@)
+	$(CC) $(CC_FLAGS) -o $(BIN_DIR)/$@ $< $(INCLUDE_FLAGS) $(LINK_FLAGS)
+
+chol_math.o : lib/chol_math.c
+	@mkdir -p $(BIN_DIR)/$(dir $@)
+	$(CC) $(CC_FLAGS) -o $(BIN_DIR)/$@ $< $(INCLUDE_FLAGS) $(LINK_FLAGS)
+
+clean : 
+	$(RM) -r $(BIN_DIR)
