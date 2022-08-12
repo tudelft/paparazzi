@@ -102,7 +102,7 @@
       <go from="p2" hmode="route" wp="p3"/>
       <go from="p3" hmode="route" wp="p4"/>
       <go from="p4" hmode="route" wp="p1"/>
-      <deroute block="route"/>
+      <deroute block="route_repeat"/>
     </block>
     <block name="stay_p1">
       <set value="FALSE" var="force_forward"/>
