@@ -38,6 +38,9 @@
       <module name="logger" type="sd_chibios"/>
       <module name="flight_recorder"/>
 
+      <!-- Chibios monitor -->
+      <module name="sys_mon"/>
+
       <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
 
       <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
@@ -264,13 +267,13 @@
     <define name="MPU_Y_SIGN" value="1"/>
     <define name="MPU_Z_SIGN" value="1"/>
 
-    <!-- Calibrated with body only at cyberzoo (2022-08-04) -->
-    <define name="ACCEL_X_NEUTRAL" value="-23"/>
-    <define name="ACCEL_Y_NEUTRAL" value="-2"/>
-    <define name="ACCEL_Z_NEUTRAL" value="289"/>
-    <define name="ACCEL_X_SENS" value="4.893325674979021" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.824293882828504" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.707040171911125" integer="16"/>
+    <!-- Calibrated with body only at cyberzoo (2022-08-12) -->
+    <define name="ACCEL_X_NEUTRAL" value="-40"/>
+    <define name="ACCEL_Y_NEUTRAL" value="9"/>
+    <define name="ACCEL_Z_NEUTRAL" value="225"/>
+    <define name="ACCEL_X_SENS" value="4.889982390644465" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="4.789682680386794" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="4.666934921818032" integer="16"/>
 
     <!-- NOT CALIBRATED -->
     <define name="MAG_X_NEUTRAL" value="-2351"/>

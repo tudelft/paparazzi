@@ -38,6 +38,9 @@
       <module name="logger" type="sd_chibios"/>
       <module name="flight_recorder"/>
 
+      <!-- Chibios monitor -->
+      <module name="sys_mon"/>
+
       <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
 
       <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
