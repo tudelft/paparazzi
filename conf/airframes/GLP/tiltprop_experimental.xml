@@ -242,7 +242,7 @@
 
     <!-- reference acceleration for attitude control                 v -->
     <define name="REF_ERR_P" value="100"/> <!-- 107 50.0 25.0 20 35 100-->
-    <define name="REF_ERR_Q" value="140"/> <!-- 200 180.0 53.0 20 20 100-->
+    <define name="REF_ERR_Q" value="180"/> <!-- 200 180.0 53.0 20 20 100 140 before-->
     <define name="REF_ERR_R" value="140"/> <!-- 200 20.0 65.0 20 20 100-->
     <define name="REF_RATE_P" value="14"/> <!-- 14.0 9.0 10 8.5 9.0-->
     <define name="REF_RATE_Q" value="14"/> <!-- 15.0 14.0 10 10 14.0-->
