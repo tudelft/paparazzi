@@ -5,23 +5,55 @@
   </description>
 
   <firmware name="rotorcraft">
-    <target name="ap" board="bebop">
+    <target name="ap" board="px4fmu_5.0_chibios">
+      <configure name="PERIODIC_FREQUENCY"  value="500"/>
+      <!--<configure name="FLASH_MODE" value="SWD"/>-->
+      <configure name="FLASH_MODE" value="PX4_BOOTLOADER"/>
+
+      <module name="radio_control" type="sbus">
+        <configure name="SBUS_PORT" value="UART3"/>
+      </module>
+
       <define name="INDI_RPM_FEEDBACK" value="FALSE"/>
+      <!-- Logger -->
+      <module name="tlsf"/>
+      <module name="pprzlog"/>
+      <module name="logger" type="sd_chibios"/>
+      <!--<module name="flight_recorder"/>-->
+
+      <!--<module name="scheduling_indi_simple"/>-->
+
+      <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
+
+      <!-- <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/> Throttle hold in command laws -->
+      <!-- <define name="RADIO_FMODE"       value="RADIO_AUX2"/> Throttle curve select -->
+      <!-- <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> Switch between AP and FBW control -->
+      <!-- <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/> -->
     </target>
 
     <target name="nps" board="pc">
+      <module name="radio_control" type="datalink"/>
       <module name="fdm" type="jsbsim"/>
       <module name="udp"/>
       <define name="INDI_RPM_FEEDBACK" value="FALSE"/>
+      <module name="logger_file">
+        <define name="FILE_LOGGER_PATH" value="/home/tblaha/Documents"/>
+      </module>
     </target>
 
     <!--define name="USE_SONAR" value="TRUE"/-->
 
 	<!-- Subsystem section -->
-    <module name="telemetry" type="transparent_udp"/>
-    <module name="radio_control" type="datalink"/>
-    <module name="actuators" type="bebop"/>
-    <module name="imu" type="bebop"/>
+  <!--
+    <module name="px4_flash">
+      <configure name="PX4IO_UART" value="uart6"/>
+    </module>
+  -->
+    <module name="telemetry" type="transparent_usb"/>
+    <!--<module name="radio_control" type="datalink"/>-->
+
+    <module name="actuators" type="pwm"/>
+    <module name="imu" type="mpu6000"/>
     <module name="gps" type="furuno"/>
     <module name="stabilization" type="indi_algos"/>
     <!--
