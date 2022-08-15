@@ -45,6 +45,9 @@
 #include "filters/low_pass_filter.h"
 #include "wls/wls_alloc.h"
 #include <stdio.h>
+#include "math/lsq_package/common/setup_wls.h"
+#include "math/lsq_package/common/solveActiveSet.h"
+#include "math/lsq_package/common/size_defines.h"
 
 // Factor that the estimated G matrix is allowed to deviate from initial one
 #define INDI_ALLOWED_G_FACTOR 2.0
@@ -482,9 +485,28 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #endif
     }
 
+    num_t JG[CA_N_V*CA_N_U];
+    int n_v = CA_N_V;
+    int n_u = CA_N_U;
+    for (int i=0; i<n_v; i++) {
+      for (int j=0; j<n_u; j++) {
+        JG[n_v*j + i] = Bwls[i][j];
+      }
+    }
+
+    num_t Wu[CA_N_U]; memset(Wu, 1.0F, sizeof(num_t)*n_u);
+    num_t theta = sqrt(1e-5);
+    num_t cond_bound = 1e4;
+
+    num_t A[CA_N_C*CA_N_U];
+    num_t b[CA_N_C];
+
     // WLS Control Allocator
-    num_iter =
-      wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, 0, du_pref, 10000, 10);
+    // num_iter =
+    //   wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, 0, du_pref, 10000, 10);
+
+    setup_wls(n_v, n_u, JG, Wv, Wu, du_pref, indi_v, theta, cond_bound, A, b);
+    solveActiveSet(A, b, du_min, du_max, 0, true, indi_du, 0, n_u, n_v, 0, 0, indi_ctl_alloc_algo);
 #endif
 
     // Add the increments to the actuators

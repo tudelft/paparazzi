@@ -39,6 +39,7 @@
       <module name="logger_file">
         <define name="FILE_LOGGER_PATH" value="/home/tblaha/Documents"/>
       </module>
+      <configure name="OPT" value="0"/>
     </target>
 
     <!--define name="USE_SONAR" value="TRUE"/-->
@@ -171,6 +172,13 @@
     <define name="WLS_PRIORITIES" value="{1000, 1000, 1, 100}"/>
 
     <define name="ALGO" value="0"/>
+  </section>
+
+  <section name="actuator_sizes">
+    <define name="INDI_OUTPUTS" value="4"/>
+    <define name="INDI_NUM_ACT" value="4"/>
+    <define name="CA_N_V" value="4"/>
+    <define name="CA_N_U" value="4"/>
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">

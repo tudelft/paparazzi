@@ -241,6 +241,7 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
       // Still free variables left, calculate corresponding solution
 
       // use a solver to find the solution to A_free*p_free = d
+      printf("%d", n_free);
       qr_solve_wrapper_pprz(n_c, n_free, A_free_ptr, d, p_free);
 
       //print results current step
@@ -258,7 +259,8 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
     // check limits
     n_infeasible = 0;
     for (int i = 0; i < n_u; i++) {
-      if (u_opt[i] >= (umax[i] + TOL) || u_opt[i] <= (umin[i] - TOL)) {
+      if (u_opt[i] >= (umax[i] * (1 + ((umax[i]>0) ? 1 : -1) * TOL) + TOL) 
+          || u_opt[i] <= (umin[i] * (1 + ((umin[i]<0) ? 1 : -1) * TOL) - TOL)) {
         infeasible_index[n_infeasible++] = i;
       }
     }
