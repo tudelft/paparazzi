@@ -525,6 +525,13 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     }
 #endif
 
+#ifdef STABILIZATIOn_INDI_MAX_SERVO_INCREMENT
+    if (act_is_servo[i]) {
+    	BoundAbs(du_min[i], STABILIZATION_INDI_MAX_SERVO_INCREMENT);
+    	BoundAbs(du_max[i], STABILIZATION_INDI_MAX_SERVO_INCREMENT);
+    }
+#endif
+
 #ifdef GUIDANCE_INDI_MIN_THROTTLE
     float airspeed = stateGetAirspeed_f();
     //limit minimum thrust ap can give
