@@ -288,6 +288,9 @@
 	<!-- Minimum throttle that can be assign to motors -->
 	<define name="MIN_THROTTLE" value="3000"/>
 	<define name="MIN_THROTTLE_FWD" value="1500"/>
+	
+	<!-- Maximum servo increment in PPRZ units -->
+	<define name="MAX_SERVO_INCREMENT" value="2000"/>
   </section>
   
   <!-- Definitions for control effectiveness calculator module -->
