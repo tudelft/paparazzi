@@ -146,7 +146,7 @@ class Base:
 
 
         if self.verbose:
-            E = 0 #dummy value (ERROR SHOULD BE CALCULATED BY RTK)
+            E = 0 #dummy value (TODO: ERROR SHOULD BE CALCULATED BY RTK)
             print("Error distances: " + str(E).replace('[','').replace(']',''))
             sys.stdout.flush()
 
@@ -176,8 +176,8 @@ class Base:
 
                 # Send base position
                 if self.enabled:
-                    dn = self.speed*m.cos(self.course/180.0*m.pi)
-                    de = self.speed*m.sin(self.course/180.0*m.pi)
+                    dn = self.speed*m.cos(self.course/180.0*m.pi) # DELTA ?
+                    de = self.speed*m.sin(self.course/180.0*m.pi) # DELTA ?
                     self.move_base(self.step*dn,self.step*de)
                     self.send_pos()
 
