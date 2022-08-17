@@ -1,7 +1,7 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
 <!-- lat0 and lon0 are reference position for waypoint-->
-<flight_plan alt="50" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="5000" name="Nederdrone Valkenburg" security_height="2">
+<flight_plan alt="20" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="5000" name="Nederdrone Valkenburg" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -72,17 +72,15 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
       <!-- <attitude pitch="-50" roll="0" throttle="0.8" until="stage_time>0" vmode="throttle"/> -->
     </block>
-    <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="GetPosHeight() @GT 18.0" deroute="Takeoff"/>
-      <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="-45." roll="0" throttle="0.9" vmode="throttle"/>
-    </block>
+
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="GetPosHeight() @GT 50.0" deroute="route"/>
+      <exception cond="GetPosHeight() @GT 25.0" deroute="route"/>
       <call_once fun="nav_set_heading_current()"/>
-      <call_once fun="waypoint_set_xy_i(WP_CLIMB,POS_BFP_OF_REAL(GetPosX()+20.0*sinf(stateGetNedToBodyEulers_f()->psi)),POS_BFP_OF_REAL(GetPosY()+20.0*cosf(stateGetNedToBodyEulers_f()->psi)))"/>
+      <!-- <call_once fun="waypoint_set_xy_i(WP_CLIMB,POS_BFP_OF_REAL(GetPosX()+20.0*sinf(stateGetNedToBodyEulers_f()->psi)),POS_BFP_OF_REAL(GetPosY()+20.0*cosf(stateGetNedToBodyEulers_f()->psi)))"/> -->
+      <call_once fun="waypoint_set_xy_i(WP_CLIMB,POS_BFP_OF_REAL(GetPosX()),POS_BFP_OF_REAL(GetPosY()))"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
+
     <block name="route">
       <set value="TRUE" var="force_forward"/>
       <go from="p1" hmode="route" wp="p2"/>
@@ -91,7 +89,9 @@
       <go from="p4" hmode="route" wp="p1"/>
        <deroute block="Approach FOLLOW"/>
     </block>
-    <block name="Approach FOLLOW">
+
+    <!-- Follow waipoint of ship GPS position (with offset) -->
+    <block name="Approach FOLLOW" strip_button="Approach FOLLOW" strip_icon="boat.png">
       <stay alt="WaypointAlt(WP_FOLLOW)" pre_call="approach_moving_target_enable(WP_FOLLOW)" wp="FOLLOW"/>
     </block>
     
@@ -100,6 +100,7 @@
       <set value="FALSE" var="force_forward"/>
       <stay wp="STDBY"/>
     </block>
+
     <block name="route_repeat">
       <set value="TRUE" var="force_forward"/>
       <go from="p1" hmode="route" wp="p2"/>
@@ -108,16 +109,19 @@
       <go from="p4" hmode="route" wp="p1"/>
       <deroute block="route_repeat"/>
     </block>
+
     <block name="stay_p1">
       <set value="FALSE" var="force_forward"/>
       <stay wp="p1"/>
     </block>
+
     <block name="go_p2">
       <set value="TRUE" var="force_forward"/>
       <call_once fun="nav_set_heading_deg(90)"/>
       <go wp="p2"/>
       <deroute block="stay_p1"/>
     </block>
+
     <block name="line_p1_p2">
       <set value="TRUE" var="force_forward"/>
       <go from="p1" hmode="route" wp="p2"/>
