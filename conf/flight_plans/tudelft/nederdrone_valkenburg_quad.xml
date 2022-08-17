@@ -74,11 +74,20 @@
     </block>
 
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="GetPosHeight() @GT 25.0" deroute="route"/>
+      <exception cond="GetPosHeight() @GT 20.0" deroute="Standby"/> 
       <call_once fun="nav_set_heading_current()"/>
       <!-- <call_once fun="waypoint_set_xy_i(WP_CLIMB,POS_BFP_OF_REAL(GetPosX()+20.0*sinf(stateGetNedToBodyEulers_f()->psi)),POS_BFP_OF_REAL(GetPosY()+20.0*cosf(stateGetNedToBodyEulers_f()->psi)))"/> -->
       <call_once fun="waypoint_set_xy_i(WP_CLIMB,POS_BFP_OF_REAL(GetPosX()),POS_BFP_OF_REAL(GetPosY()))"/>
+      <call_once fun="waypoint_set_xy_i(WP_STDBY,POS_BFP_OF_REAL(GetPosX()),POS_BFP_OF_REAL(GetPosY()))"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
+    </block>
+
+    <block name="test yaw">
+      <go wp="p1"/>
+      <for from="1" to="16" var="i">
+        <heading alt="WaypointAlt(WP_p1)" course="90 * $i" until="stage_time @GT 3"/>
+      </for>
+      <deroute block="Standby"/>
     </block>
 
     <block name="route">
@@ -158,7 +167,7 @@
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>
-    <block name="land">
+    <block name="land_TD">
       <set value="FALSE" var="force_forward"/>
       <go wp="TD"/>
     </block>
