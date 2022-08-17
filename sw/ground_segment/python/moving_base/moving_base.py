@@ -36,6 +36,7 @@ import pymap3d as pm
 import math as m
 
 PPRZ_HOME = getenv("PAPARAZZI_HOME", path.normpath(path.join(path.dirname(path.abspath(__file__)), '../../../../')))
+#PPRZ_HOME = getenv("PAPARAZZI_HOME", path.normpath(path.join(path.dirname(path.abspath(__file__)), '~/paparazzi'))) #TEST
 sys.path.append(PPRZ_HOME + "/var/lib/python/")
 from pprzlink.ivy import IvyMessagesInterface
 from pprzlink.message import PprzMessage
@@ -52,7 +53,7 @@ class UAV:
         self.timeout = 0
 
 class Base:
-    def __init__(self, freq=10., use_ground_ref=False, ignore_geo_fence=False, verbose=False):
+    def __init__(self, freq=10, use_ground_ref=False, ignore_geo_fence=False, verbose=False):
         self.step = 1. / freq
         self.use_ground_ref = use_ground_ref
         self.enabled = True # run sim by default
@@ -149,11 +150,13 @@ class Base:
             msg['speed'] = self.speed
             msg['climb'] = 0
             msg['course'] = self.course
+            msg['heading'] = 45
             self._interface.send(msg)
 
     def run(self):
         try:
             # The main loop
+            print("\nmoving base loop started!\n")
             while True:
                 # TODO: make better frequency managing
                 sleep(self.step)
