@@ -81,7 +81,7 @@ static bool verbose = false;
 static struct endpoint_t gps_ep;
 static struct gps_ubx_t gps_ubx;
 static struct gps_rtcm_t gps_rtcm;
-static uint8_t ac_id = 14;
+static uint8_t ac_id = 0;
 static float ground_heading = NAN;
 
 void packet_handler(void *ep, uint8_t *data, uint16_t len);
@@ -661,7 +661,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
       if(verbose) printf("Got a succesfull RTCM message [%d]\r\n", RTCMgetbitu(gps_rtcm.msg_buf, 24 + 0, 12));
 
       /* Forward the message to inject into the drone */
-      //send_gps_inject(gps_rtcm.msg_buf, gps_rtcm.len + 6);
+      send_gps_inject(gps_rtcm.msg_buf, gps_rtcm.len + 6);
 
       gps_rtcm.msg_available = false;
     }
@@ -684,6 +684,7 @@ int main(int argc, char** argv) {
 
   /* Arguments options and usage information */
   static struct option long_options[] = {
+    {"ac_id", required_argument, NULL, 'i'},
     {"endpoint", required_argument, NULL, 'e'},
     {"help", no_argument, NULL, 'h'},
     {"verbose", no_argument, NULL, 'v'},
@@ -692,14 +693,19 @@ int main(int argc, char** argv) {
   static const char* usage =
     "Usage: %s [options]\n"
     " Options :\n"
+    "   -i --ac_id [aircraft_id]               Aircraft id\n"
     "   -e --endpoint [endpoint_str]           Endpoint address of the GPS\n"
     "   -h --help                              Display this help\n"
     "   -v --verbose                           Print verbose information\n";
 
   int c;
   int option_index = 0;
-  while((c = getopt_long(argc, argv, "e:hv", long_options, &option_index)) != -1) {
+  while((c = getopt_long(argc, argv, "i:e:hv", long_options, &option_index)) != -1) {
     switch (c) {
+      case 'i':
+        ac_id = atoi(optarg);
+        break;
+
       case 'e':
         // Parse the endpoint argument UDP
         if(!strncmp(optarg, "udp", 3)) {
