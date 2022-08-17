@@ -1,0 +1,174 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<!-- lat0 and lon0 are reference position for waypoint-->
+<flight_plan alt="50" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="5000" name="Nederdrone Valkenburg" security_height="2">
+  <header>
+    #include "autopilot.h"
+    #include "modules/datalink/datalink.h"
+    #include "modules/ctrl/approach_moving_target.h"
+</header>
+  <waypoints>
+    <waypoint name="HOME" x="12.6" y="-48.7"/>
+    <waypoint name="CLIMB" x="62.6" y="-80.4"/>
+    <waypoint name="STDBY" x="94.9" y="-15.4"/>
+    <waypoint name="p1" x="130.6" y="14.2"/>
+    <waypoint name="p2" x="442.6" y="135.2"/>
+    <waypoint name="p3" x="512.9" y="-8.1"/>
+    <waypoint name="p4" x="204.8" y="-131.2"/>
+    <waypoint name="TD" x="-4.1" y="-23.7"/>
+    <waypoint name="FOLLOW" x="123.2" y="87.8"/>
+    <!--waypoint lat="52.1669450" lon="4.4174372" name="S1"/>
+    <waypoint lat="52.1689871" lon="4.4208804" name="S2"/-->
+    <waypoint lat="52.169189" lon="4.410820" name="C1"/>
+    <waypoint lat="52.168049" lon="4.406923" name="C2"/>
+    <waypoint lat="52.166515" lon="4.408235" name="C3"/>
+    <waypoint lat="52.163255" lon="4.407668" name="C4"/>
+    <waypoint lat="52.161908" lon="4.410082" name="C5"/>
+    <waypoint lat="52.162641" lon="4.416992" name="C6"/>
+    <waypoint lat="52.164861" lon="4.427268" name="C7"/>
+    <waypoint lat="52.170422" lon="4.427511" name="C8"/>
+    <waypoint lat="52.172276" lon="4.424011" name="C9"/>
+  </waypoints>
+  <!-- mark zones with waypoints-->
+  <sectors>
+    <sector color="red" name="Flyzone">
+      <corner name="C1"/>
+      <corner name="C2"/>
+      <corner name="C3"/>
+      <corner name="C4"/>
+      <corner name="C5"/>
+      <corner name="C6"/>
+      <corner name="C7"/>
+      <corner name="C8"/>
+      <corner name="C9"/>
+    </sector>
+  </sectors>
+  <modules> <!-- not sure what this module does or is needed for -->
+    <module name="nav" type="survey_rectangle_rotorcraft">
+      <define name="RECTANGLE_SURVEY_DEFAULT_SWEEP" value="100"/>
+    </module>
+  </modules>
+  <exceptions> <!-- conditions for geofence -->
+    <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
+    <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+  </exceptions>
+  <blocks>
+    <block name="Wait GPS"> <!-- does drone crash here ? -->
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid() || !state.ned_initialized_i"/>
+    </block>
+    <block name="Geo init"> <!-- hold altitiude -->
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetAltitudeReferenceHere()"/>
+    </block>
+    <block name="Holding point"> <!-- does drone crash here ? -->
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Start Engine"> <!-- added to test-->
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="NavResurrect()"/>
+      <call_once fun="nav_set_heading_current()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <!-- <attitude pitch="-50" roll="0" throttle="0.8" until="stage_time>0" vmode="throttle"/> -->
+    </block>
+    <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
+      <exception cond="GetPosHeight() @GT 18.0" deroute="Takeoff"/>
+      <call_once fun="nav_set_heading_current()"/>
+      <attitude pitch="-45." roll="0" throttle="0.9" vmode="throttle"/>
+    </block>
+    <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+      <exception cond="GetPosHeight() @GT 50.0" deroute="route"/>
+      <call_once fun="nav_set_heading_current()"/>
+      <call_once fun="waypoint_set_xy_i(WP_CLIMB,POS_BFP_OF_REAL(GetPosX()+20.0*sinf(stateGetNedToBodyEulers_f()->psi)),POS_BFP_OF_REAL(GetPosY()+20.0*cosf(stateGetNedToBodyEulers_f()->psi)))"/>
+      <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
+    </block>
+    <block name="route">
+      <set value="TRUE" var="force_forward"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p3"/>
+      <go from="p3" hmode="route" wp="p4"/>
+      <go from="p4" hmode="route" wp="p1"/>
+       <deroute block="Approach FOLLOW"/>
+    </block>
+    <block name="Approach FOLLOW">
+      <stay alt="WaypointAlt(WP_FOLLOW)" pre_call="approach_moving_target_enable(WP_FOLLOW)" wp="FOLLOW"/>
+    </block>
+    
+  
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <set value="FALSE" var="force_forward"/>
+      <stay wp="STDBY"/>
+    </block>
+    <block name="route_repeat">
+      <set value="TRUE" var="force_forward"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p3"/>
+      <go from="p3" hmode="route" wp="p4"/>
+      <go from="p4" hmode="route" wp="p1"/>
+      <deroute block="route_repeat"/>
+    </block>
+    <block name="stay_p1">
+      <set value="FALSE" var="force_forward"/>
+      <stay wp="p1"/>
+    </block>
+    <block name="go_p2">
+      <set value="TRUE" var="force_forward"/>
+      <call_once fun="nav_set_heading_deg(90)"/>
+      <go wp="p2"/>
+      <deroute block="stay_p1"/>
+    </block>
+    <block name="line_p1_p2">
+      <set value="TRUE" var="force_forward"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <stay until="stage_time>10" wp="p2"/>
+      <go from="p2" hmode="route" wp="p1"/>
+      <deroute block="line_p1_p2"/>
+    </block>
+
+    <!--block group="extra_pattern" name="Survey S1-S2 25m NS" strip_button="Svy25-NS-PRIMITIVE">
+      <set value="FALSE" var="force_forward"/>
+      <survey_rectangle grid="30" orientation="NS" wp1="S1" wp2="S2"/>
+    </block>
+    <block group="extra_pattern" name="Survey S1-S2 NS" strip_button="Svy-NS" strip_icon="survey.png">
+      <set value="TRUE" var="force_forward"/>
+      <call_once fun="nav_survey_rectangle_rotorcraft_setup(WP_S1, WP_S2, sweep, NS)"/>
+      <deroute block="Survey RECTANGLE RUN"/>
+    </block>
+    <block group="extra_pattern" name="Survey S1-S2 LO" strip_button="Svy-LO" strip_icon="survey_we.png">
+      <set value="TRUE" var="force_forward"/>
+      <call_once fun="nav_survey_rectangle_rotorcraft_setup(WP_S1, WP_S2, sweep, WE)"/>
+      <deroute block="Survey RECTANGLE RUN"/>
+    </block>
+    <block group="extra_pattern" name="Survey RECTANGLE RUN" strip_button="Svy CONT">
+      <set value="TRUE" var="force_forward"/>
+      <exception cond="rectangle_survey_sweep_num @GT 1" deroute="Standby"/>
+      <call fun="nav_survey_rectangle_rotorcraft_run(WP_S1, WP_S2)"/>
+    </block-->
+
+    <block name="Oval">
+      <set value="TRUE" var="force_forward"/>
+      <oval p1="p1" p2="p2" radius="nav_radius"/>
+    </block>
+    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+    </block>
+    <block name="land">
+      <set value="FALSE" var="force_forward"/>
+      <go wp="TD"/>
+    </block>
+    <block name="descend">
+      <set value="FALSE" var="force_forward"/>
+      <exception cond="LessThan(GetPosHeight(), 15.0)" deroute="flare"/>
+      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="flare">
+      <set value="FALSE" var="force_forward"/>
+      <stay climb="-0.5" vmode="climb" wp="TD"/>
+    </block>
+    <block name="landed">
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>
