@@ -54,6 +54,7 @@ struct target_t {
   uint32_t rtk_timeout;                     ///< RTK message timeout [msec]
   bool integrate_xy;                        ///< Enable integration of the position in X-Y (North/East) frame
   bool integrate_z;                         ///< Enable integration of the position in Z (Up) frame
+  struct LlaCoor_i gps_lla;                 ///< GPS LLA position
 };
 
 extern struct target_t target;
