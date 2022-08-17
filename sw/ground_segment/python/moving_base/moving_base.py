@@ -62,7 +62,8 @@ class Base:
         self.uavs = [UAV(i) for i in self.ids]
         self.time = time.mktime(time.gmtime())
         self.speed = 1.5 # m/s
-        self.course = 90 # deg
+        self.course = 90 # deg (moving directon of platform)
+        self.heading = 45 # deg (orientation of platform)
         #Valkenburg
         print("FOLLOW position = Valkenburg")
         self.lat = 52.167102 #deg
@@ -136,7 +137,7 @@ class Base:
                 ready = False
             if uav.timeout > 0.5:
                 if self.verbose:
-                    print("The state msg of rotorcraft ", uav.id, " stopped")
+                    print("The state msg of rotorcraft ", uav.id, ": stopped")
                     sys.stdout.flush()
                 ready = False
 
@@ -145,6 +146,7 @@ class Base:
 
 
         if self.verbose:
+            E = 0 #dummy value (ERROR SHOULD BE CALCULATED BY RTK)
             print("Error distances: " + str(E).replace('[','').replace(']',''))
             sys.stdout.flush()
 
@@ -158,7 +160,7 @@ class Base:
             msg['speed'] = self.speed
             msg['climb'] = 0
             msg['course'] = self.course
-            msg['heading'] = 45
+            msg['heading'] = self.heading
             self._interface.send(msg)
 
     def run(self):
