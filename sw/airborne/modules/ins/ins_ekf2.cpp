@@ -784,7 +784,8 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, uint32_t stamp, f
 /* Save the latest temperature measurement for air density calculations */
 static void temperature_cb(uint8_t __attribute__((unused)) sender_id, float temp)
 {
-  ekf2.temp = temp;
+  (void) temp;
+  //ekf2.temp = temp;
 }
 
 /* Update INS based on AGL information */
