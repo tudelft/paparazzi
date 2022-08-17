@@ -38,8 +38,9 @@
       <module name="logger" type="sd_chibios"/>
       <module name="flight_recorder"/>
 
-      <!-- Chibios monitor -->
+      <!-- Monitoring -->
       <module name="sys_mon"/>
+      <module name="status_nederdrone"/>
 
       <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
 

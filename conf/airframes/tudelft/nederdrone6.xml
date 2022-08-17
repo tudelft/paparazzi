@@ -22,13 +22,6 @@
         <configure name="SBUS_PORT" value="UART3"/>
       </module>
 
-      <module name="airspeed" type="ms45xx_i2c">
-        <define name="USE_I2C4"/>
-        <define name="MS45XX_I2C_DEV" value="i2c4"/>
-      </module>
-
-
-
       <!-- Forward FuelCell data back to the GCS -->
       <!--module name="generic_uart_sensor"/-->
 
@@ -38,8 +31,9 @@
       <module name="logger" type="sd_chibios"/>
       <module name="flight_recorder"/>
 
-      <!-- Chibios monitor -->
+      <!-- Monitoring -->
       <module name="sys_mon"/>
+      <module name="status_nederdrone"/>
 
       <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
 
@@ -107,7 +101,16 @@
     </module>
     <module name="stabilization" type="rate_indi"/>
 
-    <module name="air_data"/>
+    <!-- Airspeed sensors -->
+    <module name="airspeed" type="ms45xx_i2c">
+      <define name="USE_I2C4"/>
+      <define name="MS45XX_I2C_DEV" value="i2c4"/>
+    </module>
+    <module name="airspeed" type="uavcan"/>
+    <module name="air_data">
+      <define name="AIR_DATA_BARO_DIFF_ID" value="UAVCAN_SENDER_ID"/>
+    </module>
+
     <module name="send_imu_mag_current"/>
     <module name="eff_scheduling_nederdrone"/>
 

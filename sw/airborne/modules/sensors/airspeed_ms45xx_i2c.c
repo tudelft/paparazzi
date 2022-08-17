@@ -39,17 +39,6 @@
 #include "modules/datalink/telemetry.h"
 #endif
 
-#ifndef USE_AIRSPEED_MS45XX
-#if USE_AIRSPEED
-#define USE_AIRSPEED_MS45XX TRUE
-PRINT_CONFIG_MSG("USE_AIRSPEED_MS45XX set to TRUE since this is set USE_AIRSPEED")
-#endif
-#endif
-
-#if USE_AIRSPEED_MS45XX
-#include "state.h"
-#endif
-
 /** Default I2C device
  */
 #ifndef MS45XX_I2C_DEV
@@ -273,9 +262,6 @@ void ms45xx_i2c_event(void)
       // Compute airspeed
       ms45xx.airspeed = sqrtf(Max(ms45xx.pressure * ms45xx.airspeed_scale, 0));
 
-#if USE_AIRSPEED_MS45XX
-      stateSetAirspeed_f(ms45xx.airspeed);
-#endif
       if (ms45xx.sync_send) {
         ms45xx_downlink(&(DefaultChannel).trans_tx, &(DefaultDevice).device);
       }

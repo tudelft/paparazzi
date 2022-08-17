@@ -24,7 +24,7 @@
       <message name="ACTUATORS"                period="0.2"/>
       <message name="DATALINK_REPORT"          period="5.1"/>
       <message name="STATE_FILTER_STATUS"      period="3.2"/>
-      <message name="AIR_DATA"                 period="0.6"/>
+      <message name="AIR_DATA"                 period="0.2"/>
       <message name="SURVEY"                   period="2.5"/>
       <message name="OPTIC_FLOW_EST"           period="0.05"/>
       <message name="VECTORNAV_INFO"           period="0.5"/>
@@ -225,7 +225,7 @@
       <message name="GUIDANCE_H_REF_INT"       period="0.02"/>
       <message name="GUIDANCE_INDI_HYBRID"     period="0.002"/>
       <message name="HYBRID_GUIDANCE"          period="0.02"/>
-      <message name="ESC"                      period="0.02"/>
+      <message name="ESC"                      period="0.01"/>
       <message name="STAB_ATTITUDE_INDI"       period="0.002"/>
       <message name="PPM"                      period="0.05"/>
       <message name="INDI_G"                   period="0.1"/>
@@ -233,6 +233,7 @@
       <message name="GPS_RTK"                  period="0.1"/>
       <message name="AOA"                      period="0.01"/>
       <message name="TARGET_POS_INFO"          period="0.1"/>
+      <message name="AIRSPEED_MS45XX"          period="0.05"/>
       <!--<message name="WINDTUNNEL_MEAS"          period="0.005"/>-->
     </mode>
   </process>
