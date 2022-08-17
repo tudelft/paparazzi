@@ -35,25 +35,27 @@ float approach_moving_target_angle_deg;
 #define DEBUG_AMT TRUE
 #include <stdio.h>
 
+// settings how drone should approach the ship
 struct Amt amt = {
-  .distance = 60,
-  .speed = -1.0,
-  .pos_gain = 0.3,
-  .psi_ref = 180.0,
-  .slope_ref = 35.0,
-  .speed_gain = 1.0,
-  .relvel_gain = 1.0,
+  .distance = 60,     // [m], diagonal decent line to ship
+  .speed = -1.0,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
+  .pos_gain = 0.3,    // [-], how aggresive drone tracks the descent line
+  .psi_ref = 180.0,   // [deg], descent line direction offset w.r.t. heading ship
+  .slope_ref = 35.0,  // [deg], slope descent line
+  .speed_gain = 1.0,  // [-], how agressive ..................
+  .relvel_gain = 1.0, // [-], ................................
   .enabled_time = 0,
   .wp_id = 0,
 };
 
+// Telemetry info to send from drone to base
 struct AmtTelem {
-  struct FloatVect3 des_pos;
+  struct FloatVect3 des_pos; 
   struct FloatVect3 des_vel;
 };
 
 struct AmtTelem amt_telem;
-bool approach_moving_target_enabled = false;
+bool approach_moving_target_enabled = false; // NOT USED
 
 static abi_event gps_ev;
 static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
@@ -89,7 +91,7 @@ void approach_moving_target_init(void)
 }
 
 
-/* Update INS based on GPS information */
+/* Update INS (internal navigation system) based on GPS information */
 static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp,
                    struct GpsState *gps_s)
