@@ -61,10 +61,10 @@ class Base:
         self.ids = [14]
         self.uavs = [UAV(i) for i in self.ids]
         self.time = time.mktime(time.gmtime())
-        self.speed = 1 # m/s
+        self.speed = 0.1 # m/s
         self.course = -90 # deg
-        self.lat = 52.965523 #deg
-        self.lon = 4.474033 #deg
+        self.lat = 43.564192 #deg #52.965523
+        self.lon = 1.480751 #deg #4.474033
         self.altitude = 2.0 # starts from 1 m high
 
         # Start IVY interface
