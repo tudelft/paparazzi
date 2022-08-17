@@ -23,7 +23,26 @@
 #define ACTUATORS_UAVCAN_H
 
 #include "modules/uavcan/uavcan.h"
+#include "generated/airframe.h"
 #include BOARD_CONFIG
+
+/* uavcan ESC status telemetry structure */
+struct actuators_uavcan_telem_t {
+  uint8_t node_id;
+  float timestamp;
+  float voltage;
+  float current;
+  float temperature;
+  int32_t rpm;
+  uint32_t error_count;
+};
+
+#ifdef SERVOS_UAVCAN1_NB
+extern struct actuators_uavcan_telem_t uavcan1_telem[SERVOS_UAVCAN1_NB];
+#endif
+#ifdef SERVOS_UAVCAN2_NB
+extern struct actuators_uavcan_telem_t uavcan2_telem[SERVOS_UAVCAN2_NB];
+#endif
 
 /* External functions */
 extern void actuators_uavcan_init(struct uavcan_iface_t *iface);

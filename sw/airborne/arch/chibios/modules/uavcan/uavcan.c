@@ -58,7 +58,9 @@ struct uavcan_iface_t uavcan1 = {
   .thread_tx_wa_size = sizeof(uavcan1_tx_wa),
   .node_id = UAVCAN_CAN1_NODE_ID,
   .transfer_id = 0,
-  .initialized = false
+  .initialized = false,
+  .transmit_err_cnt = 0,
+  .transmit_err_flush_cnt = 0
 };
 #endif
 
@@ -84,7 +86,9 @@ struct uavcan_iface_t uavcan2 = {
   .thread_tx_wa_size = sizeof(uavcan2_tx_wa),
   .node_id = UAVCAN_CAN2_NODE_ID,
   .transfer_id = 0,
-  .initialized = false
+  .initialized = false,
+  .transmit_err_cnt = 0,
+  .transmit_err_flush_cnt = 0
 };
 #endif
 
@@ -157,6 +161,7 @@ static THD_FUNCTION(uavcan_tx, p)
 
     // Transmit error
     if (evts & EVENT_MASK(1)) {
+      //iface->transmit_err_cnt++;
       chEvtGetAndClearFlags(&txe);
       continue;
     }
@@ -183,6 +188,7 @@ static THD_FUNCTION(uavcan_tx, p)
         // After 5 retries giveup and clean full queue
         if (err_cnt >= 5) {
           err_cnt = 0;
+          iface->transmit_err_flush_cnt++;
           while (canardPeekTxQueue(&iface->canard)) { canardPopTxQueue(&iface->canard); }
           continue;
         }

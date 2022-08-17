@@ -51,6 +51,10 @@ struct uavcan_iface_t {
 
   uint8_t transfer_id;
   bool initialized;
+
+  // Errors
+  uint32_t transmit_err_cnt;
+  uint32_t transmit_err_flush_cnt;
 };
 
 /** Generic uavcan callback definition */
