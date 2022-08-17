@@ -58,13 +58,18 @@ class Base:
         self.use_ground_ref = use_ground_ref
         self.enabled = True # run sim by default
         self.verbose = verbose
-        self.ids = [14]
+        self.ids = [203] # originaly 14, but did not work, did not match A/C in Paparazzi
         self.uavs = [UAV(i) for i in self.ids]
         self.time = time.mktime(time.gmtime())
-        self.speed = 0.1 # m/s
-        self.course = -90 # deg
-        self.lat = 43.564192 #deg #52.965523
-        self.lon = 1.480751 #deg #4.474033
+        self.speed = 1.5 # m/s
+        self.course = 90 # deg
+        #Valkenburg
+        print("FOLLOW position = Valkenburg")
+        self.lat = 52.167102 #deg
+        self.lon = 4.413168 #deg
+        #Ergens anders
+        #self.lat = 43.564192 #deg #52.965523
+        #self.lon = 1.480751 #deg #4.474033
         self.altitude = 2.0 # starts from 1 m high
 
         # Start IVY interface
@@ -81,7 +86,9 @@ class Base:
                 uav.alt[2] = float(msg['alt']) / 100
                 uav.timeout = 0
                 uav.initialized = True
+                print("GPS_INT msg received\n") #TEST
         if not self.use_ground_ref:
+
             self._interface.subscribe(ins_cb, PprzMessage("telemetry", "INS"))
 
         # bind to GROUND_REF message
@@ -98,6 +105,7 @@ class Base:
                 uav.V[2] = -float(msg['speed'][2])
                 uav.timeout = 0
                 uav.initialized = True
+                print("GPS_INT msg received\n") #TEST
         if self.use_ground_ref:
             self._interface.subscribe(ground_ref_cb, PprzMessage("ground", "GROUND_REF"))
 
