@@ -15,7 +15,9 @@
       <module name="radio_control" type="sbus">
         <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>
         <define name="RADIO_KILL_SWITCH" value="5"/>
+        <define name="RADIO_PIVOT_SWITCH" value="6"/>
       </module>
+      <!-- <module name="auto1_commands"/> -->
     </target>
 	  
 	  <!-- ****************** Simulation Target ****************** -->
@@ -160,6 +162,23 @@
     <servo name="LM" no="3" min="1000" neutral="1150" max="1900"/>
     <!--<servo name="SERVO_TEST" no="0" min="1000" neutral="1500" max="2000"/>-->
   </servos>
+  
+  <!-- <auto_rc_commands> -->
+    <!-- To still be able to use rudder in auto mode, which is handy with sidewind landing in auto1 stabilization mode only YAW
+    Handy if in auto1 for sidewind stabilized crabbing landing, also for steering if someting not OK with course gains in Autonomous flight
+    TODO disable again after strong wind sidewind autolanding is 100% tuned
+      Note that in auto2 mode the Flap and Gear are after test then controlable by flightplan conditions e.g landng block extend gear and flap -->
+      <!--  <set command="ZAP" value="@YAW"/> --> <!-- TODO: Diable later -->
+    <!-- <set command="GEAR" value="@GEAR"/> --> <!-- Can be Used for logging start/stop -->
+    <!-- <set command="FLAP" value="@FLAP"/> -->
+
+    <!-- To be able to set gain values via RC Transmitter these ones below.
+    This way the can keep his eye on a fast moving plane and set somegain values
+    makes life of a single testpiloted AC much easier -->
+    <!--
+    <set command="GAIN1"    value="@GAIN1"/>
+    <set command="CALIB"    value="@CALIB"/> -->
+  <!--  </auto_rc_commands> -->
 
   <commands>
     <axis name="PITCH" failsafe_value="0"/>
@@ -167,6 +186,7 @@
     <axis name="YAW" failsafe_value="0"/>
     <axis name="THRUST" failsafe_value="0"/>
   </commands>
+  
 
   <command_laws>
     <set servo="TILT_LEFT" value="autopilot.motors_on ? actuators_pprz[0] : 0"/>

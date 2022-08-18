@@ -1,9 +1,10 @@
-<!DOCTYPE radio SYSTEM "radio.dtd">
-<radio name="FrSky Taranis X9Dplus TAERMK" data_min="988" data_max="2012" sync_min="6000" sync_max="18000" pulse_type="NEGATIVE">
-  <channel function="THROTTLE" min="988" neutral="988" max="2012" average="0"/>
-  <channel function="ROLL" min="988" neutral="1500" max="2012" average="0"/>
-  <channel function="PITCH" min="988" neutral="1500" max="2012" average="0"/>
-  <channel function="YAW" min="988" neutral="1500" max="2012" average="0"/>
-  <channel function="MODE" min="988" neutral="1500" max="2012" average="0" reverse="1"/>
-  <channel function="KILL_SWITCH" min="988" neutral="1500" max="2012" average="0" reverse="1"/>
+<!DOCTYPE radio SYSTEM "../radio.dtd">
+<radio name="Futaba T10CG with SBUS" data_min="900" data_max="2100" sync_min="5000" sync_max="15000" pulse_type="POSITIVE">
+ <channel function="THROTTLE" min="1000" neutral="1000" max="2000" average="0"/>
+ <channel function="ROLL" min="1000" neutral="1500" max="2000" average="0"/>
+ <channel function="PITCH" min="1000" neutral="1500" max="2000" average="0"/>
+ <channel function="YAW" min="1000" neutral="1500" max="2000" average="0"/>
+ <channel function="MODE" max="2072" neutral="1520" min="966" average="1" reverse="1"/>
+ <channel function="KILL_SWITCH" min="988" neutral="1500" max="2012" average="0" reverse="1"/>
+ <channel function="PIVOT_SWITCH" min="988" neutral="1500" max="2012" average="0" reverse="1"/>
 </radio>

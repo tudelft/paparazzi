@@ -25,7 +25,7 @@
    name="TILTPROP_EXP_TEST"
    ac_id="3"
    airframe="airframes/GLP/tiltprop_experimental_test.xml"
-   radio="radios/sbus_delft.xml"
+   radio="radios/FrSky_Taranis_X9Dplus_TAERMK.xml"
    telemetry="telemetry/tiltprop_telemetry.xml"
    flight_plan="flight_plans/GLP/tiltprop_valkenburg.xml"
    settings="settings/rotorcraft_basic.xml"
