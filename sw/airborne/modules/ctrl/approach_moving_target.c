@@ -132,6 +132,12 @@ void approach_moving_target_enable(uint8_t wp_id) {
  *
  */
 void follow_diagonal_approach(void) {
+  /* STEPS
+    - check enable timeout
+    - get target pos, vel, hdg (target is the landing spot)
+    - calculate descent line unit vector (is it nesceserry to calculate this over and over every loop?)
+    - 
+  */
 
   // Check if the flight plan recently called the enable function
   if ( (get_sys_time_msec() - amt.enabled_time) > (2000 / NAVIGATION_FREQUENCY)) {
@@ -145,27 +151,31 @@ void follow_diagonal_approach(void) {
     // TODO: What to do? Same can be checked for the velocity
     return;
   }
-  target_get_vel(&target_vel);
+  target_get_vel(&target_vel); // [m/s] update ground speed of the ship
   VECT3_SMUL(target_vel, target_vel, amt.speed_gain);
 
-  // Reference model
-  float gamma_ref = RadOfDeg(amt.slope_ref);
-  float psi_ref = RadOfDeg(target_heading + amt.psi_ref);
-
+  // Reference model (descent line)
+  // Translate angles to unit vector
+  float gamma_ref = RadOfDeg(amt.slope_ref); // descent rate 
+  float psi_ref = RadOfDeg(target_heading + amt.psi_ref); // how descent line lines up with ship heading
   amt.rel_unit_vec.x = cosf(gamma_ref) * cosf(psi_ref);
-  amt.rel_unit_vec.y = cosf(gamma_ref) * sinf(psi_ref);
+  amt.rel_unit_vec.y = cosf(gamma_ref) * sinf(psi_ref); 
   amt.rel_unit_vec.z = -sinf(gamma_ref);
 
-  // desired position = rel_pos + target_pos
+  // Multiply vector with prefered descent dist to get ref point of descent
+  // Desired position = rel_pos + target_pos ??????????????
   struct FloatVect3 ref_relpos;
   VECT3_SMUL(ref_relpos, amt.rel_unit_vec, amt.distance);
 
+  // Add ref point of descent to ship location to get NED coordinate ref point of descent
   // ATTENTION, target_pos is already relative now!
   struct FloatVect3 des_pos;
   VECT3_SUM(des_pos, ref_relpos, target_pos);
 
+  // ------------------------------------------------------------------------- ADD MORE COMMENTS FROM HERE ON
+
   struct FloatVect3 ref_relvel;
-  VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt.speed * amt.relvel_gain);
+  VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt.speed * amt.relvel_gain); 
 
   // error controller
   struct FloatVect3 pos_err;
@@ -225,6 +235,6 @@ void follow_diagonal_approach(void) {
   VECT3_DIFF(amt_telem.des_pos, *drone_pos, target_pos);
 
   // Update values for telemetry
-  VECT3_COPY(amt_telem.des_pos, des_pos);
+  VECT3_COPY(amt_telem.des_pos, des_pos); 
   VECT3_COPY(amt_telem.des_vel, des_vel);
 }
