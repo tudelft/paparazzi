@@ -78,6 +78,7 @@ extern struct GpsRelposNED gps_relposned;
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
+// send the calculated TARGET_POS from the drone to GCS
 static void send_target_pos_info(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_TARGET_POS_INFO(trans, dev, AC_ID,
@@ -126,6 +127,13 @@ extern struct LlaCoor_i gps_lla;
  * Get the current target position (NED) and heading
  */
 bool target_get_pos(struct NedCoor_f *pos, float *heading) {
+  /* STEPS for x,y,z
+      - LLA postions of ship and drone are converted to NED values w.r.t.
+      - x,y,z = NED diff between drone and rtkGPS ship [m]
+      - add position shift to x,y,z as long as no new target msg is received
+      - add offset from rtkGPS ship to landingside ship
+      - x,y,z are now position difference between droneGPS and landingside ship
+  */
   float time_diff = 0;
 
   // /* When we have a valid relative position from the RTK GPS and no timeout update the position */
@@ -147,11 +155,13 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
        // Convert from LLA to NED using origin from the UAV
     ned_of_lla_point_i(&drone_pos_cm, &state.ned_origin_i, &gps_lla);
 
-    // Convert to floating point (cm to meters)
-    pos->x = (target_pos_cm.x - drone_pos_cm.x) * 0.01;
-    pos->y = (target_pos_cm.y - drone_pos_cm.y) * 0.01;
-    pos->z = (target_pos_cm.z - drone_pos_cm.z) * 0.01;
+    // calculate position difference between target(ship) and drone
+    // and convert to floating point (cm to meters)
+    pos->x = (target_pos_cm.x - drone_pos_cm.x) * 0.01; // [m]
+    pos->y = (target_pos_cm.y - drone_pos_cm.y) * 0.01; // [m]
+    pos->z = (target_pos_cm.z - drone_pos_cm.z) * 0.01; // [m]
 
+    // calculate how old the last received msg is
     // In seconds, overflow uint32_t in 49,7 days
     time_diff = (get_sys_time_msec() - target.pos.recv_time) * 0.001; // FIXME: should be based on TOW of ground gps
 
@@ -196,7 +206,7 @@ bool target_get_vel(struct NedCoor_f *vel) {
     return true;
   }
 
-  return false;
+  return false; //target_pos_set_current_offset
 }
 
 /**
@@ -212,13 +222,13 @@ bool target_pos_set_current_offset(float unk __attribute__((unused))) {
 
     // Convert to floating point (cm to meters)
     struct NedCoor_f pos;
-    pos.x = target_pos_cm.x * 0.01;
-    pos.y = target_pos_cm.y * 0.01;
-    pos.z = target_pos_cm.z * 0.01;
+    pos.x = target_pos_cm.x * 0.01; // [m]
+    pos.y = target_pos_cm.y * 0.01; // [m]
+    pos.z = target_pos_cm.z * 0.01; // [m]
 
-    target.offset.distance = sqrtf(powf(uav_pos.x - pos.x, 2) + powf(uav_pos.y - pos.y, 2));
-    target.offset.height = -(uav_pos.z - pos.z);
-    target.offset.heading = atan2f((uav_pos.y - pos.y), (uav_pos.x - pos.x))*180.0/M_PI - target.pos.heading;
+    target.offset.distance = sqrtf(powf(uav_pos.x - pos.x, 2) + powf(uav_pos.y - pos.y, 2)); // [m] euclidean distance (only horizontal)
+    target.offset.height = -(uav_pos.z - pos.z); // [m]
+    target.offset.heading = atan2f((uav_pos.y - pos.y), (uav_pos.x - pos.x))*180.0/M_PI - target.pos.heading; // [deg]
   }
 
   return false;
