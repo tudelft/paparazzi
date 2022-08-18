@@ -168,9 +168,6 @@ float estimation_rate_dd[INDI_NUM_ACT];
 float du_estimation[INDI_NUM_ACT];
 float ddu_estimation[INDI_NUM_ACT];
 
-//#########################################
-int32_t *test_me;
-
 // The learning rate per axis (roll, pitch, yaw, thrust)
 float mu1[INDI_OUTPUTS] = {0.00001, 0.00001, 0.000003, 0.000002};
 // The learning rate for the propeller inertia (scaled by 512 wrt mu1)
@@ -661,11 +658,26 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   // Possibly we can use some bounding here
   /*BoundAbs(rate_sp.r, 5.0);*/
 
-  test_me = &radio_control.values[RADIO_PIVOT_SWITCH];
-  if (*test_me < 0){
-	  printf("hi \n");
-	  actuators_pprz[1] = (int16_t) 100;
+  if (radio_control.values[RADIO_PIVOT_SWITCH] < 0){
+    if (in_flight || ) {
+      struct FloatEulers eulers_zxy;
+      struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
+      float_eulers_of_quat_zxy(&eulers_zxy, statequat);
+      // 60 degrees pitch should get max deflection
+      int16_t servo_command = -eulers_zxy.theta/(M_PI/3.0f)*9600;
+      Bound(servo_command,0,9600);
+
+      actuators_pprz[0] = servo_command;
+      actuators_pprz[1] = servo_command;
+      actuators_pprz[2] = radio_control.values[RADIO_THROTTLE];
+      actuators_pprz[3] = radio_control.values[RADIO_THROTTLE];
+    } else {
+    for (i = 0; i < INDI_NUM_ACT; i++) {
+      actuators_pprz[i] = -9600;
+    }
+
   }
+
 
   /* compute the INDI command */
   stabilization_indi_rate_run(rate_sp, in_flight);
