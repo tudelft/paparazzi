@@ -247,8 +247,7 @@ static void send_ctrl_effectiveness_calc(struct transport_tx *trans, struct link
 		  	  	  	  	  INDI_NUM_ACT, g1g2[0],
                        	  INDI_NUM_ACT, g1g2[1],
 						  INDI_NUM_ACT, g1g2[2],
-						  INDI_NUM_ACT, g1g2[3],
-						  test_me);
+						  INDI_NUM_ACT, g1g2[3]);
 }
 #endif
 
