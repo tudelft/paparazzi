@@ -142,7 +142,7 @@ static void actuators_uavcan_esc_status_cb(struct uavcan_iface_t *iface, CanardR
   canardDecodeScalar(transfer, 48, 16, true, (void *)&tmp_float);
   telem[esc_idx].current = canardConvertFloat16ToNativeFloat(tmp_float);
   canardDecodeScalar(transfer, 64, 16, true, (void *)&tmp_float);
-  telem[esc_idx].temperature = canardConvertFloat16ToNativeFloat(tmp_float);
+  telem[esc_idx].temperature = canardConvertFloat16ToNativeFloat(tmp_float) - 273.15f;
   canardDecodeScalar(transfer, 80, 18, true, (void *)&telem[esc_idx].rpm);
 
 #ifdef UAVCAN_ACTUATORS_USE_CURRENT
