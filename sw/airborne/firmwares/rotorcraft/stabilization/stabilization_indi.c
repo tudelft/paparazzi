@@ -666,12 +666,10 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   if (*test_me < 0){
 	  printf("hi \n");
 	  actuators_pprz[1] = (int16_t) 100;
-  } else{
-
+  }
 
   /* compute the INDI command */
   stabilization_indi_rate_run(rate_sp, in_flight);
-  }
 
   // Reset thrust increment boolean
   indi_thrust_increment_set = false;
