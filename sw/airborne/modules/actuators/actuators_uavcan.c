@@ -101,8 +101,9 @@ static void actuators_uavcan_send_esc(struct transport_tx *trans, struct link_de
   float power = telem[i].current * telem[i].voltage;
   float rpm = telem[i].rpm;
   float energy = telem[i].energy;
+  float temperature = telem[i].temperature;
   pprz_msg_send_ESC(trans, dev, AC_ID, &telem[i].current, &electrical.vsupply, &power,
-                    &rpm, &telem[i].voltage, &energy, &esc_idx);
+                    &rpm, &telem[i].voltage, &energy, &temperature, &esc_idx);
   
   // Randomness added for multiple  transport devices
   if (rand_uniform() > 0.05) {
