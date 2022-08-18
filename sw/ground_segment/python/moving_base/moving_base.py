@@ -64,14 +64,10 @@ class Base:
         self.speed = 1.5 # m/s
         self.course = 90 # deg (moving directon of platform)
         self.heading = 45 # deg (orientation of platform)
-        #Valkenburg
-        print("FOLLOW position = Valkenburg")
-        self.lat = 52.167102 #deg
-        self.lon = 4.413168 #deg
-        #Ergens anders
-        #self.lat = 43.564192 #deg #52.965523
-        #self.lon = 1.480751 #deg #4.474033
-        self.altitude = 2.0 # starts from 1 m high
+        print("lat0,long0,alt0 position = Valkenburg")
+        self.lat0 = 52.167102 #deg
+        self.lon0 = 4.413168 #deg
+        self.alt0 = 5.0 # starts from 1 m high
 
         # Start IVY interface
         self._interface = IvyMessagesInterface("Moving Base")
@@ -89,7 +85,6 @@ class Base:
                 uav.initialized = True
                 print("GPS_INT msg received\n") #TEST
         if not self.use_ground_ref:
-
             self._interface.subscribe(ins_cb, PprzMessage("telemetry", "INS"))
 
         # bind to GROUND_REF message
@@ -118,11 +113,18 @@ class Base:
         if self._interface is not None:
             self._interface.shutdown()
 
-    def move_base(self, north, east):
-
-        out = pm.ned2geodetic(north, east, 0, self.lat, self.lon, self.altitude)
-        self.lat = out[0]
-        self.lon = out[1]
+    # Adds the NED coordinates to the GROUND_REF to get new LLA coordinate of ship
+    def move_base(self, north, east, down=0):
+        # [lat,lon,h] = ned2geodetic(xNorth,yEast,zDown,lat0,lon0,h0,spheroid) 
+        # transforms the local north-east-down (NED) Cartesian coordinates specified by xNorth, yEast, and zDown 
+        # to the geodetic coordinates specified by lat, lon, and h. 
+        # Specify the origin of the local NED system with the geodetic coordinates lat0, lon0, and h0. 
+        # Each coordinate input argument must match the others in size or be scalar. 
+        # Specify spheroid as the reference spheroid for the geodetic coordinates. 
+        out = pm.ned2geodetic(north, east, down, self.lat0, self.lon0, self.alt0) 
+        self.lat0 = out[0]
+        self.lon0 = out[1]
+        print(out)
 
     def send_pos(self):
         '''
@@ -137,7 +139,7 @@ class Base:
                 ready = False
             if uav.timeout > 0.5:
                 if self.verbose:
-                    print("The state msg of rotorcraft ", uav.id, ": stopped")
+                    print("TIMEOUT ERROR: The state msg of rotorcraft ", uav.id, ": stopped")
                     sys.stdout.flush()
                 ready = False
 
@@ -151,6 +153,7 @@ class Base:
             sys.stdout.flush()
 
         for ac in self.uavs:
+            # send ship location/speed information to drone
             msg = PprzMessage("datalink", "TARGET_POS")
             msg['ac_id'] = ac.id
             msg['target_id'] = ac.id
