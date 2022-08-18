@@ -30,15 +30,19 @@
  * http://arc.aiaa.org/doi/pdf/10.2514/1.G001490
  */
 
+#include <stdio.h>
+#include "math/pprz_algebra_float.h"
+#include "filters/low_pass_filter.h"
+#include "wls/wls_alloc.h"
+#include "generated/airframe.h"
+#include "modules/radio_control/radio_control.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_quat_transformations.h"
 
-#include "math/pprz_algebra_float.h"
+
 #include "state.h"
-#include "generated/airframe.h"
-#include "modules/radio_control/radio_control.h"
 #include "modules/actuators/actuators.h"
 #include "modules/core/abi.h"
 #include "filters/low_pass_filter.h"
@@ -223,6 +227,9 @@ float estimation_rate_d[INDI_NUM_ACT];
 float estimation_rate_dd[INDI_NUM_ACT];
 float du_estimation[INDI_NUM_ACT];
 float ddu_estimation[INDI_NUM_ACT];
+
+//#########################################
+int32_t *test_me;
 
 // The learning rate per axis (roll, pitch, yaw, thrust)
 float mu1[INDI_OUTPUTS] = {0.00001, 0.00001, 0.000003, 0.000002};
@@ -868,8 +875,16 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   // Possibly we can use some bounding here
   /*BoundAbs(rate_sp.r, 5.0);*/
 
+  test_me = &radio_control.values[RADIO_PIVOT_SWITCH];
+  if (*test_me < 0){
+	  printf("hi \n");
+	  actuators_pprz[1] = (int16_t) 100;
+  } else{
+
+
   /* compute the INDI command */
   stabilization_indi_rate_run(rate_sp, in_flight);
+  }
 
   // Reset thrust increment boolean
   indi_thrust_increment_set = false;
