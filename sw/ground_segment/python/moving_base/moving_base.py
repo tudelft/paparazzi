@@ -177,10 +177,10 @@ class Base:
                 for uav in self.uavs:
                     uav.timeout = uav.timeout + self.step
 
-                # Send base position
+                # Send base (ship) position
                 if self.enabled:
-                    dn = self.speed*m.cos(self.course/180.0*m.pi) # DELTA ?
-                    de = self.speed*m.sin(self.course/180.0*m.pi) # DELTA ?
+                    dn = self.speed*m.cos(self.course/180.0*m.pi) # derrivative North?
+                    de = self.speed*m.sin(self.course/180.0*m.pi) # derrivative East?
                     self.move_base(self.step*dn,self.step*de)
                     self.send_pos()
 
