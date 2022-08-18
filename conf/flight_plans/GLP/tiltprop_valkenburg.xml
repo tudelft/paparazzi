@@ -27,19 +27,15 @@
     <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block>
-    <block name="Start Engine">
-      <call_once fun="NavResurrect()"/>
-      <attitude pitch="-70" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block>
-    <block name="Half">
-    	<attitude pitch="-45" roll="0" throttle="0.4" until="FALSE" vmode="throttle"/>
-    </block>
-<!--    
+    </block>   
     <block name="Pivot Up">
       <call_once fun="nav_pivot_ramp_init()"/>
       <call fun="nav_pivot_ramp()"/>
-    </block>									-->
+    </block>
+    <block name="Start Engine">
+      <call_once fun="NavResurrect()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="GetPosHeight() @GT 5.0" deroute="Standby"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
