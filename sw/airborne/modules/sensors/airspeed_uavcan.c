@@ -49,19 +49,22 @@ static void airspeed_uavcan_cb(struct uavcan_iface_t *iface __attribute__((unuse
   //float static_temp = canardConvertFloat16ToNativeFloat(tmp_float);
   //canardDecodeScalar(transfer, (uint32_t)88, 16, false, (void*)&tmp_float);
   //float diff_temp = canardConvertFloat16ToNativeFloat(tmp_float);
-  //canardDecodeScalar(transfer, (uint32_t)104, 16, false, (void*)&tmp_float);
-  //float static_air_temp = canardConvertFloat16ToNativeFloat(tmp_float);
-  canardDecodeScalar(transfer, (uint32_t)120, 16, false, (void*)&tmp_float);
-  float pitot_temp = canardConvertFloat16ToNativeFloat(tmp_float);
+  canardDecodeScalar(transfer, (uint32_t)104, 16, false, (void*)&tmp_float);
+  float static_air_temp = canardConvertFloat16ToNativeFloat(tmp_float);
+  //canardDecodeScalar(transfer, (uint32_t)120, 16, false, (void*)&tmp_float);
+  //float pitot_temp = canardConvertFloat16ToNativeFloat(tmp_float);
 
+  if(!isnan(diff_p)) {
 #ifdef USE_AIRSPEED_LOWPASS_FILTER
-  float diff_p_filt = update_butterworth_2_low_pass(&airspeed_filter, diff_p);
-  AbiSendMsgBARO_DIFF(UAVCAN_SENDER_ID, diff_p_filt);
+    float diff_p_filt = update_butterworth_2_low_pass(&airspeed_filter, diff_p);
+    AbiSendMsgBARO_DIFF(UAVCAN_SENDER_ID, diff_p_filt);
 #else
-  AbiSendMsgBARO_DIFF(UAVCAN_SENDER_ID, diff_p);
+    AbiSendMsgBARO_DIFF(UAVCAN_SENDER_ID, diff_p);
 #endif
+  }
 
-  AbiSendMsgTEMPERATURE(UAVCAN_SENDER_ID, pitot_temp);
+  if(!isnan(static_air_temp))
+    AbiSendMsgTEMPERATURE(UAVCAN_SENDER_ID, static_air_temp);
 }
 
 void airspeed_uavcan_init(void)

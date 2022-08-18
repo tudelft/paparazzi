@@ -139,7 +139,13 @@ static void pressure_abs_cb(uint8_t __attribute__((unused)) sender_id, uint32_t 
 
 static void pressure_diff_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
 {
-  air_data.differential = pressure;
+  if(air_data.calc_diff_p_off) {
+    air_data.diff_p_offset = pressure;
+    air_data.calc_diff_p_off = false;
+  }
+
+  air_data.differential = pressure - air_data.diff_p_offset;
+
   if (air_data.calc_airspeed) {
     air_data.airspeed = eas_from_dynamic_pressure(air_data.differential);
     air_data.tas = tas_from_eas(air_data.airspeed);
