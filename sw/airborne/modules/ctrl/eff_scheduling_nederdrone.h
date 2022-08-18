@@ -44,5 +44,7 @@ extern float sched_tip_prop_upper_pitch_limit_deg;
 extern float sched_tip_prop_lower_pitch_limit_deg;
 // Setting to not switch off tip props during forward flight
 extern bool sched_tip_props_always_on;
+// Setting to scale the thrust effectiveness
+extern float thrust_eff_scaling;
 
 #endif  // EFF_SCHEDULING_NEDERDRONE_H

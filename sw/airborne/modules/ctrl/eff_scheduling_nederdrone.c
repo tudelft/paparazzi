@@ -43,6 +43,8 @@ not use this module at the same time!
 
 int32_t use_scheduling = 1;
 
+float thrust_eff_scaling = 1.0;
+
 static float g_forward[4][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL_FWD, STABILIZATION_INDI_G1_PITCH_FWD, STABILIZATION_INDI_G1_YAW_FWD, STABILIZATION_INDI_G1_THRUST_FWD};
 
 static float g_hover[4][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL, STABILIZATION_INDI_G1_PITCH, STABILIZATION_INDI_G1_YAW, STABILIZATION_INDI_G1_THRUST};
@@ -150,6 +152,7 @@ void ctrl_eff_scheduling_periodic(void)
   for (uint8_t i = 0; i < INDI_NUM_ACT; i++) {
     // Thrust
     g1g2[3][i] = g_hover[3][i] * (1.0 - ratio_spec_force) + g_forward[3][i] * ratio_spec_force;
+    g1g2[3][i] *= thrust_eff_scaling;
   }
 
   bool low_airspeed = (stateGetAirspeed_f() < INDI_SCHEDULING_LOW_AIRSPEED) && (autopilot_get_mode() != AP_MODE_NAV);
