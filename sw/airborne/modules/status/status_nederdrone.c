@@ -29,6 +29,7 @@
 #include "gps/gps.h"
 #include "actuators/actuators_uavcan.h"
 #include "modules/core/sys_mon_rtos.h"
+#include "pprz_version.h"
 
 static bool debug_enable = true;
 
@@ -176,7 +177,13 @@ static void status_nederdrone_sysmon(void) {
               (float)rtos_mon.thread_load[i] / 10.f, rtos_mon.thread_free_stack[i]);
     }
     sdLogWriteLog(pprzLogFile, " CPU time: %.2f\r\n", rtos_mon.cpu_time);
+
+    cnt = 0;
   }
+}
+
+static void status_nederdrone_i2c(void) {
+  
 }
 
 void status_nederdrone_period(void) {
@@ -186,6 +193,9 @@ void status_nederdrone_period(void) {
 
   /* Check the system load */
   status_nederdrone_sysmon();
+
+  /* Check the I2C status */
+  status_nederdrone_i2c();
 
   /* Check the GPS status */
   status_nederdrone_gps();
@@ -205,7 +215,7 @@ void status_nederdrone_period(void) {
 
   /* Flush the log to make sure data is written */
   if(cnt++ > 10) {
-    sdLogWriteLog(pprzLogFile, "[%.5f] Nederdrone status module running\n", get_sys_time_float());
+    sdLogWriteLog(pprzLogFile, "[%.5f] %s status module running (AC_ID: %u,ver: %s)\n", get_sys_time_float(), AIRFRAME_NAME, AC_ID, PPRZ_VERSION_DESC);
     sdLogFlushLog(pprzLogFile);
     cnt = 0;
   }
