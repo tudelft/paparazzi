@@ -310,7 +310,10 @@
 	<define name="MIN_THROTTLE_FWD" value="1500"/>
 	
 	<!-- Maximum servo increment in PPRZ units -->
-	<define name="MAX_SERVO_INCREMENT" value="2000"/>
+	<define name="MAX_SERVO_INCREMENT" value="4500"/>
+	
+	<define name="PIVOT_GAIN_Q" value="100"/>
+	<define name="PIVOT_GAIN_THETA" value="0"/>
   </section>
   
   <!-- Definitions for control effectiveness calculator module -->
@@ -322,8 +325,8 @@
    	<define name="MASS" value="1.270"/>		<!--[kg]-->
    	<define name="I_XX" value="0.06617232"/>	<!--[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
    	<!--<define name="I_YY" value="0.04914925"/>-->	<!--[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
-   	<define name="I_YY" value="0.011"/> <!-- 0.006 was the previous -->
-   	<define name="I_ZZ" value="0.06"/>	<!--[kg m2] The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
+   	<define name="I_YY" value="0.009"/> <!-- 0.006 was the previous -->
+   	<define name="I_ZZ" value="0.065"/>	<!--[kg m2] The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
 	    <!--<define name="I_XX" value="0.017897"/>	[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
    	<!--<define name="I_YY" value="0.003390"/>	[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
    	<!--<define name="I_ZZ" value="0.020337"/>	[kg m2] The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
@@ -337,6 +340,8 @@
  	<!-- Location of the pivot point of tilting motors w.r.t. the c.g. -->
    	<define name="Y_DIST" value="0.3"/>		<!--[m]-->
    	<define name="Z_DIST" value="0.135"/>	<!--[m]-->
+   	
+   	<define name="MAPPING" value="0.0001"/><!--This the is mapping of PPRZ units to rads for the servos -->
   </section>
   
   <!-- Gains for vertical navigation -->

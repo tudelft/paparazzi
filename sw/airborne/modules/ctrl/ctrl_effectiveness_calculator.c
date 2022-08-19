@@ -19,6 +19,7 @@ struct MotorCoefficients mot_coef = {CTRL_EFF_CALC_K1, CTRL_EFF_CALC_K2, CTRL_EF
 
 float y_dist = CTRL_EFF_CALC_Y_DIST;
 float z_dist = CTRL_EFF_CALC_Z_DIST;
+float mapping = CTRL_EFF_CALC_MAPPING;
 
 float min_thrust = 1000;				// [pprz] this is mapped to PWM range
 #ifdef CTRL_EFF_CALC_THRUST_LOWER_LIM
@@ -65,20 +66,20 @@ void ctrl_eff(void)
     float omega_l0 = actuator_state_filt_vect[3] < thrust_lower_lim ? thrust_lower_lim : actuator_state_filt_vect[3];
 #endif
 
-    float ctrl_deriv_00 = -y_dist * sinf(delta_l0) * (mot_coef.k1 * omega_l0 * omega_l0 + mot_coef.k2 * omega_l0 + mot_coef.k3) * (1 / mass_property.I_xx) * (1/(float)MAX_PPRZ);
-    float ctrl_deriv_01 =  y_dist * sinf(delta_r0) * (mot_coef.k1 * omega_r0 * omega_r0 + mot_coef.k2 * omega_r0 + mot_coef.k3) * (1 / mass_property.I_xx) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_00 = -y_dist * sinf(delta_l0) * (mot_coef.k1 * omega_l0 * omega_l0 + mot_coef.k2 * omega_l0 + mot_coef.k3) * (mapping / mass_property.I_xx);
+    float ctrl_deriv_01 =  y_dist * sinf(delta_r0) * (mot_coef.k1 * omega_r0 * omega_r0 + mot_coef.k2 * omega_r0 + mot_coef.k3) * (mapping / mass_property.I_xx);
     float ctrl_deriv_02 = -y_dist * cosf(delta_r0) * (2 * mot_coef.k1 * omega_r0 + mot_coef.k2) * (1 / mass_property.I_xx);
     float ctrl_deriv_03 =  y_dist * cosf(delta_l0) * (2 * mot_coef.k1 * omega_l0 + mot_coef.k2) * (1 / mass_property.I_xx);
-    float ctrl_deriv_10 =  z_dist * cosf(delta_l0) * (mot_coef.k1 * omega_l0 * omega_l0 + mot_coef.k2 * omega_l0 + mot_coef.k3) * (1 / mass_property.I_yy) * (1/(float)MAX_PPRZ);
-    float ctrl_deriv_11 =  z_dist * cosf(delta_r0) * (mot_coef.k1 * omega_r0 * omega_r0 + mot_coef.k2 * omega_r0 + mot_coef.k3) * (1 / mass_property.I_yy) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_10 =  z_dist * cosf(delta_l0) * (mot_coef.k1 * omega_l0 * omega_l0 + mot_coef.k2 * omega_l0 + mot_coef.k3) * (mapping / mass_property.I_yy);
+    float ctrl_deriv_11 =  z_dist * cosf(delta_r0) * (mot_coef.k1 * omega_r0 * omega_r0 + mot_coef.k2 * omega_r0 + mot_coef.k3) * (mapping / mass_property.I_yy);
     float ctrl_deriv_12 =  z_dist * sinf(delta_r0) * (2 * mot_coef.k1 * omega_r0 + mot_coef.k2) * (1 / mass_property.I_yy);
     float ctrl_deriv_13 =  z_dist * sinf(delta_l0) * (2 * mot_coef.k1 * omega_l0 + mot_coef.k2) * (1 / mass_property.I_yy);
-    float ctrl_deriv_20 = -y_dist * cosf(delta_l0) * (mot_coef.k1 * omega_l0 * omega_l0 + mot_coef.k2 * omega_l0 + mot_coef.k3) * (1 / mass_property.I_zz) * (1/(float)MAX_PPRZ);
-    float ctrl_deriv_21 =  y_dist * cosf(delta_r0) * (mot_coef.k1 * omega_r0 * omega_r0 + mot_coef.k2 * omega_r0 + mot_coef.k3) * (1 / mass_property.I_zz) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_20 = -y_dist * cosf(delta_l0) * (mot_coef.k1 * omega_l0 * omega_l0 + mot_coef.k2 * omega_l0 + mot_coef.k3) * (mapping / mass_property.I_zz);
+    float ctrl_deriv_21 =  y_dist * cosf(delta_r0) * (mot_coef.k1 * omega_r0 * omega_r0 + mot_coef.k2 * omega_r0 + mot_coef.k3) * (mapping / mass_property.I_zz);
     float ctrl_deriv_22 =  y_dist * sinf(delta_r0) * (2 * mot_coef.k1 * omega_r0 + mot_coef.k2) * (1 / mass_property.I_zz);
     float ctrl_deriv_23 = -y_dist * sinf(delta_l0) * (2 * mot_coef.k1 * omega_l0 + mot_coef.k2) * (1 / mass_property.I_zz);
-    float ctrl_deriv_30 = (mot_coef.k1 * omega_l0 * omega_l0 + mot_coef.k2 * omega_l0 + mot_coef.k3) * sinf(delta_l0) * (1/mass_property.mass) * (1/(float)MAX_PPRZ);
-    float ctrl_deriv_31 = (mot_coef.k1 * omega_r0 * omega_r0 + mot_coef.k2 * omega_r0 + mot_coef.k3) * sinf(delta_r0) * (1/mass_property.mass) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_30 = (mot_coef.k1 * omega_l0 * omega_l0 + mot_coef.k2 * omega_l0 + mot_coef.k3) * sinf(delta_l0) * (mapping/mass_property.mass);
+    float ctrl_deriv_31 = (mot_coef.k1 * omega_r0 * omega_r0 + mot_coef.k2 * omega_r0 + mot_coef.k3) * sinf(delta_r0) * (mapping/mass_property.mass);
     float ctrl_deriv_32 =  -(2 * mot_coef.k1 * actuator_state_filt_vect[2] + mot_coef.k2) * cosf(delta_r0) * (1/mass_property.mass);
     float ctrl_deriv_33 =  -(2 * mot_coef.k1 * actuator_state_filt_vect[3] + mot_coef.k2) * cosf(delta_l0) * (1/mass_property.mass);
 
@@ -147,8 +148,8 @@ void ctrl_eff_ground_contact(void)
     float ctrl_deriv_gc_01 =  0;
     float ctrl_deriv_gc_02 =  0;
     float ctrl_deriv_gc_03 =  0;
-    float ctrl_deriv_gc_10 =  C * cosf(delta_l0) * (mot_coef.k1 * omega_l0 * omega_l0 + mot_coef.k2 * omega_l0 + mot_coef.k3) * (1 / I_YY_GC) * (1/(float)MAX_PPRZ);
-    float ctrl_deriv_gc_11 =  C * cosf(delta_r0) * (mot_coef.k1 * omega_r0 * omega_r0 + mot_coef.k2 * omega_r0 + mot_coef.k3) * (1 / I_YY_GC) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_gc_10 =  C * cosf(delta_l0) * (mot_coef.k1 * omega_l0 * omega_l0 + mot_coef.k2 * omega_l0 + mot_coef.k3) * (mapping/ I_YY_GC);
+    float ctrl_deriv_gc_11 =  C * cosf(delta_r0) * (mot_coef.k1 * omega_r0 * omega_r0 + mot_coef.k2 * omega_r0 + mot_coef.k3) * (mapping/ I_YY_GC);
     float ctrl_deriv_gc_12 =  C * sinf(delta_r0) * (2 * mot_coef.k1 * omega_r0 + mot_coef.k2) * (1 / I_YY_GC);
     float ctrl_deriv_gc_13 =  C * sinf(delta_l0) * (2 * mot_coef.k1 * omega_l0 + mot_coef.k2) * (1 / I_YY_GC);
     float ctrl_deriv_gc_20 =  0;
@@ -159,8 +160,8 @@ void ctrl_eff_ground_contact(void)
 //    float ctrl_deriv_gc_31 =  0;
 //    float ctrl_deriv_gc_32 =  0;
 //    float ctrl_deriv_gc_33 =  0;
-    float ctrl_deriv_gc_30 = (mot_coef.k1 * omega_l0 * omega_l0 + mot_coef.k2 * omega_l0 + mot_coef.k3) * sinf(delta_l0) * (1/mass_property.mass) * (1/(float)MAX_PPRZ);
-    float ctrl_deriv_gc_31 = (mot_coef.k1 * omega_r0 * omega_r0 + mot_coef.k2 * omega_r0 + mot_coef.k3) * sinf(delta_r0) * (1/mass_property.mass) * (1/(float)MAX_PPRZ);
+    float ctrl_deriv_gc_30 = (mot_coef.k1 * omega_l0 * omega_l0 + mot_coef.k2 * omega_l0 + mot_coef.k3) * sinf(delta_l0) * (mapping/mass_property.mass);
+    float ctrl_deriv_gc_31 = (mot_coef.k1 * omega_r0 * omega_r0 + mot_coef.k2 * omega_r0 + mot_coef.k3) * sinf(delta_r0) * (mapping/mass_property.mass);
     float ctrl_deriv_gc_32 =  -(2 * mot_coef.k1 * omega_r0 + mot_coef.k2) * cosf(delta_r0) * (1/mass_property.mass);
     float ctrl_deriv_gc_33 =  -(2 * mot_coef.k1 * omega_l0 + mot_coef.k2) * cosf(delta_l0) * (1/mass_property.mass);
 
@@ -218,4 +219,3 @@ float pprz_to_rad_right(float x)
 	float c = 0.0;
 	return m * x + c;
 }
-
