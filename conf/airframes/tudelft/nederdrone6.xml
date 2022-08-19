@@ -108,7 +108,7 @@
     </module>
     <module name="airspeed" type="uavcan"/>
     <module name="air_data">
-      <define name="AIR_DATA_BARO_DIFF_ID" value="UAVCAN_SENDER_ID"/>
+      <define name="AIR_DATA_BARO_DIFF_ID" value="MS45XX_SENDER_ID"/>
     </module>
 
     <module name="send_imu_mag_current"/>
