@@ -225,7 +225,6 @@ class RotWingFrame(wx.Frame):
             self.StatusBox(dc, dx, dy, 3, 0, m.get_temp(), m.get_temp_perc(), m.get_temp_color())
             try:
                 self.StatusBox(dc, dx, dy, 4, 0, self.indi.get_u(m.id), self.indi.get_u_perc(m.id), self.indi.get_u_color(m.id))
-                print('TEST')
             except:
                 pass
 
