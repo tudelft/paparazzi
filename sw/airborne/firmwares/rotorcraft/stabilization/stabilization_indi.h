@@ -35,6 +35,8 @@ extern struct Int32Eulers stab_att_sp_euler; ///< with #INT32_ANGLE_FRAC
 extern float g1g2[INDI_OUTPUTS][INDI_NUM_ACT];
 extern float actuator_state_filt_vect[INDI_NUM_ACT];
 extern bool act_is_servo[INDI_NUM_ACT];
+extern float pivot_gain_q;
+extern float pivot_gain_theta;
 
 extern bool indi_use_adaptive;
 
