@@ -30,7 +30,7 @@
     <module name="stabilization" type="indi_simple"/>
     <module name="ins" type="ekf2">
         <!--<define name="INS_EKF2_OPTITRACK" value="FALSE"/>-->
-        <define name="USE_INS_NAV_INIT"/>
+        <!--<define name="USE_INS_NAV_INIT"/>-->
     </module>
 
     <!--Guidance indi-->
