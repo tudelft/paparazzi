@@ -81,7 +81,7 @@ static bool verbose = false;
 static struct endpoint_t gps_ep;
 static struct gps_ubx_t gps_ubx;
 static struct gps_rtcm_t gps_rtcm;
-static uint8_t ac_id = 14;
+static uint8_t ac_id = 203; //static uint8_t ac_id = 14;
 static float ground_heading = NAN;
 
 void packet_handler(void *ep, uint8_t *data, uint16_t len);
@@ -597,7 +597,8 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
           float velD = UBX_NAV_PVT_velD(gps_ubx.msg_buf) / 1000.;
           uint32_t iTOW = UBX_NAV_PVT_iTOW(gps_ubx.msg_buf);
 
-          if(verbose) printf("Got position %f %f (%f, %f, %f, %f, %d)\r\n", lat, lon, gSpeed, headMot, alt, velD, iTOW);
+          //if(verbose) printf("Got position %f %f (%f, %f, %f, %f, %d)\r\n", lat, lon, gSpeed, headMot, alt, velD, iTOW); // ORIGINAL
+          if(verbose) printf("position: lat %f lon %f (gspeed %f, hdg %f, alt %f, velD %f, iTOW %d)\r\n", lat, lon, gSpeed, headMot, alt, velD, iTOW); // ADAPTED FOR DEBUGGING
           IvySendMsg("ground FLIGHT_PARAM GCS %f %f %f %f %f %f %f %f %f %f %f %d %f",
                 0.0, // roll,
                 0.0, // pitch,
@@ -636,11 +637,13 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
           float relpos_heading = UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf) * 1e-5f;
           float relpos_dist = UBX_NAV_RELPOSNED_relPosLength(gps_ubx.msg_buf) * 1e-2f;
 
-          if(verbose) printf("Got relpos %d %f %f\r\n", flags, relpos_heading, relpos_dist);
+          //if(verbose) printf("Got relpos %d %f %f\r\n", flags, relpos_heading, relpos_dist); // ORIGINAL
+          if(verbose) printf("Got relpos: flags %d, relpos_hdg %f, relpos_dist %f\r\n", flags, relpos_heading, relpos_dist); // ADAPTED FOR DEBUGGING
 
           if(relPosValid) {
             ground_heading = relpos_heading;
           } else{
+            if(verbose) printf("ground heading not valid \n");
             ground_heading = NAN;
           }
           
@@ -661,7 +664,8 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
       if(verbose) printf("Got a succesfull RTCM message [%d]\r\n", RTCMgetbitu(gps_rtcm.msg_buf, 24 + 0, 12));
 
       /* Forward the message to inject into the drone */
-      //send_gps_inject(gps_rtcm.msg_buf, gps_rtcm.len + 6);
+      send_gps_inject(gps_rtcm.msg_buf, gps_rtcm.len + 6); // WAS COMMENTED
+      if(verbose) printf("Forward the message to inject into the drone \n"); // DEBUGGING
 
       gps_rtcm.msg_available = false;
     }
