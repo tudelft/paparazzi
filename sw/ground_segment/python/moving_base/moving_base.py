@@ -157,9 +157,9 @@ class Base:
             msg = PprzMessage("datalink", "TARGET_POS")
             msg['ac_id'] = ac.id
             msg['target_id'] = ac.id
-            msg['lat'] = int(self.lat * 1e7)
-            msg['lon'] = int(self.lon * 1e7)
-            msg['alt'] = int(self.altitude *1000)
+            msg['lat'] = int(self.lat0 * 1e7)
+            msg['lon'] = int(self.lon0 * 1e7)
+            msg['alt'] = int(self.alt0 *1000)
             msg['speed'] = self.speed
             msg['climb'] = 0
             msg['course'] = self.course
