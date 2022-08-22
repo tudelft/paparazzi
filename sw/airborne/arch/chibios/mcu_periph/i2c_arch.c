@@ -199,6 +199,7 @@ static void handle_i2c_thd(struct i2c_periph *p)
       if(i2c_read_sda(i) == 0) {
         i2c_clear_bus(i);
       }
+      i2cStart((I2CDriver *)p->reg_addr, &i->cfg);
       break;
     case MSG_RESET:
       //if one or more I2C errors occurred, the errors can
