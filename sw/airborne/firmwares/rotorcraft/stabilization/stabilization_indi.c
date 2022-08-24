@@ -496,10 +496,10 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   }
 
 #if STABILIZATION_INDI_COUNTER_TORQUE_INDIFFERENCE
-  if (actuator_state_filt_vect[2] < 4000){
+  if (actuator_state_filt_vect[2] > 4000 && actuator_state_filt_vect[2] < 9600){
 	  angular_acceleration[1] = angular_acceleration[1] - actuator_state_filt_vectdd_cti[1] * pprz_to_rad_servo * ratio_moi;
   }
-  if (actuator_state_filt_vect[3] < 4000){
+  if (actuator_state_filt_vect[3] > 4000 && actuator_state_filt_vect[3] < 9600){
 	  angular_acceleration[1] = angular_acceleration[1] - actuator_state_filt_vectdd_cti[0] * pprz_to_rad_servo * ratio_moi;
   }
 #endif
