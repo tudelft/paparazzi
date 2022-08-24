@@ -880,7 +880,9 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   angular_rate_ref.r = rate_sp.r;
 
   // Possibly we can use some bounding here
-  /*BoundAbs(rate_sp.r, 5.0);*/
+  BoundAbs(rate_sp.p, 2.0);
+  BoundAbs(rate_sp.q, 2.0);
+  BoundAbs(rate_sp.r, 2.0);
 
   int8_t i;
   if (radio_control.values[RADIO_PIVOT_SWITCH] < 0){
