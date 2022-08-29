@@ -3,6 +3,16 @@
   <doc>
     <description>Module to control wing rotation servo command based on prefered angle setpoint</description>
   </doc>
+  <settings>
+    <dl_settings NAME="wing_rotation">
+      <dl_settings NAME="wing_rot">
+        <dl_setting MAX="9600" MIN="0" STEP="1" VAR="wing_rotation.pprz_cmd_deadzone" shortname="pprz_cmd_deadzone"/>
+        <dl_setting MAX="9600" MIN="0" STEP="1" VAR="wing_rotation.max_cmd" shortname="max_cmd"/>
+        <dl_setting MAX="90" MIN="0" STEP="1" VAR="wing_rotation.wing_angle_deg_sp" shortname="wing_sp_deg"/>
+        <dl_setting MAX="60000" MIN="-60000" STEP="1" VAR="wing_rotation.p_gain" shortname="p_gain"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
   <header>
     <file name="wing_rotation_controller.h"/>
   </header>

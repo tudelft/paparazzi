@@ -26,8 +26,32 @@
 #ifndef WING_ROTATION_CONTROLLER_H
 #define WING_ROTATION_CONTROLLER_H
 
+#include "std.h"
+
 extern void wing_rotation_init(void);
 extern void wing_rotation_periodic(void);
 extern void wing_rotation_event(void);
+
+// Paramaters
+struct wing_rotation_controller {
+  int32_t servo_pprz_cmd;
+  int32_t pprz_cmd_deadzone;
+  uint16_t adc_wing_rotation;
+  uint16_t adc_wing_servo;
+  int16_t adc_wing_rotation_range;
+  float wing_angle_rad;
+  float wing_angle_deg;
+  float wing_angle_rad_sp;
+  float wing_angle_deg_sp;
+  bool initialized;
+  uint8_t init_loop_count;
+
+  // Control variables
+  int32_t p_gain;
+  uint32_t max_cmd;
+
+};
+
+extern struct wing_rotation_controller wing_rotation;
 
 #endif  // WING_ROTATION_CONTROLLER_H
