@@ -80,4 +80,3 @@ VPATH += $(PAPARAZZI_SRC)/sw/simulator
     <file name="nps_ins_vectornav.c" dir="$(NPS_DIR)"/> <!-- TODO should be in ins_vectornav module -->
   </makefile>
 </module>
-

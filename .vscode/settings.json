@@ -15,4 +15,8 @@
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
     "cmake.configureOnOpen": false,
+    "lldb.displayFormat": "auto",
+    "lldb.showDisassembly": "never",
+    "lldb.dereferencePointers": true,
+    "lldb.consoleMode": "commands",
 }

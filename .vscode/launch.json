@@ -5,14 +5,23 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "(lldb) Flamewheel simsitl",
+			"type": "lldb",
+			"request": "launch",
+			"program": "${workspaceFolder}/var/aircrafts/Flamewheel_ctl_alloc/nps/simsitl",
+			"env": {"PAPARAZZI_HOME": "${workspaceFolder}"},
+			"args": [],
+			"cwd": "${workspaceFolder}"
+		},
+		{
 			"name": "(gdb) Flamewheel simsitl",
 			"type": "cppdbg",
 			"request": "launch",
-			"program": "/mnt/data/Documents/Studium_MSc/Thesis/paparazzi/var/aircrafts/Flamewheel_ctl_alloc/nps/simsitl",
+			"program": "${workspaceFolder}/var/aircrafts/Flamewheel_ctl_alloc/nps/simsitl",
 			"args": [],
 			"stopAtEntry": false,
 			"cwd": "${fileDirname}",
-			"environment": [{"name":"PAPARAZZI_HOME", "value": "/mnt/data/Documents/Studium_MSc/Thesis/paparazzi"}],
+			"environment": [{"name":"PAPARAZZI_HOME", "value": "${workspaceFolder}"}],
 			"externalConsole": false,
 			"MIMode": "gdb"/*,
 			"setupCommands": [

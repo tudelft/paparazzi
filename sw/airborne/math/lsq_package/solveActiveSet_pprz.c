@@ -48,6 +48,7 @@
 #include <float.h>
 #include "math/lsq_package/lib/qr_solve/qr_solve.h"
 #include "math/lsq_package/lib/qr_solve/r8lib_min.h"
+#include "math/lsq_package/lib/sparse_math.h"
 
 // provide loop feedback
 #define WLS_VERBOSE FALSE
@@ -258,11 +259,11 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
     }
     // check limits
     n_infeasible = 0;
+    int limits_viol[CA_N_U];
+    check_limits_tol(n_u, TOL, u_opt, umin, umax, limits_viol, 0);
     for (int i = 0; i < n_u; i++) {
-      if (u_opt[i] >= (umax[i] * (1 + ((umax[i]>0) ? 1 : -1) * TOL) + TOL) 
-          || u_opt[i] <= (umin[i] * (1 + ((umin[i]<0) ? 1 : -1) * TOL) - TOL)) {
+      if (limits_viol[i] != 0)
         infeasible_index[n_infeasible++] = i;
-      }
     }
 
     // Check feasibility of the solution

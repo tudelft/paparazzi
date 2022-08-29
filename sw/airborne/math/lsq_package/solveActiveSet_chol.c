@@ -1,6 +1,7 @@
 #include "math/lsq_package/common/solveActiveSet.h"
 #include "math/lsq_package/lib/chol_math.h"
 #include "math/lsq_package/common/size_defines.h"
+#include "math/lsq_package/lib/sparse_math.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -40,6 +41,8 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
   }
 
   int gamma[CA_N_U]; memset(gamma, 0, sizeof(int)*n_u);
+  check_limits_tol(n_u, TOL, xs, umin, umax, gamma, 0);
+  /*
   for (int i = 0; i < n_u; i++) {
     if (xs[i] <= umin[i]+TOL) {
       gamma[i] = +1;
@@ -47,6 +50,7 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
       gamma[i] = -1;
     }
   }
+  */
 
   int free_index_lookup[CA_N_U]; memset(free_index_lookup, -1, sizeof(int)*n_u);
   int permutation[CA_N_U]; memset(permutation, 0, sizeof(int)*n_u);
@@ -168,12 +172,15 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
     */
 
     int n_violated = 0;
+    n_violated = check_limits_tol(n_free, TOL, z, umin, umax, gamma, permutation);
+    /*
     for (int i = 0; i < n_free; i++) {
       if ((umin[permutation[i]] - TOL > z[permutation[i]]) ||
         (z[permutation[i]] > TOL + umax[permutation[i]])) {
           n_violated++;
         }
     }
+    */
 
     if (!n_violated) {
       // is this the most efficient location TODO

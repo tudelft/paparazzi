@@ -87,3 +87,25 @@ void block_diag_mult(int n, int m, int p, num_t** A, num_t** B,
         }
     }
 }
+
+int check_limits_tol(int n, num_t tol, num_t* x, num_t* xmin, num_t* xmax, int* output, int* perm) {
+    // provides relative toleranced limits checking as 
+    int ind;
+    int res = 0;
+    for (int i=0; i<n; i++) {
+        ind = perm ? perm[i] : i;
+        if ( x[ind] >= (xmax[ind] * (1 + ((xmax[ind]>0) ? 1 : -1) * tol) + tol) ) {
+            // violated upper bound
+            output[ind] = -1;
+            res++;
+        } else if ( x[ind] <= (xmin[ind] * (1 + ((xmin[ind]<0) ? 1 : -1) * tol) - tol) ) {
+            // violated lower bound
+            output[ind] = +1;
+            res++;
+        } else {
+            output[ind] = 0;
+        }
+    }
+
+    return res;
+}
