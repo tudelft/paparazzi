@@ -18,10 +18,10 @@
             </module>
             <module NAME="sys_mon"/>
             <module NAME="flight_recorder"/>
-            <module NAME="adc_generic">
+            <!--<module NAME="adc_generic">
                 <configure VALUE="ADC_4" NAME="ADC_CHANNEL_GENERIC1"/>
                 <configure VALUE="ADC_5" NAME="ADC_CHANNEL_GENERIC2"/>
-            </module>
+            </module>-->
 
             <module TYPE="ms45xx_i2c" NAME="airspeed">
                 <define NAME="USE_I2C2"/>
@@ -79,6 +79,13 @@
         <module NAME="air_data"/>
 
         <module name="ctrl_eff_sched_rot_wing_v3"/>
+        <module name="wing_rotation_controller">
+            <define name="WING_ROTATION_POSITION_ADC_0" value="45950"/>
+            <define name="WING_ROTATION_POSITION_ADC_90" value="18800"/>
+            <define name="WING_ROTATION_DEADZONE_PPRZ_CMD" value="500"/>
+            <define name="WING_ROTATION_P_GAIN" value="-50000"/>
+            <define name="WING_ROTATION_MAX_CMD" value="9600"/>
+        </module>
 
         <module NAME="mag_lis3mdl">
             <define VALUE="TRUE" NAME="MODULE_LIS3MDL_UPDATE_AHRS"/>
@@ -96,13 +103,13 @@
     </firmware>
 
     <servos DRIVER="Pwm">
-        <servo NO="0" NEUTRAL="1100" NAME="SERVO_1" MIN="1000" MAX="2000"/>
-        <servo NO="1" NEUTRAL="1100" NAME="SERVO_2" MIN="1000" MAX="2000"/>
-        <servo NO="2" NEUTRAL="1100" NAME="SERVO_3" MIN="1000" MAX="2000"/>
-        <servo NO="3" NEUTRAL="1100" NAME="SERVO_4" MIN="1000" MAX="2000"/>
-        <servo NO="4" NEUTRAL="1100" NAME="SERVO_5" MIN="1000" MAX="2000"/>
-        <servo NO="5" NEUTRAL="1100" NAME="SERVO_6" MIN="1000" MAX="2000"/>
-        <servo NO="6" NEUTRAL="1100" NAME="SERVO_7" MIN="1000" MAX="2000"/>
+        <servo NO="0" NEUTRAL="1500" NAME="SERVO_1" MIN="1000" MAX="2000"/>
+        <servo NO="1" NEUTRAL="1500" NAME="SERVO_2" MIN="1000" MAX="2000"/>
+        <servo NO="2" NEUTRAL="1500" NAME="SERVO_3" MIN="1000" MAX="2000"/>
+        <servo NO="3" NEUTRAL="1500" NAME="SERVO_4" MIN="1000" MAX="2000"/>
+        <servo NO="4" NEUTRAL="1500" NAME="SERVO_5" MIN="1000" MAX="2000"/>
+        <servo NO="5" NEUTRAL="1500" NAME="SERVO_6" MIN="1000" MAX="2000"/>
+        <servo NO="6" NEUTRAL="1500" NAME="SERVO_7" MIN="1000" MAX="2000"/>
     </servos>
 
     <servos DRIVER="Uavcan1">
@@ -136,10 +143,11 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
+        <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_1"/>
     </command_laws>
 
     <section NAME="MISC">
-        <define name="VoltageOfAdc(adc)" value="((3.3f/65536.0f) * 14.227 * adc)"/>
+        <define name="VoltageOfAdc(adc)" value="((3.3f/65536.0f) * 12.54 * adc)"/>
         <define VALUE="TRUE" NAME="NO_RC_THRUST_LIMIT"/>
         <define VALUE="3.5" NAME="NAV_CLIMB_VSPEED"/>
         <define VALUE="-0.5" NAME="NAV_DESCEND_VSPEED"/>
@@ -150,7 +158,9 @@
     </section>
 
     <section name="IMU" prefix="IMU_">
-        <define name="MAG_CALIB" value="{{.abi_id=3, .neutral={1696,-4095,3641}, .scale={{15263,26021,26309},{25440,40858,41277}},.current_scale={0,0,0}}}"/>
+        <!--<define name="MAG_CALIB" value="{{.abi_id=3, .neutral={1696,-4095,3641}, .scale={{15263,26021,26309},{25440,40858,41277}},.current_scale={0,0,0}}}"/>-->
+        <define name="MAG_CALIB" value="{{.abi_id=3, .neutral={1638,-4050,3653}, .scale={{7385,2497,26093},{12188,3877,40843}},.current_scale={0,0,0}}}"/>
+
 
         <define name="ACCEL_CALIB" value="{{.abi_id=20, .neutral={-57,-20,-6}, .scale={{3374,11057,64239},{647,2261,13135}}}, {.abi_id=21, .neutral={-35,-20,9}, .scale={{50356,47219,17359},{10281,9653,3561}}}, {.abi_id=22, .neutral={-17,-10,24}, .scale={{22979,34687,9697},{2353,3547,1001}}}}"/>
         
@@ -219,6 +229,7 @@
         <define VALUE="TRUE" NAME="FILTER_YAW_RATE"/>
         <define VALUE="{0.03, 0.025, 0.03, 0.025}" NAME="ACT_DYN"/>
         <define VALUE="{0, 0, 0, 0}" NAME="ACT_IS_SERVO"/>
+        <define VALUE="{1000, 1000, 1, 100}" NAME="WLS_PRIORITIES"/>
         <define VALUE="FALSE" NAME="USE_ADAPTIVE"/>
         <define VALUE="0.001" NAME="ADAPTIVE_MU"/>
     </section>
