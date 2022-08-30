@@ -22,13 +22,6 @@
         <configure name="SBUS_PORT" value="UART3"/>
       </module>
 
-      <module name="airspeed" type="ms45xx_i2c">
-        <define name="USE_I2C4"/>
-        <define name="MS45XX_I2C_DEV" value="i2c4"/>
-      </module>
-
-
-
       <!-- Forward FuelCell data back to the GCS -->
       <!--module name="generic_uart_sensor"/-->
 
@@ -108,7 +101,16 @@
     </module>
     <module name="stabilization" type="rate_indi"/>
 
-    <module name="air_data"/>
+    <!-- Airspeed sensors -->
+    <module name="airspeed" type="ms45xx_i2c">
+      <define name="USE_I2C4"/>
+      <define name="MS45XX_I2C_DEV" value="i2c4"/>
+    </module>
+    <module name="airspeed" type="uavcan"/>
+    <module name="air_data">
+      <define name="AIR_DATA_BARO_DIFF_ID" value="MS45XX_SENDER_ID"/> <!-- UAVCAN_SENDER_ID -->
+    </module>
+
     <module name="send_imu_mag_current"/>
     <module name="eff_scheduling_nederdrone"/>
 
@@ -233,7 +235,7 @@
   </command_laws>
 
   <section name="MISC">
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 12.07 * adc)"/>
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 18.028 * adc)"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
 
     <!-- Basic navigation settings -->
@@ -268,13 +270,13 @@
     <define name="MPU_Y_SIGN" value="1"/>
     <define name="MPU_Z_SIGN" value="1"/>
 
-    <!-- Calibrated with body only at cyberzoo (2022-08-12) -->
-    <define name="ACCEL_X_NEUTRAL" value="-40"/>
-    <define name="ACCEL_Y_NEUTRAL" value="9"/>
-    <define name="ACCEL_Z_NEUTRAL" value="225"/>
-    <define name="ACCEL_X_SENS" value="4.889982390644465" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.789682680386794" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.666934921818032" integer="16"/>
+    <!-- Calibrated with body only at cyberzoo (2022-08-22) -->
+    <define name="ACCEL_X_NEUTRAL" value="-92"/>
+    <define name="ACCEL_Y_NEUTRAL" value="11"/>
+    <define name="ACCEL_Z_NEUTRAL" value="-233"/>
+    <define name="ACCEL_X_SENS" value="4.893773666824744" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="4.830763157841358" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="4.700942730229992" integer="16"/>
 
     <!-- NOT CALIBRATED -->
     <define name="MAG_X_NEUTRAL" value="-2351"/>
