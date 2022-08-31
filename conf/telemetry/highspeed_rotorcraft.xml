@@ -211,8 +211,7 @@
       <message name="STATE_FILTER_STATUS"      period="3.2"/>
       <message name="AIR_DATA"                 period="0.02"/>
       <message name="SURVEY"                   period="2.5"/>
-      <message name="IMU_GYRO_SCALED"          period=".002"/>
-      <message name="IMU_ACCEL_SCALED"         period=".002"/>
+      <message name="BODY_RATE_ACCEL"          period=".002"/>
       <message name="IMU_MAG_SCALED"           period=".0125"/>
       <message name="LIDAR"                    period="0.05"/>
       <message name="INS_EKF2"                 period="0.05"/>
