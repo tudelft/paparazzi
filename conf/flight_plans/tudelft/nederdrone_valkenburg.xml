@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="50" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="5000" name="Nederdrone Valkenburg" security_height="2">
+<flight_plan alt="80" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="5000" name="Nederdrone Valkenburg" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -74,7 +74,7 @@
       <attitude pitch="-45." roll="0" throttle="0.9" vmode="throttle"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="GetPosHeight() @GT 50.0" deroute="route"/>
+      <exception cond="GetPosHeight() @GT 70.0" deroute="route"/>
       <call_once fun="nav_set_heading_current()"/>
       <call_once fun="waypoint_set_xy_i(WP_CLIMB,POS_BFP_OF_REAL(GetPosX()+20.0*sinf(stateGetNedToBodyEulers_f()->psi)),POS_BFP_OF_REAL(GetPosY()+20.0*cosf(stateGetNedToBodyEulers_f()->psi)))"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
