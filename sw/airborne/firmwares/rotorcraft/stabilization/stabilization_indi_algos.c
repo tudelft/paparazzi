@@ -30,7 +30,7 @@
  * http://arc.aiaa.org/doi/pdf/10.2514/1.G001490
  */
 
-#include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
+#include "firmwares/rotorcraft/stabilization/stabilization_indi_algos.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_quat_transformations.h"
@@ -494,7 +494,10 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
       }
     }
 
-    num_t Wu[CA_N_U]; memset(Wu, 1.0F, sizeof(num_t)*n_u);
+    num_t Wu[CA_N_U];
+    for (int i=0; i<n_u; i++)
+      Wu[i] = 1.0F;
+
     num_t theta = sqrt(1e-5);
     num_t cond_bound = 1e4;
 

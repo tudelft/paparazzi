@@ -109,7 +109,7 @@ void gamma_estimator(int n, num_t** A2, num_t cond_target, num_t* gamma, num_t* 
 
 }
 
-void cond_estimator(int n, num_t** A2, num_t min_diag2, num_t* cond_est, num_t* max_sig){
+void cond_estimator(int n, num_t** A2, num_t* min_diag2, num_t* cond_est, num_t* max_sig){
     /*
     % returns upper bound on condition number of A matrix. Should run in
     % O(n*d^2) time when optimised
@@ -130,6 +130,6 @@ void cond_estimator(int n, num_t** A2, num_t min_diag2, num_t* cond_est, num_t* 
         *max_sig = (*max_sig < A2[i][i]+R) ? A2[i][i]+R : *max_sig;
     }
 
-    *cond_est = *max_sig / ((min_diag2 > 1e-10) ? min_diag2 : 1e-10);
+    *cond_est = *max_sig / ((*min_diag2 > 1e-10) ? *min_diag2 : 1e-10);
 
 }

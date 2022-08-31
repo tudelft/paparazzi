@@ -89,13 +89,19 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
   int ip;
   for (int i=0; i<n_u; i++) {
     ip = permutation[i];
+    float comp_val = A_ptr[ip+n_v][ip]*A_ptr[ip+n_v][ip];
+    if (min_diag2 > comp_val) {
+      min_diag2 = comp_val;
+    }
+    /*
     min_diag2 = (min_diag2 > A_ptr[ip+n_v][ip]*A_ptr[ip+n_v][ip])
       ? A_ptr[ip+n_v][ip]*A_ptr[ip+n_v][ip] : min_diag2;
+      */
   }
 
   num_t cond_est;
   num_t max_sig;
-  cond_estimator(n_v, A2_ptr, min_diag2, &cond_est, &max_sig);
+  cond_estimator(n_v, A2_ptr, &min_diag2, &cond_est, &max_sig);
 
   #ifdef PRINT_COND_EST
   printf("cond(A^T*A) <= %f\n", cond_est);

@@ -11,7 +11,8 @@
 			"program": "${workspaceFolder}/var/aircrafts/Flamewheel_ctl_alloc/nps/simsitl",
 			"env": {"PAPARAZZI_HOME": "${workspaceFolder}"},
 			"args": [],
-			"cwd": "${workspaceFolder}"
+			"cwd": "${workspaceFolder}",
+			"relativePathBase": "${workspaceFolder}"
 		},
 		{
 			"name": "(gdb) Flamewheel simsitl",
