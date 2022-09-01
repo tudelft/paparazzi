@@ -678,6 +678,13 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   BoundAbs(rate_sp.q, 2.0);
   BoundAbs(rate_sp.r, 2.0);
 
+#if RADIO_PIVOT_SWITCH == FASLE
+  /* compute the INDI command */
+  stabilization_indi_rate_run(rate_sp, in_flight);
+
+  // Reset thrust increment boolean
+  indi_thrust_increment_set = false;
+#else
   int8_t i;
   if (radio_control.values[RADIO_PIVOT_SWITCH] < 0){
 	  actuators_pprz[0] = MAX_PPRZ;
@@ -685,9 +692,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 	  actuators_pprz[2] = -MAX_PPRZ;
 	  actuators_pprz[3] = -MAX_PPRZ;
   }
-//  if (radio_control.values[RADIO_PIVOT_SWITCH] < 0){
   else if (radio_control.values[RADIO_PIVOT_SWITCH] == 0){
-//  if (TRUE){
       struct FloatEulers eulers_zxy;
       struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
       float_eulers_of_quat_zxy(&eulers_zxy, statequat);
@@ -704,17 +709,8 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     if (autopilot_get_motors_on()) {
       struct FloatRates * body_rates = stateGetBodyRates_f();
       int16_t motor_command = radio_control.values[RADIO_THROTTLE] - body_rates->q * pivot_gain_q - att_err.qy*pivot_gain_theta;
-//      actuators_pprz[2] = radio_control.values[RADIO_THROTTLE];
-//      actuators_pprz[3] = radio_control.values[RADIO_THROTTLE];
       actuators_pprz[2] = motor_command - 1000;
       actuators_pprz[3] = motor_command - 1000;
-
-      code_has_run = 1.0;
-      test[0] = servo_cmd_disp;
-      test[1] = radio_pivot;
-      test[2] = radio_throttle;
-      test[3] = code_has_run;
-//    }
     } else {
 		for (i = 2; i < INDI_NUM_ACT; i++) {
 		  actuators_pprz[i] = -9600;
@@ -729,7 +725,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 	  // Reset thrust increment boolean
 	  indi_thrust_increment_set = false;
   }
-
+#endif
 }
 
 // This function reads rc commands
