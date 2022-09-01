@@ -179,13 +179,13 @@
 			<lag_filter name="tilt_left_lag">
 				<input> fcs/tilt_left </input>
 				<c1> 65 </c1> <!-- 54 from cyclone file -->
-				<delay type="time"> 0.015 </delay>
+				<!--  <delay type="time"> 0.015 </delay> -->
 				<output> fcs/tilt_left_lag</output>
 			</lag_filter>
 			<lag_filter name="tilt_right_lag">
 				<input> fcs/tilt_right </input>
 				<c1> 65 </c1>
-				<delay type="time"> 0.015 </delay>
+				<!--  <delay type="time"> 0.015 </delay> -->
 				<output> fcs/tilt_right_lag </output>
 			</lag_filter>
 			<lag_filter name="mot_right_lag">
@@ -200,6 +200,42 @@
 			</lag_filter>
 		</channel>
 	</flight_control>
+<!--	<flight_control name="actuator_dynamics">
+		<channel name="filtering">
+			<second_order_filter name="tilt_left_lag">
+				<input> fcs/tilt_left </input>
+				<c1> 0 </c1>
+				<c2> 0 </c2>
+				<c3> 6400 </c3>
+				<c4> 1 </c4>
+				<c5> 128 </c5>
+				<c6> 6400 </c6>				-->
+				<!--  <delay type="time"> 0.014 </delay> -->
+<!--				<output> fcs/tilt_left_lag</output>
+			</second_order_filter>
+			<second_order_filter name="tilt_right_lag">
+				<input> fcs/tilt_right </input>
+				<c1> 0 </c1>
+				<c2> 0 </c2>
+				<c3> 6400 </c3>
+				<c4> 1 </c4>
+				<c5> 128 </c5>
+				<c6> 6400 </c6>				-->
+				<!--  <delay type="time"> 0.014 </delay> -->
+<!--				<output> fcs/tilt_right_lag </output>
+			</second_order_filter>
+			<lag_filter name="mot_right_lag">
+				<input> fcs/mot_right </input>
+				<c1> 18 </c1>
+				<output> fcs/mot_right_lag </output>
+			</lag_filter>
+			<lag_filter name="mot_left_lag">
+				<input> fcs/mot_left </input>
+				<c1> 18 </c1>
+				<output> fcs/mot_left_lag </output>
+			</lag_filter>
+		</channel>
+	</flight_control> -->
 	
 <!--**********************************************
 	 			EXTERNAL REACTIONS
