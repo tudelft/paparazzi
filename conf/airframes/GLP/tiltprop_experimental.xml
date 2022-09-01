@@ -45,6 +45,7 @@
       <!--Switch advanced INDI scheduling functions on or off-->
       <!--Take the mode channel for simulation-->
       <define name="INDI_FUNCTIONS_RC_CHANNEL" value="4"/>
+      <define name="RADIO_PIVOT_SWITCH" value="FALSE"/>
     </target>
 
 
