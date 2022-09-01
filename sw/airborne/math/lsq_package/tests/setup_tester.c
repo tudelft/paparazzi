@@ -53,7 +53,7 @@ main(int argc, char** argv) {
 
 	num_t cond_est;
 	num_t max_sig;
-	cond_estimator(n_v, A2_ptr, &min_diag2, &cond_est, &max_sig);
+	cond_estimator(n_v, A2_ptr, min_diag2, &cond_est, &max_sig);
 
 	printf("%f\n", cond_est);
 

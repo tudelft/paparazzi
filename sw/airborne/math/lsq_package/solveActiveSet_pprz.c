@@ -330,7 +330,11 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
 
       // update input u = u + alpha*p
       for (int i = 0; i < n_u; i++) {
-        u[i] += alpha * p[i];
+        if (i == id_alpha) {
+          u[i] = (p[i] > 0) ? umin[i] : umax[i];
+        } else {
+          u[i] += alpha * p[i];
+        }
       }
       // update d = d-alpha*A*p_free
       for (int i = 0; i < n_c; i++) {

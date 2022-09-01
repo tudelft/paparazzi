@@ -21,7 +21,10 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
   int n_c = n_u + n_v;
 
   //num_t xs[CA_N_U]; memcpy(xs, u_guess, sizeof(num_t)*n_u);
-  memcpy(xs, u_guess, sizeof(num_t)*n_u);
+  //memcpy(xs, u_guess, sizeof(num_t)*n_u);
+  for (int i=0; i<n_u; i++)
+    xs[i] = u_guess[i];
+
   int iter = 0;
   int n_free = 0;
 
@@ -101,7 +104,7 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
 
   num_t cond_est;
   num_t max_sig;
-  cond_estimator(n_v, A2_ptr, &min_diag2, &cond_est, &max_sig);
+  cond_estimator(n_v, A2_ptr, min_diag2, &cond_est, &max_sig);
 
   #ifdef PRINT_COND_EST
   printf("cond(A^T*A) <= %f\n", cond_est);
@@ -270,7 +273,11 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
 
       // update xs
       for (int i=0; i<n_u; i++) {
-        xs[i] += a * (z[i] - xs[i]);
+        if (i == id_alpha) {
+          xs[i] = ((z[i] - xs[i]) > 0) ? umin[i] : umax[i];
+        } else {
+          xs[i] += a * (z[i] - xs[i]);
+        }
       }
 
       // update chol

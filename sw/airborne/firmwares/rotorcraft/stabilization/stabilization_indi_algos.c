@@ -105,6 +105,8 @@ bool indi_use_adaptive = false;
 #endif
 
 activeSetAlgoChoice indi_ctl_alloc_algo = STABILIZATION_INDI_CTL_ALLOC_ALGO;
+float indi_ctl_alloc_cond_bound = STABILIZATION_INDI_CTL_ALLOC_COND_BOUND;
+float indi_ctl_alloc_theta = STABILIZATION_INDI_CTL_ALLOC_THETA;
 
 #ifdef STABILIZATION_INDI_ACT_RATE_LIMIT
 float act_rate_limit[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_RATE_LIMIT;
@@ -498,8 +500,10 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     for (int i=0; i<n_u; i++)
       Wu[i] = 1.0F;
 
-    num_t theta = sqrt(1e-5);
-    num_t cond_bound = 1e4;
+    //num_t theta = sqrt(1e-5);
+    //num_t cond_bound = 1e4;
+    num_t theta = indi_ctl_alloc_theta;
+    num_t cond_bound = indi_ctl_alloc_cond_bound;
 
     num_t A[CA_N_C*CA_N_U];
     num_t b[CA_N_C];
