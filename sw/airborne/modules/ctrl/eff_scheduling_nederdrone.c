@@ -38,7 +38,7 @@ not use this module at the same time!
 
 // Airspeed at which tip props should be turned on
 #ifndef INDI_SCHEDULING_LOW_AIRSPEED
-#define INDI_SCHEDULING_LOW_AIRSPEED 14.0
+#define INDI_SCHEDULING_LOW_AIRSPEED 12.0
 #endif
 
 int32_t use_scheduling = 1;
@@ -54,7 +54,7 @@ float sched_ratio_tip_props = 1.0;
 // If pitch lower, pitch props gradually switch off till  sched_tip_prop_lower_pitch_limit_deg (1 > sched_ratio_tip_props > 0)
 float sched_tip_prop_upper_pitch_limit_deg = -45;
 // If pitch lower, pitch props switch fully off (sched_ratio_tip_props goes to 0)
-float sched_tip_prop_lower_pitch_limit_deg = -80;
+float sched_tip_prop_lower_pitch_limit_deg = -70;
 // Setting to not switch off tip props during forward flight
 bool sched_tip_props_always_on = false;
 
@@ -155,7 +155,7 @@ void ctrl_eff_scheduling_periodic(void)
     g1g2[3][i] *= thrust_eff_scaling;
   }
 
-  bool low_airspeed = (stateGetAirspeed_f() < INDI_SCHEDULING_LOW_AIRSPEED) && (autopilot_get_mode() != AP_MODE_NAV);
+  bool low_airspeed = stateGetAirspeed_f() < INDI_SCHEDULING_LOW_AIRSPEED;
 
   // Tip prop ratio
   float pitch_deg = eulers_zxy.theta / M_PI * 180.f;
