@@ -80,10 +80,16 @@ class EscMessage(object):
     def get_rpm_perc(self):
         return self.rpm / 7000
     def get_rpm_color(self):
-        if self.rpm < 4500:
+        if self.rpm < 4800:
             return 1
         return 0.5
 
+    def get_err(self):
+        return str(self.errors) + " errs"
+    def get_err_perc(self):
+        return 0
+    def get_err_color(self):
+        return 0.5
 
     def get_volt(self):
         if (self.id in [10,17]):
@@ -379,7 +385,7 @@ class FuelCellFrame(wx.Frame):
         tdy = int(boxw * 6.0 / 300.0)
         boxh = int(boxw * 40.0 / 300.0)
         boxw = self.stat - 2*tdx
-        spacing = boxh+10
+        spacing = boxh+6
 
         dc.SetPen(wx.Pen(wx.Colour(0,0,0))) 
         dc.SetBrush(wx.Brush(wx.Colour(220,220,220))) 
@@ -489,6 +495,7 @@ class FuelCellFrame(wx.Frame):
             self.StatusBox(dc, dx, dy, 1, 0, m.get_current(), m.get_current_perc(), 1)
             self.StatusBox(dc, dx, dy, 2, 0, m.get_rpm(), m.get_rpm_perc(), m.get_rpm_color())
             self.StatusBox(dc, dx, dy, 3, 0, m.get_temp(), m.get_temp_perc(), m.get_temp_color())
+            self.StatusBox(dc, dx, dy, 4, 0, m.get_err(), m.get_err_perc(), m.get_err_color())
 
 
 
