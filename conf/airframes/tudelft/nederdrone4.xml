@@ -18,6 +18,8 @@
       <configure name="FLASH_MODE" value="SWD"/>
       <define name="USE_BARO_BOARD" value="1"/>
 
+      <module name="eff_scheduling_nederdrone"/>
+
       <module name="radio_control" type="sbus">
         <configure name="SBUS_PORT" value="UART3"/>
       </module>
@@ -62,6 +64,8 @@
     </target>
 
     <target name="nps" board="pc">
+
+      <module name="eff_scheduling_nederdrone_dummy"/>
       <module name="radio_control" type="datalink"/>
       <module name="fdm" type="jsbsim"/>
 
@@ -109,7 +113,6 @@
 
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
-    <module name="eff_scheduling_nederdrone"/>
 
     <module name="AOA_pwm">
       <define name="USE_PWM_INPUT1" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>
