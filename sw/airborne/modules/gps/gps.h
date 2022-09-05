@@ -176,7 +176,7 @@ extern void gps_parse_RTCM_INJECT(uint8_t *buf);
 
 /** GPS timeout in seconds */
 #ifndef GPS_TIMEOUT
-#define GPS_TIMEOUT 2
+#define GPS_TIMEOUT 8
 #endif
 
 static inline bool gps_has_been_good(void)
