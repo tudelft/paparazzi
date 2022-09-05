@@ -61,13 +61,14 @@ class TempMessage(object):
 
 class EscMessage(object):
     def __init__(self, msg):
-        self.id = int(msg['motor_id'])
+        self.id = int(msg['node_id']) # motor_id
         self.amp = float(msg['amps'])
         self.rpm = float(msg['rpm'])
         self.volt_b = float(msg['bat_volts'])
         self.volt_m = float(msg['motor_volts'])
         self.temperature = float(msg['temperature'])
         self.energy = float(msg['amps']) * float(msg['motor_volts'])
+        self.errors = int(msg['errors'])
     
     def get_current(self):
         return str(round(self.amp ,1)) + "A"
@@ -85,10 +86,14 @@ class EscMessage(object):
 
 
     def get_volt(self):
-        if (self.id in [6,7,8,9,16,17,18,19]):
+        if (self.id in [10,17]):
             return "Servo " + str(self.id) + " " +str(round(self.volt_m ,1)) + "V"
+        elif (self.id in [1,6]):
+            return "Old " + str(self.id) + " " +str(round(self.volt_m ,1)) + "V"
+        elif (self.id in [2,3,4,5,11,12,13,14,15,16]):
+            return "New " + str(self.id) + " " +str(round(self.volt_m ,1)) + "V"
         else:
-            return "Mot " + str(self.id) + " " +str(round(self.volt_m ,1)) + "V"
+            return "? " + str(self.id) + " " +str(round(self.volt_m ,1)) + "V"
     def get_volt_perc(self):
         return self.volt_b / (6*4.2)
 
@@ -470,13 +475,13 @@ class FuelCellFrame(wx.Frame):
         w2 = 0.60
         dw = 0.11
         mw = 0.1
-        mm = [(0.03,w1), (0.03+dw,w1), (0.03+2*dw,w1), (0.97-mw-2*dw,w1), (0.97-mw-dw,w1), (0.97-mw,w1), (0.03,w1+0.17), (0.03+dw,w1+0.17), (0.97-mw-dw,w1+0.17), (0.97-mw,w1+0.17),
-              (0.03,w2), (0.03+dw,w2), (0.03+2*dw,w2), (0.97-mw-2*dw,w2), (0.97-mw-dw,w2), (0.97-mw,w2), (0.03,w2+0.17), (0.03+dw,w2+0.17), (0.97-mw-dw,w2+0.17), (0.97-mw,w2+0.17)]
+        mm = [(0.03,w1), (0.03+dw,w1), (0.03+2*dw,w1), (0.97-mw-2*dw,w1), (0.97-mw-dw,w1), (0.97-mw,w1), (-100,0), (-100,0), (-100,0), (0.03,w2+0.17),
+              (0.03,w2), (0.03+dw,w2), (0.03+2*dw,w2), (0.97-mw-2*dw,w2), (0.97-mw-dw,w2), (0.97-mw,w2), (0.97-mw,w2+0.17), (-100,0), (-100,0), (-100,0)]
         for m in mm:
             dc.DrawRectangle(int(m[0]*w), int(m[1]*h),int(mw*w), int(0.15*h))
 
         for m in self.motors.mot:
-            mo_co = mm[m.id]
+            mo_co = mm[m.id-1]
             #print(m.id, mo_co)
             dx = int(mo_co[0]*w)
             dy = int(mo_co[1]*h)
