@@ -323,6 +323,21 @@
         <arg flag="-c" constant="*:telemetry:BARO_RAW:abs"/>
       </program>
     </session>
+    <session name="NederDroneStatusLaptop">
+      <program name="Server"/>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+        <arg flag="-nouplink"/>
+      </program>
+      <program name="NederdroneStatus"/>
+      <program name="Attitude Visualizer"/>
+      <program name="ATC"/>
+      <program name="SVInfo"/>
+      <program name="GCS">
+        <arg flag="-layout" constant="bottom_settings.xml"/>
+        <arg flag="-maps_zoom" constant="14"/>
+      </program>
+    </session>
     <session name="Joystick X3D Pro">
       <program name="Joystick">
         <arg flag="-ac" constant="@AIRCRAFT"/>
