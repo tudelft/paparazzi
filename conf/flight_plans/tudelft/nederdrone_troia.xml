@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="120" ground_alt="0" lat0="38.474472222222225" lon0="-8.871222222222222" max_dist_from_home="80000" name="Nederdrone Troia" security_height="2">
+<flight_plan alt="100" ground_alt="0" lat0="38.474472222222225" lon0="-8.871222222222222" max_dist_from_home="80000" name="Nederdrone Troia" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -111,8 +111,8 @@
                      @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
     <exception cond="And( Or(!InsideA1_soft(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
                          Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 304.8))
-                     @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('route'))" deroute="route"/>
-    <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('route'))" deroute="route"/>
+                     @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('GO NORTH'))" deroute="GO NORTH"/>
+    <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('GO NORTH'))" deroute="GO NORTH"/>
   </exceptions>
   <blocks>
     <block name="Wait GPS">
@@ -127,19 +127,19 @@
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
-    <block name="Start Engine">
+    <block name="Start Engine" strip_button="Takeoff" strip_icon="takeoff.png">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="nav_set_heading_current()"/>
       <attitude pitch="-50" roll="0" throttle="0.8" until="stage_time>0" vmode="throttle"/>
     </block>
-    <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
+    <block name="TakeoffLow">
       <exception cond="GetPosHeight() @GT 18.0" deroute="Takeoff"/>
       <call_once fun="nav_set_heading_current()"/>
       <attitude pitch="-45." roll="0" throttle="0.9" vmode="throttle"/>
     </block>
-    <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="GetPosHeight() @GT 70.0" deroute="route"/>
+    <block name="Takeoff">
+      <exception cond="GetPosHeight() @GT 70.0" deroute="GO NORTH"/>
       <call_once fun="nav_set_heading_current()"/>
       <call_once fun="waypoint_set_xy_i(WP_CLIMB,POS_BFP_OF_REAL(GetPosX()+20.0*sinf(stateGetNedToBodyEulers_f()->psi)),POS_BFP_OF_REAL(GetPosY()+20.0*cosf(stateGetNedToBodyEulers_f()->psi)))"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
@@ -186,11 +186,11 @@
       <set value="TRUE" var="force_forward"/>
       <oval p1="p1" p2="p2" radius="nav_radius"/>
     </block>
-    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
+    <block name="land here">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>
-    <block name="land">
+    <block name="land" strip_button="Land Here" strip_icon="land-right.png">
       <set value="FALSE" var="force_forward"/>
       <go wp="TD"/>
     </block>
