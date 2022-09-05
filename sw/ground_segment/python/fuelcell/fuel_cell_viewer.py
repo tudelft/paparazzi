@@ -66,8 +66,8 @@ class EscMessage(object):
         self.rpm = float(msg['rpm'])
         self.volt_b = float(msg['bat_volts'])
         self.volt_m = float(msg['motor_volts'])
-        self.temperature = float(msg['power']) - 273.15
-        self.energy = float(msg['energy'])
+        self.temperature = float(msg['temperature'])
+        self.energy = float(msg['amps']) * float(msg['motor_volts'])
     
     def get_current(self):
         return str(round(self.amp ,1)) + "A"
@@ -77,9 +77,9 @@ class EscMessage(object):
     def get_rpm(self):
         return str(round(self.rpm ,0)) + " rpm"
     def get_rpm_perc(self):
-        return self.rpm / 4000
+        return self.rpm / 7000
     def get_rpm_color(self):
-        if self.rpm < 2500:
+        if self.rpm < 4500:
             return 1
         return 0.5
 
