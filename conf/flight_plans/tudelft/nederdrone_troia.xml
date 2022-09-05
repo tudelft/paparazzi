@@ -1,33 +1,56 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="120" ground_alt="0" lat0="38.474956" lon0="-8.870696" max_dist_from_home="20000" name="Nederdrone Troia" security_height="2">
+<flight_plan alt="120" ground_alt="0" lat0="38.474472222222225" lon0="-8.871222222222222" max_dist_from_home="20000" name="Nederdrone Troia" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
 </header>
   <waypoints>
     <waypoint name="HOME" x="12.6" y="-48.7"/>
-    <waypoint name="CLIMB" x="62.6" y="-80.4"/>
-    <waypoint name="STDBY" x="94.9" y="-15.4"/>
-    <waypoint name="p1" x="130.6" y="14.2"/>
-    <waypoint name="p2" x="442.6" y="135.2"/>
-    <waypoint name="p3" x="512.9" y="-8.1"/>
-    <waypoint name="p4" x="204.8" y="-131.2"/>
-    <waypoint name="TD" x="-4.1" y="-23.7"/>
-    <waypoint name="FOLLOW" x="123.2" y="-87.8"/>
-    <!--waypoint lat="52.1669450" lon="4.4174372" name="S1"/>
-    <waypoint lat="52.1689871" lon="4.4208804" name="S2"/-->
-    <waypoint lat="38 28 28" lon="-8 52 16" name="A1"/>
-    <waypoint lat="52.168049" lon="4.406923" name="A2"/>
-    <waypoint lat="52.166515" lon="4.408235" name="A3"/>
-    <waypoint lat="52.163255" lon="4.407668" name="A4"/>
+    <waypoint lat="38.476515" lon="-8.868380" name="CLIMB"/>
+    <waypoint lat="38.477075" lon="-8.867029" name="STDBY"/>
+    <waypoint lat="38.478091" lon="-8.871123" name="p1"/>
+    <waypoint lat="38.481635" lon="-8.864318" name="p2"/>
+    <waypoint lat="38.477344" lon="-8.859447" name="p3"/>
+    <waypoint lat="38.473776" lon="-8.866378" name="p4"/>
+    <waypoint lat="38.475765" lon="-8.869543" name="TD"/>
+    <waypoint lat="38.480239" lon="-8.861225" name="APP"/>
+    <waypoint lat="38.474472222222225" lon="-8.871222222222222" name="ARP"/>
+    <waypoint lat="38.49305555555556" lon="-8.858611111111111" name="1-1"/>
+    <waypoint lat="38.478611111111114" lon="-8.845" name="1-2"/>
+    <waypoint lat="38.473240" lon="-8.901030" name="1-4"/>
+    <waypoint lat="38.455863" lon="-8.879939" name="1-3"/>
+    <waypoint lat="38.4685" lon="-8.886111111111111" name="2-1"/>
+    <waypoint lat="38.4675" lon="-8.88486111111111" name="2-2"/>
+    <waypoint lat="38.47508333333333" lon="-8.871611111111111" name="2-4"/>
+    <waypoint lat="38.47394444444444" lon="-8.870694444444444" name="2-3"/>
+    <waypoint lat="38.490282" lon="-8.859411" name="1-1_soft"/>
+    <waypoint lat="38.478730" lon="-8.848201" name="1-2_soft"/>
+    <waypoint lat="38.47638888888889" lon="-8.887222222222222" name="1-4_soft"/>
+    <waypoint lat="38.46194444444444" lon="-8.873611111111112" name="1-3_soft"/>
+    <waypoint lat="38.4685" lon="-8.886111111111111" name="2-1_soft"/>
+    <waypoint lat="38.4675" lon="-8.88486111111111" name="2-2_soft"/>
+    <waypoint lat="38.47508333333333" lon="-8.871611111111111" name="2-4_soft"/>
+    <waypoint lat="38.47394444444444" lon="-8.870694444444444" name="2-3_soft"/>
   </waypoints>
   <sectors>
     <sector color="red" name="A1">
-      <corner name="A1"/>
-      <corner name="A2"/>
-      <corner name="A3"/>
-      <corner name="A4"/>
+      <corner name="1-1"/>
+      <corner name="1-2"/>
+      <corner name="1-3"/>
+      <corner name="1-4"/>
+    </sector>
+    <sector color="orange" name="A1_soft">
+      <corner name="1-1_soft"/>
+      <corner name="1-2_soft"/>
+      <corner name="1-3_soft"/>
+      <corner name="1-4_soft"/>
+    </sector>
+    <sector color="red" name="Corridor">
+      <corner name="2-1"/>
+      <corner name="2-2"/>
+      <corner name="2-3"/>
+      <corner name="2-4"/>
     </sector>
   </sectors>
   <modules>
@@ -36,17 +59,14 @@
     </module>
   </modules>
   <exceptions>
-    <!-- soft geofence -->
     <exception cond="Or( Or(!InsideA1(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
                          Or(!InsideCorridor(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
                          Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 304.8))
                      @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
-    <!-- hard geofence -->
     <exception cond="Or( Or(!InsideA1(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
                          Or(!InsideCorridor(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
                          Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 304.8))
                      @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
-    <!-- datalink exception -->
     <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
   </exceptions>
   <blocks>
@@ -85,13 +105,11 @@
       <go from="p2" hmode="route" wp="p3"/>
       <go from="p3" hmode="route" wp="p4"/>
       <go from="p4" hmode="route" wp="p1"/>
-      <deroute block="Approach FOLLOW"/>
+      <deroute block="Approach APP"/>
     </block>
-    <block name="Approach FOLLOW">
-      <stay alt="WaypointAlt(WP_FOLLOW)" pre_call="approach_moving_target_enable(WP_FOLLOW)" wp="FOLLOW"/>
+    <block name="Approach APP">
+      <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
     </block>
-
-  
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="FALSE" var="force_forward"/>
       <stay wp="STDBY"/>
@@ -121,27 +139,6 @@
       <go from="p2" hmode="route" wp="p1"/>
       <deroute block="line_p1_p2"/>
     </block>
-
-    <!--block group="extra_pattern" name="Survey S1-S2 25m NS" strip_button="Svy25-NS-PRIMITIVE">
-      <set value="FALSE" var="force_forward"/>
-      <survey_rectangle grid="30" orientation="NS" wp1="S1" wp2="S2"/>
-    </block>
-    <block group="extra_pattern" name="Survey S1-S2 NS" strip_button="Svy-NS" strip_icon="survey.png">
-      <set value="TRUE" var="force_forward"/>
-      <call_once fun="nav_survey_rectangle_rotorcraft_setup(WP_S1, WP_S2, sweep, NS)"/>
-      <deroute block="Survey RECTANGLE RUN"/>
-    </block>
-    <block group="extra_pattern" name="Survey S1-S2 LO" strip_button="Svy-LO" strip_icon="survey_we.png">
-      <set value="TRUE" var="force_forward"/>
-      <call_once fun="nav_survey_rectangle_rotorcraft_setup(WP_S1, WP_S2, sweep, WE)"/>
-      <deroute block="Survey RECTANGLE RUN"/>
-    </block>
-    <block group="extra_pattern" name="Survey RECTANGLE RUN" strip_button="Svy CONT">
-      <set value="TRUE" var="force_forward"/>
-      <exception cond="rectangle_survey_sweep_num @GT 1" deroute="Standby"/>
-      <call fun="nav_survey_rectangle_rotorcraft_run(WP_S1, WP_S2)"/>
-    </block-->
-
     <block name="Oval">
       <set value="TRUE" var="force_forward"/>
       <oval p1="p1" p2="p2" radius="nav_radius"/>
