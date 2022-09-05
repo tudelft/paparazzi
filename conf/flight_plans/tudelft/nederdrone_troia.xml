@@ -1,12 +1,12 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="120" ground_alt="0" lat0="38.474472222222225" lon0="-8.871222222222222" max_dist_from_home="20000" name="Nederdrone Troia" security_height="2">
+<flight_plan alt="120" ground_alt="0" lat0="38.474472222222225" lon0="-8.871222222222222" max_dist_from_home="80000" name="Nederdrone Troia" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
 </header>
   <waypoints>
-    <waypoint name="HOME" x="12.6" y="-48.7"/>
+    <waypoint lat="38.474472222222225" lon="-8.871222222222222" name="HOME"/>
     <waypoint lat="38.476515" lon="-8.868380" name="CLIMB"/>
     <waypoint lat="38.477075" lon="-8.867029" name="STDBY"/>
     <waypoint lat="38.478091" lon="-8.871123" name="p1"/>
@@ -15,23 +15,41 @@
     <waypoint lat="38.473776" lon="-8.866378" name="p4"/>
     <waypoint lat="38.475765" lon="-8.869543" name="TD"/>
     <waypoint lat="38.480239" lon="-8.861225" name="APP"/>
-    <waypoint lat="38.474472222222225" lon="-8.871222222222222" name="ARP"/>
-    <waypoint lat="38.49305555555556" lon="-8.858611111111111" name="1-1"/>
-    <waypoint lat="38.478611111111114" lon="-8.845" name="1-2"/>
-    <waypoint lat="38.473240" lon="-8.901030" name="1-4"/>
-    <waypoint lat="38.455863" lon="-8.879939" name="1-3"/>
-    <waypoint lat="38.4685" lon="-8.886111111111111" name="2-1"/>
-    <waypoint lat="38.4675" lon="-8.88486111111111" name="2-2"/>
-    <waypoint lat="38.47508333333333" lon="-8.871611111111111" name="2-4"/>
-    <waypoint lat="38.47394444444444" lon="-8.870694444444444" name="2-3"/>
-    <waypoint lat="38.490282" lon="-8.859411" name="1-1_soft"/>
-    <waypoint lat="38.478730" lon="-8.848201" name="1-2_soft"/>
-    <waypoint lat="38.47638888888889" lon="-8.887222222222222" name="1-4_soft"/>
-    <waypoint lat="38.46194444444444" lon="-8.873611111111112" name="1-3_soft"/>
-    <waypoint lat="38.4685" lon="-8.886111111111111" name="2-1_soft"/>
-    <waypoint lat="38.4675" lon="-8.88486111111111" name="2-2_soft"/>
-    <waypoint lat="38.47508333333333" lon="-8.871611111111111" name="2-4_soft"/>
-    <waypoint lat="38.47394444444444" lon="-8.870694444444444" name="2-3_soft"/>
+    <waypoint lat="38.499227" lon="-8.858617" name="1-1"/>
+    <waypoint lat="38.476154" lon="-8.833249" name="1-2"/>
+    <waypoint lat="38.469040" lon="-8.861433" name="1-3"/>
+    <waypoint lat="38.467811" lon="-8.879136" name="1-4"/>
+    <waypoint lat="38.464900" lon="-8.884918" name="1-5"/>
+    <waypoint lat="38.471784" lon="-8.899161" name="1-6"/>
+    <waypoint lat="38.478446" lon="-8.885780" name="1-7"/>
+    <waypoint lat="38.480130" lon="-8.886261" name="1-8"/>
+    <waypoint lat="38.467526" lon="-8.888318" name="_2-1"/>
+    <waypoint lat="38.466563" lon="-8.887256" name="_2-2"/>
+    <waypoint lat="38.470725" lon="-8.881204" name="_2-4"/>
+    <waypoint lat="38.469633" lon="-8.880184" name="_2-3"/>
+    <waypoint lat="38.493038" lon="-8.858636" name="1-1_soft"/>
+    <waypoint lat="38.478620" lon="-8.845008" name="1-2_soft"/>
+    <waypoint lat="38.470562" lon="-8.867834" name="1-3_soft"/>
+    <waypoint lat="38.476390" lon="-8.887219" name="1-5_soft"/>
+    <waypoint lat="38.468803" lon="-8.880064" name="1-4_soft"/>
+    <waypoint lat="38.468493" lon="-8.886115" name="2-1_soft"/>
+    <waypoint lat="38.467498" lon="-8.884860" name="2-2_soft"/>
+    <waypoint lat="38.475621" lon="-8.874463" name="2-4_soft"/>
+    <waypoint lat="38.468610" lon="-8.877984" name="2-3_soft"/>
+    <waypoint lat="38.4" lon="-9.608888888888888" name="6-1"/>
+    <waypoint lat="38.409166666666664" lon="-9.196944444444444" name="6-2"/>
+    <waypoint lat="38.434444444444445" lon="-9.116666666666667" name="6-3"/>
+    <waypoint lat="38.43361111111111" lon="-9.054722222222223" name="6-4"/>
+    <waypoint lat="38.48777777777778" lon="-8.93361111111111" name="6-5"/>
+    <waypoint lat="38.46722222222222" lon="-8.885555555555555" name="6-6"/>
+    <waypoint lat="38.44444444444444" lon="-8.854722222222222" name="6-7"/>
+    <waypoint lat="38.30027777777778" lon="-8.854722222222222" name="6-8"/>
+    <waypoint lat="38.30027777777778" lon="-8.850833333333334" name="6-9"/>
+    <waypoint lat="38.215833333333336" lon="-8.850277777777778" name="6-10"/>
+    <waypoint lat="38.16833333333334" lon="-9.001666666666667" name="6-11"/>
+    <waypoint lat="38.16694444444445" lon="-9.198888888888888" name="6-12"/>
+    <waypoint lat="38.000277777777775" lon="-9.200555555555555" name="6-13"/>
+    <waypoint lat="38.000277777777775" lon="-9.450277777777778" name="6-14"/>
   </waypoints>
   <sectors>
     <sector color="red" name="A1">
@@ -39,18 +57,39 @@
       <corner name="1-2"/>
       <corner name="1-3"/>
       <corner name="1-4"/>
+      <corner name="1-5"/>
+      <corner name="1-6"/>
+      <corner name="1-7"/>
+      <corner name="1-8"/>
     </sector>
     <sector color="orange" name="A1_soft">
       <corner name="1-1_soft"/>
       <corner name="1-2_soft"/>
       <corner name="1-3_soft"/>
       <corner name="1-4_soft"/>
+      <corner name="1-5_soft"/>
     </sector>
     <sector color="red" name="Corridor">
-      <corner name="2-1"/>
-      <corner name="2-2"/>
-      <corner name="2-3"/>
-      <corner name="2-4"/>
+      <corner name="_2-1"/>
+      <corner name="_2-2"/>
+      <corner name="_2-3"/>
+      <corner name="_2-4"/>
+    </sector>
+    <sector color="red" name="A3">
+      <corner name="6-1"/>
+      <corner name="6-2"/>
+      <corner name="6-3"/>
+      <corner name="6-4"/>
+      <corner name="6-5"/>
+      <corner name="6-6"/>
+      <corner name="6-7"/>
+      <corner name="6-8"/>
+      <corner name="6-9"/>
+      <corner name="6-10"/>
+      <corner name="6-11"/>
+      <corner name="6-12"/>
+      <corner name="6-13"/>
+      <corner name="6-14"/>
     </sector>
   </sectors>
   <modules>
