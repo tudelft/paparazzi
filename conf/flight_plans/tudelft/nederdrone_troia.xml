@@ -13,6 +13,14 @@
     <waypoint lat="38.481635" lon="-8.864318" name="p2"/>
     <waypoint lat="38.477344" lon="-8.859447" name="p3"/>
     <waypoint lat="38.473776" lon="-8.866378" name="p4"/>
+    <waypoint lat="38.478091" lon="-8.871123" name="s1"/>
+    <waypoint lat="38.481635" lon="-8.864318" name="s2"/>
+    <waypoint lat="38.477344" lon="-8.859447" name="s3"/>
+    <waypoint lat="38.473776" lon="-8.866378" name="s4"/>
+    <waypoint lat="38.478091" lon="-8.871123" name="n1"/>
+    <waypoint lat="38.481635" lon="-8.864318" name="n2"/>
+    <waypoint lat="38.477344" lon="-8.859447" name="n3"/>
+    <waypoint lat="38.473776" lon="-8.866378" name="n4"/>
     <waypoint lat="38.475765" lon="-8.869543" name="TD"/>
     <waypoint lat="38.480239" lon="-8.861225" name="APP"/>
     <waypoint lat="38.499227" lon="-8.858617" name="1-1"/>
@@ -99,13 +107,13 @@
   </modules>
   <exceptions>
   <!-- Hard geofence -->
-    <exception cond="Or( Or(!InsideA1(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
+    <exception cond="And( Or(!InsideA1(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
                          Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 304.8))
                      @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
     <!-- Soft geofence -->
-    <exception cond="Or( Or(!InsideA1_soft(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
+    <exception cond="And( Or(!InsideA1_soft(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
                          Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 304.8))
-                     @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+                     @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('route'))" deroute="route"/>
     <!-- datalink loss -->
     <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('route'))" deroute="route"/>
   </exceptions>
@@ -145,7 +153,20 @@
       <go from="p2" hmode="route" wp="p3"/>
       <go from="p3" hmode="route" wp="p4"/>
       <go from="p4" hmode="route" wp="p1"/>
-      <deroute block="Approach APP"/>
+    </block>
+    <block name="GO SOUTH">
+      <set value="TRUE" var="force_forward"/>
+      <go from="s1" hmode="route" wp="s2"/>
+      <go from="s2" hmode="route" wp="s3"/>
+      <go from="s3" hmode="route" wp="s4"/>
+      <go from="s4" hmode="route" wp="s1"/>
+    </block>
+    <block name="GO NORTH">
+      <set value="TRUE" var="force_forward"/>
+      <go from="n1" hmode="route" wp="n2"/>
+      <go from="n2" hmode="route" wp="n3"/>
+      <go from="n3" hmode="route" wp="n4"/>
+      <go from="n4" hmode="route" wp="n1"/>
     </block>
     <block name="Approach APP">
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
