@@ -69,6 +69,7 @@ class EscMessage(object):
         self.temperature = float(msg['temperature'])
         self.energy = float(msg['amps']) * float(msg['motor_volts'])
         self.errors = int(msg['errors'])
+        self.timestamp = float(msg['timestamp'])
     
     def get_current(self):
         return str(round(self.amp ,1)) + "A"
@@ -115,8 +116,18 @@ class EscMessage(object):
             return 0
         elif self.temperature < 60:
             return 1
-        else:
+        elif self.temperature < 90:
             return 0.5
+        else:
+            return -1
+
+    def get_timestamp(self, CPUTIME):
+        return 'Age: ' + str(round(CPUTIME - self.timestamp,1)) + 's'
+
+    def get_timestamp_color(self, CPUTIME):
+        if (CPUTIME - self.timestamp) > 30:
+            return 0
+        return 1
 
 class MotorList(object):
     def __init__(self):
@@ -357,6 +368,10 @@ class FuelCellFrame(wx.Frame):
             self.fuelcell.update(self.payload.values)
             #print("Payload: " + self.payload.values)
 
+        elif msg.name == "ROTORCRAFT_STATUS":
+            self.CPUTIME = float(msg['cpu_time'])
+
+
 
     def update(self):
         self.Refresh()
@@ -383,9 +398,9 @@ class FuelCellFrame(wx.Frame):
         boxw = self.stat
         tdx = int(boxw * 10.0 / 300.0)
         tdy = int(boxw * 6.0 / 300.0)
-        boxh = int(boxw * 40.0 / 300.0)
+        boxh = int(boxw * 45.0 / 300.0)
         boxw = self.stat - 2*tdx
-        spacing = boxh+6
+        spacing = boxh+3
 
         dc.SetPen(wx.Pen(wx.Colour(0,0,0))) 
         dc.SetBrush(wx.Brush(wx.Colour(220,220,220))) 
@@ -481,8 +496,8 @@ class FuelCellFrame(wx.Frame):
         w2 = 0.60
         dw = 0.11
         mw = 0.1
-        mm = [(0.03,w1), (0.03+dw,w1), (0.03+2*dw,w1), (0.97-mw-2*dw,w1), (0.97-mw-dw,w1), (0.97-mw,w1), (-100,0), (-100,0), (-100,0), (0.03,w2+0.17),
-              (0.03,w2), (0.03+dw,w2), (0.03+2*dw,w2), (0.97-mw-2*dw,w2), (0.97-mw-dw,w2), (0.97-mw,w2), (0.97-mw,w2+0.17), (-100,0), (-100,0), (-100,0)]
+        mm = [(0.03,w1), (0.03+dw,w1), (0.03+2*dw,w1), (0.97-mw-2*dw,w1), (0.97-mw-dw,w1), (0.97-mw,w1), (-100,0), (-100,0), (-100,0), (0.03,w2+0.19),
+              (0.03,w2), (0.03+dw,w2), (0.03+2*dw,w2), (0.97-mw-2*dw,w2), (0.97-mw-dw,w2), (0.97-mw,w2), (0.97-mw,w2+0.19), (-100,0), (-100,0), (-100,0)]
         for m in mm:
             dc.DrawRectangle(int(m[0]*w), int(m[1]*h),int(mw*w), int(0.15*h))
 
@@ -496,6 +511,7 @@ class FuelCellFrame(wx.Frame):
             self.StatusBox(dc, dx, dy, 2, 0, m.get_rpm(), m.get_rpm_perc(), m.get_rpm_color())
             self.StatusBox(dc, dx, dy, 3, 0, m.get_temp(), m.get_temp_perc(), m.get_temp_color())
             self.StatusBox(dc, dx, dy, 4, 0, m.get_err(), m.get_err_perc(), m.get_err_color())
+            self.StatusBox(dc, dx, dy, 5, 0, m.get_timestamp(self.CPUTIME), m.get_err_perc(), m.get_timestamp_color(self.CPUTIME))
 
 
 
@@ -525,6 +541,7 @@ class FuelCellFrame(wx.Frame):
         ico = wx.Icon(PPRZ_SRC + "/sw/ground_segment/python/energy_mon/energy_mon.ico", wx.BITMAP_TYPE_ICO)
         self.SetIcon(ico)
 
+        self.CPUTIME = 0
         self.bat = {}
         self.temp = {}
         self.cell = BatteryCell()
