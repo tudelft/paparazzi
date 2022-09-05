@@ -106,13 +106,17 @@
     </module>
   </modules>
   <exceptions>
+    <!-- Hard geofence (red -> Holding point) -->
     <exception cond="And( Or(!InsideA1(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
                          Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 304.8))
                      @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
+    <!-- Soft geofence (orange -> GO NORTH) -->
     <exception cond="And( Or(!InsideA1_soft(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
                          Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 304.8))
                      @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('GO NORTH'))" deroute="GO NORTH"/>
-    <exception cond="!GpsFixValid() @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="gps_lost"/>
+    <!-- GPS Loss (8 seconds -> gps_loss) -->
+    <exception cond="!GpsFixValid() @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('gps_lost'))" deroute="gps_lost"/>
+    <!-- Datalink loss (25 seconds -> GO NORTH) -->
     <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('GO NORTH'))" deroute="GO NORTH"/>
   </exceptions>
   <blocks>
