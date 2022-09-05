@@ -54,7 +54,7 @@ float sched_ratio_tip_props = 1.0;
 // If pitch lower, pitch props gradually switch off till  sched_tip_prop_lower_pitch_limit_deg (1 > sched_ratio_tip_props > 0)
 float sched_tip_prop_upper_pitch_limit_deg = -45;
 // If pitch lower, pitch props switch fully off (sched_ratio_tip_props goes to 0)
-float sched_tip_prop_lower_pitch_limit_deg = -70;
+float sched_tip_prop_lower_pitch_limit_deg = -65;
 // Setting to not switch off tip props during forward flight
 bool sched_tip_props_always_on = false;
 
