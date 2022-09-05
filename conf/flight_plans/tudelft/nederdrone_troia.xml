@@ -8,21 +8,21 @@
   <waypoints>
     <waypoint lat="38.474472222222225" lon="-8.871222222222222" name="HOME"/>
     <waypoint lat="38.476515" lon="-8.868380" name="CLIMB"/>
-    <waypoint lat="38.477075" lon="-8.867029" name="STDBY"/>
-    <waypoint lat="38.478091" lon="-8.871123" name="p1"/>
-    <waypoint lat="38.481635" lon="-8.864318" name="p2"/>
-    <waypoint lat="38.477344" lon="-8.859447" name="p3"/>
-    <waypoint lat="38.473776" lon="-8.866378" name="p4"/>
-    <waypoint lat="38.478091" lon="-8.871123" name="s1"/>
-    <waypoint lat="38.481635" lon="-8.864318" name="s2"/>
-    <waypoint lat="38.477344" lon="-8.859447" name="s3"/>
-    <waypoint lat="38.473776" lon="-8.866378" name="s4"/>
-    <waypoint lat="38.478091" lon="-8.871123" name="n1"/>
-    <waypoint lat="38.481635" lon="-8.864318" name="n2"/>
-    <waypoint lat="38.477344" lon="-8.859447" name="n3"/>
-    <waypoint lat="38.473776" lon="-8.866378" name="n4"/>
-    <waypoint lat="38.475765" lon="-8.869543" name="TD"/>
-    <waypoint lat="38.480239" lon="-8.861225" name="APP"/>
+    <waypoint lat="38.476331" lon="-8.869787" name="STDBY"/>
+    <waypoint lat="38.476940" lon="-8.867501" name="p1"/>
+    <waypoint lat="38.481886" lon="-8.856215" name="p2"/>
+    <!-- <waypoint lat="38.478809" lon="-8.851799" name="p3"/> -->
+    <!-- <waypoint lat="38.480182" lon="-8.853301" name="p4"/> -->
+    <waypoint lat="38.475523" lon="-8.867495" name="s1"/>
+    <waypoint lat="38.478711" lon="-8.860859" name="s2"/>
+    <waypoint lat="38.476479" lon="-8.859367" name="s3"/>
+    <waypoint lat="38.473650" lon="-8.865674" name="s4"/>
+    <waypoint lat="38.480073" lon="-8.872210" name="n1"/>
+    <waypoint lat="38.483435" lon="-8.865682" name="n2"/>
+    <waypoint lat="38.480763" lon="-8.863378" name="n3"/>
+    <waypoint lat="38.477503" lon="-8.869605" name="n4"/>
+    <waypoint lat="38.475002" lon="-8.870565" name="TD"/>
+    <waypoint lat="38.474497" lon="-8.870086" name="APP"/>
     <waypoint lat="38.499227" lon="-8.858617" name="1-1"/>
     <waypoint lat="38.476154" lon="-8.833249" name="1-2"/>
     <waypoint lat="38.469040" lon="-8.861433" name="1-3"/>
@@ -106,15 +106,12 @@
     </module>
   </modules>
   <exceptions>
-  <!-- Hard geofence -->
     <exception cond="And( Or(!InsideA1(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
                          Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 304.8))
                      @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
-    <!-- Soft geofence -->
     <exception cond="And( Or(!InsideA1_soft(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
                          Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 304.8))
                      @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('route'))" deroute="route"/>
-    <!-- datalink loss -->
     <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('route'))" deroute="route"/>
   </exceptions>
   <blocks>
@@ -147,13 +144,6 @@
       <call_once fun="waypoint_set_xy_i(WP_CLIMB,POS_BFP_OF_REAL(GetPosX()+20.0*sinf(stateGetNedToBodyEulers_f()->psi)),POS_BFP_OF_REAL(GetPosY()+20.0*cosf(stateGetNedToBodyEulers_f()->psi)))"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
-    <block name="route">
-      <set value="TRUE" var="force_forward"/>
-      <go from="p1" hmode="route" wp="p2"/>
-      <go from="p2" hmode="route" wp="p3"/>
-      <go from="p3" hmode="route" wp="p4"/>
-      <go from="p4" hmode="route" wp="p1"/>
-    </block>
     <block name="GO SOUTH">
       <set value="TRUE" var="force_forward"/>
       <go from="s1" hmode="route" wp="s2"/>
@@ -174,14 +164,6 @@
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="FALSE" var="force_forward"/>
       <stay wp="STDBY"/>
-    </block>
-    <block name="route_repeat">
-      <set value="TRUE" var="force_forward"/>
-      <go from="p1" hmode="route" wp="p2"/>
-      <go from="p2" hmode="route" wp="p3"/>
-      <go from="p3" hmode="route" wp="p4"/>
-      <go from="p4" hmode="route" wp="p1"/>
-      <deroute block="route_repeat"/>
     </block>
     <block name="stay_p1">
       <set value="FALSE" var="force_forward"/>
