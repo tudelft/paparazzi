@@ -150,6 +150,7 @@
       <go from="s2" hmode="route" wp="s3"/>
       <go from="s3" hmode="route" wp="s4"/>
       <go from="s4" hmode="route" wp="s1"/>
+      <deroute block="GO SOUTH"/>
     </block>
     <block name="GO NORTH">
       <set value="TRUE" var="force_forward"/>
@@ -157,6 +158,7 @@
       <go from="n2" hmode="route" wp="n3"/>
       <go from="n3" hmode="route" wp="n4"/>
       <go from="n4" hmode="route" wp="n1"/>
+      <deroute block="GO NORTH"/>
     </block>
     <block name="Approach APP">
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
