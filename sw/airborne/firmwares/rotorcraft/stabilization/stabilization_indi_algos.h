@@ -28,6 +28,7 @@
 #include "math/lsq_package/common/solveActiveSet.h"
 
 // Scaling for the control effectiveness to make it readible
+//#define INDI_G_SCALING (1000.0/9600.0)
 #define INDI_G_SCALING 1000.0
 
 extern struct Int32Quat   stab_att_sp_quat;  ///< with #INT32_QUAT_FRAC

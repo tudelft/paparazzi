@@ -486,13 +486,18 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
       }
 #endif
     }
+    bool scale = true;
 
     num_t JG[CA_N_V*CA_N_U];
     int n_v = CA_N_V;
     int n_u = CA_N_U;
     for (int i=0; i<n_v; i++) {
       for (int j=0; j<n_u; j++) {
-        JG[n_v*j + i] = Bwls[i][j];
+        if (scale) {
+          JG[n_v*j + i] = Bwls[i][j] * MAX_PPRZ;
+        } else {
+          JG[n_v*j + i] = Bwls[i][j];
+        }
       }
     }
 
@@ -512,8 +517,26 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     // num_iter =
     //   wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, 0, du_pref, 10000, 10);
 
-    setup_wls(n_v, n_u, JG, Wv, Wu, du_pref, indi_v, theta, cond_bound, A, b);
+    // transform PPRZ units to 0-1 units
+    if (scale) {
+    for (int i=0; i<n_u; i++) {
+      du_min[i] /= MAX_PPRZ;
+      du_max[i] /= MAX_PPRZ;
+      du_pref[i] /= MAX_PPRZ;
+    }
+    }
+
+    float Wv_ins[INDI_OUTPUTS];
+    for (int i=0; i<n_v; i++)
+      Wv_ins[i] = sqrtf(Wv[i]);
+
+    setup_wls(n_v, n_u, JG, Wv_ins, Wu, du_pref, indi_v, theta, cond_bound, A, b);
     solveActiveSet(A, b, du_min, du_max, 0, true, indi_du, 0, n_u, n_v, 0, 0, indi_ctl_alloc_algo);
+
+    if (scale) {
+    for (int i=0; i<n_u; i++)
+      indi_du[i] *= MAX_PPRZ;
+    }
 #endif
 
     // Add the increments to the actuators

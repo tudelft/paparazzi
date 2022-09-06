@@ -242,7 +242,7 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
       // Still free variables left, calculate corresponding solution
 
       // use a solver to find the solution to A_free*p_free = d
-      printf("%d", n_free);
+      //printf("%d", n_free);
       qr_solve_wrapper_pprz(n_c, n_free, A_free_ptr, d, p_free);
 
       //print results current step
