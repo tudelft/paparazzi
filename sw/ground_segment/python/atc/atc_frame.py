@@ -54,6 +54,9 @@ class AtcFrame(wx.Frame):
             wx.CallAfter(self.update)
         elif msg.name =="ROTORCRAFT_FP":
             self.alt = round(float(msg['up']) * 0.0039063 * 3.28084 ,1)
+            vx = 0.0000019 * float(msg['veast'])
+            vy = 0.0000019 * float(msg['vnorth'])
+            self.gspeed = round(math.sqrt(vx*vx+vy*vy) / 3.6 * 1.852 ,1)
             wx.CallAfter(self.update)
         elif msg.name =="AIR_DATA":
             self.airspeed = round(float(msg['airspeed']) * 3.6 / 1.852,1)
@@ -102,14 +105,25 @@ class AtcFrame(wx.Frame):
         #dc.DrawCircle(w/2,w/2,w/2-1)
         font = wx.Font(fontscale, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         dc.SetFont(font)
-        dc.DrawText("Callsign: " + str(self.callsign) + " ",tdx,tdx+tdy*0)
+        name = "?"
+        if self.callsign == 14:
+            name = "Nederdrone 4"
+        elif self.callsign == 27:
+            name = "Nederdrone 6"
+        elif self.callsign == 2:
+            name = "Nederdrone 7"
+        elif self.callsign == 5:
+            name = "Nederdrone 8"
+        else:
+            name = 'ID' + str(self.callsign)
+        dc.DrawText("AC: " + str(name) + " ",tdx,tdx+tdy*0)
         dc.DrawText("Airspeed: " + str(self.airspeed) + " kt",tdx,tdx+tdy*1)
         dc.DrawText("Ground Speed: " + str(self.gspeed) + " kt",tdx,tdx+tdy*2)
 
-        dc.DrawText("AMSL: " + str(self.amsl) + " ft (<2700ft)",tdx,tdx+tdy*3)
-        dc.DrawText("AGL: " + str(self.alt) + " ft (<1500ft)",tdx,tdx+tdy*4)
+        dc.DrawText("AMSL: " + str(self.amsl) + " ft ("+ str(round(self.amsl/3.28084,1)) +"m)",tdx,tdx+tdy*3)
+        dc.DrawText("AGL: " + str(self.alt) + " ft ("+ str(round(self.alt/3.28084,1)) +"m)",tdx,tdx+tdy*4)
 
-        dc.DrawText("QNH: " + str(self.qnh*100.0) + " QFE: " + str(self.qfe) + "",tdx,tdx+tdy*5)
+        dc.DrawText("QNH: " + str(self.qnh) + " QFE: " + str(self.qfe) + "",tdx,tdx+tdy*5)
 
 
     def __init__(self):
