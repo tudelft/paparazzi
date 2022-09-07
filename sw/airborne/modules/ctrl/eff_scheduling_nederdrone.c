@@ -41,6 +41,8 @@ not use this module at the same time!
 #define INDI_SCHEDULING_LOW_AIRSPEED 12.0
 #endif
 
+bool all_act_fwd_sched = true;
+
 int32_t use_scheduling = 1;
 
 float thrust_eff_scaling = 1.0;
@@ -123,7 +125,11 @@ void ctrl_eff_scheduling_periodic(void)
     // Roll
     g1g2[0][i] = g_hover[0][i] * (1.0 - ratio) + g_forward[0][i] * ratio;
     //Pitch, scaled with v^2
-    g1g2[1][i] = g_hover[1][i] * (1.0 - pitch_ratio) + g_forward[1][i] * pitch_ratio * airspeed_pitch_eff * airspeed_pitch_eff / (16.0*16.0);
+    if (i>3 || all_act_fwd_sched) {
+      g1g2[1][i] = g_hover[1][i] * (1.0 - pitch_ratio) + g_forward[1][i] * pitch_ratio;
+    } else {
+      g1g2[1][i] = g_hover[1][i] * (1.0 - pitch_ratio) + g_forward[1][i] * pitch_ratio * airspeed_pitch_eff * airspeed_pitch_eff / (16.0*16.0);
+    }
     //Yaw
     g1g2[2][i] = g_hover[2][i] * (1.0 - ratio) + g_forward[2][i] * ratio;
 
