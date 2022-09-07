@@ -338,6 +338,8 @@
     <define name="FILT_CUTOFF" value="1.5"/>
     <define name="FILT_CUTOFF_RDOT" value="0.5"/>
     <define name="ESTIMATION_FILT_CUTOFF" value="5.0"/>
+    <define name="FILT_CUTOFF_P" value="20."/>
+    <define name="FILT_CUTOFF_Q" value="20."/>
     <define name="FILT_CUTOFF_R" value="4."/>
     <!-- first order actuator dynamics -->
     <!--define name="ACT_DYN" value="{0.009, 0.009, 0.009, 0.009, 0.05, 0.05, 0.05, 0.05}"/-->
