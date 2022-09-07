@@ -41,7 +41,7 @@ not use this module at the same time!
 #define INDI_SCHEDULING_LOW_AIRSPEED 12.0
 #endif
 
-bool all_act_fwd_sched = true;
+bool all_act_fwd_sched = false;
 
 int32_t use_scheduling = 1;
 
