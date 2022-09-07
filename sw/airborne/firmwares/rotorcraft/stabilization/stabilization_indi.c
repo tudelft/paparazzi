@@ -198,6 +198,9 @@ Butterworth2LowPass estimation_output_lowpass_filters[3];
 Butterworth2LowPass acceleration_lowpass_filter;
 static struct FirstOrderLowPass rates_filt_fo[3];
 
+float trim_elevator = 0.0;
+float trim_flaps = 0.0;
+
 struct FloatVect3 body_accel_f;
 
 void init_filters(void);
@@ -471,6 +474,11 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   indi_v[2] = (angular_accel_ref.r - use_increment*angular_acceleration[2] + g2_times_du);
   indi_v[3] = v_thrust;
 
+  // read settings and trim the aero surfaces
+  act_pref[4] = -trim_elevator + -trim_flaps;
+  act_pref[5] = -trim_elevator + -trim_flaps;
+  act_pref[6] = -trim_elevator + trim_flaps;
+  act_pref[7] = -trim_elevator + trim_flaps;
 
 #if STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
   // Calculate the increment for each actuator
