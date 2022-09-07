@@ -36,6 +36,8 @@
  */
 
 #include "wls_alloc.h"
+#include "generated/airframe.h"
+
 #include <stdio.h>
 #include "std.h"
 

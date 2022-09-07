@@ -84,11 +84,13 @@
     <file name="qr_wrapper.c" dir="math/lsq_package/lib"/>
     <file name="sparse_math.c" dir="math/lsq_package/lib"/>
     <configure name="INDI_OUTPUTS" default="6"/>
-    <configure name="INDI_NUM_ACT" default="20"/>
+    <configure name="INDI_NUM_ACT" default="21"/>
+    <!--
     <define name="INDI_OUTPUTS" value="$(INDI_OUTPUTS)"/>
     <define name="INDI_NUM_ACT" value="$(INDI_NUM_ACT)"/>
     <define name="CA_N_V" value="$(INDI_OUTPUTS)"/>
     <define name="CA_N_U" value="$(INDI_NUM_ACT)"/>
+    -->
     <define name="STABILIZATION_ATTITUDE_TYPE_INT"/>
     <define name="STABILIZATION_ATTITUDE_TYPE_H" value="stabilization/stabilization_attitude_quat_indi.h" type="string"/>
     <define name="STABILIZATION_ATTITUDE_INDI_FULL" value="true"/>

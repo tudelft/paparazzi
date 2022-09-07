@@ -74,6 +74,7 @@
  * @param m number of rows
  * @param n number of columns
  */
+void qr_solve_wrapper_pprz(int m, int n, num_t** A, num_t* b, num_t* x);
 void qr_solve_wrapper_pprz(int m, int n, num_t** A, num_t* b, num_t* x) {
   num_t in[m * n];
   // convert A to 1d array
@@ -85,7 +86,7 @@ void qr_solve_wrapper_pprz(int m, int n, num_t** A, num_t* b, num_t* x) {
   }
   // use solver
   qr_solve(m, n, in, b, x);
-};
+}
 
 /**
  * @brief active set algorithm for control allocation
@@ -122,6 +123,9 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
                     const num_t u_guess[CA_N_U], bool updating, num_t xs[CA_N_U],
                     num_t Ws[CA_N_U], int n_u, int n_v, num_t *placeholder, num_t *fl)
 {
+  (void)(updating);
+  (void)(placeholder);
+  (void)(fl);
 
   // allocate variables, use defaults where parameters are set to 0
   // if(!gamma_sq) gamma_sq = 100000;
@@ -158,7 +162,8 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
   num_t p_free[CA_N_U];
   num_t p[CA_N_U];
   num_t u_opt[CA_N_U];
-  int infeasible_index[CA_N_U]; /* UNUSED; whatever this means */
+  int infeasible_index[CA_N_U]; /*UNUSED; whatever this means */
+  (void)(infeasible_index);
   int n_infeasible = 0;
   num_t lambda[CA_N_U];
   num_t W[CA_N_U];
@@ -175,9 +180,13 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
     }
   }
 
-  num_t W_init[CA_N_U];
-  W_init ? memcpy(W, W_init, n_u * sizeof(num_t))
-    : memset(W, 0, n_u * sizeof(num_t));
+  if (Ws) {
+    memcpy(W, Ws, n_u * sizeof(num_t));
+  } else {
+    for (int i=0; i<n_u; i++) {
+      W[i] = 0.;
+    }
+  }
 
   memset(free_index_lookup, -1, n_u * sizeof(int));
 

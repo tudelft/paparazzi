@@ -2,6 +2,8 @@
 #define SOLVEACTIVESET_H
 
 #include "math/lsq_package/common/size_defines.h"
+#include "generated/airframe.h"
+
 #include <stdbool.h>
 
 typedef enum {

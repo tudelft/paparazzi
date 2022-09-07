@@ -12,6 +12,8 @@
 #define QR_SOLVE_H
 
 #include "math/lsq_package/common/size_defines.h"
+#include "generated/airframe.h"
+
 
 void daxpy ( int n, num_t da, num_t dx[], int incx, num_t dy[], int incy );
 num_t ddot ( int n, num_t dx[], int incx, num_t dy[], int incy );

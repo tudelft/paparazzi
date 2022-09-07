@@ -3,6 +3,8 @@
 #ifndef SIZE_DEFINES_H
 #define SIZE_DEFINES_H
 
+#include "generated/airframe.h"
+
 //#define CA_N_U  20 // todo: runtimes errors if this is exceeded
 //#define CA_N_V  6
 #define CA_N_C  (CA_N_U+CA_N_V)

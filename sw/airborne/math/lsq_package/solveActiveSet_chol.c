@@ -1,4 +1,5 @@
 #include "math/lsq_package/common/solveActiveSet.h"
+#include "math/lsq_package/common/setup_wls.h"
 #include "math/lsq_package/lib/chol_math.h"
 #include "math/lsq_package/common/size_defines.h"
 #include "math/lsq_package/lib/sparse_math.h"
@@ -12,6 +13,11 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
                     const num_t umax[CA_N_U], const num_t u_guess[CA_N_U], bool updating,
                     num_t xs[CA_N_U], num_t Ws[CA_N_U], const int n_u, const int n_v, num_t *placeholder, num_t *fl)
   {
+
+  (void)(updating);
+  (void)(placeholder);
+  (void)(fl);
+  (void)(Ws);
 
   // allocate variables, use defaults where parameters are set to 0
   // if(!gamma_sq) gamma_sq = 100000;
@@ -29,7 +35,6 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
   int n_free = 0;
 
   num_t A[CA_N_C][CA_N_U];
-  num_t A_free[CA_N_C][CA_N_U];
   num_t H[CA_N_U][CA_N_U];
   num_t L[CA_N_U][CA_N_U];
 
@@ -128,8 +133,6 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
   pprz_cholesky_float(L_ptr, H_ptr, inv_diag, n_u);
 
 
-
-  int free_chk = 0;
   num_t q[CA_N_U];
   num_t z[CA_N_U];
 

@@ -32,8 +32,7 @@ void tri_mult(int n, int m, num_t** A, const num_t* x, num_t* b) {
 void block_diag_self_mult(int n, int m, num_t** A, num_t** H, int s_dense, int* pos) {
     // H=A'*A
 
-    int nd = s_dense;
-    int md = m;
+    (void)(n);
 
     // calculate dense part
     int i, j, k;
@@ -88,7 +87,7 @@ void block_diag_mult(int n, int m, int p, num_t** A, num_t** B,
     }
 }
 
-int check_limits_tol(int n, num_t tol, num_t* x, num_t* xmin, num_t* xmax, int* output, int* perm) {
+int check_limits_tol(int n, num_t tol, num_t* x, const num_t* xmin, const num_t* xmax, int* output, int* perm) {
     // provides relative toleranced limits checking as 
     int ind;
     int res = 0;

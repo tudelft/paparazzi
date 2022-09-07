@@ -94,6 +94,11 @@ void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], 
                     num_t xs[CA_N_U], num_t Ws[CA_N_U], const int n_u, const int n_v, num_t *placeholder, num_t *fl)
   {
 
+  (void)(updating);
+  (void)(placeholder);
+  (void)(fl);
+  (void)(Ws);
+
   // allocate variables, use defaults where parameters are set to 0
   // if(!gamma_sq) gamma_sq = 100000;
   int imax = 0;
@@ -107,7 +112,6 @@ void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], 
   int n_free = 0;
 
   num_t A[CA_N_C][CA_N_U];
-  num_t A_free[CA_N_C][CA_N_U];
   num_t Q[CA_N_C][CA_N_C];
   num_t R[CA_N_C][CA_N_U];
 
@@ -157,7 +161,6 @@ void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], 
   print_debug(A_ptr, Q_ptr, R_ptr, &n_u, &n_c);
   #endif
 
-  int free_chk = 0;
   num_t q[CA_N_U];
   num_t z[CA_N_U];
 

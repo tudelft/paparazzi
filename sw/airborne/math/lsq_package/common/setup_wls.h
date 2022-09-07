@@ -2,6 +2,8 @@
 #define SETUP_WLS_H
 
 #include "math/lsq_package/common/size_defines.h"
+#include "generated/airframe.h"
+
 
 extern void setup_wls(
     int n_v, int n_u, num_t JG[CA_N_V*CA_N_U], num_t Wv[CA_N_V],

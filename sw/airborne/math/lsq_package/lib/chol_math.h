@@ -2,6 +2,8 @@
 #define CHOL_MATH_H
 
 #include "math/lsq_package/common/size_defines.h"
+#include "generated/airframe.h"
+
 #include <stdbool.h>
 
 int dorgqr ( int m, int n, int k, const num_t A[], num_t Q[], int lda, num_t tau[], num_t work[], int lwork );

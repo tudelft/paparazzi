@@ -34,7 +34,7 @@ void pprz_cholesky_float(num_t **out, num_t **in, num_t* inv_diag, int n)
 
 void cholesky_solve(num_t **L, num_t* inv_diag, int n, num_t *b, num_t *x) {
     // Antoine Drouin, 2007, modified
-	int i,j,k;
+	int j,k;
 	num_t t;
 
     for(j = 0 ; j < n ; j++) { // solve Ly=B
