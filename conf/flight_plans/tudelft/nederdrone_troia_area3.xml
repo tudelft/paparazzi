@@ -182,7 +182,6 @@
     <block name="line_p1_p2">
       <set value="TRUE" var="force_forward"/>
       <go from="p1" hmode="route" wp="p2"/>
-      <stay until="stage_time>10" wp="p2"/>
       <go from="p2" hmode="route" wp="p1"/>
       <deroute block="line_p1_p2"/>
     </block>
