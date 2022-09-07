@@ -244,7 +244,7 @@
 
     <!-- Basic navigation settings -->
     <define name="NAV_CLIMB_VSPEED" value="3.5"/>
-    <define name="NAV_DESCEND_VSPEED" value="-0.5"/>
+    <define name="NAV_DESCEND_VSPEED" value="-0.7"/>
     <define name="ARRIVED_AT_WAYPOINT" value="50.0"/>
 
     <!-- Avoid GPS loss behavior when having RC or datalink -->
