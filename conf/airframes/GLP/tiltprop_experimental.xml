@@ -231,11 +231,18 @@
     <define name="BODY_TO_IMU_PSI" value="0." unit="deg"/>
   </section>
 
-  <section name="AUTOPILOT">
+  <!-- <section name="AUTOPILOT">
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_FORWARD"/>
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
+  </section> -->
+
+  <section name="AUTOPILOT">
+    <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
+    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
+    <define name="MODE_AUTO2" value="AP_MODE_FORWARD"/>
+    <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
   </section>
 
   <section name="BAT">
@@ -377,7 +384,6 @@
   <!--</section>-->
 
   <section name="INS" prefix="INS_">
-  <!--  -<section name="INS">
     <!-- Delft -->
     <define name="H_X" value="0.3928"/>
     <define name="H_Y" value="-0.0140"/>
