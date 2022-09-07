@@ -66,6 +66,8 @@
 #define STABILIZATION_INDI_FILT_CUTOFF_R 20.0
 #endif
 
+PRINT_CONFIG_VAR(INDI_NUM_ACT)
+
 float du_min[INDI_NUM_ACT];
 float du_max[INDI_NUM_ACT];
 float du_pref[INDI_NUM_ACT];
@@ -199,7 +201,9 @@ Butterworth2LowPass acceleration_lowpass_filter;
 static struct FirstOrderLowPass rates_filt_fo[3];
 
 float trim_elevator = 0.0;
+float trim_elevator2 = 0.0;
 float trim_flaps = 0.0;
+float trim_flaps2 = 0.0;
 
 struct FloatVect3 body_accel_f;
 
@@ -475,10 +479,10 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   indi_v[3] = v_thrust;
 
   // read settings and trim the aero surfaces
-  act_pref[4] = -trim_elevator + -trim_flaps;
-  act_pref[5] = -trim_elevator + -trim_flaps;
-  act_pref[6] = -trim_elevator + trim_flaps;
-  act_pref[7] = -trim_elevator + trim_flaps;
+  act_pref[4] = trim_elevator - trim_flaps; //-trim_elevator; //((-trim_elevator) + (trim_elevator2) - (trim_flaps));
+  act_pref[5] = trim_elevator - trim_flaps; //-trim_elevator; //((-trim_elevator) + (trim_elevator2) - (trim_flaps));
+  act_pref[6] = trim_elevator + trim_flaps; //-trim_elevator; //((-trim_elevator) + (trim_elevator2) + (trim_flaps));
+  act_pref[7] = trim_elevator + trim_flaps; //-trim_elevator; //((-trim_elevator) + (trim_elevator2) + (trim_flaps));
 
 #if STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
   // Calculate the increment for each actuator

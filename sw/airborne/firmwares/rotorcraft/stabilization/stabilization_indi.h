@@ -45,7 +45,9 @@ extern float act_pref[INDI_NUM_ACT];
 
 // trim aero surfaces with settings
 extern float trim_elevator;
+extern float trim_elevator2;
 extern float trim_flaps;
+extern float trim_flaps2;
 
 struct Indi_gains {
   struct FloatRates att;
