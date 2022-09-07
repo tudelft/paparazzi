@@ -56,7 +56,7 @@ class AtcFrame(wx.Frame):
             self.alt = round(float(msg['up']) * 0.0039063 * 3.28084 ,1)
             vx = 0.0000019 * float(msg['veast'])
             vy = 0.0000019 * float(msg['vnorth'])
-            self.gspeed = round(math.sqrt(vx*vx+vy*vy) / 3.6 * 1.852 ,1)
+            self.gspeed = round(math.sqrt(vx*vx+vy*vy) * 3.6 / 1.852 ,1)
             wx.CallAfter(self.update)
         elif msg.name =="AIR_DATA":
             self.airspeed = round(float(msg['airspeed']) * 3.6 / 1.852,1)
@@ -117,8 +117,8 @@ class AtcFrame(wx.Frame):
         else:
             name = 'ID' + str(self.callsign)
         dc.DrawText("AC: " + str(name) + " ",tdx,tdx+tdy*0)
-        dc.DrawText("Airspeed: " + str(self.airspeed) + " kt",tdx,tdx+tdy*1)
-        dc.DrawText("Ground Speed: " + str(self.gspeed) + " kt",tdx,tdx+tdy*2)
+        dc.DrawText("Airspeed: " + str(self.airspeed) + " kt (" + str(self.airspeed/1.852*3.6) + " m/s)",tdx,tdx+tdy*1)
+        dc.DrawText("Ground Speed: " + str(self.gspeed) + " kt (" + str(self.gspeed/1.852*3.6) + " m/s)",tdx,tdx+tdy*2)
 
         dc.DrawText("AMSL: " + str(self.amsl) + " ft ("+ str(round(self.amsl/3.28084,1)) +"m)",tdx,tdx+tdy*3)
         dc.DrawText("AGL: " + str(self.alt) + " ft ("+ str(round(self.alt/3.28084,1)) +"m)",tdx,tdx+tdy*4)
