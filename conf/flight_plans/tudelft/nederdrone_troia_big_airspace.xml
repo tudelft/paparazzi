@@ -9,6 +9,7 @@
     <waypoint lat="38.474472222222225" lon="-8.871222222222222" name="HOME"/>
     <waypoint lat="38.476515" lon="-8.868380" name="CLIMB"/>
     <waypoint lat="38.476331" lon="-8.869787" name="STDBY"/>
+    <waypoint lat="38.4771159" lon="-8.8655653" name="CIRCLE"/>
     <waypoint lat="38.476940" lon="-8.867501" name="p1"/>
     <waypoint lat="38.481886" lon="-8.856215" name="p2"/>
     <!-- <waypoint lat="38.478809" lon="-8.851799" name="p3"/> -->
@@ -75,10 +76,10 @@
     <!-- GPS Loss (8 seconds -> gps_loss) -->
     <exception cond="!GpsFixValid() @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('gps_lost'))" deroute="gps_lost"/>
     <!-- Hard geofence (red -> Holding point) -->
-    <exception cond="Or(!InsideA1(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4)
+    <exception cond="Or(!InsideA1(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 500)
                      @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
     <!-- Soft geofence (orange -> GO NORTH) -->
-    <exception cond="Or(!InsideA1_soft(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4)
+    <exception cond="Or(!InsideA1_soft(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 300)
                      @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('GO NORTH'))" deroute="GO NORTH"/>
     <!-- Datalink loss (25 seconds -> GO NORTH) -->
     <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('GO NORTH'))" deroute="GO NORTH"/>
@@ -142,7 +143,6 @@
     </block>
     <block name="go_p2">
       <set value="TRUE" var="force_forward"/>
-      <call_once fun="nav_set_heading_deg(90)"/>
       <go wp="p2"/>
       <deroute block="stay_p1"/>
     </block>
@@ -152,14 +152,14 @@
       <go from="p2" hmode="route" wp="p1"/>
       <deroute block="line_p1_p2"/>
     </block>
+    <block name="Circle">
+      <set value="TRUE" var="force_forward"/>
+      <circle wp="p1" radius="nav_radius"/>
+    </block>
     <block name="gps_lost">
       <exception cond="GpsFixValid()" deroute="GO NORTH"/>
       <attitude pitch="0" roll="0" climb="-1.0" vmode="climb"/>
     </block>    
-    <block name="Oval">
-      <set value="TRUE" var="force_forward"/>
-      <oval p1="p1" p2="p2" radius="nav_radius"/>
-    </block>
     <block name="land here">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>

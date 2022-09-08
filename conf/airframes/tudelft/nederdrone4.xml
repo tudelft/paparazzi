@@ -268,9 +268,15 @@
     <define name="NAV_DESCEND_VSPEED" value="-0.5"/>
     <define name="ARRIVED_AT_WAYPOINT" value="50.0"/>
 
+    <!-- Settings for circle -->
+    <define name="DEFAULT_CIRCLE_RADIUS" value="500"/>
+    <define name="NAV_CARROT_DIST" value="200"/>
+
     <!-- Avoid GPS loss behavior when having RC or datalink -->
     <define name="NO_GPS_LOST_WITH_DATALINK_TIME" value="20"/>
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
+
+    <define name="DEFAULT_CIRCLE_RADIUS" value="500"/>
   </section>
 
   <section name="FORWARD">
