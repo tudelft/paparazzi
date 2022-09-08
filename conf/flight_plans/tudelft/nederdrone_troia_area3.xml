@@ -113,16 +113,16 @@
     <exception cond="!GpsFixValid() @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('gps_lost'))" deroute="gps_lost"/>
 
     <!-- Hard geofence -->
-    <exception cond="Or(!InsideA1(GetPosX(), GetPosY()), Or(And(InsideDecision(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4), GetPosAlt() @GT GetAltRef() + 304.8))
+    <exception cond="Or(!InsideA1(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 304.8)
                       @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
 
     <!-- Soft geofence -->
-    <exception cond="And( Or(!InsideA1_soft(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
-                         Or(InsideDecision(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 304.8))
-                     @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('come_back')) @AND !(nav_block == IndexOfBlock('route'))" deroute="come_back"/>
+    <exception cond="And( !InsideA1_soft(GetPosX(), GetPosY()),
+                          Or(InsideDecision(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 304.8))
+                     @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('come_back')) @AND !(nav_block == IndexOfBlock('route')) @AND !(nav_block == IndexOfBlock('go_route'))" deroute="come_back"/>
 
     <!-- Datalink loss -->
-    <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('come_back')) @AND !(nav_block == IndexOfBlock('route'))" deroute="come_back"/>
+    <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('come_back')) @AND !(nav_block == IndexOfBlock('route')) @AND !(nav_block == IndexOfBlock('go_route'))" deroute="come_back"/>
   </exceptions>
   <blocks>
     <block name="Wait GPS">
@@ -153,6 +153,11 @@
       <call_once fun="nav_set_heading_current()"/>
       <call_once fun="waypoint_set_xy_i(WP_CLIMB,POS_BFP_OF_REAL(GetPosX()+20.0*sinf(stateGetNedToBodyEulers_f()->psi)),POS_BFP_OF_REAL(GetPosY()+20.0*cosf(stateGetNedToBodyEulers_f()->psi)))"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
+    </block>
+    <block name="go_route">
+      <set value="TRUE" var="force_forward"/>
+      <go wp="s1"/>
+      <deroute block="route"/>
     </block>
     <block name="route">
       <set value="TRUE" var="force_forward"/>
@@ -186,8 +191,14 @@
       <deroute block="line_p1_p2"/>
     </block>
     <block name="go_away">
+      <set value="TRUE" var="force_forward"/>
       <go wp="c_east"/>
       <go from="c_east" hmode="route" wp="c_west"/>
+      <deroute block="route_a3"/>
+    </block>
+    <block name="go_route_a3">
+      <set value="TRUE" var="force_forward"/>
+      <go wp="a3_1"/>
       <deroute block="route_a3"/>
     </block>
     <block name="route_a3">
@@ -199,7 +210,8 @@
       <deroute block="come_back"/>
     </block>
     <block name="come_back">
-      <exception cond="InsideDecision(GetPosX(), GetPosY())" deroute="route"/>
+      <set value="TRUE" var="force_forward"/>
+      <exception cond="InsideDecision(GetPosX(), GetPosY())" deroute="go_route"/>
       <go wp="c_west"/>
       <go from="c_west" hmode="route" wp="c_east"/>
       <deroute block="route"/>
