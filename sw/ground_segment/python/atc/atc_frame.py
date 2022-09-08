@@ -43,7 +43,7 @@ WIDTH = 700.0
 class AtcFrame(wx.Frame):
 
     def message_recv(self, ac_id, msg):
-        self.callsign = "ID=" + str(ac_id)
+        self.callsign = ac_id
 
         if msg.name == "INS_REF":
             self.qfe = round(float(msg['baro_qfe'])  / 100.0,1)
