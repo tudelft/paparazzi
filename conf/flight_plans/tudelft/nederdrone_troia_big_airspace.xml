@@ -36,6 +36,9 @@
     <waypoint lat="38.367468506353994" lon="-8.899054527282713" name="SGF2"/>
     <waypoint lat="38.36763674417995" lon="-8.798332214355469" name="SGF3"/>
     <waypoint lat="38.506333231593715" lon="-8.849101066589355" name="SGF4"/>
+    <waypoint lat="38.5230094" lon="-8.9383347" name="_NO1"/>
+    <waypoint lat="38.3588231" lon="-8.7599693" name="_NO2"/>
+    <waypoint lat="38.5435730" lon="-8.8181561" name="_NO3"/>
   </waypoints>
   <sectors>
     <sector color="red" name="A1">
@@ -56,6 +59,11 @@
       <corner name="_2-2"/>
       <corner name="_2-3"/>
       <corner name="_2-4"/>
+    </sector>
+    <sector color="green" name="NotOcean">
+      <corner name="_NO1"/>
+      <corner name="_NO2"/>
+      <corner name="_NO3"/>
     </sector>
   </sectors>
   <modules>
