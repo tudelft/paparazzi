@@ -14,14 +14,16 @@
     <waypoint lat="38.481886" lon="-8.856215" name="p2"/>
     <!-- <waypoint lat="38.478809" lon="-8.851799" name="p3"/> -->
     <!-- <waypoint lat="38.480182" lon="-8.853301" name="p4"/> -->
-    <waypoint lat="38.475523" lon="-8.867495" name="s1"/>
-    <waypoint lat="38.478711" lon="-8.860859" name="s2"/>
-    <waypoint lat="38.476479" lon="-8.859367" name="s3"/>
-    <waypoint lat="38.473650" lon="-8.865674" name="s4"/>
+    <waypoint lat="38.4624873" lon="-8.8934337" name="s1"/>
+    <waypoint lat="38.4546941" lon="-8.8941433" name="s2"/>
+    <waypoint lat="38.4548806" lon="-8.8866906" name="s3"/>
+    <waypoint lat="38.4624935" lon="-8.8874720" name="s4"/>
     <waypoint lat="38.480073" lon="-8.872210" name="n1"/>
     <waypoint lat="38.483435" lon="-8.865682" name="n2"/>
     <waypoint lat="38.480763" lon="-8.863378" name="n3"/>
     <waypoint lat="38.477503" lon="-8.869605" name="n4"/>
+    <waypoint lat="38.4718299" lon="-8.8765607" name="c1"/>
+    <waypoint lat="38.4659684" lon="-8.8896910" name="c2"/>
     <waypoint lat="38.475002" lon="-8.870565" name="TD"/>
     <waypoint lat="38.474497" lon="-8.870086" name="APP"/>
     <waypoint lat="38.511639141458616" lon="-8.916435241699219" name="HGF1"/>
@@ -128,6 +130,18 @@
       <go from="n2" hmode="route" wp="n3"/>
       <go from="n3" hmode="route" wp="n4"/>
       <go from="n4" hmode="route" wp="n1"/>
+      <deroute block="GO NORTH"/>
+    </block>
+    <block name="CorridorLeave">
+      <set value="TRUE" var="force_forward"/>
+      <go wp="c1"/>
+      <go from="c1" hmode="route" wp="c2"/>
+      <deroute block="GO SOUTH"/>
+    </block>
+    <block name="CorridorReturn">
+      <set value="TRUE" var="force_forward"/>
+      <go wp="c2"/>
+      <go from="c2" hmode="route" wp="c1"/>
       <deroute block="GO NORTH"/>
     </block>
     <block name="Approach APP">
