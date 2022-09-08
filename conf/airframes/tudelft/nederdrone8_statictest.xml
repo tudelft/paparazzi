@@ -218,12 +218,12 @@
     <!-- Tip props always at 80% -->
     <call fun="actuators_pprz[8] = (Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), 0.01 > sched_ratio_tip_props)? -9600 : 9600/100*70*sched_ratio_tip_props);"/>
 
-    <set servo="MOTOR_1"   value="($th_hold? -9600 : @THRUST)"/>
+    <set servo="MOTOR_1"   value="-9600"/>
     <set servo="MOTOR_2"   value="($th_hold? -9600 : @THRUST)"/>
     <set servo="MOTOR_3"   value="($th_hold? -9600 : @THRUST)"/>
     <set servo="MOTOR_4"   value="($th_hold? -9600 : @THRUST)"/>
     <set servo="MOTOR_5"   value="($th_hold? -9600 : @THRUST)"/>
-    <set servo="MOTOR_6"   value="($th_hold? -9600 : @THRUST)"/>
+    <set servo="MOTOR_6"   value="-9600"/>
     <set servo="MOTOR_7"   value="($th_hold? -9600 : @THRUST)"/>
     <set servo="MOTOR_8"   value="($th_hold? -9600 : @THRUST)"/>
     <set servo="MOTOR_9"   value="($th_hold? -9600 : @THRUST)"/>
