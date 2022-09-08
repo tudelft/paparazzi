@@ -42,6 +42,37 @@
     <waypoint lat="38.5230094" lon="-8.9383347" name="_NO1"/>
     <waypoint lat="38.3588231" lon="-8.7599693" name="_NO2"/>
     <waypoint lat="38.5435730" lon="-8.8181561" name="_NO3"/>
+        <waypoint lat="38.4727" lon="-8.84385" name="SadoSouth"/>
+    <waypoint lat="38.47305477520769" lon="-8.855555100886773" name="_SS1"/>
+    <waypoint lat="38.46663423324912" lon="-8.866613867673443" name="_SS2"/>
+    <waypoint lat="38.43333226925893" lon="-8.833333038131096" name="_SS3"/>
+    <waypoint lat="38.4333325513397" lon="-8.817778321750088" name="_SS4"/>
+    <waypoint lat="38.51110982185575" lon="-8.844445796201958" name="_SS5"/>
+    <waypoint lat="38.48638784533167" lon="-8.868332986223157" name="_SS6"/>
+    <waypoint lat="38.4969" lon="-8.88336" name="SadoNorth"/>
+    <waypoint lat="38.50000029403554" lon="-8.900000105493906" name="_SN1"/>
+    <waypoint lat="38.47976231579559" lon="-8.879746646230217" name="_SN2"/>
+    <waypoint lat="38.48638784675122" lon="-8.86833308621785" name="_SN3"/>
+    <waypoint lat="38.51110982185575" lon="-8.844445796201958" name="_SN4"/>
+    <waypoint lat="38.5111106667947" lon="-8.916667317470958" name="_SN5"/>
+    <waypoint lat="38.4529" lon="-8.88438" name="C1.5"/>
+    <waypoint lat="38.43333259705368" lon="-8.900000789756982" name="_C1p5_1"/>
+    <waypoint lat="38.43333226925893" lon="-8.833333038131096" name="_C1p5_2"/>
+    <waypoint lat="38.46663421511369" lon="-8.866613791487655" name="_C1p5_3"/>
+    <waypoint lat="38.463054338801" lon="-8.872778081939318" name="_C1p5_4"/>
+    <waypoint lat="38.4763889291222" lon="-8.885556329885354" name="_C1p5_5"/>
+    <waypoint lat="38.47976234604402" lon="-8.879746644283934" name="_C1p5_6"/>
+    <waypoint lat="38.49999947367299" lon="-8.900000494031039" name="_C1p5_7"/>
+    <waypoint lat="38.4001" lon="-8.86723" name="C2.5"/>
+    <waypoint lat="38.36666569287706" lon="-8.900001023727585" name="_C2p5_1"/>
+    <waypoint lat="38.36666578383742" lon="-8.833333178329319" name="_C2p5_2"/>
+    <waypoint lat="38.43333227544894" lon="-8.833333030967227" name="_C2p5_3"/>
+    <waypoint lat="38.43333243610098" lon="-8.899999997831227" name="_C2p5_4"/>
+    <waypoint lat="38.4018" lon="-8.82269" name="C2.6"/>
+    <waypoint lat="38.36666661922838" lon="-8.833333428597804" name="_C2p6_1"/>
+    <waypoint lat="38.36666590107438" lon="-8.795001332714033" name="_C2p6_2"/>
+    <waypoint lat="38.43333255133945" lon="-8.81777887806874" name="_C2p6_3"/>
+    <waypoint lat="38.43333226925893" lon="-8.833333038131096" name="_C2p6_4"/>
   </waypoints>
   <sectors>
     <sector color="red" name="A1">
@@ -67,6 +98,42 @@
       <corner name="_NO1"/>
       <corner name="_NO2"/>
       <corner name="_NO3"/>
+    </sector>
+    <sector color="grey" name="SadoSouth">
+      <corner name="_SS1"/>
+      <corner name="_SS2"/>
+      <corner name="_SS3"/>
+      <corner name="_SS4"/>
+      <corner name="_SS5"/>
+      <corner name="_SS6"/>
+    </sector>
+    <sector color="grey" name="SadoNorth">
+      <corner name="_SN1"/>
+      <corner name="_SN2"/>
+      <corner name="_SN3"/>
+      <corner name="_SN4"/>
+      <corner name="_SN5"/>
+    </sector>
+    <sector color="grey" name="C1p5">
+      <corner name="_C1p5_1"/>
+      <corner name="_C1p5_2"/>
+      <corner name="_C1p5_3"/>
+      <corner name="_C1p5_4"/>
+      <corner name="_C1p5_5"/>
+      <corner name="_C1p5_6"/>
+      <corner name="_C1p5_7"/>
+    </sector>
+    <sector color="grey" name="C2p5">
+      <corner name="_C2p5_1"/>
+      <corner name="_C2p5_2"/>
+      <corner name="_C2p5_3"/>
+      <corner name="_C2p5_4"/>
+    </sector>
+    <sector color="grey" name="C2p6">
+      <corner name="_C2p6_1"/>
+      <corner name="_C2p6_2"/>
+      <corner name="_C2p6_3"/>
+      <corner name="_C2p6_4"/>
     </sector>
   </sectors>
   <modules>
