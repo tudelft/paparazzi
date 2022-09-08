@@ -117,8 +117,8 @@ class AtcFrame(wx.Frame):
         else:
             name = 'ID' + str(self.callsign)
         dc.DrawText("AC: " + str(name) + " ",tdx,tdx+tdy*0)
-        dc.DrawText("Airspeed: " + str(self.airspeed) + " kt (" + str(self.airspeed/1.852*3.6) + " m/s)",tdx,tdx+tdy*1)
-        dc.DrawText("Ground Speed: " + str(self.gspeed) + " kt (" + str(self.gspeed/1.852*3.6) + " m/s)",tdx,tdx+tdy*2)
+        dc.DrawText("Airspeed: " + str(self.airspeed) + " kt (" + str(self.airspeed*1.852/3.6) + " m/s)",tdx,tdx+tdy*1)
+        dc.DrawText("Ground Speed: " + str(self.gspeed) + " kt (" + str(self.gspeed*1.852/3.6) + " m/s)",tdx,tdx+tdy*2)
 
         dc.DrawText("AMSL: " + str(self.amsl) + " ft ("+ str(round(self.amsl/3.28084,1)) +"m)",tdx,tdx+tdy*3)
         dc.DrawText("AGL: " + str(self.alt) + " ft ("+ str(round(self.alt/3.28084,1)) +"m)",tdx,tdx+tdy*4)
