@@ -353,6 +353,26 @@
         <arg flag="-layout" constant="bottom_settings.xml"/>
         <arg flag="-maps_zoom" constant="14"/>
       </program>
+      <program name="Real-time Plotter">
+        <arg flag="-t" constant="Airspeed"/>
+        <arg flag="-g" constant="800x250-0+0"/>
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-c" constant="16"/>
+        <arg flag="-c" constant="*:telemetry:AIR_DATA:airspeed"/>
+        <arg flag="-n"/>
+        <arg flag="-t" constant="Energy"/>
+        <arg flag="-g" constant="800x250-0+320"/>
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.5"/>
+        <arg flag="-c" constant="*:telemetry:ENERGY:power"/>
+        <arg flag="-n"/>
+        <arg flag="-t" constant="Voltage"/>
+        <arg flag="-g" constant="800x250-0+620"/>
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.5"/>
+        <arg flag="-c" constant="*:telemetry:ENERGY:voltage"/>
+      </program>
     </session>
     <session name="Joystick X3D Pro">
       <program name="Joystick">
