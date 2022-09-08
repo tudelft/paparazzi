@@ -25,7 +25,7 @@
       </module>
 
       <!-- Forward FuelCell data back to the GCS -->
-      <!--module name="generic_uart_sensor"/-->
+      <module name="generic_uart_sensor"/>
 
       <!-- Logger -->
       <module name="tlsf"/>
