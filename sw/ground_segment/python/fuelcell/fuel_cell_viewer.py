@@ -22,7 +22,7 @@ import wx
 import sys
 import os
 import math
-import datetime
+from datetime import datetime
 
 
 PPRZ_HOME = os.getenv("PAPARAZZI_HOME", os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -237,9 +237,11 @@ class PayloadMessage(object):
 class FuelCellStatus(object):
     def _init_(self):
         self.blink = 0
+        self.msgtime = 0
 
     def update(self,msg):
         self.msg = msg
+        self.msgtime = datetime.now()
         if hasattr(self, 'blink'):
             self.blink = 1 - self.blink
         else:
@@ -261,6 +263,9 @@ class FuelCellStatus(object):
         #else:
         #    print('ERROR: ' + msg)
 
+    def get_age(self):
+        now = datetime.now()
+        return 'Age: '+str(round((now - self.msgtime).total_seconds(),1))+'s'
     def get_raw(self):
         return self.msg
     def get_raw_color(self):
@@ -270,7 +275,7 @@ class FuelCellStatus(object):
 
     def get_tank(self):
         bar = round(5 + self.tank / 100 * 295,1)
-        return 'Cylinder ' + str(bar) + ' Bar'
+        return 'Cylinder ' + str(bar) + ' Bar ('+str(self.tank)+'%)'
     def get_tank_perc(self):
         return (self.tank) / 100.0
     def get_tank_color(self):
@@ -283,7 +288,7 @@ class FuelCellStatus(object):
                 
     def get_battery(self):
         volt = round( self.battery / 100.0 * (24.0-19.6) + 19.6, 2)
-        return str(volt) + ' V'
+        return str(volt) + ' V ('+str(self.battery)+'%)'
     def get_battery_perc(self):
         return (self.battery) / 100.0
     def get_battery_color(self):
@@ -477,6 +482,7 @@ class FuelCellFrame(wx.Frame):
         self.StatusBox(dc, dx, dy, 2, 0, self.fuelcell.get_battery(), self.fuelcell.get_battery_perc(), self.fuelcell.get_battery_color())
         self.StatusBox(dc, dx, dy, 3, 0, self.fuelcell.get_status(), self.fuelcell.get_status_perc(), self.fuelcell.get_status_color())
         self.StatusBox(dc, dx, dy, 4, 0, self.fuelcell.get_error(), self.fuelcell.get_error_perc(), self.fuelcell.get_error_color())
+        self.StatusBox(dc, dx, dy, 5, 0, self.fuelcell.get_age(), 0, 1)
 
         # Warnings
         self.stat = int(0.14*w)
