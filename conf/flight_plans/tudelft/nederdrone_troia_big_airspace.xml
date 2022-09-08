@@ -20,8 +20,8 @@
     <waypoint lat="38.4624935" lon="-8.8874720" name="s4"/>
     <waypoint lat="38.480073" lon="-8.872210" name="n1"/>
     <waypoint lat="38.483435" lon="-8.865682" name="n2"/>
-    <waypoint lat="38.480763" lon="-8.863378" name="n3"/>
-    <waypoint lat="38.477503" lon="-8.869605" name="n4"/>
+    <waypoint lat="38.4751429" lon="-8.8577652" name="n3"/>
+    <waypoint lat="38.4716783" lon="-8.8649061" name="n4"/>
     <waypoint lat="38.4718299" lon="-8.8765607" name="c1"/>
     <waypoint lat="38.4659684" lon="-8.8896910" name="c2"/>
     <waypoint lat="38.475002" lon="-8.870565" name="TD"/>
@@ -118,6 +118,7 @@
     </block>
     <block name="GO SOUTH">
       <set value="TRUE" var="force_forward"/>
+      <go wp="s1"/>
       <go from="s1" hmode="route" wp="s2"/>
       <go from="s2" hmode="route" wp="s3"/>
       <go from="s3" hmode="route" wp="s4"/>
@@ -126,6 +127,7 @@
     </block>
     <block name="GO NORTH">
       <set value="TRUE" var="force_forward"/>
+      <go wp="n1"/>
       <go from="n1" hmode="route" wp="n2"/>
       <go from="n2" hmode="route" wp="n3"/>
       <go from="n3" hmode="route" wp="n4"/>
