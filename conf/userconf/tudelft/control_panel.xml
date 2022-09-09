@@ -326,9 +326,11 @@
     </session>
     <session name="NederDroneStatusLaptop">
       <program name="Server"/>
+      <program name="Messages"/>
       <program name="Data Link">
         <arg flag="-udp"/>
         <arg flag="-nouplink"/>
+        <arg flag="-ping_period" constant="500"/>
       </program>
       <program name="NederdroneStatus"/>
       <program name="FuelTankPlotter"/>
