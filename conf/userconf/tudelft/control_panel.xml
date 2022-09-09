@@ -420,6 +420,7 @@
       <program name="GCS">
         <arg flag="-speech"/>
         <arg flag="-layout" constant="bottom_settings.xml"/>
+        <arg flag="-maps_zoom" constant="16"/>
       </program>
       <program name="Messages"/>
       <program name="Attitude Visualizer"/>
