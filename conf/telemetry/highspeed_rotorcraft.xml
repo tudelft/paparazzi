@@ -44,7 +44,7 @@
       <message name="GUIDANCE_H_REF_INT"       period="0.31"/>
       <message name="GUIDANCE_INDI_HYBRID"     period="0.4"/>
       <message name="HYBRID_GUIDANCE"          period="0.4"/>
-      <message name="ESC"                      period="0.5"/>
+      <message name="ESC"                      period="0.3"/>
       <!--message name="WINDTUNNEL_MEAS"          period="0.1"/-->
       <message name="AHRS_REF_QUAT"            period="0.1"/>
       <message name="GPS_RTK"                  period="0.1"/>
