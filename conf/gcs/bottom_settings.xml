@@ -82,6 +82,14 @@
           <property name="size" value="15."/>
           <property name="color" value="#00ff00"/>
         </papget>
+        <papget type="message_field" display="text" x="261" y="50">
+          <property name="scale" value="1."/>
+          <property name="field" value="ENERGY:charge"/>
+          <property name="ac_id" value="5"/>
+          <property name="format" value="%.2f W avg"/>
+          <property name="size" value="15."/>
+          <property name="color" value="#00ff00"/>
+        </papget>
         <papget type="message_field" display="text" x="374" y="45">
           <property name="scale" value="1."/>
           <property name="field" value="FBW_STATUS:mode"/>
