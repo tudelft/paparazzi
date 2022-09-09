@@ -87,30 +87,48 @@ class TankPlotter(object):
             self.pressures.append(self.bar)
             #self.generate_plot()
 
-    def generate_plot(self):
-        self.line.set_xdata(np.array(self.timestamps))
-        self.line.set_ydata(np.array(self.pressures))
-        self.figure.canvas.draw()
-        self.figure.canvas.flush_events()
-
 if __name__ == '__main__':
     plotter = TankPlotter()
     plt.ion()
     figure = plt.figure()
     ax = figure.add_subplot(111)
-    line, = ax.plot([0], [0])
-    ax.set_xlim((0, 60))
+    line_pressure, = ax.plot([0], [0])
+    line_prediction, = ax.plot([0], [0], '--')
+    ax.set_xlim((0, 30))
     ax.set_ylim((0, 300))
+    ax.set_title("time [min] to 0 bar: Wait for more data",fontsize = 20)
+    ax.set_xlabel("t [min]", fontsize = 20)
+    ax.set_ylabel("pressure [bar]", fontsize = 20)
     ax.grid()
     figure.canvas.draw()
     figure.canvas.flush_events()
 
     while True:
         if len(plotter.pressures) > 0:
-            line.set_xdata(plotter.timestamps)
-            line.set_ydata(plotter.pressures)
-            ax.set_xlim((0, plotter.timestamps[-1] + 5))
+            line_pressure.set_xdata(np.array(plotter.timestamps) / 60)
+            line_pressure.set_ydata(plotter.pressures)
+            ax.set_xlim((0, plotter.timestamps[-1] / 60. + 30))
             ax.set_ylim((0, 300))
+
+        if len(plotter.pressures) >= 5:
+            # Determine slope
+            dt = plotter.timestamps[-1] - plotter.timestamps[-5]
+            d_pressure = plotter.pressures[-1] - plotter.pressures[-5]
+
+            # Determine point
+            p_pressure = (plotter.pressures[-5] + plotter.pressures[-4] + plotter.pressures[-3] + plotter.pressures[-2] + plotter.pressures[-1]) / 5.
+            p_t = (plotter.timestamps[-5] + plotter.timestamps[-4] + plotter.timestamps[-3] + plotter.timestamps[-2] + plotter.timestamps[-1]) / 5.
+
+            # Calculate 0 point
+            dt0 = p_pressure / (-d_pressure/ dt)
+            t_pressure0 = dt0 + p_t
+
+            # Plot line
+            line_prediction.set_xdata(np.array([p_t, t_pressure0]) / 60.)
+            line_prediction.set_ydata([p_pressure, 0])
+            ax.set_xlim([0, t_pressure0 /60. + 30])
+            ax.set_title("time [min] to 0 bar: " + str(dt0 / 60.), fontsize = 20)
+
         plt.draw()
         
         figure.canvas.draw()
