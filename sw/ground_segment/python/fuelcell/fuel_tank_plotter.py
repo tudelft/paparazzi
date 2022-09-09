@@ -111,8 +111,6 @@ if __name__ == '__main__':
             line.set_ydata(plotter.pressures)
             ax.set_xlim((0, plotter.timestamps[-1] + 5))
             ax.set_ylim((0, 300))
-            print(plotter.pressures)
-            print(plotter.timestamps)
         plt.draw()
         
         figure.canvas.draw()
