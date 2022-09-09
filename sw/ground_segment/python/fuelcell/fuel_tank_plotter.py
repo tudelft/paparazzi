@@ -90,7 +90,7 @@ class TankPlotter(object):
 if __name__ == '__main__':
     plotter = TankPlotter()
     plt.ion()
-    figure = plt.figure()
+    figure = plt.figure('Fuel tank plotter')
     ax = figure.add_subplot(111)
     line_pressure, = ax.plot([0], [0])
     line_prediction, = ax.plot([0], [0], '--')
