@@ -10,7 +10,7 @@
     <waypoint lat="38.476515" lon="-8.868380" name="CLIMB"/>
     <waypoint lat="38.476331" lon="-8.869787" name="STDBY"/>
     <waypoint lat="38.475670" lon="-8.866012" name="SAFE"/>
-    <waypoint lat="38.482073" lon="-8.870210" name="CIRCLE"/>
+    <waypoint lat="38.4708327" lon="-8.8515882" name="CIRCLE" alt="120"/>
     <waypoint lat="38.476940" lon="-8.867501" name="p1"/>
     <waypoint lat="38.481886" lon="-8.856215" name="p2"/>
     <waypoint lat="38.4624873" lon="-8.8934337" name="s1"/>
@@ -21,8 +21,8 @@
     <waypoint lat="38.483435" lon="-8.865682" name="n2"/>
     <waypoint lat="38.4751429" lon="-8.8577652" name="n3"/>
     <waypoint lat="38.4716783" lon="-8.8649061" name="n4"/>
-    <waypoint lat="38.4718299" lon="-8.8765607" name="c1"/>
-    <waypoint lat="38.4659684" lon="-8.8896910" name="c2"/>
+    <waypoint lat="38.4703765" lon="-8.8742401" name="c1"/>
+    <waypoint lat="38.4639394" lon="-8.8870224" name="c2"/>
     <waypoint lat="38.475002" lon="-8.870565" name="TD"/>
     <waypoint lat="38.474497" lon="-8.870086" name="APP"/>
     <waypoint lat="38.511639141458616" lon="-8.916435241699219" name="HGF1"/>
@@ -30,10 +30,10 @@
     <waypoint lat="38.366694607317385" lon="-8.900985717773436" name="HGF3"/>
     <waypoint lat="38.366156237889506" lon="-8.795242309570312" name="HGF4"/>
     <waypoint lat="38.51110185192187" lon="-8.844423294067381" name="HGF5"/>
-    <waypoint lat="38.467526" lon="-8.888318" name="_2-1"/>
-    <waypoint lat="38.466563" lon="-8.887256" name="_2-2"/>
-    <waypoint lat="38.470725" lon="-8.881204" name="_2-4"/>
-    <waypoint lat="38.469633" lon="-8.880184" name="_2-3"/>
+    <waypoint lat="38.465202" lon="-8.886523" name="_2-1"/>
+    <waypoint lat="38.463644" lon="-8.884909" name="_2-2"/>
+    <waypoint lat="38.470239" lon="-8.876233" name="_2-4"/>
+    <waypoint lat="38.468714" lon="-8.874109" name="_2-3"/>
     <waypoint lat="38.50996009834396" lon="-8.897552490234375" name="SGF1"/>
     <waypoint lat="38.367468506353994" lon="-8.899054527282713" name="SGF2"/>
     <waypoint lat="38.36763674417995" lon="-8.798332214355469" name="SGF3"/>
@@ -41,7 +41,7 @@
     <waypoint lat="38.5230094" lon="-8.9383347" name="_NO1"/>
     <waypoint lat="38.3588231" lon="-8.7599693" name="_NO2"/>
     <waypoint lat="38.5435730" lon="-8.8181561" name="_NO3"/>
-        <waypoint lat="38.4727" lon="-8.84385" name="SadoSouth"/>
+    <waypoint lat="38.4727" lon="-8.84385" name="SadoSouth"/>
     <waypoint lat="38.47305477520769" lon="-8.855555100886773" name="_SS1"/>
     <waypoint lat="38.46663423324912" lon="-8.866613867673443" name="_SS2"/>
     <waypoint lat="38.43333226925893" lon="-8.833333038131096" name="_SS3"/>
