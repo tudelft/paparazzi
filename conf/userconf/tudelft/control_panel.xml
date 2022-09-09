@@ -331,6 +331,7 @@
         <arg flag="-nouplink"/>
       </program>
       <program name="NederdroneStatus"/>
+      <program name="FuelTankPlotter"/>
       <program name="Attitude Visualizer"/>
       <program name="ATC"/>
       <program name="SVInfo"/>
