@@ -252,9 +252,9 @@ static void send_ctrl_effectiveness_calc(struct transport_tx *trans, struct link
   pprz_msg_send_CTRL_EFFECTIVENESS_CALC(trans, dev, AC_ID, INDI_NUM_ACT, indi_u,
 		  	  	  	  	  INDI_NUM_ACT, actuator_state_filt_vect,
 		  	  	  	  	  INDI_NUM_ACT, g1g2[0],
-                       	  INDI_NUM_ACT, g1g2[1],
-						  INDI_NUM_ACT, g1g2[2],
-						  INDI_NUM_ACT, g1g2[3]);
+                      INDI_NUM_ACT, g1g2[1],
+						          INDI_NUM_ACT, g1g2[2],
+						          INDI_NUM_ACT, g1g2[3]);
 }
 #endif
 
