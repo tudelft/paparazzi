@@ -115,9 +115,11 @@
       <define name="USE_AIRSPEED_AIR_DATA" value="FALSE"/>
     </module>
 
-    <module name="gps" type="ublox">
+    <module name="gps" type="datalink"/>
+
+    <!-- <module name="gps" type="ublox">
       <configure name="GPS_BAUD" value="B57600"/>
-    </module>
+    </module> -->
 
     <module name="stabilization" type="indi"/>
 
@@ -145,6 +147,7 @@
 
     <!--<module name="ahrs" type="int_cmpl_quat">-->
     <!--<configure name="USE_MAGNETOMETER" value="TRUE"/>-->
+    <configure name="USE_MAGNETOMETER" value="FALSE"/> <!--This is for optitrack-->
     <!--<define name="AHRS_ICQ_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>-->
     <!--<define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>-->
     <!--<define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="TRUE"/>-->
@@ -367,7 +370,7 @@
     <define name="HOVER_KP" value="200"/>
     <define name="HOVER_KD" value="175"/>
     <define name="HOVER_KI" value="72"/>
-    <define name="NOMINAL_HOVER_THROTTLE" value ="0.4"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value ="0.67"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>
   </section>
 
@@ -410,7 +413,7 @@
 
     <define name="FWD_SIDESLIP_GAIN" value="0.32"/>
 
-    <!--<define name="EFF_SCHED_USE_FUNCTION" value="TRUE"/> -->    <!-- #### Think I need to get rid of this -->
+    <!--<define name="EFF_SCHED_USE_FUNCTION" value="TRUE"/> -->    <!-- Think I need to get rid of this -->
 
     <define name="ARRIVED_AT_WAYPOINT" value="50.0"/>
     <define name="USE_AIRSPEED" value="TRUE"/>
