@@ -1195,21 +1195,21 @@
     </message>
 
     <message name="APPROACH_MOVING_TARGET" id="135">
-      <field unit="m" type="float" name="ref_pos_x">
-      <field unit="m" type="float" name="ref_pos_y">
-      <field unit="m" type="float" name="ref_pos_z">
-      <field unit="m/s" type="float" name="ref_vel_x">
-      <field unit="m/s" type="float" name="ref_vel_y">
-      <field unit="m/s" type="float" name="ref_vel_z">
-      <field unit="m" type="float" name="target_pos_x">
-      <field unit="m" type="float" name="target_pos_y">
-      <field unit="m" type="float" name="target_pos_z">
-      <field unit="m/s" type="float" name="target_vel_x">
-      <field unit="m/s" type="float" name="target_vel_y">
-      <field unit="m/s" type="float" name="target_vel_z">
-      <field unit="m" type="float" name="start_distance">
-      <field unit="m" type="float" name="distance">
-      <field unit="m" type="float" name="slope_ref">
+      <field name="ref_pos_x" type="float" unit="m"/>
+      <field name="ref_pos_y" type="float" unit="m"/>
+      <field name="ref_pos_z" type="float" unit="m"/>
+      <field name="ref_vel_x" type="float" unit="m/s"/>
+      <field name="ref_vel_y" type="float" unit="m/s"/>
+      <field name="ref_vel_z" type="float" unit="m/s"/>
+      <field name="target_pos_x" type="float" unit="m"/>
+      <field name="target_pos_y" type="float" unit="m"/>
+      <field name="target_pos_z" type="float" unit="m"/>
+      <field name="target_vel_x" type="float" unit="m/s"/>
+      <field name="target_vel_y" type="float" unit="m/s"/>
+      <field name="target_vel_z" type="float" unit="m/s"/>
+      <field name="start_distance" type="float" unit="m"/>
+      <field name="distance" type="float" unit="m"/>
+      <field name="slope_ref" type="float" unit="m"/>
     </message>
 
     <message name="RATE_LOOP" id="136">

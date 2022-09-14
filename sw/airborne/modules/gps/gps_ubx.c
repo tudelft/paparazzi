@@ -372,8 +372,8 @@ static void gps_ubx_parse_nav_relposned(void)
 
     //printf("Bar TOW: %i \n", UBX_NAV_RELPOSNED_iTOW(gps_ubx.msg_buf));
     /* Only save the latest VALID relative position */
-    if(relPosValid) {
-    //if(TRUE){
+    //if(relPosValid) {
+    if(TRUE){
       printf("GPS UBX VALID \n"); // DEBUGGING
       if (diffSoln && carrSoln == 2) {
         gps_ubx.state.fix = 5; // rtk
@@ -427,9 +427,9 @@ static void gps_ubx_parse_rxm_raw(void)
 
 static void gps_ubx_parse_rxm_rtcm(void)
 {
-  printf("received GPS_UBX_RTCM \n"); // DEBUGGING
 #if USE_GPS_UBX_RTCM
   uint8_t version   = UBX_RXM_RTCM_version(gps_ubx.msg_buf);
+  printf("received GPS_UBX_RTCM version %i \n", version); // DEBUGGING  
   if (version == RXM_RTCM_VERSION) {
     //      uint8_t flags     = UBX_RXM_RTCM_flags(gps_ubx.msg_buf);
     //      bool crcFailed    = RTCMgetbitu(&flags, 7, 1);
@@ -506,12 +506,14 @@ void gps_ubx_read_message(void)
     }
   }
   else if (gps_ubx.msg_class == UBX_RXM_ID) {
+    printf("parse RXM RTCM ID %i \n", gps_ubx.msg_id); // DEBUGGING
     switch (gps_ubx.msg_id) {
       case UBX_RXM_RAW_ID:
         gps_ubx_parse_rxm_raw();
         break;
       case UBX_RXM_RTCM_ID:
         gps_ubx_parse_rxm_rtcm();
+        //printf("parse RXM RTCM  __PARSED__ \n"); // DEBUGGING
         break;
       default:
         break;

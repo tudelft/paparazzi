@@ -30,7 +30,7 @@
     <module name="gps" type="ublox">
       <configure name="GPS_BAUD" value="B38400"/>
       <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
-      <define name="USE_GPS_UBX_RXM_RAW" value="TRUE"/>
+      <!--<define name="USE_GPS_UBX_RXM_RAW" value="TRUE"/>-->
       <configure name="GPS_PORT" value="UART2"/> <!-- always UART2 or UART4 -->
     </module>
     <module name="gps" type="ubx_ucenter"/>
