@@ -368,9 +368,13 @@ static void gps_ubx_parse_nav_relposned(void)
     uint8_t relPosValid = RTCMgetbitu(&flags, 5, 1);
     uint8_t diffSoln    = RTCMgetbitu(&flags, 6, 1);
     uint8_t gnssFixOK   = RTCMgetbitu(&flags, 7, 1);
+    printf("flags %i, carrsoln %i, relposvalid %i, diffSoln %i, gnssFixOK %i \n", flags, carrSoln, relPosValid, diffSoln, gnssFixOK); // DEBUGGING
 
-    /* Only save the latest valid relative position */
+    //printf("Bar TOW: %i \n", UBX_NAV_RELPOSNED_iTOW(gps_ubx.msg_buf));
+    /* Only save the latest VALID relative position */
     if(relPosValid) {
+    //if(TRUE){
+      printf("GPS UBX VALID \n"); // DEBUGGING
       if (diffSoln && carrSoln == 2) {
         gps_ubx.state.fix = 5; // rtk
       } else if(diffSoln && carrSoln == 1) {
@@ -380,7 +384,7 @@ static void gps_ubx_parse_nav_relposned(void)
       } else{
         gps_ubx.state.fix = 0;
       }
-
+ printf("rel pos valid ??? \n"); // DEBUGGING
       gps_relposned.iTOW          = UBX_NAV_RELPOSNED_iTOW(gps_ubx.msg_buf);
       gps_relposned.refStationId  = UBX_NAV_RELPOSNED_refStationId(gps_ubx.msg_buf);
       gps_relposned.relPosN     = UBX_NAV_RELPOSNED_relPosN(gps_ubx.msg_buf);
@@ -423,6 +427,7 @@ static void gps_ubx_parse_rxm_raw(void)
 
 static void gps_ubx_parse_rxm_rtcm(void)
 {
+  printf("received GPS_UBX_RTCM \n"); // DEBUGGING
 #if USE_GPS_UBX_RTCM
   uint8_t version   = UBX_RXM_RTCM_version(gps_ubx.msg_buf);
   if (version == RXM_RTCM_VERSION) {

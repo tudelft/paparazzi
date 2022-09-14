@@ -215,6 +215,10 @@
       <field name="rc" type="struct RadioControl *">Pointer to a radio control structure</field>
     </message>
 
+    <message name="VEL_SP" id="31">
+      <field name="vel_sp" type="struct FloatVect3 *" unit="m/s"/>
+    </message>
+
   </msg_class>
 
 </protocol>

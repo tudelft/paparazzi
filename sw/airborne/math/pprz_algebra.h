@@ -49,7 +49,7 @@ extern "C" {
 
 //
 //
-// Vector algebra
+// or algebra
 //
 //
 

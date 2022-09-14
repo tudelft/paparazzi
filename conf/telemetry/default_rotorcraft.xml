@@ -36,6 +36,11 @@
       <message name="LIDAR"                    period="1.2"/>
       <message name="INS_EKF2"                 period=".25"/>
       <message name="WIND_INFO_RET"            period="1."/>
+            <message name="GPS_RXMRTCM"               period="1"/>
+      <message name="GPS_INT"                period=".25"/>
+      <message name="GPS_RTK"               period="1"/>
+      <message name="APPROACH_MOVING_TARGET"    period="1"/>
+      <message name="TARGET_POS_INFO"    period="1"/>
     </mode>
 
     <mode name="ppm">

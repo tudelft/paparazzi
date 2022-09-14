@@ -1,0 +1,357 @@
+/*
+ * Copyright (C) 2021 Ewoud Smeur <e.j.j.smeur@tudelft.nl>
+ *
+ * This file is part of paparazzi
+ *
+ * paparazzi is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * paparazzi is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with paparazzi; see the file COPYING.  If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
+/**
+ * @file "modules/ctrl/approach_moving_target.c"
+ * @author Ewoud Smeur <e.j.j.smeur@tudelft.nl>
+ * Approach a moving target (e.g. ship)
+ */
+
+#include "approach_moving_target.h"
+
+#include "generated/modules.h"
+#include "modules/core/abi.h"
+
+//float amt_err_slowdown_gain = AMT_ERR_SLOWDOWN_GAIN;
+float amt_err_slowdown_gain = 0.001;
+bool allways_update_ship_wp = true;
+
+float approach_moving_target_angle_deg;
+
+
+#define DEBUG_AMT TRUE
+#include <stdio.h>
+
+// settings how drone should approach the ship
+struct Amt amt = {
+  .distance = 60,     // [m], diagonal decent line to ship
+  .speed = -0.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
+  .pos_gain = 200.2,    // [-], how aggresive drone tracks the descent line
+  .psi_ref = 180.0,   // [deg], descent line direction offset w.r.t. heading ship
+  .slope_ref = 19.471,  // [deg], slope descent line
+  .speed_gain = 1.0,  // [-], how agressive ..................
+  .relvel_gain = 1.0, // [-], ................................
+  .enabled_time = 0,
+  .wp_ship_id = 0,
+  .wp_approach_id = 0
+};
+
+// settings how drone should approach the ship
+struct Wave WaveInfl = {
+  .RollPitchYaw.x = 0,        // [deg]  the attitude of the deck of the ship
+  .RollPitchYaw.y = 0,        // [deg]  the attitude of the deck of the ship
+  .RollPitchYaw.z = 0,        // [deg]  the attitude of the deck of the ship
+  .WaveOff2StaticPos.x = 0,   // [m]    the offset from the average/static position of the ship
+  .WaveOff2StaticPos.y = 0,   // [m]    the offset from the average/static position of the ship
+  .WaveOff2StaticPos.z = 0,   // [m]    the offset from the average/static position of the ship
+  .estmInterval = 0,          // [sec]  the estimated interval in beteween the waves
+  .estmAmp = 0,               // [m]    the estimated amplitude of the waves
+  .certainty = 0              // [%]    how certain the system is of the wave shape/interval
+};
+
+// Telemetry info to send from drone to base
+struct AmtTelem {
+  struct FloatVect3 des_pos; // descent point to follow 
+  struct FloatVect3 des_vel;
+  struct FloatVect3 target_pos; //ship landing position
+  struct FloatVect3 target_vel;
+  float start_distance;
+};
+
+struct AmtTelem amt_telem;
+
+bool approach_moving_target_enabled = false; // NOT USED
+
+static abi_event gps_ev;
+static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
+
+struct FloatVect3 nav_get_speed_sp_from_diagonal(struct EnuCoor_i target, float pos_gain, float rope_heading);
+void update_waypoint(uint8_t wp_id, struct FloatVect3 * target_ned);
+
+#if PERIODIC_TELEMETRY
+#include "modules/datalink/telemetry.h"
+static void send_approach_moving_target(struct transport_tx *trans, struct link_device *dev)
+{
+  // pprz_msg_send_APPROACH_MOVING_TARGET(trans, dev, AC_ID,
+  //                             &amt_telem.des_pos.x,
+  //                             &amt_telem.des_pos.y,
+  //                             &amt_telem.des_pos.z,
+  //                             &amt_telem.des_vel.x,
+  //                             &amt_telem.des_vel.y,
+  //                             &amt_telem.des_vel.z,
+  //                             &amt.distance
+  //                             );
+   pprz_msg_send_APPROACH_MOVING_TARGET(trans, dev, AC_ID,
+                              &amt_telem.des_pos.x,
+                              &amt_telem.des_pos.y,
+                              &amt_telem.des_pos.z,
+                              &amt_telem.des_vel.x,
+                              &amt_telem.des_vel.y,
+                              &amt_telem.des_vel.z,
+
+                              &amt_telem.target_pos.x,
+                              &amt_telem.target_pos.y,
+                              &amt_telem.target_pos.z,
+                              &amt_telem.target_vel.x,
+                              &amt_telem.target_vel.y,
+                              &amt_telem.target_vel.z,
+
+                              &amt_telem.start_distance,
+                              &amt.distance,
+                              &amt.slope_ref
+                              );
+}
+#endif
+
+struct LlaCoor_i gps_lla;
+
+void approach_moving_target_init(void)
+{
+  AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
+
+  amt_telem.start_distance = amt.distance;
+
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_APPROACH_MOVING_TARGET, send_approach_moving_target);
+#endif
+}
+
+
+/* Update INS (internal navigation system) based on GPS information */
+static void gps_cb(uint8_t sender_id __attribute__((uTARGET_POS_INFOnused)),
+                   uint32_t stamp,
+                   struct GpsState *gps_s)
+{
+  gps_lla.lat = gps_s->lla_pos.lat;
+  gps_lla.lon = gps_s->lla_pos.lon;
+  gps_lla.alt = gps_s->lla_pos.alt;
+}
+
+// interface with ship position module?
+
+// Update a waypoint such that you can see on the GCS where the drone wants to go
+void update_waypoint(uint8_t wp_id, struct FloatVect3 * target_ned) {
+
+  // Update the waypoint
+  struct EnuCoor_f target_enu;
+  ENU_OF_TO_NED(target_enu, *target_ned);
+  waypoint_set_enu(wp_id, &target_enu);
+
+  // Send waypoint update every 0.2 second !!!!!! THIS ONE SEEMD NOT BE USED, if time is long, nothing is different in GCS sim
+  //RunOnceEvery(0.2, {
+    // Send to the GCS that the waypoint has been moved
+    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+                                &waypoints[wp_id].enu_i.x,
+                                &waypoints[wp_id].enu_i.y,
+                                &waypoints[wp_id].enu_i.z);
+  //} );
+}
+
+// Function to enable from flight plan (call repeatedly!)
+void approach_moving_target_enable(uint8_t wp_ship_id, uint8_t wp_approach_id) { 
+  amt.enabled_time = get_sys_time_msec(); // this makes folow_diagonal_approach()
+  amt.wp_ship_id = wp_ship_id;
+  amt.wp_approach_id = wp_approach_id;
+}
+
+// Function to enable from flight plan (call repeatedly!)
+void reset_moving_target_distance(void) { 
+  amt.distance = amt_telem.start_distance;
+}
+
+
+
+void waveEstimation(void){
+  const int filter_length = 20;
+  static bool filter_full = false;
+  static int filter_loopcounter = 0;
+  //static struct FloatVect3 bufRPY[filter_length];
+  //static struct FloatVect3 bufOff[filter_length];
+  
+  struct FloatVect3 dummyWaveRPY;
+  dummyWaveRPY.x = 20; //roll
+  dummyWaveRPY.y = 5;  //pitch
+  dummyWaveRPY.z = 10;  //yaw
+
+  // WaveInfl.bufRPY[filter_loopcounter] = dummyWaveRPY;
+
+  VECT3_COPY(WaveInfl.bufRPY[filter_loopcounter], dummyWaveRPY)
+
+  //avg calc
+  struct FloatVect3 sumBufRPY;
+  for (int i=0; i <filter_length; i++){
+    VECT3_ADD(sumBufRPY, WaveInfl.bufRPY[i]);
+  }
+  struct FloatVect3 avgBufRPY;
+  printf("avgBuf %.1f %.1f %.1f \n",  sumBufRPY.x,  sumBufRPY.y,  sumBufRPY.z);
+  VECT3_SDIV(avgBufRPY, sumBufRPY, filter_length);
+
+  printf("avgBuf %.1f %.1f %.1f \n",  avgBufRPY.x,  avgBufRPY.y,  avgBufRPY.z);
+
+  Bound(WaveInfl.certainty, 0, 100);
+  filter_loopcounter++;
+  if (filter_loopcounter >=filter_length) filter_loopcounter = 0;
+}
+
+
+
+/**
+ * @brief Generates a velocity reference from a diagonal approach path
+ *
+ */
+void follow_diagonal_approach(void) {
+  /* STEPS
+    - check if approach_moving_target_enable() is called recently by flightplan (otherwise return)
+    - get target pos, vel, hdg (target is the landing spot)
+    - calculate descent line unit vector (is it nesceserry to calculate this over and over every loop?)
+    - 
+  */
+  uint32_t start_time = get_sys_time_msec();
+
+  // waveEstimation(); // TESTING // NOT WORKING YET
+
+  // Check if the flight plan recently called the enable function
+  if ( (get_sys_time_msec() - amt.enabled_time) > (2000 / NAVIGATION_FREQUENCY) && !allways_update_ship_wp) {
+    return; // if approach_moving_target_enable is not called recently
+  }
+
+  // Get the target position, velocity and heading
+  struct NedCoor_f rel_target_pos, target_vel_boat = {0};
+  float target_heading;
+  if(!target_get_pos(&rel_target_pos, &target_heading)) {
+    // TODO: What to do? Same can be checked for the velocity
+    return;
+  }
+  //
+
+  target_get_vel(&target_vel_boat); // [m/s] update ground speed of the ship
+  VECT3_SMUL(target_vel_boat, target_vel_boat, amt.speed_gain);
+
+  // Reference model (descent line)
+  // Translate angles to unit vector
+  float gamma_ref = RadOfDeg(amt.slope_ref); // descent rate 
+  float psi_ref = RadOfDeg(target_heading + amt.psi_ref); // how descent line lines up with ship heading
+  amt.rel_unit_vec.x = cosf(gamma_ref) * cosf(psi_ref);
+  amt.rel_unit_vec.y = cosf(gamma_ref) * sinf(psi_ref); 
+  amt.rel_unit_vec.z = -sinf(gamma_ref);
+
+  // Multiply vector with prefered descent dist to get ref point of descent
+  // Desired position = rel_pos + target_pos_boat ??????????????
+  struct FloatVect3 ref_relpos;
+  VECT3_SMUL(ref_relpos, amt.rel_unit_vec, amt.distance); //calculate decscent point
+  //ref_relpos.z = ref_relpos.z*-1; // TESTING............................................................................
+
+  // Add ref point of descent to ship location to get NED coordinate ref point of descent
+  // ATTENTION, target_pos_boat is already relative now!
+  struct FloatVect3 rel_des_pos;
+  VECT3_SUM(rel_des_pos, ref_relpos, rel_target_pos);
+
+
+  // ------------------------------------------------------------------------- ADD MORE COMMENTS FROM HERE ON
+
+  struct FloatVect3 ref_relvel;
+  VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt.speed * amt.relvel_gain); 
+
+  // error controller
+  struct FloatVect3 pos_err;
+  struct FloatVect3 ec_vel;
+  struct NedCoor_f *drone_pos = stateGetPositionNed_f();
+  // ATTENTION, target_pos_boat is already relative now!
+  // VECT3_DIFF(pos_err, des_pos, *drone_pos);
+  VECT3_COPY(pos_err, rel_des_pos);
+  VECT3_SMUL(ec_vel, pos_err, amt.pos_gain);
+
+  // desired velocity = rel_vel + target_vel_boat + error_controller(using NED position)
+  struct FloatVect3 des_vel = {
+    ref_relvel.x + target_vel_boat.x + ec_vel.x,
+    ref_relvel.y + target_vel_boat.y + ec_vel.y,
+    ref_relvel.z + target_vel_boat.z + ec_vel.z,
+  };
+
+  vect_bound_in_3d(&des_vel, 10.0);
+
+  // Bound vertical speed setpoint
+  if(stateGetAirspeed_f() > 13.0) {
+    Bound(des_vel.z, -4.0, 5.0);
+  } else {
+    Bound(des_vel.z, -nav_climb_vspeed, -nav_descend_vspeed);
+  }
+
+  AbiSendMsgVEL_SP(VEL_SP_FCR_ID, &des_vel); // ?????????????????????????????????????????????????????????????????????????
+
+  /* limit the speed such that the vertical component is small enough
+  * and doesn't outrun the vehicle
+  */
+  float min_speed;
+  float sin_gamma_ref = sinf(gamma_ref);
+  if (sin_gamma_ref > 0.05) {
+    min_speed = (nav_descend_vspeed+0.1) / sin_gamma_ref;
+  } else {
+    min_speed = -5.0; // prevent dividing by zero
+  }
+
+  // The upper bound is not very important
+  Bound(amt.speed, min_speed, 4.0);
+
+  // Reduce approach speed if the error is large
+  float norm_pos_err_sq = VECT3_NORM2(pos_err);
+  float int_speed = (amt.speed) / (norm_pos_err_sq * amt_err_slowdown_gain + 1.0);
+  if (amt.distance < 20) int_speed = int_speed / 2;
+  //printf("int_speed %f \n", int_speed);
+
+  // Check if the flight plan recently called the enable function
+  // make distance to ship smaller, So descent to ship
+
+  if ( (get_sys_time_msec() - amt.enabled_time) > (2000 / NAVIGATION_FREQUENCY)) {
+    // integrate speed to get the distance
+    float dt = FOLLOW_DIAGONAL_APPROACH_PERIOD;
+    amt.distance += int_speed*dt;
+    Bound(amt.distance, 0, 200); // approach dist > 0
+    //amt.distance -= 1*dt;
+  }
+  
+
+  // For display purposes
+  struct FloatVect3 ned_pos_target;
+  VECT3_SUM(ned_pos_target, rel_target_pos, *drone_pos);
+  //struct FloatVect3 ne_up_pos_target; // North, East, UP (alt) for Paparazzi
+  //VECT3_COPY(ne_up_pos_target, ned_pos_target);
+  //ne_up_pos_target.z = ne_up_pos_target.z*-1;
+  update_waypoint(amt.wp_ship_id, &ned_pos_target);
+  
+  // *drone_pos = NED float
+  // des_pos = NED float
+  // ned _pos_approach = NED float
+  struct FloatVect3 ned_pos_approach; // WAS LLA instead of NED
+
+  VECT3_SUM(ned_pos_approach, rel_des_pos, *drone_pos);
+
+  update_waypoint(amt.wp_approach_id, &ned_pos_approach);
+
+  // Update values for telemetry
+  VECT3_COPY(amt_telem.des_pos, rel_des_pos); 
+  VECT3_COPY(amt_telem.des_vel, des_vel);
+
+  // Update values for telemetry
+  VECT3_COPY(amt_telem.target_pos, rel_target_pos); 
+  VECT3_COPY(amt_telem.target_vel, target_vel_boat);
+
+  uint32_t end_time = get_sys_time_msec();
+  printf("loop_time = %i %i \n", end_time, start_time);
+}

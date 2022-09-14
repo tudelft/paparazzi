@@ -45,6 +45,9 @@
 #include "math/pprz_geodetic_wgs84.h"
 #include "math/pprz_geodetic.h"
 
+// only for debugging 
+#include <stdio.h>
+
 #ifndef PRIMARY_GPS
 #error "PRIMARY_GPS not set!"
 #else

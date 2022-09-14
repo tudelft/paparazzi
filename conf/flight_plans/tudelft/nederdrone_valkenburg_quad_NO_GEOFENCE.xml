@@ -1,0 +1,230 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<!-- lat0 and lon0 are reference position for waypoint-->
+<flight_plan alt="20" ground_alt="0" lat0="52.168523" lon0="4.414476" max_dist_from_home="250" name="Nederdrone Valkenburg" security_height="2"> <!-- lon0="4.412444" -->
+  <header>
+    #include "autopilot.h"
+    #include "modules/datalink/datalink.h"
+    #include "modules/ctrl/approach_moving_target.h"
+</header>
+  <waypoints>
+    <waypoint name="CONCRETE" lat="52.168221" lon="4.412767"/>
+    <waypoint name="HOME" x="0" y="0"/>
+    <waypoint name="STDBY" x="94.9" y="-15.4"/>
+    <waypoint name="p1" lat="52.168866" lon="4.412950"/>
+    <waypoint name="p2" lat="52.167815" lon="4.413541"/>
+    <waypoint name="p3" lat="52.167973" lon="4.414224"/>
+    <waypoint name="p4" lat="52.168885" lon="4.413617"/>
+    <waypoint name="_landHere" x="-4.1" y="-23.7"/>
+    <waypoint name="SHIP" x="123.2" y="87.8"/>
+    <waypoint name="APPROACH" x="123.2" y="87.8"/>
+    <waypoint name="_StayHover" x="0" y="0"/>
+    
+    <!-- kill zone -->
+    <waypoint lat="52.169088" lon="4.411594" name="C1"/>
+    <waypoint lat="52.166475" lon="4.412721" name="C2"/>
+    <waypoint lat="52.165609" lon="4.415999" name="C3"/>
+    <waypoint lat="52.170002" lon="4.424997" name="C4"/>
+    <waypoint lat="52.172840" lon="4.423800" name="C5"/>
+    <waypoint lat="52.170653" lon="4.415772" name="C6"/>
+    
+    <!-- safe fly zone -->
+    <waypoint lat="52.169160" lon="4.412295" name="_S1"/>
+    <waypoint lat="52.170332" lon="4.416007" name="_S2"/>
+    <waypoint lat="52.167716" lon="4.417721" name="_S3"/>
+    <waypoint lat="52.166291" lon="4.415041" name="_S4"/>
+    <waypoint lat="52.166816" lon="4.413712" name="_S5"/>
+    <waypoint lat="52.168107" lon="4.412855" name="_S6"/>
+    <waypoint lat="52.168088" lon="4.412701" name="_S7"/>
+    <waypoint lat="52.168273" lon="4.412612" name="_S8"/>
+    <waypoint lat="52.168313" lon="4.412756" name="_S9"/>
+  </waypoints>
+  <!-- mark zones with waypoints-->
+  <sectors>
+    <sector color="red" name="KillZone">
+      <corner name="C1"/>
+      <corner name="C2"/>
+      <corner name="C3"/>
+      <corner name="C4"/>
+      <corner name="C5"/>
+      <corner name="C6"/>
+    </sector>
+    <sector color="yellow" name="SafeFlyZone">
+      <corner name="_S1"/>
+      <corner name="_S2"/>
+      <corner name="_S3"/>
+      <corner name="_S4"/>
+      <corner name="_S5"/>
+      <corner name="_S6"/>
+      <corner name="_S7"/>
+      <corner name="_S8"/>
+      <corner name="_S9"/>
+    </sector>
+  </sectors>
+  <modules> <!-- not sure what this module does or is needed for -->
+    <!-- <module name="nav" type="survey_rectangle_rotorcraft">
+      <define name="RECTANGLE_SURVEY_DEFAULT_SWEEP" value="100"/>
+    </module> -->
+  </modules>
+  <exceptions> <!-- conditions for geofence -->
+    <!-- Kill drone outside KillZone -->
+    <!-- <exception 
+    cond="Or(!InsideKillZone(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500) 
+    @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+    @AND !(nav_block == IndexOfBlock('Geo init')) 
+    @AND !(nav_block == IndexOfBlock('Holding point kill'))" 
+    deroute="Holding point kill"/> -->
+    
+    <!-- Send drone to Home position if outside SafeFlyZone -->
+    <!-- <exception 
+    cond="Or(! InsideSafeFlyZone(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500) 
+    @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+    @AND !(nav_block == IndexOfBlock('Geo init')) 
+    @AND !(nav_block == IndexOfBlock('Holding point hover')) 
+    @AND !(nav_block == IndexOfBlock('Standby'))" 
+    deroute="Holding point hover"/> -->
+    
+    <!-- Send drone standby if ...... -->
+    <!-- <exception 
+    cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+    @AND !(nav_block == IndexOfBlock('Geo init')) 
+    @AND !(nav_block == IndexOfBlock('Holding point kill')) 
+    @AND !(nav_block == IndexOfBlock('Standby'))" 
+    deroute="Standby"/> -->
+  </exceptions>
+  
+  <blocks>
+    <block name="Wait GPS"> 
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid() || !state.ned_initialized_i"/>
+      <!-- <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH)"/> to activate tracking waypoints ship-->
+      <deroute block="Geo init"/>
+    </block>
+    <block name="Geo init"> 
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetAltitudeReferenceHere()"/>
+      <deroute block="Holding point kill"/>
+    </block>
+    <block name="Holding point hover"> 
+      <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
+      <stay alt="GetPosAlt()" wp="_StayHover"/>
+    </block>
+    <block name="Start Engine"> <!-- added to test-->
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="NavResurrect()"/> <!-- set motors on -->
+      <call_once fun="nav_set_heading_current()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <!-- <attitude pitch="-50" roll="0" throttle="0.8" until="stage_time>0" vmode="throttle"/> -->
+    </block>
+
+    <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+      <!-- <exception cond="GetPosHeight() @GT 20.0" deroute="Standby"/> --> 
+      <!--<call_once fun="nav_set_heading_current()"/>-->
+      <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
+      <stay alt="5.0" wp="_StayHover"/>
+    </block>
+
+    <block name="HoverHeigthShip">
+      <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
+      <stay alt="WaypointAlt(WP_SHIP)" wp="_StayHover"/>
+    </block>
+    
+    <block name="HoverHeigthApproach">
+      <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
+      <stay alt="WaypointAlt(WP_APPROACH)" wp="_StayHover"/>
+    </block>
+    
+    <block name="test yaw">
+      <go wp="p1"/>
+      <for from="1" to="16" var="i">
+        <heading alt="WaypointAlt(WP_p1)" course="90 * $i" until="stage_time @GT 3"/>
+      </for>
+      <deroute block="Standby"/>
+    </block>
+
+    <block name="route">
+      <set value="TRUE" var="force_forward"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p3"/>
+      <go from="p3" hmode="route" wp="p4"/>
+      <go from="p4" hmode="route" wp="p1"/>
+    </block>
+
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <set value="FALSE" var="force_forward"/>
+      <stay wp="STDBY"/>
+    </block>
+
+    <block name="GoTo Approach point" strip_button="GoTo Approach point" >
+      <!--<go pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH)" alt="WaypointAlt(WP_APPROACH)" wp="APPROACH"/> -->
+      <stay pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH)" alt= "WaypointAlt(WP_APPROACH)" wp="APPROACH"/>
+    </block>
+    
+    <block name="GoTo Ship" strip_button="GoTo Ship" >
+      <!--<go pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH)" alt="WaypointAlt(WP_APPROACH)" wp="APPROACH"/> -->
+      <stay pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH)" alt= "WaypointAlt(WP_SHIP)" wp="SHIP"/>
+    </block>
+
+    <!-- Follow waipoint of ship GPS position (with offset) -->
+    <block name="Approach SHIP" strip_button="Approach SHIP" strip_icon="boat.png">
+      <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH)"/>
+      <stay alt= "WaypointAlt(WP_APPROACH)" wp="APPROACH"/>
+    </block>
+    
+    <block name="reset_distance">
+      <call_once fun="reset_moving_target_distance()"/>
+      <deroute block="Holding point hover"/>
+    </block>
+    
+
+    <block name="stay_p1">
+      <set value="FALSE" var="force_forward"/>
+      <stay wp="p1"/>
+    </block>
+
+    <block name="go_p2">
+      <set value="TRUE" var="force_forward"/>
+      <call_once fun="nav_set_heading_deg(90)"/>
+      <go wp="p2"/>
+      <deroute block="stay_p1"/>
+    </block>
+
+    <block name="line_p1_p2">
+      <set value="TRUE" var="force_forward"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <stay until="stage_time>10" wp="p2"/>
+      <go from="p2" hmode="route" wp="p1"/>
+      <deroute block="line_p1_p2"/>
+    </block>
+
+    <!-- set waypoint, decend fast to 2 meters -->
+    <block name="land Here" strip_button="Land Here" strip_icon="land-right.png">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="NavSetWaypointHere(WP__landHere)"/>
+      <stay climb="-0.5" vmode="climb" wp="_landHere"/>
+      <exception cond="GetPosHeight() @LT 2.0" deroute="flare"/>
+      <deroute block="flare"/>
+    </block>
+
+    <!-- set waypoint, decend slow untill 15cm -->
+    <block name="flare">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="NavSetWaypointHere(WP__landHere)"/>
+      <stay climb="-0.2" vmode="climb" wp="_landHere"/>
+      <exception cond="GetPosHeight() @LT 0.15" deroute="landed"/>
+    </block>
+    
+    <!-- drone assumed it has landed, kill throttle -->
+    <block name="landed">
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <call_once fun="NavKillThrottle()"/>
+    </block>
+
+    <block name="Holding point kill"> <!-- drone crash to prevent fly-away -->
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+
+  </blocks>
+</flight_plan>
+ 
