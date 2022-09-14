@@ -372,9 +372,9 @@ static void gps_ubx_parse_nav_relposned(void)
 
     //printf("Bar TOW: %i \n", UBX_NAV_RELPOSNED_iTOW(gps_ubx.msg_buf));
     /* Only save the latest VALID relative position */
-    //if(relPosValid) {
-    if(TRUE){
-      printf("GPS UBX VALID \n"); // DEBUGGING
+    if(relPosValid) {
+    //if(TRUE){
+      // printf("GPS UBX VALID \n"); // DEBUGGING // THIS WORKED
       if (diffSoln && carrSoln == 2) {
         gps_ubx.state.fix = 5; // rtk
       } else if(diffSoln && carrSoln == 1) {
@@ -384,7 +384,7 @@ static void gps_ubx_parse_nav_relposned(void)
       } else{
         gps_ubx.state.fix = 0;
       }
- printf("rel pos valid ??? \n"); // DEBUGGING
+      // printf("rel pos valid ??? \n"); // DEBUGGING // THIS WORKED
       gps_relposned.iTOW          = UBX_NAV_RELPOSNED_iTOW(gps_ubx.msg_buf);
       gps_relposned.refStationId  = UBX_NAV_RELPOSNED_refStationId(gps_ubx.msg_buf);
       gps_relposned.relPosN     = UBX_NAV_RELPOSNED_relPosN(gps_ubx.msg_buf);
@@ -429,8 +429,8 @@ static void gps_ubx_parse_rxm_rtcm(void)
 {
 #if USE_GPS_UBX_RTCM
   uint8_t version   = UBX_RXM_RTCM_version(gps_ubx.msg_buf);
-  printf("received GPS_UBX_RTCM version %i \n", version); // DEBUGGING  
   if (version == RXM_RTCM_VERSION) {
+    // printf("received GPS_UBX_RTCM version %i \n", version); // DEBUGGING  // THIS WORKED // Version = 2
     //      uint8_t flags     = UBX_RXM_RTCM_flags(gps_ubx.msg_buf);
     //      bool crcFailed    = RTCMgetbitu(&flags, 7, 1);
     //      uint16_t refStation = UBX_RXM_RTCM_refStation(gps_ubx.msg_buf);
@@ -506,14 +506,14 @@ void gps_ubx_read_message(void)
     }
   }
   else if (gps_ubx.msg_class == UBX_RXM_ID) {
-    printf("parse RXM RTCM ID %i \n", gps_ubx.msg_id); // DEBUGGING
+    //printf("parse RXM RTCM ID %i \n", gps_ubx.msg_id); // DEBUGGING // THIS WORKED // ID = 50
     switch (gps_ubx.msg_id) {
       case UBX_RXM_RAW_ID:
         gps_ubx_parse_rxm_raw();
         break;
       case UBX_RXM_RTCM_ID:
         gps_ubx_parse_rxm_rtcm();
-        //printf("parse RXM RTCM  __PARSED__ \n"); // DEBUGGING
+        //printf("parse RXM RTCM  __PARSED__ \n"); // DEBUGGING // THIS WORKED
         break;
       default:
         break;
@@ -700,6 +700,7 @@ void gps_ublox_write(struct link_device *dev, uint8_t *buff, uint32_t n)
     dev->put_byte(dev->periph, 0, buff[i]);
   }
   dev->send_message(dev->periph, 0);
+  //printf("Write bytes to the ublox UART connection \n"); // DEBUGGING // THIS WORKED
   return;
 }
 
@@ -722,6 +723,8 @@ void gps_inject_data(uint8_t packet_id, uint8_t length, uint8_t *data)
     return;
   }
 #endif
+
+  // printf("gps_inject_data \n"); // DEBUGGING // THIS WORKED
 
   // go through buffer
   for (i = 0; i < length; i++) {

@@ -14,6 +14,16 @@
  </section>
 
   <section name="sessions">
+    <session name="Flight Bebop2 RTK_UDP_WiFi">
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Server"/>
+      <program name="PprzGCS"/>
+      <program name="Messages">
+        <arg flag="-c" constant="datalink"/>
+      </program>
+    </session>
 
    <session name="Flight UDP/WiFi">
       <program name="Server"/>

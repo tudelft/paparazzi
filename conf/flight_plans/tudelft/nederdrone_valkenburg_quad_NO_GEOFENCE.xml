@@ -6,6 +6,8 @@
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
     #include "modules/ctrl/approach_moving_target.h"
+
+
 </header>
   <waypoints>
     <waypoint name="CONCRETE" lat="52.168221" lon="4.412767"/>
@@ -66,7 +68,16 @@
       <define name="RECTANGLE_SURVEY_DEFAULT_SWEEP" value="100"/>
     </module> -->
   </modules>
-  <exceptions> <!-- conditions for geofence -->
+  <exceptions> 
+    <!-- hold position if Datalink is lost -->
+    <exception 
+    cond="(datalink_time) @GT 4
+    @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+    @AND !(nav_block == IndexOfBlock('Geo init'))" 
+    deroute="Holding point hover"/>
+  
+  
+  <!-- conditions for geofence -->
     <!-- Kill drone outside KillZone -->
     <!-- <exception 
     cond="Or(!InsideKillZone(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500) 
