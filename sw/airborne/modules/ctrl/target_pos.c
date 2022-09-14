@@ -28,6 +28,7 @@
 #include <math.h>
 
 #include "modules/datalink/telemetry.h"
+#include "modules/core/abi.h"
 
 // The timeout when receiving GPS messages from the ground in ms
 #ifndef TARGET_POS_TIMEOUT
@@ -83,6 +84,10 @@ struct target_t target = {
 /* Get the Relative postion from the RTK */
 extern struct GpsRelposNED gps_relposned;
 
+/* GPS abi callback */
+static abi_event gps_ev;
+static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
+
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
 // send the calculated TARGET_POS from the drone to GCS
@@ -107,6 +112,18 @@ void target_pos_init(void)
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_TARGET_POS_INFO, send_target_pos_info);
 #endif
+
+  AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
+}
+
+/* Get the GPS lla position */
+static void gps_cb(uint8_t sender_id __attribute__((unused)),
+                   uint32_t stamp __attribute__((unused)),
+                   struct GpsState *gps_s)
+{
+  target.gps_lla.lat = gps_s->lla_pos.lat;
+  target.gps_lla.lon = gps_s->lla_pos.lon;
+  target.gps_lla.alt = gps_s->lla_pos.alt;
 }
 
 /**
@@ -134,7 +151,7 @@ extern struct LlaCoor_i gps_lla;
  * Get the current target position (NED) and heading 
  * RELATIVE TO THE DRONE
  */
-bool target_get_pos(struct NedCoor_f *rel_pos, float *heading) {
+bool target_get_pos(struct NedCoor_f *pos, float *heading) {
   /* STEPS for x,y,z
       - LLA postions of ship and drone are converted to NED values w.r.t.
       - x,y,z = NED diff between drone and rtkGPS ship [m]
@@ -156,21 +173,17 @@ bool target_get_pos(struct NedCoor_f *rel_pos, float *heading) {
 
   /* When we have a valid target_pos message, state ned is initialized and no timeout */
   if(target.pos.valid && state.ned_initialized_i && (target.pos.recv_time+target.target_pos_timeout) > get_sys_time_msec()) {
-    struct NedCoor_i ned_target_pos_cm, ned_drone_pos_cm;
+    struct NedCoor_i target_pos_cm, drone_pos_cm;
 
     // Convert from LLA to NED using origin from the UAV
-    ned_of_lla_point_i(&ned_target_pos_cm, &state.ned_origin_i, &target.pos.lla);
-    //printf("ned_target_pos_cm %icm   target.pos.lla %imm   state.ned_origin_i %imm \n", ned_target_pos_cm.z, target.pos.lla.alt, state.ned_origin_i.lla.alt);
-
+    ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &target.pos.lla);
     // Convert from LLA to NED using origin from the UAV
-    ned_of_lla_point_i(&ned_drone_pos_cm, &state.ned_origin_i, &gps_lla); // zero height is at 5m above ground
-    //printf("ned_drone_pos_cm %icm   target.pos.lla %imm   state.ned_origin_i %imm \n", ned_drone_pos_cm.z, gps_lla.alt, state.ned_origin_i.lla.alt);
+    ned_of_lla_point_i(&drone_pos_cm, &state.ned_origin_i, &target.gps_lla);
 
-    // calculate position difference between target(ship) and drone
-    // and convert to floating point (cm to meters)
-    rel_pos->x = (ned_target_pos_cm.x - ned_drone_pos_cm.x) * 0.01; // [m] North
-    rel_pos->y = (ned_target_pos_cm.y - ned_drone_pos_cm.y) * 0.01; // [m] East
-    rel_pos->z = (ned_target_pos_cm.z - ned_drone_pos_cm.z) * 0.01; // [m] Down
+    // Convert to floating point (cm to meters)
+    pos->x = (target_pos_cm.x - drone_pos_cm.x) * 0.01;
+    pos->y = (target_pos_cm.y - drone_pos_cm.y) * 0.01;
+    pos->z = (target_pos_cm.z - drone_pos_cm.z) * 0.01;
 
     // calculate how old the last received msg is
     // In seconds, overflow uint32_t in 49,7 days
@@ -183,23 +196,22 @@ bool target_get_pos(struct NedCoor_f *rel_pos, float *heading) {
     struct NedCoor_f vel = {0};
     bool got_vel = target_get_vel(&vel);
     if(target.integrate_xy && got_vel) {
-      rel_pos->x = rel_pos->x + vel.x * time_diff;
-      rel_pos->y = rel_pos->y + vel.y * time_diff;
+      pos->x = pos->x + vel.x * time_diff;
+      pos->y = pos->y + vel.y * time_diff;
     }
 
     if(target.integrate_z && got_vel) {
-      rel_pos->z = rel_pos->z + vel.z * time_diff;
+      pos->z = pos->z + vel.z * time_diff;
     }
 
     // Offset the target
-    rel_pos->x += target.offset.distance * cosf((*heading + target.offset.heading)/180.*M_PI);
-    rel_pos->y += target.offset.distance * sinf((*heading + target.offset.heading)/180.*M_PI);
-    rel_pos->z -= target.offset.height;
-
-    //printf("REL_TARGET_POS x: %fm   y: %fm   z: %fm \n", rel_pos->x, rel_pos->y, rel_pos->z);
+    pos->x += target.offset.distance * cosf((*heading + target.offset.heading)/180.*M_PI);
+    pos->y += target.offset.distance * sinf((*heading + target.offset.heading)/180.*M_PI);
+    pos->z -= target.offset.height;
 
     return true;
   }
+
   return false;
 }
 

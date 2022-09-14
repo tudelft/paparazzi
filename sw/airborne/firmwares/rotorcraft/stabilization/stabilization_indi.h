@@ -38,6 +38,15 @@ extern bool indi_use_adaptive;
 
 extern float *Bwls[INDI_OUTPUTS];
 
+extern float indi_Wu_surface;
+extern float indi_Wu_motor;
+
+extern float act_pref[INDI_NUM_ACT];
+
+// trim aero surfaces with settings
+extern float trim_elevator;
+extern float trim_flaps;
+
 struct Indi_gains {
   struct FloatRates att;
   struct FloatRates rate;

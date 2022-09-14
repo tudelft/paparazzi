@@ -8,7 +8,7 @@
     Subscribes to BARO_ABS, BARO_DIFF and TEMPERATURE ABI messages and calculates QNH and true airspeed from it.
     Also enables you to fly on "flight levels" using AMSL (AltitudeAboveSeaLevel) calculated from current pressure and QNH.
 
-    When using this module to provide airspeed you need a differential pressure sensor module publishing the BARO_DIFF ABI message. Make sure to disable other modules which otherwise directly set the airspeed in the state interface. E.g. when using the airspeed_ms45xx.xml module, define USE_AIRSPEED_MS45XX to FALSE.
+    When using this module to provide airspeed you need a differential pressure sensor module publishing the BARO_DIFF ABI message.
     </description>
     <define name="AIR_DATA_BARO_ABS_ID" value="ABI_SENDER_ID" description="ABI sender id for absolute baro measurement (default: ABI_BROADCAST)"/>
     <define name="AIR_DATA_BARO_DIFF_ID" value="ABI_SENDER_ID" description="ABI sender id for differential baro measurement (default: ABI_BROADCAST)"/>
@@ -23,8 +23,10 @@
     <dl_settings>
       <dl_settings name="air_data">
         <dl_setting min="800" max="1200" step="1" module="air_data/air_data" var="air_data.qnh" shortname="QNH"/>
+        <dl_setting min="-1000" max="1000" step="0.1" module="air_data/air_data" var="air_data.diff_p_offset" shortname="diff_p offset"/>
         <dl_setting min="0.8" max="1.3" step="0.01" module="air_data/air_data" var="air_data.tas_factor" shortname="TASfactor" param="AIR_DATA_TAS_FACTOR" type="float" persistent="true"/>
         <dl_setting min="0" max="1" step="1" var="air_data.calc_qnh_once" module="air_data/air_data" shortname="calcQNH"/>
+        <dl_setting min="0" max="1" step="1" var="air_data.calc_diff_p_off" module="air_data/air_data" shortname="calcDIFFP"/>
         <dl_setting min="0" max="1" step="1" var="air_data.calc_airspeed" module="air_data/air_data" shortname="calcAirspeed" param="AIR_DATA_CALC_AIRSPEED" type="uint8" persistent="true"/>
         <dl_setting min="0" max="1" step="1" var="air_data.calc_tas_factor" module="air_data/air_data" shortname="calcTASfactor" param="AIR_DATA_CALC_TAS_FACTOR" type="uint8" persistent="true"/>
         <dl_setting min="0" max="1" step="1" var="air_data.calc_amsl_baro" module="air_data/air_data" shortname="calcAMSL" param="AIR_DATA_CALC_AMSL_BARO" type="uint8" persistent="true"/>

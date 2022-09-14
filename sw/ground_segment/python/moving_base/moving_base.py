@@ -57,7 +57,7 @@ class UAV:
         self.timeout = 0
 
 class Base:
-    def __init__(self, freq=10, use_ground_ref=False, ignore_geo_fence=False, verbose=False):
+    def __init__(self, freq=10., use_ground_ref=False, ignore_geo_fence=False, verbose=False):
         self.step = 1. / freq
         self.use_ground_ref = use_ground_ref
         self.enabled = True # run sim by default
@@ -90,7 +90,7 @@ class Base:
         # Start IVY interface
         self._interface = IvyMessagesInterface("Moving Base")
 
-        # bind to GPS_INS message
+        # bind to GPS_INT message
         def ins_cb(ac_id, msg):
             if ac_id in self.ids and msg.name == "GPS_INT":
                 uav = self.uavs[self.ids.index(ac_id)]

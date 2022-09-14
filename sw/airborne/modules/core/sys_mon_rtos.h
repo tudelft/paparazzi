@@ -33,11 +33,11 @@
 
 // Maximum number of threads
 // The limit is related to the max size of the report message
-#define RTOS_MON_MAX_THREADS 20
+#define RTOS_MON_MAX_THREADS 40
 
 // Maximun len of a thread name (including trailing semi-colon)
 // Currently only the first 4 char + ';' at most
-#define RTOS_MON_NAME_LEN 5
+#define RTOS_MON_NAME_LEN 10
 
 // Names buffer size
 #define RTOS_MON_THREAD_NAMES (RTOS_MON_MAX_THREADS * RTOS_MON_NAME_LEN)

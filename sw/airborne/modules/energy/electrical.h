@@ -48,11 +48,16 @@ struct Electrical {
   float energy;        ///< consumed energy in Wh
   bool  bat_low;       ///< battery low status
   bool  bat_critical;  ///< battery critical status
+
+  uint32_t avg_power;
+  uint16_t avg_cnt;
+  bool avg_reset;
 };
 
 extern struct Electrical electrical;
 
 extern void electrical_init(void);
 extern void electrical_periodic(void);
+extern void electrical_avg_reset(float var);
 
 #endif /* ELECTRICAL_H */

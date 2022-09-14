@@ -581,8 +581,8 @@ void nav_circle(struct EnuCoor_i *wp_center, int32_t radius)
     PPRZ_ITRIG_SIN(s_carrot, carrot_angle);
     PPRZ_ITRIG_COS(c_carrot, carrot_angle);
     // compute setpoint
-    VECT2_ASSIGN(pos_diff, abs_radius * c_carrot, abs_radius * s_carrot);
-    INT32_VECT2_RSHIFT(pos_diff, pos_diff, INT32_TRIG_FRAC);
+    VECT2_ASSIGN(pos_diff, (abs_radius >> INT32_POS_FRAC) * c_carrot, (abs_radius >> INT32_POS_FRAC) * s_carrot);
+    INT32_VECT2_RSHIFT(pos_diff, pos_diff, INT32_TRIG_FRAC - INT32_POS_FRAC);
     VECT2_SUM(navigation_target, *wp_center, pos_diff);
   }
   nav_circle_center = *wp_center;

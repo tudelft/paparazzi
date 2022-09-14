@@ -39,17 +39,6 @@
 #include "modules/datalink/telemetry.h"
 #endif
 
-#ifndef USE_AIRSPEED_MS45XX
-#if USE_AIRSPEED
-#define USE_AIRSPEED_MS45XX TRUE
-PRINT_CONFIG_MSG("USE_AIRSPEED_MS45XX set to TRUE since this is set USE_AIRSPEED")
-#endif
-#endif
-
-#if USE_AIRSPEED_MS45XX
-#include "state.h"
-#endif
-
 /** Default I2C device
  */
 #ifndef MS45XX_I2C_DEV
@@ -229,6 +218,18 @@ void ms45xx_i2c_event(void)
       /* 14bit raw pressure */
       uint16_t p_raw = 0x3FFF & (((uint16_t)(ms45xx_trans.buf[0]) << 8) | (uint16_t)(ms45xx_trans.buf[1]));
 
+       /* 11bit raw temperature, 5 LSB bits not used */
+      uint16_t temp_raw = 0xFFE0 & (((uint16_t)(ms45xx_trans.buf[2]) << 8) |
+                                    (uint16_t)(ms45xx_trans.buf[3]));
+      temp_raw = temp_raw >> 5;
+
+      /* Reject any values that are the absolute minimum or maximums these
+         can happen due to gnd lifts or communication errors on the bus */
+      if(p_raw == 0x3FFF || p_raw == 0 || temp_raw == 0x7FF || temp_raw == 0) {
+        ms45xx_trans.status = I2CTransDone;
+        return;
+      }
+
       /* For type Diff
        * Output is proportional to the difference between Port 1 and Port 2. Output
        * swings positive when Port 1> Port 2. Output is 50% of total counts
@@ -256,10 +257,6 @@ void ms45xx_i2c_event(void)
         }
       }
 
-      /* 11bit raw temperature, 5 LSB bits not used */
-      uint16_t temp_raw = 0xFFE0 & (((uint16_t)(ms45xx_trans.buf[2]) << 8) |
-                                    (uint16_t)(ms45xx_trans.buf[3]));
-      temp_raw = temp_raw >> 5;
       /* 0 = -50degC, 20147 = 150degC
        * ms45xx_temperature in 0.1 deg Celcius
        */
@@ -273,9 +270,6 @@ void ms45xx_i2c_event(void)
       // Compute airspeed
       ms45xx.airspeed = sqrtf(Max(ms45xx.pressure * ms45xx.airspeed_scale, 0));
 
-#if USE_AIRSPEED_MS45XX
-      stateSetAirspeed_f(ms45xx.airspeed);
-#endif
       if (ms45xx.sync_send) {
         ms45xx_downlink(&(DefaultChannel).trans_tx, &(DefaultDevice).device);
       }

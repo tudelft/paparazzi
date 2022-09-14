@@ -8,6 +8,7 @@
         <widget NAME="alarms" size="73"/>
         <widget NAME="plugin" size="73"/>
       </rows>
+      <widget size="100" name="altgraph"/>
       <widget NAME="map2d" size="1067">
         <papget type="message_field" display="text" x="493" y="44">
           <property name="scale" value="1."/>
@@ -78,6 +79,14 @@
           <property name="scale" value="1."/>
           <property name="field" value="THROTTLE_CURVE:curve"/>
           <property name="format" value="CRV %.0f"/>
+          <property name="size" value="15."/>
+          <property name="color" value="#00ff00"/>
+        </papget>
+        <papget type="message_field" display="text" x="261" y="50">
+          <property name="scale" value="1."/>
+          <property name="field" value="ENERGY:charge"/>
+          <property name="ac_id" value="5"/>
+          <property name="format" value="%.2f W avg"/>
           <property name="size" value="15."/>
           <property name="color" value="#00ff00"/>
         </papget>

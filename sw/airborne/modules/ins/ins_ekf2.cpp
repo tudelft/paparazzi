@@ -419,7 +419,7 @@ static void send_filter_status(struct transport_tx *trans, struct link_device *d
   uint8_t ahrs_ekf2_id = AHRS_COMP_ID_EKF2;
   filter_control_status_u control_mode = ekf.control_status();
   uint32_t filter_fault_status = ekf.fault_status().value;
-  uint16_t filter_fault_status_16 = filter_fault_status; //FIXME
+  uint16_t filter_fault_status_16 = filter_fault_status >> 16; //FIXME
   uint8_t mde = 0;
 
   // Check the alignment and if GPS is fused
@@ -784,7 +784,8 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, uint32_t stamp, f
 /* Save the latest temperature measurement for air density calculations */
 static void temperature_cb(uint8_t __attribute__((unused)) sender_id, float temp)
 {
-  ekf2.temp = temp;
+  (void) temp;
+  //ekf2.temp = temp;
 }
 
 /* Update INS based on AGL information */

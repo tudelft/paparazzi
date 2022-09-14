@@ -58,7 +58,9 @@ struct uavcan_iface_t uavcan1 = {
   .thread_tx_wa_size = sizeof(uavcan1_tx_wa),
   .node_id = UAVCAN_CAN1_NODE_ID,
   .transfer_id = 0,
-  .initialized = false
+  .initialized = false,
+  .transmit_err_cnt = 0,
+  .transmit_err_flush_cnt = 0
 };
 #endif
 
@@ -84,7 +86,9 @@ struct uavcan_iface_t uavcan2 = {
   .thread_tx_wa_size = sizeof(uavcan2_tx_wa),
   .node_id = UAVCAN_CAN2_NODE_ID,
   .transfer_id = 0,
-  .initialized = false
+  .initialized = false,
+  .transmit_err_cnt = 0,
+  .transmit_err_flush_cnt = 0
 };
 #endif
 
@@ -99,12 +103,11 @@ static THD_FUNCTION(uavcan_rx, p)
   struct uavcan_iface_t *iface = (struct uavcan_iface_t *)p;
 
   chRegSetThreadName("uavcan_rx");
-  chEvtRegister(&iface->can_driver->rxfull_event, &el, EVENT_MASK(0));
+  chEvtRegister(&iface->can_driver->rxfull_event, &el, 0);
   while (true) {
     if (chEvtWaitAnyTimeout(ALL_EVENTS, TIME_MS2I(100)) == 0) {
       continue;
     }
-    chMtxLock(&iface->mutex);
 
     // Wait until a CAN message is received
     while (canReceive(iface->can_driver, CAN_ANY_MAILBOX, &rx_msg, TIME_IMMEDIATE) == MSG_OK) {
@@ -127,9 +130,10 @@ static THD_FUNCTION(uavcan_rx, p)
 #endif
 
       // Let canard handle the frame
+      chMtxLock(&iface->mutex);
       canardHandleRxFrame(&iface->canard, &rx_frame, timestamp);
+      chMtxUnlock(&iface->mutex);
     }
-    chMtxUnlock(&iface->mutex);
   }
   chEvtUnregister(&iface->can_driver->rxfull_event, &el);
 }
@@ -144,9 +148,9 @@ static THD_FUNCTION(uavcan_tx, p)
   uint8_t err_cnt = 0;
 
   chRegSetThreadName("uavcan_tx");
-  chEvtRegister(&iface->can_driver->txempty_event, &txc, EVENT_MASK(0));
-  chEvtRegister(&iface->can_driver->error_event, &txe, EVENT_MASK(1));
-  chEvtRegister(&iface->tx_request, &txr, EVENT_MASK(2));
+  chEvtRegister(&iface->can_driver->txempty_event, &txc, 0);
+  chEvtRegister(&iface->can_driver->error_event, &txe, 1);
+  chEvtRegister(&iface->tx_request, &txr, 2);
 
   while (true) {
     eventmask_t evts = chEvtWaitAnyTimeout(ALL_EVENTS, TIME_MS2I(100));
@@ -157,6 +161,7 @@ static THD_FUNCTION(uavcan_tx, p)
 
     // Transmit error
     if (evts & EVENT_MASK(1)) {
+      iface->transmit_err_cnt++;
       chEvtGetAndClearFlags(&txe);
       continue;
     }
@@ -183,6 +188,7 @@ static THD_FUNCTION(uavcan_tx, p)
         // After 5 retries giveup and clean full queue
         if (err_cnt >= 5) {
           err_cnt = 0;
+          iface->transmit_err_flush_cnt++;
           while (canardPeekTxQueue(&iface->canard)) { canardPopTxQueue(&iface->canard); }
           continue;
         }

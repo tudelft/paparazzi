@@ -110,8 +110,9 @@ static void send_energy(struct transport_tx *trans, struct link_device *dev)
 {
   uint8_t throttle = 100 * autopilot.throttle / MAX_PPRZ;
   float power = electrical.vsupply * electrical.current;
+  float avg_power = (float)electrical.avg_power / electrical.avg_cnt;
   pprz_msg_send_ENERGY(trans, dev, AC_ID,
-                       &throttle, &electrical.vsupply, &electrical.current, &power, &electrical.charge, &electrical.energy);
+                       &throttle, &electrical.vsupply, &electrical.current, &power, &avg_power, &electrical.energy);
 }
 
 static void send_fp(struct transport_tx *trans, struct link_device *dev)
@@ -142,6 +143,17 @@ static void send_fp(struct transport_tx *trans, struct link_device *dev)
                               &carrot_heading,
                               &thrust,
                               &autopilot.flight_time);
+}
+
+static void send_body_rates_accel(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_BODY_RATES_ACCEL(trans, dev, AC_ID,
+                                  &(stateGetBodyRates_f()->p),
+                                  &(stateGetBodyRates_f()->q),
+                                  &(stateGetBodyRates_f()->r),
+                                  &(stateGetAccelBody_i()->x),
+                                  &(stateGetAccelBody_i()->y),
+                                  &(stateGetAccelBody_i()->z));
 }
 
 static void send_fp_min(struct transport_tx *trans, struct link_device *dev)
@@ -199,6 +211,7 @@ void autopilot_firmware_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_FP, send_fp);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_FP_MIN, send_fp_min);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_CMD, send_rotorcraft_cmd);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_BODY_RATES_ACCEL, send_body_rates_accel);
 #ifdef RADIO_CONTROL
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_RADIO_CONTROL, send_rotorcraft_rc);
 #endif

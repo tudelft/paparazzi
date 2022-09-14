@@ -97,12 +97,20 @@ static struct {
 
 PRINT_CONFIG_VAR(MILLIAMP_AT_IDLE_THROTTLE)
 
+void electrical_avg_reset(float var __attribute__((unused)))
+{
+  electrical.avg_power = 0;
+  electrical.avg_cnt = 0;
+}
+
 void electrical_init(void)
 {
   electrical.vsupply = 0.f;
   electrical.current = 0.f;
   electrical.charge  = 0.f;
   electrical.energy  = 0.f;
+  electrical.avg_power = 0;
+  electrical.avg_cnt = 0;
 
   electrical.bat_low = false;
   electrical.bat_critical = false;
@@ -212,4 +220,7 @@ void electrical_periodic(void)
     }
   }
 
+  float power = electrical.vsupply * electrical.current;
+  electrical.avg_power += power;
+  electrical.avg_cnt++;
 }

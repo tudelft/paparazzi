@@ -6,6 +6,13 @@
       General electrical interface
     </description>
   </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="Electrical">
+        <dl_setting min="0" max="1" step="1" values="FALSE|TRUE" var="electrical.avg_reset" type="bool" shortname="avg_reset" module="modules/energy/electrical" handler="avg_reset"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
   <dep>
     <depends>adc</depends>
     <provides>electrical</provides>

@@ -33,22 +33,14 @@
 #define UAVCAN_ACTUATORS_USE_CURRENT TRUE
 #endif
 
-/* uavcan ESC status telemetry structure */
-struct actuators_uavcan_telem_t {
-  float voltage;
-  float current;
-  float temperature;
-  int32_t rpm;
-  uint32_t energy;
-};
-
+/* uavcan ESC status */
 #ifdef SERVOS_UAVCAN1_NB
 int16_t actuators_uavcan1_values[SERVOS_UAVCAN1_NB];
-static struct actuators_uavcan_telem_t uavcan1_telem[SERVOS_UAVCAN1_NB];
+struct actuators_uavcan_telem_t uavcan1_telem[SERVOS_UAVCAN1_NB];
 #endif
 #ifdef SERVOS_UAVCAN2_NB
 int16_t actuators_uavcan2_values[SERVOS_UAVCAN2_NB];
-static struct actuators_uavcan_telem_t uavcan2_telem[SERVOS_UAVCAN2_NB];
+struct actuators_uavcan_telem_t uavcan2_telem[SERVOS_UAVCAN2_NB];
 #endif
 
 /* uavcan EQUIPMENT_ESC_STATUS message definition */
@@ -100,9 +92,8 @@ static void actuators_uavcan_send_esc(struct transport_tx *trans, struct link_de
   uint8_t i = esc_idx - offset;
   float power = telem[i].current * telem[i].voltage;
   float rpm = telem[i].rpm;
-  float energy = telem[i].energy;
-  pprz_msg_send_ESC(trans, dev, AC_ID, &telem[i].current, &electrical.vsupply, &power,
-                    &rpm, &telem[i].voltage, &energy, &esc_idx);
+  pprz_msg_send_ESC(trans, dev, AC_ID, &esc_idx, &telem[i].node_id, &telem[i].timestamp, &telem[i].current, &electrical.vsupply, &power,
+                    &rpm, &telem[i].voltage, &telem[i].temperature, &telem[i].error_count);
   
   // Randomness added for multiple  transport devices
   if (rand_uniform() > 0.05) {
@@ -140,16 +131,18 @@ static void actuators_uavcan_esc_status_cb(struct uavcan_iface_t *iface, CanardR
 
   canardDecodeScalar(transfer, 105, 5, false, (void *)&esc_idx);
   //Could not find the right interface
-  if (esc_idx > max_id || telem == NULL || max_id == 0) {
+  if (esc_idx >= max_id || telem == NULL || max_id == 0) {
     return;
   }
-  canardDecodeScalar(transfer, 0, 32, false, (void *)&telem[esc_idx].energy);
+  telem[esc_idx].timestamp = get_sys_time_float();
+  telem[esc_idx].node_id = transfer->source_node_id;
+  canardDecodeScalar(transfer, 0, 32, false, (void *)&telem[esc_idx].error_count);
   canardDecodeScalar(transfer, 32, 16, true, (void *)&tmp_float);
   telem[esc_idx].voltage = canardConvertFloat16ToNativeFloat(tmp_float);
   canardDecodeScalar(transfer, 48, 16, true, (void *)&tmp_float);
   telem[esc_idx].current = canardConvertFloat16ToNativeFloat(tmp_float);
   canardDecodeScalar(transfer, 64, 16, true, (void *)&tmp_float);
-  telem[esc_idx].temperature = canardConvertFloat16ToNativeFloat(tmp_float);
+  telem[esc_idx].temperature = canardConvertFloat16ToNativeFloat(tmp_float) - 273.15f;
   canardDecodeScalar(transfer, 80, 18, true, (void *)&telem[esc_idx].rpm);
 
 #ifdef UAVCAN_ACTUATORS_USE_CURRENT

@@ -1,0 +1,18 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="status_nederdrone" dir="status">
+  <doc>
+    <description>Nederdrone status</description>
+  </doc>
+
+  <header>
+    <file name="status_nederdrone.h"/>
+  </header>
+  <init fun="status_nederdrone_init()"/>
+  <periodic fun="status_nederdrone_period()" freq="1."/>
+
+  <makefile target="ap">
+    <file name="status_nederdrone.c"/>
+  </makefile>
+</module>
+

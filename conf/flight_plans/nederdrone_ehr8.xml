@@ -1,0 +1,185 @@
+<!DOCTYPE flight_plan SYSTEM "flight_plan.dtd">
+<flight_plan alt="250" ground_alt="0" lat0="52.965523" lon0="4.474033" max_dist_from_home="600000" name="EHR8 plan" security_height="2">
+  <header>
+    #include "autopilot.h"
+    #include "subsystems/datalink/datalink.h"
+    #include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
+  </header>
+  <waypoints>
+    <waypoint name="HOME" x="0.0" y="0.0"/>
+    <waypoint name="CLIMB" x="0.0" y="55.0"/>
+    <waypoint name="STDBY" x="16.0" y="55.0"/>
+    <waypoint name="p1" x="3.6" y="-139"/>
+    <waypoint name="p2" x="275" y="-482"/>
+    <waypoint name="p3" x="167" y="-196"/>
+    <waypoint name="p4" x="137" y="-407"/>
+    <waypoint name="ROPE" x="150" y="-407"/>
+    <waypoint name="TD" x="55.6" y="-10.9"/>
+    <waypoint name="FOLLOW" x="60.5" y="13.5"/>
+
+    <!-- 't Harde -->
+    <!--waypoint name="R1" lat="52.3938563" lon="5.9233533"/>
+    <waypoint name="R2" lat="52.3924228" lon="5.9211302"/>
+    <waypoint name="R3" lat="52.3998454" lon="5.9102605"/>
+    <waypoint name="R4" lat="52.4015975" lon="5.9170479"/-->
+
+    <!-- EHR8 -->
+    <waypoint name="C1" lat="52.96166667" lon="4.740277778"/>
+    <waypoint name="C2" lat="52.86666667" lon="4.716666667"/>
+    <waypoint name="C3" lat="52.78333333" lon="4.683333333"/>
+    <waypoint name="C4" lat="52.75" lon="4.533333333"/>
+    <waypoint name="C5" lat="52.775" lon="4.433333333"/>
+    <waypoint name="C6" lat="52.81666667" lon="4.35"/>
+    <waypoint name="C7" lat="53.08333333" lon="4.35"/>
+    <waypoint name="C8" lat="53.10277778" lon="4.515555556"/>
+    <waypoint name="C9" lat="53.04972222" lon="4.679444444"/>
+  </waypoints>
+  <sectors>
+    <sector color="orange" name="EHR8">
+      <corner name="C1"/>
+      <corner name="C2"/>
+      <corner name="C3"/>
+      <corner name="C4"/>
+      <corner name="C5"/>
+      <corner name="C6"/>
+      <corner name="C7"/>
+      <corner name="C8"/>
+      <corner name="C9"/>
+    </sector>
+    <!--sector color="red" name="RES">
+      <corner name="R1"/>
+      <corner name="R2"/>
+      <corner name="R3"/>
+      <corner name="R4"/>
+    </sector-->
+  </sectors>
+  <variables>
+    <variable init="0.0f" max="1.57" min="-1.57" step="0.01" type="float" var="takeoff_pitch"/>
+    <variable init="0.15" max="2.00" min="0.00" step="0.01" type="float" var="hook_length"/>
+  </variables>
+  <modules>
+    <module name="follow_me"/>
+  </modules>
+  <exceptions>
+    <exception cond="Or(!InsideEHR8(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Holding point"/>
+    <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+  </exceptions>
+  <blocks>
+    <block name="Wait GPS">
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetGroundReferenceHere()"/>
+      <!--<call_once fun="NavSetAltitudeReferenceHere()"/>-->
+    </block>
+    <block name="Holding point">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pre_call="follow_me_set_wp(WP_FOLLOW, 0)" pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+    <block key="r" name="Start Engine">
+      <call_once fun="NavResurrect()"/>
+      <call_once fun="NavSetWaypointHere(WP_ROPE)"/>
+      <call_once fun="waypoint_set_alt(WP_ROPE, GetPosAlt()+hook_length)"/>
+      <set value="stateGetNedToBodyEulers_f()->theta" var="takeoff_pitch"/>
+      <!-- <set value="stateGetNedToBodyEulers_f()->psi" var="rope_heading"/> -->
+      <attitude pitch="0" roll="0" throttle="0.0" until="stage_time>0" vmode="throttle"/>
+      <call_once fun="NavResurrect()"/>
+    </block>
+    <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
+      <call_once fun="nav_set_heading_current()"/>
+      <attitude pre_call="follow_me_set_wp(WP_FOLLOW, 0)" pitch="takeoff_pitch/3.14*180.0" roll="0" throttle="0.85" until="stage_time>2" vmode="throttle"/>
+    </block>
+
+    <block name="follow_module">
+      <call_once fun="nav_set_heading_deg(follow_me_heading)"/>
+      <set var="force_forward" value="FALSE"/>
+      <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
+    </block>
+    <block name="follow_module_diag">
+      <call_once fun="nav_set_heading_deg(follow_me_heading)"/>
+      <set var="force_forward" value="FALSE"/>
+      <set value="1" var="take_heading_control"/>
+      <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed)" wp="FOLLOW"/>
+    </block>
+    <block name="follow_module_land">
+      <set var="force_forward" value="FALSE"/>
+      <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed*0.5)" climb="nav_descend_vspeed * 0.5" vmode="climb" wp="FOLLOW"/>
+    </block>
+    <block name="follow_landed">
+      <set var="force_forward" value="FALSE"/>
+      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+
+    <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
+      <set value="1" var="pitch_control"/>
+      <set value="0" var="take_heading_control"/>
+      <set var="force_forward" value="FALSE"/>
+      <stay wp="STDBY"/>
+    </block>
+
+
+    <block name="stay_p1">
+      <set var="force_forward" value="FALSE"/>
+      <set value="0" var="take_heading_control"/>
+      <stay wp="p1"/>
+    </block>
+    <block name="go_p2">
+      <set var="force_forward" value="TRUE"/>
+      <set value="0" var="take_heading_control"/>
+      <call_once fun="nav_set_heading_deg(90)"/>
+      <go wp="p2"/>
+      <deroute block="stay_p1"/>
+    </block>
+    <block name="line_p1_p2">
+      <set value="0" var="take_heading_control"/>
+      <set var="force_forward" value="TRUE"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <stay wp="p2" until="stage_time>10"/>
+      <go from="p2" hmode="route" wp="p1"/>
+      <deroute block="line_p1_p2"/>
+    </block>
+    <block name="route">
+      <set value="0" var="take_heading_control"/>
+      <set var="force_forward" value="TRUE"/>
+      <go pre_call="follow_me_set_wp(WP_FOLLOW, 0)" from="p1" hmode="route" wp="p3"/>
+      <go pre_call="follow_me_set_wp(WP_FOLLOW, 0)" from="p3" hmode="route" wp="p4"/>
+      <go pre_call="follow_me_set_wp(WP_FOLLOW, 0)" from="p4" hmode="route" wp="p1"/>
+      <deroute block="route"/>
+    </block>
+
+    <block name="Take Heading control">
+      <!-- <call_once fun="nav_set_heading_rad(rope_heading)"/> -->
+      <set value="1" var="take_heading_control"/>
+      <stay wp="STDBY"/>
+      <!-- <exception cond="fabs(stateGetNedToBodyEulers_f()->psi-rope_heading) @LT 0.03" deroute="Approach Rope"/> -->
+    </block>
+    <block name="Approach Rope">
+      <!-- <stay pre_call="follow_me_set_wp(WP_FOLLOW, follow_me_diag_speed*0.5)" wp="ROPE" alt="WaypointAlt(WP_ROPE)"/> -->
+      <stay pre_call="approach_moving_target_enable(WP_ROPE)" wp="ROPE" alt="WaypointAlt(WP_ROPE)"/>
+    </block>
+
+    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
+      <set var="force_forward" value="FALSE"/>
+      <set value="0" var="take_heading_control"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+    </block>
+    <block name="land">
+      <set var="force_forward" value="FALSE"/>
+      <go wp="TD"/>
+    </block>
+    <block name="descend">
+      <set var="force_forward" value="FALSE"/>
+      <exception cond="LessThan(stateGetPositionEnu_f()->z, 15.0)" deroute="flare"/>
+      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="flare">
+      <set var="force_forward" value="FALSE"/>
+      <stay climb="nav_descend_vspeed*0.1" vmode="climb" wp="TD"/>
+    </block>
+    <block name="landed">
+      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+  </blocks>
+</flight_plan>

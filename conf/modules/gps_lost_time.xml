@@ -1,0 +1,15 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="gps_lost_time" dir="gps">
+  <doc>
+    <description>Module that keeps track of GPS lost time when fix is not valid</description>
+  </doc>
+  <header>
+    <file name="gps_lost_time.h"/>
+  </header>
+  <init fun="init_gps_lost_time()"/>
+  <periodic fun="periodic_gps_lost_time()" freq="1"/>
+  <makefile>
+    <file name="gps_lost_time.c"/>
+    <test/>
+  </makefile>
+</module>

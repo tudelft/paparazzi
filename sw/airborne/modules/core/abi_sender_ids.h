@@ -92,6 +92,10 @@
 #define SDP3X_SENDER_ID 41
 #endif
 
+#ifndef UAVCAN_SENDER_ID
+#define UAVCAN_SENDER_ID 42
+#endif
+
 /*
  * IDs of airspeed sensors (message 14)
  */
@@ -576,6 +580,10 @@
 #ifndef RADIO_CONTROL_INTERMCU_ID
 #define RADIO_CONTROL_INTERMCU_ID 9
 #endif
+
+/*
+ * IDs of VEL_SP senders
+ */
 
 #ifndef VEL_SP_FCR_ID
 #define VEL_SP_FCR_ID 1 // Approach Moving Target
