@@ -263,7 +263,7 @@
   <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
     <!-- Maximum limits of the vehicle in manual speed control mode. limits are in the control rf -->
     <define name="MAX_FWD_SPEED" value="20.0" unit="m/s"/>
-    <define name="MIN_FWD_SPEED" value="-3.0" unit="m/s"/>
+    <define name="MIN_FWD_SPEED" value="-4.0" unit="m/s"/>
     <define name="MAX_LAT_SPEED" value="8.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_FWD_ACC" value="4.0" unit="m/s^2"/>
@@ -436,9 +436,9 @@
     <define name="W_ACT_AZ_CONST" value="1"/>
     <define name="W_ACT_AZ_SPEED" value="1"/>
     <define name="W_ACT_THETA_CONST" value="100"/>
-    <define name="W_ACT_THETA_SPEED" value="-15"/>
+    <define name="W_ACT_THETA_SPEED" value="-14"/>
     <define name="W_ACT_PHI_CONST" value="100"/>
-    <define name="W_ACT_PHI_SPEED" value="-15"/>
+    <define name="W_ACT_PHI_SPEED" value="-14"/>
 
     <define name="W_DV_1" value="0.01"/>
     <define name="W_DV_2" value="0.01"/>
@@ -457,9 +457,9 @@
 
   <!-- Vehicle properties, see documentation for notation -->
   <section name="VEHICLE_PROPERTIES" prefix="VEHICLE_">
-    <define name="I_XX" value="0.10" unit="Kg*m^2"/>
+    <define name="I_XX" value="0.12" unit="Kg*m^2"/>
     <define name="I_YY" value="0.08" unit="Kg*m^2"/>
-    <define name="I_ZZ" value="0.12" unit="Kg*m^2"/>
+    <define name="I_ZZ" value="0.13" unit="Kg*m^2"/>
     <define name="I_TILT" value="0.000216" unit="Kg*m^2"/>
     <define name="PROPELLER_INERTIA" value="1.984e-5" unit="Kg*m^2"/>
     <define name="MASS" value="2.45" unit="Kg"/>
@@ -469,7 +469,7 @@
     <define name="L4" value="0.37" unit="m"/>
     <define name="LZ" value="0." unit="m"/>
 
-    <define name="CL_ALPHA" value="3"/>
+    <define name="CL_ALPHA" value="3.5"/>
     <define name="CM_ZERO" value="0.05"/>
     <define name="CM_ALPHA" value="-0.1"/>
     <define name="CD_ZERO" value="0.38"/>
@@ -528,12 +528,20 @@
     <define name="ACCEL_Z_SENS" value="4.857598809380957" integer="16"/>
 
     <!-- Calibrated at Valkenburg the 12-07-2022 -->
-    <define name="MAG_X_NEUTRAL" value="-8"/>
+    <!-- <define name="MAG_X_NEUTRAL" value="-8"/>
     <define name="MAG_Y_NEUTRAL" value="-8"/>
     <define name="MAG_Z_NEUTRAL" value="2"/>
     <define name="MAG_X_SENS" value="12.840443865671938" integer="16"/>
     <define name="MAG_Y_SENS" value="11.890564124237955" integer="16"/>
-    <define name="MAG_Z_SENS" value="13.334119077510733" integer="16"/>
+    <define name="MAG_Z_SENS" value="13.334119077510733" integer="16"/> -->
+
+    <!-- Calibrated at Valkenburg the 14-09-2022 -->
+    <define name="MAG_X_NEUTRAL" value="55"/>
+    <define name="MAG_Y_NEUTRAL" value="-30"/>
+    <define name="MAG_Z_NEUTRAL" value="0"/>
+    <define name="MAG_X_SENS" value="12.627668907511923" integer="16"/>
+    <define name="MAG_Y_SENS" value="12.050259302161503" integer="16"/>
+    <define name="MAG_Z_SENS" value="13.3906605909858" integer="16"/>
 
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI" value="180" unit="deg"/>
