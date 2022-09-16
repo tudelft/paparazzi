@@ -145,17 +145,16 @@
     <module name="imu"           type="mpu6000"/>
 
     <!--     For OUTSIDE -->
-    <module name="gps" type="ublox">
+    <!-- <module name="gps" type="ublox">
       <configure name="GPS_BAUD" value="B460800"/> 
-      <!-- UBX message only but rate set to ~12HZ with GPS, GLONASS, BEIDU and GALILEIO at the SAME time is lots of GNSS data -->
-    </module>
+    </module> -->
 
     <!--     For OPTITRACK -->
-   <!-- <module name="gps"           type="datalink"> -->
-     <!-- <define name="INS_USE_GPS_ALT" value="1"/> -->
-     <!-- <define name="INS_VFF_R_GPS" value="0.09"/> -->
-     <!-- <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> -->
-   <!-- </module> -->
+   <module name="gps"           type="datalink">
+     <define name="INS_USE_GPS_ALT" value="1"/>
+     <define name="INS_VFF_R_GPS" value="0.09"/>
+     <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
+   </module>
 
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
@@ -458,7 +457,7 @@
   <!-- Vehicle properties, see documentation for notation -->
   <section name="VEHICLE_PROPERTIES" prefix="VEHICLE_">
     <define name="I_XX" value="0.12" unit="Kg*m^2"/>
-    <define name="I_YY" value="0.08" unit="Kg*m^2"/>
+    <define name="I_YY" value="0.1" unit="Kg*m^2"/>
     <define name="I_ZZ" value="0.13" unit="Kg*m^2"/>
     <define name="I_TILT" value="0.000216" unit="Kg*m^2"/>
     <define name="PROPELLER_INERTIA" value="1.984e-5" unit="Kg*m^2"/>
