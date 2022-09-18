@@ -112,6 +112,10 @@ extern bool manual_motor_stick;
 extern bool manual_heading;
 extern int manual_heading_value_rad;
 
+//Variables for PID test doublet: 
+extern int Test_doublet_start, Doublet_phi, Doublet_theta;
+extern float Doublet_period, Doublet_amplitude;
+
 /* External used functions */
 extern void overactuated_mixing_init(void);
 extern void overactuated_mixing_run(void);
