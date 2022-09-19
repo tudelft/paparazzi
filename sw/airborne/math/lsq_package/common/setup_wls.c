@@ -7,13 +7,13 @@
 void setup_wls(
     int n_v, int n_u, num_t JG[CA_N_V*CA_N_U], num_t Wv[CA_N_V],
     num_t Wu[CA_N_U], num_t up[CA_N_U], num_t dv[CA_N_V], num_t theta,
-    num_t cond_bound, num_t A[CA_N_C*CA_N_U], num_t b[CA_N_C]) {
+    num_t cond_bound, num_t A[CA_N_C*CA_N_U], num_t b[CA_N_C], num_t* gamma) {
 
     int n_c = n_v + n_u;
-    num_t gamma;
+    //num_t gamma;
 
     if (cond_bound <= 0) {
-      gamma = theta;
+      *gamma = theta;
     } else {
       // do condition number limiting
 
@@ -45,13 +45,13 @@ void setup_wls(
       }
 
       num_t max_sig;
-      gamma_estimator(n_v, A2_ptr, cond_bound, &gamma, &max_sig);
+      gamma_estimator(n_v, A2_ptr, cond_bound, &*gamma, &max_sig);
       #ifdef DOUBLE
-      gamma = (gamma > sqrt(max_sig)*theta) ? gamma : sqrt(max_sig)*theta;
+      *gamma = (*gamma > sqrt(max_sig)*theta) ? *gamma : sqrt(max_sig)*theta;
       #else
-      gamma = (gamma > sqrtf(max_sig)*theta) ? gamma : sqrtf(max_sig)*theta;
+      *gamma = (*gamma > sqrtf(max_sig)*theta) ? *gamma : sqrtf(max_sig)*theta;
       #endif
-      //printf("%f | %f\n", gamma, max_sig);
+      //printf("%f | %f\n", *gamma, max_sig);
     }
 
     for (int i=0; i<n_c; i++) {
@@ -61,7 +61,7 @@ void setup_wls(
         } else {
             for (int j=0; j<n_u; j++) {
                 if ( (i-n_v) == j ) {
-                    A[i+j*n_c] = gamma*Wu[i-n_v];
+                    A[i+j*n_c] = *gamma*Wu[i-n_v];
                 } else {
                     A[i+j*n_c] = 0;
                 }
@@ -73,7 +73,7 @@ void setup_wls(
         if (i < n_v) {
             b[i] = Wv[i]*dv[i];
         } else {
-            b[i] = gamma*Wu[i-n_v]*up[i-n_v];
+            b[i] = *gamma*Wu[i-n_v]*up[i-n_v];
         }
     }
 }

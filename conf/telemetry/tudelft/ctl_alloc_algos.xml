@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE telemetry SYSTEM "telemetry.dtd">
+<!DOCTYPE telemetry SYSTEM "../telemetry.dtd">
 <telemetry>
 
 
@@ -36,6 +36,7 @@
       <message name="LIDAR"                    period="1.2"/>
       <message name="INS_EKF2"                 period=".25"/>
       <message name="WIND_INFO_RET"            period="1."/>
+      <message name="CTL_ALLOC_PERF"           period="1."/>
     </mode>
 
     <mode name="ppm">

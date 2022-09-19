@@ -87,17 +87,21 @@
   </commands>
 
   <servos driver="Default">
-    <servo name="TOP_LEFT" no="0" min="3000" neutral="3000" max="9800"/>
-    <servo name="TOP_RIGHT" no="1" min="3000" neutral="3000" max="9800"/>
-    <servo name="BOTTOM_RIGHT" no="2" min="3000" neutral="3000" max="9800"/>
-    <servo name="BOTTOM_LEFT" no="3" min="3000" neutral="3000" max="9800"/>
+    <servo name="FRONT_RIGHT" no="0" min="3000" neutral="3000" max="9800"/>
+    <servo name="MIDDLE_RIGHT" no="1" min="3000" neutral="3000" max="9800"/>
+    <servo name="REAR_RIGHT" no="2" min="3000" neutral="3000" max="9800"/>
+    <servo name="REAR_LEFT" no="3" min="3000" neutral="3000" max="9800"/>
+    <servo name="MIDDLE_LEFT" no="4" min="3000" neutral="3000" max="9800"/>
+    <servo name="FRONT_LEFT" no="5" min="3000" neutral="3000" max="9800"/>
   </servos>
 
   <command_laws>
-    <set servo="TOP_LEFT"     value="autopilot_get_motors_on() ? actuators_pprz[0] : -MAX_PPRZ"/>
-    <set servo="TOP_RIGHT"    value="autopilot_get_motors_on() ? actuators_pprz[1] : -MAX_PPRZ"/>
-    <set servo="BOTTOM_RIGHT" value="autopilot_get_motors_on() ? actuators_pprz[2] : -MAX_PPRZ"/>
-    <set servo="BOTTOM_LEFT"  value="autopilot_get_motors_on() ? actuators_pprz[3] : -MAX_PPRZ"/>
+    <set servo="FRONT_RIGHT"   value="autopilot_get_motors_on() ? actuators_pprz[0] : -MAX_PPRZ"/>
+    <set servo="MIDDLE_RIGHT"  value="autopilot_get_motors_on() ? actuators_pprz[1] : -MAX_PPRZ"/>
+    <set servo="REAR_RIGHT"    value="autopilot_get_motors_on() ? actuators_pprz[2] : -MAX_PPRZ"/>
+    <set servo="REAR_LEFT"     value="autopilot_get_motors_on() ? actuators_pprz[3] : -MAX_PPRZ"/>
+    <set servo="MIDDLE_LEFT"   value="autopilot_get_motors_on() ? actuators_pprz[4] : -MAX_PPRZ"/>
+    <set servo="FRONT_LEFT"    value="autopilot_get_motors_on() ? actuators_pprz[5] : -MAX_PPRZ"/>
   </command_laws>
 
   <section name="AIR_DATA" prefix="AIR_DATA_">
@@ -143,12 +147,12 @@
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness -->
-    <define name="G1_ROLL" value="{20 , -20, -20 , 20 }"/>
-    <define name="G1_PITCH" value="{14 , 14, -14 , -14 }"/>
-    <define name="G1_YAW" value="{-1, 1, -1, 1}"/>
-    <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4}"/>
+    <define name="G1_ROLL" value="{5 , 13, 5, -5, -13, 5 }"/>
+    <define name="G1_PITCH" value="{-10 , 0, +10 , +10, 0, -10 }"/>
+    <define name="G1_YAW" value="{1, -1, 1, -1, 1, -1}"/>
+    <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4, -.4, -.4}"/>
     <!--Counter torque effect of spinning up a rotor-->
-    <define name="G2" value="{-61.2093,   65.3670,  -65.7419,   65.4516}"/>
+    <define name="G2" value="{60, -60, 60, -60, 60, -60}"/>
     <!--<define name="G2" value="{-61.2093/9600.0,   65.3670/9600.0,  -65.7419/9600.0,   65.4516/9600.0}"/>-->
 
     <!-- reference acceleration for attitude control -->
@@ -163,7 +167,7 @@
     <define name="FILT_CUTOFF" value="5.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN" value="{0.1, 0.1, 0.1, 0.1}"/>
+    <define name="ACT_DYN" value="{0.1, 0.1, 0.1, 0.1, 0.1, 0.1}"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
@@ -177,9 +181,9 @@
 
   <section name="actuator_sizes">
     <define name="INDI_OUTPUTS" value="4"/>
-    <define name="INDI_NUM_ACT" value="4"/>
+    <define name="INDI_NUM_ACT" value="6"/>
     <define name="CA_N_V" value="4"/>
-    <define name="CA_N_U" value="4"/>
+    <define name="CA_N_U" value="6"/>
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
@@ -208,8 +212,8 @@
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">
-    <define name="ACTUATOR_NAMES" value="nw_motor, ne_motor, se_motor, sw_motor" type="string[]"/>
-    <define name="JSBSIM_MODEL" value="bebop" type="string"/>
+    <define name="ACTUATOR_NAMES" value="fr_motor, mr_motor, rr_motor, rl_motor, ml_motor, fl_motor" type="string[]"/>
+    <define name="JSBSIM_MODEL" value="flamewheel" type="string"/>
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
     <define name="NO_MOTOR_MIXING" value="TRUE"/>
   </section>

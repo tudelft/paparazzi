@@ -77,43 +77,6 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
     }
   }
 
-  num_t min_diag2 = 1e100;
-  num_t A2[CA_N_V][CA_N_V];
-  num_t * A2_ptr[CA_N_V];
-  for (int i=0; i<n_v; i++)
-    A2_ptr[i] = A2[i];
-
-  for (int i=0; i<n_v; i++) {
-    for (int j=i; j<n_v; j++) {
-      A2_ptr[i][j] = 0;
-      for (int k=0; k<n_u; k++) {
-        A2_ptr[i][j] += A_ptr[i][k]*A_ptr[j][k];
-      }
-      if (i != j)
-        A2_ptr[j][i] = A2_ptr[i][j];
-    }
-  }
-
-  int ip;
-  for (int i=0; i<n_u; i++) {
-    ip = permutation[i];
-    float comp_val = A_ptr[ip+n_v][ip]*A_ptr[ip+n_v][ip];
-    if (min_diag2 > comp_val) {
-      min_diag2 = comp_val;
-    }
-    /*
-    min_diag2 = (min_diag2 > A_ptr[ip+n_v][ip]*A_ptr[ip+n_v][ip])
-      ? A_ptr[ip+n_v][ip]*A_ptr[ip+n_v][ip] : min_diag2;
-      */
-  }
-
-  num_t cond_est;
-  num_t max_sig;
-  cond_estimator(n_v, A2_ptr, min_diag2, &cond_est, &max_sig);
-
-  #ifdef PRINT_COND_EST
-  printf("cond(A^T*A) <= %f\n", cond_est);
-  #endif
 
   // initial factorisation
   block_diag_self_mult(n_c, n_u, A_ptr, H_ptr, n_v, permutation);
