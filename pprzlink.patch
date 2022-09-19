@@ -1,0 +1,15 @@
+diff --git a/message_definitions/v1.0/messages.xml b/message_definitions/v1.0/messages.xml
+index 57fd139..cf2ebee 100644
+--- a/message_definitions/v1.0/messages.xml
++++ b/message_definitions/v1.0/messages.xml
+@@ -1792,6 +1792,10 @@
+     </message>
+ 
+     <!-- 212 is free -->
++    <message name="CTL_ALLOC_PERF" id="212">
++      <field name="cond" type="float" unit="-">Condition number upper bound</field>
++      <field name="gamma" type="float" unit="-">Resulting Wu scaler</field>
++    </message>
+ 
+     <message name="TUNE_VERT" id="213">
+       <field name="z_sp"      type="int32" alt_unit="m"    alt_unit_coef="0.0039063"/>
