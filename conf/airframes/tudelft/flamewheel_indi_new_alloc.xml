@@ -147,12 +147,12 @@
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness -->
-    <define name="G1_ROLL" value="{5 , 13, 5, -5, -13, 5 }"/>
-    <define name="G1_PITCH" value="{-10 , 0, +10 , +10, 0, -10 }"/>
+    <define name="G1_ROLL" value="{-2 , -5, -2, 2, 5, 2 }"/>
+    <define name="G1_PITCH" value="{4 , 0, -4 , -4, 0, +4 }"/>
     <define name="G1_YAW" value="{1, -1, 1, -1, 1, -1}"/>
     <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4, -.4, -.4}"/>
     <!--Counter torque effect of spinning up a rotor-->
-    <define name="G2" value="{60, -60, 60, -60, 60, -60}"/>
+    <define name="G2" value="{30, -30, 30, -30, 30, -30}"/>
     <!--<define name="G2" value="{-61.2093/9600.0,   65.3670/9600.0,  -65.7419/9600.0,   65.4516/9600.0}"/>-->
 
     <!-- reference acceleration for attitude control -->
@@ -216,6 +216,7 @@
     <define name="JSBSIM_MODEL" value="flamewheel" type="string"/>
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
     <define name="NO_MOTOR_MIXING" value="TRUE"/>
+    <define name="COMMANDS_NB" value="6"/>
   </section>
 
   <section name="AUTOPILOT">
