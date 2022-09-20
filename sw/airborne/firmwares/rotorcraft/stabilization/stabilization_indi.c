@@ -678,7 +678,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   BoundAbs(rate_sp.q, 2.0);
   BoundAbs(rate_sp.r, 2.0);
 
-#if RADIO_PIVOT_SWITCH == FASLE
+#if RADIO_PIVOT_SWITCH == FALSE
   /* compute the INDI command */
   stabilization_indi_rate_run(rate_sp, in_flight);
 
