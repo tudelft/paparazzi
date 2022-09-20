@@ -115,11 +115,11 @@
       <define name="USE_AIRSPEED_AIR_DATA" value="FALSE"/>
     </module>
 
-    <module name="gps" type="datalink"/>
+    <!-- <module name="gps" type="datalink"/> -->
 
-    <!-- <module name="gps" type="ublox">
+    <module name="gps" type="ublox">
       <configure name="GPS_BAUD" value="B57600"/>
-    </module> -->
+    </module>
 
     <module name="stabilization" type="indi"/>
 
@@ -147,7 +147,7 @@
 
     <!--<module name="ahrs" type="int_cmpl_quat">-->
     <!--<configure name="USE_MAGNETOMETER" value="TRUE"/>-->
-    <configure name="USE_MAGNETOMETER" value="FALSE"/> <!--This is for optitrack-->
+    <!-- <configure name="USE_MAGNETOMETER" value="FALSE"/> --> <!--This is for optitrack -->
     <!--<define name="AHRS_ICQ_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/>-->
     <!--<define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>-->
     <!--<define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="TRUE"/>-->
@@ -229,7 +229,8 @@
     <define name="MAG_Y_SENS" value="3.58800117886" integer="16"/>
     <define name="MAG_Z_SENS" value="3.57182532939" integer="16"/>
 
-    <define name="BODY_TO_IMU_PHI" value="2.223" unit="deg"/>
+    <!-- <define name="BODY_TO_IMU_PHI" value="2.223" unit="deg"/> -->
+    <define name="BODY_TO_IMU_PHI" value="0.33" unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="89.28" unit="deg"/>
     <define name="BODY_TO_IMU_PSI" value="0." unit="deg"/>
   </section>
@@ -404,7 +405,7 @@
     <!--The Quadshot uses (when TRUE) a slightly different axis system for the setpoint, to make both hovering and flying forward intuitive-->
     <define name="USE_EARTH_BOUND_RC_SETPOINT" value="TRUE"/>
     <!-- This is the pitch angle that the Quadshot will have in forward flight, where 0 degrees is hover-->
-    <define name="TRANSITION_MAX_OFFSET" value="-75.0" unit="deg"/>
+    <define name="TRANSITION_MAX_OFFSET" value="-78.0" unit="deg"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     <define name="COORDINATED_TURN_AIRSPEED" value="18.0"/>
 
