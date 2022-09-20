@@ -40,6 +40,7 @@
 #include "mcu_periph/sys_time.h"
 #include "modules/sensors/aoa_pwm.h"
 #include "modules/adcs/adc_generic.h"
+#include "modules/energy/electrical.h"
 
 /**
  * Variables declaration
@@ -70,7 +71,9 @@ float psi_order_motor = 0;
 float K_beta = 0.1;
 
 //Flight states variables:
-bool INDI_engaged = 0, FAILSAFE_engaged = 0, TEST_PID_engaged = 0;
+bool INDI_engaged = 0, FAILSAFE_engaged = 0;
+
+int TEST_PID_engaged = 0;
 
 // PID and general settings from slider
 int deadband_stick_yaw = 300, deadband_stick_throttle = 300;
@@ -108,15 +111,15 @@ float K_ppz_angle_az = (9600 * 2) / (OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE - OV
 float indi_du[INDI_NUM_ACT], indi_u[INDI_NUM_ACT], indi_u_scaled[INDI_NUM_ACT];
 
 //Global variable for the ACTUATOR_OUTPUT messge: 
-int32_t actuator_output[12];
+int32_t actuator_output[INDI_NUM_ACT], actuator_state_int[INDI_NUM_ACT];
 
 //Variables for the PID test: 
 int doublet_time_up, doublet_time_down;
 int32_t bool_start_test_on;
-float doublet_time_flip, doublet_phi_cmd, doublet_theta_cmd; 
+float doublet_time_flip, doublet_phi_cmd, doublet_theta_cmd, doublet_psi_cmd, initial_psi_reference_test; 
 
 float Doublet_period = 1, Doublet_amplitude = 20;
-int Test_doublet_start = 0, Doublet_phi = 0, Doublet_theta = 0;
+int Test_doublet_start = 0, Doublet_phi = 0, Doublet_theta = 0, Doublet_psi = 0;
 
 //Variables for the actuator model v2:
 #define actuator_mem_buf_size 10
@@ -270,7 +273,19 @@ static void send_actuator_variables( struct transport_tx *trans , struct link_de
                                          & actuator_output[8],
                                          & actuator_output[9],
                                          & actuator_output[10],
-                                         & actuator_output[11]);
+                                         & actuator_output[11],
+                                         & actuator_state_int[0],
+                                         & actuator_state_int[1],
+                                         & actuator_state_int[2],
+                                         & actuator_state_int[3],
+                                         & actuator_state_int[4],
+                                         & actuator_state_int[5],
+                                         & actuator_state_int[6],
+                                         & actuator_state_int[7],
+                                         & actuator_state_int[8],
+                                         & actuator_state_int[9],
+                                         & actuator_state_int[10],
+                                         & actuator_state_int[11]);
 }
 
 /**
@@ -667,16 +682,23 @@ void overactuated_mixing_run(void)
             doublet_phi_cmd = -Doublet_amplitude*M_PI/180;
         }
 
+        if( doublet_time_up == 1 && Doublet_psi == 1){
+            doublet_psi_cmd = Doublet_amplitude*M_PI/180;
+        }
+        else if( doublet_time_down == 1 && Doublet_psi == 1){
+            doublet_psi_cmd = -Doublet_amplitude*M_PI/180;
+        }
         
     } else{
         bool_start_test_on = 0;
         doublet_theta_cmd = 0;
         doublet_phi_cmd = 0;
+        doublet_psi_cmd = 0;
     }
 
     /// Case of manual PID control [FAILSAFE]
         // if(0){
-    if(radio_control.values[RADIO_MODE] < 500) {
+    if(radio_control.values[RADIO_MODE] < -500) {
 
 
         //INIT AND BOOLEAN RESET
@@ -768,21 +790,6 @@ void overactuated_mixing_run(void)
             overactuated_mixing.commands[11] -= (int32_t) (euler_order[2] * K_ppz_angle_az);
         }
 
-        actuator_output[0] = (int32_t) (overactuated_mixing.commands[0] / K_ppz_rads_motor);
-        actuator_output[1] = (int32_t) (overactuated_mixing.commands[1] / K_ppz_rads_motor);
-        actuator_output[2] = (int32_t) (overactuated_mixing.commands[2] / K_ppz_rads_motor);
-        actuator_output[3] = (int32_t) (overactuated_mixing.commands[3] / K_ppz_rads_motor);
-
-        actuator_output[4] = (int32_t) (overactuated_mixing.commands[4] / K_ppz_angle_el * 180/M_PI);
-        actuator_output[5] = (int32_t) (overactuated_mixing.commands[5] / K_ppz_angle_el * 180/M_PI);
-        actuator_output[6] = (int32_t) (overactuated_mixing.commands[6] / K_ppz_angle_el * 180/M_PI);
-        actuator_output[7] = (int32_t) (overactuated_mixing.commands[7] / K_ppz_angle_el * 180/M_PI);
-
-        actuator_output[8] = (int32_t) (overactuated_mixing.commands[8] / K_ppz_angle_az * 180/M_PI);
-        actuator_output[9] = (int32_t) (overactuated_mixing.commands[9] / K_ppz_angle_az * 180/M_PI);
-        actuator_output[10] = (int32_t) (overactuated_mixing.commands[10] / K_ppz_angle_az * 180/M_PI);
-        actuator_output[11] = (int32_t) (overactuated_mixing.commands[11] / K_ppz_angle_az * 180/M_PI);
-
     }
 
     /// Case of PID TEST :
@@ -790,24 +797,36 @@ void overactuated_mixing_run(void)
 
         //INIT AND BOOLEAN RESET
         if(TEST_PID_engaged == 0 ){
-            INDI_engaged = 0;
+
             TEST_PID_engaged = 1;
+            INDI_engaged = 0;
             FAILSAFE_engaged = 0;
+
             for (int i = 0; i < 3; i++) {
                 euler_error_integrated[i] = 0;
                 pos_error_integrated[i] = 0;
             }
             euler_setpoint[2] = euler_vect[2];
-
+            init_filters();
         }
 
+        get_actuator_state_v2();
+        
         ////Angular error computation
         //Calculate the setpoints manually:
         euler_setpoint[0] = doublet_phi_cmd;
         euler_setpoint[1] = doublet_theta_cmd;
-        if (abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw ) {
-            euler_setpoint[2] =
-                    euler_setpoint[2] + stick_gain_yaw * radio_control.values[RADIO_YAW] * M_PI / 180 * .001;
+        if (abs(radio_control.values[RADIO_YAW]) > deadband_stick_yaw  || (Test_doublet_start == 1 && Doublet_psi == 1) ) {
+            euler_setpoint[2] += stick_gain_yaw * radio_control.values[RADIO_YAW] * M_PI / 180 * .001;
+
+            //Overwrite this value if we are running the doublet test:
+            if(Test_doublet_start == 1 && Doublet_psi == 1){
+                euler_setpoint[2] = initial_psi_reference_test + doublet_psi_cmd;
+            }
+            else{
+                initial_psi_reference_test = euler_vect[2];
+            }
+
             //Correct the setpoint in order to always be within -pi and pi
             if (euler_setpoint[2] > M_PI) {
                 euler_setpoint[2] -= 2 * M_PI;
@@ -876,21 +895,22 @@ void overactuated_mixing_run(void)
             overactuated_mixing.commands[10] -= (int32_t) (euler_order[2] * K_ppz_angle_az);
             overactuated_mixing.commands[11] -= (int32_t) (euler_order[2] * K_ppz_angle_az);
         }
+        
+        //Copy the solution to the indi_u array to determine the actuator state: 
+        indi_u[0] = overactuated_mixing.commands[0] / K_ppz_rads_motor;
+        indi_u[1] = overactuated_mixing.commands[1] / K_ppz_rads_motor;
+        indi_u[2] = overactuated_mixing.commands[2] / K_ppz_rads_motor;
+        indi_u[3] = overactuated_mixing.commands[3] / K_ppz_rads_motor;
 
-        actuator_output[0] = (int32_t) (overactuated_mixing.commands[0] / K_ppz_rads_motor);
-        actuator_output[1] = (int32_t) (overactuated_mixing.commands[1] / K_ppz_rads_motor);
-        actuator_output[2] = (int32_t) (overactuated_mixing.commands[2] / K_ppz_rads_motor);
-        actuator_output[3] = (int32_t) (overactuated_mixing.commands[3] / K_ppz_rads_motor);
+        indi_u[4] = overactuated_mixing.commands[4] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE;
+        indi_u[5] = overactuated_mixing.commands[5] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE;
+        indi_u[6] = overactuated_mixing.commands[6] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE;
+        indi_u[7] = overactuated_mixing.commands[7] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE;
 
-        actuator_output[4] = (int32_t) (overactuated_mixing.commands[4] / K_ppz_angle_el * 180/M_PI);
-        actuator_output[5] = (int32_t) (overactuated_mixing.commands[5] / K_ppz_angle_el * 180/M_PI);
-        actuator_output[6] = (int32_t) (overactuated_mixing.commands[6] / K_ppz_angle_el * 180/M_PI);
-        actuator_output[7] = (int32_t) (overactuated_mixing.commands[7] / K_ppz_angle_el * 180/M_PI);
-
-        actuator_output[8] = (int32_t) (overactuated_mixing.commands[8] / K_ppz_angle_az * 180/M_PI);
-        actuator_output[9] = (int32_t) (overactuated_mixing.commands[9] / K_ppz_angle_az * 180/M_PI);
-        actuator_output[10] = (int32_t) (overactuated_mixing.commands[10] / K_ppz_angle_az * 180/M_PI);
-        actuator_output[11] = (int32_t) (overactuated_mixing.commands[11] / K_ppz_angle_az * 180/M_PI);
+        indi_u[8] = overactuated_mixing.commands[8] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE;
+        indi_u[9] = overactuated_mixing.commands[9] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE;
+        indi_u[10] = overactuated_mixing.commands[10] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE;
+        indi_u[11] = overactuated_mixing.commands[11] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE;
 
     }
 
@@ -952,6 +972,9 @@ void overactuated_mixing_run(void)
             pos_setpoint[2] = pos_vect[2];
         }
 
+        //Compute the actual k_motor_omegasq with voltage value: 
+        float Dynamic_MOTOR_K_T_OMEGASQ = electrical.vsupply * OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ_P1 + OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ_P2;
+
 //        // Get an estimate of the actuator state using the first order dynamics given by the user
 //        get_actuator_state();
 
@@ -967,16 +990,26 @@ void overactuated_mixing_run(void)
 
         manual_motor_value = 150;
 
+        // For the yaw, we can directly control the rates:
+        float yaw_rate_setpoint_manual = MANUAL_CONTROL_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / 9600;
         euler_setpoint[0] = indi_u[13];
         euler_setpoint[1] = indi_u[12];
+
+        if(Test_doublet_start == 1 && Doublet_phi == 1){
+            euler_setpoint[0] = doublet_phi_cmd;
+        }
+        else if(Test_doublet_start == 1 && Doublet_theta == 1){
+            euler_setpoint[1] = doublet_theta_cmd;
+        }
+        else if(Test_doublet_start == 1 && Doublet_psi == 1){
+            yaw_rate_setpoint_manual = doublet_psi_cmd;
+        }
 
         BoundAbs(euler_setpoint[0],max_value_error.phi);
         BoundAbs(euler_setpoint[1],max_value_error.theta);
         euler_error[0] = euler_setpoint[0] - euler_vect[0];
         euler_error[1] = euler_setpoint[1] - euler_vect[1];
 
-        // For the yaw, we can directly control the rates:
-        float yaw_rate_setpoint_manual = MANUAL_CONTROL_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / 9600;
         //Compute the yaw rate for the coordinate turn:
         float yaw_rate_setpoint_turn = 0;
         float fwd_multiplier_yaw = 0;
@@ -989,10 +1022,10 @@ void overactuated_mixing_run(void)
         float accel_y_filt_corrected = 0;
 
         accel_y_filt_corrected = accely_filt.o[0] 
-                                - actuator_state_filt[0]*actuator_state_filt[0]* OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
-                                - actuator_state_filt[1]*actuator_state_filt[1]* OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
-                                - actuator_state_filt[3]*actuator_state_filt[2]* OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
-                                - actuator_state_filt[3]*actuator_state_filt[3]* OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[11])/VEHICLE_MASS;
+                                - actuator_state_filt[0]*actuator_state_filt[0]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
+                                - actuator_state_filt[1]*actuator_state_filt[1]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
+                                - actuator_state_filt[3]*actuator_state_filt[2]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
+                                - actuator_state_filt[3]*actuator_state_filt[3]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[11])/VEHICLE_MASS;
                                 
 
         if(airspeed > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
@@ -1073,10 +1106,6 @@ void overactuated_mixing_run(void)
         else {
             speed_setpoint_control_rf[2] = 0;
         }
-
-        //Manual set points: 
-        speed_setpoint_control_rf[0] = 0; 
-        speed_setpoint_control_rf[1] = 0;
 
         //Apply saturation blocks to speed setpoints in control reference frame:
         Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
@@ -1179,7 +1208,7 @@ void overactuated_mixing_run(void)
 
         float manual_min_el_angle = -100;
 
-        extra_data_out_local[0] = OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ;
+        extra_data_out_local[0] = Dynamic_MOTOR_K_T_OMEGASQ;
         extra_data_out_local[1] = OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ;
         extra_data_out_local[2] = VEHICLE_MASS;
         extra_data_out_local[3] = VEHICLE_I_XX;
@@ -1349,5 +1378,34 @@ void overactuated_mixing_run(void)
     BoundAbs(overactuated_mixing.commands[10], MAX_PPRZ);
     BoundAbs(overactuated_mixing.commands[11], MAX_PPRZ);
 
+    actuator_output[0] = (int32_t) (overactuated_mixing.commands[0] / K_ppz_rads_motor);
+    actuator_output[1] = (int32_t) (overactuated_mixing.commands[1] / K_ppz_rads_motor);
+    actuator_output[2] = (int32_t) (overactuated_mixing.commands[2] / K_ppz_rads_motor);
+    actuator_output[3] = (int32_t) (overactuated_mixing.commands[3] / K_ppz_rads_motor);
+
+    actuator_output[4] = (int32_t) ((overactuated_mixing.commands[4] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE) * 180/M_PI);
+    actuator_output[5] = (int32_t) ((overactuated_mixing.commands[5] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE) * 180/M_PI);
+    actuator_output[6] = (int32_t) ((overactuated_mixing.commands[6] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE) * 180/M_PI);
+    actuator_output[7] = (int32_t) ((overactuated_mixing.commands[7] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE) * 180/M_PI);
+
+    actuator_output[8] = (int32_t) ((overactuated_mixing.commands[8] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE) * 180/M_PI);
+    actuator_output[9] = (int32_t) ((overactuated_mixing.commands[9] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE) * 180/M_PI);
+    actuator_output[10] = (int32_t) ((overactuated_mixing.commands[10] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE) * 180/M_PI);
+    actuator_output[11] = (int32_t) ((overactuated_mixing.commands[11] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * 180/M_PI);
+
+    actuator_state_int[0] = (int32_t) (actuator_state[0]);
+    actuator_state_int[1] = (int32_t) (actuator_state[1]);
+    actuator_state_int[2] = (int32_t) (actuator_state[2]);
+    actuator_state_int[3] = (int32_t) (actuator_state[3]);
+
+    actuator_state_int[4] = (int32_t) (actuator_state[4] * 180/M_PI);
+    actuator_state_int[5] = (int32_t) (actuator_state[5] * 180/M_PI);
+    actuator_state_int[6] = (int32_t) (actuator_state[6] * 180/M_PI);
+    actuator_state_int[7] = (int32_t) (actuator_state[7] * 180/M_PI);
+
+    actuator_state_int[8] = (int32_t) (actuator_state[8] * 180/M_PI);
+    actuator_state_int[9] = (int32_t) (actuator_state[9] * 180/M_PI);
+    actuator_state_int[10] = (int32_t) (actuator_state[10] * 180/M_PI);
+    actuator_state_int[11] = (int32_t) (actuator_state[11] * 180/M_PI);
 }
 

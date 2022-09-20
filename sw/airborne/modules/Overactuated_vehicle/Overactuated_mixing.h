@@ -113,7 +113,7 @@ extern bool manual_heading;
 extern int manual_heading_value_rad;
 
 //Variables for PID test doublet: 
-extern int Test_doublet_start, Doublet_phi, Doublet_theta;
+extern int Test_doublet_start, Doublet_phi, Doublet_theta, Doublet_psi;
 extern float Doublet_period, Doublet_amplitude;
 
 /* External used functions */
