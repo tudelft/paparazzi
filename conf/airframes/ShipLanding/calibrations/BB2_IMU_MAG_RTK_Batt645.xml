@@ -1,0 +1,42 @@
+<airframe>
+
+  <section name="IMU" prefix="IMU_">
+    
+    <define name="MAG_X_NEUTRAL" value="-62"/>
+    <define name="MAG_Y_NEUTRAL" value="16"/>
+    <define name="MAG_Z_NEUTRAL" value="282"/>
+    <define name="MAG_X_SENS" value="7.080983150057402" integer="16"/>
+    <define name="MAG_Y_SENS" value="7.100322427222166" integer="16"/>
+    <define name="MAG_Z_SENS" value="7.418875677891118" integer="16"/>
+
+
+
+
+
+
+  </section>
+
+</airframe>
+
+<!-- 
+Bebop2 IMU calibration:
+ACCEL:
+1 - Flash the board with your normal AP firmware (if it is not already on it.)
+2 - Switch to the “raw sensors” telemetry mode in the GCS via Settings
+3 - rotate bebop to all imaginary sides of a cube, and keep it still at every orientation for 10 seconds
+4 - Stop the server so it will write the log file (to var/logs).
+5 - run the script :
+sw/tools/calibration/calibrate.py -s ACCEL -p var/logs/YY_MM_DD__hh_mm_ss.data
+6 - add printed values to the airframe file or this file
+
+MAG:
+0 - This calibration can only be done outside, far away from metal objects
+1 - Flash the board with your normal AP firmware (if it is not already on it.)
+2 - Switch to the “raw sensors” telemetry mode in the GCS via Settings
+3 - slowly spin bebop around all axis, in as much orientations as possible
+4 - Stop the server so it will write the log file (to var/logs).
+5 - run the script :
+sw/tools/calibration/calibrate.py -s MAG -p var/logs/YY_MM_DD__hh_mm_ss.data
+6 - add printed values to the airframe file or this file
+
+-->

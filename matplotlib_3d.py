@@ -44,7 +44,7 @@ ship_course = 0
 ship_heading = 0
 off_heading = 0
 off_distance = 0
-off_heigth = 0
+off_height = 0
 
 class AMT_msg:
     def __init__(self, ):
@@ -109,7 +109,7 @@ class AMT_msg:
                 global ship_heading
                 global off_heading
                 global off_distance
-                global off_heigth
+                global off_height
 
                 #i2p = 1. / 2**8     # integer to position
                 #i2v = 1. / 2**19    # integer to velocity
@@ -118,8 +118,12 @@ class AMT_msg:
                 ship_alt = float(msg['alt']) / 100
                 ship_course = float(msg['course'])
                 ship_heading = float(msg['heading'])
+                off_heading = float(msg['off_heading'])
+                off_distance = float(msg['off_distance'])
+                off_height = float(msg['off_height'])
 
-                print("TARGET_POS_INFO msg received, heading: ", ship_heading) #TEST
+
+                print("TARGET_POS_INFO msg received, off_heigt: ", off_height) #TEST
                 self.new_msg = True
 
         IVY_interface.subscribe(target_pos_info_cb, PprzMessage("telemetry", "TARGET_POS_INFO"))
@@ -139,7 +143,7 @@ class AMT_msg:
 
     def draw_3d_plot(self):
 
-        zoom_max2drone_and_ship = True
+        zoom_max2drone_and_ship = False
         zoom_getFromPrevFrame = False
 
         #self.ax.cla()
@@ -178,6 +182,10 @@ class AMT_msg:
             bc_descent_line_y = bc_descent_line_y_vec *self.distance
             bc_descent_line_z = bc_descent_line_z_vec *self.distance
 
+        bc_gps_pos_x = m.cos(m.radians(ship_heading+off_heading)) * -off_distance
+        bc_gps_pos_y = m.sin(m.radians(ship_heading+off_heading)) * -off_distance
+        bc_gps_pos_z = -off_height
+
         # if correct same as bc_ref_pos
         #bc_descent_point_x = bc_descent_line_x_vec * self.distance
         #bc_descent_point_y = bc_descent_line_y_vec * self.distance
@@ -187,8 +195,9 @@ class AMT_msg:
         #self.ax.set_zlim3d(min(bc_ref_pos_y, bc_drone_pos_y), max(bc_ref_pos_y, bc_drone_pos_y))
         #self.ax.set_ylim3d(min(bc_ref_pos_z, bc_drone_pos_z), max(bc_ref_pos_z, bc_drone_pos_z))
 
+        sys_gps = trplot( transl(bc_gps_pos_x, bc_gps_pos_y, bc_gps_pos_z)@trotz(m.radians(ship_heading)), frame='gps', d2=1.5, axislabel= False, width=1, originsize=3) # , dims=[0, 10, 0, 10, 0, 10]
         sys_boat = trplot( transl(0,0, 0)@trotz(ship_heading/360*2*m.pi), wtl=0.05, d2=1.5, frame='SHIP', rviz=True, width=1, originsize=3, color=["blue", "grey", "grey"]) # , dims=[0, 10, 0, 10, 0, 10]
-        sys_ref = trplot( transl(bc_ref_pos_x, bc_ref_pos_y, -bc_ref_pos_z)@trotz(ship_heading/360*2*m.pi), frame='des', d2=1.5, axislabel= False, width=1, originsize=3) # , dims=[0, 10, 0, 10, 0, 10]
+        sys_ref = trplot( transl(bc_ref_pos_x, bc_ref_pos_y, -bc_ref_pos_z)@trotz(m.radians(ship_heading)), frame='des', d2=1.5, axislabel= False, width=1, originsize=3) # , dims=[0, 10, 0, 10, 0, 10]
         sys_drone = trplot( transl(bc_drone_pos_x, bc_drone_pos_y, -bc_drone_pos_z), axislabel= False, color='red', d2=1.5, width=1, originsize=3) #, frame='DRONE'
         line_drone2ship = self.ax.plot([0, bc_descent_line_x], [0,bc_descent_line_y],zs=[0,bc_descent_line_z])
         if not zoom_max2drone_and_ship:

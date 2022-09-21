@@ -1210,6 +1210,7 @@
       <field name="start_distance" type="float" unit="m"/>
       <field name="distance" type="float" unit="m"/>
       <field name="slope_ref" type="float" unit="m"/>
+      <field name="force_forward" type="uint8" unit="bool"/>
     </message>
 
     <message name="RATE_LOOP" id="136">
@@ -2620,6 +2621,7 @@
       <field name="ac_id"       type="uint8"/>
       <field name="mode"        type="uint8"/>
       <field name="throttle"    type="uint8"/>
+      <field name="rotating_knob"    type="uint8"/>
       <field name="roll"        type="int8"/>
       <field name="pitch"       type="int8"/>
       <field name="yaw"         type="int8"/>

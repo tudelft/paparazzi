@@ -4,13 +4,14 @@
 
   <firmware name="rotorcraft">
     <target name="ap" board="bebop2">
-      <define name="STABILIZATION_INDI_G2_R" value="0.2784"/>
-      <define name="PRINT_DEBUG_GPS_UBX_UCENTER" value="TRUE"/>
+      <define name="STABILIZATION_INDI_G2_R" value="0.2784"/> <!-- not in file mp2 -->
+      <define name="PRINT_DEBUG_GPS_UBX_UCENTER" value="TRUE"/> <!-- not in file mp2 -->
     </target>
 
     <target name="nps" board="pc">
       <module name="fdm" type="jsbsim"/>
       <module name="udp"/>
+      <!-- not in file mp2 -->
       <define name="STABILIZATION_INDI_G2_R" value="0.0"/><!-- for jsbsim (rotor inertia is not modelled) -->
       <!-- <define name="STABILIZATION_INDI_G2_R" value="0.20"/> --><!-- for gazebo -->
     </target>
@@ -20,14 +21,20 @@
     <module name="radio_control" type="datalink"/>
     <module name="motor_mixing"/>
     <module name="actuators" type="bebop"/>
-    <module name="imu" type="bebop"/>
+    <module name="imu" type="bebop">
+      <define name="BEBOP_LOWPASS_FILTER" value="MPU60X0_DLPF_42HZ"/> <!-- added from file mp2 -->
+      <define name="BEBOP_SMPLRT_DIV" value="0"/><!-- added from file mp2 -->
+      <define name="BEBOP_GYRO_RANGE" value="MPU60X0_GYRO_RANGE_2000"/><!-- added from file mp2 -->
+      <define name="BEBOP_ACCEL_RANGE" value="MPU60X0_ACCEL_RANGE_16G"/><!-- added from file mp2 -->
+    </module>
     
     <!-- special for Nederdrone project -->
-    <module name="approach_moving_target"/>
-      <define name="AMT_ERR_SLOWDOWN_GAIN" value="true"/>
+    <module name="approach_moving_target"/><!-- not in file mp2 -->
+      <define name="AMT_ERR_SLOWDOWN_GAIN" value="true"/><!-- not in file mp2 -->
 
     <!-- GPS settings for bepop2 with "ZED-F9P RTK" gps via Xbee usb serial board HX-186-->
     <module name="gps" type="ublox">
+    <!-- not in file mp2 -->
       <configure name="GPS_BAUD" value="B38400"/>
       <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
       <define name="USE_GPS_UBX_RXM_RAW" value="TRUE"/>
@@ -41,14 +48,18 @@
       <define name="INS_EKF2_OPTITRACK" value="false"/> <!-- only true if optitrack is used!!-->
     </module>
     
+    <module name="geo_mag"/> <!-- added from file mp2 -->
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
     
+    <!-- not in file mp2 -->
     <!-- Internal MAG -->
     <!--module name="mag_ist8310">
       <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>
       <configure name="MAG_IST8310_I2C_DEV" value="I2C3"/>
     </module-->
+    
+    <!-- not in file mp2 -->
     <!-- External MAG on GPS -->
     <module name="mag_lis3mdl">
       <define name="MODULE_LIS3MDL_UPDATE_AHRS" value="TRUE"/>
@@ -100,19 +111,24 @@
     <define name="CALC_AMSL_BARO" value="TRUE"/>
   </section>
 
-  <section name="IMU" prefix="IMU_">
-    <!-- Magneto calibration -->
-    <define name="MAG_X_NEUTRAL" value="43"/>
-    <define name="MAG_Y_NEUTRAL" value="-151"/>
-    <define name="MAG_Z_NEUTRAL" value="-64"/>
-    <define name="MAG_X_SENS" value="7.21201776785" integer="16"/>
-    <define name="MAG_Y_SENS" value="7.20541442846" integer="16"/>
-    <define name="MAG_Z_SENS" value="7.55306977197" integer="16"/>
+ <!-- include IMU airframe calibration -->
+  <include href="conf/airframes/ShipLanding/calibrations/BB2_IMU_ACCEL_bebopErik.xml"/> <!-- Accelerometer for attitude -->
+  <include href="conf/airframes/ShipLanding/calibrations/BB2_IMU_MAG_RTK_Batt123.xml"/> <!-- Magnetometer  for heading  -->
+
+  <!-- local magnetic field -->
+  <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
+  <section name="AHRS" prefix="AHRS_">
+    <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
+    <!-- Delft -->
+    <define name="H_X" value="0.3892503"/>
+    <define name="H_Y" value="0.0017972"/>
+    <define name="H_Z" value="0.9211303"/>
   </section>
 
   <section name="INS" prefix="INS_">
     <define name="SONAR_MAX_RANGE" value="2.2"/>
   </section>
+
 
 
   <section name="RC_SETPOINT" prefix="STABILIZATION_ATTITUDE_">
@@ -145,20 +161,22 @@
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness -->
-    <define name="G1_P" value="0.0390"/>
-    <define name="G1_Q" value="0.0473"/>
-    <define name="G1_R" value="0.00122"/>
+    <define name="G1_P" value="0.05"/>
+    <define name="G1_Q" value="0.04"/>
+    <define name="G1_R" value="0.0022"/>
+    <define name="G2_R" value="0.20"/>
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="170.0"/>
-    <define name="REF_ERR_Q" value="600.0"/>
+    <define name="REF_ERR_P" value="320.0"/>
+    <define name="REF_ERR_Q" value="320.0"/>
     <define name="REF_ERR_R" value="600.0"/>
-    <define name="REF_RATE_P" value="14.3"/>
-    <define name="REF_RATE_Q" value="28.0"/>
+    <define name="REF_RATE_P" value="16.0"/>
+    <define name="REF_RATE_Q" value="16.0"/>
     <define name="REF_RATE_R" value="28.0"/>
 
     <!-- second order filter parameters -->
     <define name="FILT_CUTOFF" value="3.2"/>
+    <define name="FILT_CUTOFF_RDOT" value="3.2"/>
 
     <!-- first order actuator dynamics -->
     <define name="ACT_DYN_P" value="0.06"/>
@@ -179,14 +197,11 @@
   </section>
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <!-- Good weather -->
-    <define name="MAX_BANK" value="20" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="2" unit="m/s"/> <!-- default max speed = 2 -->
-    <!-- Bad weather -->
-    <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
-    <define name="PGAIN" value="120"/>
-    <define name="DGAIN" value="100"/>
-    <define name="IGAIN" value="30"/>
+    <define name="REF_MAX_SPEED" value="2" unit="m/s"/>
+    <define name="MAX_BANK" value="32" unit="deg"/>
+    <define name="PGAIN" value="140"/>
+    <define name="DGAIN" value="104"/>
+    <define name="IGAIN" value="34"/>
   </section>
 
   <section name="NAVIGATION" prefix="NAV_">
@@ -196,10 +211,9 @@
 
   <section name="SIMULATOR" prefix="NPS_">
     <define name="ACTUATOR_NAMES" value="nw_motor, ne_motor, se_motor, sw_motor" type="string[]"/>
-    <define name="JSBSIM_MODEL" value="simple_x_quad" type="string"/>
+    <define name="JSBSIM_MODEL" value="bebop" type="string"/>
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
   </section>
-  <include href="conf/simulator/gazebo/airframes/bebop.xml"/>
 
   <section name="AUTOPILOT">
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>

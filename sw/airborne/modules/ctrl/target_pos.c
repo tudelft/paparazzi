@@ -54,8 +54,9 @@
 // landing platform heigth wrt RTK-gps height
 // positive is up
 #ifndef TARGET_OFFSET_HEIGHT
-#define TARGET_OFFSET_HEIGHT -1.2
+#define TARGET_OFFSET_HEIGHT 2
 #endif
+//#define TARGET_OFFSET_HEIGHT -1.2
 
 // calculate X & Y positions in between recieved gps coordinates
 #ifndef TARGET_INTEGRATE_XY
@@ -236,7 +237,8 @@ bool target_get_vel(struct NedCoor_f *vel) {
 /**
  * Set the current measured distance and heading as offset
  */
-bool target_pos_set_current_offset(float unk __attribute__((unused))) {
+//bool target_pos_set_current_offset(float unk __attribute__((unused))) {
+bool target_pos_set_current_offset() {
   if(target.pos.valid && state.ned_initialized_i && (target.pos.recv_time+target.target_pos_timeout) > get_sys_time_msec()) {
     struct NedCoor_i target_pos_cm;
     struct NedCoor_f uav_pos = *stateGetPositionNed_f();

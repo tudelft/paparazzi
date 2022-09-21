@@ -21,12 +21,12 @@
     <waypoint name="_StayHover" x="0" y="0"/>
     
     <!-- kill zone -->
-    <waypoint lat="52.169088" lon="4.411594" name="C1"/>
-    <waypoint lat="52.166475" lon="4.412721" name="C2"/>
-    <waypoint lat="52.165609" lon="4.415999" name="C3"/>
-    <waypoint lat="52.170002" lon="4.424997" name="C4"/>
-    <waypoint lat="52.172840" lon="4.423800" name="C5"/>
-    <waypoint lat="52.170653" lon="4.415772" name="C6"/>
+    <waypoint lat="52.169088" lon="4.411594" name="_C1"/>
+    <waypoint lat="52.166475" lon="4.412721" name="_C2"/>
+    <waypoint lat="52.165609" lon="4.415999" name="_C3"/>
+    <waypoint lat="52.170002" lon="4.424997" name="_C4"/>
+    <waypoint lat="52.172840" lon="4.423800" name="_C5"/>
+    <waypoint lat="52.170653" lon="4.415772" name="_C6"/>
     
     <!-- safe fly zone -->
     <waypoint lat="52.169160" lon="4.412295" name="_S1"/>
@@ -42,12 +42,12 @@
   <!-- mark zones with waypoints-->
   <sectors>
     <sector color="red" name="KillZone">
-      <corner name="C1"/>
-      <corner name="C2"/>
-      <corner name="C3"/>
-      <corner name="C4"/>
-      <corner name="C5"/>
-      <corner name="C6"/>
+      <corner name="_C1"/>
+      <corner name="_C2"/>
+      <corner name="_C3"/>
+      <corner name="_C4"/>
+      <corner name="_C5"/>
+      <corner name="_C6"/>
     </sector>
     <sector color="yellow" name="SafeFlyZone">
       <corner name="_S1"/>

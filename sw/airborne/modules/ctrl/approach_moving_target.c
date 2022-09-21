@@ -35,6 +35,7 @@ bool allways_update_ship_wp = true;
 float approach_moving_target_angle_deg;
 
 
+
 #define DEBUG_AMT TRUE
 #include <stdio.h>
 
@@ -47,6 +48,7 @@ struct Amt amt = {
   .slope_ref = 19.471,  // [deg], slope descent line
   .speed_gain = 1.0,  // [-], how agressive ..................
   .relvel_gain = 1.0, // [-], ................................
+  .approach_speed_gain = 1.0,
   .enabled_time = 0,
   .wp_ship_id = 0,
   .wp_approach_id = 0
@@ -114,7 +116,8 @@ static void send_approach_moving_target(struct transport_tx *trans, struct link_
 
                               &amt_telem.start_distance,
                               &amt.distance,
-                              &amt.slope_ref
+                              &amt.slope_ref,
+                              &force_forward
                               );
 }
 #endif
@@ -130,6 +133,16 @@ void approach_moving_target_init(void)
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_APPROACH_MOVING_TARGET, send_approach_moving_target);
 #endif
+}
+
+/**
+ * Receive a RC_4CH message from the ground
+ * TODO: this function needs a better place in a more general script
+ */
+void target_parse_RC_4CH(uint8_t *buf)
+{
+  // Save the receivd rotating knob value
+  amt.approach_speed_gain = (float)DL_RC_4CH_rotating_knob(buf)/100;
 }
 
 
@@ -311,18 +324,18 @@ void follow_diagonal_approach(void) {
 
   // Reduce approach speed if the error is large
   float norm_pos_err_sq = VECT3_NORM2(pos_err);
-  float int_speed = (amt.speed) / (norm_pos_err_sq * amt_err_slowdown_gain + 1.0);
+  float int_speed = ((amt.speed) / (norm_pos_err_sq * amt_err_slowdown_gain + 1.0)) * amt.approach_speed_gain;
   if (amt.distance < 20) int_speed = int_speed / 2;
   //printf("int_speed %f \n", int_speed);
 
   // Check if the flight plan recently called the enable function
   // make distance to ship smaller, So descent to ship
 
-  if ( (get_sys_time_msec() - amt.enabled_time) > (2000 / NAVIGATION_FREQUENCY)) {
+  if ( (get_sys_time_msec() - amt.enabled_time) > (2000 / NAVIGATION_FREQUENCY) && force_forward) {
     // integrate speed to get the distance
     float dt = FOLLOW_DIAGONAL_APPROACH_PERIOD;
     amt.distance += int_speed*dt;
-    Bound(amt.distance, 0, 200); // approach dist > 0
+    Bound(amt.distance, 0, 100); // approach dist > 0
     //amt.distance -= 1*dt;
   }
   

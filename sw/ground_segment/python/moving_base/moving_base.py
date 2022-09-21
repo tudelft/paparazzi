@@ -47,6 +47,9 @@ from scipy import linalg as la
 
 import geopy.distance
 
+BASE_MOVING = True
+BASE_WAVES = True
+
 class UAV:
     def __init__(self, ac_id):
         self.initialized = False
@@ -67,10 +70,13 @@ class Base:
         self.time = time.mktime(time.gmtime())
         self.speed = 0.5 # m/s
         self.course = 90 # deg (moving directon of platform)
-        self.heading = 315 # deg (orientation of platform)
-        print("lat0,long0,alt0 position = Valkenburg")
-        self.lat0 = 52.168391 #deg
-        self.lon0 = 4.413617 #deg
+        self.heading = 70 # deg (orientation of platform)
+        #print("lat0,long0,alt0 position = Valkenburg")
+        #self.lat0 = 52.168391 #deg
+        #self.lon0 = 4.413617 #deg
+        print("lat0,long0,alt0 position = iMAV")
+        self.lat0 = 52.170591 #deg
+        self.lon0 = 4.417030 #deg
         self.alt0 = 55 # ref_alt0 is already about 46m in simulator
 
         self.lat = self.lat0
@@ -225,11 +231,11 @@ class Base:
 
                 # Send base (ship) position
                 if self.enabled:
-                    wave_pertubation = sineWave[wave_loop_idx_counter] - sineWave[wave_loop_idx_counter-1]
-                    wave_pertubation_heigth = cosnWave[wave_loop_idx_counter] - cosnWave[wave_loop_idx_counter-1]
+                    wave_pertubation = (sineWave[wave_loop_idx_counter] - sineWave[wave_loop_idx_counter-1])*BASE_WAVES
+                    wave_pertubation_heigth = (cosnWave[wave_loop_idx_counter] - cosnWave[wave_loop_idx_counter-1])*BASE_WAVES
 
-                    dn = self.speed*m.cos(self.course/180.0*m.pi) # derrivative North?
-                    de = self.speed*m.sin(self.course/180.0*m.pi) # derrivative East?
+                    dn = self.speed*m.cos(self.course/180.0*m.pi)*BASE_MOVING # derrivative North?
+                    de = self.speed*m.sin(self.course/180.0*m.pi)*BASE_MOVING # derrivative East?
                     self.move_base(
                         self.step*dn+wave_pertubation,  # addition to North
                         self.step*de,                   # addition to East
