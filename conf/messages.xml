@@ -1889,20 +1889,37 @@
 
      <message name="ACTUATORS_OUTPUT" id="209">
 
-         <field name="Motor_1_cmd" type="int32">Motor 1 command [PPZ]</field>
-         <field name="Motor_2_cmd" type="int32">Motor 2 command [PPZ]</field>
-         <field name="Motor_3_cmd" type="int32">Motor 3 command [PPZ]</field>
-         <field name="Motor_4_cmd" type="int32">Motor 4 command [PPZ]</field>
+        <!-- Commanded value -->
+         <field name="Motor_1_cmd" type="int32">Motor 1 command [rad/s]</field>
+         <field name="Motor_2_cmd" type="int32">Motor 2 command [rad/s]</field>
+         <field name="Motor_3_cmd" type="int32">Motor 3 command [rad/s]</field>
+         <field name="Motor_4_cmd" type="int32">Motor 4 command [rad/s]</field>
 
-         <field name="Tilt_el_1_cmd" type="int32">Tilting elevator servo 1 command [PPZ]</field>
-         <field name="Tilt_el_2_cmd" type="int32">Tilting elevator servo 2 command [PPZ]</field>
-         <field name="Tilt_el_3_cmd" type="int32">Tilting elevator servo 3 command [PPZ]</field>
-         <field name="Tilt_el_4_cmd" type="int32">Tilting elevator servo 4 command [PPZ]</field>
+         <field name="Tilt_el_1_cmd" type="int32">Tilting elevator servo 1 command [deg]</field>
+         <field name="Tilt_el_2_cmd" type="int32">Tilting elevator servo 2 command [deg]</field>
+         <field name="Tilt_el_3_cmd" type="int32">Tilting elevator servo 3 command [deg]</field>
+         <field name="Tilt_el_4_cmd" type="int32">Tilting elevator servo 4 command [deg]</field>
 
-         <field name="Tilt_az_1_cmd" type="int32">Tilting azimuth servo 1 command [PPZ]</field>
-         <field name="Tilt_az_2_cmd" type="int32">Tilting azimuth servo 2 command [PPZ]</field>
-         <field name="Tilt_az_3_cmd" type="int32">Tilting azimuth servo 3 command [PPZ]</field>
-         <field name="Tilt_az_4_cmd" type="int32">Tilting azimuth servo 4 command [PPZ]</field>
+         <field name="Tilt_az_1_cmd" type="int32">Tilting azimuth servo 1 command [deg]</field>
+         <field name="Tilt_az_2_cmd" type="int32">Tilting azimuth servo 2 command [deg]</field>
+         <field name="Tilt_az_3_cmd" type="int32">Tilting azimuth servo 3 command [deg]</field>
+         <field name="Tilt_az_4_cmd" type="int32">Tilting azimuth servo 4 command [deg]</field>
+
+        <!-- Actual actuator state  -->
+         <field name="Motor_1_state" type="int32">Motor 1 state [rad/s]</field>
+         <field name="Motor_2_state" type="int32">Motor 2 state [rad/s]</field>
+         <field name="Motor_3_state" type="int32">Motor 3 state [rad/s]</field>
+         <field name="Motor_4_state" type="int32">Motor 4 state [rad/s]</field>
+
+         <field name="Tilt_el_1_state" type="int32">Tilting elevator servo 1 state [deg]</field>
+         <field name="Tilt_el_2_state" type="int32">Tilting elevator servo 2 state [deg]</field>
+         <field name="Tilt_el_3_state" type="int32">Tilting elevator servo 3 state [deg]</field>
+         <field name="Tilt_el_4_state" type="int32">Tilting elevator servo 4 state [deg]</field>
+
+         <field name="Tilt_az_1_state" type="int32">Tilting azimuth servo 1 state [deg]</field>
+         <field name="Tilt_az_2_state" type="int32">Tilting azimuth servo 2 state [deg]</field>
+         <field name="Tilt_az_3_state" type="int32">Tilting azimuth servo 3 state [deg]</field>
+         <field name="Tilt_az_4_state" type="int32">Tilting azimuth servo 4 state [deg]</field>
 
      </message>
 

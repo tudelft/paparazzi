@@ -382,7 +382,11 @@
     <define name="MOTOR_MAX_OMEGA" value="1104" unit="rad/s"/> -->
 
     <!-- CF PROP with 4s battery-->
-    <define name="MOTOR_K_T_OMEGASQ" value="0.644623e-5" unit="N/(rad/s)^2"/>
+    <define name="MOTOR_K_T_OMEGASQ_P1" value="0.133851e-5" />
+    <define name="MOTOR_K_T_OMEGASQ_P2" value="-1.125262e-5" />
+    <!-- <define name="MOTOR_K_T_OMEGASQ_P1" value="0" />
+    <define name="MOTOR_K_T_OMEGASQ_P2" value="0.644623e-5" unit="N/(rad/s)^2"/> -->
+
     <define name="MOTOR_K_M_OMEGASQ" value="0.936722e-7" unit="N*m/(rad/s)^2"/>
     <define name="MOTOR_K_PWM_OMEGA" value="1.31" unit="(rad/s)/PWM"/>
     <define name="MOTOR_MAX_OMEGA" value="1273" unit="rad/s"/>
@@ -419,11 +423,11 @@
     <define name="SPEED_AOA_PROTECTION" value="6" unit="m/s"/>
 
     <!-- Filters properties for INDI -->
-    <define name="FILT_CUTOFF_ANG_RATES" value="20" unit="rad/s"/>
-    <define name="FILT_CUTOFF_LIN_ACC" value="20" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_EL" value="20" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="20" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="20" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ANG_RATES" value="18" unit="rad/s"/>
+    <define name="FILT_CUTOFF_LIN_ACC" value="18" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_EL" value="18" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="18" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="18" unit="rad/s"/>
 
     <!-- First order filter on rates -->
     <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0488" /><!-- 1-exp(-cutoff_frequency/sampling_frequency) [20 rad/s]--> 
@@ -440,12 +444,12 @@
     <define name="W_ACT_PHI_CONST" value="100"/>
     <define name="W_ACT_PHI_SPEED" value="-14"/>
 
-    <define name="W_DV_1" value="0.01"/>
-    <define name="W_DV_2" value="0.01"/>
-    <define name="W_DV_3" value="0.01"/>
-    <define name="W_DV_4" value="0.2"/>
-    <define name="W_DV_5" value="0.2"/>
-    <define name="W_DV_6" value="0.2"/>
+    <define name="W_DV_1" value="0.03"/>
+    <define name="W_DV_2" value="0.03"/>
+    <define name="W_DV_3" value="0.05"/>
+    <define name="W_DV_4" value="0.1"/>
+    <define name="W_DV_5" value="0.1"/>
+    <define name="W_DV_6" value="0.1"/>
 
     <define name="GAMMA_QUADRATIC_DU" value="1e-5"/>
 
@@ -457,16 +461,16 @@
 
   <!-- Vehicle properties, see documentation for notation -->
   <section name="VEHICLE_PROPERTIES" prefix="VEHICLE_">
-    <define name="I_XX" value="0.12" unit="Kg*m^2"/>
-    <define name="I_YY" value="0.08" unit="Kg*m^2"/>
-    <define name="I_ZZ" value="0.13" unit="Kg*m^2"/>
+    <define name="I_XX" value="0.156548" unit="Kg*m^2"/>
+    <define name="I_YY" value="0.161380" unit="Kg*m^2"/>
+    <define name="I_ZZ" value="0.258662" unit="Kg*m^2"/>
     <define name="I_TILT" value="0.000216" unit="Kg*m^2"/>
     <define name="PROPELLER_INERTIA" value="1.984e-5" unit="Kg*m^2"/>
     <define name="MASS" value="2.45" unit="Kg"/>
-    <define name="L1" value="0.227" unit="m"/>
-    <define name="L2" value="0.227" unit="m"/>
-    <define name="L3" value="0.39" unit="m"/>
-    <define name="L4" value="0.37" unit="m"/>
+    <define name="L1" value="0.228" unit="m"/>
+    <define name="L2" value="0.228" unit="m"/>
+    <define name="L3" value="0.40" unit="m"/>
+    <define name="L4" value="0.35" unit="m"/>
     <define name="LZ" value="0." unit="m"/>
 
     <define name="CL_ALPHA" value="3.5"/>
