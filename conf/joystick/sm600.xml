@@ -27,7 +27,7 @@ The basis of steering is the standard signs of aerospace convention
 <joystick>
   <input>
     <axis index="4" name="LeftStickHorizontal" deadband="10" exponent="0.7"/>
-    <axis index="2" name="LeftStickVertical" deadband="10" exponent="0.7"/>
+    <axis index="2" name="LeftStickVertical" deadband="10"/>
     <axis index="0" name="RightStickHorizontal" deadband="10" exponent="0.7"/>
     <axis index="1" name="RightStickVertical" deadband="10" exponent="0.7"/>
     <axis index="3" name="VRB"/>
@@ -39,9 +39,9 @@ The basis of steering is the standard signs of aerospace convention
     <message class="datalink" name="RC_4CH" send_always="true">
       <!--<field name="throttle" value="Fit(LeftStickVertical,0,127,0,127)"/> -->
       <field name="throttle" value="Fit(LeftStickVertical,-100,127,0,150)"/>
-      <field name="roll" value="RightStickHorizontal"/>
-      <field name="pitch" value="-RightStickVertical"/>
-      <field name="yaw" value="LeftStickHorizontal"/>
+      <field name="roll" value="Fit(RightStickHorizontal,-127,127,-80,80)"/>
+      <field name="pitch" value="Fit(-RightStickVertical,-127,127,-80,80)"/>
+      <field name="yaw" value="Fit(LeftStickHorizontal,-127,127,-50,50)"/>
       <field name="mode" value="2-2*VRA"/>
       <field name="rotating_knob" value="Fit(VRB,-120,120,0,200)"/>
     </message>
