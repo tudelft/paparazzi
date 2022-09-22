@@ -6,6 +6,7 @@
     <target name="ap" board="bebop2">
       <define name="STABILIZATION_INDI_G2_R" value="0.2784"/> <!-- not in file mp2 -->
       <define name="PRINT_DEBUG_GPS_UBX_UCENTER" value="TRUE"/> <!-- not in file mp2 -->
+      <define name="FAILSAFE_DESCENT_SPEED" value="0.5"/>
     </target>
 
     <target name="nps" board="pc">
@@ -113,7 +114,7 @@
 
  <!-- include IMU airframe calibration -->
   <include href="conf/airframes/ShipLanding/calibrations/BB2_IMU_ACCEL_bebopErik.xml"/> <!-- Accelerometer for attitude -->
-  <include href="conf/airframes/ShipLanding/calibrations/BB2_IMU_MAG_RTK_Batt123.xml"/> <!-- Magnetometer  for heading  -->
+  <include href="conf/airframes/ShipLanding/calibrations/BB2_IMU_MAG_RTK_Batt768.xml"/> <!-- Magnetometer  for heading  -->
 
   <!-- local magnetic field -->
   <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
