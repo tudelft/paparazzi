@@ -41,7 +41,7 @@ The basis of steering is the standard signs of aerospace convention
       <field name="throttle" value="Fit(LeftStickVertical,-100,127,0,150)"/>
       <field name="roll" value="Fit(RightStickHorizontal,-127,127,-80,80)"/>
       <field name="pitch" value="Fit(-RightStickVertical,-127,127,-80,80)"/>
-      <field name="yaw" value="Fit(LeftStickHorizontal,-127,127,-50,50)"/>
+      <field name="yaw" value="LeftStickHorizontal"/> <!--value="Fit(LeftStickHorizontal,-127,127,-70,70)"/> -->
       <field name="mode" value="2-2*VRA"/>
       <field name="rotating_knob" value="Fit(VRB,-120,120,0,200)"/>
     </message>
