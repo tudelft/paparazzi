@@ -94,7 +94,7 @@
     <define name="STABILIZATION_ATTITUDE_TYPE_INT"/>
     <define name="STABILIZATION_ATTITUDE_TYPE_H" value="stabilization/stabilization_attitude_quat_indi.h" type="string"/>
     <define name="STABILIZATION_ATTITUDE_INDI_FULL" value="true"/>
-    <define name="STABILIZATION_INDI_CTL_ALLOC_ALGO" value="0"/>
+    <define name="STABILIZATION_INDI_CTL_ALLOC_ALGO" value="2"/>
     <define name="STABILIZATION_INDI_CTL_ALLOC_COND_BOUND" value="1e6"/>
     <define name="STABILIZATION_INDI_CTL_ALLOC_THETA" value="0.0002"/>
   </makefile>
