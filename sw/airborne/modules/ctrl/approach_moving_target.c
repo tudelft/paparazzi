@@ -74,6 +74,7 @@ struct AmtTelem {
   struct FloatVect3 target_pos; //ship landing position
   struct FloatVect3 target_vel;
   float start_distance;
+  float approach_speed;
 };
 
 struct AmtTelem amt_telem;
@@ -116,6 +117,7 @@ static void send_approach_moving_target(struct transport_tx *trans, struct link_
 
                               &amt_telem.start_distance,
                               &amt.distance,
+                              &amt_telem.approach_speed,
                               &amt.slope_ref,
                               &force_forward
                               );
@@ -324,9 +326,9 @@ void follow_diagonal_approach(void) {
 
   // Reduce approach speed if the error is large
   float norm_pos_err_sq = VECT3_NORM2(pos_err);
-  float int_speed = ((amt.speed) / (norm_pos_err_sq * amt_err_slowdown_gain + 1.0)) * amt.approach_speed_gain;
-  if (amt.distance < 20) int_speed = int_speed / 2;
-  //printf("int_speed %f \n", int_speed);
+  // int_speed = (default speed / (squared position error [m] * slowdown factor + 1) * speed gain control by joystick
+  amt_telem.approach_speed = ((amt.speed) / (norm_pos_err_sq * amt_err_slowdown_gain + 1.0)) * amt.approach_speed_gain * (int)force_forward;
+  if (amt.distance < 20) amt_telem.approach_speed = amt_telem.approach_speed / 2;
 
   // Check if the flight plan recently called the enable function
   // make distance to ship smaller, So descent to ship
@@ -334,7 +336,7 @@ void follow_diagonal_approach(void) {
   if ( (get_sys_time_msec() - amt.enabled_time) > (2000 / NAVIGATION_FREQUENCY) && force_forward) {
     // integrate speed to get the distance
     float dt = FOLLOW_DIAGONAL_APPROACH_PERIOD;
-    amt.distance += int_speed*dt;
+    amt.distance += amt_telem.approach_speed*dt;
     Bound(amt.distance, 0, 100); // approach dist > 0
     //amt.distance -= 1*dt;
   }

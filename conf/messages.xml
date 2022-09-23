@@ -1209,6 +1209,7 @@
       <field name="target_vel_z" type="float" unit="m/s"/>
       <field name="start_distance" type="float" unit="m"/>
       <field name="distance" type="float" unit="m"/>
+      <field name="approach_speed" type="float" unit="m/s"/>
       <field name="slope_ref" type="float" unit="m"/>
       <field name="force_forward" type="uint8" unit="bool"/>
     </message>
