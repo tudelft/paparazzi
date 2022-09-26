@@ -19,9 +19,10 @@
       <module name="tlsf"/>
       <module name="pprzlog"/>
       <module name="logger" type="sd_chibios"/>
-      <!--
       <module name="flight_recorder"/>
-      -->
+      <define name="SDLOG_AUTO_FLUSH_PERIOD" value="1" unit="s"/>
+      <define name="SDLOG_START_DELAY" value="5" unit="s"/>
+      <define name="SDLOG_CONTIGUOUS_STORAGE_MEM" value="50" unit="Mo"/>
 
       <!--<module name="scheduling_indi_simple"/>-->
 
