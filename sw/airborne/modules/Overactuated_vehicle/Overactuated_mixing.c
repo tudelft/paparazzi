@@ -69,6 +69,9 @@ float euler_order[3];
 float psi_order_motor = 0;
 
 float K_beta = 0.1;
+float K_T_airspeed = 0.025; 
+
+float Dynamic_MOTOR_K_T_OMEGASQ;
 
 //Flight states variables:
 bool INDI_engaged = 0, FAILSAFE_engaged = 0, MANUAL_fwd_engaged = 0;
@@ -228,9 +231,9 @@ static void send_indi_cmd( struct transport_tx *trans , struct link_device * dev
  */
 static void send_overactuated_variables( struct transport_tx *trans , struct link_device * dev ) {
     // Send telemetry message
-
+    float local_variable = Dynamic_MOTOR_K_T_OMEGASQ * 1e5;
     pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID ,
-                                         & airspeed, & aoa_deg, & beta_deg,
+                                         & airspeed, & local_variable , & beta_deg,
                                          & pos_vect[0], & pos_vect[1], & pos_vect[2],
                                          & speed_vect[0], & speed_vect[1], & speed_vect[2],
                                          & acc_vect_filt[0], & acc_vect_filt[1], & acc_vect_filt[2],
@@ -854,11 +857,14 @@ void overactuated_mixing_run(void)
             pos_setpoint[2] = pos_vect[2];
         }
 
-        //Compute the actual k_motor_omegasq with voltage value: 
-        float Dynamic_MOTOR_K_T_OMEGASQ = electrical.vsupply * OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ_P1 + OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ_P2;
+        //Correct the K_T with speed: 
+        float local_gain_K_T = 1 - airspeed*K_T_airspeed ;
+        Bound( local_gain_K_T, 0.1, 1);
 
-//        // Get an estimate of the actuator state using the first order dynamics given by the user
-//        get_actuator_state();
+        //Compute the actual k_motor_omegasq with voltage value: 
+        Dynamic_MOTOR_K_T_OMEGASQ = local_gain_K_T * (electrical.vsupply * OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ_P1 + OVERACTUATED_MIXING_MOTOR_K_T_OMEGASQ_P2);
+
+        // Dynamic_MOTOR_K_T_OMEGASQ = Dynamic_MOTOR_K_T_OMEGASQ * local_gain_K_T;
 
         // Get an estimate of the actuator state using the second order dynamics
         get_actuator_state_v2();
@@ -893,25 +899,15 @@ void overactuated_mixing_run(void)
         accel_y_filt_corrected = accely_filt.o[0] 
                                 - actuator_state_filt[0]*actuator_state_filt[0]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
                                 - actuator_state_filt[1]*actuator_state_filt[1]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
-                                - actuator_state_filt[3]*actuator_state_filt[2]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
+                                - actuator_state_filt[2]*actuator_state_filt[2]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
                                 - actuator_state_filt[3]*actuator_state_filt[3]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[11])/VEHICLE_MASS;
                                 
 
         if(airspeed > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
-//            yaw_rate_setpoint_turn = 9.81 / airspeed_turn * tan(euler_vect[0]) - K_beta * accely;
-//            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/total_V;
-//              yaw_rate_setpoint_turn = accel_vect_control_rf[1] / airspeed_turn - K_beta * accely;
-//            yaw_rate_setpoint_turn = accel_vect_control_rf[1]/total_V + K_beta * beta_rad;
-//            yaw_rate_setpoint_turn = K_beta * beta_rad;
 
-            //Creating the setpoint using the desired lateral acceleration and the body correction:
-
-            // yaw_rate_setpoint_turn = acc_setpoint_control_rf[1]/airspeed_turn - K_beta * accely_filt.o[0];
-
+            //Creating the setpoint using the bank angle and the body acceleration correction for the sideslip:
             yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accel_y_filt_corrected;
 
-            //Secpnd option, create the yaw rate setpoint based on phi and lateral body acceleration: 
-            // yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accely_filt.o[0];
         }
         else{
             yaw_rate_setpoint_turn = 0;
@@ -1075,7 +1071,7 @@ void overactuated_mixing_run(void)
         am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
         am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
 
-        float manual_min_el_angle = -100;
+        float manual_min_el_angle = -120;
 
         extra_data_out_local[0] = Dynamic_MOTOR_K_T_OMEGASQ;
         extra_data_out_local[1] = OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ;
