@@ -118,6 +118,8 @@
         <servo NO="2" NEUTRAL="600" NAME="MOTOR_BACK" MIN="0" MAX="8191"/>
         <servo NO="3" NEUTRAL="600" NAME="MOTOR_LEFT" MIN="0" MAX="8191"/>
         <servo NO="4" NEUTRAL="600" NAME="MOTOR_PUSH" MIN="0" MAX="8191"/>
+        <servo NO="9" NEUTRAL="0" NAME="SERVO_ELEVATOR" MIN="4000" MAX="-4000"/>
+        <servo NO="10" NEUTRAL="0" NAME="SERVO_RUDDER" MIN="-8191" MAX="8191"/>
     </servos>
 
     <commands>
@@ -137,6 +139,8 @@
     <command_laws>
         <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
         <set VALUE="-9600" SERVO="MOTOR_PUSH"/>
+        <set VALUE="0" SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="0" SERVO="SERVO_RUDDER"/>
         <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
         <!--<call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>-->
         <set VALUE="($th_hold? -9600 : actuators_pprz[0])" SERVO="MOTOR_FRONT"/>
