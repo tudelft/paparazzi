@@ -157,6 +157,19 @@ Butterworth2LowPass actuator_state_filters[N_ACT_REAL];   //Filter of actuators
 
 Butterworth2LowPass accely_filt;//Filter of lateral acceleration for turn correction
 
+//Filters for euler angles: 
+Butterworth2LowPass phi_filt_nonlinear;
+Butterworth2LowPass theta_filt_nonlinear;
+Butterworth2LowPass psi_filt_nonlinear;
+
+//Filters for flight path angle : 
+Butterworth2LowPass flight_path_angle_filtered;
+
+//Variables for the auto test: 
+float auto_test_time_start, des_Vx, des_Vy, des_Vz, des_phi, des_theta, des_psi_dot;
+int auto_test_start; 
+
+            
 struct PID_over pid_gains_over = {
         .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
                OVERACTUATED_MIXING_PID_P_GAIN_THETA,
@@ -231,7 +244,7 @@ static void send_indi_cmd( struct transport_tx *trans , struct link_device * dev
  */
 static void send_overactuated_variables( struct transport_tx *trans , struct link_device * dev ) {
     // Send telemetry message
-    float local_variable = Dynamic_MOTOR_K_T_OMEGASQ * 1e5;
+    float local_variable = auto_test_start;
     pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID ,
                                          & airspeed, & local_variable , & beta_deg,
                                          & pos_vect[0], & pos_vect[1], & pos_vect[2],
@@ -307,9 +320,15 @@ void init_filters(void){
         init_butterworth_2_low_pass(&measurement_rates_filters[i], tau_ang_acc, sample_time, 0.0);
         init_butterworth_2_low_pass(&measurement_acc_filters[i], tau_lin_acc, sample_time, 0.0);
     }
-
-    //Initialize filter for the lateral acceleration to correct the turn: 
+    
+    //Initialize filter for the lateral acceleration to correct the turn, the attitude and the flight path angle: 
     init_butterworth_2_low_pass(&accely_filt, tau_lin_acc, sample_time, 0.0);
+
+    init_butterworth_2_low_pass(&phi_filt_nonlinear, tau_lin_acc, sample_time, 0.0);
+    init_butterworth_2_low_pass(&theta_filt_nonlinear, tau_lin_acc, sample_time, 0.0);
+    init_butterworth_2_low_pass(&psi_filt_nonlinear, tau_lin_acc, sample_time, 0.0);
+
+    init_butterworth_2_low_pass(&flight_path_angle_filtered, tau_lin_acc, sample_time, 0.0);
 
     //Initialize to zero the variables of get_actuator_state_v2:
     for(int i = 0; i < INDI_NUM_ACT; i++){
@@ -611,8 +630,19 @@ void assign_variables(void){
 
     }
 
+    // Update the filter for the body lateral acceleration 
     float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
     update_butterworth_2_low_pass(&accely_filt, accely);
+
+    // Update the filters for the attitude and the rates to be fed to the Nonlinear CA module: 
+
+    //Attitude
+    update_butterworth_2_low_pass(&phi_filt_nonlinear, euler_vect[0]);
+    update_butterworth_2_low_pass(&theta_filt_nonlinear, euler_vect[1]);
+    update_butterworth_2_low_pass(&psi_filt_nonlinear, euler_vect[2]);
+
+    //Flight path angle 
+    update_butterworth_2_low_pass(&flight_path_angle_filtered, flight_path_angle);
 
     //Computation of the matrix to pass from euler to body rates
     R_matrix[0][0]=1; R_matrix[0][1]=0; R_matrix[0][2]=0;
@@ -636,6 +666,81 @@ void overactuated_mixing_run(void)
 {
     //Assign variables
     assign_variables();
+
+    //Prepare the reference for the AUTO test with the nonlinear controller: 
+        
+    if(radio_control.values[RADIO_AUX4] < -500){
+        auto_test_start = 1; 
+    }
+    else{
+        auto_test_start = 0;
+    }
+
+    if(auto_test_start){
+        
+        if( get_sys_time_float() - auto_test_time_start >= 0 && get_sys_time_float() - auto_test_time_start < 2){
+            des_Vx = 0;
+            des_Vy = 0;
+            des_Vz = 0;
+            des_phi = 0;
+            des_theta = 0;
+            des_psi_dot = 0;  
+        }
+        else if( get_sys_time_float() - auto_test_time_start >= 2 && get_sys_time_float() - auto_test_time_start < 6){
+            des_Vx = 15;
+            des_Vy = 0;
+            des_Vz = 0;
+            des_phi = 0;
+            des_theta = 0;
+            des_psi_dot = 0;  
+        }
+        else if( get_sys_time_float() - auto_test_time_start >= 6 && get_sys_time_float() - auto_test_time_start < 10){
+            des_Vx = 15;
+            des_Vy = 0;
+            des_Vz = -2;
+            des_phi = 0;
+            des_theta = 0;
+            des_psi_dot = 0;  
+        }
+        else if( get_sys_time_float() - auto_test_time_start >= 10 && get_sys_time_float() - auto_test_time_start < 13){
+            des_Vx = 15;
+            des_Vy = 0;
+            des_Vz = 0;
+            des_phi = 0;
+            des_theta = 0;
+            des_psi_dot = 0;  
+        }
+        else if( get_sys_time_float() - auto_test_time_start >= 13 && get_sys_time_float() - auto_test_time_start < 25){
+            des_Vx = 15;
+            des_Vy = 5;
+            des_Vz = 0;
+            des_phi = 0;
+            des_theta = 0;
+            des_psi_dot = 0;   
+        }
+        else if( get_sys_time_float() - auto_test_time_start >= 25 && get_sys_time_float() - auto_test_time_start < 28){
+            des_Vx = 15;
+            des_Vy = 0;
+            des_Vz = 0;
+            des_phi = 0;
+            des_theta = 0;
+            des_psi_dot = 0;   
+        }
+        else{
+            des_Vx = 0;
+            des_Vy = 0;
+            des_Vz = 0;
+            des_phi = 0;
+            des_theta = 0;
+            des_psi_dot = 0;   
+        }                
+
+    } else{
+        auto_test_time_start = get_sys_time_float();
+    }
+
+
+
 
     /// Case of manual PID control [FAILSAFE]
         // if(0){
@@ -751,7 +856,7 @@ void overactuated_mixing_run(void)
     }
 
     /// Case of manual mode forward:
-    if(radio_control.values[RADIO_MODE] > -500 && radio_control.values[RADIO_MODE] < 500){
+    if(0){
 
         //INIT AND BOOLEAN RESET
         if(MANUAL_fwd_engaged == 0 ){
@@ -801,7 +906,7 @@ void overactuated_mixing_run(void)
 
     /// Case of INDI control mode with external nonlinear function:
     //    if(1)
-    if(radio_control.values[RADIO_MODE] > 500 )
+    if(radio_control.values[RADIO_MODE] >= 500 )
     {
 
         //INIT AND BOOLEAN RESET
@@ -873,6 +978,12 @@ void overactuated_mixing_run(void)
         manual_phi_value = MANUAL_CONTROL_MAX_CMD_ROLL_ANGLE * radio_control.values[RADIO_AUX2] / 9600;
         manual_theta_value = MANUAL_CONTROL_MAX_CMD_PITCH_ANGLE * radio_control.values[RADIO_AUX3] / 9600;
 
+        //Add the setpoint in case of AUTO test
+        if(auto_test_start){ 
+            manual_phi_value = des_phi * M_PI/180; 
+            manual_theta_value = des_theta * M_PI/180; 
+        }
+
         manual_motor_value = 150;
 
         euler_setpoint[0] = indi_u[13];
@@ -885,6 +996,12 @@ void overactuated_mixing_run(void)
 
         // For the yaw, we can directly control the rates:
         float yaw_rate_setpoint_manual = MANUAL_CONTROL_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / 9600;
+
+        //Add the setpoint in case of AUTO test
+        if(auto_test_start){ 
+            yaw_rate_setpoint_manual = des_psi_dot * M_PI/180; 
+        }
+
         //Compute the yaw rate for the coordinate turn:
         float yaw_rate_setpoint_turn = 0;
         float fwd_multiplier_yaw = 0;
@@ -972,6 +1089,13 @@ void overactuated_mixing_run(void)
             speed_setpoint_control_rf[2] = 0;
         }
 
+        //Add the setpoint in case of AUTO test
+        if(auto_test_start){ 
+            speed_setpoint_control_rf[0] = des_Vx; 
+            speed_setpoint_control_rf[1] = des_Vy; 
+            speed_setpoint_control_rf[2] = des_Vz; 
+        }
+
         //Apply saturation blocks to speed setpoints in control reference frame:
         Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
         BoundAbs(speed_setpoint_control_rf[1],LIMITS_FWD_MAX_LAT_SPEED);
@@ -1042,15 +1166,15 @@ void overactuated_mixing_run(void)
         am7_data_out_local.az_3_state_int = (int16_t) (actuator_state_filt[10] * 1e2 * 180/M_PI);
         am7_data_out_local.az_4_state_int = (int16_t) (actuator_state_filt[11] * 1e2 * 180/M_PI);
 
-        am7_data_out_local.phi_state_int = (int16_t) (euler_vect[0] * 1e2 * 180/M_PI);
-        am7_data_out_local.theta_state_int = (int16_t) (euler_vect[1] * 1e2 * 180/M_PI);
-        am7_data_out_local.psi_state_int = (int16_t) (euler_vect[2] * 1e2 * 180/M_PI);
+        am7_data_out_local.phi_state_int = (int16_t) (phi_filt_nonlinear.o[0] * 1e2 * 180/M_PI);
+        am7_data_out_local.theta_state_int = (int16_t) (theta_filt_nonlinear.o[0] * 1e2 * 180/M_PI);
+        am7_data_out_local.psi_state_int = (int16_t) (psi_filt_nonlinear.o[0] * 1e2 * 180/M_PI);
 
-        am7_data_out_local.gamma_state_int = (int16_t) (flight_path_angle * 1e2 * 180/M_PI);
+        am7_data_out_local.gamma_state_int = (int16_t) (flight_path_angle_filtered.o[0] * 1e2 * 180/M_PI);
 
-        am7_data_out_local.p_state_int = (int16_t) (rate_vect_filt[0] * 1e1 * 180/M_PI);
-        am7_data_out_local.q_state_int = (int16_t) (rate_vect_filt[1] * 1e1 * 180/M_PI);
-        am7_data_out_local.r_state_int = (int16_t) (rate_vect_filt[2] * 1e1 * 180/M_PI);
+        am7_data_out_local.p_state_int = (int16_t) (measurement_rates_filters[0].o[0] * 1e1 * 180/M_PI);
+        am7_data_out_local.q_state_int = (int16_t) (measurement_rates_filters[1].o[0] * 1e1 * 180/M_PI);
+        am7_data_out_local.r_state_int = (int16_t) (measurement_rates_filters[2].o[0] * 1e1 * 180/M_PI);
 
         am7_data_out_local.airspeed_state_int = (int16_t) (airspeed * 1e2);
 
@@ -1071,7 +1195,7 @@ void overactuated_mixing_run(void)
         am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
         am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
 
-        float manual_min_el_angle = -120;
+        float manual_min_el_angle = -100;
 
         extra_data_out_local[0] = Dynamic_MOTOR_K_T_OMEGASQ;
         extra_data_out_local[1] = OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ;
