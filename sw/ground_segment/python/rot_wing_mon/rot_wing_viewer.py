@@ -215,6 +215,8 @@ class RotWingFrame(wx.Frame):
             dc.DrawRectangle(int(m[0]*w), int(m[1]*h),int(mw*w), int(mh*h))
 
         for m in self.motors.mot:
+            if m.id>4:
+                continue
             mo_co = mm[m.id]
             #print(m.id, mo_co)
             dx = int(mo_co[0]*w)
