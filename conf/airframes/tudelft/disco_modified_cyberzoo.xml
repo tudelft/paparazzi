@@ -170,8 +170,8 @@
   <!-- ************************* ACTUATORS ************************* -->
   <servos driver="Pwm">
     <servo name="S_THROTTLE_LEFT" no="0" min="1150" neutral="1500" max="1850"/>  <!-- Overpowered motors need to be limited -->
-    <servo name="S_ELEVON_LEFT" no="1" min="2050" neutral="1550" max="1050"/> <!-- max value is upward deflection-->
-    <servo name="S_ELEVON_RIGHT" no="2" min="1000" neutral="1500" max="2000"/>
+    <servo name="S_ELEVON_LEFT" no="1" min="1000" neutral="1500" max="2000"/> <!-- max value is upward deflection-->
+    <servo name="S_ELEVON_RIGHT" no="2" min="2000" neutral="1500" max="1000"/>
     <servo name="S_THROTTLE_RIGHT" no="3" min="1150" neutral="1500" max="1850"/>
   </servos>
 

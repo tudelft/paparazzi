@@ -39,7 +39,7 @@ uint8_t cc_feed_forward = false;
 uint8_t use_controller = false;
 uint8_t elevon_delta_active = false;
 uint8_t motor_delta_active = false;
-uint8_t use_mag_psi = false;
+uint8_t use_mag_psi = true;
 
 uint8_t has_cc_ff_started = false;
 float cc_ff_start_time;
@@ -66,8 +66,8 @@ void cyclic_control_values(struct fs_landing_t *actuator_values) {
     if (labs(radio_pitch) < 100) {
       radio_pitch = 0;
     }
-    float pilot_phase_rad = atan2f(radio_pitch, radio_roll);
-    mt_phase_rad += pilot_phase_rad;
+    float pilot_phase_rad = atan2f(-radio_pitch, radio_roll);
+//    mt_phase_rad += pilot_phase_rad;
     el_phase_rad += pilot_phase_rad;
 
 #if CYCLIC_CONTROL_DEBUG
@@ -148,6 +148,19 @@ void cyclic_control_values(struct fs_landing_t *actuator_values) {
     if (motor_l < 0) {
       motor_r = get_matching_motl_val(motor_l);
     }
+  }
+  if (phase_pilot_control) {
+    int64_t radio_roll = radio_control.values[RADIO_ROLL];
+    if (labs(radio_roll) < 100) {
+      radio_roll = 0;
+    }
+    int64_t radio_pitch = -radio_control.values[RADIO_PITCH];
+    if (labs(radio_pitch) < 100) {
+      radio_pitch = 0;
+    }
+    float radio_amp = sqrt(pow(radio_pitch, 2) + pow(radio_roll, 2)) / 9600.;
+    el_delta = radio_amp;
+    er_delta = radio_amp;
   }
 
   if (use_elevon_l) {

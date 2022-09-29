@@ -50,7 +50,6 @@
         <dl_setting min="0" max="1" step="1" var="use_motor_r" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="use_elevon_l" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="use_elevon_r" type="uint8_t" module="fs_landing/cyclic_control"/>
-        <dl_setting min="0" max="1" step="1" var="use_elevon_r" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="elevon_delta_active" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="motor_delta_active" type="uint8_t" module="fs_landing/cyclic_control"/>
         <dl_setting min="0" max="1" step="1" var="phase_pilot_control" type="uint8_t" module="fs_landing/cyclic_control"/>
