@@ -11,7 +11,7 @@
       <configure name="FLASH_MODE" value="PX4_BOOTLOADER"/>
 
       <module name="radio_control" type="sbus">
-        <configure name="SBUS_PORT" value="UART6"/>
+        <configure name="SBUS_PORT" value="UART3"/>
       </module>
 
       <define name="INDI_RPM_FEEDBACK" value="FALSE"/>
@@ -30,10 +30,11 @@
 
       <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
 
-      <!-- <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/> Throttle hold in command laws -->
-      <!-- <define name="RADIO_FMODE"       value="RADIO_AUX2"/> Throttle curve select -->
-      <!-- <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> Switch between AP and FBW control -->
-      <!-- <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/> -->
+      <!--<define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/> Throttle hold in command laws-->
+      <!-- <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
+      <define name="RADIO_FMODE"       value="RADIO_AUX2"/> Throttle curve select
+      <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> Switch between AP and FBW control
+      -->
     </target>
 
     <target name="nps" board="pc">

@@ -195,7 +195,7 @@
    name="Flamewheel_ctl_alloc"
    ac_id="2"
    airframe="airframes/tudelft/flamewheel_indi_new_alloc.xml"
-   radio="radios/sbus_delft.xml"
+   radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
    telemetry="telemetry/tudelft/ctl_alloc_algos.xml"
    flight_plan="flight_plans/tudelft/control_alloc_algos.xml"
    settings="settings/control/rotorcraft_speed.xml settings/rotorcraft_basic.xml"

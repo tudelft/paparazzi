@@ -7,8 +7,8 @@
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint name="CLIMB" x="0.0" y="0.0"/>
-    <waypoint name="STDBY" x="0.0" y="0.0"/>
-    <waypoint name="ALT" x="2.0" y="2.0"/>
+    <waypoint name="STDBY" x="-1.5" y="-1.5" alt="2.0"/>
+    <waypoint name="ALT" x="1.5" y="1.5" alt="3.5"/>
   </waypoints>
   <blocks>
     <block name="Wait GPS">
@@ -35,17 +35,12 @@
       <call_once fun="nav_set_heading_deg(0)"/>
       <stay wp="STDBY"/>
     </block>
-    <block name="Attitude">
-      <call_once fun="nav_set_heading_deg(180)"/>
-      <attitude pitch="15" roll="15" vmode="alt" alt="2" until="stage_time @GT 0.5"/>
-      <deroute block="Standby"/>
-    </block>
     <block key="a" name="Alternate" strip_button="Alternate">
       <call_once fun="nav_set_heading_deg(179)"/>
       <stay wp="ALT"/>
     </block>
     <block key="l" name="land" strip_button="land" strip_icon="land-right.png">
-        <go wp="STDBY"/>
+        <stay wp="HOME" until="stage_time @GT 7"/>
         <deroute block="Flare"/>
     </block>
     <block name="Flare">
@@ -53,7 +48,7 @@
       <exception cond="!nav_is_in_flight()" deroute="Landed"/>
       <exception cond="0.10 @GT GetPosAlt()" deroute="Landed"/>
       <call_once fun="NavStartDetectGround()"/>
-      <stay climb="nav_descend_vspeed" vmode="climb" wp="STDBY"/>
+      <stay climb="nav_descend_vspeed" vmode="climb" wp="HOME"/>
     </block>
     <block name="Landed">
       <call_once fun="NavKillThrottle()"/>
