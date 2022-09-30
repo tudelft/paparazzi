@@ -37,6 +37,7 @@
       <message name="INS_EKF2"                 period=".25"/>
       <message name="WIND_INFO_RET"            period="1."/>
       <message name="CTL_ALLOC_PERF"           period="1."/>
+      <message name="DOUBLET"           period=".2"/>
     </mode>
 
     <mode name="ppm">
@@ -200,6 +201,7 @@
       <message name="IMU_ACCEL_SCALED"         period=".075"/>
       <message name="IMU_MAG_SCALED"           period=".2"/>
       <message name="LIDAR"                    period="0.05"/>
+      <message name="CTL_ALLOC_PERF"           period="1."/>
     </mode>
   </process>
 
