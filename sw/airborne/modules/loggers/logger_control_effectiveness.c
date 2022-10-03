@@ -55,6 +55,7 @@
 #if LOGGER_CONTROL_EFFECTIVENESS_COMMANDS
 #ifdef ROTORCRAFT_FIRMWARE
 #include "firmwares/rotorcraft/stabilization.h"
+#include "firmwares/rotorcraft/stabilization/stabilization_indi_algos.h"
 #endif
 #ifdef FIXEDWING_FIRMWARE
 #include "modules/core/commands.h"
@@ -118,7 +119,8 @@ void logger_control_effectiveness_periodic(void)
 #if LOGGER_CONTROL_EFFECTIVENESS_COMMANDS
   for (unsigned int i = 0; i < COMMANDS_NB; i++) {
 #ifdef ROTORCRAFT_FIRMWARE
-    sdLogWriteLog(pprzLogFile, ",%ld", stabilization_cmd[i]);
+    //sdLogWriteLog(pprzLogFile, ",%ld", stabilization_cmd[i]);
+    sdLogWriteLog(pprzLogFile, ",%.2f", indi_v[i]);
 #endif
 #ifdef FIXEDWING_FIRMWARE
     sdLogWriteLog(pprzLogFile, ",%d", commands[i]);
