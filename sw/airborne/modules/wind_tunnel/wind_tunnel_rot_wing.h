@@ -32,6 +32,7 @@
 // define variables
 extern int16_t actuators_wt[11];
 extern int16_t actuators_slider_wt[11];
+extern int16_t motors_slider_wt;
 
 extern bool motors_off_wt;
 extern bool motor_off_wt[5];
@@ -41,14 +42,15 @@ extern uint8_t wt_actuator_sweep_index;
 extern int16_t wt_input_min_cmd;
 extern int16_t wt_input_max_cmd;
 extern float wt_input_steptime;
-extern uint8_t wt_input_n_steps;
 
 // status indicators
 extern bool wt_sweep_running;
+extern bool wt_sweep_motors_running;
 
 extern void init_wt_rot_wing(void);
 extern void event_wt_rot_wing(void);
 
 extern void wind_tunnel_rot_wing_sweep_handler(bool activate);
+extern void wind_tunnel_rot_wing_sweep_motors_handler(bool activate);
 
 #endif  // WIND_TUNNEL_ROT_WING_H
