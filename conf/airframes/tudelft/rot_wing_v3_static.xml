@@ -119,7 +119,8 @@
         <servo NO="2" NEUTRAL="600" NAME="MOTOR_BACK" MIN="0" MAX="8191"/>
         <servo NO="3" NEUTRAL="600" NAME="MOTOR_LEFT" MIN="0" MAX="8191"/>
         <servo NO="4" NEUTRAL="600" NAME="MOTOR_PUSH" MIN="0" MAX="8191"/>
-        <servo NO="9" NEUTRAL="0" NAME="SERVO_ELEVATOR" MIN="4000" MAX="-4000"/>
+        <!-- <servo NO="9" NEUTRAL="0" NAME="SERVO_ELEVATOR" MIN="4000" MAX="-4000"/> -->
+        <servo NO="9" NEUTRAL="2986" NAME="SERVO_ELEVATOR" MIN="8191" MAX="-6794"/>
         <servo NO="10" NEUTRAL="0" NAME="SERVO_RUDDER" MIN="-8191" MAX="8191"/>
     </servos>
 
@@ -144,13 +145,13 @@
         <set VALUE="($th_hold? -9600 : actuators_wt[2])"    SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_wt[3])"    SERVO="MOTOR_LEFT"/>
         <set VALUE="($th_hold? -9600 : actuators_wt[4])"    SERVO="MOTOR_PUSH"/>
-        <set VALUE="actuators_wt[9]"                        SERVO="SERVO_ELEVATOR"/>
-        <set VALUE="actuators_wt[10]"                       SERVO="SERVO_RUDDER"/>
+        <set VALUE="($th_hold? 0 : actuators_wt[9])"        SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="($th_hold? 0 : actuators_wt[10])"       SERVO="SERVO_RUDDER"/>
         <set VALUE="wing_rotation.servo_pprz_cmd"           SERVO="SERVO_1"/>
     </command_laws>
 
     <section NAME="MISC">
-        <define name="VoltageOfAdc(adc)" value="((3.3f/65536.0f) * 12.54 * adc)"/>
+        <define name="VoltageOfAdc(adc)" value="((3.3f/65536.0f) * 13.86 * adc)"/>
         <define VALUE="TRUE" NAME="NO_RC_THRUST_LIMIT"/>
         <define VALUE="3.5" NAME="NAV_CLIMB_VSPEED"/>
         <define VALUE="-0.5" NAME="NAV_DESCEND_VSPEED"/>
