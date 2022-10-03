@@ -28,6 +28,7 @@
 
 int16_t actuators_wt[11] = {0,0,0,0,0,0,0,0,0,0,0};
 int16_t actuators_slider_wt[11] = {0,0,0,0,0,0,0,0,0,0,0};
+int16_t motors_slider_wt = 0;
 
 bool actuator_is_servo_wt[11] = {0,0,0,0,0,1,1,1,1,1,1};
 
@@ -39,21 +40,26 @@ uint8_t wt_actuator_sweep_index = 0;
 int16_t wt_input_min_cmd = 0;
 int16_t wt_input_max_cmd = 0;
 float wt_input_steptime = 5;
-uint8_t wt_input_n_steps = 10;
 
 struct wt_active_sweep_params {
   uint8_t sweep_index;
   int16_t min_cmd;
   int16_t max_cmd;
   float steptime;
-  uint8_t n_steps;
   float total_time;
-  float stepsize;
 } wt_active_sweep_p;
+
+struct wt_active_motors_sweep_params {
+  int16_t begin_cmd[4];
+  int16_t end_cmd;
+  float steptime;
+} wt_active_motors_sweep_p;
 
 // status indicators
 bool wt_sweep_running = false;
+bool wt_sweep_motors_running = false;
 float wt_sweep_timer_start = 0;
+float wt_sweep_motors_timer_start = 0;
 
 void init_wt_rot_wing(void)
 {
@@ -62,9 +68,14 @@ void init_wt_rot_wing(void)
   wt_active_sweep_p.min_cmd     = wt_input_min_cmd;
   wt_active_sweep_p.max_cmd     = wt_input_max_cmd;
   wt_active_sweep_p.steptime    = wt_input_steptime;
-  wt_active_sweep_p.n_steps     = wt_input_n_steps;
-  wt_active_sweep_p.total_time  = wt_active_sweep_p.steptime * (float)(wt_active_sweep_p.n_steps + 1);
-  wt_active_sweep_p.stepsize    = (float)(wt_active_sweep_p.max_cmd - wt_active_sweep_p.min_cmd) / (float)wt_active_sweep_p.n_steps;
+  wt_active_sweep_p.total_time  = wt_active_sweep_p.steptime * 4;
+
+  for (uint8_t i = 0; i<4; i++)
+  {
+    wt_active_motors_sweep_p.begin_cmd[i] = actuators_wt[i];
+  }
+  wt_active_motors_sweep_p.end_cmd = motors_slider_wt;
+  wt_active_motors_sweep_p.steptime = wt_input_steptime;
 }
 
 void event_wt_rot_wing(void)
@@ -84,10 +95,38 @@ void event_wt_rot_wing(void)
     {
       wt_sweep_running = false;
     } else {
-      float part_done = sweep_time / wt_active_sweep_p.total_time;
-      uint8_t step_number = (uint8_t)(part_done * (float)(wt_active_sweep_p.n_steps + 1));
-      int16_t sweep_cmd = wt_active_sweep_p.min_cmd + (int16_t)((float)step_number * wt_active_sweep_p.stepsize);
+      float progress = sweep_time / wt_active_sweep_p.steptime; // If progress > 4, sweep done
+      int16_t sweep_cmd = 0;
+      float stage_progress;
+      if (progress < 1) {
+        stage_progress = progress;
+        sweep_cmd = actuators_slider_wt[wt_active_sweep_p.sweep_index] + (int16_t)((float)(wt_active_sweep_p.min_cmd - actuators_slider_wt[wt_active_sweep_p.sweep_index]) * stage_progress);
+      } else if (progress < 2) {
+        stage_progress = progress - 1.;
+        sweep_cmd = wt_active_sweep_p.min_cmd + (int16_t)((float)(actuators_slider_wt[wt_active_sweep_p.sweep_index] - wt_active_sweep_p.min_cmd) * stage_progress);
+      } else if (progress < 3) {
+        stage_progress = progress - 2.;
+        sweep_cmd = actuators_slider_wt[wt_active_sweep_p.sweep_index] + (int16_t)((float)(wt_active_sweep_p.max_cmd - actuators_slider_wt[wt_active_sweep_p.sweep_index]) * stage_progress);
+      } else if (progress < 4) {
+        stage_progress = progress - 3.;
+        sweep_cmd = wt_active_sweep_p.max_cmd + (int16_t)((float)(actuators_slider_wt[wt_active_sweep_p.sweep_index] - wt_active_sweep_p.max_cmd) * stage_progress);
+      }
+
+      
       actuators_temp[wt_active_sweep_p.sweep_index] = sweep_cmd;
+    }
+  }
+
+  // If motors sweep running
+  if (wt_sweep_motors_running) {
+    float sweep_time = get_sys_time_float() - wt_sweep_motors_timer_start;
+    if (sweep_time > wt_active_motors_sweep_p.steptime) {
+      wt_sweep_motors_running = false;
+    } else {
+      float progress = sweep_time / wt_active_motors_sweep_p.steptime;
+      for (uint8_t i = 0; i<4; i++) {
+        actuators_temp[i] = wt_active_motors_sweep_p.begin_cmd[i] + (int16_t)((float)(wt_active_motors_sweep_p.end_cmd - wt_active_motors_sweep_p.begin_cmd[i]) * progress);
+      }
     }
   }
 
@@ -122,16 +161,14 @@ void evaluate_motor_commands(void)
 void wind_tunnel_rot_wing_sweep_handler(bool activate)
 {
   // Only start when there is a non active sweep
-  if (!wt_sweep_running && activate)
+  if (!wt_sweep_running && !wt_sweep_motors_running && activate)
   {
     // Copy sweep values to active sweep values
     wt_active_sweep_p.sweep_index = wt_actuator_sweep_index;
     wt_active_sweep_p.min_cmd     = wt_input_min_cmd;
     wt_active_sweep_p.max_cmd     = wt_input_max_cmd;
     wt_active_sweep_p.steptime    = wt_input_steptime;
-    wt_active_sweep_p.n_steps     = wt_input_n_steps;
-    wt_active_sweep_p.total_time  = wt_active_sweep_p.steptime * (float)(wt_active_sweep_p.n_steps + 1);
-    wt_active_sweep_p.stepsize    = (float)(wt_active_sweep_p.max_cmd - wt_active_sweep_p.min_cmd) / (float)wt_active_sweep_p.n_steps;
+    wt_active_sweep_p.total_time  = wt_active_sweep_p.steptime * 4;
     wt_sweep_running = true;
     wt_sweep_timer_start = get_sys_time_float();
   } else if (!activate) {
@@ -139,4 +176,26 @@ void wind_tunnel_rot_wing_sweep_handler(bool activate)
   }
 }
 
+void wind_tunnel_rot_wing_sweep_motors_handler(bool activate)
+{
+  // switch off sweep if running:
+  wt_sweep_running = false;
+  // Switch on motors sweep
+  if (!wt_sweep_motors_running && activate)
+  {
+    for (uint8_t i = 0; i<4; i++)
+    {
+      wt_active_motors_sweep_p.begin_cmd[i] = actuators_wt[i];
+    }
+    wt_active_motors_sweep_p.end_cmd = motors_slider_wt;
+    wt_active_motors_sweep_p.steptime = wt_input_steptime;
+    wt_sweep_motors_timer_start = get_sys_time_float();
+    wt_sweep_motors_running = true;
 
+    // set sliders
+    for (uint8_t i = 0; i<4; i++)
+    {
+      actuators_slider_wt[i] = wt_active_motors_sweep_p.end_cmd;
+    }
+  }
+}

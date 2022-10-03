@@ -6,12 +6,12 @@
   <settings>
     <dl_settings name="Wind tunnel">
       <dl_settings name="Wt act control">
-        <dl_setting min="0" max="1" step="1" values="On|Off" shortname="motors_off" var="motors_off_wt"   type="bool"/>
-        <dl_setting min="0" max="1" step="1" values="On|Off" shortname="front_off"  var="motor_off_wt[0]" type="bool"/>
-        <dl_setting min="0" max="1" step="1" values="On|Off" shortname="right_off"  var="motor_off_wt[1]" type="bool"/>
-        <dl_setting min="0" max="1" step="1" values="On|Off" shortname="back_off"   var="motor_off_wt[2]" type="bool"/>
-        <dl_setting min="0" max="1" step="1" values="On|Off" shortname="left_off"   var="motor_off_wt[3]" type="bool"/>
-        <dl_setting min="0" max="1" step="1" values="On|Off" shortname="push_off"   var="motor_off_wt[4]" type="bool"/>
+        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="motors_off" var="motors_off_wt"   type="bool"/>
+        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="front_off"  var="motor_off_wt[0]" type="bool"/>
+        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="right_off"  var="motor_off_wt[1]" type="bool"/>
+        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="back_off"   var="motor_off_wt[2]" type="bool"/>
+        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="left_off"   var="motor_off_wt[3]" type="bool"/>
+        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="push_off"   var="motor_off_wt[4]" type="bool"/>
         <dl_setting min="0"     max="9600" step="1" shortname="front_cmd"     var="actuators_slider_wt[0]"  type="int16_t"/>
         <dl_setting min="0"     max="9600" step="1" shortname="right_cmd"     var="actuators_slider_wt[1]"  type="int16_t"/>
         <dl_setting min="0"     max="9600" step="1" shortname="back_cmd"      var="actuators_slider_wt[2]"  type="int16_t"/>
@@ -19,12 +19,13 @@
         <dl_setting min="0"     max="9600" step="1" shortname="push_cmd"      var="actuators_slider_wt[4]"  type="int16_t"/>
         <dl_setting min="-9600" max="9600" step="1" shortname="elevator_cmd"  var="actuators_slider_wt[9]"  type="int16_t"/>
         <dl_setting min="-9600" max="9600" step="1" shortname="rudder_cmd"    var="actuators_slider_wt[10]" type="int16_t"/>
+        <dl_setting min="0"     max="9600" step="1" shortname="motors_cmd"    var="motors_slider_wt"        type="int16_t"/>
         <dl_setting min="0"     max="11"    step="1" shortname="sweep_idx"  var="wt_actuator_sweep_index" type="uint8_t"/>
         <dl_setting min="-9600" max="9600"  step="1" shortname="min_sweep"  var="wt_input_min_cmd"        type="int16_t"/>
         <dl_setting min="-9600" max="9600"  step="1" shortname="max_sweep"  var="wt_input_max_cmd"        type="int16_t"/>
         <dl_setting min="0"     max="20"    step="0.1" shortname="steptime"   var="wt_input_steptime"       type="float"/>
-        <dl_setting min="1"     max="20"    step="1" shortname="n_steps"    var="wt_input_n_steps"        type="uint8_t"/>
         <dl_setting min="0" max="1" step="1" values="Inactive|Active" var="wt_sweep_running" shortname="Sweep" type="bool" module="wind_tunnel/wind_tunnel_rot_wing" handler="sweep_handler"/>
+        <dl_setting min="0" max="1" step="1" values="Inactive|Active" var="wt_sweep_motors_running" shortname="Motors_sweep" type="bool" module="wind_tunnel/wind_tunnel_rot_wing" handler="sweep_motors_handler"/>
         <!--<dl_setting min="0" max="1"    step="1" values="Inactive|Active" shortname="Chirp" var="chirp_active" type="uint8_t" module="system_identification/sys_id_chirp" handler="activate_handler"/>
         <dl_setting min="0" max="1"    step="1" values="Inactive|Active" shortname="Fade in" var="chirp_fade_in" type="uint8_t" module="system_identification/sys_id_chirp" handler="fade_in_activate_handler"/>
         <dl_setting min="0" max="1"    step="1" values="Inactive|Active" shortname="Exponential" var="chirp_exponential" type="uint8_t" module="system_identification/sys_id_chirp" handler="exponential_activate_handler"/>
