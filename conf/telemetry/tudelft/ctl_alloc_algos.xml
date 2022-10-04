@@ -201,6 +201,7 @@
       <message name="IMU_MAG_SCALED"           period=".2"/>
       <message name="LIDAR"                    period="0.05"/>
       <message name="CTL_ALLOC_PERF"           period="1."/>
+      <message name="RTOS_MON"                 period="1."/>
     </mode>
   </process>
 

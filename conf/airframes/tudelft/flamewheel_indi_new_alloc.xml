@@ -209,27 +209,27 @@
       >>> np.cross(x, np.array([0, 0, -1]))
     -->
 
-    <define name="G1_ROLL" value="{-5 , -10, -5, 5, 10, 5 }"/>
-    <define name="G1_PITCH" value="{+8.6 , 0, -8.6 , -8.6, 0, +8.6 }"/>
-    <define name="G1_YAW" value="{-0.4, 0.4, -0.4, 0.4, -0.4, 0.4}"/>
+    <define name="G1_ROLL" value="{-15 , -30, -15, 15, 30, 15 }"/>
+    <define name="G1_PITCH" value="{+26 , 0, -26 , -26, 0, +26 }"/>
+    <define name="G1_YAW" value="{+1.2, -1.2, +1.2, -1.2, +1.2, -1.2}"/>
     <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4, -.4, -.4}"/>
     <!--Counter torque effect of spinning up a rotor-->
-    <define name="G2" value="{-10, 10, -10, 10, -10, 10}"/>
+    <define name="G2" value="{+30, -30, +30, -30, +30, -30}"/>
     <!--<define name="G2" value="{-61.2093/9600.0,   65.3670/9600.0,  -65.7419/9600.0,   65.4516/9600.0}"/>-->
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="600.0"/>
-    <define name="REF_ERR_Q" value="600.0"/>
-    <define name="REF_ERR_R" value="600.0"/>
-    <define name="REF_RATE_P" value="28.0"/>
-    <define name="REF_RATE_Q" value="28.0"/>
-    <define name="REF_RATE_R" value="28.0"/>
+    <define name="REF_ERR_P" value="100.0"/>
+    <define name="REF_ERR_Q" value="100.0"/>
+    <define name="REF_ERR_R" value="100.0"/>
+    <define name="REF_RATE_P" value="13.0"/>
+    <define name="REF_RATE_Q" value="13.0"/>
+    <define name="REF_RATE_R" value="13.0"/>
 
     <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
     <define name="FILT_CUTOFF" value="5.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN" value="{0.1, 0.1, 0.1, 0.1, 0.1, 0.1}"/>
+    <define name="ACT_DYN" value="{0.03, 0.03, 0.03, 0.03, 0.03, 0.03}"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>

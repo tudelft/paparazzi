@@ -27,6 +27,10 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_ref_quat_int.h"
 #include "math/lsq_package/common/solveActiveSet.h"
 
+#include "mcu_periph/sys_time.h"
+#include "mcu.h"
+#include <ch.h>
+
 // Scaling for the control effectiveness to make it readible
 //#define INDI_G_SCALING (1000.0/9600.0)
 #define INDI_G_SCALING 1000.0
