@@ -49,9 +49,12 @@
 #include "math/lsq_package/common/solveActiveSet.h"
 #include "math/lsq_package/common/size_defines.h"
 
+
+#ifndef USE_NPS
+#include <ch.h>
 #include "mcu_periph/sys_time.h"
 #include "mcu.h"
-#include <ch.h>
+#endif
 
 // Factor that the estimated G matrix is allowed to deviate from initial one
 #define INDI_ALLOWED_G_FACTOR 2.0
@@ -205,8 +208,12 @@ struct FloatVect3 body_accel_f;
 
 float gamma_used;
 float cond_est;
+#ifdef USE_NPS
+int32_t t_ctl_alloc_exec = 0;
+#else
 systime_t t_ctl_alloc_before;
 sysinterval_t t_ctl_alloc_exec;
+#endif
 
 
 void init_filters(void);
@@ -215,7 +222,7 @@ void init_filters(void);
 #include "modules/datalink/telemetry.h"
 static void send_ctl_alloc_perf(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_CTL_ALLOC_PERF(trans, dev, AC_ID, &cond_est, &gamma_used, (int32_t*) &t_ctl_alloc_before);
+  pprz_msg_send_CTL_ALLOC_PERF(trans, dev, AC_ID, &cond_est, &gamma_used, (int32_t*) &t_ctl_alloc_exec);
 }
 
 static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
@@ -483,7 +490,9 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     }
 #else
 
+#ifndef USE_NPS
     t_ctl_alloc_before = chVTGetSystemTimeX();
+#endif
     // Calculate the min and max increments
     for (i = 0; i < INDI_NUM_ACT; i++) {
       du_min[i] = -MAX_PPRZ * act_is_servo[i] - actuator_state_filt_vect[i];
@@ -588,7 +597,10 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
       for (int i=0; i<n_u; i++)
         indi_du[i] *= MAX_PPRZ;
     }
+#ifndef USE_NPS
     t_ctl_alloc_exec = chVTTimeElapsedSinceX(t_ctl_alloc_before);
+#endif
+
 #endif
 
     // Add the increments to the actuators

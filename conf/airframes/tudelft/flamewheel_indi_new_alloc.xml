@@ -209,12 +209,12 @@
       >>> np.cross(x, np.array([0, 0, -1]))
     -->
 
-    <define name="G1_ROLL" value="{-15 , -30, -15, 15, 30, 15 }"/>
-    <define name="G1_PITCH" value="{+26 , 0, -26 , -26, 0, +26 }"/>
-    <define name="G1_YAW" value="{+1.2, -1.2, +1.2, -1.2, +1.2, -1.2}"/>
+    <define name="G1_ROLL" value="{-52.5 , -105, -52.5, 52.5, 105, 52.5 }"/>
+    <define name="G1_PITCH" value="{+91 , 0, -91 , -91, 0, +91 }"/>
+    <define name="G1_YAW" value="{+2.4, -2.4, +2.4, -2.4, +2.4, -2.4}"/>
     <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4, -.4, -.4}"/>
     <!--Counter torque effect of spinning up a rotor-->
-    <define name="G2" value="{+30, -30, +30, -30, +30, -30}"/>
+    <define name="G2" value="{+0.6, -0.6, +0.6, -0.6, +0.6, -0.6}"/>
     <!--<define name="G2" value="{-61.2093/9600.0,   65.3670/9600.0,  -65.7419/9600.0,   65.4516/9600.0}"/>-->
 
     <!-- reference acceleration for attitude control -->
@@ -229,7 +229,7 @@
     <define name="FILT_CUTOFF" value="5.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN" value="{0.03, 0.03, 0.03, 0.03, 0.03, 0.03}"/>
+    <define name="ACT_DYN" value="{0.025, 0.025, 0.025, 0.025, 0.025, 0.025}"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
