@@ -127,6 +127,15 @@ static float Wv[INDI_OUTPUTS] = STABILIZATION_INDI_WLS_PRIORITIES;
 static float Wv[INDI_OUTPUTS] = {1000, 1000, 1, 100};
 #endif
 
+#ifdef STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS
+float thrust_bx_eff = STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS;
+#ifndef STABILIZATION_INDI_PUSHER_PROP_DYN
+#error "STABILIZATION_INDI_PUSHER_PROP_DYN should be defines is STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS is defined"
+#else
+float trhust_bx_dyn = STABILIZATION_INDI_PUSHER_PROP_DYN;
+#endif
+#endif
+
 // variables needed for control
 float actuator_state_filt_vect[INDI_NUM_ACT];
 struct FloatRates angular_accel_ref = {0., 0., 0.};
