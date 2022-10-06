@@ -13,6 +13,8 @@
 
         <dl_setting var="K_T_airspeed"  min="0" step=".001" max="1" shortname="K_T_airspeed" />
 
+        <dl_setting var="K_d_speed"  min="0" step=".001" max="1" shortname="K_d_speed" />
+
         <dl_setting var="neutral_servo_1_pwm"  min="1000" step="1" max="2000" shortname="neutral_servo_1_pwm" />
         <dl_setting var="neutral_servo_2_pwm"  min="1000" step="1" max="2000" shortname="neutral_servo_2_pwm" />
 

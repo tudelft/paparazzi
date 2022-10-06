@@ -169,7 +169,9 @@ Butterworth2LowPass flight_path_angle_filtered;
 float auto_test_time_start, des_Vx, des_Vy, des_Vz, des_phi, des_theta, des_psi_dot;
 int auto_test_start; 
 
-            
+// Variables for the speed to derivative gain slider: 
+float K_d_speed = 0.025; 
+
 struct PID_over pid_gains_over = {
         .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
                OVERACTUATED_MIXING_PID_P_GAIN_THETA,
@@ -1022,8 +1024,11 @@ void overactuated_mixing_run(void)
 
         if(airspeed > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
 
-            //Creating the setpoint using the bank angle and the body acceleration correction for the sideslip:
+            // Creating the setpoint using the bank angle and the body acceleration correction for the sideslip:
             yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accel_y_filt_corrected;
+
+            //Creating the setpoint using the bank angle and the sideslip vain correction for the sideslip:
+            // yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn + K_beta * beta_deg;
 
         }
         else{
@@ -1050,9 +1055,16 @@ void overactuated_mixing_run(void)
         rate_setpoint[2] = angular_body_error[2] * indi_gains_over.p.psi;
 
        //Compute the angular acceleration setpoint using the filtered rates:
-       acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * indi_gains_over.d.phi;
-       acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * indi_gains_over.d.theta;
-       acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * indi_gains_over.d.psi;
+       float gain_to_speed_constant = 1 - airspeed * K_d_speed; 
+       Bound(gain_to_speed_constant, 0, 1);
+
+       float gain_phi_d =  indi_gains_over.d.phi * gain_to_speed_constant;
+       float gain_theta_d =  indi_gains_over.d.theta * gain_to_speed_constant;
+       float gain_psi_d =  indi_gains_over.d.psi * gain_to_speed_constant;
+
+       acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * gain_phi_d;
+       acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * gain_theta_d;
+       acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * gain_psi_d;
 
         // //Compute the angular acceleration setpoint uing the unfiltered rates:
         // acc_setpoint[3] = (rate_setpoint[0] - rate_vect[0]) * indi_gains_over.d.phi;
