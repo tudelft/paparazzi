@@ -80,6 +80,7 @@
         <!--<define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>-->  <!-- Set the OpenRXSR receiver to maximum channel output of 8 9ms -->
         <define name="RADIO_CONTROL_NB_CHANNEL" value="8"/>
         <configure name="RADIO_CONTROL_PPM_PIN" value="SERVO6"/>
+        <define name="USE_PWM6" value="0"/>
         <!-- Mode set one a three way switch -->
         <!--  Per default already GEAR if not defined  <define name="RADIO_MODE" value="RADIO_GEAR"/> --><!-- yes, already done by default if not redefined to something else-->
         <define name="RADIO_GEAR" value="RADIO_AUX2"/>
@@ -436,11 +437,11 @@
     <define name="SERVO_BRAKE_FULL" value="-MAX_PPRZ"/>
     <define name="SERVO_HATCH_OPEN" value="0"/>
     <define name="SERVO_HATCH_CLOSED" value="-9600"/>
-    <define name="AirbrakesOff()" value="(ap_state->commands[COMMAND_BRAKE]=0)"/>
-    <define name="AirbrakesOn()" value="(ap_state->commands[COMMAND_BRAKE]=SERVO_BRAKE_FULL)"/>
-    <!--<define name="Fly()" value="(ap_state->commands[COMMAND_FORCECRASH]=0)" />-->
-    <!--<define name="ForceCrash()" value="(ap_state->commands[COMMAND_FORCECRASH]=9600)" />-->
-    <define name="ThrottleHigh()" value="(ap_state->commands[COMMAND_THROTTLE]>9600/2)"/>
+    <define name="AirbrakesOff()" value="(commands[COMMAND_BRAKE]=0)"/>
+    <define name="AirbrakesOn()" value="(commands[COMMAND_BRAKE]=SERVO_BRAKE_FULL)"/>
+    <!--<define name="Fly()" value="(commands[COMMAND_FORCECRASH]=0)" />-->
+    <!--<define name="ForceCrash()" value="(commands[COMMAND_FORCECRASH]=9600)" />-->
+    <define name="ThrottleHigh()" value="(commands[COMMAND_THROTTLE]>9600/2)"/>
     <define name="SPOILERON_BRAKE_FULL" value="-MAX_PPRZ"/>
     <define name="FLAPERON_BRAKE_FULL" value="MAX_PPRZ"/>
   </section>

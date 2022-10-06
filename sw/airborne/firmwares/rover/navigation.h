@@ -162,6 +162,8 @@ extern uint8_t last_wp __attribute__((unused));
 
 extern void nav_init(void);
 extern void nav_run(void);
+extern void nav_parse_BLOCK(uint8_t *buf);
+extern void nav_parse_MOVE_WP(uint8_t *buf);
 
 extern void set_exception_flag(uint8_t flag_num);
 
@@ -172,6 +174,7 @@ extern void nav_home(void);
 extern void nav_set_manual(float speed, float turn);
 
 extern void nav_reset_reference(void) __attribute__((unused));
+extern void nav_reset_alt(void) __attribute__((unused));
 extern void nav_periodic_task(void);
 
 extern bool nav_is_in_flight(void);
