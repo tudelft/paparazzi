@@ -209,10 +209,11 @@ struct FloatVect3 body_accel_f;
 float gamma_used;
 float cond_est;
 #ifdef USE_NPS
-int32_t t_ctl_alloc_exec = 0;
+uint32_t t_ctl_alloc_exec = 42;
 #else
 systime_t t_ctl_alloc_before;
 sysinterval_t t_ctl_alloc_exec;
+time_usecs_t t_ctl_alloc_exec_us;
 #endif
 
 
@@ -222,7 +223,7 @@ void init_filters(void);
 #include "modules/datalink/telemetry.h"
 static void send_ctl_alloc_perf(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_CTL_ALLOC_PERF(trans, dev, AC_ID, &cond_est, &gamma_used, (int32_t*) &t_ctl_alloc_exec);
+  pprz_msg_send_CTL_ALLOC_PERF(trans, dev, AC_ID, &cond_est, &gamma_used, (uint32_t*) &t_ctl_alloc_exec_us);
 }
 
 static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
@@ -599,6 +600,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     }
 #ifndef USE_NPS
     t_ctl_alloc_exec = chVTTimeElapsedSinceX(t_ctl_alloc_before);
+    t_ctl_alloc_exec_us = chTimeI2US(t_ctl_alloc_exec);
 #endif
 
 #endif

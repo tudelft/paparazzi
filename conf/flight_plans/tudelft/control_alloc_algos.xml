@@ -1,14 +1,14 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="2.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="60" name="Flamewheel control alloc maneouvres" security_height="0.4">
+<flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="60" name="Flamewheel control alloc maneouvres" security_height="0.4">
   <header>
 #include "autopilot.h"
   </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint name="CLIMB" x="0.0" y="0.0"/>
-    <waypoint name="STDBY" x="-1.5" y="-1.5" alt="2.0"/>
-    <waypoint name="ALT" x="1.5" y="1.5" alt="3.5"/>
+    <waypoint name="STDBY" x="-1.5" y="-1.5" alt="1.5"/>
+    <waypoint name="ALT" x="1.5" y="1.5" alt="3.0"/>
   </waypoints>
   <blocks>
     <block name="Wait GPS">

@@ -1805,7 +1805,7 @@
     <message name="CTL_ALLOC_PERF" id="212">
       <field name="cond" type="float" unit="-">Condition number upper bound</field>
       <field name="gamma" type="float" unit="-">Resulting Wu scaler</field>
-      <field name="time" type="int32" unit="-"> Wu scaler</field>
+      <field name="exec_time" type="uint32" unit="-">Execution time</field>
     </message>
 
     <message name="TUNE_VERT" id="213">
