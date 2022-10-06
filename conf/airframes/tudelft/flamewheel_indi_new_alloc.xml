@@ -35,7 +35,7 @@
       <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> <!-- Switch between AP and FBW control -->
       <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
 
-      <define name="IMU_BODY_TO_IMU_PSI" value="3.1415" unit="deg"/> <!-- must be a bug, but this is correct unit -->
+      <!--<define name="IMU_BODY_TO_IMU_PSI" value="3.1415" unit="deg"/>--> <!-- must be a bug, but this is correct unit -->
       
     </target>
 
@@ -48,7 +48,6 @@
         <define name="FILE_LOGGER_PATH" value="/home/tblaha/Documents"/>
       </module>
       <configure name="OPT" value="0"/>
-      <define name="IMU_BODY_TO_IMU_PSI" value="0." unit="deg"/>
     </target>
 
     <!--define name="USE_SONAR" value="TRUE"/-->
@@ -168,6 +167,7 @@
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI" value="0." unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
+    <define name="BODY_TO_IMU_PSI" value="180." unit="deg"/>
   </section>
 
   <!-- local magnetic field -->

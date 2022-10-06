@@ -1803,9 +1803,10 @@
 
     <!-- 212 is free -->
     <message name="CTL_ALLOC_PERF" id="212">
+      <field name="algo" type="uint8" unit="-">Algorithm ID</field>
       <field name="cond" type="float" unit="-">Condition number upper bound</field>
       <field name="gamma" type="float" unit="-">Resulting Wu scaler</field>
-      <field name="exec_time" type="uint32" unit="-">Execution time</field>
+      <field name="exec_time" type="uint32" unit="us">Execution time</field>
     </message>
 
     <message name="TUNE_VERT" id="213">
