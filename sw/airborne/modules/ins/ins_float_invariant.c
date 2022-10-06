@@ -286,8 +286,11 @@ void ins_reset_local_origin(void)
   // reset state UTM ref
   stateSetLocalUtmOrigin_f(&utm);
 #else
+  struct EcefCoor_i ecef_pos = ecef_int_from_gps(&gps);
+  struct LlaCoor_i lla_pos = lla_int_from_gps(&gps);
   struct LtpDef_i ltp_def;
-  ltp_def_from_ecef_i(&ltp_def, &gps.ecef_pos);
+  ltp_def_from_ecef_i(&ltp_def, &ecef_pos);
+  ltp_def.lla.alt = lla_pos.alt;
   ltp_def.hmsl = gps.hmsl;
   stateSetLocalOrigin_i(&ltp_def);
 #endif
@@ -353,9 +356,8 @@ void ins_float_invariant_propagate(struct FloatRates* gyro, struct FloatVect3* a
   }
 
   // fill command vector in body frame
-  struct FloatRMat *body_to_imu_rmat = orientationGetRMat_f(&ins_float_inv.body_to_imu);
-  float_rmat_transp_ratemult(&ins_float_inv.cmd.rates, body_to_imu_rmat, gyro);
-  float_rmat_transp_vmult(&ins_float_inv.cmd.accel, body_to_imu_rmat, accel);
+  RATES_COPY(ins_float_inv.cmd.rates, *gyro);
+  VECT3_COPY(ins_float_inv.cmd.accel, *accel);
 
   struct Int32Vect3 body_accel_i;
   ACCELS_BFP_OF_REAL(body_accel_i, ins_float_inv.cmd.accel);
@@ -454,18 +456,18 @@ void ins_float_invariant_update_gps(struct GpsState *gps_s)
       ins_float_inv.meas.pos_gps.y = utm.east - state.utm_origin_f.east;
       ins_float_inv.meas.pos_gps.z = state.utm_origin_f.alt - utm.alt;
       // speed
-      ins_float_inv.meas.speed_gps.x = gps_s->ned_vel.x / 100.0f;
-      ins_float_inv.meas.speed_gps.y = gps_s->ned_vel.y / 100.0f;
-      ins_float_inv.meas.speed_gps.z = gps_s->ned_vel.z / 100.0f;
+      ins_float_inv.meas.speed_gps = ned_vel_float_from_gps(gps_s);
     }
 #else
     if (state.ned_initialized_f) {
+      // position
       struct NedCoor_i gps_pos_cm_ned, ned_pos;
-      ned_of_ecef_point_i(&gps_pos_cm_ned, &state.ned_origin_i, &gps_s->ecef_pos);
+      struct EcefCoor_i ecef_pos_i = ecef_int_from_gps(gps_s);
+      ned_of_ecef_point_i(&gps_pos_cm_ned, &state.ned_origin_i, &ecef_pos_i);
       INT32_VECT3_SCALE_2(ned_pos, gps_pos_cm_ned, INT32_POS_OF_CM_NUM, INT32_POS_OF_CM_DEN);
       NED_FLOAT_OF_BFP(ins_float_inv.meas.pos_gps, ned_pos);
-      struct EcefCoor_f ecef_vel;
-      ECEF_FLOAT_OF_BFP(ecef_vel, gps_s->ecef_vel);
+      // speed
+      struct EcefCoor_f ecef_vel = ecef_vel_float_from_gps(gps_s);
       ned_of_ecef_vect_f(&ins_float_inv.meas.speed_gps, &state.ned_origin_f, &ecef_vel);
     }
 #endif
@@ -575,10 +577,8 @@ void ins_float_invariant_update_mag(struct FloatVect3* mag)
       mag_frozen_count = MAG_FROZEN_COUNT;
     }
   } else {
-    // values are moving
-    struct FloatRMat *body_to_imu_rmat = orientationGetRMat_f(&ins_float_inv.body_to_imu);
     // new values in body frame
-    float_rmat_transp_vmult(&ins_float_inv.meas.mag, body_to_imu_rmat, mag);
+    VECT3_COPY(ins_float_inv.meas.mag, *mag);
     // reset counter
     mag_frozen_count = MAG_FROZEN_COUNT;
   }
@@ -746,14 +746,4 @@ void float_quat_vmul_right(struct FloatQuat *mright, const struct FloatQuat *q,
   VECT3_SMUL(v2, *vi, q->qi);
   VECT3_ADD(v2, v1);
   QUAT_ASSIGN(*mright, qi, v2.x, v2.y, v2.z);
-}
-
-void ins_float_inv_set_body_to_imu_quat(struct FloatQuat *q_b2i)
-{
-  orientationSetQuat_f(&ins_float_inv.body_to_imu, q_b2i);
-
-  if (!ins_float_inv.is_aligned) {
-    /* Set ltp_to_imu so that body is zero */
-    ins_float_inv.state.quat = *q_b2i;
-  }
 }

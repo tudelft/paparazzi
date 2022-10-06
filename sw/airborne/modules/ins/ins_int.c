@@ -120,12 +120,14 @@ static void baro_cb(uint8_t sender_id, uint32_t stamp, float pressure);
 #ifndef INS_INT_IMU_ID
 #define INS_INT_IMU_ID ABI_BROADCAST
 #endif
+PRINT_CONFIG_VAR(INS_INT_IMU_ID)
 static abi_event accel_ev;
 static void accel_cb(uint8_t sender_id, uint32_t stamp, struct Int32Vect3 *accel);
 
 #ifndef INS_INT_GPS_ID
 #define INS_INT_GPS_ID GPS_MULTI_ID
 #endif
+PRINT_CONFIG_VAR(INS_INT_GPS_ID)
 static abi_event gps_ev;
 static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
 
@@ -135,6 +137,7 @@ static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
 #ifndef INS_INT_VEL_ID
 #define INS_INT_VEL_ID ABI_BROADCAST
 #endif
+PRINT_CONFIG_VAR(INS_INT_VEL_ID)
 static abi_event vel_est_ev;
 static void vel_est_cb(uint8_t sender_id,
                        uint32_t stamp,
@@ -143,6 +146,7 @@ static void vel_est_cb(uint8_t sender_id,
 #ifndef INS_INT_POS_ID
 #define INS_INT_POS_ID ABI_BROADCAST
 #endif
+PRINT_CONFIG_VAR(INS_INT_POS_ID)
 static abi_event pos_est_ev;
 static void pos_est_cb(uint8_t sender_id,
                        uint32_t stamp,
@@ -155,6 +159,7 @@ static void pos_est_cb(uint8_t sender_id,
 #ifndef INS_INT_AGL_ID
 #define INS_INT_AGL_ID ABI_BROADCAST
 #endif
+PRINT_CONFIG_VAR(INS_INT_AGL_ID)
 static abi_event agl_ev;                 ///< The agl ABI event
 static void agl_cb(uint8_t sender_id, uint32_t stamp, float distance);
 
@@ -234,7 +239,7 @@ void ins_int_init(void)
   /*
    * Subscribe to scaled IMU measurements and attach callbacks
    */
-  AbiBindMsgIMU_ACCEL_INT32(INS_INT_IMU_ID, &accel_ev, accel_cb);
+  AbiBindMsgIMU_ACCEL(INS_INT_IMU_ID, &accel_ev, accel_cb);
   AbiBindMsgGPS(INS_INT_GPS_ID, &gps_ev, gps_cb);
   AbiBindMsgVELOCITY_ESTIMATE(INS_INT_VEL_ID, &vel_est_ev, vel_est_cb);
   AbiBindMsgPOSITION_ESTIMATE(INS_INT_POS_ID, &pos_est_ev, pos_est_cb);
@@ -245,8 +250,10 @@ void ins_reset_local_origin(void)
 {
 #if USE_GPS
   if (GpsFixValid()) {
-    ltp_def_from_ecef_i(&ins_int.ltp_def, &gps.ecef_pos);
-    ins_int.ltp_def.lla.alt = gps.lla_pos.alt;
+    struct EcefCoor_i ecef_pos = ecef_int_from_gps(&gps);
+    struct LlaCoor_i lla_pos = lla_int_from_gps(&gps);
+    ltp_def_from_ecef_i(&ins_int.ltp_def, &ecef_pos);
+    ins_int.ltp_def.lla.alt = lla_pos.alt;
     ins_int.ltp_def.hmsl = gps.hmsl;
     ins_int.ltp_initialized = true;
     stateSetLocalOrigin_i(&ins_int.ltp_def);
@@ -267,10 +274,11 @@ void ins_reset_altitude_ref(void)
 {
 #if USE_GPS
   if (GpsFixValid()) {
+    struct LlaCoor_i lla_pos = lla_int_from_gps(&gps);
     struct LlaCoor_i lla = {
       .lat = state.ned_origin_i.lla.lat,
       .lon = state.ned_origin_i.lla.lon,
-      .alt = gps.lla_pos.alt
+      .alt = lla_pos.alt
     };
     ltp_def_from_lla_i(&ins_int.ltp_def, &lla);
     ins_int.ltp_def.hmsl = gps.hmsl;
@@ -280,15 +288,16 @@ void ins_reset_altitude_ref(void)
   ins_int.vf_reset = true;
 }
 
+void ins_reset_vertical_pos(void)
+{
+  ins_int.vf_reset = true;
+}
+
 void ins_int_propagate(struct Int32Vect3 *accel, float dt)
 {
   /* untilt accels */
-  struct Int32Vect3 accel_meas_body;
-  struct Int32RMat *body_to_imu_rmat = orientationGetRMat_i(&imu.body_to_imu);
-  int32_rmat_transp_vmult(&accel_meas_body, body_to_imu_rmat, accel);
-  stateSetAccelBody_i(&accel_meas_body);
   struct Int32Vect3 accel_meas_ltp;
-  int32_rmat_transp_vmult(&accel_meas_ltp, stateGetNedToBodyRMat_i(), &accel_meas_body);
+  int32_rmat_transp_vmult(&accel_meas_ltp, stateGetNedToBodyRMat_i(), accel);
 
   float z_accel_meas_float = ACCEL_FLOAT_OF_BFP(accel_meas_ltp.z);
 
@@ -395,7 +404,8 @@ void ins_int_update_gps(struct GpsState *gps_s)
   }
 
   struct NedCoor_i gps_pos_cm_ned;
-  ned_of_ecef_point_i(&gps_pos_cm_ned, &ins_int.ltp_def, &gps_s->ecef_pos);
+  struct EcefCoor_i ecef_pos_i = ecef_int_from_gps(gps_s);
+  ned_of_ecef_point_i(&gps_pos_cm_ned, &ins_int.ltp_def, &ecef_pos_i);
 
   /* calculate body frame position taking BODY_TO_GPS translation (in cm) into account */
 #ifdef INS_BODY_TO_GPS_X
@@ -416,7 +426,8 @@ void ins_int_update_gps(struct GpsState *gps_s)
 
   /// @todo maybe use gps_s->ned_vel directly??
   struct NedCoor_i gps_speed_cm_s_ned;
-  ned_of_ecef_vect_i(&gps_speed_cm_s_ned, &ins_int.ltp_def, &gps_s->ecef_vel);
+  struct EcefCoor_i ecef_vel_i = ecef_vel_int_from_gps(gps_s);
+  ned_of_ecef_vect_i(&gps_speed_cm_s_ned, &ins_int.ltp_def, &ecef_vel_i);
 
 #if INS_USE_GPS_ALT
   vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, INS_VFF_R_GPS);

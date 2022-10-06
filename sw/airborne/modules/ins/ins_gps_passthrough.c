@@ -66,10 +66,6 @@ struct InsGpsPassthrough ins_gp;
 static abi_event accel_ev;
 static void accel_cb(uint8_t sender_id, uint32_t stamp, struct Int32Vect3 *accel);
 
-static abi_event body_to_imu_ev;
-static void body_to_imu_cb(uint8_t sender_id, struct FloatQuat *q_b2i_f);
-static struct OrientationReps body_to_imu;
-
 
 /** ABI binding for gps data.
  * Used for GPS ABI messages.
@@ -93,13 +89,15 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 
   /* simply scale and copy pos/speed from gps */
   struct NedCoor_i gps_pos_cm_ned;
-  ned_of_ecef_point_i(&gps_pos_cm_ned, &ins_gp.ltp_def, &gps_s->ecef_pos);
+  struct EcefCoor_i ecef_pos = ecef_int_from_gps(gps_s);
+  ned_of_ecef_point_i(&gps_pos_cm_ned, &ins_gp.ltp_def, &ecef_pos);
   INT32_VECT3_SCALE_2(ins_gp.ltp_pos, gps_pos_cm_ned,
                       INT32_POS_OF_CM_NUM, INT32_POS_OF_CM_DEN);
   stateSetPositionNed_i(&ins_gp.ltp_pos);
 
   struct NedCoor_i gps_speed_cm_s_ned;
-  ned_of_ecef_vect_i(&gps_speed_cm_s_ned, &ins_gp.ltp_def, &gps_s->ecef_vel);
+  struct EcefCoor_i ecef_vel = ecef_vel_int_from_gps(gps_s);
+  ned_of_ecef_vect_i(&gps_speed_cm_s_ned, &ins_gp.ltp_def, &ecef_vel);
   INT32_VECT3_SCALE_2(ins_gp.ltp_speed, gps_speed_cm_s_ned,
                       INT32_SPEED_OF_CM_S_NUM, INT32_SPEED_OF_CM_S_DEN);
   stateSetSpeedNed_i(&ins_gp.ltp_speed);
@@ -170,14 +168,15 @@ void ins_gps_passthrough_init(void)
 #endif
 
   AbiBindMsgGPS(INS_PT_GPS_ID, &gps_ev, gps_cb);
-  AbiBindMsgIMU_ACCEL_INT32(INS_PT_IMU_ID, &accel_ev, accel_cb);
-  AbiBindMsgBODY_TO_IMU_QUAT(INS_PT_IMU_ID, &body_to_imu_ev, body_to_imu_cb);
+  AbiBindMsgIMU_ACCEL(INS_PT_IMU_ID, &accel_ev, accel_cb);
 }
 
 void ins_reset_local_origin(void)
 {
-  ltp_def_from_ecef_i(&ins_gp.ltp_def, &gps.ecef_pos);
-  ins_gp.ltp_def.lla.alt = gps.lla_pos.alt;
+  struct EcefCoor_i ecef_pos = ecef_int_from_gps(&gps);
+  struct LlaCoor_i lla_pos = lla_int_from_gps(&gps);
+  ltp_def_from_ecef_i(&ins_gp.ltp_def, &ecef_pos);
+  ins_gp.ltp_def.lla.alt = lla_pos.alt;
   ins_gp.ltp_def.hmsl = gps.hmsl;
   stateSetLocalOrigin_i(&ins_gp.ltp_def);
   ins_gp.ltp_initialized = true;
@@ -200,20 +199,11 @@ static void accel_cb(uint8_t sender_id __attribute__((unused)),
                      struct Int32Vect3 *accel)
 {
   // untilt accel and remove gravity
-  struct Int32Vect3 accel_body, accel_ned;
-  struct Int32RMat *body_to_imu_rmat = orientationGetRMat_i(&body_to_imu);
-  int32_rmat_transp_vmult(&accel_body, body_to_imu_rmat, accel);
-  stateSetAccelBody_i(&accel_body);
+  struct Int32Vect3 accel_ned;
+  stateSetAccelBody_i(accel);
   struct Int32RMat *ned_to_body_rmat = stateGetNedToBodyRMat_i();
-  int32_rmat_transp_vmult(&accel_ned, ned_to_body_rmat, &accel_body);
+  int32_rmat_transp_vmult(&accel_ned, ned_to_body_rmat, accel);
   accel_ned.z += ACCEL_BFP_OF_REAL(9.81);
   stateSetAccelNed_i((struct NedCoor_i *)&accel_ned);
   VECT3_COPY(ins_gp.ltp_accel, accel_ned);
 }
-
-static void body_to_imu_cb(uint8_t sender_id __attribute__((unused)),
-                           struct FloatQuat *q_b2i_f)
-{
-  orientationSetQuat_f(&body_to_imu, q_b2i_f);
-}
-

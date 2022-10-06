@@ -122,9 +122,10 @@ static void send_fp(struct transport_tx *trans, struct link_device *dev)
 #if GUIDANCE_INDI_HYBRID
   struct FloatEulers eulers_zxy;
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-  int32_t state_psi = ANGLE_BFP_OF_REAL(eulers_zxy.psi);
+  struct Int32Eulers att;
+  EULERS_BFP_OF_REAL(att, eulers_zxy);
 #else
-  int32_t state_psi = stateGetNedToBodyEulers_i()->psi;
+  struct Int32Eulers att = *stateGetNedToBodyEulers_i();
 #endif
   pprz_msg_send_ROTORCRAFT_FP(trans, dev, AC_ID,
                               &(stateGetPositionEnu_i()->x),
@@ -133,15 +134,26 @@ static void send_fp(struct transport_tx *trans, struct link_device *dev)
                               &(stateGetSpeedEnu_i()->x),
                               &(stateGetSpeedEnu_i()->y),
                               &(stateGetSpeedEnu_i()->z),
-                              &(stateGetNedToBodyEulers_i()->phi),
-                              &(stateGetNedToBodyEulers_i()->theta),
-                              &state_psi,
+                              &att.phi,
+                              &att.theta,
+                              &att.psi,
                               &guidance_h.sp.pos.y,
                               &guidance_h.sp.pos.x,
                               &carrot_up,
                               &carrot_heading,
                               &thrust,
                               &autopilot.flight_time);
+}
+
+static void send_body_rates_accel(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_BODY_RATES_ACCEL(trans, dev, AC_ID,
+                                  &(stateGetBodyRates_f()->p),
+                                  &(stateGetBodyRates_f()->q),
+                                  &(stateGetBodyRates_f()->r),
+                                  &(stateGetAccelBody_i()->x),
+                                  &(stateGetAccelBody_i()->y),
+                                  &(stateGetAccelBody_i()->z));
 }
 
 static void send_fp_min(struct transport_tx *trans, struct link_device *dev)
@@ -199,6 +211,7 @@ void autopilot_firmware_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_FP, send_fp);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_FP_MIN, send_fp_min);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_CMD, send_rotorcraft_cmd);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_BODY_RATES_ACCEL, send_body_rates_accel);
 #ifdef RADIO_CONTROL
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTORCRAFT_RADIO_CONTROL, send_rotorcraft_rc);
 #endif

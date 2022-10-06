@@ -105,7 +105,6 @@ typedef struct {
 // Main structure
 typedef struct {
   sr_cmd_t cmd;
-  float gvf_omega;
   float throttle;
 
   float speed_error;
@@ -118,7 +117,7 @@ extern rover_ctrl guidance_control;
 
 /** Steering rover guidance EXT FUNCTIONS **/
 extern void rover_guidance_steering_init(void);
-extern void rover_guidance_steering_heading_ctrl(void);
+extern void rover_guidance_steering_heading_ctrl(float omega);
 extern void rover_guidance_steering_speed_ctrl(void);
 extern void rover_guidance_steering_pid_reset(void);
 extern void rover_guidance_steering_kill(void);
@@ -128,22 +127,22 @@ extern void rover_guidance_steering_kill(void);
 // Bound delta
 #define BoundDelta(delta) (delta < -MIN_DELTA ? -MIN_DELTA : \
                           (delta >  MAX_DELTA ?  MAX_DELTA : \
-                           delta));
+                           delta))
 
 // Bound speed
 #define BoundSpeed(speed) (speed <  MIN_SPEED ? MIN_SPEED : \
                           (speed >  MAX_SPEED ? MAX_SPEED : \
-                           speed));
+                           speed))
 
 // Bound throttle
-#define BoundThrottle(throttle) TRIM_PPRZ((int)throttle);
+#define BoundThrottle(throttle) TRIM_PPRZ((int)throttle)
 
 // Set low level commands from high level commands
 #define GetCmdFromDelta(delta) (delta >= 0 ? -delta/MAX_DELTA * (MAX_PPRZ - (int)MAX_CMD_SHUT) : \
-                                             -delta/MIN_DELTA * (MAX_PPRZ - (int)MIN_CMD_SHUT));
+                                             -delta/MIN_DELTA * (MAX_PPRZ - (int)MIN_CMD_SHUT))
 
 // This macro is for NAV state
-#define GetCmdFromThrottle(throttle) TRIM_PPRZ((int)throttle);
+#define GetCmdFromThrottle(throttle) (autopilot_throttle_killed() ? 0 : TRIM_PPRZ((int)throttle))
 
 // Set AP throttle value
 #define SetAPThrottleFromCommands(void) { \

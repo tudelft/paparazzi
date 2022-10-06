@@ -102,6 +102,7 @@ void gps_ubx_init(void)
   gps_ubx.msg_available = false;
   gps_ubx.error_cnt = 0;
   gps_ubx.error_last = GPS_UBX_ERR_NONE;
+  gps_ubx.pacc_valid = false;
 
   gps_ubx.state.comp_id = GPS_UBX_ID;
 }
@@ -194,14 +195,22 @@ static void gps_ubx_parse_nav_pvt(void)
   gps_ubx.state.hacc        = UBX_NAV_PVT_hAcc(gps_ubx.msg_buf) / 10;
   gps_ubx.state.vacc        = UBX_NAV_PVT_vAcc(gps_ubx.msg_buf) / 10;
   gps_ubx.state.sacc        = UBX_NAV_PVT_sAcc(gps_ubx.msg_buf) / 10;
+
+  if (!gps_ubx.pacc_valid) {
+    // workaround for PVT only
+    gps_ubx.state.pacc = gps_ubx.state.hacc; // report horizontal accuracy
+  }
 }
 
 static void gps_ubx_parse_nav_sol(void)
 {
   // Copy time and fix information
-#if !USE_GPS_UBX_RTCM
-  gps_ubx.state.fix        = UBX_NAV_SOL_gpsFix(gps_ubx.msg_buf);
-#endif
+  uint8_t fix = UBX_NAV_SOL_gpsFix(gps_ubx.msg_buf);
+  if ((fix == GPS_FIX_3D && fix > gps_ubx.state.fix) || fix < GPS_FIX_3D) {
+    // update only if fix is better than current or fix not 3D
+    // leaving fix if in GNSS or RTK mode
+    gps_ubx.state.fix = fix;
+  }
   gps_ubx.state.tow        = UBX_NAV_SOL_iTOW(gps_ubx.msg_buf);
   gps_ubx.state.week       = UBX_NAV_SOL_week(gps_ubx.msg_buf);
   gps_ubx.state.num_sv     = UBX_NAV_SOL_numSV(gps_ubx.msg_buf);
@@ -222,6 +231,7 @@ static void gps_ubx_parse_nav_sol(void)
   gps_ubx.state.pacc       = UBX_NAV_SOL_pAcc(gps_ubx.msg_buf);
   gps_ubx.state.sacc       = UBX_NAV_SOL_sAcc(gps_ubx.msg_buf);
   gps_ubx.state.pdop       = UBX_NAV_SOL_pDOP(gps_ubx.msg_buf);
+  gps_ubx.pacc_valid = true;
 }
 
 static void gps_ubx_parse_nav_posecef(void)
@@ -236,6 +246,7 @@ static void gps_ubx_parse_nav_posecef(void)
 
   // Copy accuracy information
   gps_ubx.state.pacc        = UBX_NAV_POSECEF_pAcc(gps_ubx.msg_buf);
+  gps_ubx.pacc_valid = true;
 }
 
 static void gps_ubx_parse_nav_posllh(void)
@@ -351,9 +362,12 @@ static void gps_ubx_parse_nav_sat(void)
 
 static void gps_ubx_parse_nav_status(void)
 {
-#if !USE_GPS_UBX_RTCM
-  gps_ubx.state.fix     = UBX_NAV_STATUS_gpsFix(gps_ubx.msg_buf);
-#endif
+  uint8_t fix = UBX_NAV_STATUS_gpsFix(gps_ubx.msg_buf);
+  if ((fix == GPS_FIX_3D && fix > gps_ubx.state.fix) || fix < GPS_FIX_3D) {
+    // update only if fix is better than current or fix not 3D
+    // leaving fix if in GNSS or RTK mode
+    gps_ubx.state.fix = fix;
+  }
   gps_ubx.state.tow     = UBX_NAV_STATUS_iTOW(gps_ubx.msg_buf);
   gps_ubx.status_flags  = UBX_NAV_STATUS_flags(gps_ubx.msg_buf);
 }

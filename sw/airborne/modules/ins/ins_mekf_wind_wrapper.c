@@ -39,8 +39,7 @@
 #include "generated/airframe.h"
 #include "generated/flight_plan.h"
 
-#define MEKF_WIND_USE_UTM TRUE
-#if MEKF_WIND_USE_UTM
+#if FIXEDWING_FIRMWARE
 #include "firmwares/fixedwing/nav.h"
 #endif
 
@@ -206,7 +205,6 @@ static abi_event mag_ev;
 static abi_event gyro_ev;
 static abi_event accel_ev;
 static abi_event aligner_ev;
-static abi_event body_to_imu_ev;
 static abi_event geo_mag_ev;
 static abi_event gps_ev;
 
@@ -302,11 +300,8 @@ static void gyro_cb(uint8_t sender_id __attribute__((unused)),
                     uint32_t stamp, struct Int32Rates *gyro)
 {
   if (ins_mekf_wind.is_aligned) {
-    struct FloatRates gyro_f, gyro_body;
-    RATES_FLOAT_OF_BFP(gyro_f, *gyro);
-    struct FloatRMat *body_to_imu_rmat = orientationGetRMat_f(&ins_mekf_wind.body_to_imu);
-    // new values in body frame
-    float_rmat_transp_ratemult(&gyro_body, body_to_imu_rmat, &gyro_f);
+    struct FloatRates gyro_body;
+    RATES_FLOAT_OF_BFP(gyro_body, *gyro);
 
 #if USE_AUTO_INS_FREQ || !defined(INS_PROPAGATE_FREQUENCY)
     PRINT_CONFIG_MSG("Calculating dt for INS MEKF_WIND propagation.")
@@ -383,11 +378,7 @@ static void accel_cb(uint8_t sender_id __attribute__((unused)),
                      uint32_t stamp __attribute__((unused)),
                      struct Int32Vect3 *accel)
 {
-  struct FloatVect3 accel_f;
-  ACCELS_FLOAT_OF_BFP(accel_f, *accel);
-  struct FloatRMat *body_to_imu_rmat = orientationGetRMat_f(&ins_mekf_wind.body_to_imu);
-  // new values in body frame
-  float_rmat_transp_vmult(&ins_mekf_wind_accel, body_to_imu_rmat, &accel_f);
+  ACCELS_FLOAT_OF_BFP(ins_mekf_wind_accel, *accel);
 }
 
 static void mag_cb(uint8_t sender_id __attribute__((unused)),
@@ -395,11 +386,9 @@ static void mag_cb(uint8_t sender_id __attribute__((unused)),
                    struct Int32Vect3 *mag)
 {
   if (ins_mekf_wind.is_aligned) {
-    struct FloatVect3 mag_f, mag_body;
-    MAGS_FLOAT_OF_BFP(mag_f, *mag);
-    struct FloatRMat *body_to_imu_rmat = orientationGetRMat_f(&ins_mekf_wind.body_to_imu);
-    // new values in body frame
-    float_rmat_transp_vmult(&mag_body, body_to_imu_rmat, &mag_f);
+    struct FloatVect3 mag_body;
+    MAGS_FLOAT_OF_BFP(mag_body, *mag);
+
     // only correct attitude if GPS is not initialized
     ins_mekf_wind_update_mag(&mag_body, !ins_mekf_wind.gps_initialized);
 
@@ -420,19 +409,14 @@ static void aligner_cb(uint8_t __attribute__((unused)) sender_id,
                        struct Int32Vect3 *lp_mag)
 {
   if (!ins_mekf_wind.is_aligned) {
-    struct FloatRMat *body_to_imu_rmat = orientationGetRMat_f(&ins_mekf_wind.body_to_imu);
+    struct FloatRates gyro_body;
+    RATES_FLOAT_OF_BFP(gyro_body, *lp_gyro);
 
-    struct FloatRates gyro_f, gyro_body;
-    RATES_FLOAT_OF_BFP(gyro_f, *lp_gyro);
-    float_rmat_transp_ratemult(&gyro_body, body_to_imu_rmat, &gyro_f);
+    struct FloatVect3 accel_body;
+    ACCELS_FLOAT_OF_BFP(accel_body, *lp_accel);
 
-    struct FloatVect3 accel_f, accel_body;
-    ACCELS_FLOAT_OF_BFP(accel_f, *lp_accel);
-    float_rmat_transp_vmult(&accel_body, body_to_imu_rmat, &accel_f);
-
-    struct FloatVect3 mag_f, mag_body;
-    MAGS_FLOAT_OF_BFP(mag_f, *lp_mag);
-    float_rmat_transp_vmult(&mag_body, body_to_imu_rmat, &mag_f);
+    struct FloatVect3 mag_body;
+    MAGS_FLOAT_OF_BFP(mag_body, *lp_mag);
 
     struct FloatQuat quat;
     ahrs_float_get_quat_from_accel_mag(&quat, &accel_body, &mag_body);
@@ -442,16 +426,6 @@ static void aligner_cb(uint8_t __attribute__((unused)) sender_id,
 
     // ins and ahrs are now running
     ins_mekf_wind.is_aligned = true;
-  }
-}
-
-static void body_to_imu_cb(uint8_t sender_id __attribute__((unused)),
-                           struct FloatQuat *q_b2i)
-{
-  orientationSetQuat_f(&ins_mekf_wind.body_to_imu, q_b2i);
-  if (!ins_mekf_wind.is_aligned) {
-    // set ltp_to_imu so that body is zero
-    ins_mekf_wind_set_quat(q_b2i);
   }
 }
 
@@ -466,24 +440,22 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 {
 	if (ins_mekf_wind.is_aligned && gps_s->fix >= GPS_FIX_3D) {
 
-#if MEKF_WIND_USE_UTM
+#if FIXEDWING_FIRMWARE
 		if (state.utm_initialized_f) {
 			struct UtmCoor_f utm = utm_float_from_gps(gps_s, nav_utm_zone0);
-      struct FloatVect3 pos, speed;
+      struct NedCoor_f pos, speed;
 			// position (local ned)
 			pos.x = utm.north - state.utm_origin_f.north;
 			pos.y = utm.east - state.utm_origin_f.east;
 			pos.z = state.utm_origin_f.alt - utm.alt;
 			// speed
-			speed.x = gps_s->ned_vel.x / 100.0f;
-			speed.y = gps_s->ned_vel.y / 100.0f;
-			speed.z = gps_s->ned_vel.z / 100.0f;
+			speed = ned_vel_float_from_gps(gps_s);
       if (!ins_mekf_wind.gps_initialized) {
-        ins_mekf_wind_set_pos_ned((struct NedCoor_f*)(&pos));
-        ins_mekf_wind_set_speed_ned((struct NedCoor_f*)(&speed));
+        ins_mekf_wind_set_pos_ned(&pos);
+        ins_mekf_wind_set_speed_ned(&speed);
         ins_mekf_wind.gps_initialized = true;
       }
-      ins_mekf_wind_update_pos_speed(&pos, &speed);
+      ins_mekf_wind_update_pos_speed((struct FloatVect3*)(&pos), (struct FloatVect3*)(&speed));
 
 #if LOG_MEKFW_FILTER
       if (LogFileIsOpen()) {
@@ -497,15 +469,15 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 
 #else
 		if (state.ned_initialized_f) {
-      struct FloatVect3 pos, speed;
+      struct NedCoor_f pos, speed;
 			struct NedCoor_i gps_pos_cm_ned, ned_pos;
-			ned_of_ecef_point_i(&gps_pos_cm_ned, &state.ned_origin_i, &gps_s->ecef_pos);
+      struct EcefCoor_i ecef_pos_i = ecef_int_from_gps(gps_s);
+			ned_of_ecef_point_i(&gps_pos_cm_ned, &state.ned_origin_i, &ecef_pos_i);
 			INT32_VECT3_SCALE_2(ned_pos, gps_pos_cm_ned, INT32_POS_OF_CM_NUM, INT32_POS_OF_CM_DEN);
 			NED_FLOAT_OF_BFP(pos, ned_pos);
-			struct EcefCoor_f ecef_vel;
-			ECEF_FLOAT_OF_BFP(ecef_vel, gps_s->ecef_vel);
+      struct EcefCoor_f ecef_vel = ecef_vel_float_from_gps(gps_s);
 			ned_of_ecef_vect_f(&speed, &state.ned_origin_f, &ecef_vel);
-      ins_mekf_wind_update_pos_speed(&pos, &speed);
+      ins_mekf_wind_update_pos_speed((struct FloatVect3*)(&pos), (struct FloatVect3*)(&speed));
 
 #if LOG_MEKFW_FILTER
       if (LogFileIsOpen()) {
@@ -547,7 +519,7 @@ static void set_state_from_ins(void)
 void ins_mekf_wind_wrapper_init(void)
 {
   // init position
-#if MEKF_WIND_USE_UTM
+#if FIXEDWING_FIRMWARE
   struct UtmCoor_f utm0;
   utm0.north = (float)nav_utm_north0;
   utm0.east = (float)nav_utm_east0;
@@ -589,11 +561,10 @@ void ins_mekf_wind_wrapper_init(void)
   AbiBindMsgBARO_DIFF(INS_MEKF_WIND_AIRSPEED_ID, &pressure_diff_ev, pressure_diff_cb);
   AbiBindMsgAIRSPEED(INS_MEKF_WIND_AIRSPEED_ID, &airspeed_ev, airspeed_cb);
   AbiBindMsgINCIDENCE(INS_MEKF_WIND_INCIDENCE_ID, &incidence_ev, incidence_cb);
-  AbiBindMsgIMU_MAG_INT32(INS_MEKF_WIND_MAG_ID, &mag_ev, mag_cb);
-  AbiBindMsgIMU_GYRO_INT32(INS_MEKF_WIND_IMU_ID, &gyro_ev, gyro_cb);
-  AbiBindMsgIMU_ACCEL_INT32(INS_MEKF_WIND_IMU_ID, &accel_ev, accel_cb);
+  AbiBindMsgIMU_MAG(INS_MEKF_WIND_MAG_ID, &mag_ev, mag_cb);
+  AbiBindMsgIMU_GYRO(INS_MEKF_WIND_IMU_ID, &gyro_ev, gyro_cb);
+  AbiBindMsgIMU_ACCEL(INS_MEKF_WIND_IMU_ID, &accel_ev, accel_cb);
   AbiBindMsgIMU_LOWPASSED(INS_MEKF_WIND_IMU_ID, &aligner_ev, aligner_cb);
-  AbiBindMsgBODY_TO_IMU_QUAT(INS_MEKF_WIND_IMU_ID, &body_to_imu_ev, body_to_imu_cb);
   AbiBindMsgGEO_MAG(ABI_BROADCAST, &geo_mag_ev, geo_mag_cb);
   AbiBindMsgGPS(INS_MEKF_WIND_GPS_ID, &gps_ev, gps_cb);
 
@@ -632,13 +603,16 @@ void ins_mekf_wind_wrapper_init(void)
 
 void ins_reset_local_origin(void)
 {
-#if MEKF_WIND_USE_UTM
+#if FIXEDWING_FIRMWARE
   struct UtmCoor_f utm = utm_float_from_gps(&gps, 0);
   // reset state UTM ref
   stateSetLocalUtmOrigin_f(&utm);
 #else
+  struct EcefCoor_i ecef_pos = ecef_int_from_gps(&gps);
+  struct LlaCoor_i lla_pos = lla_int_from_gps(&gps);
   struct LtpDef_i ltp_def;
-  ltp_def_from_ecef_i(&ltp_def, &gps.ecef_pos);
+  ltp_def_from_ecef_i(&ltp_def, &ecef_pos);
+  ltp_def.lla.alt = lla_pos.alt;
   ltp_def.hmsl = gps.hmsl;
   stateSetLocalOrigin_i(&ltp_def);
 #endif
@@ -648,7 +622,7 @@ void ins_reset_local_origin(void)
 
 void ins_reset_altitude_ref(void)
 {
-#if MEKF_WIND_USE_UTM
+#if FIXEDWING_FIRMWARE
   struct UtmCoor_f utm = state.utm_origin_f;
   utm.alt = gps.hmsl / 1000.0f;
   stateSetLocalUtmOrigin_f(&utm);
