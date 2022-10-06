@@ -28,6 +28,13 @@
                 <define VALUE="i2c2" NAME="MS45XX_I2C_DEV"/>
             </module>
             <module name="imu" type="cube"/>
+            <module name="wing_rotation_controller">
+                <define name="WING_ROTATION_POSITION_ADC_0" value="45950"/>
+                <define name="WING_ROTATION_POSITION_ADC_90" value="18800"/>
+                <define name="WING_ROTATION_DEADZONE_PPRZ_CMD" value="500"/>
+                <define name="WING_ROTATION_P_GAIN" value="-50000"/>
+                <define name="WING_ROTATION_MAX_CMD" value="9600"/>
+            </module>
             <!--<module name="wing_rotation_controller"/>-->
             <define VALUE="RADIO_AUX1" NAME="RADIO_TH_HOLD"/>
             <define VALUE="RADIO_AUX2" NAME="RADIO_FMODE"/>
@@ -79,23 +86,16 @@
         <module NAME="air_data"/>
 
         <module name="ctrl_eff_sched_rot_wing_v3"/>
-        <module name="wing_rotation_controller">
-            <define name="WING_ROTATION_POSITION_ADC_0" value="45950"/>
-            <define name="WING_ROTATION_POSITION_ADC_90" value="18800"/>
-            <define name="WING_ROTATION_DEADZONE_PPRZ_CMD" value="500"/>
-            <define name="WING_ROTATION_P_GAIN" value="-50000"/>
-            <define name="WING_ROTATION_MAX_CMD" value="9600"/>
-        </module>
 
         <module NAME="mag_lis3mdl">
             <define VALUE="TRUE" NAME="MODULE_LIS3MDL_UPDATE_AHRS"/>
             <configure VALUE="I2C1" NAME="MAG_LIS3MDL_I2C_DEV"/>
         </module>
 
-        <module name="sys_id_doublet">
+        <!-- <module name="sys_id_doublet">
             <define name="DOUBLET_AXES" value="{0,1,2,3}"/>
             <define name="DOUBLET_RADIO_CHANNEL" value="9"/>
-        </module>
+        </module> -->
         <!--<module name="sys_id_chirp">
             <define name="CHIRP_AXES" value="{0,1,2,3}"/>
             <define name="CHIRP_RADIO_CHANNEL" value="9"/>
@@ -117,7 +117,7 @@
         <servo NO="1" NEUTRAL="600" NAME="MOTOR_RIGHT" MIN="0" MAX="8191"/>
         <servo NO="2" NEUTRAL="600" NAME="MOTOR_BACK" MIN="0" MAX="8191"/>
         <servo NO="3" NEUTRAL="600" NAME="MOTOR_LEFT" MIN="0" MAX="8191"/>
-        <servo NO="4" NEUTRAL="600" NAME="MOTOR_PUSH" MIN="0" MAX="8191"/>
+        <servo NO="4" NEUTRAL="0"   NAME="MOTOR_PUSH" MIN="0" MAX="8191"/>
         <servo NO="9" NEUTRAL="0" NAME="SERVO_ELEVATOR" MIN="4000" MAX="-4000"/>
         <servo NO="10" NEUTRAL="0" NAME="SERVO_RUDDER" MIN="-8191" MAX="8191"/>
     </servos>
@@ -138,20 +138,20 @@
 
     <command_laws>
         <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
-        <set VALUE="-9600" SERVO="MOTOR_PUSH"/>
         <set VALUE="0" SERVO="SERVO_ELEVATOR"/>
         <set VALUE="0" SERVO="SERVO_RUDDER"/>
-        <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
+        <!-- <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/> -->
         <!--<call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>-->
         <set VALUE="($th_hold? -9600 : actuators_pprz[0])" SERVO="MOTOR_FRONT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
+        <set VALUE="($th_hold? -9600 : RadioControlValues(RADIO_AUX4))" SERVO="MOTOR_PUSH"/>
         <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_1"/>
     </command_laws>
 
     <section NAME="MISC">
-        <define name="VoltageOfAdc(adc)" value="((3.3f/65536.0f) * 12.54 * adc)"/>
+        <define name="VoltageOfAdc(adc)" value="((3.3f/65536.0f) * 13.86 * adc)"/>
         <define VALUE="TRUE" NAME="NO_RC_THRUST_LIMIT"/>
         <define VALUE="3.5" NAME="NAV_CLIMB_VSPEED"/>
         <define VALUE="-0.5" NAME="NAV_DESCEND_VSPEED"/>
@@ -212,17 +212,19 @@
         <define VALUE="{-0.49, 0.45, -0.49, 0.45}" NAME="G1_YAW"/>
         <define VALUE="{-0.55,   -0.45,  -0.55,   -0.45}" NAME="G1_THRUST"/>
         <define VALUE="{0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
+        <define VALUE="0.000510937" NAME="PUSHER_PROP_EFFECTIVENESS"/>
+        <define VALUE="0.047" NAME="PUSHER_PROP_DYN"/>
         <!--<define VALUE="{0.00, -30.0, 0.0,   30.0}" NAME="G1_ROLL"/>
         <define VALUE="{6.0, 0.0,   -6.0, 0.0}" NAME="G1_PITCH"/>
         <define VALUE="{-1.1, 1.1, -1.1, 1.1}" NAME="G1_YAW"/>
         <define VALUE="{-0.5,   -0.5,  -0.5,   -0.5}" NAME="G1_THRUST"/>
         <define VALUE="{0.0, 0.0, 0.0, 0.0}" NAME="G2"/>-->
         <define VALUE="50.0" NAME="REF_ERR_P"/>
-        <define VALUE="30.0" NAME="REF_ERR_Q"/>
+        <define VALUE="32.0" NAME="REF_ERR_Q"/>
         <define VALUE="60.0" NAME="REF_ERR_R"/>
-        <define VALUE="6.0" NAME="REF_RATE_P"/>
-        <define VALUE="6.0" NAME="REF_RATE_Q"/>
-        <define VALUE="6.0" NAME="REF_RATE_R"/>
+        <define VALUE="8.8" NAME="REF_RATE_P"/>
+        <define VALUE="12.5" NAME="REF_RATE_Q"/>
+        <define VALUE="9.0" NAME="REF_RATE_R"/>
         <define VALUE="50.0" UNIT="deg/s" NAME="MAX_R"/>
         <define VALUE="20.0" NAME="FILT_CUTOFF_P"/>
         <define VALUE="20.0" NAME="FILT_CUTOFF_Q"/>
