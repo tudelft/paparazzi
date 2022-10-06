@@ -1967,21 +1967,21 @@
          <field name="act_y_acc" type="float" unit="m/s^2">Actual y speed [m/s^2]</field>
          <field name="act_z_acc" type="float" unit="m/s^2">Actual z speed [m/s^2]</field>
 
-         <field name="act_p_dot" type="float" unit="deg/s^2"> Actual p value [deg/s^2]</field>
-         <field name="act_q_dot" type="float" unit="deg/s^2">Actual theta value [deg/s^2]</field>
-         <field name="act_r_dot" type="float" unit="deg/s^2">Actual psi value [deg/s^2]</field>
+         <field name="act_p_dot" type="float" unit="rad/s^2"> Actual p value [rad/s^2]</field>
+         <field name="act_q_dot" type="float" unit="rad/s^2">Actual theta value [rad/s^2]</field>
+         <field name="act_r_dot" type="float" unit="rad/s^2">Actual psi value [rad/s^2]</field>
 
-         <field name="act_p" type="float" unit="deg/s"> Actual p value [deg/s]</field>
-         <field name="act_q" type="float" unit="deg/s">Actual theta value [deg/s]</field>
-         <field name="act_r" type="float" unit="deg/s">Actual psi value [deg/s]</field>
+         <field name="act_p" type="float" unit="rad/s"> Actual p value [rad/s]</field>
+         <field name="act_q" type="float" unit="rad/s">Actual theta value [rad/s]</field>
+         <field name="act_r" type="float" unit="rad/s">Actual psi value [rad/s]</field>
 
-         <field name="act_phi" type="float" unit="deg"> Actual phi value [deg]</field>
-         <field name="act_theta" type="float" unit="deg">Actual theta value [deg]</field>
-         <field name="act_psi" type="float" unit="deg">Actual psi value [deg]</field>
+         <field name="act_phi" type="float" unit="rad"> Actual phi value [rad]</field>
+         <field name="act_theta" type="float" unit="rad">Actual theta value [rad]</field>
+         <field name="act_psi" type="float" unit="rad">Actual psi value [rad]</field>
 
-         <field name="des_phi" type="float" unit="deg"> Desired phi value [deg]</field>
-         <field name="des_theta" type="float" unit="deg">Desired theta value [deg]</field>
-         <field name="des_psi" type="float" unit="deg">Desired psi value [deg]</field>
+         <field name="des_phi" type="float" unit="rad"> Desired phi value [rad]</field>
+         <field name="des_theta" type="float" unit="rad">Desired theta value [rad]</field>
+         <field name="des_psi" type="float" unit="rad">Desired psi value [rad]</field>
 
          <field name="des_x_pos" type="float" unit="m">Desired position x [m]</field>
          <field name="des_y_pos" type="float" unit="m">Desired position y [m]</field>

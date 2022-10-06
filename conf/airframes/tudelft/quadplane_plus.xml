@@ -163,9 +163,24 @@
     <module name="ins"           type="extended" />
 <!--    <module name="ins" type="ekf2"/>-->
 
+  <module name="mag" type="rm3100">
+    <configure name="MAG_RM3100_I2C_DEV" value="i2c4"/>
+
+    <define name="RM3100_CHAN_X_SIGN" value="+"/>
+    <define name="RM3100_CHAN_Y_SIGN" value="+"/>
+    <define name="RM3100_CHAN_Z_SIGN" value="+"/>
+    <define name="RM3100_CHAN_X" value="0"/>
+    <define name="RM3100_CHAN_Y" value="1"/>
+    <define name="RM3100_CHAN_Z" value="2"/>
+    <define name="MODULE_RM3100_SYNC_SEND" value="FALSE"/>
+    <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
+  </module>
+
     <module name="ahrs"          type="int_cmpl_quat">
-<!--      <configure name="USE_MAGNETOMETER" value="FALSE"/>-->
-<!--      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>-->
+     <configure name="USE_MAGNETOMETER" value="TRUE"/>
+     <define name="AHRS_USE_GPS_HEADING" value="FALSE"/><!-- TRUE by default Use GPS course to update heading for time being,if FALSE data from magneto only -->
+     <define name="AHRS_BIAS_UPDATE_HEADING_THRESHOLD" value="0.174533" unit="rad"/> <!-- don't update gyro bias if heading deviation is above this rotation threshold"-->
+     <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID" />
     </module>
 
 <!--    <module name="air_data"/>-->
@@ -175,10 +190,11 @@
     </module>
 
     <!-- Internal MAG -->
-    <module name="mag_ist8310">
-      <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>
+    <!-- <module name="mag_ist8310">
+      <define name="MODULE_IST8310_UPDATE_AHRS" value="FALSE"/>
       <configure name="MAG_IST8310_I2C_DEV" value="I2C3"/>
-    </module>
+    </module> -->
+
     <!-- External MAG on GPS -->
 <!--    <module name="mag_lis3mdl">-->
 <!--      <define name="MODULE_LIS3MDL_UPDATE_AHRS" value="TRUE"/>-->
@@ -484,6 +500,11 @@
     <define name="WING_SPAN" value="1.4"/>
   </section>
 
+
+  <!-- ************************* MAG EXTERNAL ************************* -->
+  <section name="MAG_RM3100" prefix="RM3100_">
+    <define name="DATA_RATE" value="RM3100_RATE_600"/>
+  </section>
 
   <section name="MISC">
     <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 17.9024749557 * adc)"/><!-- TODO: verify/calibrate -->
