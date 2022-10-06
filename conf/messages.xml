@@ -678,7 +678,17 @@
       <field name="phi" type="float[]" unit="m">Error signals</field>
     </message>
 
-    <!-- 76 is free -->
+    <message name="BODY_RATES_ACCEL" id="76">
+      <description>
+        Rates and Acceleration in the body frame
+      </description>
+      <field name="p" type="float" unit="rad/s"/>
+      <field name="q" type="float" unit="rad/s"/>
+      <field name="r" type="float" unit="rad/s"/>
+      <field name="ax" type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
+      <field name="ay" type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
+      <field name="az" type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
+    </message>
 
     <message name="SWARM_FISH" id="77">
       <description>
@@ -835,7 +845,7 @@
       </description>
       <field name="status" type="uint8" values="STOPPED|RUNNING|ERROR">General status of the logger</field>
       <field name="errno" type="uint8">Error number, depend of the logging system, provides detailed information</field>
-      <field name="used" type="uint32" unit="bytes">Accumulated number of bytes written by the logger</field>
+      <field name="used" type="uint32" unit="bytes" alt_unit="MB" alt_unit_coef="0.000000953674316">Accumulated number of bytes written by the logger</field>
       <field name="filenames" type="char[]">The filenames currently in use by the logger (First sdlog, second Flight recorder for chibios)</field>
     </message>
 
@@ -1142,18 +1152,21 @@
     </message>
 
     <message name="IMU_GYRO_SCALED" id="131">
+      <field name="id"    type="uint8"/>
       <field name="gp"    type="int32" alt_unit="deg/s" alt_unit_coef="0.0139882"/>
       <field name="gq"    type="int32" alt_unit="deg/s" alt_unit_coef="0.0139882"/>
       <field name="gr"    type="int32" alt_unit="deg/s" alt_unit_coef="0.0139882"/>
     </message>
 
     <message name="IMU_ACCEL_SCALED" id="132">
+      <field name="id"    type="uint8"/>
       <field name="ax"    type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
       <field name="ay"    type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
       <field name="az"    type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
     </message>
 
     <message name="IMU_MAG_SCALED" id="133">
+      <field name="id"    type="uint8"/>
       <field name="mx"    type="int32" alt_unit="1" alt_unit_coef="0.0004883"/>
       <field name="my"    type="int32" alt_unit="1" alt_unit_coef="0.0004883"/>
       <field name="mz"    type="int32" alt_unit="1" alt_unit_coef="0.0004883"/>
@@ -1685,6 +1698,10 @@
       <field name="mz"    type="float" />
     </message>
 
+    <!-- 194 is free -->
+    <!-- 195 is free -->
+    <!-- 196 is free -->
+
     <message name="NPS_SENSORS_SCALED" id="197">
       <field name="acc_x"    type="float" />
       <field name="acc_y"    type="float" />
@@ -1706,37 +1723,45 @@
       <field name="ins_zdd"   type="int32" alt_unit="m/s2" alt_unit_coef="0.0009766"/>
     </message>
 
+    <!-- 199 is free -->
+
     <message name="IMU_GYRO" id="200">
+      <field name="id" type="uint8"/>
       <field name="gp" type="float" unit="rad/s" alt_unit="deg/s" alt_unit_coef="57.29578"/>
       <field name="gq" type="float" unit="rad/s" alt_unit="deg/s" alt_unit_coef="57.29578"/>
       <field name="gr" type="float" unit="rad/s" alt_unit="deg/s" alt_unit_coef="57.29578"/>
     </message>
 
     <message name="IMU_MAG" id="201">
+      <field name="id" type="uint8"/>
       <field name="mx" type="float" />
       <field name="my" type="float" />
       <field name="mz" type="float" />
     </message>
 
     <message name="IMU_ACCEL" id="202">
+      <field name="id" type="uint8"/>
       <field name="ax" type="float" unit="m/s-2"/>
       <field name="ay" type="float" unit="m/s-2"/>
       <field name="az" type="float" unit="m/s-2"/>
     </message>
 
     <message name="IMU_GYRO_RAW" id="203">
+      <field name="id" type="uint8"/>
       <field name="gp" type="int32" unit="adc"/>
       <field name="gq" type="int32" unit="adc"/>
       <field name="gr" type="int32" unit="adc"/>
     </message>
 
     <message name="IMU_ACCEL_RAW" id="204">
+      <field name="id" type="uint8"/>
       <field name="ax" type="int32" unit="adc"/>
       <field name="ay" type="int32" unit="adc"/>
       <field name="az" type="int32" unit="adc"/>
     </message>
 
     <message name="IMU_MAG_RAW" id="205">
+      <field name="id" type="uint8"/>
       <field name="mx" type="int32" unit="adc"/>
       <field name="my" type="int32" unit="adc"/>
       <field name="mz" type="int32" unit="adc"/>
@@ -1751,6 +1776,7 @@
     </message>
 
     <message name="IMU_MAG_CURRENT_CALIBRATION" id="207">
+      <field name="id" type="uint8"/>
       <field name="mx" type="int32" unit="adc"/>
       <field name="my" type="int32" unit="adc"/>
       <field name="mz" type="int32" unit="adc"/>
@@ -2749,29 +2775,34 @@
       <field name="kill"        type="int8"/>
     </message>
 
-    <message name="REMOTE_GPS_SMALL" id="54" link="forwarded">
-      <field name="heading"   type="int16"  unit="1e4rad" alt_unit="deg" alt_unit_coef="0.0057296"/>
-      <field name="pos_xyz"  	type="uint32">bits 31-21 east position [cm] : bits 20-10 north position [cm] : bits 9-0 up position [cm]</field>
-      <field name="speed_xyz" type="uint32">bits 31-21 east speed [cm/s] : bits 20-10 north speed [cm/s] : bits 9-0 climb speed [cm/s]</field>
-      <field name="tow"   	type="uint32" unit="ms" alt_unit="s" alt_unit_coef="0.001"/>
-      <field name="ac_id"   	type="uint8"/>
+    <message name="EXTERNAL_POSE" id="54" link="forwarded">
+      <description>
+        Position, speed and orientation in local frame from a remote vision system
+      </description>
+      <field name="ac_id"     type="uint8">AC id for which the data is meant</field>
+      <field name="timestamp" type="uint32" unit="ms">Timestamp from the measurement</field>
+      <field name="enu_x"     type="float" unit="m">ENU x position in vision frame</field>
+      <field name="enu_y"     type="float" unit="m">ENU y position in vision frame</field>
+      <field name="enu_z"     type="float" unit="m">ENU z position in vision frame</field>
+      <field name="enu_xd"    type="float" unit="m/s">ENU x speed in vision frame</field>
+      <field name="enu_yd"    type="float" unit="m/s">ENU y speed in vision frame</field>
+      <field name="enu_zd"    type="float" unit="m/s">ENU z speed in vision frame</field>
+      <field name="body_qi"   type="float">Body quaternion i in vision frame</field>
+      <field name="body_qx"   type="float">Body quaternion x in vision frame</field>
+      <field name="body_qy"   type="float">Body quaternion y in vision frame</field>
+      <field name="body_qz"   type="float">Body quaternion z in vision frame</field>
     </message>
 
-    <message name="REMOTE_GPS" id="55" link="forwarded">
-      <field name="ac_id"   type="uint8"/>
-      <field name="numsv"   type="uint8"/>
-      <field name="ecef_x"  type="int32" unit="cm"   alt_unit="m"/>
-      <field name="ecef_y"  type="int32" unit="cm"   alt_unit="m"/>
-      <field name="ecef_z"  type="int32" unit="cm"   alt_unit="m"/>
-      <field name="lat"     type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
-      <field name="lon"     type="int32" unit="1e7deg" alt_unit="deg" alt_unit_coef="0.0000001"/>
-      <field name="alt"     type="int32" unit="mm"   alt_unit="m">Height above WGS84 reference ellipsoid</field>
-      <field name="hmsl"    type="int32" unit="mm"   alt_unit="m">Height above Mean Sea Level (geoid)</field>
-      <field name="ecef_xd" type="int32" unit="cm/s" alt_unit="m/s"/>
-      <field name="ecef_yd" type="int32" unit="cm/s" alt_unit="m/s"/>
-      <field name="ecef_zd" type="int32" unit="cm/s" alt_unit="m/s"/>
-      <field name="tow"     type="uint32"/>
-      <field name="course"  type="int32"  alt_unit="deg" alt_unit_coef="0.0000057296"/>
+    <message name="EXTERNAL_POSE_SMALL" id="55" link="forwarded">
+      <description>
+        Position, speed and orientation in local frame from a remote vision system
+        Smaller message where position, speed is in cm multiplied by a resolution
+      </description>
+      <field name="ac_id"     type="uint8">AC id for which the data is meant</field>
+      <field name="timestamp" type="uint32" unit="ms">Timestamp from the measurement</field>
+      <field name="enu_pos"   type="uint32">ENU position in vision frame(bits 31-21 east position [cm*pos_res] : bits 20-10 north position [cm*pos_res] : bits 9-0 up position [cm*pos_res])</field>
+      <field name="enu_speed" type="uint32">ENU speed in vision frame(bits 31-21 east position [cm*pos_res] : bits 20-10 north position [cm*pos_res] : bits 9-0 up position [cm*pos_res])</field>
+      <field name="heading"   type="int16"  unit="1e4rad" alt_unit="deg" alt_unit_coef="0.0057296">Heading in ENU vision frame</field>
     </message>
 
     <message name="REMOTE_GPS_LOCAL" id="56" link="forwarded">

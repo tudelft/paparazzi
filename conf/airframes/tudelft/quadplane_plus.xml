@@ -169,7 +169,6 @@
     </module>
 
 <!--    <module name="air_data"/>-->
-    <module name="send_imu_mag_current"/>
     <module name="sys_mon"/>
     <module name="actuators" type="pwm">
       <define name="SERVO_HZ" value="400"/>

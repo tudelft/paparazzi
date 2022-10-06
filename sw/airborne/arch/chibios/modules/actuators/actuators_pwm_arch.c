@@ -33,6 +33,7 @@
 #include "modules/actuators/actuators_pwm_arch.h"
 #include "modules/actuators/actuators_pwm.h"
 #include "mcu_periph/gpio.h"
+#include "modules/radio_control/radio_control.h"
 
 /* Default timer base frequency is 1MHz */
 #ifndef PWM_FREQUENCY
@@ -392,28 +393,68 @@ void actuators_pwm_commit(void)
   pwmEnableChannel(&PWM_SERVO_4_DRIVER, PWM_SERVO_4_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_4]));
 #endif
 #ifdef PWM_SERVO_5
-  pwmEnableChannel(&PWM_SERVO_5_DRIVER, PWM_SERVO_5_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_5]));
+  if(RadioControlValues(RADIO_TH_HOLD) >  4500){
+    pwmEnableChannel(&PWM_SERVO_5_DRIVER, PWM_SERVO_5_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_5]));
+  }
+  else{
+    pwmEnableChannel(&PWM_SERVO_5_DRIVER, PWM_SERVO_5_CHANNEL, 100);
+  }
 #endif
 #ifdef PWM_SERVO_6
-  pwmEnableChannel(&PWM_SERVO_6_DRIVER, PWM_SERVO_6_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_6]));
+  if(RadioControlValues(RADIO_TH_HOLD) >  4500){
+    pwmEnableChannel(&PWM_SERVO_6_DRIVER, PWM_SERVO_6_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_6]));
+  }
+  else{
+    pwmEnableChannel(&PWM_SERVO_6_DRIVER, PWM_SERVO_6_CHANNEL, 100);
+  }
 #endif
 #ifdef PWM_SERVO_7
-  pwmEnableChannel(&PWM_SERVO_7_DRIVER, PWM_SERVO_7_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_7]));
+  if(RadioControlValues(RADIO_TH_HOLD) >  4500){
+    pwmEnableChannel(&PWM_SERVO_7_DRIVER, PWM_SERVO_7_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_7]));
+  }
+  else{
+    pwmEnableChannel(&PWM_SERVO_7_DRIVER, PWM_SERVO_7_CHANNEL, 100);
+  }
 #endif
 #ifdef PWM_SERVO_8
-  pwmEnableChannel(&PWM_SERVO_8_DRIVER, PWM_SERVO_8_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_8]));
+  if(RadioControlValues(RADIO_TH_HOLD) >  4500){
+    pwmEnableChannel(&PWM_SERVO_8_DRIVER, PWM_SERVO_8_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_8]));
+  }
+  else{
+    pwmEnableChannel(&PWM_SERVO_8_DRIVER, PWM_SERVO_8_CHANNEL, 100);
+  }
 #endif
 #ifdef PWM_SERVO_9
-  pwmEnableChannel(&PWM_SERVO_9_DRIVER, PWM_SERVO_9_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_9]));
+  if(RadioControlValues(RADIO_TH_HOLD) >  4500){
+    pwmEnableChannel(&PWM_SERVO_9_DRIVER, PWM_SERVO_9_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_9]));
+  }
+  else{
+    pwmEnableChannel(&PWM_SERVO_9_DRIVER, PWM_SERVO_9_CHANNEL, 100);
+  }
 #endif
 #ifdef PWM_SERVO_10
-  pwmEnableChannel(&PWM_SERVO_10_DRIVER, PWM_SERVO_10_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_10]));
+  if(RadioControlValues(RADIO_TH_HOLD) >  4500){
+    pwmEnableChannel(&PWM_SERVO_10_DRIVER, PWM_SERVO_10_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_10]));
+  }
+  else{
+    pwmEnableChannel(&PWM_SERVO_10_DRIVER, PWM_SERVO_10_CHANNEL, 100);
+  }
 #endif
 #ifdef PWM_SERVO_11
-  pwmEnableChannel(&PWM_SERVO_11_DRIVER, PWM_SERVO_11_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_11]));
+  if(RadioControlValues(RADIO_TH_HOLD) >  4500){
+    pwmEnableChannel(&PWM_SERVO_11_DRIVER, PWM_SERVO_11_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_11]));
+  }
+  else{
+    pwmEnableChannel(&PWM_SERVO_11_DRIVER, PWM_SERVO_11_CHANNEL, 100);
+  }
 #endif
 #ifdef PWM_SERVO_12
-  pwmEnableChannel(&PWM_SERVO_12_DRIVER, PWM_SERVO_12_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_12]));
+  if(RadioControlValues(RADIO_TH_HOLD) >  4500){
+    pwmEnableChannel(&PWM_SERVO_12_DRIVER, PWM_SERVO_12_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_12]));
+  }
+  else{
+    pwmEnableChannel(&PWM_SERVO_12_DRIVER, PWM_SERVO_12_CHANNEL, 100);
+  }
 #endif
 #ifdef PWM_SERVO_13
   pwmEnableChannel(&PWM_SERVO_13_DRIVER, PWM_SERVO_13_CHANNEL, PWM_CMD_TO_US(actuators_pwm_values[PWM_SERVO_13]));
