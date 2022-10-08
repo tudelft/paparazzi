@@ -149,6 +149,16 @@ static float Wv[INDI_OUTPUTS] = STABILIZATION_INDI_WLS_PRIORITIES;
 static float Wv[INDI_OUTPUTS] = {1000, 1000, 1, 100};
 #endif
 
+// Experimenting with penalising servos
+#ifdef STABILIZATION_INDI_WLS_WU
+float indi_Wu_motor = STABILIZATION_INDI_WLS_WU_MOTOR;
+float indi_Wu_servo = STABILIZATION_INDI_WLS_WU_SERVO;
+#else
+float indi_Wu_motor = 1;
+float indi_Wu_servo = 1;
+#endif
+static float Wu[INDI_NUM_ACT];
+
 // variables needed for control
 float actuator_state_filt_vect[INDI_NUM_ACT];
 struct FloatRates angular_accel_ref = {0., 0., 0.};
@@ -567,9 +577,19 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #endif
   }
 
+//+++++++++++++++++++++++++++++++++++++++
+  for (i = 0; i < INDI_NUM_ACT; i++) {
+    if (!act_is_servo[i]) {
+      Wu[i] = indi_Wu_motor;
+    } else {
+      Wu[i] = indi_Wu_servo;
+    }
+  }
+//+++++++++++++++++++++++++++++++++++++++
+
   // WLS Control Allocator
   num_iter =
-    wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, 0, du_pref, 10000, 10);
+    wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, Wu, du_pref, 10000, 10);
 #endif
 
   // Add the increments to the actuators
