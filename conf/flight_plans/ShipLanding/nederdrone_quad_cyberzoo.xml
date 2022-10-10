@@ -68,7 +68,7 @@ heading not defined at:
 
 -->
 
-<flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="20" name="Rotorcraft Cyberzoo (Delft) no GPS" security_height="0.3">
+<flight_plan alt="0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="20" name="Rotorcraft Cyberzoo (Delft) no GPS" security_height="0.3">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -90,10 +90,10 @@ heading not defined at:
     <waypoint lat="51.990614" lon="4.376779" name="p2"/>
     <waypoint lat="51.990636" lon="4.376759" name="p3"/>
     <waypoint lat="51.990651" lon="4.376805" name="p4"/>
-    <waypoint lat="51.9906213" lon="4.3768628" name="FA1"/>
-    <waypoint lat="51.9905874" lon="4.3767766" name="FA2"/>
-    <waypoint lat="51.9906409" lon="4.3767226" name="FA3"/>
-    <waypoint lat="51.9906737" lon="4.3768074" name="FA4"/>
+    <waypoint lat="51.9906084" lon="4.3768299" name="FA1"/>
+    <waypoint lat="51.9906047" lon="4.3767444" name="FA2"/>
+    <waypoint lat="51.9906624" lon="4.3767475" name="FA3"/>
+    <waypoint lat="51.9906639" lon="4.3768412" name="FA4"/>
   </waypoints>
   <sectors>
     <sector color="red" name="Flight_Area">
@@ -104,7 +104,20 @@ heading not defined at:
     </sector>
   </sectors>
   <modules/>
-  <!--exceptions>
+  <exceptions>
+    <exception cond="Or(! InsideFlight_Area(GetPosX(), GetPosY()), GetPosAlt() @GT 3)
+    @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+    @AND !(nav_block == IndexOfBlock('Geo init')) 
+    @AND !(nav_block == IndexOfBlock('Land Here'))
+    @AND !(nav_block == IndexOfBlock('Holding point kill'))" deroute="Holding point hover"/>
+    
+    <exception cond="GetPosAlt() @GT 4
+    @AND !(nav_block == IndexOfBlock('Holding point kill'))" deroute="Land Here"/>
+    
+    <exception cond="autopilot_in_flight() @AND datalink_time @GT 2
+    @AND !(nav_block == IndexOfBlock('Holding point kill')) 
+    @AND !(nav_block == IndexOfBlock('Land Here'))" deroute="flare"/>
+    <!--
     <exception cond="electrical.bat_critical 
     @AND !(nav_block == IndexOfBlock('Wait GPS')) 
     @AND !(nav_block == IndexOfBlock('Geo init')) 
@@ -140,10 +153,12 @@ heading not defined at:
              (nav_block == IndexOfBlock('Emergency connection lost Home'))), 
              (nav_block == IndexOfBlock('Emergency connection lost Descent'))) 
     @AND datalink_time @LT 10 " deroute="Holding point hover"/>
-  </exceptions-->
+    -->
+  </exceptions>
   <blocks>
     <block name="Wait GPS">
       <set value="FALSE" var="force_forward"/>
+      <exception cond="autopilot_in_flight()" deroute="flare"/>
       <call_once fun="NavKillThrottle()"/>
       <while cond="!GpsFixValid() || !state.ned_initialized_i"/>
       <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH)"/>
@@ -153,14 +168,21 @@ heading not defined at:
       <set value="FALSE" var="force_forward"/>
       <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetAltitudeReferenceHere()"/>
-      <deroute block="Holding point kill"/>
+      <deroute block="Holding point hover"/>
     </block>
     <block name="Holding point hover">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
-      <call_once fun="nav_set_heading_deg(70)"/>
-      <stay alt="GetPosAlt()" wp="_StayHover"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
+      <stay wp="_StayHover"/>                             <!-- NEED TO TEST: what happens with altitude? and what if safe-alt is 1.5 -->
     </block>
+    
+    <block name="HOME hover 0.5m">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
+      <stay alt="0.5" wp="HOME"/>
+    </block>
+    
     <block name="Start Engine">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
@@ -170,18 +192,18 @@ heading not defined at:
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
-      <stay alt="5.0" wp="_StayHover"/>
+      <stay alt="2.5" wp="_StayHover"/>
     </block>
     <block name="HoverHeigthShip">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
-      <call_once fun="nav_set_heading_deg(70)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
       <stay alt="WaypointAlt(WP_SHIP)" wp="_StayHover"/>
     </block>
     <block name="HoverHeigthApproach">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
-      <call_once fun="nav_set_heading_deg(70)"/>      
+      <call_once fun="nav_set_heading_deg(270)"/>      
       <stay alt="WaypointAlt(WP_APPROACH)" wp="_StayHover"/>
     </block>
     <block name="route">
@@ -197,30 +219,45 @@ heading not defined at:
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="FALSE" var="force_forward"/>
-      <call_once fun="nav_set_heading_deg(70)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
       <stay wp="STDBY"/>
     </block>
     <block name="GoTo Approach point" strip_button="GoTo Approach point">
       <set value="FALSE" var="force_forward"/>
-      <call_once fun="nav_set_heading_deg(70)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
       <stay alt="WaypointAlt(WP_APPROACH)" pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH)" wp="APPROACH"/>
     </block>
     <block name="GoTo Ship" strip_button="GoTo Ship">
       <set value="FALSE" var="force_forward"/>
-      <call_once fun="nav_set_heading_deg(70)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
       <stay alt="WaypointAlt(WP_SHIP)" pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH)" wp="SHIP"/>
     </block>
     <block name="Approach SHIP" strip_button="Approach SHIP" strip_icon="boat.png">
+      <stay until="get_dist2_to_waypoint(WP_APPROACH) @LT 0.5" wp="APPROACH"/>  <!-- NEED TO TEST: does the drone first go to the waypoint before het waypoint starts shifting to the ship? -->
       <set value="TRUE" var="force_forward"/>
       <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH)"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_SHIP)"/>
-      <stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH"/>
+      <call_once fun="nav_set_heading_towards_waypoint(270)"/>
+      <stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/>
+      <stay alt="WaypointAlt(WP_SHIP)" pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH)" wp="SHIP"/>
     </block>
     <block name="reset_distance_descent">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="reset_moving_target_distance()"/>
       <deroute block="Holding point hover"/>
     </block>
+    
+    <block name="REPEAT Approach SHIP" strip_button="REPEAT Approach SHIP" strip_icon="boat.png">
+      <stay until="get_dist2_to_waypoint(WP_APPROACH) @LT 0.5" wp="APPROACH"/>  <!-- NEED TO TEST: does the drone first go to the waypoint before het waypoint starts shifting to the ship? -->
+      <set value="TRUE" var="force_forward"/>
+      <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH)"/>
+      <call_once fun="nav_set_heading_towards_waypoint(270)"/>
+      <stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/>
+      <stay alt="2.5" wp="SHIP" until="GetPosHeight() @GT 2.2"/>
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="reset_moving_target_distance()"/>
+      <deroute block="REPEAT Approach SHIP"/>
+    </block>
+    
     <block name="set_landing_offset_here_TEST">
       <set value="FALSE" var="force_forward"/>
       <exception cond="GetPosHeight() @GT 0.15" deroute="Holding point hover"/>
@@ -247,7 +284,7 @@ heading not defined at:
     <block name="Land Here" strip_button="Land Here" strip_icon="land-right.png">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere(WP__landHere)"/>
-      <call_once fun="nav_set_heading_deg(70)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
       <stay climb="-0.5" vmode="climb" wp="_landHere"/>
       <exception cond="GetPosHeight() @LT 2.0" deroute="flare"/>
       <deroute block="flare"/>
@@ -255,53 +292,37 @@ heading not defined at:
     <block name="flare">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere(WP__landHere)"/>
-      <call_once fun="nav_set_heading_deg(70)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
       <stay climb="-0.2" vmode="climb" wp="_landHere"/>
-      <exception cond="GetPosHeight() @LT 0.15" deroute="landed"/>
+      <exception cond="GetPosHeight() @LT 0.05" deroute="landed"/> <!-- NEED TO TEST: does ground detection work? -->
     </block>
     <block name="landed">
       <set value="FALSE" var="force_forward"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
       <call_once fun="NavKillThrottle()"/>
       <while cond="true"/>
     </block>
-    <block name="autodescent 40perc throttle TEST (to 2m)">
-      <call_once fun="nav_set_heading_deg(70)"/>
-      <attitude pitch="0" roll="0" throttle="0.4" until="GetPosHeight() @LT 2.0" vmode="throttle"/>
-      <deroute block="Holding point hover"/>
-    </block>
-    <block name="autodescent 30perc throttle TEST (to 2m)">
-      <call_once fun="nav_set_heading_deg(70)"/>
-      <attitude pitch="0" roll="0" throttle="0.3" until="GetPosHeight() @LT 2.0" vmode="throttle"/>
-      <deroute block="Holding point hover"/>
-    </block>
-    <block name="autodescent 20perc throttle TEST (to 2m)">
-      <call_once fun="nav_set_heading_deg(70)"/>
-      <attitude pitch="0" roll="0" throttle="0.2" until="GetPosHeight() @LT 2.0" vmode="throttle"/>
-      <deroute block="Holding point hover"/>
-    </block>
     <block name="Emergency battery critical">
-      <call_once fun="nav_set_heading_deg(70)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
       <stay alt="WaypointAlt(WP_HOME)+2" climb="-0.5" vmode="climb" wp="HOME"/>
       <deroute block="Emergency battery critical"/>
     </block>
     <block name="Emergency connection lost Hover">
       <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
-      <call_once fun="nav_set_heading_deg(70)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
       <stay alt="GetPosAlt()" until="!LessThan(NavBlockTime(), 60)" wp="_StayHover"/>
     </block>
     <block name="Emergency connection lost Home">
-      <call_once fun="nav_set_heading_deg(70)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
       <stay alt="GetPosAlt()" until="!LessThan(NavBlockTime(), 60)" wp="HOME"/>
     </block>
     <block name="Emergency connection lost Descent">
-      <call_once fun="nav_set_heading_deg(70)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
       <stay alt="2" until="!LessThan(NavBlockTime(), 60)" wp="HOME"/>
       <deroute block="flare"/>
     </block>
     <block name="Holding point kill">
       <call_once fun="NavKillThrottle()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <deroute block="Holding point kill"/>
     </block>
   </blocks>
 </flight_plan>

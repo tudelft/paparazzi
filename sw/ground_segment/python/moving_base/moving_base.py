@@ -71,12 +71,12 @@ class Base:
         self.speed = 0.5 # m/s
         self.course = 90 # deg (moving directon of platform)
         self.heading = 70 # deg (orientation of platform)
-        #print("lat0,long0,alt0 position = Valkenburg")
-        #self.lat0 = 52.168391 #deg
-        #self.lon0 = 4.413617 #deg
-        print("lat0,long0,alt0 position = iMAV")
-        self.lat0 = 52.170591 #deg
-        self.lon0 = 4.417030 #deg
+        print("lat0,long0,alt0 position = Valkenburg")
+        self.lat0 = 52.168391 #deg
+        self.lon0 = 4.413617 #deg
+        #print("lat0,long0,alt0 position = iMAV")
+        #self.lat0 = 52.170591 #deg
+        #self.lon0 = 4.417030 #deg
         self.alt0 = 55 # ref_alt0 is already about 46m in simulator
 
         self.lat = self.lat0
