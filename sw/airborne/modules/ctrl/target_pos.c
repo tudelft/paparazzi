@@ -30,6 +30,11 @@
 #include "modules/datalink/telemetry.h"
 #include "modules/core/abi.h"
 
+// if the targetpos is meant for cyberzoo ( OUTDOOR FLIGTH -> CYBERZOO False )
+#ifndef CYBERZOO
+#define CYBERZOO True
+#endif
+
 // The timeout when receiving GPS messages from the ground in ms
 #ifndef TARGET_POS_TIMEOUT
 #define TARGET_POS_TIMEOUT 5000
@@ -48,15 +53,26 @@
 
 // landing platform horizontal dist wrt RTK-gps module
 #ifndef TARGET_OFFSET_DISTANCE
-#define TARGET_OFFSET_DISTANCE 10.0
+#define TARGET_OFFSET_DISTANCE 5.0
+#endif
+
+// landing platform horizontal dist wrt RTK-gps module
+#ifndef TARGET_OFFSET_DISTANCE_CYBERZOO
+#define TARGET_OFFSET_DISTANCE_CYBERZOO 0.0
 #endif
 
 // landing platform heigth wrt RTK-gps height
 // positive is up
 #ifndef TARGET_OFFSET_HEIGHT
-#define TARGET_OFFSET_HEIGHT 2
+#define TARGET_OFFSET_HEIGHT 0
 #endif
 //#define TARGET_OFFSET_HEIGHT -1.2
+
+// landing platform heigth wrt RTK-gps height
+// positive is up
+#ifndef TARGET_OFFSET_HEIGHT_CYBERZOO
+#define TARGET_OFFSET_HEIGHT_CYBERZOO 0
+#endif
 
 // calculate X & Y positions in between recieved gps coordinates
 #ifndef TARGET_INTEGRATE_XY
@@ -65,9 +81,10 @@
 
 // calculate Z position in between recieved gps coordinates
 #ifndef TARGET_INTEGRATE_Z
-#define TARGET_INTEGRATE_Z false
+#define TARGET_INTEGRATE_Z true
 #endif
 
+#if !CYBERZOO
 /* Initialize the main structure */
 struct target_t target = {
   .pos = {0},
@@ -81,6 +98,22 @@ struct target_t target = {
   .integrate_xy = TARGET_INTEGRATE_XY,
   .integrate_z = TARGET_INTEGRATE_Z
 };
+
+#else 
+/* Initialize the main structure */
+struct target_t target_cyberzoo = {
+  .pos = {0},
+  .offset = {
+    .heading = TARGET_OFFSET_HEADING,
+    .distance = TARGET_OFFSET_DISTANCE_CYBERZOO,
+    .height = TARGET_OFFSET_HEIGHT_CYBERZOO,
+  },
+  .target_pos_timeout = TARGET_POS_TIMEOUT,
+  .rtk_timeout = TARGET_RTK_TIMEOUT,
+  .integrate_xy = TARGET_INTEGRATE_XY,
+  .integrate_z = TARGET_INTEGRATE_Z
+};
+#endif
 
 /* Get the Relative postion from the RTK */
 extern struct GpsRelposNED gps_relposned;
@@ -147,6 +180,39 @@ void target_parse_target_pos(uint8_t *buf)
   target.pos.heading = DL_TARGET_POS_heading(buf);
   target.pos.valid = true;
 }
+
+/**
+ * Receive a TARGET_POS message from the ground
+ */
+void target_parse_target_pos_roll_compensated(uint8_t *buf)
+{
+  if(DL_TARGET_POS_ac_id(buf) != AC_ID)
+    return;
+
+  // Save the received values
+  target.pos.recv_time = get_sys_time_msec();
+  target.pos.tow = gps_tow_from_sys_ticks(sys_time.nb_tick); // FIXME: need to get from the real GPS
+
+  int lat_raw = DL_TARGET_POS_lat(buf);
+  int lon_raw = DL_TARGET_POS_lon(buf);
+  target.pos.lla.alt = DL_TARGET_POS_alt(buf);
+  target.pos.ground_speed = DL_TARGET_POS_speed(buf);
+  target.pos.climb = DL_TARGET_POS_climb(buf);
+  target.pos.course = DL_TARGET_POS_course(buf);
+  target.pos.heading = DL_TARGET_POS_heading(buf);
+  target.pos.valid = true;
+  
+  //sos cas toa 
+  //sin=ov/aan 
+  //cos=aan/sch 
+  //tan=ov/aan 
+
+  //int schuincos(RadOfDeg(target.pos.heading))
+
+  target.pos.lla.lat = DL_TARGET_POS_lat(buf);
+  target.pos.lla.lon = DL_TARGET_POS_lon(buf);
+}
+
 extern struct LlaCoor_i gps_lla;
 /**
  * Get the current target position (NED) and heading 
@@ -210,6 +276,8 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
     pos->y += target.offset.distance * sinf((*heading + target.offset.heading)/180.*M_PI);
     pos->z -= target.offset.height;
 
+    // Compensate Roll of ship
+
     return true;
   }
 
@@ -220,6 +288,24 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
  * Get the current target velocity (NED)
  */
 bool target_get_vel(struct NedCoor_f *vel) {
+
+  /* When we have a valid target_pos message, state ned is initialized and no timeout */
+  if(target.pos.valid && state.ned_initialized_i && (target.pos.recv_time+target.target_pos_timeout) > get_sys_time_msec()) {
+    // Calculate baed on ground speed and course
+    vel->x = target.pos.ground_speed * cosf(target.pos.course/180.*M_PI);
+    vel->y = target.pos.ground_speed * sinf(target.pos.course/180.*M_PI);
+    vel->z = -target.pos.climb;
+
+    return true;
+  }
+
+  return false; //target_pos_set_current_offset
+}
+
+/**
+ * compensate position for Roll of the ship
+ */
+bool target_compensate_roll(struct NedCoor_f *vel) {
 
   /* When we have a valid target_pos message, state ned is initialized and no timeout */
   if(target.pos.valid && state.ned_initialized_i && (target.pos.recv_time+target.target_pos_timeout) > get_sys_time_msec()) {
