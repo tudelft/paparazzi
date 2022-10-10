@@ -741,9 +741,6 @@ void overactuated_mixing_run(void)
         auto_test_time_start = get_sys_time_float();
     }
 
-
-
-
     /// Case of manual PID control [FAILSAFE]
         // if(0){
     if(radio_control.values[RADIO_MODE] < 500) {
@@ -854,55 +851,6 @@ void overactuated_mixing_run(void)
 
         roll_cmd = servo_right_cmd;
         pitch_cmd = servo_left_cmd;
-
-    }
-
-    /// Case of manual mode forward:
-    if(0){
-
-        //INIT AND BOOLEAN RESET
-        if(MANUAL_fwd_engaged == 0 ){
-            /*
-            INIT CODE FOR THE MANUAL_fwd GOES HERE
-             */
-            INDI_engaged = 0;
-            MANUAL_fwd_engaged = 1;
-            FAILSAFE_engaged = 0;
-        }
-
-        servo_right_cmd = neutral_servo_1_pwm - radio_control.values[RADIO_ROLL]/9600.0*gain_roll_servo - radio_control.values[RADIO_PITCH]/9600.0*gain_pitch_servo;
-        servo_left_cmd = neutral_servo_2_pwm - radio_control.values[RADIO_ROLL]/9600.0*gain_roll_servo + radio_control.values[RADIO_PITCH]/9600.0*gain_pitch_servo;
-
-        servo_right_cmd += - roll_trim_servos - pitch_trim_servos;
-        servo_left_cmd += - roll_trim_servos + pitch_trim_servos;
-
-        Bound(servo_right_cmd,1000,2000);
-        Bound(servo_left_cmd,1000,2000);
-
-        //Submit value to external servo: 
-        am7_data_out_local.pwm_servo_1_int = (int16_t) (servo_right_cmd);
-        am7_data_out_local.pwm_servo_2_int = (int16_t) (servo_left_cmd);
-
-        roll_cmd = servo_right_cmd;
-        pitch_cmd = servo_left_cmd;
-
-        //Submit manual motor orders:
-        overactuated_mixing.commands[0] = (int32_t) radio_control.values[RADIO_THROTTLE];
-        overactuated_mixing.commands[1] = (int32_t) radio_control.values[RADIO_THROTTLE];
-        overactuated_mixing.commands[2] = (int32_t) radio_control.values[RADIO_THROTTLE];
-        overactuated_mixing.commands[3] = (int32_t) radio_control.values[RADIO_THROTTLE];
-
-        //Submit servo elevation orders for forward flight:
-        overactuated_mixing.commands[4] = (int32_t) ((-94*M_PI/180 - OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE) * K_ppz_angle_el);
-        overactuated_mixing.commands[5] = (int32_t) ((-90*M_PI/180 - OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE) * K_ppz_angle_el);
-        overactuated_mixing.commands[6] = (int32_t) ((-90*M_PI/180 - OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE) * K_ppz_angle_el);
-        overactuated_mixing.commands[7] = (int32_t) ((-90*M_PI/180 - OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE) * K_ppz_angle_el);
-
-        //Submit servo azimuth orders for forward flight:
-        overactuated_mixing.commands[8] = (int32_t) (- OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE * K_ppz_angle_az);
-        overactuated_mixing.commands[9] = (int32_t) (- OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE * K_ppz_angle_az);
-        overactuated_mixing.commands[10] = (int32_t) (- OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE * K_ppz_angle_az);
-        overactuated_mixing.commands[11] = (int32_t) (- OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE * K_ppz_angle_az);
 
     }
 
@@ -1093,14 +1041,17 @@ void overactuated_mixing_run(void)
         //Compute the speed setpoints in the control reference frame:
         speed_setpoint_control_rf[0] = - MANUAL_CONTROL_MAX_CMD_FWD_SPEED * radio_control.values[RADIO_PITCH]/9600.0;
         speed_setpoint_control_rf[1] = MANUAL_CONTROL_MAX_CMD_LAT_SPEED * radio_control.values[RADIO_ROLL]/9600.0;
+
         if( abs(radio_control.values[RADIO_THROTTLE] - 4800) > deadband_stick_throttle ) {
             speed_setpoint_control_rf[2] =
                     -MANUAL_CONTROL_MAX_CMD_VERT_SPEED * (radio_control.values[RADIO_THROTTLE] - 4800.0) / 4800.0;
-        }
-        else {
-            speed_setpoint_control_rf[2] = 0;
-        }
+        } else { speed_setpoint_control_rf[2] = 0; }
 
+        // If wanted, use the position control for the altitude: 
+        if(1){
+            speed_setpoint_control_rf[2] = pos_error[2] * indi_gains_over.p.z;
+        }
+        
         //Add the setpoint in case of AUTO test
         if(auto_test_start){ 
             speed_setpoint_control_rf[0] = des_Vx; 

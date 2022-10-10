@@ -34,9 +34,8 @@
       <message name="DRAGSPEED"                period="0.02"/>
       <message name="LOGGER_STATUS"            period="5.1"/>
       <message name="LIDAR"  		       period="1.2"/>
-   <   message name="INS_EKF2"                 period=".25"/>
+      <message name="INS_EKF2"                 period=".25"/>
       <message name="WIND_INFO_RET"            period="1."/>                  
-      <message name="MOTOR_MIXING"             period=".2"/>
       <message name="OVERACTUATED_VARIABLES"   period=".2"/>
       <message name="ACTUATORS_OUTPUT"         period=".2"/>
       <message name="INDI_CMD"                 period=".2"/>
@@ -230,9 +229,7 @@
       <message name="IMU_ACCEL_SCALED"         period=".005"/>
       <message name="IMU_MAG_SCALED"           period=".005"/>
       <message name="LIDAR"                    period="1"/>
-      <message name="MOTOR_MIXING"             period="0.5"/>
       <message name="DL_VALUE"                 period="0.5"/>
-      <message name="ROTORCRAFT_CMD"           period=".5"/>
       <message name="PPM"                      period="0.4"/>
       <message name="RC"                       period="0.4"/>
       <message name="ROTORCRAFT_RADIO_CONTROL" period="0.4"/>

@@ -56,10 +56,6 @@
 <!--      </module>-->
 
 
-      <!--<module name="pwm_meas">
-	<define name="USE_PWM_INPUT1" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>
-      </module>-->
-
       <module name="AOA_pwm">
 	<define name="USE_PWM_INPUT1" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>
 	<!--<define name="USE_SIDESLIP" value="TRUE"/>-->
@@ -115,9 +111,6 @@
       <define name="RADIO_FMODE" value="RADIO_AUX2"/> <!-- Throttle curve select -->
       <define name="RADIO_FBW_MODE" value="RADIO_AUX3"/> <!-- Switch between AP and FBW control -->
       <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
-
-<!--      <configure name="USE_BARO_BOARD" value="FALSE"/>&lt;!&ndash; To use in cyberzoo and OJF &ndash;&gt;-->
-
     </target>
 
 <!--    <target name="nps" board="pc">-->
@@ -160,12 +153,15 @@
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
 
-    <module name="ins"           type="extended" />
-<!--    <module name="ins" type="ekf2"/>-->
+    <!-- <module name="ins"           type="extended" /> -->
+
+   <module name="ins" type="ekf2">
+    <define name="INS_EKF2_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
+    <define name="INS_EKF2_OPTITRACK" value="TRUE"/>
+   </module>
 
   <module name="mag" type="rm3100">
     <configure name="MAG_RM3100_I2C_DEV" value="i2c4"/>
-
     <define name="RM3100_CHAN_X_SIGN" value="+"/>
     <define name="RM3100_CHAN_Y_SIGN" value="+"/>
     <define name="RM3100_CHAN_Z_SIGN" value="+"/>
@@ -176,12 +172,12 @@
     <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
   </module>
 
-    <module name="ahrs"          type="int_cmpl_quat">
+    <!--module name="ahrs"          type="float_cmpl_quat">
      <configure name="USE_MAGNETOMETER" value="TRUE"/>
-     <define name="AHRS_USE_GPS_HEADING" value="FALSE"/><!-- TRUE by default Use GPS course to update heading for time being,if FALSE data from magneto only -->
-     <define name="AHRS_BIAS_UPDATE_HEADING_THRESHOLD" value="0.174533" unit="rad"/> <!-- don't update gyro bias if heading deviation is above this rotation threshold"-->
+     <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
+     <define name="AHRS_BIAS_UPDATE_HEADING_THRESHOLD" value="0.174533" unit="rad"/>
      <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID" />
-    </module>
+    </module-->
 
 <!--    <module name="air_data"/>-->
     <module name="sys_mon"/>
@@ -203,7 +199,7 @@
 <!--      <define name="LIS3MDL_CHAN_Y_SIGN" value="-"/>-->
 <!--    </module>-->
 
-    <module name="motor_mixing"/>
+    <!-- <module name="motor_mixing"/> -->
     <module name="Overactuated_mixing"/>
   </firmware>
 
@@ -397,14 +393,14 @@
     <define name="MOTOR_MAX_OMEGA" value="1104" unit="rad/s"/> -->
 
     <!-- CF PROP with 4s battery-->
-    <define name="MOTOR_K_T_OMEGASQ_P1" value="0.133851e-5" />
-    <define name="MOTOR_K_T_OMEGASQ_P2" value="-1.125262e-5" />
-    <!-- <define name="MOTOR_K_T_OMEGASQ_P1" value="0" />
-    <define name="MOTOR_K_T_OMEGASQ_P2" value="0.644623e-5" unit="N/(rad/s)^2"/> -->
+    <!-- <define name="MOTOR_K_T_OMEGASQ_P1" value="0.133851e-5" />
+    <define name="MOTOR_K_T_OMEGASQ_P2" value="-1.125262e-5" /> -->
+    <define name="MOTOR_K_T_OMEGASQ_P1" value="0" />
+    <define name="MOTOR_K_T_OMEGASQ_P2" value="0.545e-5" unit="N/(rad/s)^2"/>
 
     <define name="MOTOR_K_M_OMEGASQ" value="0.936722e-7" unit="N*m/(rad/s)^2"/>
-    <define name="MOTOR_K_PWM_OMEGA" value="1.31" unit="(rad/s)/PWM"/>
-    <define name="MOTOR_MAX_OMEGA" value="1273" unit="rad/s"/>
+    <define name="MOTOR_K_PWM_OMEGA" value="1.4" unit="(rad/s)/PWM"/>
+    <define name="MOTOR_MAX_OMEGA" value="1400" unit="rad/s"/>
 
     <!-- SLOW PROP-->
    <!-- <define name="MOTOR_K_T_OMEGASQ" value="0.882e-5" unit="N/(rad/s)^2"/>
@@ -438,11 +434,11 @@
     <define name="SPEED_AOA_PROTECTION" value="6" unit="m/s"/>
 
     <!-- Filters properties for INDI -->
-    <define name="FILT_CUTOFF_ANG_RATES" value="14" unit="rad/s"/>
-    <define name="FILT_CUTOFF_LIN_ACC" value="14" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_EL" value="14" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="14" unit="rad/s"/>
-    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="14" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ANG_RATES" value="12" unit="rad/s"/>
+    <define name="FILT_CUTOFF_LIN_ACC" value="12" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_EL" value="12" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_AZ" value="12" unit="rad/s"/>
+    <define name="FILT_CUTOFF_ACTUATORS_MOTOR" value="12" unit="rad/s"/>
 
     <!-- First order filter on rates -->
     <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0488" /><!-- 1-exp(-cutoff_frequency/sampling_frequency) [20 rad/s]--> 
@@ -453,15 +449,15 @@
     <define name="W_ACT_EL_CONST" value="0"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
     <define name="W_ACT_AZ_CONST" value="0"/>
-    <define name="W_ACT_AZ_SPEED" value="1"/>
+    <define name="W_ACT_AZ_SPEED" value="1.5"/>
     <define name="W_ACT_THETA_CONST" value="100"/>
-    <define name="W_ACT_THETA_SPEED" value="-14"/>
+    <define name="W_ACT_THETA_SPEED" value="-15"/>
     <define name="W_ACT_PHI_CONST" value="100"/>
-    <define name="W_ACT_PHI_SPEED" value="-14"/>
+    <define name="W_ACT_PHI_SPEED" value="-15"/>
 
-    <define name="W_DV_1" value="0.03"/>
-    <define name="W_DV_2" value="0.03"/>
-    <define name="W_DV_3" value="0.05"/>
+    <define name="W_DV_1" value="0.02"/>
+    <define name="W_DV_2" value="0.02"/>
+    <define name="W_DV_3" value="0.06"/>
     <define name="W_DV_4" value="0.1"/>
     <define name="W_DV_5" value="0.1"/>
     <define name="W_DV_6" value="0.1"/>
@@ -576,13 +572,21 @@
     <define name="MAG_Y_SENS" value="12.050259302161503" integer="16"/>
     <define name="MAG_Z_SENS" value="13.3906605909858" integer="16"/> -->
 
-    <!-- Calibrated at Valkenburg the 29-09-2022 -->
-    <define name="MAG_X_NEUTRAL" value="-16"/>
+    <!-- Calibration of internal magnetometer at Valkenburg the 29-09-2022 -->
+    <!-- <define name="MAG_X_NEUTRAL" value="-16"/>
     <define name="MAG_Y_NEUTRAL" value="-3"/>
     <define name="MAG_Z_NEUTRAL" value="8"/>
     <define name="MAG_X_SENS" value="12.805665737982293" integer="16"/>
     <define name="MAG_Y_SENS" value="12.452858897859254" integer="16"/>
-    <define name="MAG_Z_SENS" value="13.380450433986857" integer="16"/>
+    <define name="MAG_Z_SENS" value="13.380450433986857" integer="16"/> -->
+
+    <!-- Calibration of rm3100 magnetometer cyberzoo 10-10-2022 -->
+    <define name="MAG_X_NEUTRAL" value="-335"/>
+    <define name="MAG_Y_NEUTRAL" value="196"/>
+    <define name="MAG_Z_NEUTRAL" value="-49"/>
+    <define name="MAG_X_SENS" value="0.5691560013402578" integer="16"/>
+    <define name="MAG_Y_SENS" value="0.5737689768733906" integer="16"/>
+    <define name="MAG_Z_SENS" value="0.4666644527755341" integer="16"/>
 
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI" value="-1.66" unit="deg"/>
