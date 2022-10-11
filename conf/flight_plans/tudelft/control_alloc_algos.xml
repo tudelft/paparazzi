@@ -6,8 +6,9 @@
   </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
-    <waypoint name="CLIMB" x="0.0" y="0.0"/>
-    <waypoint name="STDBY" x="-1.5" y="-1.5" alt="1.5"/>
+    <waypoint name="CLIMB" x="0.0" y="0.0" alt="1.5"/>
+    <waypoint name="STDBY" x="0.0" y="0.0" alt="1.5"/>
+    <waypoint name="PMY" x="-1.5" y="-1.5" alt="1.5"/>
     <waypoint name="ALT" x="1.5" y="1.5" alt="3.0"/>
   </waypoints>
   <blocks>
@@ -32,8 +33,11 @@
       <stay vmode="climb" climb="nav_climb_vspeed" wp="CLIMB"/>
     </block>
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
-      <call_once fun="nav_set_heading_deg(0)"/>
       <stay wp="STDBY"/>
+    </block>
+    <block key="p" name="Primary" strip_button="Primary">
+      <call_once fun="nav_set_heading_deg(0)"/>
+      <stay wp="PMY"/>
     </block>
     <block key="a" name="Alternate" strip_button="Alternate">
       <call_once fun="nav_set_heading_deg(179)"/>

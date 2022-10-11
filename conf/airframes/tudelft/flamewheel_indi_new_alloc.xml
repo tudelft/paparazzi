@@ -214,8 +214,8 @@
       >>> np.cross(x, np.array([0, 0, -1]))
     -->
 
-    <define name="G1_ROLL" value="{-52.5 , -105, -52.5, 52.5, 105, 52.5 }"/>
-    <define name="G1_PITCH" value="{+91 , 0, -91 , -91, 0, +91 }"/>
+    <define name="G1_ROLL" value="{-13 , -26, -13, 13, 26, 13 }"/>
+    <define name="G1_PITCH" value="{+23 , 0, -23 , -23, 0, +23 }"/>
     <define name="G1_YAW" value="{+2.4, -2.4, +2.4, -2.4, +2.4, -2.4}"/>
     <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4, -.4, -.4}"/>
     <!--Counter torque effect of spinning up a rotor-->
@@ -234,7 +234,7 @@
     <define name="FILT_CUTOFF" value="5.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN" value="{0.05, 0.05, 0.05, 0.05, 0.05, 0.05}"/>
+    <define name="ACT_DYN" value="{0.04, 0.04, 0.04, 0.04, 0.04, 0.04}"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
@@ -267,12 +267,12 @@
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
-    <define name="MAX_BANK" value="20" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="2" unit="m/s"/>
+    <define name="MAX_BANK" value="40" unit="deg"/>
+    <define name="REF_MAX_SPEED" value="0.8" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
-    <define name="PGAIN" value="79"/>
-    <define name="DGAIN" value="100"/>
+    <define name="PGAIN" value="150"/>
+    <define name="DGAIN" value="250"/>
     <define name="IGAIN" value="30"/>
   </section>
 

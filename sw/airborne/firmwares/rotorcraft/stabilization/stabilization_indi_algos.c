@@ -209,7 +209,7 @@ struct FloatVect3 body_accel_f;
 float gamma_used;
 float cond_est;
 #ifdef USE_NPS
-uint32_t t_ctl_alloc_exec = 42;
+uint32_t t_ctl_alloc_exec_us = 42;
 #else
 systime_t t_ctl_alloc_before;
 sysinterval_t t_ctl_alloc_exec;
