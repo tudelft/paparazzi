@@ -77,12 +77,16 @@
 #define STABILIZATION_INDI_FILT_CUTOFF_R 20.0
 #endif
 
+#ifndef STABILIZATION_INDI_CTL_ALLOC_IMAX
+#define STABILIZATION_INDI_CTL_ALLOC_IMAX 100
+#endif
+
+
 float du_min[INDI_NUM_ACT];
 float du_max[INDI_NUM_ACT];
 float du_pref[INDI_NUM_ACT];
 float indi_v[INDI_OUTPUTS];
 float *Bwls[INDI_OUTPUTS];
-int num_iter = 0;
 
 static void lms_estimation(void);
 static void get_actuator_state(void);
@@ -114,6 +118,7 @@ bool indi_use_adaptive = false;
 activeSetAlgoChoice indi_ctl_alloc_algo = STABILIZATION_INDI_CTL_ALLOC_ALGO;
 float indi_ctl_alloc_cond_bound = STABILIZATION_INDI_CTL_ALLOC_COND_BOUND;
 float indi_ctl_alloc_theta = STABILIZATION_INDI_CTL_ALLOC_THETA;
+float indi_max_rpm_scaler = STABILIZATION_INDI_MAX_RPM_SCALER;
 
 #ifdef STABILIZATION_INDI_ACT_RATE_LIMIT
 float act_rate_limit[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_RATE_LIMIT;
@@ -206,8 +211,11 @@ static struct FirstOrderLowPass rates_filt_fo[3];
 
 struct FloatVect3 body_accel_f;
 
-float gamma_used;
-float cond_est;
+float gamma_used = 0;
+float cond_est = 0;
+int iterations = 0;
+int n_free = INDI_NUM_ACT;
+int n_satch = 0;
 #ifdef USE_NPS
 uint32_t t_ctl_alloc_exec_us = 42;
 #else
@@ -223,7 +231,7 @@ void init_filters(void);
 #include "modules/datalink/telemetry.h"
 static void send_ctl_alloc_perf(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_CTL_ALLOC_PERF(trans, dev, AC_ID, (uint8_t*)&indi_ctl_alloc_algo, &cond_est, &gamma_used, (uint32_t*) &t_ctl_alloc_exec_us);
+  pprz_msg_send_CTL_ALLOC_PERF(trans, dev, AC_ID, (uint8_t*)&indi_ctl_alloc_algo, &cond_est, &gamma_used, (uint16_t*) &iterations, (uint8_t*) &n_satch, (uint32_t*) &t_ctl_alloc_exec_us);
 }
 
 static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
@@ -496,8 +504,8 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #endif
     // Calculate the min and max increments
     for (i = 0; i < INDI_NUM_ACT; i++) {
-      du_min[i] = -MAX_PPRZ * act_is_servo[i] - actuator_state_filt_vect[i];
-      du_max[i] = MAX_PPRZ - actuator_state_filt_vect[i];
+      du_min[i] = -MAX_PPRZ*indi_max_rpm_scaler * act_is_servo[i] - actuator_state_filt_vect[i];
+      du_max[i] = MAX_PPRZ*indi_max_rpm_scaler - actuator_state_filt_vect[i];
       du_pref[i] = act_pref[i] - actuator_state_filt_vect[i];
 
 #ifdef GUIDANCE_INDI_MIN_THROTTLE
@@ -592,7 +600,9 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
 
     // solve problem
-    solveActiveSet(A, b, du_min, du_max, 0, true, indi_du, 0, n_u, n_v, 0, 0, indi_ctl_alloc_algo);
+    solveActiveSet(A, b, du_min, du_max, 0, true, STABILIZATION_INDI_CTL_ALLOC_IMAX,
+                    indi_du, 0, n_u, n_v, &iterations, &n_free, indi_ctl_alloc_algo);
+    n_satch = INDI_NUM_ACT - n_free;
 
     if (scale) {
       for (int i=0; i<n_u; i++)

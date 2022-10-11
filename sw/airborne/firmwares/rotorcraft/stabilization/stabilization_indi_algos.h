@@ -49,6 +49,7 @@ extern bool indi_use_adaptive;
 extern activeSetAlgoChoice indi_ctl_alloc_algo;
 extern float indi_ctl_alloc_cond_bound;
 extern float indi_ctl_alloc_theta;
+extern float indi_max_rpm_scaler;
 
 extern float *Bwls[INDI_OUTPUTS];
 

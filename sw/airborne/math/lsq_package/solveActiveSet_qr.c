@@ -81,35 +81,37 @@
  * @param up Preferred control vector
  * @param gamma_sq Preference of satisfying control objective over desired
  * control vector (sqare root of gamma)
- * @param imax Max number of iterations
+ * @param imax Max number of *iterations
  *
- * @return Number of iterations, -1 upon failure
+ * @return Number of *iterations, -1 upon failure
  */
 /* int wls_alloc(num_t* u, num_t* v, num_t* umin, num_t* umax, num_t** B,
     num_t* u_guess, num_t* W_init, num_t* Wv, num_t* Wu, num_t* up,
     num_t gamma_sq, int imax) {
       */
 void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], const num_t umin[CA_N_U],
-                    const num_t umax[CA_N_U], const num_t u_guess[CA_N_U], bool updating,
-                    num_t xs[CA_N_U], num_t Ws[CA_N_U], const int n_u, const int n_v, num_t *placeholder, num_t *fl)
-  {
-
+                    const num_t umax[CA_N_U], const num_t u_guess[CA_N_U], bool updating, int imax,
+                    num_t xs[CA_N_U], int Ws[CA_N_U], const int n_u, const int n_v, int *iter, int *n_free)
+{
   (void)(updating);
-  (void)(placeholder);
-  (void)(fl);
-  (void)(Ws);
 
-  // allocate variables, use defaults where parameters are set to 0
-  // if(!gamma_sq) gamma_sq = 100000;
-  int imax = 0;
   if(!imax) imax = 100;
+
+  (void)(Ws);
 
   int n_c = n_u + n_v;
 
-  //num_t xs[CA_N_U]; memcpy(xs, u_guess, sizeof(num_t)*n_u);
-  memcpy(xs, u_guess, sizeof(num_t)*n_u);
-  int iter = 0;
-  int n_free = 0;
+  // Initialize u and the working set, if provided from input
+  if (!u_guess) {
+    for (int i = 0; i < n_u; i++) {
+      xs[i] = (umax[i] + umin[i]) * 0.5;
+    }
+  } else {
+    for (int i = 0; i < n_u; i++) {
+      xs[i] = u_guess[i];
+    }
+  }
+
 
   num_t A[CA_N_C][CA_N_U];
   num_t Q[CA_N_C][CA_N_C];
@@ -128,23 +130,14 @@ void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], 
 
   int gamma[CA_N_U]; memset(gamma, 0, sizeof(int)*n_u);
   check_limits_tol(n_u, TOL, xs, umin, umax, gamma, 0);
-  /*
-  for (int i = 0; i < n_u; i++) {
-    if (xs[i] <= umin[i]+TOL) {
-      gamma[i] = +1;
-    } else if (xs[i] >= umax[i]-TOL) {
-      gamma[i] = -1;
-    }
-  }
-  */
 
   int free_index_lookup[CA_N_U]; memset(free_index_lookup, -1, sizeof(int)*n_u);
   int permutation[CA_N_U]; memset(permutation, 0, sizeof(int)*n_u);
+  *n_free = 0;
   for (int i = 0; i < n_u; i++) {
     if (gamma[i] == 0) {
-      free_index_lookup[i] = n_free;
-      permutation[n_free] = i;
-      n_free++;
+      free_index_lookup[i] = *n_free;
+      permutation[(*n_free)++] = i;
     }
   }
 
@@ -165,9 +158,10 @@ void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], 
   num_t z[CA_N_U];
 
   // -------------- Start loop ------------
-  while (iter++ < imax) {
+  *iter = 0;
+  while ((*iter)++ < imax) {
     num_t c[CA_N_U];
-    for (int i=0; i < n_free; i++) {
+    for (int i=0; i < *n_free; i++) {
       c[i] = 0;
       for (int j=0; j < n_c; j++) {
         c[i] += Q_ptr[j][i]*b[j];
@@ -175,33 +169,33 @@ void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], 
     }
 
     num_t u_bound_perm[CA_N_U];
-    for (int k=0; k < n_u - n_free; k++) {
-      if (gamma[permutation[k+n_free]] < 0)
-        u_bound_perm[k] = umax[permutation[k+n_free]];
-      else if (gamma[permutation[k+n_free]] > 0) 
-        u_bound_perm[k] = umin[permutation[k+n_free]];
+    for (int k=0; k < n_u - *n_free; k++) {
+      if (gamma[permutation[k+*n_free]] < 0)
+        u_bound_perm[k] = umax[permutation[k+*n_free]];
+      else if (gamma[permutation[k+*n_free]] > 0) 
+        u_bound_perm[k] = umin[permutation[k+*n_free]];
       else
         printf("Gamma out of bounds for bounded variables");
     }
 
-    for (int i=0; i < n_free; i++) {
-      for (int j=0; j < n_u - n_free; j++) {
-        c[i] -= R_ptr[i][n_free+j] * u_bound_perm[j];
+    for (int i=0; i < *n_free; i++) {
+      for (int j=0; j < n_u - *n_free; j++) {
+        c[i] -= R_ptr[i][*n_free+j] * u_bound_perm[j];
       }
     }
 
-    backward_tri_solve(n_free, R_ptr, c, q);
-    for (int i = 0; i < n_free; i++) {
+    backward_tri_solve(*n_free, R_ptr, c, q);
+    for (int i = 0; i < *n_free; i++) {
       z[permutation[i]] = q[i];
     }
-    for (int i = n_free; i < n_u; i++) {
+    for (int i = *n_free; i < n_u; i++) {
       z[permutation[i]] = xs[permutation[i]];
     }
 
     int n_violated = 0;
-    n_violated = check_limits_tol(n_free, TOL, z, umin, umax, gamma, permutation);
+    n_violated = check_limits_tol(*n_free, TOL, z, umin, umax, gamma, permutation);
     /*
-    for (int i = 0; i < n_free; i++) {
+    for (int i = 0; i < *n_free; i++) {
       if ((umin[permutation[i]] - TOL > z[permutation[i]]) ||
         (z[permutation[i]] > TOL + umax[permutation[i]])) {
           n_violated++;
@@ -211,24 +205,24 @@ void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], 
 
     if (!n_violated) {
       // is this the most efficient location TODO
-      for (int i = 0; i < n_free; i++) {
+      for (int i = 0; i < *n_free; i++) {
         xs[permutation[i]] = z[permutation[i]];
       }
 
-      if (n_free == n_u) {
+      if (*n_free == n_u) {
         // no active constraints, we are optinal and feasible
         break;
       } else {
         // active constraints, check for optimality
         num_t d[CA_N_U];
-        for (int i=n_free; i < n_u; i++) {
+        for (int i=*n_free; i < n_u; i++) {
           d[i] = 0;
           for (int j=0; j < n_c; j++) {
             d[i] += Q_ptr[j][i]*b[j];
           }
         }
 
-        for (int i=n_free; i < n_u; i++) {
+        for (int i=*n_free; i < n_u; i++) {
           for (int j=i; j < n_u; j++){
             d[i] -= R_ptr[i][j]*xs[permutation[j]];
           }
@@ -237,15 +231,15 @@ void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], 
         num_t lambda_perm[CA_N_U];
         int f_free = 0;
         num_t maxlam = -1e10; // TODO
-        for (int i=n_free; i<n_u; i++) {
+        for (int i=*n_free; i<n_u; i++) {
           lambda_perm[i] = 0;
-          for (int j=n_free; j <= i; j++) {
+          for (int j=*n_free; j <= i; j++) {
             lambda_perm[i] += R_ptr[j][i]*d[j];
           }
           lambda_perm[i] *= gamma[permutation[i]];
           if (lambda_perm[i] > maxlam) {
             maxlam = lambda_perm[i];
-            f_free = i-n_free;
+            f_free = i-*n_free;
           }
         }
 
@@ -254,19 +248,17 @@ void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], 
         }
 
         // free variable
-        qr_shift(n_c, n_u, Q_ptr, R_ptr, n_free, n_free+f_free);
+        qr_shift(n_c, n_u, Q_ptr, R_ptr, *n_free, *n_free+f_free);
         #ifdef debug_qr
         print_debug(A_ptr, Q_ptr, R_ptr, &n_u, &n_c);
         #endif
 
-        gamma[permutation[n_free+f_free]] = 0;
-        int last_val = permutation[n_free+f_free];
+        gamma[permutation[*n_free+f_free]] = 0;
+        int last_val = permutation[*n_free+f_free];
         for (int i = f_free-1; i >= 0; i--) {
-          permutation[n_free+i+1] = permutation[n_free+i];
+          permutation[*n_free+i+1] = permutation[*n_free+i];
         }
-        permutation[n_free] = last_val;
-
-        n_free++;
+        permutation[(*n_free)++] = last_val;
 
       }
     } else {
@@ -277,7 +269,7 @@ void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], 
       int i_s = 0;
       num_t temp;
       int temp_s;
-      for (int f=0; f < n_free; f++) {
+      for (int f=0; f < *n_free; f++) {
         int i = permutation[f];
         if (z[i] < umin[i]-TOL) {
           temp = (xs[i] - umin[i]) / (xs[i] - z[i]);
@@ -306,19 +298,17 @@ void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], 
         }
       }
 
-      qr_shift(n_c, n_u, Q_ptr, R_ptr, n_free-1, f_bound);
+      qr_shift(n_c, n_u, Q_ptr, R_ptr, *n_free-1, f_bound);
       #ifdef debug_qr
       print_debug(A_ptr, Q_ptr, R_ptr, &n_u, &n_c);
       #endif
 
       gamma[i_a] = i_s;
       int first_val = permutation[f_bound];
-      for (int i = 0; i < n_free-f_bound-1; i++) {
+      for (int i = 0; i < *n_free-f_bound-1; i++) {
         permutation[f_bound+i] = permutation[f_bound+i+1];
       }
-      permutation[n_free-1] = first_val;
-
-      n_free--;
+      permutation[--(*n_free)] = first_val;
 
     }
 
@@ -327,13 +317,13 @@ void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], 
 }
 
 #if WLS_VERBOSE
-void print_in_and_outputs(int n_c, int n_free, num_t** A_free_ptr, num_t* d, num_t* p_free) {
+void print_in_and_outputs(int n_c, int *n_free, num_t** A_free_ptr, num_t* d, num_t* p_free) {
 
-  printf("n_c = %d n_free = %d\n", n_c, n_free);
+  printf("n_c = %d *n_free = %d\n", n_c, *n_free);
 
   printf("A_free =\n");
   for(int i = 0; i < n_c; i++) {
-    for (int j = 0; j < n_free; j++) {
+    for (int j = 0; j < *n_free; j++) {
       printf("%f ", A_free_ptr[i][j]);
     }
     printf("\n");
@@ -345,7 +335,7 @@ void print_in_and_outputs(int n_c, int n_free, num_t** A_free_ptr, num_t* d, num
   }
 
   printf("\noutput = ");
-  for (int j = 0; j < n_free; j++) {
+  for (int j = 0; j < *n_free; j++) {
     printf("%f ", p_free[j]);
   }
   printf("\n\n");
