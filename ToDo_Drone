@@ -1,0 +1,12 @@
+ 
+- forcast wave 0.5 to 1.0 sec 
+- substract wave from ship position so that descent line is not moving by the waves
+- plot ship movement in 2d plot
+- 
+
+- get a dataset from a real ship with IMU
+- kan basis-gps van drone ook worden ingesteld in paparazzi als secondary gps?
+
+
+- bebop GPS take-over als backup
+- 

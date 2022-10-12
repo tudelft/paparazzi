@@ -29,6 +29,7 @@
 #include "std.h"
 #include "math/pprz_geodetic_int.h"
 #include "math/pprz_geodetic_float.h"
+#include "math/pprz_algebra_float.h"
 
 struct target_pos_t {
   bool valid;               ///< If the data of the target position is valid
@@ -55,6 +56,7 @@ struct target_t {
   bool integrate_xy;                        ///< Enable integration of the position in X-Y (North/East) frame
   bool integrate_z;                         ///< Enable integration of the position in Z (Up) frame
   struct LlaCoor_i gps_lla;                 ///< GPS LLA position
+
 };
 
 extern struct target_t target;

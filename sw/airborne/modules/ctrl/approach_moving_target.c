@@ -35,7 +35,6 @@ bool allways_update_ship_wp = true;
 float approach_moving_target_angle_deg;
 
 
-
 #define DEBUG_AMT TRUE
 #include <stdio.h>
 
@@ -270,12 +269,12 @@ void follow_diagonal_approach(void) {
   // Desired position = rel_pos + target_pos_boat ??????????????
   struct FloatVect3 ref_relpos;
   VECT3_SMUL(ref_relpos, amt.rel_unit_vec, amt.distance); //calculate decscent point
-  //ref_relpos.z = ref_relpos.z*-1; // TESTING............................................................................
 
   // Add ref point of descent to ship location to get NED coordinate ref point of descent
   // ATTENTION, target_pos_boat is already relative now!
   struct FloatVect3 rel_des_pos;
-  VECT3_SUM(rel_des_pos, ref_relpos, rel_target_pos);
+  VECT3_SUM(rel_des_pos, ref_relpos, rel_target_pos); 
+  //printf("ref_relpos.z %f \n", ref_relpos.z);
 
 
   // ------------------------------------------------------------------------- ADD MORE COMMENTS FROM HERE ON
@@ -361,6 +360,7 @@ void follow_diagonal_approach(void) {
 
   // Update values for telemetry
   VECT3_COPY(amt_telem.des_pos, rel_des_pos); 
+  
   VECT3_COPY(amt_telem.des_vel, des_vel);
 
   // Update values for telemetry
