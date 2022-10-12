@@ -38,6 +38,10 @@ extern bool indi_use_adaptive;
 
 extern float *Bwls[INDI_OUTPUTS];
 
+extern float thrust_bx_eff;
+extern float thrust_bx_act_dyn;
+extern float actuator_thrust_bx_pprz;
+
 struct Indi_gains {
   struct FloatRates att;
   struct FloatRates rate;

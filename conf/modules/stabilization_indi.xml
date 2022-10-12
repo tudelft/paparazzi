@@ -44,6 +44,8 @@
   <settings>
     <dl_settings>
       <dl_settings NAME="indi">
+        <dl_setting var="thrust_bx_eff" min="0" step="0.00001" max="0.001" shortname="eff_push" param="STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS"/>
+        <dl_setting var="thrust_bx_act_dyn" min="0" step="0.001" max="0.1" shortname="dyn_push" param="STABILIZATION_INDI_PUSHER_PROP_DYN"/>
         <dl_setting var="indi_gains.att.p" min="0" step="1" max="2500" shortname="kp_p" param="STABILIZATION_INDI_REF_ERR_P"/>
         <dl_setting var="indi_gains.rate.p" min="0" step="0.1" max="100" shortname="kd_p" param="STABILIZATION_INDI_REF_RATE_P"/>
         <dl_setting var="indi_gains.att.q" min="0" step="1" max="2500" shortname="kp_q" param="STABILIZATION_INDI_REF_ERR_Q"/>
