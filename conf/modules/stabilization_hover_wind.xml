@@ -1,0 +1,46 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="stabilization_hover_wind" dir="stabilization" task="control">
+  <doc>
+    <description>
+      Stabilization controller for flying wing in hover with constant wind disturbance
+    </description>
+
+    <configure name="CTRL_HOVER_WIND_INPUT" default="12"/>
+    <configure name="CTRL_HOVER_WIND_NUM_ACT" default="4"/>
+    <configure name="CTRL_HOVER_WIND_NUM_INTEGRATOR_STATE" default="2"/>
+
+
+    <section name="STABILIZATION_HOVER_WIND" prefix="STABILIZATION_HOVER_WIND_">
+
+    </section>
+  </doc>
+
+  <settings>
+
+  </settings>
+
+  <dep>
+    <depends>stabilization_rotorcraft,@attitude_command</depends>
+    <provides>commands</provides>
+  </dep>
+
+  <header>
+    <file name="stabilization_hover_wind.h"/>
+  </header>
+
+  <init fun="stabilization_hover_wind_init()"/>
+
+  <makefile target="ap|nps" firmware="rotorcraft">
+    <file name="stabilization_hover_wind.c" dir="$(SRC_FIRMWARE)/stabilization"/>
+
+    <configure name="CTRL_HOVER_WIND_INPUT" default="12"/>
+    <configure name="CTRL_HOVER_WIND_NUM_ACT" default="4"/>
+    <configure name="CTRL_HOVER_WIND_NUM_INTEGRATOR_STATE" default="2"/>
+
+    <define name="CTRL_HOVER_WIND_INPUT" value="$(CTRL_HOVER_WIND_INPUT)"/>
+    <define name="CTRL_HOVER_WIND_NUM_ACT" value="$(CTRL_HOVER_WIND_NUM_ACT)"/>
+    <define name="CTRL_HOVER_WIND_NUM_INTEGRATOR_STATE" value="$(CTRL_HOVER_WIND_NUM_INTEGRATOR_STATE)"/>
+
+  </makefile>
+</module>
