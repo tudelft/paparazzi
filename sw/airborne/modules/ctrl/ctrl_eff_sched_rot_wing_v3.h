@@ -26,11 +26,15 @@
 #ifndef CTRL_EFF_SCHED_ROT_WING_V3_H
 #define CTRL_EFF_SCHED_ROT_WING_V3_H
 
+#include "std.h"
+
 // Define settings
 extern float g1_p_multiplier;
 extern float g1_q_multiplier;
 extern float g1_r_multiplier;
 extern float g1_t_multiplier;
+
+extern bool wing_rotation_sched_activated;
 
 extern void init_eff_scheduling(void);
 extern void event_eff_scheduling(void);

@@ -25,6 +25,8 @@
 
 #include "modules/ctrl/ctrl_eff_sched_rot_wing_v3.h"
 
+#include "modules/rot_wing_drone/wing_rotation_controller.h"
+
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 
 // Define initialization values
@@ -32,6 +34,8 @@ float g2_startup[INDI_NUM_ACT] = STABILIZATION_INDI_G2; //scaled by INDI_G_SCALI
 float g1_startup[INDI_OUTPUTS][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROLL,
                                                 STABILIZATION_INDI_G1_PITCH, STABILIZATION_INDI_G1_YAW, STABILIZATION_INDI_G1_THRUST
                                                 };
+float rot_wing_side_motors_g1_p_0[2];
+float rot_wing_side_motors_g1_q_90[2] = ROT_WING_SCHED_G1_Q_90; 
 
 // Define settings to multiply initial control eff scheduling values
 float g1_p_multiplier = 1.;
@@ -39,19 +43,57 @@ float g1_q_multiplier = 1.;
 float g1_r_multiplier = 1.;
 float g1_t_multiplier = 1.;
 
+bool wing_rotation_sched_activated = false;
+
 void init_eff_scheduling(void)
 {
-  // your init code here
+  // Copy initial effectiveness on roll for side motors
+  rot_wing_side_motors_g1_p_0[0] = g1_startup[0][1];
+  rot_wing_side_motors_g1_p_0[1] = g1_startup[0][3];
+
 }
 
 void event_eff_scheduling(void)
 {
-  for (int i = 0; i < 4; i++) {
-        g1g2[0][i] = g1_startup[0][i] * g1_p_multiplier / INDI_G_SCALING;
-        g1g2[1][i] = g1_startup[1][i] * g1_q_multiplier / INDI_G_SCALING;
-        g1g2[2][i] = (g1_startup[2][i] * g1_r_multiplier + g2_startup[i]) / INDI_G_SCALING;
-        g1g2[3][i] = g1_startup[3][i] * g1_t_multiplier / INDI_G_SCALING;
+  // Calculate triogeometric variables of wing rotation
+  float cosr;
+  float sinr;
+  if (wing_rotation_sched_activated) {
+    cosr = cosf(wing_rotation.wing_angle_rad);
+    sinr = sinf(wing_rotation.wing_angle_rad);
+  } else {
+    cosr = 1;
+    sinr = 0;
   }
+  
+  float g1_p_side_motors[2];
+  float g1_q_side_motors[2];
+
+  // Calculate roll and pitch effectiveness of the two roll side motors
+  g1_p_side_motors[0] = rot_wing_side_motors_g1_p_0[0] * cosr;
+  g1_p_side_motors[1] = rot_wing_side_motors_g1_p_0[1] * cosr;
+
+  g1_q_side_motors[0] = rot_wing_side_motors_g1_q_90[0] * sinr;
+  g1_q_side_motors[1] = rot_wing_side_motors_g1_q_90[1] * sinr;
+
+  // Update inner loop effectiveness matrix
+  g1g2[0][0] = g1_startup[0][0] * g1_p_multiplier / INDI_G_SCALING;
+  g1g2[1][0] = g1_startup[1][0] * g1_q_multiplier / INDI_G_SCALING;
+  g1g2[2][0] = (g1_startup[2][0] * g1_r_multiplier + g2_startup[0]) / INDI_G_SCALING;
+  g1g2[3][0] = g1_startup[3][0] * g1_t_multiplier / INDI_G_SCALING;
+
+  g1g2[0][1] = g1_p_side_motors[0] * g1_p_multiplier / INDI_G_SCALING;
+  g1g2[1][1] = g1_q_side_motors[0] * g1_q_multiplier / INDI_G_SCALING;
+  g1g2[2][1] = (g1_startup[2][1] * g1_r_multiplier + g2_startup[1]) / INDI_G_SCALING;
+  g1g2[3][1] = g1_startup[3][1] * g1_t_multiplier / INDI_G_SCALING;
+
+  g1g2[0][2] = g1_startup[0][2] * g1_p_multiplier / INDI_G_SCALING;
+  g1g2[1][2] = g1_startup[1][2] * g1_q_multiplier / INDI_G_SCALING;
+  g1g2[2][2] = (g1_startup[2][2] * g1_r_multiplier + g2_startup[2]) / INDI_G_SCALING;
+  g1g2[3][2] = g1_startup[3][2] * g1_t_multiplier / INDI_G_SCALING;
+
+  g1g2[0][3] = g1_p_side_motors[1] * g1_p_multiplier / INDI_G_SCALING;
+  g1g2[1][3] = g1_q_side_motors[1] * g1_q_multiplier / INDI_G_SCALING;
+  g1g2[2][3] = (g1_startup[2][3] * g1_r_multiplier + g2_startup[3]) / INDI_G_SCALING;
+  g1g2[3][3] = g1_startup[3][3] * g1_t_multiplier / INDI_G_SCALING;
 }
-
-
