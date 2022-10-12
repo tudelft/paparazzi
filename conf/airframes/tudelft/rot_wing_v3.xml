@@ -29,8 +29,8 @@
             </module>
             <module name="imu" type="cube"/>
             <module name="wing_rotation_controller">
-                <define name="WING_ROTATION_POSITION_ADC_0" value="45950"/>
-                <define name="WING_ROTATION_POSITION_ADC_90" value="18800"/>
+                <define name="WING_ROTATION_POSITION_ADC_0" value="18400"/>
+                <define name="WING_ROTATION_POSITION_ADC_90" value="14930"/>
                 <define name="WING_ROTATION_DEADZONE_PPRZ_CMD" value="500"/>
                 <define name="WING_ROTATION_P_GAIN" value="-50000"/>
                 <define name="WING_ROTATION_MAX_CMD" value="9600"/>
@@ -79,7 +79,7 @@
             <configure name="INDI_NUM_ACT" value="4"/>
         </module>
 
-        <module name="guidance" type="indi_hybrid"/>
+        <module name="guidance" type="indi_rot_wing"/>
 
         <module TYPE="ekf2" NAME="ins"/>
 
@@ -146,15 +146,15 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
-        <set VALUE="($th_hold? -9600 : RadioControlValues(RADIO_AUX4))" SERVO="MOTOR_PUSH"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[4])" SERVO="MOTOR_PUSH"/>
         <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_1"/>
     </command_laws>
 
     <section NAME="MISC">
         <define name="VoltageOfAdc(adc)" value="((3.3f/65536.0f) * 13.86 * adc)"/>
         <define VALUE="TRUE" NAME="NO_RC_THRUST_LIMIT"/>
-        <define VALUE="3.5" NAME="NAV_CLIMB_VSPEED"/>
-        <define VALUE="-0.5" NAME="NAV_DESCEND_VSPEED"/>
+        <define VALUE="2.0" NAME="NAV_CLIMB_VSPEED"/>
+        <define VALUE="-1.0" NAME="NAV_DESCEND_VSPEED"/>
         <!--<define VALUE="50.0" NAME="ARRIVED_AT_WAYPOINT"/>-->
         <define VALUE="20" NAME="NO_GPS_LOST_WITH_DATALINK_TIME"/>
         <define VALUE="TRUE" NAME="NO_GPS_LOST_WITH_RC_VALID"/>
@@ -163,7 +163,8 @@
 
     <section name="IMU" prefix="IMU_">
         <!--<define name="MAG_CALIB" value="{{.abi_id=3, .neutral={1696,-4095,3641}, .scale={{15263,26021,26309},{25440,40858,41277}},.current_scale={0,0,0}}}"/>-->
-        <define name="MAG_CALIB" value="{{.abi_id=3, .neutral={1638,-4050,3653}, .scale={{7385,2497,26093},{12188,3877,40843}},.current_scale={0,0,0}}}"/>
+        <define name="MAG_CALIB" value="{{.abi_id=3, .neutral={1661,-4006,3516}, .scale={{4963,37930,4367},{8399,60361,6961}}}}"/>
+
 
 
         <define name="ACCEL_CALIB" value="{{.abi_id=20, .neutral={-57,-20,-6}, .scale={{3374,11057,64239},{647,2261,13135}}}, {.abi_id=21, .neutral={-35,-20,9}, .scale={{50356,47219,17359},{10281,9653,3561}}}, {.abi_id=22, .neutral={-17,-10,24}, .scale={{22979,34687,9697},{2353,3547,1001}}}}"/>
@@ -175,8 +176,8 @@
     </section>
 
     <section PREFIX="STABILIZATION_ATTITUDE_" NAME="STABILIZATION_ATTITUDE">
-        <define VALUE="60." UNIT="deg" NAME="SP_MAX_PHI"/>
-        <define VALUE="60." UNIT="deg" NAME="SP_MAX_THETA"/>
+        <define VALUE="45." UNIT="deg" NAME="SP_MAX_PHI"/>
+        <define VALUE="45." UNIT="deg" NAME="SP_MAX_THETA"/>
         <define VALUE="90." UNIT="deg/s" NAME="SP_MAX_R"/>
         <define VALUE="200" NAME="DEADBAND_R"/>
         <define VALUE="45" UNIT="deg" NAME="SP_PSI_DELTA_LIMIT"/>
@@ -207,11 +208,11 @@
     </section>
 
     <section PREFIX="STABILIZATION_INDI_" NAME="STABILIZATION_ATTITUDE_INDI">
-        <define VALUE="{0.00, -12, 0.0,   12}" NAME="G1_ROLL"/>
-        <define VALUE="{3.7, 0.0,   -3.7, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-0.49, 0.45, -0.49, 0.45}" NAME="G1_YAW"/>
+        <define VALUE="{0.0, -13, 0.0,   13}" NAME="G1_ROLL"/>
+        <define VALUE="{1.4, 0.0,   -1.4, 0.0}" NAME="G1_PITCH"/>
+        <define VALUE="{-0.2, 0.3, -0.2, 0.3}" NAME="G1_YAW"/>
         <define VALUE="{-0.55,   -0.45,  -0.55,   -0.45}" NAME="G1_THRUST"/>
-        <define VALUE="{0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
+        <define VALUE="{0.0, 0.0, -0.0, 0.0}" NAME="G2"/>
         <define VALUE="0.000510937" NAME="PUSHER_PROP_EFFECTIVENESS"/>
         <define VALUE="0.047" NAME="PUSHER_PROP_DYN"/>
         <!--<define VALUE="{0.00, -30.0, 0.0,   30.0}" NAME="G1_ROLL"/>
@@ -225,13 +226,13 @@
         <define VALUE="8.8" NAME="REF_RATE_P"/>
         <define VALUE="12.5" NAME="REF_RATE_Q"/>
         <define VALUE="9.0" NAME="REF_RATE_R"/>
-        <define VALUE="50.0" UNIT="deg/s" NAME="MAX_R"/>
+        <define VALUE="30.0" UNIT="deg/s" NAME="MAX_R"/>
         <define VALUE="20.0" NAME="FILT_CUTOFF_P"/>
         <define VALUE="20.0" NAME="FILT_CUTOFF_Q"/>
         <define VALUE="20.0" NAME="FILT_CUTOFF_R"/>
-        <define VALUE="2.5" NAME="FILT_CUTOFF"/>
-        <define VALUE="2.5" NAME="FILT_CUTOFF_RDOT"/>
-        <define VALUE="2.5" NAME="ESTIMATION_FILT_CUTOFF"/>
+        <define VALUE="2.0" NAME="FILT_CUTOFF"/>
+        <define VALUE="2.0" NAME="FILT_CUTOFF_RDOT"/>
+        <define VALUE="2.0" NAME="ESTIMATION_FILT_CUTOFF"/>
         <define VALUE="TRUE" NAME="FILTER_YAW_RATE"/>
         <define VALUE="{0.03, 0.025, 0.03, 0.025}" NAME="ACT_DYN"/>
         <define VALUE="{0, 0, 0, 0}" NAME="ACT_IS_SERVO"/>
@@ -240,12 +241,19 @@
         <define VALUE="0.001" NAME="ADAPTIVE_MU"/>
     </section>
 
+    <section PREFIX="ROT_WING_SCHED_" NAME="CTRL_EFF_SCHEDULING">
+        <define VALUE="{1.0, -1.0}" NAME="G1_Q_90"/>
+    </section>
+
     <section PREFIX="GUIDANCE_V_" NAME="GUIDANCE_V">
         <define VALUE="310" NAME="HOVER_KP"/>
         <define VALUE="130" NAME="HOVER_KD"/>
         <define VALUE="10" NAME="HOVER_KI"/>
         <define VALUE="0.42" NAME="NOMINAL_HOVER_THROTTLE"/>
         <define VALUE="FALSE" NAME="ADAPT_THROTTLE_ENABLED"/>
+
+        <define name="REF_MIN_ZD" value="-2.0"/> <!--climb-->
+        <define name="REF_MAX_ZD" value="1.0"/> <!--descend-->
     </section>
 
     <section PREFIX="GUIDANCE_H_" NAME="GUIDANCE_H">
@@ -262,7 +270,7 @@
         <define name="POS_GAINZ" value="0.5"/> <!--tuned at 10m/s ///1.7 1.0-->
         <define name="SPEED_GAIN" value="1.0"/> <!--tuned at 10m/s ///2.0 1.4-->
         <define name="SPEED_GAINZ" value="1.0"/> <!--tuned at 10m/s ///2.1 2.4-->
-        <define name="FILTER_CUTOFF" value="2.5"/>
+        <define name="FILTER_CUTOFF" value="2.0"/>
         <define name="HEADING_BANK_GAIN" value="5."/>
         <define name="MAX_AIRSPEED" value="10.0"/>
         <define name="PITCH_LIFT_EFF" value="0.0"/>
