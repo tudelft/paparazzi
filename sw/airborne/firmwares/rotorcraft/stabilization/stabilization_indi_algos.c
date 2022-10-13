@@ -50,7 +50,7 @@
 #include "math/lsq_package/common/size_defines.h"
 
 
-#ifndef USE_NPS
+#ifdef USE_CHIBIOS_RTOS
 #include <ch.h>
 #include "mcu_periph/sys_time.h"
 #include "mcu.h"
@@ -81,10 +81,15 @@
 #define STABILIZATION_INDI_CTL_ALLOC_IMAX 100
 #endif
 
+#ifndef STABILIZATION_INDI_CTL_ALLOC_WARMSTART
+#define STABILIZATION_INDI_CTL_ALLOC_WARMSTART FALSE
+#endif
+
 
 float du_min[INDI_NUM_ACT];
 float du_max[INDI_NUM_ACT];
 float du_pref[INDI_NUM_ACT];
+int8_t Ws[INDI_NUM_ACT];
 float indi_v[INDI_OUTPUTS];
 float *Bwls[INDI_OUTPUTS];
 
@@ -119,6 +124,7 @@ activeSetAlgoChoice indi_ctl_alloc_algo = STABILIZATION_INDI_CTL_ALLOC_ALGO;
 float indi_ctl_alloc_cond_bound = STABILIZATION_INDI_CTL_ALLOC_COND_BOUND;
 float indi_ctl_alloc_theta = STABILIZATION_INDI_CTL_ALLOC_THETA;
 float indi_max_rpm_scaler = STABILIZATION_INDI_MAX_RPM_SCALER;
+bool indi_ctl_alloc_warmstart = STABILIZATION_INDI_CTL_ALLOC_WARMSTART;
 
 #ifdef STABILIZATION_INDI_ACT_RATE_LIMIT
 float act_rate_limit[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_RATE_LIMIT;
@@ -216,12 +222,12 @@ float cond_est = 0;
 int iterations = 0;
 int n_free = INDI_NUM_ACT;
 int n_satch = 0;
-#ifdef USE_NPS
-uint32_t t_ctl_alloc_exec_us = 42;
-#else
+#ifdef USE_CHIBIOS_RTOS
 systime_t t_ctl_alloc_before;
 sysinterval_t t_ctl_alloc_exec;
 time_usecs_t t_ctl_alloc_exec_us;
+#else
+uint32_t t_ctl_alloc_exec_us = 42;
 #endif
 
 
@@ -282,6 +288,9 @@ void stabilization_indi_init(void)
   uint8_t i;
   for (i = 0; i < INDI_OUTPUTS; i++) {
     Bwls[i] = g1g2[i];
+  }
+  for (i = 0; i < INDI_NUM_ACT; i++) {
+    indi_du[i] = 0;
   }
 
   // Initialize the estimator matrices
@@ -499,9 +508,10 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     }
 #else
 
-#ifndef USE_NPS
-    t_ctl_alloc_before = chVTGetSystemTimeX();
+#if USE_CHIBIOS_RTOS
+  t_ctl_alloc_before = chSysGetRealtimeCounterX();
 #endif
+
     // Calculate the min and max increments
     for (i = 0; i < INDI_NUM_ACT; i++) {
       du_min[i] = -MAX_PPRZ*indi_max_rpm_scaler * act_is_servo[i] - actuator_state_filt_vect[i];
@@ -598,19 +608,25 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     float max_sig;
     cond_estimator(n_v, A2_ptr, min_diag2, &cond_est, &max_sig);
 
-
+    if (!indi_ctl_alloc_warmstart) {
+      for (int i=0; i<n_u; i++) {
+        indi_du[i] = (du_min[i] + du_max[i]) * 0.5;
+        Ws[i] = 0;
+      }
+    }
     // solve problem
-    solveActiveSet(A, b, du_min, du_max, 0, true, STABILIZATION_INDI_CTL_ALLOC_IMAX,
-                    indi_du, 0, n_u, n_v, &iterations, &n_free, indi_ctl_alloc_algo);
+    solveActiveSet(A, b, du_min, du_max, indi_du, Ws, true, STABILIZATION_INDI_CTL_ALLOC_IMAX,
+                    n_u, n_v, &iterations, &n_free, indi_ctl_alloc_algo);
     n_satch = INDI_NUM_ACT - n_free;
 
     if (scale) {
       for (int i=0; i<n_u; i++)
         indi_du[i] *= MAX_PPRZ;
     }
-#ifndef USE_NPS
-    t_ctl_alloc_exec = chVTTimeElapsedSinceX(t_ctl_alloc_before);
-    t_ctl_alloc_exec_us = chTimeI2US(t_ctl_alloc_exec);
+
+#if USE_CHIBIOS_RTOS
+  t_ctl_alloc_exec = chSysGetRealtimeCounterX() - t_ctl_alloc_before;
+  t_ctl_alloc_exec_us = RTC2US(STM32_SYSCLK, t_ctl_alloc_exec);
 #endif
 
 #endif

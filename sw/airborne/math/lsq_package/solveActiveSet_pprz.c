@@ -118,15 +118,24 @@ void qr_solve_wrapper_pprz(int m, int n, num_t** A, num_t* b, num_t* x) {
     num_t gamma_sq, int imax) {
       */
 // #define TOL 1.5e-6 // now defined in size_defines.h
-void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], const num_t umin[CA_N_U],
-                    const num_t umax[CA_N_U], const num_t u_guess[CA_N_U], bool updating, int imax,
-                    num_t xs[CA_N_U], int Ws[CA_N_U], const int n_u, const int n_v, int *iter, int *n_free)
+void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
+  const num_t umin[CA_N_U], const num_t umax[CA_N_U], num_t us[CA_N_U],
+  int8_t Ws[CA_N_U], bool updating, int imax, const int n_u, const int n_v,
+  int *iter, int *n_free)
 {
   (void)(updating);
 
   if(!imax) imax = 100;
 
   int n_c = n_u+n_v;
+
+  for (int i = 0; i < n_u; i++) {
+    if (Ws[i] == 0) {
+      us[i] = (us[i] > umax[i]) ? umax[i] : ((us[i] < umin[i]) ? umin[i] : us[i]);
+    } else {
+      us[i] = (Ws[i] > 0) ? umax[i] : umin[i];
+    }
+  }
 
   num_t A[CA_N_C][CA_N_U];
   num_t A_free[CA_N_C][CA_N_U];
@@ -153,41 +162,19 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
 
   num_t p_free[CA_N_U];
   num_t p[CA_N_U];
-  num_t u_opt[CA_N_U];
   int infeasible_index[CA_N_U]; /*UNUSED; whatever this means */
   (void)(infeasible_index);
   int n_infeasible = 0;
   num_t lambda[CA_N_U];
-  num_t W[CA_N_U];
-
-  // Initialize u and the working set, if provided from input
-  num_t u[CA_N_U];
-  if (!u_guess) {
-    for (int i = 0; i < n_u; i++) {
-      u[i] = (umax[i] + umin[i]) * 0.5;
-    }
-  } else {
-    for (int i = 0; i < n_u; i++) {
-      u[i] = u_guess[i];
-    }
-  }
-
-  if (Ws) {
-    memcpy(W, Ws, n_u * sizeof(int));
-  } else {
-    for (int i=0; i<n_u; i++) {
-      W[i] = 0.;
-    }
-  }
 
   memset(free_index_lookup, -1, n_u * sizeof(int));
 
 
   // find free indices
-  *n_free = 0;
+  (*n_free) = 0;
   for (int i = 0; i < n_u; i++) {
-    if (W[i] == 0 || true) { // todo: fix this properly. W should be int
-      free_index_lookup[i] = *n_free;
+    if (Ws[i] == 0) { // todo: fix this properly. Ws should be int
+      free_index_lookup[i] = (*n_free);
       free_index[(*n_free)++] = i;
     }
   }
@@ -196,7 +183,7 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
   for (int i = 0; i < n_c; i++) {
     d[i] = b[i];
     for (int j = 0; j < n_u; j++) {
-      d[i] -= A[i][j] * u[j];
+      d[i] -= A[i][j] * us[j];
     }
   }
 
@@ -204,17 +191,17 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
   *iter = 0;
   while ((*iter)++ < imax) {
     // clear p, copy u to u_opt
-    memset(p, 0, n_u * sizeof(num_t));
-    memcpy(u_opt, u, n_u * sizeof(num_t));
+    for (int i=0; i<n_u; i++)
+      p[i] = 0;
 
     // Construct a matrix with the free columns of A
-    if (free_chk != *n_free) {
+    if (free_chk != (*n_free)) {
       for (int i = 0; i < n_c; i++) {
-        for (int j = 0; j < *n_free; j++) {
+        for (int j = 0; j < (*n_free); j++) {
           A_free[i][j] = A[i][free_index[j]];
         }
       }
-      free_chk = *n_free;
+      free_chk = (*n_free);
     }
 
 
@@ -222,8 +209,8 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
       // Still free variables left, calculate corresponding solution
 
       // use a solver to find the solution to A_free*p_free = d
-      //printf("%d", *n_free);
-      qr_solve_wrapper_pprz(n_c, *n_free, A_free_ptr, d, p_free);
+      //printf("%d", (*n_free));
+      qr_solve_wrapper_pprz(n_c, (*n_free), A_free_ptr, d, p_free);
 
       //print results current step
 #if WLS_VERBOSE
@@ -233,14 +220,14 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
     }
 
     // Set the nonzero values of p and add to u_opt
-    for (int i = 0; i < *n_free; i++) {
+    for (int i = 0; i < (*n_free); i++) {
       p[free_index[i]] = p_free[i];
-      u_opt[free_index[i]] += p_free[i];
+      us[free_index[i]] += p_free[i];
     }
     // check limits
     n_infeasible = 0;
-    int limits_viol[CA_N_U];
-    check_limits_tol(n_u, TOL, u_opt, umin, umax, limits_viol, 0);
+    int8_t limits_viol[CA_N_U];
+    check_limits_tol(n_u, TOL, us, umin, umax, limits_viol, 0);
     for (int i = 0; i < n_u; i++) {
       if (limits_viol[i] != 0)
         infeasible_index[n_infeasible++] = i;
@@ -249,13 +236,14 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
     // Check feasibility of the solution
     if (n_infeasible == 0) {
       // all variables are within limits
-      memcpy(u, u_opt, n_u * sizeof(num_t));
-      memset(lambda, 0, n_u * sizeof(num_t));
+      //memcpy(u, u_opt, n_u * sizeof(num_t));
+      for (int i = 0; i < n_u; i++)
+        lambda[i] = 0;
 
       // d = d + A_free*p_free; lambda = A*d; --> wrong
-      // d = d - A_free*p_free; grad = A^T*d; lambda = W .* grad --> accurate
+      // d = d - A_free*p_free; grad = A^T*d; lambda = Ws .* grad --> accurate
       for (int i = 0; i < n_c; i++) {
-        for (int k = 0; k < *n_free; k++) {
+        for (int k = 0; k < (*n_free); k++) {
           d[i] -= A_free[i][k] * p_free[k];
         }
         for (int k = 0; k < n_u; k++) {
@@ -264,16 +252,16 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
       }
       bool break_flag = true;
 
-      // lambda = lambda x W;
+      // lambda = lambda x Ws;
       for (int i = 0; i < n_u; i++) {
-        lambda[i] *= W[i];
+        lambda[i] *= Ws[i];
         // if any lambdas are negative, keep looking for solution
         if (lambda[i] < -FLT_EPSILON) {
           break_flag = false;
-          W[i] = 0;
+          Ws[i] = 0;
           // add a free index
           if (free_index_lookup[i] < 0) {
-            free_index_lookup[i] = *n_free;
+            free_index_lookup[i] = (*n_free);
             free_index[(*n_free)++] = i;
           }
         }
@@ -281,11 +269,9 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
       if (break_flag) {
 
 #if WLS_VERBOSE
-        print_final_values(1, n_u, n_v, u, B, v, umin, umax);
+        print_final_values(1, n_u, n_v, us, B, v, umin, umax);
 #endif
 
-        // if solution is found, return number of *iterations
-        memcpy(xs, u, n_u * sizeof(num_t));
         return;// *iter;
       }
     } else {
@@ -294,11 +280,11 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
       int id_alpha = 0;
 
       // find the lowest distance from the limit among the free variables
-      for (int i = 0; i < *n_free; i++) {
+      for (int i = 0; i < (*n_free); i++) {
         int id = free_index[i];
         if(fabs(p[id]) > FLT_EPSILON) {
-          alpha_tmp = (p[id] < 0) ? (umin[id] - u[id]) / p[id]
-            : (umax[id] - u[id]) / p[id];
+          alpha_tmp = (p[id] < 0) ? (umin[id] - us[id]) / p[id]
+            : (umax[id] - us[id]) / p[id];
         } else {
           alpha_tmp = INFINITY;
         }
@@ -313,19 +299,19 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
         // TODO: implement in other solvers as well!!
         num_t incr = alpha * p[i];
         if (i == id_alpha) {
-          u[i] = (incr > 0) ? umax[i] : umin[i];
+          us[i] = (incr > 0) ? umax[i] : umin[i];
+          Ws[i] = (incr > 0) ? 1 : -1;
         } else {
-          u[i] += incr;
+          us[i] += incr;
         }
       }
       // update d = d-alpha*A*p_free
       for (int i = 0; i < n_c; i++) {
-        for (int k = 0; k < *n_free; k++) {
+        for (int k = 0; k < (*n_free); k++) {
           d[i] -= A_free[i][k] * alpha * p_free[k];
         }
       }
       // get rid of a free index
-      W[id_alpha] = (p[id_alpha] > 0) ? 1.0 : -1.0;
 
       free_index[free_index_lookup[id_alpha]] = free_index[--(*n_free)];
       free_index_lookup[free_index[free_index_lookup[id_alpha]]] =
@@ -335,18 +321,17 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
   }
   // solution failed, return negative one to indicate failure
   
-  memcpy(xs, u, n_u * sizeof(num_t));
   return; // -1;
 }
 
 #if WLS_VERBOSE
-void print_in_and_outputs(int n_c, int *n_free, num_t** A_free_ptr, num_t* d, num_t* p_free) {
+void print_in_and_outputs(int n_c, int (*n_free), num_t** A_free_ptr, num_t* d, num_t* p_free) {
 
-  printf("n_c = %d *n_free = %d\n", n_c, *n_free);
+  printf("n_c = %d (*n_free) = %d\n", n_c, (*n_free));
 
   printf("A_free =\n");
   for(int i = 0; i < n_c; i++) {
-    for (int j = 0; j < *n_free; j++) {
+    for (int j = 0; j < (*n_free); j++) {
       printf("%f ", A_free_ptr[i][j]);
     }
     printf("\n");
@@ -358,7 +343,7 @@ void print_in_and_outputs(int n_c, int *n_free, num_t** A_free_ptr, num_t* d, nu
   }
 
   printf("\noutput = ");
-  for (int j = 0; j < *n_free; j++) {
+  for (int j = 0; j < (*n_free); j++) {
     printf("%f ", p_free[j]);
   }
   printf("\n\n");

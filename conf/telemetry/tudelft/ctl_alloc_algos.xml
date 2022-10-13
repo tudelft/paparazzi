@@ -39,6 +39,7 @@
       <message name="CTL_ALLOC_PERF"           period="1."/>
       <message name="RC"                       period="0.5"/>
       <message name="ROTORCRAFT_RADIO_CONTROL" period="0.5"/>
+      <message name="STATE_FILTER_STATUS"      period="0.5"/>
     </mode>
 
     <mode name="ppm">
@@ -200,12 +201,14 @@
       <message name="SURVEY"                   period="2.5"/>
       <message name="IMU_GYRO_SCALED"          period=".075"/>
       <message name="IMU_ACCEL_SCALED"         period=".075"/>
+      <!--
       <message name="IMU_MAG_SCALED"           period=".2"/>
       <message name="LIDAR"                    period="0.05"/>
-      <message name="CTL_ALLOC_PERF"           period="0.01"/>
+      -->
+      <message name="CTL_ALLOC_PERF"           period="0.002"/>
       <message name="RTOS_MON"                 period="1.0"/>
-      <message name="RC"                       period="0.05"/>
-      <message name="ROTORCRAFT_RADIO_CONTROL" period="0.05"/>
+      <message name="RC"                       period="0.075"/>
+      <message name="ROTORCRAFT_RADIO_CONTROL" period="0.075"/>
     </mode>
   </process>
 

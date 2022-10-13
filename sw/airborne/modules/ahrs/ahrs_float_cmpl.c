@@ -141,10 +141,10 @@ bool ahrs_fc_align(struct FloatRates *lp_gyro, struct FloatVect3 *lp_accel,
   return true;
 }
 
-
+int ahrs_prop_counter = 0;
 void ahrs_fc_propagate(struct FloatRates *gyro, float dt)
 {
-
+  ahrs_prop_counter++;
   struct FloatRates rates = *gyro;
   /* unbias measurement */
   RATES_SUB(rates, ahrs_fc.gyro_bias);

@@ -40,7 +40,7 @@
       <stay wp="PMY"/>
     </block>
     <block key="a" name="Alternate" strip_button="Alternate">
-      <call_once fun="nav_set_heading_deg(179)"/>
+      <call_once fun="nav_set_heading_deg(0)"/>
       <stay wp="ALT"/>
     </block>
     <block key="l" name="land" strip_button="land" strip_icon="land-right.png">

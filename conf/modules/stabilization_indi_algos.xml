@@ -41,6 +41,7 @@
       <define name="ADAPTIVE_MU" value="0.0001" description="adaptation parameter"/>
       <define name="ALGO" value="0" description="Algorithm for quadratic allocation: 0 native, 1 QR, 2 CHOL"/>
       <define name="MAX_RPM_SCALER" value="1.0" description="Reduce max output of all motors"/>
+      <define name="CTL_ALLOC_WARMSTART" value="FALSE|TRUE" description="Use warmstarting"/>
     </section>
   </doc>
   <settings>
@@ -57,6 +58,7 @@
         <dl_setting var="indi_ctl_alloc_cond_bound" min="1e4" step="1e4" max="1e8" shortname="cond_bound" param="STABILIZATION_INDI_CTL_ALLOC_COND_BOUND" type="float"/>
         <dl_setting var="indi_ctl_alloc_theta" min="1e-5" step="1e-5" max="1" shortname="theta" param="STABILIZATION_INDI_CTL_ALLOC_THETA" type="float"/>
         <dl_setting var="indi_max_rpm_scaler" min="0" step="1e-3" max="1" shortname="max_rpm_scaler" param="STABILIZATION_INDI_MAX_RPM_SCALER" type="float"/>
+        <dl_setting var="indi_ctl_alloc_warmstart" min="0" step="1" max="1" shortname="warmstart" values="FALSE|TRUE" param="STABILIZATION_INDI_CTL_ALLOC_WARMSTART" type="uint8"/>
       </dl_settings>
     </dl_settings>
   </settings>
@@ -100,5 +102,6 @@
     <define name="STABILIZATION_INDI_CTL_ALLOC_COND_BOUND" value="1e6"/>
     <define name="STABILIZATION_INDI_CTL_ALLOC_THETA" value="0.0002"/>
     <define name="STABILIZATION_INDI_MAX_RPM_SCALER" value="1.0"/>
+    <define name="STABILIZATION_INDI_CTL_ALLOC_WARMSTART" value="false"/>
   </makefile>
 </module>

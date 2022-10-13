@@ -89,6 +89,8 @@ extern void ahrs_fc_update_accel(struct FloatVect3 *accel, float dt);
 extern void ahrs_fc_update_mag(struct FloatVect3 *mag, float dt);
 extern void ahrs_fc_update_gps(struct GpsState *gps_s);
 
+extern int ahrs_prop_counter;
+
 /** Update yaw based on a heading measurement.
  * e.g. from GPS course
  * @param heading Heading in body frame, radians (CW/north)

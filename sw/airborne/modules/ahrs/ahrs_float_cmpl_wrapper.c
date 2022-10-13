@@ -99,6 +99,9 @@ static void send_filter_status(struct transport_tx *trans, struct link_device *d
   uint16_t val = 0;
   if (!ahrs_fc.is_aligned) { mde = 2; }
   uint32_t t_diff = get_sys_time_usec() - ahrs_fc_last_stamp;
+  val = (uint16_t) ahrs_prop_counter;
+  ahrs_prop_counter = 0;
+
   /* set lost if no new gyro measurements for 50ms */
   if (t_diff > 50000) { mde = 5; }
   pprz_msg_send_STATE_FILTER_STATUS(trans, dev, AC_ID, &ahrs_fc_id, &mde, &val);
