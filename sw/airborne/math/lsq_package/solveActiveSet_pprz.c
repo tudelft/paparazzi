@@ -189,7 +189,7 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
 
   // -------------- Start loop ------------
   *iter = 0;
-  while ((*iter)++ < imax) {
+  while (++(*iter) < imax) {
     // clear p, copy u to u_opt
     for (int i=0; i<n_u; i++)
       p[i] = 0;
@@ -299,8 +299,8 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
         // TODO: implement in other solvers as well!!
         num_t incr = alpha * p[i];
         if (i == id_alpha) {
-          us[i] = (incr > 0) ? umax[i] : umin[i];
-          Ws[i] = (incr > 0) ? 1 : -1;
+          us[i] = (p[i] > 0) ? umax[i] : umin[i];
+          Ws[i] = (p[i] > 0) ? 1 : -1;
         } else {
           us[i] += incr;
         }
