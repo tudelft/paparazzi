@@ -706,13 +706,13 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   indi_thrust_increment_set = false;
 #else
   int8_t i;
-  if (radio_control.values[RADIO_PIVOT_SWITCH] < 0){
+  if (radio_control.values[RADIO_PIVOT_SWITCH] < -4500){
 	  actuators_pprz[0] = MAX_PPRZ;
 	  actuators_pprz[1] = MAX_PPRZ;
 	  actuators_pprz[2] = -MAX_PPRZ;
 	  actuators_pprz[3] = -MAX_PPRZ;
   }
-  else if (radio_control.values[RADIO_PIVOT_SWITCH] == 0){
+  else if (radio_control.values[RADIO_PIVOT_SWITCH] < 4500){
       struct FloatEulers eulers_zxy;
       struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
       float_eulers_of_quat_zxy(&eulers_zxy, statequat);
