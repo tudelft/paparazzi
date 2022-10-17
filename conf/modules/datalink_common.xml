@@ -15,7 +15,7 @@
   <periodic fun="telemetry_reporting_task()"/>
   <periodic fun="datalink_periodic()" freq="1"/>
   <datalink message="PING" fun="datalink_parse_PING(dev, trans, buf)"/>
-  <datalink message="RC_4CH" fun="target_parse_RC_4CH(buf)"/>              <!-- TEST -->
+  <!--datalink message="RC_4CH" fun="target_parse_RC_4CH(buf)"/-->              <!-- TEST -->
   <makefile>
     <define name="DOWNLINK"/>
     <define name="PERIODIC_TELEMETRY"/>
