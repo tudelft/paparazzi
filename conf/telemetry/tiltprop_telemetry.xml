@@ -199,6 +199,9 @@
       <message name="IMU_GYRO_SCALED"          period="0.002"/>
       <message name="IMU_ACCEL_SCALED"         period="0.002"/>
       <message name="IMU_MAG_SCALED"           period="0.002"/>
+      <message name="IMU_ACCEL_RAW"     period=".002"/>
+      <message name="IMU_GYRO_RAW"      period=".002"/>
+      <message name="IMU_MAG_RAW"       period=".002"/>
       <message name="CTRL_EFFECTIVENESS_CALC"  period="0.002"/>
 	  <message name="AHRS_REF_QUAT" 		   period="0.002"/>
 	  <message name="ROTORCRAFT_CMD"           period="0.002"/>
