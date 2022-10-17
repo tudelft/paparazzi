@@ -2,13 +2,13 @@
 
   <section name="IMU" prefix="IMU_">
     
-    <define name="MAG_X_NEUTRAL" value="-47"/>
-    <define name="MAG_Y_NEUTRAL" value="-10"/>
-    <define name="MAG_Z_NEUTRAL" value="209"/>
-    <define name="MAG_X_SENS" value="7.04043204371475" integer="16"/>
-    <define name="MAG_Y_SENS" value="7.033790405681517" integer="16"/>
-    <define name="MAG_Z_SENS" value="7.322789521338774" integer="16"/>
-    
+    <define name="ACCEL_X_NEUTRAL" value="49"/>
+    <define name="ACCEL_Y_NEUTRAL" value="-37"/>
+    <define name="ACCEL_Z_NEUTRAL" value="19"/>
+    <define name="ACCEL_X_SENS" value="2.4559027833652873" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="2.440276225201743" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.434614999778432" integer="16"/>
+
   </section>
 
 </airframe>

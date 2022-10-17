@@ -103,26 +103,18 @@
     <define name="CALC_AMSL_BARO" value="TRUE"/>
   </section>
 
- <!-- include IMU airframe calibration 
-  <include href="conf/airframes/ShipLanding/calibrations/BB2_IMU_ACCEL_bebopErik.xml"/> Accelerometer for attitude -->
-    <section name="IMU" prefix="IMU_">
-    <!-- Magneto calibration  WITHOUT RTK GPS MODULE ON TOP OF DRONE -->
-    <define name="MAG_X_NEUTRAL" value="43"/>
-    <define name="MAG_Y_NEUTRAL" value="-151"/>
-    <define name="MAG_Z_NEUTRAL" value="-64"/>
-    <define name="MAG_X_SENS" value="7.21201776785" integer="16"/>
-    <define name="MAG_Y_SENS" value="7.20541442846" integer="16"/>
-    <define name="MAG_Z_SENS" value="7.55306977197" integer="16"/>
-    
-    <!--define name="ACCEL_X_NEUTRAL" value="19"/>
-    <define name="ACCEL_Y_NEUTRAL" value="-5"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-16"/>
-    <define name="ACCEL_X_SENS" value="4.877277526389185" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.849763412280295" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.878950889016067" integer="16"/-->
-
+  <section name="IMU" prefix="IMU_">
+    <!-- Magneto calibration -->
+    <define name="MAG_X_NEUTRAL" value="-16"/>
+    <define name="MAG_Y_NEUTRAL" value="55"/>
+    <define name="MAG_Z_NEUTRAL" value="204"/>
+    <define name="MAG_X_SENS" value="7.28514789391" integer="16"/>
+    <define name="MAG_Y_SENS" value="7.33022132691" integer="16"/>
+    <define name="MAG_Z_SENS" value="7.57102035692" integer="16"/>
   </section>
-
+  
+  <include href="conf/airframes/ShipLanding/calibrations/BB2_IMU_ACCEL_bebopErik.xml"/> <!-- Accelerometer for attitude -->
+  
   <!-- local magnetic field -->
   <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
   <section name="AHRS" prefix="AHRS_">
@@ -214,14 +206,26 @@
     <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
   </section>
 
-  <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
+  <!--section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <define name="REF_MAX_SPEED" value="0.5" unit="m/s"/>
     <define name="MAX_BANK" value="32" unit="deg"/>
     <define name="PGAIN" value="120"/>
     <define name="DGAIN" value="100"/>
     <define name="IGAIN" value="30"/>
-    <define name="REF_ZETA" value="1.0"/> <!-- 1.0 or more for no overshooting -->
+    <define name="REF_ZETA" value="1.0"/>
+  </section-->
+  
+  <!-- gains from openuas -->
+   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
+    <define name="MAX_BANK" value="22" unit="deg"/><!-- TODO: determine -->
+    <define name="REF_MAX_SPEED" value="2" unit="m/s"/>
+    <define name="PGAIN" value="120"/><!-- GPS: 120 no GPS: 0-->
+    <define name="DGAIN" value="180"/><!-- GPS: 80 no GPS: 302-->
+    <define name="IGAIN" value="30"/><!-- GPS: 30 no GPS: 0-->
+
+    <define name="REF_ZETA" value="1.5"/> <!-- 1.0 or more for no waypoint overshooting -->
   </section>
+
   
   <section name="MISC">
     <define name="ARRIVED_AT_WAYPOINT" value="0.2" unit="m"/> <!-- how far away it declares that the waypoint is reached -->

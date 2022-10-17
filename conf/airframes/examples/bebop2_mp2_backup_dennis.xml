@@ -6,9 +6,9 @@
 
   <firmware name="rotorcraft">
     <target name="ap" board="bebop2">
-    	<configure name="HOST" value="192.168.1.$(AC_ID)"/>
+    	<!--configure name="HOST" value="192.168.1.$(AC_ID)"/>
  	    <configure name="MODEM_HOST" value="192.168.1.255"/>
- 	    <configure name="MODEM_BROADCAST" value="TRUE"/>
+ 	    <configure name="MODEM_BROADCAST" value="TRUE"/-->
     </target>
 
     <target name="nps" board="pc">

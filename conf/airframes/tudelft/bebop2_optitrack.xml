@@ -81,6 +81,8 @@
     <define name="MAG_Z_SENS" value="7.57102035692" integer="16"/>
   </section>
   
+  <include href="conf/airframes/ShipLanding/calibrations/BB2_IMU_ACCEL_bebopErik.xml"/> <!-- Accelerometer for attitude -->
+  
   <!-- local magnetic field -->
   <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
   <section name="AHRS" prefix="AHRS_">
@@ -208,7 +210,7 @@
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
-    <!-- define name="NO_RC_THRUST_LIMIT" value="TRUE"/-->
+    <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>
 
   <section name="BAT">

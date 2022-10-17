@@ -1,13 +1,14 @@
 <airframe>
 
   <section name="IMU" prefix="IMU_">
-    
-    <define name="ACCEL_X_NEUTRAL" value="22"/>
-    <define name="ACCEL_Y_NEUTRAL" value="-4"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-49"/>
-    <define name="ACCEL_X_SENS" value="4.8804154262725600" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.8544937560048735" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.8799952100927050" integer="16"/>
+
+    <define name="ACCEL_X_NEUTRAL" value="21"/>
+    <define name="ACCEL_Y_NEUTRAL" value="-13"/>
+    <define name="ACCEL_Z_NEUTRAL" value="-121"/>
+    <define name="ACCEL_X_SENS" value="2.4424887250032836" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="2.4261614464896293" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.4443616138224944" integer="16"/>
+
 
   </section>
 
