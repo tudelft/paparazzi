@@ -35,6 +35,9 @@ extern float g1g2[INDI_OUTPUTS][INDI_NUM_ACT];
 extern float actuator_state_filt_vect[INDI_NUM_ACT];
 extern float pivot_gain_q;
 extern float pivot_gain_theta;
+extern float pivot_servogain_q;
+extern float pivot_servogain_theta;
+extern float roll_gain;
 extern float indi_Wu_motor;
 extern float indi_Wu_servo;
 
