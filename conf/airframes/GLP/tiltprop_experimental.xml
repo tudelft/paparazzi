@@ -109,7 +109,7 @@
       <define name="IMU_MPU9250_ACCEL_RANGE" value="MPU9250_ACCEL_RANGE_16G" />
     </module>
 
-    <!--<module name="servo_tester"/>-->
+    <!-- <module name="servo_tester"/> -->
 
     <module name="air_data">
       <define name="USE_AIRSPEED_AIR_DATA" value="FALSE"/>
@@ -167,11 +167,11 @@
   </firmware>
 
   <servos driver="Pwm">
-    <servo name="TILT_LEFT" no="0" min="2100" neutral="1500" max="900"/>
-    <servo name="TILT_RIGHT" no="1" min="900" neutral="1500" max="2100"/>
+    <servo name="TILT_LEFT" no="0" min="2150" neutral="1550" max="950"/>
+    <servo name="TILT_RIGHT" no="1" min="750" neutral="1350" max="1950"/>
     <servo name="RM" no="2" min="1000" neutral="1150" max="1900"/>
     <servo name="LM" no="3" min="1000" neutral="1150" max="1900"/>
-    <!--<servo name="SERVO_TEST" no="0" min="1000" neutral="1500" max="2000"/>-->
+    <!-- <servo name="SERVO_TEST" no="0" min="1000" neutral="1500" max="2000"/> -->
   </servos>
   
   <!-- <auto_rc_commands> -->
@@ -230,8 +230,8 @@
     <define name="MAG_Z_SENS" value="3.57182532939" integer="16"/>
 
     <!-- <define name="BODY_TO_IMU_PHI" value="2.223" unit="deg"/> -->
-    <define name="BODY_TO_IMU_PHI" value="0.33" unit="deg"/>
-    <define name="BODY_TO_IMU_THETA" value="89.28" unit="deg"/>
+    <define name="BODY_TO_IMU_PHI" value="0.75" unit="deg"/> <!-- 0.33 0.75-->
+    <define name="BODY_TO_IMU_THETA" value="89.8" unit="deg"/>
     <define name="BODY_TO_IMU_PSI" value="0." unit="deg"/>
   </section>
 
@@ -281,11 +281,11 @@
 
     <!-- reference acceleration for attitude control                 v -->
     <define name="REF_ERR_P" value="45"/> <!-- 100 believe Valkenburg was 100, 70-->
-    <define name="REF_ERR_Q" value="55"/> <!-- 180 believe Valkenburg was 140, 75-->
-    <define name="REF_ERR_R" value="55"/> <!-- 140 believe Valkenburg was 140, 75-->
-    <define name="REF_RATE_P" value="4.5"/> <!-- 14 believe Valkenburg was 10, 8-->
-    <define name="REF_RATE_Q" value="5.5"/> <!-- 14 believe Valkenburg was 10, 10-->
-    <define name="REF_RATE_R" value="5.5"/> <!-- 14 believe Valkenburg was 10, 10-->
+    <define name="REF_ERR_Q" value="50"/> <!-- 180 believe Valkenburg was 140, 75, 55-->
+    <define name="REF_ERR_R" value="80"/> <!-- 140 believe Valkenburg was 140, 75, 55-->
+    <define name="REF_RATE_P" value="4.5"/> <!-- 14 believe Valkenburg was 10, 8, 4.5-->
+    <define name="REF_RATE_Q" value="6.0"/> <!-- 14 believe Valkenburg was 10, 10, 5.5-->
+    <define name="REF_RATE_R" value="7.0"/> <!-- 14 believe Valkenburg was 10, 10, 5.5 ## TRY 6.5-->
 
     <!--Maximum rates, to avoid instability-->
     <define name="MAX_P" value="100.0" unit="deg/s"/>
@@ -330,15 +330,17 @@
     <define name="MOMENT_INERTIA_RATIO" value="0.004478"/>	<!-- ratio between MoI of tilt vs. rest of drone [total MoI minus one tilt]. Both measure around axis of servo. -->
     <define name="GRADIENT" value="0.0001"/>				<!-- gradient in linear relationship between pprz and angle (in rad), must be same as in 'ctrl_effectiveness_calc.c' -->
 
-	<!-- Minimum throttle that can be assign to motors -->
-	<define name="MIN_THROTTLE" value="4000"/>
-	<define name="MIN_THROTTLE_FWD" value="2500"/>
-	
-	<!-- Maximum servo increment in PPRZ units -->
-	<define name="MAX_SERVO_INCREMENT" value="4500"/>
-	
-	<define name="PIVOT_GAIN_Q" value="100"/>
-	<define name="PIVOT_GAIN_THETA" value="0"/>
+    <!-- Minimum throttle that can be assign to motors -->
+    <define name="MIN_THROTTLE" value="4000"/>
+    <define name="MIN_THROTTLE_FWD" value="2500"/>
+    
+    <!-- Maximum servo increment in PPRZ units -->
+    <define name="MAX_SERVO_INCREMENT" value="4500"/>
+    
+    <define name="PIVOT_GAIN_Q" value="100"/>
+    <define name="PIVOT_GAIN_THETA" value="0"/>
+    <define name="PIVOT_SERVOGAIN_Q" value="0.1"/>
+    <define name="PIVOT_SERVOGAIN_THETA" value="3"/>
   </section>
   
   <!-- Definitions for control effectiveness calculator module -->
@@ -351,7 +353,7 @@
    	<define name="I_XX" value="0.06617232"/>	<!--[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
    	<!--<define name="I_YY" value="0.04914925"/>-->	<!--[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
    	<define name="I_YY" value="0.025"/> <!-- 0.009 for valkenburg flights. 0.18 -->
-   	<define name="I_ZZ" value="0.079"/>	<!--[kg m2] 0.065 for valkenburg flights. The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
+   	<define name="I_ZZ" value="0.065"/>	<!--[kg m2] 0.065 for valkenburg flights. The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
 	    <!--<define name="I_XX" value="0.017897"/>	[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
    	<!--<define name="I_YY" value="0.003390"/>	[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
    	<!--<define name="I_ZZ" value="0.020337"/>	[kg m2] The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
@@ -374,7 +376,7 @@
     <define name="HOVER_KP" value="200"/>
     <define name="HOVER_KD" value="175"/>
     <define name="HOVER_KI" value="72"/>
-    <define name="NOMINAL_HOVER_THROTTLE" value ="0.67"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value ="0.65"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>
   </section>
 
@@ -408,7 +410,7 @@
     <!--The Quadshot uses (when TRUE) a slightly different axis system for the setpoint, to make both hovering and flying forward intuitive-->
     <define name="USE_EARTH_BOUND_RC_SETPOINT" value="TRUE"/>
     <!-- This is the pitch angle that the Quadshot will have in forward flight, where 0 degrees is hover-->
-    <define name="TRANSITION_MAX_OFFSET" value="-78.0" unit="deg"/>
+    <define name="TRANSITION_MAX_OFFSET" value="-83.0" unit="deg"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     <define name="COORDINATED_TURN_AIRSPEED" value="18.0"/>
 
