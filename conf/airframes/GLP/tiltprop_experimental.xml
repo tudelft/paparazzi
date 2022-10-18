@@ -26,7 +26,7 @@
         <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
         <define name="MS45XX_SYNC_SEND" value="TRUE" /> <!--description="flag to enable sending every new measurement via telemetry (default:FALSE)-->
         <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
-        <define name="MS45XX_PRESSURE_OFFSET" value="8502.78" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
+        <define name="MS45XX_PRESSURE_OFFSET" value="8503.84" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
 <!--        <define name="MS45XX_AIRSPEED_SCALE" value="1.6327"/> &lt;!&ndash;description="quadratic scale factor to convert differential pressure to airspeed"&ndash;&gt;-->
         <define name="MS45XX_LOWPASS_TAU" value="0.2"/> <!--description="Time constant for second order Butterworth low pass filter"-->
         <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
@@ -279,13 +279,13 @@
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{0, 0, 0, 0}"/>
 
-    <!-- reference acceleration for attitude control                 v -->
-    <define name="REF_ERR_P" value="45"/> <!-- 100 believe Valkenburg was 100, 70-->
+    <!-- reference acceleration for attitude control     (You have a screenshot on 2022-10-18 ~21:15 with values from Valkenburg) -->
+    <define name="REF_ERR_P" value="80"/> <!-- 100 believe Valkenburg was 100, 70-->
     <define name="REF_ERR_Q" value="50"/> <!-- 180 believe Valkenburg was 140, 75, 55-->
-    <define name="REF_ERR_R" value="80"/> <!-- 140 believe Valkenburg was 140, 75, 55-->
-    <define name="REF_RATE_P" value="4.5"/> <!-- 14 believe Valkenburg was 10, 8, 4.5-->
-    <define name="REF_RATE_Q" value="6.0"/> <!-- 14 believe Valkenburg was 10, 10, 5.5-->
-    <define name="REF_RATE_R" value="7.0"/> <!-- 14 believe Valkenburg was 10, 10, 5.5 ## TRY 6.5-->
+    <define name="REF_ERR_R" value="400"/> <!-- 140 believe Valkenburg was 140, 75, 55-->
+    <define name="REF_RATE_P" value="8.0"/> <!-- 14 believe Valkenburg was 10, 8, 4.5-->
+    <define name="REF_RATE_Q" value="7.5"/> <!-- 14 believe Valkenburg was 10, 10, 5.5-->
+    <define name="REF_RATE_R" value="45"/> <!-- 14 believe Valkenburg was 10, 10, 5.5 ## TRY 6.5-->
 
     <!--Maximum rates, to avoid instability-->
     <define name="MAX_P" value="100.0" unit="deg/s"/>
@@ -348,12 +348,12 @@
   	<define name="GROUND_CONTACT" value="0"/>
   	<define name="THRUST_LOWER_LIM" value="4000"/>
   	
-  	<!-- Drone specific metrics -->
+  	<!-- Drone specific metrics (You have a screenshot on 2022-10-18 ~21:15 with values from Valkenburg)-->
    	<define name="MASS" value="1.270"/>		<!--[kg]-->
    	<define name="I_XX" value="0.06617232"/>	<!--[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
    	<!--<define name="I_YY" value="0.04914925"/>-->	<!--[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
-   	<define name="I_YY" value="0.025"/> <!-- 0.009 for valkenburg flights. 0.18 -->
-   	<define name="I_ZZ" value="0.065"/>	<!--[kg m2] 0.065 for valkenburg flights. The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
+   	<define name="I_YY" value="0.021"/> <!-- 0.009 for valkenburg flights. 0.18, 0.04914925 -->
+   	<define name="I_ZZ" value="0.01752587"/>	<!--[kg m2] 0.065 for valkenburg flights. The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
 	    <!--<define name="I_XX" value="0.017897"/>	[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
    	<!--<define name="I_YY" value="0.003390"/>	[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
    	<!--<define name="I_ZZ" value="0.020337"/>	[kg m2] The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
