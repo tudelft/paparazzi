@@ -13,4 +13,5 @@
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
+    "cmake.sourceDirectory": "${workspaceFolder}/sw/ext/libsbp/c/test",
 }

@@ -1885,31 +1885,30 @@
 
 <!--     message 194 is free -->
 
-     <message name="INDI_CMD" id="210">
-         <field name="INDI_cmd_acc_x" type="float" />
-         <field name="INDI_cmd_acc_y" type="float" />
-         <field name="INDI_cmd_acc_z" type="float" />
-         <field name="INDI_cmd_p_dot" type="float" />
-         <field name="INDI_cmd_q_dot" type="float" />
-         <field name="INDI_cmd_r_dot" type="float" />
+     <message name="NONLINEAR_CA_DEBUG" id="210">
+         <field name="acc_x_setpoint_earth_rf" type="float" unit="m/s^2"/>
+         <field name="acc_y_setpoint_earth_rf" type="float" unit="m/s^2"/>
+         <field name="acc_z_setpoint_earth_rf" type="float" unit="m/s^2"/>
+         <field name="p_dot_setpoint" type="float" unit="rad/s^2"/>
+         <field name="q_dot_setpoint" type="float" unit="rad/s^2"/>
+         <field name="r_dot_setpoint" type="float" unit="rad/s^2"/>
 
-         <field name="INDI_increment_motor_1" type="float" />
-         <field name="INDI_increment_motor_2" type="float" />
-         <field name="INDI_increment_motor_3" type="float" />
-         <field name="INDI_increment_motor_4" type="float" />
+         <field name="speed_x_setpoint_control_rf" type="float" unit="m/s"/>
+         <field name="speed_y_setpoint_control_rf" type="float" unit="m/s"/>
+         <field name="speed_z_setpoint_control_rf" type="float" unit="m/s"/>
+         <field name="p_setpoint" type="float" unit="rad/s"/>
+         <field name="q_setpoint" type="float" unit="rad/s"/>
+         <field name="r_setpoint" type="float" unit="rad/s"/>
 
-         <field name="INDI_increment_el_1_servo" type="float" />
-         <field name="INDI_increment_el_2_servo" type="float" />
-         <field name="INDI_increment_el_3_servo" type="float" />
-         <field name="INDI_increment_el_4_servo" type="float" />
+         <field name="pos_x_setpoint_earth_rf" type="float" unit="m"/>
+         <field name="pos_y_setpoint_earth_rf" type="float" unit="m"/>
+         <field name="pos_z_setpoint_earth_rf" type="float" unit="m"/>
+         <field name="phi_setpoint" type="float" unit="rad"/>
+         <field name="theta_setpoint" type="float" unit="rad"/>
+         <field name="psi_setpoint" type="float" unit="rad"/>
 
-         <field name="INDI_increment_az_1_servo" type="float" />
-         <field name="INDI_increment_az_2_servo" type="float" />
-         <field name="INDI_increment_az_3_servo" type="float" />
-         <field name="INDI_increment_az_4_servo" type="float" />
-
-         <field name="INDI_increment_theta_virtual" type="float" />
-         <field name="INDI_increment_psi_virtual" type="float" />
+         <field name="feed_fwd_term_y" type="float" unit="rad/s"/>
+         <field name="feed_back_term_y" type="float" unit="rad/s"/>      
 
      </message>
 

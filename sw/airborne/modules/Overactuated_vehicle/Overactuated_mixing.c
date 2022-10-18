@@ -69,9 +69,13 @@ float euler_order[3];
 float psi_order_motor = 0;
 
 float K_beta = 0.1;
-float K_T_airspeed = 0.025; 
+float K_T_airspeed = 0.01; 
 
 float Dynamic_MOTOR_K_T_OMEGASQ;
+
+//Variables for the NONLINEAR_CA_DEBUG message: 
+
+float feed_fwd_term_yaw, feed_back_term_yaw;
 
 //Flight states variables:
 bool INDI_engaged = 0, FAILSAFE_engaged = 0, MANUAL_fwd_engaged = 0;
@@ -227,18 +231,19 @@ static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am
 }
 
 /**
- * Function for the message INDI_CMD
+ * Function for the message NONLINEAR_CA_DEBUG
  */
-static void send_indi_cmd( struct transport_tx *trans , struct link_device * dev ) {
+static void send_nonlinear_ca_debug( struct transport_tx *trans , struct link_device * dev ) {
     // Send telemetry message
 
-    pprz_msg_send_INDI_CMD(trans , dev , AC_ID ,
-                           & INDI_pseudocontrol[0],& INDI_pseudocontrol[1],& INDI_pseudocontrol[2],
-                           & INDI_pseudocontrol[3],& INDI_pseudocontrol[4],& INDI_pseudocontrol[5],
-                           & indi_du[0],& indi_du[1],& indi_du[2],& indi_du[3],
-                           & indi_du[4],& indi_du[5],& indi_du[6],& indi_du[7],
-                           & indi_du[8],& indi_du[9],& indi_du[10],& indi_du[11],
-                           & indi_du[12],& indi_du[13]);
+    pprz_msg_send_NONLINEAR_CA_DEBUG(trans , dev , AC_ID ,
+                           & acc_setpoint[0],& acc_setpoint[1],& acc_setpoint[2],
+                           & acc_setpoint[3],& INDI_pseudocontrol[4],& INDI_pseudocontrol[5],
+                           & speed_setpoint_control_rf[0],& speed_setpoint_control_rf[1],& speed_setpoint_control_rf[2],
+                           & rate_setpoint[0],& rate_setpoint[1],& rate_setpoint[2],
+                           & pos_setpoint[0],& pos_setpoint[1],& pos_setpoint[2],
+                           & euler_setpoint[0],& euler_setpoint[1], & euler_setpoint[2],
+                           & feed_fwd_term_yaw, & feed_back_term_yaw);
 }
 
 /**
@@ -561,7 +566,7 @@ void overactuated_mixing_init(void) {
 
     register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_OVERACTUATED_VARIABLES , send_overactuated_variables );
     register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_ACTUATORS_OUTPUT , send_actuator_variables );
-    register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_INDI_CMD , send_indi_cmd );
+    register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_NONLINEAR_CA_DEBUG , send_nonlinear_ca_debug );
 
     //Startup the init variables of the INDI
     init_filters();
@@ -688,40 +693,40 @@ void overactuated_mixing_run(void)
             des_theta = 0;
             des_psi_dot = 0;  
         }
-        else if( get_sys_time_float() - auto_test_time_start >= 2 && get_sys_time_float() - auto_test_time_start < 6){
-            des_Vx = 15;
+        else if( get_sys_time_float() - auto_test_time_start >= 2 && get_sys_time_float() - auto_test_time_start < 8){
+            des_Vx = 12;
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
             des_theta = 0;
             des_psi_dot = 0;  
         }
-        else if( get_sys_time_float() - auto_test_time_start >= 6 && get_sys_time_float() - auto_test_time_start < 10){
-            des_Vx = 15;
+        else if( get_sys_time_float() - auto_test_time_start >= 8 && get_sys_time_float() - auto_test_time_start < 12){
+            des_Vx = 12;
             des_Vy = 0;
             des_Vz = -2;
             des_phi = 0;
             des_theta = 0;
             des_psi_dot = 0;  
         }
-        else if( get_sys_time_float() - auto_test_time_start >= 10 && get_sys_time_float() - auto_test_time_start < 13){
-            des_Vx = 15;
+        else if( get_sys_time_float() - auto_test_time_start >= 12 && get_sys_time_float() - auto_test_time_start < 15){
+            des_Vx = 12;
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
             des_theta = 0;
             des_psi_dot = 0;  
         }
-        else if( get_sys_time_float() - auto_test_time_start >= 13 && get_sys_time_float() - auto_test_time_start < 25){
-            des_Vx = 15;
-            des_Vy = 5;
+        else if( get_sys_time_float() - auto_test_time_start >= 15 && get_sys_time_float() - auto_test_time_start < 25){
+            des_Vx = 12;
+            des_Vy = 2.5;
             des_Vz = 0;
             des_phi = 0;
             des_theta = 0;
             des_psi_dot = 0;   
         }
-        else if( get_sys_time_float() - auto_test_time_start >= 25 && get_sys_time_float() - auto_test_time_start < 28){
-            des_Vx = 15;
+        else if( get_sys_time_float() - auto_test_time_start >= 25 && get_sys_time_float() - auto_test_time_start < 30){
+            des_Vx = 12;
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
@@ -977,6 +982,8 @@ void overactuated_mixing_run(void)
 
             //Creating the setpoint using the bank angle and the sideslip vain correction for the sideslip:
             // yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn + K_beta * beta_deg;
+            feed_fwd_term_yaw = 9.81*tan(euler_vect[0])/airspeed_turn;
+            feed_back_term_yaw = - K_beta * accel_y_filt_corrected;
 
         }
         else{
@@ -1048,7 +1055,7 @@ void overactuated_mixing_run(void)
         } else { speed_setpoint_control_rf[2] = 0; }
 
         // If wanted, use the position control for the altitude: 
-        if(1){
+        if(0){
             speed_setpoint_control_rf[2] = pos_error[2] * indi_gains_over.p.z;
         }
         
@@ -1158,7 +1165,7 @@ void overactuated_mixing_run(void)
         am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
         am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
 
-        float manual_min_el_angle = -100;
+        float manual_min_el_angle = -120;
 
         extra_data_out_local[0] = Dynamic_MOTOR_K_T_OMEGASQ;
         extra_data_out_local[1] = OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ;
