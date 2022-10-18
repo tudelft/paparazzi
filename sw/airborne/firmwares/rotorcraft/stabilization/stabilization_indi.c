@@ -559,7 +559,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     }
 #endif
 
-#ifdef STABILIZATIOn_INDI_MAX_SERVO_INCREMENT
+#ifdef STABILIZATION_INDI_MAX_SERVO_INCREMENT
     if (act_is_servo[i]) {
     	BoundAbs(du_min[i], STABILIZATION_INDI_MAX_SERVO_INCREMENT);
     	BoundAbs(du_max[i], STABILIZATION_INDI_MAX_SERVO_INCREMENT);
