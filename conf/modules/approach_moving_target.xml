@@ -17,6 +17,7 @@
         <dl_setting var="amt.pos_gain" min="0.05" max="3.0" step="0.01" shortname="pos_gain"/>
         <dl_setting var="amt.speed_gain" min="0.0" max="1.0" step="0.01" shortname="speed_gain"/>
         <dl_setting var="amt.relvel_gain" min="0.0" max="1.0" step="0.01" shortname="relvel_gain"/>
+        <dl_setting var="amt.integral_gain_carrot" min="0.0" max="10.0" step="0.01" shortname="gain_carrot"/>
       </dl_settings>
     </dl_settings>
   </settings>
@@ -28,6 +29,7 @@
   </header>
   <init fun="approach_moving_target_init()"/>
   <periodic fun="follow_diagonal_approach()" freq="100.0"/>
+  <datalink message="RC_4CH" fun="target_parse_RC_4CH(buf)"/>
   <makefile>
     <file name="approach_moving_target.c"/>
   </makefile>
