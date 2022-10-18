@@ -140,6 +140,9 @@ float actuator_state_filt_vectdd_cti[INDI_NUM_ACT];
 //-------------------------------------
 float pivot_gain_q = STABILIZATION_INDI_PIVOT_GAIN_Q;
 float pivot_gain_theta = STABILIZATION_INDI_PIVOT_GAIN_THETA;
+float pivot_ratio;
+float pivot_servogain_q= STABILIZATION_INDI_PIVOT_SERVOGAIN_Q;
+float pivot_servogain_theta= STABILIZATION_INDI_PIVOT_SERVOGAIN_THETA;
 //-------------------------------------
 
 #ifdef STABILIZATION_INDI_WLS_PRIORITIES
@@ -220,6 +223,7 @@ float radio_throttle;
 float code_has_run;
 
 float test[4];
+float roll_gain = 0.0;
 
 Butterworth2LowPass actuator_lowpass_filters[INDI_NUM_ACT];
 Butterworth2LowPass estimation_input_lowpass_filters[INDI_NUM_ACT];
@@ -713,31 +717,57 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 	  actuators_pprz[3] = -MAX_PPRZ;
   }
   else if (radio_control.values[RADIO_PIVOT_SWITCH] < 4500){
-      struct FloatEulers eulers_zxy;
-      struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
-      float_eulers_of_quat_zxy(&eulers_zxy, statequat);
-      // 60 degrees pitch should get max deflection
-      int16_t servo_command = -eulers_zxy.theta/(M_PI/3.0f)*9600;
-      Bound(servo_command,0,9600);
+    struct FloatEulers eulers_zxy;
+    struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
+    struct FloatRates * body_rates = stateGetBodyRates_f();
+    float_eulers_of_quat_zxy(&eulers_zxy, statequat);
+    // 60 degrees pitch should get max deflection
+  
+    if (eulers_zxy.theta<-RadOfDeg(30.0)){
+      pivot_ratio=0.f;
+    }
+    else if(eulers_zxy.theta<-RadOfDeg(5.)){
+      pivot_ratio=0.04*DegOfRad(eulers_zxy.theta)+1.2;
+    }
+    else if (eulers_zxy.theta<RadOfDeg(5.)){
+      pivot_ratio=1.f;
+    }
+    else if (eulers_zxy.theta<RadOfDeg(30.0)){
+      pivot_ratio=-0.04*DegOfRad(eulers_zxy.theta)+1.2;
+    }
+    else{
+      pivot_ratio=0.f;
+    }
+    
 
-      servo_cmd_disp = servo_command;
-      radio_pivot = radio_control.values[RADIO_PIVOT_SWITCH];
-      radio_throttle = radio_control.values[RADIO_THROTTLE];
+    int16_t servo_command = (-eulers_zxy.theta + pivot_ratio*(att_err.qy * pivot_servogain_theta - pivot_servogain_q * body_rates->q))/(55.0/180.0*M_PI)*9600;
+    Bound(servo_command,-9600,9600);
 
-      actuators_pprz[0] = servo_command;
-      actuators_pprz[1] = servo_command;
+    servo_cmd_disp = servo_command;
+    radio_pivot = radio_control.values[RADIO_PIVOT_SWITCH];
+    radio_throttle = radio_control.values[RADIO_THROTTLE];
+
+    actuators_pprz[0] = servo_command;
+    actuators_pprz[1] = servo_command;
+   
     if (autopilot_get_motors_on()) {
-      struct FloatRates * body_rates = stateGetBodyRates_f();
-      int16_t motor_command = radio_control.values[RADIO_THROTTLE] - body_rates->q * pivot_gain_q - att_err.qy*pivot_gain_theta;
-      actuators_pprz[2] = motor_command - 1000;
-      actuators_pprz[3] = motor_command - 1000;
+    int16_t motor_command = radio_control.values[RADIO_THROTTLE] + (- body_rates->q * pivot_gain_q - att_err.qy * pivot_gain_theta)*(1.f - pivot_ratio);
+    angular_accel_ref.p = att_err.qx * indi_gains.att.p - body_rates->p * indi_gains.rate.p;
+    // for (i = 2; i < INDI_NUM_ACT; i++) {
+    // // actuators_pprz[i] = g1g2_pseudo_inv[i][0] * angular_accel_ref.p + motor_command;
+    // actuators_pprz[i] = g1g2_pseudo_inv[i][0] * angular_accel_ref.p + motor_command;
+    // }
+    actuators_pprz[2] = motor_command - angular_accel_ref.p * roll_gain;
+    actuators_pprz[3] = motor_command + angular_accel_ref.p * roll_gain;
     } else {
 		for (i = 2; i < INDI_NUM_ACT; i++) {
 		  actuators_pprz[i] = -9600;
 		}
     }
-
-  }
+    
+    /* reset psi setpoint to current psi angle */
+    stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
+  } 
   else {
 	  /* compute the INDI command */
 	  stabilization_indi_rate_run(rate_sp, in_flight);
