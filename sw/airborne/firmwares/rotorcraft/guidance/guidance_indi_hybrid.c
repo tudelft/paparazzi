@@ -234,6 +234,7 @@ void guidance_indi_enter(void) {
  * main indi guidance function
  */
 void guidance_indi_run(float *heading_sp) {
+  printf("guidance_indi_run");
 
   /*Obtain eulers with zxy rotation order*/
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
@@ -764,4 +765,5 @@ static void vel_sp_cb(uint8_t sender_id __attribute__((unused)), struct FloatVec
   indi_vel_sp.y = vel_sp->y;
   indi_vel_sp.z = vel_sp->z;
   time_of_vel_sp = get_sys_time_float();
+  
 }

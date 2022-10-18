@@ -32,7 +32,7 @@
 
 // if the targetpos is meant for cyberzoo ( OUTDOOR FLIGTH -> CYBERZOO False )
 #ifndef CYBERZOO
-#define CYBERZOO True
+#define CYBERZOO False
 #endif
 
 // The timeout when receiving GPS messages from the ground in ms
@@ -101,7 +101,7 @@ struct target_t target = {
 
 #else 
 /* Initialize the main structure */
-struct target_t target_cyberzoo = {
+struct target_t target = {
   .pos = {0},
   .offset = {
     .heading = TARGET_OFFSET_HEADING,

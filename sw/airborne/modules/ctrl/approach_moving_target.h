@@ -45,6 +45,15 @@ struct Amt {
   int32_t enabled_time;
   uint8_t wp_ship_id;
   uint8_t wp_approach_id;
+  uint8_t wp_carrot_id;
+  float last_lag;
+  float lag;
+  float integral_gain_carrot;
+  float pid_error;
+  float pid_errorSum;
+  float pid_errorLast;
+  uint32_t pid_last_timestamp;
+
 };
 
 struct Wave {
@@ -61,9 +70,10 @@ extern struct Amt amt;
 extern struct Wave WaveInfl;
 extern float amt_err_slowdown_gain;
 
+
 extern void approach_moving_target_init(void);
 extern void follow_diagonal_approach(void);
-extern void approach_moving_target_enable(uint8_t wp_ship_id, uint8_t wp_approach_id);
+extern void approach_moving_target_enable(uint8_t wp_ship_id, uint8_t wp_approach_id, uint8_t wp_carrot_id);
 extern void reset_moving_target_distance(void);
 extern void waveEstimation(void);
 

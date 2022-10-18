@@ -50,7 +50,7 @@ import geopy.distance
 BASE_MOVING = True
 BASE_WAVES = False
 
-CYBERZOO = True
+CYBERZOO = False
 ROLL_COMPENSATION_ANALYSIS = False
 
 class UAV:
@@ -75,9 +75,9 @@ class Base:
         if not CYBERZOO:
             # Outdoor configuration
             self.speed = 0.5 # m/s
-            self.course = 90 # deg (moving directon of platform)
-            self.heading = 90 # deg (orientation of platform)
-            self.alt0 = 55 # ref_alt0 is already about 46m in simulator
+            self.course = 135 # deg (moving directon of platform)
+            self.heading = 135 # deg (orientation of platform)
+            self.alt0 = 55.5 # ref_alt0 is already about 46m in simulator
 
             print("lat0,long0,alt0 position = Valkenburg")
             self.lat0 = 52.168391 #deg
@@ -89,13 +89,13 @@ class Base:
 
         else:
             # Cyberzoo configuration
-            self.speed = 0.5 # m/s
+            self.speed = 0.2 # m/s
             self.course = 90 # deg (moving directon of platform)
             self.heading = 180 # deg (orientation of platform)
             self.alt0 = 45 # ref_alt0 is already about 46m in simulator
 
             print("lat0,long0,alt0 position = Cyberzoo")
-            self.lat0 = 51.9906171 #deg
+            self.lat0 = 51.9905760 #deg
             self.lon0 = 4.3767589 #deg
 
         self.lat = self.lat0
@@ -342,9 +342,18 @@ class Base:
                         wave_pertubation_heigth)        # addition to Heigth (down)
                     self.send_pos()
                     self.loop_counter = self.loop_counter+1
+                    print("course: ", self.course)
                 
-                if not CYBERZOO and self.loop_counter > 1500:
-                    self.speed = self.speed*-1
+                if not CYBERZOO and self.loop_counter > 500: # change direction
+                    if self.course >= 180: 
+                        self.course = self.course - 180
+                    else: 
+                        self.course = self.course + 180
+                    if self.heading >= 180: 
+                        self.heading = self.heading - 180
+                    else: 
+                        self.heading = self.heading + 180
+                    #self.speed = self.speed*-1
                     self.loop_counter = 0
 
                 if CYBERZOO and self.loop_counter > 90*(0.5/abs(self.speed)):
