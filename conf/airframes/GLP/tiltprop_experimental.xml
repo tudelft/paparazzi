@@ -340,7 +340,7 @@
     <define name="PIVOT_GAIN_Q" value="100"/>
     <define name="PIVOT_GAIN_THETA" value="0"/>
     <define name="PIVOT_SERVOGAIN_Q" value="0.1"/>
-    <define name="PIVOT_SERVOGAIN_THETA" value="3"/>
+    <define name="PIVOT_SERVOGAIN_THETA" value="2"/>
   </section>
   
   <!-- Definitions for control effectiveness calculator module -->
