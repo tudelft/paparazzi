@@ -53,7 +53,7 @@
 
 // landing platform horizontal dist wrt RTK-gps module
 #ifndef TARGET_OFFSET_DISTANCE
-#define TARGET_OFFSET_DISTANCE 5.0
+#define TARGET_OFFSET_DISTANCE 10.0
 #endif
 
 // landing platform horizontal dist wrt RTK-gps module
@@ -64,7 +64,7 @@
 // landing platform heigth wrt RTK-gps height
 // positive is up
 #ifndef TARGET_OFFSET_HEIGHT
-#define TARGET_OFFSET_HEIGHT 0
+#define TARGET_OFFSET_HEIGHT 5.0
 #endif
 //#define TARGET_OFFSET_HEIGHT -1.2
 

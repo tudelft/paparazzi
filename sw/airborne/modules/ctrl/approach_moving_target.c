@@ -40,8 +40,8 @@ float approach_moving_target_angle_deg;
 
 // settings how drone should approach the ship
 struct Amt amt = {
-  .distance = 4,     // [m], diagonal decent line to ship
-  .speed = -0.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
+  .distance = 40,     // [m], diagonal decent line to ship
+  .speed = -1.0,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
   .pos_gain = 200.2,    // [-], how aggresive drone tracks the descent line
   .psi_ref = 180.0,   // [deg], descent line direction offset w.r.t. heading ship
   .slope_ref = 19.471,  // [deg], slope descent line

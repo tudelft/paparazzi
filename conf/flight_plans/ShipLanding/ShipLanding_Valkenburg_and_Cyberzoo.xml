@@ -227,10 +227,10 @@ heading not defined at:
     </block>
     <block name="Geo init">
       <set value="FALSE" var="force_forward"/>
-      <!--while cond="LessThan(NavBlockTime(), 10)"/-->
+      <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetAltitudeReferenceHere()"/>
       <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
-      <stay until="NavBlockTime() @GT 5" alt="0.0" wp="_StayHover"/>
+      <!--stay until="NavBlockTime() @GT 5" alt="0.0" wp="_StayHover"/-->
       <deroute block="Holding point kill"/>
     </block>
     <block name="Holding point hover">

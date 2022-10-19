@@ -6,7 +6,9 @@
   </description>
 
   <firmware name="rotorcraft">
-    <target name="ap" board="bebop2"/>
+    <target name="ap" board="bebop2">
+    	<!--define name="PRINT_DEBUG_GPS_UBX_UCENTER" value="TRUE"/-->
+    </target>
 
     <target name="nps" board="pc">
       <module name="fdm" type="jsbsim"/>
@@ -26,18 +28,18 @@
     <!-- GPS settings for optitrack 
     <module name="gps" type="datalink"/>-->
     
-    <!-- GPS settings for normal internal gps -->
+    <!-- GPS settings for normal internal gps 
     <module name="gps" type="ublox"/>
-    <module name="gps" type="ubx_ucenter"/>
+    <module name="gps" type="ubx_ucenter"/> -->
     
-    <!-- GPS settings for bepop2 with "ZED-F9P RTK" gps via Xbee usb serial board HX-186
+    <!-- GPS settings for bepop2 with "ZED-F9P RTK" gps via Xbee usb serial board HX-186-->
     <module name="gps" type="ublox">
       <configure name="GPS_BAUD" value="B38400"/>
       <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
       <define name="USE_GPS_UBX_RXM_RAW" value="TRUE"/>
       <configure name="GPS_PORT" value="UART2"/>
     </module>
-    <module name="gps" type="ubx_ucenter"/>-->
+    <!--module name="gps" type="ubx_ucenter"/-->
     
     <module name="stabilization" type="indi_simple"/>
     <module name="air_data">
@@ -98,12 +100,12 @@
 
   <section name="IMU" prefix="IMU_">
     <!-- Magneto calibration -->
-    <define name="MAG_X_NEUTRAL" value="-51"/>
-    <define name="MAG_Y_NEUTRAL" value="0"/>
-    <define name="MAG_Z_NEUTRAL" value="215"/>
-    <define name="MAG_X_SENS" value="7.0535780753967545" integer="16"/>
-    <define name="MAG_Y_SENS" value="7.082504702514915" integer="16"/>  
-    <define name="MAG_Z_SENS" value="7.352539052183074" integer="16"/>
+    <define name="MAG_X_NEUTRAL" value="-48"/>
+    <define name="MAG_Y_NEUTRAL" value="-3"/>
+    <define name="MAG_Z_NEUTRAL" value="216"/>
+    <define name="MAG_X_SENS" value="7.068482272360146" integer="16"/>
+    <define name="MAG_Y_SENS" value="7.132353004570351" integer="16"/>
+    <define name="MAG_Z_SENS" value="7.386998321197417" integer="16"/>
   </section>
   
   <section name="IMU" prefix="IMU_">
@@ -198,6 +200,11 @@
     <define name="G1_Q" value="0.025"/>
     <define name="G1_R" value="0.0022"/>
     <define name="G2_R" value="0.20"/>
+    
+    <!-- parameters I want to test
+    <define name="G1_P" value="0.0390"/>
+    <define name="G1_Q" value="0.0473"/>
+    <define name="G1_R" value="0.00122"/> -->
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="170.0"/>
@@ -225,7 +232,7 @@
     <define name="HOVER_KP" value="350"/>
     <define name="HOVER_KD" value="85"/>
     <define name="HOVER_KI" value="20"/>
-    <define name="NOMINAL_HOVER_THROTTLE" value="0.53"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value="0.56"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
   </section>
 
@@ -282,5 +289,9 @@
     <define name="CRITIC_BAT_LEVEL" value="11.0" unit="V"/>
     <define name="LOW_BAT_LEVEL" value="11.1" unit="V"/>
     <define name="MAX_BAT_LEVEL" value="12.4" unit="V"/>
+  </section>
+  
+  <section name="GCS">
+    <define name="AC_ICON"             value="quadrotor_xi"/>
   </section>
 </airframe>
