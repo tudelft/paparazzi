@@ -128,8 +128,16 @@
       <!-- <define name="RADIO_CONTROL_NB_CHANNEL" value="12"/>--> <!-- An Orange R620X Has maximum sbus channel output of 12 -->
     <!--</module>-->
 
-    <module name="gps" type="ublox"/> <!-- for Optitrac systems use type="datalink" -->
-    <module name="gps" type="ubx_ucenter"/>
+    <!-- GPS settings for bepop2 with "ZED-F9P RTK" gps via Xbee usb serial board HX-186-->
+    <module name="gps" type="ublox">
+      <!--configure name="GPS_BAUD" value="B57600"/-->
+      <configure name="GPS_BAUD" value="B115200"/>
+      <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
+      <define name="USE_GPS_UBX_RXM_RAW" value="TRUE"/>
+      <configure name="GPS_PORT" value="UART2"/> <!-- always UART2 or UART4 -->
+    </module>
+    <!--module name="gps" type="ubx_ucenter"/-->
+    
     <!-- This GPS is a real ublox M8N, so setting can be saved, no need
     for ubx_ucenter one has can set it oneself since we have all kinds
     of nifty Galilleio setting begin 2020 we rather keep that, but for now...
@@ -183,6 +191,9 @@
     <module name="geo_mag"/>
     <!--<module name="send_imu_mag_current"/>--> <!-- remove after Bebop2 batt comparisons-->
 
+    <module name="approach_moving_target"/><!-- added by andreas 19-10-2022 -->
+      <define name="AMT_ERR_SLOWDOWN_GAIN" value="true"/><!-- added by andreas 19-10-2022 -->
+    
     <module name="nav" type="survey_rectangle_rotorcraft">
       <define name="RECTANGLE_SURVEY_DEFAULT_SWEEP" value="10"/>
     </module>

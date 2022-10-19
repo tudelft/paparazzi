@@ -34,10 +34,11 @@
     
     <!-- GPS settings for bepop2 with "ZED-F9P RTK" gps via Xbee usb serial board HX-186-->
     <module name="gps" type="ublox">
-      <configure name="GPS_BAUD" value="B38400"/>
+      <!--configure name="GPS_BAUD" value="B57600"/-->
+      <configure name="GPS_BAUD" value="B115200"/>
       <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
       <define name="USE_GPS_UBX_RXM_RAW" value="TRUE"/>
-      <configure name="GPS_PORT" value="UART2"/>
+      <configure name="GPS_PORT" value="UART2"/> <!-- always UART2 or UART4 -->
     </module>
     <!--module name="gps" type="ubx_ucenter"/-->
     
