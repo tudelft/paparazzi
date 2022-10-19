@@ -1,0 +1,50 @@
+<!DOCTYPE flight_plan SYSTEM "flight_plan.dtd">
+
+<flight_plan alt="149" ground_alt="147" lat0="43.5640917" lon0="1.4829201" wp_frame='ltp' max_dist_from_home="15" name="Rotorcraft Basic (Enac)" security_height="1">
+  <header>
+#include "autopilot.h"
+  </header>
+  <waypoints>
+    <waypoint name="HOME" x="2.0" y="2.0"/>
+    <waypoint name="CLIMB" x="0.0" y="5.0"/>
+    <waypoint name="STDBY" x="0.0" y="0.0"/>
+    <waypoint name="TD" x="3.6" y="-4.9"/>
+  </waypoints>
+  <blocks>
+    <block name="Wait GPS">
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <!--call_once fun="NavSetGroundReferenceHere()"/-->
+      <!--<call_once fun="NavSetAltitudeReferenceHere()"/>-->
+    </block>
+    <block name="Holding point">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+    <block name="Start Engine">
+      <call_once fun="NavResurrect()"/>
+      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+    <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+      <exception cond="stateGetPositionEnu_f() @DEREF z @GT 2.0" deroute="Standby"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <stay vmode="climb" climb="nav_climb_vspeed" wp="CLIMB"/>
+    </block>
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <stay wp="STDBY"/>
+    </block>
+    <block name="land">
+      <go wp="TD"/>
+    </block>
+    <block name="flare">
+      <exception cond="!nav_is_in_flight()" deroute="landed"/>
+      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="landed">
+      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+  </blocks>
+</flight_plan>

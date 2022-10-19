@@ -287,11 +287,12 @@
 
     <!--<module name="gps" type="ubx_ucenter"/>-->
     <module name="tlsf"/>
-    <module name="pprzlog">
+
+    <!--module name="pprzlog">
       <define name="SDLOG_START_DELAY" value="10"/>
-    </module>
+    </module-->
     <module name="logger" type="sd_chibios"/>
-    <!--<module name="flight_recorder"/>-->
+    <module name="flight_recorder"/>
     <!--<module name="logger_spi_link"/>-->
 
 
@@ -304,7 +305,7 @@
 
     <module name="mag" type="hmc58xx">
       <configure name="MAG_HMC58XX_I2C_DEV" value="i2c2"/>
-      <define name="MODULE_HMC58XX_UPDATE_AHRS"/>
+      <!--define name="MODULE_HMC58XX_UPDATE_AHRS"/-->
 
       <define name="HMC58XX_CHAN_X" value="2"/>
       <define name="HMC58XX_CHAN_Y" value="1"/>
@@ -396,7 +397,9 @@
     <!--/module-->
 
     <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="TRUE"/>
+      <configure name="USE_MAGNETOMETER" value="FALSE"/>
+      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
+      <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
       <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>
       <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="TRUE"/>
     </module>
@@ -409,11 +412,7 @@
 
     <module name="gps" type="datalink"/>
     <module name="ins" type="gps_passthrough"/>
-    <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="FALSE"/>
-      <define name="USE_GPS_HEADING" value="TRUE"/> 
-      <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
-    </module> 
+
 
     <!--module name="ins" type="float_invariant">
       <define name="INS_PROPAGATE_FREQUENCY" value="500"/>
