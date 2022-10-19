@@ -6,8 +6,10 @@
       Full INDI stabilization controller for rotorcraft
     </description>
 
+    <!--
     <configure name="INDI_OUTPUTS" default="4"/>
     <configure name="INDI_NUM_ACT" default="4"/>
+    -->
 
     <section name="RC_SETPOINT" prefix="STABILIZATION_ATTITUDE_">
       <define name="SP_MAX_PHI"   value="45." description="max setpoint for roll angle" unit="deg"/>
@@ -71,6 +73,9 @@
   </header>
   <init fun="stabilization_indi_init()"/>
   <makefile target="ap|nps" firmware="rotorcraft">
+    <include name="math/lsq_package/"/>
+    <include name="math/lsq_package/lib"/>
+    <include name="math/lsq_package/common"/>
     <file name="stabilization_indi_algos.c" dir="$(SRC_FIRMWARE)/stabilization"/>
     <file name="stabilization_attitude_quat_indi.c" dir="$(SRC_FIRMWARE)/stabilization"/>
     <file name="stabilization_attitude_quat_transformations.c" dir="$(SRC_FIRMWARE)/stabilization"/>
@@ -87,9 +92,9 @@
     <file name="qr_updates.c" dir="math/lsq_package/lib"/>
     <file name="qr_wrapper.c" dir="math/lsq_package/lib"/>
     <file name="sparse_math.c" dir="math/lsq_package/lib"/>
+    <!--
     <configure name="INDI_OUTPUTS" default="6"/>
     <configure name="INDI_NUM_ACT" default="21"/>
-    <!--
     <define name="INDI_OUTPUTS" value="$(INDI_OUTPUTS)"/>
     <define name="INDI_NUM_ACT" value="$(INDI_NUM_ACT)"/>
     <define name="CA_N_V" value="$(INDI_OUTPUTS)"/>

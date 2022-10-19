@@ -1,5 +1,5 @@
 
-#include "math/lsq_package/common/setup_wls.h"
+#include "setup_wls.h"
 #include <math.h>
 
 #include <stdio.h>

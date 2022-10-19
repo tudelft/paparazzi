@@ -1,8 +1,8 @@
 #ifndef SETUP_WLS_H
 #define SETUP_WLS_H
 
-#include "math/lsq_package/common/size_defines.h"
-#include "generated/airframe.h"
+#include "size_defines.h"
+// #include "generated/airframe.h"
 
 
 extern void setup_wls(

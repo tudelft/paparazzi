@@ -7,8 +7,8 @@
  * This code is distributed under the GNU LGPL license.
  */
 
-#include "math/lsq_package/common/size_defines.h"
-#include "generated/airframe.h"
+#include "size_defines.h"
+// #include "generated/airframe.h"
 
 
 void r8mat_copy_new ( int m, int n, num_t a1[], num_t a2[] );

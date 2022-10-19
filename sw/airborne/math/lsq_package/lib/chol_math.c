@@ -1,4 +1,4 @@
-#include "math/lsq_package/lib/chol_math.h"
+#include "chol_math.h"
 #include <stdio.h>
 
 #include <string.h>

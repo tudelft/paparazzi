@@ -1,13 +1,14 @@
-#include "math/lsq_package/common/solveActiveSet.h"
-#include "math/lsq_package/common/setup_wls.h"
-#include "math/lsq_package/lib/chol_math.h"
-#include "math/lsq_package/common/size_defines.h"
-#include "math/lsq_package/lib/sparse_math.h"
+#include "solveActiveSet.h"
+#include "setup_wls.h"
+#include "chol_math.h"
+#include "size_defines.h"
+#include "sparse_math.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 
 //#define PRINT_COND_EST
+//#define DEBUG
 
 void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
   const num_t umin[CA_N_U], const num_t umax[CA_N_U], num_t us[CA_N_U],
@@ -30,40 +31,56 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
   }
 
   num_t A[CA_N_C][CA_N_U];
+  num_t H_perm[CA_N_U][CA_N_U];
   num_t H[CA_N_U][CA_N_U];
   num_t L[CA_N_U][CA_N_U];
 
   // Create a pointer array to the rows of A
   // such that we can pass it to a function
   num_t * A_ptr[CA_N_C];
+  num_t * H_perm_ptr[CA_N_U];
   num_t * H_ptr[CA_N_U];
   num_t * L_ptr[CA_N_U];
   for(int i = 0; i < n_c; i++) {
     A_ptr[i] = A[i];
-    if (i < n_u) { H_ptr[i] = H[i]; L_ptr[i] = L[i]; }
+    if (i < n_u) { H_perm_ptr[i] = H_perm[i]; H_ptr[i] = H[i]; L_ptr[i] = L[i]; }
   }
 
-  check_limits_tol(n_u, TOL, us, umin, umax, Ws, 0);
-
-  int free_index_lookup[CA_N_U]; memset(free_index_lookup, -1, sizeof(int)*n_u);
   int permutation[CA_N_U]; memset(permutation, 0, sizeof(int)*n_u);
   (*n_free) = 0;
+  int i_bnd = 0;
   for (int i = 0; i < n_u; i++) {
     if (Ws[i] == 0) {
-      free_index_lookup[i] = (*n_free);
       permutation[(*n_free)++] = i;
+    }
+  }
+  for (int i = 0; i < n_u; i++) {
+    if (Ws[i] != 0) {
+      permutation[(i_bnd++)+(*n_free)] = i;
     }
   }
 
   // convert col major input to 2d array, using the permutaiton just found
   for(int i = 0; i < n_c; i++) {
     for(int j = 0; j < n_u; j++) {
-      A[i][j] = A_col[i + n_c * permutation[j]];
+      // A[i][j] = A_col[i + n_c * permutation[j]];
+      A[i][j] = A_col[i + n_c * j];
     }
   }
 
   // initial factorisation
-  block_diag_self_mult(n_c, n_u, A_ptr, H_ptr, n_v, permutation);
+  int dummy[CA_N_U];
+  for (int i = 0; i < n_u; i++)
+    dummy[i] = i;
+
+  block_diag_self_mult(n_c, n_u, A_ptr, H_ptr, n_v, dummy);
+  for(int i = 0; i < n_u; i++) {
+    for(int j = 0; j < n_u; j++) {
+      H_perm[i][j] = H[permutation[i]][permutation[j]];
+      //H[permutation[i]][permutation[j]] = H_pre[i][j];
+    }
+  }
+  
   // debug output
   #ifdef DEBUG
   printf("H:\n");
@@ -77,7 +94,18 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
   #endif
 
   num_t inv_diag[CA_N_U];// memset(inv_diag, 0.0, sizeof(num_t)*n_u);
-  pprz_cholesky_float(L_ptr, H_ptr, inv_diag, n_u);
+  pprz_cholesky_float(L_ptr, H_perm_ptr, inv_diag, n_u);
+  // debug output
+  #ifdef DEBUG
+  printf("H_perm:\n");
+  for (int i=0; i<n_u; i++) {
+    for (int j=0; j<n_u; j++) {
+      printf("%f ", H_perm_ptr[i][j]);
+    }
+    printf("\n");
+  }
+  printf("\n");
+  #endif
 
 
   num_t q[CA_N_U];
@@ -85,11 +113,12 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
 
   // -------------- Start loop ------------
   *iter = 0;
-  while ((*iter)++ <= imax) {
+  while (++(*iter) <= imax) {
     num_t beta[CA_N_U];
     for (int i=0; i<(*n_free); i++) {
       beta[i] = 0;
       for (int j=(*n_free); j<n_u; j++) {
+      //for (int j=0; j<n_u; j++) {
         beta[i] -= H[permutation[i]][permutation[j]] * ((num_t) us[permutation[j]]);
       }
       for (int j=0; j<n_c; j++) {
@@ -120,7 +149,8 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
     }
 
     int n_violated = 0;
-    n_violated = check_limits_tol((*n_free), TOL, z, umin, umax, Ws, permutation);
+    int8_t W_temp[CA_N_U];
+    n_violated = check_limits_tol((*n_free), TOL, z, umin, umax, W_temp, permutation);
 
     if (!n_violated) {
       // is this the most efficient location TODO
@@ -170,9 +200,7 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
         for (int i = f_free-1; i >= 0; i--) {
           permutation[(*n_free)+i+1] = permutation[(*n_free)+i];
         }
-        permutation[(*n_free)] = last_val;
-
-        (*n_free)++;
+        permutation[(*n_free)++] = last_val;
 
       }
     } else {
@@ -185,10 +213,10 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
       int temp_s;
       for (int f=0; f < (*n_free); f++) {
         int i = permutation[f];
-        if (z[i] < umin[i]-TOL) {
+        if (W_temp[i] == -1) {
           temp = (us[i] - umin[i]) / (us[i] - z[i]);
           temp_s = -1;
-        } else if (z[i] > umax[i]+TOL) {
+        } else if (W_temp[i] == +1) {
           temp = (umax[i] - us[i]) / (z[i] - us[i]);
           temp_s = +1;
         } else {
@@ -204,9 +232,10 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
 
       // update xs
       for (int i=0; i<n_u; i++) {
-        num_t incr = a * (z[i]-us[i]);
+        num_t p = z[i] - us[i];
+        num_t incr = a * p;
         if (i == i_a) {
-          us[i] = (incr > 0) ? umax[i] : umin[i];
+          us[i] = (p > 0) ? umax[i] : umin[i];
         } else {
           us[i] += incr;
         }
@@ -220,9 +249,7 @@ void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
       for (int i = 0; i < (*n_free)-f_bound-1; i++) {
         permutation[f_bound+i] = permutation[f_bound+i+1];
       }
-      permutation[(*n_free)-1] = first_val;
-
-      (*n_free)--;
+      permutation[--(*n_free)] = first_val;
 
     }
 

@@ -1,6 +1,6 @@
 
-#include "math/lsq_package/lib/sparse_math.h"
-#include "math/lsq_package/common/size_defines.h"
+#include "sparse_math.h"
+#include "size_defines.h"
 #include <stdbool.h>
 
 
@@ -93,11 +93,11 @@ int check_limits_tol(int n, num_t tol, num_t* x, const num_t* xmin, const num_t*
     int res = 0;
     for (int i=0; i<n; i++) {
         ind = perm ? perm[i] : i;
-        if ( x[ind] >= (xmax[i] * (1 + ((xmax[i]>0) ? 1 : -1) * tol) + tol) ) {
+        if ( x[ind] >= (xmax[ind] * (1 + ((xmax[ind]>0) ? 1 : -1) * tol) + tol) ) {
             // violated upper bound
             output[ind] = +1;
             res++;
-        } else if ( x[ind] <= (xmin[i] * (1 + ((xmin[i]<0) ? 1 : -1) * tol) - tol) ) {
+        } else if ( x[ind] <= (xmin[ind] * (1 + ((xmin[ind]<0) ? 1 : -1) * tol) - tol) ) {
             // violated lower bound
             output[ind] = -1;
             res++;

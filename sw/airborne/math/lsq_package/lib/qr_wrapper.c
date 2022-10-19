@@ -1,6 +1,6 @@
-#include "math/lsq_package/lib/qr_wrapper.h"
-#include "math/lsq_package/lib/qr_solve/qr_solve.h"
-#include "math/lsq_package/common/size_defines.h"
+#include "qr_wrapper.h"
+#include "qr_solve/qr_solve.h"
+#include "size_defines.h"
 #include <math.h>
 #include <string.h>
 

@@ -1,8 +1,8 @@
 #ifndef CHOL_MATH_H
 #define CHOL_MATH_H
 
-#include "math/lsq_package/common/size_defines.h"
-#include "generated/airframe.h"
+#include "size_defines.h"
+// #include "generated/airframe.h"
 
 #include <stdbool.h>
 

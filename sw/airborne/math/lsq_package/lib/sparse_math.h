@@ -2,8 +2,8 @@
 #ifndef SPARSE_MATH_H
 #define SPARSE_MATH_H
 
-#include "math/lsq_package/common/size_defines.h"
-#include "generated/airframe.h"
+#include "size_defines.h"
+// #include "generated/airframe.h"
 #include <stdint.h>
 
 #include <stdbool.h>

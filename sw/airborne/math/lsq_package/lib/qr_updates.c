@@ -1,6 +1,6 @@
 
-#include "math/lsq_package/lib/qr_updates.h"
-#include "math/lsq_package/common/size_defines.h"
+#include "qr_updates.h"
+#include "size_defines.h"
 #include "sparse_math.h"
 #include <math.h>
 #include <stdbool.h>

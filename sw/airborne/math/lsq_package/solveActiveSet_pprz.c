@@ -35,8 +35,8 @@
  * MAVLab Delft University of Technology
  */
 
-#include "math/lsq_package/common/solveActiveSet.h"
-#include "math/lsq_package/common/size_defines.h"
+#include "solveActiveSet.h"
+#include "size_defines.h"
 #include <stdio.h>
 /*#include "std.h"*/
 #include <inttypes.h>
@@ -46,9 +46,9 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
-#include "math/lsq_package/lib/qr_solve/qr_solve.h"
-#include "math/lsq_package/lib/qr_solve/r8lib_min.h"
-#include "math/lsq_package/lib/sparse_math.h"
+#include "qr_solve/qr_solve.h"
+#include "qr_solve/r8lib_min.h"
+#include "sparse_math.h"
 
 // provide loop feedback
 #define WLS_VERBOSE FALSE
@@ -155,6 +155,7 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
 
   // num_t b[CA_N_C];
   num_t d[CA_N_C];
+  num_t us_prev[CA_N_U];
 
   int free_index[CA_N_U];
   int free_index_lookup[CA_N_U];
@@ -189,7 +190,7 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
 
   // -------------- Start loop ------------
   *iter = 0;
-  while (++(*iter) < imax) {
+  while (++(*iter) <= imax) {
     // clear p, copy u to u_opt
     for (int i=0; i<n_u; i++)
       p[i] = 0;
@@ -220,6 +221,7 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
     }
 
     // Set the nonzero values of p and add to u_opt
+    memcpy(us_prev, us, n_u*sizeof(num_t));
     for (int i = 0; i < (*n_free); i++) {
       p[free_index[i]] = p_free[i];
       us[free_index[i]] += p_free[i];
@@ -282,9 +284,10 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
       // find the lowest distance from the limit among the free variables
       for (int i = 0; i < (*n_free); i++) {
         int id = free_index[i];
-        if(fabs(p[id]) > FLT_EPSILON) {
-          alpha_tmp = (p[id] < 0) ? (umin[id] - us[id]) / p[id]
-            : (umax[id] - us[id]) / p[id];
+        //if(fabs(p[id]) > FLT_EPSILON) {
+        if(limits_viol[id] != 0) {
+          alpha_tmp = (p[id] < 0) ? (umin[id] - us_prev[id]) / p[id]
+            : (umax[id] - us_prev[id]) / p[id];
         } else {
           alpha_tmp = INFINITY;
         }
@@ -302,7 +305,7 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
           us[i] = (p[i] > 0) ? umax[i] : umin[i];
           Ws[i] = (p[i] > 0) ? 1 : -1;
         } else {
-          us[i] += incr;
+          us[i] = incr + us_prev[i];
         }
       }
       // update d = d-alpha*A*p_free

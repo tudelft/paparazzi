@@ -2,8 +2,8 @@
 #ifndef QR_UPDATES_H
 #define QR_UPDATES_H
 
-#include "math/lsq_package/common/size_defines.h"
-#include "generated/airframe.h"
+#include "size_defines.h"
+// #include "generated/airframe.h"
 
 
 void qr_shift ( int m, int n, num_t** Q_ptr, num_t** R_ptr, int i, int j);

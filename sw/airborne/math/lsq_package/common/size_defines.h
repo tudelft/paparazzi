@@ -3,14 +3,20 @@
 #ifndef SIZE_DEFINES_H
 #define SIZE_DEFINES_H
 
-#include "generated/airframe.h"
+#ifndef TESTING_LSQ_PACKAGE
+  #include "generated/airframe.h"
+#endif
 
 //#define CA_N_U  20 // todo: runtimes errors if this is exceeded
 //#define CA_N_V  6
 #define CA_N_C  (CA_N_U+CA_N_V)
 
-//#define DOUBLE
-#define SINGLE
+#ifndef TESTING_LSQ_PACKAGE
+	#define SINGLE
+#else
+	#define SINGLE
+	//#define DOUBLE
+#endif
 
 #ifdef DOUBLE
 typedef double num_t;

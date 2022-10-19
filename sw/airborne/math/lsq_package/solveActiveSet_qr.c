@@ -35,8 +35,8 @@
  * MAVLab Delft University of Technology
  */
 
-#include "math/lsq_package/common/solveActiveSet.h"
-#include "math/lsq_package/common/size_defines.h"
+#include "solveActiveSet.h"
+#include "size_defines.h"
 #include <stdio.h>
 /*#include "std.h"*/
 #include <inttypes.h>
@@ -46,11 +46,11 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
-#include "math/lsq_package/lib/qr_wrapper.h"
-#include "math/lsq_package/lib/qr_updates.h"
-#include "math/lsq_package/lib/qr_solve/qr_solve.h"
-#include "math/lsq_package/lib/qr_solve/r8lib_min.h"
-#include "math/lsq_package/lib/sparse_math.h"
+#include "qr_wrapper.h"
+#include "qr_updates.h"
+#include "qr_solve/qr_solve.h"
+#include "qr_solve/r8lib_min.h"
+#include "sparse_math.h"
 
 // provide loop feedback
 #define WLS_VERBOSE FALSE
@@ -137,7 +137,6 @@ void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
     }
   }
 
-
   // convert col major input to 2d array, using the permutaiton just found
   for(int i = 0; i < n_c; i++) {
     for(int j = 0; j < n_u; j++) {
@@ -190,8 +189,8 @@ void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
     }
 
     int n_violated = 0;
-    int8_t dummy[CA_N_U];
-    n_violated = check_limits_tol((*n_free), TOL, z, umin, umax, dummy, permutation);
+    int8_t W_temp[CA_N_U];
+    n_violated = check_limits_tol((*n_free), TOL, z, umin, umax, W_temp, permutation);
 
     if (!n_violated) {
       // is this the most efficient location TODO
@@ -261,11 +260,11 @@ void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
       for (int f=0; f < (*n_free); f++) {
         int i = permutation[f];
         //if (z[i] < umin[i]-TOL) {
-        if (dummy[i] == -1) {
+        if (W_temp[i] == -1) {
           temp = (us[i] - umin[i]) / (us[i] - z[i]);
           temp_s = -1;
         //} else if (z[i] > umax[i]+TOL) {
-        } else if (dummy[i] == +1) {
+        } else if (W_temp[i] == +1) {
           temp = (umax[i] - us[i]) / (z[i] - us[i]);
           temp_s = +1;
         } else {
