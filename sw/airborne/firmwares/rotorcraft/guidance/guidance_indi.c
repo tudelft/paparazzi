@@ -178,7 +178,7 @@ void guidance_indi_enter(void)
  */
 void guidance_indi_run(float *heading_sp)
 {
-  printf("guidance_indi_run \n");
+  printf("guidance_indi_run (NOT hybrid) \n");
   struct FloatEulers eulers_yxz;
   struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
   float_eulers_of_quat_yxz(&eulers_yxz, statequat);

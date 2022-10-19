@@ -234,7 +234,7 @@ void guidance_indi_enter(void) {
  * main indi guidance function
  */
 void guidance_indi_run(float *heading_sp) {
-  printf("guidance_indi_run");
+  //printf("guidance_indi_run HYBRID \n");
 
   /*Obtain eulers with zxy rotation order*/
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());

@@ -310,7 +310,7 @@ void follow_diagonal_approach(void) {
     ref_relvel.z + target_vel_boat.z + ec_vel.z,
   };
 
-  vect_bound_in_3d(&des_vel, 10.0);
+  vect_bound_in_3d(&des_vel, 5.0); // maximum velocity of INDI controller
 
   // Bound vertical speed setpoint
   if(stateGetAirspeed_f() > 13.0) {
