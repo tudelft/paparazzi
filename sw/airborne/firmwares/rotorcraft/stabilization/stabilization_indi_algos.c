@@ -238,7 +238,7 @@ void init_filters(void);
 #include "modules/datalink/telemetry.h"
 static void send_ctl_alloc_perf(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_CTL_ALLOC_PERF(trans, dev, AC_ID, (uint8_t*)&indi_ctl_alloc_algo, &cond_est, &gamma_used, (uint16_t*) &iterations, (uint8_t*) &n_satch, (uint32_t*) &t_ctl_alloc_exec_us);
+  pprz_msg_send_CTL_ALLOC_PERF(trans, dev, AC_ID, (uint8_t*)&indi_ctl_alloc_algo, &cond_est, &gamma_used, (uint16_t*) &indi_ctl_alloc_imax, (uint16_t*) &iterations, (uint8_t*) &n_satch, (uint32_t*) &t_ctl_alloc_exec_us);
 }
 
 static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
