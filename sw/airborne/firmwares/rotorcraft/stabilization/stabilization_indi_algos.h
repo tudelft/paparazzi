@@ -26,6 +26,7 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_common_int.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_ref_quat_int.h"
 #include "math/lsq_package/common/solveActiveSet.h"
+#include <stdint.h>
 /*
 #include "mcu_periph/sys_time.h"
 #include "mcu.h"
@@ -51,7 +52,7 @@ extern float indi_ctl_alloc_cond_bound;
 extern float indi_ctl_alloc_theta;
 extern float indi_max_rpm_scaler;
 extern bool indi_ctl_alloc_warmstart;
-extern uint indi_ctl_alloc_imax;
+extern uint16_t indi_ctl_alloc_imax;
 
 extern float *Bwls[INDI_OUTPUTS];
 

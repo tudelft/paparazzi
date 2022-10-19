@@ -125,7 +125,7 @@ float indi_ctl_alloc_cond_bound = STABILIZATION_INDI_CTL_ALLOC_COND_BOUND;
 float indi_ctl_alloc_theta = STABILIZATION_INDI_CTL_ALLOC_THETA;
 float indi_max_rpm_scaler = STABILIZATION_INDI_MAX_RPM_SCALER;
 bool indi_ctl_alloc_warmstart = STABILIZATION_INDI_CTL_ALLOC_WARMSTART;
-uint indi_ctl_alloc_imax = STABILIZATION_INDI_CTL_ALLOC_IMAX;
+uint16_t indi_ctl_alloc_imax = STABILIZATION_INDI_CTL_ALLOC_IMAX;
 
 #ifdef STABILIZATION_INDI_ACT_RATE_LIMIT
 float act_rate_limit[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_RATE_LIMIT;
