@@ -125,6 +125,7 @@ float indi_ctl_alloc_cond_bound = STABILIZATION_INDI_CTL_ALLOC_COND_BOUND;
 float indi_ctl_alloc_theta = STABILIZATION_INDI_CTL_ALLOC_THETA;
 float indi_max_rpm_scaler = STABILIZATION_INDI_MAX_RPM_SCALER;
 bool indi_ctl_alloc_warmstart = STABILIZATION_INDI_CTL_ALLOC_WARMSTART;
+uint indi_ctl_alloc_imax = STABILIZATION_INDI_CTL_ALLOC_IMAX;
 
 #ifdef STABILIZATION_INDI_ACT_RATE_LIMIT
 float act_rate_limit[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_RATE_LIMIT;
@@ -615,7 +616,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
       }
     }
     // solve problem
-    solveActiveSet(A, b, du_min, du_max, indi_du, Ws, true, STABILIZATION_INDI_CTL_ALLOC_IMAX,
+    solveActiveSet(A, b, du_min, du_max, indi_du, Ws, true, indi_ctl_alloc_imax,
                     n_u, n_v, &iterations, &n_free, indi_ctl_alloc_algo);
     n_satch = INDI_NUM_ACT - n_free;
 

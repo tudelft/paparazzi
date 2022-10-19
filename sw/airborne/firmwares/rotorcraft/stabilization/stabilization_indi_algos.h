@@ -51,6 +51,7 @@ extern float indi_ctl_alloc_cond_bound;
 extern float indi_ctl_alloc_theta;
 extern float indi_max_rpm_scaler;
 extern bool indi_ctl_alloc_warmstart;
+extern uint indi_ctl_alloc_imax;
 
 extern float *Bwls[INDI_OUTPUTS];
 
