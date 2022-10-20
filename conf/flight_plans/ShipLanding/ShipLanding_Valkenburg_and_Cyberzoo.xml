@@ -67,8 +67,8 @@ heading not defined at:
 - holding point kill
 
 -->
-<!--flight_plan alt="0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="20" name="Rotorcraft Cyberzoo (Delft) no GPS" security_height="0.3"-->
-<flight_plan alt="5" ground_alt="0" lat0="52.168221" lon0="4.412767" max_dist_from_home="250" name="Nederdrone Valkenburg" security_height="5">
+<flight_plan alt="0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="20" name="Rotorcraft Cyberzoo (Delft) no GPS" security_height="0.3">
+<!--flight_plan alt="5" ground_alt="0" lat0="52.168221" lon0="4.412767" max_dist_from_home="250" name="Nederdrone Valkenburg" security_height="5"-->
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -222,7 +222,7 @@ heading not defined at:
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavKillThrottle()"/>
       <while cond="!GpsFixValid() || !state.ned_initialized_i"/>
-      <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH,WP_CARROT)"/>
+      <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH)"/>
       <deroute block="Geo init"/>
     </block>
     <block name="Geo init">
@@ -255,13 +255,13 @@ heading not defined at:
     <block name="HoverHeigthShip">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
-      <call_once fun="nav_set_heading_deg(70)"/>
+      <!--call_once fun="nav_set_heading_deg(70)"/-->
       <stay alt="WaypointAlt(WP_SHIP)" wp="_StayHover"/>
     </block>
     <block name="HoverHeigthApproach">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
-      <call_once fun="nav_set_heading_deg(70)"/>      
+      <!--call_once fun="nav_set_heading_deg(70)"/-->      
       <stay alt="WaypointAlt(WP_APPROACH)" wp="_StayHover"/>
     </block>
     <block name="route">
@@ -277,46 +277,35 @@ heading not defined at:
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="FALSE" var="force_forward"/>
-      <call_once fun="nav_set_heading_deg(70)"/>
+      <!--call_once fun="nav_set_heading_deg(70)"/-->
       <stay wp="STDBY"/>
     </block>
     <block name="GoTo Approach point" strip_button="GoTo Approach point">
       <set value="FALSE" var="force_forward"/>
-      <call_once fun="nav_set_heading_deg(70)"/>
-      <stay alt="WaypointAlt(WP_APPROACH)" pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH,WP_CARROT)" wp="APPROACH"/>
+      <!--call_once fun="nav_set_heading_deg(70)"/->
+      <stay alt="WaypointAlt(WP_APPROACH)" pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH)" wp="APPROACH"/>
     </block>
     <block name="GoTo Ship" strip_button="GoTo Ship">
       <set value="FALSE" var="force_forward"/>
-      <call_once fun="nav_set_heading_deg(70)"/>
-      <stay alt="WaypointAlt(WP_SHIP)" pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH,WP_CARROT)" wp="SHIP"/>
-    </block>
-    <block name="GoTo Carrot" strip_button="GoTo Carrot">
-      <set value="FALSE" var="force_forward"/>
-      <call_once fun="nav_set_heading_deg(70)"/>
-      <stay alt="WaypointAlt(WP_CARROT)" pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH,WP_CARROT)" wp="CARROT"/>
+      <!--call_once fun="nav_set_heading_deg(70)"/-->
+      <stay alt="WaypointAlt(WP_SHIP)" pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH)" wp="SHIP"/>
     </block>
     <block name="Approach SHIP" strip_button="Approach SHIP" strip_icon="boat.png">
       <set value="TRUE" var="force_forward"/>
-      <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH,WP_CARROT)"/>
+      <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH)"/>
       <call_once fun="nav_set_heading_towards_waypoint(WP_SHIP)"/>
       <stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH"/>
     </block>
     <block name="REPEAT Approach SHIP" strip_button="REPEAT Approach SHIP" strip_icon="boat.png">
       <stay until="get_dist2_to_waypoint(WP_APPROACH) @LT 0.5" wp="APPROACH"/>  <!-- NEED TO TEST: does the drone first go to the waypoint before het waypoint starts shifting to the ship? -->
       <set value="TRUE" var="force_forward"/>
-      <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH, WP_CARROT)"/>
-      <call_once fun="nav_set_heading_towards_waypoint(270)"/>
+      <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH)"/>
+      <!--call_once fun="nav_set_heading_towards_waypoint(WP_SHIP)"/-->
       <stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/>
       <stay alt="2.5" wp="SHIP" until="GetPosHeight() @GT 2.2"/>
       <set value="FALSE" var="force_forward"/>
       <call_once fun="reset_moving_target_distance()"/>
       <deroute block="REPEAT Approach SHIP"/>
-    </block>
-    <block name="Approach SHIP (carrot)" strip_button="Approach SHIP (carrot)" strip_icon="boat.png">
-      <set value="TRUE" var="force_forward"/>
-      <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH,WP_CARROT)"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_CARROT)"/>
-      <stay alt="WaypointAlt(WP_CARROT)" wp="CARROT"/>
     </block>
     <block name="reset_distance_descent">
       <set value="FALSE" var="force_forward"/>
@@ -336,12 +325,12 @@ heading not defined at:
     </block>
     <block name="stay_HOME_1.5m">
       <set value="FALSE" var="force_forward"/>
-      <call_once fun="nav_set_heading_deg(EASYHEADING)"/>
+      <!--call_once fun="nav_set_heading_deg(EASYHEADING)"/-->
       <stay wp="HOME" alt="1.5"/>
     </block>
     <block name="go_p2">
       <set value="TRUE" var="force_forward"/>
-      <call_once fun="nav_set_heading_deg(EASYHEADING)"/>
+      <!--call_once fun="nav_set_heading_deg(EASYHEADING)"/-->
       <go wp="p2"/>
       <deroute block="stay_p1"/>
     </block>
@@ -355,7 +344,7 @@ heading not defined at:
     <block name="Land Here" strip_button="Land Here" strip_icon="land-right.png">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere(WP__landHere)"/>
-      <call_once fun="nav_set_heading_deg(70)"/>
+      <!--call_once fun="nav_set_heading_deg(70)"/-->
       <stay climb="-0.5" vmode="climb" wp="_landHere"/>
       <exception cond="GetPosHeight() @LT 2.0" deroute="flare"/>
       <deroute block="flare"/>
@@ -363,7 +352,7 @@ heading not defined at:
     <block name="flare">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere(WP__landHere)"/>
-      <call_once fun="nav_set_heading_deg(70)"/>
+      <!--call_once fun="nav_set_heading_deg(70)"/-->
       <stay climb="-0.2" vmode="climb" wp="_landHere"/>
       <exception cond="GetPosHeight() @LT 0.05" deroute="landed"/>
     </block>
@@ -374,7 +363,7 @@ heading not defined at:
       <while cond="true"/>
     </block>
     <block name="autodescent 53perc throttle TEST">
-      <call_once fun="nav_set_heading_deg(70)"/>
+      <!--call_once fun="nav_set_heading_deg(70)"/-->
       <attitude pitch="0" roll="0" throttle="0.53" until="GetPosHeight() @LT 0.2" vmode="throttle"/>
       <call_once fun="NavKillThrottle()"/> <!-- safe crash-->
       <!--deroute block="Holding point hover"/-->
