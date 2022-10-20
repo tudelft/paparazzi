@@ -1,7 +1,7 @@
 OPTIM = -O0 -fno-loop-optimize -fno-aggressive-loop-optimizations
 DEBUG = -g
 WARN_FLAGS = -Wall -W -Wwrite-strings -Winline -Wstrict-prototypes -Wnested-externs -Wpointer-arith -Wcast-align -Wcast-qual -Wshadow
-DEFINES = -DTESTING -DCA_N_U=20 -DCA_N_V=6
+DEFINES = -DTESTING -DCA_N_U=20 -DCA_N_V=6 -DTESTING_LSQ_PACKAGE
 
 CC = gcc
 CC_FLAGS = -fstack-usage -fwrapv -fPIC $(WARN_FLAGS) $(DEBUG) $(OPTIM)

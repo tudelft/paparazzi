@@ -3,6 +3,9 @@
 
 #include <string.h>
 #include <math.h>
+#include <stdint.h>
+
+//#define DEBUG
 
 /** Cholesky decomposition
  *
@@ -42,23 +45,21 @@ void cholesky_solve(num_t **L, num_t* inv_diag, int n, num_t *b, num_t *x) {
         for(k = j - 1 ; k >= 0 ; k--)
             t -= L[j][k] * x[k];
         x[j] = t*inv_diag[j];
-        //x[j] = t/L[j][j];
-        //x[j] = (num_t) ( ((num_t) t) / ((num_t) L[j][j]) );
     }
     for(j = n - 1 ; j >= 0 ; j--) { // solve Ltx=y
         t = x[j];
         for(k = j + 1 ; k < n ; k++)
             t -= L[k][j] * x[k];
         x[j] = t*inv_diag[j];
-        //x[j] = t/L[j][j];
-        //x[j] = (num_t) ( ((num_t) t) / ((num_t) L[j][j]) );
     }
 }
 
 void cholup(num_t** L, int i1, int i2)
 {
+#ifdef DEBUG
     if (i1 < 1)
         printf("should not happen");
+#endif
 
     for (int k=i1; k<i2; k++) {
         num_t r;

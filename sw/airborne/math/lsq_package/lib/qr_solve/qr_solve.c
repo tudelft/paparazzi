@@ -944,6 +944,7 @@ void dqrlss ( num_t a[], int lda, int m, int n, int kr, num_t b[], num_t x[],
 {
   int i;
   int info; /* UNUSED; */
+  (void) info;
   int j;
   int job;
   int k;
@@ -1600,6 +1601,7 @@ void qr_solve ( int m, int n, num_t a[], num_t b[], num_t x[]  )
 */
 {
   int ind; /* UNUSED; */
+  (void)ind;
   int itask;
   int kr;
   int lda;

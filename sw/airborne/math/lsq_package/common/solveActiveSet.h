@@ -13,19 +13,19 @@ typedef enum {
     CHOL = 2
 } activeSetAlgoChoice;
 
-extern void solveActiveSet(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
+extern int8_t solveActiveSet(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
   const num_t umin[CA_N_U], const num_t umax[CA_N_U], num_t us[CA_N_U],
   int8_t Ws[CA_N_U], bool updating, int imax, const int n_u, const int n_v,
   int *iter, int *n_free, activeSetAlgoChoice choice);
-void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
+int8_t solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
   const num_t umin[CA_N_U], const num_t umax[CA_N_U], num_t us[CA_N_U],
   int8_t Ws[CA_N_U], bool updating, int imax, const int n_u, const int n_v,
   int *iter, int *n_free);
-void solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
+int8_t solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
   const num_t umin[CA_N_U], const num_t umax[CA_N_U], num_t us[CA_N_U],
   int8_t Ws[CA_N_U], bool updating, int imax, const int n_u, const int n_v,
   int *iter, int *n_free);
-void solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
+int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
   const num_t umin[CA_N_U], const num_t umax[CA_N_U], num_t us[CA_N_U],
   int8_t Ws[CA_N_U], bool updating, int imax, const int n_u, const int n_v,
   int *iter, int *n_free);

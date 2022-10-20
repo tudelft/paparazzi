@@ -33,6 +33,9 @@
  *
  * written by Anton Naruta && Daniel Hoppener 2016
  * MAVLab Delft University of Technology
+ * 
+ * adapted for comparison with new algorithms by Till Blaha 2022
+ * MAVLab Delft University of Technology
  */
 
 #include "solveActiveSet.h"
@@ -52,18 +55,6 @@
 
 // provide loop feedback
 #define WLS_VERBOSE FALSE
-
-// Problem size needs to be predefined to avoid having to use VLAs
-/*
-#ifndef CA_N_V
-#error CA_N_V needs to be defined!
-#endif
-
-#ifndef CA_N_U
-#error CA_N_U needs to be defined!
-#endif
-*/
-
 
 /**
  * @brief Wrapper for qr solve
@@ -113,12 +104,7 @@ void qr_solve_wrapper_pprz(int m, int n, num_t** A, num_t* b, num_t* x) {
  *
  * @return Number of *iterations, -1 upon failure
  */
-/* int wls_alloc(num_t* u, num_t* v, num_t* umin, num_t* umax, num_t** B,
-    num_t* u_guess, num_t* W_init, num_t* Wv, num_t* Wu, num_t* up,;
-    num_t gamma_sq, int imax) {
-      */
-// #define TOL 1.5e-6 // now defined in size_defines.h
-void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
+int8_t solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
   const num_t umin[CA_N_U], const num_t umax[CA_N_U], num_t us[CA_N_U],
   int8_t Ws[CA_N_U], bool updating, int imax, const int n_u, const int n_v,
   int *iter, int *n_free)
@@ -174,7 +160,7 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
   // find free indices
   (*n_free) = 0;
   for (int i = 0; i < n_u; i++) {
-    if (Ws[i] == 0) { // todo: fix this properly. Ws should be int
+    if (Ws[i] == 0) {
       free_index_lookup[i] = (*n_free);
       free_index[(*n_free)++] = i;
     }
@@ -274,7 +260,7 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
         print_final_values(1, n_u, n_v, us, B, v, umin, umax);
 #endif
 
-        return;// *iter;
+        return 0;// *iter;
       }
     } else {
       num_t alpha = INFINITY;
@@ -299,7 +285,6 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
 
       // update input u = u + alpha*p
       for (int i = 0; i < n_u; i++) {
-        // TODO: implement in other solvers as well!!
         num_t incr = alpha * p[i];
         if (i == id_alpha) {
           us[i] = (p[i] > 0) ? umax[i] : umin[i];
@@ -323,8 +308,7 @@ void solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
     }
   }
   // solution failed, return negative one to indicate failure
-  
-  return; // -1;
+  return 1; // -1;
 }
 
 #if WLS_VERBOSE
