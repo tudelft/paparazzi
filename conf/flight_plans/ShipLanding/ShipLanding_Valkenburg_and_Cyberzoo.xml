@@ -222,6 +222,7 @@ heading not defined at:
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavKillThrottle()"/>
       <while cond="!GpsFixValid() || !state.ned_initialized_i"/>
+      <call_once fun="init_wp_ids(WP_SHIP, WP_APPROACH)"/>
       <call_once fun="approach_moving_target_enable()"/>
       <deroute block="Geo init"/>
     </block>
@@ -230,7 +231,6 @@ heading not defined at:
       <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetAltitudeReferenceHere()"/>
       <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
-      <call_once fun="init_wp_ids(WP_SHIP, WP_APPROACH)"/>
       <deroute block="Holding point kill"/>
     </block>
     <block name="Holding point hover">

@@ -56,7 +56,7 @@
 
 // landing platform horizontal dist wrt RTK-gps module
 #ifndef TARGET_OFFSET_DISTANCE_CYBERZOO
-#define TARGET_OFFSET_DISTANCE_CYBERZOO 0.0
+#define TARGET_OFFSET_DISTANCE_CYBERZOO 1.0
 #endif
 
 // landing platform heigth wrt RTK-gps height
@@ -69,7 +69,7 @@
 // landing platform heigth wrt RTK-gps height
 // positive is up
 #ifndef TARGET_OFFSET_HEIGHT_CYBERZOO
-#define TARGET_OFFSET_HEIGHT_CYBERZOO 0
+#define TARGET_OFFSET_HEIGHT_CYBERZOO 0.5
 #endif
 
 // calculate X & Y positions in between recieved gps coordinates

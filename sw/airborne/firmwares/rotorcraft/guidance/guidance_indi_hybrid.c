@@ -278,7 +278,7 @@ void guidance_indi_run(float *heading_sp) {
   float speed_sp_b_y =-sinf(psi) * speed_sp.x + cosf(psi) * speed_sp.y;
 
   #ifdef NO_AIRSPEED_SENSOR
-  float airspeed = pow((pow(stateGetSpeedNed_f().x,2) + stateGetSpeedNed_f().x,2), 0.5); // for drone without airspeed sensor
+  float airspeed = pow((pow(stateGetSpeedNed_f()->x,2) + stateGetSpeedNed_f()->y,2), 0.5); // for drone without airspeed sensor
   #else
   float airspeed = stateGetAirspeed_f(); // for hybrid drone with airspeed sensor
   #endif
@@ -374,14 +374,14 @@ void guidance_indi_run(float *heading_sp) {
 #if GUIDANCE_INDI_RC_DEBUG
 #warning "GUIDANCE_INDI_RC_DEBUG lets you control the accelerations via RC, but disables autonomous flight!"
   //for rc control horizontal, rotate from body axes to NED
-  float psi = eulers_zxy.psi;
+  float psi_rc = eulers_zxy.psi;
   float rc_x = -(radio_control.values[RADIO_PITCH]/9600.0)*8.0;
   float rc_y = (radio_control.values[RADIO_ROLL]/9600.0)*8.0;
-  sp_accel.x = cosf(psi) * rc_x - sinf(psi) * rc_y;
-  sp_accel.y = sinf(psi) * rc_x + cosf(psi) * rc_y;
+  sp_accel.x = cosf(psi_rc) * rc_x - sinf(psi_rc) * rc_y;
+  sp_accel.y = sinf(psi_rc) * rc_x + cosf(psi_rc) * rc_y;
 
   //for rc vertical control
-  sp_accel.z = -(radio_control.values[RADIO_THROTTLE]-4500)*8.0/9600.0;
+  sp_accel.z = -((radio_control.values[RADIO_THROTTLE]-4500)/9600.0)*8.0;
 #endif
 
   //Calculate matrix of partial derivatives
@@ -550,7 +550,11 @@ void guidance_indi_calcg_wing(struct FloatMat33 *Gmat) {
   float T = cosf(pitch_lift)*-9.81;
 
   // get the derivative of the lift wrt to theta
+  #ifdef DRONE_WITHOUT_WING
+  float liftd = guidance_indi_get_liftd(0, eulers_zxy.theta); // no airspeed, for drone without wing
+  #else
   float liftd = guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
+  #endif
 
   RMAT_ELMT(*Gmat, 0, 0) =  cphi*ctheta*spsi*T + cphi*spsi*lift;
   RMAT_ELMT(*Gmat, 1, 0) = -cphi*ctheta*cpsi*T - cphi*cpsi*lift;

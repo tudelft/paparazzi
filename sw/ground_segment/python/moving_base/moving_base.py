@@ -47,10 +47,10 @@ from scipy import linalg as la
 
 import geopy.distance
 
-BASE_MOVING = True
+BASE_MOVING = False
 BASE_WAVES = False
 
-CYBERZOO = False
+CYBERZOO = True
 ROLL_COMPENSATION_ANALYSIS = False
 
 class UAV:
@@ -74,7 +74,10 @@ class Base:
 
         if not CYBERZOO:
             # Outdoor configuration
-            self.speed = 0.5 # m/s
+            if BASE_MOVING:
+                 self.speed = 0.5 # m/s
+            else:
+                self.speed = 0.0 # m/s
             self.course = 135 # deg (moving directon of platform)
             self.heading = 135 # deg (orientation of platform)
             self.alt0 = 55.5 # ref_alt0 is already about 46m in simulator
@@ -89,14 +92,17 @@ class Base:
 
         else:
             # Cyberzoo configuration
-            self.speed = 0.2 # m/s
+            if BASE_MOVING:
+                 self.speed = 0.2 # m/s
+            else:
+                self.speed = 0.0 # m/s
             self.course = 90 # deg (moving directon of platform)
             self.heading = 180 # deg (orientation of platform)
             self.alt0 = 45 # ref_alt0 is already about 46m in simulator
 
             print("lat0,long0,alt0 position = Cyberzoo")
-            self.lat0 = 51.9905760 #deg
-            self.lon0 = 4.3767589 #deg
+            self.lat0 = 51.9906114 #deg
+            self.lon0 = 4.3767883 #deg
 
         self.lat = self.lat0
         self.lon = self.lon0
@@ -356,7 +362,7 @@ class Base:
                     #self.speed = self.speed*-1
                     self.loop_counter = 0
 
-                if CYBERZOO and self.loop_counter > 90*(0.5/abs(self.speed)):
+                if CYBERZOO and self.loop_counter > 90*(0.5/abs(self.speed+0.0001)):
                     self.speed = self.speed*-1
                     self.loop_counter = 0
                 

@@ -300,6 +300,7 @@ void follow_diagonal_approach(void) {
   VECT3_SMUL(ec_vel, pos_err, amt.pos_gain);
 
   // desired velocity = rel_vel + target_vel_boat + error_controller(using NED position)
+  printf("ref_relvel.x: %f \t target_vel_boat.x: %f \t ec_vel.x: %f \n", ref_relvel.x, target_vel_boat.x, ec_vel.x);
   struct FloatVect3 des_vel = {
     ref_relvel.x + target_vel_boat.x + ec_vel.x,
     ref_relvel.y + target_vel_boat.y + ec_vel.y,
@@ -313,7 +314,7 @@ void follow_diagonal_approach(void) {
     Bound(des_vel.z, -nav_climb_vspeed, -nav_descend_vspeed);
   }
 
-  vect_bound_in_3d(&des_vel, 1.0);
+  vect_bound_in_3d(&des_vel, 5.0); 
 
   /*
   #ifdef CYBERZOO
