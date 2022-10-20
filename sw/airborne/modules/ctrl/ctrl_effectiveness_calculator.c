@@ -29,7 +29,6 @@ float thrust_lower_lim = min_thrust;
 #endif
 
 float airspeed_scaling = 0.6;
-float dv;   // Difference between exhaust velocity and measured airspeed
 float thrust_loss_r;
 float thrust_loss_l;
 
@@ -37,7 +36,7 @@ float thrust_loss_l;
 static float pprz_to_rad_left(float x);
 static float pprz_to_rad_right(float x);
 static float pprz_to_omega(float x);
-static float thrust_correcting_ratio(float w);
+static float thrust_correcting_ratio(float x, float delta);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -90,8 +89,8 @@ void ctrl_eff(void)
     float motor_r0 = actuator_state_filt_vect[2] < thrust_lower_lim ? thrust_lower_lim : actuator_state_filt_vect[2]; // [pprz]
     float motor_l0 = actuator_state_filt_vect[3] < thrust_lower_lim ? thrust_lower_lim : actuator_state_filt_vect[3]; // [pprz]
 #endif
-    thrust_loss_r = thrust_correcting_ratio(motor_r0);
-    thrust_loss_l = thrust_correcting_ratio(motor_l0);
+    thrust_loss_r = thrust_correcting_ratio(motor_r0, delta_r0);
+    thrust_loss_l = thrust_correcting_ratio(motor_l0, delta_l0);
 
     float ctrl_deriv_00 = -y_dist * sinf(delta_l0) * (mot_coef.k1 * motor_l0 * motor_l0 + mot_coef.k2 * motor_l0 + mot_coef.k3) * thrust_loss_l * (mapping / mass_property.I_xx);
     float ctrl_deriv_01 =  y_dist * sinf(delta_r0) * (mot_coef.k1 * motor_r0 * motor_r0 + mot_coef.k2 * motor_r0 + mot_coef.k3) * thrust_loss_r* (mapping / mass_property.I_xx);
@@ -236,15 +235,17 @@ float pprz_to_omega(float x)
  * higher induced angle of attack of the propellers). If there is an
  * RPM sensor the measured RPM would be used here.
  */
-float thrust_correcting_ratio(float x)
+float thrust_correcting_ratio(float x, float delta)
 {
     float w = pprz_to_omega(x);
     float v = stateGetAirspeed_f();
     float pp = 0.1270;  // [m] Propeller pitch, 5 inch prop pitch 
+    float v_in = v*airspeed_scaling*cosf(delta);
     float v_e;
+    float dv;   // Difference between exhaust velocity and measured airspeed
     
     v_e = (w/(2*M_PI)) * pp;
-    dv = v_e - v*airspeed_scaling;
+    dv = v_e - v_in;
     Bound(dv, 0.5*v_e, v_e);
 
     return dv/v_e;
