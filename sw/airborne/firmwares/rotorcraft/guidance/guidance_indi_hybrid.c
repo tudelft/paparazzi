@@ -278,7 +278,7 @@ void guidance_indi_run(float *heading_sp) {
   float speed_sp_b_y =-sinf(psi) * speed_sp.x + cosf(psi) * speed_sp.y;
 
   #ifdef NO_AIRSPEED_SENSOR
-  float airspeed = stateGetSpeedNed_f(); // for drone without airspeed sensor
+  float airspeed = pow((pow(stateGetSpeedNed_f().x,2) + stateGetSpeedNed_f().x,2), 0.5); // for drone without airspeed sensor
   #else
   float airspeed = stateGetAirspeed_f(); // for hybrid drone with airspeed sensor
   #endif
