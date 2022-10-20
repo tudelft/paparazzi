@@ -28,7 +28,9 @@ struct MotorCoefficients {
 
 extern struct MassProperties mass_property;
 extern float thrust_lower_lim;
+extern float airspeed_scaling;
 
+extern void ctrl_eff_calc_init(void);
 extern void ctrl_eff_periodic(void);
 extern void ctrl_eff(void);
 extern void ctrl_eff_ground_contact(void);
