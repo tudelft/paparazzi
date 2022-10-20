@@ -264,7 +264,7 @@
 
   <section name="MANUAL_CONTROL_OPTIONS" prefix="MANUAL_CONTROL_">
     <!-- Maximum limits of the sticks -->
-    <define name="MAX_CMD_FWD_SPEED" value="15.0" unit="m/s"/>
+    <define name="MAX_CMD_FWD_SPEED" value="20.0" unit="m/s"/>
     <define name="MAX_CMD_LAT_SPEED" value="8.0" unit="m/s"/>
     <define name="MAX_CMD_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_CMD_PITCH_ANGLE" value="25.0" unit="deg"/>
@@ -274,7 +274,7 @@
 
   <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
     <!-- Maximum limits of the vehicle in manual speed control mode. limits are in the control rf -->
-    <define name="MAX_FWD_SPEED" value="15.0" unit="m/s"/>
+    <define name="MAX_FWD_SPEED" value="20.0" unit="m/s"/>
     <define name="MIN_FWD_SPEED" value="-4.0" unit="m/s"/>
     <define name="MAX_LAT_SPEED" value="8.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
@@ -581,21 +581,13 @@
     <define name="MAG_Y_SENS" value="12.452858897859254" integer="16"/>
     <define name="MAG_Z_SENS" value="13.380450433986857" integer="16"/> -->
 
-    <!-- Calibration of rm3100 magnetometer cyberzoo 10-10-2022 -->
-    <!-- <define name="MAG_X_NEUTRAL" value="-335"/>
-    <define name="MAG_Y_NEUTRAL" value="196"/>
-    <define name="MAG_Z_NEUTRAL" value="-49"/>
-    <define name="MAG_X_SENS" value="0.5691560013402578" integer="16"/>
-    <define name="MAG_Y_SENS" value="0.5737689768733906" integer="16"/>
-    <define name="MAG_Z_SENS" value="0.4666644527755341" integer="16"/> -->
-
-    <!-- Calibration of rm3100 magnetometer cyberzoo new orientation 18-10-2022 -->
-    <define name="MAG_X_NEUTRAL" value="93"/>
-    <define name="MAG_Y_NEUTRAL" value="5"/>
-    <define name="MAG_Z_NEUTRAL" value="53"/>
-    <define name="MAG_X_SENS" value="0.5498701431103294" integer="16"/>
-    <define name="MAG_Y_SENS" value="0.5338087517305924" integer="16"/>
-    <define name="MAG_Z_SENS" value="0.5365074087394153" integer="16"/>
+    <!-- Calibration of rm3100 magnetometer valkenburg new orientation 18-10-2022 -->
+    <define name="MAG_X_NEUTRAL" value="117"/>
+    <define name="MAG_Y_NEUTRAL" value="15"/>
+    <define name="MAG_Z_NEUTRAL" value="89"/>
+    <define name="MAG_X_SENS" value="0.5636982319426423" integer="16"/>
+    <define name="MAG_Y_SENS" value="0.5472083409011995" integer="16"/>
+    <define name="MAG_Z_SENS" value="0.5356416855442763" integer="16"/>
 
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI" value="0" unit="deg"/>

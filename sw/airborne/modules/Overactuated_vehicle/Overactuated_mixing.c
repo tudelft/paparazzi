@@ -69,7 +69,7 @@ float euler_order[3];
 float psi_order_motor = 0;
 
 float K_beta = 0.1;
-float K_T_airspeed = 0.01; 
+float K_T_airspeed = 0.02;
 
 float Dynamic_MOTOR_K_T_OMEGASQ;
 
@@ -694,7 +694,7 @@ void overactuated_mixing_run(void)
             des_psi_dot = 0;  
         }
         else if( get_sys_time_float() - auto_test_time_start >= 2 && get_sys_time_float() - auto_test_time_start < 8){
-            des_Vx = 12;
+            des_Vx = 15;
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
@@ -702,7 +702,7 @@ void overactuated_mixing_run(void)
             des_psi_dot = 0;  
         }
         else if( get_sys_time_float() - auto_test_time_start >= 8 && get_sys_time_float() - auto_test_time_start < 12){
-            des_Vx = 12;
+            des_Vx = 15;
             des_Vy = 0;
             des_Vz = -2;
             des_phi = 0;
@@ -710,7 +710,7 @@ void overactuated_mixing_run(void)
             des_psi_dot = 0;  
         }
         else if( get_sys_time_float() - auto_test_time_start >= 12 && get_sys_time_float() - auto_test_time_start < 15){
-            des_Vx = 12;
+            des_Vx = 15;
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
@@ -718,7 +718,7 @@ void overactuated_mixing_run(void)
             des_psi_dot = 0;  
         }
         else if( get_sys_time_float() - auto_test_time_start >= 15 && get_sys_time_float() - auto_test_time_start < 25){
-            des_Vx = 12;
+            des_Vx = 15;
             des_Vy = 2.5;
             des_Vz = 0;
             des_phi = 0;
@@ -726,7 +726,7 @@ void overactuated_mixing_run(void)
             des_psi_dot = 0;   
         }
         else if( get_sys_time_float() - auto_test_time_start >= 25 && get_sys_time_float() - auto_test_time_start < 30){
-            des_Vx = 12;
+            des_Vx = 15;
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
@@ -1165,7 +1165,7 @@ void overactuated_mixing_run(void)
         am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
         am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
 
-        float manual_min_el_angle = -120;
+        float manual_min_el_angle = -130;
 
         extra_data_out_local[0] = Dynamic_MOTOR_K_T_OMEGASQ;
         extra_data_out_local[1] = OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ;
