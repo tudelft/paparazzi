@@ -31,9 +31,7 @@
 #include "modules/core/abi.h"
 
 // if the targetpos is meant for cyberzoo ( OUTDOOR FLIGTH -> CYBERZOO False )
-#ifndef CYBERZOO
-#define CYBERZOO False
-#endif
+#define CYBERZOO
 
 // The timeout when receiving GPS messages from the ground in ms
 #ifndef TARGET_POS_TIMEOUT
@@ -84,7 +82,7 @@
 #define TARGET_INTEGRATE_Z true
 #endif
 
-#if !CYBERZOO
+#ifndef CYBERZOO
 /* Initialize the main structure */
 struct target_t target = {
   .pos = {0},
@@ -98,7 +96,6 @@ struct target_t target = {
   .integrate_xy = TARGET_INTEGRATE_XY,
   .integrate_z = TARGET_INTEGRATE_Z
 };
-
 #else 
 /* Initialize the main structure */
 struct target_t target = {

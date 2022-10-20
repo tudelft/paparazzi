@@ -299,7 +299,7 @@ heading not defined at:
     <block name="Approach SHIP" strip_button="Approach SHIP" strip_icon="boat.png">
       <set value="TRUE" var="force_forward"/>
       <call_once fun="approach_moving_target_enable()"/>
-      <call_once fun="nav_set_heading_towards_waypoint(WP_SHIP)"/>
+      <!--call_once fun="nav_set_heading_towards_waypoint(WP_SHIP)"/-->
       <stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH"/>
     </block>
     <block name="REPEAT Approach SHIP" strip_button="REPEAT Approach SHIP" strip_icon="boat.png">
@@ -360,7 +360,7 @@ heading not defined at:
       <call_once fun="NavSetWaypointHere(WP__landHere)"/>
       <!--call_once fun="nav_set_heading_deg(70)"/-->
       <stay climb="-0.2" vmode="climb" wp="_landHere"/>
-      <exception cond="GetPosHeight() @LT 0.05" deroute="landed"/>
+      <exception cond="GetPosHeight() @LT 0.10" deroute="landed"/>
     </block>
     <block name="landed">
       <set value="FALSE" var="force_forward"/>

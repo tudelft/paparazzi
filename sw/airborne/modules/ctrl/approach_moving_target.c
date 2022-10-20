@@ -48,7 +48,7 @@ struct Amt amt = {
   .distance = 40,     // [m], diagonal decent line to ship
   .speed = -1.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
   #endif
-  .pos_gain = 200.2,    // [-], how aggresive drone tracks the descent line
+  .pos_gain = 1,    // was 200 [-], how aggresive drone tracks the descent line
   .psi_ref = 180.0,   // [deg], descent line direction offset w.r.t. heading ship
   .slope_ref = 19.471,  // [deg], slope descent line
   .speed_gain = 1.0,  // [-], how agressive ..................
@@ -199,7 +199,7 @@ void reset_moving_target_distance(void) {
 }
 
 
-
+/*
 void waveEstimation(void){
   const int filter_length = 20;
   static bool filter_full = false;
@@ -230,7 +230,7 @@ void waveEstimation(void){
   Bound(WaveInfl.certainty, 0, 100);
   filter_loopcounter++;
   if (filter_loopcounter >=filter_length) filter_loopcounter = 0;
-}
+}*/
 
 
 
@@ -261,7 +261,6 @@ void follow_diagonal_approach(void) {
     // TODO: What to do? Same can be checked for the velocity
     return;
   }
-  //
 
   target_get_vel(&target_vel_boat); // [m/s] update ground speed of the ship
   VECT3_SMUL(target_vel_boat, target_vel_boat, amt.speed_gain);
@@ -314,6 +313,9 @@ void follow_diagonal_approach(void) {
     Bound(des_vel.z, -nav_climb_vspeed, -nav_descend_vspeed);
   }
 
+  vect_bound_in_3d(&des_vel, 1.0);
+
+  /*
   #ifdef CYBERZOO
   Bound(des_vel.x, -0.5, 0.5); // not sure if this works // TEST
   Bound(des_vel.y, -0.5, 0.5); // not sure if this works // TEST
@@ -321,6 +323,7 @@ void follow_diagonal_approach(void) {
   Bound(des_vel.x, -2, 2); // not sure if this works // TEST
   Bound(des_vel.y, -2, 2); // not sure if this works // TEST
   #endif
+  */
 
   // TODO: read nav status/block inside this script
   // TODO: place this in a better place with a more robust if statement

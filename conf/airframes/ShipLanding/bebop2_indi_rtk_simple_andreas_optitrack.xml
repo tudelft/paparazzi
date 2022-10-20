@@ -26,14 +26,16 @@
     <module name="approach_moving_target"/>
       <define name="AMT_ERR_SLOWDOWN_GAIN" value="true"/>
 
-    <!-- GPS settings for bepop2 with "ZED-F9P RTK" gps via Xbee usb serial board HX-186-->
+    <!-- GPS settings for optitrack -->
+    <module name="gps" type="datalink"/>
+
+    <!-- GPS settings for bepop2 with "ZED-F9P RTK" gps via Xbee usb serial board HX-186
     <module name="gps" type="ublox">
-      <!--configure name="GPS_BAUD" value="B57600"/-->
       <configure name="GPS_BAUD" value="B115200"/>
       <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
       <define name="USE_GPS_UBX_RXM_RAW" value="TRUE"/>
-      <configure name="GPS_PORT" value="UART2"/> <!-- always UART2 or UART4 -->
-    </module>
+      <configure name="GPS_PORT" value="UART2"/>
+    </module>-->
     <!--module name="gps" type="ubx_ucenter"/-->
 
 
@@ -127,8 +129,8 @@
 
   <section name="INS" prefix="INS_">
     <define name="SONAR_MAX_RANGE" value="2.2"/>
-    <define name="USE_GPS_ALT_SPEED" value="TRUE"/> <!-- TRUE for optitrack -->
-    <define name="VFF_R_GPS" value="0.1"/> <!-- optitrack 0.01 ELSE 0.1 -->
+    <define name="USE_GPS_ALT_SPEED" value="FALSE"/> <!-- TRUE for optitrack -->
+    <define name="VFF_R_GPS" value="0.01"/> <!-- optitrack 0.01 ELSE 0.1 -->
   </section>
 
 
