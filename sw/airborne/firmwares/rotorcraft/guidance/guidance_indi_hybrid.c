@@ -277,7 +277,11 @@ void guidance_indi_run(float *heading_sp) {
   float speed_sp_b_x = cosf(psi) * speed_sp.x + sinf(psi) * speed_sp.y;
   float speed_sp_b_y =-sinf(psi) * speed_sp.x + cosf(psi) * speed_sp.y;
 
-  float airspeed = stateGetAirspeed_f();
+  #ifdef NO_AIRSPEED_SENSOR
+  float airspeed = stateGetSpeedNed_f(); // for drone without airspeed sensor
+  #else
+  float airspeed = stateGetAirspeed_f(); // for hybrid drone with airspeed sensor
+  #endif
 
   struct NedCoor_f *groundspeed = stateGetSpeedNed_f();
   struct FloatVect2 airspeed_v = {cos(psi)*airspeed, sin(psi)*airspeed};
