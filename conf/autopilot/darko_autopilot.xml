@@ -75,7 +75,7 @@
     </mode>
 
     <mode name="FORWARD" shortname="FWD">
-      <!--select cond="RCMode1()"/-->
+      <select cond="RCMode1()"/>
       <on_enter>
         <call fun="stabilization_attitude_enter()"/>
         <call fun="guidance_v_z_enter()"/>
@@ -92,7 +92,7 @@
     </mode>
 
     <mode name="NAV">
-      <select cond="RCMode1() && DLModeNav()" exception="HOME"/>
+      <select cond="RCMode2() " exception="HOME"/> <!--&& DLModeNav()-->
       <on_enter>
         <call fun="guidance_h_nav_enter()"/>
         <call fun="stabilization_attitude_enter()"/>
@@ -112,7 +112,7 @@
     </mode>
 
     <mode name="GUIDED">
-      <select cond="RCMode1() && DLModeGuided()" exception="HOME"/>
+      <!--select cond="RCMode2() && DLModeGuided()" exception="HOME"/-->
       <on_enter>
         <call fun="guidance_h_hover_enter()"/>
         <call fun="stabilization_attitude_enter()"/>
@@ -134,7 +134,6 @@
 
     <mode name="HOVERWIND">
       <!--select cond="RCMode2() && DLModeHover()" exception="HOME"/-->
-      <select cond="RCMode2()"/>
       <on_enter>
         <call fun="stabilization_hover_wind_init()"/>
       </on_enter>
