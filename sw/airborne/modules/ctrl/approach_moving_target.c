@@ -40,8 +40,8 @@ float approach_moving_target_angle_deg;
 
 // settings how drone should approach the ship
 struct Amt amt = {
-  .distance = 40,     // [m], diagonal decent line to ship
-  .speed = -1.0,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
+  .distance = 60,     // [m], diagonal decent line to ship
+  .speed = -0.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
   .pos_gain = 200.2,    // [-], how aggresive drone tracks the descent line
   .psi_ref = 180.0,   // [deg], descent line direction offset w.r.t. heading ship
   .slope_ref = 19.471,  // [deg], slope descent line
@@ -50,15 +50,7 @@ struct Amt amt = {
   .approach_speed_gain = 1.0,
   .enabled_time = 0,
   .wp_ship_id = 0,
-  .wp_approach_id = 0,
-  .wp_carrot_id = 0,
-  .last_lag = 0,
-  .lag = 0,
-  .integral_gain_carrot = 1.0,
-  .pid_error = 0,
-  .pid_errorLast = 0,
-  .pid_errorSum = 0,
-  .pid_last_timestamp = 0
+  .wp_approach_id = 0
 };
 
 // settings how drone should approach the ship
@@ -186,11 +178,10 @@ void update_waypoint(uint8_t wp_id, struct FloatVect3 * target_ned) {
 }
 
 // Function to enable from flight plan (call repeatedly!)
-void approach_moving_target_enable(uint8_t wp_ship_id, uint8_t wp_approach_id, uint8_t wp_carrot_id) { 
+void approach_moving_target_enable(uint8_t wp_ship_id, uint8_t wp_approach_id) { 
   amt.enabled_time = get_sys_time_msec(); // this makes folow_diagonal_approach()
   amt.wp_ship_id = wp_ship_id;
   amt.wp_approach_id = wp_approach_id;
-  amt.wp_carrot_id = wp_carrot_id;
 }
 
 // Function to enable from flight plan (call repeatedly!)
@@ -273,14 +264,11 @@ void follow_diagonal_approach(void) {
   amt.rel_unit_vec.x = cosf(gamma_ref) * cosf(psi_ref);
   amt.rel_unit_vec.y = cosf(gamma_ref) * sinf(psi_ref); 
   amt.rel_unit_vec.z = -sinf(gamma_ref);
-  //printf("amt.rel_unit_vec.z %f \n", amt.rel_unit_vec.z);
 
   // Multiply vector with prefered descent dist to get ref point of descent
   // Desired position = rel_pos + target_pos_boat ??????????????
   struct FloatVect3 ref_relpos;
   VECT3_SMUL(ref_relpos, amt.rel_unit_vec, amt.distance); //calculate decscent point
-
-  //printf("ref_relpos.z %f \n", ref_relpos.z);
 
   // Add ref point of descent to ship location to get NED coordinate ref point of descent
   // ATTENTION, target_pos_boat is already relative now!
@@ -310,7 +298,7 @@ void follow_diagonal_approach(void) {
     ref_relvel.z + target_vel_boat.z + ec_vel.z,
   };
 
-  vect_bound_in_3d(&des_vel, 5.0); // maximum velocity of INDI controller
+  vect_bound_in_3d(&des_vel, 10.0);
 
   // Bound vertical speed setpoint
   if(stateGetAirspeed_f() > 13.0) {
@@ -319,28 +307,11 @@ void follow_diagonal_approach(void) {
     Bound(des_vel.z, -nav_climb_vspeed, -nav_descend_vspeed);
   }
 
-  // ToDo:
-  // What does VEL_SP do?
-  // this is used by guidance INDI hybrid, but not by normal guidance INDI...
-  //AbiSendMsgVEL_SP(VEL_SP_FCR_ID, &des_vel); // ????????????????????????????????????????????? NOT USED ????????????????????????????
-
-  /////////////////////////////// TEST
-  /*
-  struct FloatVect3 ned_drone_vel;
-  ned_drone_vel.x = stateGetSpeedNed_f()->x;
-  ned_drone_vel.y = stateGetSpeedNed_f()->y;
-  struct FloatVect3 ned_corr_vel;
-  VECT3_DIFF(ned_corr_vel, des_vel, ned_drone_vel)
-  struct FloatVect3 scaled_ned_corr_vel;
-  VECT3_SMUL(scaled_ned_corr_vel, ned_corr_vel, 1.0)
-  AbiSendMsgACCEL_SP(VEL_SP_FCR_ID, 1,&scaled_ned_corr_vel);
-  printf("scaled_ned_corr_vel X: %f , \t Y: %f , \t Z: %f \n", scaled_ned_corr_vel.x, scaled_ned_corr_vel.y, scaled_ned_corr_vel.z);
-  */
-  /////////////////////////////// TEST
+  AbiSendMsgVEL_SP(VEL_SP_FCR_ID, &des_vel); // ?????????????????????????????????????????????????????????????????????????
 
   /* limit the speed such that the vertical component is small enough
   * and doesn't outrun the vehicle
-  
+  */
   float min_speed;
   float sin_gamma_ref = sinf(gamma_ref);
   if (sin_gamma_ref > 0.05) {
@@ -351,7 +322,6 @@ void follow_diagonal_approach(void) {
 
   // The upper bound is not very important
   Bound(amt.speed, min_speed, 4.0);
-  */
 
   // Reduce approach speed if the error is large
   float norm_pos_err_sq = VECT3_NORM2(pos_err);
@@ -386,132 +356,11 @@ void follow_diagonal_approach(void) {
 
   VECT3_SUM(ned_pos_approach, rel_des_pos, *drone_pos);
 
-  update_waypoint(amt.wp_approach_id, &ned_pos_approach);  
-  //printf("ned_pos_approach.z %f \n", ned_pos_approach.z);
-
-  struct FloatVect3 ned_pos_carrot; // TEST: SHIFT CARROT FORWARD TO REDUCE STEADY STATE ERROR
-  struct FloatVect3 carrot_correction; // TEST: SHIFT CARROT FORWARD TO REDUCE STEADY STATE ERROR
-  VECT3_COPY(ned_pos_carrot, ned_pos_approach);
-
-  // TEST 1
-  /*
-  float c_rot = cosf(RadOfDeg(90-target_heading));
-  float s_rot = sinf(RadOfDeg(90-target_heading));
-
-
-  float x_new = pos_err.x*c_rot - pos_err.y*s_rot;
-  float y_new = pos_err.x*s_rot + pos_err.y*c_rot;
-
-  //printf(" x: %f   y: %f  \n", x_new, y_new);
-  //printf("target heading: %f \n", target_heading);
-
-  Bound(y_new, 0, 5); // bound correction to only forward of the position (wrt moving direction) and max 5 meters
-
-  carrot_correction.x = 0;
-  carrot_correction.y = y_new*0.2 + carrot_correction.y*0.8;
-  carrot_correction.z = 0;
-  //printf(" Carrot corr x: %f   y: %f  \n", carrot_correction.x, carrot_correction.y);
-
-  float c_rot_back = cosf(RadOfDeg(90+target_heading));
-  float s_rot_back = sinf(RadOfDeg(90+target_heading));
-
-  float N_carrot = carrot_correction.x*c_rot_back - carrot_correction.y*s_rot_back;
-  float E_carrot = carrot_correction.x*s_rot_back + carrot_correction.y*c_rot_back;
-
-  carrot_correction.x = E_carrot;
-  carrot_correction.y = N_carrot;
-  carrot_correction.z = 0;
- */
-
-  
-  //VECT3_ADD_SCALED(ned_pos_carrot, carrot_correction, 1.0);
-
- 
-
-  // TEST 2 
-  /*
-  float horizontal_error_dist = sqrtf(pos_err.x*pos_err.x + pos_err.y*pos_err.y);
-  float horizontal_velocity_boat = sqrtf(target_vel_boat.x*target_vel_boat.x+target_vel_boat.y*target_vel_boat.y);
-  float estm_lag = horizontal_error_dist/horizontal_velocity_boat;
-  printf("esimated lag: %f effective lag: %f \n", estm_lag, amt.lag);
-
-  if ((estm_lag - amt.last_lag) > 0){ // points diverging
-    amt.lag = amt.lag + amt.integral_gain_carrot/1000;
-  }
-  else {                              // points comming together
-    amt.lag = amt.lag - amt.integral_gain_carrot/1000;  
-  }
-  Bound(amt.lag, 0, 2); // maximum 2 seconds lag compensation
-
-  amt.last_lag = estm_lag;
-
-  carrot_correction.x = target_vel_boat.x*amt.lag;
-  carrot_correction.y = target_vel_boat.y*amt.lag;
-  carrot_correction.z = 0;
-
-  VECT3_ADD_SCALED(ned_pos_carrot, carrot_correction, 1.0);
-  */
-
-  // TEST 3 
-  // PID control
-  /*
-  // x is North
-  // y is east
-  // z is down
-
-  float rot_sin = sinf(RadOfDeg(target_heading));
-  float rot_cos = cosf(RadOfDeg(target_heading));
-
-  float pos_err_forw_ship = pos_err.x * rot_cos  + pos_err.y * rot_sin;
-  float pos_err_side_ship = pos_err.x * -rot_sin + pos_err.y * rot_cos;
-  //printf("error wrt ship forward: %f , \t side: %f \n", pos_err_forw_ship, pos_err_side_ship);
-  
-  float kp = 1;
-  float ki = 0;
-  float kd = 0.5;
-  amt.pid_error = pos_err_forw_ship; //pow(pow(pos_err.x, 2) + pow(pos_err.y, 2), 0.5);
-  float time_step = (float)(get_sys_time_msec()- amt.pid_last_timestamp) / 1000;
-  float derrivative_error = ((amt.pid_error - amt.pid_errorLast) / time_step); // SOMEHOW BIG STEP IN DERRIVATIVE ERROR IN SIMULATION
-  printf("D: %f , \t err: %f , \t last_err: %f , \t timestep: %f \n", derrivative_error, amt.pid_error, amt.pid_errorLast, time_step);
-  amt.pid_errorSum += amt.pid_error*time_step;
-
-  amt.pid_errorLast = amt.pid_error;
-  amt.pid_last_timestamp = get_sys_time_msec();
-
-  float P_val = kp*amt.pid_error;
-  float I_val = ki*amt.pid_errorSum;
-  float D_val = kd*derrivative_error;
-
-  float PID_value = P_val + I_val + D_val;
-  printf("fwrd_err: %f , \t PID value: %f , \t P: %f , \t I: %f , \t D: %f , \t timestep: %f \n", pos_err_forw_ship, PID_value, P_val, I_val, D_val, time_step);
-  Bound(PID_value, 0, 5); // bound correction distance to 5 meters
-
-  float unit_vec_x_ship = target_vel_boat.x / pow(pow(target_vel_boat.x, 2)+pow(target_vel_boat.y, 2), 0.5);
-  float unit_vec_y_ship = target_vel_boat.y / pow(pow(target_vel_boat.x, 2)+pow(target_vel_boat.y, 2), 0.5);
-
-  carrot_correction.x = unit_vec_x_ship*PID_value;
-  carrot_correction.y = unit_vec_y_ship*PID_value;
-  carrot_correction.z = 0;
-  VECT3_ADD_SCALED(ned_pos_carrot, carrot_correction, 1.0);
-  */
-
-  // TEST 4
-  /*
-  float rot_sin = sinf(RadOfDeg(target_heading));
-  float rot_cos = cosf(RadOfDeg(target_heading));
-
-  float pos_err_forw_ship = pos_err.x * rot_cos  + pos_err.y * rot_sin;
-  float pos_err_side_ship = pos_err.x * -rot_sin + pos_err.y * rot_cos;
-  printf("error wrt ship forward: %f , \t side: %f \n", pos_err_forw_ship, pos_err_side_ship);
-  */
-
-  // TEST BASIC:
-  VECT3_ADD_SCALED(ned_pos_carrot, pos_err, 1.0);
-
-  update_waypoint(amt.wp_carrot_id, &ned_pos_carrot); // TESTING CARROT
+  update_waypoint(amt.wp_approach_id, &ned_pos_approach);
 
   // Update values for telemetry
   VECT3_COPY(amt_telem.des_pos, rel_des_pos); 
+  
   VECT3_COPY(amt_telem.des_vel, des_vel);
 
   // Update values for telemetry
