@@ -222,7 +222,7 @@ heading not defined at:
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavKillThrottle()"/>
       <while cond="!GpsFixValid() || !state.ned_initialized_i"/>
-      <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH)"/>
+      <call_once fun="approach_moving_target_enable()"/>
       <deroute block="Geo init"/>
     </block>
     <block name="Geo init">
@@ -230,13 +230,14 @@ heading not defined at:
       <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetAltitudeReferenceHere()"/>
       <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
+      <call_once fun="init_wp_ids(WP_SHIP, WP_APPROACH)"/>
       <deroute block="Holding point kill"/>
     </block>
     <block name="Holding point hover">
       <set value="FALSE" var="force_forward"/>
       <!--call_once fun="NavSetWaypointHere(WP__StayHover)"/-->
       <call_once fun="NavSetAlt(WP__StayHover, GetPosAlt())"/>
-      <call_once fun="nav_set_heading_deg(EASYHEADING)"/>
+      <!--call_once fun="nav_set_heading_deg(EASYHEADING)"/-->
       <!--stay alt="GetPosAlt()" wp="_StayHover"/-->
       <stay wp="_StayHover"/>
     </block>
@@ -282,24 +283,29 @@ heading not defined at:
     </block>
     <block name="GoTo Approach point" strip_button="GoTo Approach point">
       <set value="FALSE" var="force_forward"/>
-      <!--call_once fun="nav_set_heading_deg(70)"/->
-      <stay alt="WaypointAlt(WP_APPROACH)" pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH)" wp="APPROACH"/>
+      <!--call_once fun="nav_set_heading_deg(70)"/-->
+      <stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH"/> <!--pre_call="approach_moving_target_enable()"-->
+    </block>
+    <block name="GoTo Approach point 1.5m" strip_button="GoTo Approach point 1.5m">
+      <set value="FALSE" var="force_forward"/>
+      <!--call_once fun="nav_set_heading_deg(70)"/-->
+      <stay alt="1.5" wp="APPROACH"/> <!--pre_call="approach_moving_target_enable()"-->
     </block>
     <block name="GoTo Ship" strip_button="GoTo Ship">
       <set value="FALSE" var="force_forward"/>
       <!--call_once fun="nav_set_heading_deg(70)"/-->
-      <stay alt="WaypointAlt(WP_SHIP)" pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH)" wp="SHIP"/>
+      <stay alt="WaypointAlt(WP_SHIP)"  wp="SHIP"/> <!--pre_call="approach_moving_target_enable()"-->
     </block>
     <block name="Approach SHIP" strip_button="Approach SHIP" strip_icon="boat.png">
       <set value="TRUE" var="force_forward"/>
-      <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH)"/>
+      <call_once fun="approach_moving_target_enable()"/>
       <call_once fun="nav_set_heading_towards_waypoint(WP_SHIP)"/>
       <stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH"/>
     </block>
     <block name="REPEAT Approach SHIP" strip_button="REPEAT Approach SHIP" strip_icon="boat.png">
       <stay until="get_dist2_to_waypoint(WP_APPROACH) @LT 0.5" wp="APPROACH"/>  <!-- NEED TO TEST: does the drone first go to the waypoint before het waypoint starts shifting to the ship? -->
       <set value="TRUE" var="force_forward"/>
-      <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH)"/>
+      <call_once fun="approach_moving_target_enable()"/>
       <!--call_once fun="nav_set_heading_towards_waypoint(WP_SHIP)"/-->
       <stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/>
       <stay alt="2.5" wp="SHIP" until="GetPosHeight() @GT 2.2"/>

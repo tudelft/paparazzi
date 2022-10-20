@@ -36,12 +36,18 @@ float approach_moving_target_angle_deg;
 
 
 #define DEBUG_AMT TRUE
+#define CYBERZOO
 #include <stdio.h>
 
 // settings how drone should approach the ship
 struct Amt amt = {
-  .distance = 60,     // [m], diagonal decent line to ship
+  #ifdef CYBERZOO
+  .distance = 4,     // [m], diagonal decent line to ship
   .speed = -0.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
+  #else
+  .distance = 40,     // [m], diagonal decent line to ship
+  .speed = -1.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
+  #endif
   .pos_gain = 200.2,    // [-], how aggresive drone tracks the descent line
   .psi_ref = 180.0,   // [deg], descent line direction offset w.r.t. heading ship
   .slope_ref = 19.471,  // [deg], slope descent line
@@ -177,11 +183,14 @@ void update_waypoint(uint8_t wp_id, struct FloatVect3 * target_ned) {
   //} );
 }
 
-// Function to enable from flight plan (call repeatedly!)
-void approach_moving_target_enable(uint8_t wp_ship_id, uint8_t wp_approach_id) { 
-  amt.enabled_time = get_sys_time_msec(); // this makes folow_diagonal_approach()
+void init_wp_ids(uint8_t wp_ship_id, uint8_t wp_approach_id){
   amt.wp_ship_id = wp_ship_id;
   amt.wp_approach_id = wp_approach_id;
+}
+
+// Function to enable from flight plan (call repeatedly!)
+void approach_moving_target_enable() { 
+  amt.enabled_time = get_sys_time_msec(); // this makes folow_diagonal_approach()
 }
 
 // Function to enable from flight plan (call repeatedly!)
@@ -298,8 +307,6 @@ void follow_diagonal_approach(void) {
     ref_relvel.z + target_vel_boat.z + ec_vel.z,
   };
 
-  vect_bound_in_3d(&des_vel, 10.0);
-
   // Bound vertical speed setpoint
   if(stateGetAirspeed_f() > 13.0) {
     Bound(des_vel.z, -4.0, 5.0);
@@ -307,7 +314,21 @@ void follow_diagonal_approach(void) {
     Bound(des_vel.z, -nav_climb_vspeed, -nav_descend_vspeed);
   }
 
-  AbiSendMsgVEL_SP(VEL_SP_FCR_ID, &des_vel); // ?????????????????????????????????????????????????????????????????????????
+  #ifdef CYBERZOO
+  Bound(des_vel.x, -0.5, 0.5); // not sure if this works // TEST
+  Bound(des_vel.y, -0.5, 0.5); // not sure if this works // TEST
+  #else
+  Bound(des_vel.x, -2, 2); // not sure if this works // TEST
+  Bound(des_vel.y, -2, 2); // not sure if this works // TEST
+  #endif
+
+  // TODO: read nav status/block inside this script
+  // TODO: place this in a better place with a more robust if statement
+  //if (!force_forward){
+  if ((get_sys_time_msec() - amt.enabled_time) < 1000) { 
+    AbiSendMsgVEL_SP(VEL_SP_FCR_ID, &des_vel); 
+  }
+
 
   /* limit the speed such that the vertical component is small enough
   * and doesn't outrun the vehicle

@@ -72,7 +72,8 @@ extern float amt_err_slowdown_gain;
 
 extern void approach_moving_target_init(void);
 extern void follow_diagonal_approach(void);
-extern void approach_moving_target_enable(uint8_t wp_ship_id, uint8_t wp_approach_id);
+extern void approach_moving_target_enable();
+extern void init_wp_ids(uint8_t wp_ship_id, uint8_t wp_approach_id);
 extern void reset_moving_target_distance(void);
 extern void waveEstimation(void);
 
