@@ -102,7 +102,7 @@ class Base:
 
             print("lat0,long0,alt0 position = Cyberzoo")
             self.lat0 = 51.9906114 #deg
-            self.lon0 = 4.3767883 #deg
+            self.lon0 = 4.3767600 #deg
 
         self.lat = self.lat0
         self.lon = self.lon0

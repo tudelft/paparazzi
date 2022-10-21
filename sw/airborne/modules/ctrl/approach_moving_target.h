@@ -36,6 +36,7 @@ struct Amt {
   struct FloatVect3 rel_unit_vec;
   float distance;
   float speed;
+  float accel_gain;
   float pos_gain;
   float psi_ref;
   float slope_ref;

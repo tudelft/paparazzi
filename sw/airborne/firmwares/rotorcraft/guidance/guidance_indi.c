@@ -178,7 +178,7 @@ void guidance_indi_enter(void)
  */
 void guidance_indi_run(float *heading_sp)
 {
-  printf("guidance_indi_run (NOT hybrid) \n");
+  //printf("guidance_indi_run (NOT hybrid) \n");
   struct FloatEulers eulers_yxz;
   struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
   float_eulers_of_quat_yxz(&eulers_yxz, statequat);
@@ -399,6 +399,7 @@ static void accel_sp_cb(uint8_t sender_id __attribute__((unused)), uint8_t flag,
     indi_accel_sp.z = accel_sp->z;
     indi_accel_sp_set_3d = true;
     time_of_accel_sp_3d = get_sys_time_float();
+    printf("indi_accel_sp.x: %f \n", indi_accel_sp.x);
   }
 }
 

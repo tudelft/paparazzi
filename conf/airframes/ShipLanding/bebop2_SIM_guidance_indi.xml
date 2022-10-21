@@ -21,6 +21,8 @@
     <module name="actuators" type="bebop"/>
     <module name="imu" type="bebop"/>
     <module name="gps" type="ublox"/>
+    <!-- TODO: test this module -->
+    <module name="guidance" type="indi"/>
     <module name="stabilization" type="indi_simple"/>
     <module name="ins" type="ekf2">
       <define name="INS_EKF2_OPTITRACK" value="true"/>

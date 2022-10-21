@@ -42,12 +42,13 @@ float approach_moving_target_angle_deg;
 // settings how drone should approach the ship
 struct Amt amt = {
   #ifdef CYBERZOO
-  .distance = 4,     // [m], diagonal decent line to ship
+  .distance = 40,     // [m], diagonal decent line to ship
   .speed = -0.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
   #else
   .distance = 40,     // [m], diagonal decent line to ship
   .speed = -1.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
   #endif
+  .accel_gain = 1,
   .pos_gain = 1,    // was 200 [-], how aggresive drone tracks the descent line
   .psi_ref = 180.0,   // [deg], descent line direction offset w.r.t. heading ship
   .slope_ref = 19.471,  // [deg], slope descent line
@@ -56,7 +57,8 @@ struct Amt amt = {
   .approach_speed_gain = 1.0,
   .enabled_time = 0,
   .wp_ship_id = 0,
-  .wp_approach_id = 0
+  .wp_approach_id = 0,
+  .steady_state_error = 0
 };
 
 // settings how drone should approach the ship
@@ -105,6 +107,8 @@ static void send_approach_moving_target(struct transport_tx *trans, struct link_
   //                             &amt_telem.des_vel.z,
   //                             &amt.distance
   //                             );
+  int32_t enabled_time_diff = (get_sys_time_msec() - amt.enabled_time);
+  
    pprz_msg_send_APPROACH_MOVING_TARGET(trans, dev, AC_ID,
                               &amt_telem.des_pos.x,
                               &amt_telem.des_pos.y,
@@ -124,7 +128,8 @@ static void send_approach_moving_target(struct transport_tx *trans, struct link_
                               &amt.distance,
                               &amt_telem.approach_speed,
                               &amt.slope_ref,
-                              &force_forward
+                              &force_forward,
+                              &enabled_time_diff
                               );
 }
 #endif
@@ -288,7 +293,7 @@ void follow_diagonal_approach(void) {
   // ------------------------------------------------------------------------- ADD MORE COMMENTS FROM HERE ON
 
   struct FloatVect3 ref_relvel;
-  VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt.speed * amt.relvel_gain); 
+  VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt.speed * amt.relvel_gain* (int)force_forward); 
 
   // error controller
   struct FloatVect3 pos_err;
@@ -300,7 +305,7 @@ void follow_diagonal_approach(void) {
   VECT3_SMUL(ec_vel, pos_err, amt.pos_gain);
 
   // desired velocity = rel_vel + target_vel_boat + error_controller(using NED position)
-  printf("ref_relvel.x: %f \t target_vel_boat.x: %f \t ec_vel.x: %f \n", ref_relvel.x, target_vel_boat.x, ec_vel.x);
+  //printf("ref_relvel.x: %f \t target_vel_boat.x: %f \t ec_vel.x: %f \n", ref_relvel.x, target_vel_boat.x, ec_vel.x);
   struct FloatVect3 des_vel = {
     ref_relvel.x + target_vel_boat.x + ec_vel.x,
     ref_relvel.y + target_vel_boat.y + ec_vel.y,
@@ -314,7 +319,7 @@ void follow_diagonal_approach(void) {
     Bound(des_vel.z, -nav_climb_vspeed, -nav_descend_vspeed);
   }
 
-  vect_bound_in_3d(&des_vel, 5.0); 
+  vect_bound_in_2d(&des_vel, 5.0); 
 
   /*
   #ifdef CYBERZOO
@@ -330,7 +335,19 @@ void follow_diagonal_approach(void) {
   // TODO: place this in a better place with a more robust if statement
   //if (!force_forward){
   if ((get_sys_time_msec() - amt.enabled_time) < 1000) { 
-    AbiSendMsgVEL_SP(VEL_SP_FCR_ID, &des_vel); 
+    //AbiSendMsgVEL_SP(VEL_SP_FCR_ID, &des_vel); 
+    struct FloatVect3 des_accel;
+    struct FloatVect3 current_vel_ned; 
+    struct FloatVect3 err_speed;
+    current_vel_ned.x = stateGetSpeedNed_f()->x;
+    current_vel_ned.y = stateGetSpeedNed_f()->y;
+    current_vel_ned.z = stateGetSpeedNed_f()->z;
+    VECT3_DIFF(err_speed, des_vel, current_vel_ned);
+    VECT3_SMUL(des_accel, err_speed, 1.0);
+    //printf("ref_relvel.x: %f \t target_vel_boat.x: %f \t ec_vel.x: %f \t des_accel.x: %f \n", ref_relvel.x, target_vel_boat.x, ec_vel.x, des_accel.x);
+
+    int flag = 0; // 0 is 2d, 1 is 3D
+    AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, flag, &des_accel);
   }
 
 
@@ -357,8 +374,9 @@ void follow_diagonal_approach(void) {
   // Check if the flight plan recently called the enable function
   // make distance to ship smaller, So descent to ship
 
-  if ( (get_sys_time_msec() - amt.enabled_time) > (2000 / NAVIGATION_FREQUENCY) && force_forward) {
+  if ( (get_sys_time_msec() - amt.enabled_time) < (2000 / NAVIGATION_FREQUENCY) && force_forward) {
     // integrate speed to get the distance
+    //printf("moving_towards_ship \n");
     float dt = FOLLOW_DIAGONAL_APPROACH_PERIOD;
     amt.distance += amt_telem.approach_speed*dt;
     Bound(amt.distance, 0, 100); // approach dist > 0

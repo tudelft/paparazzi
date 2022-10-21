@@ -1194,14 +1194,25 @@
       <field name="comp_id"          type="uint8" values="NONE|GENERIC|IR|ICQ|ICE|FC|DCM|FINV|MLKF|GX3|CHIMU|VN"/>
     </message>
 
-    <message name="APPROACH_MOVING_TARGET" id="135">
+     <message name="APPROACH_MOVING_TARGET" id="135">
       <field name="ref_pos_x" type="float" unit="m"/>
       <field name="ref_pos_y" type="float" unit="m"/>
       <field name="ref_pos_z" type="float" unit="m"/>
       <field name="ref_vel_x" type="float" unit="m/s"/>
       <field name="ref_vel_y" type="float" unit="m/s"/>
       <field name="ref_vel_z" type="float" unit="m/s"/>
+      <field name="target_pos_x" type="float" unit="m"/>
+      <field name="target_pos_y" type="float" unit="m"/>
+      <field name="target_pos_z" type="float" unit="m"/>
+      <field name="target_vel_x" type="float" unit="m/s"/>
+      <field name="target_vel_y" type="float" unit="m/s"/>
+      <field name="target_vel_z" type="float" unit="m/s"/>
+      <field name="start_distance" type="float" unit="m"/>
       <field name="distance" type="float" unit="m"/>
+      <field name="approach_speed" type="float" unit="m/s"/>
+      <field name="slope_ref" type="float" unit="m"/>
+      <field name="force_forward" type="uint8" unit="bool"/>
+      <field name="enabled_time_diff" type="int32" unit="ms"/>
     </message>
 
     <message name="RATE_LOOP" id="136">
