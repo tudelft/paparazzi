@@ -76,7 +76,7 @@ heading not defined at:
     #include "modules/ctrl/target_pos.h"
     #include "modules/energy/electrical.h"
     
-    #define EASYHEADING 180
+    <!--#define EASYHEADING 180 -->
 </header>
   <waypoints>
     <waypoint lat="52.168221" lon="4.412767" name="CONCRETE"/>
