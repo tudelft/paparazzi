@@ -191,9 +191,9 @@ void guidance_indi_run(float *heading_sp)
   float pos_z_err = POS_FLOAT_OF_BFP(guidance_v_z_ref - stateGetPositionNed_i()->z);
 
   // Use feed forward part from reference model
-  speed_sp.x = pos_x_err * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(guidance_h.ref.speed.x);
-  speed_sp.y = pos_y_err * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(guidance_h.ref.speed.y);
-  speed_sp.z = pos_z_err * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(guidance_v_zd_ref);
+  speed_sp.x = pos_x_err * guidance_indi_pos_gain;// + SPEED_FLOAT_OF_BFP(guidance_h.ref.speed.x);
+  speed_sp.y = pos_y_err * guidance_indi_pos_gain;// + SPEED_FLOAT_OF_BFP(guidance_h.ref.speed.y);
+  speed_sp.z = pos_z_err * guidance_indi_pos_gain;// + SPEED_FLOAT_OF_BFP(guidance_v_zd_ref);
 
   // If the acceleration setpoint is set over ABI message
   if (indi_accel_sp_set_2d) {
@@ -216,9 +216,9 @@ void guidance_indi_run(float *heading_sp)
       indi_accel_sp_set_3d = false;
     }
   } else {
-    sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * guidance_indi_speed_gain + ACCEL_FLOAT_OF_BFP(guidance_h.ref.accel.x);
-    sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * guidance_indi_speed_gain + ACCEL_FLOAT_OF_BFP(guidance_h.ref.accel.y);
-    sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * guidance_indi_speed_gain + ACCEL_FLOAT_OF_BFP(guidance_v_zdd_ref);
+    sp_accel.x = (speed_sp.x - stateGetSpeedNed_f()->x) * guidance_indi_speed_gain;// + ACCEL_FLOAT_OF_BFP(guidance_h.ref.accel.x);
+    sp_accel.y = (speed_sp.y - stateGetSpeedNed_f()->y) * guidance_indi_speed_gain;// + ACCEL_FLOAT_OF_BFP(guidance_h.ref.accel.y);
+    sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * guidance_indi_speed_gain;// + ACCEL_FLOAT_OF_BFP(guidance_v_zdd_ref);
   }
 
 #if GUIDANCE_INDI_RC_DEBUG
