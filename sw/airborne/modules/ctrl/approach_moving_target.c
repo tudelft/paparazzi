@@ -42,7 +42,7 @@ float approach_moving_target_angle_deg;
 // settings how drone should approach the ship
 struct Amt amt = {
   #ifdef CYBERZOO
-  .distance = 40,     // [m], diagonal decent line to ship
+  .distance = 4,     // [m], diagonal decent line to ship
   .speed = -0.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
   #else
   .distance = 40,     // [m], diagonal decent line to ship
@@ -53,12 +53,12 @@ struct Amt amt = {
   .psi_ref = 180.0,   // [deg], descent line direction offset w.r.t. heading ship
   .slope_ref = 19.471,  // [deg], slope descent line
   .speed_gain = 1.0,  // [-], how agressive ..................
-  .relvel_gain = 1.0, // [-], ................................
+  .relvel_gain = 0.75, // [-], ................................
   .approach_speed_gain = 1.0,
   .enabled_time = 0,
   .wp_ship_id = 0,
   .wp_approach_id = 0,
-  .steady_state_error = 0
+  .target_heigth = 0
 };
 
 // settings how drone should approach the ship
@@ -72,16 +72,6 @@ struct Wave WaveInfl = {
   .estmInterval = 0,          // [sec]  the estimated interval in beteween the waves
   .estmAmp = 0,               // [m]    the estimated amplitude of the waves
   .certainty = 0              // [%]    how certain the system is of the wave shape/interval
-};
-
-// Telemetry info to send from drone to base
-struct AmtTelem {
-  struct FloatVect3 des_pos; // descent point to follow 
-  struct FloatVect3 des_vel;
-  struct FloatVect3 target_pos; //ship landing position
-  struct FloatVect3 target_vel;
-  float start_distance;
-  float approach_speed;
 };
 
 struct AmtTelem amt_telem;
@@ -155,6 +145,7 @@ void target_parse_RC_4CH(uint8_t *buf)
 {
   // Save the receivd rotating knob value
   amt.approach_speed_gain = (float)DL_RC_4CH_rotating_knob(buf)/100;
+
 }
 
 
@@ -293,7 +284,7 @@ void follow_diagonal_approach(void) {
   // ------------------------------------------------------------------------- ADD MORE COMMENTS FROM HERE ON
 
   struct FloatVect3 ref_relvel;
-  VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt.speed * amt.relvel_gain* (int)force_forward); 
+  VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt.approach_speed_gain * amt.speed * amt.relvel_gain * (int)force_forward); 
 
   // error controller
   struct FloatVect3 pos_err;
@@ -304,11 +295,22 @@ void follow_diagonal_approach(void) {
   VECT3_COPY(pos_err, rel_des_pos);
   VECT3_SMUL(ec_vel, pos_err, amt.pos_gain);
 
+  // TODO improve + test
+  float integral_gain = 0.001;
+  VECT3_ADD_SCALED(amt.steady_state_error, pos_err, (integral_gain/NAVIGATION_FREQUENCY));
+  if (abs(pos_err.x) > 0.5) amt.steady_state_error.x = 0;
+  if (abs(pos_err.y) > 0.5) amt.steady_state_error.y = 0;
+  //if (abs(pos_err.x) < 0.005) amt.steady_state_error.x = 0;
+  //if (abs(pos_err.y) < 0.005) amt.steady_state_error.y = 0;
+  printf("steady_state_error.x: %f \n", amt.steady_state_error.x);
+  struct FloatVect3 integral_compenstation;
+  VECT3_COPY(integral_compenstation, amt.steady_state_error);
+
   // desired velocity = rel_vel + target_vel_boat + error_controller(using NED position)
   //printf("ref_relvel.x: %f \t target_vel_boat.x: %f \t ec_vel.x: %f \n", ref_relvel.x, target_vel_boat.x, ec_vel.x);
   struct FloatVect3 des_vel = {
-    ref_relvel.x + target_vel_boat.x + ec_vel.x,
-    ref_relvel.y + target_vel_boat.y + ec_vel.y,
+    ref_relvel.x + target_vel_boat.x + ec_vel.x, // + integral_compenstation.x,
+    ref_relvel.y + target_vel_boat.y + ec_vel.y, // + integral_compenstation.y,
     ref_relvel.z + target_vel_boat.z + ec_vel.z,
   };
 
@@ -346,7 +348,7 @@ void follow_diagonal_approach(void) {
     VECT3_SMUL(des_accel, err_speed, 1.0);
     //printf("ref_relvel.x: %f \t target_vel_boat.x: %f \t ec_vel.x: %f \t des_accel.x: %f \n", ref_relvel.x, target_vel_boat.x, ec_vel.x, des_accel.x);
 
-    int flag = 0; // 0 is 2d, 1 is 3D
+    int flag = 1; // 0 is 2d, 1 is 3D
     AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, flag, &des_accel);
   }
 
@@ -400,7 +402,12 @@ void follow_diagonal_approach(void) {
   VECT3_SUM(ned_pos_approach, rel_des_pos, *drone_pos);
 
   update_waypoint(amt.wp_approach_id, &ned_pos_approach);
-
+  // TEST TO SOLVE HEIGHT STEP PROBLEM
+  struct EnuCoor_f target_enu;
+  ENU_OF_TO_NED(target_enu, *ned_pos_approach);
+  amt.target_heigth = ned_pos_approach.x;
+  // TEST TO SOLVE HEIGHT STEP PROBLEM
+  
   // Update values for telemetry
   VECT3_COPY(amt_telem.des_pos, rel_des_pos); 
   

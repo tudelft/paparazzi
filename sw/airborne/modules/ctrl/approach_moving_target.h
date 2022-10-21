@@ -53,7 +53,18 @@ struct Amt {
   float pid_errorSum;
   float pid_errorLast;
   uint32_t pid_last_timestamp;
+  struct FloatVect3 steady_state_error;
+  float target_heigth;
+};
 
+// Telemetry info to send from drone to base
+struct AmtTelem {
+  struct FloatVect3 des_pos; // descent point to follow 
+  struct FloatVect3 des_vel;
+  struct FloatVect3 target_pos; //ship landing position
+  struct FloatVect3 target_vel;
+  float start_distance;
+  float approach_speed;
 };
 
 struct Wave {
@@ -67,6 +78,7 @@ struct Wave {
 };
 
 extern struct Amt amt;
+extern struct AmtTelem amt_telem;
 extern struct Wave WaveInfl;
 extern float amt_err_slowdown_gain;
 

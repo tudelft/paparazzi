@@ -190,7 +190,7 @@ heading not defined at:
     @AND !(nav_block == IndexOfBlock('Land Here'))"
     deroute="Holding point hover"/>
 
-    <!-- Cyberzoo: hover when touching flyzone geofence OR altitude above 3.5m 
+    <!-- Cyberzoo: hover when touching flyzone geofence OR altitude above 3.5m -->
     <exception cond="Or(! InsideCyberzoo(GetPosX(), GetPosY()), GetPosAlt() @GT 3.5) 
     @AND InsideTUDelft(GetPosX(), GetPosY())
     @AND !InsideValkenburg(GetPosX(), GetPosY())
@@ -199,7 +199,7 @@ heading not defined at:
     @AND !(nav_block == IndexOfBlock('Holding point hover')) 
     @AND !(nav_block == IndexOfBlock('autodescent 53perc throttle TEST')) 
     @AND !(nav_block == IndexOfBlock('Land Here'))"
-    deroute="Holding point hover"/>-->
+    deroute="Holding point hover"/>
 
     <!-- Valkenburg + Cyberzoo: kill when outside killzone geofence OR altitude more than 150m -->
     <exception cond="Or((!InsideValkenburg(GetPosX(), GetPosY()) 
@@ -303,12 +303,17 @@ heading not defined at:
       <stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH" pre_call="approach_moving_target_enable()"/>
     </block>
     <block name="REPEAT Approach SHIP" strip_button="REPEAT Approach SHIP" strip_icon="boat.png">
-      <stay until="get_dist2_to_waypoint(WP_APPROACH) @LT 0.5" wp="APPROACH"/>  <!-- NEED TO TEST: does the drone first go to the waypoint before het waypoint starts shifting to the ship? -->
+      <go wp="APPROACH"/>
+      <!--stay until="get_dist2_to_waypoint(WP_APPROACH) @LT 0.5" wp="APPROACH"/-->  <!-- NEED TO TEST: does the drone first go to the waypoint before het waypoint starts shifting to the ship? -->
       <set value="TRUE" var="force_forward"/>
       <call_once fun="approach_moving_target_enable()"/>
       <!--call_once fun="nav_set_heading_towards_waypoint(WP_SHIP)"/-->
-      <stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH" pre_call="approach_moving_target_enable()" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/>
-      <stay alt="2.5" wp="SHIP" until="GetPosHeight() @GT 2.2"/>
+      
+      <!--stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH" pre_call="approach_moving_target_enable()" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/-->
+      
+      <stay alt="(amt.distance/2)" wp="APPROACH" pre_call="approach_moving_target_enable()" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/>
+      <!--stay alt="2.5" wp="SHIP" until="GetPosHeight() @GT 2.2"/-->
+      <go wp="SHIP" alt="2.5"/>
       <set value="FALSE" var="force_forward"/>
       <call_once fun="reset_moving_target_distance()"/>
       <deroute block="REPEAT Approach SHIP"/>

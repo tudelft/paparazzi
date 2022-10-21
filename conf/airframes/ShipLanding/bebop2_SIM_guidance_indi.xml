@@ -20,7 +20,8 @@
     <module name="motor_mixing"/>
     <module name="actuators" type="bebop"/>
     <module name="imu" type="bebop"/>
-    <module name="gps" type="ublox"/>
+    <!--module name="gps" type="ublox"/-->
+    <module name="gps" type="datalink"/> <!-- optitrack -->
     <!-- TODO: test this module -->
     <module name="guidance" type="indi"/>
     <module name="stabilization" type="indi_simple"/>
@@ -190,6 +191,10 @@
     <define name="CRITIC_BAT_LEVEL" value="11.0" unit="V"/>
     <define name="LOW_BAT_LEVEL" value="11.1" unit="V"/>
     <define name="MAX_BAT_LEVEL" value="12.4" unit="V"/>
+  </section>
+  
+  <section name="GCS">
+    <define name="AC_ICON"             value="quadrotor_xi"/>
   </section>
 </airframe>
 

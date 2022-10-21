@@ -13,7 +13,12 @@
       <module name="udp"/>
     </target>
     
-    <define name="USE_SONAR" value="FALSE"/>
+    <!--define name="USE_SONAR" value="FALSE"/-->
+    <module name="sonar_bebop">
+      <define name="USE_SONAR"/>
+      <define name="SENSOR_SYNC_SEND_SONAR"/>
+    </module>
+    
 
     <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
@@ -22,7 +27,13 @@
     <module name="actuators" type="bebop"/>
     <module name="imu" type="bebop"/>
     <module name="gps" type="datalink"/>
-    <module name="guidance" type="indi"/>
+    <module name="guidance" type="indi">
+      <define name="GUIDANCE_INDI_POS_GAIN" value="1.0"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
+      <!--define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.06"/-->
+      <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.0"/> <!-- 1 works well, 3 makes it wobbling -->
+    </module>
+    
     <module name="stabilization" type="indi_simple"/>
     <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
@@ -104,7 +115,7 @@
     <define name="SONAR_MIN_RANGE" value="0.2"/>
     <define name="USE_GPS_ALT" value="1"/>
     <define name="USE_GPS_ALT_SPEED" value="1"/>
-    <define name="VFF_R_GPS" value="0.01"/>
+    <define name="VFF_R_GPS" value="0.01"/> <!-- 0.01 for optitrack ELSE 0.1 -->
   </section>
 
 
