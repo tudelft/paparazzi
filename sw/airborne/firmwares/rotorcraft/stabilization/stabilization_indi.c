@@ -216,10 +216,10 @@ void init_filters(void);
 #include "modules/datalink/telemetry.h"
 static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_INDI_G(trans, dev, AC_ID, INDI_NUM_ACT, g1_est[0],
-                       INDI_NUM_ACT, g1_est[1],
-                       INDI_NUM_ACT, g1_est[2],
-                       INDI_NUM_ACT, g1_est[3],
+  pprz_msg_send_INDI_G(trans, dev, AC_ID, INDI_NUM_ACT, g1g2[0],
+                       INDI_NUM_ACT, g1g2[1],
+                       INDI_NUM_ACT, g1g2[2],
+                       INDI_NUM_ACT, g1g2[3],
                        INDI_NUM_ACT, g2_est);
 }
 
@@ -513,7 +513,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     actuator_thrust_bx_pprz = RadioControlValues(RADIO_AUX4);
   }
 
-  actuators_pprz[4] = (int16_t) actuator_thrust_bx_pprz;
+  actuators_pprz[5] = (int16_t) actuator_thrust_bx_pprz;
   
   // Propagate state filters
   // Get the acceleration in body axes
@@ -564,6 +564,11 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
         }
       }
 #endif
+    }
+
+    // Update Bwls
+    for (i = 0; i < INDI_OUTPUTS; i++) {
+      Bwls[i] = g1g2[i];
     }
 
     // WLS Control Allocator
