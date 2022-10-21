@@ -34,6 +34,10 @@ extern float g1_q_multiplier;
 extern float g1_r_multiplier;
 extern float g1_t_multiplier;
 
+extern float rot_wing_aerodynamic_eff_const_g1_p[1];
+extern float rot_wing_aerodynamic_eff_const_g1_q[1];
+extern float rot_wing_aerodynamic_eff_const_g1_r[1];
+
 extern bool wing_rotation_sched_activated;
 
 extern void init_eff_scheduling(void);
