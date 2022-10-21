@@ -50,6 +50,14 @@
 #error "No WING_ROTATION_POSITION_ADC_90 defined"
 #endif
 
+#ifndef WING_ROTATION_FIRST_DYN
+#define WING_ROTATION_FIRST_DYN 0.0001
+#endif
+
+#ifndef WING_ROTATION_SECOND_DYN
+#define WING_ROTATION_SECOND_DYN 0.0003
+#endif
+
 // Parameters
 struct wing_rotation_controller wing_rotation;
 
@@ -58,6 +66,7 @@ static struct adc_buf buf_wing_rot_pos;
 // Inline functions
 inline void wing_rotation_to_rad(void);
 inline void wing_rotation_update_sp(void);
+inline void wing_rotation_compute_pprz_cmd(void);
 
 // Telemetry
 #if PERIODIC_TELEMETRY
@@ -80,22 +89,20 @@ void wing_rotation_init(void)
 
   // Init wing_rotation_controller struct
   wing_rotation.servo_pprz_cmd = 0;
-  wing_rotation.pprz_cmd_deadzone = WING_ROTATION_DEADZONE_PPRZ_CMD;
   wing_rotation.adc_wing_rotation = 0;
-  wing_rotation.adc_wing_servo = 0;
   wing_rotation.wing_angle_rad = 0;
   wing_rotation.wing_angle_deg = 0;
   wing_rotation.wing_angle_rad_sp = 0;
   wing_rotation.wing_angle_deg_sp = 0;
-
+  wing_rotation.wing_rotation_speed = 0;
+  wing_rotation.wing_angle_virtual_deg_sp = 0;
+  wing_rotation.wing_rotation_first_order_dynamics = WING_ROTATION_FIRST_DYN;
+  wing_rotation.wing_rotation_second_order_dynamics = WING_ROTATION_SECOND_DYN;
   wing_rotation.adc_wing_rotation_range = WING_ROTATION_POSITION_ADC_90 - WING_ROTATION_POSITION_ADC_0;
 
   // Set wing angle to current wing angle
   wing_rotation.initialized = false; 
   wing_rotation.init_loop_count = 0;
-
-  wing_rotation.p_gain = WING_ROTATION_P_GAIN;
-  wing_rotation.max_cmd = WING_ROTATION_MAX_CMD;
 
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROT_WING_CONTROLLER, send_rot_wing_controller);
@@ -112,7 +119,7 @@ void wing_rotation_periodic(void)
     wing_rotation.init_loop_count += 1;
     if (wing_rotation.init_loop_count > 4) {
       wing_rotation.initialized = true;
-      wing_rotation.wing_angle_rad_sp = wing_rotation.wing_angle_rad;
+      wing_rotation.wing_angle_rad_sp = 0;
       wing_rotation.wing_angle_deg_sp = wing_rotation.wing_angle_rad_sp / M_PI * 180.;
     }
   }
@@ -129,20 +136,14 @@ void wing_rotation_event(void)
   if (wing_rotation.initialized) {
     wing_rotation_update_sp();
 
-    // Calculate rad error
-    float pos_error_rad = wing_rotation.wing_angle_rad_sp - wing_rotation.wing_angle_rad;
+    //int32_t servo_pprz_cmd;  // Define pprz cmd
 
-    int32_t servo_pprz_cmd;  // Define pprz cmd
+    // Control the wing rotation position.
+    wing_rotation_compute_pprz_cmd();
+    //servo_pprz_cmd = wing_rotation.wing_angle_deg_sp / 90 * MAX_PPRZ;
+    //Bound(servo_pprz_cmd, 0, MAX_PPRZ);
 
-    // Control the wing servo using P control and bound command
-    servo_pprz_cmd = wing_rotation.p_gain * pos_error_rad;
-    BoundAbs(servo_pprz_cmd, (int32_t)wing_rotation.max_cmd);
-
-    if (labs(servo_pprz_cmd) < wing_rotation.pprz_cmd_deadzone) {
-      servo_pprz_cmd = 0;
-    }
-
-    wing_rotation.servo_pprz_cmd = servo_pprz_cmd;
+    //wing_rotation.servo_pprz_cmd = servo_pprz_cmd;
   }
 }
 
@@ -150,13 +151,60 @@ void wing_rotation_to_rad(void)
 { 
   wing_rotation.adc_wing_rotation = buf_wing_rot_pos.sum / buf_wing_rot_pos.av_nb_sample;
 
-  wing_rotation.wing_angle_rad = (float)(wing_rotation.adc_wing_rotation - WING_ROTATION_POSITION_ADC_0)
-                                   / (float)wing_rotation.adc_wing_rotation_range * (0.5 * M_PI);
+  wing_rotation.wing_angle_deg =  -0.00000000000839650958809 * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation 
+                                  + 0.00000124585863187 * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation 
+                                  - 0.064750469252883 * (float)wing_rotation.adc_wing_rotation
+                                  + 1235.31050095289;
+  wing_rotation.wing_angle_rad = wing_rotation.wing_angle_deg / 180. * M_PI;
+  // wing_rotation.wing_angle_rad = (float)(wing_rotation.adc_wing_rotation - WING_ROTATION_POSITION_ADC_0)
+  //                                  / (float)wing_rotation.adc_wing_rotation_range * (0.5 * M_PI);
 
-  wing_rotation.wing_angle_deg = wing_rotation.wing_angle_rad / M_PI * 180.;
+  // wing_rotation.wing_angle_deg = wing_rotation.wing_angle_rad / M_PI * 180.;
 }
 
 void wing_rotation_update_sp(void)
 {
   wing_rotation.wing_angle_rad_sp = wing_rotation.wing_angle_deg_sp / 180. * M_PI;
+}
+
+// void wing_rotation_compute_pprz_cmd(void)
+// {
+//   float max_angle_change = wing_rotation.max_angular_rate / (float)PERIODIC_FREQUENCY;
+//   float angle_error = wing_rotation.wing_angle_deg_sp - wing_rotation.wing_angle_virtual_deg_sp;
+//   if (wing_rotation.wing_angle_deg_sp > wing_rotation.wing_angle_virtual_deg_sp) 
+//   {
+//     if (angle_error < max_angle_change) {
+//       wing_rotation.wing_angle_virtual_deg_sp = wing_rotation.wing_angle_deg_sp;
+//     } else {
+//       wing_rotation.wing_angle_virtual_deg_sp += max_angle_change;
+//     }
+//   } else if (wing_rotation.wing_angle_deg_sp < wing_rotation.wing_angle_virtual_deg_sp)
+//   {
+//     if (angle_error < -max_angle_change) {
+//       wing_rotation.wing_angle_virtual_deg_sp = wing_rotation.wing_angle_deg_sp;
+//     } else {
+//       wing_rotation.wing_angle_virtual_deg_sp += -max_angle_change;
+//     }
+//   }
+
+//   int32_t servo_pprz_cmd;  // Define pprz cmd
+//   servo_pprz_cmd = (int32_t)(wing_rotation.wing_angle_virtual_deg_sp / 90. * (float)MAX_PPRZ);
+//   Bound(servo_pprz_cmd, 0, MAX_PPRZ);
+
+//   wing_rotation.servo_pprz_cmd = servo_pprz_cmd;
+// }
+
+void wing_rotation_compute_pprz_cmd(void)
+{
+  float angle_error = wing_rotation.wing_angle_deg_sp - wing_rotation.wing_angle_virtual_deg_sp;
+  float speed_sp = wing_rotation.wing_rotation_first_order_dynamics * angle_error;
+  float speed_error = speed_sp - wing_rotation.wing_rotation_speed;
+  wing_rotation.wing_rotation_speed += wing_rotation.wing_rotation_second_order_dynamics * speed_error;
+  wing_rotation.wing_angle_virtual_deg_sp += wing_rotation.wing_rotation_speed;
+  
+  int32_t servo_pprz_cmd;  // Define pprz cmd
+  servo_pprz_cmd = (int32_t)(wing_rotation.wing_angle_virtual_deg_sp / 90. * (float)MAX_PPRZ);
+  Bound(servo_pprz_cmd, 0, MAX_PPRZ);
+
+  wing_rotation.servo_pprz_cmd = servo_pprz_cmd;
 }
