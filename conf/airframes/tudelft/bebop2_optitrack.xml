@@ -49,7 +49,7 @@
       <define name="AMT_ERR_SLOWDOWN_GAIN" value="true"/><!-- added by andreas 22-09-2022 -->
      <!-- Logging fligth data to internal storage (NOT TESTED YET) -->
     <module name="logger_file">
-      <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
+      <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000/logs"/>
     </module>
   </firmware>
   
