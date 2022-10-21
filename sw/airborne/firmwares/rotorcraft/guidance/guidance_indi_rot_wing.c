@@ -297,7 +297,7 @@ void guidance_indi_run(float *heading_sp) {
   float norm_des_as = FLOAT_VECT2_NORM(desired_airspeed);
 
   // Make turn instead of straight line
-  if((airspeed > 10.0) && (norm_des_as > 12.0)) {
+  if((airspeed > 100.0) && (norm_des_as > 12.0)) {
 
   // Give the wind cancellation priority.
     if (norm_des_as > guidance_indi_max_airspeed) {
@@ -349,7 +349,7 @@ void guidance_indi_run(float *heading_sp) {
     sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
   } else { // Go somewhere in the shortest way
 
-    if(airspeed > 10.0) {
+    if(airspeed > 100.0) {
       // Groundspeed vector in body frame
       float groundspeed_x = cosf(psi) * stateGetSpeedNed_f()->x + sinf(psi) * stateGetSpeedNed_f()->y;
       float speed_increment = speed_sp_b_x - groundspeed_x;
@@ -658,13 +658,13 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   du_min_rot_wing[0] = -rot_wing_roll_limit - roll_filt.o[0]; //roll
   du_min_rot_wing[1] = -rot_wing_pitch_limit - pitch_filt.o[0]; // pitch
   du_min_rot_wing[2] = (MAX_PPRZ - actuators_pprz[0]) * g1g2[3][0] + (MAX_PPRZ - actuators_pprz[1]) * g1g2[3][1] + (MAX_PPRZ - actuators_pprz[2]) * g1g2[3][2] + (MAX_PPRZ - actuators_pprz[3]) * g1g2[3][3];
-  du_min_rot_wing[3] = -actuators_pprz[4]*thrust_bx_eff;
+  du_min_rot_wing[3] = -actuators_pprz[5]*thrust_bx_eff;
 
   // Set upper limits limits
   du_max_rot_wing[0] = rot_wing_roll_limit - roll_filt.o[0]; //roll
   du_max_rot_wing[1] = rot_wing_pitch_limit - pitch_filt.o[0]; // pitch
   du_max_rot_wing[2] = -(actuators_pprz[0]*g1g2[3][0] + actuators_pprz[1]*g1g2[3][1] + actuators_pprz[2]*g1g2[3][2] + actuators_pprz[3]*g1g2[3][3]);
-  du_max_rot_wing[3] = (MAX_PPRZ - actuators_pprz[4]) * thrust_bx_eff;
+  du_max_rot_wing[3] = (MAX_PPRZ - actuators_pprz[5]) * thrust_bx_eff;
   
   // Set prefered states
   du_pref_rot_wing[0] = 0; // prefered delta roll angle
@@ -803,7 +803,7 @@ struct FloatVect3 nav_get_speed_sp_from_line(struct FloatVect2 line_v_enu, struc
   }
 
   // Bound vertical speed setpoint
-  if(stateGetAirspeed_f() > 13.0) {
+  if(stateGetAirspeed_f() > 130.0) {
     Bound(speed_sp_return.z, -4.0, 5.0);
   } else {
     Bound(speed_sp_return.z, -nav_climb_vspeed, -nav_descend_vspeed);
@@ -859,7 +859,7 @@ struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_ga
   }
 
   // Bound vertical speed setpoint
-  if(stateGetAirspeed_f() > 13.0) {
+  if(stateGetAirspeed_f() > 130.0) {
     Bound(speed_sp_return.z, -4.0, 5.0);
   } else {
     Bound(speed_sp_return.z, -nav_climb_vspeed, -nav_descend_vspeed);
