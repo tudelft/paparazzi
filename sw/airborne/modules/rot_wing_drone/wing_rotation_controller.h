@@ -35,20 +35,18 @@ extern void wing_rotation_event(void);
 // Paramaters
 struct wing_rotation_controller {
   int32_t servo_pprz_cmd;
-  int32_t pprz_cmd_deadzone;
   uint16_t adc_wing_rotation;
-  uint16_t adc_wing_servo;
   int16_t adc_wing_rotation_range;
   float wing_angle_rad;
   float wing_angle_deg;
   float wing_angle_rad_sp;
   float wing_angle_deg_sp;
+  float wing_rotation_speed;
+  float wing_angle_virtual_deg_sp;
+  float wing_rotation_first_order_dynamics;
+  float wing_rotation_second_order_dynamics;
   bool initialized;
   uint8_t init_loop_count;
-
-  // Control variables
-  int32_t p_gain;
-  uint32_t max_cmd;
 
 };
 
