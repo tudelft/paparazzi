@@ -696,7 +696,7 @@ void nav_oval(uint8_t p1, uint8_t p2, float radius)
       return;
 
     case OR12:
-      nav_route(&p1_out, &p2_in);
+      NavSegment(p1, p2);
       if (nav_approaching_from(&p2_in, &p1_out, CARROT)) {
         oval_status = OC2;
         nav_oval_count++;
@@ -715,7 +715,7 @@ void nav_oval(uint8_t p1, uint8_t p2, float radius)
       return;
 
     case OR21:
-      nav_route(&waypoints[p2].enu_i, &waypoints[p1].enu_i);
+      NavSegment(p2, p1);
       if (nav_approaching_from(&waypoints[p1].enu_i, &waypoints[p2].enu_i, CARROT)) {
         oval_status = OC1;
         InitStage();
