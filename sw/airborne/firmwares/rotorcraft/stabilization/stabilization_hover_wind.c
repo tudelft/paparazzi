@@ -22,8 +22,6 @@
 
 #include "coef.h"
 
-//#include "firmwares/rotorcraft/stabilization/stabilization_hover_wind.h"
-
 #include "math/pprz_algebra_float.h"
 #include "state.h"
 #include "generated/airframe.h"
@@ -33,7 +31,6 @@
 #include "filters/low_pass_filter.h"
 #include "wls/wls_alloc.h"
 #include "math/pprz_simple_matrix.h"
-#include "modules/nav/waypoints.h"
 #include "generated/flight_plan.h"
 #include <stdio.h>
 
@@ -55,83 +52,79 @@ float u_scale[CTRL_HOVER_WIND_NUM_ACT][1];
 struct FloatQuat quat_roty_90 = {0.707106781186548,   0,    0.707106781186548,    0};
 struct FloatQuat quat_att_barth_frame;
 
-struct EnuCoor_i target_point;
+
 
 static inline void log_hoverwind_periodic(void);
 static inline void log_hoverwind_start(void);
 
 void stabilization_hover_wind_init(void){
+
   log_hoverwind_start();
-  waypoints_init();
 
-  VECT3_COPY(target_point, waypoints[WP_HOME].enu_i);
-
-  //get_state_vector();
   x_e[0][0] = 0;
   x_e[1][0] = 0;
 
-  
 }
 
 void stabilization_hover_wind_run(bool in_flight){
-  //if (in_flight) {
-    VECT3_COPY(target_point, waypoints[WP_HOME].enu_i);
     
-    float_quat_comp(&quat_att_barth_frame, &quat_roty_90, stateGetNedToBodyQuat_f());
-    
-    eps[0][0] = stateGetPositionEnu_f()->x - POS_FLOAT_OF_BFP(target_point.x);
-    eps[1][0] = stateGetPositionEnu_f()->y - POS_FLOAT_OF_BFP(target_point.x);
-    eps[2][0] = stateGetPositionEnu_f()->z - POS_FLOAT_OF_BFP(target_point.x);
-    eps[3][0] = stateGetSpeedEnu_f()->x;
-    eps[4][0] = stateGetSpeedEnu_f()->y;
-    eps[5][0] = stateGetSpeedEnu_f()->z;
-    eps[6][0] = quat_att_barth_frame.qx;
-    eps[7][0] = quat_att_barth_frame.qz;
-    eps[8][0] = stateGetBodyRates_f()->p;
-    eps[9][0] = stateGetBodyRates_f()->q;
-    eps[10][0] = stateGetBodyRates_f()->p;
+  float_quat_comp(&quat_att_barth_frame, &quat_roty_90, stateGetNedToBodyQuat_f());
+  
+  eps[0][0] = stateGetPositionEnu_f()->x - POS_FLOAT_OF_BFP(navigation_target.x); //navigation_target ENU
+  eps[1][0] = stateGetPositionEnu_f()->y - POS_FLOAT_OF_BFP(navigation_target.y);
+  eps[2][0] = stateGetPositionEnu_f()->z - POS_FLOAT_OF_BFP(navigation_target.z);
+  eps[3][0] = stateGetSpeedEnu_f()->x;
+  eps[4][0] = stateGetSpeedEnu_f()->y;
+  eps[5][0] = stateGetSpeedEnu_f()->z;
+  eps[6][0] = quat_att_barth_frame.qx;
+  eps[7][0] = quat_att_barth_frame.qz;
+  eps[8][0] = stateGetBodyRates_f()->p;
+  eps[9][0] = stateGetBodyRates_f()->q;
+  eps[10][0] = stateGetBodyRates_f()->p;
 
-    
-    MAT_MUL_c(CTRL_HOVER_WIND_NUM_INTEGRATOR_STATE, CTRL_HOVER_WIND_INPUT, 1, dot_x_e_dt, H, eps, 1./PERIODIC_FREQUENCY);
-    x_e[0][0] +=  dot_x_e_dt[0][0];
-    x_e[1][0] +=  dot_x_e_dt[1][0];
-    u_integrator[0][0] = x_e[0][0];
-    u_integrator[1][0] = x_e[0][0];
-    u_integrator[2][0] = x_e[1][0];
-    u_integrator[3][0] = x_e[1][0];
-    MAT_MUL(CTRL_HOVER_WIND_NUM_ACT, CTRL_HOVER_WIND_INPUT, 1, u_prop, K, eps);
-    MAT_SUB(CTRL_HOVER_WIND_NUM_ACT, 1, u_sub, u_integrator, u_prop);
-    MAT_SUM(CTRL_HOVER_WIND_NUM_ACT, 1, u, ueq, u_sub);
-    
-    u_scale[0][0] = (sqrtf(u[0][0]/kf) / mot_max_speed)*MAX_PPRZ; 
-    u_scale[1][0] = (sqrtf(u[1][0]/kf) / mot_max_speed)*MAX_PPRZ;
-    u_scale[2][0] = (u[2][0]*6/M_PI)*MAX_PPRZ;
-    u_scale[3][0] = (u[3][0]*6/M_PI)*MAX_PPRZ;
+  
+  MAT_MUL_c(CTRL_HOVER_WIND_NUM_INTEGRATOR_STATE, CTRL_HOVER_WIND_INPUT, 1, dot_x_e_dt, H, eps, 1./PERIODIC_FREQUENCY);
+  x_e[0][0] +=  dot_x_e_dt[0][0];
+  x_e[1][0] +=  dot_x_e_dt[1][0];
+  u_integrator[0][0] = x_e[0][0];
+  u_integrator[1][0] = x_e[0][0];
+  u_integrator[2][0] = x_e[1][0];
+  u_integrator[3][0] = x_e[1][0];
+  MAT_MUL(CTRL_HOVER_WIND_NUM_ACT, CTRL_HOVER_WIND_INPUT, 1, u_prop, K, eps);
+  MAT_SUB(CTRL_HOVER_WIND_NUM_ACT, 1, u_sub, u_integrator, u_prop);
+  MAT_SUM(CTRL_HOVER_WIND_NUM_ACT, 1, u, ueq, u_sub);
+  
+  u_scale[0][0] = (sqrtf(u[0][0]/kf) / mot_max_speed)*MAX_PPRZ; 
+  u_scale[1][0] = (sqrtf(u[1][0]/kf) / mot_max_speed)*MAX_PPRZ;
+  u_scale[2][0] = (u[2][0]*6/M_PI)*MAX_PPRZ;
+  u_scale[3][0] = (u[3][0]*6/M_PI)*MAX_PPRZ;
 
 
-    actuators_pprz[0]=TRIM_UPPRZ(u_scale[0][0]);
-    actuators_pprz[1]=TRIM_UPPRZ(u_scale[1][0]);
-    actuators_pprz[2]=TRIM_PPRZ(u_scale[2][0]);
-    actuators_pprz[3]=TRIM_PPRZ(u_scale[3][0]);
-/*
-    actuators_pprz[0]=0;
-    actuators_pprz[1]=0;
-    actuators_pprz[2]=0;
-    actuators_pprz[3]=0;
-*/
-    log_hoverwind_periodic();
+  actuators_pprz[0]=TRIM_UPPRZ(u_scale[0][0]);
+  actuators_pprz[1]=TRIM_UPPRZ(u_scale[1][0]);
+  actuators_pprz[2]=TRIM_PPRZ(u_scale[2][0]);
+  actuators_pprz[3]=TRIM_PPRZ(u_scale[3][0]);
+
+  log_hoverwind_periodic();
 }
 
 // Report function
 void data_report()
 {
   float msg[] = {
+    POS_FLOAT_OF_BFP(navigation_target.x),
+    POS_FLOAT_OF_BFP(navigation_target.y),
+    POS_FLOAT_OF_BFP(navigation_target.z),
     stateGetNedToBodyQuat_f()->qi, 
     stateGetNedToBodyQuat_f()->qx,
     stateGetNedToBodyQuat_f()->qy,
-    stateGetNedToBodyQuat_f()->qz   
+    stateGetNedToBodyQuat_f()->qz,
+    quat_att_barth_frame.qi, 
+    quat_att_barth_frame.qx,
+    quat_att_barth_frame.qy,
+    quat_att_barth_frame.qz    
   };
-  DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 4, msg);
+  DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 11, msg);
 }
 
 static inline void log_hoverwind_start(void) {

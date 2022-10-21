@@ -29,7 +29,7 @@
 
     <settings>
       <dl_setting var="autopilot.kill_throttle" min="0" step="1" max="1" module="autopilot" values="Resurrect|Kill" handler="KillThrottle"/>
-      <dl_setting var="autopilot_mode_auto2" min="2" step="1" max="4" module="autopilot" values="NAV|GUIDED|HOVERWIND"/>
+      <dl_setting var="autopilot_mode_auto2" min="2" step="1" max="4" module="autopilot" values="_|_|NAV|GUIDED|HOVERWIND"/>
     </settings>
 
     <control_block name="set_commands">
@@ -92,7 +92,7 @@
     </mode>
 
     <mode name="NAV">
-      <select cond="RCMode2() " exception="HOME"/> <!--&& DLModeNav()-->
+      <select cond="RCMode2() && DLModeNav() " exception="HOME"/> <!---->
       <on_enter>
         <call fun="guidance_h_nav_enter()"/>
         <call fun="stabilization_attitude_enter()"/>
@@ -112,7 +112,7 @@
     </mode>
 
     <mode name="GUIDED">
-      <!--select cond="RCMode2() && DLModeGuided()" exception="HOME"/-->
+      <select cond="RCMode2() && DLModeGuided()" exception="HOME"/>
       <on_enter>
         <call fun="guidance_h_hover_enter()"/>
         <call fun="stabilization_attitude_enter()"/>
@@ -133,10 +133,13 @@
     </mode>
 
     <mode name="HOVERWIND">
-      <!--select cond="RCMode2() && DLModeHover()" exception="HOME"/-->
+      <select cond="RCMode2() && DLModeHover()" exception="HOME"/>
       <on_enter>
         <call fun="stabilization_hover_wind_init()"/>
       </on_enter>
+      <control freq="NAVIGATION_FREQUENCY">
+        <call fun="nav_periodic_task()"/>
+      </control>
       <control>
         <call fun="stabilization_hover_wind_run(autopilot_in_flight())"/>
         <call_block name="set_commands"/>

@@ -26,7 +26,7 @@
   </header>
 
   <init fun="stabilization_hover_wind_init()"/>
-  <periodic fun="data_report()" freq="10." autorun="FALSE"/>
+  <periodic fun="data_report()" freq="10." autorun="TRUE"/>
 
   <makefile target="ap|nps" firmware="rotorcraft">
     <file name="stabilization_hover_wind.c" dir="$(SRC_FIRMWARE)/stabilization"/>
