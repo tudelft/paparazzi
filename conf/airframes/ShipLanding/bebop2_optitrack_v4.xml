@@ -13,7 +13,12 @@
       <module name="udp"/>
     </target>
     
-    <define name="USE_SONAR" value="FALSE"/>
+    <!--define name="USE_SONAR" value="FALSE"/-->
+    <module name="sonar_bebop">
+      <define name="USE_SONAR"/>
+      <define name="SENSOR_SYNC_SEND_SONAR"/>
+    </module>
+    
 
     <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
@@ -22,6 +27,13 @@
     <module name="actuators" type="bebop"/>
     <module name="imu" type="bebop"/>
     <module name="gps" type="datalink"/>
+    <module name="guidance" type="indi">
+      <define name="GUIDANCE_INDI_POS_GAIN" value="1.0"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
+      <!--define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.06"/-->
+      <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.0"/> <!-- 1 works well, 3 makes it wobbling -->
+    </module>
+    
     <module name="stabilization" type="indi_simple"/>
     <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
@@ -31,6 +43,14 @@
     <module name="geo_mag"/>
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
+    
+    <!-- special for project Andreas -->
+    <module name="approach_moving_target"/><!-- added by andreas 22-09-2022 -->
+      <define name="AMT_ERR_SLOWDOWN_GAIN" value="true"/><!-- added by andreas 22-09-2022 -->
+     <!-- Logging fligth data to internal storage (NOT TESTED YET) -->
+    <module name="logger_file">
+      <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000/logs"/>
+    </module>
   </firmware>
   
   <commands>
@@ -79,6 +99,8 @@
     <define name="MAG_Z_SENS" value="7.57102035692" integer="16"/>
   </section>
   
+  <include href="conf/airframes/ShipLanding/calibrations/BB2_IMU_ACCEL_bebopErik.xml"/> <!-- Accelerometer for attitude -->
+  
   <!-- local magnetic field -->
   <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
   <section name="AHRS" prefix="AHRS_">
@@ -97,10 +119,9 @@
   <section name="INS" prefix="INS_">
     <define name="SONAR_MAX_RANGE" value="2.2"/>
     <define name="SONAR_MIN_RANGE" value="0.2"/>
-    <define name="SONAR_UPDATE_ON_AGL" value="TRUE"/>
     <define name="USE_GPS_ALT" value="1"/>
     <define name="USE_GPS_ALT_SPEED" value="1"/>
-    <define name="VFF_R_GPS" value="0.01"/>
+    <define name="VFF_R_GPS" value="0.01"/> <!-- 0.01 for optitrack ELSE 0.1 -->
   </section>
 
 
@@ -139,11 +160,6 @@
     <define name="G1_R" value="0.0022"/>
     <define name="G2_R" value="0.20"/>
 
-    <!-- For the bebop2 we need to filter the roll rate due to the dampers -->
-    <define name="FILTER_ROLL_RATE" value="FALSE"/>
-    <define name="FILTER_PITCH_RATE" value="FALSE"/>
-    <define name="FILTER_YAW_RATE" value="FALSE"/>
-
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="170.0"/>
     <define name="REF_ERR_Q" value="600.0"/>
@@ -154,7 +170,7 @@
 
     <!-- second order filter parameters -->
     <define name="FILT_CUTOFF" value="3.2"/>
-    <define name="FILT_CUTOFF_R" value="3.2"/>
+    <define name="FILT_CUTOFF_RDOT" value="3.2"/>
 
     <!-- first order actuator dynamics -->
     <define name="ACT_DYN_P" value="0.06"/>
@@ -212,7 +228,7 @@
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
-    <!-- define name="NO_RC_THRUST_LIMIT" value="TRUE"/-->
+    <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>
 
   <section name="BAT">
@@ -223,4 +239,3 @@
     <define name="MAX_BAT_LEVEL" value="12.4" unit="V"/>
   </section>
 </airframe>
-
