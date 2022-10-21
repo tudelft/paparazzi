@@ -8,12 +8,12 @@
   <waypoints>
     <waypoint name="HOME" x="12.6" y="-48.7"/>
     <waypoint name="CLIMB" x="62.6" y="-80.4"/>
-    <waypoint name="STDBY" x="106.0" y="-55.1"/>
-    <waypoint name="p1" x="322.0" y="-254.3"/>
-    <waypoint name="p2" x="696.0" y="-148.1"/>
-    <waypoint name="p3" x="600.4" y="73.4"/>
-    <waypoint name="p4" x="238.6" y="-48.5"/>
-    <waypoint name="TD" x="-4.1" y="-23.7"/>
+    <waypoint name="STDBY" lat="52.1682655" lon="4.4135103"/>
+    <waypoint name="p1" lat="52.1675969" lon="4.4142066"/>
+    <waypoint name="p2" lat="52.1678610" lon="4.4156382"/>
+    <waypoint name="p3" lat="52.1690879" lon="4.4147384"/>
+    <waypoint name="p4" lat="52.1688135" lon="4.4134302"/>
+    <waypoint name="TD" lat="52.1681430" lon="4.4127829"/>
     <waypoint lat="52.169189" lon="4.410820" name="C1"/>
     <waypoint lat="52.168049" lon="4.406923" name="C2"/>
     <waypoint lat="52.166515" lon="4.408235" name="C3"/>
@@ -89,6 +89,9 @@
     </block>
     <block name="Oval">
       <oval p1="p1" p2="p2" radius="nav_radius"/>
+    </block>
+    <block name="Circle">
+      <circle radius="nav_radius" wp="p1"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
         <call_once fun="NavSetWaypointHere(WP_TD)"/>
