@@ -43,8 +43,14 @@
     <module name="geo_mag"/>
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
+    
+    <!-- special for project Andreas -->
     <module name="approach_moving_target"/><!-- added by andreas 22-09-2022 -->
       <define name="AMT_ERR_SLOWDOWN_GAIN" value="true"/><!-- added by andreas 22-09-2022 -->
+     <!-- Logging fligth data to internal storage (NOT TESTED YET) -->
+    <module name="logger_file">
+      <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
+    </module>
   </firmware>
   
   <commands>

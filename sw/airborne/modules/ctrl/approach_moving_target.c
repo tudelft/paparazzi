@@ -404,10 +404,10 @@ void follow_diagonal_approach(void) {
   update_waypoint(amt.wp_approach_id, &ned_pos_approach);
   // TEST TO SOLVE HEIGHT STEP PROBLEM
   struct EnuCoor_f target_enu;
-  ENU_OF_TO_NED(target_enu, *ned_pos_approach);
+  ENU_OF_TO_NED(target_enu, ned_pos_approach);
   amt.target_heigth = ned_pos_approach.x;
   // TEST TO SOLVE HEIGHT STEP PROBLEM
-  
+
   // Update values for telemetry
   VECT3_COPY(amt_telem.des_pos, rel_des_pos); 
   

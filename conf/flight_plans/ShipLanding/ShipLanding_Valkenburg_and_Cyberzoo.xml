@@ -311,7 +311,7 @@ heading not defined at:
       
       <!--stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH" pre_call="approach_moving_target_enable()" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/-->
       
-      <stay alt="(amt.distance/2)" wp="APPROACH" pre_call="approach_moving_target_enable()" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/>
+      <stay alt="amt.target_heigth" wp="APPROACH" pre_call="approach_moving_target_enable()" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/>
       <!--stay alt="2.5" wp="SHIP" until="GetPosHeight() @GT 2.2"/-->
       <go wp="SHIP" alt="2.5"/>
       <set value="FALSE" var="force_forward"/>
