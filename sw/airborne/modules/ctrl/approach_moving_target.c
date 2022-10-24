@@ -100,6 +100,7 @@ static void send_approach_moving_target(struct transport_tx *trans, struct link_
   //                             &amt.distance
   //                             );
   int32_t enabled_time_diff = (get_sys_time_msec() - amt.enabled_time);
+  uint8_t force_forward_boolean = force_forward;
   
    pprz_msg_send_APPROACH_MOVING_TARGET(trans, dev, AC_ID,
                               &amt_telem.des_pos.x,
@@ -120,7 +121,7 @@ static void send_approach_moving_target(struct transport_tx *trans, struct link_
                               &amt.distance,
                               &amt_telem.approach_speed,
                               &amt.slope_ref,
-                              &force_forward,
+                              &force_forward_boolean,
                               &enabled_time_diff
                               );
 }
