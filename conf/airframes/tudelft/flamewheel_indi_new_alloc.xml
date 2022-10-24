@@ -107,12 +107,12 @@
   </commands>
 
   <servos driver="Pwm">
-    <servo name="FRONT_RIGHT" no="0" min="1000" neutral="1150" max="2000"/>
-    <servo name="MIDDLE_RIGHT" no="1" min="1000" neutral="1150" max="2000"/>
-    <servo name="REAR_RIGHT" no="2" min="1000" neutral="1150" max="2000"/>
-    <servo name="REAR_LEFT" no="3" min="1000" neutral="1150" max="2000"/>
-    <servo name="MIDDLE_LEFT" no="4" min="1000" neutral="1150" max="2000"/>
-    <servo name="FRONT_LEFT" no="5" min="1000" neutral="1150" max="2000"/>
+    <servo name="FRONT_RIGHT" no="0" min="1000" neutral="1170" max="2000"/>
+    <servo name="MIDDLE_RIGHT" no="1" min="1000" neutral="1170" max="2000"/>
+    <servo name="REAR_RIGHT" no="2" min="1000" neutral="1170" max="2000"/>
+    <servo name="REAR_LEFT" no="3" min="1000" neutral="1170" max="2000"/>
+    <servo name="MIDDLE_LEFT" no="4" min="1000" neutral="1170" max="2000"/>
+    <servo name="FRONT_LEFT" no="5" min="1000" neutral="1170" max="2000"/>
   </servos>
 
   <command_laws>
@@ -213,31 +213,50 @@
       >>> x = np.array([np.cos(th), np.sin(th), np.zeros(6)]).T
       >>> np.cross(x, np.array([0, 0, -1]))
     -->
+    <define name="G1_ROLL" value="{-10 , -20, -10, 10, 20, 10 }"/>
+    <define name="G1_PITCH" value="{+18 , 0, -18 , -18, 0, +18 }"/>
+    <define name="G1_YAW" value="{+3.4, -3.4, +3.4, -3.4, +3.4, -3.4}"/>
+    <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4, -.4, -.4}"/>
+    <define name="G2" value="{+0.6, -0.6, +0.6, -0.6, +0.6, -0.6}"/>
 
-    <!--
+    <!-- First test on 21 oct
     <define name="G1_ROLL" value="{-17  , -34  , -17  ,  17  ,  34  ,  17}"/>
     <define name="G1_PITCH" value="{29,   0.   , -29, -29,   0.   ,  29}"/>
-    <define name="G1_YAW" value="{1,  -1,   1  -1,   1,  -1}"/>
+    <define name="G1_YAW" value="{+2.4, -2.4, +2.4, -2.4, +2.4, -2.4}"/>
     <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4, -.4, -.4}"/>
-    <define name="G2" value="{0.068, -0.068, 0.068, -0.068, 0.068, -0.068}"/>
+    <define name="G2" value="{0.8, -0.8, 0.8, -0.8, 0.8, -0.8}"/>
     -->
+
+    <!-- Second test on 21 oct, also 12 oct
     <define name="G1_ROLL" value="{-13 , -26, -13, 13, 26, 13 }"/>
     <define name="G1_PITCH" value="{+23 , 0, -23 , -23, 0, +23 }"/>
     <define name="G1_YAW" value="{+2.4, -2.4, +2.4, -2.4, +2.4, -2.4}"/>
     <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4, -.4, -.4}"/>
-    <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{+0.6, -0.6, +0.6, -0.6, +0.6, -0.6}"/>
+    -->
+
+    <!-- Ideal in sim
+    <define name="G1_ROLL" value="{-6.5 , -12, -6.5, 6.5, 13, 6.5 }"/>
+    <define name="G1_PITCH" value="{+11.5 , 0, -11.5 , -11.5, 0, +11.5 }"/>
+    <define name="G1_YAW" value="{+1.2, -1.2, +1.2, -1.2, +1.2, -1.2}"/>
+    <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4, -.4, -.4}"/>
+    <define name="G2" value="{+0, -0, +0, -0, +0, -0}"/>
+    -->
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="100.0"/>
-    <define name="REF_ERR_Q" value="100.0"/>
-    <define name="REF_ERR_R" value="100.0"/>
-    <define name="REF_RATE_P" value="13.0"/>
-    <define name="REF_RATE_Q" value="13.0"/>
-    <define name="REF_RATE_R" value="13.0"/>
+    <define name="REF_ERR_P" value="40.0"/>
+    <define name="REF_ERR_Q" value="40.0"/>
+    <define name="REF_ERR_R" value="40.0"/>
+    <define name="REF_RATE_P" value="9.0"/>
+    <define name="REF_RATE_Q" value="9.0"/>
+    <define name="REF_RATE_R" value="9.0"/>
 
-    <define name="ESTIMATION_FILT_CUTOFF" value="3.0"/>
-    <define name="FILT_CUTOFF" value="4.0"/>
+    <define name="ESTIMATION_FILT_CUTOFF" value="1.5"/>
+    <define name="FILT_CUTOFF" value="2.0"/>
+
+    <define name="FILT_CUTOFF_P" value="10.0"/>
+    <define name="FILT_CUTOFF_Q" value="10.0"/>
+    <define name="FILT_CUTOFF_R" value="10.0"/>
 
     <!-- first order actuator dynamics -->
     <define name="ACT_DYN" value="{0.03, 0.03, 0.03, 0.03, 0.03, 0.03}"/>
@@ -249,7 +268,7 @@
     <!--Priority for each axis (roll, pitch, yaw and thrust)-->
     <define name="WLS_PRIORITIES" value="{1000, 1000, 1, 100}"/>
 
-    <define name="ALGO" value="0"/>
+    <define name="ALGO" value="2"/>
   </section>
 
   <section name="actuator_sizes">

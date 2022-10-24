@@ -24,6 +24,7 @@
  */
 
 #include "modules/loggers/logger_control_effectiveness.h"
+#include "firmwares/rotorcraft/stabilization/stabilization_indi_algos.h"
 #include "modules/loggers/sdlog_chibios.h"
 #include "mcu_periph/sys_time.h"
 #include "state.h"
@@ -80,6 +81,9 @@ void logger_control_effectiveness_start(void)
     for (unsigned int i = 0; i < ACTUATORS_NB; i++) {
       sdLogWriteLog(pprzLogFile, ",act_%d", i);
     }
+    for (unsigned int i = 0; i < ACTUATORS_NB; i++) {
+      sdLogWriteLog(pprzLogFile, ",act_state_%d", i);
+    }
 #endif
 #if LOGGER_CONTROL_EFFECTIVENESS_POS
     sdLogWriteLog(pprzLogFile, ",pos_x,pos_y,pos_z");
@@ -131,7 +135,10 @@ void logger_control_effectiveness_periodic(void)
   // log actuators
 #if LOGGER_CONTROL_EFFECTIVENESS_ACTUATORS
   for (unsigned int i = 0; i < ACTUATORS_NB; i++) {
-    sdLogWriteLog(pprzLogFile, ",%d", actuators[i]);
+    sdLogWriteLog(pprzLogFile, ",%.2f", indi_u[i]);
+  }
+  for (unsigned int i = 0; i < ACTUATORS_NB; i++) {
+    sdLogWriteLog(pprzLogFile, ",%.2f", actuator_state_filt_vect[i]);
   }
 #endif
 
