@@ -45,14 +45,15 @@ struct Amt amt = {
   #ifdef CYBERZOO
   .distance = 4,     // [m], diagonal decent line to ship
   .speed = -0.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
+  .slope_ref = 15.0,  // [deg], slope descent line
   #else
   .distance = 40,     // [m], diagonal decent line to ship
   .speed = -1.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
+  .slope_ref = 19.471,  // [deg], slope descent line
   #endif
   .accel_gain = 1,
   .pos_gain = 1,    // was 200 [-], how aggresive drone tracks the descent line
   .psi_ref = 180.0,   // [deg], descent line direction offset w.r.t. heading ship
-  .slope_ref = 19.471,  // [deg], slope descent line
   .speed_gain = 1.0,  // [-], how agressive ..................
   .relvel_gain = 0.75, // [-], ................................
   .approach_speed_gain = 1.0,
