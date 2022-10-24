@@ -127,6 +127,7 @@ static void send_approach_moving_target(struct transport_tx *trans, struct link_
 #endif
 
 struct LlaCoor_i gps_lla;
+uint32_t gps_timestamp;
 
 void approach_moving_target_init(void)
 {
@@ -169,6 +170,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   gps_lla.lat = gps_s->lla_pos.lat;
   gps_lla.lon = gps_s->lla_pos.lon;
   gps_lla.alt = gps_s->lla_pos.alt;
+  gps_timestamp = stamp;
 }
 
 // interface with ship position module?
@@ -310,8 +312,8 @@ void follow_diagonal_approach(void) {
   // TODO improve + test
   float integral_gain = 0.001;
   VECT3_ADD_SCALED(amt.steady_state_error, pos_err, (integral_gain/NAVIGATION_FREQUENCY));
-  if (abs(pos_err.x) > 0.5) amt.steady_state_error.x = 0;
-  if (abs(pos_err.y) > 0.5) amt.steady_state_error.y = 0;
+  if (fabs(pos_err.x) > 0.5) amt.steady_state_error.x = 0;
+  if (fabs(pos_err.y) > 0.5) amt.steady_state_error.y = 0;
   //if (abs(pos_err.x) < 0.005) amt.steady_state_error.x = 0;
   //if (abs(pos_err.y) < 0.005) amt.steady_state_error.y = 0;
   if ((pos_err.x <= 0) != (amt.steady_state_error.x <= 0)) amt.steady_state_error.x = 0;
