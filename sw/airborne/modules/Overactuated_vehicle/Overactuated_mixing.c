@@ -50,7 +50,7 @@
 struct overactuated_mixing_t overactuated_mixing;
 
 //General state variables:
-float rate_vect[3], rate_vect_filt[3], rate_vect_filt_dot[3], euler_vect[3], acc_vect[3], acc_vect_filt[3], accel_vect_control_rf[3], speed_vect_control_rf[3];
+float rate_vect[3], rate_vect_filt[3], rate_vect_filt_dot[3], euler_vect[3], acc_vect[3], acc_vect_filt[3], accel_vect_filt_control_rf[3],accel_vect_control_rf[3], speed_vect_control_rf[3];
 float rate_vect_ned[3], acc_body_real[3], acc_body_real_filt[3];
 float speed_vect[3], pos_vect[3], airspeed = 0, aoa_deg= 0, beta_deg = 0, beta_rad = 0, flight_path_angle = 0, total_V = 0;
 float actuator_state[N_ACT_REAL];
@@ -136,7 +136,6 @@ float R_matrix[3][3];
 float pos_setpoint[3];
 float speed_setpoint[3];
 float speed_setpoint_control_rf[3];
-float acc_setpoint_control_rf[3];
 float speed_error_vect[3];
 float speed_error_vect_control_rf[3];
 float euler_setpoint[3];
@@ -238,7 +237,7 @@ static void send_nonlinear_ca_debug( struct transport_tx *trans , struct link_de
 
     pprz_msg_send_NONLINEAR_CA_DEBUG(trans , dev , AC_ID ,
                            & acc_setpoint[0],& acc_setpoint[1],& acc_setpoint[2],
-                           & acc_setpoint[3],& INDI_pseudocontrol[4],& INDI_pseudocontrol[5],
+                           & acc_setpoint[3],& acc_setpoint[4],& acc_setpoint[5],
                            & speed_setpoint_control_rf[0],& speed_setpoint_control_rf[1],& speed_setpoint_control_rf[2],
                            & rate_setpoint[0],& rate_setpoint[1],& rate_setpoint[2],
                            & pos_setpoint[0],& pos_setpoint[1],& pos_setpoint[2],
@@ -256,7 +255,7 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
                                          & airspeed, & local_variable , & beta_deg,
                                          & pos_vect[0], & pos_vect[1], & pos_vect[2],
                                          & speed_vect[0], & speed_vect[1], & speed_vect[2],
-                                         & acc_vect_filt[0], & acc_vect_filt[1], & acc_vect_filt[2],
+                                         & accel_vect_filt_control_rf[0], & accel_vect_filt_control_rf[1], & accel_vect_filt_control_rf[2],
                                          & rate_vect_filt_dot[0], & rate_vect_filt_dot[1], & rate_vect_filt_dot[2],
                                          & rate_vect_filt[0], & rate_vect_filt[1], & rate_vect_filt[2],
                                          & euler_vect[0], & euler_vect[1], & euler_vect[2],
@@ -663,6 +662,7 @@ void assign_variables(void){
 
     //Determination of the accelerations in the control rf:
     from_earth_to_control( accel_vect_control_rf, acc_vect, euler_vect[2]);
+    from_earth_to_control( accel_vect_filt_control_rf, acc_vect_filt, euler_vect[2]);
     from_earth_to_control( speed_vect_control_rf, speed_vect, euler_vect[2]);
 }
 
@@ -1087,23 +1087,20 @@ void overactuated_mixing_run(void)
         speed_error_vect_control_rf[2] = speed_setpoint_control_rf[2] - speed_vect_control_rf[2];
 
         //Compute the acceleration setpoints in the control rf:
-        acc_setpoint_control_rf[0] = speed_error_vect_control_rf[0] * indi_gains_over.d.x;
-        acc_setpoint_control_rf[1] = speed_error_vect_control_rf[1] * indi_gains_over.d.y;
-        acc_setpoint_control_rf[2] = speed_error_vect_control_rf[2] * indi_gains_over.d.z;
+        acc_setpoint[0] = speed_error_vect_control_rf[0] * indi_gains_over.d.x;
+        acc_setpoint[1] = speed_error_vect_control_rf[1] * indi_gains_over.d.y;
+        acc_setpoint[2] = speed_error_vect_control_rf[2] * indi_gains_over.d.z;
 
         //Apply saturation points for the accelerations in the control rf:
-        BoundAbs(acc_setpoint_control_rf[0],LIMITS_FWD_MAX_FWD_ACC);
-        BoundAbs(acc_setpoint_control_rf[1],LIMITS_FWD_MAX_LAT_ACC);
-        BoundAbs(acc_setpoint_control_rf[2],LIMITS_FWD_MAX_VERT_ACC);
-
-        //Compute the acceleration setpoints in the earth reference frame:
-        from_control_to_earth( acc_setpoint, acc_setpoint_control_rf, euler_vect[2]);
+        BoundAbs(acc_setpoint[0],LIMITS_FWD_MAX_FWD_ACC);
+        BoundAbs(acc_setpoint[1],LIMITS_FWD_MAX_LAT_ACC);
+        BoundAbs(acc_setpoint[2],LIMITS_FWD_MAX_VERT_ACC);
 
         //Compute the acceleration error and save it to the INDI input array in the right position:
-        // LINEAR ACCELERATION
-        INDI_pseudocontrol[0] = acc_setpoint[0] - acc_vect_filt[0];
-        INDI_pseudocontrol[1] = acc_setpoint[1] - acc_vect_filt[1];
-        INDI_pseudocontrol[2] = acc_setpoint[2] - acc_vect_filt[2];
+        // LINEAR ACCELERATION IN CONTROL RF
+        INDI_pseudocontrol[0] = acc_setpoint[0] - accel_vect_filt_control_rf[0];
+        INDI_pseudocontrol[1] = acc_setpoint[1] - accel_vect_filt_control_rf[1];
+        INDI_pseudocontrol[2] = acc_setpoint[2] - accel_vect_filt_control_rf[2];
 
 //        actuator_state_filt[0] = 100;
 //        actuator_state_filt[1] = 100;

@@ -157,21 +157,9 @@
 
    <module name="ins" type="ekf2">
     <define name="INS_EKF2_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
+    <!-- <define name="INS_EKF2_MAG_ID" value="MAG_LIS3MDL_SENDER_ID"/> -->
     <!-- <define name="INS_EKF2_OPTITRACK" value="TRUE"/> -->
    </module>
-
-  <!-- updated with new orientation 17-10-2022 -->
-  <module name="mag" type="rm3100">
-    <configure name="MAG_RM3100_I2C_DEV" value="i2c4"/>
-    <define name="RM3100_CHAN_X_SIGN" value="+"/>
-    <define name="RM3100_CHAN_Y_SIGN" value="+"/>
-    <define name="RM3100_CHAN_Z_SIGN" value="+"/>
-    <define name="RM3100_CHAN_X" value="1"/>
-    <define name="RM3100_CHAN_Y" value="2"/>
-    <define name="RM3100_CHAN_Z" value="0"/>
-    <define name="MODULE_RM3100_SYNC_SEND" value="FALSE"/>
-    <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
-  </module>
 
     <!--module name="ahrs"          type="float_cmpl_quat">
      <configure name="USE_MAGNETOMETER" value="TRUE"/>
@@ -193,15 +181,28 @@
     </module> -->
 
     <!-- External MAG on GPS -->
-<!--    <module name="mag_lis3mdl">-->
-<!--      <define name="MODULE_LIS3MDL_UPDATE_AHRS" value="TRUE"/>-->
-<!--      <configure name="MAG_LIS3MDL_I2C_DEV" value="I2C1"/>-->
-<!--      <define name="LIS3MDL_CHAN_X_SIGN" value="-"/>-->
-<!--      <define name="LIS3MDL_CHAN_Y_SIGN" value="-"/>-->
-<!--    </module>-->
+   <!-- <module name="mag_lis3mdl">
+     <define name="MODULE_LIS3MDL_UPDATE_AHRS" value="TRUE"/>
+     <configure name="MAG_LIS3MDL_I2C_DEV" value="I2C1"/>
+     <define name="LIS3MDL_CHAN_X_SIGN" value="-"/>
+     <define name="LIS3MDL_CHAN_Y_SIGN" value="-"/>
+   </module> -->
 
-    <!-- <module name="motor_mixing"/> -->
-    <module name="Overactuated_mixing"/>
+  <!-- updated with new orientation 17-10-2022 -->
+  <module name="mag" type="rm3100">
+    <configure name="MAG_RM3100_I2C_DEV" value="i2c4"/>
+    <define name="RM3100_CHAN_X_SIGN" value="+"/>
+    <define name="RM3100_CHAN_Y_SIGN" value="+"/>
+    <define name="RM3100_CHAN_Z_SIGN" value="+"/>
+    <define name="RM3100_CHAN_X" value="1"/>
+    <define name="RM3100_CHAN_Y" value="2"/>
+    <define name="RM3100_CHAN_Z" value="0"/>
+    <define name="MODULE_RM3100_SYNC_SEND" value="FALSE"/>
+    <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
+  </module>
+
+
+  <module name="Overactuated_mixing"/>
   </firmware>
 
   <servos>
