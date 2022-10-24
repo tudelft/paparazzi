@@ -431,6 +431,6 @@ void follow_diagonal_approach(void) {
   VECT3_COPY(amt_telem.target_pos, rel_target_pos); 
   VECT3_COPY(amt_telem.target_vel, target_vel_boat);
 
-  uint32_t end_time = get_sys_time_msec();
+  // uint32_t end_time = get_sys_time_msec(); // UNUSED
   //printf("loop_time = %i %i \n", end_time, start_time);
 }
