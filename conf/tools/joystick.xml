@@ -1,5 +1,5 @@
 <program command="sw/ground_segment/joystick/input2ivy" name="Joystick" icon="joystick.svg">
   <arg constant="@AIRCRAFT" flag="-ac" />
-  <arg flag="xbox_gamepad.xml" />
+  <arg flag="sm600.xml" />
 </program>
 
