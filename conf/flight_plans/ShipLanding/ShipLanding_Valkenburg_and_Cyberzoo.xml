@@ -343,7 +343,7 @@ heading not defined at:
     <block name="set_landing_offset_here_TEST">
       <set value="FALSE" var="force_forward"/>
       <exception cond="GetPosHeight() @GT 0.15" deroute="Holding point hover"/>
-      <call_once fun="target_pos_set_current_offset()"/>
+      <call_once fun="target_pos_set_current_offset(0.0)"/>
       <deroute block="Holding point kill"/>
     </block>
     <block name="stay_p1">

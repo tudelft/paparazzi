@@ -322,8 +322,8 @@ bool target_compensate_roll(struct NedCoor_f *vel) {
 /**
  * Set the current measured distance and heading as offset
  */
-//bool target_pos_set_current_offset(float unk __attribute__((unused))) {
-bool target_pos_set_current_offset() {
+bool target_pos_set_current_offset(float unk __attribute__((unused))) {
+//bool target_pos_set_current_offset() {
   if(target.pos.valid && state.ned_initialized_i && (target.pos.recv_time+target.target_pos_timeout) > get_sys_time_msec()) {
     struct NedCoor_i target_pos_cm;
     struct NedCoor_f uav_pos = *stateGetPositionNed_f();
