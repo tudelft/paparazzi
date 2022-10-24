@@ -275,12 +275,19 @@
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>
-
+  
   <section name="BAT">
-    <define name="MILLIAMP_AT_FULL_THROTTLE" value="8700"/>
+    <define name="MILLIAMP_AT_FULL_THROTTLE" value="11000"/>
     <define name="CATASTROPHIC_BAT_LEVEL" value="9.9" unit="V"/>
     <define name="CRITIC_BAT_LEVEL" value="11.0" unit="V"/>
     <define name="LOW_BAT_LEVEL" value="11.1" unit="V"/>
     <define name="MAX_BAT_LEVEL" value="12.4" unit="V"/>
+    <define name="BAT_CHECKER_DELAY" value="60"/><!-- unit="s/10", thus tenth of seconds per default use ELECTRICAL_PERIODIC_FREQ if you for some reason want it differently-->
+  </section>
+  
+  
+
+  <section name="GCS">
+    <define name="AC_ICON"             value="quadrotor_xi"/>
   </section>
 </airframe>

@@ -155,7 +155,7 @@ void target_parse_RC_4CH(uint8_t *buf)
     // Save the receivd rotating knob value
     //amt.approach_speed_gain = (float)value/100; // 0.0 to 2.0
     amt.approach_speed_gain = (float)value/200; // 0.0 to 1.0
-    printf("knop value: %i \n", value);
+    //printf("knop value: %i \n", value);
   }
 }
 
@@ -313,7 +313,8 @@ void follow_diagonal_approach(void) {
   if (abs(pos_err.y) > 0.5) amt.steady_state_error.y = 0;
   //if (abs(pos_err.x) < 0.005) amt.steady_state_error.x = 0;
   //if (abs(pos_err.y) < 0.005) amt.steady_state_error.y = 0;
-  printf("steady_state_error.x: %f \n", amt.steady_state_error.x);
+  if ((pos_err.x <= 0) != (amt.steady_state_error.x <= 0)) amt.steady_state_error.x = 0;
+  if ((pos_err.y <= 0) != (amt.steady_state_error.y <= 0)) amt.steady_state_error.y = 0;
   struct FloatVect3 integral_compenstation;
   VECT3_COPY(integral_compenstation, amt.steady_state_error);
 

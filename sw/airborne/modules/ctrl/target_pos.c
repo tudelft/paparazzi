@@ -206,6 +206,8 @@ void target_parse_target_pos_roll_compensated(uint8_t *buf)
 
   //int schuincos(RadOfDeg(target.pos.heading))
 
+  
+
   target.pos.lla.lat = DL_TARGET_POS_lat(buf);
   target.pos.lla.lon = DL_TARGET_POS_lon(buf);
 }

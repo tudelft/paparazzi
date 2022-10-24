@@ -318,6 +318,22 @@ heading not defined at:
       <call_once fun="reset_moving_target_distance()"/>
       <deroute block="REPEAT Approach SHIP"/>
     </block>
+    <block name="REPEAT Approach SHIP 1.5m" strip_button="REPEAT Approach SHIP 1.5m" strip_icon="boat.png">
+      <go wp="APPROACH"/>
+      <!--stay until="get_dist2_to_waypoint(WP_APPROACH) @LT 0.5" wp="APPROACH"/-->  <!-- NEED TO TEST: does the drone first go to the waypoint before het waypoint starts shifting to the ship? -->
+      <set value="TRUE" var="force_forward"/>
+      <call_once fun="approach_moving_target_enable()"/>
+      <!--call_once fun="nav_set_heading_towards_waypoint(WP_SHIP)"/-->
+      
+      <!--stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH" pre_call="approach_moving_target_enable()" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/-->
+      
+      <stay alt="1.5" wp="APPROACH" pre_call="approach_moving_target_enable()" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/>
+      <!--stay alt="2.5" wp="SHIP" until="GetPosHeight() @GT 2.2"/-->
+      <go wp="SHIP" alt="1.5"/>
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="reset_moving_target_distance()"/>
+      <deroute block="REPEAT Approach SHIP"/>
+    </block>
     <block name="reset_distance_descent">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="reset_moving_target_distance()"/>
