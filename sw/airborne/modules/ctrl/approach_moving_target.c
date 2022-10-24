@@ -197,7 +197,7 @@ void init_wp_ids(uint8_t wp_ship_id, uint8_t wp_approach_id){
 }
 
 // Function to enable from flight plan (call repeatedly!)
-void approach_moving_target_enable() { 
+void approach_moving_target_enable(void) { 
   amt.enabled_time = get_sys_time_msec(); // this makes folow_diagonal_approach()
 }
 
