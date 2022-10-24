@@ -235,7 +235,7 @@ heading not defined at:
     </block>
     <block name="Holding point hover">
       <set value="FALSE" var="force_forward"/>
-      <!--call_once fun="NavSetWaypointHere(WP__StayHover)"/-->
+      <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
       <call_once fun="NavSetAlt(WP__StayHover, GetPosAlt())"/>
       <!--call_once fun="nav_set_heading_deg(EASYHEADING)"/-->
       <!--stay alt="GetPosAlt()" wp="_StayHover"/-->
