@@ -9,7 +9,13 @@
         "editor.tabSize": 4,
     },
     "files.associations": {
-        "Makefile.*": "makefile"
+        "Makefile.*": "makefile",
+        "array": "c",
+        "istream": "c",
+        "limits": "c",
+        "functional": "c",
+        "regex": "c",
+        "typeinfo": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",

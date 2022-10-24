@@ -89,5 +89,6 @@ extern void approach_moving_target_enable(void);
 extern void init_wp_ids(uint8_t wp_ship_id, uint8_t wp_approach_id);
 extern void reset_moving_target_distance(void);
 extern void waveEstimation(void);
+extern void target_parse_RC_4CH(uint8_t *buf);
 
 #endif // APPROACH_MOVING_TARGET_H
