@@ -28,6 +28,7 @@
 
 #include "std.h"
 #include "math/pprz_algebra_float.h"
+#include <stdio.h>
 
 // Angle of the approach in degrees
 extern float approach_moving_target_angle_deg;

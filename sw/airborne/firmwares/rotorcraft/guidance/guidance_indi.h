@@ -31,6 +31,7 @@
 #include "std.h"
 #include "math/pprz_algebra_int.h"
 #include "math/pprz_algebra_float.h"
+#include <stdio.h>
 
 extern void guidance_indi_enter(void);
 extern void guidance_indi_run(float *heading_sp);

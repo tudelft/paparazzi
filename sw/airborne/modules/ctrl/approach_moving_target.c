@@ -38,7 +38,6 @@ float approach_moving_target_angle_deg;
 #define DEBUG_AMT TRUE
 #define SELFBUILDCONTROLLER TRUE
 #define CYBERZOO
-#include <stdio.h>
 
 // settings how drone should approach the ship
 struct Amt amt = {
@@ -254,7 +253,7 @@ void follow_diagonal_approach(void) {
     - calculate descent line unit vector (is it nesceserry to calculate this over and over every loop?)
     - 
   */
-  uint32_t start_time = get_sys_time_msec();
+  // uint32_t start_time = get_sys_time_msec(); // to print calculation time // UNUSED
 
   // waveEstimation(); // TESTING // NOT WORKING YET
 
@@ -322,11 +321,10 @@ void follow_diagonal_approach(void) {
 
   // desired velocity = rel_vel + target_vel_boat + error_controller(using NED position)
   //printf("ref_relvel.x: %f \t target_vel_boat.x: %f \t ec_vel.x: %f \n", ref_relvel.x, target_vel_boat.x, ec_vel.x);
-  struct FloatVect3 des_vel = {
-    ref_relvel.x + target_vel_boat.x + ec_vel.x, // + integral_compenstation.x,
-    ref_relvel.y + target_vel_boat.y + ec_vel.y, // + integral_compenstation.y,
-    ref_relvel.z + target_vel_boat.z + ec_vel.z,
-  };
+  struct FloatVect3 des_vel;
+  des_vel.x = ref_relvel.x + target_vel_boat.x + ec_vel.x + integral_compenstation.x;
+  des_vel.y = ref_relvel.y + target_vel_boat.y + ec_vel.y + integral_compenstation.y;
+  des_vel.z = ref_relvel.z + target_vel_boat.z + ec_vel.z;
 
   // Bound vertical speed setpoint
   if(stateGetAirspeed_f() > 13.0) {
