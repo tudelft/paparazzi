@@ -59,7 +59,7 @@ struct target_t {
 
 };
 
-extern struct target_t target;
+extern struct target_t target_landing;
 extern void target_pos_init(void);
 extern void target_parse_target_pos(uint8_t *buf);
 extern void target_parse_target_pos_roll_compensated(uint8_t *buf); // WIP // NOT TESTED YET
