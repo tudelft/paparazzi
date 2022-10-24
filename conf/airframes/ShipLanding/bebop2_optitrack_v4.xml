@@ -6,14 +6,40 @@
   </description>
 
   <firmware name="rotorcraft">
+  
+    <!-- ****** TARGET AUTOPILOT ****** -->
     <target name="ap" board="bebop2">
       <!-- control effectiveness -->
       <define name="STABILIZATION_INDI_G1_P" value="0.05"/>
       <define name="STABILIZATION_INDI_G1_Q" value="0.025"/>
       <define name="STABILIZATION_INDI_G1_R" value="0.0022"/>
       <define name="STABILIZATION_INDI_G2_R" value="0.20"/>
+      
+      <!-- SPECIFIC FOR VALKENBURG 
+      <module name="gps" type="ublox"/>
+      <define name="INS_VFF_R_GPS" value="0.1"/> 
+      <define name="INS_USE_GPS_ALT_SPEED" value="FALSE"/>
+      <define name="MISC_ARRIVED_AT_WAYPOINT" value="1.0" unit="m"/>
+      <module name="ahrs" type="int_cmpl_quat">
+        <configure name="USE_MAGNETOMETER" value="TRUE"/>
+        <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
+      </module>
+      -->
+      
+      <!-- SPECIFIC FOR OPTI TRACK -->
+      <module name="gps" type="datalink"/>
+      <define name="INS_VFF_R_GPS" value="0.01"/>
+      <define name="INS_USE_GPS_ALT_SPEED" value="TRUE"/>
+      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
+      <define name="MISC_ARRIVED_AT_WAYPOINT" value="0.2" unit="m"/>
+      <module name="ahrs" type="int_cmpl_quat">
+        <configure name="USE_MAGNETOMETER" value="FALSE"/>
+        <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
+      </module>
     </target>
+    <!-- ****** TARGET AUTOPILOT ****** -->
 
+    <!-- ****** TARGET SIMULATOR ****** -->
     <target name="nps" board="pc">
       <!-- control effectiveness -->
       <define name="STABILIZATION_INDI_G1_P" value="0.0390"/>
@@ -23,15 +49,25 @@
       <module name="fdm" type="jsbsim"/>
       <module name="udp"/>
       <define name="STABILIZATION_INDI_G2_R" value="0.0"/><!-- for jsbsim (rotor inertia is not modelled) -->
-      <!-- <define name="STABILIZATION_INDI_G2_R" value="0.20"/> --><!-- for gazebo -->
+      
+      <!-- SPECIFIC FOR SIM -->
+      <module name="gps" type="datalink"/>
+      <define name="INS_VFF_R_GPS" value="0.01"/> <!-- 0.01 for optitrack ELSE 0.1 -->
+      <define name="INS_USE_GPS_ALT_SPEED" value="TRUE"/> <!-- TRUE for optitrack -->
+      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> <!-- only for optitrack -->
+      <define name="MISC_ARRIVED_AT_WAYPOINT" value="0.2" unit="m"/> <!-- small value for optitrack, else around 1 to 3 meters -->
+      <module name="ahrs" type="int_cmpl_quat">
+        <configure name="USE_MAGNETOMETER" value="TRUE"/>
+        <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
+      </module>
     </target>
+    <!-- ****** TARGET SIMULATOR ****** -->
     
     <!--define name="USE_SONAR" value="FALSE"/-->
     <module name="sonar_bebop">
       <define name="USE_SONAR"/>
       <define name="SENSOR_SYNC_SEND_SONAR"/>
     </module>
-    
 
     <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
@@ -39,7 +75,6 @@
     <module name="motor_mixing"/>
     <module name="actuators" type="bebop"/>
     <module name="imu" type="bebop"/>
-    <module name="gps" type="datalink"/>
     <module name="guidance" type="indi">
       <define name="GUIDANCE_INDI_POS_GAIN" value="1.0"/>
       <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
@@ -48,10 +83,6 @@
     </module>
     
     <module name="stabilization" type="indi_simple"/>
-    <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="FALSE"/>
-      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
-    </module>
     <module name="ins" type="extended"/>
     <module name="geo_mag"/>
     <module name="air_data"/>
@@ -132,9 +163,9 @@
   <section name="INS" prefix="INS_">
     <define name="SONAR_MAX_RANGE" value="2.2"/>
     <define name="SONAR_MIN_RANGE" value="0.2"/>
-    <define name="USE_GPS_ALT" value="1"/>
-    <define name="USE_GPS_ALT_SPEED" value="1"/>
-    <define name="VFF_R_GPS" value="0.01"/> <!-- 0.01 for optitrack ELSE 0.1 -->
+    <define name="USE_GPS_ALT" value="TRUE"/>
+    <!--define name="USE_GPS_ALT_SPEED" value="TRUE"/-->
+    <!--define name="VFF_R_GPS" value="0.01"/--> <!-- 0.01 for optitrack ELSE 0.1 -->
   </section>
 
 
@@ -216,7 +247,7 @@
   </section>
 
   <section name="MISC">
-    <define name="ARRIVED_AT_WAYPOINT" value="0.2" unit="m"/> <!-- how far away it declares that the waypoint is reached -->
+    <!--define name="ARRIVED_AT_WAYPOINT" value="0.2" unit="m"/--> <!-- how far away it declares that the waypoint is reached -->
   </section>
 
   <section name="IMU" prefix="IMU_">
