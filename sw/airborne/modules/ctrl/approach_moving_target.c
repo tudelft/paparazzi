@@ -36,6 +36,7 @@ float approach_moving_target_angle_deg;
 
 
 #define DEBUG_AMT TRUE
+#define SELFBUILDCONTROLLER TRUE
 #define CYBERZOO
 #include <stdio.h>
 
@@ -143,14 +144,24 @@ void approach_moving_target_init(void)
  */
 void target_parse_RC_4CH(uint8_t *buf)
 {
-  // Save the receivd rotating knob value
-  amt.approach_speed_gain = (float)DL_RC_4CH_rotating_knob(buf)/100;
-
+  int value = DL_RC_4CH_rotating_knob(buf);
+  if (SELFBUILDCONTROLLER){
+    if (value < 50)       value = 0;
+    else if (value > 150) value = 100;
+    else                  value = 200;
+    amt.approach_speed_gain = (float)value/200; // 0.0 to 1.0
+  }
+  else{
+    // Save the receivd rotating knob value
+    //amt.approach_speed_gain = (float)value/100; // 0.0 to 2.0
+    amt.approach_speed_gain = (float)value/200; // 0.0 to 1.0
+    printf("knop value: %i \n", value);
+  }
 }
 
 
 /* Update INS (internal navigation system) based on GPS information */
-static void gps_cb(uint8_t sender_id __attribute__((uTARGET_POS_INFOnused)),
+static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp,
                    struct GpsState *gps_s)
 {

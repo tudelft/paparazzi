@@ -6,11 +6,24 @@
   </description>
 
   <firmware name="rotorcraft">
-    <target name="ap" board="bebop2"/>
+    <target name="ap" board="bebop2">
+      <!-- control effectiveness -->
+      <define name="STABILIZATION_INDI_G1_P" value="0.05"/>
+      <define name="STABILIZATION_INDI_G1_Q" value="0.025"/>
+      <define name="STABILIZATION_INDI_G1_R" value="0.0022"/>
+      <define name="STABILIZATION_INDI_G2_R" value="0.20"/>
+    </target>
 
     <target name="nps" board="pc">
+      <!-- control effectiveness -->
+      <define name="STABILIZATION_INDI_G1_P" value="0.0390"/>
+      <define name="STABILIZATION_INDI_G1_Q" value="0.0473"/>
+      <define name="STABILIZATION_INDI_G1_R" value="0.00122"/> 
+      
       <module name="fdm" type="jsbsim"/>
       <module name="udp"/>
+      <define name="STABILIZATION_INDI_G2_R" value="0.0"/><!-- for jsbsim (rotor inertia is not modelled) -->
+      <!-- <define name="STABILIZATION_INDI_G2_R" value="0.20"/> --><!-- for gazebo -->
     </target>
     
     <!--define name="USE_SONAR" value="FALSE"/-->
@@ -154,11 +167,11 @@
   </section>
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
-    <!-- control effectiveness -->
+    <!-- control effectiveness 
     <define name="G1_P" value="0.05"/>
     <define name="G1_Q" value="0.025"/>
     <define name="G1_R" value="0.0022"/>
-    <define name="G2_R" value="0.20"/>
+    <define name="G2_R" value="0.20"/>-->
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="170.0"/>
@@ -216,12 +229,13 @@
     <define name="CLIMB_VSPEED" value="0.5"/>
     <define name="DESCEND_VSPEED" value="-1.0"/>
   </section>
-
+  
   <section name="SIMULATOR" prefix="NPS_">
     <define name="ACTUATOR_NAMES" value="nw_motor, ne_motor, se_motor, sw_motor" type="string[]"/>
-    <define name="JSBSIM_MODEL" value="simple_x_quad_ccw" type="string"/>
+    <define name="JSBSIM_MODEL" value="simple_x_quad" type="string"/>
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
   </section>
+  <include href="conf/simulator/gazebo/airframes/bebop.xml"/>
 
   <section name="AUTOPILOT">
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
