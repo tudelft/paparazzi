@@ -281,10 +281,10 @@
 
     <!-- reference acceleration for attitude control     (You have a screenshot on 2022-10-18 ~21:15 with values from Valkenburg) -->
     <define name="REF_ERR_P" value="80"/> <!-- 100 believe Valkenburg was 100, 70-->
-    <define name="REF_ERR_Q" value="50"/> <!-- 180 believe Valkenburg was 140, 75, 55-->
+    <define name="REF_ERR_Q" value="95"/> <!-- 180 believe Valkenburg was 140, 75, 55-->
     <define name="REF_ERR_R" value="400"/> <!-- 140 believe Valkenburg was 140, 75, 55-->
     <define name="REF_RATE_P" value="8.0"/> <!-- 14 believe Valkenburg was 10, 8, 4.5-->
-    <define name="REF_RATE_Q" value="7.5"/> <!-- 14 believe Valkenburg was 10, 10, 5.5-->
+    <define name="REF_RATE_Q" value="9.0"/> <!-- 14 believe Valkenburg was 10, 10, 5.5-->
     <define name="REF_RATE_R" value="45"/> <!-- 14 believe Valkenburg was 10, 10, 5.5 ## TRY 6.5-->
 
     <!--Maximum rates, to avoid instability-->
@@ -340,7 +340,7 @@
     <define name="PIVOT_GAIN_Q" value="100"/>
     <define name="PIVOT_GAIN_THETA" value="0"/>
     <define name="PIVOT_SERVOGAIN_Q" value="0.1"/>
-    <define name="PIVOT_SERVOGAIN_THETA" value="2"/>
+    <define name="PIVOT_SERVOGAIN_THETA" value="0.1"/>
   </section>
   
   <!-- Definitions for control effectiveness calculator module -->
@@ -352,7 +352,7 @@
    	<define name="MASS" value="1.270"/>		<!--[kg]-->
    	<define name="I_XX" value="0.06617232"/>	<!--[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
    	<!--<define name="I_YY" value="0.04914925"/>-->	<!--[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
-   	<define name="I_YY" value="0.021"/> <!-- 0.009 for valkenburg flights. 0.18, 0.04914925 -->
+   	<define name="I_YY" value="0.015"/> <!-- 0.009 for valkenburg flights. 0.18, 0.04914925 -->
    	<define name="I_ZZ" value="0.01752587"/>	<!--[kg m2] 0.065 for valkenburg flights. The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
 	    <!--<define name="I_XX" value="0.017897"/>	[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
    	<!--<define name="I_YY" value="0.003390"/>	[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
