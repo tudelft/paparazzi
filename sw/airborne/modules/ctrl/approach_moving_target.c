@@ -411,15 +411,20 @@ void follow_diagonal_approach(void) {
   // *drone_pos = NED float
   // des_pos = NED float
   // ned _pos_approach = NED float
-  struct NedCoor_f ned_pos_approach; // WAS LLA instead of NED
+  struct FloatVect3 ned_pos_approach; // WAS LLA instead of NED
 
   VECT3_SUM(ned_pos_approach, rel_des_pos, *drone_pos);
 
   update_waypoint(amt.wp_approach_id, &ned_pos_approach);
   // TEST TO SOLVE HEIGHT STEP PROBLEM
-  struct EnuCoor_f target_enu_height;
-  ENU_OF_TO_NED(target_enu_height, ned_pos_approach);
-  amt.target_heigth = ned_pos_approach.x;
+  //struct EnuCoor_f target_enu_height;
+  //struct NedCoor_f ned_pos_approach_copy;
+  //ned_pos_approach_copy.x = ned_pos_approach.x;
+  //ned_pos_approach_copy.y = ned_pos_approach.y;
+  //ned_pos_approach_copy.z = ned_pos_approach.z;
+  //ENU_OF_TO_NED(target_enu_height, ned_pos_approach_copy);
+  //amt.target_heigth = ned_pos_approach_copy.x;                        // WHY X ????????????????????????????
+  amt.target_heigth = ned_pos_approach.z; 
   // TEST TO SOLVE HEIGHT STEP PROBLEM
 
   // Update values for telemetry
