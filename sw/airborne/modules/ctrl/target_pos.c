@@ -190,21 +190,14 @@ void target_parse_target_pos_roll_compensated(uint8_t *buf)
   target.pos.recv_time = get_sys_time_msec();
   target.pos.tow = gps_tow_from_sys_ticks(sys_time.nb_tick); // FIXME: need to get from the real GPS
 
-  int lat_raw = DL_TARGET_POS_lat(buf);
-  int lon_raw = DL_TARGET_POS_lon(buf);
+  // int lat_raw = DL_TARGET_POS_lat(buf);  // UNUSED
+  // int lon_raw = DL_TARGET_POS_lon(buf);  // UNUSED
   target.pos.lla.alt = DL_TARGET_POS_alt(buf);
   target.pos.ground_speed = DL_TARGET_POS_speed(buf);
   target.pos.climb = DL_TARGET_POS_climb(buf);
   target.pos.course = DL_TARGET_POS_course(buf);
   target.pos.heading = DL_TARGET_POS_heading(buf);
   target.pos.valid = true;
-  
-  //sos cas toa 
-  //sin=ov/aan 
-  //cos=aan/sch 
-  //tan=ov/aan 
-
-  //int schuincos(RadOfDeg(target.pos.heading))
 
   
 
