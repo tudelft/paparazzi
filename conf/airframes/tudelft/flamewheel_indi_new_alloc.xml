@@ -217,7 +217,7 @@
     <define name="G1_PITCH" value="{+18 , 0, -18 , -18, 0, +18 }"/>
     <define name="G1_YAW" value="{+3.4, -3.4, +3.4, -3.4, +3.4, -3.4}"/>
     <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4, -.4, -.4}"/>
-    <define name="G2" value="{+0.6, -0.6, +0.6, -0.6, +0.6, -0.6}"/>
+    <define name="G2" value="{0, -0, 0, -0, 0, -0}"/>
 
     <!-- First test on 21 oct
     <define name="G1_ROLL" value="{-17  , -34  , -17  ,  17  ,  34  ,  17}"/>
@@ -236,11 +236,11 @@
     -->
 
     <!-- Ideal in sim
-    <define name="G1_ROLL" value="{-6.5 , -12, -6.5, 6.5, 13, 6.5 }"/>
-    <define name="G1_PITCH" value="{+11.5 , 0, -11.5 , -11.5, 0, +11.5 }"/>
-    <define name="G1_YAW" value="{+1.2, -1.2, +1.2, -1.2, +1.2, -1.2}"/>
+    <define name="G1_ROLL" value="{-10 , -20, -10, 10, 20, 10 }"/>
+    <define name="G1_PITCH" value="{+18 , 0, -18 , -18, 0, +18 }"/>
+    <define name="G1_YAW" value="{+3.4, -3.4, +3.4, -3.4, +3.4, -3.4}"/>
     <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4, -.4, -.4}"/>
-    <define name="G2" value="{+0, -0, +0, -0, +0, -0}"/>
+    <define name="G2" value="{+200.6, -200.6, +200.6, -200.6, +200.6, -200.6}"/>
     -->
 
     <!-- reference acceleration for attitude control -->
@@ -286,19 +286,19 @@
     <define name="HOVER_KP" value="283"/>
     <define name="HOVER_KD" value="82"/>
     <define name="HOVER_KI" value="20"/>
-    <define name="NOMINAL_HOVER_THROTTLE" value="0.655"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value="0.4"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
   </section>
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
     <define name="MAX_BANK" value="40" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="0.8" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="1" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
-    <define name="PGAIN" value="150"/>
-    <define name="DGAIN" value="250"/>
-    <define name="IGAIN" value="30"/>
+    <define name="PGAIN" value="90"/>
+    <define name="DGAIN" value="280"/>
+    <define name="IGAIN" value="5"/>
   </section>
 
   <section name="NAVIGATION" prefix="NAV_">
