@@ -122,11 +122,11 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
         beta[i] -= H[permutation[i]][permutation[j]] * us[permutation[j]];
 
       // beta += A'*b, but is optimised, because A has diagonal part
-      for (j=0; j<n_c; j++)
+      for (j=0; j<n_v; j++)
         beta[i] += A[j][permutation[i]] * b[j];
 
-      for (j=n_v; j<n_c; j++)
-        beta[i] += A[n_v+permutation[j]][permutation[j]] * b[n_v+permutation[j]];
+      beta[i] += A[n_v+permutation[i]][permutation[i]] * b[n_v+permutation[i]];
+
       #ifdef DEBUG
       printf("%f\n", beta[i]);
       #endif

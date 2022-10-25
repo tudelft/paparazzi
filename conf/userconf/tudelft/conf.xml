@@ -197,7 +197,7 @@
    airframe="airframes/tudelft/flamewheel_indi_new_alloc.xml"
    radio="radios/OPENUAS/openuas_openrxsr_sbus_16_out.xml"
    telemetry="telemetry/tudelft/ctl_alloc_algos.xml"
-   flight_plan="flight_plans/tudelft/control_alloc_algos.xml"
+   flight_plan="flight_plans/tudelft/control_alloc_climb.xml"
    settings="settings/control/rotorcraft_speed.xml settings/rotorcraft_basic.xml"
    settings_modules="modules/ahrs_float_cmpl_quat.xml modules/gps.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/logger_sd_chibios.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi_algos.xml"
    gui_color="blue"
