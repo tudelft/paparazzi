@@ -27,6 +27,7 @@
 #ifndef SONAR_BEBOP_H
 #define SONAR_BEBOP_H
 
+
 #include "std.h"
 
 struct SonarBebop {
@@ -38,5 +39,9 @@ struct SonarBebop {
 extern struct SonarBebop sonar_bebop;
 
 extern void sonar_bebop_init(void);
+
+extern float dist_sonar(void);
+
+#define return_dist_sonar() (sonar_bebop.distance)
 
 #endif /* SONAR_BEBOP_H */

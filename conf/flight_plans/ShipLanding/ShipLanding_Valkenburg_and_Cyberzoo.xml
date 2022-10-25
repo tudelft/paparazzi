@@ -67,14 +67,15 @@ heading not defined at:
 - holding point kill
 
 -->
-<flight_plan alt="2" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="200" name="Rotorcraft Cyberzoo (Delft) no GPS" security_height="0.3">
-<!--flight_plan alt="5" ground_alt="0" lat0="52.168221" lon0="4.412767" max_dist_from_home="250" name="Nederdrone Valkenburg" security_height="5"-->
+<!--flight_plan alt="2" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="200" name="Rotorcraft Cyberzoo (Delft) no GPS" security_height="0.3"-->
+<flight_plan alt="5" ground_alt="0" lat0="52.168221" lon0="4.412767" max_dist_from_home="250" name="Nederdrone Valkenburg" security_height="5">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
     #include "modules/ctrl/approach_moving_target.h"
     #include "modules/ctrl/target_pos.h"
     #include "modules/energy/electrical.h"
+    <!-- #include "modules/sonar/sonar_bebop.h" -->
     
     <!--#define EASYHEADING 180 -->
 </header>
@@ -90,7 +91,7 @@ heading not defined at:
     <waypoint name="_landHere" x="-133.7" y="-307.0"/>
     <waypoint name="SHIP" x="123.2" y="87.8"/>
     <waypoint name="APPROACH" x="123.2" y="87.8"/>
-    <waypoint name="CARROT" x="123.2" y="87.8"/>
+    <!--waypoint name="CARROT" x="123.2" y="87.8"/-->
     <waypoint name="_StayHover" x="-122.7" y="-345.8"/>
     <waypoint name="_Takeoff" x="-140.1" y="-271.3"/>
     <waypoint lat="52.169088" lon="4.411594" name="_C1"/>
@@ -201,14 +202,14 @@ heading not defined at:
     @AND !(nav_block == IndexOfBlock('Land Here'))"
     deroute="Holding point hover"/>
 
-    <!-- Valkenburg + Cyberzoo: kill when outside killzone geofence OR altitude more than 150m -->
+    <!-- Valkenburg + Cyberzoo: kill when outside killzone geofence OR altitude more than 150m 
     <exception cond="Or((!InsideValkenburg(GetPosX(), GetPosY()) 
                     @AND !InsideTUDelft(GetPosX(), GetPosY())), 
                          GetPosAlt() @GT GetAltRef() + 150) 
     @AND !(nav_block == IndexOfBlock('Wait GPS')) 
     @AND !(nav_block == IndexOfBlock('Geo init')) 
     @AND !(nav_block == IndexOfBlock('Holding point kill'))" 
-    deroute="Holding point kill"/>
+    deroute="Holding point kill"/>-->
 
     <!-- Goto "hover" when in "connection lost" and signal is restored -->
     <exception cond="Or(Or((nav_block == IndexOfBlock('Emergency connection lost Hover')), 
@@ -216,6 +217,11 @@ heading not defined at:
     (nav_block == IndexOfBlock('Emergency connection lost Descent'))) 
     @AND datalink_time @LT 10 " 
     deroute="Holding point hover"/>
+    
+    <!-- TEST 
+    <exception cond=" return_dist_sonar() @GT 1.5 " 
+    deroute="Holding point kill"/>-->
+    
   </exceptions>
   <blocks>
     <block name="Wait GPS">

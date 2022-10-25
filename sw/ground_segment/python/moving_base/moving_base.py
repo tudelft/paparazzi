@@ -295,6 +295,7 @@ class Base:
             msg['climb'] = 0
             msg['course'] = self.course
             msg['heading'] = self.heading
+            msg['tow'] = 0
             self._interface.send(msg)
 
             self.bufLon.pop(9)

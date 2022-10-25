@@ -186,10 +186,10 @@ void update_waypoint(uint8_t wp_id, struct FloatVect3 * target_ned) {
   // Send waypoint update every 0.2 second !!!!!! THIS ONE SEEMD NOT BE USED, if time is long, nothing is different in GCS sim
   //RunOnceEvery(0.2, {
     // Send to the GCS that the waypoint has been moved
-    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-                                &waypoints[wp_id].enu_i.x,
-                                &waypoints[wp_id].enu_i.y,
-                                &waypoints[wp_id].enu_i.z);
+    // DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+    //                             &waypoints[wp_id].enu_i.x,
+    //                             &waypoints[wp_id].enu_i.y,
+    //                             &waypoints[wp_id].enu_i.z);
   //} );
 }
 
@@ -439,3 +439,6 @@ void follow_diagonal_approach(void) {
   // uint32_t end_time = get_sys_time_msec(); // UNUSED
   //printf("loop_time = %i %i \n", end_time, start_time);
 }
+
+
+

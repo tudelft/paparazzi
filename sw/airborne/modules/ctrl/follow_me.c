@@ -211,10 +211,10 @@ void follow_me_set_wp(uint8_t wp_id, float speed)
     waypoint_set_enu(wp_id, &target_enu);
 
     // Send to the GCS that the waypoint has been moved
-    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-                               &waypoints[wp_id].enu_i.x,
-                               &waypoints[wp_id].enu_i.y,
-                               &waypoints[wp_id].enu_i.z);
+    // DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+    //                            &waypoints[wp_id].enu_i.x,
+    //                            &waypoints[wp_id].enu_i.y,
+    //                            &waypoints[wp_id].enu_i.z);
   }
 
   // Allways update the time to avoid big jumps in distance and height

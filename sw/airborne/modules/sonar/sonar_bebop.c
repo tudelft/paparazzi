@@ -282,4 +282,3 @@ static float sonar_filter_narrow_obstacles(float distance_sonar)
   }
 }
 #endif
-

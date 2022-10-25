@@ -613,7 +613,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
                 iTOW, // itow
                 0.0); // airspeed
 
-            IvySendMsg("ground TARGET_POS %d %d %d %d %d %f %f %f %f",
+            IvySendMsg("ground TARGET_POS %d %d %d %d %d %f %f %f %f %d",
                 ac_id,
                 ac_id,
                 (int)(lat * 1e7),
@@ -622,7 +622,8 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
                 gSpeed,
                 -velD,
                 headMot,
-                ground_heading);
+                ground_heading,
+                iTOW);
           break;
         }
         case UBX_NAV_RELPOSNED_ID: {

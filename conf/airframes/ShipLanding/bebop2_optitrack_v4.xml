@@ -15,6 +15,21 @@
       <define name="STABILIZATION_INDI_G1_R" value="0.0022"/>
       <define name="STABILIZATION_INDI_G2_R" value="0.20"/>
       
+      <!-- SPECIFIC FOR VALKENBURG RTK -->
+      <module name="gps" type="ublox">
+        <configure name="GPS_BAUD" value="B115200"/>
+        <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
+        <define name="USE_GPS_UBX_RXM_RAW" value="TRUE"/>
+        <configure name="GPS_PORT" value="UART2"/>
+      </module>
+      <define name="INS_VFF_R_GPS" value="0.1"/> 
+      <define name="INS_USE_GPS_ALT_SPEED" value="FALSE"/>
+      <define name="MISC_ARRIVED_AT_WAYPOINT" value="1.0" unit="m"/>
+      <module name="ahrs" type="int_cmpl_quat">
+        <configure name="USE_MAGNETOMETER" value="TRUE"/>
+        <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
+      </module>
+      
       <!-- SPECIFIC FOR VALKENBURG 
       <module name="gps" type="ublox"/>
       <define name="INS_VFF_R_GPS" value="0.1"/> 
@@ -26,7 +41,7 @@
       </module>
       -->
       
-      <!-- SPECIFIC FOR OPTI TRACK -->
+      <!-- SPECIFIC FOR OPTI TRACK
       <module name="gps" type="datalink"/>
       <define name="INS_VFF_R_GPS" value="0.01"/>
       <define name="INS_USE_GPS_ALT_SPEED" value="TRUE"/>
@@ -35,8 +50,8 @@
       <module name="ahrs" type="int_cmpl_quat">
         <configure name="USE_MAGNETOMETER" value="FALSE"/>
         <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
-      </module>
-    </target>
+      </module>-->
+    </target> 
     <!-- ****** TARGET AUTOPILOT ****** -->
 
     <!-- ****** TARGET SIMULATOR ****** -->
