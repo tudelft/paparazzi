@@ -9,4 +9,37 @@
 
 
 - bebop GPS take-over als backup
-- 
+
+Notes from phone:
+- test Set_offset_here (function did not seem to work in the field)
+- mangage logfiles (store them in folders)
+- Add Uplink messages also to logfiles
+- Improve Matlab analisys somehow to show tracking error more clear
++ Make Matlab autosave figures after analisys
++ Add dotted lines in Matlab to show when approach_moving_target is enabled
+- Break harder in guidance_indi when in front of WP (prevent crash into truck/ship cabin)
+- Check if bebop speed is completely dependend of guidance_indi, or are there maybe other modules forcing the drone to move?
+- Make RTK system in drone robust to loss of RTCM messages
+- Filter/smooth signal inside GPS module (watch out for inducing delays)
+- Filter ship gps position based on heading/cog (filter roll, but not froward movement)
+- Add info to internal logging on drone (logging declared in airframe)
+- Analyse what factors cause overshoot of WP in guidance (control params/gps-noise/abrubpt-speedchange)
++ Make every gps-fix save the TOW as timestamp, to make the feedforward accurate with drone and groundstation
+? Try to make an all-purpose XML file with IF statements (tried, but without success)
+- Create/Plan dataset with gyro/accelerometer at rough sea somehow
+- Is there a Derrivative in guidance_indi?
+- Only use sonar when drone is sure it is above the deck/truck
+- Define better what happens when approach_moving_target_enable() is stoped
+- Make sure that guidance_indi/approach does not go des_pos, except when needed
+
+- = TODO
++ = DONE
+? = TRIED, but failed
+
+Factors causing overshoot WP:
+- gcs no gps-pos update send, but target changed heading/speed
+- amt.relvel_gain (approach speed gain) higher than 1.0
+- amt.speed_gain (target speed gain) higher than 1.0
+- amt.pos_gain (position error gain) too high, so the drone does not slow down early enough
+- integration_compensation (if used) because set to 0.0 when passing error=0, but at that point speed is too high
+- drone is on WP and ship/truck descellerates (drone always beyond WP in this case)
