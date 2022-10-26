@@ -18,26 +18,12 @@
         <dl_setting var="neutral_servo_1_pwm"  min="1000" step="1" max="2000" shortname="neutral_servo_1_pwm" />
         <dl_setting var="neutral_servo_2_pwm"  min="1000" step="1" max="2000" shortname="neutral_servo_2_pwm" />
 
-        <dl_setting var="gain_roll_servo"  min="-500" step="1" max="500" shortname="gain_roll_servo" />
-        <dl_setting var="gain_pitch_servo"  min="-500" step="1" max="500" shortname="gain_pitch_servo" />
-
-        <dl_setting var="roll_trim_servos"  min="-500" step="1" max="500" shortname="roll_trim_servos" />
-        <dl_setting var="pitch_trim_servos"  min="-500" step="1" max="500" shortname="pitch_trim_servos" />
+        <dl_setting var="CL_ailerons"  min="0" step=".001" max="0.5" shortname="CL_ailerons" />
 
         <dl_setting var="des_pos_earth_x"  min="-100" step="1" max="100" shortname="pos_e_x" />
         <dl_setting var="des_pos_earth_y"  min="-100" step="1" max="100" shortname="pos_e_y" />
 
-        <dl_setting var="mode_1_control"  min="0" step="1" max="1" shortname="mode_1_control" values="FALSE|TRUE" />
-        <dl_setting var="activate_tilting_az_PID" min="0" step="1" max="1" shortname="tilt_az_active_PID" values="FALSE|TRUE" />
-        <dl_setting var="activate_tilting_el_PID" min="0" step="1" max="1" shortname="tilt_el_active_PID" values="FALSE|TRUE" />
         <dl_setting var="yaw_with_tilting_PID" min="0" step="1" max="1" shortname="use_tilt_to_yaw_PID" values="FALSE|TRUE" />
-        <dl_setting var="yaw_with_motors_PID" min="0" step="1" max="1" shortname="use_motor_to_yaw_PID" values="FALSE|TRUE" />
-
-        <dl_setting var="position_with_attitude" min="0" step="1" max="1" shortname="out_loop_pos" values="FALSE|TRUE" />
-        <dl_setting var="manual_motor_stick" min="0" step="1" max="1" shortname="manual_motor_stick" values="FALSE|TRUE" />
-
-        <dl_setting var="manual_heading" min="0" step="1" max="1" shortname="manual_heading" values="FALSE|TRUE" />
-        <dl_setting var="manual_heading_value_rad" min="0" step="1" max="2" shortname="heading_rad"/>
 
         <dl_setting var="stick_gain_yaw"  min="0" step=".01" max="1" shortname="Stick gain yaw" />
         <dl_setting var="stick_gain_throttle"  min="0" step=".01" max="1" shortname="Stick gain thr" />

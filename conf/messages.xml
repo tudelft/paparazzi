@@ -1825,13 +1825,13 @@
          <field name = "az_2_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Filtered az 2 state</field>
          <field name = "az_3_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Filtered az 3 state</field>
          <field name = "az_4_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Filtered az 4 state</field>
-         <field name = "theta_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Theta value from AHRS</field>
-         <field name = "phi_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Phi value from AHRS</field>
-         <field name = "psi_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Psi value from AHRS</field>
+         <field name = "theta_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Theta value from AHRS filtered</field>
+         <field name = "phi_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Phi value from AHRS filtered</field>
+         <field name = "ailerons_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Filtered Ailerons state</field>
          <field name = "gamma_state" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Flight path angle</field>
-         <field name = "p_state" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1">Body rate around x axes</field>
-         <field name = "q_state" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1">Body rate around y axes</field>
-         <field name = "r_state" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1">Body rate around z axes</field>
+         <field name = "p_state" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1">Body rate around x axes filtered</field>
+         <field name = "q_state" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1">Body rate around y axes filtered</field>
+         <field name = "r_state" type="int16" unit="1e1_deg_s" alt_unit="deg_s"  alt_unit_coef="0.1">Body rate around z axes filtered</field>
          <field name = "airspeed_state" type="int16" unit="1e2_m_s" alt_unit="m_s"  alt_unit_coef="0.01">Airspeed measured from airspeed sensor</field>
          <field name = "beta_state" type="int16" unit="1e2_m_s" alt_unit="deg"  alt_unit_coef="0.01">Sideslip angle measured with the vain</field>
          <field name = "pseudo_control_ax" type="int16" unit="1e2_m_s2" alt_unit="m_s2"  alt_unit_coef="0.01">Computed pseudo-control for the x-earth acceleration</field>
@@ -1845,6 +1845,7 @@
          <field name = "desired_az_value" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Desired state for the azimuth tilt position</field>
          <field name = "desired_theta_value" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Desired theta value</field>
          <field name = "desired_phi_value" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Desired phi value</field>
+         <field name = "desired_ailerons_value" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Desired ailerons value</field>
          <field name = "rolling_msg_out" type="float">Rolling message out content</field>
          <field name = "rolling_msg_out_id" type="uint8">Rolling message out id</field>
      </message>
@@ -1865,6 +1866,7 @@
          <field name = "az_4_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Command for azimuth tilt 4</field>
          <field name = "theta_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Command for desired theta value</field>
          <field name = "phi_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Command for desired phi value</field>
+         <field name = "ailerons_cmd" type="int16" unit="1e2_deg" alt_unit="deg"  alt_unit_coef="0.01">Command for ailerons</field>
          <field name = "n_iteration" type="uint16">Number of iterations made for the optimization of the solution</field>
          <field name = "n_evaluation" type="uint16">Number of function evaluation made for the optimization of the solution</field>
          <field name = "elapsed_time_us" type="uint16">Elapsed time for the determination of the optimal solution</field>
@@ -1930,6 +1932,9 @@
          <field name="Tilt_az_3_cmd" type="int32">Tilting azimuth servo 3 command [deg]</field>
          <field name="Tilt_az_4_cmd" type="int32">Tilting azimuth servo 4 command [deg]</field>
 
+        <!-- Commanded aileron value  -->
+         <field name="Delta_ailerons_cmd" type="int32">Delta ailerons command [deg]</field>
+
         <!-- Actual actuator state  -->
          <field name="Motor_1_state" type="int32">Motor 1 state [rad/s]</field>
          <field name="Motor_2_state" type="int32">Motor 2 state [rad/s]</field>
@@ -1946,12 +1951,15 @@
          <field name="Tilt_az_3_state" type="int32">Tilting azimuth servo 3 state [deg]</field>
          <field name="Tilt_az_4_state" type="int32">Tilting azimuth servo 4 state [deg]</field>
 
+        <!-- Actual aileron state  -->
+         <field name="Ailerons_state" type="int32">Ailerons state [deg]</field>
+
      </message>
 
      <message name="OVERACTUATED_VARIABLES" id="212">
 
          <field name="airspeed" type="float" >Actual airspeed</field>
-         <field name="aoa_angle" type="float" >Angle of attack in degrees</field>
+         <field name="auto_test_start" type="uint8" >Boolean for the auto mode</field>
          <field name="beta_angle" type="float" >Sideslip angle in degrees</field>
 
          <field name="act_x_pos" type="float" unit="m">Actual x position [m]</field>

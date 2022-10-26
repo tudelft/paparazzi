@@ -35,9 +35,9 @@
 /**
  * DEFINE VEHICLE PROPERTIES
  */
-#define N_ACT_REAL 12
+#define N_ACT_REAL 13
 #define INDI_INPUTS 6
-#define INDI_NUM_ACT 14
+#define INDI_NUM_ACT 15
 
 /**
  * DEFINE SOME USEFUL STRUCT
@@ -94,22 +94,14 @@ extern float K_d_speed;
 
 extern int16_t neutral_servo_1_pwm; 
 extern int16_t neutral_servo_2_pwm; 
-extern int16_t gain_roll_servo; 
-extern int16_t gain_pitch_servo; 
-extern int16_t roll_trim_servos;
-extern int16_t pitch_trim_servos;
+
+extern float CL_ailerons;
 
 extern float des_pos_earth_x;
 extern float des_pos_earth_y;
-extern bool mode_1_control;
 extern float stick_gain_yaw;
 extern float stick_gain_throttle;
-extern bool activate_tilting_az_PID;
-extern bool activate_tilting_el_PID;
 extern bool yaw_with_tilting_PID;
-extern bool yaw_with_motors_PID;
-extern bool position_with_attitude;
-extern bool manual_motor_stick;
 
 extern bool manual_heading;
 extern int manual_heading_value_rad;

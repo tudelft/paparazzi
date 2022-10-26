@@ -65,6 +65,8 @@ static void am7_downlink(struct transport_tx *trans, struct link_device *dev)
     int16_t theta_cmd_int_telemetry = myam7_data_in.theta_cmd_int;
     int16_t phi_cmd_int_telemetry = myam7_data_in.phi_cmd_int;
 
+    int16_t ailerons_cmd_int_telemetry = myam7_data_in.ailerons_cmd_int;
+
     uint16_t n_iteration_telemetry = myam7_data_in.n_iteration;
     uint16_t n_evaluation_telemetry =  myam7_data_in.n_evaluation;
 
@@ -82,7 +84,7 @@ static void am7_downlink(struct transport_tx *trans, struct link_device *dev)
 	   pprz_msg_send_AM7_IN(trans, dev, AC_ID, &motor_1_cmd_int_telemetry, &motor_2_cmd_int_telemetry, &motor_3_cmd_int_telemetry,
 		 	  &motor_4_cmd_int_telemetry, &el_1_cmd_int_telemetry, &el_2_cmd_int_telemetry, &el_3_cmd_int_telemetry,
 		 	  &el_4_cmd_int_telemetry, &az_1_cmd_int_telemetry,  &az_2_cmd_int_telemetry, &az_3_cmd_int_telemetry,
-              &az_4_cmd_int_telemetry, &theta_cmd_int_telemetry, &phi_cmd_int_telemetry,&n_iteration_telemetry, &n_evaluation_telemetry,
+              &az_4_cmd_int_telemetry, &theta_cmd_int_telemetry, &phi_cmd_int_telemetry, &ailerons_cmd_int_telemetry, &n_iteration_telemetry, &n_evaluation_telemetry,
               &elapsed_time_us_telemetry, &exit_flag_optimizer_telemetry, &residual_ax_int_telemetry,&residual_ay_int_telemetry, &residual_az_int_telemetry,
               &residual_p_dot_int_telemetry, &residual_q_dot_int_telemetry,&residual_r_dot_int_telemetry, &missed_packets, &ca7_message_frequency_RX,
               &rolling_msg_in_telemetry, &rolling_msg_in_id_telemetry);
@@ -102,10 +104,10 @@ static void am7_uplink(struct transport_tx *trans, struct link_device *dev)
     int16_t az_2_state_int_telemetry = myam7_data_out.az_2_state_int;
     int16_t az_3_state_int_telemetry = myam7_data_out.az_3_state_int;
     int16_t az_4_state_int_telemetry = myam7_data_out.az_4_state_int;
-    //Variable states
+    //Variable states and ailerons
     int16_t theta_state_int_telemetry = myam7_data_out.theta_state_int;
     int16_t phi_state_int_telemetry = myam7_data_out.phi_state_int;
-    int16_t psi_state_int_telemetry = myam7_data_out.psi_state_int;
+    int16_t ailerons_state_int_telemetry = myam7_data_out.ailerons_state_int;
     int16_t gamma_state_int_telemetry = myam7_data_out.gamma_state_int;
     int16_t p_state_int_telemetry = myam7_data_out.p_state_int;
     int16_t q_state_int_telemetry = myam7_data_out.q_state_int;
@@ -125,19 +127,20 @@ static void am7_uplink(struct transport_tx *trans, struct link_device *dev)
     int16_t desired_az_value_int_telemetry = myam7_data_out.desired_az_value_int;
     int16_t desired_theta_value_int_telemetry = myam7_data_out.desired_theta_value_int;
     int16_t desired_phi_value_int_telemetry = myam7_data_out.desired_phi_value_int;
+    int16_t desired_ailerons_value_int_telemetry = myam7_data_out.desired_ailerons_value_int;
     float rolling_msg_out_telemetry = myam7_data_out.rolling_msg_out;
     uint8_t rolling_msg_out_id_telemetry = myam7_data_out.rolling_msg_out_id;
 
 	   pprz_msg_send_AM7_OUT(trans, dev, AC_ID, &motor_1_state_int_telemetry, &motor_2_state_int_telemetry, &motor_3_state_int_telemetry,
 		 	  &motor_4_state_int_telemetry, &el_1_state_int_telemetry, &el_2_state_int_telemetry, &el_3_state_int_telemetry,
 		 	  &el_4_state_int_telemetry, &az_1_state_int_telemetry,  &az_2_state_int_telemetry, &az_3_state_int_telemetry,
-              &az_4_state_int_telemetry, &theta_state_int_telemetry, &phi_state_int_telemetry, &psi_state_int_telemetry,
+              &az_4_state_int_telemetry, &theta_state_int_telemetry, &phi_state_int_telemetry, &ailerons_state_int_telemetry,
               &gamma_state_int_telemetry, &p_state_int_telemetry, &q_state_int_telemetry, &r_state_int_telemetry,
               &airspeed_state_int_telemetry, &beta_state_int_telemetry,
               &pseudo_control_ax_int_telemetry, &pseudo_control_ay_int_telemetry, &pseudo_control_az_int_telemetry,
               &pseudo_control_p_dot_int_telemetry,&pseudo_control_q_dot_int_telemetry, &pseudo_control_r_dot_int_telemetry,
               &desired_motor_value_int_telemetry, &desired_el_value_int_telemetry, &desired_az_value_int_telemetry,
-              &desired_theta_value_int_telemetry, &desired_phi_value_int_telemetry,
+              &desired_theta_value_int_telemetry, &desired_phi_value_int_telemetry, &desired_ailerons_value_int_telemetry,
               &rolling_msg_out_telemetry, &rolling_msg_out_id_telemetry);
 
 }

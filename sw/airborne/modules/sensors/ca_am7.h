@@ -52,6 +52,7 @@ struct __attribute__((__packed__)) am7_data_in {
     int16_t az_4_cmd_int;
     int16_t theta_cmd_int;
     int16_t phi_cmd_int;
+    int16_t ailerons_cmd_int;
     //Optimization info
     uint16_t n_iteration;
     uint16_t n_evaluation;
@@ -83,10 +84,10 @@ struct __attribute__((__packed__)) am7_data_out {
     int16_t az_2_state_int;
     int16_t az_3_state_int;
     int16_t az_4_state_int;
+    int16_t ailerons_state_int;
     //Variable states
     int16_t theta_state_int;
     int16_t phi_state_int;
-    int16_t psi_state_int;
     int16_t gamma_state_int;
     int16_t p_state_int;
     int16_t q_state_int;
@@ -109,6 +110,7 @@ struct __attribute__((__packed__)) am7_data_out {
     int16_t desired_az_value_int;
     int16_t desired_theta_value_int;
     int16_t desired_phi_value_int;
+    int16_t desired_ailerons_value_int;
     float rolling_msg_out;
     uint8_t rolling_msg_out_id;
     uint8_t checksum_out;
