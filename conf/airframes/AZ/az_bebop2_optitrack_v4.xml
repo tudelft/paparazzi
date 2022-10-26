@@ -21,7 +21,7 @@
         <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
         <define name="USE_GPS_UBX_RXM_RAW" value="TRUE"/>
         <configure name="GPS_PORT" value="UART2"/> <!-- always UART2 or UART4 -->
-        <define name="INS_VFF_R_GPS" value="0.1"/> 
+        <define name="INS_VFF_R_GPS" value="0.05"/> 
         <define name="INS_USE_GPS_ALT_SPEED" value="FALSE"/>
         <define name="MISC_ARRIVED_AT_WAYPOINT" value="1.0" unit="m"/>
       </module>
