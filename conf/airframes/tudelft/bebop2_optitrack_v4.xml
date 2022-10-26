@@ -6,22 +6,84 @@
   </description>
 
   <firmware name="rotorcraft">
-    <target name="ap" board="bebop2"/>
-    
-    <?TRUE
-      <target name="TEST_TARGET" board="bebop2"/>
-    /?>
+  
+    <!-- ****** TARGET AUTOPILOT ****** -->
+    <target name="ap" board="bebop2">
+      <!-- control effectiveness -->
+      <define name="STABILIZATION_INDI_G1_P" value="0.05"/>
+      <define name="STABILIZATION_INDI_G1_Q" value="0.025"/>
+      <define name="STABILIZATION_INDI_G1_R" value="0.0022"/>
+      <define name="STABILIZATION_INDI_G2_R" value="0.20"/>
+      
+      <!-- SPECIFIC FOR VALKENBURG RTK -->
+      <module name="gps" type="ublox">
+        <configure name="GPS_BAUD" value="B115200"/>
+        <!--define name="USE_GPS_UBX_RTCM" value="TRUE"/-->
+        <!--define name="USE_GPS_UBX_RXM_RAW" value="TRUE"/-->
+        <configure name="GPS_PORT" value="UART2"/>
+      </module>
+      <define name="INS_VFF_R_GPS" value="0.1"/> 
+      <define name="INS_USE_GPS_ALT_SPEED" value="FALSE"/>
+      <define name="MISC_ARRIVED_AT_WAYPOINT" value="1.0" unit="m"/>
+      <module name="ahrs" type="int_cmpl_quat">
+        <configure name="USE_MAGNETOMETER" value="TRUE"/>
+        <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
+      </module>
+      
+      <!-- SPECIFIC FOR VALKENBURG 
+      <module name="gps" type="ublox"/>
+      <define name="INS_VFF_R_GPS" value="0.1"/> 
+      <define name="INS_USE_GPS_ALT_SPEED" value="FALSE"/>
+      <define name="MISC_ARRIVED_AT_WAYPOINT" value="1.0" unit="m"/>
+      <module name="ahrs" type="int_cmpl_quat">
+        <configure name="USE_MAGNETOMETER" value="TRUE"/>
+        <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
+      </module>
+      -->
+      
+      <!-- SPECIFIC FOR OPTI TRACK
+      <module name="gps" type="datalink"/>
+      <define name="INS_VFF_R_GPS" value="0.01"/>
+      <define name="INS_USE_GPS_ALT_SPEED" value="TRUE"/>
+      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
+      <define name="MISC_ARRIVED_AT_WAYPOINT" value="0.2" unit="m"/>
+      <module name="ahrs" type="int_cmpl_quat">
+        <configure name="USE_MAGNETOMETER" value="FALSE"/>
+        <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
+      </module>-->
+    </target> 
+    <!-- ****** TARGET AUTOPILOT ****** -->
 
-    
-
-
+    <!-- ****** TARGET SIMULATOR ****** -->
     <target name="nps" board="pc">
+      <!-- control effectiveness -->
+      <define name="STABILIZATION_INDI_G1_P" value="0.0390"/>
+      <define name="STABILIZATION_INDI_G1_Q" value="0.0473"/>
+      <define name="STABILIZATION_INDI_G1_R" value="0.00122"/> 
+      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
+      
       <module name="fdm" type="jsbsim"/>
       <module name="udp"/>
+      <define name="STABILIZATION_INDI_G2_R" value="0.0"/><!-- for jsbsim (rotor inertia is not modelled) -->
+      
+      <!-- SPECIFIC FOR SIM -->
+      <module name="gps" type="datalink"/>
+      <define name="INS_VFF_R_GPS" value="0.01"/> <!-- 0.01 for optitrack ELSE 0.1 -->
+      <define name="INS_USE_GPS_ALT_SPEED" value="TRUE"/> <!-- TRUE for optitrack -->
+      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> <!-- only for optitrack -->
+      <define name="MISC_ARRIVED_AT_WAYPOINT" value="0.2" unit="m"/> <!-- small value for optitrack, else around 1 to 3 meters -->
+      <module name="ahrs" type="int_cmpl_quat">
+        <configure name="USE_MAGNETOMETER" value="TRUE"/>
+        <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
+      </module>
     </target>
-    
-    <define name="USE_SONAR" value="FALSE"/>
-    <configure name="USE_BARO_BOARD" value="TRUE"/>
+    <!-- ****** TARGET SIMULATOR ****** -->
+   
+    <!--define name="USE_SONAR" value="FALSE"/-->
+    <!--module name="sonar_bebop">
+      <define name="USE_SONAR"/>
+      <define name="SENSOR_SYNC_SEND_SONAR"/>
+    </module-->
 
     <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
@@ -29,32 +91,19 @@
     <module name="motor_mixing"/>
     <module name="actuators" type="bebop"/>
     <module name="imu" type="bebop"/>
-    <module name="gps" type="datalink"/>
-    <module name="stabilization" type="indi_simple"/>
-    <module name="air_data">
-     <define name="CALC_AIRSPEED" value="FALSE"/>
-     <define name="CALC_TAS_FACTOR" value="FALSE"/>
-     <define name="CALC_AMSL_BARO" value="TRUE"/>
-  </module>
-    <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="FALSE"/>
-      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
-      <define name="AHRS_USE_SONAR" value="TRUE"/> <!-- added for testing -->
+    <module name="guidance" type="indi">
+      <define name="GUIDANCE_INDI_POS_GAIN" value="1.0"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
+      <!--define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.06"/-->
+      <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.0"/> <!-- 1 works well, 3 makes it wobbling -->
     </module>
+    
+    <module name="stabilization" type="indi_simple"/>
     <module name="ins" type="extended"/>
     <module name="geo_mag"/>
-    <!--module name="send_imu_mag_current"/-->
-    <module name="approach_moving_target"/><!-- added by andreas 22-09-2022 -->
-      <define name="AMT_ERR_SLOWDOWN_GAIN" value="true"/><!-- added by andreas 22-09-2022 -->
-    <module name="sys_mon"/>
-    <module name="imu_temp_ctrl">
-      <define name="IMU_TEMP_CTRL_DEBUG"/>
-    </module>
-    <!-- can be used in flightplan during takeoff/landing or lowflyby with default sonar -->
-    <module name="agl_dist">
-        <!-- Make sure something like this is defined -->
-        <define name="USE_SONAR" value="FALSE"/> 
-    </module>
+    <module name="air_data"/>
+    <module name="send_imu_mag_current"/>
+    
   </firmware>
   
   <commands>
@@ -87,6 +136,12 @@
     <set servo="BOTTOM_LEFT" value="motor_mixing.commands[MOTOR_BACK_LEFT]"/>
   </command_laws>
 
+  <section name="AIR_DATA" prefix="AIR_DATA_">
+    <define name="CALC_AIRSPEED" value="FALSE"/>
+    <define name="CALC_TAS_FACTOR" value="FALSE"/>
+    <define name="CALC_AMSL_BARO" value="TRUE"/>
+  </section>
+
   <section name="IMU" prefix="IMU_">
     <!-- Magneto calibration -->
     <define name="MAG_X_NEUTRAL" value="-16"/>
@@ -97,15 +152,6 @@
     <define name="MAG_Z_SENS" value="7.57102035692" integer="16"/>
   </section>
   
-  <section name="IMU" prefix="IMU_">
-    <!-- Accelerometer calibration -->
-    <define name="ACCEL_X_NEUTRAL" value="21"/>
-    <define name="ACCEL_Y_NEUTRAL" value="-13"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-121"/>
-    <define name="ACCEL_X_SENS" value="2.4424887250032836" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="2.4261614464896293" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="2.4443616138224944" integer="16"/>
-  </section>
   
   <!-- local magnetic field -->
   <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
@@ -121,36 +167,13 @@
     <define name="H_Z" value="0.9211303"/>
     <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
   </section>
-  
-  <!-- *************************** SONAR DEVICE ***************************** -->
-  <section name="SONAR" prefix="SONAR_">
-    <define name="SCALE" value="0.016775" integer="16"/>
-    <define name="OFFSET" value="0.03" unit="m"/><!-- The landing gear height to tarmac in respect to sonar bottom -->
-    <define name="MAX_RANGE" value="9.0" unit="m"/>
-    <define name="MIN_RANGE" value="0.18" unit="m"/>
-  </section>
-
-  <!-- *************************** AGL **************************** -->
-  <section name="AGL" prefix="AGL_DIST_SONAR_">
-    <define name="ID" value="ABI_BROADCAST"/>
-    <define name="MAX_RANGE" value="7.0" unit="m"/> <!-- used upto 7.0m-->
-    <define name="MIN_RANGE" value="0.020" unit="m"/> <!-- use downto 0.2m -->
-    <define name="FILTER" value="0.15"/> <!--Low pass filter time constant-->
-  </section>
 
   <section name="INS" prefix="INS_">
     <define name="SONAR_MAX_RANGE" value="2.2"/>
     <define name="SONAR_MIN_RANGE" value="0.2"/>
-    <define name="USE_GPS_ALT" value="1"/>
-    <define name="USE_GPS_ALT_SPEED" value="1"/>
-    <define name="VFF_R_GPS" value="0.01"/>
-    <!-- If you trust GPS a lot use this: -->
-    <!-- <define name="VFF_R_GPS" value="0.01"/> -->
-    <!-- <define name="VFF_VZ_R_GPS" value="0.01"/> -->
-
-    <!-- trust more the baro over the gps alt -->
-    <define name="INV_NXZ" value="0.3"/>
-    <define name="INV_NH" value="2.0"/>
+    <define name="USE_GPS_ALT" value="TRUE"/>
+    <!--define name="USE_GPS_ALT_SPEED" value="TRUE"/-->
+    <!--define name="VFF_R_GPS" value="0.01"/--> <!-- 0.01 for optitrack ELSE 0.1 -->
   </section>
 
 
@@ -183,11 +206,11 @@
   </section>
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
-    <!-- control effectiveness -->
+    <!-- control effectiveness 
     <define name="G1_P" value="0.05"/>
     <define name="G1_Q" value="0.025"/>
     <define name="G1_R" value="0.0022"/>
-    <define name="G2_R" value="0.20"/>
+    <define name="G2_R" value="0.20"/>-->
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="170.0"/>
@@ -232,7 +255,7 @@
   </section>
 
   <section name="MISC">
-    <define name="ARRIVED_AT_WAYPOINT" value="0.2" unit="m"/> <!-- how far away it declares that the waypoint is reached -->
+    <!--define name="ARRIVED_AT_WAYPOINT" value="0.2" unit="m"/--> <!-- how far away it declares that the waypoint is reached -->
   </section>
 
   <section name="IMU" prefix="IMU_">
@@ -245,32 +268,34 @@
     <define name="CLIMB_VSPEED" value="0.5"/>
     <define name="DESCEND_VSPEED" value="-1.0"/>
   </section>
-
+  
   <section name="SIMULATOR" prefix="NPS_">
     <define name="ACTUATOR_NAMES" value="nw_motor, ne_motor, se_motor, sw_motor" type="string[]"/>
-    <define name="JSBSIM_MODEL" value="simple_x_quad_ccw" type="string"/>
+    <define name="JSBSIM_MODEL" value="simple_x_quad" type="string"/>
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
   </section>
+  <include href="conf/simulator/gazebo/airframes/bebop.xml"/>
 
   <section name="AUTOPILOT">
-    <!-- 
-    AP_MODE_HOVER_DIRECT:  hold horizontal position, vertical is dependend on throttle joystick
-    AP_MODE_ATTITUDE_Z_HOLD: Altitude fixed, only moving in horizontal plane with joystick
-    AP_MODE_ATTITUDE_RC_CLIMB: Altitude stable with joytstick throttle at 50%, horizontal normal as with joystick ATT
-    AP_MODE_GUIDED: NOT SURE, has something to do with placing the carrot somewhere and the drone will follow
-    -->
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>
-
+  
   <section name="BAT">
     <define name="MILLIAMP_AT_FULL_THROTTLE" value="11000"/>
     <define name="CATASTROPHIC_BAT_LEVEL" value="9.9" unit="V"/>
     <define name="CRITIC_BAT_LEVEL" value="11.0" unit="V"/>
     <define name="LOW_BAT_LEVEL" value="11.1" unit="V"/>
     <define name="MAX_BAT_LEVEL" value="12.4" unit="V"/>
+    <define name="BAT_CHECKER_DELAY" value="60"/><!-- unit="s/10", thus tenth of seconds per default use ELECTRICAL_PERIODIC_FREQ if you for some reason want it differently-->
+  </section>
+  
+  
+
+  <section name="GCS">
+    <define name="AC_ICON"             value="quadrotor_xi"/>
   </section>
 </airframe>

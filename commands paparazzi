@@ -1,0 +1,86 @@
+export PAPARAZZI_HOME=~/paparazzi
+export PAPARAZZI_SRC=~/paparazzi
+python sw/ground_segment/python/moving_base/moving_base.py
+
+export PAPARAZZI_HOME=~/paparazzi
+export PAPARAZZI_SRC=~/paparazzi
+cd ~/paparazzi
+./matplotlib_3d.py
+
+make clean && make
+
+
+
+notities:
+messages.xml -> GPS_RTK id=251
+Target AP = autopilot
+Target nps = new plane simulator
+@GT means greater than
+@LT means less than
+NedCoor_i = x,y,z integers
+NedCoor_f = x,y,z float
+
+telemetry: messages sent by the aircraft, usually to the ground, a.k.a. downlink stream
+datalink: messages sent by the ground to the aircraft, a.k.a. uplink
+ground: messages exchanged between ground agents over the Ivy software bus
+
+
+telnet 192.168.42.1
+killall -9 ap.elf
+/data/ftp/internal_000/paparazzi ap.elf
+
+
+
+python:
+# This limits the while loop to a max of 10 times per second.
+# Leave this out and we will use all CPU we can.
+clock.tick(10)
+
+# code line to read and publish data from RTK-gps ground station
+/home/andreas/paparazzi/sw/ground_segment/misc/ublox2ivy -i 203 -e uart:///dev/ttyACM0:230400 -v
+
+RTCM 4072 = Proprietary Messages 
+RTCM 1074 = GPS MSM4
+RTCM 1084 = GLONASS MSM4
+RTCM 1094 = Galileo MSM4
+RTCM 1230 = GLONASS L1 and L2 Code-Phase Biases
+
+UBX 7 = NavPvt (version, reserved0, refStationId, itow, relPosN, relPosE, relPosD,
+relPosLength, relPosHeading, reserved1, relPosHPN, relPosHPE,
+relPosHPD, relPosHPLength, accN, accE, accD, accLength,
+accHeading, reserved2, flags)
+UBX 60 = UBX_NAV_RELPOSNED_ID
+
+/** data structures for GPS with RTK capabilities */
+struct GpsRelposNED {
+  uint32_t iTOW;
+  uint16_t refStationId;
+  int32_t relPosN;
+  int32_t relPosE;
+  int32_t relPosD;
+  int8_t relPosHPN;
+  int8_t relPosHPE;
+  int8_t relPosHPD;
+  uint32_t accN;
+  uint32_t accE;
+  uint32_t accD;
+  uint8_t carrSoln;
+  uint8_t relPosValid;
+  uint8_t diffSoln;
+  uint8_t gnssFixOK;
+};
+  
+  
+if matlab does not work
+matlab -softwareopengl
+run "opengl('save','hardware')"
+  
+  Optitrack
+/home/andreas/paparazzi/sw/ground_segment/python/natnet3.x/natnet2ivy.py  -ac 1 203  -o  -zf 
+
+slechte batterijen:
+871: werkt wel, maar in cyberzoo voltage drop en valt dan uit heel soms uit de lucht, al vanaf dat ie vol wordt gebruikt
+11B: voltage drop in cyberzoo
+871: SUPER GOEDE BATTERIJ
+
+
