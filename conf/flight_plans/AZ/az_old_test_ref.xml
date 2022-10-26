@@ -1,0 +1,28 @@
+
+  <sectors>
+    <sector color="yellow" name="Imav">
+      <corner name="imav1"/>
+      <corner name="imav2"/>
+      <corner name="imav3"/>
+      <corner name="imav4"/>
+    </sector>
+    <sector color="red" name="KillZone">
+      <corner name="_C1"/>
+      <corner name="_C2"/>
+      <corner name="_C3"/>
+      <corner name="_C4"/>
+      <corner name="_C5"/>
+      <corner name="_C6"/>
+    </sector>
+    <sector color="yellow" name="SafeFlyZone">
+      <corner name="_S1"/>
+      <corner name="_S2"/>
+      <corner name="_S3"/>
+      <corner name="_S4"/>
+      <corner name="_S5"/>
+      <corner name="_S6"/>
+      <corner name="_S7"/>
+      <corner name="_S8"/>
+      <corner name="_S9"/>
+    </sector>
+  </sectors>

@@ -1,0 +1,251 @@
+<!DOCTYPE airframe SYSTEM "../airframe.dtd">
+
+<airframe name="bebop2_RTK">
+
+  <firmware name="rotorcraft">
+    <target name="ap" board="bebop2">
+      <define name="STABILIZATION_INDI_G2_R" value="0.2784"/>
+      <define name="PRINT_DEBUG_GPS_UBX_UCENTER" value="TRUE"/>
+      <define name="FAILSAFE_DESCENT_SPEED" value="0.5"/>
+    </target>
+
+    <target name="nps" board="pc">
+      <module name="fdm" type="jsbsim"/>
+      <module name="udp"/>
+      <define name="STABILIZATION_INDI_G2_R" value="0.0"/><!-- for jsbsim (rotor inertia is not modelled) -->
+      <!-- <define name="STABILIZATION_INDI_G2_R" value="0.20"/> --><!-- for gazebo -->
+    </target>
+
+    <define name="BAT_CHECKER_DELAY" value="60"/><!-- unit="s/10", thus tenth of seconds per default use ELECTRICAL_PERIODIC_FREQ if you for some reason want it differently-->
+    <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410"/> <!-- unit="s/10, thus  tenth of seconds for engine kill or in ELECTRICAL_PERIODIC_FREQ-->
+
+
+	  <!-- Subsystem section -->
+    <module name="telemetry" type="transparent_udp"/>
+    <module name="radio_control" type="datalink"/>
+    <module name="motor_mixing"/>
+    <module name="actuators" type="bebop"/>
+    <module name="imu" type="bebop">
+      <define name="BEBOP_LOWPASS_FILTER" value="MPU60X0_DLPF_42HZ"/>
+      <define name="BEBOP_SMPLRT_DIV" value="0"/>
+      <define name="BEBOP_GYRO_RANGE" value="MPU60X0_GYRO_RANGE_2000"/>
+      <define name="BEBOP_ACCEL_RANGE" value="MPU60X0_ACCEL_RANGE_16G"/>
+    </module>
+    
+    <!-- special for Nederdrone project -->
+    <module name="approach_moving_target"/>
+      <define name="AMT_ERR_SLOWDOWN_GAIN" value="true"/>
+
+    <!-- GPS settings for bepop2 with "ZED-F9P RTK" gps via Xbee usb serial board HX-186-->
+    <module name="gps" type="ublox">
+      <configure name="GPS_BAUD" value="B38400"/>
+      <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
+      <define name="USE_GPS_UBX_RXM_RAW" value="TRUE"/>
+      <configure name="GPS_PORT" value="UART2"/> <!-- always UART2 or UART4 -->
+    </module>
+    <module name="gps" type="ubx_ucenter"/>
+
+
+    <module name="stabilization" type="indi_simple"/>
+    <module name="ins" type="ekf2">
+      <define name="INS_EKF2_OPTITRACK" value="false"/> <!-- only true if optitrack is used!!-->
+    </module>
+    
+    <module name="geo_mag"/>
+    <module name="air_data"/>
+    <module name="send_imu_mag_current"/>
+    
+    <!-- not in file mp2 -->
+    <!-- Internal MAG -->
+    <!--module name="mag_ist8310">
+      <define name="MODULE_IST8310_UPDATE_AHRS" value="TRUE"/>
+      <configure name="MAG_IST8310_I2C_DEV" value="I2C3"/>
+    </module-->
+    
+    <!-- not in file mp2 -->
+    <!-- External MAG on GPS 
+    <module name="mag_lis3mdl">
+      <define name="MODULE_LIS3MDL_UPDATE_AHRS" value="TRUE"/>
+      <configure name="MAG_LIS3MDL_I2C_DEV" value="I2C1"/>
+      <define name="LIS3MDL_CHAN_X_SIGN" value="-"/>
+      <define name="LIS3MDL_CHAN_Y_SIGN" value="-"/>
+    </module>-->
+    
+    
+    <!-- Logging fligth data ( TO DO ) -->
+    <module name="logger_file">
+      <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
+    </module>
+  </firmware>
+  
+  <commands>
+    <axis name="PITCH" failsafe_value="0"/>
+    <axis name="ROLL" failsafe_value="0"/>
+    <axis name="YAW" failsafe_value="0"/>
+    <axis name="THRUST" failsafe_value="5500"/>
+  </commands>
+
+  <servos driver="Default">
+    <servo name="TOP_LEFT" no="0" min="2500" neutral="2500" max="12000"/>
+    <servo name="TOP_RIGHT" no="1" min="2500" neutral="2500" max="12000"/>
+    <servo name="BOTTOM_RIGHT" no="2" min="2500" neutral="2500" max="12000"/>
+    <servo name="BOTTOM_LEFT" no="3" min="2500" neutral="2500" max="12000"/>
+  </servos>
+
+  <section name="MIXING" prefix="MOTOR_MIXING_">
+    <define name="TRIM_ROLL" value="0"/>
+    <define name="TRIM_PITCH" value="0"/>
+    <define name="TRIM_YAW" value="0"/>
+    <define name="REVERSE" value="TRUE"/>
+    <define name="TYPE" value="QUAD_X"/>
+  </section>
+
+  <command_laws>
+    <call fun="motor_mixing_run(autopilot_get_motors_on(),FALSE,values)"/>
+    <set servo="TOP_LEFT" value="motor_mixing.commands[MOTOR_FRONT_LEFT]"/>
+    <set servo="TOP_RIGHT" value="motor_mixing.commands[MOTOR_FRONT_RIGHT]"/>
+    <set servo="BOTTOM_RIGHT" value="motor_mixing.commands[MOTOR_BACK_RIGHT]"/>
+    <set servo="BOTTOM_LEFT" value="motor_mixing.commands[MOTOR_BACK_LEFT]"/>
+  </command_laws>
+
+  <section name="AIR_DATA" prefix="AIR_DATA_">
+    <define name="CALC_AIRSPEED" value="FALSE"/>
+    <define name="CALC_TAS_FACTOR" value="FALSE"/>
+    <define name="CALC_AMSL_BARO" value="TRUE"/>
+  </section>
+
+
+
+ <!-- include IMU airframe calibration -->
+  <include href="conf/airframes/ShipLanding/calibrations/BB2_IMU_ACCEL_bebopErik.xml"/> <!-- Accelerometer for attitude -->
+  <include href="conf/airframes/ShipLanding/calibrations/BB2_IMU_MAG_RTK_Batt449.xml"/> <!-- Magnetometer  for heading  -->
+
+  <!-- local magnetic field -->
+  <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
+  <section name="AHRS" prefix="AHRS_">
+    <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
+    <!-- Delft -->
+    <define name="H_X" value="0.3892503"/>
+    <define name="H_Y" value="0.0017972"/>
+    <define name="H_Z" value="0.9211303"/>
+  </section>
+
+  <section name="INS" prefix="INS_">
+    <define name="SONAR_MAX_RANGE" value="2.2"/>
+    <define name="SONAR_COMPENSATE_ROTATION" value="TRUE"/><!-- compensate AGL for body rotation -->
+  </section>
+
+
+
+  <section name="RC_SETPOINT" prefix="STABILIZATION_ATTITUDE_">
+    <!-- setpoint limits for attitude stabilization rc flight -->
+    <define name="SP_MAX_PHI" value="20" unit="deg"/>
+    <define name="SP_MAX_THETA" value="20" unit="deg"/>
+    <define name="SP_MAX_R" value="300" unit="deg/s"/>
+    <define name="DEADBAND_A" value="0"/>
+    <define name="DEADBAND_E" value="0"/>
+    <define name="DEADBAND_R" value="50"/>
+  </section>
+
+  <section name="ATTITUDE_REFERENCE" prefix="STABILIZATION_ATTITUDE_">
+    <!-- attitude reference generation model -->
+    <define name="REF_OMEGA_P" value="450" unit="deg/s"/>
+    <define name="REF_ZETA_P" value="0.9"/>
+    <define name="REF_MAX_P" value="600." unit="deg/s"/>
+    <define name="REF_MAX_PDOT" value="RadOfDeg(8000.)"/>
+
+    <define name="REF_OMEGA_Q" value="450" unit="deg/s"/>
+    <define name="REF_ZETA_Q" value="0.9"/>
+    <define name="REF_MAX_Q" value="600." unit="deg/s"/>
+    <define name="REF_MAX_QDOT" value="RadOfDeg(8000.)"/>
+
+    <define name="REF_OMEGA_R" value="450" unit="deg/s"/>
+    <define name="REF_ZETA_R" value="0.9"/>
+    <define name="REF_MAX_R" value="600." unit="deg/s"/>
+    <define name="REF_MAX_RDOT" value="RadOfDeg(8000.)"/>
+  </section>
+
+  <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
+    <!-- control effectiveness -->
+    <define name="G1_P" value="0.05"/>
+    <define name="G1_Q" value="0.025"/>
+    <define name="G1_R" value="0.0022"/>
+    <define name="G2_R" value="0.20"/>
+
+    <!-- reference acceleration for attitude control -->
+    <define name="REF_ERR_P" value="320.0"/>
+    <define name="REF_ERR_Q" value="320.0"/>
+    <define name="REF_ERR_R" value="600.0"/>
+    <define name="REF_RATE_P" value="16.0"/>
+    <define name="REF_RATE_Q" value="16.0"/>
+    <define name="REF_RATE_R" value="28.0"/>
+
+    <!-- second order filter parameters -->
+    <define name="FILT_CUTOFF" value="3.2"/>
+    <define name="FILT_CUTOFF_RDOT" value="3.2"/>
+
+    <!-- first order actuator dynamics -->
+    <define name="ACT_DYN_P" value="0.06"/>
+    <define name="ACT_DYN_Q" value="0.06"/>
+    <define name="ACT_DYN_R" value="0.06"/>
+
+    <!-- Adaptive Learning Rate -->
+    <define name="USE_ADAPTIVE" value="FALSE"/>
+    <define name="ADAPTIVE_MU" value="0.0001"/>
+  </section>
+
+  <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
+    <define name="HOVER_KP" value="350"/>
+    <define name="HOVER_KD" value="85"/>
+    <define name="HOVER_KI" value="20"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value="0.655"/>
+    <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
+  </section>
+
+  <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
+    <define name="REF_MAX_SPEED" value="2" unit="m/s"/>
+    <define name="MAX_BANK" value="32" unit="deg"/>
+    <define name="PGAIN" value="140"/>
+    <define name="DGAIN" value="104"/>
+    <define name="IGAIN" value="34"/>
+  </section>
+
+  <section name="NAVIGATION" prefix="NAV_">
+    <define name="CLIMB_VSPEED" value="1.0"/>
+    <define name="DESCEND_VSPEED" value="-0.5"/>
+  </section>
+
+  <section name="SIMULATOR" prefix="NPS_">
+    <define name="ACTUATOR_NAMES" value="nw_motor, ne_motor, se_motor, sw_motor" type="string[]"/>
+    <define name="JSBSIM_MODEL" value="bebop" type="string"/>
+    <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
+  </section>
+
+  <section name="AUTOPILOT">
+    <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
+    <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
+    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
+    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+
+    <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
+  </section>
+
+  <section name="BAT">
+    <define name="MILLIAMP_AT_FULL_THROTTLE" value="8700"/>
+    <define name="CATASTROPHIC_BAT_LEVEL" value="9.9" unit="V"/>
+    <define name="CRITIC_BAT_LEVEL" value="11.0" unit="V"/>
+    <define name="LOW_BAT_LEVEL" value="11.1" unit="V"/>
+    <define name="MAX_BAT_LEVEL" value="12.4" unit="V"/>
+  </section>
+
+  <!-- ************************ FAILSAFE ***************************** -->
+<!-- Strategy for failsafe is slow wide circles and losing height in a controlled fashion 
+  <section name="FAILSAFE" prefix="FAILSAFE_">
+    <define name="DELAY_WITHOUT_GPS" value="4" unit="s"/>
+  </section>-->
+  
+  <!-- ********************** GCS SPECIFICS ************************** -->
+  <section name="GCS">
+    <define name="AC_ICON"             value="quadrotor_xi"/>
+  </section>
+</airframe>

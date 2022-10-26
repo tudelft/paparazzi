@@ -1,0 +1,328 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<!-- In this flightplan:
+Exceptions:
+- Battery critical, return home, hover at 2m
+- Geo-fencing yellow, return to home
+- Geo-fencing red, kill drone
+- connection lost for 30sec, hover 60sec, return home 60sec, descent to 2m 60sec, land
+- TODO joystick timeout
+
+Blocks:
+- Wait GPS
+- Geo Init
+- Holding point hover
+- Start engine
+- Takeoff
+- HoverHeigthShip
+- HoverHeigthApproach
+- route
+- standby
+- GoTo Approach point
+- GoTo ship
+- Approach SHIP
+- reset_distance_descent
+- set_landing_offset_here
+- stay p1
+- go p2
+- line_p1_p2
+- land here
+- flare
+- landed
+- autodescent 40perc throttle TEST
+- autodescent 30perc throttle TEST
+- autodescent 20perc throttle TEST
+- Emergency battery critical
+- Emergency connection lost Hover
+- Emergency connection lost Home
+- Emergency connection lost Descent
+- Holding point kill
+
+... Headings ...
+heading 70 degree (facing from the concrete into the field):
+- holding point hover
+- hover heigth ship
+- hover height approach
+- goto/stay at approach position
+- goto/stay at ship position
+- land here
+- flare
+- autodecent 40/30/20 % throttle
+- battery critical
+- datalink lost
+- standby
+
+heading towards waypoint:
+- route
+- approach ship
+
+heading not defined at:
+- start engine
+- takeoff
+- wait gps
+- geo init
+- reset_distance_descent
+- set_landing_offset_here_TEST
+- landed
+- holding point kill
+
+-->
+
+<flight_plan alt="0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="20" name="Rotorcraft Cyberzoo (Delft) no GPS" security_height="0.3">
+  <header>
+    #include "autopilot.h"
+    #include "modules/datalink/datalink.h"
+    #include "modules/ctrl/approach_moving_target.h"
+    #include "modules/ctrl/target_pos.h"
+    #include "modules/energy/electrical.h"
+    #include "modules/ahrs/ahrs.h"
+</header>
+  <waypoints>
+    <waypoint name="HOME" x="0.0" y="0.0"/>
+    <waypoint name="CONCRETE" x="1.2" y="-0.6"/>
+    <waypoint name="_landHere" x="2.0" y="2.0"/>
+    <waypoint name="_StayHover" x="2.0" y="2.0"/>
+    <waypoint name="_Takeoff" x="2.0" y="2.0"/>
+    <waypoint name="STDBY" x="-0.7" y="-0.8"/>
+    <waypoint name="SHIP" x="0.8" y="-1.7"/>
+    <waypoint name="APPROACH" x="0.8" y="-1.7"/>
+    <waypoint lat="51.990630" lon="4.376823" name="p1"/>
+    <waypoint lat="51.990614" lon="4.376779" name="p2"/>
+    <waypoint lat="51.990636" lon="4.376759" name="p3"/>
+    <waypoint lat="51.990651" lon="4.376805" name="p4"/>
+    <waypoint lat="51.9906084" lon="4.3768299" name="FA1"/>
+    <waypoint lat="51.9906047" lon="4.3767444" name="FA2"/>
+    <waypoint lat="51.9906624" lon="4.3767475" name="FA3"/>
+    <waypoint lat="51.9906639" lon="4.3768412" name="FA4"/>
+  </waypoints>
+  <sectors>
+    <sector color="red" name="Flight_Area">
+      <corner name="FA4"/>
+      <corner name="FA3"/>
+      <corner name="FA2"/>
+      <corner name="FA1"/>
+    </sector>
+  </sectors>
+  <modules/>
+  <exceptions>
+    <exception cond="Or(! InsideFlight_Area(GetPosX(), GetPosY()), GetPosAlt() @GT 3)
+    @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+    @AND !(nav_block == IndexOfBlock('Geo init')) 
+    @AND !(nav_block == IndexOfBlock('Land Here'))
+    @AND !(nav_block == IndexOfBlock('Holding point kill'))" deroute="Holding point hover"/>
+    
+    <exception cond="GetPosAlt() @GT 4
+    @AND !(nav_block == IndexOfBlock('Holding point kill'))" deroute="Land Here"/>
+    
+    <exception cond="autopilot_in_flight() @AND datalink_time @GT 2
+    @AND !(nav_block == IndexOfBlock('Holding point kill')) 
+    @AND !(nav_block == IndexOfBlock('Land Here'))" deroute="flare"/>
+    <!--
+    <exception cond="electrical.bat_critical 
+    @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+    @AND !(nav_block == IndexOfBlock('Geo init')) 
+    @AND !(nav_block == IndexOfBlock('Holding point kill')) 
+    @AND !(nav_block == IndexOfBlock('Land Here')) 
+    @AND !(nav_block == IndexOfBlock('flare')) 
+    @AND !(nav_block == IndexOfBlock('landed')) 
+    @AND !(nav_block == IndexOfBlock('Emergency battery critical'))" deroute="Emergency battery critical"/>
+    <exception cond="autopilot_in_flight() @AND datalink_time @GT 10 
+    @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+    @AND !(nav_block == IndexOfBlock('Geo init')) 
+    @AND !(nav_block == IndexOfBlock('Holding point kill')) 
+    @AND !(nav_block == IndexOfBlock('Land Here')) 
+    @AND !(nav_block == IndexOfBlock('Emergency battery critical'))" deroute="Emergency connection lost Hover"/>
+    <exception cond="!autopilot_in_flight() @AND datalink_time @GT 10
+    @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+    @AND !(nav_block == IndexOfBlock('Geo init')) 
+    @AND !(nav_block == IndexOfBlock('Holding point kill')) 
+    @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Emergency connection lost Hover"/>
+    <exception cond="Or(! InsideSafeFlyZone(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 60) 
+    @AND InsideKillZone(GetPosX(), GetPosY())
+    @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+    @AND !(nav_block == IndexOfBlock('Geo init')) 
+    @AND !(nav_block == IndexOfBlock('Holding point hover')) 
+    @AND !(nav_block == IndexOfBlock('autodescent 40perc throttle TEST (to 2m)')) 
+    @AND !(nav_block == IndexOfBlock('Land Here')) 
+    @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Holding point hover"/>
+    <exception cond="Or(!InsideKillZone(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 150) 
+    @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+    @AND !(nav_block == IndexOfBlock('Geo init')) 
+    @AND !(nav_block == IndexOfBlock('Holding point kill'))" deroute="Holding point kill"/>
+    <exception cond="Or(Or((nav_block == IndexOfBlock('Emergency connection lost Hover')), 
+             (nav_block == IndexOfBlock('Emergency connection lost Home'))), 
+             (nav_block == IndexOfBlock('Emergency connection lost Descent'))) 
+    @AND datalink_time @LT 10 " deroute="Holding point hover"/>
+    -->
+  </exceptions>
+  <blocks>
+    <block name="Wait GPS">
+      <set value="FALSE" var="force_forward"/>
+      <exception cond="autopilot_in_flight()" deroute="flare"/>
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid() || !state.ned_initialized_i"/>
+      <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH)"/>
+      <deroute block="Geo init"/>
+    </block>
+    <block name="Geo init">
+      <set value="FALSE" var="force_forward"/>
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetAltitudeReferenceHere()"/>
+      <deroute block="Holding point hover"/>
+    </block>
+    <block name="Holding point hover">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
+      <stay wp="_StayHover"/>                             <!-- NEED TO TEST: what happens with altitude? and what if safe-alt is 1.5 -->
+    </block>
+    
+    <block name="HOME hover 0.5m">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
+      <stay alt="0.5" wp="HOME"/>
+    </block>
+    
+    <block name="Start Engine">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="NavResurrect()"/>
+      <call_once fun="nav_set_heading_current()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
+      <stay alt="2.5" wp="_StayHover"/>
+    </block>
+    <block name="HoverHeigthShip">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
+      <stay alt="WaypointAlt(WP_SHIP)" wp="_StayHover"/>
+    </block>
+    <block name="HoverHeigthApproach">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>      
+      <stay alt="WaypointAlt(WP_APPROACH)" wp="_StayHover"/>
+    </block>
+    <block name="route">
+      <set value="TRUE" var="force_forward"/>
+       <call_once fun="nav_set_heading_towards_waypoint(WP_p2)"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_p3)"/>
+      <go from="p2" hmode="route" wp="p3"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_p4)"/>
+      <go from="p3" hmode="route" wp="p4"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_p1)"/>
+      <go from="p4" hmode="route" wp="p1"/>
+    </block>
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
+      <stay wp="STDBY"/>
+    </block>
+    <block name="GoTo Approach point" strip_button="GoTo Approach point">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
+      <stay alt="WaypointAlt(WP_APPROACH)" pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH)" wp="APPROACH"/>
+    </block>
+    <block name="GoTo Ship" strip_button="GoTo Ship">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
+      <stay alt="WaypointAlt(WP_SHIP)" pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH)" wp="SHIP"/>
+    </block>
+    <block name="Approach SHIP" strip_button="Approach SHIP" strip_icon="boat.png">
+      <stay until="get_dist2_to_waypoint(WP_APPROACH) @LT 0.5" wp="APPROACH"/>  <!-- NEED TO TEST: does the drone first go to the waypoint before het waypoint starts shifting to the ship? -->
+      <set value="TRUE" var="force_forward"/>
+      <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH)"/>
+      <call_once fun="nav_set_heading_towards_waypoint(270)"/>
+      <stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/>
+      <stay alt="WaypointAlt(WP_SHIP)" pre_call="approach_moving_target_enable(WP_SHIP, WP_APPROACH)" wp="SHIP"/>
+    </block>
+    <block name="reset_distance_descent">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="reset_moving_target_distance()"/>
+      <deroute block="Holding point hover"/>
+    </block>
+    
+    <block name="REPEAT Approach SHIP" strip_button="REPEAT Approach SHIP" strip_icon="boat.png">
+      <stay until="get_dist2_to_waypoint(WP_APPROACH) @LT 0.5" wp="APPROACH"/>  <!-- NEED TO TEST: does the drone first go to the waypoint before het waypoint starts shifting to the ship? -->
+      <set value="TRUE" var="force_forward"/>
+      <call_once fun="approach_moving_target_enable(WP_SHIP, WP_APPROACH)"/>
+      <call_once fun="nav_set_heading_towards_waypoint(270)"/>
+      <stay alt="WaypointAlt(WP_APPROACH)" wp="APPROACH" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/>
+      <stay alt="2.5" wp="SHIP" until="GetPosHeight() @GT 2.2"/>
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="reset_moving_target_distance()"/>
+      <deroute block="REPEAT Approach SHIP"/>
+    </block>
+    
+    <block name="set_landing_offset_here_TEST">
+      <set value="FALSE" var="force_forward"/>
+      <exception cond="GetPosHeight() @GT 0.15" deroute="Holding point hover"/>
+      <call_once fun="target_pos_set_current_offset()"/>
+      <deroute block="Holding point kill"/>
+    </block>
+    <block name="stay_p1">
+      <set value="FALSE" var="force_forward"/>
+      <stay wp="p1"/>
+    </block>
+    <block name="go_p2">
+      <set value="TRUE" var="force_forward"/>
+      <call_once fun="nav_set_heading_deg(WP_p2)"/>
+      <go wp="p2"/>
+      <deroute block="stay_p1"/>
+    </block>
+    <block name="line_p1_p2">
+      <set value="TRUE" var="force_forward"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <stay until="stage_time>10" wp="p2"/>
+      <go from="p2" hmode="route" wp="p1"/>
+      <deroute block="line_p1_p2"/>
+    </block>
+    <block name="Land Here" strip_button="Land Here" strip_icon="land-right.png">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="NavSetWaypointHere(WP__landHere)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
+      <stay climb="-0.5" vmode="climb" wp="_landHere"/>
+      <exception cond="GetPosHeight() @LT 2.0" deroute="flare"/>
+      <deroute block="flare"/>
+    </block>
+    <block name="flare">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="NavSetWaypointHere(WP__landHere)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
+      <stay climb="-0.2" vmode="climb" wp="_landHere"/>
+      <exception cond="GetPosHeight() @LT 0.05" deroute="landed"/> <!-- NEED TO TEST: does ground detection work? -->
+    </block>
+    <block name="landed">
+      <set value="FALSE" var="force_forward"/>
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="true"/>
+    </block>
+    <block name="Emergency battery critical">
+      <call_once fun="nav_set_heading_deg(270)"/>
+      <stay alt="WaypointAlt(WP_HOME)+2" climb="-0.5" vmode="climb" wp="HOME"/>
+      <deroute block="Emergency battery critical"/>
+    </block>
+    <block name="Emergency connection lost Hover">
+      <call_once fun="NavSetWaypointHere(WP__StayHover)"/>
+      <call_once fun="nav_set_heading_deg(270)"/>
+      <stay alt="GetPosAlt()" until="!LessThan(NavBlockTime(), 60)" wp="_StayHover"/>
+    </block>
+    <block name="Emergency connection lost Home">
+      <call_once fun="nav_set_heading_deg(270)"/>
+      <stay alt="GetPosAlt()" until="!LessThan(NavBlockTime(), 60)" wp="HOME"/>
+    </block>
+    <block name="Emergency connection lost Descent">
+      <call_once fun="nav_set_heading_deg(270)"/>
+      <stay alt="2" until="!LessThan(NavBlockTime(), 60)" wp="HOME"/>
+      <deroute block="flare"/>
+    </block>
+    <block name="Holding point kill">
+      <call_once fun="NavKillThrottle()"/>
+      <deroute block="Holding point kill"/>
+    </block>
+  </blocks>
+</flight_plan>
