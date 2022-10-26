@@ -11,28 +11,30 @@
 - bebop GPS take-over als backup
 
 Notes from phone:
++ Make Matlab autosave figures after analisys
++ Add dotted lines in Matlab to show when approach_moving_target is enabled
++ Make every gps-fix save the TOW as timestamp, to make the feedforward accurate with drone and groundstation
+? Try to make an all-purpose XML file with IF statements (tried, but without success)
+- make drone software robust for GPS disconnection mid-flight
 - test Set_offset_here (function did not seem to work in the field)
 - mangage logfiles (store them in folders)
 - Add Uplink messages also to logfiles
 - Improve Matlab analisys somehow to show tracking error more clear
-+ Make Matlab autosave figures after analisys
-+ Add dotted lines in Matlab to show when approach_moving_target is enabled
 - Break harder in guidance_indi when in front of WP (prevent crash into truck/ship cabin)
 - Check if bebop speed is completely dependend of guidance_indi, or are there maybe other modules forcing the drone to move?
 - Make RTK system in drone robust to loss of RTCM messages
-- Filter/smooth signal inside GPS module (watch out for inducing delays)
-- Filter ship gps position based on heading/cog (filter roll, but not froward movement)
 - Add info to internal logging on drone (logging declared in airframe)
 - Analyse what factors cause overshoot of WP in guidance (control params/gps-noise/abrubpt-speedchange)
-+ Make every gps-fix save the TOW as timestamp, to make the feedforward accurate with drone and groundstation
-? Try to make an all-purpose XML file with IF statements (tried, but without success)
-- Create/Plan dataset with gyro/accelerometer at rough sea somehow
+- Plan how to make dataset with gyro/accelerometer at rough sea somehow
 - Is there a Derrivative in guidance_indi?
 - Only use sonar when drone is sure it is above the deck/truck
 - Define better what happens when approach_moving_target_enable() is stoped
 - Make sure that guidance_indi/approach does not go des_pos, except when needed
+~ Filter ship gps position based on heading/cog (filter roll, but not froward movement)
+~ Filter/smooth signal inside GPS module (watch out for inducing delays)
 
 - = TODO
+~ = TODO later
 + = DONE
 ? = TRIED, but failed
 
@@ -51,3 +53,11 @@ code to test:
   float behind_ship            = rel_target_pos.x * sinf(ship_rotation) + rel_target_pos.y * cosf(ship_rotation);
 
   printf("ship_rotation: %f \t offset_centerline %f \t behind_ship %f \n", ship_rotation, offset_centerline_ship, behind_ship);
+  
+  
+ivy messages ground bar
+GPS_INJECT: ground GPS_INJECT 203 0 211,0,30,68,96,0,75,38,56,96,0,0,0,0,0,64,0,0,0,0,32,0,0,0,84,118,92,203,126,89,97,73,160,77,21,19 
+GPS_INJECT: ground GPS_INJECT 203 0 211,0,4,76,224,0,128,237,237,214 
+TARGET_POS 203 203 519906555 43751326 15681 0.036000 0.397000 162.070953 nan 
+GPS_INJECT: ground GPS_INJECT 203 0 211,0,126,254,128,0,1,0,0,20,178,99,134,0,1,36,98,120,95,192,89,123,2,27,151,75,14,209,114,0,21,32,0,2,86,0,22,182,0,0,0,0,0,0,0,0,0,1,134,100,36,0,0,0,28,222,120,160,0,0,17,253,230,160,0,0,0,240,165,46,0,0,0,77,2,119,128,0,0,68,227,229,0,0,0,0,151,82,230,0,0,0,94,62,169,255,255,255,164,162,196,0,0,3,142,213,245,255,255,254,226,150,204,0,0,13,97,37,160,0,0,0,0,0,0,0,0,0,0,81,162,215 
+
