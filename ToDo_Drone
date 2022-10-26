@@ -43,3 +43,11 @@ Factors causing overshoot WP:
 - amt.pos_gain (position error gain) too high, so the drone does not slow down early enough
 - integration_compensation (if used) because set to 0.0 when passing error=0, but at that point speed is too high
 - drone is on WP and ship/truck descellerates (drone always beyond WP in this case)
+
+
+code to test:
+  float ship_rotation = RadOfDeg(target_heading); 
+  float offset_centerline_ship = rel_target_pos.x * cosf(ship_rotation) - rel_target_pos.y * sinf(ship_rotation);
+  float behind_ship            = rel_target_pos.x * sinf(ship_rotation) + rel_target_pos.y * cosf(ship_rotation);
+
+  printf("ship_rotation: %f \t offset_centerline %f \t behind_ship %f \n", ship_rotation, offset_centerline_ship, behind_ship);

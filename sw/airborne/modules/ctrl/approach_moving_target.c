@@ -438,6 +438,12 @@ void follow_diagonal_approach(void) {
 
   // uint32_t end_time = get_sys_time_msec(); // UNUSED
   //printf("loop_time = %i %i \n", end_time, start_time);
+
+  float ship_rotation = RadOfDeg(target_heading+90); 
+  float offset_centerline_ship = rel_target_pos.x * sinf(ship_rotation) + rel_target_pos.y * cosf(ship_rotation) + rel_target_pos.x;
+  float behind_wp_ship         = rel_target_pos.x * cosf(ship_rotation) - rel_target_pos.y * sinf(ship_rotation) - rel_target_pos.y;
+
+  printf("ship_rotation: %f \t offset_centerline %f \t behind_wp_ship %f \n", ship_rotation, -offset_centerline_ship, behind_wp_ship);
 }
 
 

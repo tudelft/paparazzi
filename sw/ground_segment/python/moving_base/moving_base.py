@@ -97,7 +97,7 @@ class Base:
             else:
                 self.speed = 0.0 # m/s
             self.course = 90 # deg (moving directon of platform)
-            self.heading = 180 # deg (orientation of platform)
+            self.heading = 0 # deg (orientation of platform)
             self.alt0 = 45 # ref_alt0 is already about 46m in simulator
 
             print("lat0,long0,alt0 position = Cyberzoo")

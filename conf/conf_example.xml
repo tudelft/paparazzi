@@ -101,12 +101,12 @@
   <aircraft
    name="bebop2"
    ac_id="203"
-   airframe="airframes/ShipLanding/bebop2_optitrack_new.xml"
+   airframe="airframes/examples/bebop2_indi.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"
    flight_plan="flight_plans/ShipLanding/ShipLanding_Valkenburg_and_Cyberzoo.xml"
    settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_speed.xml"
-   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/air_data.xml modules/approach_moving_target.xml modules/electrical.xml modules/geo_mag.xml modules/gps.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi_simple.xml modules/target_pos.xml"
+   settings_modules="modules/air_data.xml modules/approach_moving_target.xml modules/electrical.xml modules/gps.xml modules/gps_ubx_ucenter.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_ekf2.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi_simple.xml modules/target_pos.xml"
    gui_color="red"
   />
   <aircraft
