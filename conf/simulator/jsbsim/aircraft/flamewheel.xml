@@ -35,8 +35,8 @@
   </metrics>
 
   <mass_balance>
-    <ixx unit="SLUG*FT2"> 0.00629 </ixx> <!-- factor 10 higher than bebop (?)-->
-    <iyy unit="SLUG*FT2"> 0.00848 </iyy>
+    <ixx unit="SLUG*FT2"> 0.004 </ixx> <!-- factor 10 higher than bebop (?)-->
+    <iyy unit="SLUG*FT2"> 0.004 </iyy>
     <izz unit="SLUG*FT2"> 0.0047 </izz>
     <ixy unit="SLUG*FT2"> 0. </ixy>
     <ixz unit="SLUG*FT2"> 0. </ixz>

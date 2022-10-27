@@ -64,6 +64,7 @@ struct Indi_gains {
 
 extern struct Indi_gains indi_gains;
 
+float inverse_thrust_transform(float T);
 extern void stabilization_indi_init(void);
 extern void stabilization_indi_enter(void);
 extern void stabilization_indi_set_failsafe_setpoint(void);

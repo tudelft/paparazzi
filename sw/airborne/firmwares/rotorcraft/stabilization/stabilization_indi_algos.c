@@ -677,13 +677,26 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
   /*Commit the actuator command*/
   for (i = 0; i < INDI_NUM_ACT; i++) {
-    actuators_pprz[i] = (int16_t) indi_u[i];
+    actuators_pprz[i] = (int16_t) (MAX_PPRZ * inverse_thrust_transform(indi_u[i] / MAX_PPRZ));
   }
 
   // Set the stab_cmd to 42 to indicate that it is not used
   stabilization_cmd[COMMAND_ROLL] = 42;
   stabilization_cmd[COMMAND_PITCH] = 42;
   stabilization_cmd[COMMAND_YAW] = 42;
+}
+
+float inverse_thrust_transform(float T) {
+#define THRUST_CURVE_A (0.616)
+#define THRUST_CURVE_B (0.378)
+#define THRUST_CURVE_C (0.0056)
+  // invert T = a*u*u + b*u + c
+  T = fmin(fmax(T, 0.), 1.);
+  float ainv = 1./THRUST_CURVE_A;
+  float b_over_2a = THRUST_CURVE_B * 2. * ainv;
+  float b_over_2a_sq = b_over_2a * b_over_2a;
+
+  return (sqrtf(b_over_2a_sq + ainv*(T-THRUST_CURVE_C)) - b_over_2a);
 }
 
 /**

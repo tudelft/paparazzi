@@ -213,11 +213,24 @@
       >>> x = np.array([np.cos(th), np.sin(th), np.zeros(6)]).T
       >>> np.cross(x, np.array([0, 0, -1]))
     -->
-    <define name="G1_ROLL" value="{-10 , -20, -10, 10, 20, 10 }"/>
-    <define name="G1_PITCH" value="{+18 , 0, -18 , -18, 0, +18 }"/>
-    <define name="G1_YAW" value="{+3.4, -3.4, +3.4, -3.4, +3.4, -3.4}"/>
+
+    <!-- should be good -->
+    <define name="G1_ROLL" value="{-8 , -16, -8, 8, 16, 8 }"/>
+    <define name="G1_PITCH" value="{+13.8 , 0, -13.8 , -13.8, 0, +13.8 }"/>
+    <define name="G1_YAW" value="{+0.18, -0.18, +0.18, -0.18, +0.18, -0.18}"/>
+    <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4, -.4, -.4}"/>
+    <define name="G2" value="{30, -30, 30, -30, 30, -30}"/>
+
+    <!-- last test on Tuesday 25 oct
+    <define name="G1_ROLL" value="{-8 , -16, -8, 8, 16, 8 }"/>
+    <define name="G1_PITCH" value="{+14.4 , 0, -14.4 , -14.4, 0, +14.4 }"/>
+    <define name="G1_YAW" value="{+0.1, -0.1, +0.1, -0.1, +0.1, -0.1}"/>
+    -->
+    <!--<define name="G1_YAW" value="{+0.4, -0.4, +0.4, -0.4, +0.4, -0.4}"/>-->
+    <!--
     <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4, -.4, -.4}"/>
     <define name="G2" value="{0, -0, 0, -0, 0, -0}"/>
+    -->
 
     <!-- First test on 21 oct
     <define name="G1_ROLL" value="{-17  , -34  , -17  ,  17  ,  34  ,  17}"/>
@@ -244,11 +257,11 @@
     -->
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="40.0"/>
-    <define name="REF_ERR_Q" value="40.0"/>
+    <define name="REF_ERR_P" value="100.0"/>
+    <define name="REF_ERR_Q" value="100.0"/>
     <define name="REF_ERR_R" value="40.0"/>
-    <define name="REF_RATE_P" value="9.0"/>
-    <define name="REF_RATE_Q" value="9.0"/>
+    <define name="REF_RATE_P" value="15.0"/>
+    <define name="REF_RATE_Q" value="15.0"/>
     <define name="REF_RATE_R" value="9.0"/>
 
     <define name="ESTIMATION_FILT_CUTOFF" value="1.5"/>
@@ -258,8 +271,8 @@
     <define name="FILT_CUTOFF_Q" value="10.0"/>
     <define name="FILT_CUTOFF_R" value="10.0"/>
 
-    <!-- first order actuator dynamics -->
-    <define name="ACT_DYN" value="{0.03, 0.03, 0.03, 0.03, 0.03, 0.03}"/>
+    <!-- first order actuator dynamics. Alpha = (1 + TIME_CONSTANT/PERIODIC_FREQUENCY)^-1 -->
+    <define name="ACT_DYN" value="{0.048, 0.048, 0.048, 0.048, 0.048, 0.048}"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
@@ -286,7 +299,7 @@
     <define name="HOVER_KP" value="283"/>
     <define name="HOVER_KD" value="82"/>
     <define name="HOVER_KI" value="30"/>
-    <define name="NOMINAL_HOVER_THROTTLE" value="0.4"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value="0.6"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
   </section>
 

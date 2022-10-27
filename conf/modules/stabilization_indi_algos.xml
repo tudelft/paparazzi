@@ -36,7 +36,7 @@
       <define name="ACT_PREF" value="{0.0, 0.0, 0.0, 0.0}" description="preferred (low energy) actuator value. Important when the system is over-determined!"/>
       <define name="USE_ADAPTIVE" value="FALSE|TRUE" description="enable adaptive gains"/>
       <define name="ADAPTIVE_MU" value="0.0001" description="adaptation parameter"/>
-      <define name="ALGO" value="0" description="Algorithm for quadratic allocation: 0 native, 1 QR, 2 CHOL"/>
+      <define name="ALGO" value="2" description="Algorithm for quadratic allocation: 0 native, 1 QR, 2 CHOL"/>
       <define name="CTL_ALLOC_WARMSTART" value="FALSE|TRUE" description="Use warmstarting"/>
       <define name="CTL_ALLOC_IMAX" description="Max iterations for solving control allocation problem"/>
       <define name="MAX_RPM_SCALER" value="1.0" description="Reduce max output of all motors"/>
