@@ -127,7 +127,7 @@ static void send_approach_moving_target(struct transport_tx *trans, struct link_
 #endif
 
 struct LlaCoor_i gps_lla;
-uint32_t gps_timestamp;
+//uint32_t gps_timestamp;
 
 void approach_moving_target_init(void)
 {
@@ -164,13 +164,13 @@ void target_parse_RC_4CH(uint8_t *buf)
 
 /* Update INS (internal navigation system) based on GPS information */
 static void gps_cb(uint8_t sender_id __attribute__((unused)),
-                   uint32_t stamp,
+                   uint32_t stamp __attribute__((unused)),
                    struct GpsState *gps_s)
 {
   gps_lla.lat = gps_s->lla_pos.lat;
   gps_lla.lon = gps_s->lla_pos.lon;
   gps_lla.alt = gps_s->lla_pos.alt;
-  gps_timestamp = stamp;
+  //gps_timestamp = stamp; // UNUSED ??
 }
 
 // interface with ship position module?

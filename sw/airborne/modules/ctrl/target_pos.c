@@ -85,35 +85,35 @@
 #ifndef CYBERZOO
 /* Initialize the main structure */
 struct target_t target_landing = {
-  .pos = {0},
-  .offset = {
-    .heading = TARGET_OFFSET_HEADING,
-    .distance = TARGET_OFFSET_DISTANCE,
-    .height = TARGET_OFFSET_HEIGHT,
-  },
-  .target_pos_timeout = TARGET_POS_TIMEOUT,
-  .rtk_timeout = TARGET_RTK_TIMEOUT,
-  .integrate_xy = TARGET_INTEGRATE_XY,
-  .integrate_z = TARGET_INTEGRATE_Z
-};
-#else 
+    .pos = {0},
+    .offset = {
+        .heading = TARGET_OFFSET_HEADING,
+        .distance = TARGET_OFFSET_DISTANCE,
+        .height = TARGET_OFFSET_HEIGHT,
+    },
+    .target_pos_timeout = TARGET_POS_TIMEOUT,
+    .rtk_timeout = TARGET_RTK_TIMEOUT,
+    .integrate_xy = TARGET_INTEGRATE_XY,
+    .integrate_z = TARGET_INTEGRATE_Z};
+#else
 /* Initialize the main structure */
 struct target_t target_landing = {
-  .pos = {0},
-  .offset = {
-    .heading = TARGET_OFFSET_HEADING,
-    .distance = TARGET_OFFSET_DISTANCE_CYBERZOO,
-    .height = TARGET_OFFSET_HEIGHT_CYBERZOO,
-  },
-  .target_pos_timeout = TARGET_POS_TIMEOUT,
-  .rtk_timeout = TARGET_RTK_TIMEOUT,
-  .integrate_xy = TARGET_INTEGRATE_XY,
-  .integrate_z = TARGET_INTEGRATE_Z
-};
+    .pos = {0},
+    .offset = {
+        .heading = TARGET_OFFSET_HEADING,
+        .distance = TARGET_OFFSET_DISTANCE_CYBERZOO,
+        .height = TARGET_OFFSET_HEIGHT_CYBERZOO,
+    },
+    .target_pos_timeout = TARGET_POS_TIMEOUT,
+    .rtk_timeout = TARGET_RTK_TIMEOUT,
+    .integrate_xy = TARGET_INTEGRATE_XY,
+    .integrate_z = TARGET_INTEGRATE_Z};
 #endif
 
 /* Get the Relative postion from the RTK */
 extern struct GpsRelposNED gps_relposned;
+
+#define TOW_now gps_tow_from_sys_ticks(sys_time.nb_tick)
 
 /* GPS abi callback */
 static abi_event gps_ev;
@@ -125,16 +125,16 @@ static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
 static void send_target_pos_info(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_TARGET_POS_INFO(trans, dev, AC_ID,
-                              &target_landing.pos.lla.lat,
-                              &target_landing.pos.lla.lon,
-                              &target_landing.pos.lla.alt,
-                              &target_landing.pos.ground_speed,
-                              &target_landing.pos.climb,
-                              &target_landing.pos.course,
-                              &target_landing.pos.heading,
-                              &target_landing.offset.heading,
-                              &target_landing.offset.distance,
-                              &target_landing.offset.height);
+                                &target_landing.pos.lla.lat,
+                                &target_landing.pos.lla.lon,
+                                &target_landing.pos.lla.alt,
+                                &target_landing.pos.ground_speed,
+                                &target_landing.pos.climb,
+                                &target_landing.pos.course,
+                                &target_landing.pos.heading,
+                                &target_landing.offset.heading,
+                                &target_landing.offset.distance,
+                                &target_landing.offset.height);
 }
 #endif
 
@@ -155,6 +155,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   target_landing.gps_lla.lat = gps_s->lla_pos.lat;
   target_landing.gps_lla.lon = gps_s->lla_pos.lon;
   target_landing.gps_lla.alt = gps_s->lla_pos.alt;
+  target_landing.pos.tow     = gps_s->tow;
 }
 
 /**
@@ -162,12 +163,12 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
  */
 void target_parse_target_pos(uint8_t *buf)
 {
-  if(DL_TARGET_POS_ac_id(buf) != AC_ID)
+  if (DL_TARGET_POS_ac_id(buf) != AC_ID)
     return;
 
   // Save the received values
   target_landing.pos.recv_time = get_sys_time_msec();
-  target_landing.pos.tow = gps_tow_from_sys_ticks(sys_time.nb_tick); // FIXME: need to get from the real GPS
+  target_landing.pos.tow = DL_TARGET_POS_itow(buf); // TODO: Test this implementation
   target_landing.pos.lla.lat = DL_TARGET_POS_lat(buf);
   target_landing.pos.lla.lon = DL_TARGET_POS_lon(buf);
   target_landing.pos.lla.alt = DL_TARGET_POS_alt(buf);
@@ -183,7 +184,7 @@ void target_parse_target_pos(uint8_t *buf)
  */
 void target_parse_target_pos_roll_compensated(uint8_t *buf)
 {
-  if(DL_TARGET_POS_ac_id(buf) != AC_ID)
+  if (DL_TARGET_POS_ac_id(buf) != AC_ID)
     return;
 
   // Save the received values
@@ -207,7 +208,7 @@ void target_parse_target_pos_roll_compensated(uint8_t *buf)
 
 extern struct LlaCoor_i gps_lla;
 /**
- * Get the current target position (NED) and heading 
+ * Get the current target position (NED) and heading
  * RELATIVE TO THE DRONE
  */
 bool target_get_pos(struct NedCoor_f *pos, float *heading) {
@@ -231,7 +232,8 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
   // }
 
   /* When we have a valid target_pos message, state ned is initialized and no timeout */
-  if(target_landing.pos.valid && state.ned_initialized_i && (target_landing.pos.recv_time+target_landing.target_pos_timeout) > get_sys_time_msec()) {
+  if (target_landing.pos.valid && state.ned_initialized_i && (target_landing.pos.recv_time + target_landing.target_pos_timeout) > get_sys_time_msec())
+  {
     struct NedCoor_i target_pos_cm, drone_pos_cm;
 
     // Convert from LLA to NED using origin from the UAV
@@ -246,7 +248,9 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
 
     // calculate how old the last received msg is
     // In seconds, overflow uint32_t in 49,7 days
-    time_diff = (get_sys_time_msec() - target_landing.pos.recv_time) * 0.001; // FIXME: should be based on TOW of ground gps
+    // time_diff = (get_sys_time_msec() - target_landing.pos.recv_time) * 0.001; // FIXME: should be based on TOW of ground gps
+    time_diff = (TOW_now - target_landing.pos.tow) * 0.001; 
+    //printf("time_diff: %f TOW_now %i target_landing.pos.tow %i \n", time_diff, TOW_now, target_landing.pos.tow);
 
     // Return the heading
     *heading = target_landing.pos.heading;
@@ -254,18 +258,20 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
     // If we have a velocity measurement try to integrate the x-y position when enabled
     struct NedCoor_f vel = {0};
     bool got_vel = target_get_vel(&vel);
-    if(target_landing.integrate_xy && got_vel) {
+    if (target_landing.integrate_xy && got_vel)
+    {
       pos->x = pos->x + vel.x * time_diff;
       pos->y = pos->y + vel.y * time_diff;
     }
 
-    if(target_landing.integrate_z && got_vel) {
+    if (target_landing.integrate_z && got_vel)
+    {
       pos->z = pos->z + vel.z * time_diff;
     }
 
     // Offset the target
-    pos->x += target_landing.offset.distance * cosf((*heading + target_landing.offset.heading)/180.*M_PI);
-    pos->y += target_landing.offset.distance * sinf((*heading + target_landing.offset.heading)/180.*M_PI);
+    pos->x += target_landing.offset.distance * cosf((*heading + target_landing.offset.heading) / 180. * M_PI);
+    pos->y += target_landing.offset.distance * sinf((*heading + target_landing.offset.heading) / 180. * M_PI);
     pos->z -= target_landing.offset.height;
 
     // Compensate Roll of ship
@@ -279,31 +285,35 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
 /**
  * Get the current target velocity (NED)
  */
-bool target_get_vel(struct NedCoor_f *vel) {
+bool target_get_vel(struct NedCoor_f *vel)
+{
 
   /* When we have a valid target_pos message, state ned is initialized and no timeout */
-  if(target_landing.pos.valid && state.ned_initialized_i && (target_landing.pos.recv_time+target_landing.target_pos_timeout) > get_sys_time_msec()) {
+  if (target_landing.pos.valid && state.ned_initialized_i && (target_landing.pos.recv_time + target_landing.target_pos_timeout) > get_sys_time_msec())
+  {
     // Calculate baed on ground speed and course
-    vel->x = target_landing.pos.ground_speed * cosf(target_landing.pos.course/180.*M_PI);
-    vel->y = target_landing.pos.ground_speed * sinf(target_landing.pos.course/180.*M_PI);
+    vel->x = target_landing.pos.ground_speed * cosf(target_landing.pos.course / 180. * M_PI);
+    vel->y = target_landing.pos.ground_speed * sinf(target_landing.pos.course / 180. * M_PI);
     vel->z = -target_landing.pos.climb;
 
     return true;
   }
 
-  return false; //target_pos_set_current_offset
+  return false; // target_pos_set_current_offset
 }
 
 /**
  * compensate position for Roll of the ship
  */
-bool target_compensate_roll(struct NedCoor_f *vel) {
+bool target_compensate_roll(struct NedCoor_f *vel)
+{
 
   /* When we have a valid target_pos message, state ned is initialized and no timeout */
-  if(target_landing.pos.valid && state.ned_initialized_i && (target_landing.pos.recv_time+target_landing.target_pos_timeout) > get_sys_time_msec()) {
+  if (target_landing.pos.valid && state.ned_initialized_i && (target_landing.pos.recv_time + target_landing.target_pos_timeout) > get_sys_time_msec())
+  {
     // Calculate baed on ground speed and course
-    vel->x = target_landing.pos.ground_speed * cosf(target_landing.pos.course/180.*M_PI);
-    vel->y = target_landing.pos.ground_speed * sinf(target_landing.pos.course/180.*M_PI);
+    vel->x = target_landing.pos.ground_speed * cosf(target_landing.pos.course / 180. * M_PI);
+    vel->y = target_landing.pos.ground_speed * sinf(target_landing.pos.course / 180. * M_PI);
     vel->z = -target_landing.pos.climb;
 
     return true;
@@ -330,9 +340,9 @@ bool target_pos_set_current_offset(float unk __attribute__((unused))) {
     pos.y = target_pos_cm.y * 0.01; // [m]
     pos.z = target_pos_cm.z * 0.01; // [m]
 
-    target_landing.offset.distance = sqrtf(powf(uav_pos.x - pos.x, 2) + powf(uav_pos.y - pos.y, 2)); // [m] euclidean distance (only horizontal)
-    target_landing.offset.height = -(uav_pos.z - pos.z); // [m]
-    target_landing.offset.heading = atan2f((uav_pos.y - pos.y), (uav_pos.x - pos.x))*180.0/M_PI - target_landing.pos.heading; // [deg]
+    target_landing.offset.distance = sqrtf(powf(uav_pos.x - pos.x, 2) + powf(uav_pos.y - pos.y, 2));                              // [m] euclidean distance (only horizontal)
+    target_landing.offset.height = -(uav_pos.z - pos.z);                                                                          // [m]
+    target_landing.offset.heading = atan2f((uav_pos.y - pos.y), (uav_pos.x - pos.x)) * 180.0 / M_PI - target_landing.pos.heading; // [deg]
   }
 
   return false;

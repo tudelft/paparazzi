@@ -2686,6 +2686,7 @@
       <field name="climb" type="float" unit="m/s">Climb speed</field>
       <field name="course" type="float" unit="deg" format="%.1f"/>
       <field name="heading" type="float" unit="deg" format="%.1f">Ground heading</field>
+      <field name="itow"   type="uint32" unit="ms"/>
     </message>
 
     <message name="SMARTPROBE" id="60" link="forwarded">
