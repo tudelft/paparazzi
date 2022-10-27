@@ -67,7 +67,9 @@
       <configure name="MODEL_PORT" value="UART2"/>
     </module>
 
-    <module name="actuators" type="pwm"/>
+    <module name="actuators" type="pwm">
+      <define name="SERVO_HZ" value="400"/>
+    </module>
     <module name="imu" type="mpu6000"/>
     <module name="gps" type="datalink"/>
     <!--
@@ -107,12 +109,12 @@
   </commands>
 
   <servos driver="Pwm">
-    <servo name="FRONT_RIGHT" no="0" min="1000" neutral="1170" max="2000"/>
-    <servo name="MIDDLE_RIGHT" no="1" min="1000" neutral="1170" max="2000"/>
-    <servo name="REAR_RIGHT" no="2" min="1000" neutral="1170" max="2000"/>
-    <servo name="REAR_LEFT" no="3" min="1000" neutral="1170" max="2000"/>
-    <servo name="MIDDLE_LEFT" no="4" min="1000" neutral="1170" max="2000"/>
-    <servo name="FRONT_LEFT" no="5" min="1000" neutral="1170" max="2000"/>
+    <servo name="FRONT_RIGHT" no="0" min="1000" neutral="1170" max="1900"/>
+    <servo name="MIDDLE_RIGHT" no="1" min="1000" neutral="1170" max="1900"/>
+    <servo name="REAR_RIGHT" no="2" min="1000" neutral="1170" max="1900"/>
+    <servo name="REAR_LEFT" no="3" min="1000" neutral="1170" max="1900"/>
+    <servo name="MIDDLE_LEFT" no="4" min="1000" neutral="1170" max="1900"/>
+    <servo name="FRONT_LEFT" no="5" min="1000" neutral="1170" max="1900"/>
   </servos>
 
   <command_laws>
