@@ -220,7 +220,7 @@
         <define VALUE="{-0.2, 0.3, -0.2, 0.3, 0.0}" NAME="G1_YAW"/>
         <define VALUE="{-0.55,   -0.45,  -0.55, -0.45, 0.0}" NAME="G1_THRUST"/>
         <define VALUE="{0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
-        <define VALUE="0.000510937" NAME="PUSHER_PROP_EFFECTIVENESS"/>
+        <define VALUE="0.00047" NAME="PUSHER_PROP_EFFECTIVENESS"/>
         <define VALUE="0.047" NAME="PUSHER_PROP_DYN"/>
         <!--<define VALUE="{0.00, -30.0, 0.0,   30.0}" NAME="G1_ROLL"/>
         <define VALUE="{6.0, 0.0,   -6.0, 0.0}" NAME="G1_PITCH"/>
@@ -234,8 +234,8 @@
         <define VALUE="12.5" NAME="REF_RATE_Q"/>
         <define VALUE="9.0" NAME="REF_RATE_R"/>
         <define VALUE="30.0" UNIT="deg/s" NAME="MAX_R"/>
-        <define VALUE="20.0" NAME="FILT_CUTOFF_P"/>
-        <define VALUE="20.0" NAME="FILT_CUTOFF_Q"/>
+        <define VALUE="5.0" NAME="FILT_CUTOFF_P"/>
+        <define VALUE="5.0" NAME="FILT_CUTOFF_Q"/>
         <define VALUE="5.0" NAME="FILT_CUTOFF_R"/>
         <define VALUE="2.0" NAME="FILT_CUTOFF"/>
         <define VALUE="0.5" NAME="FILT_CUTOFF_RDOT"/>
@@ -249,7 +249,7 @@
     </section>
 
     <section PREFIX="ROT_WING_SCHED_" NAME="CTRL_EFF_SCHEDULING">
-        <define VALUE="{1.0, -1.0}" NAME="G1_Q_90"/>
+        <define VALUE="{0.14, -0.14}" NAME="G1_Q_90"/>
         <define VALUE="{0.0}" NAME="G1_AERO_CONST_P"/>
         <define VALUE="{0.0}" NAME="G1_AERO_CONST_Q"/>
         <define VALUE="{0.006}" NAME="G1_AERO_CONST_R"/>
