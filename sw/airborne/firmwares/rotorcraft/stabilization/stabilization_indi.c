@@ -127,6 +127,14 @@ static float Wv[INDI_OUTPUTS] = STABILIZATION_INDI_WLS_PRIORITIES;
 static float Wv[INDI_OUTPUTS] = {1000, 1000, 1, 100};
 #endif
 
+#ifdef STABILIZATION_INDI_WLS_WU_MOTOR
+float indi_Wu_motor = STABILIZATION_INDI_WLS_WU_MOTOR;
+#else
+float indi_Wu_motor = 1;
+#endif
+
+float Wu[INDI_NUM_ACT];
+
 #ifdef STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS
 float thrust_bx_eff = STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS;
 #ifndef STABILIZATION_INDI_PUSHER_PROP_DYN
@@ -571,9 +579,17 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
       Bwls[i] = g1g2[i];
     }
 
+    for (i = 0; i < INDI_NUM_ACT; i++) {
+      if (!act_is_servo[i]) {
+        Wu[i] = indi_Wu_motor;
+      } else {
+        Wu[i] = 1;
+      }
+    }
+
     // WLS Control Allocator
     num_iter =
-      wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, 0, du_pref, 10000, 10);
+      wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, Wu, du_pref, 10000, 10);
 #endif
 
     // Add the increments to the actuators
