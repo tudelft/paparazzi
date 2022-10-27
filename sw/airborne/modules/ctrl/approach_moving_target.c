@@ -262,6 +262,7 @@ void follow_diagonal_approach(void) {
 
   // Check if the flight plan recently called the enable function
   if ( (get_sys_time_msec() - amt.enabled_sys_time) > (2000 / NAVIGATION_FREQUENCY) && !allways_update_ship_wp) {
+    printf("ERROR APPROACH LOOP");
     return; // if approach_moving_target_enable is not called recently
   }
 
@@ -295,13 +296,14 @@ void follow_diagonal_approach(void) {
   // ATTENTION, target_pos_boat is already relative now!
   struct FloatVect3 rel_des_pos;
   VECT3_SUM(rel_des_pos, ref_relpos, rel_target_pos); 
-  //printf("ref_relpos.z %f \n", ref_relpos.z);
+  //printf("rel_des_pos.x %f \n", rel_des_pos.x);
 
 
   // ------------------------------------------------------------------------- ADD MORE COMMENTS FROM HERE ON
 
   struct FloatVect3 ref_relvel;
   VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt.approach_speed_gain * amt.speed * amt.relvel_gain * (int)force_forward); 
+  //printf("relvel_x: %f \n", ref_relvel.x)
 
   // error controller
   struct FloatVect3 pos_err;
@@ -330,6 +332,7 @@ void follow_diagonal_approach(void) {
   des_vel.x = ref_relvel.x + target_vel_boat.x + ec_vel.x + integral_compenstation.x;
   des_vel.y = ref_relvel.y + target_vel_boat.y + ec_vel.y + integral_compenstation.y;
   des_vel.z = ref_relvel.z + target_vel_boat.z + ec_vel.z;
+
 
   // Bound vertical speed setpoint
   if(stateGetAirspeed_f() > 13.0) {
@@ -387,7 +390,8 @@ void follow_diagonal_approach(void) {
   // Reduce approach speed if the error is large
   float norm_pos_err_sq = VECT3_NORM2(pos_err);
   // int_speed = (default speed / (squared position error [m] * slowdown factor + 1) * speed gain control by joystick
-  amt_telem.approach_speed = ((amt.speed) / (norm_pos_err_sq * amt_err_slowdown_gain + 1.0)) * amt.approach_speed_gain * (int)force_forward;
+  //amt_telem.approach_speed = ((amt.speed) / (norm_pos_err_sq * amt_err_slowdown_gain + 1.0)) * amt.approach_speed_gain * (int)force_forward;
+  amt_telem.approach_speed = ((amt.speed) / 1) * amt.approach_speed_gain * (int)force_forward;
   if (amt.distance < 20) amt_telem.approach_speed = amt_telem.approach_speed / 2;
 
   // Check if the flight plan recently called the enable function
