@@ -56,8 +56,7 @@ struct Amt amt = {
   .speed_gain = 1.0,  // [-], how agressive ..................
   .relvel_gain = 0.75, // [-], ................................
   .approach_speed_gain = 1.0,
-  .speed2vel_gain = 1.0,
-  .enabled_sys_time = 0,
+  .enabled_time = 0,
   .wp_ship_id = 0,
   .wp_approach_id = 0,
   .target_heigth = 0
@@ -99,7 +98,7 @@ static void send_approach_moving_target(struct transport_tx *trans, struct link_
   //                             &amt_telem.des_vel.z,
   //                             &amt.distance
   //                             );
-  int32_t enabled_time_diff = (get_sys_time_msec() - amt.enabled_sys_time);
+  int32_t enabled_time_diff = (get_sys_time_msec() - amt.enabled_time);
   uint8_t force_forward_boolean = force_forward;
   
    pprz_msg_send_APPROACH_MOVING_TARGET(trans, dev, AC_ID,
@@ -128,7 +127,7 @@ static void send_approach_moving_target(struct transport_tx *trans, struct link_
 #endif
 
 struct LlaCoor_i gps_lla;
-//uint32_t gps_timestamp;
+uint32_t gps_timestamp;
 
 void approach_moving_target_init(void)
 {
@@ -165,13 +164,13 @@ void target_parse_RC_4CH(uint8_t *buf)
 
 /* Update INS (internal navigation system) based on GPS information */
 static void gps_cb(uint8_t sender_id __attribute__((unused)),
-                   uint32_t stamp __attribute__((unused)),
+                   uint32_t stamp,
                    struct GpsState *gps_s)
 {
   gps_lla.lat = gps_s->lla_pos.lat;
   gps_lla.lon = gps_s->lla_pos.lon;
   gps_lla.alt = gps_s->lla_pos.alt;
-  //gps_timestamp = stamp; // UNUSED ??
+  gps_timestamp = stamp;
 }
 
 // interface with ship position module?
@@ -187,10 +186,10 @@ void update_waypoint(uint8_t wp_id, struct FloatVect3 * target_ned) {
   // Send waypoint update every 0.2 second !!!!!! THIS ONE SEEMD NOT BE USED, if time is long, nothing is different in GCS sim
   //RunOnceEvery(0.2, {
     // Send to the GCS that the waypoint has been moved
-    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
-                                &waypoints[wp_id].enu_i.x,
-                                &waypoints[wp_id].enu_i.y,
-                                &waypoints[wp_id].enu_i.z);
+    // DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+    //                             &waypoints[wp_id].enu_i.x,
+    //                             &waypoints[wp_id].enu_i.y,
+    //                             &waypoints[wp_id].enu_i.z);
   //} );
 }
 
@@ -201,7 +200,7 @@ void init_wp_ids(uint8_t wp_ship_id, uint8_t wp_approach_id){
 
 // Function to enable from flight plan (call repeatedly!)
 void approach_moving_target_enable(void) { 
-  amt.enabled_sys_time = get_sys_time_msec(); // this makes folow_diagonal_approach()
+  amt.enabled_time = get_sys_time_msec(); // this makes folow_diagonal_approach()
 }
 
 // Function to enable from flight plan (call repeatedly!)
@@ -261,8 +260,7 @@ void follow_diagonal_approach(void) {
   // waveEstimation(); // TESTING // NOT WORKING YET
 
   // Check if the flight plan recently called the enable function
-  if ( (get_sys_time_msec() - amt.enabled_sys_time) > (2000 / NAVIGATION_FREQUENCY) && !allways_update_ship_wp) {
-    printf("ERROR APPROACH LOOP");
+  if ( (get_sys_time_msec() - amt.enabled_time) > (2000 / NAVIGATION_FREQUENCY) && !allways_update_ship_wp) {
     return; // if approach_moving_target_enable is not called recently
   }
 
@@ -270,9 +268,7 @@ void follow_diagonal_approach(void) {
   struct NedCoor_f rel_target_pos, target_vel_boat = {0};
   float target_heading;
   if(!target_get_pos(&rel_target_pos, &target_heading)) {
-    // ship_pos not valid or timeout of signal
     // TODO: What to do? Same can be checked for the velocity
-    
     return;
   }
 
@@ -296,14 +292,13 @@ void follow_diagonal_approach(void) {
   // ATTENTION, target_pos_boat is already relative now!
   struct FloatVect3 rel_des_pos;
   VECT3_SUM(rel_des_pos, ref_relpos, rel_target_pos); 
-  //printf("rel_des_pos.x %f \n", rel_des_pos.x);
+  //printf("ref_relpos.z %f \n", ref_relpos.z);
 
 
   // ------------------------------------------------------------------------- ADD MORE COMMENTS FROM HERE ON
 
   struct FloatVect3 ref_relvel;
   VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt.approach_speed_gain * amt.speed * amt.relvel_gain * (int)force_forward); 
-  //printf("relvel_x: %f \n", ref_relvel.x)
 
   // error controller
   struct FloatVect3 pos_err;
@@ -333,7 +328,6 @@ void follow_diagonal_approach(void) {
   des_vel.y = ref_relvel.y + target_vel_boat.y + ec_vel.y + integral_compenstation.y;
   des_vel.z = ref_relvel.z + target_vel_boat.z + ec_vel.z;
 
-
   // Bound vertical speed setpoint
   if(stateGetAirspeed_f() > 13.0) {
     Bound(des_vel.z, -4.0, 5.0);
@@ -356,7 +350,7 @@ void follow_diagonal_approach(void) {
   // TODO: read nav status/block inside this script
   // TODO: place this in a better place with a more robust if statement
   //if (!force_forward){
-  if ((get_sys_time_msec() - amt.enabled_sys_time) < 1000) { 
+  if ((get_sys_time_msec() - amt.enabled_time) < 1000) { 
     //AbiSendMsgVEL_SP(VEL_SP_FCR_ID, &des_vel); 
     struct FloatVect3 des_accel;
     struct FloatVect3 current_vel_ned; 
@@ -365,7 +359,7 @@ void follow_diagonal_approach(void) {
     current_vel_ned.y = stateGetSpeedNed_f()->y;
     current_vel_ned.z = stateGetSpeedNed_f()->z;
     VECT3_DIFF(err_speed, des_vel, current_vel_ned);
-    VECT3_SMUL(des_accel, err_speed, amt.speed2vel_gain);
+    VECT3_SMUL(des_accel, err_speed, 1.0);
     //printf("ref_relvel.x: %f \t target_vel_boat.x: %f \t ec_vel.x: %f \t des_accel.x: %f \n", ref_relvel.x, target_vel_boat.x, ec_vel.x, des_accel.x);
 
     int flag = 1; // 0 is 2d, 1 is 3D
@@ -390,14 +384,13 @@ void follow_diagonal_approach(void) {
   // Reduce approach speed if the error is large
   float norm_pos_err_sq = VECT3_NORM2(pos_err);
   // int_speed = (default speed / (squared position error [m] * slowdown factor + 1) * speed gain control by joystick
-  //amt_telem.approach_speed = ((amt.speed) / (norm_pos_err_sq * amt_err_slowdown_gain + 1.0)) * amt.approach_speed_gain * (int)force_forward;
-  amt_telem.approach_speed = ((amt.speed) / 1) * amt.approach_speed_gain * (int)force_forward;
+  amt_telem.approach_speed = ((amt.speed) / (norm_pos_err_sq * amt_err_slowdown_gain + 1.0)) * amt.approach_speed_gain * (int)force_forward;
   if (amt.distance < 20) amt_telem.approach_speed = amt_telem.approach_speed / 2;
 
   // Check if the flight plan recently called the enable function
   // make distance to ship smaller, So descent to ship
 
-  if ( (get_sys_time_msec() - amt.enabled_sys_time) < (2000 / NAVIGATION_FREQUENCY) && force_forward) {
+  if ( (get_sys_time_msec() - amt.enabled_time) < (2000 / NAVIGATION_FREQUENCY) && force_forward) {
     // integrate speed to get the distance
     //printf("moving_towards_ship \n");
     float dt = FOLLOW_DIAGONAL_APPROACH_PERIOD;
@@ -446,3 +439,5 @@ void follow_diagonal_approach(void) {
   // uint32_t end_time = get_sys_time_msec(); // UNUSED
   //printf("loop_time = %i %i \n", end_time, start_time);
 }
+
+
