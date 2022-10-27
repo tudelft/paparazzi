@@ -44,7 +44,8 @@ struct Amt {
   float speed_gain;
   float relvel_gain;
   float approach_speed_gain;
-  int32_t enabled_time;
+  float speed2vel_gain;
+  int32_t enabled_sys_time;
   uint8_t wp_ship_id;
   uint8_t wp_approach_id;
   float last_lag;

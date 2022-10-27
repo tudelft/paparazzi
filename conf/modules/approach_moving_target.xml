@@ -18,6 +18,7 @@
         <dl_setting var="amt.pos_gain" min="0.05" max="3.0" step="0.01" shortname="pos_gain"/>
         <dl_setting var="amt.speed_gain" min="0.0" max="3.0" step="0.01" shortname="speed_gain"/>
         <dl_setting var="amt.relvel_gain" min="0.0" max="3.0" step="0.01" shortname="relvel_gain"/>
+        <dl_setting var="amt.speed2vel_gain" min="0.0" max="2.0" step="0.1" shortname="speed2vel_gain"/>
       </dl_settings>
     </dl_settings>
   </settings>
