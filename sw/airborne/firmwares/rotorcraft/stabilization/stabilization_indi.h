@@ -37,10 +37,12 @@ extern float actuator_state_filt_vect[INDI_NUM_ACT];
 extern bool indi_use_adaptive;
 
 extern float *Bwls[INDI_OUTPUTS];
+extern float indi_Wu_motor;
 
 extern float thrust_bx_eff;
 extern float thrust_bx_act_dyn;
 extern float actuator_thrust_bx_pprz;
+extern float thrust_bx_state_filt;
 
 struct Indi_gains {
   struct FloatRates att;
