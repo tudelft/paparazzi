@@ -286,7 +286,7 @@ void guidance_indi_run(float *heading_sp) {
   float speed_sp_b_x = cosf(psi) * speed_sp.x + sinf(psi) * speed_sp.y;
   float speed_sp_b_y =-sinf(psi) * speed_sp.x + cosf(psi) * speed_sp.y;
 
-  float airspeed = sqrtf(stateGetSpeedNed_f()->x * stateGetSpeedNed_f()->x + stateGetSpeedNed_f()->y * stateGetSpeedNed_f()->y);//stateGetAirspeed_f();
+  float airspeed = stateGetAirspeed_f(); //sqrtf(stateGetSpeedNed_f()->x * stateGetSpeedNed_f()->x + stateGetSpeedNed_f()->y * stateGetSpeedNed_f()->y);
 
   struct NedCoor_f *groundspeed = stateGetSpeedNed_f();
   struct FloatVect2 airspeed_v = {cos(psi)*airspeed, sin(psi)*airspeed};
@@ -657,14 +657,14 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   // Set lower limits
   du_min_rot_wing[0] = -rot_wing_roll_limit - roll_filt.o[0]; //roll
   du_min_rot_wing[1] = -rot_wing_pitch_limit - pitch_filt.o[0]; // pitch
-  du_min_rot_wing[2] = (MAX_PPRZ - actuators_pprz[0]) * g1g2[3][0] + (MAX_PPRZ - actuators_pprz[1]) * g1g2[3][1] + (MAX_PPRZ - actuators_pprz[2]) * g1g2[3][2] + (MAX_PPRZ - actuators_pprz[3]) * g1g2[3][3];
-  du_min_rot_wing[3] = -actuators_pprz[5]*thrust_bx_eff;
+  du_min_rot_wing[2] = (MAX_PPRZ - actuator_state_filt_vect[0]) * g1g2[3][0] + (MAX_PPRZ - actuator_state_filt_vect[1]) * g1g2[3][1] + (MAX_PPRZ - actuator_state_filt_vect[2]) * g1g2[3][2] + (MAX_PPRZ - actuator_state_filt_vect[3]) * g1g2[3][3];
+  du_min_rot_wing[3] = -thrust_bx_state_filt*thrust_bx_eff;
 
   // Set upper limits limits
   du_max_rot_wing[0] = rot_wing_roll_limit - roll_filt.o[0]; //roll
   du_max_rot_wing[1] = rot_wing_pitch_limit - pitch_filt.o[0]; // pitch
-  du_max_rot_wing[2] = -(actuators_pprz[0]*g1g2[3][0] + actuators_pprz[1]*g1g2[3][1] + actuators_pprz[2]*g1g2[3][2] + actuators_pprz[3]*g1g2[3][3]);
-  du_max_rot_wing[3] = (MAX_PPRZ - actuators_pprz[5]) * thrust_bx_eff;
+  du_max_rot_wing[2] = -(actuator_state_filt_vect[0]*g1g2[3][0] + actuator_state_filt_vect[1]*g1g2[3][1] + actuator_state_filt_vect[2]*g1g2[3][2] + actuator_state_filt_vect[3]*g1g2[3][3]);
+  du_max_rot_wing[3] = (MAX_PPRZ - thrust_bx_state_filt) * thrust_bx_eff;
   
   // Set prefered states
   du_pref_rot_wing[0] = 0; // prefered delta roll angle
