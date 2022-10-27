@@ -295,7 +295,7 @@ class Base:
             msg['climb'] = 0
             msg['course'] = self.course
             msg['heading'] = self.heading
-            msg['tow'] = 0
+            msg['itow'] = 10000000  # very high, so the system does not think there is a time-out
             self._interface.send(msg)
 
             self.bufLon.pop(9)
