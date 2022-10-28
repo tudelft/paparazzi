@@ -156,7 +156,7 @@ void target_pos_init(void)
   AbiBindMsgGPS(ABI_BROADCAST, &gps_ev, gps_cb);
 }
 
-/* Get the GPS lla position */
+/* Get the GPS lla position of drone*/
 static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp __attribute__((unused)),
                    struct GpsState *gps_s)
@@ -231,8 +231,9 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
   */
   // calculate how old the last received msg is
   // In seconds, overflow uint32_t in 49,7 days
-  //time_diff = (get_sys_time_msec() - target_landing.pos.recv_time) * 0.001; // FIXME: should be based on TOW of ground gps
-  float time_diff = (float)((int32_t)uav_itow - (int32_t)target_landing.pos.tow) / 1000; //TODO: TEST
+  float time_diff = 0;
+  if (target_landing.pos.tow > uav_itow) time_diff = 0;
+  else time_diff = (float)(uav_itow - target_landing.pos.tow) / 1000; //TODO: TEST
   printf("time_diff: %f \t uav_itow: %i \t target_landing.pos.tow: %i \n", time_diff, uav_itow, target_landing.pos.tow);
   target_landing.target_pos_timeout = time_diff; // for telemetry
 
@@ -328,7 +329,7 @@ bool target_compensate_roll(struct NedCoor_f *vel) {
 // TODO: this function can be removed if new function works
 /**
  * Set the current measured distance and heading as offset
- 
+ */
 bool target_pos_set_current_offset(float unk __attribute__((unused))) {
   if(target_pos_valid_no_timeout()) {
     struct NedCoor_i target_pos_cm; // position of 
@@ -350,7 +351,7 @@ bool target_pos_set_current_offset(float unk __attribute__((unused))) {
   }
 
   return false;
-}*/
+}
 
 
 /**
