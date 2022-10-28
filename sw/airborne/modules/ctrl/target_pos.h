@@ -66,7 +66,8 @@ extern void target_parse_target_pos_roll_compensated(uint8_t *buf); // WIP // NO
 extern bool target_get_pos(struct NedCoor_f *pos, float *heading);
 extern bool target_get_vel(struct NedCoor_f *vel);
 extern bool target_pos_set_current_offset(float unk);
-//extern bool target_pos_set_current_offset(void);
-extern bool target_compensate_roll(struct NedCoor_f *vel); //WIP
+extern void target_pos_set_current_offset_here(void);
+extern bool target_pos_valid_no_timeout(void){
+//extern bool target_compensate_roll(struct NedCoor_f *vel); //WIP (not used untill for testing on land)
 
 #endif

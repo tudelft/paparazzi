@@ -27,6 +27,8 @@ ground: messages exchanged between ground agents over the Ivy software bus
 
 telnet 192.168.42.1
 killall -9 ap.elf
+./data/ftp/internal_000/paparazzi/ap.elf
+
 /data/ftp/internal_000/paparazzi ap.elf
 
 
@@ -82,4 +84,7 @@ slechte batterijen:
 871: werkt wel, maar in cyberzoo voltage drop en valt dan uit heel soms uit de lucht, al vanaf dat ie vol wordt gebruikt
 11B: voltage drop in cyberzoo
 871: SUPER GOEDE BATTERIJ
+
+add to GCS line if there are geo_ref errors
+-center 'WGS84 51.990 4.378' -ref 'WGS84 51.990 4.378'42_19
 

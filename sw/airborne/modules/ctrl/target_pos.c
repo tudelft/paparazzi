@@ -317,8 +317,34 @@ bool target_compensate_roll(struct NedCoor_f *vel) {
  * Set the current measured distance and heading as offset
  */
 bool target_pos_set_current_offset(float unk __attribute__((unused))) {
-//bool target_pos_set_current_offset() {
-  if(target_landing.pos.valid && state.ned_initialized_i && (target_landing.pos.recv_time+target_landing.target_pos_timeout) > get_sys_time_msec()) {
+  if(target_pos_valid_no_timeout()) {
+    struct NedCoor_i target_pos_cm;
+    struct NedCoor_f uav_pos = *stateGetPositionNed_f();
+
+    // Convert from LLA to NED using origin from the UAV
+    ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &target_landing.pos.lla);
+
+    // Convert to floating point (cm to meters)
+    struct NedCoor_f pos;
+    pos.x = target_pos_cm.x * 0.01; // [m]
+    pos.y = target_pos_cm.y * 0.01; // [m]
+    pos.z = target_pos_cm.z * 0.01; // [m]
+
+    target_landing.offset.distance = sqrtf(powf(uav_pos.x - pos.x, 2) + powf(uav_pos.y - pos.y, 2)); // [m] euclidean distance (only horizontal)
+    target_landing.offset.height = -(uav_pos.z - pos.z); // [m]
+    target_landing.offset.heading = atan2f((uav_pos.y - pos.y), (uav_pos.x - pos.x))*180.0/M_PI - target_landing.pos.heading; // [deg]
+    return true;
+  }
+
+  return false;
+}
+
+
+/**
+ * Set the current measured distance and heading as offset
+ */
+void target_pos_set_current_offset_here(void) {
+  if(target_pos_valid_no_timeout()) {
     struct NedCoor_i target_pos_cm;
     struct NedCoor_f uav_pos = *stateGetPositionNed_f();
 
@@ -335,6 +361,10 @@ bool target_pos_set_current_offset(float unk __attribute__((unused))) {
     target_landing.offset.height = -(uav_pos.z - pos.z); // [m]
     target_landing.offset.heading = atan2f((uav_pos.y - pos.y), (uav_pos.x - pos.x))*180.0/M_PI - target_landing.pos.heading; // [deg]
   }
+}
 
-  return false;
+bool target_pos_valid_no_timeout(void){
+  return (target_landing.pos.valid // gps position valid (3D fix)
+        && state.ned_initialized_i // NED origin is set
+        && (target_landing.pos.recv_time+target_landing.target_pos_timeout) > get_sys_time_msec()); // signal has recently be received
 }
