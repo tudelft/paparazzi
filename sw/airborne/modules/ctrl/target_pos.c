@@ -172,7 +172,8 @@ void target_parse_target_pos(uint8_t *buf)
 
   // Save the received values
   target_landing.pos.recv_time = get_sys_time_msec();
-  target_landing.pos.tow = gps_tow_from_sys_ticks(sys_time.nb_tick); // FIXME: need to get from the real GPS
+  //target_landing.pos.tow = gps_tow_from_sys_ticks(sys_time.nb_tick); // FIXME: need to get from the real GPS
+  target_landing.pos.tow = DL_TARGET_POS_itow(buf);; // TODO: test this implementation
   target_landing.pos.lla.lat = DL_TARGET_POS_lat(buf);
   target_landing.pos.lla.lon = DL_TARGET_POS_lon(buf);
   target_landing.pos.lla.alt = DL_TARGET_POS_alt(buf);
