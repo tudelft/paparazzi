@@ -51,9 +51,9 @@ struct target_offset_t {
 struct target_t {
   struct target_pos_t pos;                  ///< The target position message
   struct target_offset_t offset;            ///< The target offset relative to ground heading
-  uint32_t target_pos_timeout;              ///< Ground target position message timeout [msec]
+  float target_pos_timeout;                 ///< Ground target position message timeout [msec]
   uint32_t target_pos_timeout_limit;        ///< Ground target position message timeout limit for target_pos being vallid [msec]
-  uint32_t rtk_timeout;                     ///< RTK message timeout limit [msec]
+  float rtk_timeout;                        ///< RTK message timeout limit [msec]
   uint32_t rtk_timeout_limit;               ///< RTK message timeout limit for RTK being vallid [msec]
   bool integrate_xy;                        ///< Enable integration of the position in X-Y (North/East) frame
   bool integrate_z;                         ///< Enable integration of the position in Z (Up) frame
@@ -61,6 +61,7 @@ struct target_t {
 
 };
 
+extern uint32_t uav_itow;
 extern struct target_t target_landing;
 extern void target_pos_init(void);
 extern void target_parse_target_pos(uint8_t *buf);

@@ -121,6 +121,8 @@ struct target_t target_landing = {
 /* Get the Relative postion from the RTK */
 extern struct GpsRelposNED gps_relposned;
 
+uint32_t uav_itow = 0;
+
 /* GPS abi callback */
 static abi_event gps_ev;
 static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
@@ -162,6 +164,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   target_landing.gps_lla.lat = gps_s->lla_pos.lat;
   target_landing.gps_lla.lon = gps_s->lla_pos.lon;
   target_landing.gps_lla.alt = gps_s->lla_pos.alt;
+  uav_itow = gps_s->tow;
 }
 
 /**
@@ -229,7 +232,8 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
   // calculate how old the last received msg is
   // In seconds, overflow uint32_t in 49,7 days
   //time_diff = (get_sys_time_msec() - target_landing.pos.recv_time) * 0.001; // FIXME: should be based on TOW of ground gps
-  float time_diff = (TOW_now - target_landing.pos.tow) * 0.001; //TODO: TEST
+  float time_diff = (float)((int32_t)uav_itow - (int32_t)target_landing.pos.tow) / 1000; //TODO: TEST
+  printf("time_diff: %f \t uav_itow: %i \t target_landing.pos.tow: %i \n", time_diff, uav_itow, target_landing.pos.tow);
   target_landing.target_pos_timeout = time_diff; // for telemetry
 
   // /* When we have a valid relative position from the RTK GPS and no timeout update the position */

@@ -1258,7 +1258,7 @@
       <field name="off_heading" type="float" unit="deg">Offset heading</field>
       <field name="off_distance" type="float" unit="m">Offset distance</field>
       <field name="off_height" type="float" unit="m">Offset height</field>
-      <field name="timeout" type="int32" unit="ms">Time since last received position</field>
+      <field name="timeout" type="float" unit="s">Time since last received position</field>
     </message>
 
     <message name="STAB_ATTITUDE_INT" id="140">
