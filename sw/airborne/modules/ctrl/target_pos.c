@@ -231,7 +231,7 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
   // }
 
   /* When we have a valid target_pos message, state ned is initialized and no timeout */
-  if(target_landing.pos.valid && state.ned_initialized_i && (target_landing.pos.recv_time+target_landing.target_pos_timeout) > get_sys_time_msec()) {
+  if(target_pos_valid_no_timeout()) {
     struct NedCoor_i target_pos_cm, drone_pos_cm;
 
     // Convert from LLA to NED using origin from the UAV
@@ -283,7 +283,7 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
 bool target_get_vel(struct NedCoor_f *vel) {
 
   /* When we have a valid target_pos message, state ned is initialized and no timeout */
-  if(target_landing.pos.valid && state.ned_initialized_i && (target_landing.pos.recv_time+target_landing.target_pos_timeout) > get_sys_time_msec()) {
+  if(target_pos_valid_no_timeout()) {
     // Calculate baed on ground speed and course
     vel->x = target_landing.pos.ground_speed * cosf(target_landing.pos.course/180.*M_PI);
     vel->y = target_landing.pos.ground_speed * sinf(target_landing.pos.course/180.*M_PI);
@@ -318,8 +318,8 @@ bool target_compensate_roll(struct NedCoor_f *vel) {
  */
 bool target_pos_set_current_offset(float unk __attribute__((unused))) {
   if(target_pos_valid_no_timeout()) {
-    struct NedCoor_i target_pos_cm;
-    struct NedCoor_f uav_pos = *stateGetPositionNed_f();
+    struct NedCoor_i target_pos_cm; // position of 
+    struct NedCoor_f uav_pos = *stateGetPositionNed_f(); // NED position of drone
 
     // Convert from LLA to NED using origin from the UAV
     ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &target_landing.pos.lla);
