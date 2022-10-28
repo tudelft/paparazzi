@@ -350,7 +350,7 @@ void follow_diagonal_approach(void) {
   // TODO: read nav status/block inside this script
   // TODO: place this in a better place with a more robust if statement
   //if (!force_forward){
-  if ((get_sys_time_msec() - amt.enabled_sys_time) < 1000) { 
+  if ((get_sys_time_msec() - amt.enabled_sys_time) < 1000 && target_pos_valid_no_timeout()) { // TODO: test if timeout argument works
     //AbiSendMsgVEL_SP(VEL_SP_FCR_ID, &des_vel); 
     struct FloatVect3 des_accel;
     struct FloatVect3 current_vel_ned; 
