@@ -42,15 +42,20 @@ Notes from phone:
 ? = TRIED, but failed
 
 Specific aproach_ship test after failed testflight at valkenburg 27-10-2022
-- position ground-gps (red dot) in GCS at right place (also move to see if red dot is moving)
-- position target_pos at right place in GCS (according to values in target_pos module)
-- position des_pos at right place in GCS (according to values in approach module)
-- GCS waypoints moving when rotating ground-gps (also when approach_enable function is not used)
-- Drone rel_despos is correct with static placement of drone wrt ground-gps (see if de relative distances are logic)
-- Drone rel_targetpos is correct with static placement of drone wrt ground-gps (see if de relative distances are logic)
-- Drone des_vel/des_accel in approach module logic with relative distance rel_despos
-- Check ALL altitudes with static placement drone and ground-gps
-- Check if approach_enable function still works as it should (WP_approach moves to WP_ship)
++ position ground-gps (red dot) in GCS at right place (also move to see if red dot is moving)
++ position target_pos at right place in GCS (according to values in target_pos module)
++ position des_pos at right place in GCS (according to values in approach module)
++ GCS waypoints moving when rotating ground-gps (also when approach_enable function is not used)
++ Drone rel_despos is correct with static placement of drone wrt ground-gps (see if de relative distances are logic)
++ Drone rel_targetpos is correct with static placement of drone wrt ground-gps (see if de relative distances are logic)
++ Drone des_vel/des_accel in approach module logic with relative distance rel_despos
++ Check ALL altitudes with static placement drone and ground-gps
++ Check if approach_enable function still works as it should (WP_approach moves to WP_ship)
+
+- Speed SP not stopping when target_pos timeout
+- bug WP_approach stoped updating (gcs shows it at WP_HOME)
+- bug rel_refpos NAN when drone on top of it
+
 
 
 Factors causing overshoot WP:
