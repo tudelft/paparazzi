@@ -52,7 +52,9 @@ struct target_t {
   struct target_pos_t pos;                  ///< The target position message
   struct target_offset_t offset;            ///< The target offset relative to ground heading
   uint32_t target_pos_timeout;              ///< Ground target position message timeout [msec]
-  uint32_t rtk_timeout;                     ///< RTK message timeout [msec]
+  uint32_t target_pos_timeout_limit;        ///< Ground target position message timeout limit for target_pos being vallid [msec]
+  uint32_t rtk_timeout;                     ///< RTK message timeout limit [msec]
+  uint32_t rtk_timeout_limit;               ///< RTK message timeout limit for RTK being vallid [msec]
   bool integrate_xy;                        ///< Enable integration of the position in X-Y (North/East) frame
   bool integrate_z;                         ///< Enable integration of the position in Z (Up) frame
   struct LlaCoor_i gps_lla;                 ///< GPS LLA position

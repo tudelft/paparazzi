@@ -91,8 +91,10 @@ struct target_t target_landing = {
     .distance = TARGET_OFFSET_DISTANCE,
     .height = TARGET_OFFSET_HEIGHT,
   },
-  .target_pos_timeout = TARGET_POS_TIMEOUT,
-  .rtk_timeout = TARGET_RTK_TIMEOUT,
+  .target_pos_timeout = 0,
+  .target_pos_timeout_limit = TARGET_POS_TIMEOUT,
+  .rtk_timeout = 0,
+  .rtk_timeout_limit = TARGET_RTK_TIMEOUT,
   .integrate_xy = TARGET_INTEGRATE_XY,
   .integrate_z = TARGET_INTEGRATE_Z
 };
@@ -105,8 +107,10 @@ struct target_t target_landing = {
     .distance = TARGET_OFFSET_DISTANCE_CYBERZOO,
     .height = TARGET_OFFSET_HEIGHT_CYBERZOO,
   },
-  .target_pos_timeout = TARGET_POS_TIMEOUT,
-  .rtk_timeout = TARGET_RTK_TIMEOUT,
+  .target_pos_timeout = 0,
+  .target_pos_timeout_limit = TARGET_POS_TIMEOUT,
+  .rtk_timeout = 0,
+  .rtk_timeout_limit = TARGET_RTK_TIMEOUT,
   .integrate_xy = TARGET_INTEGRATE_XY,
   .integrate_z = TARGET_INTEGRATE_Z
 };
@@ -134,7 +138,8 @@ static void send_target_pos_info(struct transport_tx *trans, struct link_device 
                               &target_landing.pos.heading,
                               &target_landing.offset.heading,
                               &target_landing.offset.distance,
-                              &target_landing.offset.height);
+                              &target_landing.offset.height,
+                              &target_landing.target_pos_timeout);
 }
 #endif
 
@@ -180,7 +185,7 @@ void target_parse_target_pos(uint8_t *buf)
 
 /**
  * Receive a TARGET_POS message from the ground
- */
+
 void target_parse_target_pos_roll_compensated(uint8_t *buf)
 {
   if(DL_TARGET_POS_ac_id(buf) != AC_ID)
@@ -203,7 +208,7 @@ void target_parse_target_pos_roll_compensated(uint8_t *buf)
 
   target_landing.pos.lla.lat = DL_TARGET_POS_lat(buf);
   target_landing.pos.lla.lon = DL_TARGET_POS_lon(buf);
-}
+} */
 
 extern struct LlaCoor_i gps_lla;
 /**
@@ -218,7 +223,11 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
       - add offset from rtkGPS ship to landingside ship
       - x,y,z are now position difference between droneGPS and landingside ship
   */
-  float time_diff = 0;
+  // calculate how old the last received msg is
+  // In seconds, overflow uint32_t in 49,7 days
+  //time_diff = (get_sys_time_msec() - target_landing.pos.recv_time) * 0.001; // FIXME: should be based on TOW of ground gps
+  float time_diff = (TOW_now - target_landing.pos.tow) * 0.001; //TODO: TEST
+  target_landing.target_pos_timeout = time_diff; // for telemetry
 
   // /* When we have a valid relative position from the RTK GPS and no timeout update the position */
   // if((gps_relposned.relPosValid != 0) && (gps_relposned.iTOW+target.rtk_timeout) > gps_tow_from_sys_ticks(sys_time.nb_tick)) {
@@ -243,11 +252,6 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
     pos->x = (target_pos_cm.x - drone_pos_cm.x) * 0.01;
     pos->y = (target_pos_cm.y - drone_pos_cm.y) * 0.01;
     pos->z = (target_pos_cm.z - drone_pos_cm.z) * 0.01;
-
-    // calculate how old the last received msg is
-    // In seconds, overflow uint32_t in 49,7 days
-    //time_diff = (get_sys_time_msec() - target_landing.pos.recv_time) * 0.001; // FIXME: should be based on TOW of ground gps
-    time_diff = (TOW_now - target_landing.pos.tow) * 0.001; //TODO: TEST
 
     // Return the heading
     *heading = target_landing.pos.heading;
@@ -366,5 +370,5 @@ void target_pos_set_current_offset_here(void) {
 bool target_pos_valid_no_timeout(void){
   return (target_landing.pos.valid // gps position valid (3D fix)
         && state.ned_initialized_i // NED origin is set
-        && (target_landing.pos.recv_time+target_landing.target_pos_timeout) > get_sys_time_msec()); // signal has recently be received
+        && (target_landing.pos.recv_time+target_landing.target_pos_timeout_limit) > get_sys_time_msec()); // signal has recently be received
 }
