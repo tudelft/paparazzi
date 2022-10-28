@@ -693,10 +693,10 @@ float inverse_thrust_transform(float T) {
   // invert T = a*u*u + b*u + c
   T = fmin(fmax(T, 0.), 1.);
   float ainv = 1./THRUST_CURVE_A;
-  float b_over_2a = THRUST_CURVE_B * 2. * ainv;
+  float b_over_2a = THRUST_CURVE_B * 0.5 * ainv;
   float b_over_2a_sq = b_over_2a * b_over_2a;
 
-  return (sqrtf(b_over_2a_sq + ainv*(T-THRUST_CURVE_C)) - b_over_2a);
+  return fmin(fmax(sqrtf(b_over_2a_sq + ainv*(T-THRUST_CURVE_C)) - b_over_2a, 0.), 1.);
 }
 
 /**
