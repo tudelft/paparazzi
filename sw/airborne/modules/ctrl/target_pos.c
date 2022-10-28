@@ -82,6 +82,8 @@
 #define TARGET_INTEGRATE_Z true
 #endif
 
+#define TOW_now gps_tow_from_sys_ticks(sys_time.nb_tick)
+
 #ifndef CYBERZOO
 /* Initialize the main structure */
 struct target_t target_landing = {

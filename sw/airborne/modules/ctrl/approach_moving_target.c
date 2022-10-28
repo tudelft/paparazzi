@@ -56,7 +56,7 @@ struct Amt amt = {
   .speed_gain = 1.0,  // [-], how agressive ..................
   .relvel_gain = 0.75, // [-], ................................
   .approach_speed_gain = 1.0,
-  .enabled_time = 0,
+  .enabled_sys_time = 0,
   .wp_ship_id = 0,
   .wp_approach_id = 0,
   .target_heigth = 0
@@ -98,7 +98,7 @@ static void send_approach_moving_target(struct transport_tx *trans, struct link_
   //                             &amt_telem.des_vel.z,
   //                             &amt.distance
   //                             );
-  int32_t enabled_time_diff = (get_sys_time_msec() - amt.enabled_time);
+  int32_t enabled_time_diff = (get_sys_time_msec() - amt.enabled_sys_time);
   uint8_t force_forward_boolean = force_forward;
   
    pprz_msg_send_APPROACH_MOVING_TARGET(trans, dev, AC_ID,
@@ -200,7 +200,7 @@ void init_wp_ids(uint8_t wp_ship_id, uint8_t wp_approach_id){
 
 // Function to enable from flight plan (call repeatedly!)
 void approach_moving_target_enable(void) { 
-  amt.enabled_time = get_sys_time_msec(); // this makes folow_diagonal_approach()
+  amt.enabled_sys_time = get_sys_time_msec(); // this makes folow_diagonal_approach()
 }
 
 // Function to enable from flight plan (call repeatedly!)
@@ -260,7 +260,7 @@ void follow_diagonal_approach(void) {
   // waveEstimation(); // TESTING // NOT WORKING YET
 
   // Check if the flight plan recently called the enable function
-  if ( (get_sys_time_msec() - amt.enabled_time) > (2000 / NAVIGATION_FREQUENCY) && !allways_update_ship_wp) {
+  if ( (get_sys_time_msec() - amt.enabled_sys_time) > (2000 / NAVIGATION_FREQUENCY) && !allways_update_ship_wp) {
     return; // if approach_moving_target_enable is not called recently
   }
 
@@ -350,7 +350,7 @@ void follow_diagonal_approach(void) {
   // TODO: read nav status/block inside this script
   // TODO: place this in a better place with a more robust if statement
   //if (!force_forward){
-  if ((get_sys_time_msec() - amt.enabled_time) < 1000) { 
+  if ((get_sys_time_msec() - amt.enabled_sys_time) < 1000) { 
     //AbiSendMsgVEL_SP(VEL_SP_FCR_ID, &des_vel); 
     struct FloatVect3 des_accel;
     struct FloatVect3 current_vel_ned; 
@@ -390,7 +390,7 @@ void follow_diagonal_approach(void) {
   // Check if the flight plan recently called the enable function
   // make distance to ship smaller, So descent to ship
 
-  if ( (get_sys_time_msec() - amt.enabled_time) < (2000 / NAVIGATION_FREQUENCY) && force_forward) {
+  if ( (get_sys_time_msec() - amt.enabled_sys_time) < (2000 / NAVIGATION_FREQUENCY) && force_forward) {
     // integrate speed to get the distance
     //printf("moving_towards_ship \n");
     float dt = FOLLOW_DIAGONAL_APPROACH_PERIOD;
