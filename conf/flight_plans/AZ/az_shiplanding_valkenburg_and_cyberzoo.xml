@@ -190,7 +190,7 @@ heading not defined at:
     @AND !(nav_block == IndexOfBlock('Land Here'))"
     deroute="Holding point hover"/>
 
-    <!-- Cyberzoo: hover when touching flyzone geofence OR altitude above 3.5m -->
+    <!-- Cyberzoo: hover when touching flyzone geofence OR altitude above 3.5m 
     <exception cond="Or(! InsideCyberzoo(GetPosX(), GetPosY()), GetPosAlt() @GT 3.5) 
     @AND InsideTUDelft(GetPosX(), GetPosY())
     @AND !InsideValkenburg(GetPosX(), GetPosY())
@@ -199,7 +199,7 @@ heading not defined at:
     @AND !(nav_block == IndexOfBlock('Holding point hover')) 
     @AND !(nav_block == IndexOfBlock('autodescent 53perc throttle TEST')) 
     @AND !(nav_block == IndexOfBlock('Land Here'))"
-    deroute="Holding point hover"/>
+    deroute="Holding point hover"/>-->
 
     <!-- Valkenburg + Cyberzoo: kill when outside killzone geofence OR altitude more than 150m -->
     <exception cond="Or((!InsideValkenburg(GetPosX(), GetPosY()) 
@@ -342,9 +342,9 @@ heading not defined at:
     </block>
     <block name="set_landing_offset_here_TEST">
       <set value="FALSE" var="force_forward"/>
-      <exception cond="GetPosHeight() @GT 0.15" deroute="Holding point hover"/>
-      <call_once fun="target_pos_set_current_offset(0.0)"/>
-      <deroute block="Holding point kill"/>
+      <!--exception cond="GetPosHeight() @GT 0.15" deroute="Holding point hover"/-->
+      <call_once fun="target_pos_set_current_offset_here()"/>
+      <deroute block="Holding point hover"/>
     </block>
     <block name="stay_p1">
       <set value="FALSE" var="force_forward"/>
