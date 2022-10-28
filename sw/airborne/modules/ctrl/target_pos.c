@@ -324,9 +324,11 @@ bool target_compensate_roll(struct NedCoor_f *vel) {
 }
 */
 
+
+// TODO: this function can be removed if new function works
 /**
  * Set the current measured distance and heading as offset
- */
+ 
 bool target_pos_set_current_offset(float unk __attribute__((unused))) {
   if(target_pos_valid_no_timeout()) {
     struct NedCoor_i target_pos_cm; // position of 
@@ -348,7 +350,7 @@ bool target_pos_set_current_offset(float unk __attribute__((unused))) {
   }
 
   return false;
-}
+}*/
 
 
 /**
