@@ -316,6 +316,7 @@ void *uart_endpoint(void *arg) {
   ep->fd = open(ep->devname, O_RDWR | O_NOCTTY);
   if(ep->fd < 0) {
     fprintf(stderr, "Could not open uart for %s:%d\r\n", ep->devname, ep->baudrate);
+    exit(1);
     return NULL;
   }
 
