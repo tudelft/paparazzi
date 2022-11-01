@@ -34,6 +34,8 @@
 #endif
 */
 
+#if !USE_NPS
+
 #ifndef ADC_CHANNEL_WING_ROTATION_POSITION
 #define ADC_CHANNEL_WING_ROTATION_POSITION ADC_5
 #endif
@@ -41,6 +43,8 @@
 #ifndef ADC_CHANNEL_WING_ROTATION_POSITION_NB_SAMPLES
 #define ADC_CHANNEL_WING_ROTATION_POSITION_NB_SAMPLES 16
 #endif
+
+#endif // !USE_NPS
 
 #ifndef WING_ROTATION_POSITION_ADC_0
 #error "No WING_ROTATION_POSITION_ADC_0 defined"
@@ -84,8 +88,9 @@ static void send_rot_wing_controller(struct transport_tx *trans, struct link_dev
 void wing_rotation_init(void)
 {
   // your init code here
-
+  #if !USE_NPS
   adc_buf_channel(ADC_CHANNEL_WING_ROTATION_POSITION, &buf_wing_rot_pos, ADC_CHANNEL_WING_ROTATION_POSITION_NB_SAMPLES);
+  #endif
 
   // Init wing_rotation_controller struct
   wing_rotation.servo_pprz_cmd = 0;
@@ -149,6 +154,7 @@ void wing_rotation_event(void)
 
 void wing_rotation_to_rad(void)
 { 
+  #if !USE_NPS
   wing_rotation.adc_wing_rotation = buf_wing_rot_pos.sum / buf_wing_rot_pos.av_nb_sample;
 
   wing_rotation.wing_angle_deg =  -0.00000000000839650958809 * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation 
@@ -156,10 +162,12 @@ void wing_rotation_to_rad(void)
                                   - 0.064750469252883 * (float)wing_rotation.adc_wing_rotation
                                   + 1235.31050095289;
   wing_rotation.wing_angle_rad = wing_rotation.wing_angle_deg / 180. * M_PI;
-  // wing_rotation.wing_angle_rad = (float)(wing_rotation.adc_wing_rotation - WING_ROTATION_POSITION_ADC_0)
-  //                                  / (float)wing_rotation.adc_wing_rotation_range * (0.5 * M_PI);
 
-  // wing_rotation.wing_angle_deg = wing_rotation.wing_angle_rad / M_PI * 180.;
+  #else
+  // Copy setpoint as actual angle in simulation
+  wing_rotation.wing_angle_deg = wing_rotation.wing_angle_deg_sp;
+  wing_rotation.wing_angle_rad = wing_rotation.wing_angle_rad_sp;
+  #endif
 }
 
 void wing_rotation_update_sp(void)
@@ -167,35 +175,9 @@ void wing_rotation_update_sp(void)
   wing_rotation.wing_angle_rad_sp = wing_rotation.wing_angle_deg_sp / 180. * M_PI;
 }
 
-// void wing_rotation_compute_pprz_cmd(void)
-// {
-//   float max_angle_change = wing_rotation.max_angular_rate / (float)PERIODIC_FREQUENCY;
-//   float angle_error = wing_rotation.wing_angle_deg_sp - wing_rotation.wing_angle_virtual_deg_sp;
-//   if (wing_rotation.wing_angle_deg_sp > wing_rotation.wing_angle_virtual_deg_sp) 
-//   {
-//     if (angle_error < max_angle_change) {
-//       wing_rotation.wing_angle_virtual_deg_sp = wing_rotation.wing_angle_deg_sp;
-//     } else {
-//       wing_rotation.wing_angle_virtual_deg_sp += max_angle_change;
-//     }
-//   } else if (wing_rotation.wing_angle_deg_sp < wing_rotation.wing_angle_virtual_deg_sp)
-//   {
-//     if (angle_error < -max_angle_change) {
-//       wing_rotation.wing_angle_virtual_deg_sp = wing_rotation.wing_angle_deg_sp;
-//     } else {
-//       wing_rotation.wing_angle_virtual_deg_sp += -max_angle_change;
-//     }
-//   }
-
-//   int32_t servo_pprz_cmd;  // Define pprz cmd
-//   servo_pprz_cmd = (int32_t)(wing_rotation.wing_angle_virtual_deg_sp / 90. * (float)MAX_PPRZ);
-//   Bound(servo_pprz_cmd, 0, MAX_PPRZ);
-
-//   wing_rotation.servo_pprz_cmd = servo_pprz_cmd;
-// }
-
 void wing_rotation_compute_pprz_cmd(void)
 {
+  #if !USE_NPS
   float angle_error = wing_rotation.wing_angle_deg_sp - wing_rotation.wing_angle_virtual_deg_sp;
   float speed_sp = wing_rotation.wing_rotation_first_order_dynamics * angle_error;
   float speed_error = speed_sp - wing_rotation.wing_rotation_speed;
@@ -207,4 +189,11 @@ void wing_rotation_compute_pprz_cmd(void)
   Bound(servo_pprz_cmd, 0, MAX_PPRZ);
 
   wing_rotation.servo_pprz_cmd = servo_pprz_cmd;
+  #else
+  int32_t servo_pprz_cmd;  // Define pprz cmd
+  servo_pprz_cmd = (int32_t)(wing_rotation.wing_angle_deg_sp / 90. * (float)MAX_PPRZ);
+  Bound(servo_pprz_cmd, 0, MAX_PPRZ);
+
+  wing_rotation.servo_pprz_cmd = servo_pprz_cmd;
+  #endif
 }
