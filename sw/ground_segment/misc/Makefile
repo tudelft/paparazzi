@@ -57,10 +57,10 @@ GLIB_LDFLAGS = $(shell pkg-config glib-2.0 --libs) -lglibivy -lm $(shell pcre-co
 INCLUDES += $(shell pkg-config glib-2.0 --cflags) -I$(PAPARAZZI_SRC)/sw/airborne/ -I$(PAPARAZZI_SRC)/sw/include/ $(IVY_INC)
 INCLUDES += -I$(PAPARAZZI_SRC)/sw/ext/libsbp/c/include/ -I$(PAPARAZZI_SRC)/sw/airborne/modules/gps/librtcm3/ -I$(PAPARAZZI_SRC)/sw/airborne/arch/linux/
 
-all: davis2ivy kestrel2ivy sbp2ivy video_synchronizer sbs2ivy rtcm2ivy ublox2ivy arduino2ivy
+all: davis2ivy kestrel2ivy sbp2ivy video_synchronizer sbs2ivy rtcm2ivy ublox2ivy
 
 clean:
-	$(Q)rm -f *.o davis2ivy kestrel2ivy sbp2ivy video_synchronizer sbs2ivy rtcm2ivy ublox2ivy arduino2ivy
+	$(Q)rm -f *.o davis2ivy kestrel2ivy sbp2ivy video_synchronizer sbs2ivy rtcm2ivy ublox2ivy
 
 davis2ivy: davis2ivy.o
 	@echo CC $@
@@ -79,10 +79,6 @@ rtcm2ivy: rtcm2ivy.o serial_port.o pprz_geodetic_float.o
 	$(Q)$(CC) $(CFLAGS) -o $@ $^ $(INCLUDES) $(LIBRARYS) $(GLIB_LDFLAGS) $(IVY_LDFLAGS)
 
 ublox2ivy: ublox2ivy.o
-	@echo CC $@
-	$(Q)$(CC) $(CFLAGS) -o $@ $^ $(INCLUDES) $(LIBRARYS) -lpthread $(GLIB_LDFLAGS) $(IVY_LDFLAGS)
-	
-arduino2ivy: arduino2ivy.o
 	@echo CC $@
 	$(Q)$(CC) $(CFLAGS) -o $@ $^ $(INCLUDES) $(LIBRARYS) -lpthread $(GLIB_LDFLAGS) $(IVY_LDFLAGS)
 
