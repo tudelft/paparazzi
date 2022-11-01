@@ -62,7 +62,7 @@
 
         <module TYPE="uavcan" NAME="actuators">
             <configure VALUE="TRUE" NAME="UAVCAN_USE_CAN1"/>
-            <configure VALUE="FALSE" NAME="UAVCAN_USE_CAN2"/>
+            <configure VALUE="TRUE" NAME="UAVCAN_USE_CAN2"/>
         </module>
 
         <module TYPE="pwm" NAME="actuators"/>
@@ -112,20 +112,26 @@
 
     <servos DRIVER="Pwm">
     <!--1030 = quad 2140 = fw-->
-        <servo NO="0" NEUTRAL="1012" NAME="SERVO_1" MIN="1012" MAX="2112"/>
-        <servo NO="1" NEUTRAL="1500" NAME="SERVO_2" MIN="1000" MAX="2000"/>
-        <servo NO="2" NEUTRAL="1500" NAME="SERVO_3" MIN="1000" MAX="2000"/>
-        <servo NO="3" NEUTRAL="1500" NAME="SERVO_4" MIN="1000" MAX="2000"/>
+        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1012" NEUTRAL="1012" MAX="2112"/>
+        <servo NO="1" NAME="SERVO_AIL_LEFT"  MIN="1000" NEUTRAL="1500" MAX="2000"/>
+        <servo NO="2" NAME="SERVO_AIL_RIGHT" MIN="1000" NEUTRAL="1500" MAX="2000"/>
     </servos>
 
     <servos DRIVER="Uavcan1">
-        <servo NO="0" NEUTRAL="1000" NAME="MOTOR_FRONT" MIN="0" MAX="8191"/>
-        <servo NO="1" NEUTRAL="1000" NAME="MOTOR_RIGHT" MIN="0" MAX="8191"/>
-        <servo NO="2" NEUTRAL="1000" NAME="MOTOR_BACK" MIN="0" MAX="8191"/>
-        <servo NO="3" NEUTRAL="1000" NAME="MOTOR_LEFT" MIN="0" MAX="8191"/>
-        <servo NO="4" NEUTRAL="0"   NAME="MOTOR_PUSH" MIN="0" MAX="8191"/>
-        <servo NO="9" NEUTRAL="0" NAME="SERVO_ELEVATOR" MIN="4000" MAX="-4000"/>
-        <servo NO="10" NEUTRAL="0" NAME="SERVO_RUDDER" MIN="-8191" MAX="8191"/>
+        <servo NO="0" NAME="MOTOR_FRONT"    MIN="0"     NEUTRAL="1000" MAX="8191"/>
+        <servo NO="1" NAME="MOTOR_RIGHT"    MIN="0"     NEUTRAL="1000" MAX="8191"/>
+        <servo NO="2" NAME="MOTOR_BACK"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
+        <servo NO="3" NAME="MOTOR_LEFT"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
+        <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="0"    MAX="8191"/>
+        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="4000"  NEUTRAL="0"    MAX="-4000"/>
+        <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"    MAX="8191"/>
+    </servos>
+
+    <servos DRIVER="Uavcan2">
+        <servo NO="0" NAME="BMOTOR_FRONT" MIN="0" NEUTRAL="1000" MAX="8191"/>
+        <servo NO="1" NAME="BMOTOR_RIGHT" MIN="0" NEUTRAL="1000" MAX="8191"/>
+        <servo NO="2" NAME="BMOTOR_BACK"  MIN="0" NEUTRAL="1000" MAX="8191"/>
+        <servo NO="3" NAME="BMOTOR_LEFT"  MIN="0" NEUTRAL="1000" MAX="8191"/>
     </servos>
 
     <commands>
@@ -153,7 +159,7 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[5])" SERVO="MOTOR_PUSH"/>
-        <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_1"/>
+        <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_ROTWING"/>
     </command_laws>
 
     <section NAME="MISC">
