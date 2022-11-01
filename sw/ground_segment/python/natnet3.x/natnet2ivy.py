@@ -108,7 +108,7 @@ if args.cyberzoo:
     if args.z_forward:
         argparse.ArgumentError(args.z_forward, "Cannot use -cz --cyberzoo with -zf --z_forward")
     args.z_up_y_forward = True
-    args.north_angle = -22.
+    args.north_offset = -22.
 
 if args.north_offset != 0. and not args.z_up_y_forward:
     warnings.warn("True ENU only expected with --z_up_y_forward axes", UserWarning)
@@ -119,9 +119,9 @@ if args.z_forward:
 elif args.z_up_y_forward:
     q_axes = Quat(axis=[1., 1., 1.], angle=2./3.*np.pi)
 else:
-    q_axis = Quat(scalar=1., vector=[0., 0., 0.])
+    q_axes = Quat(scalar=1., vector=[0., 0., 0.])
 
-q_north = Quat(axis=[0., 0., 1.], angle=np.deg2rad(args.north_angle))
+q_north = Quat(axis=[0., 0., 1.], angle=np.deg2rad(args.north_offset))
 q_total = q_north * q_axes
 
 # store track function
@@ -180,7 +180,8 @@ def receiveRigidBodyList( rigidBodyList, stamp ):
         pos = q_total.rotate([pos[0], pos[1], pos[2]])
         vel = q_total.rotate([vel[0], vel[1], vel[2]])
         quat = Quat(scalar=quat[3], vector=[quat[0], quat[1], quat[2]])
-        quat = (q_north * quat).elements
+        quat = q_north.inverse * (q_axes * quat * q_axes.inverse)
+        quat = quat.elements
         # swap element back to the original imaginary-first ordering
         quat_w = quat[0]
         quat[:3] = quat[1:]
