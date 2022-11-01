@@ -71,7 +71,9 @@
       <define name="SERVO_HZ" value="400"/>
     </module>
     <module name="imu" type="mpu6000"/>
-    <module name="gps" type="datalink"/>
+    <module name="gps" type="datalink">
+      <define name="PHI_OFFSET" value="51.12312313"/>
+    </module>
     <!--
     <module name="gps" type="ubx_ucenter">
       <define name="GPS_UBX_NAV5_DYNAMICS" value="NAV5_DYN_PORTABLE" />
@@ -83,7 +85,7 @@
     <module name="stabilization" type="indi"/>
     <module name="stabilization" type="rate_indi"/>
     -->
-    <module name="ahrs" type="float_cmpl_quat">
+    <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
     </module>
@@ -281,7 +283,7 @@
     <define name="ADAPTIVE_MU" value="0.0001"/>
 
     <!--Priority for each axis (roll, pitch, yaw and thrust)-->
-    <define name="WLS_PRIORITIES" value="{1000, 1000, 1, 100}"/>
+    <define name="WLS_PRIORITIES" value="{10000, 10000, 1, 1000}"/>
 
     <define name="ALGO" value="2"/>
   </section>

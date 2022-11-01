@@ -8,8 +8,8 @@
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint name="CLIMB" x="0.0" y="0.0" alt="1.5"/>
     <waypoint name="STDBY" x="0.0" y="0.0" alt="1.5"/>
-    <waypoint name="PMY" x="-1.5" y="-1.5" alt="1.5"/>
-    <waypoint name="ALT" x="1.5" y="1.5" alt="1.5"/>
+    <waypoint name="PMY" x="-1.0" y="-1.0" alt="1.5"/>
+    <waypoint name="ALT" x="1.0" y="1.0" alt="1.5"/>
   </waypoints>
   <blocks>
     <block name="Wait GPS">

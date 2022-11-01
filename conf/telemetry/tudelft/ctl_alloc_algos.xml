@@ -39,6 +39,7 @@
       <message name="CTL_ALLOC_PERF"           period="0.5"/>
       <message name="RC"                       period="0.5"/>
       <message name="ROTORCRAFT_RADIO_CONTROL" period="0.5"/>
+      <message name="EXTERNAL_POSE_SMALL" period="0.25"/>
     </mode>
 
     <mode name="ppm">
@@ -208,6 +209,7 @@
       <message name="RTOS_MON"                 period="1.0"/>
       <message name="RC"                       period="0.075"/>
       <message name="ROTORCRAFT_RADIO_CONTROL" period="0.075"/>
+      <message name="EXTERNAL_POSE_SMALL" period="0.075"/>
     </mode>
   </process>
 

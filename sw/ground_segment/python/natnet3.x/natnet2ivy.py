@@ -44,8 +44,10 @@ import sys
 from os import path, getenv
 from time import time, sleep
 import numpy as np
+from pyquaternion import Quaternion as Quat
 from collections import deque
 import argparse
+import warnings
 
 # import NatNet client
 from NatNetClient import NatNetClient
@@ -73,7 +75,11 @@ parser.add_argument('-vs', '--vel_samples', dest='vel_samples', default=4, type=
 parser.add_argument('-rg', '--remote_gps', dest='rgl_msg', action='store_true', help="use the old REMOTE_GPS_LOCAL message")
 parser.add_argument('-sm', '--small', dest='small_msg', action='store_true', help="enable the EXTERNAL_POSE_SMALL message instead of the full")
 parser.add_argument('-o', '--old_natnet', dest='old_natnet', action='store_true', help="Change the NatNet version to 2.9")
-parser.add_argument('-zf', '--z_forward', dest='z_forward', action='store_true', help="Z-axis as forward")
+axes = parser.add_mutually_exclusive_group()
+axes.add_argument('-zf', '--z_forward', dest='z_forward', action='store_true', help="Z-axis as forward (kept for legacy reasons)")
+axes.add_argument('-zuyf', '--z_up_y_forward', dest='z_up_y_forward', action='store_true', help="Optitrack Y becomes Z, Optitrack Z becomes X")
+parser.add_argument('-no', '--north_offset', dest='north_offset', default=0., type=float, help="RH up-axis rotation to align optitrack X-axis with magnetic north (degrees). Now output is true ENU, if ground plane alignment as on wiki (long edge to the right)")
+parser.add_argument('-cz', '--cyberzoo', dest='cyberzoo', action='store_true', help="TU Delft Cyberzoo default. Equivalent to '-zuyf -no -23.0'")
 
 args = parser.parse_args()
 
@@ -96,6 +102,27 @@ if args.ivy_bus is not None:
     ivy = IvyMessagesInterface("natnet2ivy", ivy_bus=args.ivy_bus)
 else:
     ivy = IvyMessagesInterface("natnet2ivy")
+
+# process cyberzoo
+if args.cyberzoo:
+    if args.z_forward:
+        argparse.ArgumentError(args.z_forward, "Cannot use -cz --cyberzoo with -zf --z_forward")
+    args.z_up_y_forward = True
+    args.north_angle = -22.
+
+if args.north_offset != 0. and not args.z_up_y_forward:
+    warnings.warn("True ENU only expected with --z_up_y_forward axes", UserWarning)
+
+# define rotation quaternion
+if args.z_forward:
+    q_axes = Quat(axis=[0., 1., 1.], angle=np.pi)
+elif args.z_up_y_forward:
+    q_axes = Quat(axis=[1., 1., 1.], angle=2./3.*np.pi)
+else:
+    q_axis = Quat(scalar=1., vector=[0., 0., 0.])
+
+q_north = Quat(axis=[0., 0., 1.], angle=np.deg2rad(args.north_angle))
+q_total = q_north * q_axes
 
 # store track function
 def store_track(ac_id, pos, t):
@@ -130,18 +157,6 @@ def compute_velocity(ac_id):
             vel[2] /= nb
     return vel
 
-# Rotate the Z-forward to X-forward frame
-def rotZtoX(in_vec3, quat = False):
-    out_vec3 = {}
-    out_vec3[0] = -in_vec3[0]
-    out_vec3[1] = in_vec3[2]
-    out_vec3[2] = in_vec3[1]
-
-    # Copy the qi
-    if quat:
-        out_vec3[3] = in_vec3[3]
-    return out_vec3
-
 def receiveRigidBodyList( rigidBodyList, stamp ):
     for (ac_id, pos, quat, valid) in rigidBodyList:
         if not valid:
@@ -161,11 +176,15 @@ def receiveRigidBodyList( rigidBodyList, stamp ):
 
         vel = compute_velocity(i)
 
-        # Rotate everything if Z-forward
-        if args.z_forward:
-            pos = rotZtoX(pos)
-            vel = rotZtoX(vel)
-            quat = rotZtoX(quat, True)
+        # Rotate everything according to the quaternions found above
+        pos = q_total.rotate([pos[0], pos[1], pos[2]])
+        vel = q_total.rotate([vel[0], vel[1], vel[2]])
+        quat = Quat(scalar=quat[3], vector=[quat[0], quat[1], quat[2]])
+        quat = (q_north * quat).elements
+        # swap element back to the original imaginary-first ordering
+        quat_w = quat[0]
+        quat[:3] = quat[1:]
+        quat[3] = quat_w
 
         # Check which message to send
         if args.rgl_msg:
@@ -254,4 +273,3 @@ except OSError:
     natnet.stop()
     ivy.stop()
     exit(-1)
-
