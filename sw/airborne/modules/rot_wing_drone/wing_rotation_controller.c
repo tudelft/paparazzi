@@ -77,11 +77,11 @@ inline void wing_rotation_compute_pprz_cmd(void);
 #include "modules/datalink/telemetry.h"
 static void send_rot_wing_controller(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_ROT_WING_CONTROLLER(trans, dev, AC_ID,
-                          &wing_rotation.wing_angle_deg,
-                          &wing_rotation.wing_angle_deg_sp,
-                          &wing_rotation.adc_wing_rotation,
-                          &wing_rotation.servo_pprz_cmd);
+  // pprz_msg_send_ROT_WING_CONTROLLER(trans, dev, AC_ID,
+  //                         &wing_rotation.wing_angle_deg,
+  //                         &wing_rotation.wing_angle_deg_sp,
+  //                         &wing_rotation.adc_wing_rotation,
+  //                         &wing_rotation.servo_pprz_cmd);
 }
 #endif
 
@@ -110,7 +110,7 @@ void wing_rotation_init(void)
   wing_rotation.init_loop_count = 0;
 
   #if PERIODIC_TELEMETRY
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROT_WING_CONTROLLER, send_rot_wing_controller);
+    //register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROT_WING_CONTROLLER, send_rot_wing_controller);
   #endif
 }
 
