@@ -1,5 +1,16 @@
 <conf>
   <aircraft
+   name="Ground_station"
+   ac_id="66"
+   airframe="airframes/AZ/az_groundstation_pixhawk.xml"
+   radio="radios/FrSky3dr.xml"
+   telemetry="telemetry/default_rotorcraft_slow.xml"
+   flight_plan="flight_plans/tudelft/delft_basic.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/ahrs_int_cmpl_quat.xml [modules/air_data.xml] modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/gps_ubx_ucenter.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi_simple.xml"
+   gui_color="yellow"
+  />
+  <aircraft
    name="bebop2"
    ac_id="203"
    airframe="airframes/AZ/az_bebop2_optitrack_v4.xml"
