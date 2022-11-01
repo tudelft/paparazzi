@@ -2690,6 +2690,15 @@
       <field name="itow"   type="uint32" unit="ms"/>
     </message>
 
+    <!-- added by Andreas -->
+    <message name="SHIP_DATA" id="58">
+    <description>
+        gives estimation of ship movements, timings to plan landing of drone on the deck of the ship
+      </description>
+      <field name="estm_deck_flat" type="float" unit="none"/>
+      <field name="estm_deck_up" type="float" unit="none" />
+    </message>
+
     <message name="SMARTPROBE" id="60" link="forwarded">
       <description>
         Data from SmartProbe 5-hole probe sensor for wind and turbulence measurements
