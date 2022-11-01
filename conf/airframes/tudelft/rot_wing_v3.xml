@@ -183,7 +183,7 @@
         <define name="ACCEL_CALIB" value="{{.abi_id=20, .neutral={-57,-20,-6}, .scale={{3374,11057,64239},{647,2261,13135}}}, {.abi_id=21, .neutral={-35,-20,9}, .scale={{50356,47219,17359},{10281,9653,3561}}}, {.abi_id=22, .neutral={-17,-10,24}, .scale={{22979,34687,9697},{2353,3547,1001}}}}"/>
         
         <!-- Define axis in hover frame -->
-        <define name="BODY_TO_IMU_PHI"   value="-4." unit="deg"/>
+        <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
         <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
         <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
     </section>
