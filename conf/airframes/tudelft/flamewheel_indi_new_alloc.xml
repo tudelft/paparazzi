@@ -283,7 +283,7 @@
     <define name="ADAPTIVE_MU" value="0.0001"/>
 
     <!--Priority for each axis (roll, pitch, yaw and thrust)-->
-    <define name="WLS_PRIORITIES" value="{10000, 10000, 1, 1000}"/>
+    <define name="WLS_PRIORITIES" value="{1000, 1000, 1, 100}"/>
 
     <define name="ALGO" value="2"/>
   </section>
