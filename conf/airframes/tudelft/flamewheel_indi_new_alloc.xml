@@ -261,8 +261,8 @@
     -->
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="100.0"/>
-    <define name="REF_ERR_Q" value="100.0"/>
+    <define name="REF_ERR_P" value="140.0"/>
+    <define name="REF_ERR_Q" value="140.0"/>
     <define name="REF_ERR_R" value="40.0"/>
     <define name="REF_RATE_P" value="15.0"/>
     <define name="REF_RATE_Q" value="15.0"/>
@@ -310,10 +310,10 @@
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
     <define name="MAX_BANK" value="40" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="1" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="4" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
-    <define name="PGAIN" value="90"/>
+    <define name="PGAIN" value="130"/>
     <define name="DGAIN" value="280"/>
     <define name="IGAIN" value="5"/>
   </section>
