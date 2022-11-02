@@ -219,8 +219,8 @@
     -->
 
     <!-- should be good -->
-    <define name="G1_ROLL" value="{-8 , -16, -8, 8, 16, 8 }"/>
-    <define name="G1_PITCH" value="{+13.8 , 0, -13.8 , -13.8, 0, +13.8 }"/>
+    <define name="G1_ROLL" value="{-6.5 , -13, -6.5, 6.5, 13, 6.5 }"/>
+    <define name="G1_PITCH" value="{+11.3 , 0, -11.3 , -11.3, 0, +11.3 }"/>
     <define name="G1_YAW" value="{+0.18, -0.18, +0.18, -0.18, +0.18, -0.18}"/>
     <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4, -.4, -.4}"/>
     <define name="G2" value="{30, -30, 30, -30, 30, -30}"/>
@@ -320,8 +320,9 @@
 
   <section name="NAVIGATION" prefix="NAV_">
     <define name="CLIMB_VSPEED" value="0.5"/>
-    <define name="DESCEND_VSPEED" value="-1.0"/>
+    <define name="DESCEND_VSPEED" value="-0.3"/>
     <define name="CARROT_DIST" value="100"/>
+    <define name="ARRIVED_AT_WAYPOINT" value="1.0"/>
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">

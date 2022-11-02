@@ -121,7 +121,7 @@ elif args.z_up_y_forward:
 else:
     q_axes = Quat(scalar=1., vector=[0., 0., 0.])
 
-q_north = Quat(axis=[0., 0., 1.], angle=np.deg2rad(args.north_offset))
+q_north = Quat(axis=[0., 0., 1.], angle=np.deg2rad(-args.north_offset))
 q_total = q_north * q_axes
 
 # store track function
@@ -180,7 +180,7 @@ def receiveRigidBodyList( rigidBodyList, stamp ):
         pos = q_total.rotate([pos[0], pos[1], pos[2]])
         vel = q_total.rotate([vel[0], vel[1], vel[2]])
         quat = Quat(scalar=quat[3], vector=[quat[0], quat[1], quat[2]])
-        quat = q_north.inverse * (q_axes * quat * q_axes.inverse)
+        quat = q_north * (q_axes * quat * q_axes.inverse)
         quat = quat.elements
         # swap element back to the original imaginary-first ordering
         quat_w = quat[0]
