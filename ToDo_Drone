@@ -10,7 +10,7 @@
 
 - bebop GPS take-over als backup
 
-Notes from phone:
+ToDo list drone:
 + Make Matlab autosave figures after analisys
 + Add dotted lines in Matlab to show when approach_moving_target is enabled
 + Make every gps-fix save the TOW as timestamp, to make the feedforward accurate with drone and groundstation
@@ -40,6 +40,22 @@ Notes from phone:
 ~ Filter ship gps position based on heading/cog (filter roll, but not froward movement)
 ~ Filter/smooth signal inside GPS module (watch out for inducing delays)
 ~ Make some kind of pathplanner that knows how to fly when you know a desired landing position at a specific TOW
+
+ToDo list ground station:
+- connect Pixhawk to ground station battery
+- connect Pixhawk to ground station GPS
++ connect Pixhawk to XBee Telemetry
+- make paparazzi configuration for groundstation
+- make empty flightplan for groundstation (maybe add some function later)
+- make airframe for groundstation
+	- use internal pixhawk imu
+	- use NO magnetometer
+	- use gps bar instead of magnetometer
+	- send telemetry via XBee
+	- choose best state estimator for ship
+	- 
+~ add function to flightplan; send_data_to_drone() after gps_init()
+
 
 
 - = TODO

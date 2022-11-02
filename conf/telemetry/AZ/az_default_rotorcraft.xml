@@ -210,6 +210,7 @@
       <message name="LIDAR"                    period="0.05"/>
     </mode>
   </process>
+  
 
 </telemetry>
 
