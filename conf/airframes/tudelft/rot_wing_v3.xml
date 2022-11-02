@@ -180,7 +180,8 @@
     </section>
 
     <section name="IMU" prefix="IMU_">
-        <!-- Accel calibration 02-11-2022 -->
+        <!-- Accel calibration 02-11-2022 (55 deg Celcius) -->
+        <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-7,-12,24}, .scale={{60615,64566,59275},{6202,6605,6087}}}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-22,14,14}, .scale={{38753,55928,6538},{7862,11421,1335}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-59,-7,-1}, .scale={{60664,12511,34394},{12413,2556,7043}}}}"/>
 
         <!-- Define axis in hover frame -->
         <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
