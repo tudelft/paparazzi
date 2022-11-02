@@ -12,7 +12,6 @@
     <firmware name="rotorcraft">
         <target NAME="ap" BOARD="cube_orange">
             <configure VALUE="500" NAME="PERIODIC_FREQUENCY"/>
-            <configure VALUE="SWD" NAME="FLASH_MODE"/>
             <module TYPE="sbus" NAME="radio_control">
                 <configure VALUE="UART3" NAME="SBUS_PORT"/>
             </module>
@@ -160,6 +159,12 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[5])" SERVO="MOTOR_PUSH"/>
         <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_ROTWING"/>
+
+        <!-- Backup commands -->
+        <set VALUE="($th_hold? -9600 : actuators_pprz[0])" SERVO="BMOTOR_FRONT"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="BMOTOR_RIGHT"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="BMOTOR_BACK"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="BMOTOR_LEFT"/>
     </command_laws>
 
     <section NAME="MISC">
@@ -175,13 +180,8 @@
     </section>
 
     <section name="IMU" prefix="IMU_">
-        <!--<define name="MAG_CALIB" value="{{.abi_id=3, .neutral={1696,-4095,3641}, .scale={{15263,26021,26309},{25440,40858,41277}},.current_scale={0,0,0}}}"/>-->
-        <define name="MAG_CALIB" value="{{.abi_id=3, .neutral={1661,-4006,3516}, .scale={{4963,37930,4367},{8399,60361,6961}}}}"/>
+        <!-- Accel calibration 02-11-2022 -->
 
-
-
-        <define name="ACCEL_CALIB" value="{{.abi_id=20, .neutral={-57,-20,-6}, .scale={{3374,11057,64239},{647,2261,13135}}}, {.abi_id=21, .neutral={-35,-20,9}, .scale={{50356,47219,17359},{10281,9653,3561}}}, {.abi_id=22, .neutral={-17,-10,24}, .scale={{22979,34687,9697},{2353,3547,1001}}}}"/>
-        
         <!-- Define axis in hover frame -->
         <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
         <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
