@@ -1,0 +1,14 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="ctrl_windtunnel_2022" dir="ctrl" task="control">
+  <doc>
+    <description>Module to test actuator effectiveness of rotwingdrone</description>
+  </doc>
+  <header>
+    <file name="ctrl_windtunnel_2022.h"/>
+  </header>
+  <init fun="windtunnel_message_init()"/>
+  <makefile>
+    <file name="ctrl_windtunnel_2022.c"/>
+    <test/>
+  </makefile>
+</module>
