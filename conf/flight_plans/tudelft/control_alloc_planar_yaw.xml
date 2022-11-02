@@ -40,7 +40,7 @@
       <stay wp="PMY"/>
     </block>
     <block key="a" name="Alternate" strip_button="Alternate">
-      <call_once fun="nav_set_heading_deg(90)"/>
+      <call_once fun="nav_set_heading_deg(30)"/>
       <stay wp="ALT"/>
     </block>
     <block key="l" name="land" strip_button="land" strip_icon="land-right.png">
@@ -48,10 +48,10 @@
         <deroute block="Flare"/>
     </block>
     <block name="Flare">
-      <exception cond="NavDetectGround()" deroute="Holding point"/>
+    <!--<exception cond="NavDetectGround()" deroute="Holding point"/>-->
       <exception cond="!nav_is_in_flight()" deroute="Landed"/>
       <exception cond="0.10 @GT GetPosAlt()" deroute="Landed"/>
-      <call_once fun="NavStartDetectGround()"/>
+      <!--<call_once fun="NavStartDetectGround()"/>-->
       <stay climb="nav_descend_vspeed" vmode="climb" wp="HOME"/>
     </block>
     <block name="Landed">
