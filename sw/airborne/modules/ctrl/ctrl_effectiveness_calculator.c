@@ -89,8 +89,10 @@ void ctrl_eff(void)
     float motor_r0 = actuator_state_filt_vect[2] < thrust_lower_lim ? thrust_lower_lim : actuator_state_filt_vect[2]; // [pprz]
     float motor_l0 = actuator_state_filt_vect[3] < thrust_lower_lim ? thrust_lower_lim : actuator_state_filt_vect[3]; // [pprz]
 #endif
-    thrust_loss_r = thrust_correcting_ratio(motor_r0, delta_r0);
-    thrust_loss_l = thrust_correcting_ratio(motor_l0, delta_l0);
+    // thrust_loss_r = thrust_correcting_ratio(motor_r0, delta_r0);
+    // thrust_loss_l = thrust_correcting_ratio(motor_l0, delta_l0);
+    thrust_loss_r = 1.0;
+    thrust_loss_l = 1.0;
 
     float ctrl_deriv_00 = -y_dist * sinf(delta_l0) * (mot_coef.k1 * motor_l0 * motor_l0 + mot_coef.k2 * motor_l0 + mot_coef.k3) * thrust_loss_l * (mapping / mass_property.I_xx);
     float ctrl_deriv_01 =  y_dist * sinf(delta_r0) * (mot_coef.k1 * motor_r0 * motor_r0 + mot_coef.k2 * motor_r0 + mot_coef.k3) * thrust_loss_r* (mapping / mass_property.I_xx);
