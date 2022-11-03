@@ -28,11 +28,12 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_quat_transformations.h"
-#include "subsystems/actuators.h"
+//#include "subsystems/actuators.h"
 #include "modules/system_identification/sys_id_doublet.h"
 #include "modules/system_identification/sys_id_chirp.h"
 #include "modules/rot_wing_drone/wing_rotation_controller.h"
 #include "mcu_periph/sys_time.h"
+#include "modules/wind_tunnel/wind_tunnel_rot_wing.h"
 
 float dt_s = 1;//1-3;
 float dt_m = 4;//4 3-6;
@@ -75,7 +76,8 @@ int8_t p = 0; // Test number counter (Equal to number of windspeeds)
 int8_t w = 0; //Sync command counter
 int8_t o = 0; //Counter rot test
 int8_t p2 = 0; // Test number counter for the skew moment test
-
+bool static_test; // defining now because do not rember where it has to be defined
+float max_rotation_rate; // same
 bool skew_moment(void)
 {
  static_test = true;
@@ -125,8 +127,8 @@ void sync_procedure(void)
 {
   if(done_sync){
       t_sync = get_sys_time_float();
-      actuators_pprz_static[8]= (int16_t) sync_cmd[w];
-      printf("Sync CMD = %i \n",actuators_pprz_static[8]);
+      actuators_wt[8]= (int16_t) sync_cmd[w];
+      printf("Sync CMD = %i \n",actuators_wt[8]);
       done_sync = false;}
     else{
         if((get_sys_time_float() - t_sync) > dt_s){
@@ -163,11 +165,11 @@ bool mot_status_control(void)
    if(done_mot_status){
      t_mot_status = get_sys_time_float();
      for ( int8_t m = 0; m < mmax; m++){
-      actuators_pprz_static[m] = (int16_t) mot_status[j][m];
+      actuators_wt[m] = (int16_t) mot_status[j][m];
      }
-     printf("Motor State = %i %i %i %i \n",actuators_pprz_static[0],actuators_pprz_static[1],actuators_pprz_static[2],actuators_pprz_static[3]);
+     printf("Motor State = %i %i %i %i \n",actuators_wt[0],actuators_wt[1],actuators_wt[2],actuators_wt[3]);
      printf("Test Point = %i \n",tp);
-     //if (j>2){actuators_pprz_static[8]= (int16_t) push_cmd[j-3];}
+     //if (j>2){actuators_wt[8]= (int16_t) push_cmd[j-3];}
      done_mot_status = false;
      tp += 1;}
    else{
@@ -179,9 +181,9 @@ bool mot_status_control(void)
    }else{
      j = 0;
      for ( int8_t m = 0; m < 4; m++){
-      actuators_pprz_static[m] = (int16_t) 0;
+      actuators_wt[m] = (int16_t) 0;
      }
-     actuators_pprz_static[8]= (int16_t) 0;
+     actuators_wt[8]= (int16_t) 0;
      return false;}     
    }   
 
@@ -208,7 +210,7 @@ bool excitation_control(void)
  if (n < nmax ){
    if(done_excitation){     
      t_excitation = get_sys_time_float();
-     actuators_pprz_static[k+4] = (int16_t) as_static[n];
+     actuators_wt[k+4] = (int16_t) as_static[n];
      printf("Excitation = %i \n",as_static[n]);
      done_excitation = false;
       tp += 1;}
@@ -218,40 +220,40 @@ bool excitation_control(void)
        n += 1;}}
    return true;
    }else{
-     actuators_pprz_static[k+4] = (int16_t) 0;
+     actuators_wt[k+4] = (int16_t) 0;
      n = 0;
      return false;}
 }
 
-#if PERIODIC_TELEMETRY
-#include "subsystems/datalink/telemetry.h"
-static void send_windtunnel_static(struct transport_tx *trans, struct link_device *dev)
-{
-float airspeed = stateGetAirspeed_f();
+// #if PERIODIC_TELEMETRY
+// #include "subsystems/datalink/telemetry.h"
+// static void send_windtunnel_static(struct transport_tx *trans, struct link_device *dev)
+// {
+// float airspeed = stateGetAirspeed_f();
 
-pprz_msg_send_WINDTUNNEL_STATIC(trans, dev, AC_ID,
-                                        &test_active,
-                                        &airspeed,
-                                        &wing_rotation.wing_angle_deg,
-                                        &wing_rotation.wing_angle_deg_sp,
-                                        &(stateGetNedToBodyEulers_i()->theta),
-                                        &p,
-                                        &i,
-                                        &j,
-                                        &k,
-                                        &n,
-                                        &tp,
-                                        &o,
-                                        &p2,
-                                        &max_rotation_rate,
-                                        ACTUATORS_NB, actuators
-                                        );
-}
-#endif
+// pprz_msg_send_WINDTUNNEL_STATIC(trans, dev, AC_ID,
+//                                         &test_active,
+//                                         &airspeed,
+//                                         &wing_rotation.wing_angle_deg,
+//                                         &wing_rotation.wing_angle_deg_sp,
+//                                         &(stateGetNedToBodyEulers_i()->theta),
+//                                         &p,
+//                                         &i,
+//                                         &j,
+//                                         &k,
+//                                         &n,
+//                                         &tp,
+//                                         &o,
+//                                         &p2,
+//                                         &max_rotation_rate,
+//                                         ACTUATORS_NB, actuators
+//                                         );
+// }
+// #endif
 
-void windtunnel_message_init(void)
-{
-  #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WINDTUNNEL_STATIC, send_windtunnel_static);
-  #endif 
-}
+// void windtunnel_message_init(void)
+// {
+//   #if PERIODIC_TELEMETRY
+//   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WINDTUNNEL_STATIC, send_windtunnel_static);
+//   #endif 
+// }

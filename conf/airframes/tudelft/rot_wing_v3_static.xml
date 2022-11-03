@@ -102,7 +102,8 @@
         </module>
 
         <module name="wind_tunnel_rot_wing"/>
-        <module name="extended_eff_message"/>
+        <module name="ctrl_windtunnel_2022"/>
+        <!-- <module name="extended_eff_message"/> -->
 
         <!-- <module name="sys_id_doublet">
             <define name="DOUBLET_AXES" value="{0,1,2,3}"/>

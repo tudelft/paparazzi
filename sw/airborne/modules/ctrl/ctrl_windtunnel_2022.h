@@ -27,7 +27,7 @@
 #define CTRL_WINDTUNNEL_2022_H
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_common_int.h"
 //extern void windtunnel_control_init(void);
-extern void windtunnel_message_init(void);
+//extern void windtunnel_message_init(void);
 extern bool windtunnel_control(void);
 extern bool skew_moment(void);
 void sync_procedure(void);

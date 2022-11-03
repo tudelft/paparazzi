@@ -28,7 +28,7 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_quat_transformations.h"
-#include "subsystems/actuators.h"
+//#include "subsystems/actuators.h"
 #include "modules/system_identification/sys_id_doublet.h"
 #include "modules/system_identification/sys_id_chirp.h"
 #include "modules/rot_wing_drone/wing_rotation_controller.h"
@@ -51,7 +51,7 @@
 
 
 #if PERIODIC_TELEMETRY
-#include "subsystems/datalink/telemetry.h"
+//#include "subsystems/datalink/telemetry.h"
 static void send_eff_full_indi(struct transport_tx *trans, struct link_device *dev)
 {
 struct FloatRates *body_rates_full = stateGetBodyRates_f();
