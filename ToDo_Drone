@@ -15,12 +15,12 @@ ToDo list drone:
 + Add dotted lines in Matlab to show when approach_moving_target is enabled
 + Make every gps-fix save the TOW as timestamp, to make the feedforward accurate with drone and groundstation
 ? Try to make an all-purpose XML file with IF statements (tried, but without success)
+? Add Uplink messages also to logfiles
 - make set_target_offset_here() work in flightplan
 - make better implementation of function approach_ship_enable() (maybe get rid of keep-allive function?)
 - make drone software robust for GPS disconnection mid-flight
 - test Set_offset_here (function did not seem to work in the field)
 - mangage logfiles (store them in folders)
-- Add Uplink messages also to logfiles
 - Improve Matlab analisys somehow to show tracking error more clear
 - Break harder in guidance_indi when in front of WP (prevent crash into truck/ship cabin)
 - Check if bebop speed is completely dependend of guidance_indi, or are there maybe other modules forcing the drone to move?
@@ -42,18 +42,27 @@ ToDo list drone:
 ~ Make some kind of pathplanner that knows how to fly when you know a desired landing position at a specific TOW
 
 ToDo list ground station:
-- connect Pixhawk to ground station battery
-- connect Pixhawk to ground station GPS
++ connect Pixhawk to ground station battery
++ connect Pixhawk to ground station GPS
 + connect Pixhawk to XBee Telemetry
-- make paparazzi configuration for groundstation
-- make empty flightplan for groundstation (maybe add some function later)
++ make paparazzi configuration for groundstation
+	+ fake/no RC included
+	+ flightplan
+	+ airframe
+	+ telemetry
+	+ Session
++ make empty flightplan for groundstation (maybe add some function later)
 - make airframe for groundstation
 	- use internal pixhawk imu
 	- use NO magnetometer
 	- use gps bar instead of magnetometer
-	- send telemetry via XBee
+	+ send telemetry via XBee
 	- choose best state estimator for ship
 	- 
+- 3D print box for pixhawk to mount it on the bar
+- install pixhawk in box on bar with all cables cleaned up
+- let pixhawk log IMU data on the SD card
+- try to analyse some log data from the SD card in Matlab
 ~ add function to flightplan; send_data_to_drone() after gps_init()
 
 
@@ -95,24 +104,5 @@ code to test:
   float behind_ship            = rel_target_pos.x * sinf(ship_rotation) + rel_target_pos.y * cosf(ship_rotation);
 
   printf("ship_rotation: %f \t offset_centerline %f \t behind_ship %f \n", ship_rotation, offset_centerline_ship, behind_ship);
-  
-toughts about arduino in ground station
-- Arduino can send raw data over usb to laptop, laptop processes data and send info to drone
-- Or, arduino has RealTimeClock and processes all data, and sends things to laptop that can directly being forward to IVY bus
-+ Or, arduino processes data and sends triggers of events to laptop, laptop sends this info with TOW timestamp to drone 
-+ Roll angle can be estimated by gyro sensor (gravity based)
-+ Roll angle rate when deck flat can be determined by accelerometer
-+ End of a roll movement can be determined when accelerometer switches direction (sign +/-)
-? Max heigth of heave can be determined when accelerometer switches direction in z-direction (VERY HARD TO MEASURE)
-+ Send trigger event "end of roll left/rigth, this took ... sec" over usb
-+ Send trigger event "deck flat, with ... deg/s" angular speed over usb
-- Send trigger event "deck heave at top" 
-- Get TOW for timestamp
 
-
-toughts about px4 autopilot in ground station
-- Is there a px4 available in Matlab?
-- How to send data from the px4 (via laptop?) to bebop (over wifi)? how does the network looks like?
-- Do I need to choose a imu cube myself? 
-- Is the RTK-gps bar easy to integrate into the px4?
 
