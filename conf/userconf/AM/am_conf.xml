@@ -2,7 +2,7 @@
   <aircraft
    name="Overactuated_vehicle"
    ac_id="120"
-   airframe="airframes/tudelft/quadplane_plus.xml"
+   airframe="airframes/tudelft/quadplane_plus_vehicle_1.xml"
    radio="radios/crossfire_sbus.xml"
    telemetry="telemetry/AM/am_default_rotorcraft.xml"
    flight_plan="flight_plans/tudelft/nederdrone_valkenburg.xml"

@@ -221,13 +221,13 @@
       <message name="INS"                      period=".5"/>
       <message name="I2C_ERRORS"               period="4.1"/>
       <message name="UART_ERRORS"              period="3.1"/>
-      <message name="ENERGY"                   period=".01"/>
+      <message name="ENERGY"                   period=".002"/>
       <message name="DATALINK_REPORT"          period="5.1"/>
       <message name="STATE_FILTER_STATUS"      period="3.2"/>
       <message name="SURVEY"                   period="2.5"/>
-      <message name="IMU_GYRO_SCALED"          period=".01"/>
-      <message name="IMU_ACCEL_SCALED"         period=".01"/>
-      <message name="IMU_MAG_SCALED"           period=".01"/>
+      <message name="IMU_GYRO_SCALED"          period=".005"/>
+      <message name="IMU_ACCEL_SCALED"         period=".005"/>
+      <message name="IMU_MAG_SCALED"           period=".005"/>
       <message name="LIDAR"                    period="1"/>
       <message name="DL_VALUE"                 period="0.5"/>
       <message name="PPM"                      period="0.4"/>
@@ -235,6 +235,11 @@
       <message name="ROTORCRAFT_RADIO_CONTROL" period="0.4"/>
       <message name="ROTORCRAFT_STATUS"        period="1"/>
       <message name="AIR_DATA"                 period=".5"/>
+      <message name="OVERACTUATED_VARIABLES"   period=".002"/>
+      <message name="ACTUATORS_OUTPUT"         period=".002"/>
+      <message name="NONLINEAR_CA_DEBUG"       period=".002"/>
+      <message name="AM7_IN"        	        period=".002"/>
+      <message name="AM7_OUT"        	        period=".002"/>
     </mode>
   </process>
 

@@ -32,7 +32,6 @@
 #include "modules/datalink/telemetry.h"
 #include "modules/nav/waypoints.h"
 #include "generated/flight_plan.h"
-#include "modules/actuators/motor_mixing.h"
 #include "math/pprz_algebra_float.h"
 #include "math/pprz_matrix_decomp_float.c"
 #include "modules/sensors/ca_am7.h"
@@ -66,7 +65,6 @@ float euler_order[3];
 float psi_order_motor = 0;
 
 float K_beta = 0.1;
-float K_T_airspeed = 0.02;
 
 float Dynamic_MOTOR_K_T_OMEGASQ;
 
@@ -94,8 +92,8 @@ float des_pos_earth_y = 0;
 float alt_cmd = 0, pitch_cmd = 0, roll_cmd = 0, yaw_motor_cmd = 0, yaw_tilt_cmd = 0, elevation_cmd = 0, azimuth_cmd = 0;
 
 //External servos variables: 
-int16_t neutral_servo_1_pwm = 1500;
-int16_t neutral_servo_2_pwm = 1500;
+int16_t neutral_servo_1_pwm = 1417;
+int16_t neutral_servo_2_pwm = 1492;
 
 int servo_right_cmd = 0;
 int servo_left_cmd = 0;
@@ -113,7 +111,7 @@ int32_t actuator_output[INDI_NUM_ACT], actuator_state_int[INDI_NUM_ACT];
 float indi_u[INDI_NUM_ACT], indi_u_scaled[INDI_NUM_ACT];
 
 //Variables for the actuator model v2:
-#define actuator_mem_buf_size 10
+#define actuator_mem_buf_size 100
 float indi_u_memory[INDI_NUM_ACT][actuator_mem_buf_size];
 float actuator_state_old[INDI_NUM_ACT];
 float actuator_state_old_old[INDI_NUM_ACT];
@@ -161,8 +159,9 @@ Butterworth2LowPass flight_path_angle_filtered;
 float auto_test_time_start, des_Vx, des_Vy, des_Vz, des_phi, des_theta, des_psi_dot;
 uint8_t auto_test_start; 
 
-// Variables for the speed to derivative gain slider: 
-float K_d_speed = 0.025; 
+// Variables for the speed to derivative gain slider and thrust coefficient: 
+float K_d_speed = 0.04; 
+float K_T_airspeed = 0.02;
 
 struct PID_over pid_gains_over = {
         .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
@@ -397,7 +396,7 @@ void get_actuator_state_v2(void)
         //Aileron state: 
         actuator_state[14] = - OVERACTUATED_MIXING_INDI_AILERONS_FIRST_ORD_DEN_2 * actuator_state_old[14] +
                     OVERACTUATED_MIXING_INDI_AILERONS_FIRST_ORD_NUM_2 * indi_u_memory[14][actuator_mem_buf_size - delay_ts_ailerons - 1];
-        Bound(actuator_state[14],OVERACTUATED_MIXING_MOTOR_MIN_OMEGA,OVERACTUATED_MIXING_MOTOR_MAX_OMEGA);
+        Bound(actuator_state[14],OVERACTUATED_MIXING_MIN_DELTA_AILERONS,OVERACTUATED_MIXING_MAX_DELTA_AILERONS);
 
         //Propagate the actuator values into the filters and calculate the derivative
         update_butterworth_2_low_pass(&actuator_state_filters[i], actuator_state[i]);
@@ -453,9 +452,6 @@ void assign_variables(void){
     pos_vect[2] = stateGetPositionNed_f()->z;
     airspeed = ms45xx.airspeed;
     beta_deg = - aoa_pwm.angle * 180/M_PI;
-    if (fabs(beta_deg) > 200){
-        beta_deg = 0;
-    }
     beta_rad = beta_deg * M_PI / 180;
 
     total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
@@ -542,7 +538,7 @@ void overactuated_mixing_run(void)
             des_theta = 0;
             des_psi_dot = 0;  
         }
-        else if( get_sys_time_float() - auto_test_time_start >= 2 && get_sys_time_float() - auto_test_time_start < 8){
+        else if( get_sys_time_float() - auto_test_time_start >= 2 && get_sys_time_float() - auto_test_time_start < 7){
             des_Vx = 15;
             des_Vy = 0;
             des_Vz = 0;
@@ -550,10 +546,10 @@ void overactuated_mixing_run(void)
             des_theta = 0;
             des_psi_dot = 0;  
         }
-        else if( get_sys_time_float() - auto_test_time_start >= 8 && get_sys_time_float() - auto_test_time_start < 12){
+        else if( get_sys_time_float() - auto_test_time_start >= 7 && get_sys_time_float() - auto_test_time_start < 12){
             des_Vx = 15;
             des_Vy = 0;
-            des_Vz = -2;
+            des_Vz = -5;
             des_phi = 0;
             des_theta = 0;
             des_psi_dot = 0;  
@@ -566,15 +562,15 @@ void overactuated_mixing_run(void)
             des_theta = 0;
             des_psi_dot = 0;  
         }
-        else if( get_sys_time_float() - auto_test_time_start >= 15 && get_sys_time_float() - auto_test_time_start < 25){
+        else if( get_sys_time_float() - auto_test_time_start >= 15 && get_sys_time_float() - auto_test_time_start < 22){
             des_Vx = 15;
-            des_Vy = 2.5;
+            des_Vy = 5;
             des_Vz = 0;
             des_phi = 0;
             des_theta = 0;
             des_psi_dot = 0;   
         }
-        else if( get_sys_time_float() - auto_test_time_start >= 25 && get_sys_time_float() - auto_test_time_start < 30){
+        else if( get_sys_time_float() - auto_test_time_start >= 22 && get_sys_time_float() - auto_test_time_start < 26){
             des_Vx = 15;
             des_Vy = 0;
             des_Vz = 0;
@@ -596,8 +592,8 @@ void overactuated_mixing_run(void)
     }
 
     /// Case of manual PID control [FAILSAFE]
-        if(0){
-    // if(radio_control.values[RADIO_MODE] < 500) {
+        // if(0){
+    if(radio_control.values[RADIO_MODE] < 500) {
 
 
         //INIT AND BOOLEAN RESET
@@ -702,8 +698,8 @@ void overactuated_mixing_run(void)
     }
 
     /// Case of INDI control mode with external nonlinear function:
-       if(1)
-    // if(radio_control.values[RADIO_MODE] >= 500 )
+    //    if(1)
+    if(radio_control.values[RADIO_MODE] >= 500 )
     {
 
         //INIT AND BOOLEAN RESET
@@ -791,6 +787,9 @@ void overactuated_mixing_run(void)
         euler_setpoint[0] = indi_u[13];
         euler_setpoint[1] = indi_u[12];
 
+        // euler_setpoint[0] = manual_phi_value;
+        // euler_setpoint[1] = manual_theta_value;       
+
         BoundAbs(euler_setpoint[0],max_value_error.phi);
         BoundAbs(euler_setpoint[1],max_value_error.theta);
         euler_error[0] = euler_setpoint[0] - euler_vect[0];
@@ -829,8 +828,10 @@ void overactuated_mixing_run(void)
 
             //Creating the setpoint using the bank angle and the sideslip vain correction for the sideslip:
             // yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn + K_beta * beta_deg;
+
             feed_fwd_term_yaw = 9.81*tan(euler_vect[0])/airspeed_turn;
             feed_back_term_yaw = - K_beta * accel_y_filt_corrected;
+            // feed_back_term_yaw = + K_beta * beta_deg;
 
         }
         else{
@@ -852,23 +853,19 @@ void overactuated_mixing_run(void)
             }
         }
 
-        rate_setpoint[0] = angular_body_error[0] * indi_gains_over.p.phi;
-        rate_setpoint[1] = angular_body_error[1] * indi_gains_over.p.theta;
-        rate_setpoint[2] = angular_body_error[2] * indi_gains_over.p.psi;
+        float gain_to_speed_constant = 1 - airspeed * K_d_speed; 
+        Bound(gain_to_speed_constant, 0.1, 1);
 
-       //Compute the angular acceleration setpoint using the filtered rates:
-       float gain_to_speed_constant = 1 - airspeed * K_d_speed; 
-       Bound(gain_to_speed_constant, 0, 1);
+        rate_setpoint[0] = angular_body_error[0] * indi_gains_over.p.phi * gain_to_speed_constant;
+        rate_setpoint[1] = angular_body_error[1] * indi_gains_over.p.theta * gain_to_speed_constant;
+        rate_setpoint[2] = angular_body_error[2] * indi_gains_over.p.psi * gain_to_speed_constant;
 
-       float gain_phi_d =  indi_gains_over.d.phi * gain_to_speed_constant;
-       float gain_theta_d =  indi_gains_over.d.theta * gain_to_speed_constant;
-       float gain_psi_d =  indi_gains_over.d.psi * gain_to_speed_constant;
+        //Compute the angular acceleration setpoint using the filtered rates:
+        acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * indi_gains_over.d.phi * gain_to_speed_constant;
+        acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * indi_gains_over.d.theta * gain_to_speed_constant;
+        acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * indi_gains_over.d.psi * gain_to_speed_constant;
 
-       acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * gain_phi_d;
-       acc_setpoint[4] = (rate_setpoint[1] - rate_vect_filt[1]) * gain_theta_d;
-       acc_setpoint[5] = (rate_setpoint[2] - rate_vect_filt[2]) * gain_psi_d;
-
-        // //Compute the angular acceleration setpoint uing the unfiltered rates:
+        // //Compute the angular acceleration setpoint using the unfiltered rates:
         // acc_setpoint[3] = (rate_setpoint[0] - rate_vect[0]) * indi_gains_over.d.phi;
         // acc_setpoint[4] = (rate_setpoint[1] - rate_vect[1]) * indi_gains_over.d.theta;
         // acc_setpoint[5] = (rate_setpoint[2] - rate_vect[2]) * indi_gains_over.d.psi;
@@ -983,10 +980,10 @@ void overactuated_mixing_run(void)
         am7_data_out_local.desired_az_value_int = (int16_t) (manual_az_value * 1e2 * 180/M_PI);
         am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
         am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
+        // am7_data_out_local.desired_theta_value_int = (int16_t) (0 * 1e2 * 180/M_PI);
+        // am7_data_out_local.desired_phi_value_int = (int16_t) (0 * 1e2 * 180/M_PI);
 
         am7_data_out_local.desired_ailerons_value_int = (int16_t) (manual_ailerons_value * 1e2 * 180/M_PI);
-
-        float manual_min_el_angle = -130;
 
         extra_data_out_local[0] = Dynamic_MOTOR_K_T_OMEGASQ;
         extra_data_out_local[1] = OVERACTUATED_MIXING_MOTOR_K_M_OMEGASQ;
@@ -1003,8 +1000,7 @@ void overactuated_mixing_run(void)
         extra_data_out_local[12] = OVERACTUATED_MIXING_MOTOR_MIN_OMEGA;
         extra_data_out_local[13] = (OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE * 180/M_PI);
 
-//        extra_data_out_local[14] = (OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE * 180/M_PI);
-        extra_data_out_local[14] = (manual_min_el_angle);
+        extra_data_out_local[14] = (OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE_OPTIMIZATION * 180/M_PI);
 
         extra_data_out_local[15] = (OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE * 180/M_PI);
         extra_data_out_local[16] = (OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE * 180/M_PI);
@@ -1103,7 +1099,7 @@ void overactuated_mixing_run(void)
             overactuated_mixing.commands[11] = (int32_t)(
                     (indi_u[11]  - OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * K_ppz_angle_az);
 
-            roll_pwm_cmd = indi_u[14]  * OVERACTUATED_MIXING_AILERONS_K_PWM_ANGLE;
+            
         }
         else{
             //Motors:
@@ -1123,11 +1119,14 @@ void overactuated_mixing_run(void)
             overactuated_mixing.commands[9] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE) * K_ppz_angle_az);
             overactuated_mixing.commands[10] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE) * K_ppz_angle_az);
             overactuated_mixing.commands[11] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * K_ppz_angle_az);
+
+            
         }
 
         //Add servos values:
-        servo_right_cmd = neutral_servo_1_pwm + roll_pwm_cmd;
-        servo_left_cmd = neutral_servo_2_pwm + roll_pwm_cmd;
+        roll_pwm_cmd = indi_u[14] * OVERACTUATED_MIXING_AILERONS_K_PWM_ANGLE;
+        servo_right_cmd = neutral_servo_1_pwm - roll_pwm_cmd;
+        servo_left_cmd = neutral_servo_2_pwm - roll_pwm_cmd;
 
         Bound(servo_right_cmd,1000,2000);
         Bound(servo_left_cmd,1000,2000);
@@ -1176,7 +1175,7 @@ void overactuated_mixing_run(void)
     actuator_output[11] = (int32_t) ((overactuated_mixing.commands[11] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * 180/M_PI);
 
     //Ailerons
-    actuator_output[12] = (int32_t) (indi_u[14]);
+    actuator_output[12] = (int32_t) (indi_u[14] * 180/M_PI);
 
     actuator_state_int[0] = (int32_t) (actuator_state[0]);
     actuator_state_int[1] = (int32_t) (actuator_state[1]);

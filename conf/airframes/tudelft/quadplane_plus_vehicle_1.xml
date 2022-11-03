@@ -1,10 +1,10 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
 <!-- This is an overactuated quadplane
-     * Airframe:    TUD00289
+     * Airframe:    TUD00343
      * Autopilot:   Pixhawk 4
      * Actuators:   4x BLHELI32 ESC (PWM) + 8x SAVOX servos (PWM)
-     * Datalink:    Herelink/Xbee
+     * Datalink:    Xbee
      * GPS:         UBlox F9P
      * RC:          SBUS Crossfire
 -->
@@ -131,20 +131,20 @@
 <!--    </target>-->
 
     <module name="telemetry" type="transparent">
-      <configure name="MODEM_BAUD" value="B115200"/>
+      <configure name="MODEM_BAUD" value="B57600"/>
     </module>
 
     <module name="actuators"     type="pwm"/>
     <module name="imu"           type="mpu6000"/>
 
     <!--     For OUTSIDE -->
-    <module name="gps" type="ublox">
+    <!-- <module name="gps" type="ublox">
       <configure name="GPS_BAUD" value="B460800"/> 
-    </module>
+    </module> -->
 
     <!--     For OPTITRACK -->
-   <!-- <module name="gps"           type="datalink"> -->
-   <!-- </module> -->
+   <module name="gps"           type="datalink">
+   </module>
 
 
     <module name="stabilization" type="indi_simple"/>
@@ -157,7 +157,7 @@
     <define name="INS_EKF2_MAG_ID" value="MAG_IST8310_SENDER_ID"/>
     <!-- <define name="INS_EKF2_MAG_ID" value="MAG_RM3100_SENDER_ID"/> -->
     <!-- <define name="INS_EKF2_MAG_ID" value="MAG_LIS3MDL_SENDER_ID"/> -->
-    <!-- <define name="INS_EKF2_OPTITRACK" value="TRUE"/> -->
+    <define name="INS_EKF2_OPTITRACK" value="TRUE"/>
    </module>
 
     <!-- <module name="ahrs"          type="float_cmpl_quat"> -->
@@ -332,8 +332,8 @@
     <define name="PID_MAX_AZ_ORDER" value="35" unit="deg"/> <!--max azimuth deflection in PID mode-->
 
     <!-- INDI proportional gains -->
-    <define name="INDI_REF_ERR_P" value="1"/>
-    <define name="INDI_REF_ERR_Q" value="1"/>
+    <define name="INDI_REF_ERR_P" value="4"/>
+    <define name="INDI_REF_ERR_Q" value="4"/>
     <define name="INDI_REF_ERR_R" value="1.5"/>
 
     <define name="INDI_REF_ERR_X" value="1"/>
@@ -341,8 +341,8 @@
     <define name="INDI_REF_ERR_Z" value="1"/>
 
     <!-- INDI derivative gains -->
-    <define name="INDI_REF_RATE_P" value="4"/>
-    <define name="INDI_REF_RATE_Q" value="4"/>
+    <define name="INDI_REF_RATE_P" value="7"/>
+    <define name="INDI_REF_RATE_Q" value="7"/>
     <define name="INDI_REF_RATE_R" value="5"/>
 
     <define name="INDI_REF_RATE_X" value="1"/>
@@ -384,9 +384,10 @@
 
     <define name="AILERONS_K_PWM_ANGLE" value="1100" unit="uS/rad"/>
 
-    <define name="INDI_AILERONS_FIRST_ORD_DELAY" value="0.015" />
-    <define name="INDI_AILERONS_FIRST_ORD_NUM_2" value="0.0198" />
-    <define name="INDI_AILERONS_FIRST_ORD_DEN_2" value="-0.9802" />
+    <!--Aileron TF (20 rad/s) -->
+    <define name="INDI_AILERONS_FIRST_ORD_DELAY" value="0.040" />
+    <define name="INDI_AILERONS_FIRST_ORD_NUM_2" value="0.03536" />
+    <define name="INDI_AILERONS_FIRST_ORD_DEN_2" value="-0.9646" />
 
     <!-- APC PROP-->
 <!--    <define name="MOTOR_K_T_OMEGASQ" value="0.972e-5" unit="N/(rad/s)^2"/>-->
@@ -423,6 +424,8 @@
     <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
+    <define name="SERVO_EL_MIN_ANGLE_OPTIMIZATION" value="-110" unit="deg"/>
+
     <define name="SERVO_EL_1_ZERO_VALUE" value="-51" unit="deg"/>
     <define name="SERVO_EL_2_ZERO_VALUE" value="-55" unit="deg"/>
     <define name="SERVO_EL_3_ZERO_VALUE" value="-49" unit="deg"/>
@@ -435,9 +438,9 @@
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
-    <define name="MAX_PHI_INDI" value="30" unit="deg"/>
+    <define name="MAX_PHI_INDI" value="40" unit="deg"/>
     <define name="MAX_AOA_INDI" value="15" unit="deg"/>
-    <define name="MIN_AOA_INDI" value="-15" unit="deg"/>
+    <define name="MIN_AOA_INDI" value="5" unit="deg"/>
 
     <define name="MAX_DELTA_AILERONS" value="25" unit="deg"/>
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
@@ -445,13 +448,13 @@
     <define name="SPEED_AOA_PROTECTION" value="6" unit="m/s"/>
 
     <!-- Filters properties for INDI -->
-    <define name="FILT_CUTOFF_INDI" value="12" unit="rad/s"/>
+    <define name="FILT_CUTOFF_INDI" value="13" unit="rad/s"/>
 
     <!-- First order filter on rates -->
     <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0488" /><!-- 1-exp(-cutoff_frequency/sampling_frequency) [20 rad/s]--> 
 
     <!-- Weighting matrix for the INDI -->
-    <define name="W_ACT_MOTOR_CONST" value="3"/>
+    <define name="W_ACT_MOTOR_CONST" value="5"/>
     <define name="W_ACT_MOTOR_SPEED" value="0"/>
     <define name="W_ACT_EL_CONST" value="0"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
@@ -462,17 +465,17 @@
     <define name="W_ACT_PHI_CONST" value="100"/>
     <define name="W_ACT_PHI_SPEED" value="-15"/>
 
-    <define name="W_ACT_AILERONS_CONST" value="0.5"/>
-    <define name="W_ACT_AILERONS_SPEED" value="0"/>
+    <define name="W_ACT_AILERONS_CONST" value="10"/>
+    <define name="W_ACT_AILERONS_SPEED" value="-3"/>
 
-    <define name="W_DV_1" value="0.02"/>
-    <define name="W_DV_2" value="0.02"/>
-    <define name="W_DV_3" value="0.06"/>
-    <define name="W_DV_4" value="0.1"/>
-    <define name="W_DV_5" value="0.1"/>
-    <define name="W_DV_6" value="0.1"/>
+    <define name="W_DV_1" value="0.005"/>
+    <define name="W_DV_2" value="0.005"/>
+    <define name="W_DV_3" value="0.008"/>
+    <define name="W_DV_4" value="0.015"/>
+    <define name="W_DV_5" value="0.015"/>
+    <define name="W_DV_6" value="0.015"/>
 
-    <define name="GAMMA_QUADRATIC_DU" value="1e-5"/>
+    <define name="GAMMA_QUADRATIC_DU" value="2e-6"/>
 
     <!-- FWD flight properties for yaw rate induced by controller and for removal of lateral speed term-->
     <define name="MIN_SPEED_TRANSITION" value="4.0" unit="m/s"/>
@@ -515,7 +518,7 @@
   </section> -->
 
   <section name="MISC">
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 11 * adc)"/><!-- TODO: verify/calibrate -->
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 18.32 * adc)"/><!-- TODO: verify/calibrate -->
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
 
     <!-- Basic navigation settings -->
@@ -565,25 +568,7 @@
 
     <!-- ACCEL @MAVLAB 1-11-2022 :  -->
     <define name="ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={41,406,41}, .scale={{57668,10899,20979},{11789,2374,4318}}}}"/>
-    
-    <!-- <define name="ACCEL_X_NEUTRAL" value="41"/>
-<define name="ACCEL_Y_NEUTRAL" value="406"/>
-<define name="ACCEL_Z_NEUTRAL" value="41"/>
-<define name="ACCEL_X_SENS" value="4.891678687164927" integer="16"/>
-<define name="ACCEL_Y_SENS" value="4.590985687519081" integer="16"/>
-<define name="ACCEL_Z_SENS" value="4.858499293090481" integer="16"/>
-
-<define name="MAG_X_NEUTRAL" value="-9"/>
-<define name="MAG_Y_NEUTRAL" value="-9"/>
-<define name="MAG_Z_NEUTRAL" value="-8"/>
-<define name="MAG_X_SENS" value="16.496169856164315" integer="16"/>
-<define name="MAG_Y_SENS" value="15.114517995835124" integer="16"/>
-<define name="MAG_Z_SENS" value="16.64245181023045" integer="16"/> -->
-
-
     <!-- IST8310 @MAVLAB 1-11-2022 -->
-    <!-- <define name="MAG_CALIB" value="{{.abi_id=4, .calibrated={.neutral=true, .scale=true},.neutral={-9,-9,-8}, .scale={{47377,65068,14662},{2872,4305,881}}}}"/> -->
-
     <define name="MAG_CALIB" value="{{.abi_id=4, .calibrated={.neutral=true, .scale=true},.neutral={-22,-7,4}, .scale={{16952,16373,64135},{1147,946,3651}}}}"/>
 
 
