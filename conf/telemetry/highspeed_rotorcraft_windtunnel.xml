@@ -50,6 +50,8 @@
       <message name="ACTUATORS"                period="0.1"/>
       <message name="STAB_ATTITUDE_FULL_INDI"  period="0.05"/>
       <message name="ROT_WING_CONTROLLER"	 period="0.2"/>
+      <message name="EFF_FULL_INDI"            period="0.02"/> 
+      <message name="WINDTUNNEL_STATIC"        period="0.02"/>
     </mode>
 
     <mode name="calibration">
@@ -247,6 +249,7 @@
       <!-- <message name="STAB_ATTITUDE_FULL_INDI"  period="0.002"/> -->
       <message name="ROT_WING_CONTROLLER"	 period="0.2"/>
       <!--<message name="WINDTUNNEL_MEAS"          period="0.005"/>-->
+      <message name="WINDTUNNEL_STATIC" period="0.02"/>
     </mode>
   </process>
 
