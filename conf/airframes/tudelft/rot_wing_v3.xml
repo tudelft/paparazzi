@@ -183,8 +183,11 @@
         <!-- Accel calibration 02-11-2022 (55 deg Celcius) -->
         <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-7,-12,24}, .scale={{60615,64566,59275},{6202,6605,6087}}}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-22,14,14}, .scale={{38753,55928,6538},{7862,11421,1335}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-59,-7,-1}, .scale={{60664,12511,34394},{12413,2556,7043}}}}"/>
 
+        <!-- Mag calibration 02-11-2022 in front of aircraft hall-->
+        <define name="MAG_CALIB" value="{{.abi_id=3, .calibrated={.neutral=true, .scale=true},.neutral={1915,-4390,3530}, .scale={{38935,30511,19759},{59172,43926,28329}}}}"/>
+
         <!-- Define axis in hover frame -->
-        <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
+        <define name="BODY_TO_IMU_PHI"   value="-2." unit="deg"/>
         <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
         <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
     </section>
