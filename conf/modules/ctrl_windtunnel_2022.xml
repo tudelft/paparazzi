@@ -3,10 +3,28 @@
   <doc>
     <description>Module to test actuator effectiveness of rotwingdrone</description>
   </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="WT_CTRL">
+        <dl_setting var="static_test" min="0" step="1" max="1" values="OFF|ON" shortname="static_test"/>
+        <dl_setting var="manual_test" min="0" step="1" max="1" values="OFF|ON" shortname="manual_test"/>
+        <dl_setting var="mot0_static" min="0" step="1" max="9600" shortname="mot0_static" />
+        <dl_setting var="mot1_static" min="0" step="1" max="9600" shortname="mot1_static" />
+        <dl_setting var="mot2_static" min="0" step="1" max="9600" shortname="mot2_static" />
+        <dl_setting var="mot3_static" min="0" step="1" max="9600" shortname="mot3_static" />
+        <dl_setting var="ailL_static" min="-9600" step="1" max="9600" shortname="aill_static" />
+        <dl_setting var="ailR_static" min="-9600" step="1" max="9600" shortname="ailR_static" />
+        <dl_setting var="ele_static " min="-9600" step="1" max="9600" shortname="ele_static" />
+        <dl_setting var="rud_static " min="-9600" step="1" max="9600" shortname="rud_static" />
+        <dl_setting var="push_static " min="0" step="1" max="9600" shortname="push_static" />        
+      </dl_settings>
+    </dl_settings>
+  </settings>
   <header>
     <file name="ctrl_windtunnel_2022.h"/>
   </header>
   <!-- <init fun="windtunnel_message_init()"/> -->
+  <periodic fun="wing_rotation_periodic()" freq="1.0"/>
   <makefile>
     <file name="ctrl_windtunnel_2022.c"/>
     <test/>

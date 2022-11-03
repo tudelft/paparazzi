@@ -28,6 +28,7 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_common_int.h"
 //extern void windtunnel_control_init(void);
 //extern void windtunnel_message_init(void);
+extern void manual_test_periodic(void);
 extern bool windtunnel_control(void);
 extern bool skew_moment(void);
 void sync_procedure(void);
@@ -39,6 +40,16 @@ extern bool test_active;
 extern bool test_skew_active;
 //extern int16_t mot_status[3][4];
 //extern int16_t as_static[];
-
+extern bool static_test;
+extern bool manual_test;
+extern int16_t mot0_static;
+extern int16_t mot1_static;
+extern int16_t mot2_static;
+extern int16_t mot3_static;
+extern int16_t ailL_static;
+extern int16_t ailR_static;
+extern int16_t ele_static ;
+extern int16_t rud_static ;
+extern int16_t push_static ;
 
 #endif  // CTRL_WINDTUNNEL_2022_H

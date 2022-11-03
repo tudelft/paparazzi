@@ -67,7 +67,7 @@
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="nav_set_heading_current()"/>
-      <attitude pitch="-65" roll="0" throttle="0" until="stage_time>1" vmode="throttle"/>
+      <attitude pitch="-65" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="TakeoffLow" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="GetPosHeight() @GT 18.0" deroute="Takeoff"/>

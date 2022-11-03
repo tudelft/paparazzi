@@ -148,7 +148,7 @@
     </rc_commands>
 
     <command_laws>
-        <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
+        <!-- <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
         <set VALUE="($th_hold? -9600 : actuators_wt[0])"    SERVO="MOTOR_FRONT"/>
         <set VALUE="($th_hold? -9600 : actuators_wt[1])"    SERVO="MOTOR_RIGHT"/>
         <set VALUE="($th_hold? -9600 : actuators_wt[2])"    SERVO="MOTOR_BACK"/>
@@ -156,6 +156,15 @@
         <set VALUE="($th_hold? -9600 : actuators_wt[4])"    SERVO="MOTOR_PUSH"/>
         <set VALUE="($th_hold? 0 : actuators_wt[9])"        SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($th_hold? 0 : actuators_wt[10])"       SERVO="SERVO_RUDDER"/>
+        <set VALUE="wing_rotation.servo_pprz_cmd"           SERVO="SERVO_1"/> -->
+        <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
+        <set VALUE="actuators_pprz[0]"    SERVO="MOTOR_FRONT"/>
+        <set VALUE="actuators_pprz[1]"    SERVO="MOTOR_RIGHT"/>
+        <set VALUE="actuators_pprz[2]"    SERVO="MOTOR_BACK"/>
+        <set VALUE="actuators_pprz[3]"    SERVO="MOTOR_LEFT"/>
+        <set VALUE="actuators_wt[4]"    SERVO="MOTOR_PUSH"/>
+        <set VALUE="actuators_wt[9]"    SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="actuators_wt[10]"   SERVO="SERVO_RUDDER"/>
         <set VALUE="wing_rotation.servo_pprz_cmd"           SERVO="SERVO_1"/>
     </command_laws>
 

@@ -29,6 +29,7 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_quat_transformations.h"
 //#include "subsystems/actuators.h"
+#include "modules/actuators/actuators.h"
 #include "modules/system_identification/sys_id_doublet.h"
 #include "modules/system_identification/sys_id_chirp.h"
 #include "modules/rot_wing_drone/wing_rotation_controller.h"
@@ -43,6 +44,17 @@ float dt_l = 6;//7 5-10;
 #define mmax 4 // Motor counter
 #define kmax 0 // 4 Aerodynamic Surface counter
 #define nmax 5 // Excitation signal counter
+
+bool manual_test;
+int16_t mot0_static;
+int16_t mot1_static;
+int16_t mot2_static;
+int16_t mot3_static;
+int16_t ailL_static;
+int16_t ailR_static;
+int16_t ele_static ;
+int16_t rud_static ;
+int16_t push_static ;
 
 //int16_t mot_status[jmax][mmax] = {{0,0,0,0},{6400,6400,6400,6400},{6400,6400,8533,6400},{0,0,0,0},{0,0,0,0}};
 int16_t mot_status[jmax][mmax] = {{0,0,0,0},{6400,6400,6400,6400},{6400,6400,8533,6400},{8000,8000,8000,8000}};
@@ -78,6 +90,21 @@ int8_t o = 0; //Counter rot test
 int8_t p2 = 0; // Test number counter for the skew moment test
 bool static_test; // defining now because do not rember where it has to be defined
 float max_rotation_rate; // same
+
+void manual_test_periodic(void)
+{
+  if (manual_test) {
+        actuators_pprz[0] = (int16_t) mot0_static;
+        actuators_pprz[1] = (int16_t) mot1_static;
+        actuators_pprz[2] = (int16_t) mot2_static;
+        actuators_pprz[3] = (int16_t) mot3_static;
+        actuators_wt[5] = (int16_t) ailL_static;
+        actuators_wt[6] = (int16_t) ailR_static;
+        actuators_wt[7] = (int16_t) ele_static;
+        actuators_wt[8] = (int16_t) rud_static;
+        actuators_wt[4] = (int16_t) push_static; 
+  }
+}
 bool skew_moment(void)
 {
  static_test = true;
