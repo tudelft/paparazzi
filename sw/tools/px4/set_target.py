@@ -35,11 +35,13 @@ if mode == 1:
 
     print ("Sending target command to Paparazzi firmware...")
     ser.flush()
-    ser.write(line)
+    #ser.write(line)
+    ser.write(str.encode(line))
 
     if target == "fbw":
         try:
             c = ser.read(7)
+            c = c.decode('utf-8') # possible fix for error "TypeError: can only concatenate str (not "bytes") to str"
             print("AP responded with: " + c)
             if c == "TIMEOUT":
                 print("Error: FBW bootloader TIMEOUT. Power cycle the board and wait between 10 seconds to 20 seconds to retry.")
