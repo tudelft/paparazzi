@@ -1807,6 +1807,7 @@
       <field name="cond" type="float" unit="-">Condition number upper bound</field>
       <field name="gamma" type="float" unit="-">Resulting Wu scaler</field>
       <field name="rpm_max" type="float" unit="-">Artificial reduction in max u</field>
+      <field name="warmstart" type="uint8" unit="bool">use warmstart</field>
       <field name="iter_max" type="uint16" unit="-">Max iterations</field>
       <field name="iter" type="uint16" unit="-">Iterations taken</field>
       <field name="error" type="uint8" unit="bool">Optimal solution not found</field>
