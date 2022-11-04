@@ -12,7 +12,6 @@
     <firmware name="rotorcraft">
         <target NAME="ap" BOARD="cube_orange">
             <configure VALUE="500" NAME="PERIODIC_FREQUENCY"/>
-            <configure VALUE="SWD" NAME="FLASH_MODE"/>
             <module TYPE="sbus" NAME="radio_control">
                 <configure VALUE="UART3" NAME="SBUS_PORT"/>
             </module>
@@ -49,13 +48,21 @@
             <define name="RADIO_KILL_SWITCH" value="0"/>
         </target>
 
+        <module name="wing_rotation_controller">
+            <define name="WING_ROTATION_POSITION_ADC_0" value="62930"/>
+            <define name="WING_ROTATION_POSITION_ADC_90" value="41760"/>
+            <define name="WING_ROTATION_DEADZONE_PPRZ_CMD" value="500"/>
+            <define name="WING_ROTATION_P_GAIN" value="-50000"/>
+            <define name="WING_ROTATION_MAX_CMD" value="9600"/>
+        </module>
+
         <module TYPE="transparent" NAME="telemetry">
             <configure VALUE="B115200" NAME="MODEM_BAUD"/>
         </module>
 
         <module TYPE="uavcan" NAME="actuators">
             <configure VALUE="TRUE" NAME="UAVCAN_USE_CAN1"/>
-            <configure VALUE="FALSE" NAME="UAVCAN_USE_CAN2"/>
+            <configure VALUE="TRUE" NAME="UAVCAN_USE_CAN2"/>
         </module>
 
         <module TYPE="pwm" NAME="actuators"/>
@@ -85,14 +92,6 @@
             <configure VALUE="I2C1" NAME="MAG_LIS3MDL_I2C_DEV"/>
         </module>
 
-        <module name="wing_rotation_controller">
-                <define name="WING_ROTATION_POSITION_ADC_0" value="62930"/>
-                <define name="WING_ROTATION_POSITION_ADC_90" value="41760"/>
-                <define name="WING_ROTATION_DEADZONE_PPRZ_CMD" value="500"/>
-                <define name="WING_ROTATION_P_GAIN" value="-50000"/>
-                <define name="WING_ROTATION_MAX_CMD" value="9600"/>
-            </module>
-
         <module name="AOA_pwm">
             <define name="USE_PWM_INPUT1" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>
             <define name="AOA_ANGLE_OFFSET" value="3.4907"/>
@@ -100,8 +99,6 @@
             <define name="AOA_PWM_OFFSET" value="1"/>
             <configure name="AOA_PWM_CHANNEL" value="PWM_INPUT1" />
         </module>
-
-        <module name="wind_tunnel_rot_wing"/>
 
         <!-- <module name="sys_id_doublet">
             <define name="DOUBLET_AXES" value="{0,1,2,3}"/>
@@ -111,24 +108,31 @@
             <define name="CHIRP_AXES" value="{0,1,2,3}"/>
             <define name="CHIRP_RADIO_CHANNEL" value="9"/>
         </module>-->
+        <module name="wind_tunnel_rot_wing"/>
     </firmware>
 
     <servos DRIVER="Pwm">
     <!--1030 = quad 2140 = fw-->
-        <servo NO="0" NEUTRAL="1012" NAME="SERVO_1" MIN="1012" MAX="2112"/>
-        <servo NO="1" NEUTRAL="1500" NAME="SERVO_2" MIN="1000" MAX="2000"/>
-        <servo NO="2" NEUTRAL="1500" NAME="SERVO_3" MIN="1000" MAX="2000"/>
-        <servo NO="3" NEUTRAL="1500" NAME="SERVO_4" MIN="1000" MAX="2000"/>
+        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1012" NEUTRAL="1012" MAX="2112"/>
+        <servo NO="1" NAME="SERVO_AIL_LEFT"  MIN="1000" NEUTRAL="1500" MAX="2000"/>
+        <servo NO="2" NAME="SERVO_AIL_RIGHT" MIN="1000" NEUTRAL="1500" MAX="2000"/>
     </servos>
 
     <servos DRIVER="Uavcan1">
-        <servo NO="0" NEUTRAL="1000" NAME="MOTOR_FRONT" MIN="0" MAX="8191"/>
-        <servo NO="1" NEUTRAL="1000" NAME="MOTOR_RIGHT" MIN="0" MAX="8191"/>
-        <servo NO="2" NEUTRAL="1000" NAME="MOTOR_BACK" MIN="0" MAX="8191"/>
-        <servo NO="3" NEUTRAL="1000" NAME="MOTOR_LEFT" MIN="0" MAX="8191"/>
-        <servo NO="4" NEUTRAL="0"   NAME="MOTOR_PUSH" MIN="0" MAX="8191"/>
-        <servo NO="9" NEUTRAL="0" NAME="SERVO_ELEVATOR" MIN="4000" MAX="-4000"/>
-        <servo NO="10" NEUTRAL="0" NAME="SERVO_RUDDER" MIN="-8191" MAX="8191"/>
+        <servo NO="0" NAME="MOTOR_FRONT"    MIN="0"     NEUTRAL="1000" MAX="8191"/>
+        <servo NO="1" NAME="MOTOR_RIGHT"    MIN="0"     NEUTRAL="1000" MAX="8191"/>
+        <servo NO="2" NAME="MOTOR_BACK"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
+        <servo NO="3" NAME="MOTOR_LEFT"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
+        <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="0"    MAX="8191"/>
+        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="4000"  NEUTRAL="0"    MAX="-4000"/>
+        <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"    MAX="8191"/>
+    </servos>
+
+    <servos DRIVER="Uavcan2">
+        <servo NO="0" NAME="BMOTOR_FRONT" MIN="0" NEUTRAL="1000" MAX="8191"/>
+        <servo NO="1" NAME="BMOTOR_RIGHT" MIN="0" NEUTRAL="1000" MAX="8191"/>
+        <servo NO="2" NAME="BMOTOR_BACK"  MIN="0" NEUTRAL="1000" MAX="8191"/>
+        <servo NO="3" NAME="BMOTOR_LEFT"  MIN="0" NEUTRAL="1000" MAX="8191"/>
     </servos>
 
     <commands>
@@ -147,14 +151,24 @@
 
     <command_laws>
         <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
-        <set VALUE="($th_hold? -9600 : actuators_wt[0])"    SERVO="MOTOR_FRONT"/>
-        <set VALUE="($th_hold? -9600 : actuators_wt[1])"    SERVO="MOTOR_RIGHT"/>
-        <set VALUE="($th_hold? -9600 : actuators_wt[2])"    SERVO="MOTOR_BACK"/>
-        <set VALUE="($th_hold? -9600 : actuators_wt[3])"    SERVO="MOTOR_LEFT"/>
-        <set VALUE="($th_hold? -9600 : actuators_wt[4])"    SERVO="MOTOR_PUSH"/>
-        <set VALUE="($th_hold? 0 : actuators_wt[9])"        SERVO="SERVO_ELEVATOR"/>
-        <set VALUE="($th_hold? 0 : actuators_wt[10])"       SERVO="SERVO_RUDDER"/>
-        <set VALUE="wing_rotation.servo_pprz_cmd"           SERVO="SERVO_1"/>
+        <set VALUE="0" SERVO="SERVO_ELEVATOR"/>
+        <!-- <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/> -->
+        <!--<call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>-->
+        <set VALUE="($th_hold? -9600 : actuators_wt[0])" SERVO="MOTOR_FRONT"/>
+        <set VALUE="($th_hold? -9600 : actuators_wt[1])" SERVO="MOTOR_RIGHT"/>
+        <set VALUE="($th_hold? -9600 : actuators_wt[2])" SERVO="MOTOR_BACK"/>
+        <set VALUE="($th_hold? -9600 : actuators_wt[3])" SERVO="MOTOR_LEFT"/>
+        <set VALUE="($th_hold? -9600 : actuators_wt[4])" SERVO="MOTOR_PUSH"/>
+        <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_ROTWING"/>
+
+        <!-- Backup commands -->
+        <set VALUE="($th_hold? -9600 : actuators_wt[0])" SERVO="BMOTOR_FRONT"/>
+        <set VALUE="($th_hold? -9600 : actuators_wt[1])" SERVO="BMOTOR_RIGHT"/>
+        <set VALUE="($th_hold? -9600 : actuators_wt[2])" SERVO="BMOTOR_BACK"/>
+        <set VALUE="($th_hold? -9600 : actuators_wt[3])" SERVO="BMOTOR_LEFT"/>
+
+        <set VALUE="($th_hold? 0 : actuators_wt[9])"    SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="($th_hold? 0 : actuators_wt[10])" SERVO="SERVO_RUDDER"/>
     </command_laws>
 
     <section NAME="MISC">
@@ -170,14 +184,14 @@
     </section>
 
     <section name="IMU" prefix="IMU_">
-        <!--<define name="MAG_CALIB" value="{{.abi_id=3, .neutral={1696,-4095,3641}, .scale={{15263,26021,26309},{25440,40858,41277}},.current_scale={0,0,0}}}"/>-->
-        <define name="MAG_CALIB" value="{{.abi_id=3, .neutral={1661,-4006,3516}, .scale={{4963,37930,4367},{8399,60361,6961}}}}"/>
+        <!-- Accel calibration 02-11-2022 (55 deg Celcius) -->
+        <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-7,-12,24}, .scale={{60615,64566,59275},{6202,6605,6087}}}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-22,14,14}, .scale={{38753,55928,6538},{7862,11421,1335}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-59,-7,-1}, .scale={{60664,12511,34394},{12413,2556,7043}}}}"/>
 
+        <!-- Mag calibration 02-11-2022 in front of aircraft hall-->
+        <define name="MAG_CALIB" value="{{.abi_id=3, .calibrated={.neutral=true, .scale=true},.neutral={1915,-4390,3530}, .scale={{38935,30511,19759},{59172,43926,28329}}}}"/>
 
-        <!-- <define name="ACCEL_CALIB" value="{{.abi_id=20, .neutral={-57,-20,-6}, .scale={{3374,11057,64239},{647,2261,13135}}}, {.abi_id=21, .neutral={-35,-20,9}, .scale={{50356,47219,17359},{10281,9653,3561}}}, {.abi_id=22, .neutral={-17,-10,24}, .scale={{22979,34687,9697},{2353,3547,1001}}}}"/> -->
-        
         <!-- Define axis in hover frame -->
-        <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
+        <define name="BODY_TO_IMU_PHI"   value="-2." unit="deg"/>
         <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
         <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
     </section>
