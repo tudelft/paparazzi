@@ -1,0 +1,66 @@
+// This file was autogeneratd from c_testcases.m
+#include <stdbool.h>
+#include "size_defines.h"
+
+#ifndef TEST_CASES_H
+#define TEST_CASES_H
+#define N_CASES {{ number_cases }}
+
+typedef struct TestCase {
+	num_t JG[CA_N_V*CA_N_U];
+	num_t Wv[CA_N_V];
+   num_t Wu[CA_N_U];
+   num_t v[CA_N_V];
+	num_t lb[CA_N_U];
+	num_t ub[CA_N_U];
+	num_t u0[CA_N_U];
+	num_t up[CA_N_U];
+	num_t us[CA_N_U];
+	num_t res[CA_N_C];
+	// int W[CA_N_U]; // TODO
+	int n_u;
+	int n_v;
+	bool updating;
+} TestCase;
+
+void fill_cases(TestCase* test_cases) {
+   {% for test_case in test_cases -%}
+   test_cases[{{ test_case.n }}] = (TestCase) {
+      { {% for num in test_case.JG -%}
+         {{ num }}{{ "F, " if not loop.last else "F" -}}
+      {% endfor -%} },
+      { {% for num in test_case.Wv -%}
+         {{ num }}{{ "F, " if not loop.last else "F" -}}
+      {% endfor -%} },
+      { {% for num in test_case.Wu -%}
+         {{ num }}{{ "F, " if not loop.last else "F" -}}
+      {% endfor -%} },
+      { {% for num in test_case.v -%}
+         {{ num }}{{ "F, " if not loop.last else "F" -}}
+      {% endfor -%} },
+      { {% for num in test_case.lb -%}
+         {{ num }}{{ "F, " if not loop.last else "F" -}}
+      {% endfor -%} },
+      { {% for num in test_case.ub -%}
+         {{ num }}{{ "F, " if not loop.last else "F" -}}
+      {% endfor -%} },
+      { {% for num in test_case.u0 -%}
+         {{ num }}{{ "F, " if not loop.last else "F" -}}
+      {% endfor -%} },
+      { {% for num in test_case.up -%}
+         {{ num }}{{ "F, " if not loop.last else "F" -}}
+      {% endfor -%} },
+      { {% for num in test_case.us -%}
+         {{ num }}{{ "F, " if not loop.last else "F" -}}
+      {% endfor -%} },
+      { {% for num in test_case.res -%}
+         {{ num }}{{ "F, " if not loop.last else "F" -}}
+      {% endfor -%} },
+      {{ test_case.n_u }},
+      {{ test_case.n_v }},
+      {{ "true" if test_case.updating else "false" }},
+   };
+   {% endfor %}
+};
+
+#endif

@@ -198,7 +198,7 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
           }
         }
 
-        if (maxlam <= 0) {
+        if (maxlam <= TOL) {
           return 0; // constraints hit, but optimal
         }
 

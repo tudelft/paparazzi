@@ -38,6 +38,10 @@
       <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
 
       <define name="IMU_BODY_TO_IMU_PSI" value="3.1415"/> <!-- must be a bug, but this is correct unit -->
+      <configure name="USE_MAGNETOMETER" value="FALSE"/>
+      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
+      <!-- for optitrack -->
+      <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
       
     </target>
 
@@ -51,6 +55,8 @@
       </module>
       <configure name="OPT" value="0"/>
       <define name="IMU_BODY_TO_IMU_PSI" value="0."/> <!-- must be a bug, but this is correct unit -->
+      <configure name="USE_MAGNETOMETER" value="TRUE"/>
+      <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
     </target>
 
     <!--define name="USE_SONAR" value="TRUE"/-->
@@ -85,10 +91,10 @@
     <module name="stabilization" type="indi"/>
     <module name="stabilization" type="rate_indi"/>
     -->
-    <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="FALSE"/>
-      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
-    </module>
+    <module name="ahrs" type="float_cmpl_quat"/>
+    <!--
+    <module name="ahrs" type="int_cmpl_quat"/>
+    -->
     <module name="ins" type="extended"/>
     <!--
     <module name="guidance" type="indi">
@@ -189,8 +195,6 @@
     <!-- For vibrating airfames -->
     <define name="GRAVITY_HEURISTIC_FACTOR" value="0"/>
 
-    <!-- for optitrack -->
-    <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
   </section>
 
   <section name="INS" prefix="INS_">
@@ -285,7 +289,8 @@
     <!--Priority for each axis (roll, pitch, yaw and thrust)-->
     <define name="WLS_PRIORITIES" value="{1000, 1000, 1, 100}"/>
 
-    <define name="ALGO" value="2"/>
+    <define name="CTL_ALLOC_ALGO" value="2"/>
+    <define name="CTL_ALLOC_COND_BOUND" value="4e5"/>
   </section>
 
   <section name="actuator_sizes">

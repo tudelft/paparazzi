@@ -72,6 +72,12 @@
 #define AHRS_GRAVITY_HEURISTIC_FACTOR 30
 #endif
 
+/** Minimum speed in m/s for heading update via GPS.
+ * Don't update heading from GPS course if GPS ground speed is below is this threshold
+ */
+#ifndef AHRS_HEADING_UPDATE_GPS_MIN_SPEED
+#define AHRS_HEADING_UPDATE_GPS_MIN_SPEED 5.0
+#endif
 
 void ahrs_fc_update_mag_full(struct FloatVect3 *mag, float dt);
 void ahrs_fc_update_mag_2d(struct FloatVect3 *mag, float dt);
@@ -407,9 +413,13 @@ void ahrs_fc_update_gps(struct GpsState *gps_s __attribute__((unused)))
 #endif
 
 #if AHRS_USE_GPS_HEADING && USE_GPS
-  //got a 3d fix, ground speed > 0.5 m/s and course accuracy is better than 10deg
-  if (gps_s->fix >= GPS_FIX_3D && gps_s->gspeed >= 500 &&
-      gps_s->cacc <= RadOfDeg(10 * 1e7)) {
+  // got a 3d fix, ground speed > AHRS_HEADING_UPDATE_GPS_MIN_SPEED (default 5.0 m/s)
+  // and course accuracy is better than 10deg
+  static const uint16_t gps_min_speed = AHRS_HEADING_UPDATE_GPS_MIN_SPEED * 100;
+  static const uint32_t max_cacc = RadOfDeg(10 * 1e7);
+  if (gps_s->fix >= GPS_FIX_3D && 
+      gps_s->gspeed >= gps_min_speed &&
+      gps_s->cacc <= max_cacc) {
 
     // gps_s->course is in rad * 1e7, we need it in rad
     float course = gps_s->course / 1e7;
