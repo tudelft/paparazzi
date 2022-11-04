@@ -6,12 +6,12 @@
   <settings>
     <dl_settings name="Wind tunnel">
       <dl_settings name="Wt act control">
-        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="motors_off" var="motors_off_wt"   type="bool"/>
-        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="front_off"  var="motor_off_wt[0]" type="bool"/>
-        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="right_off"  var="motor_off_wt[1]" type="bool"/>
-        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="back_off"   var="motor_off_wt[2]" type="bool"/>
-        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="left_off"   var="motor_off_wt[3]" type="bool"/>
-        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="push_off"   var="motor_off_wt[4]" type="bool"/>
+        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="motors_on" var="motors_on_wt"   type="bool"/>
+        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="front_on"  var="motor_on_wt[0]" type="bool"/>
+        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="right_on"  var="motor_on_wt[1]" type="bool"/>
+        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="back_on"   var="motor_on_wt[2]" type="bool"/>
+        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="left_on"   var="motor_on_wt[3]" type="bool"/>
+        <dl_setting min="0" max="1" step="1" values="Off|On" shortname="push_on"   var="motor_on_wt[4]" type="bool"/>
         <dl_setting min="0"     max="9600" step="1" shortname="front_cmd"     var="actuators_slider_wt[0]"  type="int16_t"/>
         <dl_setting min="0"     max="9600" step="1" shortname="right_cmd"     var="actuators_slider_wt[1]"  type="int16_t"/>
         <dl_setting min="0"     max="9600" step="1" shortname="back_cmd"      var="actuators_slider_wt[2]"  type="int16_t"/>
