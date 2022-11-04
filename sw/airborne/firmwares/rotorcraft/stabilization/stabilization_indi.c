@@ -517,8 +517,12 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     actuator_thrust_bx_pprz = thrust_bx_state_filt + du_thrust_bx;
     Bound(actuator_thrust_bx_pprz, 0, MAX_PPRZ);
   } else {
-    // Copy radio cmd
+    // Copy radio 
+    #if !USE_NPS
     actuator_thrust_bx_pprz = RadioControlValues(RADIO_AUX4);
+    #else
+    actuator_thrust_bx_pprz = 0;
+    #endif
   }
 
   actuators_pprz[5] = (int16_t) actuator_thrust_bx_pprz;
