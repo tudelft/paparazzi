@@ -62,7 +62,7 @@
 // landing platform heigth wrt RTK-gps height
 // positive is up
 #ifndef TARGET_OFFSET_HEIGHT
-#define TARGET_OFFSET_HEIGHT 5.0
+#define TARGET_OFFSET_HEIGHT 1.5
 #endif
 //#define TARGET_OFFSET_HEIGHT -1.2
 
@@ -74,12 +74,12 @@
 
 // calculate X & Y positions in between recieved gps coordinates
 #ifndef TARGET_INTEGRATE_XY
-#define TARGET_INTEGRATE_XY true
+#define TARGET_INTEGRATE_XY false
 #endif
 
 // calculate Z position in between recieved gps coordinates
 #ifndef TARGET_INTEGRATE_Z
-#define TARGET_INTEGRATE_Z true
+#define TARGET_INTEGRATE_Z false
 #endif
 
 #define TOW_now gps_tow_from_sys_ticks(sys_time.nb_tick)

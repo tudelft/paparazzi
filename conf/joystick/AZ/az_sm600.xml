@@ -38,7 +38,7 @@ The basis of steering is the standard signs of aerospace convention
     <!--message class="datalink" name="RC_4CH" send_always="true"-->
     <message class="datalink" name="RC_4CH" send_always="true">
       <!--<field name="throttle" value="Fit(LeftStickVertical,0,127,0,127)"/> -->
-      <field name="throttle" value="Fit(LeftStickVertical,-100,127,0,127)"/>
+      <field name="throttle" value="Fit(LeftStickVertical,-100,100,0,127)"/>
       <field name="roll" value="Fit(RightStickHorizontal,-127,127,-80,80)"/>
       <field name="pitch" value="Fit(-RightStickVertical,-127,127,-80,80)"/>
       <field name="yaw" value="LeftStickHorizontal"/> <!--value="Fit(LeftStickHorizontal,-127,127,-70,70)"/> -->
