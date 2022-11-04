@@ -32,8 +32,8 @@ int16_t motors_slider_wt = 0;
 
 bool actuator_is_servo_wt[11] = {0,0,0,0,0,1,1,1,1,1,1};
 
-bool motors_off_wt = false;
-bool motor_off_wt[5] = {0,0,0,0,0};
+bool motors_on_wt = false;
+bool motor_on_wt[5] = {1,1,1,1,1};
 
 // actuator sweep parameters
 uint8_t wt_actuator_sweep_index = 0;
@@ -133,7 +133,7 @@ void event_wt_rot_wing(void)
   // Evaluate motor off
   for (uint8_t i = 0; i < 5; i++)
   {
-    if (motor_off_wt[i] || motors_off_wt)
+    if (!motor_on_wt[i] || !motors_on_wt)
     {
       actuators_temp[i] = -9600;
     }
@@ -151,7 +151,7 @@ void evaluate_motor_commands(void)
 {
   for (uint8_t i = 0; i < 5; i++)
   {
-    if (motor_off_wt[i] || motors_off_wt)
+    if (!motor_on_wt[i] || !motors_on_wt)
     {
       actuators_wt[i] = -9600;
     }

@@ -34,8 +34,8 @@ extern int16_t actuators_wt[11];
 extern int16_t actuators_slider_wt[11];
 extern int16_t motors_slider_wt;
 
-extern bool motors_off_wt;
-extern bool motor_off_wt[5];
+extern bool motors_on_wt;
+extern bool motor_on_wt[5];
 
 // actuator sweep parameters
 extern uint8_t wt_actuator_sweep_index;
