@@ -670,6 +670,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
           float relpos_dist = UBX_NAV_RELPOSNED_relPosLength(gps_ubx.msg_buf) * 1e-2f;
 
           if(verbose) printf("Got relpos %d %f %f\r\n", flags, relpos_heading, relpos_dist);
+          if(!relPosValid) printf("position NOT VALID! \n");
 
           if(relPosValid) {
             ground_heading = relpos_heading;

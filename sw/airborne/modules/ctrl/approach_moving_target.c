@@ -36,8 +36,8 @@ float approach_moving_target_angle_deg;
 
 
 #define DEBUG_AMT TRUE
-#define SELFBUILDCONTROLLER TRUE
-#define CYBERZOO
+#define SELFBUILDCONTROLLER FALSE
+//#define CYBERZOO
 
 // settings how drone should approach the ship
 struct Amt amt = {

@@ -67,8 +67,8 @@ heading not defined at:
 - holding point kill
 
 -->
-<flight_plan alt="2" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="200" name="Rotorcraft Cyberzoo (Delft) no GPS" security_height="0.3">
-<!--flight_plan alt="5" ground_alt="0" lat0="52.168221" lon0="4.412767" max_dist_from_home="250" name="Nederdrone Valkenburg" security_height="5"-->
+<!--flight_plan alt="2" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="200" name="Rotorcraft Cyberzoo (Delft) no GPS" security_height="0.3"-->
+<flight_plan alt="5" ground_alt="0" lat0="52.1681455" lon0="4.4128056" max_dist_from_home="250" name="Nederdrone Valkenburg" security_height="5">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"

@@ -31,7 +31,7 @@
 #include "modules/core/abi.h"
 
 // if the targetpos is meant for cyberzoo ( OUTDOOR FLIGTH -> CYBERZOO False )
-#define CYBERZOO
+//#define CYBERZOO
 
 // The timeout when receiving GPS messages from the ground in ms
 #ifndef TARGET_POS_TIMEOUT
