@@ -63,7 +63,7 @@ float g1_q_multiplier = 1.;
 float g1_r_multiplier = 1.;
 float g1_t_multiplier = 1.;
 
-bool wing_rotation_sched_activated = false;
+bool wing_rotation_sched_activated = true;
 
 // Define filters
 #ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
