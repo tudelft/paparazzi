@@ -93,6 +93,11 @@ heading not defined at:
     <waypoint lat="51.397942" lon="3.544810" name="_BreskensFerry2"/>
     <waypoint lat="51.401470" lon="3.545030" name="_BreskensFerry3"/>
     <waypoint lat="51.400403" lon="3.549402" name="_BreskensFerry4"/>
+    <waypoint lat="51.4005810" lon="3.5526176" name="_BreskensBlvd1"/>
+    <waypoint lat="51.3998183" lon="3.5543357" name="_BreskensBlvd2"/>
+    <waypoint lat="51.3993305" lon="3.5533445" name="_BreskensBlvd3"/>
+    <waypoint lat="51.3996946" lon="3.5527168" name="_BreskensBlvd4"/>
+    <waypoint lat="51.3994336" lon="3.5483776" name="_BreskensBlvd5"/>
   </waypoints>
   <sectors>
     <sector color="red" name="SafeFlyZone">
@@ -100,6 +105,12 @@ heading not defined at:
       <corner name="_BreskensFerry2"/>
       <corner name="_BreskensFerry3"/>
       <corner name="_BreskensFerry4"/>
+      <!-- with house included -->
+      <corner name="_BreskensBlvd1"/>
+      <corner name="_BreskensBlvd2"/>
+      <corner name="_BreskensBlvd3"/>
+      <corner name="_BreskensBlvd4"/>
+      <corner name="_BreskensBlvd5"/>
     </sector>
   </sectors>
   <modules/>

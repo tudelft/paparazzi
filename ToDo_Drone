@@ -17,7 +17,7 @@ ToDo list drone:
 ? Try to make an all-purpose XML file with IF statements (tried, but without success)
 ? Add Uplink messages also to logfiles
 - make set_target_offset_here() work in flightplan
-- make better implementation of function approach_ship_enable() (maybe get rid of keep-allive function?)
+- find better name for force_forward variable
 - make drone software robust for GPS disconnection mid-flight
 - test Set_offset_here (function did not seem to work in the field)
 - mangage logfiles (store them in folders)
