@@ -234,7 +234,7 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
   float time_diff = 0;
   if (target_landing.pos.tow > uav_itow) time_diff = 0;
   else time_diff = (float)(uav_itow - target_landing.pos.tow) / 1000; //TODO: TEST
-  printf("time_diff: %f \t uav_itow: %i \t target_landing.pos.tow: %i \n", time_diff, uav_itow, target_landing.pos.tow);
+  //printf("time_diff: %f \t uav_itow: %i \t target_landing.pos.tow: %i \n", time_diff, uav_itow, target_landing.pos.tow);
   target_landing.target_pos_timeout = time_diff; // for telemetry
 
   // /* When we have a valid relative position from the RTK GPS and no timeout update the position */
