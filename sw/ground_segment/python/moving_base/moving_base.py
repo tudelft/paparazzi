@@ -82,9 +82,13 @@ class Base:
             self.heading = 150 # deg (orientation of platform)
             self.alt0 = 43 # ref_alt0 is already about 46m in simulator
 
-            print("lat0,long0,alt0 position = Valkenburg")
-            self.lat0 = 52.168391 #deg
-            self.lon0 = 4.413100 #deg
+            #print("lat0,long0,alt0 position = Valkenburg")
+            #self.lat0 = 52.168391 #deg
+            #self.lon0 = 4.413100 #deg
+
+            print("lat0,long0,alt0 position = Breskens")
+            self.lat0 = 52.3995580 #deg
+            self.lon0 = 3.5465413 #deg
 
             #print("lat0,long0,alt0 position = iMAV")
             #self.lat0 = 52.170591 #deg
