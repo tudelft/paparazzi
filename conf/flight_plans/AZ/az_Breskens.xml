@@ -165,6 +165,7 @@ heading not defined at:
       <set value="FALSE" var="force_forward"/>
       <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetAltitudeReferenceHere()"/>
+      <call_once fun="NavSetGroundReferenceHere()"/>  <!-- NEED TO TEST THIS -->
       <call_once fun="NavSetWaypointHere3d(WP__StayHover)"/>
       <deroute block="Holding point kill"/>
     </block>
