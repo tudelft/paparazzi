@@ -176,6 +176,7 @@ static inline void NavResurrect(void)
 #define NavSetAltitudeReferenceHere nav_reset_alt
 
 #define NavSetWaypointHere waypoint_set_here_2d
+#define NavSetWaypointHere3d waypoint_set_here
 #define NavCopyWaypoint waypoint_copy
 #define NavCopyWaypointPositionOnly waypoint_position_copy
 
