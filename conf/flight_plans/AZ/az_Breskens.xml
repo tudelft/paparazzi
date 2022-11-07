@@ -76,6 +76,7 @@ heading not defined at:
     #include "modules/ctrl/approach_moving_target.h"
     #include "modules/ctrl/target_pos.h"
     #include "modules/energy/electrical.h"
+    #include "modules/sonar/sonar_bebop.h"
 </header>
   <waypoints>
     <waypoint x="0"           y="0"          name="HOME"/>
@@ -326,7 +327,8 @@ heading not defined at:
     <block name="flare">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere3d(WP__landHere)"/>
-      <stay climb="-0.2" vmode="climb" wp="_landHere" until="GetPosHeight() @LT 0.10"/>
+      <stay climb="-0.2" vmode="climb" wp="_landHere" until="GetPosHeight()       @LT 1.0"/>
+      <stay climb="-0.2" vmode="climb" wp="_landHere" until="sonar_bebop.distance @LT 0.3"/>
       <deroute block="landed"/>
     </block>
     
