@@ -23,7 +23,8 @@
   <header>
     <file name="ctrl_windtunnel_2022.h"/>
   </header>
-  <!-- <init fun="windtunnel_message_init()"/> -->
+  <init fun="windtunnel_message_init()"/>
+  <!-- <event fun="event_wing_rotation()"/> -->
   <periodic fun="wing_rotation_periodic()" freq="1.0"/>
   <makefile>
     <file name="ctrl_windtunnel_2022.c"/>

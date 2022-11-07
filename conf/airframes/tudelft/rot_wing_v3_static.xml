@@ -109,6 +109,7 @@
             <define name="CHIRP_RADIO_CHANNEL" value="9"/>
         </module>-->
         <module name="wind_tunnel_rot_wing"/>
+        <module name="ctrl_windtunnel_2022"/>
     </firmware>
 
     <servos DRIVER="Pwm">

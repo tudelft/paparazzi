@@ -78,33 +78,36 @@ bool test_active = false;
 bool test_skew_active = false;
 bool done_sync = true;
 bool done_skew = true;
-int8_t i = 0; // Wing set point counter
-int8_t j = 0; // Motor status counter
-int8_t m = 0; // Motor counter
-int8_t k = 0; // Aerodynamic Surface counter
-int8_t n = 0; // Excitation signal counter
+int8_t i = 0;   // Wing set point counter
+int8_t j = 0;   // Motor status counter
+int8_t m = 0;   // Motor counter
+int8_t k = 0;   // Aerodynamic Surface counter
+int8_t n = 0;   // Excitation signal counter
 int32_t tp = 0; // Test point counter
-int8_t p = 0; // Test number counter (Equal to number of windspeeds)
-int8_t w = 0; //Sync command counter
-int8_t o = 0; //Counter rot test
-int8_t p2 = 0; // Test number counter for the skew moment test
+int8_t p = 0;   // Test number counter (Equal to number of windspeeds)
+int8_t w = 0;   //Sync command counter
+int8_t o = 0;   //Counter rot test
+int8_t p2 = 0;  // Test number counter for the skew moment test
 bool static_test; // defining now because do not rember where it has to be defined
 float max_rotation_rate; // same
 
-void manual_test_periodic(void)
+// Function that pubishes selected cmd at highest freq possible
+void event_manual_test(void)
 {
   if (manual_test) {
-        actuators_pprz[0] = (int16_t) mot0_static;
-        actuators_pprz[1] = (int16_t) mot1_static;
-        actuators_pprz[2] = (int16_t) mot2_static;
-        actuators_pprz[3] = (int16_t) mot3_static;
-        actuators_wt[5] = (int16_t) ailL_static;
-        actuators_wt[6] = (int16_t) ailR_static;
-        actuators_wt[7] = (int16_t) ele_static;
-        actuators_wt[8] = (int16_t) rud_static;
-        actuators_wt[4] = (int16_t) push_static; 
+        actuators_wt[0]  = (int16_t) mot0_static;
+        actuators_wt[1]  = (int16_t) mot1_static;
+        actuators_wt[2]  = (int16_t) mot2_static;
+        actuators_wt[3]  = (int16_t) mot3_static;
+        actuators_wt[7]  = (int16_t) ailL_static;
+        actuators_wt[8]  = (int16_t) ailR_static;
+        actuators_wt[9]  = (int16_t) ele_static;
+        actuators_wt[10] = (int16_t) rud_static;
+        actuators_wt[4]  = (int16_t) push_static; 
   }
 }
+
+
 bool skew_moment(void)
 {
  static_test = true;
@@ -252,35 +255,36 @@ bool excitation_control(void)
      return false;}
 }
 
-// #if PERIODIC_TELEMETRY
+#if PERIODIC_TELEMETRY
+#include "modules/datalink/telemetry.h"
 // #include "subsystems/datalink/telemetry.h"
-// static void send_windtunnel_static(struct transport_tx *trans, struct link_device *dev)
-// {
-// float airspeed = stateGetAirspeed_f();
+static void send_windtunnel_static(struct transport_tx *trans, struct link_device *dev)
+{
+float airspeed = stateGetAirspeed_f();
 
-// pprz_msg_send_WINDTUNNEL_STATIC(trans, dev, AC_ID,
-//                                         &test_active,
-//                                         &airspeed,
-//                                         &wing_rotation.wing_angle_deg,
-//                                         &wing_rotation.wing_angle_deg_sp,
-//                                         &(stateGetNedToBodyEulers_i()->theta),
-//                                         &p,
-//                                         &i,
-//                                         &j,
-//                                         &k,
-//                                         &n,
-//                                         &tp,
-//                                         &o,
-//                                         &p2,
-//                                         &max_rotation_rate,
-//                                         ACTUATORS_NB, actuators
-//                                         );
-// }
-// #endif
-
-// void windtunnel_message_init(void)
-// {
-//   #if PERIODIC_TELEMETRY
-//   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WINDTUNNEL_STATIC, send_windtunnel_static);
-//   #endif 
-// }
+pprz_msg_send_WINDTUNNEL_STATIC(trans, dev, AC_ID,
+                                        &test_active,
+                                        &airspeed,
+                                        &wing_rotation.wing_angle_deg,
+                                        &wing_rotation.wing_angle_deg_sp,
+                                        &(stateGetNedToBodyEulers_i()->theta),
+                                        &p,
+                                        &i,
+                                        &j,
+                                        &k,
+                                        &n,
+                                        &tp,
+                                        &o,
+                                        &p2,
+                                        &max_rotation_rate,
+                                        11, actuators_wt
+                                        );
+}
+#endif
+//ACTUATORS_NB, actuators_wt
+void windtunnel_message_init(void)
+{
+  #if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WINDTUNNEL_STATIC, send_windtunnel_static);
+  #endif 
+}
