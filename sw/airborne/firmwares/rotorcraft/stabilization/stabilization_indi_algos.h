@@ -27,12 +27,8 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_ref_quat_int.h"
 #include "math/lsq_package/common/solveActiveSet.h"
 #include <stdint.h>
-/*
-#include "mcu_periph/sys_time.h"
-#include "mcu.h"
-#include <ch.h>
-*/
-#ifndef USE_NPS
+
+#ifdef USE_CHIBIOS_RTOS
 #include <ch.h>
 #endif
 
@@ -46,6 +42,7 @@ extern float g1g2[INDI_OUTPUTS][INDI_NUM_ACT];
 extern float actuator_state_filt_vect[INDI_NUM_ACT];
 extern float indi_v[INDI_OUTPUTS];
 extern float indi_u[INDI_NUM_ACT];
+extern float indi_du[INDI_NUM_ACT];
 
 extern bool indi_use_adaptive;
 extern activeSetAlgoChoice indi_ctl_alloc_algo;

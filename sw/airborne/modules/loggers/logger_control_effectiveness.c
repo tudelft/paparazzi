@@ -79,7 +79,7 @@ void logger_control_effectiveness_start(void)
 #endif
 #if LOGGER_CONTROL_EFFECTIVENESS_ACTUATORS
     for (unsigned int i = 0; i < ACTUATORS_NB; i++) {
-      sdLogWriteLog(pprzLogFile, ",act_%d", i);
+      sdLogWriteLog(pprzLogFile, ",act_du_%d", i);
     }
     for (unsigned int i = 0; i < ACTUATORS_NB; i++) {
       sdLogWriteLog(pprzLogFile, ",act_state_%d", i);
@@ -135,7 +135,7 @@ void logger_control_effectiveness_periodic(void)
   // log actuators
 #if LOGGER_CONTROL_EFFECTIVENESS_ACTUATORS
   for (unsigned int i = 0; i < ACTUATORS_NB; i++) {
-    sdLogWriteLog(pprzLogFile, ",%.2f", indi_u[i]);
+    sdLogWriteLog(pprzLogFile, ",%.2f", indi_du[i]);
   }
   for (unsigned int i = 0; i < ACTUATORS_NB; i++) {
     sdLogWriteLog(pprzLogFile, ",%.2f", actuator_state_filt_vect[i]);
