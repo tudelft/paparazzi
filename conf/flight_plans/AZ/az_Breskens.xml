@@ -327,11 +327,12 @@ heading not defined at:
     <block name="flare">
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere3d(WP__landHere)"/>
-      <stay climb="-0.2" vmode="climb" wp="_landHere"/>
-      <exception cond="GetPosHeight() @LT 0.10" deroute="landed"/>
+      <stay climb="-0.2" vmode="climb" wp="_landHere" until="GetPosHeight() @LT 0.10"/>
+      <deroute block="landed"/>
     </block>
     
     <block name="landed">
+      <stay climb="-0.5" vmode="climb" wp="_landHere" until="!MoreThan(NavBlockTime(), 2)"/>
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
