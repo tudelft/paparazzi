@@ -47,11 +47,11 @@ from scipy import linalg as la
 
 import geopy.distance
 
-BASE_MOVING = False
+BASE_MOVING = True
 BASE_WAVES = False
 BASE_FLIP_HDG = False   # if wp_approach jumps to the other side of ship when moving dir changes
 
-base_moving_distance_outdoor  = 20 # meter
+base_moving_distance_outdoor  = 60 # meter
 base_moving_distance_cyberzoo = 4  # meter
 
 CYBERZOO = False
@@ -79,19 +79,19 @@ class Base:
         if not CYBERZOO:
             # Outdoor configuration
             if BASE_MOVING:
-                 self.speed = 1.5 # m/s
+                 self.speed = 1.0 # m/s
             else:
                 self.speed = 0.0 # m/s
             self.course = 0 # deg (moving directon of platform)
             self.heading = 0 # deg (orientation of platform)
-            self.alt0 = 49 # ref_alt0 is already about 46m in simulator
+            self.alt0 = 47 # ref_alt0 is already about 46m in simulator
 
             #print("lat0,long0,alt0 position = Valkenburg")
             #self.lat0 = 52.168391 #deg
             #self.lon0 = 4.413100 #deg
 
             print("lat0,long0,alt0 position = Breskens")
-            self.lat0 = 51.3994563 #deg
+            self.lat0 = 51.3991 #deg
             self.lon0 = 3.54642 #deg
 
             #print("lat0,long0,alt0 position = iMAV")
@@ -373,6 +373,7 @@ class Base:
                     if not BASE_FLIP_HDG: 
                         self.speed = self.speed*-1
                     self.loop_counter = 0
+                    sleep(3)
 
                 if CYBERZOO and self.loop_counter > count_lim_cyberzoo:
                     self.speed = self.speed*-1
