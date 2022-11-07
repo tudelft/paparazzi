@@ -47,7 +47,7 @@ from scipy import linalg as la
 
 import geopy.distance
 
-BASE_MOVING = True
+BASE_MOVING = False
 BASE_WAVES = False
 
 CYBERZOO = False
@@ -78,8 +78,8 @@ class Base:
                  self.speed = 1.5 # m/s
             else:
                 self.speed = 0.0 # m/s
-            self.course = 150 # deg (moving directon of platform)
-            self.heading = 150 # deg (orientation of platform)
+            self.course = 0 # deg (moving directon of platform)
+            self.heading = 0 # deg (orientation of platform)
             self.alt0 = 43 # ref_alt0 is already about 46m in simulator
 
             #print("lat0,long0,alt0 position = Valkenburg")
@@ -87,8 +87,8 @@ class Base:
             #self.lon0 = 4.413100 #deg
 
             print("lat0,long0,alt0 position = Breskens")
-            self.lat0 = 52.3995580 #deg
-            self.lon0 = 3.5465413 #deg
+            self.lat0 = 51.399650 #deg
+            self.lon0 = 3.546610 #deg
 
             #print("lat0,long0,alt0 position = iMAV")
             #self.lat0 = 52.170591 #deg

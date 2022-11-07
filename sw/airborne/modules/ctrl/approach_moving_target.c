@@ -36,7 +36,7 @@ float approach_moving_target_angle_deg;
 
 
 #define DEBUG_AMT TRUE
-#define SELFBUILDCONTROLLER FALSE
+#define SELFBUILDCONTROLLER TRUE
 //#define CYBERZOO
 
 // settings how drone should approach the ship
@@ -46,7 +46,7 @@ struct Amt amt = {
   .speed = -0.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
   .slope_ref = 15.0,  // [deg], slope descent line
   #else
-  .distance = 40,     // [m], diagonal decent line to ship
+  .distance = 20,     // [m], diagonal decent line to ship
   .speed = -1.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
   .slope_ref = 19.471,  // [deg], slope descent line
   #endif
