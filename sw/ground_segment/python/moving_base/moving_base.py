@@ -47,7 +47,7 @@ from scipy import linalg as la
 
 import geopy.distance
 
-BASE_MOVING = False
+BASE_MOVING = True
 BASE_WAVES = False
 
 CYBERZOO = False
@@ -299,7 +299,7 @@ class Base:
             msg['climb'] = 0
             msg['course'] = self.course
             msg['heading'] = self.heading
-            msg['itow'] = 10000000  # very high, so the system does not think there is a time-out
+            msg['itow'] = 10000000000  # very high, so the system does not think there is a time-out
             self._interface.send(msg)
 
             self.bufLon.pop(9)
