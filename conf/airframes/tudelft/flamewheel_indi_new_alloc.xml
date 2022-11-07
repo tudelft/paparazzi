@@ -41,7 +41,7 @@
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
       <!-- for optitrack -->
-      <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
+      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
       
     </target>
 
@@ -77,9 +77,7 @@
       <define name="SERVO_HZ" value="400"/>
     </module>
     <module name="imu" type="mpu6000"/>
-    <module name="gps" type="datalink">
-      <define name="PHI_OFFSET" value="51.12312313"/>
-    </module>
+    <module name="gps" type="datalink"/>
     <!--
     <module name="gps" type="ubx_ucenter">
       <define name="GPS_UBX_NAV5_DYNAMICS" value="NAV5_DYN_PORTABLE" />
