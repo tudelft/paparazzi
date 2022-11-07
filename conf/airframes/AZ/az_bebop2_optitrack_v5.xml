@@ -21,8 +21,8 @@
         <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
         <define name="USE_GPS_UBX_RXM_RAW" value="TRUE"/>
         <configure name="GPS_PORT" value="UART2"/> <!-- always UART2 or UART4 -->
-        <define name="INS_VFF_R_GPS" value="0.05"/> 
-        <define name="INS_USE_GPS_ALT_SPEED" value="FALSE"/>
+        <define name="INS_VFF_R_GPS" value="0.1"/> 
+        <define name="INS_USE_GPS_ALT_SPEED" value="FALSE"/> <!-- TODO need to test -->
         <define name="MISC_ARRIVED_AT_WAYPOINT" value="1.0" unit="m"/>
       </module>
       
@@ -48,6 +48,8 @@
     <!-- ****** TARGET SIMULATOR ****** -->
     <target name="nps" board="pc">
       <!-- control effectiveness -->
+      <define name="NPS_WIND_DIR" value="50"/>
+      <define name="NPS_WIND_SPEED" value="10"/>
       <define name="STABILIZATION_INDI_G1_P" value="0.0390"/>
       <define name="STABILIZATION_INDI_G1_Q" value="0.0473"/>
       <define name="STABILIZATION_INDI_G1_R" value="0.00122"/> 
@@ -75,6 +77,7 @@
         <define name="SONAR_BEBOP_FILTER_NARROW_OBSTACLES_JUMP" value="0.4"/> <!-- in M -->
         <define name="SONAR_BEBOP_FILTER_NARROW_OBSTACLES_TIME" value="1.0"/> <!-- in s -->
         <define name="SENSOR_SYNC_SEND_SONAR"/>  <!-- Disable after testflights -->
+        <define name="SONAR_COMPENSATE_ROTATION" value="TRUE"/><!-- compensate AGL for body rotation -->
     </module>
 
     <!-- Subsystem section -->
@@ -87,7 +90,7 @@
       <define name="GUIDANCE_INDI_POS_GAIN" value="1.0"/>
       <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
       <!--define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.06"/-->
-      <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.0"/> <!-- 1 works well, 3 makes it wobbling -->
+      <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.5"/> <!-- 1 works well, 3 makes it wobbling -->
     </module>
     <module name="agl_dist"/> <!-- for sonar , NEED TO TEST -->
     
@@ -95,6 +98,7 @@
     <module name="ins" type="extended"/>
     <module name="geo_mag"/>
     <module name="air_data"/>
+    <module name="wind_estimation_quadrotor"/> <!-- TODO need to test what output this gives -->
     
     <!-- special for project Andreas -->
     <module name="approach_moving_target"/><!-- added by andreas 22-09-2022 -->
@@ -171,12 +175,11 @@
   </section>
 
   <section name="INS" prefix="INS_">
-    <define name="SONAR_MAX_RANGE" value="2.2"/>
+    <define name="SONAR_MAX_RANGE" value="8.0"/>
     <define name="SONAR_MIN_RANGE" value="0.2"/>
     <define name="USE_GPS_ALT" value="TRUE"/>
     <!--define name="USE_GPS_ALT_SPEED" value="TRUE"/-->
     <!--define name="VFF_R_GPS" value="0.01"/--> <!-- 0.01 for optitrack ELSE 0.1 -->
-    <define name="SONAR_COMPENSATE_ROTATION" value="TRUE"/><!-- compensate AGL for body rotation -->
   </section>
 
 
@@ -245,14 +248,14 @@
     <define name="HOVER_KP" value="350"/>
     <define name="HOVER_KD" value="85"/>
     <define name="HOVER_KI" value="20"/>
-    <define name="NOMINAL_HOVER_THROTTLE" value="0.56"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value="0.65"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
   </section>
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
     <define name="MAX_BANK" value="20" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="3.0" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="6.0" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
     <define name="PGAIN" value="120"/>
@@ -314,6 +317,11 @@
     <define name="MAX_RANGE" value="9." unit="m"/>
     <define name="MIN_RANGE" value="0.018" unit="m"/>
     <define name="FILTER" value="0.15"/> <!--Low pass filter time constant-->
+  </section>
+  
+  <section name="WIND_ESTIMATION" prefix="WE_QUAD_">
+    <define name="MASS" value="0.896"/>
+    <define name="DRAG" value="0.230"/>
   </section>
 
   <section name="GCS">
