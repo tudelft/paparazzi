@@ -51,7 +51,7 @@
 
 // landing platform horizontal dist wrt RTK-gps module
 #ifndef TARGET_OFFSET_DISTANCE
-#define TARGET_OFFSET_DISTANCE 10.0
+#define TARGET_OFFSET_DISTANCE 3.0
 #endif
 
 // landing platform horizontal dist wrt RTK-gps module
@@ -74,12 +74,12 @@
 
 // calculate X & Y positions in between recieved gps coordinates
 #ifndef TARGET_INTEGRATE_XY
-#define TARGET_INTEGRATE_XY false
+#define TARGET_INTEGRATE_XY true
 #endif
 
 // calculate Z position in between recieved gps coordinates
 #ifndef TARGET_INTEGRATE_Z
-#define TARGET_INTEGRATE_Z false
+#define TARGET_INTEGRATE_Z true
 #endif
 
 #define TOW_now gps_tow_from_sys_ticks(sys_time.nb_tick)
