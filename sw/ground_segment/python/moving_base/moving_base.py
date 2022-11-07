@@ -47,9 +47,9 @@ from scipy import linalg as la
 
 import geopy.distance
 
-BASE_MOVING = True
+BASE_MOVING = False
 BASE_WAVES = False
-BASE_FLIP_HDG = True   # if wp_approach jumps to the other side of ship when moving dir changes
+BASE_FLIP_HDG = False   # if wp_approach jumps to the other side of ship when moving dir changes
 
 base_moving_distance_outdoor  = 20 # meter
 base_moving_distance_cyberzoo = 4  # meter
@@ -84,15 +84,15 @@ class Base:
                 self.speed = 0.0 # m/s
             self.course = 0 # deg (moving directon of platform)
             self.heading = 0 # deg (orientation of platform)
-            self.alt0 = 43 # ref_alt0 is already about 46m in simulator
+            self.alt0 = 49 # ref_alt0 is already about 46m in simulator
 
             #print("lat0,long0,alt0 position = Valkenburg")
             #self.lat0 = 52.168391 #deg
             #self.lon0 = 4.413100 #deg
 
             print("lat0,long0,alt0 position = Breskens")
-            self.lat0 = 51.399650 #deg
-            self.lon0 = 3.546610 #deg
+            self.lat0 = 51.3994563 #deg
+            self.lon0 = 3.54642 #deg
 
             #print("lat0,long0,alt0 position = iMAV")
             #self.lat0 = 52.170591 #deg
@@ -342,8 +342,8 @@ class Base:
                 if BASE_WAVES:
                     print("wave: " + str(sineWave[wave_loop_idx_counter]))
 
-                count_lim_outdoor  = (base_moving_distance_outdoor /abs(self.speed))/self.step
-                count_lim_cyberzoo = (base_moving_distance_cyberzoo/abs(self.speed))/self.step
+                count_lim_outdoor  = (base_moving_distance_outdoor /abs(self.speed+0.000001))/self.step
+                count_lim_cyberzoo = (base_moving_distance_cyberzoo/abs(self.speed+0.000001))/self.step
 
                 # Send base (ship) position
                 if self.enabled:

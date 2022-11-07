@@ -165,7 +165,6 @@ heading not defined at:
       <set value="FALSE" var="force_forward"/>
       <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetAltitudeReferenceHere()"/>
-      <call_once fun="NavSetGroundReferenceHere()"/>  <!-- NEED TO TEST THIS -->
       <call_once fun="NavSetWaypointHere3d(WP__StayHover)"/>
       <deroute block="Holding point kill"/>
     </block>
@@ -252,7 +251,7 @@ heading not defined at:
       <go wp="APPROACH" />
       <set value="TRUE" var="force_forward"/>
       <call_once fun="nav_set_heading_towards_waypoint(WP_SHIP)"/>
-      <stay wp="APPROACH" pre_call="approach_moving_target_enable()" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/>
+      <stay wp="APPROACH" pre_call="approach_moving_target_enable()" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.2"/>
       <set value="FALSE" var="force_forward"/>
       <call_once fun="reset_moving_target_distance()"/>
       <deroute block="REPEAT Approach SHIP"/>
@@ -262,7 +261,7 @@ heading not defined at:
       <go wp="APPROACH" alt="5.0"/>
       <set value="TRUE" var="force_forward"/>
       <call_once fun="nav_set_heading_towards_waypoint(WP_SHIP)"/>
-      <stay alt="5.0" wp="APPROACH" pre_call="approach_moving_target_enable()" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.1"/>
+      <stay alt="5.0" wp="APPROACH" pre_call="approach_moving_target_enable()" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.2"/>
       <set value="FALSE" var="force_forward"/>
       <call_once fun="reset_moving_target_distance()"/>
       <deroute block="REPEAT Approach SHIP"/>

@@ -46,9 +46,10 @@ struct Amt amt = {
   .speed = -0.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
   .slope_ref = 15.0,  // [deg], slope descent line
   #else
-  .distance = 20,     // [m], diagonal decent line to ship
+  .distance = 40,     // [m], diagonal decent line to ship
   .speed = -1.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
-  .slope_ref = 19.471,  // [deg], slope descent line
+  //.slope_ref = 19.471,  // [deg], slope descent line
+  .slope_ref = 10,  // [deg], slope descent line
   #endif
   .accel_gain = 1,
   .pos_gain = 1,    // was 200 [-], how aggresive drone tracks the descent line

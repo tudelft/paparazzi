@@ -140,12 +140,13 @@
 
   <section name="IMU" prefix="IMU_">
     <!-- Magneto calibration -->
-    <define name="MAG_X_NEUTRAL" value="-16"/>
-    <define name="MAG_Y_NEUTRAL" value="55"/>
-    <define name="MAG_Z_NEUTRAL" value="204"/>
-    <define name="MAG_X_SENS" value="7.28514789391" integer="16"/>
-    <define name="MAG_Y_SENS" value="7.33022132691" integer="16"/>
-    <define name="MAG_Z_SENS" value="7.57102035692" integer="16"/>
+    <define name="MAG_X_NEUTRAL" value="-47"/>
+    <define name="MAG_Y_NEUTRAL" value="6"/>
+    <define name="MAG_Z_NEUTRAL" value="228"/>
+    <define name="MAG_X_SENS" value="6.9972206864688316" integer="16"/>
+    <define name="MAG_Y_SENS" value="7.007810249831598" integer="16"/>
+    <define name="MAG_Z_SENS" value="7.292594274883496" integer="16"/>
+
   </section>
   
   <!--<include href="conf/airframes/ShipLanding/calibrations/bb2_imu_accel_bebopErik.xml"/>--> <!-- Accelerometer for attitude -->
