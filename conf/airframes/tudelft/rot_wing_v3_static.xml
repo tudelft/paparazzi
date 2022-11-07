@@ -151,7 +151,6 @@
 
     <command_laws>
         <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
-        <set VALUE="0" SERVO="SERVO_ELEVATOR"/>
         <!-- <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/> -->
         <!--<call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>-->
         <set VALUE="($th_hold? -9600 : actuators_wt[0])" SERVO="MOTOR_FRONT"/>
@@ -159,7 +158,7 @@
         <set VALUE="($th_hold? -9600 : actuators_wt[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_wt[3])" SERVO="MOTOR_LEFT"/>
         <set VALUE="($th_hold? -9600 : actuators_wt[4])" SERVO="MOTOR_PUSH"/>
-        <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_ROTWING"/>
+        <set VALUE="wing_rotation.servo_pprz_cmd"        SERVO="SERVO_ROTWING"/>
 
         <!-- Backup commands -->
         <set VALUE="($th_hold? -9600 : actuators_wt[0])" SERVO="BMOTOR_FRONT"/>
@@ -167,8 +166,11 @@
         <set VALUE="($th_hold? -9600 : actuators_wt[2])" SERVO="BMOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_wt[3])" SERVO="BMOTOR_LEFT"/>
 
-        <set VALUE="($th_hold? 0 : actuators_wt[9])"    SERVO="SERVO_ELEVATOR"/>
-        <set VALUE="($th_hold? 0 : actuators_wt[10])" SERVO="SERVO_RUDDER"/>
+        <!-- Aerodynamic Surfaces -->
+        <set VALUE="($th_hold? 0 : actuators_wt[7])"     SERVO="SERVO_AIL_LEFT"/>
+        <set VALUE="($th_hold? 0 : actuators_wt[8])"     SERVO="SERVO_AIL_RIGHT"/>
+        <set VALUE="($th_hold? 0 : actuators_wt[9])"     SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="($th_hold? 0 : actuators_wt[10])"    SERVO="SERVO_RUDDER"/>
     </command_laws>
 
     <section NAME="MISC">
