@@ -57,7 +57,7 @@
         <dl_setting var="indi_ctl_alloc_imax" min="1" step="1" max="10" shortname="iter_max" param="STABILIZATION_INDI_CTL_ALLOC_IMAX" type="int"/>
         <dl_setting var="indi_ctl_alloc_cond_bound" min="1e4" step="1e4" max="1e8" shortname="cond_bound" param="STABILIZATION_INDI_CTL_ALLOC_COND_BOUND" type="float"/>
         <dl_setting var="indi_ctl_alloc_theta" min="1e-5" step="1e-5" max="1" shortname="theta" param="STABILIZATION_INDI_CTL_ALLOC_THETA" type="float"/>
-        <dl_setting var="indi_max_rpm_scaler" min="0" step="1e-3" max="1" shortname="max_rpm_scaler" param="STABILIZATION_INDI_MAX_RPM_SCALER" type="float"/>
+        <dl_setting var="indi_max_cmd_scaler" min="0" step="1e-3" max="1" shortname="max_cmd_scaler" param="STABILIZATION_INDI_MAX_CMD_SCALER" type="float"/>
       </dl_settings>
     </dl_settings>
   </settings>
@@ -92,10 +92,5 @@
     <define name="STABILIZATION_ATTITUDE_TYPE_INT"/>
     <define name="STABILIZATION_ATTITUDE_TYPE_H" value="stabilization/stabilization_attitude_quat_indi.h" type="string"/>
     <define name="STABILIZATION_ATTITUDE_INDI_FULL" value="true"/>
-    <define name="STABILIZATION_INDI_CTL_ALLOC_ALGO" value="0"/>
-    <define name="STABILIZATION_INDI_CTL_ALLOC_WARMSTART" value="false"/>
-    <define name="STABILIZATION_INDI_CTL_ALLOC_COND_BOUND" value="1e6"/>
-    <define name="STABILIZATION_INDI_CTL_ALLOC_THETA" value="0.0002"/>
-    <define name="STABILIZATION_INDI_MAX_RPM_SCALER" value="1.0"/>
   </makefile>
 </module>

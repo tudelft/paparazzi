@@ -85,6 +85,21 @@
 #define STABILIZATION_INDI_CTL_ALLOC_WARMSTART FALSE
 #endif
 
+#ifndef STABILIZATION_INDI_CTL_ALLOC_ALGO
+#define STABILIZATION_INDI_CTL_ALLOC_ALGO 1
+#endif
+
+#ifndef STABILIZATION_INDI_CTL_ALLOC_COND_BOUND
+#define STABILIZATION_INDI_CTL_ALLOC_COND_BOUND 1e7
+#endif
+
+#ifndef STABILIZATION_INDI_CTL_ALLOC_THETA
+#define STABILIZATION_INDI_CTL_ALLOC_THETA 0.0002
+#endif
+
+#ifndef STABILIZATION_INDI_MAX_CMD_SCALER
+#define STABILIZATION_INDI_MAX_CMD_SCALER 1.0
+#endif
 
 float du_min[INDI_NUM_ACT];
 float du_max[INDI_NUM_ACT];
@@ -123,7 +138,7 @@ bool indi_use_adaptive = false;
 activeSetAlgoChoice indi_ctl_alloc_algo = STABILIZATION_INDI_CTL_ALLOC_ALGO;
 float indi_ctl_alloc_cond_bound = STABILIZATION_INDI_CTL_ALLOC_COND_BOUND;
 float indi_ctl_alloc_theta = STABILIZATION_INDI_CTL_ALLOC_THETA;
-float indi_max_rpm_scaler = STABILIZATION_INDI_MAX_RPM_SCALER;
+float indi_max_cmd_scaler = STABILIZATION_INDI_MAX_CMD_SCALER;
 bool indi_ctl_alloc_warmstart = STABILIZATION_INDI_CTL_ALLOC_WARMSTART;
 uint16_t indi_ctl_alloc_imax = STABILIZATION_INDI_CTL_ALLOC_IMAX;
 
@@ -239,7 +254,7 @@ void init_filters(void);
 #include "modules/datalink/telemetry.h"
 static void send_ctl_alloc_perf(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_CTL_ALLOC_PERF(trans, dev, AC_ID, (uint8_t*)&indi_ctl_alloc_algo, &cond_est, &gamma_used, &indi_max_rpm_scaler, (uint8_t*) &indi_ctl_alloc_warmstart, (uint16_t*) &indi_ctl_alloc_imax, (uint16_t*) &iterations, (uint8_t*) &wls_error, (uint8_t*) &n_satch, (uint32_t*) &t_ctl_alloc_exec_us);
+  pprz_msg_send_CTL_ALLOC_PERF(trans, dev, AC_ID, (uint8_t*)&indi_ctl_alloc_algo, &cond_est, &gamma_used, &indi_max_cmd_scaler, (uint8_t*) &indi_ctl_alloc_warmstart, (uint16_t*) &indi_ctl_alloc_imax, (uint16_t*) &iterations, (uint8_t*) &wls_error, (uint8_t*) &n_satch, (uint32_t*) &t_ctl_alloc_exec_us);
 }
 
 static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
@@ -516,8 +531,8 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
     // Calculate the min and max increments
     for (i = 0; i < INDI_NUM_ACT; i++) {
-      du_min[i] = -MAX_PPRZ*indi_max_rpm_scaler * act_is_servo[i] - actuator_state_filt_vect[i];
-      du_max[i] = MAX_PPRZ*indi_max_rpm_scaler - actuator_state_filt_vect[i];
+      du_min[i] = -MAX_PPRZ*indi_max_cmd_scaler * act_is_servo[i] - actuator_state_filt_vect[i];
+      du_max[i] = MAX_PPRZ*indi_max_cmd_scaler - actuator_state_filt_vect[i];
       du_pref[i] = act_pref[i] - actuator_state_filt_vect[i];
 
 #ifdef GUIDANCE_INDI_MIN_THROTTLE
