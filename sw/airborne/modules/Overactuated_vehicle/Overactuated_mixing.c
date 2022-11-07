@@ -64,7 +64,7 @@ float pos_order_earth[3];
 float euler_order[3];
 float psi_order_motor = 0;
 
-float K_beta = 0.1;
+float K_beta = 0.15;
 
 float Dynamic_MOTOR_K_T_OMEGASQ;
 
@@ -94,6 +94,9 @@ float alt_cmd = 0, pitch_cmd = 0, roll_cmd = 0, yaw_motor_cmd = 0, yaw_tilt_cmd 
 //External servos variables: 
 int16_t neutral_servo_1_pwm = 1417;
 int16_t neutral_servo_2_pwm = 1492;
+
+// int16_t neutral_servo_1_pwm = 1527;
+// int16_t neutral_servo_2_pwm = 1365;
 
 int servo_right_cmd = 0;
 int servo_left_cmd = 0;
@@ -160,8 +163,8 @@ float auto_test_time_start, des_Vx, des_Vy, des_Vz, des_phi, des_theta, des_psi_
 uint8_t auto_test_start; 
 
 // Variables for the speed to derivative gain slider and thrust coefficient: 
-float K_d_speed = 0.04; 
-float K_T_airspeed = 0.02;
+float K_d_speed = 0.03; 
+float K_T_airspeed = 0.025;
 
 struct PID_over pid_gains_over = {
         .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
@@ -390,8 +393,8 @@ void get_actuator_state_v2(void)
         }
 
         //Attitude angles: 
-        actuator_state[12] = euler_vect[1];
-        actuator_state[13] = euler_vect[0];        
+        actuator_state[12] = euler_vect[1]; //Theta
+        actuator_state[13] = euler_vect[0]; //Phi        
 
         //Aileron state: 
         actuator_state[14] = - OVERACTUATED_MIXING_INDI_AILERONS_FIRST_ORD_DEN_2 * actuator_state_old[14] +
@@ -496,9 +499,10 @@ void assign_variables(void){
     update_butterworth_2_low_pass(&flight_path_angle_filtered, flight_path_angle);
 
     //Computation of the matrix to pass from euler to body rates
-    R_matrix[0][0]=1; R_matrix[0][1]=0; R_matrix[0][2]=0;
-    R_matrix[1][0]=0; R_matrix[1][1]=cos(euler_vect[0]); R_matrix[1][2]=-sin(euler_vect[0]);
-    R_matrix[2][0]=-sin(euler_vect[1]); R_matrix[2][1]=sin(euler_vect[0]) * cos(euler_vect[1]); R_matrix[2][2]=cos(euler_vect[0]) * cos(euler_vect[1]);
+    R_matrix[0][0] = 1;                     R_matrix[0][1] = 0;                                       R_matrix[0][2] = 0;
+    R_matrix[1][0] = 0;                     R_matrix[1][1] = cos(euler_vect[0]);                      R_matrix[1][2] = -sin(euler_vect[0]);
+    R_matrix[2][0] = -sin(euler_vect[1]);   R_matrix[2][1] = sin(euler_vect[0])*cos(euler_vect[1]);   R_matrix[2][2] = cos(euler_vect[0]) * cos(euler_vect[1]);
+
 
     //Initialize actuator commands
     for(int i = 0; i < 12; i++){
@@ -549,7 +553,7 @@ void overactuated_mixing_run(void)
         else if( get_sys_time_float() - auto_test_time_start >= 7 && get_sys_time_float() - auto_test_time_start < 12){
             des_Vx = 15;
             des_Vy = 0;
-            des_Vz = -5;
+            des_Vz = -4;
             des_phi = 0;
             des_theta = 0;
             des_psi_dot = 0;  
@@ -564,7 +568,7 @@ void overactuated_mixing_run(void)
         }
         else if( get_sys_time_float() - auto_test_time_start >= 15 && get_sys_time_float() - auto_test_time_start < 22){
             des_Vx = 15;
-            des_Vy = 5;
+            des_Vy = 4;
             des_Vz = 0;
             des_phi = 0;
             des_theta = 0;
@@ -592,7 +596,7 @@ void overactuated_mixing_run(void)
     }
 
     /// Case of manual PID control [FAILSAFE]
-        // if(0){
+    // if(0){
     if(radio_control.values[RADIO_MODE] < 500) {
 
 
@@ -844,21 +848,39 @@ void overactuated_mixing_run(void)
         yaw_rate_setpoint_turn = yaw_rate_setpoint_turn * fwd_multiplier_yaw;
         euler_error[2] = yaw_rate_setpoint_manual + yaw_rate_setpoint_turn;
 
-        //Link the euler error with the angular change in the body frame and calculate the rate setpoints
-        for (int j = 0; j < 3; j++) {
-            //Cleanup previous value
-            angular_body_error[j] = 0.;
-            for (int k = 0; k < 3; k++) {
-                angular_body_error[j] += euler_error[k] * R_matrix[k][j];
-            }
-        }
+        // //Link the euler error with the angular change in the body frame and calculate the rate setpoints
+        // for (int j = 0; j < 3; j++) {
+        //     //Cleanup previous value
+        //     angular_body_error[j] = 0.;
+        //     for (int k = 0; k < 3; k++) {
+        //         angular_body_error[j] += euler_error[k] * R_matrix[k][j];
+        //     }
+        // }
+
 
         float gain_to_speed_constant = 1 - airspeed * K_d_speed; 
         Bound(gain_to_speed_constant, 0.1, 1);
 
-        rate_setpoint[0] = angular_body_error[0] * indi_gains_over.p.phi * gain_to_speed_constant;
-        rate_setpoint[1] = angular_body_error[1] * indi_gains_over.p.theta * gain_to_speed_constant;
-        rate_setpoint[2] = angular_body_error[2] * indi_gains_over.p.psi * gain_to_speed_constant;
+        //Apply euler angle gains: 
+        float phi_dot = euler_error[0]  * indi_gains_over.p.phi * gain_to_speed_constant;
+        float theta_dot = euler_error[1]  * indi_gains_over.p.theta * gain_to_speed_constant;
+        float psi_dot = euler_error[2]  * indi_gains_over.p.psi * gain_to_speed_constant;
+
+        float phi_value = euler_vect[0];
+        float theta_value = euler_vect[1];
+
+        //Calculate the body error manually: 
+        angular_body_error[0] = phi_dot - sin(theta_value) * psi_dot;
+        angular_body_error[1] = cos(phi_value) * theta_dot + sin(phi_value) * cos(theta_value) * psi_dot;
+        angular_body_error[2] = -sin(phi_value) * theta_dot + cos(phi_value) * cos(theta_value) * psi_dot;
+
+        // rate_setpoint[0] = angular_body_error[0] * indi_gains_over.p.phi * gain_to_speed_constant;
+        // rate_setpoint[1] = angular_body_error[1] * indi_gains_over.p.theta * gain_to_speed_constant;
+        // rate_setpoint[2] = angular_body_error[2] * indi_gains_over.p.psi * gain_to_speed_constant;
+
+        rate_setpoint[0] = angular_body_error[0] ;
+        rate_setpoint[1] = angular_body_error[1] ;
+        rate_setpoint[2] = angular_body_error[2] ;
 
         //Compute the angular acceleration setpoint using the filtered rates:
         acc_setpoint[3] = (rate_setpoint[0] - rate_vect_filt[0]) * indi_gains_over.d.phi * gain_to_speed_constant;
@@ -952,8 +974,8 @@ void overactuated_mixing_run(void)
         am7_data_out_local.az_3_state_int = (int16_t) (actuator_state_filt[10] * 1e2 * 180/M_PI);
         am7_data_out_local.az_4_state_int = (int16_t) (actuator_state_filt[11] * 1e2 * 180/M_PI);
 
-        am7_data_out_local.phi_state_int = (int16_t) (actuator_state_filt[12] * 1e2 * 180/M_PI);
-        am7_data_out_local.theta_state_int = (int16_t) (actuator_state_filt[13] * 1e2 * 180/M_PI);
+        am7_data_out_local.phi_state_int = (int16_t) (actuator_state_filt[13] * 1e2 * 180/M_PI);
+        am7_data_out_local.theta_state_int = (int16_t) (actuator_state_filt[12] * 1e2 * 180/M_PI);
         am7_data_out_local.ailerons_state_int = (int16_t) (actuator_state_filt[14] * 1e2 * 180/M_PI);
 
         am7_data_out_local.gamma_state_int = (int16_t) (flight_path_angle_filtered.o[0] * 1e2 * 180/M_PI);

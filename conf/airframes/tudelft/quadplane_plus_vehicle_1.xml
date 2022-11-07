@@ -199,7 +199,7 @@
    </module> -->
 
   <!-- updated with new orientation 17-10-2022 -->
-  <!-- <module name="mag" type="rm3100">
+  <module name="mag" type="rm3100">
     <configure name="MAG_RM3100_I2C_DEV" value="i2c4"/>
     <define name="RM3100_CHAN_X_SIGN" value="+"/>
     <define name="RM3100_CHAN_Y_SIGN" value="+"/>
@@ -209,7 +209,7 @@
     <define name="RM3100_CHAN_Z" value="0"/>
     <define name="MODULE_RM3100_SYNC_SEND" value="FALSE"/>
     <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
-  </module> -->
+  </module>
 
   <module name="Overactuated_mixing"/>
   </firmware>
@@ -384,7 +384,7 @@
 
     <define name="AILERONS_K_PWM_ANGLE" value="1100" unit="uS/rad"/>
 
-    <!--Aileron TF (20 rad/s) -->
+    <!--Aileron TF (18 rad/s) -->
     <define name="INDI_AILERONS_FIRST_ORD_DELAY" value="0.040" />
     <define name="INDI_AILERONS_FIRST_ORD_NUM_2" value="0.03536" />
     <define name="INDI_AILERONS_FIRST_ORD_DEN_2" value="-0.9646" />
@@ -424,7 +424,7 @@
     <define name="SERVO_EL_MAX_ANGLE" value="25" unit="deg"/>
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
-    <define name="SERVO_EL_MIN_ANGLE_OPTIMIZATION" value="-110" unit="deg"/>
+    <define name="SERVO_EL_MIN_ANGLE_OPTIMIZATION" value="-120" unit="deg"/>
 
     <define name="SERVO_EL_1_ZERO_VALUE" value="-51" unit="deg"/>
     <define name="SERVO_EL_2_ZERO_VALUE" value="-55" unit="deg"/>
@@ -440,7 +440,7 @@
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
     <define name="MAX_PHI_INDI" value="40" unit="deg"/>
     <define name="MAX_AOA_INDI" value="15" unit="deg"/>
-    <define name="MIN_AOA_INDI" value="5" unit="deg"/>
+    <define name="MIN_AOA_INDI" value="-15" unit="deg"/>
 
     <define name="MAX_DELTA_AILERONS" value="25" unit="deg"/>
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
@@ -454,7 +454,7 @@
     <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0488" /><!-- 1-exp(-cutoff_frequency/sampling_frequency) [20 rad/s]--> 
 
     <!-- Weighting matrix for the INDI -->
-    <define name="W_ACT_MOTOR_CONST" value="5"/>
+    <define name="W_ACT_MOTOR_CONST" value="3"/>
     <define name="W_ACT_MOTOR_SPEED" value="0"/>
     <define name="W_ACT_EL_CONST" value="0"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
@@ -493,13 +493,13 @@
     <define name="MASS" value="2.45" unit="Kg"/>
     <define name="L1" value="0.228" unit="m"/>
     <define name="L2" value="0.228" unit="m"/>
-    <define name="L3" value="0.40" unit="m"/>
-    <define name="L4" value="0.35" unit="m"/>
+    <define name="L3" value="0.38" unit="m"/>
+    <define name="L4" value="0.38" unit="m"/>
     <define name="LZ" value="0." unit="m"/>
 
-    <define name="CL_ALPHA" value="3.5"/>
+    <define name="CL_ALPHA" value="3"/>
     <define name="CM_ZERO" value="0.05"/>
-    <define name="CM_ALPHA" value="-0.1"/>
+    <define name="CM_ALPHA" value="-0.05"/>
     <define name="CD_ZERO" value="0.38"/>
     <define name="K_CD" value="0.2"/>
     <define name="CY_BETA" value="0"/>
@@ -513,9 +513,9 @@
 
 
   <!-- ************************* MAG EXTERNAL ************************* -->
-  <!-- <section name="MAG_RM3100" prefix="RM3100_">
+  <section name="MAG_RM3100" prefix="RM3100_">
     <define name="DATA_RATE" value="RM3100_RATE_600"/>
-  </section> -->
+  </section>
 
   <section name="MISC">
     <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 18.32 * adc)"/><!-- TODO: verify/calibrate -->
@@ -561,7 +561,7 @@
     <!-- ACCEL @MAVLAB 29-10-2022 -->
     <!-- <define name="ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={42,-159,42}, .scale={{37528,32533,15741},{7661,6958,3272}}}}"/> -->
     <!-- RM3100 @VALKENBURG 31-10-2022 -->
-    <!-- <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={114,-20,85}, .scale={{1075,16889,7847},{1906,30794,14471}}}}"/> -->
+    <!-- <define name="MAG_CALIB" value="{ {.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={114,-20,85}, .scale={{1075,16889,7847},{1906,30794,14471}}} }"/> -->
 
 
     <!-- BIG OFFSETS AUTOPILOT -->
@@ -569,7 +569,9 @@
     <!-- ACCEL @MAVLAB 1-11-2022 :  -->
     <define name="ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={41,406,41}, .scale={{57668,10899,20979},{11789,2374,4318}}}}"/>
     <!-- IST8310 @MAVLAB 1-11-2022 -->
-    <define name="MAG_CALIB" value="{{.abi_id=4, .calibrated={.neutral=true, .scale=true},.neutral={-22,-7,4}, .scale={{16952,16373,64135},{1147,946,3651}}}}"/>
+    <!-- <define name="MAG_CALIB" value="{{.abi_id=4, .calibrated={.neutral=true, .scale=true},.neutral={-22,-7,4}, .scale={{16952,16373,64135},{1147,946,3651}}}}"/> -->
+    <!-- IST8310 @VALKENBURG 4-11-2022 -->
+    <define name="MAG_CALIB" value="{{.abi_id=4, .calibrated={.neutral=true, .scale=true},.neutral={-7,-12,-3}, .scale={{27369,51460,64249},{2287,4071,4889}}}}"/>
 
 
 
