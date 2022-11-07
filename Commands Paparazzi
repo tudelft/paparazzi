@@ -88,3 +88,9 @@ slechte batterijen:
 add to GCS line if there are geo_ref errors
 -center 'WGS84 51.990 4.378' -ref 'WGS84 51.990 4.378'42_19
 
+Important testfight logs:
+- Monday 7-11-2022, Breskens, Windy 10m/s
+	- 22_11_07__10_03_42.data, lots of approach moving target repetitions (20m) static base
+	- 22_11_07__11_56_49.data, straight line (repeat appraoch moving target) static/moving base
+	- 22_11_07__12_21_36.data, straigth line (repeat approach moving target) moving base
+
