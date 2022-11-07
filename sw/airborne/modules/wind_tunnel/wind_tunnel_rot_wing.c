@@ -25,6 +25,7 @@
 
 #include "modules/wind_tunnel/wind_tunnel_rot_wing.h"
 #include "mcu_periph/sys_time.h"
+#include "modules/ctrl/ctrl_windtunnel_2022.h"
 
 int16_t actuators_wt[11] = {0,0,0,0,0,0,0,0,0,0,0};
 int16_t actuators_slider_wt[11] = {0,0,0,0,0,0,0,0,0,0,0};
@@ -40,6 +41,7 @@ uint8_t wt_actuator_sweep_index = 0;
 int16_t wt_input_min_cmd = 0;
 int16_t wt_input_max_cmd = 0;
 float wt_input_steptime = 5;
+int16_t actuators_temp[11] = {0,0,0,0,0,0,0,0,0,0,0}; 
 
 struct wt_active_sweep_params {
   uint8_t sweep_index;
@@ -80,12 +82,12 @@ void init_wt_rot_wing(void)
 
 void event_wt_rot_wing(void)
 {
-  int16_t actuators_temp[11] = {0,0,0,0,0,0,0,0,0,0,0}; 
-
+  if (!manual_test){
   // Put prefered actuator commands
   for (uint8_t i = 0; i<11; i++)
   {
     actuators_temp[i] = actuators_slider_wt[i];
+  }
   }
 
   // If sweep is running, put current sweep value on actuator
@@ -133,17 +135,18 @@ void event_wt_rot_wing(void)
   // Evaluate motor off
   for (uint8_t i = 0; i < 5; i++)
   {
-    if (!motor_on_wt[i] || !motors_on_wt)
+    if (!motor_on_wt[i] || !motors_on_wt )
     {
       actuators_temp[i] = -9600;
     }
   }
-
+  if(!manual_test){
   // Bound actuators_temp and copy to actuators list
   for (uint8_t i = 0; i < 11; i++)
   {
     Bound(actuators_temp[i], -9600, 9600);
     actuators_wt[i] = actuators_temp[i];
+  }
   }
 }
 

@@ -46,15 +46,15 @@ float dt_l = 6;//7 5-10;
 #define nmax 5 // Excitation signal counter
 
 bool manual_test;
-int16_t mot0_static;
-int16_t mot1_static;
-int16_t mot2_static;
-int16_t mot3_static;
-int16_t ailL_static;
-int16_t ailR_static;
-int16_t ele_static ;
-int16_t rud_static ;
-int16_t push_static ;
+int16_t mot0_static = 0;
+int16_t mot1_static = 0;
+int16_t mot2_static = 0;
+int16_t mot3_static = 0;
+int16_t ailL_static = 0;
+int16_t ailR_static = 0;
+int16_t ele_static  = 0;
+int16_t rud_static  = 0;
+int16_t push_static = 0;
 
 //int16_t mot_status[jmax][mmax] = {{0,0,0,0},{6400,6400,6400,6400},{6400,6400,8533,6400},{0,0,0,0},{0,0,0,0}};
 int16_t mot_status[jmax][mmax] = {{0,0,0,0},{6400,6400,6400,6400},{6400,6400,8533,6400},{8000,8000,8000,8000}};
@@ -104,6 +104,8 @@ void event_manual_test(void)
         actuators_wt[9]  = (int16_t) ele_static;
         actuators_wt[10] = (int16_t) rud_static;
         actuators_wt[4]  = (int16_t) push_static; 
+
+
   }
 }
 

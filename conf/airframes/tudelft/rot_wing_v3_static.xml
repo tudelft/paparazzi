@@ -159,7 +159,7 @@
         <set VALUE="($th_hold? -9600 : actuators_wt[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_wt[3])" SERVO="MOTOR_LEFT"/>
         <set VALUE="($th_hold? -9600 : actuators_wt[4])" SERVO="MOTOR_PUSH"/>
-        <set VALUE="wing_rotation.servo_pprz_cmd"        SERVO="SERVO_ROTWING"/>
+        <set VALUE="($th_hold? 0 : wing_rotation.servo_pprz_cmd)"        SERVO="SERVO_ROTWING"/>
 
         <!-- Backup commands -->
         <set VALUE="($th_hold? -9600 : actuators_wt[0])" SERVO="BMOTOR_FRONT"/>
