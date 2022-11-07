@@ -49,6 +49,10 @@ import geopy.distance
 
 BASE_MOVING = True
 BASE_WAVES = False
+BASE_FLIP_HDG = True   # if wp_approach jumps to the other side of ship when moving dir changes
+
+base_moving_distance_outdoor  = 20 # meter
+base_moving_distance_cyberzoo = 4  # meter
 
 CYBERZOO = False
 ROLL_COMPENSATION_ANALYSIS = False
@@ -338,6 +342,8 @@ class Base:
                 if BASE_WAVES:
                     print("wave: " + str(sineWave[wave_loop_idx_counter]))
 
+                count_lim_outdoor  = (base_moving_distance_outdoor /abs(self.speed))/self.step
+                count_lim_cyberzoo = (base_moving_distance_cyberzoo/abs(self.speed))/self.step
 
                 # Send base (ship) position
                 if self.enabled:
@@ -355,19 +361,20 @@ class Base:
                     self.loop_counter = self.loop_counter+1
                     print("course: ", self.course)
                 
-                if not CYBERZOO and self.loop_counter > 500: # change direction
-                    #if self.course >= 180: 
-                    #    self.course = self.course - 180
-                    #else: 
-                    #    self.course = self.course + 180
-                    #if self.heading >= 180: 
-                    #    self.heading = self.heading - 180
-                    #else: 
-                    #    self.heading = self.heading + 180
-                    self.speed = self.speed*-1
+                if not CYBERZOO and self.loop_counter > count_lim_outdoor: # change direction
+                    if self.course >= 180 and BASE_FLIP_HDG: 
+                        self.course = self.course - 180
+                    elif BASE_FLIP_HDG: 
+                        self.course = self.course + 180
+                    if self.heading >= 180 and BASE_FLIP_HDG: 
+                        self.heading = self.heading - 180
+                    elif BASE_FLIP_HDG: 
+                        self.heading = self.heading + 180
+                    if not BASE_FLIP_HDG: 
+                        self.speed = self.speed*-1
                     self.loop_counter = 0
 
-                if CYBERZOO and self.loop_counter > 90*(0.5/abs(self.speed+0.0001)):
+                if CYBERZOO and self.loop_counter > count_lim_cyberzoo:
                     self.speed = self.speed*-1
                     self.loop_counter = 0
                 
