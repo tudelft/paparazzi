@@ -51,7 +51,7 @@ struct Amt amt = {
   //.slope_ref = 19.471,  // [deg], slope descent line
   .slope_ref = 10,  // [deg], slope descent line
   #endif
-  .accel_gain = 1,
+  .accel_gain = 0.5,
   .pos_gain = 1,    // was 200 [-], how aggresive drone tracks the descent line
   .psi_ref = 180.0,   // [deg], descent line direction offset w.r.t. heading ship
   .speed_gain = 1.0,  // [-], how agressive ..................
