@@ -82,7 +82,7 @@ void init_wt_rot_wing(void)
 
 void event_wt_rot_wing(void)
 {
-  if (!manual_test){
+  if (!manual_test && !static_test){
   // Put prefered actuator commands
   for (uint8_t i = 0; i<11; i++)
   {
@@ -140,7 +140,7 @@ void event_wt_rot_wing(void)
       actuators_temp[i] = -9600;
     }
   }
-  if(!manual_test){
+  if(!manual_test && !static_test){
   // Bound actuators_temp and copy to actuators list
   for (uint8_t i = 0; i < 11; i++)
   {

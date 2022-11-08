@@ -40,9 +40,9 @@ float dt_s = 1;//1-3;
 float dt_m = 4;//4 3-6;
 float dt_l = 6;//7 5-10;
 #define imax 7 // Wing set point counter
-#define jmax 0 // 5 Motor status counter
+#define jmax 5 // 5 Motor status counter
 #define mmax 4 // Motor counter
-#define kmax 0 // 4 Aerodynamic Surface counter
+#define kmax 4 // 4 Aerodynamic Surface counter
 #define nmax 5 // Excitation signal counter
 
 bool manual_test;
@@ -56,8 +56,8 @@ int16_t ele_static  = 0;
 int16_t rud_static  = 0;
 int16_t push_static = 0;
 
-//int16_t mot_status[jmax][mmax] = {{0,0,0,0},{6400,6400,6400,6400},{6400,6400,8533,6400},{0,0,0,0},{0,0,0,0}};
-int16_t mot_status[jmax][mmax] = {{0,0,0,0},{6400,6400,6400,6400},{6400,6400,8533,6400},{8000,8000,8000,8000}};
+//int16_t mot_status[jmax][mmax] = {{0,0,0,0},{6400,6400,6400,6400},{6400,6400,8533,6400},{8000,8000,8000,8000},{0,0,0,0}};
+int16_t mot_status[jmax][mmax] = {{0,0,0,0},{1000,1000,1000,1000},{2000,2000,2000,2000},{3000,3000,3000,3000}};
 int16_t as_static[nmax] = {-9600,-4800,1920,4800,9600};
 int16_t sync_cmd[6] = {800,0,1000,0,1200,0};
 int16_t push_cmd[2] = {2000,4000};
@@ -88,8 +88,8 @@ int8_t p = 0;   // Test number counter (Equal to number of windspeeds)
 int8_t w = 0;   //Sync command counter
 int8_t o = 0;   //Counter rot test
 int8_t p2 = 0;  // Test number counter for the skew moment test
-bool static_test; // defining now because do not rember where it has to be defined
-float max_rotation_rate; // same
+bool static_test = false; // defining now because do not rember where it has to be defined
+float max_rotation_rate=3.14/2; // same
 
 // Function that pubishes selected cmd at highest freq possible
 void event_manual_test(void)
@@ -104,8 +104,6 @@ void event_manual_test(void)
         actuators_wt[9]  = (int16_t) ele_static;
         actuators_wt[10] = (int16_t) rud_static;
         actuators_wt[4]  = (int16_t) push_static; 
-
-
   }
 }
 
@@ -159,8 +157,8 @@ void sync_procedure(void)
 {
   if(done_sync){
       t_sync = get_sys_time_float();
-      actuators_wt[8]= (int16_t) sync_cmd[w];
-      printf("Sync CMD = %i \n",actuators_wt[8]);
+      actuators_wt[4]= (int16_t) sync_cmd[w];
+      printf("Sync CMD = %i \n",actuators_wt[4]);
       done_sync = false;}
     else{
         if((get_sys_time_float() - t_sync) > dt_s){
@@ -215,7 +213,7 @@ bool mot_status_control(void)
      for ( int8_t m = 0; m < 4; m++){
       actuators_wt[m] = (int16_t) 0;
      }
-     actuators_wt[8]= (int16_t) 0;
+     actuators_wt[4]= (int16_t) 0;
      return false;}     
    }   
 
@@ -242,7 +240,7 @@ bool excitation_control(void)
  if (n < nmax ){
    if(done_excitation){     
      t_excitation = get_sys_time_float();
-     actuators_wt[k+4] = (int16_t) as_static[n];
+     actuators_wt[k+7] = (int16_t) as_static[n];
      printf("Excitation = %i \n",as_static[n]);
      done_excitation = false;
       tp += 1;}
@@ -252,7 +250,7 @@ bool excitation_control(void)
        n += 1;}}
    return true;
    }else{
-     actuators_wt[k+4] = (int16_t) 0;
+     actuators_wt[k+7] = (int16_t) 0;
      n = 0;
      return false;}
 }
