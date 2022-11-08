@@ -315,6 +315,9 @@
     </message>
 
     <message name="GUIDANCE_INDI_HYBRID" id="37">
+      <field name="pos_err_x" type="float"/>
+      <field name="pos_err_y" type="float"/>
+      <field name="pos_err_z" type="float"/>
       <field name="sp_accel_x" type="float"/>
       <field name="sp_accel_y" type="float"/>
       <field name="sp_accel_z" type="float"/>

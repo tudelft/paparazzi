@@ -124,7 +124,13 @@ static void guidance_indi_calcG_yxz(struct FloatMat33 *Gmat, struct FloatEulers 
 #include "modules/datalink/telemetry.h"
 static void send_indi_guidance(struct transport_tx *trans, struct link_device *dev)
 {
+  struct FloatVect3 pos_error;
+  guidance_indi_get_pos_error(&pos_error);
+
   pprz_msg_send_GUIDANCE_INDI_HYBRID(trans, dev, AC_ID,
+                              &pos_error.x,
+                              &pos_error.y,
+                              &pos_error.z,
                               &sp_accel.x,
                               &sp_accel.y,
                               &sp_accel.z,
@@ -188,7 +194,7 @@ void guidance_indi_run(float *heading_sp)
   //Linear controller to find the acceleration setpoint from position and velocity
   float pos_x_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.x) - stateGetPositionNed_f()->x;
   float pos_y_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y) - stateGetPositionNed_f()->y;
-  float pos_z_err = POS_FLOAT_OF_BFP(guidance_v_z_ref - stateGetPositionNed_i()->z);
+  float pos_z_err = POS_FLOAT_OF_BFP(guidance_v_z_ref - stateGetPositionNed_i()->z);             // TODO are brackets correct ??
 
   // Use feed forward part from reference model
   speed_sp.x = pos_x_err * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(guidance_h.ref.speed.x);
@@ -401,3 +407,26 @@ static void accel_sp_cb(uint8_t sender_id __attribute__((unused)), uint8_t flag,
   }
 }
 
+/**
+ * Get the current position error to target
+ */
+bool guidance_indi_get_pos_error(struct FloatVect3 *pos_err_indi) {
+
+  pos_err_indi->x = POS_FLOAT_OF_BFP(guidance_h.ref.pos.x) - stateGetPositionNed_f()->x;
+  pos_err_indi->y = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y) - stateGetPositionNed_f()->y;
+  pos_err_indi->z = POS_FLOAT_OF_BFP(guidance_v_z_ref      - stateGetPositionNed_i()->z);  // check if brackets are correct (orignal was diff)
+
+  return true;
+}
+
+
+/**
+ * Get the current position error to target
+ */
+bool guidance_indi_get_sp_error(struct FloatVect3 *speed_err_indi) {
+  speed_err_indi->x = (speed_sp.x - stateGetSpeedNed_f()->x);
+  speed_err_indi->y = (speed_sp.y - stateGetSpeedNed_f()->y);
+  speed_err_indi->z = (speed_sp.z - stateGetSpeedNed_f()->z);
+
+  return true;
+}

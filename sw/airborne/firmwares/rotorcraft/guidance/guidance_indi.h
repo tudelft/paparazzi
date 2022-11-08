@@ -44,4 +44,8 @@ extern float guidance_indi_pos_gain;
 extern float guidance_indi_speed_gain;
 extern float guidance_indi_max_bank;
 
+// for sharing to other modules and Telemetry
+extern bool guidance_indi_get_pos_error(struct FloatVect3 *pos_err_indi);
+extern bool guidance_indi_get_speed_error(struct FloatVect3 *speed_err_indi);
+
 #endif /* GUIDANCE_INDI_H */
