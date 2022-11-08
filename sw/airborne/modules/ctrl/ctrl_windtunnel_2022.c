@@ -37,12 +37,12 @@
 #include "modules/wind_tunnel/wind_tunnel_rot_wing.h"
 
 float dt_s = 1;//1-3;
-float dt_m = 4;//4 3-6;
+float dt_m = 5;//4 3-6;
 float dt_l = 6;//7 5-10;
 #define imax 7 // Wing set point counter
-#define jmax 5 // 5 Motor status counter
+#define jmax 1 // 5 Motor status counter
 #define mmax 4 // Motor counter
-#define kmax 4 // 4 Aerodynamic Surface counter
+#define kmax 8 // 4 Aerodynamic Surface + Motor counter
 #define nmax 5 // Excitation signal counter
 
 bool manual_test;
@@ -59,8 +59,10 @@ int16_t push_static = 0;
 //int16_t mot_status[jmax][mmax] = {{0,0,0,0},{6400,6400,6400,6400},{6400,6400,8533,6400},{8000,8000,8000,8000},{0,0,0,0}};
 int16_t mot_status[jmax][mmax] = {{0,0,0,0},{1000,1000,1000,1000},{2000,2000,2000,2000},{3000,3000,3000,3000}};
 int16_t as_static[nmax] = {-9600,-4800,1920,4800,9600};
+int16_t mot_static[nmax] = {2000,4000,5000,6000,8000};
 int16_t sync_cmd[6] = {800,0,1000,0,1200,0};
 int16_t push_cmd[2] = {2000,4000};
+int16_t cmd_0 = 0;
 float wing_sp[imax] = {0,10,30,45,60,75,90};
 float rotation_rate_sp[6] = {0.15,0.15,0.20,0.20,0.25,0.25};
 float boa[6] =  {90,0,90,0,90,0};
@@ -78,6 +80,7 @@ bool test_active = false;
 bool test_skew_active = false;
 bool done_sync = true;
 bool done_skew = true;
+bool shut_off = true;
 int8_t i = 0;   // Wing set point counter
 int8_t j = 0;   // Motor status counter
 int8_t m = 0;   // Motor counter
@@ -90,7 +93,9 @@ int8_t o = 0;   //Counter rot test
 int8_t p2 = 0;  // Test number counter for the skew moment test
 bool static_test = false; // defining now because do not rember where it has to be defined
 float max_rotation_rate=3.14/2; // same
-
+float stopwatch = 0;
+float ratio_excitation = 1;
+float ramp_ratio = 1./3.;
 // Function that pubishes selected cmd at highest freq possible
 void event_manual_test(void)
 {
@@ -140,6 +145,7 @@ bool windtunnel_control(void)
 {
  static_test = true;
  test_active = true;
+ motors_on_wt = true;
   if (w < 6){
    sync_procedure();
    return true;    
@@ -148,6 +154,7 @@ bool windtunnel_control(void)
      else{
         //w = 0;
         test_active = false;
+        motors_on_wt = false;
         p += 1;
         return false;
      }
@@ -240,19 +247,47 @@ bool excitation_control(void)
  if (n < nmax ){
    if(done_excitation){     
      t_excitation = get_sys_time_float();
-     actuators_wt[k+7] = (int16_t) as_static[n];
+     if(k<4){cmd_0 = actuators_wt[k+7];}
+     else{cmd_0 = actuators_wt[k-4];}
      printf("Excitation = %i \n",as_static[n]);
      done_excitation = false;
-      tp += 1;}
+     stopwatch = 0;
+     tp += 1;}
    else{
-     if((get_sys_time_float() - t_excitation) > dt_m){
+     stopwatch = get_sys_time_float() - t_excitation;
+     if(stopwatch > dt_m){
        done_excitation = true;
-       n += 1;}}
+       n += 1;}
+     else{
+       ratio_excitation = stopwatch / dt_m / ramp_ratio;
+       Bound(ratio_excitation, 0, 1);
+       if(k<4){actuators_wt[k+7] = (int16_t) cmd_0 + (as_static[n] - cmd_0) * ratio_excitation;}
+       else{actuators_wt[k-4] = (int16_t) cmd_0 + (mot_static[n] - cmd_0) * ratio_excitation;}
+         }
+       }
    return true;
    }else{
-     actuators_wt[k+7] = (int16_t) 0;
-     n = 0;
-     return false;}
+     if (shut_off){
+      t_excitation = get_sys_time_float();
+      shut_off = false;
+      if(k<4){cmd_0 = actuators_wt[k+7];}
+      else{cmd_0 = actuators_wt[k-4];}
+      return true;
+     }
+     else {
+      stopwatch = get_sys_time_float() - t_excitation;
+      ratio_excitation = stopwatch / dt_m / ramp_ratio;
+      Bound(ratio_excitation, 0, 1);
+      if(k<4){actuators_wt[k+7] = (int16_t) cmd_0 - cmd_0 * ratio_excitation;}
+      else{actuators_wt[k-4] = (int16_t) cmd_0 - cmd_0 * ratio_excitation;}
+      if (ratio_excitation == 1) {
+        shut_off = true;
+        n = 0;
+        cmd_0 = 0;
+        return false;}
+      else {return true;}
+     }
+    }
 }
 
 #if PERIODIC_TELEMETRY
