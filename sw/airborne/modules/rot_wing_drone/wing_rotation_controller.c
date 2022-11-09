@@ -65,7 +65,7 @@
 // Parameters
 struct wing_rotation_controller wing_rotation;
 
-static struct adc_buf buf_wing_rot_pos;
+//static struct adc_buf buf_wing_rot_pos; // this is not used FIX Dennis
 
 // Inline functions
 inline void wing_rotation_to_rad(void);

@@ -49,6 +49,7 @@ extern bool wt_sweep_motors_running;
 
 extern void init_wt_rot_wing(void);
 extern void event_wt_rot_wing(void);
+extern void evaluate_motor_commands(void);
 
 extern void wind_tunnel_rot_wing_sweep_handler(bool activate);
 extern void wind_tunnel_rot_wing_sweep_motors_handler(bool activate);

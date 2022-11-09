@@ -174,9 +174,9 @@ float rot_wing_roll_limit = 0.785; // 45 deg
 float rot_wing_pitch_limit = 0.785; // 20 deg
 
 void guidance_indi_propagate_filters(void);
-static void guidance_indi_calcg_wing(struct FloatMat33 *Gmat);
+//static void guidance_indi_calcg_wing(struct FloatMat33 *Gmat);
 static void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff);
-static float guidance_indi_get_liftd(float pitch, float theta);
+//static float guidance_indi_get_liftd(float pitch, float theta);
 struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_gain);
 struct FloatVect3 nav_get_speed_sp_from_line(struct FloatVect2 line_v_enu, struct FloatVect2 to_end_v_enu, struct EnuCoor_i target, float pos_gain);
 struct FloatVect3 nav_get_speed_setpoint(float pos_gain);
@@ -532,71 +532,71 @@ void guidance_indi_propagate_filters(void) {
  *
  * @param Gmat array to write the matrix to [3x3]
  */
-void guidance_indi_calcg_wing(struct FloatMat33 *Gmat) {
+// void guidance_indi_calcg_wing(struct FloatMat33 *Gmat) {
 
-  /*Pre-calculate sines and cosines*/
-  float sphi = sinf(eulers_zxy.phi);
-  float cphi = cosf(eulers_zxy.phi);
-  float stheta = sinf(eulers_zxy.theta);
-  float ctheta = cosf(eulers_zxy.theta);
-  float spsi = sinf(eulers_zxy.psi);
-  float cpsi = cosf(eulers_zxy.psi);
-  //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
+//   /*Pre-calculate sines and cosines*/
+//   float sphi = sinf(eulers_zxy.phi);
+//   float cphi = cosf(eulers_zxy.phi);
+//   float stheta = sinf(eulers_zxy.theta);
+//   float ctheta = cosf(eulers_zxy.theta);
+//   float spsi = sinf(eulers_zxy.psi);
+//   float cpsi = cosf(eulers_zxy.psi);
+//   //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
 
-#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
-#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
-#endif
+// #ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
+// #define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
+// #endif
 
-  /*Amount of lift produced by the wing*/
-  float lift_thrust_bz = -9.81; // Sum of lift and thrust in boxy z axis (level flight) 
-  float pitch_lift = eulers_zxy.theta;
-  Bound(pitch_lift,-M_PI_2,0);
-  float lift = 0;//sinf(pitch_lift)*9.81;
-  float T = cosf(pitch_lift)*-9.81;
+//   /*Amount of lift produced by the wing*/
+//   float lift_thrust_bz = -9.81; // Sum of lift and thrust in boxy z axis (level flight) 
+//   float pitch_lift = eulers_zxy.theta;
+//   Bound(pitch_lift,-M_PI_2,0);
+//   float lift = 0;//sinf(pitch_lift)*9.81;
+//   float T = cosf(pitch_lift)*-9.81;
 
-  // get the derivative of the lift wrt to theta
-  float liftd = 0;//guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
+//   // get the derivative of the lift wrt to theta
+//   float liftd = 0;//guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
 
-  /*
-  RMAT_ELMT(*Gmat, 0, 0) =  cphi*ctheta*spsi*T + cphi*spsi*lift;
-  RMAT_ELMT(*Gmat, 1, 0) = -cphi*ctheta*cpsi*T - cphi*cpsi*lift;
-  RMAT_ELMT(*Gmat, 2, 0) = -sphi*ctheta*T -sphi*lift;
-  RMAT_ELMT(*Gmat, 0, 1) = (ctheta*cpsi - sphi*stheta*spsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
-  RMAT_ELMT(*Gmat, 1, 1) = (ctheta*spsi + sphi*stheta*cpsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
-  RMAT_ELMT(*Gmat, 2, 1) = -cphi*stheta*T*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
-  RMAT_ELMT(*Gmat, 0, 2) = stheta*cpsi + sphi*ctheta*spsi;
-  RMAT_ELMT(*Gmat, 1, 2) = stheta*spsi - sphi*ctheta*cpsi;
-  RMAT_ELMT(*Gmat, 2, 2) = cphi*ctheta;
-  */
+//   /*
+//   RMAT_ELMT(*Gmat, 0, 0) =  cphi*ctheta*spsi*T + cphi*spsi*lift;
+//   RMAT_ELMT(*Gmat, 1, 0) = -cphi*ctheta*cpsi*T - cphi*cpsi*lift;
+//   RMAT_ELMT(*Gmat, 2, 0) = -sphi*ctheta*T -sphi*lift;
+//   RMAT_ELMT(*Gmat, 0, 1) = (ctheta*cpsi - sphi*stheta*spsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
+//   RMAT_ELMT(*Gmat, 1, 1) = (ctheta*spsi + sphi*stheta*cpsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
+//   RMAT_ELMT(*Gmat, 2, 1) = -cphi*stheta*T*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+//   RMAT_ELMT(*Gmat, 0, 2) = stheta*cpsi + sphi*ctheta*spsi;
+//   RMAT_ELMT(*Gmat, 1, 2) = stheta*spsi - sphi*ctheta*cpsi;
+//   RMAT_ELMT(*Gmat, 2, 2) = cphi*ctheta;
+//   */
 
-  RMAT_ELMT(*Gmat, 0, 0) =  cphi*ctheta*spsi*T + cphi*spsi*lift;
-  RMAT_ELMT(*Gmat, 1, 0) = -cphi*ctheta*cpsi*T - cphi*cpsi*lift;
-  RMAT_ELMT(*Gmat, 2, 0) = -sphi*ctheta*T -sphi*lift;
-  RMAT_ELMT(*Gmat, 0, 1) = (ctheta*cpsi - sphi*stheta*spsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
-  RMAT_ELMT(*Gmat, 1, 1) = (ctheta*spsi + sphi*stheta*cpsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
-  RMAT_ELMT(*Gmat, 2, 1) = -cphi*stheta*T*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
-  RMAT_ELMT(*Gmat, 0, 2) = stheta*cpsi + sphi*ctheta*spsi;
-  RMAT_ELMT(*Gmat, 1, 2) = stheta*spsi - sphi*ctheta*cpsi;
-  RMAT_ELMT(*Gmat, 2, 2) = cphi*ctheta;
+//   RMAT_ELMT(*Gmat, 0, 0) =  cphi*ctheta*spsi*T + cphi*spsi*lift;
+//   RMAT_ELMT(*Gmat, 1, 0) = -cphi*ctheta*cpsi*T - cphi*cpsi*lift;
+//   RMAT_ELMT(*Gmat, 2, 0) = -sphi*ctheta*T -sphi*lift;
+//   RMAT_ELMT(*Gmat, 0, 1) = (ctheta*cpsi - sphi*stheta*spsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
+//   RMAT_ELMT(*Gmat, 1, 1) = (ctheta*spsi + sphi*stheta*cpsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
+//   RMAT_ELMT(*Gmat, 2, 1) = -cphi*stheta*T*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+//   RMAT_ELMT(*Gmat, 0, 2) = stheta*cpsi + sphi*ctheta*spsi;
+//   RMAT_ELMT(*Gmat, 1, 2) = stheta*spsi - sphi*ctheta*cpsi;
+//   RMAT_ELMT(*Gmat, 2, 2) = cphi*ctheta;
 
-  Gmat_rot_wing[0][0] = (float) cphi*spsi*lift_thrust_bz;
-  Gmat_rot_wing[1][0] = (float) -cphi*cpsi*lift_thrust_bz;
-  Gmat_rot_wing[2][0] = (float) -sphi*lift_thrust_bz;
+//   Gmat_rot_wing[0][0] = (float) cphi*spsi*lift_thrust_bz;
+//   Gmat_rot_wing[1][0] = (float) -cphi*cpsi*lift_thrust_bz;
+//   Gmat_rot_wing[2][0] = (float) -sphi*lift_thrust_bz;
 
-  Gmat_rot_wing[0][1] = (float) (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
-  Gmat_rot_wing[1][1] = (float) (ctheta*spsi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
-  Gmat_rot_wing[2][1] = (float) -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+//   Gmat_rot_wing[0][1] = (float) (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
+//   Gmat_rot_wing[1][1] = (float) (ctheta*spsi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
+//   Gmat_rot_wing[2][1] = (float) -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
 
-  Gmat_rot_wing[0][2] = (float) stheta*cpsi + sphi*ctheta*spsi;
-  Gmat_rot_wing[1][2] = (float) stheta*spsi - sphi*ctheta*cpsi;
-  Gmat_rot_wing[2][2] = (float) cphi*ctheta;
+//   Gmat_rot_wing[0][2] = (float) stheta*cpsi + sphi*ctheta*spsi;
+//   Gmat_rot_wing[1][2] = (float) stheta*spsi - sphi*ctheta*cpsi;
+//   Gmat_rot_wing[2][2] = (float) cphi*ctheta;
 
-  Gmat_rot_wing[0][3] = (float) ctheta*cpsi - sphi*stheta*spsi;
-  Gmat_rot_wing[1][3] = (float) ctheta*spsi + sphi*stheta*cpsi;
-  Gmat_rot_wing[2][3] = (float) -cphi*stheta;
+//   Gmat_rot_wing[0][3] = (float) ctheta*cpsi - sphi*stheta*spsi;
+//   Gmat_rot_wing[1][3] = (float) ctheta*spsi + sphi*stheta*cpsi;
+//   Gmat_rot_wing[2][3] = (float) -cphi*stheta;
 
 
-}
+// }
 
 /**
  * Perform WLS
@@ -691,19 +691,19 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
  *
  * @return The derivative of lift w.r.t. pitch
  */
-float guidance_indi_get_liftd(float airspeed, float theta) {
-  float liftd = 0.0;
-  if(airspeed < 12) {
-    float pitch_interp = DegOfRad(theta);
-    Bound(pitch_interp, -80.0, -40.0);
-    float ratio = (pitch_interp + 40.0)/(-40.);
-    liftd = -24.0*ratio*lift_pitch_eff/0.12;
-  } else {
-    liftd = -(airspeed - 8.5)*lift_pitch_eff/M_PI*180.0;
-  }
-  //TODO: bound liftd
-  return liftd;
-}
+// float guidance_indi_get_liftd(float airspeed, float theta) {
+//   float liftd = 0.0;
+//   if(airspeed < 12) {
+//     float pitch_interp = DegOfRad(theta);
+//     Bound(pitch_interp, -80.0, -40.0);
+//     float ratio = (pitch_interp + 40.0)/(-40.);
+//     liftd = -24.0*ratio*lift_pitch_eff/0.12;
+//   } else {
+//     liftd = -(airspeed - 8.5)*lift_pitch_eff/M_PI*180.0;
+//   }
+//   //TODO: bound liftd
+//   return liftd;
+// }
 
 /**
  * @brief function that returns a speed setpoint based on flight plan.
