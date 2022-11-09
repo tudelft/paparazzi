@@ -41,6 +41,8 @@ extern float roll_gain;
 extern float indi_Wu_motor;
 extern float indi_Wu_servo;
 
+extern float side_slip_gain_rc;
+
 extern bool indi_use_adaptive;
 
 extern float *Bwls[INDI_OUTPUTS];

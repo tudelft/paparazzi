@@ -279,6 +279,7 @@ void stabilization_indi_init(void)
 {
   // Initialize filters
   init_filters();
+  init_filters_rc();
 
   AbiBindMsgRPM(RPM_SENSOR_ID, &rpm_ev, rpm_cb);
   AbiBindMsgTHRUST(THRUST_INCREMENT_ID, &thrust_ev, thrust_cb);
@@ -671,7 +672,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   struct FloatQuat *att_quat = stateGetNedToBodyQuat_f();
   struct FloatQuat quat_sp_f;
 
-  QUAT_FLOAT_OF_BFP(quat_sp_f, quat_sp);
+  QUAT_FLOAT_OF_BFP(quat_sp_f, quat_sp);  
   float_quat_inv_comp_norm_shortest(&att_err, att_quat, &quat_sp_f);
 
   struct FloatVect3 att_fb;
