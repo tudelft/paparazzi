@@ -31,6 +31,7 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 #include "firmwares/rotorcraft/autopilot_rc_helpers.h"
 #include "mcu_periph/sys_time.h"
+#include "filters/low_pass_filter.h"
 
 #ifndef STABILIZATION_ATTITUDE_DEADBAND_A
 #define STABILIZATION_ATTITUDE_DEADBAND_A 0
@@ -39,6 +40,11 @@
 #ifndef STABILIZATION_ATTITUDE_DEADBAND_E
 #define STABILIZATION_ATTITUDE_DEADBAND_E 0
 #endif
+
+//+++++++++++++++++++++++++++++++++++++++++
+Butterworth2LowPass accely_filt_rc;
+float side_slip_gain_rc = FWD_SIDESLIP_GAIN_PILOTED;
+
 
 /**
  * Airspeed that will be used in the turning speed calculation (m/s).
@@ -56,6 +62,16 @@
 
 float care_free_heading = 0;
 int32_t transition_theta_offset = 0;
+
+void init_filters_rc(void)
+{
+  // tau = 1/(2*pi*Fc)
+  float tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_FILT_CUTOFF);
+  float sample_time = 1.0 / PERIODIC_FREQUENCY;
+
+  // Filtering of the acceleration in body y
+  init_butterworth_2_low_pass(&accely_filt_rc, tau, sample_time, 0.0);
+}
 
 static int32_t get_rc_roll(void)
 {
@@ -282,6 +298,22 @@ void stabilization_attitude_read_rc_setpoint_eulers_f(struct FloatEulers *sp, bo
 
       sp->psi += omega * dt;
     }
+
+    //+++++++++++++++++++++++++++++++++++++++
+    // Propagate the filter on the body y acceleration
+    float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
+    update_butterworth_2_low_pass(&accely_filt_rc, accely);
+
+#ifdef FWD_SIDESLIP_GAIN_PILOTED
+    float airspeed = stateGetAirspeed_f();
+    float omega;
+    if (airspeed > 8.0){
+      omega = accely_filt_rc.o[0]*side_slip_gain_rc;
+      sp->psi -= omega * dt;
+    }
+#endif
+  //++++++++++++++++++++++++++++++++++++++++
+
 #ifdef STABILIZATION_ATTITUDE_SP_PSI_DELTA_LIMIT
     // Make sure the yaw setpoint does not differ too much from the real yaw
     // to prevent a sudden switch at 180 deg
