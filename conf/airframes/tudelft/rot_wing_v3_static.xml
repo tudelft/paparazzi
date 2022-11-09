@@ -115,8 +115,8 @@
     <servos DRIVER="Pwm">
     <!--1030 = quad 2140 = fw-->
         <servo NO="0" NAME="SERVO_ROTWING"   MIN="1012" NEUTRAL="1012" MAX="2112"/>
-        <servo NO="1" NAME="SERVO_AIL_LEFT"  MIN="1000" NEUTRAL="1500" MAX="2000"/>
-        <servo NO="2" NAME="SERVO_AIL_RIGHT" MIN="1000" NEUTRAL="1500" MAX="2000"/>
+        <servo NO="1" NAME="SERVO_AIL_LEFT"  MIN="1236" NEUTRAL="1500" MAX="2000"/>
+        <servo NO="2" NAME="SERVO_AIL_RIGHT" MIN="1236" NEUTRAL="1500" MAX="2000"/>
     </servos>
 
     <servos DRIVER="Uavcan1">
@@ -125,7 +125,7 @@
         <servo NO="2" NAME="MOTOR_BACK"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
         <servo NO="3" NAME="MOTOR_LEFT"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
         <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="0"    MAX="8191"/>
-        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="4000"  NEUTRAL="0"    MAX="-4000"/>
+        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="8191"  NEUTRAL="0"    MAX="-1395"/>
         <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"    MAX="8191"/>
     </servos>
 
