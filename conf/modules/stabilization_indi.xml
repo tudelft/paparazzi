@@ -58,6 +58,7 @@
         <dl_setting var="roll_gain" min="0" step="0.1" max="1000" shortname="roll gain"/>
         <dl_setting var="indi_Wu_motor" min="1" step="0.1" max="10" shortname="motor_weight_factor" param="STABILIZATION_INDI_WLS_WU_MOTOR"/>
         <dl_setting var="indi_Wu_servo" min="1" step="0.1" max="10" shortname="servo_weight_factor" param="STABILIZATION_INDI_WLS_WU_SERVO"/>
+        <dl_setting var="side_slip_gain_rc" min="0" step="0.01" max="10" shortname="sideslip_gain"/>
       </dl_settings>
     </dl_settings>
   </settings>
