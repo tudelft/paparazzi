@@ -49,6 +49,7 @@ float dt_l = 6;// [s] Long test time interval. Used for procedure which involve 
 #define mmax 4 // Number of Motors used in the Motor status (e.g. 4) 
 #define kmax 8 // Number of Aerodynamic Surfaces + Motors tested  (e.g. 4)
 #define nmax 5 // Number of Excitation steps 
+#define asel 3 // Number of selected actuators
 //#######################################################################################################################################################################################
 
 // Defines of variables to be used in manual slider test of actuators ###################################################################################################################
@@ -70,11 +71,12 @@ int16_t as_static[nmax] = {-9600,-4800,1920,4800,9600}; // [pprz] Excitation sig
 int16_t mot_static[nmax] = {2000,4000,5000,6000,8000};  // [pprz] Excitation signals Motors
 int16_t sync_cmd[6] = {800,0,1000,0,1200,0};            // [pprz] Excitation signals pusher motor during syncing procedure
 int16_t push_cmd[2] = {2000,4000};
+int16_t selected_act_idx[asel] = {3,9,10};              // Array of indeces of selected actuators
 float wing_sp[imax] = {0,10,30,45,60,75,90};            // [deg] Tested skew angles 
 float rotation_rate_sp[6] = {0.15,0.15,0.20,0.20,0.25,0.25};
 float boa[6] =  {90,0,90,0,90,0};
 float ramp_ratio = 1./3.;                               // [%] Percentage of test time dedicated to gradual sweep. FLOAT!
-float max_rotation_rate=3.14/2; // same                 // [rad/s] Maximum rotational velocity of wing
+float max_rotation_rate=3.14/2.; // same                 // [rad/s] Maximum rotational velocity of wing
 //#######################################################################################################################################################################################
 
 // Initialisation of variables used in the nested functions
@@ -97,15 +99,16 @@ bool done_excitation = true;    // Excitation completed. Go to next excitation s
 bool test_active = false;       // Automatic test is active.
 bool done_sync = true;          // Sync signal completed. Go to next sync signal.
 bool shut_off = true;           // Shutoff of actuator completed. Go to next actuator. 
-bool static_test = false; // defining now because do not rember where it has to be defined
+bool static_test = false;       // 
 bool test_skew_active = false;  // Automatic skew test is active. [experimental skew test]
 bool done_skew = true;          // Done skew. Go to next skew [experimetnal skew test]
-
+bool single_act = true;         // Turn on to select only certain actuators
 // INTEGERs ------------------------------------------------------------------------------------------
 int8_t i = 0;      // Wing set point counter
 int8_t j = 0;      // Motor status counter
 int8_t m = 0;      // Motor counter
-int8_t k = 0;      // Aerodynamic Surface counter
+int8_t k = 0;      // Actuator counter
+int8_t k_conv = 0; // Actuator counter converted
 int8_t n = 0;      // Excitation signal counter
 int32_t tp = 0;    // Test point counter
 int8_t p = 0;      // Test number counter (Equal to number of windspeeds)
@@ -256,15 +259,18 @@ bool mot_status_control(void){
 // Function to iterate inbetween the different actuators ################################################################################################################################
 bool as_control(void){
  if (k < kmax){
-   if (k < 2 && j>2){k += 1;} // From 3rd mot status only activate the tail surfaces (k>2)
+   if(k<4){k_conv = k+7;}                    // If aerodynamic surfaces index is 7-10 
+   else{k_conv = k-4;}                       // If motor index is 0-3
+   //if (k < 2 && j>2){k += 1;} // From 3rd mot status only activate the tail surfaces (k>2)
+   if (single_act && !act_selected(k_conv, selected_act_idx)){k += 1;}
    else{
-   if(done_as){
-     printf("AS = %i \n",k);
-     done_as = false;}
-   else{
-     if(!excitation_control()){
-       done_as = true;
-       k += 1;}}} 
+      if(done_as){
+        printf("Actuator = %i \n",k_conv);
+        done_as = false;}
+      else{
+        if(!excitation_control()){
+          done_as = true;
+          k += 1;}}} 
    return true;    
    }else{
      k = 0;
@@ -276,8 +282,7 @@ bool excitation_control(void){
  if (n < nmax ){                                            // If not all excitation signal explored stay in the function
    if(done_excitation){                                     // If excitation done go to next signal
      t_excitation = get_sys_time_float();                   // Register current initialization time
-     if(k<4){cmd_0 = actuators_wt[k+7];}                    // If aerodynamic surfaces index is 7-10 and register initial value
-     else{cmd_0 = actuators_wt[k-4];}                       // If motor index is 0-3 and register initial value
+     cmd_0 = actuators_wt[k_conv];                          // Register initial value
      printf("Excitation = %i \n",as_static[n]);
      done_excitation = false;
      stopwatch = 0;
@@ -290,22 +295,20 @@ bool excitation_control(void){
      else{                                                  // Else calculate the cmd to the actuator
        ratio_excitation = stopwatch / dt_m / ramp_ratio;    // Calclate the percentage of completion of the initial linear sweep
        Bound(ratio_excitation, 0, 1);
-       if(k<4){actuators_wt[k+7] = (int16_t) cmd_0 + (as_static[n] - cmd_0) * ratio_excitation;} // Command the aerodynamic surfaces
-       else{actuators_wt[k-4] = (int16_t) cmd_0 + (mot_static[n] - cmd_0) * ratio_excitation;}}} // Command the motors
+       if(k<4){actuators_wt[k_conv] = (int16_t) cmd_0 + (as_static[n] - cmd_0) * ratio_excitation;} // Command the aerodynamic surfaces
+       else{actuators_wt[k_conv] = (int16_t) cmd_0 + (mot_static[n] - cmd_0) * ratio_excitation;}}} // Command the motors
    return true;
    }else{                                                                       // If all excitation explored, initiate a shutoff sequence of the actuator
      if (shut_off){                                                             // If shutoff not yet initialized, initialize it
       t_excitation = get_sys_time_float();
       shut_off = false;
-      if(k<4){cmd_0 = actuators_wt[k+7];}
-      else{cmd_0 = actuators_wt[k-4];}
+      cmd_0 = actuators_wt[k_conv];
       return true;
      }else {
       stopwatch = get_sys_time_float() - t_excitation;
       ratio_excitation = stopwatch / dt_m / ramp_ratio;
       Bound(ratio_excitation, 0, 1);
-      if(k<4){actuators_wt[k+7] = (int16_t) cmd_0 - cmd_0 * ratio_excitation;}
-      else{actuators_wt[k-4] = (int16_t) cmd_0 - cmd_0 * ratio_excitation;}
+      actuators_wt[k_conv] = (int16_t) cmd_0 - cmd_0 * ratio_excitation;
       if (ratio_excitation == 1) {                                              // If shutoff completed move to next actuator
         shut_off = true;
         n = 0;
@@ -317,13 +320,8 @@ bool excitation_control(void){
 // Message to register the wanted telemetry #############################################################################################################################################
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
-
-void windtunnel_message_init(void){
-  #if PERIODIC_TELEMETRY
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WINDTUNNEL_STATIC, send_windtunnel_static);
-  #endif }
-
-static void send_windtunnel_static(struct transport_tx *trans, struct link_device *dev){
+static void send_windtunnel_static(struct transport_tx *trans, struct link_device *dev)
+{
   float airspeed = stateGetAirspeed_f();
   pprz_msg_send_WINDTUNNEL_STATIC(trans, dev, AC_ID,
                                         &test_active,
@@ -340,7 +338,22 @@ static void send_windtunnel_static(struct transport_tx *trans, struct link_devic
                                         &o,
                                         &p2,
                                         &max_rotation_rate,
-                                        ACTUATORS_NB, actuators_wt
-                                        );}
+                                        11, actuators_wt
+                                        );
+}
 #endif
+//ACTUATORS_NB
+void windtunnel_message_init(void){
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WINDTUNNEL_STATIC, send_windtunnel_static);
+#endif 
+}
+//#######################################################################################################################################################################################
+
+// Skew test to understand reactionary moment generated by rotation of the wing #######################################################################################################
+bool act_selected(int8_t val, int16_t sel_val[]){
+  int8_t i_sel;
+  for(i_sel = 0; i_sel < asel; i_sel++){
+    if(sel_val[i_sel]==val){return true;}}
+  return false;}
 //#######################################################################################################################################################################################

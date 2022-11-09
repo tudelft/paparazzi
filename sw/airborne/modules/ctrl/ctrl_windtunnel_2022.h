@@ -36,6 +36,7 @@ bool excitation_control(void);
 bool as_control(void);
 bool mot_status_control(void);
 bool wing_skew_control(void);
+bool act_selected(int8_t val, int16_t sel_val[]);
 extern bool test_active;
 extern bool test_skew_active;
 //extern int16_t mot_status[3][4];
