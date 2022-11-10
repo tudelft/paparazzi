@@ -51,7 +51,7 @@ BASE_MOVING = True
 BASE_WAVES = False
 BASE_FLIP_HDG = False   # if wp_approach jumps to the other side of ship when moving dir changes
 
-base_moving_distance_outdoor  = 60 # meter
+base_moving_distance_outdoor  = 40 # meter
 base_moving_distance_cyberzoo = 4  # meter
 
 CYBERZOO = False
@@ -84,14 +84,14 @@ class Base:
                 self.speed = 0.0 # m/s
             self.course = 0 # deg (moving directon of platform)
             self.heading = 0 # deg (orientation of platform)
-            self.alt0 = 47 # ref_alt0 is already about 46m in simulator
+            self.alt0 = 49 # ref_alt0 is already about 46m in simulator
 
             #print("lat0,long0,alt0 position = Valkenburg")
             #self.lat0 = 52.168391 #deg
             #self.lon0 = 4.413100 #deg
 
             print("lat0,long0,alt0 position = Breskens")
-            self.lat0 = 51.3991 #deg
+            self.lat0 = 51.3991605 #deg
             self.lon0 = 3.54642 #deg
 
             #print("lat0,long0,alt0 position = iMAV")
