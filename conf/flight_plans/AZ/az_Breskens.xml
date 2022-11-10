@@ -333,7 +333,7 @@ heading not defined at:
     </block>
     
     <block name="landed">
-      <stay climb="-0.5" vmode="climb" wp="_landHere" until="!MoreThan(NavBlockTime(), 2)"/>
+      <stay climb="-0.2" vmode="climb" wp="_landHere" until="MoreThan(NavBlockTime(), 2)"/>
       <set value="FALSE" var="force_forward"/>
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>

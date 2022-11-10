@@ -85,7 +85,7 @@
       <define name="GUIDANCE_INDI_POS_GAIN" value="1.0"/>
       <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
       <!--define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.06"/-->
-      <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="1.0"/> <!-- 1 works well, 3 makes it wobbling -->
+      <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="3.0"/> <!-- 1 works well, 3 makes it wobbling (3 good for gusty winds) -->
     </module>
     
     <module name="stabilization" type="indi_simple"/>
