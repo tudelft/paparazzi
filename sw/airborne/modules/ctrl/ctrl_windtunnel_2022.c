@@ -35,6 +35,7 @@
 #include "modules/rot_wing_drone/wing_rotation_controller.h"
 #include "mcu_periph/sys_time.h"
 #include "modules/wind_tunnel/wind_tunnel_rot_wing.h"
+#include "stdio.h"
 //#######################################################################################################################################################################################
 
 // Defines of time variables ##########################################################################################################################################################
@@ -397,17 +398,18 @@ bool act_selected(int8_t val, int16_t sel_val[]){
 
 // Function to generate ID of data point #######################################################################################################
 void ID_gen(void){
-  char k_ch[3];
-  char i_ch[3];
-  char u_ch[3];
+  int8_t size_ch = 5;
+  char k_ch[size_ch];
+  char i_ch[size_ch];
+  char u_ch[size_ch];
+  char j_ch[size_ch];
   char cmd_ch[7];
-  char j_ch[3];
   int8_t airspeed_i = (int8_t) stateGetAirspeed_f();
-  sprintf(k_ch,"%i",k_conv);
-  sprintf(i_ch,"%i",(int8_t) wing_sp[i]);
-  sprintf(u_ch,"%i",airspeed_i);
-  sprintf(cmd_ch,"%i",cmd_target);
-  sprintf(j_ch,"%i",j);
+  snprintf(k_ch,size_ch,"%i",k_conv);
+  snprintf(i_ch,size_ch,"%i",(int8_t) wing_sp[i]);
+  snprintf(u_ch,size_ch,"%i",airspeed_i);
+  snprintf(cmd_ch,7,"%i",cmd_target);
+  snprintf(j_ch,size_ch,"%i",j);
   point_id[0] = '\0';
   strcat(point_id, test_id);
   strcat(point_id,"_");
