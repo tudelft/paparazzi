@@ -81,7 +81,7 @@ PRINT_CONFIG_VAR(NAVIGATION_FREQUENCY)
 #define CLOSE_TO_WAYPOINT (15 << INT32_POS_FRAC)
 #define CARROT_DIST ((int32_t) POS_BFP_OF_REAL(NAV_CARROT_DIST))
 
-bool force_forward = false;
+bool move_to_ship = false;
 
 struct FloatVect2 line_vect, to_end_vect;
 
