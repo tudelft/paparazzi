@@ -186,7 +186,17 @@ void target_parse_target_pos(uint8_t *buf)
   target_landing.pos.climb = DL_TARGET_POS_climb(buf);
   target_landing.pos.course = DL_TARGET_POS_course(buf);
   target_landing.pos.heading = DL_TARGET_POS_heading(buf);
-  target_landing.pos.valid = true;
+  if (target_landing.pos.heading >= 0.0 && 
+      target_landing.pos.heading <= 360.0 &&
+      target_landing.pos.tow != 0 &&
+      target_landing.pos.lla.lat != 0 &&
+      target_landing.pos.lla.lon != 0){
+    target_landing.pos.valid = true;
+  }
+  else{
+    target_landing.pos.valid = false;
+  }
+  
 }
 
 /**
@@ -232,9 +242,10 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
   // calculate how old the last received msg is
   // In seconds, overflow uint32_t in 49,7 days
   float time_diff = 0;
+  // TODO: uav_itow is not the actual gps time, but the one at the last drone gps update.
+  //       the function "gps_tow_from_sys_ticks(sys_time.nb_tick)" did not seem to work well
   if (target_landing.pos.tow > uav_itow) time_diff = 0;
-  else time_diff = (float)(uav_itow - target_landing.pos.tow) / 1000; //TODO: TEST
-  //printf("time_diff: %f \t uav_itow: %i \t target_landing.pos.tow: %i \n", time_diff, uav_itow, target_landing.pos.tow);
+  else time_diff = (float)(uav_itow - target_landing.pos.tow) / 1000;
   target_landing.target_pos_timeout = time_diff; // for telemetry
 
   // /* When we have a valid relative position from the RTK GPS and no timeout update the position */

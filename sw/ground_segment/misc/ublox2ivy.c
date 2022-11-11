@@ -665,17 +665,22 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
             break;
 
           uint8_t flags       = UBX_NAV_RELPOSNED_flags(gps_ubx.msg_buf);
+          if (flags ==  19) break;
           uint8_t relPosValid = RTCMgetbitu(&flags, 5, 1);
           float relpos_heading = UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf) * 1e-5f;
           float relpos_dist = UBX_NAV_RELPOSNED_relPosLength(gps_ubx.msg_buf) * 1e-2f;
 
           if(verbose) printf("Got relpos %d %f %f\r\n", flags, relpos_heading, relpos_dist);
-          if(!relPosValid) printf("position NOT VALID! \n");
+          if(!relPosValid && verbose) printf("position NOT VALID! \n");
 
-          if(relPosValid) {
-            ground_heading = relpos_heading;
-          } else {
-            ground_heading = NAN;
+          // ground_heading = 0; // TEST TO DEBUG ------------------------------------------------------------------------------------
+
+          if(relPosValid && relpos_dist > 1.1 && relpos_dist < 1.7) {
+           ground_heading = relpos_heading;
+          } 
+          else {
+          //  ground_heading = NAN;
+          if(verbose) printf("position NOT VALID!  ground_heading is not updated \n");
           }
           
           break;
