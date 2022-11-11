@@ -69,7 +69,7 @@ heading not defined at:
 -->
 <!--flight_plan alt="2" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="200" name="Rotorcraft Cyberzoo (Delft) no GPS" security_height="0.3"-->
 <!--flight_plan alt="5" ground_alt="0" lat0="52.1681455" lon0="4.4128056" max_dist_from_home="250" name="Nederdrone Valkenburg" security_height="5"-->
-<flight_plan alt="5" ground_alt="0" lat0="51.39951" lon0="3.54657" max_dist_from_home="100" name="Bebop Test Breskens Ferry" security_height="5">
+<flight_plan alt="5" ground_alt="0" lat0="51.39905" lon0="3.54657" max_dist_from_home="100" name="Bebop Test Breskens Ferry" security_height="5">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -178,7 +178,7 @@ heading not defined at:
     </block>
     
     <block name="Start Engine">
-      <set value="FALSE" var="v"/>
+      <set value="FALSE" var="move_to_ship"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="nav_set_heading_current()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
@@ -241,8 +241,19 @@ heading not defined at:
       <stay wp="APPROACH" pre_call="approach_moving_target_enable()"/>
     </block>
     
-    <block name="Approach SHIP 5m (without starting at approach)" strip_button="Approach SHIP" strip_icon="boat.png">
+    <block name="LAND SHIP" strip_button="LAND SHIP" strip_icon="boat.png">
       <go wp="APPROACH" />
+      <set value="TRUE" var="move_to_ship"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_SHIP)"/>
+      <stay wp="APPROACH" pre_call="approach_moving_target_enable()" until="get_dist2_to_waypoint(WP_SHIP) @LT 0.2"/>
+      <stay climb="-0.2" vmode="climb" wp="APPROACH" pre_call="approach_moving_target_enable()" until="sonar_bebop.distance @LT 0.4"/>
+      <exception cond="get_dist2_to_waypoint(WP_APPROACH) @GT 0.5" deroute="LAND SHIP"/> <!-- cancel descent if pos error is too big -->
+      <call_once fun="NavSetWaypointHere3d(WP__landHere)"/> <!-- needed for the 'landed' block -->
+      <deroute block="landed"/>
+    </block>
+    
+    <block name="Approach SHIP 5m (without starting at approach)" strip_button="Approach SHIP" strip_icon="boat.png">
+      <!--go wp="APPROACH" /-->
       <set value="TRUE" var="move_to_ship"/>
       <call_once fun="approach_moving_target_enable()"/>
       <stay alt="5" wp="APPROACH" pre_call="approach_moving_target_enable()"/>
