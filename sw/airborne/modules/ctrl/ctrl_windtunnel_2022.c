@@ -45,7 +45,7 @@ float dt_l = 3;// [s] Long test time interval. Used for procedure which involve 
 
 // Defines of nested loop iteration limits ##############################################################################################################################################
 #define imax 7 // Number of Wing set point 
-#define jmax 1 // Number of Motor status (e.g. 5)
+#define jmax 2 // Number of Motor status (e.g. 5)
 #define mmax 4 // Number of Motors used in the Motor status (e.g. 4) 
 #define kmax 8 // Number of Aerodynamic Surfaces + Motors tested  (e.g. 4)
 #define nmax 5 // Number of Excitation steps 
@@ -67,7 +67,7 @@ int16_t push_static = 0;
 
 // Defines of tested excitation signals #################################################################################################################################################
 //int16_t mot_status[jmax][mmax] = {{0,0,0,0},{1000,1000,1000,1000},{2000,2000,2000,2000},{3000,3000,3000,3000}}; // [pprz] Motor status define [Status][Motor]
-int16_t mot_status[jmax][mmax] = {{0,0,0,0}}; // [pprz] Motor status define [Status][Motor]
+int16_t mot_status[jmax][mmax] = {{0,0,0,0},{3000,3000,3000,3000}}; // [pprz] Motor status define [Status][Motor]
 int16_t as_static[nmax] = {-9600,-4800,1920,4800,9600}; // [pprz] Excitation signals Aerodynamic Surface 
 int16_t mot_static[nmax] = {2000,4000,5000,6000,8000};  // [pprz] Excitation signals Motors
 int16_t sync_cmd[6] = {800,0,1000,0,1200,0};            // [pprz] Excitation signals pusher motor during syncing procedure
@@ -105,19 +105,20 @@ bool done_skew = true;          // Done skew. Go to next skew [experimetnal skew
 bool single_act = true;         // Turn on to select only certain actuators
 bool verbose_test_ID = false;   // When true, record test ID
 // INTEGERs ------------------------------------------------------------------------------------------
-int8_t i = 0;           // Wing set point counter
-int8_t j = 0;           // Motor status counter
-int8_t m = 0;           // Motor counter
-int8_t k = 0;           // Actuator counter
-int8_t k_conv = 0;      // Actuator counter converted
-int8_t n = 0;           // Excitation signal counter
-int32_t tp = 0;         // Test point counter
-int8_t p = 0;           // Test number counter (Equal to number of windspeeds)
-int8_t w = 0;           // Sync command counter
-int8_t o = 0;           // Counter rot test
-int8_t p2 = 0;          // Test number counter for the skew moment test
-int16_t cmd_0 = 0;      // [pprz] Initial CMD of actuator
-int16_t cmd_target = 0; // [pprz] Excitation cmd target
+int8_t i = 0;                                     // Wing set point counter
+int8_t j = 0;                                     // Motor status counter
+int8_t m = 0;                                     // Motor counter
+int8_t k = 0;                                     // Actuator counter
+int8_t k_conv = 20;                               // Actuator counter converted. 20 is the index of the wing.
+int8_t n = 0;                                     // Excitation signal counter
+int32_t tp = 0;                                   // Test point counter
+int8_t p = 0;                                     // Test number counter (Equal to number of windspeeds)
+int8_t w = 0;                                     // Sync command counter
+int8_t o = 0;                                     // Counter rot test
+int8_t p2 = 0;                                    // Test number counter for the skew moment test
+int16_t cmd_0 = 0;                                // [pprz] Initial CMD of actuator
+int16_t cmd_target = 0;                           // [pprz] Excitation cmd target
+int16_t cmd_0_mot_status[mmax] = {0,0,0,0};       // [pprz] Initial CMD of mot status
 // STRINGs --------------------------------------------------------------------------------------------
 char test_id[5] = "AE1";
 char point_id[20] = "Blank";
@@ -241,25 +242,41 @@ bool mot_status_control(void){
  if (j < jmax){
    if(done_mot_status){
      t_mot_status = get_sys_time_float();
-     for ( int8_t m = 0; m < mmax; m++){
-      actuators_wt[m] = (int16_t) mot_status[j][m];}
-     printf("Motor State = %i %i %i %i \n",actuators_wt[0],actuators_wt[1],actuators_wt[2],actuators_wt[3]);
-     printf("Test Point = %i \n",tp);
      done_mot_status = false;
-     verbose_test_ID = true;
-     tp += 1;}
+     for ( int8_t m = 0; m < mmax; m++){cmd_0_mot_status[m] = (int16_t) actuators_wt[m];}}
    else{
-     if((get_sys_time_float() - t_mot_status) > dt_m){
+    stopwatch = get_sys_time_float() - t_mot_status;       // Register elapsed time
+    //  printf("Motor State = %i %i %i %i \n",actuators_wt[0],actuators_wt[1],actuators_wt[2],actuators_wt[3]);
+    //  printf("Test Point = %i \n",tp);
+     if(stopwatch > dt_m){
      verbose_test_ID = false;
-     if(!as_control()){
-       done_mot_status = true;
-       j += 1;}}} 
+      if(!as_control()){
+        done_mot_status = true;
+        j += 1;}}
+     else{
+      ratio_excitation = stopwatch / dt_m / ramp_ratio;    // Calclate the percentage of completion of the initial linear sweep
+      Bound(ratio_excitation, 0, 1);
+      if (ratio_excitation==1){
+        verbose_test_ID=true;
+        tp += 1;}
+      for ( int8_t m = 0; m < mmax; m++){actuators_wt[m] = (int16_t)cmd_0_mot_status[m] + ( mot_status[j][m] - cmd_0_mot_status[m]) * ratio_excitation;}}} 
    return true;    
    }else{
-     j = 0;
-     for ( int8_t m = 0; m < 4; m++){
-      actuators_wt[m] = (int16_t) 0;}
-     actuators_wt[4]= (int16_t) 0;
+    if (shut_off){                                                             // If shutoff not yet initialized, initialize it
+      t_mot_status = get_sys_time_float();
+      shut_off = false;
+      for ( int8_t m = 0; m < mmax; m++){cmd_0_mot_status[m] = (int16_t) actuators_wt[m];}
+      return true;
+     }else {
+      stopwatch = get_sys_time_float() - t_mot_status;
+      ratio_excitation = stopwatch / dt_m / ramp_ratio;
+      Bound(ratio_excitation, 0, 1);
+      for ( int8_t m = 0; m < 4; m++){actuators_wt[m] = (int16_t) cmd_0_mot_status[m] + (0- cmd_0_mot_status[m]) * ratio_excitation;}
+      if (ratio_excitation == 1) {                                              // If shutoff completed move to next actuator
+        shut_off = true;
+        j = 0;
+        return false;}
+      else {return true;}}
      return false;}}   
 //#######################################################################################################################################################################################
 
@@ -281,6 +298,7 @@ bool as_control(void){
    return true;    
    }else{
      k = 0;
+     k_conv = 20;                           // Reset to WING idx
      return false;}}
 //#######################################################################################################################################################################################
 
@@ -318,7 +336,9 @@ bool excitation_control(void){
       stopwatch = get_sys_time_float() - t_excitation;
       ratio_excitation = stopwatch / dt_m / ramp_ratio;
       Bound(ratio_excitation, 0, 1);
-      actuators_wt[k_conv] = (int16_t) cmd_0 - cmd_0 * ratio_excitation;
+      if(k<4){cmd_target = 0;}                             // Command the aerodynamic surfaces
+      else{cmd_target = mot_status[j][k_conv];}            // CMD target might not be zero if we are testing a mot status. Logic might not work if m is different from k_conv
+      actuators_wt[k_conv] = (int16_t) cmd_0 + (cmd_target- cmd_0) * ratio_excitation;
       if (ratio_excitation == 1) {                                              // If shutoff completed move to next actuator
         shut_off = true;
         n = 0;
