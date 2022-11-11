@@ -290,7 +290,7 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
     // Offset the target
     pos->x += target_landing.offset.distance * cosf((*heading + target_landing.offset.heading)/180.*M_PI);
     pos->y += target_landing.offset.distance * sinf((*heading + target_landing.offset.heading)/180.*M_PI);
-    pos->z -= target_landing.offset.height;
+    pos->z -= (target_landing.offset.height + 0.5); // 0.5 is landing margin
 
     // Compensate Roll of ship
 
