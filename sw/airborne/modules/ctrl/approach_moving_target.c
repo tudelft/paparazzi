@@ -48,8 +48,8 @@ struct Amt amt = {
   #else
   .distance = 40,     // [m], diagonal decent line to ship
   .speed = -1.5,      // [m/s], speed over descent line to ship, inverted because software looks from ship to drone
-  //.slope_ref = 19.471,  // [deg], slope descent line
-  .slope_ref = 10,  // [deg], slope descent line
+  .slope_ref = 19.471,  // [deg], slope descent line
+  //.slope_ref = 10,  // [deg], slope descent line
   #endif
   .accel_gain = 0.5,
   .pos_gain = 1,    // was 200 [-], how aggresive drone tracks the descent line
@@ -298,7 +298,7 @@ void follow_diagonal_approach(void) {
 
 
   struct FloatVect3 ref_relvel;
-  VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt.approach_speed_gain * amt.speed * amt.relvel_gain * (int)move_to_ship); 
+  VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt_telem.approach_speed); 
 
   // error controller
   struct FloatVect3 pos_err;
@@ -363,7 +363,7 @@ void follow_diagonal_approach(void) {
     //printf("ref_relvel.x: %f \t target_vel_boat.x: %f \t ec_vel.x: %f \t des_accel.x: %f \n", ref_relvel.x, target_vel_boat.x, ec_vel.x, des_accel.x);
 
     int flag = 1; // 0 is 2d, 1 is 3D
-    AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, flag, &des_accel);
+    if (move_to_ship) AbiSendMsgACCEL_SP(ACCEL_SP_FCR_ID, flag, &des_accel);
   }
 
 
@@ -385,8 +385,15 @@ void follow_diagonal_approach(void) {
   float norm_pos_err_sq = VECT3_NORM2(pos_err);
   // int_speed = (default speed / (squared position error [m] * slowdown factor + 1) * speed gain control by joystick
   amt_telem.approach_speed = ((amt.speed) / (norm_pos_err_sq * amt_err_slowdown_gain + 1.0)) * amt.approach_speed_gain * (int)move_to_ship;
-  if (amt.distance < 20) amt_telem.approach_speed = amt_telem.approach_speed / 2; // TODO: make this transition fluent, now there is a step in appraoch speed
+  //if (amt.distance < 3)  amt_telem.approach_speed = amt_telem.approach_speed / 4; // TODO: make this transition fluent, now there is a step in appraoch speed
+  //else if (amt.distance < 10) amt_telem.approach_speed = amt_telem.approach_speed / 2; // TODO: make this transition fluent, now there is a step in appraoch speed
 
+  // THIS NEED TO BE TESTED
+  if (amt.distance < 5) {
+    float converging_factor = amt.distance/5;
+    amt_telem.approach_speed = amt_telem.approach_speed * converging_factor;
+    if (amt.distance > 0) Bound(amt_telem.approach_speed, 0.1, amt.speed);
+  }
 
   // Check if the flight plan recently called the enable function
   // make distance to ship smaller, So descent to ship
@@ -396,8 +403,7 @@ void follow_diagonal_approach(void) {
     //printf("moving_towards_ship \n");
     float dt = FOLLOW_DIAGONAL_APPROACH_PERIOD;
     amt.distance += amt_telem.approach_speed*dt;
-    Bound(amt.distance, 0, 100); // approach dist > 0
-    //amt.distance -= 1*dt;
+    Bound(amt.distance, 0, amt_telem.start_distance);
   }
   
 
