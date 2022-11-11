@@ -103,6 +103,7 @@ bool static_test = false;       //
 bool test_skew_active = false;  // Automatic skew test is active. [experimental skew test]
 bool done_skew = true;          // Done skew. Go to next skew [experimetnal skew test]
 bool single_act = true;         // Turn on to select only certain actuators
+bool verbose_test_ID = false;   // When true, record test ID
 // INTEGERs ------------------------------------------------------------------------------------------
 int8_t i = 0;           // Wing set point counter
 int8_t j = 0;           // Motor status counter
@@ -245,9 +246,11 @@ bool mot_status_control(void){
      printf("Motor State = %i %i %i %i \n",actuators_wt[0],actuators_wt[1],actuators_wt[2],actuators_wt[3]);
      printf("Test Point = %i \n",tp);
      done_mot_status = false;
+     verbose_test_ID = true;
      tp += 1;}
    else{
      if((get_sys_time_float() - t_mot_status) > dt_m){
+     verbose_test_ID = false;
      if(!as_control()){
        done_mot_status = true;
        j += 1;}}} 
@@ -297,12 +300,12 @@ bool excitation_control(void){
      stopwatch = get_sys_time_float() - t_excitation;       // Register elapsed time
      if(stopwatch > dt_m){                                  // If Elapsed time bigger than test time, terminate the excitation test
        done_excitation = true;
-       point_id[0] = '\0';
-       strcat(point_id, "Blank");
+       verbose_test_ID = false;    
        n += 1;}
      else{                                                  // Else calculate the cmd to the actuator
        ratio_excitation = stopwatch / dt_m / ramp_ratio;    // Calclate the percentage of completion of the initial linear sweep
        Bound(ratio_excitation, 0, 1);
+       if (ratio_excitation==1){verbose_test_ID=true;}
        actuators_wt[k_conv] = (int16_t) cmd_0 + (cmd_target - cmd_0) * ratio_excitation;}} 
    return true;
    }else{                                                                       // If all excitation explored, initiate a shutoff sequence of the actuator
@@ -331,7 +334,7 @@ static void send_windtunnel_static(struct transport_tx *trans, struct link_devic
 {
   float airspeed = stateGetAirspeed_f();
   uint8_t test_active_conv = (uint8_t) test_active;
-  if (done_excitation){
+  if (!verbose_test_ID){
        point_id[0] = '\0';
        strcat(point_id, "Blank");}
   else{ID_gen();}
@@ -396,7 +399,7 @@ void ID_gen(void){
   strcat(point_id, j_ch);
   strcat(point_id,"_");
   strcat(point_id, u_ch);
-  printf("String ID = %s \n", point_id);
+  //printf("String ID = %s \n", point_id);
   //printf("test test \n");
 }
 //#######################################################################################################################################################################################
