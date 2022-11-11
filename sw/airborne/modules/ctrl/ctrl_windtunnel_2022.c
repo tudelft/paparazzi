@@ -38,9 +38,9 @@
 //#######################################################################################################################################################################################
 
 // Defines of time variables ##########################################################################################################################################################
-float dt_s = 1;// [s] Short test time interval. Used for procedures which do not require much time.
-float dt_m = 5;// [s] Medium test time interval. Used for procedures which involve transitional states (e.g. actuator test)
-float dt_l = 6;// [s] Long test time interval. Used for procedure which involve the use of slow dynamics (e.g. rotation wing)
+float dt_s = 1;// [s] Short test time interval. Used for procedures which do not require much time. (e.g. 1s)
+float dt_m = 3;// [s] Medium test time interval. Used for procedures which involve transitional states (e.g. actuator test, 5s)
+float dt_l = 3;// [s] Long test time interval. Used for procedure which involve the use of slow dynamics (e.g. rotation wing, 6s)
 //#######################################################################################################################################################################################
 
 // Defines of nested loop iteration limits ##############################################################################################################################################
@@ -66,7 +66,8 @@ int16_t push_static = 0;
 //#######################################################################################################################################################################################
 
 // Defines of tested excitation signals #################################################################################################################################################
-int16_t mot_status[jmax][mmax] = {{0,0,0,0},{1000,1000,1000,1000},{2000,2000,2000,2000},{3000,3000,3000,3000}}; // [pprz] Motor status define [Status][Motor]
+//int16_t mot_status[jmax][mmax] = {{0,0,0,0},{1000,1000,1000,1000},{2000,2000,2000,2000},{3000,3000,3000,3000}}; // [pprz] Motor status define [Status][Motor]
+int16_t mot_status[jmax][mmax] = {{0,0,0,0}}; // [pprz] Motor status define [Status][Motor]
 int16_t as_static[nmax] = {-9600,-4800,1920,4800,9600}; // [pprz] Excitation signals Aerodynamic Surface 
 int16_t mot_static[nmax] = {2000,4000,5000,6000,8000};  // [pprz] Excitation signals Motors
 int16_t sync_cmd[6] = {800,0,1000,0,1200,0};            // [pprz] Excitation signals pusher motor during syncing procedure
@@ -83,7 +84,6 @@ float max_rotation_rate=3.14/2.; // same                 // [rad/s] Maximum rota
 
 // FLOATS ------------------------------------------------------------------------------------------
 static float t_excitation = 0;  // [s]Time of start of excitation of actuator
-static float t_as = 0;          // [s]
 static float t_mot_status = 0;  // [s]
 static float t_wing = 0;        // [s]
 static float t_sync = 0;        // [s]
@@ -104,18 +104,22 @@ bool test_skew_active = false;  // Automatic skew test is active. [experimental 
 bool done_skew = true;          // Done skew. Go to next skew [experimetnal skew test]
 bool single_act = true;         // Turn on to select only certain actuators
 // INTEGERs ------------------------------------------------------------------------------------------
-int8_t i = 0;      // Wing set point counter
-int8_t j = 0;      // Motor status counter
-int8_t m = 0;      // Motor counter
-int8_t k = 0;      // Actuator counter
-int8_t k_conv = 0; // Actuator counter converted
-int8_t n = 0;      // Excitation signal counter
-int32_t tp = 0;    // Test point counter
-int8_t p = 0;      // Test number counter (Equal to number of windspeeds)
-int8_t w = 0;      // Sync command counter
-int8_t o = 0;      // Counter rot test
-int8_t p2 = 0;     // Test number counter for the skew moment test
-int16_t cmd_0 = 0; // [pprz] Initial CMD of actuator
+int8_t i = 0;           // Wing set point counter
+int8_t j = 0;           // Motor status counter
+int8_t m = 0;           // Motor counter
+int8_t k = 0;           // Actuator counter
+int8_t k_conv = 0;      // Actuator counter converted
+int8_t n = 0;           // Excitation signal counter
+int32_t tp = 0;         // Test point counter
+int8_t p = 0;           // Test number counter (Equal to number of windspeeds)
+int8_t w = 0;           // Sync command counter
+int8_t o = 0;           // Counter rot test
+int8_t p2 = 0;          // Test number counter for the skew moment test
+int16_t cmd_0 = 0;      // [pprz] Initial CMD of actuator
+int16_t cmd_target = 0; // [pprz] Excitation cmd target
+// STRINGs --------------------------------------------------------------------------------------------
+char test_id[3] = "AE1";
+char point_id[20];
 //#######################################################################################################################################################################################
 
 // Graphical representation of nested functions #########################################################################################################################################
@@ -286,7 +290,11 @@ bool excitation_control(void){
      printf("Excitation = %i \n",as_static[n]);
      done_excitation = false;
      stopwatch = 0;
-     tp += 1;}
+     tp += 1;
+     point_id[0] = '\0';
+     if(k<4){cmd_target = as_static[n];}                  // Command the aerodynamic surfaces
+     else{cmd_target = mot_static[n];}                    // Command the motors
+     ID_gen();}
    else{
      stopwatch = get_sys_time_float() - t_excitation;       // Register elapsed time
      if(stopwatch > dt_m){                                  // If Elapsed time bigger than test time, terminate the excitation test
@@ -295,8 +303,7 @@ bool excitation_control(void){
      else{                                                  // Else calculate the cmd to the actuator
        ratio_excitation = stopwatch / dt_m / ramp_ratio;    // Calclate the percentage of completion of the initial linear sweep
        Bound(ratio_excitation, 0, 1);
-       if(k<4){actuators_wt[k_conv] = (int16_t) cmd_0 + (as_static[n] - cmd_0) * ratio_excitation;} // Command the aerodynamic surfaces
-       else{actuators_wt[k_conv] = (int16_t) cmd_0 + (mot_static[n] - cmd_0) * ratio_excitation;}}} // Command the motors
+       actuators_wt[k_conv] = (int16_t) cmd_0 + (cmd_target - cmd_0) * ratio_excitation;}} 
    return true;
    }else{                                                                       // If all excitation explored, initiate a shutoff sequence of the actuator
      if (shut_off){                                                             // If shutoff not yet initialized, initialize it
@@ -323,8 +330,9 @@ bool excitation_control(void){
 static void send_windtunnel_static(struct transport_tx *trans, struct link_device *dev)
 {
   float airspeed = stateGetAirspeed_f();
+  uint8_t test_active_conv = (uint8_t) test_active;
   pprz_msg_send_WINDTUNNEL_STATIC(trans, dev, AC_ID,
-                                        &test_active,
+                                        &test_active_conv,
                                         &airspeed,
                                         &wing_rotation.wing_angle_deg,
                                         &wing_rotation.wing_angle_deg_sp,
@@ -350,10 +358,39 @@ void windtunnel_message_init(void){
 }
 //#######################################################################################################################################################################################
 
-// Skew test to understand reactionary moment generated by rotation of the wing #######################################################################################################
+// Function to check if index is in the selected array #######################################################################################################
 bool act_selected(int8_t val, int16_t sel_val[]){
   int8_t i_sel;
   for(i_sel = 0; i_sel < asel; i_sel++){
     if(sel_val[i_sel]==val){return true;}}
   return false;}
+//#######################################################################################################################################################################################
+
+// Function to generate ID of data point #######################################################################################################
+void ID_gen(void){
+  char k_ch[3];
+  char i_ch[3];
+  char u_ch[3];
+  char cmd_ch[7];
+  char j_ch[3];
+  int8_t airspeed_i = (int8_t) stateGetAirspeed_f();
+  sprintf(k_ch,"%i",k_conv);
+  sprintf(i_ch,"%i",(int8_t) wing_sp[i]);
+  sprintf(u_ch,"%i",airspeed_i);
+  sprintf(cmd_ch,"%i",cmd_target);
+  sprintf(j_ch,"%i",j);
+  strcat(point_id, test_id);
+  strcat(point_id,"_");
+  strcat(point_id, k_ch);
+  strcat(point_id,"_");
+  strcat(point_id, cmd_ch);
+  strcat(point_id,"_");
+  strcat(point_id, i_ch);
+  strcat(point_id,"_");
+  strcat(point_id, j_ch);
+  strcat(point_id,"_");
+  strcat(point_id, u_ch);
+  printf("String ID = %s \n", point_id);
+  //printf("test test \n");
+}
 //#######################################################################################################################################################################################
