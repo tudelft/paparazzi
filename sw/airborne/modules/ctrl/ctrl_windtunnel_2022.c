@@ -118,8 +118,8 @@ int8_t p2 = 0;          // Test number counter for the skew moment test
 int16_t cmd_0 = 0;      // [pprz] Initial CMD of actuator
 int16_t cmd_target = 0; // [pprz] Excitation cmd target
 // STRINGs --------------------------------------------------------------------------------------------
-char test_id[3] = "AE1";
-char point_id[20];
+char test_id[5] = "AE1";
+char point_id[20] = "Blank";
 //#######################################################################################################################################################################################
 
 // Graphical representation of nested functions #########################################################################################################################################
@@ -291,14 +291,14 @@ bool excitation_control(void){
      done_excitation = false;
      stopwatch = 0;
      tp += 1;
-     point_id[0] = '\0';
      if(k<4){cmd_target = as_static[n];}                  // Command the aerodynamic surfaces
-     else{cmd_target = mot_static[n];}                    // Command the motors
-     ID_gen();}
+     else{cmd_target = mot_static[n];}}                    // Command the motors}
    else{
      stopwatch = get_sys_time_float() - t_excitation;       // Register elapsed time
      if(stopwatch > dt_m){                                  // If Elapsed time bigger than test time, terminate the excitation test
        done_excitation = true;
+       point_id[0] = '\0';
+       strcat(point_id, "Blank");
        n += 1;}
      else{                                                  // Else calculate the cmd to the actuator
        ratio_excitation = stopwatch / dt_m / ramp_ratio;    // Calclate the percentage of completion of the initial linear sweep
@@ -331,7 +331,12 @@ static void send_windtunnel_static(struct transport_tx *trans, struct link_devic
 {
   float airspeed = stateGetAirspeed_f();
   uint8_t test_active_conv = (uint8_t) test_active;
+  if (done_excitation){
+       point_id[0] = '\0';
+       strcat(point_id, "Blank");}
+  else{ID_gen();}
   pprz_msg_send_WINDTUNNEL_STATIC(trans, dev, AC_ID,
+                                        strlen(point_id), point_id,
                                         &test_active_conv,
                                         &airspeed,
                                         &wing_rotation.wing_angle_deg,
@@ -379,6 +384,7 @@ void ID_gen(void){
   sprintf(u_ch,"%i",airspeed_i);
   sprintf(cmd_ch,"%i",cmd_target);
   sprintf(j_ch,"%i",j);
+  point_id[0] = '\0';
   strcat(point_id, test_id);
   strcat(point_id,"_");
   strcat(point_id, k_ch);
