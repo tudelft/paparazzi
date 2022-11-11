@@ -80,7 +80,6 @@ struct endpoint_t {
 };
 
 static bool verbose = false;
-static bool fake = false;
 static struct endpoint_t gps_ep;
 static struct gps_ubx_t gps_ubx;
 static struct gps_rtcm_t gps_rtcm;
@@ -572,7 +571,7 @@ static void send_gps_inject(uint8_t *buf, int32_t len) {
       snprintf(number, 5, ",%d", gps_rtcm.msg_buf[i]);
       strcat(gps_packet, number);
     }
-    if (!fake) IvySendMsg("%s", gps_packet);
+    //IvySendMsg("%s", gps_packet);  ///////////////////////////////////////////////////////////////////// NO INJECT TO DEBUG
     if (PRINT_GPSDATA_TO_TERMINAL) printf("GPS_INJECT: %s \n", gps_packet);
 
     len -= send_len;
@@ -603,7 +602,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
           uint32_t iTOW = UBX_NAV_PVT_iTOW(gps_ubx.msg_buf);
 
           if(verbose) printf("Got position %f %f (%f, %f, %f, %f, %d)\r\n", lat, lon, gSpeed, headMot, alt, velD, iTOW);
-          if (!fake) IvySendMsg("ground FLIGHT_PARAM GCS %f %f %f %f %f %f %f %f %f %f %f %d %f",
+          IvySendMsg("ground FLIGHT_PARAM GCS %f %f %f %f %f %f %f %f %f %f %f %d %f",
                 0.0, // roll,
                 0.0, // pitch,
                 ground_heading, // heading
@@ -633,7 +632,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
                 iTOW, // itow
                 0.0); // airspeed
 
-            if (!fake) IvySendMsg("ground TARGET_POS %d %d %d %d %d %f %f %f %f %i",
+            IvySendMsg("ground TARGET_POS %d %d %d %d %d %f %f %f %f %i",
                 ac_id,
                 ac_id,
                 (int)(lat * 1e7),
@@ -707,26 +706,6 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
   }
 }
 
-//void MainLoop_send_fake(){
-gboolean MainLoop_send_fake(gpointer data) {
-  int usleep_time = 2000;
-  IvySendMsg("ground GPS_INJECT 203 0 211,0,126,254,128,0,1,0,0,21,145,7,8,64,1,36,100,44,3,128,89,126,204,42,151,75,5,68,192,0,2,54,0,0,109,255,255,164,0,0,0,0,0,0,0,0,0,0,0,249,4,101,0,0,0,39,161,60,64,0,0,11,222,137,96,0,0,3,138,67,20,0,0,0,121,178,159,0,0,0,90,110,142,128,0,0,6,188,126,64,0,0,2,191,196,255,255,255,248,89,215,0,0,0,75,129,87,255,255,255,247,148,64,0,0,0,179,1,216,0,0,0,0,0,0,0,0,0,0,165,60,111");
-  usleep(usleep_time);
-  IvySendMsg("ground GPS_INJECT 203 0 211,0,123,67,32,0,89,16,115,166,0,0,88,64,6,1,0,0,0,0,32,0,128,0,127,86,140,134,144,162,154,156,156,191,196,30,30,38,166,16,64,153,21,114,51,252,203,121,15,125,130,250,112,72,247,62,78,165,93,199,122,80,2,151,84,8,156,59,232,242,15,148,158,63,195,111,254,194,132,36,101,15,43,39,125,59,195,245,236,167,210,117,93,205,221,144,221,192,2,52,65,91,211,186,203,211,74,192,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,159,162,194");
-  usleep(usleep_time);
-  IvySendMsg("ground GPS_INJECT 203 0 211,0,94,67,192,0,137,60,200,102,0,0,3,128,6,0,0,0,0,0,32,128,0,0,93,104,72,9,104,200,31,95,195,171,46,2,41,55,160,103,128,214,196,234,5,89,16,84,34,8,36,153,128,69,253,64,243,232,5,168,140,12,115,144,68,202,0,195,176,221,221,221,208,16,212,228,179,208,224,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,144,96,119");
-  usleep(usleep_time);
-  IvySendMsg("ground GPS_INJECT 203 0 211,0,80,68,96,0,89,16,115,164,0,0,1,8,16,0,64,0,0,0,32,1,0,0,95,174,39,42,40,153,59,212,37,7,105,31,215,39,169,183,238,183,198,112,6,255,230,61,86,251,245,253,71,212,204,143,237,1,63,134,57,0,113,71,255,86,36,203,186,203,1,28,208,196,236,241,128,0,0,0,0,0,0,181,102,208");
-  usleep(usleep_time);
-  IvySendMsg("ground GPS_INJECT 203 0 211,0,4,76,224,0,128,237,237,214");
-  usleep(usleep_time);
-  IvySendMsg("ground TARGET_POS 203 203 519898255 43757544 48139 0.037000 0.020000 81.101112 261.170258");
-  usleep(usleep_time);
-  IvySendMsg("ground FLIGHT_PARAM GCS 0.000000 0.000000 261.253632 51.989826 4.375754 0.026000 81.101112 48.139999 0.014000 0.000000 1666856704.000000 373562400 0.000000");
-  usleep(usleep_time);  
-  return TRUE;
-}
-
 int main(int argc, char** argv) {
   /* Defaults */
   gps_ep.type = ENDPOINT_TYPE_NONE;
@@ -747,7 +726,6 @@ int main(int argc, char** argv) {
     {"endpoint", required_argument, NULL, 'e'},
     {"help", no_argument, NULL, 'h'},
     {"verbose", no_argument, NULL, 'v'},
-    {"fake", no_argument, NULL, 'f'},
     {0, 0, 0, 0}
   };
   static const char* usage =
@@ -756,8 +734,7 @@ int main(int argc, char** argv) {
     "   -i --ac_id [aircraft_id]               Aircraft id\n"
     "   -e --endpoint [endpoint_str]           Endpoint address of the GPS\n"
     "   -h --help                              Display this help\n"
-    "   -v --verbose                           Print verbose information\n"
-    "   -f --fake                              Send fake string\n";
+    "   -v --verbose                           Print verbose information\n";
 
   int c;
   int option_index = 0;
@@ -798,10 +775,6 @@ int main(int argc, char** argv) {
         verbose = true;
         break;
 
-      case 'f':
-        fake = true;
-        break;
-
       case 'h':
         fprintf(stderr, usage, argv[0]);
         return 0;
@@ -813,14 +786,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  if (fake == true){
-    g_timeout_add(500, MainLoop_send_fake, NULL);
-    printf("sending fake GPS data on IVY bus \n");
-    g_main_loop_run(ml);
-  }
-  else{
-     g_main_loop_run(ml);
-  }
+  g_main_loop_run(ml);
  
 
   /*while(true) {
