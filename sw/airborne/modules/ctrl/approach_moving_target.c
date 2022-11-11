@@ -100,7 +100,7 @@ static void send_approach_moving_target(struct transport_tx *trans, struct link_
   //                             &amt.distance
   //                             );
   int32_t enabled_time_diff = (get_sys_time_msec() - amt.enabled_sys_time);
-  uint8_t force_forward_boolean = force_forward;
+  uint8_t force_forward_boolean = move_to_ship;
   
    pprz_msg_send_APPROACH_MOVING_TARGET(trans, dev, AC_ID,
                               &amt_telem.des_pos.x,
@@ -285,21 +285,20 @@ void follow_diagonal_approach(void) {
   amt.rel_unit_vec.z = -sinf(gamma_ref);
 
   // Multiply vector with prefered descent dist to get ref point of descent
-  // Desired position = rel_pos + target_pos_boat ??????????????
   struct FloatVect3 ref_relpos;
   VECT3_SMUL(ref_relpos, amt.rel_unit_vec, amt.distance); //calculate decscent point
+  // ref_relpos is a vector here
 
   // Add ref point of descent to ship location to get NED coordinate ref point of descent
   // ATTENTION, target_pos_boat is already relative now!
   struct FloatVect3 rel_des_pos;
   VECT3_SUM(rel_des_pos, ref_relpos, rel_target_pos); 
-  //printf("ref_relpos.z %f \n", ref_relpos.z);
+  // rel_des_pos is a NED position here, relative to the drone position
 
 
-  // ------------------------------------------------------------------------- ADD MORE COMMENTS FROM HERE ON
 
   struct FloatVect3 ref_relvel;
-  VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt.approach_speed_gain * amt.speed * amt.relvel_gain * (int)force_forward); 
+  VECT3_SMUL(ref_relvel, amt.rel_unit_vec, amt.approach_speed_gain * amt.speed * amt.relvel_gain * (int)move_to_ship); 
 
   // error controller
   struct FloatVect3 pos_err;
@@ -350,7 +349,7 @@ void follow_diagonal_approach(void) {
 
   // TODO: read nav status/block inside this script
   // TODO: place this in a better place with a more robust if statement
-  //if (!force_forward){
+  //if (!move_to_ship){
   if ((get_sys_time_msec() - amt.enabled_sys_time) < 1000 && target_pos_valid_no_timeout()) { // TODO: test if timeout argument works
     //AbiSendMsgVEL_SP(VEL_SP_FCR_ID, &des_vel); 
     struct FloatVect3 des_accel;
@@ -385,13 +384,14 @@ void follow_diagonal_approach(void) {
   // Reduce approach speed if the error is large
   float norm_pos_err_sq = VECT3_NORM2(pos_err);
   // int_speed = (default speed / (squared position error [m] * slowdown factor + 1) * speed gain control by joystick
-  amt_telem.approach_speed = ((amt.speed) / (norm_pos_err_sq * amt_err_slowdown_gain + 1.0)) * amt.approach_speed_gain * (int)force_forward;
-  if (amt.distance < 20) amt_telem.approach_speed = amt_telem.approach_speed / 2;
+  amt_telem.approach_speed = ((amt.speed) / (norm_pos_err_sq * amt_err_slowdown_gain + 1.0)) * amt.approach_speed_gain * (int)move_to_ship;
+  if (amt.distance < 20) amt_telem.approach_speed = amt_telem.approach_speed / 2; // TODO: make this transition fluent, now there is a step in appraoch speed
+
 
   // Check if the flight plan recently called the enable function
   // make distance to ship smaller, So descent to ship
 
-  if ( (get_sys_time_msec() - amt.enabled_sys_time) < (2000 / NAVIGATION_FREQUENCY) && force_forward) {
+  if ( (get_sys_time_msec() - amt.enabled_sys_time) < (2000 / NAVIGATION_FREQUENCY) && move_to_ship) {
     // integrate speed to get the distance
     //printf("moving_towards_ship \n");
     float dt = FOLLOW_DIAGONAL_APPROACH_PERIOD;
