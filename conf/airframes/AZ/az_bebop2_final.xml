@@ -1,8 +1,17 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
-<airframe name="bebop2_optitrack">
+<airframe name="bebop2_internship_Andreas">
   <description>
-    Airframe file to fly a Bebop2 drone, in stable smooth flight, through waypoints using an optitrack system, such as the Cyberzoo of TUDelft. The values are tuned so that the flight speed is limited and the drone does not over-shoot the waypoints as it would in outdoor settings.
+    Airframe file to fly a Bebop2 drone in simulation, Cyberzoo and outdoors. 
+    The airfame is tested and used frequenly during the internship.
+    
+    For flying outdoors, choose SPECIFIC FOR VALKENBURG and comment out the entire block for SPECIFIC FOR OPTI TRACK. And do this the other way around for the Cyberzoo.
+    
+    WIP: use of Sonar for height estimation during fligth was tested but did not work wel
+    	 The sonar induced oscilations in the motor thrust. 
+    	 The work around solution is to read the direct sonar value inside the flightplan when needed
+    	 Future work: filter ahrs use sonar to eliminate oscillations
+    	 Future work: use direct sonar value in approach module
   </description>
 
   <firmware name="rotorcraft">
@@ -25,12 +34,11 @@
         <define name="INS_USE_GPS_ALT_SPEED" value="FALSE"/>
         <define name="MISC_ARRIVED_AT_WAYPOINT" value="1.0" unit="m"/>
       </module>
-      
       <module name="ahrs" type="int_cmpl_quat">
         <configure name="USE_MAGNETOMETER" value="TRUE"/>
         <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
       </module>
-      
+      <!-- SPECIFIC FOR VALKENBURG -->
       
       <!-- SPECIFIC FOR OPTI TRACK -->
       <!--<module name="gps" type="datalink"/>
@@ -42,6 +50,7 @@
         <configure name="USE_MAGNETOMETER" value="FALSE"/>
         <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
       </module>-->
+      <!-- SPECIFIC FOR OPTI TRACK -->
     </target>
     <!-- ****** TARGET AUTOPILOT ****** -->
 
@@ -70,7 +79,7 @@
     <!-- ****** TARGET SIMULATOR ****** -->
     
     <!--define name="USE_SONAR" value="FALSE"/-->
-    <module name="sonar_bebop">
+    <module name="sonar_bebop"> <!-- defining this module does not mean the drone uses it -->
       <define name="USE_SONAR"/>
       <define name="SENSOR_SYNC_SEND_SONAR"/>
     </module>
@@ -232,15 +241,15 @@
     <define name="ADAPTIVE_MU" value="0.0001"/>
     
     <!-- max rates (conservative) -->
-    <define name="STABILIZATION_INDI_MAX_RATE" value="343.77" unit="deg/s"/>
-    <define name="STABILIZATION_INDI_MAX_R" value="120" unit="deg/s"/>
+    <define name="STABILIZATION_INDI_MAX_RATE" value="200" unit="deg/s"/> <!-- was 343.77 -->
+    <define name="STABILIZATION_INDI_MAX_R" value="60" unit="deg/s"/>
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
     <define name="HOVER_KP" value="350"/>
     <define name="HOVER_KD" value="85"/>
     <define name="HOVER_KI" value="20"/>
-    <define name="NOMINAL_HOVER_THROTTLE" value="0.56"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value="0.66"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
   </section>
 
@@ -288,9 +297,9 @@
   
   <section name="BAT">
     <define name="MILLIAMP_AT_FULL_THROTTLE" value="11000"/>
-    <define name="CATASTROPHIC_BAT_LEVEL" value="9.5" unit="V"/>
-    <define name="CRITIC_BAT_LEVEL" value="10.0" unit="V"/>
-    <define name="LOW_BAT_LEVEL" value="10.5" unit="V"/>
+    <define name="CATASTROPHIC_BAT_LEVEL" value="10.0" unit="V"/>
+    <define name="CRITIC_BAT_LEVEL" value="10.5" unit="V"/>
+    <define name="LOW_BAT_LEVEL" value="11.0" unit="V"/>
     <define name="MAX_BAT_LEVEL" value="12.4" unit="V"/>
     <define name="BAT_CHECKER_DELAY" value="60"/><!-- unit="s/10", thus tenth of seconds per default use ELECTRICAL_PERIODIC_FREQ if you for some reason want it differently-->
   </section>
