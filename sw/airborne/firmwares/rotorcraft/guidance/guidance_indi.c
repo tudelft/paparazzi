@@ -423,7 +423,7 @@ bool guidance_indi_get_pos_error(struct FloatVect3 *pos_err_indi) {
 /**
  * Get the current position error to target
  */
-bool guidance_indi_get_sp_error(struct FloatVect3 *speed_err_indi) {
+bool guidance_indi_get_speed_error(struct FloatVect3 *speed_err_indi) {
   speed_err_indi->x = (speed_sp.x - stateGetSpeedNed_f()->x);
   speed_err_indi->y = (speed_sp.y - stateGetSpeedNed_f()->y);
   speed_err_indi->z = (speed_sp.z - stateGetSpeedNed_f()->z);
