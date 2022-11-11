@@ -45,8 +45,8 @@ float dt_l = 3;// [s] Long test time interval. Used for procedure which involve 
 
 // Defines of nested loop iteration limits ##############################################################################################################################################
 #define imax 7 // Number of Wing set point 
-#define jmax 2 // Number of Motor status (e.g. 5)
-#define mmax 4 // Number of Motors used in the Motor status (e.g. 4) 
+#define jmax 3 // Number of Motor status (e.g. 5)
+#define mmax 5 // Number of Motors used in the Motor status (e.g. 4) 
 #define kmax 8 // Number of Aerodynamic Surfaces + Motors tested  (e.g. 4)
 #define nmax 5 // Number of Excitation steps 
 #define asel 3 // Number of selected actuators
@@ -67,7 +67,7 @@ int16_t push_static = 0;
 
 // Defines of tested excitation signals #################################################################################################################################################
 //int16_t mot_status[jmax][mmax] = {{0,0,0,0},{1000,1000,1000,1000},{2000,2000,2000,2000},{3000,3000,3000,3000}}; // [pprz] Motor status define [Status][Motor]
-int16_t mot_status[jmax][mmax] = {{0,0,0,0},{3000,3000,3000,3000}}; // [pprz] Motor status define [Status][Motor]
+int16_t mot_status[jmax][mmax] = {{0,0,0,0,0},{3000,3000,3000,3000,0},{0,0,0,0,3000}}; // [pprz] Motor status define [Status][Motor]
 int16_t as_static[nmax] = {-9600,-4800,1920,4800,9600}; // [pprz] Excitation signals Aerodynamic Surface 
 int16_t mot_static[nmax] = {2000,4000,5000,6000,8000};  // [pprz] Excitation signals Motors
 int16_t sync_cmd[6] = {800,0,1000,0,1200,0};            // [pprz] Excitation signals pusher motor during syncing procedure
@@ -271,7 +271,7 @@ bool mot_status_control(void){
       stopwatch = get_sys_time_float() - t_mot_status;
       ratio_excitation = stopwatch / dt_m / ramp_ratio;
       Bound(ratio_excitation, 0, 1);
-      for ( int8_t m = 0; m < 4; m++){actuators_wt[m] = (int16_t) cmd_0_mot_status[m] + (0- cmd_0_mot_status[m]) * ratio_excitation;}
+      for ( int8_t m = 0; m < mmax; m++){actuators_wt[m] = (int16_t) cmd_0_mot_status[m] + (0- cmd_0_mot_status[m]) * ratio_excitation;}
       if (ratio_excitation == 1) {                                              // If shutoff completed move to next actuator
         shut_off = true;
         j = 0;
@@ -374,7 +374,8 @@ static void send_windtunnel_static(struct transport_tx *trans, struct link_devic
                                         &o,
                                         &p2,
                                         &max_rotation_rate,
-                                        11, actuators_wt
+                                        11, actuators_wt,
+                                        11, actuators
                                         );
 }
 #endif
