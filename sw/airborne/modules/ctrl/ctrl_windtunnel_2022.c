@@ -49,8 +49,8 @@ float dt_l = 3;// [s] Long test time interval. Used for procedure which involve 
 #define jmax 3 // Number of Motor status (e.g. 5)
 #define mmax 5 // Number of Motors used in the Motor status (e.g. 4) 
 #define kmax 8 // Number of Aerodynamic Surfaces + Motors tested  (e.g. 4)
-#define nmax 5 // Number of Excitation steps 
-#define asel 3 // Number of selected actuators
+#define nmax 8 // Number of Excitation steps 
+#define asel 4 // Number of selected actuators
 //#######################################################################################################################################################################################
 
 // Defines of variables to be used in manual slider test of actuators ###################################################################################################################
@@ -69,11 +69,20 @@ int16_t push_static = 0;
 // Defines of tested excitation signals #################################################################################################################################################
 //int16_t mot_status[jmax][mmax] = {{0,0,0,0},{1000,1000,1000,1000},{2000,2000,2000,2000},{3000,3000,3000,3000}}; // [pprz] Motor status define [Status][Motor]
 int16_t mot_status[jmax][mmax] = {{0,0,0,0,0},{3000,3000,3000,3000,0},{0,0,0,0,3000}}; // [pprz] Motor status define [Status][Motor]
-int16_t as_static[nmax] = {-9600,-4800,1920,4800,9600}; // [pprz] Excitation signals Aerodynamic Surface 
-int16_t mot_static[nmax] = {2000,4000,5000,6000,8000};  // [pprz] Excitation signals Motors
+//int16_t as_static[nmax] = {-9600,-4800,1920,4800,9600}; // [pprz] Excitation signals Aerodynamic Surface 
+//int16_t mot_static[nmax] = {2000,4000,5000,6000,8000};  // [pprz] Excitation signals Motors
+int16_t gen_static[kmax][nmax+3] = {{-9600,-4800,1920 ,4800 ,9600  , 0   , 0   , 0   },         // [pprz] ail l
+                                    {-9600,-4800,1920 ,4800 ,9600  , 0   , 0   , 0   },         // [pprz] ail r
+                                    {-9600,-7000,-4800,-3500,-1920 , 1920, 4800, 9600},         // [pprz] ele
+                                    {-9600,-4800,1920 ,4800 ,9600  , 0   , 0   , 0   },         // [pprz] rud
+                                    {2000 ,4000 ,5000 ,6000 ,8000  , 0   , 0   , 0   },         // [pprz] mot 0
+                                    {2000 ,4000 ,5000 ,6000 ,8000  , 0   , 0   , 0   },         // [pprz] mot 1
+                                    {2000 ,4000 ,5000 ,6000 ,8000  , 0   , 0   , 0   },         // [pprz] mot 2
+                                    {2000 ,4000 ,5000 ,6000 ,8000  , 0   , 0   , 0   }} ;       // [pprz] mot 3
 int16_t sync_cmd[6] = {800,0,1000,0,1200,0};            // [pprz] Excitation signals pusher motor during syncing procedure
 int16_t push_cmd[2] = {2000,4000};
-int16_t selected_act_idx[asel] = {3,9,10};              // Array of indeces of selected actuators
+int8_t selected_act_idx[asel] = {3,9,10,7};              // Array of indeces of selected actuators
+int8_t tail_act_idx[2] = {9,10};              // Array of indeces of selected actuators
 float wing_sp[imax] = {0,10,30,45,60,75,90};            // [deg] Tested skew angles 
 float rotation_rate_sp[6] = {0.15,0.15,0.20,0.20,0.25,0.25};
 float boa[6] =  {90,0,90,0,90,0};
@@ -103,7 +112,7 @@ bool shut_off = true;           // Shutoff of actuator completed. Go to next act
 bool static_test = false;       // 
 bool test_skew_active = false;  // Automatic skew test is active. [experimental skew test]
 bool done_skew = true;          // Done skew. Go to next skew [experimetnal skew test]
-bool single_act = true;         // Turn on to select only certain actuators
+bool single_act = false;        // Turn on to select only certain actuators
 bool verbose_test_ID = false;   // When true, record test ID
 // INTEGERs ------------------------------------------------------------------------------------------
 int8_t i = 0;                                     // Wing set point counter
@@ -287,15 +296,18 @@ bool as_control(void){
    if(k<4){k_conv = k+7;}                    // If aerodynamic surfaces index is 7-10 
    else{k_conv = k-4;}                       // If motor index is 0-3
    //if (k < 2 && j>2){k += 1;} // From 3rd mot status only activate the tail surfaces (k>2)
-   if (single_act && !act_selected(k_conv, selected_act_idx)){k += 1;}
+   if (single_act && !act_selected(k_conv, selected_act_idx, asel)){k += 1;} // if actuator not in the list and setting on then skip
    else{
+    if (j>1 && !act_selected(k_conv, tail_act_idx,2) ){k += 1;
+    printf("Actuator not in tail \n");} // if performing a pusher test skip all actuators except tail
+    else{
       if(done_as){
         printf("Actuator = %i \n",k_conv);
         done_as = false;}
       else{
         if(!excitation_control()){
           done_as = true;
-          k += 1;}}} 
+          k += 1;}}}} 
    return true;    
    }else{
      k = 0;
@@ -306,15 +318,18 @@ bool as_control(void){
 // Function to command different excitation signals #####################################################################################################################################
 bool excitation_control(void){
  if (n < nmax ){                                            // If not all excitation signal explored stay in the function
+  if(k_conv!=9 && n>4){n +=1;}
+  else{
    if(done_excitation){                                     // If excitation done go to next signal
      t_excitation = get_sys_time_float();                   // Register current initialization time
      cmd_0 = actuators_wt[k_conv];                          // Register initial value
-     printf("Excitation = %i \n",as_static[n]);
+     //printf("Excitation = %i \n",as_static[n]);
      done_excitation = false;
      stopwatch = 0;
      tp += 1;
-     if(k<4){cmd_target = as_static[n];}                  // Command the aerodynamic surfaces
-     else{cmd_target = mot_static[n];}}                    // Command the motors}
+    //  if(k<4){cmd_target = as_static[n];}                  // Command the aerodynamic surfaces
+    //  else{cmd_target = mot_static[n];}}                    // Command the motors}
+    cmd_target = gen_static[k][n];}
    else{
      stopwatch = get_sys_time_float() - t_excitation;       // Register elapsed time
      if(stopwatch > dt_m){                                  // If Elapsed time bigger than test time, terminate the excitation test
@@ -325,7 +340,7 @@ bool excitation_control(void){
        ratio_excitation = stopwatch / dt_m / ramp_ratio;    // Calclate the percentage of completion of the initial linear sweep
        Bound(ratio_excitation, 0, 1);
        if (ratio_excitation==1){verbose_test_ID=true;}
-       actuators_wt[k_conv] = (int16_t) cmd_0 + (cmd_target - cmd_0) * ratio_excitation;}} 
+       actuators_wt[k_conv] = (int16_t) cmd_0 + (cmd_target - cmd_0) * ratio_excitation;}}}
    return true;
    }else{                                                                       // If all excitation explored, initiate a shutoff sequence of the actuator
      if (shut_off){                                                             // If shutoff not yet initialized, initialize it
@@ -345,7 +360,9 @@ bool excitation_control(void){
         n = 0;
         cmd_0 = 0;
         return false;}
-      else {return true;}}}}
+      else {return true;}}
+      }
+      }
 //#######################################################################################################################################################################################
 
 // Message to register the wanted telemetry #############################################################################################################################################
@@ -389,10 +406,12 @@ void windtunnel_message_init(void){
 //#######################################################################################################################################################################################
 
 // Function to check if index is in the selected array #######################################################################################################
-bool act_selected(int8_t val, int16_t sel_val[]){
+bool act_selected(int8_t val, int8_t sel_val[], int8_t size_sel){
   int8_t i_sel;
-  for(i_sel = 0; i_sel < asel; i_sel++){
-    if(sel_val[i_sel]==val){return true;}}
+  for(i_sel = 0; i_sel < size_sel; i_sel++){
+    if(sel_val[i_sel]==val){
+      printf("Integer %i is in array position %i\n",val,i_sel);
+      return true;}}
   return false;}
 //#######################################################################################################################################################################################
 
