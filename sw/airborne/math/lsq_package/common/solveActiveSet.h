@@ -37,7 +37,7 @@ void print_final_values(int n_u, int n_v, num_t* u, num_t** B, num_t* v, num_t* 
 void print_in_and_outputs(int n_c, int *n_free, num_t** A_free_ptr, num_t* d, num_t* p_free);
 
 
-#ifdef RECORD_COST
+#if defined(RECORD_COST) || defined(TRUNCATE_COST)
 num_t calc_cost(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], num_t us[CA_N_U],
   const int n_u, const int n_v);
 #endif

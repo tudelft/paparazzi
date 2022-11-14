@@ -265,10 +265,10 @@
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="140.0"/>
     <define name="REF_ERR_Q" value="140.0"/>
-    <define name="REF_ERR_R" value="40.0"/>
+    <define name="REF_ERR_R" value="30.0"/>
     <define name="REF_RATE_P" value="15.0"/>
     <define name="REF_RATE_Q" value="15.0"/>
-    <define name="REF_RATE_R" value="9.0"/>
+    <define name="REF_RATE_R" value="7.0"/>
 
     <define name="ESTIMATION_FILT_CUTOFF" value="1.5"/>
     <define name="FILT_CUTOFF" value="2.0"/>
@@ -288,7 +288,7 @@
     <define name="WLS_PRIORITIES" value="{1000, 1000, 1, 100}"/>
 
     <define name="CTL_ALLOC_ALGO" value="2"/>
-    <define name="CTL_ALLOC_COND_BOUND" value="4e5"/>
+    <define name="CTL_ALLOC_COND_BOUND" value="1e5"/>
   </section>
 
   <section name="actuator_sizes">

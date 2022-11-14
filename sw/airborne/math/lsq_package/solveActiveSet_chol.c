@@ -9,6 +9,8 @@
 
 //#define PRINT_COND_EST
 //#define DEBUG
+#define TRUNCATE_COST
+#define RTOL 1e-4
 
 int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
   const num_t umin[CA_N_U], const num_t umax[CA_N_U], num_t us[CA_N_U],
@@ -114,7 +116,21 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
 
   // -------------- Start loop ------------
   *iter = 0;
+  num_t prev = INFINITY;
   while (++(*iter) <= imax) {
+#ifdef TRUNCATE_COST
+    num_t cost = calc_cost(A_col, b, us, n_u, n_v);
+    if ((*iter) == 1) {
+      prev = cost;
+    } else {
+      if (cost <= TOL)
+        return 0;
+      num_t diff = prev - cost;
+      if ((diff < 0.) || (diff/prev < RTOL))
+        return 0;
+      prev = cost;
+    }
+#endif
     num_t beta[CA_N_U];
     for (i=0; i<(*n_free); i++) {
       beta[i] = 0;
@@ -204,6 +220,10 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
         }
 
         if (maxlam <= TOL) {
+#ifdef RECORD_COST
+          if ((*iter) <= RECORD_COST_N)
+            costs[(*iter)-1] = calc_cost(A_col, b, us, n_u, n_v);
+#endif
           return 0; // constraints hit, but optimal
         }
 

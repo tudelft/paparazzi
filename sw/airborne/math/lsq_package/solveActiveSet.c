@@ -32,7 +32,7 @@ int8_t solveActiveSet(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
 	return res;
 }
 
-#ifdef RECORD_COST
+#if defined(RECORD_COST) || defined(TRUNCATE_COST)
 num_t calc_cost(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C], num_t us[CA_N_U],
   const int n_u, const int n_v)
 {
