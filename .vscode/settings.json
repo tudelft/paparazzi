@@ -19,4 +19,5 @@
     "lldb.dereferencePointers": true,
     "lldb.consoleMode": "commands",
     "lldb.showDisassembly": "never",
+    "cmake.sourceDirectory": "${workspaceFolder}/sw/ext/eigen/bench/btl/libs/STL",
 }

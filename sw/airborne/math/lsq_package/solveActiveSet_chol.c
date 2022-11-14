@@ -13,7 +13,7 @@
 int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
   const num_t umin[CA_N_U], const num_t umax[CA_N_U], num_t us[CA_N_U],
   int8_t Ws[CA_N_U], bool updating, int imax, const int n_u, const int n_v,
-  int *iter, int *n_free)
+  int *iter, int *n_free, num_t costs[])
 {
   
   (void)(updating);
@@ -162,6 +162,10 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
 
       if ((*n_free) == n_u) {
         // no active constraints, we are optinal and feasible
+#ifdef RECORD_COST
+        if ((*iter) <= RECORD_COST_N)
+          costs[(*iter)-1] = calc_cost(A_col, b, us, n_u, n_v);
+#endif
         return 0;
       } else {
         // active constraints, check for optimality
@@ -179,11 +183,12 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
         }
         // diagonal part
         for (i=n_v; i<n_c; i++)
+          // check if ratio can be used to detect small LG values.
           r[i] = -b[i] + A[i][i-n_v]*z[i-n_v];
 
         for (i = (*n_free); i<n_u; i++) {
           lambda_perm[i] = 0;
-          // lambda = A'*r but is optimised with the diagonal part of A
+          // lambda = A^T*r but is optimised with the diagonal part of A
           // dense part
           for (j = 0; j < n_v; j++)
             lambda_perm[i] -= A[j][permutation[i]]*r[j];
@@ -262,6 +267,11 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
       permutation[--(*n_free)] = first_val;
 
     }
+
+#ifdef RECORD_COST
+    if ((*iter) <= RECORD_COST_N)
+      costs[(*iter)-1] = calc_cost(A_col, b, us, n_u, n_v);
+#endif
 
   }
   return 1; // iteration limit hit

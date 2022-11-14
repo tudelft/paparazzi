@@ -1813,6 +1813,7 @@
       <field name="error" type="uint8" unit="bool">Optimal solution not found</field>
       <field name="n_satch" type="uint8" unit="-">Number of saturated actuators</field>
       <field name="exec_time" type="uint32" unit="us">Execution time</field>
+      <field name="costs" type="float[]" unit="-">Costs</field>
     </message>
 
     <message name="TUNE_VERT" id="213">

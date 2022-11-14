@@ -142,6 +142,8 @@ float indi_max_cmd_scaler = STABILIZATION_INDI_MAX_CMD_SCALER;
 bool indi_ctl_alloc_warmstart = STABILIZATION_INDI_CTL_ALLOC_WARMSTART;
 uint16_t indi_ctl_alloc_imax = STABILIZATION_INDI_CTL_ALLOC_IMAX;
 
+float alloc_costs[RECORD_COST_N];
+
 #ifdef STABILIZATION_INDI_ACT_RATE_LIMIT
 float act_rate_limit[INDI_NUM_ACT] = STABILIZATION_INDI_ACT_RATE_LIMIT;
 #endif
@@ -254,7 +256,7 @@ void init_filters(void);
 #include "modules/datalink/telemetry.h"
 static void send_ctl_alloc_perf(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_CTL_ALLOC_PERF(trans, dev, AC_ID, (uint8_t*)&indi_ctl_alloc_algo, &cond_est, &gamma_used, &indi_max_cmd_scaler, (uint8_t*) &indi_ctl_alloc_warmstart, (uint16_t*) &indi_ctl_alloc_imax, (uint16_t*) &iterations, (uint8_t*) &wls_error, (uint8_t*) &n_satch, (uint32_t*) &t_ctl_alloc_exec_us);
+  pprz_msg_send_CTL_ALLOC_PERF(trans, dev, AC_ID, (uint8_t*)&indi_ctl_alloc_algo, &cond_est, &gamma_used, &indi_max_cmd_scaler, (uint8_t*) &indi_ctl_alloc_warmstart, (uint16_t*) &indi_ctl_alloc_imax, (uint16_t*) &iterations, (uint8_t*) &wls_error, (uint8_t*) &n_satch, (uint32_t*) &t_ctl_alloc_exec_us, RECORD_COST_N, alloc_costs);
 }
 
 static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
@@ -328,6 +330,10 @@ void stabilization_indi_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_G, send_indi_g);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
 #endif
+
+  for (int i=0; i<RECORD_COST_N; i++) {
+    alloc_costs[i] = 0.;
+  }
 }
 
 /**
@@ -625,15 +631,14 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     float max_sig;
     cond_estimator(n_v, A2_ptr, min_diag2, &cond_est, &max_sig);
 
-    if (!indi_ctl_alloc_warmstart) {
-      for (int i=0; i<n_u; i++) {
-        indi_du[i] = (du_min[i] + du_max[i]) * 0.5;
+    for (int i=0; i<n_u; i++) {
+      indi_du[i] = (du_min[i] + du_max[i]) * 0.5;
+      if (!indi_ctl_alloc_warmstart)
         Ws[i] = 0;
-      }
     }
     // solve problem
     wls_error = (bool) solveActiveSet(A, b, du_min, du_max, indi_du, Ws, true, indi_ctl_alloc_imax,
-                    n_u, n_v, &iterations, &n_free, indi_ctl_alloc_algo);
+                    n_u, n_v, &iterations, &n_free, alloc_costs, indi_ctl_alloc_algo);
     n_satch = INDI_NUM_ACT - n_free;
 
     if (scale) {
