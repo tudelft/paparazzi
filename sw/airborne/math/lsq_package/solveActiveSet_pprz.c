@@ -110,8 +110,11 @@ int8_t solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
   int *iter, int *n_free, num_t costs[])
 {
   (void)(updating);
+  (void)(costs);
 
   if(!imax) imax = 100;
+
+  int8_t exit_code = ALLOC_ITER_LIMIT;
 
   int n_c = n_u+n_v;
 
@@ -147,6 +150,7 @@ int8_t solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
   int free_index_lookup[CA_N_U];
   int free_chk = -1;
 
+  bool nan_found = false;
   num_t p_free[CA_N_U];
   num_t p[CA_N_U];
   int infeasible_index[CA_N_U]; /*UNUSED; whatever this means */
@@ -209,9 +213,20 @@ int8_t solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
     // Set the nonzero values of p and add to u_opt
     memcpy(us_prev, us, n_u*sizeof(num_t));
     for (int i = 0; i < (*n_free); i++) {
+      // check for nan according to IEEE 754 assuming -ffast-math is not passed
+      if (p_free[i] != p_free[i]) {
+        // break immediately with error
+        nan_found = true;
+        break;
+      }
       p[free_index[i]] = p_free[i];
       us[free_index[i]] += p_free[i];
     }
+    if (nan_found) {
+      exit_code = ALLOC_NAN_FOUND_Q;
+      break;
+    }
+    
     // check limits
     n_infeasible = 0;
     int8_t limits_viol[CA_N_U];
@@ -259,8 +274,8 @@ int8_t solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
 #if WLS_VERBOSE
         print_final_values(1, n_u, n_v, us, B, v, umin, umax);
 #endif
-
-        return 0;// *iter;
+        exit_code = ALLOC_SUCCESS;
+        break;
       }
     } else {
       num_t alpha = INFINITY;
@@ -292,7 +307,17 @@ int8_t solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
         } else {
           us[i] = incr + us_prev[i];
         }
+        if (us[i] != us[i]) {
+          // nan found
+          nan_found = true;
+          break;
+        }
       }
+      if (nan_found) {
+        exit_code = ALLOC_NAN_FOUND_US;
+        break;
+      }
+
       // update d = d-alpha*A*p_free
       for (int i = 0; i < n_c; i++) {
         for (int k = 0; k < (*n_free); k++) {
@@ -307,8 +332,7 @@ int8_t solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
       free_index_lookup[id_alpha] = -1;
     }
   }
-  // solution failed, return negative one to indicate failure
-  return 1; // -1;
+  return exit_code;
 }
 
 #if WLS_VERBOSE

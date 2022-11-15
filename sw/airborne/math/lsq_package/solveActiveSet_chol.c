@@ -9,37 +9,22 @@
 
 //#define PRINT_COND_EST
 //#define DEBUG
+
+
 //#define TRUNCATE_COST
-#if defined(RECORD_COST) && defined(RECORD_LG_RATIOS)
-#error "Cannot have RECORD_COST and RECORD_LG_RATIOS defined at the same time"
-#endif
-#define RTOL 1e-4
-
-#ifdef __FAST_MATH__
-#error "Nan checking will go wrong with -ffast-math"
-#endif
-
-enum ExitCodes {
-  ALLOC_SUCCESS = 0,
-  ALLOC_ITER_LIMIT = 1,
-  ALLOC_COST_BELOW_TOL = 2,
-  ALLOC_COST_PLATEAU = 3,
-  ALLOC_NAN_FOUND_Q = 4,
-  ALLOC_NAN_FOUND_US = 5,
-  };
-
+#define RTOL 1e-7
 
 int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
   const num_t umin[CA_N_U], const num_t umax[CA_N_U], num_t us[CA_N_U],
   int8_t Ws[CA_N_U], bool updating, int imax, const int n_u, const int n_v,
   int *iter, int *n_free, num_t costs[])
 {
-
-  int8_t exit_code = ALLOC_ITER_LIMIT;
   
   (void)(updating);
 
   if(!imax) imax = 100;
+
+  int8_t exit_code = ALLOC_ITER_LIMIT;
 
   int n_c = n_u + n_v;
   uint8_t i;
@@ -132,6 +117,7 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
 
   num_t q[CA_N_U];
   num_t z[CA_N_U];
+  bool nan_found = false;
 
   // -------------- Start loop ------------
   *iter = 0;
@@ -185,7 +171,6 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
     #endif
     cholesky_solve(L_ptr, inv_diag, (*n_free), beta, q);
 
-    bool nan_found = false;
     for (i = 0; i < (*n_free); i++) {
       // check for nan according to IEEE 754 assuming -ffast-math is not passed
       if (q[i] != q[i]) {
@@ -220,7 +205,7 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
 #endif
 #ifdef RECORD_LG_RATIOS
           if ((*iter) <= RECORD_COST_N)
-            costs[(*iter)-1] = -1;
+            costs[(*iter)-1] = -2;
 #endif
         exit_code = ALLOC_SUCCESS;
         break;
@@ -347,7 +332,7 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
 
 #ifdef RECORD_LG_RATIOS
           if ((*iter) <= RECORD_COST_N)
-            costs[(*iter)-1] = -2;
+            costs[(*iter)-1] = -3;
 #endif
     }
 

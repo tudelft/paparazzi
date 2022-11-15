@@ -69,9 +69,13 @@ int8_t solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
   int8_t Ws[CA_N_U], bool updating, int imax, const int n_u, const int n_v,
   int *iter, int *n_free, num_t costs[])
 {
+
   (void)(updating);
+  (void)(costs);
 
   if(!imax) imax = 100;
+
+  int8_t exit_code = ALLOC_ITER_LIMIT;
 
   uint8_t i;
   uint8_t j;
@@ -129,6 +133,7 @@ int8_t solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
 
   num_t q[CA_N_U];
   num_t z[CA_N_U];
+  bool nan_found = false;
 
   // -------------- Start loop ------------
   *iter = 0;
@@ -160,8 +165,18 @@ int8_t solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
     }
 
     backward_tri_solve((*n_free), R_ptr, c, q);
+    
     for (i = 0; i < (*n_free); i++) {
+      if (q[i] != q[i]) {
+        // break immediately with error
+        nan_found = true;
+        break;
+      }
       z[permutation[i]] = q[i];
+    }
+    if (nan_found) {
+      exit_code = ALLOC_NAN_FOUND_Q;
+      break;
     }
     for (i = (*n_free); i < n_u; i++) {
       z[permutation[i]] = us[permutation[i]];
@@ -177,7 +192,8 @@ int8_t solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
 
       if ((*n_free) == n_u) {
         // no active constraints, we are optinal and feasible
-        return 0;
+        exit_code = ALLOC_SUCCESS;
+        break;
       } else {
         // active constraints, check for optimality
         num_t d[CA_N_U];
@@ -210,7 +226,8 @@ int8_t solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
         }
 
         if (maxlam <= TOL) {
-          return 0; // feasible and optimal
+          exit_code = ALLOC_SUCCESS;
+          break; // feasible and optimal
         }
 
         // free variable
@@ -262,6 +279,15 @@ int8_t solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
         } else {
           us[i] += incr;
         }
+        if (us[i] != us[i]) {
+          // nan found
+          nan_found = true;
+          break;
+        }
+      }
+      if (nan_found) {
+        exit_code = ALLOC_NAN_FOUND_US;
+        break;
       }
 
       qr_shift(n_c, n_u, Q_ptr, R_ptr, (*n_free)-1, f_bound);
@@ -279,7 +305,7 @@ int8_t solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
     }
 
   }
-  return 1; // hit iteration limit without correct solution
+  return exit_code;
 }
 
 #if WLS_VERBOSE
