@@ -240,7 +240,7 @@ float cond_est = 0;
 int iterations = 0;
 int n_free = INDI_NUM_ACT;
 int n_satch = 0;
-bool wls_error = true;
+int8_t wls_exit_code = 1;
 #ifdef USE_CHIBIOS_RTOS
 systime_t t_ctl_alloc_before;
 sysinterval_t t_ctl_alloc_exec;
@@ -256,7 +256,7 @@ void init_filters(void);
 #include "modules/datalink/telemetry.h"
 static void send_ctl_alloc_perf(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_CTL_ALLOC_PERF(trans, dev, AC_ID, (uint8_t*)&indi_ctl_alloc_algo, &cond_est, &gamma_used, &indi_max_cmd_scaler, (uint8_t*) &indi_ctl_alloc_warmstart, (uint16_t*) &indi_ctl_alloc_imax, (uint16_t*) &iterations, (uint8_t*) &wls_error, (uint8_t*) &n_satch, (uint32_t*) &t_ctl_alloc_exec_us, RECORD_COST_N, alloc_costs);
+  pprz_msg_send_CTL_ALLOC_PERF(trans, dev, AC_ID, (uint8_t*)&indi_ctl_alloc_algo, &cond_est, &gamma_used, &indi_max_cmd_scaler, (uint8_t*) &indi_ctl_alloc_warmstart, (uint16_t*) &indi_ctl_alloc_imax, (uint16_t*) &iterations, (int8_t*) &wls_exit_code, (uint8_t*) &n_satch, (uint32_t*) &t_ctl_alloc_exec_us, RECORD_COST_N, alloc_costs);
 }
 
 static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
@@ -633,11 +633,11 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
     for (int i=0; i<n_u; i++) {
       indi_du[i] = (du_min[i] + du_max[i]) * 0.5;
-      if (!indi_ctl_alloc_warmstart)
+      if ((!indi_ctl_alloc_warmstart) || (wls_exit_code > 0))
         Ws[i] = 0;
     }
     // solve problem
-    wls_error = (bool) solveActiveSet(A, b, du_min, du_max, indi_du, Ws, true, indi_ctl_alloc_imax,
+    wls_exit_code = solveActiveSet(A, b, du_min, du_max, indi_du, Ws, true, indi_ctl_alloc_imax,
                     n_u, n_v, &iterations, &n_free, alloc_costs, indi_ctl_alloc_algo);
     n_satch = INDI_NUM_ACT - n_free;
 
@@ -654,7 +654,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #endif
 
     // Add the increments to the actuators
-    if (!wls_error)
+    if (!wls_exit_code)
       float_vect_sum(indi_u, actuator_state_filt_vect, indi_du, INDI_NUM_ACT);
 
     // Bound the inputs to the actuators

@@ -15,11 +15,27 @@
 #endif
 #define RTOL 1e-4
 
+#ifdef __FAST_MATH__
+#error "Nan checking will go wrong with -ffast-math"
+#endif
+
+enum ExitCodes {
+  ALLOC_SUCCESS = 0,
+  ALLOC_ITER_LIMIT = 1,
+  ALLOC_COST_BELOW_TOL = 2,
+  ALLOC_COST_PLATEAU = 3,
+  ALLOC_NAN_FOUND_Q = 4,
+  ALLOC_NAN_FOUND_US = 5,
+  };
+
+
 int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
   const num_t umin[CA_N_U], const num_t umax[CA_N_U], num_t us[CA_N_U],
   int8_t Ws[CA_N_U], bool updating, int imax, const int n_u, const int n_v,
   int *iter, int *n_free, num_t costs[])
 {
+
+  int8_t exit_code = ALLOC_ITER_LIMIT;
   
   (void)(updating);
 
@@ -119,20 +135,26 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
 
   // -------------- Start loop ------------
   *iter = 0;
+#ifdef TRUNCATE_COST
   num_t prev = INFINITY;
   while (++(*iter) <= imax) {
-#ifdef TRUNCATE_COST
     num_t cost = calc_cost(A_col, b, us, n_u, n_v);
     if ((*iter) == 1) {
       prev = cost;
     } else {
-      if (cost <= TOL)
-        return 0;
+      if (cost <= TOL) {
+        exit_code = ALLOC_COST_BELOW_TOL;
+        break;
+      }
       num_t diff = prev - cost;
-      if ((diff < 0.) || (diff/prev < RTOL))
-        return 0;
+      if ((diff < 0.) || (diff/prev < RTOL)) {
+        exit_code = ALLOC_COST_PLATEAU;
+        break;
+      }
       prev = cost;
     }
+#else
+  while (++(*iter) <= imax) {
 #endif
     num_t beta[CA_N_U];
     for (i=0; i<(*n_free); i++) {
@@ -163,8 +185,19 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
     #endif
     cholesky_solve(L_ptr, inv_diag, (*n_free), beta, q);
 
+    bool nan_found = false;
     for (i = 0; i < (*n_free); i++) {
+      // check for nan according to IEEE 754 assuming -ffast-math is not passed
+      if (q[i] != q[i]) {
+        // break immediately with error
+        nan_found = true;
+        break;
+      }
       z[permutation[i]] = q[i];
+    }
+    if (nan_found) {
+      exit_code = ALLOC_NAN_FOUND_Q;
+      break;
     }
     for (i = (*n_free); i < n_u; i++) {
       z[permutation[i]] = us[permutation[i]];
@@ -189,7 +222,8 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
           if ((*iter) <= RECORD_COST_N)
             costs[(*iter)-1] = -1;
 #endif
-        return 0;
+        exit_code = ALLOC_SUCCESS;
+        break;
       } else {
         // active constraints, check for optimality
 
@@ -207,10 +241,11 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
           r_sq += r[i]*r[i];
         }
         // diagonal part
-        for (i=n_v; i<n_c; i++)
+        for (i=n_v; i<n_c; i++) {
           // check if ratio can be used to detect small LG values.
           r[i] = -b[i] + A[i][i-n_v]*z[i-n_v];
           r_sq += r[i]*r[i];
+        }
 
         for (i = (*n_free); i<n_u; i++) {
           lambda_perm[i] = 0;
@@ -238,7 +273,8 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
           if ((*iter) <= RECORD_COST_N)
             costs[(*iter)-1] = calc_cost(A_col, b, us, n_u, n_v);
 #endif
-          return 0; // constraints hit, but optimal
+          exit_code = ALLOC_SUCCESS;
+          break; // constraints hit, but optimal
         }
 
         // update chol
@@ -288,6 +324,15 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
         } else {
           us[i] += incr;
         }
+        if (us[i] != us[i]) {
+          // nan found
+          nan_found = true;
+          break;
+        }
+      }
+      if (nan_found) {
+        exit_code = ALLOC_NAN_FOUND_US;
+        break;
       }
 
       // update chol
@@ -312,7 +357,7 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
 #endif
 
   }
-  return 1; // iteration limit hit
+  return exit_code;
 }
 
 #if WLS_VERBOSE
