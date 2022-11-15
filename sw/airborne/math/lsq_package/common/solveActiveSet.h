@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #define RECORD_COST
+//#define RECORD_LG_RATIOS
 #define RECORD_COST_N 15
 
 typedef enum {

@@ -9,7 +9,10 @@
 
 //#define PRINT_COND_EST
 //#define DEBUG
-#define TRUNCATE_COST
+//#define TRUNCATE_COST
+#if defined(RECORD_COST) && defined(RECORD_LG_RATIOS)
+#error "Cannot have RECORD_COST and RECORD_LG_RATIOS defined at the same time"
+#endif
 #define RTOL 1e-4
 
 int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
@@ -182,6 +185,10 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
         if ((*iter) <= RECORD_COST_N)
           costs[(*iter)-1] = calc_cost(A_col, b, us, n_u, n_v);
 #endif
+#ifdef RECORD_LG_RATIOS
+          if ((*iter) <= RECORD_COST_N)
+            costs[(*iter)-1] = -1;
+#endif
         return 0;
       } else {
         // active constraints, check for optimality
@@ -191,16 +198,19 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
         num_t maxlam = -INFINITY;
 
         num_t r[CA_N_C];
+        num_t r_sq = 0.;
         // dense part
         for (i = 0; i<n_v; i++) {
           r[i] = -b[i];
           for (j =0; j<n_u; j++)
             r[i] += A[i][j]*z[j];
+          r_sq += r[i]*r[i];
         }
         // diagonal part
         for (i=n_v; i<n_c; i++)
           // check if ratio can be used to detect small LG values.
           r[i] = -b[i] + A[i][i-n_v]*z[i-n_v];
+          r_sq += r[i]*r[i];
 
         for (i = (*n_free); i<n_u; i++) {
           lambda_perm[i] = 0;
@@ -218,6 +228,10 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
             f_free = i-(*n_free);
           }
         }
+#ifdef RECORD_LG_RATIOS
+          if ((*iter) <= RECORD_COST_N)
+            costs[(*iter)-1] = (r_sq > TOL) ? maxlam / r_sq : -1;
+#endif
 
         if (maxlam <= TOL) {
 #ifdef RECORD_COST
@@ -286,6 +300,10 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
       }
       permutation[--(*n_free)] = first_val;
 
+#ifdef RECORD_LG_RATIOS
+          if ((*iter) <= RECORD_COST_N)
+            costs[(*iter)-1] = -2;
+#endif
     }
 
 #ifdef RECORD_COST
