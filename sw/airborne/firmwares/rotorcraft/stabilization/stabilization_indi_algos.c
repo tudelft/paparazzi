@@ -633,7 +633,8 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
     for (int i=0; i<n_u; i++) {
       indi_du[i] = (du_min[i] + du_max[i]) * 0.5;
-      if ((!indi_ctl_alloc_warmstart) || (wls_exit_code > 0))
+      // Reset Ws, if NAN errors
+      if ((!indi_ctl_alloc_warmstart) || (wls_exit_code >= ALLOC_NAN_FOUND_Q))
         Ws[i] = 0;
     }
     // solve problem
@@ -653,8 +654,8 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
 #endif
 
-    // Add the increments to the actuators
-    if (!wls_exit_code)
+    // Add the increments to the actuators, unless if NAN errors
+    if (wls_exit_code >= ALLOC_NAN_FOUND_Q)
       float_vect_sum(indi_u, actuator_state_filt_vect, indi_du, INDI_NUM_ACT);
 
     // Bound the inputs to the actuators
