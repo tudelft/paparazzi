@@ -7,8 +7,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define RECORD_COST
-//#define RECORD_LG_RATIOS
+//#define RECORD_COST
+#define RECORD_LG_RATIOS
 #define RECORD_COST_N 15
 #if defined(RECORD_COST) && defined(RECORD_LG_RATIOS)
 #error "Cannot have RECORD_COST and RECORD_LG_RATIOS defined at the same time"

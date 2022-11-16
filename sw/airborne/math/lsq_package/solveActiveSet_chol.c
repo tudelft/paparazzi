@@ -342,6 +342,9 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
 #endif
 
   }
+  if (exit_code == ALLOC_ITER_LIMIT)
+    (*iter)--;
+
   return exit_code;
 }
 
