@@ -138,13 +138,13 @@
     <module name="imu"           type="mpu6000"/>
 
     <!--     For OUTSIDE -->
-    <!-- <module name="gps" type="ublox">
+    <module name="gps" type="ublox">
       <configure name="GPS_BAUD" value="B460800"/> 
-    </module> -->
+    </module>
 
     <!--     For OPTITRACK -->
-   <module name="gps"           type="datalink">
-   </module>
+   <!-- <module name="gps"           type="datalink"> -->
+   <!-- </module> -->
 
 
     <module name="stabilization" type="indi_simple"/>
@@ -154,10 +154,10 @@
 
 
    <module name="ins" type="ekf2">
-    <define name="INS_EKF2_MAG_ID" value="MAG_IST8310_SENDER_ID"/>
-    <!-- <define name="INS_EKF2_MAG_ID" value="MAG_RM3100_SENDER_ID"/> -->
+    <!-- <define name="INS_EKF2_MAG_ID" value="MAG_IST8310_SENDER_ID"/> -->
+    <define name="INS_EKF2_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
     <!-- <define name="INS_EKF2_MAG_ID" value="MAG_LIS3MDL_SENDER_ID"/> -->
-    <define name="INS_EKF2_OPTITRACK" value="TRUE"/>
+    <!-- <define name="INS_EKF2_OPTITRACK" value="TRUE"/> -->
    </module>
 
     <!-- <module name="ahrs"          type="float_cmpl_quat"> -->
@@ -276,14 +276,24 @@
   </section>
 
   <!-- Maximum limits of the vehicle in manual speed control mode. limits are in the control rf -->
+  <!-- <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
+    <define name="MAX_FWD_SPEED" value="15.0" unit="m/s"/>
+    <define name="MIN_FWD_SPEED" value="-4.0" unit="m/s"/>
+    <define name="MAX_LAT_SPEED" value="8.0" unit="m/s"/>
+    <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
+    <define name="MAX_FWD_ACC" value="5.0" unit="m/s^2"/>
+    <define name="MAX_LAT_ACC" value="6.0" unit="m/s^2"/>
+    <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/>
+  </section> -->
+
   <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
     <define name="MAX_FWD_SPEED" value="15.0" unit="m/s"/>
     <define name="MIN_FWD_SPEED" value="-4.0" unit="m/s"/>
     <define name="MAX_LAT_SPEED" value="8.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
-    <define name="MAX_FWD_ACC" value="4.0" unit="m/s^2"/>
-    <define name="MAX_LAT_ACC" value="6.0" unit="m/s^2"/>
-    <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/>
+    <define name="MAX_FWD_ACC" value="7.0" unit="m/s^2"/>
+    <define name="MAX_LAT_ACC" value="7.0" unit="m/s^2"/>
+    <define name="MAX_VERT_ACC" value="4.0" unit="m/s^2"/>
   </section>
 
   <section name="OVERACTUATED_VARIABLES" prefix="OVERACTUATED_MIXING_">
@@ -508,7 +518,7 @@
     <define name="WING_CHORD" value="0.3"/>
     <define name="WING_SPAN" value="1.4"/>
 
-    <define name="CL_AILERONS" value="0.1"/>
+    <define name="CL_AILERONS" value="0.12"/>
   </section>
 
 
