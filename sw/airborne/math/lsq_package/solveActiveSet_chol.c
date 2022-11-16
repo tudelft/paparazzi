@@ -12,6 +12,7 @@
 
 #define TRUNCATE_COST
 #define RTOL 1e-7
+#define CTOL 1e-7
 
 int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
   const num_t umin[CA_N_U], const num_t umax[CA_N_U], num_t us[CA_N_U],
@@ -211,17 +212,17 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
 
         // check cost
 #ifdef TRUNCATE_COST
-        if (r_sq <= TOL) {
+        if (r_sq <= CTOL) {
           exit_code = ALLOC_COST_BELOW_TOL;
           break;
         }
-        num_t diff = prev - r_sq;
-        if ((diff < 0.) || (diff/prev < RTOL)) {
+        num_t diff = prev_cost - r_sq;
+        if ((diff < 0.) || (diff/prev_cost < RTOL)) {
           exit_code = ALLOC_COST_PLATEAU;
           break;
         }
-        prev = r_sq;
-#else
+        prev_cost = r_sq;
+#endif
 
         for (i = (*n_free); i<n_u; i++) {
           lambda_perm[i] = 0;

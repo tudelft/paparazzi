@@ -15,10 +15,10 @@
 #endif
 
 typedef enum {
-    PPRZ_NATIVE = 0,
-    QR = 1,
-    CHOL = 2
-} activeSetAlgoChoice;
+  PPRZ_NATIVE = 0,
+  QR = 1,
+  CHOL = 2,
+  } activeSetAlgoChoice;
 
 typedef enum {
   ALLOC_SUCCESS = 0,
