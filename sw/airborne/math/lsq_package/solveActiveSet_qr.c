@@ -305,70 +305,11 @@ int8_t solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
     }
 
   }
+  if (exit_code == ALLOC_ITER_LIMIT)
+    (*iter)--;
+
   return exit_code;
 }
-
-#if WLS_VERBOSE
-void print_in_and_outputs(int n_c, int (*n_free), num_t** A_free_ptr, num_t* d, num_t* p_free) {
-
-  printf("n_c = %d (*n_free) = %d\n", n_c, (*n_free));
-
-  printf("A_free =\n");
-  for(int i = 0; i < n_c; i++) {
-    for (int j = 0; j < (*n_free); j++) {
-      printf("%f ", A_free_ptr[i][j]);
-    }
-    printf("\n");
-  }
-
-  printf("d = ");
-  for (int j = 0; j < n_c; j++) {
-    printf("%f ", d[j]);
-  }
-
-  printf("\noutput = ");
-  for (int j = 0; j < (*n_free); j++) {
-    printf("%f ", p_free[j]);
-  }
-  printf("\n\n");
-}
-
-void print_final_values(int n_u, int n_v, num_t* u, num_t** B, num_t* v, num_t* umin, num_t* umax) {
-  printf("n_u = %d n_v = %d\n", n_u, n_v);
-
-  printf("B =\n");
-  for(int i = 0; i < n_v; i++) {
-    for (int j = 0; j < n_u; j++) {
-      printf("%f ", B[i][j]);
-    }
-    printf("\n");
-  }
-
-  printf("v = ");
-  for (int j = 0; j < n_v; j++) {
-    printf("%f ", v[j]);
-  }
-
-  printf("\nu = ");
-  for (int j = 0; j < n_u; j++) {
-    printf("%f ", u[j]);
-  }
-  printf("\n");
-
-  printf("\numin = ");
-  for (int j = 0; j < n_u; j++) {
-    printf("%f ", umin[j]);
-  }
-  printf("\n");
-
-  printf("\numax = ");
-  for (int j = 0; j < n_u; j++) {
-    printf("%f ", umax[j]);
-  }
-  printf("\n\n");
-
-}
-#endif
 
 #ifdef debug_qr
 void print_debug(num_t** A_ptr, num_t** Q_ptr, num_t** R_ptr, const int* n_u, const int* n_c) {

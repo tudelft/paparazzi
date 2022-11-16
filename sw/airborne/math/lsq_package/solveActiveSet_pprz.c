@@ -53,9 +53,6 @@
 #include "qr_solve/r8lib_min.h"
 #include "sparse_math.h"
 
-// provide loop feedback
-#define WLS_VERBOSE FALSE
-
 /**
  * @brief Wrapper for qr solve
  *
@@ -65,7 +62,6 @@
  * @param m number of rows
  * @param n number of columns
  */
-void qr_solve_wrapper_pprz(int m, int n, num_t** A, num_t* b, num_t* x);
 void qr_solve_wrapper_pprz(int m, int n, num_t** A, num_t* b, num_t* x) {
   num_t in[m * n];
   // convert A to 1d array
@@ -77,7 +73,7 @@ void qr_solve_wrapper_pprz(int m, int n, num_t** A, num_t* b, num_t* x) {
   }
   // use solver
   qr_solve(m, n, in, b, x);
-}
+};
 
 /**
  * @brief active set algorithm for control allocation
@@ -203,11 +199,6 @@ int8_t solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
       //printf("%d", (*n_free));
       qr_solve_wrapper_pprz(n_c, (*n_free), A_free_ptr, d, p_free);
 
-      //print results current step
-#if WLS_VERBOSE
-      print_in_and_outputs(n_c, n_free, A_free_ptr, d, p_free);
-#endif
-
     }
 
     // Set the nonzero values of p and add to u_opt
@@ -271,9 +262,6 @@ int8_t solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
       }
       if (break_flag) {
 
-#if WLS_VERBOSE
-        print_final_values(1, n_u, n_v, us, B, v, umin, umax);
-#endif
         exit_code = ALLOC_SUCCESS;
         break;
       }
@@ -332,67 +320,8 @@ int8_t solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
       free_index_lookup[id_alpha] = -1;
     }
   }
+  if (exit_code == ALLOC_ITER_LIMIT)
+    (*iter)--;
+
   return exit_code;
 }
-
-#if WLS_VERBOSE
-void print_in_and_outputs(int n_c, int (*n_free), num_t** A_free_ptr, num_t* d, num_t* p_free) {
-
-  printf("n_c = %d (*n_free) = %d\n", n_c, (*n_free));
-
-  printf("A_free =\n");
-  for(int i = 0; i < n_c; i++) {
-    for (int j = 0; j < (*n_free); j++) {
-      printf("%f ", A_free_ptr[i][j]);
-    }
-    printf("\n");
-  }
-
-  printf("d = ");
-  for (int j = 0; j < n_c; j++) {
-    printf("%f ", d[j]);
-  }
-
-  printf("\noutput = ");
-  for (int j = 0; j < (*n_free); j++) {
-    printf("%f ", p_free[j]);
-  }
-  printf("\n\n");
-}
-
-void print_final_values(int n_u, int n_v, num_t* u, num_t** B, num_t* v, num_t* umin, num_t* umax) {
-  printf("n_u = %d n_v = %d\n", n_u, n_v);
-
-  printf("B =\n");
-  for(int i = 0; i < n_v; i++) {
-    for (int j = 0; j < n_u; j++) {
-      printf("%f ", B[i][j]);
-    }
-    printf("\n");
-  }
-
-  printf("v = ");
-  for (int j = 0; j < n_v; j++) {
-    printf("%f ", v[j]);
-  }
-
-  printf("\nu = ");
-  for (int j = 0; j < n_u; j++) {
-    printf("%f ", u[j]);
-  }
-  printf("\n");
-
-  printf("\numin = ");
-  for (int j = 0; j < n_u; j++) {
-    printf("%f ", umin[j]);
-  }
-  printf("\n");
-
-  printf("\numax = ");
-  for (int j = 0; j < n_u; j++) {
-    printf("%f ", umax[j]);
-  }
-  printf("\n\n");
-
-}
-#endif

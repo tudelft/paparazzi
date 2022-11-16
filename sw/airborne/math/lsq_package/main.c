@@ -23,8 +23,9 @@ int main (int argc, char** argv)
 	choice = (argc == 2) ? (activeSetAlgoChoice) atoi(argv[1]) : 0;
 
 
+	num_t costs[RECORD_COST_N];
 	solveActiveSet(
-		A_col, b, umin, umax, xs, Ws, updating, 100, n_u, n_v, &iter, &n_free, choice);
+		A_col, b, umin, umax, xs, Ws, updating, 100, n_u, n_v, &iter, &n_free, costs, choice);
 
 	return 0;
 
