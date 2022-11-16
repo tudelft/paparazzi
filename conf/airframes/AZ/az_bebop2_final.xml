@@ -18,6 +18,7 @@
   
     <!-- ****** TARGET AUTOPILOT ****** -->
     <target name="ap" board="bebop2">
+      <module name="sys_mon"/>
       <!-- control effectiveness -->
       <define name="STABILIZATION_INDI_G1_P" value="0.05"/>
       <define name="STABILIZATION_INDI_G1_Q" value="0.025"/>
@@ -27,10 +28,10 @@
       <!-- SPECIFIC FOR VALKENBURG -->
       <module name="gps" type="ublox">
         <configure name="GPS_BAUD" value="B115200"/>
-        <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
+        <define name="USE_GPS_UBX_RTCM" value="TRUE"/> <!-- disable to fly without RTK -->
         <define name="USE_GPS_UBX_RXM_RAW" value="TRUE"/>
         <configure name="GPS_PORT" value="UART2"/> <!-- always UART2 or UART4 -->
-        <define name="INS_VFF_R_GPS" value="0.05"/> 
+        <define name="INS_VFF_R_GPS" value="0.1"/> 
         <define name="INS_USE_GPS_ALT_SPEED" value="FALSE"/>
         <define name="MISC_ARRIVED_AT_WAYPOINT" value="1.0" unit="m"/>
       </module>
@@ -78,11 +79,14 @@
     </target>
     <!-- ****** TARGET SIMULATOR ****** -->
     
-    <!--define name="USE_SONAR" value="FALSE"/-->
+    <!-- Sonar module is added to read sonar values in C scripts and telemetry-->
+    <!-- Sonar is NOT actively used for height in NAV mode-->
     <module name="sonar_bebop"> <!-- defining this module does not mean the drone uses it -->
       <define name="USE_SONAR"/>
       <define name="SENSOR_SYNC_SEND_SONAR"/>
+      <define name="SONAR_COMPENSATE_ROTATION"/>
     </module>
+
 
     <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
