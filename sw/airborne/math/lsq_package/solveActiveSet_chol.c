@@ -10,8 +10,7 @@
 //#define PRINT_COND_EST
 //#define DEBUG
 
-
-//#define TRUNCATE_COST
+#define TRUNCATE_COST
 #define RTOL 1e-7
 
 int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C],
@@ -122,26 +121,9 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
   // -------------- Start loop ------------
   *iter = 0;
 #ifdef TRUNCATE_COST
-  num_t prev = INFINITY;
-  while (++(*iter) <= imax) {
-    num_t cost = calc_cost(A_col, b, us, n_u, n_v);
-    if ((*iter) == 1) {
-      prev = cost;
-    } else {
-      if (cost <= TOL) {
-        exit_code = ALLOC_COST_BELOW_TOL;
-        break;
-      }
-      num_t diff = prev - cost;
-      if ((diff < 0.) || (diff/prev < RTOL)) {
-        exit_code = ALLOC_COST_PLATEAU;
-        break;
-      }
-      prev = cost;
-    }
-#else
-  while (++(*iter) <= imax) {
+  num_t prev_cost = INFINITY;
 #endif
+  while (++(*iter) <= imax) {
     num_t beta[CA_N_U];
     for (i=0; i<(*n_free); i++) {
       beta[i] = 0;
@@ -203,10 +185,6 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
         if ((*iter) <= RECORD_COST_N)
           costs[(*iter)-1] = calc_cost(A_col, b, us, n_u, n_v);
 #endif
-#ifdef RECORD_LG_RATIOS
-          if ((*iter) <= RECORD_COST_N)
-            costs[(*iter)-1] = -2;
-#endif
         exit_code = ALLOC_SUCCESS;
         break;
       } else {
@@ -227,10 +205,23 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
         }
         // diagonal part
         for (i=n_v; i<n_c; i++) {
-          // check if ratio can be used to detect small LG values.
           r[i] = -b[i] + A[i][i-n_v]*z[i-n_v];
           r_sq += r[i]*r[i];
         }
+
+        // check cost
+#ifdef TRUNCATE_COST
+        if (r_sq <= TOL) {
+          exit_code = ALLOC_COST_BELOW_TOL;
+          break;
+        }
+        num_t diff = prev - r_sq;
+        if ((diff < 0.) || (diff/prev < RTOL)) {
+          exit_code = ALLOC_COST_PLATEAU;
+          break;
+        }
+        prev = r_sq;
+#else
 
         for (i = (*n_free); i<n_u; i++) {
           lambda_perm[i] = 0;
@@ -248,10 +239,6 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
             f_free = i-(*n_free);
           }
         }
-#ifdef RECORD_LG_RATIOS
-          if ((*iter) <= RECORD_COST_N)
-            costs[(*iter)-1] = (r_sq > TOL) ? maxlam / r_sq : -1;
-#endif
 
         if (maxlam <= TOL) {
 #ifdef RECORD_COST
@@ -329,11 +316,6 @@ int8_t solveActiveSet_chol(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
         permutation[f_bound+i] = permutation[f_bound+i+1];
       }
       permutation[--(*n_free)] = first_val;
-
-#ifdef RECORD_LG_RATIOS
-          if ((*iter) <= RECORD_COST_N)
-            costs[(*iter)-1] = -3;
-#endif
     }
 
 #ifdef RECORD_COST
