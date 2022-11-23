@@ -18,7 +18,14 @@
     <module name="actuators" type="bebop"/>
     <module name="imu" type="bebop"/>
     <module name="gps" type="ublox"/>
+
     <module name="stabilization" type="indi_simple"/>
+    <module name="guidance" type="indi">
+      <define name="GUIDANCE_INDI_POS_GAIN" value="0.5"/>
+      <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.8"/>
+      <define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.06"/>
+    </module>
+
     <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="TRUE"/>
       <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
@@ -93,7 +100,6 @@
     <define name="SONAR_MAX_RANGE" value="2.2"/>
   </section>
 
-
   <section name="RC_SETPOINT" prefix="STABILIZATION_ATTITUDE_">
     <!-- setpoint limits for attitude stabilization rc flight -->
     <define name="SP_MAX_PHI" value="45" unit="deg"/>
@@ -130,12 +136,12 @@
     <define name="G2_R" value="0.20"/>
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="600.0"/>
-    <define name="REF_ERR_Q" value="600.0"/>
-    <define name="REF_ERR_R" value="600.0"/>
-    <define name="REF_RATE_P" value="28.0"/>
-    <define name="REF_RATE_Q" value="28.0"/>
-    <define name="REF_RATE_R" value="28.0"/>
+    <define name="REF_ERR_P" value="320.0"/>
+    <define name="REF_ERR_Q" value="320.0"/>
+    <define name="REF_ERR_R" value="320.0"/>
+    <define name="REF_RATE_P" value="16.0"/>
+    <define name="REF_RATE_Q" value="16.0"/>
+    <define name="REF_RATE_R" value="16.0"/>
 
     <!-- second order filter parameters -->
     <define name="FILT_CUTOFF" value="3.2"/>
@@ -160,7 +166,7 @@
   </section>
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="REF_MAX_SPEED" value="2" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="8" unit="m/s"/>
     <define name="MAX_BANK" value="32" unit="deg"/>
     <define name="PGAIN" value="120"/>
     <define name="DGAIN" value="100"/>
