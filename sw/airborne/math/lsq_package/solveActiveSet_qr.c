@@ -71,7 +71,6 @@ int8_t solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
 {
 
   (void)(updating);
-  (void)(costs);
 
   if(!imax) imax = 100;
 
@@ -192,6 +191,10 @@ int8_t solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
 
       if ((*n_free) == n_u) {
         // no active constraints, we are optinal and feasible
+#ifdef RECORD_COST
+        if ((*iter) <= RECORD_COST_N)
+          costs[(*iter)-1] = calc_cost(A_col, b, us, n_u, n_v);
+#endif
         exit_code = ALLOC_SUCCESS;
         break;
       } else {
@@ -226,6 +229,10 @@ int8_t solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
         }
 
         if (maxlam <= TOL) {
+#ifdef RECORD_COST
+          if ((*iter) <= RECORD_COST_N)
+            costs[(*iter)-1] = calc_cost(A_col, b, us, n_u, n_v);
+#endif
           exit_code = ALLOC_SUCCESS;
           break; // feasible and optimal
         }
@@ -301,8 +308,12 @@ int8_t solveActiveSet_qr(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_C]
         permutation[f_bound+i] = permutation[f_bound+i+1];
       }
       permutation[--(*n_free)] = first_val;
-
     }
+
+#ifdef RECORD_COST
+    if ((*iter) <= RECORD_COST_N)
+      costs[(*iter)-1] = calc_cost(A_col, b, us, n_u, n_v);
+#endif
 
   }
   if (exit_code == ALLOC_ITER_LIMIT)

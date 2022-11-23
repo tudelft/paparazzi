@@ -1,4 +1,4 @@
-OPTIM = -O0 -fno-loop-optimize -fno-aggressive-loop-optimizations
+OPTIM = -O3 -fno-loop-optimize -fno-aggressive-loop-optimizations
 DEBUG = -g
 WARN_FLAGS = -Wall -W -Wwrite-strings -Winline -Wstrict-prototypes -Wnested-externs -Wpointer-arith -Wcast-align -Wcast-qual -Wshadow
 DEFINES = -DTESTING -DCA_N_U=20 -DCA_N_V=6 -DTESTING_LSQ_PACKAGE
@@ -15,7 +15,7 @@ SOURCES = solveActiveSet.c solveActiveSet_chol.c solveActiveSet_qr.c solveActive
 
 all: $(patsubst %, $(BIN_DIR)/%.o, $(basename $(SOURCES)))
 	$(AR) $(ARFLAGS) $(BIN_DIR)/$(PRODUCT) $?
-	$(CC) $(CC_FLAGS) -o $(BIN_DIR)/main.o main.c $(BIN_DIR)/$(PRODUCT) $(DEFINES) $(DEBUG) $(WARN_FLAGS) $(INCLUDES) $(LINK_FLAGS)
+	$(CC) $(CC_FLAGS) -o $(BIN_DIR)/main.o main.c $(BIN_DIR)/$(PRODUCT) $(DEFINES) $(INCLUDES) $(LINK_FLAGS)
 
 $(BIN_DIR)/%.o : %.c
 	@mkdir -p $(dir $@)

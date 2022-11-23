@@ -11,6 +11,7 @@ void setup_wls(
 
     int n_c = n_v + n_u;
     //num_t gamma;
+    num_t min_diag_inv = 1.0F;
 
     if (cond_bound <= 0) {
       *gamma = theta;
@@ -22,10 +23,7 @@ void setup_wls(
           min_diag = (min_diag > Wu[i]) ? Wu[i] : min_diag;
 
       min_diag = (min_diag > 1e-6) ? min_diag : 1e-6;
-      num_t min_diag_inv = 1/min_diag;
-
-      for (int i=0; i<n_u; i++)
-          Wu[i] *= min_diag_inv;
+      min_diag_inv = 1/min_diag;
 
       num_t A2[CA_N_V][CA_N_V];
       num_t * A2_ptr[CA_N_V];
@@ -61,7 +59,7 @@ void setup_wls(
         } else {
             for (int j=0; j<n_u; j++) {
                 if ( (i-n_v) == j ) {
-                    A[i+j*n_c] = *gamma*Wu[i-n_v];
+                    A[i+j*n_c] = *gamma*Wu[i-n_v]*min_diag_inv;
                 } else {
                     A[i+j*n_c] = 0;
                 }
@@ -73,7 +71,7 @@ void setup_wls(
         if (i < n_v) {
             b[i] = Wv[i]*dv[i];
         } else {
-            b[i] = *gamma*Wu[i-n_v]*up[i-n_v];
+            b[i] = *gamma*Wu[i-n_v]*up[i-n_v]*min_diag_inv;
         }
     }
 }

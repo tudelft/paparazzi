@@ -12,7 +12,8 @@
         "Makefile.*": "makefile",
         "cstring": "c",
         "random": "c",
-        "cmath": "c"
+        "cmath": "c",
+        "sparse_math.h": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",

@@ -62,6 +62,7 @@
  * @param m number of rows
  * @param n number of columns
  */
+void qr_solve_wrapper_pprz(int m, int n, num_t** A, num_t* b, num_t* x);
 void qr_solve_wrapper_pprz(int m, int n, num_t** A, num_t* b, num_t* x) {
   num_t in[m * n];
   // convert A to 1d array
@@ -73,7 +74,7 @@ void qr_solve_wrapper_pprz(int m, int n, num_t** A, num_t* b, num_t* x) {
   }
   // use solver
   qr_solve(m, n, in, b, x);
-};
+}
 
 /**
  * @brief active set algorithm for control allocation
@@ -106,7 +107,6 @@ int8_t solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
   int *iter, int *n_free, num_t costs[])
 {
   (void)(updating);
-  (void)(costs);
 
   if(!imax) imax = 100;
 
@@ -261,7 +261,10 @@ int8_t solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
         }
       }
       if (break_flag) {
-
+#ifdef RECORD_COST
+          if ((*iter) <= RECORD_COST_N)
+            costs[(*iter)-1] = calc_cost(A_col, b, us, n_u, n_v);
+#endif
         exit_code = ALLOC_SUCCESS;
         break;
       }
@@ -319,6 +322,12 @@ int8_t solveActiveSet_pprz(const num_t A_col[CA_N_C*CA_N_U], const num_t b[CA_N_
         free_index_lookup[id_alpha];
       free_index_lookup[id_alpha] = -1;
     }
+
+#ifdef RECORD_COST
+    if ((*iter) <= RECORD_COST_N)
+      costs[(*iter)-1] = calc_cost(A_col, b, us, n_u, n_v);
+#endif
+
   }
   if (exit_code == ALLOC_ITER_LIMIT)
     (*iter)--;

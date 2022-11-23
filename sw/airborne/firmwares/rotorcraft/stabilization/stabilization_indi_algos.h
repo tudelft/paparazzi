@@ -58,6 +58,8 @@ struct Indi_gains {
   struct FloatRates att;
   struct FloatRates rate;
 };
+extern struct FloatRates rate_sp;
+extern struct FloatRates rates_current;
 
 extern struct Indi_gains indi_gains;
 

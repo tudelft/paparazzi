@@ -116,6 +116,8 @@ static void calc_g1g2_pseudo_inv(void);
 static void bound_g_mat(void);
 
 int32_t stabilization_att_indi_cmd[COMMANDS_NB];
+struct FloatRates rate_sp;
+struct FloatRates rates_current;
 struct Indi_gains indi_gains = {
   .att = {
     STABILIZATION_INDI_REF_ERR_P,
@@ -281,6 +283,17 @@ static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *d
                               &(quat->qy),
                               &(quat->qz));
 }
+
+static void send_rate_loop(struct transport_tx *trans, struct link_device *dev)
+{
+  float dummy = 0.;
+  int dummyint = 0;
+  pprz_msg_send_RATE_LOOP(trans, dev, AC_ID,
+    &rate_sp.p, &rate_sp.q, &rate_sp.r,
+    &dummy, &dummy, &dummy,
+    &rates_current.p, &rates_current.q, &rates_current.r,
+    (int32_t*)&dummyint);
+}
 #endif
 
 /**
@@ -329,6 +342,7 @@ void stabilization_indi_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_CTL_ALLOC_PERF, send_ctl_alloc_perf);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_G, send_indi_g);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RATE_LOOP, send_rate_loop);
 #endif
 
   for (int i=0; i<RECORD_COST_N; i++) {
@@ -446,6 +460,12 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 {
   /* Propagate the filter on the gyroscopes */
   struct FloatRates *body_rates = stateGetBodyRates_f();
+
+  // for logging
+  rates_current.p = body_rates->p;
+  rates_current.q = body_rates->q;
+  rates_current.r = body_rates->r;
+
   float rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
   int8_t i;
   for (i = 0; i < 3; i++) {
@@ -753,7 +773,6 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 #endif
 
   // local variable to compute rate setpoints based on attitude error
-  struct FloatRates rate_sp;
 
   // calculate the virtual control (reference acceleration) based on a PD controller
   rate_sp.p = indi_gains.att.p * att_fb.x / indi_gains.rate.p;
