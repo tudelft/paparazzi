@@ -5,7 +5,9 @@
   </description>
 
   <firmware name="rotorcraft">
-    <target name="ap" board="bebop2"/>
+    <target name="ap" board="bebop2">
+      <define name="INDI_RPM_FEEDBACK" value="TRUE"/>
+    </target>
 
     <target name="nps" board="pc">
       <module name="fdm" type="jsbsim"/>

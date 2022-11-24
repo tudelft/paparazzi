@@ -63,16 +63,20 @@ static FILE *file_logger = NULL;
  */
 static void file_logger_write_header(FILE *file) {
   fprintf(file, "time,");
+  fprintf(file, "rate_p,rate_q,rate_r,");
+  fprintf(file, "accel_b->x, accel_b->y, accel_b->z,");
   fprintf(file, "pos_x,pos_y,pos_z,");
   fprintf(file, "vel_x,vel_y,vel_z,");
-  fprintf(file, "att_phi,att_theta,att_psi,");
-  fprintf(file, "rate_p,rate_q,rate_r,");
-#ifdef COMMAND_THRUST
+  fprintf(file, "quat->qi, quat->qx, quat->qy, quat->qz,");
+  fprintf(file, "quatsp->qi, quatsp->qx, quatsp->qy, quatsp->qz,");
   fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
-#else
-  fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
-#endif
 }
+
+#include "firmwares/rotorcraft/stabilization/stabilization_indi_simple.h"
+#include "firmwares/rotorcraft/guidance/guidance_h.h"
+#include "firmwares/rotorcraft/guidance/guidance_v.h"
+#include "modules/actuators/actuators.h"
+#include "modules/actuators/motor_mixing.h"
 
 /** Write CSV row
  * Write values at this timestamp to log file. Make sure that the printf's match
@@ -83,21 +87,28 @@ static void file_logger_write_header(FILE *file) {
 static void file_logger_write_row(FILE *file) {
   struct NedCoor_f *pos = stateGetPositionNed_f();
   struct NedCoor_f *vel = stateGetSpeedNed_f();
-  struct FloatEulers *att = stateGetNedToBodyEulers_f();
   struct FloatRates *rates = stateGetBodyRates_f();
+  struct Int32Quat *quat = stateGetNedToBodyQuat_i();
+  struct Int32Quat *quatsp = &stab_att_sp_quat;
+  struct Int32Vect3 *accel_b = stateGetAccelBody_i();
+  // struct NedCoor_f *accel_ned = stateGetAccelNed_f();
+  // float sp_x = POS_FLOAT_OF_BFP(guidance_h.ref.pos.x);
+  // float sp_y = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y);
+  // float sp_z = POS_FLOAT_OF_BFP(guidance_v_z_sp);
 
   fprintf(file, "%f,", get_sys_time_float());
+  fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
+  fprintf(file, "%d,%d,%d,", accel_b->x, accel_b->y, accel_b->z);
   fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
   fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
-  fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
-  fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
-#ifdef COMMAND_THRUST
+  fprintf(file, "%d,%d,%d,%d,", quat->qi, quat->qx, quat->qy, quat->qz);
+  fprintf(file, "%d,%d,%d,%d,", quatsp->qi, quatsp->qx, quatsp->qy, quatsp->qz);
+  // fprintf(file, "%d,%d,%d,%d,", actuators_pprz[0], actuators_pprz[1], actuators_pprz[2], actuators_pprz[3]);
+  fprintf(file, "%d,%d,%d,%d,", motor_mixing.commands[MOTOR_FRONT_LEFT], motor_mixing.commands[MOTOR_FRONT_RIGHT], motor_mixing.commands[MOTOR_BACK_RIGHT], motor_mixing.commands[MOTOR_BACK_LEFT]);
+  fprintf(file, "%d,%d,%d,%d,", actuators_bebop.rpm_obs[0], actuators_bebop.rpm_obs[1], actuators_bebop.rpm_obs[2], actuators_bebop.rpm_obs[3]);
   fprintf(file, "%d,%d,%d,%d\n",
       stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
       stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
-#else
-  fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
-#endif
 }
 
 
