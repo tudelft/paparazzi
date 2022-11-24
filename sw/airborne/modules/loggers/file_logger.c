@@ -76,7 +76,7 @@ static void file_logger_write_header(FILE *file) {
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
 #include "firmwares/rotorcraft/guidance/guidance_v.h"
 #include "modules/actuators/actuators.h"
-#include "modules/actuators/motor_mixing.h"
+// #include "modules/actuators/motor_mixing.h"
 
 /** Write CSV row
  * Write values at this timestamp to log file. Make sure that the printf's match
@@ -103,8 +103,8 @@ static void file_logger_write_row(FILE *file) {
   fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
   fprintf(file, "%d,%d,%d,%d,", quat->qi, quat->qx, quat->qy, quat->qz);
   fprintf(file, "%d,%d,%d,%d,", quatsp->qi, quatsp->qx, quatsp->qy, quatsp->qz);
-  // fprintf(file, "%d,%d,%d,%d,", actuators_pprz[0], actuators_pprz[1], actuators_pprz[2], actuators_pprz[3]);
-  fprintf(file, "%d,%d,%d,%d,", motor_mixing.commands[MOTOR_FRONT_LEFT], motor_mixing.commands[MOTOR_FRONT_RIGHT], motor_mixing.commands[MOTOR_BACK_RIGHT], motor_mixing.commands[MOTOR_BACK_LEFT]);
+  fprintf(file, "%d,%d,%d,%d,", actuators_pprz[0], actuators_pprz[1], actuators_pprz[2], actuators_pprz[3]);
+  // fprintf(file, "%d,%d,%d,%d,", motor_mixing.commands[MOTOR_FRONT_LEFT], motor_mixing.commands[MOTOR_FRONT_RIGHT], motor_mixing.commands[MOTOR_BACK_RIGHT], motor_mixing.commands[MOTOR_BACK_LEFT]);
   fprintf(file, "%d,%d,%d,%d,", actuators_bebop.rpm_obs[0], actuators_bebop.rpm_obs[1], actuators_bebop.rpm_obs[2], actuators_bebop.rpm_obs[3]);
   fprintf(file, "%d,%d,%d,%d\n",
       stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],

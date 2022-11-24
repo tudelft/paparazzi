@@ -2,12 +2,12 @@
   <aircraft
    name="Bebop2_Dronisos"
    ac_id="4"
-   airframe="airframes/tudelft/bebop2_no_damping.xml"
+   airframe="airframes/tudelft/bebop2_no_damping_WLS.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"
    flight_plan="flight_plans/bordeaux_basic.xml"
    settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_speed.xml"
-   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/air_data.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/gps_ubx_ucenter.xml modules/guidance_indi.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi_simple.xml"
+   settings_modules="modules/ahrs_int_cmpl_quat.xml modules/air_data.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/gps_ubx_ucenter.xml modules/guidance_indi.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/ins_extended.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi.xml"
    gui_color="red"
   />
   <aircraft

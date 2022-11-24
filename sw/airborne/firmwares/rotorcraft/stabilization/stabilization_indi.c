@@ -738,6 +738,18 @@ void lms_estimation(void)
 #if STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
   // Calculate the inverse of (G1+G2)
   calc_g1g2_pseudo_inv();
+#else
+  // Calculate sum of G1 and G2 for Bwls
+  int8_t j;
+  for (i = 0; i < INDI_OUTPUTS; i++) {
+    for (j = 0; j < INDI_NUM_ACT; j++) {
+      if (i != 2) {
+        g1g2[i][j] = g1[i][j] / INDI_G_SCALING;
+      } else {
+        g1g2[i][j] = (g1[i][j] + g2[j]) / INDI_G_SCALING;
+      }
+    }
+  }
 #endif
 }
 
