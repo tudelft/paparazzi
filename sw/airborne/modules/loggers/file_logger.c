@@ -105,7 +105,11 @@ static void file_logger_write_row(FILE *file) {
   fprintf(file, "%d,%d,%d,%d,", quatsp->qi, quatsp->qx, quatsp->qy, quatsp->qz);
   fprintf(file, "%d,%d,%d,%d,", actuators_pprz[0], actuators_pprz[1], actuators_pprz[2], actuators_pprz[3]);
   // fprintf(file, "%d,%d,%d,%d,", motor_mixing.commands[MOTOR_FRONT_LEFT], motor_mixing.commands[MOTOR_FRONT_RIGHT], motor_mixing.commands[MOTOR_BACK_RIGHT], motor_mixing.commands[MOTOR_BACK_LEFT]);
+#ifdef SITL
+  fprintf(file, "0,0,0,0,");
+#else
   fprintf(file, "%d,%d,%d,%d,", actuators_bebop.rpm_obs[0], actuators_bebop.rpm_obs[1], actuators_bebop.rpm_obs[2], actuators_bebop.rpm_obs[3]);
+#endif
   fprintf(file, "%d,%d,%d,%d\n",
       stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
       stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
