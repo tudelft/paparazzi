@@ -44,6 +44,12 @@
  */
 extern void ins_reset_local_origin(void);
 
+/** INS local origin set.
+ *  Set horizontal and vertical reference to an LLA position.
+ *  Does nothing if not implemented by specific INS algorithm.
+ */
+extern void ins_set_local_origin(struct LlaCoor_i lla_pos);
+
 /** INS altitude reference reset.
  *  Reset only vertical reference to the current altitude.
  *  Does nothing if not implemented by specific INS algorithm.

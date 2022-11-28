@@ -431,7 +431,15 @@ static void guidance_h_update_reference(void)
 {
   /* compute reference even if usage temporarily disabled via guidance_h_use_ref */
 #if GUIDANCE_H_USE_REF
-  if (bit_is_set(guidance_h.sp.mask, 5)) {
+  if (bit_is_set(guidance_h.sp.mask, 4)) {
+    struct FloatVect2 sp_speed;
+    sp_speed.x = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.x);
+    sp_speed.y = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.y);
+    struct FloatVect2 sp_accel;
+    sp_accel.x = ACCEL_FLOAT_OF_BFP(guidance_h.sp.accel.x);
+    sp_accel.y = ACCEL_FLOAT_OF_BFP(guidance_h.sp.accel.y);
+    gh_set_ref(guidance_h.sp.pos, sp_speed, sp_accel);
+  } else if (bit_is_set(guidance_h.sp.mask, 5)) {
     struct FloatVect2 sp_speed;
     sp_speed.x = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.x);
     sp_speed.y = SPEED_FLOAT_OF_BFP(guidance_h.sp.speed.y);
@@ -711,6 +719,17 @@ void guidance_h_guided_run(bool in_flight)
   stabilization_attitude_set_earth_cmd_i(&guidance_h_cmd_earth, heading_sp_i);
 #endif
   stabilization_attitude_run(in_flight);
+}
+
+void guidance_h_set_traj(struct FloatVect2 pos, struct FloatVect2 vel, struct FloatVect2 acc)
+{
+  SetBit(guidance_h.sp.mask, 4);
+  guidance_h.sp.pos.x = POS_BFP_OF_REAL(pos.x);
+  guidance_h.sp.pos.y = POS_BFP_OF_REAL(pos.y);
+  guidance_h.sp.speed.x = SPEED_BFP_OF_REAL(vel.x);
+  guidance_h.sp.speed.y = SPEED_BFP_OF_REAL(vel.y);
+  guidance_h.sp.accel.x = ACCEL_BFP_OF_REAL(acc.x);
+  guidance_h.sp.accel.y = ACCEL_BFP_OF_REAL(acc.y);
 }
 
 void guidance_h_set_pos(float x, float y)

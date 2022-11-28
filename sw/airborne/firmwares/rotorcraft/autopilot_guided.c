@@ -32,6 +32,19 @@
 #include "state.h"
 #include "pprzlink/dl_protocol.h"
 
+bool autopilot_guided_trajectory(struct NedCoor_f pos, struct NedCoor_f vel, struct NedCoor_f accel, float heading)
+{
+  if (autopilot_get_mode() == AP_MODE_GUIDED) {
+    struct FloatVect2 p_h = {.x = pos.x, .y = pos.y};
+    struct FloatVect2 v_h = {.x = vel.x, .y = vel.y};
+    struct FloatVect2 a_h = {.x = accel.x, .y = accel.y};
+    guidance_h_set_traj(p_h, v_h, a_h);
+    guidance_h_set_heading(heading);
+    guidance_v_set_z(pos.z);
+    return true;
+  }
+  return false;
+}
 
 bool autopilot_guided_goto_ned(float x, float y, float z, float heading)
 {

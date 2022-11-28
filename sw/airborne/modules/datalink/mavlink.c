@@ -379,14 +379,53 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
       break;
     }
 
+    case MAVLINK_MSG_ID_SET_GPS_GLOBAL_ORIGIN: {
+      mavlink_set_gps_global_origin_t origin;
+      mavlink_msg_set_gps_global_origin_decode(msg, &origin);
+      if (origin.target_system == AC_ID) {
+        MAVLINK_DEBUG("got SET_GPS_GLOBAL_ORIGIN\n");
+
+        struct LlaCoor_i lla = {
+          .lat = origin.latitude,
+          .lon = origin.longitude,
+          .alt = origin.altitude
+        };
+        // Take care: not all INS have this function implemented!
+        ins_set_local_origin(lla);
+      }
+      break;
+    }
+
+extern bool autopilot_guided_trajectory(struct NedCoor_f pos, struct NedCoor_f vel, struct NedCoor_f accel, float heading);
     case MAVLINK_MSG_ID_SET_POSITION_TARGET_LOCAL_NED: {
       mavlink_set_position_target_local_ned_t target;
       mavlink_msg_set_position_target_local_ned_decode(msg, &target);
       // Check if this message is for this system
       if (target.target_system == AC_ID) {
         MAVLINK_DEBUG("SET_POSITION_TARGET_LOCAL_NED, byte_mask: %d\n", target.type_mask);
-        /* if position and yaw bits are not set to ignored, use only position for now */
-        if (!(target.type_mask & 0b1110000000100000)) {
+        if (!(target.type_mask & 0b111111111100000)) {
+          switch (target.coordinate_frame) {
+            case MAV_FRAME_LOCAL_NED:
+              MAVLINK_DEBUG("set pos, vel, accel target, frame LOCAL_NED\n");
+              struct NedCoor_f pos = {.x = target.x, .y = target.y, .z = target.z};
+              struct NedCoor_f vel = {.x = target.vx, .y = target.vy, .z = target.vz};
+              struct NedCoor_f acc = {.x = target.afx, .y = target.afy, .z = target.afz};
+              autopilot_guided_trajectory(pos, vel, acc, target.yaw);
+              break;
+            // OFFSET not supported ATM with velocity and acceleration! Only use position:
+            case MAV_FRAME_LOCAL_OFFSET_NED:
+              MAVLINK_DEBUG("set position target, frame LOCAL_OFFSET_NED\n");
+              autopilot_guided_goto_ned_relative(target.x, target.y, target.z, target.yaw);
+              break;
+            case MAV_FRAME_BODY_OFFSET_NED:
+              MAVLINK_DEBUG("set position target, frame BODY_OFFSET_NED\n");
+              autopilot_guided_goto_body_relative(target.x, target.y, target.z, target.yaw);
+              break;
+            default:
+              break;
+          }
+        } else if (!(target.type_mask & 0b1110000000100000)) {
+          /* if position and yaw bits are not set to ignored, use only position for now */
           switch (target.coordinate_frame) {
             case MAV_FRAME_LOCAL_NED:
               MAVLINK_DEBUG("set position target, frame LOCAL_NED\n");

@@ -270,6 +270,24 @@ void ins_reset_local_origin(void)
   ins_int.vf_reset = true;
 }
 
+void ins_set_local_origin(struct LlaCoor_i lla_pos)
+{
+  ltp_def_from_lla_i(&ins_int.ltp_def, &lla_pos);
+  ins_int.ltp_def.lla.alt = lla_pos.alt;
+  ins_int.ltp_def.hmsl = 0; // Should this be set?
+  ins_int.ltp_initialized = true;
+  stateSetLocalOrigin_i(&ins_int.ltp_def);
+
+#if USE_HFF
+  ins_int.hf_realign = true;
+#endif
+
+  ins_int.vf_reset = false;
+  // ins_int.qfe = pressure; // not sure what to put here
+  vff_realign(0);
+  ins_update_from_vff();
+}
+
 void ins_reset_altitude_ref(void)
 {
 #if USE_GPS

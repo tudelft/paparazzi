@@ -62,6 +62,8 @@ void WEAK ins_reset_local_origin(void)
 #endif
 }
 
+void WEAK ins_set_local_origin(UNUSED struct LlaCoor_i lla_pos) {}
+
 void WEAK ins_reset_altitude_ref(void) {}
 
 void WEAK ins_reset_vertical_pos(void) {}

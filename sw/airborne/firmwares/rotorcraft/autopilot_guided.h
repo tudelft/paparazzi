@@ -30,6 +30,16 @@
 #define AUTOPILOT_GUIDED_H
 
 #include "std.h"
+#include "math/pprz_geodetic_float.h"
+
+/** Follow trajectory with position, velocity and acceleration updates in GUIDED mode.
+ * @param pos Position in NED in meters
+ * @param vel Ground speed in m/s
+ * @param accel Acceleration in m/s
+ * @param heading Desired heading
+ * @return TRUE if setpoint was set (currently in AP_MODE_GUIDED)
+ */
+extern bool autopilot_guided_trajectory(struct NedCoor_f pos, struct NedCoor_f vel, struct NedCoor_f accel, float heading);
 
 /** Set position and heading setpoints in GUIDED mode.
  * @param x North position (local NED frame) in meters.

@@ -73,9 +73,10 @@ struct HorizontalGuidanceSetpoint {
    */
   struct Int32Vect2 pos;
   struct Int32Vect2 speed;  ///< only used in HOVER mode if GUIDANCE_H_USE_SPEED_REF or in GUIDED mode
+  struct Int32Vect2 accel;  ///< only used in HOVER mode if GUIDANCE_H_USE_SPEED_REF or in GUIDED mode
   float heading;
   float heading_rate;
-  uint8_t mask;             ///< bit 5: vx & vy, bit 6: vz, bit 7: vyaw
+  uint8_t mask;             ///< bit4: p,v,a bit 5: vx & vy, bit 6: vz, bit 7: vyaw
 };
 
 struct HorizontalGuidanceReference {
@@ -127,6 +128,13 @@ extern void guidance_h_set_igain(uint32_t igain);
 /** Run GUIDED mode control
  */
 extern void guidance_h_guided_run(bool in_flight);
+
+/** Set horizontal position, velocity and acceleration setpoint.
+ * @param pos NED position in meters.
+ * @param vel NED velocity in m/s.
+ * @param acc NED acceleration in m/s^2.
+ */
+extern void guidance_h_set_traj(struct FloatVect2 pos, struct FloatVect2 vel, struct FloatVect2 acc);
 
 /** Set horizontal position setpoint.
  * @param x North position (local NED frame) in meters.
