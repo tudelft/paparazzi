@@ -32,8 +32,28 @@ master.mav.set_gps_global_origin_send(
     master.target_system,
     int(449e6),
     int(-6e6),
-    0,
+    194,
     0)
+
+time.sleep(5)
+
+q = [0,0,0,0]
+
+master.mav.set_home_position_send(
+    master.target_system,
+    int(4495e5),
+    int(-6e6),
+    220,
+    0,
+    0,
+    0,
+    q,
+    0,
+    0,
+    0,
+    time_in_usec)
+
+time.sleep(5)
 
 master.mav.set_position_target_local_ned_send(
     0,
@@ -50,7 +70,7 @@ master.mav.set_position_target_local_ned_send(
     0,
     0,
     0,
-    90/180*3.14,
+    0,
     0)
 
 time.sleep(1)

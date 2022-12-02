@@ -51,6 +51,7 @@
 #include "pprz_version.h"
 #include "autopilot.h"
 #include "autopilot_guided.h"
+#include "generated/flight_plan.h"
 
 #if defined RADIO_CONTROL
 #include "modules/radio_control/radio_control.h"
@@ -396,7 +397,23 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
       break;
     }
 
-extern bool autopilot_guided_trajectory(struct NedCoor_f pos, struct NedCoor_f vel, struct NedCoor_f accel, float heading);
+    case MAVLINK_MSG_ID_SET_HOME_POSITION: {
+      mavlink_set_home_position_t set_home;
+      mavlink_msg_set_home_position_decode(msg, &set_home);
+      if (set_home.target_system == AC_ID) {
+        MAVLINK_DEBUG("got MAV_CMD_DO_SET_HOME\n");
+
+        struct LlaCoor_i lla = {
+          .lat = set_home.latitude,
+          .lon = set_home.longitude,
+          .alt = set_home.altitude
+        };
+        // Take care: not all INS have this function implemented!
+        waypoint_set_lla(WP_HOME, &lla);
+      }
+      break;
+    }
+
     case MAVLINK_MSG_ID_SET_POSITION_TARGET_LOCAL_NED: {
       mavlink_set_position_target_local_ned_t target;
       mavlink_msg_set_position_target_local_ned_decode(msg, &target);

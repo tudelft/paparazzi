@@ -131,10 +131,10 @@
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness -->
-    <define name="G1_ROLL" value="{16 ,  -16, -16,  16}"/>
-    <define name="G1_PITCH" value="{12,   12, -12,  -12}"/>
-    <define name="G1_YAW" value="{ 0.8, -0.8, 0.8, -0.8}"/>
-    <define name="G1_THRUST" value="{-.6, -.6, -.6, -.6}"/>
+    <define name="G1_ROLL"   value="{ 16,  -16, -16,   16}"/>
+    <define name="G1_PITCH"  value="{ 12,   12, -12,  -12}"/>
+    <define name="G1_YAW"    value="{0.8, -0.8, 0.8, -0.8}"/>
+    <define name="G1_THRUST" value="{-.6,  -.6, -.6,  -.6}"/>
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{112, -112, 112, -112}"/>
 
