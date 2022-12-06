@@ -204,8 +204,8 @@
 
 
   <firmware name="rotorcraft">
-    <!--autopilot name="rotorcraft_autopilot.xml"/-->
-    <autopilot name="darko_autopilot.xml"/>
+    <autopilot name="rotorcraft_autopilot.xml"/>
+    <!--autopilot name="darko_autopilot.xml"/-->
 
     <target name="ap" board="apogee_1.0_chibios">
       <configure name="PERIODIC_FREQUENCY" value="512"/>

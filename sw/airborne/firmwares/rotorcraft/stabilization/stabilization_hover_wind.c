@@ -34,9 +34,9 @@
 #include "generated/flight_plan.h"
 #include <stdio.h>
 
-#include "modules/loggers/sdlog_chibios.h"
+/*#include "modules/loggers/sdlog_chibios.h"
 #include "mcu_periph/sys_time.h"
-
+*/
 
 float x_e[CTRL_HOVER_WIND_INPUT][1];
 float state_vector_redu[CTRL_HOVER_WIND_INPUT][1];
@@ -54,8 +54,9 @@ struct FloatQuat quat_att_barth_frame;
 
 
 
-static inline void log_hoverwind_periodic(void);
-static inline void log_hoverwind_start(void);
+// static inline void log_hoverwind_periodic(void);
+// static inline void log_hoverwind_start(void);
+
 
 void stabilization_hover_wind_init(void){
 
@@ -91,8 +92,9 @@ void stabilization_hover_wind_run(bool in_flight){
   u_integrator[2][0] = x_e[1][0];
   u_integrator[3][0] = x_e[1][0];
   MAT_MUL(CTRL_HOVER_WIND_NUM_ACT, CTRL_HOVER_WIND_INPUT, 1, u_prop, K, eps);
-  MAT_SUB(CTRL_HOVER_WIND_NUM_ACT, 1, u_sub, u_integrator, u_prop);
-  MAT_SUM(CTRL_HOVER_WIND_NUM_ACT, 1, u, ueq, u_sub);
+  //MAT_SUB(CTRL_HOVER_WIND_NUM_ACT, 1, u_sub, u_integrator, u_prop);
+  //MAT_SUM(CTRL_HOVER_WIND_NUM_ACT, 1, u, ueq, u_sub);
+  MAT_SUM(CTRL_HOVER_WIND_NUM_ACT, 1, u, ueq, u_prop);
   
   u_scale[0][0] = (sqrtf(u[0][0]/kf) / mot_max_speed)*MAX_PPRZ; 
   u_scale[1][0] = (sqrtf(u[1][0]/kf) / mot_max_speed)*MAX_PPRZ;
@@ -127,7 +129,7 @@ void data_report()
   DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 11, msg);
 }
 
-static inline void log_hoverwind_start(void) {
+/*static inline void log_hoverwind_start(void) {
   // Check that log file has been created correctly
   if (pprzLogFile != -1) {
     //header
@@ -144,4 +146,4 @@ static inline void log_hoverwind_periodic(void) {
     sdLogWriteLog(pprzLogFile, "%.4f;%.4f;%.4f;%.4f;", stateGetNedToBodyQuat_f()->qi, stateGetNedToBodyQuat_f()->qx, stateGetNedToBodyQuat_f()->qy,stateGetNedToBodyQuat_f()->qz);
     sdLogWriteLog(pprzLogFile, "%f;%f;%f;%f\n", u_scale[0][0], u_scale[1][0], u_scale[2][0], u_scale[3][0]);
   }
-}
+}*/
