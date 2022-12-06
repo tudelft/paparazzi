@@ -97,6 +97,12 @@ static void guidance_indi_filter_thrust(void);
 #endif
 #endif
 
+#ifdef GUIDANCE_INDI_MAX_ACCEL_SP
+float sp_accel_bound = GUIDANCE_INDI_MAX_ACCEL_SP; // m/s^2
+#else
+float sp_accel_bound = 10; // m/s^2
+#endif
+
 float thrust_act = 0;
 Butterworth2LowPass filt_accel_ned[3];
 Butterworth2LowPass roll_filt;
@@ -233,6 +239,8 @@ void guidance_indi_run(float *heading_sp)
   //for rc vertical control
   sp_accel.z = -(radio_control.values[RADIO_THROTTLE] - 4500) * 8.0 / 9600.0;
 #endif
+
+  vect_bound_in_2d(&sp_accel, sp_accel_bound);
 
   //Calculate matrix of partial derivatives
   guidance_indi_calcG_yxz(&Ga, &eulers_yxz);
