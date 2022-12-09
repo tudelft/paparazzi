@@ -333,6 +333,18 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
             }
             break;
 
+          case MAV_CMD_NAV_TAKEOFF:
+            MAVLINK_DEBUG("got cmd MAV_CMD_NAV_TAKEOFF: with height %f\n", cmd.param7);
+            // Takeoff to height given in message at current location
+            autopilot_guided_goto_ned_relative(0, 0, -cmd.param7, 0);
+            break;
+
+          case MAV_CMD_NAV_LAND:
+            MAVLINK_DEBUG("got cmd MAV_CMD_NAV_LAND: with height %f\n", cmd.param7);
+            // TODO: should land at current location
+            autopilot_guided_goto_ned_vz(stateGetPositionNed_f()->x, stateGetPositionNed_f()->y, 2, 0, true);
+            break;
+
           case MAV_CMD_COMPONENT_ARM_DISARM:
             /* supposed to use this command to arm or SET_MODE?? */
             MAVLINK_DEBUG("got cmd COMPONENT_ARM_DISARM: %f\n", cmd.param1);
@@ -350,6 +362,7 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
             break;
 
           default:
+            MAVLINK_DEBUG("got unknown command!: %d\n", cmd.command);
             break;
         }
         // confirm command with result

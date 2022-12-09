@@ -116,6 +116,7 @@ void autopilot_init(void)
   autopilot.ground_detected = false;
   autopilot.detect_ground_once = false;
   autopilot.use_rc = true;
+  autopilot.disarm_on_not_in_flight = false;
 
   // call firmware specific init
   autopilot_firmware_init();

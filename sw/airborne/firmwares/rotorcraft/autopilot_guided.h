@@ -50,6 +50,16 @@ extern bool autopilot_guided_trajectory(struct NedCoor_f pos, struct NedCoor_f v
  */
 extern bool autopilot_guided_goto_ned(float x, float y, float z, float heading);
 
+/** Set horizontal position vertical speed and heading setpoints in GUIDED mode.
+ * @param x North position (local NED frame) in meters.
+ * @param y East position (local NED frame) in meters.
+ * @param vz Down velocity (local NED frame) in meters/second.
+ * @param heading Setpoint in radians.
+ * @param landing_detection enable landing detection with the in_flight logic.
+ * @return TRUE if setpoint was set (currently in AP_MODE_GUIDED)
+ */
+extern bool autopilot_guided_goto_ned_vz(float x, float y, float vz, float heading, bool landing_detection);
+
 /** Set position and heading setpoints wrt. current position in GUIDED mode.
  * @param dx Offset relative to current north position (local NED frame) in meters.
  * @param dy Offset relative to current east position (local NED frame) in meters.

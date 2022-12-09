@@ -57,6 +57,20 @@ bool autopilot_guided_goto_ned(float x, float y, float z, float heading)
   return false;
 }
 
+bool autopilot_guided_goto_ned_vz(float x, float y, float vz, float heading, bool landing_detection)
+{
+  if (autopilot_get_mode() == AP_MODE_GUIDED) {
+    guidance_h_set_pos(x, y);
+    guidance_h_set_heading(heading);
+    guidance_v_set_vz(vz);
+    if (landing_detection) {
+      autopilot.disarm_on_not_in_flight = true;
+    }
+    return true;
+  }
+  return false;
+}
+
 bool autopilot_guided_goto_ned_relative(float dx, float dy, float dz, float dyaw)
 {
   if (autopilot_get_mode() == AP_MODE_GUIDED && stateIsLocalCoordinateValid()) {

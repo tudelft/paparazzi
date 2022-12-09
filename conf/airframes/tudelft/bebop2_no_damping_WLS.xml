@@ -12,6 +12,8 @@
     <target name="nps" board="pc">
       <module name="fdm" type="jsbsim"/>
       <module name="udp"/>
+
+      <define name="MAVLINK_DEBUG" value="printf"/>
     </target>
 
     <module name="telemetry" type="transparent_udp"/>
@@ -25,7 +27,6 @@
       <define name="UDP1_HOST" value="192.168.56.1"/>
       <define name="UDP1_PORT_OUT" value="14550"/>
       <define name="UDP1_PORT_IN" value="14555"/>
-      <define name="MAVLINK_DEBUG" value="printf"/>
     </module>
 
 

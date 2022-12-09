@@ -72,6 +72,7 @@ struct pprz_autopilot {
   bool use_rc;              ///< enable/disable RC input
   bool ground_detected;     ///< automatic detection of landing
   bool detect_ground_once;  ///< enable automatic detection of ground (one shot)
+  bool disarm_on_not_in_flight; ///< enable automatic detection of ground (with in_flight logic)
 };
 
 

@@ -2,6 +2,8 @@ import time
 from pymavlink import mavutil
 import math
 
+import keyboard  # using module keyboard
+
 # Start a connection listening on a UDP port
 master = mavutil.mavlink_connection('udpin:192.168.56.1:14550')
 
@@ -35,7 +37,7 @@ master.mav.set_gps_global_origin_send(
     194,
     0)
 
-time.sleep(5)
+time.sleep(2)
 
 q = [0,0,0,0]
 
@@ -53,7 +55,28 @@ master.mav.set_home_position_send(
     0,
     time_in_usec)
 
-time.sleep(5)
+time.sleep(2)
+
+# Takeoff
+master.mav.command_long_send(
+    master.target_system,
+    master.target_component,
+    mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
+    0,
+    0, 0, 0, 0, 0, 0, 1.5)
+
+time.sleep(7)
+
+master.mav.command_long_send(
+    master.target_system,
+    master.target_component,
+    mavutil.mavlink.MAV_CMD_NAV_LAND,
+    0,
+    0, 0, 0, 0, 0, 0, 0)
+
+time.sleep(10)
+
+exit()
 
 master.mav.set_position_target_local_ned_send(
     0,
@@ -113,7 +136,10 @@ master.mav.set_position_target_local_ned_send(
     90/180*3.14,
     0)
 
-while True:
+t0 = time.time()
+t = time.time()
+
+while t-t0 < 20:
 
     t = time.time()
     w_c = 0.5 # rad/s
@@ -145,6 +171,17 @@ while True:
 
     time.sleep(0.002)
 
+    time.sleep(2)
+
+# Land
+master.mav.command_long_send(
+    master.target_system,
+    master.target_component,
+    mavutil.mavlink.MAV_CMD_NAV_LAND,
+    0,
+    0, 0, 0, 0, 0, 0, 0)
+
+exit()
 while True:
     try:
         print(master.recv_match().to_dict())
