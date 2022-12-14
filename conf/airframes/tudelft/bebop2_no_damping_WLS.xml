@@ -37,11 +37,15 @@
       <define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.06"/>
     </module>
 
-    <module name="ahrs" type="int_cmpl_quat">
+    <!-- <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="TRUE"/>
       <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
     </module>
-    <module name="ins" type="extended"/>
+    <module name="ins" type="extended"/> -->
+
+    <module name="ins" type="float_invariant">
+      <define name="INS_PROPAGATE_FREQUENCY" value="500"/>
+    </module>
 
     <module name="geo_mag"/>
     <module name="air_data"/>
@@ -80,26 +84,40 @@
 
   <!-- Magnetometer still needs to be calibrated -->
   <section name="IMU" prefix="IMU_">
-    <define name="MAG_X_NEUTRAL" value="0"/>
-    <define name="MAG_Y_NEUTRAL" value="0"/>
-    <define name="MAG_Z_NEUTRAL" value="0"/>
-    <define name="MAG_X_SENS" value="7.28514789391" integer="16"/>
-    <define name="MAG_Y_SENS" value="7.33022132691" integer="16"/>
-    <define name="MAG_Z_SENS" value="7.57102035692" integer="16"/>
+    <define name="MAG_X_NEUTRAL" value="8"/>
+    <define name="MAG_Y_NEUTRAL" value="-69"/>
+    <define name="MAG_Z_NEUTRAL" value="-164"/>
+    <define name="MAG_X_SENS" value="7.165546239401978" integer="16"/>
+    <define name="MAG_Y_SENS" value="7.202811864956067" integer="16"/>
+    <define name="MAG_Z_SENS" value="7.62713052438294" integer="16"/>
+
+
+    <define name="ACCEL_X_NEUTRAL" value="62"/>
+    <define name="ACCEL_Y_NEUTRAL" value="-36"/>
+    <define name="ACCEL_Z_NEUTRAL" value="9"/>
+    <define name="ACCEL_X_SENS" value="2.454829474597287" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="2.4394194216880543" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.433744193551986" integer="16"/>
   </section>
 
   <!-- local magnetic field -->
   <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
-  <section name="AHRS" prefix="AHRS_">
-    <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
+      <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
     <!-- Delft -->
+  <!-- <section name="AHRS" prefix="AHRS_">
     <define name="H_X" value="0.3892503"/>
     <define name="H_Y" value="0.0017972"/>
     <define name="H_Z" value="0.9211303"/>
-  </section>
+  </section> -->
 
+
+    <!-- Delft -->
   <section name="INS" prefix="INS_">
     <define name="SONAR_MAX_RANGE" value="2.2"/>
+
+    <define name="H_X" value="0.3928"/>
+    <define name="H_Y" value="-0.0140"/>
+    <define name="H_Z" value="0.9195"/>
   </section>
 
   <section name="RC_SETPOINT" prefix="STABILIZATION_ATTITUDE_">
@@ -162,6 +180,7 @@
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
+    <define name="REF_MIN_ZD" value="(-2.)"/>
     <define name="HOVER_KP" value="350"/>
     <define name="HOVER_KD" value="85"/>
     <define name="HOVER_KI" value="20"/>
@@ -170,7 +189,8 @@
   </section>
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="REF_MAX_SPEED" value="8" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="6" unit="m/s"/>
+    <define name="REF_OMEGA" value="40" unit="deg"/>
     <define name="MAX_BANK" value="32" unit="deg"/>
     <define name="PGAIN" value="120"/>
     <define name="DGAIN" value="100"/>
