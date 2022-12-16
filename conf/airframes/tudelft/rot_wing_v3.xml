@@ -27,13 +27,7 @@
                 <define VALUE="i2c2" NAME="MS45XX_I2C_DEV"/>
             </module>
             <module name="imu" type="cube"/>
-            <module name="wing_rotation_controller">
-                <define name="WING_ROTATION_POSITION_ADC_0" value="62930"/>
-                <define name="WING_ROTATION_POSITION_ADC_90" value="41760"/>
-                <define name="WING_ROTATION_DEADZONE_PPRZ_CMD" value="500"/>
-                <define name="WING_ROTATION_P_GAIN" value="-50000"/>
-                <define name="WING_ROTATION_MAX_CMD" value="9600"/>
-            </module>
+            
             <!--<module name="wing_rotation_controller"/>-->
             <define VALUE="RADIO_AUX1" NAME="RADIO_TH_HOLD"/>
             <define VALUE="RADIO_AUX2" NAME="RADIO_FMODE"/>
@@ -93,16 +87,30 @@
 
         <module name="AOA_pwm">
             <define name="USE_PWM_INPUT1" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>
-            <define name="AOA_ANGLE_OFFSET" value="3.4907"/>
+            <define name="AOA_ANGLE_OFFSET" value="3.5807"/>
             <define name="AOA_PWM_PERIOD" value="1024"/>
             <define name="AOA_PWM_OFFSET" value="1"/>
             <configure name="AOA_PWM_CHANNEL" value="PWM_INPUT1" />
         </module>
 
-        <!-- <module name="sys_id_doublet">
+        <module name="wing_rotation_controller">
+            <define name="WING_ROTATION_POSITION_ADC_0" value="62930"/>
+            <define name="WING_ROTATION_POSITION_ADC_90" value="41760"/>
+            <define name="WING_ROTATION_DEADZONE_PPRZ_CMD" value="500"/>
+            <define name="WING_ROTATION_P_GAIN" value="-50000"/>
+            <define name="WING_ROTATION_MAX_CMD" value="9600"/>
+        </module>
+
+        <module name="lidar_tfmini">
+            <configure name="TFMINI_PORT" value="UART8"/>
+        </module>
+
+        <module name="sys_id_doublet">
             <define name="DOUBLET_AXES" value="{0,1,2,3}"/>
             <define name="DOUBLET_RADIO_CHANNEL" value="9"/>
-        </module> -->
+        </module>
+
+        <module name="agl_dist"/>
         <!--<module name="sys_id_chirp">
             <define name="CHIRP_AXES" value="{0,1,2,3}"/>
             <define name="CHIRP_RADIO_CHANNEL" value="9"/>
@@ -151,7 +159,7 @@
         <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
         <set VALUE="0" SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($th_hold? 0 : actuators_pprz[4])" SERVO="SERVO_RUDDER"/>
-        <!-- <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/> -->
+        <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
         <!--<call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>-->
         <set VALUE="($th_hold? -9600 : actuators_pprz[0])" SERVO="MOTOR_FRONT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
@@ -225,9 +233,9 @@
     </section>
 
     <section PREFIX="STABILIZATION_INDI_" NAME="STABILIZATION_ATTITUDE_INDI">
-        <define VALUE="{0.0, -12.3, 0.0,   12.3, 0.0}" NAME="G1_ROLL"/>
-        <define VALUE="{1.3, 0.0,   -1.3, 0.0, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-0.2, 0.3, -0.2, 0.3, 0.0}" NAME="G1_YAW"/>
+        <define VALUE="{0.0, -11.0, 0.0,   11.0, 0.0}" NAME="G1_ROLL"/>
+        <define VALUE="{1.9, 0.0,   -1.9, 0.0, 0.0}" NAME="G1_PITCH"/>
+        <define VALUE="{-0.275, 0.275, -0.275, 0.275, 0.0}" NAME="G1_YAW"/>
         <define VALUE="{-0.55,   -0.45,  -0.55, -0.45, 0.0}" NAME="G1_THRUST"/>
         <define VALUE="{0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
         <define VALUE="0.00047" NAME="PUSHER_PROP_EFFECTIVENESS"/>
@@ -325,10 +333,10 @@
     </section>
 
     <section name="SIMULATOR" prefix="NPS_">
-        <define name="ACTUATOR_NAMES" value="front_motor, right_motor, back_motor, left_motor" type="string[]"/>
+        <define name="ACTUATOR_NAMES" value="front_motor, right_motor, back_motor, left_motor, rudder, pusher" type="string[]"/>
         <define name="JSBSIM_MODEL" value="rotwingv3" type="string"/>
         <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
-        <define name="COMMANDS_NB" value="4"/>
+        <define name="COMMANDS_NB" value="6"/>
         <define name="NO_MOTOR_MIXING" value="TRUE"/>
         <define name="JS_AXIS_MODE" value="4"/>
     </section>
