@@ -1,0 +1,1 @@
+var reportPages = [["Summary","darko_survey.html"],["Subsystem Report","darko_subsystems.html"],["Code Interface Report","darko_interface.html"],["Traceability Report","darko_trace.html"],["Static Code Metrics Report","darko_metrics.html"],["Code Replacements Report","darko_replacements.html"],["Coder Assumptions","darko_coderassumptions.html"]];
