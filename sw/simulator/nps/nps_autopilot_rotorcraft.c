@@ -35,6 +35,7 @@
 #include "modules/ins/ins.h"
 #include "math/pprz_algebra.h"
 
+
 #ifndef NPS_NO_MOTOR_MIXING
 #include "modules/actuators/motor_mixing.h"
 
@@ -42,6 +43,7 @@
 #warning "NPS_COMMANDS_NB does not match MOTOR_MIXING_NB_MOTOR!"
 #endif
 #endif
+
 
 #include "modules/core/abi.h"
 

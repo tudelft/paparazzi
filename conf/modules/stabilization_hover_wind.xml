@@ -31,6 +31,5 @@
   <makefile target="ap|nps" firmware="rotorcraft">
     <file name="stabilization_hover_wind.c" dir="$(SRC_FIRMWARE)/stabilization"/>
 
-
   </makefile>
 </module>

@@ -1,5 +1,5 @@
 ﻿<airframe name="DarkO3_indi">
-<!-- DarkO2 Onyx Airframe
+<!-- DarkO3 Onyx Airframe
   Apogee v1.0 Chibios
   Xbee API
   Ublox M8T
@@ -182,12 +182,12 @@
   </section>
 
 
-  <section name="SIMULATOR" prefix="NPS_">
+  <!--section name="SIMULATOR" prefix="NPS_">
     <define name="ACTUATOR_NAMES" value="ele_left, ele_right, mot_right, mot_left" type="string[]"/>
     <define name="JSBSIM_MODEL" value="cyclone" type="string"/>
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
     <define name="NO_MOTOR_MIXING" value="TRUE"/>
-  </section>
+  </section-->
   
   <section name="GCS">
     <define name="ALT_SHIFT_PLUS_PLUS" value="3"/>
@@ -195,16 +195,16 @@
     <define name="ALT_SHIFT_MINUS" value="-1"/>
   </section>
 
-    <section name="AUTOPILOT">
-      <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/> <!-- for compilation -->
-      <define name="MODE_AUTO1" value="AP_MODE_FORWARD"/> <!-- for compilation -->
-      <define name="MODE_AUTO2" value="AP_MODE_NAV"/> <!-- for compilation -->
-      <define name="MODE_STARTUP" value="AP_MODE_NAV"/> <!-- for compilation -->
-    </section> 
+  <section name="AUTOPILOT">
+    <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/> <!-- for compilation -->
+    <define name="MODE_AUTO1" value="AP_MODE_FORWARD"/> <!-- for compilation -->
+    <define name="MODE_AUTO2" value="AP_MODE_NAV"/> <!-- for compilation -->
+    <define name="MODE_STARTUP" value="AP_MODE_NAV"/> <!-- for compilation -->
+  </section> 
 
 
   <firmware name="rotorcraft">
-    <autopilot name="rotorcraft_autopilot.xml"/>
+    <!--autopilot name="rotorcraft_autopilot.xml"/-->
     <!--autopilot name="darko_autopilot.xml"/-->
 
     <target name="ap" board="apogee_1.0_chibios">
@@ -230,16 +230,18 @@
     </target>
 
     <target name="nps" board="pc">
-      <module name="fdm" type="jsbsim"/>
-      <module name="udp"/>
-      <module name="radio_control" type="datalink"/>
-      <module name="logger_file">
-        <define name="FILE_LOGGER_PATH" value="/home/parallels/Documents"/>
+      <module name="fdm" type="simulink">
+        <define name="NPS_NO_MOTOR_MIXING" value="1"/>
       </module>
+      <!--module name="udp"/-->
+      <module name="radio_control" type="datalink"/>
+      <!--module name="logger_file">
+        <define name="FILE_LOGGER_PATH" value="/home/parallels/Documents"/>
+      </module-->
 
       <!--Switch advanced INDI scheduling functions on or off-->
       <!--Take the mode channel for simulation-->
-      <define name="INDI_FUNCTIONS_RC_CHANNEL" value="4"/>
+      <!--define name="INDI_FUNCTIONS_RC_CHANNEL" value="4"/-->
     </target>
 
     <!--<module name="gps" type="ubx_ucenter"/>-->
@@ -289,11 +291,6 @@
       <!--define name="USE_SERVOS_7AND8"/-->
     </module>
 
-    <!--module name="send_imu_mag_current">
-      <define name="MILLIAMP_AT_IDLE_THROTTLE" value="1000"/>
-      <define name="MILLIAMP_AT_FULL_THROTTLE" value="20000"/>
-      <define name="CURRENT_ESTIMATION_NONLINEARITY" value="1.5"/>
-    </module-->
 
     <module name="sys_mon"/>
 

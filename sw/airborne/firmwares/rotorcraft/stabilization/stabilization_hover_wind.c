@@ -45,6 +45,7 @@ float eps[CTRL_HOVER_WIND_INPUT][1];
 float dot_x_e_dt[CTRL_HOVER_WIND_NUM_INTEGRATOR_STATE][1]; 
 float u_integrator[CTRL_HOVER_WIND_NUM_ACT][1];
 float u_prop[CTRL_HOVER_WIND_NUM_ACT][1];
+float u_filter[CTRL_HOVER_WIND_NUM_ACT][1];
 float u_sub[CTRL_HOVER_WIND_NUM_ACT][1];
 float u[CTRL_HOVER_WIND_NUM_ACT][1];
 float u_scale[CTRL_HOVER_WIND_NUM_ACT][1];
@@ -52,6 +53,8 @@ float u_scale[CTRL_HOVER_WIND_NUM_ACT][1];
 struct FloatQuat quat_roty_90 = {0.707106781186548,   0,    0.707106781186548,    0};
 struct FloatQuat quat_att_barth_frame;
 
+float tf_state1[2];
+float tf_state2[2];
 
 
 // static inline void log_hoverwind_periodic(void);
@@ -60,7 +63,7 @@ struct FloatQuat quat_att_barth_frame;
 
 void stabilization_hover_wind_init(void){
 
-  log_hoverwind_start();
+  //log_hoverwind_start();
 
   x_e[0][0] = 0;
   x_e[1][0] = 0;
@@ -88,26 +91,33 @@ void stabilization_hover_wind_run(bool in_flight){
   x_e[0][0] +=  dot_x_e_dt[0][0];
   x_e[1][0] +=  dot_x_e_dt[1][0];
   u_integrator[0][0] = x_e[0][0];
-  u_integrator[1][0] = x_e[0][0];
-  u_integrator[2][0] = x_e[1][0];
-  u_integrator[3][0] = x_e[1][0];
+  u_integrator[1][0] = x_e[1][0];
   MAT_MUL(CTRL_HOVER_WIND_NUM_ACT, CTRL_HOVER_WIND_INPUT, 1, u_prop, K, eps);
-  //MAT_SUB(CTRL_HOVER_WIND_NUM_ACT, 1, u_sub, u_integrator, u_prop);
-  //MAT_SUM(CTRL_HOVER_WIND_NUM_ACT, 1, u, ueq, u_sub);
-  MAT_SUM(CTRL_HOVER_WIND_NUM_ACT, 1, u, ueq, u_prop);
+
+  float tf1_tmp;
+  float tf2_tmp;
+
+  tf1_tmp = (u_prop[0][0] - den[1]*tf_state1[0] - den[2]* tf_state1[1])/ den[0];
+  u_filter[0][0] = num[0]*tf1_tmp + num[1]*tf_state1[0] + num[2]*tf_state1[1];
+
+  tf2_tmp = (u_prop[1][0] - den[1]*tf_state2[0] - den[2]* tf_state2[1])/ den[0];
+  u_filter[1][0] = num[0]*tf2_tmp + num[1]*tf_state2[0] + num[2]*tf_state2[1];
+
+
+  MAT_SUB(CTRL_HOVER_WIND_NUM_ACT, 1, u_sub, u_integrator, u_filter);
+  MAT_SUM(CTRL_HOVER_WIND_NUM_ACT, 1, u, ueq, u_sub);
+
   
   u_scale[0][0] = (sqrtf(u[0][0]/kf) / mot_max_speed)*MAX_PPRZ; 
-  u_scale[1][0] = (sqrtf(u[1][0]/kf) / mot_max_speed)*MAX_PPRZ;
-  u_scale[2][0] = (u[2][0]*6/M_PI)*MAX_PPRZ;
-  u_scale[3][0] = (u[3][0]*6/M_PI)*MAX_PPRZ;
+  u_scale[1][0] = (u[1][0]*6/M_PI)*MAX_PPRZ;
 
 
   actuators_pprz[0]=TRIM_UPPRZ(u_scale[0][0]);
-  actuators_pprz[1]=TRIM_UPPRZ(u_scale[1][0]);
-  actuators_pprz[2]=TRIM_PPRZ(u_scale[2][0]);
-  actuators_pprz[3]=TRIM_PPRZ(u_scale[3][0]);
+  actuators_pprz[1]=TRIM_UPPRZ(u_scale[0][0]);
+  actuators_pprz[2]=TRIM_PPRZ(u_scale[1][0]);
+  actuators_pprz[3]=TRIM_PPRZ(u_scale[1][0]);
 
-  log_hoverwind_periodic();
+  //log_hoverwind_periodic();
 }
 
 // Report function

@@ -6,11 +6,13 @@
       Simulink generated FDM for NPS simulator
     </description>
   </doc>
-  <header/>
+  <header>
+   <file name="darko.h" dir="nps/simulink/darko/Darko/darko_ert_rtw"/>
+  </header>
   <makefile target="nps|hitl">
     <file name="nps_fdm_simulink.c" dir="nps"/>
-    <file name="darko_data.c" dir="nps/simulink"/>
-    <file name="darko.c" dir="nps/simulink"/>
+    <file name="darko.c" dir="nps/simulink/darko/Darko/darko_ert_rtw"/>
+    <file name="darko_data.c" dir="nps/simulink/darko/Darko/darko_ert_rtw"/>
   </makefile>
 </module>
 
