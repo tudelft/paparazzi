@@ -37,12 +37,26 @@
 
 #include "state.h"
 
+#ifndef NPS_SIM_TO_PPRZ_PHI
+#define NPS_SIM_TO_PPRZ_PHI 0.
+#endif
+
+#ifndef NPS_SIM_TO_PPRZ_THETA
+#define NPS_SIM_TO_PPRZ_THETA -90.
+#endif
+
+#ifndef NPS_SIM_TO_PPRZ_PSI
+#define NPS_SIM_TO_PPRZ_PSI 0.
+#endif
 
 // NpsFdm structure
 struct NpsFdm fdm;
 
 // Reference point
 static struct LtpDef_d ltpdef_d;
+
+// rototion from simulink to pprz
+static struct DoubleQuat quat_to_pprz;
 
 // Static functions declaration
 static void init_ltp(void);
@@ -55,6 +69,8 @@ static void fetch_accel(void);
 static void fetch_orient(void);
 static void fetch_angular_vel(void);
 static void fetch_rotaccel(void);
+
+static void print_state(void);
 
 void nps_fdm_init(double dt)
 {
@@ -69,22 +85,30 @@ void nps_fdm_init(double dt)
   fdm.dynamic_pressure = -1;
   fdm.temperature = -1;
 
+  struct DoubleEulers e2pprz = {
+    RadOfDeg(NPS_SIM_TO_PPRZ_PHI),
+    RadOfDeg(NPS_SIM_TO_PPRZ_THETA),
+    RadOfDeg(NPS_SIM_TO_PPRZ_PSI)
+  };
+  double_quat_of_eulers(&quat_to_pprz, &e2pprz);
+
   init_ltp();
 
-  
   rtU.u[0] = 1;
   rtU.u[1] = 1;
   rtU.u[2] = 0;
   rtU.u[3] = 0;
-  
 
   for(int i=0; i<3; i++) {
     rtU.w[i] = 0;
   }
   darko_initialize();
+  print_state();
+    darko_step();
+    print_state();
 
 /*
-  darko_step(); 
+  darko_step();
 
    // Transform ltp definition to double for accuracy
   ltpdef_d.ecef.x = state.ned_origin_f.ecef.x;
@@ -106,99 +130,106 @@ void nps_fdm_init(double dt)
   fetch_rotaccel();
 */
   //printf("init");
-  
 }
 
 void nps_fdm_run_step(bool launch __attribute__((unused)), double *commands, int commands_nb __attribute__((unused)))
-{ 
+{
   feed_cmd(commands, commands_nb);
 
   //autopilot_in_flight()  autopilot.motors_on
 
-  if(autopilot_in_flight()){
+  if (autopilot_in_flight()) {
     darko_step();
-  
-  
-  // fdm.time = rtY.time; //Really need ?
-
-  // Transform ltp definition to double for accuracy
-  
-  ltpdef_d.ecef.x = state.ned_origin_f.ecef.x;
-  ltpdef_d.ecef.y = state.ned_origin_f.ecef.y;
-  ltpdef_d.ecef.z = state.ned_origin_f.ecef.z;
-  ltpdef_d.lla.lat = state.ned_origin_f.lla.lat;
-  ltpdef_d.lla.lon = state.ned_origin_f.lla.lon;
-  ltpdef_d.lla.alt = state.ned_origin_f.lla.alt;
-  for (int i = 0; i < 3 * 3; i++) {
-    ltpdef_d.ltp_of_ecef.m[i] = state.ned_origin_f.ltp_of_ecef.m[i];
-  }
-  ltpdef_d.hmsl = state.ned_origin_f.hmsl;
-  
-  fetch_pos();
-  fetch_vel();
-  fetch_accel();
-  fetch_orient();
-  fetch_angular_vel();
-  fetch_rotaccel();
   }
 
-/*
-  printf("run cmd: ");
-  for(int i=0; i<commands_nb; i++) {
-    printf("%lf  ", commands[i]);
-  }
-  printf("\n");
-  
-  printf("run pos: ");
-  for(int i=0; i<3; i++) {
-    printf("%lf  ", rtY.p[i]);
-  }
-  printf("\n");
+    // fdm.time = rtY.time; //Really need ?
 
-  printf("run vel: ");
-  for(int i=0; i<3; i++) {
-    printf("%lf  ", rtY.v[i]);
-  }
-  printf("\n");
+    // Transform ltp definition to double for accuracy
+
+    ltpdef_d.ecef.x = state.ned_origin_f.ecef.x;
+    ltpdef_d.ecef.y = state.ned_origin_f.ecef.y;
+    ltpdef_d.ecef.z = state.ned_origin_f.ecef.z;
+    ltpdef_d.lla.lat = state.ned_origin_f.lla.lat;
+    ltpdef_d.lla.lon = state.ned_origin_f.lla.lon;
+    ltpdef_d.lla.alt = state.ned_origin_f.lla.alt;
+    for (int i = 0; i < 3 * 3; i++) {
+      ltpdef_d.ltp_of_ecef.m[i] = state.ned_origin_f.ltp_of_ecef.m[i];
+    }
+    ltpdef_d.hmsl = state.ned_origin_f.hmsl;
+
+    fetch_pos();
+    fetch_vel();
+    fetch_accel();
+    fetch_orient();
+    fetch_angular_vel();
+    fetch_rotaccel();
+  //}
+
+  /*
+     printf("run cmd: ");
+     for(int i=0; i<commands_nb; i++) {
+     printf("%lf  ", commands[i]);
+     }
+     printf("\n");
+
+     printf("run pos: ");
+     for(int i=0; i<3; i++) {
+     printf("%lf  ", rtY.p[i]);
+     }
+     printf("\n");
+
+     printf("run vel: ");
+     for(int i=0; i<3; i++) {
+     printf("%lf  ", rtY.v[i]);
+     }
+     printf("\n");
 
 
-  printf("run quat: ");
-  for(int i=0; i<4; i++) {
-    printf("%lf  ", rtY.q[i]);
-  }
-  printf("\n");
+     printf("run quat: ");
+     for(int i=0; i<4; i++) {
+     printf("%lf  ", rtY.q[i]);
+     }
+     printf("\n");
 
 
-  printf("run ome: ");
-  for(int i=0; i<3; i++) {
-    printf("%lf  ", rtY.omega[i]);
-  }
-  printf("\n");
-  */
+     printf("run ome: ");
+     for(int i=0; i<3; i++) {
+     printf("%lf  ", rtY.omega[i]);
+     }
+     printf("\n");
+     */
 
 }
 
-void feed_cmd(double *commands, int commands_nb __attribute__((unused))){
-  if(commands_nb != 4) {exit(-45);}
-  
-  for(int i=0; i<commands_nb; i++) {
+#define DBG_CMD 0
+void feed_cmd(double *commands, int commands_nb __attribute__((unused))) {
+#if DBG_CMD
+  printf("commands (%d), ", commands_nb);
+#endif
+  if (commands_nb != 4) {exit(-45);}
+
+  for (int i=0; i<commands_nb; i++) {
     rtU.u[i] = commands[i];
+#if DBG_CMD
+    printf("%lf ", commands[i]);
+#endif
   }
-  
+#if DBG_CMD
+  printf("\n");
+#endif
 }
-
 
 static void fetch_pos() {
   // fetch NED pos
   fdm.ltpprz_pos.x = rtY.p[0];
   fdm.ltpprz_pos.y = rtY.p[1];
   fdm.ltpprz_pos.z = rtY.p[2];
-  
+
   // convert to ECEF and LLA
   ecef_of_ned_point_d(&fdm.ecef_pos, &ltpdef_d, &fdm.ltpprz_pos);
-  //lla_of_ecef_d(&fdm.lla_pos, &fdm.ecef_pos);
-  
-  fdm.hmsl = fdm.ltpprz_pos.z;
+  lla_of_ecef_d(&fdm.lla_pos, &fdm.ecef_pos);
+
+  fdm.hmsl = -fdm.ltpprz_pos.z; // TODO check sign
   // lla_pos_pprz
   // lla_pos_geod
   // lla_pos_geoc
@@ -215,32 +246,54 @@ static void fetch_vel() {
 
 }
 
-static void fetch_accel(){
-  fdm.ltpprz_ecef_accel.x = rtY.accel[0];
-  fdm.ltpprz_ecef_accel.y = rtY.accel[1];
-  fdm.ltpprz_ecef_accel.z = rtY.accel[2];
+static void fetch_accel() {
+  fdm.ltpprz_ecef_accel.x = rtY.accel[0]; // - fdm.ltp_g.x;
+  fdm.ltpprz_ecef_accel.y = rtY.accel[1]; // - fdm.ltp_g.y;
+  fdm.ltpprz_ecef_accel.z = rtY.accel[2]; // - fdm.ltp_g.z;
+  fdm.body_ecef_accel.x = rtY.accel[0]; // - fdm.ltp_g.x;
+  fdm.body_ecef_accel.y = rtY.accel[1]; // - fdm.ltp_g.y;
+  fdm.body_ecef_accel.z = rtY.accel[2]; // - fdm.ltp_g.z;
+  struct DoubleVect3 tmp;
+  tmp.x = rtY.accel[0];
+  tmp.y = rtY.accel[1];
+  tmp.z = rtY.accel[2];
+  double_quat_vmult(&fdm.body_accel, &fdm.ltp_to_body_quat, &tmp);
 }
 
-static void fetch_orient(){
-  fdm.ltpprz_to_body_quat.qi = rtY.q[0];
-  fdm.ltpprz_to_body_quat.qx = rtY.q[1];
-  fdm.ltpprz_to_body_quat.qy = rtY.q[2];
-  fdm.ltpprz_to_body_quat.qz = rtY.q[3];
-
+static void fetch_orient() {
+  struct DoubleQuat ltp_to_sim = { rtY.q[0], rtY.q[1], rtY.q[2], rtY.q[3] };
+  double_quat_comp(&fdm.ltpprz_to_body_quat, &ltp_to_sim, &quat_to_pprz);
+  //fdm.ltpprz_to_body_quat.qi = rtY.q[0];
+  //fdm.ltpprz_to_body_quat.qx = rtY.q[1];
+  //fdm.ltpprz_to_body_quat.qy = rtY.q[2];
+  //fdm.ltpprz_to_body_quat.qz = rtY.q[3];
+  fdm.ltp_to_body_quat = fdm.ltpprz_to_body_quat;
+  double_eulers_of_quat(&fdm.ltp_to_body_eulers, &fdm.ltpprz_to_body_quat);
 }
 
 //TODO check inertial ECI frame ou ECEF frame  fichier nps_fdm.h
 
-static void fetch_angular_vel(){
-  fdm.body_inertial_rotvel.p = rtY.omega[0];
-  fdm.body_inertial_rotvel.q = rtY.omega[1];
-  fdm.body_inertial_rotvel.r = rtY.omega[2];
+static void fetch_angular_vel() {
+  struct DoubleVect3 sim_rates, pprz_rates;
+  sim_rates.x = rtY.omega[0];
+  sim_rates.y = rtY.omega[1];
+  sim_rates.z = rtY.omega[2];
+  double_quat_vmult(&pprz_rates, &quat_to_pprz, &sim_rates);
+  fdm.body_inertial_rotvel.p = pprz_rates.x;
+  fdm.body_inertial_rotvel.q = pprz_rates.y;
+  fdm.body_inertial_rotvel.r = pprz_rates.z;
+  fdm.body_ecef_rotvel = fdm.body_inertial_rotvel;
 }
 
-static void fetch_rotaccel(){
-  fdm.body_inertial_rotaccel.p = rtY.rotaccel[0];
-  fdm.body_inertial_rotaccel.q = rtY.rotaccel[1];
-  fdm.body_inertial_rotaccel.r = rtY.rotaccel[2];
+static void fetch_rotaccel() {
+  struct DoubleVect3 sim_rotaccel, pprz_rotaccel;
+  sim_rotaccel.x = rtY.rotaccel[0];
+  sim_rotaccel.y = rtY.rotaccel[1];
+  sim_rotaccel.z = rtY.rotaccel[2];
+  double_quat_vmult(&pprz_rotaccel, &quat_to_pprz, &sim_rotaccel);
+  fdm.body_inertial_rotaccel.p = pprz_rotaccel.x;
+  fdm.body_inertial_rotaccel.q = pprz_rotaccel.y;
+  fdm.body_inertial_rotaccel.r = pprz_rotaccel.z;
 }
 
 /**************************
@@ -282,30 +335,48 @@ static void init_ltp(void)
 
 
 void nps_fdm_set_wind(double speed __attribute__((unused)),
-                      double dir __attribute__((unused)))
+    double dir __attribute__((unused)))
 {
   printf("set_wind not implemented!\n");
 }
 
 void nps_fdm_set_wind_ned(double wind_north __attribute__((unused)),
-                          double wind_east __attribute__((unused)),
-                          double wind_down __attribute__((unused)))
+    double wind_east __attribute__((unused)),
+    double wind_down __attribute__((unused)))
 {
   // printf("set_wind not implemented!\n");
   /*
-  rtU.w[0] = wind_north;
-  rtU.w[1] = wind_east;
-  rtU.w[2] = wind_down;
-  */
+     rtU.w[0] = wind_north;
+     rtU.w[1] = wind_east;
+     rtU.w[2] = wind_down;
+     */
 }
 
 void nps_fdm_set_turbulence(double wind_speed __attribute__((unused)),
-                            int turbulence_severity __attribute__((unused)))
+    int turbulence_severity __attribute__((unused)))
 {
 }
 
 void nps_fdm_set_temperature(double temp __attribute__((unused)),
-                             double h __attribute__((unused)))
+    double h __attribute__((unused)))
 {
+}
+
+static void print_state(void) {
+  printf("state %lf\n", fdm.time);
+  printf("  pos %lf %lf %lf, vel %lf %lf %lf, accel %lf %lf %lf\n",
+      rtY.p[0], rtY.p[1], rtY.p[2],
+      rtY.v[0], rtY.v[1], rtY.v[2],
+      rtY.accel[0], rtY.accel[1], rtY.accel[2]);
+  printf("  quat %lf %lf %lf %lf, rates %lf %lf %lf\n",
+      rtY.q[0], rtY.q[1], rtY.q[2], rtY.q[3],
+      rtY.omega[0], rtY.omega[1], rtY.omega[2]);
+  struct DoubleEulers eulers;
+  struct DoubleQuat quat = { rtY.q[0], rtY.q[1], rtY.q[2], rtY.q[3] };
+  double_eulers_of_quat(&eulers, &quat);
+  printf("  eulers %lf %lf %lf\n",
+      DegOfRad(eulers.phi),
+      DegOfRad(eulers.theta),
+      DegOfRad(eulers.psi));
 }
 

@@ -205,7 +205,7 @@
 
   <firmware name="rotorcraft">
     <!--autopilot name="rotorcraft_autopilot.xml"/-->
-    <!--autopilot name="darko_autopilot.xml"/-->
+    <autopilot name="darko_autopilot.xml"/>
 
     <target name="ap" board="apogee_1.0_chibios">
       <configure name="PERIODIC_FREQUENCY" value="512"/>
@@ -245,14 +245,9 @@
     </target>
 
     <!--<module name="gps" type="ubx_ucenter"/>-->
-    <module name="tlsf"/>
 
-    <!--module name="pprzlog">
-      <define name="SDLOG_START_DELAY" value="10"/>
-    </module-->
     <module name="logger" type="sd_chibios"/>
     <module name="flight_recorder"/>
-    <!--<module name="logger_spi_link"/>-->
 
 
     <module name="airspeed" type="sdp3x">
@@ -274,7 +269,7 @@
       <define name="HMC58XX_CHAN_Y_SIGN" value="+"/>
       <define name="HMC58XX_CHAN_Z_SIGN" value="-"/>
 
-    <define name="HMC58XX_MAG_TO_IMU_PHI" value="RadOfDeg\(0.0\)"/>
+      <define name="HMC58XX_MAG_TO_IMU_PHI" value="RadOfDeg\(0.0\)"/>
       <define name="HMC58XX_MAG_TO_IMU_THETA" value="RadOfDeg\(17.0\)"/>
       <define name="HMC58XX_MAG_TO_IMU_PSI" value="RadOfDeg\(0.0\)"/>
     </module>
