@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="50" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="500" name="Rotating wing Valkenburg" security_height="2">
+<flight_plan alt="30" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="500" name="Rotating wing Valkenburg" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -105,12 +105,13 @@
     </block>
     <block name="flare">
         <stay climb="-0.4" vmode="climb" wp="TD"/>
-        <exception cond="!(stateGetPositionEnu_f()->z > 2.0)" deroute="flare_low"/>
+        <!--<exception cond="!(stateGetPositionEnu_f()->z > 2.0)" deroute="flare_low"/>-->
+        <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.15)" deroute="flare_low"/>
     </block>
     <block name="flare_low">
-        <!--<exception cond="NavDetectGround()" deroute="Holding point"/>
+        <exception cond="NavDetectGround()" deroute="Holding point"/>
         <exception cond="!nav_is_in_flight()" deroute="landed"/>
-        <call_once fun="NavStartDetectGround()"/>-->
+        <call_once fun="NavStartDetectGround()"/>
         <stay climb="-0.4" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">

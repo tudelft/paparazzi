@@ -286,7 +286,7 @@ void guidance_indi_run(float *heading_sp) {
   float speed_sp_b_x = cosf(psi) * speed_sp.x + sinf(psi) * speed_sp.y;
   float speed_sp_b_y =-sinf(psi) * speed_sp.x + cosf(psi) * speed_sp.y;
 
-  float airspeed = stateGetAirspeed_f(); //sqrtf(stateGetSpeedNed_f()->x * stateGetSpeedNed_f()->x + stateGetSpeedNed_f()->y * stateGetSpeedNed_f()->y);
+  float airspeed = sqrtf(stateGetSpeedNed_f()->x * stateGetSpeedNed_f()->x + stateGetSpeedNed_f()->y * stateGetSpeedNed_f()->y);
 
   struct NedCoor_f *groundspeed = stateGetSpeedNed_f();
   struct FloatVect2 airspeed_v = {cos(psi)*airspeed, sin(psi)*airspeed};

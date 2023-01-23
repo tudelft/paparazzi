@@ -34,8 +34,8 @@
             <define VALUE="RADIO_AUX3" NAME="RADIO_FBW_MODE"/>
             <define VALUE="RADIO_AUX1" NAME="RADIO_KILL_SWITCH"/>
             <define VALUE="MAG_LIS3MDL_SENDER_ID" NAME="INS_EKF2_MAG_ID"/>
-            <define VALUE="IMU_CUBE1_ID" NAME="INS_EKF2_ACCEL_ID"/>
-            <define VALUE="IMU_CUBE1_ID" NAME="INS_EKF2_GYRO_ID"/>
+            <define VALUE="IMU_CUBE2_ID" NAME="INS_EKF2_ACCEL_ID"/>
+            <define VALUE="IMU_CUBE2_ID" NAME="INS_EKF2_GYRO_ID"/>
         </target>
 
         <target name="nps" board="pc">
@@ -103,6 +103,7 @@
 
         <module name="lidar_tfmini">
             <configure name="TFMINI_PORT" value="UART8"/>
+            <configure name="USE_TFMINI_AGL" value="TRUE"/>
         </module>
 
         <module name="sys_id_doublet">
@@ -181,6 +182,7 @@
         <define VALUE="2.0" NAME="NAV_CLIMB_VSPEED"/>
         <define VALUE="-1.0" NAME="NAV_DESCEND_VSPEED"/>
         <define name="NAV_CARROT_DIST" value="150"/>
+        <define name="THRESHOLD_GROUND_DETECT" value="40"/>
         <!--<define VALUE="50.0" NAME="ARRIVED_AT_WAYPOINT"/>-->
         <define VALUE="20" NAME="NO_GPS_LOST_WITH_DATALINK_TIME"/>
         <define VALUE="TRUE" NAME="NO_GPS_LOST_WITH_RC_VALID"/>
@@ -193,6 +195,7 @@
 
         <!-- Mag calibration 02-11-2022 in front of aircraft hall-->
         <define name="MAG_CALIB" value="{{.abi_id=3, .calibrated={.neutral=true, .scale=true},.neutral={1915,-4390,3530}, .scale={{38935,30511,19759},{59172,43926,28329}}}}"/>
+        <!--<define name="MAG_CALIB" value="{{.abi_id=3, .calibrated={.neutral=true, .scale=true},.neutral={2034,-4388,3563}, .scale={{37980,22045,626},{64559,34387,1015}}}}"/>-->
 
         <!-- Define axis in hover frame -->
         <define name="BODY_TO_IMU_PHI"   value="-2." unit="deg"/>
@@ -234,8 +237,8 @@
 
     <section PREFIX="STABILIZATION_INDI_" NAME="STABILIZATION_ATTITUDE_INDI">
         <define VALUE="{0.0, -11.0, 0.0,   11.0, 0.0}" NAME="G1_ROLL"/>
-        <define VALUE="{1.9, 0.0,   -1.9, 0.0, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-0.275, 0.275, -0.275, 0.275, 0.0}" NAME="G1_YAW"/>
+        <define VALUE="{1.6, 0.0,   -1.6, 0.0, 0.0}" NAME="G1_PITCH"/>
+        <define VALUE="{-0.2, 0.1, -0.35, 0.35, 0.0}" NAME="G1_YAW"/>
         <define VALUE="{-0.55,   -0.45,  -0.55, -0.45, 0.0}" NAME="G1_THRUST"/>
         <define VALUE="{0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
         <define VALUE="0.00047" NAME="PUSHER_PROP_EFFECTIVENESS"/>
@@ -299,7 +302,7 @@
         <define name="POS_GAINZ" value="0.5"/> <!--tuned at 10m/s ///1.7 1.0-->
         <define name="SPEED_GAIN" value="1.0"/> <!--tuned at 10m/s ///2.0 1.4-->
         <define name="SPEED_GAINZ" value="1.0"/> <!--tuned at 10m/s ///2.1 2.4-->
-        <define name="FILTER_CUTOFF" value="2.0"/>
+        <define name="FILTER_CUTOFF" value="1.0"/>
         <define name="HEADING_BANK_GAIN" value="5."/>
         <define name="MAX_AIRSPEED" value="10.0"/>
         <define name="PITCH_LIFT_EFF" value="0.0"/>
