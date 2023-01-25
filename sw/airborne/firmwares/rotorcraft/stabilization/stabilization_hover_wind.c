@@ -72,7 +72,7 @@ void stabilization_hover_wind_init(void){
 
 void stabilization_hover_wind_run(bool in_flight){
     
-  float_quat_comp(&quat_att_barth_frame, &quat_roty_90, stateGetNedToBodyQuat_f());
+  float_quat_comp_inv(&quat_att_barth_frame, &quat_roty_90, stateGetNedToBodyQuat_f());
   
   eps[0][0] = stateGetPositionEnu_f()->x - POS_FLOAT_OF_BFP(navigation_target.x); //navigation_target ENU
   eps[1][0] = stateGetPositionEnu_f()->y - POS_FLOAT_OF_BFP(navigation_target.y);
@@ -117,6 +117,12 @@ void stabilization_hover_wind_run(bool in_flight){
   actuators_pprz[2]=TRIM_PPRZ(u_scale[1][0]);
   actuators_pprz[3]=TRIM_PPRZ(u_scale[1][0]);
 
+  if (in_flight) {
+    stabilization_cmd[COMMAND_THRUST] = (actuators_pprz[0]+actuators_pprz[1])/2; // for in_flight detection
+  } else {
+    stabilization_cmd[COMMAND_THRUST] = 1000;
+  };
+  //printf("run %d %d\n", in_flight, stabilization_cmd[COMMAND_THRUST]);
   //log_hoverwind_periodic();
 }
 
