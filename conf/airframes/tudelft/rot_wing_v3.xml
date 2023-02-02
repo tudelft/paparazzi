@@ -69,7 +69,7 @@
         </module>
 
         <module TYPE="indi" NAME="stabilization">
-            <configure name="INDI_NUM_ACT" value="5"/>
+            <configure name="INDI_NUM_ACT" value="6"/>
         </module>
 
         <module name="guidance" type="indi_rot_wing"/>
@@ -120,7 +120,7 @@
 
     <servos DRIVER="Pwm">
     <!--1030 = quad 2140 = fw-->
-        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1012" NEUTRAL="1012" MAX="2112"/>
+        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1000" NEUTRAL="1000" MAX="2099"/>
         <servo NO="1" NAME="SERVO_AIL_LEFT"  MIN="1000" NEUTRAL="1500" MAX="2000"/>
         <servo NO="2" NAME="SERVO_AIL_RIGHT" MIN="1000" NEUTRAL="1500" MAX="2000"/>
     </servos>
@@ -131,7 +131,7 @@
         <servo NO="2" NAME="MOTOR_BACK"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
         <servo NO="3" NAME="MOTOR_LEFT"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
         <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="0"    MAX="8191"/>
-        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="4000"  NEUTRAL="0"    MAX="-4000"/>
+        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="8191"  NEUTRAL="0"    MAX="-1395"/>
         <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"    MAX="8191"/>
     </servos>
 
@@ -159,14 +159,16 @@
     <command_laws>
         <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
         <set VALUE="0" SERVO="SERVO_ELEVATOR"/>
-        <set VALUE="($th_hold? 0 : actuators_pprz[4])" SERVO="SERVO_RUDDER"/>
+        
         <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
         <!--<call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>-->
         <set VALUE="($th_hold? -9600 : actuators_pprz[0])" SERVO="MOTOR_FRONT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[5])" SERVO="MOTOR_PUSH"/>
+        <set VALUE="($th_hold? 0 : actuators_pprz[4])" SERVO="SERVO_RUDDER"/>
+        <set VALUE="($th_hold? 0 : actuators_pprz[5])" SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[6])" SERVO="MOTOR_PUSH"/>
         <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_ROTWING"/>
 
         <!-- Backup commands -->
@@ -236,11 +238,11 @@
     </section>
 
     <section PREFIX="STABILIZATION_INDI_" NAME="STABILIZATION_ATTITUDE_INDI">
-        <define VALUE="{0.0, -11.0, 0.0,   11.0, 0.0}" NAME="G1_ROLL"/>
-        <define VALUE="{1.6, 0.0,   -1.6, 0.0, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-0.2, 0.1, -0.35, 0.35, 0.0}" NAME="G1_YAW"/>
-        <define VALUE="{-0.55,   -0.45,  -0.55, -0.45, 0.0}" NAME="G1_THRUST"/>
-        <define VALUE="{0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
+        <define VALUE="{0.0, -11.0, 0.0,   11.0, 0.0, 0.0}" NAME="G1_ROLL"/>
+        <define VALUE="{1.6, 0.0,   -1.6, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
+        <define VALUE="{-0.2, 0.1, -0.35, 0.35, 0.0, 0.0}" NAME="G1_YAW"/>
+        <define VALUE="{-0.55,   -0.45,  -0.55, -0.45, 0.0, 0.0}" NAME="G1_THRUST"/>
+        <define VALUE="{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
         <define VALUE="0.00047" NAME="PUSHER_PROP_EFFECTIVENESS"/>
         <define VALUE="0.047" NAME="PUSHER_PROP_DYN"/>
         <!--<define VALUE="{0.00, -30.0, 0.0,   30.0}" NAME="G1_ROLL"/>
@@ -262,8 +264,8 @@
         <define VALUE="0.5" NAME="FILT_CUTOFF_RDOT"/>
         <define VALUE="2.0" NAME="ESTIMATION_FILT_CUTOFF"/>
         <define VALUE="TRUE" NAME="FILTER_YAW_RATE"/>
-        <define VALUE="{0.03, 0.025, 0.03, 0.025, 0.1}" NAME="ACT_DYN"/>
-        <define VALUE="{0, 0, 0, 0, 1}" NAME="ACT_IS_SERVO"/>
+        <define VALUE="{0.03, 0.025, 0.03, 0.025, 0.1, 0.1}" NAME="ACT_DYN"/>
+        <define VALUE="{0, 0, 0, 0, 1, 1}" NAME="ACT_IS_SERVO"/>
         <define VALUE="{1000, 1000, 1, 100}" NAME="WLS_PRIORITIES"/>
         <define VALUE="FALSE" NAME="USE_ADAPTIVE"/>
         <define VALUE="0.001" NAME="ADAPTIVE_MU"/>
