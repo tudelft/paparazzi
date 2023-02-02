@@ -106,7 +106,7 @@
     <block name="flare">
         <stay climb="-0.4" vmode="climb" wp="TD"/>
         <!--<exception cond="!(stateGetPositionEnu_f()->z > 2.0)" deroute="flare_low"/>-->
-        <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.15)" deroute="flare_low"/>
+        <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.20)" deroute="flare_low"/>
     </block>
     <block name="flare_low">
         <exception cond="NavDetectGround()" deroute="Holding point"/>
