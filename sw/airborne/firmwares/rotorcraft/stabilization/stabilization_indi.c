@@ -152,6 +152,7 @@ Butterworth2LowPass thrust_bx_act_lowpass_filter;
 // variables needed for control
 float actuator_state_filt_vect[INDI_NUM_ACT];
 struct FloatRates angular_accel_ref = {0., 0., 0.};
+struct FloatRates rate_sp_telem = {0., 0., 0.};
 float angular_acceleration[3] = {0., 0., 0.};
 float actuator_state[INDI_NUM_ACT];
 float indi_u[INDI_NUM_ACT];
@@ -254,6 +255,9 @@ static void send_att_full_indi(struct transport_tx *trans, struct link_device *d
   float airspeed = stateGetAirspeed_f();
 
   pprz_msg_send_STAB_ATTITUDE_FULL_INDI(trans, dev, AC_ID,
+                                        &rate_sp_telem.p,
+                                        &rate_sp_telem.q,
+                                        &rate_sp_telem.r,
                                         &body_rates->p,
                                         &body_rates->q,
                                         &body_rates->r,
@@ -566,6 +570,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
       {
         du_pref[i] = 0;
       }
+      du_pref[4] = act_pref[i] - actuator_state_filt_vect[i];
 
 #ifdef GUIDANCE_INDI_MIN_THROTTLE
       float airspeed = stateGetAirspeed_f();
@@ -691,6 +696,10 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   rate_sp.p = indi_gains.att.p * att_fb.x / indi_gains.rate.p;
   rate_sp.q = indi_gains.att.q * att_fb.y / indi_gains.rate.q;
   rate_sp.r = indi_gains.att.r * att_fb.z / indi_gains.rate.r;
+
+  rate_sp_telem.p = rate_sp.p;
+  rate_sp_telem.q = rate_sp.q;
+  rate_sp_telem.r = rate_sp.r;
 
   // Possibly we can use some bounding here
   /*BoundAbs(rate_sp.r, 5.0);*/
