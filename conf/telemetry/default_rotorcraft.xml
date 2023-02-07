@@ -9,7 +9,7 @@
       <message name="AUTOPILOT_VERSION"        period="11.1"/>
       <message name="DL_VALUE"                 period="1.1"/>
       <message name="ROTORCRAFT_STATUS"        period="1.2"/>
-      <message name="ROTORCRAFT_FP"            period="0.25"/>
+      <message name="ROTORCRAFT_FP"            period="0.1"/>
       <message name="ALIVE"                    period="2.1"/>
       <message name="INS_REF"                  period="5.1"/>
       <message name="ROTORCRAFT_NAV_STATUS"    period="1.6"/>
