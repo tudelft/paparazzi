@@ -1,0 +1,20 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="ekf_robin">
+  <doc>
+    <description>
+    extended kalman filter made by robin.
+    </description>
+  </doc>
+
+  <header>
+    <file name="ekf_robin.h"/>
+  </header>
+  <init fun="ekf_init()"/>
+  <periodic fun="ekf_run()" freq="512" />
+  <datalink message="EXTERNAL_VISION" fun="external_vision_update(buf)"/>
+
+  <makefile>
+    <file name="ekf_robin.c"/>
+  </makefile>
+</module>
