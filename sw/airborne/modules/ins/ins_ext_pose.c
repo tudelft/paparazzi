@@ -935,15 +935,19 @@ void ekf_run(void)
   struct FloatRates rates = { ekf_U[3]-ekf_X[12], ekf_U[4]-ekf_X[13], ekf_U[5]-ekf_X[14] };
 
 
+  // Export RAW IMU
+	stateSetAccelBody_i(&imu.accels[ROBIN_IMU].scaled);
+
+
   struct NedCoor_f accel;
 	accel.x = ekf_U[0]-ekf_X[9];
 	accel.y = ekf_U[1]-ekf_X[10];
 	accel.z = ekf_U[2]-ekf_X[11];
   struct FloatRMat *ned_to_body_rmat_f = stateGetNedToBodyRMat_f();
 
+	// TODO: remove biases!
 	
 	struct Int32Vect3 accel_ned;
-  stateSetAccelBody_i(&imu.accels[ROBIN_IMU].scaled);
   struct Int32RMat *ned_to_body_rmat = stateGetNedToBodyRMat_i();
   int32_rmat_transp_vmult(&accel_ned, ned_to_body_rmat, &imu.accels[ROBIN_IMU].scaled);
   accel_ned.z += ACCEL_BFP_OF_REAL(9.81);

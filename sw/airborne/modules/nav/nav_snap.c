@@ -27,10 +27,14 @@
 
 #include "generated/airframe.h"
 #include "modules/nav/nav_snap.h"
-#include "modules/nav/nav_min_snap.h"
 #include "mcu_periph/sys_time.h"
 #include "firmwares/rotorcraft/navigation.h"
 #include "modules/core/abi.h"
+
+// snap: oval 4x3
+// snap8: constant psi fig 8
+#include "modules/nav/nav_min_snap8.h"
+
 
 #include <stdio.h>
 
