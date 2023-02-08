@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="ekf_robin">
+<module name="ins_ext_pose" dir="ins">
   <doc>
     <description>
     extended kalman filter made by robin.
@@ -8,13 +8,13 @@
   </doc>
 
   <header>
-    <file name="ekf_robin.h"/>
+    <file name="ins_ext_pose.h"/>
   </header>
   <init fun="ekf_init()"/>
   <periodic fun="ekf_run()" freq="512" />
-  <datalink message="EXTERNAL_VISION" fun="external_vision_update(buf)"/>
+  <datalink message="EXTERNAL_POSE" fun="external_pose_update(buf)"/>
 
   <makefile>
-    <file name="ekf_robin.c"/>
+    <file name="ins_ext_pose.c"/>
   </makefile>
 </module>

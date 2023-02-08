@@ -1,10 +1,44 @@
+/*
+ * Copyright (C) 2023 MAVLab
+ *
+ * This file is part of paparazzi.
+ *
+ * paparazzi is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * paparazzi is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with paparazzi; see the file COPYING.  If not, write to
+ * the Free Software Foundation, 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
+ */
+
+/**
+ * @file modules/ins/ins_ext_pose.c
+ * Integrated Navigation System interface.
+ */
+
+
 #include <time.h>
 
-#include "ekf_robin.h"
+#include "ins_ext_pose.h"
 #include "state.h"
+#include "math/pprz_algebra_float.h"
 #include "modules/imu/imu.h"
-
 #include "generated/flight_plan.h"
+
+#if 0
+#include <stdio.h>
+#define DEBUG_PRINT(...) printf(__VA_ARGS__)
+#else
+#define DEBUG_PRINT(...) {}
+#endif
 
 
 float ekf_X[EKF_NUM_STATES];
@@ -41,7 +75,7 @@ void ekf_set_diag(float **a, float *b, int n)
 
 void ekf_init(void)
 {
-	printf("ekf init");
+	DEBUG_PRINT("ekf init");
 	float X0[EKF_NUM_STATES] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	float Pdiag[EKF_NUM_STATES] = {1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.};
 	float Qdiag[EKF_NUM_INPUTS] = {0.5, 0.5, 0.5, 0.01, 0.01, 0.01};
@@ -56,6 +90,11 @@ void ekf_init(void)
 	ekf_set_diag(ekf_Q_, Qdiag, EKF_NUM_INPUTS);
 	ekf_set_diag(ekf_R_, Rdiag, EKF_NUM_OUTPUTS);
 	float_vect_copy(ekf_X, X0, EKF_NUM_STATES);
+
+	// Todo: get IMU through ABI
+  //AbiBindMsgGPS(INS_PT_GPS_ID, &gps_ev, gps_cb);
+  //AbiBindMsgIMU_ACCEL(INS_PT_IMU_ID, &accel_ev, accel_cb);
+
 }
 
 void ekf_f(const float X[EKF_NUM_STATES], const float U[EKF_NUM_INPUTS], float out[EKF_NUM_STATES])
@@ -836,47 +875,101 @@ void ekf_measurement_step(const float Z[EKF_NUM_OUTPUTS]) {
 	float_mat_mul(ekf_P_, tmp_, Pkk_1_, EKF_NUM_STATES, EKF_NUM_STATES, EKF_NUM_STATES);
 }
 
+void ins_reset_local_origin(void);
+
+
 void ekf_run(void)
 {
+	static bool initialized = false;
+
+
 	t1 = get_sys_time_float();
 	float dt = t1-t0;
 	t0 = t1;
 
+#define ROBIN_IMU	0
+	
+	// set input values
+	ekf_U[0] = ACCEL_FLOAT_OF_BFP(imu.accels[ROBIN_IMU].scaled.x);
+	ekf_U[1] = ACCEL_FLOAT_OF_BFP(imu.accels[ROBIN_IMU].scaled.y);
+	ekf_U[2] = ACCEL_FLOAT_OF_BFP(imu.accels[ROBIN_IMU].scaled.z);
+	ekf_U[3] = RATE_FLOAT_OF_BFP(imu.gyros[ROBIN_IMU].scaled.p);
+	ekf_U[4] = RATE_FLOAT_OF_BFP(imu.gyros[ROBIN_IMU].scaled.q);
+	ekf_U[5] = RATE_FLOAT_OF_BFP(imu.gyros[ROBIN_IMU].scaled.r);
+
 	if (start) {
+
+		if (!initialized) {
+			ins_reset_local_origin();
+			initialized = true;
+		}
+
 		// prediction step
-		printf("ekf prediction step U = %f, %f, %f, %f, %f, %f dt = %f \n", ekf_U[0], ekf_U[1], ekf_U[2], ekf_U[3], ekf_U[4], ekf_U[5], dt);
+		DEBUG_PRINT("ekf prediction step U = %f, %f, %f, %f, %f, %f dt = %f \n", ekf_U[0], ekf_U[1], ekf_U[2], ekf_U[3], ekf_U[4], ekf_U[5], dt);
 		ekf_prediction_step(ekf_U, dt);
 
 		// measurement step
 		if (measurement_update) {
-			printf("ekf measurement step Z = %f, %f, %f, %f \n", ekf_Z[0], ekf_Z[1], ekf_Z[2], ekf_Z[3]);
+			DEBUG_PRINT("ekf measurement step Z = %f, %f, %f, %f \n", ekf_Z[0], ekf_Z[1], ekf_Z[2], ekf_Z[3]);
 			ekf_measurement_step(ekf_Z);
 			measurement_update = false;
 		}
 	}
+
+	// initial guess
+	struct NedCoor_f ned_pos;
+	ned_pos.x = ekf_X[0];
+	ned_pos.y = ekf_X[1];
+	ned_pos.z = ekf_X[2];
+
+	struct NedCoor_f ned_speed;
+  ned_speed.x  = ekf_X[3];
+  ned_speed.y = ekf_X[4];
+  ned_speed.z  = ekf_X[5];
+
+	struct FloatEulers ned_to_body_eulers;
+	ned_to_body_eulers.phi = ekf_X[6];
+	ned_to_body_eulers.theta = ekf_X[7];
+	ned_to_body_eulers.psi = ekf_X[8];
+
+  struct FloatRates rates = { ekf_U[3]-ekf_X[12], ekf_U[4]-ekf_X[13], ekf_U[5]-ekf_X[14] };
+
+
+  struct NedCoor_f accel;
+	accel.x = ekf_U[0]-ekf_X[9];
+	accel.y = ekf_U[1]-ekf_X[10];
+	accel.z = ekf_U[2]-ekf_X[11];
+  struct FloatRMat *ned_to_body_rmat_f = stateGetNedToBodyRMat_f();
+
 	
-	// set input values
-	ekf_U[0] = ACCEL_FLOAT_OF_BFP(imu.accel.x);
-	ekf_U[1] = ACCEL_FLOAT_OF_BFP(imu.accel.y);
-	ekf_U[2] = ACCEL_FLOAT_OF_BFP(imu.accel.z);
-	ekf_U[3] = RATE_FLOAT_OF_BFP(imu.gyro.p);
-	ekf_U[4] = RATE_FLOAT_OF_BFP(imu.gyro.q);
-	ekf_U[5] = RATE_FLOAT_OF_BFP(imu.gyro.r);
+	struct Int32Vect3 accel_ned;
+  stateSetAccelBody_i(&imu.accels[ROBIN_IMU].scaled);
+  struct Int32RMat *ned_to_body_rmat = stateGetNedToBodyRMat_i();
+  int32_rmat_transp_vmult(&accel_ned, ned_to_body_rmat, &imu.accels[ROBIN_IMU].scaled);
+  accel_ned.z += ACCEL_BFP_OF_REAL(9.81);
+  stateSetAccelNed_i((struct NedCoor_i *)&accel_ned);
+
+	stateSetPositionNed_f(&ned_pos);
+	stateSetSpeedNed_f(&ned_speed);
+	stateSetNedToBodyEulers_f(&ned_to_body_eulers);
+  stateSetBodyRates_f(&rates);
+  //stateSetAccelNed_f(&accel);
+
 }
 
 
-void external_vision_update(uint8_t *buf)
+void external_pose_update(uint8_t *buf)
 {
-  if (DL_EXTERNAL_VISION_ac_id(buf) != AC_ID) { return; } // not for this aircraft
+  if (DL_EXTERNAL_POSE_ac_id(buf) != AC_ID) { return; } // not for this aircraft
   
-  float enu_x = DL_EXTERNAL_VISION_enu_x(buf);
-  float enu_y = DL_EXTERNAL_VISION_enu_y(buf);
-  float enu_z = DL_EXTERNAL_VISION_enu_z(buf);
+  float enu_x = DL_EXTERNAL_POSE_enu_x(buf);
+  float enu_y = DL_EXTERNAL_POSE_enu_y(buf);
+  float enu_z = DL_EXTERNAL_POSE_enu_z(buf);
 
-  float quat_i = DL_EXTERNAL_VISION_quat_i(buf);
-  float quat_x = DL_EXTERNAL_VISION_quat_x(buf);
-  float quat_y = DL_EXTERNAL_VISION_quat_y(buf);
-  float quat_z = DL_EXTERNAL_VISION_quat_z(buf);
+  float quat_i = DL_EXTERNAL_POSE_body_qi(buf);
+  float quat_x = DL_EXTERNAL_POSE_body_qx(buf);
+  float quat_y = DL_EXTERNAL_POSE_body_qy(buf);
+  float quat_z = DL_EXTERNAL_POSE_body_qz(buf);
 
   struct FloatQuat orient;
   struct FloatEulers orient_eulers;
@@ -887,7 +980,20 @@ void external_vision_update(uint8_t *buf)
   orient.qz = -quat_z;  //down
 
   float_eulers_of_quat(&orient_eulers, &orient);
-  orient_eulers.psi += 90.0/57.6 - 33/57.6;
+  //orient_eulers.psi -= 90.0/57.6;
+	orient_eulers.theta = -orient_eulers.theta;
+
+/*
+  orient.qi = quat_i;
+  orient.qx = quat_x;   //north
+  orient.qy = quat_y;  //east
+  orient.qz = quat_z;  //down
+
+  float_eulers_of_quat(&orient_eulers, &orient);
+*/
+
+//  struct FloatEulers body_e;
+//  float_eulers_of_quat(&body_e, &body_q);
 
   //fix psi
   float delta_psi = orient_eulers.psi - ev_att[2];
@@ -903,6 +1009,9 @@ void external_vision_update(uint8_t *buf)
   ev_att[0] = orient_eulers.phi;
   ev_att[1] = orient_eulers.theta;
   ev_att[2] = orient_eulers.psi;
+
+
+	DEBUG_PRINT("Att = %f %f %f \n", ev_att[0], ev_att[1], ev_att[2]);
 
   // ekf starts at the first ev update
   if (start == false) {
@@ -926,3 +1035,28 @@ void external_vision_update(uint8_t *buf)
   ekf_Z[5] += delta_psi;  
 }
 
+void ins_reset_local_origin(void)
+{
+  struct EcefCoor_i ecef_pos = ecef_int_from_gps(&gps);
+  struct LlaCoor_i lla_pos = lla_int_from_gps(&gps);
+	struct LtpDef_i  ltp_def;
+  ltp_def_from_ecef_i(&ltp_def, &ecef_pos);
+  ltp_def.lla.alt = lla_pos.alt;
+  ltp_def.hmsl = gps.hmsl;
+  stateSetLocalOrigin_i(&ltp_def);
+  //ins_gp.ltp_initialized = true;
+}
+
+void ins_reset_altitude_ref(void);
+void ins_reset_altitude_ref(void)
+{/*
+  struct LlaCoor_i lla = {
+    .lat = state.ned_origin_i.lla.lat,
+    .lon = state.ned_origin_i.lla.lon,
+    .alt = gps.lla_pos.alt
+  };
+  ltp_def_from_lla_i(&ins_gp.ltp_def, &lla);
+  ins_gp.ltp_def.hmsl = gps.hmsl;
+  stateSetLocalOrigin_i(&ins_gp.ltp_def);
+*/
+}

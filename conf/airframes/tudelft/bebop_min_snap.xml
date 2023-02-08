@@ -34,11 +34,15 @@
     <module name="imu" type="bebop"/>
     <module name="gps" type="datalink"/>
     <module name="stabilization" type="indi_simple"/>
-    <module name="ahrs" type="int_cmpl_quat">
+
+<!--    <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
     </module>
     <module name="ins" type="extended"/>
+-->
+
+    <module name="ins_ext_pose"/>
 
     <module name="guidance" type="indi">
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500.0"/>
@@ -156,9 +160,9 @@
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness -->
-    <define name="G1_P" value="0.0397"/>
-    <define name="G1_Q" value="0.0299"/>
-    <define name="G1_R" value="0.0014"/>
+    <define name="G1_P" value="0.06"/>
+    <define name="G1_Q" value="0.04"/>
+    <define name="G1_R" value="0.003"/>
     <define name="G2_R" value="0.1219"/>
 
     <!-- reference acceleration for attitude control -->
