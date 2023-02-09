@@ -231,6 +231,8 @@ void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed2, float *
   // Convert moment to effectiveness
   float eff_y_elev = dMydpprz / I_yy;
 
+  Bound(eff_y_elev, 0.00001, 0.1)
+
   BoundAbs(eff_y_elev, 0.1);
   g1g2[0][5] = 0;
   g1g2[1][5] = eff_y_elev;
@@ -254,6 +256,8 @@ void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, float *T_me
 
   // Convert moment to effectiveness
   float eff_z_rudder = dMzdpprz / I_zz;
+
+  Bound(eff_z_rudder, 0.00001, 0.1)
 
   BoundAbs(eff_z_rudder, 0.1);
 
