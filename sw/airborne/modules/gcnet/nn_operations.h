@@ -9,7 +9,7 @@ Goal: Include header of different functions used to compute neural network opera
 #include <stdio.h>
 #include <math.h> // use softplus and sigmoid operations 
 
-#include INS_TYPE_H
+#include GNC_NET_NN_PARAM_H
 
 
 extern void preprocess_input(float *input, float *input_norm, const float *input_norm_mean, const float *input_norm_std);

@@ -201,7 +201,7 @@ void gcnet_run(void)
 	
 	
 	// get waypoint position in body frame
-	struct NedCoor_f *pos   = stateGetPositionNed_f();
+	//struct NedCoor_f *pos   = stateGetPositionNed_f();
 	ENU_OF_TO_NED(waypoint_ned, waypoints[WP_GOAL].enu_f);
 
 	struct FloatVect3 delta_pos_ned = {
@@ -214,7 +214,7 @@ void gcnet_run(void)
 	float_quat_vmult(&waypoint_body, &quat, &delta_pos_ned);
 
 	// get velocity in body frame
-	struct NedCoor_f *vel = stateGetSpeedNed_f();
+	//struct NedCoor_f *vel = stateGetSpeedNed_f();
 	struct FloatVect3 vel_ned = {ekf_X[3], ekf_X[4], ekf_X[5]};
 	struct FloatVect3 vel_body;
 	float_quat_vmult(&vel_body, &quat, &vel_ned);
