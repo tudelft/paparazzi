@@ -1013,7 +1013,7 @@ double get_vy(double alpha, double t) {
    )))))))))))))))))))))))))))))))))))))))));
    return get_vy_result;
 }
-double get_vz(double alpha, double t) {
+double get_vz(__attribute__((unused)) double alpha, __attribute__((unused)) double t) {
    double get_vz_result;
    get_vz_result = 0;
    return get_vz_result;

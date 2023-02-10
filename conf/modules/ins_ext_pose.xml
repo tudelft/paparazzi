@@ -6,7 +6,10 @@
     extended kalman filter made by robin.
     </description>
   </doc>
-
+  <dep>
+    <depends>@gps,@datalink,@imu</depends>
+    <provides>ahrs,ins</provides>
+  </dep>
   <header>
     <file name="ins_ext_pose.h"/>
   </header>
@@ -15,6 +18,8 @@
   <datalink message="EXTERNAL_POSE" fun="external_pose_update(buf)"/>
 
   <makefile>
+    <define name="INS_TYPE_H" value="modules/ins/ins_ext_pose.h" type="string"/>
     <file name="ins_ext_pose.c"/>
+    <file name="ins.c"/>
   </makefile>
 </module>

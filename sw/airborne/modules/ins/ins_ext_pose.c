@@ -31,7 +31,10 @@
 #include "state.h"
 #include "math/pprz_algebra_float.h"
 #include "modules/imu/imu.h"
+#include "modules/ins/ins.h"
 #include "generated/flight_plan.h"
+
+#include "modules/core/abi.h"
 
 #if 0
 #include <stdio.h>
@@ -39,6 +42,68 @@
 #else
 #define DEBUG_PRINT(...) {}
 #endif
+
+
+
+
+struct InsExtPose {
+  struct LtpDef_i  ltp_def;
+
+  /* output LTP NED */
+  struct NedCoor_i ltp_pos;
+  struct NedCoor_i ltp_speed;
+  struct NedCoor_i ltp_accel;
+};
+
+struct InsExtPose ins_expo;
+
+
+static void ins_ext_pose_init_from_flightplan(void) {
+
+  struct LlaCoor_i llh_nav0; /* Height above the ellipsoid */
+  llh_nav0.lat = NAV_LAT0;
+  llh_nav0.lon = NAV_LON0;
+  /* NAV_ALT0 = ground alt above msl, NAV_MSL0 = geoid-height (msl) over ellipsoid */
+  llh_nav0.alt = NAV_ALT0 + NAV_MSL0;
+
+  struct EcefCoor_i ecef_nav0;
+  ecef_of_lla_i(&ecef_nav0, &llh_nav0);
+
+  ltp_def_from_ecef_i(&ins_expo.ltp_def, &ecef_nav0);
+  ins_expo.ltp_def.hmsl = NAV_ALT0;
+  stateSetLocalOrigin_i(&ins_expo.ltp_def);
+}
+
+#if PERIODIC_TELEMETRY
+#include "modules/datalink/telemetry.h"
+
+static void send_ins(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_INS(trans, dev, AC_ID,
+                    &ins_expo.ltp_pos.x, &ins_expo.ltp_pos.y, &ins_expo.ltp_pos.z,
+                    &ins_expo.ltp_speed.x, &ins_expo.ltp_speed.y, &ins_expo.ltp_speed.z,
+                    &ins_expo.ltp_accel.x, &ins_expo.ltp_accel.y, &ins_expo.ltp_accel.z);
+}
+
+static void send_ins_z(struct transport_tx *trans, struct link_device *dev)
+{
+  static float fake_baro_z = 0.0;
+  pprz_msg_send_INS_Z(trans, dev, AC_ID,
+                      (float *)&fake_baro_z, &ins_expo.ltp_pos.z,
+                      &ins_expo.ltp_speed.z, &ins_expo.ltp_accel.z);
+}
+
+static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
+{
+  static float fake_qfe = 0.0;
+  pprz_msg_send_INS_REF(trans, dev, AC_ID,
+                          &ins_expo.ltp_def.ecef.x, &ins_expo.ltp_def.ecef.y, &ins_expo.ltp_def.ecef.z,
+                          &ins_expo.ltp_def.lla.lat, &ins_expo.ltp_def.lla.lon, &ins_expo.ltp_def.lla.alt,
+                          &ins_expo.ltp_def.hmsl, (float *)&fake_qfe);
+}
+#endif
+
+
 
 
 float ekf_X[EKF_NUM_STATES];
@@ -75,6 +140,8 @@ void ekf_set_diag(float **a, float *b, int n)
 
 void ekf_init(void)
 {
+	ins_ext_pose_init_from_flightplan();
+
 	DEBUG_PRINT("ekf init");
 	float X0[EKF_NUM_STATES] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	float Pdiag[EKF_NUM_STATES] = {1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.};
@@ -90,6 +157,13 @@ void ekf_init(void)
 	ekf_set_diag(ekf_Q_, Qdiag, EKF_NUM_INPUTS);
 	ekf_set_diag(ekf_R_, Rdiag, EKF_NUM_OUTPUTS);
 	float_vect_copy(ekf_X, X0, EKF_NUM_STATES);
+
+
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS, send_ins);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_Z, send_ins_z);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);
+#endif
 
 	// Todo: get IMU through ABI
   //AbiBindMsgGPS(INS_PT_GPS_ID, &gps_ev, gps_cb);
@@ -404,7 +478,7 @@ void ekf_F(const float X[EKF_NUM_STATES], const float U[EKF_NUM_INPUTS], float o
 	out[14][14]=0;
 }
 
-void ekf_L(const float X[EKF_NUM_STATES], const float U[EKF_NUM_INPUTS], float out[EKF_NUM_STATES][EKF_NUM_INPUTS])
+void ekf_L(const float X[EKF_NUM_STATES],__attribute__((unused))  const float U[EKF_NUM_INPUTS], float out[EKF_NUM_STATES][EKF_NUM_INPUTS])
 {
 	float x0=cos(X[7]);
 	float x1=cos(X[8]);
@@ -939,11 +1013,14 @@ void ekf_run(void)
 	stateSetAccelBody_i(&imu.accels[ROBIN_IMU].scaled);
 
 
-  struct NedCoor_f accel;
+  struct FloatVect3 accel;
+  struct FloatVect3 accel_ned_f;
 	accel.x = ekf_U[0]-ekf_X[9];
 	accel.y = ekf_U[1]-ekf_X[10];
 	accel.z = ekf_U[2]-ekf_X[11];
   struct FloatRMat *ned_to_body_rmat_f = stateGetNedToBodyRMat_f();
+	float_rmat_transp_vmult(&accel_ned_f, ned_to_body_rmat_f, &accel);
+	accel_ned_f.z -= 9.81;
 
 	// TODO: remove biases!
 	
@@ -957,7 +1034,7 @@ void ekf_run(void)
 	stateSetSpeedNed_f(&ned_speed);
 	stateSetNedToBodyEulers_f(&ned_to_body_eulers);
   stateSetBodyRates_f(&rates);
-  //stateSetAccelNed_f(&accel);
+  //stateSetAccelNed_f(struct NedCoor_i *)&accel_ned_f);
 
 }
 
@@ -974,6 +1051,8 @@ void external_pose_update(uint8_t *buf)
   float quat_x = DL_EXTERNAL_POSE_body_qx(buf);
   float quat_y = DL_EXTERNAL_POSE_body_qy(buf);
   float quat_z = DL_EXTERNAL_POSE_body_qz(buf);
+
+	printf("EXT_UPDATE\n");
 
   struct FloatQuat orient;
   struct FloatEulers orient_eulers;
@@ -1041,6 +1120,7 @@ void external_pose_update(uint8_t *buf)
 
 void ins_reset_local_origin(void)
 {
+/*
   struct EcefCoor_i ecef_pos = ecef_int_from_gps(&gps);
   struct LlaCoor_i lla_pos = lla_int_from_gps(&gps);
 	struct LtpDef_i  ltp_def;
@@ -1048,7 +1128,8 @@ void ins_reset_local_origin(void)
   ltp_def.lla.alt = lla_pos.alt;
   ltp_def.hmsl = gps.hmsl;
   stateSetLocalOrigin_i(&ltp_def);
-  //ins_gp.ltp_initialized = true;
+  //ins_expo.ltp_initialized = true;
+*/
 }
 
 void ins_reset_altitude_ref(void);
