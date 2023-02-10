@@ -28,7 +28,9 @@
 <!--  <periodic fun="nav_snap_run()" period="0.1" start="nav_snap_init()" autorun="FALSE"/> -->
   <makefile>
     <file name="nav_snap.c"/>
-    <file name="nav_min_snap.c"/>
+    <!-- trajectory: oval,eight,...-->
+    <configure name="MIN_SNAP_TRAJECTORY" value="oval"/>
+    <file name="trajectories/nms_$(MIN_SNAP_TRAJECTORY).c"/>
   </makefile>
 </module>
 

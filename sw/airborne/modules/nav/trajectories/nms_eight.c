@@ -5,7 +5,7 @@
  *                                                                            *
  *                       This file is part of 'project'                       *
  ******************************************************************************/
-#include "nav_min_snap8.h"
+#include "nms.h"
 #include <math.h>
 double get_x(double alpha, double t) {
    double get_x_result;
