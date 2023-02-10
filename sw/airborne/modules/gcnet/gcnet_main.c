@@ -143,7 +143,9 @@ void gcnet_init(void)
 	init_butterworth_2_low_pass(&filter_vy, tau_, sample_time, 0.0);
 	init_butterworth_2_low_pass(&filter_az, tau_, sample_time, 0.0);
 }
-	
+
+struct NedCoor_f waypoint_ned;
+
 
 void gcnet_run(void)
 {
@@ -200,7 +202,6 @@ void gcnet_run(void)
 	
 	// get waypoint position in body frame
 	struct NedCoor_f *pos   = stateGetPositionNed_f();
-	struct NedCoor_f waypoint_ned;
 	ENU_OF_TO_NED(waypoint_ned, waypoints[WP_GOAL].enu_f);
 
 	struct FloatVect3 delta_pos_ned = {
@@ -317,7 +318,7 @@ void gcnet_run(void)
 			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
 			float normal_x = cos(psi_ref + M_PI/4);
 			float normal_y = sin(psi_ref + M_PI/4);		
-			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -1.4) {
+			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -0.8) {
 				waypoint_copy(WP_GOAL, WP_WP2);
 			}
 		}
@@ -327,7 +328,7 @@ void gcnet_run(void)
 			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
 			float normal_x = cos(psi_ref + M_PI/4);
 			float normal_y = sin(psi_ref + M_PI/4);		
-			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -1.4) {
+			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -0.8) {
 				waypoint_copy(WP_GOAL, WP_WP3);
 			}
 		}
@@ -337,7 +338,7 @@ void gcnet_run(void)
 			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
 			float normal_x = cos(psi_ref + M_PI/4);
 			float normal_y = sin(psi_ref + M_PI/4);		
-			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -1.4) {
+			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -0.8) {
 				waypoint_copy(WP_GOAL, WP_WP4);
 			}
 			
@@ -348,7 +349,7 @@ void gcnet_run(void)
 			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
 			float normal_x = cos(psi_ref + M_PI/4);
 			float normal_y = sin(psi_ref + M_PI/4);		
-			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -1.4) {
+			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -0.8) {
 				waypoint_copy(WP_GOAL, WP_WP1);
 			}
 			
@@ -439,4 +440,23 @@ void external_vision_update(uint8_t *buf)
 */
 
 
+// Logging
+extern void gnc_net_log_header(FILE *file) {
+  fprintf(file, "autopilot_mode,");
+  fprintf(file, "wp_goal_x,wp_goal_y,wp_goal_z,");
+  fprintf(file, "nn_out_1,nn_out_2,nn_out_3,nn_out_4,");
+  fprintf(file, "nn_in_1,nn_in_2,nn_in_3,nn_in_4,nn_in_5,nn_in_6,nn_in_7,nn_in_8,nn_in_9,nn_in_10,nn_in_11,nn_in_12,nn_in_13,nn_in_14,nn_in_15,nn_in_16,nn_in_17,nn_in_18,nn_in_19,");
+  fprintf(file, "Mx_measured,My_measured,Mz_measured,az_measured,");
+  fprintf(file, "Mx_modeled,My_modeled,Mz_modeled,az_modeled,");
+}
 
+
+extern void gnc_net_log_data(FILE *file) {
+  //fprintf(file, "%d,%d,%d,%d,", motor_mixing.commands[0], motor_mixing.commands[1], motor_mixing.commands[2], motor_mixing.commands[3]);
+  fprintf(file, "%d,", (autopilot_get_mode()==AP_MODE_ATTITUDE_DIRECT)?(1):(0));
+  fprintf(file, "%f,%f,%f,", waypoint_ned.x, waypoint_ned.y, waypoint_ned.z);
+  fprintf(file, "%f,%f,%f,%f,",control_nn[0],control_nn[1],control_nn[2],control_nn[3]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,",state_nn[0], state_nn[1], state_nn[2], state_nn[3], state_nn[4], state_nn[5], state_nn[6], state_nn[7], state_nn[8], state_nn[9], state_nn[10], state_nn[11], state_nn[12], state_nn[13], state_nn[14], state_nn[15], state_nn[16], state_nn[17], state_nn[18]);
+  fprintf(file, "%f,%f,%f,%f,", Mx_measured, My_measured, Mz_measured, az_measured);
+  fprintf(file, "%f,%f,%f,%f,", Mx_modeled, My_modeled, Mz_modeled, az_modeled);
+}

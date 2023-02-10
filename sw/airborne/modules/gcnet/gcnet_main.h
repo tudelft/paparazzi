@@ -39,8 +39,10 @@
 // neural network library
 #include "modules/gcnet/nn_operations.h"
 
-extern float state_nn[NUM_STATES];
 extern float control_nn[NUM_CONTROLS];
+
+/*
+extern float state_nn[NUM_STATES];
 
 //extern float ev_pos[3];
 //extern float ev_att[3];
@@ -54,9 +56,17 @@ extern float Mx_modeled;
 extern float My_modeled;
 extern float Mz_modeled;
 extern float az_modeled;
+*/
+
 
 extern void gcnet_init(void);
 extern void gcnet_run(void);
+
+
+// Logging
+extern void gnc_net_log_header(FILE *file);
+extern void gnc_net_log_data(FILE *file);
+
 
 //extern void external_vision_update(uint8_t *buf);
 
