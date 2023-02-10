@@ -4,7 +4,7 @@
   <doc>
     <description>
     This module is used to test the gcnet controller.
-    Select the folder of the desired network in the define below,
+    Select the folder of the desired network in the configure below: NN_PARAMETER_PATH
     </description>
   </doc>
 
@@ -19,7 +19,8 @@
     <file name="gcnet_main.c"/>
     <file name="nn_operations.c"/>
     <!-- Select the desired network -->
-    <define value="free_final_velocity/nn_parameters.h" name="GNC_NET_NN_PARAM_H" type="string"/>
-    <file    name="free_final_velocity/nn_parameters.c"/>
+    <configure name="NN_PARAMETER_PATH" value="free_final_velocity"/>
+    <define name="GNC_NET_NN_PARAM_H" value="$(NN_PARAMETER_PATH)/nn_parameters.h" type="string"/>
+    <file name="$(NN_PARAMETER_PATH)/nn_parameters.c"/>
   </makefile>
 </module>
