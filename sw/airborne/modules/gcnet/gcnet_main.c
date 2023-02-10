@@ -311,6 +311,8 @@ void gcnet_run(void)
 	dist_to_waypoint = sqrtf(delta_pos_ned2.x*delta_pos_ned2.x + delta_pos_ned2.y*delta_pos_ned2.y + delta_pos_ned2.z*delta_pos_ned2.z);
 */
 
+#define SWITCHING_DISTANCE  1.2
+
 	if (autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) {
 		if (WP_EQUALS(WP_GOAL, WP_WP1)) {
 			psi_ref = atan2(waypoints[WP_WP1].enu_f.x-waypoints[WP_WP4].enu_f.x, waypoints[WP_WP1].enu_f.y-waypoints[WP_WP4].enu_f.y);
@@ -318,7 +320,7 @@ void gcnet_run(void)
 			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
 			float normal_x = cos(psi_ref + M_PI/4);
 			float normal_y = sin(psi_ref + M_PI/4);		
-			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -0.8) {
+			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -SWITCHING_DISTANCE) {
 				waypoint_copy(WP_GOAL, WP_WP2);
 			}
 		}
@@ -328,7 +330,7 @@ void gcnet_run(void)
 			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
 			float normal_x = cos(psi_ref + M_PI/4);
 			float normal_y = sin(psi_ref + M_PI/4);		
-			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -0.8) {
+			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -SWITCHING_DISTANCE) {
 				waypoint_copy(WP_GOAL, WP_WP3);
 			}
 		}
@@ -338,7 +340,7 @@ void gcnet_run(void)
 			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
 			float normal_x = cos(psi_ref + M_PI/4);
 			float normal_y = sin(psi_ref + M_PI/4);		
-			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -0.8) {
+			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -SWITCHING_DISTANCE) {
 				waypoint_copy(WP_GOAL, WP_WP4);
 			}
 			
@@ -349,7 +351,7 @@ void gcnet_run(void)
 			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
 			float normal_x = cos(psi_ref + M_PI/4);
 			float normal_y = sin(psi_ref + M_PI/4);		
-			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -0.8) {
+			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -SWITCHING_DISTANCE) {
 				waypoint_copy(WP_GOAL, WP_WP1);
 			}
 			
