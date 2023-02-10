@@ -1020,21 +1020,13 @@ void ekf_run(void)
 	accel.z = ekf_U[2]-ekf_X[11];
   struct FloatRMat *ned_to_body_rmat_f = stateGetNedToBodyRMat_f();
 	float_rmat_transp_vmult(&accel_ned_f, ned_to_body_rmat_f, &accel);
-	accel_ned_f.z -= 9.81;
-
-	// TODO: remove biases!
-	
-	struct Int32Vect3 accel_ned;
-  struct Int32RMat *ned_to_body_rmat = stateGetNedToBodyRMat_i();
-  int32_rmat_transp_vmult(&accel_ned, ned_to_body_rmat, &imu.accels[ROBIN_IMU].scaled);
-  accel_ned.z += ACCEL_BFP_OF_REAL(9.81);
-  stateSetAccelNed_i((struct NedCoor_i *)&accel_ned);
+	accel_ned_f.z += 9.81;
 
 	stateSetPositionNed_f(&ned_pos);
 	stateSetSpeedNed_f(&ned_speed);
 	stateSetNedToBodyEulers_f(&ned_to_body_eulers);
   stateSetBodyRates_f(&rates);
-  //stateSetAccelNed_f(struct NedCoor_i *)&accel_ned_f);
+  stateSetAccelNed_f((struct NedCoor_i *)&accel_ned_f);
 
 }
 
