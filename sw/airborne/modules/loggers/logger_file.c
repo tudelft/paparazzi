@@ -145,6 +145,9 @@ static void logger_file_write_row(FILE *file) {
 /** Start the file logger and open a new file */
 void logger_file_start(void)
 {
+  // Ensure that the module is running when started with this function
+  logger_file_logger_file_periodic_status = MODULES_RUN;
+  
   // Create output folder if necessary
   if (access(STRINGIFY(LOGGER_FILE_PATH), F_OK)) {
     char save_dir_cmd[256];
