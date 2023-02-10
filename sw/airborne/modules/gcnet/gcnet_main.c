@@ -50,7 +50,7 @@
 #include "modules/core/abi.h"
 
 /** EKF robin */
-#include "modules/ekf_robin/ekf_robin.h"
+#include "modules/ins/ins_ext_pose.h"
 
 
 uint16_t nn_rpm_obs[4] = {0,0,0,0};

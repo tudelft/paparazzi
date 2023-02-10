@@ -41,6 +41,8 @@ Section 5.3: Non-additive noise formulation and equations
 #include <stdio.h>
 
 
+extern float ekf_X[EKF_NUM_STATES];
+
 void ekf_set_diag(float **a, float *b, int n);
 
 extern void ekf_init(void);
