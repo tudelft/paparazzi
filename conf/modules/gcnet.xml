@@ -4,6 +4,7 @@
   <doc>
     <description>
     This module is used to test the gcnet controller.
+    Select the folder of the desired network in the define below,
     </description>
   </doc>
 
@@ -15,9 +16,10 @@
   <!--datalink message="EXTERNAL_VISION" fun="external_vision_update(buf)"/-->
 
   <makefile>
-    <file name="free_final_velocity/nn_parameters.c"/>
-    <define name="GNC_NET_PARAM_H" value="\"free_final_velocity/nn_parameters.h\""/>
-    <file name="nn_operations.c"/>
     <file name="gcnet_main.c"/>
+    <file name="nn_operations.c"/>
+    <!-- Select the desired network -->
+    <define value="free_final_velocity/nn_parameters.h" name="GNC_NET_NN_PARAM_H" type="string"/>
+    <file    name="free_final_velocity/nn_parameters.c"/>
   </makefile>
 </module>
