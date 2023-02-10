@@ -83,7 +83,7 @@ float guidance_indi_max_airspeed = GUIDANCE_INDI_MAX_AIRSPEED;
 
 // Max ground speed that will be commanded
 #define NAV_MAX_SPEED (GUIDANCE_INDI_MAX_AIRSPEED + 10.0)
-float nav_max_speed = NAV_MAX_SPEED;
+float nav_max_speed = 4.;//NAV_MAX_SPEED;
 
 #ifndef MAX_DECELERATION
 #define MAX_DECELERATION 1.
@@ -169,6 +169,7 @@ float pusher_priority_factor = 30.;
 float Wu_rot_wing[4] = {10., 10., 100., 1.};
 float pitch_pref_deg = 0;
 float pitch_pref_rad = 0;
+float push_first_order_constant = 1.0;
 
 float rot_wing_roll_limit = 0.785; // 45 deg
 float rot_wing_pitch_limit = 0.785; // 20 deg
@@ -658,13 +659,13 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   du_min_rot_wing[0] = -rot_wing_roll_limit - roll_filt.o[0]; //roll
   du_min_rot_wing[1] = -rot_wing_pitch_limit - pitch_filt.o[0]; // pitch
   du_min_rot_wing[2] = (MAX_PPRZ - actuator_state_filt_vect[0]) * g1g2[3][0] + (MAX_PPRZ - actuator_state_filt_vect[1]) * g1g2[3][1] + (MAX_PPRZ - actuator_state_filt_vect[2]) * g1g2[3][2] + (MAX_PPRZ - actuator_state_filt_vect[3]) * g1g2[3][3];
-  du_min_rot_wing[3] = -thrust_bx_state_filt*thrust_bx_eff;
+  du_min_rot_wing[3] = (-thrust_bx_state_filt*thrust_bx_eff) * push_first_order_constant;
 
   // Set upper limits limits
   du_max_rot_wing[0] = rot_wing_roll_limit - roll_filt.o[0]; //roll
   du_max_rot_wing[1] = rot_wing_pitch_limit - pitch_filt.o[0]; // pitch
   du_max_rot_wing[2] = -(actuator_state_filt_vect[0]*g1g2[3][0] + actuator_state_filt_vect[1]*g1g2[3][1] + actuator_state_filt_vect[2]*g1g2[3][2] + actuator_state_filt_vect[3]*g1g2[3][3]);
-  du_max_rot_wing[3] = (MAX_PPRZ - thrust_bx_state_filt) * thrust_bx_eff;
+  du_max_rot_wing[3] = ((MAX_PPRZ - thrust_bx_state_filt) * thrust_bx_eff) * push_first_order_constant;
   
   // Set prefered states
   du_pref_rot_wing[0] = 0; // prefered delta roll angle
