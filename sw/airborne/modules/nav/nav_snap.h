@@ -30,12 +30,25 @@
 
 #include "std.h"
 
+extern double time_zero;
+
 extern float min_snap_alpha;
 extern float min_snap_a_ff;
 extern float min_snap_v_ff;
 extern float min_snap_pos_gain;
 extern float min_snap_speed_gain;
 extern int min_snap_abi;
+
+extern double x_snap;
+extern double y_snap;
+extern double z_snap;
+extern double psi_snap;
+extern double vx_snap;
+extern double vy_snap;
+extern double vz_snap;
+extern double ax_snap;
+extern double ay_snap;
+extern double az_snap;
 
 extern void nav_snap_init(void);
 extern bool nav_snap_x0(int _wp);

@@ -33,12 +33,12 @@
 
 // snap: oval 4x3
 // snap8: constant psi fig 8
-#include "modules/nav/nav_min_snap8.h"
+#include "modules/nav/nav_min_snap.h"
 
 
 #include <stdio.h>
 
-double time_zero = 0;
+extern double time_zero = 0;
 
 float min_snap_alpha = 0.2;
 float min_snap_alpha_active;
@@ -50,6 +50,17 @@ float min_snap_speed_gain = 2.5;
 int min_snap_abi = 1;
 
 double min_snap_dt = 0;
+
+extern double x_snap = 0;
+extern double y_snap = 0;
+extern double z_snap = 0;
+extern double psi_snap = 0;
+extern double vx_snap = 0;
+extern double vy_snap = 0;
+extern double vz_snap = 0;
+extern double ax_snap = 0;
+extern double ay_snap = 0;
+extern double az_snap = 0;
 
 
 ///< Call once, just before starting the run
@@ -93,18 +104,18 @@ bool nav_snap_run(void)
   double min_snap_dt = get_sys_time_float() - time_zero;
   //min_snap_dt += 1.0 / ((float)NAVIGATION_FREQUENCY);
   //printf("t1=%f, t2=%f \n",min_snap_dt, min_snap_dt2);
-  float x_snap = get_x(min_snap_alpha_active, min_snap_dt);
-  float y_snap = get_y(min_snap_alpha_active, min_snap_dt);
-  float z_snap = get_z(min_snap_alpha_active, min_snap_dt);
-  float psi_snap = get_psi(min_snap_alpha_active, min_snap_dt);
+  x_snap = get_x(min_snap_alpha_active, min_snap_dt);
+  y_snap = get_y(min_snap_alpha_active, min_snap_dt);
+  z_snap = get_z(min_snap_alpha_active, min_snap_dt);
+  psi_snap = get_psi(min_snap_alpha_active, min_snap_dt);
   
-  float vx_snap = get_vx(min_snap_alpha_active, min_snap_dt);
-  float vy_snap = get_vy(min_snap_alpha_active, min_snap_dt);
-  float vz_snap = get_vz(min_snap_alpha_active, min_snap_dt);
+  vx_snap = get_vx(min_snap_alpha_active, min_snap_dt);
+  vy_snap = get_vy(min_snap_alpha_active, min_snap_dt);
+  vz_snap = get_vz(min_snap_alpha_active, min_snap_dt);
 
-  float ax_snap = get_ax(min_snap_alpha_active, min_snap_dt);
-  float ay_snap = get_ay(min_snap_alpha_active, min_snap_dt);
-  float az_snap = get_az(min_snap_alpha_active, min_snap_dt);
+  ax_snap = get_ax(min_snap_alpha_active, min_snap_dt);
+  ay_snap = get_ay(min_snap_alpha_active, min_snap_dt);
+  az_snap = get_az(min_snap_alpha_active, min_snap_dt);
   
   /////////////////////////////
   // Export WP to Navigation
