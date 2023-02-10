@@ -84,7 +84,7 @@ static void logger_file_write_header(FILE *file) {
   fprintf(file, "rpm_ref_1,rpm_ref_2,rpm_ref_3,rpm_ref_4,");
 #endif
 #ifdef INS_EXT_POSE_H
-  ins_ext_pos_log_data(file);
+  ins_ext_pos_log_header(file);
 #endif
 #ifdef NAV_SNAP_H
   min_snap_log_header(file);
