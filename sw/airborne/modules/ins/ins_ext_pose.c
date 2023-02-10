@@ -949,8 +949,6 @@ void ekf_measurement_step(const float Z[EKF_NUM_OUTPUTS]) {
 	float_mat_mul(ekf_P_, tmp_, Pkk_1_, EKF_NUM_STATES, EKF_NUM_STATES, EKF_NUM_STATES);
 }
 
-void ins_reset_local_origin(void);
-
 
 void ekf_run(void)
 {
@@ -1026,7 +1024,7 @@ void ekf_run(void)
 	stateSetSpeedNed_f(&ned_speed);
 	stateSetNedToBodyEulers_f(&ned_to_body_eulers);
   stateSetBodyRates_f(&rates);
-  stateSetAccelNed_f((struct NedCoor_i *)&accel_ned_f);
+  stateSetAccelNed_f((struct NedCoor_f *)&accel_ned_f);
 
 }
 
@@ -1112,28 +1110,23 @@ void external_pose_update(uint8_t *buf)
 
 void ins_reset_local_origin(void)
 {
-/*
-  struct EcefCoor_i ecef_pos = ecef_int_from_gps(&gps);
-  struct LlaCoor_i lla_pos = lla_int_from_gps(&gps);
-	struct LtpDef_i  ltp_def;
-  ltp_def_from_ecef_i(&ltp_def, &ecef_pos);
-  ltp_def.lla.alt = lla_pos.alt;
-  ltp_def.hmsl = gps.hmsl;
-  stateSetLocalOrigin_i(&ltp_def);
-  //ins_expo.ltp_initialized = true;
-*/
+	// Ext pos does not allow geoinit: FP origin only
 }
 
-void ins_reset_altitude_ref(void);
 void ins_reset_altitude_ref(void)
-{/*
-  struct LlaCoor_i lla = {
-    .lat = state.ned_origin_i.lla.lat,
-    .lon = state.ned_origin_i.lla.lon,
-    .alt = gps.lla_pos.alt
-  };
-  ltp_def_from_lla_i(&ins_gp.ltp_def, &lla);
-  ins_gp.ltp_def.hmsl = gps.hmsl;
-  stateSetLocalOrigin_i(&ins_gp.ltp_def);
-*/
+{
+	// Ext pos does not allow geoinit: FP origin only
+}
+
+// Logging
+void ins_ext_pos_log_header(FILE *file) {
+  fprintf(file, "ekf_X1,ekf_X2,ekf_X3,ekf_X4,ekf_X5,ekf_X6,ekf_X7,ekf_X8,ekf_X9,ekf_X10,ekf_X11,ekf_X12,ekf_X13,ekf_X14,ekf_X15,");
+  fprintf(file, "ekf_U1,ekf_U2,ekf_U3,ekf_U4,ekf_U5,ekf_U6,");
+  fprintf(file, "ekf_Z1,ekf_Z2,ekf_Z3,ekf_Z4,");
+}
+
+void ins_ext_pos_log_data(FILE *file) {
+  fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,", ekf_X[0], ekf_X[1], ekf_X[2], ekf_X[3], ekf_X[4], ekf_X[5], ekf_X[6], ekf_X[7], ekf_X[8], ekf_X[9], ekf_X[10], ekf_X[11], ekf_X[12], ekf_X[13], ekf_X[14]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", ekf_U[0], ekf_U[1], ekf_U[2], ekf_U[3], ekf_U[4], ekf_U[5]);
+  fprintf(file, "%f,%f,%f,%f,", ekf_Z[0], ekf_Z[1], ekf_Z[2], ekf_Z[3]);
 }

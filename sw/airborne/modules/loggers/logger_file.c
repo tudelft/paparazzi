@@ -43,15 +43,15 @@
 #include "firmwares/fixedwing/stabilization/stabilization_adaptive.h"
 #endif
 
-// EKF STATES
-#include "modules/ins/ins_ext_pose.h"
+// INS
+#include INS_TYPE_H
 
 // RPM
+#ifdef BOARD_BEBOP
 #include "boards/bebop/actuators.h"
+#endif
 
-// MIN SNAP TRAJECTORY
-#include "modules/nav/nav_min_snap.h"
-#include "modules/nav/nav_snap.h"
+#include "generated/modules.h"
 
 
 
@@ -79,12 +79,16 @@ static void logger_file_write_header(FILE *file) {
   fprintf(file, "att_phi,att_theta,att_psi,");
   fprintf(file, "rate_p,rate_q,rate_r,");
   //LOGGER_ADD_EXTRA();
+#ifdef BOARD_BEBOP
   fprintf(file, "rpm_obs_1,rpm_obs_2,rpm_obs_3,rpm_obs_4,");
   fprintf(file, "rpm_ref_1,rpm_ref_2,rpm_ref_3,rpm_ref_4,");
-  fprintf(file, "ekf_X1,ekf_X2,ekf_X3,ekf_X4,ekf_X5,ekf_X6,ekf_X7,ekf_X8,ekf_X9,ekf_X10,ekf_X11,ekf_X12,ekf_X13,ekf_X14,ekf_X15,");
-  fprintf(file, "ekf_U1,ekf_U2,ekf_U3,ekf_U4,ekf_U5,ekf_U6,");
-  fprintf(file, "ekf_Z1,ekf_Z2,ekf_Z3,ekf_Z4,");
-  fprintf(file, "alpha_snap,x_snap,y_snap,z_snap,psi_snap,vx_snap,vy_snap,vz_snap,ax_snap,ay_snap,az_snap,");
+#endif
+#ifdef INS_EXT_POSE_H
+  ins_ext_pos_log_data(file);
+#endif
+#ifdef NAV_SNAP_H
+  min_snap_log_header(file);
+#endif
 #ifdef COMMAND_THRUST
   fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
 #else
@@ -105,19 +109,23 @@ static void logger_file_write_row(FILE *file) {
   struct FloatRates *rates = stateGetBodyRates_f();
   
   // min snap time
-  double min_snap_dt = get_sys_time_float() - time_zero;
+  //double min_snap_dt = get_sys_time_float() - time_zero;
 
   fprintf(file, "%f,", get_sys_time_float());
   fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
   fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
   fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
   fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
+#ifdef BOARD_BEBOP
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_ref[0],actuators_bebop.rpm_ref[1],actuators_bebop.rpm_ref[2],actuators_bebop.rpm_ref[3]);
-  fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,", ekf_X[0], ekf_X[1], ekf_X[2], ekf_X[3], ekf_X[4], ekf_X[5], ekf_X[6], ekf_X[7], ekf_X[8], ekf_X[9], ekf_X[10], ekf_X[11], ekf_X[12], ekf_X[13], ekf_X[14]);
-  fprintf(file, "%f,%f,%f,%f,%f,%f,", ekf_U[0], ekf_U[1], ekf_U[2], ekf_U[3], ekf_U[4], ekf_U[5]);
-  fprintf(file, "%f,%f,%f,%f,", ekf_Z[0], ekf_Z[1], ekf_Z[2], ekf_Z[3]);
-  fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,",min_snap_alpha,x_snap,y_snap,z_snap,psi_snap,vx_snap,vy_snap,vz_snap,ax_snap,ay_snap,az_snap);
+#endif
+#ifdef INS_EXT_POSE_H
+  ins_ext_pos_log_data(file);
+#endif
+#ifdef NAV_SNAP_H
+  min_snap_log_data(file);
+#endif
 #ifdef COMMAND_THRUST
   fprintf(file, "%d,%d,%d,%d\n",
       stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],

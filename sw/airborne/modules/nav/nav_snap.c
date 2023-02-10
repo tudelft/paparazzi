@@ -38,7 +38,7 @@
 
 #include <stdio.h>
 
-extern double time_zero = 0;
+double time_zero = 0;
 
 float min_snap_alpha = 0.2;
 float min_snap_alpha_active;
@@ -49,25 +49,25 @@ float min_snap_pos_gain = 1.5;
 float min_snap_speed_gain = 2.5;
 int min_snap_abi = 1;
 
-double min_snap_dt = 0;
+//double min_snap_dt = 0;
 
-extern double x_snap = 0;
-extern double y_snap = 0;
-extern double z_snap = 0;
-extern double psi_snap = 0;
-extern double vx_snap = 0;
-extern double vy_snap = 0;
-extern double vz_snap = 0;
-extern double ax_snap = 0;
-extern double ay_snap = 0;
-extern double az_snap = 0;
+double x_snap = 0;
+double y_snap = 0;
+double z_snap = 0;
+double psi_snap = 0;
+double vx_snap = 0;
+double vy_snap = 0;
+double vz_snap = 0;
+double ax_snap = 0;
+double ay_snap = 0;
+double az_snap = 0;
 
 
 ///< Call once, just before starting the run
 
 void nav_snap_init(void)
 {
-  min_snap_dt = 0;
+  ///min_snap_dt = 0;
   time_zero = get_sys_time_float();
   min_snap_alpha_active = min_snap_alpha;
 }
@@ -162,3 +162,10 @@ bool nav_snap_run(void)
   return true; /* This pattern never ends */
 }
 
+void min_snap_log_header(FILE *file) {
+  fprintf(file, "alpha_snap,x_snap,y_snap,z_snap,psi_snap,vx_snap,vy_snap,vz_snap,ax_snap,ay_snap,az_snap,");
+}
+
+void min_snap_log_data(FILE *file) {
+  fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,",min_snap_alpha,x_snap,y_snap,z_snap,psi_snap,vx_snap,vy_snap,vz_snap,ax_snap,ay_snap,az_snap);
+}
