@@ -11,6 +11,7 @@
   <settings>
     <dl_settings>
       <dl_settings NAME="minsnap">
+        <dl_setting var="min_snap_track" min="0" step="1" max="2" values="OVAL|OVALCLIMB|EIGHT" module="nav/nav_snap" shortname="traj"/>
         <dl_setting var="min_snap_alpha" min="0.1" step="0.01" max="2" module="nav/nav_snap" shortname="alpha"/>
         <dl_setting var="min_snap_abi" min="0" step="1" max="1" module="nav/nav_snap" shortname="ABI"/>
         <dl_setting var="min_snap_v_ff" min="0.0" step="0.01" max="1" module="nav/nav_snap" shortname="v_ff"/>
@@ -28,9 +29,9 @@
 <!--  <periodic fun="nav_snap_run()" period="0.1" start="nav_snap_init()" autorun="FALSE"/> -->
   <makefile>
     <file name="nav_snap.c"/>
-    <!-- trajectory: oval,eight,...-->
-    <configure name="MIN_SNAP_TRAJECTORY" value="oval"/>
-    <file name="trajectories/nms_$(MIN_SNAP_TRAJECTORY).c"/>
+    <file name="trajectories/nms_oval.c"/>
+    <file name="trajectories/nms_ovalclimb.c"/>
+    <file name="trajectories/nms_eight.c"/>
   </makefile>
 </module>
 

@@ -32,12 +32,14 @@
 #include <stdio.h>
 
 // Settings
-extern float min_snap_alpha;
+extern float min_snap_alpha;  // minimum snap time: 1=100%
 extern float min_snap_a_ff;
 extern float min_snap_v_ff;
 extern float min_snap_pos_gain;
 extern float min_snap_speed_gain;
 extern int min_snap_abi;
+extern int min_snap_track; // track number 0,1,2
+
 
 // Functions
 extern void nav_snap_init(void);

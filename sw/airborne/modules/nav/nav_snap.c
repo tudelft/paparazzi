@@ -48,6 +48,7 @@ float min_snap_v_ff = 1.0;
 float min_snap_pos_gain = 1.5;
 float min_snap_speed_gain = 2.5;
 int min_snap_abi = 1;
+int min_snap_track = 1;
 
 //double min_snap_dt = 0;
 
@@ -79,10 +80,10 @@ bool nav_snap_x0(int _wp)
 {
   // North East Down
   double dts = 0;
-  int32_t x = POS_BFP_OF_REAL(get_x(min_snap_alpha_active, dts));
-  int32_t y = POS_BFP_OF_REAL(get_y(min_snap_alpha_active, dts));
-  int32_t z = POS_BFP_OF_REAL(get_z(min_snap_alpha_active, dts));
-  double psi = get_psi(min_snap_alpha_active, dts);
+  int32_t x = POS_BFP_OF_REAL(get_x(min_snap_alpha_active, dts, min_snap_track));
+  int32_t y = POS_BFP_OF_REAL(get_y(min_snap_alpha_active, dts, min_snap_track));
+  int32_t z = POS_BFP_OF_REAL(get_z(min_snap_alpha_active, dts, min_snap_track));
+  double psi = get_psi(min_snap_alpha_active, dts, min_snap_track);
   
   // East North Up
   struct EnuCoor_i temp;
@@ -104,18 +105,18 @@ bool nav_snap_run(void)
   double min_snap_dt = get_sys_time_float() - time_zero;
   //min_snap_dt += 1.0 / ((float)NAVIGATION_FREQUENCY);
   //printf("t1=%f, t2=%f \n",min_snap_dt, min_snap_dt2);
-  x_snap = get_x(min_snap_alpha_active, min_snap_dt);
-  y_snap = get_y(min_snap_alpha_active, min_snap_dt);
-  z_snap = get_z(min_snap_alpha_active, min_snap_dt);
-  psi_snap = get_psi(min_snap_alpha_active, min_snap_dt);
+  x_snap = get_x(min_snap_alpha_active, min_snap_dt, min_snap_track);
+  y_snap = get_y(min_snap_alpha_active, min_snap_dt, min_snap_track);
+  z_snap = get_z(min_snap_alpha_active, min_snap_dt, min_snap_track);
+  psi_snap = get_psi(min_snap_alpha_active, min_snap_dt, min_snap_track);
   
-  vx_snap = get_vx(min_snap_alpha_active, min_snap_dt);
-  vy_snap = get_vy(min_snap_alpha_active, min_snap_dt);
-  vz_snap = get_vz(min_snap_alpha_active, min_snap_dt);
+  vx_snap = get_vx(min_snap_alpha_active, min_snap_dt, min_snap_track);
+  vy_snap = get_vy(min_snap_alpha_active, min_snap_dt, min_snap_track);
+  vz_snap = get_vz(min_snap_alpha_active, min_snap_dt, min_snap_track);
 
-  ax_snap = get_ax(min_snap_alpha_active, min_snap_dt);
-  ay_snap = get_ay(min_snap_alpha_active, min_snap_dt);
-  az_snap = get_az(min_snap_alpha_active, min_snap_dt);
+  ax_snap = get_ax(min_snap_alpha_active, min_snap_dt, min_snap_track);
+  ay_snap = get_ay(min_snap_alpha_active, min_snap_dt, min_snap_track);
+  az_snap = get_az(min_snap_alpha_active, min_snap_dt, min_snap_track);
   
   /////////////////////////////
   // Export WP to Navigation
