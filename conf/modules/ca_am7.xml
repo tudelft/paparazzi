@@ -1,7 +1,7 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 <module name="ca_am7" dir="sensors">
   <doc>
-    <description>Transfers telemetry data X to the autopilot and if you wish groundstation</description>
+    <description>Transfers data from RaspberryPi to Pixhawk and vice versa</description>
   </doc>
   <header>
     <file name="ca_am7.h"/>

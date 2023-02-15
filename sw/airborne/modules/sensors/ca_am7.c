@@ -19,7 +19,7 @@
  */
 /**
  * @file "modules/ca_am7.c"
- * @author OpenUAS
+ * @author Alessandro Mancinelli
  */
 
 #include "modules/sensors/ca_am7.h"
@@ -44,52 +44,52 @@ static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((alig
 
 
 #if PERIODIC_TELEMETRY
-#include "modules/datalink/telemetry.h"
-static void am7_downlink(struct transport_tx *trans, struct link_device *dev)
-{
-    int16_t motor_1_cmd_int_telemetry = myam7_data_in.motor_1_cmd_int;
-    int16_t motor_2_cmd_int_telemetry = myam7_data_in.motor_2_cmd_int;
-    int16_t motor_3_cmd_int_telemetry = myam7_data_in.motor_3_cmd_int;
-    int16_t motor_4_cmd_int_telemetry = myam7_data_in.motor_4_cmd_int;
+    #include "modules/datalink/telemetry.h"
+    static void am7_downlink(struct transport_tx *trans, struct link_device *dev)
+    {
+        int16_t motor_1_cmd_int_telemetry = myam7_data_in.motor_1_cmd_int;
+        int16_t motor_2_cmd_int_telemetry = myam7_data_in.motor_2_cmd_int;
+        int16_t motor_3_cmd_int_telemetry = myam7_data_in.motor_3_cmd_int;
+        int16_t motor_4_cmd_int_telemetry = myam7_data_in.motor_4_cmd_int;
 
-    int16_t el_1_cmd_int_telemetry = myam7_data_in.el_1_cmd_int;
-    int16_t el_2_cmd_int_telemetry = myam7_data_in.el_2_cmd_int;
-    int16_t el_3_cmd_int_telemetry = myam7_data_in.el_3_cmd_int;
-    int16_t el_4_cmd_int_telemetry = myam7_data_in.el_4_cmd_int;
+        int16_t el_1_cmd_int_telemetry = myam7_data_in.el_1_cmd_int;
+        int16_t el_2_cmd_int_telemetry = myam7_data_in.el_2_cmd_int;
+        int16_t el_3_cmd_int_telemetry = myam7_data_in.el_3_cmd_int;
+        int16_t el_4_cmd_int_telemetry = myam7_data_in.el_4_cmd_int;
 
-    int16_t az_1_cmd_int_telemetry = myam7_data_in.az_1_cmd_int;
-    int16_t az_2_cmd_int_telemetry = myam7_data_in.az_2_cmd_int;
-    int16_t az_3_cmd_int_telemetry = myam7_data_in.az_3_cmd_int;
-    int16_t az_4_cmd_int_telemetry = myam7_data_in.az_4_cmd_int;
+        int16_t az_1_cmd_int_telemetry = myam7_data_in.az_1_cmd_int;
+        int16_t az_2_cmd_int_telemetry = myam7_data_in.az_2_cmd_int;
+        int16_t az_3_cmd_int_telemetry = myam7_data_in.az_3_cmd_int;
+        int16_t az_4_cmd_int_telemetry = myam7_data_in.az_4_cmd_int;
 
-    int16_t theta_cmd_int_telemetry = myam7_data_in.theta_cmd_int;
-    int16_t phi_cmd_int_telemetry = myam7_data_in.phi_cmd_int;
+        int16_t theta_cmd_int_telemetry = myam7_data_in.theta_cmd_int;
+        int16_t phi_cmd_int_telemetry = myam7_data_in.phi_cmd_int;
 
-    int16_t ailerons_cmd_int_telemetry = myam7_data_in.ailerons_cmd_int;
+        int16_t ailerons_cmd_int_telemetry = myam7_data_in.ailerons_cmd_int;
 
-    uint16_t n_iteration_telemetry = myam7_data_in.n_iteration;
-    uint16_t n_evaluation_telemetry =  myam7_data_in.n_evaluation;
+        uint16_t n_iteration_telemetry = myam7_data_in.n_iteration;
+        uint16_t n_evaluation_telemetry =  myam7_data_in.n_evaluation;
 
-    uint16_t elapsed_time_us_telemetry = myam7_data_in.elapsed_time_us;
-    int16_t exit_flag_optimizer_telemetry = myam7_data_in.exit_flag_optimizer;
-    int16_t residual_ax_int_telemetry = myam7_data_in.residual_ax_int;
-    int16_t residual_ay_int_telemetry = myam7_data_in.residual_ay_int;
-    int16_t residual_az_int_telemetry = myam7_data_in.residual_az_int;
-    int16_t residual_p_dot_int_telemetry = myam7_data_in.residual_p_dot_int;
-    int16_t residual_q_dot_int_telemetry = myam7_data_in.residual_q_dot_int;
-    int16_t residual_r_dot_int_telemetry = myam7_data_in.residual_r_dot_int;
-    float rolling_msg_in_telemetry = myam7_data_in.rolling_msg_in;
-    uint8_t rolling_msg_in_id_telemetry = myam7_data_in.rolling_msg_in_id;
+        uint16_t elapsed_time_us_telemetry = myam7_data_in.elapsed_time_us;
+        int16_t exit_flag_optimizer_telemetry = myam7_data_in.exit_flag_optimizer;
+        int16_t residual_ax_int_telemetry = myam7_data_in.residual_ax_int;
+        int16_t residual_ay_int_telemetry = myam7_data_in.residual_ay_int;
+        int16_t residual_az_int_telemetry = myam7_data_in.residual_az_int;
+        int16_t residual_p_dot_int_telemetry = myam7_data_in.residual_p_dot_int;
+        int16_t residual_q_dot_int_telemetry = myam7_data_in.residual_q_dot_int;
+        int16_t residual_r_dot_int_telemetry = myam7_data_in.residual_r_dot_int;
+        float rolling_msg_in_telemetry = myam7_data_in.rolling_msg_in;
+        uint8_t rolling_msg_in_id_telemetry = myam7_data_in.rolling_msg_in_id;
 
-	   pprz_msg_send_AM7_IN(trans, dev, AC_ID, &motor_1_cmd_int_telemetry, &motor_2_cmd_int_telemetry, &motor_3_cmd_int_telemetry,
-		 	  &motor_4_cmd_int_telemetry, &el_1_cmd_int_telemetry, &el_2_cmd_int_telemetry, &el_3_cmd_int_telemetry,
-		 	  &el_4_cmd_int_telemetry, &az_1_cmd_int_telemetry,  &az_2_cmd_int_telemetry, &az_3_cmd_int_telemetry,
-              &az_4_cmd_int_telemetry, &theta_cmd_int_telemetry, &phi_cmd_int_telemetry, &ailerons_cmd_int_telemetry, &n_iteration_telemetry, &n_evaluation_telemetry,
-              &elapsed_time_us_telemetry, &exit_flag_optimizer_telemetry, &residual_ax_int_telemetry,&residual_ay_int_telemetry, &residual_az_int_telemetry,
-              &residual_p_dot_int_telemetry, &residual_q_dot_int_telemetry,&residual_r_dot_int_telemetry, &missed_packets, &ca7_message_frequency_RX,
-              &rolling_msg_in_telemetry, &rolling_msg_in_id_telemetry);
-}
-static void am7_uplink(struct transport_tx *trans, struct link_device *dev)
+        pprz_msg_send_AM7_IN(trans, dev, AC_ID, &motor_1_cmd_int_telemetry, &motor_2_cmd_int_telemetry, &motor_3_cmd_int_telemetry,
+                &motor_4_cmd_int_telemetry, &el_1_cmd_int_telemetry, &el_2_cmd_int_telemetry, &el_3_cmd_int_telemetry,
+                &el_4_cmd_int_telemetry, &az_1_cmd_int_telemetry,  &az_2_cmd_int_telemetry, &az_3_cmd_int_telemetry,
+                &az_4_cmd_int_telemetry, &theta_cmd_int_telemetry, &phi_cmd_int_telemetry, &ailerons_cmd_int_telemetry, &n_iteration_telemetry, &n_evaluation_telemetry,
+                &elapsed_time_us_telemetry, &exit_flag_optimizer_telemetry, &residual_ax_int_telemetry,&residual_ay_int_telemetry, &residual_az_int_telemetry,
+                &residual_p_dot_int_telemetry, &residual_q_dot_int_telemetry,&residual_r_dot_int_telemetry, &missed_packets, &ca7_message_frequency_RX,
+                &rolling_msg_in_telemetry, &rolling_msg_in_id_telemetry);
+    }
+    static void am7_uplink(struct transport_tx *trans, struct link_device *dev)
 {
 
     int16_t motor_1_state_int_telemetry = myam7_data_out.motor_1_state_int;
@@ -182,10 +182,10 @@ void am7_init()
     //Init abi bind msg:
     AbiBindMsgAM7_DATA_OUT(ABI_BROADCAST, &AM7_out, data_AM7_out);
 
- #if PERIODIC_TELEMETRY
-   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AM7_IN, am7_downlink);
-   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AM7_OUT, am7_uplink);
- #endif
+    #if PERIODIC_TELEMETRY
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AM7_IN, am7_downlink);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AM7_OUT, am7_uplink);
+    #endif
 }
 
 /* Parse the InterMCU message */
