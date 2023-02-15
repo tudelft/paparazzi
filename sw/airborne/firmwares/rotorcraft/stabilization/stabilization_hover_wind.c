@@ -31,14 +31,17 @@
 #include "filters/low_pass_filter.h"
 #include "wls/wls_alloc.h"
 #include "math/pprz_simple_matrix.h"
-#include "generated/flight_plan.h"
 #include <stdio.h>
+
+#include "generated/flight_plan.h"
+
+
 
 /*#include "modules/loggers/sdlog_chibios.h"
 #include "mcu_periph/sys_time.h"
 */
 
-float x_e[CTRL_HOVER_WIND_INPUT][1];
+float x_e[CTRL_HOVER_WIND_INPUT][1] = {0, 0};
 float state_vector_redu[CTRL_HOVER_WIND_INPUT][1];
 
 float eps[CTRL_HOVER_WIND_INPUT][1];
@@ -53,8 +56,10 @@ float u_scale[CTRL_HOVER_WIND_NUM_ACT][1];
 struct FloatQuat quat_roty_90 = {0.707106781186548,   0,    0.707106781186548,    0};
 struct FloatQuat quat_att_barth_frame;
 
-float tf_state1[2];
-float tf_state2[2];
+float tf_state1[2] = {0, 0};
+float tf_state2[2] = {0, 0};
+float tf_state3[2] = {0, 0};
+float tf_state4[2] = {0, 0};
 
 
 // static inline void log_hoverwind_periodic(void);
@@ -71,20 +76,47 @@ void stabilization_hover_wind_init(void){
 }
 
 void stabilization_hover_wind_run(bool in_flight){
+
+  #define DBG_CMD 1
     
   float_quat_comp_inv(&quat_att_barth_frame, &quat_roty_90, stateGetNedToBodyQuat_f());
-  
+
+  #if DBG_CMD
+      printf("nav target z = %f \n", POS_FLOAT_OF_BFP(navigation_target.z));
+      printf("pos z = %f \n", stateGetPositionEnu_f()->z);
+  #endif
+ 
   eps[0][0] = stateGetPositionEnu_f()->x - POS_FLOAT_OF_BFP(navigation_target.x); //navigation_target ENU
-  eps[1][0] = stateGetPositionEnu_f()->y - POS_FLOAT_OF_BFP(navigation_target.y);
-  eps[2][0] = stateGetPositionEnu_f()->z - POS_FLOAT_OF_BFP(navigation_target.z);
+  eps[1][0] = (-stateGetPositionEnu_f()->y) - (- POS_FLOAT_OF_BFP(navigation_target.y));
+  eps[2][0] = (-stateGetPositionEnu_f()->z) - (- POS_FLOAT_OF_BFP(navigation_target.z));
   eps[3][0] = stateGetSpeedEnu_f()->x;
-  eps[4][0] = stateGetSpeedEnu_f()->y;
-  eps[5][0] = stateGetSpeedEnu_f()->z;
+  eps[4][0] = (-stateGetSpeedEnu_f()->y);
+  eps[5][0] = (-stateGetSpeedEnu_f()->z);
   eps[6][0] = quat_att_barth_frame.qx;
   eps[7][0] = quat_att_barth_frame.qz;
   eps[8][0] = stateGetBodyRates_f()->p;
   eps[9][0] = stateGetBodyRates_f()->q;
   eps[10][0] = stateGetBodyRates_f()->p;
+
+  #if DBG_CMD
+    /*
+    for (int i=0; i<11; i++) {
+      printf("eps(%d) = %f ", i, eps[i][0]);
+    }
+    */
+    printf("dpx = %f ,", eps[0][0]);
+    printf("dpy = %f ,", eps[1][0]);
+    printf("dpz = %f ,", eps[2][0]);
+    printf("dvx = %f ,", eps[3][0]);
+    printf("dvy = %f ,", eps[4][0]);
+    printf("dvz = %f ,", eps[5][0]);
+    printf("depsx = %f ,", eps[6][0]);
+    printf("depsz = %f ,", eps[7][0]);
+    printf("dwx = %f ,", eps[8][0]);
+    printf("dwy = %f ,", eps[9][0]);
+    printf("dwz = %f ", eps[10][0]);
+    printf("\n");
+  #endif
 
   
   MAT_MUL_c(CTRL_HOVER_WIND_NUM_INTEGRATOR_STATE, CTRL_HOVER_WIND_INPUT, 1, dot_x_e_dt, H, eps, 1./PERIODIC_FREQUENCY);
@@ -92,33 +124,106 @@ void stabilization_hover_wind_run(bool in_flight){
   x_e[1][0] +=  dot_x_e_dt[1][0];
   u_integrator[0][0] = x_e[0][0];
   u_integrator[1][0] = x_e[1][0];
+  /*
+    u_integrator[0][0] = 0;
+  u_integrator[1][0] = 0;
+  */
+
+   #if DBG_CMD
+    for (int i=0; i<2; i++) {
+      printf("u integrator(%d) = %f ", i, u_integrator[i][0]);
+    }
+    printf("\n");
+  #endif
+
   MAT_MUL(CTRL_HOVER_WIND_NUM_ACT, CTRL_HOVER_WIND_INPUT, 1, u_prop, K, eps);
+
+   #if DBG_CMD
+    for (int i=0; i<CTRL_HOVER_WIND_NUM_ACT; i++) {
+      printf("u prop(%d) = %f ", i, u_prop[i][0]);
+    }
+    printf("\n");
+  #endif
 
   float tf1_tmp;
   float tf2_tmp;
+  float tf3_tmp;
+  float tf4_tmp;
 
-  tf1_tmp = (u_prop[0][0] - den[1]*tf_state1[0] - den[2]* tf_state1[1])/ den[0];
+  tf1_tmp = u_prop[0][0] - den[1]*tf_state1[0] - den[2]* tf_state1[1];
   u_filter[0][0] = num[0]*tf1_tmp + num[1]*tf_state1[0] + num[2]*tf_state1[1];
+  tf_state1[1] = tf_state1[0];
+  tf_state1[0] = tf1_tmp;
 
-  tf2_tmp = (u_prop[1][0] - den[1]*tf_state2[0] - den[2]* tf_state2[1])/ den[0];
+  tf2_tmp = u_prop[1][0] - den[1]*tf_state2[0] - den[2]* tf_state2[1];
   u_filter[1][0] = num[0]*tf2_tmp + num[1]*tf_state2[0] + num[2]*tf_state2[1];
+  tf_state2[1] = tf_state2[0];
+  tf_state2[0] = tf2_tmp;
+
+  tf3_tmp = u_prop[2][0] - den[1]*tf_state3[0] - den[2]* tf_state3[1];
+  u_filter[2][0] = num[0]*tf3_tmp + num[1]*tf_state3[0] + num[2]*tf_state3[1];
+  tf_state3[1] = tf_state3[0];
+  tf_state3[0] = tf3_tmp;
+
+  tf4_tmp = u_prop[3][0] - den[1]*tf_state4[0] - den[2]* tf_state4[1];
+  u_filter[3][0] = num[0]*tf4_tmp + num[1]*tf_state4[0] + num[2]*tf_state4[1];
+  tf_state4[1] = tf_state4[0];
+  tf_state4[0] = tf4_tmp;
 
 
-  MAT_SUB(CTRL_HOVER_WIND_NUM_ACT, 1, u_sub, u_integrator, u_filter);
+  #if DBG_CMD
+    for (int i=0; i<CTRL_HOVER_WIND_NUM_ACT; i++) {
+      printf("u filter(%d) = %f ", i, u_filter[i][0]);
+    }
+    printf("\n");
+  #endif
+
+  float integrator_repart[CTRL_HOVER_WIND_NUM_ACT][1] = {u_integrator[0][0], u_integrator[0][0], u_integrator[1][0], u_integrator[1][0] };
+  MAT_SUB(CTRL_HOVER_WIND_NUM_ACT, 1, u_sub, integrator_repart, u_filter);
+  //MAT_SUB(CTRL_HOVER_WIND_NUM_ACT, 1, u_sub, integrator_repart, u_prop);
   MAT_SUM(CTRL_HOVER_WIND_NUM_ACT, 1, u, ueq, u_sub);
 
+ 
+
+  // RIGHT_MOTOR
+  if (u[0][0]>0){
+    u_scale[0][0] = (sqrtf(u[0][0]/kf) / mot_max_speed)*MAX_PPRZ; 
+  }
+  else{
+    u_scale[0][0] = 0; 
+  }
+
+  // LEFT_MOTOR
+  if (u[1][0]>0){
+    u_scale[1][0] = (sqrtf(u[1][0]/kf) / mot_max_speed)*MAX_PPRZ; 
+  }
+  else{
+    u_scale[1][0] = 0; 
+  }
+  // ELEVON_LEFT
+  u_scale[2][0] = (u[2][0]*6/M_PI)*MAX_PPRZ;
+  //ELEVON_RIGHT
+  u_scale[3][0] = (u[3][0]*6/M_PI)*MAX_PPRZ;
+
+   #if DBG_CMD
+    printf("u: %f %f %f %f  \n", u_scale[0][0], u_scale[1][0], u_scale[2][0], u_scale[3][0]);
+  #endif
+
+ 
+  actuators_pprz[0]=TRIM_PPRZ(-u_scale[2][0]); //ELEVON_LEFT
+  actuators_pprz[1]=TRIM_PPRZ(u_scale[3][0]); // ELEVON_RIGHT 
+  actuators_pprz[2]=TRIM_UPPRZ(u_scale[0][0]); // RIGHT_MOTOR
+  actuators_pprz[3]=TRIM_UPPRZ(u_scale[1][0]); // LEFT_MOTOR
   
-  u_scale[0][0] = (sqrtf(u[0][0]/kf) / mot_max_speed)*MAX_PPRZ; 
-  u_scale[1][0] = (u[1][0]*6/M_PI)*MAX_PPRZ;
-
-
-  actuators_pprz[0]=TRIM_UPPRZ(u_scale[0][0]);
-  actuators_pprz[1]=TRIM_UPPRZ(u_scale[0][0]);
-  actuators_pprz[2]=TRIM_PPRZ(u_scale[1][0]);
-  actuators_pprz[3]=TRIM_PPRZ(u_scale[1][0]);
+  
+  #if DBG_CMD
+    printf("actuators: %d %d %d %d\n", actuators_pprz[0], actuators_pprz[1], actuators_pprz[2], actuators_pprz[3]);
+    float f[4] = {actuators_pprz[0], actuators_pprz[1], actuators_pprz[2], actuators_pprz[3]};
+    DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, INDI_NUM_ACT, f);
+  #endif
 
   if (in_flight) {
-    stabilization_cmd[COMMAND_THRUST] = (actuators_pprz[0]+actuators_pprz[1])/2; // for in_flight detection
+    stabilization_cmd[COMMAND_THRUST] = (actuators_pprz[2]+actuators_pprz[3]); // for in_flight detection
   } else {
     stabilization_cmd[COMMAND_THRUST] = 1000;
   };
@@ -142,7 +247,7 @@ void data_report()
     quat_att_barth_frame.qy,
     quat_att_barth_frame.qz    
   };
-  DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 11, msg);
+  //DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 11, msg);
 }
 
 /*static inline void log_hoverwind_start(void) {
