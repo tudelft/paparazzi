@@ -33,7 +33,7 @@
 
 // snap: oval 4x3
 // snap8: constant psi fig 8
-#include "modules/nav/nav_min_snap.h"
+#include "modules/nav/trajectories/nms.h"
 
 
 #include <stdio.h>
