@@ -29,23 +29,50 @@ master.mav.set_mode_send(
     128+8,
     mode_id)
 
+# bordeaux
 time_in_usec = (int(time.time() * 1000000))
+# master.mav.set_gps_global_origin_send(
+#     master.target_system,
+#     int(449e6),
+#     int(-6e6),
+#     194,
+#     0)
+
+# valkenburg
 master.mav.set_gps_global_origin_send(
     master.target_system,
-    int(449e6),
-    int(-6e6),
-    194,
+    int(521680913),
+    int(44123255),
+    45,
     0)
+
+print("origin set")
 
 time.sleep(2)
 
 q = [0,0,0,0]
 
+# bordeaux
+# master.mav.set_home_position_send(
+#     master.target_system,
+#     int(4495e5),
+#     int(-6e6),
+#     220,
+#     0,
+#     0,
+#     0,
+#     q,
+#     0,
+#     0,
+#     0,
+#     time_in_usec)
+
+# valkenburg
 master.mav.set_home_position_send(
     master.target_system,
-    int(4495e5),
-    int(-6e6),
-    220,
+    int(521680913),
+    int(44123255),
+    45,
     0,
     0,
     0,
@@ -55,6 +82,10 @@ master.mav.set_home_position_send(
     0,
     time_in_usec)
 
+print("home set")
+
+print("takeoff in 2 secs!!")
+
 time.sleep(2)
 
 # Takeoff
@@ -63,30 +94,76 @@ master.mav.command_long_send(
     master.target_component,
     mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
     0,
-    0, 0, 0, 0, 0, 0, 1.5)
+    0, 0, 0, 0, 0, 0, 5)
 
 time.sleep(7)
 
-master.mav.command_long_send(
+print("go to start")
+
+# master.mav.command_long_send(
+#     master.target_system,
+#     master.target_component,
+#     mavutil.mavlink.MAV_CMD_NAV_LAND,
+#     0,
+#     0, 0, 0, 0, 0, 0, 0)
+
+# time.sleep(10)
+
+# exit()
+
+master.mav.set_position_target_local_ned_send(
+    0,
     master.target_system,
     master.target_component,
-    mavutil.mavlink.MAV_CMD_NAV_LAND,
+    1, #frame
+    0, #typemask
+    0, #x
+    0, #y
+    -10, #z (down)
     0,
-    0, 0, 0, 0, 0, 0, 0)
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0)
+
+time.sleep(5)
+
+print("go south")
+
+master.mav.set_position_target_local_ned_send(
+    0,
+    master.target_system,
+    master.target_component,
+    1,
+    0,
+    -10,
+    0,
+    -10,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    10/180*3.14,
+    0)
 
 time.sleep(10)
 
-exit()
+print("go back")
 
 master.mav.set_position_target_local_ned_send(
     0,
     master.target_system,
     master.target_component,
-    1,
-    0,
-    0,
-    0,
-    -20,
+    1, #frame
+    0, #typemask
+    0, #x
+    0, #y
+    -10, #z (down)
     0,
     0,
     0,
@@ -96,45 +173,9 @@ master.mav.set_position_target_local_ned_send(
     0,
     0)
 
-time.sleep(1)
+time.sleep(10)
 
-master.mav.set_position_target_local_ned_send(
-    0,
-    master.target_system,
-    master.target_component,
-    1,
-    0,
-    0,
-    10,
-    -20,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    90/180*3.14,
-    0)
-
-time.sleep(1)
-
-master.mav.set_position_target_local_ned_send(
-    0,
-    master.target_system,
-    master.target_component,
-    1,
-    0,
-    0,
-    10,
-    -20,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    90/180*3.14,
-    0)
+print("start circle")
 
 t0 = time.time()
 t = time.time()
@@ -143,7 +184,7 @@ while t-t0 < 20:
 
     t = time.time()
     w_c = 0.5 # rad/s
-    amplitude = 10 #meter
+    amplitude = 5 #meter
     xpos = amplitude*math.sin(t*w_c)
     xdpos = w_c*amplitude*math.cos(t*w_c)
     xddpos = -w_c*w_c*amplitude*math.sin(t*w_c)
@@ -166,12 +207,14 @@ while t-t0 < 20:
     xddpos,
     yddpos,
     0,
-    90/180*3.14,
+    10/180*3.14,
     0)
 
-    time.sleep(0.002)
+    time.sleep(0.1)
 
-    time.sleep(2)
+print("land")
+
+time.sleep(5)
 
 # Land
 master.mav.command_long_send(
