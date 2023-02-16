@@ -1,0 +1,26 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="gcnet">
+  <doc>
+    <description>
+    This module is used to test the gcnet controller.
+    Select the folder of the desired network in the configure below: NN_PARAMETER_PATH
+    </description>
+  </doc>
+
+  <header>
+    <file name="gcnet_main.h"/>
+  </header>
+  <init fun="gcnet_init()"/>
+  <periodic fun="gcnet_run()" freq="512" />
+  <!--datalink message="EXTERNAL_VISION" fun="external_vision_update(buf)"/-->
+
+  <makefile>
+    <file name="gcnet_main.c"/>
+    <file name="nn_operations.c"/>
+    <!-- Select the desired network -->
+    <configure name="NN_PARAMETER_PATH" value="free_final_velocity"/>
+    <define name="GNC_NET_NN_PARAM_H" value="$(NN_PARAMETER_PATH)/nn_parameters.h" type="string"/>
+    <file name="$(NN_PARAMETER_PATH)/nn_parameters.c"/>
+  </makefile>
+</module>
