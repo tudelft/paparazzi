@@ -115,6 +115,10 @@ static void guidance_indi_filter_thrust(void);
 #endif
 #endif
 
+#ifndef GUIDANCE_INDI_SP_FILTER_CUTOFF
+#define GUIDANCE_INDI_SP_FILTER_CUTOFF 1.0
+#endif
+
 #ifdef GUIDANCE_INDI_LINE_GAIN
 float guidance_indi_line_gain = GUIDANCE_INDI_LINE_GAIN;
 #else
@@ -133,6 +137,7 @@ struct FloatEulers eulers_zxy;
 
 float thrust_act = 0;
 Butterworth2LowPass filt_accel_ned[3];
+Butterworth2LowPass filt_accel_ned_sp[3];
 Butterworth2LowPass roll_filt;
 Butterworth2LowPass pitch_filt;
 Butterworth2LowPass thrust_filt;
@@ -145,6 +150,7 @@ struct FloatMat33 Ga_inv;
 struct FloatVect3 euler_cmd;
 
 float filter_cutoff = GUIDANCE_INDI_FILTER_CUTOFF;
+float sp_filter_cutoff = GUIDANCE_INDI_SP_FILTER_CUTOFF;
 
 struct FloatEulers guidance_euler_cmd;
 float thrust_in;
@@ -169,7 +175,8 @@ float pusher_priority_factor = 30.;
 float Wu_rot_wing[4] = {10., 10., 100., 1.};
 float pitch_pref_deg = 0;
 float pitch_pref_rad = 0;
-float push_first_order_constant = 1.0;
+float push_first_order_constant = 0.01;
+float a_diff_limit = 1.5;
 
 float rot_wing_roll_limit = 0.785; // 45 deg
 float rot_wing_pitch_limit = 0.785; // 20 deg
@@ -209,9 +216,11 @@ void guidance_indi_init(void)
 {
   /*AbiBindMsgACCEL_SP(GUIDANCE_INDI_ACCEL_SP_ID, &accel_sp_ev, accel_sp_cb);*/
   float tau = 1.0/(2.0*M_PI*filter_cutoff);
+  float tau_sp_filter = 1.0/(2.0*M_PI*sp_filter_cutoff);
   float sample_time = 1.0/PERIODIC_FREQUENCY;
   for(int8_t i=0; i<3; i++) {
     init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&filt_accel_ned_sp[i], tau_sp_filter, sample_time, 0.0);
   }
   init_butterworth_2_low_pass(&roll_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
@@ -237,9 +246,11 @@ void guidance_indi_enter(void) {
   thrust_act = thrust_in;
 
   float tau = 1.0 / (2.0 * M_PI * filter_cutoff);
+  float tau_sp_filter = 1.0/(2.0*M_PI*sp_filter_cutoff);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
   for (int8_t i = 0; i < 3; i++) {
     init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&filt_accel_ned_sp[i], tau_sp_filter, sample_time, 0.0);
   }
   init_butterworth_2_low_pass(&roll_filt, tau, sample_time, stateGetNedToBodyEulers_f()->phi);
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, stateGetNedToBodyEulers_f()->theta);
@@ -388,6 +399,10 @@ void guidance_indi_run(float *heading_sp) {
   sp_accel.z = -(radio_control.values[RADIO_THROTTLE]-4500)*8.0/9600.0;
 #endif
 
+  // Filter sp_accel
+  update_butterworth_2_low_pass(&filt_accel_ned_sp[0], sp_accel.x);
+  update_butterworth_2_low_pass(&filt_accel_ned_sp[1], sp_accel.y);
+  update_butterworth_2_low_pass(&filt_accel_ned_sp[2], sp_accel.z);
 
   struct FloatVect3 accel_filt;
   accel_filt.x = filt_accel_ned[0].o[0];
@@ -395,13 +410,17 @@ void guidance_indi_run(float *heading_sp) {
   accel_filt.z = filt_accel_ned[2].o[0];
 
   struct FloatVect3 a_diff;
-  a_diff.x = sp_accel.x - accel_filt.x;
-  a_diff.y = sp_accel.y - accel_filt.y;
-  a_diff.z = sp_accel.z - accel_filt.z;
+  // a_diff.x = sp_accel.x - accel_filt.x;
+  // a_diff.y = sp_accel.y - accel_filt.y;
+  // a_diff.z = sp_accel.z - accel_filt.z;
+
+  a_diff.x = filt_accel_ned_sp[0].o[0] - accel_filt.x;
+  a_diff.y = filt_accel_ned_sp[1].o[0] - accel_filt.y;
+  a_diff.z = filt_accel_ned_sp[2].o[0] - accel_filt.z;
 
   //Bound the acceleration error so that the linearization still holds
-  Bound(a_diff.x, -6.0, 6.0);
-  Bound(a_diff.y, -6.0, 6.0);
+  Bound(a_diff.x, -a_diff_limit, a_diff_limit);
+  Bound(a_diff.y, -a_diff_limit, a_diff_limit);
   Bound(a_diff.z, -9.0, 9.0);
 
   //If the thrust to specific force ratio has been defined, include vertical control
