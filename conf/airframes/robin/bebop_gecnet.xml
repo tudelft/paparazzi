@@ -39,23 +39,6 @@
     <module name="logger_file"/>
     <module name="gcnet"/>
     <module name="ins" type="ext_pose"/>
-    
-    <!-- Video/Camera modules -->
-    <module name="bebop_cam"/>
-    <!--module name="bebop_ae_awb">
-      <define name="CV_AE_AWB_VERBOSE" value="0" />
-    </module-->
-    <module name="video_capture">
-      <define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>
-      <define name="VIDEO_CAPTURE_FPS" value="10"/>
-    </module>
-
-    <module name="video_rtp_stream">
-      <define name="VIEWVIDEO_CAMERA" value="front_camera"/>
-      <define name="VIEWVIDEO_CAMERA2" value="bottom_camera"/>
-      <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="1"/>
-      <define name="VIEWVIDEO_QUALITY_FACTOR" value="40"/>
-    </module>
 
   </firmware>
 
