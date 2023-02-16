@@ -69,7 +69,7 @@ bool wing_rotation_sched_activated = true;
 
 // Define filters
 #ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
-#define ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF 1.5
+#define ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF 0.1
 #endif
 
 Butterworth2LowPass airspeed_lowpass_filter;
@@ -82,7 +82,7 @@ const float I_xx = 0.115625;
 const float I_yy = 1.070963542;
 const float I_zz = 1.333902457;
 
-inline void update_hover_motor_effectiveness(float *cosr, float *sinr);
+inline void update_hover_motor_effectiveness(float *cosr, float *sinr, float *airspeed_f);
 inline void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *skew_deg);
 inline void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *cosr);
 
@@ -105,7 +105,7 @@ void event_eff_scheduling(void)
   // Update airspeed
   float airspeed = stateGetAirspeed_f();
   update_butterworth_2_low_pass(&airspeed_lowpass_filter, airspeed);
-  float airspeed2 = airspeed_lowpass_filter.o[0] * airspeed_lowpass_filter.o[0];
+  float airspeed2 = airspeed * airspeed;//airspeed_lowpass_filter.o[0] * airspeed_lowpass_filter.o[0];
 
   // Update skew angle and triogeometric variables of wing rotation
   float cosr;
@@ -127,7 +127,7 @@ void event_eff_scheduling(void)
 
   // Calculate deflection of elevator
   
-  update_hover_motor_effectiveness(&cosr, &sinr);
+  update_hover_motor_effectiveness(&cosr, &sinr, &airspeed);
   update_rudder_effectiveness(&airspeed2, &pp_scaled, &T_mean_scaled, &cosr);
   update_elevator_effectiveness(elev_pprz, &airspeed2, &pp_scaled, &T_mean_scaled, &wing_rotation_deg);
 
@@ -170,7 +170,7 @@ void event_eff_scheduling(void)
 
 }
 
-void update_hover_motor_effectiveness(float *cosr, float *sinr)
+void update_hover_motor_effectiveness(float *cosr, float *sinr, float *airspeed_f)
 {
   float g1_p_side_motors[2];
   float g1_q_side_motors[2];
@@ -198,7 +198,9 @@ void update_hover_motor_effectiveness(float *cosr, float *sinr)
   g1g2[2][2] = (g1_startup[2][2] * g1_r_multiplier + g2_startup[2]) / INDI_G_SCALING;
   g1g2[3][2] = g1_startup[3][2] * g1_t_multiplier / INDI_G_SCALING;
 
-  g1g2[0][3] = g1_p_side_motors[1] * g1_p_multiplier / INDI_G_SCALING;
+  float bounded_airspeed = *airspeed_f;
+  Bound(bounded_airspeed, 0, 12);
+  g1g2[0][3] = (g1_p_side_motors[1] * g1_p_multiplier - 0.283333 * bounded_airspeed) / INDI_G_SCALING;
   g1g2[1][3] = g1_q_side_motors[1] * g1_q_multiplier / INDI_G_SCALING;
   g1g2[2][3] = (g1_startup[2][3] * g1_r_multiplier + g2_startup[3]) / INDI_G_SCALING;
   g1g2[3][3] = g1_startup[3][3] * g1_t_multiplier / INDI_G_SCALING;
@@ -207,12 +209,7 @@ void update_hover_motor_effectiveness(float *cosr, float *sinr)
 void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *skew_deg)
 {
   // Calculate deflection angle in [deg]
-  float de;
-  if (*elev_pprz > 0) {
-    de = -0.00074109375 * *elev_pprz - 2.323;
-  } else {
-    de =  -0.00435146875 * *elev_pprz - 2.323;
-  }
+  float de = -0.004885417 * *elev_pprz - 36.6;
 
   float dMyde = (k_elevator[0] * *airspeed2 +
                 k_elevator[2] * *pp_scaled + 
@@ -221,12 +218,7 @@ void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed2, float *
                 k_elevator[5] * *airspeed2 * *skew_deg * *T_mean_scaled +
                 k_elevator[6] * *airspeed2 * *pp_scaled * *pp_scaled) / 10000.;
 
-  float dMydpprz;
-  if (*elev_pprz > 0) {
-    dMydpprz =  dMyde * -0.00074109375;
-  } else {
-    dMydpprz =  dMyde * -0.00435146875;
-  }
+  float dMydpprz = dMyde * -0.004885417;
   
   // Convert moment to effectiveness
   float eff_y_elev = dMydpprz / I_yy;
@@ -263,6 +255,6 @@ void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, float *T_me
 
   g1g2[0][4] = 0 / INDI_G_SCALING;
   g1g2[1][4] = 0 / INDI_G_SCALING;
-  g1g2[2][4] = eff_z_rudder;
+  g1g2[2][4] = 0;//eff_z_rudder;
   g1g2[3][4] = 0 / INDI_G_SCALING;
 }
