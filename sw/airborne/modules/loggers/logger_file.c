@@ -75,6 +75,9 @@ static void logger_file_write_header(FILE *file) {
 #ifdef INS_EXT_POSE_H
   ins_ext_pos_log_header(file);
 #endif
+#ifdef NAV_SNAP_H
+  min_snap_log_header(file);
+#endif
 #ifdef COMMAND_THRUST
   fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
 #else
@@ -105,6 +108,9 @@ static void logger_file_write_row(FILE *file) {
 #endif
 #ifdef INS_EXT_POSE_H
   ins_ext_pos_log_data(file);
+#endif
+#ifdef NAV_SNAP_H
+  min_snap_log_data(file);
 #endif
 #ifdef COMMAND_THRUST
   fprintf(file, "%d,%d,%d,%d\n",
