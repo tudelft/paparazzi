@@ -7,9 +7,9 @@
  *
  * Code generated for Simulink model 'darko'.
  *
- * Model version                  : 1.10
+ * Model version                  : 1.18
  * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Mon Dec 12 08:31:49 2022
+ * C/C++ source code generated on : Tue Feb  7 09:58:35 2023
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Intel->x86-64 (Linux 64)
@@ -699,36 +699,6 @@ void darko_step(void)
 
   static const real_T g[3] = { 0.0, 0.0, 9.81 };
 
-  /* Outport: '<Root>/p' incorporates:
-   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
-   */
-  rtY.p[0] = rtDW.DiscreteTimeIntegrator_DSTATE[0];
-
-  /* Outport: '<Root>/v' incorporates:
-   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
-   */
-  rtY.v[0] = rtDW.DiscreteTimeIntegrator_DSTATE[3];
-
-  /* Outport: '<Root>/p' incorporates:
-   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
-   */
-  rtY.p[1] = rtDW.DiscreteTimeIntegrator_DSTATE[1];
-
-  /* Outport: '<Root>/v' incorporates:
-   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
-   */
-  rtY.v[1] = rtDW.DiscreteTimeIntegrator_DSTATE[4];
-
-  /* Outport: '<Root>/p' incorporates:
-   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
-   */
-  rtY.p[2] = rtDW.DiscreteTimeIntegrator_DSTATE[2];
-
-  /* Outport: '<Root>/v' incorporates:
-   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
-   */
-  rtY.v[2] = rtDW.DiscreteTimeIntegrator_DSTATE[5];
-
   /* Outport: '<Root>/q' incorporates:
    *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
    */
@@ -747,8 +717,8 @@ void darko_step(void)
   /* MATLAB Function: '<Root>/MATLAB Function1' incorporates:
    *  Inport: '<Root>/u'
    */
-  rtb_u_idx_0 = -rtU.u[0] * 1000.0;
-  rtb_u_idx_1 = rtU.u[1] * 1000.0;
+  rtb_u_idx_0 = -rtU.u[2] * 1000.0;
+  rtb_u_idx_1 = rtU.u[3] * 1000.0;
 
   /* MATLAB Function: '<Root>/MATLAB Function' incorporates:
    *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
@@ -812,10 +782,10 @@ void darko_step(void)
   }
 
   qin_idx_1 = b_tmp_2 * 2.64E-7 * qin_idx_3;
-  aero(rtDW.DiscreteTimeIntegrator_DSTATE, T1, rtU.u[2] * 30.0 *
+  aero(rtDW.DiscreteTimeIntegrator_DSTATE, T1, rtU.u[0] * 30.0 *
        0.017453292519943295, rtU.w, d_PHI, 1.225, 0.0743, 0.0, 0.0, 0.13, 0.55,
        0.125, d_ELEVON_MEFFICIENCY, d_ELEVON_FEFFICIENCY, A1, M1);
-  aero(rtDW.DiscreteTimeIntegrator_DSTATE, T2, rtU.u[3] * 30.0 *
+  aero(rtDW.DiscreteTimeIntegrator_DSTATE, T2, rtU.u[1] * 30.0 *
        0.017453292519943295, rtU.w, d_PHI, 1.225, 0.0743, 0.0, 0.0, 0.13, 0.55,
        0.125, d_ELEVON_MEFFICIENCY, d_ELEVON_FEFFICIENCY, A2, M2);
   rtb_u_idx_0 = (rtb_u_idx_0 + rtDW.DiscreteTimeIntegrator_DSTATE[10]) *
@@ -942,6 +912,24 @@ void darko_step(void)
 
   /* Outport: '<Root>/rotaccel' */
   rtY.rotaccel[2] = rtb_dxdt[12];
+
+  /* Outport: '<Root>/p' incorporates:
+   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
+   *  Gain: '<S3>/Gain'
+   *  Gain: '<S3>/Gain1'
+   */
+  rtY.p[0] = rtDW.DiscreteTimeIntegrator_DSTATE[0];
+  rtY.p[1] = -rtDW.DiscreteTimeIntegrator_DSTATE[1];
+  rtY.p[2] = -rtDW.DiscreteTimeIntegrator_DSTATE[2];
+
+  /* Outport: '<Root>/v' incorporates:
+   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
+   *  Gain: '<S4>/Gain'
+   *  Gain: '<S4>/Gain1'
+   */
+  rtY.v[0] = rtDW.DiscreteTimeIntegrator_DSTATE[3];
+  rtY.v[1] = -rtDW.DiscreteTimeIntegrator_DSTATE[4];
+  rtY.v[2] = -rtDW.DiscreteTimeIntegrator_DSTATE[5];
   for (i = 0; i <= 10; i += 2) {
     __m128d tmp;
     __m128d tmp_0;

@@ -92,6 +92,7 @@
     </mode>
 
     <mode name="NAV">
+      <select cond="$DEFAULT_MODE"/>
       <select cond="RCMode1() " exception="HOME"/> <!--&& DLModeNav() -->
       <on_enter>
         <call fun="guidance_h_nav_enter()"/>
@@ -187,7 +188,7 @@
 
     <!-- Kill throttle mode -->
     <mode name="KILL">
-      <select cond="$DEFAULT_MODE"/>
+      
       <select cond="kill_switch_is_on()"/>
       <on_enter>
         <call fun="autopilot_set_in_flight(false)"/>

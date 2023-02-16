@@ -30,6 +30,7 @@
 #include "math/pprz_algebra_float.h"
 #include "math/pprz_isa.h"
 
+
 #include "generated/airframe.h"
 #include "generated/flight_plan.h"
 
@@ -94,18 +95,18 @@ void nps_fdm_init(double dt)
 
   init_ltp();
 
-  rtU.u[0] = 1;
-  rtU.u[1] = 1;
-  rtU.u[2] = 0;
-  rtU.u[3] = 0;
+  rtU.u[0] = 0;
+  rtU.u[1] = 0;
+  rtU.u[2] = 1;
+  rtU.u[3] = 1;
 
   for(int i=0; i<3; i++) {
     rtU.w[i] = 0;
   }
   darko_initialize();
   print_state();
-    darko_step();
-    print_state();
+  darko_step();
+  print_state();
 
 /*
   darko_step();
@@ -201,7 +202,7 @@ void nps_fdm_run_step(bool launch __attribute__((unused)), double *commands, int
 
 }
 
-#define DBG_CMD 0
+#define DBG_CMD 1
 void feed_cmd(double *commands, int commands_nb __attribute__((unused))) {
 #if DBG_CMD
   printf("commands (%d), ", commands_nb);

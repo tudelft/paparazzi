@@ -7,9 +7,9 @@
  *
  * Code generated for Simulink model 'darko'.
  *
- * Model version                  : 1.10
+ * Model version                  : 1.18
  * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Mon Dec 12 08:31:49 2022
+ * C/C++ source code generated on : Tue Feb  7 09:58:35 2023
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Intel->x86-64 (Linux 64)

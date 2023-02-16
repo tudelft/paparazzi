@@ -41,7 +41,7 @@
 #include "mcu_periph/sys_time.h"
 */
 
-float x_e[CTRL_HOVER_WIND_INPUT][1] = {0, 0};
+float x_e[CTRL_HOVER_WIND_INPUT][1] = {{0}, {0}};
 float state_vector_redu[CTRL_HOVER_WIND_INPUT][1];
 
 float eps[CTRL_HOVER_WIND_INPUT][1];
@@ -82,21 +82,21 @@ void stabilization_hover_wind_run(bool in_flight){
   float_quat_comp_inv(&quat_att_barth_frame, &quat_roty_90, stateGetNedToBodyQuat_f());
 
   #if DBG_CMD
-      printf("nav target z = %f \n", POS_FLOAT_OF_BFP(navigation_target.z));
-      printf("pos z = %f \n", stateGetPositionEnu_f()->z);
+      printf("nav target z = %f \n", -POS_FLOAT_OF_BFP(navigation_target.z));
+      printf("pos z = %f \n", stateGetPositionNed_f()->z);
   #endif
  
-  eps[0][0] = stateGetPositionEnu_f()->x - POS_FLOAT_OF_BFP(navigation_target.x); //navigation_target ENU
-  eps[1][0] = (-stateGetPositionEnu_f()->y) - (- POS_FLOAT_OF_BFP(navigation_target.y));
-  eps[2][0] = (-stateGetPositionEnu_f()->z) - (- POS_FLOAT_OF_BFP(navigation_target.z));
-  eps[3][0] = stateGetSpeedEnu_f()->x;
-  eps[4][0] = (-stateGetSpeedEnu_f()->y);
-  eps[5][0] = (-stateGetSpeedEnu_f()->z);
+  eps[0][0] = stateGetPositionNed_f()->x - POS_FLOAT_OF_BFP(navigation_target.x); //navigation_target ENU
+  eps[1][0] = stateGetPositionNed_f()->y - (- POS_FLOAT_OF_BFP(navigation_target.y));
+  eps[2][0] = stateGetPositionNed_f()->z - (- POS_FLOAT_OF_BFP(navigation_target.z));
+  eps[3][0] = stateGetSpeedNed_f()->x;
+  eps[4][0] = stateGetSpeedNed_f()->y;
+  eps[5][0] = stateGetSpeedNed_f()->z;
   eps[6][0] = quat_att_barth_frame.qx;
   eps[7][0] = quat_att_barth_frame.qz;
   eps[8][0] = stateGetBodyRates_f()->p;
   eps[9][0] = stateGetBodyRates_f()->q;
-  eps[10][0] = stateGetBodyRates_f()->p;
+  eps[10][0] = stateGetBodyRates_f()->r;
 
   #if DBG_CMD
     /*
@@ -116,6 +116,8 @@ void stabilization_hover_wind_run(bool in_flight){
     printf("dwy = %f ,", eps[9][0]);
     printf("dwz = %f ", eps[10][0]);
     printf("\n");
+    float f[13] = {stateGetPositionNed_f()->x, stateGetPositionNed_f()->y, stateGetPositionNed_f()->z, stateGetSpeedNed_f()->x, stateGetSpeedNed_f()->y, stateGetSpeedNed_f()->z, quat_att_barth_frame.qi, quat_att_barth_frame.qx, quat_att_barth_frame.qy, quat_att_barth_frame.qz, stateGetBodyRates_f()->p, stateGetBodyRates_f()->q, stateGetBodyRates_f()->r};
+    DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 13, f);
   #endif
 
   
@@ -178,7 +180,7 @@ void stabilization_hover_wind_run(bool in_flight){
     printf("\n");
   #endif
 
-  float integrator_repart[CTRL_HOVER_WIND_NUM_ACT][1] = {u_integrator[0][0], u_integrator[0][0], u_integrator[1][0], u_integrator[1][0] };
+  float integrator_repart[CTRL_HOVER_WIND_NUM_ACT][1] = {{u_integrator[0][0]}, {u_integrator[0][0]}, {u_integrator[1][0]}, {u_integrator[1][0]} };
   MAT_SUB(CTRL_HOVER_WIND_NUM_ACT, 1, u_sub, integrator_repart, u_filter);
   //MAT_SUB(CTRL_HOVER_WIND_NUM_ACT, 1, u_sub, integrator_repart, u_prop);
   MAT_SUM(CTRL_HOVER_WIND_NUM_ACT, 1, u, ueq, u_sub);
@@ -210,22 +212,30 @@ void stabilization_hover_wind_run(bool in_flight){
   #endif
 
  
-  actuators_pprz[0]=TRIM_PPRZ(-u_scale[2][0]); //ELEVON_LEFT
-  actuators_pprz[1]=TRIM_PPRZ(u_scale[3][0]); // ELEVON_RIGHT 
-  actuators_pprz[2]=TRIM_UPPRZ(u_scale[0][0]); // RIGHT_MOTOR
-  actuators_pprz[3]=TRIM_UPPRZ(u_scale[1][0]); // LEFT_MOTOR
+  //actuators_pprz[0]=TRIM_PPRZ(-u_scale[2][0]); //ELEVON_LEFT  
+  //actuators_pprz[1]=TRIM_PPRZ(u_scale[3][0]); // ELEVON_RIGHT  
+
+  actuators_pprz[0]=TRIM_PPRZ(0); //ELEVON_LEFT  
+  actuators_pprz[1]=TRIM_PPRZ(0); // ELEVON_RIGHT  
+
+  //actuators_pprz[2]=TRIM_UPPRZ(u_scale[0][0]); // RIGHT_MOTOR
+  //actuators_pprz[3]=TRIM_UPPRZ(u_scale[1][0]); // LEFT_MOTOR
+
+  actuators_pprz[2]=TRIM_UPPRZ(5000); // RIGHT_MOTOR
+  actuators_pprz[3]=TRIM_UPPRZ(5000); // LEFT_MOTOR
   
   
   #if DBG_CMD
     printf("actuators: %d %d %d %d\n", actuators_pprz[0], actuators_pprz[1], actuators_pprz[2], actuators_pprz[3]);
-    float f[4] = {actuators_pprz[0], actuators_pprz[1], actuators_pprz[2], actuators_pprz[3]};
-    DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, INDI_NUM_ACT, f);
+    
   #endif
 
   if (in_flight) {
     stabilization_cmd[COMMAND_THRUST] = (actuators_pprz[2]+actuators_pprz[3]); // for in_flight detection
+    printf("in_flight");
   } else {
     stabilization_cmd[COMMAND_THRUST] = 1000;
+    printf("Not in_flight");
   };
   //printf("run %d %d\n", in_flight, stabilization_cmd[COMMAND_THRUST]);
   //log_hoverwind_periodic();
