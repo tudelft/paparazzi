@@ -564,6 +564,10 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     // Calculate the min and max increments
     for (i = 0; i < INDI_NUM_ACT; i++) {
       du_min[i] = -MAX_PPRZ * act_is_servo[i] - actuator_state_filt_vect[i];
+      if (i==5)
+      {
+        du_min[i] = - actuator_state_filt_vect[i];
+      }
       du_max[i] = MAX_PPRZ - actuator_state_filt_vect[i];
       du_pref[i] = act_pref[i] - actuator_state_filt_vect[i];
       if (act_is_servo[i])
