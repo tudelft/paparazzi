@@ -27,6 +27,7 @@
 
 #include "modules/actuators/motor_mixing.h"
 #include "paparazzi.h"
+#include "generated/modules.h"
 
 //#include <stdint.h>
 #ifndef INT32_MIN
@@ -284,4 +285,12 @@ void motor_mixing_run(bool motors_on, bool override_on, pprz_t in_cmd[])
       motor_mixing.commands[i] = MOTOR_MIXING_STOP_MOTOR;
     }
   }
+#ifdef GCNET_MAIN_H
+#pragma message "GNCNET_DIREC_MOTOR_CONTROL!"
+  if (autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) {
+    for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
+      motor_mixing.commands[i] = 9600*(control_nn[i] - 3000)/(12000-3000);
+    }
+  }
+#endif
 }

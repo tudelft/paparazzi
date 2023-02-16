@@ -10,4 +10,15 @@
    settings_modules="modules/gps.xml modules/guidance_indi.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/nav_basic_rotorcraft.xml modules/nav_snap.xml modules/stabilization_indi_simple.xml"
    gui_color="red"
   />
+  <aircraft
+   name="bebop_gncnet"
+   ac_id="45"
+   airframe="airframes/robin/bebop_gecnet.xml"
+   radio="radios/dummy.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/robin/flight_plan_robin.xml"
+   settings="settings/rotorcraft_basic.xml"
+   settings_modules="modules/gps.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/nav_basic_rotorcraft.xml modules/stabilization_indi_simple.xml"
+   gui_color="red"
+  />
 </conf>
