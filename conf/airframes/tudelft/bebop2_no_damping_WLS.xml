@@ -37,15 +37,15 @@
       <define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.06"/>
     </module>
 
-    <!-- <module name="ahrs" type="int_cmpl_quat">
+    <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="TRUE"/>
       <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
     </module>
-    <module name="ins" type="extended"/> -->
+    <module name="ins" type="extended"/>
 
-    <module name="ins" type="float_invariant">
+    <!--module name="ins" type="float_invariant">
       <define name="INS_PROPAGATE_FREQUENCY" value="500"/>
-    </module>
+    </module-->
 
     <module name="geo_mag"/>
     <module name="air_data"/>
@@ -84,12 +84,22 @@
 
   <!-- Magnetometer still needs to be calibrated -->
   <section name="IMU" prefix="IMU_">
-    <define name="MAG_X_NEUTRAL" value="8"/>
-    <define name="MAG_Y_NEUTRAL" value="-69"/>
-    <define name="MAG_Z_NEUTRAL" value="-164"/>
-    <define name="MAG_X_SENS" value="7.165546239401978" integer="16"/>
-    <define name="MAG_Y_SENS" value="7.202811864956067" integer="16"/>
-    <define name="MAG_Z_SENS" value="7.62713052438294" integer="16"/>
+  <!-- air force one -->
+<!--define name="MAG_X_NEUTRAL" value="-125"/>
+<define name="MAG_Y_NEUTRAL" value="-10"/>
+<define name="MAG_Z_NEUTRAL" value="-268"/>
+<define name="MAG_X_SENS" value="7.038035919809334" integer="16"/>
+<define name="MAG_Y_SENS" value="7.137292130750672" integer="16"/>
+<define name="MAG_Z_SENS" value="7.45661212278572" integer="16"/-->
+
+
+<define name="MAG_X_NEUTRAL" value="7"/>
+<define name="MAG_Y_NEUTRAL" value="-80"/>
+<define name="MAG_Z_NEUTRAL" value="-158"/>
+<define name="MAG_X_SENS" value="7.17821620059287" integer="16"/>
+<define name="MAG_Y_SENS" value="7.214698364332506" integer="16"/>
+<define name="MAG_Z_SENS" value="7.599783664852715" integer="16"/>
+
 
 
     <define name="ACCEL_X_NEUTRAL" value="62"/>
