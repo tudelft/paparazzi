@@ -10,13 +10,13 @@
       <define name="VIDEO_CAPTURE_PATH" value="/data/ftp/internal_000/images"/>
       <define name="LOGGER_FILE_PATH" value="/data/ftp/internal_000/log"/>
       <define name="MT9V117_TARGET_FPS" value="20"/>
-      
+      <define name="INDI_RPM_FEEDBACK" value="TRUE"/>
     </target>
     <target name="nps" board="pc">
       <module name="fdm" type="gazebo"/>
       <define name="VIDEO_CAPTURE_PATH" value="/tmp/paparazzi/images"/>
       <define name="LOGGER_FILE_PATH" value="/tmp/paparazzi/log"/>
-      
+      <define name="INDI_RPM_FEEDBACK" value="FALSE"/>
     </target>
     
     <define name="NAVIGATION_FREQUENCY" value="400.0" />
@@ -33,7 +33,7 @@
     <module name="actuators" type="bebop"/>
     <module name="imu" type="bebop"/>
     <module name="gps" type="datalink"/>
-    <module name="stabilization" type="indi_simple"/>
+    <module name="stabilization" type="indi"/>
 
 <!--
     <module name="ahrs" type="int_cmpl_quat">
@@ -47,6 +47,8 @@
 
     <module name="guidance" type="indi">
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500.0"/>
+      <define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.1"/>
+      <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
     </module>
 
     <module name="logger_file"/>
@@ -135,7 +137,7 @@
     <!-- setpoint limits for attitude stabilization rc flight -->
     <define name="SP_MAX_PHI" value="45" unit="deg"/>
     <define name="SP_MAX_THETA" value="45" unit="deg"/>
-    <define name="SP_MAX_R" value="120" unit="deg/s"/>
+    <define name="SP_MAX_R" value="400" unit="deg/s"/>
     <define name="DEADBAND_A" value="0"/>
     <define name="DEADBAND_E" value="0"/>
     <define name="DEADBAND_R" value="50"/>
@@ -161,10 +163,12 @@
 
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness -->
-    <define name="G1_P" value="0.06"/>
-    <define name="G1_Q" value="0.04"/>
-    <define name="G1_R" value="0.003"/>
-    <define name="G2_R" value="0.1219"/>
+    <define name="G1_ROLL" value="{20 , -20, -20 , 20 }"/>
+    <define name="G1_PITCH" value="{14 , 14, -14 , -14 }"/>
+    <define name="G1_YAW" value="{-1, 1, -1, 1}"/>
+    <define name="G1_THRUST" value="{-.4, -.4, -.4, -.4}"/>
+    <!--Counter torque effect of spinning up a rotor-->
+    <define name="G2" value="{-61.2093,   65.3670,  -65.7419,   65.4516}"/>
 
     <!-- reference acceleration for attitude control -->
     <define name="REF_ERR_P" value="600.0"/>
@@ -174,21 +178,19 @@
     <define name="REF_RATE_Q" value="28.0"/>
     <define name="REF_RATE_R" value="28.0"/>
 
-    <!--Maxium yaw rate, to avoid instability-->
-    <define name="MAX_R" value="120.0" unit="deg/s"/>
-
     <!-- second order filter parameters -->
-    <define name="FILT_CUTOFF" value="8.0"/>
-    <define name="ESTIMATION_FILT_CUTOFF" value="8.0"/>
+    <define name="FILT_CUTOFF" value="5.0"/>
+    <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
 
     <!-- first order actuator dynamics -->
-    <define name="ACT_DYN_P" value="0.1"/>
-    <define name="ACT_DYN_Q" value="0.1"/>
-    <define name="ACT_DYN_R" value="0.1"/>
+    <define name="ACT_DYN" value="{0.1, 0.1, 0.1, 0.1}"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
     <define name="ADAPTIVE_MU" value="0.0001"/>
+
+    <!--Priority for each axis (roll, pitch, yaw and thrust)-->
+    <define name="WLS_PRIORITIES" value="{1000, 1000, 1, 100}"/>
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
@@ -218,8 +220,8 @@
   </section>
 
   <section name="NAVIGATION" prefix="NAV_">
-    <define name="CLIMB_VSPEED" value="1.0"/>
-    <define name="DESCEND_VSPEED" value="-0.75"/>
+    <define name="CLIMB_VSPEED" value="2.5"/>
+    <define name="DESCEND_VSPEED" value="-1.0"/>
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">
