@@ -235,17 +235,6 @@ void autopilot_event(void)
       autopilot.detect_ground_once = false;
     }
   }
-
-  if (autopilot.disarm_on_not_in_flight
-#ifdef AP_MODE_FAILSAFE
-      || autopilot.mode == AP_MODE_FAILSAFE
-#endif
-     ) {
-    if (!autopilot.in_flight) {
-      autopilot_set_motors_on(false);
-      autopilot.disarm_on_not_in_flight = false;
-    }
-  }
 }
 
 /** reset in_flight counter

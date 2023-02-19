@@ -22,6 +22,8 @@
     <module name="imu" type="bebop"/>
     <module name="gps" type="ublox"/>
 
+    <module name="ground_detect"/>
+
     <module name="mavlink">
       <configure name="MAVLINK_PORT" value="UDP1"/>
       <define name="UDP1_HOST" value="192.168.56.1"/>
@@ -225,6 +227,8 @@
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
 
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
+
+    <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST" value="2000"/>
   </section>
 
   <section name="BAT">

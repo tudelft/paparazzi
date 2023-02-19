@@ -31,6 +31,7 @@
 #include "firmwares/rotorcraft/guidance.h"
 #include "state.h"
 #include "pprzlink/dl_protocol.h"
+#include "modules/nav/ground_detect.h"
 
 bool autopilot_guided_trajectory(struct NedCoor_f pos, struct NedCoor_f vel, struct NedCoor_f accel, float heading)
 {
@@ -64,7 +65,7 @@ bool autopilot_guided_goto_ned_vz(float x, float y, float vz, float heading, boo
     guidance_h_set_heading(heading);
     guidance_v_set_vz(vz);
     if (landing_detection) {
-      autopilot.disarm_on_not_in_flight = true;
+      disarm_on_not_in_flight = true;
     }
     return true;
   }

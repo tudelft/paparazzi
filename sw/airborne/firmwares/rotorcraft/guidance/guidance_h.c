@@ -724,6 +724,7 @@ void guidance_h_guided_run(bool in_flight)
 void guidance_h_set_traj(struct FloatVect2 pos, struct FloatVect2 vel, struct FloatVect2 acc)
 {
   SetBit(guidance_h.sp.mask, 4);
+  ClearBit(guidance_h.sp.mask, 5);
   guidance_h.sp.pos.x = POS_BFP_OF_REAL(pos.x);
   guidance_h.sp.pos.y = POS_BFP_OF_REAL(pos.y);
   guidance_h.sp.speed.x = SPEED_BFP_OF_REAL(vel.x);
@@ -735,6 +736,7 @@ void guidance_h_set_traj(struct FloatVect2 pos, struct FloatVect2 vel, struct Fl
 void guidance_h_set_pos(float x, float y)
 {
   ClearBit(guidance_h.sp.mask, 5);
+  ClearBit(guidance_h.sp.mask, 4);
   guidance_h.sp.pos.x = POS_BFP_OF_REAL(x);
   guidance_h.sp.pos.y = POS_BFP_OF_REAL(y);
 }
@@ -756,6 +758,7 @@ void guidance_h_set_body_vel(float vx, float vy)
 
 void guidance_h_set_vel(float vx, float vy)
 {
+  ClearBit(guidance_h.sp.mask, 4);
   SetBit(guidance_h.sp.mask, 5);
   guidance_h.sp.speed.x = SPEED_BFP_OF_REAL(vx);
   guidance_h.sp.speed.y = SPEED_BFP_OF_REAL(vy);

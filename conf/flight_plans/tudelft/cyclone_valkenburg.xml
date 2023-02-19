@@ -3,6 +3,7 @@
 <flight_plan alt="40" ground_alt="0" lat0="52.169348" lon0="4.411563" max_dist_from_home="500" name="Rotorcraft Basic (Enac)" security_height="2">
   <header>
 #include "autopilot.h"
+#include "modules/nav/ground_detect.h"
 </header>
   <waypoints>
     <waypoint name="HOME" x="-15.8" y="16.5"/>
@@ -66,7 +67,7 @@
       <go wp="TD"/>
     </block>
     <block name="flare">
-      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
+      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD" until="ground_detect()"/>
     </block>
     <block name="landed">
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>

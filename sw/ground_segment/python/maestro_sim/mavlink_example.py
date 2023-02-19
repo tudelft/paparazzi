@@ -116,7 +116,7 @@ master.mav.set_position_target_local_ned_send(
     master.target_system,
     master.target_component,
     1, #frame
-    0, #typemask
+    0b0001111111011111, #typemask only position
     0, #x
     0, #y
     -10, #z (down)
@@ -138,7 +138,7 @@ master.mav.set_position_target_local_ned_send(
     master.target_system,
     master.target_component,
     1,
-    0,
+    0b0001111111011111, #typemask only position
     -10,
     0,
     -10,
@@ -212,9 +212,29 @@ while t-t0 < 20:
 
     time.sleep(0.1)
 
-print("land")
+master.mav.set_position_target_local_ned_send(
+    0,
+    master.target_system,
+    master.target_component,
+    1, #frame
+    0, #typemask
+    0, #x
+    0, #y
+    -10, #z (down)
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0)
+
+print("hover")
 
 time.sleep(5)
+
+print("land")
 
 # Land
 master.mav.command_long_send(

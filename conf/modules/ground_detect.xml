@@ -1,0 +1,18 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="ground_detect" dir="nav">
+  <doc>
+    <description>
+
+    </description>
+  </doc>
+  <header>
+    <file name="ground_detect.h"/>
+  </header>
+  <init fun="ground_detect_init()"/>
+  <periodic fun="ground_detect_periodic()" freq="50"/>
+  <periodic fun="ground_detect_filter_accel()" freq="500"/>
+  <makefile>
+    <file name="ground_detect.c"/>
+  </makefile>
+</module>
