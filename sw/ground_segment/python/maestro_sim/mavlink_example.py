@@ -2,10 +2,9 @@ import time
 from pymavlink import mavutil
 import math
 
-import keyboard  # using module keyboard
-
 # Start a connection listening on a UDP port
-master = mavutil.mavlink_connection('udpin:192.168.56.1:14550')
+master = mavutil.mavlink_connection('udpin:192.168.42.54:14550')
+#master = mavutil.mavlink_connection('udpin:192.168.42.1:14550')
 
 # Wait for the first heartbeat
 #   This sets the system and component ID of remote system for the link
@@ -139,7 +138,7 @@ master.mav.set_position_target_local_ned_send(
     master.target_component,
     1,
     0b0001111111011111, #typemask only position
-    -10,
+    -20,
     0,
     -10,
     0,
@@ -200,7 +199,7 @@ while t-t0 < 20:
     0,
     xpos,
     ypos,
-    -20,
+    -10,
     xdpos,
     ydpos,
     0,
