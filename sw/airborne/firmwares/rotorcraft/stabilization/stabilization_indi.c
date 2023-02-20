@@ -42,6 +42,7 @@
 #include "modules/actuators/actuators.h"
 #include "modules/core/abi.h"
 #include "filters/low_pass_filter.h"
+#include "filters/notch_filter.h"
 #include "wls/wls_alloc.h"
 #include <stdio.h>
 
@@ -189,6 +190,9 @@ Butterworth2LowPass estimation_output_lowpass_filters[3];
 Butterworth2LowPass acceleration_lowpass_filter;
 static struct FirstOrderLowPass rates_filt_fo[3];
 
+struct SecondOrderNotchFilter notchfilter_roll;
+uint16_t choose_roll_filter = 0;
+
 struct FloatVect3 body_accel_f;
 
 void init_filters(void);
@@ -312,6 +316,10 @@ void init_filters(void)
   init_first_order_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
   init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
   init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
+
+  float notch_freq_hz = 67.5;
+  float notch_bandwidth = 10;
+  notch_filter_init(&notchfilter_roll, notch_freq_hz, notch_bandwidth, PERIODIC_FREQUENCY);
 }
 
 /**
@@ -396,7 +404,15 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   //Note that due to the delay, the PD controller may need relaxed gains.
   struct FloatRates rates_filt;
 #if STABILIZATION_INDI_FILTER_ROLL_RATE
-  rates_filt.p = update_first_order_low_pass(&rates_filt_fo[0], body_rates->p);
+  float roll_first_order_filter = update_first_order_low_pass(&rates_filt_fo[0], body_rates->p);
+  float roll_notch_filter = notch_filter_update(&notchfilter_roll, body_rates->p);
+  if(choose_roll_filter == 0){
+    rates_filt.p = body_rates->p;
+  } else if (choose_roll_filter == 1) {
+    rates_filt.p = roll_first_order_filter;
+  } else {
+    rates_filt.p = roll_notch_filter;
+  }
 #else
   rates_filt.p = body_rates->p;
 #endif
