@@ -7,7 +7,7 @@
   <firmware name="rotorcraft">
     <target name="ap" board="bebop2">
       <!-- <configure name="HOST" value="192.168.1.$(AC_ID)"/> -->
-      <configure name="HOST" value="10.0.15.12"/>
+      <configure name="HOST" value="10.0.15.11"/>
       <configure name="MODEM_HOST" value="10.0.15.9"/>
       <configure name="MODEM_BROADCAST" value="FALSE"/>
       <define name="INDI_RPM_FEEDBACK" value="TRUE"/>
