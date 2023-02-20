@@ -361,6 +361,32 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
             }
             break;
 
+          case MAV_CMD_DO_SET_MODE:
+            MAVLINK_DEBUG("got cmd DO_SET_MODE: %f %f\n", cmd.param1, cmd.param2);
+            result = MAV_RESULT_FAILED;
+            if(cmd.param1 == MAV_MODE_AUTO_DISARMED) {
+              autopilot_set_mode(AP_MODE_NAV);
+              autopilot_set_motors_on(FALSE);
+              if (!autopilot_get_motors_on() && autopilot_get_mode() == AP_MODE_NAV)
+                result = MAV_RESULT_ACCEPTED;
+            } else if(cmd.param1 == MAV_MODE_AUTO_ARMED) {
+              autopilot_set_mode(AP_MODE_NAV);
+              autopilot_set_motors_on(TRUE);
+              if (autopilot_get_motors_on() && autopilot_get_mode() == AP_MODE_NAV)
+                result = MAV_RESULT_ACCEPTED;
+            } else if(cmd.param1 == MAV_MODE_GUIDED_DISARMED) {
+              autopilot_set_mode(AP_MODE_GUIDED);
+              autopilot_set_motors_on(FALSE);
+              if (!autopilot_get_motors_on() && autopilot_get_mode() == AP_MODE_GUIDED)
+                result = MAV_RESULT_ACCEPTED;
+            } else if(cmd.param1 == MAV_MODE_GUIDED_ARMED) {
+              autopilot_set_mode(AP_MODE_GUIDED);
+              autopilot_set_motors_on(TRUE);
+              if (autopilot_get_motors_on() && autopilot_get_mode() == AP_MODE_GUIDED)
+                result = MAV_RESULT_ACCEPTED;
+            }
+            break;
+
           default:
             MAVLINK_DEBUG("got unknown command!: %d\n", cmd.command);
             break;
