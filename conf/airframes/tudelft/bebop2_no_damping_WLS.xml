@@ -6,6 +6,9 @@
 
   <firmware name="rotorcraft">
     <target name="ap" board="bebop2">
+      <!-- <configure name="HOST" value="192.168.1.$(AC_ID)"/> -->
+      <configure name="HOST" value="10.0.15.12"/>
+      <configure name="MODEM_HOST" value="10.0.255.255"/>
       <define name="INDI_RPM_FEEDBACK" value="TRUE"/>
     </target>
 
@@ -13,7 +16,7 @@
       <module name="fdm" type="jsbsim"/>
       <module name="udp"/>
 
-      <define name="MAVLINK_DEBUG" value="printf"/>
+      <!-- <define name="MAVLINK_DEBUG" value="printf"/> -->
     </target>
 
     <module name="telemetry" type="transparent_udp"/>
@@ -26,7 +29,8 @@
 
     <module name="mavlink">
       <configure name="MAVLINK_PORT" value="UDP1"/>
-      <define name="UDP1_HOST" value="192.168.56.1"/>
+      <!-- <define name="UDP1_HOST" value="192.168.56.1"/> -->
+      <define name="UDP1_HOST" value="127.0.0.1"/>
       <define name="UDP1_PORT_OUT" value="14550"/>
       <define name="UDP1_PORT_IN" value="14555"/>
     </module>

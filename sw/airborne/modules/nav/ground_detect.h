@@ -31,8 +31,8 @@
 #include "std.h"
 
 
-extern void ground_detect_init();
-extern void ground_detect_periodic();
+extern void ground_detect_init(void);
+extern void ground_detect_periodic(void);
 extern void ground_detect_filter_accel(void);
 
 extern bool ground_detect(void);

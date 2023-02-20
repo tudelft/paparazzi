@@ -129,7 +129,7 @@ master.mav.set_position_target_local_ned_send(
     0,
     0)
 
-time.sleep(5)
+time.sleep(10)
 
 print("go south")
 
@@ -160,7 +160,7 @@ master.mav.set_position_target_local_ned_send(
     master.target_system,
     master.target_component,
     1, #frame
-    0, #typemask
+    0b0001111111011111, #typemask only position
     0, #x
     0, #y
     -10, #z (down)

@@ -102,10 +102,10 @@ class ParrotUtils:
     # Connect with telnet and ftp, wait until login
     def connect(self):
         try:
-            self.tn = telnetlib.Telnet(self.address, timeout=3)
+            # self.tn = telnetlib.Telnet(self.address, timeout=3)
             self.ftp = FTP(self.address)
             self.ftp.login()
-            self.tn.read_until(bytes(self.prompt, 'utf-8'))
+            # self.tn.read_until(bytes(self.prompt, 'utf-8'))
             return True
         except:
             print('Could not connect to the ' + self.uav_name + ' (address: ' + self.address + ')')
