@@ -191,7 +191,7 @@ Butterworth2LowPass acceleration_lowpass_filter;
 static struct FirstOrderLowPass rates_filt_fo[3];
 
 struct SecondOrderNotchFilter notchfilter_roll;
-uint16_t choose_roll_filter = 0;
+uint16_t choose_roll_filter = 2; // 0=none, 1=first order, 2=notch filter, only works with STABILIZATION_INDI_FILTER_ROLL_RATE
 
 struct FloatVect3 body_accel_f;
 
