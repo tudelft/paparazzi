@@ -387,6 +387,16 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
             }
             break;
 
+          case MAV_CMD_NAV_RETURN_TO_LAUNCH:
+            MAVLINK_DEBUG("got cmd MAV_CMD_NAV_RETURN_TO_LAUNCH");
+            autopilot_guided_goto_ned(waypoint_get_x(WP_HOME), waypoint_get_x(WP_HOME), stateGetPositionNed_f()->z, stateGetNedToBodyEulers_f()->psi);
+            break;
+
+          case MAV_CMD_DO_FLIGHTTERMINATION:
+            MAVLINK_DEBUG("got cmd MAV_CMD_DO_FLIGHTTERMINATION");
+            autopilot_set_mode(AP_MODE_KILL);
+            break;
+
           default:
             MAVLINK_DEBUG("got unknown command!: %d\n", cmd.command);
             break;
