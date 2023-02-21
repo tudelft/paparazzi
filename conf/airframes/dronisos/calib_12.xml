@@ -1,0 +1,20 @@
+<airframe>
+  <!-- PAPARAZZI_2 -->
+  <!-- Magnetometer calibrated 20-02-2023 -->
+  <section name="IMU" prefix="IMU_">
+    <define name="MAG_X_NEUTRAL" value="7"/>
+    <define name="MAG_Y_NEUTRAL" value="-80"/>
+    <define name="MAG_Z_NEUTRAL" value="-158"/>
+    <define name="MAG_X_SENS" value="7.17821620059287" integer="16"/>
+    <define name="MAG_Y_SENS" value="7.214698364332506" integer="16"/>
+    <define name="MAG_Z_SENS" value="7.599783664852715" integer="16"/>
+
+    <define name="ACCEL_X_NEUTRAL" value="62"/>
+    <define name="ACCEL_Y_NEUTRAL" value="-36"/>
+    <define name="ACCEL_Z_NEUTRAL" value="9"/>
+    <define name="ACCEL_X_SENS" value="2.454829474597287" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="2.4394194216880543" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.433744193551986" integer="16"/>
+  </section>
+
+</airframe>

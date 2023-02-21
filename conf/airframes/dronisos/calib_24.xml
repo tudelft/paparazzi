@@ -1,0 +1,20 @@
+<airframe>
+  <!-- TUD00324 -->
+  <!-- Magnetometer calibrated ??? -->
+  <section name="IMU" prefix="IMU_">
+    <define name="MAG_X_NEUTRAL" value="-125"/>
+    <define name="MAG_Y_NEUTRAL" value="-10"/>
+    <define name="MAG_Z_NEUTRAL" value="-268"/>
+    <define name="MAG_X_SENS" value="7.038035919809334" integer="16"/>
+    <define name="MAG_Y_SENS" value="7.137292130750672" integer="16"/>
+    <define name="MAG_Z_SENS" value="7.45661212278572" integer="16"/>
+
+    <define name="ACCEL_X_NEUTRAL" value="62"/>
+    <define name="ACCEL_Y_NEUTRAL" value="-36"/>
+    <define name="ACCEL_Z_NEUTRAL" value="9"/>
+    <define name="ACCEL_X_SENS" value="2.454829474597287" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="2.4394194216880543" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.433744193551986" integer="16"/>
+  </section>
+
+</airframe>

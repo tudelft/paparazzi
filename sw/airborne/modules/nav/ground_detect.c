@@ -69,7 +69,7 @@ void ground_detect_periodic() {
   float vspeed_ned = stateGetSpeedNed_f()->z;
 
   // Detect free fall (to be done, rearm?)
-  bool free_fall = false;
+  //bool free_fall = false;
 
   // Detect noise level (to be done)
 

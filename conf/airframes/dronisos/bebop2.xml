@@ -7,10 +7,12 @@
   <firmware name="rotorcraft">
     <target name="ap" board="bebop2">
       <!-- <configure name="HOST" value="192.168.1.$(AC_ID)"/> -->
-      <configure name="HOST" value="10.0.15.11"/>
-      <configure name="MODEM_HOST" value="10.0.15.9"/>
+      <configure name="HOST" value="10.0.15.$(AC_ID)"/>
+      <configure name="MODEM_HOST" value="10.0.15.111"/>
       <configure name="MODEM_BROADCAST" value="FALSE"/>
       <define name="INDI_RPM_FEEDBACK" value="TRUE"/>
+
+      <define name="UDP1_HOST" value="127.0.0.1"/>
     </target>
 
     <target name="nps" board="pc">
@@ -18,6 +20,7 @@
       <module name="udp"/>
 
       <define name="MAVLINK_DEBUG" value="printf"/>
+      <define name="UDP1_HOST" value="10.0.0.$(AC_ID)"/>
     </target>
 
     <module name="telemetry" type="transparent_udp"/>
@@ -29,10 +32,7 @@
     <module name="ground_detect"/>
 
     <module name="mavlink">
-      <define name="MAVLINK_DEBUG" value="printf"/>
       <configure name="MAVLINK_PORT" value="UDP1"/>
-      <!-- <define name="UDP1_HOST" value="192.168.56.1"/> -->
-      <define name="UDP1_HOST" value="10.0.0.3"/>
       <define name="UDP1_PORT_OUT" value="14550"/>
       <define name="UDP1_PORT_IN" value="14555"/>
     </module>
@@ -90,33 +90,8 @@
     <define name="CALC_AMSL_BARO" value="TRUE"/>
   </section>
 
-  <!-- Magnetometer still needs to be calibrated -->
-  <section name="IMU" prefix="IMU_">
-  <!-- air force one -->
-<!--define name="MAG_X_NEUTRAL" value="-125"/>
-<define name="MAG_Y_NEUTRAL" value="-10"/>
-<define name="MAG_Z_NEUTRAL" value="-268"/>
-<define name="MAG_X_SENS" value="7.038035919809334" integer="16"/>
-<define name="MAG_Y_SENS" value="7.137292130750672" integer="16"/>
-<define name="MAG_Z_SENS" value="7.45661212278572" integer="16"/-->
-
-
-<define name="MAG_X_NEUTRAL" value="7"/>
-<define name="MAG_Y_NEUTRAL" value="-80"/>
-<define name="MAG_Z_NEUTRAL" value="-158"/>
-<define name="MAG_X_SENS" value="7.17821620059287" integer="16"/>
-<define name="MAG_Y_SENS" value="7.214698364332506" integer="16"/>
-<define name="MAG_Z_SENS" value="7.599783664852715" integer="16"/>
-
-
-
-    <define name="ACCEL_X_NEUTRAL" value="62"/>
-    <define name="ACCEL_Y_NEUTRAL" value="-36"/>
-    <define name="ACCEL_Z_NEUTRAL" value="9"/>
-    <define name="ACCEL_X_SENS" value="2.454829474597287" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="2.4394194216880543" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="2.433744193551986" integer="16"/>
-  </section>
+  <!-- Include arframe calibration -->
+  <include href="conf/airframes/dronisos/calib_$AC_ID.xml"/>
 
   <!-- local magnetic field -->
   <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
@@ -127,7 +102,6 @@
     <define name="H_Y" value="0.0017972"/>
     <define name="H_Z" value="0.9211303"/>
   </section> -->
-
 
     <!-- Delft -->
   <section name="INS" prefix="INS_">
