@@ -397,6 +397,19 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
             autopilot_set_mode(AP_MODE_KILL);
             break;
 
+          case MAV_CMD_DO_SET_HOME:
+            MAVLINK_DEBUG("got MAV_CMD_DO_SET_HOME %f %f %f\n", cmd.param5, cmd.param6, cmd.param7);
+
+            struct LlaCoor_i lla = {
+              .lat = cmd.param5*1e7,
+              .lon = cmd.param6*1e7,
+              .alt = cmd.param7*1000
+            };
+            // Take care: not all INS have this function implemented!
+            waypoint_set_lla(WP_HOME, &lla);
+            result = MAV_RESULT_ACCEPTED;
+            break;
+
           default:
             MAVLINK_DEBUG("got unknown command!: %d\n", cmd.command);
             break;
