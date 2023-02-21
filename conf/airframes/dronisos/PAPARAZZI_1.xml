@@ -17,7 +17,7 @@
       <module name="fdm" type="jsbsim"/>
       <module name="udp"/>
 
-      <!-- <define name="MAVLINK_DEBUG" value="printf"/> -->
+      <define name="MAVLINK_DEBUG" value="printf"/>
     </target>
 
     <module name="telemetry" type="transparent_udp"/>
@@ -29,9 +29,10 @@
     <module name="ground_detect"/>
 
     <module name="mavlink">
+      <define name="MAVLINK_DEBUG" value="printf"/>
       <configure name="MAVLINK_PORT" value="UDP1"/>
       <!-- <define name="UDP1_HOST" value="192.168.56.1"/> -->
-      <define name="UDP1_HOST" value="127.0.0.1"/>
+      <define name="UDP1_HOST" value="10.0.0.3"/>
       <define name="UDP1_PORT_OUT" value="14550"/>
       <define name="UDP1_PORT_IN" value="14555"/>
     </module>

@@ -468,16 +468,17 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
       mavlink_msg_set_position_target_local_ned_decode(msg, &target);
       // Check if this message is for this system
       if (target.target_system == AC_ID) {
-        MAVLINK_DEBUG("SET_POSITION_TARGET_LOCAL_NED, byte_mask: %d\n", target.type_mask);
+        //MAVLINK_DEBUG("SET_POSITION_TARGET_LOCAL_NED, byte_mask: %d\n", target.type_mask);
         if (!(target.type_mask & 0b111111111100000)) {
           switch (target.coordinate_frame) {
-            case MAV_FRAME_LOCAL_NED:
-              MAVLINK_DEBUG("set pos, vel, accel target, frame LOCAL_NED\n");
+            case MAV_FRAME_LOCAL_NED: {
+              //MAVLINK_DEBUG("set pos, vel, accel target, frame LOCAL_NED\n");
               struct NedCoor_f pos = {.x = target.x, .y = target.y, .z = target.z};
               struct NedCoor_f vel = {.x = target.vx, .y = target.vy, .z = target.vz};
               struct NedCoor_f acc = {.x = target.afx, .y = target.afy, .z = target.afz};
               autopilot_guided_trajectory(pos, vel, acc, target.yaw);
               break;
+            }
             // OFFSET not supported ATM with velocity and acceleration! Only use position:
             case MAV_FRAME_LOCAL_OFFSET_NED:
               MAVLINK_DEBUG("set position target, frame LOCAL_OFFSET_NED\n");
@@ -704,7 +705,7 @@ static void mavlink_send_gps_global_origin(struct transport_tx *trans, struct li
     mavlink_msg_gps_global_origin_send(MAVLINK_COMM_0,
                                        state.ned_origin_i.lla.lat,
                                        state.ned_origin_i.lla.lon,
-                                       state.ned_origin_i.hmsl);
+                                       state.ned_origin_i.lla.alt);
     MAVLinkSendMessage();
   }
 }
