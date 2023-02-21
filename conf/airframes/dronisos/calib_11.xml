@@ -1,13 +1,13 @@
 <airframe>
   <!-- PAPARAZZI_1 -->
-  <!-- Magnetometer still needs to be calibrated -->
+  <!-- Magnetometer calibrated 21-2 -->
   <section name="IMU" prefix="IMU_">
-    <define name="MAG_X_NEUTRAL" value="7"/>
-    <define name="MAG_Y_NEUTRAL" value="-80"/>
-    <define name="MAG_Z_NEUTRAL" value="-158"/>
-    <define name="MAG_X_SENS" value="7.17821620059287" integer="16"/>
-    <define name="MAG_Y_SENS" value="7.214698364332506" integer="16"/>
-    <define name="MAG_Z_SENS" value="7.599783664852715" integer="16"/>
+<define name="MAG_X_NEUTRAL" value="82"/>
+<define name="MAG_Y_NEUTRAL" value="-58"/>
+<define name="MAG_Z_NEUTRAL" value="37"/>
+<define name="MAG_X_SENS" value="7.671267782864817" integer="16"/>
+<define name="MAG_Y_SENS" value="7.914830826793889" integer="16"/>
+<define name="MAG_Z_SENS" value="7.741758027075008" integer="16"/>
 
     <define name="ACCEL_X_NEUTRAL" value="62"/>
     <define name="ACCEL_Y_NEUTRAL" value="-36"/>
