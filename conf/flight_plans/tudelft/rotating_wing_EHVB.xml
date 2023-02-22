@@ -15,6 +15,7 @@
     <waypoint name="p3" lat="52.1688983" lon="4.4139655"/>
     <waypoint name="p4" lat="52.1687661" lon="4.4133220"/>
     <waypoint name="TD" lat="52.1681602" lon="4.4127708"/>
+    <waypoint name="APP" lat="52.1679567" lon="4.4136344"/>
     <waypoint lat="52.169189" lon="4.410820" name="C1"/>
     <waypoint lat="52.168049" lon="4.406923" name="C2"/>
     <waypoint lat="52.166515" lon="4.408235" name="C3"/>
@@ -93,6 +94,9 @@
     </block>
     <block name="Circle">
       <circle radius="nav_radius" wp="p1"/>
+    </block>
+    <block name="Approach APP">
+      <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
         <call_once fun="NavSetWaypointHere(WP_TD)"/>
