@@ -157,6 +157,14 @@ float thrust_in;
 
 struct FloatVect3 speed_sp = {0.0, 0.0, 0.0};
 
+#ifndef GUIDANCE_INDI_VEL_SP_ID
+#define GUIDANCE_INDI_VEL_SP_ID ABI_BROADCAST
+#endif
+abi_event vel_sp_ev;
+static void vel_sp_cb(uint8_t sender_id, struct FloatVect3 *vel_sp);
+struct FloatVect3 indi_vel_sp = {0.0, 0.0, 0.0};
+float time_of_vel_sp = 0.0;
+
 // WLS implementation for rot_wing
 float Gmat_rot_wing[3][4]; // Outer loop effectiveness matrix of the rotating wing
 float du_min_rot_wing[4];
@@ -215,6 +223,8 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
 void guidance_indi_init(void)
 {
   /*AbiBindMsgACCEL_SP(GUIDANCE_INDI_ACCEL_SP_ID, &accel_sp_ev, accel_sp_cb);*/
+  AbiBindMsgVEL_SP(GUIDANCE_INDI_VEL_SP_ID, &vel_sp_ev, vel_sp_cb);
+
   float tau = 1.0/(2.0*M_PI*filter_cutoff);
   float tau_sp_filter = 1.0/(2.0*M_PI*sp_filter_cutoff);
   float sample_time = 1.0/PERIODIC_FREQUENCY;
@@ -284,7 +294,15 @@ void guidance_indi_run(float *heading_sp) {
   float pos_y_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y) - stateGetPositionNed_f()->y;
   float pos_z_err = POS_FLOAT_OF_BFP(guidance_v_z_ref - stateGetPositionNed_i()->z);
   
-  if(autopilot.mode == AP_MODE_NAV) {
+  // First check for velocity setpoint from module
+  float dt = get_sys_time_float() - time_of_vel_sp;
+
+  // If the input command is not updated after a timeout, switch back to flight plan control
+  if (dt < 0.5) {
+    speed_sp.x = indi_vel_sp.x;
+    speed_sp.y = indi_vel_sp.y;
+    speed_sp.z = indi_vel_sp.z;
+  } else if(autopilot.mode == AP_MODE_NAV) {
     speed_sp = nav_get_speed_setpoint(gih_params.pos_gain);
   } else{
     speed_sp.x = pos_x_err * gih_params.pos_gain;
@@ -761,7 +779,7 @@ struct FloatVect3 nav_get_speed_sp_from_line(struct FloatVect2 line_v_enu, struc
 
   struct NedCoor_f ned_target;
   // Target in NED instead of ENU
-  VECT3_ASSIGN(ned_target, POS_FLOAT_OF_BFP(target.y), POS_FLOAT_OF_BFP(target.x), -POS_FLOAT_OF_BFP(target.z));
+  VECT3_ASSIGN(ned_target, POS_FLOAT_OF_BFP(target.y), POS_FLOAT_OF_BFP(target.x), -POS_FLOAT_OF_BFP(-nav_flight_altitude));
 
   // Calculate magnitude of the desired speed vector based on distance to waypoint
   float dist_to_target = float_vect2_norm(&to_end_v);
@@ -886,4 +904,15 @@ struct FloatVect3 nav_get_speed_sp_from_go(struct EnuCoor_i target, float pos_ga
   }
 
   return speed_sp_return;
+}
+
+/**
+ * ABI callback that obtains the velocity setpoint from a module
+  */
+static void vel_sp_cb(uint8_t sender_id __attribute__((unused)), struct FloatVect3 *vel_sp)
+{
+  indi_vel_sp.x = vel_sp->x;
+  indi_vel_sp.y = vel_sp->y;
+  indi_vel_sp.z = vel_sp->z;
+  time_of_vel_sp = get_sys_time_float();
 }
