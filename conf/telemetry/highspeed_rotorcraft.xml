@@ -51,6 +51,7 @@
       <message name="AOA"			                 period="0.2"/>
       <message name="ACTUATORS"                period="0.02"/>
       <message name="INDI_G"			period="0.2"/>
+      <message name="APPROACH_MOVING_TARGET"  period="0.1"/>
     </mode>
 
     <mode name="calibration">
@@ -250,6 +251,7 @@
       <message name="ROT_WING_CONTROLLER"	     period="0.2"/>
       <message name="AOA"			                 period="0.02"/>
       <message name="DOUBLET"			period="0.002"/>
+      <message name="APPROACH_MOVING_TARGET"  period="0.1"/>
     </mode>
   </process>
 
