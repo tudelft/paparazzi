@@ -116,8 +116,7 @@ void stabilization_hover_wind_run(bool in_flight){
     printf("dwy = %f ,", eps[9][0]);
     printf("dwz = %f ", eps[10][0]);
     printf("\n");
-    float f[13] = {stateGetPositionNed_f()->x, stateGetPositionNed_f()->y, stateGetPositionNed_f()->z, stateGetSpeedNed_f()->x, stateGetSpeedNed_f()->y, stateGetSpeedNed_f()->z, quat_att_barth_frame.qi, quat_att_barth_frame.qx, quat_att_barth_frame.qy, quat_att_barth_frame.qz, stateGetBodyRates_f()->p, stateGetBodyRates_f()->q, stateGetBodyRates_f()->r};
-    DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 13, f);
+    
   #endif
 
   
@@ -212,7 +211,7 @@ void stabilization_hover_wind_run(bool in_flight){
   #endif
 
  
-  actuators_pprz[0]=TRIM_PPRZ(-u_scale[2][0]); //ELEVON_LEFT  
+  actuators_pprz[0]=TRIM_PPRZ(-u_scale[2][0]); //ELEVON_LEFT  -
   actuators_pprz[1]=TRIM_PPRZ(u_scale[3][0]); // ELEVON_RIGHT  
 
   //actuators_pprz[0]=TRIM_PPRZ(0); //ELEVON_LEFT  
@@ -227,17 +226,18 @@ void stabilization_hover_wind_run(bool in_flight){
   
   #if DBG_CMD
     printf("actuators: %d %d %d %d\n", actuators_pprz[0], actuators_pprz[1], actuators_pprz[2], actuators_pprz[3]);
-    
+    float f[17] = {stateGetPositionNed_f()->x, stateGetPositionNed_f()->y, stateGetPositionNed_f()->z, stateGetSpeedNed_f()->x, stateGetSpeedNed_f()->y, stateGetSpeedNed_f()->z, quat_att_barth_frame.qi, quat_att_barth_frame.qx, quat_att_barth_frame.qy, quat_att_barth_frame.qz, stateGetBodyRates_f()->p, stateGetBodyRates_f()->q, stateGetBodyRates_f()->r, actuators_pprz[0], actuators_pprz[1], actuators_pprz[2], actuators_pprz[3]};
+    DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 17, f);
   #endif
 
   if (in_flight) {
     stabilization_cmd[COMMAND_THRUST] = (actuators_pprz[2]+actuators_pprz[3]); // for in_flight detection
-    printf("in_flight");
+    printf("in_flight\n");
   } else {
     stabilization_cmd[COMMAND_THRUST] = 1000;
-    printf("Not in_flight");
+    printf("Not in_flight\n");
   };
-  //printf("run %d %d\n", in_flight, stabilization_cmd[COMMAND_THRUST]);
+
   //log_hoverwind_periodic();
 }
 
