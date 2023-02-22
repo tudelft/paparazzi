@@ -130,7 +130,7 @@ static float Wv[INDI_OUTPUTS] = {1000, 1000, 1, 100};
 #ifdef STABILIZATION_INDI_WLS_WU_MOTOR
 float indi_Wu_motor = STABILIZATION_INDI_WLS_WU_MOTOR;
 #else
-float indi_Wu_motor = 1;
+float indi_Wu_motor = 1.3;
 #endif
 
 float Wu[INDI_NUM_ACT];
