@@ -3,8 +3,8 @@ from pymavlink import mavutil
 import math
 
 # Start a connection listening on a UDP port
-master = mavutil.mavlink_connection('udpin:192.168.42.54:14550')
-#master = mavutil.mavlink_connection('udpin:192.168.42.1:14550')
+# master = mavutil.mavlink_connection('udpin:192.168.42.54:14550')
+master = mavutil.mavlink_connection('udpin:192.168.56.1:14550')
 
 # Wait for the first heartbeat
 #   This sets the system and component ID of remote system for the link
@@ -151,6 +151,16 @@ master.mav.set_position_target_local_ned_send(
     0)
 
 time.sleep(10)
+
+# Land
+master.mav.command_long_send(
+    master.target_system,
+    master.target_component,
+    mavutil.mavlink.MAV_CMD_DO_FLIGHTTERMINATION,
+    0,
+    0, 0, 0, 0, 0, 0, 0)
+
+exit()
 
 print("go back")
 
