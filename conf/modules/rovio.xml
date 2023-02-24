@@ -1,0 +1,29 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="rovio" dir="rovio">
+  <doc>
+    <description>ROVIO VIO</description>
+  </doc>
+
+  <!--settings>
+    <dl_settings>
+      <dl_settings NAME="ROVIO">
+         <dl_setting var="color_lum_min" min="0" step="1" max="255" shortname="y_min" />
+      </dl_settings>
+    </dl_settings>
+  </settings-->
+
+  <dep>
+    <depends>video_thread</depends>
+  </dep>
+
+  <header>
+    <file name="rovio.h"/>
+  </header>
+
+  <init fun="rovio_init()"/>
+  <makefile target="ap|nps">
+    <file name="rovio.c"/>
+  </makefile>
+</module>
+
