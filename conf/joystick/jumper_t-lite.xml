@@ -1,0 +1,27 @@
+<!--
+Jumper T-Lite controller V1
+The top left switch is the mode switch.
+-->
+
+<joystick>
+  <input>
+    <axis index="1" name="roll"/>
+    <axis index="0" name="pitch"/>
+    <axis index="3" name="yaw"/>
+    <axis index="2" name="thrust"/>
+    <axis index="6" name="mode" trim="-50"/>
+  </input>
+
+  <messages period="0.01">
+
+    <message class="datalink" name="RC_4CH" send_always="true">
+      <field name="mode"        value="PprzMode(mode)"/>
+      <field name="throttle"    value="Fit(thrust,-127,127,0,127)"/>
+      <field name="roll"        value="roll"/>
+      <field name="yaw"         value="yaw"/>
+      <field name="pitch"       value="pitch"/>
+    </message>
+
+  </messages>
+
+</joystick>
