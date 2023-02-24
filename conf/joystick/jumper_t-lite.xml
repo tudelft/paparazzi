@@ -1,6 +1,8 @@
 <!--
 Jumper T-Lite controller V1
 The top left switch is the mode switch.
+
+If this does not work for you, it might be due to changes within OpenTX
 -->
 
 <joystick>
@@ -9,7 +11,7 @@ The top left switch is the mode switch.
     <axis index="0" name="pitch"/>
     <axis index="3" name="yaw"/>
     <axis index="2" name="thrust"/>
-    <axis index="6" name="mode" trim="-50"/>
+    <axis index="6" name="mode"/>
   </input>
 
   <messages period="0.01">
