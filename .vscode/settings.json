@@ -13,4 +13,5 @@
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
+    "C_Cpp.errorSquiggles": "disabled",
 }
