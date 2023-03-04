@@ -7,9 +7,9 @@
  *
  * Code generated for Simulink model 'darko'.
  *
- * Model version                  : 1.18
+ * Model version                  : 1.20
  * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Tue Feb  7 09:58:35 2023
+ * C/C++ source code generated on : Wed Mar  1 17:24:17 2023
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Intel->x86-64 (Linux 64)
@@ -717,8 +717,8 @@ void darko_step(void)
   /* MATLAB Function: '<Root>/MATLAB Function1' incorporates:
    *  Inport: '<Root>/u'
    */
-  rtb_u_idx_0 = -rtU.u[2] * 1000.0;
-  rtb_u_idx_1 = rtU.u[3] * 1000.0;
+  rtb_u_idx_0 = rtU.u[2] * 15769.0 / 9600.0;
+  rtb_u_idx_1 = rtU.u[3] * 15769.0 / 9600.0;
 
   /* MATLAB Function: '<Root>/MATLAB Function' incorporates:
    *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
@@ -783,11 +783,11 @@ void darko_step(void)
 
   qin_idx_1 = b_tmp_2 * 2.64E-7 * qin_idx_3;
   aero(rtDW.DiscreteTimeIntegrator_DSTATE, T1, rtU.u[0] * 30.0 *
-       0.017453292519943295, rtU.w, d_PHI, 1.225, 0.0743, 0.0, 0.0, 0.13, 0.55,
-       0.125, d_ELEVON_MEFFICIENCY, d_ELEVON_FEFFICIENCY, A1, M1);
+       0.017453292519943295 / 9600.0, rtU.w, d_PHI, 1.225, 0.0743, 0.0, 0.0,
+       0.13, 0.55, 0.125, d_ELEVON_MEFFICIENCY, d_ELEVON_FEFFICIENCY, A1, M1);
   aero(rtDW.DiscreteTimeIntegrator_DSTATE, T2, rtU.u[1] * 30.0 *
-       0.017453292519943295, rtU.w, d_PHI, 1.225, 0.0743, 0.0, 0.0, 0.13, 0.55,
-       0.125, d_ELEVON_MEFFICIENCY, d_ELEVON_FEFFICIENCY, A2, M2);
+       0.017453292519943295 / 9600.0, rtU.w, d_PHI, 1.225, 0.0743, 0.0, 0.0,
+       0.13, 0.55, 0.125, d_ELEVON_MEFFICIENCY, d_ELEVON_FEFFICIENCY, A2, M2);
   rtb_u_idx_0 = (rtb_u_idx_0 + rtDW.DiscreteTimeIntegrator_DSTATE[10]) *
     5.1116E-6;
   b_tmp[0] = 0.0;

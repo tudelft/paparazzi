@@ -106,6 +106,14 @@ void nps_fdm_init(double dt)
   darko_initialize();
   print_state();
   darko_step();
+
+  fetch_pos();
+  fetch_vel();
+  fetch_accel();
+  fetch_orient();
+  fetch_angular_vel();
+  fetch_rotaccel();
+
   print_state();
 
 /*
@@ -164,45 +172,12 @@ void nps_fdm_run_step(bool launch __attribute__((unused)), double *commands, int
     fetch_orient();
     fetch_angular_vel();
     fetch_rotaccel();
-  //}
-
-  /*
-     printf("run cmd: ");
-     for(int i=0; i<commands_nb; i++) {
-     printf("%lf  ", commands[i]);
-     }
-     printf("\n");
-
-     printf("run pos: ");
-     for(int i=0; i<3; i++) {
-     printf("%lf  ", rtY.p[i]);
-     }
-     printf("\n");
-
-     printf("run vel: ");
-     for(int i=0; i<3; i++) {
-     printf("%lf  ", rtY.v[i]);
-     }
-     printf("\n");
-
-
-     printf("run quat: ");
-     for(int i=0; i<4; i++) {
-     printf("%lf  ", rtY.q[i]);
-     }
-     printf("\n");
-
-
-     printf("run ome: ");
-     for(int i=0; i<3; i++) {
-     printf("%lf  ", rtY.omega[i]);
-     }
-     printf("\n");
-     */
 
 }
 
-#define DBG_CMD 1
+#define DBG_CMD 0
+
+
 void feed_cmd(double *commands, int commands_nb __attribute__((unused))) {
 #if DBG_CMD
   printf("commands (%d), ", commands_nb);
@@ -264,12 +239,12 @@ static void fetch_accel() {
 static void fetch_orient() {
   struct DoubleQuat ltp_to_sim = { rtY.q[0], rtY.q[1], rtY.q[2], rtY.q[3] };
   double_quat_comp(&fdm.ltpprz_to_body_quat, &ltp_to_sim, &quat_to_pprz);
-  //fdm.ltpprz_to_body_quat.qi = rtY.q[0];
-  //fdm.ltpprz_to_body_quat.qx = rtY.q[1];
-  //fdm.ltpprz_to_body_quat.qy = rtY.q[2];
-  //fdm.ltpprz_to_body_quat.qz = rtY.q[3];
-  fdm.ltp_to_body_quat = fdm.ltpprz_to_body_quat;
-  double_eulers_of_quat(&fdm.ltp_to_body_eulers, &fdm.ltpprz_to_body_quat);
+  double_eulers_of_quat(&fdm.ltpprz_to_body_eulers, &fdm.ltpprz_to_body_quat);
+  QUAT_COPY(fdm.ltp_to_body_quat, fdm.ltpprz_to_body_quat);
+  EULERS_COPY(fdm.ltp_to_body_eulers, fdm.ltpprz_to_body_eulers);
+  printf("  quat nps %lf %lf %lf %lf, euler nps %lf %lf %lf\n",
+      fdm.ltpprz_to_body_quat.qi, fdm.ltpprz_to_body_quat.qx, fdm.ltpprz_to_body_quat.qy, fdm.ltpprz_to_body_quat.qz,
+      fdm.ltp_to_body_eulers.phi, fdm.ltp_to_body_eulers.theta, fdm.ltp_to_body_eulers.psi);
 }
 
 //TODO check inertial ECI frame ou ECEF frame  fichier nps_fdm.h
@@ -379,5 +354,8 @@ static void print_state(void) {
       DegOfRad(eulers.phi),
       DegOfRad(eulers.theta),
       DegOfRad(eulers.psi));
+  printf("  quat nps %lf %lf %lf %lf, euler nps %lf %lf %lf\n",
+      fdm.ltpprz_to_body_quat.qi, fdm.ltpprz_to_body_quat.qx, fdm.ltpprz_to_body_quat.qy, fdm.ltpprz_to_body_quat.qz,
+      fdm.ltp_to_body_eulers.phi, fdm.ltp_to_body_eulers.theta, fdm.ltp_to_body_eulers.psi);
 }
 

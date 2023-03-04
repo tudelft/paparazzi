@@ -242,6 +242,7 @@ void stabilization_hover_wind_run(bool in_flight){
 }
 
 // Report function
+/*
 void data_report()
 {
   float msg[] = {
@@ -259,6 +260,7 @@ void data_report()
   };
   //DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 11, msg);
 }
+*/
 
 /*static inline void log_hoverwind_start(void) {
   // Check that log file has been created correctly
