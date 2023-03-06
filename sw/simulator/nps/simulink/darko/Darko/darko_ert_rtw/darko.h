@@ -7,9 +7,9 @@
  *
  * Code generated for Simulink model 'darko'.
  *
- * Model version                  : 1.20
+ * Model version                  : 1.21
  * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Wed Mar  1 17:24:17 2023
+ * C/C++ source code generated on : Mon Mar  6 13:35:36 2023
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Intel->x86-64 (Linux 64)
@@ -138,8 +138,6 @@ extern RT_MODEL *const rtM;
  * '<Root>' : 'darko'
  * '<S1>'   : 'darko/MATLAB Function'
  * '<S2>'   : 'darko/MATLAB Function1'
- * '<S3>'   : 'darko/down to up'
- * '<S4>'   : 'darko/down to up1'
  */
 #endif                                 /* RTW_HEADER_darko_h_ */
 

@@ -109,10 +109,10 @@ void nps_fdm_init(double dt)
 
   fetch_pos();
   fetch_vel();
-  fetch_accel();
+  //fetch_accel();
   fetch_orient();
   fetch_angular_vel();
-  fetch_rotaccel();
+  //fetch_rotaccel();
 
   print_state();
 
@@ -168,10 +168,10 @@ void nps_fdm_run_step(bool launch __attribute__((unused)), double *commands, int
 
     fetch_pos();
     fetch_vel();
-    fetch_accel();
+    //fetch_accel();
     fetch_orient();
     fetch_angular_vel();
-    fetch_rotaccel();
+    //fetch_rotaccel();
 
 }
 
@@ -242,9 +242,11 @@ static void fetch_orient() {
   double_eulers_of_quat(&fdm.ltpprz_to_body_eulers, &fdm.ltpprz_to_body_quat);
   QUAT_COPY(fdm.ltp_to_body_quat, fdm.ltpprz_to_body_quat);
   EULERS_COPY(fdm.ltp_to_body_eulers, fdm.ltpprz_to_body_eulers);
-  printf("  quat nps %lf %lf %lf %lf, euler nps %lf %lf %lf\n",
+
+  printf("  quat nps %lf %lf %lf %lf, euler nps %lf %lf %lf,  euler state %lf %lf %lf\n",
       fdm.ltpprz_to_body_quat.qi, fdm.ltpprz_to_body_quat.qx, fdm.ltpprz_to_body_quat.qy, fdm.ltpprz_to_body_quat.qz,
-      fdm.ltp_to_body_eulers.phi, fdm.ltp_to_body_eulers.theta, fdm.ltp_to_body_eulers.psi);
+      fdm.ltp_to_body_eulers.phi, fdm.ltp_to_body_eulers.theta, fdm.ltp_to_body_eulers.psi, 
+      DegOfRad(stateGetNedToBodyEulers_f()->phi),  DegOfRad(stateGetNedToBodyEulers_f()->theta),  DegOfRad(stateGetNedToBodyEulers_f()->psi));
 }
 
 //TODO check inertial ECI frame ou ECEF frame  fichier nps_fdm.h

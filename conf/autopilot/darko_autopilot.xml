@@ -134,6 +134,7 @@
     </mode>
 
     <mode name="HOVERWIND">
+      
       <select cond="RCMode2() " exception="HOME"/> <!--&& DLModeHover()-->
       <on_enter>
         <call fun="stabilization_hover_wind_init()"/>

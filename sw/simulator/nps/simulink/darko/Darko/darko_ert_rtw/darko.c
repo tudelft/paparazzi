@@ -7,9 +7,9 @@
  *
  * Code generated for Simulink model 'darko'.
  *
- * Model version                  : 1.20
+ * Model version                  : 1.21
  * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Wed Mar  1 17:24:17 2023
+ * C/C++ source code generated on : Mon Mar  6 13:35:36 2023
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Intel->x86-64 (Linux 64)
@@ -699,6 +699,36 @@ void darko_step(void)
 
   static const real_T g[3] = { 0.0, 0.0, 9.81 };
 
+  /* Outport: '<Root>/p' incorporates:
+   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
+   */
+  rtY.p[0] = rtDW.DiscreteTimeIntegrator_DSTATE[0];
+
+  /* Outport: '<Root>/v' incorporates:
+   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
+   */
+  rtY.v[0] = rtDW.DiscreteTimeIntegrator_DSTATE[3];
+
+  /* Outport: '<Root>/p' incorporates:
+   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
+   */
+  rtY.p[1] = rtDW.DiscreteTimeIntegrator_DSTATE[1];
+
+  /* Outport: '<Root>/v' incorporates:
+   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
+   */
+  rtY.v[1] = rtDW.DiscreteTimeIntegrator_DSTATE[4];
+
+  /* Outport: '<Root>/p' incorporates:
+   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
+   */
+  rtY.p[2] = rtDW.DiscreteTimeIntegrator_DSTATE[2];
+
+  /* Outport: '<Root>/v' incorporates:
+   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
+   */
+  rtY.v[2] = rtDW.DiscreteTimeIntegrator_DSTATE[5];
+
   /* Outport: '<Root>/q' incorporates:
    *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
    */
@@ -912,24 +942,6 @@ void darko_step(void)
 
   /* Outport: '<Root>/rotaccel' */
   rtY.rotaccel[2] = rtb_dxdt[12];
-
-  /* Outport: '<Root>/p' incorporates:
-   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
-   *  Gain: '<S3>/Gain'
-   *  Gain: '<S3>/Gain1'
-   */
-  rtY.p[0] = rtDW.DiscreteTimeIntegrator_DSTATE[0];
-  rtY.p[1] = -rtDW.DiscreteTimeIntegrator_DSTATE[1];
-  rtY.p[2] = -rtDW.DiscreteTimeIntegrator_DSTATE[2];
-
-  /* Outport: '<Root>/v' incorporates:
-   *  DiscreteIntegrator: '<Root>/Discrete-Time Integrator'
-   *  Gain: '<S4>/Gain'
-   *  Gain: '<S4>/Gain1'
-   */
-  rtY.v[0] = rtDW.DiscreteTimeIntegrator_DSTATE[3];
-  rtY.v[1] = -rtDW.DiscreteTimeIntegrator_DSTATE[4];
-  rtY.v[2] = -rtDW.DiscreteTimeIntegrator_DSTATE[5];
   for (i = 0; i <= 10; i += 2) {
     __m128d tmp;
     __m128d tmp_0;
