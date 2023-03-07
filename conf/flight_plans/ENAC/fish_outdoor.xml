@@ -76,7 +76,7 @@
       <attitude pitch="0" roll="0" throttle="0.1" until="stage_time>2" vmode="throttle"/>
       <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
-      <stay climb="nav_climb_vspeed" vmode="climb" wp="STDBY"/>
+      <stay climb="nav.climb_vspeed" vmode="climb" wp="STDBY"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <call_once fun="autopilot_set_mode(AP_MODE_NAV)"/>
@@ -96,11 +96,11 @@
     <block name="flare">
       <exception cond="GetPosHeight() @LT 0.3" deroute="Ramp down"/>
       <exception cond="!nav_is_in_flight()" deroute="Landed"/>
-      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
+      <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="Ramp down">
-      <exception cond="guidance_v_delta_t @LT 0.1*9600." deroute="Landed"/>
-      <set value="guidance_v_delta_t/9600." var="fp_throttle"/>
+      <exception cond="guidance_v.delta_t @LT 0.1*9600." deroute="Landed"/>
+      <set value="guidance_v.delta_t/9600." var="fp_throttle"/>
       <stay throttle="fp_throttle-0.1*stage_time" vmode="throttle" wp="TD"/>
     </block>
     <block name="Landed">

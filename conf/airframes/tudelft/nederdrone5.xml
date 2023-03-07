@@ -56,7 +56,7 @@
       <module name="scheduling_indi_simple"/>
 
       <module name="logger_file">
-        <define name="FILE_LOGGER_PATH" value="/home/ewoud/Documents"/>
+        <define name="LOGGER_FILE_PATH" value="/home/ewoud/Documents"/>
       </module>
 
       <!--Not dealing with these in the simulation-->
@@ -70,6 +70,10 @@
       <configure name="MODEM_BAUD" value="B115200"/>
     </module>
 
+    <module name="approach_moving_target">
+      <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/>
+    </module>
+
     <module name="actuators"     type="uavcan">
       <configure name="UAVCAN_USE_CAN1" value="TRUE"/>
       <configure name="UAVCAN_USE_CAN2" value="TRUE"/>
@@ -80,7 +84,7 @@
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
     <module name="ins"           type="ekf2" />
-    
+
     <module name="air_data"/>
 
     <!-- Internal MAG -->
@@ -110,7 +114,6 @@
       <define name="GUIDANCE_INDI_PITCH_EFF_SCALING" value="1.0"/>
       <define name="GUIDANCE_H_REF_MAX_SPEED" value="18.0"/> <!--not used-->
       <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="16.0"/>
-      <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/> <!--heading can not be set by navigation-->
       <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="5"/>
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-943.0"/>
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_45" value="-500.0"/>
@@ -193,7 +196,7 @@
     <set servo="MOTOR_10"  value="($th_hold? -9600 : motor_mixing.commands[9])"/>
     <set servo="MOTOR_11"  value="($th_hold? -9600 : motor_mixing.commands[10])"/>
     <set servo="MOTOR_12"  value="($th_hold? -9600 : motor_mixing.commands[11])"/>
- 
+
     <!-- Removed ApplyDiff for differential control -->
     <set servo="AIL_1"     value="-2*@PITCH + (  2*@YAW)"/>
     <set servo="AIL_2"     value="-2*@PITCH + (- 2*@YAW)"/>

@@ -220,6 +220,7 @@ static struct FirstOrderLowPass rates_filt_fo[3];
 struct FloatVect3 body_accel_f;
 
 void init_filters(void);
+void sum_g1_g2(void);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -297,6 +298,7 @@ void stabilization_indi_init(void)
   float_vect_zero(actuator_state_filt_vect, INDI_NUM_ACT);
 
   //Calculate G1G2_PSEUDO_INVERSE
+  sum_g1_g2();
   calc_g1g2_pseudo_inv();
 
   // Initialize the array of pointers to the rows of g1g2
@@ -408,6 +410,15 @@ void stabilization_indi_set_rpy_setpoint_i(struct Int32Eulers *rpy)
 }
 
 /**
+ * @param quat quaternion setpoint
+ */
+void stabilization_indi_set_quat_setpoint_i(struct Int32Quat *quat)
+{
+  stab_att_sp_quat = *quat;
+  int32_eulers_of_quat(&stab_att_sp_euler, quat);
+}
+
+/**
  * @param cmd 2D command in North East axes
  * @param heading Heading of the setpoint
  *
@@ -428,6 +439,17 @@ void stabilization_indi_set_earth_cmd_i(struct Int32Vect2 *cmd, int32_t heading)
   stab_att_sp_euler.theta = -(c_psi * cmd->x + s_psi * cmd->y) >> INT32_TRIG_FRAC;
 
   quat_from_earth_cmd_i(&stab_att_sp_quat, cmd, heading);
+}
+
+/**
+ * @brief Set attitude setpoint from stabilization setpoint struct
+ *
+ * @param sp Stabilization setpoint structure
+ */
+void stabilization_indi_set_stab_sp(struct StabilizationSetpoint *sp)
+{
+  stab_att_sp_euler = stab_sp_to_eulers_i(sp);
+  stab_att_sp_quat = stab_sp_to_quat_i(sp);
 }
 
 /**
@@ -865,6 +887,9 @@ void lms_estimation(void)
   float_vect_copy(g1[0], g1_est[0], INDI_OUTPUTS * INDI_NUM_ACT);
   float_vect_copy(g2, g2_est, INDI_NUM_ACT);
 
+  // Calculate sum of G1 and G2 for Bwls
+  sum_g1_g2();
+
 #if STABILIZATION_INDI_ALLOCATION_PSEUDO_INVERSE
   // Calculate the inverse of (G1+G2)
   calc_g1g2_pseudo_inv();
@@ -872,12 +897,10 @@ void lms_estimation(void)
 }
 
 /**
- * Function that calculates the pseudo-inverse of (G1+G2).
+ * Function that sums g1 and g2 to obtain the g1g2 matrix
+ * It also undoes the scaling that was done to make the values readable
  */
-void calc_g1g2_pseudo_inv(void)
-{
-
-  //sum of G1 and G2
+void sum_g1_g2(void) {
   int8_t i;
   int8_t j;
   for (i = 0; i < INDI_OUTPUTS; i++) {
@@ -889,12 +912,20 @@ void calc_g1g2_pseudo_inv(void)
       }
     }
   }
+}
 
+/**
+ * Function that calculates the pseudo-inverse of (G1+G2).
+ * Make sure to sum of G1 and G2 before running this!
+ */
+void calc_g1g2_pseudo_inv(void)
+{
   //G1G2*transpose(G1G2)
   //calculate matrix multiplication of its transpose INDI_OUTPUTSxnum_act x num_actxINDI_OUTPUTS
   float element = 0;
   int8_t row;
   int8_t col;
+  int8_t i;
   for (row = 0; row < INDI_OUTPUTS; row++) {
     for (col = 0; col < INDI_OUTPUTS; col++) {
       element = 0;
@@ -906,13 +937,13 @@ void calc_g1g2_pseudo_inv(void)
   }
 
   //there are numerical errors if the scaling is not right.
-  float_vect_scale(g1g2_trans_mult[0], 100.0, INDI_OUTPUTS * INDI_OUTPUTS);
+  float_vect_scale(g1g2_trans_mult[0], 1000.0, INDI_OUTPUTS * INDI_OUTPUTS);
 
   //inverse of 4x4 matrix
   float_mat_inv_4d(g1g2inv[0], g1g2_trans_mult[0]);
 
   //scale back
-  float_vect_scale(g1g2inv[0], 100.0, INDI_OUTPUTS * INDI_OUTPUTS);
+  float_vect_scale(g1g2inv[0], 1000.0, INDI_OUTPUTS * INDI_OUTPUTS);
 
   //G1G2'*G1G2inv
   //calculate matrix multiplication INDI_NUM_ACTxINDI_OUTPUTS x INDI_OUTPUTSxINDI_OUTPUTS

@@ -493,8 +493,8 @@ void stabilization_attitude_run(bool in_flight)
   }
 
   /* RADIO throttle stick value, for 4dof mode */
-  //int32_t accel_z_sp = (-1)*3*((guidance_v_rc_delta_t - MAX_PPRZ/2) << INT32_ACCEL_FRAC) / (MAX_PPRZ/2);
-  //accel_z_sp = ((accel_z_sp << INT32_TRIG_FRAC) / guidance_v_thrust_coeff);
+  //int32_t accel_z_sp = (-1)*3*((guidance_v.rc_delta_t - MAX_PPRZ/2) << INT32_ACCEL_FRAC) / (MAX_PPRZ/2);
+  //accel_z_sp = ((accel_z_sp << INT32_TRIG_FRAC) / guidance_v.thrust_coeff);
 
   /* Transform yaw into a delta yaw while keeping filtered yawrate (kinda hacky) */
   int32_t filtered_measurement_vector[INDI_DOF];
@@ -586,6 +586,12 @@ void stabilization_attitude_set_rpy_setpoint_i(struct Int32Eulers *rpy)
   int32_quat_of_eulers(&stab_att_sp_quat, &stab_att_sp_euler);
 }
 
+void stabilization_attitude_set_quat_setpoint_i(struct Int32Quat *quat)
+{
+  stab_att_sp_quat = *quat;
+  int32_eulers_of_quat(&stab_att_sp_euler, quat);
+}
+
 void stabilization_attitude_set_earth_cmd_i(struct Int32Vect2 *cmd, int32_t heading)
 {
   // stab_att_sp_euler.psi still used in ref..
@@ -601,6 +607,12 @@ void stabilization_attitude_set_earth_cmd_i(struct Int32Vect2 *cmd, int32_t head
   stab_att_sp_euler.theta = -(c_psi * cmd->x + s_psi * cmd->y) >> INT32_TRIG_FRAC;
 
   quat_from_earth_cmd_i(&stab_att_sp_quat, cmd, heading);
+}
+
+void stabilization_attitude_set_stab_sp(struct StabilizationSetpoint *sp)
+{
+  stab_att_sp_euler = stab_sp_to_eulers_i(sp);
+  stab_att_sp_quat = stab_sp_to_quat_i(sp);
 }
 
 void stabilization_attitude_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn)
