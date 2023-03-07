@@ -39,6 +39,7 @@ extern float rot_wing_aerodynamic_eff_const_g1_q[1];
 extern float rot_wing_aerodynamic_eff_const_g1_r[1];
 
 extern bool wing_rotation_sched_activated;
+extern bool pusher_sched_activated;
 
 extern void init_eff_scheduling(void);
 extern void event_eff_scheduling(void);

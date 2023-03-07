@@ -66,6 +66,7 @@ float g1_r_multiplier = 1.;
 float g1_t_multiplier = 1.;
 
 bool wing_rotation_sched_activated = true;
+bool pusher_sched_activated = true;
 
 // Define filters
 #ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
@@ -85,6 +86,7 @@ const float I_zz = 1.333902457;
 inline void update_hover_motor_effectiveness(float *cosr, float *sinr, float *airspeed_f);
 inline void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *skew_deg);
 inline void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *cosr);
+inline void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt);
 
 void init_eff_scheduling(void)
 {
@@ -130,6 +132,7 @@ void event_eff_scheduling(void)
   update_hover_motor_effectiveness(&cosr, &sinr, &airspeed);
   update_rudder_effectiveness(&airspeed2, &pp_scaled, &T_mean_scaled, &cosr);
   update_elevator_effectiveness(elev_pprz, &airspeed2, &pp_scaled, &T_mean_scaled, &wing_rotation_deg);
+  update_pusher_effectiveness(&airspeed, thrust_bx_state_filt);
 
   // float g1_p_side_motors[2];
   // float g1_q_side_motors[2];
@@ -199,8 +202,8 @@ void update_hover_motor_effectiveness(float *cosr, float *sinr, float *airspeed_
   g1g2[3][2] = g1_startup[3][2] * g1_t_multiplier / INDI_G_SCALING;
 
   float bounded_airspeed = *airspeed_f;
-  Bound(bounded_airspeed, 0, 12);
-  g1g2[0][3] = (g1_p_side_motors[1] * g1_p_multiplier - 0.283333 * bounded_airspeed) / INDI_G_SCALING;
+  Bound(bounded_airspeed, 0, 17);
+  g1g2[0][3] = (g1_p_side_motors[1] * g1_p_multiplier - 0.283333 * bounded_airspeed * *cosr) / INDI_G_SCALING;
   g1g2[1][3] = g1_q_side_motors[1] * g1_q_multiplier / INDI_G_SCALING;
   g1g2[2][3] = (g1_startup[2][3] * g1_r_multiplier + g2_startup[3]) / INDI_G_SCALING;
   g1g2[3][3] = g1_startup[3][3] * g1_t_multiplier / INDI_G_SCALING;
@@ -257,4 +260,16 @@ void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, float *T_me
   g1g2[1][4] = 0 / INDI_G_SCALING;
   g1g2[2][4] = 0;//eff_z_rudder;
   g1g2[3][4] = 0 / INDI_G_SCALING;
+}
+
+void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt)
+{
+  if (pusher_sched_activated)
+  {
+    float eff_pusher = ((-0.67521 * *airspeed_f +  2* 1.129296875000000 * pusher_cmd_filt * 0.0038885) / 10000.) * 0.173737981;
+  Bound(eff_pusher, 0.00020, 0.0015);
+  thrust_bx_eff = eff_pusher;
+  } else {
+    thrust_bx_eff = STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS;
+  }
 }
