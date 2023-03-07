@@ -25,7 +25,6 @@
             <module TYPE="ms45xx_i2c" NAME="airspeed">
                 <define NAME="USE_I2C2"/>
                 <define VALUE="i2c2" NAME="MS45XX_I2C_DEV"/>
-                <define NAME="MS45XX_AIRSPEED_SCALE" value="1.796"/>
                 <define NAME="MS45XX_LOWPASS_TAU" value="0.1"/>
                 <define NAME="USE_AIRSPEED_LOWPASS_FILTER" value="TRUE"/>
             </module>
@@ -323,7 +322,7 @@
         <define name="POS_GAIN" value="0.5"/><!--tuned at 10m/s ///1.0 1.5-->
         <define name="POS_GAINZ" value="0.5"/> <!--tuned at 10m/s ///1.7 1.0-->
         <define name="SPEED_GAIN" value="1.0"/> <!--tuned at 10m/s ///2.0 1.4-->
-        <define name="SPEED_GAINZ" value="1.0"/> <!--tuned at 10m/s ///2.1 2.4-->
+        <define name="SPEED_GAINZ" value="0.6"/> <!--tuned at 10m/s ///2.1 2.4-->
         <define name="FILTER_CUTOFF" value="1.0"/>
         <define name="HEADING_BANK_GAIN" value="5."/>
         <define name="MAX_AIRSPEED" value="10.0"/>
