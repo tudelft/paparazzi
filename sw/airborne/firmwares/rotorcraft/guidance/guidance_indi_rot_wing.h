@@ -57,5 +57,14 @@ extern bool take_heading_control;
 extern float guidance_indi_max_bank;
 extern float push_first_order_constant;
 extern float a_diff_limit;
+extern float a_diff_limit_z;
+extern float rot_wing_max_pitch_limit_deg;
+extern float rot_wing_min_pitch_limit_deg;
+extern float airspeed_turn_lower_bound;
+
+extern float pitch_priority_factor;
+extern float roll_priority_factor;
+extern float thrust_priority_factor;
+extern float pusher_priority_factor;
 
 #endif /* GUIDANCE_INDI_HYBRID_H */

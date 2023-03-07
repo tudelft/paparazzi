@@ -9,7 +9,7 @@
   <settings>
     <dl_settings>
       <dl_settings NAME="guidance_indi_hybrid">
-        <dl_setting var="a_diff_limit" min="0.5" step="0.1" max="6" shortname="a_diff"/>
+        <dl_setting var="airspeed_turn_lower_bound" min="0.5" step="0.1" max="10" shortname="AS_lower"/>
         <dl_setting var="push_first_order_constant" min="0" step="0.001" max="1.0" shortname="push_fo"/>
         <dl_setting var="gih_params.pos_gain" min="0" step="0.1" max="10.0" shortname="kp" param="GUIDANCE_INDI_POS_GAIN" persistent="true"/>
         <dl_setting var="gih_params.pos_gainz" min="0" step="0.1" max="10.0" shortname="kp_z" param="GUIDANCE_INDI_POS_GAINZ" persistent="true"/>
