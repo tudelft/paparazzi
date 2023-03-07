@@ -160,7 +160,7 @@ void wing_rotation_to_rad(void)
   wing_rotation.wing_angle_deg =  - 0.00000000000775081780242 * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation 
                                   + 0.000001108651179779 * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation 
                                   - 0.055899851122862 * (float)wing_rotation.adc_wing_rotation
-                                  + 1044.66466029256;
+                                  + 1044.66466029256 - 5.;
   wing_rotation.wing_angle_rad = wing_rotation.wing_angle_deg / 180. * M_PI;
 
   #else
