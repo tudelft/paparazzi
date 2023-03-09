@@ -90,10 +90,13 @@
       <deroute block="route"/>
     </block>
     <block name="Oval">
-      <oval p1="p1" p2="p2" radius="nav_radius"/>
+      <oval p1="p1" p2="p2" radius="100"/>
     </block>
-    <block name="Circle">
-      <circle radius="nav_radius" wp="p1"/>
+    <block name="Circle_CW">
+      <circle radius="100" wp="p1"/>
+    </block>
+    <block name="Circle_CCW">
+      <circle radius="-100" wp="p1"/>
     </block>
     <block name="Approach APP">
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
