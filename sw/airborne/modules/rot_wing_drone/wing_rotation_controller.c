@@ -100,7 +100,7 @@ void wing_rotation_init(void)
   wing_rotation.wing_angle_rad_sp = 0;
   wing_rotation.wing_angle_deg_sp = 0;
   wing_rotation.wing_rotation_speed = 0;
-  wing_rotation.wing_angle_virtual_deg_sp = 0;
+  wing_rotation.wing_angle_virtual_deg_sp = 45;
   wing_rotation.wing_rotation_first_order_dynamics = WING_ROTATION_FIRST_DYN;
   wing_rotation.wing_rotation_second_order_dynamics = WING_ROTATION_SECOND_DYN;
   wing_rotation.adc_wing_rotation_range = WING_ROTATION_POSITION_ADC_90 - WING_ROTATION_POSITION_ADC_0;
@@ -124,7 +124,7 @@ void wing_rotation_periodic(void)
     wing_rotation.init_loop_count += 1;
     if (wing_rotation.init_loop_count > 4) {
       wing_rotation.initialized = true;
-      wing_rotation.wing_angle_rad_sp = 0;
+      wing_rotation.wing_angle_rad_sp = M_PI * 0.25;
       wing_rotation.wing_angle_deg_sp = wing_rotation.wing_angle_rad_sp / M_PI * 180.;
     }
   }
@@ -157,10 +157,11 @@ void wing_rotation_to_rad(void)
   #if !USE_NPS
   wing_rotation.adc_wing_rotation = buf_wing_rot_pos.sum / buf_wing_rot_pos.av_nb_sample;
 
-  wing_rotation.wing_angle_deg =  - 0.00000000000775081780242 * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation 
-                                  + 0.000001108651179779 * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation 
-                                  - 0.055899851122862 * (float)wing_rotation.adc_wing_rotation
-                                  + 1044.66466029256 - 5.;
+  // wing_rotation.wing_angle_deg =  - 0.00000000000775081780242 * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation 
+  //                                 + 0.000001108651179779 * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation 
+  //                                 - 0.055899851122862 * (float)wing_rotation.adc_wing_rotation
+  //                                 + 1044.66466029256 - 5.;
+  wing_rotation.wing_angle_deg = 0.003264075042712 * (float)wing_rotation.adc_wing_rotation - 47.4432681739534;
   wing_rotation.wing_angle_rad = wing_rotation.wing_angle_deg / 180. * M_PI;
 
   #else
