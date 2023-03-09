@@ -6,7 +6,7 @@
       Standard navigation patterns and flight plan handling for rotorcraft
     </description>
   </doc>
-  <settings>
+  <!-- <settings>
     <dl_settings>
       <dl_settings NAME="NAV">
         <dl_setting var="flight_altitude" MIN="0" STEP="0.1" MAX="400" module="navigation" unit="m" handler="SetFlightAltitude"/>
@@ -16,7 +16,7 @@
         <dl_setting var="nav_descend_vspeed" MIN="-10.0" STEP="0.1" MAX="0.0" unit="m/s" param="NAV_DESCEND_VSPEED"/>
       </dl_settings>
     </dl_settings>
-  </settings>
+  </settings> -->
   <dep>
     <depends>nav_rotorcraft</depends>
     <provides>navigation</provides>
