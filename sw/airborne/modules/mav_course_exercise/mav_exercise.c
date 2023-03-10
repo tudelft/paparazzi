@@ -33,6 +33,7 @@
 uint8_t increase_nav_heading(float incrementDegrees);
 uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
 uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
+uint8_t chooseRandomIncrementAvoidance(void);
 
 enum navigation_state_t {
   SAFE,
@@ -111,6 +112,7 @@ void mav_exercise_periodic(void) {
       waypoint_move_here_2d(WP_TRAJECTORY);
 
       chooseRandomIncrementAvoidance();
+      
       navigation_state = SAFE_HEADING;
       break;
     case SAFE_HEADING:
@@ -191,10 +193,10 @@ uint8_t chooseRandomIncrementAvoidance(void)
   // Randomly choose CW or CCW avoiding direction
   if (rand() % 2 == 0) {
     heading_increment = 20.f;
-    VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+    //VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   } else {
     heading_increment = -20.f;
-    VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+    //VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
   }
   return false;
 }
