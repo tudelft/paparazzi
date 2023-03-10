@@ -208,7 +208,7 @@
 
 
         <!-- Define axis in hover frame -->
-        <define name="BODY_TO_IMU_PHI"   value="-2.5" unit="deg"/>
+        <define name="BODY_TO_IMU_PHI"   value="-4.0" unit="deg"/>
         <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
         <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
     </section>
@@ -250,9 +250,10 @@
         <define VALUE="{1.6, 0.0,   -1.6, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
         <define VALUE="{-0.2, 0.1, -0.35, 0.35, 0.0, 0.0}" NAME="G1_YAW"/>-->
         <!--With tail effectiveness values-->
-        <define VALUE="{0.0, -8.7, 0.0,   8.7, 0.0, 0.0}" NAME="G1_ROLL"/>
-        <define VALUE="{1.3, 0.0,   -1.3, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-0.25, 0.25, -0.25, 0.25, 0.0, 0.0}" NAME="G1_YAW"/>
+        <define VALUE="{0.0, -15.0, 0.0, 15.0, 0.0, 0.0}" NAME="G1_ROLL"/>
+        <define VALUE="{1.5, 0.0, -1.5, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
+        <define VALUE="{-0.3, 0.3, -0.3, 0.3, 0.0, 0.0}" NAME="G1_YAW"/>
+        <!-- <define VALUE="{-0.43, 0.43, -0.43, 0.43, 0.0, 0.0}" NAME="G1_YAW"/> -->
         <!--<define VALUE="{-0.2, 0.2, -0.2, 0.2, 0.0, 0.0}" NAME="G1_YAW"/>-->
         <!--With wing effectiveness values-->
         <!--<define VALUE="{0.0, -8.3, 0.0,   8.7, 0.0, 0.0}" NAME="G1_ROLL"/>
@@ -276,12 +277,12 @@
         <define VALUE="30.0" UNIT="deg/s" NAME="MAX_R"/>
         <define VALUE="5.0" NAME="FILT_CUTOFF_P"/>
         <define VALUE="5.0" NAME="FILT_CUTOFF_Q"/>
-        <define VALUE="5.0" NAME="FILT_CUTOFF_R"/>
+        <define VALUE="3.0" NAME="FILT_CUTOFF_R"/>
         <define VALUE="2.0" NAME="FILT_CUTOFF"/>
         <define VALUE="0.5" NAME="FILT_CUTOFF_RDOT"/>
         <define VALUE="2.0" NAME="ESTIMATION_FILT_CUTOFF"/>
         <define VALUE="TRUE" NAME="FILTER_YAW_RATE"/>
-        <define VALUE="{0.03, 0.025, 0.03, 0.025, 0.1, 0.1}" NAME="ACT_DYN"/>
+        <define VALUE="{0.035, 0.035, 0.035, 0.035, 0.1, 0.1}" NAME="ACT_DYN"/>
         <define VALUE="{0, 0, 0, 0, 1, 1}" NAME="ACT_IS_SERVO"/>
         <define VALUE="{1000, 1000, 1, 100}" NAME="WLS_PRIORITIES"/>
         <define VALUE="FALSE" NAME="USE_ADAPTIVE"/>
@@ -289,7 +290,7 @@
     </section>
 
     <section PREFIX="ROT_WING_SCHED_" NAME="CTRL_EFF_SCHEDULING">
-        <define VALUE="{0.5, -0.5}" NAME="G1_Q_90"/>
+        <define VALUE="{1.5, -1.5}" NAME="G1_Q_90"/>
         <define VALUE="{0.0}" NAME="G1_AERO_CONST_P"/>
         <define VALUE="{0.0}" NAME="G1_AERO_CONST_Q"/>
         <define VALUE="{0.006}" NAME="G1_AERO_CONST_R"/>
