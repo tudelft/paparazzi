@@ -28,7 +28,7 @@
 
 // include mavlink headers, but ignore some warnings
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wswitch-default"
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 #include "mavlink/paparazzi/mavlink.h"
 #pragma GCC diagnostic pop
 
@@ -352,7 +352,7 @@ void mavlink_common_message_handler(const mavlink_message_t *msg)
             break;
         }
         // confirm command with result
-        mavlink_msg_command_ack_send(MAVLINK_COMM_0, cmd.command, result);
+        mavlink_msg_command_ack_send(MAVLINK_COMM_0, cmd.command, result, 0, UINT8_MAX, msg->sysid, msg->compid);
         MAVLinkSendMessage();
       }
       break;
@@ -527,7 +527,10 @@ static void mavlink_send_sys_status(struct transport_tx *trans, struct link_devi
                               0,      // Autopilot specific error 1
                               0,      // Autopilot specific error 2
                               0,      // Autopilot specific error 3
-                              0);     // Autopilot specific error 4
+                              0,      // Autopilot specific error 4
+                              0,
+                              0,
+                              0);     
   MAVLinkSendMessage();
 }
 
@@ -599,7 +602,8 @@ static void mavlink_send_gps_global_origin(struct transport_tx *trans, struct li
     mavlink_msg_gps_global_origin_send(MAVLINK_COMM_0,
                                        state.ned_origin_i.lla.lat,
                                        state.ned_origin_i.lla.lon,
-                                       state.ned_origin_i.hmsl);
+                                       state.ned_origin_i.hmsl,
+                                       get_sys_time_usec());
     MAVLinkSendMessage();
   }
 }
@@ -641,13 +645,14 @@ static void mavlink_send_autopilot_version(struct transport_tx *trans, struct li
                                      0, //const uint8_t *os_custom_version,
                                      0, //uint16_t vendor_id,
                                      0, //uint16_t product_id,
-                                     sha //uint64_t uid
-                                    );
+                                     sha, //uint64_t uid
+                                     0);
   MAVLinkSendMessage();
 }
 
 static void mavlink_send_attitude_quaternion(struct transport_tx *trans, struct link_device *dev)
 {
+  float repr_offset_q[4] = {0, 0, 0, 0};
   mavlink_msg_attitude_quaternion_send(MAVLINK_COMM_0,
                                        get_sys_time_msec(),
                                        stateGetNedToBodyQuat_f()->qi,
@@ -656,7 +661,8 @@ static void mavlink_send_attitude_quaternion(struct transport_tx *trans, struct 
                                        stateGetNedToBodyQuat_f()->qz,
                                        stateGetBodyRates_f()->p,
                                        stateGetBodyRates_f()->q,
-                                       stateGetBodyRates_f()->r);
+                                       stateGetBodyRates_f()->r,
+                                       repr_offset_q);
   MAVLinkSendMessage();
 }
 
@@ -676,12 +682,18 @@ static void mavlink_send_gps_raw_int(struct transport_tx *trans, struct link_dev
                                gps.fix,
                                gps.lla_pos.lat,
                                gps.lla_pos.lon,
-                               gps.lla_pos.alt,
+                               gps.hmsl,
                                gps.pdop,
                                UINT16_MAX, // VDOP
                                gps.gspeed,
                                course,
-                               gps.num_sv);
+                               gps.num_sv,
+                               gps.lla_pos.alt,
+                               gps.hacc,
+                               gps.vacc,
+                               gps.sacc,
+                               0,
+                               0);
   MAVLinkSendMessage();
 #endif
 }
@@ -771,7 +783,7 @@ static void mavlink_send_rc_channels(struct transport_tx *trans, struct link_dev
 #include "modules/energy/electrical.h"
 static void mavlink_send_battery_status(struct transport_tx *trans, struct link_device *dev)
 {
-  static uint16_t voltages[10];
+  static uint16_t voltages[14] = {0};
   // we simply only set one cell for now
   voltages[0] = electrical.vsupply * 1000.f;  // convert to mV
   /// TODO: check what all these fields are supposed to represent
@@ -784,7 +796,12 @@ static void mavlink_send_battery_status(struct transport_tx *trans, struct link_
                                   electrical.current * 100.f, // convert to deciA
                                   electrical.charge * 1000.f, // convert to mAh
                                   electrical.energy * 36, // convert to hecto Joule
-                                  -1); // remaining percentage not estimated
+                                  -1, // remaining percentage not estimated
+                                  0,
+                                  MAV_BATTERY_CHARGE_STATE_UNDEFINED,
+                                  &voltages[10],
+                                  MAV_BATTERY_MODE_UNKNOWN,
+                                  0);
   MAVLinkSendMessage();
 }
 
