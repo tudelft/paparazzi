@@ -140,26 +140,16 @@ void orange_avoider_periodic(void)
       waypoint_move_here_2d(WP_TRAJECTORY);
 
       // randomly select new search direction
-      chooseRandomIncrementAvoidance();
+      // chooseRandomIncrementAvoidance();
+
+      // define 'heading_change' based on either optimal path found by vision or a set large angle
+      defineNewHeading();
 
       navigation_state = SEARCH_FOR_SAFE_HEADING;
 
       break;
     case SEARCH_FOR_SAFE_HEADING:
       increase_nav_heading(heading_increment);
-      if (WP_A) // if the new waypoints exist
-      {
-        if (stateGetPositionEnu_i()->x = WaypointX(WP_A)) // if we are at A
-        {
-            moveWaypointNext(WP_GOAL, WP_B);
-        }else if (stateGetPositionEnu_i()->x = WaypointX(WP_B)) // if we are at B
-        {
-            moveWaypointNext(WP_GOAL, WP_C);
-        } else // if we are at C
-        {
-            moveWaypointNext(WP_GOAL, WP_A);
-        }
-      }
 
       // make sure we have a couple of good readings before declaring the way safe
       if (obstacle_free_confidence >= 2){
@@ -267,6 +257,31 @@ uint8_t chooseRandomIncrementAvoidance(void)
   } else {
     heading_increment = -5.f;
     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
+  }
+  return false;
+}
+
+/*
+ * Sets the variable 'heading_change' based on vision information (set to either 90deg or an optimal heading)
+ */
+uint8_t defineNewHeading(void);
+{
+  // Uses x/y of optimal path/pixel to compute newheading
+  if (pixel_x < 100) {   // if horizon too low -> turn 90deg
+    heading_change = 90.f;
+    VERBOSE_PRINT("Low Horizon | Set heading_change to: %f\n",  heading_change);
+  }  else{   // if horizon not too low -> turn based on optimal path
+    heading_change = tan((260 - pixel_y)/pixel_x);
+    VERBOSE_PRINT("Optimal path | Set heading_change to: %f\n",  heading_change);
+  }
+
+  //Define direction of turn based on y coord of pixel
+  if ((260-pixel_y) < 0) { // if pixel to the left of drone, turn ccw
+    heading_increment = -1.f;
+    VERBOSE_PRINT("Turn left (ccw)");
+  }else{  //if pixel to right, turn cw
+    heading_increment = 1.f;
+    VERBOSE_PRINT("Turn right (cw)");
   }
   return false;
 }
