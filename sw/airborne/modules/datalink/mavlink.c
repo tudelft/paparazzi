@@ -107,7 +107,7 @@ struct periodic_telemetry mavlink_telemetry = { TELEMETRY_MAVLINK_NB_MSG, mavlin
 void mavlink_init(void)
 {
   mavlink_system.sysid = MAVLINK_SYSID; // System ID, 1-255
-  mavlink_system.compid = MAV_COMP_ID_MISSIONPLANNER; // Component/Subsystem ID, 1-255
+  mavlink_system.compid = MAV_COMP_ID_AUTOPILOT1; // Component/Subsystem ID, 1-255
 
   get_pprz_git_version(custom_version);
 
@@ -499,7 +499,7 @@ static void mavlink_send_heartbeat(struct transport_tx *trans, struct link_devic
   }
   mavlink_msg_heartbeat_send(MAVLINK_COMM_0,
                              mav_type,
-                             MAV_AUTOPILOT_PPZ,
+                             MAV_AUTOPILOT_PX4,
                              mav_mode,
                              0, // custom_mode
                              mav_state);
