@@ -31,7 +31,7 @@ extern void windtunnel_message_init(void);
 extern void event_manual_test(void);
 extern bool windtunnel_control(void);
 extern bool skew_moment(void);
-void sync_procedure(void);
+extern bool sync_procedure(void);
 bool excitation_control(void);
 bool as_control(void);
 bool mot_status_control(void);

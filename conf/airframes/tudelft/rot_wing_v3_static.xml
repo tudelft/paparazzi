@@ -94,7 +94,7 @@
 
         <module name="AOA_pwm">
             <define name="USE_PWM_INPUT1" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>
-            <define name="AOA_ANGLE_OFFSET" value="0.104311"/> <!-- value="3.4907" -->
+            <define name="AOA_ANGLE_OFFSET" value="0.049087"/> <!-- value="3.4907" 104311 049087 0.159551-->
             <define name="AOA_PWM_PERIOD" value="1024"/>
             <define name="AOA_PWM_OFFSET" value="1"/>
             <configure name="AOA_PWM_CHANNEL" value="PWM_INPUT1" />
@@ -159,7 +159,7 @@
         <set VALUE="($th_hold? -9600 : actuators_wt[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_wt[3])" SERVO="MOTOR_LEFT"/>
         <set VALUE="($th_hold? -9600 : actuators_wt[4])" SERVO="MOTOR_PUSH"/>
-        <set VALUE="($th_hold? 0 : wing_rotation.servo_pprz_cmd)"        SERVO="SERVO_ROTWING"/>
+        <set VALUE="wing_rotation.servo_pprz_cmd"        SERVO="SERVO_ROTWING"/>
 
         <!-- Backup commands -->
         <set VALUE="($th_hold? -9600 : actuators_wt[0])" SERVO="BMOTOR_FRONT"/>

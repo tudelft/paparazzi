@@ -183,8 +183,10 @@ void wing_rotation_compute_pprz_cmd(void)
   #if !USE_NPS
   float angle_error = wing_rotation.wing_angle_deg_sp - wing_rotation.wing_angle_virtual_deg_sp;
   float speed_sp = wing_rotation.wing_rotation_first_order_dynamics * angle_error;
+  //Bound(speed_sp,-0.0087222,0.0087222);
   float speed_error = speed_sp - wing_rotation.wing_rotation_speed;
   wing_rotation.wing_rotation_speed += wing_rotation.wing_rotation_second_order_dynamics * speed_error;
+  //Bound(wing_rotation.wing_rotation_speed,-0.001/18./2.,0.001/18./2.); %bound to rotation speed for showcase turn table test
   wing_rotation.wing_angle_virtual_deg_sp += wing_rotation.wing_rotation_speed;
   
   int32_t servo_pprz_cmd;  // Define pprz cmd

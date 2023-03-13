@@ -41,16 +41,16 @@
 
 // Defines of time variables ##########################################################################################################################################################
 float dt_s = 1;// [s] Short test time interval. Used for procedures which do not require much time. (e.g. 1s)
-float dt_m = 5;// [s] Medium test time interval. Used for procedures which involve transitional states (e.g. actuator test, 5s)
+float dt_m = 3;// [s] Medium test time interval. Used for procedures which involve transitional states (e.g. actuator test, 5s)
 float dt_l = 5;// [s] Long test time interval. Used for procedure which involve the use of slow dynamics (e.g. rotation wing, 6s)
 //#######################################################################################################################################################################################
 
 // Defines of nested loop iteration limits ##############################################################################################################################################
-#define imax 4 // Number of Wing set point 
-#define jmax 12 // Number of Motor status (e.g. 5)
+#define imax 1 // Number of Wing set point 
+#define jmax 48 // Number of Motor status (e.g. 5)
 #define mmax 5 // Number of Motors used in the Motor status (e.g. 4) 
-#define kmax 8 // Number of Aerodynamic Surfaces + Motors tested  (e.g. 4)
-#define nmax 4 // Number of Excitation steps 
+#define kmax 4 // Number of Aerodynamic Surfaces + Motors tested  (e.g. 4)
+#define nmax 7 // Number of Excitation steps 
 #define asel 1 // Number of selected actuators
 //#######################################################################################################################################################################################
 
@@ -69,25 +69,36 @@ int16_t push_static = 0;
 
 // Defines of tested excitation signals #################################################################################################################################################
 //int16_t mot_status[jmax][mmax] = {{0,0,0,0},{1000,1000,1000,1000},{2000,2000,2000,2000},{3000,3000,3000,3000}}; // [pprz] Motor status define [Status][Motor]
-int16_t mot_status[jmax][mmax] = {{0,0,0,0,0},{3000,3000,3000,3000,0},{5320,5320,5320,5320,0},{0,0,0,0,3000},{3000,3000,3000,3000,3000},{5320,5320,5320,5320,3000},{0,0,0,0,4500},{3000,3000,3000,3000,4500},{5320,5320,5320,5320,4500},{0,0,0,0,6000},{3000,3000,3000,3000,6000},{5320,5320,5320,5320,6000}}; // [pprz] Motor status define [Status][Motor]
+int16_t mot_status[jmax][mmax] = {{0,0,0,0,0},{0,0,0,3000,0},{0,0,0,5320,0},{0,0,0,8000,0},
+                                  {0,0,0,0,3000},{0,0,0,3000,3000},{0,0,0,5320,3000},{0,0,0,8000,3000},
+                                  {0,0,0,0,5320},{0,0,0,3000,5320},{0,0,0,5320,5320},{0,0,0,8000,5320},
+                                  {0,0,0,0,8000},{0,0,0,3000,8000},{0,0,0,5320,8000},{0,0,0,8000,8000},
+                                  {0,0,3000,0,0},{0,0,3000,3000,0},{0,0,3000,5320,0},{0,0,3000,8000,0},
+                                  {0,0,3000,0,3000},{0,0,3000,3000,3000},{0,0,3000,5320,3000},{0,0,3000,8000,3000},
+                                  {0,0,3000,0,5320},{0,0,3000,3000,5320},{0,0,3000,5320,5320},{0,0,3000,8000,5320},
+                                  {0,0,3000,0,8000},{0,0,3000,3000,8000},{0,0,3000,5320,8000},{0,0,3000,8000,8000},
+                                  {0,0,5320,0,0}   ,{0,0,5320,3000,0}   ,{0,0,5320,5320,0}   ,{0,0,5320,8000,0},
+                                  {0,0,5320,0,3000},{0,0,5320,3000,3000},{0,0,5320,5320,3000},{0,0,5320,8000,3000},
+                                  {0,0,5320,0,5320},{0,0,5320,3000,5320},{0,0,5320,5320,5320},{0,0,5320,8000,5320},
+                                  {0,0,5320,0,8000},{0,0,5320,3000,8000},{0,0,5320,5320,8000},{0,0,5320,8000,8000}}; // [pprz] Motor status define [Status][Motor]
 //int16_t as_static[nmax] = {-9600,-4800,1920,4800,9600}; // [pprz] Excitation signals Aerodynamic Surface 
 //int16_t mot_static[nmax] = {2000,4000,5000,6000,8000};  // [pprz] Excitation signals Motors
-int16_t gen_static[kmax][nmax+3] = {{-9600,-4800,1920 ,4800 ,9600  , 0   , 0   , 0   },         // [pprz] ail l
-                                    {-9600,-4800,1920 ,4800 ,9600  , 0   , 0   , 0   },         // [pprz] ail r
-                                    {-9600,0,9600,0   ,-1920 , 1920, 4800, 9600        },         // [pprz] ele
-                                    {-9600,-4800,1920 ,4800 ,9600  , 0   , 0   , 0   },         // [pprz] rud
-                                    {1000 ,3000 ,5000 ,7000 ,9000  , 0   , 0   , 0   },         // [pprz] mot 0
-                                    {1000 ,3000 ,5000 ,7000 ,9000  , 0   , 0   , 0   },         // [pprz] mot 1
-                                    {1000 ,3000 ,5000 ,7000 ,9000  , 0   , 0   , 0   },         // [pprz] mot 2
-                                    {1000 ,3000 ,5000 ,7000 ,9000  , 0   , 0   , 0   }} ;       // [pprz] mot 3
-int16_t sync_cmd[6] = {800,0,1000,0,1200,0};            // [pprz] Excitation signals pusher motor during syncing procedure
+int16_t gen_static[kmax][nmax] = {{-9600,-4800,1920 ,4800 ,9600  , 0   , 0   },         // [pprz] ail l
+                                    {-9600,-4800,1920 ,4800 ,9600  , 0   , 0    },         // [pprz] ail r
+                                    {-9600,-7000,-4800,-1920 , 1920, 4800, 9600},         // [pprz] ele
+                                    {-9600,-4800,1920 ,4800 ,9600  , 0   , 0   },         // [pprz] rud
+                                    {1000 ,3000 ,5000 ,7000 ,9000  , 0   , 0   },         // [pprz] mot 0
+                                    {1000 ,3000 ,5000 ,7000 ,9000  , 0   , 0   },         // [pprz] mot 1
+                                    {1000 ,3000 ,5000 ,7000 ,9000  , 0   , 0   },         // [pprz] mot 2
+                                    {1000 ,3000 ,5000 ,7000 ,9000  , 0   , 0   }} ;       // [pprz] mot 3
+int16_t sync_cmd[6] = {1500,0,2000,0,2500,0};            // [pprz] Excitation signals pusher motor during syncing procedure
 int16_t push_cmd[2] = {2000,4000};
 int8_t selected_act_idx[asel] = {9};              // Array of indeces of selected actuators
 int8_t tail_act_idx[2] = {9,10};              // Array of indeces of selected actuators
-float wing_sp[imax] = {15,30,60,75};            // [deg] Tested skew angles 
+float wing_sp[imax] = {30};            // [deg] Tested skew angles 
 float rotation_rate_sp[6] = {0.15,0.15,0.20,0.20,0.25,0.25};
 float boa[6] =  {90,0,90,0,90,0};
-float ramp_ratio = 1.;                               // [%] Percentage of test time dedicated to gradual sweep. FLOAT!
+float ramp_ratio = 1./3.;                               // [%] Percentage of test time dedicated to gradual sweep. FLOAT!
 float ramp_ratio_ms = 1./3.;                               // [%] Percentage of test time dedicated to gradual sweep. FLOAT!
 float max_rotation_rate=3.14/2.; // same                 // [rad/s] Maximum rotational velocity of wing
 //#######################################################################################################################################################################################
@@ -105,7 +116,6 @@ float stopwatch = 0;            // [s] Elapsed time from start of excitation
 float ratio_excitation = 1;     // [%] Percentage of completion of sweep for excitation of actuator
 float tcp = 0;                  // [%] Percentage of completion of test
 float aoa_wt = 0;               // [rad] Angle of Attack at Elevator
-
 // BOOLs --------------------------------------------------------------------------------------------
 bool done_wing = true;          // Skew test completed. Go to next skew.
 bool done_mot_status = true;    // Mot Status test completed. Go to next mot status.
@@ -135,7 +145,7 @@ int16_t cmd_0 = 0;                                // [pprz] Initial CMD of actua
 int16_t cmd_target = 0;                           // [pprz] Excitation cmd target
 int16_t cmd_0_mot_status[mmax] = {0,0,0,0};       // [pprz] Initial CMD of mot status
 // STRINGs --------------------------------------------------------------------------------------------
-char test_id[5] = "ES1";
+char test_id[5] = "EL1";
 char point_id[20] = "Blank";
 //#######################################################################################################################################################################################
 
@@ -177,7 +187,7 @@ bool skew_moment(void){
  static_test = true;
  test_skew_active = true;
    if (w < 6){
-   sync_procedure();
+   //sync_procedure();
    return true;    
    }else{
      if (o < 6){
@@ -207,7 +217,7 @@ bool windtunnel_control(void){
  test_active = true;
  motors_on_wt = true;                           // Arm motors
   if (w < 6){                                   // if synching not done re-enter function
-   sync_procedure();
+   //sync_procedure();
    return true;    
    }else{                                       // else enter the skewing function
      if(wing_skew_control()){return true;}      // if not done skewing stay in the loop
@@ -222,9 +232,12 @@ bool windtunnel_control(void){
 //#######################################################################################################################################################################################
 
 // Function to perform a synching sequence for windtunnel data ##########################################################################################################################
-void sync_procedure(void){
-  motors_on_wt = true;                                // Arm motors
-  if(done_sync){                                      // If synching sequence still has to start
+bool sync_procedure(void){
+ if (!test_active){t_test = get_sys_time_float();}
+ static_test = true;                            
+ motors_on_wt = true;                           // Arm motors
+  if (w < 6){                                   // if synching not done re-enter function
+    if(done_sync){                                      // If synching sequence still has to start
       t_sync = get_sys_time_float();                  // Record current time of initialization
       actuators_wt[4]= (int16_t) sync_cmd[w];         // Send a cmd to the pusher motor
       printf("Sync CMD = %i \n",actuators_wt[4]);
@@ -232,7 +245,11 @@ void sync_procedure(void){
     else{
         if((get_sys_time_float() - t_sync) > dt_s){   // If the signal has been maintained long enough
         done_sync = true;                             // terminate synch step and go to next signal
-        w += 1;}}}
+        w += 1;}}
+  return true;    
+  }else{                                       // else enter the skewing function
+  return false;}
+}
 //#######################################################################################################################################################################################
 
 // Function to command different skew settings ##########################################################################################################################################
@@ -350,8 +367,8 @@ bool excitation_control(void){
      else{                                                  // Else calculate the cmd to the actuator
        ratio_excitation = stopwatch / dt_m / ramp_ratio;    // Calclate the percentage of completion of the initial linear sweep
        Bound(ratio_excitation, 0, 1);
-       verbose_test_ID=true;
-      //  if (ratio_excitation==1){verbose_test_ID=true;}
+       //verbose_test_ID=true;                              // this on if verbose while sweeping
+       if (ratio_excitation==1){verbose_test_ID=true;}      // This on if no verbose when in sweep
        actuators_wt[k_conv] = (int16_t) cmd_0 + (cmd_target - cmd_0) * ratio_excitation;}}}
    return true;
    }else{                                                                       // If all excitation explored, initiate a shutoff sequence of the actuator
@@ -388,13 +405,12 @@ static void send_windtunnel_static(struct transport_tx *trans, struct link_devic
        point_id[0] = '\0';
        strcat(point_id, "Blank");}
   else{ID_gen();}
-
   #if !USE_NPS
-    aoa_wt = aoa_pwm.angle;
+    if (aoa_pwm.angle <= M_PI){aoa_wt = -1*aoa_pwm.angle;}
+    else{aoa_wt = -1*aoa_pwm.angle + M_PI*2.0;}
   #else
     aoa_wt = 0;
   #endif
-
   pprz_msg_send_WINDTUNNEL_STATIC(trans, dev, AC_ID,
                                         strlen(point_id), point_id,
                                         &test_active_conv,

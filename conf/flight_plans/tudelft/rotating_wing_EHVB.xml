@@ -1,20 +1,21 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="50" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="500" name="Rotating wing Valkenburg" security_height="2">
+<flight_plan alt="50" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="500" name="Rotating wing Valkenburg" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
+    #include "modules/ctrl/ctrl_windtunnel_2022.h"
 </header>
   <waypoints>
-    <waypoint name="HOME" x="12.6" y="-48.7"/>
+    <waypoint name="HOME"  x="12.6" y="-48.7"/>
     <waypoint name="CLIMB" x="62.6" y="-80.4"/>
-    <waypoint name="STDBY" lat="52.1682655" lon="4.4135103"/>
-    <waypoint name="p1" lat="52.1675969" lon="4.4142066"/>
-    <waypoint name="p2" lat="52.1678610" lon="4.4156382"/>
-    <waypoint name="p3" lat="52.1690879" lon="4.4147384"/>
-    <waypoint name="p4" lat="52.1688135" lon="4.4134302"/>
-    <waypoint name="TD" lat="52.1681430" lon="4.4127829"/>
-    <waypoint lat="52.169189" lon="4.410820" name="C1"/>
+    <waypoint name="STDBY"  x="12.6" y="-48.7"/>
+    <waypoint name="p1"     x="12.6" y="-48.7"/>
+    <waypoint name="p2"     x="12.6" y="-48.7"/>
+    <waypoint name="p3"     x="12.6" y="-48.7"/>
+    <waypoint name="p4"     x="12.6" y="-48.7"/>
+    <waypoint name="TD"     x="12.6" y="-48.7"/>
+    <!-- <waypoint lat="52.169189" lon="4.410820" name="C1"/>
     <waypoint lat="52.168049" lon="4.406923" name="C2"/>
     <waypoint lat="52.166515" lon="4.408235" name="C3"/>
     <waypoint lat="52.163255" lon="4.407668" name="C4"/>
@@ -22,9 +23,9 @@
     <waypoint lat="52.162641" lon="4.416992" name="C6"/>
     <waypoint lat="52.164861" lon="4.427268" name="C7"/>
     <waypoint lat="52.170422" lon="4.427511" name="C8"/>
-    <waypoint lat="52.172276" lon="4.424011" name="C9"/>
+    <waypoint lat="52.172276" lon="4.424011" name="C9"/> -->
   </waypoints>
-  <sectors>
+  <!-- <sectors>
     <sector color="red" name="Flyzone">
       <corner name="C1"/>
       <corner name="C2"/>
@@ -36,9 +37,9 @@
       <corner name="C8"/>
       <corner name="C9"/>
     </sector>
-  </sectors>
+  </sectors> -->
   <exceptions>
-    <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
+    <!-- <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/> -->
     <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
   </exceptions>
   <blocks>
@@ -53,6 +54,24 @@
     <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>   
+    <block name="sync_me">
+      <call fun="sync_procedure()"/>
+    </block>     
+    <block name="Stop me3">
+      <stay wp="STDBY"/>
+    </block>
+    <block name="Test_fun">
+      <call fun="windtunnel_control()"/>
+    </block>
+    <block name="Stop me">
+      <stay wp="STDBY"/>
+    </block>
+    <block name="Test_fun2">
+      <call fun="skew_moment()"/>
+    </block>
+    <block name="Stop me2">
+      <stay wp="STDBY"/>
     </block>
     <block name="Start Engine">
         <call_once fun="NavResurrect()"/>
