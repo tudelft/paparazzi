@@ -17,7 +17,7 @@
  * so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTION_ID setting.
  */
 
-#include "modules/orange_avoider/orange_avoider.h"
+#include "modules/orange_avoider_custom/orange_avoider_custom.h"
 #include "firmwares/rotorcraft/navigation.h"
 #include "generated/airframe.h"
 #include "state.h"
@@ -26,11 +26,11 @@
 #include <stdio.h>
 
 #define NAV_C // needed to get the nav functions like Inside...
-#include "generated/flight_plan_custom.h"
+#include "generated/flight_plan.h" //do not change this
 
 #define ORANGE_AVOIDER_VERBOSE TRUE
 
-#define PRINT(string,...) fprintf(stderr, "[orange_avoider->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
+#define PRINT(string,...) fprintf(stderr, "[orange_avoider_custom->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 #if ORANGE_AVOIDER_VERBOSE
 #define VERBOSE_PRINT PRINT
 #else

@@ -30,7 +30,7 @@
 
 #define ORANGE_AVOIDER_VERBOSE TRUE
 
-#define PRINT(string,...) fprintf(stderr, "[orange_avoider_TEST->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
+#define PRINT(string,...) fprintf(stderr, "[orange_avoider->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 #if ORANGE_AVOIDER_VERBOSE
 #define VERBOSE_PRINT PRINT
 #else
