@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="orange_avoider">
+<module name="orange_avoider_parameters"> 
   <doc>
     <description>
 This module is an example module for the course AE4317 Autonomous Flight of Micro Air Vehicles at the TU Delft.
