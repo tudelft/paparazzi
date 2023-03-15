@@ -50,14 +50,12 @@ enum navigation_state_t {
   OUT_OF_BOUNDS
 };
 
-// define settings
-float oa_color_count_frac = 0.18f;
-
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
-int32_t confidence_value = 0;            
+int32_t confidence_value = 0;   // 0 = no obstacle, 1 = obstacle         
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
 float heading_increment = 5.f;          // heading angle increment [deg]
+float heading_change = 20.f;          // heading angle change [deg]
 float maxDistance = 2.25;               // max waypoint displacement [m]
 
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
@@ -91,7 +89,7 @@ void orange_avoider_init(void)
 {
   // Initialise random values
   srand(time(NULL));
-  chooseRandomIncrementAvoidance();
+  //chooseRandomIncrementAvoidance();
 
   // bind our colorfilter callbacks to receive the color filter outputs
   AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
@@ -107,16 +105,11 @@ void orange_avoider_periodic(void)
     return;
   }
 
-  // compute current color thresholds
-  //int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
-
-  //VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
-
-  // update our safe confidence using color threshold
-  if(confidence_value < 0.8){
-    obstacle_free_confidence == 0;
-  } else {
-    obstacle_free_confidence == 1;  
+  // update our safe confidence using confidence value (from vision)
+  if(confidence_value == 0){ // there is no obstacle
+    obstacle_free_confidence++;
+  } else {  // there is obstacle
+    obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
   }
 
   // bound obstacle_free_confidence
@@ -153,19 +146,18 @@ void orange_avoider_periodic(void)
       // turn by 'heading change' in steps of 'heading increment'
       change_nav_heading(heading_change, heading_increment);
 
-
-      // After turning check if heading is free to continue (with certai
-      if (obstacle_free_confidence >= 2){
+      // After turning check if heading is free to continue (with certain confidence)
+      if (obstacle_free_confidence >= 2){ //need to check thresholds cause this might run the turning function twice
         navigation_state = SAFE;
       }
       break;
     case OUT_OF_BOUNDS:
-      increase_nav_heading(heading_increment);
+      change_nav_heading(heading_change, heading_increment);
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
 
       if (InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         // add offset to head back into arena
-        increase_nav_heading(heading_increment);
+        change_nav_heading(heading_change, heading_increment); //delete this?
 
         // reset safe counter
         obstacle_free_confidence = 0;
