@@ -150,10 +150,12 @@ void orange_avoider_periodic(void)
       // turn by 'heading change' in steps of 'heading increment'
       change_nav_heading(heading_change, heading_increment);
 
-
-      // After turning check if heading is free to continue (with certai
-      if (obstacle_free_confidence >= 2){
-        navigation_state = SAFE;
+      // check if the heading needs to be further adjusted
+      if (stateGetNedToBodyEulers_f()->psi < () ) { // if 
+        // After turning check if heading is free to continue (with certai
+        if (obstacle_free_confidence >= 2){
+          navigation_state = SAFE;
+        }
       }
       break;
     case OUT_OF_BOUNDS:
@@ -271,7 +273,7 @@ uint8_t defineNewHeading(void);
     heading_change = 90.f;
     VERBOSE_PRINT("Low Horizon | 90deg heading_change to: %f\n",  heading_change);
   }  else{   // if horizon not too low -> turn based on optimal path
-    heading_change = atan((260 - pixel_y)/pixel_x);
+    heading_change = tan((260 - pixel_y)/pixel_x);
     VERBOSE_PRINT("Optimal path | Set heading_change to: %f\n",  heading_change);
   }
 

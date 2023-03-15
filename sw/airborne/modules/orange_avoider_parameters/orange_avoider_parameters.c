@@ -149,9 +149,11 @@ void orange_avoider_periodic(void)
       increase_nav_heading(heading_increment);
 
       // make sure we have a couple of good readings before declaring the way safe
+      
       if (obstacle_free_confidence >= 2){
         navigation_state = SAFE;
       }
+      
       break;
     case OUT_OF_BOUNDS:
       increase_nav_heading(heading_increment);
