@@ -40,8 +40,11 @@
 static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
 static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
 static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
-static uint8_t increase_nav_heading(float incrementDegrees);
-static uint8_t chooseRandomIncrementAvoidance(void);
+//static uint8_t increase_nav_heading(float incrementDegrees);
+static uint8_t change_nav_heading(float heading_change, float heading_increment);
+static uint8_t defineNewHeading(void);
+
+//static uint8_t chooseRandomIncrementAvoidance(void);
 
 enum navigation_state_t {
   SAFE,
@@ -58,7 +61,13 @@ float heading_increment = 5.f;          // heading angle increment [deg]
 float heading_change = 20.f;          // heading angle change [deg]
 float maxDistance = 2.25;               // max waypoint displacement [m]
 
+// define settings
+float oa_color_count_frac = 0.18f;  //if i delete this the autopilot.c file crashes
+
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
+
+float pixel_x = 200.;
+float pixel_y = 40.;
 
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
@@ -77,8 +86,8 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int32_t quality, int16_t __attribute__((unused)) extra)
 {
   confidence_value = quality;
-  pixel_x = pixel_x;
-  pixel_y = pixel_y;
+  // pixel_x = 200.;
+  // pixel_y = 40.;
 
 }
 
@@ -106,7 +115,7 @@ void orange_avoider_periodic(void)
   }
 
   // update our safe confidence using confidence value (from vision)
-  if(confidence_value == 0){ // there is no obstacle
+  if(confidence_value > 0.5){ // there is no obstacle
     obstacle_free_confidence++;
   } else {  // there is obstacle
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
@@ -203,15 +212,15 @@ uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters)
 
 /*
  * Change the objective waypoint 'goal' to next waypoint (A, B, C)
- */
-uint8_t moveWaypointNext(uint8_t goal, uint8_t waypoint)
-{
-  struct EnuCoor_i wp_coor;
-  wp_coor->x = WaypointX(waypoint);
-  wp_coor->y = WaypointY(waypoint);
-  moveWaypoint(goal, &wp_coor);
-  return false;
-}
+//  */
+// uint8_t moveWaypointNext(uint8_t goal, uint8_t waypoint)
+// {
+//   struct EnuCoor_i wp_coor;
+//   wp_coor->x = WaypointX(waypoint);
+//   wp_coor->y = WaypointY(waypoint);
+//   moveWaypoint(goal, &wp_coor);
+//   return false;
+// }
 
 /*
  * Calculates coordinates of a distance of 'distanceMeters' forward w.r.t. current position and heading
@@ -259,7 +268,7 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 /*
  * Sets the variable 'heading_change' based on vision information (set to either 90deg or an optimal heading)
  */
-uint8_t defineNewHeading(void);
+uint8_t defineNewHeading(void)
 {
   // Uses x/y of optimal path/pixel to compute newheading
   if (pixel_x < 100) {   // if horizon too low -> turn 90deg
@@ -290,19 +299,19 @@ uint8_t change_nav_heading(float heading_change, float heading_increment)
 
   // new heading is current heading plus increments (until total change angle achieve)
   int total_turn = 0; // variable to keep track of turn
+  float new_heading = stateGetNedToBodyEulers_f()->psi + RadOfDeg(heading_increment); //in rad   (defined outside while loop)
 
-  while {total_turn < heading_change} {
+  while (total_turn < heading_change) {
 
-  float new_heading = stateGetNedToBodyEulers_f()->psi + RadOfDeg(heading_increment); //in rad
+    // normalize heading to [-pi, pi]
+    FLOAT_ANGLE_NORMALIZE(new_heading);
 
-  // normalize heading to [-pi, pi]
-  FLOAT_ANGLE_NORMALIZE(new_heading);
+    // set heading, declared in firmwares/rotorcraft/navigation.h
+    // for performance reasons the navigation variables are stored and processed in Binary Fixed-Point format
+    nav_heading = ANGLE_BFP_OF_REAL(new_heading);
 
-  // set heading, declared in firmwares/rotorcraft/navigation.h
-  // for performance reasons the navigation variables are stored and processed in Binary Fixed-Point format
-  nav_heading = ANGLE_BFP_OF_REAL(new_heading);
-
-  total_turn += abs(heading_increment);  //in deg
+    total_turn += abs(heading_increment);  //in deg
+    new_heading += + RadOfDeg(heading_increment); //add to heading
   }
 
   VERBOSE_PRINT("Increasing heading to %f\n", DegOfRad(new_heading));
