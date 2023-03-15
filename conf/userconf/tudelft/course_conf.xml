@@ -11,9 +11,9 @@
    gui_color="white"
   />
   <aircraft
-   name="bebop_orange_avoid_guided"
+   name="bebop_optical_flow_group3"
    ac_id="43"
-   airframe="airframes/tudelft/bebop_course_orangeavoid_guided.xml"
+   airframe="airframes/tudelft/bebop_opticflow_group3.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"
    flight_plan="flight_plans/tudelft/course_orangeavoid_cyberzoo_guided.xml"
