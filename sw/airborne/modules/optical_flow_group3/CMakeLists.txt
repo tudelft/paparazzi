@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.8)
+project(Optical_flow_group3)
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+add_executable(opt_flow calculate_optical_flow_group3.cpp )
+target_link_libraries(opt_flow ${OpenCV_LIBS} )
