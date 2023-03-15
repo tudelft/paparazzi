@@ -38,7 +38,7 @@ void farneback(const std::string& filename, bool to_gray, int width, int height)
     int width_img = prvs.cols;
     int height_img = prvs.rows;
     scale_mat(prvs, prvs_left, prvs_right, WIDTH, HEIGHT, width_img, height_img);
-    std::cout<<prvs_left.size()<<"\n";
+ 
     float flow_left_arr[MOVING_MEAN_COUNT];
     float flow_right_arr[MOVING_MEAN_COUNT];
     for (int i=0; i<MOVING_MEAN_COUNT; i++)
@@ -55,9 +55,9 @@ void farneback(const std::string& filename, bool to_gray, int width, int height)
             break;
         cvtColor(frame2, next, COLOR_BGR2GRAY);
         scale_mat(next, next_left, next_right, WIDTH, HEIGHT, width_img, height_img);
-        Mat mag_left(prvs_left.size(), CV_32FC2);
+        Mat mag_left(prvs_left.size(), CV_32F);
         calculate_magnitudes_flow(mag_left, prvs_left, next_left);
-        Mat mag_right(prvs_right.size(), CV_32FC2);
+        Mat mag_right(prvs_right.size(), CV_32F);
         calculate_magnitudes_flow(mag_right, prvs_right, next_right);
         float flow_right_sum = 0.0;
         float flow_left_sum = 0.0;
@@ -81,10 +81,31 @@ void farneback(const std::string& filename, bool to_gray, int width, int height)
           flow_right_sum_tot += flow_right_arr[i];
         }
         
+
+        
         std::cout<<flow_left_sum_tot<<" "<<flow_right_sum_tot<<"\n";
         frame_nr++;
+      
+        float max_flow = std::max<float>(flow_left_sum_tot,flow_right_sum_tot);
+        Mat viz (Size(WIDTH, HEIGHT), CV_32F);
+        for (int i=0; i<((int) viz.rows/2); i++)
+        {
+          for (int j=0; j<viz.cols; j++)
+            viz.at<float>(i, j) = flow_left_sum_tot/max_flow;
+        }
+        for (int i=((int) viz.rows/2); i<viz.rows; i++)
+        {
+          for (int j=0; j<viz.cols; j++)
+          {
+            viz.at<float>(i, j) = flow_right_sum_tot/max_flow;
+            // std::cout<< viz.at<float>(j, i)<<"\n";
+            }
+        }
+        std::cout<<viz.size()<<"\n";
+        imshow("flows", viz);
+        imshow("videofeed", next);
 
-        int keyboard = waitKey(1000);
+        int keyboard = waitKey(200);
         if (keyboard == 'q' || keyboard == 27)
             break;
         prvs = next;
