@@ -1,0 +1,31 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="optical_flow_group3" dir="optical_flow_group3">
+  <doc>
+    <description>
+    Optical flow implementation
+    </description>
+     <define name="DETECT_OPTICAL_FLOW_CAMERA" value="front_camera|bottom_camera" description="Video device to use"/>
+    <define name="DETECT_OPTICAL_FLOW_FPS" value="0" description="The (maximum) frequency to run the calculations at. If zero, it will max out at the camera frame rate"/>
+  </doc>
+
+
+  <header>
+    <file name="optical_flow_group3.h"/>
+  </header>
+  <init fun="calc_action_optical_flow_init()"/>
+  <periodic fun="calc_action_optical_flow_periodic()" freq="30"/>
+  <makefile target="ap|nps">
+    <file name="optical_flow_group3.c"/>
+    <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install/include"/>
+    <flag name="LDFLAGS" value="L$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install/lib" />
+    <flag name="LDFLAGS" value="lopencv_imgcodecs" />
+    <flag name="LDFLAGS" value="lopencv_imgproc" />
+    <flag name="LDFLAGS" value="lopencv_core" />
+    <flag name="LDFLAGS" value="lstdc++" />
+    <flag name="LDFLAGS" value="ldl" />
+    <flag name="LDFLAGS" value="lm" />
+    <flag name="LDFLAGS" value="lpthread" />
+    <flag name="LDFLAGS" value="lrt" />
+  </makefile>
+</module>
