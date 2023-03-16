@@ -34,8 +34,8 @@
   />
   <aircraft
    name="bebop_orange_avoid_forward"
-   ac_id="44"
-   airframe="airframes/tudelft/bebop_course_orangeavoid_forward.xml" <!-- Changes: waypoint detection changed from 0.5m to 0.75m -->
+   ac_id="50"
+   airframe="airframes/tudelft/bebop_course_orangeavoid_forward.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"
    flight_plan="flight_plans/tudelft/course_orangeavoid_cyberzoo_forward.xml"
