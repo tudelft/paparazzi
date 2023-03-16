@@ -131,7 +131,7 @@ void orange_avoider_periodic(void)
   switch (navigation_state){
     case SAFE:
       // Move waypoint forward
-      VERBOSE_PRINT(" -- SAFE: %f , %f\n", confidence_value, obstacle_free_confidence);
+      VERBOSE_PRINT(" -- SAFE: conf_val %f , obstac_conf %f\n", confidence_value, obstacle_free_confidence);
       moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         navigation_state = OUT_OF_BOUNDS;
