@@ -277,7 +277,7 @@ uint8_t defineNewHeading(void)
     heading_change = 90.f;
     VERBOSE_PRINT("Low Horizon | 90deg heading_change to: %f\n",  heading_change);
   }  else{   // if horizon not too low -> turn based on optimal path
-    heading_change = abs(atan((260 - pixelY)/pixelX));
+    heading_change = abs(int(atan((260 - pixelY)/pixelX)));
     VERBOSE_PRINT("Optimal path | Set heading_change to: %f\n",  heading_change);
   }
 

@@ -15,11 +15,7 @@
     <waypoint name="TD" x="0.8" y="-1.7"/>
     <waypoint name="GOAL" x="1.9" y="1.0"/>
     <waypoint name="TRAJECTORY" x="1.9" y="1.0"/>
-
-    <waypoint name="A" x="0.0" y="0.0"/>
-    <waypoint name="B" x="2.0" y="1.0"/>
-    <waypoint name="C" x="1.0" y="2.0"/>
-
+    
     <waypoint lat="51.9905834" lon="4.3767710" name="_CZ1"/>
     <waypoint lat="51.9906440" lon="4.3767060" name="_CZ2"/>
     <waypoint lat="51.9906860" lon="4.3768080" name="_CZ3"/>
