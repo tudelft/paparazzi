@@ -153,8 +153,6 @@ void orange_avoider_periodic(void)
 
       int total_turn = 0; // variable to keep track of turn
 
-
-
       // check if the heading needs to be further adjusted
       if (stateGetNedToBodyEulers_f()->psi < () ) { // if 
         // After turning check if heading is free to continue (with certai
