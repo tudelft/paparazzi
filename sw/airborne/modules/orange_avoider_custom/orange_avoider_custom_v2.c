@@ -24,6 +24,7 @@
 #include "modules/core/abi.h"
 #include <time.h>
 #include <stdio.h>
+#include <math.h>
 
 #define NAV_C // needed to get the nav functions like Inside...
 #include "generated/flight_plan.h" //do not change this
@@ -150,6 +151,10 @@ void orange_avoider_periodic(void)
       // turn by 'heading change' in steps of 'heading increment'
       change_nav_heading(heading_change, heading_increment);
 
+      int total_turn = 0; // variable to keep track of turn
+
+
+
       // check if the heading needs to be further adjusted
       if (stateGetNedToBodyEulers_f()->psi < () ) { // if 
         // After turning check if heading is free to continue (with certai
@@ -248,22 +253,6 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 }
 
 /*
- * Sets the variable 'heading_increment' randomly positive/negative
- */
-// uint8_t chooseRandomIncrementAvoidance(void)
-// {
-//   // Randomly choose CW or CCW avoiding direction
-//   if (rand() % 2 == 0) {
-//     heading_increment = 5.f;
-//     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
-//   } else {
-//     heading_increment = -5.f;
-//     VERBOSE_PRINT("Set avoidance increment to: %f\n", heading_increment);
-//   }
-//   return false;
-// }
-
-/*
  * Sets the variable 'heading_change' based on vision information (set to either 90deg or an optimal heading)
  */
 uint8_t defineNewHeading(void);
@@ -273,7 +262,7 @@ uint8_t defineNewHeading(void);
     heading_change = 90.f;
     VERBOSE_PRINT("Low Horizon | 90deg heading_change to: %f\n",  heading_change);
   }  else{   // if horizon not too low -> turn based on optimal path
-    heading_change = tan((260 - pixel_y)/pixel_x);
+    heading_change = atan((260 - pixel_y)/pixel_x);
     VERBOSE_PRINT("Optimal path | Set heading_change to: %f\n",  heading_change);
   }
 

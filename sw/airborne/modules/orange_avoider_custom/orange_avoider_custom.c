@@ -24,6 +24,7 @@
 #include "modules/core/abi.h"
 #include <time.h>
 #include <stdio.h>
+#include <math.h>
 
 #define NAV_C // needed to get the nav functions like Inside...
 #include "generated/flight_plan.h" //do not change this
@@ -271,7 +272,7 @@ uint8_t defineNewHeading(void);
     heading_change = 90.f;
     VERBOSE_PRINT("Low Horizon | 90deg heading_change to: %f\n",  heading_change);
   }  else{   // if horizon not too low -> turn based on optimal path
-    heading_change = atan((260 - pixel_y)/pixel_x);
+    heading_change = abs(atan((260 - pixel_y)/pixel_x));
     VERBOSE_PRINT("Optimal path | Set heading_change to: %f\n",  heading_change);
   }
 
