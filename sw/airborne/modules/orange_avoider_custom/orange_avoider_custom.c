@@ -87,8 +87,8 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int32_t quality, int16_t __attribute__((unused)) extra)
 {
   confidence_value = quality;  //length of middle vector
-  int32_t pixelX = vecx;  //coordinates of optimal value
-  int32_t pixelY = vecy;
+  pixelX = vecx;  //coordinates of optimal value
+  pixelY = vecy;
   // PRINT("COLOR COUNT IN ORANGE AVOIDER = %d", color_count);
   // PRINT("VX, VY in orange avoider = %d %d", vx, vy);
 }
@@ -131,6 +131,7 @@ void orange_avoider_periodic(void)
   switch (navigation_state){
     case SAFE:
       // Move waypoint forward
+      VERBOSE_PRINT("\nSAFE\n");
       moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         navigation_state = OUT_OF_BOUNDS;
@@ -142,6 +143,7 @@ void orange_avoider_periodic(void)
 
       break;
     case OBSTACLE_FOUND: // logic: stop and define heading change angle and heading increment based on x/y pixel
+      VERBOSE_PRINT("\nOBSTACLE FOUND\n");
       // stop
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
@@ -153,7 +155,7 @@ void orange_avoider_periodic(void)
 
       break;
     case SEARCH_FOR_SAFE_HEADING: // logic: turn by defined heading change with defined heading increment. Then check if safe to proceed
-      
+      VERBOSE_PRINT("\nSEARCH HEADING\n");
       // turn by 'heading change' in steps of 'heading increment'
       change_nav_heading(heading_change, heading_increment);
 
@@ -163,6 +165,8 @@ void orange_avoider_periodic(void)
       }
       break;
     case OUT_OF_BOUNDS:
+      VERBOSE_PRINT("\nOUT OF BOUNCE\n");
+      defineNewHeading();
       change_nav_heading(heading_change, heading_increment);
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
 
@@ -234,9 +238,9 @@ uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
   // Now determine where to place the waypoint you want to go to
   new_coor->x = stateGetPositionEnu_i()->x + POS_BFP_OF_REAL(sinf(heading) * (distanceMeters));
   new_coor->y = stateGetPositionEnu_i()->y + POS_BFP_OF_REAL(cosf(heading) * (distanceMeters));
-  VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,	
-                POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y),
-                stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
+  //VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,	
+   //             POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y),
+   //             stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
   return false;
 }
 
@@ -245,8 +249,8 @@ uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
  */
 uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 {
-  VERBOSE_PRINT("Moving waypoint %d to x:%f y:%f\n", waypoint, POS_FLOAT_OF_BFP(new_coor->x),
-                POS_FLOAT_OF_BFP(new_coor->y));
+  //VERBOSE_PRINT("Moving waypoint %d to x:%f y:%f\n", waypoint, POS_FLOAT_OF_BFP(new_coor->x),
+  //              POS_FLOAT_OF_BFP(new_coor->y));
   waypoint_move_xy_i(waypoint, new_coor->x, new_coor->y);
   return false;
 }
@@ -277,7 +281,7 @@ uint8_t defineNewHeading(void)
     heading_change = 90.f;
     VERBOSE_PRINT("Low Horizon | 90deg heading_change to: %f\n",  heading_change);
   }  else{   // if horizon not too low -> turn based on optimal path
-    heading_change = abs(atan((260 - pixelY)/pixelX));
+    heading_change = fabs(atan((260 - pixelY)/pixelX));
     VERBOSE_PRINT("Optimal path | Set heading_change to: %f\n",  heading_change);
   }
 
@@ -312,7 +316,7 @@ uint8_t change_nav_heading(float heading_change, float heading_increment)
     // for performance reasons the navigation variables are stored and processed in Binary Fixed-Point format
     nav_heading = ANGLE_BFP_OF_REAL(new_heading);
 
-    total_turn += abs(heading_increment);  //in deg
+    total_turn += fabs(heading_increment);  //in deg
     new_heading += + RadOfDeg(heading_increment); //add to heading
   }
 
