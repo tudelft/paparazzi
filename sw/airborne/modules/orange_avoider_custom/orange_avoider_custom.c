@@ -66,9 +66,6 @@ float oa_color_count_frac = 0.18f;  //if i delete this the autopilot.c file cras
 
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
 
-float pixel_x = 200.;
-float pixel_y = 40.;
-
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
  * any time data calculated in another module needs to be accessed. Including the file where this external
@@ -80,15 +77,16 @@ float pixel_y = 40.;
 #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
 static abi_event color_detection_ev;
-static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
-                               int16_t pixel_x, int16_t pixel_y,
-                               int16_t __attribute__((unused)) pixel_width, int16_t __attribute__((unused)) pixel_height,
-                               int32_t quality, int16_t __attribute__((unused)) extra)
+static void color_detection_cb(uint8_t _attribute_((unused)) sender_id,
+                               int16_t _attribute((unused)) pixel_x, int16_t __attribute_((unused)) pixel_y,
+                               int32_t vecx, int32_t vecy,
+                               int32_t quality, int16_t _attribute_((unused)) extra)
 {
-  confidence_value = quality;
-  // pixel_x = 200.;
-  // pixel_y = 40.;
-
+  confidence_value = quality;  //length of middle vector
+  int32_t pixel_x = vecx;  //coordinates of optimal value
+  int32_t pixel_y = vecy;
+  // PRINT("COLOR COUNT IN ORANGE AVOIDER = %d", color_count);
+  // PRINT("VX, VY in orange avoider = %d %d", vx, vy);
 }
 
 /*
