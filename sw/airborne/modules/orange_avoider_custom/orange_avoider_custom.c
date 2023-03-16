@@ -24,6 +24,7 @@
 #include "modules/core/abi.h"
 #include <time.h>
 #include <stdio.h>
+#include <math.h>
 
 #define NAV_C // needed to get the nav functions like Inside...
 #include "generated/flight_plan.h" //do not change this
