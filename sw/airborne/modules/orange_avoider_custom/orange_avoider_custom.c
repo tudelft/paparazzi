@@ -41,8 +41,11 @@
 static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
 static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
 static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
-static uint8_t increase_nav_heading(float incrementDegrees);
-static uint8_t chooseRandomIncrementAvoidance(void);
+//static uint8_t increase_nav_heading(float incrementDegrees);
+static uint8_t change_nav_heading(float heading_change, float heading_increment);
+static uint8_t defineNewHeading(void);
+
+//static uint8_t chooseRandomIncrementAvoidance(void);
 
 enum navigation_state_t {
   SAFE,
@@ -51,15 +54,19 @@ enum navigation_state_t {
   OUT_OF_BOUNDS
 };
 
-// define settings
-float oa_color_count_frac = 0.18f;
-
 // define and initialise global variables
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
-int32_t color_count = 0;                // orange color count from color filter for obstacle detection
+int32_t confidence_value = 0;   // 0 = no obstacle, 1 = obstacle         
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
 float heading_increment = 5.f;          // heading angle increment [deg]
+float heading_change = 20.f;          // heading angle change [deg]
 float maxDistance = 2.25;               // max waypoint displacement [m]
+
+int32_t pixelX = 120; //initial values
+int32_t pixelY = 260;
+
+// define settings
+float oa_color_count_frac = 0.18f;  //if i delete this the autopilot.c file crashes
 
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
 
@@ -76,10 +83,14 @@ const int16_t max_trajectory_confidence = 5; // number of consecutive negative o
 static abi_event color_detection_ev;
 static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
-                               int16_t __attribute__((unused)) pixel_width, int16_t __attribute__((unused)) pixel_height,
+                               int32_t vecx, int32_t vecy,
                                int32_t quality, int16_t __attribute__((unused)) extra)
 {
-  color_count = quality;
+  confidence_value = quality;  //length of middle vector
+  int32_t pixelX = vecx;  //coordinates of optimal value
+  int32_t pixelY = vecy;
+  // PRINT("COLOR COUNT IN ORANGE AVOIDER = %d", color_count);
+  // PRINT("VX, VY in orange avoider = %d %d", vx, vy);
 }
 
 /*
@@ -89,7 +100,7 @@ void orange_avoider_init(void)
 {
   // Initialise random values
   srand(time(NULL));
-  chooseRandomIncrementAvoidance();
+  //chooseRandomIncrementAvoidance();
 
   // bind our colorfilter callbacks to receive the color filter outputs
   AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
@@ -105,15 +116,10 @@ void orange_avoider_periodic(void)
     return;
   }
 
-  // compute current color thresholds
-  int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
-
-  VERBOSE_PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
-
-  // update our safe confidence using color threshold
-  if(color_count < color_count_threshold){
+  // update our safe confidence using confidence value (from vision)
+  if(confidence_value > 0.5){ // there is no obstacle
     obstacle_free_confidence++;
-  } else {
+  } else {  // there is obstacle
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
   }
 
@@ -151,19 +157,18 @@ void orange_avoider_periodic(void)
       // turn by 'heading change' in steps of 'heading increment'
       change_nav_heading(heading_change, heading_increment);
 
-
-      // After turning check if heading is free to continue (with certai
-      if (obstacle_free_confidence >= 2){
+      // After turning check if heading is free to continue (with certain confidence)
+      if (obstacle_free_confidence >= 2){ //need to check thresholds cause this might run the turning function twice
         navigation_state = SAFE;
       }
       break;
     case OUT_OF_BOUNDS:
-      increase_nav_heading(heading_increment);
+      change_nav_heading(heading_change, heading_increment);
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
 
       if (InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         // add offset to head back into arena
-        increase_nav_heading(heading_increment);
+        change_nav_heading(heading_change, heading_increment); //delete this?
 
         // reset safe counter
         obstacle_free_confidence = 0;
@@ -181,20 +186,20 @@ void orange_avoider_periodic(void)
 /*
  * Increases the NAV heading. Assumes heading is an INT32_ANGLE. It is bound in this function.
  */
-uint8_t increase_nav_heading(float incrementDegrees)
-{
-  float new_heading = stateGetNedToBodyEulers_f()->psi + RadOfDeg(incrementDegrees);
+// uint8_t increase_nav_heading(float incrementDegrees)
+// {
+//   float new_heading = stateGetNedToBodyEulers_f()->psi + RadOfDeg(incrementDegrees);
 
-  // normalize heading to [-pi, pi]
-  FLOAT_ANGLE_NORMALIZE(new_heading);
+//   // normalize heading to [-pi, pi]
+//   FLOAT_ANGLE_NORMALIZE(new_heading);
 
-  // set heading, declared in firmwares/rotorcraft/navigation.h
-  // for performance reasons the navigation variables are stored and processed in Binary Fixed-Point format
-  nav_heading = ANGLE_BFP_OF_REAL(new_heading);
+//   // set heading, declared in firmwares/rotorcraft/navigation.h
+//   // for performance reasons the navigation variables are stored and processed in Binary Fixed-Point format
+//   nav_heading = ANGLE_BFP_OF_REAL(new_heading);
 
-  VERBOSE_PRINT("Increasing heading to %f\n", DegOfRad(new_heading));
-  return false;
-}
+//   VERBOSE_PRINT("Increasing heading to %f\n", DegOfRad(new_heading));
+//   return false;
+// }
 
 /*
  * Calculates coordinates of distance forward and sets waypoint 'waypoint' to those coordinates
@@ -209,15 +214,15 @@ uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters)
 
 /*
  * Change the objective waypoint 'goal' to next waypoint (A, B, C)
- */
-uint8_t moveWaypointNext(uint8_t goal, uint8_t waypoint)
-{
-  struct EnuCoor_i wp_coor;
-  wp_coor->x = WaypointX(waypoint);
-  wp_coor->y = WaypointY(waypoint);
-  moveWaypoint(goal, &wp_coor);
-  return false;
-}
+//  */
+// uint8_t moveWaypointNext(uint8_t goal, uint8_t waypoint)
+// {
+//   struct EnuCoor_i wp_coor;
+//   wp_coor->x = WaypointX(waypoint);
+//   wp_coor->y = WaypointY(waypoint);
+//   moveWaypoint(goal, &wp_coor);
+//   return false;
+// }
 
 /*
  * Calculates coordinates of a distance of 'distanceMeters' forward w.r.t. current position and heading
@@ -265,19 +270,19 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 /*
  * Sets the variable 'heading_change' based on vision information (set to either 90deg or an optimal heading)
  */
-uint8_t defineNewHeading(void);
+uint8_t defineNewHeading(void)
 {
   // Uses x/y of optimal path/pixel to compute newheading
-  if (pixel_x < 100) {   // if horizon too low -> turn 90deg
+  if (pixelX < 100) {   // if horizon too low -> turn 90deg
     heading_change = 90.f;
     VERBOSE_PRINT("Low Horizon | 90deg heading_change to: %f\n",  heading_change);
   }  else{   // if horizon not too low -> turn based on optimal path
-    heading_change = abs(atan((260 - pixel_y)/pixel_x));
+    heading_change = abs(atan((260 - pixelY)/pixelX));
     VERBOSE_PRINT("Optimal path | Set heading_change to: %f\n",  heading_change);
   }
 
   //Define direction of turn based on y coord of pixel
-  if ((260-pixel_y) < 0) { // if pixel to the left of drone, turn ccw
+  if ((260-pixelY) < 0) { // if pixel to the left of drone, turn ccw
     heading_increment = -1.f;
     VERBOSE_PRINT("Turn left (ccw)");
   }else{  //if pixel to right, turn cw
@@ -296,19 +301,19 @@ uint8_t change_nav_heading(float heading_change, float heading_increment)
 
   // new heading is current heading plus increments (until total change angle achieve)
   int total_turn = 0; // variable to keep track of turn
+  float new_heading = stateGetNedToBodyEulers_f()->psi + RadOfDeg(heading_increment); //in rad   (defined outside while loop)
 
-  while {total_turn < heading_change} {
+  while (total_turn < heading_change) {
 
-  float new_heading = stateGetNedToBodyEulers_f()->psi + RadOfDeg(heading_increment); //in rad
+    // normalize heading to [-pi, pi]
+    FLOAT_ANGLE_NORMALIZE(new_heading);
 
-  // normalize heading to [-pi, pi]
-  FLOAT_ANGLE_NORMALIZE(new_heading);
+    // set heading, declared in firmwares/rotorcraft/navigation.h
+    // for performance reasons the navigation variables are stored and processed in Binary Fixed-Point format
+    nav_heading = ANGLE_BFP_OF_REAL(new_heading);
 
-  // set heading, declared in firmwares/rotorcraft/navigation.h
-  // for performance reasons the navigation variables are stored and processed in Binary Fixed-Point format
-  nav_heading = ANGLE_BFP_OF_REAL(new_heading);
-
-  total_turn += abs(heading_increment);  //in deg
+    total_turn += abs(heading_increment);  //in deg
+    new_heading += + RadOfDeg(heading_increment); //add to heading
   }
 
   VERBOSE_PRINT("Increasing heading to %f\n", DegOfRad(new_heading));
