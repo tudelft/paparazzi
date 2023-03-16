@@ -86,7 +86,7 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int32_t vecx, int32_t vecy,
                                int32_t quality, int16_t __attribute__((unused)) extra)
 {
-  confidence_value = quality;  //length of middle vector
+  confidence_value = quality;  //length of middle vector 0-240
   pixelX = vecx;  //coordinates of optimal value
   pixelY = vecy;
   // PRINT("COLOR COUNT IN ORANGE AVOIDER = %d", color_count);
@@ -117,7 +117,7 @@ void orange_avoider_periodic(void)
   }
 
   // update our safe confidence using confidence value (from vision)
-  if(confidence_value > 0.5){ // there is no obstacle
+  if(confidence_value > 49){ // there is no obstacle
     obstacle_free_confidence++;
   } else {  // there is obstacle
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
@@ -131,7 +131,7 @@ void orange_avoider_periodic(void)
   switch (navigation_state){
     case SAFE:
       // Move waypoint forward
-      VERBOSE_PRINT(" -- SAFE: %f \n", obstacle_free_confidence);
+      VERBOSE_PRINT(" -- SAFE: %f , %f\n", confidence_value, obstacle_free_confidence);
       moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         navigation_state = OUT_OF_BOUNDS;
