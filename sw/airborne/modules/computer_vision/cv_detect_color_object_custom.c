@@ -423,7 +423,18 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   // PRINT("Vector x IN CV_OBS = %d", vector_x);
   // PRINT("Vector y IN CV_OBS = %d", vector_y);
 
-  return cnt, vector_x, vector_y;
+  cnt = vector_array[10];
+  int32_t length = 0;
+  int32_t pos = 0;
+  for (int8_t i = 0; i < 20; i++){
+    int8_t pot_max = vector_array[i];
+    if (pot_max > length){
+      length = pot_max;
+      pos = i;
+    }
+  }
+  vector_y = (pos * kernel_size) + floor(kernel_size/2);
+  return cnt, length, vector_y;
 }
 
 void color_object_detector_periodic(void)
