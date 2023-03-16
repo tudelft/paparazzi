@@ -131,7 +131,7 @@ void orange_avoider_periodic(void)
   switch (navigation_state){
     case SAFE:
       // Move waypoint forward
-      VERBOSE_PRINT("\nSAFE\n");
+      VERBOSE_PRINT(" -- SAFE: %f \n", obstacle_free_confidence);
       moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         navigation_state = OUT_OF_BOUNDS;
@@ -143,7 +143,7 @@ void orange_avoider_periodic(void)
 
       break;
     case OBSTACLE_FOUND: // logic: stop and define heading change angle and heading increment based on x/y pixel
-      VERBOSE_PRINT("\nOBSTACLE FOUND\n");
+      VERBOSE_PRINT(" -- OBSTACLE FOUND\n");
       // stop
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
@@ -155,7 +155,7 @@ void orange_avoider_periodic(void)
 
       break;
     case SEARCH_FOR_SAFE_HEADING: // logic: turn by defined heading change with defined heading increment. Then check if safe to proceed
-      VERBOSE_PRINT("\nSEARCH HEADING\n");
+      VERBOSE_PRINT(" -- SEARCH HEADING\n");
       // turn by 'heading change' in steps of 'heading increment'
       change_nav_heading(heading_change, heading_increment);
 
@@ -165,7 +165,7 @@ void orange_avoider_periodic(void)
       }
       break;
     case OUT_OF_BOUNDS:
-      VERBOSE_PRINT("\nOUT OF BOUNCE\n");
+      VERBOSE_PRINT(" -- OUT OF BOUNCE\n");
       defineNewHeading();
       change_nav_heading(heading_change, heading_increment);
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
@@ -279,7 +279,7 @@ uint8_t defineNewHeading(void)
 
   VERBOSE_PRINT("Pixel X: %f\n", pixelX);
   VERBOSE_PRINT("Pixel Y: %f\n", pixelY);
-  
+
   // Uses x/y of optimal path/pixel to compute newheading
   if (pixelX < 100) {   // if horizon too low -> turn 90deg
     heading_change = 90.f;
