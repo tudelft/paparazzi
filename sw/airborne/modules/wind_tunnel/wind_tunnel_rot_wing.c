@@ -145,7 +145,7 @@ void event_wt_rot_wing(void)
   for (uint8_t i = 0; i < 11; i++)
   {
     Bound(actuators_temp[i], -9600, 9600);
-    actuators_wt[i] = actuators_temp[i];
+    //actuators_wt[i] = actuators_temp[i];
   }
   }
 }

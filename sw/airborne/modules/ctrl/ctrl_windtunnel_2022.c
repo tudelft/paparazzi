@@ -51,7 +51,8 @@ float dt_l = 5;// [s] Long test time interval. Used for procedure which involve 
 #define mmax 5 // Number of Motors used in the Motor status (e.g. 4) 
 #define kmax 4 // Number of Aerodynamic Surfaces + Motors tested  (e.g. 4)
 #define nmax 7 // Number of Excitation steps 
-#define asel 1 // Number of selected actuators
+#define asel 5 // Number of selected actuators
+#define act  10// Total number of actuators for the sinusoids
 //#######################################################################################################################################################################################
 
 // Defines of variables to be used in manual slider test of actuators ###################################################################################################################
@@ -83,8 +84,8 @@ int16_t mot_status[jmax][mmax] = {{0,0,0,0,0},{0,0,0,3000,0},{0,0,0,5320,0},{0,0
                                   {0,0,5320,0,8000},{0,0,5320,3000,8000},{0,0,5320,5320,8000},{0,0,5320,8000,8000}}; // [pprz] Motor status define [Status][Motor]
 //int16_t as_static[nmax] = {-9600,-4800,1920,4800,9600}; // [pprz] Excitation signals Aerodynamic Surface 
 //int16_t mot_static[nmax] = {2000,4000,5000,6000,8000};  // [pprz] Excitation signals Motors
-int16_t gen_static[kmax][nmax] = {{-9600,-4800,1920 ,4800 ,9600  , 0   , 0   },         // [pprz] ail l
-                                    {-9600,-4800,1920 ,4800 ,9600  , 0   , 0    },         // [pprz] ail r
+int16_t gen_static[kmax][nmax] = {{-9600,-4800,1920 ,4800 ,9600  , 0   , 0   },           // [pprz] ail l
+                                    {-9600,-4800,1920 ,4800 ,9600  , 0   , 0    },        // [pprz] ail r
                                     {-9600,-7000,-4800,-1920 , 1920, 4800, 9600},         // [pprz] ele
                                     {-9600,-4800,1920 ,4800 ,9600  , 0   , 0   },         // [pprz] rud
                                     {1000 ,3000 ,5000 ,7000 ,9000  , 0   , 0   },         // [pprz] mot 0
@@ -93,7 +94,7 @@ int16_t gen_static[kmax][nmax] = {{-9600,-4800,1920 ,4800 ,9600  , 0   , 0   }, 
                                     {1000 ,3000 ,5000 ,7000 ,9000  , 0   , 0   }} ;       // [pprz] mot 3
 int16_t sync_cmd[6] = {1500,0,2000,0,2500,0};            // [pprz] Excitation signals pusher motor during syncing procedure
 int16_t push_cmd[2] = {2000,4000};
-int8_t selected_act_idx[asel] = {9};              // Array of indeces of selected actuators
+
 int8_t tail_act_idx[2] = {9,10};              // Array of indeces of selected actuators
 float wing_sp[imax] = {30};            // [deg] Tested skew angles 
 float rotation_rate_sp[6] = {0.15,0.15,0.20,0.20,0.25,0.25};
@@ -112,7 +113,7 @@ static float t_wing = 0;        // [s]
 static float t_sync = 0;        // [s]
 static float t_skew = 0;        // [s]   
 static float t_test = 0;        // [s]  
-float stopwatch = 0;            // [s] Elapsed time from start of excitation
+double stopwatch = 0;            // [s] Elapsed time from start of excitation
 float ratio_excitation = 1;     // [%] Percentage of completion of sweep for excitation of actuator
 float tcp = 0;                  // [%] Percentage of completion of test
 float aoa_wt = 0;               // [rad] Angle of Attack at Elevator
@@ -129,6 +130,7 @@ bool test_skew_active = false;  // Automatic skew test is active. [experimental 
 bool done_skew = true;          // Done skew. Go to next skew [experimetnal skew test]
 bool single_act = true;        // Turn on to select only certain actuators
 bool verbose_test_ID = false;   // When true, record test ID
+bool done_sweep = false;      
 // INTEGERs ------------------------------------------------------------------------------------------
 int8_t i = 0;                                     // Wing set point counter
 int8_t j = 0;                                     // Motor status counter
@@ -145,10 +147,88 @@ int16_t cmd_0 = 0;                                // [pprz] Initial CMD of actua
 int16_t cmd_target = 0;                           // [pprz] Excitation cmd target
 int16_t cmd_0_mot_status[mmax] = {0,0,0,0};       // [pprz] Initial CMD of mot status
 // STRINGs --------------------------------------------------------------------------------------------
-char test_id[5] = "EL1";
+char test_id[5] = "SW1";
 char point_id[20] = "Blank";
 //#######################################################################################################################################################################################
+int8_t selected_act_idx[asel] = {2,3,4,9,5};              // Array of indeces of selected actuators
+double  st            = 0.002;
+double   f_act[asel]     = {0.753982236861550,0.904778684233860,1.08573442108063,0.628318530717959,0.523598775598299};
+double   phase[asel]     = {-1.256637061435917,-2.513274122871835,-3.769911184307752,-5.026548245743669,0};
+//int16_t max_cmd[asel]   = {9600,9600,9600,9600,9600};
+//int16_t min_cmd[asel]   = {0,0,0,-9600,0};
+//double   gain[asel]      = {4800,4800,4800,9600,4800};
+//double   offset[asel]    = {4800,4800,4800,0,4800};
 
+int16_t max_cmd[asel]    = {8000,8000,8000,9600,9600};
+int16_t min_cmd[asel]    = {0,0,0,-9600,0};
+double   gain[asel]      = {4000,4000,4000,9600,4800};
+double   offset[asel]    = {4000,4000,4000,0,4800};
+
+float   total_time      = 3000;  //1600
+float   cmd_start[asel];
+bool    sine_test = false;
+
+int16_t sine_signal(double omega, double dt, double phi, double gai, double off){
+  int16_t y = (int16_t) (off + gai * sin(omega*dt+phi));
+  return y;
+}
+
+void k_ratio_sine_phased(void){
+  if(sine_test){
+    if (!test_active){
+      //t_test = get_sys_time_float();
+      stopwatch = 0;
+      for (k = 0; k < asel; ++k){
+      k_conv = selected_act_idx[k];
+      if(k_conv==11){cmd_start[k] = wing_rotation.wing_angle_deg_sp;}
+      else{cmd_start[k] = actuators_wt[k_conv];}}}
+    static_test  = true;                            
+    test_active  = true;
+    motors_on_wt = true;                           // Arm motors
+    //printf("Total Test Time %0.1f [s]\n ",(float) stopwatch);
+    if (!done_sweep){
+    //stopwatch = get_sys_time_float() - t_test;
+    ratio_excitation = (-(stopwatch-dt_l)*(stopwatch-dt_l) + dt_l*dt_l)/(dt_l*dt_l) ;
+    Bound(ratio_excitation, 0, 1);
+    for (k = 0; k < asel; ++k){
+      k_conv = selected_act_idx[k];
+      if(k_conv==11){
+        cmd_target = (int16_t) sine_signal(f_act[k],0.0,phase[k],gain[k],offset[k]);
+        wing_rotation.wing_angle_deg_sp = (float) cmd_start[k] + (cmd_target- cmd_start[k]) * ratio_excitation;}
+      else{
+        cmd_target = (int16_t) sine_signal(f_act[k],0.0,phase[k],gain[k],offset[k]);
+        actuators_wt[k_conv] = (int16_t) (cmd_start[k] + (cmd_target- cmd_start[k]) * ratio_excitation);}
+      }
+    stopwatch = stopwatch + st;  
+    if (stopwatch>dt_l){
+      done_sweep=true;
+      //t_test = get_sys_time_float();
+      stopwatch = 0;
+      }
+      //return true;
+    }else{
+    //double t_elapsed = (double)(t_test-get_sys_time_float());
+    if(stopwatch<total_time){
+      for (k = 0; k < asel; ++k){
+            k_conv = selected_act_idx[k];
+            if(k_conv==11){wing_rotation.wing_angle_deg_sp = (float) sine_signal(f_act[k],stopwatch,phase[k],gain[k],offset[k]);}
+            else{actuators_wt[k_conv] = (int16_t) sine_signal(f_act[k],stopwatch,phase[k],gain[k],offset[k]);}
+          }
+      stopwatch = stopwatch + st;     
+      //return true;    
+    }else{                                      
+        test_active = false;                    // if done skewing terminate the test
+        motors_on_wt = false;
+        p += 1;
+        printf("Total Test Time %0.1f [s]",get_sys_time_float()-t_test);
+        tcp = 0;
+        t_test = 0;
+        done_sweep = false;
+        stopwatch = 0;
+        sine_test = false;
+      //return false;
+      }}}}
+//#######################################################################################################################################################################################
 // Graphical representation of nested functions #########################################################################################################################################
 
 //  -- windtunnel_control:            
@@ -294,7 +374,7 @@ bool mot_status_control(void){
       if (ratio_excitation==1){
         verbose_test_ID=true;
         tp += 1;}
-      for ( int8_t m = 0; m < mmax; m++){actuators_wt[m] = (int16_t)cmd_0_mot_status[m] + ( mot_status[j][m] - cmd_0_mot_status[m]) * ratio_excitation;}}} 
+      for ( int8_t m = 0; m < mmax; m++){actuators_wt[m] = (int16_t) (cmd_0_mot_status[m] + ( mot_status[j][m] - cmd_0_mot_status[m]) * ratio_excitation);}}} 
    return true;    
    }else{
     if (shut_off){                                                             // If shutoff not yet initialized, initialize it
@@ -400,6 +480,7 @@ bool excitation_control(void){
 static void send_windtunnel_static(struct transport_tx *trans, struct link_device *dev)
 {
   float airspeed = stateGetAirspeed_f();
+  float cmd_skew_converted = (float) actuators_wt[5]/9600.0*90.0;
   uint8_t test_active_conv = (uint8_t) test_active;
   if (!verbose_test_ID){
        point_id[0] = '\0';
@@ -416,7 +497,7 @@ static void send_windtunnel_static(struct transport_tx *trans, struct link_devic
                                         &test_active_conv,
                                         &airspeed,
                                         &wing_rotation.wing_angle_deg,
-                                        &wing_rotation.wing_angle_deg_sp,
+                                        &cmd_skew_converted,
                                         &(stateGetNedToBodyEulers_i()->theta),
                                         &p,
                                         &i,

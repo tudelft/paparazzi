@@ -24,6 +24,7 @@
     <file name="ctrl_windtunnel_2022.h"/>
   </header>
   <init fun="windtunnel_message_init()"/>
+  <periodic fun="k_ratio_sine_phased()" freq="500.0"/>
   <periodic fun="wing_rotation_periodic()" freq="1.0"/>
   <event fun="event_manual_test()"/>
   <makefile>

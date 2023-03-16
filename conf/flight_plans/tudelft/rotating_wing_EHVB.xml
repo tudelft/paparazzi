@@ -61,6 +61,12 @@
     <block name="Stop me3">
       <stay wp="STDBY"/>
     </block>
+    <block name="Test_fun_sine">
+      <set value="true" var="sine_test"/>
+    </block>
+    <block name="Stop me4">
+      <stay wp="STDBY"/>
+    </block>
     <block name="Test_fun">
       <call fun="windtunnel_control()"/>
     </block>

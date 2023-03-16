@@ -125,7 +125,7 @@
         <servo NO="2" NAME="MOTOR_BACK"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
         <servo NO="3" NAME="MOTOR_LEFT"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
         <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="0"    MAX="8191"/>
-        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="8191"  NEUTRAL="0"    MAX="-1395"/>
+        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="4266"  NEUTRAL="0"    MAX="-1395"/>
         <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"    MAX="8191"/>
     </servos>
 
@@ -159,7 +159,7 @@
         <set VALUE="($th_hold? -9600 : actuators_wt[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_wt[3])" SERVO="MOTOR_LEFT"/>
         <set VALUE="($th_hold? -9600 : actuators_wt[4])" SERVO="MOTOR_PUSH"/>
-        <set VALUE="wing_rotation.servo_pprz_cmd"        SERVO="SERVO_ROTWING"/>
+        <set VALUE="(actuators_wt[5])" SERVO="SERVO_ROTWING"/>
 
         <!-- Backup commands -->
         <set VALUE="($th_hold? -9600 : actuators_wt[0])" SERVO="BMOTOR_FRONT"/>
