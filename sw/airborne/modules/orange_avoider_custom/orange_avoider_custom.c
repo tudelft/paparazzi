@@ -61,6 +61,9 @@ float heading_increment = 5.f;          // heading angle increment [deg]
 float heading_change = 20.f;          // heading angle change [deg]
 float maxDistance = 2.25;               // max waypoint displacement [m]
 
+int32_t pixelX = 120; //initial values
+int32_t pixelY = 260;
+
 // define settings
 float oa_color_count_frac = 0.18f;  //if i delete this the autopilot.c file crashes
 
@@ -77,14 +80,14 @@ const int16_t max_trajectory_confidence = 5; // number of consecutive negative o
 #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
 static abi_event color_detection_ev;
-static void color_detection_cb(uint8_t _attribute_((unused)) sender_id,
-                               int16_t _attribute((unused)) pixel_x, int16_t __attribute_((unused)) pixel_y,
+static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
+                               int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
                                int32_t vecx, int32_t vecy,
-                               int32_t quality, int16_t _attribute_((unused)) extra)
+                               int32_t quality, int16_t __attribute__((unused)) extra)
 {
   confidence_value = quality;  //length of middle vector
-  int32_t pixel_x = vecx;  //coordinates of optimal value
-  int32_t pixel_y = vecy;
+  int32_t pixelX = vecx;  //coordinates of optimal value
+  int32_t pixelY = vecy;
   // PRINT("COLOR COUNT IN ORANGE AVOIDER = %d", color_count);
   // PRINT("VX, VY in orange avoider = %d %d", vx, vy);
 }
@@ -269,16 +272,16 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 uint8_t defineNewHeading(void)
 {
   // Uses x/y of optimal path/pixel to compute newheading
-  if (pixel_x < 100) {   // if horizon too low -> turn 90deg
+  if (pixelX < 100) {   // if horizon too low -> turn 90deg
     heading_change = 90.f;
     VERBOSE_PRINT("Low Horizon | 90deg heading_change to: %f\n",  heading_change);
   }  else{   // if horizon not too low -> turn based on optimal path
-    heading_change = abs(atan((260 - pixel_y)/pixel_x));
+    heading_change = abs(atan((260 - pixelY)/pixelX));
     VERBOSE_PRINT("Optimal path | Set heading_change to: %f\n",  heading_change);
   }
 
   //Define direction of turn based on y coord of pixel
-  if ((260-pixel_y) < 0) { // if pixel to the left of drone, turn ccw
+  if ((260-pixelY) < 0) { // if pixel to the left of drone, turn ccw
     heading_increment = -1.f;
     VERBOSE_PRINT("Turn left (ccw)");
   }else{  //if pixel to right, turn cw
