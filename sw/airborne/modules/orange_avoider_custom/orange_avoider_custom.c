@@ -282,7 +282,7 @@ uint8_t defineNewHeading(void)
 
   // Uses x/y of optimal path/pixel to compute newheading
   if (pixelX < 100) {   // if horizon too low -> turn 90deg
-    heading_change = 90.f;
+    heading_change = 45.f;
     VERBOSE_PRINT("Low Horizon | 90deg heading_change to: %f\n",  heading_change);
   }  else{   // if horizon not too low -> turn based on optimal path
     heading_change = fabs(atan((260 - pixelY)/pixelX));
