@@ -62,13 +62,13 @@ float heading_increment = 5.f;          // heading angle increment [deg]
 float heading_change = 20.f;          // heading angle change [deg]
 float maxDistance = 2.25;               // max waypoint displacement [m]
 
-int32_t pixelX = 120; //initial values
-int32_t pixelY = 260;
+int16_t pixelX = 120; //initial values
+int16_t pixelY = 260;
 
 // define settings
 float oa_color_count_frac = 0.18f;  //if i delete this the autopilot.c file crashes
 
-const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
+const int16_t max_trajectory_confidence = 4; // number of consecutive negative object detections to be sure we are obstacle free
 
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
@@ -83,7 +83,7 @@ const int16_t max_trajectory_confidence = 5; // number of consecutive negative o
 static abi_event color_detection_ev;
 static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
-                               int32_t vecx, int32_t vecy,
+                               int16_t vecx, int16_t vecy,
                                int32_t quality, int16_t __attribute__((unused)) extra)
 {
   confidence_value = quality;  //length of middle vector 0-240

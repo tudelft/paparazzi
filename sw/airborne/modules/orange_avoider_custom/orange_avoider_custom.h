@@ -10,8 +10,8 @@
  * Example on how to use the colours detected to avoid orange pole in the cyberzoo
  */
 
-#ifndef ORANGE_AVOIDER_H
-#define ORANGE_AVOIDER_H
+#ifndef ORANGE_AVOIDER_H_CUSTOM
+#define ORANGE_AVOIDER_H_CUSTOM
 
 // settings
 extern float oa_color_count_frac;
