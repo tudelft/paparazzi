@@ -83,12 +83,12 @@ const int16_t max_trajectory_confidence = 4; // number of consecutive negative o
 static abi_event color_detection_ev;
 static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
-                               int16_t vecx, int16_t vecy,
+                               int16_t pixel_width, int16_t pixel_height,
                                int32_t quality, int16_t __attribute__((unused)) extra)
 {
   confidence_value = quality;  //length of middle vector 0-240
-  pixelX = vecx;  //coordinates of optimal value
-  pixelY = vecy;
+  pixelX = pixel_width;  //x coordinates of optimal value
+  pixelY = pixel_height; // y
   // PRINT("COLOR COUNT IN ORANGE AVOIDER = %d", color_count);
   // PRINT("VX, VY in orange avoider = %d %d", vx, vy);
 }
