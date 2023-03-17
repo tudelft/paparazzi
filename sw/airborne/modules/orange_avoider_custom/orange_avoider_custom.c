@@ -131,7 +131,7 @@ void orange_avoider_periodic(void)
   switch (navigation_state){
     case SAFE:
       // Move waypoint forward
-      VERBOSE_PRINT(" -- SAFE: conf_val %d , obstac_conf %d\n", confidence_value, obstacle_free_confidence);
+      VERBOSE_PRINT(" -- SAFE: conf_val %d , obstac_conf %d, (x,y) = %d, %d\n", confidence_value, obstacle_free_confidence, pixelX, pixelY);
       moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         navigation_state = OUT_OF_BOUNDS;
@@ -155,7 +155,7 @@ void orange_avoider_periodic(void)
 
       break;
     case SEARCH_FOR_SAFE_HEADING: // logic: turn by defined heading change with defined heading increment. Then check if safe to proceed
-      VERBOSE_PRINT(" -- SEARCH HEADING\n");
+      VERBOSE_PRINT(" -- SEARCH HEADING: conf_val %d , obstac_conf %d, (x,y) = %d, %d\n", confidence_value, obstacle_free_confidence, pixelX, pixelY);
       // turn by 'heading change' in steps of 'heading increment'
       change_nav_heading(heading_change, heading_increment);
 
