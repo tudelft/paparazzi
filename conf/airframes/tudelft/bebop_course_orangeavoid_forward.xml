@@ -66,7 +66,7 @@
       <define name="COLOR_OBJECT_DETECTOR_FPS1" value="0"/>
       <define name="COLOR_OBJECT_DETECTOR_DRAW1" value="1"/>
     </module>
-    <module name="orange_avoider_parameters">
+    <module name="orange_avoider_forward">
       <define name="ORANGE_AVOIDER_VISUAL_DETECTION_ID" value="COLOR_OBJECT_DETECTION1_ID"/>
     </module>
     <module name="video_rtp_stream">
@@ -111,7 +111,7 @@
     <define name="OUTPUT_WIDTH" value="240" />
     <define name="OFFSET_X" value="0.09" />
     <define name="ZOOM" value="1.25"/>
-    <define name="GAIN_GREEN1" value="10.0"/>
+    <define name="GAIN_GREEN1" value="100.0"/>
     <define name="GAIN_GREEN2" value="10.0"/>
     <define name="GAIN_BLUE" value="12.5"/>
     <define name="GAIN_RED" value="9.0"/>
