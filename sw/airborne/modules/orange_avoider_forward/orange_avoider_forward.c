@@ -17,7 +17,7 @@
  * so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTION_ID setting.
  */
 
-#include "modules/orange_avoider_custom/orange_avoider_custom.h"
+#include "modules/orange_avoider_custom/orange_avoider_forward.h"
 #include "firmwares/rotorcraft/navigation.h"
 #include "generated/airframe.h"
 #include "state.h"
@@ -144,9 +144,11 @@ void orange_avoider_periodic(void)
       break;
     case OBSTACLE_FOUND: // logic: stop and define heading change angle and heading increment based on x/y pixel
       VERBOSE_PRINT(" -- OBSTACLE FOUND\n");
+      // Instead of stopping, move the waypoint forward by small amount
       // stop
-      waypoint_move_here_2d(WP_GOAL);
-      waypoint_move_here_2d(WP_TRAJECTORY);
+      //waypoint_move_here_2d(WP_GOAL);
+      //waypoint_move_here_2d(WP_TRAJECTORY);
+      moveWaypointForward(WP_TRAJECTORY, 0.1f * moveDistance);
 
       // define 'heading_change' and 'heading_increment'based on either optimal path found by vision or a set large angle
       defineNewHeading();
@@ -158,6 +160,9 @@ void orange_avoider_periodic(void)
       VERBOSE_PRINT(" -- SEARCH HEADING\n");
       // turn by 'heading change' in steps of 'heading increment'
       change_nav_heading(heading_change, heading_increment);
+
+      // Keep moving forward by small increments while turning
+      moveWaypointForward(WP_TRAJECTORY, 0.1f * moveDistance);
 
       // After turning check if heading is free to continue (with certain confidence)
       if (obstacle_free_confidence >= 2){ //need to check thresholds cause this might run the turning function twice
