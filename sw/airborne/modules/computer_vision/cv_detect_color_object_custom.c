@@ -83,10 +83,17 @@ struct color_object_t {
   uint32_t color_count;
   bool updated;
 };
+
+struct return_value {
+  uint32_t color_count;
+  int16_t vector_x;
+  int16_t vector_y;
+};
+
 struct color_object_t global_filters[2];
 
 // Function
-uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
+struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
                               uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max);
@@ -133,20 +140,21 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   uint32_t count;
   int16_t vx;
   int16_t vy;
-  count, vx, vy = find_object_centroid(img, &x_c, &y_c, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
+  struct return_value result;
+  result = find_object_centroid(img, &x_c, &y_c, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
   VERBOSE_PRINT("Color count %d: %u, threshold %u, x_c %d, y_c %d\n", camera, object_count, count_threshold, x_c, y_c);
   VERBOSE_PRINT("centroid %d: (%d, %d) r: %4.2f a: %4.2f\n", camera, x_c, y_c,
         hypotf(x_c, y_c) / hypotf(img->w * 0.5, img->h * 0.5), RadOfDeg(atan2f(y_c, x_c)));
 
   pthread_mutex_lock(&mutex);
-  global_filters[filter-1].color_count = count;
+  global_filters[filter-1].color_count = result.color_count;
   global_filters[filter-1].x_c = x_c;
   global_filters[filter-1].y_c = y_c;
   global_filters[filter-1].updated = true;
   
   //new
-  global_filters[filter-1].vector_x = vx;
-  global_filters[filter-1].vector_y = vy;
+  global_filters[filter-1].vector_x = result.vector_x;
+  global_filters[filter-1].vector_y = result.vector_y;
   //new
   
   pthread_mutex_unlock(&mutex);
@@ -221,11 +229,12 @@ void color_object_detector_init(void)
  * @param draw - whether or not to draw on image
  * @return number of pixels of image within the filter bounds.
  */
-uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
+struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
                               uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max)
 {
+  struct return_value test;
   uint32_t cnt = 0;
   uint32_t tot_x = 0;
   uint32_t tot_y = 0;
@@ -437,7 +446,10 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
     }
   }
   vector_y = (pos * kernel_size) + floor(kernel_size/2);
-  return cnt, length, vector_y;
+  test.color_count = cnt;
+  test.vector_x = length;
+  test.vector_y = vector_y;
+  return test;
 }
 
 void color_object_detector_periodic(void)
