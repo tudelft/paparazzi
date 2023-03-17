@@ -131,7 +131,7 @@ void orange_avoider_periodic(void)
   switch (navigation_state){
     case SAFE:
       // Move waypoint forward
-      VERBOSE_PRINT(" -- SAFE: conf_val %f , obstac_conf %f\n", confidence_value, obstacle_free_confidence);
+      VERBOSE_PRINT(" -- SAFE: conf_val %d , obstac_conf %d\n", confidence_value, obstacle_free_confidence);
       moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         navigation_state = OUT_OF_BOUNDS;
@@ -277,8 +277,8 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 uint8_t defineNewHeading(void)
 {
 
-  VERBOSE_PRINT("Pixel X: %f\n", pixelX);
-  VERBOSE_PRINT("Pixel Y: %f\n", pixelY);
+  VERBOSE_PRINT("Pixel X: %d\n", pixelX);
+  VERBOSE_PRINT("Pixel Y: %d\n", pixelY);
 
   // Uses x/y of optimal path/pixel to compute newheading
   if (pixelX < 100) {   // if horizon too low -> turn 90deg
