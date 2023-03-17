@@ -76,8 +76,8 @@ struct color_object_t {
   int32_t y_c;
   
   //new
-  int32_t vector_x;
-  int32_t vector_y;
+  int16_t vector_x;
+  int16_t vector_y;
   //new
   
   uint32_t color_count;
@@ -130,7 +130,10 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   int32_t x_c, y_c;
 
   // Filter and find centroid
-  uint32_t count, vx, vy = find_object_centroid(img, &x_c, &y_c, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
+  uint32_t count;
+  int16_t vx;
+  int16_t vy;
+  count, vx, vy = find_object_centroid(img, &x_c, &y_c, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
   VERBOSE_PRINT("Color count %d: %u, threshold %u, x_c %d, y_c %d\n", camera, object_count, count_threshold, x_c, y_c);
   VERBOSE_PRINT("centroid %d: (%d, %d) r: %4.2f a: %4.2f\n", camera, x_c, y_c,
         hypotf(x_c, y_c) / hypotf(img->w * 0.5, img->h * 0.5), RadOfDeg(atan2f(y_c, x_c)));
@@ -417,15 +420,15 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   cnt = 1;
   // PRINT("CNT IN CV_OBS = %d", cnt);
 
-  int32_t vector_x = 4;
-  int32_t vector_y = 20;
+  int16_t vector_x = 4;
+  int16_t vector_y = 20;
 
   // PRINT("Vector x IN CV_OBS = %d", vector_x);
   // PRINT("Vector y IN CV_OBS = %d", vector_y);
 
   cnt = vector_array[10];
-  int32_t length = 0;
-  int32_t pos = 0;
+  int16_t length = 0;
+  int16_t pos = 0;
   for (int8_t i = 0; i < 20; i++){
     int8_t pot_max = vector_array[i];
     if (pot_max > length){
