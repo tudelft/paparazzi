@@ -25,8 +25,8 @@
  * if you are over the defined color_object or not
  */
 
-#ifndef COLOR_OBJECT_DETECTOR_CV_H
-#define COLOR_OBJECT_DETECTOR_CV_H
+#ifndef COLOR_OBJECT_DETECTOR_CV_H_CUSTOM
+#define COLOR_OBJECT_DETECTOR_CV_H_CUSTOM
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -53,4 +53,4 @@ extern bool cod_draw2;
 extern void color_object_detector_init(void);
 extern void color_object_detector_periodic(void);
 
-#endif /* COLOR_OBJECT_DETECTOR_CV_H */
+#endif /* COLOR_OBJECT_DETECTOR_CV_H_CUSTOM */
