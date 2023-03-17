@@ -447,6 +447,10 @@ void color_object_detector_periodic(void)
   memcpy(local_filters, global_filters, 2*sizeof(struct color_object_t));
   pthread_mutex_unlock(&mutex);
 
+  //local_filters[0].vector_x = 3;
+  //local_filters[0].vector_y = 4;
+  //local_filters[0].color_count = 60;
+
   if(local_filters[0].updated){
     AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION1_ID, local_filters[0].x_c, local_filters[0].y_c,
         local_filters[0].vector_x, local_filters[0].vector_y, local_filters[0].color_count, 0);
