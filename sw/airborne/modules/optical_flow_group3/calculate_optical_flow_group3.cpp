@@ -177,9 +177,9 @@ void farneback(char *img, float* output_flow, int width, int height, int width_i
       previous_frame_right = next_frame_right;
 }
 
-int main()
-{
-  std::string filename = "/home/matthijs/paparazzi/videos/vlc-record-2023-03-10-09h59m06s-rtp_5000.sdp-.avi";
-  farneback_playback(filename, 200, 50);
-  return 0;
-}
+// int main()
+// {
+//   std::string filename = "/home/matthijs/paparazzi/videos/vlc-record-2023-03-10-09h59m06s-rtp_5000.sdp-.avi";
+//   farneback_playback(filename, 200, 50);
+//   return 0;
+// }
