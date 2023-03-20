@@ -28,6 +28,26 @@
 #include "modules/computer_vision/opencv_example.h"
 
 
+#include "modules/orange_avoider/orange_avoider.h"
+#include "firmwares/rotorcraft/navigation.h"
+#include "generated/airframe.h"
+#include "state.h"
+#include "modules/core/abi.h"
+#include <time.h>
+#include <stdio.h>
+
+#define NAV_C // needed to get the nav functions like Inside...
+#include "generated/flight_plan.h"
+
+#define ORANGE_AVOIDER_VERBOSE TRUE
+
+#define PRINT(string,...) fprintf(stderr, "[orange_avoider->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
+#if ORANGE_AVOIDER_VERBOSE
+#define VERBOSE_PRINT PRINT
+#else
+#define VERBOSE_PRINT(...)
+#endif
+
 #ifndef OPENCVDEMO_FPS
 #define OPENCVDEMO_FPS 0       ///< Default FPS (zero means run at camera fps)
 #endif
@@ -63,6 +83,9 @@ static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
 static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
 static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 static uint8_t increase_nav_heading(float incrementDegrees);
+
+float flowleft_temp = 0.0f;
+float flowright_temp  = 0.0f;
 
 float heading_increment = 5.f; 
 float maxDistance = 2.25;   
