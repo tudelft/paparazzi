@@ -27,28 +27,58 @@
 #include "modules/computer_vision/cv_opencvdemo.h"
 #include "modules/computer_vision/opencv_example.h"
 
+
 #ifndef OPENCVDEMO_FPS
 #define OPENCVDEMO_FPS 0       ///< Default FPS (zero means run at camera fps)
 #endif
-PRINT_CONFIG_VAR(OPENCVDEMO_FPS)
 
-// Function
-struct image_t *opencv_func(struct image_t *img, uint8_t camera_id);
-struct image_t *opencv_func(struct image_t *img, uint8_t camera_id)
+#define WIDTH_2_PROCESS 200
+#define HEIGHT_2_PROCESS 50
+
+
+float output_flow[2];
+
+struct image_t *optical_flow_func(struct image_t *img, int camera_id);
+struct image_t *optical_flow_func(struct image_t *img, int camera_id)
 {
-
-  if (img->type == IMAGE_YUV422) {
-    // Call OpenCV (C++ from paparazzi C function)
-    opencv_example((char *) img->buf, img->w, img->h);
-  }
-
-// opencv_example(NULL, 10,10);
-
-  return NULL;
+    // action act = STANDBY;
+    if (img->type == IMAGE_YUV422) {
+        farneback((char *) img->buf, output_flow, WIDTH_2_PROCESS, HEIGHT_2_PROCESS, img->w, img->h);
+    }
+    return img;
 }
 
-void opencvdemo_init(void)
+void calc_action_optical_flow_init(void)
 {
-  cv_add_to_device(&OPENCVDEMO_CAMERA, opencv_func, OPENCVDEMO_FPS, 0);
+    cv_add_to_device(&OPENCVDEMO_CAMERA, optical_flow_func, OPENCVDEMO_FPS, 0);
+    output_flow[0] = 0.0;
+    output_flow[1] = 0.0;
 }
+
+void calc_action_optical_flow_periodic(void)
+{
+    printf("out: %f",output_flow[0]);
+}
+
+// PRINT_CONFIG_VAR(OPENCVDEMO_FPS)
+
+// // Function
+// struct image_t *opencv_func(struct image_t *img, uint8_t camera_id);
+// struct image_t *opencv_func(struct image_t *img, uint8_t camera_id)
+// {
+
+//   if (img->type == IMAGE_YUV422) {
+//     // Call OpenCV (C++ from paparazzi C function)
+//     opencv_example((char *) img->buf, img->w, img->h);
+//   }
+
+// // opencv_example(NULL, 10,10);
+
+//   return NULL;
+// }
+
+// void opencvdemo_init(void)
+// {
+//   cv_add_to_device(&OPENCVDEMO_CAMERA, opencv_func, OPENCVDEMO_FPS, 0);
+// }
 
