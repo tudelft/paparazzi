@@ -59,7 +59,7 @@ enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
 int32_t confidence_value = 0;   // 0 = no obstacle, 1 = obstacle         
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
 float heading_increment = 5.f;          // heading angle increment [deg]
-float heading_change = 20.f;          // heading angle change [deg]
+float heading_change = 10.f;          // heading angle change [deg]
 float maxDistance = 2.25;               // max waypoint displacement [m]
 
 int16_t pixelX = 120; //initial values
@@ -160,7 +160,7 @@ void orange_avoider_periodic(void)
       change_nav_heading(heading_change, heading_increment);
 
       // After turning check if heading is free to continue (with certain confidence)
-      if (obstacle_free_confidence >= 1){ //need to check thresholds cause this might run the turning function twice
+      if (obstacle_free_confidence >= 2){ //need to check thresholds cause this might run the turning function twice
         navigation_state = SAFE;
       }
       break;
@@ -282,10 +282,11 @@ uint8_t defineNewHeading(void)
 
   // Uses x/y of optimal path/pixel to compute newheading
   if (pixelX < 30) {   // if horizon too low -> turn 90deg
-    heading_change = 70.f;
+    heading_change = 30.f;
     VERBOSE_PRINT("Low Horizon (<30) | Set heading_change to: %f deg\n",  heading_change);
   }  else{   // if horizon not too low -> turn based on optimal path
-    heading_change = fabs(DegOfRad(atan((260 - pixelY)/pixelX))); //atan gives angle in radiants, so transform to degrees
+    heading_change = DegOfRad(atan(abs(260 - pixelY)/abs(pixelX))); //atan gives angle in radiants, so transform to degrees
+    heading_change = fmaxf(heading_change, 5.); //choose between angle computed and 5deg, so min change is 5deg
     VERBOSE_PRINT("Optimal path | Set heading_change to: %f deg\n",  heading_change);
   }
 
@@ -310,7 +311,7 @@ uint8_t change_nav_heading(float heading_change, float heading_increment)
   // new heading is current heading plus increments (until total change angle achieve)
   int total_turn = 0; // variable to keep track of turn
   float new_heading = stateGetNedToBodyEulers_f()->psi + RadOfDeg(heading_increment); //in rad   (defined outside while loop)
-
+  VERBOSE_PRINT("Current heading is: %f \n", DegOfRad(stateGetNedToBodyEulers_f()->psi));
   while (total_turn < heading_change) {
 
     // normalize heading to [-pi, pi]
@@ -324,7 +325,7 @@ uint8_t change_nav_heading(float heading_change, float heading_increment)
     new_heading += + RadOfDeg(heading_increment); //add to heading
   }
 
-  VERBOSE_PRINT("Increasing heading to %f\n deg", DegOfRad(new_heading));
+  VERBOSE_PRINT("Increasing heading by %f to %f\n deg", heading_change*heading_increment, DegOfRad(new_heading));
   return false;
 }
 
