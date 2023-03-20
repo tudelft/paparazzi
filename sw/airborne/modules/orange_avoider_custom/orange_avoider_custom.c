@@ -281,21 +281,21 @@ uint8_t defineNewHeading(void)
   VERBOSE_PRINT("Pixel Y: %d\n", pixelY);
 
   // Uses x/y of optimal path/pixel to compute newheading
-  if (pixelX < 100) {   // if horizon too low -> turn 90deg
-    heading_change = 50.f;
-    VERBOSE_PRINT("Low Horizon | 90deg heading_change to: %f\n",  heading_change);
+  if (pixelX < 30) {   // if horizon too low -> turn 90deg
+    heading_change = 70.f;
+    VERBOSE_PRINT("Low Horizon (<30) | Set heading_change to: %f deg\n",  heading_change);
   }  else{   // if horizon not too low -> turn based on optimal path
-    heading_change = fabs(atan((260 - pixelY)/pixelX));
-    VERBOSE_PRINT("Optimal path | Set heading_change to: %f\n",  heading_change);
+    heading_change = fabs(DegOfRad(atan((260 - pixelY)/pixelX))); //atan gives angle in radiants, so transform to degrees
+    VERBOSE_PRINT("Optimal path | Set heading_change to: %f deg\n",  heading_change);
   }
 
   //Define direction of turn based on y coord of pixel
-  if ((260-pixelY) < 0) { // if pixel to the left of drone, turn ccw
+  if ((260-pixelY) > 0) { // if pixel to the left of drone, turn ccw
     heading_increment = -1.f;
-    VERBOSE_PRINT("Turn left (ccw)");
+    VERBOSE_PRINT("Turn left (ccw). 260-y = %d\n", (260-pixelY));
   }else{  //if pixel to right, turn cw
     heading_increment = 1.f;
-    VERBOSE_PRINT("Turn right (cw)");
+    VERBOSE_PRINT("Turn right (cw). 260-y = %d\n", (260-pixelY));
   }
   return false;
 }
@@ -324,7 +324,7 @@ uint8_t change_nav_heading(float heading_change, float heading_increment)
     new_heading += + RadOfDeg(heading_increment); //add to heading
   }
 
-  VERBOSE_PRINT("Increasing heading to %f\n", DegOfRad(new_heading));
+  VERBOSE_PRINT("Increasing heading to %f\n deg", DegOfRad(new_heading));
   return false;
 }
 
