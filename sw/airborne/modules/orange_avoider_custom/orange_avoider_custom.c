@@ -117,7 +117,7 @@ void orange_avoider_periodic(void)
   }
 
   // update our safe confidence using confidence value (from vision)
-  if(confidence_value > 49){ // there is no obstacle
+  if(confidence_value > 30){ // there is no obstacle
     obstacle_free_confidence++;
   } else {  // there is obstacle
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
@@ -160,7 +160,7 @@ void orange_avoider_periodic(void)
       change_nav_heading(heading_change, heading_increment);
 
       // After turning check if heading is free to continue (with certain confidence)
-      if (obstacle_free_confidence >= 2){ //need to check thresholds cause this might run the turning function twice
+      if (obstacle_free_confidence >= 0){ //need to check thresholds cause this might run the turning function twice
         navigation_state = SAFE;
       }
       break;
@@ -281,8 +281,8 @@ uint8_t defineNewHeading(void)
   VERBOSE_PRINT("Pixel Y: %d\n", pixelY);
 
   // Uses x/y of optimal path/pixel to compute newheading
-  if (pixelX < 100) {   // if horizon too low -> turn 90deg
-    heading_change = 90.f;
+  if (pixelX < 30) {   // if horizon too low -> turn 90deg
+    heading_change = 25.f;
     VERBOSE_PRINT("Low Horizon | 90deg heading_change to: %f\n",  heading_change);
   }  else{   // if horizon not too low -> turn based on optimal path
     heading_change = fabs(atan((260 - pixelY)/pixelX));
