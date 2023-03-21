@@ -1,28 +1,45 @@
-// /*
-//  * Copyright (C) C. De Wagter
-//  *
-//  * This file is part of paparazzi
-//  *
-//  * paparazzi is free software; you can redistribute it and/or modify
-//  * it under the terms of the GNU General Public License as published by
-//  * the Free Software Foundation; either version 2, or (at your option)
-//  * any later version.
-//  *
-//  * paparazzi is distributed in the hope that it will be useful,
-//  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  * GNU General Public License for more details.
-//  *
-//  * You should have received a copy of the GNU General Public License
-//  * along with paparazzi; see the file COPYING.  If not, see
-//  * <http://www.gnu.org/licenses/>.
-//  */
-// /**
-//  * @file "modules/computer_vision/opencv_example.cpp"
-//  * @author C. De Wagter
-//  * A simple module showing what you can do with opencv on the bebop.
-//  */
+#include "modules/computer_vision/cv.h"
+#include "modules/computer_vision/cv_opencvdemo.h"
+#include "modules/computer_vision/opencv_example.h"
 
+
+#include "modules/orange_avoider/orange_avoider.h"
+#include "firmwares/rotorcraft/navigation.h"
+#include "generated/airframe.h"
+#include "state.h"
+#include "modules/core/abi.h"
+#include <time.h>
+#include <stdio.h>
+
+#define NAV_C // needed to get the nav functions like Inside...
+
+#include "generated/flight_plan.h"
+
+#define ORANGE_AVOIDER_VERBOSE TRUE
+
+#define PRINT(string,...) fprintf(stderr, "[orange_avoider->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
+#if ORANGE_AVOIDER_VERBOSE
+#define VERBOSE_PRINT PRINT
+#else
+#define VERBOSE_PRINT(...)
+#endif
+
+#ifndef OPENCVDEMO_FPS
+#define OPENCVDEMO_FPS 0       ///< Default FPS (zero means run at camera fps)
+#endif
+
+
+// static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
+// static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
+// static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
+// static uint8_t increase_nav_heading(float incrementDegrees);
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
 
 // #include "opencv_example.h"
 
@@ -169,7 +186,15 @@ void farneback(char *img, float* output_flow, int width, int height, int width_i
       previous_frame_left = next_frame_left;
       previous_frame_right = next_frame_right;
       std::cout<<"left: "<<output_flow[0]<<", right: "<<output_flow[1]<<"\n";
+
+      // increase_nav_heading(6.f);
+     // moveWaypointForward(WP_TRAJECTORY, 0.8f);
+     
 }
+
+
+
+
 
 // int main()
 // {
@@ -177,3 +202,53 @@ void farneback(char *img, float* output_flow, int width, int height, int width_i
 //   farneback_playback(filename, 200, 50);
 //   return 0;
 // }
+
+
+
+
+//////////////////////////////////////////////
+
+
+// /*
+//  * Calculates coordinates of distance forward and sets waypoint 'waypoint' to those coordinates
+//  */
+// uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters)
+// {
+//   struct EnuCoor_i new_coor;
+//   calculateForwards(&new_coor, distanceMeters);
+//   moveWaypoint(waypoint, &new_coor);
+//   return false;
+// }
+
+// /*
+//  * Calculates coordinates of a distance of 'distanceMeters' forward w.r.t. current position and heading
+//  */
+// uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
+// {
+//   float heading  = stateGetNedToBodyEulers_f()->psi;
+
+//   // Now determine where to place the waypoint you want to go to
+//   new_coor->x = stateGetPositionEnu_i()->x + POS_BFP_OF_REAL(sinf(heading) * (distanceMeters));
+//   new_coor->y = stateGetPositionEnu_i()->y + POS_BFP_OF_REAL(cosf(heading) * (distanceMeters));
+//   VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,	
+//                 POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y),
+//                 stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
+//   return false;
+// }
+
+
+// /*
+//  * Sets waypoint 'waypoint' to the coordinates of 'new_coor'
+//  */
+// uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
+// {
+//   VERBOSE_PRINT("Moving waypoint %d to x:%f y:%f\n", waypoint, POS_FLOAT_OF_BFP(new_coor->x),
+//                 POS_FLOAT_OF_BFP(new_coor->y));
+//   waypoint_move_xy_i(waypoint, new_coor->x, new_coor->y);
+//   return false;
+// }
+
+// // }
+// //  if(!autopilot_in_flight()){
+// // //    return;
+// // //  }

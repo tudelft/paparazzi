@@ -10,13 +10,19 @@
   </doc>
 
 
+// coment out this entire file
+
+
   <header>
     <file name="optical_flow_group3.h"/>
+    <file name="state.h"/>
   </header>
   <init fun="calc_action_optical_flow_init()"/>
-  <!--periodic fun="calc_action_optical_flow_periodic()" freq="30"/>-->
+  <periodic fun="calc_action_optical_flow_periodic()" freq="4"/>
   <makefile target="ap|nps">
-    <file name="optical_flow_group3.c"/>
+    <--<file name="optical_flow_group3.c"/>-->
+    <file name="cv_opencvdemo.c"/>
+    <file name="state.c"/>
     <file name="calculate_optical_flow_group3.cpp"/>
     <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_pc/include"/>
     

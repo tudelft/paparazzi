@@ -78,7 +78,7 @@
     </module> -->
     <module name="cv_opencvdemo">
       <define name="OPENCVDEMO_CAMERA" value="front_camera"/>
-      <define name="OPENCVDEMO_FPS" value="0"/>
+      <define name="OPENCVDEMO_FPS" value="1"/>
     </module>
     <!-- <module name="cv_detect_contour">
       <define name="DETECT_CONTOUR_CAMERA" value="front_camera"/>
