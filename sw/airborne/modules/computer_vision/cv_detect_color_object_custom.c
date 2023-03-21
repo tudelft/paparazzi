@@ -250,8 +250,10 @@ void color_object_detector_init(void)
 
 uint16_t triangle_shape(uint16_t y);
 
-struct pixel_values compute_pixel_yuv(uint8_t *buffer, int16_t x, int16_t y){
+struct pixel_values compute_pixel_yuv(struct image_t *img, int16_t x, int16_t y)
+{
   struct pixel_values result;
+  uint8_t *buffer = img->buf;
   uint8_t *yp, *up, *vp;
   if (x % 2 == 0) {
     // Even x
