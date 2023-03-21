@@ -451,12 +451,14 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   float beta2 = T_x + alpha*(T_mid);
 
   if (draw){
+    int16_t x = 0;
+
     for (int16_t y = T_mid - T_y/2; y < T_mid + T_y/2; y++){
       if (y > T_mid) {
-        int16_t x = y*-1.0*alpha + beta2;
+        x = y*-1.0*alpha + beta2;
       }
       else {
-        int16_t x = y*alpha + beta1;
+        x = y*alpha + beta1;
       }
       uint8_t *yp, *up, *vp;
       PRINT("X %d, Y %d", x, y);
