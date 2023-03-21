@@ -192,9 +192,6 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
   int16_t width = img->w;
   int16_t kernel_cnt = 0;
 
-  int8_t sensitivity = 170;
-  int8_t lower_black = 41;
-  int8_t upper_white = 183;
   int16_t threshold = 255;
 
   int16_t x = 0;
@@ -230,7 +227,6 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
           up = pix_values.up;
           vp = pix_values.vp;
 
-          // if ((*up < sensitivity) && (*vp < sensitivity) && (*yp > lower_black) && (*yp < upper_white)){
           if ( (*yp >= lum_min) && (*yp <= lum_max) &&
            (*up >= cb_min ) && (*up <= cb_max ) &&
            (*vp >= cr_min ) && (*vp <= cr_max )) {
