@@ -476,7 +476,7 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
         *yp = 128;
       }
     }
-  }
+  
 
 
   int16_t length = 0;
