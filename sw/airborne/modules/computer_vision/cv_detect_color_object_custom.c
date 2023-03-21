@@ -459,7 +459,7 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
         int16_t x = y*alpha + beta1;
       }
       uint8_t *yp, *up, *vp;
-
+      PRINT("X %d, Y %d", x, y);
       if (x % 2 == 0) {
           // Even x
           up = &buffer[y * 2 * img->w + 2 * x];      // U
