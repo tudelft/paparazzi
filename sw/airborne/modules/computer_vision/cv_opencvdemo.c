@@ -84,6 +84,8 @@ float flowleft_threshold = 5.0f;
 float flowright_threshold = 5.0f;
 float flowmiddle_threshold = 5.0f;
 
+float right_left_normalizer = 1.0f;
+
 float flowleft_temp = 0.0f;
 float flowright_temp = 0.0f;
 
@@ -103,30 +105,33 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
     // action act = STANDBY;
     if (img->type == IMAGE_YUV422) {
         farneback((char *) img->buf, output_flow, WIDTH_2_PROCESS, HEIGHT_2_PROCESS, img->w, img->h);
+       
     }
     //increase_nav_heading(6.f);
     //moveWaypointForward(WP_TRAJECTORY, 0.8f);
     //moveWaypointForward(WP_GOAL, 0.5);
-    //return img;
+    //
+
+    // THIS SHOULD BE CORRECTLY ADDED *******************
+    flowleft = output_flow[0];
+    flowright = output_flow[1];
+    printf("flowleft: %f, flowright: %f)", flowleft, flowright);
 
     switch (navigation_state){
       case SAFE:
         // Move waypoint forward
         moveWaypointForward(WP_TRAJECTORY, 0.5f);
+        moveWaypointForward(WP_GOAL, 0.5f);
 
-        // set flowmiddle equal to 10 with a 10% probability
-        if (rand() % 10 == 0){
-          flowmiddle = 10;
-        } else {
-          flowmiddle = 0;
-        }
+        right_left_normalizer = flowleft / flowright; // ADDED THIS, ABSULUTE VALUES DONT SEEM TO WORK SO WELL
+     
         if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
           navigation_state = OUT_OF_BOUNDS;
-        } else if (flowmiddle > flowmiddle_threshold){ // added this
+        } else if (flowmiddle > flowmiddle_threshold){ //  NOT YET BEING USED
           navigation_state = OBSTACLE_MIDDLE;
-        } else if (flowleft > flowleft_threshold){ // added this
+        } else if (right_left_normalizer > 1.4){ // added this
           navigation_state = OBSTACLE_LEFT;
-        } else if (flowright > flowright_threshold){ // added this
+        } else if (right_left_normalizer < 0.7){ // added this
           navigation_state = OBSTACLE_RIGHT;
         } else {
           moveWaypointForward(WP_GOAL, 0.5f);
@@ -138,11 +143,12 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         waypoint_move_here_2d(WP_GOAL);
         waypoint_move_here_2d(WP_TRAJECTORY);
 
-        // set new waypoint 20 degrees to the right and 0.8 meter forward
-        for (int i = 0; i < 5; i++     ){
-            increase_nav_heading(6.f);
-          }
+        // CUSTOM CODE
+        increase_nav_heading(30.f); // SHOULD BE TWEAKED
+        printf("Turned Right");
         moveWaypointForward(WP_TRAJECTORY, 0.8f);
+        
+        right_left_normalizer = 1.0f; // THIS SHOULDNT BE NECESSARY BUT I DUNNO
         navigation_state = SAFE;
         break;
 
@@ -151,38 +157,22 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         waypoint_move_here_2d(WP_GOAL);
         waypoint_move_here_2d(WP_TRAJECTORY);
 
-        // set new waypoint 20 degrees to the left and 0.8 meter forward
-
-        for (int i = 0; i < 5; i++     ){
-            increase_nav_heading(-6.f);
-          }
-
+        
+        increase_nav_heading(-30.f); // SHOULD BE TWEAKED
+        printf("Turned Left");
 
 
         moveWaypointForward(WP_TRAJECTORY, 0.8f);
+        right_left_normalizer = 1.0f;
         navigation_state = SAFE;
         break;
 
-    case OBSTACLE_MIDDLE:
+    case OBSTACLE_MIDDLE: // NOT YET IN USE; NEXT STEP
       // stop
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
 
-      // set new waypoint 45 degrees to the left and 0.8 meter forward if obstacle is on the left, set waypoint to the right, inside a for loop with range 3
-
-
-      // make flowleft equal to 1 with 50% probability
-      if (rand() % 2 == 0){
-        flowleft_temp = 1;
-      } else {
-        flowleft_temp = -1;
-
-      }
       increase_nav_heading(45.f);
-  
-
-
-
       moveWaypointForward(WP_TRAJECTORY, 0.1f);
       navigation_state = SAFE;
       break;
@@ -200,7 +190,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
       break;
   }
 
-    
+     return img;
 }
 
 void calc_action_optical_flow_init(void)
