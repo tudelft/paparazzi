@@ -529,7 +529,7 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
         }
       }
 
-      max = vector_x;
+      int16_t max = vector_x;
       y = vector_y;
       if (max<0) {
         max = 0;
@@ -556,12 +556,7 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
         *vp = 128;
         *yp = 20;
       }
-      vector_count++;
     }
-    }
-
-
-
   return cnt, vector_x, vector_y;
 }
 
