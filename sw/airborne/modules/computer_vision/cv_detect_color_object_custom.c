@@ -432,16 +432,12 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
 
 
 
-  cnt = 1;
   // PRINT("CNT IN CV_OBS = %d", cnt);
 
-  int16_t vector_x = 4;
-  int16_t vector_y = 20;
 
   // PRINT("Vector x IN CV_OBS = %d", vector_x);
   // PRINT("Vector y IN CV_OBS = %d", vector_y);
 
-  cnt = vector_array[10];
 
   int16_t T_x = 30;
   int16_t T_y = 160;
@@ -521,10 +517,47 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
           vp = &buffer[y * 2 * img->w + 2 * x];      // V
           yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
         }
-        *up = 128;
-        *vp = 128;
-        *yp = 128;
+        if (in_triangle){
+          *up = 128;
+          *vp = 0;
+          *yp = 128;
+        }
+        else {
+          *up = 128;
+          *vp = 255;
+          *yp = 128;
+        }
       }
+
+      max = vector_x;
+      y = vector_y;
+      if (max<0) {
+        max = 0;
+      }
+      if (max > img->w) {
+        max = img->w;
+      }
+      for(int16_t x = 0; x < max; x++){
+        uint8_t *yp, *up, *vp;
+        if (x % 2 == 0) {
+          // Even x
+          up = &buffer[y * 2 * img->w + 2 * x];      // U
+          yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
+          vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+          //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
+        } else {
+          // Uneven x
+          up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+          //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
+          vp = &buffer[y * 2 * img->w + 2 * x];      // V
+          yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+        }
+        *up = 192;
+        *vp = 128;
+        *yp = 20;
+      }
+      vector_count++;
+    }
     }
 
 
