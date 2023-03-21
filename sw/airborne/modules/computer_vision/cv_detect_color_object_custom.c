@@ -443,12 +443,58 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
 
   cnt = vector_array[10];
 
-  int16_t T_x = 50;
-  int16_t T_y = 100;
+  int16_t T_x = 30;
+  int16_t T_y = 160;
   float T_mid = 10.0*kernel_size - 12;
   float alpha = T_x/(0.5 * T_y);
   float beta1 = T_x - alpha*(T_mid);
   float beta2 = T_x + alpha*(T_mid);
+
+  // int16_t length = 0;
+  // int16_t pos = 0;
+  // for (int8_t i = 0; i < 20; i++){
+  //   int8_t pot_max = vector_array[i];
+  //   if (pot_max > length){
+  //     length = pot_max;
+  //     pos = i;
+  //   }
+  // }
+  // vector_y = (pos * kernel_size) + floor(kernel_size/2);
+  int16_t vector_x = 0;
+  int16_t vector_y = 0;
+  bool in_triangle = true;
+
+  for (int8_t i = 0; i < 20; i++){
+    int16_t vector_length = vector_array[i];
+
+    int16_t y = i*kernel_size + floor(kernel_size/2);
+
+    if (y > T_mid) {
+        x = y*-1.0*alpha + beta2;
+      }
+    else {
+      x = y*alpha + beta1;
+    }
+
+    if (x <= 0){
+      if (vector_length > vector_x){
+        vector_x = vector_length;
+        vector_y = y;
+      }
+    }
+    else {
+      if (vector_length < x) {
+        in_triangle = false;
+      }
+    }
+
+    if(!in_triangle) {
+      cnt = 0;
+    }
+    else{
+      cnt = vector_array[10];
+    }
+  }
 
   if (draw){
     int16_t x = 0;
@@ -480,20 +526,10 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
         *yp = 128;
       }
     }
-  
 
 
-  int16_t length = 0;
-  int16_t pos = 0;
-  for (int8_t i = 0; i < 20; i++){
-    int8_t pot_max = vector_array[i];
-    if (pot_max > length){
-      length = pot_max;
-      pos = i;
-    }
-  }
-  vector_y = (pos * kernel_size) + floor(kernel_size/2);
-  return cnt, length, vector_y;
+
+  return cnt, vector_x, vector_y;
 }
 
 uint16_t triangle_shape(uint16_t y) {
