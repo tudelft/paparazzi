@@ -72,10 +72,23 @@
       <define name="VIEWVIDEO_DOWNSIZE_FACTOR" value="1"/>
       <define name="VIEWVIDEO_QUALITY_FACTOR" value="40"/>
     </module>
-    <module name="optical_flow_group3">
-      <define name="DETECT_OPTICAL_FLOW_CAMERA" value="front_camera"/>
-      <define name="DETECT_OPTICAL_FLOW_FPS" value="30"/>
+    <!-- <module name="cv_detect_contour">
+        <define name="DETECT_CONTOUR_CAMERA" value="front_camera"/>
+      <define name="DETECT_CONTOUR_FPS" value="30"/>
+    </module> -->
+    <module name="cv_opencvdemo">
+      <define name="OPENCVDEMO_CAMERA" value="front_camera"/>
+      <define name="OPENCVDEMO_FPS" value="20"/>
     </module>
+    <!-- <module name="cv_detect_contour">
+      <define name="DETECT_CONTOUR_CAMERA" value="front_camera"/>
+      <define name="DETECT_CONTOUR_FPS" value="0"/>
+    </module> -->
+    <!-- <module name="optical_flow_group3">
+      <define name="DETECT_OPTICAL_FLOW_CAMERA" value="front_camera"/>
+      <define name="DETECT_OPTICAL_FLOW_FPS" value="0"/>
+    </module> -->
+
   </firmware>
 
   <commands>

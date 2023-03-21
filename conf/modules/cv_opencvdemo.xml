@@ -13,8 +13,10 @@
   </doc>
   <header>
     <file name="cv_opencvdemo.h"/>
+    <file name="state.h"/>
+
   </header>
-  <init fun="opencvdemo_init()"/>
+  <init fun="calc_action_optical_flow_init()"/>
   <makefile target="ap">
     <file name="cv_opencvdemo.c"/>
     <file name="opencv_example.cpp"/>
