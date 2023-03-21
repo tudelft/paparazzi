@@ -285,66 +285,7 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
   uint8_t *buffer = img->buf;
 
   struct return_value test;
-
-  // // Go through all the pixels
-  // for (uint16_t y = 0; y < img->h; y++) {
-  //   for (uint16_t x = 0; x < img->w; x ++) {
-  //     // Check if the color is inside the specified values
-  //     uint8_t *yp, *up, *vp;
-  //     if (x % 2 == 0) {
-  //       // Even x
-  //       up = &buffer[y * 2 * img->w + 2 * x];      // U
-  //       yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
-  //       vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
-  //       //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
-  //     } else {
-  //       // Uneven x
-  //       up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
-  //       //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
-  //       vp = &buffer[y * 2 * img->w + 2 * x];      // V
-  //       yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
-  //     }
-
-      
-  // //     if ( (*yp >= lum_min) && (*yp <= lum_max) &&
-  // //          (*up >= cb_min ) && (*up <= cb_max ) &&
-  // //          (*vp >= cr_min ) && (*vp <= cr_max )) {
-  // //       cnt ++;
-  // //       tot_x += x;
-  // //       tot_y += y;
-  // //       if (draw){
-  // //         *yp = 255;  // make pixel brighter in image
-  // //       }
-  // //     }
-  // //   }
-  // // }
-  // // if (cnt > 0) {
-  // //   *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
-  // //   *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
-  // // } else {
-  // //   *p_xc = 0;
-  // //   *p_yc = 0;
-  // // }
-
-  //       if ( (*yp >= lum_min) && (*yp <= lum_max) &&
-  //          (*up >= cb_min ) && (*up <= cb_max ) &&
-  //          (*vp >= cr_min ) && (*vp <= cr_max )) {
-  //       cnt ++;
-  //       tot_x += x;
-  //       tot_y += y;
-  //       if (draw){
-  //         *yp = 255;  // make pixel brighter in image
-  //       }
-  //     }
-  //   }
-  // }
-  // if (cnt > 0) {
-  //   *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
-  //   *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
-  // } else {
-  //   *p_xc = 0;
-  //   *p_yc = 0;
-  // }
+  struct pixel_values pix_values;  
 
   int8_t kernel_size = 25;
   int16_t heigth = img->h;
@@ -384,19 +325,10 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
           y = kur_y + i;
 
           uint8_t *yp, *up, *vp;
-          if (x % 2 == 0) {
-            // Even x
-            up = &buffer[y * 2 * img->w + 2 * x];      // U
-            yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
-            vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
-            //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
-          } else {
-            // Uneven x
-            up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
-            //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
-            vp = &buffer[y * 2 * img->w + 2 * x];      // V
-            yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
-          }
+          pix_values = compute_pixel_yuv(img, x, y);
+          yp = pix_values.yp;
+          up = pix_values.up;
+          vp = pix_values.vp;
 
           // if ((*up < sensitivity) && (*vp < sensitivity) && (*yp > lower_black) && (*yp < upper_white)){
           if ( (*yp >= lum_min) && (*yp <= lum_max) &&
@@ -443,19 +375,10 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
       }
       for(int16_t x = 0; x < max; x++){
         uint8_t *yp, *up, *vp;
-        if (x % 2 == 0) {
-          // Even x
-          up = &buffer[y * 2 * img->w + 2 * x];      // U
-          yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
-          vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
-          //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
-        } else {
-          // Uneven x
-          up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
-          //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
-          vp = &buffer[y * 2 * img->w + 2 * x];      // V
-          yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
-        }
+        pix_values = compute_pixel_yuv(img, x, y);
+        yp = pix_values.yp;
+        up = pix_values.up;
+        vp = pix_values.vp;
         *up = 0;
         *vp = 255;
         *yp = 125;
@@ -542,21 +465,13 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
       else {
         x = y*alpha + beta1;
       }
-      uint8_t *yp, *up, *vp;
-      PRINT("X %d, Y %d", x, y);
-      if (x % 2 == 0) {
-          // Even x
-          up = &buffer[y * 2 * img->w + 2 * x];      // U
-          yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
-          vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
-          //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
-        } else {
-          // Uneven x
-          up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
-          //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
-          vp = &buffer[y * 2 * img->w + 2 * x];      // V
-          yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
-        }
+
+        uint8_t *yp, *up, *vp;
+        pix_values = compute_pixel_yuv(img, x, y);
+        yp = pix_values.yp;
+        up = pix_values.up;
+        vp = pix_values.vp;
+
         if (in_triangle){
           *up = 128;
           *vp = 0;
@@ -579,19 +494,10 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
       }
       for(int16_t x = 0; x < max; x++){
         uint8_t *yp, *up, *vp;
-        if (x % 2 == 0) {
-          // Even x
-          up = &buffer[y * 2 * img->w + 2 * x];      // U
-          yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
-          vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
-          //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
-        } else {
-          // Uneven x
-          up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
-          //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
-          vp = &buffer[y * 2 * img->w + 2 * x];      // V
-          yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
-        }
+        pix_values = compute_pixel_yuv(img, x, y);
+        yp = pix_values.yp;
+        up = pix_values.up;
+        vp = pix_values.vp;
         *up = 192;
         *vp = 128;
         *yp = 20;
