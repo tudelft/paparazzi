@@ -108,7 +108,7 @@ struct pixel_values {
   uint8_t *vp;
 };
 
-struct color_object_t global_filters[2];
+struct color_object_t global_filters[1];
 
 // Function
 struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
@@ -194,7 +194,7 @@ struct image_t *object_detector2(struct image_t *img, uint8_t camera_id __attrib
 
 void color_object_detector_init(void)
 {
-  memset(global_filters, 0, 2*sizeof(struct color_object_t));
+  memset(global_filters, 0, sizeof(struct color_object_t));
   pthread_mutex_init(&mutex, NULL);
 #ifdef COLOR_OBJECT_DETECTOR_CAMERA1
 #ifdef COLOR_OBJECT_DETECTOR_LUM_MIN1
@@ -523,9 +523,9 @@ uint16_t triangle_shape(uint16_t y) {
 
 void color_object_detector_periodic(void)
 {
-  static struct color_object_t local_filters[2];
+  static struct color_object_t local_filters[1];
   pthread_mutex_lock(&mutex);
-  memcpy(local_filters, global_filters, 2*sizeof(struct color_object_t));
+  memcpy(local_filters, global_filters, sizeof(struct color_object_t));
   pthread_mutex_unlock(&mutex);
 
   //local_filters[0].vector_x = 3;
@@ -537,9 +537,9 @@ void color_object_detector_periodic(void)
         local_filters[0].vector_x, local_filters[0].vector_y, local_filters[0].color_count, 0);
     local_filters[0].updated = false;
   }
-  if(local_filters[1].updated){
-    AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION2_ID, local_filters[1].x_c, local_filters[1].y_c,
-        local_filters[1].vector_x, local_filters[1].vector_y, local_filters[1].color_count, 1);
-    local_filters[1].updated = false;
-  }
+  // if(local_filters[1].updated){
+  //   AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION2_ID, local_filters[1].x_c, local_filters[1].y_c,
+  //       local_filters[1].vector_x, local_filters[1].vector_y, local_filters[1].color_count, 1);
+  //   local_filters[1].updated = false;
+  // }
 }
