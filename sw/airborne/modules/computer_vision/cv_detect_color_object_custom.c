@@ -52,6 +52,18 @@ static pthread_mutex_t mutex;
 #define COLOR_OBJECT_DETECTOR_FPS2 0 ///< Default FPS (zero means run at camera fps)
 #endif
 
+//NEW GLOBAL VARIABLES
+
+// #define k_size 25.0f
+// #define T_x 50.0f
+// #define T_y 100.0f
+// #ifndef alpha
+// #define alpha 1.5/2.0
+// #endif
+
+
+//NEW
+
 // Filter Settings
 uint8_t cod_lum_min1 = 0;
 uint8_t cod_lum_max1 = 0;
@@ -221,6 +233,9 @@ void color_object_detector_init(void)
  * @param draw - whether or not to draw on image
  * @return number of pixels of image within the filter bounds.
  */
+
+uint16_t triangle_shape(uint16_t y);
+
 uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc, bool draw,
                               uint8_t lum_min, uint8_t lum_max,
                               uint8_t cb_min, uint8_t cb_max,
@@ -427,6 +442,43 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   // PRINT("Vector y IN CV_OBS = %d", vector_y);
 
   cnt = vector_array[10];
+
+  int16_t T_x = 50;
+  int16_t T_y = 100;
+  float T_mid = 10.0*kernel_size - 12;
+  float alpha = T_x/(0.5 * T_y);
+  float beta1 = T_x - alpha*(T_mid);
+  float beta2 = T_x + alpha*(T_mid);
+
+  if (draw){
+    for (int16_t y = int(T_mid - T_y/2); y < int(T_mid + T_y/2); y++){
+      if (y > T_mid) {
+        int16_t x = int(y*-1.0*alpha + beta2);
+      }
+      else {
+        int16_t x = int(y*alpha + beta1);
+      }
+      if (x % 2 == 0) {
+          // Even x
+          up = &buffer[y * 2 * img->w + 2 * x];      // U
+          yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
+          vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+          //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
+        } else {
+          // Uneven x
+          up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+          //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
+          vp = &buffer[y * 2 * img->w + 2 * x];      // V
+          yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+        }
+        *up = 128;
+        *vp = 128;
+        *yp = 128;
+      }
+    }
+  }
+
+
   int16_t length = 0;
   int16_t pos = 0;
   for (int8_t i = 0; i < 20; i++){
@@ -438,6 +490,18 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
   }
   vector_y = (pos * kernel_size) + floor(kernel_size/2);
   return cnt, length, vector_y;
+}
+
+uint16_t triangle_shape(uint16_t y) {
+
+  // uint16_t T_x = 100;
+  // uint16_t T_y = 200;
+  // uint16_t mid = 9*25 + 12;
+  // if 
+
+
+
+  return 0;
 }
 
 void color_object_detector_periodic(void)
