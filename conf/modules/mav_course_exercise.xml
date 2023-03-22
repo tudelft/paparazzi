@@ -11,11 +11,11 @@
   </dep>
   <!-- TODO Specify header, init, periodic, makefile sections  -->
   <header>
-    <file name="mav_course_exercise.h"/>
+    <file name="orange_avoider.h"/>
   </header>
-  <init fun="mav_course_exercise_init()"/>
-  <periodic fun="mav_course_exercise_periodic()" freq="4"/>
+  <init fun="orange_avoider_init()"/>
+  <periodic fun="orange_avoider_periodic()" freq="4"/>
   <makefile target="ap|nps">
-    <file name="mav_course_exercise.c"/>
+    <file name="orange_avoider.c"/>
   </makefile>
 </module>
