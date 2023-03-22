@@ -6,7 +6,9 @@
     Exercise module for Autonomous Flight of MAV Course
     </description>
   </doc>
-  <depends>cv_detect_color_object</depends>
+  <dep>
+    <depends>cv_detect_color_object</depends>
+  </dep>
   <!-- TODO Specify header, init, periodic, makefile sections  -->
   <header>
     <file name="mav_course_exercise.h"/>
