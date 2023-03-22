@@ -58,7 +58,7 @@ enum navigation_state_t {
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
 int32_t confidence_value = 0;   // 0 = no obstacle, 1 = obstacle         
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
-float heading_increment = 5.f;          // heading angle increment [deg]
+float heading_increment = 1.f;          // heading angle increment [deg]
 float heading_change = 10.f;          // heading angle change [deg]
 float maxDistance = 2.25;               // max waypoint displacement [m]
 
@@ -119,8 +119,10 @@ void orange_avoider_periodic(void)
   // update our safe confidence using confidence value (from vision)
   if(confidence_value > 30){ // there is no obstacle
     obstacle_free_confidence++;
+    VERBOSE_PRINT("OBS CONF + 1\n");
   } else {  // there is obstacle
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
+    VERBOSE_PRINT("OBS CONF - 2\n");
   }
 
   // bound obstacle_free_confidence
@@ -158,6 +160,8 @@ void orange_avoider_periodic(void)
       VERBOSE_PRINT(" -- SEARCH HEADING: conf_val %d , obstac_conf %d, (x,y) = %d, %d\n", confidence_value, obstacle_free_confidence, pixelX, pixelY);
       // turn by 'heading change' in steps of 'heading increment'
       change_nav_heading(heading_change, heading_increment);
+
+      // Can I add smth to wait here for vision input?
 
       // After turning check if heading is free to continue (with certain confidence)
       if (obstacle_free_confidence >= 0){ //need to check thresholds cause this might run the turning function twice
@@ -308,14 +312,15 @@ uint8_t change_nav_heading(float heading_change, float heading_increment)
 {
 
   // new heading is current heading plus increments (until total change angle achieve)
-  int total_turn = 0; // variable to keep track of turn
+  float total_turn = 0.; // variable to keep track of turn
   float new_heading = stateGetNedToBodyEulers_f()->psi + RadOfDeg(heading_increment); //in rad   (defined outside while loop)
-  VERBOSE_PRINT("Current heading is: %f \n", DegOfRad(stateGetNedToBodyEulers_f()->psi));
+  VERBOSE_PRINT("Current heading is: %f deg\n", DegOfRad(stateGetNedToBodyEulers_f()->psi));
   while (total_turn < heading_change) {
-    VERBOSE_PRINT("TURNING, total turn is: %f out of %f\n", total_turn, heading_change);
+    //VERBOSE_PRINT("TURNING, total turn is: %f out of %f\n", total_turn, heading_change);
     // normalize heading to [-pi, pi]
-    FLOAT_ANGLE_NORMALIZE(new_heading);
+    FLOAT_ANGLE_NORMALIZE(new_heading); 
 
+    //VERBOSE_PRINT("Normalised new heading is: %f", new_heading);
     // set heading, declared in firmwares/rotorcraft/navigation.h
     // for performance reasons the navigation variables are stored and processed in Binary Fixed-Point format
     nav_heading = ANGLE_BFP_OF_REAL(new_heading);
@@ -324,7 +329,7 @@ uint8_t change_nav_heading(float heading_change, float heading_increment)
     new_heading += + RadOfDeg(heading_increment); //add to heading
   }
 
-  VERBOSE_PRINT("END TUNING: Increased heading by %f to %f\n deg", heading_change*heading_increment, DegOfRad(new_heading));
+  VERBOSE_PRINT("END TUNING: Increased heading by %f deg to %f\n deg", heading_change*heading_increment, DegOfRad(new_heading));
   return false;
 }
 
