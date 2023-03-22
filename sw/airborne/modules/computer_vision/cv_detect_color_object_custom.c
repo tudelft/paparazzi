@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <math.h>
 #include "pthread.h"
+#include "state.h"
+
 
 #define PRINT(string,...) fprintf(stderr, "[object_detector->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 #if OBJECT_DETECTOR_VERBOSE
@@ -282,6 +284,9 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
     }
   }
 
+
+  float heading  = stateGetNedToBodyEulers_f()->psi;
+  PRINT("HEADING %f", heading);
   int16_t T_x = 30;
   int16_t T_y = 160;
   float T_mid = 10.0*kernel_size - half_kernel_size;
