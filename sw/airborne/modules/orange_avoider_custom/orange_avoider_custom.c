@@ -86,7 +86,7 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int16_t pixel_width, int16_t pixel_height,
                                int32_t quality, int16_t __attribute__((unused)) extra)
 {
-  confidence_value = quality;  //length of middle vector 0-240
+  confidence_value = quality;  //proportional to length of middle vectors 0-240
   pixelX = pixel_width;  //x coordinates of optimal value
   pixelY = pixel_height; // y
   // PRINT("COLOR COUNT IN ORANGE AVOIDER = %d", color_count);
@@ -172,7 +172,7 @@ void orange_avoider_periodic(void)
 
       if (InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         // add offset to head back into arena
-        change_nav_heading(heading_change, heading_increment); //delete this?
+        //change_nav_heading(heading_change, heading_increment); //delete this?
 
         // reset safe counter
         obstacle_free_confidence = 0;
@@ -277,13 +277,12 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 uint8_t defineNewHeading(void)
 {
 
-  VERBOSE_PRINT("Pixel X: %d\n", pixelX);
-  VERBOSE_PRINT("Pixel Y: %d\n", pixelY);
+  VERBOSE_PRINT("Best Pixel (X,Y): (%d, %d)\n", pixelX, pixelY);
 
   // Uses x/y of optimal path/pixel to compute newheading
   if (pixelX < 30) {   // if horizon too low -> turn 90deg
-    heading_change = 30.f;
-    VERBOSE_PRINT("Low Horizon (<30) | Set heading_change to: %f deg\n",  heading_change);
+    heading_change = 35.f;
+    VERBOSE_PRINT("Low Horizon (X<30) | Set heading_change to: %f deg\n",  heading_change);
   }  else{   // if horizon not too low -> turn based on optimal path
     heading_change = DegOfRad(atan(abs(260 - pixelY)/abs(pixelX))); //atan gives angle in radiants, so transform to degrees
     heading_change = fmaxf(heading_change, 5.); //choose between angle computed and 5deg, so min change is 5deg
@@ -293,10 +292,10 @@ uint8_t defineNewHeading(void)
   //Define direction of turn based on y coord of pixel
   if ((260-pixelY) > 0) { // if pixel to the left of drone, turn ccw
     heading_increment = -1.f;
-    VERBOSE_PRINT("Turn left (ccw). 260-y = %d\n", (260-pixelY));
+    VERBOSE_PRINT("Turn left (ccw): Y<260");
   }else{  //if pixel to right, turn cw
     heading_increment = 1.f;
-    VERBOSE_PRINT("Turn right (cw). 260-y = %d\n", (260-pixelY));
+    VERBOSE_PRINT("Turn right (cw): Y>260");
   }
   return false;
 }
@@ -313,7 +312,7 @@ uint8_t change_nav_heading(float heading_change, float heading_increment)
   float new_heading = stateGetNedToBodyEulers_f()->psi + RadOfDeg(heading_increment); //in rad   (defined outside while loop)
   VERBOSE_PRINT("Current heading is: %f \n", DegOfRad(stateGetNedToBodyEulers_f()->psi));
   while (total_turn < heading_change) {
-
+    VERBOSE_PRINT("TURNING, total turn is: %f out of %f\n", total_turn, heading_change);
     // normalize heading to [-pi, pi]
     FLOAT_ANGLE_NORMALIZE(new_heading);
 
@@ -325,7 +324,7 @@ uint8_t change_nav_heading(float heading_change, float heading_increment)
     new_heading += + RadOfDeg(heading_increment); //add to heading
   }
 
-  VERBOSE_PRINT("Increasing heading by %f to %f\n deg", heading_change*heading_increment, DegOfRad(new_heading));
+  VERBOSE_PRINT("END TUNING: Increased heading by %f to %f\n deg", heading_change*heading_increment, DegOfRad(new_heading));
   return false;
 }
 
