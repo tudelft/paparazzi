@@ -301,6 +301,12 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
 
   PRINT("Pitch %f", pitch);  
   int16_t T_x = 4.0 * -1.0 * pitch + 20;
+  if (T_x < 0){
+    T_x = 0;
+  }
+  if (T_x > 120){
+    T_x = 120;
+  }
   PRINT("Triangle height %d", T_x);  
 
   int16_t T_y = 160;
