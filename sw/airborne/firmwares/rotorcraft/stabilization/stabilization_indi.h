@@ -45,6 +45,8 @@ extern float thrust_bx_act_dyn;
 extern float actuator_thrust_bx_pprz;
 extern float thrust_bx_state_filt;
 
+extern float act_pref[INDI_NUM_ACT];
+
 struct Indi_gains {
   struct FloatRates att;
   struct FloatRates rate;
