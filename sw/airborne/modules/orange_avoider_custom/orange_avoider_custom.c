@@ -160,7 +160,7 @@ void orange_avoider_periodic(void)
       change_nav_heading(heading_change, heading_increment);
 
       // After turning check if heading is free to continue (with certain confidence)
-      if (obstacle_free_confidence >= 2){ //need to check thresholds cause this might run the turning function twice
+      if (obstacle_free_confidence >= 0){ //need to check thresholds cause this might run the turning function twice
         navigation_state = SAFE;
       }
       break;
