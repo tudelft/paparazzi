@@ -58,7 +58,7 @@ enum navigation_state_t {
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
 int32_t confidence_value = 0;   // 0 = no obstacle, 1 = obstacle         
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
-float heading_increment = 0.5f;          // heading angle increment [deg]
+float heading_increment = 0.1f;          // heading angle increment [deg]
 float heading_change = 10.f;          // heading angle change [deg]
 float maxDistance = 2.25;               // max waypoint displacement [m]
 
@@ -295,10 +295,10 @@ uint8_t defineNewHeading(void)
 
   //Define direction of turn based on y coord of pixel
   if ((260-pixelY) > 0) { // if pixel to the left of drone, turn ccw
-    heading_increment = -0.5f;
+    heading_increment = -0.1f;
     VERBOSE_PRINT("Turn left (ccw): Y<260");
   }else{  //if pixel to right, turn cw
-    heading_increment = 0.5f;
+    heading_increment = 0.1f;
     VERBOSE_PRINT("Turn right (cw): Y>260");
   }
   return false;

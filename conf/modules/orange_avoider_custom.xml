@@ -28,7 +28,7 @@ so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTI
     <file name="orange_avoider_custom.h"/>
   </header>
   <init fun="orange_avoider_init()"/>
-  <periodic fun="orange_avoider_periodic()" freq="4"/>
+  <periodic fun="orange_avoider_periodic()" freq="10"/>
   <makefile target="ap|nps">
     <file name="orange_avoider_custom.c"/>
   </makefile>
