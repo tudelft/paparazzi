@@ -5,13 +5,13 @@
       <arg flag="-d" constant="/dev/ttyUSB0"/>
     </program>
     <program name="GCS" command="sw/ground_segment/cockpit/gcs">
-        <arg flag="-speech"/>
-        <arg flag="-maximize"/>
-        <arg flag="-center_ac"/>
-        <arg flag="-mercator"/>
-        <arg flag="-maps_no_http"/>
-        <arg flag="-track_size" constant="200"/>
-        <arg flag="-zoom" constant="40."/>
+      <arg flag="-speech"/>
+      <arg flag="-maximize"/>
+      <arg flag="-center_ac"/>
+      <arg flag="-mercator"/>
+      <arg flag="-maps_no_http"/>
+      <arg flag="-track_size" constant="200"/>
+      <arg flag="-zoom" constant="40."/>
     </program>
     <program name="Messages" command="sw/ground_segment/tmtc/messages"/>
     <program name="Settings" command="sw/ground_segment/tmtc/settings">
@@ -31,7 +31,7 @@
     <program name="Real-time Distance Counter" command="sw/ground_segment/python/distance_counter/dist.py"/>
   </section>
   <section name="sessions">
-  <session name="Simulation - Gazebo">
+    <session name="Simulation - Gazebo">
       <program name="Simulator">
         <arg flag="-a" constant="@AIRCRAFT"/>
         <arg flag="-t" constant="nps"/>
@@ -56,7 +56,7 @@
     </session>
     <session name="Simulation - Gazebo + Joystick">
       <program name="Simulator">
-        <arg flag="-a" constant="@AIRCRAFT"/>
+        <arg flag="-a" constant="bebop_orange_avoid"/>
         <arg flag="-t" constant="nps"/>
       </program>
       <program name="Data Link">
@@ -75,12 +75,10 @@
         <arg flag="-track_size" constant="200"/>
         <arg flag="-zoom" constant="40."/>
       </program>
-      <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
-        <arg flag="-ac" constant="@AIRCRAFT"/>
-        <arg flag="sm600.xml"/>
-        <arg flag="-d 0"/>
-      </program>
       <program name="Gazebo"/>
+      <program name="Joystick">
+        <arg flag="-ac" constant="sm600.xml"/>
+      </program>
     </session>
     <session name="Flight UDP">
       <program name="Data Link">
@@ -90,7 +88,7 @@
       <program name="GCS">
         <arg flag="-speech"/>
       </program>
-      <program name="Joystick" command="sw/ground_segment/joystick/input2ivy">
+      <program name="Joystick">
         <arg flag="-ac" constant="@AIRCRAFT"/>
         <arg flag="sm600.xml"/>
         <arg flag="-d 0"/>
