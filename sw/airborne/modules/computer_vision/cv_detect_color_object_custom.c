@@ -34,6 +34,18 @@ static pthread_mutex_t mutex;
 #define half_kernel_size 12
 #endif
 
+float float_angle_norm(float a) {
+  while (a > M_PI)
+  {
+    a -= (2.*M_PI);
+  }
+  while (a < M_PI)
+  {
+    a += (2.*M_PI);
+  }
+  return a;  
+}
+
 //NEW
 
 // Filter Settings
@@ -285,9 +297,12 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
   }
 
 
-  // float heading  = stateGetNedToBodyEulers_f()->psi;
-  // PRINT("HEADING %f", heading);
-  int16_t T_x = 30;
+  float pitch  = DegOfRad((stateGetNedToBodyEulers_f()->theta)); //no float angle norm
+
+  PRINT("Pitch %f", pitch);  
+  int16_t T_x = 4.0 * -1.0 * pitch + 20;
+  PRINT("Triangle height %d", T_x);  
+
   int16_t T_y = 160;
   float T_mid = 10.0*kernel_size - half_kernel_size;
   float alpha = T_x/(0.5 * T_y);
