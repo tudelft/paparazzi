@@ -104,6 +104,7 @@ void farneback(char *img, float* output_flow, int width, int height, int width_i
       previous_frame_right = next_frame_right;
       previous_frame_middle = next_frame_middle;
       std::cout<<"left: "<<output_flow[0]<<", right: "<<output_flow[1]<<"middle: "<<output_flow[2]<<"\n"; 
+      frame_id++;
 }
 
 

@@ -52,8 +52,8 @@
 #define OPENCVDEMO_FPS 0       ///< Default FPS (zero means run at camera fps)
 #endif
 
-#define WIDTH_2_PROCESS 50
-#define HEIGHT_2_PROCESS 200
+#define WIDTH_2_PROCESS 40
+#define HEIGHT_2_PROCESS 190
 
 
 ///////////////////////////////////////////////////////////////////
@@ -69,6 +69,8 @@ float oa_color_count_frac = 0.18f; // ***HAVE TO DEFINE THIS HERE TO GET IT TO C
 // Define navigation states
 enum navigation_state_t {
   SAFE,
+  IJUSTTURNED1,
+  IJUSTTURNED2,
   OBSTACLE_LEFT,
   OBSTACLE_RIGHT,
   OBSTACLE_MIDDLE,
@@ -78,7 +80,9 @@ enum navigation_state_t {
 enum navigation_state_t navigation_state = SAFE;
 float flowleft = 0.0f;
 float flowright = 0.0f;
-float flowmiddle = 0.0f;
+float flowmiddle = 1.0f;
+float flowmiddle_prev = 1.0f;
+float flowmiddle_divergence = 0.0f;
 
 float flowleft_threshold = 5.0f;
 float flowright_threshold = 5.0f;
@@ -92,7 +96,7 @@ float flowright_temp = 0.0f;
 // float flowcombined_treshold = 10.0f;
 // if flowcombined > flowcombined_treshold, then turn 180 degrees (run away)
 
-float heading_increment = 5.f; 
+float heading_increment = 7.f; 
 float maxDistance = 2.25;  
 
 float output_flow[2];
@@ -111,11 +115,13 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
     //moveWaypointForward(WP_TRAJECTORY, 0.8f);
     //moveWaypointForward(WP_GOAL, 0.5);
     //
-
-    // THIS SHOULD BE CORRECTLY ADDED *******************
+    flowmiddle_prev = flowmiddle;
     flowleft = output_flow[0];
     flowright = output_flow[1];
     flowmiddle = output_flow[2];
+
+    right_left_normalizer = flowleft / flowright; // ADDED THIS, ABSULUTE VALUES DONT SEEM TO WORK SO WELL
+    flowmiddle_divergence = (flowmiddle / flowmiddle_prev);
     printf("flowleft: %f, flowright: %f)", flowleft, flowright);
 
     switch (navigation_state){
@@ -124,21 +130,38 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         moveWaypointForward(WP_TRAJECTORY, 0.5f);
         moveWaypointForward(WP_GOAL, 0.5f);
 
-        right_left_normalizer = flowleft / flowright; // ADDED THIS, ABSULUTE VALUES DONT SEEM TO WORK SO WELL
      
         if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
           navigation_state = OUT_OF_BOUNDS;
-        } else if (flowmiddle > flowmiddle_threshold){ //  NOT YET BEING USED
+        } else if (flowmiddle_divergence > 1.3){ //  NOT YET BEING USED
           navigation_state = OBSTACLE_MIDDLE;
-        } else if (right_left_normalizer > 1.4){ // added this
+        } else if (right_left_normalizer > 1.3){ // added this
           navigation_state = OBSTACLE_LEFT;
-        } else if (right_left_normalizer < 0.7){ // added this
+        } else if (right_left_normalizer < 0.78){ // added this
           navigation_state = OBSTACLE_RIGHT;
         } else {
           moveWaypointForward(WP_GOAL, 0.5f);
         }
 
         break;
+
+      case IJUSTTURNED1:
+      moveWaypointForward(WP_TRAJECTORY, 0.8f);
+      moveWaypointForward(WP_GOAL, 0.8f);
+
+
+      printf("IJUSTTURNED1");
+      navigation_state = IJUSTTURNED2;
+      break;
+
+      case IJUSTTURNED2:
+      moveWaypointForward(WP_TRAJECTORY, 0.8f);
+      moveWaypointForward(WP_GOAL, 0.8f);
+
+      navigation_state = SAFE; 
+      break;
+
+
       case OBSTACLE_LEFT:
       // stop
         waypoint_move_here_2d(WP_GOAL);
@@ -149,8 +172,9 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         printf("Turned Right");
         moveWaypointForward(WP_TRAJECTORY, 0.8f);
         
-        right_left_normalizer = 1.0f; // THIS SHOULDNT BE NECESSARY BUT I DUNNO
-        navigation_state = SAFE;
+        // right_left_normalizer = 1.0f; // THIS SHOULDNT BE NECESSARY BUT I DUNNO
+        // navigation_state = SAFE;
+        navigation_state = IJUSTTURNED1;
         break;
 
       case OBSTACLE_RIGHT:
@@ -164,20 +188,27 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
 
 
         moveWaypointForward(WP_TRAJECTORY, 0.8f);
-        right_left_normalizer = 1.0f;
-        navigation_state = SAFE;
+        // right_left_normalizer = 1.0f;
+        // navigation_state = SAFE;
+        navigation_state = IJUSTTURNED1;
         break;
 
-    case OBSTACLE_MIDDLE: // NOT YET IN USE; NEXT STEP
+    case OBSTACLE_MIDDLE: 
       // stop
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
 
-      increase_nav_heading(45.f);
+      increase_nav_heading(30.f);
+
+      
+      printf("Middle obstacle");
+      
       moveWaypointForward(WP_TRAJECTORY, 0.1f);
-      navigation_state = SAFE;
+      // navigation_state = SAFE;
+      navigation_state = IJUSTTURNED1; 
       break;
     case OUT_OF_BOUNDS:
+      
       increase_nav_heading(heading_increment);
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
 
