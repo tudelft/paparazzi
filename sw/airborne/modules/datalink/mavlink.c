@@ -499,7 +499,7 @@ static void mavlink_send_heartbeat(struct transport_tx *trans, struct link_devic
   }
   mavlink_msg_heartbeat_send(MAVLINK_COMM_0,
                              mav_type,
-                             MAV_AUTOPILOT_PX4,
+                             MAV_AUTOPILOT_ARDUPILOTMEGA,
                              mav_mode,
                              0, // custom_mode
                              mav_state);
@@ -581,13 +581,14 @@ static void mavlink_send_global_position_int(struct transport_tx *trans, struct 
     heading += 360;
   }
   uint16_t compass_heading = heading * 100;
-  int32_t relative_alt = stateGetPositionLla_i()->alt - state.ned_origin_f.hmsl;
+  int32_t relative_alt = stateGetPositionLla_i()->alt - state.ned_origin_i.lla.alt;
+  int32_t hmsl_alt = state.ned_origin_i.hmsl - state.ned_origin_i.lla.alt;
   /// TODO: check/ask what coordinate system vel is supposed to be in, not clear from docs
   mavlink_msg_global_position_int_send(MAVLINK_COMM_0,
                                        get_sys_time_msec(),
                                        stateGetPositionLla_i()->lat,
                                        stateGetPositionLla_i()->lon,
-                                       stateGetPositionLla_i()->alt,
+                                       stateGetPositionLla_i()->alt + hmsl_alt,
                                        relative_alt,
                                        stateGetSpeedNed_f()->x * 100,
                                        stateGetSpeedNed_f()->y * 100,
@@ -821,12 +822,13 @@ static void mavlink_send_vfr_hud(struct transport_tx *trans, struct link_device 
 #elif defined COMMAND_THROTTLE
   throttle = commands[COMMAND_THROTTLE] / (MAX_PPRZ / 100);
 #endif
+  float hmsl_alt = state.ned_origin_f.hmsl - state.ned_origin_f.lla.alt;
   mavlink_msg_vfr_hud_send(MAVLINK_COMM_0,
                            stateGetAirspeed_f(),
                            stateGetHorizontalSpeedNorm_f(), // groundspeed
                            heading,
                            throttle,
-                           stateGetPositionLla_f()->alt, // altitude, FIXME: should be MSL
+                           stateGetPositionLla_f()->alt + hmsl_alt,
                            stateGetSpeedNed_f()->z); // climb rate
   MAVLinkSendMessage();
 }
