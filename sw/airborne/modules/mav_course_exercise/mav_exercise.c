@@ -99,6 +99,8 @@ void mav_exercise_periodic(void) {
 
   PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
 
+  PRINT("Size_divergence: %d", divergence);
+
   // update our safe confidence using color threshold
   if (color_count < color_count_threshold) {
     obstacle_free_confidence++;
