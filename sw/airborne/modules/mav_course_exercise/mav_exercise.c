@@ -50,11 +50,14 @@ float moveDistance = 2;                 // waypoint displacement [m]
 float oob_haeding_increment = 5.f;      // heading angle increment if out of bounds [deg]
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
 
+int32_t divergence = 0;
+
 
 // needed to receive output from a separate module running on a parallel process
 #ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
 #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
+
 static abi_event color_detection_ev;
 static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
@@ -64,9 +67,24 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
   color_count = quality;
 }
 
+
+#ifndef FLOW_OPTIC_FLOW_DETECTION_ID
+#define FLOW_OPTIC_FLOW_DETECTION_ID ABI_BROADCAST
+#endif
+
+static abi_event opticflow_detection_ev;
+static void opticflow_detection_cb(uint8_t __attribute__((unused)) sender_id,
+                               uint32_t __attribute__((unused)) stamp, int32_t __attribute__((unused)) flow_x,
+                               int32_t __attribute__((unused)) flow_y,
+                               int32_t __attribute__((unused)) flow_der_x,
+                               int32_t __attribute__((unused)) flow_der_y, float __attribute__((unused)) quality, float size_divergence) {
+  divergence = size_divergence;                             
+}
+
 void mav_exercise_init(void) {
   // bind our colorfilter callbacks to receive the color filter outputs
   AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
+  AbiBindMsgOPTICAL_FLOW(FLOW_OPTIC_FLOW_DETECTION_ID, &opticflow_detection_ev, opticflow_detection_cb);
 }
 
 void mav_exercise_periodic(void) {
@@ -98,7 +116,10 @@ void mav_exercise_periodic(void) {
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0) {
         navigation_state = OBSTACLE_FOUND;
-      } else {
+      } else if (divergence > 0.3) {
+        navigation_state = OBSTACLE_FOUND;
+      }
+        else {
         moveWaypointForward(WP_GOAL, moveDistance);
       }
       break;
