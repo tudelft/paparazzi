@@ -78,7 +78,7 @@ static void opticflow_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int32_t __attribute__((unused)) flow_y,
                                int32_t __attribute__((unused)) flow_der_x,
                                int32_t __attribute__((unused)) flow_der_y, float __attribute__((unused)) quality, float size_divergence) {
-  divergence = size_divergence;                             
+  divergence = size_divergence                             
 }
 
 void mav_exercise_init(void) {
