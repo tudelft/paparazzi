@@ -9,6 +9,10 @@
 #include "opencv2/video/tracking.hpp"
 #include <opencv2/core/types.hpp>
 
+#define LOG(x) fprintf(stderr, "LOG: %s:%d %s %lu \n", __FILE__, __LINE__, x, clock()); 
+// #define LOG(x)  
+
+
 #define MOVING_MEAN_COUNT 3
 #define LEFT_IDX 0
 #define RIGHT_IDX 1
@@ -21,10 +25,12 @@ Mat previous_frame_left, previous_frame_right, previous_frame_middle;
 void scale_mat(const Mat matrix, Mat& matrix_left, Mat& matrix_right, Mat& matrix_middle, const int width, const int height, const int width_img, const int height_img);
 void scale_mat(const Mat matrix, Mat& matrix_left, Mat& matrix_right, Mat& matrix_middle, const int width, const int height, const int width_img, const int height_img)
 {
+  LOG("before matrix scaling")
   auto range_width = Range((int) (width_img/2 - width/2),(int) (width_img/2 + width/2));
   matrix_left = matrix(range_width, Range((int) (height_img/2 - height/2),(int) (height_img/2)));
   matrix_middle = matrix(range_width, Range((int) (height_img/2 - height/4),(int) (height_img/2 + height/4)));
   matrix_right = matrix(range_width, Range((int) (height_img/2),(int) (height_img/2 + height/2)));
+  LOG("after matrix scaling")
   
 }
 void calculate_magnitudes_flow(Mat& mag, const Mat prvs, const Mat next);
