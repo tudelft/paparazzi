@@ -104,7 +104,7 @@ float flowright_temp = 0.0f;
 
 float heading_increment = 7.f; 
 float movedistance = 1.0f;
-float output_flow[2];
+float output_flow[3];
 
 void image_editing(struct image_t *img, float flow_left, float flow_right) {
 //    Mat image(width_img, height_img, CV_8UC2, img);
