@@ -119,16 +119,16 @@ void orange_avoider_periodic(void)
   // update our safe confidence using confidence value (from vision)
   if(confidence_value > 30){ // there is no obstacle
     obstacle_free_confidence++;
-    VERBOSE_PRINT("OBS CONF + 1\n");
+    //VERBOSE_PRINT("OBS CONF + 1\n");
   } else {  // there is obstacle
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
-    VERBOSE_PRINT("OBS CONF - 2\n");
+    //VERBOSE_PRINT("OBS CONF - 2\n");
   }
 
   // bound obstacle_free_confidence
   Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
 
-  float moveDistance = fminf(maxDistance, 0.2f * obstacle_free_confidence);
+  float moveDistance = fminf(maxDistance, 0.2f * obstacle_free_confidence); //0.2
 
   switch (navigation_state){
     case SAFE:

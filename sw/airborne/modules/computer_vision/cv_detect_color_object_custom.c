@@ -34,6 +34,19 @@ static pthread_mutex_t mutex;
 #define half_kernel_size 12
 #endif
 
+// //520 // kernel_size
+// #ifndef vector_array_length
+// #define vector_array_length 20
+// #endif
+
+const int vector_array_length = floor(520/kernel_size);
+const int vector_array_mid = floor(vector_array_length/2);
+
+// //vector_array_length // 2
+// #ifndef vector_array_mid
+// #define vector_array_mid 10
+// #endif
+
 float float_angle_norm(float a) {
   while (a > M_PI)
   {
@@ -301,6 +314,12 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
 
   PRINT("Pitch %f", pitch);  
   int16_t T_x = 4.0 * -1.0 * pitch + 20;
+  if (T_x < 0){
+    T_x = 0;
+  }
+  if (T_x > 120){
+    T_x = 120;
+  }
   PRINT("Triangle height %d", T_x);  
 
   int16_t T_y = 160;
