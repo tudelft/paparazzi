@@ -103,9 +103,9 @@ Mat previous_frame_left, previous_frame_right;
 
 void scale_mat(const Mat matrix, Mat& matrix_left, Mat& matrix_right, const int width, const int height, const int width_img, const int height_img)
 {
-  std::cout << "w"<< width_img<<" "<<width<<"h"<<height_img<<" "<<height<<"\n";
-
-  std::cout << "1: "<<(int) (height_img/2-height/2)<<", 2: "<< (int) (height_img/2)<<", 3: "<<(int) (width_img/2-width/2)<<", 4: "<<(int) (width_img/2+width/2)<<"\n";
+//  std::cout << "w"<< width_img<<" "<<width<<"h"<<height_img<<" "<<height<<"\n";
+//
+//  std::cout << "1: "<<(int) (height_img/2-height/2)<<", 2: "<< (int) (height_img/2)<<", 3: "<<(int) (width_img/2-width/2)<<", 4: "<<(int) (width_img/2+width/2)<<"\n";
   matrix_left = matrix(Range(95,145), Range(160,260));//(Range((int) (height_img/2-height/2), (int) (height_img/2)), Range((int) (width_img/2-width/2), (int) (width_img/2+width/2)));
 
   matrix_right =matrix(Range(95,145),Range(260,360)); //matrix(Range((int) (height_img/2), (int) (height_img/2+height/2)), Range((int) (width_img/2-width/2), (int) (width_img/2+width/2)));
@@ -124,7 +124,7 @@ void calculate_magnitudes_flow(Mat& mag, Mat prvs, Mat next)
 
 void farneback(char *img, float* output_flow, int width, int height, int width_img, int height_img)
 {
-    std::cout<<"farneback"<<"\n";
+//    std::cout<<"farneback"<<"\n";
     Mat next_frame(width_img, height_img, CV_8UC2, img); 
     // cvtColor(next_frame, next_frame, CV_YUV2RGB_Y422);
     // cvtColor(next_frame, next_frame, CV_RGB2GRAY);
@@ -185,8 +185,6 @@ void farneback(char *img, float* output_flow, int width, int height, int width_i
 
       previous_frame_left = next_frame_left;
       previous_frame_right = next_frame_right;
-      std::cout<<"left: "<<output_flow[0]<<", right: "<<output_flow[1]<<"\n";
-
       // increase_nav_heading(6.f);
      // moveWaypointForward(WP_TRAJECTORY, 0.8f);
      
