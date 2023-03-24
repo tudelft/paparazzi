@@ -58,8 +58,8 @@
 // ::google::protobuf::internal::GetCurrentTime(&seconds, &nanoseconds);
 // int64_t seconds;
 // int32_t nanoseconds;
-#define LOG(x) fprintf(stderr, "LOG: %s:%d %s %lu \n", __FILE__, __LINE__, x, clock()); 
-
+//#define LOG(x) fprintf(stderr, "LOG: %s:%d %s %lu \n", __FILE__, __LINE__, x, clock());
+#define LOG(x)
 
 
 ///////////////////////////////////////////////////////////////////
@@ -104,7 +104,7 @@ float flowright_temp = 0.0f;
 
 float heading_increment = 7.f; 
 float movedistance = 1.0f;
-float output_flow[2];
+float output_flow[3];
 
 void image_editing(struct image_t *img, float flow_left, float flow_right) {
 //    Mat image(width_img, height_img, CV_8UC2, img);
@@ -127,24 +127,24 @@ void image_editing(struct image_t *img, float flow_left, float flow_right) {
     for (uint16_t y = chosen_col_a; y < chosen_col_b; y++) {
         for (uint16_t x = a; x < b; x++) {
             uint8_t *yp, *up, *vp;
-            if (x % 2 == 0) {
+            if (x % 4 == 0) {
                 // Even x
                 up = &buffer[y * 2 * img->w + 2 * x];      // U
                 yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
                 vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
                 //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
-                *yp = 255;
-                *up = 255;
-                *vp = 255;
+                *yp = 0;
+                *up = 0;
+                *vp = 0;
             } else {
                 // Uneven x
                 up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
                 //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
                 vp = &buffer[y * 2 * img->w + 2 * x];      // V
                 yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
-                *yp = 255;
-                *up = 255;
-                *vp = 255;
+//                *yp = 0;
+//                *up = 0;
+//                *vp = 0;
             }
         }
     }
@@ -170,18 +170,18 @@ void image_cover(struct image_t *img){
                     yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
                     vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
                     //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
-                    *yp = 0;
-                    *up = 0;
-                    *vp = 0;
+                    *yp = 255;
+                    *up = 255;
+                    *vp = 255;
                 } else {
                     // Uneven x
                     up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
                     //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
                     vp = &buffer[y * 2 * img->w + 2 * x];      // V
                     yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
-                    *yp = 0;
-                    *up = 0;
-                    *vp = 0;
+                    *yp = 255;
+                    *up = 255;
+                    *vp = 255;
                 }
             }
         }
@@ -211,10 +211,9 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
     flowmiddle_prev = flowmiddle;
     flowleft = output_flow[0];
     flowright = output_flow[1];
-//    image_editing(img,flowleft,flowright);
-    image_cover(img);
+    image_editing(img,flowleft,flowright);
     flowmiddle = output_flow[2];
-    
+    image_cover(img);
     
     
     //** EXTREMELY QUICK NO NEED TO OPTIMIZE
@@ -278,7 +277,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
 
         // CUSTOM CODE
         LOG("BEFORE HEADING INCREASE")
-        increase_nav_heading(30.f); // SHOULD BE TWEAKED
+        increase_nav_heading(20.f); // SHOULD BE TWEAKED
 
         LOG("AFTER HEADING INCREASE")
         printf("Turned Right");
@@ -298,7 +297,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         waypoint_move_here_2d(WP_TRAJECTORY);
 
         
-        increase_nav_heading(-30.f); // SHOULD BE TWEAKED
+        increase_nav_heading(-20.f); // SHOULD BE TWEAKED
         
 
 
@@ -316,7 +315,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
 
-      increase_nav_heading(30.f);
+      increase_nav_heading(20.f);
 
       
       

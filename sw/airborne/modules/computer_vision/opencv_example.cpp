@@ -9,8 +9,8 @@
 #include "opencv2/video/tracking.hpp"
 #include <opencv2/core/types.hpp>
 
-#define LOG(x) fprintf(stderr, "LOG: %s:%d %s %lu \n", __FILE__, __LINE__, x, clock()); 
-// #define LOG(x)  
+//#define LOG(x) fprintf(stderr, "LOG: %s:%d %s %lu \n", __FILE__, __LINE__, x, clock());
+#define LOG(x)
 
 
 #define MOVING_MEAN_COUNT 3
@@ -113,7 +113,7 @@ void farneback(char *img, float* output_flow, int width, int height, int width_i
       previous_frame_left = next_frame_left;
       previous_frame_right = next_frame_right;
       previous_frame_middle = next_frame_middle;
-      std::cout<<"left: "<<output_flow[0]<<", right: "<<output_flow[1]<<"middle: "<<output_flow[2]<<"\n"; 
+//      std::cout<<"left: "<<output_flow[0]<<", right: "<<output_flow[1]<<"middle: "<<output_flow[2]<<"\n";
       frame_id++;
 }
 

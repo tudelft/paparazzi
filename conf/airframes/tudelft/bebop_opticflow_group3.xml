@@ -59,7 +59,7 @@
     </module-->
     <module name="video_capture">
       <define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>
-      <define name="VIDEO_CAPTURE_FPS" value="10"/>
+      <define name="VIDEO_CAPTURE_FPS" value="5"/>
     </module>
     <!-- <module name="cv_detect_color_object">
       <define name="COLOR_OBJECT_DETECTOR_CAMERA1" value="front_camera"/>
@@ -78,7 +78,7 @@
     </module> -->
     <module name="cv_opencvdemo">
       <define name="OPENCVDEMO_CAMERA" value="front_camera"/>
-      <define name="OPENCVDEMO_FPS" value="6"/>
+      <define name="OPENCVDEMO_FPS" value="5"/>
     </module>
     <!-- <module name="cv_detect_contour">
       <define name="DETECT_CONTOUR_CAMERA" value="front_camera"/>
