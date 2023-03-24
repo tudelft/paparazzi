@@ -526,14 +526,14 @@ struct StabilizationSetpoint guidance_indi_run_pos(bool in_flight UNUSED, struct
   } else {
     gi_speed_sp.x = pos_err.x * gih_params.pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
     gi_speed_sp.y = pos_err.y * gih_params.pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
-    gi_speed_sp.z = pos_err.z * gih_params.pos_gainz + SPEED_FLOAT_OF_BFP(gv->zd_ref);
+    gi_speed_sp.z = pos_err.z * gih_params.pos_gainz;
   }
 
   // Bound vertical speed setpoint
   if (stateGetAirspeed_f() > 13.f) {
     Bound(gi_speed_sp.z, -4.0f, 4.0f); // FIXME no harcoded values
   } else {
-    Bound(gi_speed_sp.z, nav.descend_vspeed, nav.climb_vspeed); // FIXME don't use nav settings
+    Bound(gi_speed_sp.z, -nav.climb_vspeed, -nav.descend_vspeed); // FIXME don't use nav settings
   }
 
   accel_sp = compute_accel_from_speed_sp(); // compute accel sp
@@ -545,6 +545,8 @@ struct StabilizationSetpoint guidance_indi_run_speed(bool in_flight UNUSED, stru
 {
   struct FloatVect3 accel_sp;
 
+  float pos_z_err = POS_FLOAT_OF_BFP(gv->z_ref - stateGetPositionNed_i()->z);
+
   // First check for velocity setpoint from module // FIXME should be called like this
   float dt = get_sys_time_float() - time_of_vel_sp;
   // If the input command is not updated after a timeout, switch back to flight plan control
@@ -555,14 +557,14 @@ struct StabilizationSetpoint guidance_indi_run_speed(bool in_flight UNUSED, stru
   } else {
     gi_speed_sp.x = SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
     gi_speed_sp.y = SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
-    gi_speed_sp.z = SPEED_FLOAT_OF_BFP(gv->zd_ref);
+    gi_speed_sp.z = pos_z_err * gih_params.pos_gainz;
   }
 
   // Bound vertical speed setpoint
   if (stateGetAirspeed_f() > 13.f) {
     Bound(gi_speed_sp.z, -4.0f, 4.0f); // FIXME no harcoded values
   } else {
-    Bound(gi_speed_sp.z, nav.descend_vspeed, nav.climb_vspeed); // FIXME don't use nav settings
+    Bound(gi_speed_sp.z, -nav.climb_vspeed, -nav.descend_vspeed); // FIXME don't use nav settings
   }
 
   accel_sp = compute_accel_from_speed_sp(); // compute accel sp
