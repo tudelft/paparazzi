@@ -186,6 +186,7 @@ void orange_avoider_periodic(void)
         if (turn_counter > 3){
           VERBOSE_PRINT("I'M STUCK (90deg turn right)\n"); 
           change_nav_heading(100.f, 0.1f);
+          turn_counter == 0;
         }
       break;
     case OUT_OF_BOUNDS:
