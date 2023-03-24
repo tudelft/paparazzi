@@ -85,24 +85,14 @@ void filter_floor_ap(int* kernel_count, int* yp, int* up, int* vp, bool draw){
 }
 
 void filter_floor_nps(int* kernel_count, int* yp, int* up, int* vp, bool draw){
-  if( (*up <= 111.5) && (*vp <= 143.5) && (*yp > 93.5) && (*yp <= 160.5) ){
+  if ( (*yp >= lum_min) && (*yp <= lum_max) &&
+            (*up >= cb_min ) && (*up <= cb_max ) &&
+            (*vp >= cr_min ) && (*vp <= cr_max )) {
+    *kernel_count ++;
     if (draw){
       *yp = 255;  // make pixel brighter in image
     }
-    *kernel_count++;
-  }       
-  if( (*up > 111.5) && (*up <= 115.5) && (*vp <= 137.5) && (*yp > 96.5) ) {
-    if (draw){
-      *yp = 255;  // make pixel brighter in image
-    }
-    *kernel_count++;
-  }       
-  if( (*up <= 111.5) && (*vp > 143.5) && (*vp <= 146.5) && (*yp > 108.5) ) {
-    if (draw){
-      *yp = 255;  // make pixel brighter in image
-    }
-    *kernel_count++;
-  }   
+  }
 }
 
 //NEW
