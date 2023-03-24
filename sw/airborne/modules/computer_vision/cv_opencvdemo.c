@@ -103,8 +103,7 @@ float flowright_temp = 0.0f;
 // if flowcombined > flowcombined_treshold, then turn 180 degrees (run away)
 
 float heading_increment = 7.f; 
-float movedistance = 1.0f;  
-max
+float movedistance = 1.0f;
 float output_flow[2];
 
 void image_editing(struct image_t *img, float flow_left, float flow_right) {
