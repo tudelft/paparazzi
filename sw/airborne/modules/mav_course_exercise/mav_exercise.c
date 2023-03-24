@@ -52,12 +52,16 @@ float moveDistance = 2;                 // waypoint displacement [m]
 float oob_haeding_increment = 5.f;      // heading angle increment if out of bounds [deg]
 float heading_increment = 20.f;
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
-
-
+float divergence_imp= 0.f;
+float div_thresholder = 0.3f;
 // needed to receive output from a separate module running on a parallel process
 #ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
 #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
+
+#ifndef ORANGE_AVOIDER_OPTICAL_FLOW_ID
+#define ORANGE_AVOIDER_OPTICAL_FLOW_ID ABI_BROADCAST
+
 static abi_event color_detection_ev;
 static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
@@ -67,9 +71,20 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
   color_count = quality;
 }
 
+static abi_event optics_flower_ev;
+static void optics_flower_cb(uint8_t __attribute__((unused)) sender_id,
+                             uint32_t __attribute__((unused))  flow_x, uint32_t __attribute__((unused))  flow_y,
+                             uint32_t __attribute__((unused))  flow_der_x, uint32_t __attribute__((unused))  flow_der_y,
+                             float __attribute__((unused)) quality, float __attribute__((unused)) size_divergence) {
+  divergence_imp = size_divergence;                            
+}
+
+
+
 void mav_exercise_init(void) {
   // bind our colorfilter callbacks to receive the color filter outputs
   AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
+  AbiBindMsgOPTICAL_FLOW(ORANGE_AVOIDER_OPTICAL_FLOW_ID, &optics_flower_ev, optics_flower_cb);
 }
 
 void mav_exercise_periodic(void) {
@@ -81,11 +96,12 @@ void mav_exercise_periodic(void) {
   // compute current color thresholds
   // front_camera defined in airframe xml, with the video_capture module
   int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
-
-  PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
+  
+  //PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
+  PRINT("Color_count: %d  threshold: %d state: %d \n", divergence_imp, div_thresholder, navigation_state);
 
   // update our safe confidence using color threshold
-  if (color_count < color_count_threshold) {
+  if (divergence_imp > div_thresholder) {
     obstacle_free_confidence++;
   } else {
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
