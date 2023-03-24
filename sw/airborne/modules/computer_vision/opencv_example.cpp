@@ -9,6 +9,10 @@
 #include "opencv2/video/tracking.hpp"
 #include <opencv2/core/types.hpp>
 
+#define LOG(x) fprintf(stderr, "LOG: %s:%d %s %lu \n", __FILE__, __LINE__, x, clock()); 
+// #define LOG(x)  
+
+
 #define MOVING_MEAN_COUNT 3
 #define LEFT_IDX 0
 #define RIGHT_IDX 1
@@ -22,13 +26,14 @@ void scale_mat(const Mat matrix, Mat& matrix_left, Mat& matrix_right, Mat& matri
 void scale_mat(const Mat matrix, Mat& matrix_left, Mat& matrix_right, Mat& matrix_middle, const int width, const int height, const int width_img, const int height_img)
 {
 
-//  std::cout << "w"<< width_img<<" "<<width<<"h"<<height_img<<" "<<height<<"\n";
-//
-//  std::cout << "1: "<<(int) (height_img/2-height/2)<<", 2: "<< (int) (height_img/2)<<", 3: "<<(int) (width_img/2-width/2)<<", 4: "<<(int) (width_img/2+width/2)<<"\n";
+  LOG("before matrix scaling")
+
   auto range_width = Range((int) (width_img/2 - width/2),(int) (width_img/2 + width/2));
   matrix_left = matrix(range_width, Range((int) (height_img/2 - height/2),(int) (height_img/2)));
   matrix_middle = matrix(range_width, Range((int) (height_img/2 - height/4),(int) (height_img/2 + height/4)));
   matrix_right = matrix(range_width, Range((int) (height_img/2),(int) (height_img/2 + height/2)));
+
+  LOG("after matrix scaling")
 
   
 }
@@ -109,6 +114,7 @@ void farneback(char *img, float* output_flow, int width, int height, int width_i
       previous_frame_right = next_frame_right;
       previous_frame_middle = next_frame_middle;
       std::cout<<"left: "<<output_flow[0]<<", right: "<<output_flow[1]<<"middle: "<<output_flow[2]<<"\n"; 
+      frame_id++;
 }
 
 

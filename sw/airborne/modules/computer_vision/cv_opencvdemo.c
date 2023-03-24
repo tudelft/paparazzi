@@ -52,8 +52,14 @@
 #define OPENCVDEMO_FPS 0       ///< Default FPS (zero means run at camera fps)
 #endif
 
-#define WIDTH_2_PROCESS 50
-#define HEIGHT_2_PROCESS 200
+#define WIDTH_2_PROCESS 40
+#define HEIGHT_2_PROCESS 190
+
+// ::google::protobuf::internal::GetCurrentTime(&seconds, &nanoseconds);
+// int64_t seconds;
+// int32_t nanoseconds;
+#define LOG(x) fprintf(stderr, "LOG: %s:%d %s %lu \n", __FILE__, __LINE__, x, clock()); 
+
 
 
 ///////////////////////////////////////////////////////////////////
@@ -69,6 +75,8 @@ float oa_color_count_frac = 0.18f; // ***HAVE TO DEFINE THIS HERE TO GET IT TO C
 // Define navigation states
 enum navigation_state_t {
   SAFE,
+  IJUSTTURNED1,
+  IJUSTTURNED2,
   OBSTACLE_LEFT,
   OBSTACLE_RIGHT,
   OBSTACLE_MIDDLE,
@@ -78,7 +86,9 @@ enum navigation_state_t {
 enum navigation_state_t navigation_state = SAFE;
 float flowleft = 0.0f;
 float flowright = 0.0f;
-float flowmiddle = 0.0f;
+float flowmiddle = 1.0f;
+float flowmiddle_prev = 1.0f;
+float flowmiddle_divergence = 0.0f;
 
 float flowleft_threshold = 5.0f;
 float flowright_threshold = 5.0f;
@@ -92,9 +102,9 @@ float flowright_temp = 0.0f;
 // float flowcombined_treshold = 10.0f;
 // if flowcombined > flowcombined_treshold, then turn 180 degrees (run away)
 
-float heading_increment = 5.f; 
-float maxDistance = 2.25;  
-
+float heading_increment = 7.f; 
+float movedistance = 1.0f;  
+max
 float output_flow[2];
 
 void image_editing(struct image_t *img, float flow_left, float flow_right) {
@@ -184,96 +194,154 @@ void image_cover(struct image_t *img){
 
 
 struct image_t *optical_flow_func(struct image_t *img, int camera_id);
+
+
 struct image_t *optical_flow_func(struct image_t *img, int camera_id)
-
-
 {
     // action act = STANDBY;
+    LOG("before farneback")
     if (img->type == IMAGE_YUV422) {
         farneback((char *) img->buf, output_flow, WIDTH_2_PROCESS, HEIGHT_2_PROCESS, img->w, img->h);
        
     }
+    LOG("after farneback") 
     //increase_nav_heading(6.f);
-    //moveWaypointForward(WP_TRAJECTORY, 0.8f);
+    //moveWaypointForward(WP_TRAJECTORY, movedistance);
     //moveWaypointForward(WP_GOAL, 0.5);
     //
-
-    // THIS SHOULD BE CORRECTLY ADDED *******************
+    flowmiddle_prev = flowmiddle;
     flowleft = output_flow[0];
     flowright = output_flow[1];
 //    image_editing(img,flowleft,flowright);
     image_cover(img);
     flowmiddle = output_flow[2];
-    printf("flowleft: %f, flowright: %f)", flowleft, flowright);
+    
+    
+    
+    //** EXTREMELY QUICK NO NEED TO OPTIMIZE
+    right_left_normalizer = flowleft / flowright; // ADDED THIS, ABSULUTE VALUES DONT SEEM TO WORK SO WELL
+    flowmiddle_divergence = (flowmiddle / flowmiddle_prev);
+    //**
 
 
     switch (navigation_state){
       case SAFE:
         // Move waypoint forward
         moveWaypointForward(WP_TRAJECTORY, 0.5f);
-        moveWaypointForward(WP_GOAL, 0.5f);
 
-        right_left_normalizer = flowleft / flowright; // ADDED THIS, ABSULUTE VALUES DONT SEEM TO WORK SO WELL
+        LOG("start of safe")
+        
+
      
         if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
           navigation_state = OUT_OF_BOUNDS;
-        } else if (flowmiddle > flowmiddle_threshold){ //  NOT YET BEING USED
-          navigation_state = OBSTACLE_MIDDLE;
-        } else if (right_left_normalizer > 1.4){ // added this
-          navigation_state = OBSTACLE_LEFT;
-        } else if (right_left_normalizer < 0.7){ // added this
+          LOG("Before obstacle right evaluation")
+        } else if (right_left_normalizer < 0.78){ // added this
+          LOG("after obstacle right evaluation")
           navigation_state = OBSTACLE_RIGHT;
+        } else if (right_left_normalizer > 1.3){ // added this
+          navigation_state = OBSTACLE_LEFT;
+        } 
+          else if (flowmiddle_divergence > 1.3){ 
+          navigation_state = OBSTACLE_MIDDLE;
         } else {
           moveWaypointForward(WP_GOAL, 0.5f);
         }
+        LOG("end of safe")
 
         break;
+
+      case IJUSTTURNED1:
+      LOG("before IJUSTTURNED1")
+      moveWaypointForward(WP_TRAJECTORY, movedistance);
+      moveWaypointForward(WP_GOAL, movedistance);
+
+
+      LOG("after IJUSTTURNED1")
+      navigation_state = IJUSTTURNED2;
+      break;
+
+      case IJUSTTURNED2:
+      LOG("before IJUSTTURNED2")
+      moveWaypointForward(WP_TRAJECTORY, movedistance);
+      moveWaypointForward(WP_GOAL, movedistance);
+      LOG("after IJUSTTURNED2")
+
+      navigation_state = SAFE; 
+      break;
+
+
       case OBSTACLE_LEFT:
+        LOG("Before left obstacle")
       // stop
         waypoint_move_here_2d(WP_GOAL);
         waypoint_move_here_2d(WP_TRAJECTORY);
 
         // CUSTOM CODE
+        LOG("BEFORE HEADING INCREASE")
         increase_nav_heading(30.f); // SHOULD BE TWEAKED
-//        printf("Turned Right");
-        moveWaypointForward(WP_TRAJECTORY, 0.8f);
+
+        LOG("AFTER HEADING INCREASE")
+        printf("Turned Right");
+        moveWaypointForward(WP_TRAJECTORY, movedistance);
         
-        right_left_normalizer = 1.0f; // THIS SHOULDNT BE NECESSARY BUT I DUNNO
-        navigation_state = SAFE;
+        // right_left_normalizer = 1.0f; // THIS SHOULDNT BE NECESSARY BUT I DUNNO
+        // navigation_state = SAFE;
+        LOG("After left obstacle")
+        navigation_state = IJUSTTURNED1;
+        
         break;
 
       case OBSTACLE_RIGHT:
+        LOG("Before right obstacle")
         // stop
         waypoint_move_here_2d(WP_GOAL);
         waypoint_move_here_2d(WP_TRAJECTORY);
 
         
         increase_nav_heading(-30.f); // SHOULD BE TWEAKED
-        printf("Turned Left");
+        
 
 
-        moveWaypointForward(WP_TRAJECTORY, 0.8f);
-        right_left_normalizer = 1.0f;
-        navigation_state = SAFE;
+        moveWaypointForward(WP_TRAJECTORY, movedistance);
+        // right_left_normalizer = 1.0f;
+        // navigation_state = SAFE;
+        LOG("After right obstacle")
+        navigation_state = IJUSTTURNED1;
+        
         break;
 
-    case OBSTACLE_MIDDLE: // NOT YET IN USE; NEXT STEP
+    case OBSTACLE_MIDDLE: 
+      LOG("Before middle obstacle")
       // stop
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
 
-      increase_nav_heading(45.f);
-      moveWaypointForward(WP_TRAJECTORY, 0.1f);
-      navigation_state = SAFE;
+      increase_nav_heading(30.f);
+
+      
+      
+      
+      moveWaypointForward(WP_TRAJECTORY, movedistance);
+      // navigation_state = SAFE;
+
+      LOG("After middle obstacle")
+      navigation_state = IJUSTTURNED1; 
+
+      
       break;
     case OUT_OF_BOUNDS:
+      LOG("Before out of bounds")
+      
       increase_nav_heading(heading_increment);
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
 
       if (InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         // add offset to head back into arena
         increase_nav_heading(heading_increment);
+        LOG("After out of bounds")
         navigation_state = SAFE;
+        
       }
       break;
     default:
@@ -295,7 +363,7 @@ void calc_action_optical_flow_init(void)
 
 
 
-// moveWaypointForward(WP_TRAJECTORY, 0.8f);
+// moveWaypointForward(WP_TRAJECTORY, movedistance);
 
 void calc_action_optical_flow_periodic(void)
 {
