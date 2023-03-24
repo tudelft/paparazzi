@@ -61,6 +61,7 @@ float div_thresholder = 0.3f;
 
 #ifndef ORANGE_AVOIDER_OPTICAL_FLOW_ID
 #define ORANGE_AVOIDER_OPTICAL_FLOW_ID ABI_BROADCAST
+#endif
 
 static abi_event color_detection_ev;
 static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
