@@ -52,8 +52,8 @@
 #define OPENCVDEMO_FPS 0       ///< Default FPS (zero means run at camera fps)
 #endif
 
-#define WIDTH_2_PROCESS 200
-#define HEIGHT_2_PROCESS 50
+#define WIDTH_2_PROCESS 50
+#define HEIGHT_2_PROCESS 200
 
 
 ///////////////////////////////////////////////////////////////////
@@ -203,7 +203,9 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
     flowright = output_flow[1];
 //    image_editing(img,flowleft,flowright);
     image_cover(img);
-//    printf("flowleft: %f, flowright: %f)", flowleft, flowright);
+    flowmiddle = output_flow[2];
+    printf("flowleft: %f, flowright: %f)", flowleft, flowright);
+
 
     switch (navigation_state){
       case SAFE:
