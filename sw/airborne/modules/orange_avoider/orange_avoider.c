@@ -145,6 +145,7 @@ void orange_avoider_periodic(void)
       navigation_state = SEARCH_FOR_SAFE_HEADING;
 
       break;
+      
     case SEARCH_FOR_SAFE_HEADING:
       increase_nav_heading(heading_increment);
 
@@ -153,6 +154,7 @@ void orange_avoider_periodic(void)
         navigation_state = SAFE;
       }
       break;
+
     case OUT_OF_BOUNDS:
       increase_nav_heading(heading_increment);
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
