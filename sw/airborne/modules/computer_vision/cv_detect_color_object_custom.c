@@ -34,6 +34,23 @@ static pthread_mutex_t mutex;
 #define half_kernel_size 12
 #endif
 
+// floor(520 / kernel_size)
+#ifndef vector_array_length
+#define vector_array_length 20
+#endif
+
+// floor(vector_array_length / 2)
+#ifndef vector_array_mid
+#define vector_array_mid 10
+#endif
+
+// in_nps = 1 mean true
+#ifndef in_nps
+#define in_nps 1
+#endif
+
+
+
 float float_angle_norm(float a) {
   while (a > M_PI)
   {
@@ -45,6 +62,48 @@ float float_angle_norm(float a) {
   }
   return a;  
 }
+
+// void filter_floor_ap(int* kernel_count, int* yp, int* up, int* vp, bool draw){
+//   if( (*up <= 111.5) && (*vp <= 143.5) && (*yp > 93.5) && (*yp <= 160.5) ){
+//     if (draw){
+//       *yp = 255;  // make pixel brighter in image
+//     }
+//     *kernel_count++;
+//   }       
+//   if( (*up > 111.5) && (*up <= 115.5) && (*vp <= 137.5) && (*yp > 96.5) ) {
+//     if (draw){
+//       *yp = 255;  // make pixel brighter in image
+//     }
+//     *kernel_count++;
+//   }       
+//   if( (*up <= 111.5) && (*vp > 143.5) && (*vp <= 146.5) && (*yp > 108.5) ) {
+//     if (draw){
+//       *yp = 255;  // make pixel brighter in image
+//     }
+//     *kernel_count++;
+//   }   
+// }
+
+// void filter_floor_nps(int* kernel_count, int* yp, int* up, int* vp, bool draw){
+//   if( (*up <= 255) && (*vp <= 255) && (*yp > 0) && (*yp <= 255) ){
+//     if (draw){
+//       *yp = 255;  // make pixel brighter in image
+//     }
+//     *kernel_count++;
+//   }       
+//   if( (*up > 111.5) && (*up <= 115.5) && (*vp <= 137.5) && (*yp > 96.5) ) {
+//     if (draw){
+//       *yp = 255;  // make pixel brighter in image
+//     }
+//     *kernel_count++;
+//   }       
+//   if( (*up <= 111.5) && (*vp > 143.5) && (*vp <= 146.5) && (*yp > 108.5) ) {
+//     if (draw){
+//       *yp = 255;  // make pixel brighter in image
+//     }
+//     *kernel_count++;
+//   }   
+// }
 
 //NEW
 
@@ -218,7 +277,7 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
   int16_t kernel_w_cnt = floor(width/kernel_size);
   int16_t kernel_h_cnt = floor(heigth/kernel_size);
 
-  int16_t vector_array[20] = {0};
+  int16_t vector_array[vector_array_length] = {0};
 
   for (int8_t y_k = 0; y_k < kernel_h_cnt; y_k++){
     // for (int8_t x_k = 0; x_k < kernel_w_cnt; x_k++){
@@ -241,14 +300,38 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
           up = pix_values.up;
           vp = pix_values.vp;
 
-          if ( (*yp >= lum_min) && (*yp <= lum_max) &&
-           (*up >= cb_min ) && (*up <= cb_max ) &&
-           (*vp >= cr_min ) && (*vp <= cr_max )) {
-            if (draw){
-              *yp = 255;  // make pixel brighter in image
-            }
-            kernel_cnt++;
-          }          
+          if (in_nps){
+            if ( (*yp >= lum_min) && (*yp <= lum_max) &&
+              (*up >= cb_min ) && (*up <= cb_max ) &&
+              (*vp >= cr_min ) && (*vp <= cr_max )) {
+              if (draw){
+                *yp = 255;  // make pixel brighter in image
+              }
+              kernel_cnt++;
+              }
+          }
+
+          else {
+            if( (*up <= 111.5) && (*vp <= 143.5) && (*yp > 93.5) && (*yp <= 160.5) ){
+              if (draw){
+                *yp = 255;  // make pixel brighter in image
+              }
+              kernel_cnt++;
+            }       
+            if( (*up > 111.5) && (*up <= 115.5) && (*vp <= 137.5) && (*yp > 96.5) ) {
+              if (draw){
+                *yp = 255;  // make pixel brighter in image
+              }
+              kernel_cnt++;
+            }       
+            if( (*up <= 111.5) && (*vp > 143.5) && (*vp <= 146.5) && (*yp > 108.5) ) {
+              if (draw){
+                *yp = 255;  // make pixel brighter in image
+              }
+              kernel_cnt++;
+            }       
+          }
+            
         }
       }
       //add break when ready
@@ -310,7 +393,7 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
   //PRINT("Triangle height %d", T_x);  
 
   int16_t T_y = 160;
-  float T_mid = 10.0*kernel_size - half_kernel_size;
+  float T_mid = vector_array_mid*kernel_size - half_kernel_size;
   float alpha = T_x/(0.5 * T_y);
   float beta1 = T_x - alpha*(T_mid);
   float beta2 = T_x + alpha*(T_mid);
@@ -347,7 +430,7 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
       cnt = 0;
     }
     else{
-      cnt = vector_array[10];
+      cnt = vector_array[vector_array_mid];
     }
   }
 
