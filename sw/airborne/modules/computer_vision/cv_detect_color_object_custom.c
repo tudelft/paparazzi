@@ -63,47 +63,47 @@ float float_angle_norm(float a) {
   return a;  
 }
 
-void filter_floor_ap(int* kernel_count, int* yp, int* up, int* vp, bool draw){
-  if( (*up <= 111.5) && (*vp <= 143.5) && (*yp > 93.5) && (*yp <= 160.5) ){
-    if (draw){
-      *yp = 255;  // make pixel brighter in image
-    }
-    *kernel_count++;
-  }       
-  if( (*up > 111.5) && (*up <= 115.5) && (*vp <= 137.5) && (*yp > 96.5) ) {
-    if (draw){
-      *yp = 255;  // make pixel brighter in image
-    }
-    *kernel_count++;
-  }       
-  if( (*up <= 111.5) && (*vp > 143.5) && (*vp <= 146.5) && (*yp > 108.5) ) {
-    if (draw){
-      *yp = 255;  // make pixel brighter in image
-    }
-    *kernel_count++;
-  }   
-}
+// void filter_floor_ap(int* kernel_count, int* yp, int* up, int* vp, bool draw){
+//   if( (*up <= 111.5) && (*vp <= 143.5) && (*yp > 93.5) && (*yp <= 160.5) ){
+//     if (draw){
+//       *yp = 255;  // make pixel brighter in image
+//     }
+//     *kernel_count++;
+//   }       
+//   if( (*up > 111.5) && (*up <= 115.5) && (*vp <= 137.5) && (*yp > 96.5) ) {
+//     if (draw){
+//       *yp = 255;  // make pixel brighter in image
+//     }
+//     *kernel_count++;
+//   }       
+//   if( (*up <= 111.5) && (*vp > 143.5) && (*vp <= 146.5) && (*yp > 108.5) ) {
+//     if (draw){
+//       *yp = 255;  // make pixel brighter in image
+//     }
+//     *kernel_count++;
+//   }   
+// }
 
-void filter_floor_nps(int* kernel_count, int* yp, int* up, int* vp, bool draw){
-  if( (*up <= 255) && (*vp <= 255) && (*yp > 0) && (*yp <= 255) ){
-    if (draw){
-      *yp = 255;  // make pixel brighter in image
-    }
-    *kernel_count++;
-  }       
-  if( (*up > 111.5) && (*up <= 115.5) && (*vp <= 137.5) && (*yp > 96.5) ) {
-    if (draw){
-      *yp = 255;  // make pixel brighter in image
-    }
-    *kernel_count++;
-  }       
-  if( (*up <= 111.5) && (*vp > 143.5) && (*vp <= 146.5) && (*yp > 108.5) ) {
-    if (draw){
-      *yp = 255;  // make pixel brighter in image
-    }
-    *kernel_count++;
-  }   
-}
+// void filter_floor_nps(int* kernel_count, int* yp, int* up, int* vp, bool draw){
+//   if( (*up <= 255) && (*vp <= 255) && (*yp > 0) && (*yp <= 255) ){
+//     if (draw){
+//       *yp = 255;  // make pixel brighter in image
+//     }
+//     *kernel_count++;
+//   }       
+//   if( (*up > 111.5) && (*up <= 115.5) && (*vp <= 137.5) && (*yp > 96.5) ) {
+//     if (draw){
+//       *yp = 255;  // make pixel brighter in image
+//     }
+//     *kernel_count++;
+//   }       
+//   if( (*up <= 111.5) && (*vp > 143.5) && (*vp <= 146.5) && (*yp > 108.5) ) {
+//     if (draw){
+//       *yp = 255;  // make pixel brighter in image
+//     }
+//     *kernel_count++;
+//   }   
+// }
 
 //NEW
 
@@ -301,10 +301,35 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
           vp = pix_values.vp;
 
           if (in_nps){
-            filter_floor_nps(&kernel_cnt, yp, up, vp, draw);   
+            if ( (*yp >= lum_min) && (*yp <= lum_max) &&
+           (*up >= cb_min ) && (*up <= cb_max ) &&
+           (*vp >= cr_min ) && (*vp <= cr_max )) {
+            if (draw){
+              *yp = 255;  // make pixel brighter in image
+            }
+            kernel_cnt++;
+            }          
+ 
           }
           else{
-            filter_floor_ap(&kernel_cnt, yp, up, vp, draw);   
+            if( (*up <= 111.5) && (*vp <= 143.5) && (*yp > 93.5) && (*yp <= 160.5) ){
+              if (draw){
+                *yp = 255;  // make pixel brighter in image
+              }
+              kernel_cnt++;
+            }       
+            if( (*up > 111.5) && (*up <= 115.5) && (*vp <= 137.5) && (*yp > 96.5) ) {
+              if (draw){
+                *yp = 255;  // make pixel brighter in image
+              }
+              kernel_cnt++;
+            }       
+            if( (*up <= 111.5) && (*vp > 143.5) && (*vp <= 146.5) && (*yp > 108.5) ) {
+              if (draw){
+                *yp = 255;  // make pixel brighter in image
+              }
+              kernel_cnt++;
+            }       
           }
             
         }
