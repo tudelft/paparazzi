@@ -58,6 +58,7 @@ enum navigation_state_t {
 enum navigation_state_t navigation_state = SEARCH_FOR_SAFE_HEADING;
 int32_t confidence_value = 0;   // 0 = no obstacle, 1 = obstacle         
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
+int16_t turn_counter = 0;   //measure number of turns in a row
 float heading_increment = 0.1f;          // heading angle increment [deg]
 float heading_change = 10.f;          // heading angle change [deg]
 float maxDistance = 2.25;               // max waypoint displacement [m]
@@ -148,7 +149,7 @@ void orange_avoider_periodic(void)
       } else if (obstacle_free_confidence == 0){
         navigation_state = OBSTACLE_FOUND;
       } else {
-        moveWaypointForward(WP_GOAL, 0.9f * moveDistance);
+        moveWaypointForward(WP_GOAL, moveDistance);
       }
 
       break;
@@ -172,6 +173,7 @@ void orange_avoider_periodic(void)
           //VERBOSE_PRINT(" -- CHANGING HEADING---"); 
           VERBOSE_PRINT(" -- VISION TRUE - change heading ---\n");
           change_nav_heading(heading_change, heading_increment);
+          turn_counter++;
       }
       new_message = false; //force waiting for new vision input
       VERBOSE_PRINT(" -- VISION FALSE ---\n"); 
@@ -181,11 +183,15 @@ void orange_avoider_periodic(void)
           VERBOSE_PRINT(" check confidence ---\n"); 
           navigation_state = SAFE;
         }
+        if (turn_counter > 3){
+          VERBOSE_PRINT("I'M STUCK (90deg turn right)\n"); 
+          change_nav_heading(100.f, 0.1f);
+        }
       break;
     case OUT_OF_BOUNDS:
       VERBOSE_PRINT(" -- OUT OF BOUNCE\n");
       //defineNewHeading();
-      change_nav_heading(90.0f, 0.1f); //if our of bounce turn 90deg right
+      change_nav_heading(100.0f, 0.1f); //if our of bounce turn 90deg right
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
 
       if (InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
