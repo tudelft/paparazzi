@@ -34,6 +34,19 @@ static pthread_mutex_t mutex;
 #define half_kernel_size 12
 #endif
 
+// //520 // kernel_size
+// #ifndef vector_array_length
+// #define vector_array_length 20
+// #endif
+
+const int vector_array_length = floor(520/kernel_size);
+const int vector_array_mid = floor(vector_array_length/2);
+
+// //vector_array_length // 2
+// #ifndef vector_array_mid
+// #define vector_array_mid 10
+// #endif
+
 float float_angle_norm(float a) {
   while (a > M_PI)
   {
