@@ -277,7 +277,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
 
         // CUSTOM CODE
         LOG("BEFORE HEADING INCREASE")
-        increase_nav_heading(20.f); // SHOULD BE TWEAKED
+        increase_nav_heading(30.f); // SHOULD BE TWEAKED
 
         LOG("AFTER HEADING INCREASE")
         printf("Turned Right");
@@ -297,7 +297,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         waypoint_move_here_2d(WP_TRAJECTORY);
 
         
-        increase_nav_heading(-20.f); // SHOULD BE TWEAKED
+        increase_nav_heading(-30.f); // SHOULD BE TWEAKED
         
 
 
@@ -315,7 +315,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
 
-      increase_nav_heading(20.f);
+      increase_nav_heading(30.f);
 
       
       
