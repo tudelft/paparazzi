@@ -140,38 +140,43 @@ void image_editing(struct image_t *img, float flow_left, float flow_right) {
         }
     }
 
-//
-//    if (flow[0]>flow[1]){
-////        std::cout<<"left greater"<<flow[0]<<"  "<<flow[1]<<"\n";
-//        for(int x = a; x<b;x++){
-//            for(int j =left_a; j<left_b;j++){
-//                Vec3b colour = image.at<Vec3b>(Point(x,j));
-//
-//                colour[0] = 255;
-//                colour[1] = 255;
-//                colour[2] = 255;
-//                image.at<Vec3b>(Point(x,j)) = colour;
-//            }
-//
-//        }
-//    }
-//    else{
-////        std::cout<<"right greater"<<flow[0]<<"  "<<flow[1]<<"\n";
-//        for(int x =a; x<b;x++){
-//            for(int j =right_a; j<right_b;j++){
-//                Vec3b colour = image.at<Vec3b>(Point(x,j));
-//                colour[0] = 10;
-//                colour[1] = 10;
-//                colour[2] = 10;
-//
-//                image.at<Vec3b>(Point(x,j)) = colour;
-//            }
-//
-//        }
-//    }
-//
 
+}
 
+void image_cover(struct image_t *img){
+    uint8_t *buffer = img->buf;
+    float square_1[4] = {0,160, 0, img->w}; //[0,160,0,img->w];
+    float square_2[4] = {360,img->h,0,img->w};// [360,img->h,0,img->w];
+    float square_3[4] = {160,360,0,95}; //[160,360,0,95];
+    float square_4[4] = {160,360,145,img->w}; // [160,360,145,img->w];
+    float* squares[4] = {square_1,square_2,square_3,square_4};
+    for (int chosen = 0;chosen<4;chosen++){
+        float* ptr = squares[chosen];
+        for (uint16_t y = ptr[0]; y < ptr[1]; y++) {
+            for (uint16_t x = ptr[2]; x < ptr[3]; x++) {
+                uint8_t *yp, *up, *vp;
+                if (x % 2 == 0) {
+                    // Even x
+                    up = &buffer[y * 2 * img->w + 2 * x];      // U
+                    yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
+                    vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+                    //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
+                    *yp = 0;
+                    *up = 0;
+                    *vp = 0;
+                } else {
+                    // Uneven x
+                    up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+                    //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
+                    vp = &buffer[y * 2 * img->w + 2 * x];      // V
+                    yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+                    *yp = 0;
+                    *up = 0;
+                    *vp = 0;
+                }
+            }
+        }
+    }
 }
 
 
@@ -196,7 +201,8 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
     // THIS SHOULD BE CORRECTLY ADDED *******************
     flowleft = output_flow[0];
     flowright = output_flow[1];
-    image_editing(img,flowleft,flowright);
+//    image_editing(img,flowleft,flowright);
+    image_cover(img);
 //    printf("flowleft: %f, flowright: %f)", flowleft, flowright);
 
     switch (navigation_state){
