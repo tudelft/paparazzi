@@ -34,18 +34,15 @@ static pthread_mutex_t mutex;
 #define half_kernel_size 12
 #endif
 
-// //520 // kernel_size
-// #ifndef vector_array_length
-// #define vector_array_length 20
-// #endif
+// floor(520 / kernel_size)
+#ifndef vector_array_length
+#define vector_array_length 20
+#endif
 
-const int vector_array_length = floor(520/kernel_size);
-const int vector_array_mid = floor(vector_array_length/2);
-
-// //vector_array_length // 2
-// #ifndef vector_array_mid
-// #define vector_array_mid 10
-// #endif
+// floor(vector_array_length / 2)
+#ifndef vector_array_mid
+#define vector_array_mid 10
+#endif
 
 float float_angle_norm(float a) {
   while (a > M_PI)
@@ -231,7 +228,7 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
   int16_t kernel_w_cnt = floor(width/kernel_size);
   int16_t kernel_h_cnt = floor(heigth/kernel_size);
 
-  int16_t vector_array[20] = {0};
+  int16_t vector_array[vector_array_length] = {0};
 
   for (int8_t y_k = 0; y_k < kernel_h_cnt; y_k++){
     // for (int8_t x_k = 0; x_k < kernel_w_cnt; x_k++){
@@ -323,7 +320,7 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
   PRINT("Triangle height %d", T_x);  
 
   int16_t T_y = 160;
-  float T_mid = 10.0*kernel_size - half_kernel_size;
+  float T_mid = vector_array_mid*kernel_size - half_kernel_size;
   float alpha = T_x/(0.5 * T_y);
   float beta1 = T_x - alpha*(T_mid);
   float beta2 = T_x + alpha*(T_mid);
@@ -360,7 +357,7 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
       cnt = 0;
     }
     else{
-      cnt = vector_array[10];
+      cnt = vector_array[vector_array_mid];
     }
   }
 
