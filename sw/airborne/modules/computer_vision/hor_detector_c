@@ -1,5 +1,7 @@
 #include <stdbool.h>
 
+
+
 int* find_next(int**im_bw, int**prev_points, const int h, const int w, int step){
     int* init_guess = malloc(2 * sizeof(int));
     int* dir = malloc(2 * sizeof(int));
@@ -12,7 +14,13 @@ int* find_next(int**im_bw, int**prev_points, const int h, const int w, int step)
 
     dir[0] = ((points_arr[prev_len-3]*1+points_arr[prev_len-2]*2+points_arr[prev_len-1]*3)/6) - points_arr[prev_len-2];
     dir[1] = 3 * (prev_len-2);
+    float gradient = dir[0]/3;
 
+    if (gradient>2)
+    {
+        dir[0] = 0
+    }
+    
     init_guess[0] = points_arr[prev_len-1] + dir[0];
     init_guess[1] = dir[1];
 
@@ -109,3 +117,8 @@ int mom_changes(int** hor_points_y, float thr, int step){
     }   
 }
 
+// first get y values of horizon with hor_tracer,
+// find number of momentum changes with mom_changes, input is hor_points_y
+// threshold of 0.5 works well
+// standard step is 3
+// 
