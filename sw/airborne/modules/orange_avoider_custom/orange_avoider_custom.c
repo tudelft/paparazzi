@@ -65,6 +65,8 @@ float maxDistance = 2.25;               // max waypoint displacement [m]
 int16_t pixelX = 120; //initial values
 int16_t pixelY = 260;
 
+bool new_message = false; //boolean to keep track of vision
+
 // define settings
 float oa_color_count_frac = 0.18f;  //if i delete this the autopilot.c file crashes
 
@@ -89,6 +91,12 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
   confidence_value = quality;  //proportional to length of middle vectors 0-240
   pixelX = pixel_width;  //x coordinates of optimal value
   pixelY = pixel_height; // y
+
+  if (quality = true){
+    //PRINT("VISION TRUE");
+    new_message = true;  //message delivered set to true
+  }
+  
   // PRINT("COLOR COUNT IN ORANGE AVOIDER = %d", color_count);
   // PRINT("VX, VY in orange avoider = %d %d", vx, vy);
 }
@@ -134,13 +142,13 @@ void orange_avoider_periodic(void)
     case SAFE:
       // Move waypoint forward
       VERBOSE_PRINT(" -- SAFE: conf_val %d , obstac_conf %d, (x,y) = %d, %d\n", confidence_value, obstacle_free_confidence, pixelX, pixelY);
-      moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
+      moveWaypointForward(WP_TRAJECTORY, 1.2f * moveDistance);
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0){
         navigation_state = OBSTACLE_FOUND;
       } else {
-        moveWaypointForward(WP_GOAL, moveDistance);
+        moveWaypointForward(WP_GOAL, 0.9f * moveDistance);
       }
 
       break;
@@ -159,19 +167,25 @@ void orange_avoider_periodic(void)
     case SEARCH_FOR_SAFE_HEADING: // logic: turn by defined heading change with defined heading increment. Then check if safe to proceed
       VERBOSE_PRINT(" -- SEARCH HEADING: conf_val %d , obstac_conf %d, (x,y) = %d, %d\n", confidence_value, obstacle_free_confidence, pixelX, pixelY);
       // turn by 'heading change' in steps of 'heading increment'
-      change_nav_heading(heading_change, heading_increment);
-
-      // Can I add smth to wait here for vision input?
+      
+      if ((new_message) && (obstacle_free_confidence == 0)){  //wait for vision
+          //VERBOSE_PRINT(" -- CHANGING HEADING---"); 
+          VERBOSE_PRINT(" -- VISION TRUE - change heading ---\n");
+          change_nav_heading(heading_change, heading_increment);
+      }
+      new_message = false; //force waiting for new vision input
+      VERBOSE_PRINT(" -- VISION FALSE ---\n"); 
 
       // After turning check if heading is free to continue (with certain confidence)
-      if (obstacle_free_confidence >= 0){ //need to check thresholds cause this might run the turning function twice
-        navigation_state = SAFE;
-      }
+        if (obstacle_free_confidence > 0){ //need to check thresholds cause this might run the turning function twice
+          VERBOSE_PRINT(" check confidence ---\n"); 
+          navigation_state = SAFE;
+        }
       break;
     case OUT_OF_BOUNDS:
       VERBOSE_PRINT(" -- OUT OF BOUNCE\n");
-      defineNewHeading();
-      change_nav_heading(heading_change, heading_increment);
+      //defineNewHeading();
+      change_nav_heading(90.0f, 0.1f); //if our of bounce turn 90deg right
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
 
       if (InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
@@ -286,20 +300,20 @@ uint8_t defineNewHeading(void)
   // Uses x/y of optimal path/pixel to compute newheading
   if (pixelX < 30) {   // if horizon too low -> turn 90deg
     heading_change = 65.f;
-    VERBOSE_PRINT("Low Horizon (X<30) | Set heading_change to: %f deg\n",  heading_change);
+    //VERBOSE_PRINT("Low Horizon (X<30) | Set heading_change to: %f deg\n",  heading_change);
   }  else{   // if horizon not too low -> turn based on optimal path
     heading_change = DegOfRad(atan(abs(260 - pixelY)/abs(pixelX))); //atan gives angle in radiants, so transform to degrees
     heading_change = fmaxf(heading_change, 5.); //choose between angle computed and 5deg, so min change is 5deg
-    VERBOSE_PRINT("Optimal path | Set heading_change to: %f deg\n",  heading_change);
+    //VERBOSE_PRINT("Optimal path | Set heading_change to: %f deg\n",  heading_change);
   }
 
   //Define direction of turn based on y coord of pixel
   if ((260-pixelY) > 0) { // if pixel to the left of drone, turn ccw
     heading_increment = -0.1f;
-    VERBOSE_PRINT("Turn left (ccw): Y<260");
+    //VERBOSE_PRINT("Turn left (ccw): Y<260");
   }else{  //if pixel to right, turn cw
     heading_increment = 0.1f;
-    VERBOSE_PRINT("Turn right (cw): Y>260");
+    //VERBOSE_PRINT("Turn right (cw): Y>260");
   }
   return false;
 }
