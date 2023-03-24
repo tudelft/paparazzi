@@ -171,9 +171,9 @@ void orange_avoider_periodic(void)
       
       if ((new_message) && (obstacle_free_confidence == 0)){  //wait for vision
           //VERBOSE_PRINT(" -- CHANGING HEADING---"); 
-          VERBOSE_PRINT(" -- VISION TRUE - change heading ---\n");
           change_nav_heading(heading_change, heading_increment);
           turn_counter++;
+          VERBOSE_PRINT(" -- VISION TRUE - change heading, turn counter: %d\n", turn_counter);
       }
       new_message = false; //force waiting for new vision input
       VERBOSE_PRINT(" -- VISION FALSE ---\n"); 
@@ -181,6 +181,7 @@ void orange_avoider_periodic(void)
       // After turning check if heading is free to continue (with certain confidence)
         if (obstacle_free_confidence > 0){ //need to check thresholds cause this might run the turning function twice
           VERBOSE_PRINT(" check confidence ---\n"); 
+          turn_counter == 0;
           navigation_state = SAFE;
         }
         if (turn_counter > 3){
