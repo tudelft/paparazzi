@@ -107,6 +107,92 @@ float movedistance = 1.0f;
 max
 float output_flow[2];
 
+void image_editing(struct image_t *img, float flow_left, float flow_right) {
+//    Mat image(width_img, height_img, CV_8UC2, img);
+//    Mat matrix_left = image(Range(95,145), Range(160,260));
+//    Mat matrix_right = image(Range(95,145),Range(260,360));
+    uint8_t *buffer = img->buf;
+    int a = 95;
+    int b = 145;// rows
+    int chosen_col_a = 0;
+    int chosen_col_b = 0;
+    if (flow_left>flow_right){
+        chosen_col_a = 160;
+        chosen_col_b = 260;
+    }
+    else{
+        chosen_col_a = 260;
+        chosen_col_b = 360;
+    }
+    // L_R = 0 means obstacle left
+    for (uint16_t y = chosen_col_a; y < chosen_col_b; y++) {
+        for (uint16_t x = a; x < b; x++) {
+            uint8_t *yp, *up, *vp;
+            if (x % 2 == 0) {
+                // Even x
+                up = &buffer[y * 2 * img->w + 2 * x];      // U
+                yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
+                vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+                //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
+                *yp = 255;
+                *up = 255;
+                *vp = 255;
+            } else {
+                // Uneven x
+                up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+                //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
+                vp = &buffer[y * 2 * img->w + 2 * x];      // V
+                yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+                *yp = 255;
+                *up = 255;
+                *vp = 255;
+            }
+        }
+    }
+
+
+}
+
+void image_cover(struct image_t *img){
+    uint8_t *buffer = img->buf;
+    float square_1[4] = {0,160, 0, img->w}; //[0,160,0,img->w];
+    float square_2[4] = {360,img->h,0,img->w};// [360,img->h,0,img->w];
+    float square_3[4] = {160,360,0,95}; //[160,360,0,95];
+    float square_4[4] = {160,360,145,img->w}; // [160,360,145,img->w];
+    float* squares[4] = {square_1,square_2,square_3,square_4};
+    for (int chosen = 0;chosen<4;chosen++){
+        float* ptr = squares[chosen];
+        for (uint16_t y = ptr[0]; y < ptr[1]; y++) {
+            for (uint16_t x = ptr[2]; x < ptr[3]; x++) {
+                uint8_t *yp, *up, *vp;
+                if (x % 2 == 0) {
+                    // Even x
+                    up = &buffer[y * 2 * img->w + 2 * x];      // U
+                    yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
+                    vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
+                    //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
+                    *yp = 0;
+                    *up = 0;
+                    *vp = 0;
+                } else {
+                    // Uneven x
+                    up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
+                    //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
+                    vp = &buffer[y * 2 * img->w + 2 * x];      // V
+                    yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
+                    *yp = 0;
+                    *up = 0;
+                    *vp = 0;
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
 struct image_t *optical_flow_func(struct image_t *img, int camera_id);
 
 
@@ -126,6 +212,8 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
     flowmiddle_prev = flowmiddle;
     flowleft = output_flow[0];
     flowright = output_flow[1];
+//    image_editing(img,flowleft,flowright);
+    image_cover(img);
     flowmiddle = output_flow[2];
     
     
@@ -134,6 +222,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
     right_left_normalizer = flowleft / flowright; // ADDED THIS, ABSULUTE VALUES DONT SEEM TO WORK SO WELL
     flowmiddle_divergence = (flowmiddle / flowmiddle_prev);
     //**
+
 
     switch (navigation_state){
       case SAFE:
@@ -191,6 +280,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         // CUSTOM CODE
         LOG("BEFORE HEADING INCREASE")
         increase_nav_heading(30.f); // SHOULD BE TWEAKED
+
         LOG("AFTER HEADING INCREASE")
         printf("Turned Right");
         moveWaypointForward(WP_TRAJECTORY, movedistance);
@@ -277,7 +367,7 @@ void calc_action_optical_flow_init(void)
 
 void calc_action_optical_flow_periodic(void)
 {
-    printf("out: %f",output_flow[0]);
+//    printf("out: %f",output_flow[0]);
 
 }
 // define variables
@@ -297,7 +387,7 @@ uint8_t increase_nav_heading(float incrementDegrees)
   // for performance reasons the navigation variables are stored and processed in Binary Fixed-Point format
   nav_heading = ANGLE_BFP_OF_REAL(new_heading);
 
-  VERBOSE_PRINT("Increasing heading to %f\n", DegOfRad(new_heading));
+//  VERBOSE_PRINT("Increasing heading to %f\n", DegOfRad(new_heading));
   return false;
 }
 
@@ -322,9 +412,9 @@ uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
   // Now determine where to place the waypoint you want to go to
   new_coor->x = stateGetPositionEnu_i()->x + POS_BFP_OF_REAL(sinf(heading) * (distanceMeters));
   new_coor->y = stateGetPositionEnu_i()->y + POS_BFP_OF_REAL(cosf(heading) * (distanceMeters));
-  VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,	
-                POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y),
-                stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
+//  VERBOSE_PRINT("Calculated %f m forward position. x: %f  y: %f based on pos(%f, %f) and heading(%f)\n", distanceMeters,
+//                POS_FLOAT_OF_BFP(new_coor->x), POS_FLOAT_OF_BFP(new_coor->y),
+//                stateGetPositionEnu_f()->x, stateGetPositionEnu_f()->y, DegOfRad(heading));
   return false;
 }
 
@@ -332,8 +422,8 @@ uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
 
 uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 {
-  VERBOSE_PRINT("Moving waypoint %d to x:%f y:%f\n", waypoint, POS_FLOAT_OF_BFP(new_coor->x),
-                POS_FLOAT_OF_BFP(new_coor->y));
+//  VERBOSE_PRINT("Moving waypoint %d to x:%f y:%f\n", waypoint, POS_FLOAT_OF_BFP(new_coor->x),
+//                POS_FLOAT_OF_BFP(new_coor->y));
   waypoint_move_xy_i(waypoint, new_coor->x, new_coor->y);
   return false;
 }

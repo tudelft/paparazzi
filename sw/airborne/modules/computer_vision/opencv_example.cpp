@@ -25,12 +25,16 @@ Mat previous_frame_left, previous_frame_right, previous_frame_middle;
 void scale_mat(const Mat matrix, Mat& matrix_left, Mat& matrix_right, Mat& matrix_middle, const int width, const int height, const int width_img, const int height_img);
 void scale_mat(const Mat matrix, Mat& matrix_left, Mat& matrix_right, Mat& matrix_middle, const int width, const int height, const int width_img, const int height_img)
 {
+
   LOG("before matrix scaling")
+
   auto range_width = Range((int) (width_img/2 - width/2),(int) (width_img/2 + width/2));
   matrix_left = matrix(range_width, Range((int) (height_img/2 - height/2),(int) (height_img/2)));
   matrix_middle = matrix(range_width, Range((int) (height_img/2 - height/4),(int) (height_img/2 + height/4)));
   matrix_right = matrix(range_width, Range((int) (height_img/2),(int) (height_img/2 + height/2)));
+
   LOG("after matrix scaling")
+
   
 }
 void calculate_magnitudes_flow(Mat& mag, const Mat prvs, const Mat next);
@@ -68,7 +72,7 @@ void calculate_output_flow(const Mat mag, float* output_flow, const int idx)
 
 void farneback(char *img, float* output_flow, int width, int height, int width_img, int height_img)
 {
-    std::cout<<"farneback"<<"\n";
+//    std::cout<<"farneback"<<"\n";
     Mat next_frame(width_img, height_img, CV_8UC2, img); 
     
     Mat next_frame_gray;
