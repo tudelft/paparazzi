@@ -71,7 +71,7 @@ bool new_message = false; //boolean to keep track of vision
 // define settings
 float oa_color_count_frac = 0.18f;  //if i delete this the autopilot.c file crashes
 
-const int16_t max_trajectory_confidence = 4; // number of consecutive negative object detections to be sure we are obstacle free
+const int16_t max_trajectory_confidence = 6; // number of consecutive negative object detections to be sure we are obstacle free
 
 /*
  * This next section defines an ABI messaging event (http://wiki.paparazziuav.org/wiki/ABI), necessary
@@ -143,13 +143,13 @@ void orange_avoider_periodic(void)
     case SAFE:
       // Move waypoint forward
       VERBOSE_PRINT(" -- SAFE: conf_val %d , obstac_conf %d, (x,y) = %d, %d\n", confidence_value, obstacle_free_confidence, pixelX, pixelY);
-      moveWaypointForward(WP_TRAJECTORY, 1.2f * moveDistance);
+      moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0){
         navigation_state = OBSTACLE_FOUND;
       } else {
-        moveWaypointForward(WP_GOAL, moveDistance);
+        moveWaypointForward(WP_GOAL, 1.2f *moveDistance);
       }
 
       break;
@@ -172,28 +172,28 @@ void orange_avoider_periodic(void)
       if ((new_message) && (obstacle_free_confidence == 0)){  //wait for vision
           //VERBOSE_PRINT(" -- CHANGING HEADING---"); 
           change_nav_heading(heading_change, heading_increment);
-          turn_counter++;
+          //turn_counter++; // within function
           VERBOSE_PRINT(" -- VISION TRUE - change heading, turn counter: %d\n", turn_counter);
       }
       new_message = false; //force waiting for new vision input
-      VERBOSE_PRINT(" -- VISION FALSE ---\n"); 
+      //VERBOSE_PRINT(" -- VISION FALSE ---\n"); 
 
       // After turning check if heading is free to continue (with certain confidence)
         if (obstacle_free_confidence > 0){ //need to check thresholds cause this might run the turning function twice
-          VERBOSE_PRINT(" check confidence ---\n"); 
+          VERBOSE_PRINT(" Safe to continue ---\n"); 
           turn_counter == 0;
           navigation_state = SAFE;
         }
-        if (turn_counter > 3){
-          VERBOSE_PRINT("I'M STUCK (90deg turn right)\n"); 
-          change_nav_heading(100.f, 0.1f);
-          turn_counter == 0;
-        }
+        //if (turn_counter > 3){
+        //  VERBOSE_PRINT("I'M STUCK (90deg turn right)\n"); 
+        //  change_nav_heading(100.f, 0.1f);
+        //  turn_counter == 0;
+        //}
       break;
     case OUT_OF_BOUNDS:
       VERBOSE_PRINT(" -- OUT OF BOUNCE\n");
       //defineNewHeading();
-      change_nav_heading(100.0f, 0.1f); //if our of bounce turn 90deg right
+      change_nav_heading(100.f, 0.1f); //if our of bounce turn 90deg right
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
 
       if (InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
@@ -303,7 +303,7 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 uint8_t defineNewHeading(void)
 {
 
-  VERBOSE_PRINT("Best Pixel (X,Y): (%d, %d)\n", pixelX, pixelY);
+  //VERBOSE_PRINT("Best Pixel (X,Y): (%d, %d)\n", pixelX, pixelY);
 
   // Uses x/y of optimal path/pixel to compute newheading
   if (pixelX < 30) {   // if horizon too low -> turn 90deg
@@ -311,7 +311,7 @@ uint8_t defineNewHeading(void)
     //VERBOSE_PRINT("Low Horizon (X<30) | Set heading_change to: %f deg\n",  heading_change);
   }  else{   // if horizon not too low -> turn based on optimal path
     heading_change = DegOfRad(atan(abs(260 - pixelY)/abs(pixelX))); //atan gives angle in radiants, so transform to degrees
-    heading_change = fmaxf(heading_change, 5.); //choose between angle computed and 5deg, so min change is 5deg
+    heading_change = fmaxf(heading_change, 10.); //choose between angle computed and 5deg, so min change is 5deg
     //VERBOSE_PRINT("Optimal path | Set heading_change to: %f deg\n",  heading_change);
   }
 
@@ -336,7 +336,7 @@ uint8_t change_nav_heading(float heading_change, float heading_increment)
   // new heading is current heading plus increments (until total change angle achieve)
   float total_turn = 0.; // variable to keep track of turn
   float new_heading = stateGetNedToBodyEulers_f()->psi + RadOfDeg(heading_increment); //in rad   (defined outside while loop)
-  VERBOSE_PRINT("Current heading is: %f deg\n", DegOfRad(stateGetNedToBodyEulers_f()->psi));
+  //VERBOSE_PRINT("Heading before while loop is: %f deg\n", DegOfRad(stateGetNedToBodyEulers_f()->psi));
   while (total_turn < heading_change) {
     //VERBOSE_PRINT("TURNING, total turn is: %f out of %f\n", total_turn, heading_change);
     // normalize heading to [-pi, pi]
@@ -350,8 +350,13 @@ uint8_t change_nav_heading(float heading_change, float heading_increment)
     total_turn += fabs(heading_increment);  //in deg
     new_heading += + RadOfDeg(heading_increment); //add to heading
   }
+  //VERBOSE_PRINT("Heading after while loop is: %f deg\n", DegOfRad(stateGetNedToBodyEulers_f()->psi)); //this is no different than before loop...
+  //if (total_turn >= heading_change){
+   // turn_counter++;
+   // VERBOSE_PRINT("TURN + 1");
+  //}
 
-  VERBOSE_PRINT("END TUNING: Increased heading by %f deg to %f\n deg", heading_change*heading_increment, DegOfRad(new_heading));
+  VERBOSE_PRINT("END TUNING - Increased heading by %f deg in steps of %f to %f\n deg", heading_change, heading_increment, DegOfRad(new_heading));
   return false;
 }
 
