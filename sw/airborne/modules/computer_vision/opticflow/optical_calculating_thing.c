@@ -6,7 +6,7 @@
 #include <time.h>
 
 // Own Header
-#include "opticflow_calculator_dense.h"
+#include "opticflow_calculating_thing.h"
 
 // Computer Vision
 #include "lib/vision/image.h"
@@ -23,35 +23,35 @@
 #endif
 PRINT_CONFIG_VAR(OPTICFLOW_WINDOW_SIZE)
 
-#ifndef OPTICFLOW_PYR_SCALE
-#define OPTICFLOW_PYR_SCALE 0.1
-#endif
-PRINT_CONFIG_VAR(OPTICFLOW_PYR_SCALE)
+//#ifndef OPTICFLOW_PYR_SCALE
+//#define OPTICFLOW_PYR_SCALE 0.1
+//#endif
+//PRINT_CONFIG_VAR(OPTICFLOW_PYR_SCALE)
 
 #ifndef OPTICFLOW_LEVELS
 #define OPTICFLOW_LEVELS 3
 #endif
 PRINT_CONFIG_VAR(OPTICFLOW_LEVELS)
 
-#ifndef OPTICFLOW_POLY_N
-#define OPTICFLOW_POLY_N 2
-#endif
-PRINT_CONFIG_VAR(OPTICFLOW_POLY_N)
+//#ifndef OPTICFLOW_POLY_N
+//#define OPTICFLOW_POLY_N 2
+//#endif
+//PRINT_CONFIG_VAR(OPTICFLOW_POLY_N)
 
-#ifndef OPTICFLOW_POLY_SIGMA
-#define OPTICFLOW_POLY_SIGMA 3.0
-#endif
-PRINT_CONFIG_VAR(OPTICFLOW_POLY_SIGMA)
+//#ifndef OPTICFLOW_POLY_SIGMA
+//#define OPTICFLOW_POLY_SIGMA 3.0
+//#endif
+//PRINT_CONFIG_VAR(OPTICFLOW_POLY_SIGMA)
 
-#ifndef OPTICFLOW_FLAGS
-#define OPTICFLOW_FLAGS 0
-#endif
-PRINT_CONFIG_VAR(OPTICFLOW_FLAGS)
+//#ifndef OPTICFLOW_FLAGS
+//#define OPTICFLOW_FLAGS 0
+//#endif
+//PRINT_CONFIG_VAR(OPTICFLOW_FLAGS)
 
-#ifndef OPTICFLOW_MAX_ITERATIONS
-#define OPTICFLOW_MAX_ITERATIONS 2
-#endif
-PRINT_CONFIG_VAR(OPTICFLOW_MAX_ITERATIONS)
+//#ifndef OPTICFLOW_MAX_ITERATIONS
+//#define OPTICFLOW_MAX_ITERATIONS 2
+//#endif
+//PRINT_CONFIG_VAR(OPTICFLOW_MAX_ITERATIONS)
 
 #ifndef OPTICFLOW_ERROR_THRESHOLD
 #define OPTICFLOW_ERROR_THRESHOLD 10
@@ -96,12 +96,12 @@ void opticflow_calc_init(struct opticflow_t *opticflow)
 {
   /* Set the default values */
   opticflow->window_size = OPTICFLOW_WINDOW_SIZE;
-  opticflow->pyr_scale = OPTICFLOW_PYR_SCALE;
+  opticflow->pyr_scale = OPTICFLOW_ERROR_THRESHOLD;
   opticflow->levels = OPTICFLOW_LEVELS;
-  opticflow->poly_n = OPTICFLOW_POLY_N;
-  opticflow->poly_sigma = OPTICFLOW_POLY_SIGMA;
-  opticflow->flags = OPTICFLOW_FLAGS;
-  opticflow->max_iterations = OPTICFLOW_MAX_ITERATIONS;
+  opticflow->poly_n = OPTICFLOW_N_SAMPLES;
+  opticflow->poly_sigma = OPTICFLOW_N_ITERATIONS; 
+  //opticflow->flags = OPTICFLOW_FLAGS;
+  //opticflow->max_iterations = OPTICFLOW_MAX_ITERATIONS;
 
 }
 
@@ -140,7 +140,7 @@ static bool calc_opticfarneback(struct opticflow_t *opticflow, struct image_t *i
 	  //of_diff, div, img->w, img->h);
   
   result_analyzer = determine_flow(opticflow->prev_img_gray.buf, opticflow->img_gray.buf, img->h, img->w, opticflow->window_size, opticflow->levels, 
-	  OPTICFLOW_ERROR_THRESHOLD, OPTICFLOW_N_ITERATIONS, OPTICFLOW_N_SAMPLES, info);
+	  opticflow->pyr_scale, opticflow->poly_sigma, opticflow->poly_n, info);
 
   //result_analyzer = analyze_linear_flow_field(opt_vect, counterr, OPTICFLOW_ERROR_THRESHOLD, OPTICFLOW_N_ITERATIONS, OPTICFLOW_N_SAMPLES, img->w, img->h, info);
 

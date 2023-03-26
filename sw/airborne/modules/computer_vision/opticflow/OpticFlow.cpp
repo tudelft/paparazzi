@@ -30,7 +30,9 @@
 #include <stdio.h>
 #include "lib/vision/image.h"
 #include <stdlib.h>
+#include "opencv_image_functions.h"
 #include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/types_c.h>
 #include <opencv2/highgui/highgui_c.h>
 #include <opencv2/video/tracking.hpp>
