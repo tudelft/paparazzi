@@ -53,7 +53,7 @@ float oob_haeding_increment = 5.f;      // heading angle increment if out of bou
 float heading_increment = 20.f;
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
 float divergence_imp= 0.f;
-float div_thresholder = 0.3f;
+//float div_thresholder = 5.f;
 // needed to receive output from a separate module running on a parallel process
 #ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
 #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
@@ -99,10 +99,10 @@ void mav_exercise_periodic(void) {
   int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
   
   //PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
-  PRINT("Color_count: %d  threshold: %d state: %d \n", divergence_imp, div_thresholder, navigation_state);
+  PRINT("Divergence: %d  state: %d \n", divergence_imp,  navigation_state);
 
   // update our safe confidence using color threshold
-  if (divergence_imp > div_thresholder) {
+  if (divergence_imp < 5.f) {
     obstacle_free_confidence++;
   } else {
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
