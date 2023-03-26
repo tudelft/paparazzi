@@ -75,9 +75,9 @@ struct linear_flow_fit_info *info;
 struct linear_flow_fit_info INFO;
 info = &INFO;
 
-struct flow_t *opt_vect;
-struct flow_t OPT_VECT;
-opt_vect = &OPT_VECT;
+//struct flow_t** opt_vect = malloc(50 * sizeof(struct flow_t*));
+//struct flow_t OPT_VECT;
+//opt_vect = &OPT_VECT;
 
 int counterr = 0;
 uint16_t height_crop = 0;
@@ -138,13 +138,16 @@ static bool calc_opticfarneback(struct opticflow_t *opticflow, struct image_t *i
 	//get_flow(opticflow->prev_img_gray.buf, opticflow->img_gray.buf, opticflow->pyr_scale, opticflow->levels, opticflow->window_size,
 	  //opticflow->max_iterations, opticflow->poly_n, opticflow->poly_sigma, opticflow->flags,
 	  //of_diff, div, img->w, img->h);
-  opt_vect, counterr, width_crop, height_crop = determine_flow(opticflow->prev_img_gray.buf, opticflow->img_gray.buf, opticflow->pyr_scale, opticflow->levels, opticflow->window_size,
-	  opticflow->max_iterations, opticflow->poly_n, opticflow->poly_sigma, opticflow->flags, img->w, img->h);
-    
-  result_analyzer = analyze_linear_flow_field(opt_vect, counterr, OPTICFLOW_ERROR_THRESHOLD, OPTICFLOW_N_ITERATIONS, OPTICFLOW_N_SAMPLES, width_crop, height_crop, info);
+  
+  result_analyzer = determine_flow(opticflow->prev_img_gray.buf, opticflow->img_gray.buf, img->h, img->w, opticflow->window_size, opticflow->levels, 
+	  OPTICFLOW_ERROR_THRESHOLD, OPTICFLOW_N_ITERATIONS, OPTICFLOW_N_SAMPLES, info);
+
+  //result_analyzer = analyze_linear_flow_field(opt_vect, counterr, OPTICFLOW_ERROR_THRESHOLD, OPTICFLOW_N_ITERATIONS, OPTICFLOW_N_SAMPLES, img->w, img->h, info);
+
   if(!result_analyzer){
     return false;
   }
+
   *div = info->divergence;
 	end = clock();
 	cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC; // Calculating elapsed time
