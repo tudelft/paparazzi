@@ -99,7 +99,7 @@ void bebop2_bernardo_periodic(void) {
 
   PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
 
-  PRINT("Size_divergence: %f", divergence);
+  PRINT("Size_divergence: %d", divergence);
 
   // update our safe confidence using color threshold
   if (color_count < color_count_threshold) {
