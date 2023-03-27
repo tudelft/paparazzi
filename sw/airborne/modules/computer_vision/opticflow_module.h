@@ -31,7 +31,7 @@
 #include "opticflow/optical_calculating_thing.h"
 
 // Needed for settings
-extern struct opticflow_t opticflow[];
+extern struct opticflow_t opticflow;
 
 // Module functions
 extern void opticflow_module_init(void);

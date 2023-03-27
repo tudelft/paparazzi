@@ -7,12 +7,15 @@
 
 // Own Header
 #include "optical_calculating_thing.h"
+#include "OpticFlow.h"
 
 // Computer Vision
 #include "lib/vision/image.h"
 #include "modules/sonar/agl_dist.h"
 // Header for our c++ file that has the openCV function
+// #include "get_flow.h"
 #include "linear_flow_fit.h"
+// #include "image.h"git 
 // to get the definition of front_camera / bottom_camera
 #include BOARD_CONFIG
 // Parameters for the cvOpticalFlowFarneback function
@@ -71,7 +74,7 @@ static uint32_t timeval_diff(struct timeval *starttime, struct timeval *finishti
 
 struct linear_flow_fit_info *info;
 struct linear_flow_fit_info INFO;
-info = &INFO;
+struct linear_flow_fit_info *info = &INFO;
 
 //struct flow_t** opt_vect = malloc(50 * sizeof(struct flow_t*));
 //struct flow_t OPT_VECT;
@@ -105,7 +108,7 @@ void opticflow_calc_init(struct opticflow_t *opticflow)
 
 // Function that does the 'organizing' of the incoming images, and calls the c++ function
 // which will then call the openCV function.
-static bool calc_opticfarneback(struct opticflow_t *opticflow, struct image_t *img, float *div)
+bool calc_opticfarneback(struct opticflow_t *opticflow, struct image_t *img, float *div)
 {
 	// Checking if the very first image has been received
 	if (!opticflow->got_first_img) {
@@ -181,6 +184,7 @@ bool opticflow_calc_module_call(struct opticflow_t *opticflow, struct image_t *i
  * @param[in] *finishtime The finish time to calculate the difference from
  * @return The difference in milliseconds
  */
+__attribute__((used))
 static uint32_t timeval_diff(struct timeval *starttime, struct timeval *finishtime)
 {
   uint32_t msec;

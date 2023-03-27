@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include "state.h"
-#include "subsystems/abi.h"
+#include "core/abi.h"
 
 #include "lib/v4l/v4l2.h"
 #include "lib/encoding/jpeg.h"
@@ -53,7 +53,7 @@ PRINT_CONFIG_VAR(OPTICFLOW_FPS)
 #define PRINT(string, ...) fprintf(stderr, "[mav_exercise->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 
 /* The main opticflow variables */
-struct opticflow_t opticflow;                      ///< Struct to store opticflow parameters, like two images in
+extern struct opticflow_t opticflow;                     ///< Struct to store opticflow parameters, like two images in
 												   /// sequence. Directly taken from the original opticflow_module
                                                    //  given as example
                                                    
@@ -99,7 +99,7 @@ void opticflow_module_init(void)
   opticflow_got_result = false;
   opticflow_calc_init(&opticflow);
 
-  cv_add_to_device(&OPTICFLOW_CAMERA, opticflow_calculator_module, OPTICFLOW_FPS);
+  cv_add_to_device(&OPTICFLOW_CAMERA, opticflow_calculator_module, OPTICFLOW_FPS, 0);
 
 // Again not used right now but could be implemented with our message
 //#if PERIODIC_TELEMETRY
@@ -117,10 +117,11 @@ void opticflow_module_run(void)
   pthread_mutex_lock(&opticflow_mutex);
   // Update the stabilization loops on the current calculation
   if (opticflow_got_result) {
+    // __attribute__((used))
     uint32_t now_ts = get_sys_time_usec();
 
     // Send OF difference and divergence with our message
-    AbiSendMsgOPTICAL_FLOW(W_OPTICFLOW_ID,0,0,0,0,0,0.0f divg);
+    AbiSendMsgOPTICAL_FLOW(FLOW_OPTICFLOW_ID,0,0,0,0,0,0.0f, divg);
     opticflow_got_result = false;
   }
   pthread_mutex_unlock(&opticflow_mutex);

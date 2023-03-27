@@ -22,7 +22,7 @@
  * @author C. De Wagter
  * opencv
  */
-#include "linear_flow_fit.h"
+#include "opticflow/linear_flow_fit.h"
 
 #ifndef CV_OPENCVDEMO_H
 #define CV_OPENCVDEMO_H
