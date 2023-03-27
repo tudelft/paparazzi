@@ -130,21 +130,25 @@ void image_editing(struct image_t *img, float flow_left, float flow_right, float
     if (flow_left>flow_right && flow_left> flow_middle && flow_left>= flowleft_threshold){
         chosen_start = left_start;
         chosen_end = left_end;
+        printf("right left normaliser %f. flowmiddle divergence %f ", right_left_normalizer, flowmiddle_divergence);
+        printf("\n");
 
     }
     else if (flow_right> flow_left && flow_left > flow_middle && flow_right >= flowright_threshold){
         chosen_start=right_start;
         chosen_end = right_end;
-
+        printf("right left normaliser %f. flowmiddle divergence %f ", right_left_normalizer, flowmiddle_divergence);
+        printf("\n");
     }
     else if (flow_middle > flow_right && flow_middle > flow_left && flow_middle>=flowmiddle_threshold){
         chosen_start = middle_start;
         chosen_end = middle_end;
-
+        printf("right left normaliser %f. flowmiddle divergence %f ", right_left_normalizer, flowmiddle_divergence);
+        printf("\n");
     }
-    else{
-        printf("No flow above threshold \n");
-    }
+//    else{
+//        printf("No flow above threshold \n");
+//    }
 
 
     // L_R = 0 means obstacle left
@@ -235,15 +239,22 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
     flowmiddle_prev = flowmiddle;
     flowleft = output_flow[0];
     flowright = output_flow[1];
-    image_editing(img,flowleft,flowright,flowmiddle);
     flowmiddle = output_flow[2];
-    image_cover(img);
-    
+
     
     //** EXTREMELY QUICK NO NEED TO OPTIMIZE
     right_left_normalizer = flowleft / flowright; // ADDED THIS, ABSULUTE VALUES DONT SEEM TO WORK SO WELL
     flowmiddle_divergence = (flowmiddle / flowmiddle_prev);
     //**
+    if (right_left_normalizer < 0.78|| right_left_normalizer > 1.3|| flowmiddle_divergence > 1.3){
+        image_editing(img,flowleft,flowright,flowmiddle);
+    }
+    else{
+        printf("No flow above threshold \n");
+    }
+
+    image_cover(img);
+
 
 
     switch (navigation_state){
