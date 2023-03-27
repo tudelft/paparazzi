@@ -106,26 +106,54 @@ float heading_increment = 7.f;
 float movedistance = 1.0f;
 float output_flow[3];
 
-void image_editing(struct image_t *img, float flow_left, float flow_right) {
+void image_editing(struct image_t *img, float flow_left, float flow_right, float flow_middle) {
 //    Mat image(width_img, height_img, CV_8UC2, img);
 //    Mat matrix_left = image(Range(95,145), Range(160,260));
 //    Mat matrix_right = image(Range(95,145),Range(260,360));
+
+//    farneback((char *) img->buf, output_flow, WIDTH_2_PROCESS, HEIGHT_2_PROCESS, img->w, img->h);
     uint8_t *buffer = img->buf;
-    int a = 95;
-    int b = 145;// rows
-    int chosen_col_a = 0;
-    int chosen_col_b = 0;
-    if (flow_left>flow_right){
-        chosen_col_a = 160;
-        chosen_col_b = 260;
+    auto width_img = img->w;
+    auto height_img = img->h;
+    auto width = WIDTH_2_PROCESS;
+    auto height = HEIGHT_2_PROCESS;
+    int row_start = width_img/2 - width/2; int row_end = width_img/2 + width/2;
+    int left_start = height_img/2 - height/2; int left_end = height_img/2;
+    int middle_start = height_img/2 - height/4; int middle_end = height_img/2 + height/4 ;
+    int right_start = height_img/2; int right_end = height_img/2 + height/2;
+    int chosen_start; int chosen_end;
+//    auto range_width = Range((int) (width_img/2 - width/2),(int) (width_img/2 + width/2));
+//    auto left_end = Range((int) (height_img/2 - height/2),(int) (height_img/2));
+//    auto middle_end = Range((int) (height_img/2 - height/4),(int) (height_img/2 + height/4));
+//    auto right_end = Range((int) (height_img/2),(int) (height_img/2 + height/2));
+
+    if (flow_left>flow_right && flow_left> flow_middle && flow_left>= flowleft_threshold){
+        chosen_start = left_start;
+        chosen_end = left_end;
+        printf("right left normaliser %f. flowmiddle divergence %f ", right_left_normalizer, flowmiddle_divergence);
+        printf("\n");
+
     }
-    else{
-        chosen_col_a = 260;
-        chosen_col_b = 360;
+    else if (flow_right> flow_left && flow_left > flow_middle && flow_right >= flowright_threshold){
+        chosen_start=right_start;
+        chosen_end = right_end;
+        printf("right left normaliser %f. flowmiddle divergence %f ", right_left_normalizer, flowmiddle_divergence);
+        printf("\n");
     }
+    else if (flow_middle > flow_right && flow_middle > flow_left && flow_middle>=flowmiddle_threshold){
+        chosen_start = middle_start;
+        chosen_end = middle_end;
+        printf("right left normaliser %f. flowmiddle divergence %f ", right_left_normalizer, flowmiddle_divergence);
+        printf("\n");
+    }
+//    else{
+//        printf("No flow above threshold \n");
+//    }
+
+
     // L_R = 0 means obstacle left
-    for (uint16_t y = chosen_col_a; y < chosen_col_b; y++) {
-        for (uint16_t x = a; x < b; x++) {
+    for (uint16_t y = chosen_start; y < chosen_end; y++) {
+        for (uint16_t x = row_start; x < row_end; x++) {
             uint8_t *yp, *up, *vp;
             if (x % 4 == 0) {
                 // Even x
@@ -154,10 +182,10 @@ void image_editing(struct image_t *img, float flow_left, float flow_right) {
 
 void image_cover(struct image_t *img){
     uint8_t *buffer = img->buf;
-    float square_1[4] = {0,160, 0, img->w}; //[0,160,0,img->w];
-    float square_2[4] = {360,img->h,0,img->w};// [360,img->h,0,img->w];
-    float square_3[4] = {160,360,0,95}; //[160,360,0,95];
-    float square_4[4] = {160,360,145,img->w}; // [160,360,145,img->w];
+    float square_1[4] = {0,165, 0, img->w}; //[0,160,0,img->w];
+    float square_2[4] = {355,img->h,0,img->w};// [360,img->h,0,img->w];
+    float square_3[4] = {165,355,0,100}; //[160,360,0,95];
+    float square_4[4] = {165,355,140,img->w}; // [160,360,145,img->w];
     float* squares[4] = {square_1,square_2,square_3,square_4};
     for (int chosen = 0;chosen<4;chosen++){
         float* ptr = squares[chosen];
@@ -211,15 +239,22 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
     flowmiddle_prev = flowmiddle;
     flowleft = output_flow[0];
     flowright = output_flow[1];
-    image_editing(img,flowleft,flowright);
     flowmiddle = output_flow[2];
-    image_cover(img);
-    
+
     
     //** EXTREMELY QUICK NO NEED TO OPTIMIZE
     right_left_normalizer = flowleft / flowright; // ADDED THIS, ABSULUTE VALUES DONT SEEM TO WORK SO WELL
     flowmiddle_divergence = (flowmiddle / flowmiddle_prev);
     //**
+    if (right_left_normalizer < 0.78|| right_left_normalizer > 1.3|| flowmiddle_divergence > 1.3){
+        image_editing(img,flowleft,flowright,flowmiddle);
+    }
+    else{
+        printf("No flow above threshold \n");
+    }
+
+    image_cover(img);
+
 
 
     switch (navigation_state){
