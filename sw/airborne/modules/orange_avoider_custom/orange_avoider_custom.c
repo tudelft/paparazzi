@@ -303,7 +303,7 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 uint8_t defineNewHeading(void)
 {
 
-  //VERBOSE_PRINT("Best Pixel (X,Y): (%d, %d)\n", pixelX, pixelY);
+  VERBOSE_PRINT("Best Pixel (X,Y): (%d, %d)\n", pixelX, pixelY);
 
   // Uses x/y of optimal path/pixel to compute newheading
   if (pixelX < 30) {   // if horizon too low -> turn 90deg
