@@ -34,7 +34,7 @@ using namespace std;
 #include <opencv2/imgproc/imgproc.hpp>
 using namespace cv;
 
-void coloryuv_opencv_to_yuv422(Mat image, char *img, int width, int height)
+void coloryuv_opencv_to_yuv422(Mat image, char *img)
 {
   CV_Assert(image.depth() == CV_8U);
   CV_Assert(image.channels() == 3);
@@ -56,16 +56,16 @@ void coloryuv_opencv_to_yuv422(Mat image, char *img, int width, int height)
   }
 }
 
-void colorbgr_opencv_to_yuv422(Mat image, char *img, int width, int height)
+void colorbgr_opencv_to_yuv422(Mat image, char *img)
 {
   // Convert to YUV color space
   cvtColor(image, image, COLOR_BGR2YUV);
   // then call the to color function
-  coloryuv_opencv_to_yuv422(image, img, width, height);
+  coloryuv_opencv_to_yuv422(image, img);
 }
 
 
-void grayscale_opencv_to_yuv422(Mat image, char *img, int width, int height)
+void grayscale_opencv_to_yuv422(Mat image, char *img)
 {
   CV_Assert(image.depth() == CV_8U);
   CV_Assert(image.channels() == 1);

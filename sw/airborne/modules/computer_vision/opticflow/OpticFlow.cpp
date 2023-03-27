@@ -66,15 +66,15 @@ bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winS
     width = crop_image.width;
     height = crop_image.height;
 
-    colorbgr_opencv_to_yuv422(prev_bgr, prev, width, height);
-    colorbgr_opencv_to_yuv422(bgr, curr, width, height);
+    colorbgr_opencv_to_yuv422(prev_bgr, prev);
+    colorbgr_opencv_to_yuv422(bgr, curr);
 
     //Convert to gray
     cvtColor(M1(crop_image), prev_bgr, CV_YUV2GRAY_Y422);
     cvtColor(M2(crop_image), bgr, CV_YUV2GRAY_Y422);
 
-    grayscale_opencv_to_yuv422(prev_bgr, prev, width, height);
-    grayscale_opencv_to_yuv422(bgr, curr, width, height);
+    grayscale_opencv_to_yuv422(prev_bgr, prev);
+    grayscale_opencv_to_yuv422(bgr, curr);
 
     Mat flow(prev_bgr.rows, prev_bgr.cols, CV_32FC2); //matrix to store the flows
 
