@@ -27,21 +27,21 @@ static pthread_mutex_t mutex;
 //NEW GLOBAL VARIABLES
 
 #ifndef kernel_size
-#define kernel_size 25
+#define kernel_size 15
 #endif
 
 #ifndef half_kernel_size
-#define half_kernel_size 12
+#define half_kernel_size 7
 #endif
 
 // floor(520 / kernel_size)
 #ifndef vector_array_length
-#define vector_array_length 20
+#define vector_array_length 34
 #endif
 
 // floor(vector_array_length / 2)
 #ifndef vector_array_mid
-#define vector_array_mid 10
+#define vector_array_mid 17
 #endif
 
 // in_nps = 1 mean true
@@ -265,7 +265,7 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
   int16_t width = img->w;
   int16_t kernel_cnt = 0;
 
-  int16_t threshold = 255;
+  int16_t threshold = 180;
 
   int16_t x = 0;
   int16_t y = 0;
@@ -274,7 +274,7 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
 
   int16_t kernel_centroid = 0;
 
-  int16_t kernel_w_cnt = floor(width/kernel_size);
+  int16_t kernel_w_cnt = floor(floor(width/kernel_size)*0.4);
   int16_t kernel_h_cnt = floor(heigth/kernel_size);
 
   int16_t vector_array[vector_array_length] = {0};
@@ -339,7 +339,8 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
       if (kernel_cnt > threshold){
         if (state == 0) {
           state = 1;
-          kernel_centroid = kernel_size * x_k + half_kernel_size;
+          kernel_centroid = kernel_size * (x_k + 1);
+          // kernel_centroid = kernel_size * x_k + half_kernel_size;
           // PRINT("Vector length %d\n", kernel_centroid);
           // PRINT("Yk value %d\n", y_k);
           vector_array[y_k] = kernel_centroid;
