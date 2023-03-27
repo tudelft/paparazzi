@@ -6,15 +6,13 @@
 #include <time.h>
 
 // Own Header
-#include "opticflow_calculating_thing.h"
+#include "optical_calculating_thing.h"
 
 // Computer Vision
 #include "lib/vision/image.h"
 #include "modules/sonar/agl_dist.h"
 // Header for our c++ file that has the openCV function
-#include "get_flow.h"
 #include "linear_flow_fit.h"
-#include "image.h"
 // to get the definition of front_camera / bottom_camera
 #include BOARD_CONFIG
 // Parameters for the cvOpticalFlowFarneback function
