@@ -84,7 +84,7 @@ bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winS
     int max_area = -1;
     int max_contour_index = -1;
 
-    for (int i = 0; i < contours.size(); i++){
+    for (size_t i = 0; i < contours.size(); i++){
         double area = contourArea(contours[i]);
         if (area > max_area) {
             max_area = area;
