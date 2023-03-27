@@ -21,8 +21,8 @@
   <header>
     <file name="ctrl_eff_sched_rot_wing_v3.h"/>
   </header>
-  <init fun="init_eff_scheduling()"/>
-  <event fun="event_eff_scheduling()"/>
+    <init fun="init_eff_scheduling()"/>
+    <periodic fun="event_eff_scheduling()" freq="20"/>
   <makefile>
     <file name="ctrl_eff_sched_rot_wing_v3.c"/>
     <test/>
