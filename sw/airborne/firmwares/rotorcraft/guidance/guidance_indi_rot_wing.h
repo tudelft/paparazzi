@@ -20,15 +20,15 @@
  */
 
 /**
- * @file firmwares/rotorcraft/guidance/guidance_indi_hybrid.h
+ * @file firmwares/rotorcraft/guidance/guidance_indi_rot_wing.h
  *
  * A guidance mode based on Incremental Nonlinear Dynamic Inversion
  * Come to ICRA2016 to learn more!
  *
  */
 
-#ifndef GUIDANCE_INDI_HYBRID_H
-#define GUIDANCE_INDI_HYBRID_H
+#ifndef GUIDANCE_INDI_ROT_WING_H
+#define GUIDANCE_INDI_ROT_WING_H
 
 #include "std.h"
 #include "math/pprz_algebra_int.h"
@@ -76,4 +76,4 @@ extern float roll_priority_factor;
 extern float thrust_priority_factor;
 extern float pusher_priority_factor;
 
-#endif /* GUIDANCE_INDI_HYBRID_H */
+#endif /* GUIDANCE_INDI_ROT_WING_H */

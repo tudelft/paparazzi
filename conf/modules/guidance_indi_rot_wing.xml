@@ -23,7 +23,7 @@
     </dl_settings>
   </settings>
   <dep>
-    <depends>@navigation</depends>
+    <depends>@navigation,guidance_rotorcraft</depends>
     <provides>guidance,attitude_command</provides>
   </dep>
   <header>
@@ -39,7 +39,8 @@
     <file name="r8lib_min.c" dir="math/qr_solve"/>
     <define name="CA_N_V_GUIDANCE" value="3"/>
     <define name="CA_N_U_GUIDANCE" value="4"/>
-    <define name="GUIDANCE_INDI" value="TRUE"/>
     <define name="GUIDANCE_INDI_HYBRID" value="TRUE"/>
+    <define name="GUIDANCE_PID_USE_AS_DEFAULT" value="FALSE"/>
+    <define name="GUIDANCE_INDI_ROT_WING_USE_AS_DEFAULT" value="TRUE"/>
   </makefile>
 </module>

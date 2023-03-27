@@ -28,7 +28,7 @@
  */
 
 #include "generated/airframe.h"
-#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
+#include "firmwares/rotorcraft/guidance/guidance_indi_rot_wing.h"
 #include "modules/radio_control/radio_control.h"
 #include "state.h"
 #include "mcu_periph/sys_time.h"
@@ -153,7 +153,7 @@ float guidance_indi_hybrid_heading_sp = 0.f;
 struct FloatEulers guidance_euler_cmd;
 float thrust_in;
 
-struct FloatVect3 speed_sp = {0.0, 0.0, 0.0};
+struct FloatVect3 gi_speed_sp = {0.0, 0.0, 0.0};
 
 #ifndef GUIDANCE_INDI_VEL_SP_ID
 #define GUIDANCE_INDI_VEL_SP_ID ABI_BROADCAST
@@ -206,15 +206,15 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
                               &sp_accel.x,
                               &sp_accel.y,
                               &sp_accel.z,
-                              &euler_cmd.x,
-                              &euler_cmd.y,
+                              &guidance_euler_cmd.phi,
+                              &guidance_euler_cmd.theta,
                               &euler_cmd.z,
                               &filt_accel_ned[0].o[0],
                               &filt_accel_ned[1].o[0],
                               &filt_accel_ned[2].o[0],
-                              &speed_sp.x,
-                              &speed_sp.y,
-                              &speed_sp.z);
+                              &gi_speed_sp.x,
+                              &gi_speed_sp.y,
+                              &gi_speed_sp.z);
 }
 #endif
 
@@ -367,7 +367,7 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
 
   //Bound euler angles to prevent flipping
   Bound(guidance_euler_cmd.phi, -guidance_indi_max_bank, guidance_indi_max_bank);
-  Bound(guidance_euler_cmd.theta, -RadOfDeg(120.0), RadOfDeg(25.0));
+  Bound(guidance_euler_cmd.theta, -RadOfDeg(60.0), RadOfDeg(60.0));
 
   // Use the current roll angle to determine the corresponding heading rate of change.
   float coordinated_turn_roll = eulers_zxy.phi;
@@ -569,14 +569,14 @@ struct StabilizationSetpoint guidance_indi_run_pos(bool in_flight UNUSED, struct
   } else {
     gi_speed_sp.x = pos_err.x * gih_params.pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
     gi_speed_sp.y = pos_err.y * gih_params.pos_gain + SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
-    gi_speed_sp.z = pos_err.z * gih_params.pos_gainz + SPEED_FLOAT_OF_BFP(gv->zd_ref);
+    gi_speed_sp.z = pos_err.z * gih_params.pos_gainz;
   }
 
   // Bound vertical speed setpoint
   if (stateGetAirspeed_f() > 13.f) {
     Bound(gi_speed_sp.z, -4.0f, 4.0f); // FIXME no harcoded values
   } else {
-    Bound(gi_speed_sp.z, nav.descend_vspeed, nav.climb_vspeed); // FIXME don't use nav settings
+    Bound(gi_speed_sp.z, -nav.climb_vspeed, -nav.descend_vspeed); // FIXME don't use nav settings
   }
 
   accel_sp = compute_accel_from_speed_sp(); // compute accel sp
@@ -588,6 +588,7 @@ struct StabilizationSetpoint guidance_indi_run_speed(bool in_flight UNUSED, stru
 {
   struct FloatVect3 accel_sp;
 
+  float pos_z_err = POS_FLOAT_OF_BFP(gv->z_ref - stateGetPositionNed_i()->z);
   // First check for velocity setpoint from module // FIXME should be called like this
   float dt = get_sys_time_float() - time_of_vel_sp;
   // If the input command is not updated after a timeout, switch back to flight plan control
@@ -596,16 +597,16 @@ struct StabilizationSetpoint guidance_indi_run_speed(bool in_flight UNUSED, stru
     gi_speed_sp.y = indi_vel_sp.y;
     gi_speed_sp.z = indi_vel_sp.z;
   } else {
-    gi_speed_sp.x = SPEED_FLOAT_OF_BFP(gh->ref.speed.x);
-    gi_speed_sp.y = SPEED_FLOAT_OF_BFP(gh->ref.speed.y);
-    gi_speed_sp.z = SPEED_FLOAT_OF_BFP(gv->zd_ref);
+    gi_speed_sp.x = SPEED_FLOAT_OF_BFP(gh->sp.speed.x);
+    gi_speed_sp.y = SPEED_FLOAT_OF_BFP(gh->sp.speed.y);
+    gi_speed_sp.z = pos_z_err * gih_params.pos_gainz;
   }
 
   // Bound vertical speed setpoint
   if (stateGetAirspeed_f() > 13.f) {
     Bound(gi_speed_sp.z, -4.0f, 4.0f); // FIXME no harcoded values
   } else {
-    Bound(gi_speed_sp.z, nav.descend_vspeed, nav.climb_vspeed); // FIXME don't use nav settings
+    Bound(gi_speed_sp.z, -nav.climb_vspeed, -nav.descend_vspeed); // FIXME don't use nav settings
   }
 
   accel_sp = compute_accel_from_speed_sp(); // compute accel sp
@@ -854,7 +855,7 @@ static void vel_sp_cb(uint8_t sender_id __attribute__((unused)), struct FloatVec
   time_of_vel_sp = get_sys_time_float();
 }
 
-#if GUIDANCE_INDI_HYBRID_USE_AS_DEFAULT
+#if GUIDANCE_INDI_ROT_WING_USE_AS_DEFAULT
 // guidance indi control function is implementing the default functions of guidance
 
 void guidance_h_run_enter(void)
