@@ -18,7 +18,7 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#include "mav_exercise.h"
+#include "bebop2_bernardo.h"
 #include "modules/core/abi.h"
 #include "firmwares/rotorcraft/navigation.h"
 #include "state.h"
@@ -28,7 +28,7 @@
 #define NAV_C // needed to get the nav functions like Inside...
 #include "generated/flight_plan.h"
 
-#define PRINT(string, ...) fprintf(stderr, "[mav_exercise->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
+#define PRINT(string, ...) fprintf(stderr, "[bebop2_bernardo->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 
 uint8_t increase_nav_heading(float incrementDegrees);
 uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);

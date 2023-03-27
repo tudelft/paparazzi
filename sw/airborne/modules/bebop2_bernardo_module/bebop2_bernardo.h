@@ -18,10 +18,10 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PAPARAZZI_MAV_EXERCISE_H
-#define PAPARAZZI_MAV_EXERCISE_H
+#ifndef BEBOP2_BERNARDO_H
+#define BEBOP2_BERNARDO_H
 
 extern void mav_exercise_init(void);
 extern void mav_exercise_periodic(void);
 
-#endif //PAPARAZZI_MAV_EXERCISE_H
+#endif //BEBOP2_BERNARDO_H
