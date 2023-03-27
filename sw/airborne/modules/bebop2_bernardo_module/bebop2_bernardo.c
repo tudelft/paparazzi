@@ -81,13 +81,13 @@ static void opticflow_detection_cb(uint8_t __attribute__((unused)) sender_id,
   divergence = size_divergence;                             
 }
 
-void mav_exercise_init(void) {
+void bebop2_bernardo_init(void) {
   // bind our colorfilter callbacks to receive the color filter outputs
   AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
   AbiBindMsgOPTICAL_FLOW(FLOW_OPTIC_FLOW_DETECTION_ID, &opticflow_detection_ev, opticflow_detection_cb);
 }
 
-void mav_exercise_periodic(void) {
+void bebop2_bernardo_periodic(void) {
   // only evaluate our state machine if we are flying
   if (!autopilot_in_flight()) {
     return;
