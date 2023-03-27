@@ -26,7 +26,7 @@
 //
 // Created by SerbiBlaga on 24/03/2023.
 //
-
+#include "OpticFlow.h"
 #include <stdio.h>
 #include "lib/vision/image.h"
 #include <stdlib.h>
@@ -64,6 +64,9 @@ bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winS
     crop_image.height = height - 2 * crop_image.y; //crop the image by removing twice the y-direction corners
     width = crop_image.width;
     height = crop_image.height;
+
+    colorbgr_opencv_to_yuv422(prev_bgr, prev, width, height);
+    colorbgr_opencv_to_yuv422(bgr, curr, width, height);
 
     //Convert to gray
     cvtColor(M1(crop_image), prev_bgr, CV_YUV2GRAY_Y422);
