@@ -26,6 +26,7 @@
 //
 // Created by SerbiBlaga on 24/03/2023.
 //
+
 #include "OpticFlow.h"
 #include <stdio.h>
 #include "lib/vision/image.h"
@@ -87,7 +88,7 @@ bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winS
     int max_area = -1;
     int max_contour_index = -1;
 
-    for (size_t i = 0; i < contours.size(); i++){
+    for (int i = 0; i < contours.size(); i++){
         double area = contourArea(contours[i]);
         if (area > max_area) {
             max_area = area;
