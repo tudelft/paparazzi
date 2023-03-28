@@ -59,7 +59,7 @@
     </module-->
     <module name="video_capture">
       <define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>
-      <define name="VIDEO_CAPTURE_FPS" value="5"/>
+      <define name="VIDEO_CAPTURE_FPS" value="3"/>
     </module>
     <!-- <module name="cv_detect_color_object">
       <define name="COLOR_OBJECT_DETECTOR_CAMERA1" value="front_camera"/>
@@ -132,7 +132,7 @@
     <define name="GAIN_RED" value="9.0"/>
     <define name="TARGET_EXPOSURE" value="20" />
     <define name="OUTPUT_SCALER" value="0.25"/>
-    <define name="TARGET_FPS" value="30" />
+    <define name="TARGET_FPS" value="3" />
   </section>
 
   <section name="AIR_DATA" prefix="AIR_DATA_">

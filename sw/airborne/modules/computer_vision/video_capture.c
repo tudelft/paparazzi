@@ -48,7 +48,7 @@
 #endif
 
 #ifndef VIDEO_CAPTURE_FPS
-#define VIDEO_CAPTURE_FPS 0       ///< Default FPS (zero means run at camera fps)
+#define VIDEO_CAPTURE_FPS 5      ///< Default FPS (zero means run at camera fps)
 #endif
 PRINT_CONFIG_VAR(VIDEO_CAPTURE_FPS)
 
@@ -79,8 +79,11 @@ void video_capture_init(void)
   // Folder creation delayed until capture starts, see video_capture_save.
   // This prevents empty folders if nothing is actually recorded.
 
-  // Add function to computer vision pipeline
-  cv_add_to_device(&VIDEO_CAPTURE_CAMERA, video_capture_func, VIDEO_CAPTURE_FPS, 0);
+  // Add function to computer vision pipelineVIDEO_CAPTURE_FPS
+
+  // cv_add_to_device(&VIDEO_CAPTURE_CAMERA, video_capture_func, VIDEO_CAPTURE_FPS, 0);
+  cv_add_to_device(&VIDEO_CAPTURE_CAMERA, video_capture_func, 1, 0);
+
 }
 
 

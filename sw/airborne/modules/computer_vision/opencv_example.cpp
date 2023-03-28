@@ -9,8 +9,8 @@
 #include "opencv2/video/tracking.hpp"
 #include <opencv2/core/types.hpp>
 
-//#define LOG(x) fprintf(stderr, "LOG: %s:%d %s %lu \n", __FILE__, __LINE__, x, clock());
-#define LOG(x)
+#define LOG(x) fprintf(stderr, "LOG: %s:%d %s %lu \n", __FILE__, __LINE__, x, clock()); 
+// #define LOG(x)  
 
 
 #define MOVING_MEAN_COUNT 3
@@ -25,16 +25,12 @@ Mat previous_frame_left, previous_frame_right, previous_frame_middle;
 void scale_mat(const Mat matrix, Mat& matrix_left, Mat& matrix_right, Mat& matrix_middle, const int width, const int height, const int width_img, const int height_img);
 void scale_mat(const Mat matrix, Mat& matrix_left, Mat& matrix_right, Mat& matrix_middle, const int width, const int height, const int width_img, const int height_img)
 {
-
-  LOG("before matrix scaling")
-
+  // EXTREMELY QUICK, NO NEED TO OPTIMIZE
   auto range_width = Range((int) (width_img/2 - width/2),(int) (width_img/2 + width/2));
   matrix_left = matrix(range_width, Range((int) (height_img/2 - height/2),(int) (height_img/2)));
   matrix_middle = matrix(range_width, Range((int) (height_img/2 - height/4),(int) (height_img/2 + height/4)));
   matrix_right = matrix(range_width, Range((int) (height_img/2),(int) (height_img/2 + height/2)));
-
-  LOG("after matrix scaling")
-
+  
   
 }
 void calculate_magnitudes_flow(Mat& mag, const Mat prvs, const Mat next);
@@ -72,7 +68,7 @@ void calculate_output_flow(const Mat mag, float* output_flow, const int idx)
 
 void farneback(char *img, float* output_flow, int width, int height, int width_img, int height_img)
 {
-//    std::cout<<"farneback"<<"\n";
+    std::cout<<"farneback"<<"\n";
     Mat next_frame(width_img, height_img, CV_8UC2, img); 
     
     Mat next_frame_gray;
@@ -113,7 +109,7 @@ void farneback(char *img, float* output_flow, int width, int height, int width_i
       previous_frame_left = next_frame_left;
       previous_frame_right = next_frame_right;
       previous_frame_middle = next_frame_middle;
-//      std::cout<<"left: "<<output_flow[0]<<", right: "<<output_flow[1]<<"middle: "<<output_flow[2]<<"\n";
+      std::cout<<"left: "<<output_flow[0]<<", right: "<<output_flow[1]<<"middle: "<<output_flow[2]<<"\n"; 
       frame_id++;
 }
 
