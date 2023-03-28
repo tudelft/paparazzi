@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="2.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="60" name="Bebop avoid orange TU Delft Cyberzoo" security_height="0.4">
+<flight_plan alt="4.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="60" name="Bebop avoid orange TU Delft Cyberzoo" security_height="0.4">
   <header>
     #include "modules/datalink/datalink.h"
     #include "modules/energy/electrical.h"
@@ -21,10 +21,15 @@
     <waypoint lat="51.9906238" lon="4.3768729" name="_CZ4"/>
 
 
-    <waypoint lat="51.9905860" lon="4.3767712" name="_OZ1"/>
+    <!-- <waypoint lat="51.9905860" lon="4.3767712" name="_OZ1"/>
     <waypoint lat="51.9906430" lon="4.3767110" name="_OZ2"/>
     <waypoint lat="51.9906830" lon="4.3768048" name="_OZ3"/>
-    <waypoint lat="51.9906239" lon="4.3768684" name="_OZ4"/> 
+    <waypoint lat="51.9906239" lon="4.3768684" name="_OZ4"/> --> 
+
+    <waypoint lat="51.9906042" lon="4.3767770" name="_OZ1"/>
+    <waypoint lat="51.9906412" lon="4.3767361" name="_OZ2"/>
+    <waypoint lat="51.9906659" lon="4.3768003" name="_OZ3"/>
+    <waypoint lat="51.9906287" lon="4.3768372" name="_OZ4"/> 
   </waypoints>
   <sectors>
     <sector color="red" name="CyberZoo">
