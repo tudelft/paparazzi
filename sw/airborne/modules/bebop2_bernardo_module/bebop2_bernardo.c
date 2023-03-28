@@ -59,7 +59,7 @@ void bebop2_bernardo_periodic(void) {
   switch (navigation_state) {
     case SAFE:
       moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
-      if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
+      if (!InsideExplorationZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
         navigation_state = OUT_OF_BOUNDS;
       } 
         else {
@@ -74,7 +74,7 @@ void bebop2_bernardo_periodic(void) {
       increase_nav_heading(oob_haeding_increment);
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
 
-      if (InsideObstacleZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
+      if (InsideExplorationZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
         // add offset to head back into arena
         increase_nav_heading(oob_haeding_increment);
         navigation_state = SAFE;

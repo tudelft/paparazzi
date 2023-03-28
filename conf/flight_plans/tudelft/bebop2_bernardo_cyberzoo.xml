@@ -32,12 +32,12 @@
       <corner name="_CZ2"/>
       <corner name="_CZ3"/>
       <corner name="_CZ4"/>
-    <!-- </sector>
-    <sector color="#FF9922" name="ObstacleZone">
+    </sector>
+    <sector color="#FF9922" name="ExplorationZone">
       <corner name="_OZ1"/>
       <corner name="_OZ2"/>
       <corner name="_OZ3"/>
-      <corner name="_OZ4"/> -->
+      <corner name="_OZ4"/> 
     </sector> 
   </sectors>
   <exceptions>
