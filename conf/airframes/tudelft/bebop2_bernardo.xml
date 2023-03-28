@@ -212,7 +212,7 @@
     <define name="REF_MAX_SPEED" value="0.5" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
-    <define name="PGAIN" value="120"/>
+    <define name="PGAIN" value="260"/>
     <define name="DGAIN" value="230"/>
     <define name="IGAIN" value="40"/>
   </section>
