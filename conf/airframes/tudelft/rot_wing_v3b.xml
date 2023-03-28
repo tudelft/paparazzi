@@ -33,6 +33,8 @@
                 <configure name="TFMINI_PORT" value="UART8"/>
                 <configure name="USE_TFMINI_AGL" value="TRUE"/>
             </module>
+
+            <module name="ctrl_eff_sched_rot_wing_v3"/>
             
             <define VALUE="RADIO_AUX1" NAME="RADIO_TH_HOLD"/>
             <define VALUE="RADIO_AUX2" NAME="RADIO_FMODE"/>
@@ -86,8 +88,6 @@
 
         <module NAME="air_data"/>
 
-        <module name="ctrl_eff_sched_rot_wing_v3"/>
-
          <module name="mag" type="rm3100">
             <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
             <!-- <define name="RM3100_CHAN_Y_SIGN" value="-"/>
@@ -116,6 +116,8 @@
             <define name="DOUBLET_AXES" value="{0,1,2,3,4,5,6}"/>
             <define name="DOUBLET_RADIO_CHANNEL" value="6"/>
         </module>
+
+        <module name="nav_hybrid"/>
 
         <module name="agl_dist"/>
         <!--<module name="sys_id_chirp">
@@ -200,8 +202,8 @@
     </section>
 
     <section name="IMU" prefix="IMU_">
-        <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-6,-3,23}, .scale={{6478,36819,14396},{661,3766,1477}}}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-63,-15,-22}, .scale={{23554,58016,33455},{4537,11839,6837}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-40,-9,6}, .scale={{17919,36647,49183},{3659,7481,10067}}}}"/>
-        <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={213,82,-136}, .scale={{19043,495,16556},{35347,959,31057}}}}"/>
+        <!-- <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-6,-3,23}, .scale={{6478,36819,14396},{661,3766,1477}}}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-63,-15,-22}, .scale={{23554,58016,33455},{4537,11839,6837}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-40,-9,6}, .scale={{17919,36647,49183},{3659,7481,10067}}}}"/>
+        <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={213,82,-136}, .scale={{19043,495,16556},{35347,959,31057}}}}"/> -->
 
 
 
@@ -357,7 +359,7 @@
 
     <section name="SIMULATOR" prefix="NPS_">
         <define name="ACTUATOR_NAMES" value="front_motor, right_motor, back_motor, left_motor, rudder, pusher" type="string[]"/>
-        <define name="JSBSIM_MODEL" value="rotwingv3_fix" type="string"/>
+        <define name="JSBSIM_MODEL" value="rotwingv3b" type="string"/>
         <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
         <define name="COMMANDS_NB" value="6"/>
         <define name="NO_MOTOR_MIXING" value="TRUE"/>
