@@ -36,25 +36,23 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 
 enum navigation_state_t {
   SAFE,
-  OBSTACLE_FOUND,
-  OUT_OF_BOUNDS,
-  HOLD
+  OUT_OF_BOUNDS
 };
 
 // define and initialise global variables
-float oa_color_count_frac = 0.18f;
+//float oa_color_count_frac = 0.18f;
 enum navigation_state_t navigation_state = SAFE;
-int32_t color_count = 0;               // orange color count from color filter for obstacle detection
-int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
+//int32_t color_count = 0;               // orange color count from color filter for obstacle detection
+//int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
 float moveDistance = 2;                 // waypoint displacement [m]
 float oob_haeding_increment = 5.f;      // heading angle increment if out of bounds [deg]
-const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
+//const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
 
-int32_t divergence = 0;
+//int32_t divergence = 0;
 
 
 // needed to receive output from a separate module running on a parallel process
-#ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
+/*#ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
 #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
 
@@ -80,11 +78,11 @@ static void opticflow_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int32_t __attribute__((unused)) flow_der_y, float __attribute__((unused)) quality, float size_divergence) {
   divergence = size_divergence;                             
 }
-
+*/
 void bebop2_bernardo_init(void) {
   // bind our colorfilter callbacks to receive the color filter outputs
-  AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
-  AbiBindMsgOPTICAL_FLOW(FLOW_OPTIC_FLOW_DETECTION_ID, &opticflow_detection_ev, opticflow_detection_cb);
+  // AbiBindMsgVISUAL_DETECTION(ORANGE_AVOIDER_VISUAL_DETECTION_ID, &color_detection_ev, color_detection_cb);
+  // AbiBindMsgOPTICAL_FLOW(FLOW_OPTIC_FLOW_DETECTION_ID, &opticflow_detection_ev, opticflow_detection_cb);
 }
 
 void bebop2_bernardo_periodic(void) {
@@ -93,47 +91,15 @@ void bebop2_bernardo_periodic(void) {
     return;
   }
 
-  // compute current color thresholds
-  // front_camera defined in airframe xml, with the video_capture module
-  int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
-
-  PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
-
-  PRINT("Size_divergence: %d", divergence);
-
-  // update our safe confidence using color threshold
-  if (color_count < color_count_threshold) {
-    obstacle_free_confidence++;
-  } else {
-    obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
-  }
-
-  // bound obstacle_free_confidence
-  Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
-
   switch (navigation_state) {
     case SAFE:
       moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
         navigation_state = OUT_OF_BOUNDS;
-      } else if (obstacle_free_confidence == 0) {
-        navigation_state = OBSTACLE_FOUND;
-      } else if (divergence > 0.3) {
-        navigation_state = OBSTACLE_FOUND;
-      }
+      } 
         else {
         moveWaypointForward(WP_GOAL, moveDistance);
       }
-      break;
-    case OBSTACLE_FOUND:
-      // TODO Change behavior
-      // stop as soon as obstacle is found
-      waypoint_move_here_2d(WP_GOAL);
-      waypoint_move_here_2d(WP_TRAJECTORY);
-
-      increase_nav_heading(oob_haeding_increment);
-
-      navigation_state = SAFE;
       break;
     case OUT_OF_BOUNDS:
       // stop
@@ -149,7 +115,6 @@ void bebop2_bernardo_periodic(void) {
         navigation_state = SAFE;
       }
       break;
-    case HOLD:
     default:
       break;
   }
