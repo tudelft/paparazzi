@@ -20,10 +20,11 @@
     <waypoint lat="51.9906860" lon="4.3768080" name="_CZ3"/>
     <waypoint lat="51.9906238" lon="4.3768729" name="_CZ4"/>
 
-    <waypoint lat="51.9905860" lon="4.3767712" name="_OZ1"/>
+
+    <!-- <waypoint lat="51.9905860" lon="4.3767712" name="_OZ1"/>
     <waypoint lat="51.9906430" lon="4.3767110" name="_OZ2"/>
     <waypoint lat="51.9906830" lon="4.3768048" name="_OZ3"/>
-    <waypoint lat="51.9906239" lon="4.3768684" name="_OZ4"/>
+    <waypoint lat="51.9906239" lon="4.3768684" name="_OZ4"/> -->
   </waypoints>
   <sectors>
     <sector color="red" name="CyberZoo">
@@ -31,13 +32,13 @@
       <corner name="_CZ2"/>
       <corner name="_CZ3"/>
       <corner name="_CZ4"/>
-    </sector>
+    <!-- </sector>
     <sector color="#FF9922" name="ObstacleZone">
       <corner name="_OZ1"/>
       <corner name="_OZ2"/>
       <corner name="_OZ3"/>
       <corner name="_OZ4"/>
-    </sector>
+    </sector> -->
   </sectors>
   <exceptions>
     <!-- RC lost -->
