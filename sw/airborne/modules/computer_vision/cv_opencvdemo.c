@@ -114,6 +114,19 @@ float heading_increment = 7.f; // TWEAKABLE (triggered when out of bounds)
 float movedistance = 1.0f;     // TWEAKABLE (changes spead)
 float output_flow[3];
 
+void yaw_cancel(struct image_t *img, float flow_left, float flow_right, float flow_middle_divergence) {
+    if (img->eulers.psi < 0.3)
+    {
+        flow_left = 1;
+        flow_right = 1;
+        flow_middle_divergence = 1;
+
+    }
+}
+
+
+
+
 void image_editing(struct image_t *img, float flow_left, float flow_right, float flow_middle) {
 //    Mat image(width_img, height_img, CV_8UC2, img);
 //    Mat matrix_left = image(Range(95,145), Range(160,260));
@@ -130,6 +143,7 @@ void image_editing(struct image_t *img, float flow_left, float flow_right, float
     int middle_start = height_img/2 - height/4; int middle_end = height_img/2 + height/4 ;
     int right_start = height_img/2; int right_end = height_img/2 + height/2;
     int chosen_start; int chosen_end;
+
 
     // L_R = 0 means obstacle left
     for (uint16_t y = chosen_start; y < chosen_end; y++) {
@@ -211,7 +225,10 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         farneback((char *) img->buf, output_flow, WIDTH_2_PROCESS, HEIGHT_2_PROCESS, img->w, img->h);
        
     }
-    // LOG("after farneback") 
+
+    LOG("after farneback")
+    yaw_cancel(img, output_flow[0], output_flow[1], flowmiddle_divergence);
+
     //increase_nav_heading(6.f);
     //moveWaypointForward(WP_TRAJECTORY, movedistance);
     //moveWaypointForward(WP_GOAL, 0.5);
@@ -242,11 +259,11 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         image_editing(img,flowleft,flowright,flowmiddle);
     }
     else{
-        printf("No flow above threshold \n");
+//        printf("No flow above threshold \n");
     }
 
     image_cover(img);
-
+    printf("Yaw: %f", img->eulers.psi);
 
 
     switch (navigation_state){
@@ -361,7 +378,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         //LOG("BEFORE HEADING INCREASE")
         increase_nav_heading(45.f); // SHOULD BE TWEAKED
 
-   
+
         navigation_state = IJUSTTURNED1;
         
         break;
@@ -373,10 +390,13 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         waypoint_move_here_2d(WP_TRAJECTORY);
 
         
+
         increase_nav_heading(-45.f); // SHOULD BE TWEAKED
         
 
+
         LOG("After right obstacle")
+        printf("yaw left %f : \n ", img->eulers.psi);
         navigation_state = IJUSTTURNED1;
         
         break;
@@ -388,6 +408,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
       waypoint_move_here_2d(WP_TRAJECTORY);
 
       increase_nav_heading(45.f);
+
 
       
       
@@ -468,6 +489,7 @@ uint8_t increase_nav_heading(float incrementDegrees)
   nav_heading = ANGLE_BFP_OF_REAL(new_heading);
 
 //  VERBOSE_PRINT("Increasing heading to %f\n", DegOfRad(new_heading));
+
   return false;
 }
 
