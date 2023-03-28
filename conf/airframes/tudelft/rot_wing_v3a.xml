@@ -6,11 +6,11 @@
      * RC:          SBUS Crossfire
 -->
 
-<airframe name="RotatingWingV3">
-    <description>RotatingWingV3</description>
+<airframe name="RotatingWingV3A">
+    <description>RotatingWingV3A</description>
 
     <firmware name="rotorcraft">
-        <target NAME="ap" BOARD="cube_orange">
+        <target name="ap" board="cube_orange">
             <configure VALUE="500" NAME="PERIODIC_FREQUENCY"/>
             <module TYPE="sbus" NAME="radio_control">
                 <configure VALUE="UART3" NAME="SBUS_PORT"/>
@@ -28,9 +28,14 @@
                 <define NAME="MS45XX_LOWPASS_TAU" value="0.1"/>
                 <define NAME="USE_AIRSPEED_LOWPASS_FILTER" value="TRUE"/>
             </module>
-            <module name="imu" type="cube"/>
+
+            <module name="lidar_tfmini">
+                <configure name="TFMINI_PORT" value="UART8"/>
+                <configure name="USE_TFMINI_AGL" value="TRUE"/>
+            </module>
+
+            <module name="ctrl_eff_sched_rot_wing_v3a"/>
             
-            <!--<module name="wing_rotation_controller"/>-->
             <define VALUE="RADIO_AUX1" NAME="RADIO_TH_HOLD"/>
             <define VALUE="RADIO_AUX2" NAME="RADIO_FMODE"/>
             <define VALUE="RADIO_AUX3" NAME="RADIO_FBW_MODE"/>
@@ -84,8 +89,6 @@
 
         <module NAME="air_data"/>
 
-        <module name="ctrl_eff_sched_rot_wing_v3"/>
-
         <module NAME="mag_lis3mdl">
             <define VALUE="TRUE" NAME="MODULE_LIS3MDL_UPDATE_AHRS"/>
             <configure VALUE="I2C1" NAME="MAG_LIS3MDL_I2C_DEV"/>
@@ -99,17 +102,12 @@
             <configure name="AOA_PWM_CHANNEL" value="PWM_INPUT1" />
         </module>
 
-        <module name="wing_rotation_controller">
+        <module name="wing_rotation_controller_v3a">
             <define name="WING_ROTATION_POSITION_ADC_0" value="62930"/>
             <define name="WING_ROTATION_POSITION_ADC_90" value="41760"/>
             <define name="WING_ROTATION_DEADZONE_PPRZ_CMD" value="500"/>
             <define name="WING_ROTATION_P_GAIN" value="-50000"/>
             <define name="WING_ROTATION_MAX_CMD" value="9600"/>
-        </module>
-
-        <module name="lidar_tfmini">
-            <configure name="TFMINI_PORT" value="UART8"/>
-            <configure name="USE_TFMINI_AGL" value="TRUE"/>
         </module>
 
         <module name="sys_id_doublet">
@@ -126,7 +124,7 @@
 
     <servos DRIVER="Pwm">
     <!--1030 = quad 2140 = fw-->
-        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1000" NEUTRAL="1000" MAX="2099"/>
+        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1058" NEUTRAL="1058" MAX="2152"/>
         <servo NO="1" NAME="SERVO_AIL_LEFT"  MIN="1000" NEUTRAL="1500" MAX="2000"/>
         <servo NO="2" NAME="SERVO_AIL_RIGHT" MIN="1000" NEUTRAL="1500" MAX="2000"/>
     </servos>
@@ -164,7 +162,6 @@
 
     <command_laws>
         <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
-        <set VALUE="0" SERVO="SERVO_ELEVATOR"/>
         
         <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
         <!--<call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>-->
@@ -194,6 +191,7 @@
         <define VALUE="-1.0" NAME="NAV_DESCEND_VSPEED"/>
         <define name="NAV_CARROT_DIST" value="150"/>
         <define name="THRESHOLD_GROUND_DETECT" value="40"/>
+        <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST" value="300"/>
         <!--<define VALUE="50.0" NAME="ARRIVED_AT_WAYPOINT"/>-->
         <define VALUE="20" NAME="NO_GPS_LOST_WITH_DATALINK_TIME"/>
         <define VALUE="TRUE" NAME="NO_GPS_LOST_WITH_RC_VALID"/>
@@ -252,14 +250,14 @@
         <define VALUE="{1.6, 0.0,   -1.6, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
         <define VALUE="{-0.2, 0.1, -0.35, 0.35, 0.0, 0.0}" NAME="G1_YAW"/>-->
         <!--With tail effectiveness values-->
-        <define VALUE="{0.0, -8.3, 0.0,   8.7, 0.0, 0.0}" NAME="G1_ROLL"/>
+        <!-- <define VALUE="{0.0, -8.7, 0.0,   8.9, 0.0, 0.0}" NAME="G1_ROLL"/>
         <define VALUE="{1.2, 0.0,   -1.3, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-0.22, 0.35, -0.24, 0.27, 0.0, 0.0}" NAME="G1_YAW"/>
+        <define VALUE="{-0.17, 0.25, -0.33, 0.25, 0.0, 0.0}" NAME="G1_YAW"/> -->
         <!--<define VALUE="{-0.2, 0.2, -0.2, 0.2, 0.0, 0.0}" NAME="G1_YAW"/>-->
         <!--With wing effectiveness values-->
-        <!--<define VALUE="{0.0, -8.3, 0.0,   8.7, 0.0, 0.0}" NAME="G1_ROLL"/>
-        <define VALUE="{0.85, 0.0,   -0.97, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-0.12, 0.25, -0.21, 0.25, 0.0, 0.0}" NAME="G1_YAW"/>-->
+        <define VALUE="{0.0, -8.3, 0.0,   8.7, 0.0, 0.0}" NAME="G1_ROLL"/>
+        <define VALUE="{0.81, 0.0,   -0.97, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
+        <define VALUE="{-0.17, 0.25, -0.33, 0.25, 0.0, 0.0}" NAME="G1_YAW"/>
         <define VALUE="{-0.55,   -0.45,  -0.55, -0.45, 0.0, 0.0}" NAME="G1_THRUST"/>
         <define VALUE="{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
         <define VALUE="0.00055" NAME="PUSHER_PROP_EFFECTIVENESS"/>
@@ -358,7 +356,7 @@
 
     <section name="SIMULATOR" prefix="NPS_">
         <define name="ACTUATOR_NAMES" value="front_motor, right_motor, back_motor, left_motor, rudder, pusher" type="string[]"/>
-        <define name="JSBSIM_MODEL" value="rotwingv3" type="string"/>
+        <define name="JSBSIM_MODEL" value="rotwingv3a" type="string"/>
         <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
         <define name="COMMANDS_NB" value="6"/>
         <define name="NO_MOTOR_MIXING" value="TRUE"/>

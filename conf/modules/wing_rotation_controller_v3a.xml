@@ -1,5 +1,5 @@
 <!DOCTYPE module SYSTEM "module.dtd">
-<module name="wing_rotation_controller" dir="rot_wing_drone">
+<module name="wing_rotation_controller_v3a" dir="rot_wing_drone">
   <doc>
     <description>Module to control wing rotation servo command based on prefered angle setpoint</description>
   </doc>
@@ -13,13 +13,13 @@
     </dl_settings>
   </settings>
   <header>
-    <file name="wing_rotation_controller.h"/>
+    <file name="wing_rotation_controller_v3a.h"/>
   </header>
-  <init fun="wing_rotation_init()"/>
-  <periodic fun="wing_rotation_periodic()" freq="1.0"/>
-  <event fun="wing_rotation_event()"/>
+    <init fun="wing_rotation_init()"/>
+    <periodic fun="wing_rotation_periodic()" freq="1.0"/>
+    <periodic fun="wing_rotation_event()"/>
   <makefile>
-    <file name="wing_rotation_controller.c"/>
+    <file name="wing_rotation_controller_v3a.c"/>
     <test/>
   </makefile>
 </module>

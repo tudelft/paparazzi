@@ -23,8 +23,8 @@
  * Module to control wing rotation servo command based on prefered angle setpoint
  */
 
-#ifndef WING_ROTATION_CONTROLLER_H
-#define WING_ROTATION_CONTROLLER_H
+#ifndef WING_ROTATION_CONTROLLER_V3B_H
+#define WING_ROTATION_CONTROLLER_V3B_H
 
 #include "std.h"
 
@@ -52,4 +52,4 @@ struct wing_rotation_controller {
 
 extern struct wing_rotation_controller wing_rotation;
 
-#endif  // WING_ROTATION_CONTROLLER_H
+#endif  // WING_ROTATION_CONTROLLER_V3B_H

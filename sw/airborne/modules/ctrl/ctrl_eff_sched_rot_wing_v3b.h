@@ -18,13 +18,13 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-/** @file "modules/ctrl/ctrl_eff_sched_rot_wing_v3.h"
+/** @file "modules/ctrl/ctrl_eff_sched_rot_wing_v3b.h"
  * @author D.C. van Wijngaarden <D.C.vanWijngaarden@tudelft.nl>
  * Crtl effectiveness scheduler for thr rotating wing drone V3
  */
 
-#ifndef CTRL_EFF_SCHED_ROT_WING_V3_H
-#define CTRL_EFF_SCHED_ROT_WING_V3_H
+#ifndef CTRL_EFF_SCHED_ROT_WING_V3B_H
+#define CTRL_EFF_SCHED_ROT_WING_V3B_H
 
 #include "std.h"
 

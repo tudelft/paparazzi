@@ -18,12 +18,12 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-/** @file "modules/rot_wing_drone/wing_rotation_controller.c"
+/** @file "modules/rot_wing_drone/wing_rotation_controller_v3b.c"
  * @author Dennis van Wijngaarden <D.C.vanWijngaarden@tudelft.nl>
  * Module to control wing rotation servo command based on prefered angle setpoint
  */
 
-#include "modules/rot_wing_drone/wing_rotation_controller.h"
+#include "modules/rot_wing_drone/wing_rotation_controller_v3b.h"
 
 #include <stdlib.h>
 #include "mcu_periph/adc.h"

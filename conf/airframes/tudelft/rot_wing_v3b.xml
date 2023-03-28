@@ -6,8 +6,8 @@
      * RC:          SBUS Crossfire
 -->
 
-<airframe name="RotatingWingV3">
-    <description>RotatingWingV3</description>
+<airframe name="RotatingWingV3B">
+    <description>RotatingWingV3B</description>
 
     <firmware name="rotorcraft">
         <target name="ap" board="cube_orange">
@@ -34,7 +34,7 @@
                 <configure name="USE_TFMINI_AGL" value="TRUE"/>
             </module>
 
-            <module name="ctrl_eff_sched_rot_wing_v3"/>
+            <module name="ctrl_eff_sched_rot_wing_v3b"/>
             
             <define VALUE="RADIO_AUX1" NAME="RADIO_TH_HOLD"/>
             <define VALUE="RADIO_AUX2" NAME="RADIO_FMODE"/>
@@ -104,7 +104,7 @@
             <configure name="AOA_PWM_CHANNEL" value="PWM_INPUT1" />
         </module>
 
-        <module name="wing_rotation_controller">
+        <module name="wing_rotation_controller_v3b">
             <define name="WING_ROTATION_POSITION_ADC_0" value="62930"/>
             <define name="WING_ROTATION_POSITION_ADC_90" value="41760"/>
             <define name="WING_ROTATION_DEADZONE_PPRZ_CMD" value="500"/>

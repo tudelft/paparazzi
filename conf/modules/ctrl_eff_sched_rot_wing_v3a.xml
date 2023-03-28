@@ -1,0 +1,30 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="ctrl_eff_sched_rot_wing_v3a" dir="ctrl">
+  <doc>
+    <description>Crtl effectiveness scheduler for the rotating wing drone V3A</description>
+  </doc>
+
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="EffSched">
+        <dl_setting var="wing_rotation_sched_activated" min="0" step="1" max="1" values="FALSE|TRUE" module="ctrl/ctrl_eff_sched_rot_wing_v3a" shortname="rot_sched_on"/>
+        <dl_setting var="pusher_sched_activated" min="0" step="1" max="1" values="FALSE|TRUE" module="ctrl/ctrl_eff_sched_rot_wing_v3a" shortname="push_sched_on"/>
+        <dl_setting var="g1_p_multiplier" min="0.1" step="0.1" max="5" module="ctrl/ctrl_eff_sched_rot_wing_v3a" shortname="eff_mult_p"/>
+        <dl_setting var="g1_q_multiplier" min="0.1" step="0.1" max="5" module="ctrl/ctrl_eff_sched_rot_wing_v3a" shortname="eff_mult_q"/>
+        <dl_setting var="g1_r_multiplier" min="0.1" step="0.1" max="5" module="ctrl/ctrl_eff_sched_rot_wing_v3a" shortname="eff_mult_r"/>
+        <dl_setting var="g1_t_multiplier" min="0.1" step="0.1" max="5" module="ctrl/ctrl_eff_sched_rot_wing_v3a" shortname="eff_mult_t"/>
+        <dl_setting var="rot_wing_aerodynamic_eff_const_g1_r[0]" min="0" step="0.0001" max="0.01" module="ctrl/ctrl_eff_sched_rot_wing_v3a" shortname="eff_rud"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <header>
+    <file name="ctrl_eff_sched_rot_wing_v3a.h"/>
+  </header>
+    <init fun="init_eff_scheduling()"/>
+    <periodic fun="event_eff_scheduling()" freq="20"/>
+  <makefile>
+    <file name="ctrl_eff_sched_rot_wing_v3a.c"/>
+    <test/>
+  </makefile>
+</module>
