@@ -37,8 +37,8 @@
       <corner name="_OZ1"/>
       <corner name="_OZ2"/>
       <corner name="_OZ3"/>
-      <corner name="_OZ4"/>
-    </sector> -->
+      <corner name="_OZ4"/> -->
+    </sector> 
   </sectors>
   <exceptions>
     <!-- RC lost -->
