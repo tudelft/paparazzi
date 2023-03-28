@@ -200,15 +200,15 @@
     <define name="NOMINAL_HOVER_THROTTLE" value="0.655"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/> 
 
-    <!-- <define name="ADAPT_INITIAL_HOVER_THROTTLE" value="0.68" />
+    <define name="ADAPT_INITIAL_HOVER_THROTTLE" value="0.45" />
     <define name="ADAPT_MIN_HOVER_THROTTLE" value="0.55" />
-    <define name="ADAPT_MAX_HOVER_THROTTLE" value="0.72" /> -->
+    <define name="ADAPT_MAX_HOVER_THROTTLE" value="0.72" />
   </section>
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
     <define name="MAX_BANK" value="32" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="2" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="4" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
     <define name="PGAIN" value="220"/>
