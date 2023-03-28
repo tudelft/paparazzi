@@ -26,7 +26,7 @@
     <waypoint lat="51.9906830" lon="4.3768048" name="_OZ3"/>
     <waypoint lat="51.9906239" lon="4.3768684" name="_OZ4"/> -->
 
-    <waypoint name="_OZ1" x="-1" y="-2"/>
+    <waypoint name="_OZ1" x="-3" y="-3"/>
     <waypoint lat="51.9906430" lon="4.3767110" name="_OZ2"/>
     <waypoint lat="51.9906830" lon="4.3768048" name="_OZ3"/>
     <waypoint lat="51.9906239" lon="4.3768684" name="_OZ4"/>
