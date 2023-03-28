@@ -23,23 +23,13 @@ int frame_id = 0;
 float flow_arr[MOVING_MEAN_COUNT][3];
 Mat previous_frame_left, previous_frame_right, previous_frame_middle;
 Mat previous_frame_all;
-void scale_mat(const Mat matrix, Mat& matrix_left, Mat& matrix_right, Mat& matrix_middle, const int width, const int height, const int width_img, const int height_img);
-void scale_mat(const Mat matrix, Mat& matrix_left, Mat& matrix_right, Mat& matrix_middle, const int width, const int height, const int width_img, const int height_img)
+void scale_mats(const Mat matrix, Mat& matrix_left, Mat& matrix_right, Mat& matrix_middle, const int width, const int height);
+void scale_mats(const Mat matrix, Mat& matrix_left, Mat& matrix_right, Mat& matrix_middle, const int width, const int height)
 {
-
-  LOG("before matrix scaling")
-
   auto range_width = Range(0, width);
   matrix_left = matrix(range_width, Range(0, (int) height/2));
   matrix_middle = matrix(range_width, Range((int) height/4, (int) 3*height/4));
   matrix_right = matrix(range_width, Range((int) height/2, height));
-  // matrix_left = matrix(range_width, Range((int) (height_img/2 - height/2),(int) (height_img/2)));
-  // matrix_middle = matrix(range_width, Range((int) (height_img/2 - height/4),(int) (height_img/2 + height/4)));
-  // matrix_right = matrix(range_width, Range((int) (height_img/2),(int) (height_img/2 + height/2)));
-
-  LOG("after matrix scaling")
-
-  
 }
 void scale_mat_whole(const Mat matrix, Mat& matrix_all, const int width, const int height, const int width_img, const int height_img);
 void scale_mat_whole(const Mat matrix, Mat& matrix_all, const int width, const int height, const int width_img, const int height_img)
@@ -82,7 +72,6 @@ void calculate_output_flow(const Mat mag, float* output_flow, const int idx)
 
 void farneback(char *img, float* output_flow, int width, int height, int width_img, int height_img)
 {
-//    std::cout<<"farneback"<<"\n";
     LOG("start farneback")
     Mat next_frame(width_img, height_img, CV_8UC2, img); 
     
@@ -90,10 +79,9 @@ void farneback(char *img, float* output_flow, int width, int height, int width_i
 
     cvtColor(next_frame, next_frame_gray, CV_YUV2GRAY_Y422);
 
-    // Mat next_frame_left, next_frame_right, next_frame_middle;
     Mat next_frame_all;
-    // scale_mat(next_frame_gray, next_frame_left, next_frame_right, next_frame_middle, width, height, width_img, height_img);
     scale_mat_whole(next_frame_gray, next_frame_all, width, height, width_img, height_img);
+
     if (frame_id==0)
     {
     for (int i=0; i<MOVING_MEAN_COUNT; i++)
@@ -103,36 +91,22 @@ void farneback(char *img, float* output_flow, int width, int height, int width_i
         flow_arr[i][j] = 0.0;
       }
     }
-      // previous_frame_left = next_frame_left;
-      // previous_frame_middle = next_frame_middle;
-      // previous_frame_right = next_frame_right;
       previous_frame_all = next_frame_all;
       frame_id++;
       return;
     }  
     Mat mag_all(next_frame_all.size(), CV_32FC1);
     calculate_magnitudes_flow(mag_all, previous_frame_all, next_frame_all);
-    // Mat mag_left(next_frame_left.size(), CV_32FC1);
-    Mat mag_left, mag_right, mag_middle;
-    scale_mat(mag_all, mag_left, mag_right, mag_middle, width, height, width_img, height_img);
-    // calculate_magnitudes_flow(mag_left, previous_frame_left, next_frame_left);
-    
-    // Mat mag_right(next_frame_right.size(), CV_32FC1);
-    // calculate_magnitudes_flow(mag_right, previous_frame_right, next_frame_right);
 
-    // Mat mag_middle(next_frame_middle.size(), CV_32FC1);
-    // calculate_magnitudes_flow(mag_middle, previous_frame_middle, next_frame_middle);
+    Mat mag_left, mag_right, mag_middle;
+    scale_mats(mag_all, mag_left, mag_right, mag_middle, width, height);
 
     calculate_output_flow(mag_left, output_flow, LEFT_IDX);
     calculate_output_flow(mag_right, output_flow, RIGHT_IDX);
     calculate_output_flow(mag_middle, output_flow, MIDDLE_IDX);
     previous_frame_all = next_frame_all;
-      // previous_frame_left = next_frame_left;
-      // previous_frame_right = next_frame_right;
-      // previous_frame_middle = next_frame_middle;
-//      std::cout<<"left: "<<output_flow[0]<<", right: "<<output_flow[1]<<"middle: "<<output_flow[2]<<"\n";
-      frame_id++;
-      LOG("end farneback")
+    frame_id++;
+    LOG("end farneback")
 }
 
 
