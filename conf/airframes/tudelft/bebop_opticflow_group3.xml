@@ -132,7 +132,7 @@
     <define name="GAIN_RED" value="9.0"/>
     <define name="TARGET_EXPOSURE" value="20" />
     <define name="OUTPUT_SCALER" value="0.25"/>
-    <define name="TARGET_FPS" value="3" />
+    <define name="TARGET_FPS" value="5" />
   </section>
 
   <section name="AIR_DATA" prefix="AIR_DATA_">

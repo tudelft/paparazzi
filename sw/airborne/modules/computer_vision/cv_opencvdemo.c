@@ -130,34 +130,6 @@ void image_editing(struct image_t *img, float flow_left, float flow_right, float
     int middle_start = height_img/2 - height/4; int middle_end = height_img/2 + height/4 ;
     int right_start = height_img/2; int right_end = height_img/2 + height/2;
     int chosen_start; int chosen_end;
-//    auto range_width = Range((int) (width_img/2 - width/2),(int) (width_img/2 + width/2));
-//    auto left_end = Range((int) (height_img/2 - height/2),(int) (height_img/2));
-//    auto middle_end = Range((int) (height_img/2 - height/4),(int) (height_img/2 + height/4));
-//    auto right_end = Range((int) (height_img/2),(int) (height_img/2 + height/2));
-
-    // if (flow_left>flow_right && flow_left> flow_middle && flow_left>= flowleft_threshold){
-    //     chosen_start = left_start;
-    //     chosen_end = left_end;
-    //     printf("right left normaliser %f. flowmiddle divergence %f ", right_left_normalizer, flowmiddle_divergence);
-    //     printf("\n");
-
-    // }
-    // else if (flow_right> flow_left && flow_left > flow_middle && flow_right >= flowright_threshold){
-    //     chosen_start=right_start;
-    //     chosen_end = right_end;
-    //     printf("right left normaliser %f. flowmiddle divergence %f ", right_left_normalizer, flowmiddle_divergence);
-    //     printf("\n");
-    // }
-    // else if (flow_middle > flow_right && flow_middle > flow_left && flow_middle>=flowmiddle_threshold){
-    //     chosen_start = middle_start;
-    //     chosen_end = middle_end;
-    //     printf("right left normaliser %f. flowmiddle divergence %f ", right_left_normalizer, flowmiddle_divergence);
-    //     printf("\n");
-    // }
-//    else{
-//        printf("No flow above threshold \n");
-//    }
-
 
     // L_R = 0 means obstacle left
     for (uint16_t y = chosen_start; y < chosen_end; y++) {
@@ -329,7 +301,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
       counter++;
       printf("counter: %d \n", counter);
 
-      if (counter == 5){  // TWEAKABLE
+      if (counter == 1){  // TWEAKABLE
         navigation_state = IJUSTTURNED2;
         counter = 0;
       }
