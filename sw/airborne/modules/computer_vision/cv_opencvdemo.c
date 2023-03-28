@@ -106,6 +106,19 @@ float heading_increment = 7.f;
 float movedistance = 1.0f;
 float output_flow[3];
 
+void yaw_cancel(struct image_t *img, float flow_left, float flow_right, float flow_middle_divergence) {
+    if (img->eulers.psi < 0.3)
+    {
+        flow_left = 1;
+        flow_right = 1;
+        flow_middle_divergence = 1;
+
+    }
+}
+
+
+
+
 void image_editing(struct image_t *img, float flow_left, float flow_right, float flow_middle) {
 //    Mat image(width_img, height_img, CV_8UC2, img);
 //    Mat matrix_left = image(Range(95,145), Range(160,260));
@@ -130,21 +143,21 @@ void image_editing(struct image_t *img, float flow_left, float flow_right, float
     if (flow_left>flow_right && flow_left> flow_middle && flow_left>= flowleft_threshold){
         chosen_start = left_start;
         chosen_end = left_end;
-        printf("right left normaliser %f. flowmiddle divergence %f ", right_left_normalizer, flowmiddle_divergence);
-        printf("\n");
+//        printf("right left normaliser %f. flowmiddle divergence %f ", right_left_normalizer, flowmiddle_divergence);
+//        printf("\n");
 
     }
     else if (flow_right> flow_left && flow_left > flow_middle && flow_right >= flowright_threshold){
         chosen_start=right_start;
         chosen_end = right_end;
-        printf("right left normaliser %f. flowmiddle divergence %f ", right_left_normalizer, flowmiddle_divergence);
-        printf("\n");
+//        printf("right left normaliser %f. flowmiddle divergence %f ", right_left_normalizer, flowmiddle_divergence);
+//        printf("\n");
     }
     else if (flow_middle > flow_right && flow_middle > flow_left && flow_middle>=flowmiddle_threshold){
         chosen_start = middle_start;
         chosen_end = middle_end;
-        printf("right left normaliser %f. flowmiddle divergence %f ", right_left_normalizer, flowmiddle_divergence);
-        printf("\n");
+//        printf("right left normaliser %f. flowmiddle divergence %f ", right_left_normalizer, flowmiddle_divergence);
+//        printf("\n");
     }
 //    else{
 //        printf("No flow above threshold \n");
@@ -231,7 +244,8 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         farneback((char *) img->buf, output_flow, WIDTH_2_PROCESS, HEIGHT_2_PROCESS, img->w, img->h);
        
     }
-    LOG("after farneback") 
+    LOG("after farneback")
+    yaw_cancel(img, output_flow[0], output_flow[1], flowmiddle_divergence);
     //increase_nav_heading(6.f);
     //moveWaypointForward(WP_TRAJECTORY, movedistance);
     //moveWaypointForward(WP_GOAL, 0.5);
@@ -250,11 +264,11 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         image_editing(img,flowleft,flowright,flowmiddle);
     }
     else{
-        printf("No flow above threshold \n");
+//        printf("No flow above threshold \n");
     }
 
     image_cover(img);
-
+    printf("Yaw: %f", img->eulers.psi);
 
 
     switch (navigation_state){
@@ -316,6 +330,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
 
         LOG("AFTER HEADING INCREASE")
         printf("Turned Right");
+        printf("yaw right %f : \n ", img->eulers.psi);
         moveWaypointForward(WP_TRAJECTORY, movedistance);
         
         // right_left_normalizer = 1.0f; // THIS SHOULDNT BE NECESSARY BUT I DUNNO
@@ -333,13 +348,13 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
 
         
         increase_nav_heading(-30.f); // SHOULD BE TWEAKED
-        
 
 
         moveWaypointForward(WP_TRAJECTORY, movedistance);
         // right_left_normalizer = 1.0f;
         // navigation_state = SAFE;
         LOG("After right obstacle")
+        printf("yaw left %f : \n ", img->eulers.psi);
         navigation_state = IJUSTTURNED1;
         
         break;
@@ -351,6 +366,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
       waypoint_move_here_2d(WP_TRAJECTORY);
 
       increase_nav_heading(30.f);
+
 
       
       
@@ -421,6 +437,7 @@ uint8_t increase_nav_heading(float incrementDegrees)
   nav_heading = ANGLE_BFP_OF_REAL(new_heading);
 
 //  VERBOSE_PRINT("Increasing heading to %f\n", DegOfRad(new_heading));
+
   return false;
 }
 
