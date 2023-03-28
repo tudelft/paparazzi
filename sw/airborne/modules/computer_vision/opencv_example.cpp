@@ -9,8 +9,10 @@
 #include "opencv2/video/tracking.hpp"
 #include <opencv2/core/types.hpp>
 
-#define LOG(x) fprintf(stderr, "LOG: %s:%d %s %lu \n", __FILE__, __LINE__, x, clock());
-//#define LOG(x)
+
+#define LOG(x) fprintf(stderr, "LOG: %s:%d %s %lu \n", __FILE__, __LINE__, x, clock()); 
+// #define LOG(x)  
+
 
 
 #define MOVING_MEAN_COUNT 3
@@ -73,6 +75,7 @@ void calculate_output_flow(const Mat mag, float* output_flow, const int idx)
 void farneback(char *img, float* output_flow, int width, int height, int width_img, int height_img)
 {
     LOG("start farneback")
+
     Mat next_frame(width_img, height_img, CV_8UC2, img); 
     
     Mat next_frame_gray;
@@ -107,6 +110,7 @@ void farneback(char *img, float* output_flow, int width, int height, int width_i
     previous_frame_all = next_frame_all;
     frame_id++;
     LOG("end farneback")
+
 }
 
 

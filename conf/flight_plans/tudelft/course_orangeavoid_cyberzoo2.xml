@@ -15,14 +15,14 @@
     <waypoint name="TD" x="0.8" y="-1.7"/>
     <waypoint name="GOAL" x="1.9" y="1.0"/>
     <waypoint name="TRAJECTORY" x="1.9" y="1.0"/>
-    <waypoint lat="51.9905834" lon="4.3767710" name="_CZ1"/>
     <waypoint lat="51.9906440" lon="4.3767060" name="_CZ2"/>
     <waypoint lat="51.9906860" lon="4.3768080" name="_CZ3"/>
+    <waypoint lat="51.9905834" lon="4.3767710" name="_CZ1"/>
     <waypoint lat="51.9906238" lon="4.3768729" name="_CZ4"/>
-    <waypoint lat="51.990594" lon="4.376775" name="_OZ1"/>
-    <waypoint lat="51.990642" lon="4.376723" name="_OZ2"/>
-    <waypoint lat="51.990673" lon="4.376805" name="_OZ3"/>
-    <waypoint lat="51.990626" lon="4.376854" name="_OZ4"/>
+    <waypoint lat="51.990594" lon="4.376770" name="_OZ1"/>
+    <waypoint lat="51.990641" lon="4.376718" name="_OZ2"/>
+    <waypoint lat="51.990677" lon="4.376802" name="_OZ3"/>
+    <waypoint lat="51.990625" lon="4.376855" name="_OZ4"/>
   </waypoints>
   <sectors>
     <sector color="red" name="CyberZoo">

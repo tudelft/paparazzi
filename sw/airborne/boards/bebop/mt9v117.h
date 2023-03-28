@@ -31,9 +31,9 @@
 #include "mcu_periph/i2c.h"
 //#include "generated/airframe.h"
 
-#ifndef MT9V117_TARGET_FPS
-#define MT9V117_TARGET_FPS 0
-#endif
+// #ifndef MT9V117_TARGET_FPS
+#define MT9V117_TARGET_FPS 1
+// #endif
 
 // parameters for undistortion, defaults are rough estimates
 #ifndef MT9V117_FOCAL_X
