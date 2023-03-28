@@ -204,9 +204,9 @@
 
     <!-- <define name="HOVER_KP" value="350"/>
     <define name="HOVER_KD" value="85"/> 
-    <define name="HOVER_KI" value="20"/>
+    <define name="HOVER_KI" value="20"/> -->
     <define name="NOMINAL_HOVER_THROTTLE" value="0.655"/>
-    <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/> -->
+    <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/> 
 
     <!-- <define name="ADAPT_INITIAL_HOVER_THROTTLE" value="0.68" />
     <define name="ADAPT_MIN_HOVER_THROTTLE" value="0.55" />
