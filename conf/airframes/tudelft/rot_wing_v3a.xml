@@ -123,8 +123,7 @@
     </firmware>
 
     <servos DRIVER="Pwm">
-    <!--1030 = quad 2140 = fw-->
-        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1058" NEUTRAL="1058" MAX="2152"/>
+        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1146" NEUTRAL="1146" MAX="1819"/>
         <servo NO="1" NAME="SERVO_AIL_LEFT"  MIN="1000" NEUTRAL="1500" MAX="2000"/>
         <servo NO="2" NAME="SERVO_AIL_RIGHT" MIN="1000" NEUTRAL="1500" MAX="2000"/>
     </servos>
