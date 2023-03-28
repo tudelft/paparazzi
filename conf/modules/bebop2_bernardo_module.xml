@@ -15,7 +15,7 @@
         <dl_setting var = "HOVER_KD" min = "50" step = "5" max = " 120 " shortname = "kd_hover"/>
         <dl_setting var = "HOVER_KI" min = "5" step = "35" max = " 400 " shortname = "ki_hover"/>
       </dl_settings>
-    </settings>
+  </settings>
   <!-- TODO Specify header, init, periodic, makefile sections  -->
   <header>
     <file name="bebop2_bernardo.h"/>
