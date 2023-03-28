@@ -194,8 +194,8 @@
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
-    <define name="HOVER_KP" value="283"/>
-    <define name="HOVER_KD" value="82"/>
+    <define name="HOVER_KP" value="350"/>
+    <define name="HOVER_KD" value="85"/>
     <define name="HOVER_KI" value="20"/>
     <define name="NOMINAL_HOVER_THROTTLE" value="0.68"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
@@ -212,9 +212,9 @@
     <define name="REF_MAX_SPEED" value="0.5" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
-    <define name="PGAIN" value="260"/>
-    <define name="DGAIN" value="230"/>
-    <define name="IGAIN" value="40"/>
+    <define name="PGAIN" value="120"/>
+    <define name="DGAIN" value="100"/>
+    <define name="IGAIN" value="30"/>
   </section>
 
   <section name="NAVIGATION" prefix="NAV_">
