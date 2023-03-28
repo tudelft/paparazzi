@@ -93,7 +93,7 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
   pixelX = pixel_width;  //x coordinates of optimal value
   pixelY = pixel_height; // y
 
-  if (quality = true){
+  if (quality = true){ //if loop that always runs when a message is received
     //PRINT("VISION TRUE");
     new_message = true;  //message delivered set to true
   }
@@ -170,26 +170,28 @@ void orange_avoider_periodic(void)
       // turn by 'heading change' in steps of 'heading increment'
       
       if ((new_message) && (obstacle_free_confidence == 0)){  //wait for vision
-          //VERBOSE_PRINT(" -- CHANGING HEADING---"); 
+          //VERBOSE_PRINT(" -- Define NEW HEADING---\n"); 
+          //defineNewHeading(); //find new best route
           change_nav_heading(heading_change, heading_increment);
           //turn_counter++; // within function
-          VERBOSE_PRINT(" -- VISION TRUE - change heading, turn counter: %d\n", turn_counter);
+          VERBOSE_PRINT(" -- VISION Received - Change heading again, turn counter: %d\n", turn_counter);
       }
       new_message = false; //force waiting for new vision input
       //VERBOSE_PRINT(" -- VISION FALSE ---\n"); 
 
       // After turning check if heading is free to continue (with certain confidence)
         if (obstacle_free_confidence > 0){ //need to check thresholds cause this might run the turning function twice
-          VERBOSE_PRINT(" Safe to continue ---\n"); 
+          VERBOSE_PRINT(" Safe to continue --- reset turn counter \n"); 
           turn_counter == 0;
           navigation_state = SAFE;
         }
-        //if (turn_counter > 3){
-        //  VERBOSE_PRINT("I'M STUCK (90deg turn right)\n"); 
-        //  change_nav_heading(100.f, 0.1f);
-        //  turn_counter == 0;
-        //}
+        if (turn_counter > 5){
+         VERBOSE_PRINT("I'M STUCK (100deg turn right)\n"); 
+         change_nav_heading(100.f, 0.1f);
+         turn_counter == 0;
+        }
       break;
+
     case OUT_OF_BOUNDS:
       VERBOSE_PRINT(" -- OUT OF BOUNCE\n");
       //defineNewHeading();
@@ -303,16 +305,16 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
 uint8_t defineNewHeading(void)
 {
 
-  VERBOSE_PRINT("Best Pixel (X,Y): (%d, %d)\n", pixelX, pixelY);
+  //VERBOSE_PRINT("Best Pixel (X,Y): (%d, %d)\n", pixelX, pixelY);
 
   // Uses x/y of optimal path/pixel to compute newheading
   if (pixelX < 30) {   // if horizon too low -> turn 90deg
     heading_change = 65.f;
-    //VERBOSE_PRINT("Low Horizon (X<30) | Set heading_change to: %f deg\n",  heading_change);
+    VERBOSE_PRINT("Low Horizon (X<30) | Set heading_change to: %f deg\n",  heading_change);
   }  else{   // if horizon not too low -> turn based on optimal path
     heading_change = DegOfRad(atan(abs(260 - pixelY)/abs(pixelX))); //atan gives angle in radiants, so transform to degrees
     heading_change = fmaxf(heading_change, 10.); //choose between angle computed and 5deg, so min change is 5deg
-    //VERBOSE_PRINT("Optimal path | Set heading_change to: %f deg\n",  heading_change);
+    VERBOSE_PRINT("Optimal path | Set heading_change to: %f deg\n",  heading_change);
   }
 
   //Define direction of turn based on y coord of pixel
@@ -336,7 +338,8 @@ uint8_t change_nav_heading(float heading_change, float heading_increment)
   // new heading is current heading plus increments (until total change angle achieve)
   float total_turn = 0.; // variable to keep track of turn
   float new_heading = stateGetNedToBodyEulers_f()->psi + RadOfDeg(heading_increment); //in rad   (defined outside while loop)
-  //VERBOSE_PRINT("Heading before while loop is: %f deg\n", DegOfRad(stateGetNedToBodyEulers_f()->psi));
+  VERBOSE_PRINT("Heading before while loop is: %f deg\n", DegOfRad(stateGetNedToBodyEulers_f()->psi));
+  
   while (total_turn < heading_change) {
     //VERBOSE_PRINT("TURNING, total turn is: %f out of %f\n", total_turn, heading_change);
     // normalize heading to [-pi, pi]
@@ -348,15 +351,18 @@ uint8_t change_nav_heading(float heading_change, float heading_increment)
     nav_heading = ANGLE_BFP_OF_REAL(new_heading);
 
     total_turn += fabs(heading_increment);  //in deg
-    new_heading += + RadOfDeg(heading_increment); //add to heading
+    new_heading += RadOfDeg(heading_increment); //add to heading
   }
-  //VERBOSE_PRINT("Heading after while loop is: %f deg\n", DegOfRad(stateGetNedToBodyEulers_f()->psi)); //this is no different than before loop...
-  //if (total_turn >= heading_change){
-   // turn_counter++;
-   // VERBOSE_PRINT("TURN + 1");
-  //}
 
-  VERBOSE_PRINT("END TUNING - Increased heading by %f deg in steps of %f to %f\n deg", heading_change, heading_increment, DegOfRad(new_heading));
+  if (fabs(DegOfRad(stateGetNedToBodyEulers_f()->psi)) >= fabs(DegOfRad(new_heading))){ //when turning is over, 
+  //would work but if heading is negative and has to increase then it is considered true so it adds to turn -> find logic
+      VERBOSE_PRINT("END TUNING (TURN +1) - Increased heading by %f deg in steps of %f to %f deg\n", heading_change, heading_increment, DegOfRad(new_heading));
+      VERBOSE_PRINT("True Heading after turn while loop is: %f deg\n", DegOfRad(stateGetNedToBodyEulers_f()->psi));
+      turn_counter++;
+      VERBOSE_PRINT("TURNS: %d\n", turn_counter);
+  }
+  
+
   return false;
 }
 
