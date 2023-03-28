@@ -143,7 +143,7 @@ bool target_get_pos(struct NedCoor_f *pos, float *heading) {
   float time_diff = 0;
 
   /* When we have a valid target_pos message, state ned is initialized and no timeout */
-  if(target.pos.valid && state.ned_initialized_i && (target.pos.recv_time+target.target_pos_timeout) > get_sys_time_msec()) {
+  if(target.pos.valid && state.ned_initialized_i && (target.pos.recv_time+target.target_pos_timeout) > get_sys_time_msec() && (target.pos.heading <= 360)) {
     struct NedCoor_i target_pos_cm, drone_pos_cm;
 
     // Convert from LLA to NED using origin from the UAV

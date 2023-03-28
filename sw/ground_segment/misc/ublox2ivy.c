@@ -641,7 +641,7 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
           if(relPosValid) {
             ground_heading = relpos_heading;
           } else {
-            ground_heading = NAN;
+            ground_heading = 361;
           }
           
           break;
