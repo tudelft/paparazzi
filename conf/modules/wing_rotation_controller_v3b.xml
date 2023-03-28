@@ -7,8 +7,8 @@
     <dl_settings NAME="wing_rotation">
       <dl_settings NAME="wing_rot">
         <dl_setting MAX="90" MIN="0" STEP="1" VAR="wing_rotation.wing_angle_deg_sp" shortname="wing_sp_deg"/>
-        <dl_setting MAX="0.001" MIN="0" STEP="0.00001" VAR="wing_rotation.wing_rotation_first_order_dynamics" shortname="first_dyn"/>
-        <dl_setting MAX="0.001" MIN="0" STEP="0.00001" VAR="wing_rotation.wing_rotation_second_order_dynamics" shortname="second_dyn"/>
+        <dl_setting MAX="0.01" MIN="0" STEP="0.00001" VAR="wing_rotation.wing_rotation_first_order_dynamics" shortname="first_dyn"/>
+        <dl_setting MAX="0.01" MIN="0" STEP="0.00001" VAR="wing_rotation.wing_rotation_second_order_dynamics" shortname="second_dyn"/>
       </dl_settings>
     </dl_settings>
   </settings>
