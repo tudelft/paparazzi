@@ -22,13 +22,25 @@
  * @author C. De Wagter
  * opencv
  */
-#include "opticflow/linear_flow_fit.h"
+
+#include <stdint.h>
+#include "modules/computer_vision/opticflow/linear_flow_fit.h"
 
 #ifndef CV_OPENCVDEMO_H
 #define CV_OPENCVDEMO_H
 
-bool determine_flow(char* prev, char* curr, int height, int width, uint16_t winSize_i, uint16_t maxLevel, int OPTICFLOW_ERROR_THRESHOLD, int OPTICFLOW_N_ITERATIONS, int OPTICFLOW_N_SAMPLES, struct linear_flow_fit_info * info);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+  bool determine_flow(char* prev, char* curr, int height, int width, uint16_t winSize_i, uint16_t maxLevel, float OPTICFLOW_ERROR_THRESHOLD, int OPTICFLOW_N_ITERATIONS, int OPTICFLOW_N_SAMPLES, struct linear_flow_fit_info* info);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
+
 
 

@@ -53,7 +53,7 @@ PRINT_CONFIG_VAR(OPTICFLOW_FPS)
 #define PRINT(string, ...) fprintf(stderr, "[mav_exercise->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 
 /* The main opticflow variables */
-extern struct opticflow_t opticflow;                     ///< Struct to store opticflow parameters, like two images in
+struct opticflow_t opticflow;                     ///< Struct to store opticflow parameters, like two images in
 												   /// sequence. Directly taken from the original opticflow_module
                                                    //  given as example
                                                    

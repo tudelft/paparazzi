@@ -54,13 +54,13 @@ struct linear_flow_fit_info {
 };
 
 // This is the function called externally, passing the vector of optical flow vectors and information on the number of vectors and image size:
-bool analyze_linear_flow_field(struct flow_t *vectors, int count, float error_threshold, int n_iterations, int n_samples, int im_width, int im_height, struct linear_flow_fit_info *info);
+bool analyze_linear_flow_field(struct flow_t *vectors, int count, float error_threshold, int n_iterations, int n_samples, int im_width, int im_height, struct linear_flow_fit_info* info);
 
 // Fits the linear flow field with RANSAC:
 void fit_linear_flow_field(struct flow_t *vectors, int count, float error_threshold, int n_iterations, int n_samples, float *parameters_u, float *parameters_v, float *fit_error, float *min_error_u, float *min_error_v, int *n_inliers_u, int *n_inliers_v);
 
 // Extracts relevant information from the fit parameters:
-void extract_information_from_parameters(float *parameters_u, float *parameters_v, int im_width, int im_height, struct linear_flow_fit_info *info);
+void extract_information_from_parameters(float *parameters_u, float *parameters_v, int im_width, int im_height, struct linear_flow_fit_info* info);
 
 
 #endif

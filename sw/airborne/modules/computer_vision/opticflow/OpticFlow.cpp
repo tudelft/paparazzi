@@ -27,25 +27,24 @@
 // Created by SerbiBlaga on 24/03/2023.
 //
 
-#include "OpticFlow.h"
+#include "OpticFlow.hpp"
 #include <stdio.h>
 #include "lib/vision/image.h"
 #include <stdlib.h>
+#include <cstdint>
 #include "opencv_image_functions.h"
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/types_c.h>
 #include <opencv2/highgui/highgui_c.h>
 #include <opencv2/video/tracking.hpp>
-#include "opticflow/linear_flow_fit.h"
+#include "modules/computer_vision/opticflow/linear_flow_fit.h"
 
 using namespace cv;
 using namespace std;
 
-bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winSize_i, uint16_t maxLevel, float OPTICFLOW_ERROR_THRESHOLD, int OPTICFLOW_N_ITERATIONS, int OPTICFLOW_N_SAMPLES, struct linear_flow_fit_info *info);
 
-
-bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winSize_i, uint16_t maxLevel, float OPTICFLOW_ERROR_THRESHOLD, int OPTICFLOW_N_ITERATIONS, int OPTICFLOW_N_SAMPLES, struct linear_flow_fit_info *info){
+bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winSize_i, uint16_t maxLevel, float OPTICFLOW_ERROR_THRESHOLD, int OPTICFLOW_N_ITERATIONS, int OPTICFLOW_N_SAMPLES, struct linear_flow_fit_info* info){
 
     //struct flow_t* flow = new struct flow_t;
     vector<flow_t> lin_vectors;
@@ -188,10 +187,11 @@ bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winS
 
     //return flow_array;
 
-    bool result_analyzer;
+    // bool result_analyzer;
 
-    result_analyzer = analyze_linear_flow_field(flow_array, count_array, OPTICFLOW_ERROR_THRESHOLD, OPTICFLOW_N_ITERATIONS, OPTICFLOW_N_SAMPLES, width, height, info);
+    // result_analyzer = analyze_linear_flow_field(flow_array, count_array, OPTICFLOW_ERROR_THRESHOLD, OPTICFLOW_N_ITERATIONS, OPTICFLOW_N_SAMPLES, width, height, info);
     
-    return result_analyzer;
+    // return result_analyzer;
+    return true;
 
 }

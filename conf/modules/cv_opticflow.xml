@@ -55,10 +55,11 @@
     <file name="rtp.c" dir="modules/computer_vision/lib/encoding"/>
 
     <!-- The optical flow module (calculator) -->
+    <file name="linear_flow_fit.c" dir="modules/computer_vision/opticflow"/>
     <file name="opticflow_module.c"/>
     <file name="optical_calculating_thing.c" dir="modules/computer_vision/opticflow"/>
+    
     <file name="OpticFlow.cpp" dir="modules/computer_vision/opticflow"/>
-    <file name="linear_flow_fit.c" dir="modules/computer_vision/opticflow"/>
     <file name="pprz_algebra_float.c" dir="math"/>
     <file name="pprz_matrix_decomp_float.c" dir="math"/>
     <!-- <file name="pprz_simple_matrix.c" dir="math"/> -->
@@ -75,10 +76,11 @@
     <file name="rtp.c" dir="modules/computer_vision/lib/encoding"/>
 
     <!-- The optical flow module (calculator) -->
+    <file name="linear_flow_fit.c" dir="modules/computer_vision/opticflow"/>
     <file name="opticflow_module.c"/>
     <file name="optical_calculating_thing.c" dir="modules/computer_vision/opticflow"/>
+     
     <file name="OpticFlow.cpp" dir="modules/computer_vision/opticflow"/>
-    <file name="linear_flow_fit.c" dir="modules/computer_vision/opticflow"/>
     <file name="pprz_algebra_float.c" dir="math"/>
     <file name="pprz_matrix_decomp_float.c" dir="math"/>
     <!-- <file name="pprz_simple_matrix.c" dir="math"/> -->

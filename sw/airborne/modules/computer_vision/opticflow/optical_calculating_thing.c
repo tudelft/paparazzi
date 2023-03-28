@@ -7,7 +7,7 @@
 
 // Own Header
 #include "optical_calculating_thing.h"
-#include "OpticFlow.h"
+#include "OpticFlow.hpp"
 
 // Computer Vision
 #include "lib/vision/image.h"
@@ -55,7 +55,7 @@ PRINT_CONFIG_VAR(OPTICFLOW_LEVELS)
 //PRINT_CONFIG_VAR(OPTICFLOW_MAX_ITERATIONS)
 
 #ifndef OPTICFLOW_ERROR_THRESHOLD
-#define OPTICFLOW_ERROR_THRESHOLD 10
+#define OPTICFLOW_ERROR_THRESHOLD 10.f
 #endif
 
 #ifndef OPTICFLOW_N_ITERATIONS
@@ -73,8 +73,9 @@ PRINT_CONFIG_VAR(OPTICFLOW_LEVELS)
 static uint32_t timeval_diff(struct timeval *starttime, struct timeval *finishtime);
 
 struct linear_flow_fit_info *info;
-struct linear_flow_fit_info INFO;
-struct linear_flow_fit_info *info = &INFO;
+
+// struct linear_flow_fit_info INFO;
+// struct linear_flow_fit_info *info = &INFO;
 
 //struct flow_t** opt_vect = malloc(50 * sizeof(struct flow_t*));
 //struct flow_t OPT_VECT;

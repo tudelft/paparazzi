@@ -9,7 +9,8 @@
                 "limitSymbolsToIncludedHeaders": true
             },
             "includePath": [
-                "${workspaceFolder}"
+                "${workspaceFolder}",
+                "${workspaceFolder}/sw/airborne/modules/computer_vision"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/arm-none-eabi-gcc",

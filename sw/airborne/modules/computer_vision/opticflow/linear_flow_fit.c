@@ -38,7 +38,7 @@
 #include <math.h>
 #include <string.h>
 //#include "defs_and_types.h"
-#include "linear_flow_fit.h"
+#include "modules/computer_vision/opticflow/linear_flow_fit.h"
 #include "math/pprz_algebra_float.h"
 #include "math/pprz_matrix_decomp_float.h"
 #include "math/pprz_simple_matrix.h"
@@ -60,7 +60,7 @@
  * @param[in] im_height Image height in pixels
  * @param[out] info Contains all info extracted from the linear flow fit.
  */
-bool analyze_linear_flow_field(struct flow_t *vectors, int count, float error_threshold, int n_iterations, int n_samples, int im_width, int im_height, struct linear_flow_fit_info *info)
+bool analyze_linear_flow_field(struct flow_t *vectors, int count, float error_threshold, int n_iterations, int n_samples, int im_width, int im_height, struct linear_flow_fit_info* info)
 {
   // Are there enough flow vectors to perform a fit?
   if (count < MIN_SAMPLES_FIT) {
