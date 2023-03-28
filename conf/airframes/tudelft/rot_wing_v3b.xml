@@ -174,7 +174,7 @@
         <!-- <set VALUE="($th_hold? 0 : actuators_pprz[4])" SERVO="SERVO_RUDDER"/> -->
         <set VALUE="0" SERVO="SERVO_RUDDER"/>
         <set VALUE="($th_hold? 0 : actuators_pprz[5])" SERVO="SERVO_ELEVATOR"/>
-        <set VALUE="($th_hold? -9600 : -9600)" SERVO="MOTOR_PUSH"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[6])" SERVO="MOTOR_PUSH"/>
         <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_ROTWING"/>
         <set VALUE="0" SERVO="SERVO_AIL_LEFT"/>
         <set VALUE="0" SERVO="SERVO_AIL_RIGHT"/>
