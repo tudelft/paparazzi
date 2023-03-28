@@ -194,11 +194,19 @@
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
-    <define name="HOVER_KP" value="350"/>
+    <settings>
+      <dl_settings name ="Tuning">
+        <dl_setting var = "HOVER_KP" min = "50" step = "5" max = " 400 " shortname = "kp_hover"/>
+        <dl_setting var = "HOVER_KD" min = "50" step = "5" max = " 120 " shortname = "kd_hover"/>
+        <dl_setting var = "HOVER_KI" min = "5" step = "35" max = " 400 " shortname = "ki_hover"/>
+      </dl_settings>
+    </settings>
+
+    <!-- <define name="HOVER_KP" value="350"/>
     <define name="HOVER_KD" value="85"/> 
     <define name="HOVER_KI" value="20"/>
     <define name="NOMINAL_HOVER_THROTTLE" value="0.655"/>
-    <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
+    <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/> -->
 
     <!-- <define name="ADAPT_INITIAL_HOVER_THROTTLE" value="0.68" />
     <define name="ADAPT_MIN_HOVER_THROTTLE" value="0.55" />
