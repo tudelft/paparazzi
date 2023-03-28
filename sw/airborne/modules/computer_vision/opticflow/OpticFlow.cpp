@@ -42,7 +42,10 @@
 using namespace cv;
 using namespace std;
 
-bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winSize_i, uint16_t maxLevel, int OPTICFLOW_ERROR_THRESHOLD, int OPTICFLOW_N_ITERATIONS, int OPTICFLOW_N_SAMPLES, struct linear_flow_fit_info *info){
+bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winSize_i, uint16_t maxLevel, float OPTICFLOW_ERROR_THRESHOLD, int OPTICFLOW_N_ITERATIONS, int OPTICFLOW_N_SAMPLES, struct linear_flow_fit_info *info);
+
+
+bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winSize_i, uint16_t maxLevel, float OPTICFLOW_ERROR_THRESHOLD, int OPTICFLOW_N_ITERATIONS, int OPTICFLOW_N_SAMPLES, struct linear_flow_fit_info *info){
 
     //struct flow_t* flow = new struct flow_t;
     vector<flow_t> lin_vectors;
