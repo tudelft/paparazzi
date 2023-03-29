@@ -49,6 +49,10 @@ static pthread_mutex_t mutex;
 #define in_nps 1
 #endif
 
+// curtain_open = 1 means true
+#ifndef curtain_open
+#define curtain_open 1
+#endif
 
 
 float float_angle_norm(float a) {
@@ -315,26 +319,85 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
           }
 
           else {
-            if( (*up <= 111.5) && (*vp <= 143.5) && (*yp > 93.5) && (*yp <= 160.5) ){
-              if (draw){
-                *yp = 255;  // make pixel brighter in image
-              }
-              kernel_cnt++;
-            }       
-            if( (*up > 111.5) && (*up <= 115.5) && (*vp <= 137.5) && (*yp > 96.5) ) {
-              if (draw){
-                *yp = 255;  // make pixel brighter in image
-              }
-              kernel_cnt++;
-            }       
-            if( (*up <= 111.5) && (*vp > 143.5) && (*vp <= 146.5) && (*yp > 108.5) ) {
-              if (draw){
-                *yp = 255;  // make pixel brighter in image
-              }
-              kernel_cnt++;
-            }       
-          }
-            
+
+            if (curtain_open) {
+							if( (*up <= 108.5) && (*vp <= 144.5) && (*yp > 124.5) && (*yp <= 186.5) && (*yp > 134.5) && (*vp > 128.5) ){
+								if (draw){
+									*yp = 255;  // make pixel brighter in image
+								}
+								kernel_cnt++;
+							}
+							if( (*up <= 108.5) && (*vp > 144.5) && (*vp <= 150.5) && (*yp <= 184.5) && (*yp > 133.5) && (*up <= 102.5) ){
+								if (draw){
+									*yp = 255;  // make pixel brighter in image
+								}
+								kernel_cnt++;
+							}
+							if( (*up > 108.5) && (*up <= 111.5) && (*vp <= 143.5) && (*yp > 135.5) && (*yp <= 184.5) && (*yp > 143.5) ){
+								if (draw){
+									*yp = 255;  // make pixel brighter in image
+								}
+								kernel_cnt++;
+							}
+							if( (*up <= 108.5) && (*vp <= 144.5) && (*yp > 124.5) && (*yp <= 186.5) && (*yp <= 134.5) && (*up <= 104.5) ){
+								if (draw){
+									*yp = 255;  // make pixel brighter in image
+								}
+								kernel_cnt++;
+							}
+							if( (*up <= 108.5) && (*vp <= 144.5) && (*yp > 124.5) && (*yp <= 186.5) && (*yp > 134.5) && (*vp <= 128.5) ){
+								if (draw){
+									*yp = 255;  // make pixel brighter in image
+								}
+								kernel_cnt++;
+							}
+							if( (*up <= 108.5) && (*vp <= 144.5) && (*yp <= 124.5) && (*yp > 112.5) && (*up <= 103.5) && (*yp > 120.5) ){
+								if (draw){
+									*yp = 255;  // make pixel brighter in image
+								}
+								kernel_cnt++;
+							}
+
+            }
+            else {
+							if( (*up <= 107.5) && (*vp <= 144.5) && (*yp > 101.5) && (*yp <= 165.5) && (*vp <= 141.5) && (*up > 84.5) ){
+								if (draw){
+									*yp = 255;  // make pixel brighter in image
+								}
+								kernel_cnt++;
+							}
+							if( (*up <= 107.5) && (*vp <= 144.5) && (*yp > 101.5) && (*yp <= 165.5) && (*vp > 141.5) && (*yp > 111.5) ){
+								if (draw){
+									*yp = 255;  // make pixel brighter in image
+								}
+								kernel_cnt++;
+							}
+							if( (*up > 107.5) && (*up <= 110.5) && (*vp <= 141.5) && (*yp > 101.5) && (*yp <= 163.5) && (*yp > 111.5) ){
+								if (draw){
+									*yp = 255;  // make pixel brighter in image
+								}
+								kernel_cnt++;
+							}
+							if( (*up <= 107.5) && (*vp > 144.5) && (*vp <= 149.5) && (*yp > 107.5) && (*yp <= 144.5) && (*up <= 100.5) ){
+								if (draw){
+									*yp = 255;  // make pixel brighter in image
+								}
+								kernel_cnt++;
+							}
+							if( (*up <= 107.5) && (*vp <= 144.5) && (*yp <= 101.5) && (*yp > 97.5) && (*vp <= 138.5) && (*up > 93.5) ){
+								if (draw){
+									*yp = 255;  // make pixel brighter in image
+								}
+								kernel_cnt++;
+							}
+							if( (*up > 107.5) && (*up <= 110.5) && (*vp > 141.5) && (*vp <= 144.5) && (*yp > 125.5) && (*yp <= 151.5) ){
+								if (draw){
+									*yp = 255;  // make pixel brighter in image
+								}
+								kernel_cnt++;
+							}
+            }
+          } 
         }
       }
       //add break when ready
