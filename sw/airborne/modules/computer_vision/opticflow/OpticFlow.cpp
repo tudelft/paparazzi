@@ -28,6 +28,7 @@
 //
 
 #include "OpticFlow.h"
+#include <iostream>
 #include <stdio.h>
 #include "lib/vision/image.h"
 #include <stdlib.h>
@@ -90,9 +91,10 @@ using namespace std;
  */
 
 
-struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uint16_t winSize_i, uint16_t maxLevel, float OPTICFLOW_ERROR_THRESHOLD, int OPTICFLOW_N_ITERATIONS, int OPTICFLOW_N_SAMPLES, int *array_size){
+struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uint16_t winSize_i, uint16_t maxLevel, int *array_size){
     //struct flow_t* flow = new struct flow_t;
     vector<flow_t> lin_vectors;
+      PRINT("DETERMINE??");
 
     //Copy and scale the images to M1 and M2
     Mat M1(height, width, CV_8UC2, prev);
@@ -101,17 +103,17 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
     Mat prev_bgr;
     Mat bgr;
 
-    int crop_height = 30;
+    int crop_height = 25;
     int crop_width = 10;
 
     // Crop image
     Rect crop_image;
-    crop_image.x = crop_height;
-    crop_image.y = crop_width;
+    crop_image.y = crop_height;
+    crop_image.x = crop_width;
     crop_image.width = width - 2 * crop_image.x; //crop the image by removing twice the x-direction corners
     crop_image.height = height - 2 * crop_image.y; //crop the image by removing twice the y-direction corners
-    width = crop_image.width;
-    height = crop_image.height;
+    //width = crop_image.width;
+    //height = crop_image.height;
 
     //colorbgr_opencv_to_yuv422(prev_bgr, prev);
     //colorbgr_opencv_to_yuv422(bgr, curr);
@@ -120,10 +122,15 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
     cvtColor(M1(crop_image), prev_bgr, CV_YUV2GRAY_Y422);
     cvtColor(M2(crop_image), bgr, CV_YUV2GRAY_Y422);
 
+    //float scale = 0.2;
+    //resize(prev_bgr, prev_bgr, Size(), scale, scale, CV_INTER_LINEAR);
+    //resize(bgr, bgr, Size(), scale, scale, CV_INTER_LINEAR);
+
+
     //grayscale_opencv_to_yuv422(prev_bgr, prev);
     //grayscale_opencv_to_yuv422(bgr, curr);
 
-    Mat flow(prev_bgr.rows, prev_bgr.cols, CV_32FC2); //matrix to store the flows
+    //Mat flow(prev_bgr.rows, prev_bgr.cols, CV_32FC2); //matrix to store the flows
 
     Mat img_blur;
     blur(prev_bgr, img_blur, Size(10, 10)); //blur blur blur cause we can
@@ -140,6 +147,7 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
 
     for (size_t i = 0; i < contours.size(); i++){
         double area = contourArea(contours[i]);
+        // PRINT("PULA MARE");
         if (area > max_area) {
             max_area = area;
             max_contour_index = i;
@@ -192,22 +200,21 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
     // filter the flow vectors by their magnitude
     vector<float> magnitudes;
     for (size_t i = 0; i < flow_vectors.size(); i++) {
-        PRINT("MAG");
+        // PRINT("MAG");
         magnitudes.push_back(sqrt(pow(flow_vectors[i].x, 2) + pow(flow_vectors[i].y, 2)));
     }
 
-    PRINT("ALLLEEE");
-
+    // PRINT("ALLLEEE");
     // find the flow vectors that are above the threshold and save them
     float threshold = 0.7 * (float)(*max_element(magnitudes.begin(), magnitudes.end()));
     
-    PRINT("THREHSEERROR");
+    // PRINT("THREHSEERROR");
     vector<Point2f> good_flow_vectors;
     vector<float> good_error;
 
     lin_vectors.resize(good_points_old.size());
 
-    PRINT("RESIZEERROR");
+    // PRINT("RESIZEERROR");
     for (size_t i = 0; i < flow_vectors.size(); i++) {
         
 
@@ -217,7 +224,7 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
             good_points_new.push_back(good_points_new[i]);
 
        
-            PRINT("FORLOOPERROR");
+            // PRINT("FORLOOPERROR");
             lin_vectors[i].pos.x = good_points_old[i].x;
             lin_vectors[i].pos.y = good_points_old[i].y;
 
@@ -232,7 +239,7 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
         }
     }
 
-   PRINT("SERGGGGGG");
+//    PRINT("SERGGGGGG");
     
     // Declare an array of flow_t with the same size as lin_vectors
     flow_t* flow_array = new flow_t[lin_vectors.size()];
@@ -252,15 +259,12 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
             //flow_array[0].pos.count = i;
 
     }
+    cout << count_array;
+
     *array_size = count_array;
     //return flow_array;
 
-    PRINT("YAMAC SUCKS");
-    //bool result_analyzer;
-    // float divs;
-    //result_analyzer = analyze_linear_flow_field(flow_array, count_array, OPTICFLOW_ERROR_THRESHOLD, OPTICFLOW_N_ITERATIONS, OPTICFLOW_N_SAMPLES, width, height, info);
-    // divs = get_size_divergence(flow_array, count_array, 0);
-
+    // PRINT("YAMAC SUCKS");
     // return result_analyzer;
     return flow_array;
 

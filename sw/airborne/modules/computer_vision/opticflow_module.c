@@ -64,7 +64,7 @@ static pthread_mutex_t opticflow_mutex;            ///< Mutex lock for thread sa
 
 // Not used right now but could be adapted for telemetry of our own message
 /* Static functions */
-static struct image_t *opticflow_calculator_module(struct image_t *img);     ///< The main optical flow calculation thread
+struct image_t *opticflow_calculator_module(struct image_t *img);     ///< The main optical flow calculation thread
 
 //#if PERIODIC_TELEMETRY
 //#include "subsystems/datalink/telemetry.h"
@@ -139,7 +139,7 @@ struct image_t *opticflow_calculator_module(struct image_t *img)
 
   // Do the optical flow calculation
         
-  float temp_div;            // temp for the divergence
+  float temp_div;           // temp for the divergence
   if(opticflow_calc_module_call(&opticflow, img, &temp_div)){
     // Copy the result if finished
     pthread_mutex_lock(&opticflow_mutex);

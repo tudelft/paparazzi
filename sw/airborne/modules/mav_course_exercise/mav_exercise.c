@@ -105,7 +105,7 @@ void mav_exercise_periodic(void) {
   if (divergence_imp > 0.2f) {
     obstacle_free_confidence++;
   } else {
-    obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
+    obstacle_free_confidence -= 1;  // be more cautious with positive obstacle detections
   }
 
   // bound obstacle_free_confidence
@@ -116,7 +116,7 @@ void mav_exercise_periodic(void) {
       moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
         navigation_state = OUT_OF_BOUNDS;
-      } else if (obstacle_free_confidence == 2) {
+      } else if (obstacle_free_confidence == 0) {
         navigation_state = OBSTACLE_FOUND;
       } else {
         moveWaypointForward(WP_GOAL, moveDistance);

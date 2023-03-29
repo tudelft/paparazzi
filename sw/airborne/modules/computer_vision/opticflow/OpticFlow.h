@@ -71,7 +71,7 @@
 extern "C" {
 #endif
 
-  struct flow_t *determine_flow(char* prev, char* curr, int height, int width, uint16_t winSize_i, uint16_t maxLevel, float OPTICFLOW_ERROR_THRESHOLD, int OPTICFLOW_N_ITERATIONS, int OPTICFLOW_N_SAMPLES, int *array_size);
+  struct flow_t *determine_flow(char* prev, char* curr, int height, int width, uint16_t winSize_i, uint16_t maxLevel, int *array_size);
 
 
 #ifdef __cplusplus
