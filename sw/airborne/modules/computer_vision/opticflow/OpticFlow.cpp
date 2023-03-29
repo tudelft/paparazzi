@@ -27,7 +27,7 @@
 // Created by SerbiBlaga on 24/03/2023.
 //
 
-#include "OpticFlow.hpp"
+#include "OpticFlow.h"
 #include <stdio.h>
 #include "lib/vision/image.h"
 #include <stdlib.h>
@@ -38,14 +38,59 @@
 #include <opencv2/imgproc/types_c.h>
 #include <opencv2/highgui/highgui_c.h>
 #include <opencv2/video/tracking.hpp>
-#include "modules/computer_vision/opticflow/linear_flow_fit.h"
+//#include "linear_flow_fit.h"
+// #include "size_divergence.h"
+
+#define PRINT(string, ...) fprintf(stderr, "[mav_exercise->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
+
+#include <math.h>
+#include <string.h>
+//#include "defs_and_types.h"
+// #include "math/pprz_algebra_float.h"
+// #include "math/pprz_matrix_decomp_float.h"
+// #include "math/pprz_simple_matrix.h"
 
 using namespace cv;
 using namespace std;
 
+// Is this still necessary?
+#define MAX_COUNT_PT 50
 
-bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winSize_i, uint16_t maxLevel, float OPTICFLOW_ERROR_THRESHOLD, int OPTICFLOW_N_ITERATIONS, int OPTICFLOW_N_SAMPLES, struct linear_flow_fit_info* info){
+#define MIN_SAMPLES_FIT 3
 
+/**
+ * Analyze a linear flow field, retrieving information such as divergence, surface roughness, focus of expansion, etc.
+ * @param[out] outcome If 0, there were too few vectors for a fit. If 1, the fit was successful.
+ * @param[in] vectors The optical flow vectors
+ * @param[in] count The number of optical flow vectors
+ * @param[in] error_threshold Error used to determine inliers / outliers.
+ * @param[in] n_iterations Number of RANSAC iterations.
+ * @param[in] n_samples Number of samples used for a single fit (min. 3).
+ * @param[in] im_width Image width in pixels
+ * @param[in] im_height Image height in pixels
+ * @param[out] info Contains all info extracted from the linear flow fit.
+ */
+
+
+
+/**
+ * Analyze a linear flow field, retrieving information such as divergence, surface roughness, focus of expansion, etc.
+ * @param[in] vectors The optical flow vectors
+ * @param[in] count The number of optical flow vectors
+ * @param[in] error_threshold Error used to determine inliers / outliers.
+ * @param[in] n_iterations Number of RANSAC iterations.
+ * @param[in] n_samples Number of samples used for a single fit (min. 3).
+ * @param[out] parameters_u* Parameters of the horizontal flow field
+ * @param[out] parameters_v* Parameters of the vertical flow field
+ * @param[out] fit_error* Total error of the finally selected fit
+ * @param[out] min_error_u* Error fit horizontal flow field
+ * @param[out] min_error_v* Error fit vertical flow field
+ * @param[out] n_inliers_u* Number of inliers in the horizontal flow fit.
+ * @param[out] n_inliers_v* Number of inliers in the vertical flow fit.
+ */
+
+
+struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uint16_t winSize_i, uint16_t maxLevel, float OPTICFLOW_ERROR_THRESHOLD, int OPTICFLOW_N_ITERATIONS, int OPTICFLOW_N_SAMPLES, int *array_size){
     //struct flow_t* flow = new struct flow_t;
     vector<flow_t> lin_vectors;
 
@@ -68,15 +113,15 @@ bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winS
     width = crop_image.width;
     height = crop_image.height;
 
-    colorbgr_opencv_to_yuv422(prev_bgr, prev);
-    colorbgr_opencv_to_yuv422(bgr, curr);
+    //colorbgr_opencv_to_yuv422(prev_bgr, prev);
+    //colorbgr_opencv_to_yuv422(bgr, curr);
 
     //Convert to gray
     cvtColor(M1(crop_image), prev_bgr, CV_YUV2GRAY_Y422);
     cvtColor(M2(crop_image), bgr, CV_YUV2GRAY_Y422);
 
-    grayscale_opencv_to_yuv422(prev_bgr, prev);
-    grayscale_opencv_to_yuv422(bgr, curr);
+    //grayscale_opencv_to_yuv422(prev_bgr, prev);
+    //grayscale_opencv_to_yuv422(bgr, curr);
 
     Mat flow(prev_bgr.rows, prev_bgr.cols, CV_32FC2); //matrix to store the flows
 
@@ -130,6 +175,7 @@ bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winS
     vector<float> error;
     calcOpticalFlowPyrLK(prev_bgr, bgr, points_old, points_new, status, error, winSize, maxLevel, criteria);
     //flow->error = error;
+
     
     // filter the flow vector by their status
     vector<Point2f> good_points_old, good_points_new, flow_vectors;
@@ -143,32 +189,50 @@ bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winS
         }
     }
     
-
     // filter the flow vectors by their magnitude
     vector<float> magnitudes;
     for (size_t i = 0; i < flow_vectors.size(); i++) {
+        PRINT("MAG");
         magnitudes.push_back(sqrt(pow(flow_vectors[i].x, 2) + pow(flow_vectors[i].y, 2)));
     }
 
+    PRINT("ALLLEEE");
+
     // find the flow vectors that are above the threshold and save them
-    float threshold = 0.9 * (*max_element(magnitudes.begin(), magnitudes.end()));
+    float threshold = 0.7 * (float)(*max_element(magnitudes.begin(), magnitudes.end()));
+    
+    PRINT("THREHSEERROR");
     vector<Point2f> good_flow_vectors;
     vector<float> good_error;
+
+    lin_vectors.resize(good_points_old.size());
+
+    PRINT("RESIZEERROR");
     for (size_t i = 0; i < flow_vectors.size(); i++) {
+        
+
         if (magnitudes[i] >= threshold) {
             good_flow_vectors.push_back(flow_vectors[i]);
             good_points_old.push_back(good_points_old[i]);
             good_points_new.push_back(good_points_new[i]);
-            lin_vectors[i].pos.x = points_old[i].x;
-            lin_vectors[i].pos.y = points_old[i].y;
+
+       
+            PRINT("FORLOOPERROR");
+            lin_vectors[i].pos.x = good_points_old[i].x;
+            lin_vectors[i].pos.y = good_points_old[i].y;
+
+            
             lin_vectors[i].flow_x = flow_vectors[i].x;
             lin_vectors[i].flow_y = flow_vectors[i].y;
-            lin_vectors[i].error = good_error[i];
+            
+            lin_vectors[i].error = error_new[i];
             lin_vectors[i].pos.count = 0;
             lin_vectors[i].pos.x_sub = 0;
             lin_vectors[i].pos.y_sub = 0;
         }
     }
+
+   PRINT("SERGGGGGG");
     
     // Declare an array of flow_t with the same size as lin_vectors
     flow_t* flow_array = new flow_t[lin_vectors.size()];
@@ -181,17 +245,23 @@ bool determine_flow(char *prev, char *curr, int height, int width, uint16_t winS
             flow_array[i].flow_y = lin_vectors[i].flow_y;
             flow_array[i].error = lin_vectors[i].error;
             count_array++;
+            // if(i==50){
+            //     break;}
+
+            
             //flow_array[0].pos.count = i;
 
     }
-
+    *array_size = count_array;
     //return flow_array;
 
-    // bool result_analyzer;
+    PRINT("YAMAC SUCKS");
+    //bool result_analyzer;
+    // float divs;
+    //result_analyzer = analyze_linear_flow_field(flow_array, count_array, OPTICFLOW_ERROR_THRESHOLD, OPTICFLOW_N_ITERATIONS, OPTICFLOW_N_SAMPLES, width, height, info);
+    // divs = get_size_divergence(flow_array, count_array, 0);
 
-    // result_analyzer = analyze_linear_flow_field(flow_array, count_array, OPTICFLOW_ERROR_THRESHOLD, OPTICFLOW_N_ITERATIONS, OPTICFLOW_N_SAMPLES, width, height, info);
-    
     // return result_analyzer;
-    return true;
+    return flow_array;
 
 }

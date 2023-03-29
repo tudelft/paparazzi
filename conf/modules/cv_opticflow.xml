@@ -55,7 +55,7 @@
     <file name="rtp.c" dir="modules/computer_vision/lib/encoding"/>
 
     <!-- The optical flow module (calculator) -->
-    <file name="linear_flow_fit.c" dir="modules/computer_vision/opticflow"/>
+    <file name="size_divergence.c" dir="modules/computer_vision/opticflow"/>
     <file name="opticflow_module.c"/>
     <file name="optical_calculating_thing.c" dir="modules/computer_vision/opticflow"/>
     
@@ -76,7 +76,7 @@
     <file name="rtp.c" dir="modules/computer_vision/lib/encoding"/>
 
     <!-- The optical flow module (calculator) -->
-    <file name="linear_flow_fit.c" dir="modules/computer_vision/opticflow"/>
+    <file name="size_divergence.c" dir="modules/computer_vision/opticflow"/>
     <file name="opticflow_module.c"/>
     <file name="optical_calculating_thing.c" dir="modules/computer_vision/opticflow"/>
      

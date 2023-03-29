@@ -7,14 +7,14 @@
 
 // Own Header
 #include "optical_calculating_thing.h"
-#include "OpticFlow.hpp"
+#include "OpticFlow.h"
 
 // Computer Vision
 #include "lib/vision/image.h"
 #include "modules/sonar/agl_dist.h"
 // Header for our c++ file that has the openCV function
 // #include "get_flow.h"
-#include "linear_flow_fit.h"
+#include "size_divergence.h"
 // #include "image.h"git 
 // to get the definition of front_camera / bottom_camera
 #include BOARD_CONFIG
@@ -72,8 +72,16 @@ PRINT_CONFIG_VAR(OPTICFLOW_LEVELS)
 /* Functions only used here */
 static uint32_t timeval_diff(struct timeval *starttime, struct timeval *finishtime);
 
-struct linear_flow_fit_info *info;
+// struct linear_flow_fit_info *info;
 
+// struct flow_t* arrayofflows
+// struct flow_t* arrayofflows = (struct flow_t*) malloc(n * sizeof(struct flow_t));
+// int size_array = 1;
+
+struct flow_t* allocate_flows(int n) {
+    struct flow_t* arrayofflows = (struct flow_t*) malloc(n * sizeof(struct flow_t));
+    return arrayofflows;
+}
 // struct linear_flow_fit_info INFO;
 // struct linear_flow_fit_info *info = &INFO;
 
@@ -140,17 +148,17 @@ bool calc_opticfarneback(struct opticflow_t *opticflow, struct image_t *img, flo
 	//get_flow(opticflow->prev_img_gray.buf, opticflow->img_gray.buf, opticflow->pyr_scale, opticflow->levels, opticflow->window_size,
 	  //opticflow->max_iterations, opticflow->poly_n, opticflow->poly_sigma, opticflow->flags,
 	  //of_diff, div, img->w, img->h);
-  
-  result_analyzer = determine_flow(opticflow->prev_img_gray.buf, opticflow->img_gray.buf, img->h, img->w, opticflow->window_size, opticflow->levels, 
-	  opticflow->pyr_scale, opticflow->poly_sigma, opticflow->poly_n, info);
 
+	PRINT("SERBBB");
+    // use the array of structs here
+	int array_size = 1; // initialise array size
+	struct flow_t* arrayofflows = determine_flow(opticflow->prev_img_gray.buf, opticflow->img_gray.buf, img->h, img->w, opticflow->window_size, opticflow->levels, 
+	  opticflow->pyr_scale, opticflow->poly_sigma, opticflow->poly_n, &array_size);
+	PRINT("THEOO");
+	
+	*div = get_size_divergence(arrayofflows, array_size, 0);
   //result_analyzer = analyze_linear_flow_field(opt_vect, counterr, OPTICFLOW_ERROR_THRESHOLD, OPTICFLOW_N_ITERATIONS, OPTICFLOW_N_SAMPLES, img->w, img->h, info);
-
-  if(!result_analyzer){
-    return false;
-  }
-
-  *div = info->divergence;
+	
 	end = clock();
 	cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC; // Calculating elapsed time
 	PRINT("Time taken %lf \n", cpu_time_used);
@@ -158,7 +166,9 @@ bool calc_opticfarneback(struct opticflow_t *opticflow, struct image_t *img, flo
 	                                                           // the 'colored' optic flow image
 	// Put current image in previous to be ready for next loop
 	image_switch(&opticflow->img_gray, &opticflow->prev_img_gray);
-  
+  PRINT("SERBBB suck");
+	free(arrayofflows);
+
   return true;
 }
 

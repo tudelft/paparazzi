@@ -13,6 +13,7 @@ extern "C" {
 #include "inter_thread_data.h"
 #include "lib/vision/image.h"
 #include "lib/v4l/v4l2.h"
+#include "size_divergence.h"
 
 struct opticflow_t {
   bool got_first_img;                 ///< If we got a image to work with
@@ -28,6 +29,7 @@ struct opticflow_t {
   uint8_t max_iterations;               ///< The maximum amount of iterations the Lucas Kanade algorithm should do
 };
 
+extern struct flow_t* allocate_flows(int n);
 extern void opticflow_calc_init(struct opticflow_t *opticflow);
 extern bool opticflow_calc_module_call(struct opticflow_t *opticflow, struct image_t *img, float *divg);
 extern bool calc_opticfarneback(struct opticflow_t *opticflow, struct image_t *img, float *divg);
