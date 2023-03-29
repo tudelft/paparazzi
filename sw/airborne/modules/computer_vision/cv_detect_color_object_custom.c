@@ -403,7 +403,7 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
   int16_t vector_y = 0;
   bool in_triangle = true;
 
-  for (int8_t i = 0; i < 20; i++){
+  for (int8_t i = 0; i < vector_array_length; i++){
     int16_t vector_length = vector_array[i];
 
     int16_t y = i*kernel_size + half_kernel_size;

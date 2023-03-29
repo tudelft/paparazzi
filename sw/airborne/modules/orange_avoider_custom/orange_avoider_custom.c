@@ -197,7 +197,7 @@ void orange_avoider_periodic(void)
           VERBOSE_PRINT(" Safe to continue - reset counter. Turns = %d \n", turn_counter); 
           navigation_state = SAFE;
         }
-        if (turn_counter > 2){
+        if (turn_counter > 4){
          VERBOSE_PRINT("I'M STUCK (100deg turn right)\n"); 
          change_nav_heading(100.f, 0.1f);
          turn_counter = 0;
