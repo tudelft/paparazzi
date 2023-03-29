@@ -134,12 +134,14 @@ struct color_object_t {
 
   int16_t vector_x;
   int16_t vector_y;
+  int32_t direction;
 };
 
 struct return_value {
   uint32_t color_count;
   int16_t vector_x;
   int16_t vector_y;
+  int32_t direction;
 };
 
 struct pixel_values {
@@ -192,6 +194,7 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
   global_filters[0].updated = true;
   global_filters[0].vector_x = result.vector_x;
   global_filters[0].vector_y = result.vector_y;  
+  global_filters[0].direction = result.direction;
   pthread_mutex_unlock(&mutex);
 
   return img;
@@ -274,7 +277,7 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
 
   int16_t kernel_centroid = 0;
 
-  int16_t kernel_w_cnt = floor(floor(width/kernel_size)*0.4);
+  int16_t kernel_w_cnt = floor(floor(width/kernel_size)*0.5);
   int16_t kernel_h_cnt = floor(heigth/kernel_size);
 
   int16_t vector_array[vector_array_length] = {0};
@@ -384,7 +387,7 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
   float pitch  = DegOfRad((stateGetNedToBodyEulers_f()->theta)); //no float angle norm
 
   //PRINT("Pitch %f", pitch);  
-  int16_t T_x = 4.0 * -1.0 * pitch + 20;
+  int16_t T_x = 4.0 * -1.0 * pitch;
   if (T_x < 0){
     T_x = 0;
   }
@@ -393,7 +396,7 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
   }
   //PRINT("Triangle height %d", T_x);  
 
-  int16_t T_y = 160;
+  int16_t T_y = 190;
   float T_mid = vector_array_mid*kernel_size - half_kernel_size;
   float alpha = T_x/(0.5 * T_y);
   float beta1 = T_x - alpha*(T_mid);
@@ -483,9 +486,134 @@ struct return_value find_object_centroid(struct image_t *img, int32_t* p_xc, int
         *yp = 20;
       }
     }
+  /*
+  Adviced direction predictor
+  Use x = ay**2 + by + c for drawing parabols
+  Draw parabolic around x axis and translate for plotting and vector comparison
+  b = 0
+  c is adjustable
+  y_cross = 200
+  a = -c/y_cross**2
+  */
+  int16_t c = 50;
+  int16_t y_cross = 400;
+  float a = -(float)c/(y_cross * y_cross);
+  int16_t c_array[] = {25, 40, 50, 60};
+  int16_t c_array_size = 4;//sizeof(c_array)/sizeof(c_array[0]);
+
+  int16_t x_ref = 0;
+  int16_t y_ref = 0;
+  // int16_t n = 0;
+
+  int32_t direction = 0;
+  // int16_t calibration_fac = 20;
+  // int16_t side_saturation = 15;
+  int16_t direction_saturation = 50;
+
+  // Set vectors in the nav_array and plot them if desired
+  for (int16_t i = c_array_size - 1; i >= 0; i--)
+  {
+    int16_t difference = 0;
+    for (int16_t j = -1; j < 2; j += 2)
+    {
+      uint16_t temp = 0;
+      for (int16_t n = 0; n < vector_array_mid; n++) {
+        x = vector_array[vector_array_mid + n*j];
+        y_ref = (n*kernel_size + half_kernel_size + 1)*j;
+        x_ref = (int)(a*y_ref*y_ref) + c_array[i];
+
+        if (draw) {
+          uint8_t *yp, *up, *vp;
+          pix_values = compute_pixel_yuv(img, x_ref, T_mid+n*j);
+          yp = pix_values.yp;
+          up = pix_values.up;
+          vp = pix_values.vp;
+          *up = 128;
+          *vp = 255;
+          *yp = 128;          
+          pix_values = compute_pixel_yuv(img, x_ref+1, T_mid+n*j);
+          yp = pix_values.yp;
+          up = pix_values.up;
+          vp = pix_values.vp;
+          *up = 128;
+          *vp = 255;
+          *yp = 128;
+        }
+
+        
+        temp = n;
+        if (x < x_ref) {
+          
+          break;
+        }
+      }
+      difference += j*temp;
+    }
+    // int16_t difference = nav_array[i][1] - nav_array[i][0];
+    // Bound(difference, -side_saturation, side_saturation);s
+    direction += difference;
+  }
+  // direction = (int)((0.8 + (calibration_fac/scaling))*direction);
+  Bound(direction, -direction_saturation, direction_saturation);
+
+
+
+  // PRINT("DIRECTION: %d\n", direction);
+  if (draw) {
+    // Draw direction
+    if (direction >= 0) {
+      for (int16_t i = 0; i < direction; i++) {
+        x = 20;
+        y = T_mid + i;
+        uint8_t *yp, *up, *vp;
+        pix_values = compute_pixel_yuv(img, x, y);
+        yp = pix_values.yp;
+        up = pix_values.up;
+        vp = pix_values.vp;
+        *up = 230;
+        *vp = 100;
+        *yp = 29;
+      }
+    }
+    else {
+      for (int16_t i = 0; i > direction; i--) {
+        x = 20;
+        y = T_mid + i;
+        uint8_t *yp, *up, *vp;
+        pix_values = compute_pixel_yuv(img, x, y);
+        yp = pix_values.yp;
+        up = pix_values.up;
+        vp = pix_values.vp;
+        *up = 230;
+        *vp = 100;
+        *yp = 29;
+      }
+    }
+
+
+    // Draw grey lines to indicate test area for predictive routing
+    Bound(y_cross, 0, T_mid);
+    int16_t x = 0;
+    for (int16_t i = 0; i < c_array_size; i++) {
+      c = c_array[i];
+      for (int16_t y = T_mid - y_cross; y < T_mid + y_cross; y++){
+        int16_t y_temp = y - T_mid;
+          x = a*y_temp*y_temp + c;
+          uint8_t *yp, *up, *vp;
+          pix_values = compute_pixel_yuv(img, x, y);
+          yp = pix_values.yp;
+          up = pix_values.up;
+          vp = pix_values.vp;
+          *up = 128;
+          *vp = 128;
+          *yp = 128;
+        }
+    }
+  }
   test.color_count = cnt;
   test.vector_x = vector_x;
   test.vector_y = vector_y;
+  test.direction = direction;
   return test;
 }
 
@@ -497,7 +625,7 @@ void color_object_detector_periodic(void)
   pthread_mutex_unlock(&mutex);
 
   if(local_filters[0].updated){
-    AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION1_ID, local_filters[0].x_c, local_filters[0].y_c,
+    AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION1_ID, local_filters[0].direction, local_filters[0].y_c,
         local_filters[0].vector_x, local_filters[0].vector_y, local_filters[0].color_count, 0);
     local_filters[0].updated = false;
   }
