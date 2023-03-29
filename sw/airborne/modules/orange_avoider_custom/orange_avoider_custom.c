@@ -116,7 +116,7 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
 void orange_avoider_init(void)
 {
   // Initialise random values
-  srand(time(NULL));
+  //srand(time(NULL));
   //chooseRandomIncrementAvoidance();
 
   // bind our colorfilter callbacks to receive the color filter outputs
@@ -136,23 +136,22 @@ void orange_avoider_periodic(void)
   // update our safe confidence using confidence value (from vision)
   if(confidence_value > 30){ // there is no obstacle
     obstacle_free_confidence+= 5;
-    //VERBOSE_PRINT("OBS CONF + 1\n");
   } else {  // there is obstacle
     obstacle_free_confidence -= 1;  // be more cautious with positive obstacle detections
-    //VERBOSE_PRINT("OBS CONF - 2\n");
   }
 
   // bound obstacle_free_confidence
   Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
 
   float moveDistance = 1.0;
-  float adjust_heading = (float)direction/(50*7);
+  float adjust_heading = (float)direction/(350); // = 50*7 -> 50 is max due to saturation. 7 is gain for heading.
 
   switch (navigation_state){
     case SAFE:
       // Move waypoint forward
-      VERBOSE_PRINT(" -- SAFE: conf_val %d , obstac_conf %d, (x,y) = %d, %d\nMovedistane: %f\n", confidence_value, obstacle_free_confidence, pixelX, pixelY,moveDistance);
+      VERBOSE_PRINT(" -- SAFE: conf_val %d , obstac_conf %d, (x,y) = %d, %d\n", confidence_value, obstacle_free_confidence, pixelX, pixelY);
       moveWaypointForward2(WP_TRAJECTORY, 1.5f * moveDistance, adjust_heading);
+      
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0){
