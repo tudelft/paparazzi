@@ -206,32 +206,71 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
 
     // PRINT("ALLLEEE");
     // find the flow vectors that are above the threshold and save them
-    float threshold = 0.7 * (float)(*max_element(magnitudes.begin(), magnitudes.end()));
+    // float threshold = 0.7 * (float)(*max_element(magnitudes.begin(), magnitudes.end()));
     
-    // PRINT("THREHSEERROR");
-    vector<Point2f> good_flow_vectors;
-    vector<float> good_error;
+    // // PRINT("THREHSEERROR");
+    // vector<Point2f> good_flow_vectors;
+    // vector<float> good_error;
 
-    lin_vectors.resize(good_points_old.size());
+    // lin_vectors.resize(good_points_old.size());
 
-    // PRINT("RESIZEERROR");
-    for (size_t i = 0; i < flow_vectors.size(); i++) {
+    // // PRINT("RESIZEERROR");
+    // for (size_t i = 0; i < flow_vectors.size(); i++) {
         
 
-        if (magnitudes[i] >= threshold) {
+    //     if (magnitudes[i] >= threshold) {
+    //         good_flow_vectors.push_back(flow_vectors[i]);
+    //         good_points_old.push_back(good_points_old[i]);
+    //         good_points_new.push_back(good_points_new[i]);
+
+       
+    //         // PRINT("FORLOOPERROR");
+    //         lin_vectors[i].pos.x = good_points_old[i].x;
+    //         lin_vectors[i].pos.y = good_points_old[i].y;
+
+            
+    //         lin_vectors[i].flow_x = flow_vectors[i].x;
+    //         lin_vectors[i].flow_y = flow_vectors[i].y;
+            
+    //         lin_vectors[i].error = error_new[i];
+    //         lin_vectors[i].pos.count = 0;
+    //         lin_vectors[i].pos.x_sub = 0;
+    //         lin_vectors[i].pos.y_sub = 0;
+    //     }
+    // }
+    // sort magnitudes in descending order
+    sort(magnitudes.rbegin(), magnitudes.rend());
+
+    // find the flow vectors that are above the threshold and save them
+    float threshold = 0.0;
+    int num_top_vectors = (int)(0.1 * flow_vectors.size()); // calculate number of top vectors
+    int num_nonzero_vectors = 0;
+
+    for (size_t i = 0; i < flow_vectors.size(); i++) {
+        if (magnitudes[i] > 0) {
+            num_nonzero_vectors++;
+            if (num_nonzero_vectors <= num_top_vectors) {
+                threshold = magnitudes[i];
+            }
+        }
+    }
+
+    vector<Point2f> good_flow_vectors;
+    vector<float> good_error;
+    lin_vectors.resize(good_points_old.size());
+
+    for (size_t i = 0; i < flow_vectors.size(); i++) {
+        if (magnitudes[i] >= threshold && good_flow_vectors.size() < num_top_vectors) {
             good_flow_vectors.push_back(flow_vectors[i]);
             good_points_old.push_back(good_points_old[i]);
             good_points_new.push_back(good_points_new[i]);
 
-       
-            // PRINT("FORLOOPERROR");
             lin_vectors[i].pos.x = good_points_old[i].x;
             lin_vectors[i].pos.y = good_points_old[i].y;
 
-            
             lin_vectors[i].flow_x = flow_vectors[i].x;
             lin_vectors[i].flow_y = flow_vectors[i].y;
-            
+
             lin_vectors[i].error = error_new[i];
             lin_vectors[i].pos.count = 0;
             lin_vectors[i].pos.x_sub = 0;
