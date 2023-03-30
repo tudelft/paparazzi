@@ -116,7 +116,7 @@
       <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
       <stay wp="STDBY"/>
     </block>
-    <block key="l" name="Land here" strip_button="Land here" strip_icon="land-right.png">
+    <block key="l" name="land here" strip_button="land here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
       <go wp="TD"/>
       <deroute block="Flare"/>
