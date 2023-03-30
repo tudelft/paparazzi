@@ -152,8 +152,7 @@ bool calc_opticfarneback(struct opticflow_t *opticflow, struct image_t *img, flo
 	PRINT("SERBBB");
     // use the array of structs here
 	int array_size = 1; // initialise array size
-	struct flow_t* arrayofflows = determine_flow(opticflow->prev_img_gray.buf, opticflow->img_gray.buf, img->h, img->w, opticflow->window_size, opticflow->levels, 
-	  opticflow->pyr_scale, opticflow->poly_sigma, opticflow->poly_n, &array_size);
+	struct flow_t* arrayofflows = determine_flow(opticflow->prev_img_gray.buf, opticflow->img_gray.buf, img->h, img->w, opticflow->window_size, opticflow->levels, &array_size);
 	PRINT("THEOO");
 	
 	*div = get_size_divergence(arrayofflows, array_size, 0);
