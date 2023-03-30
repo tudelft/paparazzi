@@ -70,11 +70,12 @@
 #define HEADING_INC_MIDDLE 60.f
 #define HEADING_INC_OUT_OF_BOUND 90.f
 
-float movedistance = 1.5f;     // TWEAKABLE (changes spead)
+float movedistance = 1.0f;     // TWEAKABLE (changes spead)
 
 float right_obstacle_threshold = 0.75f;
 float flowmiddle_obstacle_threshold = 1.3f;                          // TWEAKABLE
 float left_obstacle_threshold= 1.25f;                                 // TWEAKABLE
+
 
 
 float x_prev;
