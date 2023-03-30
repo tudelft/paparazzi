@@ -27,6 +27,13 @@
 #define CV_OPENCVDEMO_H
 
 // extern void opencvdemo_init(void);
+struct FlowData
+{
+  left;
+  right;
+  middle
+}
+void finite_state_machine(FlowData flow_data);
 extern void calc_action_optical_flow_init(void);
 extern void calc_action_optical_flow_periodic(void);
 #endif

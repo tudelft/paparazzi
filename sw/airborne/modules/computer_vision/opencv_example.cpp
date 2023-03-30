@@ -39,6 +39,7 @@ void scale_mat_whole(const Mat matrix, Mat& matrix_all, const int width, const i
     auto range_width = Range((int) (width_img/2 - width/2),(int) (width_img/2 + width/2));
     matrix_all = matrix(range_width, Range((int) (height_img/2 - height/2),(int) (height_img/2 + height/2)));
 }
+
 void calculate_magnitudes_flow(Mat& mag, const Mat prvs, const Mat next);
 void calculate_magnitudes_flow(Mat& mag, const Mat prvs, const Mat next)
 {
@@ -46,6 +47,7 @@ void calculate_magnitudes_flow(Mat& mag, const Mat prvs, const Mat next)
     calcOpticalFlowFarneback(prvs, next, flow, 0.5, 3, 15, 3, 5, 1.2, 0);      
     Mat flow_parts[2];
     split(flow, flow_parts);
+    // mag = flow_parts[0];
     magnitude(flow_parts[0], flow_parts[1], mag);
 }
 

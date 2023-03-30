@@ -35,6 +35,7 @@
 #include "modules/core/abi.h"
 #include <time.h>
 #include <stdio.h>
+#include "math.h"
 
 #define NAV_C // needed to get the nav functions like Inside...
 #include "generated/flight_plan.h"
@@ -48,12 +49,38 @@
 #define VERBOSE_PRINT(...)
 #endif
 
-#ifndef OPENCVDEMO_FPS
-#define OPENCVDEMO_FPS 5       ///< Default FPS (zero means run at camera fps)
-#endif
 
-#define WIDTH_2_PROCESS 40   // TWEAKABLE
-#define HEIGHT_2_PROCESS 120 // TWEAKABLE
+
+
+
+////////////////////////////////////////////////////
+////////////PARAMETERS_TO_TEST_ON///////////////////
+////////////////////////////////////////////////////
+#ifndef OPENCVDEMO_FPS
+#define OPENCVDEMO_FPS 0       ///< Default FPS (zero means run at camera fps)
+#endif
+#define WIDTH_2_PROCESS 30   // TWEAKABLE
+#define HEIGHT_2_PROCESS 140 // TWEAKABLE
+#define FLOWMIDDLE_DIV_LOWER 0.80f
+#define FLOWMIDDLE_ABS_MIN 0.0f // Not too sure whether using this is a smart move, otherwise set to 0
+#define LEFTFLOW_TURNING_TH 1.18f
+#define RIGHTFLOW_TURNING_TH 0.78f
+#define COUNTER2_MAX 5
+#define HEADING_INC_LEFT_RIGHT 45.f
+#define HEADING_INC_MIDDLE 60.f
+#define HEADING_INC_OUT_OF_BOUND 90.f
+
+float movedistance = 1.5f;     // TWEAKABLE (changes spead)
+
+float right_obstacle_threshold = 0.75f;
+float flowmiddle_obstacle_threshold = 1.3f;                          // TWEAKABLE
+float left_obstacle_threshold= 1.25f;                                 // TWEAKABLE
+
+
+float x_prev;
+float y_prev;
+float tot_dist = 0.f;
+
 
 // ::google::protobuf::internal::GetCurrentTime(&seconds, &nanoseconds);
 // int64_t seconds;
@@ -92,15 +119,13 @@ float flowmiddle_prev_prev = 1.0f;
 float flowmiddle_divergence = 1.0f;
 float flowmiddle_divergence_prev = 1.0f;
 
-float flowleft_threshold = 5.0f;
-float flowright_threshold = 5.0f;
-float flowmiddle_threshold = 5.0f;
+// float flowleft_threshold = 5.0f;
+// float flowright_threshold = 5.0f;
+// float flowmiddle_threshold = 5.0f;
 
 float right_left_normalizer = 1.0f;                                  // TWEAKABLE
-float left_obstacle_threshold= 1.3f;                                 // TWEAKABLE
 // float right_obstacle_threshold = 1.0f // TWEAKABLE
-float right_obstacle_threshold = 0.65f;
-float flowmiddle_obstacle_threshold = 1.5f;                          // TWEAKABLE
+
 
 
 float flowleft_temp = 0.0f;
@@ -108,23 +133,22 @@ float flowright_temp = 0.0f;
 
 int counter = 0;
 int counter2 = 0;
-
+int step = 0;
 // float flowcombined_treshold = 10.0f;
 // if flowcombined > flowcombined_treshold, then turn 180 degrees (run away)
 
-float heading_increment = 180.f; // TWEAKABLE (triggered when out of bounds)
-float movedistance = 1.0f;     // TWEAKABLE (changes spead)
+// float heading_increment = 180.f; // TWEAKABLE (triggered when out of bounds)
 float output_flow[3];
 
-void yaw_cancel(struct image_t *img, float flow_left, float flow_right, float flow_middle_divergence) {
-    if (img->eulers.psi < 0.3)
-    {
-        flow_left = 1;
-        flow_right = 1;
-        flow_middle_divergence = 1;
+// void yaw_cancel(struct image_t *img, float flow_left, float flow_right, float flow_middle_divergence) {
+//     if (img->eulers.psi < 0.3)
+//     {
+//         flow_left = 1;
+//         flow_right = 1;
+//         flow_middle_divergence = 1;
 
-    }
-}
+//     }
+// }
 
 
 
@@ -178,10 +202,10 @@ void image_editing(struct image_t *img, float flow_left, float flow_right, float
 
 void image_cover(struct image_t *img){
     uint8_t *buffer = img->buf;
-    float square_1[4] = {0,165, 0, img->w}; //[0,160,0,img->w];
-    float square_2[4] = {355,img->h,0,img->w};// [360,img->h,0,img->w];
-    float square_3[4] = {165,355,0,100}; //[160,360,0,95];
-    float square_4[4] = {165,355,140,img->w}; // [160,360,145,img->w];
+    float square_1[4] = {0,img->h/2 - HEIGHT_2_PROCESS/2, 0, img->w}; //[0,160,0,img->w];
+    float square_2[4] = {img->h/2 + HEIGHT_2_PROCESS/2,img->h,0,img->w};// [360,img->h,0,img->w];
+    float square_3[4] = {img->h/2 - HEIGHT_2_PROCESS/2,img->h/2 + HEIGHT_2_PROCESS/2,0,img->w/2 - WIDTH_2_PROCESS/2}; //[160,360,0,95];
+    float square_4[4] = {img->h/2 - HEIGHT_2_PROCESS/2,img->h/2 + HEIGHT_2_PROCESS/2,img->w/2 + WIDTH_2_PROCESS/2,img->w}; // [160,360,145,img->w];
     float* squares[4] = {square_1,square_2,square_3,square_4};
     for (int chosen = 0;chosen<4;chosen++){
         float* ptr = squares[chosen];
@@ -227,9 +251,10 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         farneback((char *) img->buf, output_flow, WIDTH_2_PROCESS, HEIGHT_2_PROCESS, img->w, img->h);
        
     }
-
+    compute_dist(step);
+    step = 1;
     LOG("after farneback")
-    yaw_cancel(img, output_flow[0], output_flow[1], flowmiddle_divergence);
+    // yaw_cancel(img, output_flow[0], output_flow[1], flowmiddle_divergence);
 
     //increase_nav_heading(6.f);
     //moveWaypointForward(WP_TRAJECTORY, movedistance);
@@ -272,7 +297,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
     switch (navigation_state){
       case SAFE:
         // Move waypoint forward
-        moveWaypointForward(WP_TRAJECTORY, 1.0f);
+        moveWaypointForward(WP_TRAJECTORY, 1.0f * movedistance);
 
         LOG("start of safe")
         
@@ -300,7 +325,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
           navigation_state = OBSTACLE_MIDDLE;break;
           break; 
           
-        } else if (flowmiddle_divergence < 0.60){    // TWEAKABLE
+        } else if (flowmiddle_divergence < FLOWMIDDLE_DIV_LOWER){    // TWEAKABLE
           printf("Obstacle MIDDLE \n");
           navigation_state = OBSTACLE_MIDDLE;
           break; 
@@ -316,15 +341,15 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
           break; 
         } 
 
-        else if (flowmiddle  < 500.0f){    // TWEAKABLE
+        else if (flowmiddle  < FLOWMIDDLE_ABS_MIN){    // TWEAKABLE
           printf("Obstacle MIDDLE \n");
           increase_nav_heading(90.0f);
-          navigation_state = SAFE
+          navigation_state = SAFE;
           break; 
         } 
         
         else {
-          moveWaypointForward(WP_GOAL, 0.5f);
+          moveWaypointForward(WP_GOAL, 0.5f * movedistance);
           printf("NO OBSTACLE \n");
         }
         LOG("end of safe")
@@ -357,14 +382,14 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         break;
         
   
-        } else if (right_left_normalizer < 0.78){ // added this
+        } else if (right_left_normalizer < RIGHTFLOW_TURNING_TH){ // added this
           LOG("after obstacle right evaluation")
           printf("Obstacle RIGHT \n");
           navigation_state = OBSTACLE_RIGHT;
           counter2 = 0;
           break;
          
-        } else if (right_left_normalizer > 1.3){ 
+        } else if (right_left_normalizer > LEFTFLOW_TURNING_TH){ 
           printf("Obstacle LEFT \n");
           navigation_state = OBSTACLE_LEFT;
           counter2 = 0;
@@ -373,7 +398,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
 
      
       printf("counter2: %d \n", counter2);
-      if (counter2 == 15){
+      if (counter2 == COUNTER2_MAX){
         navigation_state = SAFE;
         counter2 = 0;
         break;
@@ -386,7 +411,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         LOG("OBSTACLE LEFT")
         waypoint_move_here_2d(WP_GOAL);
         waypoint_move_here_2d(WP_TRAJECTORY);
-        increase_nav_heading(45.f); // SHOULD BE TWEAKED
+        increase_nav_heading(HEADING_INC_LEFT_RIGHT); // SHOULD BE TWEAKED
         printf("yaw left %f : \n ", img->eulers.psi);
         navigation_state = IJUSTTURNED1;
         break;
@@ -395,7 +420,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
         LOG("OBSTACLE RIGHT")
         waypoint_move_here_2d(WP_GOAL);
         waypoint_move_here_2d(WP_TRAJECTORY);
-        increase_nav_heading(-45.f); // SHOULD BE TWEAKED
+        increase_nav_heading(-HEADING_INC_LEFT_RIGHT); // SHOULD BE TWEAKED
         printf("yaw left %f : \n ", img->eulers.psi);
         navigation_state = IJUSTTURNED1;
         break;
@@ -404,22 +429,22 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
       LOG("OBSTACLE MIDDLE")
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
-      increase_nav_heading(45.f);
+      increase_nav_heading(HEADING_INC_MIDDLE);
       navigation_state = IJUSTTURNED1; 
       break;
     case OUT_OF_BOUNDS:
       LOG("Out of bounds")
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
-      increase_nav_heading(60.0f);
-      moveWaypointForward(WP_TRAJECTORY, 1.0f);
+      increase_nav_heading(HEADING_INC_OUT_OF_BOUND);
+      moveWaypointForward(WP_TRAJECTORY, 1.0f * movedistance);
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         navigation_state = OUT_OF_BOUNDS; 
         break;
         }
       else {
         LOG("NOT OUT OF BOUNDS ANYMORE")
-        moveWaypointForward(WP_GOAL, 1.0f);
+        moveWaypointForward(WP_GOAL, 1.0f * movedistance);
         navigation_state = IJUSTTURNED2;
         break;
       }
@@ -509,5 +534,18 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor)
   return false;
 }
 
-
+void compute_dist(int i)
+{
+  if (i==0)
+  {
+    x_prev = POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x);
+    y_prev = POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y);
+    return;
+  }
+  printf("x_prev %f\n", x_prev);
+  tot_dist += sqrt((POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x) - x_prev) * (POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->x) - x_prev) + (POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y) - y_prev) * (POS_FLOAT_OF_BFP(stateGetPositionEnu_i()->y) - y_prev));
+  printf("tot_dist: %lf\n", tot_dist);
+  x_prev = stateGetPositionEnu_i()->x;
+  y_prev = stateGetPositionEnu_i()->y;
+}
 
