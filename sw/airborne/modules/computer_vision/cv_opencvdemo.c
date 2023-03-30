@@ -154,7 +154,7 @@ float output_flow[3];
 
 
 
-void image_editing(struct image_t *img, float flow_left, float flow_right, float flow_middle) {
+void image_editing(struct image_t *img, float right_left_normaliser, float flowmiddle_divergence) {
 //    Mat image(width_img, height_img, CV_8UC2, img);
 //    Mat matrix_left = image(Range(95,145), Range(160,260));
 //    Mat matrix_right = image(Range(95,145),Range(260,360));
@@ -170,7 +170,20 @@ void image_editing(struct image_t *img, float flow_left, float flow_right, float
     int middle_start = height_img/2 - height/4; int middle_end = height_img/2 + height/4 ;
     int right_start = height_img/2; int right_end = height_img/2 + height/2;
     int chosen_start; int chosen_end;
+    if(right_left_normalizer < right_obstacle_threshold){
+        chosen_start = right_start;
+        chosen_end = right_end;
+    }
+    else if(right_left_normalizer > left_obstacle_threshold){
+        chosen_start = left_start;
+        chosen_end = left_end;
 
+    }
+    else if(flowmiddle_divergence > flowmiddle_obstacle_threshold){
+        chosen_start = middle_start;
+        chosen_end = middle_end;
+
+    }
 
     // L_R = 0 means obstacle left
     for (uint16_t y = chosen_start; y < chosen_end; y++) {
@@ -285,7 +298,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
 
  
     if (right_left_normalizer < right_obstacle_threshold|| right_left_normalizer > left_obstacle_threshold|| flowmiddle_divergence > 1.5){
-        image_editing(img,flowleft,flowright,flowmiddle);
+        image_editing(img,right_left_normalizer,flowmiddle_divergence);
     }
     else{
 //        printf("No flow above threshold \n");
