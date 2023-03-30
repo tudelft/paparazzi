@@ -16,13 +16,15 @@ uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 
 enum navigation_state_t {
   SAFE,
+  OUT_OF_EXPLORATION,
   OUT_OF_BOUNDS
 };
 
 // define and initialise global variables
 enum navigation_state_t navigation_state = SAFE;
 float moveDistance = 2;                 // waypoint displacement [m]
-float oob_haeding_increment = 5.f;      // heading angle increment if out of bounds [deg]
+float oob_heading_increment = 5.f;      // heading angle increment if out of bounds [deg]
+float ooz_heading_increment = 15.f;     // heading angle increment if out of exploration zone [deg]
 
 void bebop2_bernardo_init(void) {
   // bind our colorfilter callbacks to receive the color filter outputs
@@ -39,24 +41,42 @@ void bebop2_bernardo_periodic(void) {
   switch (navigation_state) {
     case SAFE:
       moveWaypointForward(WP_TRAJECTORY, 1.5f * moveDistance);
-      if (!InsideExplorationZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
+      if (!InsideCyberZoo(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
         navigation_state = OUT_OF_BOUNDS;
-      } 
-        else {
+      } else if (!InsideExplorationZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
+        navigation_state = OUT_OF_EXPLORATION;
+      } else {
         moveWaypointForward(WP_GOAL, moveDistance);
       }
+        
       break;
+
+    case OUT_OF_EXPLORATION:
+      // stop
+      waypoint_move_here_2d(WP_GOAL);
+      waypoint_move_here_2d(WP_TRAJECTORY);
+
+      increase_nav_heading(ooz_heading_increment);
+      moveWaypointForward(WP_TRAJECTORY, 1.5f);
+
+      if (InsideExplorationZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
+        // add offset to head back into arena
+        increase_nav_heading(ooz_heading_increment);
+        navigation_state = SAFE;
+      }
+      break;
+    
     case OUT_OF_BOUNDS:
       // stop
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
 
-      increase_nav_heading(oob_haeding_increment);
+      increase_nav_heading(oob_heading_increment);
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
 
       if (InsideExplorationZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
         // add offset to head back into arena
-        increase_nav_heading(oob_haeding_increment);
+        increase_nav_heading(oob_heading_increment);
         navigation_state = SAFE;
       }
       break;
