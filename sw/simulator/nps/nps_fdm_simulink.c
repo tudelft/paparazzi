@@ -72,12 +72,13 @@ static void fetch_angular_vel(void);
 static void fetch_rotaccel(void);
 
 static void print_state(void);
+static int check_for_nan(void);
 
 void nps_fdm_init(double dt)
 {
   fdm.init_dt = dt;
   fdm.time = dt;
-  //fdm.on_ground = TRUE;
+  //fdm.on_ground = false;
 
   fdm.nan_count = 0;
   fdm.pressure = -1;
@@ -104,32 +105,8 @@ void nps_fdm_init(double dt)
     rtU.w[i] = 0;
   }
   darko_initialize();
-  print_state();
+  //print_state();
   darko_step();
-
-  fetch_pos();
-  fetch_vel();
-  //fetch_accel();
-  fetch_orient();
-  fetch_angular_vel();
-  //fetch_rotaccel();
-
-  print_state();
-
-/*
-  darko_step();
-
-   // Transform ltp definition to double for accuracy
-  ltpdef_d.ecef.x = state.ned_origin_f.ecef.x;
-  ltpdef_d.ecef.y = state.ned_origin_f.ecef.y;
-  ltpdef_d.ecef.z = state.ned_origin_f.ecef.z;
-  ltpdef_d.lla.lat = state.ned_origin_f.lla.lat;
-  ltpdef_d.lla.lon = state.ned_origin_f.lla.lon;
-  ltpdef_d.lla.alt = state.ned_origin_f.lla.alt;
-  for (int i = 0; i < 3 * 3; i++) {
-    ltpdef_d.ltp_of_ecef.m[i] = state.ned_origin_f.ltp_of_ecef.m[i];
-  }
-  ltpdef_d.hmsl = state.ned_origin_f.hmsl;
 
   fetch_pos();
   fetch_vel();
@@ -137,13 +114,14 @@ void nps_fdm_init(double dt)
   fetch_orient();
   fetch_angular_vel();
   fetch_rotaccel();
-*/
-  //printf("init");
+
+  //print_state();
+
 }
 
 void nps_fdm_run_step(bool launch __attribute__((unused)), double *commands, int commands_nb __attribute__((unused)))
 {
-  //feed_cmd(commands, commands_nb);
+  feed_cmd(commands, commands_nb);
 
   //autopilot_in_flight()  autopilot.motors_on
 
@@ -168,31 +146,42 @@ void nps_fdm_run_step(bool launch __attribute__((unused)), double *commands, int
 
     fetch_pos();
     fetch_vel();
-    //fetch_accel();
+    fetch_accel();
     fetch_orient();
     fetch_angular_vel();
-    //fetch_rotaccel();
+    fetch_rotaccel();
 
+    /* Check the current state to make sure it is valid (no NaNs) */
+    if (check_for_nan()) {
+      printf("Error: FDM simulation encountered a total of %i NaN values at simulation time %f.\n", fdm.nan_count, fdm.time);
+      printf("It is likely the simulation diverged and gave non-physical results. If you did\n");
+      printf("not crash, check your model and/or initial conditions. Exiting with status 1.\n");
+      exit(1);
+    }
 }
 
 #define DBG_CMD 0
 
 
 void feed_cmd(double *commands, int commands_nb __attribute__((unused))) {
-#if DBG_CMD
-  printf("commands (%d), ", commands_nb);
-#endif
+  #if DBG_CMD
+    printf("commands (%d), ", commands_nb);
+  #endif
+
   if (commands_nb != 4) {exit(-45);}
 
+  
   for (int i=0; i<commands_nb; i++) {
     rtU.u[i] = commands[i];
-#if DBG_CMD
-    printf("%lf ", commands[i]);
-#endif
+    #if DBG_CMD
+        printf("%lf ", commands[i]);
+    #endif
   }
-#if DBG_CMD
-  printf("\n");
-#endif
+  #if DBG_CMD
+    printf("\n");
+  #endif
+
+  
 }
 
 static void fetch_pos() {
@@ -210,6 +199,12 @@ static void fetch_pos() {
   // lla_pos_geod
   // lla_pos_geoc
   fdm.agl = fdm.hmsl; // TODO
+
+/*
+printf(" pos %lf %lf %lf \n",
+        fdm.ltpprz_pos.x, fdm.ltpprz_pos.y,fdm.ltpprz_pos.z);
+*/
+   
 }
 
 static void fetch_vel() {
@@ -218,7 +213,7 @@ static void fetch_vel() {
   fdm.ltpprz_ecef_vel.z = rtY.v[2];
 
   ecef_of_ned_vect_d(&fdm.ecef_ecef_vel, &ltpdef_d, &fdm.ltpprz_ecef_vel);
-  //lla_of_ecef_d(&fdm.lla_pos, &fdm.ecef_ecef_vel);
+
 
 }
 
@@ -236,6 +231,8 @@ static void fetch_accel() {
   double_quat_vmult(&fdm.body_accel, &fdm.ltp_to_body_quat, &tmp);
 }
 
+
+
 static void fetch_orient() {
   struct DoubleQuat ltp_to_sim = { rtY.q[0], rtY.q[1], rtY.q[2], rtY.q[3] };
   double_quat_comp(&fdm.ltpprz_to_body_quat, &ltp_to_sim, &quat_to_pprz);
@@ -243,10 +240,6 @@ static void fetch_orient() {
   QUAT_COPY(fdm.ltp_to_body_quat, fdm.ltpprz_to_body_quat);
   EULERS_COPY(fdm.ltp_to_body_eulers, fdm.ltpprz_to_body_eulers);
 
-  printf("  quat nps %lf %lf %lf %lf, euler nps %lf %lf %lf,  euler state %lf %lf %lf\n",
-      fdm.ltpprz_to_body_quat.qi, fdm.ltpprz_to_body_quat.qx, fdm.ltpprz_to_body_quat.qy, fdm.ltpprz_to_body_quat.qz,
-      fdm.ltp_to_body_eulers.phi, fdm.ltp_to_body_eulers.theta, fdm.ltp_to_body_eulers.psi, 
-      DegOfRad(stateGetNedToBodyEulers_f()->phi),  DegOfRad(stateGetNedToBodyEulers_f()->theta),  DegOfRad(stateGetNedToBodyEulers_f()->psi));
 }
 
 //TODO check inertial ECI frame ou ECEF frame  fichier nps_fdm.h
@@ -273,6 +266,8 @@ static void fetch_rotaccel() {
   fdm.body_inertial_rotaccel.q = pprz_rotaccel.y;
   fdm.body_inertial_rotaccel.r = pprz_rotaccel.z;
 }
+
+
 
 /**************************
  ** Generating LTP plane **
@@ -360,4 +355,85 @@ static void print_state(void) {
       fdm.ltpprz_to_body_quat.qi, fdm.ltpprz_to_body_quat.qx, fdm.ltpprz_to_body_quat.qy, fdm.ltpprz_to_body_quat.qz,
       fdm.ltp_to_body_eulers.phi, fdm.ltp_to_body_eulers.theta, fdm.ltp_to_body_eulers.psi);
 }
+
+/**
+ * Checks NpsFdm struct for NaNs.
+ *
+ * Increments the NaN count on each new NaN
+ *
+ * @return Count of new NaNs. 0 for no new NaNs.
+ */
+static int check_for_nan(void)
+{
+  int orig_nan_count = fdm.nan_count;
+  /* Check all elements for nans */
+  if (isnan(fdm.ecef_pos.x)) { fdm.nan_count++; }
+  if (isnan(fdm.ecef_pos.y)) { fdm.nan_count++; }
+  if (isnan(fdm.ecef_pos.z)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_pos.x)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_pos.y)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_pos.z)) { fdm.nan_count++; }
+  if (isnan(fdm.lla_pos.lon)) { fdm.nan_count++; }
+  if (isnan(fdm.lla_pos.lat)) { fdm.nan_count++; }
+  if (isnan(fdm.lla_pos.alt)) { fdm.nan_count++; }
+  if (isnan(fdm.hmsl)) { fdm.nan_count++; }
+  // Skip debugging elements
+  if (isnan(fdm.ecef_ecef_vel.x)) { fdm.nan_count++; }
+  if (isnan(fdm.ecef_ecef_vel.y)) { fdm.nan_count++; }
+  if (isnan(fdm.ecef_ecef_vel.z)) { fdm.nan_count++; }
+  if (isnan(fdm.ecef_ecef_accel.x)) { fdm.nan_count++; }
+  if (isnan(fdm.ecef_ecef_accel.y)) { fdm.nan_count++; }
+  if (isnan(fdm.ecef_ecef_accel.z)) { fdm.nan_count++; }
+  if (isnan(fdm.body_ecef_vel.x)) { fdm.nan_count++; }
+  if (isnan(fdm.body_ecef_vel.y)) { fdm.nan_count++; }
+  if (isnan(fdm.body_ecef_vel.z)) { fdm.nan_count++; }
+  if (isnan(fdm.body_ecef_accel.x)) { fdm.nan_count++; }
+  if (isnan(fdm.body_ecef_accel.y)) { fdm.nan_count++; }
+  if (isnan(fdm.body_ecef_accel.z)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_ecef_vel.x)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_ecef_vel.y)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_ecef_vel.z)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_ecef_accel.x)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_ecef_accel.y)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_ecef_accel.z)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_ecef_vel.x)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_ecef_vel.y)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_ecef_vel.z)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_ecef_accel.x)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_ecef_accel.y)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_ecef_accel.z)) { fdm.nan_count++; }
+  if (isnan(fdm.ecef_to_body_quat.qi)) { fdm.nan_count++; }
+  if (isnan(fdm.ecef_to_body_quat.qx)) { fdm.nan_count++; }
+  if (isnan(fdm.ecef_to_body_quat.qy)) { fdm.nan_count++; }
+  if (isnan(fdm.ecef_to_body_quat.qz)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_to_body_quat.qi)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_to_body_quat.qx)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_to_body_quat.qy)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_to_body_quat.qz)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_to_body_eulers.phi)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_to_body_eulers.theta)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_to_body_eulers.psi)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_to_body_quat.qi)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_to_body_quat.qx)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_to_body_quat.qy)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_to_body_quat.qz)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_to_body_eulers.phi)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_to_body_eulers.theta)) { fdm.nan_count++; }
+  if (isnan(fdm.ltpprz_to_body_eulers.psi)) { fdm.nan_count++; }
+  if (isnan(fdm.body_ecef_rotvel.p)) { fdm.nan_count++; }
+  if (isnan(fdm.body_ecef_rotvel.q)) { fdm.nan_count++; }
+  if (isnan(fdm.body_ecef_rotvel.r)) { fdm.nan_count++; }
+  if (isnan(fdm.body_ecef_rotaccel.p)) { fdm.nan_count++; }
+  if (isnan(fdm.body_ecef_rotaccel.q)) { fdm.nan_count++; }
+  if (isnan(fdm.body_ecef_rotaccel.r)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_g.x)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_g.y)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_g.z)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_h.x)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_h.y)) { fdm.nan_count++; }
+  if (isnan(fdm.ltp_h.z)) { fdm.nan_count++; }
+
+  return (fdm.nan_count - orig_nan_count);
+}
+
 

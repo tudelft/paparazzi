@@ -35,6 +35,17 @@
 
 #include "generated/flight_plan.h"
 
+#ifndef SMEUR_TO_BARTH_PHI
+#define SMEUR_TO_BARTH_PHI 0.
+#endif
+
+#ifndef SMEUR_TO_BARTH_THETA
+#define SMEUR_TO_BARTH_THETA 90.
+#endif
+
+#ifndef SMEUR_TO_BARTH_PSI
+#define SMEUR_TO_BARTH_PSI 0.
+#endif
 
 
 /*#include "modules/loggers/sdlog_chibios.h"
@@ -53,13 +64,17 @@ float u_sub[CTRL_HOVER_WIND_NUM_ACT][1];
 float u[CTRL_HOVER_WIND_NUM_ACT][1];
 float u_scale[CTRL_HOVER_WIND_NUM_ACT][1];
 
-struct FloatQuat quat_roty_90 = {0.707106781186548,   0,    0.707106781186548,    0};
+// rotation from Smeur frame to Barth frame 
+static struct FloatQuat quat_smeur_2_barth;
+
 struct FloatQuat quat_att_barth_frame;
 
 float tf_state1[2] = {0, 0};
 float tf_state2[2] = {0, 0};
 float tf_state3[2] = {0, 0};
 float tf_state4[2] = {0, 0};
+
+
 
 
 // static inline void log_hoverwind_periodic(void);
@@ -69,6 +84,13 @@ float tf_state4[2] = {0, 0};
 void stabilization_hover_wind_init(void){
 
   //log_hoverwind_start();
+  struct FloatEulers eul2smeurbarth = {
+    RadOfDeg(SMEUR_TO_BARTH_PHI),
+    RadOfDeg(SMEUR_TO_BARTH_THETA),
+    RadOfDeg(SMEUR_TO_BARTH_PSI)
+  };
+  float_quat_of_eulers(&quat_smeur_2_barth, &eul2smeurbarth);
+
 
   x_e[0][0] = 0;
   x_e[1][0] = 0;
@@ -77,18 +99,21 @@ void stabilization_hover_wind_init(void){
 
 void stabilization_hover_wind_run(bool in_flight){
 
-  #define DBG_CMD 1
+  #define DBG_CMD 0
     
-  float_quat_comp_inv(&quat_att_barth_frame, &quat_roty_90, stateGetNedToBodyQuat_f());
+  float_quat_comp(&quat_att_barth_frame, stateGetNedToBodyQuat_f(), &quat_smeur_2_barth);
 
   #if DBG_CMD
-      printf("nav target z = %f \n", -POS_FLOAT_OF_BFP(navigation_target.z));
+      printf("nav target z = %f \n", -POS_FLOAT_OF_BFP(nav.target.z));
       printf("pos z = %f \n", stateGetPositionNed_f()->z);
   #endif
- 
-  eps[0][0] = stateGetPositionNed_f()->x - POS_FLOAT_OF_BFP(navigation_target.x); //navigation_target ENU
-  eps[1][0] = stateGetPositionNed_f()->y - (- POS_FLOAT_OF_BFP(navigation_target.y));
-  eps[2][0] = stateGetPositionNed_f()->z - (- POS_FLOAT_OF_BFP(navigation_target.z));
+
+  struct FloatVect3 nav_target_enu;
+  ENU_OF_TO_NED(nav_target_enu, nav.target) //nav.target ENU
+
+  eps[0][0] = stateGetPositionNed_f()->x - nav_target_enu.x; 
+  eps[1][0] = stateGetPositionNed_f()->y - nav_target_enu.y;
+  eps[2][0] = stateGetPositionNed_f()->z - nav_target_enu.z;
   eps[3][0] = stateGetSpeedNed_f()->x;
   eps[4][0] = stateGetSpeedNed_f()->y;
   eps[5][0] = stateGetSpeedNed_f()->z;
@@ -130,7 +155,7 @@ void stabilization_hover_wind_run(bool in_flight){
   u_integrator[1][0] = 0;
   */
 
-   #if DBG_CMD
+  #if DBG_CMD
     for (int i=0; i<2; i++) {
       printf("u integrator(%d) = %f ", i, u_integrator[i][0]);
     }
@@ -139,7 +164,7 @@ void stabilization_hover_wind_run(bool in_flight){
 
   MAT_MUL(CTRL_HOVER_WIND_NUM_ACT, CTRL_HOVER_WIND_INPUT, 1, u_prop, K, eps);
 
-   #if DBG_CMD
+  #if DBG_CMD
     for (int i=0; i<CTRL_HOVER_WIND_NUM_ACT; i++) {
       printf("u prop(%d) = %f ", i, u_prop[i][0]);
     }
@@ -184,7 +209,7 @@ void stabilization_hover_wind_run(bool in_flight){
   //MAT_SUB(CTRL_HOVER_WIND_NUM_ACT, 1, u_sub, integrator_repart, u_prop);
   MAT_SUM(CTRL_HOVER_WIND_NUM_ACT, 1, u, ueq, u_sub);
 
- 
+
 
   // RIGHT_MOTOR
   if (u[0][0]>0){
@@ -206,13 +231,13 @@ void stabilization_hover_wind_run(bool in_flight){
   //ELEVON_RIGHT
   u_scale[3][0] = (u[3][0]*6/M_PI)*MAX_PPRZ;
 
-   #if DBG_CMD
+  #if DBG_CMD
     printf("u: %f %f %f %f  \n", u_scale[0][0], u_scale[1][0], u_scale[2][0], u_scale[3][0]);
   #endif
 
- 
-  actuators_pprz[0]=TRIM_PPRZ(-u_scale[2][0]); //ELEVON_LEFT  -
-  actuators_pprz[1]=TRIM_PPRZ(u_scale[3][0]); // ELEVON_RIGHT  
+
+  actuators_pprz[0]=TRIM_PPRZ(u_scale[3][0]); //ELEVON_LEFT  -
+  actuators_pprz[1]=TRIM_PPRZ(-u_scale[2][0]); // ELEVON_RIGHT  
 
   //actuators_pprz[0]=TRIM_PPRZ(0); //ELEVON_LEFT  
   //actuators_pprz[1]=TRIM_PPRZ(0); // ELEVON_RIGHT  
@@ -232,11 +257,12 @@ void stabilization_hover_wind_run(bool in_flight){
 
   if (in_flight) {
     stabilization_cmd[COMMAND_THRUST] = (actuators_pprz[2]+actuators_pprz[3]); // for in_flight detection
-    printf("in_flight\n");
+    //printf("in_flight\n");
   } else {
     stabilization_cmd[COMMAND_THRUST] = 1000;
-    printf("Not in_flight\n");
+    //printf("Not in_flight\n");
   };
+  
 
   //log_hoverwind_periodic();
 }
@@ -246,9 +272,9 @@ void stabilization_hover_wind_run(bool in_flight){
 void data_report()
 {
   float msg[] = {
-    POS_FLOAT_OF_BFP(navigation_target.x),
-    POS_FLOAT_OF_BFP(navigation_target.y),
-    POS_FLOAT_OF_BFP(navigation_target.z),
+    nav.target.x,
+    nav.target.y,
+    nav.target.z,
     stateGetNedToBodyQuat_f()->qi, 
     stateGetNedToBodyQuat_f()->qx,
     stateGetNedToBodyQuat_f()->qy,
@@ -258,7 +284,7 @@ void data_report()
     quat_att_barth_frame.qy,
     quat_att_barth_frame.qz    
   };
-  //DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 11, msg);
+  DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 11, msg);
 }
 
 

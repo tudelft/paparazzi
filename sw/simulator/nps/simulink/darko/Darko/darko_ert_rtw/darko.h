@@ -7,9 +7,9 @@
  *
  * Code generated for Simulink model 'darko'.
  *
- * Model version                  : 1.21
- * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Mon Mar  6 13:35:36 2023
+ * Model version                  : 2.24
+ * Simulink Coder version         : 9.9 (R2023a) 19-Nov-2022
+ * C/C++ source code generated on : Fri Mar 31 10:46:22 2023
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Intel->x86-64 (Linux 64)
@@ -38,8 +38,8 @@
 /* Forward declaration for rtModel */
 typedef struct tag_RTM RT_MODEL;
 
-#ifndef DEFINED_TYPEDEF_FOR_struct_YysP9KtKw43hFSdxSlefvD_
-#define DEFINED_TYPEDEF_FOR_struct_YysP9KtKw43hFSdxSlefvD_
+#ifndef DEFINED_TYPEDEF_FOR_struct_Fc6JNy00bSQiCdhMnYpMKF_
+#define DEFINED_TYPEDEF_FOR_struct_Fc6JNy00bSQiCdhMnYpMKF_
 
 typedef struct {
   real_T MASS;
@@ -53,8 +53,8 @@ typedef struct {
   real_T INERTIA_PROP_N;
   real_T PHI[36];
   real_T RHO;
+  real_T TOT_SURFACE;
   real_T WET_SURFACE;
-  real_T DRY_SURFACE;
   real_T PHI_n;
   real_T CHORD;
   real_T WINGSPAN;
@@ -64,13 +64,24 @@ typedef struct {
   real_T PROP_KP;
   real_T THICKNESS;
   real_T PROP_KM;
-} struct_YysP9KtKw43hFSdxSlefvD;
+  real_T CENTRAGE;
+  real_T ELEVON_RATE_CHANGE;
+  real_T ELEVON_ANGLE_MAX;
+  real_T MOTOR_RATE_CHANGE;
+  real_T MOTOR_SPEED_MAX;
+  real_T Mb[12];
+  real_T Fb[12];
+} struct_Fc6JNy00bSQiCdhMnYpMKF;
 
 #endif
 
 /* Block signals and states (default storage) for system '<Root>' */
 typedef struct {
   real_T DiscreteTimeIntegrator_DSTATE[13];/* '<Root>/Discrete-Time Integrator' */
+  real_T PrevY;                        /* '<S4>/Rate Limiter' */
+  real_T PrevY_f;                      /* '<S4>/Rate Limiter1' */
+  real_T PrevY_a;                      /* '<S4>/Rate Limiter2' */
+  real_T PrevY_d;                      /* '<S4>/Rate Limiter3' */
 } DW;
 
 /* Constant parameters (default storage) */
@@ -138,6 +149,8 @@ extern RT_MODEL *const rtM;
  * '<Root>' : 'darko'
  * '<S1>'   : 'darko/MATLAB Function'
  * '<S2>'   : 'darko/MATLAB Function1'
+ * '<S3>'   : 'darko/MATLAB Function2'
+ * '<S4>'   : 'darko/Saturation'
  */
 #endif                                 /* RTW_HEADER_darko_h_ */
 
