@@ -612,4 +612,20 @@
 #define VEL_SP_FCR_ID 1 // Approach Moving Target
 #endif
 
+/*
+ * IDs of DIVERGENCE_SAFE_HEADING message
+*/
+// The OF avoider gets ID 1
+#ifndef DIVERGENCE_SAFE_HEADING_OF_AVOIDANCE_ID
+#define DIVERGENCE_SAFE_HEADING_OF_AVOIDANCE_ID 1
+#endif
+
+/*
+ * IDs of PAUSE_THREAD message
+*/
+// The OF avoider gets ID 1
+#ifndef PAUSE_THREAD_OBJECT_AVOIDER_ID
+#define PAUSE_THREAD_OBJECT_AVOIDER_ID 1
+#endif
+
 #endif /* ABI_SENDER_IDS_H */

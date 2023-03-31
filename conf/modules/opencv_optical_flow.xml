@@ -1,0 +1,91 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="opencv_optical_flow" dir="of_avoidance">
+  <doc>
+    <description>
+      This file includes image processing functions from the module `of_avoidance` made by team 2 in 2023 for the AFMAV course.
+    </description>
+
+    <define name="OPENCVDEMO_CAMERA" value="front_camera|bottom_camera" description="Video device to use"/>
+    <define name="OPENCVDEMO_FPS" value="0" description="The (maximum) frequency to run the calculations at. If zero, it will max out at the camera frame rate"/>
+    
+    <!-- CROP window settings -->
+    <define name="RESIZE" value="0.25" description="Resize factor use for the camera image in x and y direction"/>
+    <define name="CROP_X" value="60" description="Crop offset in x-direction before resizing for the left and from the right [0, 520 / 2]"/>
+    <define name="CROP_Y" value="50" description="Crop offset in y-direction before resizing (so from the top) [0, 240]"/>
+    <!-- CROP_WIDTH is not necessary since it is always symmetric around the center. Therefore CROP_X contains all the necessary info. -->
+    <define name="CROP_HEIGHT" value="50" description="Crop size in y-direction before resizing [0, 240]"/>
+
+    <!-- OF settings -->
+    <define name="OFF_PYR_SCALE" value="0.5" description="Farneback OF setting"/>
+    <define name="OFF_LEVELS" value="3" description="Farneback OF setting"/>
+    <define name="OFF_WINSIZE" value="10" description="Farneback OF setting"/>
+    <define name="OFF_ITERATIONS" value="1" description="Farneback OF setting"/>
+    <define name="OFF_POLY_N" value="1" description="Farneback OF setting"/>
+    <define name="OFF_POLY_SIGMA" value="1.2" description="Farneback OF setting"/>
+    <define name="OFF_FLAGS" value="0" description="Farneback OF setting"/>
+
+    <!-- Detection threshold -->
+    <define name="DET_THRESHOLD" value="0.14" description="Divergence cutoff threshold"/>
+
+    <!-- Lowest index calculation -->
+    <define name="N_DIRBLOCKS" value="5" description="The number of blocks over which to divide the field of view (should be odd)"/>
+    <define name="M_DIRFILTER" value="1" description="The number of adjacent blocks to take into account to determine the no. of obstacles for a certain direction"/>
+    <define name="PERCENTAGE_HISTORY_IMPORTANCE" value="0.7" description="The extent to which the past detections are used when determining the new detections [0.0, 1.0]"/>
+
+  </doc>
+  <header>
+    <file name="of_avoidance.h"/>
+  </header>
+  <init fun="OF_init()"/>
+  <periodic fun="OF_periodic()" freq="50"/>
+  <makefile target="ap">
+    <file name="opencv_optical_flow.cpp"/>
+    <file name="of_avoidance.c"/>
+    <file name="../computer_vision/opencv_image_functions.cpp"/>
+    
+    <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_arm/include"/>
+    
+    <flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install_arm/lib"/>
+    <flag name="LDFLAGS" value="lopencv_world"/>
+    <flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install_arm/share/OpenCV/3rdparty/lib"/>
+    <flag name="LDFLAGS" value="llibprotobuf"/>
+    <flag name="LDFLAGS" value="llibjpeg-turbo"/>
+    <flag name="LDFLAGS" value="llibpng"/>
+    <flag name="LDFLAGS" value="llibtiff"/>
+    <flag name="LDFLAGS" value="lzlib"/>
+    <flag name="LDFLAGS" value="lquirc"/>
+    <flag name="LDFLAGS" value="ltegra_hal"/>
+    <flag name="LDFLAGS" value="ldl"/>
+    <flag name="LDFLAGS" value="lm"/>
+    <flag name="LDFLAGS" value="lpthread"/>
+    <flag name="LDFLAGS" value="lrt"/>
+  </makefile>
+  <makefile target="nps">
+    <file name="opencv_optical_flow.cpp"/>
+    <file name="of_avoidance.c"/>
+    <file name="../computer_vision/opencv_image_functions.cpp"/>
+    
+    <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_pc/include"/>
+    
+    <flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install_pc/lib"/>
+    <flag name="LDFLAGS" value="lopencv_world"/>
+    <flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install_pc/share/OpenCV/3rdparty/lib"/>
+    <flag name="LDFLAGS" value="llibprotobuf"/>
+    <flag name="LDFLAGS" value="lquirc"/>
+    <flag name="LDFLAGS" value="L/usr/lib/x86_64-linux-gnu"/>
+    <flag name="LDFLAGS" value="ljpeg"/>
+    <flag name="LDFLAGS" value="lpng"/>
+    <flag name="LDFLAGS" value="ltiff"/>
+    <flag name="LDFLAGS" value="L/usr/lib/x86_64-linux-gnu/hdf5/serial"/>
+    <flag name="LDFLAGS" value="lhdf5"/>
+    <flag name="LDFLAGS" value="lpthread"/>
+    <flag name="LDFLAGS" value="lsz"/>
+    <flag name="LDFLAGS" value="lz"/>
+    <flag name="LDFLAGS" value="ldl"/>
+    <flag name="LDFLAGS" value="lm"/>
+    <flag name="LDFLAGS" value="lfreetype"/>
+    <flag name="LDFLAGS" value="lharfbuzz"/>
+    <flag name="LDFLAGS" value="lrt"/>
+  </makefile>
+</module>

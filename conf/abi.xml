@@ -246,6 +246,14 @@
       <field name="vel_sp" type="struct FloatVect3 *" unit="m/s"/>
     </message>
 
+    <message name="DIVERGENCE_SAFE_HEADING" id="37">
+      <field name="i_safe" type="uint8_t" unit="us"/>
+    </message>
+
+    <message name="PAUSE_THREAD" id="38">
+      <field name="pause_dura" type="uint8_t" unit="s"/>
+    </message>
+
   </msg_class>
 
 </protocol>

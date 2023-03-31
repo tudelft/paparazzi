@@ -1,0 +1,27 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="object_avoider" dir="of_avoidance">
+  <doc>
+    <description>
+      This file includes the autopilot functions from the module `of_avoidance` made by team 2 in 2023 for the AFMAV course.
+    </description>
+    <define name="OFF_DIV_SAFE_INDEX" value="37" description="The DIVERGENCE_SAFE_HEADING message channel"/>
+    <!-- Autopilot settings -->
+    <define name="N_DIRBLOCKS" value="5" description="Possible heading directions"/>
+    <define name="FOV_ANGLE" value="160" description="Determines the size of the steering correction when detecting an obstacle"/>
+    <define name="DIR_CHANGE_THRESHOLD" value="8" description="Number of consecutive measurements necessary to decide to steer away"/>
+    <define name="PAUSE_TIME" value="20" description="The confidence values reset and aren't updated for (PAUSE_TIME * 100ms) after a steer correction"/>
+    <define name="PAUSE_V_FACTOR" value="0.4" description="The percentage of the default speed it has when pausing [0.0 - 1.0]"/>
+  </doc>  
+  <dep>
+    <depends>opencv_optical_flow</depends>
+  </dep>
+  <header>
+    <file name="object_avoider.h"/>
+  </header>
+  <init fun="object_avoider_init()"/>
+  <periodic fun="object_avoider_periodic()" freq="4"/>
+  <makefile target="ap|nps">
+    <file name="object_avoider.c"/>
+  </makefile>
+</module>
