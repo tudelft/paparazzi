@@ -93,8 +93,9 @@ using namespace std;
 
 struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uint16_t winSize_i, uint16_t maxLevel, int *array_size){
     //struct flow_t* flow = new struct flow_t;
+    // PRINT("STARTDETER");
     vector<flow_t> lin_vectors;
-      PRINT("DETERMINE??");
+    //   PRINT("DETERMINE??");
 
     //Copy and scale the images to M1 and M2
     Mat M1(height, width, CV_8UC2, prev);
@@ -103,8 +104,8 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
     Mat prev_bgr;
     Mat bgr;
 
-    int crop_height = 25;
-    int crop_width = 10;
+    int crop_height = 0;
+    int crop_width = 0;
 
     // Crop image
     Rect crop_image;
@@ -122,9 +123,9 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
     cvtColor(M1(crop_image), prev_bgr, CV_YUV2GRAY_Y422);
     cvtColor(M2(crop_image), bgr, CV_YUV2GRAY_Y422);
 
-    //float scale = 0.2;
-    //resize(prev_bgr, prev_bgr, Size(), scale, scale, CV_INTER_LINEAR);
-    //resize(bgr, bgr, Size(), scale, scale, CV_INTER_LINEAR);
+    // float scale = 0.2;
+    // resize(prev_bgr, prev_bgr, Size(), scale, scale, CV_INTER_LINEAR);
+    // resize(bgr, bgr, Size(), scale, scale, CV_INTER_LINEAR);
 
 
     //grayscale_opencv_to_yuv422(prev_bgr, prev);
@@ -142,9 +143,15 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
     vector<vector<Point>> contours;
     vector<Vec4i> hierarchy;
     findContours(thresh, contours, hierarchy, RETR_TREE, CHAIN_APPROX_NONE);
+    if(contours.size() == 0){
+        *array_size = 0;
+        return nullptr;
+        
+    }
     int max_area = -1;
     int max_contour_index = -1;
-
+    // PRINT("CONTOURS");
+    PRINT("%d", contours.size());
     for (size_t i = 0; i < contours.size(); i++){
         double area = contourArea(contours[i]);
         // PRINT("PULA MARE");
@@ -153,7 +160,7 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
             max_contour_index = i;
         }
     }
-
+    // PRINT("SUCKIT");
     vector<Point> largest_contour = contours[max_contour_index];
     Mat mask = Mat::zeros(prev_bgr.size(), CV_8UC1);
     drawContours(mask, vector<vector<Point>>{largest_contour}, 0, Scalar(255), -1);
@@ -169,14 +176,14 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
     // Parameters for lucas kanade optical flow
     //Size winSize(15, 15);
 
-    uint16_t nr;
+    uint16_t nr = 12;
     nr = winSize_i;
 
     Size winSize(nr, nr);
 
     //int maxLevel = 2;
     TermCriteria criteria(TermCriteria::COUNT | TermCriteria::EPS, 10, 0.03);
-
+    // PRINT("DUNNO");
     // calculate optical flow
     vector<Point2f> points_new;
     vector<uchar> status;
@@ -189,14 +196,14 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
     vector<Point2f> good_points_old, good_points_new, flow_vectors;
     vector<float> error_new;
     for (size_t i = 0; i < status.size(); i++) {
-        if (status[i]) {
+        if (status[i] == 1) {
             good_points_old.push_back(points_old[i]);
             good_points_new.push_back(points_new[i]);
             flow_vectors.push_back(points_new[i] - points_old[i]);
             error_new.push_back(error[i]);
         }
     }
-    
+    // PRINT("BEFOREFILTER");
     // filter the flow vectors by their magnitude
     vector<float> magnitudes;
     for (size_t i = 0; i < flow_vectors.size(); i++) {
@@ -239,11 +246,12 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
     //     }
     // }
     // sort magnitudes in descending order
+    // PRINT("BEFORESORT");
     sort(magnitudes.rbegin(), magnitudes.rend());
 
     // find the flow vectors that are above the threshold and save them
     float threshold = 0.0;
-    int num_top_vectors = (int)(0.1 * flow_vectors.size()); // calculate number of top vectors
+    int num_top_vectors = (int)(0.2 * flow_vectors.size()); // calculate number of top vectors
     int num_nonzero_vectors = 0;
 
     for (size_t i = 0; i < flow_vectors.size(); i++) {
@@ -254,7 +262,7 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
             }
         }
     }
-
+    // PRINT("AFTERSORT");
     vector<Point2f> good_flow_vectors;
     vector<float> good_error;
     lin_vectors.resize(good_points_old.size());
@@ -298,7 +306,8 @@ struct flow_t *determine_flow(char *prev, char *curr, int height, int width, uin
             //flow_array[0].pos.count = i;
 
     }
-    cout << count_array;
+    // cout << "Count of array:";
+    // cout << count_array;
 
     *array_size = count_array;
     //return flow_array;

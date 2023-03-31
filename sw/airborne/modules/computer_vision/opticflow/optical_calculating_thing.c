@@ -30,7 +30,7 @@ PRINT_CONFIG_VAR(OPTICFLOW_WINDOW_SIZE)
 //PRINT_CONFIG_VAR(OPTICFLOW_PYR_SCALE)
 
 #ifndef OPTICFLOW_LEVELS
-#define OPTICFLOW_LEVELS 3
+#define OPTICFLOW_LEVELS 2
 #endif
 PRINT_CONFIG_VAR(OPTICFLOW_LEVELS)
 
@@ -149,11 +149,11 @@ bool calc_opticfarneback(struct opticflow_t *opticflow, struct image_t *img, flo
 	  //opticflow->max_iterations, opticflow->poly_n, opticflow->poly_sigma, opticflow->flags,
 	  //of_diff, div, img->w, img->h);
 
-	PRINT("SERBBB");
+	// PRINT("SERBBB");
     // use the array of structs here
 	int array_size = 1; // initialise array size
 	struct flow_t* arrayofflows = determine_flow(opticflow->prev_img_gray.buf, opticflow->img_gray.buf, img->h, img->w, opticflow->window_size, opticflow->levels, &array_size);
-	PRINT("THEOO");
+	// PRINT("THEOO");
 	
 	*div = get_size_divergence(arrayofflows, array_size, 0);
   //result_analyzer = analyze_linear_flow_field(opt_vect, counterr, OPTICFLOW_ERROR_THRESHOLD, OPTICFLOW_N_ITERATIONS, OPTICFLOW_N_SAMPLES, img->w, img->h, info);
@@ -165,8 +165,8 @@ bool calc_opticfarneback(struct opticflow_t *opticflow, struct image_t *img, flo
 	                                                           // the 'colored' optic flow image
 	// Put current image in previous to be ready for next loop
 	image_switch(&opticflow->img_gray, &opticflow->prev_img_gray);
-  PRINT("SERBBB suck");
-	free(arrayofflows);
+  // PRINT("SERBBB suck");
+	// free(arrayofflows);
 
   return true;
 }
