@@ -63,18 +63,18 @@
 #define HEIGHT_2_PROCESS 140 // TWEAKABLE
 #define FLOWMIDDLE_DIV_LOWER 0.80f
 #define FLOWMIDDLE_ABS_MIN 0.0f // Not too sure whether using this is a smart move, otherwise set to 0
-#define LEFTFLOW_TURNING_TH 1.18f
-#define RIGHTFLOW_TURNING_TH 0.78f
-#define COUNTER2_MAX 5
+#define LEFTFLOW_TURNING_TH 1.22f
+#define RIGHTFLOW_TURNING_TH 0.75f
+#define COUNTER2_MAX 9
 #define HEADING_INC_LEFT_RIGHT 45.f
 #define HEADING_INC_MIDDLE 60.f
 #define HEADING_INC_OUT_OF_BOUND 90.f
 
-float movedistance = 1.0f;     // TWEAKABLE (changes spead)
+float movedistance = 1.2f;     // TWEAKABLE (changes spead)
 
-float right_obstacle_threshold = 0.75f;
+float right_obstacle_threshold = 0.78f;
 float flowmiddle_obstacle_threshold = 1.3f;                          // TWEAKABLE
-float left_obstacle_threshold= 1.25f;                                 // TWEAKABLE
+float left_obstacle_threshold= 1.28f;                                 // TWEAKABLE
 
 
 
@@ -377,7 +377,7 @@ struct image_t *optical_flow_func(struct image_t *img, int camera_id)
       counter++;
       printf("counter: %d \n", counter);
 
-      if (counter == 5){  // TWEAKABLE
+      if (counter == 3){  // TWEAKABLE
         navigation_state = IJUSTTURNED2;
         counter = 0;
       }
