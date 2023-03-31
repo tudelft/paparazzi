@@ -56,7 +56,7 @@ struct NpsFdm fdm;
 // Reference point
 static struct LtpDef_d ltpdef_d;
 
-// rototion from simulink to pprz
+// rotation from simulink to pprz
 static struct DoubleQuat quat_to_pprz;
 
 // Static functions declaration
@@ -71,7 +71,7 @@ static void fetch_orient(void);
 static void fetch_angular_vel(void);
 static void fetch_rotaccel(void);
 
-static void print_state(void);
+//static void print_state(void);
 static int check_for_nan(void);
 
 void nps_fdm_init(double dt)
@@ -335,6 +335,7 @@ void nps_fdm_set_temperature(double temp __attribute__((unused)),
 {
 }
 
+/*
 static void print_state(void) {
   printf("state %lf\n", fdm.time);
   printf("  pos %lf %lf %lf, vel %lf %lf %lf, accel %lf %lf %lf\n",
@@ -355,6 +356,7 @@ static void print_state(void) {
       fdm.ltpprz_to_body_quat.qi, fdm.ltpprz_to_body_quat.qx, fdm.ltpprz_to_body_quat.qy, fdm.ltpprz_to_body_quat.qz,
       fdm.ltp_to_body_eulers.phi, fdm.ltp_to_body_eulers.theta, fdm.ltp_to_body_eulers.psi);
 }
+*/
 
 /**
  * Checks NpsFdm struct for NaNs.
