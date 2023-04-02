@@ -46,7 +46,7 @@ static pthread_mutex_t mutex;
 
 // in_nps = 1 mean true
 #ifndef in_nps
-#define in_nps 1
+#define in_nps 0
 #endif
 
 // curtain_open = 1 means true
