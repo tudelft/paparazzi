@@ -40,8 +40,11 @@
 
 static uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
 static uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters);
+
+// Copies of the move waypoint forward functions with adjustments to yaw and move forward at the same time
 static uint8_t moveWaypointForward2(uint8_t waypoint, float distanceMeters, float heading_change);
 static uint8_t calculateForwards2(struct EnuCoor_i *new_coor, float distanceMeters, float heading_change);
+
 static uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
 //static uint8_t increase_nav_heading(float incrementDegrees);
 static uint8_t change_nav_heading(float heading_change, float heading_increment);
@@ -66,12 +69,13 @@ float heading_change = 10.f;          // heading angle change [deg]
 float final_heading = 15.f; //initial value for final heading
 float maxDistance = 1.0;               // max waypoint displacement [m]
 
-int16_t pixelX = 120; //initial values
+// Initial values of the visual infomation sent over on the abi message
+int16_t pixelX = 120;
 int16_t pixelY = 260;
 int32_t direction = 0;
 
 bool new_message = false; //boolean to keep track of vision
-bool new_turn = true;
+bool new_turn = true; //boolean to keep track if turns are made
 
 // define settings
 float oa_color_count_frac = 0.18f;  //if i delete this the autopilot.c file crashes
@@ -135,24 +139,22 @@ void orange_avoider_periodic(void)
 
   // update our safe confidence using confidence value (from vision)
   if(confidence_value > 30){ // there is no obstacle
-    obstacle_free_confidence+= 5;
-    //VERBOSE_PRINT("OBS CONF + 1\n");
+    obstacle_free_confidence+= 5; // Always try to go forward if there is a way
   } else {  // there is obstacle
     obstacle_free_confidence -= 1;  // be more cautious with positive obstacle detections
-    //VERBOSE_PRINT("OBS CONF - 2\n");
   }
 
   // bound obstacle_free_confidence
   Bound(obstacle_free_confidence, 0, max_trajectory_confidence);
 
-  float moveDistance = 1.0;
-  float adjust_heading = (float)direction/(50*7);
+  float moveDistance = 1.0; // Always move the waypoint one meter ahead
+  float adjust_heading = (float)direction/(50*7); // Correction factor for how much the heading should be changed in radians based on predicted path
 
   switch (navigation_state){
     case SAFE:
       // Move waypoint forward
       VERBOSE_PRINT(" -- SAFE: conf_val %d , obstac_conf %d, (x,y) = %d, %d\nMovedistane: %f\n", confidence_value, obstacle_free_confidence, pixelX, pixelY,moveDistance);
-      moveWaypointForward2(WP_TRAJECTORY, 1.5f * moveDistance, adjust_heading);
+      moveWaypointForward2(WP_TRAJECTORY, 1.5f * moveDistance, adjust_heading); // Adjust heading slightly if moving forward
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0){
@@ -193,7 +195,6 @@ void orange_avoider_periodic(void)
           }
           
           change_nav_heading(heading_change, heading_increment);
-          //VERBOSE_PRINT(" -- VISION Received - Change heading again, turn counter: %d\n", turn_counter);
       }
       new_message = false; //force waiting for new vision input
 
@@ -265,7 +266,7 @@ uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters)
 uint8_t moveWaypointForward2(uint8_t waypoint, float distanceMeters, float heading_change)
 {
   struct EnuCoor_i new_coor;
-  calculateForwards2(&new_coor, distanceMeters, heading_change);
+  calculateForwards2(&new_coor, distanceMeters, heading_change); // Also pass along the heading change
   moveWaypoint(waypoint, &new_coor);
   return false;
 }
@@ -300,7 +301,7 @@ uint8_t calculateForwards(struct EnuCoor_i *new_coor, float distanceMeters)
 
 uint8_t calculateForwards2(struct EnuCoor_i *new_coor, float distanceMeters, float heading_change)
 {
-  float heading  = stateGetNedToBodyEulers_f()->psi + heading_change;
+  float heading  = stateGetNedToBodyEulers_f()->psi + heading_change; // Get heading and additional input heading
   nav_heading = ANGLE_BFP_OF_REAL(heading);
 
   // Now determine where to place the waypoint you want to go to
