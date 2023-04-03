@@ -230,7 +230,7 @@ void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed2, float *
   float dMydpprz = dMyde * -0.004885417;
   
   // Convert moment to effectiveness
-  float eff_y_elev = dMydpprz / I_yy;
+  float eff_y_elev = dMydpprz / I_yy * 2.; // *2 as range is doubled wrt to v3a
 
   Bound(eff_y_elev, 0.00001, 0.1)
 
