@@ -153,7 +153,7 @@ void nps_fdm_run_step(bool launch __attribute__((unused)), double *commands, int
 
     /* Check the current state to make sure it is valid (no NaNs) */
     if (check_for_nan()) {
-      printf("Error: FDM simulation encountered a total of %i NaN values at simulation time %f.\n", fdm.nan_count, fdm.time);
+      printf("Error: FDM simulation encountered a total of %i NaN values.\n", fdm.nan_count);
       printf("It is likely the simulation diverged and gave non-physical results. If you did\n");
       printf("not crash, check your model and/or initial conditions. Exiting with status 1.\n");
       exit(1);

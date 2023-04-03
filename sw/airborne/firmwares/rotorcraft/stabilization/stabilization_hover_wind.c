@@ -35,6 +35,8 @@
 
 #include "generated/flight_plan.h"
 
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+
 #ifndef SMEUR_TO_BARTH_PHI
 #define SMEUR_TO_BARTH_PHI 0.
 #endif
@@ -100,28 +102,35 @@ void stabilization_hover_wind_init(void){
 void stabilization_hover_wind_run(bool in_flight){
 
   #define DBG_CMD 0
+
+  struct FloatVect3 barth_rate, smeur_rate;
+  smeur_rate.x = stateGetBodyRates_f()->p;
+  smeur_rate.y = stateGetBodyRates_f()->q;
+  smeur_rate.z = stateGetBodyRates_f()->r;
     
   float_quat_comp(&quat_att_barth_frame, stateGetNedToBodyQuat_f(), &quat_smeur_2_barth);
+  float_quat_vmult(&barth_rate, &quat_smeur_2_barth, &smeur_rate);
+
 
   #if DBG_CMD
       printf("nav target z = %f \n", -POS_FLOAT_OF_BFP(nav.target.z));
       printf("pos z = %f \n", stateGetPositionNed_f()->z);
   #endif
 
-  struct FloatVect3 nav_target_enu;
-  ENU_OF_TO_NED(nav_target_enu, nav.target) //nav.target ENU
+  struct FloatVect3 nav_target_ned;
+  ENU_OF_TO_NED(nav_target_ned, nav.target) //nav.target ENU
 
-  eps[0][0] = stateGetPositionNed_f()->x - nav_target_enu.x; 
-  eps[1][0] = stateGetPositionNed_f()->y - nav_target_enu.y;
-  eps[2][0] = stateGetPositionNed_f()->z - nav_target_enu.z;
+  eps[0][0] = stateGetPositionNed_f()->x - nav_target_ned.x; 
+  eps[1][0] = stateGetPositionNed_f()->y - nav_target_ned.y;
+  eps[2][0] = stateGetPositionNed_f()->z - nav_target_ned.z;
   eps[3][0] = stateGetSpeedNed_f()->x;
   eps[4][0] = stateGetSpeedNed_f()->y;
   eps[5][0] = stateGetSpeedNed_f()->z;
   eps[6][0] = quat_att_barth_frame.qx;
   eps[7][0] = quat_att_barth_frame.qz;
-  eps[8][0] = stateGetBodyRates_f()->p;
-  eps[9][0] = stateGetBodyRates_f()->q;
-  eps[10][0] = stateGetBodyRates_f()->r;
+  eps[8][0] = barth_rate.x;
+  eps[9][0] = barth_rate.y;
+  eps[10][0] = barth_rate.z;
 
   #if DBG_CMD
     /*
@@ -211,24 +220,22 @@ void stabilization_hover_wind_run(bool in_flight){
 
 
 
-  // RIGHT_MOTOR
+ 
   if (u[0][0]>0){
-    u_scale[0][0] = (sqrtf(u[0][0]/kf) / mot_max_speed)*MAX_PPRZ; 
+    u_scale[0][0] = (sqrtf(MAX(u[0][0],0)/kf) / mot_max_speed)*MAX_PPRZ; 
   }
   else{
     u_scale[0][0] = 0; 
   }
 
-  // LEFT_MOTOR
   if (u[1][0]>0){
-    u_scale[1][0] = (sqrtf(u[1][0]/kf) / mot_max_speed)*MAX_PPRZ; 
+    u_scale[1][0] = (sqrtf(MAX(u[1][0],0)/kf) / mot_max_speed)*MAX_PPRZ; 
   }
   else{
     u_scale[1][0] = 0; 
   }
-  // ELEVON_LEFT
+ 
   u_scale[2][0] = (u[2][0]*6/M_PI)*MAX_PPRZ;
-  //ELEVON_RIGHT
   u_scale[3][0] = (u[3][0]*6/M_PI)*MAX_PPRZ;
 
   #if DBG_CMD
