@@ -120,7 +120,7 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
 void orange_avoider_init(void)
 {
   // Initialise random values
-  srand(time(NULL));
+  //srand(time(NULL));
   //chooseRandomIncrementAvoidance();
 
   // bind our colorfilter callbacks to receive the color filter outputs
@@ -155,6 +155,7 @@ void orange_avoider_periodic(void)
       // Move waypoint forward
       VERBOSE_PRINT(" -- SAFE: conf_val %d , obstac_conf %d, (x,y) = %d, %d\nMovedistane: %f\n", confidence_value, obstacle_free_confidence, pixelX, pixelY,moveDistance);
       moveWaypointForward2(WP_TRAJECTORY, 1.5f * moveDistance, adjust_heading); // Adjust heading slightly if moving forward
+
       if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
         navigation_state = OUT_OF_BOUNDS;
       } else if (obstacle_free_confidence == 0){
