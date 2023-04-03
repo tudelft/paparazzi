@@ -119,7 +119,7 @@ void stabilization_hover_wind_run(bool in_flight){
 
   struct FloatVect3 nav_target_ned;
   ENU_OF_TO_NED(nav_target_ned, nav.target) //nav.target ENU
-
+  printf("nav target z = %f \n", nav_target_ned.z);
   eps[0][0] = stateGetPositionNed_f()->x - nav_target_ned.x; 
   eps[1][0] = stateGetPositionNed_f()->y - nav_target_ned.y;
   eps[2][0] = stateGetPositionNed_f()->z - nav_target_ned.z;

@@ -37,7 +37,7 @@
       <define name="INDI_FUNCTIONS_RC_CHANNEL" value="6"/>
     </target>
 
-    <target name="nps" board="pc">
+    <!--target name="nps" board="pc">
       <module name="fdm" type="simulink"/>
       <module name="udp"/>
       <module name="radio_control" type="datalink"/>
@@ -47,10 +47,10 @@
       <define name="INDI_FUNCTIONS_RC_CHANNEL" value="4"/>
       <define name="NPS_BYPASS_AHRS" value="TRUE"/>
       <define name="NPS_BYPASS_INS"  value="TRUE"/>
-    </target>
+    </target-->
 
 
-    <!--target name="nps" board="pc">
+    <target name="nps" board="pc">
       <module name="fdm" type="jsbsim"/>
       <module name="udp"/>
       <module name="radio_control" type="datalink"/>
@@ -59,7 +59,7 @@
       </module>
       <define name="INDI_FUNCTIONS_RC_CHANNEL" value="4"/> 
       <define name="DEBUG_NPS_JSBSIM_QUAT" value="1"/>
-    </target-->
+    </target>
 
     <!--<module name="gps" type="ubx_ucenter"/>-->
 
