@@ -82,7 +82,7 @@ static struct endpoint_t gps_ep;
 static struct gps_ubx_t gps_ubx;
 static struct gps_rtcm_t gps_rtcm;
 static uint8_t ac_id = 0;
-static float ground_heading = NAN;
+static float ground_heading = 361;
 
 void packet_handler(void *ep, uint8_t *data, uint16_t len);
 
