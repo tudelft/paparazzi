@@ -19,7 +19,7 @@
 #define SIDES_OBS_TH 1.22f
 #define MIDDLE_OBS_TH_UPPER 1.3f
 #define MIDDLE_OBS_TH_LOWER 0.6f
-#define LEFTFLOW_TURNING_TH 1.18f
+#define LEFTFLOW_TURNING_TH 1.18f // This threshold is slightly biased to go to the right again, to avoid turning back into an obstacle
 #define RIGHTFLOW_TURNING_TH 0.75f
 #define MIDDLE_OBS_TH_UPPER_2_STEP 2.0f
 #define MIDDLE_OBS_TH_LOWER_2_STEP 0.4f
