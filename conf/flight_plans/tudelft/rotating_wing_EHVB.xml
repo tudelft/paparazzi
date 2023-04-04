@@ -16,6 +16,7 @@
     <waypoint name="p4" lat="52.1687661" lon="4.4133220"/>
     <waypoint name="TD" lat="52.1681602" lon="4.4127708"/>
     <waypoint name="APP" lat="52.1679567" lon="4.4136344"/>
+    <waypoint name="FOLLOW" lat="52.16850964562752" lon="4.413635008734417"/>
     <waypoint lat="52.169189" lon="4.410820" name="C1"/>
     <waypoint lat="52.168049" lon="4.406923" name="C2"/>
     <waypoint lat="52.166515" lon="4.408235" name="C3"/>
@@ -39,6 +40,9 @@
       <corner name="C9"/>
     </sector>
   </sectors>
+  <modules>
+    <module name="follow_me"/>
+  </modules>
   <exceptions>
     <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
     <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
@@ -67,6 +71,9 @@
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
         <stay wp="STDBY"/>
+    </block>
+    <block name="follow_module">
+      <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
     </block>
     <block name="stay_p1">
       <stay wp="p1"/>
