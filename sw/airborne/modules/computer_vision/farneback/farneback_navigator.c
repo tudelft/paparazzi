@@ -1,7 +1,7 @@
 #include "modules/computer_vision/cv.h"
-#include "modules/computer_vision/farneback_navigator.h"
-#include "modules/computer_vision/farneback_calculator.h"
-#include "modules/computer_vision/finite_state_machine.h"
+#include "farneback_navigator.h"
+#include "farneback_calculator.h"
+#include "finite_state_machine.h"
 
 
 #include "modules/orange_avoider/orange_avoider.h"

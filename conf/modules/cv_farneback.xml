@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="cv_farneback" dir="computer_vision">
+<module name="cv_farneback" dir="computer_vision/farneback">
   <doc>
     <description>This example shows how opencv can be used on (for example) the Bebop drone.
     Important to know is that sw/ext/opencv_bebop must be downloaded, and made.
@@ -13,14 +13,12 @@
   </doc>
   <header>
     <file name="farneback_navigator.h"/>
-    <file name="state.h"/>
 
   </header>
   <init fun="calc_action_optical_flow_init()"/>
   <makefile target="ap">
     <file name="farneback_navigator.c"/>
     <file name="farneback_calculator.cpp"/>
-    <file name="opencv_image_functions.cpp"/>
     <file name="finite_state_machine.c"/>
     <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_arm/include"/>
     
@@ -42,7 +40,7 @@
   <makefile target="nps">
     <file name="farneback_navigator.c"/>
     <file name="farneback_calculator.cpp"/>
-    <file name="opencv_image_functions.cpp"/>
+    <!-- <file name="opencv_image_functions.cpp"/> -->
     <file name="finite_state_machine.c"/>
     <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_pc/include"/>
     
