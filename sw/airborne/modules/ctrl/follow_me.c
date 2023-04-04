@@ -112,23 +112,23 @@ void follow_me_set_wp(uint8_t wp_id, float speed)
   float diff_time_ms = 0;
 
   // Check if we got a valid relative position which didn't timeout
-  if(bit_is_set(gps.valid_fields, GPS_VALID_RELPOS_BIT) && gps.relpos_tow+FOLLOW_ME_GPS_TIMEOUT > gps_tow_from_sys_ticks(sys_time.nb_tick)) {
+  if(gps_relposned.relPosValid && gps_relposned.iTOW+FOLLOW_ME_GPS_TIMEOUT > gps_tow_from_sys_ticks(sys_time.nb_tick)) {
     static struct NedCoor_f cur_pos;
     static uint32_t last_relpos_tow = 0;
 
     // Make sure to only use the current state from the receive of the GPS message (FIXME overflow at sunday)
-    if(last_relpos_tow < gps.relpos_tow) {
+    if(last_relpos_tow < gps_relposned.iTOW) {
       cur_pos = *stateGetPositionNed_f();
-      last_relpos_tow = gps.relpos_tow;
+      last_relpos_tow = gps_relposned.iTOW;
     }
 
     // Set the target position
-    target_pos.x = cur_pos.x - gps.relpos_ned.x / 100.0f;
-    target_pos.y = cur_pos.y - gps.relpos_ned.y / 100.0f;
-    target_pos.z = cur_pos.z - gps.relpos_ned.z / 100.0f;
+    target_pos.x = cur_pos.x - gps_relposned.relPosN / 100.0f;
+    target_pos.y = cur_pos.y - gps_relposned.relPosE / 100.0f;
+    target_pos.z = cur_pos.z - gps_relposned.relPosD / 100.0f;
 
     // Calculate the difference in time from measurement
-    diff_time_ms = gps_tow_from_sys_ticks(sys_time.nb_tick) - gps.relpos_tow + follow_me_gps_delay;
+    diff_time_ms = gps_tow_from_sys_ticks(sys_time.nb_tick) - gps_relposned.iTOW + follow_me_gps_delay;
     if(diff_time_ms < 0) diff_time_ms += (1000*60*60*24*7); //msec of a week
   }
   // Check if we got a position from the ground which didn't timeout and local NED is initialized
