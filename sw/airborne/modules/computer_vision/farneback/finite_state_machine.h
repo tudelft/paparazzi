@@ -2,7 +2,7 @@
 #define FINITE_STATE_MACHINE_H
 #pragma
 
-
+// Optical flow structure with all relevant optical flow parameters
 struct OpticalFlow
 {
     float left;

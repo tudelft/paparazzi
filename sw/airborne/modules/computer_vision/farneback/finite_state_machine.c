@@ -9,7 +9,13 @@
 #include <time.h>
 #include <stdio.h>
 
+// Navigation parameters
 #define MOVEDISTANCE 1.2f
+#define HEADING_INC_LEFT_RIGHT 45
+#define HEADING_INC_MIDDLE 60
+#define HEADING_INC_OUT_OF_BOUND 90
+
+// Decision parameters
 #define SIDES_OBS_TH 1.22f
 #define MIDDLE_OBS_TH_UPPER 1.3f
 #define MIDDLE_OBS_TH_LOWER 0.6f
@@ -18,11 +24,7 @@
 #define MIDDLE_OBS_TH_UPPER_2_STEP 2.0f
 #define MIDDLE_OBS_TH_LOWER_2_STEP 0.4f
 
-#define HEADING_INC_LEFT_RIGHT 45
-#define HEADING_INC_MIDDLE 60
-#define HEADING_INC_OUT_OF_BOUND 90
-
-
+// Counters to repeat a certain step X times
 #define STEPS_COUNT_PHASE_1_TURNING 3
 #define STEPS_COUNT_PHASE_2_TURNING 9
 
@@ -48,31 +50,23 @@ enum navigation_state_t navigation_state = SAFE;
 
 int counter_turn_1 = 0;
 int counter_turn_2 = 0;
-struct OpticalFlow flow_vals;
+struct OpticalFlow flow_vals; // holds all the relevant flow variables
 
 struct OpticalFlow run_fsm(float flow_left, float flow_right, float flow_middle)
 {
+    // Set new flow_vals
     flow_vals.middle_prev_prev = flow_vals.middle_prev;
     flow_vals.middle_prev = flow_vals.middle;
     flow_vals.left = flow_left;
     flow_vals.right = flow_right;
     flow_vals.middle = flow_middle;
 
-
+    // Calculate the relevant ratios
     flow_vals.middle_divergence = (flow_middle / flow_vals.middle_prev);
     flow_vals.middle_divergence_prev = (flow_middle / flow_vals.middle_prev_prev);
     flow_vals.right_left_ratio = flow_left / flow_right; 
-
-    // TODO: IMPLEMENT THIS STILL
-    // if (right_left_normalizer < right_obstacle_threshold|| right_left_normalizer > left_obstacle_threshold|| flowmiddle_divergence > 1.5){
-    //     image_editing(img,right_left_normalizer,flowmiddle_divergence);
-    // }
-
-
-    // image_cover(img);
-    // printf("Yaw: %f", img->eulers.psi);
-
-
+    log_flow();
+    // State machine
     switch (navigation_state){
       case SAFE:
         state_safe();
@@ -118,37 +112,37 @@ void log_flow(void)
 
 void state_safe(void)
 {
-        moveWaypointForward(WP_TRAJECTORY, MOVEDISTANCE);
-        LOG("start of safe")
-        if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
-          navigation_state = OUT_OF_BOUNDS;
-          printf("OUT OF BOUNDS \n");
-          return; 
-          
-  
-        } else if (flow_vals.right_left_ratio < SIDES_OBS_TH){
-          // LOG("after obstacle right evaluation")
-          printf("Obstacle RIGHT \n");
-          navigation_state = OBSTACLE_RIGHT;
-          return; 
-          
-        } else if (flow_vals.right_left_ratio > (1 / SIDES_OBS_TH)){
-          printf("Obstacle LEFT \n");
-          navigation_state = OBSTACLE_LEFT;
-          return;
-          
-        } 
-          else if ((flow_vals.middle_divergence > MIDDLE_OBS_TH_UPPER) ||  (flow_vals.middle_divergence < MIDDLE_OBS_TH_LOWER) || (flow_vals.middle_divergence_prev < MIDDLE_OBS_TH_LOWER_2_STEP) || (flow_vals.middle_divergence_prev > MIDDLE_OBS_TH_UPPER_2_STEP)){
-          printf("Obstacle MIDDLE \n");
-          navigation_state = OBSTACLE_MIDDLE;
-          return; 
-        } 
-        else {
-          moveWaypointForward(WP_GOAL, 0.5f * MOVEDISTANCE);
-          printf("NO OBSTACLE \n");
-        }
-        LOG("end of safe")
-        return;
+  LOG("start of safe state")
+    moveWaypointForward(WP_TRAJECTORY, MOVEDISTANCE);
+    if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
+      navigation_state = OUT_OF_BOUNDS;
+      printf("OUT OF BOUNDS \n");
+      return; 
+      
+    // Conditions for an obstacle on the right
+    } else if (flow_vals.right_left_ratio < (1/SIDES_OBS_TH)){
+      printf("Obstacle RIGHT \n");
+      navigation_state = OBSTACLE_RIGHT;
+      return; 
+    // Conditions for an obstacle on the left
+    } else if (flow_vals.right_left_ratio > SIDES_OBS_TH){
+      printf("Obstacle LEFT \n");
+      navigation_state = OBSTACLE_LEFT;
+      return;
+      
+    } 
+    // Conditions for an obstacle in the middle
+      else if ((flow_vals.middle_divergence > MIDDLE_OBS_TH_UPPER) ||  (flow_vals.middle_divergence < MIDDLE_OBS_TH_LOWER) || (flow_vals.middle_divergence_prev < MIDDLE_OBS_TH_LOWER_2_STEP) || (flow_vals.middle_divergence_prev > MIDDLE_OBS_TH_UPPER_2_STEP)){
+      printf("Obstacle MIDDLE \n");
+      navigation_state = OBSTACLE_MIDDLE;
+      return; 
+    } 
+    else {
+      moveWaypointForward(WP_GOAL, 0.5f * MOVEDISTANCE);
+      printf("NO OBSTACLE \n");
+    }
+    LOG("end of safe state")
+    return;
 }
 
 void state_obs_right(void)
@@ -187,21 +181,22 @@ void reset_counters_turn(void)
 void state_just_turned(void)
 {
   LOG("JUST_TURNED")
+  // Right after turning we don't look at any obstacles but very briefly move forward
+  moveWaypointForward(WP_TRAJECTORY, 0.5 * MOVEDISTANCE);
+  moveWaypointForward(WP_GOAL, 0.5 * MOVEDISTANCE);
   if (counter_turn_1 < STEPS_COUNT_PHASE_1_TURNING){
-      moveWaypointForward(WP_TRAJECTORY, 0.5 * MOVEDISTANCE);
-      moveWaypointForward(WP_GOAL, 0.5 * MOVEDISTANCE);
       counter_turn_1++;
       return;
     }
-    moveWaypointForward(WP_TRAJECTORY, 0.5 * MOVEDISTANCE);
-    moveWaypointForward(WP_GOAL, 0.5 * MOVEDISTANCE);
     counter_turn_2++;
-
+  // If we are out of bounds, we need to move away
   if (!InsideObstacleZone(WaypointX(WP_TRAJECTORY),WaypointY(WP_TRAJECTORY))){
     navigation_state = OUT_OF_BOUNDS;
     reset_counters_turn();
     return;
   } 
+  // briefly after turning, the middle flow values sometimes become slightly of the charts, 
+  // therefore we only look at left and right flow with slightly different thresholds
   else if (flow_vals.right_left_ratio < RIGHTFLOW_TURNING_TH){ // added this
     LOG("after obstacle right evaluation")
     navigation_state = OBSTACLE_RIGHT;
@@ -215,7 +210,6 @@ void state_just_turned(void)
     reset_counters_turn();
     return;
   } 
-
   else if (counter_turn_2 == STEPS_COUNT_PHASE_1_TURNING){
     navigation_state = SAFE;
     reset_counters_turn();
