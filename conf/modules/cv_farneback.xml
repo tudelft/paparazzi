@@ -40,7 +40,6 @@
   <makefile target="nps">
     <file name="farneback_navigator.c"/>
     <file name="farneback_calculator.cpp"/>
-    <!-- <file name="opencv_image_functions.cpp"/> -->
     <file name="finite_state_machine.c"/>
     <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_pc/include"/>
     
