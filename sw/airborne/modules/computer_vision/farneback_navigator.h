@@ -18,19 +18,15 @@
  * <http://www.gnu.org/licenses/>.
  */
 /**
- * @file "modules/computer_vision/cv_opencvdemo.h"
+ * @file "modules/computer_vision/cv_opencvdemo.c"
  * @author C. De Wagter
- * opencv
+ * A simple module showing what you can do with opencv on the bebop.
  */
 
-#ifndef CV_OPENCVDEMO_H
-#define CV_OPENCVDEMO_H
+#ifndef FARNEBACK_NAVIGATOR_H
+#define FARNEBACK_NAVIGATOR_H
 
-// // extern void opencvdemo_init(void);
-
-// void finite_state_machine(FlowData flow_data);
 extern void calc_action_optical_flow_init(void);
-extern void calc_action_optical_flow_periodic(void);
-#endif
+#endif // FARNEBACK_NAVIGATOR_H
 
 

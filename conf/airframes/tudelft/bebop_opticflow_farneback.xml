@@ -1,6 +1,6 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
-<airframe name="bebop_avoider">
+<airframe name="bebop_optical_flow_farneback">
   <description>MAVLAB Course TUDelft
   </description>
 
@@ -76,9 +76,9 @@
         <define name="DETECT_CONTOUR_CAMERA" value="front_camera"/>
       <define name="DETECT_CONTOUR_FPS" value="30"/>
     </module> -->
-    <module name="cv_opencvdemo">
-      <define name="OPENCVDEMO_CAMERA" value="front_camera"/>
-      <define name="OPENCVDEMO_FPS" value="5"/>
+    <module name="cv_farneback">
+      <define name="FARNEBACK_CAMERA" value="front_camera"/>
+      <define name="FARNEBACK_FPS" value="5"/>
     </module>
     <!-- <module name="cv_detect_contour">
       <define name="DETECT_CONTOUR_CAMERA" value="front_camera"/>

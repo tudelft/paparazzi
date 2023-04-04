@@ -5,13 +5,12 @@
 #include <iostream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include "opencv_example.h"
+#include "farneback_calculator.h"
 #include "opencv2/video/tracking.hpp"
 #include <opencv2/core/types.hpp>
 
 
 #define LOG(x) fprintf(stderr, "LOG: %s:%d %s %lu \n", __FILE__, __LINE__, x, clock()); 
-// #define LOG(x)  
 
 
 
@@ -112,14 +111,4 @@ void farneback(char *img, float* output_flow, int width, int height, int width_i
     previous_frame_all = next_frame_all;
     frame_id++;
     LOG("end farneback")
-
 }
-
-
-// int main()
-// {
-//   std::string filename = "/home/matthijs/paparazzi/videos/vlc-record-2023-03-10-09h59m06s-rtp_5000.sdp-.avi";
-//   farneback_playback(filename, 200, 50);
-//   return 0;
-// }
-

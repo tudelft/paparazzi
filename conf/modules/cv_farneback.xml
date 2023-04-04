@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="cv_opencvdemo" dir="computer_vision">
+<module name="cv_farneback" dir="computer_vision">
   <doc>
     <description>This example shows how opencv can be used on (for example) the Bebop drone.
     Important to know is that sw/ext/opencv_bebop must be downloaded, and made.
@@ -8,18 +8,18 @@
     The LDFLAGS in this file should be the same as in this conf file.
     </description>
 
-    <define name="OPENCVDEMO_CAMERA" value="frontale_camera|bottom_camera" description="Video device to use"/>
-    <define name="OPENCVDEMO_FPS" value="5" description="The (maximum) frequency to run the calculations at. If zero, it will max out at the camera frame rate"/>
+    <define name="FARNEBACK_CAMERA" value="frontale_camera|bottom_camera" description="Video device to use"/>
+    <define name="FARNEBACK_FPS" value="5" description="The (maximum) frequency to run the calculations at. If zero, it will max out at the camera frame rate"/>
   </doc>
   <header>
-    <file name="cv_opencvdemo.h"/>
+    <file name="farneback_navigator.h"/>
     <file name="state.h"/>
 
   </header>
   <init fun="calc_action_optical_flow_init()"/>
   <makefile target="ap">
-    <file name="cv_opencvdemo.c"/>
-    <file name="opencv_example.cpp"/>
+    <file name="farneback_navigator.c"/>
+    <file name="farneback_calculator.cpp"/>
     <file name="opencv_image_functions.cpp"/>
     <file name="finite_state_machine.c"/>
     <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_arm/include"/>
@@ -40,8 +40,8 @@
     <flag name="LDFLAGS" value="lrt"/>
   </makefile>
   <makefile target="nps">
-    <file name="cv_opencvdemo.c"/>
-    <file name="opencv_example.cpp"/>
+    <file name="farneback_navigator.c"/>
+    <file name="farneback_calculator.cpp"/>
     <file name="opencv_image_functions.cpp"/>
     <file name="finite_state_machine.c"/>
     <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_pc/include"/>
