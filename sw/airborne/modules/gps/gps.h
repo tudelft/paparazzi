@@ -160,6 +160,7 @@ struct RtcmMan {
 
 /** global GPS state */
 extern struct GpsState gps;
+extern struct GpsRelposNED gps_relposned;
 
 #ifdef GPS_TYPE_H
 #include GPS_TYPE_H
