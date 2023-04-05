@@ -60,7 +60,7 @@
 
 float follow_me_distance = FOLLOW_ME_DISTANCE;
 float follow_me_height = FOLLOW_ME_HEIGHT;
-float follow_me_heading = 0.;
+float follow_me_heading = 180.;
 float follow_me_min_speed = FOLLOW_ME_MIN_SPEED;
 float follow_me_filt = FOLLOW_ME_FILT;
 float follow_me_diag_speed = 1.0;
@@ -76,6 +76,7 @@ static struct LlaCoor_i ground_lla;
 static float ground_speed;
 static float ground_climb;
 static float ground_course;
+static float ground_heading;
 
 void follow_me_init(void)
 {
@@ -96,12 +97,9 @@ void follow_me_parse_target_pos(uint8_t *buf)
   ground_speed = DL_TARGET_POS_speed(buf);
   ground_climb = DL_TARGET_POS_climb(buf);
   ground_course = DL_TARGET_POS_course(buf);
+  ground_heading = DL_TARGET_POS_heading(buf);
+  if(ground_heading > 360.f) ground_heading -= 360.f;
 
-  // Update the heading based on the course
-  if(ground_speed > follow_me_min_speed) {
-    follow_me_heading = ground_course + 180.f;
-    if(follow_me_heading > 360.f) follow_me_heading -= 360.f;
-  }
   ground_set = true;
 }
 
@@ -184,8 +182,8 @@ void follow_me_set_wp(uint8_t wp_id, float speed)
     }
 
     // Filter the cosine and sine of the follow me heading to avoid wrapping
-    fmh_cos_filt = fmh_cos_filt * follow_me_filt + cosf(follow_me_heading/180.*M_PI) * (1 - follow_me_filt);
-    fmh_sin_filt = fmh_sin_filt * follow_me_filt + sinf(follow_me_heading/180.*M_PI) * (1 - follow_me_filt);
+    fmh_cos_filt = fmh_cos_filt * follow_me_filt + cosf(ground_heading+follow_me_heading/180.*M_PI) * (1 - follow_me_filt);
+    fmh_sin_filt = fmh_sin_filt * follow_me_filt + sinf(ground_heading+follow_me_heading/180.*M_PI) * (1 - follow_me_filt);
 
     // Add the target distance in the direction of the follow me heading
     target_pos.x += dist * fmh_cos_filt;
