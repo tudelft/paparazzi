@@ -65,10 +65,10 @@
     </block>
     <block name="Start Engine">
         <call_once fun="NavResurrect()"/>
-        <attitude pitch="0" roll="0" throttle="0" until="stage_time>5" vmode="throttle"/>
+        <attitude pitch="0" roll="0" throttle="0" until="stage_time>10" vmode="throttle"/>
     </block>
      <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-        <exception cond="stateGetPositionEnu_f()->z > 10.0" deroute="Standby"/>
+        <exception cond="stateGetPositionEnu_f()->z > 4.0" deroute="Approach APP"/>
         <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
         <stay wp="CLIMB"/>
     </block>
