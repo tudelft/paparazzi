@@ -191,8 +191,8 @@ void update_hover_motor_effectiveness(float *cosr, float *sinr, float *airspeed_
   g1g2[2][0] = (g1_startup[2][0] * g1_r_multiplier + g2_startup[0]) / INDI_G_SCALING;
   g1g2[3][0] = g1_startup[3][0] * g1_t_multiplier / INDI_G_SCALING;
 
-  //g1g2[0][1] = g1_p_side_motors[0] * g1_p_multiplier / INDI_G_SCALING;
-  g1g2[0][1] = ((-0.00335545 - 0.00214628 * *cosr + 0.00369705 * *sinr + -0.00302647 * *cosr * *cosr + -0.00032898 * *sinr * *sinr)) * g1_p_multiplier;
+  g1g2[0][1] = g1_p_side_motors[0] * g1_p_multiplier / INDI_G_SCALING;
+  //g1g2[0][1] = ((-0.00335545 - 0.00214628 * *cosr + 0.00369705 * *sinr + -0.00302647 * *cosr * *cosr + -0.00032898 * *sinr * *sinr)) * g1_p_multiplier;
   Bound(g1g2[0][1], -1, -0.0001);
   g1g2[1][1] = g1_q_side_motors[0] * g1_q_multiplier / INDI_G_SCALING;
   g1g2[2][1] = (g1_startup[2][1] * g1_r_multiplier + g2_startup[1]) / INDI_G_SCALING;
@@ -205,8 +205,8 @@ void update_hover_motor_effectiveness(float *cosr, float *sinr, float *airspeed_
 
   float bounded_airspeed = *airspeed_f;
   Bound(bounded_airspeed, 0, 17);
-  //g1g2[0][3] = (g1_p_side_motors[1] * g1_p_multiplier - 0.283333 * bounded_airspeed * *cosr) / INDI_G_SCALING;
-  g1g2[0][3] = ((0.0040856 + 0.00123478 * *cosr + -0.00428635 * *sinr + 0.00390033 * *cosr * *cosr + 0.00018527 * *sinr * *sinr)) * g1_p_multiplier;
+  g1g2[0][3] = (g1_p_side_motors[1] * g1_p_multiplier - 0.283333 * bounded_airspeed * *cosr) / INDI_G_SCALING;
+  //g1g2[0][3] = ((0.0040856 + 0.00123478 * *cosr + -0.00428635 * *sinr + 0.00390033 * *cosr * *cosr + 0.00018527 * *sinr * *sinr)) * g1_p_multiplier;
   Bound(g1g2[0][3], 0.0001, 1);
   g1g2[1][3] = g1_q_side_motors[1] * g1_q_multiplier / INDI_G_SCALING;
   g1g2[2][3] = (g1_startup[2][3] * g1_r_multiplier + g2_startup[3]) / INDI_G_SCALING;
@@ -276,4 +276,11 @@ void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt)
   } else {
     thrust_bx_eff = STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS;
   }
+}
+
+float rot_wing_sched_get_liftd(float airspeed, float sinr)
+{
+  //wing = (-0.74529194103945*airspeed*airspeed*sinr*sinr - 0.4065513216373*airspeed*airspeed) / m
+  //fuse = (-0.072362752875*airspeed*airspeed) / m
+  //ele  = (-0.1452739306305*airspeed*airspeed) / m
 }
