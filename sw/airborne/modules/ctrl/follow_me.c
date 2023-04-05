@@ -110,7 +110,7 @@ void follow_me_set_wp(uint8_t wp_id, float speed)
   float diff_time_ms = 0;
 
   // Check if we got a valid relative position which didn't timeout
-  if(gps_relposned.relPosValid && gps_relposned.iTOW+FOLLOW_ME_GPS_TIMEOUT > gps_tow_from_sys_ticks(sys_time.nb_tick)) {
+  /*if(gps_relposned.relPosValid && gps_relposned.iTOW+FOLLOW_ME_GPS_TIMEOUT > gps_tow_from_sys_ticks(sys_time.nb_tick)) {
     static struct NedCoor_f cur_pos;
     static uint32_t last_relpos_tow = 0;
 
@@ -130,7 +130,7 @@ void follow_me_set_wp(uint8_t wp_id, float speed)
     if(diff_time_ms < 0) diff_time_ms += (1000*60*60*24*7); //msec of a week
   }
   // Check if we got a position from the ground which didn't timeout and local NED is initialized
-  else if(ground_set && state.ned_initialized_i && ground_time_msec+FOLLOW_ME_GROUND_TIMEOUT > get_sys_time_msec()) {
+  else*/ if(ground_set && state.ned_initialized_i && ground_time_msec+FOLLOW_ME_GROUND_TIMEOUT > get_sys_time_msec()) {
     struct NedCoor_i target_pos_cm;
     ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &ground_lla);
     target_pos.x = target_pos_cm.x / 100.;
