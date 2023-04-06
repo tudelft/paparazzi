@@ -67,10 +67,13 @@
         <call_once fun="NavResurrect()"/>
         <attitude pitch="0" roll="0" throttle="0" until="stage_time>10" vmode="throttle"/>
     </block>
-     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+    <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
         <exception cond="stateGetPositionEnu_f()->z > 4.0" deroute="Approach APP"/>
         <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
-        <stay wp="CLIMB"/>
+        <attitude pitch="0" roll="0" throttle="0.75" until="stage_time>2" vmode="throttle"/>
+    </block>
+    <block name="Approach APP">
+      <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
         <stay wp="STDBY"/>
@@ -80,9 +83,6 @@
     </block>
     <block name="stay_p1">
       <stay wp="p1"/>
-    </block>
-    <block name="Approach APP">
-      <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
         <call_once fun="NavSetWaypointHere(WP_TD)"/>
