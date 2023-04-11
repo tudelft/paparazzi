@@ -24,7 +24,7 @@ enum navigation_state_t {
 enum navigation_state_t navigation_state = SAFE;
 float moveDistance = 2;                 // waypoint displacement [m]
 float oob_heading_increment = 5.f;      // heading angle increment if out of bounds [deg]
-float ooz_heading_increment = 15.f;     // heading angle increment if out of exploration zone [deg]
+float ooz_heading_increment = 45.f;     // heading angle increment if out of exploration zone [deg]
 
 void bebop2_bernardo_init(void) {
   // bind our colorfilter callbacks to receive the color filter outputs
