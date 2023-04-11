@@ -55,10 +55,6 @@
       <program name="Gazebo"/>
     </session>
     <session name="Simulation - Gazebo + Joystick">
-      <program name="Simulator">
-        <arg flag="-a" constant="bebop_orange_avoid"/>
-        <arg flag="-t" constant="nps"/>
-      </program>
       <program name="Data Link">
         <arg flag="-udp"/>
         <arg flag="-ping_period" constant="100"/>
@@ -78,6 +74,11 @@
       <program name="Gazebo"/>
       <program name="Joystick">
         <arg flag="-ac" constant="sm600.xml"/>
+      </program>
+      <program name="Simulator">
+        <arg flag=""/>
+        <arg flag="-a" constant="bebop2_bernardo"/>
+        <arg flag="-t" constant="nps"/>
       </program>
     </session>
     <session name="Flight UDP">
