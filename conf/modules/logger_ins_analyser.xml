@@ -1,0 +1,16 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="logger_ins_analyser" dir="loggers">
+  <doc>
+    <description>
+      Messages can be used to store INS linear variables into the flight_recorder
+    </description>
+  </doc>
+  <header>
+    <file name="logger_ins_analyser.h" />
+  </header>
+  <init fun="logger_ins_analyser()"/>
+  <makefile target="ap|nps">
+    <file name="logger_ins_analyser.c"/>
+  </makefile>
+</module>

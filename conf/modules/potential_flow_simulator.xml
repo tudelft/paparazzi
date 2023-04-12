@@ -1,0 +1,26 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="potential_flow_simulator" dir="potential_flow_simulator">
+  <doc>
+    <description>Potential flow simulator for orographic soaring (Never Landing Drone project)
+</description>
+  </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="PotentialFlowSettings">
+        <dl_setting var="ref_wind_spd" min="-20" step="0.1" max="20" shortname="speed_m/s" />
+        <dl_setting var="ref_wind_dir" min="0" step="1" max="360" shortname="dir_deg_cw(not working yet)" />
+        <dl_setting var="obstacle_position_north" min="-10.0" step="0.2" max="10.0" shortname="hill_pos_north"/>
+        <dl_setting var="obstacle_position_down" min="-10.0" step="0.2" max="10.0" shortname="hill_pos_down"/>
+        <dl_setting var="obstacle_radius" min="0.0" step="0.2" max="20.0" shortname="hill_radius"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <header>
+    <file name="potential_flow_simulator.h"/>
+  </header>
+  <init fun="init_potential_flow_simulator()"/>
+  <periodic fun="potential_flow_simulator_periodic()" freq="50" autorun="TRUE"/>
+  <makefile>
+    <file name="potential_flow_simulator.c"/>
+  </makefile>
+</module>

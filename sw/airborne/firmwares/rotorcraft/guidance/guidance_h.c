@@ -34,7 +34,11 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "firmwares/rotorcraft/navigation.h"
 #include "modules/radio_control/radio_control.h"
-#if GUIDANCE_INDI_HYBRID
+#if GUIDANCE_INDI_SOARING
+#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid_nld_soaring.h"
+#elif GUIDANCE_INDI_NLD
+#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid_nld.h"
+#elif GUIDANCE_INDI_HYBRID
 #include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h"
 #else
 #include "firmwares/rotorcraft/guidance/guidance_indi.h"
@@ -262,7 +266,9 @@ void guidance_h_mode_changed(uint8_t new_mode)
 
     case GUIDANCE_H_MODE_GUIDED:
     case GUIDANCE_H_MODE_HOVER:
-#if GUIDANCE_INDI
+#if GUIDANCE_INDI_SOARING
+    guidance_indi_soaring_enter();
+#elif GUIDANCE_INDI
       guidance_indi_enter();
 #endif
       guidance_h_hover_enter();
@@ -282,7 +288,9 @@ void guidance_h_mode_changed(uint8_t new_mode)
 #endif
 
     case GUIDANCE_H_MODE_NAV:
-#if GUIDANCE_INDI
+#if GUIDANCE_INDI_SOARING
+guidance_indi_soaring_enter();
+#elif GUIDANCE_INDI
       guidance_indi_enter();
 #endif
       guidance_h_nav_enter();
@@ -624,7 +632,9 @@ void guidance_h_from_nav(bool in_flight)
     guidance_h_set_heading(ANGLE_FLOAT_OF_BFP(nav_heading));
 #endif
 
-#if GUIDANCE_INDI
+#if GUIDANCE_INDI_SOARING
+    guidance_indi_soaring_run(&guidance_h.sp.heading);
+#elif GUIDANCE_INDI
     guidance_indi_run(&guidance_h.sp.heading);
 #else
     /* compute x,y earth commands */
@@ -704,7 +714,9 @@ void guidance_h_guided_run(bool in_flight)
 
   guidance_h_update_reference();
 
-#if GUIDANCE_INDI
+#if GUIDANCE_INDI_SOARING
+    guidance_indi_soaring_run(&guidance_h.sp.heading);
+#elif GUIDANCE_INDI
   guidance_indi_run(&guidance_h.sp.heading);
 #else
   /* compute x,y earth commands */

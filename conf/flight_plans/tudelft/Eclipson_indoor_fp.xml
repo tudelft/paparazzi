@@ -1,0 +1,112 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="3.2" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="25" name="Eclipson_indoor_nav" security_height="0.5">
+  <header>
+    #include "autopilot.h"
+    #include "modules/datalink/datalink.h"
+    #include "modules/radio_control/radio_control.h"
+</header>
+  <waypoints>
+    <waypoint name="HOME" x="0.0" y="0.0"/>
+<!--    <waypoint name="CLIMB" x="0.0" y="10.0"/>-->
+    <waypoint name="STDBY" x="0.0" y="2.3"/>
+    <waypoint name="SOAR" x="0.0" y="2.3" />
+    <!--    <waypoint name="p1" x="-19.9" y="30"/>-->
+<!--    <waypoint name="p2" x="30" y="45"/>-->
+<!--    <waypoint name="p3" x="45" y="-36.5"/>-->
+<!--    <waypoint name="p4" x="4.9" y="-34.4"/>-->
+    <waypoint name="H1" x="0.0" y="15.0"/>
+    <waypoint alt="3.4" name="S1_WP" x="0.0" y="1.8" />
+<!--    <waypoint alt="3.2" name="S2_RIGHT" x="0.2" y="2.2" />-->
+<!--    <waypoint alt="3.2" name="S3_BACK" x="0.0" y="1.8" />-->
+<!--    <waypoint alt="3.2" name="S4_LEFT" x="-0.2" y="2.2" />-->
+<!--    <waypoint alt="3.2" name="S5_DOWN" x="0.0" y="2.2" />-->
+<!--    <waypoint alt="3.7" name="S6_UP" x="0.0" y="2.2" />-->
+
+    <waypoint name="GF1" x="-5" y="15"/>
+    <waypoint name="GF2" x="-5" y="-15"/>
+    <waypoint name="GF3" x="5" y="-15"/>
+    <waypoint name="GF4" x="5" y="15"/>
+  </waypoints>
+  <sectors>
+    <sector color="red" name="Geofence">
+      <corner name="GF1"/>
+      <corner name="GF2"/>
+      <corner name="GF3"/>
+      <corner name="GF4"/>
+    </sector>
+  </sectors>
+  <exceptions>
+    <exception cond="Or(!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 1500) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyNoThrottle"/>
+    <exception cond="datalink_time > 25 && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="Soaring"/>
+<!--    <exception cond="radio_control.status == RC_REALLY_LOST && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="route"/>-->
+  </exceptions>
+  <blocks>
+    <block name="Wait GPS">
+      <set value="true" var="force_forward"/>
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <block name="Geo init">
+      <set value="true" var="force_forward"/>
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetGroundReferenceHere()"/>
+    </block>
+    <block name="Holding point">
+      <set value="true" var="force_forward"/>
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Start Engine">
+      <set value="true" var="force_forward"/>
+      <call_once fun="NavResurrect()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+<!--    <block name="Climb">-->
+<!--      <set value="true" var="force_forward"/>-->
+<!--      <call_once fun="NavResurrect()"/>-->
+<!--      <go from="HOME" throttle="1.0" wp="CLIMB" pitch="-70"/>-->
+<!--    </block>-->
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <call_once fun="NavResurrect()"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+      <call_once fun="guidance_indi_hybrid_soaring_reset()"/>
+      <go wp="STDBY"/>
+      <stay wp="STDBY"/>
+    </block>
+
+    <block name="SetHeading">
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+    </block>
+    <block name="Soaring">
+<!--      <set value="true" var="force_forward"/>-->
+<!--      <call_once fun="NavResurrect()"/>-->
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+      <call_once fun="guidance_indi_hybrid_soaring_start()"/>
+      <go wp="SOAR"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+      <stay wp="SOAR"/>
+    </block>
+    <block name="STAY_WP_S1">
+      <call_once fun="guidance_indi_hybrid_soaring_stop()"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+      <go wp="S1_WP"/>
+      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>
+      <stay wp="S1_WP"/>
+    </block>
+<!--    <block name="BACK">-->
+<!--      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>-->
+<!--      <go wp="S3_BACK"/>-->
+<!--      <call_once fun="nav_set_heading_towards_waypoint(WP_H1)"/>-->
+<!--      <stay wp="S3_BACK"/>-->
+<!--    </block>-->
+    <block name="ReturnStbyNoThrottle">
+      <exception cond="And(!(radio_control.status == RC_REALLY_LOST), And(InsideGeofence(GetPosX(), GetPosY()), And(MoreThan(GetPosAlt(), GetAltRef() + 20), LessThan(GetPosAlt(), GetAltRef() + 70))))" deroute="Standby"/>
+      <set value="1" var="autopilot.kill_throttle"/>
+      <set value="true" var="force_forward"/>
+      <call_once fun="NavKillThrottle()"/>
+      <stay wp="STDBY"/>
+<!--      <circle radius="nav_radius" wp="STDBY" throttle="0.0"/>-->
+    </block>
+  </blocks>
+</flight_plan>

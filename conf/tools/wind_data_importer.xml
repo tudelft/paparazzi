@@ -1,0 +1,4 @@
+<program command="sw/ground_segment/python/wind_data_importer/wind_data_importer.py" name="WindDataImporter">
+    <arg constant="0" flag="-type" />
+    <arg constant="@AIRCRAFT" flag="-ac" />
+</program>
