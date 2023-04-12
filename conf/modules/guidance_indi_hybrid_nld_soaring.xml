@@ -1,0 +1,94 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="guidance_indi_hybrid_nld_soaring" dir="guidance" task="control">
+  <doc>
+    <description>
+      Guidance controller for hybrids using INDI NLD for soaring
+    </description>
+  </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings NAME="guidance_indi_hybrid_nld">
+        <dl_settings name="controller">
+        <dl_setting var="gih_params.pos_gain" min="0" step="0.05" max="10.0" shortname="kpos" param="GUIDANCE_INDI_POS_GAIN" persistent="true"/>
+        <dl_setting var="gih_params.pos_gainz" min="0" step="0.05" max="10.0" shortname="kpos_z" param="GUIDANCE_INDI_POS_GAINZ" persistent="true"/>
+        <dl_setting var="gih_params.speed_gain" min="0" step="0.05" max="10.0" shortname="kspd" param="GUIDANCE_INDI_SPEED_GAIN" persistent="true"/>
+        <dl_setting var="gih_params.speed_gainz" min="0" step="0.05" max="10.0" shortname="kspd_z" param="GUIDANCE_INDI_SPEED_GAINZ" persistent="true"/>
+        <dl_setting var="gih_params.heading_bank_gain" min="0" step="0.1" max="30.0" shortname="bank gain" param="GUIDANCE_INDI_HEADING_BANK_GAIN" persistent="true"/>
+        <dl_setting var="guidance_indi_max_airspeed" min="5.0" step="1.0" max="30.0" shortname="cruise_airspeed"/>
+        <dl_setting var="nav_max_speed" min="1.0" step="1.0" max="50.0" shortname="nav_max_speed"/>
+        <dl_setting var="guidance_indi_max_bank" min="10.0" step="1.0" max="50.0" shortname="max_bank"/>
+<!--        <dl_setting var="take_heading_control" min="0" step="1" max="1" values="OFF|ON" shortname="take_heading"/>-->
+        <dl_setting var="guidance_soaring_max_throttle" min="0" step="100" max="9600" shortname="max_throttle"/>
+
+        <dl_setting var="soaring_spd_sp.x" min="-1.0" step="0.001" max="1.0" shortname="speed_sp_x"/>
+        <dl_setting var="soaring_spd_sp.y" min="-1.0" step="0.001" max="1.0" shortname="speed_sp_y"/>
+        <dl_setting var="soaring_spd_sp.z" min="-1.0" step="0.001" max="1.0" shortname="speed_sp_z"/>
+
+          <dl_setting var="gd_gamma_sq" min="0" step="1" max="10000" shortname="gamma_sq"/>
+          <dl_setting var="gd_Wv[0]" min="0" step="0.1" max="1000" shortname="weight_x"/>
+          <dl_setting var="gd_Wv[1]" min="0" step="0.1" max="1000" shortname="weight_y"/>
+          <dl_setting var="gd_Wv[2]" min="0" step="0.1" max="1000" shortname="weight_z"/>
+          <dl_setting var="gd_Wu[0]" min="0" step="0.1" max="1000" shortname="weight_roll"/>
+          <dl_setting var="gd_Wu[1]" min="0" step="0.1" max="1000" shortname="weight_pitch"/>
+          <dl_setting var="gd_Wu[2]" min="0" step="0.1" max="1000" shortname="weight_throttle"/>
+
+          <!--          <dl_setting var="gd_gamma_sq" min="0" step="1" max="10000" shortname="gamma_sq"/>-->
+        </dl_settings>
+        <dl_settings name="soaring">
+          <dl_setting var="speed_sp_from_position" min="0" step="1" max="1" values="OFF|ON" shortname="sp_position"/>
+          <dl_setting var="speed_sp_from_gradient" min="0" step="1" max="1" values="OFF|ON" shortname="sp_gradient"/>
+          <dl_setting var="y_position_ctrl" min="0" step="1" max="1" values="OFF|ON" shortname="y_pos_ctrl"/>
+          <dl_setting var="soaring_explore_positions" min="0" step="1" max="1" values="OFF|ON" shortname="moving_wp"/>
+
+          <dl_setting var="soaring_move_wp_wait_sec" min="0" step="1" max="100" shortname="wait_time"/>
+          <dl_setting var="soaring_move_wp_cost_threshold" min="1" step="1" max="10000" shortname="cost_threshold"/>
+
+          <dl_setting var="soaring_use_fixed_step_size" min="0" step="1" max="1" values="OFF|ON" shortname="use_fixed_step_size"/>
+          <dl_setting var="soaring_fixed_step_size" min="0" step="0.05" max="1" shortname="fixed_step_size"/>
+
+          <dl_setting var="soaring_step_size_big" min="0" step="0.05" max="1" shortname="step_size_big"/>
+          <dl_setting var="soaring_step_size_mid" min="0" step="0.05" max="1" shortname="step_size_mid"/>
+          <dl_setting var="soaring_step_size_small" min="0" step="0.01" max="1" shortname="step_size_small"/>
+          <dl_setting var="soaring_step_size_fine" min="0" step="0.01" max="1" shortname="step_size_fine"/>
+
+          <dl_setting var="soaring_step_k_big" min="0" step="0.1" max="1000" shortname="big_step_cost_multiplier"/>
+          <dl_setting var="soaring_step_k_mid" min="0" step="0.1" max="1000" shortname="mid_step_cost_multiplier"/>
+          <dl_setting var="soaring_step_k_small" min="0" step="0.1" max="1000" shortname="small_step_cost_multiplier"/>
+
+          <dl_setting var="gd_k_thr" min="0" step="0.001" max="10" shortname="wp_throttle_weight"/>
+          <dl_setting var="gd_k_spd_x" min="0" step="0.1" max="100" shortname="wp_spd_x_weight"/>
+          <dl_setting var="gd_k_spd_z" min="0" step="0.1" max="100" shortname="wp_spd_z_weight"/>
+          <dl_setting var="gd_k_pitch" min="0" step="0.1" max="100" shortname="wp_pitch_weight"/>
+
+          <dl_setting var="heading_target.x" min="1.0" step="0.5" max="50" shortname="heading_target_x"/>
+          <dl_setting var="heading_target.y" min="-10.0" step="0.5" max="1.0" shortname="heading_target_y"/>
+
+          <dl_setting var="guidance_grad_gain_x" min="0" step="0.001" max="2" shortname="grad_x_gain"/>
+          <dl_setting var="guidance_grad_gain_z" min="0" step="0.001" max="2" shortname="grad_z_gain"/>
+          <dl_setting var="guidance_grad_gain_rec_x" min="0" step="0.001" max="10" shortname="grad_x_gain"/>
+          <dl_setting var="guidance_grad_gain_rec_z" min="0" step="0.001" max="10" shortname="grad_z_gain"/>
+        </dl_settings>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <dep>
+    <depends>@navigation</depends>
+    <provides>guidance,attitude_command</provides>
+  </dep>
+  <header>
+    <file name="guidance_indi_hybrid_nld_soaring.h"/>
+  </header>
+  <init fun="guidance_indi_soaring_init()"/>
+  <init fun="guidance_indi_soaring_enter()"/>
+  <!--<periodic fun="guidance_indi_propagate_filters()" freq="PERIODIC_FREQUENCY" autorun="TRUE"/>-->
+  <makefile target="ap|nps" firmware="rotorcraft">
+    <file name="guidance_indi_hybrid_nld_soaring.c" dir="$(SRC_FIRMWARE)/guidance"/>
+      <file name="wls_alloc_gd.c" dir="$(SRC_FIRMWARE)/guidance/wls"/>
+      <file name="qr_solve.c" dir="math/qr_solve"/>
+      <file name="r8lib_min.c" dir="math/qr_solve"/>
+    <define name="GUIDANCE_INDI" value="TRUE"/>
+    <define name="GUIDANCE_INDI_SOARING" value="TRUE"/>
+    <define name="GUIDANCE_INDI_HYBRID" value="TRUE"/>
+  </makefile>
+</module>

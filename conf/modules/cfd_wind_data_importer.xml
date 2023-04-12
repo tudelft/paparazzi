@@ -1,0 +1,28 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="cfd_wind_data_importer" dir="cfd_wind_data_importer">
+  <doc>
+    <description>
+      Sending IVY request to import CFD wind data
+    </description>
+  </doc>
+  <settings>
+    <dl_settings>
+      <dl_settings name="CFD_wind_module">
+        <dl_settings name="Wind_speed">
+          <dl_setting var="wind_speed" min="10" max="15" step="1" shortname="wind speed" unit="m/s"/>
+        </dl_settings>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <header>
+    <file name="cfd_wind_data_importer.h"/>
+  </header>
+  <init fun="init_cfd_wind_data_importer()"/>
+  <periodic fun="cfd_wind_data_importer_periodic()" freq="30" autorun="TRUE"/>
+  <datalink message="CFD_WIND_DATA" fun="cfd_wind_importer_parse_wind_msg(buf)"/>
+  <datalink message="MOVE_WAYPOINT_LTP" fun="cfd_wind_importer_move_waypoint_msg_cb(buf)"/>
+
+  <makefile>
+    <file name="cfd_wind_data_importer.c"/>
+  </makefile>
+</module>
