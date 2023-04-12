@@ -1,0 +1,111 @@
+<?xml version='1.0'?>
+<sdf version='1.4'>
+  <model name="simple_fixedwing_w_camera">
+    <pose>0 0 0 0 0 0</pose>
+
+    <link name="body">
+        <pose>0 0 0 0 3.14159 3.14159</pose>
+        <!--<pose>0 0 -.1 0 3.14159 -1.5708</pose>-->
+
+      <!--<velocity_decay>
+        <linear>0.001</linear>
+      </velocity_decay>-->
+      
+    
+      <inertial><!-- Converted to SI from Paparazzi's ARDrone model for JSBsim -->
+        <mass>5.4</mass>
+        <inertia>
+          <ixx> 1.35581 </ixx>
+          <iyy> 1.35581 </iyy>
+          <izz> 2.71163 </izz>
+          <ixy> 0. </ixy>
+          <ixz> 0. </ixz>
+          <iyz> 0. </iyz>
+        </inertia>
+      </inertial>
+
+        <collision name='base_link_collision'>
+          <pose>0 0 -0.07 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.47 0.47 0.11</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <visual name='base_link_visual'>
+          <pose>0.07 0 -0.08 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <scale>0.4 0.4 0.4</scale>
+              <uri>model://simple_fixedwing_w_camera/body.dae</uri>
+            </mesh>
+          </geometry>
+          <material>
+            <script>
+              <name>Gazebo/DarkGrey</name>
+              <uri>__default__</uri>
+            </script>
+          </material>
+        </visual>
+
+    </link>
+
+    <!-- CAMERAS -->
+
+    <link name="front_camera">
+      <pose>0.50 0 0 0 0 0</pose>
+      <inertial>
+        <mass>0.001</mass>
+        <inertia>
+          <ixx>0.0001</ixx>
+          <iyy>0.0001</iyy>
+          <izz>0.0001</izz>
+          <ixy>0</ixy>
+          <iyz>0</iyz>
+          <ixz>0</ixz>
+        </inertia>
+      </inertial>
+      <sensor type="camera" name="front_camera_sensor">
+        <update_rate>30.0</update_rate>
+        <camera>
+          <horizontal_fov>1.3962634</horizontal_fov>
+          <image>
+            <width>1280</width>
+            <height>720</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.02</near>
+            <far>300</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.007</stddev>
+          </noise>
+        </camera>
+      </sensor>
+        <!--<visual name="front_camera_visual">
+          <pose>0.50 0 0 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.01 0.05 0.05</size>
+            </box>
+          </geometry>
+          <material>
+            <script>
+              <name>Gazebo/White</name>
+              <uri>__default__</uri>
+            </script>
+          </material>
+        </visual>-->
+    </link>
+    
+    <joint name="front_camera_joint" type="fixed">
+      <parent>body</parent>
+      <child>front_camera</child>
+    </joint>
+
+  </model>
+</sdf>
