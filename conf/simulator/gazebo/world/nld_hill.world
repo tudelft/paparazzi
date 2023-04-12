@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<sdf version="1.4">
+  <world name="default">
+    <!--<include>
+      <uri>model://ground_plane</uri>
+    </include>-->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+  <!-- TODO: use a smaller model file -->
+    <!--<model name="hill">
+      <pose>100 0 0  0 0 0</pose>
+      <static>true</static>
+      <link name="body">
+        <visual name="visual">
+          <geometry>
+            <mesh><uri>model://nld_hill/hill_gzb_210210_50m.obj</uri></mesh>
+          </geometry>
+	      <material>
+            <script>
+              <name>Kitchen/Grass</name>
+            </script>
+          </material>
+        </visual>
+      </link>
+    </model>-->
+    <scene>
+      <sky>
+        <clouds>
+          <speed>12</speed>
+        </clouds>
+      </sky>
+    </scene>
+  </world>
+</sdf>
