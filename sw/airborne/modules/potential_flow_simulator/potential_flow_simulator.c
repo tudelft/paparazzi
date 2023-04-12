@@ -37,7 +37,7 @@
 #include "math/pprz_geodetic_int.h"
 #include "math/pprz_geodetic_float.h"
 #include "math/pprz_geodetic_double.h"
-#include "subsystems/datalink/telemetry.h"
+#include "modules/datalink/telemetry.h"
 #ifdef SIM
     #include "nps_atmosphere.h"
 #endif
@@ -184,7 +184,7 @@ inline struct FloatVect3 utm_to_v3(struct UtmCoor_f *_utm_f) {
 }
 
 #if PERIODIC_TELEMETRY
-#include "subsystems/datalink/telemetry.h"
+#include "modules/datalink/telemetry.h"
 static void send_potential_flow(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_POTENTIAL_FLOW(trans, dev, AC_ID,

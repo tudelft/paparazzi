@@ -35,8 +35,8 @@
 #include "nps_atmosphere.h"
 #include "state.h"
 
-#include "subsystems/datalink/downlink.h"
-#include "subsystems/datalink/telemetry.h"
+#include "modules/datalink/downlink.h"
+#include "modules/datalink/telemetry.h"
 //#include "subsystems/abi.h"
 
 #include "math/pprz_geodetic_float.h"
