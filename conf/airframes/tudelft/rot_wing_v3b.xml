@@ -126,7 +126,7 @@
 
     <servos DRIVER="Pwm">
     <!--1030 = quad 2140 = fw-->
-        <servo NO="0" NAME="SERVO_ROTWING"   MIN="974" NEUTRAL="974" MAX="2038"/>
+        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1027" NEUTRAL="1027" MAX="2096"/>
     </servos>
 
     <servos DRIVER="Uavcan1">
@@ -148,10 +148,10 @@
 
     <!-- CAN BUS 1 command outputs-->
     <servos driver="Uavcan2Cmd">
-        <servo name="AIL_LEFT" no="7" min="-9600" neutral="0" max="9600"/>
-        <servo name="FLAP_LEFT" no="8" min="-9600" neutral="0" max="9600"/>
-        <servo name="FLAP_RIGHT" no="9" min="-9600" neutral="0" max="9600"/>
-        <servo name="AIL_RIGHT" no="10" min="-9600" neutral="0" max="9600"/>
+        <servo name="AIL_LEFT" no="7" min="-9600" neutral="0" max="3250"/>
+        <servo name="FLAP_LEFT" no="8" min="-9600" neutral="0" max="3250"/>
+        <servo name="FLAP_RIGHT" no="9" min="-3250" neutral="0" max="9600"/>
+        <servo name="AIL_RIGHT" no="10" min="-3250" neutral="0" max="9600"/>
     </servos>
 
     <commands>
@@ -182,10 +182,10 @@
         <set VALUE="($th_hold? 0 : actuators_pprz[5])" SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[6])" SERVO="MOTOR_PUSH"/>
         <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_ROTWING"/>
-        <set VALUE="RadioControlValues(RADIO_ROLL)" SERVO="AIL_LEFT"/>
-        <set VALUE="RadioControlValues(RADIO_ROLL)" SERVO="AIL_RIGHT"/>
-        <set VALUE="RadioControlValues(RADIO_ROLL)" SERVO="FLAP_LEFT"/>
-        <set VALUE="RadioControlValues(RADIO_ROLL)" SERVO="FLAP_RIGHT"/>
+        <set VALUE="0" SERVO="AIL_LEFT"/>
+        <set VALUE="0" SERVO="AIL_RIGHT"/>
+        <set VALUE="0" SERVO="FLAP_LEFT"/>
+        <set VALUE="0" SERVO="FLAP_RIGHT"/>
 
         <!-- Backup commands -->
         <set VALUE="($th_hold? -9600 : actuators_pprz[0])" SERVO="BMOTOR_FRONT"/>
