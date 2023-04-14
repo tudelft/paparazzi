@@ -268,10 +268,10 @@
         <define VALUE="{0.0, 0.0, 0.0, 0.0}" NAME="G2"/>-->
         <define VALUE="50.0" NAME="REF_ERR_P"/>
         <define VALUE="32.0" NAME="REF_ERR_Q"/>
-        <define VALUE="30.0" NAME="REF_ERR_R"/>
+        <define VALUE="23.0" NAME="REF_ERR_R"/>
         <define VALUE="7.0" NAME="REF_RATE_P"/>
         <define VALUE="8.0" NAME="REF_RATE_Q"/>
-        <define VALUE="9.0" NAME="REF_RATE_R"/>
+        <define VALUE="5.0" NAME="REF_RATE_R"/>
         <define VALUE="30.0" UNIT="deg/s" NAME="MAX_R"/>
         <define VALUE="5.0" NAME="FILT_CUTOFF_P"/>
         <define VALUE="5.0" NAME="FILT_CUTOFF_Q"/>
