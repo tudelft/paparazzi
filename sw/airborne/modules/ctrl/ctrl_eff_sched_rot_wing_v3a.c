@@ -79,11 +79,12 @@ Butterworth2LowPass airspeed_lowpass_filter;
 const float k_elevator[7] = {-27.9567, -89.3122, -137.9557, 0.1857, 90.2486, -0.0146, -0.2029};
 const float k_rudder[6] = {-1.6495, -26.3124, -0.7737, 0.2341, 0.6833, 17.5573};
 
-const float I_xx = 0.115625;
-const float I_yy = 1.070963542;
-const float I_zz = 1.333902457;
+float I_xx = 0.18707079;
+float I_yy = 1.04;
+float I_zz = 1.333902457;
 
-inline void update_hover_motor_effectiveness(float *cosr, float *sinr, float *airspeed_f);
+inline void update_inertia(float *cosr2, float *sinr2);
+inline void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr, float *airspeed_f);
 inline void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *skew_deg);
 inline void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *cosr);
 inline void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt);
@@ -112,13 +113,19 @@ void event_eff_scheduling(void)
   // Update skew angle and triogeometric variables of wing rotation
   float cosr;
   float sinr;
+  float cosr2;
+  float sinr2;
   float wing_rotation_deg = wing_rotation.wing_angle_deg;
   if (wing_rotation_sched_activated) {
     cosr = cosf(wing_rotation.wing_angle_rad);
     sinr = sinf(wing_rotation.wing_angle_rad);
+    cosr2 = cosr * cosr;
+    sinr2 = sinr * sinr;
   } else {
     cosr = 1;
+    cosr2 = 1;
     sinr = 0;
+    sinr2 = 0;
   }
 
   // Update actuator states
@@ -129,7 +136,8 @@ void event_eff_scheduling(void)
 
   // Calculate deflection of elevator
   
-  update_hover_motor_effectiveness(&cosr, &sinr, &airspeed);
+  update_inertia(&cosr2, &sinr2);
+  update_hover_motor_effectiveness(&wing_rotation.wing_angle_rad, &cosr, &sinr, &airspeed);
   update_rudder_effectiveness(&airspeed2, &pp_scaled, &T_mean_scaled, &cosr);
   update_elevator_effectiveness(elev_pprz, &airspeed2, &pp_scaled, &T_mean_scaled, &wing_rotation_deg);
   update_pusher_effectiveness(&airspeed, thrust_bx_state_filt);
@@ -173,10 +181,20 @@ void event_eff_scheduling(void)
 
 }
 
-void update_hover_motor_effectiveness(float *cosr, float *sinr, float *airspeed_f)
+void update_inertia(float *cosr2, float *sinr2)
+{
+  // Inertia with wing
+  I_xx = 0.102529209767747 * *sinr2 + 0.0422707902322535 * *cosr2 + 0.1448;
+  I_yy = 0.303551738402111 * *sinr2 + 0.366381594931223 * *cosr2 + 0.669933333333333;
+}
+
+void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr, float *airspeed_f)
 {
   float g1_p_side_motors[2];
   float g1_q_side_motors[2];
+
+  float bounded_airspeed = *airspeed_f;
+  Bound(bounded_airspeed, 0, 17);
 
   // Calculate roll and pitch effectiveness of the two roll side motors
   g1_p_side_motors[0] = rot_wing_side_motors_g1_p_0[0] * *cosr;
@@ -193,8 +211,13 @@ void update_hover_motor_effectiveness(float *cosr, float *sinr, float *airspeed_
 
   g1g2[0][1] = g1_p_side_motors[0] * g1_p_multiplier / INDI_G_SCALING;
   //g1g2[0][1] = ((-0.00335545 - 0.00214628 * *cosr + 0.00369705 * *sinr + -0.00302647 * *cosr * *cosr + -0.00032898 * *sinr * *sinr)) * g1_p_multiplier;
-  Bound(g1g2[0][1], -1, -0.0001);
-  g1g2[1][1] = g1_q_side_motors[0] * g1_q_multiplier / INDI_G_SCALING;
+  // For pprz_cmd = 5500
+  g1g2[0][1] = ((0.000072804595016592 * *sk * *sk * bounded_airspeed * *cosr - 0.00129490506761079 * *cosr) / I_xx) * g1_p_multiplier;
+  Bound(g1g2[0][1], -1, -0.00001);
+  //g1g2[1][1] = g1_q_side_motors[0] * g1_q_multiplier / INDI_G_SCALING;
+  // For pprz_cmd = 5500
+  g1g2[1][1] = ((-0.000563317785007957 * *sk * *sk * *sinr + 0.00123052200974951 * *sk) / I_yy) * g1_q_multiplier;
+  Bound(g1g2[1][1], 0, 1);
   g1g2[2][1] = (g1_startup[2][1] * g1_r_multiplier + g2_startup[1]) / INDI_G_SCALING;
   g1g2[3][1] = g1_startup[3][1] * g1_t_multiplier / INDI_G_SCALING;
 
@@ -203,12 +226,15 @@ void update_hover_motor_effectiveness(float *cosr, float *sinr, float *airspeed_
   g1g2[2][2] = (g1_startup[2][2] * g1_r_multiplier + g2_startup[2]) / INDI_G_SCALING;
   g1g2[3][2] = g1_startup[3][2] * g1_t_multiplier / INDI_G_SCALING;
 
-  float bounded_airspeed = *airspeed_f;
-  Bound(bounded_airspeed, 0, 17);
   g1g2[0][3] = (g1_p_side_motors[1] * g1_p_multiplier - 0.283333 * bounded_airspeed * *cosr) / INDI_G_SCALING;
   //g1g2[0][3] = ((0.0040856 + 0.00123478 * *cosr + -0.00428635 * *sinr + 0.00390033 * *cosr * *cosr + 0.00018527 * *sinr * *sinr)) * g1_p_multiplier;
-  Bound(g1g2[0][3], 0.0001, 1);
-  g1g2[1][3] = g1_q_side_motors[1] * g1_q_multiplier / INDI_G_SCALING;
+  // For pprz_cmd = 5500
+  g1g2[0][3] = -((0.000072804595016592 * *sk * *sk * bounded_airspeed * *cosr - 0.00129490506761079 * *cosr + 0.000053954 * bounded_airspeed * *cosr) / I_xx) * g1_p_multiplier;
+  Bound(g1g2[0][3], 0.00001, 1);
+  //g1g2[1][3] = g1_q_side_motors[1] * g1_q_multiplier / INDI_G_SCALING;
+  // For pprz_cmd = 5500
+  g1g2[1][3] = -((-0.000563317785007957 * *sk * *sk * *sinr + 0.00123052200974951 * *sk) / I_yy) * g1_q_multiplier;
+  Bound(g1g2[1][3], -1, 0);
   g1g2[2][3] = (g1_startup[2][3] * g1_r_multiplier + g2_startup[3]) / INDI_G_SCALING;
   g1g2[3][3] = g1_startup[3][3] * g1_t_multiplier / INDI_G_SCALING;
 }
@@ -216,7 +242,7 @@ void update_hover_motor_effectiveness(float *cosr, float *sinr, float *airspeed_
 void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *skew_deg)
 {
   // Calculate deflection angle in [deg]
-  float de = -0.004885417 * *elev_pprz - 36.6;
+  float de = -0.004885417 * *elev_pprz + 36.6;
 
   float dMyde = (k_elevator[0] * *airspeed2 +
                 k_elevator[2] * *pp_scaled + 
@@ -278,9 +304,9 @@ void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt)
   }
 }
 
-float rot_wing_sched_get_liftd(float airspeed, float sinr)
-{
-  //wing = (-0.74529194103945*airspeed*airspeed*sinr*sinr - 0.4065513216373*airspeed*airspeed) / m
-  //fuse = (-0.072362752875*airspeed*airspeed) / m
-  //ele  = (-0.1452739306305*airspeed*airspeed) / m
-}
+// float rot_wing_sched_get_liftd(float airspeed, float sinr)
+// {
+//   //wing = (-0.74529194103945*airspeed*airspeed*sinr*sinr - 0.4065513216373*airspeed*airspeed) / m
+//   //fuse = (-0.072362752875*airspeed*airspeed) / m
+//   //ele  = (-0.1452739306305*airspeed*airspeed) / m
+// }
