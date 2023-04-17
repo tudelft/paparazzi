@@ -79,6 +79,7 @@ extern float a_diff_limit;
 extern float a_diff_limit_z;
 extern float rot_wing_max_pitch_limit_deg;
 extern float rot_wing_min_pitch_limit_deg;
+extern float pitch_pref_deg;
 extern float airspeed_turn_lower_bound;
 
 extern float pitch_priority_factor;

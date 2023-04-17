@@ -756,6 +756,8 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   float ctheta = cosf(eulers_zxy.theta);
   float spsi = sinf(eulers_zxy.psi);
   float cpsi = cosf(eulers_zxy.psi);
+
+  pitch_pref_rad = pitch_pref_deg / 180. * M_PI;
   //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
 
 #ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
@@ -812,7 +814,7 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   
   // Set prefered states
   du_pref_rot_wing[0] = 0; // prefered delta roll angle
-  du_pref_rot_wing[1] = -pitch_filt.o[0];// prefered delta pitch angle
+  du_pref_rot_wing[1] = -pitch_filt.o[0] + pitch_pref_rad;// prefered delta pitch angle
   du_pref_rot_wing[2] = du_max_rot_wing[2];
   du_pref_rot_wing[3] = accel_bx_err - 9.81 * sinf(pitch_filt.o[0]);
 
