@@ -168,8 +168,7 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
-        <!-- <set VALUE="($th_hold? 0 : actuators_pprz[4])" SERVO="SERVO_RUDDER"/> -->
-        <set VALUE="0" SERVO="SERVO_RUDDER"/>
+        <set VALUE="($th_hold? 0 : actuators_pprz[4])" SERVO="SERVO_RUDDER"/>
         <set VALUE="($th_hold? 0 : actuators_pprz[5])" SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[6])" SERVO="MOTOR_PUSH"/>
         <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_ROTWING"/>
@@ -257,7 +256,8 @@
         <!-- <define VALUE="{0.0, -8.3, 0.0,   8.7, 0.0, 0.0}" NAME="G1_ROLL"/>
         <define VALUE="{0.81, 0.0,   -0.97, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
         <define VALUE="{-0.17, 0.25, -0.33, 0.25, 0.0, 0.0}" NAME="G1_YAW"/> -->
-        <define VALUE="{-0.55,   -0.45,  -0.55, -0.45, 0.0, 0.0}" NAME="G1_THRUST"/>
+        <!-- <define VALUE="{-0.55,   -0.45,  -0.55, -0.45, 0.0, 0.0}" NAME="G1_THRUST"/> -->
+        <define VALUE="{-0.47,   -0.38,  -0.47, -0.38, 0.0, 0.0}" NAME="G1_THRUST"/>
         <define VALUE="{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
         <define VALUE="0.00055" NAME="PUSHER_PROP_EFFECTIVENESS"/>
         <define VALUE="0.047" NAME="PUSHER_PROP_DYN"/>
