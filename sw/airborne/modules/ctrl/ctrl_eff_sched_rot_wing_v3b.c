@@ -192,8 +192,8 @@ void update_hover_motor_effectiveness(float *cosr, float *sinr, float *airspeed_
   g1g2[3][0] = g1_startup[3][0] * g1_t_multiplier / INDI_G_SCALING;
 
   //g1g2[0][1] = g1_p_side_motors[0] * g1_p_multiplier / INDI_G_SCALING;
-  //g1g2[0][1] = (-9.5171 * *cosr + 1.137337 * *sinr - 7.04792) * g1_p_multiplier / INDI_G_SCALING;
-  g1g2[0][1] = (-29.0418001 * *cosr + -0.0605468326 * *sinr + 14.811780) * g1_p_multiplier / INDI_G_SCALING;
+  g1g2[0][1] = (-9.5171 * *cosr + 1.137337 * *sinr - 7.04792) * g1_p_multiplier / INDI_G_SCALING;
+  // g1g2[0][1] = (-29.0418001 * *cosr + -0.0605468326 * *sinr + 14.811780) * g1_p_multiplier / INDI_G_SCALING;
   Bound(g1g2[0][1], -1, -0.0001);
   g1g2[1][1] = g1_q_side_motors[0] * g1_q_multiplier / INDI_G_SCALING;
   g1g2[2][1] = (g1_startup[2][1] * g1_r_multiplier + g2_startup[1]) / INDI_G_SCALING;
@@ -207,8 +207,8 @@ void update_hover_motor_effectiveness(float *cosr, float *sinr, float *airspeed_
   float bounded_airspeed = *airspeed_f;
   Bound(bounded_airspeed, 0, 17);
   //g1g2[0][3] = (g1_p_side_motors[1] * g1_p_multiplier - 0.283333 * bounded_airspeed * *cosr) / INDI_G_SCALING;
-  //g1g2[0][3] = (4.29991 * *cosr + 0.22106 * *sinr + 10.43872) * g1_p_multiplier / INDI_G_SCALING;
-  g1g2[0][3] = (32.00169 * *cosr + -0.39095 * *sinr + -17.64292) * g1_p_multiplier / INDI_G_SCALING;
+  g1g2[0][3] = (4.29991 * *cosr + 0.22106 * *sinr + 10.43872) * g1_p_multiplier / INDI_G_SCALING;
+  // g1g2[0][3] = (32.00169 * *cosr + -0.39095 * *sinr + -17.64292) * g1_p_multiplier / INDI_G_SCALING;
   Bound(g1g2[0][3], 0.0001, 1);
   g1g2[1][3] = g1_q_side_motors[1] * g1_q_multiplier / INDI_G_SCALING;
   g1g2[2][3] = (g1_startup[2][3] * g1_r_multiplier + g2_startup[3]) / INDI_G_SCALING;
@@ -218,7 +218,7 @@ void update_hover_motor_effectiveness(float *cosr, float *sinr, float *airspeed_
 void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *skew_deg)
 {
   // Calculate deflection angle in [deg]
-  float de = -0.004885417 * *elev_pprz - 36.6;
+  float de = -0.004885417 * *elev_pprz + 36.6;
 
   float dMyde = (k_elevator[0] * *airspeed2 +
                 k_elevator[2] * *pp_scaled + 

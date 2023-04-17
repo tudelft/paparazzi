@@ -76,16 +76,16 @@ bool pusher_sched_activated = true;
 Butterworth2LowPass airspeed_lowpass_filter;
 
 // Define scheduling constants
-const float k_elevator[7] = {-27.9567, -89.3122, -137.9557, 0.1857, 90.2486, -0.0146, -0.2029};
-const float k_rudder[6] = {-1.6495, -26.3124, -0.7737, 0.2341, 0.6833, 17.5573};
+const float k_elevator[3] = {0.4603,  -4.81466, -28.8464};
+const float k_rudder[3] = {-26.1434, -0.336403, -1.16702 };
 
 float I_xx = 0.18707079;
 float I_yy = 1.04;
-float I_zz = 1.333902457;
+float I_zz = 1.14;
 
 inline void update_inertia(float *cosr2, float *sinr2);
 inline void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr, float *airspeed_f);
-inline void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *skew_deg);
+inline void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed, float *airspeed2, float *pp_scaled);
 inline void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *cosr);
 inline void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt);
 
@@ -139,7 +139,7 @@ void event_eff_scheduling(void)
   update_inertia(&cosr2, &sinr2);
   update_hover_motor_effectiveness(&wing_rotation.wing_angle_rad, &cosr, &sinr, &airspeed);
   update_rudder_effectiveness(&airspeed2, &pp_scaled, &T_mean_scaled, &cosr);
-  update_elevator_effectiveness(elev_pprz, &airspeed2, &pp_scaled, &T_mean_scaled, &wing_rotation_deg);
+  update_elevator_effectiveness(elev_pprz, &airspeed, &airspeed2, &pp_scaled);
   update_pusher_effectiveness(&airspeed, thrust_bx_state_filt);
 
   // float g1_p_side_motors[2];
@@ -239,26 +239,22 @@ void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr, float
   g1g2[3][3] = g1_startup[3][3] * g1_t_multiplier / INDI_G_SCALING;
 }
 
-void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *skew_deg)
+void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed, float *airspeed2, float *pp_scaled)
 {
   // Calculate deflection angle in [deg]
   float de = -0.004885417 * *elev_pprz + 36.6;
 
-  float dMyde = (k_elevator[0] * *airspeed2 +
-                k_elevator[2] * *pp_scaled + 
-                k_elevator[3] * *airspeed2 * 2. * de +
-                k_elevator[4] * *T_mean_scaled + 
-                k_elevator[5] * *airspeed2 * *skew_deg * *T_mean_scaled +
-                k_elevator[6] * *airspeed2 * *pp_scaled * *pp_scaled) / 10000.;
+  float dMyde = (k_elevator[0] * de * *airspeed2 +
+                k_elevator[1] * *pp_scaled * *pp_scaled * *airspeed + 
+                k_elevator[2] * *airspeed2) / 10000.;
 
   float dMydpprz = dMyde * -0.004885417;
   
   // Convert moment to effectiveness
   float eff_y_elev = dMydpprz / I_yy;
 
-  Bound(eff_y_elev, 0.00001, 0.1)
+  Bound(eff_y_elev, 0.00001, 0.1);
 
-  BoundAbs(eff_y_elev, 0.1);
   g1g2[0][5] = 0;
   g1g2[1][5] = eff_y_elev;
   g1g2[2][5] = 0;
@@ -268,27 +264,22 @@ void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed2, float *
 
 void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *cosr)
 {
-  float dMzdr = (k_rudder[0] * *airspeed2 + 
-                k_rudder[1] * *pp_scaled * *T_mean_scaled + 
-                k_rudder[2] * *airspeed2 * *T_mean_scaled * *cosr + 
-                k_rudder[3] * *airspeed2 * *T_mean_scaled +
-                k_rudder[4] * *airspeed2 * *cosr + 
-                k_rudder[5] * *T_mean_scaled * *cosr) / 10000.;
+  float dMzdr = (k_rudder[0] * *pp_scaled * *T_mean_scaled + 
+                k_rudder[1] * *T_mean_scaled * *airspeed2 * *cosr + 
+                k_rudder[2] * *airspeed2) / 10000.;
 
   // Convert moment to effectiveness
 
-  float dMzdpprz = dMzdr * -0.001791781;
+  float dMzdpprz = dMzdr * -0.0018;
 
   // Convert moment to effectiveness
   float eff_z_rudder = dMzdpprz / I_zz;
 
-  Bound(eff_z_rudder, 0.00001, 0.1)
-
-  BoundAbs(eff_z_rudder, 0.1);
+  Bound(eff_z_rudder, 0.00001, 0.1);
 
   g1g2[0][4] = 0 / INDI_G_SCALING;
   g1g2[1][4] = 0 / INDI_G_SCALING;
-  g1g2[2][4] = 0;//eff_z_rudder;
+  g1g2[2][4] = eff_z_rudder;
   g1g2[3][4] = 0 / INDI_G_SCALING;
 }
 
