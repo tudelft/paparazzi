@@ -41,6 +41,10 @@ extern float rot_wing_aerodynamic_eff_const_g1_r[1];
 extern bool wing_rotation_sched_activated;
 extern bool pusher_sched_activated;
 
+extern float sched_pitch_hover_deg;
+extern float sched_lower_hover_speed;
+extern float sched_upper_hover_speed;
+
 extern void init_eff_scheduling(void);
 extern void event_eff_scheduling(void);
 

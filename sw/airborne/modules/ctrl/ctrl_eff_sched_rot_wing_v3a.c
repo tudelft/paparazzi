@@ -30,6 +30,7 @@
 #include "modules/actuators/actuators.h"
 
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
+#include "firmwares/rotorcraft/guidance/guidance_indi_rot_wing.h"
 
 #include "state.h"
 #include "filters/low_pass_filter.h"
@@ -68,6 +69,10 @@ float g1_t_multiplier = 1.;
 bool wing_rotation_sched_activated = true;
 bool pusher_sched_activated = true;
 
+float sched_pitch_hover_deg = -2.;
+float sched_lower_hover_speed = 4.;
+float sched_upper_hover_speed = 10.;
+
 // Define filters
 #ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
 #define ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF 0.1
@@ -78,6 +83,7 @@ Butterworth2LowPass airspeed_lowpass_filter;
 // Define scheduling constants
 const float k_elevator[3] = {0.4603,  -4.81466, -28.8464};
 const float k_rudder[3] = {-26.1434, -0.336403, -1.16702 };
+const float k_pusher[2] = {0, 0};
 
 float I_xx = 0.18707079;
 float I_yy = 1.04;
@@ -88,6 +94,7 @@ inline void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr
 inline void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed, float *airspeed2, float *pp_scaled);
 inline void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *cosr);
 inline void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt);
+inline void schedule_pref_pitch_angle_deg(float *airspeed_f);
 
 void init_eff_scheduling(void)
 {
@@ -141,6 +148,7 @@ void event_eff_scheduling(void)
   update_rudder_effectiveness(&airspeed2, &pp_scaled, &T_mean_scaled, &cosr);
   update_elevator_effectiveness(elev_pprz, &airspeed, &airspeed2, &pp_scaled);
   update_pusher_effectiveness(&airspeed, thrust_bx_state_filt);
+  schedule_pref_pitch_angle_deg(&airspeed);
 
   // float g1_p_side_motors[2];
   // float g1_q_side_motors[2];
@@ -293,6 +301,20 @@ void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt)
   } else {
     thrust_bx_eff = STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS;
   }
+}
+
+void schedule_pref_pitch_angle_deg(float *airspeed_f)
+{
+  if (*airspeed_f < sched_lower_hover_speed) {
+    pitch_pref_deg = sched_pitch_hover_deg;
+  } else if (*airspeed_f > sched_upper_hover_speed) {
+    pitch_pref_deg = 0.;
+  } else {
+    float airspeed_sched_range = sched_upper_hover_speed - sched_lower_hover_speed;
+    Bound(airspeed_sched_range,0.01, 25.);
+    pitch_pref_deg = (1. - (*airspeed_f - sched_lower_hover_speed) / airspeed_sched_range) * sched_pitch_hover_deg;
+  }
+  
 }
 
 // float rot_wing_sched_get_liftd(float airspeed, float sinr)
