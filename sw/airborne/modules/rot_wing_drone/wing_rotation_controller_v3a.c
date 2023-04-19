@@ -165,10 +165,10 @@ void wing_rotation_to_rad(void)
   #if !USE_NPS
   wing_rotation.adc_wing_rotation = buf_wing_rot_pos.sum / buf_wing_rot_pos.av_nb_sample;
 
-  wing_rotation.wing_angle_deg =  - 0.00000000001090296468811 * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation 
-                                  + 0.000001522461604547 * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation 
-                                  - 0.073578367127617 * (float)wing_rotation.adc_wing_rotation
-                                  + 1286.46225540187;
+  wing_rotation.wing_angle_deg =  -2.65302456619e-12 * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation 
+                                  + 3.743648588699e-7 * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation 
+                                  - 0.02145571907765 * (float)wing_rotation.adc_wing_rotation
+                                  + 511.027281901372;
   wing_rotation.wing_angle_rad = wing_rotation.wing_angle_deg / 180. * M_PI;
 
   #else
