@@ -48,6 +48,7 @@
         <target name="nps" board="pc">
             <module name="radio_control" type="datalink"/>
             <module name="fdm" type="jsbsim"/>
+            <module name="ctrl_eff_sched_rot_wing_v3a"/>
 
             <!--Not dealing with these in the simulation-->
             <define name="RADIO_TH_HOLD"     value="0"/> <!-- Throttle hold in command laws -->
@@ -108,6 +109,7 @@
             <define name="WING_ROTATION_DEADZONE_PPRZ_CMD" value="500"/>
             <define name="WING_ROTATION_P_GAIN" value="-50000"/>
             <define name="WING_ROTATION_MAX_CMD" value="9600"/>
+            <define name="WING_ROTATION_RESET_RADIO_CHANNEL" value="10"/>
         </module>
 
         <module name="sys_id_doublet">
@@ -260,7 +262,7 @@
         <define VALUE="{-0.47,   -0.38,  -0.47, -0.38, 0.0, 0.0}" NAME="G1_THRUST"/>
         <define VALUE="{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
         <define VALUE="0.00055" NAME="PUSHER_PROP_EFFECTIVENESS"/>
-        <define VALUE="0.047" NAME="PUSHER_PROP_DYN"/>
+        <define VALUE="0.034" NAME="PUSHER_PROP_DYN"/>
         <!--<define VALUE="{0.00, -30.0, 0.0,   30.0}" NAME="G1_ROLL"/>
         <define VALUE="{6.0, 0.0,   -6.0, 0.0}" NAME="G1_PITCH"/>
         <define VALUE="{-1.1, 1.1, -1.1, 1.1}" NAME="G1_YAW"/>
@@ -324,7 +326,7 @@
         <define name="HEADING_BANK_GAIN" value="5."/>
         <define name="MAX_AIRSPEED" value="10.0"/>
         <define name="PITCH_LIFT_EFF" value="0.0"/>
-        <define name="ZERO_AIRSPEED" value="TRUE"/>
+        <!-- <define name="ZERO_AIRSPEED" value="TRUE"/> -->
         <!--<define name="MIN_THROTTLE" value="0."/>
         <define name="MIN_PITCH" value="-35."/>
         <define name="MAX_PITCH" value="35."/>
