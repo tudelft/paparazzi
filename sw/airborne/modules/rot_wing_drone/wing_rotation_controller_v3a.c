@@ -24,6 +24,7 @@
  */
 
 #include "modules/rot_wing_drone/wing_rotation_controller_v3a.h"
+#include "modules/radio_control/radio_control.h"
 
 #include <stdlib.h>
 #include "mcu_periph/adc.h"
@@ -132,7 +133,14 @@ void wing_rotation_periodic(void)
 
 void wing_rotation_event(void)
 {
-  // your event code here
+  // First check if safety switch is triggered
+  #ifdef WING_ROTATION_RESET_RADIO_CHANNEL
+  // Update wing_rotation deg setpoint when RESET switch triggered
+  if (radio_control.values[WING_ROTATION_RESET_RADIO_CHANNEL] > 1750)
+  {
+      wing_rotation.wing_angle_deg_sp = 0;
+  }
+  #endif
 
   // Update Wing position sensor
   wing_rotation_to_rad();
