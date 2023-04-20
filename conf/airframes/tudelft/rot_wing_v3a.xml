@@ -81,7 +81,7 @@
         </module>
 
         <module TYPE="indi" NAME="stabilization">
-            <configure name="INDI_NUM_ACT" value="6"/>
+            <configure name="INDI_NUM_ACT" value="8"/>
         </module>
 
         <module name="guidance" type="indi_rot_wing"/>
@@ -126,8 +126,8 @@
 
     <servos DRIVER="Pwm">
         <servo NO="0" NAME="SERVO_ROTWING"   MIN="1146" NEUTRAL="1146" MAX="1819"/>
-        <servo NO="1" NAME="SERVO_AIL_LEFT"  MIN="1000" NEUTRAL="1500" MAX="2000"/>
-        <servo NO="2" NAME="SERVO_AIL_RIGHT" MIN="1000" NEUTRAL="1500" MAX="2000"/>
+        <servo NO="1" NAME="SERVO_AIL_LEFT"  MIN="1260" NEUTRAL="1500" MAX="1740"/>
+        <servo NO="2" NAME="SERVO_AIL_RIGHT" MIN="1260" NEUTRAL="1500" MAX="1740"/>
     </servos>
 
     <servos DRIVER="Uavcan1">
@@ -172,10 +172,10 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
         <set VALUE="($th_hold? 0 : actuators_pprz[4])" SERVO="SERVO_RUDDER"/>
         <set VALUE="($th_hold? 0 : actuators_pprz[5])" SERVO="SERVO_ELEVATOR"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[6])" SERVO="MOTOR_PUSH"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[8])" SERVO="MOTOR_PUSH"/>
         <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_ROTWING"/>
-        <set VALUE="0" SERVO="SERVO_AIL_LEFT"/>
-        <set VALUE="0" SERVO="SERVO_AIL_RIGHT"/>
+        <set VALUE="($th_hold? 0 : actuators_pprz[6])" SERVO="SERVO_AIL_LEFT"/>
+        <set VALUE="($th_hold? 0 : actuators_pprz[7])" SERVO="SERVO_AIL_RIGHT"/>
 
         <!-- Backup commands -->
         <set VALUE="($th_hold? -9600 : actuators_pprz[0])" SERVO="BMOTOR_FRONT"/>
@@ -250,17 +250,17 @@
         <define VALUE="{1.6, 0.0,   -1.6, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
         <define VALUE="{-0.2, 0.1, -0.35, 0.35, 0.0, 0.0}" NAME="G1_YAW"/>-->
         <!--With tail effectiveness values-->
-        <define VALUE="{0.0, -8.7, 0.0,   8.9, 0.0, 0.0}" NAME="G1_ROLL"/>
-        <define VALUE="{1.2, 0.0,   -1.3, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-0.17, 0.25, -0.33, 0.25, 0.0, 0.0}" NAME="G1_YAW"/>
+        <define VALUE="{0.0, -8.7, 0.0,   8.9, 0.0, 0.0, 0.0, 0.0}" NAME="G1_ROLL"/>
+        <define VALUE="{1.2, 0.0,   -1.3, 0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
+        <define VALUE="{-0.17, 0.25, -0.33, 0.25, 0.0, 0.0, 0.0, 0.0}" NAME="G1_YAW"/>
         <!--<define VALUE="{-0.2, 0.2, -0.2, 0.2, 0.0, 0.0}" NAME="G1_YAW"/>-->
         <!--With wing effectiveness values-->
         <!-- <define VALUE="{0.0, -8.3, 0.0,   8.7, 0.0, 0.0}" NAME="G1_ROLL"/>
         <define VALUE="{0.81, 0.0,   -0.97, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
         <define VALUE="{-0.17, 0.25, -0.33, 0.25, 0.0, 0.0}" NAME="G1_YAW"/> -->
         <!-- <define VALUE="{-0.55,   -0.45,  -0.55, -0.45, 0.0, 0.0}" NAME="G1_THRUST"/> -->
-        <define VALUE="{-0.47,   -0.38,  -0.47, -0.38, 0.0, 0.0}" NAME="G1_THRUST"/>
-        <define VALUE="{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
+        <define VALUE="{-0.47,   -0.38,  -0.47, -0.38, 0.0, 0.0, 0.0, 0.0}" NAME="G1_THRUST"/>
+        <define VALUE="{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
         <define VALUE="0.00055" NAME="PUSHER_PROP_EFFECTIVENESS"/>
         <define VALUE="0.034" NAME="PUSHER_PROP_DYN"/>
         <!--<define VALUE="{0.00, -30.0, 0.0,   30.0}" NAME="G1_ROLL"/>
@@ -282,8 +282,8 @@
         <define VALUE="0.5" NAME="FILT_CUTOFF_RDOT"/>
         <define VALUE="2.0" NAME="ESTIMATION_FILT_CUTOFF"/>
         <define VALUE="TRUE" NAME="FILTER_YAW_RATE"/>
-        <define VALUE="{0.03, 0.025, 0.03, 0.025, 0.1, 0.1}" NAME="ACT_DYN"/>
-        <define VALUE="{0, 0, 0, 0, 1, 1}" NAME="ACT_IS_SERVO"/>
+        <define VALUE="{0.03, 0.025, 0.03, 0.025, 0.1, 0.1,0.1,0.1}" NAME="ACT_DYN"/>
+        <define VALUE="{0, 0, 0, 0, 1, 1, 1, 1}" NAME="ACT_IS_SERVO"/>
         <define VALUE="{1000, 1000, 1, 100}" NAME="WLS_PRIORITIES"/>
         <define VALUE="FALSE" NAME="USE_ADAPTIVE"/>
         <define VALUE="0.001" NAME="ADAPTIVE_MU"/>
