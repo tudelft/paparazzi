@@ -126,8 +126,8 @@
 
     <servos DRIVER="Pwm">
         <servo NO="0" NAME="SERVO_ROTWING"   MIN="1146" NEUTRAL="1146" MAX="1819"/>
-        <servo NO="1" NAME="SERVO_AIL_LEFT"  MIN="1260" NEUTRAL="1500" MAX="1740"/>
-        <servo NO="2" NAME="SERVO_AIL_RIGHT" MIN="1260" NEUTRAL="1500" MAX="1740"/>
+        <servo NO="1" NAME="SERVO_AIL_LEFT"  MIN="1000" NEUTRAL="1500" MAX="2000"/>
+        <servo NO="2" NAME="SERVO_AIL_RIGHT" MIN="1000" NEUTRAL="1500" MAX="2000"/>
     </servos>
 
     <servos DRIVER="Uavcan1">
