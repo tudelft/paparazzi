@@ -71,7 +71,7 @@ bool pusher_sched_activated = true;
 
 float sched_pitch_hover_deg = -2.;
 float sched_lower_hover_speed = 4.;
-float sched_upper_hover_speed = 10.;
+float sched_upper_hover_speed = 6.;
 
 // Define filters
 #ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
@@ -300,7 +300,7 @@ void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, float *T_me
 
 void update_left_aileron_effectiveness(float *airspeed2, float *sinr)
 {
-  float dMxdpprz = 1.664354375e-6 * *airspeed2 * *sinr * *sinr * *sinr;
+  float dMxdpprz = 3.46740494791667e-6 * *airspeed2 * *sinr * *sinr * *sinr;
   float eff_x_left_aileron = dMxdpprz / I_xx;
   Bound(eff_x_left_aileron, 0, 0.005);
   g1g2[0][6] = eff_x_left_aileron;
@@ -308,7 +308,7 @@ void update_left_aileron_effectiveness(float *airspeed2, float *sinr)
 
 void update_right_aileron_effectiveness(float *airspeed2, float *sinr)
 {
-  float dMxdpprz = 1.60160185e-6 * *airspeed2 * *sinr * *sinr * *sinr;
+  float dMxdpprz = 3.33667052083333e-6 * *airspeed2 * *sinr * *sinr * *sinr;
   float eff_x_right_aileron = dMxdpprz / I_xx;
   Bound(eff_x_right_aileron, 0, 0.005)
   g1g2[0][7] = eff_x_right_aileron;
