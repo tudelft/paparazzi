@@ -25,7 +25,7 @@
 
 #include "modules/nav/nav_rotorcraft_hybrid.h"
 #include "firmwares/rotorcraft/navigation.h"
-#include "firmwares/rotorcraft/guidance/guidance_indi_hybrid.h" // strong dependency for now
+#include "firmwares/rotorcraft/guidance/guidance_indi_rot_wing.h" // strong dependency for now
 #include "math/pprz_isa.h"
 
 // Max ground speed that will be commanded
