@@ -70,8 +70,9 @@ bool wing_rotation_sched_activated = true;
 bool pusher_sched_activated = true;
 
 float sched_pitch_hover_deg = -2.;
-float sched_lower_hover_speed = 4.;
-float sched_upper_hover_speed = 6.;
+float sched_pitch_forward_deg = 5;
+float sched_lower_hover_speed = 7.;
+float sched_upper_hover_speed = 14.;
 
 // Define filters
 #ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
@@ -337,13 +338,14 @@ void schedule_pref_pitch_angle_deg(float *airspeed_f)
   if (*airspeed_f < sched_lower_hover_speed) {
     pitch_pref_deg = sched_pitch_hover_deg;
   } else if (*airspeed_f > sched_upper_hover_speed) {
-    pitch_pref_deg = 0.;
+    pitch_pref_deg = sched_pitch_forward_deg;
   } else {
     float airspeed_sched_range = sched_upper_hover_speed - sched_lower_hover_speed;
+    float pitch_sched_range = sched_pitch_forward_deg - sched_pitch_hover_deg;
     Bound(airspeed_sched_range,0.01, 25.);
-    pitch_pref_deg = (1. - (*airspeed_f - sched_lower_hover_speed) / airspeed_sched_range) * sched_pitch_hover_deg;
+    pitch_pref_deg = (1. - (*airspeed_f - sched_lower_hover_speed) / airspeed_sched_range) * pitch_sched_range + sched_pitch_hover_deg;
+    Bound(pitch_pref_deg, -10, 10);
   }
-  
 }
 
 // float rot_wing_sched_get_liftd(float airspeed, float sinr)

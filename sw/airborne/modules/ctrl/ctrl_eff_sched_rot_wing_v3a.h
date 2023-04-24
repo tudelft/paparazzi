@@ -42,6 +42,7 @@ extern bool wing_rotation_sched_activated;
 extern bool pusher_sched_activated;
 
 extern float sched_pitch_hover_deg;
+extern float sched_pitch_forward_deg;
 extern float sched_lower_hover_speed;
 extern float sched_upper_hover_speed;
 

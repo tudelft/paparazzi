@@ -7,6 +7,7 @@
   <settings>
     <dl_settings>
       <dl_settings NAME="EffSched">
+        <dl_setting var="sched_pitch_forward_deg" min="-10" step="0.1" max="10" module="ctrl/ctrl_eff_sched_rot_wing_v3a" shortname="forward_pitch"/>
         <dl_setting var="sched_pitch_hover_deg" min="-10" step="0.1" max="10" module="ctrl/ctrl_eff_sched_rot_wing_v3a" shortname="hover_pitch"/>
         <dl_setting var="sched_lower_hover_speed" min="0" step="0.1" max="20" module="ctrl/ctrl_eff_sched_rot_wing_v3a" shortname="lower_hover_speed"/>
         <dl_setting var="sched_upper_hover_speed" min="0" step="0.1" max="20" module="ctrl/ctrl_eff_sched_rot_wing_v3a" shortname="upper_hover_speed"/>
