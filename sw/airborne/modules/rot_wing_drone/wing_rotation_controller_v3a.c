@@ -26,6 +26,8 @@
 #include "modules/rot_wing_drone/wing_rotation_controller_v3a.h"
 #include "modules/radio_control/radio_control.h"
 
+#include "state.h"
+
 #include <stdlib.h>
 #include "mcu_periph/adc.h"
 
@@ -105,6 +107,7 @@ void wing_rotation_init(void)
   wing_rotation.wing_rotation_first_order_dynamics = WING_ROTATION_FIRST_DYN;
   wing_rotation.wing_rotation_second_order_dynamics = WING_ROTATION_SECOND_DYN;
   wing_rotation.adc_wing_rotation_range = WING_ROTATION_POSITION_ADC_90 - WING_ROTATION_POSITION_ADC_0;
+  wing_rotation.airspeed_scheduling = false;
 
   // Set wing angle to current wing angle
   wing_rotation.initialized = false; 
@@ -138,6 +141,7 @@ void wing_rotation_event(void)
   // Update wing_rotation deg setpoint when RESET switch triggered
   if (radio_control.values[WING_ROTATION_RESET_RADIO_CHANNEL] > 1750)
   {
+      wing_rotation.airspeed_scheduling = false;
       wing_rotation.wing_angle_deg_sp = 0;
   }
   #endif
@@ -147,6 +151,21 @@ void wing_rotation_event(void)
 
   // Run control if initialized
   if (wing_rotation.initialized) {
+
+    if (wing_rotation.airspeed_scheduling)
+    { 
+      float wing_angle_scheduled_sp_deg = 0;
+      float airspeed = stateGetAirspeed_f();
+      if (airspeed < 6)
+      {
+        wing_angle_scheduled_sp_deg = 0;
+      } else {
+        wing_angle_scheduled_sp_deg = (airspeed - 6.) * 9.;
+      }
+      Bound(wing_angle_scheduled_sp_deg, 0., 90.);
+      wing_rotation.wing_angle_deg_sp = wing_angle_scheduled_sp_deg;
+    }
+
     wing_rotation_update_sp();
 
     //int32_t servo_pprz_cmd;  // Define pprz cmd

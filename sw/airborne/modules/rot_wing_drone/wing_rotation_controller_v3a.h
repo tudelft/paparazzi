@@ -47,7 +47,7 @@ struct wing_rotation_controller {
   float wing_rotation_second_order_dynamics;
   bool initialized;
   uint8_t init_loop_count;
-
+  bool airspeed_scheduling;
 };
 
 extern struct wing_rotation_controller wing_rotation;
