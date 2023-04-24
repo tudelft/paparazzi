@@ -86,9 +86,7 @@
     <block name="line_p1_p2">
       <stay until="stage_time>10" wp="p1"/>
       <go from="p1" hmode="route" wp="p2"/>
-      <stay until="stage_time>10" wp="p2"/>
-      <go from="p2" hmode="route" wp="p1"/>
-      <deroute block="line_p1_p2"/>
+      <stay wp="p2"/>
     </block>
     <block name="route">
       <go from="p1" hmode="route" wp="p2"/>
