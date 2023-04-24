@@ -85,6 +85,7 @@
         </module>
 
         <module name="guidance" type="indi_rot_wing"/>
+        <module name="nav_hybrid"/>
 
         <module TYPE="ekf2" NAME="ins"/>
 
@@ -268,7 +269,7 @@
         <define VALUE="{-1.1, 1.1, -1.1, 1.1}" NAME="G1_YAW"/>
         <define VALUE="{-0.5,   -0.5,  -0.5,   -0.5}" NAME="G1_THRUST"/>
         <define VALUE="{0.0, 0.0, 0.0, 0.0}" NAME="G2"/>-->
-        <define VALUE="50.0" NAME="REF_ERR_P"/>
+        <define VALUE="40.0" NAME="REF_ERR_P"/>
         <define VALUE="32.0" NAME="REF_ERR_Q"/>
         <define VALUE="23.0" NAME="REF_ERR_R"/>
         <define VALUE="7.0" NAME="REF_RATE_P"/>
@@ -357,10 +358,10 @@
     </section>
 
     <section name="SIMULATOR" prefix="NPS_">
-        <define name="ACTUATOR_NAMES" value="front_motor, right_motor, back_motor, left_motor, rudder, pusher" type="string[]"/>
+        <define name="ACTUATOR_NAMES" value="front_motor, right_motor, back_motor, left_motor, rudder, elevator, aileron_left, aileron_right, pusher" type="string[]"/>
         <define name="JSBSIM_MODEL" value="rotwingv3a" type="string"/>
         <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
-        <define name="COMMANDS_NB" value="6"/>
+        <define name="COMMANDS_NB" value="9"/>
         <define name="NO_MOTOR_MIXING" value="TRUE"/>
         <define name="JS_AXIS_MODE" value="4"/>
     </section>
