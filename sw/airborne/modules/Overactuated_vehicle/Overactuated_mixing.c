@@ -948,7 +948,7 @@ void overactuated_mixing_run(void)
         acc_setpoint[2] = speed_error_vect_control_rf[2] * indi_gains_over.d.z;
 
         //Apply saturation points for the accelerations in the control rf:
-        BoundAbs(acc_setpoint[0],LIMITS_FWD_MAX_FWD_ACC);
+        Bound(acc_setpoint[0],LIMITS_FWD_MIN_FWD_ACC,LIMITS_FWD_MAX_FWD_ACC);
         BoundAbs(acc_setpoint[1],LIMITS_FWD_MAX_LAT_ACC);
         BoundAbs(acc_setpoint[2],LIMITS_FWD_MAX_VERT_ACC);
 
