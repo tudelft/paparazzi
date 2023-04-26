@@ -177,15 +177,19 @@ static void ms45xx_downlink(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_AIRSPEED_MS45XX(trans,dev,AC_ID,
                                 &ms45xx.pressure,
+                                &ms45xx.pressure_raw,
                                 &ms45xx.temperature,
-                                &ms45xx.airspeed);
+                                &ms45xx.airspeed,
+                                &ms45xx.airspeed_raw);
 }
 
 void ms45xx_i2c_init(void)
 {
   ms45xx.pressure = 0.;
+  ms45xx.pressure_raw = 0.;
   ms45xx.temperature = 0;
   ms45xx.airspeed = 0.;
+  ms45xx.airspeed_raw = 0.;
   ms45xx.pressure_type = MS45XX_PRESSURE_TYPE;
   ms45xx.pressure_scale = MS45XX_PRESSURE_SCALE;
   ms45xx.pressure_offset = MS45XX_PRESSURE_OFFSET;
@@ -250,6 +254,7 @@ void ms45xx_i2c_event(void)
        */
 
       float p_out = (p_raw * ms45xx.pressure_scale) - ms45xx.pressure_offset;
+      ms45xx.pressure_raw = p_out;
 #ifdef USE_AIRSPEED_LOWPASS_FILTER
       ms45xx.pressure = update_butterworth_2_low_pass(&ms45xx_filter, p_out);
 #else
@@ -280,6 +285,7 @@ void ms45xx_i2c_event(void)
       AbiSendMsgTEMPERATURE(MS45XX_SENDER_ID, temp);
       // Compute airspeed
       ms45xx.airspeed = sqrtf(Max(ms45xx.pressure * ms45xx.airspeed_scale, 0));
+      ms45xx.airspeed_raw = sqrtf(Max(ms45xx.pressure_raw * ms45xx.airspeed_scale, 0));
 
 #if USE_AIRSPEED_MS45XX
       stateSetAirspeed_f(ms45xx.airspeed);
