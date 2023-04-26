@@ -539,7 +539,7 @@ void overactuated_mixing_run(void)
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
-            des_theta = 0;
+            des_theta = 25;
             des_psi_dot = 0;  
         }
         else if( get_sys_time_float() - auto_test_time_start >= 2 && get_sys_time_float() - auto_test_time_start < 7){
@@ -547,7 +547,7 @@ void overactuated_mixing_run(void)
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
-            des_theta = 0;
+            des_theta = 25;
             des_psi_dot = 0;  
         }
         else if( get_sys_time_float() - auto_test_time_start >= 7 && get_sys_time_float() - auto_test_time_start < 12){
@@ -555,7 +555,7 @@ void overactuated_mixing_run(void)
             des_Vy = 0;
             des_Vz = -4;
             des_phi = 0;
-            des_theta = 0;
+            des_theta = 25;
             des_psi_dot = 0;  
         }
         else if( get_sys_time_float() - auto_test_time_start >= 12 && get_sys_time_float() - auto_test_time_start < 15){
@@ -563,7 +563,7 @@ void overactuated_mixing_run(void)
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
-            des_theta = 0;
+            des_theta = 25;
             des_psi_dot = 0;  
         }
         else if( get_sys_time_float() - auto_test_time_start >= 15 && get_sys_time_float() - auto_test_time_start < 22){
@@ -571,7 +571,7 @@ void overactuated_mixing_run(void)
             des_Vy = 4;
             des_Vz = 0;
             des_phi = 0;
-            des_theta = 0;
+            des_theta = 25;
             des_psi_dot = 0;   
         }
         else if( get_sys_time_float() - auto_test_time_start >= 22 && get_sys_time_float() - auto_test_time_start < 26){
@@ -579,7 +579,7 @@ void overactuated_mixing_run(void)
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
-            des_theta = 0;
+            des_theta = 25;
             des_psi_dot = 0;   
         }
         else{
@@ -587,7 +587,7 @@ void overactuated_mixing_run(void)
             des_Vy = 0;
             des_Vz = 0;
             des_phi = 0;
-            des_theta = 0;
+            des_theta = 25;
             des_psi_dot = 0;   
         }                
 

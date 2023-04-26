@@ -384,9 +384,9 @@
 
     <define name="AILERONS_K_PWM_ANGLE" value="1100" unit="uS/rad"/>
 
-    <define name="INDI_AILERONS_FIRST_ORD_DELAY" value="0.015" />
-    <define name="INDI_AILERONS_FIRST_ORD_NUM_2" value="0.0198" />
-    <define name="INDI_AILERONS_FIRST_ORD_DEN_2" value="-0.9802" />
+    <define name="INDI_AILERONS_FIRST_ORD_DELAY" value="0.005" />
+    <define name="INDI_AILERONS_FIRST_ORD_NUM_2" value="0.02" />
+    <define name="INDI_AILERONS_FIRST_ORD_DEN_2" value="-0.98" />
 
     <!-- APC PROP-->
 <!--    <define name="MOTOR_K_T_OMEGASQ" value="0.972e-5" unit="N/(rad/s)^2"/>-->
@@ -505,7 +505,7 @@
     <define name="WING_CHORD" value="0.3"/>
     <define name="WING_SPAN" value="1.4"/>
 
-    <define name="CL_AILERONS" value="0.1"/>
+    <define name="CL_AILERONS" value="0.4"/>
   </section>
 
 
