@@ -87,4 +87,7 @@ extern float roll_priority_factor;
 extern float thrust_priority_factor;
 extern float pusher_priority_factor;
 
+extern float horizontal_accel_weight;
+extern float vertical_accel_weight;
+
 #endif /* GUIDANCE_INDI_ROT_WING_H */

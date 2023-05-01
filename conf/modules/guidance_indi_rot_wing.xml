@@ -9,6 +9,10 @@
   <settings>
     <dl_settings>
       <dl_settings NAME="guidance_indi_hybrid">
+        <dl_setting var="pitch_pref_deg" min="-10" step="0.1" max="10" shortname="pitch_pref"/>
+        <dl_setting var="horizontal_accel_weight" min="1" step="0.1" max="30" shortname="h_accel weight"/>
+        <dl_setting var="vertical_accel_weight" min="1" step="0.1" max="30" shortname="v_accel weight"/>
+        <dl_setting var="thrust_priority_factor" min="1" step="0.1" max="60" shortname="thrust weight"/>
         <dl_setting var="a_diff_limit" min="0.1" step="0.1" max="10.0" shortname="a_diff_limit"/>
         <dl_setting var="a_diff_limit_z" min="0.1" step="0.1" max="10.0" shortname="a_diff_limit_z"/>
         <dl_setting var="airspeed_turn_lower_bound" min="0.5" step="0.1" max="10" shortname="AS_lower"/>
