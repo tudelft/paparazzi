@@ -84,7 +84,7 @@
     </message>
 
     <message name="RPM" id="15">
-      <field name="rpm" type="uint16_t *" unit="rpm"/>
+      <field name="rpm" type="struct rpm_act_t *" unit="rpm"/>
       <field name="num_act" type="uint8_t"/>
     </message>
 
@@ -248,6 +248,10 @@
 
     <message name="THRUSTBX" id="37">
       <field name="thrust_bx_increment" type="float" unit="m/s^2"/>
+    </message>
+
+    <message name="LIFT_D" id="38">
+      <field name="liftd" type="float"/>
     </message>
 
   </msg_class>
