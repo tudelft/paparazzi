@@ -10,9 +10,13 @@
   </fileheader>
 
   <metrics>
-    <wingarea unit="IN2"> 78.53 </wingarea>
-    <wingspan unit="IN"> 10 </wingspan>
-    <chord unit="IN"> 6.89 </chord>
+   <wingarea unit="M2"> 1.0 </wingarea>
+    <wingspan unit="M"> 2 </wingspan>
+    <chord unit="M"> 0.25 </chord>
+    <htailarea unit="M2"> 0 </htailarea>
+    <htailarm unit="M"> 0 </htailarm>
+    <vtailarea unit="M2"> 0 </vtailarea>
+    <vtailarm unit="M"> 0 </vtailarm>
     <htailarea unit="FT2"> 0 </htailarea>
     <htailarm unit="FT"> 0 </htailarm>
     <vtailarea unit="FT2"> 0 </vtailarea>
@@ -443,8 +447,35 @@
            <value>-8</value>
        </product>
     </function>
+  </axis>
+
+  <axis name="LIFT">
+
+    <function name="aero/force/Lift_alpha">
+      <description>Lift due to alpha</description>
+      <product>
+          <property>aero/qbar-psf</property>
+          <property>metrics/Sw-sqft</property>
+          <table>
+            <independentVar lookup="row">aero/alpha-deg</independentVar>
+            <tableData>
+              -50  -0.80
+              -20  -0.63
+              -12  -0.74
+              -8  -0.64
+              0  0.07
+              11  1.15
+              14  1.2
+              18  1.1
+              45  0.8
+            </tableData>
+          </table>
+      </product>
+    </function>
 
   </axis>
+
+
   </aerodynamics>
 
 </fdm_config>
