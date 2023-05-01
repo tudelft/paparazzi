@@ -156,11 +156,11 @@ void wing_rotation_event(void)
     { 
       float wing_angle_scheduled_sp_deg = 0;
       float airspeed = stateGetAirspeed_f();
-      if (airspeed < 6)
+      if (airspeed < 12)
       {
         wing_angle_scheduled_sp_deg = 0;
       } else {
-        wing_angle_scheduled_sp_deg = (airspeed - 6.) * 9.;
+        wing_angle_scheduled_sp_deg = (airspeed - 12.) * 15.;
       }
       Bound(wing_angle_scheduled_sp_deg, 0., 90.);
       wing_rotation.wing_angle_deg_sp = wing_angle_scheduled_sp_deg;
