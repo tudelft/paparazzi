@@ -26,6 +26,14 @@
 #include "airspeed_uavcan.h"
 #include "uavcan/uavcan.h"
 #include "core/abi.h"
+#include "filters/low_pass_filter.h"
+
+#include "pprzlink/messages.h"
+#include "modules/datalink/downlink.h"
+
+#if PERIODIC_TELEMETRY
+#include "modules/datalink/telemetry.h"
+#endif
 
 #ifdef USE_AIRSPEED_LOWPASS_FILTER
 static Butterworth2LowPass airspeed_filter;
@@ -36,6 +44,15 @@ static uavcan_event airspeed_uavcan_ev;
 #define UAVCAN_EQUIPMENT_AIR_DATA_RAWAIRDATA_ID            1027
 #define UAVCAN_EQUIPMENT_AIR_DATA_RAWAIRDATA_SIGNATURE     (0xC77DF38BA122F5DAULL)
 #define UAVCAN_EQUIPMENT_AIR_DATA_RAWAIRDATA_MAX_SIZE      ((397 + 7)/8)
+
+struct airspeed_uavcan_s airspeed_uavcan;
+
+static void airspeed_uavcan_downlink(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_AIRSPEED_UAVCAN(trans,dev,AC_ID,
+                                &airspeed_uavcan.diff_p,
+                                &airspeed_uavcan.temperature);
+}
 
 static void airspeed_uavcan_cb(struct uavcan_iface_t *iface __attribute__((unused)), CanardRxTransfer *transfer) {
   uint16_t tmp_float = 0;
@@ -57,14 +74,17 @@ static void airspeed_uavcan_cb(struct uavcan_iface_t *iface __attribute__((unuse
   if(!isnan(diff_p)) {
 #ifdef USE_AIRSPEED_LOWPASS_FILTER
     float diff_p_filt = update_butterworth_2_low_pass(&airspeed_filter, diff_p);
-    AbiSendMsgBARO_DIFF(UAVCAN_SENDER_ID, diff_p_filt);
+    airspeed_uavcan.diff_p = diff_p;
+    //AbiSendMsgBARO_DIFF(UAVCAN_SENDER_ID, diff_p_filt);
 #else
-    AbiSendMsgBARO_DIFF(UAVCAN_SENDER_ID, diff_p);
+    //AbiSendMsgBARO_DIFF(UAVCAN_SENDER_ID, diff_p);
+    airspeed_uavcan.diff_p = diff_p;
 #endif
   }
 
   if(!isnan(static_air_temp))
-    AbiSendMsgTEMPERATURE(UAVCAN_SENDER_ID, static_air_temp);
+    //AbiSendMsgTEMPERATURE(UAVCAN_SENDER_ID, static_air_temp);
+    airspeed_uavcan.temperature = static_air_temp;
 }
 
 void airspeed_uavcan_init(void)
@@ -74,6 +94,13 @@ void airspeed_uavcan_init(void)
   init_butterworth_2_low_pass(&airspeed_filter, MS45XX_LOWPASS_TAU, MS45XX_I2C_PERIODIC_PERIOD, 0);
 #endif
 
+  airspeed_uavcan.diff_p = 0;
+  airspeed_uavcan.temperature = 0;
+
   // Bind uavcan RAWAIRDATA message from EQUIPMENT.AIR_DATA
   uavcan_bind(UAVCAN_EQUIPMENT_AIR_DATA_RAWAIRDATA_ID, UAVCAN_EQUIPMENT_AIR_DATA_RAWAIRDATA_SIGNATURE, &airspeed_uavcan_ev, &airspeed_uavcan_cb);
+
+  #if PERIODIC_TELEMETRY
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AIRSPEED_UAVCAN, airspeed_uavcan_downlink);
+  #endif
 }
