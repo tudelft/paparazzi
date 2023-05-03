@@ -84,7 +84,7 @@
     </message>
 
     <message name="RPM" id="15">
-      <field name="rpm" type="struct rpm_act_t *" unit="rpm"/>
+      <field name="rpm" type="uint16_t *" unit="rpm"/>
       <field name="num_act" type="uint8_t"/>
     </message>
 
@@ -246,12 +246,24 @@
       <field name="vel_sp" type="struct FloatVect3 *" unit="m/s"/>
     </message>
 
-    <message name="THRUSTBX" id="37">
-      <field name="thrust_bx_increment" type="float" unit="m/s^2"/>
+    <message name="AM7_DATA_OUT" id="37">
+      <field name="myam7_data_out_ptr" type="struct am7_data_out *">Pointer pointing at the myam7_data_out struct</field>
+      <field name="extra_data_out_ptr" type="float *">Pointer pointing at the extra_data_out array</field>
     </message>
 
-    <message name="LIFT_D" id="38">
-      <field name="liftd" type="float"/>
+    <message name="AM7_DATA_IN" id="38">
+      <field name="myam7_data_in_ptr" type="struct am7_data_in *">Pointer pointing at the myam7_data_in struct</field>
+      <field name="extra_data_in_ptr" type="float *">Pointer pointing at the extra_data_in array</field>
+    </message>
+
+    <message name="SERIAL_ACT_T4_OUT" id="39">
+      <field name="myserial_act_t4_out_ptr" type="struct serial_act_t4_out *">Pointer pointing at the myserial_act_t4_out struct</field>
+      <field name="serial_act_t4_extra_data_out_ptr" type="float *">Pointer pointing at the serial_act_t4_extra_data_out array</field>
+    </message>
+
+    <message name="SERIAL_ACT_T4_IN" id="40">
+      <field name="myserial_act_t4_in_ptr" type="struct serial_act_t4_in *">Pointer pointing at the myserial_act_t4_in struct</field>
+      <field name="serial_act_t4_extra_data_in_ptr" type="float *">Pointer pointing at the serial_act_t4_extra_data_in array</field>
     </message>
 
   </msg_class>
