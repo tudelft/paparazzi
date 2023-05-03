@@ -140,13 +140,16 @@ NOTES:
       </module>
 
       <!-- If one want to use a Joystick over connection one can us this instead of sbus-->
-      <module name="radio_control" type="datalink">
+      <module name="radio_control" type="ppm">
       <!-- <module name="radio_control" type="sbus"> -->
       <!-- <configure name="SBUS_PORT" value="UART3"/>--> <!--Telem2 RCIN UART5? -->
-        <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>
-        <define name="RADIO_AUX1" value="5"/>
-        <define name="RADIO_TH_HOLD" value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
-        <define name="RADIO_FMODE" value="RADIO_AUX2"/> <!-- Throttle curve select -->
+        <define name="RADIO_CONTROL_NB_CHANNEL" value="12"/>
+        <!--<define name="RADIO_AUX1" value="5"/>-->
+        <!-- <define name="RADIO_AUX4" value="8"/> -->
+        <define name="RADIO_FMODE" value="RADIO_AUX2"/> 
+        <define name="RADIO_TH_HOLD" value="RADIO_AUX1"/> 
+         <define name="RADIO_MODE" value="RADIO_FMODE"/> <!-- Throttle hold in command laws -->
+        <!-- Throttle curve select -->
         <define name="RADIO_FBW_MODE" value="RADIO_AUX3"/> <!-- Switch between AP and FBW control -->
         <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
       </module>
@@ -224,6 +227,11 @@ NOTES:
       <!-- Note NPS needs the ppm type radio_control module -->
       <!--<module name="radio_control" type="datalink"/>-->
       <module name="udp"/><!--FIXME-->
+      
+      <module name="approach_moving_target">
+	<define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/>
+      </module>
+
     </target>
 
     <define name="USE_AIRSPEED" value="TRUE"/><!-- Use the sensor, not stating use it in flight -->
@@ -284,8 +292,8 @@ NOTES:
     <!-- <module name="photogrammetry_calculator"/> -->
 
     <module name="traffic_info"/>
-    <!-- <module name="tcas"/> -->
-    <!-- <module name="Overactuated_mixing"/> -->
+    <!-- <module name="tcas"/>--> 
+    <module name="Overactuated_mixing"/>
 
     <define name="VEL_SP_FCR_ID" value="10"/>
     <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/>

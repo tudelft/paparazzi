@@ -104,9 +104,9 @@
     <block name="Circle_CCW">
       <circle radius="-100" wp="p1"/>
     </block>
-    <block name="Approach APP">
+    <!-- <block name="Approach APP">
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
-    </block>
+    </block> -->
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
         <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>

@@ -38,7 +38,7 @@
 #include "modules/sensors/serial_act_t4.h"
 #include "modules/core/abi.h"
 #include "mcu_periph/sys_time.h"
-#include "modules/sensors/aoa_pwm.h"
+// #include "modules/sensors/aoa_pwm.h"
 #include "modules/adcs/adc_generic.h"
 #include "modules/energy/electrical.h"
 
@@ -817,7 +817,7 @@ void assign_variables(void){
     pos_vect[1] = stateGetPositionNed_f()->y;
     pos_vect[2] = stateGetPositionNed_f()->z;
     airspeed = ms45xx.airspeed;
-    beta_deg = - aoa_pwm.angle * 180/M_PI;
+    // beta_deg = - aoa_pwm.angle * 180/M_PI;
     beta_rad = beta_deg * M_PI / 180;
 
     total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
