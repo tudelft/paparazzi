@@ -38,15 +38,23 @@
 #include "modules/sensors/serial_act_t4.h"
 #include "modules/core/abi.h"
 #include "mcu_periph/sys_time.h"
-// #include "modules/sensors/aoa_pwm.h"
+#include "modules/sensors/aoa_pwm.h"
 #include "modules/adcs/adc_generic.h"
 #include "modules/energy/electrical.h"
 
 #include "modules/core/sys_mon_rtos.h"
 
+
 /**
  * Variables declaration
  */
+
+#define FLY_WITH_AIRSPEED
+// #define USE_NEW_THR_ESTIMATION
+// #define USE_NEW_THR_ESTIMATION_OPTIMIZATION
+#define NEW_AOA_DEFINITION 
+#define FILTER_AIRSPEED
+#define NEW_YAWRATE_REFERENCE
 
 #define FBW_ACTUATORS
 #define MAX_DSHOT_VALUE 1999.0
@@ -125,7 +133,7 @@ float desired_angle_servo_9 = 0;
 float desired_angle_servo_10 = 0;
 
 //Sideslip gains
-float K_beta = 0.1;
+float K_beta = 0.15;
 
 float Dynamic_MOTOR_K_T_OMEGASQ;
 
@@ -156,8 +164,6 @@ float alt_cmd = 0, pitch_cmd = 0, roll_cmd = 0, yaw_motor_cmd = 0, yaw_tilt_cmd 
 int16_t neutral_servo_1_pwm = 1417;
 int16_t neutral_servo_2_pwm = 1492;
 
-// int16_t neutral_servo_1_pwm = 1527;
-// int16_t neutral_servo_2_pwm = 1365;
 
 int servo_right_cmd = 0;
 int servo_left_cmd = 0;
@@ -175,9 +181,8 @@ float K_ppz_angle_az = (9600 * 2) / (OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE - OV
 //Global variable for the ACTUATOR_OUTPUT messge: 
 int32_t actuator_output[INDI_NUM_ACT], actuator_state_int[INDI_NUM_ACT];
 
-
 //Incremental INDI variables
-float indi_u[INDI_NUM_ACT], indi_u_scaled[INDI_NUM_ACT];
+float indi_u[INDI_NUM_ACT];
 
 //Variables for the actuator model v2:
 #ifndef FBW_ACTUATORS
@@ -252,64 +257,66 @@ float time_old_sys_mon = 0;
 int debug_enable = 0; 
 
 struct PID_over pid_gains_over = {
-        .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
-               OVERACTUATED_MIXING_PID_P_GAIN_THETA,
-               OVERACTUATED_MIXING_PID_P_GAIN_PSI_AZ, //It natively uses the azimuth, specific pid for motor are defined below
-               OVERACTUATED_MIXING_PID_P_GAIN_POS_X_TILT,
-               OVERACTUATED_MIXING_PID_P_GAIN_POS_Y_TILT,
-               OVERACTUATED_MIXING_PID_P_GAIN_POS_Z
-        },
-        .i = { OVERACTUATED_MIXING_PID_I_GAIN_PHI,
-               OVERACTUATED_MIXING_PID_I_GAIN_THETA,
-               OVERACTUATED_MIXING_PID_I_GAIN_PSI_AZ,
-               OVERACTUATED_MIXING_PID_I_GAIN_POS_X_TILT,
-               OVERACTUATED_MIXING_PID_I_GAIN_POS_Y_TILT,
-               OVERACTUATED_MIXING_PID_I_GAIN_POS_Z
-        },
-        .d = { OVERACTUATED_MIXING_PID_D_GAIN_PHI,
-               OVERACTUATED_MIXING_PID_D_GAIN_THETA,
-               OVERACTUATED_MIXING_PID_D_GAIN_PSI_AZ,
-               OVERACTUATED_MIXING_PID_D_GAIN_POS_X_TILT,
-               OVERACTUATED_MIXING_PID_D_GAIN_POS_Y_TILT,
-               OVERACTUATED_MIXING_PID_D_GAIN_POS_Z
-        } };
+    .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
+        OVERACTUATED_MIXING_PID_P_GAIN_THETA,
+        OVERACTUATED_MIXING_PID_P_GAIN_PSI_AZ, //It natively uses the azimuth, specific pid for motor are defined below
+        OVERACTUATED_MIXING_PID_P_GAIN_POS_X_TILT,
+        OVERACTUATED_MIXING_PID_P_GAIN_POS_Y_TILT,
+        OVERACTUATED_MIXING_PID_P_GAIN_POS_Z
+    },
+    .i = { OVERACTUATED_MIXING_PID_I_GAIN_PHI,
+        OVERACTUATED_MIXING_PID_I_GAIN_THETA,
+        OVERACTUATED_MIXING_PID_I_GAIN_PSI_AZ,
+        OVERACTUATED_MIXING_PID_I_GAIN_POS_X_TILT,
+        OVERACTUATED_MIXING_PID_I_GAIN_POS_Y_TILT,
+        OVERACTUATED_MIXING_PID_I_GAIN_POS_Z
+    },
+    .d = { OVERACTUATED_MIXING_PID_D_GAIN_PHI,
+        OVERACTUATED_MIXING_PID_D_GAIN_THETA,
+        OVERACTUATED_MIXING_PID_D_GAIN_PSI_AZ,
+        OVERACTUATED_MIXING_PID_D_GAIN_POS_X_TILT,
+        OVERACTUATED_MIXING_PID_D_GAIN_POS_Y_TILT,
+        OVERACTUATED_MIXING_PID_D_GAIN_POS_Z
+    } 
+};
 struct PD_indi_over indi_gains_over = {
-        .p = { OVERACTUATED_MIXING_INDI_REF_ERR_P,
-               OVERACTUATED_MIXING_INDI_REF_ERR_Q,
-               OVERACTUATED_MIXING_INDI_REF_ERR_R,
-               OVERACTUATED_MIXING_INDI_REF_ERR_X,
-               OVERACTUATED_MIXING_INDI_REF_ERR_Y,
-               OVERACTUATED_MIXING_INDI_REF_ERR_Z
-        },
-        .d = { OVERACTUATED_MIXING_INDI_REF_RATE_P,
-               OVERACTUATED_MIXING_INDI_REF_RATE_Q,
-               OVERACTUATED_MIXING_INDI_REF_RATE_R,
-               OVERACTUATED_MIXING_INDI_REF_RATE_X,
-               OVERACTUATED_MIXING_INDI_REF_RATE_Y,
-               OVERACTUATED_MIXING_INDI_REF_RATE_Z
-        } };
+    .p = { OVERACTUATED_MIXING_INDI_REF_ERR_P,
+        OVERACTUATED_MIXING_INDI_REF_ERR_Q,
+        OVERACTUATED_MIXING_INDI_REF_ERR_R,
+        OVERACTUATED_MIXING_INDI_REF_ERR_X,
+        OVERACTUATED_MIXING_INDI_REF_ERR_Y,
+        OVERACTUATED_MIXING_INDI_REF_ERR_Z
+    },
+    .d = { OVERACTUATED_MIXING_INDI_REF_RATE_P,
+        OVERACTUATED_MIXING_INDI_REF_RATE_Q,
+        OVERACTUATED_MIXING_INDI_REF_RATE_R,
+        OVERACTUATED_MIXING_INDI_REF_RATE_X,
+        OVERACTUATED_MIXING_INDI_REF_RATE_Y,
+        OVERACTUATED_MIXING_INDI_REF_RATE_Z
+    } 
+};
+
 struct FloatEulers max_value_error = {
-        OVERACTUATED_MIXING_MAX_PHI,
-        OVERACTUATED_MIXING_MAX_THETA,
-        OVERACTUATED_MIXING_MAX_PSI_ERR };
-struct ActuatorsStruct act_dyn_struct = {
-        OVERACTUATED_MIXING_INDI_ACT_DYN_MOTOR,
-        OVERACTUATED_MIXING_INDI_ACT_DYN_EL,
-        OVERACTUATED_MIXING_INDI_ACT_DYN_AZ };
+OVERACTUATED_MIXING_MAX_PHI,
+OVERACTUATED_MIXING_MAX_THETA,
+OVERACTUATED_MIXING_MAX_PSI_ERR 
+};
 
-// Variables needed for the actuators:
-float act_dyn[INDI_NUM_ACT];
-
+/**
+ * ABI routine called by the serial_act_t4 ABI event
+ */
 static void data_AM7_abi_in(uint8_t sender_id __attribute__((unused)), struct am7_data_in * myam7_data_in_ptr, float * extra_data_in_ptr){
     memcpy(&myam7_data_in_local,myam7_data_in_ptr,sizeof(struct am7_data_in));
     memcpy(&extra_data_in_local,extra_data_in_ptr,255 * sizeof(float));
 }
 
+/**
+ * ABI routine called by the serial_act_t4 ABI event
+ */
 static void serial_act_t4_abi_in(uint8_t sender_id __attribute__((unused)), struct serial_act_t4_in * myserial_act_t4_in_ptr, float * serial_act_t4_extra_data_in_ptr){
     memcpy(&myserial_act_t4_in_local,myserial_act_t4_in_ptr,sizeof(struct serial_act_t4_in));
     memcpy(&serial_act_t4_extra_data_in_local,serial_act_t4_extra_data_in_ptr,255 * sizeof(float));
 }
-
 
 /**
  * Function for the message NONLINEAR_CA_DEBUG
@@ -352,7 +359,6 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
  * if current_speed > end_speed the output is 1
  */
 float compute_lat_speed_multiplier(float start_speed, float end_speed, float current_speed){
-
     float lat_speed_multiplier = (current_speed - start_speed) / (end_speed - start_speed);
     Bound(lat_speed_multiplier , 0, 1);
     return lat_speed_multiplier;
@@ -433,7 +439,6 @@ void from_earth_to_control(float * out_array, float * in_array, float Psi){
     }
 }
 
-
 /**
  * Function which computes the thrust in the body reference frame using the inflow angle 
  * characteristics determined in the wind tunnel:
@@ -488,31 +493,43 @@ struct BodyCoord_f compute_propeller_thrust_in_body_frame(float propeller_speed,
 float compute_yaw_rate_turn(void){
             //Compute the yaw rate for the coordinate turn:
         float yaw_rate_setpoint_turn = 0;
-
+        #ifdef FILTER_AIRSPEED
+        float airspeed_turn = airspeed_filt.o[0];
+        #else
         float airspeed_turn = airspeed;
+        #endif
         //We are dividing by the airspeed, so a lower bound is important
         Bound(airspeed_turn,10.0,30.0);
 
         float accel_y_filt_corrected = 0;
 
-        // accel_y_filt_corrected = accely_filt.o[0] 
-        //                         - actuator_state_filt[0]*actuator_state_filt[0]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
-        //                         - actuator_state_filt[1]*actuator_state_filt[1]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
-        //                         - actuator_state_filt[2]*actuator_state_filt[2]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
-        //                         - actuator_state_filt[3]*actuator_state_filt[3]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[11])/VEHICLE_MASS;
-                                
+
+        #ifdef USE_NEW_THR_ESTIMATION                        
         accel_y_filt_corrected = accely_filt.o[0] 
                                 - compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[4],actuator_state_filt[8],actuator_state_filt[0]).y/VEHICLE_MASS
                                 - compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[5],actuator_state_filt[9],actuator_state_filt[1]).y/VEHICLE_MASS
                                 - compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[6],actuator_state_filt[10],actuator_state_filt[2]).y/VEHICLE_MASS
                                 - compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[7],actuator_state_filt[11],actuator_state_filt[3]).y/VEHICLE_MASS;
+        #else                        
+        accel_y_filt_corrected = accely_filt.o[0] 
+                                - actuator_state_filt[0]*actuator_state_filt[0]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
+                                - actuator_state_filt[1]*actuator_state_filt[1]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
+                                - actuator_state_filt[2]*actuator_state_filt[2]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
+                                - actuator_state_filt[3]*actuator_state_filt[3]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[11])/VEHICLE_MASS;
+        #endif
+        
+        #ifdef NEW_YAWRATE_REFERENCE
+            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accel_y_filt_corrected;
 
-        // Creating the setpoint using the bank angle and the body acceleration correction for the sideslip:
-        yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accel_y_filt_corrected;
-
-        feed_fwd_term_yaw = 9.81*tan(euler_vect[0])/airspeed_turn;
-        feed_back_term_yaw = - K_beta * accel_y_filt_corrected;
-
+            feed_fwd_term_yaw = 9.81*tan(euler_vect[0])/airspeed_turn;
+            feed_back_term_yaw = - K_beta * accel_y_filt_corrected;
+        #else
+            if(airspeed > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
+                yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accel_y_filt_corrected;
+                feed_fwd_term_yaw = 9.81*tan(euler_vect[0])/airspeed_turn;
+                feed_back_term_yaw = - K_beta * accel_y_filt_corrected;  
+            }     
+        #endif
         yaw_rate_setpoint_turn = yaw_rate_setpoint_turn * compute_lat_speed_multiplier(OVERACTUATED_MIXING_MIN_SPEED_TRANSITION,OVERACTUATED_MIXING_REF_SPEED_TRANSITION,airspeed);
 
         return yaw_rate_setpoint_turn;
@@ -531,13 +548,23 @@ void compute_speed_ref_from_waypoint(float * speed_reference_control_rf, float *
     //Transpose position error from ground rf to control rf: 
     from_earth_to_control(pos_error_control_rf, pos_error_earth_rf, Psi);
 
-    //Before applying gains and bounds, let's compute the dynamic saturation point for the fwd speed, based on the control-x distance of the WP: 
-    float max_fwd_speed_approach_wp = sqrt( fabs(pos_error_control_rf[0]) * 2 * WP_CONTROL_MAX_DECEL_WP_APPROACH );
+    //Compute the heading angle needed to get to the desired waypoint:
+    float track_heading = atan2f(pos_error_control_rf[1],pos_error_control_rf[0]);
 
     //Apply saturation block to the maximum position error: 
     BoundAbs(pos_error_control_rf[0],WP_CONTROL_MAX_POS_XY_ERROR);
     BoundAbs(pos_error_control_rf[1],WP_CONTROL_MAX_POS_XY_ERROR);
     BoundAbs(pos_error_control_rf[2],WP_CONTROL_MAX_POS_Z_ERROR);
+
+    //Compute the the constarined waypoint distance in the x-y plane:
+    float pos_error_xy_norm = sqrt(pos_error_control_rf[0] * pos_error_control_rf[0] + pos_error_control_rf[1] * pos_error_control_rf[1]);
+
+    //Let's compute the dynamic saturation point for the fwd speed, based on the control-x distance of the WP: 
+    float max_fwd_speed_approach_wp = sqrt( pos_error_xy_norm * 2 * WP_CONTROL_MAX_DECEL_WP_APPROACH );
+
+    //Now rescale the position error using the track heading and constrained waypoint distance:
+    pos_error_control_rf[0] = pos_error_xy_norm * cosf(track_heading);
+    pos_error_control_rf[1] = pos_error_xy_norm * sinf(track_heading);
 
     //Now apply static gains to the position error to generate the speed references in the control rf: 
     speed_reference_control_rf[0] = pos_error_control_rf[0] * WP_CONTROL_VX_CONTROL_STATIC_GAIN;
@@ -780,6 +807,154 @@ void get_actuator_state_v2(void)
 }
 
 /**
+ * Fill up the variables to be sent to the Raspberry pi for the CA computation
+ */
+void send_values_to_raspberry_pi(void){
+
+    //Compute and transmit the messages to the AM7 module:
+    am7_data_out_local.motor_1_state_int = (int16_t) (actuator_state_filt[0] * 1e1);
+    am7_data_out_local.motor_2_state_int = (int16_t) (actuator_state_filt[1] * 1e1);
+    am7_data_out_local.motor_3_state_int = (int16_t) (actuator_state_filt[2] * 1e1);
+    am7_data_out_local.motor_4_state_int = (int16_t) (actuator_state_filt[3] * 1e1);
+
+    am7_data_out_local.el_1_state_int = (int16_t) (actuator_state_filt[4] * 1e2 * 180/M_PI);
+    am7_data_out_local.el_2_state_int = (int16_t) (actuator_state_filt[5] * 1e2 * 180/M_PI);
+    am7_data_out_local.el_3_state_int = (int16_t) (actuator_state_filt[6] * 1e2 * 180/M_PI);
+    am7_data_out_local.el_4_state_int = (int16_t) (actuator_state_filt[7] * 1e2 * 180/M_PI);
+
+    am7_data_out_local.az_1_state_int = (int16_t) (actuator_state_filt[8] * 1e2 * 180/M_PI);
+    am7_data_out_local.az_2_state_int = (int16_t) (actuator_state_filt[9] * 1e2 * 180/M_PI);
+    am7_data_out_local.az_3_state_int = (int16_t) (actuator_state_filt[10] * 1e2 * 180/M_PI);
+    am7_data_out_local.az_4_state_int = (int16_t) (actuator_state_filt[11] * 1e2 * 180/M_PI);
+
+    am7_data_out_local.phi_state_int = (int16_t) (actuator_state_filt[13] * 1e2 * 180/M_PI);
+    am7_data_out_local.theta_state_int = (int16_t) (actuator_state_filt[12] * 1e2 * 180/M_PI);
+    am7_data_out_local.ailerons_state_int = (int16_t) (actuator_state_filt[14] * 1e2 * 180/M_PI);
+
+    am7_data_out_local.gamma_state_int = (int16_t) (flight_path_angle_filtered.o[0] * 1e2 * 180/M_PI);
+
+    am7_data_out_local.p_state_int = (int16_t) (measurement_rates_filters[0].o[0] * 1e1 * 180/M_PI);
+    am7_data_out_local.q_state_int = (int16_t) (measurement_rates_filters[1].o[0] * 1e1 * 180/M_PI);
+    am7_data_out_local.r_state_int = (int16_t) (measurement_rates_filters[2].o[0] * 1e1 * 180/M_PI);
+
+    #ifdef FILTER_AIRSPEED
+    am7_data_out_local.airspeed_state_int = (int16_t) (airspeed_filt.o[0] * 1e2);
+    #else
+    am7_data_out_local.airspeed_state_int = (int16_t) (airspeed * 1e2);
+    #endif
+
+    float fake_beta = 0;
+
+    am7_data_out_local.beta_state_int = (int16_t) (fake_beta * 1e2);
+
+    am7_data_out_local.pseudo_control_ax_int = (int16_t) (INDI_pseudocontrol[0] * 1e2);
+    am7_data_out_local.pseudo_control_ay_int = (int16_t) (INDI_pseudocontrol[1] * 1e2);
+    am7_data_out_local.pseudo_control_az_int = (int16_t) (INDI_pseudocontrol[2] * 1e2);
+    am7_data_out_local.pseudo_control_p_dot_int = (int16_t) (INDI_pseudocontrol[3] * 1e1 * 180/M_PI);
+    am7_data_out_local.pseudo_control_q_dot_int = (int16_t) (INDI_pseudocontrol[4] * 1e1 * 180/M_PI);
+    am7_data_out_local.pseudo_control_r_dot_int = (int16_t) (INDI_pseudocontrol[5] * 1e1 * 180/M_PI);
+
+    am7_data_out_local.desired_motor_value_int = (int16_t) (manual_motor_value * 1e1);
+    am7_data_out_local.desired_el_value_int = (int16_t) (manual_el_value * 1e2 * 180/M_PI);
+    am7_data_out_local.desired_az_value_int = (int16_t) (manual_az_value * 1e2 * 180/M_PI);
+    am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
+    am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
+    // am7_data_out_local.desired_theta_value_int = (int16_t) (0 * 1e2 * 180/M_PI);
+    // am7_data_out_local.desired_phi_value_int = (int16_t) (0 * 1e2 * 180/M_PI);
+
+    am7_data_out_local.desired_ailerons_value_int = (int16_t) (manual_ailerons_value * 1e2 * 180/M_PI);
+
+    #ifdef USE_NEW_THR_ESTIMATION_OPTIMIZATION
+    extra_data_out_local[0] = PROP_MODEL_KT_REF;
+    #else
+    extra_data_out_local[0] = Dynamic_MOTOR_K_T_OMEGASQ;
+    #endif
+
+    extra_data_out_local[1] = PROP_MODEL_KM_REF;
+    extra_data_out_local[2] = VEHICLE_MASS;
+    extra_data_out_local[3] = VEHICLE_I_XX;
+    extra_data_out_local[4] = VEHICLE_I_YY;
+    extra_data_out_local[5] = VEHICLE_I_ZZ;
+    extra_data_out_local[6] = VEHICLE_L1;
+    extra_data_out_local[7] = VEHICLE_L2;
+    extra_data_out_local[8] = VEHICLE_L3;
+    extra_data_out_local[9] = VEHICLE_L4;
+    extra_data_out_local[10] = VEHICLE_LZ;
+    #ifdef RPM_CONTROL
+    extra_data_out_local[11] = RPM_CONTROL_FBW_MAX_OMEGA_RAD_S;
+    #else    
+    extra_data_out_local[11] = OVERACTUATED_MIXING_MOTOR_MAX_OMEGA;
+    #endif
+    extra_data_out_local[12] = OVERACTUATED_MIXING_MOTOR_MIN_OMEGA;
+
+    extra_data_out_local[13] = (OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE * 180/M_PI);
+
+    extra_data_out_local[14] = (OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE * 180/M_PI);
+
+    extra_data_out_local[15] = (OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE * 180/M_PI);
+    extra_data_out_local[16] = (OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE * 180/M_PI);
+    extra_data_out_local[17] = (OVERACTUATED_MIXING_MAX_THETA_INDI * 180/M_PI);
+    extra_data_out_local[18] = (OVERACTUATED_MIXING_MIN_THETA_INDI * 180/M_PI);
+    extra_data_out_local[19] = (OVERACTUATED_MIXING_MAX_AOA_INDI * 180/M_PI);
+    extra_data_out_local[20] = (OVERACTUATED_MIXING_MIN_AOA_INDI * 180/M_PI);
+    extra_data_out_local[21] = (OVERACTUATED_MIXING_MAX_PHI_INDI * 180/M_PI);
+    extra_data_out_local[22] = VEHICLE_CM_ZERO;
+    extra_data_out_local[23] = VEHICLE_CM_ALPHA;
+    extra_data_out_local[24] = VEHICLE_CL_ALPHA;
+    extra_data_out_local[25] = VEHICLE_CD_ZERO;
+    extra_data_out_local[26] = VEHICLE_K_CD;
+    extra_data_out_local[27] = VEHICLE_S;
+    extra_data_out_local[28] = VEHICLE_WING_CHORD;
+    extra_data_out_local[29] = 1.225; //rho value at MSL
+
+    extra_data_out_local[30] = OVERACTUATED_MIXING_W_ACT_MOTOR_CONST;
+    extra_data_out_local[31] = OVERACTUATED_MIXING_W_ACT_MOTOR_SPEED;
+    extra_data_out_local[32] = OVERACTUATED_MIXING_W_ACT_EL_CONST;
+    extra_data_out_local[33] = OVERACTUATED_MIXING_W_ACT_EL_SPEED;
+    extra_data_out_local[34] = OVERACTUATED_MIXING_W_ACT_AZ_CONST;
+    extra_data_out_local[35] = OVERACTUATED_MIXING_W_ACT_AZ_SPEED;
+    extra_data_out_local[36] = OVERACTUATED_MIXING_W_ACT_THETA_CONST;
+    extra_data_out_local[37] = OVERACTUATED_MIXING_W_ACT_THETA_SPEED;
+    extra_data_out_local[38] = OVERACTUATED_MIXING_W_ACT_PHI_CONST;
+    extra_data_out_local[39] = OVERACTUATED_MIXING_W_ACT_PHI_SPEED;
+
+    extra_data_out_local[40] = OVERACTUATED_MIXING_W_DV_1;
+    extra_data_out_local[41] = OVERACTUATED_MIXING_W_DV_2;
+    extra_data_out_local[42] = OVERACTUATED_MIXING_W_DV_3;
+    extra_data_out_local[43] = OVERACTUATED_MIXING_W_DV_4;
+    extra_data_out_local[44] = OVERACTUATED_MIXING_W_DV_5;
+    extra_data_out_local[45] = OVERACTUATED_MIXING_W_DV_6;
+
+    extra_data_out_local[46] = OVERACTUATED_MIXING_GAMMA_QUADRATIC_DU;
+
+    extra_data_out_local[47] = VEHICLE_CY_BETA;
+    extra_data_out_local[48] = VEHICLE_CL_BETA;
+    extra_data_out_local[49] = VEHICLE_WING_SPAN;
+
+    extra_data_out_local[50] = OVERACTUATED_MIXING_SPEED_AOA_PROTECTION;
+
+    //Aileron addon: 
+    extra_data_out_local[51] = OVERACTUATED_MIXING_W_ACT_AILERONS_CONST;
+    extra_data_out_local[52] = OVERACTUATED_MIXING_W_ACT_AILERONS_SPEED;
+    extra_data_out_local[53] = (OVERACTUATED_MIXING_MIN_DELTA_AILERONS * 180/M_PI);
+    extra_data_out_local[54] = (OVERACTUATED_MIXING_MAX_DELTA_AILERONS * 180/M_PI);
+    extra_data_out_local[55] = CL_ailerons ;
+
+    //Inflow angle aerodynamic model: 
+    extra_data_out_local[56] = PROP_MODEL_MAX_THR_LOSS_OPTIMIZER;
+    extra_data_out_local[57] = PROP_MODEL_C_DR;
+}
+
+/**
+ * This function outputs the maximum equivalent gound speed in the control reference to have a maximum desired airspeed.
+ */
+float max_V_control_from_max_airspeed(float current_airspeed, float current_Vx_control_rf, float aoa_rad, float max_desired_airspeed){
+    float estimated_wind_fwd = current_Vx_control_rf - current_airspeed/cos(aoa_rad);
+    float Vx_ground_max_for_airspeed = max_desired_airspeed + estimated_wind_fwd;
+    return Vx_ground_max_for_airspeed;
+}
+
+/**
  * Initialize the overactuated mixing module
  */
 void overactuated_mixing_init(void) {
@@ -817,25 +992,9 @@ void assign_variables(void){
     pos_vect[1] = stateGetPositionNed_f()->y;
     pos_vect[2] = stateGetPositionNed_f()->z;
     airspeed = ms45xx.airspeed;
-    // beta_deg = - aoa_pwm.angle * 180/M_PI;
+    beta_deg = - aoa_pwm.angle * 180/M_PI;
     beta_rad = beta_deg * M_PI / 180;
 
-    total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
-    if(total_V > 5){
-        flight_path_angle = asin(-speed_vect[2]/total_V);
-        BoundAbs(flight_path_angle, M_PI/2);
-    }
-    else{
-        flight_path_angle = 0;
-    }
-
-    for (int i = 0 ; i < 4 ; i++){
-        act_dyn[i] = act_dyn_struct.motor;
-        act_dyn[i+4] = act_dyn_struct.elevation;
-        act_dyn[i+8] = act_dyn_struct.azimuth;
-    }
-
-    //Determine the acceleration set in the body reference frame with gravity:
 
     /* Propagate the filter on the gyroscopes and accelerometers */
     for (int i = 0; i < 3; i++) {
@@ -846,11 +1005,13 @@ void assign_variables(void){
         rate_vect_filt_dot[i] = (measurement_rates_filters[i].o[0]
                                  - measurement_rates_filters[i].o[1]) * PERIODIC_FREQUENCY_OVERACTUATED;
 
+        //Filter body rates with second order butterworth filter
         // rate_vect_filt[i] = measurement_rates_filters[i].o[0];
 
-        acc_vect_filt[i] = measurement_acc_filters[i].o[0];
-
+        //Filter body rates with first order dedicated filter
         rate_vect_filt[i] = rate_vect_filt[i] + OVERACTUATED_MIXING_FIRST_ORDER_FILTER_COEFF_ANG_RATES * (rate_vect[i] - rate_vect_filt[i]);
+
+        acc_vect_filt[i] = measurement_acc_filters[i].o[0];
 
     }
 
@@ -867,7 +1028,26 @@ void assign_variables(void){
     //Determination of the accelerations in the control rf:
     from_earth_to_control( accel_vect_control_rf, acc_vect, euler_vect[2]);
     from_earth_to_control( accel_vect_filt_control_rf, acc_vect_filt, euler_vect[2]);
+    //Determination of the speed in the control rf:
     from_earth_to_control( speed_vect_control_rf, speed_vect, euler_vect[2]);
+
+    //Definition of AoA and FPA 
+    #ifdef NEW_AOA_DEFINITION
+    float projected_airspeed_on_x_control = 0.0;
+    if(fabs(cosf(euler_vect[1])) > 0.001){
+        projected_airspeed_on_x_control = airspeed/cosf(euler_vect[1]);
+    }
+    total_V = sqrt(projected_airspeed_on_x_control*projected_airspeed_on_x_control + speed_vect_control_rf[1]*speed_vect_control_rf[1] + speed_vect_control_rf[2]*speed_vect_control_rf[2]);
+    #else
+    total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
+    #endif
+
+    flight_path_angle = 0.0;
+    if(total_V > 1.0){
+        flight_path_angle = asin(-speed_vect[2]/total_V);
+        BoundAbs(flight_path_angle, M_PI/2);
+    }
+
 }
 
 /**
@@ -889,9 +1069,9 @@ void overactuated_mixing_run(void)
     y_stb = waypoint_get_x(WP_STDBY);
     z_stb = -waypoint_get_alt(WP_STDBY); 
 
-    // //Prepare the reference for the AUTO test with the nonlinear controller: 
+    //Prepare the reference for the AUTO test with the nonlinear controller: 
         
-    // if(radio_control.values[none] < -500){
+    // if(radio_control.values[RADIO_AUX4] < -500){
     //     auto_test_start = 1; 
     // }
     // else{
@@ -1176,8 +1356,8 @@ void overactuated_mixing_run(void)
         get_actuator_state_v2();
 
         //Calculate the desired euler angles from the auxiliary joystick channels:
-        manual_phi_value = MANUAL_CONTROL_MAX_CMD_ROLL_ANGLE * radio_control.values[RADIO_AUX3] / 9600;
-        manual_theta_value = MANUAL_CONTROL_MAX_CMD_PITCH_ANGLE * radio_control.values[RADIO_AUX4] / 9600;
+        manual_phi_value = MANUAL_CONTROL_MAX_CMD_ROLL_ANGLE * radio_control.values[RADIO_AUX2] / 9600;
+        manual_theta_value = MANUAL_CONTROL_MAX_CMD_PITCH_ANGLE * radio_control.values[RADIO_AUX3] / 9600;
 
         //Add the setpoint in case of AUTO test
         if(auto_test_start){ 
@@ -1223,10 +1403,6 @@ void overactuated_mixing_run(void)
         angular_body_error[0] = phi_dot - sin(theta_value) * psi_dot;
         angular_body_error[1] = cos(phi_value) * theta_dot + sin(phi_value) * cos(theta_value) * psi_dot;
         angular_body_error[2] = -sin(phi_value) * theta_dot + cos(phi_value) * cos(theta_value) * psi_dot;
-
-        // rate_setpoint[0] = angular_body_error[0] * indi_gains_over.p.phi * gain_to_speed_constant;
-        // rate_setpoint[1] = angular_body_error[1] * indi_gains_over.p.theta * gain_to_speed_constant;
-        // rate_setpoint[2] = angular_body_error[2] * indi_gains_over.p.psi * gain_to_speed_constant;
 
         rate_setpoint[0] = angular_body_error[0] ;
         rate_setpoint[1] = angular_body_error[1] ;
@@ -1282,7 +1458,7 @@ void overactuated_mixing_run(void)
             speed_setpoint_control_rf[2] = des_Vz; 
         }
 
-        // If we are in the waypoint control mode, overwrite the speed setpoints with the one distated by the waypoint: 
+        // If we are in the waypoint control mode, overwrite the speed setpoints with the one dictated by the waypoint: 
         if(waypoint_mode){
             pos_setpoint[0] = x_stb; 
             pos_setpoint[1] = y_stb; 
@@ -1292,7 +1468,14 @@ void overactuated_mixing_run(void)
 
 
         //Apply saturation blocks to speed setpoints in control reference frame:
-        Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
+        #ifdef FLY_WITH_AIRSPEED
+            //Try to equalize the maximum fwd speed with the airspeed:
+            float aoa_angle_estimation = euler_vect[1] - flight_path_angle;
+            float max_Vx_airspeed = max_V_control_from_max_airspeed(airspeed, speed_vect_control_rf[0], aoa_angle_estimation, LIMITS_FWD_MAX_AIRSPEED);
+            Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,Min(LIMITS_FWD_MAX_FWD_SPEED,max_Vx_airspeed));
+        #else
+            Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,LIMITS_FWD_MAX_FWD_SPEED);
+        #endif
         BoundAbs(speed_setpoint_control_rf[1],LIMITS_FWD_MAX_LAT_SPEED);
         BoundAbs(speed_setpoint_control_rf[2],LIMITS_FWD_MAX_VERT_SPEED);
 
@@ -1307,7 +1490,7 @@ void overactuated_mixing_run(void)
         acc_setpoint[2] = speed_error_vect_control_rf[2] * indi_gains_over.d.z;
 
         //Apply saturation points for the accelerations in the control rf:
-        BoundAbs(acc_setpoint[0],LIMITS_FWD_MAX_FWD_ACC);
+        Bound(acc_setpoint[0],LIMITS_FWD_MIN_FWD_ACC,LIMITS_FWD_MAX_FWD_ACC);
         BoundAbs(acc_setpoint[1],LIMITS_FWD_MAX_LAT_ACC);
         BoundAbs(acc_setpoint[2],LIMITS_FWD_MAX_VERT_ACC);
 
@@ -1317,131 +1500,10 @@ void overactuated_mixing_run(void)
         INDI_pseudocontrol[1] = acc_setpoint[1] - accel_vect_filt_control_rf[1];
         INDI_pseudocontrol[2] = acc_setpoint[2] - accel_vect_filt_control_rf[2];
 
+        //Send desired accelleration increments to the Raspberry pi:
+        send_values_to_raspberry_pi();
 
-        //Compute and transmit the messages to the AM7 module:
-        am7_data_out_local.motor_1_state_int = (int16_t) (actuator_state_filt[0] * 1e1);
-        am7_data_out_local.motor_2_state_int = (int16_t) (actuator_state_filt[1] * 1e1);
-        am7_data_out_local.motor_3_state_int = (int16_t) (actuator_state_filt[2] * 1e1);
-        am7_data_out_local.motor_4_state_int = (int16_t) (actuator_state_filt[3] * 1e1);
-
-        am7_data_out_local.el_1_state_int = (int16_t) (actuator_state_filt[4] * 1e2 * 180/M_PI);
-        am7_data_out_local.el_2_state_int = (int16_t) (actuator_state_filt[5] * 1e2 * 180/M_PI);
-        am7_data_out_local.el_3_state_int = (int16_t) (actuator_state_filt[6] * 1e2 * 180/M_PI);
-        am7_data_out_local.el_4_state_int = (int16_t) (actuator_state_filt[7] * 1e2 * 180/M_PI);
-
-        am7_data_out_local.az_1_state_int = (int16_t) (actuator_state_filt[8] * 1e2 * 180/M_PI);
-        am7_data_out_local.az_2_state_int = (int16_t) (actuator_state_filt[9] * 1e2 * 180/M_PI);
-        am7_data_out_local.az_3_state_int = (int16_t) (actuator_state_filt[10] * 1e2 * 180/M_PI);
-        am7_data_out_local.az_4_state_int = (int16_t) (actuator_state_filt[11] * 1e2 * 180/M_PI);
-
-        am7_data_out_local.phi_state_int = (int16_t) (actuator_state_filt[13] * 1e2 * 180/M_PI);
-        am7_data_out_local.theta_state_int = (int16_t) (actuator_state_filt[12] * 1e2 * 180/M_PI);
-        am7_data_out_local.ailerons_state_int = (int16_t) (actuator_state_filt[14] * 1e2 * 180/M_PI);
-
-        am7_data_out_local.gamma_state_int = (int16_t) (flight_path_angle_filtered.o[0] * 1e2 * 180/M_PI);
-
-        am7_data_out_local.p_state_int = (int16_t) (measurement_rates_filters[0].o[0] * 1e1 * 180/M_PI);
-        am7_data_out_local.q_state_int = (int16_t) (measurement_rates_filters[1].o[0] * 1e1 * 180/M_PI);
-        am7_data_out_local.r_state_int = (int16_t) (measurement_rates_filters[2].o[0] * 1e1 * 180/M_PI);
-
-        am7_data_out_local.airspeed_state_int = (int16_t) (airspeed_filt.o[0] * 1e2);
-
-        float fake_beta = 0;
-
-        am7_data_out_local.beta_state_int = (int16_t) (fake_beta * 1e2);
-
-        am7_data_out_local.pseudo_control_ax_int = (int16_t) (INDI_pseudocontrol[0] * 1e2);
-        am7_data_out_local.pseudo_control_ay_int = (int16_t) (INDI_pseudocontrol[1] * 1e2);
-        am7_data_out_local.pseudo_control_az_int = (int16_t) (INDI_pseudocontrol[2] * 1e2);
-        am7_data_out_local.pseudo_control_p_dot_int = (int16_t) (INDI_pseudocontrol[3] * 1e1 * 180/M_PI);
-        am7_data_out_local.pseudo_control_q_dot_int = (int16_t) (INDI_pseudocontrol[4] * 1e1 * 180/M_PI);
-        am7_data_out_local.pseudo_control_r_dot_int = (int16_t) (INDI_pseudocontrol[5] * 1e1 * 180/M_PI);
-
-        am7_data_out_local.desired_motor_value_int = (int16_t) (manual_motor_value * 1e1);
-        am7_data_out_local.desired_el_value_int = (int16_t) (manual_el_value * 1e2 * 180/M_PI);
-        am7_data_out_local.desired_az_value_int = (int16_t) (manual_az_value * 1e2 * 180/M_PI);
-        am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
-        am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
-        // am7_data_out_local.desired_theta_value_int = (int16_t) (0 * 1e2 * 180/M_PI);
-        // am7_data_out_local.desired_phi_value_int = (int16_t) (0 * 1e2 * 180/M_PI);
-
-        am7_data_out_local.desired_ailerons_value_int = (int16_t) (manual_ailerons_value * 1e2 * 180/M_PI);
-
-        extra_data_out_local[0] = PROP_MODEL_KT_REF;
-        extra_data_out_local[1] = PROP_MODEL_KM_REF;
-        extra_data_out_local[2] = VEHICLE_MASS;
-        extra_data_out_local[3] = VEHICLE_I_XX;
-        extra_data_out_local[4] = VEHICLE_I_YY;
-        extra_data_out_local[5] = VEHICLE_I_ZZ;
-        extra_data_out_local[6] = VEHICLE_L1;
-        extra_data_out_local[7] = VEHICLE_L2;
-        extra_data_out_local[8] = VEHICLE_L3;
-        extra_data_out_local[9] = VEHICLE_L4;
-        extra_data_out_local[10] = VEHICLE_LZ;
-        #ifdef RPM_CONTROL
-        extra_data_out_local[11] = RPM_CONTROL_FBW_MAX_OMEGA_RAD_S;
-        #else    
-        extra_data_out_local[11] = OVERACTUATED_MIXING_MOTOR_MAX_OMEGA;
-        #endif
-        extra_data_out_local[12] = OVERACTUATED_MIXING_MOTOR_MIN_OMEGA;
-
-        extra_data_out_local[13] = (OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE * 180/M_PI);
-
-        extra_data_out_local[14] = (OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE * 180/M_PI);
-
-        extra_data_out_local[15] = (OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE * 180/M_PI);
-        extra_data_out_local[16] = (OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE * 180/M_PI);
-        extra_data_out_local[17] = (OVERACTUATED_MIXING_MAX_THETA_INDI * 180/M_PI);
-        extra_data_out_local[18] = (OVERACTUATED_MIXING_MIN_THETA_INDI * 180/M_PI);
-        extra_data_out_local[19] = (OVERACTUATED_MIXING_MAX_AOA_INDI * 180/M_PI);
-        extra_data_out_local[20] = (OVERACTUATED_MIXING_MIN_AOA_INDI * 180/M_PI);
-        extra_data_out_local[21] = (OVERACTUATED_MIXING_MAX_PHI_INDI * 180/M_PI);
-        extra_data_out_local[22] = VEHICLE_CM_ZERO;
-        extra_data_out_local[23] = VEHICLE_CM_ALPHA;
-        extra_data_out_local[24] = VEHICLE_CL_ALPHA;
-        extra_data_out_local[25] = VEHICLE_CD_ZERO;
-        extra_data_out_local[26] = VEHICLE_K_CD;
-        extra_data_out_local[27] = VEHICLE_S;
-        extra_data_out_local[28] = VEHICLE_WING_CHORD;
-        extra_data_out_local[29] = 1.225; //rho value at MSL
-
-        extra_data_out_local[30] = OVERACTUATED_MIXING_W_ACT_MOTOR_CONST;
-        extra_data_out_local[31] = OVERACTUATED_MIXING_W_ACT_MOTOR_SPEED;
-        extra_data_out_local[32] = OVERACTUATED_MIXING_W_ACT_EL_CONST;
-        extra_data_out_local[33] = OVERACTUATED_MIXING_W_ACT_EL_SPEED;
-        extra_data_out_local[34] = OVERACTUATED_MIXING_W_ACT_AZ_CONST;
-        extra_data_out_local[35] = OVERACTUATED_MIXING_W_ACT_AZ_SPEED;
-        extra_data_out_local[36] = OVERACTUATED_MIXING_W_ACT_THETA_CONST;
-        extra_data_out_local[37] = OVERACTUATED_MIXING_W_ACT_THETA_SPEED;
-        extra_data_out_local[38] = OVERACTUATED_MIXING_W_ACT_PHI_CONST;
-        extra_data_out_local[39] = OVERACTUATED_MIXING_W_ACT_PHI_SPEED;
-
-        extra_data_out_local[40] = OVERACTUATED_MIXING_W_DV_1;
-        extra_data_out_local[41] = OVERACTUATED_MIXING_W_DV_2;
-        extra_data_out_local[42] = OVERACTUATED_MIXING_W_DV_3;
-        extra_data_out_local[43] = OVERACTUATED_MIXING_W_DV_4;
-        extra_data_out_local[44] = OVERACTUATED_MIXING_W_DV_5;
-        extra_data_out_local[45] = OVERACTUATED_MIXING_W_DV_6;
-
-        extra_data_out_local[46] = OVERACTUATED_MIXING_GAMMA_QUADRATIC_DU;
-
-        extra_data_out_local[47] = VEHICLE_CY_BETA;
-        extra_data_out_local[48] = VEHICLE_CL_BETA;
-        extra_data_out_local[49] = VEHICLE_WING_SPAN;
-
-        extra_data_out_local[50] = OVERACTUATED_MIXING_SPEED_AOA_PROTECTION;
-
-        //Aileron addon: 
-        extra_data_out_local[51] = OVERACTUATED_MIXING_W_ACT_AILERONS_CONST;
-        extra_data_out_local[52] = OVERACTUATED_MIXING_W_ACT_AILERONS_SPEED;
-        extra_data_out_local[53] = (OVERACTUATED_MIXING_MIN_DELTA_AILERONS * 180/M_PI);
-        extra_data_out_local[54] = (OVERACTUATED_MIXING_MAX_DELTA_AILERONS * 180/M_PI);
-        extra_data_out_local[55] = CL_ailerons ;
-
-        //Inflow angle aerodynamic model: 
-        extra_data_out_local[56] = PROP_MODEL_MAX_THR_LOSS_OPTIMIZER;
-        extra_data_out_local[57] = PROP_MODEL_C_DR;
-
+        //Retrieve actuator commands from the Raspberry Pi and assign them to the indi_u array
         indi_u[0] =  (myam7_data_in_local.motor_1_cmd_int * 1e-1);
         indi_u[1] =  (myam7_data_in_local.motor_2_cmd_int * 1e-1);
         indi_u[2] =  (myam7_data_in_local.motor_3_cmd_int * 1e-1);
@@ -1735,11 +1797,32 @@ void overactuated_mixing_run(void)
             Bound(overactuated_mixing.commands[1], 0, MAX_PPRZ);
             Bound(overactuated_mixing.commands[2], 0, MAX_PPRZ);
             Bound(overactuated_mixing.commands[3], 0, MAX_PPRZ);
+            // Bound actuator values for the FBW system before submitting:
+            Bound(overactuated_mixing.commands[4],(OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE)*K_ppz_angle_el,(OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE)*K_ppz_angle_el);
+            Bound(overactuated_mixing.commands[5],(OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE)*K_ppz_angle_el,(OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE)*K_ppz_angle_el);
+            Bound(overactuated_mixing.commands[6],(OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE)*K_ppz_angle_el,(OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE)*K_ppz_angle_el);
+            Bound(overactuated_mixing.commands[7],(OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE)*K_ppz_angle_el,(OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE)*K_ppz_angle_el);
+
+            Bound(overactuated_mixing.commands[8],(OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE)*K_ppz_angle_az,(OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE)*K_ppz_angle_az);
+            Bound(overactuated_mixing.commands[9],(OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE)*K_ppz_angle_az,(OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE)*K_ppz_angle_az);
+            Bound(overactuated_mixing.commands[10],(OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE)*K_ppz_angle_az,(OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE)*K_ppz_angle_az);
+            Bound(overactuated_mixing.commands[11],(OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE)*K_ppz_angle_az,(OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE)*K_ppz_angle_az);
+            
             //Motors cmds:
             myserial_act_t4_out_local.motor_1_dshot_cmd_int =  (int16_t) (overactuated_mixing.commands[0] * MAX_DSHOT_VALUE / 9600.0); 
             myserial_act_t4_out_local.motor_2_dshot_cmd_int =  (int16_t) (overactuated_mixing.commands[1] * MAX_DSHOT_VALUE / 9600.0); 
             myserial_act_t4_out_local.motor_3_dshot_cmd_int =  (int16_t) (overactuated_mixing.commands[2] * MAX_DSHOT_VALUE / 9600.0); 
             myserial_act_t4_out_local.motor_4_dshot_cmd_int =  (int16_t) (overactuated_mixing.commands[3] * MAX_DSHOT_VALUE / 9600.0); 
+            //Elevator servos cmd: 
+            myserial_act_t4_out_local.servo_2_cmd_int = (int16_t) ( ( overactuated_mixing.commands[4] / K_ppz_angle_el ) * 100 * FBW_T4_K_RATIO_GEAR_EL * 180/M_PI );
+            myserial_act_t4_out_local.servo_6_cmd_int = (int16_t) ( ( overactuated_mixing.commands[5] / K_ppz_angle_el ) * 100 * FBW_T4_K_RATIO_GEAR_EL * 180/M_PI );
+            myserial_act_t4_out_local.servo_8_cmd_int = (int16_t) ( ( overactuated_mixing.commands[6] / K_ppz_angle_el ) * 100 * FBW_T4_K_RATIO_GEAR_EL * 180/M_PI );
+            myserial_act_t4_out_local.servo_4_cmd_int = (int16_t) ( ( overactuated_mixing.commands[7] / K_ppz_angle_el ) * 100 * FBW_T4_K_RATIO_GEAR_EL * 180/M_PI );
+            //Azimuth servos cmd: 
+            myserial_act_t4_out_local.servo_1_cmd_int = (int16_t) ( ( overactuated_mixing.commands[8] / K_ppz_angle_az ) * 100 * FBW_T4_K_RATIO_GEAR_AZ * 180/M_PI );
+            myserial_act_t4_out_local.servo_5_cmd_int = (int16_t) ( ( overactuated_mixing.commands[9] / K_ppz_angle_az ) * 100 * FBW_T4_K_RATIO_GEAR_AZ * 180/M_PI );
+            myserial_act_t4_out_local.servo_7_cmd_int = (int16_t) ( ( -overactuated_mixing.commands[10] / K_ppz_angle_az ) * 100 * FBW_T4_K_RATIO_GEAR_AZ * 180/M_PI );
+            myserial_act_t4_out_local.servo_3_cmd_int = (int16_t) ( ( -overactuated_mixing.commands[11] / K_ppz_angle_az ) * 100 * FBW_T4_K_RATIO_GEAR_AZ * 180/M_PI );            
             //Aileron servos PWM cmd: 
             myserial_act_t4_out_local.servo_9_cmd_int = (int16_t) (indi_u[14] * 100.0 * 180.0/M_PI );
             myserial_act_t4_out_local.servo_10_cmd_int = (int16_t) (indi_u[14] * 100.0 * 180.0/M_PI );     
@@ -1757,27 +1840,8 @@ void overactuated_mixing_run(void)
             myserial_act_t4_out_local.servo_10_cmd_int = (int16_t) (10 * 100); //10 degrees down ;  
         }
 
-        // Bound actuator values for the FBW system before submitting:
-        Bound(overactuated_mixing.commands[4],(OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE)*K_ppz_angle_el,(OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE)*K_ppz_angle_el);
-        Bound(overactuated_mixing.commands[5],(OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE)*K_ppz_angle_el,(OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE)*K_ppz_angle_el);
-        Bound(overactuated_mixing.commands[6],(OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE)*K_ppz_angle_el,(OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE)*K_ppz_angle_el);
-        Bound(overactuated_mixing.commands[7],(OVERACTUATED_MIXING_SERVO_EL_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE)*K_ppz_angle_el,(OVERACTUATED_MIXING_SERVO_EL_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE)*K_ppz_angle_el);
 
-        Bound(overactuated_mixing.commands[8],(OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE)*K_ppz_angle_az,(OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE)*K_ppz_angle_az);
-        Bound(overactuated_mixing.commands[9],(OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE)*K_ppz_angle_az,(OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE)*K_ppz_angle_az);
-        Bound(overactuated_mixing.commands[10],(OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE)*K_ppz_angle_az,(OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE)*K_ppz_angle_az);
-        Bound(overactuated_mixing.commands[11],(OVERACTUATED_MIXING_SERVO_AZ_MIN_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE)*K_ppz_angle_az,(OVERACTUATED_MIXING_SERVO_AZ_MAX_ANGLE - OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE)*K_ppz_angle_az);
-        
-        //Elevator servos cmd: 
-        myserial_act_t4_out_local.servo_2_cmd_int = (int16_t) ( ( overactuated_mixing.commands[4] / K_ppz_angle_el ) * 100 * FBW_T4_K_RATIO_GEAR_EL * 180/M_PI );
-        myserial_act_t4_out_local.servo_6_cmd_int = (int16_t) ( ( overactuated_mixing.commands[5] / K_ppz_angle_el ) * 100 * FBW_T4_K_RATIO_GEAR_EL * 180/M_PI );
-        myserial_act_t4_out_local.servo_8_cmd_int = (int16_t) ( ( overactuated_mixing.commands[6] / K_ppz_angle_el ) * 100 * FBW_T4_K_RATIO_GEAR_EL * 180/M_PI );
-        myserial_act_t4_out_local.servo_4_cmd_int = (int16_t) ( ( overactuated_mixing.commands[7] / K_ppz_angle_el ) * 100 * FBW_T4_K_RATIO_GEAR_EL * 180/M_PI );
-        //Azimuth servos cmd: 
-        myserial_act_t4_out_local.servo_1_cmd_int = (int16_t) ( ( overactuated_mixing.commands[8] / K_ppz_angle_az ) * 100 * FBW_T4_K_RATIO_GEAR_AZ * 180/M_PI );
-        myserial_act_t4_out_local.servo_5_cmd_int = (int16_t) ( ( overactuated_mixing.commands[9] / K_ppz_angle_az ) * 100 * FBW_T4_K_RATIO_GEAR_AZ * 180/M_PI );
-        myserial_act_t4_out_local.servo_7_cmd_int = (int16_t) ( ( -overactuated_mixing.commands[10] / K_ppz_angle_az ) * 100 * FBW_T4_K_RATIO_GEAR_AZ * 180/M_PI );
-        myserial_act_t4_out_local.servo_3_cmd_int = (int16_t) ( ( -overactuated_mixing.commands[11] / K_ppz_angle_az ) * 100 * FBW_T4_K_RATIO_GEAR_AZ * 180/M_PI );
+
 
         #ifdef TEST_PWM_SERVOS
             myserial_act_t4_out_local.servo_9_cmd_int = (int16_t) (desired_angle_servo_9 * 100);
@@ -1828,10 +1892,10 @@ void overactuated_mixing_run(void)
         BoundAbs(overactuated_mixing.commands[11], MAX_PPRZ);
     #endif
 
-    actuator_output[0] = (int32_t) (overactuated_mixing.commands[0] / K_ppz_rads_motor);
-    actuator_output[1] = (int32_t) (overactuated_mixing.commands[1] / K_ppz_rads_motor);
-    actuator_output[2] = (int32_t) (overactuated_mixing.commands[2] / K_ppz_rads_motor);
-    actuator_output[3] = (int32_t) (overactuated_mixing.commands[3] / K_ppz_rads_motor);
+    actuator_output[0] = (int32_t) (indi_u[0]);
+    actuator_output[1] = (int32_t) (indi_u[1]);
+    actuator_output[2] = (int32_t) (indi_u[2]);
+    actuator_output[3] = (int32_t) (indi_u[3]);
 
     actuator_output[4] = (int32_t) ((overactuated_mixing.commands[4] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE) * 18000/M_PI);
     actuator_output[5] = (int32_t) ((overactuated_mixing.commands[5] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE) * 18000/M_PI);
@@ -1863,4 +1927,3 @@ void overactuated_mixing_run(void)
     actuator_state_int[12] = (int32_t) (actuator_state[14] * 18000.0/M_PI);
 
 }
-

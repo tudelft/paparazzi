@@ -57,11 +57,6 @@ struct BodyCoord_f {
     float z;
 };
 
-struct ActuatorsStruct {
-    float motor;
-    float elevation;
-    float azimuth;
-};
 
 struct PID_over_simple {
     float p;
@@ -106,11 +101,7 @@ struct overactuated_mixing_t {
 
 extern struct overactuated_mixing_t overactuated_mixing;
 extern struct PID_over pid_gains_over;
-extern struct PID_over_simple pid_pos_x_att;
-extern struct PID_over_simple pid_pos_y_att;
-extern struct PID_over_simple pid_gain_psi_motor;
 extern struct PD_indi_over indi_gains_over;
-extern struct ActuatorsStruct act_dyn_struct;
 
 // Variables for slider
 extern float K_beta;

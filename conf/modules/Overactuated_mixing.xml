@@ -50,9 +50,6 @@
 
         <dl_setting var="CL_ailerons"  min="0" step=".001" max="0.5" shortname="CL_ailerons" />
 
-        <dl_setting var="des_pos_earth_x"  min="-100" step="1" max="100" shortname="pos_e_x" />
-        <dl_setting var="des_pos_earth_y"  min="-100" step="1" max="100" shortname="pos_e_y" />
-
         <dl_setting var="yaw_with_tilting_PID" min="0" step="1" max="1" shortname="use_tilt_to_yaw_PID" values="FALSE|TRUE" />
 
         <dl_setting var="stick_gain_yaw"  min="0" step=".01" max="1" shortname="Stick gain yaw" />
@@ -113,11 +110,6 @@
 
         <dl_setting var="indi_gains_over.p.z" min="0" step=".001" max="30" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_ERR_Z" shortname="INDI_kp_z" persistent="true"/>
         <dl_setting var="indi_gains_over.d.z" min="0" step=".001" max="30" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_REF_RATE_Z" shortname="INDI_kd_z" persistent="true"/>
-
-        <dl_setting var="act_dyn_struct.motor" min="0" step=".001" max=".5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_ACT_DYN_MOTOR" shortname="act_dyn_thr" persistent="true"/>
-        <dl_setting var="act_dyn_struct.elevation" min="0" step=".001" max=".5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_ACT_DYN_EL" shortname="act_dyn_el" persistent="true"/>
-        <dl_setting var="act_dyn_struct.azimuth" min="0" step=".001" max=".5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_INDI_ACT_DYN_AZ" shortname="ect_dyn_az" persistent="true"/>
-
       </dl_settings>
     </dl_settings>
   </settings>
@@ -126,7 +118,7 @@
     <file name="Overactuated_mixing.h"/>
   </header>
   <init fun="overactuated_mixing_init()"/>
-   <periodic fun="overactuated_mixing_run()" autorun="TRUE" freq="250"/>
+   <periodic fun="overactuated_mixing_run()" autorun="TRUE" freq="500"/>
    
   <makefile>
     <file name="Overactuated_mixing.c"/>
@@ -135,7 +127,6 @@
 <!--    <file name="r8lib_min.c" dir="math/qr_solve"/>-->
     <define name="CA_N_V" value="6" />
     <define name="CA_N_U" value="14" />
-    <define name="PERIODIC_FREQUENCY_OVERACTUATED" value="250" />
+    <define name="PERIODIC_FREQUENCY_OVERACTUATED" value="500" />
   </makefile>
 </module>
-
