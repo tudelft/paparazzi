@@ -53,6 +53,10 @@
       <message name="INDI_G"			period="0.2"/>
       <message name="APPROACH_MOVING_TARGET"  period="0.1"/>
       <message name="TARGET_POS_INFO"         period="0.1"/>
+      <message name="AIRSPEED_WIND_ESTIMATOR_EKF"         period="0.1"/>
+      <message name="AIRSPEED_WIND_ESTIMATOR_EKF_COV"         period="0.1"/>
+      <message name="AIRSPEED_WIND_ESTIMATOR_EKF_FORCES"         period="0.1"/>
+      <message name="RTOS_MON"         period="0.5"/>
     </mode>
 
     <mode name="calibration">
@@ -254,6 +258,10 @@
       <message name="DOUBLET"			period="0.002"/>
       <message name="APPROACH_MOVING_TARGET"  period="0.1"/>
       <message name="TARGET_POS_INFO"         period="0.1"/>
+      <message name="AIRSPEED_WIND_ESTIMATOR_EKF"         period="0.04"/>
+      <message name="AIRSPEED_WIND_ESTIMATOR_EKF_COV"         period="0.04"/>
+      <message name="AIRSPEED_WIND_ESTIMATOR_EKF_FORCES"         period="0.04"/>
+      <message name="RTOS_MON"         period="0.5"/>
     </mode>
   </process>
 

@@ -200,7 +200,7 @@ struct Int32Eulers stab_att_sp_euler;
 struct Int32Quat   stab_att_sp_quat;
 
 abi_event rpm_ev;
-static void rpm_cb(uint8_t sender_id, uint16_t *rpm, uint8_t num_act);
+static void rpm_cb(uint8_t sender_id, struct rpm_act_t * rpm_message, uint8_t num_act);
 
 abi_event thrust_ev;
 static void thrust_cb(uint8_t sender_id, float thrust_increment);
@@ -974,15 +974,16 @@ void calc_g1g2_pseudo_inv(void)
   }
 }
 
-static void rpm_cb(uint8_t __attribute__((unused)) sender_id, uint16_t UNUSED *rpm, uint8_t UNUSED num_act)
+static void rpm_cb(uint8_t __attribute__((unused)) sender_id, struct rpm_act_t * rpm_message, uint8_t UNUSED num_act)
 {
 #if INDI_RPM_FEEDBACK
-  int8_t i;
-  for (i = 0; i < num_act; i++) {
-    act_obs[i] = (rpm[i] - get_servo_min(i));
+  // Sanity check that index is valid
+  if (rpm_message->actuator_idx<num_act){
+    int8_t i = rpm_message->actuator_idx;
+    act_obs[i] = (rpm_message->rpm - get_servo_min(i));
     act_obs[i] *= (MAX_PPRZ / (float)(get_servo_max(i) - get_servo_min(i)));
     Bound(act_obs[i], 0, MAX_PPRZ);
-  }
+    }
 #endif
 }
 
