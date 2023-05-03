@@ -889,77 +889,77 @@ void overactuated_mixing_run(void)
     y_stb = waypoint_get_x(WP_STDBY);
     z_stb = -waypoint_get_alt(WP_STDBY); 
 
-    //Prepare the reference for the AUTO test with the nonlinear controller: 
+    // //Prepare the reference for the AUTO test with the nonlinear controller: 
         
-    if(radio_control.values[RADIO_AUX4] < -500){
-        auto_test_start = 1; 
-    }
-    else{
-        auto_test_start = 0;
-    }
+    // if(radio_control.values[none] < -500){
+    //     auto_test_start = 1; 
+    // }
+    // else{
+    //     auto_test_start = 0;
+    // }
 
-    if(auto_test_start){
+    // if(auto_test_start){
         
-        if( get_sys_time_float() - auto_test_time_start >= 0 && get_sys_time_float() - auto_test_time_start < 2){
-            des_Vx = 0;
-            des_Vy = 0;
-            des_Vz = 0;
-            des_phi = 0;
-            des_theta = 0;
-            des_psi_dot = 0;  
-        }
-        else if( get_sys_time_float() - auto_test_time_start >= 2 && get_sys_time_float() - auto_test_time_start < 7){
-            des_Vx = 15;
-            des_Vy = 0;
-            des_Vz = 0;
-            des_phi = 0;
-            des_theta = 0;
-            des_psi_dot = 0;  
-        }
-        else if( get_sys_time_float() - auto_test_time_start >= 7 && get_sys_time_float() - auto_test_time_start < 12){
-            des_Vx = 15;
-            des_Vy = 0;
-            des_Vz = -4;
-            des_phi = 0;
-            des_theta = 0;
-            des_psi_dot = 0;  
-        }
-        else if( get_sys_time_float() - auto_test_time_start >= 12 && get_sys_time_float() - auto_test_time_start < 15){
-            des_Vx = 15;
-            des_Vy = 0;
-            des_Vz = 0;
-            des_phi = 0;
-            des_theta = 0;
-            des_psi_dot = 0;  
-        }
-        else if( get_sys_time_float() - auto_test_time_start >= 15 && get_sys_time_float() - auto_test_time_start < 22){
-            des_Vx = 15;
-            des_Vy = 4;
-            des_Vz = 0;
-            des_phi = 0;
-            des_theta = 0;
-            des_psi_dot = 0;   
-        }
-        else if( get_sys_time_float() - auto_test_time_start >= 22 && get_sys_time_float() - auto_test_time_start < 26){
-            des_Vx = 15;
-            des_Vy = 0;
-            des_Vz = 0;
-            des_phi = 0;
-            des_theta = 0;
-            des_psi_dot = 0;   
-        }
-        else{
-            des_Vx = 0;
-            des_Vy = 0;
-            des_Vz = 0;
-            des_phi = 0;
-            des_theta = 0;
-            des_psi_dot = 0;   
-        }                
+    //     if( get_sys_time_float() - auto_test_time_start >= 0 && get_sys_time_float() - auto_test_time_start < 2){
+    //         des_Vx = 0;
+    //         des_Vy = 0;
+    //         des_Vz = 0;
+    //         des_phi = 0;
+    //         des_theta = 0;
+    //         des_psi_dot = 0;  
+    //     }
+    //     else if( get_sys_time_float() - auto_test_time_start >= 2 && get_sys_time_float() - auto_test_time_start < 7){
+    //         des_Vx = 15;
+    //         des_Vy = 0;
+    //         des_Vz = 0;
+    //         des_phi = 0;
+    //         des_theta = 0;
+    //         des_psi_dot = 0;  
+    //     }
+    //     else if( get_sys_time_float() - auto_test_time_start >= 7 && get_sys_time_float() - auto_test_time_start < 12){
+    //         des_Vx = 15;
+    //         des_Vy = 0;
+    //         des_Vz = -4;
+    //         des_phi = 0;
+    //         des_theta = 0;
+    //         des_psi_dot = 0;  
+    //     }
+    //     else if( get_sys_time_float() - auto_test_time_start >= 12 && get_sys_time_float() - auto_test_time_start < 15){
+    //         des_Vx = 15;
+    //         des_Vy = 0;
+    //         des_Vz = 0;
+    //         des_phi = 0;
+    //         des_theta = 0;
+    //         des_psi_dot = 0;  
+    //     }
+    //     else if( get_sys_time_float() - auto_test_time_start >= 15 && get_sys_time_float() - auto_test_time_start < 22){
+    //         des_Vx = 15;
+    //         des_Vy = 4;
+    //         des_Vz = 0;
+    //         des_phi = 0;
+    //         des_theta = 0;
+    //         des_psi_dot = 0;   
+    //     }
+    //     else if( get_sys_time_float() - auto_test_time_start >= 22 && get_sys_time_float() - auto_test_time_start < 26){
+    //         des_Vx = 15;
+    //         des_Vy = 0;
+    //         des_Vz = 0;
+    //         des_phi = 0;
+    //         des_theta = 0;
+    //         des_psi_dot = 0;   
+    //     }
+    //     else{
+    //         des_Vx = 0;
+    //         des_Vy = 0;
+    //         des_Vz = 0;
+    //         des_phi = 0;
+    //         des_theta = 0;
+    //         des_psi_dot = 0;   
+    //     }                
 
-    } else{
-        auto_test_time_start = get_sys_time_float();
-    }
+    // } else{
+    //     auto_test_time_start = get_sys_time_float();
+    // }
 
     /// Case of manual PID control [FAILSAFE]
     // if(0){
@@ -1176,8 +1176,8 @@ void overactuated_mixing_run(void)
         get_actuator_state_v2();
 
         //Calculate the desired euler angles from the auxiliary joystick channels:
-        manual_phi_value = MANUAL_CONTROL_MAX_CMD_ROLL_ANGLE * radio_control.values[RADIO_AUX2] / 9600;
-        manual_theta_value = MANUAL_CONTROL_MAX_CMD_PITCH_ANGLE * radio_control.values[RADIO_AUX3] / 9600;
+        manual_phi_value = MANUAL_CONTROL_MAX_CMD_ROLL_ANGLE * radio_control.values[RADIO_AUX3] / 9600;
+        manual_theta_value = MANUAL_CONTROL_MAX_CMD_PITCH_ANGLE * radio_control.values[RADIO_AUX4] / 9600;
 
         //Add the setpoint in case of AUTO test
         if(auto_test_start){ 

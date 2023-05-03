@@ -12,7 +12,7 @@
   <makefile>
 <!--       Configure default UART port and baudrate-->
     <configure name="AM7_PORT" default="UART3" case="upper|lower"/>
-    <configure name="AM7_BAUD" default="B460800"/>
+    <configure name="AM7_BAUD" default="B1500000"/>
     <!-- Enable UART and set baudrate -->
     <define name="USE_$(AM7_PORT_UPPER)"/>
     <define name="$(AM7_PORT_UPPER)_BAUD" value="$(AM7_BAUD)"/>
