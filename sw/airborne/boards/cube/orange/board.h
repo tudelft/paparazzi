@@ -1634,6 +1634,16 @@
 #define SERVO1_TIM_CH	 4
 #define SERVO1_TIM_AF	 1
 
+/**
+ * PPM radio defines
+ *
+ * available on ?
+ */
+#define RC_PPM_TICKS_PER_USEC 6
+#define PPM_TIMER_FREQUENCY 6000000
+#define PPM_CHANNEL ICU_CHANNEL_2 //CONCAT_BOARD_PARAM(ICU_CHANNEL_, RC2_TIM_CH)
+#define PPM_TIMER ICUD4 //CONCAT_BOARD_PARAM(ICUD, RC2_TIM)
+
 #define BOARD_GROUP_DECLFOREACH(line, group) \
   static const ioline_t group ## _ARRAY[] = {group}; \
   for (ioline_t i=0, line =  group ## _ARRAY[i]; (i < group ## _SIZE) && (line = group ## _ARRAY[i]); i++)

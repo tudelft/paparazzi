@@ -12,8 +12,17 @@
     <firmware name="rotorcraft">
         <target name="ap" board="cube_orange">
             <configure VALUE="500" NAME="PERIODIC_FREQUENCY"/>
-            <module TYPE="sbus" NAME="radio_control">
-                <configure VALUE="UART3" NAME="SBUS_PORT"/>
+            <module TYPE="ppm" NAME="radio_control">
+               <!-- <configure VALUE="UART3" NAME="SBUS_PORT"/> -->
+        <define name="RADIO_CONTROL_NB_CHANNEL" value="8"/>  <!-- Set the OpenRXSR receiver to maximum channel output of 8 9ms -->
+        <!--<configure name="SBUS_PORT" value="UART5"/>--> <!-- Default use UART2  on FMU4 -->
+        <!-- Mode set one a three way switch -->
+        <!--  Per default already GEAR if not defined  <define name="RADIO_MODE" value="RADIO_GEAR"/> --><!-- yes, already done by default if not redefined to something else-->
+        <!-- <define name="RADIO_GEAR" value="RADIO_AUX2"/>
+        <define name="RADIO_FLAP" value="RADIO_AUX3"/> -->
+        <define name="RADIO_MODE" value="RADIO_AUX4"/>
+
+
             </module>
             <module NAME="sys_mon"/>
             <module NAME="flight_recorder"/>
@@ -61,7 +70,8 @@
         </module>
 
         <module TYPE="transparent" NAME="telemetry">
-            <configure VALUE="B115200" NAME="MODEM_BAUD"/>
+          <configure  name="MODEM_PORT" value="usb_serial"/>
+          <configure  name="MODEM_BAUD" value="B115200"/>
         </module>
 
         <module TYPE="uavcan" NAME="actuators">
@@ -95,14 +105,14 @@
             <define name="RM3100_ADDR" value="RM3100_ADDR3"/>
             <configure name="MAG_RM3100_I2C_DEV" value="I2C1"/>
         </module>
-
+<!-- 
         <module name="AOA_pwm">
             <define name="USE_PWM_INPUT1" value="PWM_PULSE_TYPE_ACTIVE_LOW"/>
             <define name="AOA_ANGLE_OFFSET" value="3.5807"/>
             <define name="AOA_PWM_PERIOD" value="1024"/>
             <define name="AOA_PWM_OFFSET" value="1"/>
             <configure name="AOA_PWM_CHANNEL" value="PWM_INPUT1" />
-        </module>
+        </module> -->
 
         <module name="wing_rotation_controller_v3b">
             <define name="WING_ROTATION_POSITION_ADC_0" value="62930"/>

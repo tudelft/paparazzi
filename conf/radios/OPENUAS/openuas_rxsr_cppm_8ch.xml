@@ -10,7 +10,7 @@ the order of the functon in the list
   <channel function="ROLL" min="1000" neutral="1500" max="1900" average="0"/>
   <channel function="PITCH" min="1000" neutral="1500" max="1900" average="0"/>
   <channel function="YAW" min="1000" neutral="1500" max="1900" average="0"/>
-  <channel function="MODE" min="1000" neutral="1500" max="1900" average="2"/>
+  <channel function="AUX1" min="1000" neutral="1500" max="1900" average="2"/>
   <channel function="AUX2" min="1000" neutral="1100" max="1900" average="4"/>
   <channel function="AUX3" min="1000" neutral="1500" max="1900" average="6"/>
   <channel function="AUX4" min="1000" neutral="1500" max="1900" average="6"/> 
