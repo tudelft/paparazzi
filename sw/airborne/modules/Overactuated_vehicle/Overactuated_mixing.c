@@ -949,7 +949,7 @@ void send_values_to_raspberry_pi(void){
  * This function outputs the maximum equivalent gound speed in the control reference to have a maximum desired airspeed.
  */
 float max_V_control_from_max_airspeed(float current_airspeed, float current_Vx_control_rf, float aoa_rad, float max_desired_airspeed){
-    float estimated_wind_fwd = current_Vx_control_rf - current_airspeed/cos(aoa_rad);
+    float estimated_wind_fwd = current_Vx_control_rf - current_airspeed/cosf(aoa_rad);
     float Vx_ground_max_for_airspeed = max_desired_airspeed + estimated_wind_fwd;
     return Vx_ground_max_for_airspeed;
 }

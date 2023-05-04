@@ -129,7 +129,7 @@ NOTES:
         <define name="MS45XX_SYNC_SEND" value="TRUE" /> <!--description="flag to enable sending every new measurement via telemetry (default:FALSE)-->
         <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
         <define name="MS45XX_PRESSURE_OFFSET" value="8476" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
-        <define name="MS45XX_LOWPASS_TAU" value="0.2"/> <!--description="Time constant for second order Butterworth low pass filter"-->
+        <define name="MS45XX_LOWPASS_TAU" value="0.25"/> <!--description="Time constant for second order Butterworth low pass filter"-->
         <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
       </module>
 
@@ -299,7 +299,7 @@ NOTES:
 
   <!-- Maximum limits of the sticks -->
   <section name="MANUAL_CONTROL_OPTIONS" prefix="MANUAL_CONTROL_">
-    <define name="MAX_CMD_FWD_SPEED" value="15.0" unit="m/s"/>
+    <define name="MAX_CMD_FWD_SPEED" value="25.0" unit="m/s"/>
     <define name="MAX_CMD_LAT_SPEED" value="10.0" unit="m/s"/>
     <define name="MAX_CMD_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_CMD_PITCH_ANGLE" value="25.0" unit="deg"/>
@@ -319,7 +319,7 @@ NOTES:
   <!-- Maximum limits of the vehicle in manual speed control mode. limits are in the control rf -->
   <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
     <define name="MAX_FWD_SPEED" value="25.0" unit="m/s"/>
-    <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> <!--updated for WP navigation-->
+    <define name="MAX_AIRSPEED" value="18.0" unit="m/s"/> <!--updated for WP navigation-->
     <define name="MIN_FWD_SPEED" value="-4.0" unit="m/s"/>
     <define name="MAX_LAT_SPEED" value="7.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
@@ -358,7 +358,7 @@ NOTES:
     <!-- PID gains wrt the SI units -->
     <define name="PID_P_GAIN_PHI" value="1050"/>
     <define name="PID_I_GAIN_PHI" value="1"/>
-    <define name="PID_D_GAIN_PHI" value="230"/>
+    <define name="PID_D_GAIN_PHI" value="165"/>
 
     <define name="PID_P_GAIN_THETA" value="850"/>
     <define name="PID_I_GAIN_THETA" value="1"/>
@@ -417,7 +417,7 @@ NOTES:
     <define name="INDI_REF_RATE_R" value="5"/>
 
     <define name="INDI_REF_RATE_X" value="1"/>
-    <define name="INDI_REF_RATE_Y" value="0.5"/>
+    <define name="INDI_REF_RATE_Y" value="0.55"/>
     <define name="INDI_REF_RATE_Z" value="3"/>
 
     <!-- Actuator dynamics and mapping-->
@@ -535,7 +535,7 @@ NOTES:
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
     <define name="MAX_PHI_INDI" value="30" unit="deg"/>
     <define name="MAX_AOA_INDI" value="15" unit="deg"/>
-    <define name="MIN_AOA_INDI" value="-15" unit="deg"/>
+    <define name="MIN_AOA_INDI" value="0.1" unit="deg"/>
 
     <define name="MAX_DELTA_AILERONS" value="25" unit="deg"/>
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
@@ -550,8 +550,8 @@ NOTES:
     <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0488" /> 
 
     <!-- Weighting matrix for the INDI -->
-    <define name="W_ACT_MOTOR_CONST" value="3"/>
-    <define name="W_ACT_MOTOR_SPEED" value="0.1"/>
+    <define name="W_ACT_MOTOR_CONST" value="2.5"/>
+    <define name="W_ACT_MOTOR_SPEED" value="0"/>
     <define name="W_ACT_EL_CONST" value="0"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
     <define name="W_ACT_AZ_CONST" value="0"/>
@@ -716,26 +716,13 @@ NOTES:
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
   </section>
 
-  <!-- <section name="FORWARD"> -->
-    <!--The Nederdrone uses a slightly different axis system for the setpoint, to make both hovering and flying forward intuitive-->
-    <!-- <define name="USE_EARTH_BOUND_RC_SETPOINT" value="TRUE"/> -->
-    <!-- This is the pitch angle that the Nederdrone will have in forward flight, where 0 degrees is hover-->
-    <!-- <define name="TRANSITION_MAX_OFFSET" value="0.0" unit="deg"/> -->
-    <!-- For RC coordinated turns, lower because the yawing was too slow -->
-    <!-- <define name="MAX_FWD_SPEED" value="20.0"/> -->
-    <!-- For hybrid guidance -->
-    <!-- <define name="MAX_AIRSPEED" value="20.0"/> -->
-    <!-- Enable airspeed measurements -->
-    <!-- <define name="USE_AIRSPEED" value="FALSE"/> -->
-  <!-- </section> -->
-
   <section name="IMU" prefix="IMU_">
 
     <!-- Calibrated at mavlab 03-05-2023 -->
     <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-17,-8,22}, .scale={{11701,50107,46279},{1198,5125,4775}}} , {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-61,-18,-13}, .scale={{9035,17566,62431},{1732,3587,12773}}}}"/>
 
-    <!-- valkenburg rm3100 15-03-2023 -->
-    <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={60,-40,-72}, .scale={{26092,14481,16001},{45931,25202,28757}}}}"/>
+    <!-- valkenburg rm3100 04-05-2023 -->
+    <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={213,62,-46}, .scale={{21725,29825,31357},{36926,51139,54396}}}}"/>
 
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI" value="180" unit="deg"/>
