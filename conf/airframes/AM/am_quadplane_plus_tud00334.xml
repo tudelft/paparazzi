@@ -321,11 +321,11 @@ NOTES:
     <define name="MAX_FWD_SPEED" value="25.0" unit="m/s"/>
     <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> <!--updated for WP navigation-->
     <define name="MIN_FWD_SPEED" value="-4.0" unit="m/s"/>
-    <define name="MAX_LAT_SPEED" value="8.0" unit="m/s"/>
+    <define name="MAX_LAT_SPEED" value="7.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_FWD_ACC" value="4.0" unit="m/s^2"/>
     <define name="MIN_FWD_ACC" value="-1.8" unit="m/s^2"/> <!--updated for WP navigation-->
-    <define name="MAX_LAT_ACC" value="6.0" unit="m/s^2"/>
+    <define name="MAX_LAT_ACC" value="9.0" unit="m/s^2"/>
     <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/>
   </section>
 
@@ -559,7 +559,7 @@ NOTES:
     <define name="W_ACT_THETA_CONST" value="5"/>
     <define name="W_ACT_THETA_SPEED" value="0"/>
     <define name="W_ACT_PHI_CONST" value="100"/>
-    <define name="W_ACT_PHI_SPEED" value="-10"/>
+    <define name="W_ACT_PHI_SPEED" value="-12"/>
 
     <define name="W_ACT_AILERONS_CONST" value="0.5"/>
     <define name="W_ACT_AILERONS_SPEED" value="0"/>
