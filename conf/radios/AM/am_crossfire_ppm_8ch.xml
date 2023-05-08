@@ -9,9 +9,4 @@
  <channel function="AUX2" min="1100" neutral="1500" max="1900" average="1"/> <!-- TH_HOLD -->
  <channel function="AUX3" min="1100" neutral="1500" max="1900" average="1"/> <!-- FMODE -->
  <channel function="AUX4" min="1100" neutral="1500" max="1900" average="1"/> <!-- FBW_MODE -->
- 
- <channel function="AUX5" min="1100" neutral="1500" max="1900" average="1"/> <!-- FBW_MODE -->
- <channel function="AUX6" min="1100" neutral="1500" max="1900" average="1"/> <!-- FBW_MODE -->
- <channel function="AUX7" min="1100" neutral="1500" max="1900" average="1"/> <!-- FBW_MODE -->
- <channel function="AUX8" min="1100" neutral="1500" max="1900" average="1"/> <!-- FBW_MODE -->
 </radio>

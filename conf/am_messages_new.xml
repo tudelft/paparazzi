@@ -2068,6 +2068,16 @@
          <field name = "rotor_4_el_update_time_us" type="int16" >Rotor 4 elevation servo update time in microseconds</field>
          <field name = "servo_9_update_time_us" type="int16" >Servo 9 update time in microseconds</field>
          <field name = "servo_10_update_time_us" type="int16" >Servo 10 update time in microseconds</field>
+         
+         <field name = "motor_1_current_int" type="int16" >Motor 1 current in mA</field>
+         <field name = "motor_2_current_int" type="int16" >Motor 2 current in mA</field>
+         <field name = "motor_3_current_int" type="int16" >Motor 3 current in mA</field>
+         <field name = "motor_4_current_int" type="int16" >Motor 4 current in mA</field>
+
+         <field name = "motor_1_voltage_int" type="int16" >Motor 1 voltagein mV</field>
+         <field name = "motor_2_voltage_int" type="int16" >Motor 2 voltagein mV</field>
+         <field name = "motor_3_voltage_int" type="int16" >Motor 3 voltagein mV</field>
+         <field name = "motor_4_voltage_int" type="int16" >Motor 4 voltagein mV</field>         
      </message>
 
      <message name= "SERIAL_ACT_T4_OUT" id = "187">

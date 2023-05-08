@@ -3,11 +3,11 @@
    name="Overactuated_vehicle"
    ac_id="120"
    airframe="airframes/AM/am_quadplane_plus_tud00334.xml"
-   radio="radios/AM/am_crossfire_ppm_12ch.xml"
+   radio="radios/AM/am_crossfire_ppm_8ch.xml"
    telemetry="telemetry/AM/am_overactuated_vehicle.xml"
    flight_plan="flight_plans/tudelft/rotating_wing_EHVB.xml"
    settings="settings/rotorcraft_basic.xml"
-   settings_modules="modules/Overactuated_mixing.xml modules/Overactuated_mixing.xml modules/Overactuated_mixing.xml modules/Overactuated_mixing.xml modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/approach_moving_target.xml modules/follow_me.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_pid_rotorcraft.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/imu_heater.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_rotorcraft.xml modules/stabilization_indi_simple.xml modules/target_pos.xml"
+   settings_modules="modules/AOA_pwm.xml modules/Overactuated_mixing.xml modules/Overactuated_mixing.xml modules/Overactuated_mixing.xml modules/Overactuated_mixing.xml modules/air_data.xml modules/airspeed_ms45xx_i2c.xml modules/approach_moving_target.xml modules/follow_me.xml modules/geo_mag.xml modules/gps.xml modules/gps_ublox.xml modules/guidance_pid_rotorcraft.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/imu_heater.xml modules/ins_ekf2.xml modules/logger_sd_chibios.xml modules/nav_rotorcraft.xml modules/stabilization_indi_simple.xml modules/target_pos.xml"
    gui_color="#ffffd633d633"
   />
 </conf>

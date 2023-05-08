@@ -63,6 +63,16 @@ static uint8_t serial_act_t4_msg_buf_in[sizeof(struct serial_act_t4_in)*2]__attr
         int16_t motor_3_error_code_int_telemetry = myserial_act_t4_in.motor_3_error_code_int;
         int16_t motor_4_error_code_int_telemetry = myserial_act_t4_in.motor_4_error_code_int;
 
+        int16_t motor_1_current_int_telemetry = myserial_act_t4_in.motor_1_current_int;
+        int16_t motor_2_current_int_telemetry = myserial_act_t4_in.motor_2_current_int;
+        int16_t motor_3_current_int_telemetry = myserial_act_t4_in.motor_3_current_int;
+        int16_t motor_4_current_int_telemetry = myserial_act_t4_in.motor_4_current_int;
+
+        int16_t motor_1_voltage_int_telemetry = myserial_act_t4_in.motor_1_voltage_int;
+        int16_t motor_2_voltage_int_telemetry = myserial_act_t4_in.motor_2_voltage_int;
+        int16_t motor_3_voltage_int_telemetry = myserial_act_t4_in.motor_3_voltage_int;
+        int16_t motor_4_voltage_int_telemetry = myserial_act_t4_in.motor_4_voltage_int;
+
         int16_t rotor_1_az_angle_int_telemetry = myserial_act_t4_in.servo_1_angle_int;
         int16_t rotor_1_el_angle_int_telemetry = myserial_act_t4_in.servo_2_angle_int;
         int16_t rotor_2_az_angle_int_telemetry = myserial_act_t4_in.servo_5_angle_int;
@@ -98,7 +108,9 @@ static uint8_t serial_act_t4_msg_buf_in[sizeof(struct serial_act_t4_in)*2]__attr
                 &motor_1_error_code_int_telemetry, &motor_2_error_code_int_telemetry, &motor_3_error_code_int_telemetry, &motor_4_error_code_int_telemetry,
                 &rotor_1_az_angle_update_time_us_telemetry, &rotor_1_el_angle_update_time_us_telemetry, &rotor_2_az_angle_update_time_us_telemetry, &rotor_2_el_angle_update_time_us_telemetry,
                 &rotor_3_az_angle_update_time_us_telemetry, &rotor_3_el_angle_update_time_us_telemetry, &rotor_4_az_angle_update_time_us_telemetry, &rotor_4_el_angle_update_time_us_telemetry,
-                &servo_9_update_time_us_telemetry, &servo_10_update_time_us_telemetry);
+                &servo_9_update_time_us_telemetry, &servo_10_update_time_us_telemetry,
+                &motor_1_current_int_telemetry, &motor_2_current_int_telemetry, &motor_3_current_int_telemetry, &motor_4_current_int_telemetry,
+                &motor_1_voltage_int_telemetry, &motor_2_voltage_int_telemetry, &motor_3_voltage_int_telemetry, &motor_4_voltage_int_telemetry);
     }
 
     static void serial_act_t4_uplink(struct transport_tx *trans, struct link_device *dev)

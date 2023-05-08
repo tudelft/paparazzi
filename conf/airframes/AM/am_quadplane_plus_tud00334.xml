@@ -135,23 +135,19 @@ NOTES:
 
       <!--module name="gps" type="datalink"/--><!--Enable this for CyberZoo tests , disable the uBlox module -->
 
-      <!-- The GNSS in the tail -->
+      
       <module name="gps" type="ublox">
-       <!-- <configure name="GPS_PORT" value="UART1"/>--><!-- Uses the default GPS port on FC can be remove if only connected there -->
         <configure name="GPS_BAUD" value="B460800"/><!-- UBX message only but rate set to ~?HZ with GPS, GLONASS, BEIDU and GALILEIO at the SAME time is a LOT of GNSS message data-->
         <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
       </module>
 
       <!-- If one want to use a Joystick over connection one can us this instead of sbus-->
       <module name="radio_control" type="ppm">
-      <!-- <module name="radio_control" type="sbus"> -->
-      <!-- <configure name="SBUS_PORT" value="UART3"/>--> <!--Telem2 RCIN UART5? -->
         <define name="RADIO_CONTROL_NB_CHANNEL" value="8"/>
         <define name="RADIO_FMODE" value="RADIO_AUX1"/> 
         <define name="RADIO_TH_HOLD" value="RADIO_AUX2"/> 
-         <define name="RADIO_MODE" value="RADIO_FMODE"/> <!-- Throttle hold in command laws -->
-        <!-- Throttle curve select -->
-        <define name="RADIO_FBW_MODE" value="RADIO_AUX3"/> <!-- Switch between AP and FBW control -->
+         <define name="RADIO_MODE" value="RADIO_FMODE"/> 
+        <define name="RADIO_FBW_MODE" value="RADIO_AUX3"/>
         <define name="RADIO_KILL_SWITCH" value="RADIO_AUX2"/>
       </module>
 
@@ -574,8 +570,10 @@ NOTES:
     <define VALUE="0.7e-5" NAME="GAMMA_QUADRATIC_DU"/>
 
     <!-- FWD flight properties for yaw rate induced by controller and for removal of lateral speed term-->
-    <define name="MIN_SPEED_TRANSITION" value="3.0" unit="m/s"/>
-    <define name="REF_SPEED_TRANSITION" value="5.0" unit="m/s"/>
+    <!-- <define name="MIN_SPEED_TRANSITION" value="3.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION" value="5.0" unit="m/s"/> -->
+    <define name="MIN_SPEED_TRANSITION" value="0.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION" value="0.5" unit="m/s"/>
 
   </section>
 

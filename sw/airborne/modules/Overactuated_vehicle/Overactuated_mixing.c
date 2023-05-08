@@ -190,12 +190,12 @@ float indi_u[INDI_NUM_ACT];
 float indi_u_memory[INDI_NUM_ACT][actuator_mem_buf_size];
 float actuator_state_old[INDI_NUM_ACT];
 float actuator_state_old_old[INDI_NUM_ACT];
-int delay_ts_motor = (int) (OVERACTUATED_MIXING_INDI_MOTOR_FIRST_ORD_DELAY * PERIODIC_FREQUENCY_OVERACTUATED);
-int delay_ts_az = (int) (OVERACTUATED_MIXING_INDI_AZ_SECOND_ORD_DELAY * PERIODIC_FREQUENCY_OVERACTUATED);
-int delay_ts_el = (int) (OVERACTUATED_MIXING_INDI_EL_SECOND_ORD_DELAY * PERIODIC_FREQUENCY_OVERACTUATED);
-int delay_ts_ailerons = (int) (OVERACTUATED_MIXING_INDI_AILERONS_FIRST_ORD_DELAY * PERIODIC_FREQUENCY_OVERACTUATED);
-float max_rate_az = OVERACTUATED_MIXING_INDI_AZ_SECOND_ORD_RATE_LIMIT / PERIODIC_FREQUENCY_OVERACTUATED;
-float max_rate_el = OVERACTUATED_MIXING_INDI_EL_SECOND_ORD_RATE_LIMIT / PERIODIC_FREQUENCY_OVERACTUATED;
+int delay_ts_motor = (int) (OVERACTUATED_MIXING_INDI_MOTOR_FIRST_ORD_DELAY * PERIODIC_FREQUENCY);
+int delay_ts_az = (int) (OVERACTUATED_MIXING_INDI_AZ_SECOND_ORD_DELAY * PERIODIC_FREQUENCY);
+int delay_ts_el = (int) (OVERACTUATED_MIXING_INDI_EL_SECOND_ORD_DELAY * PERIODIC_FREQUENCY);
+int delay_ts_ailerons = (int) (OVERACTUATED_MIXING_INDI_AILERONS_FIRST_ORD_DELAY * PERIODIC_FREQUENCY);
+float max_rate_az = OVERACTUATED_MIXING_INDI_AZ_SECOND_ORD_RATE_LIMIT / PERIODIC_FREQUENCY;
+float max_rate_el = OVERACTUATED_MIXING_INDI_EL_SECOND_ORD_RATE_LIMIT / PERIODIC_FREQUENCY;
 #endif
 
 
@@ -519,16 +519,13 @@ float compute_yaw_rate_turn(void){
         #endif
         
         #ifdef NEW_YAWRATE_REFERENCE
-            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accel_y_filt_corrected;
-
-            feed_fwd_term_yaw = 9.81*tan(euler_vect[0])/airspeed_turn;
+            yaw_rate_setpoint_turn = accel_vect_filt_control_rf[1]/airspeed_turn - K_beta * accel_y_filt_corrected;
+            feed_fwd_term_yaw = accel_vect_filt_control_rf[1]/airspeed_turn;
             feed_back_term_yaw = - K_beta * accel_y_filt_corrected;
         #else
-            if(airspeed > OVERACTUATED_MIXING_MIN_SPEED_TRANSITION){
-                yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accel_y_filt_corrected;
-                feed_fwd_term_yaw = 9.81*tan(euler_vect[0])/airspeed_turn;
-                feed_back_term_yaw = - K_beta * accel_y_filt_corrected;  
-            }     
+            yaw_rate_setpoint_turn = 9.81*tan(euler_vect[0])/airspeed_turn - K_beta * accel_y_filt_corrected;
+            feed_fwd_term_yaw = 9.81*tan(euler_vect[0])/airspeed_turn;
+            feed_back_term_yaw = - K_beta * accel_y_filt_corrected;    
         #endif
         yaw_rate_setpoint_turn = yaw_rate_setpoint_turn * compute_lat_speed_multiplier(OVERACTUATED_MIXING_MIN_SPEED_TRANSITION,OVERACTUATED_MIXING_REF_SPEED_TRANSITION,airspeed);
 
@@ -622,7 +619,7 @@ static void send_actuator_variables( struct transport_tx *trans , struct link_de
  * Initialize the filters
  */
 void init_filters(void){
-    float sample_time = 1.0 / PERIODIC_FREQUENCY_OVERACTUATED;
+    float sample_time = 1.0 / PERIODIC_FREQUENCY;
     //Sensors cutoff frequency
     float tau_indi = 1.0 / (OVERACTUATED_MIXING_FILT_CUTOFF_INDI);
 
@@ -782,25 +779,10 @@ void get_actuator_state_v2(void)
     }
 
     // Collect extra packet from extra_data_in rolling message: 
-    // myESC_status.ESC_1_rpm = myserial_act_t4_in_local.motor_1_rpm_int; 
-    // myESC_status.ESC_2_rpm = myserial_act_t4_in_local.motor_2_rpm_int; 
-    // myESC_status.ESC_3_rpm = myserial_act_t4_in_local.motor_3_rpm_int; 
-    // myESC_status.ESC_4_rpm = myserial_act_t4_in_local.motor_4_rpm_int; 
-    
-    // myESC_status.ESC_1_voltage = serial_act_t4_extra_data_in_local[0];
-    // myESC_status.ESC_2_voltage = serial_act_t4_extra_data_in_local[1];
-    // myESC_status.ESC_3_voltage = serial_act_t4_extra_data_in_local[2];
-    // myESC_status.ESC_4_voltage = serial_act_t4_extra_data_in_local[3];
-
-    // myESC_status.ESC_1_current = serial_act_t4_extra_data_in_local[4];
-    // myESC_status.ESC_2_current = serial_act_t4_extra_data_in_local[5];
-    // myESC_status.ESC_3_current = serial_act_t4_extra_data_in_local[6];
-    // myESC_status.ESC_4_current = serial_act_t4_extra_data_in_local[7];
-
-    // myESC_status.ESC_1_consumption = serial_act_t4_extra_data_in_local[8];
-    // myESC_status.ESC_2_consumption = serial_act_t4_extra_data_in_local[9];
-    // myESC_status.ESC_3_consumption = serial_act_t4_extra_data_in_local[10];
-    // myESC_status.ESC_4_consumption = serial_act_t4_extra_data_in_local[11];
+    // myESC_status.ESC_1_consumption = serial_act_t4_extra_data_in_local[0];
+    // myESC_status.ESC_2_consumption = serial_act_t4_extra_data_in_local[1];
+    // myESC_status.ESC_3_consumption = serial_act_t4_extra_data_in_local[2];
+    // myESC_status.ESC_4_consumption = serial_act_t4_extra_data_in_local[3];
 
     #endif
 
@@ -1003,7 +985,7 @@ void assign_variables(void){
 
         //Calculate the angular acceleration via finite difference
         rate_vect_filt_dot[i] = (measurement_rates_filters[i].o[0]
-                                 - measurement_rates_filters[i].o[1]) * PERIODIC_FREQUENCY_OVERACTUATED;
+                                 - measurement_rates_filters[i].o[1]) * PERIODIC_FREQUENCY;
 
         //Filter body rates with second order butterworth filter
         // rate_vect_filt[i] = measurement_rates_filters[i].o[0];
@@ -1192,7 +1174,7 @@ void overactuated_mixing_run(void)
 
         //Calculate and bound the angular error integration term for the PID
         for (int i = 0; i < 3; i++) {
-            euler_error_integrated[i] += euler_error[i] / PERIODIC_FREQUENCY_OVERACTUATED;
+            euler_error_integrated[i] += euler_error[i] / PERIODIC_FREQUENCY;
             BoundAbs(euler_error_integrated[i], OVERACTUATED_MIXING_PID_MAX_EULER_ERR_INTEGRATIVE);
         }
 
@@ -1533,45 +1515,42 @@ void overactuated_mixing_run(void)
             overactuated_mixing.commands[2] = (int32_t)(indi_u[2] * K_ppz_rads_motor);
             overactuated_mixing.commands[3] = (int32_t)(indi_u[3] * K_ppz_rads_motor);
             #else //RPM CONTROL ON TEENSY
+
                 //TESTING:
                 #ifdef TEST_RPM_CONTROL
-
-                indi_u[0] = (2 * M_PI) * Des_RPM_motor_1 / 60;
-                indi_u[1] = 0;
-                indi_u[2] = 0;
-                indi_u[3] = 0;
-                indi_u[4] = 0;
-                indi_u[5] = 0;
-                indi_u[6] = 0;
-                indi_u[7] = 0;
-                indi_u[8] = 0;
-                indi_u[9] = 0;
-                indi_u[10] = 0;
-                indi_u[11] = 0;
-                indi_u[12] = 0;
-                indi_u[13] = 0;
-                indi_u[14] = 0;
-
+                    indi_u[0] = (2 * M_PI) * Des_RPM_motor_1 / 60;
+                    indi_u[1] = 0;
+                    indi_u[2] = 0;
+                    indi_u[3] = 0;
+                    indi_u[4] = 0;
+                    indi_u[5] = 0;
+                    indi_u[6] = 0;
+                    indi_u[7] = 0;
+                    indi_u[8] = 0;
+                    indi_u[9] = 0;
+                    indi_u[10] = 0;
+                    indi_u[11] = 0;
+                    indi_u[12] = 0;
+                    indi_u[13] = 0;
+                    indi_u[14] = 0;
                 #endif
 
                 #ifdef TEST_DSHOT_CONTROL
-
-                indi_u[0] = Des_dshot_steps_motor_1*600;
-                indi_u[1] = 0;
-                indi_u[2] = 0;
-                indi_u[3] = 0;
-                indi_u[4] = 0;
-                indi_u[5] = 0;
-                indi_u[6] = 0;
-                indi_u[7] = 0;
-                indi_u[8] = 0;
-                indi_u[9] = 0;
-                indi_u[10] = 0;
-                indi_u[11] = 0;
-                indi_u[12] = 0;
-                indi_u[13] = 0;
-                indi_u[14] = 0;
-
+                    indi_u[0] = Des_dshot_steps_motor_1*600;
+                    indi_u[1] = 0;
+                    indi_u[2] = 0;
+                    indi_u[3] = 0;
+                    indi_u[4] = 0;
+                    indi_u[5] = 0;
+                    indi_u[6] = 0;
+                    indi_u[7] = 0;
+                    indi_u[8] = 0;
+                    indi_u[9] = 0;
+                    indi_u[10] = 0;
+                    indi_u[11] = 0;
+                    indi_u[12] = 0;
+                    indi_u[13] = 0;
+                    indi_u[14] = 0;
                 #endif
 
                 #ifdef TEST_PWM_SERVOS
@@ -1595,10 +1574,10 @@ void overactuated_mixing_run(void)
                 #endif  
 
                 #ifdef TEST_DSHOT_CONTROL
-                overactuated_mixing.commands[0] = (int32_t) (indi_u[0]);
-                overactuated_mixing.commands[1] = (int32_t) (indi_u[1]);
-                overactuated_mixing.commands[2] = (int32_t) (indi_u[2]);
-                overactuated_mixing.commands[3] = (int32_t) (indi_u[3]);
+                    overactuated_mixing.commands[0] = (int32_t) (indi_u[0]);
+                    overactuated_mixing.commands[1] = (int32_t) (indi_u[1]);
+                    overactuated_mixing.commands[2] = (int32_t) (indi_u[2]);
+                    overactuated_mixing.commands[3] = (int32_t) (indi_u[3]);
                 #endif 
 
                 #ifdef TEST_ROTOR_ANGLES
@@ -1641,7 +1620,6 @@ void overactuated_mixing_run(void)
                     indi_u[14] = 0;
                     actuator_output[12] = (int32_t) (test_frequency*100);
                 #endif
-
                 //END TESTING
 
                 #ifndef TEST_DSHOT_CONTROL
@@ -1680,10 +1658,10 @@ void overactuated_mixing_run(void)
                     #ifndef RPM_INDI_CONTROL //PID RPM control
 
                     //Derivative term:
-                    motor_rad_s_dot_filtered[0] = (motor_rad_s_filtered_old[0] - motor_rad_s_filtered_old[0])*PERIODIC_FREQUENCY_OVERACTUATED;
-                    motor_rad_s_dot_filtered[1] = (motor_rad_s_filtered_old[1] - motor_rad_s_filtered_old[1])*PERIODIC_FREQUENCY_OVERACTUATED;
-                    motor_rad_s_dot_filtered[2] = (motor_rad_s_filtered_old[2] - motor_rad_s_filtered_old[2])*PERIODIC_FREQUENCY_OVERACTUATED;
-                    motor_rad_s_dot_filtered[3] = (motor_rad_s_filtered_old[3] - motor_rad_s_filtered_old[3])*PERIODIC_FREQUENCY_OVERACTUATED;
+                    motor_rad_s_dot_filtered[0] = (motor_rad_s_filtered_old[0] - motor_rad_s_filtered_old[0])*PERIODIC_FREQUENCY;
+                    motor_rad_s_dot_filtered[1] = (motor_rad_s_filtered_old[1] - motor_rad_s_filtered_old[1])*PERIODIC_FREQUENCY;
+                    motor_rad_s_dot_filtered[2] = (motor_rad_s_filtered_old[2] - motor_rad_s_filtered_old[2])*PERIODIC_FREQUENCY;
+                    motor_rad_s_dot_filtered[3] = (motor_rad_s_filtered_old[3] - motor_rad_s_filtered_old[3])*PERIODIC_FREQUENCY;
 
                     motor_rad_s_filtered_old[0] = motor_rad_s_filtered[0];
                     motor_rad_s_filtered_old[1] = motor_rad_s_filtered[1];
