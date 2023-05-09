@@ -78,6 +78,10 @@ static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((alig
         int16_t residual_p_dot_int_telemetry = myam7_data_in.residual_p_dot_int;
         int16_t residual_q_dot_int_telemetry = myam7_data_in.residual_q_dot_int;
         int16_t residual_r_dot_int_telemetry = myam7_data_in.residual_r_dot_int;
+
+        int16_t lidar_value_cm_telemetry = myam7_data_in.lidar_value_cm;
+        int16_t lidar_strength_telemetry = myam7_data_in.lidar_strength;
+
         float rolling_msg_in_telemetry = myam7_data_in.rolling_msg_in;
         uint8_t rolling_msg_in_id_telemetry = myam7_data_in.rolling_msg_in_id;
 
@@ -87,6 +91,7 @@ static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((alig
                 &az_4_cmd_int_telemetry, &theta_cmd_int_telemetry, &phi_cmd_int_telemetry, &ailerons_cmd_int_telemetry, &n_iteration_telemetry, &n_evaluation_telemetry,
                 &elapsed_time_us_telemetry, &exit_flag_optimizer_telemetry, &residual_ax_int_telemetry,&residual_ay_int_telemetry, &residual_az_int_telemetry,
                 &residual_p_dot_int_telemetry, &residual_q_dot_int_telemetry,&residual_r_dot_int_telemetry, &missed_packets, &ca7_message_frequency_RX,
+                &lidar_value_cm_telemetry, &lidar_strength_telemetry,
                 &rolling_msg_in_telemetry, &rolling_msg_in_id_telemetry);
     }
     static void am7_uplink(struct transport_tx *trans, struct link_device *dev)

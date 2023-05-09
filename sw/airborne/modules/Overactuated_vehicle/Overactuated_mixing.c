@@ -1764,6 +1764,8 @@ void overactuated_mixing_run(void)
     //Send to the raspberry pi the values for the next optimization run.
     AbiSendMsgAM7_DATA_OUT(ABI_AM7_DATA_OUT_ID, &am7_data_out_local, extra_data_out_local);
 
+    //Copy locally the readings from the lidar: 
+
     #ifdef FBW_ACTUATORS
         //Pre compute the actuator values to be sent to the FBW T4: 
         //Motor cmds

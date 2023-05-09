@@ -2026,6 +2026,8 @@
          <field name = "residual_r_dot" type="int16" unit="1e1_deg_s2" alt_unit="deg_s2"  alt_unit_coef="0.1">Residual z-body angular acceleration of the computed optimised solution</field>
          <field name = "missed_packets" type="uint32">Missed packets on serial communication</field>
          <field name = "message_frequency" type="uint16">Refresh rate of the incoming messages from companion computer</field>
+         <field name = "lidar_altitude" type="int16" unit="cm" alt_unit="m" alt_unit_coef="0.01">Altitude read by the lidar</field>
+         <field name = "lidar_strength" type="int16">Signal strength of the lidar</field>
          <field name = "rolling_msg_in" type="float">Rolling message in content</field>
          <field name = "rolling_msg_in_id" type="uint8">Rolling message in id</field>
      </message>

@@ -65,6 +65,10 @@ struct __attribute__((__packed__)) am7_data_in {
     int16_t residual_p_dot_int;
     int16_t residual_q_dot_int;
     int16_t residual_r_dot_int;
+    //Lidar status
+    int16_t lidar_value_cm; 
+    int16_t lidar_strength;  
+    //Rolling_msg  
     float rolling_msg_in;
     uint8_t rolling_msg_in_id;
     uint8_t checksum_in;
