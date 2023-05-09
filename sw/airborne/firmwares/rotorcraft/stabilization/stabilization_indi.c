@@ -261,15 +261,15 @@ static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *d
                               &(quat->qz));
 }
 
-static void send_ctrl_effectiveness_calc(struct transport_tx *trans, struct link_device *dev)
-{
-  pprz_msg_send_CTRL_EFFECTIVENESS_CALC(trans, dev, AC_ID, INDI_NUM_ACT, indi_u,
-		  	  	  	  	  INDI_NUM_ACT, actuator_state_filt_vect,
-		  	  	  	  	  INDI_NUM_ACT, g1g2[0],
-                      INDI_NUM_ACT, g1g2[1],
-						          INDI_NUM_ACT, g1g2[2],
-						          INDI_NUM_ACT, g1g2[3]);
-}
+// static void send_ctrl_effectiveness_calc(struct transport_tx *trans, struct link_device *dev)
+// {
+//   pprz_msg_send_CTRL_EFFECTIVENESS_CALC(trans, dev, AC_ID, INDI_NUM_ACT, indi_u,
+// 		  	  	  	  	  INDI_NUM_ACT, actuator_state_filt_vect,
+// 		  	  	  	  	  INDI_NUM_ACT, g1g2[0],
+//                       INDI_NUM_ACT, g1g2[1],
+// 						          INDI_NUM_ACT, g1g2[2],
+// 						          INDI_NUM_ACT, g1g2[3]);
+// }
 #endif
 
 /**
@@ -319,7 +319,7 @@ void stabilization_indi_init(void)
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_G, send_indi_g);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_CTRL_EFFECTIVENESS_CALC, send_ctrl_effectiveness_calc);
+  // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_CTRL_EFFECTIVENESS_CALC, send_ctrl_effectiveness_calc);
 #endif
 }
 
@@ -672,7 +672,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   struct FloatQuat *att_quat = stateGetNedToBodyQuat_f();
   struct FloatQuat quat_sp_f;
 
-  QUAT_FLOAT_OF_BFP(quat_sp_f, quat_sp);  
+  QUAT_FLOAT_OF_BFP(quat_sp_f, quat_sp);
   float_quat_inv_comp_norm_shortest(&att_err, att_quat, &quat_sp_f);
 
   struct FloatVect3 att_fb;
@@ -723,7 +723,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     struct FloatRates * body_rates = stateGetBodyRates_f();
     float_eulers_of_quat_zxy(&eulers_zxy, statequat);
     // 60 degrees pitch should get max deflection
-  
+
     if (eulers_zxy.theta<-RadOfDeg(30.0)){
       pivot_ratio=0.f;
     }
@@ -739,7 +739,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     else{
       pivot_ratio=0.f;
     }
-    
+
 
     int16_t servo_command = (-eulers_zxy.theta + pivot_ratio*(att_err.qy * pivot_servogain_theta - pivot_servogain_q * body_rates->q))/(55.0/180.0*M_PI)*9600;
     Bound(servo_command,-9600,9600);
@@ -750,7 +750,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 
     actuators_pprz[0] = servo_command;
     actuators_pprz[1] = servo_command;
-   
+
     if (autopilot_get_motors_on()) {
     int16_t motor_command = radio_control.values[RADIO_THROTTLE] + (- body_rates->q * pivot_gain_q - att_err.qy * pivot_gain_theta)*(1.f - pivot_ratio);
     angular_accel_ref.p = att_err.qx * indi_gains.att.p - body_rates->p * indi_gains.rate.p;
@@ -765,10 +765,10 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 		  actuators_pprz[i] = -9600;
 		}
     }
-    
+
     /* reset psi setpoint to current psi angle */
     stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
-  } 
+  }
   else {
 	  /* compute the INDI command */
 	  stabilization_indi_rate_run(rate_sp, in_flight);
