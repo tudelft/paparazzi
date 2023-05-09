@@ -36,8 +36,8 @@
       <message name="LIDAR"                    period="1.2"/>
       <message name="INS_EKF2"                 period=".25"/>
       <message name="WIND_INFO_RET"            period="1."/>
-      <message name="CTRL_EFFECTIVENESS_CALC"  period="0.1"/>
-      <message name="CTRL_EFF_MODULE"         period="0.1"/>
+      <!-- <message name="CTRL_EFFECTIVENESS_CALC"  period="0.1"/>
+      <message name="CTRL_EFF_MODULE"         period="0.1"/> -->
     </mode>
 
     <mode name="ppm">
@@ -203,8 +203,8 @@
       <message name="IMU_ACCEL_RAW"     period=".002"/>
       <message name="IMU_GYRO_RAW"      period=".002"/>
       <message name="IMU_MAG_RAW"       period=".002"/>
-      <message name="CTRL_EFFECTIVENESS_CALC"  period="0.002"/>
-      <message name="CTRL_EFF_MODULE"         period="0.002"/>
+      <!-- <message name="CTRL_EFFECTIVENESS_CALC"  period="0.002"/>
+      <message name="CTRL_EFF_MODULE"         period="0.002"/> -->
 	  <message name="AHRS_REF_QUAT" 		   period="0.002"/>
 	  <message name="ROTORCRAFT_CMD"           period="0.002"/>
     </mode>
