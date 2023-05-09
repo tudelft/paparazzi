@@ -39,11 +39,11 @@ static float pprz_to_omega(float x);
 static float thrust_correcting_ratio(float x, float delta);
 
 #if PERIODIC_TELEMETRY
-#include "modules/datalink/telemetry.h"
-static void send_ctrl_eff_module(struct transport_tx *trans, struct link_device *dev)
-{
-  pprz_msg_send_CTRL_EFF_MODULE(trans, dev, AC_ID, &thrust_loss_r, &thrust_loss_l);
-}
+// #include "modules/datalink/telemetry.h"
+// static void send_ctrl_eff_module(struct transport_tx *trans, struct link_device *dev)
+// {
+//   pprz_msg_send_CTRL_EFF_MODULE(trans, dev, AC_ID, &thrust_loss_r, &thrust_loss_l);
+// }
 #endif
 
 /*
@@ -52,7 +52,7 @@ static void send_ctrl_eff_module(struct transport_tx *trans, struct link_device 
 void ctrl_eff_calc_init(void)
 {
 #if PERIODIC_TELEMETRY
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_CTRL_EFF_MODULE, send_ctrl_eff_module);
+    // register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_CTRL_EFF_MODULE, send_ctrl_eff_module);
 #endif
 }
 
@@ -232,7 +232,7 @@ float pprz_to_omega(float x)
  * Function which calculates thrust loss ratio using conservation of
  * momentum. 'airspeed_scaling' is to prevent the loss factor getting
  * too small too quickly. A better approach would be to (TODO:) alter
- * motor angular rate 'w' w.r.t measured airspeed. The higher the 
+ * motor angular rate 'w' w.r.t measured airspeed. The higher the
  * measured airspeed, the higher the angular rate 'w' (less drag with
  * higher induced angle of attack of the propellers). If there is an
  * RPM sensor the measured RPM would be used here.
@@ -241,11 +241,11 @@ float thrust_correcting_ratio(float x, float delta)
 {
     float w = pprz_to_omega(x);
     float v = stateGetAirspeed_f();
-    float pp = 0.1270;  // [m] Propeller pitch, 5 inch prop pitch 
+    float pp = 0.1270;  // [m] Propeller pitch, 5 inch prop pitch
     float v_in = v*airspeed_scaling*cosf(delta);
     float v_e;
     float dv;   // Difference between exhaust velocity and measured airspeed
-    
+
     v_e = (w/(2*M_PI)) * pp;
     dv = v_e - v_in;
     Bound(dv, 0.5*v_e, v_e);
