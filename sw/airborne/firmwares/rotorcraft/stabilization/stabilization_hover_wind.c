@@ -71,6 +71,8 @@ static struct FloatQuat quat_smeur_2_barth;
 
 struct FloatQuat quat_att_barth_frame;
 
+struct NedCoor_f pos_target;
+
 float tf_state1[2] = {0, 0};
 float tf_state2[2] = {0, 0};
 float tf_state3[2] = {0, 0};
@@ -81,6 +83,17 @@ float tf_state4[2] = {0, 0};
 
 // static inline void log_hoverwind_periodic(void);
 // static inline void log_hoverwind_start(void);
+
+#if PERIODIC_TELEMETRY
+#include "modules/datalink/telemetry.h"
+static void send_payload_float(struct transport_tx *trans, struct link_device *dev)
+{
+  float f[10] = {pos_target.x, pos_target.y, pos_target.z,
+                 eps[0][0], eps[0][0], eps[0][0],
+                 u_scale[0][0], u_scale[1][0], u_scale[2][0], u_scale[3][0]};
+  pprz_msg_send_PAYLOAD_FLOAT(trans, dev, AC_ID, 10, f);
+}
+#endif
 
 
 void stabilization_hover_wind_init(void){
@@ -96,6 +109,11 @@ void stabilization_hover_wind_init(void){
 
   x_e[0][0] = 0;
   x_e[1][0] = 0;
+  pos_target = *stateGetPositionNed_f(); 
+
+  #if PERIODIC_TELEMETRY
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_PAYLOAD_FLOAT, send_payload_float);
+  #endif
 
 }
 
@@ -117,12 +135,12 @@ void stabilization_hover_wind_run(bool in_flight){
       printf("pos z = %f \n", stateGetPositionNed_f()->z);
   #endif
 
-  struct FloatVect3 nav_target_ned;
-  ENU_OF_TO_NED(nav_target_ned, nav.target) //nav.target ENU
+  
+  //ENU_OF_TO_NED(nav_target_ned, nav.target) //nav.target ENU
   //printf("nav target z = %f \n", nav_target_ned.z);
-  eps[0][0] = stateGetPositionNed_f()->x - nav_target_ned.x; 
-  eps[1][0] = stateGetPositionNed_f()->y - nav_target_ned.y;
-  eps[2][0] = stateGetPositionNed_f()->z - nav_target_ned.z;
+  eps[0][0] = stateGetPositionNed_f()->x - pos_target.x; 
+  eps[1][0] = stateGetPositionNed_f()->y - pos_target.y;
+  eps[2][0] = stateGetPositionNed_f()->z - pos_target.z;
   eps[3][0] = stateGetSpeedNed_f()->x;
   eps[4][0] = stateGetSpeedNed_f()->y;
   eps[5][0] = stateGetSpeedNed_f()->z;
