@@ -263,6 +263,11 @@ NOTES:
 
     <module name="Overactuated_mixing"/>
 
+    <module name="lidar" type="tfmini_am7">
+      <configure name="USE_TFMINI_AGL" value="TRUE"/>
+      <configure name="TFMINI_COMPENSATE_ROTATION" value="TRUE"/>
+    </module>
+
     <module name="approach_moving_target">
       <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/>
     </module>

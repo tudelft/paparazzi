@@ -35,15 +35,22 @@
 #include "pprzlink/messages.h"
 #include "modules/datalink/downlink.h"
 
+//include am7 module
+#include "modules/sensors/ca_am7.h"
+
 struct TFMini tfmini = {
   .parse_status = TFMINI_INITIALIZE
 };
 
 static void tfmini_parse(uint8_t byte);
 
+static abi_event AM7_in;
+// struct am7_data_in myam7_data_in_local;
+
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
 
+#if USE_TFMINI_SERIAL
 /**
  * Downlink message lidar
  */
@@ -56,8 +63,25 @@ static void tfmini_send_lidar(struct transport_tx *trans, struct link_device *de
                       &status);
 }
 
+#else
+/**
+ * Downlink message lidar with am7
+ */
+static void tfmini_send_lidar_with_am7(struct transport_tx *trans, struct link_device *dev)
+{
+  uint8_t status = 254;
+  tfmini.mode = 254;
+  pprz_msg_send_LIDAR(trans, dev, AC_ID,
+                      &tfmini.distance,
+                      &tfmini.mode,
+                      &status);
+}
+
 #endif
 
+#endif
+
+#if USE_TFMINI_SERIAL
 /**
  * Initialization function
  */
@@ -76,6 +100,8 @@ void tfmini_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_LIDAR, tfmini_send_lidar);
 #endif
 }
+
+#endif
 
 /**
  * Lidar event function
@@ -178,3 +204,53 @@ static void tfmini_parse(uint8_t byte)
       break;
   }
 }
+
+/**
+ * ABI routine called by the serial_act_t4 ABI event
+ */
+static void data_AM7_abi_in_lidar(uint8_t sender_id __attribute__((unused)), struct am7_data_in * myam7_data_in_ptr, float * extra_data_in_ptr){
+
+  int16_t raw_value_lidar_cm = myam7_data_in_ptr->lidar_value_cm;
+  int16_t raw_value_lidar_strength = myam7_data_in_ptr->lidar_strength;
+  extra_data_in_ptr = extra_data_in_ptr;
+
+  if(raw_value_lidar_cm >= 0){
+    tfmini.raw_dist = (uint16_t) raw_value_lidar_cm;
+    tfmini.raw_strength = (uint16_t) raw_value_lidar_strength;
+    uint32_t now_ts = get_sys_time_usec();
+    tfmini.distance = tfmini.raw_dist / 100.f;
+    tfmini.strength = tfmini.raw_strength;
+
+    // compensate AGL measurement for body rotation
+    if (tfmini.compensate_rotation) {
+      float phi = stateGetNedToBodyEulers_f()->phi;
+      float theta = stateGetNedToBodyEulers_f()->theta;
+      float gain = (float)fabs((double)(cosf(phi) * cosf(theta)));
+      tfmini.distance = tfmini.distance * gain;
+    }
+    // send message (if requested)
+    if (tfmini.update_agl) {
+      AbiSendMsgAGL(AGL_LIDAR_TFMINI_ID, now_ts, tfmini.distance);
+    }
+  }
+}
+
+/**
+ * Initialization function to call the AM7 module ABI message to copy the raw value and stength from there. 
+ */
+void tfmini_init_with_am7(void)
+{
+  tfmini.update_agl = USE_TFMINI_AGL;
+  tfmini.compensate_rotation = TFMINI_COMPENSATE_ROTATION;
+
+  tfmini.strength = 0;
+  tfmini.distance = 0;
+
+  //Init abi bind msg to Raspberry Pi:
+  AbiBindMsgAM7_DATA_IN(ABI_BROADCAST, &AM7_in, data_AM7_abi_in_lidar);
+
+  #if PERIODIC_TELEMETRY
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_LIDAR, tfmini_send_lidar_with_am7);
+  #endif
+}
+

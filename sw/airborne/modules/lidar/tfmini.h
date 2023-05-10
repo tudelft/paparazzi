@@ -60,8 +60,13 @@ struct TFMini {
 
 extern struct TFMini tfmini;
 
+#ifndef USE_TFMINI_SERIAL
 extern void tfmini_init(void);
 extern void tfmini_event(void);
+#else
+extern void tfmini_init_with_am7(void);
+#endif
+
 extern void tfmini_downlink(void);
 
 #endif /* LIDAR_TFMINI_H */

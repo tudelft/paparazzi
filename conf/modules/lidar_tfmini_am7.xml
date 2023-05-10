@@ -1,0 +1,42 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="lidar_tfmini_am7" dir="lidar">
+  <doc>
+    <description>
+      TFMini Lidar through am7 module
+    </description>
+    <configure name="USE_TFMINI_AGL" value="0" description="use this lidar for AGL measurements"/>
+    <configure name="TFMINI_COMPENSATE_ROTATION" value="1" description="compensate AGL measurements for body rotation"/>
+
+  </doc>
+
+  <settings>
+    <dl_settings NAME="Lidar TFMini">
+      <dl_settings NAME="Lidar">
+        <dl_setting MAX="1" MIN="0" STEP="1" VAR="tfmini.compensate_rotation" shortname="derotate_agl"/>
+        <dl_setting MAX="1" MIN="0" STEP="1" VAR="tfmini.update_agl" shortname="update_agl"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+  <dep>
+    <provides>sonar</provides>
+  </dep>
+
+  <header>
+    <file name="tfmini.h"/>
+  </header>
+  <init fun="tfmini_init_with_am7()"/>
+  <makefile>
+    <configure name="USE_TFMINI_AGL" default="0"/>
+    <configure name="TFMINI_COMPENSATE_ROTATION" default="0"/>
+    <define name="USE_TFMINI_AGL" value="$(USE_TFMINI_AGL)"/>
+    <define name="TFMINI_COMPENSATE_ROTATION" value="$(TFMINI_COMPENSATE_ROTATION)"/>
+    <file name="tfmini.c"/>
+    <define name="USE_TFMINI_SERIAL" value="FALSE"/>
+  </makefile>
+  <makefile target="nps">
+    <define name="USE_SONAR" value="1"/><!-- in NPS use a virtual sonar to simulate lidar measurements -->
+  </makefile>
+</module>
+
+
