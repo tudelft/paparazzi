@@ -423,6 +423,10 @@ static void gps_ubx_parse_nav_relposned(void)
       gps_relposned.relPosValid = relPosValid;
       gps_relposned.diffSoln    = diffSoln;
       gps_relposned.gnssFixOK   = gnssFixOK;
+
+      // RELHEADING
+      gps_relposned.relPosHeading = UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf) * 1e-5f;
+      gps_relposned.relPosLength = UBX_NAV_RELPOSNED_relPosLength(gps_ubx.msg_buf) * 1e-2f;
     }
   }
 #endif
