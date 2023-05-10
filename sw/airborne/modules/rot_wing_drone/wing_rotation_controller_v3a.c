@@ -108,6 +108,8 @@ void wing_rotation_init(void)
   wing_rotation.wing_rotation_second_order_dynamics = WING_ROTATION_SECOND_DYN;
   wing_rotation.adc_wing_rotation_range = WING_ROTATION_POSITION_ADC_90 - WING_ROTATION_POSITION_ADC_0;
   wing_rotation.airspeed_scheduling = false;
+  wing_rotation.transition_forward = false;
+  wing_rotation.forward_airspeed = 18.;
 
   // Set wing angle to current wing angle
   wing_rotation.initialized = false; 
@@ -146,6 +148,10 @@ void wing_rotation_event(void)
   }
   #endif
 
+  if (!wing_rotation.airspeed_scheduling) {
+    wing_rotation.transition_forward = false;
+  }
+
   // Update Wing position sensor
   wing_rotation_to_rad();
 
@@ -159,8 +165,25 @@ void wing_rotation_event(void)
       if (airspeed < 12)
       {
         wing_angle_scheduled_sp_deg = 0;
+        wing_rotation.transition_forward = false;
       } else {
-        wing_angle_scheduled_sp_deg = (airspeed - 12.) * 15.;
+        // First check if eligable for transition forward boolean
+        if (airspeed > 14.)
+        {
+          wing_rotation.transition_forward = true;
+        }
+
+        if (wing_rotation.transition_forward) {
+          // Set angle to 40 degrees if airspeed below 14 m/s
+          if (airspeed < 14.) {
+            wing_angle_scheduled_sp_deg = 40.;
+          } else {
+            float airspeed_range = wing_rotation.forward_airspeed - 14.;
+            Bound(airspeed_range, 1., 10.);
+            float airspeed_step = 50. / airspeed_range;
+            wing_angle_scheduled_sp_deg = 40. + (airspeed - 14.) * airspeed_step;
+          }
+        }
       }
       Bound(wing_angle_scheduled_sp_deg, 0., 90.);
       wing_rotation.wing_angle_deg_sp = wing_angle_scheduled_sp_deg;
