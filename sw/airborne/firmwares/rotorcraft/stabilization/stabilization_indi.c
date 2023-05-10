@@ -40,6 +40,9 @@
 #include "generated/airframe.h"
 #include "modules/radio_control/radio_control.h"
 #include "modules/actuators/actuators.h"
+#ifdef STABILIZATION_INDI_ROTWING_V3A
+#include "modules/rot_wing_drone/wing_rotation_controller_v3a.h"
+#endif
 #include "modules/core/abi.h"
 #include "filters/low_pass_filter.h"
 #include "wls/wls_alloc.h"
@@ -200,7 +203,7 @@ struct Int32Eulers stab_att_sp_euler;
 struct Int32Quat   stab_att_sp_quat;
 
 abi_event rpm_ev;
-static void rpm_cb(uint8_t sender_id, uint16_t *rpm, uint8_t num_act);
+static void rpm_cb(uint8_t sender_id, struct rpm_act_t * rpm_message, uint8_t num_act);
 
 abi_event thrust_ev;
 static void thrust_cb(uint8_t sender_id, float thrust_increment);
@@ -569,7 +572,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     #endif
   }
 
-  actuators_pprz[6] = (int16_t) actuator_thrust_bx_pprz;
+  actuators_pprz[INDI_NUM_ACT] = (int16_t) actuator_thrust_bx_pprz;
   
   // Propagate state filters
   // Get the acceleration in body axes
@@ -603,7 +606,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     // Calculate the min and max increments
     for (i = 0; i < INDI_NUM_ACT; i++) {
       du_min[i] = -MAX_PPRZ * act_is_servo[i] - use_increment*actuator_state_filt_vect[i];
-      if (i==5)
+      if (i==5) // elevator
       {
         du_min[i] = - use_increment*actuator_state_filt_vect[i];
       }
@@ -613,7 +616,6 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
       {
         du_pref[i] = 0;
       }
-      du_pref[4] = act_pref[i] - use_increment*actuator_state_filt_vect[i];
 
 #ifdef GUIDANCE_INDI_MIN_THROTTLE
     float airspeed = stateGetAirspeed_f();
@@ -629,6 +631,18 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     }
 #endif
   }
+#ifdef STABILIZATION_INDI_ROTWING_V3A
+  // Right aileron lower limit calculation
+
+  float min_pprz_cmd_right_ail = -9600;
+  if (wing_rotation.wing_angle_deg > 10 && wing_rotation.wing_angle_deg < 55) {
+    min_pprz_cmd_right_ail = -0.17310723586735 * wing_rotation.wing_angle_deg * wing_rotation.wing_angle_deg * wing_rotation.wing_angle_deg + 7.41438279843746 * wing_rotation.wing_angle_deg * wing_rotation.wing_angle_deg + 153.366175476407 * wing_rotation.wing_angle_deg - 11631.8630123744;
+  }
+  Bound(min_pprz_cmd_right_ail, -9600, -4000);
+
+
+  du_min[7] = min_pprz_cmd_right_ail - use_increment*indi_u[7];
+#endif // STABILIZATION_INDI_ROTWING_V3A
 
     // Update Bwls
     for (i = 0; i < INDI_OUTPUTS; i++) {
@@ -974,15 +988,16 @@ void calc_g1g2_pseudo_inv(void)
   }
 }
 
-static void rpm_cb(uint8_t __attribute__((unused)) sender_id, uint16_t UNUSED *rpm, uint8_t UNUSED num_act)
+static void rpm_cb(uint8_t __attribute__((unused)) sender_id, struct rpm_act_t UNUSED * rpm_message, uint8_t UNUSED num_act)
 {
 #if INDI_RPM_FEEDBACK
-  int8_t i;
-  for (i = 0; i < num_act; i++) {
-    act_obs[i] = (rpm[i] - get_servo_min(i));
+  // Sanity check that index is valid
+  if (rpm_message->actuator_idx<num_act){
+    int8_t i = rpm_message->actuator_idx;
+    act_obs[i] = (rpm_message->rpm - get_servo_min(i));
     act_obs[i] *= (MAX_PPRZ / (float)(get_servo_max(i) - get_servo_min(i)));
     Bound(act_obs[i], 0, MAX_PPRZ);
-  }
+    }
 #endif
 }
 
