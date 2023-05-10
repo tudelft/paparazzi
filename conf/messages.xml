@@ -2257,6 +2257,8 @@
       <field name="relPosValid"   type="uint8"  values="FALSE|TRUE"/>
       <field name="diffSoln"      type="uint8"  values="NONE|DGPS"/>
       <field name="gnssFixOK"           type="uint8" values="NONE|3D"/>
+      <field name="relPosHeading" type="float"  unit="deg"/>
+      <field name="relPosLength"  type="float"  unit="mm"/>
     </message>
 
     <message name="GPS_SMALL" id="252">

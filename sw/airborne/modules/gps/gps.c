@@ -158,7 +158,10 @@ static void send_gps_rtk(struct transport_tx *trans, struct link_device *dev)
                         &gps_relposned.carrSoln,
                         &gps_relposned.relPosValid,
                         &gps_relposned.diffSoln,
-                        &gps_relposned.gnssFixOK);
+                        &gps_relposned.gnssFixOK,
+                        &gps_relposned.relPosHeading,
+                        &gps_relposned.relPosLength
+                        );
 }
 
 static void send_gps_rxmrtcm(struct transport_tx *trans, struct link_device *dev)

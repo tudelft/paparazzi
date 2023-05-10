@@ -1,9 +1,7 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 <airframe name="Seal">
   <description>
-    Basic Fixedwing airframe equipped with a Hextronix Cube Orange flightcontroller hardware
-
-    + Model:       Eachine in original set configuration
+    + Model:       Eachine (AtomRC Seal 1500) in original set configuration
     + Autopilot:   Pixhawk4 but alternaivly a Cube Orange Plus(+) ( Hextronix names it FMU v2.1)
     + Actuators:   Default in set included servos
     + GNSS         Two (2x) uBlox ZED F9P
@@ -36,20 +34,9 @@ NOTES:
 
 
   <firmware name="rotorcraft">
-
-<!--      <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/>  &lt;!&ndash;Throttle hold in command laws&ndash;&gt;-->
-      <!--<define name="RADIO_FMODE"       value="RADIO_AUX2"/> --><!-- Throttle curve select -->
-      <define name="RADIO_FBW_MODE"    value="RADIO_MODE"/> <!-- Switch between manual , stabilized att, and autonomous -->
-<!--      <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>-->
-
-            <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
-<!--            <define name="RADIO_FMODE"       value="RADIO_AUX2"/> &lt;!&ndash; Throttle curve select &ndash;&gt;-->
-<!--            <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> &lt;!&ndash; Switch between AP and FBW control &ndash;&gt;-->
-<!--            <define name="RADIO_FLAPS"       value="RADIO_AUX4"/> &lt;!&ndash; Flaps control &ndash;&gt;-->
-            <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
-<!--            <define name="RADIO_BACK_THOLD"  value="RADIO_AUX5"/>-->
-
     <target name="ap" board="px4fmu_5.0_chibios">
+      <configure name="FLASH_MODE" value="SWD"/>
+
       <!--<configure name="CPU_LED" value="1"/>--> <!--No support yet on Cube board-->
       <!--configure name="RTOS_DEBUG" value="TRUE"/-->
       <!-- <define name="USE_PERSISTENT_SETTINGS" value="TRUE"/>-->
@@ -62,7 +49,7 @@ NOTES:
 
       <configure name="NAVIGATION_FREQUENCY" value="20"/>
       <configure name="CONTROL_FREQUENCY" value="100"/>
-      <configure name="TELEMETRY_FREQUENCY" value="50"/>
+<!--      <configure name="TELEMETRY_FREQUENCY" value="50"/>-->
       <configure name="MODULES_FREQUENCY" value="500"/>
 
       <!--when swapped for Cube Orange Plus use this one
@@ -187,7 +174,8 @@ NOTES:
       <module name="telemetry" type="transparent">
         <!--<configure name="MODEM_PORT" value="usb_serial"/>--><!--Handy for Desk debugging-->
         <configure name="MODEM_PORT" value="UART2"/><!--Default UART2=Telem1 UART3 = Telem2 -->
-        <configure name="MODEM_BAUD" value="B57600"/>
+<!--        <configure name="MODEM_BAUD" value="B57600"/>-->
+        <configure name="MODEM_BAUD" value="B115200"/>
       </module>
 
       <!-- Enable for onboard logging -->
@@ -204,6 +192,19 @@ NOTES:
       -->
 
       <module name="logger_ins_analyser" />
+
+      <!--      <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/>  &lt;!&ndash;Throttle hold in command laws&ndash;&gt;-->
+      <!--<define name="RADIO_FMODE"       value="RADIO_AUX2"/> --><!-- Throttle curve select -->
+      <define name="RADIO_FBW_MODE"    value="RADIO_MODE"/> <!-- Switch between manual , stabilized att, and autonomous -->
+      <!--      <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>-->
+
+      <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
+      <!--            <define name="RADIO_FMODE"       value="RADIO_AUX2"/> &lt;!&ndash; Throttle curve select &ndash;&gt;-->
+      <!--            <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> &lt;!&ndash; Switch between AP and FBW control &ndash;&gt;-->
+      <!--            <define name="RADIO_FLAPS"       value="RADIO_AUX4"/> &lt;!&ndash; Flaps control &ndash;&gt;-->
+      <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
+      <!--            <define name="RADIO_BACK_THOLD"  value="RADIO_AUX5"/>-->
+
     </target>
 
     <target name="nps" board="pc">
@@ -226,6 +227,11 @@ NOTES:
       <!-- Note NPS needs the ppm type radio_control module -->
       <!--<module name="radio_control" type="datalink"/>-->
       <module name="udp"/><!--FIXME-->
+
+      <define name="RADIO_TH_HOLD"     value="0"/> <!-- Throttle hold in command laws -->
+      <define name="RADIO_FMODE"       value="0"/> <!-- Throttle curve select -->
+      <define name="RADIO_FBW_MODE"    value="0"/> <!-- Switch between AP and FBW control -->
+      <define name="RADIO_KILL_SWITCH" value="0"/>
     </target>
 
     <define name="USE_AIRSPEED" value="TRUE"/><!-- Use the sensor, not stating use it in flight -->
@@ -317,7 +323,7 @@ NOTES:
 
   <servos>
     <servo name="S_THROTTLE" no="0" min="1100" neutral="1120" max="1900"/><!-- Castle creation fixed endpoints are ~1250μs till 1850μs-->
-    <servo name="S_AILERON_LEFT" no="1" min="1100" neutral="1500" max="1900"/>
+    <servo name="S_AILERON_LEFT" no="1" min="1900" neutral="1500" max="1100"/>
     <servo name="S_ELEVATOR" no="2" min="1900" neutral="1500" max="1100"/>
     <servo name="S_RUDDER" no="3" min="1100" neutral="1500" max="1900"/>
     <servo name="S_AILERON_RIGHT" no="4" min="1100" neutral="1500" max="1900"/>
@@ -419,23 +425,41 @@ NOTES:
     <!-- Calibrate Accelometer on 150423 20:40 UTC-->
     <!-- <define name="IMU_ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={-410,19,-56}, .scale={{13420,4554,56119},{2923,931,11629}}}}"/> -->
 
-    <define name="ACCEL_X_NEUTRAL" value="-410"/>
+<!--    <define name="ACCEL_X_NEUTRAL" value="-410"/>-->
+<!--    <define name="ACCEL_Y_NEUTRAL" value="19"/>-->
+<!--    <define name="ACCEL_Z_NEUTRAL" value="-56"/>-->
+<!--    <define name="ACCEL_X_SENS" value="4.591173431212081" integer="16"/>-->
+<!--    <define name="ACCEL_Y_SENS" value="4.891514448303641" integer="16"/>-->
+<!--    <define name="ACCEL_Z_SENS" value="4.825780378432305" integer="16"/>-->
+
+    <!--    <define name="MAG_X_NEUTRAL" value="7"/>-->
+    <!--    <define name="MAG_Y_NEUTRAL" value="76"/>-->
+    <!--    <define name="MAG_Z_NEUTRAL" value="133"/>-->
+    <!--    <define name="MAG_X_SENS" value="3.82579687604" integer="16"/>-->
+    <!--    <define name="MAG_Y_SENS" value="3.6213651898" integer="16"/>-->
+    <!--    <define name="MAG_Z_SENS" value="4.01635370187" integer="16"/>-->
+
+
+<!--    CAMPUS ON MAY 10 2023-->
+    <define name="ACCEL_X_NEUTRAL" value="-408"/>
     <define name="ACCEL_Y_NEUTRAL" value="19"/>
-    <define name="ACCEL_Z_NEUTRAL" value="-56"/>
-    <define name="ACCEL_X_SENS" value="4.591173431212081" integer="16"/>
-    <define name="ACCEL_Y_SENS" value="4.891514448303641" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="4.825780378432305" integer="16"/>
-    
+    <define name="ACCEL_Z_NEUTRAL" value="-50"/>
+    <define name="ACCEL_X_SENS" value="4.5882846387782035" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="4.8897114353285716" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="4.823552615401122" integer="16"/>
+
+    <define name="MAG_X_NEUTRAL" value="-45"/>
+    <define name="MAG_Y_NEUTRAL" value="11"/>
+    <define name="MAG_Z_NEUTRAL" value="3"/>
+    <define name="MAG_X_SENS" value="14.302642204691061" integer="16"/>
+    <define name="MAG_Y_SENS" value="14.261926262622307" integer="16"/>
+    <define name="MAG_Z_SENS" value="12.316901907620773" integer="16"/>
+
+
     <define name="BODY_TO_IMU_PHI" value="0" unit="deg"/>
     <define name="BODY_TO_IMU_THETA" value="90.0" unit="deg"/>
     <define name="BODY_TO_IMU_PSI" value="0.0" unit="deg"/>
 
-    <define name="MAG_X_NEUTRAL" value="7"/>
-    <define name="MAG_Y_NEUTRAL" value="76"/>
-    <define name="MAG_Z_NEUTRAL" value="133"/>
-    <define name="MAG_X_SENS" value="3.82579687604" integer="16"/>
-    <define name="MAG_Y_SENS" value="3.6213651898" integer="16"/>
-    <define name="MAG_Z_SENS" value="4.01635370187" integer="16"/>
 
     <!-- TODO: Calibrate ASAP as a Mag is in board -->
     <define name="MAG_X_CURRENT_COEF" value="-0.677655963532"/>
@@ -695,5 +719,6 @@ NOTES:
         <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
         <define name="NO_MOTOR_MIXING" value="TRUE"/>
   </section>
+  <include href="conf/simulator/gazebo/airframes/simple_fixedwing_w_camera.xml"/>
 
 </airframe>
