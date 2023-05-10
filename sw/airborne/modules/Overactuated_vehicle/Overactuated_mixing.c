@@ -41,14 +41,14 @@
 #include "modules/sensors/aoa_pwm.h"
 #include "modules/adcs/adc_generic.h"
 #include "modules/energy/electrical.h"
-
 #include "modules/core/sys_mon_rtos.h"
-
+#include "firmwares/rotorcraft/navigation.h"
 
 /**
  * Variables declaration
  */
-
+// #define STB_WP_TARGET 
+    
 #define FLY_WITH_AIRSPEED
 // #define USE_NEW_THR_ESTIMATION
 // #define USE_NEW_THR_ESTIMATION_OPTIMIZATION
@@ -72,8 +72,6 @@
 // #define TEST_RASMUS_SERVO
 // float time_old = 0; 
 // float test_frequency = 0.5;
-
-// struct ESC_status myESC_status;
 
 //Array which contains all the actuator values (sent to motor and servos)
 struct overactuated_mixing_t overactuated_mixing;
@@ -253,8 +251,12 @@ float K_d_speed = 0.03;
 float K_T_airspeed = 0.025;
 
 //Variables for the sysmon file write: 
-float time_old_sys_mon = 0;
-int debug_enable = 0; 
+
+// #define PRINT_CPU_LOAD_ON_SD
+
+#ifdef PRINT_CPU_LOAD_ON_SD
+    float time_old_sys_mon = 0;
+#endif
 
 struct PID_over pid_gains_over = {
     .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
@@ -651,31 +653,34 @@ void init_filters(void){
     #endif
 }
 
-/**
- * @brief Check the system performance
- * 
- */
-static void status_nederdrone_sysmon(void) {
-  static uint8_t cnt = 0;
+#ifdef PRINT_CPU_LOAD_ON_SD
+    /**
+    * @brief Check the system performance
+    * 
+    */
+    static void status_nederdrone_sysmon(void) {
 
-  if(rtos_mon.cpu_load > 85 || (debug_enable && cnt++ > 10)) {
-    sdLogWriteLog(pprzLogFile, "Data reported in the RTOS_MON message:\r\n");
-    sdLogWriteLog(pprzLogFile, " core free mem: %lu\r\n", rtos_mon.core_free_memory);
-    sdLogWriteLog(pprzLogFile, " heap free mem: %lu\r\n", rtos_mon.heap_free_memory);
-    sdLogWriteLog(pprzLogFile, " heap fragments: %lu\r\n", rtos_mon.heap_fragments);
-    sdLogWriteLog(pprzLogFile, " heap largest: %lu\r\n", rtos_mon.heap_largest);
-    sdLogWriteLog(pprzLogFile, " CPU load: %d %%\r\n", rtos_mon.cpu_load);
-    sdLogWriteLog(pprzLogFile, " number of threads: %d\r\n", rtos_mon.thread_counter);
-    sdLogWriteLog(pprzLogFile, " thread names: %s\r\n", rtos_mon.thread_names);
-    for (int i = 0; i < rtos_mon.thread_counter; i++) {
-      sdLogWriteLog(pprzLogFile, " thread %d load: %0.1f, free stack: %d\r\n", i,
-              (float)rtos_mon.thread_load[i] / 10.f, rtos_mon.thread_free_stack[i]);
+    static uint8_t cnt = 0;
+
+    if(rtos_mon.cpu_load > 85 || ( cnt++ > 10)) {
+        sdLogWriteLog(pprzLogFile, "Data reported in the RTOS_MON message:\r\n");
+        sdLogWriteLog(pprzLogFile, " core free mem: %lu\r\n", rtos_mon.core_free_memory);
+        sdLogWriteLog(pprzLogFile, " heap free mem: %lu\r\n", rtos_mon.heap_free_memory);
+        sdLogWriteLog(pprzLogFile, " heap fragments: %lu\r\n", rtos_mon.heap_fragments);
+        sdLogWriteLog(pprzLogFile, " heap largest: %lu\r\n", rtos_mon.heap_largest);
+        sdLogWriteLog(pprzLogFile, " CPU load: %d %%\r\n", rtos_mon.cpu_load);
+        sdLogWriteLog(pprzLogFile, " number of threads: %d\r\n", rtos_mon.thread_counter);
+        sdLogWriteLog(pprzLogFile, " thread names: %s\r\n", rtos_mon.thread_names);
+        for (int i = 0; i < rtos_mon.thread_counter; i++) {
+        sdLogWriteLog(pprzLogFile, " thread %d load: %0.1f, free stack: %d\r\n", i,
+                (float)rtos_mon.thread_load[i] / 10.f, rtos_mon.thread_free_stack[i]);
+        }
+        sdLogWriteLog(pprzLogFile, " CPU time: %.2f\r\n", rtos_mon.cpu_time);
+
+        cnt = 0;
     }
-    sdLogWriteLog(pprzLogFile, " CPU time: %.2f\r\n", rtos_mon.cpu_time);
-
-    cnt = 0;
-  }
-}
+    }
+#endif
 
 /**
  * Get actuator state based on second order dynamics with rate limiter for servos and first order dynamics for motor
@@ -973,8 +978,14 @@ void assign_variables(void){
     pos_vect[0] = stateGetPositionNed_f()->x;
     pos_vect[1] = stateGetPositionNed_f()->y;
     pos_vect[2] = stateGetPositionNed_f()->z;
-    airspeed = ms45xx.airspeed;
-    beta_deg = - aoa_pwm.angle * 180/M_PI;
+    #ifdef SITL
+        airspeed = 10;
+        beta_deg = 0;
+    #else
+        airspeed = ms45xx.airspeed;
+        beta_deg = - aoa_pwm.angle * 180/M_PI;
+    #endif
+    
     beta_rad = beta_deg * M_PI / 180;
 
 
@@ -1040,16 +1051,24 @@ void overactuated_mixing_run(void)
     //Assign variables
     assign_variables();
 
-    //Write to sysmon every 1 second if required by debug enable
-    if(get_sys_time_float() - time_old_sys_mon >= 1 && debug_enable){
-        status_nederdrone_sysmon();
-        time_old_sys_mon = get_sys_time_float();
-    }
+    #ifdef PRINT_CPU_LOAD_ON_SD
+        //Write to sysmon every 1 second if required by debug enable
+        if(get_sys_time_float() - time_old_sys_mon >= 1 ){
+            status_nederdrone_sysmon();
+            time_old_sys_mon = get_sys_time_float();
+        }
+    #endif
 
     //Retrieve the position of the STB WP: 
-    x_stb = waypoint_get_y(WP_STDBY);
-    y_stb = waypoint_get_x(WP_STDBY);
-    z_stb = -waypoint_get_alt(WP_STDBY); 
+    #ifdef STB_WP_TARGET
+        x_stb = waypoint_get_y(WP_STDBY);
+        y_stb = waypoint_get_x(WP_STDBY);
+        z_stb = -waypoint_get_alt(WP_STDBY); 
+    #else
+        x_stb = nav.target.y;
+        y_stb = nav.target.x;
+        z_stb = -nav.fp_altitude;
+    #endif
 
     //Prepare the reference for the AUTO test with the nonlinear controller: 
         
@@ -1122,6 +1141,10 @@ void overactuated_mixing_run(void)
     // } else{
     //     auto_test_time_start = get_sys_time_float();
     // }
+
+    #ifdef SITL
+        radio_control.values[RADIO_MODE] = 1000; //Enter wp mode automatically
+    #endif
 
     /// Case of manual PID control [FAILSAFE]
     // if(0){

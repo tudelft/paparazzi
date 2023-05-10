@@ -38,12 +38,6 @@ extern float actuator_state_filt_vect[INDI_NUM_ACT];
 extern bool indi_use_adaptive;
 
 extern float *Bwls[INDI_OUTPUTS];
-extern float indi_Wu_motor;
-
-extern float thrust_bx_eff;
-extern float thrust_bx_act_dyn;
-extern float actuator_thrust_bx_pprz;
-extern float thrust_bx_state_filt;
 
 extern float act_pref[INDI_NUM_ACT];
 
@@ -66,4 +60,3 @@ extern void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_fl
 extern void stabilization_indi_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn);
 
 #endif /* STABILIZATION_INDI */
-
