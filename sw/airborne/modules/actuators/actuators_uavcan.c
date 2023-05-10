@@ -27,6 +27,8 @@
 #include "actuators_uavcan.h"
 #include "modules/energy/electrical.h"
 #include "math/pprz_random.h"
+#include "modules/core/abi.h"
+#include "modules/actuators/actuators.h"
 
 /* By default enable the usage of the current sensing in the ESC telemetry */
 #ifndef UAVCAN_ACTUATORS_USE_CURRENT
@@ -159,7 +161,7 @@ static void actuators_uavcan_esc_status_cb(struct uavcan_iface_t *iface, CanardR
 
   canardDecodeScalar(transfer, 105, 5, false, (void *)&esc_idx);
   //Could not find the right interface
-  if (esc_idx > max_id || telem == NULL || max_id == 0) {
+  if (esc_idx >= max_id || telem == NULL || max_id == 0) {
     return;
   }
   canardDecodeScalar(transfer, 0, 32, false, (void *)&telem[esc_idx].energy);
@@ -184,6 +186,23 @@ static void actuators_uavcan_esc_status_cb(struct uavcan_iface_t *iface, CanardR
     electrical.current += uavcan2_telem[i].current;
   }
 #endif
+#endif
+
+// Create struct for ABI
+struct rpm_act_t rpm_message;
+rpm_message.actuator_idx =  esc_idx;
+rpm_message.rpm = telem->rpm;
+
+// Send ABI message
+#ifdef SERVOS_UAVCAN1_NB
+  if (iface == &uavcan1) {
+    AbiSendMsgRPM(RPM_SENSOR_ID, &rpm_message, SERVOS_UAVCAN1_NB);
+  }
+#endif
+#ifdef SERVOS_UAVCAN2_NB
+  if (iface == &uavcan2) {
+    AbiSendMsgRPM(RPM_SENSOR_ID, &rpm_message, SERVOS_UAVCAN2_NB);
+  }
 #endif
 }
 
