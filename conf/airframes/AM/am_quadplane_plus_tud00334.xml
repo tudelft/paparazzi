@@ -256,9 +256,11 @@ NOTES:
     <module name="geo_mag"/>
     <module name="air_data"/>
 
-
     <module name="agl_dist">
-        <!--<define name="USE_SONAR"/>-->
+      <define name="AGL_DIST_ID" value="AGL_LIDAR_TFMINI_ID"/>
+      <define name="AGL_DIST_MAX_RANGE" value="12.0"/>
+      <define name="AGL_DIST_MIN_RANGE" value="0.05"/>
+      <define name="AGL_DIST_FILTER" value="0.1"/>
     </module>
 
     <module name="Overactuated_mixing"/>
@@ -822,7 +824,6 @@ NOTES:
     <!-- Brick on only -->
     <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.76* adc)"/>
     <!-- <define name="MilliAmpereOfAdc(adc)" value="((3.3f/4096.0f) * 39.877f * adc)"/> -->
-    
     <!-- <define name="MAX_BAT_CAPACITY" value="5000" unit="mAh"/> -->
     <!-- <define name="MILLIAMP_AT_IDLE_THROTTLE" value="500" unit="mA"/> -->
     <!-- <define name="MILLIAMP_AT_FULL_THROTTLE" value="30000" unit="mA"/> -->

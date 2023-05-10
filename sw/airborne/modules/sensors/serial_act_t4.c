@@ -117,6 +117,7 @@ static uint8_t serial_act_t4_msg_buf_in[sizeof(struct serial_act_t4_in)*2]__attr
     {
     
     int8_t motor_arm_int_telemetry = myserial_act_t4_out.motor_arm_int;
+    int8_t servo_arm_int_telemetry = myserial_act_t4_out.servo_arm_int;
     int16_t motor_1_dshot_cmd_int_telemetry = myserial_act_t4_out.motor_1_dshot_cmd_int; 
     int16_t motor_2_dshot_cmd_int_telemetry = myserial_act_t4_out.motor_2_dshot_cmd_int; 
     int16_t motor_3_dshot_cmd_int_telemetry = myserial_act_t4_out.motor_3_dshot_cmd_int; 
@@ -137,7 +138,7 @@ static uint8_t serial_act_t4_msg_buf_in[sizeof(struct serial_act_t4_in)*2]__attr
     uint8_t rolling_msg_out_id_telemetry = myserial_act_t4_out.rolling_msg_out_id;
 
 	   pprz_msg_send_SERIAL_ACT_T4_OUT(trans, dev, AC_ID, 
-                    &motor_arm_int_telemetry,
+                    &motor_arm_int_telemetry, &servo_arm_int_telemetry,
                     &motor_1_dshot_cmd_int_telemetry, &motor_2_dshot_cmd_int_telemetry, &motor_3_dshot_cmd_int_telemetry, &motor_4_dshot_cmd_int_telemetry, 
                     &rotor_1_az_angle_cmd_int_telemetry, &rotor_1_el_angle_cmd_int_telemetry, &rotor_2_az_angle_cmd_int_telemetry, &rotor_2_el_angle_cmd_int_telemetry, 
                     &rotor_3_az_angle_cmd_int_telemetry, &rotor_3_el_angle_cmd_int_telemetry, &rotor_4_az_angle_cmd_int_telemetry, &rotor_4_el_angle_cmd_int_telemetry, 
