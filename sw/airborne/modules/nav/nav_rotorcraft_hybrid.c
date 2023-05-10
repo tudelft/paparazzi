@@ -34,6 +34,7 @@
 #endif
 #define NAV_MAX_SPEED (GUIDANCE_INDI_MAX_AIRSPEED + GUIDANCE_INDI_NAV_SPEED_MARGIN)
 float nav_max_speed = NAV_MAX_SPEED;
+float nav_max_acceleration_sp = 1.0;
 
 #ifndef MAX_DECELERATION
 #define MAX_DECELERATION 1.f
@@ -83,6 +84,14 @@ static void nav_hybrid_goto(struct EnuCoor_f *wp)
     float_vect2_bound_in_2d(&speed_sp, max_h_speed);
   }
 
+  // Check for acceleration bound
+  float abs_nav_speed = sqrtf(nav.speed.x * nav.speed.x + nav.speed.y * nav.speed.y);
+  float abs_speed_sp = sqrtf(speed_sp.x * speed_sp.x + speed_sp.y * speed_sp.y);
+  if (abs_speed_sp > abs_nav_speed) {
+    float bound_speed = abs_nav_speed + nav_max_acceleration_sp / NAVIGATION_FREQUENCY;
+    float_vect2_bound_in_2d(&speed_sp, bound_speed);
+  }
+
   VECT2_COPY(nav.speed, speed_sp);
   nav.horizontal_mode = NAV_HORIZONTAL_MODE_WAYPOINT;
   nav.setpoint_mode = NAV_SETPOINT_MODE_SPEED;
@@ -126,7 +135,23 @@ static void nav_hybrid_route(struct EnuCoor_f *wp_start, struct EnuCoor_f *wp_en
   VECT2_ADD(direction, v_to_line);
   float length_direction = Max(float_vect2_norm(&direction), 0.01f);
   // Scale to have the desired speed
-  VECT2_SMUL(nav.speed, direction, desired_speed / length_direction);
+  struct FloatVect2 speed_sp;
+  
+  VECT2_SMUL(speed_sp, direction, desired_speed / length_direction);
+
+  // Check for acceleration bound
+  float abs_nav_speed = sqrtf(nav.speed.x * nav.speed.x + nav.speed.y * nav.speed.y);
+  float abs_speed_sp = sqrtf(speed_sp.x * speed_sp.x + speed_sp.y * speed_sp.y);
+  if (abs_speed_sp > abs_nav_speed) {
+    float bound_speed = abs_nav_speed + nav_max_acceleration_sp / NAVIGATION_FREQUENCY;
+    float_vect2_bound_in_2d(&speed_sp, bound_speed);
+  }
+
+  // if need for deceleration
+  
+
+  VECT2_COPY(nav.speed, speed_sp);
+  
   // final target position, should be on the line, for display
   VECT2_SUM(nav.target, *stateGetPositionEnu_f(), direction);
 
@@ -227,7 +252,20 @@ static void nav_hybrid_circle(struct EnuCoor_f *wp_center, float radius)
   struct FloatVect2 speed_unit;
   VECT2_DIFF(speed_unit, nav.target, *stateGetPositionEnu_f());
   float_vect2_normalize(&speed_unit);
-  VECT2_SMUL(nav.speed, speed_unit, desired_speed);
+
+  struct FloatVect2 speed_sp;
+  
+  VECT2_SMUL(speed_sp, speed_unit, desired_speed);
+
+  // Check for acceleration bound
+  float abs_nav_speed = sqrtf(nav.speed.x * nav.speed.x + nav.speed.y * nav.speed.y);
+  float abs_speed_sp = sqrtf(speed_sp.x * speed_sp.x + speed_sp.y * speed_sp.y);
+  if (abs_speed_sp > abs_nav_speed) {
+    float bound_speed = abs_nav_speed + nav_max_acceleration_sp / NAVIGATION_FREQUENCY;
+    float_vect2_bound_in_2d(&speed_sp, bound_speed);
+  }
+
+  VECT2_COPY(nav.speed, speed_sp);
 
   nav_rotorcraft_base.circle.center = *wp_center;
   nav_rotorcraft_base.circle.radius = radius;
