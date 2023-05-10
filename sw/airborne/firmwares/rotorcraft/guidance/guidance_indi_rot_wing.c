@@ -712,7 +712,7 @@ void guidance_indi_calcg_wing(struct FloatMat33 *Gmat) {
   float T = cosf(pitch_lift)*-9.81;
 
   // get the derivative of the lift wrt to theta
-  float liftd = 0;//guidance_indi_get_liftd();
+  float liftd = guidance_indi_get_liftd();
 
   /*
   RMAT_ELMT(*Gmat, 0, 0) =  cphi*ctheta*spsi*T + cphi*spsi*lift;
@@ -783,7 +783,7 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   Bound(pitch_lift,-M_PI_2,0);
 
   // get the derivative of the lift wrt to theta
-  float liftd = 0; //guidance_indi_get_liftd();
+  float liftd = guidance_indi_get_liftd();
 
   // Calc assumed body acceleration setpoint and error
   float accel_bx_sp = cpsi * sp_accel.x + spsi * sp_accel.y;
@@ -829,7 +829,7 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   du_pref_rot_wing[0] = 0; // prefered delta roll angle
   du_pref_rot_wing[1] = -pitch_filt.o[0] + pitch_pref_rad;// prefered delta pitch angle
   du_pref_rot_wing[2] = du_max_rot_wing[2];
-  du_pref_rot_wing[3] = accel_bx_err;// - 9.81 * sinf(pitch_filt.o[0]);
+  du_pref_rot_wing[3] = accel_bx_err - 9.81 * sinf(pitch_filt.o[0]);
 
   // Set weights
   Wu_rot_wing[0] = roll_priority_factor * 10.414;
