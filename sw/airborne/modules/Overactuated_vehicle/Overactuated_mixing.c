@@ -54,6 +54,7 @@
 // #define USE_NEW_THR_ESTIMATION_OPTIMIZATION
 #define NEW_AOA_DEFINITION 
 #define FILTER_AIRSPEED
+
 #define NEW_YAWRATE_REFERENCE
 
 #define FBW_ACTUATORS
@@ -1065,9 +1066,11 @@ void overactuated_mixing_run(void)
         y_stb = waypoint_get_x(WP_STDBY);
         z_stb = -waypoint_get_alt(WP_STDBY); 
     #else
+    
         x_stb = nav.target.y;
         y_stb = nav.target.x;
         z_stb = -nav.fp_altitude;
+
     #endif
 
     //Prepare the reference for the AUTO test with the nonlinear controller: 

@@ -64,7 +64,6 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="Start Engine">
-      <set value="FALSE" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <call_once fun="nav_set_heading_current()"/>
       <attitude pitch="-65" roll="0" throttle="0" until="stage_time>1" vmode="throttle"/>
@@ -97,74 +96,60 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block-->
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
-      <set value="FALSE" var="force_forward"/>
       <stay wp="STDBY"/>
     </block>
     <block name="stay_p1">
-      <set value="FALSE" var="force_forward"/>
       <stay wp="p1"/>
     </block>
     <block name="go_p2">
-      <set value="TRUE" var="force_forward"/>
       <call_once fun="nav_set_heading_deg(90)"/>
       <go wp="p2"/>
       <deroute block="stay_p1"/>
     </block>
     <block name="line_p1_p2">
-      <set value="TRUE" var="force_forward"/>
       <go from="p1" hmode="route" wp="p2"/>
       <stay until="stage_time>10" wp="p2"/>
       <go from="p2" hmode="route" wp="p1"/>
       <deroute block="line_p1_p2"/>
     </block>
     <block name="route">
-      <set value="TRUE" var="force_forward"/>
-      <go from="p1" hmode="route" wp="p2"/>
-      <go from="p2" hmode="route" wp="p3"/>
-      <go from="p3" hmode="route" wp="p4"/>
-      <go from="p4" hmode="route" wp="p1"/>
+      <go wp="p1"/>
+      <go wp="p2"/>
+      <go wp="p3"/>
+      <go wp="p4"/>
       <deroute block="route"/>
     </block>
 
     <block group="extra_pattern" name="Survey S1-S2 25m NS" strip_button="Svy25-NS-PRIMITIVE">
-      <set value="FALSE" var="force_forward"/>
       <survey_rectangle grid="30" orientation="NS" wp1="S1" wp2="S2"/>
     </block>
     <block group="extra_pattern" name="Survey S1-S2 NS" strip_button="Svy-NS" strip_icon="survey.png">
-      <set value="TRUE" var="force_forward"/>
       <call_once fun="nav_survey_rectangle_rotorcraft_setup(WP_S1, WP_S2, sweep, NS)"/>
       <deroute block="Survey RECTANGLE RUN"/>
     </block>
     <block group="extra_pattern" name="Survey S1-S2 LO" strip_button="Svy-LO" strip_icon="survey_we.png">
-      <set value="TRUE" var="force_forward"/>
       <call_once fun="nav_survey_rectangle_rotorcraft_setup(WP_S1, WP_S2, sweep, WE)"/>
       <deroute block="Survey RECTANGLE RUN"/>
     </block>
     <block group="extra_pattern" name="Survey RECTANGLE RUN" strip_button="Svy CONT">
-      <set value="TRUE" var="force_forward"/>
       <exception cond="rectangle_survey_sweep_num @GT 1" deroute="Standby"/>
       <call fun="nav_survey_rectangle_rotorcraft_run(WP_S1, WP_S2)"/>
     </block>
 
     <block name="Oval">
-      <set value="TRUE" var="force_forward"/>
       <oval p1="p1" p2="p2" radius="nav.radius"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
-      <set value="FALSE" var="force_forward"/>
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>
     <block name="land">
-      <set value="FALSE" var="force_forward"/>
       <go wp="TD"/>
     </block>
     <block name="descend">
-      <set value="FALSE" var="force_forward"/>
       <exception cond="LessThan(GetPosHeight(), 15.0)" deroute="flare"/>
       <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="flare">
-      <set value="FALSE" var="force_forward"/>
       <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">
