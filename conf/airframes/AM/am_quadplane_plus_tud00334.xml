@@ -255,10 +255,13 @@ NOTES:
       <define name="AGL_DIST_FILTER" value="0.1"/>
     </module>
 
+
     <module name="Overactuated_mixing"/>
 
     <module name="lidar" type="tfmini_am7">
       <configure name="USE_TFMINI_AGL" value="TRUE"/>
+      <configure name="USE_TFMINI" value="TRUE"/>
+      <configure name="AHRS_USE_TFMINI_AGL" value="TRUE"/>
       <configure name="TFMINI_COMPENSATE_ROTATION" value="TRUE"/>
     </module>
 
@@ -695,6 +698,12 @@ NOTES:
   </section>
 
   <!-- ************************* MAG EXTERNAL ************************* -->
+
+   <!-- ************************* MAG EXTERNAL ************************* -->
+  <section name="MAG_RM3100" prefix="RM3100_">
+    <define name="DATA_RATE" value="RM3100_RATE_600"/>
+    <define name="ADDR" value="RM3100_ADDR3"/>
+  </section>
 
   <section name="IMU" prefix="IMU_">
 
