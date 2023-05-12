@@ -47,6 +47,7 @@
 /**
  * Variables declaration
  */
+ 
 // #define STB_WP_TARGET 
     
 #define FLY_WITH_AIRSPEED
@@ -1205,11 +1206,11 @@ void overactuated_mixing_run(void)
         }
 
         euler_order[0] = pid_gains_over.p.phi * euler_error[0] + pid_gains_over.i.phi * euler_error_integrated[0] -
-                         pid_gains_over.d.phi * rate_vect[0];
+                         pid_gains_over.d.phi * rate_vect_filt[0];
         euler_order[1] = pid_gains_over.p.theta * euler_error[1] + pid_gains_over.i.theta * euler_error_integrated[1] -
-                         pid_gains_over.d.theta * rate_vect[1];
+                         pid_gains_over.d.theta * rate_vect_filt[1];
         euler_order[2] = pid_gains_over.p.psi * euler_error[2] + pid_gains_over.i.psi * euler_error_integrated[2] -
-                         pid_gains_over.d.psi * rate_vect[2];
+                         pid_gains_over.d.psi * rate_vect_filt[2];
 
         //Bound euler angle orders:
         BoundAbs(euler_order[0], OVERACTUATED_MIXING_PID_MAX_ROLL_ORDER_PWM);
