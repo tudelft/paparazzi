@@ -1,0 +1,13 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="oneloop_indi" dir="wind_tunnel">
+  <doc>
+    <description>One loop (Guidance + Stabilization) INDI controller for the rotating wing drone RW3C</description>
+  </doc>
+  <header>
+    <file name="oneloop_indi.h"/>
+  </header>
+  <makefile>
+    <file name="oneloop_indi.c"/>
+    <test/>
+  </makefile>
+</module>
