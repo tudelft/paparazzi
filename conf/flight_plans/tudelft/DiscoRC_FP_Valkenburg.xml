@@ -1,5 +1,7 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
+<!--        lat0="51.991126" lon0="4.378142"    delft-->
+<!--        lat0="52.1683346" lon0="4.4135455" Valkenburg-->
 <flight_plan alt="70" ground_alt="0" lat0="52.1683346" lon0="4.4135455" max_dist_from_home="500" name="Altura fp Valkenburg" security_height="30">
   <header>
     #include "autopilot.h"
@@ -37,12 +39,15 @@
     <block name="Wait GPS">
       <set value="true" var="force_forward"/>
       <call_once fun="NavKillThrottle()"/>
-      <while cond="!GpsFixValid()"/>
+<!--      <while cond="LessThan(NavBlockTime(), 60)"/>-->
+      <while cond="!GpsFixValid() || !state.ned_initialized_i"/>
+<!--            <while cond="!GpsFixValid()"/>-->
     </block>
     <block name="Geo init">
       <set value="true" var="force_forward"/>
       <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetGroundReferenceHere()"/>
+      <call_once fun="NavSetAltitudeReferenceHere()"/>
     </block>
     <block name="Holding point">
       <set value="true" var="force_forward"/>

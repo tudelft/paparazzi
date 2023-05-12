@@ -642,7 +642,7 @@ NOTES:
 
 <!--    GPS HEADING IN EKF-->
     <define name="INS_EKF2_FUSION_MODE" value="MASK_USE_GPS | MASK_USE_GPSYAW"/>
-    <define name="INS_EKF2_GPS_COURSE_YAW" value="TRUE"/>
+    <define name="INS_EKF2_GPS_COURSE_YAW" value="FALSE"/>
     <define name="INS_EKF2_VDIST_SENSOR_TYPE" value="VDIST_SENSOR_GPS"/>    <!-- Primary source of altitude -->
     <define name="INS_EKF2_GPS_CHECK_MASK" value="0"/>  <!-- bitmask used to control which GPS quality checks are used-->
   </section>

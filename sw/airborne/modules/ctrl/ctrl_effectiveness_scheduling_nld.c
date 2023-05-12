@@ -48,7 +48,7 @@ static float g1g2_hover[INDI_OUTPUTS][INDI_NUM_ACT] = {STABILIZATION_INDI_G1_ROL
 
 static float g2_both[INDI_NUM_ACT] = STABILIZATION_INDI_G2; //scaled by INDI_G_SCALING
 
-int32_t use_scheduling = 0;
+int32_t use_scheduling = 1;
 
 float ce_pitch_a = CE_PITCH_A;
 float ce_pitch_b = CE_PITCH_B;
@@ -84,9 +84,9 @@ void ctrl_eff_scheduling_periodic(void)
 //    ctrl_eff_scheduling_periodic_a();
 //  }
 
-//    if (use_scheduling == 1) {
+    if (use_scheduling == 1) {
         ctrl_eff_scheduling_periodic_b();
-//    }
+    }
 
 #ifdef INDI_THRUST_ON_PITCH_EFF
   //State prioritization {W Roll, W pitch, W yaw, TOTAL THRUST}
@@ -155,7 +155,7 @@ void ctrl_eff_scheduling_periodic_b(void)
 //      g1g2[0][3] = roll_eff/1000;
 //  } else {
     // calculate squared airspeed
-    Bound(airspeed, 6.0, 17.0);
+    Bound(airspeed, 6.0, 20.0);
     float airspeed2 = airspeed*airspeed;
 
     float pitch_eff = ce_pitch_a + ce_pitch_b*airspeed2;

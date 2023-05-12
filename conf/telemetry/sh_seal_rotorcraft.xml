@@ -46,6 +46,9 @@
       <message name="AHRS_REF_QUAT"            period="1.0"/>
 <!--      <message name="STAB_ATTITUDE_INDI"       period="0.1"/>-->
       <message name="GUIDANCE_INDI_HYBRID"    period="1.0"/>
+      <message name="GUIDANCE_INDI_HYBRID_SOARING"    period="1.0"/>
+
+      <message name="SOARING_WP_MAP"          period="1.0"/>
 
       <message name="ACTUATORS"                 period="1.0"/>
       <message name="ROTORCRAFT_RADIO_CONTROL" period="1.5"/>
@@ -53,11 +56,13 @@
 
       <message name="INS_ANALYSER"            period="3.0"/>
 <!--      <message name="INDI_G"                   period="1.0"/>-->
-<!--      <message name="INDI_SCHEDULE_G1"          period="0.5"/>-->
+      <message name="INDI_SCHEDULE_G1"          period="0.5"/>
 
       <message name="GUIDANCE_H_REF_INT"       period="0.5"/>
       <message name="VERT_LOOP"         period=".5"/>
       <message name="GPS_RTK"                  period="1"/>
+
+<!--      <message name="BARO_MS5611"               period="3.0"/>-->
     </mode>
 
     <mode name="ppm">
@@ -209,7 +214,7 @@
       <message name="INS_REF"                  period="5.1"/>
       <message name="ROTORCRAFT_NAV_STATUS"    period="1.6"/>
       <message name="WP_MOVED"                 period="1.3"/>
-      <message name="GPS_INT"                  period=".1"/>
+      <message name="GPS_INT"                  period=".05"/>
       <message name="INS"                      period=".002"/>
       <message name="INS_Z"                    period=".1"/>
       <message name="I2C_ERRORS"               period="4.1"/>
@@ -229,7 +234,7 @@
       <message name="ESC"                      period="0.02"/>
       <message name="PPM"                      period="0.05"/>
       <message name="INDI_G"                   period="0.5"/>
-      <message name="INDI_SCHEDULE_G1"          period="0.1"/>
+      <message name="INDI_SCHEDULE_G1"          period="0.05"/>
 
       <message name="ROTORCRAFT_FP"            period="0.02"/>
 
@@ -247,7 +252,10 @@
       <message name="ACTUATORS"                 period="0.1"/>
       <message name="ROTORCRAFT_RADIO_CONTROL" period="0.1"/>
 
-      <message name="GUIDANCE_INDI_HYBRID"    period="0.1"/>
+      <message name="GUIDANCE_INDI_HYBRID"    period="0.05"/>
+      <message name="GUIDANCE_INDI_HYBRID_SOARING"    period="0.05"/>
+
+      <message name="SOARING_WP_MAP"          period="0.1"/>
 
       <!--      <message name="IMU_ACCEL"                period=".05"/>-->
 <!--      <message name="IMU_MAG"                period=".05"/>-->
