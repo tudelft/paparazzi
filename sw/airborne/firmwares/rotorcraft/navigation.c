@@ -590,7 +590,7 @@ void nav_circle(struct EnuCoor_i *wp_center, int32_t radius)
   horizontal_mode = HORIZONTAL_MODE_CIRCLE;
 
 //  // Set z target TODO: nav set altitude (for some reason circle do not set z position)
-//  navigation_target.z = nav_circle_center.z;
+  navigation_target.z = nav_circle_center.z;
 }
 
 

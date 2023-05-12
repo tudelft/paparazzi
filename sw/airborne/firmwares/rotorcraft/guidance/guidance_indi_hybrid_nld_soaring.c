@@ -171,7 +171,7 @@ struct FloatVect3 guidance_wind_gradient = {0.0, 0.0, 0.0};
 #define GUIDANCE_INDI_GRAD_GAIN_REC_Z 1.0
 #endif
 #ifndef GUIDANCE_INDI_POS_CTRL
-#define GUIDANCE_INDI_POS_CTRL FALSE
+#define GUIDANCE_INDI_POS_CTRL TRUE
 #endif
 #ifndef GUIDANCE_INDI_MAX_THROTTLE
 #define GUIDANCE_INDI_MAX_THROTTLE 9600
@@ -180,7 +180,7 @@ struct FloatVect3 guidance_wind_gradient = {0.0, 0.0, 0.0};
 #define GUIDANCE_INDI_PREF_THROTTLE 0.0
 #endif
 #ifndef GUIDANCE_INDI_Y_POSITION_CTRL
-#define GUIDANCE_INDI_Y_POSITION_CTRL FALSE
+#define GUIDANCE_INDI_Y_POSITION_CTRL TRUE
 #endif
 
 // Moving WP
@@ -209,6 +209,34 @@ struct FloatVect3 guidance_wind_gradient = {0.0, 0.0, 0.0};
 #define GUIDANCE_INDI_SOARING_WP_COST_THRES 50
 #endif
 
+// Moving WP Steps
+#ifndef GUIDANCE_INDI_SOARING_STEP_K_BIG
+#define GUIDANCE_INDI_SOARING_STEP_K_BIG 5
+#endif
+#ifndef GUIDANCE_INDI_SOARING_STEP_K_MED
+#define GUIDANCE_INDI_SOARING_STEP_K_MED 3
+#endif
+#ifndef GUIDANCE_INDI_SOARING_STEP_K_SMALL
+#define GUIDANCE_INDI_SOARING_STEP_K_SMALL 1.5
+#endif
+#ifndef GUIDANCE_INDI_SOARING_STEP_BIG
+#define GUIDANCE_INDI_SOARING_STEP_BIG 0.5
+#endif
+#ifndef GUIDANCE_INDI_SOARING_STEP_MED
+#define GUIDANCE_INDI_SOARING_STEP_MED 0.3
+#endif
+#ifndef GUIDANCE_INDI_SOARING_STEP_SMALL
+#define GUIDANCE_INDI_SOARING_STEP_SMALL 0.1
+#endif
+#ifndef GUIDANCE_INDI_SOARING_STEP_FINE
+#define GUIDANCE_INDI_SOARING_STEP_FINE 0.05
+#endif
+#ifndef GUIDANCE_INDI_SOARING_USE_FIXED_STEP_SIZE
+#define GUIDANCE_INDI_SOARING_USE_FIXED_STEP_SIZE FALSE
+#endif
+#ifndef GUIDANCE_INDI_SOARING_FIXED_STEP_SIZE
+#define GUIDANCE_INDI_SOARING_FIXED_STEP_SIZE 0.2
+#endif
 
 // 2m/0.1 = 20 data points for one axis
 #define MAP_MAX_NUM_POINTS 400
@@ -262,17 +290,17 @@ float move_wp_sum_cost = 0.;
 struct FloatVect3 wp_soaring_pos;
 uint8_t soar_wp_id = GUIDANCE_INDI_SOARING_WP_ID;
 bool soaring_move_wp_running = false;
-bool soaring_use_fixed_step_size = false;
-float soaring_fixed_step_size = 0.2;
+bool soaring_use_fixed_step_size = GUIDANCE_INDI_SOARING_USE_FIXED_STEP_SIZE;
+float soaring_fixed_step_size = GUIDANCE_INDI_SOARING_FIXED_STEP_SIZE;
 
-float soaring_step_k_big = 3;
-float soaring_step_k_mid = 2;
-float soaring_step_k_small = 1.5;
+float soaring_step_k_big = GUIDANCE_INDI_SOARING_STEP_K_BIG;
+float soaring_step_k_mid = GUIDANCE_INDI_SOARING_STEP_K_MED;
+float soaring_step_k_small = GUIDANCE_INDI_SOARING_STEP_K_SMALL;
 
-float soaring_step_size_big = 0.3;
-float soaring_step_size_mid = 0.2;
-float soaring_step_size_small = 0.1;
-float soaring_step_size_fine = 0.05;
+float soaring_step_size_big = GUIDANCE_INDI_SOARING_STEP_BIG;
+float soaring_step_size_mid = GUIDANCE_INDI_SOARING_STEP_MED;
+float soaring_step_size_small = GUIDANCE_INDI_SOARING_STEP_SMALL;
+float soaring_step_size_fine = GUIDANCE_INDI_SOARING_STEP_FINE;
 
 int32_t wp_pos_x;
 int32_t wp_pos_y;
@@ -495,6 +523,7 @@ void guidance_indi_soaring_run(float *heading_sp) {
     pos_y_err = POS_FLOAT_OF_BFP(guidance_h.ref.pos.y) - stateGetPositionNed_f()->y;
     pos_z_err = POS_FLOAT_OF_BFP(guidance_v_z_ref - stateGetPositionNed_i()->z);
 
+//    TODO: remove experimental features;
   if(speed_sp_from_position){
       // position ctrl
       speed_sp.x = pos_x_err * gih_params.pos_gain;
