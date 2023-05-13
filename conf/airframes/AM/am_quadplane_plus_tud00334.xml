@@ -290,13 +290,13 @@ NOTES:
   <section name="OVERACTUATED_VARIABLES" prefix="OVERACTUATED_MIXING_">
 
     <!-- PID gains wrt the SI units -->
-    <define name="PID_P_GAIN_PHI" value="1050"/>
+    <define name="PID_P_GAIN_PHI" value="300"/>
     <define name="PID_I_GAIN_PHI" value="1"/>
-    <define name="PID_D_GAIN_PHI" value="165"/>
+    <define name="PID_D_GAIN_PHI" value="130"/>
 
-    <define name="PID_P_GAIN_THETA" value="850"/>
+    <define name="PID_P_GAIN_THETA" value="160"/>
     <define name="PID_I_GAIN_THETA" value="1"/>
-    <define name="PID_D_GAIN_THETA" value="150"/>
+    <define name="PID_D_GAIN_THETA" value="100"/>
 
     <!-- <define name="PID_P_GAIN_PSI_AZ" value="1.5"/>
     <define name="PID_I_GAIN_PSI_AZ" value="0.5"/>
@@ -474,12 +474,12 @@ NOTES:
     <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0488" /> 
 
     <!-- Weighting matrix for the INDI -->
-    <define name="W_ACT_MOTOR_CONST" value="2.5"/>
-    <define name="W_ACT_MOTOR_SPEED" value="0"/>
+    <define name="W_ACT_MOTOR_CONST" value="3"/>
+    <define name="W_ACT_MOTOR_SPEED" value="0.1"/>
     <define name="W_ACT_EL_CONST" value="0"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
     <define name="W_ACT_AZ_CONST" value="0"/>
-    <define name="W_ACT_AZ_SPEED" value="2"/>
+    <define name="W_ACT_AZ_SPEED" value="0.1"/>
     <define name="W_ACT_THETA_CONST" value="5"/>
     <define name="W_ACT_THETA_SPEED" value="0"/>
     <define name="W_ACT_PHI_CONST" value="100"/>
