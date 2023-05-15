@@ -100,6 +100,20 @@ float Wv[6]       = {2.0,2.0,5.0,10.0,10.0,1.0}; // {ax_dot,ay_dot,az_dot,p_ddot
 float Wu[11]      = {2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,1.0,1.8,2.0}; // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}
 float Wu_tran[11] = {0.0,0.0,0.0,0.0,3.0,3.0,3.0,3.0,0.0,0.0,0.0}; // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}
 
+/*Define Variables used in control*/
+struct Int32Eulers stab_att_sp_euler;
+struct Int32Quat   stab_att_sp_quat;
+float actuator_state_filt_vect[INDI_NUM_ACT];
+struct FloatRates angular_accel_ref = {0., 0., 0.};
+float actuator_state[INDI_NUM_ACT];
+//struct FloatRates rate_sp_telem = {0., 0., 0.};
+float angular_acceleration[3] = {0., 0., 0.};
+float indi_u[INDI_NUM_ACT];
+float indi_du[INDI_NUM_ACT];
+float g2_times_du;
+float q_filt = 0.0;
+float r_filt = 0.0;
+
 /*Error Controller Gain Design*/
 static float k_e_1_3_f(float p1, float p2, float p3) {return (p1*p2*p3)};
 static float k_e_2_3_f(float p1, float p2, float p3) {return (p1*p2+p1*p3+p2*p3)};
@@ -222,3 +236,231 @@ float k_r_d_e   = k_e_2_2_f(p1_head,p2_head);
 float k_r_rm    = k_rm_1_2_f(rm_k_head*p1_head,rm_k_head*p2_head);
 float k_r_d_rm  = k_rm_2_2_f(rm_k_head*p1_head,rm_k_head*p2_head);
 
+/** state eulers in zxy order */
+struct FloatEulers eulers_zxy;
+Butterworth2LowPass filt_accel_ned[3];
+Butterworth2LowPass filt_accel_body[3];
+Butterworth2LowPass roll_filt;
+Butterworth2LowPass pitch_filt;
+Butterworth2LowPass yaw_filt;
+//Butterworth2LowPass thrust_filt;
+//Butterworth2LowPass accely_filt;
+
+/*Filters Initialization*/
+float oneloop_indi_filt_cutoff = 2.0;
+float oneloop_indi_estimation_filt_cutoff = 2.0;
+
+Butterworth2LowPass actuator_lowpass_filters[INDI_NUM_ACT];
+Butterworth2LowPass estimation_input_lowpass_filters[INDI_NUM_ACT];
+Butterworth2LowPass att_dot_meas_lowpass_filters[3];
+Butterworth2LowPass att_dot_est_output_lowpass_filters[3];
+
+static struct FirstOrderLowPass rates_filt_fo[3];
+struct FloatVect3 body_accel_f;
+
+void init_filters(void);
+void init_filters(void)
+{
+  float tau = 1.0 / (2.0 * M_PI *oneloop_indi_filt_cutoff);
+  float tau_est = 1.0 / (2.0 * M_PI * oneloop_indi_estimation_filt_cutoff);
+  float sample_time = 1.0 / PERIODIC_FREQUENCY;
+
+  // Filtering of the Inputs with 3 dimensions (e.g. rates and accelerations)
+  int8_t i;
+  for (i = 0; i < 3; i++) {
+    // Filtering of the gyroscope
+    init_butterworth_2_low_pass(&att_dot_meas_lowpass_filters[i], tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&att_dot_est_output_lowpass_filters[i], tau_est, sample_time, 0.0);
+    // Filtering of the linear accelerations
+    init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&filt_accel_body[i], tau, sample_time, 0.0);
+  }
+
+  // Filtering of the actuators
+  for (i = 0; i < INDI_NUM_ACT; i++) {
+    init_butterworth_2_low_pass(&actuator_lowpass_filters[i], tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&estimation_input_lowpass_filters[i], tau_est, sample_time, 0.0);
+  }
+  init_butterworth_2_low_pass(&roll_filt, tau, sample_time, 0.0);
+  init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
+  init_butterworth_2_low_pass(&yaw_filt, tau, sample_time, 0.0);
+
+  // Init rate filter for feedback
+  float time_constants[3] = {1.0 / (2 * M_PI * ONELOOP_INDI_FILT_CUTOFF_P), 1.0 / (2 * M_PI * ONELOOP_INDI_FILT_CUTOFF_Q), 1.0 / (2 * M_PI * ONELOOP_INDI_FILT_CUTOFF_R)};
+  init_first_order_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
+  init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
+  init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
+}
+
+void guidance_indi_propagate_filters(void);
+/*Low pass the accelerometer measurements to remove noise from vibrations.The roll and pitch also need to be filtered to synchronize them with the acceleration. Called as a periodic function with PERIODIC_FREQ*/
+void guidance_indi_propagate_filters(void) {
+  struct NedCoor_f *accel = stateGetAccelNed_f();
+  float accel_b_x = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->x);
+  float accel_b_y = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
+  float accel_b_z = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->z);
+  struct FloatRates *body_rates = stateGetBodyRates_f();
+  float rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
+  update_butterworth_2_low_pass(&filt_accel_ned[0], accel->x);
+  update_butterworth_2_low_pass(&filt_accel_ned[1], accel->y);
+  update_butterworth_2_low_pass(&filt_accel_ned[2], accel->z);
+  update_butterworth_2_low_pass(&roll_filt, eulers_zxy.phi);
+  update_butterworth_2_low_pass(&pitch_filt, eulers_zxy.theta);
+  update_butterworth_2_low_pass(&yaw_filt, eulers_zxy.psi);
+  update_butterworth_2_low_pass(&filt_accel_body[0], accel_b_x);
+  update_butterworth_2_low_pass(&filt_accel_body[1], accel_b_y);
+  update_butterworth_2_low_pass(&filt_accel_body[2], accel_b_z);
+  
+  int8_t i;
+  for (i = 0; i < 3; i++) {
+    update_butterworth_2_low_pass(&att_dot_meas_lowpass_filters[i], rate_vect[i]);
+    update_butterworth_2_low_pass(&att_dot_est_output_lowpass_filters[i], rate_vect[i]);
+    //Calculate the angular acceleration via finite difference
+    angular_acceleration[i] = (measurement_lowpass_filters[i].o[0]- measurement_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY;
+    // Calculate derivatives for estimation
+    float estimation_rate_d_prev = estimation_rate_d[i];
+    estimation_rate_d[i] = (estimation_output_lowpass_filters[i].o[0] - estimation_output_lowpass_filters[i].o[1]) *PERIODIC_FREQUENCY;
+    estimation_rate_dd[i] = (estimation_rate_d[i] - estimation_rate_d_prev) * PERIODIC_FREQUENCY;
+}
+
+/*Init function of oneloop controller*/
+void oneloop_indi_init(void)
+{
+  // Initialize filters
+  init_filters();
+
+  AbiBindMsgRPM(RPM_SENSOR_ID, &rpm_ev, rpm_cb);
+  //AbiBindMsgTHRUST(THRUST_INCREMENT_ID, &thrust_ev, thrust_cb);
+  //AbiBindMsgTHRUSTBX(THRUST_BX_INCREMENT_ID, &thrust_bx_ev, thrust_bx_cb);
+
+ // #ifdef STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS
+ // actuator_thrust_bx_pprz = -MAX_PPRZ;
+ // thrust_bx_state_filt = 0;
+ // thrust_bx_state = 0;
+ // #endif
+  float_vect_zero(actuator_state_filt_vect, INDI_NUM_ACT);
+  float_vect_zero(actuator_state_filt_vectd, INDI_NUM_ACT);
+  float_vect_zero(actuator_state_filt_vectdd, INDI_NUM_ACT);
+  float_vect_zero(estimation_rate_d, INDI_NUM_ACT);
+  float_vect_zero(estimation_rate_dd, INDI_NUM_ACT);
+
+
+  //Calculate G1G2_PSEUDO_INVERSE
+  //sum_g1_g2();
+  //calc_g1g2_pseudo_inv();
+
+  int8_t i;
+  // Initialize the array of pointers to the rows of g1g2
+  //for (i = 0; i < INDI_OUTPUTS; i++) {
+  //  Bwls[i] = g1g2[i];
+  //}
+
+  // Initialize the estimator matrices
+  //float_vect_copy(g1_est[0], g1[0], INDI_OUTPUTS * INDI_NUM_ACT);
+  //float_vect_copy(g2_est, g2, INDI_NUM_ACT);
+  // Remember the initial matrices
+  //float_vect_copy(g1_init[0], g1[0], INDI_OUTPUTS * INDI_NUM_ACT);
+  //float_vect_copy(g2_init, g2, INDI_NUM_ACT);
+
+  // Assume all non-servos are delivering thrust
+  //num_thrusters = INDI_NUM_ACT;
+  //for (i = 0; i < INDI_NUM_ACT; i++) {
+  //  num_thrusters -= act_is_servo[i];
+  //}
+
+#if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_G, send_indi_g);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_FULL_INDI, send_att_full_indi);
+#endif
+}
+
+/**
+ * Function that resets important values upon engaging Oneloop INDI.
+ *
+ * FIXME: Ideally we should distinguish between the "stabilization" and "guidance" needs because it is unlikely to switch stabilization in flight,
+ * and there are multiple modes that use (the same) stabilization. Resetting the controller
+ * is not so nice when you are flying.
+ */
+void oneloop_indi_enter(void)
+{
+  /* Stabilization Reset */
+  // To-Do // stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
+  float_vect_zero(du_estimation, INDI_NUM_ACT);
+  float_vect_zero(ddu_estimation, INDI_NUM_ACT);
+
+  /*Guidance Reset*/
+  // To-D- // guidance_indi_hybrid_heading_sp = stateGetNedToBodyEulers_f()->psi;
+
+  float tau = 1.0 / (2.0 * M_PI * filter_cutoff);
+  float sample_time = 1.0 / PERIODIC_FREQUENCY;
+  for (int8_t i = 0; i < 3; i++) {
+    init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&filt_accel_body[i], tau, sample_time, 0.0);
+  }
+  init_butterworth_2_low_pass(&roll_filt, tau, sample_time, stateGetNedToBodyEulers_f()->phi);
+  init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, stateGetNedToBodyEulers_f()->theta);
+  init_butterworth_2_low_pass(&yaw_filt, tau, sample_time, stateGetNedToBodyEulers_f()->yaw);
+}
+
+/*Function that calculates the failsafe setpoint*/
+void oneloop_indi_set_failsafe_setpoint(void)
+{
+  /* set failsafe to zero roll/pitch and current heading */
+  int32_t heading2 = stabilization_attitude_get_heading_i() / 2;
+  PPRZ_ITRIG_COS(stab_att_sp_quat.qi, heading2);
+  stab_att_sp_quat.qx = 0;
+  stab_att_sp_quat.qy = 0;
+  PPRZ_ITRIG_SIN(stab_att_sp_quat.qz, heading2);
+}
+
+void oneloop_indi_attitude_run(struct FloatVect3 att_ref, struct FloatVect3 att_d_ref, struct FloatVect3 att_2d_ref, struct FloatVect3 att_3d_ref, bool in_flight)
+{
+  struct FloatVect3 att;
+  struct FloatVect3 att_d; 
+  struct FloatVect3 att_2d;
+
+  att[3]    = {roll_filt.o[0],pitch_filt.o[0],yaw_filt.o[0]};
+  att_d[3]  = {measurement_lowpass_filters[0].o[0],measurement_lowpass_filters[1].o[0],measurement_lowpass_filters[2].o[0]};
+  att_2d[3] = angular_acceleration;
+
+  struct FloatVect3 nu;
+  nu[0] = ec_3rd(float att_ref[0], float att_d_ref[0], float att_2d_ref[0], float att_3d_ref[0], float att[0], float att_d[0], float att_2d[0], float k_phi_e, float k_p_e, float k_pdot_e);
+  nu[1] = ec_3rd(float att_ref[1], float att_d_ref[1], float att_2d_ref[1], float att_3d_ref[1], float att[1], float att_d[1], float att_2d[1], float k_theta_e, float k_q_e, float k_qdot_e);
+  nu[2] = ec_2rd(float att_d_ref[2], float att_2d_ref[2], float att_3d_ref[2], float att_d[2], float att_2d[2], float k_r_e, float kr_d_e);
+  
+  // local variable to compute rate setpoints based on attitude error
+  struct FloatRates rate_sp;
+
+  // calculate the virtual control (reference acceleration) based on a PD controller
+  rate_sp.p = indi_gains.att.p * att_fb.x / indi_gains.rate.p;
+  rate_sp.q = indi_gains.att.q * att_fb.y / indi_gains.rate.q;
+  rate_sp.r = indi_gains.att.r * att_fb.z / indi_gains.rate.r;
+
+  rate_sp_telem.p = rate_sp.p;
+  rate_sp_telem.q = rate_sp.q;
+  rate_sp_telem.r = rate_sp.r;
+
+  // Possibly we can use some bounding here
+  /*BoundAbs(rate_sp.r, 5.0);*/
+
+  /* compute the INDI command */
+  stabilization_indi_rate_run(rate_sp, in_flight);
+
+  // Reset thrust increment boolean
+  indi_thrust_increment_set = false;
+  indi_thrust_bx_increment_set = false;
+}
+
+// This function reads rc commands
+void stabilization_indi_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn)
+{
+  struct FloatQuat q_sp;
+#if USE_EARTH_BOUND_RC_SETPOINT
+  stabilization_attitude_read_rc_setpoint_quat_earth_bound_f(&q_sp, in_flight, in_carefree, coordinated_turn);
+#else
+  stabilization_attitude_read_rc_setpoint_quat_f(&q_sp, in_flight, in_carefree, coordinated_turn);
+#endif
+
+  QUAT_BFP_OF_REAL(stab_att_sp_quat, q_sp);
+}

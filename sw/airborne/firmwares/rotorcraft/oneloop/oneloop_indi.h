@@ -26,5 +26,8 @@
 #ifndef ONELOOP_INDI_H
 #define ONELOOP_INDI_H
 
-
+extern void oneloop_indi_init(void);
+extern void oneloop_indi_enter(void);
+extern void oneloop_indi_set_failsafe_setpoint(void);
+extern void oneloop_indi_attitude_run(struct FloatVect3 att_ref, struct FloatVect3 att_d_ref, struct FloatVect3 att_2d_ref, struct FloatVect3 att_3d_ref, bool in_flight);
 #endif  // ONELOOP_INDI_H
