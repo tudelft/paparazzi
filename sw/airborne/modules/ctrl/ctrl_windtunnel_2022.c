@@ -51,7 +51,7 @@ float dt_l = 5;// [s] Long test time interval. Used for procedure which involve 
 #define mmax 5 // Number of Motors used in the Motor status (e.g. 4) 
 #define kmax 4 // Number of Aerodynamic Surfaces + Motors tested  (e.g. 4)
 #define nmax 7 // Number of Excitation steps 
-#define asel 5 // Number of selected actuators
+#define asel 3 // Number of selected actuators
 #define act  10// Total number of actuators for the sinusoids
 //#######################################################################################################################################################################################
 
@@ -66,6 +66,7 @@ int16_t ailR_static = 0;
 int16_t ele_static  = 0;
 int16_t rud_static  = 0;
 int16_t push_static = 0;
+int16_t wing_static = 0;
 //#######################################################################################################################################################################################
 
 // Defines of tested excitation signals #################################################################################################################################################
@@ -114,6 +115,7 @@ static float t_sync = 0;        // [s]
 static float t_skew = 0;        // [s]   
 static float t_test = 0;        // [s]  
 double stopwatch = 0;            // [s] Elapsed time from start of excitation
+double stopwatch_2 = 0;            // [s] Elapsed time from start of excitation
 float ratio_excitation = 1;     // [%] Percentage of completion of sweep for excitation of actuator
 float tcp = 0;                  // [%] Percentage of completion of test
 float aoa_wt = 0;               // [rad] Angle of Attack at Elevator
@@ -131,6 +133,7 @@ bool done_skew = true;          // Done skew. Go to next skew [experimetnal skew
 bool single_act = true;        // Turn on to select only certain actuators
 bool verbose_test_ID = false;   // When true, record test ID
 bool done_sweep = false;      
+bool done_sweep2 = false;
 // INTEGERs ------------------------------------------------------------------------------------------
 int8_t i = 0;                                     // Wing set point counter
 int8_t j = 0;                                     // Motor status counter
@@ -147,24 +150,23 @@ int16_t cmd_0 = 0;                                // [pprz] Initial CMD of actua
 int16_t cmd_target = 0;                           // [pprz] Excitation cmd target
 int16_t cmd_0_mot_status[mmax] = {0,0,0,0};       // [pprz] Initial CMD of mot status
 // STRINGs --------------------------------------------------------------------------------------------
-char test_id[5] = "SW1";
+char test_id[5] = "SW4";
 char point_id[20] = "Blank";
 //#######################################################################################################################################################################################
-int8_t selected_act_idx[asel] = {2,3,4,9,5};              // Array of indeces of selected actuators
+int8_t selected_act_idx[asel] = {0,1,5};              // Array of indeces of selected actuators
 double  st            = 0.002;
-double   f_act[asel]     = {0.753982236861550,0.904778684233860,1.08573442108063,0.628318530717959,0.523598775598299};
-double   phase[asel]     = {-1.256637061435917,-2.513274122871835,-3.769911184307752,-5.026548245743669,0};
-//int16_t max_cmd[asel]   = {9600,9600,9600,9600,9600};
-//int16_t min_cmd[asel]   = {0,0,0,-9600,0};
-//double   gain[asel]      = {4800,4800,4800,9600,4800};
-//double   offset[asel]    = {4800,4800,4800,0,4800};
+// double   f_act[asel]     = {0.753982236861550,0.904778684233860,1.08573442108063,0.628318530717959,0.013089969389957};  //0.523598775598299 old freq skew
+// double   phase[asel]     = {-1.256637061435917,-2.513274122871835,-3.769911184307752,-5.026548245743669,0};
 
-int16_t max_cmd[asel]    = {8000,8000,8000,9600,9600};
-int16_t min_cmd[asel]    = {0,0,0,-9600,0};
-double   gain[asel]      = {4000,4000,4000,9600,4800};
-double   offset[asel]    = {4000,4000,4000,0,4800};
+double   f_act[asel]     = {0.628318530717959,0.753982236861550,0.020943951023932};  //0.523598775598299 old freq skew
+double   phase[asel]     = {-1.256637061435917,-2.513274122871835,0};
 
-float   total_time      = 3000;  //1600
+int16_t max_cmd[asel]   = {8000,8000,9600};
+int16_t min_cmd[asel]   = {0,0,0};
+double   gain[asel]      = {4000,4000,4800};
+double   offset[asel]    = {4000,4000,4800};
+
+float   total_time      = 300;  //1600
 float   cmd_start[asel];
 bool    sine_test = false;
 
@@ -216,17 +218,33 @@ void k_ratio_sine_phased(void){
           }
       stopwatch = stopwatch + st;     
       //return true;    
-    }else{                                      
-        test_active = false;                    // if done skewing terminate the test
-        motors_on_wt = false;
-        p += 1;
-        printf("Total Test Time %0.1f [s]",get_sys_time_float()-t_test);
-        tcp = 0;
-        t_test = 0;
-        done_sweep = false;
-        stopwatch = 0;
-        sine_test = false;
-      //return false;
+    }else{    
+            if (!done_sweep2){
+            ratio_excitation = (-(stopwatch_2-dt_l)*(stopwatch_2-dt_l) + dt_l*dt_l)/(dt_l*dt_l) ;
+            Bound(ratio_excitation, 0, 1);
+            for (k = 0; k < asel; ++k){
+              k_conv = selected_act_idx[k];
+              cmd_start[k] = (int16_t) sine_signal(f_act[k],total_time,phase[k],gain[k],offset[k]);
+              actuators_wt[k_conv] = (int16_t) (cmd_start[k] + (0.0 - cmd_start[k]) * ratio_excitation);
+              }
+            stopwatch_2 = stopwatch_2 + st;  
+            if (stopwatch_2>dt_l){
+              done_sweep2=true;
+              stopwatch_2 = 0;
+              }
+            }else{                                  
+            test_active = false;                    // if done skewing terminate the test
+            motors_on_wt = false;
+            p += 1;
+            printf("Total Test Time %0.1f [s]",get_sys_time_float()-t_test);
+            tcp = 0;
+            t_test = 0;
+            done_sweep = false;
+            done_sweep2 = false;
+            stopwatch = 0;
+            stopwatch_2 = 0;
+            sine_test = false;}
+          //return false;
       }}}}
 //#######################################################################################################################################################################################
 // Graphical representation of nested functions #########################################################################################################################################
@@ -259,7 +277,8 @@ void event_manual_test(void){
         actuators_wt[8]  = (int16_t) ailR_static;
         actuators_wt[9]  = (int16_t) ele_static;
         actuators_wt[10] = (int16_t) rud_static;
-        actuators_wt[4]  = (int16_t) push_static;}}
+        actuators_wt[4]  = (int16_t) push_static;
+        actuators_wt[5]  = (int16_t) wing_static;}}
 // ####################################################################################################################################################################################
 
 // Skew test to understand reactionary moment generated by rotation of the wing #######################################################################################################

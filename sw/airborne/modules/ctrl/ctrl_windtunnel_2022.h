@@ -56,5 +56,6 @@ extern int16_t ailR_static;
 extern int16_t ele_static ;
 extern int16_t rud_static ;
 extern int16_t push_static ;
+extern int16_t wing_static ;
 extern char point_id[20];
 #endif  // CTRL_WINDTUNNEL_2022_H

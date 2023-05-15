@@ -16,7 +16,8 @@
         <dl_setting var="ailR_static" min="-9600" step="1" max="9600" shortname="ailR_static" />
         <dl_setting var="ele_static " min="-9600" step="1" max="9600" shortname="ele_static" />
         <dl_setting var="rud_static " min="-9600" step="1" max="9600" shortname="rud_static" />
-        <dl_setting var="push_static " min="0" step="1" max="9600" shortname="push_static" />        
+        <dl_setting var="push_static " min="0" step="1" max="9600" shortname="push_static" />   
+        <dl_setting var="wing_static" min="0" step="1" max="9600" shortname="wing_static" />        
       </dl_settings>
     </dl_settings>
   </settings>
