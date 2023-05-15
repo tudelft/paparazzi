@@ -39,6 +39,8 @@
     <dl_settings>
       <dl_settings NAME="General overact">
 
+        <dl_setting var="overestimation_coeff"  min="0" step=".01" max="2" shortname="overest_coeff" />
+
         <dl_setting var="K_beta"  min="-5" step=".01" max="5" shortname="K_beta" />
 
         <dl_setting var="K_T_airspeed"  min="0" step=".001" max="1" shortname="K_T_airspeed" />

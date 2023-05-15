@@ -58,7 +58,8 @@
 
 #define NEW_YAWRATE_REFERENCE
 #define OVERESTIMATE_LATERAL_FORCES
-float overestimation_coeff = 1.35;
+float overestimation_coeff = 1.4;
+
 
 #define FBW_ACTUATORS
 #define MAX_DSHOT_VALUE 1999.0
@@ -510,35 +511,40 @@ float compute_yaw_rate_turn(void){
         float accel_y_filt_corrected = 0;
 
 
-        #ifdef USE_NEW_THR_ESTIMATION                        
-        accel_y_filt_corrected = accely_filt.o[0] 
+        #ifdef USE_NEW_THR_ESTIMATION   
+            #ifdef OVERESTIMATE_LATERAL_FORCES
+                accel_y_filt_corrected = accely_filt.o[0] 
+                                - overestimation_coeff * compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[4],actuator_state_filt[8],actuator_state_filt[0]).y/VEHICLE_MASS
+                                - overestimation_coeff * compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[5],actuator_state_filt[9],actuator_state_filt[1]).y/VEHICLE_MASS
+                                - overestimation_coeff * compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[6],actuator_state_filt[10],actuator_state_filt[2]).y/VEHICLE_MASS
+                                - overestimation_coeff * compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[7],actuator_state_filt[11],actuator_state_filt[3]).y/VEHICLE_MASS;
+            #else                     
+                accel_y_filt_corrected = accely_filt.o[0] 
                                 - compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[4],actuator_state_filt[8],actuator_state_filt[0]).y/VEHICLE_MASS
                                 - compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[5],actuator_state_filt[9],actuator_state_filt[1]).y/VEHICLE_MASS
                                 - compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[6],actuator_state_filt[10],actuator_state_filt[2]).y/VEHICLE_MASS
                                 - compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[7],actuator_state_filt[11],actuator_state_filt[3]).y/VEHICLE_MASS;
+            #endif
         #else         
-        #ifdef OVERESTIMATE_LATERAL_FORCES
-            
-            accel_y_filt_corrected = accely_filt.o[0] 
-                                    - overestimation_coeff * actuator_state_filt[0]*actuator_state_filt[0]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
-                                    - overestimation_coeff * actuator_state_filt[1]*actuator_state_filt[1]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
-                                    - overestimation_coeff * actuator_state_filt[2]*actuator_state_filt[2]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
-                                    - overestimation_coeff * actuator_state_filt[3]*actuator_state_filt[3]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[11])/VEHICLE_MASS;
-        #else               
-            accel_y_filt_corrected = accely_filt.o[0] 
-                                    - actuator_state_filt[0]*actuator_state_filt[0]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
-                                    - actuator_state_filt[1]*actuator_state_filt[1]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
-                                    - actuator_state_filt[2]*actuator_state_filt[2]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
-                                    - actuator_state_filt[3]*actuator_state_filt[3]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[11])/VEHICLE_MASS;
-        #endif
-
+            #ifdef OVERESTIMATE_LATERAL_FORCES                
+                accel_y_filt_corrected = accely_filt.o[0] 
+                                        - overestimation_coeff * actuator_state_filt[0]*actuator_state_filt[0]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
+                                        - overestimation_coeff * actuator_state_filt[1]*actuator_state_filt[1]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
+                                        - overestimation_coeff * actuator_state_filt[2]*actuator_state_filt[2]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
+                                        - overestimation_coeff * actuator_state_filt[3]*actuator_state_filt[3]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[11])/VEHICLE_MASS;
+            #else               
+                accel_y_filt_corrected = accely_filt.o[0] 
+                                        - actuator_state_filt[0]*actuator_state_filt[0]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
+                                        - actuator_state_filt[1]*actuator_state_filt[1]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
+                                        - actuator_state_filt[2]*actuator_state_filt[2]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
+                                        - actuator_state_filt[3]*actuator_state_filt[3]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[11])/VEHICLE_MASS;
+            #endif
         #endif
         
         #ifdef NEW_YAWRATE_REFERENCE
             yaw_rate_setpoint_turn = accel_vect_filt_control_rf[1]/airspeed_turn - K_beta * accel_y_filt_corrected;
             feed_fwd_term_yaw = accel_vect_filt_control_rf[1]/airspeed_turn;
             feed_back_term_yaw = - K_beta * accel_y_filt_corrected;
-            yaw_rate_setpoint_turn = yaw_rate_setpoint_turn * compute_lat_speed_multiplier(OVERACTUATED_MIXING_MIN_SPEED_TRANSITION,OVERACTUATED_MIXING_REF_SPEED_TRANSITION,airspeed);
         #else
             yaw_rate_setpoint_turn = accel_vect_filt_control_rf[1]/airspeed_turn - K_beta * accel_y_filt_corrected;
             feed_fwd_term_yaw = accel_vect_filt_control_rf[1]/airspeed_turn;

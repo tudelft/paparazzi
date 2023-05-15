@@ -1,33 +1,7 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
-<airframe name="OverDone">
+<airframe name="OVERQUAD_TUD00334">
   <description>
     Overactuated vehicle airframe equipped with a Hextronix Cube Orange flightcontroller hardware
-
-    + Model:       Custom build Blended wing
-    + Autopilot:   Cube Orange Plus(+) (Hextronix names it FMU v2.1)
-    + Actuators:   Force and Position Feedback Serial servos on Teensy 4.x
-    + GNSS         One uBlox ZED F9P
-    + MAG          RM3100
-    + ESC:         4x 30A
-    + RCRX:        OpenRXSR Receiver and TBS Crossfire Micro swappable
-    + AIRSPEED:    MS4525
-    + TELEMETRY:   Herelink
-    + CURRENT:     A standard Hextronix PowerBrick sensor on the default analog ports
-    + RANGER:      Ultrasonic sensor on I2C(soon)
-    + MOTOR:       ?
-    + PROP:        Default "x "
-
-NOTES:
-     + Servo pins point to back of airframe
-     + Engine battery voltage and current values X powerbrick
-     + Servos and Sonar powered via 4x BEC
-     + Flightcontroller powered via BEC on powerbrick
-     + Herelink Telemetry powered via additional CC BEC at 7.1V
-     + Uploading of the firmware can be performed via original PX4 bootloader...
-       Simple, USB cable in, upload... voila PPRZ'dized aircraft
-     + Separate left and right Aileron servo outputs for more flexibility
-     + Advised battery for this airframe is a 5000mAh 4S LiPo min. 50C
-
   </description>
 
 
@@ -182,7 +156,6 @@ NOTES:
         <define name="INS_EKF2_GYRO_ID" value="IMU_CUBE2_ID"/>
     </module>
 
-    <!-- <module name="auto1_commands"/> -->
     <module name="geo_mag"/>
     <module name="air_data"/>
 

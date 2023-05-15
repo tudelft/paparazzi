@@ -122,6 +122,9 @@ extern bool yaw_with_tilting_PID;
 extern bool manual_heading;
 extern int manual_heading_value_rad;
 
+//Variable for the lateral acceleration and yaw rate control: 
+extern float overestimation_coeff;
+
 //Variables for the FBW controller: 
 extern float K_indi_rad_s_dshot, Des_RPM_motor_1, Des_dshot_steps_motor_1;
 
