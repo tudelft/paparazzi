@@ -206,6 +206,10 @@ NOTES:
 
     </target>
 
+    <target name="fbw" board="px4io_2.4">
+
+    </target>
+
     <target name="nps" board="pc">
       <configure name="PERIODIC_FREQUENCY" value="500"/> <!--  unit="Hz" -->
       <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/><!--  unit="Hz" -->

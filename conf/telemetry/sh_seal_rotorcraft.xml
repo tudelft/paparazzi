@@ -63,6 +63,8 @@
       <message name="GPS_RTK"                  period="1"/>
 
 <!--      <message name="BARO_MS5611"               period="3.0"/>-->
+      <message name="FBW_STATUS"          period="10.0"/>
+
     </mode>
 
     <mode name="ppm">
@@ -203,6 +205,21 @@
     </mode>
 
   </process>
+
+<!--  <process name="Fbw">-->
+<!--    <mode name="default">-->
+<!--      <message name="COMMANDS"            period="5.0"/>-->
+<!--      <message name="FBW_STATUS"          period="2.0"/>-->
+<!--      <message name="ACTUATORS"           period="5.0"/> &lt;!&ndash; For trimming &ndash;&gt;-->
+<!--    </mode>-->
+<!--    <mode name="debug">-->
+<!--      <message name="PPM"                 period="0.5"/>-->
+<!--      <message name="RC"                  period="0.5"/>-->
+<!--      <message name="COMMANDS"            period="0.5"/>-->
+<!--      <message name="FBW_STATUS"          period="1.0"/>-->
+<!--      <message name="ACTUATORS"           period="5.0"/>-->
+<!--    </mode>-->
+<!--  </process>-->
 
   <process name="FlightRecorder">
     <mode name="default">
