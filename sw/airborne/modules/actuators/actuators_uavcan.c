@@ -186,34 +186,16 @@ static void actuators_uavcan_esc_status_cb(struct uavcan_iface_t *iface, CanardR
     electrical.current += uavcan2_telem[i].current;
   }
 #endif
-
-// Create struct for ABI
-#ifdef SERVOS_UAVCAN1_NB
-struct rpm_act_t rpm_message;
-rpm_message.actuator_idx =  esc_idx;
-rpm_message.rpm = telem[esc_idx].rpm;
-
-// Send ABI message
-AbiSendMsgRPM(RPM_SENSOR_ID, &rpm_message, SERVOS_UAVCAN1_NB);
-#endif
-
 #endif
 
 // Create struct for ABI
-struct rpm_act_t rpm_message;
-rpm_message.actuator_idx =  esc_idx;
-rpm_message.rpm = telem->rpm;
-
-// Send ABI message
 #ifdef SERVOS_UAVCAN1_NB
-  if (iface == &uavcan1) {
-    AbiSendMsgRPM(RPM_SENSOR_ID, &rpm_message, SERVOS_UAVCAN1_NB);
-  }
-#endif
-#ifdef SERVOS_UAVCAN2_NB
-  if (iface == &uavcan2) {
-    AbiSendMsgRPM(RPM_SENSOR_ID, &rpm_message, SERVOS_UAVCAN2_NB);
-  }
+  struct rpm_act_t rpm_message;
+  rpm_message.actuator_idx =  esc_idx;
+  rpm_message.rpm = telem[esc_idx].rpm;
+
+  // Send ABI message
+  AbiSendMsgRPM(RPM_SENSOR_ID, &rpm_message, SERVOS_UAVCAN1_NB);
 #endif
 }
 
@@ -268,7 +250,6 @@ void actuators_uavcan_commit(struct uavcan_iface_t *iface, int16_t *values, uint
   // Broadcast the raw command message on the interface
   uavcan_broadcast(iface, UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_SIGNATURE, UAVCAN_EQUIPMENT_ESC_RAWCOMMAND_ID,
                    CANARD_TRANSFER_PRIORITY_HIGH, buffer, (offset + 7) / 8);
-
 }
 
 /**

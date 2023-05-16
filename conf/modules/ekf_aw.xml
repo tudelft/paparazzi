@@ -9,20 +9,20 @@
     <define name="PERIODIC_FREQUENCY_AIRSPEED_EKF" value="25" description="Airspeed periodic frequency"/>
     <define name="PERIODIC_FREQUENCY_AIRSPEED_EKF_FETCH" value="100" description="Airspeed periodic fetch frequency"/>
     
-    <define name="EKF_AW_P0_V_body"  value="1e-00f" description="Initial covariance body velocity"/>
-    <define name="EKF_AW_P0_mu"      value="1e-00f" description="Initial covariance wind"/>
-    <define name="EKF_AW_P0_offset"  value="1e-00f" description="Initial covariance offset"/>
+    <define name="EKF_AW_P0_V_BODY"  value="1e-00f" description="Initial covariance body velocity"/>
+    <define name="EKF_AW_P0_MU"      value="1e-00f" description="Initial covariance wind"/>
+    <define name="EKF_AW_P0_OFFSET"  value="1e-00f" description="Initial covariance offset"/>
 
-    <define name="EKF_AW_Q_accel"  value="1e-00f" description="Accel process noise"/>
-    <define name="EKF_AW_Q_gyro"   value="1e-00f"  description="Gyro process noise"/>
-    <define name="EKF_AW_Q_mu"     value="1e-00f"  description="Wind process noise"/>
-    <define name="EKF_AW_Q_offset" value="1e-00f" description="Offset process noise"/>
+    <define name="EKF_AW_Q_ACCEL"  value="1e-00f" description="Accel process noise"/>
+    <define name="EKF_AW_Q_GYRO"   value="1e-00f"  description="Gyro process noise"/>
+    <define name="EKF_AW_Q_MU"     value="1e-00f"  description="Wind process noise"/>
+    <define name="EKF_AW_Q_OFFSET" value="1e-00f" description="Offset process noise"/>
 
-    <define name="EKF_AW_R_V_gnd"        value="1e-00f" description="GPS Velocity measurement noise"/>
-    <define name="EKF_AW_R_accel_filt_x" value="1e-00f" description="Filtered x accel measurement noise"/>
-    <define name="EKF_AW_R_accel_filt_y" value="1e-00f" description="Filtered y accel measurement noise"/>
-    <define name="EKF_AW_R_accel_filt_z" value="1e-00f" description="Filtered z accel measurement noise"/>
-    <define name="EKF_AW_R_V_pitot"      value="1e-00f" description="Pitot Tube Velocity measurement noise"/>
+    <define name="EKF_AW_R_V_GND"        value="1e-00f" description="GPS Velocity measurement noise"/>
+    <define name="EKF_AW_R_ACCEL_FILT_X" value="1e-00f" description="Filtered x accel measurement noise"/>
+    <define name="EKF_AW_R_ACCEL_FILT_Y" value="1e-00f" description="Filtered y accel measurement noise"/>
+    <define name="EKF_AW_R_ACCEL_FILT_Z" value="1e-00f" description="Filtered z accel measurement noise"/>
+    <define name="EKF_AW_R_V_PITOT"      value="1e-00f" description="Pitot Tube Velocity measurement noise"/>
 
     <define name="EKF_AW_WING_INSTALLED"   value="false" description="Use wing contribution"/>
     <define name="EKF_AW_USE_MODEL_BASED"  value="false" description="Use model based to augment filter"/>

@@ -101,7 +101,7 @@ static void send_airspeed_wind_ekf_forces(struct transport_tx *trans, struct lin
 
 // RPM ABI Event
 abi_event RPM_ev;
-float time_of_rpm = 0.0;
+float time_of_rpm = 0.0f;
 static void rpm_cb(uint8_t sender_id __attribute__((unused)), struct rpm_act_t *rpm_message, uint8_t num_act);
 
 // Filter struct
@@ -109,8 +109,8 @@ struct ekfAw ekf_aw; // Local wrapper
 static struct ekfAwParameters *ekf_params; ///< The EKF parameters
 
 // Define settings to change filter tau value
-float tau_filter_high = 25.0;
-float tau_filter_low = 0.2;
+float tau_filter_high = 25.0f;
+float tau_filter_low = 0.2f;
 
 // Bool Reset EKF Filter
 bool reset_filter = false;
@@ -144,9 +144,9 @@ Butterworth2LowPass filt_airspeed_pitot;
 void ekf_aw_wrapper_init(void){
   
   // Define filter frequencies
-  float sample_time = 1.0 / PERIODIC_FREQUENCY_AIRSPEED_EKF_FETCH;
-  float tau_low = 1.0 / (2.0 * M_PI * tau_filter_low);
-  float tau_high = 1.0 / (2.0 * M_PI * tau_filter_high);
+  float sample_time = 1.0f / PERIODIC_FREQUENCY_AIRSPEED_EKF_FETCH;
+  float tau_low = 1.0f / (2.0f * M_PI * tau_filter_low);
+  float tau_high = 1.0f / (2.0f * M_PI * tau_filter_high);
 
   // Init filters
   for(int8_t i=0; i<3; i++) {
@@ -290,10 +290,10 @@ void ekf_aw_wrapper_periodic(void){
   }
 
   // Sample time of EKF filter
-  float sample_time = 1.0 / PERIODIC_FREQUENCY_AIRSPEED_EKF_FETCH;
+  float sample_time = 1.0f / PERIODIC_FREQUENCY_AIRSPEED_EKF_FETCH;
   
   // Check if in flight and altitude higher than 1m
-  set_in_air_status(autopilot_in_flight() & (-stateGetPositionNed_f()->z>1.0));
+  set_in_air_status(autopilot_in_flight() & (-stateGetPositionNed_f()->z>1.0f));
 
   // Propagate
   if (ekf_aw.in_air | ekf_aw.override_start){
@@ -351,7 +351,7 @@ void ekf_aw_wrapper_fetch(void){
   update_butterworth_2_low_pass(&filt_groundspeed[2], stateGetSpeedNed_f()->z);
 
   // Getting body accel
-  struct FloatVect3 body_accel_f = {0,0,0};
+  struct FloatVect3 body_accel_f = {0.0f,0.0f,0.0f};
   if (EKF_AW_WRAPPER_ROT_WING){
     // If body accel available, can use this
     struct Int32Vect3 *body_accel_i;
@@ -397,14 +397,14 @@ void ekf_aw_wrapper_fetch(void){
 
     // Get elevator pprz signal
     int16_t *elev_pprz = &actuators_pprz[5];
-    float de = 0;
+    float de = 0.0f;
     if (EKF_AW_WRAPPER_ROT_WING_TYPE_A){
       // Calculate deflection angle in [deg]
-      de = (-0.004885417 * *elev_pprz + 36.6)*3.14f/180.0f;
+      de = (-0.004885417f * *elev_pprz + 36.6f)*3.14f/180.0f;
     }
     else{
       // Calculate deflection angle in [deg]
-      de = (-0.004885417 * *elev_pprz + 36.6)*3.14f/180.0f;
+      de = (-0.004885417f * *elev_pprz + 36.6f)*3.14f/180.0f;
     }
     
     update_butterworth_2_low_pass(&filt_elevator_pprz, de);
