@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="60" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="500" name="Rotating wing Valkenburg" security_height="2">
+<flight_plan alt="55" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="500" name="Overactuated vehicle Valkenburg" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -105,6 +105,7 @@
       <circle radius="-100" wp="p1"/>
     </block>
     <block name="Approach APP">
+      <!-- set value="FALSE" var="force_forward"/-->
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">

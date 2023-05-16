@@ -1,6 +1,6 @@
 # Hey Emacs, this is a -*- makefile -*-
 #
-# cube_orange.makefile
+# cube_orange_plus.makefile
 #
 # This is for the main MCU (STM32F767) on the PX4 board
 # See https://pixhawk.org/modules/pixhawk for details
@@ -45,7 +45,7 @@ CHIBIOS_BOARD_STARTUP = startup_stm32h7xx.mk
 # possibilities: DFU, SWD, PX4 bootloader
 FLASH_MODE ?= PX4_BOOTLOADER
 PX4_TARGET = "ap"
-PX4_PROTOTYPE ?= "${PAPARAZZI_HOME}/sw/tools/px4/cube_orange.prototype"
+PX4_PROTOTYPE ?= "${PAPARAZZI_HOME}/sw/tools/px4/cube_orangeplus.prototype"
 PX4_BL_PORT ?= "/dev/serial/by-id/*-BL_*,/dev/serial/by-id/*_BL_*"
 
 #
@@ -85,4 +85,3 @@ INTERMCU_BAUD ?= B1500000
 # e.g. <servo driver="Ppm">
 #
 ACTUATORS ?= actuators_pwm
-

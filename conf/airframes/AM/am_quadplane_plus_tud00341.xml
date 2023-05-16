@@ -1,13 +1,13 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 <airframe name="OVERQUAD_TUD00341">
   <description>
-    Overactuated vehicle airframe equipped with a Hextronix Cube Orange flightcontroller hardware
+    Overactuated vehicle airframe equipped with a Hextronix Cube Orange flight controller hardware
   </description>
 
 
   <firmware name="rotorcraft">
 
-    <target name="ap" board="cube_orange">
+    <target name="ap" board="cube_orangeplus">
       <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
       <configure name="PERIODIC_FREQUENCY" value="500"/>
 
@@ -69,7 +69,7 @@
 
       <module name="telemetry" type="transparent">
         <!--Handy for Desk debugging-->
-        <configure name="MODEM_PORT" value="usb_serial"/>
+        <!-- <configure name="MODEM_PORT" value="usb_serial"/> -->
         <configure name="MODEM_BAUD" value="B115200"/>
       </module>
 
@@ -148,8 +148,8 @@
         <define name="INS_EKF2_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
         <!-- <define name="INS_EKF2_MAG_ID" value="MAG_LIS3MDL_SENDER_ID"/> -->
         <!-- <define name="INS_EKF2_OPTITRACK" value="TRUE"/> -->
-        <define name="INS_EKF2_ACCEL_ID" value="IMU_CUBE2_ID"/>
-        <define name="INS_EKF2_GYRO_ID" value="IMU_CUBE2_ID"/>
+        <define name="INS_EKF2_ACCEL_ID" value="IMU_CUBE1_ID"/>
+        <define name="INS_EKF2_GYRO_ID" value="IMU_CUBE1_ID"/>
     </module>
 
     <module name="geo_mag"/>
@@ -597,13 +597,13 @@
    <!-- ************************* MAG EXTERNAL ************************* -->
   <section name="MAG_RM3100" prefix="RM3100_">
     <define name="DATA_RATE" value="RM3100_RATE_600"/>
-    <define name="ADDR" value="RM3100_ADDR3"/>
+    <define name="ADDR" value="RM3100_ADDR0"/>
   </section>
 
   <section name="IMU" prefix="IMU_">
 
-    <!-- Calibrated at mavlab 03-05-2023 -->
-    <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-17,-8,22}, .scale={{11701,50107,46279},{1198,5125,4775}}} , {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-61,-18,-13}, .scale={{9035,17566,62431},{1732,3587,12773}}}}"/>
+    <!-- Calibrated at mavlab 15-05-2023 -->
+    <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-9,-6,-4}, .scale={{38883,41480,36505},{3968,4241,3726}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-33,-9,11}, .scale={{36893,53565,3365},{7544,10964,689}}}}"/>
 
     <!-- valkeburg rm3100 21-04-2023 -->
     <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={17,-52,-80}, .scale={{2843,11261,31619},{4991,19705,56656}}}}"/>
