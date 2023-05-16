@@ -309,7 +309,7 @@ void data_report()
     quat_att_barth_frame.qy,
     quat_att_barth_frame.qz    
   };
-  DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 11, msg);
+  //DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 11, msg);
 }
 
 
