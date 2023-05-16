@@ -161,7 +161,7 @@ static void actuators_uavcan_esc_status_cb(struct uavcan_iface_t *iface, CanardR
 
   canardDecodeScalar(transfer, 105, 5, false, (void *)&esc_idx);
   //Could not find the right interface
-  if (esc_idx > max_id || telem == NULL || max_id == 0) {
+  if (esc_idx >= max_id || telem == NULL || max_id == 0) {
     return;
   }
   canardDecodeScalar(transfer, 0, 32, false, (void *)&telem[esc_idx].energy);
@@ -197,6 +197,23 @@ rpm_message.rpm = telem[esc_idx].rpm;
 AbiSendMsgRPM(RPM_SENSOR_ID, &rpm_message, SERVOS_UAVCAN1_NB);
 #endif
 
+#endif
+
+// Create struct for ABI
+struct rpm_act_t rpm_message;
+rpm_message.actuator_idx =  esc_idx;
+rpm_message.rpm = telem->rpm;
+
+// Send ABI message
+#ifdef SERVOS_UAVCAN1_NB
+  if (iface == &uavcan1) {
+    AbiSendMsgRPM(RPM_SENSOR_ID, &rpm_message, SERVOS_UAVCAN1_NB);
+  }
+#endif
+#ifdef SERVOS_UAVCAN2_NB
+  if (iface == &uavcan2) {
+    AbiSendMsgRPM(RPM_SENSOR_ID, &rpm_message, SERVOS_UAVCAN2_NB);
+  }
 #endif
 }
 

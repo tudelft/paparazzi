@@ -30,8 +30,10 @@
 
 struct AirspeedMs45xx {
   float pressure;              ///< (differential) pressure in Pascal
+  float pressure_raw;          ///< (differential) pressure in Pascal (raw)
   int16_t temperature;         ///< Temperature in 0.1 deg Celcius
   float airspeed;              ///< Airspeed in m/s estimated from (differential) pressure.
+  float airspeed_raw;          ///< Airspeed in m/s estimated from (differential) pressure (raw).
   bool  pressure_type;         ///< Pressure type Differential of Gauge
   float airspeed_scale;        ///< Quadratic scale factor to convert (differential) pressure to airspeed
   float pressure_scale;        ///< Scaling factor from raw measurement to Pascal

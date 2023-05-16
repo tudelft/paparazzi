@@ -250,6 +250,10 @@
       <field name="thrust_bx_increment" type="float" unit="m/s^2"/>
     </message>
 
+    <message name="LIFT_D" id="38">
+      <field name="liftd" type="float"/>
+    </message>
+
   </msg_class>
 
 </protocol>

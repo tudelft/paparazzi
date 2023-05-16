@@ -29,6 +29,8 @@
 
 #include "modules/actuators/actuators.h"
 
+#include "modules/core/abi.h"
+
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #include "firmwares/rotorcraft/guidance/guidance_indi_rot_wing.h"
 
@@ -69,8 +71,8 @@ float g1_t_multiplier = 1.;
 bool wing_rotation_sched_activated = true;
 bool pusher_sched_activated = true;
 
-float sched_pitch_hover_deg = -2.;
-float sched_pitch_forward_deg = 5;
+float sched_pitch_hover_deg = 0.;
+float sched_pitch_forward_deg = 10.;
 float sched_lower_hover_speed = 7.;
 float sched_upper_hover_speed = 14.;
 
@@ -98,7 +100,18 @@ inline void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, floa
 inline void update_left_aileron_effectiveness(float *airspeed2, float *sinr);
 inline void update_right_aileron_effectiveness(float *airspeed2, float *sinr);
 inline void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt);
-inline void schedule_pref_pitch_angle_deg(float *airspeed_f);
+// inline void schedule_pref_pitch_angle_deg(float *airspeed_f);
+inline void schedule_pref_pitch_angle_deg(float *sinr);
+inline void schedule_liftd(float *airspeed2, float *sinr);
+
+#if PERIODIC_TELEMETRY
+#include "modules/datalink/telemetry.h"
+static void send_thrust_bx_eff(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_THRUST_BX_EFF(trans, dev, AC_ID,
+                              &thrust_bx_eff);
+}
+#endif
 
 void init_eff_scheduling(void)
 {
@@ -111,6 +124,10 @@ void init_eff_scheduling(void)
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
 
   init_butterworth_2_low_pass(&airspeed_lowpass_filter, tau, sample_time, 0.0);
+
+  #if PERIODIC_TELEMETRY
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_THRUST_BX_EFF, send_thrust_bx_eff);
+  #endif
 }
 
 void event_eff_scheduling(void)
@@ -154,7 +171,8 @@ void event_eff_scheduling(void)
   update_left_aileron_effectiveness(&airspeed2, &sinr);
   update_right_aileron_effectiveness(&airspeed2, &sinr);
   update_pusher_effectiveness(&airspeed, thrust_bx_state_filt);
-  schedule_pref_pitch_angle_deg(&airspeed);
+  //schedule_pref_pitch_angle_deg(&sinr);
+  schedule_liftd(&airspeed2, &sinr2);
 
   // float g1_p_side_motors[2];
   // float g1_q_side_motors[2];
@@ -210,7 +228,7 @@ void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr, float
   float g1_q_side_motors[2];
 
   float bounded_airspeed = *airspeed_f;
-  Bound(bounded_airspeed, 0, 17);
+  Bound(bounded_airspeed, 0, 20);
 
   // Calculate roll and pitch effectiveness of the two roll side motors
   g1_p_side_motors[0] = rot_wing_side_motors_g1_p_0[0] * *cosr;
@@ -259,10 +277,14 @@ void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed, float *a
 {
   // Calculate deflection angle in [deg]
   float de = -0.004885417 * *elev_pprz + 36.6;
+  float bounded_airspeed = *airspeed;
+  float bounded_airspeed2 = *airspeed2; 
+  Bound(bounded_airspeed, 0. ,20.);
+  Bound(bounded_airspeed2, 0., 400.);
 
-  float dMyde = (k_elevator[0] * de * *airspeed2 +
-                k_elevator[1] * *pp_scaled * *pp_scaled * *airspeed + 
-                k_elevator[2] * *airspeed2) / 10000.;
+  float dMyde = (k_elevator[0] * de * bounded_airspeed2 +
+                k_elevator[1] * *pp_scaled * *pp_scaled * bounded_airspeed + 
+                k_elevator[2] * bounded_airspeed2) / 10000.;
 
   float dMydpprz = dMyde * -0.004885417;
   
@@ -280,9 +302,11 @@ void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed, float *a
 
 void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *cosr)
 {
+  float bounded_airspeed2 = *airspeed2;
+  Bound(bounded_airspeed2, 0., 400.);
   float dMzdr = (k_rudder[0] * *pp_scaled * *T_mean_scaled + 
-                k_rudder[1] * *T_mean_scaled * *airspeed2 * *cosr + 
-                k_rudder[2] * *airspeed2) / 10000.;
+                k_rudder[1] * *T_mean_scaled * bounded_airspeed2 * *cosr + 
+                k_rudder[2] * bounded_airspeed2) / 10000.;
 
   // Convert moment to effectiveness
 
@@ -301,7 +325,9 @@ void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, float *T_me
 
 void update_left_aileron_effectiveness(float *airspeed2, float *sinr)
 {
-  float dMxdpprz = 3.46740494791667e-6 * *airspeed2 * *sinr * *sinr * *sinr;
+  float bounded_airspeed2 = *airspeed2;
+  Bound(bounded_airspeed2, 0., 400.);
+  float dMxdpprz = 3.46740494791667e-6 * bounded_airspeed2 * *sinr * *sinr * *sinr;
   float eff_x_left_aileron = dMxdpprz / I_xx;
   Bound(eff_x_left_aileron, 0, 0.005);
   g1g2[0][6] = eff_x_left_aileron;
@@ -309,7 +335,9 @@ void update_left_aileron_effectiveness(float *airspeed2, float *sinr)
 
 void update_right_aileron_effectiveness(float *airspeed2, float *sinr)
 {
-  float dMxdpprz = 3.33667052083333e-6 * *airspeed2 * *sinr * *sinr * *sinr;
+  float bounded_airspeed2 = *airspeed2;
+  Bound(bounded_airspeed2, 0., 400.);
+  float dMxdpprz = 3.33667052083333e-6 * bounded_airspeed2 * *sinr * *sinr * *sinr;
   float eff_x_right_aileron = dMxdpprz / I_xx;
   Bound(eff_x_right_aileron, 0, 0.005)
   g1g2[0][7] = eff_x_right_aileron;
@@ -319,13 +347,15 @@ void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt)
 {
   if (pusher_sched_activated)
   {
+    float bounded_airspeed = *airspeed_f;
+    Bound(bounded_airspeed, 0., 20.);
+
     float rpmP = -2.91178067445214e-5*pusher_cmd_filt*pusher_cmd_filt + 1.32098226269777*pusher_cmd_filt - 131.497033952591;
-    float dFxdrpmP = k_pusher[0]*rpmP + k_pusher[1]* *airspeed_f;
+    float dFxdrpmP = k_pusher[0]*rpmP + k_pusher[1]* bounded_airspeed;
     float drpmPdpprz = 1.32098226269777 - 5.82356134890428e-5*pusher_cmd_filt;
 
     float eff_pusher = (dFxdrpmP * drpmPdpprz / weight_sched) / 10000.;
 
-    //float eff_pusher = ((-0.67521 * *airspeed_f +  2* 1.129296875000000 * pusher_cmd_filt * 0.0038885) / 10000.) * 0.173737981;
   Bound(eff_pusher, 0.00020, 0.0015);
   thrust_bx_eff = eff_pusher;
   } else {
@@ -333,24 +363,39 @@ void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt)
   }
 }
 
-void schedule_pref_pitch_angle_deg(float *airspeed_f)
+// void schedule_pref_pitch_angle_deg(float *airspeed_f)
+// {
+//   if (*airspeed_f < sched_lower_hover_speed) {
+//     pitch_pref_deg = sched_pitch_hover_deg;
+//   } else if (*airspeed_f > sched_upper_hover_speed) {
+//     pitch_pref_deg = sched_pitch_forward_deg;
+//   } else {
+//     float airspeed_sched_range = sched_upper_hover_speed - sched_lower_hover_speed;
+//     float pitch_sched_range = sched_pitch_forward_deg - sched_pitch_hover_deg;
+//     Bound(airspeed_sched_range,0.01, 25.);
+//     pitch_pref_deg = (1. - (*airspeed_f - sched_lower_hover_speed) / airspeed_sched_range) * pitch_sched_range + sched_pitch_hover_deg;
+//     Bound(pitch_pref_deg, -10, 10);
+//   }
+// }
+
+void schedule_pref_pitch_angle_deg(float *sinr)
 {
-  if (*airspeed_f < sched_lower_hover_speed) {
-    pitch_pref_deg = sched_pitch_hover_deg;
-  } else if (*airspeed_f > sched_upper_hover_speed) {
-    pitch_pref_deg = sched_pitch_forward_deg;
-  } else {
-    float airspeed_sched_range = sched_upper_hover_speed - sched_lower_hover_speed;
-    float pitch_sched_range = sched_pitch_forward_deg - sched_pitch_hover_deg;
-    Bound(airspeed_sched_range,0.01, 25.);
-    pitch_pref_deg = (1. - (*airspeed_f - sched_lower_hover_speed) / airspeed_sched_range) * pitch_sched_range + sched_pitch_hover_deg;
-    Bound(pitch_pref_deg, -10, 10);
-  }
+  float pitch_pref_range_deg = sched_pitch_forward_deg - sched_pitch_hover_deg;
+
+  // Schedule prefered pitch angle
+  float pitch_diff_deg = pitch_pref_range_deg * *sinr;
+  pitch_pref_deg = sched_pitch_hover_deg + pitch_diff_deg;
 }
 
-// float rot_wing_sched_get_liftd(float airspeed, float sinr)
-// {
-//   //wing = (-0.74529194103945*airspeed*airspeed*sinr*sinr - 0.4065513216373*airspeed*airspeed) / m
-//   //fuse = (-0.072362752875*airspeed*airspeed) / m
-//   //ele  = (-0.1452739306305*airspeed*airspeed) / m
-// }
+void schedule_liftd(float *airspeed2, float *sinr2)
+{
+  float bounded_airspeed2 = *airspeed2;
+  Bound(bounded_airspeed2, 0., 400.);
+  float lift_d_wing = (-0.74529194103945 * bounded_airspeed2 * *sinr2 - 0.4065513216373 * bounded_airspeed2) / weight_sched;
+  float lift_d_fuselage = -0.072362752875 * bounded_airspeed2 / weight_sched;
+  float lift_d_tail = -0.1452739306305 * bounded_airspeed2 / weight_sched;
+
+  float lift_d = lift_d_wing + lift_d_fuselage + lift_d_tail;
+  Bound(lift_d, -130., 0.);
+  AbiSendMsgLIFT_D(LIFT_D_SCHED_ID, lift_d);
+}

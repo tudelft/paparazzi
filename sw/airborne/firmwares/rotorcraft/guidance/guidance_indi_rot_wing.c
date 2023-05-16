@@ -155,6 +155,8 @@ float thrust_in;
 
 struct FloatVect3 gi_speed_sp = {0.0, 0.0, 0.0};
 
+// ABI handlers
+
 #ifndef GUIDANCE_INDI_VEL_SP_ID
 #define GUIDANCE_INDI_VEL_SP_ID ABI_BROADCAST
 #endif
@@ -162,6 +164,14 @@ abi_event vel_sp_ev;
 static void vel_sp_cb(uint8_t sender_id, struct FloatVect3 *vel_sp);
 struct FloatVect3 indi_vel_sp = {0.0, 0.0, 0.0};
 float time_of_vel_sp = 0.0;
+
+#ifndef GUIDANCE_INDI_LIFT_D_ID
+#define GUIDANCE_INDI_LIFT_D_ID ABI_BROADCAST
+#endif
+abi_event lift_d_ev;
+static void lift_d_cb(uint8_t sender_id, float lift_d);
+float indi_lift_d_abi = 0;
+float time_of_lift_d = 0.0;
 
 // WLS implementation for rot_wing
 float Gmat_rot_wing[3][4]; // Outer loop effectiveness matrix of the rotating wing
@@ -178,6 +188,8 @@ float pitch_priority_factor = 60.;//18.;
 float roll_priority_factor = 10.;
 float thrust_priority_factor = 7.;
 float pusher_priority_factor = 30.;
+float horizontal_accel_weight = 10.;
+float vertical_accel_weight = 1.;
 float Wu_rot_wing[4] = {10., 10., 100., 1.};
 float pitch_pref_deg = 0;
 float pitch_pref_rad = 0;
@@ -196,7 +208,7 @@ float airspeed_turn_lower_bound = 10.;
 void guidance_indi_propagate_filters(void);
 static void guidance_indi_calcg_wing(struct FloatMat33 *Gmat);
 static void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff);
-static float guidance_indi_get_liftd(float pitch, float theta);
+static float guidance_indi_get_liftd(void);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -225,6 +237,7 @@ void guidance_indi_init(void)
 {
   /*AbiBindMsgACCEL_SP(GUIDANCE_INDI_ACCEL_SP_ID, &accel_sp_ev, accel_sp_cb);*/
   AbiBindMsgVEL_SP(GUIDANCE_INDI_VEL_SP_ID, &vel_sp_ev, vel_sp_cb);
+  AbiBindMsgLIFT_D(GUIDANCE_INDI_LIFT_D_ID, &lift_d_ev, lift_d_cb);
 
   float tau = 1.0/(2.0*M_PI*filter_cutoff);
   float tau_sp_filter = 1.0/(2.0*M_PI*sp_filter_cutoff);
@@ -699,7 +712,7 @@ void guidance_indi_calcg_wing(struct FloatMat33 *Gmat) {
   float T = cosf(pitch_lift)*-9.81;
 
   // get the derivative of the lift wrt to theta
-  float liftd = 0;//guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
+  float liftd = guidance_indi_get_liftd();
 
   /*
   RMAT_ELMT(*Gmat, 0, 0) =  cphi*ctheta*spsi*T + cphi*spsi*lift;
@@ -770,7 +783,7 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   Bound(pitch_lift,-M_PI_2,0);
 
   // get the derivative of the lift wrt to theta
-  float liftd = 0;//guidance_indi_get_liftd(stateGetAirspeed_f(), eulers_zxy.theta);
+  float liftd = guidance_indi_get_liftd();
 
   // Calc assumed body acceleration setpoint and error
   float accel_bx_sp = cpsi * sp_accel.x + spsi * sp_accel.y;
@@ -816,13 +829,17 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   du_pref_rot_wing[0] = 0; // prefered delta roll angle
   du_pref_rot_wing[1] = -pitch_filt.o[0] + pitch_pref_rad;// prefered delta pitch angle
   du_pref_rot_wing[2] = du_max_rot_wing[2];
-  du_pref_rot_wing[3] = accel_bx_err;// - 9.81 * sinf(pitch_filt.o[0]);
+  du_pref_rot_wing[3] = accel_bx_err - 9.81 * sinf(pitch_filt.o[0]);
 
   // Set weights
   Wu_rot_wing[0] = roll_priority_factor * 10.414;
   Wu_rot_wing[1] = pitch_priority_factor * 27.53;
   Wu_rot_wing[2] = thrust_priority_factor * 0.626;
   Wu_rot_wing[3] = pusher_priority_factor * 1.0;
+
+  Wv_rot_wing[0] = horizontal_accel_weight;
+  Wv_rot_wing[1] = horizontal_accel_weight;
+  Wv_rot_wing[2] = vertical_accel_weight;
 
   num_iter_rot_wing =
     wls_alloc_guidance(rot_wing_du, rot_wing_v, du_min_rot_wing, du_max_rot_wing, Bwls_rot_wing, 0, 0, Wv_rot_wing, Wu_rot_wing, du_pref_rot_wing, 100000, 10);
@@ -833,21 +850,14 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
 /**
  * @brief Get the derivative of lift w.r.t. pitch.
  *
- * @param airspeed The airspeed says most about the flight condition
- *
  * @return The derivative of lift w.r.t. pitch
  */
-float guidance_indi_get_liftd(float airspeed, float theta) {
+float guidance_indi_get_liftd(void) {
   float liftd = 0.0;
-  if(airspeed < 12) {
-    float pitch_interp = DegOfRad(theta);
-    Bound(pitch_interp, -80.0, -40.0);
-    float ratio = (pitch_interp + 40.0)/(-40.);
-    liftd = -24.0*ratio*lift_pitch_eff/0.12;
-  } else {
-    liftd = -(airspeed - 8.5)*lift_pitch_eff/M_PI*180.0;
+  float dt = get_sys_time_float() - time_of_lift_d;
+  if (dt < 0.5) {
+    liftd = indi_lift_d_abi;
   }
-  //TODO: bound liftd
   return liftd;
 }
 
@@ -861,6 +871,15 @@ static void vel_sp_cb(uint8_t sender_id __attribute__((unused)), struct FloatVec
   indi_vel_sp.y = vel_sp->y;
   indi_vel_sp.z = vel_sp->z;
   time_of_vel_sp = get_sys_time_float();
+}
+
+/**
+ * ABI callback that obtains the liftd from a module
+  */
+static void lift_d_cb(uint8_t sender_id __attribute__((unused)), float lift_d)
+{
+  indi_lift_d_abi = lift_d;
+  time_of_lift_d = get_sys_time_float();
 }
 
 #if GUIDANCE_INDI_ROT_WING_USE_AS_DEFAULT

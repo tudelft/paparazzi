@@ -29,6 +29,8 @@
                 <define NAME="USE_AIRSPEED_LOWPASS_FILTER" value="TRUE"/>
             </module>
 
+            <module name="airspeed" type="uavcan"/>
+
             <module name="lidar_tfmini">
                 <configure name="TFMINI_PORT" value="UART8"/>
                 <configure name="USE_TFMINI_AGL" value="TRUE"/>
@@ -43,6 +45,7 @@
             <define VALUE="MAG_LIS3MDL_SENDER_ID" NAME="INS_EKF2_MAG_ID"/>
             <define VALUE="IMU_CUBE2_ID" NAME="INS_EKF2_ACCEL_ID"/>
             <define VALUE="IMU_CUBE2_ID" NAME="INS_EKF2_GYRO_ID"/>
+            <define name="I2C2_CLOCK_SPEED" value="100000"/>
         </target>
 
         <target name="nps" board="pc">
@@ -70,7 +73,9 @@
             <configure VALUE="TRUE" NAME="UAVCAN_USE_CAN2"/>
         </module>
 
-        <module TYPE="pwm" NAME="actuators"/>
+        <module TYPE="pwm" NAME="actuators">
+            <define name="SERVO_HZ" value="400"/>
+        </module>
 
         <module name="imu" type="cube"/>
 
@@ -184,9 +189,10 @@
     </firmware>
 
     <servos DRIVER="Pwm">
-        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1146" NEUTRAL="1146" MAX="1819"/>
+        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1246" NEUTRAL="1246" MAX="1922"/>
         <servo NO="1" NAME="SERVO_AIL_LEFT"  MIN="1000" NEUTRAL="1500" MAX="2000"/>
         <servo NO="2" NAME="SERVO_AIL_RIGHT" MIN="1000" NEUTRAL="1500" MAX="2000"/>
+        <servo NO="3" NAME="SERVO_CAM" MIN="0" NEUTRAL="2500" MAX="2500"/>
     </servos>
 
     <servos DRIVER="Uavcan1">
@@ -230,11 +236,12 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
         <set VALUE="($th_hold? 0 : actuators_pprz[4])" SERVO="SERVO_RUDDER"/>
-        <set VALUE="($th_hold? 0 : actuators_pprz[5])" SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="(!autopilot_in_flight()? 0 : actuators_pprz[5])" SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[8])" SERVO="MOTOR_PUSH"/>
         <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_ROTWING"/>
         <set VALUE="($th_hold? 0 : actuators_pprz[6])" SERVO="SERVO_AIL_LEFT"/>
         <set VALUE="($th_hold? 0 : actuators_pprz[7])" SERVO="SERVO_AIL_RIGHT"/>
+        <set VALUE="(autopilot_get_motors_on()? -9600 : 9600)" SERVO="SERVO_CAM"/>
 
         <!-- Backup commands -->
         <set VALUE="($th_hold? -9600 : actuators_pprz[0])" SERVO="BMOTOR_FRONT"/>
@@ -251,7 +258,7 @@
         <define name="NAV_CARROT_DIST" value="150"/>
         <define name="THRESHOLD_GROUND_DETECT" value="40"/>
         <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST" value="300"/>
-        <!--<define VALUE="50.0" NAME="ARRIVED_AT_WAYPOINT"/>-->
+        <define VALUE="50.0" NAME="ARRIVED_AT_WAYPOINT"/>
         <define VALUE="20" NAME="NO_GPS_LOST_WITH_DATALINK_TIME"/>
         <define VALUE="TRUE" NAME="NO_GPS_LOST_WITH_RC_VALID"/>
         <define name="UART4_CR2"    value="(USART_CR2_STOP1_BITS | USART_CR2_SWAP)"/>
@@ -346,6 +353,7 @@
         <define VALUE="{1000, 1000, 1, 100}" NAME="WLS_PRIORITIES"/>
         <define VALUE="FALSE" NAME="USE_ADAPTIVE"/>
         <define VALUE="0.001" NAME="ADAPTIVE_MU"/>
+        <define VALUE="1" NAME="ROTWING_V3A"/>
     </section>
 
     <section PREFIX="ROT_WING_SCHED_" NAME="CTRL_EFF_SCHEDULING">
@@ -374,18 +382,20 @@
         <define VALUE="100" NAME="DGAIN"/>
         <define VALUE="0" NAME="AGAIN"/>
         <define VALUE="20" NAME="IGAIN"/>
+        <define name="REF_MAX_ACCEL" value="5."/>
     </section>
 
     <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
-        <define name="POS_GAIN" value="0.5"/><!--tuned at 10m/s ///1.0 1.5-->
+        <define name="POS_GAIN" value="0.3"/><!--tuned at 10m/s ///1.0 1.5-->
         <define name="POS_GAINZ" value="0.5"/> <!--tuned at 10m/s ///1.7 1.0-->
         <define name="SPEED_GAIN" value="1.0"/> <!--tuned at 10m/s ///2.0 1.4-->
         <define name="SPEED_GAINZ" value="0.6"/> <!--tuned at 10m/s ///2.1 2.4-->
-        <define name="FILTER_CUTOFF" value="1.0"/>
+        <define name="FILTER_CUTOFF" value="2.0"/>
         <define name="HEADING_BANK_GAIN" value="5."/>
         <define name="MAX_AIRSPEED" value="10.0"/>
         <define name="PITCH_LIFT_EFF" value="0.0"/>
-        <!-- <define name="ZERO_AIRSPEED" value="TRUE"/> -->
+        <define name="ZERO_AIRSPEED" value="TRUE"/>
+        <define name="NAV_CIRCLE_DIST" value="60."/>
         <!--<define name="MIN_THROTTLE" value="0."/>
         <define name="MIN_PITCH" value="-35."/>
         <define name="MAX_PITCH" value="35."/>

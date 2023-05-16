@@ -87,6 +87,7 @@ inline void update_hover_motor_effectiveness(float *cosr, float *sinr, float *ai
 inline void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *skew_deg);
 inline void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *cosr);
 inline void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt);
+inline void schedule_pref_pitch_angle_deg(float *airspeed_f);
 
 void init_eff_scheduling(void)
 {
@@ -278,4 +279,9 @@ void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt)
   } else {
     thrust_bx_eff = STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS;
   }
+}
+
+void schedule_pref_pitch_angle_deg(float *airspeed_f)
+{
+
 }

@@ -62,12 +62,12 @@
     </block>
     <block name="Start Engine">
         <call_once fun="NavResurrect()"/>
-        <attitude pitch="0" roll="0" throttle="0" until="stage_time>5" vmode="throttle"/>
+        <attitude pitch="0" roll="0" throttle="0" until="stage_time>10" vmode="throttle"/>
     </block>
-     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-        <exception cond="stateGetPositionEnu_f()->z > 10.0" deroute="Standby"/>
+    <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+        <exception cond="stateGetPositionEnu_f()->z > 4.0" deroute="Standby"/>
         <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
-        <stay wp="CLIMB"/>
+        <attitude pitch="0" roll="0" throttle="0.75" until="stage_time>2" vmode="throttle"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
         <stay wp="STDBY"/>
@@ -84,7 +84,6 @@
       <deroute block="stay_p1"/>
     </block>
     <block name="line_p1_p2">
-      <stay until="stage_time>10" wp="p1"/>
       <go from="p1" hmode="route" wp="p2"/>
       <stay wp="p2"/>
     </block>
