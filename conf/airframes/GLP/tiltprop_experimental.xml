@@ -192,6 +192,8 @@
     <servo name="TILT_RIGHT" no="1" min="750" neutral="1350" max="1950"/>
     <servo name="RM" no="2" min="1000" neutral="1150" max="1900"/>
     <servo name="LM" no="3" min="1000" neutral="1150" max="1900"/>
+    <servo name="AIL_LEFT" no="4" min="1200" neutral="1500" max="1800"/>
+    <servo name="AIL_RIGHT" no="5" min="1200" neutral="1500" max="1800"/>
     <!-- <servo name="SERVO_TEST" no="0" min="2050" neutral="1550" max="1050"/> -->
   </servos>
   
@@ -290,9 +292,9 @@
 
   <section name="AUTOPILOT">
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
-    <define name="MODE_AUTO2" value="AP_MODE_FORWARD"/>
-    <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
+    <define name="MODE_AUTO1" value="AP_MODE_FORWARD"/>
+    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+    <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
   </section>
 
   <section name="BAT">
