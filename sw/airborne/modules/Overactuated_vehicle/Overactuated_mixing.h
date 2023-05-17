@@ -135,6 +135,8 @@ extern float desired_angle_servo_9, desired_angle_servo_10;
 
 extern float des_az_angle_test, des_el_angle_test;
 
+extern int feed_speed_ref_from_approach_module;
+
 /* External used functions */
 extern void overactuated_mixing_init(void);
 extern void overactuated_mixing_run(void);

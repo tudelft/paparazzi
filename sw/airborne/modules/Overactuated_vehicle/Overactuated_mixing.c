@@ -256,12 +256,16 @@ float K_d_speed = 0.03;
 float K_T_airspeed = 0.025;
 
 //Variables for the sysmon file write: 
-
 // #define PRINT_CPU_LOAD_ON_SD
-
 #ifdef PRINT_CPU_LOAD_ON_SD
     float time_old_sys_mon = 0;
 #endif
+
+//Variables for the approach module: 
+int feed_speed_ref_from_approach_module = 0;
+static abi_event vel_sp_ev;
+float des_speed_approach_control_rf[3];
+
 
 struct PID_over pid_gains_over = {
     .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
@@ -302,11 +306,10 @@ struct PD_indi_over indi_gains_over = {
         OVERACTUATED_MIXING_INDI_REF_RATE_Z
     } 
 };
-
 struct FloatEulers max_value_error = {
-OVERACTUATED_MIXING_MAX_PHI,
-OVERACTUATED_MIXING_MAX_THETA,
-OVERACTUATED_MIXING_MAX_PSI_ERR 
+    OVERACTUATED_MIXING_MAX_PHI,
+    OVERACTUATED_MIXING_MAX_THETA,
+    OVERACTUATED_MIXING_MAX_PSI_ERR 
 };
 
 /**
@@ -559,6 +562,18 @@ float compute_yaw_rate_turn(void){
         
 
         return yaw_rate_setpoint_turn;
+}
+
+/**
+ * ABI callback that obtains the velocity setpoint from a module and makes it in the control reference frame
+  */
+static void vel_sp_cb(uint8_t sender_id __attribute__((unused)), struct FloatVect3 *vel_sp)
+{
+    float des_speed_approach_earth_rf[3] = {vel_sp->x , vel_sp->y, vel_sp->z};
+    des_speed_approach_control_rf[0] = 0;
+    des_speed_approach_control_rf[1] = 0;
+    des_speed_approach_control_rf[2] = 0;
+    from_earth_to_control( des_speed_approach_control_rf, des_speed_approach_earth_rf, euler_vect[2]);
 }
 
 /**
@@ -984,6 +999,10 @@ void overactuated_mixing_init(void) {
     AbiBindMsgAM7_DATA_IN(ABI_BROADCAST, &AM7_in, data_AM7_abi_in);
     //Init abi bind msg to Teensy 4.0:
     AbiBindMsgSERIAL_ACT_T4_IN(ABI_BROADCAST, &SERIAL_ACT_T4_IN, serial_act_t4_abi_in);
+
+    //Init abi for the approach module: 
+    AbiBindMsgVEL_SP(ABI_BROADCAST, &vel_sp_ev, vel_sp_cb);
+
 }
 
 /**

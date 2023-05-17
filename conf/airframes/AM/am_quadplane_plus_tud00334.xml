@@ -271,10 +271,6 @@
     <define name="PID_I_GAIN_THETA" value="1"/>
     <define name="PID_D_GAIN_THETA" value="100"/>
 
-    <!-- <define name="PID_P_GAIN_PSI_AZ" value="1.5"/>
-    <define name="PID_I_GAIN_PSI_AZ" value="0.5"/>
-    <define name="PID_D_GAIN_PSI_AZ" value="0.5"/> -->
-
     <define name="PID_P_GAIN_PSI_AZ" value="1.3"/>
     <define name="PID_I_GAIN_PSI_AZ" value="0.34"/>
     <define name="PID_D_GAIN_PSI_AZ" value="0.23"/>

@@ -78,17 +78,9 @@
       <module name="pprzlog"/>
       <module name="logger" type="sd_chibios"/>
       <module name="flight_recorder"/>      
-      <!--
-      <module name="shell">
-        <configure name="SHELL_PORT" value="usb_serial_debug"/>
-      </module>
-      -->
 
-<!--<define name="USE_SIDESLIP" value="TRUE"/>-->
- <!-- (2*3.14)/AOA_PWM_PERIOD -->
- <!-- the PPM RC INput used for PWM in -->
+
       <module name="AOA_pwm">
-        <!-- <define name="USE_PWM_INPUT2" value="TRUE"/> -->
         <define name="SEND_SYNC_AOA" value="TRUE"/>
         <define name="AOA_ANGLE_OFFSET" value="3.1415"/>
         <define name="AOA_PWM_PERIOD" value="4096"/>
@@ -109,23 +101,6 @@
       </module>
 
     </target>
-
-    <!-- <target name="nps" board="pc">
-      <configure name="PERIODIC_FREQUENCY" value="500"/> 
-      <configure name="AHRS_PROPAGATE_FREQUENCY" value="500"/>
-      <module name="fdm" type="jsbsim"/>
-      <module name="radio_control" type="ppm"/>
-      <define name="RADIO_GEAR" value="RADIO_AUX2"/>
-      <define name="RADIO_FLAP" value="RADIO_AUX3"/>
-      <define name="INS_BARO_ID" value="BARO_SIM_SENDER_ID"/>
-      <module name="telemetry"   type="transparent"/>
-      <module name="imu" type="nps"/>
-      <module name="gps" type="ublox"/>
-      <module name="udp"/>
-      <module name="approach_moving_target">
-	      <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/>
-      </module>
-    </target> -->
 
     <define name="USE_AIRSPEED" value="TRUE"/><!-- Use the sensor, not stating use it in flight -->
 
@@ -222,7 +197,7 @@
   <!-- Maximum limits of the vehicle in manual speed control mode. limits are in the control rf -->
   <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
     <define name="MAX_FWD_SPEED" value="25.0" unit="m/s"/>
-    <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> <!--updated for WP navigation-->
+    <define name="MAX_AIRSPEED" value="16.0" unit="m/s"/> <!--updated for WP navigation-->
     <define name="MIN_FWD_SPEED" value="-4.0" unit="m/s"/>
     <define name="MAX_LAT_SPEED" value="7.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
