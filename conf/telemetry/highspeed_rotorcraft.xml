@@ -56,8 +56,8 @@
       <message name="TARGET_POS_INFO"         period="0.1"/>
       <message name="THRUST_BX_EFF"         period="0.1"/>
       <message name="AIRSPEED_WIND_ESTIMATOR_EKF" period="0.1"/>
-      <message name="AIRSPEED_WIND_ESTIMATOR_EKF_COV" period="0.5"/>
-      <message name="AIRSPEED_WIND_ESTIMATOR_EKF_FORCES" period="0.5"/>
+      <message name="AIRSPEED_WIND_ESTIMATOR_EKF_COV" period="0.1"/>
+      <message name="AIRSPEED_WIND_ESTIMATOR_EKF_FORCES" period="0.1"/>
     </mode>
 
     <mode name="calibration">
@@ -261,9 +261,9 @@
       <message name="TARGET_POS_INFO"         period="0.1"/>
       <message name="AIRSPEED_MS45XX"         period="0.002"/>
       <message name="AIRSPEED_UAVCAN"		period="0.002"/>
-      <message name="AIRSPEED_WIND_ESTIMATOR_EKF" period="0.05"/>
-      <message name="AIRSPEED_WIND_ESTIMATOR_EKF_COV" period="0.5"/>
-      <message name="AIRSPEED_WIND_ESTIMATOR_EKF_FORCES" period="0.5"/>
+      <message name="AIRSPEED_WIND_ESTIMATOR_EKF" period="0.04"/>
+      <message name="AIRSPEED_WIND_ESTIMATOR_EKF_COV" period="0.04"/>
+      <message name="AIRSPEED_WIND_ESTIMATOR_EKF_FORCES" period="0.04"/>
     </mode>
   </process>
 

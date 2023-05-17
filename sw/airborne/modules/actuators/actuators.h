@@ -43,7 +43,7 @@ extern void actuators_periodic(void);
 // New actuator structure for ABI Message
 struct rpm_act_t {
       uint8_t actuator_idx;
-      uint8_t rpm;
+      int32_t rpm;
     };
 
 #if ACTUATORS_NB
