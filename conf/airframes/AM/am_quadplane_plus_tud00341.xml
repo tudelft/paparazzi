@@ -130,22 +130,22 @@
     <module name="geo_mag"/>
     <module name="air_data"/>
 
-    <module name="agl_dist">
-      <define name="AGL_DIST_ID" value="AGL_LIDAR_TFMINI_ID"/>
-      <define name="AGL_DIST_MAX_RANGE" value="12.0"/>
-      <define name="AGL_DIST_MIN_RANGE" value="0.05"/>
-      <define name="AGL_DIST_FILTER" value="0.1"/>
-    </module>
+    <!-- <module name="agl_dist"> -->
+      <!-- <define name="AGL_DIST_ID" value="AGL_LIDAR_TFMINI_ID"/> -->
+      <!-- <define name="AGL_DIST_MAX_RANGE" value="12.0"/> -->
+      <!-- <define name="AGL_DIST_MIN_RANGE" value="0.05"/> -->
+      <!-- <define name="AGL_DIST_FILTER" value="0.1"/> -->
+    <!-- </module> -->
 
 
     <module name="Overactuated_mixing"/>
 
-    <module name="lidar" type="tfmini_am7">
-      <configure name="USE_TFMINI_AGL" value="TRUE"/>
-      <configure name="USE_TFMINI" value="TRUE"/>
-      <configure name="AHRS_USE_TFMINI_AGL" value="TRUE"/>
-      <configure name="TFMINI_COMPENSATE_ROTATION" value="TRUE"/>
-    </module>
+    <!-- <module name="lidar" type="tfmini_am7"> -->
+      <!-- <configure name="USE_TFMINI_AGL" value="TRUE"/> -->
+      <!-- <configure name="USE_TFMINI" value="TRUE"/> -->
+      <!-- <configure name="AHRS_USE_TFMINI_AGL" value="TRUE"/> -->
+      <!-- <configure name="TFMINI_COMPENSATE_ROTATION" value="TRUE"/> -->
+    <!-- </module> -->
 
     <module name="approach_moving_target">
       <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.03"/>
@@ -196,8 +196,8 @@
 
   <!-- Maximum limits of the vehicle in manual speed control mode. limits are in the control rf -->
   <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
-    <define name="MAX_FWD_SPEED" value="25.0" unit="m/s"/>
-    <define name="MAX_AIRSPEED" value="16.0" unit="m/s"/> <!--updated for WP navigation-->
+    <define name="MAX_FWD_SPEED" value="20.0" unit="m/s"/>
+    <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> <!--updated for WP navigation-->
     <define name="MIN_FWD_SPEED" value="-4.0" unit="m/s"/>
     <define name="MAX_LAT_SPEED" value="7.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
@@ -403,7 +403,7 @@
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
     <define name="MAX_PHI_INDI" value="30" unit="deg"/>
     <define name="MAX_AOA_INDI" value="15" unit="deg"/>
-    <define name="MIN_AOA_INDI" value="0.1" unit="deg"/>
+    <define name="MIN_AOA_INDI" value="-15" unit="deg"/>
 
     <define name="MAX_DELTA_AILERONS" value="25" unit="deg"/>
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
@@ -419,15 +419,15 @@
 
     <!-- Weighting matrix for the INDI -->
     <define name="W_ACT_MOTOR_CONST" value="3"/>
-    <define name="W_ACT_MOTOR_SPEED" value="0.1"/>
+    <define name="W_ACT_MOTOR_SPEED" value="0.25"/>
     <define name="W_ACT_EL_CONST" value="0"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
     <define name="W_ACT_AZ_CONST" value="0"/>
-    <define name="W_ACT_AZ_SPEED" value="0.1"/>
+    <define name="W_ACT_AZ_SPEED" value="0.25"/>
     <define name="W_ACT_THETA_CONST" value="5"/>
     <define name="W_ACT_THETA_SPEED" value="0"/>
     <define name="W_ACT_PHI_CONST" value="100"/>
-    <define name="W_ACT_PHI_SPEED" value="-12"/>
+    <define name="W_ACT_PHI_SPEED" value="-15"/>
 
     <define name="W_ACT_AILERONS_CONST" value="0.5"/>
     <define name="W_ACT_AILERONS_SPEED" value="0"/>

@@ -142,7 +142,7 @@
     <set value="0" var="feed_speed_ref_from_approach_module"/>
         <stay climb="-0.5" vmode="climb" wp="TD"/>
         <!--<exception cond="!(stateGetPositionEnu_f()->z > 2.0)" deroute="flare_low"/>-->
-        <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.20)" deroute="flare_low"/>
+        <!--<exception cond="agl_dist_valid @AND !(agl_dist_value > 0.20)" deroute="flare_low"/>-->
     </block>
     <block name="flare_low">
     <set value="0" var="feed_speed_ref_from_approach_module"/>

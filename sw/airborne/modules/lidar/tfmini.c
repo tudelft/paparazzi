@@ -245,7 +245,7 @@ void tfmini_init_with_am7(void)
 
   tfmini.strength = 0;
   tfmini.distance = 0;
-
+  
   //Init abi bind msg to Raspberry Pi:
   AbiBindMsgAM7_DATA_IN(ABI_BROADCAST, &AM7_in, data_AM7_abi_in_lidar);
 
