@@ -192,23 +192,122 @@ NOTES:
 
       <module name="logger_ins_analyser" />
 
-      <!--      <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/>  &lt;!&ndash;Throttle hold in command laws&ndash;&gt;-->
+<!--      MOVED BECAUSE OF FBW   -->
+      <module name="actuators" type="pwm"/>
+
+      <define name="USE_AIRSPEED" value="TRUE"/><!-- Use the sensor, not stating use it in flight -->
+
+      <define name="WIND_INFO"/>
+      <define name="WIND_INFO_RET"/>
+
+      <!--<define name="SENSOR_SYNC_SEND"/>--> <!-- TODO Disable after first 10 test flights temporary for debugging Baro -->
+      <configure name="BARO_PERIODIC_FREQUENCY" value="100"/>
+
+      <configure name="USE_BARO_BOARD" value="TRUE"/>
+
+      <define name="USE_BARO_MEDIAN_FILTER"/>
+      <define name="BAT_CHECKER_DELAY" value="80"/>
+      <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410"/>
+      <!--    <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>-->
+      <!--    <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/>-->
+      <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/>
+      <configure name="USE_MAGNETOMETER" value="TRUE"/>
+      <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/> <!-- as in USE it for values in the AHRS -->
+
+      <!--    <module name="stabilization" type="indi_simple"/>-->
+      <module name="stabilization" type="indi">
+        <configure name="INDI_NUM_ACT" value="5"/>
+        <!--        <configure name="INDI_OUTPUTS" value="4"/>-->
+      </module>
+
+      <module name="guidance" type="indi_hybrid_nld">
+        <!--        <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>-->
+        <!--        <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="2500"/>-->
+      </module>
+
+      <module name="ins" type="ekf2">
+        <!--      <define name="INS_PROPAGATE_FREQUENCY" value="500"/>-->
+      </module>
+
+      <!--    <module name="ins"           type="extended" />-->
+
+      <module name="geo_mag"/>
+      <module name="air_data"/>
+
+      <module name="ctrl_effectiveness_scheduling_nld">
+        <define name="SQUARED_ROLL_EFF" value="0.0"/>
+        <define name="PITCH_EFF_AT_60" value="8.79"/>
+        <define name="YAW_EFF_AT_60" value="11.52"/>
+        <!--function of the form: A + B*airspeed^2-->
+        <!--        scaled (1000)-->
+
+        <!--      tune from 1 and 2 -->
+        <define name="CE_PITCH_A" value="-2.1835017"/>
+        <define name="CE_PITCH_B" value="0.05397338"/>
+        <!--      !!!!!!!!! YAW<->ROLL-->
+        <define name="CE_ROLL_A" value="0.2517310"/>
+        <define name="CE_ROLL_B" value="0.01611938"/>
+        <!--      <define name="CE_YAW_A" value="0.827970"/>-->
+        <define name="CE_YAW_A" value="1.027970"/>
+        <define name="CE_YAW_B" value="0.0342179"/>
+
+        <define name="CTRL_EFFECTIVENESS_SEND_SCHEDULING_MSG" value="1"/>
+      </module>
+      <define name="INDI_FUNCTIONS_RC_CHANNEL" value="6"/>
+
+      <module name="intermcu" type="uart">
+        <configure name="INTERMCU_PORT" value="UART8" />
+        <configure name="INTERMCU_BAUD" value="B1500000" /> <!-- This is only during first 10s start up, afterwards it is set to 230400-->
+      </module>
+      <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> <!-- Switch between AP and FBW control; *AUX3 == 7* -->
+
       <!--<define name="RADIO_FMODE"       value="RADIO_AUX2"/> --><!-- Throttle curve select -->
-      <define name="RADIO_FBW_MODE"    value="RADIO_MODE"/> <!-- Switch between manual , stabilized att, and autonomous -->
-      <!--      <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>-->
+      <!--      RADIO_MODE == 4-->
+      <!--      <define name="RADIO_FBW_MODE"    value="RADIO_MODE"/> &lt;!&ndash; Switch between manual , stabilized att, and autonomous &ndash;&gt;-->
 
       <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
-      <!--            <define name="RADIO_FMODE"       value="RADIO_AUX2"/> &lt;!&ndash; Throttle curve select &ndash;&gt;-->
-      <!--            <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> &lt;!&ndash; Switch between AP and FBW control &ndash;&gt;-->
-      <!--            <define name="RADIO_FLAPS"       value="RADIO_AUX4"/> &lt;!&ndash; Flaps control &ndash;&gt;-->
-      <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
+<!--            <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>-->
       <!--            <define name="RADIO_BACK_THOLD"  value="RADIO_AUX5"/>-->
+
+<!--      <module name="px4_flash">-->
+<!--        <configure name="PX4IO_UART" value="UART8"/>-->
+<!--        <configure name="PX4IO_BAUD" value="B1500000" description="Baud rate for PX4IO flashing"/>-->
+<!--      </module>-->
+<!--      <define name="PX4_IO_FORCE_PROG" value="TRUE" />-->
 
     </target>
 
     <target name="fbw" board="px4io_2.4">
+      <configure name="PERIODIC_FREQUENCY" value="200"/>
+      <module name="radio_control" type="ppm">
+<!--        <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="1" />-->
+<!--        <define name="RADIO_KILL_SWITCH" value="RADIO_KILL" />-->
+      </module>
+      <module name="actuators" type="pwm">
+        <define name="SERVO_HZ" value="200" />
+      </module>
+      <define name="RC_LOST_FBW_MODE" value="FBW_MODE_AUTO" />
+      <!-- Switch to Failsafe or to Autopilot on RC loss? -->
+      <define name="RC_LOST_IN_AUTO_FBW_MODE" value="FBW_MODE_AUTO" />
+      <define name="AP_LOST_FBW_MODE" value="FBW_MODE_FAILSAFE" />
+      <!-- Switch to Failsafe or to Manual on AP loss? -->
+      <define name="INTERMCU_LOST_CNT" value="100" />
+
+      <module name="intermcu" type="uart">
+        <configure name="INTERMCU_PORT" value="UART2" />
+        <configure name="INTERMCU_BAUD" value="B1500000" />
+      </module>
+
+      <module name="telemetry" type="transparent">
+        <configure name="MODEM_PORT" value="$(INTERMCU_PORT)"/>
+        <configure name="MODEM_BAUD" value="$(INTERMCU_BAUD)"/>
+<!--        <define name="TELEMETRY_DISABLE_RX"/>-->
+      </module>
+
+      <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
 
     </target>
+
 
     <target name="nps" board="pc">
       <configure name="PERIODIC_FREQUENCY" value="500"/> <!--  unit="Hz" -->
@@ -235,86 +334,70 @@ NOTES:
       <define name="RADIO_FMODE"       value="0"/> <!-- Throttle curve select -->
       <define name="RADIO_FBW_MODE"    value="0"/> <!-- Switch between AP and FBW control -->
       <define name="RADIO_KILL_SWITCH" value="0"/>
-    </target>
 
-    <module name="actuators" type="pwm"/>
+<!--      MOVED BC FBW-->
+      <module name="actuators" type="pwm"/>
 
-    <define name="USE_AIRSPEED" value="TRUE"/><!-- Use the sensor, not stating use it in flight -->
+      <define name="USE_AIRSPEED" value="TRUE"/><!-- Use the sensor, not stating use it in flight -->
 
-    <define name="WIND_INFO"/>
-    <define name="WIND_INFO_RET"/>
+      <define name="WIND_INFO"/>
+      <define name="WIND_INFO_RET"/>
 
-    <!--<define name="SENSOR_SYNC_SEND"/>--> <!-- TODO Disable after first 10 test flights temporary for debugging Baro -->
-    <configure name="BARO_PERIODIC_FREQUENCY" value="100"/>
+      <!--<define name="SENSOR_SYNC_SEND"/>--> <!-- TODO Disable after first 10 test flights temporary for debugging Baro -->
+      <configure name="BARO_PERIODIC_FREQUENCY" value="100"/>
 
-    <configure name="USE_BARO_BOARD" value="TRUE"/>
+      <configure name="USE_BARO_BOARD" value="TRUE"/>
 
-    <define name="USE_BARO_MEDIAN_FILTER"/>
-    <define name="BAT_CHECKER_DELAY" value="80"/>
-    <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410"/>
-<!--    <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>-->
-<!--    <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/>-->
-    <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/>
-    <configure name="USE_MAGNETOMETER" value="TRUE"/>
-    <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/> <!-- as in USE it for values in the AHRS -->
+      <define name="USE_BARO_MEDIAN_FILTER"/>
+      <define name="BAT_CHECKER_DELAY" value="80"/>
+      <define name="CATASTROPHIC_BATTERY_KILL_DELAY" value="410"/>
+      <!--    <define name="AHRS_TRIGGERED_ATTITUDE_LOOP"/>-->
+      <!--    <define name="USE_AHRS_GPS_ACCELERATIONS" value="TRUE"/>-->
+      <define name="USE_MAGNETOMETER_ONGROUND" value="TRUE"/>
+      <configure name="USE_MAGNETOMETER" value="TRUE"/>
+      <configure name="AHRS_USE_MAGNETOMETER" value="TRUE"/> <!-- as in USE it for values in the AHRS -->
 
-    <!--    <module name="stabilization" type="indi_simple"/>-->
-    <module name="stabilization" type="indi">
+      <!--    <module name="stabilization" type="indi_simple"/>-->
+      <module name="stabilization" type="indi">
         <configure name="INDI_NUM_ACT" value="5"/>
-<!--        <configure name="INDI_OUTPUTS" value="4"/>-->
-    </module>
+        <!--        <configure name="INDI_OUTPUTS" value="4"/>-->
+      </module>
 
-    <module name="guidance" type="indi_hybrid_nld">
-<!--        <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>-->
-<!--        <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="2500"/>-->
-    </module>
- 
-    <module name="ins" type="ekf2">
-<!--      <define name="INS_PROPAGATE_FREQUENCY" value="500"/>-->
-    </module>
+      <module name="guidance" type="indi_hybrid_nld">
+        <!--        <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>-->
+        <!--        <define name="GUIDANCE_INDI_MIN_THROTTLE_FWD" value="2500"/>-->
+      </module>
 
-<!--    <module name="ins"           type="extended" />-->
+      <module name="ins" type="ekf2">
+        <!--      <define name="INS_PROPAGATE_FREQUENCY" value="500"/>-->
+      </module>
 
-    <module name="geo_mag"/>
-    <module name="air_data"/>
+      <!--    <module name="ins"           type="extended" />-->
 
-  <module name="ctrl_effectiveness_scheduling_nld">
-      <define name="SQUARED_ROLL_EFF" value="0.0"/>
-      <define name="PITCH_EFF_AT_60" value="8.79"/>
-      <define name="YAW_EFF_AT_60" value="11.52"/>
-      <!--function of the form: A + B*airspeed^2-->
-<!--        scaled (1000)-->
+      <module name="geo_mag"/>
+      <module name="air_data"/>
 
-<!--      tuned manually, works at lower AS-->
-<!--      <define name="CE_PITCH_A" value="-0.60926"/>-->
-      <!--      <define name="CE_PITCH_B" value="0.021846"/>-->
-<!--      <define name="CE_ROLL_A" value="0.56927"/>-->
-      <!--      <define name="CE_ROLL_B" value="0.009639"/>-->
-<!--      <define name="CE_YAW_A" value="1.697402"/>-->
-      <!--      <define name="CE_YAW_B" value="0.01647448"/>-->
+      <module name="ctrl_effectiveness_scheduling_nld">
+        <define name="SQUARED_ROLL_EFF" value="0.0"/>
+        <define name="PITCH_EFF_AT_60" value="8.79"/>
+        <define name="YAW_EFF_AT_60" value="11.52"/>
+        <!--function of the form: A + B*airspeed^2-->
+        <!--        scaled (1000)-->
+        <!--      tune from 1 and 2 -->
+        <define name="CE_PITCH_A" value="-2.1835017"/>
+        <define name="CE_PITCH_B" value="0.05397338"/>
+        <!--      !!!!!!!!! YAW<->ROLL-->
+        <define name="CE_ROLL_A" value="0.2517310"/>
+        <define name="CE_ROLL_B" value="0.01611938"/>
+        <!--      <define name="CE_YAW_A" value="0.827970"/>-->
+        <define name="CE_YAW_A" value="1.027970"/>
+        <define name="CE_YAW_B" value="0.0342179"/>
 
-<!--      tuned at Valkenburg 21-10-08-->
-<!--      <define name="CE_PITCH_A" value="-0.60926"/>-->
-<!--      <define name="CE_PITCH_B" value="0.047824"/>-->
-<!--&lt;!&ndash;      !!!!!!!!! YAW<->ROLL&ndash;&gt;-->
-<!--      <define name="CE_ROLL_A" value="0.56927"/>-->
-<!--      <define name="CE_ROLL_B" value="0.014879"/>-->
-<!--      <define name="CE_YAW_A" value="1.697402"/>-->
-<!--      <define name="CE_YAW_B" value="0.03082177"/>-->
+        <define name="CTRL_EFFECTIVENESS_SEND_SCHEDULING_MSG" value="1"/>
+      </module>
+      <define name="INDI_FUNCTIONS_RC_CHANNEL" value="6"/>
 
-<!--      tune from 1 and 2 -->
-      <define name="CE_PITCH_A" value="-2.1835017"/>
-      <define name="CE_PITCH_B" value="0.05397338"/>
-      <!--      !!!!!!!!! YAW<->ROLL-->
-      <define name="CE_ROLL_A" value="0.2517310"/>
-      <define name="CE_ROLL_B" value="0.01611938"/>
-<!--      <define name="CE_YAW_A" value="0.827970"/>-->
-      <define name="CE_YAW_A" value="1.027970"/>
-      <define name="CE_YAW_B" value="0.0342179"/>
-
-      <define name="CTRL_EFFECTIVENESS_SEND_SCHEDULING_MSG" value="1"/>
-    </module>
-    <define name="INDI_FUNCTIONS_RC_CHANNEL" value="6"/>
+    </target>
 
   </firmware>
 
@@ -669,6 +752,7 @@ NOTES:
 
 <!--    <define name="INS_EKF2_GPS_CHECK_MASK" value="0"/>-->
 <!--    <define name="USE_GPS" value="TRUE"/>-->
+<!--    <define name="telemetry_mode_Fbw" value="1"/>-->
   </section>
 
   <section name="PHOTOGRAMMETRY" prefix="PHOTOGRAMMETRY_">

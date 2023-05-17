@@ -63,7 +63,7 @@
       <message name="GPS_RTK"                  period="1"/>
 
 <!--      <message name="BARO_MS5611"               period="3.0"/>-->
-      <message name="FBW_STATUS"          period="10.0"/>
+      <message name="FBW_STATUS"          period="1.0"/>
 
     </mode>
 
