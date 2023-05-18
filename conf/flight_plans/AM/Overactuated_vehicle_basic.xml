@@ -1,0 +1,129 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="152" ground_alt="147" lat0="43 33 50.83" lon0="1 28 52.61" max_dist_from_home="150" name="Rotorcraft Basic (Enac)" security_height="2">
+  <header>
+#include "autopilot.h"
+#include "modules/datalink/datalink.h"
+#include  "modules/Overactuated_vehicle/Overactuated_mixing.h"
+    
+  </header>
+  <waypoints>
+    <waypoint name="HOME" x="0.0" y="0.0"/>
+    <waypoint name="CLIMB" x="0.0" y="5.0"/>
+    <waypoint name="STDBY" x="-2.0" y="-5.0"/>
+    <waypoint name="p1" x="3.6" y="-13.9"/>
+    <waypoint name="p2" x="27.5" y="-48.2"/>
+    <waypoint name="p3" x="16.7" y="-19.6"/>
+    <waypoint name="p4" x="13.7" y="-40.7"/>
+    <waypoint name="CAM" x="-20" y="-50" height="2."/>
+    <waypoint name="TD" x="5.6" y="-10.9"/>
+        <waypoint name="APP" x="40.5" y="13.5"/>
+            <waypoint name="FOLLOW" x="60.5" y="13.5"/>
+  </waypoints>
+  <modules>
+    <module name="follow_me"/>
+  </modules>
+  
+  <blocks>
+    <block name="Wait GPS">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <block name="Geo init">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetGroundReferenceHere()"/>
+      <!--<call_once fun="NavSetAltitudeReferenceHere()"/>-->
+    </block>
+    <block name="Holding point">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+    <block name="Start Engine">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <call_once fun="NavResurrect()"/>
+      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+        <block name="follow_module">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
+    </block>
+    <block name="Approach APP">
+    <set value="1" var="feed_speed_ref_from_approach_module"/>
+      <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
+    </block>
+    
+    <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <exception cond="stateGetPositionEnu_f() @DEREF z @GT 2.0" deroute="Standby"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <stay vmode="climb" climb="nav.climb_vspeed" wp="CLIMB"/>
+    </block>
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <stay wp="STDBY"/>
+    </block>
+    <block name="stay_p1">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <stay wp="p1"/>
+    </block>
+    <block name="go_p2">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <call_once fun="nav_set_heading_deg(90)"/>
+      <go wp="p2"/>
+      <deroute block="stay_p1"/>
+    </block>
+    <block name="line_p1_p2">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <stay wp="p2" until="stage_time @GT 10"/>
+      <go from="p2" hmode="route" wp="p1"/>
+      <deroute block="stay_p1"/>
+    </block>
+    <block name="route">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <go wp="p1"/>
+      <go wp="p2"/>
+      <go wp="p3"/>
+      <go wp="p4"/>
+      <deroute block="route"/>
+    </block>
+    <block name="Oval">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <oval p1="p1" p2="p2" radius="-1"/>
+    </block>
+    <block name="test yaw">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <go wp="p1"/>
+      <for var="i" from="1" to="16">
+        <heading alt="WaypointAlt(WP_p1)" course="90 * $i" until="stage_time @GT 3"/>
+      </for>
+      <deroute block="Standby"/>
+    </block>
+    <block name="circle CAM" pre_call="nav_set_heading_towards_waypoint(WP_CAM)">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <circle radius="nav.radius" wp="CAM"/>
+    </block>
+    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+    </block>
+    <block name="land">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <go wp="TD"/>
+    </block>
+    <block name="flare">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <exception cond="NavDetectGround()" deroute="Holding point"/>
+      <exception cond="!nav_is_in_flight()" deroute="landed"/>
+      <call_once fun="NavStartDetectGround()"/>
+      <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="landed">
+    <set value="0" var="feed_speed_ref_from_approach_module"/>
+      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" until="FALSE"/>
+    </block>
+  </blocks>
+</flight_plan>
