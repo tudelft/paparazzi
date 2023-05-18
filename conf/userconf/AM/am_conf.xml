@@ -16,7 +16,7 @@
    airframe="airframes/AM/am_quadplane_plus_tud00334_SIM.xml"
    radio="radios/crossfire_sbus.xml"
    telemetry="telemetry/AM/am_overactuated_vehicle_SIM.xml"
-   flight_plan="flight_plans/AM/overactuated_vehicle_EHVB.xml"
+   flight_plan="flight_plans/AM/overactuated_vehicle_EH8R.xml"
    settings=""
    settings_modules="modules/Overactuated_mixing.xml modules/Overactuated_mixing.xml modules/Overactuated_mixing.xml modules/Overactuated_mixing.xml modules/air_data.xml modules/approach_moving_target.xml modules/follow_me.xml modules/gps.xml modules/gps_ublox.xml modules/gps_ubx_ucenter.xml modules/guidance_indi_hybrid.xml modules/guidance_rotorcraft.xml modules/imu_common.xml modules/imu_heater.xml modules/ins_ekf2.xml modules/nav_rotorcraft.xml modules/scheduling_indi_simple.xml modules/stabilization_indi_simple.xml modules/target_pos.xml"
    gui_color="red"
