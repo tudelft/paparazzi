@@ -648,7 +648,7 @@
     <define name="NO_GPS_LOST_WITH_DATALINK_TIME" value="20"/>
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
 
-    <!-- <define name="CARROT" value="2000" unit="s"/> -->
+    <define name="CARROT" value="5" unit="s"/>
     
   </section>
 
