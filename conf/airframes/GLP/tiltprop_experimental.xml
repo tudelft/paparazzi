@@ -16,6 +16,7 @@
         <define name="RADIO_CONTROL_NB_CHANNEL" value="16"/>
         <define name="RADIO_KILL_SWITCH" value="5"/>
         <define name="RADIO_PIVOT_SWITCH" value="6"/>
+        <define name="RADIO_SERVO" value="7"/>
       </module>
       
       <module name="airspeed" type="ms45xx_i2c">
@@ -31,6 +32,7 @@
         <define name="MS45XX_LOWPASS_TAU" value="0.2"/> <!--description="Time constant for second order Butterworth low pass filter"-->
         <define name="USE_AIRSPEED_MS45XX" value="TRUE"/> <!--description="Set airspeed in state interface for this sensor" -->
       </module>
+      
     </target>
 	  
 	  <!-- ****************** Simulation Target ****************** -->
@@ -192,8 +194,8 @@
     <servo name="TILT_RIGHT" no="1" min="750" neutral="1350" max="1950"/>
     <servo name="RM" no="2" min="1000" neutral="1150" max="1900"/>
     <servo name="LM" no="3" min="1000" neutral="1150" max="1900"/>
-    <servo name="AIL_LEFT" no="4" min="1200" neutral="1500" max="1800"/>
-    <servo name="AIL_RIGHT" no="5" min="1200" neutral="1500" max="1800"/>
+    <servo name="AIL_LEFT" no="4" min="1200" neutral="1146" max="1800"/>
+    <servo name="AIL_RIGHT" no="5" min="1200" neutral="1917" max="1800"/>
     <!-- <servo name="SERVO_TEST" no="0" min="2050" neutral="1550" max="1050"/> -->
   </servos>
   
@@ -227,8 +229,8 @@
     <set servo="TILT_RIGHT" value="autopilot.motors_on ? actuators_pprz[1] : 0"/>
     <set servo="RM" value="autopilot.motors_on ? actuators_pprz[2] : -MAX_PPRZ"/>
     <set servo="LM" value="autopilot.motors_on ? actuators_pprz[3] : -MAX_PPRZ"/>
-    <!--<set servo="RM" value="autopilot_motors_on ? -MAX_PPRZ : -MAX_PPRZ"/>-->
-    <!--<set servo="LM" value="autopilot_motors_on ? -MAX_PPRZ : -MAX_PPRZ"/>-->
+    <set servo="AIL_LEFT" value="RadioControlValues(RADIO_SERVO)"/>
+    <set servo="AIL_RIGHT" value="RadioControlValues(RADIO_SERVO)"/>
   </command_laws>
 
   <section name="IMU" prefix="IMU_">

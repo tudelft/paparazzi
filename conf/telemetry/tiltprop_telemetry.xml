@@ -19,6 +19,7 @@
       <message name="INS"                      period=".25"/>
       <message name="I2C_ERRORS"               period="4.1"/>
       <message name="UART_ERRORS"              period="3.1"/>
+      <message name="AHRS_REF_QUAT"            period="0.2"/>
       <message name="SUPERBITRF"               period="3"/>
       <message name="ENERGY"                   period="2.5"/>
       <message name="DATALINK_REPORT"          period="5.1"/>
@@ -200,9 +201,7 @@
       <message name="IMU_GYRO_SCALED"          period="0.002"/>
       <message name="IMU_ACCEL_SCALED"         period="0.002"/>
       <message name="IMU_MAG_SCALED"           period="0.002"/>
-      <message name="IMU_ACCEL_RAW"     period=".002"/>
-      <message name="IMU_GYRO_RAW"      period=".002"/>
-      <message name="IMU_MAG_RAW"       period=".002"/>
+      <message name="ACTUATORS"                period="0.002"/>
       <!-- <message name="CTRL_EFFECTIVENESS_CALC"  period="0.002"/>
       <message name="CTRL_EFF_MODULE"         period="0.002"/> -->
 	  <message name="AHRS_REF_QUAT" 		   period="0.002"/>
