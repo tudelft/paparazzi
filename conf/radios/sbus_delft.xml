@@ -7,4 +7,5 @@
  <channel function="MODE" max="2072" neutral="1520" min="966" average="1" reverse="0"/>
  <channel function="GAIN1" min="966" neutral="1520" max="2072" average="0"/>
  <channel function="GAIN2" min="966" neutral="1520" max="2072" average="0"/>
+ <channel function="SERVO" min="966" neutral="1520" max="2072" average="0"/>
 </radio>

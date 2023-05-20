@@ -28,7 +28,7 @@
 	      <y> 0 </y>
 	      <z> 0 </z>
 	    </location>
-	    <location name="EYEPOINT" unit="IN">
+	    <location name="EYEPOINT" unite="IN">
 	      <x> 0 </x>
 	      <y> 0 </y>
 	      <z> 0 </z>
