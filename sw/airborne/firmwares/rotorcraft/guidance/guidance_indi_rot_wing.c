@@ -183,17 +183,18 @@ float *Bwls_rot_wing[3];
 int num_iter_rot_wing = 0;
 float rot_wing_du[4];
 float rot_wing_v[3];
-float Wv_rot_wing[3] = {10., 10., 1.};
-float pitch_priority_factor = 60.;//18.;
+float Wv_rot_wing[3] = {10., 10., 10.};
+float pitch_priority_factor = 11.; //18;
 float roll_priority_factor = 10.;
 float thrust_priority_factor = 7.;
 float pusher_priority_factor = 30.;
 float horizontal_accel_weight = 10.;
-float vertical_accel_weight = 1.;
+float vertical_accel_weight = 10.;
 float Wu_rot_wing[4] = {10., 10., 100., 1.};
 float pitch_pref_deg = 0;
 float pitch_pref_rad = 0;
 float push_first_order_constant = 1.0;
+float hover_motor_slowdown = 1.0;
 float a_diff_limit = 3.0;
 float a_diff_limit_z = 1.0;
 
@@ -566,7 +567,7 @@ static float bound_vz_sp(float vz_sp)
 {
   // Bound vertical speed setpoint
   if (stateGetAirspeed_f() > 13.f) {
-    Bound(vz_sp, -4.0f, 4.0f); // FIXME no harcoded values
+    Bound(vz_sp, -nav.climb_vspeed, -nav.descend_vspeed); // FIXME no harcoded values
   } else {
     Bound(vz_sp, -nav.climb_vspeed, -nav.descend_vspeed); // FIXME don't use nav settings
   }
@@ -823,7 +824,7 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   du_max_rot_wing[0] = rot_wing_roll_limit - roll_filt.o[0]; //roll
   du_max_rot_wing[1] = rot_wing_max_pitch_limit_deg/180.*M_PI - pitch_filt.o[0]; // pitch
   du_max_rot_wing[2] = -(actuator_state_filt_vect[0]*g1g2[3][0] + actuator_state_filt_vect[1]*g1g2[3][1] + actuator_state_filt_vect[2]*g1g2[3][2] + actuator_state_filt_vect[3]*g1g2[3][3]);
-  du_max_rot_wing[3] = ((MAX_PPRZ - thrust_bx_state_filt) * STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS) * push_first_order_constant;
+  du_max_rot_wing[3] = a_diff_limit;
   
   // Set prefered states
   du_pref_rot_wing[0] = 0; // prefered delta roll angle

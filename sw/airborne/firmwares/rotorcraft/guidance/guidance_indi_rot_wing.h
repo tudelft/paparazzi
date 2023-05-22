@@ -75,6 +75,7 @@ extern bool force_forward;       ///< forward flight for hybrid nav
 
 extern float guidance_indi_max_bank;
 extern float push_first_order_constant;
+extern float hover_motor_slowdown;
 extern float a_diff_limit;
 extern float a_diff_limit_z;
 extern float rot_wing_max_pitch_limit_deg;
