@@ -44,7 +44,7 @@
             <define VALUE="RADIO_AUX1" NAME="RADIO_KILL_SWITCH"/>
             <define VALUE="MAG_LIS3MDL_SENDER_ID" NAME="INS_EKF2_MAG_ID"/>
             <define VALUE="IMU_CUBE2_ID" NAME="INS_EKF2_ACCEL_ID"/>
-            <define VALUE="IMU_CUBE2_ID" NAME="INS_EKF2_GYRO_ID"/>
+            <define VALUE="IMU_CUBE1_ID" NAME="INS_EKF2_GYRO_ID"/>
             <define name="I2C2_CLOCK_SPEED" value="100000"/>
         </target>
 
@@ -189,7 +189,7 @@
     </firmware>
 
     <servos DRIVER="Pwm">
-        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1246" NEUTRAL="1246" MAX="1922"/>
+        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1310" NEUTRAL="1310" MAX="1717"/>
         <servo NO="1" NAME="SERVO_AIL_LEFT"  MIN="1000" NEUTRAL="1500" MAX="2000"/>
         <servo NO="2" NAME="SERVO_AIL_RIGHT" MIN="1000" NEUTRAL="1500" MAX="2000"/>
         <servo NO="3" NAME="SERVO_CAM" MIN="0" NEUTRAL="2500" MAX="2500"/>
@@ -201,7 +201,7 @@
         <servo NO="2" NAME="MOTOR_BACK"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
         <servo NO="3" NAME="MOTOR_LEFT"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
         <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="0"    MAX="8191"/>
-        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="8191"  NEUTRAL="8191" MAX="-1395"/>
+        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="8191"  NEUTRAL="8191" MAX="-2400"/>
         <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"    MAX="8191"/>
     </servos>
 
@@ -338,11 +338,11 @@
         <define VALUE="32.0" NAME="REF_ERR_Q"/>
         <define VALUE="23.0" NAME="REF_ERR_R"/>
         <define VALUE="7.0" NAME="REF_RATE_P"/>
-        <define VALUE="8.0" NAME="REF_RATE_Q"/>
+        <define VALUE="7.2" NAME="REF_RATE_Q"/>
         <define VALUE="5.0" NAME="REF_RATE_R"/>
         <define VALUE="30.0" UNIT="deg/s" NAME="MAX_R"/>
-        <define VALUE="5.0" NAME="FILT_CUTOFF_P"/>
-        <define VALUE="5.0" NAME="FILT_CUTOFF_Q"/>
+        <define VALUE="20.0" NAME="FILT_CUTOFF_P"/>
+        <define VALUE="20.0" NAME="FILT_CUTOFF_Q"/>
         <define VALUE="5.0" NAME="FILT_CUTOFF_R"/>
         <define VALUE="2.0" NAME="FILT_CUTOFF"/>
         <define VALUE="0.5" NAME="FILT_CUTOFF_RDOT"/>
@@ -394,7 +394,7 @@
         <define name="HEADING_BANK_GAIN" value="5."/>
         <define name="MAX_AIRSPEED" value="10.0"/>
         <define name="PITCH_LIFT_EFF" value="0.0"/>
-        <define name="ZERO_AIRSPEED" value="TRUE"/>
+        <!-- <define name="ZERO_AIRSPEED" value="TRUE"/> -->
         <define name="NAV_CIRCLE_DIST" value="60."/>
         <!--<define name="MIN_THROTTLE" value="0."/>
         <define name="MIN_PITCH" value="-35."/>
