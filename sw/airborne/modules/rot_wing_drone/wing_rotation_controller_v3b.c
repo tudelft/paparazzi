@@ -24,6 +24,9 @@
  */
 
 #include "modules/rot_wing_drone/wing_rotation_controller_v3b.h"
+#include "modules/radio_control/radio_control.h"
+
+#include "state.h"
 
 #include <stdlib.h>
 #include "mcu_periph/adc.h"
@@ -65,6 +68,11 @@
 // Parameters
 struct wing_rotation_controller wing_rotation;
 
+float wing_rotation_sched_as_1 = 5;
+float wing_rotation_sched_as_2 = 8;
+float wing_rotation_sched_as_3 = 10;
+float wing_rotation_sched_as_4 = 15;
+
 static struct adc_buf buf_wing_rot_pos;
 
 // Inline functions
@@ -92,7 +100,7 @@ void wing_rotation_init(void)
   adc_buf_channel(ADC_CHANNEL_WING_ROTATION_POSITION, &buf_wing_rot_pos, ADC_CHANNEL_WING_ROTATION_POSITION_NB_SAMPLES);
   #endif
 
-  // Init wing_rotation_controller struct
+    // Init wing_rotation_controller struct
   wing_rotation.servo_pprz_cmd = 0;
   wing_rotation.adc_wing_rotation = 0;
   wing_rotation.wing_angle_rad = 0;
@@ -104,6 +112,9 @@ void wing_rotation_init(void)
   wing_rotation.wing_rotation_first_order_dynamics = WING_ROTATION_FIRST_DYN;
   wing_rotation.wing_rotation_second_order_dynamics = WING_ROTATION_SECOND_DYN;
   wing_rotation.adc_wing_rotation_range = WING_ROTATION_POSITION_ADC_90 - WING_ROTATION_POSITION_ADC_0;
+  wing_rotation.airspeed_scheduling = false;
+  wing_rotation.transition_forward = false;
+  wing_rotation.forward_airspeed = 18.;
 
   // Set wing angle to current wing angle
   wing_rotation.initialized = false; 
@@ -132,13 +143,49 @@ void wing_rotation_periodic(void)
 
 void wing_rotation_event(void)
 {
-  // your event code here
+  // First check if safety switch is triggered
+  #ifdef WING_ROTATION_RESET_RADIO_CHANNEL
+  // Update wing_rotation deg setpoint when RESET switch triggered
+  if (radio_control.values[WING_ROTATION_RESET_RADIO_CHANNEL] > 1750)
+  {
+      wing_rotation.airspeed_scheduling = false;
+      wing_rotation.wing_angle_deg_sp = 0;
+  }
+  #endif
+
+  if (!wing_rotation.airspeed_scheduling) {
+    wing_rotation.transition_forward = false;
+  }
 
   // Update Wing position sensor
   wing_rotation_to_rad();
 
   // Run control if initialized
   if (wing_rotation.initialized) {
+
+    if (wing_rotation.airspeed_scheduling)
+    { 
+      float wing_angle_scheduled_sp_deg = 0;
+      float airspeed = stateGetAirspeed_f();
+      if (airspeed < wing_rotation_sched_as_1) {
+        wing_angle_scheduled_sp_deg = 0;
+      } else if (airspeed < wing_rotation_sched_as_2) {
+        float as_range = wing_rotation_sched_as_2 - wing_rotation_sched_as_1;
+        Bound(as_range, 1, 20);
+        wing_angle_scheduled_sp_deg = ((airspeed - wing_rotation_sched_as_1) / as_range) * 55;
+      } else if (airspeed < wing_rotation_sched_as_3) {
+        wing_angle_scheduled_sp_deg = 55;
+      } else if (airspeed < wing_rotation_sched_as_4) {
+        float as_range = wing_rotation_sched_as_4 - wing_rotation_sched_as_3;
+        Bound(as_range, 1, 20);
+        wing_angle_scheduled_sp_deg = ((airspeed - wing_rotation_sched_as_3) / as_range) * 35 + 55;
+      } else {
+        wing_angle_scheduled_sp_deg = 90;
+      }
+      Bound(wing_angle_scheduled_sp_deg, 0., 90.);
+      wing_rotation.wing_angle_deg_sp = wing_angle_scheduled_sp_deg;
+    }
+
     wing_rotation_update_sp();
 
     //int32_t servo_pprz_cmd;  // Define pprz cmd
@@ -157,10 +204,6 @@ void wing_rotation_to_rad(void)
   #if !USE_NPS
   wing_rotation.adc_wing_rotation = buf_wing_rot_pos.sum / buf_wing_rot_pos.av_nb_sample;
 
-  // wing_rotation.wing_angle_deg =  - 0.00000000000775081780242 * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation 
-  //                                 + 0.000001108651179779 * (float)wing_rotation.adc_wing_rotation * (float)wing_rotation.adc_wing_rotation 
-  //                                 - 0.055899851122862 * (float)wing_rotation.adc_wing_rotation
-  //                                 + 1044.66466029256 - 5.;
   wing_rotation.wing_angle_deg = 0.003264075042712 * (float)wing_rotation.adc_wing_rotation - 47.4432681739534;
   wing_rotation.wing_angle_rad = wing_rotation.wing_angle_deg / 180. * M_PI;
 

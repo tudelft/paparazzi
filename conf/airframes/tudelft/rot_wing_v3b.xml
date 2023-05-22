@@ -41,13 +41,15 @@
             <define VALUE="RADIO_AUX3" NAME="RADIO_FBW_MODE"/>
             <define VALUE="RADIO_AUX1" NAME="RADIO_KILL_SWITCH"/>
             <define VALUE="MAG_RM3100_SENDER_ID" NAME="INS_EKF2_MAG_ID" />
-            <define VALUE="IMU_CUBE2_ID" NAME="INS_EKF2_ACCEL_ID"/>
-            <define VALUE="IMU_CUBE2_ID" NAME="INS_EKF2_GYRO_ID"/>
+            <define VALUE="IMU_CUBE1_ID" NAME="INS_EKF2_ACCEL_ID"/>
+            <define VALUE="IMU_CUBE1_ID" NAME="INS_EKF2_GYRO_ID"/>
+            <define name="I2C2_CLOCK_SPEED" value="100000"/>
         </target>
 
         <target name="nps" board="pc">
             <module name="radio_control" type="datalink"/>
             <module name="fdm" type="jsbsim"/>
+            <module name="ctrl_eff_sched_rot_wing_v3b"/>
 
             <!--Not dealing with these in the simulation-->
             <define name="RADIO_TH_HOLD"     value="0"/> <!-- Throttle hold in command laws -->
@@ -69,7 +71,9 @@
             <configure VALUE="TRUE" NAME="UAVCAN_USE_CAN2"/>
         </module>
 
-        <module TYPE="pwm" NAME="actuators"/>
+        <module TYPE="pwm" NAME="actuators">
+            <define name="SERVO_HZ" value="400"/>
+        </module>
 
         <module name="imu" type="cube"/>
 
@@ -79,10 +83,11 @@
         </module>
 
         <module TYPE="indi" NAME="stabilization">
-            <configure name="INDI_NUM_ACT" value="6"/>
+            <configure name="INDI_NUM_ACT" value="8"/>
         </module>
 
         <module name="guidance" type="indi_rot_wing"/>
+        <module name="nav_hybrid"/>
 
         <module TYPE="ekf2" NAME="ins"/>
 
@@ -110,6 +115,7 @@
             <define name="WING_ROTATION_DEADZONE_PPRZ_CMD" value="500"/>
             <define name="WING_ROTATION_P_GAIN" value="-50000"/>
             <define name="WING_ROTATION_MAX_CMD" value="9600"/>
+            <define name="WING_ROTATION_RESET_RADIO_CHANNEL" value="10"/>
         </module>
 
         <module name="sys_id_doublet">
@@ -235,11 +241,9 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
-        <!-- <set VALUE="($th_hold? 0 : actuators_pprz[4])" SERVO="SERVO_RUDDER"/> -->
-        <set VALUE="0" SERVO="SERVO_RUDDER"/>
-        <set VALUE="($th_hold? 0 : actuators_pprz[5])" SERVO="SERVO_ELEVATOR"/>
-        <!--<set VALUE="($th_hold? -9600 : actuators_pprz[6])" SERVO="MOTOR_PUSH"/>-->
-        <set VALUE="-9600" SERVO="MOTOR_PUSH"/>
+        <set VALUE="($th_hold? 0 : actuators_pprz[4])" SERVO="SERVO_RUDDER"/>
+        <set VALUE="(!autopilot_in_flight()? 0 : actuators_pprz[5])" SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[8])" SERVO="MOTOR_PUSH"/>
         <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_ROTWING"/>
         <set VALUE="0" SERVO="AIL_LEFT"/>
         <set VALUE="0" SERVO="AIL_RIGHT"/>
@@ -261,7 +265,7 @@
         <define name="NAV_CARROT_DIST" value="150"/>
         <define name="THRESHOLD_GROUND_DETECT" value="40"/>
         <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST" value="300"/>
-        <!--<define VALUE="50.0" NAME="ARRIVED_AT_WAYPOINT"/>-->
+        <define VALUE="50.0" NAME="ARRIVED_AT_WAYPOINT"/>
         <define VALUE="20" NAME="NO_GPS_LOST_WITH_DATALINK_TIME"/>
         <define VALUE="TRUE" NAME="NO_GPS_LOST_WITH_RC_VALID"/>
         <define name="USE_AIRSPEED" value="TRUE"/>
@@ -314,17 +318,17 @@
         <define VALUE="{1.6, 0.0,   -1.6, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
         <define VALUE="{-0.2, 0.1, -0.35, 0.35, 0.0, 0.0}" NAME="G1_YAW"/>-->
         <!--With tail effectiveness values-->
-        <define VALUE="{0.0, -15.0, 0.0, 15.0, 0.0, 0.0}" NAME="G1_ROLL"/>
-        <define VALUE="{1.5, 0.0, -1.5, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-0.3, 0.3, -0.3, 0.3, 0.0, 0.0}" NAME="G1_YAW"/>
+        <define VALUE="{0.0, -15.0, 0.0, 15.0, 0.0, 0.0, 0.0, 0.0}" NAME="G1_ROLL"/>
+        <define VALUE="{1.5, 0.0, -1.5, 0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
+        <define VALUE="{-0.3, 0.3, -0.3, 0.3, 0.0, 0.0, 0.0, 0.0}" NAME="G1_YAW"/>
         <!-- <define VALUE="{-0.43, 0.43, -0.43, 0.43, 0.0, 0.0}" NAME="G1_YAW"/> -->
         <!--<define VALUE="{-0.2, 0.2, -0.2, 0.2, 0.0, 0.0}" NAME="G1_YAW"/>-->
         <!--With wing effectiveness values-->
         <!--<define VALUE="{0.0, -8.3, 0.0,   8.7, 0.0, 0.0}" NAME="G1_ROLL"/>
         <define VALUE="{0.85, 0.0,   -0.97, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
         <define VALUE="{-0.12, 0.25, -0.21, 0.25, 0.0, 0.0}" NAME="G1_YAW"/>-->
-        <define VALUE="{-0.55,   -0.45,  -0.55, -0.45, 0.0, 0.0}" NAME="G1_THRUST"/>
-        <define VALUE="{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
+        <define VALUE="{-0.55,   -0.45,  -0.55, -0.45, 0.0, 0.0, 0.0, 0.0}" NAME="G1_THRUST"/>
+        <define VALUE="{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
         <define VALUE="0.00055" NAME="PUSHER_PROP_EFFECTIVENESS"/>
         <define VALUE="0.047" NAME="PUSHER_PROP_DYN"/>
         <!--<define VALUE="{0.00, -30.0, 0.0,   30.0}" NAME="G1_ROLL"/>
@@ -339,15 +343,15 @@
         <define VALUE="8.0" NAME="REF_RATE_Q"/>
         <define VALUE="9.0" NAME="REF_RATE_R"/>
         <define VALUE="30.0" UNIT="deg/s" NAME="MAX_R"/>
-        <define VALUE="5.0" NAME="FILT_CUTOFF_P"/>
-        <define VALUE="5.0" NAME="FILT_CUTOFF_Q"/>
-        <define VALUE="3.0" NAME="FILT_CUTOFF_R"/>
+        <define VALUE="20.0" NAME="FILT_CUTOFF_P"/>
+        <define VALUE="20.0" NAME="FILT_CUTOFF_Q"/>
+        <define VALUE="5.0" NAME="FILT_CUTOFF_R"/>
         <define VALUE="2.0" NAME="FILT_CUTOFF"/>
         <define VALUE="0.5" NAME="FILT_CUTOFF_RDOT"/>
         <define VALUE="2.0" NAME="ESTIMATION_FILT_CUTOFF"/>
         <define VALUE="TRUE" NAME="FILTER_YAW_RATE"/>
-        <define VALUE="{0.035, 0.035, 0.035, 0.035, 0.1, 0.1}" NAME="ACT_DYN"/>
-        <define VALUE="{0, 0, 0, 0, 1, 1}" NAME="ACT_IS_SERVO"/>
+        <define VALUE="{0.035, 0.035, 0.035, 0.035, 0.1, 0.1, 0.1, 0.1}" NAME="ACT_DYN"/>
+        <define VALUE="{0, 0, 0, 0, 1, 1, 1, 1}" NAME="ACT_IS_SERVO"/>
         <define VALUE="{1000, 1000, 1, 100}" NAME="WLS_PRIORITIES"/>
         <define VALUE="FALSE" NAME="USE_ADAPTIVE"/>
         <define VALUE="0.001" NAME="ADAPTIVE_MU"/>
@@ -382,15 +386,16 @@
     </section>
 
     <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
-        <define name="POS_GAIN" value="0.5"/><!--tuned at 10m/s ///1.0 1.5-->
+        <define name="POS_GAIN" value="0.3"/><!--tuned at 10m/s ///1.0 1.5-->
         <define name="POS_GAINZ" value="0.5"/> <!--tuned at 10m/s ///1.7 1.0-->
         <define name="SPEED_GAIN" value="1.0"/> <!--tuned at 10m/s ///2.0 1.4-->
         <define name="SPEED_GAINZ" value="0.6"/> <!--tuned at 10m/s ///2.1 2.4-->
-        <define name="FILTER_CUTOFF" value="1.0"/>
+        <define name="FILTER_CUTOFF" value="2.0"/>
         <define name="HEADING_BANK_GAIN" value="5."/>
         <define name="MAX_AIRSPEED" value="10.0"/>
         <define name="PITCH_LIFT_EFF" value="0.0"/>
-        <define name="ZERO_AIRSPEED" value="TRUE"/>
+        <!-- <define name="ZERO_AIRSPEED" value="TRUE"/> -->
+        <define name="NAV_CIRCLE_DIST" value="60."/>
         <!--<define name="MIN_THROTTLE" value="0."/>
         <define name="MIN_PITCH" value="-35."/>
         <define name="MAX_PITCH" value="35."/>
@@ -421,10 +426,10 @@
     </section>
 
     <section name="SIMULATOR" prefix="NPS_">
-        <define name="ACTUATOR_NAMES" value="front_motor, right_motor, back_motor, left_motor, rudder, pusher" type="string[]"/>
-        <define name="JSBSIM_MODEL" value="rotwingv3b" type="string"/>
+        <define name="ACTUATOR_NAMES" value="front_motor, right_motor, back_motor, left_motor, rudder, elevator, aileron_left, aileron_right, pusher" type="string[]"/>
+        <define name="JSBSIM_MODEL" value="rotwingv3a" type="string"/>
         <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
-        <define name="COMMANDS_NB" value="6"/>
+        <define name="COMMANDS_NB" value="9"/>
         <define name="NO_MOTOR_MIXING" value="TRUE"/>
         <define name="JS_AXIS_MODE" value="4"/>
     </section>
