@@ -635,10 +635,12 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   // Right aileron lower limit calculation
 
   float min_pprz_cmd_right_ail = -9600;
-  if (wing_rotation.wing_angle_deg > 10 && wing_rotation.wing_angle_deg < 55) {
-    min_pprz_cmd_right_ail = -0.17310723586735 * wing_rotation.wing_angle_deg * wing_rotation.wing_angle_deg * wing_rotation.wing_angle_deg + 7.41438279843746 * wing_rotation.wing_angle_deg * wing_rotation.wing_angle_deg + 153.366175476407 * wing_rotation.wing_angle_deg - 11631.8630123744;
+  if (wing_rotation.wing_angle_deg < 17) {
+    min_pprz_cmd_right_ail = -1920;
+  } else if (wing_rotation.wing_angle_deg > 17 && wing_rotation.wing_angle_deg < 25) {
+    min_pprz_cmd_right_ail = -3.2 * wing_rotation.wing_angle_deg * wing_rotation.wing_angle_deg * wing_rotation.wing_angle_deg + 288. * wing_rotation.wing_angle_deg * wing_rotation.wing_angle_deg - 8771.2 * wing_rotation.wing_angle_deg + 79680;
   }
-  Bound(min_pprz_cmd_right_ail, -9600, -4000);
+  Bound(min_pprz_cmd_right_ail, -9600, -1920);
 
 
   du_min[7] = min_pprz_cmd_right_ail - use_increment*indi_u[7];
