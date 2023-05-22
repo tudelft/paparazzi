@@ -101,7 +101,8 @@ inline void update_left_aileron_effectiveness(float *airspeed2, float *sinr);
 inline void update_right_aileron_effectiveness(float *airspeed2, float *sinr);
 inline void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt);
 // inline void schedule_pref_pitch_angle_deg(float *airspeed_f);
-inline void schedule_pref_pitch_angle_deg(float *sinr);
+// inline void schedule_pref_pitch_angle_deg(float *sinr);
+inline void schedule_pref_pitch_angle_deg(float wing_rot_deg);
 inline void schedule_liftd(float *airspeed2, float *sinr);
 
 #if PERIODIC_TELEMETRY
@@ -172,6 +173,7 @@ void event_eff_scheduling(void)
   update_right_aileron_effectiveness(&airspeed2, &sinr);
   update_pusher_effectiveness(&airspeed, thrust_bx_state_filt);
   //schedule_pref_pitch_angle_deg(&sinr);
+  schedule_pref_pitch_angle_deg(wing_rotation_deg);
   schedule_liftd(&airspeed2, &sinr2);
 
   // float g1_p_side_motors[2];
@@ -356,7 +358,7 @@ void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt)
 
     float eff_pusher = (dFxdrpmP * drpmPdpprz / weight_sched) / 10000.;
 
-  Bound(eff_pusher, 0.00020, 0.0015);
+  Bound(eff_pusher, 0.00030, 0.0015);
   thrust_bx_eff = eff_pusher;
   } else {
     thrust_bx_eff = STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS;
@@ -378,13 +380,27 @@ void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt)
 //   }
 // }
 
-void schedule_pref_pitch_angle_deg(float *sinr)
-{
-  float pitch_pref_range_deg = sched_pitch_forward_deg - sched_pitch_hover_deg;
+// void schedule_pref_pitch_angle_deg(float *sinr)
+// {
+//   float pitch_pref_range_deg = sched_pitch_forward_deg - sched_pitch_hover_deg;
 
-  // Schedule prefered pitch angle
-  float pitch_diff_deg = pitch_pref_range_deg * *sinr;
-  pitch_pref_deg = sched_pitch_hover_deg + pitch_diff_deg;
+//   // Schedule prefered pitch angle
+//   float pitch_diff_deg = pitch_pref_range_deg * *sinr;
+//   pitch_pref_deg = sched_pitch_hover_deg + pitch_diff_deg;
+// }
+
+void schedule_pref_pitch_angle_deg(float wing_rot_deg)
+{
+  float scheduled_pitch_angle = 0;
+  if (wing_rot_deg < 55) {
+    scheduled_pitch_angle = 0;
+  } else {
+    float pitch_range = 7.;
+    float pitch_progression = (wing_rot_deg - 55) / 35.;
+    scheduled_pitch_angle = pitch_range * pitch_progression;
+  }
+  Bound(scheduled_pitch_angle, 0., 7.);
+  pitch_pref_deg = scheduled_pitch_angle;
 }
 
 void schedule_liftd(float *airspeed2, float *sinr2)
