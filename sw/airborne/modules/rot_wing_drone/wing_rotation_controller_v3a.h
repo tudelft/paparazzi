@@ -52,6 +52,11 @@ struct wing_rotation_controller {
   float forward_airspeed;
 };
 
+extern float wing_rotation_sched_as_1;
+extern float wing_rotation_sched_as_2;
+extern float wing_rotation_sched_as_3;
+extern float wing_rotation_sched_as_4;
+
 extern struct wing_rotation_controller wing_rotation;
 
 #endif  // WING_ROTATION_CONTROLLER_V3A_H
