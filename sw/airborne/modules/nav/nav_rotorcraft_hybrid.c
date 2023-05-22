@@ -34,7 +34,8 @@
 #endif
 #define NAV_MAX_SPEED (GUIDANCE_INDI_MAX_AIRSPEED + GUIDANCE_INDI_NAV_SPEED_MARGIN)
 float nav_max_speed = NAV_MAX_SPEED;
-float nav_max_acceleration_sp = 1.0;
+float nav_max_acceleration_sp = 0.8;
+float nav_max_deceleration_sp = 0.5;
 
 #ifndef MAX_DECELERATION
 #define MAX_DECELERATION 1.f
@@ -77,7 +78,7 @@ static void nav_hybrid_goto(struct EnuCoor_f *wp)
     // Calculate distance to waypoint
     float dist_to_wp = float_vect2_norm(&pos_error);
     // Calculate max speed to decelerate from
-    float max_speed_decel2 = fabsf(2.f * dist_to_wp * MAX_DECELERATION); // dist_to_wp can only be positive, but just in case
+    float max_speed_decel2 = fabsf(2.f * dist_to_wp * nav_max_deceleration_sp); // dist_to_wp can only be positive, but just in case
     float max_speed_decel = sqrtf(max_speed_decel2);
     // Bound the setpoint velocity vector
     float max_h_speed = Min(nav_max_speed, max_speed_decel);
@@ -86,7 +87,7 @@ static void nav_hybrid_goto(struct EnuCoor_f *wp)
 
   // Check for acceleration bound
   float abs_nav_speed = sqrtf(nav.speed.x * nav.speed.x + nav.speed.y * nav.speed.y);
-  float abs_speed_sp = sqrtf(speed_sp.x * speed_sp.x + speed_sp.y * speed_sp.y);
+  float abs_speed_sp = float_vect2_norm(&speed_sp);
   if (abs_speed_sp > abs_nav_speed) {
     float bound_speed = abs_nav_speed + nav_max_acceleration_sp / NAVIGATION_FREQUENCY;
     float_vect2_bound_in_2d(&speed_sp, bound_speed);
@@ -111,6 +112,14 @@ static void nav_hybrid_route(struct EnuCoor_f *wp_start, struct EnuCoor_f *wp_en
   } else {
     desired_speed = dist_to_target * gih_params.pos_gain;
     Bound(desired_speed, 0.0f, nav_max_speed);
+
+    // Calculate max speed to decelerate from
+    float max_speed_decel2 = fabsf(2.f * dist_to_target * nav_max_deceleration_sp); // dist_to_wp can only be positive, but just in case
+    float max_speed_decel = sqrtf(max_speed_decel2);
+    // Bound the setpoint velocity vector
+    if (desired_speed > max_speed_decel) {
+      Bound(desired_speed, 0.0f, max_speed_decel);
+    }
   }
 
   // Calculate length of line segment
