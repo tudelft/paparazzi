@@ -97,8 +97,8 @@
             <define name="MODULE_RM3100_UPDATE_AHRS" value="TRUE"/>
             <!-- <define name="RM3100_CHAN_Y_SIGN" value="-"/>
             <define name="RM3100_CHAN_Z_SIGN" value="-"/> -->
-            <define name="RM3100_ADDR" value="RM3100_ADDR3"/>
-            <configure name="MAG_RM3100_I2C_DEV" value="I2C1"/>
+            <!-- <define name="RM3100_ADDR" value="RM3100_ADDR3"/> -->
+            <configure name="MAG_RM3100_I2C_DEV" value="I2C2"/>
         </module>
 
         <module name="AOA_pwm">
@@ -212,10 +212,10 @@
 
     <!-- CAN BUS 1 command outputs-->
     <servos driver="Uavcan2Cmd">
-        <servo name="AIL_LEFT" no="7" min="-9600" neutral="0" max="3250"/>
-        <servo name="FLAP_LEFT" no="8" min="-9600" neutral="0" max="3250"/>
-        <servo name="FLAP_RIGHT" no="9" min="-3250" neutral="0" max="9600"/>
-        <servo name="AIL_RIGHT" no="10" min="-3250" neutral="0" max="9600"/>
+        <servo name="AIL_LEFT" no="7" min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
+        <servo name="FLAP_LEFT" no="8" min="-3250" neutral="0" max="3250"/> <!-- min can go up to -9600-->
+        <servo name="FLAP_RIGHT" no="9" min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
+        <servo name="AIL_RIGHT" no="10" min="-3250" neutral="0" max="3250"/> <!-- max can go up to -9600-->
     </servos>
 
     <commands>
@@ -273,7 +273,8 @@
 
     <section name="IMU" prefix="IMU_">
         <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-6,-3,23}, .scale={{6478,36819,14396},{661,3766,1477}}}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-63,-15,-22}, .scale={{23554,58016,33455},{4537,11839,6837}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-40,-9,6}, .scale={{17919,36647,49183},{3659,7481,10067}}}}"/>
-        <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true, .rotation=true},.neutral={213,82,-136}, .scale={{19043,495,16556},{35347,959,31057}}, .body_to_sensor={TRIG_BFP_OF_REAL(-0.0000000), TRIG_BFP_OF_REAL(-0.6560590), TRIG_BFP_OF_REAL(0.7547096), TRIG_BFP_OF_REAL(-1.0000000), TRIG_BFP_OF_REAL(-0.0000000), TRIG_BFP_OF_REAL(-0.0000000), TRIG_BFP_OF_REAL(0.0000000), TRIG_BFP_OF_REAL(-0.7547096), TRIG_BFP_OF_REAL(-0.6560590)}}}"/>
+        <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={800,238,187}, .scale={{29946,594,14673},{48505,929,23794}}}}"/>
+
 
         <!-- Define axis in hover frame -->
         <define name="BODY_TO_IMU_PHI"   value="-4.0" unit="deg"/>
