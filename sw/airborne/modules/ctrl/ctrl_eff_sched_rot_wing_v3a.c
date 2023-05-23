@@ -226,18 +226,8 @@ void update_inertia(float *cosr2, float *sinr2)
 
 void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr, float *airspeed_f)
 {
-  float g1_p_side_motors[2];
-  float g1_q_side_motors[2];
-
   float bounded_airspeed = *airspeed_f;
   Bound(bounded_airspeed, 0, 20);
-
-  // Calculate roll and pitch effectiveness of the two roll side motors
-  g1_p_side_motors[0] = rot_wing_side_motors_g1_p_0[0] * *cosr;
-  g1_p_side_motors[1] = rot_wing_side_motors_g1_p_0[1] * *cosr;
-
-  g1_q_side_motors[0] = rot_wing_side_motors_g1_q_90[0] * *sinr;
-  g1_q_side_motors[1] = rot_wing_side_motors_g1_q_90[1] * *sinr;
 
   // Update inner loop effectiveness matrix for motors
   g1g2[0][0] = g1_startup[0][0] * g1_p_multiplier / INDI_G_SCALING;
