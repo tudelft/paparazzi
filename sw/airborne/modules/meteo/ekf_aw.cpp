@@ -1493,7 +1493,7 @@ float fx_pusher(float *RPM_pusher, float *u){
 }
 
 // Fy Forces functions
-float fy_wing(float *skew,float *aoa,float *u){
+float fy_wing(float *skew,float *aoa __attribute__((unused)),float *u){
 
   float sign = *u < 0.0f ? -1.0f : *u > 0.0f ? 1.0f : 0.0f;
 
