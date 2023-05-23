@@ -29,9 +29,14 @@
                 <define NAME="USE_AIRSPEED_LOWPASS_FILTER" value="TRUE"/>
             </module>
 
-            <module name="lidar_tfmini">
+            <!--module name="lidar_tfmini">
                 <configure name="TFMINI_PORT" value="UART8"/>
                 <configure name="USE_TFMINI_AGL" value="TRUE"/>
+            </module-->
+
+            <module name="mavlink">
+                <configure name="MAVLINK_BAUD" value="B115200"/>
+                <configure name="MAVLINK_PORT" value="UART8"/>
             </module>
 
             <module name="ctrl_eff_sched_rot_wing_v3b"/>
