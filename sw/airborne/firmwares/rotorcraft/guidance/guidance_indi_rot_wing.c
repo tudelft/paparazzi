@@ -524,7 +524,7 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
     FLOAT_ANGLE_NORMALIZE(sp_accel_b.y);
     sp_accel_b.y *= gih_params.heading_bank_gain;
 
-    // Control the airspeed
+    // Control the airspeed if error small enough
     sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
 
     accel_sp.x = cpsi * sp_accel_b.x - spsi * sp_accel_b.y;
@@ -790,6 +790,7 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   float accel_bx_sp = cpsi * sp_accel.x + spsi * sp_accel.y;
   float accel_bx = cpsi * filt_accel_ned[0].o[0] + spsi * filt_accel_ned[1].o[0];
   float accel_bx_err = accel_bx_sp - accel_bx;
+  // float accel_bx_err = cpsi * a_diff.x + spsi * a_diff.y;
 
   Gmat_rot_wing[0][0] = cphi*spsi*lift_thrust_bz;
   Gmat_rot_wing[1][0] = -cphi*cpsi*lift_thrust_bz;
