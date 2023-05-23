@@ -92,7 +92,7 @@ const float k_pusher[2] = {0.007777, -0.67521};
 float I_xx = 0.1184;
 float I_yy = 1.1552;
 float I_zz = 1.18;
-const float weight_sched = 6.5;
+const float weight_sched = 6.94;
 
 
 inline void update_inertia(float *cosr2, float *sinr2);
