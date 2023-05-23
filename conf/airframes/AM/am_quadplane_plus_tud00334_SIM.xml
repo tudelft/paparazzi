@@ -50,7 +50,7 @@
       <module name="radio_control" type="datalink"/>
       <module name="fdm" type="jsbsim"/>
 
-      <module name="scheduling_indi_simple"/>
+      <!-- <module name="scheduling_indi_simple"/> -->
 
       <module name="logger_file">
         <define name="LOGGER_FILE_PATH" value="/home/ewoud/Documents"/>
@@ -107,29 +107,14 @@
       <configure name="USE_TFMINI_AGL" value="FALSE"/>
     </module-->
 
-    <module name="guidance" type="indi_hybrid">
-      <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
-      <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>
-      <define name="GUIDANCE_INDI_SPEED_GAIN" value="1.0"/>
-      <define name="GUIDANCE_INDI_POS_GAINZ" value="0.2"/>
-      <define name="GUIDANCE_INDI_SPEED_GAINZ" value="1.0"/>
-      <define name="GUIDANCE_INDI_PITCH_LIFT_EFF" value="0.12"/>
-      <define name="GUIDANCE_INDI_PITCH_EFF_SCALING" value="1.0"/>
-      <define name="GUIDANCE_H_REF_MAX_SPEED" value="18.0"/> <!--not used-->
-      <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="16.0"/>
-      <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="5"/>
-      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-943.0"/>
-      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_45" value="-500.0"/>
-      <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_FWD" value="-1600.0"/>
-      <define name="GUIDANCE_INDI_FILTER_CUTOFF" value="0.5"/>
-      <define name="GUIDANCE_INDI_LINE_GAIN" value="0.2"/>
-      <define name="GUIDANCE_INDI_MIN_THROTTLE" value="2500"/>
-    </module>
-
     <module name="motor_mixing"/>
+
+    <module name="guidance" type="indi_hybrid"/>
+    <module name="nav_hybrid"/>
+
   </firmware>
 
-  <!-- <module name="nav_hybrid"/> -->
+
   
   <!-- CAN BUS 1 (Front Wing) -->
   <servos driver="Uavcan1">
@@ -736,6 +721,24 @@
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
     <define name="ADAPTIVE_MU" value="0.0001"/>
+  </section>
+
+  <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
+      <define name="POS_GAIN" value="0.5"/>
+      <define name="POS_GAINZ" value="0.5"/>
+      <define name="SPEED_GAIN" value="1.0"/>
+      <define name="SPEED_GAINZ" value="0.6"/> 
+      <define name="FILTER_CUTOFF" value="1.0"/>
+      <define name="HEADING_BANK_GAIN" value="5."/>
+      <define name="MAX_AIRSPEED" value="15.0"/>
+      <define name="PITCH_LIFT_EFF" value="0.0"/>
+      <define name="ZERO_AIRSPEED" value="TRUE"/>
+  </section>
+
+  <section name="FORWARD">
+  <!-- This is the pitch angle that the drone will have in forward flight, where 0 degrees is hover-->
+      <define name="TRANSITION_MAX_OFFSET" value="0.0" unit="deg"/>
+      <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/>
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">

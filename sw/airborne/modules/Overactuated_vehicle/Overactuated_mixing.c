@@ -235,7 +235,7 @@ Butterworth2LowPass measurement_acc_filters[3];   //Filter of acceleration
 Butterworth2LowPass actuator_state_filters[INDI_NUM_ACT];   //Filter of actuators
 
 //Filter of lateral acceleration for turn correction
-Butterworth2LowPass accely_filt;
+Butterworth2LowPass accel_body_y_filt;
 
 //Filter for the airspeed: 
 Butterworth2LowPass airspeed_filt;
@@ -516,13 +516,13 @@ float compute_yaw_rate_turn(void){
 
         #ifdef USE_NEW_THR_ESTIMATION   
             #ifdef OVERESTIMATE_LATERAL_FORCES
-                accel_y_filt_corrected = accely_filt.o[0] 
+                accel_y_filt_corrected = accel_body_y_filt.o[0] 
                                 - overestimation_coeff * compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[4],actuator_state_filt[8],actuator_state_filt[0]).y/VEHICLE_MASS
                                 - overestimation_coeff * compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[5],actuator_state_filt[9],actuator_state_filt[1]).y/VEHICLE_MASS
                                 - overestimation_coeff * compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[6],actuator_state_filt[10],actuator_state_filt[2]).y/VEHICLE_MASS
                                 - overestimation_coeff * compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[7],actuator_state_filt[11],actuator_state_filt[3]).y/VEHICLE_MASS;
             #else                     
-                accel_y_filt_corrected = accely_filt.o[0] 
+                accel_y_filt_corrected = accel_body_y_filt.o[0] 
                                 - compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[4],actuator_state_filt[8],actuator_state_filt[0]).y/VEHICLE_MASS
                                 - compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[5],actuator_state_filt[9],actuator_state_filt[1]).y/VEHICLE_MASS
                                 - compute_propeller_thrust_in_body_frame(airspeed_filt.o[0],actuator_state_filt[6],actuator_state_filt[10],actuator_state_filt[2]).y/VEHICLE_MASS
@@ -530,13 +530,13 @@ float compute_yaw_rate_turn(void){
             #endif
         #else         
             #ifdef OVERESTIMATE_LATERAL_FORCES                
-                accel_y_filt_corrected = accely_filt.o[0] 
+                accel_y_filt_corrected = accel_body_y_filt.o[0] 
                                         - overestimation_coeff * actuator_state_filt[0]*actuator_state_filt[0]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
                                         - overestimation_coeff * actuator_state_filt[1]*actuator_state_filt[1]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
                                         - overestimation_coeff * actuator_state_filt[2]*actuator_state_filt[2]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
                                         - overestimation_coeff * actuator_state_filt[3]*actuator_state_filt[3]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[11])/VEHICLE_MASS;
             #else               
-                accel_y_filt_corrected = accely_filt.o[0] 
+                accel_y_filt_corrected = accel_body_y_filt.o[0] 
                                         - actuator_state_filt[0]*actuator_state_filt[0]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[8])/VEHICLE_MASS
                                         - actuator_state_filt[1]*actuator_state_filt[1]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[9])/VEHICLE_MASS
                                         - actuator_state_filt[2]*actuator_state_filt[2]* Dynamic_MOTOR_K_T_OMEGASQ * sin(actuator_state_filt[10])/VEHICLE_MASS
@@ -679,7 +679,7 @@ void init_filters(void){
     }
     
     //Initialize filter for the lateral acceleration to correct the turn and the flight path angle: 
-    init_butterworth_2_low_pass(&accely_filt, tau_indi, sample_time, 0.0);
+    init_butterworth_2_low_pass(&accel_body_y_filt, tau_indi, sample_time, 0.0);
     init_butterworth_2_low_pass(&flight_path_angle_filtered, tau_indi, sample_time, 0.0);
     init_butterworth_2_low_pass(&airspeed_filt, tau_indi, sample_time, 0.0);
 
@@ -1055,8 +1055,8 @@ void assign_variables(void){
     }
 
     // Update the filter for the body lateral acceleration 
-    float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
-    update_butterworth_2_low_pass(&accely_filt, accely);
+    float accely_local = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
+    update_butterworth_2_low_pass(&accel_body_y_filt, accely_local);
 
     //Flight path angle 
     update_butterworth_2_low_pass(&flight_path_angle_filtered, flight_path_angle);

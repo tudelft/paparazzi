@@ -14,7 +14,7 @@
     </dl_settings>
   </settings>
   <dep>
-    <depends>nav_basic_rotorcraft,guidance_indi_rot_wing</depends>
+    <depends>nav_basic_rotorcraft,guidance_indi_hybrid</depends>
   </dep>
   <header>
     <file name="nav_rotorcraft_hybrid.h"/>
