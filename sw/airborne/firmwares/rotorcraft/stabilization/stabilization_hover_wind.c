@@ -88,10 +88,13 @@ float tf_state4[2] = {0, 0};
 #include "modules/datalink/telemetry.h"
 static void send_payload_float(struct transport_tx *trans, struct link_device *dev)
 {
-  float f[10] = {pos_target.x, pos_target.y, pos_target.z,
-                 eps[0][0], eps[0][0], eps[0][0],
-                 u_scale[0][0], u_scale[1][0], u_scale[2][0], u_scale[3][0]};
-  pprz_msg_send_PAYLOAD_FLOAT(trans, dev, AC_ID, 10, f);
+  float f[20] = {pos_target.x, pos_target.y, pos_target.z,
+                 eps[0][0], eps[1][0], eps[2][0],
+                 u_scale[0][0], u_scale[1][0], u_scale[2][0], u_scale[3][0],
+                 u_prop[0][0], u_prop[1][0], u_prop[2][0], u_prop[3][0],
+                 u_filter[0][0],u_filter[1][0],u_filter[2][0],u_filter[3][0],
+                 u_integrator[0][0], u_integrator[1][0]};
+  pprz_msg_send_PAYLOAD_FLOAT(trans, dev, AC_ID, 20, f);
 }
 #endif
 

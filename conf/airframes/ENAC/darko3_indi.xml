@@ -64,6 +64,7 @@
     <!--<module name="gps" type="ubx_ucenter"/>-->
 
     <module name="logger" type="sd_chibios"/>
+    <define name="SDLOG_START_DELAY" value="10"/>
     <module name="flight_recorder"/>
 
 
