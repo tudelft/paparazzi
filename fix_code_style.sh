@@ -16,9 +16,7 @@ echo "Using astyle version $ASTYLE_VERSION"
 
 set -f
 
-if [ $(bc <<< "$ASTYLE_VERSION >= 2.03") -eq 1 ]; then
-    astyle --style=kr   \
-        --indent=spaces=2  \
+
         --convert-tabs \
         --indent-switches    \
         --indent-preprocessor \
