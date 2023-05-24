@@ -65,6 +65,8 @@ extern void ins_ekf2_parse_EXTERNAL_POSE(uint8_t *buf);
 extern void ins_ekf2_parse_EXTERNAL_POSE_SMALL(uint8_t *buf);
 extern struct ekf2_t ekf2;
 
+extern float settings_yaw_offset;
+
 #ifdef __cplusplus
 }
 #endif

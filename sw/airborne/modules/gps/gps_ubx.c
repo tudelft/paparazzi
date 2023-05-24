@@ -426,7 +426,12 @@ static void gps_ubx_parse_nav_relposned(void)
 
       // RELHEADING
       gps_relposned.relPosHeading = UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf) * 1e-5f;
-      gps_relposned.relPosLength = UBX_NAV_RELPOSNED_relPosLength(gps_ubx.msg_buf) * 1e-2f;
+      if(relPosValid && (diffSoln && carrSoln >= 1)) {
+          gps_ubx.state.relPosHeading = (RadOfDeg(UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf) * 10)) * 10;
+      } else {
+          gps_ubx.state.relPosHeading = NAN;
+      }
+      gps_relposned.relPosLength = UBX_NAV_RELPOSNED_relPosLength(gps_ubx.msg_buf);
     }
   }
 #endif
