@@ -85,8 +85,8 @@ float sched_upper_hover_speed = 14.;
 Butterworth2LowPass airspeed_lowpass_filter;
 
 // Define scheduling constants
-const float k_elevator[7] = {-27.9567, -89.3122, -137.9557, 0.1857, 90.2486, -0.0146, -0.2029};
-const float k_rudder[6] = {-1.6495, -26.3124, -0.7737, 0.2341, 0.6833, 17.5573};
+const float k_elevator[3] = {0.4603,  -4.81466, -28.8464};
+const float k_rudder[3] = {-26.1434, -0.336403, -1.16702 };
 const float k_pusher[2] = {0.007777, -0.67521};
 
 float I_xx = 0.1184;
@@ -257,7 +257,7 @@ void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr, float
 void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed, float *airspeed2, float *pp_scaled)
 {
   // Calculate deflection angle in [deg]
-  float de = -0.004885417 * *elev_pprz + 36.6;
+  float de = -0.0094 * *elev_pprz + 80.0;
   float bounded_airspeed = *airspeed;
   float bounded_airspeed2 = *airspeed2; 
   Bound(bounded_airspeed, 0. ,20.);
@@ -267,7 +267,7 @@ void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed, float *a
                 k_elevator[1] * *pp_scaled * *pp_scaled * bounded_airspeed + 
                 k_elevator[2] * bounded_airspeed2) / 10000.;
 
-  float dMydpprz = dMyde * -0.004885417;
+  float dMydpprz = dMyde * -0.0094;
   
   // Convert moment to effectiveness
   float eff_y_elev = dMydpprz / I_yy;
