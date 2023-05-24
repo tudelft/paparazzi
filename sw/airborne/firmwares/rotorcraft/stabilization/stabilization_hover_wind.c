@@ -143,7 +143,7 @@ void stabilization_hover_wind_run(bool in_flight){
   //printf("nav target z = %f \n", nav_target_ned.z);
   eps[0][0] = stateGetPositionNed_f()->x - pos_target.x; 
   eps[1][0] = stateGetPositionNed_f()->y - pos_target.y;
-  eps[2][0] = stateGetPositionNed_f()->z - pos_target.z;
+  eps[2][0] = -(stateGetPositionNed_f()->z - pos_target.z);
   eps[3][0] = stateGetSpeedNed_f()->x;
   eps[4][0] = stateGetSpeedNed_f()->y;
   eps[5][0] = stateGetSpeedNed_f()->z;
