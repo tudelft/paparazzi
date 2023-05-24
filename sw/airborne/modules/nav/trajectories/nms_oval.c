@@ -7,7 +7,7 @@
  ******************************************************************************/
 #include "nms.h"
 #include <math.h>
-double get_x(double alpha, double t) {
+double get_x1(double alpha, double t) {
    double get_x_result;
    get_x_result = 0.54463903501502708*((alpha*t >= 0 && alpha*t < 2.0203404023284914) ? (
       -0.026439362980357668*pow(alpha, 6)*pow(t, 6) - 0.025896290401512412*pow(alpha, 5)*pow(t, 5) + 0.71917960738092723*pow(alpha, 4)*pow(t, 4) - 1.1292505711663887*pow(alpha, 3)*pow(t, 3)
@@ -256,7 +256,7 @@ double get_x(double alpha, double t) {
    ))))))))))))))))))))))))))))))))))))))))) - 2.4942996884133888;
    return get_x_result;
 }
-double get_y(double alpha, double t) {
+double get_y1(double alpha, double t) {
    double get_y_result;
    get_y_result = 0.83867056794542405*((alpha*t >= 0 && alpha*t < 2.0203404023284914) ? (
       -0.026439362980357668*pow(alpha, 6)*pow(t, 6) - 0.025896290401512412*pow(alpha, 5)*pow(t, 5) + 0.71917960738092723*pow(alpha, 4)*pow(t, 4) - 1.1292505711663887*pow(alpha, 3)*pow(t, 3)
@@ -505,12 +505,12 @@ double get_y(double alpha, double t) {
    ))))))))))))))))))))))))))))))))))))))))) - 0.16872778188808191;
    return get_y_result;
 }
-double get_z(__attribute__((unused)) double alpha, __attribute__((unused)) double t) {
+double get_z1(__attribute__((unused)) double alpha, __attribute__((unused)) double t) {
    double get_z_result;
    get_z_result = -1.0;
    return get_z_result;
 }
-double get_psi(double alpha, double t) {
+double get_psi1(double alpha, double t) {
    double get_psi_result;
    get_psi_result = ((alpha*t >= 0 && alpha*t < 2.0203404023284914) ? (
       0.0087410788611211824*pow(alpha, 6)*pow(t, 6) - 0.060323743277614854*pow(alpha, 5)*pow(t, 5) + 0.15629004763477175*pow(alpha, 4)*pow(t, 4) - 0.046375789083893081*pow(alpha, 3)*pow(t, 3)
@@ -637,7 +637,7 @@ double get_psi(double alpha, double t) {
    ))))))))))))))))))))))))))))))))))))))))) - 0.57595865315812877;
    return get_psi_result;
 }
-double get_vx(double alpha, double t) {
+double get_vx1(double alpha, double t) {
    double get_vx_result;
    get_vx_result = 0.54463903501502708*((alpha*t >= 0 && alpha*t < 2.0203404023284914) ? (
       -0.15863617788214601*pow(alpha, 6)*pow(t, 5) - 0.12948145200756206*pow(alpha, 5)*pow(t, 4) + 2.8767184295237089*pow(alpha, 4)*pow(t, 3) - 3.3877517134991662*pow(alpha, 3)*pow(t, 2)
@@ -886,7 +886,7 @@ double get_vx(double alpha, double t) {
    )))))))))))))))))))))))))))))))))))))))));
    return get_vx_result;
 }
-double get_vy(double alpha, double t) {
+double get_vy1(double alpha, double t) {
    double get_vy_result;
    get_vy_result = 0.83867056794542405*((alpha*t >= 0 && alpha*t < 2.0203404023284914) ? (
       -0.15863617788214601*pow(alpha, 6)*pow(t, 5) - 0.12948145200756206*pow(alpha, 5)*pow(t, 4) + 2.8767184295237089*pow(alpha, 4)*pow(t, 3) - 3.3877517134991662*pow(alpha, 3)*pow(t, 2)
@@ -1135,12 +1135,12 @@ double get_vy(double alpha, double t) {
    )))))))))))))))))))))))))))))))))))))))));
    return get_vy_result;
 }
-double get_vz(__attribute__((unused)) double alpha, __attribute__((unused)) double t) {
+double get_vz1(__attribute__((unused)) double alpha, __attribute__((unused)) double t) {
    double get_vz_result;
    get_vz_result = 0;
    return get_vz_result;
 }
-double get_ax(double alpha, double t) {
+double get_ax1(double alpha, double t) {
    double get_ax_result;
    get_ax_result = 0.54463903501502708*((alpha*t >= 0 && alpha*t < 2.0203404023284914) ? (
       -0.79318088941073006*pow(alpha, 6)*pow(t, 4) - 0.51792580803024824*pow(alpha, 5)*pow(t, 3) + 8.6301552885711263*pow(alpha, 4)*pow(t, 2) - 6.7755034269983323*pow(alpha, 3)*t
@@ -1389,7 +1389,7 @@ double get_ax(double alpha, double t) {
    )))))))))))))))))))))))))))))))))))))))));
    return get_ax_result;
 }
-double get_ay(double alpha, double t) {
+double get_ay1(double alpha, double t) {
    double get_ay_result;
    get_ay_result = 0.83867056794542405*((alpha*t >= 0 && alpha*t < 2.0203404023284914) ? (
       -0.79318088941073006*pow(alpha, 6)*pow(t, 4) - 0.51792580803024824*pow(alpha, 5)*pow(t, 3) + 8.6301552885711263*pow(alpha, 4)*pow(t, 2) - 6.7755034269983323*pow(alpha, 3)*t
@@ -1638,7 +1638,7 @@ double get_ay(double alpha, double t) {
    )))))))))))))))))))))))))))))))))))))))));
    return get_ay_result;
 }
-double get_az(__attribute__((unused)) double alpha, __attribute__((unused)) double t) {
+double get_az1(__attribute__((unused)) double alpha, __attribute__((unused)) double t) {
    double get_az_result;
    get_az_result = 0;
    return get_az_result;

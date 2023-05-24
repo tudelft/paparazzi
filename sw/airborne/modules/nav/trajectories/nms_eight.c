@@ -7,7 +7,7 @@
  ******************************************************************************/
 #include "nms.h"
 #include <math.h>
-double get_x(double alpha, double t) {
+double get_x3(double alpha, double t) {
    double get_x_result;
    get_x_result = 0.54463903501502708*((alpha*t >= 0 && alpha*t < 1.2527016056223264) ? (
       -0.19489522922784955*pow(alpha, 6)*pow(t, 6) + 0.40814749873817185*pow(alpha, 5)*pow(t, 5) + 0.52177272618624482*pow(alpha, 4)*pow(t, 4) - 0.91098741920892468*pow(alpha, 3)*pow(t, 3)
@@ -256,7 +256,7 @@ double get_x(double alpha, double t) {
    ))))))))))))))))))))))))))))))))))))))))) - 2.4942996884133888;
    return get_x_result;
 }
-double get_y(double alpha, double t) {
+double get_y3(double alpha, double t) {
    double get_y_result;
    get_y_result = 0.83867056794542405*((alpha*t >= 0 && alpha*t < 1.2527016056223264) ? (
       -0.19489522922784955*pow(alpha, 6)*pow(t, 6) + 0.40814749873817185*pow(alpha, 5)*pow(t, 5) + 0.52177272618624482*pow(alpha, 4)*pow(t, 4) - 0.91098741920892468*pow(alpha, 3)*pow(t, 3)
@@ -505,17 +505,17 @@ double get_y(double alpha, double t) {
    ))))))))))))))))))))))))))))))))))))))))) - 0.16872778188808191;
    return get_y_result;
 }
-double get_z(__attribute__((unused)) double alpha, __attribute__((unused)) double t) {
+double get_z3(__attribute__((unused)) double alpha, __attribute__((unused)) double t) {
    double get_z_result;
    get_z_result = -1.0;
    return get_z_result;
 }
-double get_psi(__attribute__((unused)) double alpha, __attribute__((unused)) double t) {
+double get_psi3(__attribute__((unused)) double alpha, __attribute__((unused)) double t) {
    double get_psi_result;
    get_psi_result = -0.57595865315812877;
    return get_psi_result;
 }
-double get_vx(double alpha, double t) {
+double get_vx3(double alpha, double t) {
    double get_vx_result;
    get_vx_result = 0.54463903501502708*((alpha*t >= 0 && alpha*t < 1.2527016056223264) ? (
       -1.1693713753670973*pow(alpha, 6)*pow(t, 5) + 2.0407374936908593*pow(alpha, 5)*pow(t, 4) + 2.0870909047449793*pow(alpha, 4)*pow(t, 3) - 2.7329622576267738*pow(alpha, 3)*pow(t, 2)
@@ -764,7 +764,7 @@ double get_vx(double alpha, double t) {
    )))))))))))))))))))))))))))))))))))))))));
    return get_vx_result;
 }
-double get_vy(double alpha, double t) {
+double get_vy3(double alpha, double t) {
    double get_vy_result;
    get_vy_result = 0.83867056794542405*((alpha*t >= 0 && alpha*t < 1.2527016056223264) ? (
       -1.1693713753670973*pow(alpha, 6)*pow(t, 5) + 2.0407374936908593*pow(alpha, 5)*pow(t, 4) + 2.0870909047449793*pow(alpha, 4)*pow(t, 3) - 2.7329622576267738*pow(alpha, 3)*pow(t, 2)
@@ -1013,12 +1013,12 @@ double get_vy(double alpha, double t) {
    )))))))))))))))))))))))))))))))))))))))));
    return get_vy_result;
 }
-double get_vz(__attribute__((unused)) double alpha, __attribute__((unused)) double t) {
+double get_vz3(__attribute__((unused)) double alpha, __attribute__((unused)) double t) {
    double get_vz_result;
    get_vz_result = 0;
    return get_vz_result;
 }
-double get_ax(double alpha, double t) {
+double get_ax3(double alpha, double t) {
    double get_ax_result;
    get_ax_result = 0.54463903501502708*((alpha*t >= 0 && alpha*t < 1.2527016056223264) ? (
       -5.8468568768354867*pow(alpha, 6)*pow(t, 4) + 8.1629499747634373*pow(alpha, 5)*pow(t, 3) + 6.2612727142349378*pow(alpha, 4)*pow(t, 2) - 5.4659245152535476*pow(alpha, 3)*t
@@ -1267,7 +1267,7 @@ double get_ax(double alpha, double t) {
    )))))))))))))))))))))))))))))))))))))))));
    return get_ax_result;
 }
-double get_ay(double alpha, double t) {
+double get_ay3(double alpha, double t) {
    double get_ay_result;
    get_ay_result = 0.83867056794542405*((alpha*t >= 0 && alpha*t < 1.2527016056223264) ? (
       -5.8468568768354867*pow(alpha, 6)*pow(t, 4) + 8.1629499747634373*pow(alpha, 5)*pow(t, 3) + 6.2612727142349378*pow(alpha, 4)*pow(t, 2) - 5.4659245152535476*pow(alpha, 3)*t
@@ -1516,7 +1516,7 @@ double get_ay(double alpha, double t) {
    )))))))))))))))))))))))))))))))))))))))));
    return get_ay_result;
 }
-double get_az(__attribute__((unused)) double alpha, __attribute__((unused)) double t) {
+double get_az3(__attribute__((unused)) double alpha, __attribute__((unused)) double t) {
    double get_az_result;
    get_az_result = 0;
    return get_az_result;
