@@ -36,7 +36,7 @@
 /** For waypoints */
 #include "firmwares/rotorcraft/navigation.h"
 #include "generated/flight_plan.h"
-#define WP_EQUALS(_wp1, _wp2) WaypointX(_wp1)==WaypointX(_wp2) && WaypointY(_wp1)==WaypointY(_wp2)
+#define WP_EQUALS(_wp1, _wp2) WaypointX(_wp1)==WaypointX(_wp2) && WaypointY(_wp1)==WaypointY(_wp2) && WaypointAlt(_wp1)==WaypointAlt(_wp2)
 
 /** For Filtering */
 #include "filters/low_pass_filter.h"
@@ -51,7 +51,6 @@
 
 /** EKF robin */
 #include "modules/ins/ins_ext_pose.h"
-
 
 uint16_t nn_rpm_obs[4] = {0,0,0,0};
 //uint16_t nn_rpm_ref[4] = {0,0,0,0};
@@ -114,11 +113,17 @@ float k_r1 = 2.57035545e-06; //2.24736889e-10;
 float k_r2 = 4.10923364e-07; //3.51480672e-07;
 float k_rr = 8.12932607e-04; //1.95277752e-03;
 float k_omega = 4.36301076e-08; //4.33399301e-08;
+float tau = 0.03; //0.028;
 
 // sample_time = 1/sample_frequency
 float sample_time = 1.0/512.0;
 
 int count = 0;
+
+float switching_distance = 3.0; // m
+
+// Two consecutive waypoint flight
+bool set_first_wp_goal = true;
 
 
 void gcnet_init(void)
@@ -130,7 +135,7 @@ void gcnet_init(void)
 	AbiBindMsgRPM(RPM_SENSOR_ID, &rpm_read_ev, rpm_read_cb);
 
 	// Initialize filters (cutoff frequency=8.0)
-  	float tau_ = 1.0 / (2.0 * M_PI * 8.0);				// tau = 1/(2*pi*cutoff_frequency)
+  	float tau_ = 1.0 / (2.0 * M_PI * 9.0);				// tau = 1/(2*pi*cutoff_frequency)
 
 	init_butterworth_2_low_pass(&filter_p, tau_, sample_time, 0.0);
 	init_butterworth_2_low_pass(&filter_q, tau_, sample_time, 0.0);
@@ -143,9 +148,7 @@ void gcnet_init(void)
 	init_butterworth_2_low_pass(&filter_vy, tau_, sample_time, 0.0);
 	init_butterworth_2_low_pass(&filter_az, tau_, sample_time, 0.0);
 }
-
-struct NedCoor_f waypoint_ned;
-
+	
 
 void gcnet_run(void)
 {
@@ -157,18 +160,34 @@ void gcnet_run(void)
 	// set goal to next waypoint once activated
 
 	if (!active && autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) {
-		if (WP_EQUALS(WP_GOAL, WP_WP1)) {
-			waypoint_copy(WP_GOAL, WP_WP2);
-		}
-		else if (WP_EQUALS(WP_GOAL, WP_WP2)) {
+
+		// Set first waypoint goal to WP3 (for two consecutive waypoint flight)
+		if (set_first_wp_goal == true){
+			// Single waypoint flight
+			//waypoint_copy(WP_GOAL, WP_WP2);
+
+			// Consecutive waypoint flight 
 			waypoint_copy(WP_GOAL, WP_WP3);
-		}
-		else if (WP_EQUALS(WP_GOAL, WP_WP3)) {
-			waypoint_copy(WP_GOAL, WP_WP4);
-		}
-		else if (WP_EQUALS(WP_GOAL, WP_WP4)) {
-			waypoint_copy(WP_GOAL, WP_WP1);
-		}
+
+			// Consecutive waypoint flight and randomnly positioned 4x3m track
+			//waypoint_copy(WP_GOAL, WP_WP3_rand3);
+
+			set_first_wp_goal = false;
+		     }
+		/*else {
+			if (WP_EQUALS(WP_GOAL, WP_WP1)) {
+				waypoint_copy(WP_GOAL, WP_WP2);
+			}
+			else if (WP_EQUALS(WP_GOAL, WP_WP2)) {
+				waypoint_copy(WP_GOAL, WP_WP3);
+			}
+			else if (WP_EQUALS(WP_GOAL, WP_WP3)) {
+				waypoint_copy(WP_GOAL, WP_WP4);
+			}
+			else if (WP_EQUALS(WP_GOAL, WP_WP4)) {
+				waypoint_copy(WP_GOAL, WP_WP1);
+			}
+		      }*/
 	}
 
 
@@ -201,7 +220,8 @@ void gcnet_run(void)
 	
 	
 	// get waypoint position in body frame
-	//struct NedCoor_f *pos   = stateGetPositionNed_f();
+	struct NedCoor_f *pos   = stateGetPositionNed_f();
+	struct NedCoor_f waypoint_ned;
 	ENU_OF_TO_NED(waypoint_ned, waypoints[WP_GOAL].enu_f);
 
 	struct FloatVect3 delta_pos_ned = {
@@ -214,7 +234,7 @@ void gcnet_run(void)
 	float_quat_vmult(&waypoint_body, &quat, &delta_pos_ned);
 
 	// get velocity in body frame
-	//struct NedCoor_f *vel = stateGetSpeedNed_f();
+	struct NedCoor_f *vel = stateGetSpeedNed_f();
 	struct FloatVect3 vel_ned = {ekf_X[3], ekf_X[4], ekf_X[5]};
 	struct FloatVect3 vel_body;
 	float_quat_vmult(&vel_body, &quat, &vel_ned);
@@ -248,17 +268,19 @@ void gcnet_run(void)
 	Mx_measured = Ixx*d_p - q_*r_*(Iyy-Izz);
 	My_measured = Iyy*d_q - p_*r_*(Izz-Ixx);
 	Mz_measured = Izz*d_r - p_*q_*(Ixx-Iyy);
+	//az_measured = filter_az.o[0];
 
 	Mx_modeled = k_p*( w1*w1 - w2*w2 - w3*w3 + w4*w4) + k_pv*vby;
 	My_modeled = k_q*( w1*w1 + w2*w2 - w3*w3 - w4*w4) + k_qv*vbx;
 	Mz_modeled = k_r1*(-w1 + w2 - w3 + w4) + k_r2*(-d_w1 + d_w2 - d_w3 + d_w4) - k_rr*r_;
+	//az_modeled = -k_omega*(w1*w1 + w2*w2 + w3*w3 + w4*w4);
 
 /*
 	//TEMPORARY FOR TEST
 	psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y);
 	dist_to_waypoint = sqrtf(delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z);
 	//dist_to_waypoint < .3
-	if (active && count<8) {
+	if (active && count<40) {
 		if (waiting == false) {
 			waiting = true;
 			t0_ = get_sys_time_float();
@@ -282,8 +304,6 @@ void gcnet_run(void)
 		}
 	}
 */
-
-
 /*
 	// set goal to next waypoint once waypoint is reached (within 0.3 meter)
 	if (dist_to_waypoint < 0.3 && dist_to_waypoint < sqrtf(delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z) && autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) {
@@ -311,51 +331,448 @@ void gcnet_run(void)
 	dist_to_waypoint = sqrtf(delta_pos_ned2.x*delta_pos_ned2.x + delta_pos_ned2.y*delta_pos_ned2.y + delta_pos_ned2.z*delta_pos_ned2.z);
 */
 
-#define SWITCHING_DISTANCE  1.2
-
 	if (autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) {
+		// Added following condition: two consecutive waypoint changes need to be separated in time by at least .1 seconds
+		// This is to prevent hysteresis due to position errors at high speeds.
+		if (waiting == false) {
+			waiting = true;
+			t0_ = get_sys_time_float();
+		}
+		t1_ = get_sys_time_float();
+
 		if (WP_EQUALS(WP_GOAL, WP_WP1)) {
-			psi_ref = atan2(waypoints[WP_WP1].enu_f.x-waypoints[WP_WP4].enu_f.x, waypoints[WP_WP1].enu_f.y-waypoints[WP_WP4].enu_f.y);
+
+			// Hover-to-Hover			
+			//psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y);
 			
+
+			//// Single WP
+			//psi_ref = atan2(waypoints[WP_WP1].enu_f.x-waypoints[WP_WP4].enu_f.x, waypoints[WP_WP1].enu_f.y-waypoints[WP_WP4].enu_f.y);
+
+			//// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP1].enu_f.x-waypoints[WP_WP4].enu_f.x, waypoints[WP_WP1].enu_f.y-waypoints[WP_WP4].enu_f.y) - M_PI/2;
+			// One extra input (for consecutive WP flight) - Distance between WPs
+			state_nn[19] = -3.0;
+			switching_distance = 3.0;
+			// Two extra inputs (for consecutive WP flight) - XY
+			//state_nn[20] = 0.0; // WP1_x
+			//state_nn[19] = -3.0; // WP1_y
+			//switching_distance = 3.0;
+
 			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
-			float normal_x = cos(psi_ref + M_PI/4);
-			float normal_y = sin(psi_ref + M_PI/4);		
-			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -SWITCHING_DISTANCE) {
+			//float normal_x = cos(psi_ref + M_PI/4);
+			//float normal_y = sin(psi_ref + M_PI/4);		
+			//if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -2.0 && t1_-t0_ > 0.1) {
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
 				waypoint_copy(WP_GOAL, WP_WP2);
+				waiting=false;
 			}
 		}
 		else if (WP_EQUALS(WP_GOAL, WP_WP2)) {
-			psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y);
+
+			// Hover-to-Hover			
+			//psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y);
 			
+
+			// Single WP			
+			//psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y);
+			
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y) - M_PI/2;
+			// One extra input (for consecutive WP flight) - Distance between WPs
+			state_nn[19] = -4.0;
+			switching_distance = 4.0;
+			// Two extra inputs (for consecutive WP flight) - XY
+			//state_nn[20] = 0.0; // WP1_x
+			//state_nn[19] = -4.0; // WP1_y
+			//switching_distance = 4.0;
+
 			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
-			float normal_x = cos(psi_ref + M_PI/4);
-			float normal_y = sin(psi_ref + M_PI/4);		
-			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -SWITCHING_DISTANCE) {
+			//float normal_x = cos(psi_ref + M_PI/4);
+			//float normal_y = sin(psi_ref + M_PI/4);		
+			// if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -2.0 && t1_-t0_ > 0.1) {
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
 				waypoint_copy(WP_GOAL, WP_WP3);
+				waiting=false;
 			}
 		}
 		else if (WP_EQUALS(WP_GOAL, WP_WP3)) {
-			psi_ref = atan2(waypoints[WP_WP3].enu_f.x-waypoints[WP_WP2].enu_f.x, waypoints[WP_WP3].enu_f.y-waypoints[WP_WP2].enu_f.y);
+			// Single WP			
+			//psi_ref = atan2(waypoints[WP_WP3].enu_f.x-waypoints[WP_WP2].enu_f.x, waypoints[WP_WP3].enu_f.y-waypoints[WP_WP2].enu_f.y);
 			
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP3].enu_f.x-waypoints[WP_WP2].enu_f.x, waypoints[WP_WP3].enu_f.y-waypoints[WP_WP2].enu_f.y) - M_PI/2;
+			// One extra input (for consecutive WP flight) - Distance between WPs
+			state_nn[19] = -3.0;
+			switching_distance = 3.0;
+			// Two extra inputs (for consecutive WP flight) - XY
+			//state_nn[20] = 0.0; // WP1_x
+			//state_nn[19] = -3.0; // WP1_y
+			//switching_distance = 3.0;
+
 			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
-			float normal_x = cos(psi_ref + M_PI/4);
-			float normal_y = sin(psi_ref + M_PI/4);		
-			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -SWITCHING_DISTANCE) {
+			//float normal_x = cos(psi_ref + M_PI/4);
+			//float normal_y = sin(psi_ref + M_PI/4);		
+			//if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -2.0 && t1_-t0_ > 0.1) {
+		
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
 				waypoint_copy(WP_GOAL, WP_WP4);
+				waiting=false;
 			}
-			
 		}
 		else if (WP_EQUALS(WP_GOAL, WP_WP4)) {
-			psi_ref = atan2(waypoints[WP_WP4].enu_f.x-waypoints[WP_WP3].enu_f.x, waypoints[WP_WP4].enu_f.y-waypoints[WP_WP3].enu_f.y);
+			// Single WP			
+			//psi_ref = atan2(waypoints[WP_WP4].enu_f.x-waypoints[WP_WP3].enu_f.x, waypoints[WP_WP4].enu_f.y-waypoints[WP_WP3].enu_f.y);
 			
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP4].enu_f.x-waypoints[WP_WP3].enu_f.x, waypoints[WP_WP4].enu_f.y-waypoints[WP_WP3].enu_f.y) - M_PI/2;
+			// One extra input (for consecutive WP flight) - Distance between WPs
+			state_nn[19] = -4.0;
+			switching_distance = 4.0;
+			// Two extra inputs (for consecutive WP flight) - XY
+			//state_nn[20] = 0.0; // WP1_x
+			//state_nn[19] = -4.0; // WP1_y
+			//switching_distance = 4.0;
+
 			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
-			float normal_x = cos(psi_ref + M_PI/4);
-			float normal_y = sin(psi_ref + M_PI/4);		
-			if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -SWITCHING_DISTANCE) {
+			// float normal_x = cos(psi_ref + M_PI/4);
+			// float normal_y = sin(psi_ref + M_PI/4);		
+			//if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -2.0 && t1_-t0_ > 0.1) {
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
 				waypoint_copy(WP_GOAL, WP_WP1);
+				waiting=false;
 			}
-			
 		}
+
+	// 4x3m track with Y and X relative position between WPs as GCNET input
+	// "Randomly" positioned waypoints for 4x3m track
+
+		else if (WP_EQUALS(WP_GOAL, WP_WP1_rand1)) {
+			// Single WP
+			//psi_ref = atan2(waypoints[WP_WP1].enu_f.x-waypoints[WP_WP4].enu_f.x, waypoints[WP_WP1].enu_f.y-waypoints[WP_WP4].enu_f.y);
+
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP1].enu_f.x-waypoints[WP_WP4].enu_f.x, waypoints[WP_WP1].enu_f.y-waypoints[WP_WP4].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP1_rand1
+			state_nn[20] = 0.222; // WP1_x
+			state_nn[19] = -3.0; // WP1_y
+
+			switching_distance = 3.008;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP2_rand2);
+				waiting=false;
+			}
+		}
+		else if (WP_EQUALS(WP_GOAL, WP_WP2_rand2)) {
+			// Single WP			
+			//psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y);
+			
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP2_rand2
+			state_nn[20] = 0.0; // WP1_x
+			state_nn[19] = -4.0; // WP1_y
+
+			switching_distance = 4.0;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP3_rand3);
+				waiting=false;
+			}
+		}
+		else if (WP_EQUALS(WP_GOAL, WP_WP3_rand3)) {
+			// Single WP			
+			//psi_ref = atan2(waypoints[WP_WP3].enu_f.x-waypoints[WP_WP2].enu_f.x, waypoints[WP_WP3].enu_f.y-waypoints[WP_WP2].enu_f.y);
+			
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP3].enu_f.x-waypoints[WP_WP2].enu_f.x, waypoints[WP_WP3].enu_f.y-waypoints[WP_WP2].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP3_rand3
+			state_nn[20] = 0.0; // WP1_x
+			state_nn[19] = -3.0; // WP1_y
+
+			switching_distance = 3.0;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP4_rand4);
+				waiting=false;
+			}
+		}
+		else if (WP_EQUALS(WP_GOAL, WP_WP4_rand4)) {
+			// Single WP			
+			//psi_ref = atan2(waypoints[WP_WP4].enu_f.x-waypoints[WP_WP3].enu_f.x, waypoints[WP_WP4].enu_f.y-waypoints[WP_WP3].enu_f.y);
+			
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP4].enu_f.x-waypoints[WP_WP3].enu_f.x, waypoints[WP_WP4].enu_f.y-waypoints[WP_WP3].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP4_rand4
+			state_nn[20] = 0.0; // WP1_x
+			state_nn[19] = -4.0; // WP1_y
+
+			switching_distance = 4.0;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP1_rand5);
+				waiting=false;
+			}
+		}
+
+			///////////////////
+
+		else if (WP_EQUALS(WP_GOAL, WP_WP1_rand5)) {
+			// Single WP
+			//psi_ref = atan2(waypoints[WP_WP1].enu_f.x-waypoints[WP_WP4].enu_f.x, waypoints[WP_WP1].enu_f.y-waypoints[WP_WP4].enu_f.y);
+
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP1].enu_f.x-waypoints[WP_WP4].enu_f.x, waypoints[WP_WP1].enu_f.y-waypoints[WP_WP4].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP1_rand5
+			state_nn[20] = 0.45; // WP1_x
+			state_nn[19] = -3.45; // WP1_y
+
+			switching_distance = 3.479;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP2_rand6);
+				waiting=false;
+			}
+		}
+		else if (WP_EQUALS(WP_GOAL, WP_WP2_rand6)) {
+			// Single WP			
+			//psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y);
+			
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP2_rand6
+			state_nn[20] = 0.0; // WP1_x
+			state_nn[19] = -4.0; // WP1_y
+
+			switching_distance = 4.0;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP3_rand7);
+				waiting=false;
+			}
+		}
+		else if (WP_EQUALS(WP_GOAL, WP_WP3_rand7)) {
+			// Single WP			
+			//psi_ref = atan2(waypoints[WP_WP3].enu_f.x-waypoints[WP_WP2].enu_f.x, waypoints[WP_WP3].enu_f.y-waypoints[WP_WP2].enu_f.y);
+			
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP3].enu_f.x-waypoints[WP_WP2].enu_f.x, waypoints[WP_WP3].enu_f.y-waypoints[WP_WP2].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP3_rand7
+			state_nn[20] = 0.0; // WP1_x
+			state_nn[19] = -3.0; // WP1_y
+
+			switching_distance = 3.0;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP4_rand8);
+				waiting=false;
+			}
+		}
+		else if (WP_EQUALS(WP_GOAL, WP_WP4_rand8)) {
+			// Single WP			
+			//psi_ref = atan2(waypoints[WP_WP4].enu_f.x-waypoints[WP_WP3].enu_f.x, waypoints[WP_WP4].enu_f.y-waypoints[WP_WP3].enu_f.y);
+			
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP4].enu_f.x-waypoints[WP_WP3].enu_f.x, waypoints[WP_WP4].enu_f.y-waypoints[WP_WP3].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP4_rand8
+			state_nn[20] = 0.0; // WP1_x
+			state_nn[19] = -4.0; // WP1_y
+
+			switching_distance = 4.0;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP1_rand9);
+				waiting=false;
+			}
+		}
+
+			///////////////////
+
+			///////////////////
+
+		else if (WP_EQUALS(WP_GOAL, WP_WP1_rand9)) {
+			// Single WP
+			//psi_ref = atan2(waypoints[WP_WP1].enu_f.x-waypoints[WP_WP4].enu_f.x, waypoints[WP_WP1].enu_f.y-waypoints[WP_WP4].enu_f.y);
+
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP1].enu_f.x-waypoints[WP_WP4].enu_f.x, waypoints[WP_WP1].enu_f.y-waypoints[WP_WP4].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP1_rand9
+			state_nn[20] = -0.4611; // WP1_x
+			state_nn[19] = -3.0466; // WP1_y
+
+			switching_distance = 3.081;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP2_rand10);
+				waiting=false;
+			}
+		}
+		else if (WP_EQUALS(WP_GOAL, WP_WP2_rand10)) {
+			// Single WP			
+			//psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y);
+			
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP2_rand10
+			state_nn[20] = 0.0056; // WP1_x
+			state_nn[19] = -3.5454; // WP1_y
+
+			switching_distance = 3.545;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP3_rand11);
+				waiting=false;
+			}
+		}
+		else if (WP_EQUALS(WP_GOAL, WP_WP3_rand11)) {
+			// Single WP			
+			//psi_ref = atan2(waypoints[WP_WP3].enu_f.x-waypoints[WP_WP2].enu_f.x, waypoints[WP_WP3].enu_f.y-waypoints[WP_WP2].enu_f.y);
+			
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP3].enu_f.x-waypoints[WP_WP2].enu_f.x, waypoints[WP_WP3].enu_f.y-waypoints[WP_WP2].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP3_rand11
+			state_nn[20] = -0.0079; // WP1_x
+			state_nn[19] = -3.9611; // WP1_y
+
+			switching_distance = 3.961;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP4_rand12);
+				waiting=false;
+			}
+		}
+		else if (WP_EQUALS(WP_GOAL, WP_WP4_rand12)) {
+			// Single WP			
+			//psi_ref = atan2(waypoints[WP_WP4].enu_f.x-waypoints[WP_WP3].enu_f.x, waypoints[WP_WP4].enu_f.y-waypoints[WP_WP3].enu_f.y);
+			
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP4].enu_f.x-waypoints[WP_WP3].enu_f.x, waypoints[WP_WP4].enu_f.y-waypoints[WP_WP3].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP4_rand12
+			state_nn[20] = -0.0176; // WP1_x
+			state_nn[19] = -3.0872; // WP1_y
+
+			switching_distance = 3.087;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP1_rand13);
+				waiting=false;
+			}
+		}
+
+			///////////////////
+
+
+		else if (WP_EQUALS(WP_GOAL, WP_WP1_rand13)) {
+			// Single WP
+			//psi_ref = atan2(waypoints[WP_WP1].enu_f.x-waypoints[WP_WP4].enu_f.x, waypoints[WP_WP1].enu_f.y-waypoints[WP_WP4].enu_f.y);
+
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP1].enu_f.x-waypoints[WP_WP4].enu_f.x, waypoints[WP_WP1].enu_f.y-waypoints[WP_WP4].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP1_rand13
+			state_nn[20] = 0.0127; // WP1_x
+			state_nn[19] = -3.02; // WP1_y
+
+			switching_distance = 3.02;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP2_rand14);
+				waiting=false;
+			}
+		}
+		else if (WP_EQUALS(WP_GOAL, WP_WP2_rand14)) {
+			// Single WP			
+			//psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y);
+			
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP2_rand14
+			state_nn[20] = -0.1778; // WP1_x
+			state_nn[19] = -3.2543; // WP1_y
+
+			switching_distance = 3.259;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP3_rand15);
+				waiting=false;
+			}
+		}
+		else if (WP_EQUALS(WP_GOAL, WP_WP3_rand15)) {
+			// Single WP			
+			//psi_ref = atan2(waypoints[WP_WP3].enu_f.x-waypoints[WP_WP2].enu_f.x, waypoints[WP_WP3].enu_f.y-waypoints[WP_WP2].enu_f.y);
+			
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP3].enu_f.x-waypoints[WP_WP2].enu_f.x, waypoints[WP_WP3].enu_f.y-waypoints[WP_WP2].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP3_rand15
+			state_nn[20] = 0.1553; // WP1_x
+			state_nn[19] = -3.0323; // WP1_y
+
+			switching_distance = 3.036;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP4_rand16);
+				waiting=false;
+			}
+		}
+		else if (WP_EQUALS(WP_GOAL, WP_WP4_rand16)) {
+			// Single WP			
+			//psi_ref = atan2(waypoints[WP_WP4].enu_f.x-waypoints[WP_WP3].enu_f.x, waypoints[WP_WP4].enu_f.y-waypoints[WP_WP3].enu_f.y);
+			
+			// Two consecutive WPs	
+			psi_ref = atan2(waypoints[WP_WP4].enu_f.x-waypoints[WP_WP3].enu_f.x, waypoints[WP_WP4].enu_f.y-waypoints[WP_WP3].enu_f.y) - M_PI/2;
+			// Two extra inputs (for consecutive WP flight) - Relative Y and X position in rotated frame
+			// WP_WP4_rand16
+			state_nn[20] = 0.3222; // WP1_x
+			state_nn[19] = -3.7887; // WP1_y
+
+			switching_distance = 3.802;
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP1_rand1);
+				waiting=false;
+			}
+		}
+
+
 	}
 
 
@@ -397,6 +814,14 @@ void gcnet_run(void)
 	
 	// calcuate neural network output
 	nn_control(state_nn, control_nn);
+
+	// Artificially limit the RPM commands
+	/*float omega_max_artificial_limit = 11200;
+ 	for (int i = 1; i < 4; i++)
+        {if (control_nn[i] > omega_max_artificial_limit){
+	control_nn[i] = omega_max_artificial_limit;
+	}
+	}*/
 }
 
 
@@ -442,23 +867,4 @@ void external_vision_update(uint8_t *buf)
 */
 
 
-// Logging
-extern void gnc_net_log_header(FILE *file) {
-  fprintf(file, "autopilot_mode,");
-  fprintf(file, "wp_goal_x,wp_goal_y,wp_goal_z,");
-  fprintf(file, "nn_out_1,nn_out_2,nn_out_3,nn_out_4,");
-  fprintf(file, "nn_in_1,nn_in_2,nn_in_3,nn_in_4,nn_in_5,nn_in_6,nn_in_7,nn_in_8,nn_in_9,nn_in_10,nn_in_11,nn_in_12,nn_in_13,nn_in_14,nn_in_15,nn_in_16,nn_in_17,nn_in_18,nn_in_19,");
-  fprintf(file, "Mx_measured,My_measured,Mz_measured,az_measured,");
-  fprintf(file, "Mx_modeled,My_modeled,Mz_modeled,az_modeled,");
-}
 
-
-extern void gnc_net_log_data(FILE *file) {
-  //fprintf(file, "%d,%d,%d,%d,", motor_mixing.commands[0], motor_mixing.commands[1], motor_mixing.commands[2], motor_mixing.commands[3]);
-  fprintf(file, "%d,", (autopilot_get_mode()==AP_MODE_ATTITUDE_DIRECT)?(1):(0));
-  fprintf(file, "%f,%f,%f,", waypoint_ned.x, waypoint_ned.y, waypoint_ned.z);
-  fprintf(file, "%f,%f,%f,%f,",control_nn[0],control_nn[1],control_nn[2],control_nn[3]);
-  fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,",state_nn[0], state_nn[1], state_nn[2], state_nn[3], state_nn[4], state_nn[5], state_nn[6], state_nn[7], state_nn[8], state_nn[9], state_nn[10], state_nn[11], state_nn[12], state_nn[13], state_nn[14], state_nn[15], state_nn[16], state_nn[17], state_nn[18]);
-  fprintf(file, "%f,%f,%f,%f,", Mx_measured, My_measured, Mz_measured, az_measured);
-  fprintf(file, "%f,%f,%f,%f,", Mx_modeled, My_modeled, Mz_modeled, az_modeled);
-}

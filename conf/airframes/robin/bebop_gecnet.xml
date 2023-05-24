@@ -37,7 +37,7 @@
 -->
 
     <module name="logger_file"/>
-    <module name="gcnet"/>
+    <module name="gcnet_robin"/>
     <module name="ins" type="ext_pose"/>
 
   </firmware>

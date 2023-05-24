@@ -89,7 +89,7 @@ static void logger_file_write_header(FILE *file) {
 #ifdef NAV_SNAP_H
   min_snap_log_header(file);
 #endif
-#ifdef GCNET_MAIN_H
+#ifdef GCNET_ROBIN_MAIN_H
   gnc_net_log_header(file);
 #endif
 #ifdef COMMAND_THRUST
@@ -129,7 +129,7 @@ static void logger_file_write_row(FILE *file) {
 #ifdef NAV_SNAP_H
   min_snap_log_data(file);
 #endif
-#ifdef GCNET_MAIN_H
+#ifdef GCNET_ROBIN_MAIN_H
   gnc_net_log_data(file);
 #endif
 #ifdef COMMAND_THRUST

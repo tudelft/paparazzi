@@ -22,7 +22,7 @@
 /**
  * @file modules/nav/nav_snap.c
  *
- * Feed-forward a hardcoded minium snap trajectory.
+ * Feed-forward a hardcoded minimum snap trajectory.
  */
 
 #include "generated/airframe.h"
@@ -61,6 +61,8 @@ double vz_snap = 0;
 double ax_snap = 0;
 double ay_snap = 0;
 double az_snap = 0;
+
+bool waiting = false;
 
 
 ///< Call once, just before starting the run
@@ -102,6 +104,20 @@ bool nav_snap_run(void)
   // Import Snap:
   // Everything in North East Down
   double min_snap_dt = get_sys_time_float() - time_zero;
+  
+  //if (min_snap_dt*min_snap_alpha_active>12.8) {
+  //	time_zero = get_sys_time_float();
+  //	waiting = true;
+  //} else if (waiting) {
+  //	if (min_snap_dt > 5) {
+  //		waiting = false;
+  //		min_snap_alpha_active = min_snap_alpha_active + 0.05;
+  //		time_zero = get_sys_time_float();	
+  //	}
+  //	min_snap_dt = 0;
+  //}
+  
+  
   //min_snap_dt += 1.0 / ((float)NAVIGATION_FREQUENCY);
   //printf("t1=%f, t2=%f \n",min_snap_dt, min_snap_dt2);
   x_snap = get_x(min_snap_alpha_active, min_snap_dt);
@@ -167,5 +183,5 @@ void min_snap_log_header(FILE *file) {
 }
 
 void min_snap_log_data(FILE *file) {
-  fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,",min_snap_alpha,x_snap,y_snap,z_snap,psi_snap,vx_snap,vy_snap,vz_snap,ax_snap,ay_snap,az_snap);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,",min_snap_alpha_active,x_snap,y_snap,z_snap,psi_snap,vx_snap,vy_snap,vz_snap,ax_snap,ay_snap,az_snap);
 }

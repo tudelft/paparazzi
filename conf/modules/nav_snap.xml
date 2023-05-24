@@ -29,7 +29,7 @@
   <makefile>
     <file name="nav_snap.c"/>
     <!-- trajectory: oval,eight,...-->
-    <configure name="MIN_SNAP_TRAJECTORY" value="oval"/>
+    <configure name="MIN_SNAP_TRAJECTORY" value="smaller_oval"/>
     <file name="trajectories/nms_$(MIN_SNAP_TRAJECTORY).c"/>
   </makefile>
 </module>

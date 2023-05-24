@@ -1,0 +1,19 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="rpm_peak_tracker">
+  <doc>
+    <description>
+    module which computes the maximum rpm limit for a GCNET based on measurements made by seb.
+    </description>
+  </doc>
+
+  <header>
+    <file name="rpm_peak_tracker.h"/>
+  </header>
+  <init fun="rpm_peak_tracker_init()"/>
+  <periodic fun="rpm_peak_tracker_run()" autorun="FALSE" freq="512" />
+
+  <makefile>
+    <file name="rpm_peak_tracker.c"/>
+  </makefile>
+</module>
