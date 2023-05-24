@@ -273,6 +273,21 @@ PRINT_CONFIG_VAR(INS_EKF2_GPS_P_NOISE)
 #endif
 PRINT_CONFIG_VAR(INS_EKF2_BARO_NOISE)
 
+#ifndef INS_EKF2_GPS_RTK_YAW
+#define INS_EKF2_GPS_RTK_YAW 0
+#endif
+PRINT_CONFIG_VAR(INS_EKF2_GPS_RTK_YAW)
+
+#ifndef INS_EKF2_GPS_RTK_YAW_OFFSET
+#define INS_EKF2_GPS_RTK_YAW_OFFSET 0
+#endif
+PRINT_CONFIG_VAR(INS_EKF2_GPS_RTK_YAW_OFFSET)
+
+#ifndef INS_EKF2_MAG_FUSION_TYPE
+#define INS_EKF2_MAG_FUSION_TYPE 0
+#endif
+PRINT_CONFIG_VAR(INS_EKF2_MAG_FUSION_TYPE)
+
 /* All registered ABI events */
 static abi_event baro_ev;
 static abi_event temperature_ev;
@@ -301,6 +316,8 @@ static void ins_ekf2_publish_attitude(uint32_t stamp);
 static Ekf ekf;                                   ///< EKF class itself
 static parameters *ekf_params;                    ///< The EKF parameters
 struct ekf2_t ekf2;                               ///< Local EKF2 status structure
+
+float settings_yaw_offset = INS_EKF2_GPS_RTK_YAW_OFFSET;
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -376,6 +393,7 @@ static void send_ins_ekf2(struct transport_tx *trans, struct link_device *dev)
   ekf.get_innovation_test_status(innov_test_status, mag, vel, pos, hgt, tas, hagl, beta);
   //ekf.get_flow_innov(&flow);
   ekf.get_mag_decl_deg(&mag_decl);
+  flow = 0;
 
   if (ekf.isTerrainEstimateValid()) {
     terrain_valid = 1;
@@ -479,6 +497,8 @@ void ins_ekf2_init(void)
   ekf_params->flow_noise = INS_EKF2_FLOW_NOISE;
   ekf_params->flow_noise_qual_min = INS_EKF2_FLOW_NOISE_QMIN;
   ekf_params->flow_innov_gate = INS_EKF2_FLOW_INNOV_GATE;
+
+  ekf_params->mag_fusion_type = ekf2.mag_fusion_type = INS_EKF2_MAG_FUSION_TYPE;
 
   /* Set the IMU position relative from the CoG in xyz (m) */
   ekf_params->imu_pos_body = {
@@ -858,6 +878,13 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 #if INS_EKF2_GPS_COURSE_YAW
   gps_msg.yaw = wrap_pi((float)gps_s->course / 1e7);
   gps_msg.yaw_offset = 0;
+#elif INS_EKF2_GPS_RTK_YAW
+  if (ISFINITE(gps_s->relPosHeading)) {
+        gps_msg.yaw = wrap_pi((float)gps_s->relPosHeading / 1e7);
+  } else {
+      gps_msg.yaw = NAN;
+  }
+  gps_msg.yaw_offset = wrap_pi((float)settings_yaw_offset*0.017);
 #else
   gps_msg.yaw = NAN;
   gps_msg.yaw_offset = NAN;
