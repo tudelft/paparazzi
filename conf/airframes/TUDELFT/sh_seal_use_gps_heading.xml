@@ -276,7 +276,7 @@ NOTES:
 <!--      <define name="PX4_IO_FORCE_PROG" value="TRUE" />-->
 
 <!--      YAW OFFSET  -->
-      <define name="INS_EKF2_GPS_RTK_YAW_OFFSET" value="180"/>
+      <define name="INS_EKF2_GPS_RTK_YAW_OFFSET" value="0"/>
 
     </target>
 
