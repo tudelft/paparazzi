@@ -62,6 +62,7 @@
       <exception cond="kill_switch_is_on()" deroute="KILL"/>
     </exceptions>
 
+    <!-- 0 -->
     <mode name="ATTITUDE_DIRECT" shortname="ATT">
       <select cond="RCMode0()"/>
       <on_enter>
@@ -78,6 +79,7 @@
       <exception cond="RCLost()" deroute="FAILSAFE"/>
     </mode>
 
+     <!-- 1 -->
     <mode name="ATTITUDE_Z_HOLD" shortname="A_ZH">
       <!--select cond="RCMode1()"/-->
       <on_enter>
@@ -95,6 +97,7 @@
       <exception cond="RCLost()" deroute="FAILSAFE"/>
     </mode>
 
+     <!-- 2 -->
     <mode name="FORWARD" shortname="FWD">
       <select cond="RCMode2() && DLModeForward()"/>
       <on_enter>
@@ -111,6 +114,7 @@
       <exception cond="RCLost()" deroute="FAILSAFE"/>
     </mode>
 
+     <!-- 3 -->
     <mode name="NAV">
       <select cond="RCMode2() && DLModeNav()" exception="HOME"/>
       <on_enter>
@@ -131,7 +135,7 @@
       <exception cond="GpsIsLost() && autopilot_in_flight()" deroute="FAILSAFE"/>
     </mode>
 
-
+     <!-- 4 -->
     <mode name="HOVERWIND">
       
       <select cond="RCMode1()" exception="HOME"/> <!---->
@@ -149,6 +153,7 @@
       <!--exception cond="RCLost()" deroute="FAILSAFE"/-->
     </mode>
 
+     <!-- 5 -->
     <mode name="GUIDED">
       <select cond="RCMode2() && DLModeGuided()" exception="HOME"/>
       <on_enter>
@@ -170,6 +175,7 @@
       <exception cond="GpsIsLost() && autopilot_in_flight()" deroute="FAILSAFE"/>
     </mode>
 
+     <!-- 6 -->
     <mode name="HOME">
       <on_enter>
         <call fun="guidance_h_nav_enter()"/>
@@ -190,7 +196,7 @@
     </mode>
 
     
-
+     <!-- 7 -->
     <!-- Safe landing -->
     <mode name="FAILSAFE" shortname="FAIL">
       <on_enter>
@@ -210,6 +216,7 @@
       <exception cond="!GpsIsLost()" deroute="$LAST_MODE"/>
     </mode>
 
+     <!-- 8 -->
     <!-- Kill throttle mode -->
     <mode name="KILL">
       <select cond="$DEFAULT_MODE"/>

@@ -79,22 +79,18 @@ float tf_state3[2] = {0, 0};
 float tf_state4[2] = {0, 0};
 
 
-
-
-// static inline void log_hoverwind_periodic(void);
-// static inline void log_hoverwind_start(void);
-
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
 static void send_payload_float(struct transport_tx *trans, struct link_device *dev)
 {
-  float f[20] = {pos_target.x, pos_target.y, pos_target.z,
-                 eps[0][0], eps[1][0], eps[2][0],
+  float f[32] = {pos_target.x, pos_target.y, pos_target.z,
+                 eps[0][0], eps[1][0], eps[2][0], eps[3][0], eps[4][0], eps[5][0], eps[6][0], eps[7][0], eps[8][0], eps[9][0], eps[10][0],
                  u_scale[0][0], u_scale[1][0], u_scale[2][0], u_scale[3][0],
                  u_prop[0][0], u_prop[1][0], u_prop[2][0], u_prop[3][0],
                  u_filter[0][0],u_filter[1][0],u_filter[2][0],u_filter[3][0],
-                 u_integrator[0][0], u_integrator[1][0]};
-  pprz_msg_send_PAYLOAD_FLOAT(trans, dev, AC_ID, 20, f);
+                 u_integrator[0][0], u_integrator[1][0],
+                 u[0][0], u[1][0], u[2][0], u[3][0]};
+  pprz_msg_send_PAYLOAD_FLOAT(trans, dev, AC_ID, 32, f);
 }
 #endif
 
@@ -109,7 +105,6 @@ void stabilization_hover_wind_init(void){
   };
   float_quat_of_eulers(&quat_smeur_2_barth, &eul2smeurbarth);
 
-
   x_e[0][0] = 0;
   x_e[1][0] = 0;
   pos_target = *stateGetPositionNed_f(); 
@@ -122,7 +117,6 @@ void stabilization_hover_wind_init(void){
 
 void stabilization_hover_wind_run(bool in_flight){
 
-  #define DBG_CMD 0
 
   struct FloatVect3 barth_rate, smeur_rate;
   smeur_rate.x = stateGetBodyRates_f()->p;
@@ -132,18 +126,12 @@ void stabilization_hover_wind_run(bool in_flight){
   float_quat_comp(&quat_att_barth_frame, stateGetNedToBodyQuat_f(), &quat_smeur_2_barth);
   float_quat_vmult(&barth_rate, &quat_smeur_2_barth, &smeur_rate);
 
-
-  #if DBG_CMD
-      printf("nav target z = %f \n", -POS_FLOAT_OF_BFP(nav.target.z));
-      printf("pos z = %f \n", stateGetPositionNed_f()->z);
-  #endif
-
   
   //ENU_OF_TO_NED(nav_target_ned, nav.target) //nav.target ENU
   //printf("nav target z = %f \n", nav_target_ned.z);
   eps[0][0] = stateGetPositionNed_f()->x - pos_target.x; 
   eps[1][0] = stateGetPositionNed_f()->y - pos_target.y;
-  eps[2][0] = -(stateGetPositionNed_f()->z - pos_target.z);
+  eps[2][0] = stateGetPositionNed_f()->z - pos_target.z;
   eps[3][0] = stateGetSpeedNed_f()->x;
   eps[4][0] = stateGetSpeedNed_f()->y;
   eps[5][0] = stateGetSpeedNed_f()->z;
@@ -153,53 +141,14 @@ void stabilization_hover_wind_run(bool in_flight){
   eps[9][0] = barth_rate.y;
   eps[10][0] = barth_rate.z;
 
-  #if DBG_CMD
-    /*
-    for (int i=0; i<11; i++) {
-      printf("eps(%d) = %f ", i, eps[i][0]);
-    }
-    */
-    printf("dpx = %f ,", eps[0][0]);
-    printf("dpy = %f ,", eps[1][0]);
-    printf("dpz = %f ,", eps[2][0]);
-    printf("dvx = %f ,", eps[3][0]);
-    printf("dvy = %f ,", eps[4][0]);
-    printf("dvz = %f ,", eps[5][0]);
-    printf("depsx = %f ,", eps[6][0]);
-    printf("depsz = %f ,", eps[7][0]);
-    printf("dwx = %f ,", eps[8][0]);
-    printf("dwy = %f ,", eps[9][0]);
-    printf("dwz = %f ", eps[10][0]);
-    printf("\n");
-    
-  #endif
-
   
   MAT_MUL_c(CTRL_HOVER_WIND_NUM_INTEGRATOR_STATE, CTRL_HOVER_WIND_INPUT, 1, dot_x_e_dt, H, eps, 1./PERIODIC_FREQUENCY);
   x_e[0][0] +=  dot_x_e_dt[0][0];
   x_e[1][0] +=  dot_x_e_dt[1][0];
   u_integrator[0][0] = x_e[0][0];
   u_integrator[1][0] = x_e[1][0];
-  /*
-    u_integrator[0][0] = 0;
-  u_integrator[1][0] = 0;
-  */
-
-  #if DBG_CMD
-    for (int i=0; i<2; i++) {
-      printf("u integrator(%d) = %f ", i, u_integrator[i][0]);
-    }
-    printf("\n");
-  #endif
 
   MAT_MUL(CTRL_HOVER_WIND_NUM_ACT, CTRL_HOVER_WIND_INPUT, 1, u_prop, K, eps);
-
-  #if DBG_CMD
-    for (int i=0; i<CTRL_HOVER_WIND_NUM_ACT; i++) {
-      printf("u prop(%d) = %f ", i, u_prop[i][0]);
-    }
-    printf("\n");
-  #endif
 
   float tf1_tmp;
   float tf2_tmp;
@@ -227,18 +176,10 @@ void stabilization_hover_wind_run(bool in_flight){
   tf_state4[0] = tf4_tmp;
 
 
-  #if DBG_CMD
-    for (int i=0; i<CTRL_HOVER_WIND_NUM_ACT; i++) {
-      printf("u filter(%d) = %f ", i, u_filter[i][0]);
-    }
-    printf("\n");
-  #endif
-
   float integrator_repart[CTRL_HOVER_WIND_NUM_ACT][1] = {{u_integrator[0][0]}, {u_integrator[0][0]}, {u_integrator[1][0]}, {u_integrator[1][0]} };
   MAT_SUB(CTRL_HOVER_WIND_NUM_ACT, 1, u_sub, integrator_repart, u_filter);
   //MAT_SUB(CTRL_HOVER_WIND_NUM_ACT, 1, u_sub, integrator_repart, u_prop);
   MAT_SUM(CTRL_HOVER_WIND_NUM_ACT, 1, u, ueq, u_sub);
-
 
 
  
@@ -259,30 +200,16 @@ void stabilization_hover_wind_run(bool in_flight){
   u_scale[2][0] = (u[2][0]*6/M_PI)*MAX_PPRZ;
   u_scale[3][0] = (u[3][0]*6/M_PI)*MAX_PPRZ;
 
-  #if DBG_CMD
-    printf("u: %f %f %f %f  \n", u_scale[0][0], u_scale[1][0], u_scale[2][0], u_scale[3][0]);
-  #endif
-
 
   actuators_pprz[0]=TRIM_PPRZ(u_scale[3][0]); //ELEVON_LEFT  -
   actuators_pprz[1]=TRIM_PPRZ(-u_scale[2][0]); // ELEVON_RIGHT  
 
-  //actuators_pprz[0]=TRIM_PPRZ(0); //ELEVON_LEFT  
-  //actuators_pprz[1]=TRIM_PPRZ(0); // ELEVON_RIGHT  
 
   actuators_pprz[2]=TRIM_UPPRZ(u_scale[0][0]); // RIGHT_MOTOR
   actuators_pprz[3]=TRIM_UPPRZ(u_scale[1][0]); // LEFT_MOTOR
 
-  //actuators_pprz[2]=TRIM_UPPRZ(5000); // RIGHT_MOTOR
-  //actuators_pprz[3]=TRIM_UPPRZ(5000); // LEFT_MOTOR
   
   
-  #if DBG_CMD
-    printf("actuators: %d %d %d %d\n", actuators_pprz[0], actuators_pprz[1], actuators_pprz[2], actuators_pprz[3]);
-    float f[17] = {stateGetPositionNed_f()->x, stateGetPositionNed_f()->y, stateGetPositionNed_f()->z, stateGetSpeedNed_f()->x, stateGetSpeedNed_f()->y, stateGetSpeedNed_f()->z, quat_att_barth_frame.qi, quat_att_barth_frame.qx, quat_att_barth_frame.qy, quat_att_barth_frame.qz, stateGetBodyRates_f()->p, stateGetBodyRates_f()->q, stateGetBodyRates_f()->r, actuators_pprz[0], actuators_pprz[1], actuators_pprz[2], actuators_pprz[3]};
-    DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 17, f);
-  #endif
-
   if (in_flight) {
     stabilization_cmd[COMMAND_THRUST] = (actuators_pprz[2]+actuators_pprz[3]); // for in_flight detection
     //printf("in_flight\n");
@@ -292,45 +219,4 @@ void stabilization_hover_wind_run(bool in_flight){
   };
   
 
-  //log_hoverwind_periodic();
 }
-
-// Report function
-
-void data_report()
-{
-  float msg[] = {
-    nav.target.x,
-    nav.target.y,
-    nav.target.z,
-    stateGetNedToBodyQuat_f()->qi, 
-    stateGetNedToBodyQuat_f()->qx,
-    stateGetNedToBodyQuat_f()->qy,
-    stateGetNedToBodyQuat_f()->qz,
-    quat_att_barth_frame.qi, 
-    quat_att_barth_frame.qx,
-    quat_att_barth_frame.qy,
-    quat_att_barth_frame.qz    
-  };
-  //DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 11, msg);
-}
-
-
-/*static inline void log_hoverwind_start(void) {
-  // Check that log file has been created correctly
-  if (pprzLogFile != -1) {
-    //header
-    sdLogWriteLog(pprzLogFile, "'time';'eps1';'eps2';'eps3';'eps7';'eps8';'qi';'qx';'qy';'qz';'u_scale1';'u_scale2';'u_scale3';'u_scale4'\n");
-  }
-}
-
-static inline void log_hoverwind_periodic(void) {
-  // Check that log file has been created correctly
-  if (pprzLogFile != -1) {
-    //Data
-    sdLogWriteLog(pprzLogFile, "%.5f;", get_sys_time_float());
-    sdLogWriteLog(pprzLogFile, "%.4f;%.4f;%.4f;%.4f;%.4f;", eps[0][0], eps[1][0], eps[2][0], eps[6][0], eps[7][0]);
-    sdLogWriteLog(pprzLogFile, "%.4f;%.4f;%.4f;%.4f;", stateGetNedToBodyQuat_f()->qi, stateGetNedToBodyQuat_f()->qx, stateGetNedToBodyQuat_f()->qy,stateGetNedToBodyQuat_f()->qz);
-    sdLogWriteLog(pprzLogFile, "%f;%f;%f;%f\n", u_scale[0][0], u_scale[1][0], u_scale[2][0], u_scale[3][0]);
-  }
-}*/
