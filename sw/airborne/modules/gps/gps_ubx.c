@@ -427,7 +427,8 @@ static void gps_ubx_parse_nav_relposned(void)
       // RELHEADING
       gps_relposned.relPosHeading = UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf) * 1e-5f;
       if(relPosValid && (diffSoln && carrSoln >= 1)) {
-          gps_ubx.state.relPosHeading = (RadOfDeg(UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf) * 10)) * 10;
+          // FIXME: remove hard coded 180 deg offset
+          gps_ubx.state.relPosHeading = (RadOfDeg((UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf)*1e-5f - 180.0)*1e5f * 10)) * 10;
       } else {
           gps_ubx.state.relPosHeading = NAN;
       }

@@ -288,6 +288,11 @@ PRINT_CONFIG_VAR(INS_EKF2_GPS_RTK_YAW_OFFSET)
 #endif
 PRINT_CONFIG_VAR(INS_EKF2_MAG_FUSION_TYPE)
 
+#ifndef INS_EKF2_GPS_RTK_YAW_MAX_INTERVAL
+#define INS_EKF2_GPS_RTK_YAW_MAX_INTERVAL (uint64_t)5e6         // 5 sec
+#endif
+PRINT_CONFIG_VAR(INS_EKF2_GPS_RTK_YAW_MAX_INTERVAL)
+
 /* All registered ABI events */
 static abi_event baro_ev;
 static abi_event temperature_ev;
@@ -318,6 +323,8 @@ static parameters *ekf_params;                    ///< The EKF parameters
 struct ekf2_t ekf2;                               ///< Local EKF2 status structure
 
 float settings_yaw_offset = INS_EKF2_GPS_RTK_YAW_OFFSET;
+float _last_gps_rtk_yaw = 0.0;
+uint64_t _time_last_gps_rtk_yaw_valid{0};
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -881,8 +888,14 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
 #elif INS_EKF2_GPS_RTK_YAW
   if (ISFINITE(gps_s->relPosHeading)) {
         gps_msg.yaw = wrap_pi((float)gps_s->relPosHeading / 1e7);
+        _last_gps_rtk_yaw = wrap_pi((float)gps_s->relPosHeading / 1e7);
+        _time_last_gps_rtk_yaw_valid = stamp;
   } else {
-      gps_msg.yaw = NAN;
+      if (_time_last_gps_rtk_yaw_valid+INS_EKF2_GPS_RTK_YAW_MAX_INTERVAL > stamp) {
+          gps_msg.yaw = _last_gps_rtk_yaw;
+      } else {
+          gps_msg.yaw = NAN;
+      }
   }
   gps_msg.yaw_offset = wrap_pi((float)settings_yaw_offset*0.017);
 #else
