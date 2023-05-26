@@ -1589,6 +1589,7 @@ void overactuated_mixing_run(void)
 
                 //TESTING:
                 #ifdef TEST_RPM_CONTROL
+                #warning You are using a testing define!!! 
                     indi_u[0] = (2 * M_PI) * Des_RPM_motor_1 / 60;
                     indi_u[1] = 0;
                     indi_u[2] = 0;
