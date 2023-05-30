@@ -40,7 +40,7 @@
     <!-- Video/Camera modules -->
     <module name="bebop_cam"/>
     <module name="video_capture">
-      <define name="VIDEO_CAPTURE_CAMERA" value="front_camera"/>
+      <define name="VIDEO_CAPTURE_CAMERA" value="bottom_camera"/>
       <define name="VIDEO_CAPTURE_FPS" value="10"/>
     </module>
     <module name="video_rtp_stream">
