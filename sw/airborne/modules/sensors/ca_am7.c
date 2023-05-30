@@ -95,60 +95,64 @@ static uint8_t am7_msg_buf_in[sizeof(struct am7_data_in)*2]  __attribute__((alig
                 &rolling_msg_in_telemetry, &rolling_msg_in_id_telemetry);
     }
     static void am7_uplink(struct transport_tx *trans, struct link_device *dev)
-{
+    {
 
-    int16_t motor_1_state_int_telemetry = myam7_data_out.motor_1_state_int;
-    int16_t motor_2_state_int_telemetry = myam7_data_out.motor_2_state_int;
-    int16_t motor_3_state_int_telemetry = myam7_data_out.motor_3_state_int;
-    int16_t motor_4_state_int_telemetry = myam7_data_out.motor_4_state_int;
-    int16_t el_1_state_int_telemetry = myam7_data_out.el_1_state_int;
-    int16_t el_2_state_int_telemetry = myam7_data_out.el_2_state_int;
-    int16_t el_3_state_int_telemetry = myam7_data_out.el_3_state_int;
-    int16_t el_4_state_int_telemetry = myam7_data_out.el_4_state_int;
-    int16_t az_1_state_int_telemetry = myam7_data_out.az_1_state_int;
-    int16_t az_2_state_int_telemetry = myam7_data_out.az_2_state_int;
-    int16_t az_3_state_int_telemetry = myam7_data_out.az_3_state_int;
-    int16_t az_4_state_int_telemetry = myam7_data_out.az_4_state_int;
-    //Variable states and ailerons
-    int16_t theta_state_int_telemetry = myam7_data_out.theta_state_int;
-    int16_t phi_state_int_telemetry = myam7_data_out.phi_state_int;
-    int16_t ailerons_state_int_telemetry = myam7_data_out.ailerons_state_int;
-    int16_t gamma_state_int_telemetry = myam7_data_out.gamma_state_int;
-    int16_t p_state_int_telemetry = myam7_data_out.p_state_int;
-    int16_t q_state_int_telemetry = myam7_data_out.q_state_int;
-    int16_t r_state_int_telemetry = myam7_data_out.r_state_int;
-    int16_t airspeed_state_int_telemetry = myam7_data_out.airspeed_state_int;
-    int16_t beta_state_int_telemetry = myam7_data_out.beta_state_int;
-    //Pseudo-control cmd
-    int16_t pseudo_control_ax_int_telemetry = myam7_data_out.pseudo_control_ax_int;
-    int16_t pseudo_control_ay_int_telemetry = myam7_data_out.pseudo_control_ay_int;
-    int16_t pseudo_control_az_int_telemetry = myam7_data_out.pseudo_control_az_int;
-    int16_t pseudo_control_p_dot_int_telemetry = myam7_data_out.pseudo_control_p_dot_int;
-    int16_t pseudo_control_q_dot_int_telemetry = myam7_data_out.pseudo_control_q_dot_int;
-    int16_t pseudo_control_r_dot_int_telemetry = myam7_data_out.pseudo_control_r_dot_int;
-    //Desired actuator value:
-    int16_t desired_motor_value_int_telemetry = myam7_data_out.desired_motor_value_int;
-    int16_t desired_el_value_int_telemetry = myam7_data_out.desired_el_value_int;
-    int16_t desired_az_value_int_telemetry = myam7_data_out.desired_az_value_int;
-    int16_t desired_theta_value_int_telemetry = myam7_data_out.desired_theta_value_int;
-    int16_t desired_phi_value_int_telemetry = myam7_data_out.desired_phi_value_int;
-    int16_t desired_ailerons_value_int_telemetry = myam7_data_out.desired_ailerons_value_int;
-    float rolling_msg_out_telemetry = myam7_data_out.rolling_msg_out;
-    uint8_t rolling_msg_out_id_telemetry = myam7_data_out.rolling_msg_out_id;
+        int16_t motor_1_state_int_telemetry = myam7_data_out.motor_1_state_int;
+        int16_t motor_2_state_int_telemetry = myam7_data_out.motor_2_state_int;
+        int16_t motor_3_state_int_telemetry = myam7_data_out.motor_3_state_int;
+        int16_t motor_4_state_int_telemetry = myam7_data_out.motor_4_state_int;
+        int16_t el_1_state_int_telemetry = myam7_data_out.el_1_state_int;
+        int16_t el_2_state_int_telemetry = myam7_data_out.el_2_state_int;
+        int16_t el_3_state_int_telemetry = myam7_data_out.el_3_state_int;
+        int16_t el_4_state_int_telemetry = myam7_data_out.el_4_state_int;
+        int16_t az_1_state_int_telemetry = myam7_data_out.az_1_state_int;
+        int16_t az_2_state_int_telemetry = myam7_data_out.az_2_state_int;
+        int16_t az_3_state_int_telemetry = myam7_data_out.az_3_state_int;
+        int16_t az_4_state_int_telemetry = myam7_data_out.az_4_state_int;
+        //Variable states and ailerons
+        int16_t theta_state_int_telemetry = myam7_data_out.theta_state_int;
+        int16_t phi_state_int_telemetry = myam7_data_out.phi_state_int;
+        int16_t ailerons_state_int_telemetry = myam7_data_out.ailerons_state_int;
+        int16_t gamma_state_int_telemetry = myam7_data_out.gamma_state_int;
+        int16_t p_state_int_telemetry = myam7_data_out.p_state_int;
+        int16_t q_state_int_telemetry = myam7_data_out.q_state_int;
+        int16_t r_state_int_telemetry = myam7_data_out.r_state_int;
+        int16_t airspeed_state_int_telemetry = myam7_data_out.airspeed_state_int;
+        int16_t beta_state_int_telemetry = myam7_data_out.beta_state_int;
+        //Approach boolean and lidar corrected altitude for the rotor constraint application 
+        int16_t approach_boolean_telemetry = myam7_data_out.approach_boolean;
+        int16_t lidar_alt_corrected_int_telemetry = myam7_data_out.lidar_alt_corrected_int;       
+        //Pseudo-control cmd
+        int16_t pseudo_control_ax_int_telemetry = myam7_data_out.pseudo_control_ax_int;
+        int16_t pseudo_control_ay_int_telemetry = myam7_data_out.pseudo_control_ay_int;
+        int16_t pseudo_control_az_int_telemetry = myam7_data_out.pseudo_control_az_int;
+        int16_t pseudo_control_p_dot_int_telemetry = myam7_data_out.pseudo_control_p_dot_int;
+        int16_t pseudo_control_q_dot_int_telemetry = myam7_data_out.pseudo_control_q_dot_int;
+        int16_t pseudo_control_r_dot_int_telemetry = myam7_data_out.pseudo_control_r_dot_int;
+        //Desired actuator value:
+        int16_t desired_motor_value_int_telemetry = myam7_data_out.desired_motor_value_int;
+        int16_t desired_el_value_int_telemetry = myam7_data_out.desired_el_value_int;
+        int16_t desired_az_value_int_telemetry = myam7_data_out.desired_az_value_int;
+        int16_t desired_theta_value_int_telemetry = myam7_data_out.desired_theta_value_int;
+        int16_t desired_phi_value_int_telemetry = myam7_data_out.desired_phi_value_int;
+        int16_t desired_ailerons_value_int_telemetry = myam7_data_out.desired_ailerons_value_int;
+        float rolling_msg_out_telemetry = myam7_data_out.rolling_msg_out;
+        uint8_t rolling_msg_out_id_telemetry = myam7_data_out.rolling_msg_out_id;
 
-	   pprz_msg_send_AM7_OUT(trans, dev, AC_ID, &motor_1_state_int_telemetry, &motor_2_state_int_telemetry, &motor_3_state_int_telemetry,
-		 	  &motor_4_state_int_telemetry, &el_1_state_int_telemetry, &el_2_state_int_telemetry, &el_3_state_int_telemetry,
-		 	  &el_4_state_int_telemetry, &az_1_state_int_telemetry,  &az_2_state_int_telemetry, &az_3_state_int_telemetry,
-              &az_4_state_int_telemetry, &theta_state_int_telemetry, &phi_state_int_telemetry, &ailerons_state_int_telemetry,
-              &gamma_state_int_telemetry, &p_state_int_telemetry, &q_state_int_telemetry, &r_state_int_telemetry,
-              &airspeed_state_int_telemetry, &beta_state_int_telemetry,
-              &pseudo_control_ax_int_telemetry, &pseudo_control_ay_int_telemetry, &pseudo_control_az_int_telemetry,
-              &pseudo_control_p_dot_int_telemetry,&pseudo_control_q_dot_int_telemetry, &pseudo_control_r_dot_int_telemetry,
-              &desired_motor_value_int_telemetry, &desired_el_value_int_telemetry, &desired_az_value_int_telemetry,
-              &desired_theta_value_int_telemetry, &desired_phi_value_int_telemetry, &desired_ailerons_value_int_telemetry,
-              &rolling_msg_out_telemetry, &rolling_msg_out_id_telemetry);
+        pprz_msg_send_AM7_OUT(trans, dev, AC_ID, &motor_1_state_int_telemetry, &motor_2_state_int_telemetry, &motor_3_state_int_telemetry,
+                &motor_4_state_int_telemetry, &el_1_state_int_telemetry, &el_2_state_int_telemetry, &el_3_state_int_telemetry,
+                &el_4_state_int_telemetry, &az_1_state_int_telemetry,  &az_2_state_int_telemetry, &az_3_state_int_telemetry,
+                &az_4_state_int_telemetry, &theta_state_int_telemetry, &phi_state_int_telemetry, &ailerons_state_int_telemetry,
+                &gamma_state_int_telemetry, &p_state_int_telemetry, &q_state_int_telemetry, &r_state_int_telemetry,
+                &airspeed_state_int_telemetry, &beta_state_int_telemetry,
+                &approach_boolean_telemetry, &lidar_alt_corrected_int_telemetry,
+                &pseudo_control_ax_int_telemetry, &pseudo_control_ay_int_telemetry, &pseudo_control_az_int_telemetry,
+                &pseudo_control_p_dot_int_telemetry,&pseudo_control_q_dot_int_telemetry, &pseudo_control_r_dot_int_telemetry,
+                &desired_motor_value_int_telemetry, &desired_el_value_int_telemetry, &desired_az_value_int_telemetry,
+                &desired_theta_value_int_telemetry, &desired_phi_value_int_telemetry, &desired_ailerons_value_int_telemetry,
+                &rolling_msg_out_telemetry, &rolling_msg_out_id_telemetry);
 
-}
+    }
 #endif
 
 static void data_AM7_out(uint8_t sender_id __attribute__((unused)), struct am7_data_out * myam7_data_out_ptr, float * extra_data_out_ptr){

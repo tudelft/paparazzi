@@ -32,7 +32,7 @@
     <define name="USE_TFMINI_AGL" value="$(USE_TFMINI_AGL)"/>
     <define name="TFMINI_COMPENSATE_ROTATION" value="$(TFMINI_COMPENSATE_ROTATION)"/>
     <file name="tfmini.c"/>
-    <define name="USE_TFMINI_SERIAL" value="FALSE"/>
+    <define name="USE_TFMINI_AM7" value="FALSE"/>
   </makefile>
   <makefile target="nps">
     <define name="USE_SONAR" value="1"/><!-- in NPS use a virtual sonar to simulate lidar measurements -->

@@ -60,7 +60,7 @@ struct TFMini {
 
 extern struct TFMini tfmini;
 
-#ifndef USE_TFMINI_SERIAL
+#ifndef USE_TFMINI_AM7
 extern void tfmini_init(void);
 extern void tfmini_event(void);
 #else

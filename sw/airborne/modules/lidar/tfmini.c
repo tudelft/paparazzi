@@ -45,12 +45,12 @@ struct TFMini tfmini = {
 static void tfmini_parse(uint8_t byte);
 
 static abi_event AM7_in;
-// struct am7_data_in myam7_data_in_local;
+
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
 
-#if USE_TFMINI_SERIAL
+#if USE_TFMINI_AM7
 /**
  * Downlink message lidar
  */
@@ -81,7 +81,7 @@ static void tfmini_send_lidar_with_am7(struct transport_tx *trans, struct link_d
 
 #endif
 
-#if USE_TFMINI_SERIAL
+#if USE_TFMINI_AM7
 /**
  * Initialization function
  */

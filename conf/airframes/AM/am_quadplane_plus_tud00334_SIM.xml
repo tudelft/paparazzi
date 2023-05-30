@@ -1,7 +1,7 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
 <!-- This is a Nedderdrone
-     * Airframe:    TUD00289
+     * Airframe:    TUD00334
      * Autopilot:   Pixhawk 4
      * Actuators:   12x T-Motor ESC + Motors and 8x Servos (all CAN)
      * Datalink:    Herelink
@@ -102,6 +102,7 @@
       <define name="LIS3MDL_CHAN_X_SIGN" value="-"/>
       <define name="LIS3MDL_CHAN_Y_SIGN" value="-"/>
     </module-->
+
     <!--module name="lidar" type="tfmini">
       <configure name="TFMINI_PORT" value="UART4"/>
       <configure name="USE_TFMINI_AGL" value="FALSE"/>

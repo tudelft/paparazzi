@@ -261,11 +261,14 @@ float K_T_airspeed = 0.025;
     float time_old_sys_mon = 0;
 #endif
 
-//Variables for the approach module: 
+//Variables for the approach module and tilt constraint: 
 int feed_speed_ref_from_approach_module = 0;
 static abi_event vel_sp_ev;
 float des_speed_approach_control_rf[3];
 
+static abi_event get_agl_corrected_value_ev;
+float altitude_lidar_agl_meters; 
+int approach_state = 0; 
 
 struct PID_over pid_gains_over = {
     .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
@@ -574,6 +577,16 @@ static void vel_sp_cb(uint8_t sender_id __attribute__((unused)), struct FloatVec
     des_speed_approach_control_rf[1] = 0;
     des_speed_approach_control_rf[2] = 0;
     from_earth_to_control( des_speed_approach_control_rf, des_speed_approach_earth_rf, euler_vect[2]);
+}
+
+/**
+ * ABI callback that obtains lidar corrected AGL altitude
+  */
+static void get_agl_corrected_value(uint8_t sender_id __attribute__((unused)), uint32_t timestamp_lidar, float distance_lidar_meter)
+{   
+    timestamp_lidar = timestamp_lidar;
+    //Capy distance to global variable: 
+    altitude_lidar_agl_meters = distance_lidar_meter;
 }
 
 /**
@@ -893,6 +906,10 @@ void send_values_to_raspberry_pi(void){
 
     am7_data_out_local.desired_ailerons_value_int = (int16_t) (manual_ailerons_value * 1e2 * 180/M_PI);
 
+    //Adding the corrected message from lidar: 
+    am7_data_out_local.approach_boolean = (int16_t) (approach_state);
+    am7_data_out_local.lidar_alt_corrected_int = (int16_t) (altitude_lidar_agl_meters * 1e2);
+
     #ifdef USE_NEW_THR_ESTIMATION_OPTIMIZATION
     extra_data_out_local[0] = PROP_MODEL_KT_REF;
     #else
@@ -972,6 +989,10 @@ void send_values_to_raspberry_pi(void){
     //Inflow angle aerodynamic model: 
     extra_data_out_local[56] = PROP_MODEL_MAX_THR_LOSS_OPTIMIZER;
     extra_data_out_local[57] = PROP_MODEL_C_DR;
+
+    //Approach tilting angle constraint: 
+    extra_data_out_local[58] = OVERACTUATED_MIXING_K_ALT_TILT_CONSTRAINT;     
+    extra_data_out_local[59] = OVERACTUATED_MIXING_MIN_ALT_TILT_CONSTRAINT;   
 }
 
 /**
@@ -1002,6 +1023,9 @@ void overactuated_mixing_init(void) {
 
     //Init abi for the approach module: 
     AbiBindMsgVEL_SP(ABI_BROADCAST, &vel_sp_ev, vel_sp_cb);
+
+    //Init abi for the lidar module: 
+    AbiBindMsgAGL(ABI_BROADCAST, &get_agl_corrected_value_ev, get_agl_corrected_value);
 
 }
 
@@ -1811,21 +1835,6 @@ void overactuated_mixing_run(void)
             overactuated_mixing.commands[10] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE) * K_ppz_angle_az);
             overactuated_mixing.commands[11] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * K_ppz_angle_az);  
         }
-
-        //Add servos values:
-        roll_pwm_cmd = indi_u[14] * OVERACTUATED_MIXING_AILERONS_K_PWM_ANGLE;
-        servo_right_cmd = neutral_servo_1_pwm - roll_pwm_cmd;
-        servo_left_cmd = neutral_servo_2_pwm - roll_pwm_cmd;
-
-        Bound(servo_right_cmd,1000,2000);
-        Bound(servo_left_cmd,1000,2000);
-
-        //Submit value to external servo: 
-        am7_data_out_local.pwm_servo_1_int = (int16_t) (indi_u[14]*18000/M_PI);
-        am7_data_out_local.pwm_servo_2_int = (int16_t) (indi_u[14]*18000/M_PI);
-        
-        roll_cmd = servo_right_cmd;
-        pitch_cmd = servo_left_cmd;
 
     }
 
