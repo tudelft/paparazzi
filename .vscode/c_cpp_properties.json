@@ -9,7 +9,8 @@
                 "limitSymbolsToIncludedHeaders": true
             },
             "includePath": [
-                "${workspaceFolder}"
+                "${workspaceFolder}/**",
+                "~/paparazzi/tests/modules/generated"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/arm-none-eabi-gcc",
