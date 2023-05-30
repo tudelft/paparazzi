@@ -10,7 +10,11 @@
     },
     "files.associations": {
         "Makefile.*": "makefile",
-        "flight_plan.h": "c"
+        "flight_plan.h": "c",
+        "modules.h": "c",
+        "uart.h": "c",
+        "uart_arch.h": "c",
+        "termios.h": "c"
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
