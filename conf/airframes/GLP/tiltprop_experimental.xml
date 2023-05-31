@@ -345,7 +345,7 @@
     <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
     <define name="FILT_CUTOFF" value="1.5"/>
     <define name="Filt_CUTOFF_P" value="10"/>
-    <define name="FILT_CUTOFF_Q" value="10"/>
+    <define name="FILT_CUTOFF_Q" value="1"/>
     <define name="FILT_CUTOFF_R" value="10"/>
     <!--<define name="FILT_CUTOFF" value="4.0"/>
     <define name="FILT_CUTOFF_R" value="3.2"/> -->
