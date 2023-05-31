@@ -139,7 +139,7 @@ static float Wv[INDI_OUTPUTS] = {1000, 1000, 1, 100};
 #ifdef STABILIZATION_INDI_WLS_WU
 float indi_Wu[INDI_NUM_ACT] = STABILIZATION_INDI_WLS_WU;
 #else
-float indi_Wu[INDI_NUM_ACT] = {1.0};
+float indi_Wu[INDI_NUM_ACT] = {[0 ... INDI_NUM_ACT-1] = 1.0};
 #endif
 
 // variables needed for control
@@ -828,7 +828,7 @@ void calc_g1g2_pseudo_inv(void)
   float_vect_scale(g1g2_trans_mult[0], 1000.0, INDI_OUTPUTS * INDI_OUTPUTS);
 
   //inverse of 4x4 matrix
-  float_mat_inv_4d(g1g2inv[0], g1g2_trans_mult[0]);
+  float_mat_inv_4d(g1g2inv, g1g2_trans_mult);
 
   //scale back
   float_vect_scale(g1g2inv[0], 1000.0, INDI_OUTPUTS * INDI_OUTPUTS);

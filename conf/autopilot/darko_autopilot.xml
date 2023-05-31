@@ -33,13 +33,11 @@
     </control_block>
 
     <control_block name="attitude_loop">
-      <call fun="guidance_h_transition_run(FALSE)"/>
       <call fun="stabilization_attitude_read_rc(autopilot_in_flight(), FALSE, FALSE)"/>
       <call fun="stabilization_attitude_run(autopilot_in_flight())"/>
     </control_block>
 
     <control_block name="forward_loop">
-      <call fun="guidance_h_transition_run(TRUE)"/>
       <call fun="stabilization_attitude_read_rc(autopilot_in_flight(), FALSE, TRUE)"/>
       <call fun="stabilization_attitude_run(autopilot_in_flight())"/>
     </control_block>

@@ -57,6 +57,7 @@ int32_t transition_percentage;
 struct StabilizationSetpoint guidance_h_cmd;
 
 static void guidance_h_update_reference(void);
+static inline void transition_run(bool to_forward);
 static void read_rc_setpoint_speed_i(struct Int32Vect2 *speed_sp, bool in_flight);
 
 #if PERIODIC_TELEMETRY
@@ -288,13 +289,14 @@ void guidance_h_run(bool  in_flight)
 #endif
 
     case GUIDANCE_H_MODE_FORWARD:
-      guidance_h_transition_run(true);
-      
+      if (transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
+        transition_run(true);
+      }
       /* Falls through. */
     case GUIDANCE_H_MODE_CARE_FREE:
     case GUIDANCE_H_MODE_ATTITUDE:
-      if (!(guidance_h.mode == GUIDANCE_H_MODE_FORWARD)) {
-        guidance_h_transition_run(false);
+      if ((!(guidance_h.mode == GUIDANCE_H_MODE_FORWARD)) && transition_percentage > 0) {
+        transition_run(false);
       }
       stabilization_attitude_run(in_flight);
 #if (STABILIZATION_FILTER_CMD_ROLL_PITCH || STABILIZATION_FILTER_CMD_YAW)
@@ -474,18 +476,14 @@ void guidance_h_from_nav(bool in_flight)
   }
 }
 
-void guidance_h_transition_run(bool to_forward)
+static inline void transition_run(bool to_forward)
 {
   if (to_forward) {
     //Add 0.00625%
-    if (transition_percentage < (100 << INT32_PERCENTAGE_FRAC)) {
-      transition_percentage += 1 << (INT32_PERCENTAGE_FRAC - 4);
-    }
+    transition_percentage += 1 << (INT32_PERCENTAGE_FRAC - 4);
   } else {
     //Subtract 0.00625%
-    if (transition_percentage > 0 ) {
-      transition_percentage -= 1 << (INT32_PERCENTAGE_FRAC - 4);
-    }
+    transition_percentage -= 1 << (INT32_PERCENTAGE_FRAC - 4);
   }
 
 #ifdef TRANSITION_MAX_OFFSET
