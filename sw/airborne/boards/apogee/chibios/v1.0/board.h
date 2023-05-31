@@ -293,9 +293,22 @@
 /**
  * DSHOT
  */
-#ifndef DSHOT_TELEMETRY_DEV
-#define DSHOT_TELEMETRY_DEV NULL
+#ifdef DSHOT_TIM2_TELEMETRY_NUM
+#define DSHOT_TIM2_TELEMETRY_DEV CONCAT_BOARD_PARAM(&SD, DSHOT_TIM2_TELEMETRY_NUM)
+#else
+#define DSHOT_TIM2_TELEMETRY_DEV NULL
 #endif
+
+#ifdef DSHOT_TIM3_TELEMETRY_NUM
+#define DSHOT_TIM3_TELEMETRY_DEV CONCAT_BOARD_PARAM(&SD, DSHOT_TIM3_TELEMETRY_NUM)
+#else
+#define DSHOT_TIM3_TELEMETRY_DEV NULL
+#endif
+
+// macros for possible dshot telemetry
+#define DSHOT_TLM_RX 6
+//#define DSHOT_TLM_AUX_RX 
+
 #ifndef USE_DSHOT_TIM2
 #define USE_DSHOT_TIM2 1
 #endif
@@ -326,7 +339,7 @@
   .dma_stream = STM32_PWM2_UP_DMA_STREAM,   \
   .dma_channel = STM32_PWM2_UP_DMA_CHANNEL, \
   .pwmp = &PWMD2,                           \
-  .tlm_sd = DSHOT_TELEMETRY_DEV,            \
+  .tlm_sd = DSHOT_TIM2_TELEMETRY_DEV,            \
   .dma_buf = &dshot2DmaBuffer,              \
 }
 #endif
@@ -363,10 +376,17 @@
   .dma_stream = STM32_PWM3_UP_DMA_STREAM,   \
   .dma_channel = STM32_PWM3_UP_DMA_CHANNEL, \
   .pwmp = &PWMD3,                           \
-  .tlm_sd = DSHOT_TELEMETRY_DEV,            \
+  .tlm_sd = DSHOT_TIM3_TELEMETRY_DEV,            \
   .dma_buf = &dshot3DmaBuffer,              \
 }
 #endif
+
+/**
+ * UART6 on UART6 connector (DSHOT telemetry)
+ */
+#define UART6_GPIO_PORT_RX  PAL_PORT(7U)
+#define UART6_GPIO_RX       7U
+#define UART6_GPIO_AF       8U
 
 /**
  * PPM radio defines
