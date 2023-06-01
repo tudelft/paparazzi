@@ -32,6 +32,7 @@ extern "C" {
 #endif
 
 #include "firmwares/rotorcraft/stabilization.h"
+//#include "firmwares/rotorcraft/oneloop/oneloop_andi.h"
 #include "math/pprz_algebra_int.h"
 #include STABILIZATION_ATTITUDE_TYPE_H
 
@@ -44,6 +45,7 @@ extern void stabilization_attitude_set_quat_setpoint_i(struct Int32Quat *quat);
 extern void stabilization_attitude_set_earth_cmd_i(struct Int32Vect2 *cmd, int32_t heading);
 extern void stabilization_attitude_set_stab_sp(struct StabilizationSetpoint *sp);
 extern void stabilization_attitude_run(bool in_flight);
+extern void oneloop_attitude_run(bool in_flight);
 
 #ifdef __cplusplus
 }

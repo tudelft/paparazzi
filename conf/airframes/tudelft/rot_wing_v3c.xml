@@ -6,8 +6,8 @@
      * RC:          SBUS Crossfire
 -->
 
-<airframe name="RotatingWingV3B">
-    <description>RotatingWingV3B</description>
+<airframe name="RotatingWingV3C">
+    <description>RotatingWingV3C</description>
 
     <firmware name="rotorcraft">
         <target name="ap" board="cube_orange">

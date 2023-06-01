@@ -36,8 +36,6 @@
     </program>
     <program name="Hardware in the Loop" command="sw/simulator/simhitl"/>
     <program name="Environment Simulator" command="sw/simulator/gaia"/>
-
-
     <program name="Attitude Visualizer" command="sw/tools/attitude_viz.py"/>
     <program name="App Server" command="sw/ground_segment/tmtc/app_server"/>
     <program name="Ivy2Nmea" command="sw/ground_segment/tmtc/ivy2nmea">
@@ -248,13 +246,11 @@
       </program>
       <program name="Server"/>
     </session>
-
     <session name="Forward Skywalker to C172 over ttyUSB1">
       <program name="IvySerialBridge">
         <arg flag="8" constant="/dev/ttyUSB1"/>
       </program>
     </session>
-
     <session name="Messages and Settings">
       <program name="Data Link">
         <arg flag="-d" constant="/dev/ttyUSB0"/>
@@ -397,6 +393,163 @@
         <arg flag="-udp"/>
       </program>
       <program name="Real-time Plotter"/>
+    </session>
+    <session name="BebopManual">
+      <program name="GCS"/>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Joystick">
+        <arg flag="-ac" constant="Bebop_DePonti"/>
+        <arg flag="radiomaster_tx12.xml"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="theta"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:theta"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:theta_ref"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="phi"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:phi"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:phi_ref"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="psi"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:psi"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:psi_ref"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="u"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:u[0]"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:u[1]"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:u[2]"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:u[3]"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag=""/>
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="nu_guidance"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:nu[0]"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:nu[1]"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:nu[2]"/>
+        <arg flag=""/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag=""/>
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="nu_stabilization"/>
+        <arg flag=""/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:nu[3]"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:nu[4]"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:nu[5]"/>
+      </program>
+    </session>
+    <session name="Bebop Simulation">
+      <program name="GCS"/>
+      <program name="Server">
+        <arg flag="-n"/>
+      </program>
+      <program name="Messages"/>
+      <program name="Joystick">
+        <arg flag="-d" constant="1"/>
+        <arg flag="-ac" constant="Bebop_DePonti"/>
+        <arg flag="radiomaster_tx12.xml"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="theta"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:theta"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:theta_ref"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="phi"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:phi"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:phi_ref"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="psi"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:psi"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:psi_ref"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="u"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:u[0]"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:u[1]"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:u[2]"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:u[3]"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag=""/>
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="nu_guidance"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:nu[0]"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:nu[1]"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:nu[2]"/>
+        <arg flag=""/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag=""/>
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="nu_stabilization"/>
+        <arg flag=""/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:nu[3]"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:nu[4]"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:nu[5]"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="Pitch_rate"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:q"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:q_ref"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="Roll_rate"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:p"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:p_ref"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="Pitch_acc"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:q_dot"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:q_dot_ref"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="Roll_acc"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:p_dot"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:p_dot_ref"/>
+      </program>
     </session>
   </section>
 </control_panel>

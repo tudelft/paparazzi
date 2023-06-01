@@ -1,0 +1,24 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="oneloop_andi" dir="oneloop" task="control">
+  <doc>
+    <description>One loop (Guidance + Stabilization) ANDI controller for the rotating wing drone RW3C</description>
+  </doc>
+  <header>
+    <file name="oneloop_andi.h"/>
+  </header>
+  <init fun="oneloop_andi_init()"/>
+   <makefile target="ap|nps" firmware="rotorcraft">
+    <file       name="oneloop_andi.c" dir="$(SRC_FIRMWARE)/oneloop"/>
+    <file       name="stabilization_attitude_quat_indi.c" dir="$(SRC_FIRMWARE)/stabilization"/>
+    <file       name="wls_alloc.c" dir="$(SRC_FIRMWARE)/oneloop/wls"/>
+    <file       name="qr_solve.c" dir="math/qr_solve"/>
+    <file       name="r8lib_min.c" dir="math/qr_solve"/>
+    <configure  name="ANDI_OUTPUTS" default="4"/>
+    <configure  name="ANDI_NUM_ACT" default="4"/>
+    <define     name="ANDI_OUTPUTS" value="$(ANDI_OUTPUTS)"/>
+    <define     name="ANDI_NUM_ACT" value="$(ANDI_NUM_ACT)"/>
+    <define     name="CA_N_V_ONELOOP" value="$(ANDI_OUTPUTS)"/>
+    <define     name="CA_N_U_ONELOOP" value="$(ANDI_NUM_ACT)"/>
+    <define     name="ONELOOP_ATTITUDE_ANDI_FULL" value="true"/>
+  </makefile> 
+</module>
