@@ -165,12 +165,12 @@
     <define VALUE="0.5"     NAME  = "FILT_CUTOFF_RDOT"/>
     <define VALUE="TRUE"    NAME  = "FILTER_YAW_RATE"/>
     <!-- <define VALUE="{0.08f, 0.08f, 0.08f, 0.08f}" NAME="ACT_DYN"/> -->
-    <define VALUE="{50.0f, 50.0f, 50.0f, 50.0f}" NAME="ACT_DYN"/>
-    <define VALUE="{0, 0, 0, 0}" NAME="ACT_IS_SERVO"/>
-    <define NAME="ACT_MAX"      VALUE ="{9600.0f, 9600.0f,  9600.0f,  9600.0f}"/>
-    <define NAME="ACT_MIN"      VALUE ="{0.0f,    0.0f,     0.0f,     0.0f}"/>
-    <define NAME="ACT_MAX_NORM" VALUE ="{1.0f,   1.0f,    1.0f,    1.0f}"/>
-    <define NAME="ACT_MIN_NORM" VALUE ="{0.0f,    0.0f,     0.0f,     0.0f}"/>
+    <define NAME="ACT_DYN"      VALUE="{50.0f, 50.0f, 50.0f, 50.0f}" />
+    <define NAME="ACT_IS_SERVO" VALUE="{0, 0, 0, 0}" />
+    <define NAME="ACT_MAX"      VALUE = "{9600.0f, 9600.0f,  9600.0f,  9600.0f}"/>
+    <define NAME="ACT_MIN"      VALUE = "{0.0f,    0.0f,     0.0f,     0.0f}"/>
+    <define NAME="ACT_MAX_NORM" VALUE = "{1.0f,   1.0f,    1.0f,    1.0f}"/>
+    <define NAME="ACT_MIN_NORM" VALUE = "{0.0f,    0.0f,     0.0f,     0.0f}"/>
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">

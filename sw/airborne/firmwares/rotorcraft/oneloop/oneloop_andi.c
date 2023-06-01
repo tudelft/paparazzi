@@ -106,12 +106,6 @@ void rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d
 
 static void send_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
-  //struct FloatRates *body_rates = stateGetBodyRates_f();
-  //struct Int32Vect3 *body_accel_i = stateGetAccelBody_i();
-  //struct FloatVect3 body_accel_f_telem;
-  //ACCELS_FLOAT_OF_BFP(body_accel_f_telem, *body_accel_i);
-  //float airspeed = stateGetAirspeed_f();
-
   pprz_msg_send_ONELOOP_ANDI(trans, dev, AC_ID,
                                         &att_ref[0],
                                         &att_ref[1],
@@ -195,8 +189,8 @@ float w_theta = 1.0;     // [rad/s] First order bandwidth of actuator
                            +1 if u_i = umax_i
 
  See also: WLSC_ALLOC, IP_ALLOC, FXP_ALLOC, QP_SIM. */
-float gamma_wls             = 100;//100000.0;
-static float Wv[ANDI_OUTPUTS]      = {0.0,0.0,0.0,10.0*100.0,10.0*100.0,0.0};//{0.0,0.0,5.0,10.0*100.0,10.0*100.0,0.0}; // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}
+float gamma_wls             = 0.01;//100;//100000.0;
+static float Wv[ANDI_OUTPUTS]      = {0.0,0.0,0.0,10.0*100.0,10.0*100.0,100.0};//{0.0,0.0,5.0,10.0*100.0,10.0*100.0,0.0}; // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}
 static float Wu[ANDI_NUM_ACT]      = {2.0,2.0,2.0,2.0}; // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}
 float u_pref[ANDI_NUM_ACT]  = {0.0,0.0,0.0,0.0};
 // float Wu[11]      = {2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,1.0,1.8,2.0}; // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}
@@ -608,7 +602,7 @@ void oneloop_andi_enter(void)
   float_vect_zero(pos_3d_ref,3);  
   float_vect_zero(nu, ANDI_OUTPUTS);
   /*Guidance Reset*/
-  // To-D- // guidance_andi_hybrid_heading_sp = stateGetNedToBodyEulers_f()->psi;
+  // To-Do- // guidance_andi_hybrid_heading_sp = stateGetNedToBodyEulers_f()->psi;
 
   float tau = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
@@ -644,7 +638,7 @@ void oneloop_andi_attitude_run(struct Int32Quat quat_sp, struct FloatVect3 pos_d
   calc_normalization();
   sum_g1g2_1l();
   //printf("I am running ONELOOP ANDI\n");
-    // If drone is not on the ground use incremental law
+  // If drone is not on the ground use incremental law
   float use_increment = 0.0;
   bool volando = false;
   if(in_flight) {
@@ -663,20 +657,20 @@ void oneloop_andi_attitude_run(struct Int32Quat quat_sp, struct FloatVect3 pos_d
   // Override
   eulers_zxy_des.phi   = (float) (radio_control.values[RADIO_ROLL] )/9600.0*45.0*3.14/180.0;//0.0;
   eulers_zxy_des.theta = (float) (radio_control.values[RADIO_PITCH])/9600.0*45.0*3.14/180.0;//0.0;
-  eulers_zxy_des.psi   = (float) (radio_control.values[RADIO_YAW])/9600.0*180.0*3.14/180.0;
+  eulers_zxy_des.psi   = 0.0;//
   eulers_zxy.phi   = stateGetNedToBodyEulers_f()->phi;
   eulers_zxy.theta = stateGetNedToBodyEulers_f()->theta;
   eulers_zxy.psi   = stateGetNedToBodyEulers_f()->psi;
   oneloop_andi_propagate_filters();
-  att_1l[0] = roll_filt.o[0]                         ;//* use_increment;
-  att_1l[1] = pitch_filt.o[0]                        ;//* use_increment;
-  att_1l[2] = yaw_filt.o[0]                          ;//* use_increment;
-  att_d[0]  = att_dot_meas_lowpass_filters[0].o[0]   ;//* use_increment;
-  att_d[1]  = att_dot_meas_lowpass_filters[1].o[0]   ;//* use_increment;
-  att_d[2]  = att_dot_meas_lowpass_filters[2].o[0]   ;//* use_increment;
-  att_2d[0] = ang_acc[0]                             ;//* use_increment;
-  att_2d[1] = ang_acc[1]                             ;//* use_increment;
-  att_2d[2] = ang_acc[2]                             ;//* use_increment;
+  att_1l[0] = roll_filt.o[0]                        * use_increment;
+  att_1l[1] = pitch_filt.o[0]                       * use_increment;
+  att_1l[2] = yaw_filt.o[0]                         * use_increment;
+  att_d[0]  = att_dot_meas_lowpass_filters[0].o[0]  * use_increment;
+  att_d[1]  = att_dot_meas_lowpass_filters[1].o[0]  * use_increment;
+  att_d[2]  = att_dot_meas_lowpass_filters[2].o[0]  * use_increment;
+  att_2d[0] = ang_acc[0]                            * use_increment;
+  att_2d[1] = ang_acc[1]                            * use_increment;
+  att_2d[2] = ang_acc[2]                            * use_increment;
 
   
   int8_t i;
@@ -701,7 +695,7 @@ void oneloop_andi_attitude_run(struct Int32Quat quat_sp, struct FloatVect3 pos_d
     }
   printf("a_thrust: %f\n",a_thrust);
   att_ref[2] = eulers_zxy_des.psi;
-  float des_r = (eulers_zxy_des.psi-eulers_zxy.psi);
+  float des_r = (float) (radio_control.values[RADIO_YAW])/9600.0*2.0; //(eulers_zxy_des.psi-eulers_zxy.psi);
   BoundAbs(des_r,2.0);
   // Generate reference signals with reference model
   rm_3rd(dt_1l, &att_ref[0],   &att_d_ref[0],  &att_2d_ref[0], &att_3d_ref[0],     eulers_zxy_des.phi, k_phi_rm, k_p_rm, k_pdot_rm);
@@ -714,9 +708,9 @@ void oneloop_andi_attitude_run(struct Int32Quat quat_sp, struct FloatVect3 pos_d
   //nu[2] = a_thrust;
   nu[2] = 0.0;
 
-  nu[3] = use_increment * ec_3rd(att_ref[0], att_d_ref[0], att_2d_ref[0], att_3d_ref[0], att_1l[0], att_d[0], att_2d[0], k_phi_e, k_p_e, k_pdot_e);
-  nu[4] = use_increment * ec_3rd(att_ref[1], att_d_ref[1], att_2d_ref[1], att_3d_ref[1], att_1l[1], att_d[1], att_2d[1], k_theta_e, k_q_e, k_qdot_e);
-  nu[5] = 0.0;//use_increment * ec_2rd(att_d_ref[2], att_2d_ref[2], att_3d_ref[2], att_d[2], att_2d[2], k_r_e, k_r_d_e);
+  nu[3] = ec_3rd(att_ref[0], att_d_ref[0], att_2d_ref[0], att_3d_ref[0], att_1l[0], att_d[0], att_2d[0], k_phi_e, k_p_e, k_pdot_e);
+  nu[4] = ec_3rd(att_ref[1], att_d_ref[1], att_2d_ref[1], att_3d_ref[1], att_1l[1], att_d[1], att_2d[1], k_theta_e, k_q_e, k_qdot_e);
+  nu[5] = ec_2rd(att_d_ref[2], att_2d_ref[2], att_3d_ref[2], att_d[2], att_2d[2], k_r_e, k_r_d_e);
 
  
   // Calculate the min and max increments
