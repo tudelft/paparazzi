@@ -281,30 +281,30 @@ static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *d
                               &(quat->qz));
 }
 
-static void send_att_full_indi(struct transport_tx *trans, struct link_device *dev)
-{
-  struct FloatRates *body_rates = stateGetBodyRates_f();
-  struct Int32Vect3 *body_accel_i = stateGetAccelBody_i();
-  struct FloatVect3 body_accel_f_telem;
-  ACCELS_FLOAT_OF_BFP(body_accel_f_telem, *body_accel_i);
-  float airspeed = stateGetAirspeed_f();
+// static void send_att_full_indi(struct transport_tx *trans, struct link_device *dev)
+// {
+//   struct FloatRates *body_rates = stateGetBodyRates_f();
+//   struct Int32Vect3 *body_accel_i = stateGetAccelBody_i();
+//   struct FloatVect3 body_accel_f_telem;
+//   ACCELS_FLOAT_OF_BFP(body_accel_f_telem, *body_accel_i);
+//   float airspeed = stateGetAirspeed_f();
 
-  pprz_msg_send_STAB_ATTITUDE_FULL_INDI(trans, dev, AC_ID,
-                                        &rate_sp_telem.p,
-                                        &rate_sp_telem.q,
-                                        &rate_sp_telem.r,
-                                        &body_rates->p,
-                                        &body_rates->q,
-                                        &body_rates->r,
-                                        &body_accel_f_telem.x,
-                                        &body_accel_f_telem.y,
-                                        &body_accel_f_telem.z,
-                                        &angular_accel_ref.p,
-                                        &angular_accel_ref.q,
-                                        &angular_accel_ref.r,
-                                        &airspeed,
-                                        INDI_NUM_ACT, indi_u);
-}
+//   pprz_msg_send_STAB_ATTITUDE_FULL_INDI(trans, dev, AC_ID,
+//                                         &rate_sp_telem.p,
+//                                         &rate_sp_telem.q,
+//                                         &rate_sp_telem.r,
+//                                         &body_rates->p,
+//                                         &body_rates->q,
+//                                         &body_rates->r,
+//                                         &body_accel_f_telem.x,
+//                                         &body_accel_f_telem.y,
+//                                         &body_accel_f_telem.z,
+//                                         &angular_accel_ref.p,
+//                                         &angular_accel_ref.q,
+//                                         &angular_accel_ref.r,
+//                                         &airspeed,
+//                                         INDI_NUM_ACT, indi_u);
+// }
 #endif
 
 /**
@@ -357,7 +357,7 @@ void stabilization_indi_init(void)
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_G, send_indi_g);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_REF_QUAT, send_ahrs_ref_quat);
-  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_FULL_INDI, send_att_full_indi);
+  //register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_FULL_INDI, send_att_full_indi);
 #endif
 }
 
@@ -772,16 +772,17 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   if (in_flight && indi_use_adaptive) {
     lms_estimation();
   }
-
+  printf("I am running stabilization INDI\n");
   /*Commit the actuator command*/
   for (i = 0; i < INDI_NUM_ACT; i++) {
     actuators_pprz[i] = (int16_t) indi_u[i];
   }
 
   // Set the stab_cmd to 42 to indicate that it is not used
-  stabilization_cmd[COMMAND_ROLL] = 42;
-  stabilization_cmd[COMMAND_PITCH] = 42;
-  stabilization_cmd[COMMAND_YAW] = 42;
+
+  //stabilization_cmd[COMMAND_ROLL] = 42;
+  //stabilization_cmd[COMMAND_PITCH] = 42;
+  //stabilization_cmd[COMMAND_YAW] = 42;
 }
 
 /**

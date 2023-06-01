@@ -1,0 +1,13 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="oneloop_effectiveness" dir="actuators" task="actuators">
+  <doc>
+    <description>Module to generate and schedule the INDI effectiveness matrix for the one loop controller</description>
+  </doc>
+  <header>
+    <file name="oneloop_effectiveness.h"/>
+  </header>
+  <makefile>
+    <file name="oneloop_effectiveness.c"/>
+    <test/>
+  </makefile>
+</module>

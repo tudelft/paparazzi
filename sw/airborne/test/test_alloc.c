@@ -30,16 +30,17 @@
 
 #include <stdio.h>
 #include "std.h"
-#include "firmwares/rotorcraft/stabilization/wls/wls_alloc.h"
+//#include "firmwares/rotorcraft/stabilization/wls/wls_alloc.h"
+#include "firmwares/rotorcraft/oneloop/wls/wls_alloc.h"
 
-#define INDI_OUTPUTS 4
+#define INDI_OUTPUTS 6
 
 void test_overdetermined(void);
 void calc_nu_out(float** Bwls, float* du, float* nu_out);
 
 int main(int argc, char **argv)
 {
-#define INDI_NUM_ACT 6
+#define INDI_NUM_ACT 4
   test_overdetermined();
 /*#define INDI_NUM_ACT 4*/
   /*test_four_by_four();*/
@@ -48,40 +49,40 @@ int main(int argc, char **argv)
 /*
  * function to test wls with 4x4 (outputs x inputs) system
  */
-void test_four_by_four(void)
-{
-  float u_min[INDI_NUM_ACT] = { -107, -19093, 0, -95, };
-  float u_max[INDI_NUM_ACT] = {19093, 107, 4600, 4505, };
+// void test_four_by_four(void)
+// {
+//   float u_min[INDI_NUM_ACT] = { -107, -19093, 0, -95, };
+//   float u_max[INDI_NUM_ACT] = {19093, 107, 4600, 4505, };
 
-  float g1g2[INDI_OUTPUTS][INDI_NUM_ACT] = {
-    {      0,         0,  -0.0105,  0.0107016},
-    { -0.0030044, 0.0030044, 0.035, 0.035},
-    { -0.004856, -0.004856, 0, 0},
-    {       0,         0,   -0.0011,   -0.0011}
-  };
+//   float g1g2[INDI_OUTPUTS][INDI_NUM_ACT] = {
+//     {      0,         0,  -0.0105,  0.0107016},
+//     { -0.0030044, 0.0030044, 0.035, 0.035},
+//     { -0.004856, -0.004856, 0, 0},
+//     {       0,         0,   -0.0011,   -0.0011}
+//   };
 
-  //State prioritization {W Roll, W pitch, W yaw, TOTAL THRUST}
-  static float Wv[INDI_OUTPUTS] = {100, 1000, 0.1, 10};
-  /*static float Wv[INDI_OUTPUTS] = {10, 10, 0.1, 1};*/
+//   //State prioritization {W Roll, W pitch, W yaw, TOTAL THRUST}
+//   static float Wv[INDI_OUTPUTS] = {100, 1000, 0.1, 10};
+//   /*static float Wv[INDI_OUTPUTS] = {10, 10, 0.1, 1};*/
 
-  // The control objective in array format
-  float indi_v[INDI_OUTPUTS] = {10.8487,  -10.5658,    6.8383,    1.8532};
-  float indi_du[INDI_NUM_ACT];
+//   // The control objective in array format
+//   float indi_v[INDI_OUTPUTS] = {10.8487,  -10.5658,    6.8383,    1.8532};
+//   float indi_du[INDI_NUM_ACT];
 
-  // Initialize the array of pointers to the rows of g1g2
-  float *Bwls[INDI_OUTPUTS];
-  uint8_t i;
-  for (i = 0; i < INDI_OUTPUTS; i++) {
-    Bwls[i] = g1g2[i];
-  }
+//   // Initialize the array of pointers to the rows of g1g2
+//   float *Bwls[INDI_OUTPUTS];
+//   uint8_t i;
+//   for (i = 0; i < INDI_OUTPUTS; i++) {
+//     Bwls[i] = g1g2[i];
+//   }
 
-  // WLS Control Allocator
-  int num_iter =
-    wls_alloc(indi_du, indi_v, u_min, u_max, Bwls, 0, 0, Wv, 0, 0, 10000, 10);
+//   // WLS Control Allocator
+//   int num_iter =
+//     wls_alloc(indi_du, indi_v, u_min, u_max, Bwls, 0, 0, Wv, 0, 0, 10000, 10);
 
-  printf("finished in %d iterations\n", num_iter);
-  printf("du = %f, %f, %f, %f\n", indi_du[0], indi_du[1], indi_du[2], indi_du[3]);
-}
+//   printf("finished in %d iterations\n", num_iter);
+//   printf("du = %f, %f, %f, %f\n", indi_du[0], indi_du[1], indi_du[2], indi_du[3]);
+// }
 
 
 /*
@@ -89,25 +90,27 @@ void test_four_by_four(void)
  */
 void test_overdetermined(void)
 {
-  float u_min[INDI_NUM_ACT] = {0};
-  float u_max[INDI_NUM_ACT] = {0};
-  float du_min[INDI_NUM_ACT] = {0};
-  float du_max[INDI_NUM_ACT] = {0};
+  //float u_min[INDI_NUM_ACT] = {0};
+  //float u_max[INDI_NUM_ACT] = {0};
 
-  float u_p[INDI_NUM_ACT] = {0};
+  float du_min[INDI_NUM_ACT] = {-4314.069824, -7696.667969, -4314.575684, -7696.657227};
+  float du_max[INDI_NUM_ACT] = {5285.930176, 1903.332031, 5285.424316, 1903.342773};
+  float du_pref[INDI_NUM_ACT] = {-4314.069824, -7696.667969, -4314.575684, -7696.657227};
 
-  float u_c[INDI_NUM_ACT] = {4614, 4210, 4210, 4614, 4210, 4210};
+  //float u_p[INDI_NUM_ACT] = {0};
+
+  float u_c[INDI_NUM_ACT] = {9600-5288.787109, 9600-1886.305664, 9600-5288.282227, 9600-1886.315430};
 
   printf("lower and upper bounds for du:\n");
 
   uint8_t k;
   for(k=0; k<INDI_NUM_ACT; k++) {
-    u_max[k] = 9600 - u_min[k];
+    //u_max[k] = 9600 - u_min[k];
 
-    du_min[k] = u_min[k] - u_c[k];
-    du_max[k] = u_max[k] - u_c[k];
+    //du_min[k] = u_min[k] - u_c[k];
+    //du_max[k] = u_max[k] - u_c[k];
 
-    u_p[k] = du_min[k];
+    //u_p[k] = du_min[k];
 
     printf("%f ", du_min[k]);
     printf("%f \n", du_max[k]);
@@ -116,18 +119,20 @@ void test_overdetermined(void)
   printf("\n");
 
   float g1g2[INDI_OUTPUTS][INDI_NUM_ACT] = {
-    {  0.0,  -0.015,  0.015,  0.0,  -0.015,   0.015 },
-    {  0.015,   -0.010, -0.010,   0.015,  -0.010,   -0.010 },
-    {   0.103,   0.103,    0.103,   -0.103,    -0.103,    -0.103 },
-    {-0.0009, -0.0009, -0.0009, -0.0009, -0.0009, -0.0009 }
+    {0.000000,  0.000000,  0.000000,  0.000000  },
+    {0.000000 , 0.000000,  0.000000, 0.000000 },
+    {-0.035000, -0.035000, -0.035000, -0.035000 },
+    {0.900000,  -0.900000, -0.900000, 0.900000 },
+    {0.750000,  0.750000,  -0.750000, -0.750000 },
+    {-0.032500, 0.032500,  -0.032500, 0.032500}
   };
 
   //State prioritization {W Roll, W pitch, W yaw, TOTAL THRUST}
-  static float Wv[INDI_OUTPUTS] = {100, 100, 1, 10};
-
+  static float Wv[INDI_OUTPUTS] = {1.0, 1.0, 5.0, 1000.0, 1000.0, 0.0};
+  static float Wu[INDI_NUM_ACT] = {2.0,2.0,2.0,2.0};
   // The control objective in array format
-  float indi_v[INDI_OUTPUTS] = {240,  -240.5658,    600.0,    1.8532};
-  float indi_du[INDI_NUM_ACT];
+  float indi_v[INDI_OUTPUTS] = {0.000000, 0.000000, 840.768982, -0.000132, -0.001230, 0.000000};
+  float indi_du[INDI_NUM_ACT] = {95.290405,-570.446533,95.291260,-570.445801};
 
   // Initialize the array of pointers to the rows of g1g2
   float *Bwls[INDI_OUTPUTS];
@@ -138,7 +143,7 @@ void test_overdetermined(void)
 
   // WLS Control Allocator
   int num_iter =
-    wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, 0, u_p, 0, 10);
+    wls_alloc_oneloop(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, Wu, du_pref, 100000.0, 10);
 
   printf("finished in %d iterations\n", num_iter);
 
