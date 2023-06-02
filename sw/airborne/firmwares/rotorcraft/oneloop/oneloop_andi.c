@@ -202,7 +202,7 @@ float du_pref[ANDI_NUM_ACT];
 int   number_iter = 0;
 /*Declaration of Reference Model and Error Controller Gains*/
 float rm_k_attitude;
-float p1_att;       
+float p1_att = 7.68;       
 float p2_att;      
 float p3_att;
 
@@ -222,7 +222,7 @@ float k_pdot_rm ;
 
 /*Position Loop*/
 float rm_k_pos;     
-float p1_pos  ;     
+float p1_pos = 1.0;     
 float p2_pos  ;     
 float p3_pos  ;     
 float route_k  ;    
@@ -250,7 +250,7 @@ float k_aE_route ;
 
 /*Altitude Loop*/
 float rm_k_alt ;    
-float p1_alt   ;    
+float p1_alt = 2.0;    
 float p2_alt   ;    
 float p3_alt   ;     
 
@@ -266,7 +266,7 @@ float k_aD_rm ;
 
 /*Heading Loop*/
 float rm_k_head  ;  
-float p1_head ;     
+float p1_head = 4.8;     
 float p2_head ;      
 
 float k_r_e  ;      
@@ -387,7 +387,7 @@ void rm_2rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des
 void init_controller(void){
 /*Attitude Loop*/
 rm_k_attitude = 0.8;
-p1_att        = 0.8*0.8*w_L;
+// p1_att        = 0.8*0.8*w_L;
 p2_att        = p1_att;
 p3_att        = p1_att;
 k_theta_e     = k_e_1_3_f(p1_att,p2_att,p3_att);
@@ -405,7 +405,7 @@ k_pdot_rm     = k_qdot_rm;
 
 /*Position Loop*/
 rm_k_pos      = 0.9;
-p1_pos        = 1.0;
+// p1_pos        = 1.0;
 p2_pos        = p1_pos;
 p3_pos        = p1_pos;
 route_k       = 0.8;
@@ -430,7 +430,7 @@ k_aE_route   = k_aN_route;
 
 /*Altitude Loop*/
 rm_k_alt      = 0.9;
-p1_alt        = 2.0;
+// p1_alt        = 2.0;
 p2_alt        = p1_alt;
 p3_alt        = p1_alt;
 k_D_e         = k_e_1_3_f(p1_alt,p2_alt,p3_alt);
@@ -442,7 +442,7 @@ k_aD_rm       = k_rm_3_3_f(rm_k_alt*p1_alt,1.0,rm_k_alt*p3_alt);
 
 /*Heading Loop*/
 rm_k_head     = 0.9;
-p1_head       = 0.4 * w_L;
+// p1_head       = 0.4 * w_L;
 p2_head       = p1_head;
 k_r_e         = k_e_1_2_f(p1_head,p2_head);
 k_r_d_e       = k_e_2_2_f(p1_head,p2_head);
@@ -457,22 +457,26 @@ k_r_d_rm      = k_rm_2_2_f(rm_k_head*p1_head,rm_k_head*p2_head);
 
 /** state eulers in zxy order */
 struct FloatEulers eulers_zxy;
+
+
+/*Filters Initialization*/
+float oneloop_andi_estimation_filt_cutoff = 2.0;
+
 Butterworth2LowPass filt_accel_ned[3];
 Butterworth2LowPass filt_accel_body[3];
 Butterworth2LowPass roll_filt;
 Butterworth2LowPass pitch_filt;
 Butterworth2LowPass yaw_filt;
-
-/*Filters Initialization*/
-float oneloop_andi_estimation_filt_cutoff = 2.0;
-
 Butterworth2LowPass act_lowpass_filt[ANDI_NUM_ACT];
 Butterworth2LowPass att_dot_meas_lowpass_filters[3];
-Butterworth2LowPass att_dot_est_output_lowpass_filters[3];
+Butterworth2LowPass att_ref_lowpass_filters[3];
+Butterworth2LowPass rate_ref_lowpass_filters[3];
+
+
 Butterworth2LowPass measurement_lowpass_filters[3];
 Butterworth2LowPass estimation_output_lowpass_filters[3];
 
-static struct FirstOrderLowPass rates_filt_fo[3];
+//static struct FirstOrderLowPass rates_filt_fo[3];
 struct FloatVect3 body_accel_f;
 
 
@@ -485,12 +489,11 @@ void init_filter(void)
   // Filtering of the Inputs with 3 dimensions (e.g. rates and accelerations)
   int8_t i;
   for (i = 0; i < 3; i++) {
-    // Filtering of the gyroscope
     init_butterworth_2_low_pass(&att_dot_meas_lowpass_filters[i], tau, sample_time, 0.0);
-    init_butterworth_2_low_pass(&att_dot_est_output_lowpass_filters[i], tau_est, sample_time, 0.0);
-    // Filtering of the linear accelerations
     init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&filt_accel_body[i], tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&att_ref_lowpass_filters[i], tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&rate_ref_lowpass_filters[i], tau, sample_time, 0.0);
   }
 
   // Filtering of the actuators
@@ -502,10 +505,10 @@ void init_filter(void)
   init_butterworth_2_low_pass(&yaw_filt, tau, sample_time, 0.0);
 
   // Init rate filter for feedback
-  float time_constants[3] = {1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_P), 1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_Q), 1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_R)};
-  init_first_order_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
-  init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
-  init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
+  //float time_constants[3] = {1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_P), 1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_Q), 1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_R)};
+  //init_first_order_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
+  //init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
+  //init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
 }
 
 
@@ -530,8 +533,6 @@ void oneloop_andi_propagate_filters(void) {
   int8_t i;
   for (i = 0; i < 3; i++) {
     update_butterworth_2_low_pass(&att_dot_meas_lowpass_filters[i], rate_vect[i]);
-    update_butterworth_2_low_pass(&att_dot_est_output_lowpass_filters[i], rate_vect[i]);
-    //Calculate the angular acceleration via finite difference
     ang_acc[i] = (att_dot_meas_lowpass_filters[i].o[0]- att_dot_meas_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY;
 }}
 
@@ -583,6 +584,7 @@ void oneloop_andi_enter(void)
   calc_normalization();
   sum_g1g2_1l();
   init_filter();
+  init_controller();
   /* Stabilization Reset */
   // To-Do // stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
   float_vect_zero(andi_u, ANDI_NUM_ACT);
@@ -604,15 +606,15 @@ void oneloop_andi_enter(void)
   /*Guidance Reset*/
   // To-Do- // guidance_andi_hybrid_heading_sp = stateGetNedToBodyEulers_f()->psi;
 
-  float tau = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff);
-  float sample_time = 1.0 / PERIODIC_FREQUENCY;
-  for (int8_t i = 0; i < 3; i++) {
-    init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
-    init_butterworth_2_low_pass(&filt_accel_body[i], tau, sample_time, 0.0);
-  }
-  init_butterworth_2_low_pass(&roll_filt, tau, sample_time, stateGetNedToBodyEulers_f()->phi);
-  init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, stateGetNedToBodyEulers_f()->theta);
-  init_butterworth_2_low_pass(&yaw_filt, tau, sample_time, stateGetNedToBodyEulers_f()->psi);
+  //float tau = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff);
+  //float sample_time = 1.0 / PERIODIC_FREQUENCY;
+  //for (int8_t i = 0; i < 3; i++) {
+    //init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
+    //init_butterworth_2_low_pass(&filt_accel_body[i], tau, sample_time, 0.0);
+  //}
+  //init_butterworth_2_low_pass(&roll_filt, tau, sample_time, stateGetNedToBodyEulers_f()->phi);
+  //init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, stateGetNedToBodyEulers_f()->theta);
+  //init_butterworth_2_low_pass(&yaw_filt, tau, sample_time, stateGetNedToBodyEulers_f()->psi);
 }
 
 
@@ -629,12 +631,13 @@ void oneloop_andi_attitude_run(struct Int32Quat quat_sp, struct FloatVect3 pos_d
   new_time = get_sys_time_float();
   printf("This function is running at a dt=%f \n",new_time-old_time);
   old_time = new_time;
-  //printf("k_theta_e = %f\n",k_theta_e);
-  //printf("k_q_e = %f\n",k_q_e);
-  //printf("k_qdot_e = %f\n",k_qdot_e);
-  //printf("k_theta_rm = %f\n",k_theta_rm);
-  //printf("k_q_rm = %f\n",k_q_rm);
-  //printf("k_qdot_rm = %f\n",k_qdot_rm);
+  printf("k_theta_e = %f\n",k_theta_e);
+  printf("k_q_e = %f\n",k_q_e);
+  printf("k_qdot_e = %f\n",k_qdot_e);
+  printf("k_theta_rm = %f\n",k_theta_rm);
+  printf("k_q_rm = %f\n",k_q_rm);
+  printf("k_qdot_rm = %f\n",k_qdot_rm);
+  init_controller();
   calc_normalization();
   sum_g1g2_1l();
   //printf("I am running ONELOOP ANDI\n");
@@ -698,10 +701,23 @@ void oneloop_andi_attitude_run(struct Int32Quat quat_sp, struct FloatVect3 pos_d
   float des_r = (float) (radio_control.values[RADIO_YAW])/9600.0*2.0; //(eulers_zxy_des.psi-eulers_zxy.psi);
   BoundAbs(des_r,2.0);
   // Generate reference signals with reference model
+  // for (i = 0; i < 3; i++) {
+  //   printf("att_ref[%i]=%f ",i,att_ref[i]);
+  //   update_butterworth_2_low_pass(&att_ref_lowpass_filters[i],  att_ref[i]);
+  //   update_butterworth_2_low_pass(&rate_ref_lowpass_filters[i], att_d_ref[i]);
+  //   att_ref[i]   = att_ref_lowpass_filters[i].o[0];
+  //   printf("att_ref_filt[%i]=%f ",i,att_ref[i]);
+  //   printf("\n");
+  //   att_d_ref[i] = rate_ref_lowpass_filters[i].o[0];
+  // }
+
   rm_3rd(dt_1l, &att_ref[0],   &att_d_ref[0],  &att_2d_ref[0], &att_3d_ref[0],     eulers_zxy_des.phi, k_phi_rm, k_p_rm, k_pdot_rm);
   rm_3rd(dt_1l, &att_ref[1],   &att_d_ref[1],  &att_2d_ref[1], &att_3d_ref[1],     eulers_zxy_des.theta, k_theta_rm, k_q_rm, k_qdot_rm);
   rm_2rd(dt_1l, &att_d_ref[2], &att_2d_ref[2], &att_3d_ref[2], des_r, k_r_rm, k_r_d_rm);
-  
+  for (i = 0; i < 3; i++) {
+    printf("att_ref_new[%i]=%f",i,att_ref[i]);
+  }
+  printf("\n");
   // Generate pseudo control vector (nu) based on error controller
   nu[0] = 0.0;
   nu[1] = 0.0;

@@ -53,6 +53,11 @@ extern float g1g2_1l[ANDI_OUTPUTS][ANDI_NUM_ACT];
 
 extern float andi_u[ANDI_NUM_ACT];
 
+extern float p1_att;
+extern float p1_head;
+extern float p1_pos;
+extern float p1_alt;
+
 extern void oneloop_andi_init(void);
 extern void oneloop_andi_enter(void);
 extern void oneloop_andi_set_failsafe_setpoint(void);

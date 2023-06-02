@@ -150,10 +150,14 @@
   </section>
 
   <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
-    <define name="G1_ROLL"   value="{18.f,    -18.f,    -18.f ,     18.0f}"/>
-    <define name="G1_PITCH"  value="{15.f ,    15.f,    -15.f,     -15.0f}"/>
+    <define name="G1_ROLL"   value="{20.0f , -20.0f, -20.0f , 20.0f }"/>
+    <define name="G1_PITCH"  value="{10.0f , 10.0f, -10.0f , -10.0f }"/>  
+    <define name="G1_YAW"    value="{-1.0f, 1.0f, -1.0f, 1.0f}"/>
+    <define name="G1_THRUST" value="{-.4f, -.4f, -.4f, -.4f}"/>  
+    <!-- <define name="G1_ROLL"   value="{18.f,    -18.f,    -18.f ,     18.0f}"/>
+    <define name="G1_PITCH"  value="{15.f ,    15.f,    -15.f,     -15.0f}    10"/>
     <define name="G1_YAW"    value="{-0.65f,   0.65f,   -0.65f,     0.65f}"/>
-    <define name="G1_THRUST" value="{-.7f,    -.7f,     -.7f,      -0.7f }"/>
+    <define name="G1_THRUST" value="{-.7f,    -.7f,     -.7f,      -0.7f }"/> -->
     <define name="G1_ZERO"   value="{0.0f,    0.0f,     0.0f,       0.0f }"/>      
     <define name="G2"        value="{ 0.f,  0.f,   0.f,     0.f}"/>
     <define name="MAX_R"     value="120.0" unit="deg/s"/>
