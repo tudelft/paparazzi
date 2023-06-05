@@ -6,7 +6,7 @@
     #include "modules/energy/electrical.h"
     #include "modules/radio_control/radio_control.h"
     #include "modules/ahrs/ahrs.h"
-    #define NPS_GAZEBO_WORLD "cyberzoo.world"
+    #define NPS_GAZEBO_WORLD "cyberzoo2023_bernardothesis.world"
 </header>
   <waypoints>
     <waypoint lat="51.990631" lon="4.376796" name="HOME"/>
@@ -25,11 +25,7 @@
     <waypoint x="3" y="3" name="_OZ2"/>
     <waypoint x="0" y="3" name="_OZ3"/>
     <waypoint x="0" y="0" name="_OZ4"/> 
-
-    <!-- <waypoint lat="51.9906042" lon="4.3767770" name="_OZ1"/>
-    <waypoint lat="51.9906412" lon="4.3767361" name="_OZ2"/>
-    <waypoint lat="51.9906659" lon="4.3768003" name="_OZ3"/>
-    <waypoint lat="51.9906287" lon="4.3768372" name="_OZ4"/> --> 
+ 
   </waypoints>
   <sectors>
     <sector color="red" name="CyberZoo">
