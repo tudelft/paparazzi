@@ -751,7 +751,7 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   du_max_rot_wing[0] = rot_wing_roll_limit - roll_filt.o[0]; //roll
   du_max_rot_wing[1] = rot_wing_max_pitch_limit_deg/180.*M_PI - pitch_filt.o[0]; // pitch
   du_max_rot_wing[2] = -(actuator_state_filt_vect[0]*g1g2[3][0] + actuator_state_filt_vect[1]*g1g2[3][1] + actuator_state_filt_vect[2]*g1g2[3][2] + actuator_state_filt_vect[3]*g1g2[3][3]);
-  du_max_rot_wing[3] = a_diff_limit;
+  du_max_rot_wing[3] = a_diff_limit * 3;
   
   // Set prefered states
   du_pref_rot_wing[0] = 0; // prefered delta roll angle
