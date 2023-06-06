@@ -190,7 +190,7 @@
             <define name="EKF_AW_K4_FZ_WING" value="2.185395e-01f" description="Fz1 = ((k1+k2*alpha+k3*alpha^2)*(sin(skew)^2+k4)*V^2"/>
 
             <define name="EKF_AW_TELEMETRY_DEBUG"     value="false" description="debug mode to send timing info through telemetry"/>
-        </module> -->
+        </module>
     </firmware>
 
     <servos DRIVER="Pwm">
@@ -248,6 +248,7 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
         <set VALUE="($th_hold? 0 : actuators_pprz[4])" SERVO="SERVO_RUDDER"/>
         <set VALUE="(!autopilot_in_flight()? 0 : actuators_pprz[5])" SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="RadioControlValues(RADIO_PITCH)" SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[8])" SERVO="MOTOR_PUSH"/>
         <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_ROTWING"/>
         <set VALUE="($th_hold? 0 : actuators_pprz[6])" SERVO="AIL_LEFT"/>
