@@ -94,20 +94,23 @@ void ctrl_eff(void)
     thrust_loss_r = 1.0;
     thrust_loss_l = 1.0;
 
-    float ctrl_deriv_00 = -y_dist * sinf(delta_l0) * (mot_coef.k1 * motor_l0 * motor_l0 + mot_coef.k2 * motor_l0 + mot_coef.k3) * thrust_loss_l * (mapping / mass_property.I_xx);
-    float ctrl_deriv_01 =  y_dist * sinf(delta_r0) * (mot_coef.k1 * motor_r0 * motor_r0 + mot_coef.k2 * motor_r0 + mot_coef.k3) * thrust_loss_r* (mapping / mass_property.I_xx);
+    float Tr = mot_coef.k1 * motor_r0 * motor_r0 + mot_coef.k2 * motor_r0 + mot_coef.k3;
+    float Tl = mot_coef.k1 * motor_l0 * motor_l0 + mot_coef.k2 * motor_l0 + mot_coef.k3;
+
+    float ctrl_deriv_00 = -y_dist * sinf(delta_l0) * Tl* thrust_loss_l * (mapping / mass_property.I_xx);
+    float ctrl_deriv_01 =  y_dist * sinf(delta_r0) * Tr* thrust_loss_r* (mapping / mass_property.I_xx);
     float ctrl_deriv_02 = -y_dist * cosf(delta_r0) * (2 * mot_coef.k1 * motor_r0 + mot_coef.k2) * thrust_loss_r* (1 / mass_property.I_xx);
     float ctrl_deriv_03 =  y_dist * cosf(delta_l0) * (2 * mot_coef.k1 * motor_l0 + mot_coef.k2) * thrust_loss_l* (1 / mass_property.I_xx);
-    float ctrl_deriv_10 =  z_dist * cosf(delta_l0) * (mot_coef.k1 * motor_l0 * motor_l0 + mot_coef.k2 * motor_l0 + mot_coef.k3) * thrust_loss_l* (mapping / mass_property.I_yy);
-    float ctrl_deriv_11 =  z_dist * cosf(delta_r0) * (mot_coef.k1 * motor_r0 * motor_r0 + mot_coef.k2 * motor_r0 + mot_coef.k3) * thrust_loss_r* (mapping / mass_property.I_yy);
+    float ctrl_deriv_10 =  z_dist * cosf(delta_l0) * Tl* thrust_loss_l* (mapping / mass_property.I_yy);
+    float ctrl_deriv_11 =  z_dist * cosf(delta_r0) * Tr* thrust_loss_r* (mapping / mass_property.I_yy);
     float ctrl_deriv_12 =  z_dist * sinf(delta_r0) * (2 * mot_coef.k1 * motor_r0 + mot_coef.k2) * thrust_loss_r* (1 / mass_property.I_yy);
     float ctrl_deriv_13 =  z_dist * sinf(delta_l0) * (2 * mot_coef.k1 * motor_l0 + mot_coef.k2) * thrust_loss_l* (1 / mass_property.I_yy);
-    float ctrl_deriv_20 = -y_dist * cosf(delta_l0) * (mot_coef.k1 * motor_l0 * motor_l0 + mot_coef.k2 * motor_l0 + mot_coef.k3) * thrust_loss_l* (mapping / mass_property.I_zz);
-    float ctrl_deriv_21 =  y_dist * cosf(delta_r0) * (mot_coef.k1 * motor_r0 * motor_r0 + mot_coef.k2 * motor_r0 + mot_coef.k3) * thrust_loss_r* (mapping / mass_property.I_zz);
+    float ctrl_deriv_20 = -y_dist * cosf(delta_l0) * Tl * thrust_loss_l* (mapping / mass_property.I_zz);
+    float ctrl_deriv_21 =  y_dist * cosf(delta_r0) * Tr * thrust_loss_r* (mapping / mass_property.I_zz);
     float ctrl_deriv_22 =  y_dist * sinf(delta_r0) * (2 * mot_coef.k1 * motor_r0 + mot_coef.k2) * thrust_loss_r* (1 / mass_property.I_zz);
     float ctrl_deriv_23 = -y_dist * sinf(delta_l0) * (2 * mot_coef.k1 * motor_l0 + mot_coef.k2) * thrust_loss_l* (1 / mass_property.I_zz);
-    float ctrl_deriv_30 = (mot_coef.k1 * motor_l0 * motor_l0 + mot_coef.k2 * motor_l0 + mot_coef.k3) * thrust_loss_l* sinf(delta_l0) * (mapping/mass_property.mass);
-    float ctrl_deriv_31 = (mot_coef.k1 * motor_r0 * motor_r0 + mot_coef.k2 * motor_r0 + mot_coef.k3) * thrust_loss_r* sinf(delta_r0) * (mapping/mass_property.mass);
+    float ctrl_deriv_30 = Tl * thrust_loss_l* sinf(delta_l0) * (mapping/mass_property.mass);
+    float ctrl_deriv_31 = Tr* thrust_loss_r* sinf(delta_r0) * (mapping/mass_property.mass);
     float ctrl_deriv_32 =  -(2 * mot_coef.k1 * actuator_state_filt_vect[2] + mot_coef.k2) * thrust_loss_r* cosf(delta_r0) * (1/mass_property.mass);
     float ctrl_deriv_33 =  -(2 * mot_coef.k1 * actuator_state_filt_vect[3] + mot_coef.k2) * thrust_loss_l* cosf(delta_l0) * (1/mass_property.mass);
 
