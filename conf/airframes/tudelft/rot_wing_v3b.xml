@@ -204,7 +204,7 @@
         <servo NO="2" NAME="MOTOR_BACK"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
         <servo NO="3" NAME="MOTOR_LEFT"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
         <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="0"    MAX="8191"/>
-        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="4000"  NEUTRAL="4000" MAX="-4300"/>
+        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="4000"  NEUTRAL="4000" MAX="-5500"/>
         <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"    MAX="8191"/>
     </servos>
 
@@ -248,7 +248,6 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
         <set VALUE="($th_hold? 0 : actuators_pprz[4])" SERVO="SERVO_RUDDER"/>
         <set VALUE="(!autopilot_in_flight()? 0 : actuators_pprz[5])" SERVO="SERVO_ELEVATOR"/>
-        <set VALUE="RadioControlValues(RADIO_PITCH)" SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[8])" SERVO="MOTOR_PUSH"/>
         <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_ROTWING"/>
         <set VALUE="($th_hold? 0 : actuators_pprz[6])" SERVO="AIL_LEFT"/>
