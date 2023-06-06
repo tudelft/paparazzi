@@ -235,7 +235,7 @@ void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr, float
   g1g2[2][0] = (g1_startup[2][0] * g1_r_multiplier + g2_startup[0]) / INDI_G_SCALING;
   g1g2[3][0] = g1_startup[3][0] * g1_t_multiplier / INDI_G_SCALING;
 
-  g1g2[0][1] = g1_p_side_motors[0] * g1_p_multiplier / INDI_G_SCALING;
+  //g1g2[0][1] = g1_p_side_motors[0] * g1_p_multiplier / INDI_G_SCALING;
   //g1g2[0][1] = ((-0.00335545 - 0.00214628 * *cosr + 0.00369705 * *sinr + -0.00302647 * *cosr * *cosr + -0.00032898 * *sinr * *sinr)) * g1_p_multiplier;
   // For pprz_cmd = 5500
   g1g2[0][1] = ((0.000072804595016592 * *sk * *sk * bounded_airspeed * *cosr - 0.00129490506761079 * *cosr) / I_xx) * g1_p_multiplier;
@@ -252,7 +252,7 @@ void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr, float
   g1g2[2][2] = (g1_startup[2][2] * g1_r_multiplier + g2_startup[2]) / INDI_G_SCALING;
   g1g2[3][2] = g1_startup[3][2] * g1_t_multiplier / INDI_G_SCALING;
 
-  g1g2[0][3] = (g1_p_side_motors[1] * g1_p_multiplier - 0.283333 * bounded_airspeed * *cosr) / INDI_G_SCALING;
+  //g1g2[0][3] = (g1_p_side_motors[1] * g1_p_multiplier - 0.283333 * bounded_airspeed * *cosr) / INDI_G_SCALING;
   //g1g2[0][3] = ((0.0040856 + 0.00123478 * *cosr + -0.00428635 * *sinr + 0.00390033 * *cosr * *cosr + 0.00018527 * *sinr * *sinr)) * g1_p_multiplier;
   // For pprz_cmd = 5500
   g1g2[0][3] = -((0.000072804595016592 * *sk * *sk * bounded_airspeed * *cosr - 0.00129490506761079 * *cosr + 0.000053954 * bounded_airspeed * *cosr) / I_xx) * g1_p_multiplier;
