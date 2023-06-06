@@ -396,7 +396,7 @@
   <!-- Definitions for control effectiveness calculator module -->
   <section name="CONTROL_EFFECTIVENESS" prefix="CTRL_EFF_CALC_">
   	<define name="GROUND_CONTACT" value="0"/>
-  	<define name="THRUST_LOWER_LIM" value="4000"/>
+  	<define name="THRUST_LOWER_LIM" value="6000"/>
   	
   	<!-- Drone specific metrics (You have a screenshot on 2022-10-18 ~21:15 with values from Valkenburg)-->
    	<define name="MASS" value="1.270"/>		<!--[kg]-->
