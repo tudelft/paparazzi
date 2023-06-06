@@ -645,6 +645,33 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
   du_min[7] = min_pprz_cmd_right_ail - use_increment*indi_u[7];
 #endif // STABILIZATION_INDI_ROTWING_V3A
+#ifdef STABILIZATION_INDI_ROTWING_V3B
+  // Right aileron lower limit calculation
+
+  float min_pprz_cmd_ail = -9600;
+  if (wing_rotation.wing_angle_deg < 15) {
+    min_pprz_cmd_ail = 0;
+  } 
+  Bound(min_pprz_cmd_ail, -9600, 0);
+
+  du_min[6] = min_pprz_cmd_ail - use_increment*indi_u[6];
+
+  float min_pprz_cmd_flap_ail = -9600;
+  if (wing_rotation.wing_angle_deg < 38) {
+    min_pprz_cmd_flap_ail = -1000;
+  } if (wing_rotation.wing_angle_deg > 50) {
+    min_pprz_cmd_flap_ail = -9600;
+  } else {
+    min_pprz_cmd_flap_ail = -5.596578906693223 * wing_rotation.wing_angle_deg * wing_rotation.wing_angle_deg * wing_rotation.wing_angle_deg + 654.186408367317 * wing_rotation.wing_angle_deg * wing_rotation.wing_angle_deg - 25577.0135504177 * wing_rotation.wing_angle_deg + 333307.855118805;
+  }
+
+  Bound(min_pprz_cmd_flap_ail, -9600, 0);
+
+  du_min[7] = min_pprz_cmd_flap_ail - use_increment*indi_u[7];
+
+  du_pref[6] = - use_increment*actuator_state_filt_vect[6];
+  du_pref[7] = - use_increment*actuator_state_filt_vect[7];
+#endif // STABILIZATION_INDI_ROTWING_V3B
 
     // Update Bwls
     for (i = 0; i < INDI_OUTPUTS; i++) {
