@@ -34,6 +34,8 @@ extern float g1_q_multiplier;
 extern float g1_r_multiplier;
 extern float g1_t_multiplier;
 
+extern float pitch_angle_set;
+
 extern float rot_wing_aerodynamic_eff_const_g1_p[1];
 extern float rot_wing_aerodynamic_eff_const_g1_q[1];
 extern float rot_wing_aerodynamic_eff_const_g1_r[1];

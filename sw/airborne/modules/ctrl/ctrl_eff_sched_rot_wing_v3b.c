@@ -77,6 +77,8 @@ float sched_pitch_forward_deg = 10.;
 float sched_lower_hover_speed = 7.;
 float sched_upper_hover_speed = 14.;
 
+float pitch_angle_set = 0;
+
 // Define filters
 #ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
 #define ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF 0.1
@@ -99,11 +101,12 @@ inline void update_inertia(float *cosr2, float *sinr2);
 inline void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr, float *airspeed_f);
 inline void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed, float *airspeed2, float *pp_scaled);
 inline void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, float *T_mean_scaled, float *cosr);
-inline void update_left_aileron_effectiveness(float *airspeed2, float *sinr);
-inline void update_right_aileron_effectiveness(float *airspeed2, float *sinr);
+//inline void update_left_aileron_effectiveness(float *airspeed2, float *sinr);
+inline void update_aileron_effectiveness(float *airspeed2, float *sinr);
+inline void update_flap_aileron_effectiveness(float *airspeed2, float *sinr);
 inline void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt);
 inline void schedule_pref_pitch_angle_deg(float wing_rot_deg);
-inline void schedule_liftd(float *airspeed2, float *sinr);
+inline void schedule_liftd(float *airspeed2, float *sinr, float wing_rot_deg);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -169,11 +172,12 @@ void event_eff_scheduling(void)
   update_hover_motor_effectiveness(&wing_rotation.wing_angle_rad, &cosr, &sinr, &airspeed);
   update_rudder_effectiveness(&airspeed2, &pp_scaled, &T_mean_scaled, &cosr);
   update_elevator_effectiveness(elev_pprz, &airspeed, &airspeed2, &pp_scaled);
-  update_left_aileron_effectiveness(&airspeed2, &sinr);
-  update_right_aileron_effectiveness(&airspeed2, &sinr);
+  // update_left_aileron_effectiveness(&airspeed2, &sinr);
+  update_aileron_effectiveness(&airspeed2, &sinr);
+  update_flap_aileron_effectiveness(&airspeed2, &sinr);
   update_pusher_effectiveness(&airspeed, thrust_bx_state_filt);
   schedule_pref_pitch_angle_deg(wing_rotation_deg);
-  schedule_liftd(&airspeed2, &sinr2);
+  schedule_liftd(&airspeed2, &sinr2, wing_rotation_deg);
 
   // float g1_p_side_motors[2];
   // float g1_q_side_motors[2];
@@ -257,7 +261,7 @@ void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr, float
 void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed, float *airspeed2, float *pp_scaled)
 {
   // Calculate deflection angle in [deg]
-  float de = -0.0094 * *elev_pprz + 80.0;
+  float de = -0.0063 * *elev_pprz + 50.0;
   float bounded_airspeed = *airspeed;
   float bounded_airspeed2 = *airspeed2; 
   Bound(bounded_airspeed, 0. ,20.);
@@ -267,7 +271,7 @@ void update_elevator_effectiveness(int16_t *elev_pprz, float *airspeed, float *a
                 k_elevator[1] * *pp_scaled * *pp_scaled * bounded_airspeed + 
                 k_elevator[2] * bounded_airspeed2) / 10000.;
 
-  float dMydpprz = dMyde * -0.0094;
+  float dMydpprz = dMyde * -0.0063;
   
   // Convert moment to effectiveness
   float eff_y_elev = dMydpprz / I_yy;
@@ -304,24 +308,34 @@ void update_rudder_effectiveness(float *airspeed2, float *pp_scaled, float *T_me
   g1g2[3][4] = 0 / INDI_G_SCALING;
 }
 
-void update_left_aileron_effectiveness(float *airspeed2, float *sinr)
+// void update_left_aileron_effectiveness(float *airspeed2, float *sinr)
+// {
+//   float bounded_airspeed2 = *airspeed2;
+//   Bound(bounded_airspeed2, 0., 400.);
+//   float dMxdpprz = 2.620421875e-6 * 0.53 * bounded_airspeed2 * *sinr * *sinr * *sinr;
+//   float eff_x_left_aileron = dMxdpprz / I_xx;
+//   Bound(eff_x_left_aileron, 0, 0.005);
+//   g1g2[0][6] = eff_x_left_aileron;
+// }
+
+void update_aileron_effectiveness(float *airspeed2, float *sinr)
 {
   float bounded_airspeed2 = *airspeed2;
   Bound(bounded_airspeed2, 0., 400.);
-  float dMxdpprz = 3.46740494791667e-6 * bounded_airspeed2 * *sinr * *sinr * *sinr;
-  float eff_x_left_aileron = dMxdpprz / I_xx;
-  Bound(eff_x_left_aileron, 0, 0.005);
-  g1g2[0][6] = eff_x_left_aileron;
+  float dMxdpprz = 2.620421875e-6 * 1.06 * bounded_airspeed2 * *sinr * *sinr * *sinr;
+  float eff_x_aileron = dMxdpprz / I_xx;
+  Bound(eff_x_aileron, 0, 0.005)
+  g1g2[0][6] = eff_x_aileron;
 }
 
-void update_right_aileron_effectiveness(float *airspeed2, float *sinr)
+void update_flap_aileron_effectiveness(float *airspeed2, float *sinr)
 {
   float bounded_airspeed2 = *airspeed2;
   Bound(bounded_airspeed2, 0., 400.);
-  float dMxdpprz = 3.33667052083333e-6 * bounded_airspeed2 * *sinr * *sinr * *sinr;
-  float eff_x_right_aileron = dMxdpprz / I_xx;
-  Bound(eff_x_right_aileron, 0, 0.005)
-  g1g2[0][7] = eff_x_right_aileron;
+  float dMxdpprz = 2.620421875e-6 * 0.78 * bounded_airspeed2 * *sinr * *sinr * *sinr;
+  float eff_x_flap_aileron = dMxdpprz / I_xx;
+  Bound(eff_x_flap_aileron, 0, 0.005)
+  g1g2[0][7] = eff_x_flap_aileron;
 }
 
 void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt)
@@ -355,18 +369,22 @@ void schedule_pref_pitch_angle_deg(float wing_rot_deg)
     scheduled_pitch_angle = pitch_range * pitch_progression;
   }
   Bound(scheduled_pitch_angle, 0., 7.);
+  //scheduled_pitch_angle = pitch_angle_set;
   pitch_pref_deg = scheduled_pitch_angle;
 }
 
-void schedule_liftd(float *airspeed2, float *sinr2)
+void schedule_liftd(float *airspeed2, float *sinr2, float wing_rot_deg)
 {
   float bounded_airspeed2 = *airspeed2;
   Bound(bounded_airspeed2, 0., 400.);
-  float lift_d_wing = (-0.74529194103945 * bounded_airspeed2 * *sinr2 - 0.4065513216373 * bounded_airspeed2) / weight_sched;
+  float lift_d_wing = (-0.74529194103945 * bounded_airspeed2 * *sinr2 - 0.4065513216373 * bounded_airspeed2) / weight_sched * 1.18;
   float lift_d_fuselage = -0.072362752875 * bounded_airspeed2 / weight_sched;
   float lift_d_tail = -0.1452739306305 * bounded_airspeed2 / weight_sched;
 
   float lift_d = lift_d_wing + lift_d_fuselage + lift_d_tail;
+  if (wing_rot_deg < 60) {
+    lift_d = 0.0;
+  }
   Bound(lift_d, -130., 0.);
   AbiSendMsgLIFT_D(LIFT_D_SCHED_ID, lift_d);
 }
