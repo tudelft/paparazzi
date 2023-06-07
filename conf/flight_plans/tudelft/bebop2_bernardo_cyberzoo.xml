@@ -21,10 +21,10 @@
     <waypoint lat="51.9906238" lon="4.3768729" name="_CZ4"/>
 
 
-    <waypoint x="3" y="0" name="_OZ1"/>
+    <waypoint x="3" y="-3" name="_OZ1"/>
     <waypoint x="3" y="3" name="_OZ2"/>
-    <waypoint x="0" y="3" name="_OZ3"/>
-    <waypoint x="0" y="0" name="_OZ4"/> 
+    <waypoint x="-3" y="3" name="_OZ3"/>
+    <waypoint x="-3" y="-3" name="_OZ4"/> 
  
   </waypoints>
   <sectors>
