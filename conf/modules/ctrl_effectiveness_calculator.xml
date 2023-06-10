@@ -10,6 +10,8 @@
   <settings>
   	<dl_settings>
   		<dl_settings NAME="Ctrl Eff Calc">
+        <dl_setting var="c_delta_a" min="0.0" step="0.05" max="1.0" shortname="c_delta_a"/>
+        <dl_setting var="cda_offset" min="-0.1" step="0.0001" max="0.1" shortname="cda_offset"/>
   			<dl_setting var="thrust_lower_lim" min="0" step="100" max="6000" shortname="thrust_lim_low" param="THRUST_LOWER_LIM"/>
         <dl_setting var="airspeed_scaling" min="0" step="0.01" max="1" shortname="airspeed_scale"/>
   			<dl_setting var="mass_property.mass" min="0.90" step="0.01" max="1.400" shortname="mass" param="MASS"/>

@@ -138,7 +138,9 @@
       <configure name="GPS_BAUD" value="B57600"/>
     </module>
 
-    <module name="stabilization" type="indi"/>
+    <module name="stabilization" type="indi">
+      <configure name="INDI_NUM_ACT" value="5"/>
+    </module>
 
 <!--
     <module name="guidance" type="indi_hybrid">
@@ -229,8 +231,8 @@
     <set servo="TILT_RIGHT" value="autopilot.motors_on ? actuators_pprz[1] : 0"/>
     <set servo="RM" value="autopilot.motors_on ? actuators_pprz[2] : -MAX_PPRZ"/>
     <set servo="LM" value="autopilot.motors_on ? actuators_pprz[3] : -MAX_PPRZ"/>
-    <set servo="AIL_LEFT" value="RadioControlValues(RADIO_SERVO)"/>
-    <set servo="AIL_RIGHT" value="RadioControlValues(RADIO_SERVO)"/>
+    <set servo="AIL_LEFT" value="actuators_pprz[4]"/>
+    <set servo="AIL_RIGHT" value="actuators_pprz[4]"/>
   </command_laws>
 
   <section name="IMU" prefix="IMU_">
@@ -258,12 +260,12 @@
     <define name="MAG_Y_SENS" value="7.872914622750806" integer="16"/>
     <define name="MAG_Z_SENS" value="7.381622435447413" integer="16"/> -->
 
-    <define name="MAG_X_NEUTRAL" value="228"/>
-    <define name="MAG_Y_NEUTRAL" value="325"/>
-    <define name="MAG_Z_NEUTRAL" value="161"/>
-    <define name="MAG_X_SENS" value="7.730267479741485" integer="16"/>
-    <define name="MAG_Y_SENS" value="7.906730631648299" integer="16"/>
-    <define name="MAG_Z_SENS" value="7.482027409616238" integer="16"/>
+    <define name="MAG_X_NEUTRAL" value="211"/>
+    <define name="MAG_Y_NEUTRAL" value="309"/>
+    <define name="MAG_Z_NEUTRAL" value="130"/>
+    <define name="MAG_X_SENS" value="7.697406436475285" integer="16"/>
+    <define name="MAG_Y_SENS" value="7.958512154144208" integer="16"/>
+    <define name="MAG_Z_SENS" value="7.589262406904852" integer="16"/>
 
 
     <!-- Apparently do not need the following because of 'geo_mag' module -->
@@ -322,12 +324,12 @@
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
     <!-- Actuators					 tilt_l tilt_r  m_r  m_l						-->
-    <define name="G1_ROLL" value="{0.0, 0.0, -6.705, 6.705}"/>
-    <define name="G1_PITCH" value="{1.755, 1.755, 0.0, 0.0}"/>
-    <define name="G1_YAW" value="{-0.878, 0.878, 0.0, 0.0}"/>
-    <define name="G1_THRUST" value="{0.0, 0.0, -0.308, -0.308}"/>
+    <define name="G1_ROLL"   value="{   0.0,   0.0, -6.705,  6.705,   0.0}"/>
+    <define name="G1_PITCH"  value="{ 1.755, 1.755,    0.0,    0.0,   0.0}"/>
+    <define name="G1_YAW"    value="{-0.878, 0.878,    0.0,    0.0,   1.0}"/>
+    <define name="G1_THRUST" value="{   0.0,   0.0, -0.308, -0.308,   0.0}"/>
     <!--Counter torque effect of spinning up a rotor-->
-    <define name="G2" value="{0, 0, 0, 0}"/>
+    <define name="G2" value="{0, 0, 0, 0, 0}"/>
 
     <!-- reference acceleration for attitude control     (You have a screenshot on 2022-10-18 ~21:15 with values from Valkenburg) -->
     <define name="REF_ERR_P" value="90"/> <!-- 100 believe Valkenburg was 100, 70-->
@@ -353,18 +355,16 @@
     <!-- first order actuator dynamics -->
     <!--<define name="ACT_DYN" value="{0.1, 0.1, 0.045, 0.045}"/>-->
     <!--<define name="ACT_DYN" value="{0.0982, 0.1192, 0.045, 0.045}"/>--> <!-- [0.05 0.05 0.045 0.045] before -->
-    <define name="ACT_DYN" value="{0.0982, 0.1192, 0.02, 0.02}"/> <!-- [0.05 0.05 0.045 0.045] before -->
-    <define name="ACT_RATE_LIMIT" value="{226.89, 226.89, 9600, 9600}"/>
-    <define name="ACT_IS_SERVO" value="{1, 1, 0, 0}"/>
+    <define name="ACT_DYN" value="{0.0982, 0.1192, 0.02, 0.02, 0.09}"/> <!-- [0.05 0.05 0.045 0.045] before -->
+    <define name="ACT_RATE_LIMIT" value="{226.89, 226.89, 9600, 9600, 226.0}"/>
+    <define name="ACT_IS_SERVO" value="{1, 1, 0, 0, 1}"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
     <define name="ADAPTIVE_MU" value="0.0001"/>
 
     <define name="WLS_PRIORITIES" value="{1.0,1.0,1.0,1.0}"/>
-    <define name="WLS_WU" value="TRUE"/>
-    <define name="WLS_WU_MOTOR" value="1"/>
-    <define name="WLS_WU_SERVO" value="1"/>
+    <define name="WLS_WU" value="{1.0,1.0,1.0,1.0,1.0}"/>
 
     <!-- Second order actuator dynamics -->
     <define name="SERVO_DELAY" value="0.014"/> <!-- [s] -->
@@ -413,6 +413,9 @@
    	<define name="K1" value="0.00000005"/>
    	<define name="K2" value="0.0004"/>
    	<define name="K3" value="0.1175"/>
+
+    <define name="CDA" value="0.15"/>
+    <define name="CDA_OFFSET" value="0.0008"/>
 
  	<!-- Location of the pivot point of tilting motors w.r.t. the c.g. -->
    	<define name="Y_DIST" value="0.3"/>		<!--[m]-->

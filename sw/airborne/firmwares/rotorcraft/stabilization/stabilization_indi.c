@@ -614,16 +614,6 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #endif
   }
 
-//+++++++++++++++++++++++++++++++++++++++
-  for (i = 0; i < INDI_NUM_ACT; i++) {
-    if (!act_is_servo[i]) {
-      Wu[i] = indi_Wu_motor;
-    } else {
-      Wu[i] = indi_Wu_servo;
-    }
-  }
-//+++++++++++++++++++++++++++++++++++++++
-
   // WLS Control Allocator
   num_iter =
     wls_alloc(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, indi_Wu, du_pref, 10000, 10);
