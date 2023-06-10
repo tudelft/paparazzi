@@ -32,6 +32,8 @@ float airspeed_scaling = 0.6;
 float thrust_loss_r;
 float thrust_loss_l;
 
+float c_delta_a = CTRL_EFF_CALC_CDA;
+float cda_offset = CTRL_EFF_CALC_CDA_OFFSET;
 
 static float pprz_to_rad_left(float x);
 static float pprz_to_rad_right(float x);
@@ -132,6 +134,10 @@ void ctrl_eff(void)
     g1g2[3][1] = ctrl_deriv_31;
     g1g2[3][2] = ctrl_deriv_32;
     g1g2[3][3] = ctrl_deriv_33;
+
+    float airspeed = stateGetAirspeed_f();
+
+    g1g2[2][4] = cda_offset + 0.0001*c_delta_a * airspeed*airspeed;
 }
 
 void ctrl_eff_ground_contact(void)
