@@ -475,7 +475,7 @@
     <define name="W_ACT_EL_CONST" value="0"/>
     <define name="W_ACT_EL_SPEED" value="0"/>
     <define name="W_ACT_AZ_CONST" value="0"/>
-    <define name="W_ACT_AZ_SPEED" value="0.25"/>
+    <define name="W_ACT_AZ_SPEED" value="0.5"/>
     <define name="W_ACT_THETA_CONST" value="5"/>
     <define name="W_ACT_THETA_SPEED" value="0"/>
     <define name="W_ACT_PHI_CONST" value="100"/>
