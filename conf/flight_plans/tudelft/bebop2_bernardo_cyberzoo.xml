@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="3.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="60" name="Bernardo Thesis TU Delft Cyberzoo" security_height="0.4">
+<flight_plan alt="4.5" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="60" name="Bernardo Thesis TU Delft Cyberzoo" security_height="0.4">
   <header>
     #include "modules/datalink/datalink.h"
     #include "modules/energy/electrical.h"
@@ -58,12 +58,12 @@
       !(nav_block >= IndexOfBlock('land here')) @AND
       (autopilot_in_flight() == true) )" deroute="land here"/>
     <!-- Geofencing Z 3.5 -->
-    <exception cond="((GetPosAlt() @GT 3.5) @AND
+    <exception cond="((GetPosAlt() @GT 5.5) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('land here')) @AND
       (autopilot_in_flight() == true) )" deroute="land here"/>
     <!-- Geofencing Z 4.5 (constant RPM descent)-->
-    <exception cond="((GetPosAlt() @GT 4.5) @AND
+    <exception cond="((GetPosAlt() @GT 5.5) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       (autopilot_in_flight() == true) )" deroute="Landed"/>
     <!-- Bat low -->
