@@ -446,6 +446,9 @@
 
     <define name="SPEED_AOA_PROTECTION" value="2" unit="m/s"/>
 
+    <define name="K_ALT_TILT_CONSTRAINT" value="50" unit="deg/meters"/>
+    <define name="MIN_ALT_TILT_CONSTRAINT" value="0.3" unit="meters"/>
+
     <!-- Filters properties for INDI -->
     <define name="FILT_CUTOFF_INDI" value="12" unit="rad/s"/>
 
@@ -642,7 +645,7 @@
     <!--The Nederdrone uses a slightly different axis system for the setpoint, to make both hovering and flying forward intuitive-->
     <define name="USE_EARTH_BOUND_RC_SETPOINT" value="TRUE"/>
     <!-- This is the pitch angle that the Nederdrone will have in forward flight, where 0 degrees is hover-->
-    <define name="TRANSITION_MAX_OFFSET" value="-80.0" unit="deg"/>
+    <!-- <define name="TRANSITION_MAX_OFFSET" value="-80.0" unit="deg"/> -->
     <!-- For RC coordinated turns, lower because the yawing was too slow -->
     <define name="MAX_FWD_SPEED" value="20.0"/>
     <!-- For hybrid guidance -->
@@ -734,6 +737,10 @@
       <define name="MAX_AIRSPEED" value="15.0"/>
       <define name="PITCH_LIFT_EFF" value="0.0"/>
       <define name="ZERO_AIRSPEED" value="TRUE"/>
+  </section>
+
+  <section name="NAV_HYBRID" prefix="NAV_HYBRID_">
+      <!-- <define name="POS_GAIN" value="0.5"/> -->
   </section>
 
   <section name="FORWARD">

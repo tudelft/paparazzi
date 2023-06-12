@@ -43,14 +43,19 @@
 #include "modules/energy/electrical.h"
 #include "modules/core/sys_mon_rtos.h"
 #include "firmwares/rotorcraft/navigation.h"
+#include "modules/nav/nav_rotorcraft_hybrid.h"
+#include "firmwares/rotorcraft/navigation.h"
 
 /**
  * Variables declaration
  */
  
 // #define STB_WP_TARGET 
-    
-#define FLY_WITH_AIRSPEED
+
+#define USE_NAV_HYBRID_MODULE
+
+// #define FLY_WITH_AIRSPEED
+
 // #define USE_NEW_THR_ESTIMATION
 // #define USE_NEW_THR_ESTIMATION_OPTIMIZATION
 #define NEW_AOA_DEFINITION 
@@ -83,7 +88,6 @@ struct overactuated_mixing_t overactuated_mixing;
 
 //General state variables:
 float rate_vect[3], rate_vect_filt[3], rate_vect_filt_dot[3], euler_vect[3], acc_vect[3], acc_vect_filt[3], accel_vect_filt_control_rf[3],accel_vect_control_rf[3], speed_vect_control_rf[3];
-float rate_vect_ned[3], acc_body_real[3], acc_body_real_filt[3];
 float speed_vect[3], pos_vect[3], airspeed = 0, beta_deg = 0, beta_rad = 0, flight_path_angle = 0, total_V = 0;
 float actuator_state[INDI_NUM_ACT];
 float actuator_state_filt[INDI_NUM_ACT];
@@ -262,13 +266,14 @@ float K_T_airspeed = 0.025;
 #endif
 
 //Variables for the approach module and tilt constraint: 
-int feed_speed_ref_from_approach_module = 0;
 static abi_event vel_sp_ev;
 float des_speed_approach_control_rf[3];
+float time_of_speed_setpoint_approach = 0; 
+
 
 static abi_event get_agl_corrected_value_ev;
 float altitude_lidar_agl_meters; 
-int approach_state = 0; 
+int approach_state = 1; 
 
 struct PID_over pid_gains_over = {
     .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
@@ -576,6 +581,7 @@ static void vel_sp_cb(uint8_t sender_id __attribute__((unused)), struct FloatVec
     des_speed_approach_control_rf[0] = 0;
     des_speed_approach_control_rf[1] = 0;
     des_speed_approach_control_rf[2] = 0;
+    time_of_speed_setpoint_approach = get_sys_time_float();
     from_earth_to_control( des_speed_approach_control_rf, des_speed_approach_earth_rf, euler_vect[2]);
 }
 
@@ -636,6 +642,34 @@ void compute_speed_ref_from_waypoint(float * speed_reference_control_rf, float *
 
     //Apply approach constrain to fwd speed: 
     Bound(speed_reference_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,max_fwd_speed_approach_wp);
+
+    #ifdef USE_NAV_HYBRID_MODULE
+        //Horizontal part:
+        float nav_hybrid_des_speed[3]; 
+        nav_hybrid_des_speed[0] = nav.speed.y;
+        nav_hybrid_des_speed[1] = nav.speed.x;
+
+        //Vertical part:
+        if(nav.vertical_mode == NAV_VERTICAL_MODE_CLIMB){
+            nav_hybrid_des_speed[2] = -nav.climb;
+        }
+        else if(nav.vertical_mode == NAV_VERTICAL_MODE_ALT){
+            float pos_error_z = (-nav.nav_altitude) - stateGetPositionNed_f()->z;
+            nav_hybrid_des_speed[2] = pos_error_z * WP_CONTROL_VZ_CONTROL_STATIC_GAIN;
+        }
+
+        //Transpose in control rf: 
+        from_earth_to_control( speed_reference_control_rf, nav_hybrid_des_speed, euler_vect[2]);
+
+    #endif
+
+    //If we are in the approach mode, then use these speed references: 
+
+    if( get_sys_time_float() - time_of_speed_setpoint_approach < 0.05){ //50 mS 
+        speed_reference_control_rf[0] = des_speed_approach_control_rf[0];
+        speed_reference_control_rf[1] = des_speed_approach_control_rf[1];
+        speed_reference_control_rf[2] = des_speed_approach_control_rf[2];
+    }
 
 }
 
@@ -996,7 +1030,7 @@ void send_values_to_raspberry_pi(void){
 }
 
 /**
- * This function outputs the maximum equivalent gound speed in the control reference to have a maximum desired airspeed.
+ * This function outputs the maximum equivalent ground speed in the control reference to have a maximum desired airspeed.
  */
 float max_V_control_from_max_airspeed(float current_airspeed, float current_Vx_control_rf, float aoa_rad, float max_desired_airspeed){
     float estimated_wind_fwd = current_Vx_control_rf - current_airspeed/cosf(aoa_rad);

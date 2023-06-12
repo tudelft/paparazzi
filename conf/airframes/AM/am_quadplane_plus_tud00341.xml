@@ -130,22 +130,22 @@
     <module name="geo_mag"/>
     <module name="air_data"/>
 
-    <!-- <module name="agl_dist"> -->
-      <!-- <define name="AGL_DIST_ID" value="AGL_LIDAR_TFMINI_ID"/> -->
-      <!-- <define name="AGL_DIST_MAX_RANGE" value="12.0"/> -->
-      <!-- <define name="AGL_DIST_MIN_RANGE" value="0.05"/> -->
-      <!-- <define name="AGL_DIST_FILTER" value="0.1"/> -->
-    <!-- </module> -->
+    <module name="agl_dist">
+      <define name="AGL_DIST_ID" value="AGL_LIDAR_TFMINI_ID"/>
+      <define name="AGL_DIST_MAX_RANGE" value="12.0"/>
+      <define name="AGL_DIST_MIN_RANGE" value="0.05"/>
+      <define name="AGL_DIST_FILTER" value="0.1"/>
+    </module>
 
 
     <module name="Overactuated_mixing"/>
 
-    <!-- <module name="lidar" type="tfmini_am7"> -->
-      <!-- <configure name="USE_TFMINI_AGL" value="TRUE"/> -->
-      <!-- <configure name="USE_TFMINI" value="TRUE"/> -->
-      <!-- <configure name="AHRS_USE_TFMINI_AGL" value="TRUE"/> -->
-      <!-- <configure name="TFMINI_COMPENSATE_ROTATION" value="TRUE"/> -->
-    <!-- </module> -->
+    <module name="lidar" type="tfmini_am7">
+      <configure name="USE_TFMINI_AGL" value="TRUE"/>
+      <configure name="USE_TFMINI" value="TRUE"/>
+      <configure name="AHRS_USE_TFMINI_AGL" value="TRUE"/>
+      <configure name="TFMINI_COMPENSATE_ROTATION" value="TRUE"/>
+    </module>
 
     <module name="approach_moving_target">
       <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.03"/>
@@ -176,13 +176,23 @@
   </command_laws>
 
   <!-- Maximum limits of the sticks -->
-  <section name="MANUAL_CONTROL_OPTIONS" prefix="MANUAL_CONTROL_">
+  <!-- <section name="MANUAL_CONTROL_OPTIONS" prefix="MANUAL_CONTROL_">
     <define name="MAX_CMD_FWD_SPEED" value="25.0" unit="m/s"/>
     <define name="MAX_CMD_LAT_SPEED" value="10.0" unit="m/s"/>
     <define name="MAX_CMD_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_CMD_PITCH_ANGLE" value="25.0" unit="deg"/>
     <define name="MAX_CMD_ROLL_ANGLE" value="25.0" unit="deg"/>
     <define name="MAX_CMD_YAW_RATE" value="100.0" unit="deg/s"/>
+  </section> -->
+
+  <!-- for demos -->
+  <section name="MANUAL_CONTROL_OPTIONS" prefix="MANUAL_CONTROL_">
+    <define name="MAX_CMD_FWD_SPEED" value="25.0" unit="m/s"/>
+    <define name="MAX_CMD_LAT_SPEED" value="20.0" unit="m/s"/>
+    <define name="MAX_CMD_VERT_SPEED" value="3.0" unit="m/s"/>
+    <define name="MAX_CMD_PITCH_ANGLE" value="25.0" unit="deg"/>
+    <define name="MAX_CMD_ROLL_ANGLE" value="25.0" unit="deg"/>
+    <define name="MAX_CMD_YAW_RATE" value="200.0" unit="deg/s"/>
   </section>
 
     <!-- OPTITRACK -->
@@ -195,15 +205,28 @@
     <!-- </section> -->
 
   <!-- Maximum limits of the vehicle in manual speed control mode. limits are in the control rf -->
-  <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
+  <!-- <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
     <define name="MAX_FWD_SPEED" value="20.0" unit="m/s"/>
-    <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> <!--updated for WP navigation-->
+    <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> 
     <define name="MIN_FWD_SPEED" value="-4.0" unit="m/s"/>
     <define name="MAX_LAT_SPEED" value="7.0" unit="m/s"/>
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_FWD_ACC" value="4.0" unit="m/s^2"/>
-    <define name="MIN_FWD_ACC" value="-1.8" unit="m/s^2"/> <!--updated for WP navigation-->
+    <define name="MIN_FWD_ACC" value="-1.8" unit="m/s^2"/> 
     <define name="MAX_LAT_ACC" value="9.0" unit="m/s^2"/>
+    <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/>
+  </section> -->
+
+  <!-- for demos -->
+  <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
+    <define name="MAX_FWD_SPEED" value="25.0" unit="m/s"/>
+    <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> 
+    <define name="MIN_FWD_SPEED" value="-10.0" unit="m/s"/>
+    <define name="MAX_LAT_SPEED" value="15.0" unit="m/s"/>
+    <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
+    <define name="MAX_FWD_ACC" value="15.0" unit="m/s^2"/>
+    <define name="MIN_FWD_ACC" value="-10" unit="m/s^2"/>
+    <define name="MAX_LAT_ACC" value="20" unit="m/s^2"/>
     <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/>
   </section>
 
@@ -409,6 +432,10 @@
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
 
     <define name="SPEED_AOA_PROTECTION" value="2" unit="m/s"/>
+
+    <!-- Tilting angle constraint in the approach and takeoff phase -->
+    <define name="K_ALT_TILT_CONSTRAINT" value="50" unit="deg/meters"/>
+    <define name="MIN_ALT_TILT_CONSTRAINT" value="0.3" unit="meters"/>
 
     <!-- Filters properties for INDI -->
     <define name="FILT_CUTOFF_INDI" value="12" unit="rad/s"/>
