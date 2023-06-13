@@ -42,6 +42,7 @@
       <define name="CTL_ALLOC_ALGO" value="1" description="Algorithm for quadratic allocation: 0 QR_NAIVE, 1 QR, 2 CHOL"/>
       <define name="CTL_ALLOC_WARMSTART" value="FALSE|TRUE" description="Use warmstarting"/>
       <define name="CTL_ALLOC_IMAX" description="Max iterations for solving control allocation problem"/>
+      <define name="MAX_OUTPUT" description="Float between 0 and 1 that scales the max output, to test performance during saturation."/>
       <define name="LOG_ALLOC_EXEC_TIME" value="FALSE|TRUE" description="Chibios only. Count HW timer ticks for solution of WLS allocation."/>
     </section>
   </doc>
@@ -60,6 +61,7 @@
         <dl_setting var="indi_ctl_alloc_imax" min="1" step="1" max="10" shortname="iter_max" param="STABILIZATION_INDI_CTL_ALLOC_IMAX" type="int"/>
         <dl_setting var="indi_ctl_alloc_cond_bound" min="1e4" step="1e4" max="1e8" shortname="cond_bound" param="STABILIZATION_INDI_CTL_ALLOC_COND_BOUND" type="float"/>
         <dl_setting var="indi_ctl_alloc_theta" min="1e-5" step="1e-5" max="1" shortname="theta" param="STABILIZATION_INDI_CTL_ALLOC_THETA" type="float"/>
+        <dl_setting var="indi_max_output" min="0.1" step="1e-3" max="1" shortname="max_output" param="STABILIZATION_INDI_MAX_OUTPUT" type="float"/>
       </dl_settings>
     </dl_settings>
   </settings>
