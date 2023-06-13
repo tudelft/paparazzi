@@ -104,4 +104,8 @@ extern float soaring_step_size_mid;
 extern float soaring_step_size_small;
 extern float soaring_step_size_fine;
 
+extern float arrival_check_dist_3d;
+extern float stay_wp_duration;
+extern float weight_logistic_fn_factor;
+
 #endif /* GUIDANCE_INDI_HYBRID_NLD_SOARING_H */

@@ -481,6 +481,7 @@
          <field name="theta_filt" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
          <field name="psi" type="float" unit="rad" alt_unit="deg" alt_unit_coef="57.3"/>
          <field name="wls_num_iter" type="int16"/>
+         <field name="thr_filt" type="float"/>
      </message>
 
     <message name="BARO_ETS" id="56">
@@ -911,14 +912,22 @@
     </message>
 
     <message name="SOARING_WP_MAP" id="95">
-        <field name="north"  type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
-        <field name="east"  type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
-        <field name="up"  type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+        <field name="wp_north"  type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+        <field name="wp_east"  type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
+        <field name="wp_up"  type="int32" unit="2^8m" alt_unit="m" alt_unit_coef="0.0039063"/>
         <field name="cost_now" type="float"/>
         <field name="cost_last_position" type="float"/>
         <field name="last_movement_number" type="int16"/>
         <field name="move_north" type="float"/>
         <field name="move_down" type="float"/>
+        <field name="k_thr" type="float"/>
+        <field name="k_spd_x" type="float"/>
+        <field name="k_spd_z" type="float"/>
+        <field name="k_pitch" type="float"/>
+        <field name="move_cost_threshold" type="float"/>
+        <field name="wp_arrival_dist" type="float"/>
+        <field name="wp_arrival_duration" type="float"/>
+        <field name="timeout_duration" type="float"/>
     </message>
 
     <message name="HIH_STATUS" id="96">

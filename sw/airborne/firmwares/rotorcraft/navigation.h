@@ -185,6 +185,7 @@ bool nav_approaching_from(struct EnuCoor_i *wp, struct EnuCoor_i *from, int16_t 
 bool nav_check_wp_time(struct EnuCoor_i *wp, uint16_t stay_time);
 #define NavCheckWaypointTime(wp, time) nav_check_wp_time(&waypoints[wp].enu_i, time)
 
+bool nav_check_wp_time_3d(struct EnuCoor_i *wp, uint16_t stay_time, float arrival_dist);
 
 /* should we really keep this one ??
  * maybe better to use the `goto` flight plan primitive and

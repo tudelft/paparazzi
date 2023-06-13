@@ -278,6 +278,8 @@ NOTES:
     </target>
 
     <target name="fbw" board="px4io_2.4">
+      <configure name="FLASH_MODE" value="SWD"/>
+
       <configure name="PERIODIC_FREQUENCY" value="200"/>
       <module name="radio_control" type="ppm">
 <!--        <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="1" />-->

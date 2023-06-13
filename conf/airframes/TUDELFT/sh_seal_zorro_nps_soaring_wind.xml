@@ -621,11 +621,13 @@ NOTES:
 
     <define name="SOARING_WP_ID" value="3"/>   <!-- a WP ID must be specified -->
     <define name="SOARING_WP_COST_THRES" value="50"/>
-    <define name="SOARING_WP_WAIT_SEC" value="10"/>
+    <define name="SOARING_WP_WAIT_SEC" value="20"/>
     <define name="SOARING_WP_W_PITCH" value="10"/>
     <define name="SOARING_WP_W_SPD_X" value="1"/>
     <define name="SOARING_WP_W_SPD_Z" value="1"/>
     <define name="SOARING_WP_W_THROTTLE" value="0.1"/>    <!-- W*(0~9600) -->
+    <define name="SOARING_USE_VARIABLE_WEIGHTS" value="TRUE"/>
+    <define name="SOARING_LOGISTIC_FN_FACTOR" value="2"/>
 
   </section>
 
