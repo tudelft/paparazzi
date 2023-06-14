@@ -44,6 +44,13 @@
       <define name="CTL_ALLOC_IMAX" description="Max iterations for solving control allocation problem"/>
       <define name="MAX_OUTPUT" description="Float between 0 and 1 that scales the max output, to test performance during saturation."/>
       <define name="LOG_ALLOC_EXEC_TIME" value="FALSE|TRUE" description="Chibios only. Count HW timer ticks for solution of WLS allocation."/>
+      <!-- defaults
+      algo 1 (QR)
+      warmstart (true)
+      imax 10 (?)
+      cond_bound 1e9
+      theta 1e-5
+      -->
     </section>
   </doc>
   <settings>
