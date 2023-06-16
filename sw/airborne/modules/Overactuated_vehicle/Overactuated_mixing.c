@@ -54,7 +54,7 @@
 
 #define USE_NAV_HYBRID_MODULE
 
-// #define FLY_WITH_AIRSPEED
+#define FLY_WITH_AIRSPEED
 
 // #define USE_NEW_THR_ESTIMATION
 // #define USE_NEW_THR_ESTIMATION_OPTIMIZATION
@@ -664,7 +664,6 @@ void compute_speed_ref_from_waypoint(float * speed_reference_control_rf, float *
     #endif
 
     //If we are in the approach mode, then use these speed references: 
-
     if( get_sys_time_float() - time_of_speed_setpoint_approach < 0.05){ //50 mS 
         speed_reference_control_rf[0] = des_speed_approach_control_rf[0];
         speed_reference_control_rf[1] = des_speed_approach_control_rf[1];
@@ -1168,12 +1167,10 @@ void overactuated_mixing_run(void)
         x_stb = waypoint_get_y(WP_STDBY);
         y_stb = waypoint_get_x(WP_STDBY);
         z_stb = -waypoint_get_alt(WP_STDBY); 
-    #else
-    
+    #else //Use the NAV provided target. 
         x_stb = nav.target.y;
         y_stb = nav.target.x;
         z_stb = -nav.fp_altitude;
-
     #endif
 
     //Prepare the reference for the AUTO test with the nonlinear controller: 
@@ -1249,7 +1246,7 @@ void overactuated_mixing_run(void)
     // }
 
     #ifdef SITL
-        radio_control.values[RADIO_MODE] = 1000; //Enter wp mode automatically
+        radio_control.values[RADIO_MODE] = 1000; //Enter wp mode automatically to test the WP mode in simulation 
     #endif
 
     /// Case of manual PID control [FAILSAFE]

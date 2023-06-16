@@ -36,6 +36,8 @@ extern float nav_max_speed;
 extern float nav_hybrid_line_gain; 
 extern float nav_hybrid_pos_gain; 
 
+extern bool force_forward;
+
 extern void nav_rotorcraft_hybrid_init(void);
 
 #endif
