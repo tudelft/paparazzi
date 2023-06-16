@@ -152,7 +152,7 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
   float W[CA_N_U_ONELOOP];
   printf("@@@@@@@@@ My inputs are: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
   for (int i = 0; i < CA_N_U_ONELOOP; i++) {
-    printf ("andi_du[%i] = %f ",i,u[i]);
+    printf("andi_du[%i] = %f ",i,u[i]);
     printf("du_min[%i] = %f ",i,umin[i]);
     printf("du_max[%i] = %f ",i,umax[i]);
     printf("du_pref[%i] = %f ",i,up[i]);

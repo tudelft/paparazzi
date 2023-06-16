@@ -25,10 +25,14 @@
     <file       name="r8lib_min.c" dir="math/qr_solve"/>
     <configure  name="ANDI_OUTPUTS" default="4"/>
     <configure  name="ANDI_NUM_ACT" default="4"/>
+    <configure  name="ANDI_NUM_VIRTUAL_ACT" default="2"/>
+    <configure  name="ANDI_NUM_ACT_TOT" default="6"/>
     <define     name="ANDI_OUTPUTS" value="$(ANDI_OUTPUTS)"/>
     <define     name="ANDI_NUM_ACT" value="$(ANDI_NUM_ACT)"/>
+    <define     name="ANDI_NUM_VIRTUAL_ACT" value="$(ANDI_NUM_VIRTUAL_ACT)"/>
+    <define     name="ANDI_NUM_ACT_TOT" value="$(ANDI_NUM_ACT_TOT)"/>
     <define     name="CA_N_V_ONELOOP" value="$(ANDI_OUTPUTS)"/>
-    <define     name="CA_N_U_ONELOOP" value="$(ANDI_NUM_ACT)"/>
+    <define     name="CA_N_U_ONELOOP" value="$(ANDI_NUM_ACT_TOT)"/>
     <define     name="ONELOOP_ATTITUDE_ANDI_FULL" value="true"/>
   </makefile> 
 </module>

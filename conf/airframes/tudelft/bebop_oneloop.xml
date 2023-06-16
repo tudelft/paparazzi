@@ -39,7 +39,9 @@
       <define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.08"/>
     </module>
     <module name="oneloop" type="andi">
+    <configure name="ANDI_NUM_ACT_TOT" value="6"/>
       <configure name="ANDI_NUM_ACT" value="4"/>
+      <configure name="ANDI_NUM_VIRTUAL_ACT" value="2"/>
       <configure name="ANDI_OUTPUTS" value="6"/>
     </module>
     <module name="geo_mag"/>
@@ -84,6 +86,7 @@
     <define name="THRESHOLD_GROUND_DETECT" value="40"/>
     <define name="AUTOPILOT_ARMING_DELAY" value="2"/>
     <!-- <define VALUE="TRUE" NAME="NO_GPS_LOST_WITH_RC_VALID"/> -->
+    <!-- <define name="ACTUATORS_NB" value="6"/> -->
   </section>
 
   <section name="AIR_DATA" prefix="AIR_DATA_">
@@ -150,31 +153,31 @@
   </section>
 
   <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
-    <define name="G1_ROLL"   value="{20.0f , -20.0f, -20.0f , 20.0f }"/>
-    <define name="G1_PITCH"  value="{10.0f , 10.0f, -10.0f , -10.0f }"/>  
-    <define name="G1_YAW"    value="{-1.0f, 1.0f, -1.0f, 1.0f}"/>
-    <define name="G1_THRUST" value="{-.4f, -.4f, -.4f, -.4f}"/>  
+    <define name="G1_ROLL"   value="{20.0f , -20.0f, -20.0f, 20.0f , 0.0f, 0.0f  }"/>
+    <define name="G1_PITCH"  value="{10.0f , 10.0f , -10.0f, -10.0f, 0.0f, 0.0f  }"/>  
+    <define name="G1_YAW"    value="{-1.0f , 1.0f  , -1.0f , 1.0f  , 0.0f, 0.0f  }"/>
+    <define name="G1_THRUST" value="{-.4f  , -.4f  , -.4f  , -.4f  , 0.0f, 0.0f  }"/>  
     <!-- <define name="G1_ROLL"   value="{18.f,    -18.f,    -18.f ,     18.0f}"/>
     <define name="G1_PITCH"  value="{15.f ,    15.f,    -15.f,     -15.0f}    10"/>
     <define name="G1_YAW"    value="{-0.65f,   0.65f,   -0.65f,     0.65f}"/>
     <define name="G1_THRUST" value="{-.7f,    -.7f,     -.7f,      -0.7f }"/> -->
-    <define name="G1_ZERO"   value="{0.0f,    0.0f,     0.0f,       0.0f }"/>      
-    <define name="G2"        value="{ 0.f,  0.f,   0.f,     0.f}"/>
+    <define name="G1_ZERO"   value="{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }"/>      
+    <define name="G2"        value="{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}"/>
     <define name="MAX_R"     value="120.0" unit="deg/s"/>
-    <define value="3.2"     NAME  = "FILT_CUTOFF" />
-    <define value="3.2"     NAME  = "ESTIMATION_FILT_CUTOFF" />
-    <define VALUE="5.0"     NAME  = "FILT_CUTOFF_P"/>
-    <define VALUE="5.0"     NAME  = "FILT_CUTOFF_Q"/>
-    <define VALUE="3.0"     NAME  = "FILT_CUTOFF_R"/>
-    <define VALUE="0.5"     NAME  = "FILT_CUTOFF_RDOT"/>
-    <define VALUE="TRUE"    NAME  = "FILTER_YAW_RATE"/>
+    <define value="5.0"      NAME  = "FILT_CUTOFF" />
+    <define value="3.2"      NAME  = "ESTIMATION_FILT_CUTOFF" />
+    <define VALUE="20.0"     NAME  = "FILT_CUTOFF_P"/>
+    <define VALUE="20.0"     NAME  = "FILT_CUTOFF_Q"/>
+    <define VALUE="20.0"     NAME  = "FILT_CUTOFF_R"/>
+    <define VALUE="0.5"      NAME  = "FILT_CUTOFF_RDOT"/>
+    <define VALUE="TRUE"     NAME  = "FILTER_YAW_RATE"/>
     <!-- <define VALUE="{0.08f, 0.08f, 0.08f, 0.08f}" NAME="ACT_DYN"/> -->
-    <define NAME="ACT_DYN"      VALUE="{50.0f, 50.0f, 50.0f, 50.0f}" />
-    <define NAME="ACT_IS_SERVO" VALUE="{0, 0, 0, 0}" />
-    <define NAME="ACT_MAX"      VALUE = "{9600.0f, 9600.0f,  9600.0f,  9600.0f}"/>
-    <define NAME="ACT_MIN"      VALUE = "{0.0f,    0.0f,     0.0f,     0.0f}"/>
-    <define NAME="ACT_MAX_NORM" VALUE = "{1.0f,   1.0f,    1.0f,    1.0f}"/>
-    <define NAME="ACT_MIN_NORM" VALUE = "{0.0f,    0.0f,     0.0f,     0.0f}"/>
+    <define NAME="ACT_DYN"      VALUE = "{50.0f, 50.0f, 50.0f, 50.0f, 0.0f,0.0f}" />
+    <define NAME="ACT_IS_SERVO" VALUE = "{0, 0, 0, 0, 0, 0}" />
+    <define NAME="ACT_MAX"      VALUE = "{9600.0f, 9600.0f,  9600.0f,  9600.0f,  M_PI_4,  M_PI_4}"/>
+    <define NAME="ACT_MIN"      VALUE = "{0.0f   ,    0.0f,     0.0f,     0.0f, -M_PI_4, -M_PI_4}"/>
+    <define NAME="ACT_MAX_NORM" VALUE = "{1.0f   ,    1.0f,     1.0f,     1.0f,    1.0f,    1.0f}"/>
+    <define NAME="ACT_MIN_NORM" VALUE = "{0.0f   ,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f}"/>
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">

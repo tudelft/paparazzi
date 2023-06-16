@@ -47,11 +47,12 @@ extern float pos_1l[3];
 extern float pos_d[3];
 extern float pos_2d[3];
 extern float act_state_filt_vect_1l[ANDI_NUM_ACT];
+extern float actuator_state_1l[ANDI_NUM_ACT];
 extern float nu[6];
 
-extern float g1g2_1l[ANDI_OUTPUTS][ANDI_NUM_ACT];
+extern float g1g2_1l[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
 
-extern float andi_u[ANDI_NUM_ACT];
+extern float andi_u[ANDI_NUM_ACT_TOT];
 
 extern float p1_att;
 extern float p1_head;

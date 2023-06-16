@@ -43,7 +43,7 @@
 #include "wls/wls_alloc.h"
 #include <stdio.h>
 
-//#define ANDI_NUM_ACT 4 
+//#define ANDI_NUM_ACT_TOT 4 
 //#define ANDI_OUTPUTS 6
 
 #ifdef ONELOOP_ANDI_FILT_CUTOFF
@@ -53,44 +53,61 @@ float oneloop_andi_filt_cutoff = 2.0;
 #endif
 
 #ifdef ONELOOP_ANDI_ACT_IS_SERVO
-bool actuator_is_servo[ANDI_NUM_ACT] = ONELOOP_ANDI_ACT_IS_SERVO;
+bool actuator_is_servo[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_IS_SERVO;
 #else
-bool actuator_is_servo[ANDI_NUM_ACT] = {0};
+bool actuator_is_servo[ANDI_NUM_ACT_TOT] = {0};
 #endif
 
 #ifdef ONELOOP_ANDI_ACT_DYN
-float act_dynamics[ANDI_NUM_ACT] = ONELOOP_ANDI_ACT_DYN;
-//float act_dynamics_d[ANDI_NUM_ACT] = = {0};
+float act_dynamics[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_DYN;
+//float act_dynamics_d[ANDI_NUM_ACT_TOT] = = {0};
 #else
-float act_dynamics[ANDI_NUM_ACT] = = {0};
-f//loat act_dynamics_d[ANDI_NUM_ACT] = = {0};
+float act_dynamics[ANDI_NUM_ACT_TOT] = = {0};
+f//loat act_dynamics_d[ANDI_NUM_ACT_TOT] = = {0};
 #endif
-//float act_dynamics_d[ANDI_NUM_ACT] = = {0};
+//float act_dynamics_d[ANDI_NUM_ACT_TOT] = = {0};
 
 #ifdef ONELOOP_ANDI_ACT_MAX
-float act_max[ANDI_NUM_ACT] = ONELOOP_ANDI_ACT_MAX;
+float act_max[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX;
 #else
-float act_max[ANDI_NUM_ACT] = = {9600.0};
+float act_max[ANDI_NUM_ACT_TOT] = = {9600.0};
 #endif
 
 #ifdef ONELOOP_ANDI_ACT_MIN
-float act_min[ANDI_NUM_ACT] = ONELOOP_ANDI_ACT_MIN;
+float act_min[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN;
 #else
-float act_min[ANDI_NUM_ACT] = = {0.0};
+float act_min[ANDI_NUM_ACT_TOT] = = {0.0};
 #endif
 
 #ifdef ONELOOP_ANDI_ACT_MAX_NORM
-float act_max_norm[ANDI_NUM_ACT] = ONELOOP_ANDI_ACT_MAX_NORM;
+float act_max_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX_NORM;
 #else
-float act_max_norm[ANDI_NUM_ACT] = = {1.0};
+float act_max_norm[ANDI_NUM_ACT_TOT] = = {1.0};
 #endif
 
 #ifdef ONELOOP_ANDI_ACT_MIN_NORM
-float act_min_norm[ANDI_NUM_ACT] = ONELOOP_ANDI_ACT_MIN_NORM;
+float act_min_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN_NORM;
 #else
-float act_min_norm[ANDI_NUM_ACT] = = {0.0};
+float act_min_norm[ANDI_NUM_ACT_TOT] = = {0.0};
 #endif
 
+#ifdef ONELOOP_ANDI_FILT_CUTOFF_P
+#define ONELOOP_ANDI_FILTER_ROLL_RATE TRUE
+#else
+#define ONELOOP_ANDI_FILT_CUTOFF_P 20.0
+#endif
+
+#ifdef ONELOOP_ANDI_FILT_CUTOFF_Q
+#define ONELOOP_ANDI_FILTER_PITCH_RATE TRUE
+#else
+#define ONELOOP_ANDI_FILT_CUTOFF_Q 20.0
+#endif
+
+#ifdef ONELOOP_ANDI_FILT_CUTOFF_R
+#define ONELOOP_ANDI_FILTER_YAW_RATE TRUE
+#else
+#define ONELOOP_ANDI_FILT_CUTOFF_R 20.0
+#endif
 /*  Define Section of the functions used in this module*/
 void calc_normalization(void);
 void sum_g1g2_1l(void);
@@ -106,7 +123,36 @@ void rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d
 
 static void send_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_ONELOOP_ANDI(trans, dev, AC_ID,
+  float test_trash[4] = {0.,0.,0.,0.};
+  float test_trash2[6] = {0., 0., 0.,0.,0.,0.};
+  // pprz_msg_send_ONELOOP_ANDI(trans, dev, AC_ID,
+  //                                       &att_ref[0],
+  //                                       &att_ref[1],
+  //                                       &att_ref[2],
+  //                                       &att_1l[0],
+  //                                       &att_1l[1],
+  //                                       &att_1l[2],
+  //                                       &att_d_ref[0],
+  //                                       &att_d_ref[1],
+  //                                       &att_d_ref[2],
+  //                                       &att_d[0],
+  //                                       &att_d[1],
+  //                                       &att_d[2],
+  //                                       &att_2d_ref[0],
+  //                                       &att_2d_ref[1],
+  //                                       &att_2d_ref[2],
+  //                                       &att_2d[0],
+  //                                       &att_2d[1],
+  //                                       &att_2d[2],
+  //                                       ANDI_NUM_ACT_TOT, g1g2_1l[0],
+  //                                       ANDI_NUM_ACT_TOT, g1g2_1l[1],
+  //                                       ANDI_NUM_ACT_TOT, g1g2_1l[2],
+  //                                       ANDI_NUM_ACT_TOT, g1g2_1l[3],
+  //                                       ANDI_NUM_ACT_TOT, g1g2_1l[4],
+  //                                       ANDI_NUM_ACT_TOT, g1g2_1l[5],
+  //                                       ANDI_OUTPUTS, nu,
+  //                                       ANDI_NUM_ACT, actuator_state_1l); //andi_u
+    pprz_msg_send_ONELOOP_ANDI(trans, dev, AC_ID,
                                         &att_ref[0],
                                         &att_ref[1],
                                         &att_ref[2],
@@ -125,14 +171,14 @@ static void send_oneloop_andi(struct transport_tx *trans, struct link_device *de
                                         &att_2d[0],
                                         &att_2d[1],
                                         &att_2d[2],
-                                        ANDI_NUM_ACT, g1g2_1l[0],
-                                        ANDI_NUM_ACT, g1g2_1l[1],
-                                        ANDI_NUM_ACT, g1g2_1l[2],
-                                        ANDI_NUM_ACT, g1g2_1l[3],
-                                        ANDI_NUM_ACT, g1g2_1l[4],
-                                        ANDI_NUM_ACT, g1g2_1l[5],
-                                        ANDI_OUTPUTS, nu,
-                                        ANDI_NUM_ACT, act_state_filt_vect_1l); //andi_u
+                                        6, test_trash2,
+                                        6, test_trash2,
+                                        6, test_trash2,
+                                        4, test_trash, //at this point the message crashes, probably too much memory, split message in two 
+                                        4, test_trash,
+                                        4, test_trash,
+                                        ANDI_OUTPUTS, test_trash2,
+                                        ANDI_NUM_ACT, test_trash); //andi_u
 }
 #endif
 /*Physical Properties RW3C*/
@@ -191,14 +237,14 @@ float w_theta = 1.0;     // [rad/s] First order bandwidth of actuator
  See also: WLSC_ALLOC, IP_ALLOC, FXP_ALLOC, QP_SIM. */
 float gamma_wls             = 0.01;//100;//100000.0;
 static float Wv[ANDI_OUTPUTS]      = {0.0,0.0,0.0,10.0*100.0,10.0*100.0,100.0};//{0.0,0.0,5.0,10.0*100.0,10.0*100.0,0.0}; // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}
-static float Wu[ANDI_NUM_ACT]      = {2.0,2.0,2.0,2.0}; // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}
-float u_pref[ANDI_NUM_ACT]  = {0.0,0.0,0.0,0.0};
+static float Wu[ANDI_NUM_ACT_TOT]      = {2.0, 2.0, 2.0,2.0,2.0,2.0}; // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}
+float u_pref[ANDI_NUM_ACT_TOT]         = {0.0,0.0,0.0,0.0,0.0,0.0};
 // float Wu[11]      = {2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,1.0,1.8,2.0}; // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}
 // float Wu_tran[11] = {0.0,0.0,0.0,0.0,3.0,3.0,3.0,3.0,0.0,0.0,0.0}; // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}
 // float u_pref[11] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
-float du_min[ANDI_NUM_ACT] = {0.0,0.0,0.0,0.0};
-float du_max[ANDI_NUM_ACT];
-float du_pref[ANDI_NUM_ACT];
+float du_min[ANDI_NUM_ACT_TOT]; // = {0.0,0.0,0.0,0.0};
+float du_max[ANDI_NUM_ACT_TOT];
+float du_pref[ANDI_NUM_ACT_TOT];
 int   number_iter = 0;
 /*Declaration of Reference Model and Error Controller Gains*/
 float rm_k_attitude;
@@ -282,23 +328,23 @@ float old_time = 0.0;
 float new_time = 0.0;
 struct Int32Eulers stab_att_sp_euler;
 struct Int32Quat   stab_att_sp_quat;
-float act_dynamics_d[ANDI_NUM_ACT];
+float act_dynamics_d[ANDI_NUM_ACT_TOT];
 //struct FloatRates ang_accel_ref = {0., 0., 0.};
-float actuator_state_1l[ANDI_NUM_ACT] = {0.,0.,0.,0.};
+float actuator_state_1l[ANDI_NUM_ACT];// = {0.0, 0.0,0.,0.,0.,0.};
 //struct FloatRates rate_sp_telem = {0., 0., 0.};
 float ang_acc[3] = {0., 0., 0.};
-float andi_u[ANDI_NUM_ACT];
-float andi_du[ANDI_NUM_ACT];
-float andi_du_n[ANDI_NUM_ACT];
+float andi_u[ANDI_NUM_ACT_TOT];
+float andi_du[ANDI_NUM_ACT_TOT];
+float andi_du_n[ANDI_NUM_ACT_TOT];
 float g2_times_du;
 //float q_filt = 0.0;
 //float r_filt = 0.0;
 float dt_1l = 1./PERIODIC_FREQUENCY;
-//float G1[6][ANDI_NUM_ACT];
+//float G1[6][ANDI_NUM_ACT_TOT];
 bool  rc_on = true;
-float act_state_filt_vect_1l[ANDI_NUM_ACT];
-float du_estimation[ANDI_NUM_ACT];
-float ddu_estimation[ANDI_NUM_ACT];
+//float act_state_filt_vect_1l[ANDI_NUM_ACT];
+//float du_estimation[ANDI_NUM_ACT_TOT];
+//float ddu_estimation[ANDI_NUM_ACT_TOT];
 float att_ref[3];
 float att_d_ref[3];
 float att_2d_ref[3];
@@ -317,14 +363,14 @@ float pos_2d[3];
 
 float nu[ANDI_OUTPUTS];
 
-float g2_1l[ANDI_NUM_ACT] = ONELOOP_ANDI_G2; //scaled by INDI_G_SCALING
-//float g1_1l[ANDI_OUTPUTS][ANDI_NUM_ACT] = {ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_THRUST, ONELOOP_ANDI_G1_ROLL, ONELOOP_ANDI_G1_PITCH, ONELOOP_ANDI_G1_YAW};  
-float g1_1l[ANDI_OUTPUTS][ANDI_NUM_ACT] = {ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_ROLL, ONELOOP_ANDI_G1_PITCH, ONELOOP_ANDI_G1_YAW};
-float g1g2_1l[ANDI_OUTPUTS][ANDI_NUM_ACT];
-float thrust_eff[ANDI_NUM_ACT] = ONELOOP_ANDI_G1_THRUST;
+float g2_1l[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_G2; //scaled by INDI_G_SCALING
+//float g1_1l[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT] = {ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_THRUST, ONELOOP_ANDI_G1_ROLL, ONELOOP_ANDI_G1_PITCH, ONELOOP_ANDI_G1_YAW};  
+float g1_1l[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT] = {ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_ZERO, ONELOOP_ANDI_G1_ROLL, ONELOOP_ANDI_G1_PITCH, ONELOOP_ANDI_G1_YAW};
+float g1g2_1l[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
+float thrust_eff[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_G1_THRUST;
 
-float ratio_u_un[ANDI_NUM_ACT] = {1.0,1.0,1.0,1.0};
-float ratio_vn_v[ANDI_NUM_ACT];
+float ratio_u_un[ANDI_NUM_ACT_TOT];// = {1.0,1.0,1.0,1.0};
+float ratio_vn_v[ANDI_NUM_ACT_TOT];
 
 float *bwls_1l[ANDI_OUTPUTS];
 
@@ -374,10 +420,10 @@ void rm_2rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des
 }
 
 /*Third Order Dynamics Approximation*/
-// static float w_approx(float p1, float p2, float p3, float rm_k){
-//   float tao = (p1*p2+p1*p3+p2*p3)/(p1*p2*p3)/(rm_k);
-//   return 1/tao;
-// }
+static float w_approx(float p1, float p2, float p3, float rm_k){
+  float tao = (p1*p2+p1*p3+p2*p3)/(p1*p2*p3)/(rm_k);
+  return 1/tao;
+}
 
 /** Gain Design
  * @brief This section is used to define the gains of the reference model and error controller
@@ -393,6 +439,9 @@ p3_att        = p1_att;
 k_theta_e     = k_e_1_3_f(p1_att,p2_att,p3_att);
 k_q_e         = k_e_2_3_f(p1_att,p2_att,p3_att);
 k_qdot_e      = k_e_3_3_f(p1_att,p2_att,p3_att);
+// k_theta_e     = 2.7706*6.3155*9.1441;
+// k_q_e         = 6.3155*9.1441;
+// k_qdot_e      = 9.1441;
 k_phi_e       = k_theta_e;
 k_p_e         = k_q_e;
 k_pdot_e      = k_qdot_e;
@@ -450,9 +499,9 @@ k_r_rm        = k_rm_1_2_f(rm_k_head*p1_head,rm_k_head*p2_head);
 k_r_d_rm      = k_rm_2_2_f(rm_k_head*p1_head,rm_k_head*p2_head);
 
 /*Approximated Dynamics*/
-// UNCOMMENT ME
-//act_dynamics[ANDI_NUM_ACT-2] = w_approx( p1_att,  p2_att,  p3_att,  rm_k_attitude);
-//act_dynamics[ANDI_NUM_ACT-1]   = w_approx( p1_att,  p2_att,  p3_att,  rm_k_attitude);
+
+act_dynamics[ANDI_NUM_ACT_TOT-2]   = w_approx( p1_att,  p2_att,  p3_att,  rm_k_attitude);
+act_dynamics[ANDI_NUM_ACT_TOT-1]   = w_approx( p1_att,  p2_att,  p3_att,  rm_k_attitude);
 }
 
 /** state eulers in zxy order */
@@ -467,7 +516,7 @@ Butterworth2LowPass filt_accel_body[3];
 Butterworth2LowPass roll_filt;
 Butterworth2LowPass pitch_filt;
 Butterworth2LowPass yaw_filt;
-Butterworth2LowPass act_lowpass_filt[ANDI_NUM_ACT];
+//Butterworth2LowPass act_lowpass_filt[ANDI_NUM_ACT];
 Butterworth2LowPass att_dot_meas_lowpass_filters[3];
 Butterworth2LowPass att_ref_lowpass_filters[3];
 Butterworth2LowPass rate_ref_lowpass_filters[3];
@@ -476,19 +525,20 @@ Butterworth2LowPass rate_ref_lowpass_filters[3];
 Butterworth2LowPass measurement_lowpass_filters[3];
 Butterworth2LowPass estimation_output_lowpass_filters[3];
 
-//static struct FirstOrderLowPass rates_filt_fo[3];
+static struct FirstOrderLowPass rates_filt_fo[3];
 struct FloatVect3 body_accel_f;
 
 
 void init_filter(void)
 {
   float tau = 1.0 / (2.0 * M_PI *oneloop_andi_filt_cutoff);
-  float tau_est = 1.0 / (2.0 * M_PI * oneloop_andi_estimation_filt_cutoff);
+  //float tau_est = 1.0 / (2.0 * M_PI * oneloop_andi_estimation_filt_cutoff);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
 
   // Filtering of the Inputs with 3 dimensions (e.g. rates and accelerations)
   int8_t i;
   for (i = 0; i < 3; i++) {
+    init_butterworth_2_low_pass(&att_dot_meas_lowpass_filters[i], tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&att_dot_meas_lowpass_filters[i], tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&filt_accel_body[i], tau, sample_time, 0.0);
@@ -497,18 +547,18 @@ void init_filter(void)
   }
 
   // Filtering of the actuators
-  for (i = 0; i < ANDI_NUM_ACT; i++) {
-    init_butterworth_2_low_pass(&act_lowpass_filt[i], tau, sample_time, 0.0);
-  }
+  // for (i = 0; i < ANDI_NUM_ACT; i++) {
+  //   init_butterworth_2_low_pass(&act_lowpass_filt[i], tau, sample_time, 0.0);
+  // }
   init_butterworth_2_low_pass(&roll_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&yaw_filt, tau, sample_time, 0.0);
 
   // Init rate filter for feedback
-  //float time_constants[3] = {1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_P), 1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_Q), 1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_R)};
-  //init_first_order_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
-  //init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
-  //init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
+  float time_constants[3] = {1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_P), 1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_Q), 1.0 / (2 * M_PI * ONELOOP_ANDI_FILT_CUTOFF_R)};
+  init_first_order_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
+  init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
+  init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
 }
 
 
@@ -530,10 +580,14 @@ void oneloop_andi_propagate_filters(void) {
   update_butterworth_2_low_pass(&filt_accel_body[1], accel_b_y);
   update_butterworth_2_low_pass(&filt_accel_body[2], accel_b_z);
   
+  
   int8_t i;
   for (i = 0; i < 3; i++) {
     update_butterworth_2_low_pass(&att_dot_meas_lowpass_filters[i], rate_vect[i]);
-    ang_acc[i] = (att_dot_meas_lowpass_filters[i].o[0]- att_dot_meas_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY;
+    float old_rate = rates_filt_fo[i].last_out;
+    update_first_order_low_pass(&rates_filt_fo[i], rate_vect[i]);
+    //ang_acc[i] = (att_dot_meas_lowpass_filters[i].o[0]- att_dot_meas_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY;
+    ang_acc[i] = (rates_filt_fo[i].last_out- old_rate) * PERIODIC_FREQUENCY;
 }}
 
 /*Init function of oneloop controller*/
@@ -552,10 +606,10 @@ void oneloop_andi_init(void)
   }
   init_filter();
   init_controller();
-  float_vect_zero(andi_u, ANDI_NUM_ACT);
-  float_vect_zero(andi_du, ANDI_NUM_ACT);
-  float_vect_zero(andi_du_n, ANDI_NUM_ACT);
-  float_vect_zero(act_state_filt_vect_1l, ANDI_NUM_ACT);
+  float_vect_zero(andi_u, ANDI_NUM_ACT_TOT);
+  float_vect_zero(andi_du, ANDI_NUM_ACT_TOT);
+  float_vect_zero(andi_du_n, ANDI_NUM_ACT_TOT);
+  // float_vect_zero(act_state_filt_vect_1l, ANDI_NUM_ACT);
   float_vect_zero(actuator_state_1l,ANDI_NUM_ACT);
   float_vect_zero(att_ref,3);
   float_vect_zero(att_d_ref,3);
@@ -587,13 +641,13 @@ void oneloop_andi_enter(void)
   init_controller();
   /* Stabilization Reset */
   // To-Do // stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
-  float_vect_zero(andi_u, ANDI_NUM_ACT);
-  float_vect_zero(andi_du, ANDI_NUM_ACT);
-  float_vect_zero(andi_du_n, ANDI_NUM_ACT);
-  float_vect_zero(act_state_filt_vect_1l, ANDI_NUM_ACT);
+  float_vect_zero(andi_u, ANDI_NUM_ACT_TOT);
+  float_vect_zero(andi_du, ANDI_NUM_ACT_TOT);
+  float_vect_zero(andi_du_n, ANDI_NUM_ACT_TOT);
+  // float_vect_zero(act_state_filt_vect_1l, ANDI_NUM_ACT);
   float_vect_zero(actuator_state_1l,ANDI_NUM_ACT);
-  float_vect_zero(du_estimation, ANDI_NUM_ACT);
-  float_vect_zero(ddu_estimation, ANDI_NUM_ACT);
+  // float_vect_zero(du_estimation, ANDI_NUM_ACT_TOT);
+  // float_vect_zero(ddu_estimation, ANDI_NUM_ACT_TOT);
   float_vect_zero(att_ref,3);
   float_vect_zero(att_d_ref,3);
   float_vect_zero(att_2d_ref,3);
@@ -631,12 +685,12 @@ void oneloop_andi_attitude_run(struct Int32Quat quat_sp, struct FloatVect3 pos_d
   new_time = get_sys_time_float();
   printf("This function is running at a dt=%f \n",new_time-old_time);
   old_time = new_time;
-  printf("k_theta_e = %f\n",k_theta_e);
-  printf("k_q_e = %f\n",k_q_e);
-  printf("k_qdot_e = %f\n",k_qdot_e);
-  printf("k_theta_rm = %f\n",k_theta_rm);
-  printf("k_q_rm = %f\n",k_q_rm);
-  printf("k_qdot_rm = %f\n",k_qdot_rm);
+  //printf("k_theta_e = %f\n",k_theta_e);
+  //printf("k_q_e = %f\n",k_q_e);
+  //printf("k_qdot_e = %f\n",k_qdot_e);
+  //printf("k_theta_rm = %f\n",k_theta_rm);
+  //printf("k_q_rm = %f\n",k_q_rm);
+  //printf("k_qdot_rm = %f\n",k_qdot_rm);
   init_controller();
   calc_normalization();
   sum_g1g2_1l();
@@ -665,12 +719,18 @@ void oneloop_andi_attitude_run(struct Int32Quat quat_sp, struct FloatVect3 pos_d
   eulers_zxy.theta = stateGetNedToBodyEulers_f()->theta;
   eulers_zxy.psi   = stateGetNedToBodyEulers_f()->psi;
   oneloop_andi_propagate_filters();
-  att_1l[0] = roll_filt.o[0]                        * use_increment;
-  att_1l[1] = pitch_filt.o[0]                       * use_increment;
-  att_1l[2] = yaw_filt.o[0]                         * use_increment;
-  att_d[0]  = att_dot_meas_lowpass_filters[0].o[0]  * use_increment;
-  att_d[1]  = att_dot_meas_lowpass_filters[1].o[0]  * use_increment;
-  att_d[2]  = att_dot_meas_lowpass_filters[2].o[0]  * use_increment;
+  // att_1l[0] = roll_filt.o[0]                        * use_increment;
+  // att_1l[1] = pitch_filt.o[0]                       * use_increment;
+  // att_1l[2] = yaw_filt.o[0]                         * use_increment;
+  att_1l[0] = eulers_zxy.phi                        * use_increment;
+  att_1l[1] = eulers_zxy.theta                      * use_increment;
+  att_1l[2] = eulers_zxy.psi                        * use_increment;
+  // att_d[0]  = att_dot_meas_lowpass_filters[0].o[0]  * use_increment;
+  // att_d[1]  = att_dot_meas_lowpass_filters[1].o[0]  * use_increment;
+  // att_d[2]  = att_dot_meas_lowpass_filters[2].o[0]  * use_increment;
+  att_d[0]  = rates_filt_fo[0].last_out                 * use_increment;
+  att_d[1]  = rates_filt_fo[1].last_out                 * use_increment;
+  att_d[2]  = rates_filt_fo[2].last_out                 * use_increment;
   att_2d[0] = ang_acc[0]                            * use_increment;
   att_2d[1] = ang_acc[1]                            * use_increment;
   att_2d[2] = ang_acc[2]                            * use_increment;
@@ -691,8 +751,8 @@ void oneloop_andi_attitude_run(struct Int32Quat quat_sp, struct FloatVect3 pos_d
   float a_thrust = 0.0;
   for (i = 0; i < ANDI_NUM_ACT; i++) {
     //printf("bwls_thrust column %i is %f\n",i,bwls_1l[2][i]);
-    //printf("filtered state of actuator %i is %f\n",i,act_state_filt_vect_1l[i]);
-    a_thrust +=(thrust_cmd_1l - use_increment*act_state_filt_vect_1l[i]) * bwls_1l[2][i]; //stabilization_cmd[COMMAND_THRUST] radio_control.values[RADIO_THROTTLE] 2000.0
+    //printf("filtered state of actuator %i is %f\n",i,actuator_state_1l[i]);
+    a_thrust +=(thrust_cmd_1l - use_increment*actuator_state_1l[i]) * bwls_1l[2][i]; //stabilization_cmd[COMMAND_THRUST] radio_control.values[RADIO_THROTTLE] 2000.0
     //a_thrust +=(thrust_cmd_1l - use_increment*actuator_state_1l[i]) * bwls_1l[2][i];
     //a_thrust += (thrust_cmd_1l - use_increment*andi_u[i]) * bwls_1l[2][i];
     }
@@ -730,13 +790,20 @@ void oneloop_andi_attitude_run(struct Int32Quat quat_sp, struct FloatVect3 pos_d
 
  
   // Calculate the min and max increments
-  for (i = 0; i < ANDI_NUM_ACT; i++) {
-    du_min[i]  = (0.0       - use_increment * act_state_filt_vect_1l[i])/ratio_u_un[i];//-MAX_PPRZ * actuator_is_servo[i] - use_increment*act_state_filt_vect_1l[i];
-    du_max[i]  = (MAX_PPRZ  - use_increment * act_state_filt_vect_1l[i])/ratio_u_un[i];//MAX_PPRZ - use_increment*act_state_filt_vect_1l[i];
-    //du_pref[i] = (u_pref[i] - use_increment * act_state_filt_vect_1l[i])/ratio_u_un[i];//(u_pref[i] - use_increment*act_state_filt_vect_1l[i])/ratio_u_un[i];
-    du_pref[i] = (thrust_cmd_1l - use_increment * act_state_filt_vect_1l[i])/ratio_u_un[i];
+  for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
+    if(i<ANDI_NUM_ACT){
+      du_min[i]  = (act_min[i]    - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
+      du_max[i]  = (act_max[i]    - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
+      du_pref[i] = (thrust_cmd_1l - use_increment * actuator_state_1l[i])/ratio_u_un[i];//du_pref[i] = (u_pref[i] - use_increment * actuator_state_1l[i])/ratio_u_un[i];
+    }else{
+      du_min[i]  = (act_min[i]    - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];
+      du_max[i]  = (act_max[i]    - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
+      du_pref[i] = (0.0           - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
     }
-
+    }
+    
+    
+    
     // if(autopilot.arming_status==3){
     //   printf("I AM ARMED\n");
     // }
@@ -748,12 +815,12 @@ void oneloop_andi_attitude_run(struct Int32Quat quat_sp, struct FloatVect3 pos_d
     printf("@@@@@@@@@ END WLS @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
   // int8_t j;
   // for (i = 0; i < ANDI_OUTPUTS; i++) {
-  //   for (j = 0; j < ANDI_NUM_ACT; j++) {
+  //   for (j = 0; j < ANDI_NUM_ACT_TOT; j++) {
   //     printf("B row %i, column %i is % f\n",i,j,g1g2_1l[i][j]);
   //   }
   // }
 
-  for (i = 0; i < ANDI_NUM_ACT; i++){
+  for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
     printf("andi_du_pre_denormalization[%i]: %f ",i,andi_du_n[i]);
     andi_du[i] = (float)(andi_du_n[i] * ratio_u_un[i]);
   }
@@ -761,7 +828,7 @@ void oneloop_andi_attitude_run(struct Int32Quat quat_sp, struct FloatVect3 pos_d
   if (volando) {
     // Add the increments to the actuators
     //printf("I am integrating\n");
-    float_vect_sum(andi_u, act_state_filt_vect_1l, andi_du, ANDI_NUM_ACT);
+    float_vect_sum(andi_u, actuator_state_1l, andi_du, ANDI_NUM_ACT);
     //float_vect_copy(andi_u, andi_du, ANDI_NUM_ACT);
   } else {
     // Not in flight, so don't increment
@@ -771,7 +838,7 @@ void oneloop_andi_attitude_run(struct Int32Quat quat_sp, struct FloatVect3 pos_d
 
   // TODO : USE THE PROVIDED MAX AND MIN
   // Bound the inputs to the actuators
-  for (i = 0; i < ANDI_NUM_ACT; i++) {
+  for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     if (actuator_is_servo[i]) {
         BoundAbs(andi_u[i], MAX_PPRZ);
       } else {
@@ -780,25 +847,26 @@ void oneloop_andi_attitude_run(struct Int32Quat quat_sp, struct FloatVect3 pos_d
   }
   // Propagate actuator filters
   get_act_state_oneloop();
-  for (i = 0; i < ANDI_NUM_ACT; i++) {
 
-    update_butterworth_2_low_pass(&act_lowpass_filt[i], actuator_state_1l[i]);
-    printf("actuator_state_pre_filter[%i]: %f ",i,actuator_state_1l[i]);
-    printf("actuator_state_post_filter[%i]: %f ",i,act_lowpass_filt[i].o[0]);
-    printf("\n");
+  // for (i = 0; i < ANDI_NUM_ACT; i++) {
 
-    if (actuator_is_servo[i]) {
-        BoundAbs(act_lowpass_filt[i].o[0], MAX_PPRZ);
-      } else {
-        Bound(act_lowpass_filt[i].o[0], 0.0, MAX_PPRZ);
-      }
-    act_state_filt_vect_1l[i] = act_lowpass_filt[i].o[0];
-    if (actuator_is_servo[i]) {
-        BoundAbs(act_state_filt_vect_1l[i], MAX_PPRZ);
-      } else {
-        Bound(act_state_filt_vect_1l[i], 0.0, MAX_PPRZ);
-      }
-  }
+  //   // update_butterworth_2_low_pass(&act_lowpass_filt[i], actuator_state_1l[i]);
+  //   // printf("actuator_state_pre_filter[%i]: %f ",i,actuator_state_1l[i]);
+  //   // printf("actuator_state_post_filter[%i]: %f ",i,act_lowpass_filt[i].o[0]);
+  //   // printf("\n");
+
+  //   // if (actuator_is_servo[i]) {
+  //   //     BoundAbs(act_lowpass_filt[i].o[0], MAX_PPRZ);
+  //   //   } else {
+  //   //     Bound(act_lowpass_filt[i].o[0], 0.0, MAX_PPRZ);
+  //   //   }
+  //   act_state_filt_vect_1l[i] = act_lowpass_filt[i].o[0];
+  //   if (actuator_is_servo[i]) {
+  //       BoundAbs(act_state_filt_vect_1l[i], MAX_PPRZ);
+  //     } else {
+  //       Bound(act_state_filt_vect_1l[i], 0.0, MAX_PPRZ);
+  //     }
+  // }
 
   // if (verbose_oneloop){
   //   verbose_oneloop = true;
@@ -850,24 +918,82 @@ void get_act_state_oneloop(void)
  */
 
 void sum_g1g2_1l(void) {
-  int8_t i;
-  int8_t j;
+  // int8_t i;
+  // int8_t j;
+
+  struct FloatEulers *euler = stateGetNedToBodyEulers_f();
+  float sphi   = sinf(euler->phi);
+  float cphi   = cosf(euler->phi);
+  float stheta = sinf(euler->theta);
+  float ctheta = cosf(euler->theta);
+  float spsi   = sinf(euler->psi);
+  float cpsi   = cosf(euler->psi);
+    //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
+  float T = -9.81;
+
+  // M0
+  g1g2_1l[0][0] = sphi * spsi + cphi * cpsi * stheta;
+  g1g2_1l[1][0] = cphi * spsi * stheta - cpsi * sphi;
+  g1g2_1l[2][0] = cphi * ctheta;
+  g1g2_1l[3][0] = (g1_1l[3][0] / ANDI_G_SCALING) * act_dynamics[0] * ratio_u_un[0] * ratio_vn_v[0];
+  g1g2_1l[4][0] = (g1_1l[4][0] / ANDI_G_SCALING) * act_dynamics[0] * ratio_u_un[0] * ratio_vn_v[0];
+  g1g2_1l[5][0] = ((g1_1l[5][0] + g2_1l[0]) / ANDI_G_SCALING) * act_dynamics[0] *ratio_u_un[0] * ratio_vn_v[0];
+  // M1
+  g1g2_1l[0][1] = sphi * spsi + cphi * cpsi * stheta;
+  g1g2_1l[1][1] = cphi * spsi * stheta - cpsi * sphi;
+  g1g2_1l[2][1] = cphi * ctheta;
+  g1g2_1l[3][1] = (g1_1l[3][1] / ANDI_G_SCALING) * act_dynamics[1] * ratio_u_un[1] * ratio_vn_v[1];
+  g1g2_1l[4][1] = (g1_1l[4][1] / ANDI_G_SCALING) * act_dynamics[1] * ratio_u_un[1] * ratio_vn_v[1];
+  g1g2_1l[5][1] = ((g1_1l[5][1] + g2_1l[1]) / ANDI_G_SCALING) * act_dynamics[1] *ratio_u_un[1] * ratio_vn_v[1];  
+  // M2
+  g1g2_1l[0][2] = sphi * spsi + cphi * cpsi * stheta;
+  g1g2_1l[1][2] = cphi * spsi * stheta - cpsi * sphi;
+  g1g2_1l[2][2] = cphi * ctheta;
+  g1g2_1l[3][2] = (g1_1l[3][2] / ANDI_G_SCALING) * act_dynamics[2] * ratio_u_un[2] * ratio_vn_v[2];
+  g1g2_1l[4][2] = (g1_1l[4][2] / ANDI_G_SCALING) * act_dynamics[2] * ratio_u_un[2] * ratio_vn_v[2];
+  g1g2_1l[5][2] = ((g1_1l[5][2] + g2_1l[2]) / ANDI_G_SCALING) * act_dynamics[2] *ratio_u_un[2] * ratio_vn_v[2];  
+  // M3
+  g1g2_1l[0][3] = sphi * spsi + cphi * cpsi * stheta;
+  g1g2_1l[1][3] = cphi * spsi * stheta - cpsi * sphi;
+  g1g2_1l[2][3] = cphi * ctheta;
+  g1g2_1l[3][3] = (g1_1l[3][3] / ANDI_G_SCALING) * act_dynamics[3] * ratio_u_un[3] * ratio_vn_v[3];
+  g1g2_1l[4][3] = (g1_1l[4][3] / ANDI_G_SCALING) * act_dynamics[3] * ratio_u_un[3] * ratio_vn_v[3];
+  g1g2_1l[5][3] = ((g1_1l[5][3] + g2_1l[3]) / ANDI_G_SCALING) * act_dynamics[3] *ratio_u_un[3] * ratio_vn_v[3]; 
+  // Phi
+  g1g2_1l[0][4]= (cphi * spsi - sphi * cpsi * stheta)  * T * act_dynamics[4] * ratio_u_un[4] * ratio_vn_v[4];
+  g1g2_1l[1][4]= (-sphi * spsi * stheta - cpsi * cphi) * T * act_dynamics[4] * ratio_u_un[4] * ratio_vn_v[4];
+  g1g2_1l[2][4]= -ctheta * sphi                        * T * act_dynamics[4] * ratio_u_un[4] * ratio_vn_v[4];
+  g1g2_1l[3][4]= 0.0;
+  g1g2_1l[4][4]= 0.0;
+  g1g2_1l[5][4]= 0.0;
+  // Theta
+  g1g2_1l[0][5] = (cphi * cpsi * ctheta) * T * act_dynamics[5] * ratio_u_un[5] * ratio_vn_v[5];
+  g1g2_1l[1][5] = (cphi * spsi * ctheta) * T * act_dynamics[5] * ratio_u_un[5] * ratio_vn_v[5];
+  g1g2_1l[2][5] = -stheta * cphi         * T * act_dynamics[5] * ratio_u_un[5] * ratio_vn_v[5];
+  g1g2_1l[3][5] = 0.0;
+  g1g2_1l[4][5] = 0.0;
+  g1g2_1l[5][5] = 0.0;
+
+ 
   //printf("I am calculating what g1g2\n");
-  for (i = 0; i < ANDI_OUTPUTS; i++) {
-    for (j = 0; j < ANDI_NUM_ACT; j++) {
-      if (i != 5) {
-        g1g2_1l[i][j] = (g1_1l[i][j] / ANDI_G_SCALING) * act_dynamics[j] * ratio_u_un[j] * ratio_vn_v[j];
-      } else {
-        g1g2_1l[i][j] = ((g1_1l[i][j] + g2_1l[j]) / ANDI_G_SCALING) * act_dynamics[j] *ratio_u_un[j] * ratio_vn_v[j];
-      }
-    }
+  // for (i = 0; i < ANDI_OUTPUTS; i++) {
+  //   for (j = 0; j < ANDI_NUM_ACT_TOT; j++) {
+  //     if (i != 5) {
+        
+  //     } else if (i !=5) {
+  //       g1g2_1l[i][j] = (g1_1l[i][j] / ANDI_G_SCALING) * act_dynamics[j] * ratio_u_un[j] * ratio_vn_v[j];
+  //     }
+  //     } else {
+  //       g1g2_1l[i][j] = ((g1_1l[i][j] + g2_1l[j]) / ANDI_G_SCALING) * act_dynamics[j] *ratio_u_un[j] * ratio_vn_v[j];
+  //     }
+  //   }
   }
-}
+
 
 void calc_normalization(void){
   //printf("I am calculating the normalization factors\n");
   int8_t i;
-  for (i = 0; i < ANDI_NUM_ACT; i++){
+  for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
     act_dynamics_d[i] = 1.0-exp(-act_dynamics[i]*dt_1l);
     Bound(act_dynamics_d[i],0.0,1.0);
     //printf("discrete dynamics actuator %i is %f\n",i,act_dynamics_d[i]);
