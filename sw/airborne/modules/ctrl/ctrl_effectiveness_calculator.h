@@ -29,6 +29,9 @@ struct MotorCoefficients {
 extern float c_delta_a;
 extern float cda_offset;
 
+extern float g14;
+extern float g15;
+
 extern struct MassProperties mass_property;
 extern float thrust_lower_lim;
 extern float airspeed_scaling;
