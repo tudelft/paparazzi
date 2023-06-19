@@ -139,10 +139,10 @@
     </module>
 
     <module name="stabilization" type="indi">
-      <configure name="INDI_NUM_ACT" value="5"/>
+      <configure name="INDI_NUM_ACT" value="6"/>
     </module>
 
-<!--
+
     <module name="guidance" type="indi_hybrid">
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
       <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>
@@ -157,12 +157,7 @@
       <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/>
 
       <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="15.0"/>
-
-      <define name="FE_LIFT_A_PITCH" value="0.00018"/>
-      <define name="FE_LIFT_B_PITCH" value="0.00072"/>
-      <define name="FE_LIFT_A_AS" value="0.0008"/>
-      <define name="FE_LIFT_B_AS" value="0.00009"/>
-    </module> -->
+    </module>
 
     <!-- <module name="ahrs" type="int_cmpl_quat">
     <configure name="USE_MAGNETOMETER" value="TRUE"/> -->
@@ -232,7 +227,7 @@
     <set servo="RM" value="autopilot.motors_on ? actuators_pprz[2] : -MAX_PPRZ"/>
     <set servo="LM" value="autopilot.motors_on ? actuators_pprz[3] : -MAX_PPRZ"/>
     <set servo="AIL_LEFT" value="actuators_pprz[4]"/>
-    <set servo="AIL_RIGHT" value="actuators_pprz[4]"/>
+    <set servo="AIL_RIGHT" value="actuators_pprz[5]"/>
   </command_laws>
 
   <section name="IMU" prefix="IMU_">
@@ -324,10 +319,10 @@
   <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
     <!-- control effectiveness, scaled by INDI_G_SCALING (1000)-->
     <!-- Actuators					 tilt_l tilt_r  m_r  m_l						-->
-    <define name="G1_ROLL"   value="{   0.0,   0.0, -6.705,  6.705,   0.0}"/>
-    <define name="G1_PITCH"  value="{ 1.755, 1.755,    0.0,    0.0,   0.0}"/>
-    <define name="G1_YAW"    value="{-0.878, 0.878,    0.0,    0.0,   1.0}"/>
-    <define name="G1_THRUST" value="{   0.0,   0.0, -0.308, -0.308,   0.0}"/>
+    <define name="G1_ROLL"   value="{   0.0,   0.0, -6.705,  6.705,   0.0,   0.0}"/>
+    <define name="G1_PITCH"  value="{ 1.755, 1.755,    0.0,    0.0,   0.5,  -0.5}"/>
+    <define name="G1_YAW"    value="{-0.878, 0.878,    0.0,    0.0,   0.5,   0.5}"/>
+    <define name="G1_THRUST" value="{   0.0,   0.0, -0.308, -0.308,   0.0,   0.0}"/>
     <!--Counter torque effect of spinning up a rotor-->
     <define name="G2" value="{0, 0, 0, 0, 0}"/>
 
@@ -364,7 +359,7 @@
     <define name="ADAPTIVE_MU" value="0.0001"/>
 
     <define name="WLS_PRIORITIES" value="{1.0,1.0,1.0,1.0}"/>
-    <define name="WLS_WU" value="{1.0,1.0,1.0,1.0,1.0}"/>
+    <define name="WLS_WU" value="{1.0,1.0,1.0,1.0,0.01,0.01}"/>
 
     <!-- Second order actuator dynamics -->
     <define name="SERVO_DELAY" value="0.014"/> <!-- [s] -->
