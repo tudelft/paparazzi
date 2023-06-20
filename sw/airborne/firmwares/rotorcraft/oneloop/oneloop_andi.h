@@ -62,7 +62,7 @@ extern float p1_alt;
 extern void oneloop_andi_init(void);
 extern void oneloop_andi_enter(void);
 extern void oneloop_andi_set_failsafe_setpoint(void);
-extern void oneloop_andi_attitude_run(struct Int32Quat quat_sp, struct FloatVect3 pos_des, bool in_flight);
+extern void oneloop_andi_attitude_run(bool in_flight);
 extern void oneloop_andi_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn);
 //extern int32_t stabilization_cmd[COMMANDS_NB];
 #endif  // ONELOOP_ANDI_H
