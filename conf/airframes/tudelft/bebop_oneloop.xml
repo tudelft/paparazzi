@@ -7,7 +7,7 @@
   <firmware name="rotorcraft">
   <!-- <autopilot name="rotorcraft_autopilot.xml"/> -->
     <target name="ap" board="bebop">
-      <define name="STABILIZATION_INDI_G2_R" value="0.1450"/>
+       <define name="STABILIZATION_INDI_G2_R" value="0.1450"/>
        <define name="RADIO_TH_HOLD"     value="0"/>
     </target>
 
@@ -26,12 +26,19 @@
     <module name="actuators" type="bebop"/>
     <module name="imu" type="bebop"/>
     <module name="gps" type="furuno"/>
+    <!--OPTITRACK CHANGES-->
+    <!-- <module name="gps" type="datalink"/> -->
+    <!--OPTITRACK CHANGES-->
     <module name="stabilization" type="indi">
       <configure name="INDI_NUM_ACT" value="4"/>
     </module>
     <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="TRUE"/>
       <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
+      <!--OPTITRACK CHANGES-->
+      <!-- <configure name="USE_MAGNETOMETER" value="FALSE"/>
+      <define name="AHRS_USE_GPS_HEADING" value="TRUE"/> -->
+      <!--OPTITRACK CHANGES-->
     </module>
     <module name="ins" type="extended"/>
     <module name="guidance" type="indi">
@@ -39,7 +46,7 @@
       <define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.08"/>
     </module>
     <module name="oneloop" type="andi">
-    <configure name="ANDI_NUM_ACT_TOT" value="6"/>
+      <configure name="ANDI_NUM_ACT_TOT" value="6"/>
       <configure name="ANDI_NUM_ACT" value="4"/>
       <configure name="ANDI_NUM_VIRTUAL_ACT" value="2"/>
       <configure name="ANDI_OUTPUTS" value="6"/>
@@ -106,6 +113,10 @@
   <!-- local magnetic field -->
   <!-- http://wiki.paparazziuav.org/wiki/Subsystem/ahrs#Local_Magnetic_Field -->
   <section name="AHRS" prefix="AHRS_">
+    <!--OPTITRACK CHANGES-->
+    <!-- Needed to use optitrack heading at any speed -->
+    <!-- <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/> -->
+    <!--OPTITRACK CHANGES-->
     <!-- values used if no GPS fix, on 3D fix is update by geo_mag module -->
     <!-- Delft -->
     <define name="H_X" value="0.3892503"/>
@@ -117,6 +128,11 @@
   </section>
 
   <section name="INS" prefix="INS_">
+    <!--OPTITRACK CHANGES-->
+    <!-- <define name="USE_GPS_ALT" value="1"/>
+    <define name="USE_GPS_ALT_SPEED" value="1"/>
+    <define name="VFF_R_GPS" value="0.01"/> -->
+    <!--OPTITRACK CHANGES-->
     <define name="SONAR_MAX_RANGE" value="2.2"/>
   </section>
 
@@ -166,9 +182,9 @@
     <define name="MAX_R"     value="120.0" unit="deg/s"/>
     <define value="5.0"      NAME  = "FILT_CUTOFF" />
     <define value="3.2"      NAME  = "ESTIMATION_FILT_CUTOFF" />
-    <define VALUE="20.0"     NAME  = "FILT_CUTOFF_P"/>
-    <define VALUE="20.0"     NAME  = "FILT_CUTOFF_Q"/>
-    <define VALUE="20.0"     NAME  = "FILT_CUTOFF_R"/>
+    <define VALUE="5.0"     NAME  = "FILT_CUTOFF_P"/>
+    <define VALUE="5.0"     NAME  = "FILT_CUTOFF_Q"/>
+    <define VALUE="5.0"     NAME  = "FILT_CUTOFF_R"/>
     <define VALUE="0.5"      NAME  = "FILT_CUTOFF_RDOT"/>
     <define VALUE="TRUE"     NAME  = "FILTER_YAW_RATE"/>
     <!-- <define VALUE="{0.08f, 0.08f, 0.08f, 0.08f}" NAME="ACT_DYN"/> -->
@@ -177,7 +193,7 @@
     <define NAME="ACT_MAX"      VALUE = "{9600.0f, 9600.0f,  9600.0f,  9600.0f,  M_PI_4,  M_PI_4}"/>
     <define NAME="ACT_MIN"      VALUE = "{0.0f   ,    0.0f,     0.0f,     0.0f, -M_PI_4, -M_PI_4}"/>
     <define NAME="ACT_MAX_NORM" VALUE = "{1.0f   ,    1.0f,     1.0f,     1.0f,    1.0f,    1.0f}"/>
-    <define NAME="ACT_MIN_NORM" VALUE = "{0.0f   ,    0.0f,     0.0f,     0.0f,    0.0f,    0.0f}"/>
+    <define NAME="ACT_MIN_NORM" VALUE = "{0.0f   ,    0.0f,     0.0f,     0.0f,   -1.0f,   -1.0f}"/>
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
@@ -221,8 +237,8 @@
   <section name="AUTOPILOT">
     <define name="MODE_STARTUP" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO2" value="AP_MODE_ATTITUDE_Z_HOLD"/>
-    <define name="MODE_AUTO1" value="AP_MODE_NAV"/>
+    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
+    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
     <!-- <define name="USE_THROTTLE_FOR_MOTOR_ARMING" value="TRUE"/> -->
     <!-- <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/> -->
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>

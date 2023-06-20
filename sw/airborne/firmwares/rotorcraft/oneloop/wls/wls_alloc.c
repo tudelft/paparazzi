@@ -163,6 +163,11 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
     printf("Wv[%i] = %f ",i,Wv[i]);
   }
   printf("\n");
+  for (int i = 0; i < CA_N_V_ONELOOP; i++) {
+    printf("nu[%i] = %f ",i,v[i]);
+  }
+  printf("\n");
+  
   //print_in_and_outputs(n_c, n_free, A_free_ptr, d, p_free);
   //print_final_values(n_u, n_v, u, B, v, umin, umax);
   

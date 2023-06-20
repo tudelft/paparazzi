@@ -74,11 +74,7 @@ void stabilization_attitude_set_stab_sp(struct StabilizationSetpoint *sp)
 void stabilization_attitude_run(bool in_flight)
 {
   //stabilization_indi_attitude_run(stab_att_sp_quat, in_flight);
-  struct FloatVect3 dummy;
-  dummy.x = 0.0;
-  dummy.y = 0.0;
-  dummy.z = 0.0;
-  oneloop_andi_attitude_run(stab_att_sp_quat, dummy, in_flight);
+  oneloop_andi_attitude_run(in_flight);
 }
 
 // void oneloop_attitude_run(bool in_flight)

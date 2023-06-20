@@ -550,6 +550,69 @@
         <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:p_dot"/>
         <arg flag="-c" constant="*:telemetry:ONELOOP_ANDI:p_dot_ref"/>
       </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="POS_N"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:pos_N_ref"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:pos_N"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="POS_E"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:pos_E_ref"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:pos_E"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="POS_D"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:pos_D_ref"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:pos_D"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="VEL_N"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:vel_N_ref"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:vel_N"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="VEL_E"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:vel_E_ref"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:vel_E"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="VEL_D"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:vel_D_ref"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:vel_D"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="ACC_N"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:acc_N_ref"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:acc_N"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="ACC_E"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:acc_E_ref"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:acc_E"/>
+      </program>
+      <program name="Real-time Plotter">
+        <arg flag="-m" constant="1000"/>
+        <arg flag="-u" constant="0.05"/>
+        <arg flag="-t" constant="ACC_D"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:acc_D_ref"/>
+        <arg flag="-c" constant="*:telemetry:ONELOOP_GUIDANCE:acc_D"/>
+      </program>
     </session>
   </section>
 </control_panel>

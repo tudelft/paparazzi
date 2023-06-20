@@ -51,6 +51,8 @@
       <message name="ACTUATORS"                period="0.02"/>
       <message name="INDI_G"			             period="0.2"/>
       <message name="ONELOOP_ANDI"             period="0.02"/>
+      <message name="ONELOOP_G"                period="0.02"/>
+      <message name="ONELOOP_GUIDANCE"         period="0.02"/>      
       <!-- <message name="COMMANDS"                 period="0.02"/> -->
     </mode>
 
@@ -250,6 +252,8 @@
       <message name="ROT_WING_CONTROLLER"	     period="0.2"/>
       <message name="AOA"			                 period="0.02"/>
       <message name="ONELOOP_ANDI"             period="0.02"/>
+      <message name="ONELOOP_G"                period="0.02"/>
+      <message name="ONELOOP_GUIDANCE"         period="0.02"/>
     </mode>
   </process>
 
