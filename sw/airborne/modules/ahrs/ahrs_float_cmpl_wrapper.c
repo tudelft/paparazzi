@@ -37,11 +37,14 @@ PRINT_CONFIG_VAR(AHRS_FC_OUTPUT_ENABLED)
 /** if TRUE with push the estimation results to the state interface */
 static bool ahrs_fc_output_enabled;
 static uint32_t ahrs_fc_last_stamp;
-static uint8_t ahrs_fc_id = AHRS_COMP_ID_FC;
 
 static void compute_body_orientation_and_rates(void);
 
 #if PERIODIC_TELEMETRY
+#ifndef AHRS_FC_IS_WITH_EKF2
+
+static uint8_t ahrs_fc_id = AHRS_COMP_ID_FC;
+
 #include "modules/datalink/telemetry.h"
 #include "mcu_periph/sys_time.h"
 #include "state.h"
@@ -99,6 +102,7 @@ static void send_filter_status(struct transport_tx *trans, struct link_device *d
   if (t_diff > 50000) { mde = 5; }
   pprz_msg_send_STATE_FILTER_STATUS(trans, dev, AC_ID, &ahrs_fc_id, &mde, &val);
 }
+#endif
 #endif
 
 
@@ -256,13 +260,18 @@ static void compute_body_orientation_and_rates(void)
 {
   if (ahrs_fc_output_enabled) {
     /* Set state */
-    stateSetNedToBodyQuat_f(&ahrs_fc.ltp_to_body_quat);
-    stateSetBodyRates_f(&ahrs_fc.body_rate);
+
+    #ifndef AHRS_FC_IS_WITH_EKF2
+      stateSetNedToBodyQuat_f(&ahrs_fc.ltp_to_body_quat);
+      stateSetBodyRates_f(&ahrs_fc.body_rate);
+    #endif
+
   }
 }
 
 void ahrs_fc_register(void)
 {
+
   ahrs_fc_output_enabled = AHRS_FC_OUTPUT_ENABLED;
   ahrs_fc_init();
   ahrs_register_impl(ahrs_fc_enable_output);
@@ -278,10 +287,13 @@ void ahrs_fc_register(void)
   AbiBindMsgGPS(AHRS_FC_GPS_ID, &gps_ev, gps_cb);
 
 #if PERIODIC_TELEMETRY
+  #ifndef AHRS_FC_IS_WITH_EKF2
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_EULER, send_euler);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_GYRO_BIAS_INT, send_bias);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_EULER_INT, send_euler_int);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GEO_MAG, send_geo_mag);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STATE_FILTER_STATUS, send_filter_status);
+  #endif
 #endif
+
 }

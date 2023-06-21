@@ -51,7 +51,8 @@
     <file name="ahrs_float_cmpl.c"/>
     <file name="ahrs_float_cmpl_wrapper.c"/>
     <test>
-      <define name="PRIMARY_AHRS" value="ahrs_fc"/>
+      <!-- <define name="PRIMARY_AHRS" value="ahrs_fc"/> -->
+      <define name="SECONDARY_AHRS" value="ahrs_fc"/>
       <define name="AHRS_TYPE_H" value="modules/ahrs/ahrs_float_cmpl_wrapper.h" type="string"/>
       <define name="AHRS_PROPAGATE_QUAT"/>
     </test>

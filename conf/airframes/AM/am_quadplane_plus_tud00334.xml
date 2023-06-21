@@ -17,7 +17,7 @@
       <module name="mag" type="rm3100">
         <configure name="MAG_RM3100_I2C_DEV" value="i2c2"/>
         <define name="RM3100_CHAN_X_SIGN" value="+"/>
-        <define name="RM3100_CHAN_Y_SIGN" value="+"/>
+        <define name="RM3100_CHAN_Y_SIGN" value="-"/>
         <define name="RM3100_CHAN_Z_SIGN" value="-"/>
         <define name="RM3100_CHAN_X" value="0"/>
         <define name="RM3100_CHAN_Y" value="1"/>
@@ -105,11 +105,13 @@
       <!--      Module needed for the communication between the raspberry pi and the pixhawk-->
       <module name="ca_am7">
         <configure name="AM7_PORT" value="UART3"/>
+        <configure name="AM7_BAUD" value="B921600"/>
       </module>
 
       <!-- Module needed for the fly by wire communication between the Teensy T4 and the pixhawk-->
       <module name="serial_act_t4">
         <configure name="SERIAL_ACT_T4_PORT" value="UART8"/>
+        <configure name="SERIAL_ACT_T4_BAUD" value="B921600"/>
       </module>
 
     </target>
@@ -136,14 +138,14 @@
     <!-- <module name="guidance" type="indi"/> -->
     <module name="nav_hybrid"/>
 
-    <!-- <module name="ahrs" type="float_cmpl_quat"> -->
-      <!--<configure name="AHRS_ALIGNER_LED" value="2"/>--><!-- no support yet-->
-      <!-- <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/> -->
-      <!-- <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="1.0"/>RTK heading can be 0 -->
-      <!-- <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="0.0"/> -->
-      <!-- <define name="AHRS_FC_MAG_ID" value="MAG_IST8310_SENDER_ID"/> -->
-      <!--<define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID"/>--><!-- Only after hardware was added -->
-    <!-- </module> -->
+    <module name="ahrs" type="float_cmpl_quat">
+      <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
+      <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="1.0"/>
+      <define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="0.0"/>
+      <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
+      <define name="AHRS_FC_OUTPUT_ENABLED" value="FALSE"/>
+      <define name="AHRS_FC_IS_WITH_EKF2" value="TRUE"/>
+    </module>
 
     <module name="stabilization" type="indi_simple"/>
  
@@ -286,13 +288,13 @@
   <section name="OVERACTUATED_VARIABLES" prefix="OVERACTUATED_MIXING_">
 
     <!-- PID gains wrt the SI units -->
-    <define name="PID_P_GAIN_PHI" value="300"/>
-    <define name="PID_I_GAIN_PHI" value="1"/>
-    <define name="PID_D_GAIN_PHI" value="130"/>
+    <define name="PID_P_GAIN_PHI" value="500"/>
+    <define name="PID_I_GAIN_PHI" value="2"/>
+    <define name="PID_D_GAIN_PHI" value="250"/>
 
-    <define name="PID_P_GAIN_THETA" value="160"/>
-    <define name="PID_I_GAIN_THETA" value="1"/>
-    <define name="PID_D_GAIN_THETA" value="100"/>
+    <define name="PID_P_GAIN_THETA" value="300"/>
+    <define name="PID_I_GAIN_THETA" value="2"/>
+    <define name="PID_D_GAIN_THETA" value="150"/>
 
     <define name="PID_P_GAIN_PSI_AZ" value="1.3"/>
     <define name="PID_I_GAIN_PSI_AZ" value="0.34"/>
@@ -437,15 +439,15 @@
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
     <!-- ball bearings vehicle -->
-    <define name="SERVO_EL_1_ZERO_VALUE" value="5.36" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="8.17" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="-1.84" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="-0.5" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="-4.21" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="-0.6" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="-3.16" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="0.7" unit="deg"/>
 
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="6.5" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="11.33" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="-3.1" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="-5" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="1.31" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="-4.0" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="2.98" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="-1.84" unit="deg"/>
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
@@ -468,6 +470,8 @@
     <!-- First order filter on rates -->
     <!-- 1-exp(-cutoff_frequency/sampling_frequency) [20 rad/s]-->
     <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0488" /> 
+
+    <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES_FAILSAFE" value="0.12" /> 
 
     <!-- Weighting matrix for the INDI -->
     <define name="W_ACT_MOTOR_CONST" value="3"/>
@@ -624,7 +628,7 @@
    <!-- ************************* MAG EXTERNAL ************************* -->
   <section name="MAG_RM3100" prefix="RM3100_">
     <define name="DATA_RATE" value="RM3100_RATE_600"/>
-    <define name="ADDR" value="RM3100_ADDR3"/>
+    <define name="ADDR" value="RM3100_ADDR0"/>
   </section>
 
   <section name="IMU" prefix="IMU_">
@@ -632,8 +636,8 @@
     <!-- Calibrated at mavlab 03-05-2023 -->
     <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-17,-8,22}, .scale={{11701,50107,46279},{1198,5125,4775}}} , {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-61,-18,-13}, .scale={{9035,17566,62431},{1732,3587,12773}}}}"/>
 
-    <!-- valkenburg rm3100 04-05-2023 -->
-    <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={213,62,-46}, .scale={{21725,29825,31357},{36926,51139,54396}}}}"/>
+    <!-- TO BE CALIBRATED AGAIN. THIS IS RANDOM-->
+    <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={17,-52,-80}, .scale={{2843,11261,31619},{4991,19705,56656}}}}"/>
 
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI" value="180" unit="deg"/>

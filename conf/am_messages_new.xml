@@ -2209,21 +2209,21 @@
          <field name="act_theta" type="float" unit="rad">Actual theta value [rad]</field>
          <field name="act_psi" type="float" unit="rad">Actual psi value [rad]</field>
 
-         <field name="des_phi" type="float" unit="rad"> Desired phi value [rad]</field>
-         <field name="des_theta" type="float" unit="rad">Desired theta value [rad]</field>
-         <field name="des_psi" type="float" unit="rad">Desired psi value [rad]</field>
+         <field name="sec_ahrs_phi" type="float" unit="rad"> Backup AHRS phi value [rad]</field>
+         <field name="sec_ahrs_theta" type="float" unit="rad">Backup AHRS theta value [rad]</field>
+         <field name="sec_ahrs_psi" type="float" unit="rad">Backup AHRS psi value [rad]</field>
 
-         <field name="des_x_pos" type="float" unit="m">Desired position x [m]</field>
-         <field name="des_y_pos" type="float" unit="m">Desired position y [m]</field>
-         <field name="des_z_pos" type="float" unit="m">Desired position z [m]</field>
+         <field name="sec_ahrs_p" type="float" unit="rad"> Backup AHRS body p [rad/s]</field>
+         <field name="sec_ahrs_q" type="float" unit="rad">Backup AHRS body q [rad]</field>
+         <field name="sec_ahrs_r" type="float" unit="rad">Backup AHRS body r [rad]</field>
 
-         <field name="alt_action" type="float" >Altitude action on motor [ppz]</field>
-         <field name="pitch_action" type="float" >Pitch action on motor [ppz]</field>
-         <field name="roll_action" type="float" >Roll action on motor [ppz]</field>
-         <field name="yaw_action_motor" type="float" >Yaw action on motor [ppz]</field>
-         <field name="yaw_action_tilt" type="float" >Yaw action on azimuth [ppz]</field>
-         <field name="elev_action" type="float" >elevation action [ppz]</field>
-         <field name="azimuth_action" type="float" >azimuth action [ppz]</field>
+         <field name="target_phi" type="float" unit="rad"> Target phi value [rad]</field>
+         <field name="target_theta" type="float" unit="rad">Target theta value [rad]</field>
+         <field name="target_psi" type="float" unit="rad">Target psi value [rad]</field>
+
+         <field name="target_x_pos" type="float" unit="m">Target position x [m]</field>
+         <field name="target_y_pos" type="float" unit="m">Target position y [m]</field>
+         <field name="target_z_pos" type="float" unit="m">Target position z [m]</field>
      </message>
 
     <message name="TUNE_VERT" id="213">

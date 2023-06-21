@@ -46,11 +46,15 @@
 #include "modules/nav/nav_rotorcraft_hybrid.h"
 #include "firmwares/rotorcraft/navigation.h"
 
+#include "modules/ahrs/ahrs_float_cmpl.h"
+
 /**
  * Variables declaration
  */
  
 // #define STB_WP_TARGET 
+
+#define USE_SEC_AHRS_IN_FAILSAFE_MODE
 
 #define USE_NAV_HYBRID_MODULE
 
@@ -165,8 +169,6 @@ int manual_heading_value_rad = 0;
 float des_pos_earth_x = 0;
 float des_pos_earth_y = 0;
 
-float alt_cmd = 0, pitch_cmd = 0, roll_cmd = 0, yaw_motor_cmd = 0, yaw_tilt_cmd = 0, elevation_cmd = 0, azimuth_cmd = 0;
-
 //External servos variables: 
 int16_t neutral_servo_1_pwm = 1417;
 int16_t neutral_servo_2_pwm = 1492;
@@ -265,6 +267,9 @@ float K_T_airspeed = 0.025;
     float time_old_sys_mon = 0;
 #endif
 
+float euler_vect_sec_ahrs[3];
+float rate_vect_sec_ahrs[3], rate_vect_sec_ahrs_filt[3]; 
+
 //Variables for the approach module and tilt constraint: 
 static abi_event vel_sp_ev;
 float des_speed_approach_control_rf[3];
@@ -357,6 +362,8 @@ static void send_nonlinear_ca_debug( struct transport_tx *trans , struct link_de
  */
 static void send_overactuated_variables( struct transport_tx *trans , struct link_device * dev ) {
     // Send telemetry message
+
+    //Updated with secundary AHRS reference and removed old cmd part 
     pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID ,
                                          & airspeed, & auto_test_start , & beta_deg,
                                          & pos_vect[0], & pos_vect[1], & pos_vect[2],
@@ -365,9 +372,11 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
                                          & rate_vect_filt_dot[0], & rate_vect_filt_dot[1], & rate_vect_filt_dot[2],
                                          & rate_vect_filt[0], & rate_vect_filt[1], & rate_vect_filt[2],
                                          & euler_vect[0], & euler_vect[1], & euler_vect[2],
+                                         & euler_vect_sec_ahrs[0], & euler_vect_sec_ahrs[1], & euler_vect_sec_ahrs[2],
+                                         & rate_vect_sec_ahrs_filt[0], & rate_vect_sec_ahrs_filt[1], & rate_vect_sec_ahrs_filt[2],
                                          & euler_setpoint[0], & euler_setpoint[1], & euler_setpoint[2],
-                                         & pos_setpoint[0], & pos_setpoint[1], & pos_setpoint[2],
-                                         & alt_cmd, & pitch_cmd, & roll_cmd, & yaw_motor_cmd, & yaw_tilt_cmd, & elevation_cmd, & azimuth_cmd);
+                                         & pos_setpoint[0], & pos_setpoint[1], & pos_setpoint[2]);
+
 }
 
 /**
@@ -1154,6 +1163,21 @@ void overactuated_mixing_run(void)
     //Assign variables
     assign_variables();
 
+    #ifdef USE_SEC_AHRS_IN_FAILSAFE_MODE
+        struct FloatEulers ltp_to_body_euler;
+        float_eulers_of_quat(&ltp_to_body_euler, &ahrs_fc.ltp_to_body_quat);
+        euler_vect_sec_ahrs[0] = ltp_to_body_euler.phi;
+        euler_vect_sec_ahrs[1] = ltp_to_body_euler.theta;
+        euler_vect_sec_ahrs[2] = ltp_to_body_euler.psi;
+        rate_vect_sec_ahrs[0] = ahrs_fc.body_rate.p; 
+        rate_vect_sec_ahrs[1] = ahrs_fc.body_rate.q; 
+        rate_vect_sec_ahrs[2] = ahrs_fc.body_rate.r; 
+        //Propagate filters on rate with same property of the EKF2 one:
+        for (int i=0;i<3;i++){
+            rate_vect_sec_ahrs_filt[i] += OVERACTUATED_MIXING_FIRST_ORDER_FILTER_COEFF_ANG_RATES_FAILSAFE * (rate_vect_sec_ahrs[i] - rate_vect_sec_ahrs_filt[i]);
+        }
+    #endif 
+
     #ifdef PRINT_CPU_LOAD_ON_SD
         //Write to sysmon every 1 second if required by debug enable
         if(get_sys_time_float() - time_old_sys_mon >= 1 ){
@@ -1253,6 +1277,15 @@ void overactuated_mixing_run(void)
     // if(0){
     if(radio_control.values[RADIO_MODE] < -500) {
 
+        //Use Secundary complementary filter AHRS in FAILSAFE MODE: 
+        #ifdef USE_SEC_AHRS_IN_FAILSAFE_MODE
+            euler_vect[0] = euler_vect_sec_ahrs[0]; 
+            euler_vect[1] = euler_vect_sec_ahrs[1]; 
+            euler_vect[2] = euler_vect_sec_ahrs[2];   
+            rate_vect_filt[0] = rate_vect_sec_ahrs_filt[0]; 
+            rate_vect_filt[1] = rate_vect_sec_ahrs_filt[1]; 
+            rate_vect_filt[2] = rate_vect_sec_ahrs_filt[2]; 
+        #endif 
 
         //INIT AND BOOLEAN RESET
         if(FAILSAFE_engaged == 0 ){
