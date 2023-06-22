@@ -4,13 +4,13 @@ from os import path, getenv
 import time
 import itertools
 
-PPRZ_HOME = "/home/yamac/paparazzi" #getenv("PAPARAZZI_HOME", path.normpath(path.join(path.dirname(path.abspath(__file__)), '../../../../')))
-PPRZ_SRC = "/home/yamac/paparazzi"  #getenv("PAPARAZZI_SRC", path.normpath(path.join(path.dirname(path.abspath(__file__)), '../../../../')))
+PPRZ_HOME = getenv("PAPARAZZI_HOME", path.normpath(path.join(path.dirname(path.abspath(__file__)), '../../../../')))
+PPRZ_SRC =  getenv("PAPARAZZI_SRC", path.normpath(path.join(path.dirname(path.abspath(__file__)), '../../../../')))
 sys.path.append(PPRZ_HOME + "/var/lib/python/")
 sys.path.append(PPRZ_SRC + "/sw/lib/python")
 from pprzlink.ivy import IvyMessagesInterface
-from pprzlink.message import PprzMessage
-from settings_xml_parse import PaparazziACSettings
+from pprzlink.message import PprzMessage 
+
 
 ref_lat = 50.909553
 ref_long = 6.227969
@@ -64,9 +64,9 @@ alt = [altitude[i] for i in optimal_order]
 _interface = IvyMessagesInterface("Tiltprop Waypoints")
 
 for i in range(len(x)):
-    msgw = PprzMessage("datalink", "MOVE_WP")
-    msgw['wp_id'] = i + 16
+    msgw = PprzMessage("ground", "MOVE_WAYPOINT")
     msgw['ac_id'] = 4
+    msgw['wp_id'] = i + 16
     msgw['lat'] = lat[i]
     msgw['long'] = long[i]
     msgw['alt'] = alt[i]

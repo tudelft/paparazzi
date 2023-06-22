@@ -246,10 +246,10 @@ void sum_g1_g2(void);
 #include "modules/datalink/telemetry.h"
 static void send_indi_g(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_INDI_G(trans, dev, AC_ID, INDI_NUM_ACT, g1_est[0],
-                       INDI_NUM_ACT, g1_est[1],
-                       INDI_NUM_ACT, g1_est[2],
-                       INDI_NUM_ACT, g1_est[3],
+  pprz_msg_send_INDI_G(trans, dev, AC_ID, INDI_NUM_ACT, g1g2[0],
+                       INDI_NUM_ACT, g1g2[1],
+                       INDI_NUM_ACT, g1g2[2],
+                       INDI_NUM_ACT, g1g2[3],
                        INDI_NUM_ACT, g2_est);
 }
 
@@ -735,6 +735,9 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 	  actuators_pprz[1] = MAX_PPRZ;
 	  actuators_pprz[2] = -MAX_PPRZ;
 	  actuators_pprz[3] = -MAX_PPRZ;
+    // don't use the ailerons for the takeoff
+    actuators_pprz[4] = 0;
+    actuators_pprz[5] = 0;
   }
   else if (radio_control.values[RADIO_PIVOT_SWITCH] < 4500){
     struct FloatEulers eulers_zxy;
@@ -779,11 +782,16 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     // }
     actuators_pprz[2] = motor_command - angular_accel_ref.p * roll_gain;
     actuators_pprz[3] = motor_command + angular_accel_ref.p * roll_gain;
+
     } else {
 		for (i = 2; i < INDI_NUM_ACT; i++) {
 		  actuators_pprz[i] = -9600;
 		}
     }
+
+    // don't use the ailerons for the takeoff
+    actuators_pprz[4] = 0;
+    actuators_pprz[5] = 0;
 
     /* reset psi setpoint to current psi angle */
     stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
