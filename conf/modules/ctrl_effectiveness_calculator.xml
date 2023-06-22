@@ -10,8 +10,8 @@
   <settings>
   	<dl_settings>
   		<dl_settings NAME="Ctrl Eff Calc">
-        <dl_setting var="g14" min="-0.001" step="0.0001" max="0.001" shortname="g14"/>
-        <dl_setting var="g15" min="-0.001" step="0.0001" max="0.001" shortname="g15"/>
+        <dl_setting var="g14" min="-0.01" step="0.0001" max="0.00" shortname="g14"/>
+        <dl_setting var="g15" min="-0.01" step="0.0001" max="0.01" shortname="g15"/>
         <dl_setting var="c_delta_a" min="0.0" step="0.05" max="1.0" shortname="c_delta_a"/>
         <dl_setting var="cda_offset" min="-0.1" step="0.0001" max="0.1" shortname="cda_offset"/>
   			<dl_setting var="thrust_lower_lim" min="0" step="100" max="6000" shortname="thrust_lim_low" param="THRUST_LOWER_LIM"/>

@@ -910,6 +910,9 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 	  actuators_pprz[1] = MAX_PPRZ;
 	  actuators_pprz[2] = -MAX_PPRZ;
 	  actuators_pprz[3] = -MAX_PPRZ;
+    // don't use the ailerons for the takeoff
+    actuators_pprz[4] = 0;
+    actuators_pprz[5] = 0;
   }
   else if (radio_control.values[RADIO_PIVOT_SWITCH] < 4500){
     struct FloatEulers eulers_zxy;
@@ -954,11 +957,16 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     // }
     actuators_pprz[2] = motor_command - angular_accel_ref.p * roll_gain;
     actuators_pprz[3] = motor_command + angular_accel_ref.p * roll_gain;
+
     } else {
 		for (i = 2; i < INDI_NUM_ACT; i++) {
 		  actuators_pprz[i] = -9600;
 		}
     }
+
+    // don't use the ailerons for the takeoff
+    actuators_pprz[4] = 0;
+    actuators_pprz[5] = 0;
 
     /* reset psi setpoint to current psi angle */
     stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
