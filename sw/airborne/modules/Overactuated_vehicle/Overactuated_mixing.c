@@ -672,7 +672,7 @@ void compute_speed_ref_from_waypoint(float * speed_reference_control_rf, float *
 
     #endif
 
-    //If we are in the approach mode, then use these speed references: 
+    //If we are in the ewoud approach mode, then use these speed references: 
     if( get_sys_time_float() - time_of_speed_setpoint_approach < 0.05){ //50 mS 
         speed_reference_control_rf[0] = des_speed_approach_control_rf[0];
         speed_reference_control_rf[1] = des_speed_approach_control_rf[1];

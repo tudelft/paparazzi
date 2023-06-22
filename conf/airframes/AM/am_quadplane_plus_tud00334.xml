@@ -136,7 +136,10 @@
     <define name="USE_AIRSPEED" value="TRUE"/><!-- Use the sensor, not stating use it in flight -->
 
     <!-- <module name="guidance" type="indi"/> -->
-    <module name="nav_hybrid"/>
+
+    <module name="nav_hybrid">
+      <configure name="NAV_HYBRID_POS_GAIN" value="1"/>
+    </module>
 
     <module name="ahrs" type="float_cmpl_quat">
       <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="FALSE"/>
@@ -145,6 +148,8 @@
       <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID"/>
       <define name="AHRS_FC_OUTPUT_ENABLED" value="FALSE"/>
       <define name="AHRS_FC_IS_WITH_EKF2" value="TRUE"/>
+      <define name="AHRS_FC_IMU_ID" value="IMU_CUBE2_ID"/>
+      <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>
     </module>
 
     <module name="stabilization" type="indi_simple"/>
@@ -636,8 +641,8 @@
     <!-- Calibrated at mavlab 03-05-2023 -->
     <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-17,-8,22}, .scale={{11701,50107,46279},{1198,5125,4775}}} , {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-61,-18,-13}, .scale={{9035,17566,62431},{1732,3587,12773}}}}"/>
 
-    <!-- TO BE CALIBRATED AGAIN. THIS IS RANDOM-->
-    <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={17,-52,-80}, .scale={{2843,11261,31619},{4991,19705,56656}}}}"/>
+    <!-- Calibrated at Valkenburg the 22-06-2023-->
+    <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={21,253,27}, .scale={{13265,16225,23969},{22921,29034,43079}}}}"/>
 
     <!-- Define axis in hover frame -->
     <define name="BODY_TO_IMU_PHI" value="180" unit="deg"/>
