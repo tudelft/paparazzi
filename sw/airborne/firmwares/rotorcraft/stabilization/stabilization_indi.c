@@ -229,6 +229,28 @@ static void send_indi_schedule_g1(struct transport_tx *trans, struct link_device
                        INDI_NUM_ACT, Bwls[3]);
 }
 #endif
+
+#if STABILIZATION_INDI_PUBLISH_ATTITUDE
+static void send_att_indi(struct transport_tx *trans, struct link_device *dev)
+{
+    float g2_disp = 0;
+  pprz_msg_send_STAB_ATTITUDE_INDI(trans, dev, AC_ID,
+                                   &angular_acceleration[0],
+                                   &angular_acceleration[1],
+                                   &angular_acceleration[2],
+                                   &angular_accel_ref.p,
+                                   &angular_accel_ref.q,
+                                   &angular_accel_ref.r,
+//                                   &Bwls[0][3],
+//                                   &Bwls[1][2],
+//                                   &Bwls[2][1],
+                                    &g2_disp,
+                                   &g2_disp,
+                                   &g2_disp,
+                                   &g2_disp);
+}
+#endif
+
 #endif
 
 /**
@@ -277,6 +299,9 @@ void stabilization_indi_init(void)
 #if CTRL_EFFECTIVENESS_SEND_SCHEDULING_MSG
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INDI_SCHEDULE_G1, send_indi_schedule_g1);
 #endif
+    #if STABILIZATION_INDI_PUBLISH_ATTITUDE
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STAB_ATTITUDE_INDI, send_att_indi);
+    #endif
 #endif
 }
 
@@ -341,6 +366,15 @@ void stabilization_indi_set_failsafe_setpoint(void)
   stab_att_sp_quat.qx = 0;
   stab_att_sp_quat.qy = 0;
   PPRZ_ITRIG_SIN(stab_att_sp_quat.qz, heading2);
+
+//    int32_t heading2 = stabilization_attitude_get_heading_i() / 2;
+//struct Int32Eulers rpy = {
+//        ANGLE_BFP_OF_REAL(RadOfDeg(15.0)),
+//        ANGLE_BFP_OF_REAL(RadOfDeg(-95.0)),
+//        heading2,
+//};
+//
+//    stabilization_indi_set_rpy_setpoint_i(&rpy);
 }
 
 /**

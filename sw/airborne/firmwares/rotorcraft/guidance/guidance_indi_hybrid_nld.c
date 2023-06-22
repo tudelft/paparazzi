@@ -231,9 +231,10 @@ void guidance_indi_run(float *heading_sp) {
   /*Calculate the transition percentage so that the ctrl_effecitveness scheduling works*/
   transition_percentage = BFP_OF_REAL((eulers_zxy.theta/RadOfDeg(-75.0))*100,INT32_PERCENTAGE_FRAC);
   Bound(transition_percentage,0,BFP_OF_REAL(100.0,INT32_PERCENTAGE_FRAC));
-  const int32_t max_offset = ANGLE_BFP_OF_REAL(TRANSITION_MAX_OFFSET);
-  transition_theta_offset = INT_MULT_RSHIFT((transition_percentage <<
-        (INT32_ANGLE_FRAC - INT32_PERCENTAGE_FRAC)) / 100, max_offset, INT32_ANGLE_FRAC);
+//  const int32_t max_offset = ANGLE_BFP_OF_REAL(TRANSITION_MAX_OFFSET);
+//  transition_theta_offset = INT_MULT_RSHIFT((transition_percentage <<
+//        (INT32_ANGLE_FRAC - INT32_PERCENTAGE_FRAC)) / 100, max_offset, INT32_ANGLE_FRAC);
+    transition_theta_offset = -90.0;
 
   //filter accel to get rid of noise and filter attitude to synchronize with accel
   guidance_indi_propagate_filters();

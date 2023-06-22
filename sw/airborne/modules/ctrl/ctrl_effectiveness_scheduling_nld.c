@@ -155,7 +155,7 @@ void ctrl_eff_scheduling_periodic_b(void)
 //      g1g2[0][3] = roll_eff/1000;
 //  } else {
     // calculate squared airspeed
-    Bound(airspeed, 6.0, 20.0);
+    Bound(airspeed, 7.0, 20.0);
     float airspeed2 = airspeed*airspeed;
 
     float pitch_eff = ce_pitch_a + ce_pitch_b*airspeed2;
