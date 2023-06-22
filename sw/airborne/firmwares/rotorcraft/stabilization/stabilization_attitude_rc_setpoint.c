@@ -186,8 +186,9 @@ void stabilization_attitude_read_rc_setpoint_eulers(struct Int32Eulers *sp, bool
     Bound(dt, 0, 0.5);
 
     /* do not advance yaw setpoint if within a small deadband around stick center or if throttle is zero */
-    if (YAW_DEADBAND_EXCEEDED() && !THROTTLE_STICK_DOWN()) {
-      sp->psi += get_rc_yaw() * dt;
+//    if (YAW_DEADBAND_EXCEEDED() && !THROTTLE_STICK_DOWN()) {
+        if (YAW_DEADBAND_EXCEEDED()) {
+            sp->psi += get_rc_yaw() * dt;
       INT32_ANGLE_NORMALIZE(sp->psi);
     }
     if (coordinated_turn) {
@@ -265,8 +266,9 @@ void stabilization_attitude_read_rc_setpoint_eulers_f(struct FloatEulers *sp, bo
     Bound(dt, 0, 0.5);
 
     /* do not advance yaw setpoint if within a small deadband around stick center or if throttle is zero */
-    if (YAW_DEADBAND_EXCEEDED() && !THROTTLE_STICK_DOWN()) {
-      sp->psi += get_rc_yaw_f() * dt;
+//    if (YAW_DEADBAND_EXCEEDED() && !THROTTLE_STICK_DOWN()) {
+        if (YAW_DEADBAND_EXCEEDED()) {
+            sp->psi += get_rc_yaw_f() * dt;
       FLOAT_ANGLE_NORMALIZE(sp->psi);
     }
     if (coordinated_turn) {
