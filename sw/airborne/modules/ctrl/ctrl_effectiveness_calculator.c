@@ -35,8 +35,9 @@ float thrust_loss_l;
 float c_delta_a = CTRL_EFF_CALC_CDA;
 float cda_offset = CTRL_EFF_CALC_CDA_OFFSET;
 
-float g14 = -4.0/1000.0;
-float g15 = 4.0/1000.0;
+float c_delta_e = CTRL_EFF_CALC_CDE;
+
+float g14and5 = 4.0f/1000.0f;
 
 static float pprz_to_rad_left(float x);
 static float pprz_to_rad_right(float x);
@@ -140,11 +141,11 @@ void ctrl_eff(void)
 
     float airspeed = stateGetAirspeed_f();
 
-    g1g2[2][4] = -(cda_offset + 0.0001*c_delta_a * airspeed*airspeed);
-    g1g2[2][5] = -(cda_offset + 0.0001*c_delta_a * airspeed*airspeed);
+    g1g2[2][4] = -(cda_offset + 0.001f*c_delta_a * airspeed*airspeed);
+    g1g2[2][5] = -(cda_offset + 0.001f*c_delta_a * airspeed*airspeed);
 
-    g1g2[1][4] = g14;
-    g1g2[1][5] = g15;
+    g1g2[1][4] = -g14and5 - 0.001f*c_delta_e * airspeed*airspeed;
+    g1g2[1][5] = g14and5 + 0.001f*c_delta_e * airspeed*airspeed;
 }
 
 void ctrl_eff_ground_contact(void)
@@ -253,7 +254,7 @@ float pprz_to_omega(float x)
  * higher induced angle of attack of the propellers). If there is an
  * RPM sensor the measured RPM would be used here.
  */
-float thrust_correcting_ratio(float x, float delta)
+float UNUSED thrust_correcting_ratio(float x, float delta)
 {
     float w = pprz_to_omega(x);
     float v = stateGetAirspeed_f();
