@@ -115,7 +115,12 @@ void init_filter(void);
 void init_controller(void);
 void rm_2rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm);
 void rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
+void rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
 void calc_model(void);
+void straight_oval(float s, float r, float l, float psi_i, float v_route, float a_route, float j_route, float p[3], float p0[3],  float v[3], float a[3], float j[3],float* lap);
+void nav_speed_controller(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_d_des, float x_d_actual, float x_2d_bound, float k1_rm, float k2_rm);
+void nav_speed_controller_enter(void);
+float convert_angle(float psi);
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
 
@@ -245,7 +250,7 @@ int   number_iter = 0;
 
 /*Declaration of Reference Model and Error Controller Gains*/
 float rm_k_attitude;
-float p1_att = 7.68;       
+float p1_att = 12;//7.68;       
 float p2_att;      
 float p3_att;
 
@@ -265,7 +270,7 @@ float k_pdot_rm ;
 
 /*Position Loop*/
 float rm_k_pos;     
-float p1_pos = 1.0;     
+float p1_pos = 2.0;     
 float p2_pos  ;     
 float p3_pos  ;     
 float route_k  ;    
@@ -309,17 +314,46 @@ float k_aD_rm ;
 
 /*Heading Loop*/
 float rm_k_head  ;  
-float p1_head = 4.8;     
-float p2_head ;      
+float p1_head = 7.0;//4.8;     
+float p2_head ;
+float p3_head ;      
 
 float k_r_e  ;      
 float k_r_d_e ;     
-
+float k_psi_e     ;  
+float k_psi_d_e   ;  
+float k_psi_2d_e  ;  
     
 float k_r_rm  ;     
-float k_r_d_rm ;    
+float k_r_d_rm ;   
+float k_psi_rm    ;  
+float k_psi_d_rm  ;  
+float k_psi_2d_rm ;  
 
+/*NAV PVAJ Loop*/
+float p1_nav = 1.0;
+float p2_nav;
+float k_v_nav;
+float k_v_d_nav;
+/* Declaration of Navigation Variables*/
+float p_nav    ;
+float v_nav    ;
+float a_nav    ;
+float j_nav    ;
+float v_nav_des = 1.5;
+float max_a_nav;
 
+float r_oval    = 2.0;
+float l_oval    = 0.1;
+float psi_oval  = 0.0;
+float p_oval[3] = {0.0,0.0,0.0};
+float v_oval[3] = {0.0,0.0,0.0};
+float a_oval[3] = {0.0,0.0,0.0};
+float j_oval[3] = {0.0,0.0,0.0};
+float lap_oval  = 0.0;
+bool  oval_on   = false;
+float psi_des_rad = 0.0;
+float psi_des_deg = 0.0;
 /*Define Variables used in control*/
 float old_time = 0.0;
 float new_time = 0.0;
@@ -371,6 +405,7 @@ float ratio_vn_v[ANDI_NUM_ACT_TOT];
 float *bwls_1l[ANDI_OUTPUTS];
 
 bool check_1st_nav = true; 
+bool check_1st_oval= true;
 bool verbose_oneloop = true;
 /*Error Controller Gain Design*/
 static float k_e_1_3_f(float p1, float p2, float p3) {return (p1*p2*p3);}
@@ -391,6 +426,12 @@ static float ec_3rd(float x_ref, float x_d_ref, float x_2d_ref, float x_3d_ref, 
   float y_4d = k1_e*(x_ref-x)+k2_e*(x_d_ref-x_d)+k3_e*(x_2d_ref-x_2d)+x_3d_ref;
   return y_4d;
 }
+static float ec_3rd_head(float x_ref, float x_d_ref, float x_2d_ref, float x_3d_ref, float x, float x_d, float x_2d, float k1_e, float k2_e, float k3_e){
+  printf("x_ref = %f\n",x_ref);
+  printf("x = %f\n",x);
+  float y_4d = k1_e*(convert_angle(x_ref-x))+k2_e*(x_d_ref-x_d)+k3_e*(x_2d_ref-x_2d)+x_3d_ref;
+  return y_4d;
+}
 static float ec_2rd(float x_ref, float x_d_ref, float x_2d_ref, float x, float x_d, float k1_e, float k2_e){
   float y_3d = k1_e*(x_ref-x)+k2_e*(x_d_ref-x_d)+x_2d_ref;
   return y_3d;
@@ -405,6 +446,23 @@ void rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d
   *x_2d_ref = (*x_2d_ref + dt * (*x_3d_ref));
   *x_d_ref  = (*x_d_ref  + dt * (*x_2d_ref));
   *x_ref    = (*x_ref    + dt * (*x_d_ref ));
+}
+
+void rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm){
+  printf("e_x :%f\n",(x_des- *x_ref));
+  printf("k1_rm : %f\n",k1_rm);
+  float e_x      = k1_rm * convert_angle((x_des- *x_ref));
+  //e_x = convert_angle(e_x);
+  printf("x_des :%f\n",x_des);
+  printf("x_ref :%f\n",*x_ref);
+  printf("e_x :%f\n",e_x);
+  float e_x_d    = k2_rm * (e_x- *x_d_ref);
+  float e_x_2d   = k3_rm * (e_x_d- *x_2d_ref);
+  *x_3d_ref = e_x_2d;
+  *x_2d_ref = (*x_2d_ref + dt * (*x_3d_ref));
+  *x_d_ref  = (*x_d_ref  + dt * (*x_2d_ref));
+  *x_ref    = (*x_ref    + dt * (*x_d_ref ));
+  printf("x_ref 2:%f\n", *x_ref);
 }
 
 
@@ -467,6 +525,7 @@ k_aN_rm       = k_rm_3_3_f(rm_k_pos*p1_pos,1.0,rm_k_pos*p3_pos);
 k_E_rm        = k_N_rm;
 k_vE_rm       = k_vN_rm;
 k_aE_rm       = k_aN_rm;
+
 k_N_route    = k_rm_1_3_f(route_k*rm_k_pos*p1_pos,1.0,route_k*rm_k_pos*p3_pos);
 k_vN_route   = k_rm_2_3_f(route_k*rm_k_pos*p1_pos,1.0,route_k*rm_k_pos*p3_pos);
 k_aN_route   = k_rm_3_3_f(route_k*rm_k_pos*p1_pos,1.0,route_k*rm_k_pos*p3_pos);
@@ -485,13 +544,30 @@ k_D_rm        = k_rm_1_3_f(rm_k_alt*p1_alt,1.0,rm_k_alt*p3_alt);
 k_vD_rm       = k_rm_2_3_f(rm_k_alt*p1_alt,1.0,rm_k_alt*p3_alt);
 k_aD_rm       = k_rm_3_3_f(rm_k_alt*p1_alt,1.0,rm_k_alt*p3_alt);
 
-/*Heading Loop*/
+/*Heading Loop Manual*/
 rm_k_head     = 0.9;
 p2_head       = p1_head;
 k_r_e         = k_e_1_2_f(p1_head,p2_head);
 k_r_d_e       = k_e_2_2_f(p1_head,p2_head);
 k_r_rm        = k_rm_1_2_f(rm_k_head*p1_head,rm_k_head*p2_head);
 k_r_d_rm      = k_rm_2_2_f(rm_k_head*p1_head,rm_k_head*p2_head);
+
+/*Heading Loop NAV*/
+rm_k_head     = 0.9;
+p2_head       = p1_head;
+p3_head       = p1_head;
+k_psi_e       = k_e_1_3_f(p1_head,p2_head,p3_head);
+k_psi_d_e     = k_e_2_3_f(p1_head,p2_head,p3_head);
+k_psi_2d_e    = k_e_3_3_f(p1_head,p2_head,p3_head);
+k_psi_rm      = k_rm_1_3_f(rm_k_head*p1_head,1.0,rm_k_head*p3_head);
+k_psi_d_rm    = k_rm_2_3_f(rm_k_head*p1_head,1.0,rm_k_head*p3_head);
+k_psi_2d_rm   = k_rm_3_3_f(rm_k_head*p1_head,1.0,rm_k_head*p3_head);
+
+/*Nav PVAJ Loop*/
+p2_nav        = p1_nav;
+k_v_nav       = k_rm_1_2_f(p1_nav,p2_nav);
+k_v_d_nav     = k_rm_2_2_f(p1_nav,p2_nav);
+
 
 /*Approximated Dynamics*/
 
@@ -624,6 +700,7 @@ void oneloop_andi_init(void)
   eulers_zxy_des.phi   =  0.0;
   eulers_zxy_des.theta =  0.0;
   eulers_zxy_des.psi   =  0.0;
+  nav_speed_controller_enter();
 
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ONELOOP_ANDI, send_oneloop_andi);
@@ -666,6 +743,7 @@ void oneloop_andi_enter(void)
   eulers_zxy_des.phi   =  0.0;
   eulers_zxy_des.theta =  0.0;
   eulers_zxy_des.psi   =  0.0;
+  nav_speed_controller_enter();
   /*Guidance Reset*/
 
 }
@@ -685,18 +763,6 @@ void oneloop_andi_attitude_run(bool in_flight)
   printf("This function is running at a dt=%f \n",new_time-old_time);
   old_time = new_time;
 
-  printf("k_D_e = %f\n",k_D_e);
-  printf("k_vD_e = %f\n",k_vD_e);
-  printf("k_aD_e = %f\n",k_aD_e);
-  printf("k_D_rm = %f\n",k_D_rm);
-  printf("k_vD_rm = %f\n",k_vD_rm);
-  printf("k_aD_rm = %f\n",k_aD_rm);  
-  //printf("k_theta_e = %f\n",k_theta_e);
-  //printf("k_q_e = %f\n",k_q_e);
-  //printf("k_qdot_e = %f\n",k_qdot_e);
-  //printf("k_theta_rm = %f\n",k_theta_rm);
-  //printf("k_q_rm = %f\n",k_q_rm);
-  //printf("k_qdot_rm = %f\n",k_qdot_rm);
   init_controller();
   calc_normalization();
   sum_g1g2_1l();
@@ -709,6 +775,8 @@ void oneloop_andi_attitude_run(bool in_flight)
     volando = true;
     printf("I am in flight\n");
     }
+
+  psi_des_rad = psi_des_deg * M_PI / 180.0;
 
   // Convert Quaternion setpoint to Euler setpoint
   //struct FloatEulers eulers_zxy_des;
@@ -723,17 +791,20 @@ void oneloop_andi_attitude_run(bool in_flight)
   //   // eulers_zxy_des.theta =  0.0;
   //   // eulers_zxy_des.psi   =  0.0;
   // }
-  if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
-    printf("I AM IN ATT\n");
-    eulers_zxy_des.phi   = (float) (radio_control.values[RADIO_ROLL] )/9600.0*45.0*3.14/180.0;//0.0;
-    eulers_zxy_des.theta = (float) (radio_control.values[RADIO_PITCH])/9600.0*45.0*3.14/180.0;//0.0;
-    eulers_zxy_des.psi   = 0.0;//
-    check_1st_nav = true;
-  }
+
   eulers_zxy.phi   = stateGetNedToBodyEulers_f()->phi;
   eulers_zxy.theta = stateGetNedToBodyEulers_f()->theta;
   eulers_zxy.psi   = stateGetNedToBodyEulers_f()->psi;
   
+  if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
+    printf("I AM IN ATT\n");
+    eulers_zxy_des.phi   = (float) (radio_control.values[RADIO_ROLL] )/9600.0*45.0*3.14/180.0;//0.0;
+    eulers_zxy_des.theta = (float) (radio_control.values[RADIO_PITCH])/9600.0*45.0*3.14/180.0;//0.0;
+    eulers_zxy_des.psi   = eulers_zxy.psi;//
+    psi_des_rad          = eulers_zxy.psi;
+    check_1st_nav  = true;
+    check_1st_oval = true;
+  }
   att_1l[0] = eulers_zxy.phi                        * use_increment;
   att_1l[1] = eulers_zxy.theta                      * use_increment;
   att_1l[2] = eulers_zxy.psi                        * use_increment;
@@ -776,7 +847,6 @@ void oneloop_andi_attitude_run(bool in_flight)
     float thrust_cmd_1l = (float) radio_control.values[RADIO_THROTTLE];
     Bound(thrust_cmd_1l,0,MAX_PPRZ);
     printf("thrust_cmd_1l: %f\n",thrust_cmd_1l);
-    // stabilization_cmd[COMMAND_THRUST] = thrust_cmd_1l;
     for (i = 0; i < ANDI_NUM_ACT; i++) {
      a_thrust +=(thrust_cmd_1l - use_increment*actuator_state_1l[i]) * bwls_1l[2][i] / (ratio_u_un[i] * ratio_vn_v[i]);
     }
@@ -785,48 +855,82 @@ void oneloop_andi_attitude_run(bool in_flight)
     printf("I AM IN NAV\n");
     Wv[0] = 1.0;
     Wv[1] = 1.0;
-      if(check_1st_nav){
-        check_1st_nav = false;
+      if(check_1st_nav || (check_1st_oval && oval_on)){ // First time engaging NAV
+        check_1st_nav  = false;
+        check_1st_oval = false;
           for (i = 0; i < 3; i++) {
             pos_init[i] = pos_1l[i];
           }
+        psi_des_rad = eulers_zxy.psi; // At first NAV reset desired heading to current heading
+        psi_oval = psi_des_rad; 
+
       }
       float rc_x = (float) (-radio_control.values[RADIO_PITCH])/9600.0*3.0;
       float rc_y = (float) (radio_control.values[RADIO_ROLL] )/9600.0*3.0;
-      pos_des[0] = pos_init[0] + cosf(eulers_zxy.psi) * rc_x - sinf(eulers_zxy.psi) * rc_y;;
-      pos_des[1] = pos_init[1] + sinf(eulers_zxy.psi) * rc_x + cosf(eulers_zxy.psi) * rc_y;;
-      pos_des[2] = pos_init[2];
+      if(oval_on){
+        float v_actual = sqrtf(pos_d[0] * pos_d[0]+pos_d[1] * pos_d[1]);
+        
+        if (v_actual > 0.5){
+          psi_des_rad = atan2(pos_d[1], pos_d[0]);
+          psi_des_rad = convert_angle(psi_des_rad);
+        }
+        nav_speed_controller(dt_1l, &p_nav, &v_nav, &a_nav, &j_nav, v_nav_des, v_actual, max_a_nav, k_v_nav, k_v_d_nav);
+        printf("p_nav = %f\n",p_nav);
+        straight_oval(p_nav, r_oval, l_oval, psi_oval, v_nav, a_nav, j_nav, pos_ref, pos_init,  pos_d_ref, pos_2d_ref, pos_3d_ref, &lap_oval);
+        
+      }else{
+        check_1st_oval = true;
+        
+        nav_speed_controller_enter();
+        pos_des[0] = pos_init[0] + cosf(eulers_zxy.psi) * rc_x - sinf(eulers_zxy.psi) * rc_y;;
+        pos_des[1] = pos_init[1] + sinf(eulers_zxy.psi) * rc_x + cosf(eulers_zxy.psi) * rc_y;;
+        pos_des[2] = pos_init[2];
+        rm_3rd(dt_1l, &pos_ref[0],   &pos_d_ref[0],  &pos_2d_ref[0], &pos_3d_ref[0], pos_des[0], k_N_rm, k_vN_rm, k_aN_rm);
+        rm_3rd(dt_1l, &pos_ref[1],   &pos_d_ref[1],  &pos_2d_ref[1], &pos_3d_ref[1], pos_des[1], k_E_rm, k_vE_rm, k_aE_rm); 
+        rm_3rd(dt_1l, &pos_ref[2],   &pos_d_ref[2],  &pos_2d_ref[2], &pos_3d_ref[2], pos_des[2], k_D_rm, k_vD_rm, k_aD_rm);
+      }
       printf("Desired position is :[%f, %f, %f]\n",pos_des[0],pos_des[1],pos_des[2]);
-      
-      rm_3rd(dt_1l, &pos_ref[0],   &pos_d_ref[0],  &pos_2d_ref[0], &pos_3d_ref[0], pos_des[0], k_N_rm, k_vN_rm, k_aN_rm);
-      rm_3rd(dt_1l, &pos_ref[1],   &pos_d_ref[1],  &pos_2d_ref[1], &pos_3d_ref[1], pos_des[1], k_E_rm, k_vE_rm, k_aE_rm); 
-      rm_3rd(dt_1l, &pos_ref[2],   &pos_d_ref[2],  &pos_2d_ref[2], &pos_3d_ref[2], pos_des[2], k_D_rm, k_vD_rm, k_aD_rm);   
+       
   }
 
-  att_ref[2] = eulers_zxy_des.psi;
-  float des_r = (float) (radio_control.values[RADIO_YAW])/9600.0*2.0; //(eulers_zxy_des.psi-eulers_zxy.psi);
-  BoundAbs(des_r,2.0);
+  
+  float des_r = 0.0;
+  
+  if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
+    att_ref[2] = psi_des_rad;
+    des_r = (float) (radio_control.values[RADIO_YAW])/9600.0*3.0; //(eulers_zxy_des.psi-eulers_zxy.psi);
+    rm_2rd(dt_1l, &att_d_ref[2], &att_2d_ref[2], &att_3d_ref[2], des_r, k_r_rm, k_r_d_rm);
+  } else {
+   //des_r = convert_angle(psi_des_rad-eulers_zxy.psi);
+    rm_3rd_head(dt_1l, &att_ref[2],  &att_d_ref[2], &att_2d_ref[2], &att_3d_ref[2], psi_des_rad, k_psi_rm, k_psi_d_rm, k_psi_2d_rm);
+    printf("psi_des_rad=%f\n",psi_des_rad);
+    printf("psi_ref_temp_1 =%f\n",att_ref[2]);
+  }
+  BoundAbs(des_r,5.0);
 
-  rm_3rd(dt_1l, &att_ref[0],   &att_d_ref[0],  &att_2d_ref[0], &att_3d_ref[0],     eulers_zxy_des.phi, k_phi_rm, k_p_rm, k_pdot_rm);
-  rm_3rd(dt_1l, &att_ref[1],   &att_d_ref[1],  &att_2d_ref[1], &att_3d_ref[1],     eulers_zxy_des.theta, k_theta_rm, k_q_rm, k_qdot_rm);
-  rm_2rd(dt_1l, &att_d_ref[2], &att_2d_ref[2], &att_3d_ref[2], des_r, k_r_rm, k_r_d_rm);
+  rm_3rd(dt_1l, &att_ref[0],   &att_d_ref[0],  &att_2d_ref[0], &att_3d_ref[0], eulers_zxy_des.phi, k_phi_rm, k_p_rm, k_pdot_rm);
+  rm_3rd(dt_1l, &att_ref[1],   &att_d_ref[1],  &att_2d_ref[1], &att_3d_ref[1], eulers_zxy_des.theta, k_theta_rm, k_q_rm, k_qdot_rm);
+  
   
   // Generate pseudo control for stabilization vector (nu) based on error controller
   if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
     nu[0] = 0.0;
     nu[1] = 0.0;
     nu[2] = a_thrust;
+    nu[5] = ec_2rd(att_d_ref[2], att_2d_ref[2], att_3d_ref[2], att_d[2], att_2d[2], k_r_e, k_r_d_e);
+
   }else{
     nu[0] = ec_3rd(pos_ref[0], pos_d_ref[0], pos_2d_ref[0], pos_3d_ref[0], pos_1l[0], pos_d[0], pos_2d[0], k_N_e, k_vN_e, k_aN_e);
     nu[1] = ec_3rd(pos_ref[1], pos_d_ref[1], pos_2d_ref[1], pos_3d_ref[1], pos_1l[1], pos_d[1], pos_2d[1], k_E_e, k_vE_e, k_aE_e);
     nu[2] = ec_3rd(pos_ref[2], pos_d_ref[2], pos_2d_ref[2], pos_3d_ref[2], pos_1l[2], pos_d[2], pos_2d[2], k_D_e, k_vD_e, k_aD_e); 
-    printf("PVAJ D Ref    [%f, %f, %f, %f]\n",pos_ref[2],pos_d_ref[2],pos_2d_ref[2],pos_3d_ref[2]);
-    printf("PVA  D Actual [%f, %f, %f]\n",pos_1l[2],pos_d[2],pos_2d[2]);
+    printf("psi_ref_temp_2 =%f\n",att_ref[2]);
+    nu[5] = ec_3rd_head(att_ref[2], att_d_ref[2], att_2d_ref[2], att_3d_ref[2], att_1l[2], att_d[2], att_2d[2], k_psi_e, k_psi_d_e, k_psi_2d_e);
+
   }
   
   nu[3] = ec_3rd(att_ref[0], att_d_ref[0], att_2d_ref[0], att_3d_ref[0], att_1l[0], att_d[0], att_2d[0], k_phi_e, k_p_e, k_pdot_e);
   nu[4] = ec_3rd(att_ref[1], att_d_ref[1], att_2d_ref[1], att_3d_ref[1], att_1l[1], att_d[1], att_2d[1], k_theta_e, k_q_e, k_qdot_e);
-  nu[5] = ec_2rd(att_d_ref[2], att_2d_ref[2], att_3d_ref[2], att_d[2], att_2d[2], k_r_e, k_r_d_e);
+  
 
  
   // Calculate the min and max increments
@@ -891,6 +995,7 @@ void oneloop_andi_attitude_run(bool in_flight)
   eulers_zxy_des.phi   =  andi_u[ANDI_NUM_ACT];
   eulers_zxy_des.theta =  andi_u[ANDI_NUM_ACT+1];
 
+  psi_des_deg = psi_des_rad * 180.0 / M_PI;
 
 }
 
@@ -1033,3 +1138,231 @@ void calc_model(void){
   }
 }
 
+/**
+ * Navigation speed controller function.
+ *
+ * This function calculates the control signal for the navigation speed controller based on the desired
+ * speed (x_d_des) and the actual speed (x_d_actual) of a system. It updates the reference values
+ * for velocity (x_d_ref), acceleration (x_2d_ref), and position (x_ref) using a proportional controller.
+ *
+ * @param dt          Time step between control updates.
+ * @param x_ref       Pointer to the reference position.
+ * @param x_d_ref     Pointer to the reference velocity.
+ * @param x_2d_ref    Pointer to the reference acceleration.
+ * @param x_d_des     Desired velocity.
+ * @param x_d_actual  Actual velocity.
+ * @param x_d_bound   Upper bound for the control velocity.
+ * @param k1_rm       Proportional control gain.
+ */
+
+void nav_speed_controller_enter(){
+  p_nav     = 0.0;
+  v_nav     = 0.0;
+  a_nav     = 0.0;
+  j_nav     = 0.0;
+  //v_nav_des = 0.2;
+  max_a_nav = 10.0;
+}
+
+void nav_speed_controller(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_d_des, float x_d_actual, float x_2d_bound, float k1_rm, float k2_rm){
+  float e_x_d      = k1_rm * (x_d_des- x_d_actual);
+  float e_x_2d     = k2_rm * (e_x_d- *x_2d_ref);
+  float x_3d_bound = (x_2d_bound - fabs(*x_2d_ref)) / dt;
+  BoundAbs(e_x_2d, x_3d_bound);
+  *x_3d_ref = e_x_2d;
+  *x_2d_ref = (*x_2d_ref + dt * (*x_3d_ref));
+  *x_d_ref  = (*x_d_ref  + dt * (*x_2d_ref));
+  *x_ref    = (*x_ref    + dt * (*x_d_ref ));  
+}
+/**
+ * @brief the position, velocity, acceleration, jerk, and lap count for a point moving along a straight oval path.
+ *
+ * @param s         The distance along the path.
+ * @param r         The radius of the corners of the oval path.
+ * @param l         The length of the straight sections of the oval path.
+ * @param psi_i     The heading angle of the oval path.
+ * @param v_route   The velocity magnitude along the path.
+ * @param a_route   The acceleration magnitude along the path.
+ * @param j_route   The jerk magnitude along the path.
+ * @param p         Pointer to an array of length 3 representing the position vector [x, y, z] of the point on the path.
+ * @param v         Pointer to an array of length 3 representing the velocity vector [Vx, Vy, Vz] of the point on the path.
+ * @param a         Pointer to an array of length 3 representing the acceleration vector [Ax, Ay, Az] of the point on the path.
+ * @param j         Pointer to an array of length 3 representing the jerk vector [Jx, Jy, Jz] of the point on the path.
+ * @param lap       Pointer to a variable that stores the number of laps completed around the oval path.
+ */
+
+//void straight_oval(float s, float r, float l, float psi_i, float v_route, float a_route, float j_route, float* p, float* v, float* a, float* j, float* lap)
+void straight_oval(float s, float r, float l, float psi_i, float v_route, float a_route, float j_route, float p[3], float pi[3], float v[3], float a[3], float j[3], float* lap) {
+    printf("psi_oval = %f\n",psi_i);
+    float cd = cosf(psi_i);
+    float sd = sinf(psi_i);
+    float p0[3] = {0.0, 0.0, 0.0};
+    //float pi[3] = {0.0,0.0,0.0};
+    float p1[3] = {p0[0] + r, p0[1]-r, p0[2]};
+    float p2[3] = {p1[0] + l, p0[1]-r, p0[2]};
+
+    // Calculate inner vertices
+    float p1i[3] = {p1[0], p1[1] + r, p1[2]};
+    float p2i[3] = {p2[0], p2[1] + r, p2[2]};
+    float p3i[3] = {p2[0], p2[1] - r, p2[2]};
+    float p4i[3] = {p1[0], p1[1] - r, p1[2]};
+    float l01 = 1.0; 
+    float l12 = 1.0;
+    float l34 = 1.0;
+    
+    float tmp_1[3] = {0.,0.,0.};
+    float tmp_2[3] = {0.,0.,0.};
+    float tmp_3[3] = {0.,0.,0.};
+    float_vect_diff(tmp_1,p1i,p0,3);
+    float_vect_diff(tmp_2,p2i,p1i,3);
+    float_vect_diff(tmp_3,p4i,p3i,3);
+    l01 = float_vect_norm(tmp_1,3);
+    l12 = float_vect_norm(tmp_2,3);
+    l34 = float_vect_norm(tmp_3,3);
+    
+    float u01[3] = {0.,0.,0.};  
+    float u12[3] = {0.,0.,0.};
+    float u34[3] = {0.,0.,0.};
+
+    float_vect_sdiv(u01,tmp_1,l01,3);
+    float_vect_sdiv(u12,tmp_2,l12,3);
+    float_vect_sdiv(u34,tmp_3,l34,3);
+    float runway = r;
+    int8_t i;
+    if (s < runway) {
+      for (i = 0; i < 3; i++){
+        p[i] = p0[i] + s * u01[i];
+        v[i] = v_route * u01[i];
+        a[i] = a_route * u01[i];
+        j[i] = j_route * u01[i];
+      }
+    } else {
+        s = s - runway;
+
+        // Calculate length of route
+        float L = 2 * M_PI * r + l12 + l34;
+        float s1 = l12;
+        float s2 = s1 + M_PI * r;
+        float s3 = s2 + l34;
+        float s4 = s3 + M_PI * r;
+        float dist = fmodf(s, L);
+        *lap = floorf(s / (1.05f * L));
+        if (dist < s1) {
+            float sector = dist;
+              for (i = 0; i < 3; i++){
+                p[i] = p1i[i] + sector * u12[i];
+                v[i] = v_route * u12[i];
+                a[i] = a_route * u12[i];
+                j[i] = j_route * u12[i];
+              }
+        } else if (dist < s2) {
+            float sector = dist - s1;
+            float beta = sector / r;
+            float sb = sinf(beta);
+            float cb = cosf(beta);
+            float v2 = v_route * v_route;
+            float v3 = v2 * v_route;
+            float r2 = r * r;
+
+            p[0] = r * sb + p2[0];
+            p[1] = r * cb + p2[1];
+            p[2] = p2[2];
+            v[0] =  cb * v_route;
+            v[1] = -sb * v_route;
+            v[2] = 0; 
+            a[0] =  cb * a_route - sb * v2 /  r;
+            a[1] = -sb * a_route - cb * v2 / r;
+            a[2] = 0 ;
+            j[0] = cb * j_route - cb * v3 / r2 - 3 * sb * a_route * v_route / r;
+            j[1] = sb * v3 / r2 - sb * j_route - 3 * cb * a_route * v_route / r;
+            j[2] = 0;
+            //v[0] = v_route * cosf(beta);
+            //v[1] = -v_route * sinf(beta);
+            //v[2] = 0;
+            //a[0] = v_route * v_route / r * (-sinf(beta));
+            //a[1] = v_route * v_route / r * (-cosf(beta));
+            //a[2] = 0;
+            //j[0] = 0;
+            //j[1] = 0;
+            //j[2] = 0;
+        } else if (dist < s3) {
+            float sector = dist - s2;
+               for (i = 0; i < 3; i++){
+                p[i] = p3i[i] + sector * u34[i];
+                v[i] = v_route * u34[i];
+                a[i] = a_route * u34[i];
+                j[i] = j_route * u34[i];
+              }           
+        } else if (dist < s4) {
+            float sector = dist - s3;
+            float beta = M_PI + sector / r;
+            float sb = sinf(beta);
+            float cb = cosf(beta);
+            float v2 = v_route * v_route;
+            float v3 = v2 * v_route;
+            float r2 = r * r;
+
+            p[0] = r * sb + p1[0];
+            p[1] = r * cb + p1[1];
+            p[2] = p1[2];
+            v[0] =  cb * v_route;
+            v[1] = -sb * v_route;
+            v[2] = 0; 
+            a[0] =  cb * a_route - sb * v2 / r;
+            a[1] = -sb * a_route - cb * v2 / r;
+            a[2] = 0 ;
+            j[0] = cb * j_route - cb * v3 / r2 - 3 * sb * a_route * v_route / r;
+            j[1] = sb * v3 / r2 - sb * j_route - 3 * cb * a_route * v_route / r;
+            j[2] = 0;            
+        }
+    }
+
+    float temp_p[3] = {
+        cd * p[0] - sd * p[1],
+        sd * p[0] + cd * p[1],
+        p[2]
+    };
+    float temp_v[3] = {
+        cd * v[0] - sd * v[1],
+        sd * v[0] + cd * v[1],
+        v[2]
+    };
+    float temp_a[3] = {
+        cd * a[0] - sd * a[1],
+        sd * a[0] + cd * a[1],
+        a[2]
+    };
+    float temp_j[3] = {
+        cd * j[0] - sd * j[1],
+        sd * j[0] + cd * j[1],
+        j[2]
+    };
+    for (i = 0; i < 3; i++){
+      p[i] = temp_p[i] + pi[i];
+      v[i] = temp_v[i];
+      a[i] = temp_a[i];
+      j[i] = temp_j[i];
+    }
+}
+
+/**
+ * Converts an angle in radians to an angle between -pi and pi.
+ *
+ * @param psi The input angle in radians.
+ * @return The converted angle between -pi and pi.
+ */
+float convert_angle(float psi) {
+    // Compute the equivalent angle between -2pi and 2pi
+    psi = fmodf(psi, 2 * M_PI);
+
+    if (psi < -M_PI)
+        psi += 2 * M_PI;
+    else if (psi > M_PI)
+        psi -= 2 * M_PI;
+
+    // Convert to angle between -pi and pi
+    if (psi <= M_PI)
+        return psi;
+    else
+        return psi - 2 * M_PI;
+}
