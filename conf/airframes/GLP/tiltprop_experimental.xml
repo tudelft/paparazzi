@@ -153,17 +153,11 @@
       <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="15.0"/>
     </module>
 
-    <module name="gps" type="datalink"/>
+    <!-- <module name="gps" type="datalink"/> -->
 
-    <!-- <module name="gps" type="ublox">
-      <configure name="GPS_BAUD" value="B57600"/>
-    </module> -->
-
-    <module name="ahrs" type="int_cmpl_quat">
-    <!-- <configure name="USE_MAGNETOMETER" value="TRUE"/> -->
-    <configure name="USE_MAGNETOMETER" value="FALSE"/> <!--This is for optitrack -->
+    <!-- <module name="ahrs" type="int_cmpl_quat">
+    <configure name="USE_MAGNETOMETER" value="FALSE"/>
     <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
-    <!-- <define name="AHRS_ICQ_MAG_ID" value="MAG_HMC58XX_SENDER_ID"/> -->
     <define name="AHRS_GRAVITY_UPDATE_COORDINATED_TURN" value="TRUE"/>
     <define name="AHRS_GPS_SPEED_IN_NEGATIVE_Z_DIRECTION" value="TRUE"/>
     <define name="AHRS_HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
@@ -172,9 +166,13 @@
       <define name="INS_USE_GPS_ALT" value="1"/>
       <define name="INS_USE_GPS_ALT_SPEED" value="1"/>
       <define name="INS_VFF_R_GPS" value="0.01"/>
+    </module> -->
+
+    <module name="gps" type="ublox">
+      <configure name="GPS_BAUD" value="B57600"/>
     </module>
 
-   <!-- <module name="ins" type="ekf2"/> -->
+   <module name="ins" type="ekf2"/>
 
     <!-- <module name="ins" type="float_invariant">
       <define name="INS_PROPAGATE_FREQUENCY" value="500"/>
@@ -365,7 +363,7 @@
     <define name="ADAPTIVE_MU" value="0.0001"/>
 
     <define name="WLS_PRIORITIES" value="{1.0,1.0,1.0,1.0}"/>
-    <define name="WLS_WU" value="{100.0,100.0,1.0,1.0,0.01,0.01}"/>
+    <define name="WLS_WU" value="{1.0,1.0,1.0,1.0,0.001,0.001}"/>
 
     <!-- Second order actuator dynamics -->
     <define name="SERVO_DELAY" value="0.014"/> <!-- [s] -->
@@ -415,8 +413,10 @@
    	<define name="K2" value="0.0004"/>
    	<define name="K3" value="0.1175"/>
 
-    <define name="CDA" value="0.075"/>
+    <define name="CDA" value="0.04"/>
     <define name="CDA_OFFSET" value="0.0004"/>
+
+    <define name="CDE" value="0.02"/>
 
  	<!-- Location of the pivot point of tilting motors w.r.t. the c.g. -->
    	<define name="Y_DIST" value="0.3"/>		<!--[m]-->
