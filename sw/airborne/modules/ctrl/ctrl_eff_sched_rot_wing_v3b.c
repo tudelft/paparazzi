@@ -106,6 +106,7 @@ inline void update_aileron_effectiveness(float *airspeed2, float *sinr);
 inline void update_flap_aileron_effectiveness(float *airspeed2, float *sinr);
 inline void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt);
 inline void schedule_pref_pitch_angle_deg(float wing_rot_deg);
+inline void schedule_pitch_priority_factor(float wing_rot_deg);
 inline void schedule_liftd(float *airspeed2, float *sinr, float wing_rot_deg);
 
 #if PERIODIC_TELEMETRY
@@ -362,15 +363,29 @@ void schedule_pref_pitch_angle_deg(float wing_rot_deg)
 {
   float scheduled_pitch_angle = 0;
   if (wing_rot_deg < 55) {
-    scheduled_pitch_angle = 0;
+    scheduled_pitch_angle = pitch_angle_set;
   } else {
     float pitch_range = 7.;
     float pitch_progression = (wing_rot_deg - 55) / 35.;
     scheduled_pitch_angle = pitch_range * pitch_progression;
   }
-  Bound(scheduled_pitch_angle, 0., 7.);
-  //scheduled_pitch_angle = pitch_angle_set;
+  Bound(scheduled_pitch_angle, -5., 7.);
   pitch_pref_deg = scheduled_pitch_angle;
+}
+
+void schedule_pitch_priority_factor(float wing_rot_deg)
+{
+  float scheduled_pitch_priority;
+  float hover_weight = 60;
+  float forward_weight = 11;
+  float pitch_priority_range = hover_weight - forward_weight;
+  float transition_percentage = wing_rot_deg / 90.;
+  Bound(transition_percentage, 0. ,1.);
+
+  scheduled_pitch_priority = hover_weight - transition_percentage * pitch_priority_range;
+  
+  Bound(scheduled_pitch_priority, forward_weight, hover_weight);
+  pitch_priority_factor = scheduled_pitch_priority;
 }
 
 void schedule_liftd(float *airspeed2, float *sinr2, float wing_rot_deg)
