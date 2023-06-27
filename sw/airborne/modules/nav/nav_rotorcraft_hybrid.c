@@ -34,7 +34,7 @@
 #endif
 #define NAV_MAX_SPEED (GUIDANCE_INDI_MAX_AIRSPEED + GUIDANCE_INDI_NAV_SPEED_MARGIN)
 float nav_max_speed = NAV_MAX_SPEED;
-float nav_max_acceleration_sp = 0.8;
+float nav_max_acceleration_sp = 6.0;
 float nav_max_deceleration_sp = 0.5;
 
 #ifndef MAX_DECELERATION
