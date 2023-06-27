@@ -201,7 +201,7 @@ float a_diff_limit_z = 1.0;
 float rot_wing_roll_limit = 0.785; // 45 deg
 float rot_wing_pitch_limit = 0.785; // 20 deg
 
-float rot_wing_max_pitch_limit_deg = 20.;
+float rot_wing_max_pitch_limit_deg = 8.;
 float rot_wing_min_pitch_limit_deg = -20.;
 
 float airspeed_turn_lower_bound = 10.;
@@ -532,7 +532,7 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
   }
   else { // Go somewhere in the shortest way
 
-    if (airspeed > 10.f) {
+    if (airspeed > TURN_AIRSPEED_TH) {
       // Groundspeed vector in body frame
       float groundspeed_x = cpsi * stateGetSpeedNed_f()->x + spsi * stateGetSpeedNed_f()->y;
       float speed_increment = speed_sp_b_x - groundspeed_x;
