@@ -97,7 +97,7 @@
         </papget>
         <papget type="message_field" display="text" x="130" y="47">
           <property name="scale" value="1"/>
-          <property name="field" value="AIR_DATA:airspeed"/>
+          <property name="field" value="STAB_ATTITUDE_FULL_INDI:airspeed"/>
           <property name="format" value="AS %.2f m/s"/>
           <property name="size" value="15."/>
           <property name="color" value="#00ff00"/>
