@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="10" ground_alt="0" lat0="51 59 27.6" lon0="4 22 42.0" max_dist_from_home="1000" name="Delft Basic" security_height="2">
+<flight_plan alt="50" ground_alt="0" lat0="50.909553" lon0="6.227969" max_dist_from_home="500" name="Delft" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -11,10 +11,20 @@
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint name="CLIMB" x="0.0" y="5.0"/>
     <waypoint name="STDBY" x="-2.0" y="-5.0"/>
-    <waypoint name="p1" x="-19.9" y="14.3"/>
-    <waypoint name="p2" x="-0.6" y="21.6"/>
-    <waypoint name="p3" x="22.2" y="-26.5"/>
-    <waypoint name="p4" x="4.9" y="-34.4"/>
+    <waypoint lat="50.910955" lon="6.227807" name="p1" />
+    <waypoint lat="50.912010" lon="6.227356" name="p2" />
+    <waypoint lat="50.912416" lon="6.229374" name="p3" />
+    <waypoint lat="50.911780" lon="6.228762" name="p4" />
+    <waypoint lat="50.913294" lon="6.226859" name="_A" />
+    <waypoint lat="50.912641" lon="6.230576" name="_B" />
+    <waypoint lat="50.911691" lon="6.231193" name="_C" />
+    <waypoint lat="50.910957" lon="6.229037" name="_D" />
+    <waypoint lat="50.909293" lon="6.228355" name="_E" />
+    <waypoint lat="50.908305" lon="6.226553" name="_F" />
+    <waypoint lat="50.906807" lon="6.226607" name="_G" />
+    <waypoint lat="50.906570" lon="6.226328" name="_H" />
+    <waypoint lat="50.907037" lon="6.223780" name="_J" />
+    <waypoint lat="50.911048" lon="6.223747" name="_K" />
     <waypoint name="CAM" x="14.2" y="-29.4"/>
     <waypoint name="TD" x="5.6" y="-10.9"/>
     <waypoint name="_G1" x="-31.4" y="27.3"/>
@@ -23,15 +33,27 @@
     <waypoint name="_G4" x="2.5" y="-46.9"/>
   </waypoints>
   <sectors>
-    <sector color="red" name="Flight_Area">
+    <!--sector color="red" name="Flight_Area">
       <corner name="_G1"/>
       <corner name="_G2"/>
       <corner name="_G3"/>
       <corner name="_G4"/>
+    </sector-->
+    <sector color="green" name="Soft">
+      <corner name="_A"/>
+      <corner name="_B"/>
+      <corner name="_C"/>
+      <corner name="_D"/>
+      <corner name="_E"/>
+      <corner name="_F"/>
+      <corner name="_G"/>
+      <corner name="_H"/>
+      <corner name="_J"/>
+      <corner name="_K"/>
     </sector>
   </sectors>
   <exceptions>
-    <exception cond="!InsideFlight_Area(GetPosX(), GetPosY())" deroute="Holding point"/>
+    <exception cond="!InsideSoft(GetPosX(), GetPosY())" deroute="Holding point"/>
     <exception cond="((radio_control.status == RC_REALLY_LOST) @AND
       !(IndexOfBlock('Takeoff') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('land here')) @AND
