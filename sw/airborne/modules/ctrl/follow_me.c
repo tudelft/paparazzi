@@ -135,8 +135,10 @@ void follow_me_periodic(void)
     wp_new_enu.z = wp_enu->z;
 
     // Rotate the waypoint
-    wp_new_enu.x = ((wp_new_enu.x - cur_targetpos.x) * cosf(diff_targetpos_heading/180.*M_PI)) + cur_targetpos.x;
-    wp_new_enu.y = ((wp_new_enu.y - cur_targetpos.y) * sinf(diff_targetpos_heading/180.*M_PI)) + cur_targetpos.y;
+    float cos_heading = cosf(diff_targetpos_heading/180.*M_PI);
+    float sin_heading = cosf(diff_targetpos_heading/180.*M_PI);
+    wp_new_enu.x = ((wp_new_enu.x - cur_targetpos.x) * cos_heading) + ((wp_new_enu.y - cur_targetpos.y) * sin_heading) +  + cur_targetpos.x;
+    wp_new_enu.y = (-(wp_new_enu.y - cur_targetpos.y) * sin_heading) + ((wp_new_enu.y - cur_targetpos.y) * cos_heading) + cur_targetpos.y;
 
     // Update the waypoint
     waypoint_set_enu(wp_id, &wp_new_enu);
