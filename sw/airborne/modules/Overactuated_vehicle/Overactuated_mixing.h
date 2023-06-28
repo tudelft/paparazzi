@@ -113,6 +113,8 @@ extern int16_t neutral_servo_2_pwm;
 
 extern float CL_ailerons;
 
+extern float extra_lat_gain;
+
 extern float des_pos_earth_x;
 extern float des_pos_earth_y;
 extern float stick_gain_yaw;

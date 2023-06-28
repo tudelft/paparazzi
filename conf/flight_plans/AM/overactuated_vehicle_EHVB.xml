@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="55" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="500" name="Overactuated vehicle Valkenburg" security_height="2">
+<flight_plan alt="55" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="500" name="Overactuated vehicle Valkenburg" security_height="12">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -9,15 +9,15 @@
   <waypoints>
     <waypoint name="HOME" x="12.6" y="-48.7"/>
     <waypoint name="CLIMB" x="62.6" y="-80.4"/>
-    <waypoint name="STDBY" lat="52.1682655" lon="4.4135103"/>
+    <waypoint name="STDBY" lat="52.1682794" lon="4.4139911"/>
     <!--<waypoint name="p1" lat="52.1674262" lon="4.4141448"/>-->
-    <waypoint name="p1" lat="52.1684116" lon="4.4149282"/>
-    <waypoint name="p2" lat="52.1675165" lon="4.4147158"/>
-    <waypoint name="p3" lat="52.1688983" lon="4.4139655"/>
-    <waypoint name="p4" lat="52.1687661" lon="4.4133220"/>
+    <waypoint name="p1" lat="52.1694940" lon="4.4155585"/>
+    <waypoint name="p2" lat="52.1678116" lon="4.4165828"/>
+    <waypoint name="p3" lat="52.1671481" lon="4.4141374"/>
+    <waypoint name="p4" lat="52.1689418" lon="4.4132070"/>
     <waypoint name="TD" lat="52.1681602" lon="4.4127708"/>
-    <waypoint name="APP" lat="52.1679567" lon="4.4136344"/>
-    <waypoint name="FOLLOW" lat="52.16850964562752" lon="4.413635008734417"/>
+    <waypoint name="APP" lat="52.1680902" lon="4.4148029"/>
+    <waypoint name="FOLLOW" lat="52.1686922" lon="4.4149181"/>
     <waypoint lat="52.169189" lon="4.410820" name="C1"/>
     <waypoint lat="52.168049" lon="4.406923" name="C2"/>
     <waypoint lat="52.166515" lon="4.408235" name="C3"/>
@@ -111,6 +111,20 @@
       <go from="p1" hmode="route" wp="p2"/>
       <stay wp="p2"/>
     </block>
+    <block name="newroute">
+    <set value="1" var="force_forward"/>
+    <set value="0" var="approach_state"/>
+      <go wp="p1"/>
+      <go wp="p2"/>
+      <go wp="p3"/>
+      <go wp="p4"/>
+      <!-- <go from="p1" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p3"/>
+      <go from="p3" hmode="route" wp="p4"/>
+      <go from="p4" hmode="route" wp="p1"/>-->
+
+      <deroute block="newroute"/>
+    </block>
     <block name="route">
     <set value="1" var="force_forward"/>
     <set value="0" var="approach_state"/>
@@ -159,7 +173,7 @@
     <set value="0" var="force_forward"/>
     <set value="1" var="approach_state"/>
         <exception cond="!(stateGetPositionEnu_f()->z > 12.0)" deroute="flare"/>
-        <stay climb="-1.0" vmode="climb" wp="TD"/>
+        <stay climb="-1.5" vmode="climb" wp="TD"/>
     </block>
     <block name="flare">
     <set value="0" var="force_forward"/>

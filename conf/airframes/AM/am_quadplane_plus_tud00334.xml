@@ -139,6 +139,7 @@
 
     <module name="nav_hybrid">
       <configure name="NAV_HYBRID_POS_GAIN" value="1"/>
+      <configure name="NAV_MAX_SPEED" value="15"/>
     </module>
 
     <module name="ahrs" type="float_cmpl_quat">
@@ -505,8 +506,10 @@
     <!-- FWD flight properties for yaw rate induced by controller and for removal of lateral speed term-->
     <!-- <define name="MIN_SPEED_TRANSITION" value="3.0" unit="m/s"/>
     <define name="REF_SPEED_TRANSITION" value="5.0" unit="m/s"/> -->
-    <define name="MIN_SPEED_TRANSITION" value="0.0" unit="m/s"/>
-    <define name="REF_SPEED_TRANSITION" value="0.5" unit="m/s"/>
+    <!-- <define name="MIN_SPEED_TRANSITION" value="0.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION" value="0.5" unit="m/s"/> -->
+    <define name="MIN_SPEED_TRANSITION" value="8.0" unit="m/s"/>
+    <define name="REF_SPEED_TRANSITION" value="10.0" unit="m/s"/>
 
   </section>
 
@@ -626,6 +629,10 @@
     <define name="VZ_GAIN_MAX_VAL" value="1"/>
     <define name="VZ_GAIN_MIN_VAL" value="0.6"/>
 
+    <define name="MIN_LAT_SPEED_GAIN_VALUE" value="0.1"/>
+
+    <define name="FWD_SPEED_FORCE_FWD_MODE" value="20"/>
+    
   </section>
 
   <!-- ************************* MAG EXTERNAL ************************* -->

@@ -60,6 +60,10 @@
 
 #define FLY_WITH_AIRSPEED
 
+// #define USE_LAT_SPEED_FEEDBACK_IN_WP_MODE
+
+#define RECTIFY_LAT_AND_FWD_SPEED
+
 // #define USE_NEW_THR_ESTIMATION
 // #define USE_NEW_THR_ESTIMATION_OPTIMIZATION
 #define NEW_AOA_DEFINITION 
@@ -151,6 +155,8 @@ float Dynamic_MOTOR_K_T_OMEGASQ;
 //Ailerons variables 
 float CL_ailerons = VEHICLE_CL_AILERONS;
 float roll_pwm_cmd; 
+
+float extra_lat_gain = 1; 
 
 //Variables for the NONLINEAR_CA_DEBUG message: 
 float feed_fwd_term_yaw, feed_back_term_yaw;
@@ -249,9 +255,8 @@ Butterworth2LowPass airspeed_filt;
 //Filters for flight path angle : 
 Butterworth2LowPass flight_path_angle_filtered;
 
-//Variables for the auto test: 
-float auto_test_time_start, des_Vx, des_Vy, des_Vz, des_phi, des_theta, des_psi_dot;
-uint8_t auto_test_start = 0; 
+//Variable to keep track of the control mode used (1 is failsafe PID, 2 is Nonlinear controller): 
+uint8_t control_mode_ovc_vehicle = 0; 
 
 //Variables for the waypoint contol: 
 int waypoint_mode = 0; 
@@ -365,7 +370,7 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
 
     //Updated with secundary AHRS reference and removed old cmd part 
     pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID ,
-                                         & airspeed, & auto_test_start , & beta_deg,
+                                         & airspeed, & control_mode_ovc_vehicle , & beta_deg,
                                          & pos_vect[0], & pos_vect[1], & pos_vect[2],
                                          & speed_vect[0], & speed_vect[1], & speed_vect[2],
                                          & accel_vect_filt_control_rf[0], & accel_vect_filt_control_rf[1], & accel_vect_filt_control_rf[2],
@@ -1090,6 +1095,17 @@ void assign_variables(void){
     pos_vect[0] = stateGetPositionNed_f()->x;
     pos_vect[1] = stateGetPositionNed_f()->y;
     pos_vect[2] = stateGetPositionNed_f()->z;
+    #ifdef USE_SEC_AHRS_IN_FAILSAFE_MODE
+        struct FloatEulers ltp_to_body_euler;
+        float_eulers_of_quat(&ltp_to_body_euler, &ahrs_fc.ltp_to_body_quat);
+        euler_vect_sec_ahrs[0] = ltp_to_body_euler.phi;
+        euler_vect_sec_ahrs[1] = ltp_to_body_euler.theta;
+        euler_vect_sec_ahrs[2] = ltp_to_body_euler.psi;
+        rate_vect_sec_ahrs[0] = ahrs_fc.body_rate.p; 
+        rate_vect_sec_ahrs[1] = ahrs_fc.body_rate.q; 
+        rate_vect_sec_ahrs[2] = ahrs_fc.body_rate.r; 
+    #endif 
+
     #ifdef SITL
         airspeed = 10;
         beta_deg = 0;
@@ -1118,6 +1134,7 @@ void assign_variables(void){
 
         acc_vect_filt[i] = measurement_acc_filters[i].o[0];
 
+        rate_vect_sec_ahrs_filt[i] += OVERACTUATED_MIXING_FIRST_ORDER_FILTER_COEFF_ANG_RATES_FAILSAFE * (rate_vect_sec_ahrs[i] - rate_vect_sec_ahrs_filt[i]);
     }
 
     // Update the filter for the body lateral acceleration 
@@ -1138,13 +1155,13 @@ void assign_variables(void){
 
     //Definition of AoA and FPA 
     #ifdef NEW_AOA_DEFINITION
-    float projected_airspeed_on_x_control = 0.0;
-    if(fabs(cosf(euler_vect[1])) > 0.001){
-        projected_airspeed_on_x_control = airspeed/cosf(euler_vect[1]);
-    }
-    total_V = sqrt(projected_airspeed_on_x_control*projected_airspeed_on_x_control + speed_vect_control_rf[1]*speed_vect_control_rf[1] + speed_vect_control_rf[2]*speed_vect_control_rf[2]);
+        float projected_airspeed_on_x_control = 0.0;
+        if(fabs(cosf(euler_vect[1])) > 0.001){
+            projected_airspeed_on_x_control = airspeed/cosf(euler_vect[1]);
+        }
+        total_V = sqrt(projected_airspeed_on_x_control*projected_airspeed_on_x_control + speed_vect_control_rf[1]*speed_vect_control_rf[1] + speed_vect_control_rf[2]*speed_vect_control_rf[2]);
     #else
-    total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
+        total_V = sqrt(speed_vect[0]*speed_vect[0] + speed_vect[1]*speed_vect[1] + speed_vect[2]*speed_vect[2]);
     #endif
 
     flight_path_angle = 0.0;
@@ -1162,21 +1179,6 @@ void overactuated_mixing_run(void)
 {
     //Assign variables
     assign_variables();
-
-    #ifdef USE_SEC_AHRS_IN_FAILSAFE_MODE
-        struct FloatEulers ltp_to_body_euler;
-        float_eulers_of_quat(&ltp_to_body_euler, &ahrs_fc.ltp_to_body_quat);
-        euler_vect_sec_ahrs[0] = ltp_to_body_euler.phi;
-        euler_vect_sec_ahrs[1] = ltp_to_body_euler.theta;
-        euler_vect_sec_ahrs[2] = ltp_to_body_euler.psi;
-        rate_vect_sec_ahrs[0] = ahrs_fc.body_rate.p; 
-        rate_vect_sec_ahrs[1] = ahrs_fc.body_rate.q; 
-        rate_vect_sec_ahrs[2] = ahrs_fc.body_rate.r; 
-        //Propagate filters on rate with same property of the EKF2 one:
-        for (int i=0;i<3;i++){
-            rate_vect_sec_ahrs_filt[i] += OVERACTUATED_MIXING_FIRST_ORDER_FILTER_COEFF_ANG_RATES_FAILSAFE * (rate_vect_sec_ahrs[i] - rate_vect_sec_ahrs_filt[i]);
-        }
-    #endif 
 
     #ifdef PRINT_CPU_LOAD_ON_SD
         //Write to sysmon every 1 second if required by debug enable
@@ -1197,84 +1199,11 @@ void overactuated_mixing_run(void)
         z_stb = -nav.fp_altitude;
     #endif
 
-    //Prepare the reference for the AUTO test with the nonlinear controller: 
-        
-    // if(radio_control.values[RADIO_AUX4] < -500){
-    //     auto_test_start = 1; 
-    // }
-    // else{
-    //     auto_test_start = 0;
-    // }
-
-    // if(auto_test_start){
-        
-    //     if( get_sys_time_float() - auto_test_time_start >= 0 && get_sys_time_float() - auto_test_time_start < 2){
-    //         des_Vx = 0;
-    //         des_Vy = 0;
-    //         des_Vz = 0;
-    //         des_phi = 0;
-    //         des_theta = 0;
-    //         des_psi_dot = 0;  
-    //     }
-    //     else if( get_sys_time_float() - auto_test_time_start >= 2 && get_sys_time_float() - auto_test_time_start < 7){
-    //         des_Vx = 15;
-    //         des_Vy = 0;
-    //         des_Vz = 0;
-    //         des_phi = 0;
-    //         des_theta = 0;
-    //         des_psi_dot = 0;  
-    //     }
-    //     else if( get_sys_time_float() - auto_test_time_start >= 7 && get_sys_time_float() - auto_test_time_start < 12){
-    //         des_Vx = 15;
-    //         des_Vy = 0;
-    //         des_Vz = -4;
-    //         des_phi = 0;
-    //         des_theta = 0;
-    //         des_psi_dot = 0;  
-    //     }
-    //     else if( get_sys_time_float() - auto_test_time_start >= 12 && get_sys_time_float() - auto_test_time_start < 15){
-    //         des_Vx = 15;
-    //         des_Vy = 0;
-    //         des_Vz = 0;
-    //         des_phi = 0;
-    //         des_theta = 0;
-    //         des_psi_dot = 0;  
-    //     }
-    //     else if( get_sys_time_float() - auto_test_time_start >= 15 && get_sys_time_float() - auto_test_time_start < 22){
-    //         des_Vx = 15;
-    //         des_Vy = 4;
-    //         des_Vz = 0;
-    //         des_phi = 0;
-    //         des_theta = 0;
-    //         des_psi_dot = 0;   
-    //     }
-    //     else if( get_sys_time_float() - auto_test_time_start >= 22 && get_sys_time_float() - auto_test_time_start < 26){
-    //         des_Vx = 15;
-    //         des_Vy = 0;
-    //         des_Vz = 0;
-    //         des_phi = 0;
-    //         des_theta = 0;
-    //         des_psi_dot = 0;   
-    //     }
-    //     else{
-    //         des_Vx = 0;
-    //         des_Vy = 0;
-    //         des_Vz = 0;
-    //         des_phi = 0;
-    //         des_theta = 0;
-    //         des_psi_dot = 0;   
-    //     }                
-
-    // } else{
-    //     auto_test_time_start = get_sys_time_float();
-    // }
-
     #ifdef SITL
         radio_control.values[RADIO_MODE] = 1000; //Enter wp mode automatically to test the WP mode in simulation 
     #endif
 
     /// Case of manual PID control [FAILSAFE]
-    // if(0){
     if(radio_control.values[RADIO_MODE] < -500) {
 
         //Use Secundary complementary filter AHRS in FAILSAFE MODE: 
@@ -1296,7 +1225,7 @@ void overactuated_mixing_run(void)
                 pos_error_integrated[i] = 0;
             }
             euler_setpoint[2] = euler_vect[2];
-
+            control_mode_ovc_vehicle = 1;
         }
 
         ////Angular error computation
@@ -1428,6 +1357,7 @@ void overactuated_mixing_run(void)
 
             INDI_engaged = 1;
             FAILSAFE_engaged = 0;
+            control_mode_ovc_vehicle = 2;
 
             //Reset actuator states position:
             indi_u[0] = 100;
@@ -1458,29 +1388,28 @@ void overactuated_mixing_run(void)
 
             //Init dshot RPM control cmds
             #ifdef RPM_CONTROL
-            if(RadioControlValues(RADIO_TH_HOLD) > 0){
-                for (int i = 0; i < 4; i++){
+                if(RadioControlValues(RADIO_TH_HOLD) > 0){
+                    for (int i = 0; i < 4; i++){
 
-                    #ifdef RPM_INDI_CONTROL
+                        #ifdef RPM_INDI_CONTROL
 
-                    dshot_cmd_ppz_filtered[i] = overactuated_mixing.commands[i];
-                    for (int j = 0; j < RPM_CONTROL_FBW_MOTOR_DYN_DELAY_TS; j++){
-                        dshot_cmd_ppz_filtered_delayed[i][j] = overactuated_mixing.commands[i];
+                        dshot_cmd_ppz_filtered[i] = overactuated_mixing.commands[i];
+                        for (int j = 0; j < RPM_CONTROL_FBW_MOTOR_DYN_DELAY_TS; j++){
+                            dshot_cmd_ppz_filtered_delayed[i][j] = overactuated_mixing.commands[i];
+                        }
+                        dshot_cmd_state_filtered[i] = overactuated_mixing.commands[i];
+                        dshot_cmd_ppz[i] = overactuated_mixing.commands[i];
+
+                        #else //PID RPM CONTROL
+
+                        motor_rad_s_filtered_old[i] = actuator_state[i];
+                        motor_rad_s_error_integrated[i] = 0;
+
+                        #endif 
+
+                        motor_rad_s_filtered[i] = actuator_state[i];
                     }
-                    dshot_cmd_state_filtered[i] = overactuated_mixing.commands[i];
-                    dshot_cmd_ppz[i] = overactuated_mixing.commands[i];
-
-                    #else //PID RPM CONTROL
-
-                    motor_rad_s_filtered_old[i] = actuator_state[i];
-                    motor_rad_s_error_integrated[i] = 0;
-
-                    #endif 
-
-                    motor_rad_s_filtered[i] = actuator_state[i];
-
                 }
-            }
             #endif
         }
 
@@ -1500,12 +1429,6 @@ void overactuated_mixing_run(void)
         manual_phi_value = MANUAL_CONTROL_MAX_CMD_ROLL_ANGLE * radio_control.values[RADIO_AUX3] / 9600;
         manual_theta_value = MANUAL_CONTROL_MAX_CMD_PITCH_ANGLE * radio_control.values[RADIO_AUX4] / 9600;
 
-        //Add the setpoint in case of AUTO test
-        if(auto_test_start){ 
-            manual_phi_value = des_phi * M_PI/180; 
-            manual_theta_value = des_theta * M_PI/180; 
-        }
-
         manual_motor_value = OVERACTUATED_MIXING_MOTOR_MIN_OMEGA;
 
         euler_setpoint[0] = indi_u[13];
@@ -1521,11 +1444,6 @@ void overactuated_mixing_run(void)
 
         // For the yaw, we can directly control the rates:
         float yaw_rate_setpoint_manual = MANUAL_CONTROL_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / 9600;
-
-        //Add the setpoint in case of AUTO test
-        if(auto_test_start){ 
-            yaw_rate_setpoint_manual = des_psi_dot * M_PI/180; 
-        }
 
         euler_error[2] = yaw_rate_setpoint_manual + compute_yaw_rate_turn();
 
@@ -1591,13 +1509,10 @@ void overactuated_mixing_run(void)
         if(0){
             speed_setpoint_control_rf[2] = pos_error[2] * indi_gains_over.p.z;
         }
-        
-        //Add the setpoint in case of AUTO test
-        if(auto_test_start){ 
-            speed_setpoint_control_rf[0] = des_Vx; 
-            speed_setpoint_control_rf[1] = des_Vy; 
-            speed_setpoint_control_rf[2] = des_Vz; 
-        }
+
+        //Estimate aoa (useful in the next two loops):
+        float aoa_angle_estimation = euler_vect[1] - flight_path_angle;
+        BoundAbs(aoa_angle_estimation, (M_PI/2 - 0.01));
 
         // If we are in the waypoint control mode, overwrite the speed setpoints with the one dictated by the waypoint: 
         if(waypoint_mode){
@@ -1605,13 +1520,40 @@ void overactuated_mixing_run(void)
             pos_setpoint[1] = y_stb; 
             pos_setpoint[2] = z_stb;       
             compute_speed_ref_from_waypoint(speed_setpoint_control_rf, pos_setpoint, pos_vect, airspeed, euler_vect[2]);
+            #ifdef RECTIFY_LAT_AND_FWD_SPEED 
+                //Make sure not to divide by zero: 
+                if(speed_setpoint_control_rf[0] < 0.01 && speed_setpoint_control_rf[0] >= 0){
+                    speed_setpoint_control_rf[0] = 0.01;
+                }
+                if(speed_setpoint_control_rf[0] > -0.01 && speed_setpoint_control_rf[0] < 0){
+                    speed_setpoint_control_rf[0] = -0.01;
+                }
+
+                //Compute the angle between the desired speed array and the vehicle x-control axis:
+                float alpha_speed = atan2f(speed_setpoint_control_rf[1],speed_setpoint_control_rf[0]);
+
+                //Compute weight to move from one lateral speed reference to another: 
+                float lat_speed_weight = compute_lat_speed_multiplier(OVERACTUATED_MIXING_MIN_SPEED_TRANSITION,OVERACTUATED_MIXING_REF_SPEED_TRANSITION,airspeed);
+
+                // Compute first term of lateral speed desired based on the alpha_speed value:
+                float first_term_lateral_speed = (airspeed / cosf(aoa_angle_estimation)) * alpha_speed * lat_speed_weight * extra_lat_gain;
+                float second_term_lateral_speed = speed_setpoint_control_rf[1] * (1-lat_speed_weight);
+                //Conpute the lateral speed desired
+                speed_setpoint_control_rf[1] = first_term_lateral_speed + second_term_lateral_speed;
+
+                //Apply full fwd speed if requested:
+                if(force_forward){
+                    speed_setpoint_control_rf[0] = WP_CONTROL_FWD_SPEED_FORCE_FWD_MODE;
+                }
+
+            #endif
+
         }
 
 
         //Apply saturation blocks to speed setpoints in control reference frame:
         #ifdef FLY_WITH_AIRSPEED
             //Try to equalize the maximum fwd speed with the airspeed:
-            float aoa_angle_estimation = euler_vect[1] - flight_path_angle;
             float max_Vx_airspeed = max_V_control_from_max_airspeed(airspeed, speed_vect_control_rf[0], aoa_angle_estimation, LIMITS_FWD_MAX_AIRSPEED);
             Bound(speed_setpoint_control_rf[0],LIMITS_FWD_MIN_FWD_SPEED,Min(LIMITS_FWD_MAX_FWD_SPEED,max_Vx_airspeed));
         #else
@@ -1622,7 +1564,16 @@ void overactuated_mixing_run(void)
 
         //Compute the speed error in the control rf:
         speed_error_vect_control_rf[0] = speed_setpoint_control_rf[0] - speed_vect_control_rf[0];
-        speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1] * (1 - compute_lat_speed_multiplier(OVERACTUATED_MIXING_MIN_SPEED_TRANSITION,OVERACTUATED_MIXING_REF_SPEED_TRANSITION,airspeed));
+        if(waypoint_mode){
+            #ifdef USE_LAT_SPEED_FEEDBACK_IN_WP_MODE
+                speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1];
+            #else
+                speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1] * (1 - compute_lat_speed_multiplier(OVERACTUATED_MIXING_MIN_SPEED_TRANSITION,OVERACTUATED_MIXING_REF_SPEED_TRANSITION,airspeed));
+            #endif
+        }
+        else{
+            speed_error_vect_control_rf[1] = speed_setpoint_control_rf[1] - speed_vect_control_rf[1] * (1 - compute_lat_speed_multiplier(OVERACTUATED_MIXING_MIN_SPEED_TRANSITION,OVERACTUATED_MIXING_REF_SPEED_TRANSITION,airspeed));
+        }   
         speed_error_vect_control_rf[2] = speed_setpoint_control_rf[2] - speed_vect_control_rf[2];
 
         //Compute the acceleration setpoints in the control rf:

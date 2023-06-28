@@ -2182,7 +2182,7 @@
      <message name="OVERACTUATED_VARIABLES" id="212">
 
          <field name="airspeed" type="float" >Actual airspeed</field>
-         <field name="auto_test_start" type="uint8" >Boolean for the auto mode</field>
+         <field name="control_mode_ovc_vehicle" type="uint8" >Boolean for the control mode</field>
          <field name="beta_angle" type="float" >Sideslip angle in degrees</field>
 
          <field name="act_x_pos" type="float" unit="m">Actual x position [m]</field>
