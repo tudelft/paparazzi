@@ -32,6 +32,7 @@
     <file name="follow_me.h"/>
   </header>
   <init fun="follow_me_init()"/>
+  <periodic fun="follow_me_periodic()" freq="1"/>
   <datalink message="TARGET_POS" fun="follow_me_parse_target_pos(buf)"/>
   <makefile>
     <file name="follow_me.c"/>

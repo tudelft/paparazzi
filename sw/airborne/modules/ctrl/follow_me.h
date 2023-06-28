@@ -76,6 +76,10 @@ extern float follow_me_min_height;
  */
 extern void follow_me_init(void);
 
+/** periodic function
+ */
+extern void follow_me_periodic(void);
+
 /** on receiving a TARGET_POS message
  */
 extern void follow_me_parse_target_pos(uint8_t *buf);

@@ -44,7 +44,9 @@
     </sector-->
   </sectors>
   <modules>
-    <module name="follow_me"/>
+    <module name="follow_me">
+      <define name="FOLLOW_ME_MOVING_WPS" value="WP_p1"/>
+    </module>
   </modules>
   <exceptions>
     <exception cond="Or(!InsideEHR8(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Holding point"/>
