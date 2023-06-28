@@ -78,6 +78,7 @@ struct endpoint_t {
 };
 
 static bool verbose = false;
+static bool no_rtc_injection = false; 
 static struct endpoint_t gps_ep;
 static struct gps_ubx_t gps_ubx;
 static struct gps_rtcm_t gps_rtcm;
@@ -661,8 +662,10 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
       if(verbose) printf("Got a succesfull RTCM message [%d]\r\n", RTCMgetbitu(gps_rtcm.msg_buf, 24 + 0, 12));
 
       /* Forward the message to inject into the drone */
-      send_gps_inject(gps_rtcm.msg_buf, gps_rtcm.len + 6);
-
+      if(!no_rtc_injection){
+        send_gps_inject(gps_rtcm.msg_buf, gps_rtcm.len + 6);
+      }
+      
       gps_rtcm.msg_available = false;
     }
   }
@@ -688,6 +691,7 @@ int main(int argc, char** argv) {
     {"endpoint", required_argument, NULL, 'e'},
     {"help", no_argument, NULL, 'h'},
     {"verbose", no_argument, NULL, 'v'},
+    {"no_rtc", no_argument, NULL, 'n'},
     {0, 0, 0, 0}
   };
   static const char* usage =
@@ -735,6 +739,10 @@ int main(int argc, char** argv) {
 
       case 'v':
         verbose = true;
+        break;
+
+      case 'n': 
+        no_rtc_injection = true; 
         break;
 
       case 'h':

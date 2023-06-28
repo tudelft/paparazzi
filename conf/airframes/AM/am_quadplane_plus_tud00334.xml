@@ -140,6 +140,7 @@
     <module name="nav_hybrid">
       <configure name="NAV_HYBRID_POS_GAIN" value="1"/>
       <configure name="NAV_MAX_SPEED" value="15"/>
+      <configure name="NAV_HYBRID_LINE_GAIN" value="1"/>
     </module>
 
     <module name="ahrs" type="float_cmpl_quat">
@@ -186,7 +187,6 @@
 
     <module name="approach_moving_target">
       <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/>
-      <define name="VEL_SP_FCR_ID" value="10"/>
     </module>
   </firmware>
 

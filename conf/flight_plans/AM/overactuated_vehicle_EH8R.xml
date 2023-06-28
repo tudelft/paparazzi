@@ -49,104 +49,133 @@
     </sector-->
   </sectors>
   <modules>
-    <module name="follow_me"/>
+    <module name="follow_me">
+      <define name="FOLLOW_ME_MOVING_WPS" value="WP_p1,WP_p2,WP_p3,WP_p4"/>
+    </module>
   </modules>
   <exceptions>
     <exception cond="Or(!InsideEHR8(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Holding point"/>
     <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
   </exceptions>
   <blocks>
+
     <block name="Wait GPS">
-    <set value="0" var="force_forward"/>
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
       <call_once fun="NavKillThrottle()"/>
       <while cond="!GpsFixValid() || !state.ned_initialized_i"/>
     </block>
+
     <block name="Geo init">
-    <set value="0" var="force_forward"/>
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
       <while cond="LessThan(NavBlockTime(), 10)"/>
-      <call_once fun="NavSetAltitudeReferenceHere()"/>
+      <call_once fun="NavSetGroundReferenceHere()"/>
     </block>
+
     <block name="Holding point">
-    <set value="0" var="force_forward"/>
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
+
     <block name="Start Engine">
-    <set value="0" var="force_forward"/>
-        <call_once fun="NavResurrect()"/>
-        <attitude pitch="0" roll="0" throttle="0" until="stage_time>10" vmode="throttle"/>
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <call_once fun="NavResurrect()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="stage_time>10" vmode="throttle"/>
     </block>
+
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-    <set value="0" var="force_forward"/>
-        <exception cond="stateGetPositionEnu_f()->z > 4.0" deroute="Approach APP"/>
-        <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
-        <attitude pitch="0" roll="0" throttle="0.75" until="stage_time>2" vmode="throttle"/>
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <exception cond="stateGetPositionEnu_f()->z > 10.0" deroute="follow_module"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <stay wp="CLIMB"/>
     </block>
+
     <block name="Approach APP">
-    <set value="0" var="force_forward"/>
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
     </block>
+
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
-    <set value="0" var="force_forward"/>
-        <stay wp="STDBY"/>
+      <set value="0" var="force_forward"/>
+      <set value="0" var="approach_state"/>
+      <stay wp="STDBY"/>
     </block>
+
     <block name="follow_module">
-    <set value="0" var="force_forward"/>
+      <set value="0" var="force_forward"/>
+      <set value="0" var="approach_state"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
     </block>
+
     <block name="stay_p1">
-    <set value="0" var="force_forward"/>
+      <set value="0" var="force_forward"/>
+      <set value="0" var="approach_state"/>
       <stay wp="p1"/>
     </block>
+
     <block name="route">
-    <set value="1" var="force_forward"/>
-    
-    <go from="p1" hmode="route" wp="p2"/>
-    <go from="p2" hmode="route" wp="p3"/>
-    <go from="p3" hmode="route" wp="p4"/>
-    <go from="p4" hmode="route" wp="p1"/>
-    
-      <!-- <go wp="p1"/>
-      <go wp="p2"/>
-      <go wp="p3"/>
-      <go wp="p4"/> -->
+      <set value="1" var="force_forward"/>
+      <set value="0" var="approach_state"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p3"/>
+      <go from="p3" hmode="route" wp="p4"/>
+      <go from="p4" hmode="route" wp="p1"/>
       <deroute block="route"/>
     </block>
     
     <block name="Circle_CW">
       <set value="1" var="force_forward"/>
+      <set value="0" var="approach_state"/>
       <circle radius="100" wp="p1"/>
     </block>
 
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
-    <set value="0" var="force_forward"/>
-        <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>
+
     <block name="land">
-    <set value="0" var="force_forward"/>
-        <go wp="TD"/>
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <go wp="TD"/>
     </block>
+
     <block name="descend">
-    <set value="0" var="force_forward"/>
-        <exception cond="!(stateGetPositionEnu_f()->z > 12.0)" deroute="flare"/>
-        <stay climb="-1.0" vmode="climb" wp="TD"/>
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <exception cond="!(stateGetPositionEnu_f()->z > 12.0)" deroute="flare"/>
+      <stay climb="-1.0" vmode="climb" wp="TD"/>
     </block>
+
     <block name="flare">
-    <set value="0" var="force_forward"/>
-        <stay climb="-0.5" vmode="climb" wp="TD"/>
-        <!--<exception cond="!(stateGetPositionEnu_f()->z > 2.0)" deroute="flare_low"/>-->
-        <!--<exception cond="agl_dist_valid @AND !(agl_dist_value > 0.20)" deroute="flare_low"/>-->
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <stay climb="-0.5" vmode="climb" wp="TD"/>
+      <!--<exception cond="!(stateGetPositionEnu_f()->z > 2.0)" deroute="flare_low"/>-->
+      <!--<exception cond="agl_dist_valid @AND !(agl_dist_value > 0.20)" deroute="flare_low"/>-->
     </block>
+
     <block name="flare_low">
-    <set value="0" var="force_forward"/>
-        <exception cond="NavDetectGround()" deroute="Holding point"/>
-        <exception cond="!nav_is_in_flight()" deroute="landed"/>
-        <call_once fun="NavStartDetectGround()"/>
-        <stay climb="-0.5" vmode="climb" wp="TD"/>
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <exception cond="NavDetectGround()" deroute="Holding point"/>
+      <exception cond="!nav_is_in_flight()" deroute="landed"/>
+      <call_once fun="NavStartDetectGround()"/>
+      <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
+
     <block name="landed">
-    <set value="0" var="force_forward"/>
-        <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <set value="0" var="force_forward"/>
+      <set value="1" var="approach_state"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
+
   </blocks>
 </flight_plan>
