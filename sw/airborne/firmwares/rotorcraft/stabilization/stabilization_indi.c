@@ -613,6 +613,14 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     }
 #endif
   }
+  //Control allocation Weights as a function of airspeed
+  float airspd = stateGetAirspeed_f();
+  float fun_tilt = -0.124875 * airspd + 1.4995;
+  float fun_elevon = 0.124875 * airspd - 0.4985;
+  indi_Wu[0] = (fun_tilt > 1.0) ? 1.0: ((fun_tilt < 0.001) ? 0.001 : fun_tilt);
+  indi_Wu[1] = indi_Wu[0];
+  indi_Wu[4] = (fun_elevon > 1.0) ? 1.0: ((fun_elevon < 0.001) ? 0.001 : fun_elevon);
+  indi_Wu[5] = indi_Wu[4];
 
   // WLS Control Allocator
   num_iter =
