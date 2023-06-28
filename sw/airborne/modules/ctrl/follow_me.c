@@ -86,6 +86,7 @@ static float ground_heading;
 static uint8_t moving_wps[] = {FOLLOW_ME_MOVING_WPS};
 static uint8_t moving_wps_cnt = 0;
 static struct EnuCoor_f last_targetpos;
+static float last_targetpos_heading;
 static bool last_targetpos_valid = false;
 
 void follow_me_init(void)
@@ -105,14 +106,20 @@ void follow_me_periodic(void)
   // Calculate the difference to move the waypoints
   struct NedCoor_i target_pos_cm;
   struct EnuCoor_f cur_targetpos, diff_targetpos;
+  float cur_targetpos_heading, diff_targetpos_heading;
+
   ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &ground_lla);
   cur_targetpos.x = target_pos_cm.y / 100.f;
   cur_targetpos.y = target_pos_cm.x / 100.f;
   cur_targetpos.z = -target_pos_cm.z / 100.f;
   VECT3_DIFF(diff_targetpos, cur_targetpos, last_targetpos);
 
+  cur_targetpos_heading = ground_heading;
+  diff_targetpos_heading = cur_targetpos_heading - last_targetpos_heading;
+
   // Only move if we had a previous location
   VECT3_COPY(last_targetpos, cur_targetpos);
+  last_targetpos_heading = cur_targetpos_heading;
   if(!last_targetpos_valid) {
     last_targetpos_valid = true;
     return;
@@ -126,6 +133,10 @@ void follow_me_periodic(void)
     wp_new_enu.x = wp_enu->x + diff_targetpos.x;
     wp_new_enu.y = wp_enu->y + diff_targetpos.y;
     wp_new_enu.z = wp_enu->z;
+
+    // Rotate the waypoint
+    wp_new_enu.x = ((wp_new_enu.x - cur_targetpos.x) * cosf(diff_targetpos_heading/180.*M_PI)) + cur_targetpos.x;
+    wp_new_enu.y = ((wp_new_enu.y - cur_targetpos.y) * sinf(diff_targetpos_heading/180.*M_PI)) + cur_targetpos.y;
 
     // Update the waypoint
     waypoint_set_enu(wp_id, &wp_new_enu);
