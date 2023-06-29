@@ -44,6 +44,8 @@ extern float indi_Wu_servo;
 
 extern float side_slip_gain_rc;
 
+extern float airspd;
+
 extern bool indi_use_adaptive;
 
 extern float *Bwls[INDI_OUTPUTS];
