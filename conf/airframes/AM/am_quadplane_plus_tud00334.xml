@@ -62,11 +62,10 @@
       <!-- If one want to use a Joystick over connection one can us this instead of sbus-->
       <module name="radio_control" type="ppm">
         <define name="RADIO_CONTROL_NB_CHANNEL" value="8"/>
-        <define name="RADIO_FMODE" value="RADIO_AUX1"/> 
-        <define name="RADIO_TH_HOLD" value="RADIO_AUX2"/> 
-         <define name="RADIO_MODE" value="RADIO_FMODE"/> 
-        <define name="RADIO_FBW_MODE" value="RADIO_AUX3"/>
+        <define name="RADIO_MODE" value="RADIO_AUX1"/>
         <define name="RADIO_KILL_SWITCH" value="RADIO_AUX2"/>
+        <define name="RADIO_MANUAL_ROLL_CMD" value="RADIO_AUX3"/>
+        <define name="RADIO_MANUAL_PITCH_CMD" value="RADIO_AUX4"/>
       </module>
 
       <module name="sys_mon"/><!-- Enable if one want to check processor load for higher loop, nav, module etc. frequencies -->
@@ -736,8 +735,8 @@
   </section>
 
   <section name="AUTOPILOT">
-    <define name="MODE_MANUAL" value="AP_MODE_HOVER_DIRECT"/>
-    <define name="MODE_AUTO1" value="AP_MODE_RC_DIRECT"/>
+    <define name="MODE_MANUAL" value="AP_MODE_RC_DIRECT"/>
+    <define name="MODE_AUTO1" value="AP_MODE_HOVER_DIRECT"/>
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
   </section>
@@ -768,6 +767,12 @@
     <!-- Avoid GPS loss behavior when having RC or datalink -->
     <define name="NO_GPS_LOST_WITH_DATALINK_TIME" value="20"/>
     <define name="NO_GPS_LOST_WITH_RC_VALID" value="TRUE"/>
+
+    <define name="UNLOCKED_HOME_MODE" value="TRUE"/>
+    <define name="RC_LOST_MODE" value="AP_MODE_NAV"/>
+
+    <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/>
+
   </section>
 
   <section name="AIR_DATA" prefix="AIR_DATA_">

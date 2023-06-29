@@ -1207,13 +1207,9 @@ void overactuated_mixing_run(void)
         z_stb = -nav.fp_altitude;
     #endif
 
-    #ifdef SITL
-        radio_control.values[RADIO_MODE] = 1000; //Enter wp mode automatically to test the WP mode in simulation 
-    #endif
-
     /// Case of manual PID control [FAILSAFE]
-    if(radio_control.values[RADIO_MODE] < -500) {
-
+    // if(radio_control.values[RADIO_MODE] < -500) {
+    if(autopilot.mode == AP_MODE_RC_DIRECT) {
         //Use Secundary complementary filter AHRS in FAILSAFE MODE: 
         #ifdef USE_SEC_AHRS_IN_FAILSAFE_MODE
             euler_vect[0] = euler_vect_sec_ahrs[0]; 
@@ -1324,14 +1320,17 @@ void overactuated_mixing_run(void)
     }
 
     /// Case of INDI control mode with external nonlinear function:
-    if(radio_control.values[RADIO_MODE] >= -500 )
+    // if(radio_control.values[RADIO_MODE] >= -500 )
+    if(autopilot.mode == AP_MODE_NAV || autopilot.mode == AP_MODE_HOVER_DIRECT)
     {
         //Manual Speed reference mode
-        if(radio_control.values[RADIO_MODE] < 500){
+        // if(radio_control.values[RADIO_MODE] < 500){
+        if(autopilot.mode == AP_MODE_HOVER_DIRECT){    
             waypoint_mode = 0;
         }
         // Waypoint reference mode
-        if(radio_control.values[RADIO_MODE] >= 500){
+        // if(radio_control.values[RADIO_MODE] >= 500){
+        if(autopilot.mode == AP_MODE_NAV){    
             waypoint_mode = 1;
         }
 
@@ -1395,27 +1394,25 @@ void overactuated_mixing_run(void)
 
             //Init dshot RPM control cmds
             #ifdef RPM_CONTROL
-                if(RadioControlValues(RADIO_TH_HOLD) > 0){
-                    for (int i = 0; i < 4; i++){
+                for (int i = 0; i < 4; i++){
 
-                        #ifdef RPM_INDI_CONTROL
+                    #ifdef RPM_INDI_CONTROL
 
-                        dshot_cmd_ppz_filtered[i] = overactuated_mixing.commands[i];
-                        for (int j = 0; j < RPM_CONTROL_FBW_MOTOR_DYN_DELAY_TS; j++){
-                            dshot_cmd_ppz_filtered_delayed[i][j] = overactuated_mixing.commands[i];
-                        }
-                        dshot_cmd_state_filtered[i] = overactuated_mixing.commands[i];
-                        dshot_cmd_ppz[i] = overactuated_mixing.commands[i];
-
-                        #else //PID RPM CONTROL
-
-                        motor_rad_s_filtered_old[i] = actuator_state[i];
-                        motor_rad_s_error_integrated[i] = 0;
-
-                        #endif 
-
-                        motor_rad_s_filtered[i] = actuator_state[i];
+                    dshot_cmd_ppz_filtered[i] = overactuated_mixing.commands[i];
+                    for (int j = 0; j < RPM_CONTROL_FBW_MOTOR_DYN_DELAY_TS; j++){
+                        dshot_cmd_ppz_filtered_delayed[i][j] = overactuated_mixing.commands[i];
                     }
+                    dshot_cmd_state_filtered[i] = overactuated_mixing.commands[i];
+                    dshot_cmd_ppz[i] = overactuated_mixing.commands[i];
+
+                    #else //PID RPM CONTROL
+
+                    motor_rad_s_filtered_old[i] = actuator_state[i];
+                    motor_rad_s_error_integrated[i] = 0;
+
+                    #endif 
+
+                    motor_rad_s_filtered[i] = actuator_state[i];
                 }
             #endif
         }
@@ -1433,8 +1430,8 @@ void overactuated_mixing_run(void)
         get_actuator_state_v2();
 
         //Calculate the desired euler angles from the auxiliary joystick channels:
-        manual_phi_value = MANUAL_CONTROL_MAX_CMD_ROLL_ANGLE * radio_control.values[RADIO_AUX3] / 9600;
-        manual_theta_value = MANUAL_CONTROL_MAX_CMD_PITCH_ANGLE * radio_control.values[RADIO_AUX4] / 9600;
+        manual_phi_value = MANUAL_CONTROL_MAX_CMD_ROLL_ANGLE * radio_control.values[RADIO_MANUAL_ROLL_CMD] / MAX_PPRZ;
+        manual_theta_value = MANUAL_CONTROL_MAX_CMD_PITCH_ANGLE * radio_control.values[RADIO_MANUAL_PITCH_CMD] / MAX_PPRZ;
 
         manual_motor_value = OVERACTUATED_MIXING_MOTOR_MIN_OMEGA;
 
@@ -1450,7 +1447,7 @@ void overactuated_mixing_run(void)
         euler_error[1] = euler_setpoint[1] - euler_vect[1];
 
         // For the yaw, we can directly control the rates:
-        float yaw_rate_setpoint_manual = MANUAL_CONTROL_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / 9600;
+        float yaw_rate_setpoint_manual = MANUAL_CONTROL_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / MAX_PPRZ;
 
         euler_error[2] = yaw_rate_setpoint_manual + compute_yaw_rate_turn();
 
@@ -1624,7 +1621,8 @@ void overactuated_mixing_run(void)
         indi_u[14] =  (myam7_data_in_local.ailerons_cmd_int * 1e-2 * M_PI/180);
 
         // Write values to servos and motor
-        if(RadioControlValues(RADIO_TH_HOLD) > 0) {
+        // if(radio_control.values[RADIO_KILL_SWITCH] > 0) {
+        if(autopilot.motors_on) {
             //Motors:
             #ifndef RPM_CONTROL
                 overactuated_mixing.commands[0] = (int32_t)(indi_u[0] * K_ppz_rads_motor);
@@ -1634,46 +1632,9 @@ void overactuated_mixing_run(void)
             #else //RPM CONTROL ON TEENSY
 
                 //TESTING:
-                #ifdef TEST_RPM_CONTROL
-                #warning You are using a testing define!!! 
-                    indi_u[0] = (2 * M_PI) * Des_RPM_motor_1 / 60;
-                    indi_u[1] = 0;
-                    indi_u[2] = 0;
-                    indi_u[3] = 0;
-                    indi_u[4] = 0;
-                    indi_u[5] = 0;
-                    indi_u[6] = 0;
-                    indi_u[7] = 0;
-                    indi_u[8] = 0;
-                    indi_u[9] = 0;
-                    indi_u[10] = 0;
-                    indi_u[11] = 0;
-                    indi_u[12] = 0;
-                    indi_u[13] = 0;
-                    indi_u[14] = 0;
-                #endif
-
-                #ifdef TEST_DSHOT_CONTROL
-                    indi_u[0] = Des_dshot_steps_motor_1*600;
-                    indi_u[1] = 0;
-                    indi_u[2] = 0;
-                    indi_u[3] = 0;
-                    indi_u[4] = 0;
-                    indi_u[5] = 0;
-                    indi_u[6] = 0;
-                    indi_u[7] = 0;
-                    indi_u[8] = 0;
-                    indi_u[9] = 0;
-                    indi_u[10] = 0;
-                    indi_u[11] = 0;
-                    indi_u[12] = 0;
-                    indi_u[13] = 0;
-                    indi_u[14] = 0;
-                #endif
-
-                #ifdef TEST_PWM_SERVOS
-
-                        indi_u[0] = 0;
+                    #ifdef TEST_RPM_CONTROL
+                    #warning You are using a testing define!!! 
+                        indi_u[0] = (2 * M_PI) * Des_RPM_motor_1 / 60;
                         indi_u[1] = 0;
                         indi_u[2] = 0;
                         indi_u[3] = 0;
@@ -1688,56 +1649,93 @@ void overactuated_mixing_run(void)
                         indi_u[12] = 0;
                         indi_u[13] = 0;
                         indi_u[14] = 0;
+                    #endif
 
-                #endif  
+                    #ifdef TEST_DSHOT_CONTROL
+                        indi_u[0] = Des_dshot_steps_motor_1*600;
+                        indi_u[1] = 0;
+                        indi_u[2] = 0;
+                        indi_u[3] = 0;
+                        indi_u[4] = 0;
+                        indi_u[5] = 0;
+                        indi_u[6] = 0;
+                        indi_u[7] = 0;
+                        indi_u[8] = 0;
+                        indi_u[9] = 0;
+                        indi_u[10] = 0;
+                        indi_u[11] = 0;
+                        indi_u[12] = 0;
+                        indi_u[13] = 0;
+                        indi_u[14] = 0;
+                    #endif
 
-                #ifdef TEST_DSHOT_CONTROL
-                    overactuated_mixing.commands[0] = (int32_t) (indi_u[0]);
-                    overactuated_mixing.commands[1] = (int32_t) (indi_u[1]);
-                    overactuated_mixing.commands[2] = (int32_t) (indi_u[2]);
-                    overactuated_mixing.commands[3] = (int32_t) (indi_u[3]);
-                #endif 
+                    #ifdef TEST_PWM_SERVOS
 
-                #ifdef TEST_ROTOR_ANGLES
-                    indi_u[0] = 0;
-                    indi_u[1] = 0;
-                    indi_u[2] = 0;
-                    indi_u[3] = 0;
-                    indi_u[4] = des_el_angle_test*M_PI/180;
-                    indi_u[5] = des_el_angle_test*M_PI/180;
-                    indi_u[6] = des_el_angle_test*M_PI/180;
-                    indi_u[7] = des_el_angle_test*M_PI/180;
-                    indi_u[8] = des_az_angle_test*M_PI/180;
-                    indi_u[9] = des_az_angle_test*M_PI/180;
-                    indi_u[10] = des_az_angle_test*M_PI/180;
-                    indi_u[11] = des_az_angle_test*M_PI/180;
-                    indi_u[12] = 0;
-                    indi_u[13] = 0;
-                    indi_u[14] = 0;
-                #endif
+                            indi_u[0] = 0;
+                            indi_u[1] = 0;
+                            indi_u[2] = 0;
+                            indi_u[3] = 0;
+                            indi_u[4] = 0;
+                            indi_u[5] = 0;
+                            indi_u[6] = 0;
+                            indi_u[7] = 0;
+                            indi_u[8] = 0;
+                            indi_u[9] = 0;
+                            indi_u[10] = 0;
+                            indi_u[11] = 0;
+                            indi_u[12] = 0;
+                            indi_u[13] = 0;
+                            indi_u[14] = 0;
 
-                #ifdef TEST_RASMUS_SERVO
-                    if(get_sys_time_float() - time_old > 1.5 && get_sys_time_float() > 40){
-                        test_frequency +=0.5;
-                        time_old = get_sys_time_float();
-                    }
-                    indi_u[0] = 0;
-                    indi_u[1] = 0;
-                    indi_u[2] = 0;
-                    indi_u[3] = 0;
-                    indi_u[4] = 5*sin(get_sys_time_float()*test_frequency*2*M_PI)*M_PI/180;
-                    indi_u[5] = 0;
-                    indi_u[6] = 0;
-                    indi_u[7] = 0;
-                    indi_u[8] = 0;
-                    indi_u[9] = 0;
-                    indi_u[10] = 0;
-                    indi_u[11] = 0;
-                    indi_u[12] = 0;
-                    indi_u[13] = 0;
-                    indi_u[14] = 0;
-                    actuator_output[12] = (int32_t) (test_frequency*100);
-                #endif
+                    #endif  
+
+                    #ifdef TEST_DSHOT_CONTROL
+                        overactuated_mixing.commands[0] = (int32_t) (indi_u[0]);
+                        overactuated_mixing.commands[1] = (int32_t) (indi_u[1]);
+                        overactuated_mixing.commands[2] = (int32_t) (indi_u[2]);
+                        overactuated_mixing.commands[3] = (int32_t) (indi_u[3]);
+                    #endif 
+
+                    #ifdef TEST_ROTOR_ANGLES
+                        indi_u[0] = 0;
+                        indi_u[1] = 0;
+                        indi_u[2] = 0;
+                        indi_u[3] = 0;
+                        indi_u[4] = des_el_angle_test*M_PI/180;
+                        indi_u[5] = des_el_angle_test*M_PI/180;
+                        indi_u[6] = des_el_angle_test*M_PI/180;
+                        indi_u[7] = des_el_angle_test*M_PI/180;
+                        indi_u[8] = des_az_angle_test*M_PI/180;
+                        indi_u[9] = des_az_angle_test*M_PI/180;
+                        indi_u[10] = des_az_angle_test*M_PI/180;
+                        indi_u[11] = des_az_angle_test*M_PI/180;
+                        indi_u[12] = 0;
+                        indi_u[13] = 0;
+                        indi_u[14] = 0;
+                    #endif
+
+                    #ifdef TEST_RASMUS_SERVO
+                        if(get_sys_time_float() - time_old > 1.5 && get_sys_time_float() > 40){
+                            test_frequency +=0.5;
+                            time_old = get_sys_time_float();
+                        }
+                        indi_u[0] = 0;
+                        indi_u[1] = 0;
+                        indi_u[2] = 0;
+                        indi_u[3] = 0;
+                        indi_u[4] = 5*sin(get_sys_time_float()*test_frequency*2*M_PI)*M_PI/180;
+                        indi_u[5] = 0;
+                        indi_u[6] = 0;
+                        indi_u[7] = 0;
+                        indi_u[8] = 0;
+                        indi_u[9] = 0;
+                        indi_u[10] = 0;
+                        indi_u[11] = 0;
+                        indi_u[12] = 0;
+                        indi_u[13] = 0;
+                        indi_u[14] = 0;
+                        actuator_output[12] = (int32_t) (test_frequency*100);
+                    #endif
                 //END TESTING
 
                 #ifndef TEST_DSHOT_CONTROL
@@ -1775,42 +1773,42 @@ void overactuated_mixing_run(void)
 
                     #ifndef RPM_INDI_CONTROL //PID RPM control
 
-                    //Derivative term:
-                    motor_rad_s_dot_filtered[0] = (motor_rad_s_filtered_old[0] - motor_rad_s_filtered_old[0])*PERIODIC_FREQUENCY;
-                    motor_rad_s_dot_filtered[1] = (motor_rad_s_filtered_old[1] - motor_rad_s_filtered_old[1])*PERIODIC_FREQUENCY;
-                    motor_rad_s_dot_filtered[2] = (motor_rad_s_filtered_old[2] - motor_rad_s_filtered_old[2])*PERIODIC_FREQUENCY;
-                    motor_rad_s_dot_filtered[3] = (motor_rad_s_filtered_old[3] - motor_rad_s_filtered_old[3])*PERIODIC_FREQUENCY;
+                        //Derivative term:
+                        motor_rad_s_dot_filtered[0] = (motor_rad_s_filtered_old[0] - motor_rad_s_filtered_old[0])*PERIODIC_FREQUENCY;
+                        motor_rad_s_dot_filtered[1] = (motor_rad_s_filtered_old[1] - motor_rad_s_filtered_old[1])*PERIODIC_FREQUENCY;
+                        motor_rad_s_dot_filtered[2] = (motor_rad_s_filtered_old[2] - motor_rad_s_filtered_old[2])*PERIODIC_FREQUENCY;
+                        motor_rad_s_dot_filtered[3] = (motor_rad_s_filtered_old[3] - motor_rad_s_filtered_old[3])*PERIODIC_FREQUENCY;
 
-                    motor_rad_s_filtered_old[0] = motor_rad_s_filtered[0];
-                    motor_rad_s_filtered_old[1] = motor_rad_s_filtered[1];
-                    motor_rad_s_filtered_old[2] = motor_rad_s_filtered[2];
-                    motor_rad_s_filtered_old[3] = motor_rad_s_filtered[3];
+                        motor_rad_s_filtered_old[0] = motor_rad_s_filtered[0];
+                        motor_rad_s_filtered_old[1] = motor_rad_s_filtered[1];
+                        motor_rad_s_filtered_old[2] = motor_rad_s_filtered[2];
+                        motor_rad_s_filtered_old[3] = motor_rad_s_filtered[3];
 
-                    //Integral term:
-                    motor_rad_s_error_integrated[0] += indi_u[0] - motor_rad_s_filtered[0];
-                    motor_rad_s_error_integrated[1] += indi_u[1] - motor_rad_s_filtered[1];
-                    motor_rad_s_error_integrated[2] += indi_u[2] - motor_rad_s_filtered[2];
-                    motor_rad_s_error_integrated[3] += indi_u[3] - motor_rad_s_filtered[3];
+                        //Integral term:
+                        motor_rad_s_error_integrated[0] += indi_u[0] - motor_rad_s_filtered[0];
+                        motor_rad_s_error_integrated[1] += indi_u[1] - motor_rad_s_filtered[1];
+                        motor_rad_s_error_integrated[2] += indi_u[2] - motor_rad_s_filtered[2];
+                        motor_rad_s_error_integrated[3] += indi_u[3] - motor_rad_s_filtered[3];
 
-                    //Feed fwd term
-                    float feed_fwd_term_rpm[4];
-                    feed_fwd_term_rpm[0] = 9600 * indi_u[0] / OVERACTUATED_MIXING_MOTOR_MAX_OMEGA;
-                    feed_fwd_term_rpm[1] = 9600 * indi_u[1] / OVERACTUATED_MIXING_MOTOR_MAX_OMEGA;
-                    feed_fwd_term_rpm[2] = 9600 * indi_u[2] / OVERACTUATED_MIXING_MOTOR_MAX_OMEGA;
-                    feed_fwd_term_rpm[3] = 9600 * indi_u[3] / OVERACTUATED_MIXING_MOTOR_MAX_OMEGA;
+                        //Feed fwd term
+                        float feed_fwd_term_rpm[4];
+                        feed_fwd_term_rpm[0] = 9600 * indi_u[0] / OVERACTUATED_MIXING_MOTOR_MAX_OMEGA;
+                        feed_fwd_term_rpm[1] = 9600 * indi_u[1] / OVERACTUATED_MIXING_MOTOR_MAX_OMEGA;
+                        feed_fwd_term_rpm[2] = 9600 * indi_u[2] / OVERACTUATED_MIXING_MOTOR_MAX_OMEGA;
+                        feed_fwd_term_rpm[3] = 9600 * indi_u[3] / OVERACTUATED_MIXING_MOTOR_MAX_OMEGA;
 
-                    overactuated_mixing.commands[0] = (int32_t) (feed_fwd_term_rpm[0] + (indi_u[0] - motor_rad_s_filtered[0]) * K_p_rad_s_dshot + 
-                                                                 motor_rad_s_error_integrated[0] * K_i_rad_s_dshot - 
-                                                                 motor_rad_s_dot_filtered[0] * K_d_rad_s_dshot);
-                    overactuated_mixing.commands[1] = (int32_t) (feed_fwd_term_rpm[1] + (indi_u[1] - motor_rad_s_filtered[1]) * K_p_rad_s_dshot + 
-                                                                 motor_rad_s_error_integrated[1] * K_i_rad_s_dshot - 
-                                                                 motor_rad_s_dot_filtered[1] * K_d_rad_s_dshot);
-                    overactuated_mixing.commands[2] = (int32_t) (feed_fwd_term_rpm[2] + (indi_u[2] - motor_rad_s_filtered[2]) * K_p_rad_s_dshot + 
-                                                                motor_rad_s_error_integrated[2] * K_i_rad_s_dshot - 
-                                                                motor_rad_s_dot_filtered[2] * K_d_rad_s_dshot);
-                    overactuated_mixing.commands[3] = (int32_t) (feed_fwd_term_rpm[3] + (indi_u[3] - motor_rad_s_filtered[3]) * K_p_rad_s_dshot + 
-                                                                 motor_rad_s_error_integrated[3] * K_i_rad_s_dshot - 
-                                                                 motor_rad_s_dot_filtered[3] * K_d_rad_s_dshot);
+                        overactuated_mixing.commands[0] = (int32_t) (feed_fwd_term_rpm[0] + (indi_u[0] - motor_rad_s_filtered[0]) * K_p_rad_s_dshot + 
+                                                                    motor_rad_s_error_integrated[0] * K_i_rad_s_dshot - 
+                                                                    motor_rad_s_dot_filtered[0] * K_d_rad_s_dshot);
+                        overactuated_mixing.commands[1] = (int32_t) (feed_fwd_term_rpm[1] + (indi_u[1] - motor_rad_s_filtered[1]) * K_p_rad_s_dshot + 
+                                                                    motor_rad_s_error_integrated[1] * K_i_rad_s_dshot - 
+                                                                    motor_rad_s_dot_filtered[1] * K_d_rad_s_dshot);
+                        overactuated_mixing.commands[2] = (int32_t) (feed_fwd_term_rpm[2] + (indi_u[2] - motor_rad_s_filtered[2]) * K_p_rad_s_dshot + 
+                                                                    motor_rad_s_error_integrated[2] * K_i_rad_s_dshot - 
+                                                                    motor_rad_s_dot_filtered[2] * K_d_rad_s_dshot);
+                        overactuated_mixing.commands[3] = (int32_t) (feed_fwd_term_rpm[3] + (indi_u[3] - motor_rad_s_filtered[3]) * K_p_rad_s_dshot + 
+                                                                    motor_rad_s_error_integrated[3] * K_i_rad_s_dshot - 
+                                                                    motor_rad_s_dot_filtered[3] * K_d_rad_s_dshot);
 
                     #endif
 
@@ -1838,25 +1836,7 @@ void overactuated_mixing_run(void)
             overactuated_mixing.commands[11] = (int32_t)(
                     (indi_u[11]  - OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * K_ppz_angle_az);
         }
-        else{
-            //Motors:
-            overactuated_mixing.commands[0] = 0;
-            overactuated_mixing.commands[1] = 0;
-            overactuated_mixing.commands[2] = 0;
-            overactuated_mixing.commands[3] = 0;
 
-            //Elevator servos:
-            overactuated_mixing.commands[4] = (int32_t)((-OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE) * K_ppz_angle_el);
-            overactuated_mixing.commands[5] = (int32_t)((-OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE) * K_ppz_angle_el);
-            overactuated_mixing.commands[6] = (int32_t)((-OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE) * K_ppz_angle_el);
-            overactuated_mixing.commands[7] = (int32_t)((-OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE) * K_ppz_angle_el);
-
-            //Azimuth servos:
-            overactuated_mixing.commands[8] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE) * K_ppz_angle_az);
-            overactuated_mixing.commands[9] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE) * K_ppz_angle_az);
-            overactuated_mixing.commands[10] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE) * K_ppz_angle_az);
-            overactuated_mixing.commands[11] = (int32_t)((-OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * K_ppz_angle_az);  
-        }
 
     }
 
@@ -1866,22 +1846,14 @@ void overactuated_mixing_run(void)
     #ifdef FBW_ACTUATORS
         //Pre compute the actuator values to be sent to the FBW T4: 
         //Motor cmds
-        if(RadioControlValues(RADIO_TH_HOLD) > 0) {
-            //Add the logic to disarm motor but not servos: 
-            if(radio_control.values[RADIO_MODE] < -9000) { //kill only the motors, put the servos straight
-                //Arm motor:
-                myserial_act_t4_out_local.motor_arm_int = 0;
-                //Arm servos:
-                myserial_act_t4_out_local.servo_arm_int = 1;   
-                //Put servos straight: 
-                for (int i=4; i<12; i++) overactuated_mixing.commands[i] = 0;
-            }
-            else{
-                //Arm motor:
-                myserial_act_t4_out_local.motor_arm_int = 1;
-                //Arm servos:
-                myserial_act_t4_out_local.servo_arm_int = 1;   
-            }
+
+        // if(radio_control.values[RADIO_KILL_SWITCH] > 0) {
+        if(autopilot.motors_on) {
+            //Arm motor:
+            myserial_act_t4_out_local.motor_arm_int = 1;
+            //Arm servos:
+            myserial_act_t4_out_local.servo_arm_int = 1;   
+
             //Bound motor values before submitting:
             Bound(overactuated_mixing.commands[0], 0, MAX_PPRZ);
             Bound(overactuated_mixing.commands[1], 0, MAX_PPRZ);
@@ -1901,10 +1873,10 @@ void overactuated_mixing_run(void)
             //Motors cmds:
             //extra careful:
             if(myserial_act_t4_out_local.motor_arm_int == 1){
-                myserial_act_t4_out_local.motor_1_dshot_cmd_int =  (int16_t) (overactuated_mixing.commands[0] * MAX_DSHOT_VALUE / 9600.0); 
-                myserial_act_t4_out_local.motor_2_dshot_cmd_int =  (int16_t) (overactuated_mixing.commands[1] * MAX_DSHOT_VALUE / 9600.0); 
-                myserial_act_t4_out_local.motor_3_dshot_cmd_int =  (int16_t) (overactuated_mixing.commands[2] * MAX_DSHOT_VALUE / 9600.0); 
-                myserial_act_t4_out_local.motor_4_dshot_cmd_int =  (int16_t) (overactuated_mixing.commands[3] * MAX_DSHOT_VALUE / 9600.0); 
+                myserial_act_t4_out_local.motor_1_dshot_cmd_int =  (int16_t) (overactuated_mixing.commands[0] * MAX_DSHOT_VALUE / MAX_PPRZ); 
+                myserial_act_t4_out_local.motor_2_dshot_cmd_int =  (int16_t) (overactuated_mixing.commands[1] * MAX_DSHOT_VALUE / MAX_PPRZ); 
+                myserial_act_t4_out_local.motor_3_dshot_cmd_int =  (int16_t) (overactuated_mixing.commands[2] * MAX_DSHOT_VALUE / MAX_PPRZ); 
+                myserial_act_t4_out_local.motor_4_dshot_cmd_int =  (int16_t) (overactuated_mixing.commands[3] * MAX_DSHOT_VALUE / MAX_PPRZ); 
             }
             else{
                 myserial_act_t4_out_local.motor_1_dshot_cmd_int =  (int16_t) (0); 
@@ -1996,15 +1968,15 @@ void overactuated_mixing_run(void)
     actuator_output[2] = (int32_t) (indi_u[2]);
     actuator_output[3] = (int32_t) (indi_u[3]);
 
-    actuator_output[4] = (int32_t) ((overactuated_mixing.commands[4] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE) * 18000/M_PI);
-    actuator_output[5] = (int32_t) ((overactuated_mixing.commands[5] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE) * 18000/M_PI);
-    actuator_output[6] = (int32_t) ((overactuated_mixing.commands[6] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE) * 18000/M_PI);
-    actuator_output[7] = (int32_t) ((overactuated_mixing.commands[7] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE) * 18000/M_PI);
+    actuator_output[4] = (int32_t) ((overactuated_mixing.commands[4] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_1_ZERO_VALUE) * 18000.0/M_PI);
+    actuator_output[5] = (int32_t) ((overactuated_mixing.commands[5] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_2_ZERO_VALUE) * 18000.0/M_PI);
+    actuator_output[6] = (int32_t) ((overactuated_mixing.commands[6] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_3_ZERO_VALUE) * 18000.0/M_PI);
+    actuator_output[7] = (int32_t) ((overactuated_mixing.commands[7] / K_ppz_angle_el + OVERACTUATED_MIXING_SERVO_EL_4_ZERO_VALUE) * 18000.0/M_PI);
 
-    actuator_output[8] = (int32_t) ((overactuated_mixing.commands[8] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE) * 18000/M_PI);
-    actuator_output[9] = (int32_t) ((overactuated_mixing.commands[9] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE) * 18000/M_PI);
-    actuator_output[10] = (int32_t) ((overactuated_mixing.commands[10] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE) * 18000/M_PI);
-    actuator_output[11] = (int32_t) ((overactuated_mixing.commands[11] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * 18000/M_PI);
+    actuator_output[8] = (int32_t) ((overactuated_mixing.commands[8] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_1_ZERO_VALUE) * 18000.0/M_PI);
+    actuator_output[9] = (int32_t) ((overactuated_mixing.commands[9] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_2_ZERO_VALUE) * 18000.0/M_PI);
+    actuator_output[10] = (int32_t) ((overactuated_mixing.commands[10] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_3_ZERO_VALUE) * 18000.0/M_PI);
+    actuator_output[11] = (int32_t) ((overactuated_mixing.commands[11] / K_ppz_angle_az + OVERACTUATED_MIXING_SERVO_AZ_4_ZERO_VALUE) * 18000.0/M_PI);
 
     //Actuator state message:
     actuator_state_int[0] = (int32_t) (actuator_state[0]);
