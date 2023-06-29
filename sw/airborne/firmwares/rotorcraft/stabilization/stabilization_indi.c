@@ -291,6 +291,8 @@ float radio_pivot;
 float radio_throttle;
 float code_has_run;
 
+ float airspd = 0.0;
+
 float test[4];
 float roll_gain = 0.0;
 
@@ -752,13 +754,15 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #endif
   }
   //Control allocation Weights as a function of airspeed
-  float airspd = stateGetAirspeed_f();
-  float fun_tilt = -0.124875 * airspd + 1.4995;
-  float fun_elevon = 0.124875 * airspd - 0.4985;
-  indi_Wu[0] = (fun_tilt > 1.0) ? 1.0: ((fun_tilt < 0.001) ? 0.001 : fun_tilt);
+  // float airspd = stateGetAirspeed_f();
+  float fun_tilt = 0.124875f * airspd - 0.4985f;
+  float fun_elevon = -0.124875f * airspd + 1.4995f;
+  indi_Wu[0] = (fun_tilt > 1.0f) ? 1.0f: ((fun_tilt < 0.001f) ? 0.001f : fun_tilt);
   indi_Wu[1] = indi_Wu[0];
-  indi_Wu[4] = (fun_elevon > 1.0) ? 1.0: ((fun_elevon < 0.001) ? 0.001 : fun_elevon);
+  indi_Wu[4] = (fun_elevon > 1.0f) ? 1.0f: ((fun_elevon < 0.001f) ? 0.001f : fun_elevon);
   indi_Wu[5] = indi_Wu[4];
+
+  RunOnceEvery(200, DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 6, indi_Wu));
 
   // WLS Control Allocator
   num_iter =
@@ -914,6 +918,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 #else
   int8_t i;
   if (radio_control.values[RADIO_PIVOT_SWITCH] < -4500){
+    // initialize pivoting by putting motors up
 	  actuators_pprz[0] = MAX_PPRZ;
 	  actuators_pprz[1] = MAX_PPRZ;
 	  actuators_pprz[2] = -MAX_PPRZ;
@@ -929,22 +934,10 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     float_eulers_of_quat_zxy(&eulers_zxy, statequat);
     // 60 degrees pitch should get max deflection
 
-    if (eulers_zxy.theta<-RadOfDeg(30.0)){
-      pivot_ratio=0.f;
-    }
-    else if(eulers_zxy.theta<-RadOfDeg(5.)){
-      pivot_ratio=0.04*DegOfRad(eulers_zxy.theta)+1.2;
-    }
-    else if (eulers_zxy.theta<RadOfDeg(5.)){
-      pivot_ratio=1.f;
-    }
-    else if (eulers_zxy.theta<RadOfDeg(30.0)){
-      pivot_ratio=-0.04*DegOfRad(eulers_zxy.theta)+1.2;
-    }
-    else{
-      pivot_ratio=0.f;
-    }
-
+    
+    float pivot_ratio = 1.f - fabs(eulers_zxy.theta)/RadOfDeg(30.0);
+    
+    Bound(pivot_ratio, 0.0f, 1.0f);
 
     int16_t servo_command = (-eulers_zxy.theta + pivot_ratio*(att_err.qy * pivot_servogain_theta - pivot_servogain_q * body_rates->q))/(55.0/180.0*M_PI)*9600;
     Bound(servo_command,-9600,9600);
@@ -957,7 +950,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     actuators_pprz[1] = servo_command;
 
     if (autopilot_get_motors_on()) {
-    int16_t motor_command = radio_control.values[RADIO_THROTTLE] + (- body_rates->q * pivot_gain_q - att_err.qy * pivot_gain_theta)*(1.f - pivot_ratio);
+    int16_t motor_command = radio_control.values[RADIO_THROTTLE] + (1.f - pivot_ratio)*(- body_rates->q * pivot_gain_q - att_err.qy * pivot_gain_theta);
     angular_accel_ref.p = att_err.qx * indi_gains.att.p - body_rates->p * indi_gains.rate.p;
     // for (i = 2; i < INDI_NUM_ACT; i++) {
     // // actuators_pprz[i] = g1g2_pseudo_inv[i][0] * angular_accel_ref.p + motor_command;
