@@ -1104,6 +1104,14 @@ void assign_variables(void){
         rate_vect_sec_ahrs[0] = ahrs_fc.body_rate.p; 
         rate_vect_sec_ahrs[1] = ahrs_fc.body_rate.q; 
         rate_vect_sec_ahrs[2] = ahrs_fc.body_rate.r; 
+    #else 
+        //assign primary ahrs value to sec ahrs value. This is because the PID requires less filtering. 
+        euler_vect_sec_ahrs[0] = euler_vect[0];
+        euler_vect_sec_ahrs[1] = euler_vect[1];
+        euler_vect_sec_ahrs[2] = euler_vect[2];
+        rate_vect_sec_ahrs[0] = rate_vect[0];
+        rate_vect_sec_ahrs[1] = rate_vect[1];
+        rate_vect_sec_ahrs[2] = rate_vect[2];
     #endif 
 
     #ifdef SITL
@@ -1224,7 +1232,7 @@ void overactuated_mixing_run(void)
                 euler_error_integrated[i] = 0;
                 pos_error_integrated[i] = 0;
             }
-            euler_setpoint[2] = euler_vect[2];
+            euler_setpoint[2] = euler_vect_sec_ahrs[2];
             control_mode_ovc_vehicle = 1;
         }
 
@@ -1248,9 +1256,9 @@ void overactuated_mixing_run(void)
         BoundAbs(euler_setpoint[0], max_value_error.phi);
         BoundAbs(euler_setpoint[1], max_value_error.theta);
 
-        euler_error[0] = euler_setpoint[0] - euler_vect[0];
-        euler_error[1] = euler_setpoint[1] - euler_vect[1];
-        euler_error[2] = euler_setpoint[2] - euler_vect[2];
+        euler_error[0] = euler_setpoint[0] - euler_vect_sec_ahrs[0];
+        euler_error[1] = euler_setpoint[1] - euler_vect_sec_ahrs[1];
+        euler_error[2] = euler_setpoint[2] - euler_vect_sec_ahrs[2];
 
         //Add logic for the psi control:
         if (euler_error[2] > M_PI) {
@@ -1267,11 +1275,11 @@ void overactuated_mixing_run(void)
         }
 
         euler_order[0] = pid_gains_over.p.phi * euler_error[0] + pid_gains_over.i.phi * euler_error_integrated[0] -
-                         pid_gains_over.d.phi * rate_vect_filt[0];
+                         pid_gains_over.d.phi * rate_vect_sec_ahrs_filt[0];
         euler_order[1] = pid_gains_over.p.theta * euler_error[1] + pid_gains_over.i.theta * euler_error_integrated[1] -
-                         pid_gains_over.d.theta * rate_vect_filt[1];
+                         pid_gains_over.d.theta * rate_vect_sec_ahrs_filt[1];
         euler_order[2] = pid_gains_over.p.psi * euler_error[2] + pid_gains_over.i.psi * euler_error_integrated[2] -
-                         pid_gains_over.d.psi * rate_vect_filt[2];
+                         pid_gains_over.d.psi * rate_vect_sec_ahrs_filt[2];
 
         //Bound euler angle orders:
         BoundAbs(euler_order[0], OVERACTUATED_MIXING_PID_MAX_ROLL_ORDER_PWM);
@@ -1316,7 +1324,6 @@ void overactuated_mixing_run(void)
     }
 
     /// Case of INDI control mode with external nonlinear function:
-    //    if(1)
     if(radio_control.values[RADIO_MODE] >= -500 )
     {
         //Manual Speed reference mode

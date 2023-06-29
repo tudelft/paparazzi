@@ -690,8 +690,8 @@ int main(int argc, char** argv) {
     {"ac_id", required_argument, NULL, 'i'},
     {"endpoint", required_argument, NULL, 'e'},
     {"help", no_argument, NULL, 'h'},
-    {"verbose", no_argument, NULL, 'v'},
     {"no_rtc", no_argument, NULL, 'n'},
+    {"verbose", no_argument, NULL, 'v'},
     {0, 0, 0, 0}
   };
   static const char* usage =
@@ -700,6 +700,7 @@ int main(int argc, char** argv) {
     "   -i --ac_id [aircraft_id]               Aircraft id\n"
     "   -e --endpoint [endpoint_str]           Endpoint address of the GPS\n"
     "   -h --help                              Display this help\n"
+    "   -n --no_rtc                            Do not forward RTC message to the UAV\n"
     "   -v --verbose                           Print verbose information\n";
 
   int c;
