@@ -723,8 +723,7 @@
         <arg flag="--long_edge" constant="right"/>
         <arg flag="--x_side" constant="right"/>
         <arg flag="--ac_nose" constant="right"/>
-        <arg flag="-o"/>
-        <arg flag="-ac" constant="2"/>
+        <arg flag="-ac" constant="1"/>
         <arg flag="30"/>
       </program>
     </session>
