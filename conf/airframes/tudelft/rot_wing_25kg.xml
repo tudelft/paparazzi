@@ -36,6 +36,11 @@
             <configure VALUE="B115200" NAME="MODEM_BAUD"/>
         </module>
 
+        <!-- <module name="telemetry"     type="transparent">
+            <configure name="MODEM_BAUD" value="B115200"/>
+            <configure name="MODEM_PORT" value="usb_serial"/>
+        </module> -->
+
         <module TYPE="pwm" NAME="actuators">
             <define name="SERVO_HZ" value="400"/>
         </module>
@@ -105,7 +110,7 @@
     </command_laws>
 
     <section NAME="MISC">
-        <define name="VoltageOfAdc(adc)" value="((3.3f/65536.0f) * 13.86 * adc)"/>
+        <define name="VoltageOfAdc(adc)" value="((3.3f/65536.0f) * 25.46 * adc)"/>
         <define VALUE="TRUE" NAME="NO_RC_THRUST_LIMIT"/>
         <define VALUE="2.0" NAME="NAV_CLIMB_VSPEED"/>
         <define VALUE="-1.0" NAME="NAV_DESCEND_VSPEED"/>
@@ -119,11 +124,13 @@
     </section>
 
     <section name="IMU" prefix="IMU_">
-        <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-1,7,15}, .scale={{47078,36798,62826},{4819,3749,6427}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-26,9,2}, .scale={{32863,18346,55169},{6721,3745,11294}}}}"/>
-        <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={-14,3,42}, .scale={{17279,2209,36874},{30247,3800,64095}}}}"/>
+        <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-3,3,13}, .scale={{15146,60067,2567},{1551,6124,263}}}}"/>
+        <!-- <define name="ACCEL_CALIB" value="{{.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-3,3,13}, .scale={{15146,60067,2567},{1551,6124,263}}}}"/> -->
+
+        <!-- <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={-14,3,42}, .scale={{17279,2209,36874},{30247,3800,64095}}}}"/> -->
 
         <!-- Define axis in hover frame -->
-        <define name="BODY_TO_IMU_PHI"   value="-4.0" unit="deg"/>
+        <define name="BODY_TO_IMU_PHI"   value="0." unit="deg"/>
         <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
         <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
     </section>
@@ -257,11 +264,11 @@
     </section>
 
     <section NAME="BAT">
-        <define VALUE="18.0" UNIT="V" NAME="CATASTROPHIC_BAT_LEVEL"/>
-        <define VALUE="18.6" UNIT="V" NAME="CRITIC_BAT_LEVEL"/>
-        <define VALUE="19.2" UNIT="V" NAME="LOW_BAT_LEVEL"/>
-        <define VALUE="25.2" UNIT="V" NAME="MAX_BAT_LEVEL"/>
-        <define VALUE="6" NAME="BAT_NB_CELLS"/>
+        <define VALUE="36.0" UNIT="V" NAME="CATASTROPHIC_BAT_LEVEL"/>
+        <define VALUE="37.2" UNIT="V" NAME="CRITIC_BAT_LEVEL"/>
+        <define VALUE="48.4" UNIT="V" NAME="LOW_BAT_LEVEL"/>
+        <define VALUE="50.4" UNIT="V" NAME="MAX_BAT_LEVEL"/>
+        <define VALUE="12" NAME="BAT_NB_CELLS"/>
     </section>
 
     <!-- <section name="SIMULATOR" prefix="NPS_">
