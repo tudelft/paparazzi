@@ -139,7 +139,25 @@ static float Wv[INDI_OUTPUTS] = {1000, 1000, 1, 100};
 #ifdef STABILIZATION_INDI_WLS_WU_MOTOR
 float indi_Wu_motor = STABILIZATION_INDI_WLS_WU_MOTOR;
 #else
-float indi_Wu_motor = 1.3;
+float indi_Wu_motor = 130;
+#endif
+
+#ifdef STABILIZATION_INDI_WLS_WU_ELEVATOR
+float indi_Wu_elevator = STABILIZATION_INDI_WLS_WU_ELEVATOR;
+#else
+float indi_Wu_elevator = 100;
+#endif
+
+#ifdef STABILIZATION_INDI_WLS_WU_RUDDER
+float indi_Wu_rudder = STABILIZATION_INDI_WLS_WU_RUDDER;
+#else
+float indi_Wu_rudder = 100;
+#endif
+
+#ifdef STABILIZATION_INDI_WLS_WU_AILERON
+float indi_Wu_aileron = STABILIZATION_INDI_WLS_WU_AILERON;
+#else
+float indi_Wu_aileron = 100;
 #endif
 
 #ifdef STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS
@@ -644,6 +662,20 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
 
   du_min[7] = min_pprz_cmd_right_ail - use_increment*indi_u[7];
+  du_pref[4] = - use_increment*actuator_state_filt_vect[4];
+
+  // Schedule V3A weights
+  // indi_Wu[0] = indi_Wu_motor;
+  // indi_Wu[1] = indi_Wu_motor;
+  // indi_Wu[2] = indi_Wu_motor;
+  // indi_Wu[3] = indi_Wu_motor;
+
+  // indi_Wu[4] = indi_Wu_rudder;
+  // indi_Wu[5] = indi_Wu_elevator;
+
+  // indi_Wu[6] = indi_Wu_aileron;
+  // indi_Wu[7] = indi_Wu_aileron;
+
 #endif // STABILIZATION_INDI_ROTWING_V3A
 #ifdef STABILIZATION_INDI_ROTWING_V3B
   // Right aileron lower limit calculation
@@ -669,8 +701,17 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
   du_min[7] = min_pprz_cmd_flap_ail - use_increment*indi_u[7];
 
+  du_pref[4] = - use_increment*actuator_state_filt_vect[4];
   du_pref[6] = - use_increment*actuator_state_filt_vect[6];
   du_pref[7] = - use_increment*actuator_state_filt_vect[7];
+
+    // for (i = 0; i < INDI_NUM_ACT; i++) {
+    //   if (!act_is_servo[i]) {
+    //     indi_Wu[i] = indi_Wu_motor;
+    //   } else {
+    //     indi_Wu[i] = 100.;
+    //   }
+    // }
 #endif // STABILIZATION_INDI_ROTWING_V3B
 
     // Update Bwls
@@ -680,7 +721,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
     for (i = 0; i < INDI_NUM_ACT; i++) {
       if (!act_is_servo[i]) {
-        indi_Wu[i] = indi_Wu_motor;
+        indi_Wu[i] = 1.3;
       } else {
         indi_Wu[i] = 1;
       }
