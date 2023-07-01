@@ -493,13 +493,20 @@
     <define name="W_ACT_AILERONS_CONST" value="0.5"/>
     <define name="W_ACT_AILERONS_SPEED" value="0"/>
 
-    <define VALUE="0.007" NAME="W_DV_1"/>
+    <!-- <define VALUE="0.007" NAME="W_DV_1"/>
     <define VALUE="0.007" NAME="W_DV_2"/>
     <define VALUE="0.01" NAME="W_DV_3"/>
     <define VALUE="0.02" NAME="W_DV_4"/>
     <define VALUE="0.02" NAME="W_DV_5"/>
-    <define VALUE="0.02" NAME="W_DV_6"/>
+    <define VALUE="0.02" NAME="W_DV_6"/> -->
     
+    <define VALUE="0.01" NAME="W_DV_1"/>
+    <define VALUE="0.01" NAME="W_DV_2"/>
+    <define VALUE="0.015" NAME="W_DV_3"/>
+    <define VALUE="0.03" NAME="W_DV_4"/>
+    <define VALUE="0.03" NAME="W_DV_5"/>
+    <define VALUE="0.03" NAME="W_DV_6"/>
+
     <define VALUE="0.55e-5" NAME="GAMMA_QUADRATIC_DU"/>
 
     <!-- FWD flight properties for yaw rate induced by controller and for removal of lateral speed term-->
@@ -773,6 +780,7 @@
 
     <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/>
 
+    <define name="FAILSAFE_HOME_RADIUS" value="600" unit="m"/>
   </section>
 
   <section name="AIR_DATA" prefix="AIR_DATA_">
