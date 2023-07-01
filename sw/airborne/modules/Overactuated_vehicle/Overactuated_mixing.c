@@ -175,14 +175,6 @@ int manual_heading_value_rad = 0;
 float des_pos_earth_x = 0;
 float des_pos_earth_y = 0;
 
-//External servos variables: 
-int16_t neutral_servo_1_pwm = 1417;
-int16_t neutral_servo_2_pwm = 1492;
-
-
-int servo_right_cmd = 0;
-int servo_left_cmd = 0;
-
 // Actuators gains:
 #ifdef RPM_CONTROL
 float K_ppz_rads_motor = 9.6;
@@ -916,8 +908,8 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.az_3_state_int = (int16_t) (actuator_state_filt[10] * 1e2 * 180/M_PI);
     am7_data_out_local.az_4_state_int = (int16_t) (actuator_state_filt[11] * 1e2 * 180/M_PI);
 
-    am7_data_out_local.phi_state_int = (int16_t) (actuator_state_filt[13] * 1e2 * 180/M_PI);
     am7_data_out_local.theta_state_int = (int16_t) (actuator_state_filt[12] * 1e2 * 180/M_PI);
+    am7_data_out_local.phi_state_int = (int16_t) (actuator_state_filt[13] * 1e2 * 180/M_PI);
     am7_data_out_local.ailerons_state_int = (int16_t) (actuator_state_filt[14] * 1e2 * 180/M_PI);
 
     am7_data_out_local.gamma_state_int = (int16_t) (flight_path_angle_filtered.o[0] * 1e2 * 180/M_PI);
@@ -948,8 +940,6 @@ void send_values_to_raspberry_pi(void){
     am7_data_out_local.desired_az_value_int = (int16_t) (manual_az_value * 1e2 * 180/M_PI);
     am7_data_out_local.desired_theta_value_int = (int16_t) (manual_theta_value * 1e2 * 180/M_PI);
     am7_data_out_local.desired_phi_value_int = (int16_t) (manual_phi_value * 1e2 * 180/M_PI);
-    // am7_data_out_local.desired_theta_value_int = (int16_t) (0 * 1e2 * 180/M_PI);
-    // am7_data_out_local.desired_phi_value_int = (int16_t) (0 * 1e2 * 180/M_PI);
 
     am7_data_out_local.desired_ailerons_value_int = (int16_t) (manual_ailerons_value * 1e2 * 180/M_PI);
 
@@ -1224,12 +1214,16 @@ void overactuated_mixing_run(void)
         if(FAILSAFE_engaged == 0 ){
             INDI_engaged = 0;
             FAILSAFE_engaged = 1;
+            control_mode_ovc_vehicle = 1;
+        }
+
+        //Keep resetting the errors and heading setpoint if we are killed:
+        if(!autopilot.motors_on){
             for (int i = 0; i < 3; i++) {
                 euler_error_integrated[i] = 0;
                 pos_error_integrated[i] = 0;
             }
-            euler_setpoint[2] = euler_vect_sec_ahrs[2];
-            control_mode_ovc_vehicle = 1;
+            euler_setpoint[2] = euler_vect_sec_ahrs[2];    
         }
 
         ////Angular error computation
@@ -1308,14 +1302,9 @@ void overactuated_mixing_run(void)
             overactuated_mixing.commands[11] -= (int32_t) (euler_order[2] * K_ppz_angle_az);
         }
 
-        //Add servos values:
-        servo_right_cmd = neutral_servo_1_pwm;
-        servo_left_cmd = neutral_servo_2_pwm;
-
+        //Do not use ailerons. Put them in neutral position 
         indi_u[14] = 0;
 
-        Bound(servo_right_cmd,1000,2000);
-        Bound(servo_left_cmd,1000,2000);
 
     }
 
