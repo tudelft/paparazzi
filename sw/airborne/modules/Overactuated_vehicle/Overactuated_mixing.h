@@ -76,22 +76,22 @@ struct PD_indi_over {
 };
 
 struct ESC_status {
-    float ESC_1_rpm; 
-    float ESC_1_voltage; 
+    float ESC_1_rpm;
+    float ESC_1_voltage;
     float ESC_1_current;
-    float ESC_1_consumption;  
-    float ESC_2_rpm; 
-    float ESC_2_voltage; 
+    float ESC_1_consumption;
+    float ESC_2_rpm;
+    float ESC_2_voltage;
     float ESC_2_current;
-    float ESC_2_consumption;  
-    float ESC_3_rpm; 
-    float ESC_3_voltage; 
+    float ESC_2_consumption;
+    float ESC_3_rpm;
+    float ESC_3_voltage;
     float ESC_3_current;
-    float ESC_3_consumption;    
-    float ESC_4_rpm; 
-    float ESC_4_voltage; 
+    float ESC_3_consumption;
+    float ESC_4_rpm;
+    float ESC_4_voltage;
     float ESC_4_current;
-    float ESC_4_consumption;            
+    float ESC_4_consumption;
 };
 
 /* overactuated mixing structure */
@@ -108,9 +108,6 @@ extern float K_beta;
 extern float K_T_airspeed;
 extern float K_d_speed;
 
-extern int16_t neutral_servo_1_pwm; 
-extern int16_t neutral_servo_2_pwm; 
-
 extern float CL_ailerons;
 
 extern float extra_lat_gain;
@@ -124,22 +121,22 @@ extern bool yaw_with_tilting_PID;
 extern bool manual_heading;
 extern int manual_heading_value_rad;
 
-//Variable for the lateral acceleration and yaw rate control: 
+//Variable for the lateral acceleration and yaw rate control:
 extern float overestimation_coeff;
 
-//Variables for the FBW controller: 
+//Variables for the FBW controller:
 extern float K_indi_rad_s_dshot, Des_RPM_motor_1, Des_dshot_steps_motor_1;
 
 extern float K_p_rad_s_dshot, K_i_rad_s_dshot, K_d_rad_s_dshot;
 
-extern int min_pwm_servo_9, max_pwm_servo_9, neutral_pwm_servo_9, min_pwm_servo_10, max_pwm_servo_10, neutral_pwm_servo_10; 
+extern int min_pwm_servo_9, max_pwm_servo_9, neutral_pwm_servo_9, min_pwm_servo_10, max_pwm_servo_10, neutral_pwm_servo_10;
 extern float desired_angle_servo_9, desired_angle_servo_10;
 
 extern float des_az_angle_test, des_el_angle_test;
 
 extern int feed_speed_ref_from_approach_module;
 
-extern int approach_state; 
+extern int approach_state;
 
 /* External used functions */
 extern void overactuated_mixing_init(void);

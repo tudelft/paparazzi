@@ -48,9 +48,6 @@
         <dl_setting var="K_T_airspeed"  min="0" step=".001" max="1" shortname="K_T_airspeed" />
 
         <dl_setting var="K_d_speed"  min="0" step=".001" max="1" shortname="K_d_speed" />
-        
-        <dl_setting var="neutral_servo_1_pwm"  min="1000" step="1" max="2000" shortname="neutral_servo_1_pwm" />
-        <dl_setting var="neutral_servo_2_pwm"  min="1000" step="1" max="2000" shortname="neutral_servo_2_pwm" />
 
         <dl_setting var="CL_ailerons"  min="0" step=".001" max="0.5" shortname="CL_ailerons" />
 
@@ -77,7 +74,7 @@
         <dl_setting var="pid_gains_over.p.psi" min="0" step=".01" max="40" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_PSI" shortname="tilt_kp_yaw" persistent="true"/>
         <dl_setting var="pid_gains_over.i.psi" min="0" step=".01" max="20" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_PSI" shortname="tilt_ki_yaw" persistent="true"/>
         <dl_setting var="pid_gains_over.d.psi" min="0" step=".01" max="20" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_PSI" shortname="tilt_kd_yaw" persistent="true"/>
-        
+
         <dl_setting var="pid_gains_over.p.x" min="0" step=".01" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_P_GAIN_POS_X_TILT" shortname="PID_kp_x" persistent="true"/>
         <dl_setting var="pid_gains_over.i.x" min="0" step=".01" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_I_GAIN_POS_X_TILT" shortname="PID_ki_x" persistent="true"/>
         <dl_setting var="pid_gains_over.d.x" min="0" step=".01" max="5" module="Overactuated_vehicle/Overactuated_mixing" param="OVERACTUATED_MIXING_PID_D_GAIN_POS_X_TILT" shortname="PID_kd_x" persistent="true"/>
@@ -122,7 +119,7 @@
   </header>
   <init fun="overactuated_mixing_init()"/>
    <periodic fun="overactuated_mixing_run()" autorun="TRUE" freq="500"/>
-   
+
   <makefile>
     <file name="Overactuated_mixing.c"/>
   </makefile>
