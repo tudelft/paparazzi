@@ -78,10 +78,10 @@
     </firmware>
 
     <servos DRIVER="Pwm">
-        <servo NO="0" NAME="MOTOR_FRONT"   MIN="1000" NEUTRAL="1050" MAX="2000"/>
-        <servo NO="1" NAME="MOTOR_RIGHT"   MIN="1000" NEUTRAL="1050" MAX="2000"/>
-        <servo NO="2" NAME="MOTOR_BACK"    MIN="1000" NEUTRAL="1050" MAX="2000"/>
-        <servo NO="3" NAME="MOTOR_LEFT"    MIN="1000" NEUTRAL="1050" MAX="2000"/>
+        <servo NO="0" NAME="MOTOR_FRONT"   MIN="1000" NEUTRAL="1200" MAX="2000"/>
+        <servo NO="1" NAME="MOTOR_RIGHT"   MIN="1000" NEUTRAL="1200" MAX="2000"/>
+        <servo NO="2" NAME="MOTOR_BACK"    MIN="1000" NEUTRAL="1200" MAX="2000"/>
+        <servo NO="3" NAME="MOTOR_LEFT"    MIN="1000" NEUTRAL="1200" MAX="2000"/>
     </servos>
 
     <commands>
@@ -172,9 +172,9 @@
         <define VALUE="{1.6, 0.0,   -1.6, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
         <define VALUE="{-0.2, 0.1, -0.35, 0.35, 0.0, 0.0}" NAME="G1_YAW"/>-->
         <!--With tail effectiveness values-->
-        <define VALUE="{0.0, -40.0, 0.0, 40.0}" NAME="G1_ROLL"/>
-        <define VALUE="{3.5, 0.0, -3.5, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-0.6, 0.7, -0.6, 0.7}" NAME="G1_YAW"/>
+        <define VALUE="{0.0, -10.0, 0.0, 10.0}" NAME="G1_ROLL"/>
+        <define VALUE="{2.0, 0.0, -2.0, 0.0}" NAME="G1_PITCH"/>
+        <define VALUE="{-0.5, 0.6, -0.5, 0.6}" NAME="G1_YAW"/>
         <!-- <define VALUE="{-0.43, 0.43, -0.43, 0.43, 0.0, 0.0}" NAME="G1_YAW"/> -->
         <!--<define VALUE="{-0.2, 0.2, -0.2, 0.2, 0.0, 0.0}" NAME="G1_YAW"/>-->
         <!--With wing effectiveness values-->
