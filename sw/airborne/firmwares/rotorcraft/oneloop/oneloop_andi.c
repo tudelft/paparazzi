@@ -49,6 +49,24 @@ float oneloop_andi_filt_cutoff = ONELOOP_ANDI_FILT_CUTOFF;
 float oneloop_andi_filt_cutoff = 2.0;
 #endif
 
+#ifdef ONELOOP_ANDI_FILT_CUTOFF_ACC
+float oneloop_andi_filt_cutoff_a = ONELOOP_ANDI_FILT_CUTOFF_ACC;
+#else
+float oneloop_andi_filt_cutoff_a = 2.0;
+#endif
+
+#ifdef ONELOOP_ANDI_FILT_CUTOFF_VEL
+float oneloop_andi_filt_cutoff_v = ONELOOP_ANDI_FILT_CUTOFF_VEL;
+#else
+float oneloop_andi_filt_cutoff_v = 2.0;
+#endif
+
+#ifdef ONELOOP_ANDI_FILT_CUTOFF_POS
+float oneloop_andi_filt_cutoff_p = ONELOOP_ANDI_FILT_CUTOFF_POS;
+#else
+float oneloop_andi_filt_cutoff_p = 2.0;
+#endif
+
 #ifdef ONELOOP_ANDI_ACT_IS_SERVO
 bool actuator_is_servo[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_IS_SERVO;
 #else
@@ -114,13 +132,16 @@ void float_rates_of_euler_dot_vec(float r[3], float e[3], float edot[3]);
 void float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3]);
 void err_3d(float err[3], float a[3], float b[3], float k[3]);
 void integrate_3d(float dt, float a[3], float a_dot[3]);
+void vect_bound_3d(float vect[3], float bound);
+float ho_bound(float dt, float x_d[3],float x_bound);
 void rm_2rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm);
 void rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
 void rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
 void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], float k1_rm[3], float k2_rm[3], float k3_rm[3]);
+void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], float k1_rm[3], float k2_rm[3], float k3_rm[3], float x_d_bound, float x_2d_bound);
 void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3]);
 void calc_model(void);
-void straight_oval(float s, float r, float l, float psi_i, float v_route, float a_route, float j_route, float p[3], float p0[3],  float v[3], float a[3], float j[3],float* lap);
+void straight_oval(float s, float r, float l, float psi_i, float v_route, float a_route, float j_route, float p[3], float p0[3],  float v[3], float a[3], float j[3], float psi_vec[4], float* lap);
 void nav_speed_controller(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_d_des, float x_d_actual, float x_2d_bound, float k1_rm, float k2_rm);
 void nav_speed_controller_enter(void);
 float convert_angle(float psi);
@@ -253,7 +274,7 @@ int   number_iter = 0;
 
 /*Declaration of Reference Model and Error Controller Gains*/
 float rm_k_attitude;
-float p1_att = 10;//7.68;       
+float p1_att = 7.0;//7.68;       
 float p2_att;      
 float p3_att;
 
@@ -273,7 +294,7 @@ float k_pdot_rm ;
 
 /*Position Loop*/
 float rm_k_pos;     
-float p1_pos = 4.0;//2.0;     
+float p1_pos = 2.0;//2.0;     
 float p2_pos  ;     
 float p3_pos  ;     
 float route_k  ;    
@@ -317,7 +338,7 @@ float k_aD_rm ;
 
 /*Heading Loop*/
 float rm_k_head  ;  
-float p1_head = 7.0;//4.8;     
+float p1_head = 5.0;//4.8;     
 float p2_head ;
 float p3_head ;      
 
@@ -343,11 +364,12 @@ float p_nav    ;
 float v_nav    ;
 float a_nav    ;
 float j_nav    ;
-float v_nav_des = 2.0;
-float max_a_nav;
+float v_nav_des = 2.5;
+float max_a_nav = 8.0;
+float max_v_nav = 5.0;
 
-float r_oval    = 2.5;
-float l_oval    = 0.1;
+float r_oval    = 5.0;
+float l_oval    = 10.0;
 float psi_oval  = 0.0;
 float p_oval[3] = {0.0,0.0,0.0};
 float v_oval[3] = {0.0,0.0,0.0};
@@ -357,6 +379,7 @@ float lap_oval  = 0.0;
 bool  oval_on   = false;
 float psi_des_rad = 0.0;
 float psi_des_deg = 0.0;
+float psi_vec[4] = {0.0, 0.0, 0.0, 0.0};
 /*Define Variables used in control*/
 float old_time = 0.0;
 float new_time = 0.0;
@@ -411,6 +434,7 @@ float *bwls_1l[ANDI_OUTPUTS];
 bool check_1st_nav = true; 
 bool check_1st_oval= true;
 bool verbose_oneloop = true;
+bool heading_on = false;
 /*Error Controller Gain Design*/
 static float k_e_1_3_f(float p1, float p2, float p3) {return (p1*p2*p3);}
 static float k_e_2_3_f(float p1, float p2, float p3) {return (p1*p2+p1*p3+p2*p3);}
@@ -470,6 +494,28 @@ void integrate_3d(float dt, float a[3], float a_dot[3])
     a[i] = a[i] + dt * a_dot[i];
   }
 }
+
+/* Scale a 3D vector to within a 3D bound */
+void vect_bound_3d(float vect[3], float bound) {
+  float norm = float_vect_norm(vect,3);
+  if((norm-bound) > FLT_EPSILON) {
+    float scale = bound/norm;
+    vect[0] *= scale;
+    vect[1] *= scale;
+    vect[2] *= scale;
+  }
+}
+
+/* Generate higher order bound based on lower order bound*/
+float ho_bound(float dt, float x_d[3],float x_bound){
+  float x_d_norm = float_vect_norm(x_d,3);
+  printf("x_d_norm: %f\n", x_d_norm);
+  //BoundAbs(x_d_norm, x_bound);
+  printf("x_bound: %f\n", x_bound);
+  float x_d_bound = (x_bound-x_d_norm)/dt;
+  printf("x_d_bound: %f\n", x_d_bound);
+  return fabs(x_d_bound);
+}
 /*Reference Model Definition*/
 void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], float k1_rm[3], float k2_rm[3], float k3_rm[3]){
   float e_x[3];
@@ -502,21 +548,47 @@ void rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d
 }
 
 void rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm){
-  printf("e_x :%f\n",(x_des- *x_ref));
-  printf("k1_rm : %f\n",k1_rm);
   float e_x      = k1_rm * convert_angle((x_des- *x_ref));
-  //e_x = convert_angle(e_x);
-  printf("x_des :%f\n",x_des);
-  printf("x_ref :%f\n",*x_ref);
-  printf("e_x :%f\n",e_x);
   float e_x_d    = k2_rm * (e_x- *x_d_ref);
   float e_x_2d   = k3_rm * (e_x_d- *x_2d_ref);
   *x_3d_ref = e_x_2d;
   *x_2d_ref = (*x_2d_ref + dt * (*x_3d_ref));
   *x_d_ref  = (*x_d_ref  + dt * (*x_2d_ref));
   *x_ref    = (*x_ref    + dt * (*x_d_ref ));
-  printf("x_ref 2:%f\n", *x_ref);
 }
+
+void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], float k1_rm[3], float k2_rm[3], float k3_rm[3], float x_d_bound, float x_2d_bound){
+  float e_x[3];
+  float e_x_d[3];
+  float e_x_2d[3];
+  printf("x_d_bound: %f\n", x_d_bound);
+  printf("norm(x_d_ref): %f\n", float_vect_norm(x_d_ref,3));
+  float x_2d_bound_vel = 1000.0;(x_d_bound - float_vect_norm(x_d_ref,3)) / dt;
+  printf("x_2d_bound_vel: %f\n", x_2d_bound_vel);
+  float x_2d_bound_gen = fminf(x_2d_bound_vel, x_2d_bound);
+  printf("x_2d_bound_gen: %f\n", x_2d_bound_gen);
+  float x_3d_bound = ho_bound(dt, x_2d_ref, x_2d_bound_gen);
+  printf("x_3d_bound: %f\n", x_3d_bound);
+  err_3d(e_x, x_des, x_ref, k1_rm);
+  vect_bound_3d(e_x,x_d_bound);
+  printf("e_x: %f\n", e_x[0]);
+  err_3d(e_x_d, e_x, x_d_ref, k2_rm);
+  vect_bound_3d(e_x_d,x_2d_bound);
+  printf("e_x_d: %f\n", e_x_d[0]);
+  err_3d(e_x_2d, e_x_d, x_2d_ref, k3_rm);
+  printf("e_x_2d: %f\n", e_x_2d[0]);
+  // float norm_ex2d = float_vect_norm(e_x_2d,3);
+  //vect_bound_3d(e_x_2d, x_3d_bound);
+  //float_vect_scale(e_x_2d, x_3d_bound/norm_ex2d, 3);
+  printf("e_x_2d: %f\n", e_x_2d[0]);
+  float_vect_copy(x_3d_ref,e_x_2d,3);
+  integrate_3d(dt, x_2d_ref, x_3d_ref);
+  vect_bound_3d(x_2d_ref, x_2d_bound);
+  integrate_3d(dt, x_d_ref, x_2d_ref);
+  vect_bound_3d(x_d_ref, x_d_bound);
+  integrate_3d(dt, x_ref, x_d_ref);
+}
+
 
 
 void rm_2rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm){
@@ -677,6 +749,8 @@ Butterworth2LowPass measurement_lowpass_filters[3];
 Butterworth2LowPass estimation_output_lowpass_filters[3];
 
 static struct FirstOrderLowPass rates_filt_fo[3];
+static struct FirstOrderLowPass pos_filt_fo[3];
+static struct FirstOrderLowPass vel_filt_fo[3];
 Butterworth2LowPass model_pred_filt[ANDI_OUTPUTS];
 
 struct FloatVect3 body_accel_f;
@@ -685,14 +759,24 @@ struct FloatVect3 body_accel_f;
 void init_filter(void)
 {
   float tau = 1.0 / (2.0 * M_PI *oneloop_andi_filt_cutoff);
+  printf("tau = %f\n",tau);
+  float tau_a = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_a);
+  printf("tau_a = %f\n",tau_a);
+  float tau_v = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_v);
+  float tau_p = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_p);
+  printf("tau_p = %f\n",tau_p);
+  printf("oneloop_andi_filt_cutoff: %f\n", oneloop_andi_filt_cutoff);
+  printf("oneloop_andi_filt_cutoff_a: %f\n", oneloop_andi_filt_cutoff_a);
+  printf("oneloop_andi_filt_cutoff_v: %f\n", oneloop_andi_filt_cutoff_v);
+  printf("oneloop_andi_filt_cutoff_p: %f\n", oneloop_andi_filt_cutoff_p);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
 
   // Filtering of the Inputs with 3 dimensions (e.g. rates and accelerations)
   int8_t i;
   for (i = 0; i < 3; i++) {
     init_butterworth_2_low_pass(&att_dot_meas_lowpass_filters[i], tau, sample_time, 0.0);
-    init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
-    init_butterworth_2_low_pass(&filt_accel_body[i], tau, sample_time, 0.0);
+    init_butterworth_2_low_pass(&filt_accel_ned[i], tau_a, sample_time, 0.0);
+    init_butterworth_2_low_pass(&filt_accel_body[i], tau_a, sample_time, 0.0);
     init_butterworth_2_low_pass(&att_ref_lowpass_filters[i], tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&rate_ref_lowpass_filters[i], tau, sample_time, 0.0);
   }
@@ -706,9 +790,22 @@ void init_filter(void)
   init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
   init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
   
+  // Init pos and vel filters
+
+  init_first_order_low_pass(&pos_filt_fo[0], tau_p, sample_time, stateGetPositionNed_f()->x );
+  init_first_order_low_pass(&pos_filt_fo[1], tau_p, sample_time, stateGetPositionNed_f()->y );
+  init_first_order_low_pass(&pos_filt_fo[2], tau_p, sample_time, stateGetPositionNed_f()->z );
+  init_first_order_low_pass(&vel_filt_fo[0], tau_v, sample_time, stateGetSpeedNed_f()->x );
+  init_first_order_low_pass(&vel_filt_fo[1], tau_v, sample_time, stateGetSpeedNed_f()->y );
+  init_first_order_low_pass(&vel_filt_fo[2], tau_v, sample_time, stateGetSpeedNed_f()->z );
+  
   // Remember to change the time constant if you provide different P Q R filters
   for (i = 0; i < ANDI_OUTPUTS; i++){
+    if (i < 3){
+       init_butterworth_2_low_pass(&model_pred_filt[i], tau_a, sample_time, 0.0);
+    } else {
     init_butterworth_2_low_pass(&model_pred_filt[i], tau, sample_time, 0.0);
+    }
   }
 }
 
@@ -721,6 +818,8 @@ void oneloop_andi_propagate_filters(void) {
   float accel_b_z = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->z);
   struct FloatRates *body_rates = stateGetBodyRates_f();
   float rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
+  float pos_vect[3]  = {stateGetPositionNed_f()->x,stateGetPositionNed_f()->y,stateGetPositionNed_f()->z};
+  float vel_vect[3]  = {stateGetSpeedNed_f()->x,stateGetSpeedNed_f()->y,stateGetSpeedNed_f()->z};
   update_butterworth_2_low_pass(&filt_accel_ned[0], accel->x);
   update_butterworth_2_low_pass(&filt_accel_ned[1], accel->y);
   update_butterworth_2_low_pass(&filt_accel_ned[2], accel->z);
@@ -741,6 +840,9 @@ void oneloop_andi_propagate_filters(void) {
     update_butterworth_2_low_pass(&att_dot_meas_lowpass_filters[i], rate_vect[i]);
     //float old_rate = rates_filt_fo[i].last_out;
     update_first_order_low_pass(&rates_filt_fo[i], rate_vect[i]);
+    update_first_order_low_pass(&pos_filt_fo[i], pos_vect[i]);
+    update_first_order_low_pass(&vel_filt_fo[i], vel_vect[i]);
+ 
     ang_acc[i] = (att_dot_meas_lowpass_filters[i].o[0]- att_dot_meas_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY + model_pred[3+i] - model_pred_filt[3+i].o[0];
     lin_acc[i] = filt_accel_ned[i].o[0] + model_pred[i] - model_pred_filt[i].o[0];  
     //ang_acc[i] = (rates_filt_fo[i].last_out- old_rate) * PERIODIC_FREQUENCY;
@@ -883,12 +985,12 @@ void oneloop_andi_attitude_run(bool in_flight)
   att_2d[1] = ang_acc[1]                            * use_increment;
   att_2d[2] = ang_acc[2]                            * use_increment;
 
-  pos_1l[0] = stateGetPositionNed_f()->x;
-  pos_1l[1] = stateGetPositionNed_f()->y;
-  pos_1l[2] = stateGetPositionNed_f()->z;
-  pos_d[0]  = stateGetSpeedNed_f()->x;
-  pos_d[1]  = stateGetSpeedNed_f()->y;
-  pos_d[2]  = stateGetSpeedNed_f()->z;
+  pos_1l[0] = pos_filt_fo[0].last_out;//stateGetPositionNed_f()->x;   // pos_filt_fo[0].last_out;s
+  pos_1l[1] = pos_filt_fo[1].last_out;//stateGetPositionNed_f()->y;   // pos_filt_fo[1].last_out;s
+  pos_1l[2] = pos_filt_fo[2].last_out;//stateGetPositionNed_f()->z;   // pos_filt_fo[2].last_out;s
+  pos_d[0]  = vel_filt_fo[0].last_out;//stateGetSpeedNed_f()->x;      // vel_filt_fo[0].last_out;s
+  pos_d[1]  = vel_filt_fo[1].last_out;//stateGetSpeedNed_f()->y;      // vel_filt_fo[1].last_out;s
+  pos_d[2]  = vel_filt_fo[2].last_out;//stateGetSpeedNed_f()->z;      // vel_filt_fo[2].last_out;s
   pos_2d[0] = lin_acc[0];
   pos_2d[1] = lin_acc[1];
   pos_2d[2] = lin_acc[2];
@@ -944,10 +1046,13 @@ void oneloop_andi_attitude_run(bool in_flight)
         
         nav_speed_controller(dt_1l, &p_nav, &v_nav, &a_nav, &j_nav, v_nav_des, v_actual, max_a_nav, k_v_nav, k_v_d_nav);
         printf("p_nav = %f\n",p_nav);
-        straight_oval(p_nav, r_oval, l_oval, psi_oval, v_nav, a_nav, j_nav, pos_ref, pos_init,  pos_d_ref, pos_2d_ref, pos_3d_ref, &lap_oval);
+        
+        straight_oval(p_nav, r_oval, l_oval, psi_oval, v_nav, a_nav, j_nav, pos_ref, pos_init,  pos_d_ref, pos_2d_ref, pos_3d_ref, psi_vec, &lap_oval);
         if (v_actual > 0.5){
-          psi_des_rad = atan2(pos_d_ref[1], pos_d_ref[0]); // Investigate whether to use the ref or the actual signal
-          psi_des_rad = convert_angle(psi_des_rad);
+          //if (heading_on){
+            //psi_des_rad = atan2f(pos_d_ref[1], pos_d_ref[0]); // Investigate whether to use the ref or the actual signal
+            //psi_des_rad = convert_angle(psi_des_rad);
+          //}
         }
         
       }else{
@@ -957,9 +1062,10 @@ void oneloop_andi_attitude_run(bool in_flight)
         pos_des[0] = pos_init[0] + cosf(eulers_zxy.psi) * rc_x - sinf(eulers_zxy.psi) * rc_y;;
         pos_des[1] = pos_init[1] + sinf(eulers_zxy.psi) * rc_x + cosf(eulers_zxy.psi) * rc_y;;
         pos_des[2] = pos_init[2];
-        rm_3rd(dt_1l, &pos_ref[0],   &pos_d_ref[0],  &pos_2d_ref[0], &pos_3d_ref[0], pos_des[0], k_N_rm, k_vN_rm, k_aN_rm);
-        rm_3rd(dt_1l, &pos_ref[1],   &pos_d_ref[1],  &pos_2d_ref[1], &pos_3d_ref[1], pos_des[1], k_E_rm, k_vE_rm, k_aE_rm); 
-        rm_3rd(dt_1l, &pos_ref[2],   &pos_d_ref[2],  &pos_2d_ref[2], &pos_3d_ref[2], pos_des[2], k_D_rm, k_vD_rm, k_aD_rm);
+        float k1_pos_rm[3] = {k_N_rm,  k_E_rm,  k_D_rm};
+        float k2_pos_rm[3] = {k_vN_rm, k_vE_rm, k_vD_rm};
+        float k3_pos_rm[3] = {k_aN_rm, k_aE_rm, k_aD_rm};
+        rm_3rd_pos(dt_1l, pos_ref, pos_d_ref, pos_2d_ref, pos_3d_ref, pos_des, k1_pos_rm, k2_pos_rm, k3_pos_rm, max_v_nav, max_a_nav);
       }
       printf("Desired position is :[%f, %f, %f]\n",pos_des[0],pos_des[1],pos_des[2]);
        
@@ -981,6 +1087,12 @@ void oneloop_andi_attitude_run(bool in_flight)
     float k3_att_rm[3] = {k_pdot_rm, k_qdot_rm, k_psi_2d_rm};
     float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, psi_des_rad};
     rm_3rd_attitude(dt_1l, att_ref, att_d_ref, att_2d_ref, att_3d_ref, att_des, k1_att_rm, k2_att_rm, k3_att_rm);
+    if(oval_on && heading_on) {
+      att_ref[2]    = psi_vec[0];
+      att_d_ref[2]  = psi_vec[1];
+      att_2d_ref[2] = psi_vec[2];
+      att_3d_ref[2] = psi_vec[3];
+    }
   }
 
   // Generate pseudo control for stabilization vector (nu) based on error controller
@@ -996,14 +1108,14 @@ void oneloop_andi_attitude_run(bool in_flight)
     float k1_att_e[3] = {k_phi_e,  k_theta_e, k_psi_e};
     float k2_att_e[3] = {k_p_e,    k_q_e,     k_psi_d_e};
     float k3_att_e[3] = {k_pdot_e, k_qdot_e,  k_psi_2d_e};
-    float y_4d[3];
-    ec_3rd_att(y_4d, att_ref, att_d_ref, att_2d_ref, att_3d_ref, att_1l, att_d, att_2d, k1_att_e, k2_att_e, k3_att_e);
+    float y_4d_att[3];
+    ec_3rd_att(y_4d_att, att_ref, att_d_ref, att_2d_ref, att_3d_ref, att_1l, att_d, att_2d, k1_att_e, k2_att_e, k3_att_e);
     nu[0] = ec_3rd(pos_ref[0], pos_d_ref[0], pos_2d_ref[0], pos_3d_ref[0], pos_1l[0], pos_d[0], pos_2d[0], k_N_e, k_vN_e, k_aN_e);
     nu[1] = ec_3rd(pos_ref[1], pos_d_ref[1], pos_2d_ref[1], pos_3d_ref[1], pos_1l[1], pos_d[1], pos_2d[1], k_E_e, k_vE_e, k_aE_e);
     nu[2] = ec_3rd(pos_ref[2], pos_d_ref[2], pos_2d_ref[2], pos_3d_ref[2], pos_1l[2], pos_d[2], pos_2d[2], k_D_e, k_vD_e, k_aD_e); 
-    nu[3] = y_4d[0];  
-    nu[4] = y_4d[1]; 
-    nu[5] = y_4d[2]; 
+    nu[3] = y_4d_att[0];  
+    nu[4] = y_4d_att[1]; 
+    nu[5] = y_4d_att[2]; 
   }
   
   // Calculate the min and max increments
@@ -1206,7 +1318,8 @@ void nav_speed_controller_enter(){
   a_nav     = 0.0;
   j_nav     = 0.0;
   //v_nav_des = 0.2;
-  max_a_nav = 10.0;
+  max_a_nav = 8.0;
+  max_v_nav = 5.0;
 }
 
 void nav_speed_controller(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_d_des, float x_d_actual, float x_2d_bound, float k1_rm, float k2_rm){
@@ -1237,10 +1350,11 @@ void nav_speed_controller(float dt, float* x_ref, float* x_d_ref, float* x_2d_re
  */
 
 //void straight_oval(float s, float r, float l, float psi_i, float v_route, float a_route, float j_route, float* p, float* v, float* a, float* j, float* lap)
-void straight_oval(float s, float r, float l, float psi_i, float v_route, float a_route, float j_route, float p[3], float pi[3], float v[3], float a[3], float j[3], float* lap) {
+void straight_oval(float s, float r, float l, float psi_i, float v_route, float a_route, float j_route, float p[3], float pi[3], float v[3], float a[3], float j[3], float psi_vec[4], float* lap) {
     printf("psi_oval = %f\n",psi_i);
     float cd = cosf(psi_i);
     float sd = sinf(psi_i);
+    float head_vec[4] = {0.0, 0.0, 0.0, 0.0};
     float p0[3] = {0.0, 0.0, 0.0};
     //float pi[3] = {0.0,0.0,0.0};
     float p1[3] = {p0[0] + r, p0[1]-r, p0[2]};
@@ -1308,6 +1422,10 @@ void straight_oval(float s, float r, float l, float psi_i, float v_route, float 
             float v2 = v_route * v_route;
             float v3 = v2 * v_route;
             float r2 = r * r;
+            head_vec[0] = beta;
+            head_vec[1] = v_route / r;
+            head_vec[2] = a_route / r;
+            head_vec[3] = j_route / r; 
 
             p[0] = r * sb + p2[0];
             p[1] = r * cb + p2[1];
@@ -1337,6 +1455,7 @@ void straight_oval(float s, float r, float l, float psi_i, float v_route, float 
                 v[i] = v_route * u34[i];
                 a[i] = a_route * u34[i];
                 j[i] = j_route * u34[i];
+                head_vec[0] = M_PI;
               }           
         } else if (dist < s4) {
             float sector = dist - s3;
@@ -1346,6 +1465,10 @@ void straight_oval(float s, float r, float l, float psi_i, float v_route, float 
             float v2 = v_route * v_route;
             float v3 = v2 * v_route;
             float r2 = r * r;
+            head_vec[0] = beta;
+            head_vec[1] = v_route / r;
+            head_vec[2] = a_route / r;
+            head_vec[3] = j_route / r;
 
             p[0] = r * sb + p1[0];
             p[1] = r * cb + p1[1];
@@ -1388,6 +1511,10 @@ void straight_oval(float s, float r, float l, float psi_i, float v_route, float 
       a[i] = temp_a[i];
       j[i] = temp_j[i];
     }
+    psi_vec[0] = convert_angle(-head_vec[0] + psi_i);
+    psi_vec[1] = -head_vec[1];
+    psi_vec[2] = -head_vec[2];
+    psi_vec[3] = -head_vec[3];
 }
 
 /**

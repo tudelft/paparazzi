@@ -55,6 +55,9 @@ extern float g1g2_1l[ANDI_OUTPUTS][ANDI_NUM_ACT_TOT];
 
 extern float andi_u[ANDI_NUM_ACT_TOT];
 
+extern bool check_1st_nav;
+extern bool heading_on;
+
 extern float p1_att;
 extern float p1_head;
 extern float p1_pos;
