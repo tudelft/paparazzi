@@ -1,48 +1,71 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="1.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="60" name="Safe TU Delft Cyberzoo" security_height="0.4">
+<flight_plan alt="8.0" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="5000" name="Oneloop Valkenburg" security_height="2">
   <header>
+    #include "autopilot.h"
     #include "modules/datalink/datalink.h"
     #include "modules/energy/electrical.h"
     #include "modules/radio_control/radio_control.h"
     #include "modules/ahrs/ahrs.h"
 </header>
   <waypoints>
-    <waypoint lat="51.990631" lon="4.376796" name="HOME"/>
-    <waypoint name="CLIMB" x="1.9" y="1.0"/>
-    <waypoint name="STDBY" x="0.5" y="0.3"/>
-    <waypoint name="p5" x="0.2" y="0.3"/>
-    <waypoint name="TD" x="0.8" y="-1.7"/>
-    <waypoint lat="51.9905979" lon="4.3767279" name="CZ1"/>
-    <waypoint lat="51.9906685" lon="4.3767327" name="CZ2"/>
-    <waypoint lat="51.9906652" lon="4.3768481" name="CZ3"/>
-    <waypoint lat="51.9905941" lon="4.3768441" name="CZ4"/>
-    <waypoint lat="51.9906028" lon="4.3767375" name="p1"/>
-    <waypoint lat="51.9906633" lon="4.3767411" name="p2"/>
-    <waypoint lat="51.9906601" lon="4.3768415" name="p3"/>
-    <waypoint lat="51.9905979" lon="4.3768386" name="p4"/>
+    <waypoint name="HOME" lat="52.1682196" lon="4.4134865"/>
+    <waypoint name="CLIMB" x="62.6" y="-80.4"/>
+    <waypoint name="STDBY" x="106.0" y="-55.1"/>
+    <waypoint name="p1" x="322.0" y="-254.3"/>
+    <waypoint name="p2" x="696.0" y="-148.1"/>
+    <waypoint name="p3" x="600.4" y="73.4"/>
+    <waypoint name="p4" x="238.6" y="-48.5"/>
+    <waypoint name="TD" x="-4.1" y="-23.7"/>
+    <waypoint name="FOLLOW" x="123.2" y="-87.8"/>
+    <waypoint name="S1" lat="52.1669450" lon="4.4174372"/>
+    <waypoint name="S2" lat="52.1689871" lon="4.4208804"/>
+    <waypoint lat="52.169189"  lon="4.410820"  name="C1"/>
+    <waypoint lat="52.168049"  lon="4.406923"  name="C2"/>
+    <waypoint lat="52.166515"  lon="4.408235"  name="C3"/>
+    <waypoint lat="52.163255"  lon="4.407668"  name="C4"/>
+    <waypoint lat="52.161908"  lon="4.410082"  name="C5"/>
+    <waypoint lat="52.162641"  lon="4.416992"  name="C6"/>
+    <waypoint lat="52.164861"  lon="4.427268"  name="C7"/>
+    <waypoint lat="52.170422"  lon="4.427511"  name="C8"/>
+    <waypoint lat="52.172276"  lon="4.424011"  name="C9"/>
+    <waypoint lat="52.1673931" lon="4.4127541" name="p5"/>
+    <waypoint lat="52.1678569" lon="4.4150577" name="p6"/>
+    <waypoint lat="52.1689993" lon="4.4144979" name="p7"/>
+    <waypoint lat="52.1686045" lon="4.4121999" name="p8"/>
   </waypoints>
   <sectors>
-    <sector color="blue" name="CyberZoo">
-      <corner name="CZ1"/>
-      <corner name="CZ2"/>
-      <corner name="CZ3"/>
-      <corner name="CZ4"/>
+    <sector color="red" name="Hard_Geofence">
+      <corner name="C1"/>
+      <corner name="C2"/>
+      <corner name="C3"/>
+      <corner name="C4"/>
+      <corner name="C5"/>
+      <corner name="C6"/>
+      <corner name="C7"/>
+      <corner name="C8"/>
+      <corner name="C9"/>
     </sector>
-    <sector color="red" name="Flyzone">
-      <corner name="p1"/>
-      <corner name="p2"/>
-      <corner name="p3"/>
-      <corner name="p4"/>
+        <sector color="blue" name="Soft_Geofence">
+      <corner name="p5"/>
+      <corner name="p6"/>
+      <corner name="p7"/>
+      <corner name="p8"/>
     </sector>
   </sectors>
+  <modules>
+    <!--module name="follow_me"/-->
+    <module name="nav" type="survey_rectangle_rotorcraft">
+      <define name="RECTANGLE_SURVEY_DEFAULT_SWEEP" value="100"/>
+    </module>
+  </modules>
   <exceptions>
-    <!--Soft Geofencing (go back to Standby)-->
-    <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosAlt() @GT 20.0) @AND
+       <!--Soft Geofencing (go back to Standby)-->
+    <exception cond="Or(!InsideSoft_Geofence(GetPosX(), GetPosY()), GetPosAlt() @GT 20.0) @AND
      !(nav_block == IndexOfBlock('Wait GPS')) @AND
      !(nav_block == IndexOfBlock('Geo init'))" deroute="safe"/>
     <!-- Hard Geofencing (Kill) -->
-    <exception cond="(Or(!InsideCyberZoo(GetPosX(), GetPosY()), GetPosAlt() @GT 80.0) @AND
+    <exception cond="(Or(!InsideHard_Geofence(GetPosX(), GetPosY()), GetPosAlt() @GT 80.0) @AND
       !(IndexOfBlock('Holding point') @GT nav_block) @AND
       !(nav_block >= IndexOfBlock('land here')) @AND
       (autopilot_in_flight() == true) )" deroute="Landed"/>
@@ -70,18 +93,18 @@
   <blocks>
     <block name="Wait GPS">
       <call_once fun="NavKillThrottle()"/>
-      <while cond="!GpsFixValid()"/>
+      <while cond="!GpsFixValid() || !state.ned_initialized_i"/>
     </block>
     <block name="Geo init">
-      <while cond="LessThan(NavBlockTime(), 2)"/>
+      <while cond="LessThan(NavBlockTime(), 10)"/>
       <call_once fun="NavSetAltitudeReferenceHere()"/>
     </block>
     <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
-    <block key="r" name="Start Engine">
-      <call_once fun="NavResurrect()"/>
+     <block key="r" name="Start Engine">
+      <call_once fun="NavResurrect()"/>     
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
       <call_once fun="NavResurrect()"/>
     </block>
@@ -97,13 +120,9 @@
     <block key="s" name="Standby" strip_button="Standby" strip_icon="home.png">
       <stay wp="STDBY"/>
     </block>
-    <block name="go_p5">
-      <stay wp="p5"/>
-    </block>
     <block name="safe">
       <set var="oval_on" value="false"/>
-      <stay wp="p5"/>
-      <exception cond="NavBlockTime() @GT 5" deroute="go_p5"/>
+      <stay wp="HOME"/>
     </block>
     <block key="l" name="land here" strip_button="land here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
