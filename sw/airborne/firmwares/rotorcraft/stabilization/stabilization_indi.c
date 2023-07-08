@@ -40,12 +40,13 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_quat_transformations.h"
-
+#include "modules/tailsitter_auto/tailsitter_auto_toff.h"
 
 #include "state.h"
 #include "modules/actuators/actuators.h"
 #include "modules/core/abi.h"
-
+#include "firmwares/rotorcraft/autopilot_static.h"
+#include <time.h>
 
 // Factor that the estimated G matrix is allowed to deviate from initial one
 #define INDI_ALLOWED_G_FACTOR 2.0
@@ -218,6 +219,14 @@ float servo_cmd_disp;
 float radio_pivot;
 float radio_throttle;
 float code_has_run;
+
+//Variables for the auto take off
+float toff_thrust;
+int16_t actuator_pprz_2; 
+int16_t actuator_pprz_3; 
+bool stage_2 = false;
+bool *st2;
+st2 = &stage_2;
 
  float airspd = 0.0;
 
@@ -710,7 +719,13 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   indi_thrust_increment_set = false;
 #else
   int8_t i;
-  if (radio_control.values[RADIO_PIVOT_SWITCH] < -4500){
+  struct FloatEulers eulers_zxy;
+  struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
+  struct FloatRates * body_rates = stateGetBodyRates_f();
+  float_eulers_of_quat_zxy(&eulers_zxy, statequat);
+
+  //if (radio_control.values[RADIO_PIVOT_SWITCH] < -4500){
+    if (ap.mode == NAV && stateGetAirspeed_f() < 1.0 && fabs(eulers_zxy.theta) > RadOfDeg(85)){
     // initialize pivoting by putting motors up
 	  actuators_pprz[0] = MAX_PPRZ;
 	  actuators_pprz[1] = MAX_PPRZ;
@@ -719,12 +734,12 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     // don't use the ailerons for the takeoff
     actuators_pprz[4] = 0;
     actuators_pprz[5] = 0;
+    sleep(1000);
+    *st2 = true;
   }
-  else if (radio_control.values[RADIO_PIVOT_SWITCH] < 4500){
-    struct FloatEulers eulers_zxy;
-    struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
-    struct FloatRates * body_rates = stateGetBodyRates_f();
-    float_eulers_of_quat_zxy(&eulers_zxy, statequat);
+  //else if (radio_control.values[RADIO_PIVOT_SWITCH] < 4500){
+    else if (*st2 == true) {
+    
     // 60 degrees pitch should get max deflection
 
     
@@ -736,21 +751,26 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     Bound(servo_command,-9600,9600);
 
     servo_cmd_disp = servo_command;
-    radio_pivot = radio_control.values[RADIO_PIVOT_SWITCH];
-    radio_throttle = radio_control.values[RADIO_THROTTLE];
-
+    //radio_pivot = radio_control.values[RADIO_PIVOT_SWITCH];
+    //radio_throttle = radio_control.values[RADIO_THROTTLE];
+    
+    toff_thrust = take_off_thrust();
+    
     actuators_pprz[0] = servo_command;
     actuators_pprz[1] = servo_command;
 
     if (autopilot_get_motors_on()) {
-    int16_t motor_command = radio_control.values[RADIO_THROTTLE] + (1.f - pivot_ratio)*(- body_rates->q * pivot_gain_q - att_err.qy * pivot_gain_theta);
+    int16_t motor_command = toff_thrust + (1.f - pivot_ratio)*(- body_rates->q * pivot_gain_q - att_err.qy * pivot_gain_theta);
     angular_accel_ref.p = att_err.qx * indi_gains.att.p - body_rates->p * indi_gains.rate.p;
     // for (i = 2; i < INDI_NUM_ACT; i++) {
     // // actuators_pprz[i] = g1g2_pseudo_inv[i][0] * angular_accel_ref.p + motor_command;
     // actuators_pprz[i] = g1g2_pseudo_inv[i][0] * angular_accel_ref.p + motor_command;
     // }
-    actuators_pprz[2] = motor_command - angular_accel_ref.p * roll_gain;
-    actuators_pprz[3] = motor_command + angular_accel_ref.p * roll_gain;
+    actuator_pprz_2 = motor_command - angular_accel_ref.p * roll_gain;
+    actuator_pprz_3 = motor_command + angular_accel_ref.p * roll_gain;
+
+    actuators_pprz[2] = actuator_pprz_2; 
+    actuators_pprz[3] = actuator_pprz_3;
 
     } else {
 		for (i = 2; i < INDI_NUM_ACT; i++) {
@@ -764,6 +784,10 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 
     /* reset psi setpoint to current psi angle */
     stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
+
+    if(theta_counter > 3 && airspeed > 4){
+      *st2 = false;
+    }
   }
   else {
 	  /* compute the INDI command */
