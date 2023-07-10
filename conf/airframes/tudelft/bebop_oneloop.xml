@@ -109,6 +109,7 @@
     <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
     <define name="BODY_TO_IMU_PSI" value="0." unit="deg"/>
     <define name="ACCEL_CALIB" value="{{.abi_id=1, .calibrated={.neutral=true, .scale=true},.neutral={171,25,-326}, .scale={{22001,54059,59579},{8998,22092,24933}}}}"/>
+    <define name="IMU_MAG_CALIB" value="{{.abi_id=1, .calibrated={.neutral=true, .scale=true},.neutral={-9,8,121}, .scale={{1143,47395,48383},{152,5978,5811}}}}"/>
   </section>
 
   <!-- local magnetic field -->

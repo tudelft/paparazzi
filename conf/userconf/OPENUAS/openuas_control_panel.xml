@@ -396,9 +396,7 @@
     </session>
     <session name="BebopManual">
       <program name="GCS"/>
-      <program name="Server">
-        <arg flag="-n"/>
-      </program>
+      <program name="Server"/>
       <program name="Messages"/>
       <program name="Data Link">
         <arg flag="-udp"/>
