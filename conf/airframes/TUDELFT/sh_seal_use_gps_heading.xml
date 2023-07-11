@@ -62,12 +62,10 @@ NOTES:
         <define name="IMU_MPU_X_SIGN" value="+1"/>
         <define name="IMU_MPU_Y_SIGN" value="+1"/>
         <define name="IMU_MPU_Z_SIGN" value="-1"/>
-                <!-- <define name="IMU_MPU_LOWPASS_FILTER" value="MPU60X0_DLPF_42HZ"/>
+
+        <define name="IMU_MPU_LOWPASS_FILTER" value="MPU60X0_DLPF_42HZ"/>
         <define name="IMU_MPU_SMPLRT_DIV" value="0"/>
-        <define name="IMU_MPU_ACCEL_LOWPASS_FILTER" value="MPU60X0_DLPF_ACC_44HZ"/> -->
-<!--        <define name="IMU_MPU_LOWPASS_FILTER" value="MPU60X0_DLPF_42HZ"/>-->
-<!--        <define name="IMU_MPU_SMPLRT_DIV" value="0"/>-->
-<!--        <define name="IMU_MPU_ACCEL_LOWPASS_FILTER" value="MPU60X0_DLPF_ACC_44HZ"/>-->
+        <define name="IMU_MPU_ACCEL_LOWPASS_FILTER" value="MPU60X0_DLPF_ACC_44HZ"/>
       </module>
 
       <!--<module name="imu" type="heater"/>--><!-- TODO fix function not found-->
@@ -141,7 +139,7 @@ NOTES:
         <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
         <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
 <!--        <define name="MS45XX_PRESSURE_OFFSET" value="8552.5" />&lt;!&ndash; 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)&ndash;&gt;-->
-        <define name="MS45XX_PRESSURE_OFFSET" value="8545.0"/>  <!-- pressure diff -15~ish -->
+        <define name="MS45XX_PRESSURE_OFFSET" value="8528.7"/>
         <!-- <define name="MS45XX_AIRSPEED_SCALE" value="1.6327"/>--> <!--description="quadratic scale factor to convert differential pressure to airspeed"&ndash;&gt;-->
         <define name="MS45XX_LOWPASS_TAU" value="0.2"/> <!--description="Time constant for second order Butterworth low pass filter"-->
         <define name="USE_AIRSPEED_LOWPASS_FILTER" value="TRUE"/>
@@ -259,8 +257,8 @@ NOTES:
         <define name="CE_PITCH_A" value="0.68"/>
         <define name="CE_PITCH_B" value="0.04697"/>
         <!--      !!!!!!!!! YAW<->ROLL-->
-        <define name="CE_ROLL_A" value="0.7517310"/>
-        <define name="CE_ROLL_B" value="0.02611938"/>
+        <define name="CE_ROLL_A" value="1.0517310"/>
+        <define name="CE_ROLL_B" value="0.02811938"/>
         <!--      <define name="CE_YAW_A" value="0.827970"/>-->
         <define name="CE_YAW_A" value="1.027970"/>
         <define name="CE_YAW_B" value="0.0342179"/>
@@ -402,12 +400,13 @@ NOTES:
         <define name="YAW_EFF_AT_60" value="11.52"/>
         <!--function of the form: A + B*airspeed^2-->
         <!--        scaled (1000)-->
+
         <!--      tune from 1 and 2 -->
-        <define name="CE_PITCH_A" value="-2.1835017"/>
-        <define name="CE_PITCH_B" value="0.05397338"/>
+        <define name="CE_PITCH_A" value="0.68"/>
+        <define name="CE_PITCH_B" value="0.04697"/>
         <!--      !!!!!!!!! YAW<->ROLL-->
-        <define name="CE_ROLL_A" value="0.2517310"/>
-        <define name="CE_ROLL_B" value="0.01611938"/>
+        <define name="CE_ROLL_A" value="0.5817310"/>
+        <define name="CE_ROLL_B" value="0.02211938"/>
         <!--      <define name="CE_YAW_A" value="0.827970"/>-->
         <define name="CE_YAW_A" value="1.027970"/>
         <define name="CE_YAW_B" value="0.0342179"/>
@@ -494,7 +493,7 @@ NOTES:
     <!--  <set servo="S_THROTTLE" value="$th_hold? -9600 : @THRUST"/>-->
     <set servo="S_AILERON_LEFT" value="(autopilot.mode == AP_MODE_FAILSAFE ? 4500 : @ROLL * $manual + actuators_pprz[0] * $autopil)"/>
 <!--    <set servo="S_ELEVATOR" value="-@PITCH * $manual + actuators_pprz[2] * $autopil"/>-->
-     <set servo="S_ELEVATOR" value="(autopilot.mode == AP_MODE_FAILSAFE ? 4000 : @PITCH * $manual + actuators_pprz[2] * $autopil)"/>
+     <set servo="S_ELEVATOR" value="(autopilot.mode == AP_MODE_FAILSAFE ? -4000 : @PITCH * $manual + actuators_pprz[2] * $autopil)"/>
 
      <set servo="S_RUDDER" value="(autopilot.mode == AP_MODE_FAILSAFE ? 0 : @YAW * $manual + actuators_pprz[3] * $autopil)"/>
     <set servo="S_AILERON_RIGHT" value="(autopilot.mode == AP_MODE_FAILSAFE ? -4500 : -@ROLL * $manual + actuators_pprz[1] * $autopil)"/>
@@ -669,9 +668,9 @@ NOTES:
     <define name="G2" value="{0, 0, 0, 0, 0}"/>
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="100.0"/>
+    <define name="REF_ERR_P" value="60.0"/>
     <define name="REF_ERR_Q" value="40.0"/>
-    <define name="REF_ERR_R" value="50.0"/>
+    <define name="REF_ERR_R" value="80.0"/>
     <define name="REF_RATE_P" value="14.0"/>
     <define name="REF_RATE_Q" value="15.0"/>
     <define name="REF_RATE_R" value="15.0"/>
@@ -695,13 +694,13 @@ NOTES:
 
   <section name="STABILIZATION_ATTITUDE" prefix="STABILIZATION_ATTITUDE_">
     <!-- setpoints -->
-    <define name="SP_MAX_PHI"     value="45." unit="deg"/>
+    <define name="SP_MAX_PHI"     value="60." unit="deg"/>
     <define name="SP_MAX_THETA"   value="45." unit="deg"/>
     <define name="SP_MAX_R"       value="90." unit="deg/s"/>
     <define name="DEADBAND_R"     value="250"/>
     <define name="DEADBAND_A"     value="250"/>
 <!--    <define name="SP_PSI_DELTA_LIMIT" value="0.001" unit="deg"/>-->
-      <define name="SP_PSI_DELTA_LIMIT" value="45" unit="deg"/>
+      <define name="SP_PSI_DELTA_LIMIT" value="60" unit="deg"/>
   </section>
 
   <section name="ctrl_eff_scheduling" prefix="FWD_">
@@ -720,7 +719,7 @@ NOTES:
     <define name="ADAPT_THROTTLE_ENABLED" value="FALSE"/>
   </section>
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <define name="MAX_BANK" value="45" unit="deg"/>
+    <define name="MAX_BANK" value="30" unit="deg"/>
     <define name="USE_SPEED_REF" value="TRUE"/>
     <define name="PGAIN" value="50"/>
     <define name="DGAIN" value="120"/>
@@ -733,7 +732,7 @@ NOTES:
       <define name="POS_GAINZ" value="0.2"/>
       <define name="SPEED_GAIN" value="0.85"/>
       <define name="SPEED_GAINZ" value="1.0"/>
-      <define name="MAX_AIRSPEED" value="10."/>
+      <define name="MAX_AIRSPEED" value="10."/>     <!--THIS IS *CRUISE* AISPEED!!! -->
       <define name="ZERO_AIRSPEED" value="FALSE"/>
       <define name="NAV_SPEED_MARGIN" value="10.0"/>
       <define name="PITCH_EFF_SCALING" value="1.0"/>
@@ -743,8 +742,8 @@ NOTES:
       <!--define name="THRUST_DYNAMICS" value="0.04"/-->
       <define name="MIN_THROTTLE" value="0.0"/>
       <define name="MIN_THROTTLE_FWD" value="0.0"/>
-      <define name="MIN_PITCH" value="-115."/>
-      <define name="MAX_PITCH" value="-75."/>
+      <define name="MIN_PITCH" value="-120."/>
+      <define name="MAX_PITCH" value="-60."/>
   </section>
 
   <section name="BAT">
@@ -779,10 +778,10 @@ NOTES:
     <define name="NAV_GLIDE_PITCH_TRIM" value="0.0" unit="deg"/>
 
     <define name="KILL_MODE_DISTANCE" value="MAX_DIST_FROM_HOME*1.3+HOME_RADIUS" unit="m"/>
-    <define name="DEFAULT_CIRCLE_RADIUS" value="70.0" unit="m"/>
+    <define name="DEFAULT_CIRCLE_RADIUS" value="80.0" unit="m"/>
     <define name="HOME_RADIUS" value="DEFAULT_CIRCLE_RADIUS" unit="m"/>
     <define name="LANDING_CIRCLE_RADIUS" value="70.0" unit="m"/>
-    <define name="MIN_CIRCLE_RADIUS" value="60.0" unit="m"/>
+    <define name="MIN_CIRCLE_RADIUS" value="70.0" unit="m"/>
 
     <define name="CARROT" value="5.0" unit="s"/>
 

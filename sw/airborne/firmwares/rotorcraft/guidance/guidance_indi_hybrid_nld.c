@@ -61,6 +61,24 @@
 #define GUIDANCE_INDI_POS_GAINZ 0.5
 #endif
 
+#ifndef GUIDANCE_INDI_MIN_PITCH
+#define GUIDANCE_INDI_MIN_PITCH -120
+#define GUIDANCE_INDI_MAX_PITCH 25
+#endif
+
+#ifndef GUIDANCE_INDI_LIFTD_ASQ
+#define GUIDANCE_INDI_LIFTD_ASQ 0.20
+#endif
+
+/* If lift effectiveness at low airspeed not defined,
+ * just make one interpolation segment that connects to
+ * the quadratic part from 12 m/s onward
+ */
+#ifndef GUIDANCE_INDI_LIFTD_P50
+#define GUIDANCE_INDI_LIFTD_P80 (GUIDANCE_INDI_LIFTD_ASQ*12*12)
+#define GUIDANCE_INDI_LIFTD_P50 (GUIDANCE_INDI_LIFTD_P80/2)
+#endif
+
 struct guidance_indi_hybrid_params gih_params = {
   .pos_gain = GUIDANCE_INDI_POS_GAIN,
   .pos_gainz = GUIDANCE_INDI_POS_GAINZ,
@@ -79,12 +97,26 @@ struct guidance_indi_hybrid_params gih_params = {
 #endif
 float guidance_indi_max_airspeed = GUIDANCE_INDI_MAX_AIRSPEED;
 
+// Tell the guidance that the airspeed needs to be zeroed.
+// Recomended to also put GUIDANCE_INDI_NAV_SPEED_MARGIN low in this case.
+#ifndef GUIDANCE_INDI_ZERO_AIRSPEED
+#define GUIDANCE_INDI_ZERO_AIRSPEED FALSE
+#endif
+
 // Max ground speed that will be commanded
-#define NAV_MAX_SPEED (GUIDANCE_INDI_MAX_AIRSPEED + 10.0)
+#ifndef GUIDANCE_INDI_NAV_SPEED_MARGIN
+#define GUIDANCE_INDI_NAV_SPEED_MARGIN 10.0
+#endif
+#define NAV_MAX_SPEED (GUIDANCE_INDI_MAX_AIRSPEED + GUIDANCE_INDI_NAV_SPEED_MARGIN)
 float nav_max_speed = NAV_MAX_SPEED;
 
 #ifndef MAX_DECELERATION
 #define MAX_DECELERATION 1.
+#endif
+
+/*Airspeed threshold where making a turn is "worth it"*/
+#ifndef TURN_AIRSPEED_TH
+#define TURN_AIRSPEED_TH 10.0
 #endif
 
 /*Boolean to force the heading to a static value (only use for specific experiments)*/
@@ -252,6 +284,10 @@ void guidance_indi_run(float *heading_sp) {
     speed_sp.z = pos_z_err * gih_params.pos_gainz;
   }
 
+    if (stab_indi_kill_throttle) {
+        speed_sp.z = 1.0;
+    }
+
   //for rc control horizontal, rotate from body axes to NED
   float psi = eulers_zxy.psi;
   /*NAV mode*/
@@ -319,6 +355,13 @@ void guidance_indi_run(float *heading_sp) {
     sp_accel.y = sinf(psi) * sp_accel_b.x + cosf(psi) * sp_accel_b.y;
 
     sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
+
+//    FIXME
+    if (stab_indi_kill_throttle) {
+        sp_accel.z = (1.0 - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
+//        Bound(sp_accel.z, -1.0, 3.0);
+    }
+
 //  } else { // Go somewhere in the shortest way
 //
 //    if(airspeed > 10.0) {
@@ -405,7 +448,7 @@ void guidance_indi_run(float *heading_sp) {
 
   //Bound euler angles to prevent flipping
   Bound(guidance_euler_cmd.phi, -guidance_indi_max_bank, guidance_indi_max_bank);
-  Bound(guidance_euler_cmd.theta, -RadOfDeg(120.0), RadOfDeg(25.0));
+  Bound(guidance_euler_cmd.theta, RadOfDeg(GUIDANCE_INDI_MIN_PITCH), RadOfDeg(GUIDANCE_INDI_MAX_PITCH));
 
   // Use the current roll angle to determine the corresponding heading rate of change.
   float coordinated_turn_roll = eulers_zxy.phi;
@@ -433,6 +476,20 @@ void guidance_indi_run(float *heading_sp) {
   } else {
     *heading_sp += omega / PERIODIC_FREQUENCY;
     FLOAT_ANGLE_NORMALIZE(*heading_sp);
+    // limit heading setpoint to be within bounds of current heading
+    #ifdef STABILIZATION_ATTITUDE_SP_PSI_DELTA_LIMIT
+      float delta_limit = STABILIZATION_ATTITUDE_SP_PSI_DELTA_LIMIT;
+      float heading = stabilization_attitude_get_heading_f();
+
+      float delta_psi = *heading_sp - heading;
+      FLOAT_ANGLE_NORMALIZE(delta_psi);
+      if (delta_psi > delta_limit) {
+        *heading_sp = heading + delta_limit;
+      } else if (delta_psi < -delta_limit) {
+        *heading_sp = heading - delta_limit;
+      }
+      FLOAT_ANGLE_NORMALIZE(*heading_sp);
+    #endif
   }
 #endif
 

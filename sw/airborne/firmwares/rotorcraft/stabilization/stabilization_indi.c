@@ -73,6 +73,8 @@ float indi_v[INDI_OUTPUTS];
 float *Bwls[INDI_OUTPUTS];
 int num_iter = 0;
 
+bool stab_indi_kill_throttle = false;
+
 static void lms_estimation(void);
 static void get_actuator_state(void);
 static void calc_g1_element(float dx_error, int8_t i, int8_t j, float mu_extra);
@@ -366,15 +368,6 @@ void stabilization_indi_set_failsafe_setpoint(void)
   stab_att_sp_quat.qx = 0;
   stab_att_sp_quat.qy = 0;
   PPRZ_ITRIG_SIN(stab_att_sp_quat.qz, heading2);
-
-//    int32_t heading2 = stabilization_attitude_get_heading_i() / 2;
-//struct Int32Eulers rpy = {
-//        ANGLE_BFP_OF_REAL(RadOfDeg(15.0)),
-//        ANGLE_BFP_OF_REAL(RadOfDeg(-95.0)),
-//        heading2,
-//};
-//
-//    stabilization_indi_set_rpy_setpoint_i(&rpy);
 }
 
 /**
@@ -585,6 +578,12 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   stabilization_cmd[COMMAND_ROLL] = 42;
   stabilization_cmd[COMMAND_PITCH] = 42;
   stabilization_cmd[COMMAND_YAW] = 42;
+
+//    FIXME
+  if (stab_indi_kill_throttle) {
+      stabilization_cmd[COMMAND_THRUST] = 0;
+      actuators_pprz[4] = 0;
+  }
 }
 
 /**
