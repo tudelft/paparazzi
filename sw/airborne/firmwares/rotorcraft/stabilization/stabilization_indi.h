@@ -57,6 +57,8 @@ struct Indi_gains {
   struct FloatRates rate;
 };
 
+extern bool stab_indi_kill_throttle;
+
 extern struct Indi_gains indi_gains;
 
 extern void stabilization_indi_init(void);

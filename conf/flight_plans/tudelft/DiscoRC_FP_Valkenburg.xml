@@ -2,23 +2,25 @@
 
 <!--        lat0="51.991126" lon0="4.378142"    delft-->
 <!--        lat0="52.1683346" lon0="4.4135455" Valkenburg-->
+<!--        lat0="51.989841" lon0="4.375814"  faculty-->
 <flight_plan alt="70" ground_alt="0" lat0="52.1683346" lon0="4.4135455" max_dist_from_home="500" name="Altura fp Valkenburg" security_height="30">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/telemetry.h"
     #include "modules/radio_control/radio_control.h"
+    #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint name="CLIMB" x="0.0" y="80.0"/>
-    <waypoint name="STDBY" x="-2.0" y="-5.0"/>
-    <waypoint name="p1" x="-19.9" y="30"/>
-    <waypoint name="p2" x="30" y="45"/>
-    <waypoint name="p3" x="45" y="-36.5"/>
-    <waypoint name="p4" x="4.9" y="-34.4"/>
+    <waypoint name="STDBY" x="60.0" y="-10.0"/>
+    <waypoint name="p1" x="-15" y="30"/>
+    <waypoint name="p2" x="130" y="75"/>
+    <waypoint name="p3" x="170" y="-86.5"/>
+    <waypoint name="p4" x="10" y="-84.4"/>
     <waypoint name="TD" x="5.6" y="-10.9"/>
     <waypoint name="GF1" x="-133.6" y="112.0"/>
-    <waypoint name="GF2" x="-63.7" y="-204.1"/>
+    <waypoint name="GF2" x="-63.7" y="-254.1"/>
     <waypoint name="GF3" x="380.6" y="-137.4"/>
     <waypoint name="GF4" x="239.1" y="254.7"/>
   </waypoints>
@@ -31,9 +33,23 @@
     </sector>
   </sectors>
   <exceptions>
-    <exception cond="Or(!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 1500) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyNoThrottle"/>
-    <exception cond="datalink_time > 25 && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="route"/>
-    <exception cond="radio_control.status == RC_REALLY_LOST && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="route"/>
+<!--    <exception cond="radio_control.status == RC_REALLY_LOST" deroute="RCFailsafe"/>-->
+
+    <!--    Datalink and GPS both fails-->
+    <exception cond="And(datalink_time > 10, !GpsFixValid()) && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="ReturnStbyNoThrottle"/>
+
+    <!--    in AUTO2: RC lost, Datalink & GPS valid; -->
+    <exception cond="autopilot.mode == MODE_AUTO2 && radio_control.status == RC_REALLY_LOST && GpsFixValid() && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="Standby"/>
+<!--    AUTO2, Datalink lost, GPS valid; -->
+    <exception cond="autopilot.mode == MODE_AUTO2 && GpsFixValid() && datalink_time > 10  && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="Standby" />
+    <!--    in Auto2: GPS failure, Datalink valid -->
+    <exception cond="autopilot.mode == MODE_AUTO2 && !GpsFixValid()  && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="Standby"/>
+
+    <!--    (outside geofence || alt higher than 150m) && GPS fixed && (not in preparation blocks) : go to Geofence block -->
+    <exception cond="Or(!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() > GetAltRef() + 150) && GpsFixValid() && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point'))" deroute="GeoFence"/>
+
+<!--    <exception cond="datalink_time > 25 && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="route"/>-->
+<!--    <exception cond="radio_control.status == RC_REALLY_LOST && !(nav_block == IndexOfBlock('Wait GPS')) && !(nav_block == IndexOfBlock('Geo init')) && !(nav_block == IndexOfBlock('Holding point')) && !(nav_block == IndexOfBlock('Standby'))" deroute="route"/>-->
   </exceptions>
   <blocks>
     <block name="Wait GPS">
@@ -64,18 +80,14 @@
       <call_once fun="NavResurrect()"/>
       <go from="HOME" throttle="1.0" wp="CLIMB" pitch="-70"/>
     </block>
-<!--    <block name="Takeoff1" strip_button="Takeoff" strip_icon="takeoff.png">-->
-<!--      <set value="true" var="force_forward"/>-->
-<!--      <exception cond="stateGetPositionEnu_f()->z > 50.0" deroute="route"/>-->
-<!--      <call_once fun="nav_set_heading_current()"/>-->
-<!--      <attitude pitch="-10." roll="0" throttle="1.0" vmode="throttle"/>-->
-<!--    </block>-->
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <set value="0" var="stab_indi_kill_throttle"/>
       <set value="true" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <circle radius="nav_radius" wp="STDBY"/>
     </block>
     <block name="route">
+      <set value="0" var="stab_indi_kill_throttle"/>
       <set value="true" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
       <while cond="true">
@@ -85,11 +97,28 @@
         <go from="p4" hmode="route" wp="p1"/>
       </while>
     </block>
+
     <block name="ReturnStbyNoThrottle">
-      <exception cond="And(!(radio_control.status == RC_REALLY_LOST), And(InsideGeofence(GetPosX(), GetPosY()), And(MoreThan(GetPosAlt(), GetAltRef() + 20), LessThan(GetPosAlt(), GetAltRef() + 70))))" deroute="Standby"/>
-      <set value="1" var="autopilot.kill_throttle"/>
+<!--      <exception cond="And(!(radio_control.status == RC_REALLY_LOST), And(InsideGeofence(GetPosX(), GetPosY()), And(MoreThan(GetPosAlt(), GetAltRef() + 20), LessThan(GetPosAlt(), GetAltRef() + 70))))" deroute="Standby"/>-->
+<!--      <set value="1" var="autopilot.kill_throttle"/>-->
+      <set value="1" var="stab_indi_kill_throttle"/>
       <set value="true" var="force_forward"/>
-      <call_once fun="NavKillThrottle()"/>
+<!--      <call_once fun="NavKillThrottle()"/>-->
+      <circle radius="nav_radius" wp="STDBY" throttle="0.0"/>
+    </block>
+
+    <!--      Circle at STDBY without throttle-->
+    <block name="GeoFence">
+      <set value="1" var="stab_indi_kill_throttle"/>
+<!--            <call_once fun="NavKillThrottle()"/>-->
+      <set value="true" var="force_forward"/>
+      <circle radius="nav_radius" wp="STDBY" throttle="0.0"/>
+    </block>
+
+    <block name="RCFailsafe">
+<!--      <set value="1" var="autopilot.kill_throttle"/>-->
+<!--      <set value="true" var="force_forward"/>-->
+<!--      <call_once fun="NavKillThrottle()"/>-->
       <circle radius="nav_radius" wp="STDBY" throttle="0.0"/>
     </block>
   </blocks>
