@@ -137,7 +137,7 @@ float ho_bound(float dt, float x_d[3],float x_bound);
 void rm_2rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm);
 void rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
 void rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
-void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], float k1_rm[3], float k2_rm[3], float k3_rm[3]);
+void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], bool ow_psi, float psi_overwrite[4], float k1_rm[3], float k2_rm[3], float k3_rm[3]);
 void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], float k1_rm[3], float k2_rm[3], float k3_rm[3], float x_d_bound, float x_2d_bound);
 void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3]);
 void calc_model(void);
@@ -364,12 +364,12 @@ float p_nav    ;
 float v_nav    ;
 float a_nav    ;
 float j_nav    ;
-float v_nav_des = 2.5;
+float v_nav_des = 1.2;//2.5;
 float max_a_nav = 8.0;
 float max_v_nav = 5.0;
 
-float r_oval    = 5.0;
-float l_oval    = 10.0;
+float r_oval    = 2.0;//5.0;
+float l_oval    = 0.1;//10.0;
 float psi_oval  = 0.0;
 float p_oval[3] = {0.0,0.0,0.0};
 float v_oval[3] = {0.0,0.0,0.0};
@@ -377,6 +377,7 @@ float a_oval[3] = {0.0,0.0,0.0};
 float j_oval[3] = {0.0,0.0,0.0};
 float lap_oval  = 0.0;
 bool  oval_on   = false;
+bool  ow_psi    = false;
 float psi_des_rad = 0.0;
 float psi_des_deg = 0.0;
 float psi_vec[4] = {0.0, 0.0, 0.0, 0.0};
@@ -517,7 +518,7 @@ float ho_bound(float dt, float x_d[3],float x_bound){
   return fabs(x_d_bound);
 }
 /*Reference Model Definition*/
-void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], float k1_rm[3], float k2_rm[3], float k3_rm[3]){
+void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], bool ow_psi, float psi_overwrite[4], float k1_rm[3], float k2_rm[3], float k3_rm[3]){
   float e_x[3];
   float e_x_rates[3];
   float e_x_d[3];
@@ -529,10 +530,14 @@ void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[
   err_3d(e_x_d, e_x_rates, x_d_ref, k2_rm);
   err_3d(e_x_2d, e_x_d, x_2d_ref, k3_rm);
   float_vect_copy(x_3d_ref,e_x_2d,3);
+  if(ow_psi){x_3d_ref[2] = psi_overwrite[3];}
   integrate_3d(dt, x_2d_ref, x_3d_ref);
+  if(ow_psi){x_2d_ref[2] = psi_overwrite[2];}
   integrate_3d(dt, x_d_ref, x_2d_ref);
+  if(ow_psi){x_d_ref[2] = psi_overwrite[1];}
   float_euler_dot_of_rates_vec(x_d_ref, x_ref, x_d_eul_ref);
   integrate_3d(dt, x_ref, x_d_eul_ref);
+  if(ow_psi){x_ref[2] = psi_overwrite[0];}
   x_ref[2] = convert_angle(x_ref[2]);
 }
 
@@ -563,7 +568,7 @@ void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], f
   float e_x_2d[3];
   printf("x_d_bound: %f\n", x_d_bound);
   printf("norm(x_d_ref): %f\n", float_vect_norm(x_d_ref,3));
-  float x_2d_bound_vel = 1000.0;(x_d_bound - float_vect_norm(x_d_ref,3)) / dt;
+  float x_2d_bound_vel = 1000.0;//(x_d_bound - float_vect_norm(x_d_ref,3)) / dt;
   printf("x_2d_bound_vel: %f\n", x_2d_bound_vel);
   float x_2d_bound_gen = fminf(x_2d_bound_vel, x_2d_bound);
   printf("x_2d_bound_gen: %f\n", x_2d_bound_gen);
@@ -1086,8 +1091,16 @@ void oneloop_andi_attitude_run(bool in_flight)
     float k2_att_rm[3] = {k_p_rm, k_q_rm, k_psi_d_rm};
     float k3_att_rm[3] = {k_pdot_rm, k_qdot_rm, k_psi_2d_rm};
     float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, psi_des_rad};
-    rm_3rd_attitude(dt_1l, att_ref, att_d_ref, att_2d_ref, att_3d_ref, att_des, k1_att_rm, k2_att_rm, k3_att_rm);
+    
     if(oval_on && heading_on) {
+      ow_psi = true;
+    }else{
+      ow_psi = false;
+    }
+
+    rm_3rd_attitude(dt_1l, att_ref, att_d_ref, att_2d_ref, att_3d_ref, att_des, ow_psi, psi_vec, k1_att_rm, k2_att_rm, k3_att_rm);
+
+    if(ow_psi) {
       att_ref[2]    = psi_vec[0];
       att_d_ref[2]  = psi_vec[1];
       att_2d_ref[2] = psi_vec[2];

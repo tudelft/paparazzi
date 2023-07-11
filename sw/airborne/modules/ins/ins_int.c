@@ -431,7 +431,8 @@ void ins_int_update_gps(struct GpsState *gps_s)
   struct NedCoor_i gps_speed_cm_s_ned;
   struct EcefCoor_i ecef_vel_i = ecef_vel_int_from_gps(gps_s);
   ned_of_ecef_vect_i(&gps_speed_cm_s_ned, &ins_int.ltp_def, &ecef_vel_i);
-
+  gps_speed_cm_s_ned.x = gps.ned_vel.x;//100.0;
+  gps_speed_cm_s_ned.y = gps.ned_vel.y;//100.0;
 #if INS_USE_GPS_ALT
   vff_update_z_conf(((float)gps_pos_cm_ned.z) / 100.0, INS_VFF_R_GPS);
 #endif
@@ -590,14 +591,17 @@ static void vel_est_cb(uint8_t sender_id __attribute__((unused)),
 
   // abi message contains an update to the horizontal velocity estimate
 #if USE_HFF
+   printf("I am using HFF\n");
   struct FloatVect2 vel = {vel_ned.x, vel_ned.y};
   struct FloatVect2 Rvel = {noise_x, noise_y};
 
   hff_update_vel(vel,  Rvel);
   ins_update_from_hff();
 #else
+  printf("I am using this\n");
   if (noise_x >= 0.f)
   {
+    printf("I have entered the if statement\n");
     ins_int.ltp_speed.x = SPEED_BFP_OF_REAL(vel_ned.x);
   }
   if (noise_y >= 0.f)
