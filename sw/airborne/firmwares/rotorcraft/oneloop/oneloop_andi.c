@@ -990,12 +990,12 @@ void oneloop_andi_attitude_run(bool in_flight)
   att_2d[1] = ang_acc[1]                            * use_increment;
   att_2d[2] = ang_acc[2]                            * use_increment;
 
-  pos_1l[0] = pos_filt_fo[0].last_out;//stateGetPositionNed_f()->x;   // pos_filt_fo[0].last_out;s
-  pos_1l[1] = pos_filt_fo[1].last_out;//stateGetPositionNed_f()->y;   // pos_filt_fo[1].last_out;s
-  pos_1l[2] = pos_filt_fo[2].last_out;//stateGetPositionNed_f()->z;   // pos_filt_fo[2].last_out;s
-  pos_d[0]  = vel_filt_fo[0].last_out;//stateGetSpeedNed_f()->x;      // vel_filt_fo[0].last_out;s
-  pos_d[1]  = vel_filt_fo[1].last_out;//stateGetSpeedNed_f()->y;      // vel_filt_fo[1].last_out;s
-  pos_d[2]  = vel_filt_fo[2].last_out;//stateGetSpeedNed_f()->z;      // vel_filt_fo[2].last_out;s
+  pos_1l[0] = stateGetPositionNed_f()->x;   // pos_filt_fo[0].last_out;s
+  pos_1l[1] = stateGetPositionNed_f()->y;   // pos_filt_fo[1].last_out;s
+  pos_1l[2] = stateGetPositionNed_f()->z;   // pos_filt_fo[2].last_out;s
+  pos_d[0]  = stateGetSpeedNed_f()->x;      // vel_filt_fo[0].last_out;s
+  pos_d[1]  = stateGetSpeedNed_f()->y;      // vel_filt_fo[1].last_out;s
+  pos_d[2]  = stateGetSpeedNed_f()->z;      // vel_filt_fo[2].last_out;s
   pos_2d[0] = lin_acc[0];
   pos_2d[1] = lin_acc[1];
   pos_2d[2] = lin_acc[2];
