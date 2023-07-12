@@ -591,17 +591,14 @@ static void vel_est_cb(uint8_t sender_id __attribute__((unused)),
 
   // abi message contains an update to the horizontal velocity estimate
 #if USE_HFF
-   printf("I am using HFF\n");
   struct FloatVect2 vel = {vel_ned.x, vel_ned.y};
   struct FloatVect2 Rvel = {noise_x, noise_y};
 
   hff_update_vel(vel,  Rvel);
   ins_update_from_hff();
 #else
-  printf("I am using this\n");
   if (noise_x >= 0.f)
   {
-    printf("I have entered the if statement\n");
     ins_int.ltp_speed.x = SPEED_BFP_OF_REAL(vel_ned.x);
   }
   if (noise_y >= 0.f)
