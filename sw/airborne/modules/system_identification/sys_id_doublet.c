@@ -61,8 +61,8 @@ uint8_t doublet_mode = 0;
 
 uint8_t doublet_axis = 0;
 
-pprz_t doublet_amplitude = 4500;
-float doublet_length_s = 20.0f;
+pprz_t doublet_amplitude = 0;
+float doublet_length_s = 0.5f;
 float doublet_extra_waiting_time_s = 0.0f;
 
 
