@@ -75,6 +75,12 @@
             <define name="DOUBLET_RADIO_CHANNEL" value="6"/>
         </module>
 
+        <!-- <module name="rot_wing_auto_doublet">
+            <define name="ROT_WING_AUTO_DOUBLET_N_ACTUATORS" value="4"/>
+            <define name="ROT_WING_AUTO_DOUBLET_ACTUATORS" value="{0,1,2,3}"/>
+            <define name="ROT_WING_AUTO_DOUBLET_AMPLITUDE" value="{1500,1500,1500,1500}"/>
+        </module> -->
+
     </firmware>
 
     <servos DRIVER="Pwm">
@@ -83,6 +89,7 @@
         <servo NO="2" NAME="MOTOR_BACK"    MIN="1000" NEUTRAL="1200" MAX="2000"/>
         <servo NO="3" NAME="MOTOR_LEFT"    MIN="1000" NEUTRAL="1200" MAX="2000"/>
     </servos>
+    <!-- MIN lim elev: 1000, max lim: 1800 -->
 
     <commands>
         <axis NAME="ROLL" FAILSAFE_VALUE="0"/>
