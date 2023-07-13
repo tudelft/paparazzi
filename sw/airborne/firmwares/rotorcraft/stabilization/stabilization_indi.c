@@ -581,7 +581,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #endif
   }
   //Control allocation Weights as a function of airspeed
-  // float airspd = stateGetAirspeed_f();
+  float airspd = stateGetAirspeed_f();
   float fun_tilt = 0.124875f * airspd - 0.4985f;
   float fun_elevon = -0.124875f * airspd + 1.4995f;
   indi_Wu[0] = (fun_tilt > 1.0f) ? 1.0f: ((fun_tilt < 0.001f) ? 0.001f : fun_tilt);
@@ -727,9 +727,9 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     float_eulers_of_quat_zxy(&eulers_zxy, statequat);
     // 60 degrees pitch should get max deflection
 
-    
+
     float pivot_ratio = 1.f - fabs(eulers_zxy.theta)/RadOfDeg(30.0);
-    
+
     Bound(pivot_ratio, 0.0f, 1.0f);
 
     int16_t servo_command = (-eulers_zxy.theta + pivot_ratio*(att_err.qy * pivot_servogain_theta - pivot_servogain_q * body_rates->q))/(55.0/180.0*M_PI)*9600;
