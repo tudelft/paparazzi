@@ -222,9 +222,9 @@
     <block name="flare_low">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
-      <exception cond="NavDetectGround()" deroute="Holding point"/>
-      <exception cond="!nav_is_in_flight()" deroute="landed"/>
-      <call_once fun="NavStartDetectGround()"/>
+      <!-- <exception cond="NavDetectGround()" deroute="Holding point"/> -->
+      <!-- <exception cond="!nav_is_in_flight()" deroute="landed"/> -->
+      <!-- <call_once fun="NavStartDetectGround()"/> -->
       <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">

@@ -44,7 +44,7 @@
         <define name="MS45XX_I2C_DEV" value="i2c2"/>
         <define name="MS45XX_PRESSURE_RANGE" value="1" /><!-- description="pressure range in psi (default: 1)"-->
         <define name="MS45XX_OUTPUT_TYPE" value="0"/> <!--description="set to 0 for output type A, to 1 for output type B (default: type A)"/>-->
-        <define name="MS45XX_SYNC_SEND" value="TRUE" /> <!--description="flag to enable sending every new measurement via telemetry (default:FALSE)-->
+        <define name="MS45XX_SYNC_SEND" value="FALSE" /> <!--description="flag to enable sending every new measurement via telemetry (default:FALSE)-->
         <define name="MS45XX_PRESSURE_SCALE" value="1.052"/> <!--description="pressure scaling factor to convert raw output to Pa (default: set according to pressure range and output type according to datasheet)"-->
         <define name="MS45XX_PRESSURE_OFFSET" value="8476" /><!-- 8507.3 description="pressure offset in Pa (default: set according to pressure range and output type according to datasheet)-->
         <define name="MS45XX_LOWPASS_TAU" value="0.25"/> <!--description="Time constant for second order Butterworth low pass filter"-->
@@ -249,7 +249,7 @@
     <define name="MAX_VERT_SPEED" value="3.0" unit="m/s"/>
     <define name="MAX_FWD_ACC" value="4.0" unit="m/s^2"/>
     <define name="MIN_FWD_ACC" value="-1.8" unit="m/s^2"/>
-    <define name="MAX_LAT_ACC" value="9.0" unit="m/s^2"/>
+    <define name="MAX_LAT_ACC" value="11.0" unit="m/s^2"/>
     <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/>
   </section>
 
@@ -456,7 +456,7 @@
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
-    <define name="MAX_PHI_INDI" value="30" unit="deg"/>
+    <define name="MAX_PHI_INDI" value="35" unit="deg"/>
     <define name="MAX_AOA_INDI" value="15" unit="deg"/>
     <define name="MIN_AOA_INDI" value="-15" unit="deg"/>
 

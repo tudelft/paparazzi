@@ -1753,6 +1753,9 @@ void overactuated_mixing_run(void)
                             //Compute the incremental ppz cmd for the motors:
                             dshot_cmd_ppz[i] = ( dshot_cmd_state_filtered[i] + K_indi_rad_s_dshot * (indi_u[i] - motor_rad_s_filtered[i]));
 
+                            //Bound the dshot cmd to the max and min PPZ value 
+                            Bound(dshot_cmd_ppz[i], 0, MAX_PPRZ);
+                            
                             //Assign computed cmd to the output array: 
                             overactuated_mixing.commands[i] = (int32_t) (dshot_cmd_ppz[i]);
 
