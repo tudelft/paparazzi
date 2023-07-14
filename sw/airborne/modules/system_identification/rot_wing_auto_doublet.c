@@ -150,4 +150,5 @@ void rot_wing_auto_doublet_on_deactivation(void)
   rot_wing_auto_doublet_activated = false;
   rot_wing_auto_doublet_timer = 0;
   rot_wing_auto_doublet_counter = 0;
+  doublet_amplitude = 0;
 }
