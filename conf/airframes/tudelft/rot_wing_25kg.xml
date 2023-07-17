@@ -6,8 +6,8 @@
      * RC:          SBUS Crossfire
 -->
 
-<airframe name="RotatingWingV3B">
-    <description>RotatingWingV3B</description>
+<airframe name="RotatingWing25Kg">
+    <description>RotatingWing25Kg</description>
 
     <firmware name="rotorcraft">
         <target name="ap" board="cube_orangeplus">
@@ -17,10 +17,7 @@
             </module>
             <module NAME="sys_mon"/>
             <module NAME="flight_recorder"/>
-            <!--<module NAME="adc_generic">
-                <configure VALUE="ADC_4" NAME="ADC_CHANNEL_GENERIC1"/>
-                <configure VALUE="ADC_5" NAME="ADC_CHANNEL_GENERIC2"/>
-            </module>-->
+            <module NAME="actuators_faulhaber"/>
             
             <define VALUE="RADIO_AUX1" NAME="RADIO_TH_HOLD"/>
             <define VALUE="RADIO_AUX2" NAME="RADIO_FMODE"/>
@@ -34,31 +31,21 @@
 
         <module TYPE="transparent" NAME="telemetry">
             <configure VALUE="B115200" NAME="MODEM_BAUD"/>
+            <!--configure VALUE="usb_serial" NAME="MODEM_PORT"/-->
         </module>
 
-        <!-- <module name="telemetry"     type="transparent">
-            <configure name="MODEM_BAUD" value="B115200"/>
-            <configure name="MODEM_PORT" value="usb_serial"/>
-        </module> -->
-
-        <module TYPE="pwm" NAME="actuators">
-            <define name="SERVO_HZ" value="400"/>
+        <module TYPE="uavcan" NAME="actuators">
+            <configure VALUE="TRUE" NAME="UAVCAN_USE_CAN1"/>
+            <configure VALUE="TRUE" NAME="UAVCAN_USE_CAN2"/>
         </module>
 
         <module name="imu" type="cube"/>
+         <module TYPE="ekf2" NAME="ins"/>
 
          <module name="gps"           type="ublox">
             <configure name="UBX_GPS_BAUD" value="B460800"/>
             <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
         </module>
-
-        <module TYPE="indi" NAME="stabilization">
-            <configure name="INDI_NUM_ACT" value="4"/>
-        </module>
-
-        <module name="guidance" type="indi"/>
-
-        <module TYPE="ekf2" NAME="ins"/>
 
         <module NAME="air_data"/>
 
@@ -69,6 +56,11 @@
             <!-- <define name="RM3100_ADDR" value="RM3100_ADDR3"/> -->
             <configure name="MAG_RM3100_I2C_DEV" value="I2C2"/>
         </module>
+
+        <module TYPE="indi" NAME="stabilization">
+            <configure name="INDI_NUM_ACT" value="4"/>
+        </module>
+        <module name="guidance" type="indi"/>
 
         <module name="sys_id_doublet">
             <define name="DOUBLET_AXES" value="{0,1,2,3,4,5,6}"/>
@@ -83,11 +75,24 @@
 
     </firmware>
 
-    <servos DRIVER="Pwm">
-        <servo NO="0" NAME="MOTOR_FRONT"   MIN="1000" NEUTRAL="1200" MAX="2000"/>
-        <servo NO="1" NAME="MOTOR_RIGHT"   MIN="1000" NEUTRAL="1200" MAX="2000"/>
-        <servo NO="2" NAME="MOTOR_BACK"    MIN="1000" NEUTRAL="1200" MAX="2000"/>
-        <servo NO="3" NAME="MOTOR_LEFT"    MIN="1000" NEUTRAL="1200" MAX="2000"/>
+    <servos DRIVER="Uavcan1">
+        <servo NO="0" NAME="MOTOR_FRONT"    MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
+        <servo NO="1" NAME="MOTOR_RIGHT"    MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
+        <servo NO="2" NAME="MOTOR_BACK"     MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
+        <servo NO="3" NAME="MOTOR_LEFT"     MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
+        <servo NO="4" NAME="MOTOR_PUSH"     MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
+        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="-1000" NEUTRAL="0"     MAX="1000"/>
+        <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"     MAX="8191"/>
+    </servos>
+
+    <servos DRIVER="Uavcan2">
+        <servo NO="0" NAME="BMOTOR_FRONT"    MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
+        <servo NO="1" NAME="BMOTOR_RIGHT"    MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
+        <servo NO="2" NAME="BMOTOR_BACK"     MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
+        <servo NO="3" NAME="BMOTOR_LEFT"     MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
+        <servo NO="4" NAME="BMOTOR_PUSH"     MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
+        <servo NO="5" NAME="BSERVO_ELEVATOR" MIN="-1000" NEUTRAL="0"     MAX="1000"/>
+        <servo NO="6" NAME="BSERVO_RUDDER"   MIN="-8191" NEUTRAL="0"     MAX="8191"/>
     </servos>
     <!-- MIN lim elev: 1000, max lim: 1800 -->
 
@@ -114,6 +119,17 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
+        <set VALUE="($th_hold? -9600 : -9600)" SERVO="MOTOR_PUSH"/>
+        <set VALUE="0" SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="0" SERVO="SERVO_RUDDER"/>
+
+        <set VALUE="($th_hold? -9600 : actuators_pprz[0])" SERVO="BMOTOR_FRONT"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="BMOTOR_RIGHT"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="BMOTOR_BACK"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="BMOTOR_LEFT"/>
+        <set VALUE="($th_hold? -9600 : -9600)" SERVO="BMOTOR_PUSH"/>
+        <set VALUE="0" SERVO="BSERVO_ELEVATOR"/>
+        <set VALUE="0" SERVO="BSERVO_RUDDER"/>
     </command_laws>
 
     <section NAME="MISC">
