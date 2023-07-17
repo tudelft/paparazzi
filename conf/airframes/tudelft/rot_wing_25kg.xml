@@ -67,30 +67,30 @@
             <define name="DOUBLET_RADIO_CHANNEL" value="6"/>
         </module>
 
-        <!-- <module name="rot_wing_auto_doublet">
+        <module name="rot_wing_auto_doublet">
             <define name="ROT_WING_AUTO_DOUBLET_N_ACTUATORS" value="4"/>
             <define name="ROT_WING_AUTO_DOUBLET_ACTUATORS" value="{0,1,2,3}"/>
             <define name="ROT_WING_AUTO_DOUBLET_AMPLITUDE" value="{1500,1500,1500,1500}"/>
-        </module> -->
+        </module>
 
     </firmware>
 
     <servos DRIVER="Uavcan1">
-        <servo NO="0" NAME="MOTOR_FRONT"    MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
-        <servo NO="1" NAME="MOTOR_RIGHT"    MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
-        <servo NO="2" NAME="MOTOR_BACK"     MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
-        <servo NO="3" NAME="MOTOR_LEFT"     MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
-        <servo NO="4" NAME="MOTOR_PUSH"     MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
+        <servo NO="0" NAME="MOTOR_FRONT"    MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
+        <servo NO="1" NAME="MOTOR_RIGHT"    MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
+        <servo NO="2" NAME="MOTOR_BACK"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
+        <servo NO="3" NAME="MOTOR_LEFT"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
+        <servo NO="4" NAME="MOTOR_PUSH"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
         <servo NO="5" NAME="SERVO_ELEVATOR" MIN="-1000" NEUTRAL="0"     MAX="1000"/>
         <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"     MAX="8191"/>
     </servos>
 
     <servos DRIVER="Uavcan2">
-        <servo NO="0" NAME="BMOTOR_FRONT"    MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
-        <servo NO="1" NAME="BMOTOR_RIGHT"    MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
-        <servo NO="2" NAME="BMOTOR_BACK"     MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
-        <servo NO="3" NAME="BMOTOR_LEFT"     MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
-        <servo NO="4" NAME="BMOTOR_PUSH"     MIN="-8191" NEUTRAL="-8000" MAX="8191"/>
+        <servo NO="0" NAME="BMOTOR_FRONT"    MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
+        <servo NO="1" NAME="BMOTOR_RIGHT"    MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
+        <servo NO="2" NAME="BMOTOR_BACK"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
+        <servo NO="3" NAME="BMOTOR_LEFT"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
+        <servo NO="4" NAME="BMOTOR_PUSH"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
         <servo NO="5" NAME="BSERVO_ELEVATOR" MIN="-1000" NEUTRAL="0"     MAX="1000"/>
         <servo NO="6" NAME="BSERVO_RUDDER"   MIN="-8191" NEUTRAL="0"     MAX="8191"/>
     </servos>
