@@ -27,6 +27,7 @@
             <define VALUE="IMU_CUBE1_ID" NAME="INS_EKF2_ACCEL_ID"/>
             <define VALUE="IMU_CUBE1_ID" NAME="INS_EKF2_GYRO_ID"/>
             <define name="I2C2_CLOCK_SPEED" value="100000"/>
+            <define name="ADC_CURRENT_DISABLE" value="TRUE"/>
         </target>
 
         <target name="nps" board="pc">
