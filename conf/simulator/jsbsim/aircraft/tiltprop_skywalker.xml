@@ -8,12 +8,12 @@
 		<version>Version 1</version>
 		<description>Simulation model of a tilting propeller tailsitter MAV using the Skywalker x5 foam airframe</description>
 	</fileheader>
-	
+
 <!--**********************************************
 	 			METRICS
-	**********************************************	-->	
-	
-	<!--	
+	**********************************************	-->
+
+	<!--
 	<metrics>
 		<wingarea unit="IN2"> 403 </wingarea>
 	    <wingspan unit="IN"> 47.24 </wingspan>
@@ -40,7 +40,7 @@
 	    </location>
 	</metrics>
 	-->
-	
+
 	<metrics>
 		<wingarea unit="IN2"> 115 </wingarea>
 		<wingspan unit="IN"> 35.4 </wingspan>
@@ -70,16 +70,16 @@
 <!--**********************************************
 	 			MASS BALANCE
 	**********************************************	-->
-	
+
 	<mass_balance>
 	<!--
 		<ixx unit="SLUG*FT2"> 0.0056452996 </ixx>
 		<iyy unit="SLUG*FT2"> 0.02407556 </iyy>
 		<izz unit="SLUG*FT2"> 0.0029480072 </izz> -->
-		<ixx unit="SLUG*FT2"> 0.0488062 </ixx>
-		<iyy unit="SLUG*FT2"> 0.0362506 </iyy>
-		<izz unit="SLUG*FT2"> 0.0129264 </izz> 
-<!--  These are cyclone values	   
+		<ixx unit="SLUG*FT2"> 0.049 </ixx>
+		<iyy unit="SLUG*FT2"> 0.11 </iyy>
+		<izz unit="SLUG*FT2"> 0.022 </izz>
+<!--  These are cyclone values
 		<ixx unit="SLUG*FT2"> 0.0132 </ixx>
 		<iyy unit="SLUG*FT2"> 0.00250 </iyy>
 		<izz unit="SLUG*FT2"> 0.0150 </izz>-->
@@ -93,15 +93,15 @@
 			<z> 0 </z>
 		</location>
 	</mass_balance>
-	
-	
+
+
 <!--**********************************************
 	 			GROUND CONTACTS
 	**********************************************
 	The locations in this section are given in the
 	structural coordinate system					-->
 	<ground_reactions>
-		
+
 	    <contact type="STRUCTURE" name="CONTACT_FRONT">
 	      <location unit="M">
 	        <x> -0.15 </x>
@@ -117,8 +117,8 @@
 	      <brake_group> NONE </brake_group>
 	      <retractable>0</retractable>
 	    </contact>
-		
-		
+
+
 	    <contact type="STRUCTURE" name="CONTACT_BACK">
 	      <location unit="M">
 	        <x> 0.15</x>
@@ -134,8 +134,8 @@
 	      <brake_group> NONE </brake_group>
 	      <retractable>0</retractable>
 	    </contact>
-		
-		
+
+
 	    <contact type="STRUCTURE" name="CONTACT_RIGHT">
 	      <location unit="M">
 	        <x> 0.0  </x>
@@ -151,7 +151,7 @@
 	      <brake_group> NONE </brake_group>
 	      <retractable>0</retractable>
 	    </contact>
-	
+
 		<contact type="STRUCTURE" name="CONTACT_LEFT">
 	      <location unit="M">
 	        <x> 0.0  </x>
@@ -171,7 +171,7 @@
 
 <!--**********************************************
 	 			FLIGHT CONTROLS
-	**********************************************	-->		
+	**********************************************	-->
 
 	<flight_control name="actuator_dynamics">
 		<channel name="filtering">
@@ -236,10 +236,10 @@
 			</lag_filter>
 		</channel>
 	</flight_control> -->
-	
+
 <!--**********************************************
 	 			EXTERNAL REACTIONS
-	**********************************************	-->	
+	**********************************************	-->
 	<!-- Same order as in the above section -->
 	<external_reactions>
 		<property> fcs/tilt_left </property>
@@ -250,12 +250,12 @@
 		<property> fcs/mot_right_lag </property>
 		<property> fcs/mot_left </property>
 		<property> fcs/mot_left_lag </property>
-	
-		
 
-		
+
+
+
 		<!-- Lift motors: force couples motors -->
-		
+
 		<!--________________LEFT MOTOR________________-->
 		<force name="mot_left_1" frame="BODY" unit="LBS">
 			<function>
@@ -296,7 +296,7 @@
 				<z> 0 </z>
 			</direction>
 		</force>
-		
+
 		<force name="mot_left_2" frame="BODY" unit="LBS">
 			<function>
 				<product>
@@ -336,7 +336,7 @@
 				<z> -1 </z>
 			</direction>
 		</force>
-		
+
 		<!--________________RIGHT MOTOR________________-->
 		<force name="mot_right_1" frame="BODY" unit="LBS">
 			<function>
@@ -377,7 +377,7 @@
 				<z> 0 </z>
 			</direction>
 		</force>
-		
+
 		<force name="mot_right_2" frame="BODY" unit="LBS">
 			<function>
 				<product>
@@ -417,18 +417,18 @@
 				<z> -1 </z>
 			</direction>
 		</force>
-		
-		
+
+
 	</external_reactions>
-	
+
 	<!-- The below "<propulsion/> was commented out by me -->
 	<!--    <propulsion/> -->
-	
+
 	<flight_control name="FGFCS"/>
 
 	<aerodynamics file="Systems/aerodynamics_tiltprop_tailsitter.xml"/>
-	
-	
+
+
 </fdm_config>
 
 
