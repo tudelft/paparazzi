@@ -74,6 +74,8 @@ static void file_logger_write_header(FILE *file) {
 #endif
 }
 
+#include "modules/actuators/actuators.h"
+
 /** Write CSV row
  * Write values at this timestamp to log file. Make sure that the printf's match
  * the column headers of file_logger_write_header! Don't forget the \n at the
@@ -85,19 +87,17 @@ static void file_logger_write_row(FILE *file) {
   struct NedCoor_f *vel = stateGetSpeedNed_f();
   struct FloatEulers *att = stateGetNedToBodyEulers_f();
   struct FloatRates *rates = stateGetBodyRates_f();
+  struct FloatQuat * statequat = stateGetNedToBodyQuat_f();
+  struct Int32Vect3 *acc = stateGetAccelBody_i();
+  struct FloatVect3 acc_f = {ACCEL_FLOAT_OF_BFP(acc->x), ACCEL_FLOAT_OF_BFP(acc->y), ACCEL_FLOAT_OF_BFP(acc->z)};
 
   fprintf(file, "%f,", get_sys_time_float());
+  fprintf(file, "%d,%d,%d,%d,%d,%d,", actuators_pprz[0],actuators_pprz[1],actuators_pprz[2],actuators_pprz[3],actuators_pprz[4],actuators_pprz[5]);
+  fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
   fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
   fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
-  fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
-  fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
-#ifdef COMMAND_THRUST
-  fprintf(file, "%d,%d,%d,%d\n",
-      stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
-      stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
-#else
-  fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
-#endif
+  fprintf(file, "%f,%f,%f,", acc_f.x, acc_f.y, acc_f.z);
+  fprintf(file, "%f,%f,%f,%f\n", statequat->qi, statequat->qx,statequat->qy,statequat->qz);
 }
 
 

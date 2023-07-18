@@ -41,7 +41,7 @@
       <module name="udp"/>
       <module name="radio_control" type="datalink"/>
       <module name="logger_file">
-        <define name="FILE_LOGGER_PATH" value="/home/gervaselovellprescod/Documents/Logs/SIM_logs"/>
+        <define name="FILE_LOGGER_PATH" value="home/ewoud"/>
       </module>
 
       <!--Switch advanced INDI scheduling functions on or off-->
