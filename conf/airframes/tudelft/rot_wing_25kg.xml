@@ -29,6 +29,17 @@
             <define name="I2C2_CLOCK_SPEED" value="100000"/>
         </target>
 
+        <target name="nps" board="pc">
+            <module name="radio_control" type="datalink"/>
+            <module name="fdm" type="jsbsim"/>
+
+            <!--Not dealing with these in the simulation-->
+            <define name="RADIO_TH_HOLD"     value="0"/> <!-- Throttle hold in command laws -->
+            <define name="RADIO_FMODE"       value="0"/> <!-- Throttle curve select -->
+            <define name="RADIO_FBW_MODE"    value="0"/> <!-- Switch between AP and FBW control -->
+            <define name="RADIO_KILL_SWITCH" value="0"/>
+        </target>
+
         <module TYPE="transparent" NAME="telemetry">
             <configure VALUE="B115200" NAME="MODEM_BAUD"/>
             <!--configure VALUE="usb_serial" NAME="MODEM_PORT"/-->
@@ -60,7 +71,8 @@
         <module TYPE="indi" NAME="stabilization">
             <configure name="INDI_NUM_ACT" value="6"/>
         </module>
-        <module name="guidance" type="indi"/>
+        <module name="guidance" type="indi_rot_wing"/>
+        <module name="nav_hybrid"/>
 
         <module name="sys_id_doublet">
             <define name="DOUBLET_AXES" value="{0,1,2,3,4,5,6}"/>
@@ -80,7 +92,7 @@
         <servo NO="1" NAME="MOTOR_RIGHT"    MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
         <servo NO="2" NAME="MOTOR_BACK"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
         <servo NO="3" NAME="MOTOR_LEFT"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
-        <servo NO="4" NAME="MOTOR_PUSH"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
+        <servo NO="4" NAME="MOTOR_PUSH"     MIN="-8191" NEUTRAL="-8191" MAX="8191"/>
         <servo NO="5" NAME="SERVO_ELEVATOR" MIN="-8191" NEUTRAL="-8191" MAX="4900"/>
         <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"     MAX="8191"/>
     </servos>
@@ -90,7 +102,7 @@
         <servo NO="1" NAME="BMOTOR_RIGHT"    MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
         <servo NO="2" NAME="BMOTOR_BACK"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
         <servo NO="3" NAME="BMOTOR_LEFT"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
-        <servo NO="4" NAME="BMOTOR_PUSH"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
+        <servo NO="4" NAME="BMOTOR_PUSH"     MIN="-8191" NEUTRAL="-8191" MAX="8191"/>
         <servo NO="5" NAME="BSERVO_ELEVATOR" MIN="-8191" NEUTRAL="-8191" MAX="4900"/>
         <servo NO="6" NAME="BSERVO_RUDDER"   MIN="-8191" NEUTRAL="0"     MAX="8191"/>
     </servos>
@@ -119,7 +131,7 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
-        <set VALUE="($th_hold? -9600 : -9600)" SERVO="MOTOR_PUSH"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[6])" SERVO="MOTOR_PUSH"/>
         <set VALUE="0" SERVO="SERVO_ELEVATOR"/>
         <set VALUE="0" SERVO="SERVO_RUDDER"/>
 
@@ -127,7 +139,7 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="BMOTOR_RIGHT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="BMOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="BMOTOR_LEFT"/>
-        <set VALUE="($th_hold? -9600 : -9600)" SERVO="BMOTOR_PUSH"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[6])" SERVO="BMOTOR_PUSH"/>
         <set VALUE="0" SERVO="BSERVO_ELEVATOR"/>
         <set VALUE="0" SERVO="BSERVO_RUDDER"/>
     </command_laws>
@@ -247,8 +259,8 @@
         <define name="FILTER_CUTOFF" value="2.0"/>
         <define name="HEADING_BANK_GAIN" value="5."/>
         <define name="MAX_AIRSPEED" value="17.0"/>
-        <!-- <define name="PITCH_LIFT_EFF" value="0.0"/>
-        <define name="NAV_CIRCLE_DIST" value="60."/> -->
+        <define name="PITCH_LIFT_EFF" value="0.0"/>
+        <!-- <define name="NAV_CIRCLE_DIST" value="60."/> -->
         <!--<define name="MIN_THROTTLE" value="0."/>
         <define name="MIN_PITCH" value="-35."/>
         <define name="MAX_PITCH" value="35."/>
@@ -279,12 +291,12 @@
         <define VALUE="12" NAME="BAT_NB_CELLS"/>
     </section>
 
-    <!-- <section name="SIMULATOR" prefix="NPS_">
-        <define name="ACTUATOR_NAMES" value="front_motor, right_motor, back_motor, left_motor, rudder, elevator, aileron_left, aileron_right, pusher" type="string[]"/>
-        <define name="JSBSIM_MODEL" value="rotwingv3a" type="string"/>
+    <section name="SIMULATOR" prefix="NPS_">
+        <define name="ACTUATOR_NAMES" value="front_motor, right_motor, back_motor, left_motor, rudder, elevator, pusher" type="string[]"/>
+        <define name="JSBSIM_MODEL" value="rotwing25" type="string"/>
         <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
-        <define name="COMMANDS_NB" value="9"/>
+        <define name="COMMANDS_NB" value="7"/>
         <define name="NO_MOTOR_MIXING" value="TRUE"/>
         <define name="JS_AXIS_MODE" value="4"/>
-    </section> -->
+    </section>
 </airframe>
