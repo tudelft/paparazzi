@@ -147,7 +147,7 @@
     </section>
 
     <section name="IMU" prefix="IMU_">
-        <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-3,3,13}, .scale={{15146,60067,2567},{1551,6124,263}}}}"/>
+        <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-3,3,13}, .scale={{15146,60067,2567},{1551,6124,263}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-3,3,13}, .scale={{15146,60067,2567},{1551,6124,263}}}}"/>
         <!-- <define name="ACCEL_CALIB" value="{{.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-3,3,13}, .scale={{15146,60067,2567},{1551,6124,263}}}}"/> -->
 
         <!-- <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={-14,3,42}, .scale={{17279,2209,36874},{30247,3800,64095}}}}"/> -->
@@ -195,8 +195,8 @@
         <define VALUE="{1.6, 0.0,   -1.6, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
         <define VALUE="{-0.2, 0.1, -0.35, 0.35, 0.0, 0.0}" NAME="G1_YAW"/>-->
         <!--With tail effectiveness values-->
-        <define VALUE="{0.0, -10.0, 0.0, 10.0}" NAME="G1_ROLL"/>
-        <define VALUE="{2.0, 0.0, -2.0, 0.0}" NAME="G1_PITCH"/>
+        <define VALUE="{0.0, -8.5, 0.0, 8.5}" NAME="G1_ROLL"/>
+        <define VALUE="{1.0, 0.0, -1.0, 0.0}" NAME="G1_PITCH"/>
         <define VALUE="{-0.5, 0.6, -0.5, 0.6}" NAME="G1_YAW"/>
         <!-- <define VALUE="{-0.43, 0.43, -0.43, 0.43, 0.0, 0.0}" NAME="G1_YAW"/> -->
         <!--<define VALUE="{-0.2, 0.2, -0.2, 0.2, 0.0, 0.0}" NAME="G1_YAW"/>-->
@@ -220,8 +220,8 @@
         <define VALUE="7.2" NAME="REF_RATE_Q"/>
         <define VALUE="3.9" NAME="REF_RATE_R"/>
         <define VALUE="30.0" UNIT="deg/s" NAME="MAX_R"/>
-        <define VALUE="20.0" NAME="FILT_CUTOFF_P"/>
-        <define VALUE="20.0" NAME="FILT_CUTOFF_Q"/>
+        <define VALUE="5.0" NAME="FILT_CUTOFF_P"/>
+        <define VALUE="5.0" NAME="FILT_CUTOFF_Q"/>
         <define VALUE="5.0" NAME="FILT_CUTOFF_R"/>
         <define VALUE="2.0" NAME="FILT_CUTOFF"/>
         <define VALUE="0.5" NAME="FILT_CUTOFF_RDOT"/>
