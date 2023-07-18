@@ -79,4 +79,7 @@ extern float guidance_indi_max_bank;
 extern bool force_forward;       ///< forward flight for hybrid nav
 
 
+extern float lift_pitch_eff;
+extern float guidance_indi_pitch_eff_scaling;
+
 #endif /* GUIDANCE_INDI_HYBRID_H */

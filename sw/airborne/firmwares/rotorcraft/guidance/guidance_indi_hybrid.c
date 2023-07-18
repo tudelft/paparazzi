@@ -130,6 +130,18 @@ static void guidance_indi_filter_thrust(void);
 #endif
 #endif
 
+#ifdef GUIDANCE_INDI_LINE_GAIN
+float guidance_indi_line_gain = GUIDANCE_INDI_LINE_GAIN;
+#else
+float guidance_indi_line_gain = 1.0;
+#endif
+
+#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
+#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
+#endif
+
+float guidance_indi_pitch_eff_scaling = GUIDANCE_INDI_PITCH_EFF_SCALING;
+
 float inv_eff[4];
 
 // Max bank angle in radians
@@ -648,10 +660,6 @@ void guidance_indi_calcg_wing(struct FloatMat33 *Gmat) {
   float cpsi = cosf(eulers_zxy.psi);
   //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
 
-#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
-#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
-#endif
-
   /*Amount of lift produced by the wing*/
   float pitch_lift = eulers_zxy.theta;
   Bound(pitch_lift,-M_PI_2,0);
@@ -664,9 +672,9 @@ void guidance_indi_calcg_wing(struct FloatMat33 *Gmat) {
   RMAT_ELMT(*Gmat, 0, 0) =  cphi*ctheta*spsi*T + cphi*spsi*lift;
   RMAT_ELMT(*Gmat, 1, 0) = -cphi*ctheta*cpsi*T - cphi*cpsi*lift;
   RMAT_ELMT(*Gmat, 2, 0) = -sphi*ctheta*T -sphi*lift;
-  RMAT_ELMT(*Gmat, 0, 1) = (ctheta*cpsi - sphi*stheta*spsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
-  RMAT_ELMT(*Gmat, 1, 1) = (ctheta*spsi + sphi*stheta*cpsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
-  RMAT_ELMT(*Gmat, 2, 1) = -cphi*stheta*T*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+  RMAT_ELMT(*Gmat, 0, 1) = (ctheta*cpsi - sphi*stheta*spsi)*T*guidance_indi_pitch_eff_scaling + sphi*spsi*liftd;
+  RMAT_ELMT(*Gmat, 1, 1) = (ctheta*spsi + sphi*stheta*cpsi)*T*guidance_indi_pitch_eff_scaling - sphi*cpsi*liftd;
+  RMAT_ELMT(*Gmat, 2, 1) = -cphi*stheta*T*guidance_indi_pitch_eff_scaling + cphi*liftd;
   RMAT_ELMT(*Gmat, 0, 2) = stheta*cpsi + sphi*ctheta*spsi;
   RMAT_ELMT(*Gmat, 1, 2) = stheta*spsi - sphi*ctheta*cpsi;
   RMAT_ELMT(*Gmat, 2, 2) = cphi*ctheta;
