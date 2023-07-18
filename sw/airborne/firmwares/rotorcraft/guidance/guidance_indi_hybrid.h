@@ -56,4 +56,7 @@ extern float nav_max_speed;
 extern bool take_heading_control;
 extern float guidance_indi_max_bank;
 
+extern float lift_pitch_eff;
+extern float guidance_indi_pitch_eff_scaling;
+
 #endif /* GUIDANCE_INDI_HYBRID_H */
