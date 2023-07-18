@@ -82,9 +82,15 @@ int16_t actuators_uavcan2cmd_values[SERVOS_UAVCAN2CMD_NB];
 #define UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_SIGNATURE   (0xD8A7486238EC3AF3ULL)
 #define UAVCAN_EQUIPMENT_ACTUATOR_ARRAYCOMMAND_MAX_SIZE    ((484 + 7)/8)
 
+/* uavcan EQUIMPENT_DEVICE_TEMPERATURE message definition */
+#define UAVCAN_EQUIPMENT_DEVICE_TEMPERATURE_ID             1110
+#define UAVCAN_EQUIPMENT_DEVICE_TEMPERATURE_SIGNATURE      (0x70261C28A94144C6ULL)
+#define UAVCAN_EQUIPMENT_DEVICE_TEMPERATURE_MAX_SIZE       ((40 + 7)/8)
+
 /* private variables */
 static bool actuators_uavcan_initialized = false;
 static uavcan_event esc_status_ev;
+static uavcan_event device_temperature_ev;
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -169,8 +175,8 @@ static void actuators_uavcan_esc_status_cb(struct uavcan_iface_t *iface, CanardR
   telem[esc_idx].voltage = canardConvertFloat16ToNativeFloat(tmp_float);
   canardDecodeScalar(transfer, 48, 16, true, (void *)&tmp_float);
   telem[esc_idx].current = canardConvertFloat16ToNativeFloat(tmp_float);
-  canardDecodeScalar(transfer, 64, 16, true, (void *)&tmp_float);
-  telem[esc_idx].temperature = canardConvertFloat16ToNativeFloat(tmp_float);
+  //canardDecodeScalar(transfer, 64, 16, true, (void *)&tmp_float);
+  //telem[esc_idx].temperature = canardConvertFloat16ToNativeFloat(tmp_float);
   canardDecodeScalar(transfer, 80, 18, true, (void *)&telem[esc_idx].rpm);
 
 #ifdef UAVCAN_ACTUATORS_USE_CURRENT
@@ -200,6 +206,41 @@ static void actuators_uavcan_esc_status_cb(struct uavcan_iface_t *iface, CanardR
 }
 
 /**
+ * Whevener an DEVICE_TEMPERATURE message from the EQUIPMENT group is received
+ */
+static void actuators_uavcan_device_temperature_cb(struct uavcan_iface_t *iface, CanardRxTransfer *transfer)
+{
+  uint16_t device_id;
+  uint16_t tmp_float;
+
+  struct actuators_uavcan_telem_t *telem = NULL;
+  uint8_t max_id = 0;
+#ifdef SERVOS_UAVCAN1_NB
+  if (iface == &uavcan1) {
+    telem = uavcan1_telem;
+    max_id = SERVOS_UAVCAN1_NB;
+  }
+#endif
+#ifdef SERVOS_UAVCAN2_NB
+  if (iface == &uavcan2) {
+    telem = uavcan2_telem;
+    max_id = SERVOS_UAVCAN2_NB;
+  }
+#endif
+
+
+  canardDecodeScalar(transfer, 0, 16, false, (void*)&device_id);
+  //Could not find the right interface
+  if (device_id >= max_id || telem == NULL || max_id == 0) {
+    return;
+  }
+
+  canardDecodeScalar(transfer, 16, 16, false, (void*)&tmp_float);
+  telem[device_id].temperature = canardConvertFloat16ToNativeFloat(tmp_float);
+}
+
+
+/**
  * Initialize an uavcan interface
  */
 void actuators_uavcan_init(struct uavcan_iface_t *iface __attribute__((unused)))
@@ -210,6 +251,9 @@ void actuators_uavcan_init(struct uavcan_iface_t *iface __attribute__((unused)))
   // Bind uavcan ESC_STATUS message from EQUIPMENT
   uavcan_bind(UAVCAN_EQUIPMENT_ESC_STATUS_ID, UAVCAN_EQUIPMENT_ESC_STATUS_SIGNATURE, &esc_status_ev,
               &actuators_uavcan_esc_status_cb);
+  // Bind uavcan DEVICE_TEMPERATURE message from EQUIPMENT
+  uavcan_bind(UAVCAN_EQUIPMENT_DEVICE_TEMPERATURE_ID, UAVCAN_EQUIPMENT_DEVICE_TEMPERATURE_SIGNATURE, &device_temperature_ev,
+              &actuators_uavcan_device_temperature_cb);
 
   // Configure telemetry
 #if PERIODIC_TELEMETRY
