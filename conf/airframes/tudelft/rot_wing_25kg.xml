@@ -58,7 +58,7 @@
         </module>
 
         <module TYPE="indi" NAME="stabilization">
-            <configure name="INDI_NUM_ACT" value="4"/>
+            <configure name="INDI_NUM_ACT" value="6"/>
         </module>
         <module name="guidance" type="indi"/>
 
@@ -81,7 +81,7 @@
         <servo NO="2" NAME="MOTOR_BACK"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
         <servo NO="3" NAME="MOTOR_LEFT"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
         <servo NO="4" NAME="MOTOR_PUSH"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
-        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="-1000" NEUTRAL="0"     MAX="1000"/>
+        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="-8191" NEUTRAL="-8191" MAX="4900"/>
         <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"     MAX="8191"/>
     </servos>
 
@@ -91,7 +91,7 @@
         <servo NO="2" NAME="BMOTOR_BACK"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
         <servo NO="3" NAME="BMOTOR_LEFT"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
         <servo NO="4" NAME="BMOTOR_PUSH"     MIN="-8191" NEUTRAL="-5000" MAX="8191"/>
-        <servo NO="5" NAME="BSERVO_ELEVATOR" MIN="-1000" NEUTRAL="0"     MAX="1000"/>
+        <servo NO="5" NAME="BSERVO_ELEVATOR" MIN="-8191" NEUTRAL="-8191" MAX="4900"/>
         <servo NO="6" NAME="BSERVO_RUDDER"   MIN="-8191" NEUTRAL="0"     MAX="8191"/>
     </servos>
     <!-- MIN lim elev: 1000, max lim: 1800 -->
@@ -191,28 +191,13 @@
     </section>
 
     <section PREFIX="STABILIZATION_INDI_" NAME="STABILIZATION_ATTITUDE_INDI">
-        <!--<define VALUE="{0.0, -11.0, 0.0,   11.0, 0.0, 0.0}" NAME="G1_ROLL"/>
-        <define VALUE="{1.6, 0.0,   -1.6, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-0.2, 0.1, -0.35, 0.35, 0.0, 0.0}" NAME="G1_YAW"/>-->
-        <!--With tail effectiveness values-->
-        <define VALUE="{0.0, -8.5, 0.0, 8.5}" NAME="G1_ROLL"/>
-        <define VALUE="{1.0, 0.0, -1.0, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-0.5, 0.6, -0.5, 0.6}" NAME="G1_YAW"/>
-        <!-- <define VALUE="{-0.43, 0.43, -0.43, 0.43, 0.0, 0.0}" NAME="G1_YAW"/> -->
-        <!--<define VALUE="{-0.2, 0.2, -0.2, 0.2, 0.0, 0.0}" NAME="G1_YAW"/>-->
-        <!--With wing effectiveness values-->
-        <!--<define VALUE="{0.0, -8.3, 0.0,   8.7, 0.0, 0.0}" NAME="G1_ROLL"/>
-        <define VALUE="{0.85, 0.0,   -0.97, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-0.12, 0.25, -0.21, 0.25, 0.0, 0.0}" NAME="G1_YAW"/>-->
-        <define VALUE="{-0.575,   -0.575,  -0.575, -0.575}" NAME="G1_THRUST"/>
-        <define VALUE="{0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
-        <!-- <define VALUE="0.00055" NAME="PUSHER_PROP_EFFECTIVENESS"/>
-        <define VALUE="0.047" NAME="PUSHER_PROP_DYN"/> -->
-        <!--<define VALUE="{0.00, -30.0, 0.0,   30.0}" NAME="G1_ROLL"/>
-        <define VALUE="{6.0, 0.0,   -6.0, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-1.1, 1.1, -1.1, 1.1}" NAME="G1_YAW"/>
-        <define VALUE="{-0.5,   -0.5,  -0.5,   -0.5}" NAME="G1_THRUST"/>
-        <define VALUE="{0.0, 0.0, 0.0, 0.0}" NAME="G2"/>-->
+        <define VALUE="{0.0, -8.5, 0.0, 8.5, 0.0, 0.0}" NAME="G1_ROLL"/>
+        <define VALUE="{1.0, 0.0, -1.0, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
+        <define VALUE="{-0.5, 0.6, -0.5, 0.6, 0.0, 0.0}" NAME="G1_YAW"/>
+        <define VALUE="{-0.575,   -0.575,  -0.575, -0.575, 0.0, 0.0}" NAME="G1_THRUST"/>
+        <define VALUE="{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
+        <define VALUE="0.0009" NAME="PUSHER_PROP_EFFECTIVENESS"/>
+        <define VALUE="0.047" NAME="PUSHER_PROP_DYN"/>
         <define VALUE="40.0" NAME="REF_ERR_P"/>
         <define VALUE="32.0" NAME="REF_ERR_Q"/>
         <define VALUE="23.0" NAME="REF_ERR_R"/>
@@ -227,8 +212,8 @@
         <define VALUE="0.5" NAME="FILT_CUTOFF_RDOT"/>
         <define VALUE="2.0" NAME="ESTIMATION_FILT_CUTOFF"/>
         <define VALUE="TRUE" NAME="FILTER_YAW_RATE"/>
-        <define VALUE="{0.024, 0.024, 0.024, 0.024}" NAME="ACT_DYN"/>
-        <define VALUE="{0, 0, 0, 0}" NAME="ACT_IS_SERVO"/>
+        <define VALUE="{0.024, 0.024, 0.024, 0.024, 0.1, 0.1}" NAME="ACT_DYN"/>
+        <define VALUE="{0, 0, 0, 0, 1, 1}" NAME="ACT_IS_SERVO"/>
         <define VALUE="{1000, 1000, 1, 100}" NAME="WLS_PRIORITIES"/>
         <define VALUE="FALSE" NAME="USE_ADAPTIVE"/>
         <define VALUE="0.001" NAME="ADAPTIVE_MU"/>
