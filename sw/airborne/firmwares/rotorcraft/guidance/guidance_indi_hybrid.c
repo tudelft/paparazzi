@@ -165,6 +165,17 @@ static void guidance_indi_filter_thrust(void);
 
 float climb_vspeed_fwd = GUIDANCE_INDI_CLIMB_SPEED_FWD;
 float descend_vspeed_fwd = GUIDANCE_INDI_DESCEND_SPEED_FWD;
+#ifdef GUIDANCE_INDI_LINE_GAIN
+float guidance_indi_line_gain = GUIDANCE_INDI_LINE_GAIN;
+#else
+float guidance_indi_line_gain = 1.0;
+#endif
+
+#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
+#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
+#endif
+
+float guidance_indi_pitch_eff_scaling = GUIDANCE_INDI_PITCH_EFF_SCALING;
 
 float inv_eff[4];
 
@@ -762,10 +773,6 @@ void WEAK guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_I
   float cpsi = cosf(eulers_zxy.psi);
   //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
 
-#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
-#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
-#endif
-
   /*Amount of lift produced by the wing*/
   float pitch_lift = eulers_zxy.theta;
   Bound(pitch_lift,-M_PI_2,0);
@@ -778,9 +785,9 @@ void WEAK guidance_indi_calcg_wing(float Gmat[GUIDANCE_INDI_HYBRID_V][GUIDANCE_I
   Gmat[0][0] =  cphi*ctheta*spsi*T + cphi*spsi*lift;
   Gmat[1][0] = -cphi*ctheta*cpsi*T - cphi*cpsi*lift;
   Gmat[2][0] = -sphi*ctheta*T -sphi*lift;
-  Gmat[0][1] = (ctheta*cpsi - sphi*stheta*spsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
-  Gmat[1][1] = (ctheta*spsi + sphi*stheta*cpsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
-  Gmat[2][1] = -cphi*stheta*T*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+  Gmat[0][1] = (ctheta*cpsi - sphi*stheta*spsi)*T*guidance_indi_pitch_eff_scaling + sphi*spsi*liftd;
+  Gmat[1][1] = (ctheta*spsi + sphi*stheta*cpsi)*T*guidance_indi_pitch_eff_scaling - sphi*cpsi*liftd;
+  Gmat[2][1] = -cphi*stheta*T*guidance_indi_pitch_eff_scaling + cphi*liftd;
   Gmat[0][2] = stheta*cpsi + sphi*ctheta*spsi;
   Gmat[1][2] = stheta*spsi - sphi*ctheta*cpsi;
   Gmat[2][2] = cphi*ctheta;
