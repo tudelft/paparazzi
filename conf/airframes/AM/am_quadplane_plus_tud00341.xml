@@ -58,11 +58,10 @@
       <!-- If one want to use a Joystick over connection one can us this instead of sbus-->
       <module name="radio_control" type="ppm">
         <define name="RADIO_CONTROL_NB_CHANNEL" value="8"/>
-        <define name="RADIO_FMODE" value="RADIO_AUX1"/> 
-        <define name="RADIO_TH_HOLD" value="RADIO_AUX2"/> 
-         <define name="RADIO_MODE" value="RADIO_FMODE"/> 
-        <define name="RADIO_FBW_MODE" value="RADIO_AUX3"/>
+        <define name="RADIO_MODE" value="RADIO_AUX1"/>
         <define name="RADIO_KILL_SWITCH" value="RADIO_AUX2"/>
+        <define name="RADIO_MANUAL_ROLL_CMD" value="RADIO_AUX3"/>
+        <define name="RADIO_MANUAL_PITCH_CMD" value="RADIO_AUX4"/>
       </module>
 
       <module name="sys_mon"/><!-- Enable if one want to check processor load for higher loop, nav, module etc. frequencies -->
