@@ -413,11 +413,20 @@ void guidance_h_nav_enter(void)
   /* horizontal position setpoint from navigation/flightplan */
   guidance_h_set_pos(nav.carrot.y, nav.carrot.x);
   reset_guidance_reference_from_current_position();
-  /* set nav_heading to current heading */
-  nav.heading = stateGetNedToBodyEulers_f()->psi;
-  guidance_h_set_heading(nav.heading);
-  /* call specific implementation */
-  guidance_h_run_enter();
+
+#if HYBRID_NAVIGATION
+  /*Obtain eulers with zxy rotation order*/
+  struct FloatEulers eulers_zxy;
+  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+
+  nav_heading = ANGLE_BFP_OF_REAL(eulers_zxy.psi);
+  guidance_h.sp.heading = eulers_zxy->psi;
+#else
+  nav_heading = stateGetNedToBodyEulers_i()->psi;
+  guidance_h.sp.heading = stateGetNedToBodyEulers_f()->psi;
+#endif
+
+
 }
 
 void guidance_h_from_nav(bool in_flight)
