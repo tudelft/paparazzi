@@ -77,7 +77,7 @@
     <file name="wls_alloc.c" dir="$(SRC_FIRMWARE)/stabilization/wls"/>
     <file name="qr_solve.c" dir="math/qr_solve"/>
     <file name="r8lib_min.c" dir="math/qr_solve"/>
-    <file name="tailsitter_auto_toff.c" dir="modules/tailsitter_auto"/>
+    <file name="tailsitter_auto_takeoff.c" dir="modules/tailsitter_auto"/>
     <configure name="INDI_OUTPUTS" default="4"/>
     <configure name="INDI_NUM_ACT" default="4"/>
     <define name="INDI_OUTPUTS" value="$(INDI_OUTPUTS)"/>

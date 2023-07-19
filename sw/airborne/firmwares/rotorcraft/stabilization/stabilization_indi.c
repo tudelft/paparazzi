@@ -40,7 +40,7 @@
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude_quat_transformations.h"
-#include "modules/tailsitter_auto/tailsitter_auto_toff.h"
+#include "modules/tailsitter_auto/tailsitter_auto_takeoff.h"
 
 #include "state.h"
 #include "modules/actuators/actuators.h"
@@ -50,7 +50,7 @@
 
 // Factor that the estimated G matrix is allowed to deviate from initial one
 #define INDI_ALLOWED_G_FACTOR 2.0
-
+#define PERIODIC_TELEMETRY 1
 #ifdef STABILIZATION_INDI_FILT_CUTOFF_P
 #define STABILIZATION_INDI_FILTER_ROLL_RATE TRUE
 #else
@@ -221,14 +221,16 @@ float radio_throttle;
 float code_has_run;
 
 //Variables for the auto take off
-float toff_thrust;
 int16_t actuator_pprz_2; 
 int16_t actuator_pprz_3; 
-bool stage_2 = false;
-bool *st2;
-st2 = &stage_2;
-
- float airspd = 0.0;
+int16_t detect_stage;
+//bool stage_1 = false;
+//bool stage_2 = false;
+//bool *st1;
+//st1 = &stage_1;
+//bool *st2;
+//st2 = &stage_2;
+float airspd = 0.0;
 
 float test[4];
 float roll_gain = 0.0;
@@ -266,7 +268,8 @@ static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *d
                               &(quat->qi),
                               &(quat->qx),
                               &(quat->qy),
-                              &(quat->qz));
+                              &(quat->qz),
+                              &detect_stage);
 }
 
 // static void send_ctrl_effectiveness_calc(struct transport_tx *trans, struct link_device *dev)
@@ -724,8 +727,11 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   struct FloatRates * body_rates = stateGetBodyRates_f();
   float_eulers_of_quat_zxy(&eulers_zxy, statequat);
 
+  detect_stage = take_off_stage(eulers_zxy.theta);
+  float toff_thrust = take_off_thrust();
+
   //if (radio_control.values[RADIO_PIVOT_SWITCH] < -4500){
-    if (ap.mode == NAV && stateGetAirspeed_f() < 1.0 && fabs(eulers_zxy.theta) > RadOfDeg(85)){
+    if (detect_stage == 0){
     // initialize pivoting by putting motors up
 	  actuators_pprz[0] = MAX_PPRZ;
 	  actuators_pprz[1] = MAX_PPRZ;
@@ -734,16 +740,15 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     // don't use the ailerons for the takeoff
     actuators_pprz[4] = 0;
     actuators_pprz[5] = 0;
-    sleep(1000);
-    *st2 = true;
+   
   }
   //else if (radio_control.values[RADIO_PIVOT_SWITCH] < 4500){
-    else if (*st2 == true) {
+    else if (detect_stage == 1 || detect_stage == 2) {
     
     // 60 degrees pitch should get max deflection
 
     
-    float pivot_ratio = 1.f - fabs(eulers_zxy.theta)/RadOfDeg(30.0);
+    float pivot_ratio = 1.f - fabsf(eulers_zxy.theta)/RadOfDeg(30.0);
     
     Bound(pivot_ratio, 0.0f, 1.0f);
 
@@ -753,8 +758,6 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     servo_cmd_disp = servo_command;
     //radio_pivot = radio_control.values[RADIO_PIVOT_SWITCH];
     //radio_throttle = radio_control.values[RADIO_THROTTLE];
-    
-    toff_thrust = take_off_thrust();
     
     actuators_pprz[0] = servo_command;
     actuators_pprz[1] = servo_command;
@@ -771,8 +774,8 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 
     actuators_pprz[2] = actuator_pprz_2; 
     actuators_pprz[3] = actuator_pprz_3;
-
-    } else {
+    } 
+    else {
 		for (i = 2; i < INDI_NUM_ACT; i++) {
 		  actuators_pprz[i] = -9600;
 		}
@@ -784,12 +787,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 
     /* reset psi setpoint to current psi angle */
     stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
-
-    if(theta_counter > 3 && airspeed > 4){
-      *st2 = false;
-    }
-  }
-  else {
+  } else {
 	  /* compute the INDI command */
 	  stabilization_indi_rate_run(rate_sp, in_flight);
 

@@ -185,7 +185,7 @@
     <module name="ctrl_effectiveness_calculator"/>
 
     <module name="geo_mag"/>
-
+    <module name="tailsitter_auto_takeoff"/>
 
     <!-- ******************************************************* -->
   </firmware>
@@ -390,6 +390,7 @@
     <define name="PIVOT_GAIN_THETA" value="450"/>
     <define name="PIVOT_SERVOGAIN_Q" value="0.0"/>
     <define name="PIVOT_SERVOGAIN_THETA" value="2.2"/>
+    <!--define name="PERIODIC_TELEMETRY" value="TRUE"/-->
   </section>
 
   <!-- Definitions for control effectiveness calculator module -->
@@ -460,6 +461,10 @@
     <define name="IGAIN" value="0"/>
   </section>
 
+  <section name="TAILSITTER_AUTO_TAKEOFF">
+    <define name="TAKEOFF_Q_GAIN" value="10.0"/>
+  </section>
+
   <section name="MISC">
     <!--The Quadshot uses (when TRUE) a slightly different axis system for the setpoint, to make both hovering and flying forward intuitive-->
     <define name="USE_EARTH_BOUND_RC_SETPOINT" value="TRUE"/>
@@ -479,6 +484,7 @@
     <define name="ARRIVED_AT_WAYPOINT" value="50.0"/>
     <define name="USE_AIRSPEED" value="TRUE"/>
   </section>
+  
 
   <section name="SIMULATOR" prefix="NPS_">
     <define name="ACTUATOR_NAMES" value="tilt_left, tilt_right, mot_right, mot_left" type="string[]"/>

@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="50" ground_alt="0" lat0="50.909553" lon0="6.227969" max_dist_from_home="500" name="Rotorcraft Basic (Enac)" security_height="2">
+<flight_plan alt="50" ground_alt="0" lat0="50.907082" lon0="6.225678" max_dist_from_home="500" name="Rotorcraft Basic (Enac)" security_height="2">
   <header>
 #include "autopilot.h"
 </header>
@@ -10,6 +10,7 @@
     <waypoint name="STDBY" x="-29.1" y="-47.5"/>
     <waypoint name="GOAL" x="1.9" y="1.0"/>
     <waypoint name="TRAJECTORY" x="1.9" y="1.0"/>
+    <waypoint lat="50.907346" lon="6.224256" name="START" />
     <waypoint lat="50.913294" lon="6.226859" name="_A" />
     <waypoint lat="50.912641" lon="6.230576" name="_B" />
     <waypoint lat="50.911691" lon="6.231193" name="_C" />
@@ -40,9 +41,9 @@
       <corner name="_K"/>
     </sector>
   </sectors> 
-  <exceptions>
+  <!--exceptions>
     <exception cond="!InsideSoft(GetPosX(), GetPosY())" deroute="HOME"/>
-  </exceptions>
+  </exceptions-->
   <blocks>
     <block name="Wait GPS">
       <call_once fun="NavKillThrottle()"/>
@@ -65,6 +66,15 @@
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
+    <block name="Automatic Takeoff">
+      <call_once fun="take_off_enter()"/>
+      <attitude pitch="0" roll="0" alt="5"/>
+    </block>
+    <!--block name="Mapping">
+      <call_once fun="quad_orthomap_init()"/>
+      <go wp="START"/>
+      <stay wp="GOAL"/>
+    </block-->
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="false" var="force_forward"/>
       <stay wp="STDBY"/>
