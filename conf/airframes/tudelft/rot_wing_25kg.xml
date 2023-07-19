@@ -18,7 +18,7 @@
             <module NAME="sys_mon"/>
             <module NAME="flight_recorder"/>
             <module NAME="actuators_faulhaber"/>
-            
+
             <define VALUE="RADIO_AUX1" NAME="RADIO_TH_HOLD"/>
             <define VALUE="RADIO_AUX2" NAME="RADIO_FMODE"/>
             <define VALUE="RADIO_AUX3" NAME="RADIO_FBW_MODE"/>
@@ -126,7 +126,7 @@
 
     <command_laws>
         <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
-        
+
         <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
         <!--<call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>-->
         <set VALUE="($th_hold? -9600 : actuators_pprz[0])" SERVO="MOTOR_FRONT"/>
@@ -219,12 +219,12 @@
         <define VALUE="7.2" NAME="REF_RATE_Q"/>
         <define VALUE="3.9" NAME="REF_RATE_R"/>
         <define VALUE="30.0" UNIT="deg/s" NAME="MAX_R"/>
-        <define VALUE="20.0" NAME="FILT_CUTOFF_P"/>
-        <define VALUE="20.0" NAME="FILT_CUTOFF_Q"/>
+        <define VALUE="5.0" NAME="FILT_CUTOFF_P"/>
+        <define VALUE="5.0" NAME="FILT_CUTOFF_Q"/>
         <define VALUE="5.0" NAME="FILT_CUTOFF_R"/>
-        <define VALUE="2.0" NAME="FILT_CUTOFF"/>
-        <define VALUE="0.5" NAME="FILT_CUTOFF_RDOT"/>
-        <define VALUE="2.0" NAME="ESTIMATION_FILT_CUTOFF"/>
+        <define VALUE="TRUE" NAME="FILTER_RATES_SECOND_ORDER"/>
+        <define VALUE="1.0" NAME="FILT_CUTOFF"/>
+        <define VALUE="1.0" NAME="ESTIMATION_FILT_CUTOFF"/>
         <define VALUE="TRUE" NAME="FILTER_YAW_RATE"/>
         <define VALUE="{0.024, 0.024, 0.024, 0.024, 0.1, 0.1}" NAME="ACT_DYN"/>
         <define VALUE="{0, 0, 0, 0, 1, 1}" NAME="ACT_IS_SERVO"/>
@@ -258,7 +258,7 @@
         <define name="POS_GAINZ" value="0.5"/> <!--tuned at 10m/s ///1.7 1.0-->
         <define name="SPEED_GAIN" value="0.7"/> <!--tuned at 10m/s ///2.0 1.4-->
         <define name="SPEED_GAINZ" value="0.6"/> <!--tuned at 10m/s ///2.1 2.4-->
-        <define name="FILTER_CUTOFF" value="2.0"/>
+        <define name="FILTER_CUTOFF" value="1.0"/>
         <define name="HEADING_BANK_GAIN" value="5."/>
         <define name="MAX_AIRSPEED" value="17.0"/>
         <define name="PITCH_LIFT_EFF" value="0.0"/>

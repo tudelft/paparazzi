@@ -250,6 +250,7 @@ Butterworth2LowPass measurement_lowpass_filters[3];
 Butterworth2LowPass estimation_output_lowpass_filters[3];
 Butterworth2LowPass acceleration_lowpass_filter;
 static struct FirstOrderLowPass rates_filt_fo[3];
+Butterworth2LowPass rates_filt_so[3];
 
 struct FloatVect3 body_accel_f;
 
@@ -409,12 +410,20 @@ void init_filters(void)
   init_butterworth_2_low_pass(&thrust_bx_act_lowpass_filter, tau, sample_time, 0.0);
   #endif
 
+#if INDI_FILTER_RATES_SECOND_ORDER
+  tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_P);
+  init_butterworth_2_low_pass(&rates_filt_so[0], tau, sample_time, 0.0);
+  tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_Q);
+  init_butterworth_2_low_pass(&rates_filt_so[1], tau, sample_time, 0.0);
+  tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_R);
+  init_butterworth_2_low_pass(&rates_filt_so[2], tau, sample_time, 0.0);
+#else
   // Init rate filter for feedback
   float time_constants[3] = {1.0 / (2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_P), 1.0 / (2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_Q), 1.0 / (2 * M_PI * STABILIZATION_INDI_FILT_CUTOFF_R)};
-
   init_first_order_low_pass(&rates_filt_fo[0], time_constants[0], sample_time, stateGetBodyRates_f()->p);
   init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
   init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
+#endif
 }
 
 /**
@@ -519,17 +528,29 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   //Note that due to the delay, the PD controller may need relaxed gains.
   struct FloatRates rates_filt;
 #if STABILIZATION_INDI_FILTER_ROLL_RATE
+#if INDI_FILTER_RATES_SECOND_ORDER
+  rates_filt.p = update_butterworth_2_low_pass(&rates_filt_so[0], body_rates->p);
+#else
   rates_filt.p = update_first_order_low_pass(&rates_filt_fo[0], body_rates->p);
+#endif
 #else
   rates_filt.p = body_rates->p;
 #endif
 #if STABILIZATION_INDI_FILTER_PITCH_RATE
+#if INDI_FILTER_RATES_SECOND_ORDER
+  rates_filt.p = update_butterworth_2_low_pass(&rates_filt_so[1], body_rates->q);
+#else
   rates_filt.q = update_first_order_low_pass(&rates_filt_fo[1], body_rates->q);
+#endif
 #else
   rates_filt.q = body_rates->q;
 #endif
 #if STABILIZATION_INDI_FILTER_YAW_RATE
+#if INDI_FILTER_RATES_SECOND_ORDER
+  rates_filt.p = update_butterworth_2_low_pass(&rates_filt_so[2], body_rates->r);
+#else
   rates_filt.r = update_first_order_low_pass(&rates_filt_fo[2], body_rates->r);
+#endif
 #else
   rates_filt.r = body_rates->r;
 #endif
@@ -582,7 +603,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     actuator_thrust_bx_pprz = thrust_bx_state_filt + du_thrust_bx;
     Bound(actuator_thrust_bx_pprz, 0, MAX_PPRZ);
   } else {
-    // Copy radio 
+    // Copy radio
     #if !USE_NPS
     actuator_thrust_bx_pprz = RadioControlValues(RADIO_AUX4);
     #else
@@ -591,7 +612,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   }
 
   actuators_pprz[INDI_NUM_ACT] = (int16_t) actuator_thrust_bx_pprz;
-  
+
   // Propagate state filters
   // Get the acceleration in body axes
   struct Int32Vect3 *body_accel_i;
@@ -683,7 +704,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   float min_pprz_cmd_ail = -9600;
   if (wing_rotation.wing_angle_deg < 15) {
     min_pprz_cmd_ail = 0;
-  } 
+  }
   Bound(min_pprz_cmd_ail, -9600, 0);
 
   du_min[6] = min_pprz_cmd_ail - use_increment*indi_u[6];
