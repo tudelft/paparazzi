@@ -52,7 +52,15 @@
         </module>
 
         <module name="imu" type="cube"/>
-         <module TYPE="ekf2" NAME="ins"/>
+         <module TYPE="ekf2" NAME="ins">
+            <define name="INS_EKF2_IMU_POS_X" value="-0.3"/>
+            <define name="INS_EKF2_IMU_POS_Y" value="0.0"/>
+            <define name="INS_EKF2_IMU_POS_Z" value="0.0"/>
+
+            <define name="INS_EKF2_GPS_POS_X" value="-1.44"/>
+            <define name="INS_EKF2_GPS_POS_Y" value="0.0"/>
+            <define name="INS_EKF2_GPS_POS_Z" value="0.2"/>
+         </module>
 
          <module name="gps"           type="ublox">
             <configure name="UBX_GPS_BAUD" value="B460800"/>
