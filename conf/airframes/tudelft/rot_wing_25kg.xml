@@ -204,8 +204,8 @@
     </section>
 
     <section PREFIX="STABILIZATION_INDI_" NAME="STABILIZATION_ATTITUDE_INDI">
-        <define VALUE="{0.0, -8.5, 0.0, 8.5, 0.0, 0.0}" NAME="G1_ROLL"/>
-        <define VALUE="{1.0, 0.0, -1.0, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
+        <define VALUE="{0.0, -15.0, 0.0, 15.0, 0.0, 0.0}" NAME="G1_ROLL"/>
+        <define VALUE="{1.8, 0.0, -1.8, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
         <define VALUE="{-0.5, 0.6, -0.5, 0.6, 0.0, 0.0}" NAME="G1_YAW"/>
         <define VALUE="{-0.575,   -0.575,  -0.575, -0.575, 0.0, 0.0}" NAME="G1_THRUST"/>
         <define VALUE="{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
@@ -218,8 +218,8 @@
         <define VALUE="7.2" NAME="REF_RATE_Q"/>
         <define VALUE="3.9" NAME="REF_RATE_R"/>
         <define VALUE="30.0" UNIT="deg/s" NAME="MAX_R"/>
-        <define VALUE="5.0" NAME="FILT_CUTOFF_P"/>
-        <define VALUE="5.0" NAME="FILT_CUTOFF_Q"/>
+        <define VALUE="20.0" NAME="FILT_CUTOFF_P"/>
+        <define VALUE="20.0" NAME="FILT_CUTOFF_Q"/>
         <define VALUE="5.0" NAME="FILT_CUTOFF_R"/>
         <define VALUE="2.0" NAME="FILT_CUTOFF"/>
         <define VALUE="0.5" NAME="FILT_CUTOFF_RDOT"/>
