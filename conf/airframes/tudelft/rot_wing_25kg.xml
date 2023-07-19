@@ -227,12 +227,12 @@
         <define VALUE="7.2" NAME="REF_RATE_Q"/>
         <define VALUE="3.9" NAME="REF_RATE_R"/>
         <define VALUE="30.0" UNIT="deg/s" NAME="MAX_R"/>
-        <define VALUE="5.0" NAME="FILT_CUTOFF_P"/>
-        <define VALUE="5.0" NAME="FILT_CUTOFF_Q"/>
-        <define VALUE="5.0" NAME="FILT_CUTOFF_R"/>
+        <define VALUE="20.0" NAME="FILT_CUTOFF_P"/>
+        <define VALUE="20.0" NAME="FILT_CUTOFF_Q"/>
+        <define VALUE="20.0" NAME="FILT_CUTOFF_R"/>
         <define VALUE="TRUE" NAME="FILTER_RATES_SECOND_ORDER"/>
-        <define VALUE="1.0" NAME="FILT_CUTOFF"/>
-        <define VALUE="1.0" NAME="ESTIMATION_FILT_CUTOFF"/>
+        <define VALUE="2.0" NAME="FILT_CUTOFF"/>
+        <define VALUE="2.0" NAME="ESTIMATION_FILT_CUTOFF"/>
         <define VALUE="TRUE" NAME="FILTER_YAW_RATE"/>
         <define VALUE="{0.024, 0.024, 0.024, 0.024, 0.1, 0.1}" NAME="ACT_DYN"/>
         <define VALUE="{0, 0, 0, 0, 1, 1}" NAME="ACT_IS_SERVO"/>
@@ -266,7 +266,7 @@
         <define name="POS_GAINZ" value="0.5"/> <!--tuned at 10m/s ///1.7 1.0-->
         <define name="SPEED_GAIN" value="0.7"/> <!--tuned at 10m/s ///2.0 1.4-->
         <define name="SPEED_GAINZ" value="0.6"/> <!--tuned at 10m/s ///2.1 2.4-->
-        <define name="FILTER_CUTOFF" value="1.0"/>
+        <define name="FILTER_CUTOFF" value="2.0"/>
         <define name="HEADING_BANK_GAIN" value="5."/>
         <define name="MAX_AIRSPEED" value="17.0"/>
         <define name="PITCH_LIFT_EFF" value="0.0"/>
