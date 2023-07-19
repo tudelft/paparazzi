@@ -59,6 +59,7 @@
             <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
         </module>
 
+        <module name="airspeed" type="uavcan"/>
         <module NAME="air_data"/>
 
          <module name="mag" type="rm3100">
