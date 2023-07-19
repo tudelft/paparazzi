@@ -164,6 +164,8 @@ static void send_accel_raw(struct transport_tx *trans, struct link_device *dev)
   static uint8_t id = 0;
   pprz_msg_send_IMU_ACCEL_RAW(trans, dev, AC_ID, &imu.accels[id].abi_id, &imu.accels[id].temperature,
                               &imu.accels[id].unscaled.x, &imu.accels[id].unscaled.y, &imu.accels[id].unscaled.z);
+  if(imu.accels[id].abi_id == IMU_CUBE1_ID)
+    return;
   id++;
   if(id >= IMU_MAX_SENSORS || imu.accels[id].abi_id == ABI_DISABLE)
     id = 0;
@@ -174,6 +176,8 @@ static void send_accel_scaled(struct transport_tx *trans, struct link_device *de
   static uint8_t id = 0;
   pprz_msg_send_IMU_ACCEL_SCALED(trans, dev, AC_ID, &imu.accels[id].abi_id,
                                  &imu.accels[id].scaled.x, &imu.accels[id].scaled.y, &imu.accels[id].scaled.z);
+  if(imu.accels[id].abi_id == IMU_CUBE1_ID)
+    return;
   id++;
   if(id >= IMU_MAX_SENSORS || imu.accels[id].abi_id == ABI_DISABLE)
     id = 0;
@@ -186,6 +190,8 @@ static void send_accel(struct transport_tx *trans, struct link_device *dev)
   ACCELS_FLOAT_OF_BFP(accel_float, imu.accels[id].scaled);
   pprz_msg_send_IMU_ACCEL(trans, dev, AC_ID, &imu.accels[id].abi_id,
                           &accel_float.x, &accel_float.y, &accel_float.z);
+  if(imu.accels[id].abi_id == IMU_CUBE1_ID)
+    return;
   id++;
   if(id >= IMU_MAX_SENSORS || imu.accels[id].abi_id == ABI_DISABLE)
     id = 0;
@@ -196,6 +202,8 @@ static void send_gyro_raw(struct transport_tx *trans, struct link_device *dev)
   static uint8_t id = 0;
   pprz_msg_send_IMU_GYRO_RAW(trans, dev, AC_ID, &imu.gyros[id].abi_id, &imu.gyros[id].temperature,
                              &imu.gyros[id].unscaled.p, &imu.gyros[id].unscaled.q, &imu.gyros[id].unscaled.r);
+  if(imu.gyros[id].abi_id == IMU_CUBE1_ID)
+    return;
   id++;
   if(id >= IMU_MAX_SENSORS || imu.gyros[id].abi_id == ABI_DISABLE)
     id = 0;
@@ -206,6 +214,8 @@ static void send_gyro_scaled(struct transport_tx *trans, struct link_device *dev
   static uint8_t id = 0;
   pprz_msg_send_IMU_GYRO_SCALED(trans, dev, AC_ID, &imu.gyros[id].abi_id,
                                 &imu.gyros[id].scaled.p, &imu.gyros[id].scaled.q, &imu.gyros[id].scaled.r);
+  if(imu.gyros[id].abi_id == IMU_CUBE1_ID)
+    return;
   id++;
   if(id >= IMU_MAX_SENSORS || imu.gyros[id].abi_id == ABI_DISABLE)
     id = 0;
@@ -218,6 +228,8 @@ static void send_gyro(struct transport_tx *trans, struct link_device *dev)
   RATES_FLOAT_OF_BFP(gyro_float, imu.gyros[id].scaled);
   pprz_msg_send_IMU_GYRO(trans, dev, AC_ID, &imu.gyros[id].abi_id,
                          &gyro_float.p, &gyro_float.q, &gyro_float.r);
+  if(imu.gyros[id].abi_id == IMU_CUBE1_ID)
+    return;
   id++;
   if(id >= IMU_MAX_SENSORS || imu.gyros[id].abi_id == ABI_DISABLE)
     id = 0;
