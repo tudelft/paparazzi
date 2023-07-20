@@ -10,7 +10,6 @@
     <dl_settings>
       <dl_settings NAME="takeoff">
         <dl_setting var="Kq" min="-10.0" step="1.0" max="100.0" shortname="Pitch Rate Gain"/>
-        <dl_setting var="stage_1_thrust" min="5800" step="5" max="6500" shortname="Stage1 Thrust"/>
       </dl_settings>
     </dl_settings>
   </settings>
