@@ -261,12 +261,16 @@ void guidance_indi_run(float *heading_sp) {
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
 
   /*Calculate the transition percentage so that the ctrl_effecitveness scheduling works*/
-  transition_percentage = BFP_OF_REAL((eulers_zxy.theta/RadOfDeg(-75.0))*100,INT32_PERCENTAGE_FRAC);
+//    transition_percentage = BFP_OF_REAL((eulers_zxy.theta/RadOfDeg(-75.0))*100,INT32_PERCENTAGE_FRAC);
+    transition_percentage = BFP_OF_REAL((eulers_zxy.theta/TRANSITION_MAX_OFFSET)*100,INT32_PERCENTAGE_FRAC);
   Bound(transition_percentage,0,BFP_OF_REAL(100.0,INT32_PERCENTAGE_FRAC));
-//  const int32_t max_offset = ANGLE_BFP_OF_REAL(TRANSITION_MAX_OFFSET);
-//  transition_theta_offset = INT_MULT_RSHIFT((transition_percentage <<
-//        (INT32_ANGLE_FRAC - INT32_PERCENTAGE_FRAC)) / 100, max_offset, INT32_ANGLE_FRAC);
-    transition_theta_offset = -90.0;
+  const int32_t max_offset = ANGLE_BFP_OF_REAL(TRANSITION_MAX_OFFSET);
+#ifdef FIXED_THETA_OFFSET
+    transition_theta_offset = FIXED_THETA_OFFSET;
+#else
+  transition_theta_offset = INT_MULT_RSHIFT((transition_percentage <<
+        (INT32_ANGLE_FRAC - INT32_PERCENTAGE_FRAC)) / 100, max_offset, INT32_ANGLE_FRAC);
+#endif
 
   //filter accel to get rid of noise and filter attitude to synchronize with accel
   guidance_indi_propagate_filters();
