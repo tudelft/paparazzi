@@ -9,7 +9,7 @@ PPRZ_SRC =  getenv("PAPARAZZI_SRC", path.normpath(path.join(path.dirname(path.ab
 sys.path.append(PPRZ_HOME + "/var/lib/python/")
 sys.path.append(PPRZ_SRC + "/sw/lib/python")
 from pprzlink.ivy import IvyMessagesInterface
-from pprzlink.message import PprzMessage 
+from pprzlink.message import PprzMessage
 
 
 ref_lat = 50.909553
@@ -51,7 +51,7 @@ for order in permutations:
         total_distance += distances[prev][i]
         prev = i
 
-    
+
     if total_distance < optimal_distance:
         optimal_distance = total_distance
         optimal_order = order
@@ -73,3 +73,5 @@ for i in range(len(x)):
 
     _interface.send(msgw)
     time.sleep(0.5)
+
+#TODO: check if waypoints are confirmed!

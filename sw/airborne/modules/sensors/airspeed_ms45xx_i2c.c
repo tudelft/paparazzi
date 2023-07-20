@@ -273,6 +273,10 @@ void ms45xx_i2c_event(void)
       // Compute airspeed
       ms45xx.airspeed = sqrtf(Max(ms45xx.pressure * ms45xx.airspeed_scale, 0));
 
+      // Ad hoc: found the airspeed is too low: scale with 1.5!
+#warning "airspeed scaling with 1.5!"
+      ms45xx.airspeed = ms45xx.airspeed * 1.5;
+
 #if USE_AIRSPEED_MS45XX
       stateSetAirspeed_f(ms45xx.airspeed);
 #endif
