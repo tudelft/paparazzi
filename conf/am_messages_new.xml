@@ -2183,6 +2183,9 @@
 
          <field name="airspeed" type="float" >Actual airspeed</field>
          <field name="control_mode_ovc_vehicle" type="uint8" >Boolean for the control mode</field>
+         
+         <field name="ground_detected" type="uint8" >Boolean for the ground detection</field>
+
          <field name="beta_angle" type="float" >Sideslip angle in degrees</field>
 
          <field name="act_x_pos" type="float" unit="m">Actual x position [m]</field>

@@ -277,6 +277,13 @@ static abi_event get_agl_corrected_value_ev;
 float altitude_lidar_agl_meters; 
 int approach_state = 1; 
 
+//Detect_ground variables: 
+uint8_t ground_detected_am = 0;
+float time_of_ground_not_detected; 
+float min_lidar_alt_ground_detect = 0.3; 
+float time_tolerance_land = 1;
+float az_tolerance_land = 4; 
+
 struct PID_over pid_gains_over = {
     .p = { OVERACTUATED_MIXING_PID_P_GAIN_PHI,
         OVERACTUATED_MIXING_PID_P_GAIN_THETA,
@@ -322,6 +329,28 @@ struct FloatEulers max_value_error = {
     OVERACTUATED_MIXING_MAX_PSI_ERR 
 };
 
+
+/**
+ * Function which detects ground
+ * IT ONLY WORKS WITH THE NONLINEAR CONTROLLER!!! 
+ */
+uint8_t detect_ground_on_landing(void){
+    if(altitude_lidar_agl_meters <= min_lidar_alt_ground_detect && myam7_data_in_local.residual_az_int > az_tolerance_land && approach_state == 1 ){
+        if(get_sys_time_float() - time_of_ground_not_detected >= time_tolerance_land){
+            ground_detected_am = 1;
+        }
+        else{
+            ground_detected_am = 0; 
+        }
+    }
+    else{
+        time_of_ground_not_detected = get_sys_time_float();
+        ground_detected_am = 0; 
+    }
+
+    return ground_detected_am;
+}
+
 /**
  * ABI routine called by the serial_act_t4 ABI event
  */
@@ -362,7 +391,10 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
 
     //Updated with secundary AHRS reference and removed old cmd part 
     pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID ,
-                                         & airspeed, & control_mode_ovc_vehicle , & beta_deg,
+                                         & airspeed, 
+                                         & control_mode_ovc_vehicle , 
+                                         & ground_detected_am,
+                                         & beta_deg,
                                          & pos_vect[0], & pos_vect[1], & pos_vect[2],
                                          & speed_vect[0], & speed_vect[1], & speed_vect[2],
                                          & accel_vect_filt_control_rf[0], & accel_vect_filt_control_rf[1], & accel_vect_filt_control_rf[2],

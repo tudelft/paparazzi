@@ -138,8 +138,15 @@ extern int feed_speed_ref_from_approach_module;
 
 extern int approach_state;
 
+
+extern float min_lidar_alt_ground_detect; 
+extern float time_tolerance_land;
+extern float az_tolerance_land;
+
 /* External used functions */
 extern void overactuated_mixing_init(void);
 extern void overactuated_mixing_run(void);
+
+extern uint8_t detect_ground_on_landing(void); 
 
 #endif
