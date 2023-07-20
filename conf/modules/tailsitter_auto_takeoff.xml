@@ -1,6 +1,6 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="tailsitter_auto_takeoff" dir="tailsitter_auto"> 
+<module name="tailsitter_auto_takeoff" dir="tailsitter_auto">
   <doc>
     <description>
       Bla bla bla
