@@ -185,7 +185,9 @@
     <module name="ctrl_effectiveness_calculator"/>
 
     <module name="geo_mag"/>
-
+    <module name="tailsitter_auto_takeoff">
+      <define name="TAKEOFF_Q_GAIN" value="10.0"/>
+    </module>
 
     <!-- ******************************************************* -->
   </firmware>
