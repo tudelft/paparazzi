@@ -223,24 +223,7 @@ float g2_est[INDI_NUM_ACT];
 float g1_init[INDI_OUTPUTS][INDI_NUM_ACT];
 float g2_init[INDI_NUM_ACT];
 
-float servo_cmd_disp;
-float radio_pivot;
-float radio_throttle;
-float code_has_run;
-
 //Variables for the auto take off
-int16_t actuator_pprz_2;
-int16_t actuator_pprz_3;
-int16_t detect_stage;
-//bool stage_1 = false;
-//bool stage_2 = false;
-//bool *st1;
-//st1 = &stage_1;
-//bool *st2;
-//st2 = &stage_2;
-float airspd = 0.0;
-
-float test[4];
 float roll_gain = 0.0;
 
 Butterworth2LowPass actuator_lowpass_filters[INDI_NUM_ACT];
@@ -277,8 +260,7 @@ static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *d
                               &(quat->qi),
                               &(quat->qx),
                               &(quat->qy),
-                              &(quat->qz),
-                              &detect_stage);
+                              &(quat->qz));
 }
 
 // static void send_ctrl_effectiveness_calc(struct transport_tx *trans, struct link_device *dev)
@@ -628,9 +610,9 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #endif
   }
   //Control allocation Weights as a function of airspeed
-  float airspd = stateGetAirspeed_f();
-  float fun_tilt = 0.124875f * airspd - 0.4985f;
-  float fun_elevon = -0.124875f * airspd + 1.4995f;
+  float airspeed = stateGetAirspeed_f();
+  float fun_tilt = 0.124875f * airspeed - 0.4985f;
+  float fun_elevon = -0.124875f * airspeed + 1.4995f;
   indi_Wu[0] = (fun_tilt > 1.0f) ? 1.0f: ((fun_tilt < 0.001f) ? 0.001f : fun_tilt);
   indi_Wu[1] = indi_Wu[0];
   indi_Wu[4] = (fun_elevon > 1.0f) ? 1.0f: ((fun_elevon < 0.001f) ? 0.001f : fun_elevon);
@@ -759,11 +741,10 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   struct FloatRates * body_rates = stateGetBodyRates_f();
   float_eulers_of_quat_zxy(&eulers_zxy, statequat);
 
-  detect_stage = take_off_stage(eulers_zxy.theta);
-  float toff_thrust = take_off_thrust();
+  int16_t takeoff_stage = take_off_stage(eulers_zxy.theta);
+  float takeoff_thrust = take_off_thrust();
 
-  //if (radio_control.values[RADIO_PIVOT_SWITCH] < -4500){
-    if (detect_stage == 0){
+  if (takeoff_stage == 0){
     // initialize pivoting by putting motors up
 	  actuators_pprz[0] = MAX_PPRZ;
 	  actuators_pprz[1] = MAX_PPRZ;
@@ -772,14 +753,8 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     // don't use the ailerons for the takeoff
     actuators_pprz[4] = 0;
     actuators_pprz[5] = 0;
-
-  }
-  //else if (radio_control.values[RADIO_PIVOT_SWITCH] < 4500){
-    else if (detect_stage == 1 || detect_stage == 2) {
-
+  } else if (takeoff_stage == 1 || takeoff_stage == 2) {
     // 60 degrees pitch should get max deflection
-
-
     float pivot_ratio = 1.f - fabsf(eulers_zxy.theta)/RadOfDeg(30.0);
 
     Bound(pivot_ratio, 0.0f, 1.0f);
@@ -787,30 +762,19 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     int16_t servo_command = (-eulers_zxy.theta + pivot_ratio*(att_err.qy * pivot_servogain_theta - pivot_servogain_q * body_rates->q))/(55.0/180.0*M_PI)*9600;
     Bound(servo_command,-9600,9600);
 
-    servo_cmd_disp = servo_command;
-    //radio_pivot = radio_control.values[RADIO_PIVOT_SWITCH];
-    //radio_throttle = radio_control.values[RADIO_THROTTLE];
-
     actuators_pprz[0] = servo_command;
     actuators_pprz[1] = servo_command;
 
     if (autopilot_get_motors_on()) {
-    int16_t motor_command = toff_thrust + (1.f - pivot_ratio)*(- body_rates->q * pivot_gain_q - att_err.qy * pivot_gain_theta);
+    int16_t motor_command = takeoff_thrust + (1.f - pivot_ratio)*(- body_rates->q * pivot_gain_q - att_err.qy * pivot_gain_theta);
     angular_accel_ref.p = att_err.qx * indi_gains.att.p - body_rates->p * indi_gains.rate.p;
-    // for (i = 2; i < INDI_NUM_ACT; i++) {
-    // // actuators_pprz[i] = g1g2_pseudo_inv[i][0] * angular_accel_ref.p + motor_command;
-    // actuators_pprz[i] = g1g2_pseudo_inv[i][0] * angular_accel_ref.p + motor_command;
-    // }
-    actuator_pprz_2 = motor_command - angular_accel_ref.p * roll_gain;
-    actuator_pprz_3 = motor_command + angular_accel_ref.p * roll_gain;
 
-    actuators_pprz[2] = actuator_pprz_2;
-    actuators_pprz[3] = actuator_pprz_3;
-    }
-    else {
-		for (i = 2; i < INDI_NUM_ACT; i++) {
-		  actuators_pprz[i] = -9600;
-		}
+    actuators_pprz[2] = motor_command - angular_accel_ref.p * roll_gain;
+    actuators_pprz[3] = motor_command + angular_accel_ref.p * roll_gain;
+    } else {
+      for (i = 2; i < INDI_NUM_ACT; i++) {
+        actuators_pprz[i] = -9600;
+      }
     }
 
     // don't use the ailerons for the takeoff
@@ -819,7 +783,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 
     /* reset psi setpoint to current psi angle */
     stab_att_sp_euler.psi = stabilization_attitude_get_heading_i();
-  } else {
+  } else { // not in a takeoff stage, flying
 	  /* compute the INDI command */
 	  stabilization_indi_rate_run(rate_sp, in_flight);
 
