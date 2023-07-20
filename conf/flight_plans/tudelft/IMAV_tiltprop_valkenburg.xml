@@ -53,14 +53,15 @@
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
-    <!-- <block name="Pivot Up - not ready for use!!">
-      <call_once fun="nav_pivot_ramp_init()"/>
-      <call fun="nav_pivot_ramp()"/>
-    </block> -->
-    <block name="Start Engine">
+    <block name="Automatic Takeoff">
+      <call_once fun="NavResurrect()"/>
+      <call_once fun="take_off_enter()"/>
+      <attitude pitch="0" roll="0" alt="5"/>
+    </block>
+    <!-- <block name="Start Engine">
       <call_once fun="NavResurrect()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block>
+    </block> -->
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="GetPosHeight() @GT 5.0" deroute="Standby"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
