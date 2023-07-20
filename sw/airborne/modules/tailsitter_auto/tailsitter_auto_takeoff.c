@@ -32,6 +32,8 @@ int16_t stage = 0;
 int16_t counter = 0;
 float Kq = TAKEOFF_Q_GAIN;
 
+float t_scale_to_thrust = 1.3;
+
 #define TAKEOFF_MODULE_FREQ 500
 
 int16_t pwm2pprz(float pwm);
@@ -58,7 +60,7 @@ int16_t take_off_thrust(void){
       thrust_pprz = pwm2pprz(thrust_pwm);
     } else if(stage == 1){
       int16_t pitch_rate_cont = (int16_t) ceil(Kq*(0.3 - body_rates->q));
-      thrust_pprz = 6000 - pitch_rate_cont + counter/2;
+      thrust_pprz = 6000 - pitch_rate_cont + counter*t_scale_to_thrust;
     } else{ // stage 2 (thrust not used actually?)
       thrust_pwm = 1542;
       thrust_pprz = pwm2pprz(thrust_pwm);
