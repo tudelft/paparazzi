@@ -751,7 +751,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
     // don't use the ailerons for the takeoff
     actuators_pprz[4] = 0;
     actuators_pprz[5] = 0;
-  } else if (takeoff_stage == 1 || takeoff_stage == 2) {
+  } else if (takeoff_stage == 1) {
     // 60 degrees pitch should get max deflection
     float pivot_ratio = 1.f - fabsf(eulers_zxy.theta)/RadOfDeg(30.0);
 

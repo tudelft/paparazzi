@@ -32,6 +32,8 @@ int16_t stage = 0;
 int16_t counter = 0;
 float Kq = TAKEOFF_Q_GAIN;
 
+#define TAKEOFF_MODULE_FREQ 500
+
 int16_t pwm2pprz(float pwm);
 int16_t take_off_stage(float theta);
 int16_t take_off_thrust(void);
@@ -56,12 +58,8 @@ int16_t take_off_thrust(void){
       thrust_pprz = pwm2pprz(thrust_pwm);
     } else if(stage == 1){
       int16_t pitch_rate_cont = (int16_t) ceil(Kq*(0.3 - body_rates->q));
-      thrust_pprz = 6400 - pitch_rate_cont;
-    }
-    else if(stage == 2){
-      thrust_pwm = -22.9362*eulers_zxy.theta + 1697.9914;
-      thrust_pprz = pwm2pprz(thrust_pwm);
-    } else{
+      thrust_pprz = 6000 - pitch_rate_cont + counter/2;
+    } else{ // stage 2 (thrust not used actually?)
       thrust_pwm = 1542;
       thrust_pprz = pwm2pprz(thrust_pwm);
     }
@@ -79,28 +77,24 @@ int16_t take_off_stage(float theta){
       stage = 0;
       counter = 0;
     }
-    if(stage == 0 && counter/500 > 1.0){
+    if(stage == 0 && counter/TAKEOFF_MODULE_FREQ > 1.0){
       stage = 1;
+      counter = 0;
     }
-    else if(stage == 1 && fabsf(theta) < RadOfDeg(30.0)){
+    else if(stage == 1 && fabsf(theta) < RadOfDeg(5.0)){
       stage = 2;
-    }
-    else if(stage == 2 && fabsf(theta) < RadOfDeg(5.0)){
-      stage = 3;
-    }
-    else if(stage == 3){
       counter = 0;
     }
   } else {
+    counter = 0;
     if(radio_control.values[RADIO_PIVOT_SWITCH] < -4500 ){
-      counter = 0;
       stage = 0;
     }
     else if(radio_control.values[RADIO_PIVOT_SWITCH] < 4500){
       stage = 1;
     }
     else if(radio_control.values[RADIO_PIVOT_SWITCH] > 4500){
-      stage = 3;
+      stage = 2;
     }
   }
   return stage;
