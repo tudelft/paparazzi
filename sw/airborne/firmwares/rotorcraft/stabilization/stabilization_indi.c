@@ -578,6 +578,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   float airspeed = stateGetAirspeed_f();
   float fun_tilt = 0.124875f * airspeed - 0.4985f;
   float fun_elevon = -0.124875f * airspeed + 1.4995f;
+
   indi_Wu[0] = (fun_tilt > 1.0f) ? 1.0f: ((fun_tilt < 0.001f) ? 0.001f : fun_tilt);
   indi_Wu[1] = indi_Wu[0];
   indi_Wu[4] = (fun_elevon > 1.0f) ? 1.0f: ((fun_elevon < 0.001f) ? 0.001f : fun_elevon);
