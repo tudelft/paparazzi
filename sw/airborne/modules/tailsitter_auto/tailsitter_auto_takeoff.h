@@ -27,5 +27,6 @@ extern int16_t take_off_thrust(void);
 extern void take_off_enter(void);
 
 extern float Kq;
+extern float t_scale_to_thrust;
 
 #endif // TAILSITTER_AUTO_TOFF_H
