@@ -944,6 +944,7 @@ static void optical_flow_cb(uint8_t sender_id __attribute__((unused)),
   /* Build integrated flow and gyro messages for filter
   NOTE: pure rotations should result in same flow_x and
   gyro_roll and same flow_y and gyro_pitch */
+<<<<<<< HEAD
   Vector2f flowdata;
   flowdata(0) = RadOfDeg(flow_y) * (1e-6 *
                                     sample.dt);                       // INTEGRATED FLOW AROUND Y AXIS (RIGHT -X, LEFT +X)
@@ -957,4 +958,22 @@ static void optical_flow_cb(uint8_t sender_id __attribute__((unused)),
 
   // Update the optical flow data based on the callback
   ekf.setOpticalFlowData(sample);
+=======
+  ekf2.flow_quality = quality;
+  ekf2.flow_x = RadOfDeg(flow_y) * (1e-6 * ekf2.flow_dt);                       // INTEGRATED FLOW AROUND Y AXIS (RIGHT -X, LEFT +X)
+  ekf2.flow_y = - RadOfDeg(flow_x) * (1e-6 * ekf2.flow_dt);                     // INTEGRATED FLOW AROUND X AXIS (FORWARD +Y, BACKWARD -Y)
+  ekf2.gyro_roll = NAN;
+  ekf2.gyro_pitch = NAN;
+  ekf2.gyro_yaw = NAN;
+
+  /* once callback initiated, build the
+  optical flow message with what is received */
+  flow_msg.quality = quality;                                                   // quality indicator between 0 and 255
+  flow_msg.flowdata = Vector2f(ekf2.flow_x, ekf2.flow_y);                       // measured delta angle of the image about the X and Y body axes (rad), RH rotaton is positive
+  flow_msg.gyrodata = Vector3f{ekf2.gyro_roll, ekf2.gyro_pitch, ekf2.gyro_yaw}; // measured delta angle of the inertial frame about the body axes obtained from rate gyro measurements (rad), RH rotation is positive
+  flow_msg.dt = ekf2.flow_dt;                                                   // amount of integration time (usec)
+
+  // update the optical flow data based on the callback
+  ekf.setOpticalFlowData(stamp, &flow_msg);
+>>>>>>> fix EKF2 origin set alt
 }
