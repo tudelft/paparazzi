@@ -347,9 +347,11 @@
 
     <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
     <define name="FILT_CUTOFF" value="3.0"/>
-    <define name="Filt_CUTOFF_P" value="20"/>
-    <define name="FILT_CUTOFF_Q" value="20"/>
-    <define name="FILT_CUTOFF_R" value="20"/>
+    <define name="Filt_CUTOFF_P" value="10"/>
+    <!-- <define name="FILT_CUTOFF_Q" value="20"/> -->
+    <define name="FILTER_PITCH_RATE" value="TRUE"/>
+    <define name="2ORDER_QFILT_CUTOFF" value="3.0"/>
+    <define name="FILT_CUTOFF_R" value="10"/>
     <!--<define name="FILT_CUTOFF" value="4.0"/>
     <define name="FILT_CUTOFF_R" value="3.2"/> -->
 

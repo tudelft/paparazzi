@@ -301,6 +301,9 @@ Butterworth2LowPass rates_filt_so[3];
 #else
 static struct FirstOrderLowPass rates_filt_fo[3];
 #endif
+
+Butterworth2LowPass qfilt;
+
 struct FloatVect3 body_accel_f;
 
 void init_filters(void);
@@ -482,6 +485,9 @@ void init_filters(void)
   init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
   init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
 #endif
+
+  tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_2ORDER_QFILT_CUTOFF);
+  init_butterworth_2_low_pass(&qfilt, tau_est, sample_time, 0.0);
 
   // Initialize 2nd order actuator state variables
   for(int i = 0; i < INDI_NUM_ACT; i++){
