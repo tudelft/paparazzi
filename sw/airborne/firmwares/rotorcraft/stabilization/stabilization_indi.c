@@ -223,6 +223,8 @@ Butterworth2LowPass estimation_output_lowpass_filters[3];
 Butterworth2LowPass acceleration_lowpass_filter;
 static struct FirstOrderLowPass rates_filt_fo[3];
 
+Butterworth2LowPass qfilt;
+
 struct FloatVect3 body_accel_f;
 
 void init_filters(void);
@@ -363,6 +365,9 @@ void init_filters(void)
   init_first_order_low_pass(&rates_filt_fo[1], time_constants[1], sample_time, stateGetBodyRates_f()->q);
   init_first_order_low_pass(&rates_filt_fo[2], time_constants[2], sample_time, stateGetBodyRates_f()->r);
 
+  tau = 1.0 / (2.0 * M_PI * STABILIZATION_INDI_2ORDER_QFILT_CUTOFF);
+  init_butterworth_2_low_pass(&qfilt, tau_est, sample_time, 0.0);
+
   // Initialize 2nd order actuator state variables
   for(int i = 0; i < INDI_NUM_ACT; i++){
       for(int j = 0; j < actuator_mem_buf_size; j++ ){
@@ -460,7 +465,9 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   rates_filt.p = body_rates->p;
 #endif
 #if STABILIZATION_INDI_FILTER_PITCH_RATE
-  rates_filt.q = update_first_order_low_pass(&rates_filt_fo[1], body_rates->q);
+  // rates_filt.q = update_first_order_low_pass(&rates_filt_fo[1], body_rates->q);
+  update_butterworth_2_low_pass(&qfilt, body_rates->q);
+  rates_filt.q = qfilt.o[0];
 #else
   rates_filt.q = body_rates->q;
 #endif
