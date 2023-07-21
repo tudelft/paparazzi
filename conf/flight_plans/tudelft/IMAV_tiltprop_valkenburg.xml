@@ -56,7 +56,7 @@
     <block name="Automatic Takeoff">
       <call_once fun="NavResurrect()"/>
       <call_once fun="take_off_enter()"/>
-      <attitude pitch="0" roll="0" alt="5"/>
+      <attitude pitch="0" roll="0" alt="5" until="GetPosHeight() @GT 2.0"/>
     </block>
     <!-- <block name="Start Engine">
       <call_once fun="NavResurrect()"/>
