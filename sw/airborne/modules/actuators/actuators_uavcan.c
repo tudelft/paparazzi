@@ -40,6 +40,7 @@ struct actuators_uavcan_telem_t {
   float voltage;
   float current;
   float temperature;
+  float temperature_dev;
   int32_t rpm;
   uint32_t energy;
 };
@@ -129,7 +130,7 @@ static void actuators_uavcan_send_esc(struct transport_tx *trans, struct link_de
   float rpm = telem[i].rpm;
   float energy = telem[i].energy;
   pprz_msg_send_ESC(trans, dev, AC_ID, &telem[i].current, &electrical.vsupply, &power,
-                    &rpm, &telem[i].voltage, &energy, &telem[i].temperature, &esc_idx);
+                    &rpm, &telem[i].voltage, &energy, &telem[i].temperature, &telem[i].temperature_dev, &esc_idx);
   
   // Randomness added for multiple  transport devices
   if (rand_uniform() > 0.05) {
@@ -175,8 +176,8 @@ static void actuators_uavcan_esc_status_cb(struct uavcan_iface_t *iface, CanardR
   telem[esc_idx].voltage = canardConvertFloat16ToNativeFloat(tmp_float);
   canardDecodeScalar(transfer, 48, 16, true, (void *)&tmp_float);
   telem[esc_idx].current = canardConvertFloat16ToNativeFloat(tmp_float);
-  //canardDecodeScalar(transfer, 64, 16, true, (void *)&tmp_float);
-  //telem[esc_idx].temperature = canardConvertFloat16ToNativeFloat(tmp_float);
+  canardDecodeScalar(transfer, 64, 16, true, (void *)&tmp_float);
+  telem[esc_idx].temperature = canardConvertFloat16ToNativeFloat(tmp_float);
   canardDecodeScalar(transfer, 80, 18, true, (void *)&telem[esc_idx].rpm);
 
 #ifdef UAVCAN_ACTUATORS_USE_CURRENT
@@ -236,7 +237,7 @@ static void actuators_uavcan_device_temperature_cb(struct uavcan_iface_t *iface,
   }
 
   canardDecodeScalar(transfer, 16, 16, false, (void*)&tmp_float);
-  telem[device_id].temperature = canardConvertFloat16ToNativeFloat(tmp_float);
+  telem[device_id].temperature_dev = canardConvertFloat16ToNativeFloat(tmp_float);
 }
 
 
