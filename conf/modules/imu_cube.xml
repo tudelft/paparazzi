@@ -51,6 +51,7 @@
     <define name="IMU_HEATER_I_GAIN" value="0.07"/>
 
     <file name="invensense2.c" dir="peripherals"/>
+    <file name="invensense3.c" dir="peripherals"/>
     <file name="mpu60x0.c" dir="peripherals"/>
     <file name="mpu60x0_spi.c" dir="peripherals"/>
     <file name="imu_cube.c"/>

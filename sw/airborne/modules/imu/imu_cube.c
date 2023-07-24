@@ -28,11 +28,19 @@
 #include "modules/core/abi.h"
 #include "mcu_periph/spi.h"
 #include "peripherals/invensense2.h"
+#ifdef CUBEORANGE_PLUS
+#include "peripherals/invensense3.h"
+#else
 #include "peripherals/mpu60x0_spi.h"
+#endif
 
 
 static struct invensense2_t imu1;
+#ifdef CUBEORANGE_PLUS
+static struct invensense3_t imu2;
+#else
 static struct Mpu60x0_Spi imu2;
+#endif
 static struct invensense2_t imu3;
 
 void imu_cube_init(void)
@@ -59,6 +67,17 @@ void imu_cube_init(void)
   imu_set_defaults_gyro(IMU_CUBE1_ID, &rmat, NULL, NULL);
   imu_set_defaults_accel(IMU_CUBE1_ID, &rmat, NULL, NULL);
 
+  #ifdef CUBEORANGE_PLUS
+  imu2.abi_id = IMU_CUBE2_ID;
+  imu2.bus = INVENSENSE3_SPI;
+  imu2.spi.p = &CUBE_IMU2_SPI_DEV;
+  imu2.spi.slave_idx = CUBE_IMU2_SPI_SLAVE_IDX;
+  imu2.gyro_odr = INVENSENSE3_GYRO_ODR_4KHZ;
+  imu2.gyro_range = INVENSENSE3_GYRO_RANGE_2000DPS;
+  imu2.accel_odr = INVENSENSE3_ACCEL_ODR_4KHZ;
+  imu2.accel_range = INVENSENSE3_ACCEL_RANGE_16G;
+  invensense3_init(&imu2);
+  #else
   /* IMU 2 (ICM20602 isolated) */
   mpu60x0_spi_init(&imu2, &CUBE_IMU2_SPI_DEV, CUBE_IMU2_SPI_SLAVE_IDX);
   // change the default configuration
@@ -67,14 +86,20 @@ void imu_cube_init(void)
   imu2.config.dlpf_cfg_acc = MPU60X0_DLPF_ACC_218HZ; // only for ICM sensors
   imu2.config.gyro_range = MPU60X0_GYRO_RANGE_2000;
   imu2.config.accel_range = MPU60X0_ACCEL_RANGE_16G;
+  #endif
 
   // Rotation
   eulers.phi = ANGLE_BFP_OF_REAL(RadOfDeg(180)),
   eulers.theta = ANGLE_BFP_OF_REAL(0);
   eulers.psi = ANGLE_BFP_OF_REAL(RadOfDeg(270));
   int32_rmat_of_eulers(&rmat, &eulers);
+  #ifdef CUBEORANGE_PLUS
+  imu_set_defaults_gyro(IMU_CUBE2_ID, &rmat, NULL, NULL);
+  imu_set_defaults_accel(IMU_CUBE2_ID, &rmat, NULL, NULL);
+  #else
   imu_set_defaults_gyro(IMU_CUBE2_ID, &rmat, NULL, MPU60X0_GYRO_SENS_FRAC[MPU60X0_GYRO_RANGE_2000]);
   imu_set_defaults_accel(IMU_CUBE2_ID, &rmat, NULL, MPU60X0_ACCEL_SENS_FRAC[MPU60X0_ACCEL_RANGE_16G]);
+  #endif
 
   /* IMU 3 (ICM2094 isolated) */
   imu3.abi_id = IMU_CUBE3_ID;
@@ -99,7 +124,11 @@ void imu_cube_init(void)
 void imu_cube_periodic(void)
 {
   invensense2_periodic(&imu1);
+  #ifdef CUBEORANGE_PLUS
+  invensense3_periodic(&imu2);
+  #else
   mpu60x0_spi_periodic(&imu2);
+  #endif
   invensense2_periodic(&imu3);
 }
 
@@ -107,6 +136,9 @@ void imu_cube_event(void)
 {
   invensense2_event(&imu1);
 
+  #ifdef CUBEORANGE_PLUS
+  invensense3_event(&imu2);
+  #else
   mpu60x0_spi_event(&imu2);
   if (imu2.data_available) {
     uint32_t now_ts = get_sys_time_usec();
@@ -129,6 +161,7 @@ void imu_cube_event(void)
     AbiSendMsgIMU_GYRO_RAW(IMU_CUBE2_ID, now_ts, &rates, 1, imu2.temp);
     AbiSendMsgIMU_ACCEL_RAW(IMU_CUBE2_ID, now_ts, &accel, 1, imu2.temp);
   }
+  #endif
 
   invensense2_event(&imu3);
 }

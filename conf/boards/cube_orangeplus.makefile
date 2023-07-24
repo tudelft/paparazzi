@@ -24,6 +24,7 @@ USE_FPU_OPT= -mfpu=fpv5-d16
 #USE_LTO=yes
 
 $(TARGET).CFLAGS += -DPPRZLINK_ENABLE_FD
+$(TARGET).CFLAGS += -DCUBEORANGE_PLUS
 
 ##############################################################################
 # Architecture or project specific options
