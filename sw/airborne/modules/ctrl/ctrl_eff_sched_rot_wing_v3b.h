@@ -29,12 +29,14 @@
 #include "std.h"
 
 // Define settings
+extern float lift_d_multiplier;
 extern float g1_p_multiplier;
 extern float g1_q_multiplier;
 extern float g1_r_multiplier;
 extern float g1_t_multiplier;
 
 extern float pitch_angle_set;
+extern float pitch_angle_range;
 
 extern float rot_wing_aerodynamic_eff_const_g1_p[1];
 extern float rot_wing_aerodynamic_eff_const_g1_q[1];

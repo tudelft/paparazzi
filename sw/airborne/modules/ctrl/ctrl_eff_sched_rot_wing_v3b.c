@@ -64,6 +64,7 @@ float rot_wing_aerodynamic_eff_const_g1_q[1] = ROT_WING_SCHED_G1_AERO_CONST_Q;
 float rot_wing_aerodynamic_eff_const_g1_r[1] = ROT_WING_SCHED_G1_AERO_CONST_R;
 
 // Define settings to multiply initial control eff scheduling values
+float lift_d_multiplier = 1.;
 float g1_p_multiplier = 1.;
 float g1_q_multiplier = 1.;
 float g1_r_multiplier = 1.;
@@ -78,6 +79,7 @@ float sched_lower_hover_speed = 7.;
 float sched_upper_hover_speed = 14.;
 
 float pitch_angle_set = 0;
+float pitch_angle_range = 3.;
 
 // Define filters
 #ifndef ROT_WING_SCHED_AIRSPEED_FILTER_CUTOFF
@@ -365,9 +367,8 @@ void schedule_pref_pitch_angle_deg(float wing_rot_deg)
   if (wing_rot_deg < 55) {
     scheduled_pitch_angle = pitch_angle_set;
   } else {
-    float pitch_range = 7.;
     float pitch_progression = (wing_rot_deg - 55) / 35.;
-    scheduled_pitch_angle = pitch_range * pitch_progression;
+    scheduled_pitch_angle = pitch_angle_range * pitch_progression;
   }
   Bound(scheduled_pitch_angle, -5., 7.);
   pitch_pref_deg = scheduled_pitch_angle;
@@ -396,7 +397,7 @@ void schedule_liftd(float *airspeed2, float *sinr2, float wing_rot_deg)
   float lift_d_fuselage = -0.072362752875 * bounded_airspeed2 / weight_sched;
   float lift_d_tail = -0.1452739306305 * bounded_airspeed2 / weight_sched;
 
-  float lift_d = lift_d_wing + lift_d_fuselage + lift_d_tail;
+  float lift_d = (lift_d_wing + lift_d_fuselage + lift_d_tail) * lift_d_multiplier;
   if (wing_rot_deg < 60) {
     lift_d = 0.0;
   }
