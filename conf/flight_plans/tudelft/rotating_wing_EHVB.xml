@@ -45,7 +45,7 @@
     </sector>
   </sectors>
   <modules>
-    <module name="follow_me"/>
+    <!--<module name="follow_me"/>-->
   </modules>
   <exceptions>
     <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
@@ -86,10 +86,10 @@
         <set value="false" var="force_forward"/>
         <stay wp="STDBY" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
     </block>
-    <block name="follow_module">
+    <!--<block name="follow_module">
       <set value="false" var="force_forward"/>
       <stay pre_call="follow_me_set_wp(WP_FOLLOW, 0)" wp="FOLLOW"/>
-    </block>
+    </block>-->
     <block name="stay_p1">
       <set value="false" var="force_forward"/>
       <stay wp="p1" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
@@ -164,10 +164,10 @@
     </block>
     <block name="flare_low">
         <set value="false" var="force_forward"/>
-        <exception cond="NavDetectGround()" deroute="Holding point"/>
+        <!-- <exception cond="NavDetectGround()" deroute="Holding point"/> -->
         <exception cond="!nav_is_in_flight()" deroute="landed"/>
         <call_once fun="NavStartDetectGround()"/>
-        <stay climb="-0.5" vmode="climb" wp="TD"/>
+        <!-- <stay climb="-0.5" vmode="climb" wp="TD"/> -->
     </block>
     <block name="landed">
         <set value="false" var="force_forward"/>
