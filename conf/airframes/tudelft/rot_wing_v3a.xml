@@ -188,11 +188,12 @@
         </module>
 
         <module name="rot_wing_automation"/>
+        <module name="ground_detect_ship"/>
 
     </firmware>
 
     <servos DRIVER="Pwm">
-        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1310" NEUTRAL="1310" MAX="1717"/>
+        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1308" NEUTRAL="1308" MAX="1715"/>
         <servo NO="1" NAME="SERVO_AIL_LEFT"  MIN="1000" NEUTRAL="1500" MAX="2000"/>
         <servo NO="2" NAME="SERVO_AIL_RIGHT" MIN="1000" NEUTRAL="1500" MAX="2000"/>
         <servo NO="3" NAME="SERVO_CAM" MIN="0" NEUTRAL="2500" MAX="2500"/>
@@ -204,7 +205,7 @@
         <servo NO="2" NAME="MOTOR_BACK"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
         <servo NO="3" NAME="MOTOR_LEFT"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
         <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="0"    MAX="8191"/>
-        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="8191"  NEUTRAL="8191" MAX="-2400"/>
+        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="4100"  NEUTRAL="4100" MAX="-5600"/>
         <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"    MAX="8191"/>
     </servos>
 
@@ -266,6 +267,7 @@
         <define VALUE="TRUE" NAME="NO_GPS_LOST_WITH_RC_VALID"/>
         <define name="UART4_CR2"    value="(USART_CR2_STOP1_BITS | USART_CR2_SWAP)"/>
         <define name="USE_AIRSPEED" value="TRUE"/>
+        <define name="DEBUG_GROUND_DETECT" value="TRUE"/>
     </section>
 
     <section name="IMU" prefix="IMU_">
