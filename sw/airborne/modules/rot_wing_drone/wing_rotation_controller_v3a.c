@@ -58,20 +58,22 @@
 #endif
 
 #ifndef WING_ROTATION_FIRST_DYN
-#define WING_ROTATION_FIRST_DYN 0.002
+#define WING_ROTATION_FIRST_DYN 0.001
 #endif
 
 #ifndef WING_ROTATION_SECOND_DYN
-#define WING_ROTATION_SECOND_DYN 0.006
+#define WING_ROTATION_SECOND_DYN 0.003
 #endif
 
 // Parameters
 struct wing_rotation_controller wing_rotation;
 
-float wing_rotation_sched_as_1 = 5;
-float wing_rotation_sched_as_2 = 8;
+float wing_rotation_sched_as_1 = 4;
+float wing_rotation_sched_as_2 = 10;
 float wing_rotation_sched_as_3 = 10;
-float wing_rotation_sched_as_4 = 15;
+float wing_rotation_sched_as_4 = 14;
+
+bool in_transition = false;
 
 static struct adc_buf buf_wing_rot_pos;
 
@@ -164,26 +166,22 @@ void wing_rotation_event(void)
   if (wing_rotation.initialized) {
 
     if (wing_rotation.airspeed_scheduling)
-    { 
+    {
       float wing_angle_scheduled_sp_deg = 0;
       float airspeed = stateGetAirspeed_f();
-      if (airspeed < wing_rotation_sched_as_1) {
+      if (airspeed < 8) {
+        in_transition = false;
         wing_angle_scheduled_sp_deg = 0;
-      } else if (airspeed < wing_rotation_sched_as_2) {
-        float as_range = wing_rotation_sched_as_2 - wing_rotation_sched_as_1;
-        Bound(as_range, 1, 20);
-        wing_angle_scheduled_sp_deg = ((airspeed - wing_rotation_sched_as_1) / as_range) * 55;
-      } else if (airspeed < wing_rotation_sched_as_3) {
+      } else if (airspeed < 10 && in_transition) {
         wing_angle_scheduled_sp_deg = 55;
-      } else if (airspeed < wing_rotation_sched_as_4) {
-        float as_range = wing_rotation_sched_as_4 - wing_rotation_sched_as_3;
-        Bound(as_range, 1, 20);
-        wing_angle_scheduled_sp_deg = ((airspeed - wing_rotation_sched_as_3) / as_range) * 35 + 55;
       } else {
-        wing_angle_scheduled_sp_deg = 90;
+        wing_angle_scheduled_sp_deg = ((airspeed - 10.)) / 4. * 35. + 55.;
+        in_transition = true;
       }
-      Bound(wing_angle_scheduled_sp_deg, 0., 90.);
+
+      Bound(wing_angle_scheduled_sp_deg, 0., 90.)
       wing_rotation.wing_angle_deg_sp = wing_angle_scheduled_sp_deg;
+
     }
 
     wing_rotation_update_sp();
