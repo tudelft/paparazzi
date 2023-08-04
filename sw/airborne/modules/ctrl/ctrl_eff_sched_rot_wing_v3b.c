@@ -64,7 +64,7 @@ float rot_wing_aerodynamic_eff_const_g1_q[1] = ROT_WING_SCHED_G1_AERO_CONST_Q;
 float rot_wing_aerodynamic_eff_const_g1_r[1] = ROT_WING_SCHED_G1_AERO_CONST_R;
 
 // Define settings to multiply initial control eff scheduling values
-float lift_d_multiplier = 0.75;
+float lift_d_multiplier = 0.7;
 float g1_p_multiplier = 1.;
 float g1_q_multiplier = 1.;
 float g1_r_multiplier = 1.;
