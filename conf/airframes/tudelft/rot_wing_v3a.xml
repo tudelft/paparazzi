@@ -275,7 +275,8 @@
         <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-7,-12,24}, .scale={{60615,64566,59275},{6202,6605,6087}}}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-22,14,14}, .scale={{38753,55928,6538},{7862,11421,1335}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-59,-7,-1}, .scale={{60664,12511,34394},{12413,2556,7043}}}}"/>
 
         <!-- Mag calibration 02-11-2022 in front of aircraft hall-->
-        <define name="MAG_CALIB" value="{{.abi_id=3, .calibrated={.neutral=true, .scale=true},.neutral={1915,-4390,3530}, .scale={{38935,30511,19759},{59172,43926,28329}}}}"/>
+        <define name="MAG_CALIB" value="{{.abi_id=3, .calibrated={.neutral=true, .scale=true},.neutral={2081,-4454,3722}, .scale={{28619,39955,3973},{48492,63631,6391}}}}"/>
+
         <!--<define name="MAG_CALIB" value="{{.abi_id=3, .calibrated={.neutral=true, .scale=true},.neutral={2034,-4388,3563}, .scale={{37980,22045,626},{64559,34387,1015}}}}"/>-->
 
         <!-- Define axis in hover frame -->
@@ -323,7 +324,7 @@
         <!--With tail effectiveness values-->
         <define VALUE="{0.0, -8.7, 0.0,   8.9, 0.0, 0.0, 0.0, 0.0}" NAME="G1_ROLL"/>
         <define VALUE="{1.2, 0.0,   -1.3, 0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G1_PITCH"/>
-        <define VALUE="{-0.17, 0.25, -0.33, 0.25, 0.0, 0.0, 0.0, 0.0}" NAME="G1_YAW"/>
+        <define VALUE="{-0.3, 0.3, -0.3, 0.3, 0.0, 0.0, 0.0, 0.0}" NAME="G1_YAW"/>
         <!--<define VALUE="{-0.2, 0.2, -0.2, 0.2, 0.0, 0.0}" NAME="G1_YAW"/>-->
         <!--With wing effectiveness values-->
         <!-- <define VALUE="{0.0, -8.3, 0.0,   8.7, 0.0, 0.0}" NAME="G1_ROLL"/>
