@@ -116,10 +116,12 @@
       <stay wp="end_trans"/>
     </block>
     <block name="transition_CW">
+      <set value="false" var="force_forward"/>
       <stay wp="end_trans"/>
       <exception cond="rot_wing_a.transitioned @AND (wing_rotation.wing_angle_deg > 80.0)" deroute="Circle_CW_fwd"/>
     </block>
     <block name="transition_CCW">
+      <set value="false" var="force_forward"/>
       <stay wp="end_trans"/>
       <exception cond="rot_wing_a.transitioned @AND (wing_rotation.wing_angle_deg > 80.0)" deroute="Circle_CCW_fwd"/>
     </block>
