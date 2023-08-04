@@ -115,6 +115,14 @@
       <call_once fun="NavSetWaypointHere(WP_p1)"/>
       <stay wp="end_trans"/>
     </block>
+    <block name="transition_CW">
+      <stay wp="end_trans"/>
+      <exception cond="rot_wing_a.transitioned @AND (wing_rotation.wing_angle_deg > 80.0)" deroute="Circle_CW_fwd"/>
+    </block>
+    <block name="transition_CCW">
+      <stay wp="end_trans"/>
+      <exception cond="rot_wing_a.transitioned @AND (wing_rotation.wing_angle_deg > 80.0)" deroute="Circle_CCW_fwd"/>
+    </block>
     <block name="route">
       <set value="false" var="force_forward"/>
       <go from="p1" hmode="route" wp="p2"/>
