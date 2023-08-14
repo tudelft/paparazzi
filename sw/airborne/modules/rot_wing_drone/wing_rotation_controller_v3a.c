@@ -172,16 +172,17 @@ void wing_rotation_event(void)
       if (airspeed < 8) {
         in_transition = false;
         wing_angle_scheduled_sp_deg = 0;
-      } else if (airspeed < 10 && in_transition) {
+      } else if (airspeed < 12 && in_transition) {
         wing_angle_scheduled_sp_deg = 55;
-      } else {
-        wing_angle_scheduled_sp_deg = ((airspeed - 10.)) / 4. * 35. + 55.;
+      } else if (airspeed > 12) {
+        wing_angle_scheduled_sp_deg = ((airspeed - 12.)) / 2. * 35. + 55.;
         in_transition = true;
+      } else {
+        wing_angle_scheduled_sp_deg = 0;
       }
 
       Bound(wing_angle_scheduled_sp_deg, 0., 90.)
       wing_rotation.wing_angle_deg_sp = wing_angle_scheduled_sp_deg;
-
     }
 
     wing_rotation_update_sp();
