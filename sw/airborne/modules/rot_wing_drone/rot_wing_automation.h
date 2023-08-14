@@ -30,6 +30,7 @@
 #include "math/pprz_algebra_float.h"
 
 extern void init_rot_wing_automation(void);
+extern void periodic_rot_wing_automation(void);
 extern void rot_wing_vis_transition(uint8_t wp_transition_id, uint8_t wp_decel_id, uint8_t wp_end_id);
 
 struct rot_wing_automation {
