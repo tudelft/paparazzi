@@ -26,6 +26,8 @@
 #include "modules/rot_wing_drone/wing_rotation_controller_v3a.h"
 #include "modules/radio_control/radio_control.h"
 
+#include "firmwares/rotorcraft/guidance/guidance_h.h"
+
 #include "state.h"
 
 #include <stdlib.h>
@@ -154,6 +156,11 @@ void wing_rotation_event(void)
       wing_rotation.wing_angle_deg_sp = 0;
   }
   #endif
+
+  if (guidance_h.mode == GUIDANCE_H_MODE_FORWARD)
+  {
+    wing_rotation.airspeed_scheduling = true;
+  }
 
   if (!wing_rotation.airspeed_scheduling) {
     wing_rotation.transition_forward = false;
