@@ -194,14 +194,18 @@ float Wu_rot_wing[4] = {10., 10., 100., 1.};
 float pitch_pref_deg = 0;
 float pitch_pref_rad = 0;
 float push_first_order_constant = 1.0;
-float hover_motor_slowdown = 1.0;
 float a_diff_limit = 3.0;
 float a_diff_limit_z = 1.0;
+
+bool hover_motors_on = true;
+
+bool weather_vane_on = false;
+float weather_vane_gain = 1.;
 
 float rot_wing_roll_limit = 0.785; // 45 deg
 float rot_wing_pitch_limit = 0.785; // 20 deg
 
-float rot_wing_max_pitch_limit_deg = 8.;
+float rot_wing_max_pitch_limit_deg = 12.;
 float rot_wing_min_pitch_limit_deg = -20.;
 
 float airspeed_turn_lower_bound = 10.;
@@ -385,14 +389,18 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   // Use the current roll angle to determine the corresponding heading rate of change.
   float coordinated_turn_roll = eulers_zxy.phi;
 
-  if( (guidance_euler_cmd.theta > 0.0) && ( fabs(guidance_euler_cmd.phi) < guidance_euler_cmd.theta)) {
-    coordinated_turn_roll = ((guidance_euler_cmd.phi > 0.0) - (guidance_euler_cmd.phi < 0.0))*guidance_euler_cmd.theta;
-  }
+  // if( (guidance_euler_cmd.theta > 0.0) && ( fabs(guidance_euler_cmd.phi) < guidance_euler_cmd.theta)) {
+  //   coordinated_turn_roll = ((guidance_euler_cmd.phi > 0.0) - (guidance_euler_cmd.phi < 0.0))*guidance_euler_cmd.theta;
+  // }
 
   if (fabs(coordinated_turn_roll) < max_phi) {
     omega = 9.81 / airspeed_turn * tanf(coordinated_turn_roll);
   } else { //max 60 degrees roll
     omega = 9.81 / airspeed_turn * 1.72305 * ((coordinated_turn_roll > 0.0) - (coordinated_turn_roll < 0.0));
+  }
+
+  if (weather_vane_on) {
+    omega = weather_vane_gain * guidance_euler_cmd.phi;
   }
 
 #ifdef FWD_SIDESLIP_GAIN
@@ -741,16 +749,32 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   rot_wing_v[1] = a_diff.y;
   rot_wing_v[2] = a_diff.z;
 
+  // Thrust z limits
+  // Evaluate motors_on boolean
+  if (!hover_motors_on) {
+    if (stateGetAirspeed_f() < 15.) {
+      hover_motors_on = true;
+    } else if (liftd > -30.) {
+      hover_motors_on = true;
+    } else if (eulers_zxy.theta > 0.2094) { // 12 deg pitch
+      hover_motors_on = true;
+    }
+  }
+  float du_min_thrust_z = ((MAX_PPRZ - actuator_state_filt_vect[0]) * g1g2[3][0] + (MAX_PPRZ - actuator_state_filt_vect[1]) * g1g2[3][1] + (MAX_PPRZ - actuator_state_filt_vect[2]) * g1g2[3][2] + (MAX_PPRZ - actuator_state_filt_vect[3]) * g1g2[3][3]) * hover_motors_on;
+  Bound(du_min_thrust_z, -50., 0.);
+  float du_max_thrust_z = -(actuator_state_filt_vect[0]*g1g2[3][0] + actuator_state_filt_vect[1]*g1g2[3][1] + actuator_state_filt_vect[2]*g1g2[3][2] + actuator_state_filt_vect[3]*g1g2[3][3]);
+  Bound(du_max_thrust_z, 0., 50.);
+
   // Set lower limits
   du_min_rot_wing[0] = -rot_wing_roll_limit - roll_filt.o[0]; //roll
   du_min_rot_wing[1] = rot_wing_min_pitch_limit_deg/180.*M_PI - pitch_filt.o[0]; // pitch
-  du_min_rot_wing[2] = (MAX_PPRZ - actuator_state_filt_vect[0]) * g1g2[3][0] + (MAX_PPRZ - actuator_state_filt_vect[1]) * g1g2[3][1] + (MAX_PPRZ - actuator_state_filt_vect[2]) * g1g2[3][2] + (MAX_PPRZ - actuator_state_filt_vect[3]) * g1g2[3][3];
+  du_min_rot_wing[2] = du_min_thrust_z;
   du_min_rot_wing[3] = (-thrust_bx_state_filt*STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS) * push_first_order_constant;
 
   // Set upper limits limits
   du_max_rot_wing[0] = rot_wing_roll_limit - roll_filt.o[0]; //roll
   du_max_rot_wing[1] = rot_wing_max_pitch_limit_deg/180.*M_PI - pitch_filt.o[0]; // pitch
-  du_max_rot_wing[2] = -(actuator_state_filt_vect[0]*g1g2[3][0] + actuator_state_filt_vect[1]*g1g2[3][1] + actuator_state_filt_vect[2]*g1g2[3][2] + actuator_state_filt_vect[3]*g1g2[3][3]);
+  du_max_rot_wing[2] = du_max_thrust_z;
   du_max_rot_wing[3] = a_diff_limit * 3;
   
   // Set prefered states
