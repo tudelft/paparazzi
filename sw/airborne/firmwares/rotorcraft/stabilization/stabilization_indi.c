@@ -572,6 +572,34 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     use_increment = 1.0;
   }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  int32_t thrust_sp_qp = stabilization_cmd[COMMAND_THRUST];
+  //int32_t push_sp_qp = stabilization_cmd[COMMAND_PUSH];
+  pprz_t push_sp_qp = RadioControlValues(RADIO_AUX4);
+
+#ifdef EXPERIMENTAL
+#error NOT_TESTED
+  // if mode forward -> mix/swap thrust/push
+  if (guidance_h.mode == MODE_H_FORWARD) {
+    // swap
+    thrust_sp_qp = stabilization_cmd[COMMAND_PUSH] / 2;
+    push_sp_qp = stabilization_cmd[COMMAND_THRUST];
+  }
+#endif
+
   float v_thrust = 0.0;
   if (indi_thrust_increment_set) {
     v_thrust = indi_thrust_increment;
@@ -587,7 +615,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     // incremental thrust
     for (i = 0; i < INDI_NUM_ACT; i++) {
       v_thrust +=
-        (stabilization_cmd[COMMAND_THRUST] - use_increment*actuator_state_filt_vect[i]) * Bwls[3][i];
+        (thrust_sp_qp - use_increment*actuator_state_filt_vect[i]) * Bwls[3][i];
     }
   }
 
@@ -605,7 +633,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   } else {
     // Copy radio
     #if !USE_NPS
-    actuator_thrust_bx_pprz = RadioControlValues(RADIO_AUX4);
+    actuator_thrust_bx_pprz = push_sp_qp;
     #else
     actuator_thrust_bx_pprz = 0;
     #endif
@@ -684,6 +712,8 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
   du_min[7] = min_pprz_cmd_right_ail - use_increment*indi_u[7];
   du_pref[4] = - use_increment*actuator_state_filt_vect[4];
+  du_pref[6] = - use_increment*actuator_state_filt_vect[6];
+  du_pref[7] = - use_increment*actuator_state_filt_vect[7];
 
   // Schedule V3A weights
   // indi_Wu[0] = indi_Wu_motor;
