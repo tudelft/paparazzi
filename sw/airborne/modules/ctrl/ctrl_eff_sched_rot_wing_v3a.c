@@ -260,7 +260,9 @@ void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr, float
   //g1g2[0][3] = (g1_p_side_motors[1] * g1_p_multiplier - 0.283333 * bounded_airspeed * *cosr) / INDI_G_SCALING;
   //g1g2[0][3] = ((0.0040856 + 0.00123478 * *cosr + -0.00428635 * *sinr + 0.00390033 * *cosr * *cosr + 0.00018527 * *sinr * *sinr)) * g1_p_multiplier;
   // For pprz_cmd = 5500
-  g1g2[0][3] = -((0.000072804595016592 * *sk * *sk * bounded_airspeed * *cosr - 0.00129490506761079 * *cosr + 0.000053954 * bounded_airspeed * *cosr) / I_xx) * g1_p_multiplier;
+  float bounded_airspeed_eff_loss = bounded_airspeed;
+  Bound(bounded_airspeed_eff_loss, 0, 10);
+  g1g2[0][3] = -((0.000072804595016592 * *sk * *sk * bounded_airspeed * *cosr - 0.00129490506761079 * *cosr + 0.000053954 * bounded_airspeed_eff_loss * *cosr) / I_xx) * g1_p_multiplier;
   Bound(g1g2[0][3], 0.00001, 1);
   //g1g2[1][3] = g1_q_side_motors[1] * g1_q_multiplier / INDI_G_SCALING;
   // For pprz_cmd = 5500
