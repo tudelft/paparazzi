@@ -732,9 +732,9 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   Gmat_rot_wing[1][0] = -cphi*lift_thrust_bz;
   Gmat_rot_wing[2][0] = -sphi*lift_thrust_bz;
 
-  Gmat_rot_wing[0][1] =  ctheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING;
-  Gmat_rot_wing[1][1] =  sphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*liftd;
-  Gmat_rot_wing[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
+  Gmat_rot_wing[0][1] =  ctheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING; // roll out is bad to climb
+  Gmat_rot_wing[1][1] =  sphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*liftd; 
+  Gmat_rot_wing[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd; 
 
   Gmat_rot_wing[0][2] =  stheta;        // psi=90 -> ax->sphi*ctheta
   Gmat_rot_wing[1][2] = -sphi*ctheta;   // psi=90 -> ay->stheta
@@ -785,16 +785,19 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   du_pref_rot_wing[2] = du_max_rot_wing[2];
   du_pref_rot_wing[3] = accel_bx_err - 9.81 * sinf(pitch_filt.o[0]);
 
-  float transition_percentage = 0.0f; // TODO: when hover props go below 40%, ...
-  #define AIRSPEED_IMPORTANCE_IN_FORWARD_WEIGHT 5
+  float thrust_command = (actuator_state_filt_vect[0] + actuator_state_filt_vect[1] + actuator_state_filt_vect[2] + actuator_state_filt_vect[3]) / 4;
+  Bound(thrust_command, 0, MAX_PPRZ);
+  float fixed_wing_percentage = !hover_motors_on; // TODO: when hover props go below 40%, ...
+  Bound(fixed_wing_percentage, 0, 1);
+  #define AIRSPEED_IMPORTANCE_IN_FORWARD_WEIGHT 16
 
   // Set weights
   Wu_rot_wing[0] = roll_priority_factor * 10.414;
-  Wu_rot_wing[1] = pitch_priority_factor * 27.53 * (1 - transition_percentage * 0.75);
+  Wu_rot_wing[1] = pitch_priority_factor * 27.53;
   Wu_rot_wing[2] = thrust_priority_factor * 0.626;
   Wu_rot_wing[3] = pusher_priority_factor * 1.0;
 
-  Wv_rot_wing[0] = horizontal_accel_weight * (1.0f + transition_percentage * AIRSPEED_IMPORTANCE_IN_FORWARD_WEIGHT);
+  Wv_rot_wing[0] = horizontal_accel_weight * (1.0f + fixed_wing_percentage * AIRSPEED_IMPORTANCE_IN_FORWARD_WEIGHT); // stall n low hover motor_off (weight 16x more important than vertical weight)
   Wv_rot_wing[1] = horizontal_accel_weight;
   Wv_rot_wing[2] = vertical_accel_weight;
 
