@@ -728,20 +728,20 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
 
   // cpsi = 1  spsi = 0   ->   psi=0
 
+  Gmat_rot_wing[0][0] =  0;
+  Gmat_rot_wing[1][0] = -cphi*lift_thrust_bz;
+  Gmat_rot_wing[2][0] = -sphi*lift_thrust_bz;
+
   Gmat_rot_wing[0][1] =  ctheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING;
   Gmat_rot_wing[1][1] =  sphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*liftd;
   Gmat_rot_wing[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
-
-  Gmat_rot_wing[0][0] =  0
-  Gmat_rot_wing[1][0] = -cphi*lift_thrust_bz;
-  Gmat_rot_wing[2][0] = -sphi*lift_thrust_bz;
 
   Gmat_rot_wing[0][2] =  stheta;        // psi=90 -> ax->sphi*ctheta
   Gmat_rot_wing[1][2] = -sphi*ctheta;   // psi=90 -> ay->stheta
   Gmat_rot_wing[2][2] =  cphi*ctheta;
 
   Gmat_rot_wing[0][3] =  ctheta;
-  Gmat_rot_wing[1][3] =  sphi*stheta;
+  Gmat_rot_wing[1][3] =  0;
   Gmat_rot_wing[2][3] = -cphi*stheta;
 
   // Perform WLS
@@ -749,7 +749,7 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
 
   rot_wing_v[0] =  cpsi * a_diff.x + spsi * a_diff.y;
   rot_wing_v[1] = -spsi * a_diff.x + cpsi * a_diff.y;
-  rot_wing_v[2] =  a_diff.z;
+  rot_wing_v[2] =  a_diff.z; 
 
   // Thrust z limits
   // Evaluate motors_on boolean
