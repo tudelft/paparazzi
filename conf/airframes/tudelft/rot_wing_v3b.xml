@@ -123,7 +123,7 @@
             <define name="WING_ROTATION_DEADZONE_PPRZ_CMD" value="500"/>
             <define name="WING_ROTATION_P_GAIN" value="-50000"/>
             <define name="WING_ROTATION_MAX_CMD" value="9600"/>
-            <define name="WING_ROTATION_RESET_RADIO_CHANNEL" value="10"/>
+            <!-- <define name="WING_ROTATION_RESET_RADIO_CHANNEL" value="10"/> -->
         </module>
 
         <module name="sys_id_doublet">
@@ -239,6 +239,7 @@
         <axis NAME="PITCH" FAILSAFE_VALUE="0"/>
         <axis NAME="YAW" FAILSAFE_VALUE="0"/>
         <axis NAME="THRUST" FAILSAFE_VALUE="0"/>
+        <axis NAME="PUSH" FAILSAFE_VALUE="0"/>
     </commands>
 
     <rc_commands>
@@ -246,10 +247,18 @@
         <set VALUE="@ROLL" COMMAND="ROLL"/>
         <set VALUE="@PITCH" COMMAND="PITCH"/>
         <set VALUE="@YAW" COMMAND="YAW"/>
+        <set VALUE="@AUX4" COMMAND="PUSH"/>
     </rc_commands>
+
+    <auto_rc_commands>
+        <set VALUE="@AUX4" COMMAND="PUSH"/>
+    </auto_rc_commands>
+
 
     <command_laws>
         <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
+        <let VAR="servo_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
+        <!-- <let VAR="hover_off" VALUE="Or(th_hold, bool_disable_hover_motors)"/> -->
         
         <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
         <!--<call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>-->
@@ -257,14 +266,14 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
-        <set VALUE="($th_hold? 0 : actuators_pprz[4])" SERVO="SERVO_RUDDER"/>
-        <set VALUE="(!autopilot_in_flight()? 0 : actuators_pprz[5])" SERVO="SERVO_ELEVATOR"/>
+        <set VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : actuators_pprz[4])" SERVO="SERVO_RUDDER"/>
+        <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? 0 : actuators_pprz[5]))" SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[8])" SERVO="MOTOR_PUSH"/>
         <set VALUE="wing_rotation.servo_pprz_cmd" SERVO="SERVO_ROTWING"/>
-        <set VALUE="($th_hold? 0 : actuators_pprz[6])" SERVO="AIL_LEFT"/>
-        <set VALUE="($th_hold? 0 : actuators_pprz[6])" SERVO="AIL_RIGHT"/>
-        <set VALUE="($th_hold? 0 : actuators_pprz[7])" SERVO="FLAP_LEFT"/>
-        <set VALUE="($th_hold? 0 : actuators_pprz[7])" SERVO="FLAP_RIGHT"/>
+        <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])" SERVO="AIL_LEFT"/>
+        <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[6])" SERVO="AIL_RIGHT"/>
+        <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])" SERVO="FLAP_LEFT"/>
+        <set VALUE="($servo_hold? RadioControlValues(RADIO_ROLL) : actuators_pprz[7])" SERVO="FLAP_RIGHT"/>
 
         <!-- Backup commands -->
         <set VALUE="($th_hold? -9600 : actuators_pprz[0])" SERVO="BMOTOR_FRONT"/>
@@ -410,9 +419,9 @@
         <define name="SPEED_GAINZ" value="0.6"/> <!--tuned at 10m/s ///2.1 2.4-->
         <define name="FILTER_CUTOFF" value="2.0"/>
         <define name="HEADING_BANK_GAIN" value="5."/>
-        <define name="MAX_AIRSPEED" value="17.0"/>
+        <define name="MAX_AIRSPEED" value="19.0"/>
         <define name="PITCH_LIFT_EFF" value="0.0"/>
-        <!-- <define name="ZERO_AIRSPEED" value="FALSE"/> -->
+        <!-- <define name="ZERO_AIRSPEED" value="TRUE"/> -->
         <define name="NAV_CIRCLE_DIST" value="60."/>
         <!--<define name="MIN_THROTTLE" value="0."/>
         <define name="MIN_PITCH" value="-35."/>
@@ -431,7 +440,7 @@
 
     <section NAME="AUTOPILOT">
         <define VALUE="AP_MODE_ATTITUDE_DIRECT" NAME="MODE_MANUAL"/>
-        <define VALUE="AP_MODE_HOVER_Z_HOLD" NAME="MODE_AUTO1"/>
+        <define VALUE="AP_MODE_FORWARD" NAME="MODE_AUTO1"/>
         <define VALUE="AP_MODE_NAV" NAME="MODE_AUTO2"/>
         <define VALUE="AP_MODE_NAV" NAME="MODE_STARTUP"/>
     </section>
