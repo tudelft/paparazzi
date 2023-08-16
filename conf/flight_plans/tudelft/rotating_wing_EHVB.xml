@@ -80,8 +80,8 @@
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
         <set value="false" var="force_forward"/>
-        <!--<set value="false" var="wing_rotation.airspeed_scheduling"/>
-        <set value="0" var="wing_rotation.wing_angle_deg_sp"/>-->
+        <set value="false" var="wing_rotation.airspeed_scheduling"/>
+        <set value="0" var="wing_rotation.wing_angle_deg_sp"/>
         <stay wp="STDBY" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
     </block>
     <block name="Approach APP">
@@ -124,13 +124,13 @@
       <set value="false" var="force_forward"/>
       <set value="true" var="wing_rotation.airspeed_scheduling"/>
       <stay wp="end_trans"/>
-      <exception cond="rot_wing_a.transitioned @AND (wing_rotation.wing_angle_deg > 80.0)" deroute="Circle_CW_fwd"/>
+      <exception cond="rot_wing_a.transitioned @AND (wing_rotation.wing_angle_deg > 75.0)" deroute="Circle_CW_fwd"/>
     </block>
     <block name="transition_CCW">
       <set value="false" var="force_forward"/>
       <set value="true" var="wing_rotation.airspeed_scheduling"/>
       <stay wp="end_trans"/>
-      <exception cond="rot_wing_a.transitioned @AND (wing_rotation.wing_angle_deg > 80.0)" deroute="Circle_CCW_fwd"/>
+      <exception cond="rot_wing_a.transitioned @AND (wing_rotation.wing_angle_deg > 75.0)" deroute="Circle_CCW_fwd"/>
     </block>
     <block name="route">
       <set value="false" var="force_forward"/>
