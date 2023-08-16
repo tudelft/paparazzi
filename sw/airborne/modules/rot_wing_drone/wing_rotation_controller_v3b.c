@@ -155,6 +155,15 @@ void wing_rotation_event(void)
   }
   #endif
 
+  if (guidance_h.mode == GUIDANCE_H_MODE_FORWARD)
+  {
+    wing_rotation.airspeed_scheduling = true;
+  } else if (guidance_h.mode == GUIDANCE_H_MODE_ATTITUDE)
+  {
+    wing_rotation.airspeed_scheduling = false;
+    wing_rotation.wing_angle_deg_sp = 0;
+  }
+
   if (!wing_rotation.airspeed_scheduling) {
     wing_rotation.transition_forward = false;
   }
@@ -174,9 +183,11 @@ void wing_rotation_event(void)
         wing_angle_scheduled_sp_deg = 0;
       } else if (airspeed < 10 && in_transition) {
         wing_angle_scheduled_sp_deg = 55;
-      } else {
+      } else if (airspeed > 10) {
         wing_angle_scheduled_sp_deg = ((airspeed - 10.)) / 4. * 35. + 55.;
         in_transition = true;
+      } else {
+        wing_angle_scheduled_sp_deg = 0;
       }
 
       Bound(wing_angle_scheduled_sp_deg, 0., 90.)
