@@ -718,28 +718,30 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   float accel_bx_err = accel_bx_sp - accel_bx;
   // float accel_bx_err = cpsi * a_diff.x + spsi * a_diff.y;
 
-  Gmat_rot_wing[0][0] = cphi*spsi*lift_thrust_bz;
-  Gmat_rot_wing[1][0] = -cphi*cpsi*lift_thrust_bz;
-  Gmat_rot_wing[2][0] = -sphi*lift_thrust_bz;
+  // cpsi = 1  spsi = 0   ->   psi=0
 
-  Gmat_rot_wing[0][1] = (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
-  Gmat_rot_wing[1][1] = (ctheta*spsi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
+  Gmat_rot_wing[0][1] =  ctheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING;
+  Gmat_rot_wing[1][1] =  sphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*liftd;
   Gmat_rot_wing[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
 
-  Gmat_rot_wing[0][2] = stheta*cpsi + sphi*ctheta*spsi;
-  Gmat_rot_wing[1][2] = stheta*spsi - sphi*ctheta*cpsi;
-  Gmat_rot_wing[2][2] = cphi*ctheta;
+  Gmat_rot_wing[0][0] =  0
+  Gmat_rot_wing[1][0] = -cphi*lift_thrust_bz;
+  Gmat_rot_wing[2][0] = -sphi*lift_thrust_bz;
 
-  Gmat_rot_wing[0][3] = ctheta*cpsi - sphi*stheta*spsi;
-  Gmat_rot_wing[1][3] = ctheta*spsi + sphi*stheta*cpsi;
+  Gmat_rot_wing[0][2] =  stheta;        // psi=90 -> ax->sphi*ctheta
+  Gmat_rot_wing[1][2] = -sphi*ctheta;   // psi=90 -> ay->stheta
+  Gmat_rot_wing[2][2] =  cphi*ctheta;
+
+  Gmat_rot_wing[0][3] =  ctheta;
+  Gmat_rot_wing[1][3] =  sphi*stheta;
   Gmat_rot_wing[2][3] = -cphi*stheta;
 
   // Perform WLS
   // WLS Control Allocator
 
-  rot_wing_v[0] = a_diff.x;
-  rot_wing_v[1] = a_diff.y;
-  rot_wing_v[2] = a_diff.z;
+  rot_wing_v[0] =  cpsi * a_diff.x + spsi * a_diff.y;
+  rot_wing_v[1] = -spsi * a_diff.x + cpsi * a_diff.y;
+  rot_wing_v[2] =  a_diff.z;
 
   // Set lower limits
   du_min_rot_wing[0] = -rot_wing_roll_limit - roll_filt.o[0]; //roll
@@ -759,13 +761,16 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   du_pref_rot_wing[2] = du_max_rot_wing[2];
   du_pref_rot_wing[3] = accel_bx_err - 9.81 * sinf(pitch_filt.o[0]);
 
+  float transition_percentage = 0.0f; // TODO: when hover props go below 40%, ...
+  #define AIRSPEED_IMPORTANCE_IN_FORWARD_WEIGHT 5
+
   // Set weights
   Wu_rot_wing[0] = roll_priority_factor * 10.414;
-  Wu_rot_wing[1] = pitch_priority_factor * 27.53;
+  Wu_rot_wing[1] = pitch_priority_factor * 27.53 * (1 - transition_percentage * 0.75);
   Wu_rot_wing[2] = thrust_priority_factor * 0.626;
   Wu_rot_wing[3] = pusher_priority_factor * 1.0;
 
-  Wv_rot_wing[0] = horizontal_accel_weight;
+  Wv_rot_wing[0] = horizontal_accel_weight * (1.0f + transition_percentage * AIRSPEED_IMPORTANCE_IN_FORWARD_WEIGHT);
   Wv_rot_wing[1] = horizontal_accel_weight;
   Wv_rot_wing[2] = vertical_accel_weight;
 
