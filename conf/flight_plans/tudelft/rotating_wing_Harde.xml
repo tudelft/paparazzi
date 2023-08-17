@@ -1,0 +1,155 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="60" ground_alt="0" lat0="52.3931434" lon0="5.9205099" max_dist_from_home="9000" name="Rotating wing Harde" security_height="2">
+  <header>
+    #include "autopilot.h"
+    #include "modules/datalink/datalink.h"
+</header>
+  <waypoints>
+    <waypoint name="HOME" x="12.6" y="-48.7"/>
+    <waypoint name="CLIMB" x="62.6" y="-80.4"/>
+    <waypoint name="trans" x="100." y="100."/>
+    <waypoint name="decel" x="100." y="100."/>
+    <waypoint name="end_trans" x="100." y="100."/>
+    <waypoint name="STDBY" lat="52.3940343" lon="5.9229692"/>
+    <waypoint name="begin_trans"  lat="52.3941568" lon="5.9231750"/>
+    <waypoint name="p1" lat="52.3963465" lon="5.9267684"/>
+    <waypoint name="p2" lat="52.3994182	" lon="5.9333586"/>
+    <waypoint name="p3" lat="52.4033999" lon="5.9292886"/>
+    <waypoint name="p4" lat="52.3999490" lon="5.9231485"/>
+    <waypoint name="circ" lat="52.39535877874752" lon="5.924914921610622"/>
+    <waypoint name="TD" lat="52.39306725044085" lon="5.92060993591204"/>
+    <waypoint lat="52.4034734" lon="5.9067552" name="C1"/>
+    <waypoint lat="52.3878517" lon="5.9212118" name="C2"/>
+    <waypoint lat="52.430140432233145" lon="6.003188930885045" name="C3"/>
+    <waypoint lat="52.442091206182084" lon="5.987117813607398" name="C4"/>
+  </waypoints>
+  <sectors>
+    <sector color="red" name="Flyzone">
+      <corner name="C1"/>
+      <corner name="C2"/>
+      <corner name="C3"/>
+      <corner name="C4"/>
+    </sector>
+  </sectors>
+  <modules>
+  </modules>
+  <exceptions>
+    <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
+    <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+  </exceptions>
+  <blocks>
+    <block name="Wait GPS">
+      <set value="false" var="force_forward"/>
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid() || !state.ned_initialized_i"/>
+    </block>
+    <block name="Geo init">
+      <set value="false" var="force_forward"/>
+      <while cond="LessThan(NavBlockTime(), 10)"/>
+      <call_once fun="NavSetAltitudeReferenceHere()"/>
+    </block>
+    <block name="Holding point">
+      <set value="false" var="force_forward"/>
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Start Engine">
+        <set value="false" var="force_forward"/>
+        <call_once fun="NavResurrect()"/>
+        <attitude pitch="0" roll="0" throttle="0" until="stage_time>10" vmode="throttle"/>
+    </block>
+    <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+        <set value="false" var="force_forward"/>
+        <exception cond="stateGetPositionEnu_f()->z > 4.0" deroute="Standby"/>
+        <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+        <attitude pitch="0" roll="0" throttle="0.75" until="stage_time>2" vmode="throttle"/>
+    </block>
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+        <set value="false" var="force_forward"/>
+        <set value="false" var="wing_rotation.airspeed_scheduling"/>
+        <set value="0" var="wing_rotation.wing_angle_deg_sp"/>
+        <stay wp="STDBY" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+    </block>
+    <block name="stay_begin-trans">
+      <set value="false" var="force_forward"/>
+      <stay wp="begin_trans" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+    </block>
+    <block name="line_trans_fwd">
+      <set value="false" var="force_forward"/>
+      <set value="true" var="wing_rotation.airspeed_scheduling"/>
+      <call_once fun="NavSetWaypointHere(WP_begin_trans)"/>
+      <go wp="end_trans"/>
+      <deroute block="end_transition"/>
+    </block>
+    <block name="end_transition">
+      <set value="false" var="force_forward"/>
+      <set value="false" var="wing_rotation.airspeed_scheduling"/>
+      <set value="0" var="wing_rotation.wing_angle_deg_sp"/>
+      <stay wp="end_trans"/>
+    </block>
+    <block name="transition_CW">
+      <set value="false" var="force_forward"/>
+      <set value="true" var="wing_rotation.airspeed_scheduling"/>
+      <stay wp="end_trans"/>
+      <exception cond="rot_wing_a.transitioned @AND (wing_rotation.wing_angle_deg > 75.0)" deroute="Circle_CW_fwd"/>
+    </block>
+    <block name="transition_CCW">
+      <set value="false" var="force_forward"/>
+      <set value="true" var="wing_rotation.airspeed_scheduling"/>
+      <stay wp="end_trans"/>
+      <exception cond="rot_wing_a.transitioned @AND (wing_rotation.wing_angle_deg > 75.0)" deroute="Circle_CCW_fwd"/>
+    </block>
+    <block name="route">
+      <set value="false" var="force_forward"/>
+      <go from="p1" hmode="route" wp="p2"/>
+      <go from="p2" hmode="route" wp="p3"/>
+      <go from="p3" hmode="route" wp="p4"/>
+      <go from="p4" hmode="route" wp="p1"/>
+      <deroute block="route"/>
+    </block>
+    <block name="Circle_CW_fwd">
+      <set value="true" var="force_forward"/>
+      <circle radius="100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+    </block>
+    <block name="Circle_CCW_fwd">
+      <set value="true" var="force_forward"/>
+      <circle radius="-100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+    </block>
+    <block name="Transition_quad">
+      <set value="false" var="force_forward"/>
+      <go wp="STDBY"/>
+      <deroute block="Standby"/>
+    </block>
+    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
+        <set value="false" var="force_forward"/>
+        <call_once fun="NavSetWaypointHere(WP_TD)"/>
+    </block>
+    <block name="land">
+        <set value="false" var="force_forward"/>
+        <go wp="TD"/>
+    </block>
+    <block name="descend">
+        <set value="false" var="force_forward"/>
+        <exception cond="!(stateGetPositionEnu_f()->z > 12.0)" deroute="flare"/>
+        <stay climb="-1.0" vmode="climb" wp="TD"/>
+    </block>
+    <block name="flare">
+        <set value="false" var="force_forward"/>
+        <stay climb="-0.5" vmode="climb" wp="TD"/>
+        <!--<exception cond="!(stateGetPositionEnu_f()->z > 2.0)" deroute="flare_low"/>-->
+        <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.24)" deroute="flare_low"/>
+    </block>
+    <block name="flare_low">
+        <set value="false" var="force_forward"/>
+        <exception cond="NavDetectGround()" deroute="Holding point"/>
+        <exception cond="!nav_is_in_flight()" deroute="Holding point"/>
+        <call_once fun="NavStartDetectGround()"/>
+        <stay climb="-0.5" vmode="climb" wp="TD"/>
+    </block>
+    <block name="landed">
+        <set value="false" var="force_forward"/>
+        <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>
