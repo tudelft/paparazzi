@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="60" ground_alt="0" lat0="52.3931434" lon0="5.9205099" max_dist_from_home="9000" name="Rotating wing Harde" security_height="2">
+<flight_plan alt="120" ground_alt="60" lat0="52.3931434" lon0="5.9205099" max_dist_from_home="9000" name="Rotating wing Harde" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -14,15 +14,16 @@
     <waypoint name="STDBY" lat="52.3940343" lon="5.9229692"/>
     <waypoint name="begin_trans"  lat="52.3941568" lon="5.9231750"/>
     <waypoint name="p1" lat="52.3963465" lon="5.9267684"/>
-    <waypoint name="p2" lat="52.3994182	" lon="5.9333586"/>
+    <waypoint name="p2" lat="52.3994182" lon="5.9333586"/>
     <waypoint name="p3" lat="52.4033999" lon="5.9292886"/>
     <waypoint name="p4" lat="52.3999490" lon="5.9231485"/>
     <waypoint name="circ" lat="52.39535877874752" lon="5.924914921610622"/>
     <waypoint name="TD" lat="52.39306725044085" lon="5.92060993591204"/>
     <waypoint lat="52.4034734" lon="5.9067552" name="C1"/>
     <waypoint lat="52.3878517" lon="5.9212118" name="C2"/>
-    <waypoint lat="52.430140432233145" lon="6.003188930885045" name="C3"/>
-    <waypoint lat="52.442091206182084" lon="5.987117813607398" name="C4"/>
+    <waypoint lat="52.4054122" lon="5.9581765" name="C3"/>
+    <waypoint lat="52.4179727" lon="6.0083051" name="C4"/>
+    <waypoint lat="52.442091206182084" lon="5.987117813607398" name="C5"/>
   </waypoints>
   <sectors>
     <sector color="red" name="Flyzone">
@@ -30,6 +31,7 @@
       <corner name="C2"/>
       <corner name="C3"/>
       <corner name="C4"/>
+      <corner name="C5"/>
     </sector>
   </sectors>
   <modules>
