@@ -215,7 +215,7 @@
         <servo NO="2" NAME="MOTOR_BACK"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
         <servo NO="3" NAME="MOTOR_LEFT"     MIN="0"     NEUTRAL="1000" MAX="8191"/>
         <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="0"    MAX="8191"/>
-        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="4000"  NEUTRAL="4000" MAX="-5500"/>
+        <servo NO="5" NAME="SERVO_ELEVATOR" MIN="5000"  NEUTRAL="5000" MAX="-5500"/>
         <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"    MAX="8191"/>
     </servos>
 
@@ -423,6 +423,7 @@
         <define name="PITCH_LIFT_EFF" value="0.0"/>
         <!-- <define name="ZERO_AIRSPEED" value="TRUE"/> -->
         <define name="NAV_CIRCLE_DIST" value="60."/>
+        <define name="NAV_LINE_DIST" value="100"/>
         <!--<define name="MIN_THROTTLE" value="0."/>
         <define name="MIN_PITCH" value="-35."/>
         <define name="MAX_PITCH" value="35."/>
