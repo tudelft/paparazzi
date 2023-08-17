@@ -197,7 +197,8 @@ float push_first_order_constant = 1.0;
 float a_diff_limit = 3.0;
 float a_diff_limit_z = 1.0;
 
-bool hover_motors_on = true;
+bool hover_motors_idle = true;
+bool bool_disable_hover_motors = false;
 
 bool weather_vane_on = false;
 float weather_vane_gain = 1.;
@@ -753,16 +754,16 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
 
   // Thrust z limits
   // Evaluate motors_on boolean
-  if (!hover_motors_on) {
+  if (!hover_motors_idle) {
     if (stateGetAirspeed_f() < 15.) {
-      hover_motors_on = true;
+      hover_motors_idle = true;
     } else if (liftd > -30.) {
-      hover_motors_on = true;
+      hover_motors_idle = true;
     } else if (eulers_zxy.theta > 0.2094) { // 12 deg pitch
-      hover_motors_on = true;
+      hover_motors_idle = true;
     }
   }
-  float du_min_thrust_z = ((MAX_PPRZ - actuator_state_filt_vect[0]) * g1g2[3][0] + (MAX_PPRZ - actuator_state_filt_vect[1]) * g1g2[3][1] + (MAX_PPRZ - actuator_state_filt_vect[2]) * g1g2[3][2] + (MAX_PPRZ - actuator_state_filt_vect[3]) * g1g2[3][3]) * hover_motors_on;
+  float du_min_thrust_z = ((MAX_PPRZ - actuator_state_filt_vect[0]) * g1g2[3][0] + (MAX_PPRZ - actuator_state_filt_vect[1]) * g1g2[3][1] + (MAX_PPRZ - actuator_state_filt_vect[2]) * g1g2[3][2] + (MAX_PPRZ - actuator_state_filt_vect[3]) * g1g2[3][3]) * hover_motors_idle;
   Bound(du_min_thrust_z, -50., 0.);
   float du_max_thrust_z = -(actuator_state_filt_vect[0]*g1g2[3][0] + actuator_state_filt_vect[1]*g1g2[3][1] + actuator_state_filt_vect[2]*g1g2[3][2] + actuator_state_filt_vect[3]*g1g2[3][3]);
   Bound(du_max_thrust_z, 0., 50.);
@@ -787,7 +788,7 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
 
   float thrust_command = (actuator_state_filt_vect[0] + actuator_state_filt_vect[1] + actuator_state_filt_vect[2] + actuator_state_filt_vect[3]) / 4;
   Bound(thrust_command, 0, MAX_PPRZ);
-  float fixed_wing_percentage = !hover_motors_on; // TODO: when hover props go below 40%, ...
+  float fixed_wing_percentage = !hover_motors_idle; // TODO: when hover props go below 40%, ...
   Bound(fixed_wing_percentage, 0, 1);
   #define AIRSPEED_IMPORTANCE_IN_FORWARD_WEIGHT 16
 

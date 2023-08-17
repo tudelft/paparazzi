@@ -258,14 +258,14 @@
     <command_laws>
         <let VAR="th_hold" VALUE="Or(LessThan(RadioControlValues(RADIO_TH_HOLD), -4800), !autopilot_get_motors_on())"/>
         <let VAR="servo_hold" VALUE="LessThan(RadioControlValues(RADIO_TH_HOLD), -4800)"/>
-        <!-- <let VAR="hover_off" VALUE="Or(th_hold, bool_disable_hover_motors)"/> -->
+        <let VAR="hover_off" VALUE="Or($th_hold, bool_disable_hover_motors)"/>
         
         <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>
         <!--<call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>-->
-        <set VALUE="($th_hold? -9600 : actuators_pprz[0])" SERVO="MOTOR_FRONT"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
+        <set VALUE="($hover_off? -9600 : actuators_pprz[0])" SERVO="MOTOR_FRONT"/>
+        <set VALUE="($hover_off? -9600 : actuators_pprz[1])" SERVO="MOTOR_RIGHT"/>
+        <set VALUE="($hover_off? -9600 : actuators_pprz[2])" SERVO="MOTOR_BACK"/>
+        <set VALUE="($hover_off? -9600 : actuators_pprz[3])" SERVO="MOTOR_LEFT"/>
         <set VALUE="($servo_hold? RadioControlValues(RADIO_YAW) : actuators_pprz[4])" SERVO="SERVO_RUDDER"/>
         <set VALUE="($servo_hold? (RadioControlValues(RADIO_PITCH)/4+7200) : (!autopilot_in_flight()? 0 : actuators_pprz[5]))" SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[8])" SERVO="MOTOR_PUSH"/>

@@ -83,7 +83,8 @@ extern float rot_wing_min_pitch_limit_deg;
 extern float pitch_pref_deg;
 extern float airspeed_turn_lower_bound;
 
-extern bool hover_motors_on;
+extern bool hover_motors_idle;
+extern bool bool_disable_hover_motors;
 
 extern bool weather_vane_on;
 extern float weather_vane_gain;
