@@ -81,6 +81,8 @@
     <block name="stay_begin-trans">
       <set value="7" var="nav_max_speed"/>
       <set value="false" var="force_forward"/>
+      <set value="false" var="wing_rotation.airspeed_scheduling"/>
+      <set value="0" var="wing_rotation.wing_angle_deg_sp"/>
       <stay wp="begin_trans" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
     </block>
     <block name="line_trans_fwd">
