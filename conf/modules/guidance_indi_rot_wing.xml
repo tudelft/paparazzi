@@ -11,7 +11,7 @@
       <dl_settings NAME="guidance_indi_hybrid">
         <dl_setting var="weather_vane_on" min="0" step="1.0" max="1.0" shortname="wv_on"/>
         <dl_setting var="weather_vane_gain" min="1.0" step="0.1" max="20.0" shortname="wv_gain"/>
-        <dl_setting var="hover_motors_idle" min="0" step="1.0" max="1.0" shortname="hover_m_idle"/>
+        <dl_setting var="hover_motors_active" min="0" step="1.0" max="1.0" shortname="hover_m_active"/>
         <dl_setting var="bool_disable_hover_motors" min="0" step="1.0" max="1.0" shortname="hover_m_off"/>
         <dl_setting var="pitch_priority_factor" min="0" step="1.0" max="100" shortname="pitch_weight"/>
         <dl_setting var="pitch_pref_deg" min="-10" step="0.1" max="10" shortname="pitch_pref"/>
