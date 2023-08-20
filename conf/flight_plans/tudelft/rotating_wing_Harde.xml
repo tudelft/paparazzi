@@ -58,11 +58,13 @@
     </block>
     <block name="Start Engine">
         <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
         <call_once fun="NavResurrect()"/>
         <attitude pitch="0" roll="0" throttle="0" until="stage_time>10" vmode="throttle"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
         <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
         <exception cond="stateGetPositionEnu_f()->z > 4.0" deroute="Standby"/>
         <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
         <attitude pitch="0" roll="0" throttle="0.75" until="stage_time>2" vmode="throttle"/>
@@ -70,8 +72,7 @@
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
         <set value="7" var="nav_max_speed"/>
         <set value="false" var="force_forward"/>
-        <set value="false" var="wing_rotation.airspeed_scheduling"/>
-        <set value="0" var="wing_rotation.wing_angle_deg_sp"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
         <stay wp="STDBY" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
     </block>
     <block name="Link_loss">
@@ -81,14 +82,13 @@
     <block name="stay_begin-trans">
       <set value="7" var="nav_max_speed"/>
       <set value="false" var="force_forward"/>
-      <set value="false" var="wing_rotation.airspeed_scheduling"/>
-      <set value="0" var="wing_rotation.wing_angle_deg_sp"/>
+      <call fun="set_wing_rotation_scheduler(false)"/>
       <stay wp="begin_trans" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
     </block>
     <block name="line_trans_fwd">
       <set value="30" var="nav_max_speed"/>
       <set value="false" var="force_forward"/>
-      <set value="true" var="wing_rotation.airspeed_scheduling"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
       <call_once fun="NavSetWaypointHere(WP_begin_trans)"/>
       <go wp="end_trans"/>
       <deroute block="end_transition"/>
@@ -96,27 +96,27 @@
     <block name="end_transition">
       <set value="7" var="nav_max_speed"/>
       <set value="false" var="force_forward"/>
-      <set value="false" var="wing_rotation.airspeed_scheduling"/>
-      <set value="0" var="wing_rotation.wing_angle_deg_sp"/>
+      <call fun="set_wing_rotation_scheduler(false)"/>
       <stay wp="end_trans"/>
     </block>
     <block name="transition_CW">
       <set value="30" var="nav_max_speed"/>
       <set value="false" var="force_forward"/>
-      <set value="true" var="wing_rotation.airspeed_scheduling"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
       <stay wp="end_trans"/>
       <exception cond="rot_wing_a.transitioned @AND (wing_rotation.wing_angle_deg > 75.0)" deroute="Circle_CW_fwd"/>
     </block>
     <block name="transition_CCW">
       <set value="30" var="nav_max_speed"/>
       <set value="false" var="force_forward"/>
-      <set value="true" var="wing_rotation.airspeed_scheduling"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
       <stay wp="end_trans"/>
       <exception cond="rot_wing_a.transitioned @AND (wing_rotation.wing_angle_deg > 75.0)" deroute="Circle_CCW_fwd"/>
     </block>
     <block name="route">
       <set value="true" var="force_forward"/>
       <set value="30" var="nav_max_speed"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
       <go from="p1" hmode="route" wp="p2"/>
       <go from="p2" hmode="route" wp="p3"/>
       <go from="p3" hmode="route" wp="p4"/>
@@ -126,6 +126,7 @@
     <block name="small_route">
       <set value="30" var="nav_max_speed"/>
       <set value="true" var="force_forward"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
       <go wp="p2"/>
       <go wp="p3"/>
       <go wp="p4"/>
@@ -135,38 +136,45 @@
     <block name="Circle_CW_fwd">
       <set value="30" var="nav_max_speed"/>
       <set value="true" var="force_forward"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
       <circle radius="100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
     </block>
     <block name="Circle_CCW_fwd">
       <set value="30" var="nav_max_speed"/>
       <set value="true" var="force_forward"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
       <circle radius="-100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
     </block>
     <block name="Transition_quad">
       <set value="30" var="nav_max_speed"/>
       <set value="false" var="force_forward"/>
+      <call fun="set_wing_rotation_scheduler(true)"/>
       <go wp="STDBY"/>
       <deroute block="Standby"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
         <set value="7" var="nav_max_speed"/>
         <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
         <call_once fun="NavSetWaypointHere(WP_TD)"/>
     </block>
     <block name="land">
         <set value="7" var="nav_max_speed"/>
         <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
         <go wp="TD"/>
     </block>
     <block name="descend">
         <set value="7" var="nav_max_speed"/>
         <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
         <exception cond="!(stateGetPositionEnu_f()->z > 12.0)" deroute="flare"/>
         <stay climb="-1.0" vmode="climb" wp="TD"/>
     </block>
     <block name="flare">
         <set value="7" var="nav_max_speed"/>
         <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
         <stay climb="-0.5" vmode="climb" wp="TD"/>
         <!--<exception cond="!(stateGetPositionEnu_f()->z > 2.0)" deroute="flare_low"/>-->
         <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.24)" deroute="flare_low"/>
@@ -174,6 +182,7 @@
     <block name="flare_low">
         <set value="7" var="nav_max_speed"/>
         <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
         <exception cond="NavDetectGround()" deroute="Holding point"/>
         <exception cond="!nav_is_in_flight()" deroute="Holding point"/>
         <call_once fun="NavStartDetectGround()"/>
@@ -182,6 +191,7 @@
     <block name="landed">
         <set value="7" var="nav_max_speed"/>
         <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
         <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
   </blocks>
