@@ -157,11 +157,10 @@ void wing_rotation_event(void)
 
   if (guidance_h.mode == GUIDANCE_H_MODE_FORWARD)
   {
-    wing_rotation.airspeed_scheduling = true;
+    set_wing_rotation_scheduler(true);
   } else if (guidance_h.mode == GUIDANCE_H_MODE_ATTITUDE)
   {
-    wing_rotation.airspeed_scheduling = false;
-    wing_rotation.wing_angle_deg_sp = 0;
+    set_wing_rotation_scheduler(false);
   }
 
   if (!wing_rotation.airspeed_scheduling) {
@@ -249,4 +248,16 @@ void wing_rotation_compute_pprz_cmd(void)
 
   wing_rotation.servo_pprz_cmd = servo_pprz_cmd;
   #endif
+}
+
+// Function to call in flightplan to switch scheduler on or off
+void set_wing_rotation_scheduler(bool rotation_scheduler_on)
+{
+  if (rotation_scheduler_on)
+  {
+    wing_rotation.airspeed_scheduling = true;
+  } else {
+    wing_rotation.airspeed_scheduling = false;
+    wing_rotation.wing_angle_deg_sp = 0;
+  }
 }
