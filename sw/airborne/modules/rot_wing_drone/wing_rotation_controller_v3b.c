@@ -251,7 +251,7 @@ void wing_rotation_compute_pprz_cmd(void)
 }
 
 // Function to call in flightplan to switch scheduler on or off
-void set_wing_rotation_scheduler(bool rotation_scheduler_on)
+bool set_wing_rotation_scheduler(bool rotation_scheduler_on)
 {
   if (rotation_scheduler_on)
   {
@@ -260,4 +260,5 @@ void set_wing_rotation_scheduler(bool rotation_scheduler_on)
     wing_rotation.airspeed_scheduling = false;
     wing_rotation.wing_angle_deg_sp = 0;
   }
+  return true;
 }

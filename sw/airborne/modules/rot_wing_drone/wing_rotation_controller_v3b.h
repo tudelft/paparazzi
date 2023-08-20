@@ -31,7 +31,7 @@
 extern void wing_rotation_init(void);
 extern void wing_rotation_periodic(void);
 extern void wing_rotation_event(void);
-extern void set_wing_rotation_scheduler(bool rotation_scheduler_on);
+extern bool set_wing_rotation_scheduler(bool rotation_scheduler_on);
 
 // Paramaters
 struct wing_rotation_controller {
