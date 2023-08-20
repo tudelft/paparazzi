@@ -697,7 +697,6 @@ void guidance_indi_propagate_filters(void) {
  * @param Gmat array to write the matrix to [3x4]
  */
 void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
-
   /*Pre-calculate sines and cosines*/
   float sphi = sinf(eulers_zxy.phi);
   float cphi = cosf(eulers_zxy.phi);
@@ -757,12 +756,18 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   if (!hover_motors_active) {
     if (stateGetAirspeed_f() < 15.) {
       hover_motors_active = true;
+      bool_disable_hover_motors = false;
     } else if (liftd > -30.) {
       hover_motors_active = true;
+      bool_disable_hover_motors = false;
     } else if (eulers_zxy.theta > 0.2094) { // 12 deg pitch
       hover_motors_active = true;
+      bool_disable_hover_motors = false;
     }
+  } else {
+    bool_disable_hover_motors = false;
   }
+
   float du_min_thrust_z = ((MAX_PPRZ - actuator_state_filt_vect[0]) * g1g2[3][0] + (MAX_PPRZ - actuator_state_filt_vect[1]) * g1g2[3][1] + (MAX_PPRZ - actuator_state_filt_vect[2]) * g1g2[3][2] + (MAX_PPRZ - actuator_state_filt_vect[3]) * g1g2[3][3]) * hover_motors_active;
   Bound(du_min_thrust_z, -50., 0.);
   float du_max_thrust_z = -(actuator_state_filt_vect[0]*g1g2[3][0] + actuator_state_filt_vect[1]*g1g2[3][1] + actuator_state_filt_vect[2]*g1g2[3][2] + actuator_state_filt_vect[3]*g1g2[3][3]);
