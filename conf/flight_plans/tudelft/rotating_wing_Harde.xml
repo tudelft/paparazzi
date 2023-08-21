@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="120" ground_alt="60" lat0="52.3931434" lon0="5.9205099" max_dist_from_home="9000" name="Rotating wing Harde" security_height="2">
+<flight_plan alt="180" ground_alt="60" lat0="52.3931434" lon0="5.9205099" max_dist_from_home="9000" name="Rotating wing Harde" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
