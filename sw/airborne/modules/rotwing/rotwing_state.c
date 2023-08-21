@@ -78,7 +78,9 @@ void periodic_rotwing_state(void)
   // Switch on motors if flight mode is attitude
   if (guidance_h.mode == GUIDANCE_H_MODE_ATTITUDE) {
     bool_disable_hover_motors = false;
-  } 
+  } else if (guidance_h.mode == GUIDANCE_H_MODE_FORWARD) {
+    bool_disable_hover_motors = false;
+  }
 
 }
 
