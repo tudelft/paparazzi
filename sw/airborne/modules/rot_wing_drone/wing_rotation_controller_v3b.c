@@ -260,5 +260,5 @@ bool set_wing_rotation_scheduler(bool rotation_scheduler_on)
     wing_rotation.airspeed_scheduling = false;
     wing_rotation.wing_angle_deg_sp = 0;
   }
-  return true;
+  return false;
 }
