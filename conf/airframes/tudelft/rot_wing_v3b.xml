@@ -411,6 +411,7 @@
         <define VALUE="100" NAME="DGAIN"/>
         <define VALUE="0" NAME="AGAIN"/>
         <define VALUE="20" NAME="IGAIN"/>
+        <define VALUE="USE_REF" NAME="FALSE"/>
     </section>
 
     <section name="GUIDANCE_INDI_HYBRID" prefix="GUIDANCE_INDI_">
