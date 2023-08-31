@@ -41,8 +41,6 @@ struct TFMini tfmini = {
 
 static void tfmini_parse(uint8_t byte);
 
-#define PERIODIC_TELEMETRY 1
-
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
 
