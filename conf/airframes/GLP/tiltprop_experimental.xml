@@ -126,7 +126,7 @@
       <define name="IMU_MPU9250_ACCEL_RANGE" value="MPU9250_ACCEL_RANGE_16G" />
     </module>
 
-    <!-- <module name="servo_tester"/> -->
+    <!--module name="servo_tester"/-->
 
     <module name="air_data">
       <define name="USE_AIRSPEED_AIR_DATA" value="FALSE"/>
@@ -189,17 +189,32 @@
       <define name="TAKEOFF_Q_GAIN" value="10.0"/>
     </module>
 
+    <module name="agl_dist">
+      <define name="AGL_DIST_ID" value="AGL_LIDAR_TFMINI_ID"/>
+      <define name="AGL_DIST_MAX_RANGE" value="12.0"/>
+      <define name="AGL_DIST_MIN_RANGE" value="0.05"/>
+      <define name="AGL_DIST_FILTER" value="0.1"/>
+    </module>
+
+    <module name="lidar" type="tfmini">
+      <configure name="TFMINI_PORT" value="UART2"/> 
+      <configure name="TFMINI_BAUD" value="B115200"/>
+      <configure name="USE_TFMINI_AGL" value="TRUE"/>
+      <configure name="TFMINI_COMPENSATE_ROTATION" value="TRUE"/>
+    </module>
+  
+
     <!-- ******************************************************* -->
   </firmware>
 
   <servos driver="Pwm">
-    <servo name="TILT_LEFT" no="0" min="2160" neutral="1560" max="960"/>
+    <servo name="TILT_LEFT" no="0" min="2300" neutral="1700" max="1100"/>
     <servo name="TILT_RIGHT" no="1" min="750" neutral="1350" max="1950"/>
     <servo name="RM" no="2" min="1000" neutral="1150" max="1900"/>
     <servo name="LM" no="3" min="1000" neutral="1150" max="1900"/>
     <servo name="AIL_LEFT" no="4" min="1100" neutral="1500" max="1900"/>
     <servo name="AIL_RIGHT" no="5" min="1100" neutral="1500" max="1900"/>
-    <!-- <servo name="SERVO_TEST" no="0" min="2050" neutral="1550" max="1050"/> -->
+    <!--servo name="SERVO_TEST" no="0" min="2160" neutral="1560" max="960"/-->
   </servos>
 
   <!-- <auto_rc_commands> -->
@@ -228,7 +243,7 @@
 
 
   <command_laws>
-    <set servo="TILT_LEFT" value="autopilot.motors_on ? actuators_pprz[0] : 0"/>
+    <set servo="TILT_LEFT" value="autopilot.motors_on ? actuators_pprz[0] : 0"/> 
     <set servo="TILT_RIGHT" value="autopilot.motors_on ? actuators_pprz[1] : 0"/>
     <set servo="RM" value="autopilot.motors_on ? actuators_pprz[2] : -MAX_PPRZ"/>
     <set servo="LM" value="autopilot.motors_on ? actuators_pprz[3] : -MAX_PPRZ"/>
@@ -348,7 +363,7 @@
     <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
     <define name="FILT_CUTOFF" value="3.0"/>
     <define name="Filt_CUTOFF_P" value="10"/>
-    <!-- <define name="FILT_CUTOFF_Q" value="20"/> -->
+    <!--define name="FILT_CUTOFF_Q" value="20"/--> 
     <define name="FILTER_PITCH_RATE" value="TRUE"/>
     <define name="2ORDER_QFILT_CUTOFF" value="3.0"/>
     <define name="FILT_CUTOFF_R" value="10"/>
@@ -358,7 +373,7 @@
     <!-- first order actuator dynamics -->
     <!--<define name="ACT_DYN" value="{0.1, 0.1, 0.045, 0.045}"/>-->
     <!--<define name="ACT_DYN" value="{0.0982, 0.1192, 0.045, 0.045}"/>--> <!-- [0.05 0.05 0.045 0.045] before -->
-    <define name="ACT_DYN" value="{0.0982, 0.1192, 0.03, 0.03, 0.09, 0.09}"/> <!-- [0.05 0.05 0.045 0.045] before -->
+    <define name="ACT_DYN" value="{0.0982, 0.1192, 0.03, 0.03, 0.05105, 0.05105}"/> <!-- [0.05 0.05 0.045 0.045] before -->
     <define name="ACT_RATE_LIMIT" value="{226.89, 226.89, 9600, 9600, 226.0, 226.0}"/>
     <define name="ACT_IS_SERVO" value="{1, 1, 0, 0, 1, 1}"/>
 
