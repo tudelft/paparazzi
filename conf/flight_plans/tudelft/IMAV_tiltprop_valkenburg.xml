@@ -98,6 +98,7 @@
       <go wp="TD"/>
     </block>
     <block name="flare">
+      <exception cond="LessThan(agl_dist_value_filtered, 0.15)" deroute="landed"/>
       <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">
