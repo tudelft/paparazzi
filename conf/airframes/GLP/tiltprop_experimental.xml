@@ -52,7 +52,7 @@
 
 
     <!-- ****************** Common to both ********************* -->
-    <!--<module name="gps" type="ubx_ucenter"/>-->
+    <!-- <module name="gps" type="ubx_ucenter"/> -->
 
     <module name="tlsf"/>
     <module name="pprzlog"/>
@@ -169,7 +169,7 @@
     </module> -->
 
     <module name="gps" type="ublox">
-      <configure name="GPS_BAUD" value="B57600"/>
+      <configure name="GPS_BAUD" value="B460800"/>
     </module>
 
    <module name="ins" type="ekf2"/>
