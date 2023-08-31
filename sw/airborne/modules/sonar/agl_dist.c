@@ -40,10 +40,10 @@ float agl_measurement_time;
 #define AGL_DIST_ID ABI_BROADCAST
 #endif
 #ifndef AGL_DIST_MAX_RANGE
-#define AGL_DIST_MAX_RANGE 5.0f
+#define AGL_DIST_MAX_RANGE 12.0f
 #endif
 #ifndef AGL_DIST_MIN_RANGE
-#define AGL_DIST_MIN_RANGE 0.001f
+#define AGL_DIST_MIN_RANGE 0.05f
 #endif
 #ifndef AGL_DIST_FILTER
 #define AGL_DIST_FILTER 0.1f

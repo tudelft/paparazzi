@@ -50,6 +50,7 @@
 #include <stdio.h>
 #include "firmwares/rotorcraft/autopilot_static.h"
 #include <time.h>
+#include "modules/sonar/agl_dist.h"
 
 // Factor that the estimated G matrix is allowed to deviate from initial one
 #define INDI_ALLOWED_G_FACTOR 2.0
@@ -925,7 +926,7 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
 
   int16_t takeoff_stage = take_off_stage(eulers_zxy.theta);
   float takeoff_thrust = take_off_thrust();
-
+  
   if (takeoff_stage == 0){
     // initialize pivoting by putting motors up
 	  actuators_pprz[0] = MAX_PPRZ;
