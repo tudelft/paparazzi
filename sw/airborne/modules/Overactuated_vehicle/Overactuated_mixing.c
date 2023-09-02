@@ -1481,10 +1481,12 @@ void overactuated_mixing_run(void)
         Bound(gain_to_speed_constant, 0.1, 1);
 
         //Apply euler angle gains: 
-        float phi_dot = euler_error[0]  * indi_gains_over.p.phi * gain_to_speed_constant;ltp_to_body_euler
+        float phi_dot = euler_error[0]  * indi_gains_over.p.phi * gain_to_speed_constant;
+        float theta_dot = euler_error[1]  * indi_gains_over.p.theta * gain_to_speed_constant;
+        float psi_dot = euler_error[2]  * indi_gains_over.p.psi * gain_to_speed_constant;
         float phi_value = euler_vect[0];
         float theta_value = euler_vect[1];
-
+        
         //Calculate the body error manually: 
         angular_body_error[0] = phi_dot - sin(theta_value) * psi_dot;
         angular_body_error[1] = cos(phi_value) * theta_dot + sin(phi_value) * cos(theta_value) * psi_dot;
