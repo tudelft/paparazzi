@@ -217,13 +217,13 @@
       <set value="1" var="approach_state"/>
       <stay climb="-0.8" vmode="climb" wp="TD"/>
       <exception cond="!(stateGetPositionEnu_f()->z > 1.0)" deroute="flare_low"/>
-      <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.20)" deroute="flare_low"/>
+      <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.50)" deroute="flare_low"/>
     </block>
     <block name="flare_low">
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
       <!-- <exception cond="NavDetectGround()" deroute="Holding point"/> -->
-      <!-- <exception cond="!nav_is_in_flight()" deroute="landed"/> -->
+      <exception cond="detect_ground_on_landing()" deroute="landed"/>
       <!-- <call_once fun="NavStartDetectGround()"/> -->
       <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>

@@ -335,13 +335,18 @@ struct FloatEulers max_value_error = {
  * IT ONLY WORKS WITH THE NONLINEAR CONTROLLER!!! 
  */
 uint8_t detect_ground_on_landing(void){
-    if(altitude_lidar_agl_meters <= min_lidar_alt_ground_detect && myam7_data_in_local.residual_az_int > az_tolerance_land && approach_state == 1 ){
+    if(altitude_lidar_agl_meters <= min_lidar_alt_ground_detect &&
+       myam7_data_in_local.lidar_strength >= 200 && 
+       myam7_data_in_local.residual_az_int > az_tolerance_land && 
+       approach_state == 1 ){
+
         if(get_sys_time_float() - time_of_ground_not_detected >= time_tolerance_land){
             ground_detected_am = 1;
         }
         else{
             ground_detected_am = 0; 
         }
+        
     }
     else{
         time_of_ground_not_detected = get_sys_time_float();
@@ -1476,10 +1481,7 @@ void overactuated_mixing_run(void)
         Bound(gain_to_speed_constant, 0.1, 1);
 
         //Apply euler angle gains: 
-        float phi_dot = euler_error[0]  * indi_gains_over.p.phi * gain_to_speed_constant;
-        float theta_dot = euler_error[1]  * indi_gains_over.p.theta * gain_to_speed_constant;
-        float psi_dot = euler_error[2]  * indi_gains_over.p.psi * gain_to_speed_constant;
-
+        float phi_dot = euler_error[0]  * indi_gains_over.p.phi * gain_to_speed_constant;ltp_to_body_euler
         float phi_value = euler_vect[0];
         float theta_value = euler_vect[1];
 
