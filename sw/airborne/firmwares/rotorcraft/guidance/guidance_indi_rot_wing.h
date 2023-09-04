@@ -73,6 +73,9 @@ extern float nav_max_speed;
 extern bool take_heading_control;
 extern bool force_forward;       ///< forward flight for hybrid nav
 
+extern struct FloatRates ff_rates;
+extern bool ff_rates_set;
+
 extern float guidance_indi_max_bank;
 extern float push_first_order_constant;
 extern float hover_motor_slowdown;

@@ -95,6 +95,9 @@ bool take_heading_control = false;
 
 bool force_forward = false;
 
+struct FloatRates ff_rates;
+bool ff_rates_set = false;
+
 struct FloatVect3 sp_accel = {0.0,0.0,0.0};
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
 float guidance_indi_specific_force_gain = GUIDANCE_INDI_SPECIFIC_FORCE_GAIN;

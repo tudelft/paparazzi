@@ -48,6 +48,9 @@
 #include "wls/wls_alloc.h"
 #include <stdio.h>
 
+// For feed forward rates
+#include "firmwares/rotorcraft/guidance/guidance_indi_rot_wing.h"
+
 // Factor that the estimated G matrix is allowed to deviate from initial one
 #define INDI_ALLOWED_G_FACTOR 2.0
 
@@ -873,6 +876,11 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight)
   rate_sp.p = indi_gains.att.p * att_fb.x / indi_gains.rate.p;
   rate_sp.q = indi_gains.att.q * att_fb.y / indi_gains.rate.q;
   rate_sp.r = indi_gains.att.r * att_fb.z / indi_gains.rate.r;
+
+  if (ff_rates_set) {
+    RATES_ADD(rate_sp, ff_rates);
+    ff_rates_set = false;
+  }
 
   rate_sp_telem.p = rate_sp.p;
   rate_sp_telem.q = rate_sp.q;
