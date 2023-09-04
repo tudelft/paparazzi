@@ -69,6 +69,8 @@ extern float l_oval;
 extern float psi_oval;
 extern float psi_des_deg;
 
+extern float w_scale;
+
 extern void oneloop_andi_init(void);
 extern void oneloop_andi_enter(void);
 extern void oneloop_andi_set_failsafe_setpoint(void);

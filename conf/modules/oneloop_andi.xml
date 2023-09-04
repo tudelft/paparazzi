@@ -19,6 +19,7 @@
        <dl_setting var="l_oval"       min="0.0"     step="0.001" max="15.0"    shortname="l_oval"/>
        <dl_setting var="psi_des_deg"      min="-180.0"  step="0.1"   max="180.0"   shortname="psi_des"/>
        <dl_setting var="heading_on"      min="0"       step="1"     max="1"      values="OFF|ON" shortname="heading_on"/>
+       <dl_setting var="w_scale"    min="0.2"     step="0.001" max="3.0"    shortname="w_scale"/>
      </dl_settings>
    </dl_settings>
   </settings>

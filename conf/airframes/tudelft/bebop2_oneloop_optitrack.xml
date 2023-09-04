@@ -170,16 +170,16 @@
   </section>
 
   <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
-    <define name="G1_ROLL"   value="{12.5f, -12.5f, -12.5f , 12.5f , 0.0f, 0.0f  }"/>
-    <define name="G1_PITCH"  value="{10.f , 10.f, -10.f, -10.f, 0.0f, 0.0f  }"/>  
+    <define name="G1_ROLL"   value="{16.0f, -16.0f, -16.0f , 16.0f , 0.0f, 0.0f  }"/>
+    <define name="G1_PITCH"  value="{12.f , 12.f, -12.f, -12.f, 0.0f, 0.0f  }"/>  
     <define name="G1_YAW"    value="{0.65f, -0.65f, 0.65f, -0.65f  , 0.0f, 0.0f  }"/>
-    <define name="G1_THRUST" value="{-.7f, -.7f, -.7f, -.7f  , 0.0f, 0.0f  }"/>  
+    <define name="G1_THRUST" value="{-.51f, -.51f, -.51f, -.51f  , 0.0f, 0.0f  }"/>  
     <define name="G1_ZERO"   value="{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }"/>
     <!-- <define name="G2"        value="{ 110.f,   -110.f,   110.f,   -110.f}"/> -->
     <define name="G2"        value = "{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}"/>
     <define name="MAX_R"     value = "300.0" unit="deg/s"/>
     <define value="5.0"      NAME  = "FILT_CUTOFF"/>
-    <define value="0.5"      NAME  = "FILT_CUTOFF_ACC"/>
+    <define value="5.0"     NAME  = "FILT_CUTOFF_ACC"/>
     <define value="10.0"     NAME  = "FILT_CUTOFF_VEL"/>
     <define value="10.0"     NAME  = "FILT_CUTOFF_POS"/>
     <define value="3.2"      NAME  = "ESTIMATION_FILT_CUTOFF" />
