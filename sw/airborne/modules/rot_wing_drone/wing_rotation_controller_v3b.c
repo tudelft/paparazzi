@@ -217,8 +217,8 @@ void wing_rotation_to_rad(void)
 
   #else
   // Copy setpoint as actual angle in simulation
-  wing_rotation.wing_angle_deg = wing_rotation.wing_angle_deg_sp;
-  wing_rotation.wing_angle_rad = wing_rotation.wing_angle_rad_sp;
+  wing_rotation.wing_angle_deg = wing_rotation.wing_angle_virtual_deg_sp;
+  wing_rotation.wing_angle_rad = wing_rotation.wing_angle_virtual_deg_sp / 180. * M_PI;
   #endif
 }
 
@@ -229,13 +229,13 @@ void wing_rotation_update_sp(void)
 
 void wing_rotation_compute_pprz_cmd(void)
 {
-  #if !USE_NPS
   float angle_error = wing_rotation.wing_angle_deg_sp - wing_rotation.wing_angle_virtual_deg_sp;
   float speed_sp = wing_rotation.wing_rotation_first_order_dynamics * angle_error;
   float speed_error = speed_sp - wing_rotation.wing_rotation_speed;
   wing_rotation.wing_rotation_speed += wing_rotation.wing_rotation_second_order_dynamics * speed_error;
   wing_rotation.wing_angle_virtual_deg_sp += wing_rotation.wing_rotation_speed;
-  
+
+  #if !USE_NPS
   int32_t servo_pprz_cmd;  // Define pprz cmd
   servo_pprz_cmd = (int32_t)(wing_rotation.wing_angle_virtual_deg_sp / 90. * (float)MAX_PPRZ);
   Bound(servo_pprz_cmd, 0, MAX_PPRZ);
@@ -247,6 +247,7 @@ void wing_rotation_compute_pprz_cmd(void)
   Bound(servo_pprz_cmd, 0, MAX_PPRZ);
 
   wing_rotation.servo_pprz_cmd = servo_pprz_cmd;
+  actuators_pprz[INDI_NUM_ACT+1] = servo_pprz_cmd;
   #endif
 }
 
