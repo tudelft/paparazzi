@@ -14,10 +14,10 @@
     <waypoint name="STDBY" lat="52.1682655" lon="4.4135103"/>
     <waypoint name="begin_trans" lat="52.168412" lon="4.4149282"/>
     <!--<waypoint name="p1" lat="52.1674262" lon="4.4141448"/>-->
-    <waypoint name="p1" lat="52.1684116" lon="4.4149282"/>
-    <waypoint name="p2" lat="52.1675165" lon="4.4147158"/>
-    <waypoint name="p3" lat="52.1688983" lon="4.4139655"/>
-    <waypoint name="p4" lat="52.1687661" lon="4.4133220"/>
+    <waypoint name="p1" lat="52.1672408" lon="4.4144528"/>
+    <waypoint name="p2" lat="52.1682897" lon="4.4138441"/>
+    <waypoint name="p3" lat="52.1687878" lon="4.4155648"/>
+    <waypoint name="p4" lat="52.1678559" lon="4.4164701"/>
     <waypoint name="circ" lat="52.1684116" lon="4.4149282"/>
     <waypoint name="TD" lat="52.1681602" lon="4.4127708"/>
     <waypoint name="APP" lat="52.1679567" lon="4.4136344"/>
