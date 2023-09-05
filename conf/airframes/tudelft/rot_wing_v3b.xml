@@ -209,7 +209,7 @@
 
     <servos DRIVER="Pwm">
     <!--1030 = quad 2140 = fw-->
-        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1027" NEUTRAL="1027" MAX="2096"/>
+        <servo NO="0" NAME="SERVO_ROTWING"   MIN="1018" NEUTRAL="1018" MAX="2086"/>
     </servos>
 
     <servos DRIVER="Uavcan1">
