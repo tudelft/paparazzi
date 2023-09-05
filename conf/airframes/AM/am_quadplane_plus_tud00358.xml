@@ -68,7 +68,7 @@
 
       <module name="telemetry" type="transparent">
         <!--Handy for Desk debugging-->
-        <configure name="MODEM_PORT" value="usb_serial"/>
+        <!-- <configure name="MODEM_PORT" value="usb_serial"/> -->
         <configure name="MODEM_BAUD" value="B115200"/>
       </module>
 
@@ -246,14 +246,14 @@
 
     <define name="SERVO_9_MIN_PWM" value="2246" />   
     <define name="SERVO_9_MAX_PWM" value="843" />   
-    <define name="SERVO_9_NEUTRAL_PWM" value="1406" /> 
+    <define name="SERVO_9_NEUTRAL_PWM" value="1481" /> 
     <define name="SERVO_9_MIN_ANGLE_DEG" value="-25" /> 
     <define name="SERVO_9_MAX_ANGLE_DEG" value="25" /> 
     <define name="SERVO_9_DELAY_TS" value="5" /> 
 
     <define name="SERVO_10_MIN_PWM" value="2217" />   
     <define name="SERVO_10_MAX_PWM" value="850" />   
-    <define name="SERVO_10_NEUTRAL_PWM" value="1589" /> 
+    <define name="SERVO_10_NEUTRAL_PWM" value="1549" /> 
     <define name="SERVO_10_MIN_ANGLE_DEG" value="-25" /> 
     <define name="SERVO_10_MAX_ANGLE_DEG" value="25" /> 
     <define name="SERVO_10_DELAY_TS" value="5" /> 
@@ -418,15 +418,15 @@
     <define name="SERVO_EL_MIN_ANGLE" value="-130" unit="deg"/>
 
     <!-- ball bearings vehicle -->
-    <define name="SERVO_EL_1_ZERO_VALUE" value="1.84" unit="deg"/>
-    <define name="SERVO_EL_2_ZERO_VALUE" value="-4.04" unit="deg"/>
-    <define name="SERVO_EL_3_ZERO_VALUE" value="-0.7" unit="deg"/>
-    <define name="SERVO_EL_4_ZERO_VALUE" value="-0.17" unit="deg"/>
+    <define name="SERVO_EL_1_ZERO_VALUE" value="-8.43" unit="deg"/>
+    <define name="SERVO_EL_2_ZERO_VALUE" value="-7.38" unit="deg"/>
+    <define name="SERVO_EL_3_ZERO_VALUE" value="1.93" unit="deg"/>
+    <define name="SERVO_EL_4_ZERO_VALUE" value="1.05" unit="deg"/>
 
-    <define name="SERVO_AZ_1_ZERO_VALUE" value="2.28" unit="deg"/>
-    <define name="SERVO_AZ_2_ZERO_VALUE" value="-1.75" unit="deg"/>
-    <define name="SERVO_AZ_3_ZERO_VALUE" value="3.6" unit="deg"/>
-    <define name="SERVO_AZ_4_ZERO_VALUE" value="3.95" unit="deg"/>
+    <define name="SERVO_AZ_1_ZERO_VALUE" value="-7.91" unit="deg"/>
+    <define name="SERVO_AZ_2_ZERO_VALUE" value="-1.05" unit="deg"/>
+    <define name="SERVO_AZ_3_ZERO_VALUE" value="1.31" unit="deg"/>
+    <define name="SERVO_AZ_4_ZERO_VALUE" value="0.43" unit="deg"/>
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
@@ -616,10 +616,10 @@
 
   <section name="IMU" prefix="IMU_">
 
-    <!-- Calibrated at mavlab 15-05-2023 -->
-    <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-9,-6,-4}, .scale={{38883,41480,36505},{3968,4241,3726}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-33,-9,11}, .scale={{36893,53565,3365},{7544,10964,689}}}}"/>
-
-    <!-- Calibrated at Valkenburg the 20-07-2023 -->
+    <!-- Calibrated at mavlab 02-09-2023 -->
+    <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-4,0,5}, .scale={{8594,5643,20184},{877,577,2057}}} , {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-39,-7,-18}, .scale={{4783,17054,59665},{978,3481,12227}}}}"/>
+    
+    <!-- TBD!!! -->
     <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={9,-131,25}, .scale={{20269,20901,3230},{35294,37646,5847}}}}"/>
     
     <!-- Define axis in hover frame -->
@@ -715,7 +715,7 @@
 
   <section name="BAT">
     <!-- Brick on only -->
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.76* adc)"/>
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 0.57* adc)"/>
     <!-- <define name="MilliAmpereOfAdc(adc)" value="((3.3f/4096.0f) * 39.877f * adc)"/> -->
     <!-- <define name="MAX_BAT_CAPACITY" value="5000" unit="mAh"/> -->
     <!-- <define name="MILLIAMP_AT_IDLE_THROTTLE" value="500" unit="mA"/> -->

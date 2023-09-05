@@ -1252,6 +1252,7 @@ void overactuated_mixing_run(void)
             INDI_engaged = 0;
             FAILSAFE_engaged = 1;
             control_mode_ovc_vehicle = 1;
+            euler_setpoint[2] = euler_vect[2]; 
         }
 
         //Keep resetting the errors and heading setpoint if we are killed:
