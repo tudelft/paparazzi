@@ -137,7 +137,6 @@ struct FloatEulers eulers_zxy;
 
 float thrust_act = 0;
 Butterworth2LowPass filt_accel_ned[3];
-Butterworth2LowPass filt_accel_ned_sp[3];
 Butterworth2LowPass roll_filt;
 Butterworth2LowPass pitch_filt;
 Butterworth2LowPass thrust_filt;
@@ -252,7 +251,6 @@ void guidance_indi_init(void)
   float sample_time = 1.0/PERIODIC_FREQUENCY;
   for(int8_t i=0; i<3; i++) {
     init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
-    init_butterworth_2_low_pass(&filt_accel_ned_sp[i], tau_sp_filter, sample_time, 0.0);
   }
   init_butterworth_2_low_pass(&roll_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
@@ -283,7 +281,6 @@ void guidance_indi_enter(void) {
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
   for (int8_t i = 0; i < 3; i++) {
     init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
-    init_butterworth_2_low_pass(&filt_accel_ned_sp[i], tau_sp_filter, sample_time, 0.0);
   }
   init_butterworth_2_low_pass(&roll_filt, tau, sample_time, stateGetNedToBodyEulers_f()->phi);
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, stateGetNedToBodyEulers_f()->theta);
@@ -299,7 +296,7 @@ void guidance_indi_enter(void) {
  *
  * main indi guidance function
  */
-struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, float heading_sp) 
+struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, float heading_sp)
 {
   // set global accel sp variable FIXME clean this
   sp_accel = *accel_sp;
@@ -330,11 +327,6 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   sp_accel.z = -(radio_control.values[RADIO_THROTTLE]-4500)*8.0/9600.0;
 #endif
 
-  // Filter sp_accel
-  update_butterworth_2_low_pass(&filt_accel_ned_sp[0], sp_accel.x);
-  update_butterworth_2_low_pass(&filt_accel_ned_sp[1], sp_accel.y);
-  update_butterworth_2_low_pass(&filt_accel_ned_sp[2], sp_accel.z);
-
   struct FloatVect3 accel_filt;
   accel_filt.x = filt_accel_ned[0].o[0];
   accel_filt.y = filt_accel_ned[1].o[0];
@@ -344,10 +336,6 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
   a_diff.x = sp_accel.x - accel_filt.x;
   a_diff.y = sp_accel.y - accel_filt.y;
   a_diff.z = sp_accel.z - accel_filt.z;
-
-  // a_diff.x = filt_accel_ned_sp[0].o[0] - accel_filt.x;
-  // a_diff.y = filt_accel_ned_sp[1].o[0] - accel_filt.y;
-  // a_diff.z = filt_accel_ned_sp[2].o[0] - accel_filt.z;
 
   //Bound the acceleration error so that the linearization still holds
   Bound(a_diff.x, -a_diff_limit, a_diff_limit);
@@ -716,7 +704,7 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
 #endif
 
   /*Amount of lift produced by the wing*/
-  float lift_thrust_bz = -9.81; // Sum of lift and thrust in boxy z axis (level flight) 
+  float lift_thrust_bz = -9.81; // Sum of lift and thrust in boxy z axis (level flight)
   float pitch_lift = eulers_zxy.theta;
   Bound(pitch_lift,-M_PI_2,0);
 
@@ -736,8 +724,8 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   Gmat_rot_wing[2][0] = -sphi*ctheta*lift_thrust_bz;
 
   Gmat_rot_wing[0][1] =  cphi*ctheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING; // roll out is bad to climb
-  Gmat_rot_wing[1][1] =  sphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*liftd; 
-  Gmat_rot_wing[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd; 
+  Gmat_rot_wing[1][1] =  sphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*liftd;
+  Gmat_rot_wing[2][1] = -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
 
   Gmat_rot_wing[0][2] =  cphi*stheta;        // psi=90 -> ax->sphi*ctheta
   Gmat_rot_wing[1][2] = -sphi;   // psi=90 -> ay->stheta
@@ -752,7 +740,7 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
 
   rot_wing_v[0] =  cpsi * a_diff.x + spsi * a_diff.y;
   rot_wing_v[1] = -spsi * a_diff.x + cpsi * a_diff.y;
-  rot_wing_v[2] =  a_diff.z; 
+  rot_wing_v[2] =  a_diff.z;
 
   // Thrust z limits
   // Evaluate motors_on boolean
@@ -787,7 +775,7 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   du_max_rot_wing[1] = rot_wing_max_pitch_limit_deg/180.*M_PI - pitch_filt.o[0]; // pitch
   du_max_rot_wing[2] = du_max_thrust_z;
   du_max_rot_wing[3] = a_diff_limit * 3;
-  
+
   // Set prefered states
   du_pref_rot_wing[0] = 0; // prefered delta roll angle
   du_pref_rot_wing[1] = -pitch_filt.o[0] + pitch_pref_rad;// prefered delta pitch angle
