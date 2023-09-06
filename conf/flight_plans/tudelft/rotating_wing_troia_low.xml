@@ -8,7 +8,7 @@
   <waypoints>
     <waypoint lat="38.474472222222225" lon="-8.871222222222222" name="HOME"/>
     <waypoint lat="38.476515" lon="-8.868380" name="CLIMB"/>
-    <waypoint lat="38.476331" lon="-8.869787" name="STDBY"/>
+    <waypoint lat="38.4745" lon="-8.86905" name="STDBY"/>
     <!-- <waypoint lat="38.476940" lon="-8.867501" name="p1"/>
     <waypoint lat="38.481886" lon="-8.856215" name="p2"/>
     <waypoint lat="38.478809" lon="-8.851799" name="p3"/>
@@ -16,17 +16,17 @@
     <waypoint lat="38.476940" lon="-8.867501" name="trans"/>
     <waypoint lat="38.481886" lon="-8.856215" name="decel"/>
     <waypoint lat="38.478809" lon="-8.851799" name="end_trans"/>
-    <waypoint lat="38.4756010" lon="-8.8687996" name="begin_trans"/>
-    <waypoint lat="38.4760802" lon="-8.8664491" name="circ"/>
-    <waypoint lat="38.475523" lon="-8.867495" name="s1"/>
-    <waypoint lat="38.478711" lon="-8.860859" name="s2"/>
-    <waypoint lat="38.476479" lon="-8.859367" name="s3"/>
-    <waypoint lat="38.473650" lon="-8.865674" name="s4"/>
+    <waypoint lat="38.4767" lon="-8.8681" name="begin_trans"/>
+    <waypoint lat="38.4756" lon="-8.86813" name="circ"/>
+    <waypoint lat="38.4758" lon="-8.8696" name="s1"/>
+    <waypoint lat="38.4736" lon="-8.86724" name="s2"/>
+    <waypoint lat="38.4756" lon="-8.86366" name="s3"/>
+    <waypoint lat="38.4776" lon="-8.86609" name="s4"/>
     <waypoint lat="38.480073" lon="-8.872210" name="n1"/>
     <waypoint lat="38.483435" lon="-8.865682" name="n2"/>
     <waypoint lat="38.480763" lon="-8.863378" name="n3"/>
     <waypoint lat="38.477503" lon="-8.869605" name="n4"/>
-    <waypoint lat="38.475002" lon="-8.870565" name="TD"/>
+    <waypoint lat="38.4743" lon="-8.86995" name="TD"/>
     <waypoint lat="38.474497" lon="-8.870086" name="APP"/>
     <waypoint lat="38.499227" lon="-8.858617" name="1-1"/>
     <waypoint lat="38.476154" lon="-8.833249" name="1-2"/>
@@ -122,7 +122,7 @@
                          Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 304.8))
                      @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('GO SOUTH'))" deroute="Standby"/>
     <!-- Datalink loss (25 seconds -> GO SOUTH) -->
-    <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Standby'))" deroute="Standby"/>
+    <exception cond="datalink_time @GT 25 @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Link_loss'))" deroute="Link_loss"/>
   </exceptions>
   <blocks>
        <block name="Wait GPS">
@@ -202,6 +202,10 @@
     <block name="Approach APP">
       <set value="false" var="force_forward"/>
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
+    </block>
+    <block name="Link_loss">
+      <set value="false" var="force_forward"/>
+      <stay wp="STDBY" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
     </block>
     <block name="gps_lost">
       <exception cond="GpsFixValid()" deroute="GO NORTH"/>
