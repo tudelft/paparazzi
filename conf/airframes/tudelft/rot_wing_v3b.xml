@@ -359,7 +359,7 @@
         <define VALUE="{-0.575,   -0.575,  -0.575, -0.575, 0.0, 0.0, 0.0, 0.0}" NAME="G1_THRUST"/>
         <define VALUE="{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}" NAME="G2"/>
         <define VALUE="0.00055" NAME="PUSHER_PROP_EFFECTIVENESS"/>
-        <define VALUE="0.047" NAME="PUSHER_PROP_DYN"/>
+        <define VALUE="0.024" NAME="PUSHER_PROP_DYN"/>
         <!--<define VALUE="{0.00, -30.0, 0.0,   30.0}" NAME="G1_ROLL"/>
         <define VALUE="{6.0, 0.0,   -6.0, 0.0}" NAME="G1_PITCH"/>
         <define VALUE="{-1.1, 1.1, -1.1, 1.1}" NAME="G1_YAW"/>
