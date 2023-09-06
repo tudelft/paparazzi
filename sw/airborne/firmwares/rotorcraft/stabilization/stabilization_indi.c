@@ -591,7 +591,9 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 
   int32_t thrust_sp_qp = stabilization_cmd[COMMAND_THRUST];
   //int32_t push_sp_qp = stabilization_cmd[COMMAND_PUSH];
+  #if !USE_NPS
   pprz_t push_sp_qp = RadioControlValues(RADIO_AUX4);
+  #endif
 
 #ifdef EXPERIMENTAL
 #error NOT_TESTED
