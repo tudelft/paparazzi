@@ -144,10 +144,11 @@
         <set value="false" var="force_forward"/>
         <call fun="set_wing_rotation_scheduler(false)"/>
         <call_once fun="NavResurrect()"/>
-        <attitude pitch="0" roll="0" throttle="0" until="stage_time>10" vmode="throttle"/>
+        <attitude pitch="0" roll="0" throttle="0" until="stage_time>5" vmode="throttle"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
         <set value="false" var="force_forward"/>
+        <call_once fun="autopilot_set_in_flight(true)"/>
         <call fun="set_wing_rotation_scheduler(false)"/>
         <exception cond="stateGetPositionEnu_f()->z > 4.0" deroute="Standby"/>
         <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
