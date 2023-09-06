@@ -227,7 +227,7 @@ static void send_guidance_indi_hybrid(struct transport_tx *trans, struct link_de
                               &sp_accel.z,
                               &guidance_euler_cmd.phi,
                               &guidance_euler_cmd.theta,
-                              &euler_cmd.z,
+                              &rot_wing_du[2],
                               &filt_accel_ned[0].o[0],
                               &filt_accel_ned[1].o[0],
                               &filt_accel_ned[2].o[0],
@@ -352,9 +352,6 @@ struct StabilizationSetpoint guidance_indi_run(struct FloatVect3 *accel_sp, floa
 
   // Perform WLS
   guidance_indi_calcg_rot_wing(a_diff);
-
-  //Calculate roll,pitch and thrust command
-  //MAT33_VECT3_MUL(euler_cmd, Ga_inv, a_diff);
 
   AbiSendMsgTHRUST(THRUST_INCREMENT_ID, rot_wing_du[2]);
   AbiSendMsgTHRUSTBX(THRUST_BX_INCREMENT_ID, rot_wing_du[3]);
