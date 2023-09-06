@@ -52,6 +52,16 @@
             <define VALUE="IMU_CUBE2_ID" NAME="INS_EKF2_ACCEL_ID"/>
             <define VALUE="IMU_CUBE1_ID" NAME="INS_EKF2_GYRO_ID"/>
             <define name="I2C2_CLOCK_SPEED" value="100000"/>
+            
+            <section name="IMU" prefix="IMU_">
+                <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-6,-3,23}, .scale={{6478,36819,14396},{661,3766,1477}}}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-63,-15,-22}, .scale={{23554,58016,33455},{4537,11839,6837}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-40,-9,6}, .scale={{17919,36647,49183},{3659,7481,10067}}}}"/>
+                <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={-14,3,42}, .scale={{17279,2209,36874},{30247,3800,64095}}}}"/>
+
+                <!-- Define axis in hover frame -->
+                <define name="BODY_TO_IMU_PHI"   value="-4.0" unit="deg"/>
+                <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
+                <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
+            </section>
         </target>
 
         <target name="nps" board="pc">
@@ -242,7 +252,7 @@
         <axis NAME="PITCH" FAILSAFE_VALUE="0"/>
         <axis NAME="YAW" FAILSAFE_VALUE="0"/>
         <axis NAME="THRUST" FAILSAFE_VALUE="0"/>
-        <axis NAME="PUSH" FAILSAFE_VALUE="0"/>
+        <!-- <axis NAME="PUSH" FAILSAFE_VALUE="0"/> -->
     </commands>
 
     <rc_commands>
@@ -250,11 +260,11 @@
         <set VALUE="@ROLL" COMMAND="ROLL"/>
         <set VALUE="@PITCH" COMMAND="PITCH"/>
         <set VALUE="@YAW" COMMAND="YAW"/>
-        <set VALUE="@AUX4" COMMAND="PUSH"/>
+        <!-- <set VALUE="@AUX4" COMMAND="PUSH"/> -->
     </rc_commands>
 
     <auto_rc_commands>
-        <set VALUE="@AUX4" COMMAND="PUSH"/>
+        <!-- <set VALUE="@AUX4" COMMAND="PUSH"/> -->
     </auto_rc_commands>
 
 
@@ -298,16 +308,6 @@
         <define VALUE="TRUE" NAME="NO_GPS_LOST_WITH_RC_VALID"/>
         <define name="USE_AIRSPEED" value="TRUE"/>
         <define name="DEBUG_GROUND_DETECT" value="TRUE"/>
-    </section>
-
-    <section name="IMU" prefix="IMU_">
-        <define name="ACCEL_CALIB" value="{{.abi_id=20, .calibrated={.neutral=true, .scale=true},.neutral={-6,-3,23}, .scale={{6478,36819,14396},{661,3766,1477}}}, {.abi_id=21, .calibrated={.neutral=true, .scale=true},.neutral={-63,-15,-22}, .scale={{23554,58016,33455},{4537,11839,6837}}}, {.abi_id=22, .calibrated={.neutral=true, .scale=true},.neutral={-40,-9,6}, .scale={{17919,36647,49183},{3659,7481,10067}}}}"/>
-        <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={-14,3,42}, .scale={{17279,2209,36874},{30247,3800,64095}}}}"/>
-
-        <!-- Define axis in hover frame -->
-        <define name="BODY_TO_IMU_PHI"   value="-4.0" unit="deg"/>
-        <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
-        <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
     </section>
 
     <section PREFIX="STABILIZATION_ATTITUDE_" NAME="STABILIZATION_ATTITUDE">
