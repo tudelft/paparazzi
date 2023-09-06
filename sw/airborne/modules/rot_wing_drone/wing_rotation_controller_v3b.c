@@ -75,7 +75,9 @@ float wing_rotation_sched_as_4 = 15;
 
 bool in_transition = false;
 
+#if !USE_NPS
 static struct adc_buf buf_wing_rot_pos;
+#endif
 
 // Inline functions
 inline void wing_rotation_to_rad(void);
@@ -119,7 +121,7 @@ void wing_rotation_init(void)
   wing_rotation.forward_airspeed = 18.;
 
   // Set wing angle to current wing angle
-  wing_rotation.initialized = false; 
+  wing_rotation.initialized = false;
   wing_rotation.init_loop_count = 0;
 
   #if PERIODIC_TELEMETRY
@@ -208,7 +210,7 @@ void wing_rotation_event(void)
 }
 
 void wing_rotation_to_rad(void)
-{ 
+{
   #if !USE_NPS
   wing_rotation.adc_wing_rotation = buf_wing_rot_pos.sum / buf_wing_rot_pos.av_nb_sample;
 

@@ -104,7 +104,7 @@ void rot_wing_vis_transition(uint8_t wp_transition_id, uint8_t wp_decel_id, uint
   // get groundspeed
   float ground_speed = stateGetHorizontalSpeedNorm_f();
 
-  // get drone position   
+  // get drone position
   struct NedCoor_f *drone_pos = stateGetPositionNed_f();
 
   // Move reference waypoints
@@ -117,7 +117,7 @@ void rot_wing_vis_transition(uint8_t wp_transition_id, uint8_t wp_decel_id, uint
   VECT3_SUM(end_transition_pos, end_transition_rel_pos, *drone_pos);
   end_transition_pos.z = drone_pos->z;
   update_waypoint_rot_wing_automation(wp_end_id, &end_transition_pos);
-  
+
   // Move transition waypoint
   float airspeed_error = rot_wing_a.trans_airspeed - airspeed;
   float transition_time = airspeed_error / rot_wing_a.trans_accel;
