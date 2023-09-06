@@ -45,7 +45,7 @@
   </sectors>
   <modules>
     <module name="follow_me">
-      <define name="FOLLOW_ME_MOVING_WPS" value="WP_p1"/>
+      <define name="FOLLOW_ME_MOVING_WPS" value="WP_p1,WP_STDBY"/>
     </module>
   </modules>
   <exceptions>
@@ -77,7 +77,7 @@
         <set value="false" var="force_forward"/>
         <exception cond="stateGetPositionEnu_f()->z > 4.0" deroute="Approach APP"/>
         <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
-        <attitude pitch="0" roll="0" throttle="0.75" until="stage_time>2" vmode="throttle"/>
+        <attitude pitch="0" roll="0" throttle="0.70" until="stage_time>2" vmode="throttle"/>
     </block>
     <block name="Approach APP">
       <set value="false" var="force_forward"/>
@@ -110,7 +110,7 @@
     <block name="Approach land">
       <set value="false" var="force_forward"/>
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
-      <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.25)" deroute="Approach flare"/>
+      <exception cond="agl_dist_valid @AND !(agl_dist_value > 3.0)" deroute="Approach flare"/>
     </block>
     <block name="Approach flare">
       <set value="false" var="force_forward"/>
