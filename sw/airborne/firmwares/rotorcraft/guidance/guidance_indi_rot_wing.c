@@ -751,7 +751,7 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
     } else if (liftd > -30.) {
       hover_motors_active = true;
       bool_disable_hover_motors = false;
-    } else if (eulers_zxy.theta > 0.2094) { // 12 deg pitch
+    } else if (eulers_zxy.theta > RadOfDeg(15.0)) {
       hover_motors_active = true;
       bool_disable_hover_motors = false;
     }
