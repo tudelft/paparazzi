@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="80" ground_alt="0" lat0="38.474472222222225" lon0="-8.871222222222222" max_dist_from_home="80000" name="Nederdrone Troia" security_height="2">
+<flight_plan alt="100" ground_alt="0" lat0="38.474472222222225" lon0="-8.871222222222222" max_dist_from_home="80000" name="Nederdrone Troia" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -8,7 +8,7 @@
   <waypoints>
     <waypoint lat="38.474472222222225" lon="-8.871222222222222" name="HOME"/>
     <waypoint lat="38.476515" lon="-8.868380" name="CLIMB"/>
-    <waypoint lat="38.4745" lon="-8.86905" name="STDBY"/>
+    <waypoint lat="38.4742" lon="-8.86866" name="STDBY"/>
     <!-- <waypoint lat="38.476940" lon="-8.867501" name="p1"/>
     <waypoint lat="38.481886" lon="-8.856215" name="p2"/>
     <waypoint lat="38.478809" lon="-8.851799" name="p3"/>
@@ -16,12 +16,12 @@
     <waypoint lat="38.476940" lon="-8.867501" name="trans"/>
     <waypoint lat="38.481886" lon="-8.856215" name="decel"/>
     <waypoint lat="38.478809" lon="-8.851799" name="end_trans"/>
-    <waypoint lat="38.4767" lon="-8.8681" name="begin_trans"/>
-    <waypoint lat="38.4756" lon="-8.86813" name="circ"/>
-    <waypoint lat="38.4758" lon="-8.8696" name="s1"/>
-    <waypoint lat="38.4736" lon="-8.86724" name="s2"/>
-    <waypoint lat="38.4756" lon="-8.86366" name="s3"/>
-    <waypoint lat="38.4776" lon="-8.86609" name="s4"/>
+    <waypoint lat="38.4753" lon="-8.86665" name="begin_trans"/>
+    <waypoint lat="38.4743" lon="-8.86683" name="circ"/>
+    <waypoint lat="38.4746" lon="-8.86871" name="s1"/>
+    <waypoint lat="38.4727" lon="-8.86733" name="s2"/>
+    <waypoint lat="38.4739" lon="-8.86469" name="s3"/>
+    <waypoint lat="38.4757" lon="-8.86625" name="s4"/>
     <waypoint lat="38.480073" lon="-8.872210" name="n1"/>
     <waypoint lat="38.483435" lon="-8.865682" name="n2"/>
     <waypoint lat="38.480763" lon="-8.863378" name="n3"/>
@@ -114,11 +114,11 @@
     <!-- GPS Loss (8 seconds -> gps_loss) -->
     <exception cond="!GpsFixValid() @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('gps_lost'))" deroute="gps_lost"/>
     <!-- Hard geofence (red -> Holding point) -->
-    <exception cond="And( Or(!InsideA1(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
+    <exception cond="And( Or(!InsideA1(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 300),
                          Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 304.8))
                      @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
     <!-- Soft geofence (orange -> GO SOUTH) -->
-    <exception cond="And( Or(!InsideA1_soft(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 152.4),
+    <exception cond="And( Or(!InsideA1_soft(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 300),
                          Or(!InsideA3(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 304.8))
                      @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('GO SOUTH'))" deroute="Standby"/>
     <!-- Datalink loss (25 seconds -> GO SOUTH) -->
