@@ -100,4 +100,7 @@ extern float pusher_priority_factor;
 extern float horizontal_accel_weight;
 extern float vertical_accel_weight;
 
+extern float climb_vspeed_fwd;
+extern float descend_vspeed_fwd;
+
 #endif /* GUIDANCE_INDI_ROT_WING_H */

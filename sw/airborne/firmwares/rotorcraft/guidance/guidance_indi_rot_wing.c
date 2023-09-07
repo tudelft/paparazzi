@@ -213,6 +213,9 @@ float rot_wing_min_pitch_limit_deg = -20.;
 
 float airspeed_turn_lower_bound = 10.;
 
+float climb_vspeed_fwd = GUIDANCE_INDI_CLIMB_SPEED_FWD;
+float descend_vspeed_fwd = GUIDANCE_INDI_DESCEND_SPEED_FWD;
+
 void guidance_indi_propagate_filters(void);
 static void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff);
 static float guidance_indi_get_liftd(void);
@@ -563,7 +566,7 @@ static float bound_vz_sp(float vz_sp)
 {
   // Bound vertical speed setpoint
   if (stateGetAirspeed_f() > 13.f) {
-    Bound(vz_sp, -nav.climb_vspeed, -nav.descend_vspeed); // FIXME no harcoded values
+    Bound(vz_sp, -climb_vspeed_fwd, -descend_vspeed_fwd); // FIXME no harcoded values
   } else {
     Bound(vz_sp, -nav.climb_vspeed, -nav.descend_vspeed); // FIXME don't use nav settings
   }
