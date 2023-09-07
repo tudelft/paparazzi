@@ -150,9 +150,15 @@
         <set value="false" var="force_forward"/>
         <call_once fun="autopilot_set_in_flight(true)"/>
         <call fun="set_wing_rotation_scheduler(false)"/>
-        <exception cond="stateGetPositionEnu_f()->z > 4.0" deroute="Standby"/>
+        <exception cond="stateGetPositionEnu_f()->z > 2.0" deroute="Climb"/>
+        <attitude pitch="0" roll="0" throttle="0.75" until="stage_time>1" vmode="throttle"/>
+    </block>
+    <block name="Climb">
+        <exception cond="stateGetPositionEnu_f()->z > 10.0" deroute="Standby"/>
         <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
-        <attitude pitch="0" roll="0" throttle="0.75" until="stage_time>2" vmode="throttle"/>
+        <set value="false" var="force_forward"/>
+        <call fun="set_wing_rotation_scheduler(false)"/>
+        <stay climb="nav.climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
         <set value="7" var="nav_max_speed"/>
