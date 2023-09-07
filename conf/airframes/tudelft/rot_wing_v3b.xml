@@ -402,8 +402,8 @@
         <define VALUE="0.42" NAME="NOMINAL_HOVER_THROTTLE"/>
         <define VALUE="FALSE" NAME="ADAPT_THROTTLE_ENABLED"/>
 
-        <define name="REF_MIN_ZD" value="-2.0"/> <!--climb-->
-        <define name="REF_MAX_ZD" value="1.0"/> <!--descend-->
+        <define name="REF_MIN_ZD" value="-4.0"/> <!--climb-->
+        <define name="REF_MAX_ZD" value="4.0"/> <!--descend-->
     </section>
 
     <section PREFIX="GUIDANCE_H_" NAME="GUIDANCE_H">
