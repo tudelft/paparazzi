@@ -141,6 +141,7 @@ Butterworth2LowPass roll_filt;
 Butterworth2LowPass pitch_filt;
 Butterworth2LowPass thrust_filt;
 Butterworth2LowPass accely_filt;
+Butterworth2LowPass accel_bodyz_filt;
 
 struct FloatVect2 desired_airspeed;
 
@@ -150,6 +151,7 @@ struct FloatVect3 euler_cmd;
 
 float filter_cutoff = GUIDANCE_INDI_FILTER_CUTOFF;
 float sp_filter_cutoff = GUIDANCE_INDI_SP_FILTER_CUTOFF;
+float bodyz_filter_cutoff = 0.2;
 
 float guidance_indi_hybrid_heading_sp = 0.f;
 struct FloatEulers guidance_euler_cmd;
@@ -197,7 +199,7 @@ float pitch_pref_deg = 0;
 float pitch_pref_rad = 0;
 float push_first_order_constant = 1.0;
 float a_diff_limit = 3.0;
-float a_diff_limit_z = 1.0;
+float a_diff_limit_z = 3.0;
 
 bool hover_motors_active = true;
 bool bool_disable_hover_motors = false;
@@ -251,6 +253,7 @@ void guidance_indi_init(void)
 
   float tau = 1.0/(2.0*M_PI*filter_cutoff);
   float tau_sp_filter = 1.0/(2.0*M_PI*sp_filter_cutoff);
+  float tau_bodyz = 1.0/(2.0*M_PI*bodyz_filter_cutoff);
   float sample_time = 1.0/PERIODIC_FREQUENCY;
   for(int8_t i=0; i<3; i++) {
     init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
@@ -259,6 +262,7 @@ void guidance_indi_init(void)
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
+  init_butterworth_2_low_pass(&accel_bodyz_filt, tau_bodyz, sample_time, 0.0);
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_GUIDANCE_INDI_HYBRID, send_guidance_indi_hybrid);
@@ -281,6 +285,7 @@ void guidance_indi_enter(void) {
 
   float tau = 1.0 / (2.0 * M_PI * filter_cutoff);
   float tau_sp_filter = 1.0/(2.0*M_PI*sp_filter_cutoff);
+  float tau_bodyz = 1.0/(2.0*M_PI*bodyz_filter_cutoff);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
   for (int8_t i = 0; i < 3; i++) {
     init_butterworth_2_low_pass(&filt_accel_ned[i], tau, sample_time, 0.0);
@@ -289,6 +294,7 @@ void guidance_indi_enter(void) {
   init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, stateGetNedToBodyEulers_f()->theta);
   init_butterworth_2_low_pass(&thrust_filt, tau, sample_time, thrust_in);
   init_butterworth_2_low_pass(&accely_filt, tau, sample_time, 0.0);
+  init_butterworth_2_low_pass(&accel_bodyz_filt, tau_bodyz, sample_time, -9.81);
 }
 
 #include "firmwares/rotorcraft/navigation.h"
@@ -680,6 +686,10 @@ void guidance_indi_propagate_filters(void) {
   // Propagate filter for sideslip correction
   float accely = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
   update_butterworth_2_low_pass(&accely_filt, accely);
+
+  // Propagate filter for thrust/lift estimate
+  float accelz = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->z);
+  update_butterworth_2_low_pass(&accel_bodyz_filt, accelz);
 }
 
 /**
@@ -704,9 +714,8 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
 #endif
 
   /*Amount of lift produced by the wing*/
-  float lift_thrust_bz = -9.81; // Sum of lift and thrust in boxy z axis (level flight)
-  float pitch_lift = eulers_zxy.theta;
-  Bound(pitch_lift,-M_PI_2,0);
+  // float lift_thrust_bz = -9.81; // Sum of lift and thrust in boxy z axis (level flight)
+  float lift_thrust_bz = accel_bodyz_filt.o[0]; // Sum of lift and thrust in boxy z axis (level flight)
 
   // get the derivative of the lift wrt to theta
   float liftd = guidance_indi_get_liftd();
@@ -802,8 +811,6 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
     wls_alloc_guidance(rot_wing_du, rot_wing_v, du_min_rot_wing, du_max_rot_wing, Bwls_rot_wing, 0, 0, Wv_rot_wing, Wu_rot_wing, du_pref_rot_wing, 100000, 10);
 }
 
-
-
 /**
  * @brief Get the derivative of lift w.r.t. pitch.
  *
@@ -817,7 +824,6 @@ float guidance_indi_get_liftd(void) {
   }
   return liftd;
 }
-
 
 /**
  * ABI callback that obtains the velocity setpoint from a module
