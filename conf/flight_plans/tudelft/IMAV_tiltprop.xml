@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="60" ground_alt="0" lat0="50.910595" lon0="6.227356" max_dist_from_home="600" name="Tiltprop Valkenburg" security_height="2">
+<flight_plan alt="60" ground_alt="0" lat0="50.910595" lon0="6.227356" max_dist_from_home="600" name="Tiltprop IMAV" security_height="2">
   <header>
 #include "autopilot.h"
 #include "generated/modules.h"
@@ -105,13 +105,13 @@
     </sector>
   </sectors>
   <exceptions>
-    <exception cond="Or(!InsideSoftGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 110) @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+    <exception cond="Or(!InsideSoftGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 110) @AND !(nav_block == IndexOfBlock('Wait GPS'))
       @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Geo init'))
       @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="HOME"/>
-    <exception cond="Or(!InsideHardGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 120) @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+    <exception cond="Or(!InsideHardGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 120) @AND !(nav_block == IndexOfBlock('Wait GPS'))
       @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Geo init'))
       @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Terminate"/>
-    <exception cond="(GpsIsLost() @AND (datalink_time @GT 15) @AND nav_block @GT IndexOfBlock('Standby') 
+    <exception cond="(GpsIsLost() @AND (datalink_time @GT 15) @AND nav_block @GT IndexOfBlock('Standby')
       @AND nav_block @LT IndexOfBlock('landed'))" deroute="No_GPS_Connection"/>
   </exceptions>
   <blocks>
