@@ -305,6 +305,7 @@ void stabilization_attitude_read_rc_setpoint_eulers_f(struct FloatEulers *sp, bo
     update_butterworth_2_low_pass(&accely_filt_rc, accely);
 
 #ifdef FWD_SIDESLIP_GAIN_PILOTED
+    
     float airspeed = stateGetAirspeed_f();
     float omega;
     if (airspeed > 8.0){
