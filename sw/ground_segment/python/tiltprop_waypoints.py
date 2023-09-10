@@ -39,7 +39,6 @@ permutations = itertools.permutations(range(len(x)))
 for order in permutations:
     total_distance = 0
     total_distance = total_distance + m.sqrt(waypoints[order[0]][0]**2+waypoints[order[0]][1]**2)
-    #prev = order[-1]
     for i in range(3):
         idxcurrent = order[i]
         idxnext = order[i+1]
