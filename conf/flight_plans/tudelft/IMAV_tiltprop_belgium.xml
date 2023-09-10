@@ -16,33 +16,33 @@
     <waypoint lat="50.716833" lon="5.900428" name="p3"/>
     <waypoint lat="50.712991" lon="5.895158" name="p4"/>
     <waypoint name="TD" x="-25.4" y="34.0"/>
-    <waypoint lat="50.721287" lon="5.896945" name="_A"/>
-    <waypoint lat="50.719103" lon="5.892398" name="_B"/>
-    <waypoint lat="50.716440" lon="5.888566" name="_C"/>
-    <waypoint lat="50.711922" lon="5.883399" name="_D"/>
-    <waypoint lat="50.711264" lon="5.886377" name="_E"/>
-    <waypoint lat="50.711291" lon="5.893099" name="_F"/>
-    <waypoint lat="50.711666" lon="5.898816" name="_G"/>
-    <waypoint lat="50.712919" lon="5.900822" name="_H"/>
-    <waypoint lat="50.715047" lon="5.902306" name="_J"/>
-    <waypoint lat="50.716857" lon="5.906448" name="_K"/>
-    <waypoint lat="50.717694" lon="5.902928" name="_L"/>
-    <waypoint lat="50.718487" lon="5.899484" name="_M"/>
+    <waypoint lat="50.721287" lon="5.896945" name="A"/>
+    <waypoint lat="50.719103" lon="5.892398" name="B"/>
+    <waypoint lat="50.716440" lon="5.888566" name="C"/>
+    <waypoint lat="50.711922" lon="5.883399" name="D"/>
+    <waypoint lat="50.711264" lon="5.886377" name="E"/>
+    <waypoint lat="50.711291" lon="5.893099" name="F"/>
+    <waypoint lat="50.711666" lon="5.898816" name="G"/>
+    <waypoint lat="50.712919" lon="5.900822" name="H"/>
+    <waypoint lat="50.715047" lon="5.902306" name="J"/>
+    <waypoint lat="50.716857" lon="5.906448" name="K"/>
+    <waypoint lat="50.717694" lon="5.902928" name="L"/>
+    <waypoint lat="50.718487" lon="5.899484" name="M"/>
   </waypoints>
   <sectors>
     <sector color="green" name="Geofence">
-      <corner name="_A"/>
-      <corner name="_B"/>
-      <corner name="_C"/>
-      <corner name="_D"/>
-      <corner name="_E"/>
-      <corner name="_F"/>
-      <corner name="_G"/>
-      <corner name="_H"/>
-      <corner name="_J"/>
-      <corner name="_K"/>
-      <corner name="_L"/>
-      <corner name="_M"/>
+      <corner name="A"/>
+      <corner name="B"/>
+      <corner name="C"/>
+      <corner name="D"/>
+      <corner name="E"/>
+      <corner name="F"/>
+      <corner name="G"/>
+      <corner name="H"/>
+      <corner name="J"/>
+      <corner name="K"/>
+      <corner name="L"/>
+      <corner name="M"/>
     </sector>
   </sectors>
   <exceptions>
@@ -53,10 +53,6 @@
       @AND (nav_block @LT IndexOfBlock('landed')))" deroute="No_GPS_Connection"/>
   </exceptions>
   <blocks>
-    <block name="No_GPS_Connection">
-      <attitude pitch="0" roll="0" vmode="climb" climb="-1"/>
-      <exception cond="NavBlockTime() @GT 15" deroute="Terminate"/>
-    </block>
     <block name="Wait GPS">
       <call_once fun="NavKillThrottle()"/>
       <while cond="!GpsFixValid()"/>
@@ -116,6 +112,10 @@
       <set value="false" var="force_forward"/>
       <set value="true" var="terminate_flight"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="No_GPS_Connection">
+      <attitude pitch="0" roll="0" vmode="climb" climb="-1"/>
+      <exception cond="NavBlockTime() @GT 15" deroute="Terminate"/>
     </block>
   </blocks>
 </flight_plan>
