@@ -70,8 +70,9 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="Automatic Takeoff">
+      <call_once fun="NavResurrect()"/>
       <call_once fun="take_off_enter()"/>
-      <attitude alt="5" pitch="0" roll="0"/>
+      <attitude pitch="0" roll="0" alt="5" until="GetPosHeight() @GT 2.0"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="false" var="force_forward"/>
@@ -104,6 +105,7 @@
       <go wp="TD"/>
     </block>
     <block name="flare">
+      <exception cond="LessThan(agl_dist_value_filtered, 0.15)" deroute="landed"/>
       <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">
