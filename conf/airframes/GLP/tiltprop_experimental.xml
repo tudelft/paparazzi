@@ -115,7 +115,8 @@
 
     <module name="telemetry" type="transparent">
       <configure name="MODEM_PORT" value="UART3"/>
-      <configure name="MODEM_BAUD" value="B57600"/>
+      <!-- <configure name="MODEM_BAUD" value="B57600"/> -->
+      <configure name="MODEM_BAUD" value="B115200"/>
     </module>
 
     <module name="imu" type="mpu9250_spi">
@@ -197,12 +198,12 @@
     </module>
 
     <module name="lidar" type="tfmini">
-      <configure name="TFMINI_PORT" value="UART2"/> 
+      <configure name="TFMINI_PORT" value="UART2"/>
       <configure name="TFMINI_BAUD" value="B115200"/>
       <configure name="USE_TFMINI_AGL" value="TRUE"/>
       <configure name="TFMINI_COMPENSATE_ROTATION" value="TRUE"/>
     </module>
-  
+
 
     <!-- ******************************************************* -->
   </firmware>
@@ -243,8 +244,13 @@
 
 
   <command_laws>
+<<<<<<< HEAD
     <set servo="TILT_LEFT" value="autopilot.motors_on ? actuators_pprz[0] : terminate_flight ? -MAX_PPRZ : 0"/> 
     <set servo="TILT_RIGHT" value="autopilot.motors_on ? actuators_pprz[1] : terminate_flight ? -MAX_PPRZ : 0"/>
+=======
+    <set servo="TILT_LEFT" value="autopilot.motors_on ? actuators_pprz[0] : 0"/>
+    <set servo="TILT_RIGHT" value="autopilot.motors_on ? actuators_pprz[1] : 0"/>
+>>>>>>> setup herelink
     <set servo="RM" value="autopilot.motors_on ? actuators_pprz[2] : -MAX_PPRZ"/>
     <set servo="LM" value="autopilot.motors_on ? actuators_pprz[3] : -MAX_PPRZ"/>
     <set servo="AIL_LEFT" value="autopilot.motors_on ? actuators_pprz[4] : terminate_flight ? -MAX_PPRZ : 0"/>
@@ -363,7 +369,7 @@
     <define name="ESTIMATION_FILT_CUTOFF" value="4.0"/>
     <define name="FILT_CUTOFF" value="3.0"/>
     <define name="Filt_CUTOFF_P" value="10"/>
-    <!--define name="FILT_CUTOFF_Q" value="20"/--> 
+    <!--define name="FILT_CUTOFF_Q" value="20"/-->
     <define name="FILTER_PITCH_RATE" value="TRUE"/>
     <define name="2ORDER_QFILT_CUTOFF" value="3.0"/>
     <define name="FILT_CUTOFF_R" value="10"/>
