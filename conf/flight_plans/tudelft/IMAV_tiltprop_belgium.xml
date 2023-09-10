@@ -30,7 +30,7 @@
     <waypoint name="TD" x="-25.4" y="34.0"/>
   </waypoints>
   <sectors>
-    <sector color="green" name="Soft">
+    <sector color="green" name="Geofence">
       <corner name="_A"/>
       <corner name="_B"/>
       <corner name="_C"/>
@@ -45,7 +45,18 @@
       <corner name="_M"/>
     </sector>
   </sectors>
+  <exceptions>
+    <exception cond="Or(!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 200) @AND !(nav_block == IndexOfBlock('Wait GPS'))
+      @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Geo init'))
+      @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Terminate"/>
+    <exception cond="(GpsIsLost() @AND (nav_block @GT IndexOfBlock('Standby'))
+      @AND (nav_block @LT IndexOfBlock('landed')))" deroute="No_GPS_Connection"/>
+  </exceptions>
   <blocks>
+    <block name="No_GPS_Connection">
+      <attitude pitch="0" roll="0" vmode="climb" climb="-1"/>
+      <exception cond="NavBlockTime() @GT 15" deroute="Terminate"/>
+    </block>
     <block name="Wait GPS">
       <call_once fun="NavKillThrottle()"/>
       <while cond="!GpsFixValid()"/>
