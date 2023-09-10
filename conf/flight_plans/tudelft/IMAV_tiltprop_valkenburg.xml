@@ -1,10 +1,10 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="60" ground_alt="0" lat0="52.1681695" lon0="4.4126932" max_dist_from_home="1500" name="Tiltprop Valkenburg" security_height="2">
+<flight_plan alt="60" ground_alt="0" lat0="50.910595" lon0="6.227356" max_dist_from_home="600" name="Tiltprop Valkenburg" security_height="2">
   <header>
 #include "autopilot.h"
 #include "generated/modules.h"
-</header>
+  </header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint lat="52.168426" lon="4.412981" name="CLIMB"/>
@@ -14,33 +14,111 @@
     <waypoint lat="52.168015" lon="4.416774" name="p3"/>
     <waypoint lat="52.167425" lon="4.414332" name="p4"/>
     <waypoint lat="52.168022" lon="4.413165" name="TD"/>
-    <waypoint lat="52.169189" lon="4.410820" name="C1"/>
-    <waypoint lat="52.168049" lon="4.406923" name="C2"/>
-    <waypoint lat="52.166515" lon="4.408235" name="C3"/>
-    <waypoint lat="52.163702" lon="4.409208" name="C4"/>
-    <waypoint lat="52.161908" lon="4.410082" name="C5"/>
-    <waypoint lat="52.163685" lon="4.415079" name="C6"/>
-    <waypoint lat="52.164861" lon="4.427268" name="C7"/>
-    <waypoint lat="52.170422" lon="4.427511" name="C8"/>
-    <waypoint lat="52.172276" lon="4.424011" name="C9"/>
+    <waypoint lat="50.906376" lon="6.223196" name="_F1"/>
+    <waypoint lat="50.910998" lon="6.223086" name="_F2"/>
+    <waypoint lat="50.913740" lon="6.226769" name="_F3"/>
+    <waypoint lat="50.913135" lon="6.230278" name="_F4"/>
+    <waypoint lat="50.912821" lon="6.231021" name="_F5"/>
+    <waypoint lat="50.912073" lon="6.231793" name="_F6"/>
+    <waypoint lat="50.911361" lon="6.231674" name="_F7"/>
+    <waypoint lat="50.911074" lon="6.230432" name="_F8"/>
+    <waypoint lat="50.910664" lon="6.229780" name="_F9"/>
+    <waypoint lat="50.907942" lon="6.227214" name="_F10"/>
+    <waypoint lat="50.907432" lon="6.227156" name="_F11"/>
+    <waypoint lat="50.906610" lon="6.227501" name="_F12"/>
+    <waypoint lat="50.905917" lon="6.226675" name="_F13"/>
+    <waypoint lat="50.906223" lon="6.225644" name="_F14"/>
+    <waypoint lat="50.906886" lon="6.223927" name="_G1"/>
+    <waypoint lat="50.910946" lon="6.223798" name="_G2"/>
+    <waypoint lat="50.913247" lon="6.226908" name="_G3"/>
+    <waypoint lat="50.912701" lon="6.229972" name="_G4"/>
+    <waypoint lat="50.912425" lon="6.230648" name="_G5"/>
+    <waypoint lat="50.911652" lon="6.231214" name="_G6"/>
+    <waypoint lat="50.911392" lon="6.229977" name="_G7"/>
+    <waypoint lat="50.910842" lon="6.229131" name="_G8"/>
+    <waypoint lat="50.909282" lon="6.228386" name="_G9"/>
+    <waypoint lat="50.908253" lon="6.226671" name="_G10"/>
+    <waypoint lat="50.907502" lon="6.226436" name="_G11"/>
+    <waypoint lat="50.907083" lon="6.226495" name="_G12"/>
+    <waypoint lat="50.906788" lon="6.226718" name="_G13"/>
+    <waypoint lat="50.906549" lon="6.226418" name="_G14"/>
+    <waypoint lat="50.907036" lon="6.225883" name="_M1"/>
+    <waypoint lat="50.907150" lon="6.224190" name="_M2"/>
+    <waypoint lat="50.911153" lon="6.224431" name="_M3"/>
+    <waypoint lat="50.911092" lon="6.226390" name="_M4"/>
+    <waypoint lat="50.910190" lon="6.226687" name="_D1"/>
+    <waypoint lat="50.911327" lon="6.226676" name="_D2"/>
+    <waypoint lat="50.911382" lon="6.225096" name="_D3"/>
+    <waypoint lat="50.912922" lon="6.227107" name="_D4"/>
+    <waypoint lat="50.912415" lon="6.229913" name="_D5"/>
+    <waypoint lat="50.910146" lon="6.228435" name="_D6"/>
+    <waypoint lat="50.911017" lon="6.228648" name="A1"/>
+    <waypoint lat="50.907650" lon="6.226392" name="A2"/>
+    <waypoint lat="50.909557" lon="6.225059" name="A3"/>
   </waypoints>
   <sectors>
-    <sector color="red" name="Flyzone">
-      <corner name="C1"/>
-      <corner name="C2"/>
-      <corner name="C3"/>
-      <corner name="C4"/>
-      <corner name="C5"/>
-      <corner name="C6"/>
-      <corner name="C7"/>
-      <corner name="C8"/>
-      <corner name="C9"/>
+    <sector color="red" name="HardGeofence">
+      <corner name="_F1"/>
+      <corner name="_F2"/>
+      <corner name="_F3"/>
+      <corner name="_F4"/>
+      <corner name="_F5"/>
+      <corner name="_F6"/>
+      <corner name="_F7"/>
+      <corner name="_F8"/>
+      <corner name="_F9"/>
+      <corner name="_F10"/>
+      <corner name="_F11"/>
+      <corner name="_F12"/>
+      <corner name="_F13"/>
+      <corner name="_F14"/>
+    </sector>
+    <sector color="green" name="SoftGeofence">
+      <corner name="_G1"/>
+      <corner name="_G2"/>
+      <corner name="_G3"/>
+      <corner name="_G4"/>
+      <corner name="_G5"/>
+      <corner name="_G6"/>
+      <corner name="_G7"/>
+      <corner name="_G8"/>
+      <corner name="_G9"/>
+      <corner name="_G10"/>
+      <corner name="_G11"/>
+      <corner name="_G12"/>
+      <corner name="_G13"/>
+      <corner name="_G14"/>
+    </sector>
+    <sector color="blue" name="Dynamic">
+      <corner name="_D1"/>
+      <corner name="_D2"/>
+      <corner name="_D3"/>
+      <corner name="_D4"/>
+      <corner name="_D5"/>
+      <corner name="_D6"/>
+    </sector>
+    <sector color="yellow" name="Mapping">
+      <corner name="_M1"/>
+      <corner name="_M2"/>
+      <corner name="_M3"/>
+      <corner name="_M4"/>
     </sector>
   </sectors>
   <exceptions>
-    <exception cond="Or(!InsideFlyzone(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 1500) @AND !(nav_block == IndexOfBlock('Wait GPS')) @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Holding point"/>
+    <exception cond="Or(!InsideSoftGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 110) @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+      @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Geo init'))
+      @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="HOME"/>
+    <exception cond="Or(!InsideHardGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 120) @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+      @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Geo init'))
+      @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Terminate"/>
+    <exception cond="(GpsIsLost() @AND (datalink_time @GT 15) @AND nav_block @GT IndexOfBlock('Standby') 
+      @AND nav_block @LT IndexOfBlock('landed'))" deroute="No_GPS_Connection"/>
   </exceptions>
   <blocks>
+    <block name="No_GPS_Connection">
+      <attitude pitch="0" roll="0" vmode="climb" climb="-1"/>
+      <exception cond="NavBlockTime() @GT 15" deroute="Terminate"/>
+    </block>
     <block name="Wait GPS">
       <call_once fun="NavKillThrottle()"/>
       <while cond="!GpsFixValid()"/>
@@ -58,10 +136,6 @@
       <call_once fun="take_off_enter()"/>
       <attitude pitch="0" roll="0" alt="5" until="GetPosHeight() @GT 2.0"/>
     </block>
-    <!-- <block name="Start Engine">
-      <call_once fun="NavResurrect()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block> -->
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="GetPosHeight() @GT 5.0" deroute="Standby"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
@@ -102,6 +176,11 @@
       <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Terminate">
+      <call_once fun="NavKillThrottle()"/>
+      <set value="true" var="terminate_flight"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
   </blocks>
