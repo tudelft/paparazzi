@@ -115,10 +115,6 @@
       @AND (nav_block @LT IndexOfBlock('landed')))" deroute="No_GPS_Connection"/>
   </exceptions>
   <blocks>
-    <block name="No_GPS_Connection">
-      <attitude pitch="0" roll="0" vmode="climb" climb="-1"/>
-      <exception cond="NavBlockTime() @GT 15" deroute="Terminate"/>
-    </block>
     <block name="Wait GPS">
       <call_once fun="NavKillThrottle()"/>
       <while cond="!GpsFixValid()"/>
@@ -184,6 +180,10 @@
       <set value="false" var="force_forward"/>
       <set value="true" var="terminate_flight"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="No_GPS_Connection">
+      <attitude pitch="0" roll="0" vmode="climb" climb="-1"/>
+      <exception cond="NavBlockTime() @GT 15" deroute="Terminate"/>
     </block>
   </blocks>
 </flight_plan>
