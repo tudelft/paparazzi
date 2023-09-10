@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="70" ground_alt="0" lat0="50.714955" lon0="5.900670" max_dist_from_home="800" name="Rotorcraft Basic (Enac)" security_height="2">
+<flight_plan alt="70" ground_alt="0" lat0="50.714955" lon0="5.900670" max_dist_from_home="1300" name="Rotorcraft Basic (Enac)" security_height="2">
   <header>
 #include "autopilot.h"
 </header>
@@ -47,7 +47,7 @@
   </sectors>
   <exceptions>
     <exception cond="Or(!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 200) @AND !(nav_block == IndexOfBlock('Wait GPS'))
-      @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Geo init'))
+      @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block @LT IndexOfBlock('Holding point'))
       @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Terminate"/>
     <exception cond="(GpsIsLost() @AND (nav_block @GT IndexOfBlock('Standby'))
       @AND (nav_block @LT IndexOfBlock('landed')))" deroute="No_GPS_Connection"/>
@@ -107,6 +107,12 @@
       <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Terminate">
+      <call_once fun="NavKillThrottle()"/>
+      <set value="false" var="force_forward"/>
+      <set value="true" var="terminate_flight"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
   </blocks>
