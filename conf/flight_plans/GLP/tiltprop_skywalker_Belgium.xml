@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="50" ground_alt="0" lat0="50.907082" lon0="6.225678" max_dist_from_home="500" name="Rotorcraft Basic (Enac)" security_height="2">
+<flight_plan alt="50" ground_alt="0" lat0="50.714955" lon0="5.900670" max_dist_from_home="800" name="Rotorcraft Basic (Enac)" security_height="2">
   <header>
 #include "autopilot.h"
 </header>
@@ -10,21 +10,23 @@
     <waypoint name="STDBY" x="-29.1" y="-47.5"/>
     <waypoint name="GOAL" x="1.9" y="1.0"/>
     <waypoint name="TRAJECTORY" x="1.9" y="1.0"/>
-    <waypoint lat="50.907346" lon="6.224256" name="START" />
-    <waypoint lat="50.913294" lon="6.226859" name="_A" />
-    <waypoint lat="50.912641" lon="6.230576" name="_B" />
-    <waypoint lat="50.911691" lon="6.231193" name="_C" />
-    <waypoint lat="50.910957" lon="6.229037" name="_D" />
-    <waypoint lat="50.909293" lon="6.228355" name="_E" />
-    <waypoint lat="50.908305" lon="6.226553" name="_F" />
-    <waypoint lat="50.906807" lon="6.226607" name="_G" />
-    <waypoint lat="50.906570" lon="6.226328" name="_H" />
-    <waypoint lat="50.907037" lon="6.223780" name="_J" />
-    <waypoint lat="50.911048" lon="6.223747" name="_K" />
-    <waypoint lat="50.910955" lon="6.227807" name="p1" />
-    <waypoint lat="50.912010" lon="6.227356" name="p2" />
-    <waypoint lat="50.912416" lon="6.229374" name="p3" />
-    <waypoint lat="50.911780" lon="6.228762" name="p4" />
+    <waypoint lat="50.714955" lon="5.900670" name="START"/>
+    <waypoint lat="50.721287" lon="5.896945" name="_A"/>
+    <waypoint lat="50.719103" lon="5.892398" name="_B"/>
+    <waypoint lat="50.716440" lon="5.888566" name="_C"/>
+    <waypoint lat="50.711922" lon="5.883399" name="_D"/>
+    <waypoint lat="50.711264" lon="5.886377" name="_E"/>
+    <waypoint lat="50.711291" lon="5.893099" name="_F"/>
+    <waypoint lat="50.711666" lon="5.898816" name="_G"/>
+    <waypoint lat="50.712919" lon="5.900822" name="_H"/>
+    <waypoint lat="50.715047" lon="5.902306" name="_J"/>
+    <waypoint lat="50.716857" lon="5.906448" name="_K"/>
+    <waypoint lat="50.717694" lon="5.902928" name="_L"/>
+    <waypoint lat="50.718487" lon="5.899484" name="_M"/>
+    <waypoint lat="50.715114" lon="5.891141" name="p1"/>
+    <waypoint lat="50.718965" lon="5.896237" name="p2"/>
+    <waypoint lat="50.716833" lon="5.900428" name="p3"/>
+    <waypoint lat="50.712991" lon="5.895158" name="p4"/>
     <waypoint name="TD" x="-25.4" y="34.0"/>
   </waypoints>
   <sectors>
@@ -42,10 +44,7 @@
       <corner name="_L"/>
       <corner name="_M"/>
     </sector>
-  </sectors> 
-  <!--exceptions>
-    <exception cond="!InsideSoft(GetPosX(), GetPosY())" deroute="HOME"/>
-  </exceptions-->
+  </sectors>
   <blocks>
     <block name="Wait GPS">
       <call_once fun="NavKillThrottle()"/>
@@ -70,13 +69,8 @@
     </block>
     <block name="Automatic Takeoff">
       <call_once fun="take_off_enter()"/>
-      <attitude pitch="0" roll="0" alt="5"/>
+      <attitude alt="5" pitch="0" roll="0"/>
     </block>
-    <!--block name="Mapping">
-      <call_once fun="quad_orthomap_init()"/>
-      <go wp="START"/>
-      <stay wp="GOAL"/>
-    </block-->
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="false" var="force_forward"/>
       <stay wp="STDBY"/>
