@@ -28,6 +28,10 @@
 #include "firmwares/rotorcraft/autopilot_static.h"
 #include "autopilot.h"
 
+#ifndef RADIO_THROTTLE
+#define RADIO_THROTTLE   0
+#endif
+
 int16_t stage = 0;
 int16_t counter = 0;
 float Kq = TAKEOFF_Q_GAIN;
