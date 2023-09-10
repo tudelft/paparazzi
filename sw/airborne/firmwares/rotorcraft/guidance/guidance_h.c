@@ -419,10 +419,10 @@ void guidance_h_nav_enter(void)
   struct FloatEulers eulers_zxy;
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
 
-  nav_heading = ANGLE_BFP_OF_REAL(eulers_zxy.psi);
+  nav.heading = ANGLE_BFP_OF_REAL(eulers_zxy.psi);
   guidance_h.sp.heading = eulers_zxy->psi;
 #else
-  nav_heading = stateGetNedToBodyEulers_i()->psi;
+  nav.heading = stateGetNedToBodyEulers_i()->psi;
   guidance_h.sp.heading = stateGetNedToBodyEulers_f()->psi;
 #endif
 
