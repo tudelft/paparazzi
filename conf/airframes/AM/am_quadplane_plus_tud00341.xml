@@ -255,14 +255,14 @@
 
     <define name="SERVO_9_MIN_PWM" value="2246" />   
     <define name="SERVO_9_MAX_PWM" value="843" />   
-    <define name="SERVO_9_NEUTRAL_PWM" value="1406" /> 
+    <define name="SERVO_9_NEUTRAL_PWM" value="1514" /> 
     <define name="SERVO_9_MIN_ANGLE_DEG" value="-25" /> 
     <define name="SERVO_9_MAX_ANGLE_DEG" value="25" /> 
     <define name="SERVO_9_DELAY_TS" value="5" /> 
 
     <define name="SERVO_10_MIN_PWM" value="2217" />   
     <define name="SERVO_10_MAX_PWM" value="850" />   
-    <define name="SERVO_10_NEUTRAL_PWM" value="1589" /> 
+    <define name="SERVO_10_NEUTRAL_PWM" value="1600" /> 
     <define name="SERVO_10_MIN_ANGLE_DEG" value="-25" /> 
     <define name="SERVO_10_MAX_ANGLE_DEG" value="25" /> 
     <define name="SERVO_10_DELAY_TS" value="5" /> 
