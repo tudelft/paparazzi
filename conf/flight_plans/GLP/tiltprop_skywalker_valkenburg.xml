@@ -10,23 +10,21 @@
     <waypoint name="STDBY" x="-29.1" y="-47.5"/>
     <waypoint name="GOAL" x="1.9" y="1.0"/>
     <waypoint name="TRAJECTORY" x="1.9" y="1.0"/>
-    <waypoint lat="50.714955" lon="5.900670" name="START" />
-    <waypoint lat="50.719220" lon="5.897836" name="_A" />
-    <waypoint lat="50.717855" lon="5.896118" name="_B" />
-    <waypoint lat="50.716456" lon="5.894120" name="_C" />
-    <waypoint lat="50.715080" lon="5.892244" name="_D" />
-    <waypoint lat="50.714048" lon="5.894348" name="_E" />
-    <waypoint lat="50.713082" lon="5.896364" name="_F" />
-    <waypoint lat="50.711894" lon="5.898765" name="_G" />
-    <waypoint lat="50.713326" lon="5.900308" name="_H" />
-    <waypoint lat="50.715047" lon="5.902306" name="_J" />
-    <waypoint lat="50.716401" lon="5.903937" name="_K" />
-    <waypoint lat="50.717255" lon="5.902131" name="_L" />
-    <waypoint lat="50.718487" lon="5.899484" name="_M" />
-    <waypoint lat="50.715590" lon="5.894435" name="p1" />
-    <waypoint lat="50.718454" lon="5.897941" name="p2" />
-    <waypoint lat="50.716967" lon="5.900886" name="p3" />
-    <waypoint lat="50.714037" lon="5.897503" name="p4" />
+    <waypoint lat="50.907346" lon="6.224256" name="START" />
+    <waypoint lat="50.913294" lon="6.226859" name="_A" />
+    <waypoint lat="50.912641" lon="6.230576" name="_B" />
+    <waypoint lat="50.911691" lon="6.231193" name="_C" />
+    <waypoint lat="50.910957" lon="6.229037" name="_D" />
+    <waypoint lat="50.909293" lon="6.228355" name="_E" />
+    <waypoint lat="50.908305" lon="6.226553" name="_F" />
+    <waypoint lat="50.906807" lon="6.226607" name="_G" />
+    <waypoint lat="50.906570" lon="6.226328" name="_H" />
+    <waypoint lat="50.907037" lon="6.223780" name="_J" />
+    <waypoint lat="50.911048" lon="6.223747" name="_K" />
+    <waypoint lat="50.910955" lon="6.227807" name="p1" />
+    <waypoint lat="50.912010" lon="6.227356" name="p2" />
+    <waypoint lat="50.912416" lon="6.229374" name="p3" />
+    <waypoint lat="50.911780" lon="6.228762" name="p4" />
     <waypoint name="TD" x="-25.4" y="34.0"/>
   </waypoints>
   <sectors>
