@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="50" ground_alt="0" lat0="50.714955" lon0="5.900670" max_dist_from_home="800" name="Rotorcraft Basic (Enac)" security_height="2">
+<flight_plan alt="70" ground_alt="0" lat0="50.714955" lon0="5.900670" max_dist_from_home="800" name="Rotorcraft Basic (Enac)" security_height="2">
   <header>
 #include "autopilot.h"
 </header>
@@ -57,15 +57,6 @@
     <block name="Holding point">
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block>
-    <block name="Start Engine">
-      <call_once fun="NavResurrect()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
-    </block>
-    <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="GetPosHeight() @GT 5.0" deroute="Standby"/>
-      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
-      <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
     <block name="Automatic Takeoff">
       <call_once fun="take_off_enter()"/>

@@ -181,6 +181,7 @@
     </block>
     <block name="Terminate">
       <call_once fun="NavKillThrottle()"/>
+      <set value="false" var="force_forward"/>
       <set value="true" var="terminate_flight"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
