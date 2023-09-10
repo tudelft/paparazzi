@@ -11,6 +11,11 @@
     <waypoint name="GOAL" x="1.9" y="1.0"/>
     <waypoint name="TRAJECTORY" x="1.9" y="1.0"/>
     <waypoint lat="50.714955" lon="5.900670" name="START"/>
+    <waypoint lat="50.715114" lon="5.891141" name="p1"/>
+    <waypoint lat="50.718965" lon="5.896237" name="p2"/>
+    <waypoint lat="50.716833" lon="5.900428" name="p3"/>
+    <waypoint lat="50.712991" lon="5.895158" name="p4"/>
+    <waypoint name="TD" x="-25.4" y="34.0"/>
     <waypoint lat="50.721287" lon="5.896945" name="_A"/>
     <waypoint lat="50.719103" lon="5.892398" name="_B"/>
     <waypoint lat="50.716440" lon="5.888566" name="_C"/>
@@ -23,11 +28,6 @@
     <waypoint lat="50.716857" lon="5.906448" name="_K"/>
     <waypoint lat="50.717694" lon="5.902928" name="_L"/>
     <waypoint lat="50.718487" lon="5.899484" name="_M"/>
-    <waypoint lat="50.715114" lon="5.891141" name="p1"/>
-    <waypoint lat="50.718965" lon="5.896237" name="p2"/>
-    <waypoint lat="50.716833" lon="5.900428" name="p3"/>
-    <waypoint lat="50.712991" lon="5.895158" name="p4"/>
-    <waypoint name="TD" x="-25.4" y="34.0"/>
   </waypoints>
   <sectors>
     <sector color="green" name="Geofence">
