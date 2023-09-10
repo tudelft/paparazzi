@@ -3,7 +3,7 @@
 		* GPS:			Ublox M8N
 -->
 
-<airframe name="tiltprop tailsitter experimental">
+<airframe name="imav tailsitter">
 
   <firmware name="rotorcraft">
     <!-- ****************** Autopilot Target ******************* -->
