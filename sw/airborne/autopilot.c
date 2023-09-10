@@ -46,6 +46,7 @@
 #include "pprz_version.h"
 
 struct pprz_autopilot autopilot;
+bool terminate_flight = false;
 
 #ifndef AUTOPILOT_RC_ID
 #define AUTOPILOT_RC_ID ABI_BROADCAST
