@@ -48,6 +48,7 @@
 #include "pprz_version.h"
 
 struct pprz_autopilot autopilot;
+bool terminate_flight = false;
 
 
 static void send_autopilot_version(struct transport_tx *trans, struct link_device *dev)

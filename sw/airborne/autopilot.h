@@ -75,6 +75,7 @@ struct pprz_autopilot {
   bool detect_ground_once;  ///< enable automatic detection of ground (one shot)
 };
 
+extern bool terminate_flight;
 
 /** Global autopilot structure
  */
