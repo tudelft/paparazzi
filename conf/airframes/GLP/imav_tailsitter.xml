@@ -248,8 +248,8 @@
     <set servo="TILT_RIGHT" value="autopilot.motors_on ? actuators_pprz[1] : 0"/>
     <set servo="RM" value="autopilot.motors_on ? actuators_pprz[2] : -MAX_PPRZ"/>
     <set servo="LM" value="autopilot.motors_on ? actuators_pprz[3] : -MAX_PPRZ"/>
-    <set servo="AIL_LEFT" value="terminate_flight ? 3000 : (autopilot.motors_on ? actuators_pprz[4] : 0)"/>
-    <set servo="AIL_RIGHT" value="terminate_flight ? -3000 : (autopilot.motors_on ? actuators_pprz[5] : 0)"/>
+    <set servo="AIL_LEFT" value="terminate_flight ? 6000 : (autopilot.motors_on ? actuators_pprz[4] : 0)"/>
+    <set servo="AIL_RIGHT" value="terminate_flight ? 6000 : (autopilot.motors_on ? actuators_pprz[5] : 0)"/>
   </command_laws>
 
   <section name="IMU" prefix="IMU_">
