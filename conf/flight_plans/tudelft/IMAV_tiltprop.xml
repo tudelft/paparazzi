@@ -111,8 +111,8 @@
     <exception cond="Or(!InsideHardGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 120) @AND !(nav_block == IndexOfBlock('Wait GPS'))
       @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Geo init'))
       @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Terminate"/>
-    <exception cond="(GpsIsLost() @AND (datalink_time @GT 15) @AND nav_block @GT IndexOfBlock('Standby')
-      @AND nav_block @LT IndexOfBlock('landed'))" deroute="No_GPS_Connection"/>
+    <exception cond="(GpsIsLost() @AND (nav_block @GT IndexOfBlock('Standby'))
+      @AND (nav_block @LT IndexOfBlock('landed')))" deroute="No_GPS_Connection"/>
   </exceptions>
   <blocks>
     <block name="No_GPS_Connection">
