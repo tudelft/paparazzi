@@ -157,6 +157,7 @@
     <block name="route">
       <set value="true" var="force_forward"/>
       <while cond="true">
+        <go from="HOME" hmode="route" wp="p1">
         <go from="p1" hmode="route" wp="p2"/>
         <go from="p2" hmode="route" wp="p3"/>
         <go from="p3" hmode="route" wp="p4"/>
