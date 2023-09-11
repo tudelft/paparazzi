@@ -4,16 +4,16 @@
   <header>
 #include "autopilot.h"
 #include "generated/modules.h"
-  </header>
+</header>
   <waypoints>
     <waypoint name="HOME" x="0.0" y="0.0"/>
-    <waypoint lat="52.168426" lon="4.412981" name="CLIMB"/>
-    <waypoint lat="52.168221" lon="4.413348" name="STDBY"/>
-    <waypoint lat="52.168459" lon="4.413640" name="p1"/>
-    <waypoint lat="52.169043" lon="4.416050" name="p2"/>
-    <waypoint lat="52.168015" lon="4.416774" name="p3"/>
-    <waypoint lat="52.167425" lon="4.414332" name="p4"/>
-    <waypoint lat="52.168022" lon="4.413165" name="TD"/>
+    <waypoint lat="50.909980" lon="6.227951" name="CLIMB"/>
+    <waypoint lat="50.910085" lon="6.227526" name="STDBY"/>
+    <waypoint lat="50.910365" lon="6.227154" name="p1"/>
+    <waypoint lat="50.912118" lon="6.227161" name="p2"/>
+    <waypoint lat="50.912126" lon="6.228542" name="p3"/>
+    <waypoint lat="50.910400" lon="6.228343" name="p4"/>
+    <waypoint lat="50.909725" lon="6.227899" name="TD"/>
     <waypoint lat="50.906376" lon="6.223196" name="_F1"/>
     <waypoint lat="50.910998" lon="6.223086" name="_F2"/>
     <waypoint lat="50.913740" lon="6.226769" name="_F3"/>
@@ -130,7 +130,7 @@
     <block name="Automatic Takeoff">
       <call_once fun="NavResurrect()"/>
       <call_once fun="take_off_enter()"/>
-      <attitude pitch="0" roll="0" alt="5" until="GetPosHeight() @GT 2.0"/>
+      <attitude alt="5" pitch="0" roll="0" until="GetPosHeight() @GT 2.0"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
       <exception cond="GetPosHeight() @GT 5.0" deroute="Standby"/>
@@ -153,7 +153,7 @@
     <block name="route">
       <set value="true" var="force_forward"/>
       <while cond="true">
-        <go from="HOME" hmode="route" wp="p1">
+        <go wp="p1"/>
         <go from="p1" hmode="route" wp="p2"/>
         <go from="p2" hmode="route" wp="p3"/>
         <go from="p3" hmode="route" wp="p4"/>
@@ -182,7 +182,7 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="No_GPS_Connection">
-      <attitude pitch="0" roll="0" vmode="climb" climb="-1"/>
+      <attitude climb="-1" pitch="0" roll="0" vmode="climb"/>
       <exception cond="NavBlockTime() @GT 15" deroute="Terminate"/>
     </block>
   </blocks>
