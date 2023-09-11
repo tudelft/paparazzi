@@ -59,8 +59,8 @@ _interface = IvyMessagesInterface("Tiltprop Waypoints")
 
 for i in range(len(x)):
     msgw = PprzMessage("ground", "MOVE_WAYPOINT")
-    msgw['ac_id'] = 4
-    msgw['wp_id'] = i + 11
+    msgw['ac_id'] = 2
+    msgw['wp_id'] = i + 4
     msgw['lat'] = lat[i]
     msgw['long'] = long[i]
     msgw['alt'] = alt[i]
