@@ -136,9 +136,20 @@
       <attitude alt="5" pitch="0" roll="0" until="GetPosHeight() @GT 2.0"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="GetPosHeight() @GT 5.0" deroute="Standby"/>
+      <exception cond="GetPosHeight() @GT 15.0" deroute="route"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
+    </block>
+    <block name="route">
+      <set value="true" var="force_forward"/>
+      <while cond="true">
+        <go wp="h1"/>
+        <go from="h1" hmode="route" wp="h2"/>
+        <go from="h2" hmode="route" wp="h3"/>
+        <go from="h3" hmode="route" wp="h4"/>
+        <go from="h4" hmode="route" wp="h1"/>
+      </while>
+      <deroute block="stay_h1"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="false" var="force_forward"/>
@@ -153,32 +164,19 @@
       <go wp="p2"/>
       <deroute block="stay_h1"/>
     </block>
-    <block name="route">
-      <set value="true" var="force_forward"/>
-      <while cond="true">
-        <go wp="h1"/>
-        <go from="h1" hmode="route" wp="h2"/>
-        <go from="h2" hmode="route" wp="h3"/>
-        <go from="h3" hmode="route" wp="h4"/>
-        <go from="h4" hmode="route" wp="h1"/>
-      </while>
-      <deroute block="stay_h1"/>
-    </block>
     <block name="go_start">
       <set value="false" var="force_forward"/>
       <go wp="START"/>
-      <deroute block="waypoint"/>
+      <deroute block="route"/>
     </block>
-    <block name="waypoint">
+    <block name="4waypoints">
       <set value="true" var="force_forward"/>
-      <while cond="true">
-        <go wp="p1"/>
-        <go from="p1" hmode="route" wp="p2"/>
-        <go from="p2" hmode="route" wp="p3"/>
-        <go from="p3" hmode="route" wp="p4"/>
-        <go from="p4" hmode="route" wp="p1"/>
-      </while>
-      <deroute block="go_start"/>
+      <go wp="p1"/>
+      <go wp="p2"/>
+      <go wp="p3"/>
+      <go wp="p4"/>
+      <go wp="START"/>
+      <deroute block="route"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
@@ -203,10 +201,7 @@
       <attitude climb="-1" pitch="0" roll="0" vmode="climb"/>
       <exception cond="NavBlockTime() @GT 15" deroute="Terminate"/>
     </block>
-    <block name="Terminate">    <waypoint lat="50.910365" lon="6.227154" name="p1"/>
-    <waypoint lat="50.912118" lon="6.227161" name="p2"/>
-    <waypoint lat="50.912126" lon="6.228542" name="p3"/>
-    <waypoint lat="50.910400" lon="6.228343" name="p4"/>
+    <block name="Terminate">
       <call_once fun="NavKillThrottle()"/>
       <set value="false" var="force_forward"/>
       <set value="true" var="terminate_flight"/>

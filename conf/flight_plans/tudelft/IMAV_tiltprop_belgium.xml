@@ -70,6 +70,21 @@
       <call_once fun="take_off_enter()"/>
       <attitude pitch="0" roll="0" alt="5" until="GetPosHeight() @GT 2.0"/>
     </block>
+    <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+      <exception cond="GetPosHeight() @GT 5.0" deroute="Standby"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
+    </block>
+    <block name="route">
+      <set value="true" var="force_forward"/>
+      <while cond="true">
+        <go from="p1" hmode="route" wp="p2"/>
+        <go from="p2" hmode="route" wp="p3"/>
+        <go from="p3" hmode="route" wp="p4"/>
+        <go from="p4" hmode="route" wp="p1"/>
+      </while>
+      <deroute block="stay_p1"/>
+    </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="false" var="force_forward"/>
       <stay wp="STDBY"/>
@@ -81,16 +96,6 @@
     <block name="go_p2">
       <set value="false" var="force_forward"/>
       <go wp="p2"/>
-      <deroute block="stay_p1"/>
-    </block>
-    <block name="route">
-      <set value="true" var="force_forward"/>
-      <while cond="true">
-        <go from="p1" hmode="route" wp="p2"/>
-        <go from="p2" hmode="route" wp="p3"/>
-        <go from="p3" hmode="route" wp="p4"/>
-        <go from="p4" hmode="route" wp="p1"/>
-      </while>
       <deroute block="stay_p1"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
