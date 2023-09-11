@@ -209,8 +209,8 @@
   </firmware>
 
   <servos driver="Pwm">
-    <servo name="TILT_LEFT" no="0" min="2300" neutral="1700" max="1100"/>
-    <servo name="TILT_RIGHT" no="1" min="750" neutral="1350" max="1950"/>
+    <servo name="TILT_LEFT" no="0" min="2100" neutral="1500" max="900"/>
+    <servo name="TILT_RIGHT" no="1" min="900" neutral="1500" max="2100"/>
     <servo name="RM" no="2" min="1000" neutral="1150" max="1900"/>
     <servo name="LM" no="3" min="1000" neutral="1150" max="1900"/>
     <servo name="AIL_LEFT" no="4" min="1100" neutral="1500" max="1900"/>
