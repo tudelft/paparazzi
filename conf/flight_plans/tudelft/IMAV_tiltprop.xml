@@ -13,6 +13,10 @@
     <waypoint lat="50.912118" lon="6.227161" name="p2"/>
     <waypoint lat="50.912126" lon="6.228542" name="p3"/>
     <waypoint lat="50.910400" lon="6.228343" name="p4"/>
+    <waypoint lat="50.910365" lon="6.227154" name="h1"/>
+    <waypoint lat="50.912118" lon="6.227161" name="h2"/>
+    <waypoint lat="50.912126" lon="6.228542" name="h3"/>
+    <waypoint lat="50.910400" lon="6.228343" name="h4"/>
     <waypoint lat="50.910595" lon="6.227356" name="START"/>
     <waypoint lat="50.909725" lon="6.227899" name="TD"/>
     <waypoint lat="50.906376" lon="6.223196" name="F1"/>
@@ -140,21 +144,32 @@
       <set value="false" var="force_forward"/>
       <stay wp="STDBY"/>
     </block>
-    <block name="stay_p1">
+    <block name="stay_h1">
       <set value="false" var="force_forward"/>
-      <stay wp="p1"/>
+      <stay wp="h1"/>
     </block>
     <block name="go_p2">
       <set value="false" var="force_forward"/>
       <go wp="p2"/>
-      <deroute block="stay_p1"/>
+      <deroute block="stay_h1"/>
+    </block>
+    <block name="route">
+      <set value="true" var="force_forward"/>
+      <while cond="true">
+        <go wp="h1"/>
+        <go from="h1" hmode="route" wp="h2"/>
+        <go from="h2" hmode="route" wp="h3"/>
+        <go from="h3" hmode="route" wp="h4"/>
+        <go from="h4" hmode="route" wp="h1"/>
+      </while>
+      <deroute block="stay_h1"/>
     </block>
     <block name="go_start">
       <set value="false" var="force_forward"/>
       <go wp="START"/>
-      <deroute block="route"/>
+      <deroute block="waypoint"/>
     </block>
-    <block name="route">
+    <block name="waypoint">
       <set value="true" var="force_forward"/>
       <while cond="true">
         <go wp="p1"/>
@@ -188,7 +203,10 @@
       <attitude climb="-1" pitch="0" roll="0" vmode="climb"/>
       <exception cond="NavBlockTime() @GT 15" deroute="Terminate"/>
     </block>
-    <block name="Terminate">
+    <block name="Terminate">    <waypoint lat="50.910365" lon="6.227154" name="p1"/>
+    <waypoint lat="50.912118" lon="6.227161" name="p2"/>
+    <waypoint lat="50.912126" lon="6.228542" name="p3"/>
+    <waypoint lat="50.910400" lon="6.228343" name="p4"/>
       <call_once fun="NavKillThrottle()"/>
       <set value="false" var="force_forward"/>
       <set value="true" var="terminate_flight"/>

@@ -13,8 +13,8 @@ from pprzlink.ivy import IvyMessagesInterface
 from pprzlink.message import PprzMessage
 
 
-ref_lat = 51.990634
-ref_long = 4.376789
+ref_lat = 50.910595
+ref_long = 6.227356
 deg2m = 111.139
 with open('./sw/ground_segment/python/waypoints.txt', 'r') as file:
     longitude = []
