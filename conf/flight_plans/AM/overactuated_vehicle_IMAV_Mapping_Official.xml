@@ -86,6 +86,7 @@
     <waypoint lat="50.907802" lon="6.225896" name="C1"/>
     <waypoint lat="50.908381" lon="6.225419" name="C2"/>
     <waypoint lat="50.909987" lon="6.225059" name="C3"/>
+    <waypoint lat="50.910031" lon="6.226726" name="CAR"/>
   </waypoints>
   <sectors>
     <sector color="red" name="HardGeofence">
@@ -211,6 +212,11 @@
       <call_once fun="nav_set_heading_deg(90)"/>
       <go wp="p2"/>
       <deroute block="stay_p1"/>
+    </block>
+    <block name="goto_car">
+      <set value="0" var="approach_state"/>
+      <set value="0" var="force_forward"/>
+      <stay wp="CAR"/>
     </block>
     <block name="follow_aruco">
       <set value="0" var="force_forward"/>
