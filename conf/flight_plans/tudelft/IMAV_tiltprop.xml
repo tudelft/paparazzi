@@ -108,12 +108,12 @@
   <exceptions>
     <exception cond="Or(!InsideSoftGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 110) @AND !(nav_block == IndexOfBlock('Wait GPS'))
       @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Geo init'))
-      @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="HOME"/>
+      @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Terminate')))" deroute="return home"/>
     <exception cond="Or(!InsideHardGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 120) @AND !(nav_block == IndexOfBlock('Wait GPS'))
       @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Geo init'))
       @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Terminate"/>
     <exception cond="(GpsIsLost() @AND (nav_block @GT IndexOfBlock('Standby'))
-      @AND (nav_block @LT IndexOfBlock('landed')))" deroute="No_GPS_Connection"/>
+      @AND (nav_block @LT IndexOfBlock('landed'))) @AND !(nav_block == IndexOfBlock('Terminate')))" deroute="No_GPS_Connection"/>
   </exceptions>
   <blocks>
     <block name="Wait GPS">
@@ -188,8 +188,13 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="No_GPS_Connection">
+      <set value="false" var="force_forward"/>
       <attitude climb="-1" pitch="0" roll="0" vmode="climb"/>
       <exception cond="NavBlockTime() @GT 15" deroute="Terminate"/>
+    </block>
+    <block name="return home">
+    <set value="false" var="force_forward"/>
+      <go wp="Standby">
     </block>
   </blocks>
 </flight_plan>
