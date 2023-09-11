@@ -8,13 +8,17 @@
     <waypoint name="HOME" x="0.0" y="0.0"/>
     <waypoint name="CLIMB" x="-39.0" y="17.6"/>
     <waypoint name="STDBY" x="-29.1" y="-47.5"/>
+    <waypoint lat="50.716569" lon="5.893181" name="p1"/>
+    <waypoint lat="50.717996" lon="5.894865" name="p2"/>
+    <waypoint lat="50.715705" lon="5.895292" name="p3"/>
+    <waypoint lat="50.713760" lon="5.896266" name="p4"/>
+    <waypoint lat="50.715144" lon="5.891024" name="h1"/>
+    <waypoint lat="50.717903" lon="5.895903" name="h2"/>
+    <waypoint lat="50.716302" lon="5.899203" name="h3"/>
+    <waypoint lat="50.713192" lon="5.894472" name="h4"/>
+    <waypoint lat="50.716057" lon="5.897104" name="START"/>
     <waypoint name="GOAL" x="1.9" y="1.0"/>
     <waypoint name="TRAJECTORY" x="1.9" y="1.0"/>
-    <waypoint lat="50.714955" lon="5.900670" name="START"/>
-    <waypoint lat="50.715114" lon="5.891141" name="p1"/>
-    <waypoint lat="50.718965" lon="5.896237" name="p2"/>
-    <waypoint lat="50.716833" lon="5.900428" name="p3"/>
-    <waypoint lat="50.712991" lon="5.895158" name="p4"/>
     <waypoint name="TD" x="-25.4" y="34.0"/>
     <waypoint lat="50.721287" lon="5.896945" name="A"/>
     <waypoint lat="50.719103" lon="5.892398" name="B"/>
@@ -68,35 +72,50 @@
     <block name="Automatic Takeoff">
       <call_once fun="NavResurrect()"/>
       <call_once fun="take_off_enter()"/>
-      <attitude pitch="0" roll="0" alt="5" until="GetPosHeight() @GT 2.0"/>
+      <attitude alt="5" pitch="0" roll="0" until="GetPosHeight() @GT 2.0"/>
     </block>
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-      <exception cond="GetPosHeight() @GT 5.0" deroute="Standby"/>
+      <exception cond="GetPosHeight() @GT 15.0" deroute="route"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
     <block name="route">
       <set value="true" var="force_forward"/>
       <while cond="true">
-        <go from="p1" hmode="route" wp="p2"/>
-        <go from="p2" hmode="route" wp="p3"/>
-        <go from="p3" hmode="route" wp="p4"/>
-        <go from="p4" hmode="route" wp="p1"/>
+        <go wp="h1"/>
+        <go from="h1" hmode="route" wp="h2"/>
+        <go from="h2" hmode="route" wp="h3"/>
+        <go from="h3" hmode="route" wp="h4"/>
+        <go from="h4" hmode="route" wp="h1"/>
       </while>
-      <deroute block="stay_p1"/>
+      <deroute block="stay_h1"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="false" var="force_forward"/>
       <stay wp="STDBY"/>
     </block>
-    <block name="stay_p1">
+    <block name="stay_h1">
       <set value="false" var="force_forward"/>
-      <stay wp="p1"/>
+      <stay wp="h1"/>
     </block>
     <block name="go_p2">
       <set value="false" var="force_forward"/>
       <go wp="p2"/>
-      <deroute block="stay_p1"/>
+      <deroute block="stay_h1"/>
+    </block>
+    <block name="go_start">
+      <set value="false" var="force_forward"/>
+      <go wp="START"/>
+      <deroute block="route"/>
+    </block>
+    <block name="4waypoints">
+      <set value="true" var="force_forward"/>
+      <go wp="p1"/>
+      <go wp="p2"/>
+      <go wp="p3"/>
+      <go wp="p4"/>
+      <go wp="START"/>
+      <deroute block="route"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
@@ -112,6 +131,10 @@
     <block name="landed">
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
+    <block name="return home">
+      <set value="false" var="force_forward"/>
+      <go wp="STDBY"/>
+    </block>
     <block name="Terminate">
       <call_once fun="NavKillThrottle()"/>
       <set value="false" var="force_forward"/>
@@ -119,7 +142,7 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="No_GPS_Connection">
-      <attitude pitch="0" roll="0" vmode="climb" climb="-1"/>
+      <attitude climb="-1" pitch="0" roll="0" vmode="climb"/>
       <exception cond="NavBlockTime() @GT 15" deroute="Terminate"/>
     </block>
   </blocks>
