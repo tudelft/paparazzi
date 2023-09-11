@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="245" ground_alt="185" lat0="50.909282" lon0="6.228386" max_dist_from_home="1000" name="Overactuated vehicle IMAV test Belgium" security_height="245">
+<flight_plan alt="177" ground_alt="117" lat0="50.909282" lon0="6.228386" max_dist_from_home="1000" name="Overactuated vehicle IMAV test Belgium" security_height="245">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
