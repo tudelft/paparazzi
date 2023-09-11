@@ -143,7 +143,7 @@
     @AND (nav_block @GT IndexOfBlock('Standby')) @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Wait GPS')) 
     @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Standby"/>
     <exception cond="(!InsideHardGeofence(GetPosX(), GetPosY()) @OR GetPosAlt() @GT GetAltRef() + 120) 
-    @AND (nav_block @GT IndexOfBlock('Standby')) @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Wait GPS')) 
+    @AND (nav_block @GT IndexOfBlock('Takeoff')) @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Wait GPS')) 
     @AND !(nav_block == IndexOfBlock('Geo init')) @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="landed"/>
     <exception cond="electrical.bat_low @AND autopilot_in_flight() @AND (nav_block @GT IndexOfBlock('Standby')) 
                      @AND (nav_block @LT IndexOfBlock('landed'))" deroute="descend"/>
