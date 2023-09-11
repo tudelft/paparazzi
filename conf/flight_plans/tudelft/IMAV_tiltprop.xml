@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="60" ground_alt="0" lat0="50.910595" lon0="6.227356" max_dist_from_home="600" name="Tiltprop IMAV" security_height="2">
+<flight_plan alt="60" ground_alt="0" lat0="50.909688" lon0="6.228237" max_dist_from_home="600" name="Tiltprop IMAV" security_height="2">
   <header>
 #include "autopilot.h"
 #include "generated/modules.h"
