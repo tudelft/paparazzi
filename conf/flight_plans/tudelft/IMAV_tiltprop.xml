@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="60" ground_alt="0" lat0="50.910595" lon0="6.227356" max_dist_from_home="600" name="Tiltprop IMAV" security_height="2">
+<flight_plan alt="60" ground_alt="0" lat0="50.909688" lon0="6.228237" max_dist_from_home="600" name="Tiltprop IMAV" security_height="2">
   <header>
 #include "autopilot.h"
 #include "generated/modules.h"
@@ -13,6 +13,7 @@
     <waypoint lat="50.912118" lon="6.227161" name="p2"/>
     <waypoint lat="50.912126" lon="6.228542" name="p3"/>
     <waypoint lat="50.910400" lon="6.228343" name="p4"/>
+    <waypoint lat="50.910595" lon="6.227356" name="START"/>
     <waypoint lat="50.909725" lon="6.227899" name="TD"/>
     <waypoint lat="50.906376" lon="6.223196" name="_F1"/>
     <waypoint lat="50.910998" lon="6.223086" name="_F2"/>
@@ -107,12 +108,12 @@
   <exceptions>
     <exception cond="Or(!InsideSoftGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 110) @AND !(nav_block == IndexOfBlock('Wait GPS'))
       @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Geo init'))
-      @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="HOME"/>
+      @AND !(nav_block == IndexOfBlock('Holding point')) @AND !(nav_block == IndexOfBlock('Terminate')))" deroute="return home"/>
     <exception cond="Or(!InsideHardGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 120) @AND !(nav_block == IndexOfBlock('Wait GPS'))
       @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block == IndexOfBlock('Geo init'))
       @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Terminate"/>
     <exception cond="(GpsIsLost() @AND (nav_block @GT IndexOfBlock('Standby'))
-      @AND (nav_block @LT IndexOfBlock('landed')))" deroute="No_GPS_Connection"/>
+      @AND (nav_block @LT IndexOfBlock('landed'))) @AND !(nav_block == IndexOfBlock('Terminate')))" deroute="No_GPS_Connection"/>
   </exceptions>
   <blocks>
     <block name="Wait GPS">
@@ -150,6 +151,11 @@
       <go wp="p2"/>
       <deroute block="stay_p1"/>
     </block>
+    <block name="go_start">
+      <set value="false" var="force_forward"/>
+      <go wp="START"/>
+      <deroute block="route"/>
+    </block>
     <block name="route">
       <set value="true" var="force_forward"/>
       <while cond="true">
@@ -159,7 +165,7 @@
         <go from="p3" hmode="route" wp="p4"/>
         <go from="p4" hmode="route" wp="p1"/>
       </while>
-      <deroute block="stay_p1"/>
+      <deroute block="go_start"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
@@ -182,8 +188,13 @@
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="No_GPS_Connection">
+      <set value="false" var="force_forward"/>
       <attitude climb="-1" pitch="0" roll="0" vmode="climb"/>
       <exception cond="NavBlockTime() @GT 15" deroute="Terminate"/>
+    </block>
+    <block name="return home">
+    <set value="false" var="force_forward"/>
+      <go wp="Standby">
     </block>
   </blocks>
 </flight_plan>
