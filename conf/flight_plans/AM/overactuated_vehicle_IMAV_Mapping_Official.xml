@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="325" ground_alt="262" lat0="50.714955" lon0="5.900670" max_dist_from_home="1000" name="Overactuated vehicle IMAV test Belgium" security_height="300">
+<flight_plan alt="325" ground_alt="262" lat0="50.715244" lon0="5.900478" max_dist_from_home="1000" name="Overactuated vehicle IMAV test Belgium" security_height="300">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -23,15 +23,15 @@
   <waypoints>
     <waypoint name="HOME" x="-9.0" y="10.3"/>
     <waypoint name="CLIMB" x="-24.8" y="61.4"/>
-    <waypoint lat="50.716089" lon="5.899916" name="STDBY"/>
-    <waypoint lat="50.717100" lon="5.898383" name="p1"/>
-    <waypoint lat="50.716153" lon="5.900826" name="p2"/>
-    <waypoint lat="50.714488" lon="5.898650" name="p3"/>
-    <waypoint lat="50.715734" lon="5.896373" name="p4"/>
-    <waypoint lat="50.715244" lon="5.900478" name="TD"/>
-    <waypoint lat="50.715681" lon="5.901172" name="APP"/>
-    <waypoint lat="50.715639" lon="5.898828" name="FOLLOW"/>
-    <waypoint lat="50.715255" lon="5.898592" name="FOLLOW_ARUCO"/>
+    <waypoint x="0" y="20" name="STDBY"/>
+    <waypoint x="20" y="20" name="p1"/>
+    <waypoint x="40" y="20" name="p2"/>
+    <waypoint x="60" y="20" name="p3"/>
+    <waypoint x="60" y="20" name="p4"/>
+    <waypoint x="10" y="20" name="TD"/>
+    <waypoint x="80" y="40" name="APP"/>
+    <waypoint x="0" y="20" name="FOLLOW"/>
+    <waypoint x="0" y="40" name="FOLLOW_ARUCO"/>
     <waypoint lat="50.907310" lon="6.224457" name="Z1"/>
     <waypoint lat="50.910916" lon="6.224731" name="Z2"/>
     <waypoint lat="50.910902" lon="6.225038" name="Z3"/>
