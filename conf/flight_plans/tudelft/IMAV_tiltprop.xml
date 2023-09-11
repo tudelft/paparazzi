@@ -105,14 +105,14 @@
       <corner name="_M4"/>
     </sector>
   </sectors>
-  <exceptions>
+  <!-- <exceptions>
     <exception cond="Or(!InsideHardGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 120) @AND !(nav_block @GT IndexOfBlock('Holding point'))
       @AND (nav_block @LT IndexOfBlock('Terminate'))" deroute="Terminate"/>
     <exception cond="(GpsIsLost() @AND (nav_block @GT IndexOfBlock('Holding point'))
       @AND (nav_block @LT IndexOfBlock('Terminate')))" deroute="No_GPS_Connection"/>
     <exception cond="Or(!InsideSoftGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 110) @AND !(nav_block @GT IndexOfBlock('Holding point'))
       @AND (nav_block @LT IndexOfBlock('landed'))" deroute="return home"/>
-  </exceptions>
+  </exceptions> -->
   <blocks>
     <block name="Wait GPS">
       <call_once fun="NavKillThrottle()"/>
@@ -181,7 +181,7 @@
     </block>
     <block name="return home">
       <set value="false" var="force_forward"/>
-      <go wp="Standby">
+      <go wp="STDBY"/>
     </block>
     <block name="No_GPS_Connection">
       <set value="false" var="force_forward"/>
