@@ -215,8 +215,7 @@
     <block name="follow_aruco">
       <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>
-      <go wp="FOLLOW_ARUCO"/>
-      <deroute block="follow_aruco"/>
+      <stay wp="FOLLOW_ARUCO"/>
     </block>
     <block name="line_p1_p2">
       <set value="0" var="force_forward"/>
