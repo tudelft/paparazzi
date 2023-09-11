@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="60" ground_alt="0" lat0="50.909688" lon0="6.228237" max_dist_from_home="600" name="Tiltprop IMAV" security_height="2">
+<flight_plan alt="160" ground_alt="0" lat0="50.909688" lon0="6.228237" max_dist_from_home="600" name="Tiltprop IMAV" security_height="2">
   <header>
 #include "autopilot.h"
 #include "generated/modules.h"
@@ -15,34 +15,34 @@
     <waypoint lat="50.910400" lon="6.228343" name="p4"/>
     <waypoint lat="50.910595" lon="6.227356" name="START"/>
     <waypoint lat="50.909725" lon="6.227899" name="TD"/>
-    <waypoint lat="50.906376" lon="6.223196" name="_F1"/>
-    <waypoint lat="50.910998" lon="6.223086" name="_F2"/>
-    <waypoint lat="50.913740" lon="6.226769" name="_F3"/>
-    <waypoint lat="50.913135" lon="6.230278" name="_F4"/>
-    <waypoint lat="50.912821" lon="6.231021" name="_F5"/>
-    <waypoint lat="50.912073" lon="6.231793" name="_F6"/>
-    <waypoint lat="50.911361" lon="6.231674" name="_F7"/>
-    <waypoint lat="50.911074" lon="6.230432" name="_F8"/>
-    <waypoint lat="50.910664" lon="6.229780" name="_F9"/>
-    <waypoint lat="50.907942" lon="6.227214" name="_F10"/>
-    <waypoint lat="50.907432" lon="6.227156" name="_F11"/>
-    <waypoint lat="50.906610" lon="6.227501" name="_F12"/>
-    <waypoint lat="50.905917" lon="6.226675" name="_F13"/>
-    <waypoint lat="50.906223" lon="6.225644" name="_F14"/>
-    <waypoint lat="50.906886" lon="6.223927" name="_G1"/>
-    <waypoint lat="50.910946" lon="6.223798" name="_G2"/>
-    <waypoint lat="50.913247" lon="6.226908" name="_G3"/>
-    <waypoint lat="50.912701" lon="6.229972" name="_G4"/>
-    <waypoint lat="50.912425" lon="6.230648" name="_G5"/>
-    <waypoint lat="50.911652" lon="6.231214" name="_G6"/>
-    <waypoint lat="50.911392" lon="6.229977" name="_G7"/>
-    <waypoint lat="50.910842" lon="6.229131" name="_G8"/>
-    <waypoint lat="50.909282" lon="6.228386" name="_G9"/>
-    <waypoint lat="50.908253" lon="6.226671" name="_G10"/>
-    <waypoint lat="50.907502" lon="6.226436" name="_G11"/>
-    <waypoint lat="50.907083" lon="6.226495" name="_G12"/>
-    <waypoint lat="50.906788" lon="6.226718" name="_G13"/>
-    <waypoint lat="50.906549" lon="6.226418" name="_G14"/>
+    <waypoint lat="50.906376" lon="6.223196" name="F1"/>
+    <waypoint lat="50.910998" lon="6.223086" name="F2"/>
+    <waypoint lat="50.913740" lon="6.226769" name="F3"/>
+    <waypoint lat="50.913135" lon="6.230278" name="F4"/>
+    <waypoint lat="50.912821" lon="6.231021" name="F5"/>
+    <waypoint lat="50.912073" lon="6.231793" name="F6"/>
+    <waypoint lat="50.911361" lon="6.231674" name="F7"/>
+    <waypoint lat="50.911074" lon="6.230432" name="F8"/>
+    <waypoint lat="50.910664" lon="6.229780" name="F9"/>
+    <waypoint lat="50.907942" lon="6.227214" name="F10"/>
+    <waypoint lat="50.907432" lon="6.227156" name="F11"/>
+    <waypoint lat="50.906610" lon="6.227501" name="F12"/>
+    <waypoint lat="50.905917" lon="6.226675" name="F13"/>
+    <waypoint lat="50.906223" lon="6.225644" name="F14"/>
+    <waypoint lat="50.906886" lon="6.223927" name="G1"/>
+    <waypoint lat="50.910946" lon="6.223798" name="G2"/>
+    <waypoint lat="50.913247" lon="6.226908" name="G3"/>
+    <waypoint lat="50.912701" lon="6.229972" name="G4"/>
+    <waypoint lat="50.912425" lon="6.230648" name="G5"/>
+    <waypoint lat="50.911652" lon="6.231214" name="G6"/>
+    <waypoint lat="50.911392" lon="6.229977" name="G7"/>
+    <waypoint lat="50.910842" lon="6.229131" name="G8"/>
+    <waypoint lat="50.909282" lon="6.228386" name="G9"/>
+    <waypoint lat="50.908253" lon="6.226671" name="G10"/>
+    <waypoint lat="50.907502" lon="6.226436" name="G11"/>
+    <waypoint lat="50.907083" lon="6.226495" name="G12"/>
+    <waypoint lat="50.906788" lon="6.226718" name="G13"/>
+    <waypoint lat="50.906549" lon="6.226418" name="G14"/>
     <waypoint lat="50.907036" lon="6.225883" name="_M1"/>
     <waypoint lat="50.907150" lon="6.224190" name="_M2"/>
     <waypoint lat="50.911153" lon="6.224431" name="_M3"/>
@@ -59,36 +59,36 @@
   </waypoints>
   <sectors>
     <sector color="red" name="HardGeofence">
-      <corner name="_F1"/>
-      <corner name="_F2"/>
-      <corner name="_F3"/>
-      <corner name="_F4"/>
-      <corner name="_F5"/>
-      <corner name="_F6"/>
-      <corner name="_F7"/>
-      <corner name="_F8"/>
-      <corner name="_F9"/>
-      <corner name="_F10"/>
-      <corner name="_F11"/>
-      <corner name="_F12"/>
-      <corner name="_F13"/>
-      <corner name="_F14"/>
+      <corner name="F1"/>
+      <corner name="F2"/>
+      <corner name="F3"/>
+      <corner name="F4"/>
+      <corner name="F5"/>
+      <corner name="F6"/>
+      <corner name="F7"/>
+      <corner name="F8"/>
+      <corner name="F9"/>
+      <corner name="F10"/>
+      <corner name="F11"/>
+      <corner name="F12"/>
+      <corner name="F13"/>
+      <corner name="F14"/>
     </sector>
     <sector color="green" name="SoftGeofence">
-      <corner name="_G1"/>
-      <corner name="_G2"/>
-      <corner name="_G3"/>
-      <corner name="_G4"/>
-      <corner name="_G5"/>
-      <corner name="_G6"/>
-      <corner name="_G7"/>
-      <corner name="_G8"/>
-      <corner name="_G9"/>
-      <corner name="_G10"/>
-      <corner name="_G11"/>
-      <corner name="_G12"/>
-      <corner name="_G13"/>
-      <corner name="_G14"/>
+      <corner name="G1"/>
+      <corner name="G2"/>
+      <corner name="G3"/>
+      <corner name="G4"/>
+      <corner name="G5"/>
+      <corner name="G6"/>
+      <corner name="G7"/>
+      <corner name="G8"/>
+      <corner name="G9"/>
+      <corner name="G10"/>
+      <corner name="G11"/>
+      <corner name="G12"/>
+      <corner name="G13"/>
+      <corner name="G14"/>
     </sector>
     <sector color="blue" name="Dynamic">
       <corner name="_D1"/>
@@ -105,14 +105,14 @@
       <corner name="_M4"/>
     </sector>
   </sectors>
-  <!-- <exceptions>
-    <exception cond="Or(!InsideHardGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 120) @AND !(nav_block @GT IndexOfBlock('Holding point'))
-      @AND (nav_block @LT IndexOfBlock('Terminate'))" deroute="Terminate"/>
+  <exceptions>
+    <exception cond="!InsideHardGeofence(GetPosX(), GetPosY()) @AND (nav_block @GT IndexOfBlock('Holding point'))
+      @AND !(nav_block ==IndexOfBlock('Terminate'))" deroute="Terminate"/>
     <exception cond="(GpsIsLost() @AND (nav_block @GT IndexOfBlock('Holding point'))
       @AND (nav_block @LT IndexOfBlock('Terminate')))" deroute="No_GPS_Connection"/>
-    <exception cond="Or(!InsideSoftGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 110) @AND !(nav_block @GT IndexOfBlock('Holding point'))
+    <exception cond="Or(!InsideSoftGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 110) @AND (nav_block @GT IndexOfBlock('Holding point'))
       @AND (nav_block @LT IndexOfBlock('landed'))" deroute="return home"/>
-  </exceptions> -->
+  </exceptions>
   <blocks>
     <block name="Wait GPS">
       <call_once fun="NavKillThrottle()"/>
