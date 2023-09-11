@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="325" ground_alt="262" lat0="50.715244" lon0="5.900478" max_dist_from_home="1000" name="Overactuated vehicle IMAV test Belgium" security_height="300">
+<flight_plan alt="245" ground_alt="185" lat0="50.909282" lon0="6.228386" max_dist_from_home="1000" name="Overactuated vehicle IMAV test Belgium" security_height="245">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -21,17 +21,17 @@
     }
 </header>
   <waypoints>
-    <waypoint name="HOME" x="-9.0" y="10.3"/>
+    <waypoint name="HOME" x="-25.8" y="12.3"/>
     <waypoint name="CLIMB" x="-24.8" y="61.4"/>
-    <waypoint x="0" y="20" name="STDBY"/>
-    <waypoint x="20" y="20" name="p1"/>
-    <waypoint x="40" y="20" name="p2"/>
-    <waypoint x="60" y="20" name="p3"/>
-    <waypoint x="60" y="20" name="p4"/>
-    <waypoint x="10" y="20" name="TD"/>
-    <waypoint x="80" y="40" name="APP"/>
-    <waypoint x="0" y="20" name="FOLLOW"/>
-    <waypoint x="0" y="40" name="FOLLOW_ARUCO"/>
+    <waypoint name="STDBY" x="-32.7" y="42.6"/>
+    <waypoint name="p1" x="-79.0" y="62.6"/>
+    <waypoint name="p2" x="-119.9" y="65.5"/>
+    <waypoint name="p3" x="-127.4" y="-7.0"/>
+    <waypoint name="p4" x="-82.5" y="-3.8"/>
+    <waypoint name="TD" x="10" y="20"/>
+    <waypoint name="APP" x="-100.6" y="29.3"/>
+    <waypoint name="FOLLOW" x="-115.2" y="-38.4"/>
+    <waypoint name="FOLLOW_ARUCO" x="-117.0" y="-57.3"/>
     <waypoint lat="50.907310" lon="6.224457" name="Z1"/>
     <waypoint lat="50.910916" lon="6.224731" name="Z2"/>
     <waypoint lat="50.910902" lon="6.225038" name="Z3"/>
@@ -83,6 +83,9 @@
     <waypoint lat="50.911017" lon="6.228648" name="A1"/>
     <waypoint lat="50.907650" lon="6.226392" name="A2"/>
     <waypoint lat="50.909557" lon="6.225059" name="A3"/>
+    <waypoint lat="50.907802" lon="6.225896" name="C1"/>
+    <waypoint lat="50.908381" lon="6.225419" name="C2"/>
+    <waypoint lat="50.909987" lon="6.225059" name="C3"/>
   </waypoints>
   <sectors>
     <sector color="red" name="HardGeofence">
@@ -258,15 +261,15 @@
     <block name="Mapping hmode">
       <set value="1" var="force_forward"/>
       <set value="0" var="approach_state"/>
-      <go from="Z9" wp="Z10" hmode="route"/>
-      <go from="Z10" wp="Z5" hmode="route"/>
-      <go from="Z5" wp="Z6" hmode="route"/>
-      <go from="Z6" wp="Z2" hmode="route"/>
-      <go from="Z2" wp="Z1" hmode="route"/>
-      <go from="Z1" wp="Z7" hmode="route"/>
-      <go from="Z7" wp="Z8" hmode="route"/>
-      <go from="Z8" wp="Z3" hmode="route"/>
-      <go from="Z3" wp="Z4" hmode="route"/>
+      <go from="Z9" hmode="route" wp="Z10"/>
+      <go from="Z10" hmode="route" wp="Z5"/>
+      <go from="Z5" hmode="route" wp="Z6"/>
+      <go from="Z6" hmode="route" wp="Z2"/>
+      <go from="Z2" hmode="route" wp="Z1"/>
+      <go from="Z1" hmode="route" wp="Z7"/>
+      <go from="Z7" hmode="route" wp="Z8"/>
+      <go from="Z8" hmode="route" wp="Z3"/>
+      <go from="Z3" hmode="route" wp="Z4"/>
     </block>
     <block name="Mapping">
       <set value="1" var="force_forward"/>
