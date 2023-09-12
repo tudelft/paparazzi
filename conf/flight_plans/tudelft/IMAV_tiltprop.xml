@@ -17,8 +17,12 @@
     <waypoint lat="50.912118" lon="6.227161" name="h2"/>
     <waypoint lat="50.912126" lon="6.228542" name="h3"/>
     <waypoint lat="50.910400" lon="6.228343" name="h4"/>
+    <waypoint lat="50.910365" lon="6.227154" alt="100" name="L1"/>
+    <waypoint lat="50.912118" lon="6.227161" alt="80" name="L2"/>
+    <waypoint lat="50.910595" lon="6.227356" alt="60" name="L3"/>
+    <waypoint lat="50.910595" lon="6.227356" alt="30" name="L4"/>
     <waypoint lat="50.910595" lon="6.227356" name="START"/>
-    <waypoint lat="50.909725" lon="6.227899" name="TD"/>
+    <waypoint lat="50.909725" lon="6.227899" alt="15" name="TD"/>
     <waypoint lat="50.906376" lon="6.223196" name="F1"/>
     <waypoint lat="50.910998" lon="6.223086" name="F2"/>
     <waypoint lat="50.913740" lon="6.226769" name="F3"/>
@@ -151,6 +155,16 @@
       </while>
       <deroute block="stay_h1"/>
     </block>
+    <block name="LowerALT">
+      <set value="true" var="force_forward"/>
+      <while cond="true">
+        <go wp="L1"/>
+        <go wp="L2"/>
+        <go wp="L3"/>
+        <go wp="L4"/>
+      </while>
+      <deroute block="land here"/>
+    </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="false" var="force_forward"/>
       <stay wp="STDBY"/>
@@ -180,10 +194,7 @@
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
-    </block>
-    <block name="land">
-      <set value="false" var="force_forward"/>
-      <go wp="TD"/>
+      <deroute block="flare"/>
     </block>
     <block name="flare">
       <exception cond="LessThan(agl_dist_value_filtered, 0.15)" deroute="landed"/>
