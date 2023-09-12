@@ -13,10 +13,10 @@
     <waypoint lat="50.912118" lon="6.227161" name="p2"/>
     <waypoint lat="50.912126" lon="6.228542" name="p3"/>
     <waypoint lat="50.910400" lon="6.228343" name="p4"/>
-    <waypoint lat="50.910411" lon="6.227930" name="h1"/>
-    <waypoint lat="50.911989" lon="6.228975" name="h2"/>
-    <waypoint lat="50.912457" lon="6.227229" name="h3"/>
-    <waypoint lat="50.911518" lon="6.226121" name="h4"/>
+    <waypoint lat="50.909755" lon="6.227661" name="h1"/>
+    <waypoint lat="50.912285" lon="6.229167" name="h2"/>
+    <waypoint lat="50.912668" lon="6.226968" name="h3"/>
+    <waypoint lat="50.910604" lon="6.224689" name="h4"/>
     <waypoint alt="125.0" lat="50.910576" lon="6.228077" name="L1"/>
     <waypoint alt="110.0" lat="50.911556" lon="6.228343" name="L2"/>
     <waypoint alt="100.0" lat="50.911602" lon="6.227074" name="L3"/>
