@@ -49,6 +49,8 @@
     <target name="nps" board="pc">
       <module name="radio_control" type="datalink"/>
       <module name="fdm" type="jsbsim"/>
+      <define name="agl_dist_valid" value="1" />
+      <define name="agl_dist_value" value="10" />
 
       <!-- <module name="scheduling_indi_simple"/> -->
 
@@ -66,7 +68,7 @@
     </target>
 
     <!-- <module name="nav_hybrid"/>         -->
-    <module name="Overactuated_mixing"/>
+    <module name="Overactuated_mixing_sim"/>
 
     <module name="telemetry"     type="transparent">
       <configure name="MODEM_BAUD" value="B115200"/>
@@ -455,6 +457,7 @@
     <!-- First order filter on rates -->
     <!-- 1-exp(-cutoff_frequency/sampling_frequency) [20 rad/s]-->
     <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES" value="0.0488" /> 
+  <define name="FIRST_ORDER_FILTER_COEFF_ANG_RATES_FAILSAFE" value="0.12" /> 
 
     <!-- Weighting matrix for the INDI -->
     <define name="W_ACT_MOTOR_CONST" value="2.5"/>
