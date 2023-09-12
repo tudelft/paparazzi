@@ -50,6 +50,22 @@
     <waypoint lat="50.732038" lon="5.883784" name="FLY7"/>
     <waypoint lat="50.732494" lon="5.889264" name="FLY8"/>
     <waypoint lat="50.728871" lon="5.895051" name="FLY9"/>
+    <waypoint lat="50.728083" lon="5.885457" name="M1"/>
+    <waypoint lat="50.730119" lon="5.889529" name="M2"/>
+    <waypoint lat="50.727777" lon="5.886005" name="M3"/>
+    <waypoint lat="50.729872" lon="5.889984" name="M4"/>
+    <waypoint lat="50.727500" lon="5.886578" name="M5"/>
+    <waypoint lat="50.729607" lon="5.890436" name="M6"/>
+    <waypoint lat="50.729332" lon="5.890778" name="M7"/>
+    <waypoint lat="50.727275" lon="5.887226" name="M8"/>
+    <waypoint lat="50.729054" lon="5.891475" name="M9"/>
+    <waypoint lat="50.727018" lon="5.887763" name="M10"/>
+    <waypoint lat="50.726737" lon="5.888124" name="M11"/>
+    <waypoint lat="50.728379" lon="5.884745" name="M12"/>
+    <waypoint lat="50.730423" lon="5.888982" name="M13"/>
+    <waypoint lat="50.728793" lon="5.892046" name="M14"/>
+    <waypoint lat="50.726886" lon="5.888871" name="M15"/>
+    <waypoint lat="50.727866" lon="5.884748" name="M16"/>
   </waypoints>
   <sectors>
     <sector color="orange" name="Safe_area">
@@ -201,6 +217,32 @@
       <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
+    </block>
+    <block name="Mapping hmode">
+      <set value="1" var="force_forward"/>
+      <set value="0" var="approach_state"/>
+      <go from="M1" hmode="route" wp="M2"/>
+      <go from="M2" hmode="route" wp="M6"/>
+      <go from="M6" hmode="route" wp="M5"/>
+      <go from="M5" hmode="route" wp="M10"/>
+      <go from="M10" hmode="route" wp="M9"/>
+      <go from="M9" hmode="route" wp="M4"/>
+      <go from="M4" hmode="route" wp="M3"/>
+      <go from="M3" hmode="route" wp="M8"/>
+      <go from="M8" hmode="route" wp="M7"/>
+    </block>
+    <block name="Mapping">
+      <set value="1" var="force_forward"/>
+      <set value="0" var="approach_state"/>
+      <go from="M1" wp="M2"/>
+      <go from="M2" wp="M6"/>
+      <go from="M6" wp="M5"/>
+      <go from="M5" wp="M10"/>
+      <go from="M10" wp="M9"/>
+      <go from="M9" wp="M4"/>
+      <go from="M4" wp="M3"/>
+      <go from="M3" wp="M8"/>
+      <go from="M8" wp="M7"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <set value="1" var="approach_state"/>
