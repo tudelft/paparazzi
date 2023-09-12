@@ -75,16 +75,17 @@
 
     <block name="Holding point">
       <set value="0" var="force_forward"/>
-      <set value="1" var="approach_state"/>
+      <set value="0" var="approach_state"/>
       <call_once fun="NavKillThrottle()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" pre_call="NavKillThrottle()" vmode="throttle"/>
     </block>
-
+    
     <block name="Start Engine">
-      <set value="0" var="force_forward"/>
       <set value="1" var="approach_state"/>
+      <set value="0" var="force_forward"/>
       <call_once fun="NavResurrect()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="stage_time>10" vmode="throttle"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <stay climb="-0.5" vmode="climb" wp="TD"/>
     </block>
 
     <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">

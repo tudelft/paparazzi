@@ -799,7 +799,7 @@
     <define name="UNLOCKED_HOME_MODE" value="TRUE"/>
     <define name="RC_LOST_MODE" value="AP_MODE_NAV"/>
 
-    <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/>
+    <!-- <define name="USE_KILL_SWITCH_FOR_MOTOR_ARMING" value="TRUE"/> -->
 
     <define name="FAILSAFE_HOME_RADIUS" value="600" unit="m"/>
   </section>
