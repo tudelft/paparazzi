@@ -156,6 +156,11 @@
       <set value="0" var="force_forward"/>
       <stay wp="FOLLOW_ARUCO"/>
     </block>
+    <block name="Follow_APP">
+      <set value="0" var="approach_state"/>
+      <set value="0" var="force_forward"/>
+      <stay wp="APP"/>
+    </block>    
     <block name="follow_module">
       <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>
