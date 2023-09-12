@@ -13,8 +13,8 @@ from pprzlink.ivy import IvyMessagesInterface
 from pprzlink.message import PprzMessage
 
 
-ref_lat = 50.910595
-ref_long = 6.227356
+ref_lat = 50.7291675
+ref_long = 5.8873805
 deg2m = 111.139
 with open('./sw/ground_segment/python/waypoints.txt', 'r') as file:
     longitude = []
@@ -57,7 +57,10 @@ alt = [altitude[i] for i in optimal_order]
 
 _interface = IvyMessagesInterface("Tiltprop Waypoints")
 
-for i in range(len(x)):
+time.sleep(1.0)
+
+for i in range(4):
+    print(i)
     msgw = PprzMessage("ground", "MOVE_WAYPOINT")
     msgw['ac_id'] = 2
     msgw['wp_id'] = i + 4

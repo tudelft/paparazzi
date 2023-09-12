@@ -1,41 +1,41 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="70" ground_alt="0" lat0="50.714955" lon0="5.900670" max_dist_from_home="1300" name="Rotorcraft Basic (Enac)" security_height="2">
+<flight_plan alt="260" ground_alt="0" lat0="50.7291675" lon0="5.8873805" max_dist_from_home="1600" name="Rotorcraft Basic (Enac)" security_height="2">
   <header>
 #include "autopilot.h"
 </header>
   <waypoints>
-    <waypoint name="HOME" x="0.0" y="0.0"/>
-    <waypoint name="CLIMB" x="-39.0" y="17.6"/>
-    <waypoint name="STDBY" x="-29.1" y="-47.5"/>
-    <waypoint lat="50.716569" lon="5.893181" name="p1"/>
-    <waypoint lat="50.717996" lon="5.894865" name="p2"/>
-    <waypoint lat="50.715705" lon="5.895292" name="p3"/>
-    <waypoint lat="50.713760" lon="5.896266" name="p4"/>
-    <waypoint lat="50.715144" lon="5.891024" name="h1"/>
-    <waypoint lat="50.717903" lon="5.895903" name="h2"/>
-    <waypoint lat="50.716302" lon="5.899203" name="h3"/>
-    <waypoint lat="50.713192" lon="5.894472" name="h4"/>
-    <waypoint lat="50.715144" lon="5.891024" alt="55" name="L1"/>
-    <waypoint lat="50.717903" lon="5.895903" alt="40" name="L2"/>
-    <waypoint lat="50.716302" lon="5.899203" alt="30" name="L3"/>
-    <waypoint lat="50.713192" lon="5.894472" alt="15" name="L4"/>
-    <waypoint lat="50.716057" lon="5.897104" name="START"/>
-    <waypoint name="GOAL" x="1.9" y="1.0"/>
-    <waypoint name="TRAJECTORY" x="1.9" y="1.0"/>
-    <waypoint name="TD" x="-25.4" y="34.0"/>
-    <waypoint lat="50.721287" lon="5.896945" name="A"/>
-    <waypoint lat="50.719103" lon="5.892398" name="B"/>
-    <waypoint lat="50.716440" lon="5.888566" name="C"/>
-    <waypoint lat="50.711922" lon="5.883399" name="D"/>
-    <waypoint lat="50.711264" lon="5.886377" name="E"/>
-    <waypoint lat="50.711291" lon="5.893099" name="F"/>
-    <waypoint lat="50.711666" lon="5.898816" name="G"/>
-    <waypoint lat="50.712919" lon="5.900822" name="H"/>
-    <waypoint lat="50.715047" lon="5.902306" name="J"/>
-    <waypoint lat="50.716857" lon="5.906448" name="K"/>
-    <waypoint lat="50.717694" lon="5.902928" name="L"/>
-    <waypoint lat="50.718487" lon="5.899484" name="M"/>
+    <waypoint name="HOME" x="0" y="0"/>
+    <waypoint name="CLIMB" x="-6.8" y="-24.3"/>
+    <waypoint name="STDBY" x="155.2" y="-17.8"/>
+    <waypoint lat="50.729921" lon="5.886568" name="p1"/>
+    <waypoint lat="50.730552" lon="5.887398" name="p2"/>
+    <waypoint lat="50.730456" lon="5.889711" name="p3"/>
+    <waypoint lat="50.729452" lon="5.889359" name="p4"/>
+    <waypoint lat="50.728351" lon="5.885521" name="h1"/>
+    <waypoint lat="50.727090" lon="5.888642" name="h2"/>
+    <waypoint lat="50.728902" lon="5.891478" name="h3"/>
+    <waypoint lat="50.729938" lon="5.889121" name="h4"/>
+    <waypoint alt="250.0" lat="50.728351" lon="5.885521" name="L1"/>
+    <waypoint alt="235.0" lat="50.727090" lon="5.888642" name="L2"/>
+    <waypoint alt="220.0" lat="50.728902" lon="5.891478" name="L3"/>
+    <waypoint alt="210.0" lat="50.729938" lon="5.889121" name="L4"/>
+    <waypoint lat="50.728549" lon="5.890849" name="START" height="70"/>
+    <waypoint name="GOAL" x="43.1" y="-56.5"/>
+    <waypoint name="TRAJECTORY" x="47.5" y="-43.8"/>
+    <waypoint alt="210" lat="50.7290641" lon="5.8873910" name="TD"/>
+    <waypoint lat="50.732065" lon="5.884914" name="A"/>
+    <waypoint lat="50.729770" lon="5.882619" name="B"/>
+    <waypoint lat="50.725393" lon="5.873334" name="C"/>
+    <waypoint lat="50.722190" lon="5.867498" name="D"/>
+    <waypoint lat="50.717813" lon="5.869879" name="E"/>
+    <waypoint lat="50.715078" lon="5.873857" name="F"/>
+    <waypoint lat="50.717190" lon="5.878342" name="G"/>
+    <waypoint lat="50.724153" lon="5.888522" name="H"/>
+    <waypoint lat="50.723996" lon="5.901567" name="J"/>
+    <waypoint lat="50.729355" lon="5.901615" name="K"/>
+    <waypoint lat="50.733158" lon="5.896488" name="L"/>
+    <waypoint lat="50.731179" lon="5.889759" name="M"/>
   </waypoints>
   <sectors>
     <sector color="green" name="Geofence">
@@ -109,13 +109,11 @@
     </block>
     <block name="LowerALT">
       <set value="true" var="force_forward"/>
-      <while cond="true">
-        <go wp="L1"/>
-        <go wp="L2"/>
-        <go wp="L3"/>
-        <go wp="L4"/>
-      </while>
-      <deroute block="land here"/>
+      <go wp="L1"/>
+      <go wp="L2"/>
+      <go wp="L3"/>
+      <go wp="L4"/>
+      <deroute block="land"/>
     </block>
     <block name="go_start">
       <set value="false" var="force_forward"/>
@@ -133,10 +131,14 @@
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
-      <deroute block="flare"/>     
+      <deroute block="flare"/>
+    </block>
+    <block name="land">
+      <set value="false" var="force_forward"/>
+      <go vmode="alt" wp="TD"/>
     </block>
     <block name="flare">
-      <exception cond="LessThan(agl_dist_value_filtered, 0.15)" deroute="landed"/>
+      <exception cond="LessThan(agl_dist_value_filtered, 0.15) @AND agl_dist_valid" deroute="landed"/>
       <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">

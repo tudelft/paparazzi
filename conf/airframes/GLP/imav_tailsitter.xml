@@ -248,8 +248,8 @@
     <set servo="TILT_RIGHT" value="autopilot.motors_on ? actuators_pprz[1] : 0"/>
     <set servo="RM" value="autopilot.motors_on ? actuators_pprz[2] : -MAX_PPRZ"/>
     <set servo="LM" value="autopilot.motors_on ? actuators_pprz[3] : -MAX_PPRZ"/>
-    <set servo="AIL_LEFT" value="terminate_flight ? 6000 : (autopilot.motors_on ? actuators_pprz[4] : 0)"/>
-    <set servo="AIL_RIGHT" value="terminate_flight ? 6000 : (autopilot.motors_on ? actuators_pprz[5] : 0)"/>
+    <set servo="AIL_LEFT" value="autopilot.motors_on ? actuators_pprz[4] : 0"/>
+    <set servo="AIL_RIGHT" value="autopilot.motors_on ? actuators_pprz[5] : 0"/>
   </command_laws>
 
   <section name="IMU" prefix="IMU_">
@@ -422,7 +422,7 @@
    	<define name="I_XX" value="0.06617232"/>	<!--[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
    	<!--<define name="I_YY" value="0.04914925"/>-->	<!--[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
    	<define name="I_YY" value="0.015"/> <!-- 0.009 for valkenburg flights. 0.18, 0.04914925 -->
-   	<define name="I_ZZ" value="0.03"/>	<!--[kg m2] 0.065 for valkenburg flights. The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
+   	<define name="I_ZZ" value="0.02"/>	<!--[kg m2] 0.065 for valkenburg flights. The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->
 	    <!--<define name="I_XX" value="0.017897"/>	[kg m2] The cyclone value from jsbsim is 0.017897, currently using values from CAD files -->
    	<!--<define name="I_YY" value="0.003390"/>	[kg m2] The cyclone value from jsbsim is 0.003390, currently using values from CAD files -->
    	<!--<define name="I_ZZ" value="0.020337"/>	[kg m2] The cyclone value from jsbsim is 0.020337, currently using values from CAD files -->

@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="160" ground_alt="0" lat0="50.9092605" lon0="6.2275658" max_dist_from_home="600" name="Tiltprop IMAV" security_height="2">
+<flight_plan alt="140" ground_alt="0" lat0="50.9092605" lon0="6.2275658" max_dist_from_home="600" name="Tiltprop IMAV" security_height="2">
   <header>
 #include "autopilot.h"
 #include "generated/modules.h"
@@ -13,16 +13,16 @@
     <waypoint lat="50.912118" lon="6.227161" name="p2"/>
     <waypoint lat="50.912126" lon="6.228542" name="p3"/>
     <waypoint lat="50.910400" lon="6.228343" name="p4"/>
-    <waypoint lat="50.910365" lon="6.227154" name="h1"/>
-    <waypoint lat="50.912118" lon="6.227161" name="h2"/>
-    <waypoint lat="50.912126" lon="6.228542" name="h3"/>
-    <waypoint lat="50.910400" lon="6.228343" name="h4"/>
-    <waypoint lat="50.910365" lon="6.227154" alt="100" name="L1"/>
-    <waypoint lat="50.912118" lon="6.227161" alt="80" name="L2"/>
-    <waypoint lat="50.910595" lon="6.227356" alt="60" name="L3"/>
-    <waypoint lat="50.910595" lon="6.227356" alt="30" name="L4"/>
+    <waypoint lat="50.910411" lon="6.227930" name="h1"/>
+    <waypoint lat="50.911989" lon="6.228975" name="h2"/>
+    <waypoint lat="50.912457" lon="6.227229" name="h3"/>
+    <waypoint lat="50.911518" lon="6.226121" name="h4"/>
+    <waypoint alt="125.0" lat="50.910576" lon="6.228077" name="L1"/>
+    <waypoint alt="110.0" lat="50.911556" lon="6.228343" name="L2"/>
+    <waypoint alt="100.0" lat="50.911602" lon="6.227074" name="L3"/>
+    <waypoint alt="90.0" lat="50.910003" lon="6.227250" name="L4"/>
     <waypoint lat="50.910595" lon="6.227356" name="START"/>
-    <waypoint lat="50.909725" lon="6.227899" alt="15" name="TD"/>
+    <waypoint alt="15.0" lat="50.909323" lon="6.227556" name="TD"/>
     <waypoint lat="50.906376" lon="6.223196" name="F1"/>
     <waypoint lat="50.910998" lon="6.223086" name="F2"/>
     <waypoint lat="50.913740" lon="6.226769" name="F3"/>
@@ -163,7 +163,7 @@
         <go wp="L3"/>
         <go wp="L4"/>
       </while>
-      <deroute block="land here"/>
+      <deroute block="land"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="false" var="force_forward"/>
@@ -177,6 +177,14 @@
       <set value="false" var="force_forward"/>
       <go wp="p2"/>
       <deroute block="stay_h1"/>
+    </block>
+    <block name="LowerALT">
+      <set value="true" var="force_forward"/>
+      <go wp="L1"/>
+      <go wp="L2"/>
+      <go wp="L3"/>
+      <go wp="L4"/>
+      <deroute block="land"/>
     </block>
     <block name="go_start">
       <set value="false" var="force_forward"/>
@@ -195,6 +203,10 @@
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>
       <deroute block="flare"/>
+    </block>
+    <block name="land">
+      <set value="false" var="force_forward"/>
+      <go vmode="alt" wp="TD"/>
     </block>
     <block name="flare">
       <exception cond="LessThan(agl_dist_value_filtered, 0.15)" deroute="landed"/>
