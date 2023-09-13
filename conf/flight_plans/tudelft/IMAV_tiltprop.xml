@@ -146,6 +146,7 @@
       <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
     </block>
     <block name="route">
+      <exception cond="(datalink_time @GT 30)" deroute="LowerALT"/>
       <set value="true" var="force_forward"/>
       <while cond="true">
         <go wp="h1"/>
