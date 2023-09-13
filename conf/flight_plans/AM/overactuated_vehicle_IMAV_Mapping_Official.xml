@@ -169,7 +169,7 @@
       <set value="0" var="approach_state"/>
       <set value="0" var="force_forward"/>
       <while cond="LessThan(NavBlockTime(), 10)"/>
-      <call_once fun="NavSetAltitudeReferenceHere()"/>
+      <!--call_once fun="NavSetAltitudeReferenceHere()"/-->
     </block>
     <block name="Holding point">
       <set value="0" var="force_forward"/>
