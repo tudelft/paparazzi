@@ -156,16 +156,6 @@
       </while>
       <deroute block="stay_h1"/>
     </block>
-    <block name="LowerALT">
-      <set value="true" var="force_forward"/>
-      <while cond="true">
-        <go wp="L1"/>
-        <go wp="L2"/>
-        <go wp="L3"/>
-        <go wp="L4"/>
-      </while>
-      <deroute block="land"/>
-    </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="false" var="force_forward"/>
       <stay wp="STDBY"/>
