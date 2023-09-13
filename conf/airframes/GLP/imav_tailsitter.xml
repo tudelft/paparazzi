@@ -248,8 +248,8 @@
     <set servo="TILT_RIGHT" value="autopilot.motors_on ? actuators_pprz[1] : 0"/>
     <set servo="RM" value="autopilot.motors_on ? actuators_pprz[2] : -MAX_PPRZ"/>
     <set servo="LM" value="autopilot.motors_on ? actuators_pprz[3] : -MAX_PPRZ"/>
-    <set servo="AIL_LEFT" value="autopilot.motors_on ? actuators_pprz[4] : 0"/>
-    <set servo="AIL_RIGHT" value="autopilot.motors_on ? actuators_pprz[5] : 0"/>
+    <set servo="AIL_LEFT" value="terminate_flight ? 6000 : (autopilot.motors_on ? actuators_pprz[4] : 0)"/>
+    <set servo="AIL_RIGHT" value="terminate_flight ? 6000 : (autopilot.motors_on ? actuators_pprz[5] : 0)"/>
   </command_laws>
 
   <section name="IMU" prefix="IMU_">
@@ -496,7 +496,7 @@
 
     <!--<define name="EFF_SCHED_USE_FUNCTION" value="TRUE"/> -->    <!-- Think I need to get rid of this -->
 
-    <define name="ARRIVED_AT_WAYPOINT" value="50.0"/>
+    <define name="ARRIVED_AT_WAYPOINT" value="40.0"/>
     <define name="USE_AIRSPEED" value="TRUE"/>
   </section>
 

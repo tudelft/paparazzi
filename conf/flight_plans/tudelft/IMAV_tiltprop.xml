@@ -22,7 +22,7 @@
     <waypoint alt="100.0" lat="50.911602" lon="6.227074" name="L3"/>
     <waypoint alt="90.0" lat="50.910003" lon="6.227250" name="L4"/>
     <waypoint lat="50.910595" lon="6.227356" name="START"/>
-    <waypoint alt="15.0" lat="50.909323" lon="6.227556" name="TD"/>
+    <waypoint alt="80.0" lat="50.909323" lon="6.227556" name="TD"/>
     <waypoint lat="50.906376" lon="6.223196" name="F1"/>
     <waypoint lat="50.910998" lon="6.223086" name="F2"/>
     <waypoint lat="50.913740" lon="6.226769" name="F3"/>
@@ -136,6 +136,7 @@
     </block>
     <block name="Automatic Takeoff">
       <call_once fun="NavResurrect()"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
       <call_once fun="take_off_enter()"/>
       <attitude alt="5" pitch="0" roll="0" until="GetPosHeight() @GT 2.0"/>
     </block>
@@ -188,8 +189,7 @@
     </block>
     <block name="go_start">
       <set value="false" var="force_forward"/>
-      <go wp="START"/>
-      <deroute block="route"/>
+      <stay wp="START"/>
     </block>
     <block name="4waypoints">
       <set value="true" var="force_forward"/>
@@ -209,7 +209,7 @@
       <go vmode="alt" wp="TD"/>
     </block>
     <block name="flare">
-      <exception cond="LessThan(agl_dist_value_filtered, 0.15)" deroute="landed"/>
+      <exception cond="LessThan(agl_dist_value_filtered, 0.15) @AND agl_dist_valid" deroute="landed"/>
       <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
     </block>
     <block name="landed">
