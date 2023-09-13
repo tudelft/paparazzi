@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="177" ground_alt="117" lat0="50.909282" lon0="6.228386" max_dist_from_home="1000" name="Overactuated vehicle IMAV Official" security_height="245">
+<flight_plan alt="197" ground_alt="117" lat0="50.909282" lon0="6.228386" max_dist_from_home="1000" name="Overactuated vehicle IMAV Official" security_height="245">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -23,7 +23,7 @@
   <waypoints>
     <waypoint name="HOME" x="-25.8" y="12.3"/>
     <waypoint name="CLIMB" x="-24.8" y="61.4"/>
-    <waypoint name="STDBY" x="-32.7" y="42.6"/>
+    <waypoint name="STDBY" x="-139.6" y="56.1"/>
     <waypoint name="p1" x="-79.0" y="62.6"/>
     <waypoint name="p2" x="-119.9" y="65.5"/>
     <waypoint name="p3" x="-127.4" y="-7.0"/>
@@ -87,6 +87,7 @@
     <waypoint lat="50.908381" lon="6.225419" name="C2"/>
     <waypoint lat="50.909987" lon="6.225059" name="C3"/>
     <waypoint lat="50.910031" lon="6.226726" name="CAR"/>
+    <waypoint alt="127" lat="50.909228" lon="6.226700" name="HIKERS"/>
   </waypoints>
   <sectors>
     <sector color="red" name="HardGeofence">
@@ -175,7 +176,7 @@
       <set value="0" var="force_forward"/>
       <set value="0" var="approach_state"/>
       <call_once fun="NavKillThrottle()"/>
-      <attitude pitch="0" roll="0" throttle="0" until="FALSE" pre_call="NavKillThrottle()" vmode="throttle"/>
+      <attitude pitch="0" pre_call="NavKillThrottle()" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <block name="Start Engine">
       <set value="1" var="approach_state"/>
@@ -190,11 +191,30 @@
       <exception cond="stateGetPositionEnu_f()->z > 10.0" deroute="Standby"/>
       <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
       <stay wp="CLIMB"/>
+      <deroute block="go to Standby"/>
     </block>
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
       <set value="0" var="approach_state"/>
       <set value="0" var="force_forward"/>
       <stay wp="STDBY"/>
+    </block>
+    <block name="go to Standby">
+      <set value="0" var="approach_state"/>
+      <set value="0" var="force_forward"/>
+      <go wp="STDBY"/>
+      <deroute block="goto_mapping"/>
+    </block>
+    <block name="go to Standby Hikers">
+      <set value="0" var="approach_state"/>
+      <set value="0" var="force_forward"/>
+      <go wp="STDBY"/>
+      <deroute block="goto_hikers"/>
+    </block>
+    <block name="Standby_land">
+      <set value="0" var="approach_state"/>
+      <set value="0" var="force_forward"/>
+      <go wp="STDBY"/>
+      <deroute block="descend"/>
     </block>
     <block name="follow_module">
       <set value="0" var="force_forward"/>
@@ -263,6 +283,12 @@
       <set value="0" var="approach_state"/>
       <circle radius="-100" wp="p1"/>
     </block>
+    <block name="goto_mapping">
+      <set value="0" var="approach_state"/>
+      <set value="0" var="force_forward"/>
+      <go wp="Z9"/>
+      <deroute block="Mapping hmode"/>
+    </block>
     <block name="Mapping hmode">
       <set value="1" var="force_forward"/>
       <set value="0" var="approach_state"/>
@@ -275,6 +301,7 @@
       <go from="Z7" hmode="route" wp="Z8"/>
       <go from="Z8" hmode="route" wp="Z3"/>
       <go from="Z3" hmode="route" wp="Z4"/>
+      <deroute block="go to Standby Hikers"/>
     </block>
     <block name="Mapping">
       <set value="1" var="force_forward"/>
@@ -288,6 +315,18 @@
       <go from="Z7" wp="Z8"/>
       <go from="Z8" wp="Z3"/>
       <go from="Z3" wp="Z4"/>
+    </block>
+    <block name="goto_hikers">
+      <set value="0" var="approach_state"/>
+      <set value="0" var="force_forward"/>
+      <go wp="HIKERS"/>
+      <deroute block="stay_hikers"/>
+    </block>
+    <block name="stay_hikers">
+      <set value="0" var="approach_state"/>
+      <set value="0" var="force_forward"/>
+      <stay wp="HIKERS"/>
+      <exception cond="NavBlockTime() @GT 10" deroute="Standby_land"/>
     </block>
     <block name="Approach APP">
       <set value="0" var="force_forward"/>
