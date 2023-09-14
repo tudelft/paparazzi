@@ -98,4 +98,3 @@ extern void follow_me_parse_target_pos(uint8_t *buf);
 extern void follow_me_set_wp(uint8_t wp_id, float speed);
 
 #endif
-

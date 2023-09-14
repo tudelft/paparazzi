@@ -45,6 +45,7 @@
       <message name="HYBRID_GUIDANCE"          period="0.4"/>
       <message name="ESC"                      period="0.5"/>
       <message name="AHRS_REF_QUAT"            period="0.1"/>
+      <message name="INS_FLOW_INFO"	       period="0.1"/> 
       <message name="GPS_RTK"                  period="0.1"/>
       <message name="STAB_ATTITUDE_FULL_INDI"  period="0.05"/>
       <message name="ROT_WING_CONTROLLER"	     period="0.2"/>

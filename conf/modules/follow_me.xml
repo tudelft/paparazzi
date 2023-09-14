@@ -4,11 +4,16 @@
   <doc>
     <description>
       Follow a ground based object which is transmitting the TARGET_POS datalink message or using RTK GPS.
-      This can be done using gpsd2ivy.
+      This can be done using gpsd2ivy or ublox2ivy.
     </description>
     <section name="FOLLOW_ME" prefix="FOLLOW_ME_">
       <define name="TIMEOUT" value="10." description="timeout of the ground GPS"/>
       <define name="DISTANCE" value="5." description="distance to hover from the ground GPS"/>
+      <define name="HEIGHT" value="60" description="height to hover above the ground GPS"/>
+      <define name="GPS_TIMEOUT" value="5000" description="RTK relative position timeout in ms"/>
+      <define name="GROUND_TIMEOUT" value="5000" description="ground position timeout in ms"/>
+      <define name="FILT" value="0.9" description="filtering of the heading cos/sin (higher is harder)"/>
+      <define name="MOVING_WPS" value="" description="list of waypoints comma seperated which should move"/>
     </section>
   </doc>
   <settings>
@@ -38,4 +43,3 @@
     <file name="follow_me.c"/>
   </makefile>
 </module>
-
