@@ -56,6 +56,7 @@
       <message name="AIRSPEED_UAVCAN"		period="0.1"/>
       <message name="TARGET_POS_INFO"         period="0.1"/>
       <message name="THRUST_BX_EFF"         period="0.1"/>
+      <message name="ROTATING_WING_STATE"      period="0.2"/>
     </mode>
 
     <mode name="calibration">
