@@ -24,16 +24,25 @@
  */
 
 #include "modules/rot_wing_drone/rotwing_state.h"
+#include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #include "firmwares/rotorcraft/guidance/guidance_indi_rot_wing.h"
+#include "modules/rot_wing_drone/wing_rotation_controller_v3b.h"
+#include "modules/actuators/actuators.h"
+#include "modules/core/abi.h"
 
 struct RotwingState rotwing_state;
 
 // Quad state identification
-#ifndef ROTWING_MIN_SKEW_ANGLE_QUAD
-#define ROTWING_MIN_SKEW_ANGLE_QUAD 10.0
+#ifndef ROTWING_MIN_SKEW_ANGLE_DEG_QUAD
+#define ROTWING_MIN_SKEW_ANGLE_DEG_QUAD 10.0
 #endif
 #ifndef ROTWING_MIN_SKEW_ANGLE_COUNTER
 #define ROTWING_MIN_SKEW_ANGLE_COUNTER 10         // Minimum number of loops the skew angle is below ROTWING_MIN_SKEW_ANGLE_COUNTER
+#endif
+
+// Skewing state identification
+#ifndef ROTWING_SKEWING_COUNTER
+#define ROTWING_SKEWING_COUNTER 10                // Minimum number of loops the skew angle is in between QUAD and FW
 #endif
 
 // Half skew state identification
@@ -55,24 +64,74 @@ struct RotwingState rotwing_state;
 #define ROTWING_MIN_FW_COUNTER 10                 // Minimum number of loops the skew angle is above the MIN_FW_SKEW_ANGLE
 #endif
 
-void init_rotwing_state(void)
+// FW idle state identification
+#ifndef ROTWING_MIN_THRUST_IDLE
+#define ROTWING_MIN_THRUST_IDLE 100
+#endif
+#ifndef ROTWING_MIN_THRUST_IDLE_COUNTER
+#define ROTWING_MIN_THRUST_IDLE_COUNTER 10
+#endif
+
+// FW hov mot off state identification
+#ifndef ROTWING_HOV_MOT_OFF_RPM_TH
+#define ROTWING_HOV_MOT_OFF_RPM_TH 50
+#endif
+#ifndef ROTWING_HOV_MOT_OFF_COUNTER
+#define ROTWING_HOV_MOT_OFF_COUNTER 10
+#endif
+
+#ifndef ROTWING_STATE_RPM_ID
+#define ROTWING_STATE_RPM_ID ABI_BROADCAST
+#endif
+abi_event rpm_ev;
+static void rpm_cb(uint8_t sender_id, struct rpm_act_t * rpm_message, uint8_t num_act);
+int32_t rotwing_state_hover_rpm[4] = {0, 0, 0, 0};
+
+bool rotwing_state_force_quad = false;
+
+uint8_t rotwing_state_hover_counter = 0;
+uint8_t rotwing_state_skewing_counter = 0;
+uint8_t rotwing_state_fw_counter = 0;
+uint8_t rotwing_state_fw_idle_counter = 0;
+uint8_t rotwing_state_fw_m_off_counter = 0;
+
+inline void rotwing_check_set_current_state(void);
+inline void rotwing_update_desired_state(void);
+
+#if PERIODIC_TELEMETRY
+#include "modules/datalink/telemetry.h"
+static void send_rotating_wing_state(struct transport_tx *trans, struct link_device *dev)
 {
+  pprz_msg_send_ROTATING_WING_STATE(trans, dev, AC_ID, 
+                                        &rotwing_state.current_state,
+                                        &rotwing_state.desired_state);
+}
+#endif // PERIODIC_TELEMETRY
+
+void init_rotwing_state(void)
+{ 
+  // Bind ABI messages
+  AbiBindMsgRPM(ROTWING_STATE_RPM_ID, &rpm_ev, rpm_cb);
+
   // Start the drone in a desired hover state
   rotwing_state.current_state = ROTWING_STATE_HOVER;
   rotwing_state.desired_state = ROTWING_STATE_HOVER;
+
+  #if PERIODIC_TELEMETRY
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ROTATING_WING_STATE, send_rotating_wing_state);
+  #endif
 }
 
 void periodic_rotwing_state(void)
 {
-  // Check the current state
-  // States can be checked according to wing angle sensor, setpoints .....
-  // check state
+  // Check and set the current state
+  rotwing_check_set_current_state();
 
-  // float skew_angle_deg; //TODO: put actual skew angle in degrees to this float
+  // Check and update desired state
+  rotwing_update_desired_state();
 
   // Check difference with desired state
-
-
+  //TODO: add function
 
   //TODO: incorparate motor active / disbaling depending on called flight state
   // Switch on motors if flight mode is attitude
@@ -81,23 +140,184 @@ void periodic_rotwing_state(void)
   } else if (guidance_h.mode == GUIDANCE_H_MODE_FORWARD) {
     bool_disable_hover_motors = false;
   }
-
 }
 
-// void rotwing_determine_current_state(float skew_angle_deg)
-// {
-//   if (skew_angle_deg < ROTWING_MIN_SKEW_ANGLE_QUAD)
-//   {
-//     // increment counter
+// Function to request a state
+void request_rotwing_state(uint8_t state)
+{
+  if (state == ROTWING_STATE_HOVER) {
+    rotwing_state.current_state = ROTWING_STATE_HOVER;
+  } else if (state == ROTWING_STATE_FW) {
+    rotwing_state.current_state = ROTWING_STATE_FW;
+  }
+}
 
-//     // set to quad if counter is high enough
-//   } else if (skew_angle_deg > ROTWING_MIN_SKEW_ANGLE_QUAD && skew_angle_deg < (ROTWING_HALF_SKEW_ANGLE_DEG - ROTWING_HALF_SKEW_ANGLE_HALF_RANGE) {
+void rotwing_check_set_current_state(void)
+{
+  // States can be checked according to wing angle sensor, setpoints .....
+  uint8_t prev_state = rotwing_state.current_state;
+  switch (prev_state) {
+      case ROTWING_STATE_HOVER:
+        // Check if state needs to be set to skewing
+        if (wing_rotation.wing_angle_deg > ROTWING_MIN_SKEW_ANGLE_DEG_QUAD)
+        {
+          rotwing_state_skewing_counter++;
+        } else {
+          rotwing_state_skewing_counter = 0;
+        }
 
-//   } else if (skew_angle_deg > (ROTWING_HALF_SKEW_ANGLE_DEG - ROTWING_HALF_SKEW_ANGLE_HALF_RANGE) && skew_angle_deg < (ROTWING_HALF_SKEW_ANGLE_DEG + ROTWING_HALF_SKEW_ANGLE_HALF_RANGE)) {
+        // Switch state if necessary 
+        if (rotwing_state_skewing_counter > ROTWING_MIN_SKEW_ANGLE_COUNTER) {
+          rotwing_state.current_state = ROTWING_STATE_SKEWING;
+          rotwing_state_skewing_counter = 0;
+        }
+        break;
 
-//   } else {
-    
-//   }
-// }
+      case ROTWING_STATE_SKEWING:
+        // Check if state needs to be set to hover
+        if (wing_rotation.wing_angle_deg < ROTWING_MIN_SKEW_ANGLE_DEG_QUAD)
+        {
+          rotwing_state_hover_counter++;
+        } else {
+          rotwing_state_hover_counter = 0;
+        }
 
+        // Check if state needs to be set to fixed wing
+        if (wing_rotation.wing_angle_deg > ROTWING_MIN_FW_SKEW_ANGLE_DEG)
+        {
+          rotwing_state_fw_counter++;
+        } else {
+          rotwing_state_fw_counter = 0;
+        }
 
+        // Switch state if necessary
+        if (rotwing_state_hover_counter > ROTWING_MIN_SKEW_ANGLE_COUNTER) {
+          rotwing_state.current_state = ROTWING_STATE_HOVER;
+          rotwing_state_hover_counter = 0;
+        }
+
+        if (rotwing_state_fw_counter > ROTWING_MIN_FW_COUNTER) {
+          rotwing_state.current_state = ROTWING_STATE_FW;
+          rotwing_state_fw_counter = 0;
+        }
+        break;
+
+      case ROTWING_STATE_FW:
+        // Check if state needs to be set to skewing
+        if (wing_rotation.wing_angle_deg < ROTWING_MIN_FW_SKEW_ANGLE_DEG) {
+          rotwing_state_skewing_counter++;
+        } else {
+          rotwing_state_skewing_counter = 0;
+        }
+
+        // Check if state needs to be set to fixed wing with hover motors idle (If hover thrust below threshold)
+        if (stabilization_cmd[COMMAND_THRUST] < ROTWING_MIN_THRUST_IDLE) {
+            rotwing_state_fw_idle_counter++;
+        } else {
+          rotwing_state_fw_idle_counter = 0;
+        }
+
+        // Switch state if necessary
+        if (rotwing_state_skewing_counter > ROTWING_MIN_FW_COUNTER) {
+          rotwing_state.current_state = ROTWING_STATE_SKEWING;
+          rotwing_state_skewing_counter = 0;
+          rotwing_state_fw_idle_counter = 0;
+        } else if (rotwing_state_fw_idle_counter > ROTWING_MIN_THRUST_IDLE_COUNTER 
+                    && rotwing_state_skewing_counter == 0) {
+          rotwing_state.current_state = ROTWING_STATE_FW_HOV_MOT_IDLE;
+          rotwing_state_skewing_counter = 0;
+          rotwing_state_fw_idle_counter = 0;
+        }
+        break;
+
+      case ROTWING_STATE_FW_HOV_MOT_IDLE:
+        // Check if state needs to be set to fixed wing with hover motors activated
+        if (stabilization_cmd[COMMAND_THRUST] > ROTWING_MIN_THRUST_IDLE) {
+          rotwing_state_fw_counter++;
+        } else {
+          rotwing_state_fw_counter = 0;
+        }
+
+        // Check if state needs to be set to fixed wing with hover motors off (if zero rpm on hover motors)
+        if (rotwing_state_hover_rpm[0] == 0 
+            && rotwing_state_hover_rpm[1] == 0 
+            && rotwing_state_hover_rpm[2] == 0
+            && rotwing_state_hover_rpm[3] == 0) {
+          rotwing_state_fw_m_off_counter++;
+        } else {
+          rotwing_state_fw_m_off_counter = 0;
+        }
+
+        // Switch state if necessary
+        if (rotwing_state_fw_counter > ROTWING_MIN_THRUST_IDLE_COUNTER) {
+          rotwing_state.current_state = ROTWING_STATE_FW;
+          rotwing_state_fw_counter = 0;
+          rotwing_state_fw_m_off_counter = 0;
+        } else if (rotwing_state_fw_m_off_counter > ROTWING_HOV_MOT_OFF_COUNTER 
+                    && rotwing_state_fw_counter == 0) {
+          rotwing_state.current_state = ROTWING_STATE_FW_HOV_MOT_OFF;
+          rotwing_state_fw_counter = 0;
+          rotwing_state_fw_m_off_counter = 0;
+        }
+        break;
+
+      case ROTWING_STATE_FW_HOV_MOT_OFF:
+        // Check if state needs to be set to fixed wing with hover motors idle (if rpm on hover motors)
+        if (rotwing_state_hover_rpm[0] > ROTWING_HOV_MOT_OFF_RPM_TH
+            && rotwing_state_hover_rpm[1] > ROTWING_HOV_MOT_OFF_RPM_TH 
+            && rotwing_state_hover_rpm[2] > ROTWING_HOV_MOT_OFF_RPM_TH
+            && rotwing_state_hover_rpm[3] > ROTWING_HOV_MOT_OFF_RPM_TH) {
+          rotwing_state_fw_idle_counter++;
+        } else {
+          rotwing_state_fw_idle_counter = 0;
+        }
+
+        // Switch state if necessary
+        if (rotwing_state_fw_counter > ROTWING_MIN_THRUST_IDLE_COUNTER) {
+          rotwing_state.current_state = ROTWING_STATE_FW_HOV_MOT_IDLE;
+          rotwing_state_fw_idle_counter = 0;
+        }
+        break;
+
+      default:
+        break;
+  }
+}
+
+void rotwing_update_desired_state(void) 
+{
+  // If force_forward and nav selected, then the desired state if FW with hover motors off;
+  switch (guidance_h.mode) {
+    case GUIDANCE_H_MODE_NAV:
+      if (rotwing_state_force_quad) {
+        rotwing_state.desired_state = ROTWING_STATE_HOVER;
+      } else if (force_forward) {
+        rotwing_state.desired_state = ROTWING_STATE_FW_HOV_MOT_OFF;
+      } else {
+        rotwing_state.desired_state = ROTWING_STATE_FREE;
+      }
+      break;
+
+    case GUIDANCE_H_MODE_FORWARD:
+      rotwing_state.desired_state = ROTWING_STATE_FW_HOV_MOT_OFF;
+      break;
+
+    case GUIDANCE_H_MODE_ATTITUDE:
+      rotwing_state.desired_state = ROTWING_STATE_HOVER;
+      break;
+
+    default:
+      rotwing_state.desired_state = ROTWING_STATE_FREE;
+      break;
+  }
+}
+
+static void rpm_cb(uint8_t __attribute__((unused)) sender_id, struct rpm_act_t UNUSED * rpm_message, uint8_t UNUSED num_act)
+{
+  // Sanity check that index is valid
+  if (rpm_message->actuator_idx<num_act){
+      if (rpm_message->actuator_idx < 4) {
+        rotwing_state_hover_rpm[rpm_message->actuator_idx] = rpm_message->rpm;
+      }
+    }
+}

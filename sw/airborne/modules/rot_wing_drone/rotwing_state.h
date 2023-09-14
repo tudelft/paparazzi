@@ -31,12 +31,11 @@
 /** Rotwing States
  */
 #define ROTWING_STATE_HOVER               0 // Wing is skewed in 0 degrees (quad)
-#define ROTWING_STATE_LOW_ANGLE_SKEWING   1 // Wing is skewing in between 0 (quad) and 55 degrees (half skew)
-#define ROTWING_STATE_HALF_SKEW           2 // Wing skew angle is fixed at 55 degrees
-#define ROTWING_STATE_HIGH_ANGLE_SKEWING  3 // Wing is skewing in between 55 (half skew) and 90 degrees (fixed_wing)
-#define ROTWING_STATE_FW                  4 // Wing is skewed at 90 degrees (fixed wing), hover motors have full authority
-#define ROTWING_STATE_FW_HOV_MOT_IDLE     5 // Wing is skewed at 90 degrees (fixed wing), hover motors are forced to idle
-#define ROTWING_STATE_FW_HOV_MOT_OFF      6 // Wing is skewed at 90 degrees (fixed wubg), hover motors are switched off
+#define ROTWING_STATE_SKEWING             1 // WIng is skewing
+#define ROTWING_STATE_FW                  2 // Wing is skewed at 90 degrees (fixed wing), hover motors have full authority
+#define ROTWING_STATE_FW_HOV_MOT_IDLE     3 // Wing is skewed at 90 degrees (fixed wing), hover motors are forced to idle
+#define ROTWING_STATE_FW_HOV_MOT_OFF      4 // Wing is skewed at 90 degrees (fixed wubg), hover motors are switched off
+#define ROTWING_STATE_FREE                5 // This is a desired state for which the controller has to decide the desired state itself
 
 struct RotwingState {
   uint8_t current_state;
@@ -45,7 +44,10 @@ struct RotwingState {
 
 extern struct RotwingState rotwing_state;
 
+extern bool rotwing_state_force_quad;
+
 extern void init_rotwing_state(void);
 extern void periodic_rotwing_state(void);
+extern void request_rotwing_state(uint8_t state);
 
 #endif  // ROTWING_STATE_H
