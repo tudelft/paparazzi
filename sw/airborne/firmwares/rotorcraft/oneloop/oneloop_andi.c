@@ -167,6 +167,11 @@ static void send_oneloop_g(struct transport_tx *trans, struct link_device *dev)
 }
 static void send_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
+  float temp_dummy[ANDI_NUM_ACT];
+  temp_dummy[0] = andi_du[0];
+  temp_dummy[1] = andi_du[1];
+  temp_dummy[2] = andi_du[2];
+  temp_dummy[3] = andi_du[3];
   pprz_msg_send_ONELOOP_ANDI(trans, dev, AC_ID,
                                         &att_ref[0],
                                         &att_ref[1],
@@ -187,7 +192,7 @@ static void send_oneloop_andi(struct transport_tx *trans, struct link_device *de
                                         &att_2d[1],
                                         &att_2d[2],
                                         ANDI_OUTPUTS, nu,
-                                        ANDI_NUM_ACT, actuator_state_1l); //andi_u
+                                        ANDI_NUM_ACT, actuator_state_1l); //andi_u,actuator_state_1l
 }
 static void send_oneloop_guidance(struct transport_tx *trans, struct link_device *dev)
 {
@@ -212,7 +217,8 @@ static void send_oneloop_guidance(struct transport_tx *trans, struct link_device
                                         &pos_2d[2],
                                         &pos_3d_ref[0],
                                         &pos_3d_ref[1],
-                                        &pos_3d_ref[2]); //andi_u
+                                        &pos_3d_ref[2],
+                                        ANDI_NUM_ACT_TOT,andi_u); //andi_u
 }
 #endif
 /*Physical Properties RW3C*/
@@ -271,7 +277,7 @@ float w_theta = 1.0;     // [rad/s] First order bandwidth of actuator
  See also: WLSC_ALLOC, IP_ALLOC, FXP_ALLOC, QP_SIM. */
 float gamma_wls                   = 1000.0;//0.01;//100;//100000.0;
 static float Wv[ANDI_OUTPUTS]     = {1.0,1.0,1.0,10.0*100.0,10.0*100.0,100.0};//{0.0,0.0,5.0,10.0*100.0,10.0*100.0,0.0}; // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}
-static float Wu[ANDI_NUM_ACT_TOT] = {2.0, 2.0, 2.0,2.0,2.0,2.0}; // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}
+static float Wu[ANDI_NUM_ACT_TOT] =  {2.0, 2.0, 2.0,2.0,2.0,2.0}; // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}{0.0, 0.0, 0.0,0.0,0.0,0.0};//
 float u_pref[ANDI_NUM_ACT_TOT]    = {0.0,0.0,0.0,0.0,0.0,0.0};
 float du_min[ANDI_NUM_ACT_TOT]; 
 float du_max[ANDI_NUM_ACT_TOT];
@@ -281,8 +287,8 @@ float old_state[ANDI_NUM_ACT_TOT];
 int   number_iter = 0;
 
 /*Declaration of Reference Model and Error Controller Gains*/
-float rm_k_attitude;
-float p1_att = 7.0;//7.68;       
+float rm_k_attitude = 0.8;
+float p1_att = 12.0;//7.68;       
 float p2_att;      
 float p3_att;
 
@@ -301,8 +307,10 @@ float k_p_rm ;
 float k_pdot_rm ;    
 
 /*Position Loop*/
-float rm_k_pos;     
-float p1_pos = 2.0;//2.0;     
+float scale_pos = 1.0;
+float rm_k_pos;    
+float damp_pos = 0.3979;//0.7; 
+float p1_pos   = 0.6717*0.3979;//2.0;     
 float p2_pos  ;     
 float p3_pos  ;     
 float route_k  ;    
@@ -329,7 +337,8 @@ float k_vE_route ;
 float k_aE_route ;  
 
 /*Altitude Loop*/
-float rm_k_alt ;    
+float rm_k_alt ;   
+float damp_alt = 0.5;//0.7; 
 float p1_alt = 3.0;    
 float p2_alt   ;    
 float p3_alt   ;     
@@ -344,7 +353,7 @@ float k_aD_rm ;
 
 /*Heading Loop*/
 float rm_k_head  ;  
-float p1_head = 5.0;//4.8;     
+float p1_head = 3.0;//5.0;     
 float p2_head ;
 float p3_head ;      
 
@@ -394,6 +403,7 @@ float psi_vec[4] = {0.0, 0.0, 0.0, 0.0};
 /*Define Variables used in control*/
 float old_time = 0.0;
 float new_time = 0.0;
+float dt_actual = 1./PERIODIC_FREQUENCY;
 struct Int32Eulers stab_att_sp_euler;
 struct Int32Quat   stab_att_sp_quat;
 float act_dynamics_d[ANDI_NUM_ACT_TOT];
@@ -451,6 +461,10 @@ static float k_e_2_3_f(float p1, float p2, float p3) {return (p1*p2+p1*p3+p2*p3)
 static float k_e_3_3_f(float p1, float p2, float p3) {return (p1+p2+p3);}
 static float k_e_1_2_f(float p1, float p2) {return (p1*p2);}
 static float k_e_2_2_f(float p1, float p2) {return (p1+p2);}
+
+static float k_e_1_3_f_v2(float omega_n, float zeta, float p1) {return (omega_n*omega_n*p1);}
+static float k_e_2_3_f_v2(float omega_n, float zeta, float p1) {return (omega_n*omega_n+2*zeta*omega_n*p1);}
+static float k_e_3_3_f_v2(float omega_n, float zeta, float p1) {return (2*zeta*omega_n+p1);}
 
 /*Reference Model Gain Design*/
 static float k_rm_1_3_f(float omega_n, float zeta, float p1) {return (omega_n*omega_n*p1)/(omega_n*omega_n+omega_n*p1*zeta*2.0);}
@@ -646,7 +660,7 @@ static float w_approx(float p1, float p2, float p3, float rm_k){
 
 void init_controller(void){
 /*Attitude Loop*/
-rm_k_attitude = 0.8;
+//rm_k_attitude = 0.8;
 p2_att        = p1_att;
 p3_att        = p1_att;
 k_theta_e     = k_e_1_3_f(p1_att,p2_att,p3_att);
@@ -664,18 +678,21 @@ k_pdot_rm     = k_qdot_rm;
 
 /*Position Loop*/
 rm_k_pos      = 0.9;
-p2_pos        = p1_pos;
+p2_pos        = 0.4654;
 p3_pos        = p1_pos;
 route_k       = 0.8;
-k_N_e         = k_e_1_3_f(p1_pos,p2_pos,p3_pos);
-k_vN_e        = k_e_2_3_f(p1_pos,p2_pos,p3_pos);
-k_aN_e        = k_e_3_3_f(p1_pos,p2_pos,p3_pos);
+k_N_e         = k_e_1_3_f_v2(p1_pos/damp_pos,damp_pos,p2_pos);
+k_vN_e        = k_e_2_3_f_v2(p1_pos/damp_pos,damp_pos,p2_pos);
+k_aN_e        = k_e_3_3_f_v2(p1_pos/damp_pos,damp_pos,p2_pos);
 k_E_e         = k_N_e;
 k_vE_e        = k_vN_e;
 k_aE_e        = k_aN_e;
-k_N_rm        = k_rm_1_3_f(rm_k_pos*p1_pos,1.0,rm_k_pos*p3_pos);
-k_vN_rm       = k_rm_2_3_f(rm_k_pos*p1_pos,1.0,rm_k_pos*p3_pos);
-k_aN_rm       = k_rm_3_3_f(rm_k_pos*p1_pos,1.0,rm_k_pos*p3_pos);
+k_N_rm        = k_rm_1_3_f(rm_k_pos*p1_pos/damp_pos,damp_pos,rm_k_pos*p2_pos);
+k_vN_rm       = k_rm_2_3_f(rm_k_pos*p1_pos/damp_pos,damp_pos,rm_k_pos*p2_pos);
+k_aN_rm       = k_rm_3_3_f(rm_k_pos*p1_pos/damp_pos,damp_pos,rm_k_pos*p2_pos);
+// k_N_rm        = k_rm_1_3_f(rm_k_pos*p1_pos,1.0,rm_k_pos*p3_pos);
+// k_vN_rm       = k_rm_2_3_f(rm_k_pos*p1_pos,1.0,rm_k_pos*p3_pos);
+// k_aN_rm       = k_rm_3_3_f(rm_k_pos*p1_pos,1.0,rm_k_pos*p3_pos);
 k_E_rm        = k_N_rm;
 k_vE_rm       = k_vN_rm;
 k_aE_rm       = k_aN_rm;
@@ -689,11 +706,11 @@ k_aE_route   = k_aN_route;
 
 /*Altitude Loop*/
 rm_k_alt      = 0.9;
-p2_alt        = p1_alt;
+p2_alt        = 6.0;
 p3_alt        = p1_alt;
-k_D_e         = k_e_1_3_f(p1_alt,p2_alt,p3_alt);
-k_vD_e        = k_e_2_3_f(p1_alt,p2_alt,p3_alt);
-k_aD_e        = k_e_3_3_f(p1_alt,p2_alt,p3_alt);
+k_D_e         = k_e_1_3_f_v2(p1_alt/damp_alt,damp_alt,p2_alt);
+k_vD_e        = k_e_2_3_f_v2(p1_alt/damp_alt,damp_alt,p2_alt);
+k_aD_e        = k_e_3_3_f_v2(p1_alt/damp_alt,damp_alt,p2_alt);
 k_D_rm        = k_rm_1_3_f(rm_k_alt*p1_alt,1.0,rm_k_alt*p3_alt);
 k_vD_rm       = k_rm_2_3_f(rm_k_alt*p1_alt,1.0,rm_k_alt*p3_alt);
 k_aD_rm       = k_rm_3_3_f(rm_k_alt*p1_alt,1.0,rm_k_alt*p3_alt);
@@ -725,8 +742,8 @@ k_v_d_nav     = k_rm_2_2_f(p1_nav,p2_nav);
 
 /*Approximated Dynamics*/
 
-act_dynamics[ANDI_NUM_ACT_TOT-2]   = w_approx( p1_att,  p2_att,  p3_att,  1.0);//rm_k_attitude);
-act_dynamics[ANDI_NUM_ACT_TOT-1]   = w_approx( p1_att,  p2_att,  p3_att,  1.0);//rm_k_attitude);
+act_dynamics[ANDI_NUM_ACT]   = w_approx( p1_att,  p2_att,  p3_att,  1.0);//rm_k_attitude);
+act_dynamics[ANDI_NUM_ACT+1]   = w_approx( p1_att,  p2_att,  p3_att,  1.0);//rm_k_attitude);
 }
 
 /** state eulers in zxy order */
@@ -856,6 +873,7 @@ void oneloop_andi_propagate_filters(void) {
  
     ang_acc[i] = (att_dot_meas_lowpass_filters[i].o[0]- att_dot_meas_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY + model_pred[3+i] - model_pred_filt[3+i].o[0];
     //lin_acc[i] = filt_accel_ned[i].o[0] + model_pred[i] - model_pred_filt[i].o[0];  
+    // Uncomment me when done
     lin_acc[i] = filt_accel_ned[i].last_out + model_pred[i] - model_pred_a_filt[i].last_out; 
     //ang_acc[i] = (rates_filt_fo[i].last_out- old_rate) * PERIODIC_FREQUENCY;
     
@@ -946,6 +964,13 @@ void oneloop_andi_attitude_run(bool in_flight)
   new_time = get_sys_time_float();
   printf("This function is running at a dt=%f \n",new_time-old_time);
   old_time = new_time;
+  dt_actual = dt_1l;//new_time - old_time;
+  // Calculate Position error in XY from previous iteration to schedule gains of position
+  float xy_err[2];
+  xy_err[0] = pos_ref[0]-pos_1l[0];
+  xy_err[1] = pos_ref[1]-pos_1l[2];
+  scale_pos = sqrtf(xy_err[0]*xy_err[0]+xy_err[1]*xy_err[1]);
+  Bound(scale_pos,0.01,0.5);
 
   printf("k_N_e = %f\n",k_N_e);
   printf("k_vN_e = %f\n",k_vN_e);
@@ -957,8 +982,18 @@ void oneloop_andi_attitude_run(bool in_flight)
   printf("k_vD_e = %f\n",k_vD_e);
   printf("k_aD_e = %f\n",k_aD_e);
 
+  // Register attitude to be used in this loop
+  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+
+  // eulers_zxy.phi   = stateGetNedToBodyEulers_f()->phi;
+  // eulers_zxy.theta = stateGetNedToBodyEulers_f()->theta;
+  // eulers_zxy.psi   = stateGetNedToBodyEulers_f()->psi;
+
   init_controller();
   calc_normalization();
+    // Propagate actuator filters
+  get_act_state_oneloop();
+
   sum_g1g2_1l();
 
   // If drone is not on the ground use incremental law
@@ -971,10 +1006,6 @@ void oneloop_andi_attitude_run(bool in_flight)
     }
 
   psi_des_rad = psi_des_deg * M_PI / 180.0;
-
-  eulers_zxy.phi   = stateGetNedToBodyEulers_f()->phi;
-  eulers_zxy.theta = stateGetNedToBodyEulers_f()->theta;
-  eulers_zxy.psi   = stateGetNedToBodyEulers_f()->psi;
   
   if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
     printf("I AM IN ATT\n");
@@ -1133,9 +1164,12 @@ void oneloop_andi_attitude_run(bool in_flight)
     printf("pos_3d_ref[0]: %f\n",pos_3d_ref[0]);
     printf("pos_3d_ref[1]: %f\n",pos_3d_ref[1]);
     printf("pos_3d_ref[2]: %f\n",pos_3d_ref[2]);
+
     nu[0] = ec_3rd(pos_ref[0], pos_d_ref[0], pos_2d_ref[0], pos_3d_ref[0], pos_1l[0], pos_d[0], pos_2d[0], k_N_e, k_vN_e, k_aN_e);
     nu[1] = ec_3rd(pos_ref[1], pos_d_ref[1], pos_2d_ref[1], pos_3d_ref[1], pos_1l[1], pos_d[1], pos_2d[1], k_E_e, k_vE_e, k_aE_e);
     nu[2] = ec_3rd(pos_ref[2], pos_d_ref[2], pos_2d_ref[2], pos_3d_ref[2], pos_1l[2], pos_d[2], pos_2d[2], k_D_e, k_vD_e, k_aD_e); 
+
+
     nu[3] = y_4d_att[0];  
     nu[4] = y_4d_att[1]; 
     nu[5] = y_4d_att[2]; 
@@ -1146,7 +1180,7 @@ void oneloop_andi_attitude_run(bool in_flight)
     if(i<ANDI_NUM_ACT){
       du_min[i]  = (act_min[i]    - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
       du_max[i]  = (act_max[i]    - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
-      du_pref[i] = (u_pref[i] - use_increment * actuator_state_1l[i])/ratio_u_un[i];
+      du_pref[i] = (u_pref[i]     - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
     }else{
       du_min[i]  = (act_min[i]    - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];
       du_max[i]  = (act_max[i]    - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
@@ -1165,13 +1199,13 @@ void oneloop_andi_attitude_run(bool in_flight)
   if (volando) {
     // Add the increments to the actuators
     float_vect_sum(andi_u, actuator_state_1l, andi_du, ANDI_NUM_ACT);
-    andi_u[ANDI_NUM_ACT_TOT-2] = andi_du[ANDI_NUM_ACT_TOT-2] + att_1l[0];
-    andi_u[ANDI_NUM_ACT_TOT-1] = andi_du[ANDI_NUM_ACT_TOT-1] + att_1l[1];
+    andi_u[ANDI_NUM_ACT]   = andi_du[ANDI_NUM_ACT]   + att_1l[0];
+    andi_u[ANDI_NUM_ACT+1] = andi_du[ANDI_NUM_ACT+1] + att_1l[1];
   } else {
     // Not in flight, so don't increment
     float_vect_copy(andi_u, andi_du, ANDI_NUM_ACT);
-    andi_u[ANDI_NUM_ACT_TOT-2] = andi_du[ANDI_NUM_ACT_TOT-2];
-    andi_u[ANDI_NUM_ACT_TOT-1] = andi_du[ANDI_NUM_ACT_TOT-1];
+    andi_u[ANDI_NUM_ACT] = andi_du[ANDI_NUM_ACT];
+    andi_u[ANDI_NUM_ACT+1] = andi_du[ANDI_NUM_ACT+1];
   }
 
   // TODO : USE THE PROVIDED MAX AND MIN and change limits for phi and theta
@@ -1179,8 +1213,6 @@ void oneloop_andi_attitude_run(bool in_flight)
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     Bound(andi_u[i], act_min[i], act_max[i]);
   }
-  // Propagate actuator filters
-  get_act_state_oneloop();
 
   /*Commit the actuator command*/
   stabilization_cmd[COMMAND_THRUST] = 0;
@@ -1189,8 +1221,13 @@ void oneloop_andi_attitude_run(bool in_flight)
     stabilization_cmd[COMMAND_THRUST] += actuator_state_1l[i];
   }
   stabilization_cmd[COMMAND_THRUST] = stabilization_cmd[COMMAND_THRUST]/4.0;
-  eulers_zxy_des.phi   =  andi_u[ANDI_NUM_ACT];
-  eulers_zxy_des.theta =  andi_u[ANDI_NUM_ACT+1];
+  if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
+    eulers_zxy_des.phi   =  andi_u[ANDI_NUM_ACT];
+    eulers_zxy_des.theta =  andi_u[ANDI_NUM_ACT+1];
+  } else {
+    eulers_zxy_des.phi   =  andi_u[ANDI_NUM_ACT];
+    eulers_zxy_des.theta =  andi_u[ANDI_NUM_ACT+1];
+  }
 
   psi_des_deg = psi_des_rad * 180.0 / M_PI;
 
@@ -1219,13 +1256,13 @@ void get_act_state_oneloop(void)
 
 void sum_g1g2_1l(void) {
 
-  struct FloatEulers *euler = stateGetNedToBodyEulers_f();
-  float sphi   = sinf(euler->phi);
-  float cphi   = cosf(euler->phi);
-  float stheta = sinf(euler->theta);
-  float ctheta = cosf(euler->theta);
-  float spsi   = sinf(euler->psi);
-  float cpsi   = cosf(euler->psi);
+  //struct FloatEulers *euler = stateGetNedToBodyEulers_f();
+  float sphi   = sinf(eulers_zxy.phi);
+  float cphi   = cosf(eulers_zxy.phi);
+  float stheta = sinf(eulers_zxy.theta);
+  float ctheta = cosf(eulers_zxy.theta);
+  float spsi   = sinf(eulers_zxy.psi);
+  float cpsi   = cosf(eulers_zxy.psi);
 
   float T = -9.81; //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
   float scaler;
@@ -1264,17 +1301,38 @@ void sum_g1g2_1l(void) {
   g1g2_1l[5][3] = (g1_1l[5][3] + g2_1l[3])                           * scaler; 
   // Phi
   scaler = act_dynamics[4] * ratio_u_un[4] * ratio_vn_v[4];
-  g1g2_1l[0][4]= (cphi * spsi - sphi * cpsi * stheta)  * T * scaler;
-  g1g2_1l[1][4]= (-sphi * spsi * stheta - cpsi * cphi) * T * scaler;
-  g1g2_1l[2][4]= -ctheta * sphi                        * T * scaler;
-  g1g2_1l[3][4]= 0.0;
-  g1g2_1l[4][4]= 0.0;
-  g1g2_1l[5][4]= 0.0;
+  // g1g2_1l[0][4] = (cphi * spsi - sphi * cpsi * stheta)  * T * scaler;
+  // g1g2_1l[1][4] = (-sphi * spsi * stheta - cpsi * cphi) * T * scaler;
+  // g1g2_1l[2][4] = -ctheta * sphi                        * T * scaler;
+  // g1g2_1l[3][4] = 0.0;
+  // g1g2_1l[4][4] = 0.0;
+  // g1g2_1l[5][4] = 0.0;
+
+  g1g2_1l[0][4] = (cphi*ctheta*spsi)  * T * scaler;
+  g1g2_1l[1][4] = (-cphi*ctheta*cpsi) * T * scaler;
+  g1g2_1l[2][4] = -sphi*ctheta                      * T * scaler;
+  // g1g2_1l[0][4] = (ctheta*spsi)  * T * scaler;
+  // g1g2_1l[1][4] = (-ctheta*cpsi) * T * scaler;
+  // g1g2_1l[2][4] = 0.0;
+  g1g2_1l[3][4] = 0.0;
+  g1g2_1l[4][4] = 0.0;
+  g1g2_1l[5][4] = 0.0;
+
   // Theta
   scaler = act_dynamics[5] * ratio_u_un[5] * ratio_vn_v[5];
-  g1g2_1l[0][5] = (cphi * cpsi * ctheta) * T * scaler;
-  g1g2_1l[1][5] = (cphi * spsi * ctheta) * T * scaler;
+  // g1g2_1l[0][5] = (cphi * cpsi * ctheta) * T * scaler;
+  // g1g2_1l[1][5] = (cphi * spsi * ctheta) * T * scaler;
+  // g1g2_1l[2][5] = -stheta * cphi         * T * scaler;
+  // g1g2_1l[3][5] = 0.0;
+  // g1g2_1l[4][5] = 0.0;
+  // g1g2_1l[5][5] = 0.0;
+
+  g1g2_1l[0][5] = (ctheta*cpsi - sphi*stheta*spsi) * T * scaler;
+  g1g2_1l[1][5] = (ctheta*spsi + sphi*stheta*cpsi) * T * scaler;
   g1g2_1l[2][5] = -stheta * cphi         * T * scaler;
+  // g1g2_1l[0][5] = (cpsi) * T * scaler;
+  // g1g2_1l[1][5] = (spsi) * T * scaler;
+  // g1g2_1l[2][5] = 0.0;
   g1g2_1l[3][5] = 0.0;
   g1g2_1l[4][5] = 0.0;
   g1g2_1l[5][5] = 0.0;
@@ -1284,14 +1342,18 @@ void sum_g1g2_1l(void) {
 void calc_normalization(void){
   int8_t i;
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
-    act_dynamics_d[i] = 1.0-exp(-act_dynamics[i]*dt_1l);
+    act_dynamics_d[i] = 1.0-exp(-act_dynamics[i]*dt_actual);
     Bound(act_dynamics_d[i],0.0,1.0);
     printf("discrete dynamics actuator %i is %f\n",i,act_dynamics_d[i]);
     ratio_vn_v[i] = 1.0;
     Bound(act_max[i],0,MAX_PPRZ);
     Bound(act_min[i],-MAX_PPRZ,0);
     ratio_u_un[i] = (act_max[i]-act_min[i])/(act_max_norm[i]-act_min_norm[i]);
+    printf("ratio_u_un %i is %f\n",i,ratio_u_un[i]);
   }
+  printf("act_dynamics[0]=%f\n",act_dynamics[0]);
+  printf("dt_actual=%f\n",dt_actual);
+  printf("exp[0]=%f\n",exp(-act_dynamics[0]*dt_actual));
 }
 
 void calc_model(void){
