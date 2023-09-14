@@ -43,11 +43,13 @@
 #include "firmwares/fixedwing/stabilization/stabilization_adaptive.h"
 #endif
 
+#include "firmwares/rotorcraft/oneloop/oneloop_andi.h"
+
 #include "generated/modules.h"
 
 /** Set the default File logger path to the USB drive */
 #ifndef LOGGER_FILE_PATH
-#define LOGGER_FILE_PATH /data/video/usb
+#define LOGGER_FILE_PATH /data/ftp/internal_000
 #endif
 
 /** The file pointer */
@@ -63,25 +65,46 @@ static FILE *logger_file = NULL;
  * @param file Log file pointer
  */
 static void logger_file_write_header(FILE *file) {
-  fprintf(file, "time,");
-  fprintf(file, "pos_x,pos_y,pos_z,");
-  fprintf(file, "vel_x,vel_y,vel_z,");
-  fprintf(file, "att_phi,att_theta,att_psi,");
-  fprintf(file, "rate_p,rate_q,rate_r,");
-#ifdef BOARD_BEBOP
-  fprintf(file, "rpm_obs_1,rpm_obs_2,rpm_obs_3,rpm_obs_4,");
-  fprintf(file, "rpm_ref_1,rpm_ref_2,rpm_ref_3,rpm_ref_4,");
-#endif
-#ifdef INS_EXT_POSE_H
-  ins_ext_pos_log_header(file);
-#endif
-#ifdef COMMAND_THRUST
-  fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
-#else
-  fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
-#endif
-}
+  fprintf(file, "timestamp,");
+  fprintf(file,"ap_mode,ap_in_flight,");
+  fprintf(file,"phi_ref,theta_ref,psi_ref,phi,theta,psi,");
+  fprintf(file,"p_ref,q_ref,r_ref,p,q,r,");
+  fprintf(file,"p_dot_ref,q_dot_ref,r_dot_ref,p_dot,q_dot,r_dot,");
+  fprintf(file,"pos_N_ref,pos_E_ref,pos_D_ref,pos_N,pos_E,pos_D,");
+  fprintf(file,"vel_N_ref,vel_E_ref,vel_D_ref,vel_N,vel_E,vel_D,");
+  fprintf(file,"acc_N_ref,acc_E_ref,acc_D_ref,acc_N,acc_E,acc_D,");
+  fprintf(file,"jerk_N,jerk_E,jerk_D,");
+  fprintf(file,"nu_0,nu_1,nu_2,nu_3,nu_4,nu_5,");
+  fprintf(file,"u_0,u_1,u_2,u_3,");
+  fprintf(file,"G1_aN_0,G1_aN_1,G1_aN_2,G1_aN_3,G1_aN_4,G1_aN_5,");
+  fprintf(file,"G1_aE_0,G1_aE_1,G1_aE_2,G1_aE_3,G1_aE_4,G1_aE_5,");
+  fprintf(file,"G1_aD_0,G1_aD_1,G1_aD_2,G1_aD_3,G1_aD_4,G1_aD_5,");
+  fprintf(file,"G1_roll_0,G1_roll_1,G1_roll_2,G1_roll_3,G1_roll_4,G1_roll_5,");
+  fprintf(file,"G1_pitch_0,G1_pitch_1,G1_pitch_2,G1_pitch_3,G1_pitch_4,G1_pitch_5,");
+  fprintf(file,"G1_yaw_0,G1_yaw_1,G1_yaw_2,G1_yaw_3,G1_yaw_4,G1_yaw_5,");
+  fprintf(file,"andi_u_0,andi_u_1,andi_u_2,andi_u_3,andi_u_4,andi_u_5,");
+  fprintf(file,"andi_du_0,andi_du_1,andi_du_2,andi_du_3,andi_du_4,andi_du_5\n");
 
+  // fprintf(file, "pos_x,pos_y,pos_z,");
+  // fprintf(file, "vel_x,vel_y,vel_z,");
+  // fprintf(file, "att_phi,att_theta,att_psi,");
+  // fprintf(file, "rate_p,rate_q,rate_r,");
+// #ifdef BOARD_BEBOP
+//   fprintf(file, "rpm_obs_1,rpm_obs_2,rpm_obs_3,rpm_obs_4,");
+//   fprintf(file, "rpm_ref_1,rpm_ref_2,rpm_ref_3,rpm_ref_4\n");
+// #endif
+// fprintf(file,"\n");
+
+// #ifdef INS_EXT_POSE_H
+//   ins_ext_pos_log_header(file);
+// #endif
+
+// #ifdef COMMAND_THRUST
+//   fprintf(file, "cmd_thrust,cmd_roll,cmd_pitch,cmd_yaw\n");
+// #else
+//   fprintf(file, "h_ctl_aileron_setpoint,h_ctl_elevator_setpoint\n");
+// #endif
+}
 /** Write CSV row
  * Write values at this timestamp to log file. Make sure that the printf's match
  * the column headers of logger_file_write_header! Don't forget the \n at the
@@ -89,36 +112,63 @@ static void logger_file_write_header(FILE *file) {
  * @param file Log file pointer
  */
 static void logger_file_write_row(FILE *file) {
-  struct NedCoor_f *pos = stateGetPositionNed_f();
-  struct NedCoor_f *vel = stateGetSpeedNed_f();
-  struct FloatEulers *att = stateGetNedToBodyEulers_f();
-  struct FloatRates *rates = stateGetBodyRates_f();
+  // struct NedCoor_f *pos = stateGetPositionNed_f();
+  // struct NedCoor_f *vel = stateGetSpeedNed_f();
+  // struct FloatEulers *att = stateGetNedToBodyEulers_f();
+  // struct FloatRates *rates = stateGetBodyRates_f();
 
   fprintf(file, "%f,", get_sys_time_float());
-  fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
-  fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
-  fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
-  fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
-#ifdef BOARD_BEBOP
-  fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
-  fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_ref[0],actuators_bebop.rpm_ref[1],actuators_bebop.rpm_ref[2],actuators_bebop.rpm_ref[3]);
-#endif
-#ifdef INS_EXT_POSE_H
-  ins_ext_pos_log_data(file);
-#endif
-#ifdef COMMAND_THRUST
-  fprintf(file, "%d,%d,%d,%d\n",
-      stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
-      stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
-#else
-  fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
-#endif
+  fprintf(file, "%d,%d,", autopilot.mode,autopilot.in_flight);
+  fprintf(file, "%f,%f,%f,", att_ref[0], att_ref[1], att_ref[2]);
+  fprintf(file, "%f,%f,%f,", att_1l[0], att_1l[1], att_1l[2]);
+  fprintf(file, "%f,%f,%f,", att_d_ref[0], att_d_ref[1], att_d_ref[2]);
+  fprintf(file, "%f,%f,%f,", att_d[0], att_d[1], att_d[2]);
+  fprintf(file, "%f,%f,%f,", att_2d_ref[0], att_2d_ref[1], att_2d_ref[2]);
+  fprintf(file, "%f,%f,%f,", att_2d[0], att_2d[1], att_2d[2]);
+  fprintf(file, "%f,%f,%f,", pos_ref[0], pos_ref[1], pos_ref[2]);
+  fprintf(file, "%f,%f,%f,", pos_1l[0], pos_1l[1], pos_1l[2]);
+  fprintf(file, "%f,%f,%f,", pos_d_ref[0], pos_d_ref[1], pos_d_ref[2]);
+  fprintf(file, "%f,%f,%f,", pos_d[0], pos_d[1], pos_d[2]);
+  fprintf(file, "%f,%f,%f,", pos_2d_ref[0], pos_2d_ref[1], pos_2d_ref[2]);
+  fprintf(file, "%f,%f,%f,", pos_2d[0], pos_2d[1], pos_2d[2]);
+  fprintf(file, "%f,%f,%f,", pos_3d_ref[0], pos_3d_ref[1], pos_3d_ref[2]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", nu[0], nu[1], nu[2],nu[3],nu[4],nu[5]);
+  fprintf(file, "%f,%f,%f,%f,",actuator_state_1l[0], actuator_state_1l[1], actuator_state_1l[2], actuator_state_1l[3]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", g1g2_1l[0][0], g1g2_1l[0][1], g1g2_1l[0][2], g1g2_1l[0][3], g1g2_1l[0][4], g1g2_1l[0][5]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", g1g2_1l[1][0], g1g2_1l[1][1], g1g2_1l[1][2], g1g2_1l[1][3], g1g2_1l[1][4], g1g2_1l[1][5]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", g1g2_1l[2][0], g1g2_1l[2][1], g1g2_1l[2][2], g1g2_1l[2][3], g1g2_1l[2][4], g1g2_1l[2][5]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", g1g2_1l[3][0], g1g2_1l[3][1], g1g2_1l[3][2], g1g2_1l[3][3], g1g2_1l[3][4], g1g2_1l[3][5]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", g1g2_1l[4][0], g1g2_1l[4][1], g1g2_1l[4][2], g1g2_1l[4][3], g1g2_1l[4][4], g1g2_1l[4][5]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", g1g2_1l[5][0], g1g2_1l[5][1], g1g2_1l[5][2], g1g2_1l[5][3], g1g2_1l[5][4], g1g2_1l[5][5]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,", andi_u[0], andi_u[1], andi_u[2], andi_u[3], andi_u[4], andi_u[5]);
+  fprintf(file, "%f,%f,%f,%f,%f,%f\n", andi_du[0], andi_du[1], andi_du[2], andi_du[3], andi_du[4], andi_du[5]);
+  // fprintf(file,"\n");
+
+  // fprintf(file, "%f,%f,%f,", pos->x, pos->y, pos->z);
+  // fprintf(file, "%f,%f,%f,", vel->x, vel->y, vel->z);
+  // fprintf(file, "%f,%f,%f,", att->phi, att->theta, att->psi);
+  // fprintf(file, "%f,%f,%f,", rates->p, rates->q, rates->r);
+// #ifdef BOARD_BEBOP
+//   fprintf(file, "%d,%d,%d,%d,",actuators_bebop.rpm_obs[0],actuators_bebop.rpm_obs[1],actuators_bebop.rpm_obs[2],actuators_bebop.rpm_obs[3]);
+//   fprintf(file, "%d,%d,%d,%d\n",actuators_bebop.rpm_ref[0],actuators_bebop.rpm_ref[1],actuators_bebop.rpm_ref[2],actuators_bebop.rpm_ref[3]);
+// #endif
+// #ifdef INS_EXT_POSE_H
+//   ins_ext_pos_log_data(file);
+// #endif
+// #ifdef COMMAND_THRUST
+//   fprintf(file, "%d,%d,%d,%d\n",
+//       stabilization_cmd[COMMAND_THRUST], stabilization_cmd[COMMAND_ROLL],
+//       stabilization_cmd[COMMAND_PITCH], stabilization_cmd[COMMAND_YAW]);
+// #else
+//   fprintf(file, "%d,%d\n", h_ctl_aileron_setpoint, h_ctl_elevator_setpoint);
+// #endif
 }
 
 
 /** Start the file logger and open a new file */
 void logger_file_start(void)
 {
+  printf("STARTED LOGGER\n");
   // Ensure that the module is running when started with this function
   logger_file_logger_file_periodic_status = MODULES_RUN;
   
