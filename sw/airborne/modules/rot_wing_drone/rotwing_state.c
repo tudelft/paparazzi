@@ -23,7 +23,7 @@
  * This module keeps track of the current state of a rotating wing drone and desired state set by the RC or flightplan. Paramters are being scheduled in each change of a current state and desired state. Functions are defined in this module to call the actual state and desired state and set a desired state.
  */
 
-#include "modules/rotwing/rotwing_state.h"
+#include "modules/rot_wing_drone/rotwing_state.h"
 #include "firmwares/rotorcraft/guidance/guidance_indi_rot_wing.h"
 
 struct RotwingState rotwing_state;
