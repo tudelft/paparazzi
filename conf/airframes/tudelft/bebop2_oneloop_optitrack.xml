@@ -67,10 +67,10 @@
   </commands>
 
   <servos driver="Default">
-    <servo name="TOP_LEFT" no="0" min="2500" neutral="3000" max="12000"/>
-    <servo name="TOP_RIGHT" no="1" min="2500" neutral="3000" max="12000"/>
+    <servo name="TOP_LEFT"     no="0" min="2500" neutral="3000" max="12000"/>
+    <servo name="TOP_RIGHT"    no="1" min="2500" neutral="3000" max="12000"/>
     <servo name="BOTTOM_RIGHT" no="2" min="2500" neutral="3000" max="12000"/>
-    <servo name="BOTTOM_LEFT" no="3" min="2500" neutral="3000" max="12000"/>
+    <servo name="BOTTOM_LEFT"  no="3" min="2500" neutral="3000" max="12000"/>
   </servos>
 
   <command_laws>
@@ -103,12 +103,19 @@
     <define name="MAG_X_SENS" value="6.087925756389221" integer="16"/>
     <define name="MAG_Y_SENS" value="7.491867971046776" integer="16"/>
     <define name="MAG_Z_SENS" value="7.644631951089722" integer="16"/>
-    <define name="ACCEL_X_NEUTRAL" value="109"/>
+    <!-- <define name="ACCEL_X_NEUTRAL" value="109"/>
     <define name="ACCEL_Y_NEUTRAL" value="-72"/>
     <define name="ACCEL_Z_NEUTRAL" value="256"/>
     <define name="ACCEL_X_SENS" value="2.4578714129580255" integer="16"/>
     <define name="ACCEL_Y_SENS" value="2.437685806130137" integer="16"/>
-    <define name="ACCEL_Z_SENS" value="2.4172463665103288" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.4172463665103288" integer="16"/> -->
+    <define name="ACCEL_X_NEUTRAL" value="91"/>
+    <define name="ACCEL_Y_NEUTRAL" value="-72"/>
+    <define name="ACCEL_Z_NEUTRAL" value="317"/>
+    <define name="ACCEL_X_SENS" value="2.455456320639332" integer="16"/>
+    <define name="ACCEL_Y_SENS" value="2.437457529673178" integer="16"/>
+    <define name="ACCEL_Z_SENS" value="2.4191553354382838" integer="16"/>
+
   </section>
 
   <!-- local magnetic field -->
@@ -179,7 +186,7 @@
     <define name="G2"        value = "{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}"/>
     <define name="MAX_R"     value = "300.0" unit="deg/s"/>
     <define value="5.0"      NAME  = "FILT_CUTOFF"/>
-    <define value="5.0"     NAME  = "FILT_CUTOFF_ACC"/>
+    <define value="0.5"      NAME  = "FILT_CUTOFF_ACC"/>
     <define value="10.0"     NAME  = "FILT_CUTOFF_VEL"/>
     <define value="10.0"     NAME  = "FILT_CUTOFF_POS"/>
     <define value="3.2"      NAME  = "ESTIMATION_FILT_CUTOFF" />
