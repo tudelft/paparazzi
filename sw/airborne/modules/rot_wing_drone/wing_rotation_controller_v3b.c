@@ -68,11 +68,6 @@
 // Parameters
 struct wing_rotation_controller wing_rotation;
 
-float wing_rotation_sched_as_1 = 5;
-float wing_rotation_sched_as_2 = 8;
-float wing_rotation_sched_as_3 = 10;
-float wing_rotation_sched_as_4 = 15;
-
 bool in_transition = false;
 
 #if !USE_NPS
