@@ -26,6 +26,7 @@
 #include "modules/rot_wing_drone/rotwing_state.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
 #include "firmwares/rotorcraft/guidance/guidance_indi_rot_wing.h"
+#include "firmwares/rotorcraft/autopilot_firmware.h"
 #include "modules/rot_wing_drone/wing_rotation_controller_v3b.h"
 #include "modules/actuators/actuators.h"
 #include "modules/core/abi.h"
@@ -83,8 +84,8 @@ struct RotwingState rotwing_state;
 #ifndef ROTWING_STATE_RPM_ID
 #define ROTWING_STATE_RPM_ID ABI_BROADCAST
 #endif
-abi_event rpm_ev;
-static void rpm_cb(uint8_t sender_id, struct rpm_act_t * rpm_message, uint8_t num_act);
+abi_event rotwing_state_rpm_ev;
+static void rotwing_state_rpm_cb(uint8_t sender_id, struct rpm_act_t * rpm_message, uint8_t num_act);
 int32_t rotwing_state_hover_rpm[4] = {0, 0, 0, 0};
 
 bool rotwing_state_force_quad = false;
@@ -111,7 +112,7 @@ static void send_rotating_wing_state(struct transport_tx *trans, struct link_dev
 void init_rotwing_state(void)
 { 
   // Bind ABI messages
-  AbiBindMsgRPM(ROTWING_STATE_RPM_ID, &rpm_ev, rpm_cb);
+  AbiBindMsgRPM(ROTWING_STATE_RPM_ID, &rotwing_state_rpm_ev, rotwing_state_rpm_cb);
 
   // Start the drone in a desired hover state
   rotwing_state.current_state = ROTWING_STATE_HOVER;
@@ -154,6 +155,17 @@ void request_rotwing_state(uint8_t state)
 
 void rotwing_check_set_current_state(void)
 {
+  // if !in_flight, set state to hover
+  if (!autopilot.in_flight) {
+    rotwing_state_hover_counter = 0;
+    rotwing_state_skewing_counter = 0;
+    rotwing_state_fw_counter = 0;
+    rotwing_state_fw_idle_counter = 0;
+    rotwing_state_fw_m_off_counter = 0;
+    rotwing_state.current_state = ROTWING_STATE_HOVER;
+    return;
+  }
+
   // States can be checked according to wing angle sensor, setpoints .....
   uint8_t prev_state = rotwing_state.current_state;
   switch (prev_state) {
@@ -312,7 +324,7 @@ void rotwing_update_desired_state(void)
   }
 }
 
-static void rpm_cb(uint8_t __attribute__((unused)) sender_id, struct rpm_act_t UNUSED * rpm_message, uint8_t UNUSED num_act)
+static void rotwing_state_rpm_cb(uint8_t __attribute__((unused)) sender_id, struct rpm_act_t UNUSED * rpm_message, uint8_t UNUSED num_act)
 {
   // Sanity check that index is valid
   if (rpm_message->actuator_idx<num_act){
