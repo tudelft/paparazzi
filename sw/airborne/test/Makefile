@@ -6,7 +6,7 @@ Q=@
 CC = gcc
 CFLAGS = -std=c99 -I.. -I../../include -Wall
 #CFLAGS += -DDEBUG
-CFLAGS += -DCA_N_U_ONELOOP=4
+CFLAGS += -DCA_N_U_ONELOOP=6
 CFLAGS += -DCA_N_V_ONELOOP=6
 LDFLAGS = -lm
 

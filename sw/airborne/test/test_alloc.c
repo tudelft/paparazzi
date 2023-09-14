@@ -40,7 +40,7 @@ void calc_nu_out(float** Bwls, float* du, float* nu_out);
 
 int main(int argc, char **argv)
 {
-#define INDI_NUM_ACT 4
+#define INDI_NUM_ACT 6
   test_overdetermined();
 /*#define INDI_NUM_ACT 4*/
   /*test_four_by_four();*/
@@ -93,13 +93,13 @@ void test_overdetermined(void)
   //float u_min[INDI_NUM_ACT] = {0};
   //float u_max[INDI_NUM_ACT] = {0};
 
-  float du_min[INDI_NUM_ACT] = {-4314.069824, -7696.667969, -4314.575684, -7696.657227};
-  float du_max[INDI_NUM_ACT] = {5285.930176, 1903.332031, 5285.424316, 1903.342773};
-  float du_pref[INDI_NUM_ACT] = {-4314.069824, -7696.667969, -4314.575684, -7696.657227};
+  float du_min[INDI_NUM_ACT] = { -0.5957,-0.5872,-0.6169,-0.5955,-1.6878,-1.1996};
+  float du_max[INDI_NUM_ACT] = {0.4043,0.4128,0.3831,0.4045,0.3122,0.8004};
+  float du_pref[INDI_NUM_ACT] = { -0.5957,-0.5872,-0.6169,-0.5955,-0.6878,-0.1996};
 
   //float u_p[INDI_NUM_ACT] = {0};
 
-  float u_c[INDI_NUM_ACT] = {9600-5288.787109, 9600-1886.305664, 9600-5288.282227, 9600-1886.315430};
+  float u_c[INDI_NUM_ACT] = {9600-5288.787109, 9600-1886.305664, 9600-5288.282227, 9600-1886.315430, 0.0, 0.0};
 
   printf("lower and upper bounds for du:\n");
 
@@ -119,20 +119,20 @@ void test_overdetermined(void)
   printf("\n");
 
   float g1g2[INDI_OUTPUTS][INDI_NUM_ACT] = {
-    {0.000000,  0.000000,  0.000000,  0.000000  },
-    {0.000000 , 0.000000,  0.000000, 0.000000 },
-    {-0.035000, -0.035000, -0.035000, -0.035000 },
-    {0.900000,  -0.900000, -0.900000, 0.900000 },
-    {0.750000,  0.750000,  -0.750000, -0.750000 },
-    {-0.032500, 0.032500,  -0.032500, 0.032500}
+    {-0.0261e3, -0.0261e3, -0.0261e3, -0.0261e3, 0.0013e3, -0.0151e3},
+    {0.1027e3,  0.1027e3,  0.1027e3,  0.1027e3,  0.0153e3, -0.0001e3},
+    {-0.1647e3, -0.1647e3, -0.1647e3, -0.1647e3, 0.0093e3, 0.0023e3},
+    {4.7232e3,  -4.7232e3, -4.7232e3, 4.7232e3,  0.0,      0.0},
+    {4.1472e3,  4.1472e3,  -4.1472e3, -4.1472e3, 0.0,      0.0},
+    {0.2496e3,  -0.2496e3, 0.2496e3,  -0.2496e3, 0.0,      0.0}
   };
 
   //State prioritization {W Roll, W pitch, W yaw, TOTAL THRUST}
-  static float Wv[INDI_OUTPUTS] = {1.0, 1.0, 5.0, 1000.0, 1000.0, 0.0};
-  static float Wu[INDI_NUM_ACT] = {2.0,2.0,2.0,2.0};
+  static float Wv[INDI_OUTPUTS] = {1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 100.0};
+  static float Wu[INDI_NUM_ACT] = {2.0,2.0,2.0,2.0,2.0,2.0};
   // The control objective in array format
-  float indi_v[INDI_OUTPUTS] = {0.000000, 0.000000, 840.768982, -0.000132, -0.001230, 0.000000};
-  float indi_du[INDI_NUM_ACT] = {95.290405,-570.446533,95.291260,-570.445801};
+  float indi_v[INDI_OUTPUTS] = {7.3244,9.0048,5.1520,6.2520,13.8888,-3.3358};
+  float indi_du[INDI_NUM_ACT] = {95.290405,-570.446533,95.291260,-570.445801,0.0,0.0};
 
   // Initialize the array of pointers to the rows of g1g2
   float *Bwls[INDI_OUTPUTS];
@@ -143,19 +143,19 @@ void test_overdetermined(void)
 
   // WLS Control Allocator
   int num_iter =
-    wls_alloc_oneloop(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, Wu, du_pref, 100000.0, 10);
+    wls_alloc_oneloop(indi_du, indi_v, du_min, du_max, Bwls, 0, 0, Wv, Wu, du_pref, 1000.0, 10);
 
   printf("finished in %d iterations\n", num_iter);
 
-  float nu_out[4] = {0.0f};
+  float nu_out[6] = {0.0f};
   calc_nu_out(Bwls, indi_du, nu_out);
 
   printf("du                 = %f, %f, %f, %f, %f, %f\n", indi_du[0], indi_du[1], indi_du[2], indi_du[3], indi_du[4], indi_du[5]);
   // Precomputed solution' in Matlab for this problem using lsqlin:
   printf("du (matlab_lsqlin) = %f, %f, %f, %f, %f, %f\n", -4614.0, 426.064612091305, 5390.0, -4614.0, -4210.0, 5390.0);
   printf("u = %f, %f, %f, %f, %f, %f\n", indi_du[0]+u_c[0], indi_du[1]+u_c[1], indi_du[2]+u_c[2], indi_du[3]+u_c[3], indi_du[4]+u_c[4], indi_du[5]+u_c[5]);
-  printf("nu_in = %f, %f, %f, %f\n", indi_v[0], indi_v[1], indi_v[2], indi_v[3]);
-  printf("nu_out = %f, %f, %f, %f\n", nu_out[0], nu_out[1], nu_out[2], nu_out[3]);
+  printf("nu_in = %f, %f, %f, %f,  %f, %f\n", indi_v[0], indi_v[1], indi_v[2], indi_v[3], indi_v[4], indi_v[5]);
+  printf("nu_out = %f, %f, %f, %f,  %f, %f\n", nu_out[0], nu_out[1], nu_out[2], nu_out[3], nu_out[4], nu_out[5]);
 }
 
 /*
@@ -163,7 +163,7 @@ void test_overdetermined(void)
  */
 void calc_nu_out(float** Bwls, float* du, float* nu_out) {
 
-  for(int i=0; i<4; i++) {
+  for(int i=0; i<6; i++) {
     nu_out[i] = 0;
     for(int j=0; j<INDI_NUM_ACT; j++) {
       nu_out[i] += Bwls[i][j] * du[j];

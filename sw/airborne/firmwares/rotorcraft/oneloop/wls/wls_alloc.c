@@ -122,6 +122,7 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
 
   int n_c = CA_N_C_ONELOOP;
   int n_u = CA_N_U_ONELOOP;
+  printf("n_u = %i\n",n_u);
   int n_v = CA_N_V_ONELOOP;
 
   float A[CA_N_C_ONELOOP][CA_N_U_ONELOOP];
