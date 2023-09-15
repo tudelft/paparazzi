@@ -454,5 +454,11 @@
       </program>
       <program name="Gazebo"/>
     </session>
+    <session name="Hydrogen">
+      <program name="Attitude Visualizer"/>
+      <program name="HydrogenStatus"/>
+      <program name="NederdroneStatus"/>
+      <program name="ATC"/>
+    </session>
   </section>
 </control_panel>

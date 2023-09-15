@@ -51,6 +51,8 @@ extern float thrust_bx_state_filt;
 
 extern float act_pref[INDI_NUM_ACT];
 
+extern float indi_Wu[INDI_NUM_ACT];
+
 struct Indi_gains {
   struct FloatRates att;
   struct FloatRates rate;
