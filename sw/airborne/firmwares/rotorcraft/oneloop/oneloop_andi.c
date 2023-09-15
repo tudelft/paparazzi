@@ -307,30 +307,36 @@ float k_p_rm ;
 float k_pdot_rm ;    
 
 /*Position Loop*/
+float xy_1 = 1.0;
+float xy_2 = 0.01;
 float scale_pos = 1.0;
 float rm_k_pos;    
-float damp_pos = 0.3979;//0.7; 
-float p1_pos   = 0.6717*0.3979;//2.0;     
-float p2_pos  ;     
+float damp_pos = 0.7; //0.3979;//0.7; 
+float p1_pos   = 2.0;
+float p1_pos_1 = 2.0; 
+float p1_pos_2 = 2.0;//0.6717*0.7; 
+float p2_pos   = 6.0;
+float p2_pos_1 = 6.0; 
+float p2_pos_2 = 6.0;//0.4654;     
 float p3_pos  ;     
-float route_k  ;    
+float route_k ;    
 
 float k_N_e    ;    
 float k_vN_e   ;    
 float k_aN_e   ;    
 float k_E_e    ;    
-float k_vE_e    ;   
+float k_vE_e   ;   
 float k_aE_e   ;     
 
 float k_N_rm   ;    
-float k_vN_rm ;     
+float k_vN_rm  ;     
 float k_aN_rm  ;    
 float k_E_rm   ;    
 float k_vE_rm  ;    
 float k_aE_rm  ;    
 
 float k_N_route ;   
-float k_vN_route  ; 
+float k_vN_route ; 
 float k_aN_route ;  
 float k_E_route  ;  
 float k_vE_route ;  
@@ -338,8 +344,9 @@ float k_aE_route ;
 
 /*Altitude Loop*/
 float rm_k_alt ;   
-float damp_alt = 0.5;//0.7; 
-float p1_alt = 3.0;    
+float damp_alt = 0.7;//0.7; 
+float p1_alt   = 3.0;  
+float p1_alt_2 = 3.0;//0.5;  
 float p2_alt   ;    
 float p3_alt   ;     
 
@@ -530,10 +537,10 @@ void vect_bound_3d(float vect[3], float bound) {
 /* Generate higher order bound based on lower order bound*/
 float ho_bound(float dt, float x_d[3],float x_bound){
   float x_d_norm = float_vect_norm(x_d,3);
-  printf("x_d_norm: %f\n", x_d_norm);
-  printf("x_bound: %f\n", x_bound);
+  // printf("x_d_norm: %f\n", x_d_norm);
+  // printf("x_bound: %f\n", x_bound);
   float x_d_bound = (x_bound-x_d_norm)/dt;
-  printf("x_d_bound: %f\n", x_d_bound);
+  // printf("x_d_bound: %f\n", x_d_bound);
   return fabs(x_d_bound);
 }
 /*Reference Model Definition*/
@@ -585,23 +592,23 @@ void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], f
   float e_x[3];
   float e_x_d[3];
   float e_x_2d[3];
-  printf("x_d_bound: %f\n", x_d_bound);
-  printf("norm(x_d_ref): %f\n", float_vect_norm(x_d_ref,3));
+  // printf("x_d_bound: %f\n", x_d_bound);
+  // printf("norm(x_d_ref): %f\n", float_vect_norm(x_d_ref,3));
   float x_2d_bound_vel = 1000.0;//(x_d_bound - float_vect_norm(x_d_ref,3)) / dt;
-  printf("x_2d_bound_vel: %f\n", x_2d_bound_vel);
+  // printf("x_2d_bound_vel: %f\n", x_2d_bound_vel);
   float x_2d_bound_gen = fminf(x_2d_bound_vel, x_2d_bound);
-  printf("x_2d_bound_gen: %f\n", x_2d_bound_gen);
+  // printf("x_2d_bound_gen: %f\n", x_2d_bound_gen);
   float x_3d_bound = ho_bound(dt, x_2d_ref, x_2d_bound_gen);
-  printf("x_3d_bound: %f\n", x_3d_bound);
+  // printf("x_3d_bound: %f\n", x_3d_bound);
   err_3d(e_x, x_des, x_ref, k1_rm);
   vect_bound_3d(e_x,x_d_bound);
-  printf("e_x: %f\n", e_x[0]);
+  // printf("e_x: %f\n", e_x[0]);
   err_3d(e_x_d, e_x, x_d_ref, k2_rm);
   vect_bound_3d(e_x_d,x_2d_bound);
-  printf("e_x_d: %f\n", e_x_d[0]);
+  // printf("e_x_d: %f\n", e_x_d[0]);
   err_3d(e_x_2d, e_x_d, x_2d_ref, k3_rm);
-  printf("e_x_2d: %f\n", e_x_2d[0]);
-  printf("e_x_2d: %f\n", e_x_2d[0]);
+  // printf("e_x_2d: %f\n", e_x_2d[0]);
+  // printf("e_x_2d: %f\n", e_x_2d[0]);
   float_vect_copy(x_3d_ref,e_x_2d,3);
   integrate_3d(dt, x_2d_ref, x_3d_ref);
   vect_bound_3d(x_2d_ref, x_2d_bound);
@@ -653,6 +660,11 @@ static float w_approx(float p1, float p2, float p3, float rm_k){
   return 1.0*w_scale/tao;
 }
 
+static float schedule_p(float xy, float xy_1, float xy_2, float p_1, float p_2){
+  float p = (p_1-p_2)/(xy_1-xy_2)*(xy-xy_2)+p_2;
+  return p;
+}
+
 /** Gain Design
  * @brief This section is used to define the gains of the reference model and error controller
  * FIXME: Calculate the gains dynamically for transition
@@ -678,7 +690,8 @@ k_pdot_rm     = k_qdot_rm;
 
 /*Position Loop*/
 rm_k_pos      = 0.9;
-p2_pos        = 0.4654;
+p1_pos        = schedule_p(scale_pos,xy_1,xy_2,p1_pos_1,p1_pos_2);//    (-0.6717*damp_pos)/(0.5-0.01)*(scale_pos-0.01)+0.6717*damp_pos;
+p2_pos        = schedule_p(scale_pos,xy_1,xy_2,p2_pos_1,p2_pos_2);// (6.0-0.4654)/(0.5-0.01)*(scale_pos-0.01)+0.4654;
 p3_pos        = p1_pos;
 route_k       = 0.8;
 k_N_e         = k_e_1_3_f_v2(p1_pos/damp_pos,damp_pos,p2_pos);
@@ -777,18 +790,18 @@ struct FloatVect3 body_accel_f;
 
 void init_filter(void)
 {
-  printf("init of the filters");
+  // printf("init of the filters");
   float tau = 1.0 / (2.0 * M_PI *oneloop_andi_filt_cutoff);
-  printf("tau = %f\n",tau);
+  // printf("tau = %f\n",tau);
   float tau_a = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_a);
-  printf("tau_a = %f\n",tau_a);
+  // printf("tau_a = %f\n",tau_a);
   float tau_v = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_v);
   float tau_p = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_p);
-  printf("tau_p = %f\n",tau_p);
-  printf("oneloop_andi_filt_cutoff: %f\n", oneloop_andi_filt_cutoff);
-  printf("oneloop_andi_filt_cutoff_a: %f\n", oneloop_andi_filt_cutoff_a);
-  printf("oneloop_andi_filt_cutoff_v: %f\n", oneloop_andi_filt_cutoff_v);
-  printf("oneloop_andi_filt_cutoff_p: %f\n", oneloop_andi_filt_cutoff_p);
+  // printf("tau_p = %f\n",tau_p);
+  // printf("oneloop_andi_filt_cutoff: %f\n", oneloop_andi_filt_cutoff);
+  // printf("oneloop_andi_filt_cutoff_a: %f\n", oneloop_andi_filt_cutoff_a);
+  // printf("oneloop_andi_filt_cutoff_v: %f\n", oneloop_andi_filt_cutoff_v);
+  // printf("oneloop_andi_filt_cutoff_p: %f\n", oneloop_andi_filt_cutoff_p);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
 
   // Filtering of the Inputs with 3 dimensions (e.g. rates and accelerations)
@@ -842,7 +855,7 @@ void oneloop_andi_propagate_filters(void) {
   float rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
   float pos_vect[3]  = {stateGetPositionNed_f()->x,stateGetPositionNed_f()->y,stateGetPositionNed_f()->z};
   float vel_vect[3]  = {stateGetSpeedNed_f()->x,stateGetSpeedNed_f()->y,stateGetSpeedNed_f()->z};
-  printf("oneloop_andi_filt_cutoff_a = %f\n",oneloop_andi_filt_cutoff_a);
+  // printf("oneloop_andi_filt_cutoff_a = %f\n",oneloop_andi_filt_cutoff_a);
   //printf("tau_a = %f\n",tau_a);
   // update_butterworth_2_low_pass(&filt_accel_ned[0], accel->x);
   // update_butterworth_2_low_pass(&filt_accel_ned[1], accel->y);
@@ -968,10 +981,12 @@ void oneloop_andi_attitude_run(bool in_flight)
   // Calculate Position error in XY from previous iteration to schedule gains of position
   float xy_err[2];
   xy_err[0] = pos_ref[0]-pos_1l[0];
-  xy_err[1] = pos_ref[1]-pos_1l[2];
+  xy_err[1] = pos_ref[1]-pos_1l[1];
   scale_pos = sqrtf(xy_err[0]*xy_err[0]+xy_err[1]*xy_err[1]);
-  Bound(scale_pos,0.01,0.5);
-
+  Bound(scale_pos,xy_2,xy_1);
+  printf("xy_err[%f,%f]\n",xy_err[0],xy_err[1]);
+  printf("scale_pos= %f\n",scale_pos);
+  printf("p1_pos = %f\n",p1_pos);
   printf("k_N_e = %f\n",k_N_e);
   printf("k_vN_e = %f\n",k_vN_e);
   printf("k_aN_e = %f\n",k_aN_e);
@@ -981,6 +996,7 @@ void oneloop_andi_attitude_run(bool in_flight)
   printf("k_D_e = %f\n",k_D_e);
   printf("k_vD_e = %f\n",k_vD_e);
   printf("k_aD_e = %f\n",k_aD_e);
+
 
   // Register attitude to be used in this loop
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
@@ -1059,11 +1075,11 @@ void oneloop_andi_attitude_run(bool in_flight)
 
     float thrust_cmd_1l = (float) radio_control.values[RADIO_THROTTLE];
     Bound(thrust_cmd_1l,0,MAX_PPRZ);
-    printf("thrust_cmd_1l: %f\n",thrust_cmd_1l);
+    //printf("thrust_cmd_1l: %f\n",thrust_cmd_1l);
     for (i = 0; i < ANDI_NUM_ACT; i++) {
      a_thrust +=(thrust_cmd_1l - use_increment*actuator_state_1l[i]) * bwls_1l[2][i] / (ratio_u_un[i] * ratio_vn_v[i]);
     }
-    printf("a_thrust: %f\n",a_thrust);
+    //printf("a_thrust: %f\n",a_thrust);
   }else{
     printf("I AM IN NAV\n");
     Wv[0] = 1.0;
@@ -1088,7 +1104,7 @@ void oneloop_andi_attitude_run(bool in_flight)
         float v_actual = sqrtf(pos_d[0] * pos_d[0]+pos_d[1] * pos_d[1]);
         
         nav_speed_controller(dt_1l, &p_nav, &v_nav, &a_nav, &j_nav, v_nav_des, v_actual, max_a_nav, k_v_nav, k_v_d_nav);
-        printf("p_nav = %f\n",p_nav);
+        //printf("p_nav = %f\n",p_nav);
         
         straight_oval(p_nav, r_oval, l_oval, psi_oval, v_nav, a_nav, j_nav, pos_ref, pos_init,  pos_d_ref, pos_2d_ref, pos_3d_ref, psi_vec, &lap_oval);
         if (v_actual > 0.5){
@@ -1110,7 +1126,7 @@ void oneloop_andi_attitude_run(bool in_flight)
         float k3_pos_rm[3] = {k_aN_rm, k_aE_rm, k_aD_rm};
         rm_3rd_pos(dt_1l, pos_ref, pos_d_ref, pos_2d_ref, pos_3d_ref, pos_des, k1_pos_rm, k2_pos_rm, k3_pos_rm, max_v_nav, max_a_nav);
       }
-      printf("Desired position is :[%f, %f, %f]\n",pos_des[0],pos_des[1],pos_des[2]);
+      //printf("Desired position is :[%f, %f, %f]\n",pos_des[0],pos_des[1],pos_des[2]);
        
   }
 
@@ -1161,9 +1177,9 @@ void oneloop_andi_attitude_run(bool in_flight)
     float k3_att_e[3] = {k_pdot_e, k_qdot_e,  k_psi_2d_e};
     float y_4d_att[3];
     ec_3rd_att(y_4d_att, att_ref, att_d_ref, att_2d_ref, att_3d_ref, att_1l, att_d, att_2d, k1_att_e, k2_att_e, k3_att_e);
-    printf("pos_3d_ref[0]: %f\n",pos_3d_ref[0]);
-    printf("pos_3d_ref[1]: %f\n",pos_3d_ref[1]);
-    printf("pos_3d_ref[2]: %f\n",pos_3d_ref[2]);
+    //printf("pos_3d_ref[0]: %f\n",pos_3d_ref[0]);
+    //printf("pos_3d_ref[1]: %f\n",pos_3d_ref[1]);
+    //printf("pos_3d_ref[2]: %f\n",pos_3d_ref[2]);
 
     nu[0] = ec_3rd(pos_ref[0], pos_d_ref[0], pos_2d_ref[0], pos_3d_ref[0], pos_1l[0], pos_d[0], pos_2d[0], k_N_e, k_vN_e, k_aN_e);
     nu[1] = ec_3rd(pos_ref[1], pos_d_ref[1], pos_2d_ref[1], pos_3d_ref[1], pos_1l[1], pos_d[1], pos_2d[1], k_E_e, k_vE_e, k_aE_e);
@@ -1192,10 +1208,10 @@ void oneloop_andi_attitude_run(bool in_flight)
     printf("@@@@@@@@@ END WLS @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
 
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
-    printf("andi_du_pre_denormalization[%i]: %f ",i,andi_du_n[i]);
+    //printf("andi_du_pre_denormalization[%i]: %f ",i,andi_du_n[i]);
     andi_du[i] = (float)(andi_du_n[i] * ratio_u_un[i]);
   }
-  printf("\n");
+  //printf("\n");
   if (volando) {
     // Add the increments to the actuators
     float_vect_sum(andi_u, actuator_state_1l, andi_du, ANDI_NUM_ACT);
@@ -1344,16 +1360,16 @@ void calc_normalization(void){
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
     act_dynamics_d[i] = 1.0-exp(-act_dynamics[i]*dt_actual);
     Bound(act_dynamics_d[i],0.0,1.0);
-    printf("discrete dynamics actuator %i is %f\n",i,act_dynamics_d[i]);
+    //printf("discrete dynamics actuator %i is %f\n",i,act_dynamics_d[i]);
     ratio_vn_v[i] = 1.0;
     Bound(act_max[i],0,MAX_PPRZ);
     Bound(act_min[i],-MAX_PPRZ,0);
     ratio_u_un[i] = (act_max[i]-act_min[i])/(act_max_norm[i]-act_min_norm[i]);
-    printf("ratio_u_un %i is %f\n",i,ratio_u_un[i]);
+    //printf("ratio_u_un %i is %f\n",i,ratio_u_un[i]);
   }
-  printf("act_dynamics[0]=%f\n",act_dynamics[0]);
-  printf("dt_actual=%f\n",dt_actual);
-  printf("exp[0]=%f\n",exp(-act_dynamics[0]*dt_actual));
+  //printf("act_dynamics[0]=%f\n",act_dynamics[0]);
+  //printf("dt_actual=%f\n",dt_actual);
+  //printf("exp[0]=%f\n",exp(-act_dynamics[0]*dt_actual));
 }
 
 void calc_model(void){
@@ -1371,7 +1387,7 @@ void calc_model(void){
         model_pred[i] = model_pred[i] +  (att_1l[j-ANDI_NUM_ACT] - old_state[j]) * g1g2_1l[i][j]  / (act_dynamics[j] * ratio_u_un[j] * ratio_vn_v[j]);
       }
     }
-     printf("Model Prediction axis %i = %f\n",i,model_pred[i]);
+     //printf("Model Prediction axis %i = %f\n",i,model_pred[i]);
   }
   // Store the old state of the actuators for the next iteration
   for ( j = 0; j < ANDI_NUM_ACT_TOT; j++){
@@ -1440,7 +1456,7 @@ void nav_speed_controller(float dt, float* x_ref, float* x_d_ref, float* x_2d_re
 
 //void straight_oval(float s, float r, float l, float psi_i, float v_route, float a_route, float j_route, float* p, float* v, float* a, float* j, float* lap)
 void straight_oval(float s, float r, float l, float psi_i, float v_route, float a_route, float j_route, float p[3], float pi[3], float v[3], float a[3], float j[3], float psi_vec[4], float* lap) {
-    printf("psi_oval = %f\n",psi_i);
+    //printf("psi_oval = %f\n",psi_i);
     float cd = cosf(psi_i);
     float sd = sinf(psi_i);
     float head_vec[4] = {0.0, 0.0, 0.0, 0.0};
