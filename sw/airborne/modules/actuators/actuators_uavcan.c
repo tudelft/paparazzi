@@ -157,7 +157,7 @@ static void actuators_uavcan_send_esc(struct transport_tx *trans, struct link_de
   float rpm = telem->rpm;
   float energy = telem->energy;
   pprz_msg_send_ESC(trans, dev, AC_ID, &telem->current, &electrical.vsupply, &power,
-                    &rpm, &telem->voltage, &energy, &telem->temperature, &telm->temperature_dev, &telem->node_id, &old_idx);
+                    &rpm, &telem->voltage, &energy, &telem->temperature, &telem->temperature_dev, &telem->node_id, &old_idx);
 }
 #endif
 
