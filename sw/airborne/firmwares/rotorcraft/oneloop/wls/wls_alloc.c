@@ -122,7 +122,7 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
 
   int n_c = CA_N_C_ONELOOP;
   int n_u = CA_N_U_ONELOOP;
-  printf("n_u = %i\n",n_u);
+  //printf("n_u = %i\n",n_u);
   int n_v = CA_N_V_ONELOOP;
 
   float A[CA_N_C_ONELOOP][CA_N_U_ONELOOP];
@@ -151,23 +151,23 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
   int n_infeasible = 0;
   float lambda[CA_N_U_ONELOOP];
   float W[CA_N_U_ONELOOP];
-  printf("@@@@@@@@@ My inputs are: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+  //printf("@@@@@@@@@ My inputs are: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
   for (int i = 0; i < CA_N_U_ONELOOP; i++) {
-    printf("andi_du[%i] = %f ",i,u[i]);
-    printf("du_min[%i] = %f ",i,umin[i]);
-    printf("du_max[%i] = %f ",i,umax[i]);
-    printf("du_pref[%i] = %f ",i,up[i]);
-    printf("Wu[%i] = %f ",i,Wu[i]);
-    printf("\n");
+    //printf("andi_du[%i] = %f ",i,u[i]);
+    //printf("du_min[%i] = %f ",i,umin[i]);
+    //printf("du_max[%i] = %f ",i,umax[i]);
+    //printf("du_pref[%i] = %f ",i,up[i]);
+    //printf("Wu[%i] = %f ",i,Wu[i]);
+    //printf("\n");
   }
   for (int i = 0; i < CA_N_V_ONELOOP; i++) {
-    printf("Wv[%i] = %f ",i,Wv[i]);
+    //printf("Wv[%i] = %f ",i,Wv[i]);
   }
-  printf("\n");
+  //printf("\n");
   for (int i = 0; i < CA_N_V_ONELOOP; i++) {
-    printf("nu[%i] = %f ",i,v[i]);
+    //printf("nu[%i] = %f ",i,v[i]);
   }
-  printf("\n");
+  //printf("\n");
   
   //print_in_and_outputs(n_c, n_free, A_free_ptr, d, p_free);
   //print_final_values(n_u, n_v, u, B, v, umin, umax);
@@ -215,8 +215,8 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
 
   // -------------- Start loop ------------
   while (iter++ < imax) {
-    //printf("###### Entering Iteration WLS ######################\n");
-    //printf("n_free>0 , n_free = %i\n", n_free);
+    ////printf("###### Entering Iteration WLS ######################\n");
+    ////printf("n_free>0 , n_free = %i\n", n_free);
 
    
     // clear p, copy u to u_opt
@@ -226,24 +226,24 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
     // if(n_free < 0){
     //   return -1;
     // }
-    //printf("free_chk is : %i\n",free_chk);
-    //printf("n_free is : %i\n",n_free);
+    ////printf("free_chk is : %i\n",free_chk);
+    ////printf("n_free is : %i\n",n_free);
     // Construct a matrix with the free columns of A
     if (free_chk != n_free) {
       for (int i = 0; i < n_c; i++) {
         for (int j = 0; j < n_free; j++) {
           A_free[i][j] = A[i][free_index[j]];
-          //printf("A_free[%i][%i]=%f\n",i,j,A_free[i][j]);
+          ////printf("A_free[%i][%i]=%f\n",i,j,A_free[i][j]);
         }
       }
       free_chk = n_free;
     }
 
 
-    //printf("NFREE: %d", n_free);
+    ////printf("NFREE: %d", n_free);
     if (n_free>0) {
-      //printf("I think n_free is bigger than 0\n");
-      //printf("n_free>0 , n_free = %i\n", n_free);
+      ////printf("I think n_free is bigger than 0\n");
+      ////printf("n_free>0 , n_free = %i\n", n_free);
 
       // Still feree variables left, calculate corresponding solution
 
@@ -261,27 +261,27 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
     for (int i = 0; i < n_free; i++) {
       p[free_index[i]] = p_free[i];
       u_opt[free_index[i]] += p_free[i];
-      //printf("u_opt of act %i is %f\n",i,u_opt[free_index[i]]);
+      ////printf("u_opt of act %i is %f\n",i,u_opt[free_index[i]]);
     }
 
     // check limits
     n_infeasible = 0;
     for (int i = 0; i < n_u; i++) {
-      //printf("I am checking feasibility\n");
-      //printf("u_opt[%i]=%f, with u_max %f and u_min %f \n",i,u_opt[i],umax[i],umin[i]);
+      ////printf("I am checking feasibility\n");
+      ////printf("u_opt[%i]=%f, with u_max %f and u_min %f \n",i,u_opt[i],umax[i],umin[i]);
       if (u_opt[i] >= (umax[i] + 0.000001f) || u_opt[i] <= (umin[i] - 0.000001f)) {
         infeasible_index[n_infeasible++] = i;
-        //printf("current u_opt[%i] is infeasible, n_infeasible is %i\n",i,n_infeasible);
+        ////printf("current u_opt[%i] is infeasible, n_infeasible is %i\n",i,n_infeasible);
         //n_infeasible = n_infeasible + 1;
       }
       // if ((fabs(u_opt[i]- umax[i]) < FLT_EPSILON) || ((u_opt[i] - umax[i]) > 0.0) || ((u_opt[i] - umin[i]) < 0.0) ){     
       //   infeasible_index[n_infeasible++] = i;
       // }
     }
-    //printf("n_infeasible: %i\n",n_infeasible);
+    ////printf("n_infeasible: %i\n",n_infeasible);
     // Check feasibility of the solution
     if (n_infeasible == 0 || n_free == 0) {
-      //printf("I THINK ALL SOLUTIONS ARE FEASIBLE\n");
+      ////printf("I THINK ALL SOLUTIONS ARE FEASIBLE\n");
       // all variables are within limits
       memcpy(u, u_opt, n_u * sizeof(float));
       memset(lambda, 0, n_u * sizeof(float));
@@ -302,7 +302,7 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
         lambda[i] *= W[i];
         // if any lambdas are negative, keep looking for solution
         if (lambda[i] < -FLT_EPSILON) {
-          //printf("I think I can find a better solution\n");
+          ////printf("I think I can find a better solution\n");
           break_flag = false;
           W[i] = 0;
           // add a free index
@@ -322,7 +322,7 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
         return iter;
       }
     } else {
-      //printf("I THINK SOME SOLUTIONS ARE INFEASIBLE\n");
+      ////printf("I THINK SOME SOLUTIONS ARE INFEASIBLE\n");
       float alpha = INFINITY;
       float alpha_tmp;
       int id_alpha = 0;
@@ -341,13 +341,13 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
           id_alpha = id;
         }
       }
-      //printf("Lowest distance is %f for variable %i\n",alpha,id_alpha);
+      ////printf("Lowest distance is %f for variable %i\n",alpha,id_alpha);
       // update input u = u + alpha*p
       for (int i = 0; i < n_u; i++) {
-        //printf("old u[%i] is %f\n",i,u[i]);
+        ////printf("old u[%i] is %f\n",i,u[i]);
         u[i] += alpha * p[i];
-        //printf("p[%i] is %f\n",i,p[i]);
-        //printf("new u[%i] is %f\n",i,u[i]);
+        ////printf("p[%i] is %f\n",i,p[i]);
+        ////printf("new u[%i] is %f\n",i,u[i]);
       }
       // update d = d-alpha*A*p_free
       for (int i = 0; i < n_c; i++) {
