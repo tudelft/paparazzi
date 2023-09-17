@@ -125,8 +125,8 @@ bool nav_snap_run(void)
   temp.x = POS_BFP_OF_REAL(y_snap);
   temp.y = POS_BFP_OF_REAL(x_snap);
   temp.z = POS_BFP_OF_REAL(-z_snap);
-  VECT3_COPY(navigation_target, temp);
-  VECT3_COPY(navigation_carrot, temp);
+  VECT3_COPY(nav.target, temp);
+  VECT3_COPY(nav.carrot, temp);
 
   // Set heading
   nav_set_heading_rad(psi_snap);
