@@ -19,18 +19,8 @@
  * Boston, MA 02111-1307, USA.
  */
 
-/**
- * @file modules/rovio/rovio.h
- */
 
-#ifndef ROVIO_CV_H
-#define ROVIO_CV_H
+#include "rovio/MultiCamera.hpp"
+#include "rovio/FeatureManager.hpp"
+#include "rovio/MultilevelPatchAlignment.hpp"
 
-#include <stdint.h>
-#include <stdbool.h>
-
-// Module functions
-extern void rovio_init(void);
-extern void rovio_periodic(void);
-
-#endif /* ROVIO_CV_H */

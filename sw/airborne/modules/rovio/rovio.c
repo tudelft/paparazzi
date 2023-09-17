@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Kirk Scheper <kirkscheper@gmail.com>
+ * Copyright (C) 2023 TUDelft
  *
  * This file is part of Paparazzi.
  *

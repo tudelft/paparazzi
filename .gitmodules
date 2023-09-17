@@ -53,3 +53,6 @@
 [submodule "sw/ext/libcanard"]
 	path = sw/ext/libcanard
 	url = https://github.com/UAVCAN/libcanard.git
+[submodule "sw/ext/rovio2"]
+	path = sw/ext/rovio2
+	url = https://github.com/tudelft/rovio2.git

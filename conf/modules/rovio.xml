@@ -23,7 +23,13 @@
 
   <init fun="rovio_init()"/>
   <makefile target="ap|nps">
+    <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/rovio2/include"/>
+    <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/rovio2/lightweight_filtering/include"/>
+    <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/eigen"/>
+    <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/rovio2/kindr/include"/>
+    <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_arm/include"/>
     <file name="rovio.c"/>
+    <file name="rovio_thread.cpp"/>
   </makefile>
 </module>
 
