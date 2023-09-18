@@ -98,6 +98,7 @@ uint8_t rotwing_state_fw_m_off_counter = 0;
 
 inline void rotwing_check_set_current_state(void);
 inline void rotwing_update_desired_state(void);
+inline void rotwing_switch_state(void);
 
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
@@ -132,7 +133,7 @@ void periodic_rotwing_state(void)
   rotwing_update_desired_state();
 
   // Check difference with desired state
-  //TODO: add function
+  // rotwing_switch_state();
 
   //TODO: incorparate motor active / disbaling depending on called flight state
   // Switch on motors if flight mode is attitude
@@ -321,6 +322,58 @@ void rotwing_update_desired_state(void)
     default:
       rotwing_state.desired_state = ROTWING_STATE_FREE;
       break;
+  }
+}
+
+// Function that handles settings for switching state(s)
+void rotwing_switch_state(void)
+{
+  switch (rotwing_state.current_state) {
+    case ROTWING_STATE_HOVER:
+      if (rotwing_state.desired_state > ROTWING_STATE_HOVER) {
+        // if in hover state, but higher state requested, switch on wing_rotation scheduler
+        wing_rotation.airspeed_scheduling = true;
+      } else {
+        // if hover state desired and at the state, fix wing in quad
+        wing_rotation.airspeed_scheduling = false;
+        wing_rotation.wing_angle_deg_sp = 0;
+      }
+      break;
+
+    case ROTWING_STATE_SKEWING:
+      if (rotwing_state.desired_state > ROTWING_STATE_SKEWING) {
+        // Keep wing rotation scheduler on if skewing to a higher state
+        wing_rotation.airspeed_scheduling = true;
+      } else {
+        // go back to quad state if fulfilling conditions for skewing back (motors on, skewing back not too fast).
+      }
+      break;
+
+    case ROTWING_STATE_FW:
+      break;
+
+    case ROTWING_STATE_FW_HOV_MOT_IDLE:
+      if (rotwing_state.desired_state > ROTWING_STATE_FW_HOV_MOT_IDLE) {
+        // Switch off hover motors if in idle and desired state is higher
+        bool_disable_hover_motors = true;
+      } else if (rotwing_state.desired_state < ROTWING_STATE_FW_HOV_MOT_IDLE) {
+        // Allow hover motors to generate thrust when desired state is lower than current state
+        hover_motors_active = true;
+      } else {
+        // if idle desired and already at idle, let motors spin idle
+        bool_disable_hover_motors = false;
+        hover_motors_active = false;
+      }
+      break;
+
+    case ROTWING_STATE_FW_HOV_MOT_OFF:
+      if (rotwing_state.desired_state < ROTWING_STATE_FW_HOV_MOT_OFF) {
+        // Switch on the hover motors when going to a lower state
+        bool_disable_hover_motors = false;
+      }
+      wing_rotation.airspeed_scheduling = false;
+      wing_rotation.wing_angle_deg_sp = 90;
+      break; 
   }
 }
 
