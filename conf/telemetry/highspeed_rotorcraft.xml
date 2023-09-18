@@ -263,6 +263,7 @@
       <message name="AIRSPEED_WIND_ESTIMATOR_EKF" period="0.04"/>
       <message name="AIRSPEED_WIND_ESTIMATOR_EKF_COV" period="0.04"/>
       <message name="AIRSPEED_WIND_ESTIMATOR_EKF_FORCES" period="0.04"/>
+      <message name="ROTATING_WING_STATE"      period="0.1"/>
     </mode>
   </process>
 
