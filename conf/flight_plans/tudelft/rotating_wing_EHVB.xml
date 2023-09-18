@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="60" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="500" name="Rotating wing Valkenburg" security_height="2">
+<flight_plan alt="70" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="500" name="Rotating wing Valkenburg" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
@@ -78,6 +78,7 @@
         <set value="false" var="force_forward"/>
         <call fun="set_wing_rotation_scheduler(false)"/>
         <exception cond="stateGetPositionEnu_f()->z > 4.0" deroute="Standby"/>
+        <call_once fun="autopilot_set_in_flight(true)"/>
         <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
         <attitude pitch="0" roll="0" throttle="0.75" until="stage_time>2" vmode="throttle"/>
     </block>
