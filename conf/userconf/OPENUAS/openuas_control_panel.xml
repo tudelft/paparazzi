@@ -723,6 +723,8 @@
         <arg flag="--ac_nose" constant="right"/>
         <arg flag="-ac" constant="1"/>
         <arg flag="30"/>
+        <arg flag="-f" constant="512"/>
+        <arg flag="-o"/>
       </program>
     </session>
     <session name="Bebop2 Simulation">
@@ -971,6 +973,7 @@
         <arg flag="--ac_nose" constant="right"/>
         <arg flag="-ac" constant="1"/>
         <arg flag="31"/>
+        <arg flag="-o"/>
       </program>
     </session>
     <session name="Bebop2 Manual">

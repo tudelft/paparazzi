@@ -15,4 +15,5 @@
     },
     "C_Cpp.dimInactiveRegions": false,
     "esbonio.sphinx.confDir": "",
+    "cmake.sourceDirectory": "/home/tomasodeponti/tudelft_paparazzi/sw/ext/TRICAL",
 }
