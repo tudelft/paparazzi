@@ -167,11 +167,6 @@ static void send_oneloop_g(struct transport_tx *trans, struct link_device *dev)
 }
 static void send_oneloop_andi(struct transport_tx *trans, struct link_device *dev)
 {
-  float temp_dummy[ANDI_NUM_ACT];
-  temp_dummy[0] = andi_du[0];
-  temp_dummy[1] = andi_du[1];
-  temp_dummy[2] = andi_du[2];
-  temp_dummy[3] = andi_du[3];
   pprz_msg_send_ONELOOP_ANDI(trans, dev, AC_ID,
                                         &att_ref[0],
                                         &att_ref[1],
