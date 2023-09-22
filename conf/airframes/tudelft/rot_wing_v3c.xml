@@ -294,7 +294,7 @@
     </section>
 
     <section PREFIX="STABILIZATION_ATTITUDE_" NAME="STABILIZATION_ATTITUDE">
-        <define VALUE="45." UNIT="deg" NAME="SP_MAX_PHI"/>
+        <define VALUE="45." UNIT="deg" NAME="SP_MAX_PHI"/> 
         <define VALUE="45." UNIT="deg" NAME="SP_MAX_THETA"/>
         <define VALUE="90." UNIT="deg/s" NAME="SP_MAX_R"/>
         <define VALUE="200" NAME="DEADBAND_R"/>

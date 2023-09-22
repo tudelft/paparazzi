@@ -39,6 +39,9 @@ extern bool indi_use_adaptive;
 
 extern float *Bwls[INDI_OUTPUTS];
 extern float indi_Wu_motor;
+extern float indi_Wu_elevator;
+extern float indi_Wu_rudder;
+extern float indi_Wu_aileron;
 
 extern float thrust_bx_eff;
 extern float thrust_bx_act_dyn;

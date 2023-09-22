@@ -27,6 +27,7 @@
 
 #include "modules/datalink/telemetry.h"
 #include "generated/modules.h"
+#include "generated/flight_plan.h"
 
 // Distance to the target to hover from is by default 15 meters
 #ifndef FOLLOW_ME_DISTANCE
@@ -35,7 +36,7 @@
 
 // Height difference between te target be default 18 meters
 #ifndef FOLLOW_ME_HEIGHT
-#define FOLLOW_ME_HEIGHT 75
+#define FOLLOW_ME_HEIGHT 60
 #endif
 
 // Minimum speed in m/s which the ground needs to have in order to update the heading
@@ -58,6 +59,10 @@
 #define FOLLOW_ME_FILT 0.9
 #endif
 
+#ifndef FOLLOW_ME_MOVING_WPS
+#define FOLLOW_ME_MOVING_WPS
+#endif
+
 float follow_me_distance = FOLLOW_ME_DISTANCE;
 float follow_me_height = FOLLOW_ME_HEIGHT;
 float follow_me_heading = 180.;
@@ -78,10 +83,72 @@ static float ground_climb;
 static float ground_course;
 static float ground_heading;
 
+static uint8_t moving_wps[] = {FOLLOW_ME_MOVING_WPS};
+static uint8_t moving_wps_cnt = 0;
+static struct EnuCoor_f last_targetpos;
+static float last_targetpos_heading;
+static bool last_targetpos_valid = false;
+
 void follow_me_init(void)
 {
   ground_set = false;
   ground_time_msec = 0;
+  last_targetpos_valid = false;
+  moving_wps_cnt = sizeof(moving_wps) / sizeof(uint8_t);
+}
+
+void follow_me_periodic(void)
+{
+  if(!ground_set) {
+    return;
+  }
+
+  // Calculate the difference to move the waypoints
+  struct NedCoor_i target_pos_cm;
+  struct EnuCoor_f cur_targetpos, diff_targetpos;
+  float cur_targetpos_heading, diff_targetpos_heading;
+
+  ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &ground_lla);
+  cur_targetpos.x = target_pos_cm.y / 100.f;
+  cur_targetpos.y = target_pos_cm.x / 100.f;
+  cur_targetpos.z = -target_pos_cm.z / 100.f;
+  VECT3_DIFF(diff_targetpos, cur_targetpos, last_targetpos);
+
+  cur_targetpos_heading = ground_heading;
+  diff_targetpos_heading = cur_targetpos_heading - last_targetpos_heading;
+
+  // Only move if we had a previous location
+  VECT3_COPY(last_targetpos, cur_targetpos);
+  last_targetpos_heading = cur_targetpos_heading;
+  if(!last_targetpos_valid) {
+    last_targetpos_valid = true;
+    return;
+  }
+
+  // Go through all waypoints
+  for(uint8_t i = 0; i < moving_wps_cnt; i++) {
+    uint8_t wp_id = moving_wps[i];
+    struct EnuCoor_f *wp_enu = waypoint_get_enu_f(wp_id);
+    struct EnuCoor_f wp_new_enu;
+    wp_new_enu.x = wp_enu->x + diff_targetpos.x;
+    wp_new_enu.y = wp_enu->y + diff_targetpos.y;
+    wp_new_enu.z = wp_enu->z;
+
+    // Rotate the waypoint
+    float cos_heading = cosf(diff_targetpos_heading/180.*M_PI);
+    float sin_heading = sinf(diff_targetpos_heading/180.*M_PI);
+    wp_new_enu.x = ((wp_new_enu.x - cur_targetpos.x) * cos_heading) + ((wp_new_enu.y - cur_targetpos.y) * sin_heading) +  + cur_targetpos.x;
+    wp_new_enu.y = (-(wp_new_enu.y - cur_targetpos.y) * sin_heading) + ((wp_new_enu.y - cur_targetpos.y) * cos_heading) + cur_targetpos.y;
+
+    // Update the waypoint
+    waypoint_set_enu(wp_id, &wp_new_enu);
+
+    // Send to the GCS that the waypoint has been moved
+    DOWNLINK_SEND_WP_MOVED_ENU(DefaultChannel, DefaultDevice, &wp_id,
+                               &waypoints[wp_id].enu_i.x,
+                               &waypoints[wp_id].enu_i.y,
+                               &waypoints[wp_id].enu_i.z);
+  }
 }
 
 void follow_me_parse_target_pos(uint8_t *buf)
@@ -182,8 +249,8 @@ void follow_me_set_wp(uint8_t wp_id, float speed)
     }
 
     // Filter the cosine and sine of the follow me heading to avoid wrapping
-    fmh_cos_filt = fmh_cos_filt * follow_me_filt + cosf(ground_heading+follow_me_heading/180.*M_PI) * (1 - follow_me_filt);
-    fmh_sin_filt = fmh_sin_filt * follow_me_filt + sinf(ground_heading+follow_me_heading/180.*M_PI) * (1 - follow_me_filt);
+    fmh_cos_filt = fmh_cos_filt * follow_me_filt + cosf((ground_heading+follow_me_heading)/180.*M_PI) * (1 - follow_me_filt);
+    fmh_sin_filt = fmh_sin_filt * follow_me_filt + sinf((ground_heading+follow_me_heading)/180.*M_PI) * (1 - follow_me_filt);
 
     // Add the target distance in the direction of the follow me heading
     target_pos.x += dist * fmh_cos_filt;

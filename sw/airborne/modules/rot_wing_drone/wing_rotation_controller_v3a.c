@@ -58,15 +58,20 @@
 #endif
 
 #ifndef WING_ROTATION_FIRST_DYN
-#define WING_ROTATION_FIRST_DYN 0.001
+#define WING_ROTATION_FIRST_DYN 0.002
 #endif
 
 #ifndef WING_ROTATION_SECOND_DYN
-#define WING_ROTATION_SECOND_DYN 0.003
+#define WING_ROTATION_SECOND_DYN 0.006
 #endif
 
 // Parameters
 struct wing_rotation_controller wing_rotation;
+
+float wing_rotation_sched_as_1 = 5;
+float wing_rotation_sched_as_2 = 8;
+float wing_rotation_sched_as_3 = 10;
+float wing_rotation_sched_as_4 = 15;
 
 static struct adc_buf buf_wing_rot_pos;
 
@@ -162,28 +167,20 @@ void wing_rotation_event(void)
     { 
       float wing_angle_scheduled_sp_deg = 0;
       float airspeed = stateGetAirspeed_f();
-      if (airspeed < 12)
-      {
+      if (airspeed < wing_rotation_sched_as_1) {
         wing_angle_scheduled_sp_deg = 0;
-        wing_rotation.transition_forward = false;
+      } else if (airspeed < wing_rotation_sched_as_2) {
+        float as_range = wing_rotation_sched_as_2 - wing_rotation_sched_as_1;
+        Bound(as_range, 1, 20);
+        wing_angle_scheduled_sp_deg = ((airspeed - wing_rotation_sched_as_1) / as_range) * 55;
+      } else if (airspeed < wing_rotation_sched_as_3) {
+        wing_angle_scheduled_sp_deg = 55;
+      } else if (airspeed < wing_rotation_sched_as_4) {
+        float as_range = wing_rotation_sched_as_4 - wing_rotation_sched_as_3;
+        Bound(as_range, 1, 20);
+        wing_angle_scheduled_sp_deg = ((airspeed - wing_rotation_sched_as_3) / as_range) * 35 + 55;
       } else {
-        // First check if eligable for transition forward boolean
-        if (airspeed > 14.)
-        {
-          wing_rotation.transition_forward = true;
-        }
-
-        if (wing_rotation.transition_forward) {
-          // Set angle to 40 degrees if airspeed below 14 m/s
-          if (airspeed < 14.) {
-            wing_angle_scheduled_sp_deg = 40.;
-          } else {
-            float airspeed_range = wing_rotation.forward_airspeed - 14.;
-            Bound(airspeed_range, 1., 10.);
-            float airspeed_step = 50. / airspeed_range;
-            wing_angle_scheduled_sp_deg = 40. + (airspeed - 14.) * airspeed_step;
-          }
-        }
+        wing_angle_scheduled_sp_deg = 90;
       }
       Bound(wing_angle_scheduled_sp_deg, 0., 90.);
       wing_rotation.wing_angle_deg_sp = wing_angle_scheduled_sp_deg;

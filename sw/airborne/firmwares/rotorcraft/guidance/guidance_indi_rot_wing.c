@@ -183,30 +183,30 @@ float *Bwls_rot_wing[3];
 int num_iter_rot_wing = 0;
 float rot_wing_du[4];
 float rot_wing_v[3];
-float Wv_rot_wing[3] = {10., 10., 1.};
-float pitch_priority_factor = 60.;//18.;
+float Wv_rot_wing[3] = {10., 10., 10.};
+float pitch_priority_factor = 11.; //18;
 float roll_priority_factor = 10.;
 float thrust_priority_factor = 7.;
 float pusher_priority_factor = 30.;
 float horizontal_accel_weight = 10.;
-float vertical_accel_weight = 1.;
+float vertical_accel_weight = 10.;
 float Wu_rot_wing[4] = {10., 10., 100., 1.};
 float pitch_pref_deg = 0;
 float pitch_pref_rad = 0;
 float push_first_order_constant = 1.0;
+float hover_motor_slowdown = 1.0;
 float a_diff_limit = 3.0;
 float a_diff_limit_z = 1.0;
 
 float rot_wing_roll_limit = 0.785; // 45 deg
 float rot_wing_pitch_limit = 0.785; // 20 deg
 
-float rot_wing_max_pitch_limit_deg = 20.;
+float rot_wing_max_pitch_limit_deg = 8.;
 float rot_wing_min_pitch_limit_deg = -20.;
 
 float airspeed_turn_lower_bound = 10.;
 
 void guidance_indi_propagate_filters(void);
-static void guidance_indi_calcg_wing(struct FloatMat33 *Gmat);
 static void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff);
 static float guidance_indi_get_liftd(void);
 
@@ -523,7 +523,7 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
     FLOAT_ANGLE_NORMALIZE(sp_accel_b.y);
     sp_accel_b.y *= gih_params.heading_bank_gain;
 
-    // Control the airspeed
+    // Control the airspeed if error small enough
     sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
 
     accel_sp.x = cpsi * sp_accel_b.x - spsi * sp_accel_b.y;
@@ -532,7 +532,7 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
   }
   else { // Go somewhere in the shortest way
 
-    if (airspeed > 10.f) {
+    if (airspeed > TURN_AIRSPEED_TH) {
       // Groundspeed vector in body frame
       float groundspeed_x = cpsi * stateGetSpeedNed_f()->x + spsi * stateGetSpeedNed_f()->y;
       float speed_increment = speed_sp_b_x - groundspeed_x;
@@ -566,7 +566,7 @@ static float bound_vz_sp(float vz_sp)
 {
   // Bound vertical speed setpoint
   if (stateGetAirspeed_f() > 13.f) {
-    Bound(vz_sp, -4.0f, 4.0f); // FIXME no harcoded values
+    Bound(vz_sp, -nav.climb_vspeed, -nav.descend_vspeed); // FIXME no harcoded values
   } else {
     Bound(vz_sp, -nav.climb_vspeed, -nav.descend_vspeed); // FIXME don't use nav settings
   }
@@ -683,79 +683,6 @@ void guidance_indi_propagate_filters(void) {
 }
 
 /**
- * Calculate the matrix of partial derivatives of the roll, pitch and thrust
- * w.r.t. the NED accelerations, taking into account the lift of a wing that is
- * horizontal at -90 degrees pitch
- *
- * @param Gmat array to write the matrix to [3x3]
- */
-void guidance_indi_calcg_wing(struct FloatMat33 *Gmat) {
-
-  /*Pre-calculate sines and cosines*/
-  float sphi = sinf(eulers_zxy.phi);
-  float cphi = cosf(eulers_zxy.phi);
-  float stheta = sinf(eulers_zxy.theta);
-  float ctheta = cosf(eulers_zxy.theta);
-  float spsi = sinf(eulers_zxy.psi);
-  float cpsi = cosf(eulers_zxy.psi);
-  //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
-
-#ifndef GUIDANCE_INDI_PITCH_EFF_SCALING
-#define GUIDANCE_INDI_PITCH_EFF_SCALING 1.0
-#endif
-
-  /*Amount of lift produced by the wing*/
-  float lift_thrust_bz = -9.81; // Sum of lift and thrust in boxy z axis (level flight) 
-  float pitch_lift = eulers_zxy.theta;
-  Bound(pitch_lift,-M_PI_2,0);
-  float lift = 0;//sinf(pitch_lift)*9.81;
-  float T = cosf(pitch_lift)*-9.81;
-
-  // get the derivative of the lift wrt to theta
-  float liftd = guidance_indi_get_liftd();
-
-  /*
-  RMAT_ELMT(*Gmat, 0, 0) =  cphi*ctheta*spsi*T + cphi*spsi*lift;
-  RMAT_ELMT(*Gmat, 1, 0) = -cphi*ctheta*cpsi*T - cphi*cpsi*lift;
-  RMAT_ELMT(*Gmat, 2, 0) = -sphi*ctheta*T -sphi*lift;
-  RMAT_ELMT(*Gmat, 0, 1) = (ctheta*cpsi - sphi*stheta*spsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
-  RMAT_ELMT(*Gmat, 1, 1) = (ctheta*spsi + sphi*stheta*cpsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
-  RMAT_ELMT(*Gmat, 2, 1) = -cphi*stheta*T*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
-  RMAT_ELMT(*Gmat, 0, 2) = stheta*cpsi + sphi*ctheta*spsi;
-  RMAT_ELMT(*Gmat, 1, 2) = stheta*spsi - sphi*ctheta*cpsi;
-  RMAT_ELMT(*Gmat, 2, 2) = cphi*ctheta;
-  */
-
-  RMAT_ELMT(*Gmat, 0, 0) =  cphi*ctheta*spsi*T + cphi*spsi*lift;
-  RMAT_ELMT(*Gmat, 1, 0) = -cphi*ctheta*cpsi*T - cphi*cpsi*lift;
-  RMAT_ELMT(*Gmat, 2, 0) = -sphi*ctheta*T -sphi*lift;
-  RMAT_ELMT(*Gmat, 0, 1) = (ctheta*cpsi - sphi*stheta*spsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
-  RMAT_ELMT(*Gmat, 1, 1) = (ctheta*spsi + sphi*stheta*cpsi)*T*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
-  RMAT_ELMT(*Gmat, 2, 1) = -cphi*stheta*T*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
-  RMAT_ELMT(*Gmat, 0, 2) = stheta*cpsi + sphi*ctheta*spsi;
-  RMAT_ELMT(*Gmat, 1, 2) = stheta*spsi - sphi*ctheta*cpsi;
-  RMAT_ELMT(*Gmat, 2, 2) = cphi*ctheta;
-
-  Gmat_rot_wing[0][0] = (float) cphi*spsi*lift_thrust_bz;
-  Gmat_rot_wing[1][0] = (float) -cphi*cpsi*lift_thrust_bz;
-  Gmat_rot_wing[2][0] = (float) -sphi*lift_thrust_bz;
-
-  Gmat_rot_wing[0][1] = (float) (ctheta*cpsi - sphi*stheta*spsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + sphi*spsi*liftd;
-  Gmat_rot_wing[1][1] = (float) (ctheta*spsi + sphi*stheta*cpsi)*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING - sphi*cpsi*liftd;
-  Gmat_rot_wing[2][1] = (float) -cphi*stheta*lift_thrust_bz*GUIDANCE_INDI_PITCH_EFF_SCALING + cphi*liftd;
-
-  Gmat_rot_wing[0][2] = (float) stheta*cpsi + sphi*ctheta*spsi;
-  Gmat_rot_wing[1][2] = (float) stheta*spsi - sphi*ctheta*cpsi;
-  Gmat_rot_wing[2][2] = (float) cphi*ctheta;
-
-  Gmat_rot_wing[0][3] = (float) ctheta*cpsi - sphi*stheta*spsi;
-  Gmat_rot_wing[1][3] = (float) ctheta*spsi + sphi*stheta*cpsi;
-  Gmat_rot_wing[2][3] = (float) -cphi*stheta;
-
-
-}
-
-/**
  * Perform WLS
  *
  * @param Gmat array to write the matrix to [3x4]
@@ -789,6 +716,7 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   float accel_bx_sp = cpsi * sp_accel.x + spsi * sp_accel.y;
   float accel_bx = cpsi * filt_accel_ned[0].o[0] + spsi * filt_accel_ned[1].o[0];
   float accel_bx_err = accel_bx_sp - accel_bx;
+  // float accel_bx_err = cpsi * a_diff.x + spsi * a_diff.y;
 
   Gmat_rot_wing[0][0] = cphi*spsi*lift_thrust_bz;
   Gmat_rot_wing[1][0] = -cphi*cpsi*lift_thrust_bz;
@@ -823,7 +751,7 @@ void guidance_indi_calcg_rot_wing(struct FloatVect3 a_diff) {
   du_max_rot_wing[0] = rot_wing_roll_limit - roll_filt.o[0]; //roll
   du_max_rot_wing[1] = rot_wing_max_pitch_limit_deg/180.*M_PI - pitch_filt.o[0]; // pitch
   du_max_rot_wing[2] = -(actuator_state_filt_vect[0]*g1g2[3][0] + actuator_state_filt_vect[1]*g1g2[3][1] + actuator_state_filt_vect[2]*g1g2[3][2] + actuator_state_filt_vect[3]*g1g2[3][3]);
-  du_max_rot_wing[3] = ((MAX_PPRZ - thrust_bx_state_filt) * STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS) * push_first_order_constant;
+  du_max_rot_wing[3] = a_diff_limit * 3;
   
   // Set prefered states
   du_pref_rot_wing[0] = 0; // prefered delta roll angle

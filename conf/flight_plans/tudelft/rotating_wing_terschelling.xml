@@ -1,35 +1,29 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="60" ground_alt="0" lat0="52.168595" lon0="4.412444" max_dist_from_home="500" name="Rotating wing Valkenburg" security_height="2">
+<flight_plan alt="60" ground_alt="0" lat0="53.398848" lon0="5.258644" max_dist_from_home="5000" name="Rotating wing Terschelling" security_height="2">
   <header>
     #include "autopilot.h"
     #include "modules/datalink/datalink.h"
 </header>
   <waypoints>
-    <waypoint name="HOME" x="12.6" y="-48.7"/>
-    <waypoint name="CLIMB" x="62.6" y="-80.4"/>
-    <waypoint name="trans" x="100." y="100."/>
-    <waypoint name="decel" x="100." y="100."/>
-    <waypoint name="end_trans" x="100." y="100."/>
-    <waypoint name="STDBY" lat="52.1682655" lon="4.4135103"/>
-    <!--<waypoint name="p1" lat="52.1674262" lon="4.4141448"/>-->
-    <waypoint name="p1" lat="52.1684116" lon="4.4149282"/>
-    <waypoint name="p2" lat="52.1675165" lon="4.4147158"/>
-    <waypoint name="p3" lat="52.1688983" lon="4.4139655"/>
-    <waypoint name="p4" lat="52.1687661" lon="4.4133220"/>
-    <waypoint name="circ" lat="52.1684116" lon="4.4149282"/>
-    <waypoint name="TD" lat="52.1681602" lon="4.4127708"/>
-    <waypoint name="APP" lat="52.1679567" lon="4.4136344"/>
-    <waypoint name="FOLLOW" lat="52.16850964562752" lon="4.413635008734417"/>
-    <waypoint lat="52.169189" lon="4.410820" name="C1"/>
-    <waypoint lat="52.168049" lon="4.406923" name="C2"/>
-    <waypoint lat="52.166515" lon="4.408235" name="C3"/>
-    <waypoint lat="52.163255" lon="4.407668" name="C4"/>
-    <waypoint lat="52.161908" lon="4.410082" name="C5"/>
-    <waypoint lat="52.162641" lon="4.416992" name="C6"/>
-    <waypoint lat="52.164861" lon="4.427268" name="C7"/>
-    <waypoint lat="52.170422" lon="4.427511" name="C8"/>
-    <waypoint lat="52.172276" lon="4.424011" name="C9"/>
+     <waypoint name="HOME" x="-657.7" y="-25.2"/>
+    <waypoint name="CLIMB" x="-476.9" y="77.1"/>
+    <waypoint name="STDBY" x="-688.0" y="13.9"/>
+    <waypoint name="p1" x="-1047.6" y="27.2"/>
+    <waypoint name="p2" x="-1091.2" y="272.9"/>
+    <waypoint name="p3" x="-718.0" y="345.1"/>
+    <waypoint name="p4" x="-641.6" y="127.3"/>
+    <waypoint name="TD" x="-472.8" y="169.5"/>
+    <waypoint name="FOLLOW" x="-593.9" y="379.7"/>
+    <waypoint lat="53.403590" lon="5.214102" name="C1"/>
+    <waypoint lat="53.399129" lon="5.219031" name="C2"/>
+    <waypoint lat="53.391752" lon="5.234877" name="C3"/>
+    <waypoint lat="53.399786" lon="5.273960" name="C4"/>
+    <waypoint lat="53.416200" lon="5.265441" name="C5"/>
+    <waypoint lat="53.424575" lon="5.252654" name="C6"/>
+    <waypoint lat="53.422246" lon="5.233265" name="C7"/>
+    <waypoint lat="53.418859" lon="5.216361" name="C8"/>
+    <waypoint lat="53.411762" lon="5.208801" name="C9"/>
   </waypoints>
   <sectors>
     <sector color="red" name="Flyzone">
@@ -78,13 +72,13 @@
         <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
         <attitude pitch="0" roll="0" throttle="0.75" until="stage_time>2" vmode="throttle"/>
     </block>
-    <block name="Approach APP">
+    <!-- <block name="Approach APP">
       <set value="false" var="force_forward"/>
       <stay alt="WaypointAlt(WP_APP)" pre_call="approach_moving_target_enable(WP_APP)" wp="APP"/>
-    </block>
+    </block> -->
     <block name="Standby" strip_button="Standby" strip_icon="home.png">
         <set value="false" var="force_forward"/>
-        <stay wp="STDBY" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+        <stay wp="STDBY"/>
     </block>
     <block name="follow_module">
       <set value="false" var="force_forward"/>
@@ -92,7 +86,7 @@
     </block>
     <block name="stay_p1">
       <set value="false" var="force_forward"/>
-      <stay wp="p1" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+      <stay wp="p1"/>
     </block>
     <block name="go_p2">
       <set value="false" var="force_forward"/>
@@ -104,16 +98,6 @@
       <set value="false" var="force_forward"/>
       <go from="p1" hmode="route" wp="p2"/>
       <stay wp="p2"/>
-    </block>
-    <block name="line_trans_fwd">
-      <set value="false" var="force_forward"/>
-      <call_once fun="NavSetWaypointHere(WP_p1)"/>
-      <stay wp="end_trans"/>
-    </block>
-    <block name="line_trans_quad">
-      <set value="false" var="force_forward"/>
-      <call_once fun="NavSetWaypointHere(WP_p1)"/>
-      <stay wp="end_trans"/>
     </block>
     <block name="route">
       <set value="false" var="force_forward"/>
@@ -129,19 +113,19 @@
     </block>
     <block name="Circle_CW">
       <set value="false" var="force_forward"/>
-      <circle radius="100" wp="circ"/>
+      <circle radius="100" wp="p1"/>
     </block>
     <block name="Circle_CCW">
       <set value="false" var="force_forward"/>
-      <circle radius="-100" wp="circ"/>
+      <circle radius="-100" wp="p1"/>
     </block>
     <block name="Circle_CW_fwd">
       <set value="true" var="force_forward"/>
-      <circle radius="100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+      <circle radius="100" wp="p1"/>
     </block>
     <block name="Circle_CCW_fwd">
       <set value="true" var="force_forward"/>
-      <circle radius="-100" wp="circ" pre_call="rot_wing_vis_transition(WP_trans, WP_decel, WP_end_trans)"/>
+      <circle radius="-100" wp="p1"/>
     </block>
     <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
         <set value="false" var="force_forward"/>
@@ -160,7 +144,7 @@
         <set value="false" var="force_forward"/>
         <stay climb="-0.5" vmode="climb" wp="TD"/>
         <!--<exception cond="!(stateGetPositionEnu_f()->z > 2.0)" deroute="flare_low"/>-->
-        <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.24)" deroute="flare_low"/>
+        <exception cond="agl_dist_valid @AND !(agl_dist_value > 0.20)" deroute="flare_low"/>
     </block>
     <block name="flare_low">
         <set value="false" var="force_forward"/>

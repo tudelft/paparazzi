@@ -101,7 +101,8 @@ inline void update_left_aileron_effectiveness(float *airspeed2, float *sinr);
 inline void update_right_aileron_effectiveness(float *airspeed2, float *sinr);
 inline void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt);
 // inline void schedule_pref_pitch_angle_deg(float *airspeed_f);
-inline void schedule_pref_pitch_angle_deg(float *sinr);
+// inline void schedule_pref_pitch_angle_deg(float *sinr);
+inline void schedule_pref_pitch_angle_deg(float wing_rot_deg);
 inline void schedule_liftd(float *airspeed2, float *sinr);
 
 #if PERIODIC_TELEMETRY
@@ -172,6 +173,7 @@ void event_eff_scheduling(void)
   update_right_aileron_effectiveness(&airspeed2, &sinr);
   update_pusher_effectiveness(&airspeed, thrust_bx_state_filt);
   //schedule_pref_pitch_angle_deg(&sinr);
+  schedule_pref_pitch_angle_deg(wing_rotation_deg);
   schedule_liftd(&airspeed2, &sinr2);
 
   // float g1_p_side_motors[2];
@@ -224,18 +226,8 @@ void update_inertia(float *cosr2, float *sinr2)
 
 void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr, float *airspeed_f)
 {
-  float g1_p_side_motors[2];
-  float g1_q_side_motors[2];
-
   float bounded_airspeed = *airspeed_f;
   Bound(bounded_airspeed, 0, 20);
-
-  // Calculate roll and pitch effectiveness of the two roll side motors
-  g1_p_side_motors[0] = rot_wing_side_motors_g1_p_0[0] * *cosr;
-  g1_p_side_motors[1] = rot_wing_side_motors_g1_p_0[1] * *cosr;
-
-  g1_q_side_motors[0] = rot_wing_side_motors_g1_q_90[0] * *sinr;
-  g1_q_side_motors[1] = rot_wing_side_motors_g1_q_90[1] * *sinr;
 
   // Update inner loop effectiveness matrix for motors
   g1g2[0][0] = g1_startup[0][0] * g1_p_multiplier / INDI_G_SCALING;
@@ -243,7 +235,7 @@ void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr, float
   g1g2[2][0] = (g1_startup[2][0] * g1_r_multiplier + g2_startup[0]) / INDI_G_SCALING;
   g1g2[3][0] = g1_startup[3][0] * g1_t_multiplier / INDI_G_SCALING;
 
-  g1g2[0][1] = g1_p_side_motors[0] * g1_p_multiplier / INDI_G_SCALING;
+  //g1g2[0][1] = g1_p_side_motors[0] * g1_p_multiplier / INDI_G_SCALING;
   //g1g2[0][1] = ((-0.00335545 - 0.00214628 * *cosr + 0.00369705 * *sinr + -0.00302647 * *cosr * *cosr + -0.00032898 * *sinr * *sinr)) * g1_p_multiplier;
   // For pprz_cmd = 5500
   g1g2[0][1] = ((0.000072804595016592 * *sk * *sk * bounded_airspeed * *cosr - 0.00129490506761079 * *cosr) / I_xx) * g1_p_multiplier;
@@ -260,7 +252,7 @@ void update_hover_motor_effectiveness(float *sk, float *cosr, float *sinr, float
   g1g2[2][2] = (g1_startup[2][2] * g1_r_multiplier + g2_startup[2]) / INDI_G_SCALING;
   g1g2[3][2] = g1_startup[3][2] * g1_t_multiplier / INDI_G_SCALING;
 
-  g1g2[0][3] = (g1_p_side_motors[1] * g1_p_multiplier - 0.283333 * bounded_airspeed * *cosr) / INDI_G_SCALING;
+  //g1g2[0][3] = (g1_p_side_motors[1] * g1_p_multiplier - 0.283333 * bounded_airspeed * *cosr) / INDI_G_SCALING;
   //g1g2[0][3] = ((0.0040856 + 0.00123478 * *cosr + -0.00428635 * *sinr + 0.00390033 * *cosr * *cosr + 0.00018527 * *sinr * *sinr)) * g1_p_multiplier;
   // For pprz_cmd = 5500
   g1g2[0][3] = -((0.000072804595016592 * *sk * *sk * bounded_airspeed * *cosr - 0.00129490506761079 * *cosr + 0.000053954 * bounded_airspeed * *cosr) / I_xx) * g1_p_multiplier;
@@ -356,7 +348,7 @@ void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt)
 
     float eff_pusher = (dFxdrpmP * drpmPdpprz / weight_sched) / 10000.;
 
-  Bound(eff_pusher, 0.00020, 0.0015);
+  Bound(eff_pusher, 0.00030, 0.0015);
   thrust_bx_eff = eff_pusher;
   } else {
     thrust_bx_eff = STABILIZATION_INDI_PUSHER_PROP_EFFECTIVENESS;
@@ -378,13 +370,27 @@ void update_pusher_effectiveness(float *airspeed_f, float pusher_cmd_filt)
 //   }
 // }
 
-void schedule_pref_pitch_angle_deg(float *sinr)
-{
-  float pitch_pref_range_deg = sched_pitch_forward_deg - sched_pitch_hover_deg;
+// void schedule_pref_pitch_angle_deg(float *sinr)
+// {
+//   float pitch_pref_range_deg = sched_pitch_forward_deg - sched_pitch_hover_deg;
 
-  // Schedule prefered pitch angle
-  float pitch_diff_deg = pitch_pref_range_deg * *sinr;
-  pitch_pref_deg = sched_pitch_hover_deg + pitch_diff_deg;
+//   // Schedule prefered pitch angle
+//   float pitch_diff_deg = pitch_pref_range_deg * *sinr;
+//   pitch_pref_deg = sched_pitch_hover_deg + pitch_diff_deg;
+// }
+
+void schedule_pref_pitch_angle_deg(float wing_rot_deg)
+{
+  float scheduled_pitch_angle = 0;
+  if (wing_rot_deg < 55) {
+    scheduled_pitch_angle = 0;
+  } else {
+    float pitch_range = 7.;
+    float pitch_progression = (wing_rot_deg - 55) / 35.;
+    scheduled_pitch_angle = pitch_range * pitch_progression;
+  }
+  Bound(scheduled_pitch_angle, 0., 7.);
+  pitch_pref_deg = scheduled_pitch_angle;
 }
 
 void schedule_liftd(float *airspeed2, float *sinr2)

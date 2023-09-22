@@ -87,6 +87,8 @@ float  oneloop_andi_filt_cutoff_p = 2.0;
 #define ONELOOP_ANDI_FILT_CUTOFF_R 20.0
 #endif
 
+
+
 // Define default settings for actuator properties
 
 #ifdef ONELOOP_ANDI_ACT_IS_SERVO
@@ -124,6 +126,11 @@ float  act_max_norm[ANDI_NUM_ACT_TOT] = = {1.0};
 float  act_min_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN_NORM;
 #else
 float  act_min_norm[ANDI_NUM_ACT_TOT] = = {0.0};
+#endif
+
+#ifndef ONELOOP_ANDI_DEBUG_MODE
+printf("Debug Mode not defined\n");
+#define ONELOOP_ANDI_DEBUG_MODE  FALSE;
 #endif
 
 /*  Define Section of the functions used in this module*/
@@ -222,7 +229,7 @@ float g   = 9.81; // [m/s^2] Gravitational Acceleration
 float Ixx = 0.251; // [kg m^2] Inertia around x axis
 float Iyy = 1.071; // [kg m^2] Inertia around y axis
 float Izz = 1.334; // [kg m^2] Inertia around z axis
-float num_thrusters = 4.0; // Number of motors used for thrust
+float num_thrusters_1l = 4.0; // Number of motors used for thrust
 /*Actuator Dynamics*/
 float w_F = 15.23; // [rad/s] First order bandwidth of actuator
 float w_B = 15.23; // [rad/s] First order bandwidth of actuator
@@ -274,16 +281,16 @@ float gamma_wls                   = 1000.0;//0.01;//100;//100000.0;
 static float Wv[ANDI_OUTPUTS]     = {1.0,1.0,1.0,10.0*100.0,10.0*100.0,100.0};//{0.0,0.0,5.0,10.0*100.0,10.0*100.0,0.0}; // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}
 static float Wu[ANDI_NUM_ACT_TOT] =  {2.0, 2.0, 2.0,2.0,2.0,2.0}; // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}{0.0, 0.0, 0.0,0.0,0.0,0.0};//
 float u_pref[ANDI_NUM_ACT_TOT]    = {0.0,0.0,0.0,0.0,0.0,0.0};
-float du_min[ANDI_NUM_ACT_TOT]; 
-float du_max[ANDI_NUM_ACT_TOT];
-float du_pref[ANDI_NUM_ACT_TOT];
+float du_min_1l[ANDI_NUM_ACT_TOT]; 
+float du_max_1l[ANDI_NUM_ACT_TOT];
+float du_pref_1l[ANDI_NUM_ACT_TOT];
 float model_pred[ANDI_OUTPUTS];
 float old_state[ANDI_NUM_ACT_TOT];
 int   number_iter = 0;
 
 /*Declaration of Reference Model and Error Controller Gains*/
 float rm_k_attitude = 0.8;
-float p1_att = 12.0;//7.68;       
+float p1_att = 7.68;//7.68; %12 works well for bebop1       
 float p2_att;      
 float p3_att;
 
@@ -355,7 +362,7 @@ float k_aD_rm ;
 
 /*Heading Loop*/
 float rm_k_head  ;  
-float p1_head = 3.0;//5.0;     
+float p1_head = 1.5;//5.0;     //3.0 works well for bebop1
 float p2_head ;
 float p3_head ;      
 
@@ -406,8 +413,8 @@ float psi_vec[4] = {0.0, 0.0, 0.0, 0.0};
 float old_time = 0.0;
 float new_time = 0.0;
 float dt_actual = 1./PERIODIC_FREQUENCY;
-struct Int32Eulers stab_att_sp_euler;
-struct Int32Quat   stab_att_sp_quat;
+struct Int32Eulers stab_att_sp_euler_1l;
+struct Int32Quat   stab_att_sp_quat_1l;
 float act_dynamics_d[ANDI_NUM_ACT_TOT];
 float actuator_state_1l[ANDI_NUM_ACT];
 
@@ -416,7 +423,7 @@ float lin_acc[3];
 float andi_u[ANDI_NUM_ACT_TOT];
 float andi_du[ANDI_NUM_ACT_TOT];
 float andi_du_n[ANDI_NUM_ACT_TOT];
-float g2_times_du;
+float g2_times_du_1l;
 float dt_1l = 1./PERIODIC_FREQUENCY;
 bool  rc_on = true;
 struct FloatEulers eulers_zxy_des;
@@ -764,23 +771,23 @@ float oneloop_andi_estimation_filt_cutoff = 2.0;
 static struct FirstOrderLowPass filt_accel_ned[3];
 //Butterworth2LowPass filt_accel_ned[3];
 Butterworth2LowPass filt_accel_body[3];
-Butterworth2LowPass roll_filt;
-Butterworth2LowPass pitch_filt;
+Butterworth2LowPass roll_filt_1l;
+Butterworth2LowPass pitch_filt_1l;
 Butterworth2LowPass yaw_filt;
 Butterworth2LowPass att_dot_meas_lowpass_filters[3];
 Butterworth2LowPass att_ref_lowpass_filters[3];
 Butterworth2LowPass rate_ref_lowpass_filters[3];
 
 
-Butterworth2LowPass measurement_lowpass_filters[3];
-Butterworth2LowPass estimation_output_lowpass_filters[3];
+Butterworth2LowPass measurement_lowpass_filters_1l[3];
+Butterworth2LowPass estimation_output_lowpass_filters_1l[3];
 
 static struct FirstOrderLowPass rates_filt_fo[3];
 static struct FirstOrderLowPass pos_filt_fo[3];
 static struct FirstOrderLowPass vel_filt_fo[3];
 Butterworth2LowPass model_pred_filt[ANDI_OUTPUTS];
 static struct FirstOrderLowPass model_pred_a_filt[3];
-struct FloatVect3 body_accel_f;
+struct FloatVect3 body_accel_f_1l;
 
 
 void init_filter(void)
@@ -809,8 +816,8 @@ void init_filter(void)
     init_butterworth_2_low_pass(&att_ref_lowpass_filters[i], tau, sample_time, 0.0);
     init_butterworth_2_low_pass(&rate_ref_lowpass_filters[i], tau, sample_time, 0.0);
   }
-  init_butterworth_2_low_pass(&roll_filt, tau, sample_time, 0.0);
-  init_butterworth_2_low_pass(&pitch_filt, tau, sample_time, 0.0);
+  init_butterworth_2_low_pass(&roll_filt_1l, tau, sample_time, 0.0);
+  init_butterworth_2_low_pass(&pitch_filt_1l, tau, sample_time, 0.0);
   init_butterworth_2_low_pass(&yaw_filt, tau, sample_time, 0.0);
 
   // Init rate filter for feedback
@@ -858,8 +865,8 @@ void oneloop_andi_propagate_filters(void) {
   update_first_order_low_pass(&filt_accel_ned[0], accel->x);
   update_first_order_low_pass(&filt_accel_ned[1], accel->y);
   update_first_order_low_pass(&filt_accel_ned[2], accel->z);
-  update_butterworth_2_low_pass(&roll_filt, eulers_zxy.phi);
-  update_butterworth_2_low_pass(&pitch_filt, eulers_zxy.theta);
+  update_butterworth_2_low_pass(&roll_filt_1l, eulers_zxy.phi);
+  update_butterworth_2_low_pass(&pitch_filt_1l, eulers_zxy.theta);
   update_butterworth_2_low_pass(&yaw_filt, eulers_zxy.psi);
   update_butterworth_2_low_pass(&filt_accel_body[0], accel_b_x);
   update_butterworth_2_low_pass(&filt_accel_body[1], accel_b_y);
@@ -1014,6 +1021,9 @@ void oneloop_andi_attitude_run(bool in_flight)
     use_increment = 1.0;
     volando = true;
     printf("I am in flight\n");
+    }
+  if (ONELOOP_ANDI_DEBUG_MODE) {
+      volando = false;
     }
 
   psi_des_rad = psi_des_deg * M_PI / 180.0;
@@ -1189,17 +1199,17 @@ void oneloop_andi_attitude_run(bool in_flight)
   // Calculate the min and max increments
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     if(i<ANDI_NUM_ACT){
-      du_min[i]  = (act_min[i]    - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
-      du_max[i]  = (act_max[i]    - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
-      du_pref[i] = (u_pref[i]     - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
+      du_min_1l[i]  = (act_min[i]    - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
+      du_max_1l[i]  = (act_max[i]    - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
+      du_pref_1l[i] = (u_pref[i]     - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
     }else{
-      du_min[i]  = (act_min[i]    - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];
-      du_max[i]  = (act_max[i]    - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
-      du_pref[i] = (0.0           - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
+      du_min_1l[i]  = (act_min[i]    - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];
+      du_max_1l[i]  = (act_max[i]    - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
+      du_pref_1l[i] = (0.0           - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
     }
     }
     // WLS Control Allocator
-    number_iter = wls_alloc_oneloop(andi_du_n, nu, du_min, du_max, bwls_1l, 0, 0, Wv, Wu, du_pref, gamma_wls, 10);
+    number_iter = wls_alloc_oneloop(andi_du_n, nu, du_min_1l, du_max_1l, bwls_1l, 0, 0, Wv, Wu, du_pref_1l, gamma_wls, 10);
     printf("@@@@@@@@@ END WLS @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
 
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
