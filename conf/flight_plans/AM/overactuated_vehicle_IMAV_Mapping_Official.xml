@@ -33,14 +33,14 @@
     <waypoint name="FOLLOW" x="-115.2" y="-38.4"/>
     <waypoint name="FOLLOW_ARUCO" x="-117.0" y="-57.3"/>
     <waypoint lat="50.907310" lon="6.224457" name="Z1"/>
-    <waypoint lat="50.910792" lon="6.224694" name="Z2"/>
-    <waypoint lat="50.910856" lon="6.225063" name="Z3"/>
+    <waypoint lat="50.910800" lon="6.224682" name="Z2"/>
+    <waypoint lat="50.910802" lon="6.225063" name="Z3"/>
     <waypoint lat="50.907300" lon="6.224761" name="Z4"/>
     <waypoint lat="50.907279" lon="6.225080" name="Z5"/>
-    <waypoint lat="50.910886" lon="6.225339" name="Z6"/>
+    <waypoint lat="50.910786" lon="6.225400" name="Z6"/>
     <waypoint lat="50.907258" lon="6.225372" name="Z7"/>
-    <waypoint lat="50.910872" lon="6.225686" name="Z8"/>
-    <waypoint lat="50.910857" lon="6.226015" name="Z9"/>
+    <waypoint lat="50.910787" lon="6.225723" name="Z8"/>
+    <waypoint lat="50.910772" lon="6.226039" name="Z9"/>
     <waypoint lat="50.907246" lon="6.225661" name="Z10"/>
     <waypoint lat="50.906376" lon="6.223196" name="_F1"/>
     <waypoint lat="50.910998" lon="6.223086" name="_F2"/>
@@ -88,7 +88,7 @@
     <waypoint lat="50.909987" lon="6.225059" name="C3"/>
     <waypoint lat="50.910031" lon="6.226726" name="CAR"/>
     <waypoint alt="130.0" lat="50.909228" lon="6.227019" name="HIKERS"/>
-    <waypoint alt="137" lat="50.9093323" lon="6.2273822" name="PL"/>
+    <waypoint alt="137.0" lat="50.909332" lon="6.227382" name="PL"/>
   </waypoints>
   <sectors>
     <sector color="red" name="HardGeofence">
