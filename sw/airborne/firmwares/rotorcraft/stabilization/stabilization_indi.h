@@ -40,6 +40,8 @@ extern float pivot_servogain_theta;
 extern float roll_gain;
 extern float indi_Wu_motor;
 extern float indi_Wu_servo;
+extern float angular_acceleration[3];
+
 
 extern float side_slip_gain_rc;
 
