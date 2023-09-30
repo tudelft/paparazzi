@@ -156,7 +156,7 @@ float Dynamic_MOTOR_K_T_OMEGASQ;
 float CL_ailerons = VEHICLE_CL_AILERONS;
 float roll_pwm_cmd; 
 
-float extra_lat_gain = 1; 
+float extra_lat_gain = 0.8; 
 
 //Variables for the NONLINEAR_CA_DEBUG message: 
 float feed_fwd_term_yaw, feed_back_term_yaw;
@@ -255,7 +255,7 @@ int waypoint_mode = 0;
 float x_stb, y_stb, z_stb;
 
 // Variables for the speed to derivative gain slider and thrust coefficient: 
-float K_d_speed = 0.03; 
+float K_d_speed = 0.02; 
 float K_T_airspeed = 0.025;
 
 //Variables for the sysmon file write: 

@@ -229,7 +229,7 @@
     <define name="MAX_FWD_ACC" value="5.0" unit="m/s^2"/>
     <define name="MIN_FWD_ACC" value="-2.5" unit="m/s^2"/> 
     <define name="MAX_LAT_ACC" value="7.0" unit="m/s^2"/>
-    <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/>
+    <define name="MAX_VERT_ACC" value="3.0" unit="m/s^2"/>
   </section>
 
   <!-- for demos -->
@@ -304,7 +304,7 @@
 
     <!-- Maximum orders -->
     <!-- General -->
-    <define name="MAX_PHI" value="30" unit="deg"/>
+    <define name="MAX_PHI" value="35" unit="deg"/>
     <define name="MAX_THETA" value="40" unit="deg"/>
     <define name="MAX_PSI_ERR" value="80" unit="deg"/>
 
@@ -439,9 +439,9 @@
 
     <define name="MAX_THETA_INDI" value="60" unit="deg"/>
     <define name="MIN_THETA_INDI" value="-15" unit="deg"/>
-    <define name="MAX_PHI_INDI" value="40" unit="deg"/>
+    <define name="MAX_PHI_INDI" value="60" unit="deg"/>
     <define name="MAX_AOA_INDI" value="18" unit="deg"/>
-    <define name="MIN_AOA_INDI" value="3" unit="deg"/>
+    <define name="MIN_AOA_INDI" value="2" unit="deg"/>
 
     <define name="MAX_DELTA_AILERONS" value="25" unit="deg"/>
     <define name="MIN_DELTA_AILERONS" value="-25" unit="deg"/>
