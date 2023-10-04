@@ -128,9 +128,37 @@ float  act_min_norm[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MIN_NORM;
 float  act_min_norm[ANDI_NUM_ACT_TOT] = = {0.0};
 #endif
 
+#ifdef ONELOOP_ANDI_WV // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}
+static float Wv[ANDI_OUTPUTS] = ONELOOP_ANDI_WV;
+#else
+static float Wv[ANDI_OUTPUTS] = {1.0};
+#endif
+
+#ifdef ONELOOP_ANDI_WU // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}
+static float Wu[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_WU;
+#else
+static float Wu[ANDI_NUM_ACT_TOT] = {1.0};
+#endif
+
+#ifdef ONELOOP_ANDI_U_PREF
+static float u_pref[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_U_PREF;
+#else
+static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
+#endif
+
 #ifndef ONELOOP_ANDI_DEBUG_MODE
 printf("Debug Mode not defined\n");
 #define ONELOOP_ANDI_DEBUG_MODE  FALSE;
+#endif
+
+#ifndef ONELOOP_ANDI_AC_HAS_PUSHER
+printf("Did not specify if ac has a pusher\n");
+#define ONELOOP_ANDI_AC_HAS_PUSHER  FALSE;
+#endif
+
+#ifndef ONELOOP_ANDI_PUSHER_IDX
+printf("Did not specify pusher index\n");
+#define ONELOOP_ANDI_PUSHER_IDX  4;
 #endif
 
 /*  Define Section of the functions used in this module*/
@@ -238,6 +266,7 @@ float w_R = 12.66; // [rad/s] First order bandwidth of actuator
 float w_P = 24.07; // [rad/s] First order bandwidth of actuator
 float w_phi = 1.0;     // [rad/s] First order bandwidth of actuator
 float w_theta = 1.0;     // [rad/s] First order bandwidth of actuator
+
 /*WLS Settings*/
 /* WLS_ALLOC - Control allocation using weighted least squares.
 
@@ -277,10 +306,11 @@ float w_theta = 1.0;     // [rad/s] First order bandwidth of actuator
                            +1 if u_i = umax_i
 
  See also: WLSC_ALLOC, IP_ALLOC, FXP_ALLOC, QP_SIM. */
+
 float gamma_wls                   = 1000.0;//0.01;//100;//100000.0;
-static float Wv[ANDI_OUTPUTS]     = {1.0,1.0,1.0,10.0*100.0,10.0*100.0,100.0};//{0.0,0.0,5.0,10.0*100.0,10.0*100.0,0.0}; // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}
-static float Wu[ANDI_NUM_ACT_TOT] =  {2.0, 2.0, 2.0,2.0,2.0,2.0}; // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}{0.0, 0.0, 0.0,0.0,0.0,0.0};//
-float u_pref[ANDI_NUM_ACT_TOT]    = {0.0,0.0,0.0,0.0,0.0,0.0};
+// static float Wv[ANDI_OUTPUTS]     = {1.0,1.0,1.0,10.0*100.0,10.0*100.0,100.0};//{0.0,0.0,5.0,10.0*100.0,10.0*100.0,0.0}; // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}
+// static float Wu[ANDI_NUM_ACT_TOT] =  {2.0,2.0,2.0,2.0,2.0,2.0,2.0}; // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}{0.0, 0.0, 0.0,0.0,0.0,0.0};//
+// float u_pref[ANDI_NUM_ACT_TOT]    = {0.0,0.0,0.0,0.0,0.0,0.0,0.0};
 float du_min_1l[ANDI_NUM_ACT_TOT]; 
 float du_max_1l[ANDI_NUM_ACT_TOT];
 float du_pref_1l[ANDI_NUM_ACT_TOT];
@@ -777,33 +807,23 @@ Butterworth2LowPass yaw_filt;
 Butterworth2LowPass att_dot_meas_lowpass_filters[3];
 Butterworth2LowPass att_ref_lowpass_filters[3];
 Butterworth2LowPass rate_ref_lowpass_filters[3];
-
-
 Butterworth2LowPass measurement_lowpass_filters_1l[3];
 Butterworth2LowPass estimation_output_lowpass_filters_1l[3];
+Butterworth2LowPass model_pred_filt[ANDI_OUTPUTS];
 
 static struct FirstOrderLowPass rates_filt_fo[3];
 static struct FirstOrderLowPass pos_filt_fo[3];
 static struct FirstOrderLowPass vel_filt_fo[3];
-Butterworth2LowPass model_pred_filt[ANDI_OUTPUTS];
 static struct FirstOrderLowPass model_pred_a_filt[3];
 struct FloatVect3 body_accel_f_1l;
 
 
 void init_filter(void)
 {
-  // printf("init of the filters");
   float tau = 1.0 / (2.0 * M_PI *oneloop_andi_filt_cutoff);
-  // printf("tau = %f\n",tau);
   float tau_a = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_a);
-  // printf("tau_a = %f\n",tau_a);
   float tau_v = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_v);
   float tau_p = 1.0 / (2.0 * M_PI * oneloop_andi_filt_cutoff_p);
-  // printf("tau_p = %f\n",tau_p);
-  // printf("oneloop_andi_filt_cutoff: %f\n", oneloop_andi_filt_cutoff);
-  // printf("oneloop_andi_filt_cutoff_a: %f\n", oneloop_andi_filt_cutoff_a);
-  // printf("oneloop_andi_filt_cutoff_v: %f\n", oneloop_andi_filt_cutoff_v);
-  // printf("oneloop_andi_filt_cutoff_p: %f\n", oneloop_andi_filt_cutoff_p);
   float sample_time = 1.0 / PERIODIC_FREQUENCY;
 
   // Filtering of the Inputs with 3 dimensions (e.g. rates and accelerations)
@@ -838,8 +858,7 @@ void init_filter(void)
   for (i = 0; i < ANDI_OUTPUTS; i++){
     if (i < 3){
        init_butterworth_2_low_pass(&model_pred_filt[i], tau_a, sample_time, 0.0);
-       init_first_order_low_pass(&model_pred_a_filt[i], tau_a, sample_time, 0.0 );
-       
+       init_first_order_low_pass(&model_pred_a_filt[i], tau_a, sample_time, 0.0);      
     } else {
     init_butterworth_2_low_pass(&model_pred_filt[i], tau, sample_time, 0.0);
     }
@@ -980,6 +999,7 @@ void oneloop_andi_attitude_run(bool in_flight)
   printf("This function is running at a dt=%f \n",new_time-old_time);
   old_time = new_time;
   dt_actual = dt_1l;//new_time - old_time;
+
   // Calculate Position error in XY from previous iteration to schedule gains of position
   float xy_err[2];
   xy_err[0] = pos_ref[0]-pos_1l[0];
@@ -1002,10 +1022,6 @@ void oneloop_andi_attitude_run(bool in_flight)
 
   // Register attitude to be used in this loop
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-
-  // eulers_zxy.phi   = stateGetNedToBodyEulers_f()->phi;
-  // eulers_zxy.theta = stateGetNedToBodyEulers_f()->theta;
-  // eulers_zxy.psi   = stateGetNedToBodyEulers_f()->psi;
 
   init_controller();
   calc_normalization();
@@ -1030,8 +1046,8 @@ void oneloop_andi_attitude_run(bool in_flight)
   
   if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
     printf("I AM IN ATT\n");
-    eulers_zxy_des.phi   = (float) (radio_control.values[RADIO_ROLL] )/9600.0*45.0*3.14/180.0;//0.0;
-    eulers_zxy_des.theta = (float) (radio_control.values[RADIO_PITCH])/9600.0*45.0*3.14/180.0;//0.0;
+    eulers_zxy_des.phi   = (float) (radio_control.values[RADIO_ROLL] )/9600.0*45.0*3.14/180.0;
+    eulers_zxy_des.theta = (float) (radio_control.values[RADIO_PITCH])/9600.0*45.0*3.14/180.0;
     eulers_zxy_des.psi   = eulers_zxy.psi;//
     psi_des_rad          = eulers_zxy.psi;
     check_1st_nav  = true;
@@ -1040,7 +1056,7 @@ void oneloop_andi_attitude_run(bool in_flight)
   att_1l[0] = eulers_zxy.phi                        * use_increment;
   att_1l[1] = eulers_zxy.theta                      * use_increment;
   att_1l[2] = eulers_zxy.psi                        * use_increment;
-  oneloop_andi_propagate_filters(); //needs to be after update of attitude vector
+  oneloop_andi_propagate_filters();   //needs to be after update of attitude vector
   att_d[0]  = rates_filt_fo[0].last_out             * use_increment;
   att_d[1]  = rates_filt_fo[1].last_out             * use_increment;
   att_d[2]  = rates_filt_fo[2].last_out             * use_increment;
@@ -1048,19 +1064,18 @@ void oneloop_andi_attitude_run(bool in_flight)
   att_2d[1] = ang_acc[1]                            * use_increment;
   att_2d[2] = ang_acc[2]                            * use_increment;
 
-  pos_1l[0] = stateGetPositionNed_f()->x;   // pos_filt_fo[0].last_out;s
-  pos_1l[1] = stateGetPositionNed_f()->y;   // pos_filt_fo[1].last_out;s
-  pos_1l[2] = stateGetPositionNed_f()->z;   // pos_filt_fo[2].last_out;s
-  pos_d[0]  = stateGetSpeedNed_f()->x;      // vel_filt_fo[0].last_out;s
-  pos_d[1]  = stateGetSpeedNed_f()->y;      // vel_filt_fo[1].last_out;s
-  pos_d[2]  = stateGetSpeedNed_f()->z;      // vel_filt_fo[2].last_out;s
-  //struct NedCoor_f *accel = stateGetAccelNed_f();
+  pos_1l[0] = stateGetPositionNed_f()->x;   
+  pos_1l[1] = stateGetPositionNed_f()->y;   
+  pos_1l[2] = stateGetPositionNed_f()->z;   
+  pos_d[0]  = stateGetSpeedNed_f()->x;      
+  pos_d[1]  = stateGetSpeedNed_f()->y;      
+  pos_d[2]  = stateGetSpeedNed_f()->z;      
   pos_2d[0] = lin_acc[0];
   pos_2d[1] = lin_acc[1];
   pos_2d[2] = lin_acc[2];
   
-  int8_t i;
   // Update bwls_1l
+  int8_t i;
   for (i = 0; i < ANDI_OUTPUTS; i++) {
     bwls_1l[i] = g1g2_1l[i];
   }
@@ -1068,6 +1083,7 @@ void oneloop_andi_attitude_run(bool in_flight)
 
   // Generate reference signals with reference model
   float a_thrust = 0.0;
+  float thrust_cmd_1l = 0.0;
   if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
     Wv[0] = 0.0;
     Wv[1] = 0.0;
@@ -1078,13 +1094,12 @@ void oneloop_andi_attitude_run(bool in_flight)
     float_vect_zero(pos_3d_ref,3);
     float_vect_copy(pos_init,pos_1l,3);
 
-    float thrust_cmd_1l = (float) radio_control.values[RADIO_THROTTLE];
-    Bound(thrust_cmd_1l,0,MAX_PPRZ);
-    //printf("thrust_cmd_1l: %f\n",thrust_cmd_1l);
+    // Create commands adhoc to get actuators to the wanted level
+    thrust_cmd_1l = (float) radio_control.values[RADIO_THROTTLE];
+    Bound(thrust_cmd_1l,0.0,MAX_PPRZ); 
     for (i = 0; i < ANDI_NUM_ACT; i++) {
      a_thrust +=(thrust_cmd_1l - use_increment*actuator_state_1l[i]) * bwls_1l[2][i] / (ratio_u_un[i] * ratio_vn_v[i]);
     }
-    //printf("a_thrust: %f\n",a_thrust);
   }else{
     printf("I AM IN NAV\n");
     Wv[0] = 1.0;
@@ -1182,9 +1197,6 @@ void oneloop_andi_attitude_run(bool in_flight)
     float k3_att_e[3] = {k_pdot_e, k_qdot_e,  k_psi_2d_e};
     float y_4d_att[3];
     ec_3rd_att(y_4d_att, att_ref, att_d_ref, att_2d_ref, att_3d_ref, att_1l, att_d, att_2d, k1_att_e, k2_att_e, k3_att_e);
-    //printf("pos_3d_ref[0]: %f\n",pos_3d_ref[0]);
-    //printf("pos_3d_ref[1]: %f\n",pos_3d_ref[1]);
-    //printf("pos_3d_ref[2]: %f\n",pos_3d_ref[2]);
 
     nu[0] = ec_3rd(pos_ref[0], pos_d_ref[0], pos_2d_ref[0], pos_3d_ref[0], pos_1l[0], pos_d[0], pos_2d[0], k_N_e, k_vN_e, k_aN_e);
     nu[1] = ec_3rd(pos_ref[1], pos_d_ref[1], pos_2d_ref[1], pos_3d_ref[1], pos_1l[1], pos_d[1], pos_2d[1], k_E_e, k_vE_e, k_aE_e);
@@ -1229,6 +1241,10 @@ void oneloop_andi_attitude_run(bool in_flight)
     andi_u[ANDI_NUM_ACT+1] = andi_du[ANDI_NUM_ACT+1];
   }
 
+  // Overwrite the pusher command if enabled and in ATT
+  if ((ONELOOP_ANDI_AC_HAS_PUSHER)&&(autopilot.mode==AP_MODE_ATTITUDE_DIRECT)){
+    andi_u[ONELOOP_ANDI_PUSHER_IDX] = radio_control.values[RADIO_AUX4];
+  }
   // TODO : USE THE PROVIDED MAX AND MIN and change limits for phi and theta
   // Bound the inputs to the actuators
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
@@ -1251,7 +1267,6 @@ void oneloop_andi_attitude_run(bool in_flight)
   }
 
   psi_des_deg = psi_des_rad * 180.0 / M_PI;
-
 }
 
 void get_act_state_oneloop(void)
@@ -1287,76 +1302,81 @@ void sum_g1g2_1l(void) {
 
   float T = -9.81; //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
   float scaler;
-  // M0
-  scaler = act_dynamics[0] * ratio_u_un[0] * ratio_vn_v[0] / ANDI_G_SCALING;
+  
+  // M0 (Front)
+  int i = 0;
+  scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
+  // g1g2_1l[0][i] = (sphi * spsi + cphi * cpsi * stheta) * g1_1l[2][i] * scaler;
+  // g1g2_1l[1][i] = (cphi * spsi * stheta - cpsi * sphi) * g1_1l[2][i] * scaler;
+  // g1g2_1l[2][i] = (cphi * ctheta                     ) * g1_1l[2][i] * scaler;
+  g1g2_1l[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * g1_1l[2][i] * scaler;
+  g1g2_1l[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * g1_1l[2][i] * scaler;
+  g1g2_1l[2][i] = (cphi * ctheta                       ) * g1_1l[2][i] * scaler;
+  g1g2_1l[3][i] = (g1_1l[3][i])                                        * scaler;
+  g1g2_1l[4][i] = (g1_1l[4][i])                                        * scaler;
+  g1g2_1l[5][i] = (g1_1l[5][i] + g2_1l[i])                             * scaler;
+  
+  // M1 (Right)
+  i = i + 1;
+  scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
+  g1g2_1l[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * g1_1l[2][i] * scaler;
+  g1g2_1l[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * g1_1l[2][i] * scaler;
+  g1g2_1l[2][i] = (cphi * ctheta                       ) * g1_1l[2][i] * scaler;
+  g1g2_1l[3][i] = (g1_1l[3][i])                                        * scaler;
+  g1g2_1l[4][i] = (g1_1l[4][i])                                        * scaler;
+  g1g2_1l[5][i] = (g1_1l[5][i] + g2_1l[i])                             * scaler;  
+  
+  // M2 (Back)
+  i = i + 1;
+  scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
+  g1g2_1l[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * g1_1l[2][i] * scaler;
+  g1g2_1l[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * g1_1l[2][i] * scaler;
+  g1g2_1l[2][i] = (cphi * ctheta                       ) * g1_1l[2][i] * scaler;
+  g1g2_1l[3][i] = (g1_1l[3][i])                                        * scaler;
+  g1g2_1l[4][i] = (g1_1l[4][i])                                        * scaler;
+  g1g2_1l[5][i] = (g1_1l[5][i] + g2_1l[i])                             * scaler;  
+  
+  // M3 (Left)
+  i = i + 1;
+  scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
+  g1g2_1l[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * g1_1l[2][i] * scaler;
+  g1g2_1l[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * g1_1l[2][i] * scaler;
+  g1g2_1l[2][i] = (cphi * ctheta                       ) * g1_1l[2][i] * scaler;
+  g1g2_1l[3][i] = (g1_1l[3][i])                                        * scaler;
+  g1g2_1l[4][i] = (g1_1l[4][i])                                        * scaler;
+  g1g2_1l[5][i] = (g1_1l[5][i] + g2_1l[i])                             * scaler; 
+  
+  if (ONELOOP_ANDI_AC_HAS_PUSHER){
+  // M4 (Pusher)
+    i = i + 1;
+    scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
+    g1g2_1l[0][i] = (cpsi * ctheta - sphi * spsi * stheta) * g1_1l[2][i] * scaler;
+    g1g2_1l[1][i] = (ctheta * spsi + cpsi * sphi * stheta) * g1_1l[2][i] * scaler;
+    g1g2_1l[2][i] = (- cphi * stheta                     ) * g1_1l[2][i] * scaler;
+    g1g2_1l[3][i] = 0.0;
+    g1g2_1l[4][i] = 0.0;
+    g1g2_1l[5][i] = 0.0;
+  }
 
-  g1g2_1l[0][0] = (sphi * spsi + cphi * cpsi * stheta) * g1_1l[2][0] * scaler;
-  g1g2_1l[1][0] = (cphi * spsi * stheta - cpsi * sphi) * g1_1l[2][0] * scaler;
-  g1g2_1l[2][0] = (cphi * ctheta                     ) * g1_1l[2][0] * scaler;
-  g1g2_1l[3][0] = (g1_1l[3][0])                                      * scaler;
-  g1g2_1l[4][0] = (g1_1l[4][0])                                      * scaler;
-  g1g2_1l[5][0] = (g1_1l[5][0] + g2_1l[0])                           * scaler;
-  // M1
-  scaler = act_dynamics[1] * ratio_u_un[1] * ratio_vn_v[1] / ANDI_G_SCALING;
-  g1g2_1l[0][1] = (sphi * spsi + cphi * cpsi * stheta) * g1_1l[2][1] * scaler;
-  g1g2_1l[1][1] = (cphi * spsi * stheta - cpsi * sphi) * g1_1l[2][1] * scaler;
-  g1g2_1l[2][1] = (cphi * ctheta                     ) * g1_1l[2][1] * scaler;
-  g1g2_1l[3][1] = (g1_1l[3][1])                     * scaler;
-  g1g2_1l[4][1] = (g1_1l[4][1])                     * scaler;
-  g1g2_1l[5][1] = (g1_1l[5][1] + g2_1l[1])       * scaler;  
-  // M2
-  scaler = act_dynamics[2] * ratio_u_un[2] * ratio_vn_v[2] / ANDI_G_SCALING;
-  g1g2_1l[0][2] = (sphi * spsi + cphi * cpsi * stheta) * g1_1l[2][2] * scaler;
-  g1g2_1l[1][2] = (cphi * spsi * stheta - cpsi * sphi) * g1_1l[2][2] * scaler;
-  g1g2_1l[2][2] = (cphi * ctheta                     ) * g1_1l[2][2] * scaler;
-  g1g2_1l[3][2] = (g1_1l[3][2])                                      * scaler;
-  g1g2_1l[4][2] = (g1_1l[4][2])                                      * scaler;
-  g1g2_1l[5][2] = (g1_1l[5][2] + g2_1l[2])                           * scaler;  
-  // M3
-  scaler = act_dynamics[3] * ratio_u_un[3] * ratio_vn_v[3] / ANDI_G_SCALING;
-  g1g2_1l[0][3] = (sphi * spsi + cphi * cpsi * stheta) * g1_1l[2][3] * scaler;
-  g1g2_1l[1][3] = (cphi * spsi * stheta - cpsi * sphi) * g1_1l[2][3] * scaler;
-  g1g2_1l[2][3] = (cphi * ctheta                     ) * g1_1l[2][3] * scaler;
-  g1g2_1l[3][3] = (g1_1l[3][3])                                      * scaler;
-  g1g2_1l[4][3] = (g1_1l[4][3])                                      * scaler;
-  g1g2_1l[5][3] = (g1_1l[5][3] + g2_1l[3])                           * scaler; 
   // Phi
-  scaler = act_dynamics[4] * ratio_u_un[4] * ratio_vn_v[4];
-  // g1g2_1l[0][4] = (cphi * spsi - sphi * cpsi * stheta)  * T * scaler;
-  // g1g2_1l[1][4] = (-sphi * spsi * stheta - cpsi * cphi) * T * scaler;
-  // g1g2_1l[2][4] = -ctheta * sphi                        * T * scaler;
-  // g1g2_1l[3][4] = 0.0;
-  // g1g2_1l[4][4] = 0.0;
-  // g1g2_1l[5][4] = 0.0;
-
-  g1g2_1l[0][4] = (cphi*ctheta*spsi)  * T * scaler;
-  g1g2_1l[1][4] = (-cphi*ctheta*cpsi) * T * scaler;
-  g1g2_1l[2][4] = -sphi*ctheta                      * T * scaler;
-  // g1g2_1l[0][4] = (ctheta*spsi)  * T * scaler;
-  // g1g2_1l[1][4] = (-ctheta*cpsi) * T * scaler;
-  // g1g2_1l[2][4] = 0.0;
-  g1g2_1l[3][4] = 0.0;
-  g1g2_1l[4][4] = 0.0;
-  g1g2_1l[5][4] = 0.0;
+  i = i + 1;
+  scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i];
+  g1g2_1l[0][i] = (cphi*ctheta*spsi)  * T * scaler;
+  g1g2_1l[1][i] = (-cphi*ctheta*cpsi) * T * scaler;
+  g1g2_1l[2][i] = -sphi*ctheta        * T * scaler;
+  g1g2_1l[3][i] = 0.0;
+  g1g2_1l[4][i] = 0.0;
+  g1g2_1l[5][i] = 0.0;
 
   // Theta
-  scaler = act_dynamics[5] * ratio_u_un[5] * ratio_vn_v[5];
-  // g1g2_1l[0][5] = (cphi * cpsi * ctheta) * T * scaler;
-  // g1g2_1l[1][5] = (cphi * spsi * ctheta) * T * scaler;
-  // g1g2_1l[2][5] = -stheta * cphi         * T * scaler;
-  // g1g2_1l[3][5] = 0.0;
-  // g1g2_1l[4][5] = 0.0;
-  // g1g2_1l[5][5] = 0.0;
-
-  g1g2_1l[0][5] = (ctheta*cpsi - sphi*stheta*spsi) * T * scaler;
-  g1g2_1l[1][5] = (ctheta*spsi + sphi*stheta*cpsi) * T * scaler;
-  g1g2_1l[2][5] = -stheta * cphi         * T * scaler;
-  // g1g2_1l[0][5] = (cpsi) * T * scaler;
-  // g1g2_1l[1][5] = (spsi) * T * scaler;
-  // g1g2_1l[2][5] = 0.0;
-  g1g2_1l[3][5] = 0.0;
-  g1g2_1l[4][5] = 0.0;
-  g1g2_1l[5][5] = 0.0;
+  i = i + 1;
+  scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i];
+  g1g2_1l[0][i] = (ctheta*cpsi - sphi*stheta*spsi) * T * scaler;
+  g1g2_1l[1][i] = (ctheta*spsi + sphi*stheta*cpsi) * T * scaler;
+  g1g2_1l[2][i] = -stheta * cphi                   * T * scaler;
+  g1g2_1l[3][i] = 0.0;
+  g1g2_1l[4][i] = 0.0;
+  g1g2_1l[5][i] = 0.0;
   }
 
 
@@ -1372,9 +1392,6 @@ void calc_normalization(void){
     ratio_u_un[i] = (act_max[i]-act_min[i])/(act_max_norm[i]-act_min_norm[i]);
     //printf("ratio_u_un %i is %f\n",i,ratio_u_un[i]);
   }
-  //printf("act_dynamics[0]=%f\n",act_dynamics[0]);
-  //printf("dt_actual=%f\n",dt_actual);
-  //printf("exp[0]=%f\n",exp(-act_dynamics[0]*dt_actual));
 }
 
 void calc_model(void){
