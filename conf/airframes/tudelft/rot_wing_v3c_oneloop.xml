@@ -16,12 +16,7 @@
                 <configure VALUE="UART3" NAME="SBUS_PORT"/>
             </module>
             <module NAME="sys_mon"/>
-            <!-- <module NAME="flight_recorder"/> -->
-            <!--<module NAME="adc_generic">
-                <configure VALUE="ADC_4" NAME="ADC_CHANNEL_GENERIC1"/>
-                <configure VALUE="ADC_5" NAME="ADC_CHANNEL_GENERIC2"/>
-            </module>-->
-
+            <module NAME="flight_recorder"/>
             <module TYPE="ms45xx_i2c" NAME="airspeed">
                 <define NAME="USE_I2C2"/>
                 <define VALUE="i2c2" NAME="MS45XX_I2C_DEV"/>
@@ -36,14 +31,7 @@
                 <configure name="TFMINI_PORT" value="UART8"/>
                 <configure name="USE_TFMINI_AGL" value="TRUE"/>
             </module>
-
-            <!-- <module name="mavlink">
-                <configure name="MAVLINK_BAUD" value="B115200"/>
-                <configure name="MAVLINK_PORT" value="UART8"/>
-            </module> -->
-
-            <!-- <module name="ctrl_eff_sched_rot_wing_v3b"/> -->
-            
+            <!-- <module name="ctrl_eff_sched_rot_wing_v3b"/> -->           
             <define VALUE="RADIO_AUX1" NAME="RADIO_TH_HOLD"/>
             <define VALUE="RADIO_AUX2" NAME="RADIO_FMODE"/>
             <define VALUE="RADIO_AUX3" NAME="RADIO_FBW_MODE"/>
