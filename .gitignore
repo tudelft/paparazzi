@@ -1,6 +1,7 @@
 # ignore html dir for github pages
 /doc/generated
 /doc/manual/generated
+/conf/messages.xml
 
 *.so
 *.[oa]
