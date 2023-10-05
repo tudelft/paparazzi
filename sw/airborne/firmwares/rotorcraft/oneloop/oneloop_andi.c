@@ -43,7 +43,6 @@
 #include "wls/wls_alloc.h"
 #include <stdio.h>
 
-// Define default filter cutoff frequencies
 
 #ifdef ONELOOP_ANDI_FILT_CUTOFF
 float  oneloop_andi_filt_cutoff = ONELOOP_ANDI_FILT_CUTOFF;
@@ -87,10 +86,6 @@ float  oneloop_andi_filt_cutoff_p = 2.0;
 #define ONELOOP_ANDI_FILT_CUTOFF_R 20.0
 #endif
 
-
-
-// Define default settings for actuator properties
-
 #ifdef ONELOOP_ANDI_ACT_IS_SERVO
 bool   actuator_is_servo[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_IS_SERVO;
 #else
@@ -102,7 +97,6 @@ float  act_dynamics[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_DYN;
 #else
 float  act_dynamics[ANDI_NUM_ACT_TOT] = = {0};
 #endif
-
 
 #ifdef ONELOOP_ANDI_ACT_MAX
 float  act_max[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX;
@@ -222,7 +216,7 @@ static void send_oneloop_andi(struct transport_tx *trans, struct link_device *de
                                         &att_2d[1],
                                         &att_2d[2],
                                         ANDI_OUTPUTS, nu,
-                                        ANDI_NUM_ACT, actuator_state_1l); //andi_u,actuator_state_1l
+                                        ANDI_NUM_ACT, actuator_state_1l);
 }
 static void send_oneloop_guidance(struct transport_tx *trans, struct link_device *dev)
 {
@@ -248,7 +242,7 @@ static void send_oneloop_guidance(struct transport_tx *trans, struct link_device
                                         &pos_3d_ref[0],
                                         &pos_3d_ref[1],
                                         &pos_3d_ref[2],
-                                        ANDI_NUM_ACT_TOT,andi_u); //andi_u
+                                        ANDI_NUM_ACT_TOT,andi_u);
 }
 #endif
 /*Physical Properties RW3C*/
@@ -307,10 +301,7 @@ float w_theta = 1.0;     // [rad/s] First order bandwidth of actuator
 
  See also: WLSC_ALLOC, IP_ALLOC, FXP_ALLOC, QP_SIM. */
 
-float gamma_wls                   = 1000.0;//0.01;//100;//100000.0;
-// static float Wv[ANDI_OUTPUTS]     = {1.0,1.0,1.0,10.0*100.0,10.0*100.0,100.0};//{0.0,0.0,5.0,10.0*100.0,10.0*100.0,0.0}; // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}
-// static float Wu[ANDI_NUM_ACT_TOT] =  {2.0,2.0,2.0,2.0,2.0,2.0,2.0}; // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}{0.0, 0.0, 0.0,0.0,0.0,0.0};//
-// float u_pref[ANDI_NUM_ACT_TOT]    = {0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+float gamma_wls                   = 1000.0;
 float du_min_1l[ANDI_NUM_ACT_TOT]; 
 float du_max_1l[ANDI_NUM_ACT_TOT];
 float du_pref_1l[ANDI_NUM_ACT_TOT];
@@ -421,12 +412,12 @@ float p_nav    ;
 float v_nav    ;
 float a_nav    ;
 float j_nav    ;
-float v_nav_des = 1.2;//2.5;
+float v_nav_des = 1.2;
 float max_a_nav = 8.0;
 float max_v_nav = 5.0;
 
-float r_oval    = 2.0;//5.0;
-float l_oval    = 0.1;//10.0;
+float r_oval    = 2.0;
+float l_oval    = 0.1;
 float psi_oval  = 0.0;
 float p_oval[3] = {0.0,0.0,0.0};
 float v_oval[3] = {0.0,0.0,0.0};
@@ -569,10 +560,7 @@ void vect_bound_3d(float vect[3], float bound) {
 /* Generate higher order bound based on lower order bound*/
 float ho_bound(float dt, float x_d[3],float x_bound){
   float x_d_norm = float_vect_norm(x_d,3);
-  // printf("x_d_norm: %f\n", x_d_norm);
-  // printf("x_bound: %f\n", x_bound);
   float x_d_bound = (x_bound-x_d_norm)/dt;
-  // printf("x_d_bound: %f\n", x_d_bound);
   return fabs(x_d_bound);
 }
 /*Reference Model Definition*/
@@ -624,23 +612,14 @@ void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], f
   float e_x[3];
   float e_x_d[3];
   float e_x_2d[3];
-  // printf("x_d_bound: %f\n", x_d_bound);
-  // printf("norm(x_d_ref): %f\n", float_vect_norm(x_d_ref,3));
   float x_2d_bound_vel = 1000.0;//(x_d_bound - float_vect_norm(x_d_ref,3)) / dt;
-  // printf("x_2d_bound_vel: %f\n", x_2d_bound_vel);
   float x_2d_bound_gen = fminf(x_2d_bound_vel, x_2d_bound);
-  // printf("x_2d_bound_gen: %f\n", x_2d_bound_gen);
   float x_3d_bound = ho_bound(dt, x_2d_ref, x_2d_bound_gen);
-  // printf("x_3d_bound: %f\n", x_3d_bound);
   err_3d(e_x, x_des, x_ref, k1_rm);
   vect_bound_3d(e_x,x_d_bound);
-  // printf("e_x: %f\n", e_x[0]);
   err_3d(e_x_d, e_x, x_d_ref, k2_rm);
   vect_bound_3d(e_x_d,x_2d_bound);
-  // printf("e_x_d: %f\n", e_x_d[0]);
   err_3d(e_x_2d, e_x_d, x_2d_ref, k3_rm);
-  // printf("e_x_2d: %f\n", e_x_2d[0]);
-  // printf("e_x_2d: %f\n", e_x_2d[0]);
   float_vect_copy(x_3d_ref,e_x_2d,3);
   integrate_3d(dt, x_2d_ref, x_3d_ref);
   vect_bound_3d(x_2d_ref, x_2d_bound);
@@ -680,7 +659,6 @@ void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[
   float_vect_sum(y_4d, y_4d, y_4d_1, 3);
   float_vect_sum(y_4d, y_4d, y_4d_2, 3);
   float_vect_sum(y_4d, y_4d, y_4d_3, 3);
-  //return y_4d;
 }
 static float ec_2rd(float x_ref, float x_d_ref, float x_2d_ref, float x, float x_d, float k1_e, float k2_e){
   float y_3d = k1_e*(x_ref-x)+k2_e*(x_d_ref-x_d)+x_2d_ref;
@@ -876,8 +854,6 @@ void oneloop_andi_propagate_filters(void) {
   float rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
   float pos_vect[3]  = {stateGetPositionNed_f()->x,stateGetPositionNed_f()->y,stateGetPositionNed_f()->z};
   float vel_vect[3]  = {stateGetSpeedNed_f()->x,stateGetSpeedNed_f()->y,stateGetSpeedNed_f()->z};
-  // printf("oneloop_andi_filt_cutoff_a = %f\n",oneloop_andi_filt_cutoff_a);
-  //printf("tau_a = %f\n",tau_a);
   // update_butterworth_2_low_pass(&filt_accel_ned[0], accel->x);
   // update_butterworth_2_low_pass(&filt_accel_ned[1], accel->y);
   // update_butterworth_2_low_pass(&filt_accel_ned[2], accel->z);
@@ -907,10 +883,7 @@ void oneloop_andi_propagate_filters(void) {
  
     ang_acc[i] = (att_dot_meas_lowpass_filters[i].o[0]- att_dot_meas_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY + model_pred[3+i] - model_pred_filt[3+i].o[0];
     //lin_acc[i] = filt_accel_ned[i].o[0] + model_pred[i] - model_pred_filt[i].o[0];  
-    // Uncomment me when done
-    lin_acc[i] = filt_accel_ned[i].last_out + model_pred[i] - model_pred_a_filt[i].last_out; 
-    //ang_acc[i] = (rates_filt_fo[i].last_out- old_rate) * PERIODIC_FREQUENCY;
-    
+    lin_acc[i] = filt_accel_ned[i].last_out + model_pred[i] - model_pred_a_filt[i].last_out;     
 }}
 
 /*Init function of oneloop controller*/
@@ -1085,6 +1058,7 @@ void oneloop_andi_attitude_run(bool in_flight)
   float a_thrust = 0.0;
   float thrust_cmd_1l = 0.0;
   if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
+    // FIX ME: This is a hack to get the WLS TO IGNORE XY POSITION IN ATTITUDE DIRECT MODE. Rather use another variable so WV is not overwritten.
     Wv[0] = 0.0;
     Wv[1] = 0.0;
     float_vect_copy(pos_des,pos_1l,3);
@@ -1202,7 +1176,6 @@ void oneloop_andi_attitude_run(bool in_flight)
     nu[1] = ec_3rd(pos_ref[1], pos_d_ref[1], pos_2d_ref[1], pos_3d_ref[1], pos_1l[1], pos_d[1], pos_2d[1], k_E_e, k_vE_e, k_aE_e);
     nu[2] = ec_3rd(pos_ref[2], pos_d_ref[2], pos_2d_ref[2], pos_3d_ref[2], pos_1l[2], pos_d[2], pos_2d[2], k_D_e, k_vD_e, k_aD_e); 
 
-
     nu[3] = y_4d_att[0];  
     nu[4] = y_4d_att[1]; 
     nu[5] = y_4d_att[2]; 
@@ -1288,6 +1261,7 @@ void get_act_state_oneloop(void)
 /**
  * Function that sums g1 and g2 to obtain the g1_g2 matrix
  * It also undoes the scaling that was done to make the values readable
+ * FIXME: make this function into a for loop to make it more adaptable to different configurations
  */
 
 void sum_g1g2_1l(void) {
@@ -1385,31 +1359,28 @@ void calc_normalization(void){
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
     act_dynamics_d[i] = 1.0-exp(-act_dynamics[i]*dt_actual);
     Bound(act_dynamics_d[i],0.0,1.0);
-    //printf("discrete dynamics actuator %i is %f\n",i,act_dynamics_d[i]);
     ratio_vn_v[i] = 1.0;
     Bound(act_max[i],0,MAX_PPRZ);
     Bound(act_min[i],-MAX_PPRZ,0);
     ratio_u_un[i] = (act_max[i]-act_min[i])/(act_max_norm[i]-act_min_norm[i]);
-    //printf("ratio_u_un %i is %f\n",i,ratio_u_un[i]);
   }
 }
 
+/**
+ * Function that calculates the model prediction for the complementary filter.
+ * FIXME: Switch to absolute prediction instead of delta prediction for linear accelerations
+ */
 void calc_model(void){
-  // TO DO switch to complementary filter on delta_u instead of u
   int8_t i;
   int8_t j;
- 
   for (i = 0; i < ANDI_OUTPUTS; i++){
-    //model_pred[i] = 0.0;
     for (j = 0; j < ANDI_NUM_ACT_TOT; j++){
-      //THIS MIGHT BE WRONG
       if (j < ANDI_NUM_ACT){
         model_pred[i] = model_pred[i] +  (actuator_state_1l[j] - old_state[j]) * g1g2_1l[i][j]    / (act_dynamics[j] * ratio_u_un[j] * ratio_vn_v[j]);
       } else {
         model_pred[i] = model_pred[i] +  (att_1l[j-ANDI_NUM_ACT] - old_state[j]) * g1g2_1l[i][j]  / (act_dynamics[j] * ratio_u_un[j] * ratio_vn_v[j]);
       }
     }
-     //printf("Model Prediction axis %i = %f\n",i,model_pred[i]);
   }
   // Store the old state of the actuators for the next iteration
   for ( j = 0; j < ANDI_NUM_ACT_TOT; j++){
@@ -1566,15 +1537,6 @@ void straight_oval(float s, float r, float l, float psi_i, float v_route, float 
             j[0] = cb * j_route - cb * v3 / r2 - 3 * sb * a_route * v_route / r;
             j[1] = sb * v3 / r2 - sb * j_route - 3 * cb * a_route * v_route / r;
             j[2] = 0;
-            //v[0] = v_route * cosf(beta);
-            //v[1] = -v_route * sinf(beta);
-            //v[2] = 0;
-            //a[0] = v_route * v_route / r * (-sinf(beta));
-            //a[1] = v_route * v_route / r * (-cosf(beta));
-            //a[2] = 0;
-            //j[0] = 0;
-            //j[1] = 0;
-            //j[2] = 0;
         } else if (dist < s3) {
             float sector = dist - s2;
                for (i = 0; i < 3; i++){
