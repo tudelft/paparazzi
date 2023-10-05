@@ -211,8 +211,8 @@
     <!-- </section> -->
 
   <!-- Maximum limits of the vehicle in manual speed control mode. limits are in the control rf -->
-  <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
-    <!-- <define name="MAX_FWD_SPEED" value="20.0" unit="m/s"/>
+  <!-- <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
+    <define name="MAX_FWD_SPEED" value="20.0" unit="m/s"/>
     <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> 
     <define name="MIN_FWD_SPEED" value="-4.0" unit="m/s"/>
     <define name="MAX_LAT_SPEED" value="7.0" unit="m/s"/>
@@ -220,7 +220,10 @@
     <define name="MAX_FWD_ACC" value="4.0" unit="m/s^2"/>
     <define name="MIN_FWD_ACC" value="-1.8" unit="m/s^2"/> 
     <define name="MAX_LAT_ACC" value="9.0" unit="m/s^2"/>
-    <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/> -->
+    <define name="MAX_VERT_ACC" value="5.0" unit="m/s^2"/> 
+  </section> -->
+
+  <section name="FWD_LIMITS" prefix="LIMITS_FWD_">
     <define name="MAX_FWD_SPEED" value="25.0" unit="m/s"/>
     <define name="MAX_AIRSPEED" value="15.0" unit="m/s"/> 
     <define name="MIN_FWD_SPEED" value="-5.0" unit="m/s"/>
