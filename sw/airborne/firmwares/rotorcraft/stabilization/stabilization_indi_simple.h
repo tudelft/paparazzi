@@ -78,6 +78,8 @@ struct IndiVariables {
   struct IndiEstimation est; ///< Estimation parameters for adaptive INDI
 };
 
+// TEST
+extern struct FloatRates rate_sp_log;
 
 extern struct IndiVariables indi;
 extern void stabilization_indi_init(void);

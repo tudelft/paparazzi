@@ -40,7 +40,6 @@ extern float min_snap_speed_gain;
 extern int min_snap_abi;
 extern int min_snap_track; // track number 0,1,2
 
-
 // Functions
 extern void nav_snap_init(void);
 extern bool nav_snap_x0(int _wp);

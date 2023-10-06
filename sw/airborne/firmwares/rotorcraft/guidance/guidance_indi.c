@@ -48,6 +48,12 @@
 #include "filters/low_pass_filter.h"
 #include "modules/core/abi.h"
 
+
+// UGLY FIX
+#ifdef NN_INDI_CMDS
+  #include "modules/gcnet_ppo/gcnet_main.h"
+#endif
+
 // The acceleration reference is calculated with these gains. If you use GPS,
 // they are probably limited by the update rate of your GPS. The default
 // values are tuned for 4 Hz GPS updates. If you have high speed position updates, the
@@ -265,6 +271,21 @@ void guidance_indi_run(float *heading_sp)
   guidance_euler_cmd.psi = *heading_sp;
 
 #ifdef GUIDANCE_INDI_SPECIFIC_FORCE_GAIN
+
+// UGLY FIX overwrites thrust command:
+#ifdef NN_INDI_CMDS
+  #pragma message "GNCNET_INDI_THRUST_OVERRIDE! (UGLY FIX IN  [guidance_indi.c])"
+  if ((autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) || gcnet_fake_att_mode) {
+    float nn_indi_thrust = indi_accel_sp.z; //comes from ABI message in gcnet_ppo/gcnet_main.c
+    struct FloatVect3 nn_indi_filt_accel_ned = {filt_accel_ned[0].o[0], filt_accel_ned[1].o[0], filt_accel_ned[2].o[0]};
+    // subtract gravity
+    nn_indi_filt_accel_ned.z -= 9.81;
+    struct FloatVect3 nn_indi_filt_accel_body;
+    float_quat_vmult(&nn_indi_filt_accel_body, statequat, &nn_indi_filt_accel_ned);
+    control_increment.z = nn_indi_thrust - nn_indi_filt_accel_body.z;
+  }
+#endif
+
   guidance_indi_filter_thrust();
 
   //Add the increment in specific force * specific_force_to_thrust_gain to the filtered thrust

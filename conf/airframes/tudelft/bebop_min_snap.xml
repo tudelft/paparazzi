@@ -44,6 +44,7 @@
 -->
 
     <module name="ins_ext_pose"/>
+    <!--module name="gcnet_ppo"/-->
 
     <module name="guidance" type="indi">
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500.0"/>

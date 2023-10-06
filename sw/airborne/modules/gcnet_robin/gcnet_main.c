@@ -84,6 +84,7 @@ float t1_;
 
 bool active = false;
 bool waiting = false;
+float switching_distance = 1.2;
 float dist_to_waypoint = 10;
 float psi_ref = 0;
 
@@ -310,7 +311,129 @@ void gcnet_run(void)
 	};
 	dist_to_waypoint = sqrtf(delta_pos_ned2.x*delta_pos_ned2.x + delta_pos_ned2.y*delta_pos_ned2.y + delta_pos_ned2.z*delta_pos_ned2.z);
 */
+/*
+	if (autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) {
+		// Added following condition: two consecutive waypoint changes need to be separated in time by at least .1 seconds
+		// This is to prevent hysteresis due to position errors at high speeds.
+		if (waiting == false) {
+			waiting = true;
+			t0_ = get_sys_time_float();
+		}
+		t1_ = get_sys_time_float();
 
+		if (WP_EQUALS(WP_GOAL, WP_WP1)) {
+
+			// Hover-to-Hover			
+			//psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y);
+			
+
+			//// Single WP
+			psi_ref = atan2(waypoints[WP_WP1].enu_f.x-waypoints[WP_WP4].enu_f.x, waypoints[WP_WP1].enu_f.y-waypoints[WP_WP4].enu_f.y);
+
+			//// Two consecutive WPs	
+			//psi_ref = atan2(waypoints[WP_WP1].enu_f.x-waypoints[WP_WP4].enu_f.x, waypoints[WP_WP1].enu_f.y-waypoints[WP_WP4].enu_f.y) - M_PI/2;
+			// One extra input (for consecutive WP flight) - Distance between WPs
+			//state_nn[19] = -3.0;
+			//switching_distance = 3.0;
+			// Two extra inputs (for consecutive WP flight) - XY
+			//state_nn[20] = 0.0; // WP1_x
+			//state_nn[19] = -3.0; // WP1_y
+			//switching_distance = 3.0;
+
+			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
+			//float normal_x = cos(psi_ref + M_PI/4);
+			//float normal_y = sin(psi_ref + M_PI/4);		
+			//if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -2.0 && t1_-t0_ > 0.1) {
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP2);
+				waiting=false;
+			}
+		}
+		else if (WP_EQUALS(WP_GOAL, WP_WP2)) {
+
+			// Hover-to-Hover			
+			//psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y);
+			
+
+			// Single WP			
+			psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y);
+			
+			// Two consecutive WPs	
+			// psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y) - M_PI/2;
+			// One extra input (for consecutive WP flight) - Distance between WPs
+			// state_nn[19] = -4.0;
+			// switching_distance = 4.0;
+			// Two extra inputs (for consecutive WP flight) - XY
+			//state_nn[20] = 0.0; // WP1_x
+			//state_nn[19] = -4.0; // WP1_y
+			//switching_distance = 4.0;
+
+			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
+			//float normal_x = cos(psi_ref + M_PI/4);
+			//float normal_y = sin(psi_ref + M_PI/4);		
+			// if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -2.0 && t1_-t0_ > 0.1) {
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP3);
+				waiting=false;
+			}
+		}
+		else if (WP_EQUALS(WP_GOAL, WP_WP3)) {
+			// Single WP			
+			psi_ref = atan2(waypoints[WP_WP3].enu_f.x-waypoints[WP_WP2].enu_f.x, waypoints[WP_WP3].enu_f.y-waypoints[WP_WP2].enu_f.y);
+			
+			// Two consecutive WPs	
+			// psi_ref = atan2(waypoints[WP_WP3].enu_f.x-waypoints[WP_WP2].enu_f.x, waypoints[WP_WP3].enu_f.y-waypoints[WP_WP2].enu_f.y) - M_PI/2;
+			// One extra input (for consecutive WP flight) - Distance between WPs
+			// state_nn[19] = -3.0;
+			// switching_distance = 3.0;
+			// Two extra inputs (for consecutive WP flight) - XY
+			//state_nn[20] = 0.0; // WP1_x
+			//state_nn[19] = -3.0; // WP1_y
+			//switching_distance = 3.0;
+
+			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
+			//float normal_x = cos(psi_ref + M_PI/4);
+			//float normal_y = sin(psi_ref + M_PI/4);		
+			//if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -2.0 && t1_-t0_ > 0.1) {
+		
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP4);
+				waiting=false;
+			}
+		}
+		else if (WP_EQUALS(WP_GOAL, WP_WP4)) {
+			// Single WP			
+			psi_ref = atan2(waypoints[WP_WP4].enu_f.x-waypoints[WP_WP3].enu_f.x, waypoints[WP_WP4].enu_f.y-waypoints[WP_WP3].enu_f.y);
+			
+			// Two consecutive WPs	
+			// psi_ref = atan2(waypoints[WP_WP4].enu_f.x-waypoints[WP_WP3].enu_f.x, waypoints[WP_WP4].enu_f.y-waypoints[WP_WP3].enu_f.y) - M_PI/2;
+			// One extra input (for consecutive WP flight) - Distance between WPs
+			// state_nn[19] = -4.0;
+			// switching_distance = 4.0;
+			// Two extra inputs (for consecutive WP flight) - XY
+			//state_nn[20] = 0.0; // WP1_x
+			//state_nn[19] = -4.0; // WP1_y
+			//switching_distance = 4.0;
+
+			// set next waypoint once drone passes the plane perpendicular to the waypoint (psi_ref + pi/4 direction)
+			// float normal_x = cos(psi_ref + M_PI/4);
+			// float normal_y = sin(psi_ref + M_PI/4);		
+			//if (-delta_pos_ned.x*normal_x - delta_pos_ned.y*normal_y > -2.0 && t1_-t0_ > 0.1) {
+
+			// Use euclidean distance instead
+			if ( delta_pos_ned.x*delta_pos_ned.x + delta_pos_ned.y*delta_pos_ned.y + delta_pos_ned.z*delta_pos_ned.z < switching_distance*switching_distance && t1_-t0_ > 0.1) {
+				waypoint_copy(WP_GOAL, WP_WP1);
+				waiting=false;
+			}
+		}
+	}
+*/
 	psi_ref = atan2(waypoints[WP_WP2].enu_f.x-waypoints[WP_WP1].enu_f.x, waypoints[WP_WP2].enu_f.y-waypoints[WP_WP1].enu_f.y);
 
 
@@ -346,9 +469,9 @@ void gcnet_run(void)
 	state_nn[14] = nn_rpm_obs[2];
 	state_nn[15] = nn_rpm_obs[3];
 
-	//state_nn[16] = Mx_measured - Mx_modeled;
-	//state_nn[17] = My_measured - My_modeled;
-	//state_nn[18] = Mz_measured - Mz_modeled;
+	state_nn[16] = Mx_measured - Mx_modeled;
+	state_nn[17] = My_measured - My_modeled;
+	state_nn[18] = Mz_measured - Mz_modeled;
 	
 	// calcuate neural network output
 	nn_control(state_nn, control_nn);

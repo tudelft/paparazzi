@@ -1,0 +1,24 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="gcnet_ppo">
+  <doc>
+    <description>
+    This module is used to test the gcnet ppo controller.
+    </description>
+  </doc>
+
+  <header>
+    <file name="gcnet_main.h"/>
+  </header>
+  <init fun="gcnet_init()"/>
+  <periodic fun="gcnet_run()" freq="512" />
+
+  <makefile>
+    <file name="gcnet_main.c"/>
+    <file name="nn_controller.c"/>
+    <file name="neural_network.c"/>
+    <file name="nn_thrust.c"/>
+    <file name="nn_moment.c"/>
+    
+  </makefile>
+</module>

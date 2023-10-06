@@ -139,6 +139,13 @@ struct IndiVariables indi = {
 #endif
 };
 
+// TEST
+#ifdef NN_INDI_CMDS
+  #include "modules/gcnet_ppo/gcnet_main.h"
+#endif
+struct FloatRates rate_sp_log;
+// END TEST
+
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
 
@@ -328,6 +335,24 @@ static inline void finite_difference(float output[3], float new[3], float old[3]
  */
 void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight __attribute__((unused)))
 {
+  //TEST
+  rate_sp_log.p = rate_sp.p;
+  rate_sp_log.q = rate_sp.q;
+  rate_sp_log.r = rate_sp.r;
+  //END TEST
+
+  //UGLY FIX OVERWRITES rate_sp by GCNET command
+  #ifdef NN_INDI_CMDS
+  #pragma message "GNCNET_INDI_RATE_OVERRIDE! (UGLY FIX IN  [stabilization_indi_simple.c])"
+    if ((autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) || gcnet_fake_att_mode) {
+      rate_sp.p = control_nn[0];
+      rate_sp.q = control_nn[1];
+      rate_sp.r = control_nn[2];
+    }
+  #endif
+  //END UGLY FIX
+
+
   //Propagate input filters
   //first order actuator dynamics
   indi.u_act_dyn.p = indi.u_act_dyn.p + STABILIZATION_INDI_ACT_DYN_P * (indi.u_in.p - indi.u_act_dyn.p);

@@ -6,6 +6,8 @@
     #include "modules/energy/electrical.h"
     #include "modules/radio_control/radio_control.h"
     #include "modules/ahrs/ahrs.h"
+    #include "modules/gcnet_ppo/gcnet_main.h"
+    #include "generated/flight_plan.h"
     #define NPS_GAZEBO_WORLD "cyberzoo.world"
 </header>
   <waypoints>
@@ -16,7 +18,8 @@
     <waypoint name="TD" x="0.8" y="-1.7"/>
     <waypoint name="GOAL" x="1.9" y="1.0"/>
     <waypoint name="TRAJECTORY" x="1.9" y="1.0"/>
-
+    <waypoint name="START" x="1.9" y="1.0"/>
+    
     <!-- Waypoints for testing the gcnet -->
     <waypoint name="Origin" x="0" y="0" alt="1."/>
     <waypoint name="P1" x="-1." y="-1." alt="1."/>
@@ -162,6 +165,9 @@ y = sin(33.0/57.6) * x + cos(33.0/57.6) * y;
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
     <!-- === MY BLOCKS === -->
+    <block name="ACTIVATE_GCNET">
+      <call_once fun="gcnet_activate()"/>
+    </block>
     <block name="heading_180">
       <call_once fun="nav_set_heading_deg(170)"/>
       <go wp="GOAL"/>
@@ -169,6 +175,16 @@ y = sin(33.0/57.6) * x + cos(33.0/57.6) * y;
     </block>
     <block name="heading_-180">
       <call_once fun="nav_set_heading_deg(-170)"/>
+      <go wp="GOAL"/>
+      <stay wp="GOAL"/>
+    </block>
+    <block name="GO_TO_START">
+      <call_once fun="go_to_start()"/>
+      <go wp="GOAL"/>
+      <stay wp="GOAL"/>
+    </block>
+    <block name="GO_TO_NEXT_GATE">
+      <call_once fun="go_to_next_gate()"/>
       <go wp="GOAL"/>
       <stay wp="GOAL"/>
     </block>

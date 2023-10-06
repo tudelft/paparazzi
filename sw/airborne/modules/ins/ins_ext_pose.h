@@ -42,6 +42,8 @@ Section 5.3: Non-additive noise formulation and equations
 
 
 extern float ekf_X[EKF_NUM_STATES];
+extern float ekf_U[EKF_NUM_INPUTS];
+extern float ekf_Z[EKF_NUM_OUTPUTS];
 
 void ekf_set_diag(float **a, float *b, int n);
 

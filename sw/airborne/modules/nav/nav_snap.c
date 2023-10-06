@@ -35,6 +35,8 @@
 // snap8: constant psi fig 8
 #include "modules/nav/trajectories/nms.h"
 
+// indi logs
+#include "firmwares/rotorcraft/stabilization/stabilization_indi_simple.h"
 
 #include <stdio.h>
 
@@ -65,6 +67,9 @@ double az_snap = 0;
 
 bool waiting = false;
 
+float ax_sp;
+float ay_sp;
+float az_sp;
 
 ///< Call once, just before starting the run
 
@@ -159,9 +164,9 @@ bool nav_snap_run(void)
   float vz_sp = vz_snap * min_snap_v_ff + pos_z_err * min_snap_pos_gain;
 
   // Acceleration command
-  float ax_sp = ax_snap * min_snap_a_ff + (vx_sp - stateGetSpeedNed_f()->x) * min_snap_speed_gain;
-  float ay_sp = ay_snap * min_snap_a_ff + (vy_sp - stateGetSpeedNed_f()->y) * min_snap_speed_gain;
-  float az_sp = az_snap * min_snap_a_ff + (vz_sp - stateGetSpeedNed_f()->z) * min_snap_speed_gain;
+  ax_sp = ax_snap * min_snap_a_ff + (vx_sp - stateGetSpeedNed_f()->x) * min_snap_speed_gain;
+  ay_sp = ay_snap * min_snap_a_ff + (vy_sp - stateGetSpeedNed_f()->y) * min_snap_speed_gain;
+  az_sp = az_snap * min_snap_a_ff + (vz_sp - stateGetSpeedNed_f()->z) * min_snap_speed_gain;
 
   // Export to ABI
   struct FloatVect3 u;
@@ -180,9 +185,9 @@ bool nav_snap_run(void)
 }
 
 void min_snap_log_header(FILE *file) {
-  fprintf(file, "alpha_snap,x_snap,y_snap,z_snap,psi_snap,vx_snap,vy_snap,vz_snap,ax_snap,ay_snap,az_snap,");
+  fprintf(file, "alpha_snap,x_snap,y_snap,z_snap,psi_snap,vx_snap,vy_snap,vz_snap,ax_snap,ay_snap,az_snap,ax_sp,ay_sp,az_sp,p_sp,q_sp,r_sp,");
 }
 
 void min_snap_log_data(FILE *file) {
-  fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,",min_snap_alpha_active,x_snap,y_snap,z_snap,psi_snap,vx_snap,vy_snap,vz_snap,ax_snap,ay_snap,az_snap);
+  fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,",min_snap_alpha_active,x_snap,y_snap,z_snap,psi_snap,vx_snap,vy_snap,vz_snap,ax_snap,ay_snap,az_snap,ax_sp,ay_sp,az_sp,rate_sp_log.p,rate_sp_log.q,rate_sp_log.r);
 }

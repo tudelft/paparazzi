@@ -286,6 +286,17 @@ void motor_mixing_run(bool motors_on, bool override_on, pprz_t in_cmd[])
     }
   }
 #ifdef GCNET_MAIN_H
+#ifndef NN_INDI_CMDS
+#pragma message "GNCNET_DIREC_MOTOR_CONTROL!"
+  if (autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT || gcnet_fake_att_mode) {
+    for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {
+      motor_mixing.commands[i] = 9600*(control_nn[i] - 3000)/(12000-3000);
+    }
+  }
+#endif
+#endif
+
+#ifdef GCNET_ROBIN_MAIN_H
 #pragma message "GNCNET_DIREC_MOTOR_CONTROL!"
   if (autopilot_get_mode() == AP_MODE_ATTITUDE_DIRECT) {
     for (i = 0; i < MOTOR_MIXING_NB_MOTOR; i++) {

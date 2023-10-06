@@ -28,6 +28,7 @@
     <module name="gps" type="datalink"/>
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
+    
 <!--
     <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
@@ -37,7 +38,8 @@
 -->
 
     <module name="logger_file"/>
-    <module name="gcnet_robin"/>
+    <!--module name="gcnet_robin"/-->
+    <module name="gcnet_ppo"/>
     <module name="ins" type="ext_pose"/>
 
   </firmware>
