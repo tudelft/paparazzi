@@ -246,7 +246,7 @@ static void send_oneloop_guidance(struct transport_tx *trans, struct link_device
 }
 #endif
 /*Physical Properties RW3C*/
-float m   = 0.4;//6.5;  // [kg] Mass
+float m   = 6.5;  // [kg] Mass Bebop 0.4
 float g   = 9.81; // [m/s^2] Gravitational Acceleration
 float Ixx = 0.251; // [kg m^2] Inertia around x axis
 float Iyy = 1.071; // [kg m^2] Inertia around y axis
@@ -941,7 +941,7 @@ void oneloop_andi_enter(void)
   init_filter();
   init_controller();
   /* Stabilization Reset */
-  float_vect_zero(att_ref,3);
+  float_vect_zero(att_ref,2);
   float_vect_zero(att_d_ref,3);
   float_vect_zero(att_2d_ref,3);
   float_vect_zero(att_3d_ref,3);
@@ -1092,8 +1092,8 @@ void oneloop_andi_attitude_run(bool in_flight)
         pos_init[1] = (float) (guidance_h.sp.pos.y * 0.0039063);
         pos_init[2] = (float) (guidance_v.z_sp     * 0.0039063);
       }
-      float rc_x = (float) (-radio_control.values[RADIO_PITCH])/9600.0*3.0;
-      float rc_y = (float) (radio_control.values[RADIO_ROLL] )/9600.0*3.0;
+      //float rc_x = (float) (-radio_control.values[RADIO_PITCH])/9600.0*3.0;
+      //float rc_y = (float) (radio_control.values[RADIO_ROLL] )/9600.0*3.0;
       if(oval_on){
         float v_actual = sqrtf(pos_d[0] * pos_d[0]+pos_d[1] * pos_d[1]);
         
@@ -1112,8 +1112,8 @@ void oneloop_andi_attitude_run(bool in_flight)
         check_1st_oval = true;
         
         nav_speed_controller_enter();
-        pos_des[0] = pos_init[0] + cosf(eulers_zxy.psi) * rc_x - sinf(eulers_zxy.psi) * rc_y;;
-        pos_des[1] = pos_init[1] + sinf(eulers_zxy.psi) * rc_x + cosf(eulers_zxy.psi) * rc_y;;
+        pos_des[0] = pos_init[0];// + cosf(eulers_zxy.psi) * rc_x - sinf(eulers_zxy.psi) * rc_y;;
+        pos_des[1] = pos_init[1];// + sinf(eulers_zxy.psi) * rc_x + cosf(eulers_zxy.psi) * rc_y;;
         pos_des[2] = pos_init[2];
         float k1_pos_rm[3] = {k_N_rm,  k_E_rm,  k_D_rm};
         float k2_pos_rm[3] = {k_vN_rm, k_vE_rm, k_vD_rm};
@@ -1273,8 +1273,8 @@ void sum_g1g2_1l(void) {
   float ctheta = cosf(eulers_zxy.theta);
   float spsi   = sinf(eulers_zxy.psi);
   float cpsi   = cosf(eulers_zxy.psi);
-
-  float T = -9.81; //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
+  float T      = -9.81; //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
+  float P      = actuator_state_1l[ONELOOP_ANDI_PUSHER_IDX] * g1_1l[2][ONELOOP_ANDI_PUSHER_IDX] / ANDI_G_SCALING;
   float scaler;
   
   // M0 (Front)
@@ -1324,9 +1324,9 @@ void sum_g1g2_1l(void) {
   // M4 (Pusher)
     i = i + 1;
     scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
-    g1g2_1l[0][i] = 0.0; //(cpsi * ctheta - sphi * spsi * stheta) * g1_1l[2][i] * scaler;
-    g1g2_1l[1][i] = 0.0; //(ctheta * spsi + cpsi * sphi * stheta) * g1_1l[2][i] * scaler;
-    g1g2_1l[2][i] = 0.0; //(- cphi * stheta                     ) * g1_1l[2][i] * scaler;
+    g1g2_1l[0][i] = (cpsi * ctheta - sphi * spsi * stheta) * g1_1l[2][i] * scaler;
+    g1g2_1l[1][i] = (ctheta * spsi + cpsi * sphi * stheta) * g1_1l[2][i] * scaler;
+    g1g2_1l[2][i] = (- cphi * stheta                     ) * g1_1l[2][i] * scaler;
     g1g2_1l[3][i] = 0.0;
     g1g2_1l[4][i] = 0.0;
     g1g2_1l[5][i] = 0.0;
@@ -1335,9 +1335,9 @@ void sum_g1g2_1l(void) {
   // Phi
   i = i + 1;
   scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i];
-  g1g2_1l[0][i] = (cphi*ctheta*spsi)  * T * scaler;
-  g1g2_1l[1][i] = (-cphi*ctheta*cpsi) * T * scaler;
-  g1g2_1l[2][i] = -sphi*ctheta        * T * scaler;
+  g1g2_1l[0][i] = ( cphi * ctheta * spsi * T - cphi * spsi * stheta * P) * scaler;
+  g1g2_1l[1][i] = (-cphi * ctheta * cpsi * T + cphi * cpsi * stheta * P) * scaler;
+  g1g2_1l[2][i] = (-sphi * ctheta * T + sphi * stheta * P) * scaler;
   g1g2_1l[3][i] = 0.0;
   g1g2_1l[4][i] = 0.0;
   g1g2_1l[5][i] = 0.0;
@@ -1345,9 +1345,9 @@ void sum_g1g2_1l(void) {
   // Theta
   i = i + 1;
   scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i];
-  g1g2_1l[0][i] = (ctheta*cpsi - sphi*stheta*spsi) * T * scaler;
-  g1g2_1l[1][i] = (ctheta*spsi + sphi*stheta*cpsi) * T * scaler;
-  g1g2_1l[2][i] = -stheta * cphi                   * T * scaler;
+  g1g2_1l[0][i] = ((ctheta*cpsi - sphi*stheta*spsi) * T - (cpsi * stheta + ctheta * sphi * spsi) * P) * scaler;
+  g1g2_1l[1][i] = ((ctheta*spsi + sphi*stheta*cpsi) * T - (spsi * stheta - cpsi * ctheta * sphi) * P) * scaler;
+  g1g2_1l[2][i] = (-stheta * cphi * T - cphi * ctheta * P) * scaler;
   g1g2_1l[3][i] = 0.0;
   g1g2_1l[4][i] = 0.0;
   g1g2_1l[5][i] = 0.0;
@@ -1373,23 +1373,47 @@ void calc_normalization(void){
 void calc_model(void){
   int8_t i;
   int8_t j;
-  for (i = 0; i < ANDI_OUTPUTS; i++){
-    for (j = 0; j < ANDI_NUM_ACT_TOT; j++){
-      if (j < ANDI_NUM_ACT){
-        model_pred[i] = model_pred[i] +  (actuator_state_1l[j] - old_state[j]) * g1g2_1l[i][j]    / (act_dynamics[j] * ratio_u_un[j] * ratio_vn_v[j]);
-      } else {
-        model_pred[i] = model_pred[i] +  (att_1l[j-ANDI_NUM_ACT] - old_state[j]) * g1g2_1l[i][j]  / (act_dynamics[j] * ratio_u_un[j] * ratio_vn_v[j]);
-      }
+  // Incremental Model Prediction : Good for nonlinear but could be not bound
+  // for (i = 0; i < ANDI_OUTPUTS; i++){
+  //   for (j = 0; j < ANDI_NUM_ACT_TOT; j++){
+  //     if (j < ANDI_NUM_ACT){
+  //       model_pred[i] = model_pred[i] +  (actuator_state_1l[j] - old_state[j]) * g1g2_1l[i][j]    / (act_dynamics[j] * ratio_u_un[j] * ratio_vn_v[j]);
+  //     } else {
+  //       model_pred[i] = model_pred[i] +  (att_1l[j-ANDI_NUM_ACT] - old_state[j]) * g1g2_1l[i][j]  / (act_dynamics[j] * ratio_u_un[j] * ratio_vn_v[j]);
+  //     }
+  //   }
+  // }
+
+  // // Store the old state of the actuators for the next iteration
+  // for ( j = 0; j < ANDI_NUM_ACT_TOT; j++){
+  //   if(j < ANDI_NUM_ACT){
+  //     old_state[j] = actuator_state_1l[j];
+  //   } else {
+  //     old_state[j] = att_1l[j-ANDI_NUM_ACT];
+  //   }
+  // }
+
+  // Absolute Model Prediction : 
+  float sphi   = sinf(eulers_zxy.phi);
+  float cphi   = cosf(eulers_zxy.phi);
+  float stheta = sinf(eulers_zxy.theta);
+  float ctheta = cosf(eulers_zxy.theta);
+  float spsi   = sinf(eulers_zxy.psi);
+  float cpsi   = cosf(eulers_zxy.psi);
+  float T      = -9.81; 
+  float P      = actuator_state_1l[ONELOOP_ANDI_PUSHER_IDX] * g1_1l[2][ONELOOP_ANDI_PUSHER_IDX] / ANDI_G_SCALING;
+  
+  model_pred[0] = (cpsi * stheta + ctheta * sphi * spsi) * T + (cpsi * ctheta + sphi * spsi * stheta) * P;
+  model_pred[1] = (spsi * stheta - cpsi * ctheta * sphi) * T + (ctheta * spsi + cpsi * sphi * stheta) * P;
+  model_pred[2] = g + cphi * ctheta * T - cphi * stheta * P;
+
+  for (i = 3; i < ANDI_OUTPUTS; i++){ // For loop for prediction of angular acceleration
+    model_pred[i] = 0.0;              // 
+    for (j = 0; j < ANDI_NUM_ACT; j++){
+      model_pred[i] = model_pred[i] +  actuator_state_1l[j] * g1g2_1l[i][j] / (act_dynamics[j] * ratio_u_un[j] * ratio_vn_v[j]);
     }
   }
-  // Store the old state of the actuators for the next iteration
-  for ( j = 0; j < ANDI_NUM_ACT_TOT; j++){
-    if(j < ANDI_NUM_ACT){
-      old_state[j] = actuator_state_1l[j];
-    } else {
-      old_state[j] = att_1l[j-ANDI_NUM_ACT];
-    }
-  }
+
 }
 
 /**

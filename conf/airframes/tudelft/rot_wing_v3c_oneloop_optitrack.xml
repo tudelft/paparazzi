@@ -181,7 +181,7 @@
         <set VALUE="($th_hold? -9600 : actuators_pprz[3])"           SERVO="MOTOR_LEFT"/>
         <set VALUE="($th_hold?     0 : actuators_pprz[5])"           SERVO="SERVO_RUDDER"/>
         <set VALUE="(!autopilot_in_flight()? 0 : actuators_pprz[6])" SERVO="SERVO_ELEVATOR"/>
-        <set VALUE="($th_hold? -9600 : -9600)"           SERVO="MOTOR_PUSH"/>
+        <set VALUE="($th_hold? -9600 : actuators_pprz[4])"           SERVO="MOTOR_PUSH"/>
         <set VALUE=" wing_rotation.servo_pprz_cmd"                   SERVO="SERVO_ROTWING"/>
         <set VALUE="($th_hold? 0 : actuators_pprz[7])"               SERVO="AIL_LEFT"/>
         <set VALUE="($th_hold? 0 : actuators_pprz[7])"               SERVO="AIL_RIGHT"/>
@@ -273,7 +273,7 @@
         <define NAME  ="AC_HAS_PUSHER"   VALUE = "TRUE"/>
         <define NAME  ="PUSHER_IDX"      VALUE = "4"/>
         <define NAME  ="WV"              VALUE = "{1.0f, 1.0f, 1.0f, 1000.0f, 1000.0f, 100.0f}"/>
-        <define NAME  ="WU"              VALUE = "{2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f}"/>
+        <define NAME  ="WU"              VALUE = "{3.0f, 3.0f, 3.0f, 3.0f, 1.0f, 2.0f, 2.0f}"/>
         <define NAME  ="U_PREF"          VALUE = "{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}"/>
     </section>
 
