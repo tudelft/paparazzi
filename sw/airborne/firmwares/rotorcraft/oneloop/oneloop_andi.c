@@ -334,10 +334,10 @@ float xy_1 = 1.0;
 float xy_2 = 0.01;
 float scale_pos = 1.0;
 float rm_k_pos;    
-float damp_pos = 0.7; //0.3979;//0.7; 
+float damp_pos = 0.85; //0.3979;//0.7; 
 float p1_pos   = 2.0;
-float p1_pos_1 = 2.0; 
-float p1_pos_2 = 2.0;//0.6717*0.7; 
+float p1_pos_1 = 1.2; 
+float p1_pos_2 = 1.2;//0.6717*0.7; 
 float p2_pos   = 6.0;
 float p2_pos_1 = 6.0; 
 float p2_pos_2 = 6.0;//0.4654;     
@@ -1324,9 +1324,9 @@ void sum_g1g2_1l(void) {
   // M4 (Pusher)
     i = i + 1;
     scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
-    g1g2_1l[0][i] = (cpsi * ctheta - sphi * spsi * stheta) * g1_1l[2][i] * scaler;
-    g1g2_1l[1][i] = (ctheta * spsi + cpsi * sphi * stheta) * g1_1l[2][i] * scaler;
-    g1g2_1l[2][i] = (- cphi * stheta                     ) * g1_1l[2][i] * scaler;
+    g1g2_1l[0][i] = 0.0; //(cpsi * ctheta - sphi * spsi * stheta) * g1_1l[2][i] * scaler;
+    g1g2_1l[1][i] = 0.0; //(ctheta * spsi + cpsi * sphi * stheta) * g1_1l[2][i] * scaler;
+    g1g2_1l[2][i] = 0.0; //(- cphi * stheta                     ) * g1_1l[2][i] * scaler;
     g1g2_1l[3][i] = 0.0;
     g1g2_1l[4][i] = 0.0;
     g1g2_1l[5][i] = 0.0;
