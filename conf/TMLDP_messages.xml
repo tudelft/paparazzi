@@ -1889,7 +1889,12 @@
     </message>
 
     <!-- 191 is free -->
-    <!-- 192 is free -->
+
+    <message name="PUSHER_TEST" id="192">
+      <field name="pusher_max_f"    type="float"/>
+      <field name="pusher_test_on"  type="uint8" unit="bool"/>
+      <field name="pusher_test_cmd" type="float"/>
+    </message>
 
     <message name="AHRS_LKF" id="193">
       <field name="phi"   type="float" unit="rad"   alt_unit="deg"   alt_unit_coef="57.29578" />

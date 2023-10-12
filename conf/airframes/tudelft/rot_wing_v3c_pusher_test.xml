@@ -175,10 +175,10 @@
         
         <!-- <call fun="sys_id_doublet_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/> -->
         <!--<call fun="sys_id_chirp_add_values(autopilot_get_motors_on(),FALSE,actuators_pprz)"/>-->
-        <set VALUE="($th_hold? -9600 : actuators_pprz[0])"           SERVO="MOTOR_FRONT"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[1])"           SERVO="MOTOR_RIGHT"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[2])"           SERVO="MOTOR_BACK"/>
-        <set VALUE="($th_hold? -9600 : actuators_pprz[3])"           SERVO="MOTOR_LEFT"/>
+        <set VALUE="($th_hold? -9600 : -9600)"           SERVO="MOTOR_FRONT"/>
+        <set VALUE="($th_hold? -9600 : -9600)"           SERVO="MOTOR_RIGHT"/>
+        <set VALUE="($th_hold? -9600 : -9600)"           SERVO="MOTOR_BACK"/>
+        <set VALUE="($th_hold? -9600 : -9600)"           SERVO="MOTOR_LEFT"/>
         <set VALUE="($th_hold?     0 : actuators_pprz[5])"           SERVO="SERVO_RUDDER"/>
         <set VALUE="(!autopilot_in_flight()? 0 : actuators_pprz[6])" SERVO="SERVO_ELEVATOR"/>
         <set VALUE="($th_hold? -9600 : actuators_pprz[4])"           SERVO="MOTOR_PUSH"/>

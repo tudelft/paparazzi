@@ -184,6 +184,18 @@ float convert_angle(float psi);
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
 
+static void send_pusher_test(struct transport_tx *trans, struct link_device *dev)
+{
+  uint8_t pt = 0;
+  if(pusher_test_on){
+    pt = 1;
+  }
+  pprz_msg_send_PUSHER_TEST(trans, dev, AC_ID,
+                                        &pusher_max_f,
+                                        &pt,
+                                        &pusher_test_cmd); 
+}
+
 static void send_oneloop_g(struct transport_tx *trans, struct link_device *dev)
 {
   pprz_msg_send_ONELOOP_G(trans, dev, AC_ID,
@@ -484,6 +496,12 @@ bool check_1st_oval= true;
 bool verbose_oneloop = true;
 bool heading_on = false;
 
+/* Pusher Stall Test*/
+bool pusher_test_on = false;
+float pusher_max_f = 1.0;
+int16_t pusher_counter = 0;
+float du_pusher_msg = 0.0;
+float pusher_test_cmd = 0.0;
 
 /*Error Controller Gain Design*/
 static float k_e_1_3_f(float p1, float p2, float p3) {return (p1*p2*p3);}
@@ -924,6 +942,7 @@ void oneloop_andi_init(void)
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ONELOOP_ANDI, send_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ONELOOP_G, send_oneloop_g);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ONELOOP_GUIDANCE, send_oneloop_guidance);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ONELOOP_ANDI, send_pusher_test);
   #endif
 }
 
@@ -970,8 +989,9 @@ void oneloop_andi_attitude_run(bool in_flight)
   printf("############### NEW LOOP ##########################\n");
   new_time = get_sys_time_float();
   printf("This function is running at a dt=%f \n",new_time-old_time);
+  dt_actual = new_time - old_time;
   old_time = new_time;
-  dt_actual = dt_1l;//new_time - old_time;
+  
 
   // Calculate Position error in XY from previous iteration to schedule gains of position
   float xy_err[2];
@@ -1184,13 +1204,16 @@ void oneloop_andi_attitude_run(bool in_flight)
   // Calculate the min and max increments
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     if(i<ANDI_NUM_ACT){
-      du_min_1l[i]  = (act_min[i]    - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
-      du_max_1l[i]  = (act_max[i]    - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
-      du_pref_1l[i] = (u_pref[i]     - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
+      du_min_1l[i]  = (act_min[i] - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
+      du_max_1l[i]  = (act_max[i] - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
+      du_pref_1l[i] = (u_pref[i]  - use_increment * actuator_state_1l[i])/ratio_u_un[i];//
     }else{
-      du_min_1l[i]  = (act_min[i]    - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];
-      du_max_1l[i]  = (act_max[i]    - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
-      du_pref_1l[i] = (0.0           - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
+      du_min_1l[i]  = (act_min[i] - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
+      du_max_1l[i]  = (act_max[i] - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
+      // if(i== ANDI_NUM_ACT_TOT-1){
+      //   u_pref[i] = radio_control.values[RADIO_AUX4] * (13.0) / 9600.0 - 3.0;
+      // }
+      du_pref_1l[i] = (u_pref[i]  - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
     }
     }
     // WLS Control Allocator
@@ -1216,8 +1239,28 @@ void oneloop_andi_attitude_run(bool in_flight)
 
   // Overwrite the pusher command if enabled and in ATT
   if ((ONELOOP_ANDI_AC_HAS_PUSHER)&&(autopilot.mode==AP_MODE_ATTITUDE_DIRECT)){
-    andi_u[ONELOOP_ANDI_PUSHER_IDX] = radio_control.values[RADIO_AUX4];
+    if(pusher_test_on){
+      float pusher_target = 9600.0;
+      float max_du_pusher = pusher_target * pusher_max_f * 0.002 * 0.1;
+      float du_pusher = pusher_target - pusher_test_cmd;
+      if (du_pusher > max_du_pusher) {
+        du_pusher = max_du_pusher;
+      }
+      pusher_test_cmd = pusher_test_cmd + du_pusher;
+      andi_u[ONELOOP_ANDI_PUSHER_IDX] = pusher_test_cmd;
+      if (andi_u[ONELOOP_ANDI_PUSHER_IDX]>(pusher_target-100.0)){
+        pusher_counter = pusher_counter +1;
+      }
+      if(pusher_counter>500){
+        pusher_test_on = false;
+        pusher_counter = 0;
+      }      
+    }else{
+      pusher_test_cmd = 0.0;
+      andi_u[ONELOOP_ANDI_PUSHER_IDX] = pusher_test_cmd;//radio_control.values[RADIO_AUX4];
+    }
   }
+ 
   // TODO : USE THE PROVIDED MAX AND MIN and change limits for phi and theta
   // Bound the inputs to the actuators
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
@@ -1357,7 +1400,7 @@ void sum_g1g2_1l(void) {
 void calc_normalization(void){
   int8_t i;
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
-    act_dynamics_d[i] = 1.0-exp(-act_dynamics[i]*dt_actual);
+    act_dynamics_d[i] = 1.0-exp(-act_dynamics[i]*dt_1l);
     Bound(act_dynamics_d[i],0.0,1.0);
     ratio_vn_v[i] = 1.0;
     Bound(act_max[i],0,MAX_PPRZ);

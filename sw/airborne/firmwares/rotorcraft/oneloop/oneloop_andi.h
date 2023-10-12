@@ -74,6 +74,11 @@ extern float rm_k_attitude;
 
 extern float w_scale;
 
+extern bool pusher_test_on;
+extern float pusher_max_f;
+extern float du_pusher_msg;
+extern float dt_actual;
+extern float pusher_test_cmd;
 extern void oneloop_andi_init(void);
 extern void oneloop_andi_enter(void);
 extern void oneloop_andi_set_failsafe_setpoint(void);
