@@ -360,9 +360,18 @@ static void guidance_h_update_reference(void)
     guidance_h.ref.accel.x = ACCEL_BFP_OF_REAL(gh_ref.accel.x);
     guidance_h.ref.accel.y = ACCEL_BFP_OF_REAL(gh_ref.accel.y);
   } else {
-    VECT2_COPY(guidance_h.ref.pos, guidance_h.sp.pos);
-    INT_VECT2_ZERO(guidance_h.ref.speed);
-    INT_VECT2_ZERO(guidance_h.ref.accel);
+    if (nav.setpoint_mode == NAV_SETPOINT_MODE_POS) {
+      VECT2_COPY(guidance_h.ref.pos, guidance_h.sp.pos);
+      INT_VECT2_ZERO(guidance_h.ref.speed);
+      INT_VECT2_ZERO(guidance_h.ref.accel);
+    } else { //(nav.setpoint_mode == NAV_SETPOINT_MODE_SPEED)
+      guidance_h.ref.pos.x = stateGetPositionNed_i()->x;
+      guidance_h.ref.pos.y = stateGetPositionNed_i()->y;
+      guidance_h.ref.speed.x = guidance_h.sp.speed.x;
+      guidance_h.ref.speed.y = guidance_h.sp.speed.y;
+      guidance_h.ref.accel.x = 0;
+      guidance_h.ref.accel.y = 0;
+    } // TODO: make accel ref set
   }
 
 #if GUIDANCE_H_USE_SPEED_REF
@@ -404,11 +413,10 @@ void guidance_h_nav_enter(void)
   /* horizontal position setpoint from navigation/flightplan */
   guidance_h_set_pos(nav.carrot.y, nav.carrot.x);
   reset_guidance_reference_from_current_position();
-  /* set nav_heading to current heading */
-  nav.heading = stateGetNedToBodyEulers_f()->psi;
-  guidance_h_set_heading(nav.heading);
+
   /* call specific implementation */
   guidance_h_run_enter();
+  guidance_h_set_heading(nav.heading);
 }
 
 void guidance_h_from_nav(bool in_flight)

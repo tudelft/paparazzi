@@ -51,7 +51,6 @@ let dl_id = "ground_dl" (* Hack, should be [my_id] *)
 let (//) = Filename.concat
 let logs_path = Env.paparazzi_home // "var" // "logs"
 let conf_xml = ExtXml.parse_file (Env.paparazzi_home // "conf" // "conf.xml")
-let srtm_path = Env.paparazzi_home // "data" // "srtm"
 
 let get_indexed_value = fun ?(text="UNK") t i ->
   if i >= 0 then t.(i) else text
@@ -91,7 +90,15 @@ let expand_aicraft x =
         [Xml.Element ("generated_settings", [], Xml.children xml)]
       with _ -> []
     in
-    if List.length ac.Aircraft.xml > 0 then Xml.Element (Xml.tag x, Xml.attribs x, ac.Aircraft.xml @ settings_xml)
+    
+    (* expand procedures in flight plan and replace in aircraft conf *)
+    let fp_file = Env.paparazzi_home // "conf" // ExtXml.attrib x "flight_plan" in
+    let fp_xml = ExtXml.parse_file fp_file in
+    let dir = Filename.dirname fp_file in
+    let fp_xml = Fp_proc.process_includes dir fp_xml in
+    let ac_xml = List.map (fun e -> match Xml.tag e with "flight_plan" -> fp_xml | _ -> e) ac.Aircraft.xml in
+
+    if List.length ac.Aircraft.xml > 0 then Xml.Element (Xml.tag x, Xml.attribs x, ac_xml @ settings_xml)
     else failwith "Nothing to parse"
   with
     | Failure msg -> handle_error_message "Fail with" msg
@@ -972,7 +979,6 @@ let () =
     (fun x -> Printf.fprintf stderr "%s: Warning: Don't do anything with '%s' argument\n" Sys.argv.(0) x)
     "Usage: ";
 
-  Srtm.add_path srtm_path;
   Ivy.init "Paparazzi server" "READY" (fun _ _ -> ());
   Ivy.start !ivy_bus;
 

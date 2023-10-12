@@ -37,9 +37,11 @@ float nav_max_speed = NAV_MAX_SPEED;
 float nav_max_acceleration_sp = 6.0;
 float nav_max_deceleration_sp = 0.5;
 
-#ifndef MAX_DECELERATION
-#define MAX_DECELERATION 1.f
+#ifndef NAV_HYBRID_MAX_DECELERATION
+#define NAV_HYBRID_MAX_DECELERATION 1.0
 #endif
+
+float nav_max_deceleration_sp = NAV_HYBRID_MAX_DECELERATION;
 
 #ifdef GUIDANCE_INDI_LINE_GAIN
 static float guidance_indi_line_gain = GUIDANCE_INDI_LINE_GAIN;
@@ -77,7 +79,11 @@ static void nav_hybrid_goto(struct EnuCoor_f *wp)
   } else {
     // Calculate distance to waypoint
     float dist_to_wp = float_vect2_norm(&pos_error);
-    // Calculate max speed to decelerate from
+    // Calculate max speed when decelerating at MAX capacity a_max
+    // distance travelled d = 1/2 a_max t^2
+    // The time in which it does this is: T = V / a_max
+    // The maximum speed at which to fly to still allow arriving with zero 
+    // speed at the waypoint given maximum deceleration is: V = sqrt(2 * a_max * d)
     float max_speed_decel2 = fabsf(2.f * dist_to_wp * nav_max_deceleration_sp); // dist_to_wp can only be positive, but just in case
     float max_speed_decel = sqrtf(max_speed_decel2);
     // Bound the setpoint velocity vector

@@ -65,13 +65,17 @@ class InstallWindow(QWidget):
 
     def cmd_gcs(self):
         self.execute('sudo -E apt-get -f -y install pprzgcs')
+        self.execute('sudo -E apt-get -f -y install python3-pyqt5.qtwebkit') # for the documentation
 
     def cmd_mcu(self):
         self.execute('sudo -E apt-get -f -y install dfu-util')
         self.execute('sudo -E cp conf/system/udev/rules/*.rules /etc/udev/rules.d/ && sudo -E udevadm control --reload-rules')
 
     def cmd_gazebo(self):
-        self.execute('sudo -E apt-get -f -y install gazebo9 libgazebo9-dev')
+        if float(release['RELEASE']) > 20.04:
+            self.execute('sudo -E apt-get -f -y install gazebo libgazebo-dev')
+        else:
+            self.execute('sudo -E apt-get -f -y install gazebo9 libgazebo9-dev')
         self.execute('git submodule init && git submodule sync && git submodule update ./sw/ext/tudelft_gazebo_models')
 
 
@@ -83,6 +87,7 @@ class InstallWindow(QWidget):
         self.execute('sudo -E apt-get -f -y install ffmpeg vlc jstest-gtk default-jre')
         self.execute('sudo -E apt-get install -y python3-pip')
         self.execute('python3 -m pip install pyquaternion ivy-python') # Required for NatNat
+        self.execute('python3 -m pip install pymap3d') # Required for Moving-Base
 
     def cmd_doc(self):
         self.view('https://paparazzi-uav.readthedocs.io')
@@ -157,6 +162,8 @@ class InstallWindow(QWidget):
 
         button8 = QPushButton('8) Bebop Opencv')
         button8.clicked.connect(self.cmd_bebopcv)
+        if float(release['RELEASE']) > 20.04:
+            button8.setDisabled(True)
         btn_layout.addWidget(button8)
 
         button9 = QPushButton('9) VLC + Joystick + Natnet')

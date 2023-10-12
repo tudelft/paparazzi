@@ -92,6 +92,7 @@
 
 struct Int32Eulers stab_att_sp_euler;
 struct Int32Quat   stab_att_sp_quat;
+struct FloatRates  stab_att_ff_rates;
 
 static struct FirstOrderLowPass rates_filt_fo[3];
 
@@ -148,18 +149,25 @@ static void send_att_indi(struct transport_tx *trans, struct link_device *dev)
   struct FloatRates g1_disp;
   RATES_SMUL(g1_disp, indi.est.g1, INDI_EST_SCALE);
   float g2_disp = indi.est.g2 * INDI_EST_SCALE;
+  float zero = 0;
 
   pprz_msg_send_STAB_ATTITUDE_INDI(trans, dev, AC_ID,
-                                   &indi.rate_d[0],
+                                   &zero, &zero, &zero,         // input lin.acc
+                                   &indi.rate[0].o[0],          // rate
+                                   &indi.rate[1].o[0],
+                                   &indi.rate[2].o[0],
+                                   &zero, &zero, &zero,         // rate.ref
+                                   &indi.rate_d[0],             // ang.acc = rate.diff
                                    &indi.rate_d[1],
                                    &indi.rate_d[2],
-                                   &indi.angular_accel_ref.p,
+                                   &indi.angular_accel_ref.p,   // ang.acc.ref
                                    &indi.angular_accel_ref.q,
                                    &indi.angular_accel_ref.r,
-                                   &g1_disp.p,
+                                   &g1_disp.p,                  // matrix
                                    &g1_disp.q,
                                    &g1_disp.r,
-                                   &g2_disp);
+                                   &g2_disp,
+                                   0, &zero);                   // outputs
 }
 
 static void send_ahrs_ref_quat(struct transport_tx *trans, struct link_device *dev)
@@ -241,6 +249,7 @@ void stabilization_indi_set_failsafe_setpoint(void)
   stab_att_sp_quat.qx = 0;
   stab_att_sp_quat.qy = 0;
   PPRZ_ITRIG_SIN(stab_att_sp_quat.qz, heading2);
+  FLOAT_RATES_ZERO(stab_att_ff_rates);
 }
 
 /**
@@ -254,6 +263,7 @@ void stabilization_indi_set_rpy_setpoint_i(struct Int32Eulers *rpy)
   stab_att_sp_euler = *rpy;
 
   int32_quat_of_eulers(&stab_att_sp_quat, &stab_att_sp_euler);
+  FLOAT_RATES_ZERO(stab_att_ff_rates);
 }
 
 /**
@@ -263,6 +273,7 @@ void stabilization_indi_set_quat_setpoint_i(struct Int32Quat *quat)
 {
   stab_att_sp_quat = *quat;
   int32_eulers_of_quat(&stab_att_sp_euler, quat);
+  FLOAT_RATES_ZERO(stab_att_ff_rates);
 }
 
 /**
@@ -286,6 +297,7 @@ void stabilization_indi_set_earth_cmd_i(struct Int32Vect2 *cmd, int32_t heading)
   stab_att_sp_euler.theta = -(c_psi * cmd->x + s_psi * cmd->y) >> INT32_TRIG_FRAC;
 
   quat_from_earth_cmd_i(&stab_att_sp_quat, cmd, heading);
+  FLOAT_RATES_ZERO(stab_att_ff_rates);
 }
 
 /**
@@ -297,6 +309,7 @@ void stabilization_indi_set_stab_sp(struct StabilizationSetpoint *sp)
 {
   stab_att_sp_euler = stab_sp_to_eulers_i(sp);
   stab_att_sp_quat = stab_sp_to_quat_i(sp);
+  stab_att_ff_rates = stab_sp_to_rates_f(sp);
 }
 
 /**
@@ -477,6 +490,9 @@ void stabilization_indi_attitude_run(struct Int32Quat quat_sp, bool in_flight __
   rate_sp.p = indi.gains.att.p * att_fb.x / indi.gains.rate.p;
   rate_sp.q = indi.gains.att.q * att_fb.y / indi.gains.rate.q;
   rate_sp.r = indi.gains.att.r * att_fb.z / indi.gains.rate.r;
+
+  // Add feed-forward rates to the attitude feedback part
+  RATES_ADD(rate_sp, stab_att_ff_rates);
 
   /* compute the INDI command */
   stabilization_indi_rate_run(rate_sp, in_flight);

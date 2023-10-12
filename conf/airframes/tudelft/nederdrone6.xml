@@ -35,6 +35,7 @@
       <module name="airspeed" type="ms45xx_i2c">
         <define name="USE_I2C4"/>
         <define name="MS45XX_I2C_DEV" value="i2c4"/>
+        <define name="I2C4_CLOCK_SPEED" value="100000"/>
       </module>
       <!--module name="airspeed" type="uavcan"/-->
 
@@ -63,7 +64,6 @@
     </target>
 
     <target name="nps" board="pc">
-      <!-- <module name="eff_scheduling_nederdrone_dummy"/> -->
       <module name="radio_control" type="datalink"/>
       <module name="fdm" type="jsbsim"/>
 
@@ -78,17 +78,21 @@
       <define name="RADIO_KILL_SWITCH" value="0"/>
     </target>
 
-    <module name="eff_scheduling_nederdrone"/>
+    <module name="eff_scheduling_nederdrone">
+      <!-- Trims -->
+      <define name="INDI_SCHEDULING_TRIM_ELEVATOR" value="0"/>
+      <define name="INDI_SCHEDULING_PREF_FLAPS_FACTOR" value="1.0"/>
+    </module>
 
     <module name="telemetry"     type="transparent">
-      <configure name="MODEM_BAUD" value="B115200"/>
+      <configure name="MODEM_BAUD" value="B460800"/>
     </module>
 
-    <module name="approach_moving_target">
-      <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/>
-    </module>
+    <module name="approach_moving_target"/>
 
-    <module name="ins"           type="ekf2" />
+    <module name="ins"           type="ekf2">
+      <define name="USE_INS_NAV_INIT" value="FALSE"/>
+    </module>
 
     <module name="actuators"     type="uavcan">
       <configure name="UAVCAN_USE_CAN1" value="TRUE"/>
@@ -102,6 +106,8 @@
     </module>
     <module name="stabilization" type="indi">
       <configure name="INDI_NUM_ACT" value="8"/>
+      <define name="WLS_N_U" value="8"/>
+      <define name="WLS_N_V" value="4"/>
       <define name="TILT_TWIST_CTRL" value="TRUE"/>
     </module>
     <module name="stabilization" type="rate_indi"/>
@@ -128,15 +134,21 @@
       <configure name="USE_TFMINI_AGL" value="FALSE"/>
     </module-->
 
+    <module name="nav" type="hybrid">
+      <define name="GUIDANCE_H_USE_REF" value="FALSE"/>
+    </module>
+
     <module name="guidance" type="indi_hybrid">
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
       <define name="GUIDANCE_INDI_POS_GAIN" value="0.3"/>
       <define name="GUIDANCE_INDI_SPEED_GAIN" value="0.5"/>
       <define name="GUIDANCE_INDI_POS_GAINZ" value="0.3"/>
       <define name="GUIDANCE_INDI_SPEED_GAINZ" value="0.5"/>
+      <define name="GUIDANCE_INDI_PITCH_LIFT_EFF" value="0.12"/>
       <define name="GUIDANCE_INDI_PITCH_EFF_SCALING" value="1.0"/>
       <define name="GUIDANCE_H_REF_MAX_SPEED" value="18.0"/> <!--not used-->
       <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="17.0"/>
+      <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/> <!--heading can not be set by navigation-->
       <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="5"/>
       <!--define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-943.0"/>
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_45" value="-500.0"/>
@@ -183,13 +195,6 @@
     <axis name="YAW"    failsafe_value="0"/>
     <axis name="THRUST" failsafe_value="0"/>
   </commands>
-
-  <rc_commands>
-    <set command="THRUST" value="@THROTTLE" />
-    <set command="ROLL" value="@YAW" />
-    <set command="PITCH" value="@PITCH/2" />
-    <set command="YAW" value="-@ROLL/4" />
-  </rc_commands>
 
   <section name="MIXING" prefix="MOTOR_MIXING_">
     <!-- frontleft left (CCW), frontleft mid (CW), frontleft right (CCW), frontright left (CW), frontright mid (CCW), frontright right (CW) -->
@@ -333,14 +338,15 @@
     <define name="FILT_CUTOFF" value="1.5"/>
     <define name="FILT_CUTOFF_RDOT" value="0.5"/>
     <define name="ESTIMATION_FILT_CUTOFF" value="5.0"/>
-    <define name="FILT_CUTOFF_R" value="4."/>
     <define name="FILT_CUTOFF_P" value="20."/>
     <define name="FILT_CUTOFF_Q" value="20."/>
+    <define name="FILT_CUTOFF_R" value="4."/>
     <!-- first order actuator dynamics -->
     <!--define name="ACT_DYN" value="{0.009, 0.009, 0.009, 0.009, 0.05, 0.05, 0.05, 0.05}"/-->
     <define name="ACT_DYN" value="{0.028, 0.028, 0.028, 0.028, 0.05, 0.05, 0.05, 0.05}"/>
     <define name="ACT_RATE_LIMIT" value="{9600, 9600, 9600, 9600, 170, 170, 170, 170}"/>
     <define name="ACT_IS_SERVO" value="{0, 0, 0, 0, 1, 1, 1, 1}"/>
+    <define name="WLS_WU" value="{1.,1.,1.,1.,1.,1.,1.,1.}"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
@@ -362,6 +368,14 @@
     <define name="DGAIN" value="100"/>
     <define name="AGAIN" value="0"/>
     <define name="IGAIN" value="20"/>
+  </section>
+
+  <section name="AMT" prefix="APPROACH_MOVING_TARGET_">
+    <define name="CUTOFF_FREQ_FILTERS_HZ" value="0.25"/>
+    <define name="ERR_SLOWDOWN_GAIN" value="0.25" />
+    <define name="SLOPE" value="35.0"/>
+    <define name="DISTANCE" value="60.0"/>
+    <define name="SPEED" value="-1.0"/>
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">

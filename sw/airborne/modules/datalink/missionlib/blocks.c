@@ -31,6 +31,7 @@
 // include mavlink headers, but ignore some warnings
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+#pragma GCC diagnostic ignored "-Wswitch-default"
 #include "mavlink/paparazzi/mavlink.h"
 #pragma GCC diagnostic pop
 

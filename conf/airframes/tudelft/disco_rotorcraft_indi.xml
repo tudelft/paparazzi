@@ -18,15 +18,13 @@
       </module>
       <module name="airspeed" type="ms45xx_i2c">
         <define name="MS45XX_I2C_DEV" value="i2c1"/>
-        <define name="MS45XX_PRESSURE_RANVE" value="0.05"/>
-        <define name="USE_AIRSPEED_MS45XX" value="TRUE"/>
       </module>
 
-      <define name="RADIO_TH_HOLD"     value="RADIO_AUX1"/> <!-- Throttle hold in command laws -->
+      <define name="RADIO_TH_HOLD"     value="RADIO_KILL"/> <!-- Throttle hold in command laws -->
       <define name="RADIO_FMODE"       value="RADIO_AUX2"/> <!-- Throttle curve select -->
       <define name="RADIO_FBW_MODE"    value="RADIO_AUX3"/> <!-- Switch between AP and FBW control -->
       <define name="RADIO_FLAPS"       value="RADIO_AUX4"/> <!-- Flaps control -->
-      <define name="RADIO_KILL_SWITCH" value="RADIO_AUX1"/>
+      <define name="RADIO_KILL_SWITCH" value="RADIO_KILL"/>
       <define name="RADIO_BACK_THOLD"  value="RADIO_AUX5"/>
 
     </target>
@@ -58,7 +56,9 @@
     <module name="actuators" type="disco"/>
     <!--<module name="control" type="new"/>-->
     <module name="stabilization" type="indi">
-      <configure name="INDI_NUM_ACT" value="3"/>
+      <define name="WLS_N_U" value="4"/>
+      <define name="WLS_N_V" value="4"/>
+     <configure name="INDI_NUM_ACT" value="3"/>
     </module>
     <module name="guidance" type="indi_hybrid"/>
     <!--<module name="sonar_bebop">
@@ -82,13 +82,6 @@
     <axis name="PITCH"    failsafe_value="0"/>
     <axis name="YAW"      failsafe_value="0"/>
   </commands>
-
-  <rc_commands>
-    <set command="THRUST"   value="@THROTTLE"/>
-    <set command="ROLL"     value="@ROLL"/>
-    <set command="PITCH"    value="@PITCH"/>
-    <set command="YAW"      value="@YAW"/>
-  </rc_commands>
 
   <section name="MIXER">
     <define name="AILEVON_AILERON_RATE" value="0.75"/>
