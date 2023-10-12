@@ -211,6 +211,8 @@
         <define VALUE="45." UNIT="deg"   NAME="STABILIZATION_ATTITUDE_SP_MAX_THETA"/>
         <define VALUE="90." UNIT="deg/s" NAME="STABILIZATION_ATTITUDE_SP_MAX_R"/>
         <define VALUE="200"              NAME="STABILIZATION_ATTITUDE_DEADBAND_R"/>
+        <define name="WLS_N_U" value="8"/>
+        <define name="WLS_N_V" value="6"/>
     </section>
 
     <section name="IMU" prefix="IMU_">

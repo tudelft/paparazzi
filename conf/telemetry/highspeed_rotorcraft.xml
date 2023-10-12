@@ -45,9 +45,9 @@
       <message name="HYBRID_GUIDANCE"          period="0.4"/>
       <message name="ESC"                      period="0.5"/>
       <message name="AHRS_REF_QUAT"            period="0.1"/>
-      <message name="INS_FLOW_INFO"	       period="0.1"/> 
+      <message name="INS_FLOW_INFO"	           period="0.1"/> 
       <message name="GPS_RTK"                  period="0.1"/>
-      <message name="ROT_WING_CONTROLLER"	     period="0.2"/>
+      <message name="ROTATING_WING_STATE"	     period="0.2"/>
       <message name="AOA"			                 period="0.2"/>
       <message name="ACTUATORS"                period="0.02"/>
       <message name="INDI_G"			             period="0.2"/>
@@ -247,7 +247,7 @@
       <message name="ACTUATORS"                period="0.002"/>
       <message name="GPS_RTK"                  period="0.1"/>
       <message name="IMU_HEATER"               period="1.0"/>
-      <message name="ROT_WING_CONTROLLER"	     period="0.2"/>
+      <message name="ROTATING_WING_STATE"	     period="0.2"/>
       <message name="AOA"			                 period="0.02"/>
       <message name="ONELOOP_ANDI"             period="0.002"/>
       <message name="ONELOOP_G"                period="0.002"/>
