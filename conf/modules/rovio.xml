@@ -28,6 +28,21 @@
     <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/eigen"/>
     <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/rovio2/kindr/include"/>
     <flag name="CXXFLAGS" value="I$(PAPARAZZI_SRC)/sw/ext/opencv_bebop/install_arm/include"/>
+
+	<flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install_arm/lib"/>
+	<flag name="LDFLAGS" value="lopencv_world"/>
+	<flag name="LDFLAGS" value="L$(PAPARAZZI_HOME)/sw/ext/opencv_bebop/install_arm/share/OpenCV/3rdparty/lib"/>
+	<flag name="LDFLAGS" value="llibprotobuf"/>
+	<flag name="LDFLAGS" value="llibjpeg-turbo"/>
+	<flag name="LDFLAGS" value="llibpng"/>
+	<flag name="LDFLAGS" value="llibtiff"/>
+	<flag name="LDFLAGS" value="lzlib"/>
+	<flag name="LDFLAGS" value="lquirc"/>
+	<flag name="LDFLAGS" value="ltegra_hal"/>
+	<flag name="LDFLAGS" value="ldl"/>
+	<flag name="LDFLAGS" value="lm"/>
+	<flag name="LDFLAGS" value="lpthread"/>
+	<flag name="LDFLAGS" value="lrt"/>
     <file name="rovio.c"/>
     <file name="rovio_thread.cpp"/>
   </makefile>
