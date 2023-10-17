@@ -1241,7 +1241,7 @@ void oneloop_andi_attitude_run(bool in_flight)
   if ((ONELOOP_ANDI_AC_HAS_PUSHER)&&(autopilot.mode==AP_MODE_ATTITUDE_DIRECT)){
     if(pusher_test_on){
       float pusher_target = 9600.0;
-      float max_du_pusher = pusher_target * pusher_max_f * 0.002 * 0.1;
+      float max_du_pusher = pusher_target * pusher_max_f * 0.002;
       float du_pusher = pusher_target - pusher_test_cmd;
       if (du_pusher > max_du_pusher) {
         du_pusher = max_du_pusher;
