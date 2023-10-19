@@ -172,7 +172,7 @@ void  rm_2rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_de
 void  rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
 void  rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
 void  rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], bool ow_psi, float psi_overwrite[4], float k1_rm[3], float k2_rm[3], float k3_rm[3]);
-void  rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], float k1_rm[3], float k2_rm[3], float k3_rm[3], float x_d_bound, float x_2d_bound);
+void  rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], float k1_rm[3], float k2_rm[3], float k3_rm[3], float x_d_bound, float x_2d_bound, float x_3d_bound);
 void  ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3]);
 void  calc_model(void);
 void  straight_oval(float s, float r, float l, float psi_i, float v_route, float a_route, float j_route, float p[3], float p0[3],  float v[3], float a[3], float j[3], float psi_vec[4], float* lap);
@@ -425,7 +425,8 @@ float v_nav    ;
 float a_nav    ;
 float j_nav    ;
 float v_nav_des = 1.2;
-float max_a_nav = 8.0;
+float max_j_nav = 2.1; // Pusher Test shows erros above 2[Hz] ramp commands [0.6 SF]
+float max_a_nav = 3.0; // (35[N]/6.5[Kg]) = 5.38[m/s2]  [0.8 SF]
 float max_v_nav = 5.0;
 
 float r_oval    = 2.0;
@@ -626,19 +627,20 @@ void rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float*
   *x_ref    = (*x_ref    + dt * (*x_d_ref ));
 }
 
-void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], float k1_rm[3], float k2_rm[3], float k3_rm[3], float x_d_bound, float x_2d_bound){
+void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], float k1_rm[3], float k2_rm[3], float k3_rm[3], float x_d_bound, float x_2d_bound, float x_3d_bound){
   float e_x[3];
   float e_x_d[3];
   float e_x_2d[3];
   float x_2d_bound_vel = 1000.0;//(x_d_bound - float_vect_norm(x_d_ref,3)) / dt;
   float x_2d_bound_gen = fminf(x_2d_bound_vel, x_2d_bound);
-  float x_3d_bound = ho_bound(dt, x_2d_ref, x_2d_bound_gen);
+  //float x_3d_bound = ho_bound(dt, x_2d_ref, x_2d_bound_gen);
   err_3d(e_x, x_des, x_ref, k1_rm);
   vect_bound_3d(e_x,x_d_bound);
   err_3d(e_x_d, e_x, x_d_ref, k2_rm);
   vect_bound_3d(e_x_d,x_2d_bound);
   err_3d(e_x_2d, e_x_d, x_2d_ref, k3_rm);
   float_vect_copy(x_3d_ref,e_x_2d,3);
+  vect_bound_3d(x_3d_ref, x_3d_bound);
   integrate_3d(dt, x_2d_ref, x_3d_ref);
   vect_bound_3d(x_2d_ref, x_2d_bound);
   integrate_3d(dt, x_d_ref, x_2d_ref);
@@ -1138,7 +1140,7 @@ void oneloop_andi_attitude_run(bool in_flight)
         float k1_pos_rm[3] = {k_N_rm,  k_E_rm,  k_D_rm};
         float k2_pos_rm[3] = {k_vN_rm, k_vE_rm, k_vD_rm};
         float k3_pos_rm[3] = {k_aN_rm, k_aE_rm, k_aD_rm};
-        rm_3rd_pos(dt_1l, pos_ref, pos_d_ref, pos_2d_ref, pos_3d_ref, pos_des, k1_pos_rm, k2_pos_rm, k3_pos_rm, max_v_nav, max_a_nav);
+        rm_3rd_pos(dt_1l, pos_ref, pos_d_ref, pos_2d_ref, pos_3d_ref, pos_des, k1_pos_rm, k2_pos_rm, k3_pos_rm, max_v_nav, max_a_nav, max_j_nav);
       }
       //printf("Desired position is :[%f, %f, %f]\n",pos_des[0],pos_des[1],pos_des[2]);
        
@@ -1257,7 +1259,7 @@ void oneloop_andi_attitude_run(bool in_flight)
       }      
     }else{
       pusher_test_cmd = 0.0;
-      andi_u[ONELOOP_ANDI_PUSHER_IDX] = pusher_test_cmd;//radio_control.values[RADIO_AUX4];
+      andi_u[ONELOOP_ANDI_PUSHER_IDX] = radio_control.values[RADIO_AUX4];
     }
   }
  
