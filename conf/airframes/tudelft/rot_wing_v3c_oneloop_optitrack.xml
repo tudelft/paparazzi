@@ -136,7 +136,7 @@
         <servo NO="1" NAME="MOTOR_RIGHT"    MIN="0"     NEUTRAL="600" MAX="8191"/>
         <servo NO="2" NAME="MOTOR_BACK"     MIN="0"     NEUTRAL="600" MAX="8191"/>
         <servo NO="3" NAME="MOTOR_LEFT"     MIN="0"     NEUTRAL="600" MAX="8191"/>
-        <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="0"    MAX="8191"/>
+        <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="200"    MAX="6552"/>
         <servo NO="5" NAME="SERVO_ELEVATOR" MIN="4000"  NEUTRAL="4000" MAX="-5500"/>
         <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"    MAX="8191"/>
     </servos>
@@ -211,6 +211,8 @@
         <define VALUE="45." UNIT="deg"   NAME="STABILIZATION_ATTITUDE_SP_MAX_THETA"/>
         <define VALUE="90." UNIT="deg/s" NAME="STABILIZATION_ATTITUDE_SP_MAX_R"/>
         <define VALUE="200"              NAME="STABILIZATION_ATTITUDE_DEADBAND_R"/>
+        <define name="WLS_N_U" value="8"/>
+        <define name="WLS_N_V" value="6"/>
     </section>
 
     <section name="IMU" prefix="IMU_">
