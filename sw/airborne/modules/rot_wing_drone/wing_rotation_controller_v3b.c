@@ -73,7 +73,7 @@ float wing_rotation_sched_as_2 = 8;
 float wing_rotation_sched_as_3 = 10;
 float wing_rotation_sched_as_4 = 15;
 
-static struct adc_buf buf_wing_rot_pos;
+//static struct adc_buf buf_wing_rot_pos;
 
 // Inline functions
 inline void wing_rotation_to_rad(void);
