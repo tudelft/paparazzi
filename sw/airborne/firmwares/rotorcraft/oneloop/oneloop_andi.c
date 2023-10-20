@@ -428,8 +428,8 @@ float v_nav    ;
 float a_nav    ;
 float j_nav    ;
 float v_nav_des = 1.2;
-float max_j_nav = 2.1; // Pusher Test shows erros above 2[Hz] ramp commands [0.6 SF]
-float max_a_nav = 3.0; // (35[N]/6.5[Kg]) = 5.38[m/s2]  [0.8 SF]
+float max_j_nav = 500.0; // Pusher Test shows erros above 2[Hz] ramp commands [0.6 SF]
+float max_a_nav = 4.0;   // (35[N]/6.5[Kg]) = 5.38[m/s2]  [0.8 SF]
 float max_v_nav = 5.0;
 
 float r_oval    = 2.0;
@@ -634,9 +634,6 @@ void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], f
   float e_x[3];
   float e_x_d[3];
   float e_x_2d[3];
-  float x_2d_bound_vel = 1000.0;//(x_d_bound - float_vect_norm(x_d_ref,3)) / dt;
-  float x_2d_bound_gen = fminf(x_2d_bound_vel, x_2d_bound);
-  //float x_3d_bound = ho_bound(dt, x_2d_ref, x_2d_bound_gen);
   err_3d(e_x, x_des, x_ref, k1_rm);
   vect_bound_3d(e_x,x_d_bound);
   err_3d(e_x_d, e_x, x_d_ref, k2_rm);
@@ -645,9 +642,7 @@ void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], f
   float_vect_copy(x_3d_ref,e_x_2d,3);
   vect_bound_3d(x_3d_ref, x_3d_bound);
   integrate_3d(dt, x_2d_ref, x_3d_ref);
-  vect_bound_3d(x_2d_ref, x_2d_bound);
   integrate_3d(dt, x_d_ref, x_2d_ref);
-  vect_bound_3d(x_d_ref, x_d_bound);
   integrate_3d(dt, x_ref, x_d_ref);
 }
 
