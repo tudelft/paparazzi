@@ -101,7 +101,7 @@ float  act_dynamics[ANDI_NUM_ACT_TOT] = = {0};
 #ifdef ONELOOP_ANDI_ACT_MAX
 float  act_max[ANDI_NUM_ACT_TOT] = ONELOOP_ANDI_ACT_MAX;
 #else
-float  act_max[ANDI_NUM_ACT_TOT] = = {9600.0};
+float  act_max[ANDI_NUM_ACT_TOT] = = {MAX_PPRZ};
 #endif
 
 #ifdef ONELOOP_ANDI_ACT_MIN
@@ -514,9 +514,9 @@ static float k_e_3_3_f(float p1, float p2, float p3) {return (p1+p2+p3);}
 static float k_e_1_2_f(float p1, float p2) {return (p1*p2);}
 static float k_e_2_2_f(float p1, float p2) {return (p1+p2);}
 
-static float k_e_1_3_f_v2(float omega_n, float zeta, float p1) {return (omega_n*omega_n*p1);}
-static float k_e_2_3_f_v2(float omega_n, float zeta, float p1) {return (omega_n*omega_n+2*zeta*omega_n*p1);}
-static float k_e_3_3_f_v2(float omega_n, float zeta, float p1) {return (2*zeta*omega_n+p1);}
+static float k_e_1_3_f_v2(float omega_n, UNUSED float zeta, float p1) {return (omega_n*omega_n*p1);}
+static float k_e_2_3_f_v2(float omega_n,        float zeta, float p1) {return (omega_n*omega_n+2*zeta*omega_n*p1);}
+static float k_e_3_3_f_v2(float omega_n,        float zeta, float p1) {return (2*zeta*omega_n+p1);}
 
 /*Reference Model Gain Design*/
 static float k_rm_1_3_f(float omega_n, float zeta, float p1) {return (omega_n*omega_n*p1)/(omega_n*omega_n+omega_n*p1*zeta*2.0);}
@@ -661,10 +661,7 @@ static float ec_3rd(float x_ref, float x_d_ref, float x_2d_ref, float x_3d_ref, 
   float y_4d = k1_e*(x_ref-x)+k2_e*(x_d_ref-x_d)+k3_e*(x_2d_ref-x_2d)+x_3d_ref;
   return y_4d;
 }
-static float ec_3rd_head(float x_ref, float x_d_ref, float x_2d_ref, float x_3d_ref, float x, float x_d, float x_2d, float k1_e, float k2_e, float k3_e){
-  float y_4d = k1_e*(convert_angle(x_ref-x))+k2_e*(x_d_ref-x_d)+k3_e*(x_2d_ref-x_2d)+x_3d_ref;
-  return y_4d;
-}
+
 void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3]){
   float y_4d_1[3];
   float y_4d_2[3];
@@ -686,11 +683,6 @@ static float ec_2rd(float x_ref, float x_d_ref, float x_2d_ref, float x, float x
 static float w_approx(float p1, float p2, float p3, float rm_k){
   float tao = (p1*p2+p1*p3+p2*p3)/(p1*p2*p3)/(rm_k);
   return 1.0*w_scale/tao;
-}
-
-static float schedule_p(float xy, float xy_1, float xy_2, float p_1, float p_2){
-  float p = (p_1-p_2)/(xy_1-xy_2)*(xy-xy_2)+p_2;
-  return p;
 }
 
 /** Gain Design
@@ -718,8 +710,6 @@ k_pdot_rm     = k_qdot_rm;
 
 /*Position Loop*/
 rm_k_pos      = 0.9;
-p1_pos        = schedule_p(scale_pos,xy_1,xy_2,p1_pos_1,p1_pos_2);//    (-0.6717*damp_pos)/(0.5-0.01)*(scale_pos-0.01)+0.6717*damp_pos;
-p2_pos        = schedule_p(scale_pos,xy_1,xy_2,p2_pos_1,p2_pos_2);// (6.0-0.4654)/(0.5-0.01)*(scale_pos-0.01)+0.4654;
 p3_pos        = p1_pos;
 route_k       = 0.8;
 k_N_e         = k_e_1_3_f_v2(p1_pos/damp_pos,damp_pos,p2_pos);
@@ -823,7 +813,6 @@ void init_filter(void)
   int8_t i;
   for (i = 0; i < 3; i++) {
     init_butterworth_2_low_pass(&att_dot_meas_lowpass_filters[i], tau, sample_time, 0.0);
-    //init_butterworth_2_low_pass(&filt_accel_ned[i], tau_a, sample_time, 0.0);
     init_first_order_low_pass(&filt_accel_ned[i], tau_a, sample_time, 0.0 );
     init_butterworth_2_low_pass(&filt_accel_body[i], tau_a, sample_time, 0.0);
     init_butterworth_2_low_pass(&att_ref_lowpass_filters[i], tau, sample_time, 0.0);
@@ -869,9 +858,6 @@ void oneloop_andi_propagate_filters(void) {
   float rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
   float pos_vect[3]  = {stateGetPositionNed_f()->x,stateGetPositionNed_f()->y,stateGetPositionNed_f()->z};
   float vel_vect[3]  = {stateGetSpeedNed_f()->x,stateGetSpeedNed_f()->y,stateGetSpeedNed_f()->z};
-  // update_butterworth_2_low_pass(&filt_accel_ned[0], accel->x);
-  // update_butterworth_2_low_pass(&filt_accel_ned[1], accel->y);
-  // update_butterworth_2_low_pass(&filt_accel_ned[2], accel->z);
   update_first_order_low_pass(&filt_accel_ned[0], accel->x);
   update_first_order_low_pass(&filt_accel_ned[1], accel->y);
   update_first_order_low_pass(&filt_accel_ned[2], accel->z);
@@ -891,13 +877,11 @@ void oneloop_andi_propagate_filters(void) {
   for (i = 0; i < 3; i++) {
     update_first_order_low_pass(&model_pred_a_filt[i], model_pred[i]);
     update_butterworth_2_low_pass(&att_dot_meas_lowpass_filters[i], rate_vect[i]);
-    //float old_rate = rates_filt_fo[i].last_out;
     update_first_order_low_pass(&rates_filt_fo[i], rate_vect[i]);
     update_first_order_low_pass(&pos_filt_fo[i], pos_vect[i]);
     update_first_order_low_pass(&vel_filt_fo[i], vel_vect[i]);
  
     ang_acc[i] = (att_dot_meas_lowpass_filters[i].o[0]- att_dot_meas_lowpass_filters[i].o[1]) * PERIODIC_FREQUENCY + model_pred[3+i] - model_pred_filt[3+i].o[0];
-    //lin_acc[i] = filt_accel_ned[i].o[0] + model_pred[i] - model_pred_filt[i].o[0];  
     lin_acc[i] = filt_accel_ned[i].last_out + model_pred[i] - model_pred_a_filt[i].last_out;     
 }}
 
@@ -988,16 +972,7 @@ void oneloop_andi_attitude_run(bool in_flight)
   printf("This function is running at a dt=%f \n",new_time-old_time);
   dt_actual = new_time - old_time;
   old_time = new_time;
-  
 
-  // Calculate Position error in XY from previous iteration to schedule gains of position
-  float xy_err[2];
-  xy_err[0] = pos_ref[0]-pos_1l[0];
-  xy_err[1] = pos_ref[1]-pos_1l[1];
-  scale_pos = sqrtf(xy_err[0]*xy_err[0]+xy_err[1]*xy_err[1]);
-  Bound(scale_pos,xy_2,xy_1);
-  printf("xy_err[%f,%f]\n",xy_err[0],xy_err[1]);
-  printf("scale_pos= %f\n",scale_pos);
   printf("p1_pos = %f\n",p1_pos);
   printf("p2_pos = %f\n",p2_pos);
   printf("k_N_e = %f\n",k_N_e);
@@ -1040,8 +1015,8 @@ void oneloop_andi_attitude_run(bool in_flight)
   
   if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
     printf("I AM IN ATT\n");
-    eulers_zxy_des.phi   = (float) (radio_control.values[RADIO_ROLL] )/9600.0*45.0*3.14/180.0;
-    eulers_zxy_des.theta = (float) (radio_control.values[RADIO_PITCH])/9600.0*45.0*3.14/180.0;
+    eulers_zxy_des.phi   = (float) (radio_control.values[RADIO_ROLL] )/MAX_PPRZ*45.0*M_PI/180.0;
+    eulers_zxy_des.theta = (float) (radio_control.values[RADIO_PITCH])/MAX_PPRZ*45.0*M_PI/180.0;
     eulers_zxy_des.psi   = eulers_zxy.psi;//
     psi_des_rad          = eulers_zxy.psi;
     check_1st_nav  = true;
@@ -1113,8 +1088,6 @@ void oneloop_andi_attitude_run(bool in_flight)
         pos_init[1] = (float) (guidance_h.sp.pos.y * 0.0039063);
         pos_init[2] = (float) (guidance_v.z_sp     * 0.0039063);
       }
-      //float rc_x = (float) (-radio_control.values[RADIO_PITCH])/9600.0*3.0;
-      //float rc_y = (float) (radio_control.values[RADIO_ROLL] )/9600.0*3.0;
       if(oval_on){
         float v_actual = sqrtf(pos_d[0] * pos_d[0]+pos_d[1] * pos_d[1]);
         
@@ -1133,16 +1106,14 @@ void oneloop_andi_attitude_run(bool in_flight)
         check_1st_oval = true;
         
         nav_speed_controller_enter();
-        pos_des[0] = pos_init[0];// + cosf(eulers_zxy.psi) * rc_x - sinf(eulers_zxy.psi) * rc_y;;
-        pos_des[1] = pos_init[1];// + sinf(eulers_zxy.psi) * rc_x + cosf(eulers_zxy.psi) * rc_y;;
+        pos_des[0] = pos_init[0];
+        pos_des[1] = pos_init[1];
         pos_des[2] = pos_init[2];
         float k1_pos_rm[3] = {k_N_rm,  k_E_rm,  k_D_rm};
         float k2_pos_rm[3] = {k_vN_rm, k_vE_rm, k_vD_rm};
         float k3_pos_rm[3] = {k_aN_rm, k_aE_rm, k_aD_rm};
         rm_3rd_pos(dt_1l, pos_ref, pos_d_ref, pos_2d_ref, pos_3d_ref, pos_des, k1_pos_rm, k2_pos_rm, k3_pos_rm, max_v_nav, max_a_nav, max_j_nav);
       }
-      //printf("Desired position is :[%f, %f, %f]\n",pos_des[0],pos_des[1],pos_des[2]);
-       
   }
 
   
@@ -1150,7 +1121,7 @@ void oneloop_andi_attitude_run(bool in_flight)
   
   if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
     att_ref[2] = psi_des_rad;
-    des_r = (float) (radio_control.values[RADIO_YAW])/9600.0*3.0; //(eulers_zxy_des.psi-eulers_zxy.psi);
+    des_r = (float) (radio_control.values[RADIO_YAW])/MAX_PPRZ*3.0; 
     BoundAbs(des_r,5.0);
     rm_2rd(dt_1l, &att_d_ref[2], &att_2d_ref[2], &att_3d_ref[2], des_r, k_r_rm, k_r_d_rm);
     rm_3rd(dt_1l, &att_ref[0],   &att_d_ref[0],  &att_2d_ref[0], &att_3d_ref[0], eulers_zxy_des.phi, k_phi_rm, k_p_rm, k_pdot_rm);
@@ -1212,7 +1183,7 @@ void oneloop_andi_attitude_run(bool in_flight)
       du_min_1l[i]  = (act_min[i] - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
       du_max_1l[i]  = (act_max[i] - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
       // if(i== ANDI_NUM_ACT_TOT-1){
-      //   u_pref[i] = radio_control.values[RADIO_AUX4] * (13.0) / 9600.0 - 3.0;
+      //   u_pref[i] = radio_control.values[RADIO_AUX4] * (13.0) / MAX_PPRZ - 3.0;
       // }
       du_pref_1l[i] = (u_pref[i]  - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
     }
@@ -1241,8 +1212,8 @@ void oneloop_andi_attitude_run(bool in_flight)
   // Overwrite the pusher command if enabled and in ATT
   if ((ONELOOP_ANDI_AC_HAS_PUSHER)&&(autopilot.mode==AP_MODE_ATTITUDE_DIRECT)){
     if(pusher_test_on){
-      float pusher_target = 9600.0;
-      float max_du_pusher = pusher_target * pusher_max_f * 0.002;
+      float pusher_target = MAX_PPRZ;
+      float max_du_pusher = pusher_target * pusher_max_f * dt_actual;
       float du_pusher = pusher_target - pusher_test_cmd;
       if (du_pusher > max_du_pusher) {
         du_pusher = max_du_pusher;
