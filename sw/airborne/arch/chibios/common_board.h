@@ -295,7 +295,7 @@
 
 #if defined(LINE_SERVO8)
 #ifndef USE_PWM8
-USE_PWM8#define  1
+#define USE_PWM8 1
 #endif
 #if USE_PWM8
 #define PWM_SERVO_8 7
