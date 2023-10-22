@@ -234,7 +234,7 @@ void guidance_indi_run(float *heading_sp)
 
   // If the acceleration setpoint is set over ABI message
   if (indi_accel_sp_set_2d) {
-    sp_accel.x = indi_accel_sp.x -d_cg * angular_acceleration[1];
+    sp_accel.x = indi_accel_sp.x;
     sp_accel.y = indi_accel_sp.y;
     // In 2D the vertical motion is derived from the flight plan
     sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * guidance_indi_speed_gain;

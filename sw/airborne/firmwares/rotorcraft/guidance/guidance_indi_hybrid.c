@@ -121,7 +121,7 @@ float guidance_indi_line_gain = 1.0;
 #endif
 
 float guidance_indi_pitch_eff_scaling = GUIDANCE_INDI_PITCH_EFF_SCALING;
-
+float d_cg = 0.16;
 float inv_eff[4];
 
 float lift_pitch_eff = GUIDANCE_INDI_PITCH_LIFT_EFF;
@@ -320,6 +320,8 @@ void guidance_indi_run(float *heading_sp) {
 
     // Control the airspeed
     sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
+    // Subtract d_cg * q_dot from the x component of the body-frame acceleration
+    sp_accel_b.x -= d_cg * angular_acceleration[1];
 
     sp_accel.x = cosf(psi) * sp_accel_b.x - sinf(psi) * sp_accel_b.y;
     sp_accel.y = sinf(psi) * sp_accel_b.x + cosf(psi) * sp_accel_b.y;
