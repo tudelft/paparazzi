@@ -96,7 +96,7 @@ static void guidance_indi_filter_thrust(void);
 #define GUIDANCE_INDI_FILTER_CUTOFF 3.0
 #endif
 #endif
-float d_cg = 0.16;
+
 float thrust_act = 0;
 Butterworth2LowPass filt_accel_ned[3];
 Butterworth2LowPass roll_filt;
@@ -195,46 +195,11 @@ void guidance_indi_run(float *heading_sp)
   speed_sp.y = pos_y_err * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(guidance_h.ref.speed.y);
   speed_sp.z = pos_z_err * guidance_indi_pos_gain + SPEED_FLOAT_OF_BFP(guidance_v_zd_ref);
 
-  // Define rotation matrices for ZXY sequence
-  struct FloatMat33 Rz, Rx, Ry, Rzxy;
-  FLOAT_MAT33_ZERO(Rz);
-  FLOAT_MAT33_ZERO(Rx);
-  FLOAT_MAT33_ZERO(Ry);
-  FLOAT_MAT33_ZERO(Rzxy);
-
-  Rz.m[0] = cosf(eulers_yxz.psi);   Rz.m[1] = -sinf(eulers_yxz.psi); Rz.m[2] = 0;
-  Rz.m[3] = sinf(eulers_yxz.psi);   Rz.m[4] = cosf(eulers_yxz.psi);  Rz.m[5] = 0;
-  Rz.m[6] = 0;                      Rz.m[7] = 0;                     Rz.m[8] = 1;
-
-  Rx.m[0] = 1;                      Rx.m[1] = 0;                     Rx.m[2] = 0;
-  Rx.m[3] = 0;                      Rx.m[4] = cosf(eulers_yxz.theta);Rx.m[5] = -sinf(eulers_yxz.theta);
-  Rx.m[6] = 0;                      Rx.m[7] = sinf(eulers_yxz.theta);Rx.m[8] = cosf(eulers_yxz.theta);
-
-  Ry.m[0] = cosf(eulers_yxz.phi);   Ry.m[1] = 0;                     Ry.m[2] = sinf(eulers_yxz.phi);
-  Ry.m[3] = 0;                      Ry.m[4] = 1;                     Ry.m[5] = 0;
-  Ry.m[6] = -sinf(eulers_yxz.phi);  Ry.m[7] = 0;                     Ry.m[8] = cosf(eulers_yxz.phi);
-
-  // Compute the combined rotation matrix Rzxy = Rz * Rx * Ry
-  struct FloatMat33 temp_mat;
-  FLOAT_MAT33_MUL(temp_mat, Rz, Rx);
-  FLOAT_MAT33_MUL(Rzxy, temp_mat, Ry);
-
-  // Convert sp_accel from NED frame to body frame
-  struct FloatVect3 sp_accel_body;
-  MAT33_VECT3_MUL(sp_accel_body, Rzxy, sp_accel);
-
-  // Subtract d_cg * q_dot from the x component of the body-frame acceleration
-  sp_accel_body.x -= d_cg * angular_acceleration[1];
-
-  // Convert modified body-frame acceleration back to NED frame
-  struct FloatMat33 Rzxy_T;
-  FLOAT_MAT33_TRANS(Rzxy_T, Rzxy);
-  MAT33_VECT3_MUL(sp_accel, Rzxy_T, sp_accel_body);
 
 
   // If the acceleration setpoint is set over ABI message
   if (indi_accel_sp_set_2d) {
-    sp_accel.x = indi_accel_sp.x -d_cg * angular_acceleration[1];
+    sp_accel.x = indi_accel_sp.x;
     sp_accel.y = indi_accel_sp.y;
     // In 2D the vertical motion is derived from the flight plan
     sp_accel.z = (speed_sp.z - stateGetSpeedNed_f()->z) * guidance_indi_speed_gain;

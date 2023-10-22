@@ -1,0 +1,58 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="40" ground_alt="0" lat0="51.990756118113396" lon0="4.3766371656872245" max_dist_from_home="500" name="Rotorcraft Basic (Enac)" security_height="2">
+  <header>
+#include "autopilot.h"
+#include "generated/modules.h"
+</header>
+  <waypoints>
+    <waypoint name="HOME" x="-15.8" y="16.5"/>
+    <waypoint name="CLIMB" x="-39.0" y="17.6"/>
+    <waypoint name="STDBY" x="-29.1" y="-47.5"/>
+    <waypoint name="TD" x="-25.4" y="34.0"/>
+  </waypoints>
+  <blocks>
+    <block name="Wait GPS">
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 1)"/>
+      <call_once fun="NavSetGroundReferenceHere()"/>
+    </block>
+    <block name="Holding point">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>   
+    <block name="Automatic Takeoff">
+      <call_once fun="NavResurrect()"/>
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <call_once fun="take_off_enter()"/>
+      <attitude alt="3" pitch="0" roll="0" until="GetPosHeight() @GT 2.0"/>
+    </block>
+    <block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+      <exception cond="GetPosHeight() @GT 2.0" deroute="Standby"/>
+      <call_once fun="NavSetWaypointHere(WP_CLIMB)"/>
+      <stay climb="nav_climb_vspeed" vmode="climb" wp="CLIMB"/>
+    </block>
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <set value="false" var="force_forward"/>
+      <stay wp="STDBY"/>
+    </block>
+    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+      <deroute block="flare"/>
+    </block>
+    <block name="land">
+      <set value="false" var="force_forward"/>
+      <go vmode="alt" wp="TD"/>
+    </block>
+    <block name="flare">
+      <exception cond="LessThan(agl_dist_value_filtered, 0.20) @AND agl_dist_valid" deroute="landed"/>
+      <stay climb="nav_descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="landed">
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+  </blocks>
+</flight_plan>
