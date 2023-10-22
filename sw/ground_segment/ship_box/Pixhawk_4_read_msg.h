@@ -15,7 +15,7 @@
 #ifndef PIXHAWK4COMM_H
 #define PIXHAWK4COMM_H
 
-#define BAUDRATE_PIXHAWK_4 57600
+#define BAUDRATE_PIXHAWK_4 460800
 
 #define SHIP_INFO_MSG_ID 190
 
@@ -24,6 +24,8 @@
 #define AC_ID_DEST "ground"
 
 #define PPRZ_STX 0x99
+
+#define MESSAGE_ON_TX_FREQUENCY_CALCULATION 50
 
 #define VERBOSE
 
