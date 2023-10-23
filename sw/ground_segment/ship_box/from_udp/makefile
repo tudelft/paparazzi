@@ -33,7 +33,7 @@ INCLUDES += -I$(PAPARAZZI_SRC)/sw/ext/libsbp/c/include/ -I$(PAPARAZZI_SRC)/sw/ai
 make:
 	@echo "Compiling..."
 
-	gcc -o Pixhawk_4_read_msg *.c -lwiringPi $(INCLUDES) $(LIBRARYS) -lpthread $(GLIB_LDFLAGS) $(IVY_LDFLAGS)
+	gcc -o Pixhawk_4_read_msg *.c $(INCLUDES) $(LIBRARYS) -lpthread $(GLIB_LDFLAGS) $(IVY_LDFLAGS)
 clean:
 	@echo "Cleaning up..."
 	rm -rvf Pixhawk_4_read_msg

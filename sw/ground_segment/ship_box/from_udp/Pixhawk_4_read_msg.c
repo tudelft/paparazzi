@@ -1,3 +1,27 @@
+/*
+ * Paparazzi UBLox to Ivy
+ *
+ * Copyright (C) 2021 Freek van Tienen <freek.v.tienen@gmail.com>
+ *
+ * This file is part of paparazzi.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with paparazzi; see the file COPYING.  If not, write to
+ * the Free Software Foundation, 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
+ *
+ */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -16,7 +40,15 @@
 #include <Ivy/ivy.h>
 #include <Ivy/ivyglibloop.h>
 #include "Pixhawk_4_read_msg.h"
-#include <string.h>
+
+
+#define UDP_BUFFER_SIZE   1024
+
+struct timeval current_time, last_time;
+
+double delta_time[MESSAGE_ON_TX_FREQUENCY_CALCULATION];
+float avg_msg_frequency_tx; 
+int delta_time_count; 
 
 /* PPRZ message parser states */
 enum normal_parser_states {
@@ -29,6 +61,53 @@ enum normal_parser_states {
   ParsingMsgPayload,
   CheckingCRCA,
   CheckingCRCB
+};
+
+struct normal_parser_t {
+  enum normal_parser_states state;
+  unsigned char length;
+  int counter;
+  unsigned char sender_id; //Note that Source is the official PPRZLink v2 name
+  unsigned char destination;
+  unsigned char class_id; //HiNibble 4 bits
+  unsigned char component_id; //LowNibble 4 bits
+  unsigned char msg_id;
+  unsigned char payload[256];
+  unsigned char crc_a;
+  unsigned char crc_b;
+};
+
+/* Endpoints */
+struct endpoint_udp_t {
+  char server_addr[128];
+  uint16_t server_port;
+  char client_addr[128];
+  uint16_t client_port;
+
+  int fd;
+  pthread_t thread;
+};
+
+struct endpoint_uart_t {
+  char devname[512];
+  int baudrate;
+
+  int fd;
+  pthread_t thread;
+};
+
+enum endpoint_type_t {
+  ENDPOINT_TYPE_NONE,
+  ENDPOINT_TYPE_UDP,
+  ENDPOINT_TYPE_UART
+};
+
+struct endpoint_t {
+  enum endpoint_type_t type;
+  union {
+    struct endpoint_udp_t udp;
+    struct endpoint_uart_t uart;
+  } ep;
 };
 
 struct payload_ship_info_msg {
@@ -49,35 +128,19 @@ struct payload_ship_info_msg {
   float z_ddot; 
 };
 
-struct normal_parser_t {
-  enum normal_parser_states state;
-  unsigned char length;
-  int counter;
-  unsigned char sender_id; //Note that Source is the official PPRZLink v2 name
-  unsigned char destination;
-  unsigned char class_id; //HiNibble 4 bits
-  unsigned char component_id; //LowNibble 4 bits
-  unsigned char msg_id;
-  unsigned char payload[256];
-  unsigned char crc_a;
-  unsigned char crc_b;
-};
-
-int verbose; 
-int ac_id; 
-
+static bool verbose = false;
+static struct endpoint_t ship_box_ep;
+static uint8_t ac_id = 0;
 struct normal_parser_t parser;
+
+char outBuffer[256];    //buffer to hold outgoing data
+uint8_t out_idx = 0;
 
 struct payload_ship_info_msg paylod_ship; 
 
-char packetBuffer[256]; //buffer to hold incoming packet
-char outBuffer[256];    //buffer to hold outgoing data
-uint8_t out_idx = 0;
-uint8_t serial_connect_info = 1; //If 1 then spit out serial print wifi connection info for debugging purposes
+void packet_handler(void *ep, uint8_t *data, uint16_t len);
 
-int serial_port_pixhawk_4;
-
-pthread_t pixhawk_4_msg_generator;
+void ivy_send_ship_info_msg(void);
 
 /* 
    PPRZLINK v2
@@ -206,69 +269,305 @@ uint8_t parse_single_byte(unsigned char in_byte)
   return 0;
 }
 
+/**
+ * Create an UDP endpoint thread
+ */
+void *udp_endpoint(void *arg) {
+  struct endpoint_udp_t *ep = (struct endpoint_udp_t *)arg;
 
-
-void Pixhawk_reading_init(){
-  //Init serial port for the communication
-  if ((serial_port_pixhawk_4 = serialOpen ("/dev/ttyS0", BAUDRATE_PIXHAWK_4)) < 0){
-    fprintf (stderr, "Unable to open serial device /dev/ttyS0 to Pixhawk 4. %s\n", strerror (errno)) ;
+  /* Create the socket */
+	ep->fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if(ep->fd < 0) {
+		fprintf(stderr, "Could not create socket for %s:%d\r\n", ep->server_addr, ep->server_port);
+    return NULL;
   }
 
-  /* Start the Pixhawk 4 reading thread */
-  if(verbose) printf("Start reading from Pixhawk 4 serial device /dev/ttyS0");
-  pthread_create(&pixhawk_4_msg_generator, NULL, pixhawk_fwd_msg, NULL);
+  /* Enable broadcasting */
+  int one = 1;
+  setsockopt(ep->fd, SOL_SOCKET, SO_BROADCAST, &one, sizeof(one));
 
-}
+  /* Create the input address */
+	struct sockaddr_in server;
+	server.sin_family = AF_INET;
+	server.sin_addr.s_addr = inet_addr(ep->server_addr);
+	server.sin_port = htons(ep->server_port);
 
-void* pixhawk_fwd_msg(){ 
-  while(1){
-    Pixhawk_read_fwd_ship_info_msg();
-    
+  /* Bind the socket with the server address  */
+  if(bind(ep->fd, (struct sockaddr *)&server, sizeof(server)) < 0) {
+    fprintf(stderr, "Could not bind to address %s:%d\r\n", ep->server_addr, ep->server_port);
+    return NULL;
+  }
+
+  /* Wait for messages */
+  while(true) {
+    struct sockaddr_in client;
+    uint8_t buffer[UDP_BUFFER_SIZE];
+    socklen_t len = sizeof(client);
+    int n = recvfrom(ep->fd, buffer, UDP_BUFFER_SIZE, MSG_WAITALL, (struct sockaddr *)&client, &len);
+
+    // Ignore errors
+    if(n < 0)
+      continue;
+
+    if(verbose) printf("Got packet at endpoint [%s:%d] with length %d\r\n", ep->server_addr, ep->server_port, n);
+
+    // Send the message to the handler
+    packet_handler(ep, buffer, n);
   }
 }
 
-void Pixhawk_read_fwd_ship_info_msg(void){
-    if(serialDataAvail(serial_port_pixhawk_4) > 0) { 
-      unsigned char inbyte = serialGetchar(serial_port_pixhawk_4);
-      if (parse_single_byte(inbyte)) { 
-        // if complete message detected save the message on the paylod_ship struct
-        if(parser.msg_id == SHIP_INFO_MSG_ID){
+/**
+ * Send a message out of an UDP endpoint
+ */
+void udp_endpoint_send(struct endpoint_udp_t *ep, uint8_t *buffer, uint16_t len) {
+  // Check if file descriptor is valid
+  if(ep->fd < 0)
+    return;
 
-          memcpy(&paylod_ship,&parser.payload[2],sizeof(struct payload_ship_info_msg));
+  struct sockaddr_in client;
+	client.sin_family = AF_INET;
+	client.sin_addr.s_addr = inet_addr(ep->client_addr);
+	client.sin_port = htons(ep->client_port);
 
-          if(verbose){
-            printf("Valid SHIP_INFO_MSG_ID message received from Pixhawk 4 with ID %d: \n",parser.sender_id);
-            printf("Ship roll angle [deg] : %f \n",paylod_ship.phi);
-            printf("Ship theta angle [deg] : %f \n",paylod_ship.theta);
-            printf("Ship psi angle [deg] : %f \n",paylod_ship.psi);
-            printf("Ship roll rate [deg/s] : %f \n",paylod_ship.phi_dot);
-            printf("Ship pitch rate [deg/s] : %f \n",paylod_ship.theta_dot);
-            printf("Ship yaw rate [deg/s] : %f \n",paylod_ship.psi_dot);  
-            printf("Ship pos x [m] : %f \n",paylod_ship.x);  
-            printf("Ship pos y [m] : %f \n",paylod_ship.y);  
-            printf("Ship pos z [m] : %f \n",paylod_ship.z);  
-            printf("Ship speed x [m/s] : %f \n",paylod_ship.x_dot);  
-            printf("Ship speed y [m/s] : %f \n",paylod_ship.y_dot);  
-            printf("Ship speed z [m/s] : %f \n",paylod_ship.z_dot);  
-            printf("Ship acc x [m/s^2] : %f \n",paylod_ship.x_ddot);  
-            printf("Ship acc y [m/s^2] : %f \n",paylod_ship.y_ddot);  
-            printf("Ship acc z [m/s^2] : %f \n",paylod_ship.z_ddot);                
+  if(verbose) printf("Send packet at endpoint [%s:%d] with length %d\r\n", ep->client_addr, ep->client_port, len);
+  sendto(ep->fd, buffer, len, MSG_DONTWAIT, (struct sockaddr *)&client, sizeof(client));
+}
+
+/**
+ * Create an UDP endpoint
+ */
+void udp_create(char *server_addr, uint16_t server_port, char *client_addr, uint16_t client_port) {
+  /* Create the endpoint */
+  ship_box_ep.type = ENDPOINT_TYPE_UDP;
+  struct endpoint_udp_t *ep = &ship_box_ep.ep.udp;
+  strncpy(ep->server_addr, server_addr, 127);
+  ep->server_port = server_port;
+  strncpy(ep->client_addr, client_addr, 127);
+  ep->client_port = client_port;
+
+  /* Start the endpoint thread */
+  if(verbose) printf("Created UDP endpoint with server [%s:%d] and client [%s:%d]\r\n", ep->server_addr, ep->server_port, ep->client_addr, ep->client_port);
+  pthread_create(&ep->thread, NULL, udp_endpoint, ep);
+}
+
+/**
+ * Get the baudrate based ont he argument
+ */
+int get_baud(unsigned int baud_rate)
+{
+  int baud = 0;
+  switch (baud_rate)
+  {
+      #ifdef B921600
+    case 921600:
+      baud = B921600;
+      break;
+      #endif
+      #ifdef B460800
+    case 460800:
+      baud = B460800;
+      break;
+      #endif
+    case 230400:
+      baud = B230400;
+      break;
+    case 115200:
+      baud = B115200;
+      break;
+    case 57600:
+      baud = B57600;
+      break;
+    case 38400:
+      baud = B38400;
+      break;
+    case 19200:
+      baud  = B19200;
+      break;
+    case 9600:
+      baud  = B9600;
+      break;
+    case 4800:
+      baud  = B4800;
+      break;
+    case 2400:
+      baud  = B2400;
+      break;
+    case 1800:
+      baud  = B1800;
+      break;
+    case 1200:
+      baud  = B1200;
+      break;
+    case 600:
+      baud  = B600;
+      break;
+    case 300:
+      baud  = B300;
+      break;
+    case 200:
+      baud  = B200;
+      break;
+    case 150:
+      baud  = B150;
+      break;
+    case 134:
+      baud  = B134;
+      break;
+    case 110:
+      baud  = B110;
+      break;
+    case 75:
+      baud  = B75;
+      break;
+    case 50:
+      baud  = B50;
+      break;
+    default:
+      baud = -1;
+  }  //end of switch baud_rate
+  return baud;
+}
+
+/**
+ * Create an UART endpoint thread
+ */
+void *uart_endpoint(void *arg) {
+  struct endpoint_uart_t *ep = (struct endpoint_uart_t *)arg;
+
+  /* Open de uart device in blocking Read/Write mode */
+  ep->fd = open(ep->devname, O_RDWR | O_NOCTTY);
+  if(ep->fd < 0) {
+    fprintf(stderr, "Could not open uart for %s:%d\r\n", ep->devname, ep->baudrate);
+    return NULL;
+  }
+
+  /* Conver the baudrate */
+  int baud = get_baud(ep->baudrate);
+  if(baud < 0) {
+    fprintf(stderr, "Could set baudrate for %s:%d\r\n", ep->devname, ep->baudrate);
+    return NULL;
+  }
+
+  /* Configure the UART */
+  struct termios options;
+	tcgetattr(ep->fd, &options);
+	options.c_cflag = baud | CS8 | CLOCAL | CREAD;
+	options.c_iflag = IGNPAR;
+	options.c_oflag = 0;
+	options.c_lflag = 0;
+	tcflush(ep->fd, TCIFLUSH);
+	tcsetattr(ep->fd, TCSANOW, &options);
+
+  /* Try to read bytes */
+  while(true) {
+    uint8_t buffer[2048];
+    int len = read(ep->fd, buffer, 2048);
+
+    // Read got an error
+    if(len < 0) {
+      if(verbose) printf("Got read error (%d) at endpoint [%s:%d]\r\n", len, ep->devname, ep->baudrate);
+      usleep(20);
+    }
+    // No bytes to read
+    else if(len == 0) {
+      usleep(20);
+    }
+    // We succsfully received some bytes
+    else if(len > 0) {
+      if(verbose) printf("Got packet at endpoint [%s:%d] with length %d\r\n", ep->devname, ep->baudrate, len);
+
+      // Send the message to the handler
+      packet_handler(ep, buffer, len);
+    }
+  }
+}
+
+/**
+ * Send a message out of an UART endpoint
+ */
+void uart_endpoint_send(struct endpoint_uart_t *ep, uint8_t *buffer, uint16_t len) {
+  // Check if file descriptor is valid
+  if(ep->fd < 0)
+    return;
+
+  if(verbose) printf("Send packet at endpoint [%s:%d] with length %d\r\n", ep->devname, ep->baudrate, len);
+  if(write(ep->fd, buffer, len) < 0)
+    fprintf(stderr, "Send packet at endpoint [%s:%d] with length %d errored\r\n", ep->devname, ep->baudrate, len);
+}
+
+/**
+ * Create an UART endpoint
+ */
+void uart_create(char *devname, uint32_t baudrate) {
+  /* Create the endpoint */
+  ship_box_ep.type = ENDPOINT_TYPE_UART;
+  struct endpoint_uart_t *ep = &ship_box_ep.ep.uart;
+  strncpy(ep->devname, devname, 511);
+  ep->baudrate = baudrate;
+
+  /* Start the endpoint thread */
+  if(verbose) printf("Created UART endpoint [%s:%d]\r\n", ep->devname, ep->baudrate);
+  pthread_create(&ep->thread, NULL, uart_endpoint, ep);
+}
+
+/**
+ * Handle incoming packets from the SHIP BOX (parsing SHIP_BOX_MSG)
+ */
+void packet_handler(void *ep, uint8_t *data, uint16_t len) {
+
+  for (int i=0; i<len; i++){
+    if (parse_single_byte(data[i])) { 
+      // if complete message detected save the message on the paylod_ship struct
+      if(parser.msg_id == SHIP_INFO_MSG_ID){
+
+        memcpy(&paylod_ship,&parser.payload[2],sizeof(struct payload_ship_info_msg));
+
+        gettimeofday(&current_time, NULL);
+        if ((current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time.tv_sec*1e6 + last_time.tv_usec) >= (1.0/MSG_OUT_TX_FREQUENCY)*1e6){
+          delta_time[delta_time_count] = (current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time.tv_sec*1e6 + last_time.tv_usec);
+          gettimeofday(&last_time, NULL);
+          delta_time_count++; 
+          if(delta_time_count > MESSAGE_ON_TX_FREQUENCY_CALCULATION){ 
+            delta_time_count = 0; 
+            avg_msg_frequency_tx = 0; 
+            for (int j=0; j<MESSAGE_ON_TX_FREQUENCY_CALCULATION; j++){
+              avg_msg_frequency_tx +=  delta_time[j];
+            }
+            avg_msg_frequency_tx = MESSAGE_ON_TX_FREQUENCY_CALCULATION/(avg_msg_frequency_tx*1e-6);
+            if(verbose){
+              printf("Valid SHIP_INFO_MSG_ID message received from Ship box with ID %d: \n",parser.sender_id);
+              printf("Ship roll angle [deg] : %f \n",paylod_ship.phi);
+              printf("Ship theta angle [deg] : %f \n",paylod_ship.theta);
+              printf("Ship psi angle [deg] : %f \n",paylod_ship.psi);
+              printf("Ship roll rate [deg/s] : %f \n",paylod_ship.phi_dot);
+              printf("Ship pitch rate [deg/s] : %f \n",paylod_ship.theta_dot);
+              printf("Ship yaw rate [deg/s] : %f \n",paylod_ship.psi_dot);  
+              printf("Ship pos x [m] : %f \n",paylod_ship.x);  
+              printf("Ship pos y [m] : %f \n",paylod_ship.y);  
+              printf("Ship pos z [m] : %f \n",paylod_ship.z);  
+              printf("Ship speed x [m/s] : %f \n",paylod_ship.x_dot);  
+              printf("Ship speed y [m/s] : %f \n",paylod_ship.y_dot);  
+              printf("Ship speed z [m/s] : %f \n",paylod_ship.z_dot);  
+              printf("Ship acc x [m/s^2] : %f \n",paylod_ship.x_ddot);  
+              printf("Ship acc y [m/s^2] : %f \n",paylod_ship.y_ddot);  
+              printf("Ship acc z [m/s^2] : %f \n",paylod_ship.z_ddot);     
+              printf("Average frequency ship message output : %.1f \n",avg_msg_frequency_tx);             
+            }
           }
-
           ivy_send_ship_info_msg();
         }
       }
     }
-    else{
-      usleep(20);
-    }
+  }
+
 }
 
 void ivy_send_ship_info_msg(void){
-  if(verbose) printf("Sent received Ship message on ivy bus\n");
-  IvySendMsg("ground %d  %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f",
-          SHIP_INFO_MSG_ID,
-
+  // if(verbose) printf("Sent received Ship message on ivy bus\n");
+  IvySendMsg("ground SHIP_INFO_MSG %d %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f",
+          // SHIP_INFO_MSG_ID,
+          ac_id,
+          
           paylod_ship.phi,
           paylod_ship.theta,
           paylod_ship.psi,
@@ -291,7 +590,6 @@ void ivy_send_ship_info_msg(void){
 }
 
 int main(int argc, char** argv) {
-
   /* Defaults */
   #ifdef __APPLE__
     char* ivy_bus = "224.255.255.255";
@@ -307,25 +605,52 @@ int main(int argc, char** argv) {
   /* Arguments options and usage information */
   static struct option long_options[] = {
     {"ac_id", required_argument, NULL, 'i'},
+    {"endpoint", required_argument, NULL, 'e'},
     {"help", no_argument, NULL, 'h'},
     {"verbose", no_argument, NULL, 'v'},
     {0, 0, 0, 0}
   };
-
   static const char* usage =
     "Usage: %s [options]\n"
     " Options :\n"
     "   -i --ac_id [aircraft_id]               Aircraft id\n"
+    "   -e --endpoint [endpoint_str]           Endpoint address of the GPS\n"
     "   -h --help                              Display this help\n"
     "   -v --verbose                           Print verbose information\n";
 
   int c;
   int option_index = 0;
-
-  while((c = getopt_long(argc, argv, "i:h:v", long_options, &option_index)) != -1) {
+  while((c = getopt_long(argc, argv, "i:e:h:v", long_options, &option_index)) != -1) {
     switch (c) {
       case 'i':
         ac_id = atoi(optarg);
+        break;
+
+      case 'e':
+        // Parse the endpoint argument UDP
+        if(!strncmp(optarg, "udp", 3)) {
+          char serv_addr[125], cli_addr[125];
+          uint16_t serv_port, cli_port;
+          if(sscanf(optarg, "udp://%[^:]:%hu:%[^:]:%hu", serv_addr, &serv_port, cli_addr, &cli_port) != 4) {
+            fprintf(stderr, "UDP endpoint %s has incorrect arguments\r\n", optarg);
+            return 2;
+          }
+          udp_create(serv_addr, serv_port, cli_addr, cli_port);
+        }
+        // Parse the endpoint argument UART
+        else if(!strncmp(optarg, "uart", 4)) {
+          char devname[256];
+          uint32_t baudrate;
+          if(sscanf(optarg, "uart://%[^:]:%u", devname, &baudrate) != 2) {
+            fprintf(stderr, "UART endpoint %s has incorrect arguments\r\n", optarg);
+            return 2;
+          }
+          uart_create(devname, baudrate);
+        }
+        else {
+          fprintf(stderr, "Endpoint %s has incorrect type only uart and udp are supported\r\n", optarg);
+          return 2;
+        }
         break;
 
       case 'v':
@@ -343,7 +668,11 @@ int main(int argc, char** argv) {
     }
   }
 
-  Pixhawk_reading_init();
   g_main_loop_run(ml);
 
+  /*while(true) {
+    usleep(50000);
+  }*/
+
+  return 0;
 }
