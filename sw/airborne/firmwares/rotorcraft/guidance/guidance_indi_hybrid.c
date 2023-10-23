@@ -176,7 +176,7 @@ float guidance_indi_line_gain = 1.0;
 #endif
 
 float guidance_indi_pitch_eff_scaling = GUIDANCE_INDI_PITCH_EFF_SCALING;
-
+float d_cg = 0.16;
 float inv_eff[4];
 
 // Max bank angle in radians
@@ -591,6 +591,8 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
 
     // Control the airspeed
     sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
+    // Subtract d_cg * q_dot from the x component of the body-frame acceleration
+    sp_accel_b.x -= d_cg * angular_acceleration[1];
 
     accel_sp.x = cpsi * sp_accel_b.x - spsi * sp_accel_b.y;
     accel_sp.y = spsi * sp_accel_b.x + cpsi * sp_accel_b.y;
