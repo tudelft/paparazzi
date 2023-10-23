@@ -3,7 +3,7 @@
 <module name="ship_state_message" dir="ship_state">
   <doc>
     <description>
-    This module generate the message SHIP_INFO_MSG
+    This module generate the message SHIP_INFO_MSG_GROUND
     </description>
   </doc>
   <header>

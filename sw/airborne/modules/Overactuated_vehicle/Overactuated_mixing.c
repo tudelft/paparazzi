@@ -336,11 +336,10 @@ struct FloatEulers max_value_error = {
 void overactuated_mixing_parse_SHIP_INFO_MSG(uint8_t *buf) {
 
 //   ship_info_receive.timestamp = get_sys_time_usec();
-//   ship_info_receive.phi = DL_GPS_INJECT_phi(buf);
+  ship_info_receive.phi = DL_SHIP_INFO_MSG_phi(buf);
 
-//   ship_info_receive.phi = DL_TARGET_POS_lat(buf);
 //   ship_info_receive.phi = get_sys_time_usec();
-  ship_info_receive.phi = 50; 
+//   ship_info_receive.phi = 50; 
 
 }
 

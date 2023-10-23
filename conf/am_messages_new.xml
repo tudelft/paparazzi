@@ -1755,7 +1755,24 @@
     </message>
 
     <!-- 191 is free -->
-    <!-- 192 is free -->
+
+    <message name="SHIP_INFO_MSG_GROUND" id="192" >
+      <field name="phi" type="float" unit="deg">Roll</field>
+      <field name="theta" type="float" unit="deg">Pitch</field>
+      <field name="psi" type="float" unit="deg">Yaw</field>
+      <field name="phi_dot" type="float" unit="deg/s">roll rate</field>
+      <field name="theta_dot" type="float" unit="deg/s">pitch rate</field>
+      <field name="psi_dot" type="float" unit="deg/s">yaw rate</field>      
+      <field name="x" type="float" unit="m">position_x</field>
+      <field name="y" type="float" unit="m">position_y</field>
+      <field name="z" type="float" unit="m">position_z</field>
+      <field name="x_dot" type="float" unit="m/s">speed_x</field>
+      <field name="y_dot" type="float" unit="m/s">speed_y</field>
+      <field name="z_dot" type="float" unit="m/s">speed_z</field>
+      <field name="x_ddot" type="float" unit="m/s^2">acc_x</field>      
+      <field name="y_ddot" type="float" unit="m/s^2">acc_y</field>      
+      <field name="z_ddot" type="float" unit="m/s^2">acc_z</field>                        
+    </message>
 
     <message name="AHRS_LKF" id="193">
       <field name="phi"   type="float" unit="rad"   alt_unit="deg"   alt_unit_coef="57.29578" />
@@ -1952,24 +1969,6 @@
       <field name="current" type="float" unit="A">Current measured</field>
       <field name="power" type="float" unit="W">Calculated power (Voltage * Current)</field>
       <field name="commands" type="int32[]">Commands send to actuators</field>
-    </message>
-
-    <message name="SHIP_INFO_MSG" id="190">
-      <field name="phi" type="float" unit="deg">Roll</field>
-      <field name="theta" type="float" unit="deg">Pitch</field>
-      <field name="psi" type="float" unit="deg">Yaw</field>
-      <field name="phi_dot" type="float" unit="deg/s">roll rate</field>
-      <field name="theta_dot" type="float" unit="deg/s">pitch rate</field>
-      <field name="psi_dot" type="float" unit="deg/s">yaw rate</field>      
-      <field name="x" type="float" unit="m">position_x</field>
-      <field name="y" type="float" unit="m">position_y</field>
-      <field name="z" type="float" unit="m">position_z</field>
-      <field name="x_dot" type="float" unit="m/s">speed_x</field>
-      <field name="y_dot" type="float" unit="m/s">speed_y</field>
-      <field name="z_dot" type="float" unit="m/s">speed_z</field>
-      <field name="x_ddot" type="float" unit="m/s^2">acc_x</field>      
-      <field name="y_ddot" type="float" unit="m/s^2">acc_y</field>      
-      <field name="z_ddot" type="float" unit="m/s^2">acc_z</field>                        
     </message>
 
      <message name= "AM7_OUT" id = "185">
@@ -3216,6 +3215,25 @@
       <field name="msg" type="char[]"/>
     </message>
     
+    <message name="SHIP_INFO_MSG" id="190" link="forwarded">
+      <field name="ac_id" type="uint8"/>
+      <field name="phi" type="float" unit="deg">Roll</field>
+      <field name="theta" type="float" unit="deg">Pitch</field>
+      <field name="psi" type="float" unit="deg">Yaw</field>
+      <field name="phi_dot" type="float" unit="deg/s">roll rate</field>
+      <field name="theta_dot" type="float" unit="deg/s">pitch rate</field>
+      <field name="psi_dot" type="float" unit="deg/s">yaw rate</field>      
+      <field name="x" type="float" unit="m">position_x</field>
+      <field name="y" type="float" unit="m">position_y</field>
+      <field name="z" type="float" unit="m">position_z</field>
+      <field name="x_dot" type="float" unit="m/s">speed_x</field>
+      <field name="y_dot" type="float" unit="m/s">speed_y</field>
+      <field name="z_dot" type="float" unit="m/s">speed_z</field>
+      <field name="x_ddot" type="float" unit="m/s^2">acc_x</field>      
+      <field name="y_ddot" type="float" unit="m/s^2">acc_y</field>      
+      <field name="z_ddot" type="float" unit="m/s^2">acc_z</field>                        
+    </message>
+
   </msg_class>
 
 

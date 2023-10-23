@@ -110,7 +110,7 @@ struct endpoint_t {
   } ep;
 };
 
-struct payload_ship_info_msg {
+struct payload_ship_info_msg_ground {
   float phi; 
   float theta; 
   float psi; 
@@ -136,7 +136,7 @@ struct normal_parser_t parser;
 char outBuffer[256];    //buffer to hold outgoing data
 uint8_t out_idx = 0;
 
-struct payload_ship_info_msg paylod_ship; 
+struct payload_ship_info_msg_ground paylod_ship; 
 
 void packet_handler(void *ep, uint8_t *data, uint16_t len);
 
@@ -518,9 +518,9 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
   for (int i=0; i<len; i++){
     if (parse_single_byte(data[i])) { 
       // if complete message detected save the message on the paylod_ship struct
-      if(parser.msg_id == SHIP_INFO_MSG_ID){
+      if(parser.msg_id == SHIP_INFO_MSG_GROUND_ID){
 
-        memcpy(&paylod_ship,&parser.payload[2],sizeof(struct payload_ship_info_msg));
+        memcpy(&paylod_ship,&parser.payload[2],sizeof(struct payload_ship_info_msg_ground));
 
         gettimeofday(&current_time, NULL);
         if ((current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time.tv_sec*1e6 + last_time.tv_usec) >= (1.0/MSG_OUT_TX_FREQUENCY)*1e6){
@@ -534,27 +534,27 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
               avg_msg_frequency_tx +=  delta_time[j];
             }
             avg_msg_frequency_tx = MESSAGE_ON_TX_FREQUENCY_CALCULATION/(avg_msg_frequency_tx*1e-6);
-            if(verbose){
-              printf("Valid SHIP_INFO_MSG_ID message received from Ship box with ID %d: \n",parser.sender_id);
-              printf("Ship roll angle [deg] : %f \n",paylod_ship.phi);
-              printf("Ship theta angle [deg] : %f \n",paylod_ship.theta);
-              printf("Ship psi angle [deg] : %f \n",paylod_ship.psi);
-              printf("Ship roll rate [deg/s] : %f \n",paylod_ship.phi_dot);
-              printf("Ship pitch rate [deg/s] : %f \n",paylod_ship.theta_dot);
-              printf("Ship yaw rate [deg/s] : %f \n",paylod_ship.psi_dot);  
-              printf("Ship pos x [m] : %f \n",paylod_ship.x);  
-              printf("Ship pos y [m] : %f \n",paylod_ship.y);  
-              printf("Ship pos z [m] : %f \n",paylod_ship.z);  
-              printf("Ship speed x [m/s] : %f \n",paylod_ship.x_dot);  
-              printf("Ship speed y [m/s] : %f \n",paylod_ship.y_dot);  
-              printf("Ship speed z [m/s] : %f \n",paylod_ship.z_dot);  
-              printf("Ship acc x [m/s^2] : %f \n",paylod_ship.x_ddot);  
-              printf("Ship acc y [m/s^2] : %f \n",paylod_ship.y_ddot);  
-              printf("Ship acc z [m/s^2] : %f \n",paylod_ship.z_ddot);     
-              printf("Average frequency ship message output : %.1f \n",avg_msg_frequency_tx);             
-            }
           }
           ivy_send_ship_info_msg();
+          if(verbose){
+            printf("Valid SHIP_INFO_MSG_GROUND message received from Ship box with ID %d: \n",parser.sender_id);
+            printf("Ship roll angle [deg] : %f \n",paylod_ship.phi);
+            printf("Ship theta angle [deg] : %f \n",paylod_ship.theta);
+            printf("Ship psi angle [deg] : %f \n",paylod_ship.psi);
+            printf("Ship roll rate [deg/s] : %f \n",paylod_ship.phi_dot);
+            printf("Ship pitch rate [deg/s] : %f \n",paylod_ship.theta_dot);
+            printf("Ship yaw rate [deg/s] : %f \n",paylod_ship.psi_dot);  
+            printf("Ship pos x [m] : %f \n",paylod_ship.x);  
+            printf("Ship pos y [m] : %f \n",paylod_ship.y);  
+            printf("Ship pos z [m] : %f \n",paylod_ship.z);  
+            printf("Ship speed x [m/s] : %f \n",paylod_ship.x_dot);  
+            printf("Ship speed y [m/s] : %f \n",paylod_ship.y_dot);  
+            printf("Ship speed z [m/s] : %f \n",paylod_ship.z_dot);  
+            printf("Ship acc x [m/s^2] : %f \n",paylod_ship.x_ddot);  
+            printf("Ship acc y [m/s^2] : %f \n",paylod_ship.y_ddot);  
+            printf("Ship acc z [m/s^2] : %f \n",paylod_ship.z_ddot);     
+            printf("Average frequency ship message output : %.1f \n",avg_msg_frequency_tx);             
+          }
         }
       }
     }
@@ -565,7 +565,6 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
 void ivy_send_ship_info_msg(void){
   // if(verbose) printf("Sent received Ship message on ivy bus\n");
   IvySendMsg("ground SHIP_INFO_MSG %d %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f",
-          // SHIP_INFO_MSG_ID,
           ac_id,
           
           paylod_ship.phi,

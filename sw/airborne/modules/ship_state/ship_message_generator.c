@@ -48,7 +48,7 @@ static void send_ship_info_message(struct transport_tx *trans, struct link_devic
     float x_ddot_telemetry = stateGetAccelNed_f()->x;
     float y_ddot_telemetry = stateGetAccelNed_f()->y;
     float z_ddot_telemetry = stateGetAccelNed_f()->z;       
-    pprz_msg_send_SHIP_INFO_MSG(trans, dev, AC_ID, &phi_telemetry, &theta_telemetry, &psi_telemetry,
+    pprz_msg_send_SHIP_INFO_MSG_GROUND(trans, dev, AC_ID, &phi_telemetry, &theta_telemetry, &psi_telemetry,
                                 &phi_dot_telemetry, &theta_dot_telemetry, &psi_dot_telemetry,
                                 &x_telemetry, &y_telemetry, &z_telemetry,
                                 &x_dot_telemetry, &y_dot_telemetry, &z_dot_telemetry,
@@ -58,7 +58,7 @@ static void send_ship_info_message(struct transport_tx *trans, struct link_devic
 
 void ship_message_generator_init(void) 
 {
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_SHIP_INFO_MSG, send_ship_info_message);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_SHIP_INFO_MSG_GROUND, send_ship_info_message);
 }
 
 void ship_message_generator_periodic(void) 

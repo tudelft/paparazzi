@@ -135,6 +135,8 @@
    <periodic fun="overactuated_mixing_run()" autorun="TRUE" freq="500"/>
    <periodic fun="detect_ground_on_landing()" autorun="TRUE" freq="500"/>
    <!-- <datalink message="GPS_INJECT" fun="overactuated_mixing_parse_SHIP_INFO_MSG(buf)"/> -->
+   <!-- <datalink message="TARGET_POS" fun="overactuated_mixing_parse_SHIP_INFO_MSG(buf)"/> -->
+   
    <datalink message="SHIP_INFO_MSG" fun="overactuated_mixing_parse_SHIP_INFO_MSG(buf)"/>
    
   <makefile>

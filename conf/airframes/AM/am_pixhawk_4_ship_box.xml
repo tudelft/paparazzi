@@ -130,7 +130,7 @@
 <!--    </target>-->
 
     <module name="telemetry" type="transparent">
-      <configure name="MODEM_BAUD" value="B57600"/>
+      <configure name="MODEM_BAUD" value="B460800"/>
     </module>
 
     <module name="actuators"     type="pwm"/>
