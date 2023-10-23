@@ -330,17 +330,26 @@ struct FloatEulers max_value_error = {
     OVERACTUATED_MIXING_MAX_THETA,
     OVERACTUATED_MIXING_MAX_PSI_ERR 
 };
-
-
+       
 
 void overactuated_mixing_parse_SHIP_INFO_MSG(uint8_t *buf) {
-
-//   ship_info_receive.timestamp = get_sys_time_usec();
-  ship_info_receive.phi = DL_SHIP_INFO_MSG_phi(buf);
-
-//   ship_info_receive.phi = get_sys_time_usec();
-//   ship_info_receive.phi = 50; 
-
+    if(DL_SHIP_INFO_MSG_ac_id(buf) != AC_ID)
+    return;
+    ship_info_receive.phi = DL_SHIP_INFO_MSG_phi(buf);  
+    ship_info_receive.theta = DL_SHIP_INFO_MSG_theta(buf);  
+    ship_info_receive.psi = DL_SHIP_INFO_MSG_psi(buf);  
+    ship_info_receive.phi_dot = DL_SHIP_INFO_MSG_phi_dot(buf);  
+    ship_info_receive.theta_dot = DL_SHIP_INFO_MSG_theta_dot(buf);  
+    ship_info_receive.psi_dot = DL_SHIP_INFO_MSG_psi_dot(buf);  
+    ship_info_receive.x = DL_SHIP_INFO_MSG_x(buf);  
+    ship_info_receive.y = DL_SHIP_INFO_MSG_y(buf); 
+    ship_info_receive.z = DL_SHIP_INFO_MSG_z(buf);  
+    ship_info_receive.x_dot = DL_SHIP_INFO_MSG_x_dot(buf);  
+    ship_info_receive.y_dot = DL_SHIP_INFO_MSG_y_dot(buf); 
+    ship_info_receive.z_dot = DL_SHIP_INFO_MSG_z_dot(buf);  
+    ship_info_receive.x_ddot = DL_SHIP_INFO_MSG_x_ddot(buf);  
+    ship_info_receive.y_ddot = DL_SHIP_INFO_MSG_y_ddot(buf); 
+    ship_info_receive.z_ddot = DL_SHIP_INFO_MSG_z_ddot(buf); 
 }
 
 /**
@@ -384,6 +393,21 @@ static void serial_act_t4_abi_in(uint8_t sender_id __attribute__((unused)), stru
     memcpy(&myserial_act_t4_in_local,myserial_act_t4_in_ptr,sizeof(struct serial_act_t4_in));
     memcpy(&serial_act_t4_extra_data_in_local,serial_act_t4_extra_data_in_ptr,255 * sizeof(float));
 }
+
+
+/**
+ * Function for the message SHIP_INFO_MSG_GROUND
+ */
+static void send_ship_info_msg_ground( struct transport_tx *trans , struct link_device * dev ) {
+    // Send telemetry message
+    pprz_msg_send_SHIP_INFO_MSG_GROUND(trans , dev , AC_ID ,
+                & ship_info_receive.phi,& ship_info_receive.theta,& ship_info_receive.psi,
+                & ship_info_receive.phi_dot,& ship_info_receive.theta_dot,& ship_info_receive.psi_dot,
+                & ship_info_receive.x,& ship_info_receive.y,& ship_info_receive.z,
+                & ship_info_receive.x_dot,& ship_info_receive.y_dot,& ship_info_receive.z_dot, 
+                & ship_info_receive.x_ddot,& ship_info_receive.y_ddot,& ship_info_receive.z_ddot);
+}
+
 
 /**
  * Function for the message NONLINEAR_CA_DEBUG
@@ -1100,7 +1124,8 @@ void overactuated_mixing_init(void) {
     register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_OVERACTUATED_VARIABLES , send_overactuated_variables );
     register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_ACTUATORS_OUTPUT , send_actuator_variables );
     register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_NONLINEAR_CA_DEBUG , send_nonlinear_ca_debug );
-
+    register_periodic_telemetry ( DefaultPeriodic , PPRZ_MSG_ID_SHIP_INFO_MSG_GROUND , send_ship_info_msg_ground );
+    
     //Startup the init variables of the INDI
     init_filters();
 
