@@ -1,11 +1,10 @@
-<!DOCTYPE radio SYSTEM "radio.dtd">
+<!DOCTYPE radio SYSTEM "../radio.dtd">
 <radio name="Futaba T10CG with SBUS" data_min="900" data_max="2100" sync_min="5000" sync_max="15000" pulse_type="POSITIVE">
  <channel function="THROTTLE" min="1000" neutral="1000" max="2000" average="0"/>
  <channel function="ROLL" min="1000" neutral="1500" max="2000" average="0"/>
  <channel function="PITCH" min="1000" neutral="1500" max="2000" average="0"/>
  <channel function="YAW" min="1000" neutral="1500" max="2000" average="0"/>
- <channel function="MODE" max="2072" neutral="1520" min="966" average="1" reverse="0"/>
- <channel function="GAIN1" min="966" neutral="1520" max="2072" average="0"/>
- <channel function="GAIN2" min="966" neutral="1520" max="2072" average="0"/>
- <channel function="SERVO" min="966" neutral="1520" max="2072" average="0"/>
+ <channel function="MODE" max="2072" neutral="1520" min="966" average="1" reverse="1"/>
+ <channel function="KILL_SWITCH" min="988" neutral="1500" max="2012" average="0"/>
+ <channel function="PIVOT_SWITCH" min="988" neutral="1500" max="2012" average="0" reverse="1"/>
 </radio>
