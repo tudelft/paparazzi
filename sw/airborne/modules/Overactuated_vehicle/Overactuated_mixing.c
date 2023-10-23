@@ -94,6 +94,8 @@ float overestimation_coeff = 1.4;
 //Array which contains all the actuator values (sent to motor and servos)
 struct overactuated_mixing_t overactuated_mixing;
 
+struct ship_info_msg ship_info_receive;
+
 //General state variables:
 float rate_vect[3], rate_vect_filt[3], rate_vect_filt_dot[3], euler_vect[3], acc_vect[3], acc_vect_filt[3], accel_vect_filt_control_rf[3],accel_vect_control_rf[3], speed_vect_control_rf[3];
 float speed_vect[3], pos_vect[3], airspeed = 0, beta_deg = 0, beta_rad = 0, flight_path_angle = 0, total_V = 0;
@@ -330,6 +332,18 @@ struct FloatEulers max_value_error = {
 };
 
 
+
+void overactuated_mixing_parse_SHIP_INFO_MSG(uint8_t *buf) {
+
+//   ship_info_receive.timestamp = get_sys_time_usec();
+//   ship_info_receive.phi = DL_GPS_INJECT_phi(buf);
+
+//   ship_info_receive.phi = DL_TARGET_POS_lat(buf);
+//   ship_info_receive.phi = get_sys_time_usec();
+  ship_info_receive.phi = 50; 
+
+}
+
 /**
  * Function which detects ground
  * IT ONLY WORKS WITH THE NONLINEAR CONTROLLER!!! 
@@ -396,7 +410,8 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
 
     //Updated with secundary AHRS reference and removed old cmd part 
     pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID ,
-                                         & airspeed, 
+                                        //  & airspeed, 
+                                         & ship_info_receive.phi,
                                          & control_mode_ovc_vehicle , 
                                          & ground_detected_am,
                                          & beta_deg,

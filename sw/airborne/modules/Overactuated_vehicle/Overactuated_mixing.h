@@ -75,6 +75,28 @@ struct PD_indi_over {
     struct FloatEulersPosition d;
 };
 
+struct ship_info_msg { 
+    float timestamp; 
+    float phi; 
+    float theta; 
+    float psi; 
+    float phi_dot; 
+    float theta_dot; 
+    float psi_dot; 
+    float x; 
+    float y; 
+    float z; 
+    float x_dot; 
+    float y_dot; 
+    float z_dot; 
+    float x_ddot; 
+    float y_ddot; 
+    float z_ddot; 
+};
+
+
+
+
 struct ESC_status {
     float ESC_1_rpm;
     float ESC_1_voltage;
@@ -138,7 +160,6 @@ extern int feed_speed_ref_from_approach_module;
 
 extern int approach_state;
 
-
 extern float min_lidar_alt_ground_detect; 
 extern float time_tolerance_land;
 extern float az_tolerance_land;
@@ -146,6 +167,8 @@ extern float az_tolerance_land;
 /* External used functions */
 extern void overactuated_mixing_init(void);
 extern void overactuated_mixing_run(void);
+
+extern void overactuated_mixing_parse_SHIP_INFO_MSG(uint8_t *buf);
 
 extern uint8_t detect_ground_on_landing(void); 
 
