@@ -242,37 +242,39 @@ void Pixhawk_read_fwd_ship_info_msg(void){
           memcpy(&paylod_ship,&parser.payload[2],sizeof(struct payload_ship_info_msg));
 
           gettimeofday(&current_time, NULL);
-          delta_time[delta_time_count] = (current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time.tv_sec*1e6 + last_time.tv_usec);
-          gettimeofday(&last_time, NULL);
-          delta_time_count++; 
-          if(delta_time_count > MESSAGE_ON_TX_FREQUENCY_CALCULATION){ 
-            delta_time_count = 0; 
-            avg_msg_frequency_tx = 0; 
-            for (int j=0; j<MESSAGE_ON_TX_FREQUENCY_CALCULATION; j++){
-              avg_msg_frequency_tx +=  delta_time[j];
+          if ((current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time.tv_sec*1e6 + last_time.tv_usec) >= (1.0/MSG_OUT_TX_FREQUENCY)*1e6){
+            delta_time[delta_time_count] = (current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time.tv_sec*1e6 + last_time.tv_usec);
+            gettimeofday(&last_time, NULL);
+            delta_time_count++; 
+            if(delta_time_count > MESSAGE_ON_TX_FREQUENCY_CALCULATION){ 
+              delta_time_count = 0; 
+              avg_msg_frequency_tx = 0; 
+              for (int j=0; j<MESSAGE_ON_TX_FREQUENCY_CALCULATION; j++){
+                avg_msg_frequency_tx +=  delta_time[j];
+              }
+              avg_msg_frequency_tx = MESSAGE_ON_TX_FREQUENCY_CALCULATION/(avg_msg_frequency_tx*1e-6);
+              if(verbose){
+                printf("Valid SHIP_INFO_MSG_ID message received from Pixhawk 4 with ID %d: \n",parser.sender_id);
+                printf("Ship roll angle [deg] : %f \n",paylod_ship.phi);
+                printf("Ship theta angle [deg] : %f \n",paylod_ship.theta);
+                printf("Ship psi angle [deg] : %f \n",paylod_ship.psi);
+                printf("Ship roll rate [deg/s] : %f \n",paylod_ship.phi_dot);
+                printf("Ship pitch rate [deg/s] : %f \n",paylod_ship.theta_dot);
+                printf("Ship yaw rate [deg/s] : %f \n",paylod_ship.psi_dot);  
+                printf("Ship pos x [m] : %f \n",paylod_ship.x);  
+                printf("Ship pos y [m] : %f \n",paylod_ship.y);  
+                printf("Ship pos z [m] : %f \n",paylod_ship.z);  
+                printf("Ship speed x [m/s] : %f \n",paylod_ship.x_dot);  
+                printf("Ship speed y [m/s] : %f \n",paylod_ship.y_dot);  
+                printf("Ship speed z [m/s] : %f \n",paylod_ship.z_dot);  
+                printf("Ship acc x [m/s^2] : %f \n",paylod_ship.x_ddot);  
+                printf("Ship acc y [m/s^2] : %f \n",paylod_ship.y_ddot);  
+                printf("Ship acc z [m/s^2] : %f \n",paylod_ship.z_ddot);     
+                printf("Average frequency ship message output : %.1f \n",avg_msg_frequency_tx);             
+              }
             }
-            avg_msg_frequency_tx = MESSAGE_ON_TX_FREQUENCY_CALCULATION/(avg_msg_frequency_tx*1e-6);
-            if(verbose){
-              printf("Valid SHIP_INFO_MSG_ID message received from Pixhawk 4 with ID %d: \n",parser.sender_id);
-              printf("Ship roll angle [deg] : %f \n",paylod_ship.phi);
-              printf("Ship theta angle [deg] : %f \n",paylod_ship.theta);
-              printf("Ship psi angle [deg] : %f \n",paylod_ship.psi);
-              printf("Ship roll rate [deg/s] : %f \n",paylod_ship.phi_dot);
-              printf("Ship pitch rate [deg/s] : %f \n",paylod_ship.theta_dot);
-              printf("Ship yaw rate [deg/s] : %f \n",paylod_ship.psi_dot);  
-              printf("Ship pos x [m] : %f \n",paylod_ship.x);  
-              printf("Ship pos y [m] : %f \n",paylod_ship.y);  
-              printf("Ship pos z [m] : %f \n",paylod_ship.z);  
-              printf("Ship speed x [m/s] : %f \n",paylod_ship.x_dot);  
-              printf("Ship speed y [m/s] : %f \n",paylod_ship.y_dot);  
-              printf("Ship speed z [m/s] : %f \n",paylod_ship.z_dot);  
-              printf("Ship acc x [m/s^2] : %f \n",paylod_ship.x_ddot);  
-              printf("Ship acc y [m/s^2] : %f \n",paylod_ship.y_ddot);  
-              printf("Ship acc z [m/s^2] : %f \n",paylod_ship.z_ddot);     
-              printf("Average frequency ship message output : %.1f \n",avg_msg_frequency_tx);             
-            }
+            ivy_send_ship_info_msg();
           }
-          ivy_send_ship_info_msg();
         }
       }
     }
@@ -283,9 +285,10 @@ void Pixhawk_read_fwd_ship_info_msg(void){
 
 void ivy_send_ship_info_msg(void){
   // if(verbose) printf("Sent received Ship message on ivy bus\n");
-  IvySendMsg("ground %d  %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f",
-          SHIP_INFO_MSG_ID,
-
+  IvySendMsg("ground SHIP_INFO_MSG %d %f %f %f  %f %f %f  %f %f %f  %f %f %f  %f %f %f",
+          // SHIP_INFO_MSG_ID,
+          ac_id,
+          
           paylod_ship.phi,
           paylod_ship.theta,
           paylod_ship.psi,
