@@ -30,9 +30,7 @@
  * http://arc.aiaa.org/doi/pdf/10.2514/1.G001490
  */
 
-#include <stdio.h>
 #include "math/pprz_algebra_float.h"
-#include "filters/low_pass_filter.h"
 #include "generated/airframe.h"
 #include "modules/radio_control/radio_control.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_indi.h"
@@ -48,7 +46,6 @@
 #include "math/wls/wls_alloc.h"
 #include <stdio.h>
 #include "firmwares/rotorcraft/autopilot_static.h"
-#include <time.h>
 #include "modules/sonar/agl_dist.h"
 
 // Factor that the estimated G matrix is allowed to deviate from initial one
@@ -581,6 +578,8 @@ void stabilization_indi_set_stab_sp(struct StabilizationSetpoint *sp)
  */
 void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 {
+  float airspeed = stateGetAirspeed_f();
+
   /* Propagate the filter on the gyroscopes */
   struct FloatRates *body_rates = stateGetBodyRates_f();
   float rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
@@ -713,6 +712,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #else
   stabilization_indi_set_wls_settings(use_increment);
 
+  for (i = 0; i < INDI_NUM_ACT; i++) {
 #ifdef STABILIZATION_INDI_MIN_THROTTLE
 //    float airspeed = stateGetAirspeed_f();
 //    // Limit minimum thrust ap can give
@@ -723,13 +723,12 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 //    		du_min_stab_indi[i] = STABILIZATION_INDI_MIN_THROTTLE_FWD - actuator_state_filt_vect[i];
 //    	}
 //    }
-
     if (!act_is_servo[i]) {
-    	if (autopilot.mode == AP_MODE_ATTITUDE_DIRECT){
+    	if (autopilot.mode == AP_MODE_ATTITUDE_DIRECT) {
     		du_min_stab_indi[i] = STABILIZATION_INDI_MIN_THROTTLE - actuator_state_filt_vect[i];
-        } else if (autopilot.mode == AP_MODE_FORWARD){
-        	du_min_stab_indi[i] = STABILIZATION_INDI_MIN_THROTTLE_FWD - actuator_state_filt_vect[i];
-        }
+      } else if (autopilot.mode == AP_MODE_FORWARD) {
+        du_min_stab_indi[i] = STABILIZATION_INDI_MIN_THROTTLE_FWD - actuator_state_filt_vect[i];
+      }
     }
 #endif
 
@@ -741,7 +740,6 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
 #endif
 
 #ifdef GUIDANCE_INDI_MIN_THROTTLE
-    float airspeed = stateGetAirspeed_f();
     //limit minimum thrust ap can give
     if (!act_is_servo[i]) {
       if ((guidance_h.mode == GUIDANCE_H_MODE_HOVER) || (guidance_h.mode == GUIDANCE_H_MODE_NAV)) {
@@ -754,8 +752,8 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
     }
 #endif
   }
+
   //Control allocation Weights as a function of airspeed
-  float airspeed = stateGetAirspeed_f();
   float fun_tilt = 0.124875f * airspeed - 0.4985f;
   float fun_elevon = -0.124875f * airspeed + 1.4995f;
   indi_Wu[0] = (fun_tilt > 1.0f) ? 1.0f: ((fun_tilt < 0.001f) ? 0.001f : fun_tilt);
@@ -763,7 +761,7 @@ void stabilization_indi_rate_run(struct FloatRates rate_sp, bool in_flight)
   indi_Wu[4] = (fun_elevon > 1.0f) ? 1.0f: ((fun_elevon < 0.001f) ? 0.001f : fun_elevon);
   indi_Wu[5] = indi_Wu[4];
 
-  RunOnceEvery(200, DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 6, indi_Wu));
+  // RunOnceEvery(200, DOWNLINK_SEND_PAYLOAD_FLOAT(DefaultChannel, DefaultDevice, 6, indi_Wu));
 
   // WLS Control Allocator
   num_iter =
