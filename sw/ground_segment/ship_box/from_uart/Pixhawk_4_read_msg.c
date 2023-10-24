@@ -246,7 +246,7 @@ void Pixhawk_read_fwd_ship_info_msg(void){
             delta_time[delta_time_count] = (current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time.tv_sec*1e6 + last_time.tv_usec);
             gettimeofday(&last_time, NULL);
             delta_time_count++; 
-            if(delta_time_count > MESSAGE_ON_TX_FREQUENCY_CALCULATION){ 
+            if(delta_time_count >= MESSAGE_ON_TX_FREQUENCY_CALCULATION){ 
               delta_time_count = 0; 
               avg_msg_frequency_tx = 0; 
               for (int j=0; j<MESSAGE_ON_TX_FREQUENCY_CALCULATION; j++){
