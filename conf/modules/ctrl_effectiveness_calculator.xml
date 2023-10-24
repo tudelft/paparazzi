@@ -1,0 +1,34 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="ctrl_effectiveness_calculator" dir="ctrl">
+  <doc>
+    <description>
+      Function which calculates the control effectiveness matrix on the fly
+      depending on the current actuator states.
+    </description>
+  </doc>
+  <settings>
+  	<dl_settings>
+  		<dl_settings NAME="Ctrl Eff Calc">
+        <dl_setting var="g14and5" min="0.0001" step="0.0001" max="0.01" shortname="g14and5"/>
+        <dl_setting var="c_delta_e" min="0.0" step="0.0001" max="0.1" shortname="c_delta_e"/>
+        <dl_setting var="c_delta_a" min="0.0" step="0.05" max="1.0" shortname="c_delta_a"/>
+        <dl_setting var="cda_offset" min="0.0" step="0.0001" max="0.1" shortname="cda_offset"/>
+  			<dl_setting var="thrust_lower_lim" min="0" step="100" max="6000" shortname="thrust_lim_low" param="THRUST_LOWER_LIM"/>
+        <dl_setting var="airspeed_scaling" min="0" step="0.01" max="1" shortname="airspeed_scale"/>
+  			<dl_setting var="mass_property.mass" min="0.90" step="0.01" max="1.400" shortname="mass" param="MASS"/>
+  			<dl_setting var="mass_property.I_xx" min="0.017897" step="0.001" max="0.06617232" shortname="I_xx" param="I_XX"/>
+  			<dl_setting var="mass_property.I_yy" min="0.003390" step="0.001" max="0.04914925" shortname="I_yy" param="I_YY"/>
+  			<dl_setting var="mass_property.I_zz" min="0.01752587" step="0.001" max="0.10" shortname="I_zz" param="I_ZZ"/>
+  		</dl_settings>
+  	</dl_settings>
+  </settings>
+  <header>
+    <file name="ctrl_effectiveness_calculator.h"/>
+  </header>
+  <init fun="ctrl_eff_calc_init()"/>
+  <periodic fun="ctrl_eff_periodic()" freq="500"/>
+  <makefile>
+    <file name="ctrl_effectiveness_calculator.c"/>
+  </makefile>
+</module>

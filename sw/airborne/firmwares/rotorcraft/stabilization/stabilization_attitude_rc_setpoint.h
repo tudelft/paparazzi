@@ -32,6 +32,7 @@
 
 extern int32_t transition_theta_offset; // Pitch offset added for hybrid vehicle when in forward mode
 
+extern void init_filters_rc(void);
 extern void stabilization_attitude_reset_care_free_heading(void);
 extern int32_t stabilization_attitude_get_heading_i(void);
 extern float stabilization_attitude_get_heading_f(void);
