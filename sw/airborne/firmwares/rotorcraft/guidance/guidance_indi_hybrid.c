@@ -590,9 +590,14 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
     sp_accel_b.y *= gih_params.heading_bank_gain;
 
     // Control the airspeed
-    sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
+    if(radio_control.values[RADIO_VIBRA_COMPEN] < -4500 ){
+      sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
+    }
+    else if(radio_control.values[RADIO_VIBRA_COMPEN] > 4500){
+      sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
     // Subtract d_cg * q_dot from the x component of the body-frame acceleration
-    sp_accel_b.x -= d_cg * angular_acceleration[1];
+      sp_accel_b.x -= d_cg * angular_acceleration[1];
+    }
 
     accel_sp.x = cpsi * sp_accel_b.x - spsi * sp_accel_b.y;
     accel_sp.y = spsi * sp_accel_b.x + cpsi * sp_accel_b.y;
