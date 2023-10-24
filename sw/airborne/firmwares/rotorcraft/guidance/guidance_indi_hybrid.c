@@ -176,7 +176,7 @@ float guidance_indi_line_gain = 1.0;
 #endif
 
 float guidance_indi_pitch_eff_scaling = GUIDANCE_INDI_PITCH_EFF_SCALING;
-float d_cg = 0.16;
+
 float inv_eff[4];
 
 // Max bank angle in radians
@@ -185,8 +185,6 @@ float guidance_indi_min_pitch = GUIDANCE_INDI_MIN_PITCH;
 
 /** state eulers in zxy order */
 struct FloatEulers eulers_zxy;
-
-bool use_vibration_compensation = false;
 
 float thrust_act = 0;
 Butterworth2LowPass filt_accel_ned[3];
@@ -592,13 +590,6 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
     sp_accel_b.y *= gih_params.heading_bank_gain;
 
     // Control the airspeed
-    if(use_vibration_compensation) {
-      sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
-    // Subtract d_cg * q_dot from the x component of the body-frame acceleration
-      sp_accel_b.x -= d_cg * angular_acceleration[1];
-    } else {
-      sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
-    }
 
     accel_sp.x = cpsi * sp_accel_b.x - spsi * sp_accel_b.y;
     accel_sp.y = spsi * sp_accel_b.x + cpsi * sp_accel_b.y;

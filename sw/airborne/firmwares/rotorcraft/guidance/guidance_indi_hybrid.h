@@ -98,9 +98,8 @@ extern bool take_heading_control;
 extern float guidance_indi_max_bank;
 extern float guidance_indi_min_pitch;
 extern bool force_forward;       ///< forward flight for hybrid nav
-extern bool use_vibration_compensation;
 
-extern float d_cg;
+
 extern float lift_pitch_eff;
 extern float guidance_indi_pitch_eff_scaling;
 
