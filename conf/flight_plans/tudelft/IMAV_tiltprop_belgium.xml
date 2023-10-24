@@ -1,0 +1,120 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="70" ground_alt="0" lat0="50.714955" lon0="5.900670" max_dist_from_home="1300" name="Rotorcraft Basic (Enac)" security_height="2">
+  <header>
+#include "autopilot.h"
+</header>
+  <waypoints>
+    <waypoint name="HOME" x="0.0" y="0.0"/>
+    <waypoint name="CLIMB" x="-39.0" y="17.6"/>
+    <waypoint name="STDBY" x="-29.1" y="-47.5"/>
+    <waypoint name="GOAL" x="1.9" y="1.0"/>
+    <waypoint name="TRAJECTORY" x="1.9" y="1.0"/>
+    <waypoint lat="50.714955" lon="5.900670" name="START"/>
+    <waypoint lat="50.715114" lon="5.891141" name="p1"/>
+    <waypoint lat="50.718965" lon="5.896237" name="p2"/>
+    <waypoint lat="50.716833" lon="5.900428" name="p3"/>
+    <waypoint lat="50.712991" lon="5.895158" name="p4"/>
+    <waypoint name="TD" x="-25.4" y="34.0"/>
+    <waypoint lat="50.721287" lon="5.896945" name="A"/>
+    <waypoint lat="50.719103" lon="5.892398" name="B"/>
+    <waypoint lat="50.716440" lon="5.888566" name="C"/>
+    <waypoint lat="50.711922" lon="5.883399" name="D"/>
+    <waypoint lat="50.711264" lon="5.886377" name="E"/>
+    <waypoint lat="50.711291" lon="5.893099" name="F"/>
+    <waypoint lat="50.711666" lon="5.898816" name="G"/>
+    <waypoint lat="50.712919" lon="5.900822" name="H"/>
+    <waypoint lat="50.715047" lon="5.902306" name="J"/>
+    <waypoint lat="50.716857" lon="5.906448" name="K"/>
+    <waypoint lat="50.717694" lon="5.902928" name="L"/>
+    <waypoint lat="50.718487" lon="5.899484" name="M"/>
+  </waypoints>
+  <sectors>
+    <sector color="green" name="Geofence">
+      <corner name="A"/>
+      <corner name="B"/>
+      <corner name="C"/>
+      <corner name="D"/>
+      <corner name="E"/>
+      <corner name="F"/>
+      <corner name="G"/>
+      <corner name="H"/>
+      <corner name="J"/>
+      <corner name="K"/>
+      <corner name="L"/>
+      <corner name="M"/>
+    </sector>
+  </sectors>
+  <exceptions>
+    <exception cond="Or(!InsideGeofence(GetPosX(), GetPosY()), GetPosAlt() @GT GetAltRef() + 200) @AND !(nav_block == IndexOfBlock('Wait GPS'))
+      @AND (nav_block @LT IndexOfBlock('landed')) @AND !(nav_block @LT IndexOfBlock('Holding point'))
+      @AND !(nav_block == IndexOfBlock('Holding point'))" deroute="Terminate"/>
+    <exception cond="(GpsIsLost() @AND (nav_block @GT IndexOfBlock('Standby'))
+      @AND (nav_block @LT IndexOfBlock('landed')))" deroute="No_GPS_Connection"/>
+  </exceptions>
+  <blocks>
+    <block name="Wait GPS">
+      <call_once fun="NavKillThrottle()"/>
+      <while cond="!GpsFixValid()"/>
+    </block>
+    <block name="Geo init">
+      <while cond="LessThan(NavBlockTime(), 1)"/>
+      <call_once fun="NavSetGroundReferenceHere()"/>
+    </block>
+    <block name="Holding point">
+      <call_once fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Automatic Takeoff">
+      <call_once fun="NavResurrect()"/>
+      <call_once fun="take_off_enter()"/>
+      <attitude pitch="0" roll="0" alt="5" until="GetPosHeight() @GT 2.0"/>
+    </block>
+    <block name="Standby" strip_button="Standby" strip_icon="home.png">
+      <set value="false" var="force_forward"/>
+      <stay wp="STDBY"/>
+    </block>
+    <block name="stay_p1">
+      <set value="false" var="force_forward"/>
+      <stay wp="p1"/>
+    </block>
+    <block name="go_p2">
+      <set value="false" var="force_forward"/>
+      <go wp="p2"/>
+      <deroute block="stay_p1"/>
+    </block>
+    <block name="route">
+      <set value="true" var="force_forward"/>
+      <while cond="true">
+        <go from="p1" hmode="route" wp="p2"/>
+        <go from="p2" hmode="route" wp="p3"/>
+        <go from="p3" hmode="route" wp="p4"/>
+        <go from="p4" hmode="route" wp="p1"/>
+      </while>
+      <deroute block="stay_p1"/>
+    </block>
+    <block name="land here" strip_button="Land Here" strip_icon="land-right.png">
+      <call_once fun="NavSetWaypointHere(WP_TD)"/>
+    </block>
+    <block name="land">
+      <set value="false" var="force_forward"/>
+      <go wp="TD"/>
+    </block>
+    <block name="flare">
+      <exception cond="LessThan(agl_dist_value_filtered, 0.15)" deroute="landed"/>
+      <stay climb="nav.descend_vspeed" vmode="climb" wp="TD"/>
+    </block>
+    <block name="landed">
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="Terminate">
+      <call_once fun="NavKillThrottle()"/>
+      <set value="false" var="force_forward"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+    <block name="No_GPS_Connection">
+      <attitude pitch="0" roll="0" vmode="climb" climb="-1"/>
+      <exception cond="NavBlockTime() @GT 15" deroute="Terminate"/>
+    </block>
+  </blocks>
+</flight_plan>
