@@ -61,8 +61,8 @@ extern bool heading_on;
 
 extern float p1_att;
 extern float p1_head;
-extern float p1_pos_1;
-extern float p1_pos_2;
+extern float p1_pos;
+extern float p2_pos;
 extern float p1_alt;
 extern bool  oval_on;
 extern float v_nav_des;

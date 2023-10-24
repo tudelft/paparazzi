@@ -342,17 +342,10 @@ float k_p_rm ;
 float k_pdot_rm ;    
 
 /*Position Loop*/
-float xy_1 = 1.0;
-float xy_2 = 0.01;
-float scale_pos = 1.0;
 float rm_k_pos;    
 float damp_pos = 0.85; //0.3979;//0.7; 
-float p1_pos   = 2.0;
-float p1_pos_1 = 1.2; 
-float p1_pos_2 = 1.2;//0.6717*0.7; 
-float p2_pos   = 6.0;
-float p2_pos_1 = 6.0; 
-float p2_pos_2 = 6.0;//0.4654;     
+float p1_pos   = 1.2;
+float p2_pos   = 6.0; 
 float p3_pos  ;     
 float route_k ;   
 float p1_pos_rm = 0.6;
