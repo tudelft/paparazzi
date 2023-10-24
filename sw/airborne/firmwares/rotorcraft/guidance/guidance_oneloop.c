@@ -32,7 +32,7 @@
 
 void guidance_h_run_enter(void)
 {
-  oneloop_andi_enter();
+  oneloop_andi_enter(false);
 }
 
 void guidance_v_run_enter(void)
@@ -44,7 +44,8 @@ void guidance_v_run_enter(void)
 
 struct StabilizationSetpoint guidance_h_run_pos(bool in_flight, UNUSED struct HorizontalGuidance *gh)
 {
-  oneloop_andi_run(in_flight, false);
+  half_loop = false;
+  oneloop_andi_run(in_flight, half_loop);
   struct StabilizationSetpoint sp= { 0 };
   return sp;
 }

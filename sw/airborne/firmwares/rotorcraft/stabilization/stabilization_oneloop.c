@@ -48,7 +48,7 @@ void stabilization_attitude_init(void)
 
 void stabilization_attitude_enter(void)
 {
-  oneloop_andi_enter();
+  oneloop_andi_enter(true);
 }
 
 void stabilization_attitude_set_failsafe_setpoint(void)
@@ -79,7 +79,9 @@ void stabilization_attitude_set_stab_sp(UNUSED struct StabilizationSetpoint *sp)
 void stabilization_attitude_run(bool in_flight)
 {
   // Run the oneloop controller in half-loop mode
-  oneloop_andi_run(in_flight, true);
+  if (half_loop){
+  oneloop_andi_run(in_flight, half_loop);
+  }
 }
 
 

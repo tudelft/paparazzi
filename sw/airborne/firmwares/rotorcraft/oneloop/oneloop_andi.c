@@ -252,6 +252,8 @@ static void send_oneloop_guidance(struct transport_tx *trans, struct link_device
                                         ANDI_NUM_ACT_TOT,andi_u);
 }
 #endif
+/* Oneloop Basic Variables*/
+bool half_loop = true;
 /*Physical Properties RW3C*/
 float m   = 6.5;  // [kg] Mass Bebop 0.4
 float g   = 9.81; // [m/s^2] Gravitational Acceleration
@@ -998,6 +1000,7 @@ void oneloop_andi_propagate_filters(void) {
 /** @brief Init function of Oneloop ANDI controller  */
 void oneloop_andi_init(void)
 { 
+  half_loop = true;
   // Initialize Effectiveness matrix
   calc_normalization();
   sum_g1g2_1l();
@@ -1042,8 +1045,9 @@ void oneloop_andi_init(void)
  * and there are multiple modes that use (the same) stabilization. Resetting the controller
  * is not so nice when you are flying.
  */
-void oneloop_andi_enter(void)
+void oneloop_andi_enter(bool half_loop_sp)
 {
+  half_loop = half_loop_sp;
   calc_normalization();
   sum_g1g2_1l();
   init_filter();
@@ -1062,7 +1066,6 @@ void oneloop_andi_enter(void)
   float_vect_zero(model_pred,ANDI_OUTPUTS);
   nav_speed_controller_enter(); //uncomment me
   /*Guidance Reset*/
-
 }
 
 /**
@@ -1091,15 +1094,15 @@ void oneloop_andi_RM(bool half_loop)
     float_vect_zero(pos_3d_ref,3);
     float_vect_copy(pos_init,pos_1l,3);
     // Set desired attitude with stick input
-    eulers_zxy_des.phi   = (float) (radio_control.values[RADIO_ROLL] )/MAX_PPRZ*45.0*M_PI/180.0;
-    eulers_zxy_des.theta = (float) (radio_control.values[RADIO_PITCH])/MAX_PPRZ*45.0*M_PI/180.0;
+    eulers_zxy_des.phi   = (float) (radio_control_get(RADIO_ROLL))/MAX_PPRZ*45.0*M_PI/180.0;
+    eulers_zxy_des.theta = (float) (radio_control_get(RADIO_PITCH))/MAX_PPRZ*45.0*M_PI/180.0;
     eulers_zxy_des.psi   = eulers_zxy.psi;
     psi_des_rad          = eulers_zxy.psi;
     // Initialize some variables
     check_1st_nav  = true;
     check_1st_oval = true;
     // Create commands adhoc to get actuators to the wanted level
-    thrust_cmd_1l = (float) radio_control.values[RADIO_THROTTLE];
+    thrust_cmd_1l = (float) radio_control_get(RADIO_THROTTLE);
     Bound(thrust_cmd_1l,0.0,MAX_PPRZ); 
     int8_t i;
     for (i = 0; i < ANDI_NUM_ACT; i++) {
@@ -1108,7 +1111,7 @@ void oneloop_andi_RM(bool half_loop)
     // Overwrite Yaw Ref with desired Yaw setting (for consistent plotting)
     att_ref[2] = psi_des_rad;
     // Set desired Yaw rate with stick input
-    des_r = (float) (radio_control.values[RADIO_YAW])/MAX_PPRZ*3.0; 
+    des_r = (float) (radio_control_get(RADIO_YAW))/MAX_PPRZ*3.0; 
     BoundAbs(des_r,3.0);
     // Generate reference signals
     rm_2rd(dt_1l, &att_d_ref[2], &att_2d_ref[2], &att_3d_ref[2], des_r, k_r_rm, k_r_d_rm);
@@ -1119,6 +1122,9 @@ void oneloop_andi_RM(bool half_loop)
     Wv_wls[0] = Wv[0];
     Wv_wls[1] = Wv[1];
     // First time engaging NAV Mode or Navigation Functions (e.g. Oval) requires some initialization
+    printf("check_1st_nav = %d \n",check_1st_nav);
+    printf("check_1st_oval = %d \n",check_1st_oval);
+    printf("oval_on = %d \n",oval_on);
     if(check_1st_nav || (check_1st_oval && oval_on)){ 
       check_1st_nav  = false;
       check_1st_oval = false;
@@ -1129,10 +1135,14 @@ void oneloop_andi_RM(bool half_loop)
       psi_des_rad = eulers_zxy.psi; 
       psi_oval = psi_des_rad; // Uncomment me
     // Use the horizontal guidance position input to set the desired position 
+      printf("check if statement\n");
     } else { 
       pos_init[0] = (float) (guidance_h.sp.pos.x * 0.0039063);
       pos_init[1] = (float) (guidance_h.sp.pos.y * 0.0039063);
       pos_init[2] = (float) (guidance_v.z_sp     * 0.0039063);
+      printf("guidance_h.sp.pos.x = %f \n",guidance_h.sp.pos.x* 0.0039063);
+      printf("guidance_h.sp.pos.y = %f \n",guidance_h.sp.pos.y* 0.0039063);
+      printf("guidance_v.z_sp     = %f \n",guidance_v.z_sp* 0.0039063);
     }
     // Group RM gains in arrays
     float k1_pos_rm[3] = {k_N_rm,  k_E_rm,  k_D_rm};
@@ -1184,7 +1194,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop)
   dt_actual = new_time - old_time;
   old_time = new_time;
   printf("This function is running at a dt=%f \n",new_time-old_time);
-  
+  printf("Half loop = %d \n",half_loop);
   // At beginnig of the loop: (1) Register Attitude, (2) Initialize gains of RM and EC, (3) Calculate Normalization of Actuators Signals, (4) Propagate Actuator Model, (5) Update effectiveness matrix
   float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
   init_controller();
@@ -1271,7 +1281,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop)
       du_min_1l[i]  = (act_min[i] - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
       du_max_1l[i]  = (act_max[i] - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
       // if(i== ANDI_NUM_ACT_TOT-1){
-      //   u_pref[i] = radio_control.values[RADIO_AUX4] * (13.0) / MAX_PPRZ - 3.0;
+      //   u_pref[i] = radio_control_get(RADIO_AUX4) * (13.0) / MAX_PPRZ - 3.0;
       // }
       du_pref_1l[i] = (u_pref[i]  - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
     }
@@ -1344,7 +1354,7 @@ void pusher_test_run(void){
   }      
  }else{
    pusher_test_cmd = 0.0;
-   andi_u[ONELOOP_ANDI_PUSHER_IDX] = radio_control.values[RADIO_AUX4];
+   andi_u[ONELOOP_ANDI_PUSHER_IDX] = radio_control_get(RADIO_AUX4);
  }
 }
 

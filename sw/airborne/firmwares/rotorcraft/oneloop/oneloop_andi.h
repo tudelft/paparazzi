@@ -82,9 +82,11 @@ extern float r_oval;
 extern float l_oval;
 extern float psi_oval;
 
+extern bool half_loop;
+
 //extern bool oval_on;
 extern void oneloop_andi_init(void);
-extern void oneloop_andi_enter(void);
+extern void oneloop_andi_enter(bool half_loop_sp);
 extern void oneloop_andi_set_failsafe_setpoint(void);
 extern void oneloop_andi_run(bool in_flight, bool half_loop);
 extern void oneloop_andi_RM(bool half_loop);

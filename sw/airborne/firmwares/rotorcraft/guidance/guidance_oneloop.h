@@ -28,4 +28,5 @@
 #ifndef GUIDANCE_ONELOOP_H
 #define GUIDANCE_ONELOOP_H
 
+#include "firmwares/rotorcraft/oneloop/oneloop_andi.h"
 #endif /* GUIDANCE_INDI_H */
