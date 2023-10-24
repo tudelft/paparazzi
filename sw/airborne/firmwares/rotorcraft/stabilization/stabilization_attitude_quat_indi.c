@@ -30,7 +30,6 @@
  */
 
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
-#include "firmwares/rotorcraft/oneloop/oneloop_andi.h"
 
 void stabilization_attitude_init(void)
 {
@@ -39,8 +38,7 @@ void stabilization_attitude_init(void)
 
 void stabilization_attitude_enter(void)
 {
-  //stabilization_indi_enter();
-  oneloop_andi_enter();
+  stabilization_indi_enter();
 }
 
 void stabilization_attitude_set_failsafe_setpoint(void)
@@ -70,18 +68,8 @@ void stabilization_attitude_set_stab_sp(struct StabilizationSetpoint *sp)
 
 void stabilization_attitude_run(bool in_flight)
 {
-  //stabilization_indi_attitude_run(stab_att_sp_quat, in_flight);
-  oneloop_andi_attitude_run(in_flight);
+  stabilization_indi_attitude_run(stab_att_sp_quat, in_flight);
 }
-
-// void oneloop_attitude_run(bool in_flight)
-// {
-//   struct FloatVect3 dummy;
-//   dummy.x = 0.0;
-//   dummy.y = 0.0;
-//   dummy.z = 0.0;
-//   oneloop_andi_attitude_run(stab_att_sp_quat, dummy, in_flight);
-// }
 
 void stabilization_attitude_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn)
 {

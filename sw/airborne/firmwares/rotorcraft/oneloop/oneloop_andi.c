@@ -25,11 +25,7 @@
 
 /* Include necessary header files */
 #include "firmwares/rotorcraft/oneloop/oneloop_andi.h"
-#include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
-#include "firmwares/rotorcraft/stabilization/stabilization_attitude_rc_setpoint.h"
-#include "firmwares/rotorcraft/stabilization/stabilization_attitude_quat_transformations.h"
-#include "firmwares/rotorcraft/guidance/guidance_h.h"
-#include "firmwares/rotorcraft/guidance/guidance_v.h"
+#include "firmwares/rotorcraft/oneloop/navigation_oneloop.h"
 #include "math/pprz_algebra_float.h"
 #include "state.h"
 #include "generated/airframe.h"
@@ -123,9 +119,11 @@ float  act_min_norm[ANDI_NUM_ACT_TOT] = = {0.0};
 #endif
 
 #ifdef ONELOOP_ANDI_WV // {ax_dot,ay_dot,az_dot,p_ddot,q_ddot,r_ddot}
-static float Wv[ANDI_OUTPUTS] = ONELOOP_ANDI_WV;
+static float Wv[ANDI_OUTPUTS]     = ONELOOP_ANDI_WV;
+static float Wv_wls[ANDI_OUTPUTS] = ONELOOP_ANDI_WV;
 #else
-static float Wv[ANDI_OUTPUTS] = {1.0};
+static float Wv[ANDI_OUTPUTS]     = {1.0};
+static float Wv_wls[ANDI_OUTPUTS] = {1.0};
 #endif
 
 #ifdef ONELOOP_ANDI_WU // {de,dr,daL,daR,mF,mB,mL,mR,mP,phi,theta}
@@ -167,7 +165,6 @@ void  float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3]);
 void  err_3d(float err[3], float a[3], float b[3], float k[3]);
 void  integrate_3d(float dt, float a[3], float a_dot[3]);
 void  vect_bound_3d(float vect[3], float bound);
-float ho_bound(float dt, float x_d[3],float x_bound);
 void  rm_2rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm);
 void  rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
 void  rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
@@ -175,10 +172,8 @@ void  rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref
 void  rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], float k1_rm[3], float k2_rm[3], float k3_rm[3], float x_d_bound, float x_2d_bound, float x_3d_bound);
 void  ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3]);
 void  calc_model(void);
-void  straight_oval(float s, float r, float l, float psi_i, float v_route, float a_route, float j_route, float p[3], float p0[3],  float v[3], float a[3], float j[3], float psi_vec[4], float* lap);
-void  nav_speed_controller(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_d_des, float x_d_actual, float x_2d_bound, float k1_rm, float k2_rm);
+void  pusher_test_run(void);
 void  nav_speed_controller_enter(void);
-float convert_angle(float psi);
 
 /* Define messages of the module*/
 #if PERIODIC_TELEMETRY
@@ -412,10 +407,9 @@ float k_r_rm  ;
 float k_r_d_rm ;   
 float k_psi_rm    ;  
 float k_psi_d_rm  ;  
-float k_psi_2d_rm ;  
+float k_psi_2d_rm ;
 
 /*NAV PVAJ Loop*/
-
 float p1_nav = 1.0;
 float p2_nav;
 float k_v_nav;
@@ -432,19 +426,14 @@ float max_j_nav = 500.0; // Pusher Test shows erros above 2[Hz] ramp commands [0
 float max_a_nav = 4.0;   // (35[N]/6.5[Kg]) = 5.38[m/s2]  [0.8 SF]
 float max_v_nav = 5.0;
 
-float r_oval    = 2.0;
-float l_oval    = 0.1;
-float psi_oval  = 0.0;
-float p_oval[3] = {0.0,0.0,0.0};
-float v_oval[3] = {0.0,0.0,0.0};
-float a_oval[3] = {0.0,0.0,0.0};
-float j_oval[3] = {0.0,0.0,0.0};
-float lap_oval  = 0.0;
-bool  oval_on   = false;
 bool  ow_psi    = false;
 float psi_des_rad = 0.0;
 float psi_des_deg = 0.0;
 float psi_vec[4] = {0.0, 0.0, 0.0, 0.0};
+
+float use_increment = 0.0;
+float a_thrust = 0.0;
+//bool  oval_on = false;  //delete me
 
 /*Define Variables used in control*/
 float old_time = 0.0;
@@ -500,6 +489,17 @@ bool check_1st_oval= true;
 bool verbose_oneloop = true;
 bool heading_on = false;
 
+/*Oval function parameters*/
+float r_oval    = 2.0;
+float l_oval    = 0.1;
+float psi_oval  = 0.0;
+float p_oval[3] = {0.0,0.0,0.0};
+float v_oval[3] = {0.0,0.0,0.0};
+float a_oval[3] = {0.0,0.0,0.0};
+float j_oval[3] = {0.0,0.0,0.0};
+float lap_oval  = 0.0;
+bool  oval_on   = false;
+
 /* Pusher Stall Test*/
 bool pusher_test_on = false;
 float pusher_max_f = 1.0;
@@ -507,7 +507,29 @@ int16_t pusher_counter = 0;
 float du_pusher_msg = 0.0;
 float pusher_test_cmd = 0.0;
 
-/*Error Controller Gain Design*/
+/** state eulers in zxy order */
+struct FloatEulers eulers_zxy;
+
+/*Filters Initialization*/
+float oneloop_andi_estimation_filt_cutoff = 2.0;
+static struct FirstOrderLowPass filt_accel_ned[3];
+Butterworth2LowPass filt_accel_body[3];
+Butterworth2LowPass roll_filt_1l;
+Butterworth2LowPass pitch_filt_1l;
+Butterworth2LowPass yaw_filt;
+Butterworth2LowPass att_dot_meas_lowpass_filters[3];
+Butterworth2LowPass att_ref_lowpass_filters[3];
+Butterworth2LowPass rate_ref_lowpass_filters[3];
+Butterworth2LowPass measurement_lowpass_filters_1l[3];
+Butterworth2LowPass estimation_output_lowpass_filters_1l[3];
+Butterworth2LowPass model_pred_filt[ANDI_OUTPUTS];
+static struct FirstOrderLowPass rates_filt_fo[3];
+static struct FirstOrderLowPass pos_filt_fo[3];
+static struct FirstOrderLowPass vel_filt_fo[3];
+static struct FirstOrderLowPass model_pred_a_filt[3];
+struct FloatVect3 body_accel_f_1l;
+
+/** @brief  Error Controller Gain Design */
 static float k_e_1_3_f(float p1, float p2, float p3) {return (p1*p2*p3);}
 static float k_e_2_3_f(float p1, float p2, float p3) {return (p1*p2+p1*p3+p2*p3);}
 static float k_e_3_3_f(float p1, float p2, float p3) {return (p1+p2+p3);}
@@ -518,14 +540,14 @@ static float k_e_1_3_f_v2(float omega_n, UNUSED float zeta, float p1) {return (o
 static float k_e_2_3_f_v2(float omega_n,        float zeta, float p1) {return (omega_n*omega_n+2*zeta*omega_n*p1);}
 static float k_e_3_3_f_v2(float omega_n,        float zeta, float p1) {return (2*zeta*omega_n+p1);}
 
-/*Reference Model Gain Design*/
+/** @brief Reference Model Gain Design */
 static float k_rm_1_3_f(float omega_n, float zeta, float p1) {return (omega_n*omega_n*p1)/(omega_n*omega_n+omega_n*p1*zeta*2.0);}
 static float k_rm_2_3_f(float omega_n, float zeta, float p1) {return (omega_n*omega_n+omega_n*p1*zeta*2.0)/(p1+omega_n*zeta*2.0);}
 static float k_rm_3_3_f(float omega_n, float zeta, float p1) {return p1+omega_n*zeta*2.0;}
 static float k_rm_1_2_f(float omega_n, float zeta) {return omega_n/(2.0*zeta);}
 static float k_rm_2_2_f(float omega_n, float zeta) {return 2.0*zeta*omega_n;}
 
-/*Attitude Conversion Functions*/
+/** @brief Attitude Rates to Euler Conversion Function */
 void float_rates_of_euler_dot_vec(float r[3], float e[3], float edot[3])
 {
   float sphi   = sinf(e[0]);
@@ -537,9 +559,9 @@ void float_rates_of_euler_dot_vec(float r[3], float e[3], float edot[3])
   r[2] = -sphi * edot[1] + cphi * ctheta * edot[2];
 }
 
+/** @brief Attitude Euler to Rates Conversion Function */
 void float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3])
 {
-  // To-Do bound ctheta to never be zero 
   float sphi   = sinf(e[0]);
   float cphi   = cosf(e[0]);
   float stheta = sinf(e[1]);
@@ -552,6 +574,7 @@ void float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3])
   edot[2] = sphi/ctheta*r[1] + cphi/ctheta*r[2];
 }
 
+/** @brief Calculate Scaled Error between two 3D arrays*/
 void err_3d(float err[3], float a[3], float b[3], float k[3])
 {
   int8_t i;
@@ -560,6 +583,7 @@ void err_3d(float err[3], float a[3], float b[3], float k[3])
   }
 }
 
+/** @brief Integrate in time 3D array*/
 void integrate_3d(float dt, float a[3], float a_dot[3])
 {
   int8_t i;
@@ -568,7 +592,7 @@ void integrate_3d(float dt, float a[3], float a_dot[3])
   }
 }
 
-/* Scale a 3D vector to within a 3D bound */
+/** @brief Scale a 3D array to within a 3D bound */
 void vect_bound_3d(float vect[3], float bound) {
   float norm = float_vect_norm(vect,3);
   if((norm-bound) > FLT_EPSILON) {
@@ -579,13 +603,21 @@ void vect_bound_3d(float vect[3], float bound) {
   }
 }
 
-/* Generate higher order bound based on lower order bound*/
-float ho_bound(float dt, float x_d[3],float x_bound){
-  float x_d_norm = float_vect_norm(x_d,3);
-  float x_d_bound = (x_bound-x_d_norm)/dt;
-  return fabs(x_d_bound);
-}
-/*Reference Model Definition*/
+/** 
+ * @brief Reference Model Definition for 3rd order system with attitude conversion functions
+ * @param dt              Delta time [s]
+ * @param x_ref           Reference signal 1st order
+ * @param x_d_ref         Reference signal 2nd order
+ * @param x_2d_ref        Reference signal 3rd order
+ * @param x_3d_ref        Reference signal 4th order
+ * @param x_des           Desired 1st order signal
+ * @param ow_psi          Overwrite psi (for navigation functions) [bool]
+ * @param psi_overwrite   Overwrite psi (for navigation functions) [values]
+ * @param k1_rm           Reference Model Gain 1st order signal
+ * @param k2_rm           Reference Model Gain 2nd order signal
+ * @param k3_rm           Reference Model Gain 3rd order signal
+ * FIXME: 
+ */
 void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], bool ow_psi, float psi_overwrite[4], float k1_rm[3], float k2_rm[3], float k3_rm[3]){
   float e_x[3];
   float e_x_rates[3];
@@ -609,7 +641,19 @@ void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[
   x_ref[2] = convert_angle(x_ref[2]);
 }
 
-/*Reference Model Definition*/
+/** 
+ * @brief Reference Model Definition for 3rd order system 
+ * @param dt              Delta time [s]
+ * @param x_ref           Reference signal 1st order
+ * @param x_d_ref         Reference signal 2nd order
+ * @param x_2d_ref        Reference signal 3rd order
+ * @param x_3d_ref        Reference signal 4th order
+ * @param x_des           Desired 1st order signal
+ * @param k1_rm           Reference Model Gain 1st order signal
+ * @param k2_rm           Reference Model Gain 2nd order signal
+ * @param k3_rm           Reference Model Gain 3rd order signal
+ * FIXME: 
+ */
 void rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm){
   float e_x      = k1_rm * (x_des- *x_ref);
   float e_x_d    = k2_rm * (e_x- *x_d_ref);
@@ -620,6 +664,19 @@ void rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d
   *x_ref    = (*x_ref    + dt * (*x_d_ref ));
 }
 
+/** 
+ * @brief Reference Model Definition for 3rd order system specific to the heading angle
+ * @param dt              Delta time [s]
+ * @param x_ref           Reference signal 1st order
+ * @param x_d_ref         Reference signal 2nd order
+ * @param x_2d_ref        Reference signal 3rd order
+ * @param x_3d_ref        Reference signal 4th order
+ * @param x_des           Desired 1st order signal
+ * @param k1_rm           Reference Model Gain 1st order signal
+ * @param k2_rm           Reference Model Gain 2nd order signal
+ * @param k3_rm           Reference Model Gain 3rd order signal
+ * FIXME: 
+ */
 void rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm){
   float e_x      = k1_rm * convert_angle((x_des- *x_ref));
   float e_x_d    = k2_rm * (e_x- *x_d_ref);
@@ -630,6 +687,22 @@ void rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float*
   *x_ref    = (*x_ref    + dt * (*x_d_ref ));
 }
 
+/** 
+ * @brief Reference Model Definition for 3rd order system specific to positioning with bounds
+ * @param dt              Delta time [s]
+ * @param x_ref           Reference signal 1st order
+ * @param x_d_ref         Reference signal 2nd order
+ * @param x_2d_ref        Reference signal 3rd order
+ * @param x_3d_ref        Reference signal 4th order
+ * @param x_des           Desired 1st order signal
+ * @param k1_rm           Reference Model Gain 1st order signal
+ * @param k2_rm           Reference Model Gain 2nd order signal
+ * @param k3_rm           Reference Model Gain 3rd order signal
+ * @param x_d_bound       Bound for the 2nd order reference signal
+ * @param x_2d_bound      Bound for the 3rd order reference signal
+ * @param x_3d_bound      Bound for the 4th order reference signal
+ * FIXME: 
+ */
 void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], float k1_rm[3], float k2_rm[3], float k3_rm[3], float x_d_bound, float x_2d_bound, float x_3d_bound){
   float e_x[3];
   float e_x_d[3];
@@ -647,7 +720,19 @@ void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], f
 }
 
 
-
+/** 
+ * @brief Reference Model Definition for 2nd order system
+ * @param dt              Delta time [s]
+ * @param x_ref           Reference signal 1st order
+ * @param x_d_ref         Reference signal 2nd order
+ * @param x_2d_ref        Reference signal 3rd order
+ * @param x_3d_ref        Reference signal 4th order
+ * @param x_des           Desired 1st order signal
+ * @param k1_rm           Reference Model Gain 1st order signal
+ * @param k2_rm           Reference Model Gain 2nd order signal
+ * @param k3_rm           Reference Model Gain 3rd order signal
+ * FIXME: 
+ */
 void rm_2rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm){
   float e_x      = k1_rm * (x_des- *x_ref);
   float e_x_d    = k2_rm * (e_x- *x_d_ref);
@@ -656,12 +741,43 @@ void rm_2rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des
   *x_ref    = (*x_ref    + dt * (*x_d_ref ));
 }
 
-/*Error Controller Definition*/
+/** 
+ * @brief Error Controller Definition for 3rd order system 
+ * @param dt              Delta time [s]
+ * @param x_ref           Reference signal 1st order
+ * @param x_d_ref         Reference signal 2nd order
+ * @param x_2d_ref        Reference signal 3rd order
+ * @param x_3d_ref        Reference signal 4th order
+ * @param x_des           Desired 1st order signal
+ * @param x               Current 1st order signal
+ * @param x_d             Current 2nd order signal
+ * @param x_2d            Current 3rd order signal
+ * @param k1_e            Error Controller Gain 1st order signal
+ * @param k2_e            Error Controller Gain 2nd order signal
+ * @param k3_e            Error Controller Gain 3rd order signal
+ * FIXME: 
+ */
 static float ec_3rd(float x_ref, float x_d_ref, float x_2d_ref, float x_3d_ref, float x, float x_d, float x_2d, float k1_e, float k2_e, float k3_e){
   float y_4d = k1_e*(x_ref-x)+k2_e*(x_d_ref-x_d)+k3_e*(x_2d_ref-x_2d)+x_3d_ref;
   return y_4d;
 }
 
+/** 
+ * @brief Error Controller Definition for 3rd order system specific to attitude
+ * @param dt              Delta time [s]
+ * @param x_ref           Reference signal 1st order
+ * @param x_d_ref         Reference signal 2nd order
+ * @param x_2d_ref        Reference signal 3rd order
+ * @param x_3d_ref        Reference signal 4th order
+ * @param x_des           Desired 1st order signal
+ * @param x               Current 1st order signal
+ * @param x_d             Current 2nd order signal
+ * @param x_2d            Current 3rd order signal
+ * @param k1_e            Error Controller Gain 1st order signal
+ * @param k2_e            Error Controller Gain 2nd order signal
+ * @param k3_e            Error Controller Gain 3rd order signal
+ * FIXME: 
+ */
 void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3]){
   float y_4d_1[3];
   float y_4d_2[3];
@@ -675,24 +791,45 @@ void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[
   float_vect_sum(y_4d, y_4d, y_4d_2, 3);
   float_vect_sum(y_4d, y_4d, y_4d_3, 3);
 }
+
+/** 
+ * @brief Error Controller Definition for 2rd order system 
+ * @param dt              Delta time [s]
+ * @param x_ref           Reference signal 1st order
+ * @param x_d_ref         Reference signal 2nd order
+ * @param x_2d_ref        Reference signal 3rd order
+ * @param x_des           Desired 1st order signal
+ * @param x               Current 1st order signal
+ * @param x_d             Current 2nd order signal
+ * @param k1_e            Error Controller Gain 1st order signal
+ * @param k2_e            Error Controller Gain 2nd order signal
+ * FIXME: 
+ */
 static float ec_2rd(float x_ref, float x_d_ref, float x_2d_ref, float x, float x_d, float k1_e, float k2_e){
   float y_3d = k1_e*(x_ref-x)+k2_e*(x_d_ref-x_d)+x_2d_ref;
   return y_3d;
 }
-/*Third Order Dynamics Approximation*/
+
+
+/**
+ * @brief  Third Order to First Order Dynamics Approximation
+ * @param p1              Pole 1
+ * @param p2              Pole 2
+ * @param p3              Pole 3
+ * @param rm_k            Reference Model Gain
+ * FIXME: 
+ */
 static float w_approx(float p1, float p2, float p3, float rm_k){
   float tao = (p1*p2+p1*p3+p2*p3)/(p1*p2*p3)/(rm_k);
   return 1.0*w_scale/tao;
 }
 
-/** Gain Design
- * @brief This section is used to define the gains of the reference model and error controller
+/** 
+ * @brief Initialize Controller Gains
  * FIXME: Calculate the gains dynamically for transition
  */
-
 void init_controller(void){
 /*Attitude Loop*/
-//rm_k_attitude = 0.8;
 p2_att        = p1_att;
 p3_att        = p1_att;
 k_theta_e     = k_e_1_3_f(p1_att,p2_att,p3_att);
@@ -767,40 +904,13 @@ p2_nav        = p1_nav;
 k_v_nav       = k_rm_1_2_f(p1_nav,p2_nav);
 k_v_d_nav     = k_rm_2_2_f(p1_nav,p2_nav);
 
-
 /*Approximated Dynamics*/
-
 act_dynamics[ANDI_NUM_ACT]   = w_approx( p1_att,  p2_att,  p3_att,  1.0);//rm_k_attitude);
 act_dynamics[ANDI_NUM_ACT+1]   = w_approx( p1_att,  p2_att,  p3_att,  1.0);//rm_k_attitude);
 }
 
-/** state eulers in zxy order */
-struct FloatEulers eulers_zxy;
 
-
-/*Filters Initialization*/
-float oneloop_andi_estimation_filt_cutoff = 2.0;
-
-static struct FirstOrderLowPass filt_accel_ned[3];
-//Butterworth2LowPass filt_accel_ned[3];
-Butterworth2LowPass filt_accel_body[3];
-Butterworth2LowPass roll_filt_1l;
-Butterworth2LowPass pitch_filt_1l;
-Butterworth2LowPass yaw_filt;
-Butterworth2LowPass att_dot_meas_lowpass_filters[3];
-Butterworth2LowPass att_ref_lowpass_filters[3];
-Butterworth2LowPass rate_ref_lowpass_filters[3];
-Butterworth2LowPass measurement_lowpass_filters_1l[3];
-Butterworth2LowPass estimation_output_lowpass_filters_1l[3];
-Butterworth2LowPass model_pred_filt[ANDI_OUTPUTS];
-
-static struct FirstOrderLowPass rates_filt_fo[3];
-static struct FirstOrderLowPass pos_filt_fo[3];
-static struct FirstOrderLowPass vel_filt_fo[3];
-static struct FirstOrderLowPass model_pred_a_filt[3];
-struct FloatVect3 body_accel_f_1l;
-
-
+/** @brief  Initialize the filters */
 void init_filter(void)
 {
   float tau = 1.0 / (2.0 * M_PI *oneloop_andi_filt_cutoff);
@@ -848,16 +958,16 @@ void init_filter(void)
 }
 
 
-/*Low pass the accelerometer measurements to remove noise from vibrations.The roll and pitch also need to be filtered to synchronize them with the acceleration. Called as a periodic function with PERIODIC_FREQ*/
+/** @brief  Propagate the filters */
 void oneloop_andi_propagate_filters(void) {
-  struct NedCoor_f *accel = stateGetAccelNed_f();
-  float accel_b_x = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->x);
-  float accel_b_y = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
-  float accel_b_z = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->z);
-  struct FloatRates *body_rates = stateGetBodyRates_f();
-  float rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
-  float pos_vect[3]  = {stateGetPositionNed_f()->x,stateGetPositionNed_f()->y,stateGetPositionNed_f()->z};
-  float vel_vect[3]  = {stateGetSpeedNed_f()->x,stateGetSpeedNed_f()->y,stateGetSpeedNed_f()->z};
+  struct  NedCoor_f *accel = stateGetAccelNed_f();
+  float   accel_b_x = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->x);
+  float   accel_b_y = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->y);
+  float   accel_b_z = ACCEL_FLOAT_OF_BFP(stateGetAccelBody_i()->z);
+  struct  FloatRates *body_rates = stateGetBodyRates_f();
+  float   rate_vect[3] = {body_rates->p, body_rates->q, body_rates->r};
+  float   pos_vect[3]  = {stateGetPositionNed_f()->x,stateGetPositionNed_f()->y,stateGetPositionNed_f()->z};
+  float   vel_vect[3]  = {stateGetSpeedNed_f()->x,stateGetSpeedNed_f()->y,stateGetSpeedNed_f()->z};
   update_first_order_low_pass(&filt_accel_ned[0], accel->x);
   update_first_order_low_pass(&filt_accel_ned[1], accel->y);
   update_first_order_low_pass(&filt_accel_ned[2], accel->z);
@@ -885,20 +995,18 @@ void oneloop_andi_propagate_filters(void) {
     lin_acc[i] = filt_accel_ned[i].last_out + model_pred[i] - model_pred_a_filt[i].last_out;     
 }}
 
-/*Init function of oneloop controller*/
+/** @brief Init function of Oneloop ANDI controller  */
 void oneloop_andi_init(void)
 { 
-  //Calculate g1_g2. 
+  // Initialize Effectiveness matrix
   calc_normalization();
   sum_g1g2_1l();
-
-  // Initialize the array of pointers to the rows of g1_g2
   int8_t i;
   for (i = 0; i < ANDI_OUTPUTS; i++) {
    bwls_1l[i] = g1g2_1l[i];
   }
 
-  // Initialize filters
+  // Initialize filters and other variables
   init_filter();
   init_controller();
   float_vect_zero(andi_u, ANDI_NUM_ACT_TOT);
@@ -917,8 +1025,9 @@ void oneloop_andi_init(void)
   eulers_zxy_des.theta =  0.0;
   eulers_zxy_des.psi   =  0.0;
   float_vect_zero(model_pred,ANDI_OUTPUTS);
-  nav_speed_controller_enter();
+  nav_speed_controller_enter(); //uncomment me
 
+  // Start telemetry
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ONELOOP_ANDI, send_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ONELOOP_G, send_oneloop_g);
@@ -928,8 +1037,7 @@ void oneloop_andi_init(void)
 }
 
 /**
- * Function that resets important values upon engaging Oneloop ANDI.
- *
+ * @brief Function that resets important values upon engaging Oneloop ANDI.
  * FIXME: Ideally we should distinguish between the "stabilization" and "guidance" needs because it is unlikely to switch stabilization in flight,
  * and there are multiple modes that use (the same) stabilization. Resetting the controller
  * is not so nice when you are flying.
@@ -952,76 +1060,155 @@ void oneloop_andi_enter(void)
   eulers_zxy_des.theta =  0.0;
   eulers_zxy_des.psi   =  0.0;
   float_vect_zero(model_pred,ANDI_OUTPUTS);
-  nav_speed_controller_enter();
+  nav_speed_controller_enter(); //uncomment me
   /*Guidance Reset*/
 
 }
 
-
 /**
- * @brief Function that calculates the actuator command based on the desired control vector
- * 
- * @param att_des 
- * @param in_flight 
+ * @brief  Function to generate the reference signals for the oneloop controller
+ * @param half_loop  In half-loop mode the controller is used for stabilization only
  * FIXME: 
  */
-void oneloop_andi_attitude_run(bool in_flight)
+void oneloop_andi_RM(bool half_loop)
 {
-  printf("############### NEW LOOP ##########################\n");
-  new_time = get_sys_time_float();
-  printf("This function is running at a dt=%f \n",new_time-old_time);
-  dt_actual = new_time - old_time;
-  old_time = new_time;
 
-  printf("p1_pos = %f\n",p1_pos);
-  printf("p2_pos = %f\n",p2_pos);
-  printf("k_N_e = %f\n",k_N_e);
-  printf("k_vN_e = %f\n",k_vN_e);
-  printf("k_aN_e = %f\n",k_aN_e);
-  printf("k_N_rm = %f\n",k_N_rm);
-  printf("k_vN_rm = %f\n",k_vN_rm);
-  printf("k_aN_rm = %f\n",k_aN_rm);
-  printf("k_E_e = %f\n",k_E_e);
-  printf("k_vE_e = %f\n",k_vE_e);
-  printf("k_aE_e = %f\n",k_aE_e);
-  printf("k_D_e = %f\n",k_D_e);
-  printf("k_vD_e = %f\n",k_vD_e);
-  printf("k_aD_e = %f\n",k_aD_e);
-
-
-  // Register attitude to be used in this loop
-  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
-
-  init_controller();
-  calc_normalization();
-    // Propagate actuator filters
-  get_act_state_oneloop();
-
-  sum_g1g2_1l();
-
-  // If drone is not on the ground use incremental law
-  float use_increment = 0.0;
-  bool volando = false;
-  if(in_flight) {
-    use_increment = 1.0;
-    volando = true;
-    printf("I am in flight\n");
-    }
-  if (ONELOOP_ANDI_DEBUG_MODE) {
-      volando = false;
-    }
-
-  psi_des_rad = psi_des_deg * M_PI / 180.0;
-  
-  if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
-    printf("I AM IN ATT\n");
+  // Initialize some variables
+  a_thrust = 0.0;
+  float thrust_cmd_1l = 0.0;
+  float des_r = 0.0;
+  int8_t i;
+  // Generate reference signals with reference model 
+  if(half_loop){
+    // Disregard X and Y jerk objectives
+    Wv_wls[0] = 0.0;
+    Wv_wls[1] = 0.0;
+    // Overwrite references with actual signals (for consistent plotting)
+    float_vect_copy(pos_des,pos_1l,3);
+    float_vect_copy(pos_ref,pos_1l,3);
+    float_vect_copy(pos_d_ref,pos_d,3);
+    float_vect_copy(pos_2d_ref,pos_2d,3);
+    float_vect_zero(pos_3d_ref,3);
+    float_vect_copy(pos_init,pos_1l,3);
+    // Set desired attitude with stick input
     eulers_zxy_des.phi   = (float) (radio_control.values[RADIO_ROLL] )/MAX_PPRZ*45.0*M_PI/180.0;
     eulers_zxy_des.theta = (float) (radio_control.values[RADIO_PITCH])/MAX_PPRZ*45.0*M_PI/180.0;
-    eulers_zxy_des.psi   = eulers_zxy.psi;//
+    eulers_zxy_des.psi   = eulers_zxy.psi;
     psi_des_rad          = eulers_zxy.psi;
+    // Initialize some variables
     check_1st_nav  = true;
     check_1st_oval = true;
+    // Create commands adhoc to get actuators to the wanted level
+    thrust_cmd_1l = (float) radio_control.values[RADIO_THROTTLE];
+    Bound(thrust_cmd_1l,0.0,MAX_PPRZ); 
+    int8_t i;
+    for (i = 0; i < ANDI_NUM_ACT; i++) {
+     a_thrust +=(thrust_cmd_1l - use_increment*actuator_state_1l[i]) * bwls_1l[2][i] / (ratio_u_un[i] * ratio_vn_v[i]);
+    }
+    // Overwrite Yaw Ref with desired Yaw setting (for consistent plotting)
+    att_ref[2] = psi_des_rad;
+    // Set desired Yaw rate with stick input
+    des_r = (float) (radio_control.values[RADIO_YAW])/MAX_PPRZ*3.0; 
+    BoundAbs(des_r,3.0);
+    // Generate reference signals
+    rm_2rd(dt_1l, &att_d_ref[2], &att_2d_ref[2], &att_3d_ref[2], des_r, k_r_rm, k_r_d_rm);
+    rm_3rd(dt_1l, &att_ref[0],   &att_d_ref[0],  &att_2d_ref[0], &att_3d_ref[0], eulers_zxy_des.phi, k_phi_rm, k_p_rm, k_pdot_rm);
+    rm_3rd(dt_1l, &att_ref[1],   &att_d_ref[1],  &att_2d_ref[1], &att_3d_ref[1], eulers_zxy_des.theta, k_theta_rm, k_q_rm, k_qdot_rm);
+  }else{
+    // Make sure X and Y jerk objectives are active
+    Wv_wls[0] = Wv[0];
+    Wv_wls[1] = Wv[1];
+    // First time engaging NAV Mode or Navigation Functions (e.g. Oval) requires some initialization
+    if(check_1st_nav || (check_1st_oval && oval_on)){ 
+      check_1st_nav  = false;
+      check_1st_oval = false;
+      for (i = 0; i < 3; i++) {
+        pos_init[i] = pos_1l[i];
+      }
+      // Reset desired heading to current heading
+      psi_des_rad = eulers_zxy.psi; 
+      psi_oval = psi_des_rad; // Uncomment me
+    // Use the horizontal guidance position input to set the desired position 
+    } else { 
+      pos_init[0] = (float) (guidance_h.sp.pos.x * 0.0039063);
+      pos_init[1] = (float) (guidance_h.sp.pos.y * 0.0039063);
+      pos_init[2] = (float) (guidance_v.z_sp     * 0.0039063);
+    }
+    // Group RM gains in arrays
+    float k1_pos_rm[3] = {k_N_rm,  k_E_rm,  k_D_rm};
+    float k2_pos_rm[3] = {k_vN_rm, k_vE_rm, k_vD_rm};
+    float k3_pos_rm[3] = {k_aN_rm, k_aE_rm, k_aD_rm};
+    float k1_att_rm[3] = {k_phi_rm, k_theta_rm, k_psi_rm};
+    float k2_att_rm[3] = {k_p_rm, k_q_rm, k_psi_d_rm};
+    float k3_att_rm[3] = {k_pdot_rm, k_qdot_rm, k_psi_2d_rm};
+    // Register Arttitude Setpoints from previous loop
+    float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, psi_des_rad};
+    // Navigation Functions (e.g. oval) provide directly reference signals
+    if(oval_on){
+      if(heading_on) {
+        ow_psi = true;
+      }else{
+        ow_psi = false;
+      }
+      float v_actual = sqrtf(pos_d[0] * pos_d[0]+pos_d[1] * pos_d[1]); //uncomment me
+      nav_speed_controller(dt_1l, &p_nav, &v_nav, &a_nav, &j_nav, v_nav_des, v_actual, max_a_nav, k_v_nav, k_v_d_nav);   //uncomment me   
+      straight_oval(p_nav, r_oval, l_oval, psi_oval, v_nav, a_nav, j_nav, pos_ref, pos_init,  pos_d_ref, pos_2d_ref, pos_3d_ref, psi_vec, &lap_oval);  //uncomment me     
+    }else{
+      // Perfrom initialization of some variables
+      check_1st_oval = true;
+      ow_psi         = false;
+      nav_speed_controller_enter(); //uncomment me
+      // Set desired postion 
+      pos_des[0] = pos_init[0];
+      pos_des[1] = pos_init[1];
+      pos_des[2] = pos_init[2];
+      // Generate Reference signals for positioning using RM
+      rm_3rd_pos(dt_1l, pos_ref, pos_d_ref, pos_2d_ref, pos_3d_ref, pos_des, k1_pos_rm, k2_pos_rm, k3_pos_rm, max_v_nav, max_a_nav, max_j_nav);
+    }
+    // Generate Reference signals for attitude using RM
+    rm_3rd_attitude(dt_1l, att_ref, att_d_ref, att_2d_ref, att_3d_ref, att_des, ow_psi, psi_vec, k1_att_rm, k2_att_rm, k3_att_rm);
   }
+}
+
+/**
+ * @brief  Main function that runs the controller and performs control allocation
+ * @param half_loop  In half-loop mode the controller is used for stabilization only
+ * @param in_flight  The drone is in flight
+ * FIXME: 
+ */
+void oneloop_andi_run(bool in_flight, bool half_loop)
+{
+  // For NPS print time and loop delimeters
+  printf("############### NEW LOOP ##########################\n");
+  new_time = get_sys_time_float();
+  dt_actual = new_time - old_time;
+  old_time = new_time;
+  printf("This function is running at a dt=%f \n",new_time-old_time);
+  
+  // At beginnig of the loop: (1) Register Attitude, (2) Initialize gains of RM and EC, (3) Calculate Normalization of Actuators Signals, (4) Propagate Actuator Model, (5) Update effectiveness matrix
+  float_eulers_of_quat_zxy(&eulers_zxy, stateGetNedToBodyQuat_f());
+  init_controller();
+  calc_normalization();
+  get_act_state_oneloop();
+  sum_g1g2_1l();
+  
+  // If drone is not on the ground use incremental law
+  use_increment = 0.0;
+  bool  volando       = false;
+  if(in_flight) {
+    use_increment = 1.0;
+    volando       = true;
+    printf("I am in flight\n");
+  }
+  if (ONELOOP_ANDI_DEBUG_MODE) {
+    volando = false;
+  }
+  
+  // Update desired Heading (psi_des_rad) based on previous loop or changed setting
+  psi_des_rad = psi_des_deg * M_PI / 180.0;
+
+  // Register the state of the drone in the variables used in RM and EC
+  // (1) Attitude related
   att_1l[0] = eulers_zxy.phi                        * use_increment;
   att_1l[1] = eulers_zxy.theta                      * use_increment;
   att_1l[2] = eulers_zxy.psi                        * use_increment;
@@ -1032,7 +1219,7 @@ void oneloop_andi_attitude_run(bool in_flight)
   att_2d[0] = ang_acc[0]                            * use_increment;
   att_2d[1] = ang_acc[1]                            * use_increment;
   att_2d[2] = ang_acc[2]                            * use_increment;
-
+  // (2) Position related
   pos_1l[0] = stateGetPositionNed_f()->x;   
   pos_1l[1] = stateGetPositionNed_f()->y;   
   pos_1l[2] = stateGetPositionNed_f()->z;   
@@ -1043,113 +1230,16 @@ void oneloop_andi_attitude_run(bool in_flight)
   pos_2d[1] = lin_acc[1];
   pos_2d[2] = lin_acc[2];
   
-  // Update bwls_1l
+  // Update the effectiveness matrix used in WLS
   int8_t i;
   for (i = 0; i < ANDI_OUTPUTS; i++) {
     bwls_1l[i] = g1g2_1l[i];
   }
 
-
-  // Generate reference signals with reference model
-  float a_thrust = 0.0;
-  float thrust_cmd_1l = 0.0;
-  if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
-    // FIX ME: This is a hack to get the WLS TO IGNORE XY POSITION IN ATTITUDE DIRECT MODE. Rather use another variable so WV is not overwritten.
-    Wv[0] = 0.0;
-    Wv[1] = 0.0;
-    float_vect_copy(pos_des,pos_1l,3);
-    float_vect_copy(pos_ref,pos_1l,3);
-    float_vect_copy(pos_d_ref,pos_d,3);
-    float_vect_copy(pos_2d_ref,pos_2d,3);
-    float_vect_zero(pos_3d_ref,3);
-    float_vect_copy(pos_init,pos_1l,3);
-
-    // Create commands adhoc to get actuators to the wanted level
-    thrust_cmd_1l = (float) radio_control.values[RADIO_THROTTLE];
-    Bound(thrust_cmd_1l,0.0,MAX_PPRZ); 
-    for (i = 0; i < ANDI_NUM_ACT; i++) {
-     a_thrust +=(thrust_cmd_1l - use_increment*actuator_state_1l[i]) * bwls_1l[2][i] / (ratio_u_un[i] * ratio_vn_v[i]);
-    }
-  }else{
-    printf("I AM IN NAV\n");
-    Wv[0] = 1.0;
-    Wv[1] = 1.0;
-      if(check_1st_nav || (check_1st_oval && oval_on)){ // First time engaging NAV
-        check_1st_nav  = false;
-        check_1st_oval = false;
-          for (i = 0; i < 3; i++) {
-            pos_init[i] = pos_1l[i];
-          }
-        psi_des_rad = eulers_zxy.psi; // At first NAV reset desired heading to current heading
-        psi_oval = psi_des_rad; 
-
-      } else { // Use the horizontal position input of the wp
-        pos_init[0] = (float) (guidance_h.sp.pos.x * 0.0039063);
-        pos_init[1] = (float) (guidance_h.sp.pos.y * 0.0039063);
-        pos_init[2] = (float) (guidance_v.z_sp     * 0.0039063);
-      }
-      if(oval_on){
-        float v_actual = sqrtf(pos_d[0] * pos_d[0]+pos_d[1] * pos_d[1]);
-        
-        nav_speed_controller(dt_1l, &p_nav, &v_nav, &a_nav, &j_nav, v_nav_des, v_actual, max_a_nav, k_v_nav, k_v_d_nav);
-        //printf("p_nav = %f\n",p_nav);
-        
-        straight_oval(p_nav, r_oval, l_oval, psi_oval, v_nav, a_nav, j_nav, pos_ref, pos_init,  pos_d_ref, pos_2d_ref, pos_3d_ref, psi_vec, &lap_oval);
-        if (v_actual > 0.5){
-          //if (heading_on){
-            //psi_des_rad = atan2f(pos_d_ref[1], pos_d_ref[0]); // Investigate whether to use the ref or the actual signal
-            //psi_des_rad = convert_angle(psi_des_rad);
-          //}
-        }
-        
-      }else{
-        check_1st_oval = true;
-        
-        nav_speed_controller_enter();
-        pos_des[0] = pos_init[0];
-        pos_des[1] = pos_init[1];
-        pos_des[2] = pos_init[2];
-        float k1_pos_rm[3] = {k_N_rm,  k_E_rm,  k_D_rm};
-        float k2_pos_rm[3] = {k_vN_rm, k_vE_rm, k_vD_rm};
-        float k3_pos_rm[3] = {k_aN_rm, k_aE_rm, k_aD_rm};
-        rm_3rd_pos(dt_1l, pos_ref, pos_d_ref, pos_2d_ref, pos_3d_ref, pos_des, k1_pos_rm, k2_pos_rm, k3_pos_rm, max_v_nav, max_a_nav, max_j_nav);
-      }
-  }
-
-  
-  float des_r = 0.0;
-  
-  if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
-    att_ref[2] = psi_des_rad;
-    des_r = (float) (radio_control.values[RADIO_YAW])/MAX_PPRZ*3.0; 
-    BoundAbs(des_r,5.0);
-    rm_2rd(dt_1l, &att_d_ref[2], &att_2d_ref[2], &att_3d_ref[2], des_r, k_r_rm, k_r_d_rm);
-    rm_3rd(dt_1l, &att_ref[0],   &att_d_ref[0],  &att_2d_ref[0], &att_3d_ref[0], eulers_zxy_des.phi, k_phi_rm, k_p_rm, k_pdot_rm);
-    rm_3rd(dt_1l, &att_ref[1],   &att_d_ref[1],  &att_2d_ref[1], &att_3d_ref[1], eulers_zxy_des.theta, k_theta_rm, k_q_rm, k_qdot_rm);
-  } else {
-    float k1_att_rm[3] = {k_phi_rm, k_theta_rm, k_psi_rm};
-    float k2_att_rm[3] = {k_p_rm, k_q_rm, k_psi_d_rm};
-    float k3_att_rm[3] = {k_pdot_rm, k_qdot_rm, k_psi_2d_rm};
-    float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, psi_des_rad};
-    
-    if(oval_on && heading_on) {
-      ow_psi = true;
-    }else{
-      ow_psi = false;
-    }
-
-    rm_3rd_attitude(dt_1l, att_ref, att_d_ref, att_2d_ref, att_3d_ref, att_des, ow_psi, psi_vec, k1_att_rm, k2_att_rm, k3_att_rm);
-
-    if(ow_psi) {
-      att_ref[2]    = psi_vec[0];
-      att_d_ref[2]  = psi_vec[1];
-      att_2d_ref[2] = psi_vec[2];
-      att_3d_ref[2] = psi_vec[3];
-    }
-  }
-
+  // Run the Reference Model (RM)
+  oneloop_andi_RM(half_loop);
   // Generate pseudo control for stabilization vector (nu) based on error controller
-  if(autopilot.mode==AP_MODE_ATTITUDE_DIRECT){
+  if(half_loop){
     nu[0] = 0.0;
     nu[1] = 0.0;
     nu[2] = a_thrust;
@@ -1163,16 +1253,14 @@ void oneloop_andi_attitude_run(bool in_flight)
     float k3_att_e[3] = {k_pdot_e, k_qdot_e,  k_psi_2d_e};
     float y_4d_att[3];
     ec_3rd_att(y_4d_att, att_ref, att_d_ref, att_2d_ref, att_3d_ref, att_1l, att_d, att_2d, k1_att_e, k2_att_e, k3_att_e);
-
     nu[0] = ec_3rd(pos_ref[0], pos_d_ref[0], pos_2d_ref[0], pos_3d_ref[0], pos_1l[0], pos_d[0], pos_2d[0], k_N_e, k_vN_e, k_aN_e);
     nu[1] = ec_3rd(pos_ref[1], pos_d_ref[1], pos_2d_ref[1], pos_3d_ref[1], pos_1l[1], pos_d[1], pos_2d[1], k_E_e, k_vE_e, k_aE_e);
     nu[2] = ec_3rd(pos_ref[2], pos_d_ref[2], pos_2d_ref[2], pos_3d_ref[2], pos_1l[2], pos_d[2], pos_2d[2], k_D_e, k_vD_e, k_aD_e); 
-
     nu[3] = y_4d_att[0];  
     nu[4] = y_4d_att[1]; 
     nu[5] = y_4d_att[2]; 
   }
-  
+
   // Calculate the min and max increments
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
     if(i<ANDI_NUM_ACT){
@@ -1189,14 +1277,12 @@ void oneloop_andi_attitude_run(bool in_flight)
     }
     }
     // WLS Control Allocator
-    number_iter = wls_alloc_oneloop(andi_du_n, nu, du_min_1l, du_max_1l, bwls_1l, 0, 0, Wv, Wu, du_pref_1l, gamma_wls, 10);
-    printf("@@@@@@@@@ END WLS @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+    number_iter = wls_alloc_oneloop(andi_du_n, nu, du_min_1l, du_max_1l, bwls_1l, 0, 0, Wv_wls, Wu, du_pref_1l, gamma_wls, 10);
 
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
-    //printf("andi_du_pre_denormalization[%i]: %f ",i,andi_du_n[i]);
     andi_du[i] = (float)(andi_du_n[i] * ratio_u_un[i]);
   }
-  //printf("\n");
+
   if (volando) {
     // Add the increments to the actuators
     float_vect_sum(andi_u, actuator_state_1l, andi_du, ANDI_NUM_ACT);
@@ -1211,26 +1297,7 @@ void oneloop_andi_attitude_run(bool in_flight)
 
   // Overwrite the pusher command if enabled and in ATT
   if ((ONELOOP_ANDI_AC_HAS_PUSHER)&&(autopilot.mode==AP_MODE_ATTITUDE_DIRECT)){
-    if(pusher_test_on){
-      float pusher_target = MAX_PPRZ;
-      float max_du_pusher = pusher_target * pusher_max_f * dt_actual;
-      float du_pusher = pusher_target - pusher_test_cmd;
-      if (du_pusher > max_du_pusher) {
-        du_pusher = max_du_pusher;
-      }
-      pusher_test_cmd = pusher_test_cmd + du_pusher;
-      andi_u[ONELOOP_ANDI_PUSHER_IDX] = pusher_test_cmd;
-      if (andi_u[ONELOOP_ANDI_PUSHER_IDX]>(pusher_target-100.0)){
-        pusher_counter = pusher_counter +1;
-      }
-      if(pusher_counter>500){
-        pusher_test_on = false;
-        pusher_counter = 0;
-      }      
-    }else{
-      pusher_test_cmd = 0.0;
-      andi_u[ONELOOP_ANDI_PUSHER_IDX] = radio_control.values[RADIO_AUX4];
-    }
+    pusher_test_run();
   }
  
   // TODO : USE THE PROVIDED MAX AND MIN and change limits for phi and theta
@@ -1253,13 +1320,37 @@ void oneloop_andi_attitude_run(bool in_flight)
     eulers_zxy_des.phi   =  andi_u[ANDI_NUM_ACT];
     eulers_zxy_des.theta =  andi_u[ANDI_NUM_ACT+1];
   }
-
-  psi_des_deg = psi_des_rad * 180.0 / M_PI;
+  psi_des_deg = psi_des_rad * 180.0 / M_PI;  
+  printf("###################################################\n");
 }
 
+/** @brief  Function to test the spin-up and general dynamics of the pusher motor */
+void pusher_test_run(void){
+  if(pusher_test_on){
+  float pusher_target = MAX_PPRZ;
+  float max_du_pusher = pusher_target * pusher_max_f * dt_actual;
+  float du_pusher = pusher_target - pusher_test_cmd;
+  if (du_pusher > max_du_pusher) {
+     du_pusher = max_du_pusher;
+  }
+  pusher_test_cmd = pusher_test_cmd + du_pusher;
+  andi_u[ONELOOP_ANDI_PUSHER_IDX] = pusher_test_cmd;
+  if (andi_u[ONELOOP_ANDI_PUSHER_IDX]>(pusher_target-100.0)){
+    pusher_counter = pusher_counter +1;
+  }
+  if(pusher_counter>500){
+    pusher_test_on = false;
+    pusher_counter = 0;
+  }      
+ }else{
+   pusher_test_cmd = 0.0;
+   andi_u[ONELOOP_ANDI_PUSHER_IDX] = radio_control.values[RADIO_AUX4];
+ }
+}
+
+/** @brief  Function to reconstruct actuator state using first order dynamics */
 void get_act_state_oneloop(void)
 {
-  //actuator dynamics
   int8_t i;
   float prev_actuator_state_1l;
   for (i = 0; i < ANDI_NUM_ACT; i++) {
@@ -1269,18 +1360,14 @@ void get_act_state_oneloop(void)
       actuator_state_1l[i] = 0.0;
     }
     Bound(actuator_state_1l[i],0,MAX_PPRZ);
-    // TO DO ACTUATORS BOUND ACTUATOR_STATE_1L TO NOT BE ZERO!!!!!
   }
 }
 
 /**
- * Function that sums g1 and g2 to obtain the g1_g2 matrix
- * It also undoes the scaling that was done to make the values readable
+ * @brief Function that sums g1 and g2 to obtain the g1_g2 matrix. It also undoes the scaling that was done to make the values readable
  * FIXME: make this function into a for loop to make it more adaptable to different configurations
  */
-
 void sum_g1g2_1l(void) {
-
   //struct FloatEulers *euler = stateGetNedToBodyEulers_f();
   float sphi   = sinf(eulers_zxy.phi);
   float cphi   = cosf(eulers_zxy.phi);
@@ -1295,9 +1382,6 @@ void sum_g1g2_1l(void) {
   // M0 (Front)
   int i = 0;
   scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
-  // g1g2_1l[0][i] = (sphi * spsi + cphi * cpsi * stheta) * g1_1l[2][i] * scaler;
-  // g1g2_1l[1][i] = (cphi * spsi * stheta - cpsi * sphi) * g1_1l[2][i] * scaler;
-  // g1g2_1l[2][i] = (cphi * ctheta                     ) * g1_1l[2][i] * scaler;
   g1g2_1l[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * g1_1l[2][i] * scaler;
   g1g2_1l[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * g1_1l[2][i] * scaler;
   g1g2_1l[2][i] = (cphi * ctheta                       ) * g1_1l[2][i] * scaler;
@@ -1368,7 +1452,7 @@ void sum_g1g2_1l(void) {
   g1g2_1l[5][i] = 0.0;
   }
 
-
+/** @brief  Calculate Normalization of actuators and discrete actuator dynamics  */
 void calc_normalization(void){
   int8_t i;
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
@@ -1381,33 +1465,10 @@ void calc_normalization(void){
   }
 }
 
-/**
- * Function that calculates the model prediction for the complementary filter.
- * FIXME: Switch to absolute prediction instead of delta prediction for linear accelerations
- */
+/** @brief  Function that calculates the model prediction for the complementary filter. */
 void calc_model(void){
   int8_t i;
   int8_t j;
-  // Incremental Model Prediction : Good for nonlinear but could be not bound
-  // for (i = 0; i < ANDI_OUTPUTS; i++){
-  //   for (j = 0; j < ANDI_NUM_ACT_TOT; j++){
-  //     if (j < ANDI_NUM_ACT){
-  //       model_pred[i] = model_pred[i] +  (actuator_state_1l[j] - old_state[j]) * g1g2_1l[i][j]    / (act_dynamics[j] * ratio_u_un[j] * ratio_vn_v[j]);
-  //     } else {
-  //       model_pred[i] = model_pred[i] +  (att_1l[j-ANDI_NUM_ACT] - old_state[j]) * g1g2_1l[i][j]  / (act_dynamics[j] * ratio_u_un[j] * ratio_vn_v[j]);
-  //     }
-  //   }
-  // }
-
-  // // Store the old state of the actuators for the next iteration
-  // for ( j = 0; j < ANDI_NUM_ACT_TOT; j++){
-  //   if(j < ANDI_NUM_ACT){
-  //     old_state[j] = actuator_state_1l[j];
-  //   } else {
-  //     old_state[j] = att_1l[j-ANDI_NUM_ACT];
-  //   }
-  // }
-
   // Absolute Model Prediction : 
   float sphi   = sinf(eulers_zxy.phi);
   float cphi   = cosf(eulers_zxy.phi);
@@ -1428,225 +1489,10 @@ void calc_model(void){
       model_pred[i] = model_pred[i] +  actuator_state_1l[j] * g1g2_1l[i][j] / (act_dynamics[j] * ratio_u_un[j] * ratio_vn_v[j]);
     }
   }
-
 }
 
 /**
- * Navigation speed controller function.
- *
- * This function calculates the control signal for the navigation speed controller based on the desired
- * speed (x_d_des) and the actual speed (x_d_actual) of a system. It updates the reference values
- * for velocity (x_d_ref), acceleration (x_2d_ref), jerk (x_3d_ref) and position (x_ref) using a proportional controller.
- *
- * @param dt          Time step between control updates.
- * @param x_ref       Pointer to the reference position.
- * @param x_d_ref     Pointer to the reference velocity.
- * @param x_2d_ref    Pointer to the reference acceleration.
- * @param x_3d_ref    Pointer to the reference jerk.
- * @param x_d_des     Desired velocity.
- * @param x_d_actual  Actual velocity.
- * @param x_2d_bound  Upper bound for the control acceleration.
- * @param k1_rm       Proportional control gain velocity.
- * @param k2_rm       Proportional control gain acceleration.
- */
-
-void nav_speed_controller_enter(){
-  p_nav     = 0.0;
-  v_nav     = 0.0;
-  a_nav     = 0.0;
-  j_nav     = 0.0;
-  max_a_nav = 8.0;
-  max_v_nav = 5.0;
-}
-
-void nav_speed_controller(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_d_des, float x_d_actual, float x_2d_bound, float k1_rm, float k2_rm){
-  float e_x_d      = k1_rm * (x_d_des- x_d_actual);
-  float e_x_2d     = k2_rm * (e_x_d- *x_2d_ref);
-  float x_3d_bound = (x_2d_bound - fabs(*x_2d_ref)) / dt;
-  BoundAbs(e_x_2d, x_3d_bound);
-  *x_3d_ref = e_x_2d;
-  *x_2d_ref = (*x_2d_ref + dt * (*x_3d_ref));
-  *x_d_ref  = (*x_d_ref  + dt * (*x_2d_ref));
-  *x_ref    = (*x_ref    + dt * (*x_d_ref ));  
-}
-/**
- * @brief the position, velocity, acceleration, jerk, and lap count for a point moving along a straight oval path.
- *
- * @param s         The distance along the path.
- * @param r         The radius of the corners of the oval path.
- * @param l         The length of the straight sections of the oval path.
- * @param psi_i     The heading angle of the oval path.
- * @param v_route   The velocity magnitude along the path.
- * @param a_route   The acceleration magnitude along the path.
- * @param j_route   The jerk magnitude along the path.
- * @param p         Array of length 3 representing the position vector [x, y, z] of the point on the path.
- * @param v         Array of length 3 representing the velocity vector [Vx, Vy, Vz] of the point on the path.
- * @param a         Array of length 3 representing the acceleration vector [Ax, Ay, Az] of the point on the path.
- * @param j         Array of length 3 representing the jerk vector [Jx, Jy, Jz] of the point on the path.
- * @param lap       Pointer to a variable that stores the number of laps completed around the oval path.
- */
-
-//void straight_oval(float s, float r, float l, float psi_i, float v_route, float a_route, float j_route, float* p, float* v, float* a, float* j, float* lap)
-void straight_oval(float s, float r, float l, float psi_i, float v_route, float a_route, float j_route, float p[3], float pi[3], float v[3], float a[3], float j[3], float psi_vec[4], float* lap) {
-    //printf("psi_oval = %f\n",psi_i);
-    float cd = cosf(psi_i);
-    float sd = sinf(psi_i);
-    float head_vec[4] = {0.0, 0.0, 0.0, 0.0};
-    float p0[3] = {0.0, 0.0, 0.0};
-    //float pi[3] = {0.0,0.0,0.0};
-    float p1[3] = {p0[0] + r, p0[1]-r, p0[2]};
-    float p2[3] = {p1[0] + l, p0[1]-r, p0[2]};
-
-    // Calculate inner vertices
-    float p1i[3] = {p1[0], p1[1] + r, p1[2]};
-    float p2i[3] = {p2[0], p2[1] + r, p2[2]};
-    float p3i[3] = {p2[0], p2[1] - r, p2[2]};
-    float p4i[3] = {p1[0], p1[1] - r, p1[2]};
-    float l01 = 1.0; 
-    float l12 = 1.0;
-    float l34 = 1.0;
-    
-    float tmp_1[3] = {0.,0.,0.};
-    float tmp_2[3] = {0.,0.,0.};
-    float tmp_3[3] = {0.,0.,0.};
-    float_vect_diff(tmp_1,p1i,p0,3);
-    float_vect_diff(tmp_2,p2i,p1i,3);
-    float_vect_diff(tmp_3,p4i,p3i,3);
-    l01 = float_vect_norm(tmp_1,3);
-    l12 = float_vect_norm(tmp_2,3);
-    l34 = float_vect_norm(tmp_3,3);
-    
-    float u01[3] = {0.,0.,0.};  
-    float u12[3] = {0.,0.,0.};
-    float u34[3] = {0.,0.,0.};
-
-    float_vect_sdiv(u01,tmp_1,l01,3);
-    float_vect_sdiv(u12,tmp_2,l12,3);
-    float_vect_sdiv(u34,tmp_3,l34,3);
-    float runway = r;
-    int8_t i;
-    if (s < runway) {
-      for (i = 0; i < 3; i++){
-        p[i] = p0[i] + s * u01[i];
-        v[i] = v_route * u01[i];
-        a[i] = a_route * u01[i];
-        j[i] = j_route * u01[i];
-      }
-    } else {
-        s = s - runway;
-
-        // Calculate length of route
-        float L = 2 * M_PI * r + l12 + l34;
-        float s1 = l12;
-        float s2 = s1 + M_PI * r;
-        float s3 = s2 + l34;
-        float s4 = s3 + M_PI * r;
-        float dist = fmodf(s, L);
-        *lap = floorf(s / (1.05f * L));
-        if (dist < s1) {
-            float sector = dist;
-              for (i = 0; i < 3; i++){
-                p[i] = p1i[i] + sector * u12[i];
-                v[i] = v_route * u12[i];
-                a[i] = a_route * u12[i];
-                j[i] = j_route * u12[i];
-              }
-        } else if (dist < s2) {
-            float sector = dist - s1;
-            float beta = sector / r;
-            float sb = sinf(beta);
-            float cb = cosf(beta);
-            float v2 = v_route * v_route;
-            float v3 = v2 * v_route;
-            float r2 = r * r;
-            head_vec[0] = beta;
-            head_vec[1] = v_route / r;
-            head_vec[2] = a_route / r;
-            head_vec[3] = j_route / r; 
-
-            p[0] = r * sb + p2[0];
-            p[1] = r * cb + p2[1];
-            p[2] = p2[2];
-            v[0] =  cb * v_route;
-            v[1] = -sb * v_route;
-            v[2] = 0; 
-            a[0] =  cb * a_route - sb * v2 /  r;
-            a[1] = -sb * a_route - cb * v2 / r;
-            a[2] = 0 ;
-            j[0] = cb * j_route - cb * v3 / r2 - 3 * sb * a_route * v_route / r;
-            j[1] = sb * v3 / r2 - sb * j_route - 3 * cb * a_route * v_route / r;
-            j[2] = 0;
-        } else if (dist < s3) {
-            float sector = dist - s2;
-               for (i = 0; i < 3; i++){
-                p[i] = p3i[i] + sector * u34[i];
-                v[i] = v_route * u34[i];
-                a[i] = a_route * u34[i];
-                j[i] = j_route * u34[i];
-                head_vec[0] = M_PI;
-              }           
-        } else if (dist < s4) {
-            float sector = dist - s3;
-            float beta = M_PI + sector / r;
-            float sb = sinf(beta);
-            float cb = cosf(beta);
-            float v2 = v_route * v_route;
-            float v3 = v2 * v_route;
-            float r2 = r * r;
-            head_vec[0] = beta;
-            head_vec[1] = v_route / r;
-            head_vec[2] = a_route / r;
-            head_vec[3] = j_route / r;
-
-            p[0] = r * sb + p1[0];
-            p[1] = r * cb + p1[1];
-            p[2] = p1[2];
-            v[0] =  cb * v_route;
-            v[1] = -sb * v_route;
-            v[2] = 0; 
-            a[0] =  cb * a_route - sb * v2 / r;
-            a[1] = -sb * a_route - cb * v2 / r;
-            a[2] = 0 ;
-            j[0] = cb * j_route - cb * v3 / r2 - 3 * sb * a_route * v_route / r;
-            j[1] = sb * v3 / r2 - sb * j_route - 3 * cb * a_route * v_route / r;
-            j[2] = 0;            
-        }
-    }
-
-    float temp_p[3] = {
-        cd * p[0] - sd * p[1],
-        sd * p[0] + cd * p[1],
-        p[2]
-    };
-    float temp_v[3] = {
-        cd * v[0] - sd * v[1],
-        sd * v[0] + cd * v[1],
-        v[2]
-    };
-    float temp_a[3] = {
-        cd * a[0] - sd * a[1],
-        sd * a[0] + cd * a[1],
-        a[2]
-    };
-    float temp_j[3] = {
-        cd * j[0] - sd * j[1],
-        sd * j[0] + cd * j[1],
-        j[2]
-    };
-    for (i = 0; i < 3; i++){
-      p[i] = temp_p[i] + pi[i];
-      v[i] = temp_v[i];
-      a[i] = temp_a[i];
-      j[i] = temp_j[i];
-    }
-    psi_vec[0] = convert_angle(-head_vec[0] + psi_i);
-    psi_vec[1] = -head_vec[1];
-    psi_vec[2] = -head_vec[2];
-    psi_vec[3] = -head_vec[3];
-}
-
-/**
- * Converts an angle in radians to an angle between -pi and pi.
+ * @brief Converts an angle in radians to an angle between -pi and pi.
  *
  * @param psi The input angle in radians.
  * @return The converted angle between -pi and pi.
@@ -1665,4 +1511,13 @@ float convert_angle(float psi) {
         return psi;
     else
         return psi - 2 * M_PI;
+}
+
+void nav_speed_controller_enter(){
+  p_nav     = 0.0;
+  v_nav     = 0.0;
+  a_nav     = 0.0;
+  j_nav     = 0.0;
+  max_a_nav = 4.0;
+  max_v_nav = 5.0;
 }

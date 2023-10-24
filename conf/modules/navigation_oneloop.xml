@@ -1,0 +1,25 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+<module name="navigation_oneloop" dir="oneloop" task="default">
+  <doc>
+    <description>A collection of Navigation functions to test the oneloop controller</description>
+  </doc>
+  <settings>
+   <dl_settings>
+     <dl_settings NAME="oneloop">
+       <dl_setting var="oval_on"        min="0"       step="1"     max="1"      values="OFF|ON" shortname="oval"/>
+       <dl_setting var="r_oval"         min="0.0"     step="0.001" max="15.0"    shortname="r_oval"/>
+       <dl_setting var="l_oval"         min="0.0"     step="0.001" max="15.0"    shortname="l_oval"/>
+     </dl_settings>
+   </dl_settings>
+  </settings>  
+  <dep>
+    <provides>Navigation</provides>
+  </dep>
+  <header>
+    <file name="navigation_oneloop.h"/>
+  </header>
+  <makefile>
+    <file name="navigation_oneloop.c" dir="$(SRC_FIRMWARE)/oneloop"/>
+    <test/>
+  </makefile>
+</module>

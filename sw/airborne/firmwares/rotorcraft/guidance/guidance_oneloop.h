@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Ewoud Smeur <ewoud.smeur@gmail.com>
+ * Copyright (C) 2015 Tomaso De Ponti <t.m.l.deponti@tudelft.nl>
  *
  * This file is part of paparazzi.
  *
@@ -20,9 +20,9 @@
  */
 
 /**
- * @file firmwares/rotorcraft/guidance/guidance_indi.h
+ * @file firmwares/rotorcraft/guidance/guidance_oneloop.h
  *
- * A guidance mode based on Incremental Nonlinear Dynamic Inversion
+ * A dummy guidance mode to run the oneloop_andi controller
  */
 
 #ifndef GUIDANCE_ONELOOP_H

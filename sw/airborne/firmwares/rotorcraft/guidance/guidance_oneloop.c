@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Ewoud Smeur <ewoud.smeur@gmail.com>
+ * Copyright (C) 2015 Tomaso De Ponti <t.m.l.deponti@tudelft.nl>
  *
  * This file is part of paparazzi.
  *
@@ -20,20 +20,15 @@
  */
 
 /**
- * @file firmwares/rotorcraft/guidance/guidance_indi.c
+ * @file firmwares/rotorcraft/guidance/guidance_oneloop.c
  *
- * A guidance mode based on Incremental Nonlinear Dynamic Inversion
+ * A dummy guidance mode to run the oneloop_andi controller
  *
- * Based on the papers:
- * Cascaded Incremental Nonlinear Dynamic Inversion Control for MAV Disturbance Rejection
- * https://www.researchgate.net/publication/312907985_Cascaded_Incremental_Nonlinear_Dynamic_Inversion_Control_for_MAV_Disturbance_Rejection
- *
- * Gust Disturbance Alleviation with Incremental Nonlinear Dynamic Inversion
- * https://www.researchgate.net/publication/309212603_Gust_Disturbance_Alleviation_with_Incremental_Nonlinear_Dynamic_Inversion
  */
 
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
 #include "firmwares/rotorcraft/guidance/guidance_v.h"
+#include "firmwares/rotorcraft/oneloop/oneloop_andi.h"
 
 void guidance_h_run_enter(void)
 {
@@ -45,39 +40,39 @@ void guidance_v_run_enter(void)
   // nothing to do
 }
 
-static struct VerticalGuidance *_gv = &guidance_v;
+//static struct VerticalGuidance *_gv = &guidance_v;
 
-struct StabilizationSetpoint guidance_h_run_pos(bool in_flight, struct HorizontalGuidance *gh)
+struct StabilizationSetpoint guidance_h_run_pos(bool in_flight, UNUSED struct HorizontalGuidance *gh)
 {
-  oneloop_andi_attitude_run(in_flight);
-  struct StabilizationSetpoint sp;
+  oneloop_andi_run(in_flight, false);
+  struct StabilizationSetpoint sp= { 0 };
   return sp;
 }
 
-struct StabilizationSetpoint guidance_h_run_speed(bool in_flight, struct HorizontalGuidance *gh)
+struct StabilizationSetpoint guidance_h_run_speed(UNUSED bool in_flight, UNUSED struct HorizontalGuidance *gh)
 {
-   struct StabilizationSetpoint sp;
+   struct StabilizationSetpoint sp= { 0 };
   return sp;
 }
 
-struct StabilizationSetpoint guidance_h_run_accel(bool in_flight, struct HorizontalGuidance *gh)
+struct StabilizationSetpoint guidance_h_run_accel(UNUSED bool in_flight, UNUSED struct HorizontalGuidance *gh)
 {
-   struct StabilizationSetpoint sp;
+   struct StabilizationSetpoint sp= { 0 };
   return sp;
 }
 
-int32_t guidance_v_run_pos(bool in_flight UNUSED, struct VerticalGuidance *gv)
+int32_t guidance_v_run_pos(bool in_flight UNUSED, UNUSED struct VerticalGuidance *gv)
 {
   return 0; // nothing to do
 }
 
-int32_t guidance_v_run_speed(bool in_flight UNUSED, struct VerticalGuidance *gv)
+int32_t guidance_v_run_speed(bool in_flight UNUSED, UNUSED struct VerticalGuidance *gv)
 {
 
   return 0; // nothing to do
 }
 
-int32_t guidance_v_run_accel(bool in_flight UNUSED, struct VerticalGuidance *gv)
+int32_t guidance_v_run_accel(bool in_flight UNUSED, UNUSED struct VerticalGuidance *gv)
 {
   return 0; // nothing to do
 }

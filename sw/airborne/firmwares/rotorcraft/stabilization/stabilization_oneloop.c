@@ -26,15 +26,16 @@
  *  just directly passes the RC commands along.
  */
 
-#include "firmwares/rotorcraft/stabilization.h"
+//#include "firmwares/rotorcraft/stabilization.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_oneloop.h"
+#include "firmwares/rotorcraft/oneloop/oneloop_andi.h"
 
 #include "modules/radio_control/radio_control.h"
 #include "generated/airframe.h"
 #include "generated/modules.h"
 
 
-struct Int32Eulers stab_att_sp_euler;
+struct FloatEulers stab_att_sp_euler;
 struct Int32Quat   stab_att_sp_quat;
 struct FloatRates  stab_att_ff_rates;
 
@@ -42,13 +43,12 @@ struct FloatRates  stab_att_ff_rates;
 
 void stabilization_attitude_init(void)
 {
-  // indi init is already done through module init
-
+  // oneloop init is already done through module init
 }
 
 void stabilization_attitude_enter(void)
 {
-
+  oneloop_andi_enter();
 }
 
 void stabilization_attitude_set_failsafe_setpoint(void)
@@ -66,7 +66,7 @@ void stabilization_attitude_set_quat_setpoint_i(UNUSED struct Int32Quat *quat)
 
 }
 
-void stabilization_attitude_set_earth_cmd_i(UNUSED struct Int32Vect2 *cmd, int32_t heading)
+void stabilization_attitude_set_earth_cmd_i(UNUSED struct Int32Vect2 *cmd, UNUSED int32_t heading)
 {
 
 }
@@ -76,15 +76,14 @@ void stabilization_attitude_set_stab_sp(UNUSED struct StabilizationSetpoint *sp)
 
 }
 
-void stabilization_attitude_run(UNUSED bool in_flight)
+void stabilization_attitude_run(bool in_flight)
 {
-  //if att mode
-  // half loop
-
+  // Run the oneloop controller in half-loop mode
+  oneloop_andi_run(in_flight, true);
 }
 
 
-void stabilization_attitude_read_rc(UNUSED bool in_flight, bool in_carefree, bool coordinated_turn)
+void stabilization_attitude_read_rc(UNUSED bool in_flight, UNUSED bool in_carefree, UNUSED bool coordinated_turn)
 {
 
 }

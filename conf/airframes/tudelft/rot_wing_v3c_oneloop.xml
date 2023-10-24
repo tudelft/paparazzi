@@ -79,15 +79,11 @@
             <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
         </module>
 
-        <module TYPE="indi" NAME="stabilization">
+        <module TYPE="oneloop" NAME="stabilization">
             <configure name="INDI_NUM_ACT" value="8"/>
         </module>
-        <module name="guidance" type="indi">
-            <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-500.0"/>
-            <define name="GUIDANCE_INDI_THRUST_DYNAMICS" value="0.08"/>
-        </module>
-        <!-- <module name="guidance" type="indi_rot_wing"/>
-        <module name="nav_hybrid"/> -->
+
+        <module name="guidance" type="oneloop"/>
 
         <module TYPE="ekf2" NAME="ins"/>
         <module name="oneloop" type="andi">
@@ -124,6 +120,7 @@
         </module>
 
         <module name="agl_dist"/>
+        <module name="navigation_oneloop"/>
         <!-- <module name="rot_wing_automation"/> -->
     </firmware>
 
@@ -137,7 +134,7 @@
         <servo NO="1" NAME="MOTOR_RIGHT"    MIN="0"     NEUTRAL="600" MAX="8191"/>
         <servo NO="2" NAME="MOTOR_BACK"     MIN="0"     NEUTRAL="600" MAX="8191"/>
         <servo NO="3" NAME="MOTOR_LEFT"     MIN="0"     NEUTRAL="600" MAX="8191"/>
-        <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="0"    MAX="8191"/>
+        <servo NO="4" NAME="MOTOR_PUSH"     MIN="0"     NEUTRAL="200"    MAX="6552"/>
         <servo NO="5" NAME="SERVO_ELEVATOR" MIN="4000"  NEUTRAL="4000" MAX="-5500"/>
         <servo NO="6" NAME="SERVO_RUDDER"   MIN="-8191" NEUTRAL="0"    MAX="8191"/>
     </servos>
@@ -212,6 +209,8 @@
         <define VALUE="45." UNIT="deg"   NAME="STABILIZATION_ATTITUDE_SP_MAX_THETA"/>
         <define VALUE="90." UNIT="deg/s" NAME="STABILIZATION_ATTITUDE_SP_MAX_R"/>
         <define VALUE="200"              NAME="STABILIZATION_ATTITUDE_DEADBAND_R"/>
+        <define name="WLS_N_U" value="8"/>
+        <define name="WLS_N_V" value="6"/>
     </section>
 
     <section name="IMU" prefix="IMU_">
@@ -220,12 +219,12 @@
         <define name="MAG_CALIB" value="{{.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={-14,3,42}, .scale={{17279,2209,36874},{30247,3800,64095}}}}"/>
 
         <!-- Define axis in hover frame -->
-        <define name="BODY_TO_IMU_PHI"   value="-4.0" unit="deg"/>
+        <define name="BODY_TO_IMU_PHI"   value="-3.0" unit="deg"/>
         <define name="BODY_TO_IMU_THETA" value="0." unit="deg"/>
         <define name="BODY_TO_IMU_PSI"   value="0." unit="deg"/>
     </section>
 
-    <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
+    <!-- <section name="STABILIZATION_ATTITUDE_INDI" prefix="STABILIZATION_INDI_">
         <define name="G1_ROLL"   value="{18.f,    -18.f,    -18.f ,     18.f}"/>
         <define name="G1_PITCH"  value="{15.f ,    15.f,    -15.f,     -15.f }"/>
         <define name="G1_YAW"    value="{-0.65f,   0.65f,   -0.65f,     0.65f}"/>
@@ -244,7 +243,7 @@
         <define VALUE="{0, 0, 0, 0}" NAME="ACT_IS_SERVO"/>
         <define name="USE_ADAPTIVE" value="FALSE"/>
         <define name="ADAPTIVE_MU" value="0.0001"/>
-    </section>
+    </section> -->
 
     <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
         <define name  ="G1_ROLL"         value = "{ 0.0f,   -15.0f,   0.0f,    15.0f,  0.0f,  0.0f, 0.0f}"/>
@@ -274,7 +273,7 @@
         <define NAME  ="AC_HAS_PUSHER"   VALUE = "TRUE"/>
         <define NAME  ="PUSHER_IDX"      VALUE = "4"/>
         <define NAME  ="WV"              VALUE = "{1.0f, 1.0f, 1.0f, 1000.0f, 1000.0f, 100.0f}"/>
-        <define NAME  ="WU"              VALUE = "{2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f, 2.0f}"/>
+        <define NAME  ="WU"              VALUE = "{3.0f, 3.0f, 3.0f, 3.0f, 1.0f, 2.0f, 2.0f}"/>
         <define NAME  ="U_PREF"          VALUE = "{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}"/>
     </section>
 
@@ -286,24 +285,21 @@
         <define VALUE="0.1" NAME="AIRSPEED_FILTER_CUTOFF"/>
     </section> -->
 
-  <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
+  <!-- <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
     <define name="HOVER_KP" value="283"/>
     <define name="HOVER_KD" value="82"/>
     <define name="HOVER_KI" value="20"/>
     <define name="NOMINAL_HOVER_THROTTLE" value="0.655"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
-  </section>
+  </section> -->
 
-  <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
-    <!-- Good weather -->
+  <!-- <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <define name="MAX_BANK" value="20" unit="deg"/>
     <define name="REF_MAX_SPEED" value="2" unit="m/s"/>
-    <!-- Bad weather -->
-    <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
     <define name="PGAIN" value="79"/>
     <define name="DGAIN" value="100"/>
     <define name="IGAIN" value="30"/>
-  </section>
+  </section> -->
 
 <!-- This is the pitch angle that the drone will have in forward flight, where 0 degrees is hovwer-->
     <!-- <section name="FORWARD">
@@ -330,7 +326,7 @@
 
     <section name="SIMULATOR" prefix="NPS_">
         <define name="ACTUATOR_NAMES"  value="front_motor, right_motor, back_motor, left_motor, rudder, elevator, aileron_left, aileron_right, pusher" type="string[]"/>
-        <define name="JSBSIM_MODEL"    value="rotwingv3a" type="string"/>
+        <define name="JSBSIM_MODEL"    value="rotwingv3b" type="string"/>
         <define name="SENSORS_PARAMS"  value="nps_sensors_params_default.h" type="string"/>
         <define name="COMMANDS_NB"     value="9"/>
         <define name="NO_MOTOR_MIXING" value="TRUE"/>

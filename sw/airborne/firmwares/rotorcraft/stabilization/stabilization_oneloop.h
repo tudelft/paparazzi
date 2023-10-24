@@ -32,7 +32,7 @@
 #include "math/pprz_algebra_int.h"
 #include "firmwares/rotorcraft/stabilization/stabilization_attitude.h"
 
-extern struct Int32Eulers stab_att_sp_euler;
+extern struct FloatEulers stab_att_sp_euler;
 extern struct Int32Quat   stab_att_sp_quat;
 extern struct FloatRates  stab_att_ff_rates;
 
