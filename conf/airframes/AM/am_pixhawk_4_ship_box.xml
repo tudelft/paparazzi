@@ -9,8 +9,8 @@
      * RC:          SBUS Crossfire
 -->
 
-<airframe name="quadplane_plus">
-  <description>Overactuated vehicle</description>
+<airframe name="ship_box_pixhawk_4">
+  <description>ship_box_pixhawk_4</description>
 
   <firmware name="rotorcraft">
     <target name="ap" board="px4fmu_5.0_chibios">
@@ -130,7 +130,7 @@
 <!--    </target>-->
 
     <module name="telemetry" type="transparent">
-      <configure name="MODEM_BAUD" value="B460800"/>
+      <configure name="MODEM_BAUD" value="B115200"/>
     </module>
 
     <module name="actuators"     type="pwm"/>
@@ -285,18 +285,13 @@
     <define name="MPU_Y_SIGN" value="1"/>
     <define name="MPU_Z_SIGN" value="-1"/>
 
-    <!-- BEST AUTOPILOT -->
 
-    <!-- ACCEL @MAVLAB 29-10-2022 -->
-    <define name="ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={42,-159,42}, .scale={{37528,32533,15741},{7661,6958,3272}}}}"/>
-    <!-- RM3100 @VALKENBURG 31-10-2022 -->
+<!-- RM3100 @VALKENBURG 31-10-2022 -->
     <define name="MAG_CALIB" value="{ {.abi_id=5, .calibrated={.neutral=true, .scale=true},.neutral={114,-20,85}, .scale={{1075,16889,7847},{1906,30794,14471}}} }"/>
 
+    <!-- ACCEL @MAVLAB 24-10-2023 -->
+    <define name="ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={-161,46,-43}, .scale={{13597,60345,54850},{2910,12316,11407}}}}"/>
 
-    <!-- BIG OFFSETS AUTOPILOT -->
-
-    <!-- ACCEL @MAVLAB 1-11-2022 :  -->
-    <!-- <define name="ACCEL_CALIB" value="{{.abi_id=9, .calibrated={.neutral=true, .scale=true},.neutral={41,406,41}, .scale={{57668,10899,20979},{11789,2374,4318}}}}"/> -->
     <!-- IST8310 @MAVLAB 1-11-2022 -->
     <!-- <define name="MAG_CALIB" value="{{.abi_id=4, .calibrated={.neutral=true, .scale=true},.neutral={-22,-7,4}, .scale={{16952,16373,64135},{1147,946,3651}}}}"/> -->
     <!-- IST8310 @VALKENBURG 4-11-2022 -->

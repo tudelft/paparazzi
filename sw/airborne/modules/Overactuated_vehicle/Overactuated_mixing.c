@@ -433,8 +433,7 @@ static void send_overactuated_variables( struct transport_tx *trans , struct lin
 
     //Updated with secundary AHRS reference and removed old cmd part 
     pprz_msg_send_OVERACTUATED_VARIABLES(trans , dev , AC_ID ,
-                                        //  & airspeed, 
-                                         & ship_info_receive.phi,
+                                         & airspeed, 
                                          & control_mode_ovc_vehicle , 
                                          & ground_detected_am,
                                          & beta_deg,
@@ -1499,6 +1498,11 @@ void overactuated_mixing_run(void)
         manual_phi_value = MANUAL_CONTROL_MAX_CMD_ROLL_ANGLE * radio_control.values[RADIO_MANUAL_ROLL_CMD] / MAX_PPRZ;
         manual_theta_value = MANUAL_CONTROL_MAX_CMD_PITCH_ANGLE * radio_control.values[RADIO_MANUAL_PITCH_CMD] / MAX_PPRZ;
 
+        #ifdef USE_EXT_REF_ATTITUDE
+            manual_phi_value = ship_info_receive.phi * M_PI/180;
+            manual_theta_value = ship_info_receive.theta * M_PI/180;
+        #endif
+
         manual_motor_value = OVERACTUATED_MIXING_MOTOR_MIN_OMEGA;
 
         euler_setpoint[0] = indi_u[13];
@@ -1513,10 +1517,17 @@ void overactuated_mixing_run(void)
         euler_error[1] = euler_setpoint[1] - euler_vect[1];
 
         // For the yaw, we can directly control the rates:
-        float yaw_rate_setpoint_manual = MANUAL_CONTROL_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / MAX_PPRZ;
+        float yaw_rate_setpoint_manual = 0;
+        if(abs(radio_control.values[RADIO_YAW]) >= 100){
+            yaw_rate_setpoint_manual = MANUAL_CONTROL_MAX_CMD_YAW_RATE * radio_control.values[RADIO_YAW] / MAX_PPRZ;
+        }
 
         euler_error[2] = yaw_rate_setpoint_manual + compute_yaw_rate_turn();
 
+        #ifdef FULLY_MANUAL_HEADING
+            euler_error[2] = yaw_rate_setpoint_manual;
+        #endif
+        
         float gain_to_speed_constant = 1 - airspeed * K_d_speed; 
         Bound(gain_to_speed_constant, 0.1, 1);
 
