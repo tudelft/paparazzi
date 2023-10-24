@@ -62,8 +62,8 @@ extern float v_nav_des;
 
 extern float p1_att;
 extern float p1_head;
-extern float p1_pos_1;
-extern float p1_pos_2;
+extern float p1_pos;
+extern float p2_pos;
 extern float p1_alt;
 
 extern float psi_des_deg;

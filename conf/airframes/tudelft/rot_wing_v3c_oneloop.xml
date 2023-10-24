@@ -278,7 +278,7 @@
     </section>
 
     <section name="SIMULATOR" prefix="NPS_">
-        <define name="ACTUATOR_NAMES"  value="front_motor, right_motor, back_motor, left_motor, rudder, elevator, aileron_left, aileron_right, pusher" type="string[]"/>
+        <define name="ACTUATOR_NAMES"  value="front_motor, right_motor, back_motor, left_motor, pusher, rudder, elevator, aileron_left, aileron_right" type="string[]"/>
         <define name="JSBSIM_MODEL"    value="rotwingv3b" type="string"/>
         <define name="SENSORS_PARAMS"  value="nps_sensors_params_default.h" type="string"/>
         <define name="COMMANDS_NB"     value="9"/>

@@ -339,17 +339,10 @@ float k_p_rm ;
 float k_pdot_rm ;    
 
 /*Position Loop*/
-float xy_1 = 1.0;
-float xy_2 = 0.01;
-float scale_pos = 1.0;
 float rm_k_pos;    
-float damp_pos = 0.85; //0.3979;//0.7; 
-float p1_pos   = 2.0;
-float p1_pos_1 = 1.2; 
-float p1_pos_2 = 1.2;//0.6717*0.7; 
-float p2_pos   = 6.0;
-float p2_pos_1 = 6.0; 
-float p2_pos_2 = 6.0;//0.4654;     
+float damp_pos = 0.85;
+float p1_pos   = 1.2;
+float p2_pos   = 6.0;    
 float p3_pos  ;     
 float route_k ;   
 float p1_pos_rm = 0.6;
@@ -1122,9 +1115,6 @@ void oneloop_andi_RM(bool half_loop)
     Wv_wls[0] = Wv[0];
     Wv_wls[1] = Wv[1];
     // First time engaging NAV Mode or Navigation Functions (e.g. Oval) requires some initialization
-    printf("check_1st_nav = %d \n",check_1st_nav);
-    printf("check_1st_oval = %d \n",check_1st_oval);
-    printf("oval_on = %d \n",oval_on);
     if(check_1st_nav || (check_1st_oval && oval_on)){ 
       check_1st_nav  = false;
       check_1st_oval = false;
@@ -1135,14 +1125,10 @@ void oneloop_andi_RM(bool half_loop)
       psi_des_rad = eulers_zxy.psi; 
       psi_oval = psi_des_rad; // Uncomment me
     // Use the horizontal guidance position input to set the desired position 
-      printf("check if statement\n");
     } else { 
       pos_init[0] = (float) (guidance_h.sp.pos.x * 0.0039063);
       pos_init[1] = (float) (guidance_h.sp.pos.y * 0.0039063);
       pos_init[2] = (float) (guidance_v.z_sp     * 0.0039063);
-      printf("guidance_h.sp.pos.x = %f \n",guidance_h.sp.pos.x* 0.0039063);
-      printf("guidance_h.sp.pos.y = %f \n",guidance_h.sp.pos.y* 0.0039063);
-      printf("guidance_v.z_sp     = %f \n",guidance_v.z_sp* 0.0039063);
     }
     // Group RM gains in arrays
     float k1_pos_rm[3] = {k_N_rm,  k_E_rm,  k_D_rm};
