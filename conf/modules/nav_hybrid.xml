@@ -30,7 +30,6 @@
   <makefile target="ap|nps|hitl" firmware="rotorcraft">
     <file name="nav_rotorcraft_hybrid.c"/>
     <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="15."/>
-    <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="15."/>
     <test firmware="rotorcraft">
       <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="15."/>
       <configure name="SRC_FIRMWARE" value="firmwares/rotorcraft"/>

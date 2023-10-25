@@ -39,11 +39,6 @@
 #define FOLLOW_ME_HEIGHT 60
 #endif
 
-// Minimum speed in m/s which the ground needs to have in order to update the heading
-#ifndef FOLLOW_ME_MIN_SPEED
-#define FOLLOW_ME_MIN_SPEED 1.0f
-#endif
-
 // The relative position GPS timeout in ms
 #ifndef FOLLOW_ME_GPS_TIMEOUT
 #define FOLLOW_ME_GPS_TIMEOUT 5000
@@ -54,7 +49,7 @@
 #define FOLLOW_ME_GROUND_TIMEOUT 5000
 #endif
 
-// The default course sin/cos filter value (higher is harder filtering)
+// The default heading sin/cos filter value (higher is harder filtering)
 #ifndef FOLLOW_ME_FILT
 #define FOLLOW_ME_FILT 0.9
 #endif
@@ -274,4 +269,3 @@ void follow_me_set_wp(uint8_t wp_id, float speed)
   // Allways update the time to avoid big jumps in distance and height
   last_time_ms = get_sys_time_msec();
 }
-
