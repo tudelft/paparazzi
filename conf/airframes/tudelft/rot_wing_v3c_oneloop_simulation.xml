@@ -215,35 +215,35 @@
     </section>
 
     <section PREFIX="ONELOOP_ANDI_" NAME="ONELOOP_ANDI">
-        <define name  ="G1_ROLL"         value = "{ 0.0f,   -15.0f,   0.0f,    15.0f,  0.0f,  0.0f, 0.0f}"/>
-        <define name  ="G1_PITCH"        value = "{ 1.5f,    0.0f,   -1.5f,    0.0f,   0.0f,  0.0f, 0.0f}"/>  
-        <define name  ="G1_YAW"          value = "{-0.3f,    0.3f,   -0.3f,    0.3f,   0.0f,  0.0f, 0.0f}"/>
-        <define name  ="G1_THRUST"       value = "{-0.575f, -0.575f, -0.575f, -0.575f, 0.55f, 0.0f, 0.0f}"/>  
-        <define name  ="G1_ZERO"         value = "{ 0.0f,    0.0f,    0.0f,    0.0f,   0.0f,  0.0f, 0.0f}"/> 
-        <define name  ="G2"              value = "{ 0.0f,    0.0f,    0.0f,    0.0f,   0.0f,  0.0f, 0.0f}"/>
-        <define name  ="MAX_R"           value = "120.0" unit="deg/s"/>
-        <define value ="5.0"             NAME  = "FILT_CUTOFF"/>
-        <define value ="5.0"             NAME  = "FILT_CUTOFF_ACC"/>
-        <define value ="10.0"            NAME  = "FILT_CUTOFF_VEL"/>
-        <define value ="10.0"            NAME  = "FILT_CUTOFF_POS"/>
-        <define value ="3.2"             NAME  = "ESTIMATION_FILT_CUTOFF" />
-        <define VALUE ="5.0"             NAME  = "FILT_CUTOFF_P"/>
-        <define VALUE ="5.0"             NAME  = "FILT_CUTOFF_Q"/>
-        <define VALUE ="5.0"             NAME  = "FILT_CUTOFF_R"/>
-        <define VALUE ="0.5"             NAME  = "FILT_CUTOFF_RDOT"/>
-        <define VALUE ="TRUE"            NAME  = "FILTER_YAW_RATE"/>
-        <define NAME  ="ACT_DYN"         VALUE = "{10.1f, 10.1f, 10.1f, 10.1f, 24.07f, 0.0f,0.0f}" />
-        <define NAME  ="ACT_IS_SERVO"    VALUE = "{0, 0, 0, 0, 0, 0, 0}" />
-        <define NAME  ="ACT_MAX"         VALUE = "{9600.0f, 9600.0f,  9600.0f,  9600.0f, 9600.0f,  M_PI_4,  M_PI_4}"/>
-        <define NAME  ="ACT_MIN"         VALUE = "{0.0f   ,    0.0f,     0.0f,     0.0f,    0.0f, -M_PI_4, -M_PI_4}"/>
-        <define NAME  ="ACT_MAX_NORM"    VALUE = "{1.0f   ,    1.0f,     1.0f,     1.0f,    1.0f,    1.0f,    1.0f}"/>
-        <define NAME  ="ACT_MIN_NORM"    VALUE = "{0.0f   ,    0.0f,     0.0f,     0.0f,    0.0f,   -1.0f,   -1.0f}"/>
-        <define NAME  ="DEBUG_MODE"      VALUE = "FALSE"/>
-        <define NAME  ="AC_HAS_PUSHER"   VALUE = "TRUE"/>
-        <define NAME  ="PUSHER_IDX"      VALUE = "4"/>
-        <define NAME  ="WV"              VALUE = "{1.0f, 1.0f, 1.0f, 1000.0f, 1000.0f, 100.0f}"/>
-        <define NAME  ="WU"              VALUE = "{3.0f, 3.0f, 3.0f, 3.0f, 1.0f, 2.0f, 2.0f}"/>
-        <define NAME  ="U_PREF"          VALUE = "{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}"/>
+        <define name  = "G1_ROLL"                   value = "{ 0.0f,   -15.0f,   0.0f,    15.0f,  0.0f,  0.0f, 0.0f}"/>
+        <define name  = "G1_PITCH"                  value = "{ 1.5f,    0.0f,   -1.5f,    0.0f,   0.0f,  0.0f, 0.0f}"/>  
+        <define name  = "G1_YAW"                    value = "{-0.3f,    0.3f,   -0.3f,    0.3f,   0.0f,  0.0f, 0.0f}"/>
+        <define name  = "G1_THRUST"                 value = "{-0.575f, -0.575f, -0.575f, -0.575f, 0.55f, 0.0f, 0.0f}"/>  
+        <define name  = "G1_ZERO"                   value = "{ 0.0f,    0.0f,    0.0f,    0.0f,   0.0f,  0.0f, 0.0f}"/> 
+        <define name  = "G2"                        value = "{ 0.0f,    0.0f,    0.0f,    0.0f,   0.0f,  0.0f, 0.0f}"/>
+        <define name  = "MAX_R"                     value = "120.0" unit="deg/s"/>
+        <define name  = "FILT_CUTOFF"               value = "5.0" />
+        <define name  = "FILT_CUTOFF_ACC"           value = "5.0"/>
+        <define name  = "FILT_CUTOFF_VEL"           value = "10.0"/>
+        <define name  = "FILT_CUTOFF_POS"           value = "10.0"/>
+        <define name  = "ESTIMATION_FILT_CUTOFF"    value = "3.2" />
+        <define name  = "FILT_CUTOFF_P"             value = "5.0"/>
+        <define name  = "FILT_CUTOFF_Q"             value = "5.0"/>
+        <define name  = "FILT_CUTOFF_R"             value = "5.0" />
+        <define name  = "FILT_CUTOFF_RDOT"          value = "0.5" />
+        <define name  = "FILTER_YAW_RATE"           value = "TRUE"/>
+        <define name  = "ACT_DYN"                   value = "{10.1f, 10.1f, 10.1f, 10.1f, 24.07f, 0.0f,0.0f}" />
+        <define name  = "ACT_IS_SERVO"              value = "{0, 0, 0, 0, 0, 0, 0}" />
+        <define name  = "ACT_MAX"                   value = "{9600.0f, 9600.0f,  9600.0f,  9600.0f, 9600.0f,  M_PI_4,  M_PI_4}"/>
+        <define name  = "ACT_MIN"                   value = "{0.0f   ,    0.0f,     0.0f,     0.0f,    0.0f, -M_PI_4, -M_PI_4}"/>
+        <define name  = "ACT_MAX_NORM"              value = "{1.0f   ,    1.0f,     1.0f,     1.0f,    1.0f,    1.0f,    1.0f}"/>
+        <define name  = "ACT_MIN_NORM"              value = "{0.0f   ,    0.0f,     0.0f,     0.0f,    0.0f,   -1.0f,   -1.0f}"/>
+        <define name  = "DEBUG_MODE"                value = "FALSE"/>
+        <define name  = "AC_HAS_PUSHER"             value = "TRUE"/>
+        <define name  = "PUSHER_IDX"                value = "4"/>
+        <define name  = "WV"                        value = "{1.0f, 1.0f, 1.0f, 1000.0f, 1000.0f, 100.0f}"/>
+        <define name  = "WU"                        value = "{3.0f, 3.0f, 3.0f, 3.0f, 1.0f, 2.0f, 2.0f}"/>
+        <define name  = "U_PREF"                    value = "{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}"/>
     </section>
 
     <section NAME="AUTOPILOT">
