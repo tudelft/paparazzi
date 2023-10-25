@@ -1374,79 +1374,48 @@ void sum_g1g2_1l(void) {
   float T      = -9.81; //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
   float P      = actuator_state_1l[ONELOOP_ANDI_PUSHER_IDX] * g1_1l[2][ONELOOP_ANDI_PUSHER_IDX] / ANDI_G_SCALING;
   float scaler;
-  
-  // M0 (Front)
   int i = 0;
-  scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
-  g1g2_1l[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * g1_1l[2][i] * scaler;
-  g1g2_1l[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * g1_1l[2][i] * scaler;
-  g1g2_1l[2][i] = (cphi * ctheta                       ) * g1_1l[2][i] * scaler;
-  g1g2_1l[3][i] = (g1_1l[3][i])                                        * scaler;
-  g1g2_1l[4][i] = (g1_1l[4][i])                                        * scaler;
-  g1g2_1l[5][i] = (g1_1l[5][i] + g2_1l[i])                             * scaler;
-  
-  // M1 (Right)
-  i = i + 1;
-  scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
-  g1g2_1l[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * g1_1l[2][i] * scaler;
-  g1g2_1l[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * g1_1l[2][i] * scaler;
-  g1g2_1l[2][i] = (cphi * ctheta                       ) * g1_1l[2][i] * scaler;
-  g1g2_1l[3][i] = (g1_1l[3][i])                                        * scaler;
-  g1g2_1l[4][i] = (g1_1l[4][i])                                        * scaler;
-  g1g2_1l[5][i] = (g1_1l[5][i] + g2_1l[i])                             * scaler;  
-  
-  // M2 (Back)
-  i = i + 1;
-  scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
-  g1g2_1l[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * g1_1l[2][i] * scaler;
-  g1g2_1l[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * g1_1l[2][i] * scaler;
-  g1g2_1l[2][i] = (cphi * ctheta                       ) * g1_1l[2][i] * scaler;
-  g1g2_1l[3][i] = (g1_1l[3][i])                                        * scaler;
-  g1g2_1l[4][i] = (g1_1l[4][i])                                        * scaler;
-  g1g2_1l[5][i] = (g1_1l[5][i] + g2_1l[i])                             * scaler;  
-  
-  // M3 (Left)
-  i = i + 1;
-  scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
-  g1g2_1l[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * g1_1l[2][i] * scaler;
-  g1g2_1l[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * g1_1l[2][i] * scaler;
-  g1g2_1l[2][i] = (cphi * ctheta                       ) * g1_1l[2][i] * scaler;
-  g1g2_1l[3][i] = (g1_1l[3][i])                                        * scaler;
-  g1g2_1l[4][i] = (g1_1l[4][i])                                        * scaler;
-  g1g2_1l[5][i] = (g1_1l[5][i] + g2_1l[i])                             * scaler; 
-  
-  if (ONELOOP_ANDI_AC_HAS_PUSHER){
-  // M4 (Pusher)
-    i = i + 1;
-    scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
-    g1g2_1l[0][i] = (cpsi * ctheta - sphi * spsi * stheta) * g1_1l[2][i] * scaler;
-    g1g2_1l[1][i] = (ctheta * spsi + cpsi * sphi * stheta) * g1_1l[2][i] * scaler;
-    g1g2_1l[2][i] = (- cphi * stheta                     ) * g1_1l[2][i] * scaler;
-    g1g2_1l[3][i] = 0.0;
-    g1g2_1l[4][i] = 0.0;
-    g1g2_1l[5][i] = 0.0;
+  for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
+    // Effectiveness matrix for real actuators
+    if (i < ANDI_NUM_ACT){
+      scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i] / ANDI_G_SCALING;
+      g1g2_1l[0][i] = (cpsi * stheta + ctheta * sphi * spsi) * g1_1l[2][i] * scaler;
+      g1g2_1l[1][i] = (spsi * stheta - cpsi * ctheta * sphi) * g1_1l[2][i] * scaler;
+      g1g2_1l[2][i] = (cphi * ctheta                       ) * g1_1l[2][i] * scaler;
+      g1g2_1l[3][i] = (g1_1l[3][i])                                        * scaler;
+      g1g2_1l[4][i] = (g1_1l[4][i])                                        * scaler;
+      g1g2_1l[5][i] = (g1_1l[5][i] + g2_1l[i])                             * scaler;
+      if ((ONELOOP_ANDI_AC_HAS_PUSHER)&&(i==ONELOOP_ANDI_PUSHER_IDX)){
+        g1g2_1l[0][i] = (cpsi * ctheta - sphi * spsi * stheta) * g1_1l[2][i] * scaler;
+        g1g2_1l[1][i] = (ctheta * spsi + cpsi * sphi * stheta) * g1_1l[2][i] * scaler;
+        g1g2_1l[2][i] = (- cphi * stheta                     ) * g1_1l[2][i] * scaler;
+        g1g2_1l[3][i] = 0.0;
+        g1g2_1l[4][i] = 0.0;
+        g1g2_1l[5][i] = 0.0;
+      }
+    }else{
+      scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i];
+      // Effectiveness matrix for Phi
+      if (i == ANDI_NUM_ACT){
+        g1g2_1l[0][i] = ( cphi * ctheta * spsi * T - cphi * spsi * stheta * P) * scaler;
+        g1g2_1l[1][i] = (-cphi * ctheta * cpsi * T + cphi * cpsi * stheta * P) * scaler;
+        g1g2_1l[2][i] = (-sphi * ctheta * T + sphi * stheta * P) * scaler;
+        g1g2_1l[3][i] = 0.0;
+        g1g2_1l[4][i] = 0.0;
+        g1g2_1l[5][i] = 0.0;
+      }
+      // Effectiveness matrix for Theta
+      if (i == ANDI_NUM_ACT+1){
+        g1g2_1l[0][i] = ((ctheta*cpsi - sphi*stheta*spsi) * T - (cpsi * stheta + ctheta * sphi * spsi) * P) * scaler;
+        g1g2_1l[1][i] = ((ctheta*spsi + sphi*stheta*cpsi) * T - (spsi * stheta - cpsi * ctheta * sphi) * P) * scaler;
+        g1g2_1l[2][i] = (-stheta * cphi * T - cphi * ctheta * P) * scaler;
+        g1g2_1l[3][i] = 0.0;
+        g1g2_1l[4][i] = 0.0;
+        g1g2_1l[5][i] = 0.0;
+      }
+    }
   }
-
-  // Phi
-  i = i + 1;
-  scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i];
-  g1g2_1l[0][i] = ( cphi * ctheta * spsi * T - cphi * spsi * stheta * P) * scaler;
-  g1g2_1l[1][i] = (-cphi * ctheta * cpsi * T + cphi * cpsi * stheta * P) * scaler;
-  g1g2_1l[2][i] = (-sphi * ctheta * T + sphi * stheta * P) * scaler;
-  g1g2_1l[3][i] = 0.0;
-  g1g2_1l[4][i] = 0.0;
-  g1g2_1l[5][i] = 0.0;
-
-  // Theta
-  i = i + 1;
-  scaler = act_dynamics[i] * ratio_u_un[i] * ratio_vn_v[i];
-  g1g2_1l[0][i] = ((ctheta*cpsi - sphi*stheta*spsi) * T - (cpsi * stheta + ctheta * sphi * spsi) * P) * scaler;
-  g1g2_1l[1][i] = ((ctheta*spsi + sphi*stheta*cpsi) * T - (spsi * stheta - cpsi * ctheta * sphi) * P) * scaler;
-  g1g2_1l[2][i] = (-stheta * cphi * T - cphi * ctheta * P) * scaler;
-  g1g2_1l[3][i] = 0.0;
-  g1g2_1l[4][i] = 0.0;
-  g1g2_1l[5][i] = 0.0;
-  }
+}
 
 /** @brief  Calculate Normalization of actuators and discrete actuator dynamics  */
 void calc_normalization(void){
