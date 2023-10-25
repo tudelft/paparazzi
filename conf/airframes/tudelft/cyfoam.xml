@@ -233,8 +233,7 @@
     <!--Use an airspeed sensor and get the measured airspeed in the messages-->
     <module name="airspeed" type="ms45xx_i2c">
       <define name="MS45XX_I2C_DEV" value="i2c1"/>
-      <define name="MS45XX_AIRSPEED_SCALE" value="2.4"/>
-      <define name="USE_AIRSPEED_MS45XX" value="TRUE"/>
+      <define name="MS45XX_PRESSURE_SCALE" value="1.546"/> <!-- 2.4 / 1.6327 * 1.0521 -->
     </module>
 
     <module name="pwm_meas">
@@ -290,6 +289,8 @@
     </module>
     <module name="stabilization" type="indi">
       <define name="INDI_THRUST_ON_PITCH_EFF" value="23.0"/>
+      <define name="WLS_N_U" value="4" />
+      <define name="WLS_N_V" value="4" />
     </module>
     <module name="guidance"      type="indi_hybrid">
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
@@ -313,7 +314,9 @@
       <define name="FE_LIFT_A_AS" value="0.0008"/>
       <define name="FE_LIFT_B_AS" value="0.00009"/>
     </module>
-    <module name="nav" type="hybrid"/>
+    <module name="nav" type="hybrid">
+      <define name="GUIDANCE_H_USE_REF" value="FALSE"/>
+    </module>
 
     <!--<module name="ahrs"          type="int_cmpl_quat">-->
       <!--<configure name="USE_MAGNETOMETER" value="TRUE"/>-->

@@ -7,8 +7,8 @@
 #
 
 BOARD=cube
-BOARD_VERSION=orange
-BOARD_DIR=$(BOARD)/$(BOARD_VERSION)
+BOARD_VERSION=orange_plus
+BOARD_DIR=$(BOARD)/orange
 BOARD_CFG=\"arch/chibios/common_board.h\"
 
 ARCH=chibios
@@ -76,6 +76,9 @@ GPS_BAUD ?= B57600
 INTERMCU_PORT ?= UART6
 INTERMCU_BAUD ?= B1500000
 
+# Overwrite default Cube IMU slave ID
+CUBE_IMU2_SPI_SLAVE_IDX ?= SPI_SLAVE5
+
 #
 # default actuator configuration
 #
@@ -85,3 +88,4 @@ INTERMCU_BAUD ?= B1500000
 # e.g. <servo driver="Ppm">
 #
 ACTUATORS ?= actuators_pwm
+

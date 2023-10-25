@@ -881,9 +881,36 @@ static inline void float_mat_diagonal_scal(float **o, float v, int n)
   }
 }
 
+
+/** Divide a matrix by a scalar */
+static inline void float_mat_div_scalar(float **o, float **a, float scalar, int m, int n)
+{
+   int i, j;
+   for (i = 0; i < m; i++) {
+     for (j = 0; j < n; j++) {
+         o[i][j] = a[i][j] / scalar;
+     }
+   }
+}
+
+/** Multiply a matrix by a scalar */
+static inline void float_mat_mul_scalar(float **o, float **a, float scalar, int m, int n)
+{
+   int i, j;
+   for (i = 0; i < m; i++) {
+     for (j = 0; j < n; j++) {
+         o[i][j] = a[i][j] * scalar;
+     }
+   }
+}
+
+
+
 extern bool float_mat_inv_2d(float inv_out[4], float mat_in[4]);
 extern void float_mat2_mult(struct FloatVect2 *vect_out, float mat[4], struct FloatVect2 vect_in);
-extern bool float_mat_inv_4d(float invOut[16], float mat_in[16]);
+extern bool float_mat_inv_3d(float inv_out[3][3], float mat_in[3][3]);
+extern void float_mat3_mult(struct FloatVect3 *vect_out, float mat[3][3], struct FloatVect3 vect_in);
+extern bool float_mat_inv_4d(float invOut[4][4], float mat_in[4][4]);
 
 extern void float_vect3_bound_in_2d(struct FloatVect3 *vect3, float bound);
 extern void float_vect3_bound_in_3d(struct FloatVect3 *vect3, float bound);

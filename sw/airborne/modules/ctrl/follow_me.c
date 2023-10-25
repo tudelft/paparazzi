@@ -29,12 +29,12 @@
 #include "generated/modules.h"
 #include "generated/flight_plan.h"
 
-// Distance to the target to hover from is by default 15 meters
+// Distance to the target to hover from is by default 45 meters
 #ifndef FOLLOW_ME_DISTANCE
 #define FOLLOW_ME_DISTANCE 45
 #endif
 
-// Height difference between te target be default 18 meters
+// Height difference between te target be default 60 meters
 #ifndef FOLLOW_ME_HEIGHT
 #define FOLLOW_ME_HEIGHT 60
 #endif
@@ -59,6 +59,7 @@
 #define FOLLOW_ME_FILT 0.9
 #endif
 
+// By default no moving waypoints
 #ifndef FOLLOW_ME_MOVING_WPS
 #define FOLLOW_ME_MOVING_WPS
 #endif
@@ -66,7 +67,6 @@
 float follow_me_distance = FOLLOW_ME_DISTANCE;
 float follow_me_height = FOLLOW_ME_HEIGHT;
 float follow_me_heading = 180.;
-float follow_me_min_speed = FOLLOW_ME_MIN_SPEED;
 float follow_me_filt = FOLLOW_ME_FILT;
 float follow_me_diag_speed = 1.0;
 float follow_me_gps_delay = 200;
@@ -104,14 +104,12 @@ void follow_me_periodic(void)
   }
 
   // Calculate the difference to move the waypoints
-  struct NedCoor_i target_pos_cm;
+  struct EnuCoor_i target_pos_cm;
   struct EnuCoor_f cur_targetpos, diff_targetpos;
   float cur_targetpos_heading, diff_targetpos_heading;
 
-  ned_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &ground_lla);
-  cur_targetpos.x = target_pos_cm.y / 100.f;
-  cur_targetpos.y = target_pos_cm.x / 100.f;
-  cur_targetpos.z = -target_pos_cm.z / 100.f;
+  enu_of_lla_point_i(&target_pos_cm, &state.ned_origin_i, &ground_lla);
+  VECT3_FLOAT_OF_CM(cur_targetpos, target_pos_cm);
   VECT3_DIFF(diff_targetpos, cur_targetpos, last_targetpos);
 
   cur_targetpos_heading = ground_heading;
@@ -138,7 +136,7 @@ void follow_me_periodic(void)
     float cos_heading = cosf(diff_targetpos_heading/180.*M_PI);
     float sin_heading = sinf(diff_targetpos_heading/180.*M_PI);
     wp_new_enu.x = ((wp_new_enu.x - cur_targetpos.x) * cos_heading) + ((wp_new_enu.y - cur_targetpos.y) * sin_heading) + cur_targetpos.x;
-    wp_new_enu.y = (-(wp_new_enu.y - cur_targetpos.y) * sin_heading) + ((wp_new_enu.y - cur_targetpos.y) * cos_heading) + cur_targetpos.y;
+    wp_new_enu.y = (-(wp_new_enu.x - cur_targetpos.x) * sin_heading) + ((wp_new_enu.y - cur_targetpos.y) * cos_heading) + cur_targetpos.y;
 
     // Update the waypoint
     waypoint_set_enu(wp_id, &wp_new_enu);
@@ -165,7 +163,11 @@ void follow_me_parse_target_pos(uint8_t *buf)
   ground_climb = DL_TARGET_POS_climb(buf);
   ground_course = DL_TARGET_POS_course(buf);
   ground_heading = DL_TARGET_POS_heading(buf);
-  if(ground_heading > 360.f) ground_heading -= 360.f;
+  if(ground_heading > 360.f) {
+    // Ground heading is invalid
+    ground_set = false;
+    return;
+  }
 
   ground_set = true;
 }
@@ -176,24 +178,24 @@ void follow_me_set_wp(uint8_t wp_id, float speed)
   struct NedCoor_f target_pos;
   float diff_time_ms = 0;
 
-  // Check if we got a valid relative position which didn't timeout
-  /*if(gps_relposned.relPosValid && gps_relposned.iTOW+FOLLOW_ME_GPS_TIMEOUT > gps_tow_from_sys_ticks(sys_time.nb_tick)) {
+  // Check if we got a valid relative position which didn't timeout (FIXME)
+  /*if(bit_is_set(gps.valid_fields, GPS_VALID_RELPOS_BIT) && gps.relpos_tow+FOLLOW_ME_GPS_TIMEOUT > gps_tow_from_sys_ticks(sys_time.nb_tick)) {
     static struct NedCoor_f cur_pos;
     static uint32_t last_relpos_tow = 0;
 
     // Make sure to only use the current state from the receive of the GPS message (FIXME overflow at sunday)
-    if(last_relpos_tow < gps_relposned.iTOW) {
+    if(last_relpos_tow < gps.relpos_tow) {
       cur_pos = *stateGetPositionNed_f();
-      last_relpos_tow = gps_relposned.iTOW;
+      last_relpos_tow = gps.relpos_tow;
     }
 
     // Set the target position
-    target_pos.x = cur_pos.x - gps_relposned.relPosN / 100.0f;
-    target_pos.y = cur_pos.y - gps_relposned.relPosE / 100.0f;
-    target_pos.z = cur_pos.z - gps_relposned.relPosD / 100.0f;
+    target_pos.x = cur_pos.x - gps.relpos_ned.x / 100.0f;
+    target_pos.y = cur_pos.y - gps.relpos_ned.y / 100.0f;
+    target_pos.z = cur_pos.z - gps.relpos_ned.z / 100.0f;
 
     // Calculate the difference in time from measurement
-    diff_time_ms = gps_tow_from_sys_ticks(sys_time.nb_tick) - gps_relposned.iTOW + follow_me_gps_delay;
+    diff_time_ms = gps_tow_from_sys_ticks(sys_time.nb_tick) - gps.relpos_tow + follow_me_gps_delay;
     if(diff_time_ms < 0) diff_time_ms += (1000*60*60*24*7); //msec of a week
   }
   // Check if we got a position from the ground which didn't timeout and local NED is initialized
@@ -272,3 +274,4 @@ void follow_me_set_wp(uint8_t wp_id, float speed)
   // Allways update the time to avoid big jumps in distance and height
   last_time_ms = get_sys_time_msec();
 }
+

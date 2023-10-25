@@ -1,7 +1,7 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
 <!-- This is a Nedderdrone with Trailing edge motors
-     * Airframe:    TUD00???
+     * Airframe:    TUD00343
      * Autopilot:   Pixhawk 4
      * Actuators:   12x T-Motor ESC + Motors and 8x Servos (all CAN)
      * Datalink:    Herelink
@@ -35,6 +35,7 @@
       <module name="airspeed" type="ms45xx_i2c">
         <define name="USE_I2C4"/>
         <define name="MS45XX_I2C_DEV" value="i2c4"/>
+        <define name="I2C4_CLOCK_SPEED" value="100000"/>
       </module>
       <!--module name="airspeed" type="uavcan"/-->
 
@@ -67,7 +68,7 @@
       <module name="fdm" type="jsbsim"/>
 
       <module name="logger_file">
-        <define name="FILE_LOGGER_PATH" value="/home/ewoud/Documents"/>
+        <define name="FILE_LOGGER_PATH" value="~/"/>
       </module>
 
       <!--Not dealing with these in the simulation-->
@@ -77,17 +78,21 @@
       <define name="RADIO_KILL_SWITCH" value="0"/>
     </target>
 
-    <module name="eff_scheduling_nederdrone"/>
+    <module name="eff_scheduling_nederdrone">
+      <!-- Trims -->
+      <define name="INDI_SCHEDULING_TRIM_ELEVATOR" value="0"/>
+      <define name="INDI_SCHEDULING_PREF_FLAPS_FACTOR" value="1.0"/>
+    </module>
 
     <module name="telemetry"     type="transparent">
-      <configure name="MODEM_BAUD" value="B115200"/>
+      <configure name="MODEM_BAUD" value="B460800"/>
     </module>
 
-    <module name="approach_moving_target">
-      <define name="AMT_ERR_SLOWDOWN_GAIN" value="0.25"/>
-    </module>
+    <module name="approach_moving_target"/>
 
-    <module name="ins"           type="ekf2" />
+    <module name="ins"           type="ekf2">
+      <define name="USE_INS_NAV_INIT" value="FALSE"/>
+    </module>
 
     <module name="actuators"     type="uavcan">
       <configure name="UAVCAN_USE_CAN1" value="TRUE"/>
@@ -101,6 +106,8 @@
     </module>
     <module name="stabilization" type="indi">
       <configure name="INDI_NUM_ACT" value="8"/>
+      <define name="WLS_N_U" value="8"/>
+      <define name="WLS_N_V" value="4"/>
       <define name="TILT_TWIST_CTRL" value="TRUE"/>
     </module>
     <module name="stabilization" type="rate_indi"/>
@@ -127,15 +134,21 @@
       <configure name="USE_TFMINI_AGL" value="FALSE"/>
     </module-->
 
+    <module name="nav" type="hybrid">
+      <define name="GUIDANCE_H_USE_REF" value="FALSE"/>
+    </module>
+
     <module name="guidance" type="indi_hybrid">
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
       <define name="GUIDANCE_INDI_POS_GAIN" value="0.3"/>
       <define name="GUIDANCE_INDI_SPEED_GAIN" value="0.5"/>
       <define name="GUIDANCE_INDI_POS_GAINZ" value="0.3"/>
       <define name="GUIDANCE_INDI_SPEED_GAINZ" value="0.5"/>
+      <define name="GUIDANCE_INDI_PITCH_LIFT_EFF" value="0.12"/>
       <define name="GUIDANCE_INDI_PITCH_EFF_SCALING" value="1.0"/>
       <define name="GUIDANCE_H_REF_MAX_SPEED" value="18.0"/> <!--not used-->
       <define name="GUIDANCE_INDI_MAX_AIRSPEED" value="17.0"/>
+      <define name="GUIDANCE_HEADING_IS_FREE" value="FALSE"/> <!--heading can not be set by navigation-->
       <define name="GUIDANCE_INDI_HEADING_BANK_GAIN" value="5"/>
       <!--define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN" value="-943.0"/>
       <define name="GUIDANCE_INDI_SPECIFIC_FORCE_GAIN_45" value="-500.0"/>
@@ -150,6 +163,64 @@
     </module>
 
     <module name="motor_mixing"/>
+
+
+    <!--Airspeed estimation using EKF-->
+    <module name="ekf_aw">
+      <define name="EKF_AW_P0_V_BODY"  value="1.E-2f" description="Initial covariance body velocity"/>
+      <define name="EKF_AW_P0_MU"      value="1.E-5f" description="Initial covariance wind"/>
+      <define name="EKF_AW_P0_OFFSET"  value="1.E-10f" description="Initial covariance offset"/>
+
+      <define name="EKF_AW_Q_ACCEL"  value="1.0E-4f" description="Accel process noise"/>
+      <define name="EKF_AW_Q_GYRO"   value="1.0E-9f"  description="Gyro process noise"/>
+      <define name="EKF_AW_Q_MU"     value="1.0E-6f"  description="Wind process noise"/>
+      <define name="EKF_AW_Q_OFFSET" value="1.0E-8f" description="Offset process noise"/>
+
+      <define name="EKF_AW_R_V_GND"        value="1.E-5f" description="GPS Velocity measurement noise"/>
+      <define name="EKF_AW_R_ACCEL_FILT_X" value="1.E-5f" description="Filtered x accel measurement noise"/>
+      <define name="EKF_AW_R_ACCEL_FILT_Y" value="1.E-5f" description="Filtered y accel measurement noise"/>
+      <define name="EKF_AW_R_ACCEL_FILT_Z" value="1.E-5f" description="Filtered z accel measurement noise"/>
+      <define name="EKF_AW_R_V_PITOT"      value="1.E-7f" description="Pitot Tube Velocity measurement noise"/>
+
+      <define name="EKF_AW_AZ_SCHED_GAIN"     value="2" />
+      <define name="EKF_AW_AZ_SCHED_START_DEG"     value="60" />
+      <define name="EKF_AW_AZ_SCHED_END_DEG"     value="70" />
+
+      <define name="EKF_AW_AX_SCHED_GAIN"     value="0" />
+      <define name="EKF_AW_AX_SCHED_START_DEG"     value="45" />
+      <define name="EKF_AW_AX_SCHED_END_DEG"     value="60" />
+
+      <define name="EKF_AW_QUICK_CONVERGENCE"     value="true" />
+      <define name="EKF_AW_QUICK_CONVERGENCE_TIME"     value="15" />
+
+      <define name="EKF_AW_WING_INSTALLED"   value="true" description="Use wing contribution"/>
+      <define name="EKF_AW_USE_MODEL_BASED_X"  value="true" description="Use model based to augment filter"/>
+      <define name="EKF_AW_USE_MODEL_BASED_Y"  value="true" description="Use model based to augment filter"/>
+      <define name="EKF_AW_USE_MODEL_BASED_Z"  value="true" description="Use model based to augment filter"/>
+
+      <define name="EKF_AW_VEHICLE_MASS" value="6.5" description="Mass of the vehicle"/>
+
+      <define name="EKF_AW_K2_FX_FUSELAGE" value="-4E-2f" description="K*u*u"/>
+      <define name="EKF_AW_K3_FX_HOVER" value="-3E-1f" description="K*u"/>
+
+      <define name="EKF_AW_K1_FX_WING" value="-3.21432e-02f" description="Fx2 = (k1*(1+k5*skew)+(k2*alpha+k3*alpha^2))*(sin(skew)^2+k4)*V^2"/>
+      <define name="EKF_AW_K2_FX_WING" value="1.67195e-01f" description="Fx2 = (k1*(1+k5*skew)+(k2*alpha+k3*alpha^2))*(sin(skew)^2+k4)*V^2"/>
+      <define name="EKF_AW_K3_FX_WING" value="5.9441e-01f" description="Fx2 = (k1*(1+k5*skew)+(k2*alpha+k3*alpha^2))*(sin(skew)^2+k4)*V^2"/>
+      <define name="EKF_AW_K4_FX_WING" value="3.9839e-03f" description="Fx2 = (k1*(1+k5*skew)+(k2*alpha+k3*alpha^2))*(sin(skew)^2+k4)*V^2"/>
+      <define name="EKF_AW_K5_FX_WING" value="3.5321e-03f" description="Fx2 = (k1*(1+k5*skew)+(k2*alpha+k3*alpha^2))*(sin(skew)^2+k4)*V^2"/>
+
+      <define name="EKF_AW_K_FY_V"     value="-3.2E-1f" description="Fy beta coefficient"/>
+      <define name="EKF_AW_K1_FY_WING" value="0.0f" description="Fy = K1*cos(skew)*sin(skew)*u^2"/>
+
+      <define name="EKF_AW_K1_FZ_WING" value="-1.0008e-01f" description="Fz1 = ((k1+k2*alpha+k3*alpha^2)*(sin(skew)^2+k4)*V^2"/>
+      <define name="EKF_AW_K2_FZ_WING" value="-8.6965e-01f" description="Fz1 = ((k1+k2*alpha+k3*alpha^2)*(sin(skew)^2+k4)*V^2"/>
+      <define name="EKF_AW_K3_FZ_WING" value="1.45783e-01f" description="Fz1 = ((k1+k2*alpha+k3*alpha^2)*(sin(skew)^2+k4)*V^2"/>
+      <define name="EKF_AW_K4_FZ_WING" value="2.185395e-01f" description="Fz1 = ((k1+k2*alpha+k3*alpha^2)*(sin(skew)^2+k4)*V^2"/>
+
+      <define name="EKF_AW_TELEMETRY_DEBUG"     value="false" description="debug mode to send timing info through telemetry"/>
+    </module>
+
+
   </firmware>
 
   <!-- CAN BUS 1 (Front Wing) -->
@@ -182,13 +253,6 @@
     <axis name="YAW"    failsafe_value="0"/>
     <axis name="THRUST" failsafe_value="0"/>
   </commands>
-
-  <rc_commands>
-    <set command="THRUST" value="@THROTTLE" />
-    <set command="ROLL" value="@YAW" />
-    <set command="PITCH" value="@PITCH/2" />
-    <set command="YAW" value="-@ROLL/4" />
-  </rc_commands>
 
   <section name="MIXING" prefix="MOTOR_MIXING_">
     <!-- frontleft left (CCW), frontleft mid (CW), frontleft right (CCW), frontright left (CW), frontright mid (CCW), frontright right (CW) -->
@@ -340,6 +404,7 @@
     <define name="ACT_DYN" value="{0.028, 0.028, 0.028, 0.028, 0.05, 0.05, 0.05, 0.05}"/>
     <define name="ACT_RATE_LIMIT" value="{9600, 9600, 9600, 9600, 170, 170, 170, 170}"/>
     <define name="ACT_IS_SERVO" value="{0, 0, 0, 0, 1, 1, 1, 1}"/>
+    <define name="WLS_WU" value="{1.,1.,1.,1.,1.,1.,1.,1.}"/>
 
     <!-- Adaptive Learning Rate -->
     <define name="USE_ADAPTIVE" value="FALSE"/>
@@ -361,6 +426,14 @@
     <define name="DGAIN" value="100"/>
     <define name="AGAIN" value="0"/>
     <define name="IGAIN" value="20"/>
+  </section>
+
+  <section name="AMT" prefix="APPROACH_MOVING_TARGET_">
+    <define name="CUTOFF_FREQ_FILTERS_HZ" value="0.25"/>
+    <define name="ERR_SLOWDOWN_GAIN" value="0.25" />
+    <define name="SLOPE" value="35.0"/>
+    <define name="DISTANCE" value="60.0"/>
+    <define name="SPEED" value="-1.0"/>
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">

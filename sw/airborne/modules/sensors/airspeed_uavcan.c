@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Freek van Tienen <freek.v.tienen@gmail.com>
+ * Copyright (C) 2023 Freek van Tienen <freek.v.tienen@gmail.com>
  *
  * This file is part of paparazzi
  *
@@ -35,7 +35,19 @@
 #include "modules/datalink/telemetry.h"
 #endif
 
-#ifdef USE_AIRSPEED_LOWPASS_FILTER
+#ifndef AIRSPEED_UAVCAN_LOWPASS_TAU
+#define AIRSPEED_UAVCAN_LOWPASS_TAU 0.15
+#endif
+
+#ifndef AIRSPEED_UAVCAN_LOWPASS_PERIOD
+#define AIRSPEED_UAVCAN_LOWPASS_PERIOD 0.1
+#endif
+
+#ifndef AIRSPEED_UAVCAN_SEND_ABI
+#define AIRSPEED_UAVCAN_SEND_ABI 1
+#endif
+
+#ifdef USE_AIRSPEED_UAVCAN_LOWPASS_FILTER
 static Butterworth2LowPass airspeed_filter;
 #endif
 static uavcan_event airspeed_uavcan_ev;
@@ -49,9 +61,21 @@ struct airspeed_uavcan_s airspeed_uavcan;
 
 static void airspeed_uavcan_downlink(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_AIRSPEED_UAVCAN(trans,dev,AC_ID,
+  uint8_t dev_id = UAVCAN_SENDER_ID;
+  uint16_t raw = 0;
+  float offset = 0;
+  float sign = 1.0f;
+  if (airspeed_uavcan.diff_p < 0) {
+    sign = -1.0f;
+  }
+  float airspeed = sqrt(airspeed_uavcan.diff_p * sign * 2.0f / 1.225f) * sign;
+  pprz_msg_send_AIRSPEED_RAW(trans,dev,AC_ID,
+                                &dev_id,
+                                &raw,
+                                &offset,
                                 &airspeed_uavcan.diff_p,
-                                &airspeed_uavcan.temperature);
+                                &airspeed_uavcan.temperature,
+                                &airspeed);
 }
 
 static void airspeed_uavcan_cb(struct uavcan_iface_t *iface __attribute__((unused)), CanardRxTransfer *transfer) {
@@ -72,26 +96,31 @@ static void airspeed_uavcan_cb(struct uavcan_iface_t *iface __attribute__((unuse
   //float pitot_temp = canardConvertFloat16ToNativeFloat(tmp_float);
 
   if(!isnan(diff_p)) {
-#ifdef USE_AIRSPEED_LOWPASS_FILTER
+#ifdef USE_AIRSPEED_UAVCAN_LOWPASS_FILTER
     float diff_p_filt = update_butterworth_2_low_pass(&airspeed_filter, diff_p);
-    airspeed_uavcan.diff_p = diff_p;
-    //AbiSendMsgBARO_DIFF(UAVCAN_SENDER_ID, diff_p_filt);
+    airspeed_uavcan.diff_p = diff_p_filt;
 #else
-    //AbiSendMsgBARO_DIFF(UAVCAN_SENDER_ID, diff_p);
     airspeed_uavcan.diff_p = diff_p;
+#endif
+
+#if AIRSPEED_UAVCAN_SEND_ABI
+    AbiSendMsgBARO_DIFF(UAVCAN_SENDER_ID, airspeed_uavcan.diff_p);
 #endif
   }
 
-  if(!isnan(static_air_temp))
-    //AbiSendMsgTEMPERATURE(UAVCAN_SENDER_ID, static_air_temp);
+  if(!isnan(static_air_temp)) {
     airspeed_uavcan.temperature = static_air_temp;
+#if AIRSPEED_UAVCAN_SEND_ABI
+    AbiSendMsgTEMPERATURE(UAVCAN_SENDER_ID, airspeed_uavcan.temperature);
+#endif
+  }
 }
 
 void airspeed_uavcan_init(void)
 {
   // Setup low pass filter with time constant and 100Hz sampling freq
-#ifdef USE_AIRSPEED_LOWPASS_FILTER
-  init_butterworth_2_low_pass(&airspeed_filter, MS45XX_LOWPASS_TAU, MS45XX_I2C_PERIODIC_PERIOD, 0);
+#ifdef USE_AIRSPEED_UAVCAN_LOWPASS_FILTER
+  init_butterworth_2_low_pass(&airspeed_filter, AIRSPEED_UAVCAN_LOWPASS_TAU, AIRSPEED_UAVCAN_LOWPASS_PERIOD, 0);
 #endif
 
   airspeed_uavcan.diff_p = 0;
@@ -101,6 +130,6 @@ void airspeed_uavcan_init(void)
   uavcan_bind(UAVCAN_EQUIPMENT_AIR_DATA_RAWAIRDATA_ID, UAVCAN_EQUIPMENT_AIR_DATA_RAWAIRDATA_SIGNATURE, &airspeed_uavcan_ev, &airspeed_uavcan_cb);
 
   #if PERIODIC_TELEMETRY
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AIRSPEED_UAVCAN, airspeed_uavcan_downlink);
+    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AIRSPEED_RAW, airspeed_uavcan_downlink);
   #endif
 }

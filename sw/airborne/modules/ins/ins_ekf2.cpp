@@ -455,6 +455,31 @@ static void send_ahrs_bias(struct transport_tx *trans, struct link_device *dev)
   pprz_msg_send_AHRS_BIAS(trans, dev, AC_ID, &accel_bias(0), &accel_bias(1), &accel_bias(2),
                           &gyro_bias(0), &gyro_bias(1), &gyro_bias(2), &mag_bias(0), &mag_bias(1), &mag_bias(2));
 }
+
+static void send_ahrs_quat(struct transport_tx *trans, struct link_device *dev)
+{
+  struct Int32Quat ltp_to_body_quat;
+  const Quatf att_q{ekf.calculate_quaternion()};
+  ltp_to_body_quat.qi = QUAT1_BFP_OF_REAL(att_q(0));
+  ltp_to_body_quat.qx = QUAT1_BFP_OF_REAL(att_q(1));
+  ltp_to_body_quat.qy = QUAT1_BFP_OF_REAL(att_q(2));
+  ltp_to_body_quat.qz = QUAT1_BFP_OF_REAL(att_q(3));
+  struct Int32Quat *quat = stateGetNedToBodyQuat_i();
+  float foo = 0.f;
+  uint8_t ahrs_id = 1; // generic
+  pprz_msg_send_AHRS_QUAT_INT(trans, dev, AC_ID,
+                              &foo,
+                              &ltp_to_body_quat.qi,
+                              &ltp_to_body_quat.qx,
+                              &ltp_to_body_quat.qy,
+                              &ltp_to_body_quat.qz,
+                              &(quat->qi),
+                              &(quat->qx),
+                              &(quat->qy),
+                              &(quat->qz),
+                              &ahrs_id);
+}
+
 #endif
 
 /* Initialize the EKF */
@@ -522,13 +547,13 @@ void ins_ekf2_init(void)
 
   /* Initialize the origin from flight plan */
 #if USE_INS_NAV_INIT
-  if(ekf.setEkfGlobalOrigin(NAV_LAT0*1e-7, NAV_LON0*1e-7, (NAV_ALT0 + NAV_MSL0)*1e-3))
+  if(ekf.setEkfGlobalOrigin(NAV_LAT0*1e-7, NAV_LON0*1e-7, (NAV_ALT0)*1e-3)) // EKF2 works HMSL
   {
     struct LlaCoor_i llh_nav0; /* Height above the ellipsoid */
     llh_nav0.lat = NAV_LAT0;
     llh_nav0.lon = NAV_LON0;
     /* NAV_ALT0 = ground alt above msl, NAV_MSL0 = geoid-height (msl) over ellipsoid */
-    llh_nav0.alt = NAV_ALT0 + NAV_MSL0;
+    llh_nav0.alt = NAV_ALT0 + NAV_MSL0; // in millimeters above WGS84 reference ellipsoid
 
     ltp_def_from_lla_i(&ekf2.ltp_def, &llh_nav0);
     ekf2.ltp_def.hmsl = NAV_ALT0;
@@ -550,6 +575,7 @@ void ins_ekf2_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_STATE_FILTER_STATUS, send_filter_status);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_WIND_INFO_RET, send_wind_info_ret);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_BIAS, send_ahrs_bias);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_AHRS_QUAT_INT, send_ahrs_quat);
 #endif
 
   /*
@@ -563,6 +589,20 @@ void ins_ekf2_init(void)
   AbiBindMsgIMU_MAG(INS_EKF2_MAG_ID, &mag_ev, mag_cb);
   AbiBindMsgGPS(INS_EKF2_GPS_ID, &gps_ev, gps_cb);
   AbiBindMsgOPTICAL_FLOW(INS_EKF2_OF_ID, &optical_flow_ev, optical_flow_cb);
+}
+
+void ins_reset_local_origin(void)
+{
+#if USE_GPS
+  if (GpsFixValid()) {
+    struct LlaCoor_i lla_pos = lla_int_from_gps(&gps);
+    if (ekf.setEkfGlobalOrigin(lla_pos.lat*1e-7, lla_pos.lon*1e-7, gps.hmsl*1e-3)) {
+      ltp_def_from_lla_i(&ekf2.ltp_def, &lla_pos);
+      ekf2.ltp_def.hmsl = gps.hmsl;
+      stateSetLocalOrigin_i(&ekf2.ltp_def);
+    }
+  }
+#endif
 }
 
 /* Update the INS state */
@@ -621,7 +661,7 @@ void ins_ekf2_update(void)
       if (ekf_origin_valid && (origin_time > ekf2.ltp_stamp)) {
         lla_ref.lat = ekf_origin_lat * 1e7; // WGS-84 lat
         lla_ref.lon = ekf_origin_lon * 1e7; // WGS-84 lon
-        lla_ref.alt = ref_alt * 1e3 + wgs84_ellipsoid_to_geoid_i(lla_ref.lat, lla_ref.lon); // WGS-84 height
+        lla_ref.alt = ref_alt * 1e3 + wgs84_ellipsoid_to_geoid_i(lla_ref.lat, lla_ref.lon); // in millimeters above WGS84 reference ellipsoid (ref_alt is in HMSL)
         ltp_def_from_lla_i(&ekf2.ltp_def, &lla_ref);
         ekf2.ltp_def.hmsl = ref_alt * 1e3;
         stateSetLocalOrigin_i(&ekf2.ltp_def);
@@ -769,7 +809,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, uint32_t stamp, f
   ekf.set_air_density(rho);
 
   // Calculate the height above mean sea level based on pressure
-  sample.hgt = pprz_isa_height_of_pressure_full(pressure, ekf2.qnh * 100.0f); 
+  sample.hgt = pprz_isa_height_of_pressure_full(pressure, ekf2.qnh * 100.0f);
   ekf.setBaroData(sample);
 }
 
@@ -854,7 +894,7 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
   struct LlaCoor_i lla_pos = lla_int_from_gps(gps_s);
   gps_msg.lat = lla_pos.lat;
   gps_msg.lon = lla_pos.lon;
-  gps_msg.alt = gps_s->hmsl;
+  gps_msg.alt = gps_s->hmsl; // EKF2 works with HMSL
 #if INS_EKF2_GPS_COURSE_YAW
   gps_msg.yaw = wrap_pi((float)gps_s->course / 1e7);
   gps_msg.yaw_offset = 0;

@@ -16,6 +16,7 @@
     <target name="ap" board="px4fmu_5.0_chibios">
       <configure name="PERIODIC_FREQUENCY" value="500"/>
       <configure name="FLASH_MODE" value="SWD"/>
+      <define name="USE_BARO_BOARD" value="1"/>
 
 <!--      <module name="radio_control" type="ppm"/>-->
 
@@ -130,7 +131,7 @@
 <!--    </target>-->
 
     <module name="telemetry" type="transparent">
-      <configure name="MODEM_BAUD" value="B115200"/>
+      <configure name="MODEM_BAUD" value="B460800"/>
     </module>
 
     <module name="actuators"     type="pwm"/>
@@ -149,24 +150,25 @@
     <module name="stabilization" type="indi_simple"/>
     <module name="stabilization" type="rate_indi"/>
 
-    <module name="ins"           type="extended" />
+    <!-- <module name="ins"           type="extended" /> -->
 
 
-   <!-- <module name="ins" type="ekf2"> -->
+   <module name="ins" type="ekf2">
     <!-- <define name="INS_EKF2_ACCEL_ID" value="IMU_MPU6000_ID"/> -->
     <!-- <define name="INS_EKF2_GYRO_ID" value="IMU_MPU6000_ID"/> -->
     <!-- <define name="INS_EKF2_MAG_ID" value="MAG_IST8310_SENDER_ID"/> -->
+    <define name="INS_EKF2_MAG_ID" value="5"/>
     <!-- <define name="INS_EKF2_MAG_ID" value="MAG_RM3100_SENDER_ID"/> -->
     <!-- <define name="INS_EKF2_MAG_ID" value="MAG_LIS3MDL_SENDER_ID"/> -->
     <!-- <define name="INS_EKF2_OPTITRACK" value="TRUE"/> -->
-   <!-- </module> -->
+   </module>
 
-    <module name="ahrs"          type="float_cmpl_quat">
-     <configure name="USE_MAGNETOMETER" value="TRUE"/>
-     <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
-     <define name="AHRS_BIAS_UPDATE_HEADING_THRESHOLD" value="0.174533" unit="rad"/>
-     <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID" />
-    </module>
+    <!-- <module name="ahrs"          type="float_cmpl_quat"> -->
+     <!-- <configure name="USE_MAGNETOMETER" value="TRUE"/> -->
+     <!-- <define name="AHRS_USE_GPS_HEADING" value="FALSE"/> -->
+     <!-- <define name="AHRS_BIAS_UPDATE_HEADING_THRESHOLD" value="0.174533" unit="rad"/> -->
+     <!-- <define name="AHRS_FC_MAG_ID" value="MAG_RM3100_SENDER_ID" /> -->
+    <!-- </module> -->
 
     <!-- <module name="air_data"/> -->
 
@@ -296,7 +298,6 @@
     <!-- <define name="MAG_CALIB" value="{{.abi_id=4, .calibrated={.neutral=true, .scale=true},.neutral={-22,-7,4}, .scale={{16952,16373,64135},{1147,946,3651}}}}"/> -->
     <!-- IST8310 @VALKENBURG 4-11-2022 -->
     <!-- <define name="MAG_CALIB" value="{{.abi_id=4, .calibrated={.neutral=true, .scale=true},.neutral={-7,-12,-3}, .scale={{27369,51460,64249},{2287,4071,4889}}}}"/> -->
-
 
 
     <!-- Define axis in hover frame -->

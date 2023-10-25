@@ -114,12 +114,13 @@
     </message>
 
     <message name="ENERGY" id="12">
-      <field name="throttle" type="uint8" unit="%">Throttle setting</field>
-      <field name="voltage"  type="float" unit="V">Input battery voltage</field>
-      <field name="current"  type="float" unit="A">Current consumption</field>
-      <field name="power"    type="float" unit="W">Electrical power</field>
-      <field name="charge"   type="float" unit="Ah">Accumulated consumed charge</field>
-      <field name="energy"   type="float" unit="Wh">Accumulated consumed energy</field>
+      <field name="throttle"   type="uint8" unit="%">Throttle setting</field>
+      <field name="voltage"    type="float" unit="V">Input battery voltage</field>
+      <field name="current"    type="float" unit="A">Current consumption</field>
+      <field name="power"      type="float" unit="W">Electrical power</field>
+      <field name="avg_power" type="float" unit="W"> Average electrical power</field>
+      <field name="charge"     type="float" unit="Ah">Accumulated consumed charge</field>
+      <field name="energy"    type="float" unit="Wh">Accumulated consumed energy</field>
     </message>
 
     <message name="DEBUG_MCU_LINK" id="13">
@@ -1245,6 +1246,15 @@
       <field name="airspeed_raw" type="float" unit="m/s"/>
     </message>
 
+    <message name="AIRSPEED_RAW" id="191">
+      <field name="DEV_ID" type="uint8"/>
+      <field name="raw_p" type="uint16"/>
+      <field name="pressure_offset" type="float" unit="Pa"/>
+      <field name="pressure" type="float" unit="Pa"/>
+      <field name="temperature" type="float"/>
+      <field name="airspeed_raw" type="float" unit="m/s"/>
+    </message>
+
     <message name="APPROACH_MOVING_TARGET" id="139">
       <field name="ref_pos_x" type="float" unit="m"/>
       <field name="ref_pos_y" type="float" unit="m"/>
@@ -1753,8 +1763,6 @@
       <field name="diffPress" type="float" unit="Pa"/>
       <field name="temperature" type="float"/>
     </message>
-
-    <!-- 191 is free -->
 
     <message name="SHIP_INFO_MSG_GROUND" id="192" >
       <field name="phi" type="float" unit="deg">Roll</field>
@@ -2275,16 +2283,26 @@
     </message>
 
     <message name="STAB_ATTITUDE_INDI" id="216">
+      <field name="body_acc_x" type="float"/>
+      <field name="body_acc_y" type="float"/>
+      <field name="body_acc_z" type="float"/>   
+      <field name="angular_rate_p" type="float"/>
+      <field name="angular_rate_q" type="float"/>
+      <field name="angular_rate_r" type="float"/>      
+      <field name="angular_rate_ref_p" type="float"/>
+      <field name="angular_rate_ref_q" type="float"/>
+      <field name="angular_rate_ref_r" type="float"/>
       <field name="angular_accel_p" type="float"/>
       <field name="angular_accel_q" type="float"/>
       <field name="angular_accel_r" type="float"/>
       <field name="angular_accel_ref_p" type="float"/>
       <field name="angular_accel_ref_q" type="float"/>
-      <field name="angular_accel_ref_r" type="float"/>
-      <field name="g1_p" type="float"/>
-      <field name="g1_q" type="float"/>
-      <field name="g1_r" type="float"/>
-      <field name="g2_r" type="float"/>
+      <field name="angular_accel_ref_r" type="float"/>      
+      <field name="eff_matrix_1" type="float"/>
+      <field name="eff_matrix_2" type="float"/>
+      <field name="eff_matrix_3" type="float"/>
+      <field name="eff_matrix_4" type="float"/>
+      <field name="act_values" type="float[]"/>
     </message>
 
     <message name="ROTORCRAFT_FP_MIN" id="217">

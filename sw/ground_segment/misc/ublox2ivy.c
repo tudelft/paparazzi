@@ -43,6 +43,7 @@
 
 #define UDP_BUFFER_SIZE   1024
 #define NAV_RELPOSNED_VERSION   0x01
+#define INVALID_HEADING  361
 
 /* Endpoints */
 struct endpoint_udp_t {
@@ -78,12 +79,12 @@ struct endpoint_t {
 };
 
 static bool verbose = false;
-static bool no_rtc_injection = false; 
+static bool rtcm_forward = true;
 static struct endpoint_t gps_ep;
 static struct gps_ubx_t gps_ubx;
 static struct gps_rtcm_t gps_rtcm;
 static uint8_t ac_id = 0;
-static float ground_heading = 361;
+static float ground_heading = INVALID_HEADING;
 
 void packet_handler(void *ep, uint8_t *data, uint16_t len);
 
@@ -632,17 +633,18 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
           if(version > NAV_RELPOSNED_VERSION)
             break;
 
+          uint16_t refStationId = UBX_NAV_RELPOSNED_refStationId(gps_ubx.msg_buf);
           uint8_t flags       = UBX_NAV_RELPOSNED_flags(gps_ubx.msg_buf);
           uint8_t relPosValid = RTCMgetbitu(&flags, 5, 1);
           float relpos_heading = UBX_NAV_RELPOSNED_relPosHeading(gps_ubx.msg_buf) * 1e-5f;
           float relpos_dist = UBX_NAV_RELPOSNED_relPosLength(gps_ubx.msg_buf) * 1e-2f;
 
-          if(verbose) printf("Got relpos %d %f %f\r\n", flags, relpos_heading, relpos_dist);
+          if(verbose) printf("Got relpos %d %d %f %f\r\n", refStationId, flags, relpos_heading, relpos_dist);
 
           if(relPosValid) {
             ground_heading = relpos_heading;
           } else {
-            ground_heading = 361;
+            ground_heading = INVALID_HEADING;
           }
           
           break;
@@ -662,10 +664,9 @@ void packet_handler(void *ep, uint8_t *data, uint16_t len) {
       if(verbose) printf("Got a succesfull RTCM message [%d]\r\n", RTCMgetbitu(gps_rtcm.msg_buf, 24 + 0, 12));
 
       /* Forward the message to inject into the drone */
-      if(!no_rtc_injection){
+      if(rtcm_forward)
         send_gps_inject(gps_rtcm.msg_buf, gps_rtcm.len + 6);
-      }
-      
+
       gps_rtcm.msg_available = false;
     }
   }
@@ -689,8 +690,8 @@ int main(int argc, char** argv) {
   static struct option long_options[] = {
     {"ac_id", required_argument, NULL, 'i'},
     {"endpoint", required_argument, NULL, 'e'},
+    {"rtcm_disable", no_argument, NULL, 'r'},
     {"help", no_argument, NULL, 'h'},
-    {"no_rtc", no_argument, NULL, 'n'},
     {"verbose", no_argument, NULL, 'v'},
     {0, 0, 0, 0}
   };
@@ -699,13 +700,13 @@ int main(int argc, char** argv) {
     " Options :\n"
     "   -i --ac_id [aircraft_id]               Aircraft id\n"
     "   -e --endpoint [endpoint_str]           Endpoint address of the GPS\n"
+    "   -r --rtcm_disable                      Disables RTCM forwarding"
     "   -h --help                              Display this help\n"
-    "   -n --no_rtc                            Do not forward RTC message to the UAV\n"
     "   -v --verbose                           Print verbose information\n";
 
   int c;
   int option_index = 0;
-  while((c = getopt_long(argc, argv, "i:e:hv", long_options, &option_index)) != -1) {
+  while((c = getopt_long(argc, argv, "i:e:rhv", long_options, &option_index)) != -1) {
     switch (c) {
       case 'i':
         ac_id = atoi(optarg);
@@ -738,12 +739,12 @@ int main(int argc, char** argv) {
         }
         break;
 
-      case 'v':
-        verbose = true;
+      case 'r':
+        rtcm_forward = false;
         break;
 
-      case 'n': 
-        no_rtc_injection = true; 
+      case 'v':
+        verbose = true;
         break;
 
       case 'h':
@@ -758,10 +759,6 @@ int main(int argc, char** argv) {
   }
 
   g_main_loop_run(ml);
-
-  /*while(true) {
-    usleep(50000);
-  }*/
 
   return 0;
 }

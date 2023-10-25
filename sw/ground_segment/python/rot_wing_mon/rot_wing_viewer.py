@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2018 TUDelft
+# Copyright (C) 2023 TUDelft
 #
 # This file is part of paparazzi.
 #
@@ -46,7 +46,8 @@ class EscMessage(object):
         self.rpm = float(msg['rpm'])
         self.volt_b = float(msg['bat_volts'])
         self.volt_m = float(msg['motor_volts'])
-        self.temperature = float(msg['temperature']) - 273.15
+        self.temperature = float(msg['temperature'])
+        self.temperature_dev = float(msg['temperature_dev'])
         self.energy = float(msg['energy'])
     
     def get_current(self):
@@ -78,11 +79,26 @@ class EscMessage(object):
         return str(round(self.temperature ,1)) + "C"
     def get_temp_perc(self):
         return self.temperature / 120.0
+    
+    def get_temp_dev(self):
+        if self.temperature_dev < -200:
+            return "xxx"
+        return str(round(self.temperature_dev, 1)) + "C"
+    def get_temp_dev_perc(self):
+        return self.temperature_dev / 120.0
 
     def get_temp_color(self):
         if self.temperature < 0:
             return 0
         elif self.temperature < 60:
+            return 1
+        else:
+            return 0.5
+        
+    def get_temp_dev_color(self):
+        if self.temperature_dev < 0:
+            return 0
+        elif self.temperature_dev < 100:
             return 1
         else:
             return 0.5
@@ -124,7 +140,7 @@ class RotWingFrame(wx.Frame):
             self.motors.fill_from_esc_msg(self.esc)
             wx.CallAfter(self.update)    
 
-        if msg.name == "STAB_ATTITUDE_FULL_INDI":
+        if msg.name == "STAB_ATTITUDE_INDI":
             self.indi = INDIMessage(msg)
             wx.CallAfter(self.update)
 
@@ -225,8 +241,12 @@ class RotWingFrame(wx.Frame):
             self.StatusBox(dc, dx, dy, 1, 0, m.get_current(), m.get_current_perc(), 1)
             self.StatusBox(dc, dx, dy, 2, 0, m.get_rpm(), m.get_rpm_perc(), m.get_rpm_color())
             self.StatusBox(dc, dx, dy, 3, 0, m.get_temp(), m.get_temp_perc(), m.get_temp_color())
+            self.StatusBox(dc, dx, dy, 4, 0, m.get_temp_dev(), m.get_temp_dev_perc(), m.get_temp_dev_color())
             try:
-                self.StatusBox(dc, dx, dy, 4, 0, self.indi.get_u(m.id), self.indi.get_u_perc(m.id), self.indi.get_u_color(m.id))
+                if m.id == 4:
+                    self.StatusBox(dc, dx, dy, 5, 0, self.indi.get_u(8), self.indi.get_u_perc(8), self.indi.get_u_color(8))
+                else:
+                    self.StatusBox(dc, dx, dy, 5, 0, self.indi.get_u(m.id), self.indi.get_u_perc(m.id), self.indi.get_u_color(m.id))
             except:
                 pass
 

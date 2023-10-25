@@ -84,7 +84,10 @@
     <module name="gps"           type="ublox">
       <configure name="GPS_BAUD" value="B115200"/>
     </module>
-    <module name="stabilization" type="indi"/>
+    <module name="stabilization" type="indi">
+      <define name="WLS_N_U" value="4"/>
+      <define name="WLS_N_V" value="4"/>
+    </module>
     <module name="guidance"      type="indi">
       <define name="GUIDANCE_INDI_RC_DEBUG" value="FALSE"/>
       <define name="GUIDANCE_INDI_POS_GAIN" value="0.2"/>
@@ -130,8 +133,7 @@
     <!--Use an airspeed sensor and get the measured airspeed in the messages-->
     <module name="airspeed" type="ms45xx_i2c">
       <define name="MS45XX_I2C_DEV" value="i2c1"/>
-      <define name="MS45XX_AIRSPEED_SCALE" value="2.4"/>
-      <define name="USE_AIRSPEED_MS45XX" value="TRUE"/>
+      <define name="MS45XX_PRESSURE_SCALE" value="1.546"/> <!-- 2.4 / 1.6327 * 1.0521 -->
     </module>
 
     <!--<module name="pwm_meas"/>-->

@@ -73,6 +73,9 @@ static struct {
 #if defined ADC_CHANNEL_CURRENT && !defined SITL
   struct adc_buf current_adc_buf;
 #endif
+#if defined ADC_CHANNEL_CURRENT2 && !defined SITL
+  struct adc_buf current2_adc_buf;
+#endif
 #ifdef MILLIAMP_AT_FULL_THROTTLE
   float nonlin_factor;
 #endif
@@ -103,6 +106,8 @@ void electrical_init(void)
   electrical.current = 0.f;
   electrical.charge  = 0.f;
   electrical.energy  = 0.f;
+  electrical.avg_power = 0;
+  electrical.avg_cnt = 0;
 
   electrical.bat_low = false;
   electrical.bat_critical = false;
@@ -114,6 +119,10 @@ void electrical_init(void)
   /* measure current if available, otherwise estimate it */
 #if defined ADC_CHANNEL_CURRENT && !defined SITL
   adc_buf_channel(ADC_CHANNEL_CURRENT, &electrical_priv.current_adc_buf, DEFAULT_AV_NB_SAMPLE);
+
+#if defined ADC_CHANNEL_CURRENT2 && !defined SITL
+  adc_buf_channel(ADC_CHANNEL_CURRENT2, &electrical_priv.current2_adc_buf, DEFAULT_AV_NB_SAMPLE);
+#endif
 #elif defined MILLIAMP_AT_FULL_THROTTLE
   PRINT_CONFIG_VAR(CURRENT_ESTIMATION_NONLINEARITY)
   electrical_priv.nonlin_factor = CURRENT_ESTIMATION_NONLINEARITY;
@@ -135,6 +144,11 @@ void electrical_periodic(void)
 #ifndef SITL
   int32_t current_adc = electrical_priv.current_adc_buf.sum / electrical_priv.current_adc_buf.av_nb_sample;
   electrical.current = MilliAmpereOfAdc(current_adc) / 1000.f;
+
+#ifdef ADC_CHANNEL_CURRENT2
+  current_adc = electrical_priv.current2_adc_buf.sum / electrical_priv.current2_adc_buf.av_nb_sample;
+  electrical.current += MilliAmpereOfAdc2(current_adc) / 1000.f;
+#endif
 #endif
 #elif defined MILLIAMP_AT_FULL_THROTTLE && defined COMMAND_CURRENT_ESTIMATION
   /*
@@ -212,4 +226,13 @@ void electrical_periodic(void)
     }
   }
 
+  float power = electrical.vsupply * electrical.current;
+  electrical.avg_power += power;
+  electrical.avg_cnt++;
+}
+
+void electrical_avg_reset(float var __attribute__((unused)))
+{
+  electrical.avg_power = 0;
+  electrical.avg_cnt = 0;
 }

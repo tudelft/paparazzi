@@ -92,6 +92,10 @@
 #define SDP3X_SENDER_ID 41
 #endif
 
+#ifndef UAVCAN_SENDER_ID
+#define UAVCAN_SENDER_ID 42
+#endif
+
 /*
  * IDs of airspeed sensors (message 14)
  */
@@ -383,6 +387,10 @@
 #define IMU_NPS_ID 23
 #endif
 
+#ifndef IMU_ICM42688_ID
+#define IMU_ICM42688_ID 24
+#endif
+
 // prefiltering with OneEuro filter
 #ifndef IMU_F1E_ID
 #define IMU_F1E_ID 30
@@ -457,10 +465,22 @@
 #endif
 
 /*
- * IDs of RPM sensors (message 15)
+ * IDs of ACT_FEEDBACK sensors (message 15)
  */
-#ifndef RPM_SENSOR_ID
-#define RPM_SENSOR_ID 1
+#ifndef ACT_FEEDBACK_BOARD_ID
+#define ACT_FEEDBACK_BOARD_ID 1
+#endif
+
+#ifndef ACT_FEEDBACK_DSHOT_ID
+#define ACT_FEEDBACK_DSHOT_ID 2
+#endif
+
+#ifndef ACT_FEEDBACK_UAVCAN_ID
+#define ACT_FEEDBACK_UAVCAN_ID 3
+#endif
+
+#ifndef ACT_FEEDBACK_RPM_SENSOR_ID
+#define ACT_FEEDBACK_RPM_SENSOR_ID 4
 #endif
 
 /*
