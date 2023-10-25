@@ -98,14 +98,16 @@ float pprz_angle_step = 9600. / 45.; // CMD per degree
 static void send_rotating_wing_state(struct transport_tx *trans, struct link_device *dev)
 {
   uint8_t state = 0; // Quadrotor
+  uint16_t adc_pos = 0;
+  int32_t pprz_cmd = 0;
   float angle = eff_sched_var.wing_rotation_rad / M_PI * 180.f;
   pprz_msg_send_ROTATING_WING_STATE(trans, dev, AC_ID,
                           &state,
                           &state,
                           &angle,
                           &rotation_angle_setpoint_deg,
-                          0,
-                          0);
+                          &adc_pos,
+                          &pprz_cmd);
 }
 #endif
 
@@ -121,7 +123,7 @@ static abi_event wing_position_ev;
 static void wing_position_cb(uint8_t sender_id UNUSED, struct act_feedback_t *pos_msg, uint8_t num_act)
 {
   for (int i=0; i<num_act; i++){
-    if (pos_msg[i].set.position && (pos_msg[i].idx =  SERVO_ROTATION_MECH))
+    if (pos_msg[i].set.position && (pos_msg[i].idx == SERVO_ROTATION_MECH))
     {
       // Get wing rotation angle from sensor
       eff_sched_var.wing_rotation_rad = 0.5 * M_PI - pos_msg[i].position;
