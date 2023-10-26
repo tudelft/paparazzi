@@ -108,9 +108,6 @@ float du_max_stab_indi[INDI_NUM_ACT];
 float du_pref_stab_indi[INDI_NUM_ACT];
 float indi_v[INDI_OUTPUTS];
 float *Bwls[INDI_OUTPUTS];
-
-float d_cg = 0.16;
-bool use_vibration_compensation = false;
 int num_iter = 0;
 
 static void lms_estimation(void);
@@ -1086,12 +1083,6 @@ void lms_estimation(void)
   body_accel_i = stateGetAccelBody_i();
   ACCELS_FLOAT_OF_BFP(body_accel_f, *body_accel_i);
 
-  if(use_vibration_compensation) {
-    // Subtract d_cg * q_dot from the x component of the body-frame acceleration
-      body_accel_f.x -= d_cg * angular_acceleration[1];
-    }
-  // Filter the acceleration in x axis
-  update_butterworth_2_low_pass(&acceleration_lowpass_filter, body_accel_f.x);
   // Filter the acceleration in z axis
   update_butterworth_2_low_pass(&acceleration_lowpass_filter, body_accel_f.z);
 
