@@ -593,7 +593,7 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
 
     // Control the airspeed
     if(use_vibration_compensation) {
-      sp_accel_b.x = (speed_sp_b_x - airspeed)====ih_params.speed_gain;
+      sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
     // Subtract d_cg * q_dot from the x component of the body-frame acceleration
       sp_accel_b.x -= d_cg * angular_acceleration[1];
     } else {
