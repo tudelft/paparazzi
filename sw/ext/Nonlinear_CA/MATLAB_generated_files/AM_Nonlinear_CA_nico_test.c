@@ -2,14 +2,14 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains.c
+ * File: AM_Nonlinear_CA_nico_test.c
  *
  * MATLAB Coder version            : 5.4
- * C/C++ source code generated on  : 02-Jun-2023 12:17:03
+ * C/C++ source code generated on  : 26-Oct-2023 15:50:45
  */
 
 /* Include Files */
-#include "Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains.h"
+#include "AM_Nonlinear_CA_nico_test.h"
 #include "rt_nonfinite.h"
 #include "coder_posix_time.h"
 #include "rt_nonfinite.h"
@@ -132,24 +132,49 @@ typedef struct {
   captured_var *CL_aileron;
   captured_var *gain_ailerons;
   captured_var *W_dv_4;
+  captured_var *W_act_motor1;
+  captured_var *gamma_quadratic_du2;
+  captured_var *previous_motor_value1;
   captured_var *W_dv_6;
-  captured_var *W_act_motor;
   captured_var *gamma_quadratic_du;
   captured_var *desired_motor_value;
   captured_var *W_dv_5;
   captured_var *W_dv_3;
   captured_var *W_dv_1;
   captured_var *W_dv_2;
-  captured_var *W_act_tilt_el;
+  captured_var *W_act_motor2;
+  captured_var *previous_motor_value2;
+  captured_var *previous_motor_value3;
+  captured_var *W_act_motor3;
+  captured_var *W_act_motor4;
+  captured_var *previous_motor_value4;
+  captured_var *W_act_tilt_el1;
+  captured_var *previous_el_value1;
   captured_var *desired_el_value;
-  captured_var *W_act_tilt_az;
+  captured_var *W_act_tilt_el2;
+  captured_var *previous_el_value2;
+  captured_var *W_act_tilt_el3;
+  captured_var *previous_el_value3;
+  captured_var *W_act_tilt_el4;
+  captured_var *previous_el_value4;
+  captured_var *W_act_tilt_az1;
+  captured_var *previous_az_value1;
   captured_var *desired_az_value;
+  captured_var *W_act_tilt_az2;
+  captured_var *previous_az_value2;
+  captured_var *W_act_tilt_az3;
+  captured_var *previous_az_value3;
+  captured_var *W_act_tilt_az4;
+  captured_var *previous_az_value4;
   captured_var *W_act_theta;
   captured_var *desired_theta_value;
+  captured_var *previous_theta_value;
   captured_var *W_act_phi;
   captured_var *desired_phi_value;
+  captured_var *previous_phi_value;
   captured_var *W_act_ailerons;
   captured_var *desired_ailerons_value;
+  captured_var *previous_ailerons_value;
 } d_struct_T;
 
 #endif                                 /* typedef_d_struct_T */
@@ -352,8 +377,7 @@ static double freq;
 static bool freq_not_empty;
 static coderTimespec savedTime;
 static bool savedTime_not_empty;
-static bool isInitialized_Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains
-  = false;
+static bool isInitialized_AM_Nonlinear_CA_nico_test = false;
 
 /* Function Declarations */
 static bool BFGSUpdate(int nvar, double Bk[225], const double sk[16], double yk
@@ -366,6 +390,42 @@ static void addBoundToActiveSetMatrix_(k_struct_T *obj, int TYPE, int idx_local)
 static void b_computeGradLag(double workspace[496], int nVar, const double grad
   [16], const int finiteFixed[16], int mFixed, const int finiteLB[16], int mLB,
   const int finiteUB[16], int mUB, const double lambda[31]);
+static double b_compute_cost_and_gradient_fcn(const b_captured_var *dv_global,
+  const captured_var *gain_theta, const captured_var *Cl_alpha, const
+  captured_var *S, const captured_var *V, const captured_var *rho, const
+  captured_var *flight_path_angle, const captured_var *Beta, const captured_var *
+  K_Cd, const captured_var *Cd_zero, const captured_var *gain_phi, const
+  captured_var *K_p_T, const captured_var *gain_motor, const captured_var
+  *gain_el, const captured_var *gain_az, const captured_var *m, const
+  captured_var *I_zz, const captured_var *p, const captured_var *r, const
+  captured_var *I_xx, const captured_var *I_yy, const captured_var *l_z, const
+  captured_var *K_p_M, const captured_var *Cm_zero, const captured_var
+  *wing_chord, const captured_var *l_4, const captured_var *l_3, const
+  captured_var *Cm_alpha, const captured_var *q, const captured_var *l_1, const
+  captured_var *l_2, const captured_var *CL_aileron, const captured_var
+  *gain_ailerons, const captured_var *W_dv_4, const captured_var *W_act_motor1,
+  const captured_var *gamma_quadratic_du2, const captured_var
+  *previous_motor_value1, const captured_var *W_dv_6, const captured_var
+  *gamma_quadratic_du, const captured_var *desired_motor_value, const
+  captured_var *W_dv_5, const captured_var *W_dv_3, const captured_var *W_dv_1,
+  const captured_var *W_dv_2, const captured_var *W_act_motor2, const
+  captured_var *previous_motor_value2, const captured_var *previous_motor_value3,
+  const captured_var *W_act_motor3, const captured_var *W_act_motor4, const
+  captured_var *previous_motor_value4, const captured_var *W_act_tilt_el1, const
+  captured_var *previous_el_value1, const captured_var *desired_el_value, const
+  captured_var *W_act_tilt_el2, const captured_var *previous_el_value2, const
+  captured_var *W_act_tilt_el3, const captured_var *previous_el_value3, const
+  captured_var *W_act_tilt_el4, const captured_var *previous_el_value4, const
+  captured_var *W_act_tilt_az1, const captured_var *previous_az_value1, const
+  captured_var *desired_az_value, const captured_var *W_act_tilt_az2, const
+  captured_var *previous_az_value2, const captured_var *W_act_tilt_az3, const
+  captured_var *previous_az_value3, const captured_var *W_act_tilt_az4, const
+  captured_var *previous_az_value4, const captured_var *W_act_theta, const
+  captured_var *desired_theta_value, const captured_var *previous_theta_value,
+  const captured_var *W_act_phi, const captured_var *desired_phi_value, const
+  captured_var *previous_phi_value, const captured_var *W_act_ailerons, const
+  captured_var *desired_ailerons_value, const captured_var
+  *previous_ailerons_value, const double u_in[15]);
 static void b_driver(const double lb[15], const double ub[15], i_struct_T
                      *TrialState, b_struct_T *MeritFunction, const l_struct_T
                      *FcnEvaluator, e_struct_T *memspace, k_struct_T *WorkingSet,
@@ -413,16 +473,29 @@ static void compute_cost_and_gradient_fcn(const b_captured_var *dv_global, const
   const captured_var *l_3, const captured_var *Cm_alpha, const captured_var *q,
   const captured_var *l_1, const captured_var *l_2, const captured_var
   *CL_aileron, const captured_var *gain_ailerons, const captured_var *W_dv_4,
-  const captured_var *W_dv_6, const captured_var *W_act_motor, const
+  const captured_var *W_act_motor1, const captured_var *gamma_quadratic_du2,
+  const captured_var *previous_motor_value1, const captured_var *W_dv_6, const
   captured_var *gamma_quadratic_du, const captured_var *desired_motor_value,
   const captured_var *W_dv_5, const captured_var *W_dv_3, const captured_var
-  *W_dv_1, const captured_var *W_dv_2, const captured_var *W_act_tilt_el, const
-  captured_var *desired_el_value, const captured_var *W_act_tilt_az, const
-  captured_var *desired_az_value, const captured_var *W_act_theta, const
-  captured_var *desired_theta_value, const captured_var *W_act_phi, const
-  captured_var *desired_phi_value, const captured_var *W_act_ailerons, const
-  captured_var *desired_ailerons_value, const double u_in[15], double *cost,
-  double gradient[15]);
+  *W_dv_1, const captured_var *W_dv_2, const captured_var *W_act_motor2, const
+  captured_var *previous_motor_value2, const captured_var *previous_motor_value3,
+  const captured_var *W_act_motor3, const captured_var *W_act_motor4, const
+  captured_var *previous_motor_value4, const captured_var *W_act_tilt_el1, const
+  captured_var *previous_el_value1, const captured_var *desired_el_value, const
+  captured_var *W_act_tilt_el2, const captured_var *previous_el_value2, const
+  captured_var *W_act_tilt_el3, const captured_var *previous_el_value3, const
+  captured_var *W_act_tilt_el4, const captured_var *previous_el_value4, const
+  captured_var *W_act_tilt_az1, const captured_var *previous_az_value1, const
+  captured_var *desired_az_value, const captured_var *W_act_tilt_az2, const
+  captured_var *previous_az_value2, const captured_var *W_act_tilt_az3, const
+  captured_var *previous_az_value3, const captured_var *W_act_tilt_az4, const
+  captured_var *previous_az_value4, const captured_var *W_act_theta, const
+  captured_var *desired_theta_value, const captured_var *previous_theta_value,
+  const captured_var *W_act_phi, const captured_var *desired_phi_value, const
+  captured_var *previous_phi_value, const captured_var *W_act_ailerons, const
+  captured_var *desired_ailerons_value, const captured_var
+  *previous_ailerons_value, const double u_in[15], double *cost, double
+  gradient[15]);
 static void compute_deltax(const double H[225], i_struct_T *solution, e_struct_T
   *memspace, const f_struct_T *qrmanager, g_struct_T *cholmanager, const
   struct_T *objective, bool alwaysPositiveDef);
@@ -998,6 +1071,492 @@ static void b_computeGradLag(double workspace[496], int nVar, const double grad
 }
 
 /*
+ * Arguments    : const b_captured_var *dv_global
+ *                const captured_var *gain_theta
+ *                const captured_var *Cl_alpha
+ *                const captured_var *S
+ *                const captured_var *V
+ *                const captured_var *rho
+ *                const captured_var *flight_path_angle
+ *                const captured_var *Beta
+ *                const captured_var *K_Cd
+ *                const captured_var *Cd_zero
+ *                const captured_var *gain_phi
+ *                const captured_var *K_p_T
+ *                const captured_var *gain_motor
+ *                const captured_var *gain_el
+ *                const captured_var *gain_az
+ *                const captured_var *m
+ *                const captured_var *I_zz
+ *                const captured_var *p
+ *                const captured_var *r
+ *                const captured_var *I_xx
+ *                const captured_var *I_yy
+ *                const captured_var *l_z
+ *                const captured_var *K_p_M
+ *                const captured_var *Cm_zero
+ *                const captured_var *wing_chord
+ *                const captured_var *l_4
+ *                const captured_var *l_3
+ *                const captured_var *Cm_alpha
+ *                const captured_var *q
+ *                const captured_var *l_1
+ *                const captured_var *l_2
+ *                const captured_var *CL_aileron
+ *                const captured_var *gain_ailerons
+ *                const captured_var *W_dv_4
+ *                const captured_var *W_act_motor1
+ *                const captured_var *gamma_quadratic_du2
+ *                const captured_var *previous_motor_value1
+ *                const captured_var *W_dv_6
+ *                const captured_var *gamma_quadratic_du
+ *                const captured_var *desired_motor_value
+ *                const captured_var *W_dv_5
+ *                const captured_var *W_dv_3
+ *                const captured_var *W_dv_1
+ *                const captured_var *W_dv_2
+ *                const captured_var *W_act_motor2
+ *                const captured_var *previous_motor_value2
+ *                const captured_var *previous_motor_value3
+ *                const captured_var *W_act_motor3
+ *                const captured_var *W_act_motor4
+ *                const captured_var *previous_motor_value4
+ *                const captured_var *W_act_tilt_el1
+ *                const captured_var *previous_el_value1
+ *                const captured_var *desired_el_value
+ *                const captured_var *W_act_tilt_el2
+ *                const captured_var *previous_el_value2
+ *                const captured_var *W_act_tilt_el3
+ *                const captured_var *previous_el_value3
+ *                const captured_var *W_act_tilt_el4
+ *                const captured_var *previous_el_value4
+ *                const captured_var *W_act_tilt_az1
+ *                const captured_var *previous_az_value1
+ *                const captured_var *desired_az_value
+ *                const captured_var *W_act_tilt_az2
+ *                const captured_var *previous_az_value2
+ *                const captured_var *W_act_tilt_az3
+ *                const captured_var *previous_az_value3
+ *                const captured_var *W_act_tilt_az4
+ *                const captured_var *previous_az_value4
+ *                const captured_var *W_act_theta
+ *                const captured_var *desired_theta_value
+ *                const captured_var *previous_theta_value
+ *                const captured_var *W_act_phi
+ *                const captured_var *desired_phi_value
+ *                const captured_var *previous_phi_value
+ *                const captured_var *W_act_ailerons
+ *                const captured_var *desired_ailerons_value
+ *                const captured_var *previous_ailerons_value
+ *                const double u_in[15]
+ * Return Type  : double
+ */
+static double b_compute_cost_and_gradient_fcn(const b_captured_var *dv_global,
+  const captured_var *gain_theta, const captured_var *Cl_alpha, const
+  captured_var *S, const captured_var *V, const captured_var *rho, const
+  captured_var *flight_path_angle, const captured_var *Beta, const captured_var *
+  K_Cd, const captured_var *Cd_zero, const captured_var *gain_phi, const
+  captured_var *K_p_T, const captured_var *gain_motor, const captured_var
+  *gain_el, const captured_var *gain_az, const captured_var *m, const
+  captured_var *I_zz, const captured_var *p, const captured_var *r, const
+  captured_var *I_xx, const captured_var *I_yy, const captured_var *l_z, const
+  captured_var *K_p_M, const captured_var *Cm_zero, const captured_var
+  *wing_chord, const captured_var *l_4, const captured_var *l_3, const
+  captured_var *Cm_alpha, const captured_var *q, const captured_var *l_1, const
+  captured_var *l_2, const captured_var *CL_aileron, const captured_var
+  *gain_ailerons, const captured_var *W_dv_4, const captured_var *W_act_motor1,
+  const captured_var *gamma_quadratic_du2, const captured_var
+  *previous_motor_value1, const captured_var *W_dv_6, const captured_var
+  *gamma_quadratic_du, const captured_var *desired_motor_value, const
+  captured_var *W_dv_5, const captured_var *W_dv_3, const captured_var *W_dv_1,
+  const captured_var *W_dv_2, const captured_var *W_act_motor2, const
+  captured_var *previous_motor_value2, const captured_var *previous_motor_value3,
+  const captured_var *W_act_motor3, const captured_var *W_act_motor4, const
+  captured_var *previous_motor_value4, const captured_var *W_act_tilt_el1, const
+  captured_var *previous_el_value1, const captured_var *desired_el_value, const
+  captured_var *W_act_tilt_el2, const captured_var *previous_el_value2, const
+  captured_var *W_act_tilt_el3, const captured_var *previous_el_value3, const
+  captured_var *W_act_tilt_el4, const captured_var *previous_el_value4, const
+  captured_var *W_act_tilt_az1, const captured_var *previous_az_value1, const
+  captured_var *desired_az_value, const captured_var *W_act_tilt_az2, const
+  captured_var *previous_az_value2, const captured_var *W_act_tilt_az3, const
+  captured_var *previous_az_value3, const captured_var *W_act_tilt_az4, const
+  captured_var *previous_az_value4, const captured_var *W_act_theta, const
+  captured_var *desired_theta_value, const captured_var *previous_theta_value,
+  const captured_var *W_act_phi, const captured_var *desired_phi_value, const
+  captured_var *previous_phi_value, const captured_var *W_act_ailerons, const
+  captured_var *desired_ailerons_value, const captured_var
+  *previous_ailerons_value, const double u_in[15])
+{
+  double a;
+  double a_tmp;
+  double ab_sigma_1_tmp;
+  double b_a;
+  double b_a_tmp;
+  double b_sigma_1_tmp;
+  double b_sigma_1_tmp_tmp;
+  double b_sigma_2_tmp;
+  double b_sigma_3_tmp;
+  double bb_sigma_1_tmp;
+  double c_a;
+  double c_a_tmp;
+  double c_sigma_1_tmp;
+  double c_sigma_1_tmp_tmp;
+  double c_sigma_3_tmp;
+  double cb_sigma_1_tmp;
+  double d_a;
+  double d_sigma_1_tmp;
+  double d_sigma_1_tmp_tmp;
+  double d_sigma_3_tmp;
+  double db_sigma_1_tmp;
+  double e_a;
+  double e_sigma_1_tmp;
+  double e_sigma_1_tmp_tmp;
+  double e_sigma_3_tmp;
+  double eb_sigma_1_tmp;
+  double f_a;
+  double f_sigma_1_tmp;
+  double f_sigma_3_tmp;
+  double fb_sigma_1_tmp;
+  double g_sigma_1_tmp;
+  double g_sigma_3_tmp;
+  double gb_sigma_1_tmp;
+  double h_sigma_1_tmp;
+  double h_sigma_3_tmp;
+  double hb_sigma_1_tmp;
+  double i_sigma_1_tmp;
+  double ib_sigma_1_tmp;
+  double j_sigma_1_tmp;
+  double jb_sigma_1_tmp;
+  double k_sigma_1_tmp;
+  double kb_sigma_1_tmp;
+  double l_sigma_1_tmp;
+  double lb_sigma_1_tmp;
+  double m_sigma_1_tmp;
+  double mb_sigma_1_tmp;
+  double n_sigma_1_tmp;
+  double o_sigma_1_tmp;
+  double p_sigma_1_tmp;
+  double q_sigma_1_tmp;
+  double r_sigma_1_tmp;
+  double s_sigma_1_tmp;
+  double sigma_1;
+  double sigma_1_tmp;
+  double sigma_1_tmp_tmp;
+  double sigma_1_tmp_tmp_tmp;
+  double sigma_2;
+  double sigma_2_tmp;
+  double sigma_3;
+  double sigma_3_tmp;
+  double sigma_4;
+  double sigma_5;
+  double sigma_7;
+  double t_sigma_1_tmp;
+  double u_sigma_1_tmp;
+  double v_sigma_1_tmp;
+  double w_sigma_1_tmp;
+  double x_sigma_1_tmp;
+  double y_sigma_1_tmp;
+  sigma_1_tmp_tmp_tmp = u_in[12] * gain_theta->contents;
+  sigma_1_tmp_tmp = flight_path_angle->contents - sigma_1_tmp_tmp_tmp;
+  sigma_1_tmp = cos(sigma_1_tmp_tmp);
+  b_sigma_1_tmp = sin(sigma_1_tmp_tmp);
+  c_sigma_1_tmp = cos(Beta->contents);
+  d_sigma_1_tmp = cos(sigma_1_tmp_tmp_tmp);
+  b_sigma_1_tmp_tmp = u_in[13] * gain_phi->contents;
+  e_sigma_1_tmp = cos(b_sigma_1_tmp_tmp);
+  f_sigma_1_tmp = sin(sigma_1_tmp_tmp_tmp);
+  c_sigma_1_tmp_tmp = u_in[4] * gain_el->contents;
+  g_sigma_1_tmp = cos(c_sigma_1_tmp_tmp);
+  d_sigma_1_tmp_tmp = u_in[5] * gain_el->contents;
+  h_sigma_1_tmp = cos(d_sigma_1_tmp_tmp);
+  e_sigma_1_tmp_tmp = u_in[6] * gain_el->contents;
+  sigma_7 = cos(e_sigma_1_tmp_tmp);
+  sigma_1_tmp_tmp_tmp = u_in[7] * gain_el->contents;
+  i_sigma_1_tmp = cos(sigma_1_tmp_tmp_tmp);
+  j_sigma_1_tmp = sin(b_sigma_1_tmp_tmp);
+  k_sigma_1_tmp = sin(Beta->contents);
+  l_sigma_1_tmp = sin(c_sigma_1_tmp_tmp);
+  m_sigma_1_tmp = sin(d_sigma_1_tmp_tmp);
+  n_sigma_1_tmp = sin(e_sigma_1_tmp_tmp);
+  o_sigma_1_tmp = sin(sigma_1_tmp_tmp_tmp);
+  b_sigma_1_tmp_tmp = u_in[8] * gain_az->contents;
+  p_sigma_1_tmp = sin(b_sigma_1_tmp_tmp);
+  c_sigma_1_tmp_tmp = u_in[9] * gain_az->contents;
+  q_sigma_1_tmp = sin(c_sigma_1_tmp_tmp);
+  d_sigma_1_tmp_tmp = u_in[10] * gain_az->contents;
+  r_sigma_1_tmp = sin(d_sigma_1_tmp_tmp);
+  e_sigma_1_tmp_tmp = u_in[11] * gain_az->contents;
+  s_sigma_1_tmp = sin(e_sigma_1_tmp_tmp);
+  t_sigma_1_tmp = cos(b_sigma_1_tmp_tmp);
+  u_sigma_1_tmp = cos(c_sigma_1_tmp_tmp);
+  v_sigma_1_tmp = cos(d_sigma_1_tmp_tmp);
+  w_sigma_1_tmp = cos(e_sigma_1_tmp_tmp);
+  a_tmp = V->contents;
+  b_a_tmp = Cl_alpha->contents;
+  a = gain_theta->contents;
+  b_a = flight_path_angle->contents;
+  c_a = gain_theta->contents;
+  d_a = flight_path_angle->contents;
+  c_a_tmp = gain_motor->contents;
+  e_a = gain_theta->contents;
+  f_a = flight_path_angle->contents;
+  x_sigma_1_tmp = u_in[0] * u_in[0];
+  y_sigma_1_tmp = u_in[1] * u_in[1];
+  ab_sigma_1_tmp = u_in[2] * u_in[2];
+  bb_sigma_1_tmp = u_in[3] * u_in[3];
+  cb_sigma_1_tmp = ((l_sigma_1_tmp * x_sigma_1_tmp + m_sigma_1_tmp *
+                     y_sigma_1_tmp) + n_sigma_1_tmp * ab_sigma_1_tmp) +
+    o_sigma_1_tmp * bb_sigma_1_tmp;
+  db_sigma_1_tmp = a_tmp * a_tmp;
+  eb_sigma_1_tmp = b_a_tmp * b_a_tmp;
+  fb_sigma_1_tmp = K_Cd->contents * eb_sigma_1_tmp;
+  gb_sigma_1_tmp = Cl_alpha->contents * S->contents * db_sigma_1_tmp *
+    rho->contents;
+  hb_sigma_1_tmp = S->contents * db_sigma_1_tmp * rho->contents;
+  ib_sigma_1_tmp = fb_sigma_1_tmp * (u_in[12] * u_in[12]);
+  eb_sigma_1_tmp = 2.0 * K_Cd->contents * eb_sigma_1_tmp * u_in[12] *
+    flight_path_angle->contents * gain_theta->contents;
+  b_sigma_1_tmp_tmp = c_a_tmp * c_a_tmp;
+  jb_sigma_1_tmp = K_p_T->contents * b_sigma_1_tmp_tmp;
+  sigma_1_tmp_tmp_tmp = hb_sigma_1_tmp * b_sigma_1_tmp * c_sigma_1_tmp;
+  kb_sigma_1_tmp = gb_sigma_1_tmp * sigma_1_tmp * sigma_1_tmp_tmp / 2.0;
+  c_sigma_1_tmp_tmp = jb_sigma_1_tmp * j_sigma_1_tmp;
+  lb_sigma_1_tmp = jb_sigma_1_tmp * e_sigma_1_tmp;
+  gb_sigma_1_tmp = gb_sigma_1_tmp * b_sigma_1_tmp * sigma_1_tmp_tmp / 2.0;
+  mb_sigma_1_tmp = jb_sigma_1_tmp * d_sigma_1_tmp;
+  sigma_1 = dv_global->contents[0] - (((((d_sigma_1_tmp * (gb_sigma_1_tmp -
+    hb_sigma_1_tmp * sigma_1_tmp * c_sigma_1_tmp * (((ib_sigma_1_tmp * (a * a) -
+    eb_sigma_1_tmp) + fb_sigma_1_tmp * (b_a * b_a)) + Cd_zero->contents) / 2.0)
+    + e_sigma_1_tmp * f_sigma_1_tmp * (kb_sigma_1_tmp + sigma_1_tmp_tmp_tmp *
+    (((ib_sigma_1_tmp * (c_a * c_a) - eb_sigma_1_tmp) + fb_sigma_1_tmp * (d_a *
+    d_a)) + Cd_zero->contents) / 2.0)) - mb_sigma_1_tmp * cb_sigma_1_tmp) -
+    lb_sigma_1_tmp * f_sigma_1_tmp * (((g_sigma_1_tmp * t_sigma_1_tmp *
+    x_sigma_1_tmp + h_sigma_1_tmp * u_sigma_1_tmp * y_sigma_1_tmp) + sigma_7 *
+    v_sigma_1_tmp * ab_sigma_1_tmp) + i_sigma_1_tmp * w_sigma_1_tmp *
+    bb_sigma_1_tmp)) + c_sigma_1_tmp_tmp * f_sigma_1_tmp * (((g_sigma_1_tmp *
+    p_sigma_1_tmp * x_sigma_1_tmp + h_sigma_1_tmp * q_sigma_1_tmp *
+    y_sigma_1_tmp) + sigma_7 * r_sigma_1_tmp * ab_sigma_1_tmp) + i_sigma_1_tmp *
+    s_sigma_1_tmp * bb_sigma_1_tmp)) - hb_sigma_1_tmp * j_sigma_1_tmp *
+    f_sigma_1_tmp * k_sigma_1_tmp * (((ib_sigma_1_tmp * (e_a * e_a) -
+    eb_sigma_1_tmp) + fb_sigma_1_tmp * (f_a * f_a)) + Cd_zero->contents) / 2.0) /
+    m->contents;
+  a = gain_theta->contents;
+  b_a = flight_path_angle->contents;
+  c_a = gain_theta->contents;
+  d_a = flight_path_angle->contents;
+  sigma_2_tmp = ((cos(u_in[4] * gain_el->contents) * cos(u_in[8] *
+    gain_az->contents) * (u_in[0] * u_in[0]) + cos(u_in[5] * gain_el->contents) *
+                  cos(u_in[9] * gain_az->contents) * (u_in[1] * u_in[1])) + cos
+                 (u_in[6] * gain_el->contents) * cos(u_in[10] *
+    gain_az->contents) * (u_in[2] * u_in[2])) + cos(u_in[7] * gain_el->contents)
+    * cos(u_in[11] * gain_az->contents) * (u_in[3] * u_in[3]);
+  b_sigma_2_tmp = ((cos(u_in[4] * gain_el->contents) * sin(u_in[8] *
+    gain_az->contents) * (u_in[0] * u_in[0]) + cos(u_in[5] * gain_el->contents) *
+                    sin(u_in[9] * gain_az->contents) * (u_in[1] * u_in[1])) +
+                   cos(u_in[6] * gain_el->contents) * sin(u_in[10] *
+    gain_az->contents) * (u_in[2] * u_in[2])) + cos(u_in[7] * gain_el->contents)
+    * sin(u_in[11] * gain_az->contents) * (u_in[3] * u_in[3]);
+  sigma_2 = dv_global->contents[1] + (((j_sigma_1_tmp * (kb_sigma_1_tmp +
+    sigma_1_tmp_tmp_tmp * (((ib_sigma_1_tmp * (a * a) - eb_sigma_1_tmp) +
+    fb_sigma_1_tmp * (b_a * b_a)) + Cd_zero->contents) / 2.0) -
+    c_sigma_1_tmp_tmp * sigma_2_tmp) - lb_sigma_1_tmp * b_sigma_2_tmp) +
+    hb_sigma_1_tmp * e_sigma_1_tmp * k_sigma_1_tmp * (((ib_sigma_1_tmp * (c_a *
+    c_a) - eb_sigma_1_tmp) + fb_sigma_1_tmp * (d_a * d_a)) + Cd_zero->contents) /
+    2.0) / m->contents;
+  c_sigma_1_tmp_tmp = 2.0 * K_p_T->contents;
+  d_sigma_1_tmp_tmp = 2.0 * K_p_M->contents;
+  sigma_1_tmp_tmp_tmp = Cm_alpha->contents * S->contents;
+  e_sigma_1_tmp_tmp = 2.0 * I_yy->contents;
+  sigma_1_tmp_tmp = 2.0 * I_xx->contents;
+  sigma_3_tmp = 2.0 * I_zz->contents;
+  a_tmp = c_sigma_1_tmp_tmp * x_sigma_1_tmp * b_sigma_1_tmp_tmp;
+  b_a_tmp = c_sigma_1_tmp_tmp * y_sigma_1_tmp * b_sigma_1_tmp_tmp;
+  c_a_tmp = c_sigma_1_tmp_tmp * ab_sigma_1_tmp * b_sigma_1_tmp_tmp;
+  c_sigma_1_tmp_tmp = c_sigma_1_tmp_tmp * bb_sigma_1_tmp * b_sigma_1_tmp_tmp;
+  b_sigma_3_tmp = d_sigma_1_tmp_tmp * x_sigma_1_tmp * b_sigma_1_tmp_tmp;
+  c_sigma_3_tmp = d_sigma_1_tmp_tmp * y_sigma_1_tmp * b_sigma_1_tmp_tmp;
+  d_sigma_3_tmp = d_sigma_1_tmp_tmp * ab_sigma_1_tmp * b_sigma_1_tmp_tmp;
+  d_sigma_1_tmp_tmp = d_sigma_1_tmp_tmp * bb_sigma_1_tmp * b_sigma_1_tmp_tmp;
+  e_sigma_3_tmp = a_tmp * l_z->contents;
+  f_sigma_3_tmp = b_a_tmp * l_z->contents;
+  g_sigma_3_tmp = c_a_tmp * l_z->contents;
+  h_sigma_3_tmp = c_sigma_1_tmp_tmp * l_z->contents;
+  sigma_3 = ((((((((((((((((sigma_3_tmp * p->contents * r->contents -
+    sigma_1_tmp_tmp * p->contents * r->contents) - e_sigma_1_tmp_tmp *
+    dv_global->contents[4]) + e_sigma_3_tmp * l_sigma_1_tmp) + f_sigma_3_tmp *
+    m_sigma_1_tmp) + g_sigma_3_tmp * n_sigma_1_tmp) + h_sigma_3_tmp *
+                       o_sigma_1_tmp) - b_sigma_3_tmp * g_sigma_1_tmp *
+                      p_sigma_1_tmp) + c_sigma_3_tmp * h_sigma_1_tmp *
+                     q_sigma_1_tmp) - d_sigma_3_tmp * sigma_7 * r_sigma_1_tmp) +
+                   d_sigma_1_tmp_tmp * i_sigma_1_tmp * s_sigma_1_tmp) +
+                  Cm_zero->contents * S->contents * db_sigma_1_tmp *
+                  rho->contents * wing_chord->contents) + a_tmp * l_4->contents *
+                 g_sigma_1_tmp * t_sigma_1_tmp) + b_a_tmp * l_4->contents *
+                h_sigma_1_tmp * u_sigma_1_tmp) - c_a_tmp * l_3->contents *
+               sigma_7 * v_sigma_1_tmp) - c_sigma_1_tmp_tmp * l_3->contents *
+              i_sigma_1_tmp * w_sigma_1_tmp) - sigma_1_tmp_tmp_tmp *
+             db_sigma_1_tmp * flight_path_angle->contents * rho->contents *
+             wing_chord->contents) + sigma_1_tmp_tmp_tmp * u_in[12] *
+    db_sigma_1_tmp * gain_theta->contents * rho->contents * wing_chord->contents;
+  sigma_4 = ((((((((((((((e_sigma_1_tmp_tmp * q->contents * r->contents -
+    sigma_1_tmp_tmp * dv_global->contents[3]) - sigma_3_tmp * q->contents *
+    r->contents) + b_sigma_3_tmp * l_sigma_1_tmp) - c_sigma_3_tmp *
+                       m_sigma_1_tmp) + d_sigma_3_tmp * n_sigma_1_tmp) -
+                     d_sigma_1_tmp_tmp * o_sigma_1_tmp) + a_tmp * l_1->contents *
+                    g_sigma_1_tmp * t_sigma_1_tmp) - b_a_tmp * l_1->contents *
+                   h_sigma_1_tmp * u_sigma_1_tmp) - c_a_tmp * l_2->contents *
+                  sigma_7 * v_sigma_1_tmp) + c_sigma_1_tmp_tmp * l_2->contents *
+                 i_sigma_1_tmp * w_sigma_1_tmp) + e_sigma_3_tmp * g_sigma_1_tmp *
+                p_sigma_1_tmp) + f_sigma_3_tmp * h_sigma_1_tmp * q_sigma_1_tmp)
+              + g_sigma_3_tmp * sigma_7 * r_sigma_1_tmp) + h_sigma_3_tmp *
+             i_sigma_1_tmp * s_sigma_1_tmp) + CL_aileron->contents * S->contents
+    * db_sigma_1_tmp * u_in[14] * gain_ailerons->contents * rho->contents;
+  sigma_1_tmp_tmp_tmp = K_p_T->contents * x_sigma_1_tmp * b_sigma_1_tmp_tmp;
+  c_sigma_1_tmp_tmp = K_p_T->contents * y_sigma_1_tmp * b_sigma_1_tmp_tmp;
+  d_sigma_1_tmp_tmp = K_p_T->contents * ab_sigma_1_tmp * b_sigma_1_tmp_tmp;
+  e_sigma_1_tmp_tmp = K_p_T->contents * bb_sigma_1_tmp * b_sigma_1_tmp_tmp;
+  sigma_5 = (((((((((((((I_zz->contents * dv_global->contents[5] -
+    I_xx->contents * p->contents * q->contents) + I_yy->contents * p->contents *
+                        q->contents) + sigma_1_tmp_tmp_tmp * l_1->contents *
+                       l_sigma_1_tmp) - c_sigma_1_tmp_tmp * l_1->contents *
+                      m_sigma_1_tmp) - d_sigma_1_tmp_tmp * l_2->contents *
+                     n_sigma_1_tmp) + e_sigma_1_tmp_tmp * l_2->contents *
+                    o_sigma_1_tmp) - K_p_M->contents * x_sigma_1_tmp *
+                   b_sigma_1_tmp_tmp * g_sigma_1_tmp * t_sigma_1_tmp) +
+                  K_p_M->contents * y_sigma_1_tmp * b_sigma_1_tmp_tmp *
+                  h_sigma_1_tmp * u_sigma_1_tmp) - K_p_M->contents *
+                 ab_sigma_1_tmp * b_sigma_1_tmp_tmp * sigma_7 * v_sigma_1_tmp) +
+                K_p_M->contents * bb_sigma_1_tmp * b_sigma_1_tmp_tmp *
+                i_sigma_1_tmp * w_sigma_1_tmp) - sigma_1_tmp_tmp_tmp *
+               l_4->contents * g_sigma_1_tmp * p_sigma_1_tmp) -
+              c_sigma_1_tmp_tmp * l_4->contents * h_sigma_1_tmp * q_sigma_1_tmp)
+             + d_sigma_1_tmp_tmp * l_3->contents * sigma_7 * r_sigma_1_tmp) +
+    e_sigma_1_tmp_tmp * l_3->contents * i_sigma_1_tmp * s_sigma_1_tmp;
+  a = gain_theta->contents;
+  b_a = flight_path_angle->contents;
+  sigma_1_tmp_tmp_tmp = hb_sigma_1_tmp * (((ib_sigma_1_tmp * (a * a) -
+    eb_sigma_1_tmp) + fb_sigma_1_tmp * (b_a * b_a)) + Cd_zero->contents);
+  sigma_7 = (100.0 * (((((f_sigma_1_tmp * (sigma_1_tmp_tmp_tmp * sigma_1_tmp *
+    c_sigma_1_tmp / 2.0 - gb_sigma_1_tmp) + e_sigma_1_tmp * d_sigma_1_tmp *
+    (kb_sigma_1_tmp + sigma_1_tmp_tmp_tmp * b_sigma_1_tmp * c_sigma_1_tmp / 2.0))
+    + jb_sigma_1_tmp * f_sigma_1_tmp * cb_sigma_1_tmp) - lb_sigma_1_tmp *
+                        d_sigma_1_tmp * sigma_2_tmp) + mb_sigma_1_tmp *
+                       j_sigma_1_tmp * b_sigma_2_tmp) - sigma_1_tmp_tmp_tmp *
+                      d_sigma_1_tmp * j_sigma_1_tmp * k_sigma_1_tmp / 2.0) /
+             m->contents - 100.0 * dv_global->contents[2]) + 981.0;
+  a_tmp = W_act_motor1->contents;
+  b_a_tmp = desired_motor_value->contents / gain_motor->contents;
+  a = u_in[0] - b_a_tmp;
+  c_a_tmp = W_act_motor2->contents;
+  b_a = u_in[1] - b_a_tmp;
+  c_a = W_act_motor3->contents;
+  d_a = u_in[2] - b_a_tmp;
+  c_sigma_1_tmp_tmp = W_act_motor4->contents;
+  e_a = u_in[3] - b_a_tmp;
+  b_a_tmp = W_act_phi->contents;
+  f_a = u_in[13] - desired_phi_value->contents / gain_phi->contents;
+  d_sigma_1_tmp_tmp = W_act_theta->contents;
+  i_sigma_1_tmp = u_in[12] - desired_theta_value->contents /
+    gain_theta->contents;
+  e_sigma_1_tmp_tmp = W_act_tilt_el1->contents;
+  d_sigma_3_tmp = desired_el_value->contents / gain_el->contents;
+  l_sigma_1_tmp = u_in[4] - d_sigma_3_tmp;
+  sigma_1_tmp_tmp = W_act_tilt_el2->contents;
+  m_sigma_1_tmp = u_in[5] - d_sigma_3_tmp;
+  sigma_3_tmp = W_act_tilt_el3->contents;
+  n_sigma_1_tmp = u_in[6] - d_sigma_3_tmp;
+  b_sigma_3_tmp = W_act_tilt_el4->contents;
+  f_sigma_1_tmp = u_in[7] - d_sigma_3_tmp;
+  d_sigma_3_tmp = W_act_ailerons->contents;
+  j_sigma_1_tmp = u_in[14] - desired_ailerons_value->contents /
+    gain_ailerons->contents;
+  f_sigma_3_tmp = W_act_tilt_az1->contents;
+  sigma_1_tmp_tmp_tmp = desired_az_value->contents / gain_az->contents;
+  k_sigma_1_tmp = u_in[8] - sigma_1_tmp_tmp_tmp;
+  h_sigma_3_tmp = W_act_tilt_az2->contents;
+  sigma_1_tmp = u_in[9] - sigma_1_tmp_tmp_tmp;
+  sigma_2_tmp = W_act_tilt_az3->contents;
+  b_sigma_1_tmp = u_in[10] - sigma_1_tmp_tmp_tmp;
+  mb_sigma_1_tmp = W_act_tilt_az4->contents;
+  eb_sigma_1_tmp = u_in[11] - sigma_1_tmp_tmp_tmp;
+  fb_sigma_1_tmp = u_in[0] - previous_motor_value1->contents /
+    gain_motor->contents;
+  hb_sigma_1_tmp = u_in[1] - previous_motor_value2->contents /
+    gain_motor->contents;
+  ib_sigma_1_tmp = u_in[2] - previous_motor_value3->contents /
+    gain_motor->contents;
+  jb_sigma_1_tmp = u_in[3] - previous_motor_value4->contents /
+    gain_motor->contents;
+  kb_sigma_1_tmp = u_in[13] - previous_phi_value->contents / gain_phi->contents;
+  lb_sigma_1_tmp = u_in[12] - previous_theta_value->contents /
+    gain_theta->contents;
+  w_sigma_1_tmp = u_in[4] - previous_el_value1->contents / gain_el->contents;
+  x_sigma_1_tmp = u_in[5] - previous_el_value2->contents / gain_el->contents;
+  y_sigma_1_tmp = u_in[6] - previous_el_value3->contents / gain_el->contents;
+  ab_sigma_1_tmp = u_in[7] - previous_el_value4->contents / gain_el->contents;
+  bb_sigma_1_tmp = u_in[14] - previous_ailerons_value->contents /
+    gain_ailerons->contents;
+  gb_sigma_1_tmp = u_in[8] - previous_az_value1->contents / gain_az->contents;
+  v_sigma_1_tmp = u_in[9] - previous_az_value2->contents / gain_az->contents;
+  b_sigma_1_tmp_tmp = u_in[10] - previous_az_value3->contents /
+    gain_az->contents;
+  u_sigma_1_tmp = u_in[11] - previous_az_value4->contents / gain_az->contents;
+  cb_sigma_1_tmp = W_dv_1->contents;
+  o_sigma_1_tmp = W_dv_2->contents;
+  p_sigma_1_tmp = W_dv_3->contents;
+  q_sigma_1_tmp = W_dv_4->contents;
+  r_sigma_1_tmp = I_xx->contents;
+  s_sigma_1_tmp = W_dv_5->contents;
+  t_sigma_1_tmp = I_yy->contents;
+  g_sigma_1_tmp = W_dv_6->contents;
+  h_sigma_1_tmp = I_zz->contents;
+  b_sigma_2_tmp = a_tmp * a_tmp;
+  db_sigma_1_tmp = c_a_tmp * c_a_tmp;
+  g_sigma_3_tmp = c_sigma_1_tmp_tmp * c_sigma_1_tmp_tmp;
+  e_sigma_3_tmp = b_a_tmp * b_a_tmp;
+  c_sigma_3_tmp = d_sigma_1_tmp_tmp * d_sigma_1_tmp_tmp;
+  c_a_tmp = e_sigma_1_tmp_tmp * e_sigma_1_tmp_tmp;
+  b_a_tmp = sigma_1_tmp_tmp * sigma_1_tmp_tmp;
+  a_tmp = sigma_3_tmp * sigma_3_tmp;
+  sigma_3_tmp = b_sigma_3_tmp * b_sigma_3_tmp;
+  sigma_1_tmp_tmp = d_sigma_3_tmp * d_sigma_3_tmp;
+  e_sigma_1_tmp_tmp = f_sigma_3_tmp * f_sigma_3_tmp;
+  d_sigma_1_tmp_tmp = h_sigma_3_tmp * h_sigma_3_tmp;
+  c_sigma_1_tmp_tmp = sigma_2_tmp * sigma_2_tmp;
+  sigma_1_tmp_tmp_tmp = mb_sigma_1_tmp * mb_sigma_1_tmp;
+  return ((((((gamma_quadratic_du->contents * ((((((((((((((b_sigma_2_tmp * (a *
+    a) + db_sigma_1_tmp * (b_a * b_a)) + c_a * c_a * (d_a * d_a)) +
+    g_sigma_3_tmp * (e_a * e_a)) + e_sigma_3_tmp * (f_a * f_a)) + c_sigma_3_tmp *
+    (i_sigma_1_tmp * i_sigma_1_tmp)) + c_a_tmp * (l_sigma_1_tmp * l_sigma_1_tmp))
+    + b_a_tmp * (m_sigma_1_tmp * m_sigma_1_tmp)) + a_tmp * (n_sigma_1_tmp *
+    n_sigma_1_tmp)) + sigma_3_tmp * (f_sigma_1_tmp * f_sigma_1_tmp)) +
+    sigma_1_tmp_tmp * (j_sigma_1_tmp * j_sigma_1_tmp)) + e_sigma_1_tmp_tmp *
+    (k_sigma_1_tmp * k_sigma_1_tmp)) + d_sigma_1_tmp_tmp * (sigma_1_tmp *
+    sigma_1_tmp)) + c_sigma_1_tmp_tmp * (b_sigma_1_tmp * b_sigma_1_tmp)) +
+    sigma_1_tmp_tmp_tmp * (eb_sigma_1_tmp * eb_sigma_1_tmp)) +
+               gamma_quadratic_du2->contents * ((((((((((((((b_sigma_2_tmp *
+    (fb_sigma_1_tmp * fb_sigma_1_tmp) + db_sigma_1_tmp * (hb_sigma_1_tmp *
+    hb_sigma_1_tmp)) + b_sigma_2_tmp * (ib_sigma_1_tmp * ib_sigma_1_tmp)) +
+    g_sigma_3_tmp * (jb_sigma_1_tmp * jb_sigma_1_tmp)) + e_sigma_3_tmp *
+    (kb_sigma_1_tmp * kb_sigma_1_tmp)) + c_sigma_3_tmp * (lb_sigma_1_tmp *
+    lb_sigma_1_tmp)) + c_a_tmp * (w_sigma_1_tmp * w_sigma_1_tmp)) + b_a_tmp *
+    (x_sigma_1_tmp * x_sigma_1_tmp)) + a_tmp * (y_sigma_1_tmp * y_sigma_1_tmp))
+    + sigma_3_tmp * (ab_sigma_1_tmp * ab_sigma_1_tmp)) + sigma_1_tmp_tmp *
+    (bb_sigma_1_tmp * bb_sigma_1_tmp)) + e_sigma_1_tmp_tmp * (gb_sigma_1_tmp *
+    gb_sigma_1_tmp)) + d_sigma_1_tmp_tmp * (v_sigma_1_tmp * v_sigma_1_tmp)) +
+    c_sigma_1_tmp_tmp * (b_sigma_1_tmp_tmp * b_sigma_1_tmp_tmp)) +
+    sigma_1_tmp_tmp_tmp * (u_sigma_1_tmp * u_sigma_1_tmp))) + cb_sigma_1_tmp *
+              cb_sigma_1_tmp * (sigma_1 * sigma_1)) + o_sigma_1_tmp *
+             o_sigma_1_tmp * (sigma_2 * sigma_2)) + p_sigma_1_tmp *
+            p_sigma_1_tmp * (sigma_7 * sigma_7) / 10000.0) + q_sigma_1_tmp *
+           q_sigma_1_tmp * (sigma_4 * sigma_4) / (4.0 * (r_sigma_1_tmp *
+             r_sigma_1_tmp))) + s_sigma_1_tmp * s_sigma_1_tmp * (sigma_3 *
+           sigma_3) / (4.0 * (t_sigma_1_tmp * t_sigma_1_tmp))) + g_sigma_1_tmp *
+    g_sigma_1_tmp * (sigma_5 * sigma_5) / (h_sigma_1_tmp * h_sigma_1_tmp);
+}
+
+/*
  * Arguments    : const double lb[15]
  *                const double ub[15]
  *                i_struct_T *TrialState
@@ -1215,7 +1774,7 @@ static void b_driver(const double lb[15], const double ub[15], i_struct_T
         int exitg1;
         do {
           exitg1 = 0;
-          if (TrialState->FunctionEvaluations < 2000 && toc() <= 5e-3) {
+          if (TrialState->FunctionEvaluations < 75 && toc() <= 5e-3) {
             if (evalWellDefined && (phi_alpha <= MeritFunction->phi + alpha *
                                     0.0001 * MeritFunction->phiPrimePlus)) {
               exitg1 = 1;
@@ -1719,10 +2278,10 @@ static void b_test_exit(c_struct_T *Flags, e_struct_T *memspace, b_struct_T
         }
 
         if (guard1) {
-          if (TrialState->sqpIterations >= 400 || toc() >= 5e-3) {
+          if (TrialState->sqpIterations >= 75 || toc() >= 5e-3) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
-          } else if (TrialState->FunctionEvaluations >= 2000) {
+          } else if (TrialState->FunctionEvaluations >= 75) {
             Flags->done = true;
             TrialState->sqpExitFlag = 0;
           }
@@ -2592,24 +3151,49 @@ static void computeQ_(f_struct_T *obj, int nrows)
  *                const captured_var *CL_aileron
  *                const captured_var *gain_ailerons
  *                const captured_var *W_dv_4
+ *                const captured_var *W_act_motor1
+ *                const captured_var *gamma_quadratic_du2
+ *                const captured_var *previous_motor_value1
  *                const captured_var *W_dv_6
- *                const captured_var *W_act_motor
  *                const captured_var *gamma_quadratic_du
  *                const captured_var *desired_motor_value
  *                const captured_var *W_dv_5
  *                const captured_var *W_dv_3
  *                const captured_var *W_dv_1
  *                const captured_var *W_dv_2
- *                const captured_var *W_act_tilt_el
+ *                const captured_var *W_act_motor2
+ *                const captured_var *previous_motor_value2
+ *                const captured_var *previous_motor_value3
+ *                const captured_var *W_act_motor3
+ *                const captured_var *W_act_motor4
+ *                const captured_var *previous_motor_value4
+ *                const captured_var *W_act_tilt_el1
+ *                const captured_var *previous_el_value1
  *                const captured_var *desired_el_value
- *                const captured_var *W_act_tilt_az
+ *                const captured_var *W_act_tilt_el2
+ *                const captured_var *previous_el_value2
+ *                const captured_var *W_act_tilt_el3
+ *                const captured_var *previous_el_value3
+ *                const captured_var *W_act_tilt_el4
+ *                const captured_var *previous_el_value4
+ *                const captured_var *W_act_tilt_az1
+ *                const captured_var *previous_az_value1
  *                const captured_var *desired_az_value
+ *                const captured_var *W_act_tilt_az2
+ *                const captured_var *previous_az_value2
+ *                const captured_var *W_act_tilt_az3
+ *                const captured_var *previous_az_value3
+ *                const captured_var *W_act_tilt_az4
+ *                const captured_var *previous_az_value4
  *                const captured_var *W_act_theta
  *                const captured_var *desired_theta_value
+ *                const captured_var *previous_theta_value
  *                const captured_var *W_act_phi
  *                const captured_var *desired_phi_value
+ *                const captured_var *previous_phi_value
  *                const captured_var *W_act_ailerons
  *                const captured_var *desired_ailerons_value
+ *                const captured_var *previous_ailerons_value
  *                const double u_in[15]
  *                double *cost
  *                double gradient[15]
@@ -2628,27 +3212,41 @@ static void compute_cost_and_gradient_fcn(const b_captured_var *dv_global, const
   const captured_var *l_3, const captured_var *Cm_alpha, const captured_var *q,
   const captured_var *l_1, const captured_var *l_2, const captured_var
   *CL_aileron, const captured_var *gain_ailerons, const captured_var *W_dv_4,
-  const captured_var *W_dv_6, const captured_var *W_act_motor, const
+  const captured_var *W_act_motor1, const captured_var *gamma_quadratic_du2,
+  const captured_var *previous_motor_value1, const captured_var *W_dv_6, const
   captured_var *gamma_quadratic_du, const captured_var *desired_motor_value,
   const captured_var *W_dv_5, const captured_var *W_dv_3, const captured_var
-  *W_dv_1, const captured_var *W_dv_2, const captured_var *W_act_tilt_el, const
-  captured_var *desired_el_value, const captured_var *W_act_tilt_az, const
-  captured_var *desired_az_value, const captured_var *W_act_theta, const
-  captured_var *desired_theta_value, const captured_var *W_act_phi, const
-  captured_var *desired_phi_value, const captured_var *W_act_ailerons, const
-  captured_var *desired_ailerons_value, const double u_in[15], double *cost,
-  double gradient[15])
+  *W_dv_1, const captured_var *W_dv_2, const captured_var *W_act_motor2, const
+  captured_var *previous_motor_value2, const captured_var *previous_motor_value3,
+  const captured_var *W_act_motor3, const captured_var *W_act_motor4, const
+  captured_var *previous_motor_value4, const captured_var *W_act_tilt_el1, const
+  captured_var *previous_el_value1, const captured_var *desired_el_value, const
+  captured_var *W_act_tilt_el2, const captured_var *previous_el_value2, const
+  captured_var *W_act_tilt_el3, const captured_var *previous_el_value3, const
+  captured_var *W_act_tilt_el4, const captured_var *previous_el_value4, const
+  captured_var *W_act_tilt_az1, const captured_var *previous_az_value1, const
+  captured_var *desired_az_value, const captured_var *W_act_tilt_az2, const
+  captured_var *previous_az_value2, const captured_var *W_act_tilt_az3, const
+  captured_var *previous_az_value3, const captured_var *W_act_tilt_az4, const
+  captured_var *previous_az_value4, const captured_var *W_act_theta, const
+  captured_var *desired_theta_value, const captured_var *previous_theta_value,
+  const captured_var *W_act_phi, const captured_var *desired_phi_value, const
+  captured_var *previous_phi_value, const captured_var *W_act_ailerons, const
+  captured_var *desired_ailerons_value, const captured_var
+  *previous_ailerons_value, const double u_in[15], double *cost, double
+  gradient[15])
 {
   double gradient_fcn_15[16];
   double a;
   double a_tmp;
   double ab_a;
   double ab_sigma_1_tmp;
+  double ac_a;
   double b_a;
   double b_a_tmp;
   double b_gradient_fcn_15_tmp;
   double b_gradient_fcn_15_tmp_tmp;
-  double b_sigma_15_tmp;
+  double b_sigma_14_tmp;
   double b_sigma_1_tmp;
   double b_sigma_1_tmp_tmp;
   double b_sigma_2_tmp;
@@ -2656,17 +3254,19 @@ static void compute_cost_and_gradient_fcn(const b_captured_var *dv_global, const
   double b_sigma_5_tmp;
   double bb_a;
   double bb_sigma_1_tmp;
+  double bc_a;
   double c_a;
   double c_a_tmp;
   double c_gradient_fcn_15_tmp;
   double c_gradient_fcn_15_tmp_tmp;
-  double c_sigma_15_tmp;
+  double c_sigma_14_tmp;
   double c_sigma_1_tmp;
   double c_sigma_1_tmp_tmp;
   double c_sigma_3_tmp;
   double c_sigma_5_tmp;
   double cb_a;
   double cb_sigma_1_tmp;
+  double cc_a;
   double d_a;
   double d_a_tmp;
   double d_gradient_fcn_15_tmp;
@@ -2677,6 +3277,7 @@ static void compute_cost_and_gradient_fcn(const b_captured_var *dv_global, const
   double d_sigma_5_tmp;
   double db_a;
   double db_sigma_1_tmp;
+  double dc_a;
   double e_a;
   double e_a_tmp;
   double e_gradient_fcn_15_tmp;
@@ -2686,6 +3287,7 @@ static void compute_cost_and_gradient_fcn(const b_captured_var *dv_global, const
   double e_sigma_3_tmp;
   double eb_a;
   double eb_sigma_1_tmp;
+  double ec_a;
   double f_a;
   double f_a_tmp;
   double f_gradient_fcn_15_tmp;
@@ -2695,6 +3297,7 @@ static void compute_cost_and_gradient_fcn(const b_captured_var *dv_global, const
   double f_sigma_3_tmp;
   double fb_a;
   double fb_sigma_1_tmp;
+  double fc_a;
   double g_a;
   double g_a_tmp;
   double g_gradient_fcn_15_tmp;
@@ -2703,42 +3306,52 @@ static void compute_cost_and_gradient_fcn(const b_captured_var *dv_global, const
   double g_sigma_3_tmp;
   double gb_a;
   double gb_sigma_1_tmp;
+  double gc_a;
   double gradient_fcn_15_tmp;
   double gradient_fcn_15_tmp_tmp;
   double h_a;
+  double h_a_tmp;
   double h_gradient_fcn_15_tmp;
   double h_sigma_1_tmp;
   double h_sigma_1_tmp_tmp;
   double h_sigma_3_tmp;
   double hb_a;
   double hb_sigma_1_tmp;
+  double hc_a;
   double i_a;
+  double i_a_tmp;
   double i_gradient_fcn_15_tmp;
   double i_sigma_1_tmp;
   double i_sigma_1_tmp_tmp;
   double i_sigma_3_tmp;
   double ib_a;
   double ib_sigma_1_tmp;
+  double ic_a;
   double j_a;
+  double j_a_tmp;
   double j_gradient_fcn_15_tmp;
   double j_sigma_1_tmp;
   double j_sigma_1_tmp_tmp;
   double j_sigma_3_tmp;
   double jb_a;
   double jb_sigma_1_tmp;
+  double jc_a;
   double k_a;
+  double k_a_tmp;
   double k_gradient_fcn_15_tmp;
   double k_sigma_1_tmp;
   double k_sigma_1_tmp_tmp;
   double k_sigma_3_tmp;
   double kb_a;
-  double kb_sigma_1_tmp;
+  double kc_a;
   double l_a;
+  double l_a_tmp;
   double l_gradient_fcn_15_tmp;
   double l_sigma_1_tmp;
   double l_sigma_1_tmp_tmp;
   double l_sigma_3_tmp;
   double lb_a;
+  double lc_a;
   double m_a;
   double m_gradient_fcn_15_tmp;
   double m_sigma_1_tmp;
@@ -2755,28 +3368,36 @@ static void compute_cost_and_gradient_fcn(const b_captured_var *dv_global, const
   double o_gradient_fcn_15_tmp;
   double o_sigma_1_tmp;
   double o_sigma_1_tmp_tmp;
+  double o_sigma_3_tmp;
   double ob_a;
   double p_a;
   double p_gradient_fcn_15_tmp;
   double p_sigma_1_tmp;
   double p_sigma_1_tmp_tmp;
+  double p_sigma_3_tmp;
   double pb_a;
   double q_a;
+  double q_gradient_fcn_15_tmp;
   double q_sigma_1_tmp;
   double q_sigma_1_tmp_tmp;
+  double q_sigma_3_tmp;
   double qb_a;
   double r_a;
+  double r_gradient_fcn_15_tmp;
   double r_sigma_1_tmp;
   double r_sigma_1_tmp_tmp;
+  double r_sigma_3_tmp;
   double rb_a;
   double s_a;
+  double s_gradient_fcn_15_tmp;
   double s_sigma_1_tmp;
   double s_sigma_1_tmp_tmp;
   double sb_a;
   double sigma_1;
+  double sigma_13;
   double sigma_14;
+  double sigma_14_tmp;
   double sigma_15;
-  double sigma_15_tmp;
   double sigma_1_tmp;
   double sigma_1_tmp_tmp;
   double sigma_1_tmp_tmp_tmp;
@@ -2792,18 +3413,25 @@ static void compute_cost_and_gradient_fcn(const b_captured_var *dv_global, const
   double sigma_7;
   double sigma_7_tmp;
   double t_a;
+  double t_gradient_fcn_15_tmp;
   double t_sigma_1_tmp;
   double t_sigma_1_tmp_tmp;
+  double tb_a;
   double u_a;
   double u_sigma_1_tmp;
+  double ub_a;
   double v_a;
   double v_sigma_1_tmp;
+  double vb_a;
   double w_a;
   double w_sigma_1_tmp;
+  double wb_a;
   double x_a;
   double x_sigma_1_tmp;
+  double xb_a;
   double y_a;
   double y_sigma_1_tmp;
+  double yb_a;
   sigma_1_tmp_tmp_tmp = u_in[12] * gain_theta->contents;
   sigma_1_tmp_tmp = flight_path_angle->contents - sigma_1_tmp_tmp_tmp;
   b_sigma_1_tmp_tmp = cos(sigma_1_tmp_tmp);
@@ -2869,26 +3497,26 @@ static void compute_cost_and_gradient_fcn(const b_captured_var *dv_global, const
   eb_sigma_1_tmp = K_p_T->contents * t_sigma_1_tmp_tmp;
   fb_sigma_1_tmp = bb_sigma_1_tmp * c_sigma_1_tmp_tmp * d_sigma_1_tmp_tmp;
   gb_sigma_1_tmp = ab_sigma_1_tmp * b_sigma_1_tmp_tmp * sigma_1_tmp_tmp / 2.0;
-  hb_sigma_1_tmp = eb_sigma_1_tmp * m_sigma_1_tmp_tmp;
-  ib_sigma_1_tmp = eb_sigma_1_tmp * g_sigma_1_tmp_tmp;
-  jb_sigma_1_tmp = ab_sigma_1_tmp * c_sigma_1_tmp_tmp * sigma_1_tmp_tmp / 2.0;
-  kb_sigma_1_tmp = eb_sigma_1_tmp * e_sigma_1_tmp_tmp;
-  sigma_1 = dv_global->contents[0] - (((((e_sigma_1_tmp_tmp * (jb_sigma_1_tmp -
+  b_a_tmp = eb_sigma_1_tmp * m_sigma_1_tmp_tmp;
+  hb_sigma_1_tmp = eb_sigma_1_tmp * g_sigma_1_tmp_tmp;
+  ib_sigma_1_tmp = ab_sigma_1_tmp * c_sigma_1_tmp_tmp * sigma_1_tmp_tmp / 2.0;
+  jb_sigma_1_tmp = eb_sigma_1_tmp * e_sigma_1_tmp_tmp;
+  sigma_1 = dv_global->contents[0] - (((((e_sigma_1_tmp_tmp * (ib_sigma_1_tmp -
     bb_sigma_1_tmp * b_sigma_1_tmp_tmp * d_sigma_1_tmp_tmp * (((cb_sigma_1_tmp *
     (a * a) - db_sigma_1_tmp) + y_sigma_1_tmp * (b_a * b_a)) + Cd_zero->contents)
     / 2.0) + g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp * (gb_sigma_1_tmp +
     fb_sigma_1_tmp * (((cb_sigma_1_tmp * (c_a * c_a) - db_sigma_1_tmp) +
                        y_sigma_1_tmp * (d_a * d_a)) + Cd_zero->contents) / 2.0))
-    - kb_sigma_1_tmp * v_sigma_1_tmp) - ib_sigma_1_tmp * h_sigma_1_tmp_tmp *
+    - jb_sigma_1_tmp * v_sigma_1_tmp) - hb_sigma_1_tmp * h_sigma_1_tmp_tmp *
     (((sigma_1_tmp * n_sigma_1_tmp * r_sigma_1_tmp + b_sigma_1_tmp *
        o_sigma_1_tmp * s_sigma_1_tmp) + c_sigma_1_tmp * p_sigma_1_tmp *
-      t_sigma_1_tmp) + d_sigma_1_tmp * q_sigma_1_tmp * u_sigma_1_tmp)) +
-    hb_sigma_1_tmp * h_sigma_1_tmp_tmp * (((sigma_1_tmp * j_sigma_1_tmp *
-    r_sigma_1_tmp + b_sigma_1_tmp * k_sigma_1_tmp * s_sigma_1_tmp) +
-    c_sigma_1_tmp * l_sigma_1_tmp * t_sigma_1_tmp) + d_sigma_1_tmp *
-    m_sigma_1_tmp * u_sigma_1_tmp)) - bb_sigma_1_tmp * m_sigma_1_tmp_tmp *
-    h_sigma_1_tmp_tmp * e_sigma_1_tmp * (((cb_sigma_1_tmp * (e_a * e_a) -
-    db_sigma_1_tmp) + y_sigma_1_tmp * (f_a * f_a)) + Cd_zero->contents) / 2.0) /
+      t_sigma_1_tmp) + d_sigma_1_tmp * q_sigma_1_tmp * u_sigma_1_tmp)) + b_a_tmp
+    * h_sigma_1_tmp_tmp * (((sigma_1_tmp * j_sigma_1_tmp * r_sigma_1_tmp +
+    b_sigma_1_tmp * k_sigma_1_tmp * s_sigma_1_tmp) + c_sigma_1_tmp *
+    l_sigma_1_tmp * t_sigma_1_tmp) + d_sigma_1_tmp * m_sigma_1_tmp *
+    u_sigma_1_tmp)) - bb_sigma_1_tmp * m_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp *
+    e_sigma_1_tmp * (((cb_sigma_1_tmp * (e_a * e_a) - db_sigma_1_tmp) +
+                      y_sigma_1_tmp * (f_a * f_a)) + Cd_zero->contents) / 2.0) /
     m->contents;
   a = gain_theta->contents;
   b_a = flight_path_angle->contents;
@@ -2909,77 +3537,78 @@ static void compute_cost_and_gradient_fcn(const b_captured_var *dv_global, const
   sigma_2 = dv_global->contents[1] + (((m_sigma_1_tmp_tmp * (gb_sigma_1_tmp +
     fb_sigma_1_tmp * (((cb_sigma_1_tmp * (a * a) - db_sigma_1_tmp) +
                        y_sigma_1_tmp * (b_a * b_a)) + Cd_zero->contents) / 2.0)
-    - hb_sigma_1_tmp * sigma_2_tmp) - ib_sigma_1_tmp * b_sigma_2_tmp) +
-    bb_sigma_1_tmp * g_sigma_1_tmp_tmp * e_sigma_1_tmp * (((cb_sigma_1_tmp *
-    (c_a * c_a) - db_sigma_1_tmp) + y_sigma_1_tmp * (d_a * d_a)) +
-    Cd_zero->contents) / 2.0) / m->contents;
+    - b_a_tmp * sigma_2_tmp) - hb_sigma_1_tmp * b_sigma_2_tmp) + bb_sigma_1_tmp *
+    g_sigma_1_tmp_tmp * e_sigma_1_tmp * (((cb_sigma_1_tmp * (c_a * c_a) -
+    db_sigma_1_tmp) + y_sigma_1_tmp * (d_a * d_a)) + Cd_zero->contents) / 2.0) /
+    m->contents;
   sigma_3_tmp = 2.0 * K_p_T->contents;
-  hb_sigma_1_tmp = 2.0 * K_p_M->contents;
+  b_a_tmp = 2.0 * K_p_M->contents;
   b_sigma_3_tmp = sigma_3_tmp * r_sigma_1_tmp;
   c_sigma_3_tmp = sigma_3_tmp * s_sigma_1_tmp;
   d_sigma_3_tmp = sigma_3_tmp * t_sigma_1_tmp;
   e_sigma_3_tmp = sigma_3_tmp * u_sigma_1_tmp;
   fb_sigma_1_tmp = Cm_alpha->contents * S->contents;
-  b_a_tmp = 2.0 * I_yy->contents;
+  f_sigma_3_tmp = 2.0 * I_yy->contents;
   a_tmp = 2.0 * I_xx->contents;
-  f_sigma_3_tmp = 2.0 * I_zz->contents;
-  g_sigma_3_tmp = b_sigma_3_tmp * t_sigma_1_tmp_tmp;
-  h_sigma_3_tmp = c_sigma_3_tmp * t_sigma_1_tmp_tmp;
-  c_a_tmp = d_sigma_3_tmp * t_sigma_1_tmp_tmp;
-  i_sigma_3_tmp = e_sigma_3_tmp * t_sigma_1_tmp_tmp;
-  j_sigma_3_tmp = hb_sigma_1_tmp * r_sigma_1_tmp * t_sigma_1_tmp_tmp;
-  k_sigma_3_tmp = hb_sigma_1_tmp * s_sigma_1_tmp * t_sigma_1_tmp_tmp;
-  l_sigma_3_tmp = hb_sigma_1_tmp * t_sigma_1_tmp * t_sigma_1_tmp_tmp;
-  hb_sigma_1_tmp = hb_sigma_1_tmp * u_sigma_1_tmp * t_sigma_1_tmp_tmp;
-  m_sigma_3_tmp = g_sigma_3_tmp * l_z->contents;
-  a = h_sigma_3_tmp * l_z->contents;
-  b_a = c_a_tmp * l_z->contents;
-  c_a = i_sigma_3_tmp * l_z->contents;
-  n_sigma_3_tmp = fb_sigma_1_tmp * w_sigma_1_tmp;
-  sigma_3 = ((((((((((((((((f_sigma_3_tmp * p->contents * r->contents - a_tmp *
-    p->contents * r->contents) - b_a_tmp * dv_global->contents[4]) +
-    m_sigma_3_tmp * f_sigma_1_tmp) + a * g_sigma_1_tmp) + b_a * h_sigma_1_tmp) +
-                       c_a * i_sigma_1_tmp) - j_sigma_3_tmp * sigma_1_tmp *
-                      j_sigma_1_tmp) + k_sigma_3_tmp * b_sigma_1_tmp *
-                     k_sigma_1_tmp) - l_sigma_3_tmp * c_sigma_1_tmp *
-                    l_sigma_1_tmp) + hb_sigma_1_tmp * d_sigma_1_tmp *
-                   m_sigma_1_tmp) + Cm_zero->contents * S->contents *
-                  w_sigma_1_tmp * rho->contents * wing_chord->contents) +
-                 g_sigma_3_tmp * l_4->contents * sigma_1_tmp * n_sigma_1_tmp) +
-                h_sigma_3_tmp * l_4->contents * b_sigma_1_tmp * o_sigma_1_tmp) -
-               c_a_tmp * l_3->contents * c_sigma_1_tmp * p_sigma_1_tmp) -
-              i_sigma_3_tmp * l_3->contents * d_sigma_1_tmp * q_sigma_1_tmp) -
-             n_sigma_3_tmp * flight_path_angle->contents * rho->contents *
-             wing_chord->contents) + fb_sigma_1_tmp * u_in[12] * w_sigma_1_tmp *
-    gain_theta->contents * rho->contents * wing_chord->contents;
+  g_sigma_3_tmp = 2.0 * I_zz->contents;
+  h_sigma_3_tmp = b_sigma_3_tmp * t_sigma_1_tmp_tmp;
+  i_sigma_3_tmp = c_sigma_3_tmp * t_sigma_1_tmp_tmp;
+  j_sigma_3_tmp = d_sigma_3_tmp * t_sigma_1_tmp_tmp;
+  c_a_tmp = e_sigma_3_tmp * t_sigma_1_tmp_tmp;
+  k_sigma_3_tmp = b_a_tmp * r_sigma_1_tmp * t_sigma_1_tmp_tmp;
+  l_sigma_3_tmp = b_a_tmp * s_sigma_1_tmp * t_sigma_1_tmp_tmp;
+  m_sigma_3_tmp = b_a_tmp * t_sigma_1_tmp * t_sigma_1_tmp_tmp;
+  b_a_tmp = b_a_tmp * u_sigma_1_tmp * t_sigma_1_tmp_tmp;
+  n_sigma_3_tmp = h_sigma_3_tmp * l_z->contents;
+  o_sigma_3_tmp = i_sigma_3_tmp * l_z->contents;
+  p_sigma_3_tmp = j_sigma_3_tmp * l_z->contents;
+  q_sigma_3_tmp = c_a_tmp * l_z->contents;
+  r_sigma_3_tmp = fb_sigma_1_tmp * w_sigma_1_tmp;
+  sigma_3 = ((((((((((((((((g_sigma_3_tmp * p->contents * r->contents - a_tmp *
+    p->contents * r->contents) - f_sigma_3_tmp * dv_global->contents[4]) +
+    n_sigma_3_tmp * f_sigma_1_tmp) + o_sigma_3_tmp * g_sigma_1_tmp) +
+                        p_sigma_3_tmp * h_sigma_1_tmp) + q_sigma_3_tmp *
+                       i_sigma_1_tmp) - k_sigma_3_tmp * sigma_1_tmp *
+                      j_sigma_1_tmp) + l_sigma_3_tmp * b_sigma_1_tmp *
+                     k_sigma_1_tmp) - m_sigma_3_tmp * c_sigma_1_tmp *
+                    l_sigma_1_tmp) + b_a_tmp * d_sigma_1_tmp * m_sigma_1_tmp) +
+                  Cm_zero->contents * S->contents * w_sigma_1_tmp *
+                  rho->contents * wing_chord->contents) + h_sigma_3_tmp *
+                 l_4->contents * sigma_1_tmp * n_sigma_1_tmp) + i_sigma_3_tmp *
+                l_4->contents * b_sigma_1_tmp * o_sigma_1_tmp) - j_sigma_3_tmp *
+               l_3->contents * c_sigma_1_tmp * p_sigma_1_tmp) - c_a_tmp *
+              l_3->contents * d_sigma_1_tmp * q_sigma_1_tmp) - r_sigma_3_tmp *
+             flight_path_angle->contents * rho->contents * wing_chord->contents)
+    + fb_sigma_1_tmp * u_in[12] * w_sigma_1_tmp * gain_theta->contents *
+    rho->contents * wing_chord->contents;
   sigma_4_tmp = CL_aileron->contents * S->contents * w_sigma_1_tmp;
-  sigma_4 = ((((((((((((((b_a_tmp * q->contents * r->contents - a_tmp *
-    dv_global->contents[3]) - f_sigma_3_tmp * q->contents * r->contents) +
-                        j_sigma_3_tmp * f_sigma_1_tmp) - k_sigma_3_tmp *
-                       g_sigma_1_tmp) + l_sigma_3_tmp * h_sigma_1_tmp) -
-                     hb_sigma_1_tmp * i_sigma_1_tmp) + g_sigma_3_tmp *
-                    l_1->contents * sigma_1_tmp * n_sigma_1_tmp) - h_sigma_3_tmp
-                   * l_1->contents * b_sigma_1_tmp * o_sigma_1_tmp) - c_a_tmp *
-                  l_2->contents * c_sigma_1_tmp * p_sigma_1_tmp) + i_sigma_3_tmp
-                 * l_2->contents * d_sigma_1_tmp * q_sigma_1_tmp) +
-                m_sigma_3_tmp * sigma_1_tmp * j_sigma_1_tmp) + a * b_sigma_1_tmp
-               * k_sigma_1_tmp) + b_a * c_sigma_1_tmp * l_sigma_1_tmp) + c_a *
-             d_sigma_1_tmp * m_sigma_1_tmp) + sigma_4_tmp * u_in[14] *
-    gain_ailerons->contents * rho->contents;
+  sigma_4 = ((((((((((((((f_sigma_3_tmp * q->contents * r->contents - a_tmp *
+    dv_global->contents[3]) - g_sigma_3_tmp * q->contents * r->contents) +
+                        k_sigma_3_tmp * f_sigma_1_tmp) - l_sigma_3_tmp *
+                       g_sigma_1_tmp) + m_sigma_3_tmp * h_sigma_1_tmp) - b_a_tmp
+                     * i_sigma_1_tmp) + h_sigma_3_tmp * l_1->contents *
+                    sigma_1_tmp * n_sigma_1_tmp) - i_sigma_3_tmp * l_1->contents
+                   * b_sigma_1_tmp * o_sigma_1_tmp) - j_sigma_3_tmp *
+                  l_2->contents * c_sigma_1_tmp * p_sigma_1_tmp) + c_a_tmp *
+                 l_2->contents * d_sigma_1_tmp * q_sigma_1_tmp) + n_sigma_3_tmp *
+                sigma_1_tmp * j_sigma_1_tmp) + o_sigma_3_tmp * b_sigma_1_tmp *
+               k_sigma_1_tmp) + p_sigma_3_tmp * c_sigma_1_tmp * l_sigma_1_tmp) +
+             q_sigma_3_tmp * d_sigma_1_tmp * m_sigma_1_tmp) + sigma_4_tmp *
+    u_in[14] * gain_ailerons->contents * rho->contents;
   sigma_5_tmp = K_p_T->contents * r_sigma_1_tmp;
   b_sigma_5_tmp = K_p_T->contents * s_sigma_1_tmp;
   c_sigma_5_tmp = K_p_T->contents * t_sigma_1_tmp;
   d_sigma_5_tmp = K_p_T->contents * u_sigma_1_tmp;
   fb_sigma_1_tmp = sigma_5_tmp * t_sigma_1_tmp_tmp;
-  hb_sigma_1_tmp = b_sigma_5_tmp * t_sigma_1_tmp_tmp;
-  b_a_tmp = c_sigma_5_tmp * t_sigma_1_tmp_tmp;
+  b_a_tmp = b_sigma_5_tmp * t_sigma_1_tmp_tmp;
+  f_sigma_3_tmp = c_sigma_5_tmp * t_sigma_1_tmp_tmp;
   a_tmp = d_sigma_5_tmp * t_sigma_1_tmp_tmp;
   sigma_5 = (((((((((((((I_zz->contents * dv_global->contents[5] -
     I_xx->contents * p->contents * q->contents) + I_yy->contents * p->contents *
                         q->contents) + fb_sigma_1_tmp * l_1->contents *
-                       f_sigma_1_tmp) - hb_sigma_1_tmp * l_1->contents *
-                      g_sigma_1_tmp) - b_a_tmp * l_2->contents * h_sigma_1_tmp)
-                    + a_tmp * l_2->contents * i_sigma_1_tmp) - K_p_M->contents *
+                       f_sigma_1_tmp) - b_a_tmp * l_1->contents * g_sigma_1_tmp)
+                     - f_sigma_3_tmp * l_2->contents * h_sigma_1_tmp) + a_tmp *
+                    l_2->contents * i_sigma_1_tmp) - K_p_M->contents *
                    r_sigma_1_tmp * t_sigma_1_tmp_tmp * sigma_1_tmp *
                    n_sigma_1_tmp) + K_p_M->contents * s_sigma_1_tmp *
                   t_sigma_1_tmp_tmp * b_sigma_1_tmp * o_sigma_1_tmp) -
@@ -2987,8 +3616,8 @@ static void compute_cost_and_gradient_fcn(const b_captured_var *dv_global, const
                  c_sigma_1_tmp * p_sigma_1_tmp) + K_p_M->contents *
                 u_sigma_1_tmp * t_sigma_1_tmp_tmp * d_sigma_1_tmp *
                 q_sigma_1_tmp) - fb_sigma_1_tmp * l_4->contents * sigma_1_tmp *
-               j_sigma_1_tmp) - hb_sigma_1_tmp * l_4->contents * b_sigma_1_tmp *
-              k_sigma_1_tmp) + b_a_tmp * l_3->contents * c_sigma_1_tmp *
+               j_sigma_1_tmp) - b_a_tmp * l_4->contents * b_sigma_1_tmp *
+              k_sigma_1_tmp) + f_sigma_3_tmp * l_3->contents * c_sigma_1_tmp *
              l_sigma_1_tmp) + a_tmp * l_3->contents * d_sigma_1_tmp *
     m_sigma_1_tmp;
   a = gain_theta->contents;
@@ -2997,24 +3626,26 @@ static void compute_cost_and_gradient_fcn(const b_captured_var *dv_global, const
               b_a)) + Cd_zero->contents;
   sigma_7_tmp = bb_sigma_1_tmp * sigma_6;
   sigma_7 = (100.0 * (((((h_sigma_1_tmp_tmp * (sigma_7_tmp * b_sigma_1_tmp_tmp *
-    d_sigma_1_tmp_tmp / 2.0 - jb_sigma_1_tmp) + g_sigma_1_tmp_tmp *
+    d_sigma_1_tmp_tmp / 2.0 - ib_sigma_1_tmp) + g_sigma_1_tmp_tmp *
     e_sigma_1_tmp_tmp * (gb_sigma_1_tmp + sigma_7_tmp * c_sigma_1_tmp_tmp *
     d_sigma_1_tmp_tmp / 2.0)) + eb_sigma_1_tmp * h_sigma_1_tmp_tmp *
-    v_sigma_1_tmp) - ib_sigma_1_tmp * e_sigma_1_tmp_tmp * sigma_2_tmp) +
-                       kb_sigma_1_tmp * m_sigma_1_tmp_tmp * b_sigma_2_tmp) -
+    v_sigma_1_tmp) - hb_sigma_1_tmp * e_sigma_1_tmp_tmp * sigma_2_tmp) +
+                       jb_sigma_1_tmp * m_sigma_1_tmp_tmp * b_sigma_2_tmp) -
                       sigma_7_tmp * e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp *
                       e_sigma_1_tmp / 2.0) / m->contents - 100.0 *
              dv_global->contents[2]) + 981.0;
-  sigma_14 = 1.0 / m->contents;
+  sigma_13 = 1.0 / m->contents;
   fb_sigma_1_tmp = r_sigma_1_tmp_tmp * gain_theta->contents * rho->contents;
-  sigma_15_tmp = s_sigma_1_tmp_tmp * gain_theta->contents * rho->contents;
-  b_sigma_15_tmp = sigma_15_tmp * sigma_6;
-  c_sigma_15_tmp = y_sigma_1_tmp * S->contents * w_sigma_1_tmp *
+  sigma_14_tmp = s_sigma_1_tmp_tmp * gain_theta->contents * rho->contents;
+  b_sigma_14_tmp = sigma_14_tmp * sigma_6;
+  c_sigma_14_tmp = y_sigma_1_tmp * S->contents * w_sigma_1_tmp *
     gain_theta->contents * rho->contents * sigma_1_tmp_tmp;
-  sigma_15 = ((fb_sigma_1_tmp * b_sigma_1_tmp_tmp / 2.0 + b_sigma_15_tmp *
+  sigma_14 = ((fb_sigma_1_tmp * b_sigma_1_tmp_tmp / 2.0 + b_sigma_14_tmp *
                d_sigma_1_tmp_tmp * b_sigma_1_tmp_tmp / 2.0) - fb_sigma_1_tmp *
-              sigma_1_tmp_tmp * c_sigma_1_tmp_tmp / 2.0) + c_sigma_15_tmp *
+              sigma_1_tmp_tmp * c_sigma_1_tmp_tmp / 2.0) + c_sigma_14_tmp *
     d_sigma_1_tmp_tmp * c_sigma_1_tmp_tmp;
+  sigma_15 = ab_sigma_1_tmp * sigma_1_tmp_tmp * b_sigma_1_tmp_tmp / 2.0 +
+    sigma_7_tmp * d_sigma_1_tmp_tmp * c_sigma_1_tmp_tmp / 2.0;
   gradient_fcn_15_tmp_tmp = f_sigma_1_tmp_tmp + n_sigma_1_tmp_tmp;
   gradient_fcn_15_tmp = sin(gradient_fcn_15_tmp_tmp);
   b_gradient_fcn_15_tmp_tmp = f_sigma_1_tmp_tmp + o_sigma_1_tmp_tmp;
@@ -3025,486 +3656,578 @@ static void compute_cost_and_gradient_fcn(const b_captured_var *dv_global, const
   d_gradient_fcn_15_tmp = sin(d_gradient_fcn_15_tmp_tmp);
   a_tmp = W_dv_4->contents;
   a = I_xx->contents;
-  b_a_tmp = W_dv_6->contents;
+  b_a_tmp = W_act_motor1->contents;
+  c_a_tmp = W_dv_6->contents;
   b_a = I_zz->contents;
-  c_a_tmp = W_act_motor->contents;
-  hb_sigma_1_tmp = W_dv_5->contents;
+  f_sigma_3_tmp = W_dv_5->contents;
   c_a = I_yy->contents;
-  f_sigma_3_tmp = W_dv_3->contents;
-  g_sigma_3_tmp = W_dv_1->contents;
-  h_sigma_3_tmp = W_dv_2->contents;
+  g_sigma_3_tmp = W_dv_3->contents;
+  h_sigma_3_tmp = W_dv_1->contents;
+  i_sigma_3_tmp = W_dv_2->contents;
   d_a = I_yy->contents;
+  j_sigma_3_tmp = W_act_motor2->contents;
   e_a = I_zz->contents;
   f_a = I_xx->contents;
-  i_sigma_3_tmp = I_xx->contents;
-  j_sigma_3_tmp = I_zz->contents;
-  k_sigma_3_tmp = I_yy->contents;
-  l_sigma_3_tmp = I_zz->contents;
-  m_sigma_3_tmp = I_xx->contents;
-  cb_sigma_1_tmp = I_yy->contents;
-  bb_sigma_1_tmp = I_zz->contents;
-  db_sigma_1_tmp = W_act_tilt_el->contents;
-  eb_sigma_1_tmp = I_xx->contents;
-  gb_sigma_1_tmp = I_yy->contents;
-  jb_sigma_1_tmp = I_zz->contents;
-  kb_sigma_1_tmp = I_xx->contents;
-  r_sigma_1_tmp_tmp = I_yy->contents;
-  g_a = I_xx->contents;
-  h_a = I_zz->contents;
+  l_sigma_3_tmp = I_xx->contents;
+  m_sigma_3_tmp = I_zz->contents;
+  k_sigma_3_tmp = W_act_motor3->contents;
+  n_sigma_3_tmp = I_yy->contents;
+  p_sigma_3_tmp = I_zz->contents;
+  o_sigma_3_tmp = W_act_motor4->contents;
+  q_sigma_3_tmp = I_xx->contents;
+  db_sigma_1_tmp = I_yy->contents;
+  eb_sigma_1_tmp = I_zz->contents;
+  bb_sigma_1_tmp = W_act_tilt_el1->contents;
+  gb_sigma_1_tmp = I_xx->contents;
+  hb_sigma_1_tmp = I_yy->contents;
+  ib_sigma_1_tmp = W_act_tilt_el2->contents;
+  g_a = I_zz->contents;
+  h_a = I_xx->contents;
   i_a = I_yy->contents;
-  j_a = I_yy->contents;
+  j_a = I_xx->contents;
+  d_a_tmp = W_act_tilt_el3->contents;
   k_a = I_zz->contents;
-  l_a = I_xx->contents;
-  m_a = I_zz->contents;
-  n_a = I_yy->contents;
-  d_a_tmp = W_act_tilt_az->contents;
+  l_a = I_yy->contents;
+  m_a = I_yy->contents;
+  e_a_tmp = W_act_tilt_el4->contents;
+  n_a = I_zz->contents;
   o_a = I_xx->contents;
-  p_a = I_yy->contents;
-  q_a = I_zz->contents;
+  p_a = I_zz->contents;
+  f_a_tmp = W_act_tilt_az1->contents;
+  q_a = I_yy->contents;
   r_a = I_xx->contents;
-  s_a = I_zz->contents;
-  t_a = I_yy->contents;
+  s_a = I_yy->contents;
+  g_a_tmp = W_act_tilt_az2->contents;
+  t_a = I_zz->contents;
   u_a = I_xx->contents;
-  v_a = I_yy->contents;
-  w_a = I_zz->contents;
+  v_a = I_zz->contents;
+  h_a_tmp = W_act_tilt_az3->contents;
+  w_a = I_yy->contents;
   x_a = I_xx->contents;
-  e_a_tmp = W_act_theta->contents;
   y_a = I_yy->contents;
-  f_a_tmp = W_act_phi->contents;
-  g_a_tmp = W_act_ailerons->contents;
-  ab_a = I_xx->contents;
+  i_a_tmp = W_act_tilt_az4->contents;
+  ab_a = I_zz->contents;
+  bb_a = I_xx->contents;
+  j_a_tmp = W_act_theta->contents;
+  cb_a = I_yy->contents;
+  k_a_tmp = W_act_phi->contents;
+  l_a_tmp = W_act_ailerons->contents;
+  db_a = I_xx->contents;
   fb_sigma_1_tmp = desired_motor_value->contents / gain_motor->contents;
-  bb_a = u_in[0] - fb_sigma_1_tmp;
-  cb_a = u_in[1] - fb_sigma_1_tmp;
-  db_a = u_in[2] - fb_sigma_1_tmp;
-  eb_a = u_in[3] - fb_sigma_1_tmp;
-  fb_a = u_in[13] - desired_phi_value->contents / gain_phi->contents;
-  gb_a = u_in[12] - desired_theta_value->contents / gain_theta->contents;
+  eb_a = u_in[0] - fb_sigma_1_tmp;
+  fb_a = u_in[1] - fb_sigma_1_tmp;
+  gb_a = u_in[2] - fb_sigma_1_tmp;
+  hb_a = u_in[3] - fb_sigma_1_tmp;
+  ib_a = u_in[13] - desired_phi_value->contents / gain_phi->contents;
+  jb_a = u_in[12] - desired_theta_value->contents / gain_theta->contents;
   fb_sigma_1_tmp = desired_el_value->contents / gain_el->contents;
-  hb_a = u_in[4] - fb_sigma_1_tmp;
-  ib_a = u_in[5] - fb_sigma_1_tmp;
-  jb_a = u_in[6] - fb_sigma_1_tmp;
-  kb_a = u_in[7] - fb_sigma_1_tmp;
-  lb_a = u_in[14] - desired_ailerons_value->contents / gain_ailerons->contents;
+  kb_a = u_in[4] - fb_sigma_1_tmp;
+  lb_a = u_in[5] - fb_sigma_1_tmp;
+  mb_a = u_in[6] - fb_sigma_1_tmp;
+  nb_a = u_in[7] - fb_sigma_1_tmp;
+  ob_a = u_in[14] - desired_ailerons_value->contents / gain_ailerons->contents;
   fb_sigma_1_tmp = desired_az_value->contents / gain_az->contents;
-  mb_a = u_in[8] - fb_sigma_1_tmp;
-  nb_a = u_in[9] - fb_sigma_1_tmp;
-  ob_a = u_in[10] - fb_sigma_1_tmp;
-  pb_a = u_in[11] - fb_sigma_1_tmp;
-  qb_a = I_xx->contents;
-  rb_a = I_yy->contents;
-  sb_a = I_zz->contents;
+  pb_a = u_in[8] - fb_sigma_1_tmp;
+  qb_a = u_in[9] - fb_sigma_1_tmp;
+  rb_a = u_in[10] - fb_sigma_1_tmp;
+  sb_a = u_in[11] - fb_sigma_1_tmp;
+  tb_a = u_in[0] - previous_motor_value1->contents / gain_motor->contents;
+  ub_a = u_in[1] - previous_motor_value2->contents / gain_motor->contents;
+  vb_a = u_in[2] - previous_motor_value3->contents / gain_motor->contents;
+  wb_a = u_in[3] - previous_motor_value4->contents / gain_motor->contents;
+  xb_a = u_in[13] - previous_phi_value->contents / gain_phi->contents;
+  yb_a = u_in[12] - previous_theta_value->contents / gain_theta->contents;
+  ac_a = u_in[4] - previous_el_value1->contents / gain_el->contents;
+  bc_a = u_in[5] - previous_el_value2->contents / gain_el->contents;
+  cc_a = u_in[6] - previous_el_value3->contents / gain_el->contents;
+  dc_a = u_in[7] - previous_el_value4->contents / gain_el->contents;
+  ec_a = u_in[14] - previous_ailerons_value->contents / gain_ailerons->contents;
+  fc_a = u_in[8] - previous_az_value1->contents / gain_az->contents;
+  gc_a = u_in[9] - previous_az_value2->contents / gain_az->contents;
+  hc_a = u_in[10] - previous_az_value3->contents / gain_az->contents;
+  ic_a = u_in[11] - previous_az_value4->contents / gain_az->contents;
+  jc_a = I_xx->contents;
+  kc_a = I_yy->contents;
+  lc_a = I_zz->contents;
   e_gradient_fcn_15_tmp = K_p_T->contents * l_1->contents;
-  f_gradient_fcn_15_tmp = K_p_T->contents * l_z->contents;
-  g_gradient_fcn_15_tmp = cos(u_in[4] * gain_el->contents) * cos(u_in[8] *
+  f_gradient_fcn_15_tmp = u_in[0] * gain_motor->contents;
+  g_gradient_fcn_15_tmp = K_p_T->contents * l_z->contents;
+  h_gradient_fcn_15_tmp = cos(u_in[4] * gain_el->contents) * cos(u_in[8] *
     gain_az->contents);
-  h_gradient_fcn_15_tmp = cos(u_in[4] * gain_el->contents) * sin(u_in[8] *
+  i_gradient_fcn_15_tmp = cos(u_in[4] * gain_el->contents) * sin(u_in[8] *
     gain_az->contents);
   e_gradient_fcn_15_tmp_tmp = 4.0 * K_p_T->contents;
-  i_gradient_fcn_15_tmp = e_gradient_fcn_15_tmp_tmp * u_in[0];
-  j_gradient_fcn_15_tmp = K_p_T->contents * l_4->contents;
-  k_gradient_fcn_15_tmp = K_p_M->contents * cos(u_in[4] * gain_el->contents);
-  l_gradient_fcn_15_tmp = hb_sigma_1_tmp * hb_sigma_1_tmp;
-  m_gradient_fcn_15_tmp = b_a_tmp * b_a_tmp;
-  n_gradient_fcn_15_tmp = a_tmp * a_tmp;
-  f_gradient_fcn_15_tmp_tmp = c_a_tmp * c_a_tmp;
-  o_gradient_fcn_15_tmp = 2.0 * f_gradient_fcn_15_tmp_tmp *
-    gamma_quadratic_du->contents;
-  p_gradient_fcn_15_tmp = f_sigma_3_tmp * f_sigma_3_tmp;
-  y_sigma_1_tmp = g_sigma_3_tmp * g_sigma_3_tmp;
-  s_sigma_1_tmp_tmp = h_sigma_3_tmp * h_sigma_3_tmp;
-  gradient_fcn_15[0] = (((((2.0 * u_in[0] * n_gradient_fcn_15_tmp * sigma_4 *
-    t_sigma_1_tmp_tmp * ((K_p_M->contents * f_sigma_1_tmp +
-    e_gradient_fcn_15_tmp * sigma_1_tmp * n_sigma_1_tmp) + f_gradient_fcn_15_tmp
-    * sigma_1_tmp * j_sigma_1_tmp) / (a * a) - 4.0 * u_in[0] *
-    m_gradient_fcn_15_tmp * sigma_5 * t_sigma_1_tmp_tmp * ((K_p_M->contents *
-    sigma_1_tmp * n_sigma_1_tmp - e_gradient_fcn_15_tmp * f_sigma_1_tmp) +
-    j_gradient_fcn_15_tmp * sigma_1_tmp * j_sigma_1_tmp) / (b_a * b_a)) -
-    o_gradient_fcn_15_tmp * (desired_motor_value->contents - u_in[0] *
-    gain_motor->contents) / gain_motor->contents) + 2.0 * u_in[0] *
-    l_gradient_fcn_15_tmp * sigma_3 * t_sigma_1_tmp_tmp *
-    ((f_gradient_fcn_15_tmp * f_sigma_1_tmp - k_gradient_fcn_15_tmp *
-      j_sigma_1_tmp) + K_p_T->contents * l_4->contents * cos(u_in[4] *
-    gain_el->contents) * n_sigma_1_tmp) / (c_a * c_a)) + K_p_T->contents * u_in
-    [0] * p_gradient_fcn_15_tmp * sigma_7 * t_sigma_1_tmp_tmp * sigma_14 *
-    ((f_sigma_1_tmp * h_sigma_1_tmp_tmp - g_gradient_fcn_15_tmp *
-      e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) + h_gradient_fcn_15_tmp *
-     e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) / 25.0) + i_gradient_fcn_15_tmp *
-                        y_sigma_1_tmp * sigma_1 * t_sigma_1_tmp_tmp * sigma_14 *
-                        ((f_sigma_1_tmp * e_sigma_1_tmp_tmp +
-    g_gradient_fcn_15_tmp * g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp) -
-    h_gradient_fcn_15_tmp * h_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp)) -
-    i_gradient_fcn_15_tmp * s_sigma_1_tmp_tmp * sigma_2 * t_sigma_1_tmp_tmp *
-    sigma_14 * gradient_fcn_15_tmp * sigma_1_tmp;
-  g_gradient_fcn_15_tmp = cos(u_in[5] * gain_el->contents) * cos(u_in[9] *
-    gain_az->contents);
-  h_gradient_fcn_15_tmp = cos(u_in[5] * gain_el->contents) * sin(u_in[9] *
-    gain_az->contents);
-  i_gradient_fcn_15_tmp = e_gradient_fcn_15_tmp_tmp * u_in[1];
-  ib_sigma_1_tmp = K_p_M->contents * cos(u_in[5] * gain_el->contents);
-  gradient_fcn_15[1] = (((((2.0 * u_in[1] * l_gradient_fcn_15_tmp * sigma_3 *
-    t_sigma_1_tmp_tmp * ((f_gradient_fcn_15_tmp * g_sigma_1_tmp +
-    K_p_M->contents * b_sigma_1_tmp * k_sigma_1_tmp) + j_gradient_fcn_15_tmp *
-    b_sigma_1_tmp * o_sigma_1_tmp) / (d_a * d_a) - 4.0 * u_in[1] *
-    m_gradient_fcn_15_tmp * sigma_5 * t_sigma_1_tmp_tmp *
-    ((e_gradient_fcn_15_tmp * g_sigma_1_tmp - ib_sigma_1_tmp * o_sigma_1_tmp) +
-     K_p_T->contents * l_4->contents * cos(u_in[5] * gain_el->contents) *
-     k_sigma_1_tmp) / (e_a * e_a)) - 2.0 * u_in[1] * n_gradient_fcn_15_tmp *
-    sigma_4 * t_sigma_1_tmp_tmp * ((K_p_M->contents * g_sigma_1_tmp +
-    e_gradient_fcn_15_tmp * b_sigma_1_tmp * o_sigma_1_tmp) -
-    f_gradient_fcn_15_tmp * b_sigma_1_tmp * k_sigma_1_tmp) / (f_a * f_a)) -
-    o_gradient_fcn_15_tmp * (desired_motor_value->contents - u_in[1] *
-    gain_motor->contents) / gain_motor->contents) + K_p_T->contents * u_in[1] *
-    p_gradient_fcn_15_tmp * sigma_7 * t_sigma_1_tmp_tmp * sigma_14 *
-    ((g_sigma_1_tmp * h_sigma_1_tmp_tmp - g_gradient_fcn_15_tmp *
-      e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) + h_gradient_fcn_15_tmp *
-     e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) / 25.0) + i_gradient_fcn_15_tmp *
-                        y_sigma_1_tmp * sigma_1 * t_sigma_1_tmp_tmp * sigma_14 *
-                        ((g_sigma_1_tmp * e_sigma_1_tmp_tmp +
-    g_gradient_fcn_15_tmp * g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp) -
-    h_gradient_fcn_15_tmp * h_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp)) -
-    i_gradient_fcn_15_tmp * s_sigma_1_tmp_tmp * sigma_2 * t_sigma_1_tmp_tmp *
-    sigma_14 * b_gradient_fcn_15_tmp * b_sigma_1_tmp;
-  g_gradient_fcn_15_tmp = K_p_T->contents * l_2->contents;
-  h_gradient_fcn_15_tmp = cos(u_in[6] * gain_el->contents) * cos(u_in[10] *
-    gain_az->contents);
-  i_gradient_fcn_15_tmp = cos(u_in[6] * gain_el->contents) * sin(u_in[10] *
-    gain_az->contents);
-  a = e_gradient_fcn_15_tmp_tmp * u_in[2];
-  b_a = K_p_T->contents * l_3->contents;
-  c_a = K_p_M->contents * cos(u_in[6] * gain_el->contents);
-  gradient_fcn_15[2] = (((((2.0 * u_in[2] * n_gradient_fcn_15_tmp * sigma_4 *
-    t_sigma_1_tmp_tmp * ((K_p_M->contents * h_sigma_1_tmp -
-    g_gradient_fcn_15_tmp * c_sigma_1_tmp * p_sigma_1_tmp) +
-    f_gradient_fcn_15_tmp * c_sigma_1_tmp * l_sigma_1_tmp) / (i_sigma_3_tmp *
-    i_sigma_3_tmp) - 4.0 * u_in[2] * m_gradient_fcn_15_tmp * sigma_5 *
-    t_sigma_1_tmp_tmp * ((g_gradient_fcn_15_tmp * h_sigma_1_tmp +
-    K_p_M->contents * c_sigma_1_tmp * p_sigma_1_tmp) - b_a * c_sigma_1_tmp *
-    l_sigma_1_tmp) / (j_sigma_3_tmp * j_sigma_3_tmp)) - o_gradient_fcn_15_tmp *
-    (desired_motor_value->contents - u_in[2] * gain_motor->contents) /
-    gain_motor->contents) - 2.0 * u_in[2] * l_gradient_fcn_15_tmp * sigma_3 *
-    t_sigma_1_tmp_tmp * ((c_a * l_sigma_1_tmp - f_gradient_fcn_15_tmp *
-    h_sigma_1_tmp) + K_p_T->contents * l_3->contents * cos(u_in[6] *
-    gain_el->contents) * p_sigma_1_tmp) / (k_sigma_3_tmp * k_sigma_3_tmp)) +
-    K_p_T->contents * u_in[2] * p_gradient_fcn_15_tmp * sigma_7 *
-    t_sigma_1_tmp_tmp * sigma_14 * ((h_sigma_1_tmp * h_sigma_1_tmp_tmp -
+  j_gradient_fcn_15_tmp = e_gradient_fcn_15_tmp_tmp * u_in[0];
+  k_gradient_fcn_15_tmp = K_p_T->contents * l_4->contents;
+  l_gradient_fcn_15_tmp = K_p_M->contents * cos(u_in[4] * gain_el->contents);
+  f_gradient_fcn_15_tmp_tmp = b_a_tmp * b_a_tmp;
+  m_gradient_fcn_15_tmp = 2.0 * f_gradient_fcn_15_tmp_tmp;
+  n_gradient_fcn_15_tmp = f_sigma_3_tmp * f_sigma_3_tmp;
+  o_gradient_fcn_15_tmp = c_a_tmp * c_a_tmp;
+  p_gradient_fcn_15_tmp = a_tmp * a_tmp;
+  q_gradient_fcn_15_tmp = g_sigma_3_tmp * g_sigma_3_tmp;
+  r_gradient_fcn_15_tmp = h_sigma_3_tmp * h_sigma_3_tmp;
+  s_gradient_fcn_15_tmp = i_sigma_3_tmp * i_sigma_3_tmp;
+  t_gradient_fcn_15_tmp = m_gradient_fcn_15_tmp * gamma_quadratic_du2->contents;
+  gradient_fcn_15[0] = ((((((2.0 * u_in[0] * p_gradient_fcn_15_tmp *
+    t_sigma_1_tmp_tmp * sigma_4 * ((K_p_M->contents * f_sigma_1_tmp +
+    e_gradient_fcn_15_tmp * sigma_1_tmp * n_sigma_1_tmp) + g_gradient_fcn_15_tmp
+    * sigma_1_tmp * j_sigma_1_tmp) / (a * a) - t_gradient_fcn_15_tmp *
+    (previous_motor_value1->contents - f_gradient_fcn_15_tmp) /
+    gain_motor->contents) - 4.0 * u_in[0] * o_gradient_fcn_15_tmp *
+    t_sigma_1_tmp_tmp * sigma_5 * ((K_p_M->contents * sigma_1_tmp *
+    n_sigma_1_tmp - e_gradient_fcn_15_tmp * f_sigma_1_tmp) +
+    k_gradient_fcn_15_tmp * sigma_1_tmp * j_sigma_1_tmp) / (b_a * b_a)) -
+    m_gradient_fcn_15_tmp * gamma_quadratic_du->contents *
+    (desired_motor_value->contents - f_gradient_fcn_15_tmp) /
+    gain_motor->contents) + 2.0 * u_in[0] * n_gradient_fcn_15_tmp *
+    t_sigma_1_tmp_tmp * sigma_3 * ((g_gradient_fcn_15_tmp * f_sigma_1_tmp -
+    l_gradient_fcn_15_tmp * j_sigma_1_tmp) + K_p_T->contents * l_4->contents *
+    cos(u_in[4] * gain_el->contents) * n_sigma_1_tmp) / (c_a * c_a)) +
+    K_p_T->contents * u_in[0] * q_gradient_fcn_15_tmp * t_sigma_1_tmp_tmp *
+    sigma_7 * sigma_13 * ((f_sigma_1_tmp * h_sigma_1_tmp_tmp -
     h_gradient_fcn_15_tmp * e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) +
-    i_gradient_fcn_15_tmp * e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) / 25.0) + a *
-                        y_sigma_1_tmp * sigma_1 * t_sigma_1_tmp_tmp * sigma_14 *
-                        ((h_sigma_1_tmp * e_sigma_1_tmp_tmp +
-    h_gradient_fcn_15_tmp * g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp) -
-    i_gradient_fcn_15_tmp * h_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp)) - a *
-    s_sigma_1_tmp_tmp * sigma_2 * t_sigma_1_tmp_tmp * sigma_14 *
-    c_gradient_fcn_15_tmp * c_sigma_1_tmp;
-  h_gradient_fcn_15_tmp = cos(u_in[7] * gain_el->contents) * cos(u_in[11] *
-    gain_az->contents);
-  i_gradient_fcn_15_tmp = cos(u_in[7] * gain_el->contents) * sin(u_in[11] *
-    gain_az->contents);
-  a = e_gradient_fcn_15_tmp_tmp * u_in[3];
-  fb_sigma_1_tmp = K_p_M->contents * cos(u_in[7] * gain_el->contents);
-  gradient_fcn_15[3] = (((((4.0 * u_in[3] * m_gradient_fcn_15_tmp * sigma_5 *
-    t_sigma_1_tmp_tmp * ((g_gradient_fcn_15_tmp * i_sigma_1_tmp +
-    K_p_M->contents * d_sigma_1_tmp * q_sigma_1_tmp) + b_a * d_sigma_1_tmp *
-    m_sigma_1_tmp) / (l_sigma_3_tmp * l_sigma_3_tmp) - o_gradient_fcn_15_tmp *
-    (desired_motor_value->contents - u_in[3] * gain_motor->contents) /
-    gain_motor->contents) + 2.0 * u_in[3] * n_gradient_fcn_15_tmp * sigma_4 *
-    t_sigma_1_tmp_tmp * ((g_gradient_fcn_15_tmp * d_sigma_1_tmp * q_sigma_1_tmp
-    - K_p_M->contents * i_sigma_1_tmp) + f_gradient_fcn_15_tmp * d_sigma_1_tmp *
-    m_sigma_1_tmp) / (m_sigma_3_tmp * m_sigma_3_tmp)) + 2.0 * u_in[3] *
-    l_gradient_fcn_15_tmp * sigma_3 * t_sigma_1_tmp_tmp *
-    ((f_gradient_fcn_15_tmp * i_sigma_1_tmp + fb_sigma_1_tmp * m_sigma_1_tmp) -
-     K_p_T->contents * l_3->contents * cos(u_in[7] * gain_el->contents) *
-     q_sigma_1_tmp) / (cb_sigma_1_tmp * cb_sigma_1_tmp)) + K_p_T->contents *
-    u_in[3] * p_gradient_fcn_15_tmp * sigma_7 * t_sigma_1_tmp_tmp * sigma_14 *
-    ((i_sigma_1_tmp * h_sigma_1_tmp_tmp - h_gradient_fcn_15_tmp *
-      e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) + i_gradient_fcn_15_tmp *
-     e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) / 25.0) + a * y_sigma_1_tmp *
-                        sigma_1 * t_sigma_1_tmp_tmp * sigma_14 * ((i_sigma_1_tmp
+    i_gradient_fcn_15_tmp * e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) / 25.0) +
+                        j_gradient_fcn_15_tmp * r_gradient_fcn_15_tmp *
+                        t_sigma_1_tmp_tmp * sigma_1 * sigma_13 * ((f_sigma_1_tmp
     * e_sigma_1_tmp_tmp + h_gradient_fcn_15_tmp * g_sigma_1_tmp_tmp *
     h_sigma_1_tmp_tmp) - i_gradient_fcn_15_tmp * h_sigma_1_tmp_tmp *
-    m_sigma_1_tmp_tmp)) - a * s_sigma_1_tmp_tmp * sigma_2 * t_sigma_1_tmp_tmp *
-    sigma_14 * d_gradient_fcn_15_tmp * d_sigma_1_tmp;
-  e_gradient_fcn_15_tmp_tmp = db_sigma_1_tmp * db_sigma_1_tmp;
-  f_gradient_fcn_15_tmp = 2.0 * e_gradient_fcn_15_tmp_tmp *
-    gamma_quadratic_du->contents;
-  h_gradient_fcn_15_tmp = 2.0 * r_sigma_1_tmp * m_gradient_fcn_15_tmp;
-  i_gradient_fcn_15_tmp = r_sigma_1_tmp * l_gradient_fcn_15_tmp;
-  o_gradient_fcn_15_tmp = b_sigma_3_tmp * s_sigma_1_tmp_tmp;
-  a = sigma_5_tmp * p_gradient_fcn_15_tmp;
-  m_sigma_3_tmp = b_sigma_3_tmp * y_sigma_1_tmp;
-  gradient_fcn_15[4] = (((((h_gradient_fcn_15_tmp * gain_el->contents * sigma_5 *
-    t_sigma_1_tmp_tmp * ((K_p_T->contents * l_1->contents * cos(u_in[4] *
-    gain_el->contents) + K_p_M->contents * n_sigma_1_tmp * f_sigma_1_tmp) +
-    j_gradient_fcn_15_tmp * f_sigma_1_tmp * j_sigma_1_tmp) / (bb_sigma_1_tmp *
-    bb_sigma_1_tmp) - f_gradient_fcn_15_tmp * (desired_el_value->contents -
-    i_sigma_1_tmp_tmp) / gain_el->contents) - r_sigma_1_tmp *
-    n_gradient_fcn_15_tmp * gain_el->contents * sigma_4 * t_sigma_1_tmp_tmp *
-    ((e_gradient_fcn_15_tmp * n_sigma_1_tmp * f_sigma_1_tmp -
-      k_gradient_fcn_15_tmp) + K_p_T->contents * l_z->contents * sin(u_in[4] *
-    gain_el->contents) * j_sigma_1_tmp) / (eb_sigma_1_tmp * eb_sigma_1_tmp)) +
-    i_gradient_fcn_15_tmp * gain_el->contents * sigma_3 * t_sigma_1_tmp_tmp *
-    ((K_p_T->contents * l_z->contents * cos(u_in[4] * gain_el->contents) +
-      K_p_M->contents * sin(u_in[4] * gain_el->contents) * j_sigma_1_tmp) -
-     j_gradient_fcn_15_tmp * n_sigma_1_tmp * f_sigma_1_tmp) / (gb_sigma_1_tmp *
-    gb_sigma_1_tmp)) + a * gain_el->contents * sigma_7 * t_sigma_1_tmp_tmp *
-    sigma_14 * ((sigma_1_tmp * h_sigma_1_tmp_tmp + n_sigma_1_tmp * f_sigma_1_tmp
-                 * e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) - f_sigma_1_tmp *
-                j_sigma_1_tmp * e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) / 50.0) +
-                        m_sigma_3_tmp * gain_el->contents * sigma_1 *
-                        t_sigma_1_tmp_tmp * sigma_14 * ((sigma_1_tmp *
-    e_sigma_1_tmp_tmp - cos(u_in[8] * gain_az->contents) * sin(u_in[4] *
-    gain_el->contents) * g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp) + sin(u_in[4] *
-    gain_el->contents) * sin(u_in[8] * gain_az->contents) * h_sigma_1_tmp_tmp *
-    m_sigma_1_tmp_tmp)) + o_gradient_fcn_15_tmp * gain_el->contents * sigma_2 *
-    t_sigma_1_tmp_tmp * sigma_14 * gradient_fcn_15_tmp * f_sigma_1_tmp;
-  k_gradient_fcn_15_tmp = s_sigma_1_tmp * l_gradient_fcn_15_tmp;
-  j_sigma_3_tmp = 2.0 * s_sigma_1_tmp * m_gradient_fcn_15_tmp;
-  k_sigma_3_tmp = c_sigma_3_tmp * s_sigma_1_tmp_tmp;
-  l_sigma_3_tmp = b_sigma_5_tmp * p_gradient_fcn_15_tmp;
-  i_sigma_3_tmp = c_sigma_3_tmp * y_sigma_1_tmp;
-  gradient_fcn_15[5] = (((((l_sigma_3_tmp * gain_el->contents * sigma_7 *
-    t_sigma_1_tmp_tmp * sigma_14 * ((b_sigma_1_tmp * h_sigma_1_tmp_tmp +
-    o_sigma_1_tmp * g_sigma_1_tmp * e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) -
+    m_sigma_1_tmp_tmp)) - j_gradient_fcn_15_tmp * s_gradient_fcn_15_tmp *
+    t_sigma_1_tmp_tmp * sigma_2 * sigma_13 * gradient_fcn_15_tmp * sigma_1_tmp;
+  f_gradient_fcn_15_tmp = u_in[1] * gain_motor->contents;
+  h_gradient_fcn_15_tmp = cos(u_in[5] * gain_el->contents) * cos(u_in[9] *
+    gain_az->contents);
+  i_gradient_fcn_15_tmp = cos(u_in[5] * gain_el->contents) * sin(u_in[9] *
+    gain_az->contents);
+  j_gradient_fcn_15_tmp = e_gradient_fcn_15_tmp_tmp * u_in[1];
+  m_gradient_fcn_15_tmp = K_p_M->contents * cos(u_in[5] * gain_el->contents);
+  ab_sigma_1_tmp = j_sigma_3_tmp * j_sigma_3_tmp;
+  y_sigma_1_tmp = 2.0 * ab_sigma_1_tmp;
+  gradient_fcn_15[1] = ((((((2.0 * u_in[1] * n_gradient_fcn_15_tmp *
+    t_sigma_1_tmp_tmp * sigma_3 * ((g_gradient_fcn_15_tmp * g_sigma_1_tmp +
+    K_p_M->contents * b_sigma_1_tmp * k_sigma_1_tmp) + k_gradient_fcn_15_tmp *
+    b_sigma_1_tmp * o_sigma_1_tmp) / (d_a * d_a) - y_sigma_1_tmp *
+    gamma_quadratic_du2->contents * (previous_motor_value2->contents -
+    f_gradient_fcn_15_tmp) / gain_motor->contents) - 4.0 * u_in[1] *
+    o_gradient_fcn_15_tmp * t_sigma_1_tmp_tmp * sigma_5 *
+    ((e_gradient_fcn_15_tmp * g_sigma_1_tmp - m_gradient_fcn_15_tmp *
+      o_sigma_1_tmp) + K_p_T->contents * l_4->contents * cos(u_in[5] *
+    gain_el->contents) * k_sigma_1_tmp) / (e_a * e_a)) - 2.0 * u_in[1] *
+    p_gradient_fcn_15_tmp * t_sigma_1_tmp_tmp * sigma_4 * ((K_p_M->contents *
+    g_sigma_1_tmp + e_gradient_fcn_15_tmp * b_sigma_1_tmp * o_sigma_1_tmp) -
+    g_gradient_fcn_15_tmp * b_sigma_1_tmp * k_sigma_1_tmp) / (f_a * f_a)) -
+    y_sigma_1_tmp * gamma_quadratic_du->contents *
+    (desired_motor_value->contents - f_gradient_fcn_15_tmp) /
+    gain_motor->contents) + K_p_T->contents * u_in[1] * q_gradient_fcn_15_tmp *
+    t_sigma_1_tmp_tmp * sigma_7 * sigma_13 * ((g_sigma_1_tmp * h_sigma_1_tmp_tmp
+    - h_gradient_fcn_15_tmp * e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) +
+    i_gradient_fcn_15_tmp * e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) / 25.0) +
+                        j_gradient_fcn_15_tmp * r_gradient_fcn_15_tmp *
+                        t_sigma_1_tmp_tmp * sigma_1 * sigma_13 * ((g_sigma_1_tmp
+    * e_sigma_1_tmp_tmp + h_gradient_fcn_15_tmp * g_sigma_1_tmp_tmp *
+    h_sigma_1_tmp_tmp) - i_gradient_fcn_15_tmp * h_sigma_1_tmp_tmp *
+    m_sigma_1_tmp_tmp)) - j_gradient_fcn_15_tmp * s_gradient_fcn_15_tmp *
+    t_sigma_1_tmp_tmp * sigma_2 * sigma_13 * b_gradient_fcn_15_tmp *
+    b_sigma_1_tmp;
+  f_gradient_fcn_15_tmp = K_p_T->contents * l_2->contents;
+  h_gradient_fcn_15_tmp = u_in[2] * gain_motor->contents;
+  i_gradient_fcn_15_tmp = cos(u_in[6] * gain_el->contents) * cos(u_in[10] *
+    gain_az->contents);
+  j_gradient_fcn_15_tmp = cos(u_in[6] * gain_el->contents) * sin(u_in[10] *
+    gain_az->contents);
+  y_sigma_1_tmp = e_gradient_fcn_15_tmp_tmp * u_in[2];
+  jb_sigma_1_tmp = K_p_T->contents * l_3->contents;
+  r_sigma_1_tmp_tmp = K_p_M->contents * cos(u_in[6] * gain_el->contents);
+  s_sigma_1_tmp_tmp = k_sigma_3_tmp * k_sigma_3_tmp;
+  gradient_fcn_15[2] = ((((((2.0 * u_in[2] * p_gradient_fcn_15_tmp *
+    t_sigma_1_tmp_tmp * sigma_4 * ((K_p_M->contents * h_sigma_1_tmp -
+    f_gradient_fcn_15_tmp * c_sigma_1_tmp * p_sigma_1_tmp) +
+    g_gradient_fcn_15_tmp * c_sigma_1_tmp * l_sigma_1_tmp) / (l_sigma_3_tmp *
+    l_sigma_3_tmp) - t_gradient_fcn_15_tmp * (previous_motor_value3->contents -
+    h_gradient_fcn_15_tmp) / gain_motor->contents) - 4.0 * u_in[2] *
+    o_gradient_fcn_15_tmp * t_sigma_1_tmp_tmp * sigma_5 *
+    ((f_gradient_fcn_15_tmp * h_sigma_1_tmp + K_p_M->contents * c_sigma_1_tmp *
+      p_sigma_1_tmp) - jb_sigma_1_tmp * c_sigma_1_tmp * l_sigma_1_tmp) /
+    (m_sigma_3_tmp * m_sigma_3_tmp)) - 2.0 * s_sigma_1_tmp_tmp *
+    gamma_quadratic_du->contents * (desired_motor_value->contents -
+    h_gradient_fcn_15_tmp) / gain_motor->contents) - 2.0 * u_in[2] *
+    n_gradient_fcn_15_tmp * t_sigma_1_tmp_tmp * sigma_3 * ((r_sigma_1_tmp_tmp *
+    l_sigma_1_tmp - g_gradient_fcn_15_tmp * h_sigma_1_tmp) + K_p_T->contents *
+    l_3->contents * cos(u_in[6] * gain_el->contents) * p_sigma_1_tmp) /
+    (n_sigma_3_tmp * n_sigma_3_tmp)) + K_p_T->contents * u_in[2] *
+    q_gradient_fcn_15_tmp * t_sigma_1_tmp_tmp * sigma_7 * sigma_13 *
+    ((h_sigma_1_tmp * h_sigma_1_tmp_tmp - i_gradient_fcn_15_tmp *
+      e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) + j_gradient_fcn_15_tmp *
+     e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) / 25.0) + y_sigma_1_tmp *
+                        r_gradient_fcn_15_tmp * t_sigma_1_tmp_tmp * sigma_1 *
+                        sigma_13 * ((h_sigma_1_tmp * e_sigma_1_tmp_tmp +
+    i_gradient_fcn_15_tmp * g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp) -
+    j_gradient_fcn_15_tmp * h_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp)) -
+    y_sigma_1_tmp * s_gradient_fcn_15_tmp * t_sigma_1_tmp_tmp * sigma_2 *
+    sigma_13 * c_gradient_fcn_15_tmp * c_sigma_1_tmp;
+  h_gradient_fcn_15_tmp = u_in[3] * gain_motor->contents;
+  i_gradient_fcn_15_tmp = cos(u_in[7] * gain_el->contents) * cos(u_in[11] *
+    gain_az->contents);
+  j_gradient_fcn_15_tmp = cos(u_in[7] * gain_el->contents) * sin(u_in[11] *
+    gain_az->contents);
+  t_gradient_fcn_15_tmp = e_gradient_fcn_15_tmp_tmp * u_in[3];
+  y_sigma_1_tmp = K_p_M->contents * cos(u_in[7] * gain_el->contents);
+  e_gradient_fcn_15_tmp_tmp = o_sigma_3_tmp * o_sigma_3_tmp;
+  cb_sigma_1_tmp = 2.0 * e_gradient_fcn_15_tmp_tmp;
+  gradient_fcn_15[3] = ((((((4.0 * u_in[3] * o_gradient_fcn_15_tmp *
+    t_sigma_1_tmp_tmp * sigma_5 * ((f_gradient_fcn_15_tmp * i_sigma_1_tmp +
+    K_p_M->contents * d_sigma_1_tmp * q_sigma_1_tmp) + jb_sigma_1_tmp *
+    d_sigma_1_tmp * m_sigma_1_tmp) / (p_sigma_3_tmp * p_sigma_3_tmp) -
+    cb_sigma_1_tmp * gamma_quadratic_du2->contents *
+    (previous_motor_value4->contents - h_gradient_fcn_15_tmp) /
+    gain_motor->contents) - cb_sigma_1_tmp * gamma_quadratic_du->contents *
+    (desired_motor_value->contents - h_gradient_fcn_15_tmp) /
+    gain_motor->contents) + 2.0 * u_in[3] * p_gradient_fcn_15_tmp *
+    t_sigma_1_tmp_tmp * sigma_4 * ((f_gradient_fcn_15_tmp * d_sigma_1_tmp *
+    q_sigma_1_tmp - K_p_M->contents * i_sigma_1_tmp) + g_gradient_fcn_15_tmp *
+    d_sigma_1_tmp * m_sigma_1_tmp) / (q_sigma_3_tmp * q_sigma_3_tmp)) + 2.0 *
+    u_in[3] * n_gradient_fcn_15_tmp * t_sigma_1_tmp_tmp * sigma_3 *
+    ((g_gradient_fcn_15_tmp * i_sigma_1_tmp + y_sigma_1_tmp * m_sigma_1_tmp) -
+     K_p_T->contents * l_3->contents * cos(u_in[7] * gain_el->contents) *
+     q_sigma_1_tmp) / (db_sigma_1_tmp * db_sigma_1_tmp)) + K_p_T->contents *
+    u_in[3] * q_gradient_fcn_15_tmp * t_sigma_1_tmp_tmp * sigma_7 * sigma_13 *
+    ((i_sigma_1_tmp * h_sigma_1_tmp_tmp - i_gradient_fcn_15_tmp *
+      e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) + j_gradient_fcn_15_tmp *
+     e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) / 25.0) + t_gradient_fcn_15_tmp *
+                        r_gradient_fcn_15_tmp * t_sigma_1_tmp_tmp * sigma_1 *
+                        sigma_13 * ((i_sigma_1_tmp * e_sigma_1_tmp_tmp +
+    i_gradient_fcn_15_tmp * g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp) -
+    j_gradient_fcn_15_tmp * h_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp)) -
+    t_gradient_fcn_15_tmp * s_gradient_fcn_15_tmp * t_sigma_1_tmp_tmp * sigma_2 *
+    sigma_13 * d_gradient_fcn_15_tmp * d_sigma_1_tmp;
+  q_sigma_3_tmp = bb_sigma_1_tmp * bb_sigma_1_tmp;
+  g_gradient_fcn_15_tmp = 2.0 * q_sigma_3_tmp;
+  h_gradient_fcn_15_tmp = 2.0 * r_sigma_1_tmp * o_gradient_fcn_15_tmp;
+  i_gradient_fcn_15_tmp = r_sigma_1_tmp * n_gradient_fcn_15_tmp;
+  j_gradient_fcn_15_tmp = b_sigma_3_tmp * s_gradient_fcn_15_tmp;
+  t_gradient_fcn_15_tmp = b_sigma_3_tmp * r_gradient_fcn_15_tmp;
+  cb_sigma_1_tmp = sigma_5_tmp * q_gradient_fcn_15_tmp;
+  gradient_fcn_15[4] = ((((((h_gradient_fcn_15_tmp * gain_el->contents *
+    t_sigma_1_tmp_tmp * sigma_5 * ((K_p_T->contents * l_1->contents * cos(u_in[4]
+    * gain_el->contents) + K_p_M->contents * n_sigma_1_tmp * f_sigma_1_tmp) +
+    k_gradient_fcn_15_tmp * f_sigma_1_tmp * j_sigma_1_tmp) / (eb_sigma_1_tmp *
+    eb_sigma_1_tmp) - g_gradient_fcn_15_tmp * gamma_quadratic_du2->contents *
+    (previous_el_value1->contents - i_sigma_1_tmp_tmp) / gain_el->contents) -
+    g_gradient_fcn_15_tmp * gamma_quadratic_du->contents *
+    (desired_el_value->contents - i_sigma_1_tmp_tmp) / gain_el->contents) -
+    r_sigma_1_tmp * p_gradient_fcn_15_tmp * gain_el->contents *
+    t_sigma_1_tmp_tmp * sigma_4 * ((e_gradient_fcn_15_tmp * n_sigma_1_tmp *
+    f_sigma_1_tmp - l_gradient_fcn_15_tmp) + K_p_T->contents * l_z->contents *
+    sin(u_in[4] * gain_el->contents) * j_sigma_1_tmp) / (gb_sigma_1_tmp *
+    gb_sigma_1_tmp)) + i_gradient_fcn_15_tmp * gain_el->contents *
+    t_sigma_1_tmp_tmp * sigma_3 * ((K_p_T->contents * l_z->contents * cos(u_in[4]
+    * gain_el->contents) + K_p_M->contents * sin(u_in[4] * gain_el->contents) *
+    j_sigma_1_tmp) - k_gradient_fcn_15_tmp * n_sigma_1_tmp * f_sigma_1_tmp) /
+    (hb_sigma_1_tmp * hb_sigma_1_tmp)) + cb_sigma_1_tmp * gain_el->contents *
+    t_sigma_1_tmp_tmp * sigma_7 * sigma_13 * ((sigma_1_tmp * h_sigma_1_tmp_tmp +
+    n_sigma_1_tmp * f_sigma_1_tmp * e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) -
+    f_sigma_1_tmp * j_sigma_1_tmp * e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) /
+    50.0) + t_gradient_fcn_15_tmp * gain_el->contents * t_sigma_1_tmp_tmp *
+                        sigma_1 * sigma_13 * ((sigma_1_tmp * e_sigma_1_tmp_tmp -
+    cos(u_in[8] * gain_az->contents) * sin(u_in[4] * gain_el->contents) *
+    g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp) + sin(u_in[4] * gain_el->contents) *
+    sin(u_in[8] * gain_az->contents) * h_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp)) +
+    j_gradient_fcn_15_tmp * gain_el->contents * t_sigma_1_tmp_tmp * sigma_2 *
+    sigma_13 * gradient_fcn_15_tmp * f_sigma_1_tmp;
+  p_sigma_3_tmp = ib_sigma_1_tmp * ib_sigma_1_tmp;
+  g_gradient_fcn_15_tmp = 2.0 * p_sigma_3_tmp;
+  l_gradient_fcn_15_tmp = s_sigma_1_tmp * n_gradient_fcn_15_tmp;
+  n_sigma_3_tmp = 2.0 * s_sigma_1_tmp * o_gradient_fcn_15_tmp;
+  o_sigma_3_tmp = c_sigma_3_tmp * s_gradient_fcn_15_tmp;
+  l_sigma_3_tmp = c_sigma_3_tmp * r_gradient_fcn_15_tmp;
+  m_sigma_3_tmp = b_sigma_5_tmp * q_gradient_fcn_15_tmp;
+  gradient_fcn_15[5] = ((((((m_sigma_3_tmp * gain_el->contents *
+    t_sigma_1_tmp_tmp * sigma_7 * sigma_13 * ((b_sigma_1_tmp * h_sigma_1_tmp_tmp
+    + o_sigma_1_tmp * g_sigma_1_tmp * e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) -
     g_sigma_1_tmp * k_sigma_1_tmp * e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) /
-    50.0 - j_sigma_3_tmp * gain_el->contents * sigma_5 * t_sigma_1_tmp_tmp *
+    50.0 - g_gradient_fcn_15_tmp * gamma_quadratic_du2->contents *
+    (previous_el_value2->contents - j_sigma_1_tmp_tmp) / gain_el->contents) -
+    n_sigma_3_tmp * gain_el->contents * t_sigma_1_tmp_tmp * sigma_5 *
     ((K_p_T->contents * l_1->contents * cos(u_in[5] * gain_el->contents) +
-      K_p_M->contents * o_sigma_1_tmp * g_sigma_1_tmp) - j_gradient_fcn_15_tmp *
-     g_sigma_1_tmp * k_sigma_1_tmp) / (jb_sigma_1_tmp * jb_sigma_1_tmp)) -
-    s_sigma_1_tmp * n_gradient_fcn_15_tmp * gain_el->contents * sigma_4 *
-    t_sigma_1_tmp_tmp * ((ib_sigma_1_tmp - e_gradient_fcn_15_tmp * o_sigma_1_tmp
-    * g_sigma_1_tmp) + K_p_T->contents * l_z->contents * sin(u_in[5] *
-    gain_el->contents) * k_sigma_1_tmp) / (kb_sigma_1_tmp * kb_sigma_1_tmp)) -
-    k_gradient_fcn_15_tmp * gain_el->contents * sigma_3 * t_sigma_1_tmp_tmp *
-    ((K_p_M->contents * sin(u_in[5] * gain_el->contents) * k_sigma_1_tmp -
-      K_p_T->contents * l_z->contents * cos(u_in[5] * gain_el->contents)) +
-     j_gradient_fcn_15_tmp * o_sigma_1_tmp * g_sigma_1_tmp) / (r_sigma_1_tmp_tmp
-    * r_sigma_1_tmp_tmp)) - f_gradient_fcn_15_tmp * (desired_el_value->contents
-    - j_sigma_1_tmp_tmp) / gain_el->contents) + i_sigma_3_tmp *
-                        gain_el->contents * sigma_1 * t_sigma_1_tmp_tmp *
-                        sigma_14 * ((b_sigma_1_tmp * e_sigma_1_tmp_tmp - cos
-    (u_in[9] * gain_az->contents) * sin(u_in[5] * gain_el->contents) *
-    g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp) + sin(u_in[5] * gain_el->contents) *
-    sin(u_in[9] * gain_az->contents) * h_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp)) +
-    k_sigma_3_tmp * gain_el->contents * sigma_2 * t_sigma_1_tmp_tmp * sigma_14 *
-    b_gradient_fcn_15_tmp * g_sigma_1_tmp;
-  e_gradient_fcn_15_tmp = 2.0 * t_sigma_1_tmp * m_gradient_fcn_15_tmp;
-  ib_sigma_1_tmp = t_sigma_1_tmp * l_gradient_fcn_15_tmp;
-  h_sigma_3_tmp = d_sigma_3_tmp * s_sigma_1_tmp_tmp;
-  c_a_tmp = c_sigma_5_tmp * p_gradient_fcn_15_tmp;
-  g_sigma_3_tmp = d_sigma_3_tmp * y_sigma_1_tmp;
-  gradient_fcn_15[6] = (((((t_sigma_1_tmp * n_gradient_fcn_15_tmp *
-    gain_el->contents * sigma_4 * t_sigma_1_tmp_tmp * ((c_a +
-    g_gradient_fcn_15_tmp * p_sigma_1_tmp * h_sigma_1_tmp) - K_p_T->contents *
-    l_z->contents * sin(u_in[6] * gain_el->contents) * l_sigma_1_tmp) / (g_a *
-    g_a) - e_gradient_fcn_15_tmp * gain_el->contents * sigma_5 *
-    t_sigma_1_tmp_tmp * ((K_p_T->contents * l_2->contents * cos(u_in[6] *
-    gain_el->contents) - K_p_M->contents * p_sigma_1_tmp * h_sigma_1_tmp) + b_a *
-    h_sigma_1_tmp * l_sigma_1_tmp) / (h_a * h_a)) - f_gradient_fcn_15_tmp *
-    (desired_el_value->contents - k_sigma_1_tmp_tmp) / gain_el->contents) +
-    ib_sigma_1_tmp * gain_el->contents * sigma_3 * t_sigma_1_tmp_tmp *
-    ((K_p_T->contents * l_z->contents * cos(u_in[6] * gain_el->contents) +
-      K_p_M->contents * sin(u_in[6] * gain_el->contents) * l_sigma_1_tmp) + b_a *
-     p_sigma_1_tmp * h_sigma_1_tmp) / (i_a * i_a)) + c_a_tmp * gain_el->contents
-    * sigma_7 * t_sigma_1_tmp_tmp * sigma_14 * ((c_sigma_1_tmp *
-    h_sigma_1_tmp_tmp + p_sigma_1_tmp * h_sigma_1_tmp * e_sigma_1_tmp_tmp *
+      K_p_M->contents * o_sigma_1_tmp * g_sigma_1_tmp) - k_gradient_fcn_15_tmp *
+     g_sigma_1_tmp * k_sigma_1_tmp) / (g_a * g_a)) - s_sigma_1_tmp *
+    p_gradient_fcn_15_tmp * gain_el->contents * t_sigma_1_tmp_tmp * sigma_4 *
+    ((m_gradient_fcn_15_tmp - e_gradient_fcn_15_tmp * o_sigma_1_tmp *
+      g_sigma_1_tmp) + K_p_T->contents * l_z->contents * sin(u_in[5] *
+    gain_el->contents) * k_sigma_1_tmp) / (h_a * h_a)) - l_gradient_fcn_15_tmp *
+    gain_el->contents * t_sigma_1_tmp_tmp * sigma_3 * ((K_p_M->contents * sin
+    (u_in[5] * gain_el->contents) * k_sigma_1_tmp - K_p_T->contents *
+    l_z->contents * cos(u_in[5] * gain_el->contents)) + k_gradient_fcn_15_tmp *
+    o_sigma_1_tmp * g_sigma_1_tmp) / (i_a * i_a)) - g_gradient_fcn_15_tmp *
+    gamma_quadratic_du->contents * (desired_el_value->contents -
+    j_sigma_1_tmp_tmp) / gain_el->contents) + l_sigma_3_tmp * gain_el->contents *
+                        t_sigma_1_tmp_tmp * sigma_1 * sigma_13 * ((b_sigma_1_tmp
+    * e_sigma_1_tmp_tmp - cos(u_in[9] * gain_az->contents) * sin(u_in[5] *
+    gain_el->contents) * g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp) + sin(u_in[5] *
+    gain_el->contents) * sin(u_in[9] * gain_az->contents) * h_sigma_1_tmp_tmp *
+    m_sigma_1_tmp_tmp)) + o_sigma_3_tmp * gain_el->contents * t_sigma_1_tmp_tmp *
+    sigma_2 * sigma_13 * b_gradient_fcn_15_tmp * g_sigma_1_tmp;
+  k_sigma_3_tmp = d_a_tmp * d_a_tmp;
+  e_gradient_fcn_15_tmp = 2.0 * k_sigma_3_tmp;
+  g_gradient_fcn_15_tmp = 2.0 * t_sigma_1_tmp * o_gradient_fcn_15_tmp;
+  m_gradient_fcn_15_tmp = t_sigma_1_tmp * n_gradient_fcn_15_tmp;
+  c_a_tmp = d_sigma_3_tmp * s_gradient_fcn_15_tmp;
+  i_sigma_3_tmp = d_sigma_3_tmp * r_gradient_fcn_15_tmp;
+  j_sigma_3_tmp = c_sigma_5_tmp * q_gradient_fcn_15_tmp;
+  gradient_fcn_15[6] = ((((((t_sigma_1_tmp * p_gradient_fcn_15_tmp *
+    gain_el->contents * t_sigma_1_tmp_tmp * sigma_4 * ((r_sigma_1_tmp_tmp +
+    f_gradient_fcn_15_tmp * p_sigma_1_tmp * h_sigma_1_tmp) - K_p_T->contents *
+    l_z->contents * sin(u_in[6] * gain_el->contents) * l_sigma_1_tmp) / (j_a *
+    j_a) - e_gradient_fcn_15_tmp * gamma_quadratic_du2->contents *
+    (previous_el_value3->contents - k_sigma_1_tmp_tmp) / gain_el->contents) -
+    g_gradient_fcn_15_tmp * gain_el->contents * t_sigma_1_tmp_tmp * sigma_5 *
+    ((K_p_T->contents * l_2->contents * cos(u_in[6] * gain_el->contents) -
+      K_p_M->contents * p_sigma_1_tmp * h_sigma_1_tmp) + jb_sigma_1_tmp *
+     h_sigma_1_tmp * l_sigma_1_tmp) / (k_a * k_a)) - e_gradient_fcn_15_tmp *
+    gamma_quadratic_du->contents * (desired_el_value->contents -
+    k_sigma_1_tmp_tmp) / gain_el->contents) + m_gradient_fcn_15_tmp *
+    gain_el->contents * t_sigma_1_tmp_tmp * sigma_3 * ((K_p_T->contents *
+    l_z->contents * cos(u_in[6] * gain_el->contents) + K_p_M->contents * sin
+    (u_in[6] * gain_el->contents) * l_sigma_1_tmp) + jb_sigma_1_tmp *
+    p_sigma_1_tmp * h_sigma_1_tmp) / (l_a * l_a)) + j_sigma_3_tmp *
+    gain_el->contents * t_sigma_1_tmp_tmp * sigma_7 * sigma_13 * ((c_sigma_1_tmp
+    * h_sigma_1_tmp_tmp + p_sigma_1_tmp * h_sigma_1_tmp * e_sigma_1_tmp_tmp *
     g_sigma_1_tmp_tmp) - h_sigma_1_tmp * l_sigma_1_tmp * e_sigma_1_tmp_tmp *
-    m_sigma_1_tmp_tmp) / 50.0) + g_sigma_3_tmp * gain_el->contents * sigma_1 *
-                        t_sigma_1_tmp_tmp * sigma_14 * ((c_sigma_1_tmp *
-    e_sigma_1_tmp_tmp - cos(u_in[10] * gain_az->contents) * sin(u_in[6] *
+    m_sigma_1_tmp_tmp) / 50.0) + i_sigma_3_tmp * gain_el->contents *
+                        t_sigma_1_tmp_tmp * sigma_1 * sigma_13 * ((c_sigma_1_tmp
+    * e_sigma_1_tmp_tmp - cos(u_in[10] * gain_az->contents) * sin(u_in[6] *
     gain_el->contents) * g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp) + sin(u_in[6] *
     gain_el->contents) * sin(u_in[10] * gain_az->contents) * h_sigma_1_tmp_tmp *
-    m_sigma_1_tmp_tmp)) + h_sigma_3_tmp * gain_el->contents * sigma_2 *
-    t_sigma_1_tmp_tmp * sigma_14 * c_gradient_fcn_15_tmp * h_sigma_1_tmp;
-  c_a = u_sigma_1_tmp * l_gradient_fcn_15_tmp;
-  b_a_tmp = 2.0 * u_sigma_1_tmp * m_gradient_fcn_15_tmp;
-  a_tmp = e_sigma_3_tmp * s_sigma_1_tmp_tmp;
-  f_sigma_3_tmp = d_sigma_5_tmp * p_gradient_fcn_15_tmp;
-  hb_sigma_1_tmp = e_sigma_3_tmp * y_sigma_1_tmp;
-  gradient_fcn_15[7] = (((((c_a * gain_el->contents * sigma_3 *
-    t_sigma_1_tmp_tmp * ((K_p_T->contents * l_z->contents * cos(u_in[7] *
-    gain_el->contents) - K_p_M->contents * sin(u_in[7] * gain_el->contents) *
-    m_sigma_1_tmp) + b_a * q_sigma_1_tmp * i_sigma_1_tmp) / (j_a * j_a) -
-    b_a_tmp * gain_el->contents * sigma_5 * t_sigma_1_tmp_tmp *
-    ((K_p_M->contents * q_sigma_1_tmp * i_sigma_1_tmp - K_p_T->contents *
-      l_2->contents * cos(u_in[7] * gain_el->contents)) + b_a * i_sigma_1_tmp *
-     m_sigma_1_tmp) / (k_a * k_a)) - u_sigma_1_tmp * n_gradient_fcn_15_tmp *
-    gain_el->contents * sigma_4 * t_sigma_1_tmp_tmp * ((fb_sigma_1_tmp +
-    g_gradient_fcn_15_tmp * q_sigma_1_tmp * i_sigma_1_tmp) + K_p_T->contents *
-    l_z->contents * sin(u_in[7] * gain_el->contents) * m_sigma_1_tmp) / (l_a *
-    l_a)) - f_gradient_fcn_15_tmp * (desired_el_value->contents -
-    l_sigma_1_tmp_tmp) / gain_el->contents) + f_sigma_3_tmp * gain_el->contents *
-    sigma_7 * t_sigma_1_tmp_tmp * sigma_14 * ((d_sigma_1_tmp * h_sigma_1_tmp_tmp
-    + q_sigma_1_tmp * i_sigma_1_tmp * e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) -
-    i_sigma_1_tmp * m_sigma_1_tmp * e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) /
-    50.0) + hb_sigma_1_tmp * gain_el->contents * sigma_1 * t_sigma_1_tmp_tmp *
-                        sigma_14 * ((d_sigma_1_tmp * e_sigma_1_tmp_tmp - cos
+    m_sigma_1_tmp_tmp)) + c_a_tmp * gain_el->contents * t_sigma_1_tmp_tmp *
+    sigma_2 * sigma_13 * c_gradient_fcn_15_tmp * h_sigma_1_tmp;
+  h_sigma_3_tmp = e_a_tmp * e_a_tmp;
+  e_gradient_fcn_15_tmp = 2.0 * h_sigma_3_tmp;
+  r_sigma_1_tmp_tmp = u_sigma_1_tmp * n_gradient_fcn_15_tmp;
+  a_tmp = 2.0 * u_sigma_1_tmp * o_gradient_fcn_15_tmp;
+  g_sigma_3_tmp = e_sigma_3_tmp * s_gradient_fcn_15_tmp;
+  fb_sigma_1_tmp = e_sigma_3_tmp * r_gradient_fcn_15_tmp;
+  f_sigma_3_tmp = d_sigma_5_tmp * q_gradient_fcn_15_tmp;
+  gradient_fcn_15[7] = ((((((r_sigma_1_tmp_tmp * gain_el->contents *
+    t_sigma_1_tmp_tmp * sigma_3 * ((K_p_T->contents * l_z->contents * cos(u_in[7]
+    * gain_el->contents) - K_p_M->contents * sin(u_in[7] * gain_el->contents) *
+    m_sigma_1_tmp) + jb_sigma_1_tmp * q_sigma_1_tmp * i_sigma_1_tmp) / (m_a *
+    m_a) - e_gradient_fcn_15_tmp * gamma_quadratic_du2->contents *
+    (previous_el_value4->contents - l_sigma_1_tmp_tmp) / gain_el->contents) -
+    a_tmp * gain_el->contents * t_sigma_1_tmp_tmp * sigma_5 * ((K_p_M->contents *
+    q_sigma_1_tmp * i_sigma_1_tmp - K_p_T->contents * l_2->contents * cos(u_in[7]
+    * gain_el->contents)) + jb_sigma_1_tmp * i_sigma_1_tmp * m_sigma_1_tmp) /
+    (n_a * n_a)) - u_sigma_1_tmp * p_gradient_fcn_15_tmp * gain_el->contents *
+    t_sigma_1_tmp_tmp * sigma_4 * ((y_sigma_1_tmp + f_gradient_fcn_15_tmp *
+    q_sigma_1_tmp * i_sigma_1_tmp) + K_p_T->contents * l_z->contents * sin(u_in
+    [7] * gain_el->contents) * m_sigma_1_tmp) / (o_a * o_a)) -
+    e_gradient_fcn_15_tmp * gamma_quadratic_du->contents *
+    (desired_el_value->contents - l_sigma_1_tmp_tmp) / gain_el->contents) +
+    f_sigma_3_tmp * gain_el->contents * t_sigma_1_tmp_tmp * sigma_7 * sigma_13 *
+    ((d_sigma_1_tmp * h_sigma_1_tmp_tmp + q_sigma_1_tmp * i_sigma_1_tmp *
+      e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) - i_sigma_1_tmp * m_sigma_1_tmp *
+     e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) / 50.0) + fb_sigma_1_tmp *
+                        gain_el->contents * t_sigma_1_tmp_tmp * sigma_1 *
+                        sigma_13 * ((d_sigma_1_tmp * e_sigma_1_tmp_tmp - cos
     (u_in[11] * gain_az->contents) * sin(u_in[7] * gain_el->contents) *
     g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp) + sin(u_in[7] * gain_el->contents) *
     sin(u_in[11] * gain_az->contents) * h_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp))
-    + a_tmp * gain_el->contents * sigma_2 * t_sigma_1_tmp_tmp * sigma_14 *
-    d_gradient_fcn_15_tmp * i_sigma_1_tmp;
-  fb_sigma_1_tmp = d_a_tmp * d_a_tmp;
-  f_gradient_fcn_15_tmp = 2.0 * fb_sigma_1_tmp * gamma_quadratic_du->contents;
-  gradient_fcn_15[8] = (((((h_gradient_fcn_15_tmp * gain_az->contents * sigma_5 *
-    t_sigma_1_tmp_tmp * sigma_1_tmp * (K_p_M->contents * j_sigma_1_tmp -
-    K_p_T->contents * l_4->contents * cos(u_in[8] * gain_az->contents)) / (m_a *
-    m_a) - i_gradient_fcn_15_tmp * gain_az->contents * sigma_3 *
-    t_sigma_1_tmp_tmp * sigma_1_tmp * (K_p_M->contents * cos(u_in[8] *
-    gain_az->contents) + j_gradient_fcn_15_tmp * j_sigma_1_tmp) / (n_a * n_a)) -
-    f_gradient_fcn_15_tmp * (desired_az_value->contents - n_sigma_1_tmp_tmp) /
-    gain_az->contents) + sigma_5_tmp * n_gradient_fcn_15_tmp * gain_az->contents
-    * sigma_4 * t_sigma_1_tmp_tmp * sigma_1_tmp * (l_z->contents * n_sigma_1_tmp
-    - l_1->contents * j_sigma_1_tmp) / (o_a * o_a)) - o_gradient_fcn_15_tmp *
-    gain_az->contents * sigma_2 * t_sigma_1_tmp_tmp * sigma_14 * cos
-    (gradient_fcn_15_tmp_tmp) * sigma_1_tmp) + a * gain_az->contents * sigma_7 *
-                        t_sigma_1_tmp_tmp * sigma_14 * gradient_fcn_15_tmp *
-                        sigma_1_tmp * e_sigma_1_tmp_tmp / 50.0) - m_sigma_3_tmp *
-    gain_az->contents * sigma_1 * t_sigma_1_tmp_tmp * sigma_14 *
-    gradient_fcn_15_tmp * sigma_1_tmp * h_sigma_1_tmp_tmp;
-  gradient_fcn_15[9] = (((((k_gradient_fcn_15_tmp * gain_az->contents * sigma_3 *
-    t_sigma_1_tmp_tmp * b_sigma_1_tmp * (K_p_M->contents * cos(u_in[9] *
-    gain_az->contents) - j_gradient_fcn_15_tmp * k_sigma_1_tmp) / (p_a * p_a) -
-    f_gradient_fcn_15_tmp * (desired_az_value->contents - o_sigma_1_tmp_tmp) /
-    gain_az->contents) - j_sigma_3_tmp * gain_az->contents * sigma_5 *
-    t_sigma_1_tmp_tmp * b_sigma_1_tmp * (K_p_M->contents * k_sigma_1_tmp +
-    K_p_T->contents * l_4->contents * cos(u_in[9] * gain_az->contents)) / (q_a *
-    q_a)) + b_sigma_5_tmp * n_gradient_fcn_15_tmp * gain_az->contents * sigma_4 *
-    t_sigma_1_tmp_tmp * b_sigma_1_tmp * (l_z->contents * o_sigma_1_tmp +
-    l_1->contents * k_sigma_1_tmp) / (r_a * r_a)) - k_sigma_3_tmp *
-    gain_az->contents * sigma_2 * t_sigma_1_tmp_tmp * sigma_14 * cos
-    (b_gradient_fcn_15_tmp_tmp) * b_sigma_1_tmp) + l_sigma_3_tmp *
-                        gain_az->contents * sigma_7 * t_sigma_1_tmp_tmp *
-                        sigma_14 * b_gradient_fcn_15_tmp * b_sigma_1_tmp *
-                        e_sigma_1_tmp_tmp / 50.0) - i_sigma_3_tmp *
-    gain_az->contents * sigma_1 * t_sigma_1_tmp_tmp * sigma_14 *
-    b_gradient_fcn_15_tmp * b_sigma_1_tmp * h_sigma_1_tmp_tmp;
-  gradient_fcn_15[10] = (((((e_gradient_fcn_15_tmp * gain_az->contents * sigma_5
-    * t_sigma_1_tmp_tmp * c_sigma_1_tmp * (K_p_M->contents * l_sigma_1_tmp +
-    K_p_T->contents * l_3->contents * cos(u_in[10] * gain_az->contents)) / (s_a *
-    s_a) - ib_sigma_1_tmp * gain_az->contents * sigma_3 * t_sigma_1_tmp_tmp *
-    c_sigma_1_tmp * (K_p_M->contents * cos(u_in[10] * gain_az->contents) - b_a *
-                     l_sigma_1_tmp) / (t_a * t_a)) - f_gradient_fcn_15_tmp *
-    (desired_az_value->contents - p_sigma_1_tmp_tmp) / gain_az->contents) +
-    c_sigma_5_tmp * n_gradient_fcn_15_tmp * gain_az->contents * sigma_4 *
-    t_sigma_1_tmp_tmp * c_sigma_1_tmp * (l_z->contents * p_sigma_1_tmp +
-    l_2->contents * l_sigma_1_tmp) / (u_a * u_a)) - h_sigma_3_tmp *
-    gain_az->contents * sigma_2 * t_sigma_1_tmp_tmp * sigma_14 * cos
-    (c_gradient_fcn_15_tmp_tmp) * c_sigma_1_tmp) + c_a_tmp * gain_az->contents *
-    sigma_7 * t_sigma_1_tmp_tmp * sigma_14 * c_gradient_fcn_15_tmp *
-    c_sigma_1_tmp * e_sigma_1_tmp_tmp / 50.0) - g_sigma_3_tmp *
-    gain_az->contents * sigma_1 * t_sigma_1_tmp_tmp * sigma_14 *
-    c_gradient_fcn_15_tmp * c_sigma_1_tmp * h_sigma_1_tmp_tmp;
-  gradient_fcn_15[11] = (((((c_a * gain_az->contents * sigma_3 *
-    t_sigma_1_tmp_tmp * d_sigma_1_tmp * (K_p_M->contents * cos(u_in[11] *
-    gain_az->contents) + b_a * m_sigma_1_tmp) / (v_a * v_a) -
-    f_gradient_fcn_15_tmp * (desired_az_value->contents - q_sigma_1_tmp_tmp) /
-    gain_az->contents) - b_a_tmp * gain_az->contents * sigma_5 *
-    t_sigma_1_tmp_tmp * d_sigma_1_tmp * (K_p_M->contents * m_sigma_1_tmp -
-    K_p_T->contents * l_3->contents * cos(u_in[11] * gain_az->contents)) / (w_a *
-    w_a)) + d_sigma_5_tmp * n_gradient_fcn_15_tmp * gain_az->contents * sigma_4 *
-    t_sigma_1_tmp_tmp * d_sigma_1_tmp * (l_z->contents * q_sigma_1_tmp -
-    l_2->contents * m_sigma_1_tmp) / (x_a * x_a)) - a_tmp * gain_az->contents *
-    sigma_2 * t_sigma_1_tmp_tmp * sigma_14 * cos(d_gradient_fcn_15_tmp_tmp) *
-    d_sigma_1_tmp) + f_sigma_3_tmp * gain_az->contents * sigma_7 *
-    t_sigma_1_tmp_tmp * sigma_14 * d_gradient_fcn_15_tmp * d_sigma_1_tmp *
-    e_sigma_1_tmp_tmp / 50.0) - hb_sigma_1_tmp * gain_az->contents * sigma_1 *
-    t_sigma_1_tmp_tmp * sigma_14 * d_gradient_fcn_15_tmp * d_sigma_1_tmp *
-    h_sigma_1_tmp_tmp;
-  gradient_fcn_15_tmp = K_p_T->contents * gain_theta->contents;
-  b_gradient_fcn_15_tmp = Cl_alpha->contents * sigma_1_tmp_tmp;
-  gradient_fcn_15_tmp_tmp = sigma_6 * d_sigma_1_tmp_tmp;
-  c_gradient_fcn_15_tmp = gradient_fcn_15_tmp * t_sigma_1_tmp_tmp;
-  d_gradient_fcn_15_tmp = gradient_fcn_15_tmp_tmp * c_sigma_1_tmp_tmp;
-  e_gradient_fcn_15_tmp = b_gradient_fcn_15_tmp * b_sigma_1_tmp_tmp;
-  f_gradient_fcn_15_tmp = gradient_fcn_15_tmp * sigma_2_tmp * t_sigma_1_tmp_tmp;
-  gradient_fcn_15_tmp = gradient_fcn_15_tmp * b_sigma_2_tmp * t_sigma_1_tmp_tmp;
-  g_gradient_fcn_15_tmp = d_gradient_fcn_15_tmp + e_gradient_fcn_15_tmp;
-  h_gradient_fcn_15_tmp = 2.0 * x_sigma_1_tmp * K_Cd->contents * sigma_1_tmp_tmp
+    + g_sigma_3_tmp * gain_el->contents * t_sigma_1_tmp_tmp * sigma_2 * sigma_13
+    * d_gradient_fcn_15_tmp * i_sigma_1_tmp;
+  b_a_tmp = f_a_tmp * f_a_tmp;
+  e_gradient_fcn_15_tmp = 2.0 * b_a_tmp;
+  gradient_fcn_15[8] = ((((((h_gradient_fcn_15_tmp * gain_az->contents *
+    t_sigma_1_tmp_tmp * sigma_5 * sigma_1_tmp * (K_p_M->contents * j_sigma_1_tmp
+    - K_p_T->contents * l_4->contents * cos(u_in[8] * gain_az->contents)) / (p_a
+    * p_a) - e_gradient_fcn_15_tmp * gamma_quadratic_du2->contents *
+    (previous_az_value1->contents - n_sigma_1_tmp_tmp) / gain_az->contents) -
+    i_gradient_fcn_15_tmp * gain_az->contents * t_sigma_1_tmp_tmp * sigma_3 *
+    sigma_1_tmp * (K_p_M->contents * cos(u_in[8] * gain_az->contents) +
+                   k_gradient_fcn_15_tmp * j_sigma_1_tmp) / (q_a * q_a)) -
+    e_gradient_fcn_15_tmp * gamma_quadratic_du->contents *
+    (desired_az_value->contents - n_sigma_1_tmp_tmp) / gain_az->contents) +
+    sigma_5_tmp * p_gradient_fcn_15_tmp * gain_az->contents * t_sigma_1_tmp_tmp *
+    sigma_4 * sigma_1_tmp * (l_z->contents * n_sigma_1_tmp - l_1->contents *
+    j_sigma_1_tmp) / (r_a * r_a)) - j_gradient_fcn_15_tmp * gain_az->contents *
+    t_sigma_1_tmp_tmp * sigma_2 * sigma_13 * cos(gradient_fcn_15_tmp_tmp) *
+    sigma_1_tmp) - t_gradient_fcn_15_tmp * gain_az->contents * t_sigma_1_tmp_tmp
+                        * sigma_1 * sigma_13 * gradient_fcn_15_tmp * sigma_1_tmp
+                        * h_sigma_1_tmp_tmp) + cb_sigma_1_tmp *
+    gain_az->contents * t_sigma_1_tmp_tmp * sigma_7 * sigma_13 *
+    gradient_fcn_15_tmp * sigma_1_tmp * e_sigma_1_tmp_tmp / 50.0;
+  gradient_fcn_15_tmp_tmp = g_a_tmp * g_a_tmp;
+  gradient_fcn_15_tmp = 2.0 * gradient_fcn_15_tmp_tmp;
+  gradient_fcn_15[9] = ((((((l_gradient_fcn_15_tmp * gain_az->contents *
+    t_sigma_1_tmp_tmp * sigma_3 * b_sigma_1_tmp * (K_p_M->contents * cos(u_in[9]
+    * gain_az->contents) - k_gradient_fcn_15_tmp * k_sigma_1_tmp) / (s_a * s_a)
+    - gradient_fcn_15_tmp * gamma_quadratic_du2->contents *
+    (previous_az_value2->contents - o_sigma_1_tmp_tmp) / gain_az->contents) -
+    gradient_fcn_15_tmp * gamma_quadratic_du->contents *
+    (desired_az_value->contents - o_sigma_1_tmp_tmp) / gain_az->contents) -
+    n_sigma_3_tmp * gain_az->contents * t_sigma_1_tmp_tmp * sigma_5 *
+    b_sigma_1_tmp * (K_p_M->contents * k_sigma_1_tmp + K_p_T->contents *
+                     l_4->contents * cos(u_in[9] * gain_az->contents)) / (t_a *
+    t_a)) + b_sigma_5_tmp * p_gradient_fcn_15_tmp * gain_az->contents *
+    t_sigma_1_tmp_tmp * sigma_4 * b_sigma_1_tmp * (l_z->contents * o_sigma_1_tmp
+    + l_1->contents * k_sigma_1_tmp) / (u_a * u_a)) - o_sigma_3_tmp *
+    gain_az->contents * t_sigma_1_tmp_tmp * sigma_2 * sigma_13 * cos
+    (b_gradient_fcn_15_tmp_tmp) * b_sigma_1_tmp) - l_sigma_3_tmp *
+                        gain_az->contents * t_sigma_1_tmp_tmp * sigma_1 *
+                        sigma_13 * b_gradient_fcn_15_tmp * b_sigma_1_tmp *
+                        h_sigma_1_tmp_tmp) + m_sigma_3_tmp * gain_az->contents *
+    t_sigma_1_tmp_tmp * sigma_7 * sigma_13 * b_gradient_fcn_15_tmp *
+    b_sigma_1_tmp * e_sigma_1_tmp_tmp / 50.0;
+  b_gradient_fcn_15_tmp_tmp = h_a_tmp * h_a_tmp;
+  gradient_fcn_15_tmp = 2.0 * b_gradient_fcn_15_tmp_tmp;
+  gradient_fcn_15[10] = ((((((g_gradient_fcn_15_tmp * gain_az->contents *
+    t_sigma_1_tmp_tmp * sigma_5 * c_sigma_1_tmp * (K_p_M->contents *
+    l_sigma_1_tmp + K_p_T->contents * l_3->contents * cos(u_in[10] *
+    gain_az->contents)) / (v_a * v_a) - gradient_fcn_15_tmp *
+    gamma_quadratic_du2->contents * (previous_az_value3->contents -
+    p_sigma_1_tmp_tmp) / gain_az->contents) - m_gradient_fcn_15_tmp *
+    gain_az->contents * t_sigma_1_tmp_tmp * sigma_3 * c_sigma_1_tmp *
+    (K_p_M->contents * cos(u_in[10] * gain_az->contents) - jb_sigma_1_tmp *
+     l_sigma_1_tmp) / (w_a * w_a)) - gradient_fcn_15_tmp *
+    gamma_quadratic_du->contents * (desired_az_value->contents -
+    p_sigma_1_tmp_tmp) / gain_az->contents) + c_sigma_5_tmp *
+    p_gradient_fcn_15_tmp * gain_az->contents * t_sigma_1_tmp_tmp * sigma_4 *
+    c_sigma_1_tmp * (l_z->contents * p_sigma_1_tmp + l_2->contents *
+                     l_sigma_1_tmp) / (x_a * x_a)) - c_a_tmp * gain_az->contents
+    * t_sigma_1_tmp_tmp * sigma_2 * sigma_13 * cos(c_gradient_fcn_15_tmp_tmp) *
+    c_sigma_1_tmp) - i_sigma_3_tmp * gain_az->contents * t_sigma_1_tmp_tmp *
+    sigma_1 * sigma_13 * c_gradient_fcn_15_tmp * c_sigma_1_tmp *
+    h_sigma_1_tmp_tmp) + j_sigma_3_tmp * gain_az->contents * t_sigma_1_tmp_tmp *
+    sigma_7 * sigma_13 * c_gradient_fcn_15_tmp * c_sigma_1_tmp *
+    e_sigma_1_tmp_tmp / 50.0;
+  c_gradient_fcn_15_tmp_tmp = i_a_tmp * i_a_tmp;
+  gradient_fcn_15_tmp = 2.0 * c_gradient_fcn_15_tmp_tmp;
+  gradient_fcn_15[11] = ((((((r_sigma_1_tmp_tmp * gain_az->contents *
+    t_sigma_1_tmp_tmp * sigma_3 * d_sigma_1_tmp * (K_p_M->contents * cos(u_in[11]
+    * gain_az->contents) + jb_sigma_1_tmp * m_sigma_1_tmp) / (y_a * y_a) -
+    gradient_fcn_15_tmp * gamma_quadratic_du2->contents *
+    (previous_az_value4->contents - q_sigma_1_tmp_tmp) / gain_az->contents) -
+    gradient_fcn_15_tmp * gamma_quadratic_du->contents *
+    (desired_az_value->contents - q_sigma_1_tmp_tmp) / gain_az->contents) -
+    a_tmp * gain_az->contents * t_sigma_1_tmp_tmp * sigma_5 * d_sigma_1_tmp *
+    (K_p_M->contents * m_sigma_1_tmp - K_p_T->contents * l_3->contents * cos
+     (u_in[11] * gain_az->contents)) / (ab_a * ab_a)) + d_sigma_5_tmp *
+    p_gradient_fcn_15_tmp * gain_az->contents * t_sigma_1_tmp_tmp * sigma_4 *
+    d_sigma_1_tmp * (l_z->contents * q_sigma_1_tmp - l_2->contents *
+                     m_sigma_1_tmp) / (bb_a * bb_a)) - g_sigma_3_tmp *
+    gain_az->contents * t_sigma_1_tmp_tmp * sigma_2 * sigma_13 * cos
+    (d_gradient_fcn_15_tmp_tmp) * d_sigma_1_tmp) - fb_sigma_1_tmp *
+    gain_az->contents * t_sigma_1_tmp_tmp * sigma_1 * sigma_13 *
+    d_gradient_fcn_15_tmp * d_sigma_1_tmp * h_sigma_1_tmp_tmp) + f_sigma_3_tmp *
+    gain_az->contents * t_sigma_1_tmp_tmp * sigma_7 * sigma_13 *
+    d_gradient_fcn_15_tmp * d_sigma_1_tmp * e_sigma_1_tmp_tmp / 50.0;
+  gradient_fcn_15_tmp = Cl_alpha->contents * sigma_1_tmp_tmp;
+  b_gradient_fcn_15_tmp = gain_theta->contents * sigma_15;
+  d_gradient_fcn_15_tmp_tmp = sigma_6 * d_sigma_1_tmp_tmp;
+  c_gradient_fcn_15_tmp = K_p_T->contents * gain_theta->contents *
+    t_sigma_1_tmp_tmp;
+  d_gradient_fcn_15_tmp = c_gradient_fcn_15_tmp * b_sigma_2_tmp;
+  e_gradient_fcn_15_tmp = 2.0 * x_sigma_1_tmp * K_Cd->contents * sigma_1_tmp_tmp
     * d_sigma_1_tmp_tmp * b_sigma_1_tmp_tmp;
-  i_gradient_fcn_15_tmp = sigma_15_tmp * e_sigma_1_tmp_tmp;
-  j_gradient_fcn_15_tmp = sigma_15_tmp * h_sigma_1_tmp_tmp;
-  k_gradient_fcn_15_tmp = b_sigma_15_tmp * e_sigma_1_tmp;
-  o_gradient_fcn_15_tmp = c_sigma_15_tmp * e_sigma_1_tmp;
-  ib_sigma_1_tmp = e_a_tmp * e_a_tmp;
-  gradient_fcn_15[12] = (((p_gradient_fcn_15_tmp * sigma_7 * sigma_14 *
-    ((((((((c_gradient_fcn_15_tmp * e_sigma_1_tmp_tmp * v_sigma_1_tmp - sigma_15
-            * e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) + j_gradient_fcn_15_tmp *
-           (((Cl_alpha->contents * c_sigma_1_tmp_tmp + gradient_fcn_15_tmp_tmp *
-              c_sigma_1_tmp_tmp) + b_gradient_fcn_15_tmp * b_sigma_1_tmp_tmp) -
-            h_gradient_fcn_15_tmp) / 2.0) + f_gradient_fcn_15_tmp *
-          g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp) + i_gradient_fcn_15_tmp *
-         (gradient_fcn_15_tmp_tmp * b_sigma_1_tmp_tmp - b_gradient_fcn_15_tmp *
-          c_sigma_1_tmp_tmp) / 2.0) - gradient_fcn_15_tmp * h_sigma_1_tmp_tmp *
-        m_sigma_1_tmp_tmp) - sigma_15_tmp * g_sigma_1_tmp_tmp *
-       h_sigma_1_tmp_tmp * g_gradient_fcn_15_tmp / 2.0) + k_gradient_fcn_15_tmp *
-      h_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp / 2.0) + o_gradient_fcn_15_tmp *
-     e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) / 50.0 - 2.0 * y_sigma_1_tmp *
-    sigma_1 * sigma_14 * ((((((((c_gradient_fcn_15_tmp * h_sigma_1_tmp_tmp *
-    v_sigma_1_tmp - sigma_15 * g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp) -
-    i_gradient_fcn_15_tmp * (((Cl_alpha->contents * c_sigma_1_tmp_tmp +
-    d_gradient_fcn_15_tmp) + e_gradient_fcn_15_tmp) - h_gradient_fcn_15_tmp) /
-    2.0) - f_gradient_fcn_15_tmp * e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) +
-    gradient_fcn_15_tmp * e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) +
-    j_gradient_fcn_15_tmp * (gradient_fcn_15_tmp_tmp * b_sigma_1_tmp_tmp -
-    b_gradient_fcn_15_tmp * c_sigma_1_tmp_tmp) / 2.0) + i_gradient_fcn_15_tmp *
-    g_sigma_1_tmp_tmp * g_gradient_fcn_15_tmp / 2.0) - k_gradient_fcn_15_tmp *
-    e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp / 2.0) + o_gradient_fcn_15_tmp *
-    h_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp)) - 2.0 * s_sigma_1_tmp_tmp * sigma_2 *
-    sigma_14 * (K_Cd->contents * S->contents * gain_theta->contents *
+  f_gradient_fcn_15_tmp = sigma_14_tmp * e_sigma_1_tmp_tmp;
+  g_gradient_fcn_15_tmp = sigma_14_tmp * h_sigma_1_tmp_tmp;
+  h_gradient_fcn_15_tmp = c_gradient_fcn_15_tmp * sigma_2_tmp;
+  i_gradient_fcn_15_tmp = b_sigma_14_tmp * e_sigma_1_tmp;
+  j_gradient_fcn_15_tmp = c_sigma_14_tmp * e_sigma_1_tmp;
+  fb_sigma_1_tmp = j_a_tmp * j_a_tmp;
+  k_gradient_fcn_15_tmp = 2.0 * fb_sigma_1_tmp;
+  gradient_fcn_15[12] = ((((q_gradient_fcn_15_tmp * sigma_7 * sigma_13 *
+    ((((((((c_gradient_fcn_15_tmp * e_sigma_1_tmp_tmp * v_sigma_1_tmp -
+            b_gradient_fcn_15_tmp * g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp) -
+           sigma_14 * e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp) +
+          h_gradient_fcn_15_tmp * g_sigma_1_tmp_tmp * h_sigma_1_tmp_tmp) -
+         d_gradient_fcn_15_tmp * h_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) +
+        g_gradient_fcn_15_tmp * (((Cl_alpha->contents * c_sigma_1_tmp_tmp +
+    d_gradient_fcn_15_tmp_tmp * c_sigma_1_tmp_tmp) + gradient_fcn_15_tmp *
+    b_sigma_1_tmp_tmp) - e_gradient_fcn_15_tmp) / 2.0) + f_gradient_fcn_15_tmp *
+       (d_gradient_fcn_15_tmp_tmp * b_sigma_1_tmp_tmp - gradient_fcn_15_tmp *
+        c_sigma_1_tmp_tmp) / 2.0) + i_gradient_fcn_15_tmp * h_sigma_1_tmp_tmp *
+      m_sigma_1_tmp_tmp / 2.0) + j_gradient_fcn_15_tmp * e_sigma_1_tmp_tmp *
+     m_sigma_1_tmp_tmp) / 50.0 - 2.0 * r_gradient_fcn_15_tmp * sigma_1 *
+    sigma_13 * ((((((((b_gradient_fcn_15_tmp * e_sigma_1_tmp_tmp *
+                       g_sigma_1_tmp_tmp - sigma_14 * g_sigma_1_tmp_tmp *
+                       h_sigma_1_tmp_tmp) + c_gradient_fcn_15_tmp *
+                      h_sigma_1_tmp_tmp * v_sigma_1_tmp) + d_gradient_fcn_15_tmp
+                     * e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp) -
+                    f_gradient_fcn_15_tmp * (((Cl_alpha->contents *
+    c_sigma_1_tmp_tmp + d_gradient_fcn_15_tmp_tmp * c_sigma_1_tmp_tmp) +
+    gradient_fcn_15_tmp * b_sigma_1_tmp_tmp) - e_gradient_fcn_15_tmp) / 2.0) +
+                   g_gradient_fcn_15_tmp * (d_gradient_fcn_15_tmp_tmp *
+    b_sigma_1_tmp_tmp - gradient_fcn_15_tmp * c_sigma_1_tmp_tmp) / 2.0) -
+                  h_gradient_fcn_15_tmp * e_sigma_1_tmp_tmp * g_sigma_1_tmp_tmp)
+                 - i_gradient_fcn_15_tmp * e_sigma_1_tmp_tmp * m_sigma_1_tmp_tmp
+                 / 2.0) + j_gradient_fcn_15_tmp * h_sigma_1_tmp_tmp *
+                m_sigma_1_tmp_tmp)) - 2.0 * s_gradient_fcn_15_tmp * sigma_2 *
+    sigma_13 * (K_Cd->contents * S->contents * gain_theta->contents *
                 rho->contents * sigma_1_tmp_tmp * e_sigma_1_tmp *
-                g_sigma_1_tmp_tmp * x_sigma_1_tmp * w_sigma_1_tmp + sigma_15 *
-                m_sigma_1_tmp_tmp)) - 2.0 * ib_sigma_1_tmp *
+                g_sigma_1_tmp_tmp * x_sigma_1_tmp * w_sigma_1_tmp + sigma_14 *
+                m_sigma_1_tmp_tmp)) - k_gradient_fcn_15_tmp *
     gamma_quadratic_du->contents * (desired_theta_value->contents -
-    sigma_1_tmp_tmp_tmp) / gain_theta->contents) + n_sigma_3_tmp *
-    l_gradient_fcn_15_tmp * gain_theta->contents * rho->contents * sigma_3 *
-    wing_chord->contents / (2.0 * (y_a * y_a));
-  gradient_fcn_15_tmp = sigma_3_tmp * b_sigma_2_tmp * t_sigma_1_tmp_tmp;
-  b_gradient_fcn_15_tmp = sigma_3_tmp * sigma_2_tmp * t_sigma_1_tmp_tmp;
+    sigma_1_tmp_tmp_tmp) / gain_theta->contents) - k_gradient_fcn_15_tmp *
+    gamma_quadratic_du2->contents * (previous_theta_value->contents -
+    sigma_1_tmp_tmp_tmp) / gain_theta->contents) + r_sigma_3_tmp *
+    n_gradient_fcn_15_tmp * gain_theta->contents * rho->contents * sigma_3 *
+    wing_chord->contents / (2.0 * (cb_a * cb_a));
+  gradient_fcn_15_tmp = sigma_3_tmp * t_sigma_1_tmp_tmp;
+  b_gradient_fcn_15_tmp = gradient_fcn_15_tmp * sigma_2_tmp;
+  gradient_fcn_15_tmp *= b_sigma_2_tmp;
   c_gradient_fcn_15_tmp = sigma_7_tmp * e_sigma_1_tmp;
-  d_gradient_fcn_15_tmp = ab_sigma_1_tmp * sigma_1_tmp_tmp * b_sigma_1_tmp_tmp;
-  e_gradient_fcn_15_tmp = sigma_7_tmp * d_sigma_1_tmp_tmp;
-  f_gradient_fcn_15_tmp = c_gradient_fcn_15_tmp * g_sigma_1_tmp_tmp;
-  g_gradient_fcn_15_tmp = d_gradient_fcn_15_tmp * m_sigma_1_tmp_tmp;
-  h_gradient_fcn_15_tmp = e_gradient_fcn_15_tmp * c_sigma_1_tmp_tmp *
-    m_sigma_1_tmp_tmp;
-  i_gradient_fcn_15_tmp = f_a_tmp * f_a_tmp;
-  gradient_fcn_15[13] = ((gain_phi->contents * sigma_1 * sigma_14 *
-    h_sigma_1_tmp_tmp * ((((f_gradient_fcn_15_tmp - b_gradient_fcn_15_tmp *
-    m_sigma_1_tmp_tmp) - gradient_fcn_15_tmp * g_sigma_1_tmp_tmp) +
-    g_gradient_fcn_15_tmp) + h_gradient_fcn_15_tmp) * y_sigma_1_tmp +
-    gain_phi->contents * sigma_2 * sigma_14 * ((((gradient_fcn_15_tmp *
-    m_sigma_1_tmp_tmp - b_gradient_fcn_15_tmp * g_sigma_1_tmp_tmp) -
-    c_gradient_fcn_15_tmp * m_sigma_1_tmp_tmp) + d_gradient_fcn_15_tmp *
-    g_sigma_1_tmp_tmp) + e_gradient_fcn_15_tmp * g_sigma_1_tmp_tmp *
-    c_sigma_1_tmp_tmp) * s_sigma_1_tmp_tmp) - 2.0 * i_gradient_fcn_15_tmp *
+  d_gradient_fcn_15_tmp_tmp = k_a_tmp * k_a_tmp;
+  d_gradient_fcn_15_tmp = 2.0 * d_gradient_fcn_15_tmp_tmp;
+  e_gradient_fcn_15_tmp = gradient_fcn_15_tmp * g_sigma_1_tmp_tmp;
+  f_gradient_fcn_15_tmp = b_gradient_fcn_15_tmp * m_sigma_1_tmp_tmp;
+  g_gradient_fcn_15_tmp = c_gradient_fcn_15_tmp * g_sigma_1_tmp_tmp;
+  gradient_fcn_15[13] = (((gain_phi->contents * sigma_1 * sigma_13 *
+    h_sigma_1_tmp_tmp * (((2.0 * sigma_15 * m_sigma_1_tmp_tmp -
+    e_gradient_fcn_15_tmp) - f_gradient_fcn_15_tmp) + g_gradient_fcn_15_tmp) *
+    r_gradient_fcn_15_tmp + gain_phi->contents * sigma_2 * sigma_13 * (((2.0 *
+    sigma_15 * g_sigma_1_tmp_tmp - b_gradient_fcn_15_tmp * g_sigma_1_tmp_tmp) +
+    gradient_fcn_15_tmp * m_sigma_1_tmp_tmp) - c_gradient_fcn_15_tmp *
+    m_sigma_1_tmp_tmp) * s_gradient_fcn_15_tmp) - d_gradient_fcn_15_tmp *
     gamma_quadratic_du->contents * (desired_phi_value->contents -
-    f_sigma_1_tmp_tmp) / gain_phi->contents) - p_gradient_fcn_15_tmp *
-    gain_phi->contents * sigma_7 * sigma_14 * e_sigma_1_tmp_tmp *
-    ((((f_gradient_fcn_15_tmp - b_gradient_fcn_15_tmp * m_sigma_1_tmp_tmp) -
-       gradient_fcn_15_tmp * g_sigma_1_tmp_tmp) + g_gradient_fcn_15_tmp) +
-     h_gradient_fcn_15_tmp) / 100.0;
-  gradient_fcn_15_tmp = g_a_tmp * g_a_tmp;
-  gradient_fcn_15[14] = gradient_fcn_15_tmp * gamma_quadratic_du->contents *
+    f_sigma_1_tmp_tmp) / gain_phi->contents) - d_gradient_fcn_15_tmp *
+    gamma_quadratic_du2->contents * (previous_phi_value->contents -
+    f_sigma_1_tmp_tmp) / gain_phi->contents) - q_gradient_fcn_15_tmp *
+    gain_phi->contents * sigma_7 * sigma_13 * e_sigma_1_tmp_tmp * (((2.0 *
+    sigma_15 * m_sigma_1_tmp_tmp - e_gradient_fcn_15_tmp) -
+    f_gradient_fcn_15_tmp) + g_gradient_fcn_15_tmp) / 100.0;
+  gradient_fcn_15_tmp = l_a_tmp * l_a_tmp;
+  gradient_fcn_15[14] = (gradient_fcn_15_tmp * gamma_quadratic_du->contents *
     (2.0 * u_in[14] - 2.0 * desired_ailerons_value->contents /
-     gain_ailerons->contents) + sigma_4_tmp * n_gradient_fcn_15_tmp *
-    gain_ailerons->contents * rho->contents * sigma_4 / (2.0 * (ab_a * ab_a));
-  gradient_fcn_15[15] = (((((gamma_quadratic_du->contents *
-    ((((((((((((((f_gradient_fcn_15_tmp_tmp * (bb_a * bb_a) +
-                  f_gradient_fcn_15_tmp_tmp * (cb_a * cb_a)) +
-                 f_gradient_fcn_15_tmp_tmp * (db_a * db_a)) +
-                f_gradient_fcn_15_tmp_tmp * (eb_a * eb_a)) +
-               i_gradient_fcn_15_tmp * (fb_a * fb_a)) + ib_sigma_1_tmp * (gb_a *
-    gb_a)) + e_gradient_fcn_15_tmp_tmp * (hb_a * hb_a)) +
-            e_gradient_fcn_15_tmp_tmp * (ib_a * ib_a)) +
-           e_gradient_fcn_15_tmp_tmp * (jb_a * jb_a)) +
-          e_gradient_fcn_15_tmp_tmp * (kb_a * kb_a)) + gradient_fcn_15_tmp *
-         (lb_a * lb_a)) + fb_sigma_1_tmp * (mb_a * mb_a)) + fb_sigma_1_tmp *
-       (nb_a * nb_a)) + fb_sigma_1_tmp * (ob_a * ob_a)) + fb_sigma_1_tmp * (pb_a
-    * pb_a)) + y_sigma_1_tmp * (sigma_1 * sigma_1)) + s_sigma_1_tmp_tmp *
-    (sigma_2 * sigma_2)) + p_gradient_fcn_15_tmp * (sigma_7 * sigma_7) / 10000.0)
-    + n_gradient_fcn_15_tmp * (sigma_4 * sigma_4) / (4.0 * (qb_a * qb_a))) +
-    l_gradient_fcn_15_tmp * (sigma_3 * sigma_3) / (4.0 * (rb_a * rb_a))) +
-    m_gradient_fcn_15_tmp * (sigma_5 * sigma_5) / (sb_a * sb_a);
+     gain_ailerons->contents) + gradient_fcn_15_tmp *
+    gamma_quadratic_du2->contents * (2.0 * u_in[14] - 2.0 *
+    previous_ailerons_value->contents / gain_ailerons->contents)) + sigma_4_tmp *
+    p_gradient_fcn_15_tmp * gain_ailerons->contents * rho->contents * sigma_4 /
+    (2.0 * (db_a * db_a));
+  gradient_fcn_15[15] = ((((((gamma_quadratic_du->contents *
+    ((((((((((((((f_gradient_fcn_15_tmp_tmp * (eb_a * eb_a) + ab_sigma_1_tmp *
+    (fb_a * fb_a)) + s_sigma_1_tmp_tmp * (gb_a * gb_a)) +
+                e_gradient_fcn_15_tmp_tmp * (hb_a * hb_a)) +
+               d_gradient_fcn_15_tmp_tmp * (ib_a * ib_a)) + fb_sigma_1_tmp *
+              (jb_a * jb_a)) + q_sigma_3_tmp * (kb_a * kb_a)) + p_sigma_3_tmp *
+            (lb_a * lb_a)) + k_sigma_3_tmp * (mb_a * mb_a)) + h_sigma_3_tmp *
+          (nb_a * nb_a)) + gradient_fcn_15_tmp * (ob_a * ob_a)) + b_a_tmp *
+        (pb_a * pb_a)) + gradient_fcn_15_tmp_tmp * (qb_a * qb_a)) +
+      b_gradient_fcn_15_tmp_tmp * (rb_a * rb_a)) + c_gradient_fcn_15_tmp_tmp *
+     (sb_a * sb_a)) + gamma_quadratic_du2->contents *
+    ((((((((((((((f_gradient_fcn_15_tmp_tmp * (tb_a * tb_a) + ab_sigma_1_tmp *
+    (ub_a * ub_a)) + f_gradient_fcn_15_tmp_tmp * (vb_a * vb_a)) +
+                e_gradient_fcn_15_tmp_tmp * (wb_a * wb_a)) +
+               d_gradient_fcn_15_tmp_tmp * (xb_a * xb_a)) + fb_sigma_1_tmp *
+              (yb_a * yb_a)) + q_sigma_3_tmp * (ac_a * ac_a)) + p_sigma_3_tmp *
+            (bc_a * bc_a)) + k_sigma_3_tmp * (cc_a * cc_a)) + h_sigma_3_tmp *
+          (dc_a * dc_a)) + gradient_fcn_15_tmp * (ec_a * ec_a)) + b_a_tmp *
+        (fc_a * fc_a)) + gradient_fcn_15_tmp_tmp * (gc_a * gc_a)) +
+      b_gradient_fcn_15_tmp_tmp * (hc_a * hc_a)) + c_gradient_fcn_15_tmp_tmp *
+     (ic_a * ic_a))) + r_gradient_fcn_15_tmp * (sigma_1 * sigma_1)) +
+    s_gradient_fcn_15_tmp * (sigma_2 * sigma_2)) + q_gradient_fcn_15_tmp *
+    (sigma_7 * sigma_7) / 10000.0) + p_gradient_fcn_15_tmp * (sigma_4 * sigma_4)
+    / (4.0 * (jc_a * jc_a))) + n_gradient_fcn_15_tmp * (sigma_3 * sigma_3) /
+    (4.0 * (kc_a * kc_a))) + o_gradient_fcn_15_tmp * (sigma_5 * sigma_5) / (lc_a
+    * lc_a);
   *cost = gradient_fcn_15[15];
   memcpy(&gradient[0], &gradient_fcn_15[0], 15U * sizeof(double));
 }
@@ -4278,495 +5001,56 @@ static void driver(const double H[225], const double f[16], i_struct_T *solution
 static void evalObjAndConstr(const d_struct_T *obj_objfun_workspace, const
   double x[15], double *fval, int *status)
 {
-  double a;
-  double ab_sigma_1_tmp;
-  double b_a;
-  double b_sigma_1_tmp;
-  double bb_sigma_1_tmp;
-  double c_a;
-  double c_sigma_1_tmp;
-  double cb_sigma_1_tmp;
-  double d_a;
-  double d_sigma_1_tmp;
-  double e_a;
-  double e_sigma_1_tmp;
-  double f_a;
-  double f_sigma_1_tmp;
-  double g_a;
-  double g_sigma_1_tmp;
-  double h_a;
-  double h_sigma_1_tmp;
-  double i_a;
-  double i_sigma_1_tmp;
-  double j_a;
-  double j_sigma_1_tmp;
-  double k_a;
-  double k_sigma_1_tmp;
-  double l_a;
-  double l_sigma_1_tmp;
-  double m_a;
-  double m_sigma_1_tmp;
-  double n_a;
-  double n_sigma_1_tmp;
-  double o_a;
-  double o_sigma_1_tmp;
-  double p_a;
-  double p_sigma_1_tmp;
-  double q_a;
-  double q_sigma_1_tmp;
-  double r_a;
-  double r_sigma_1_tmp;
-  double s_a;
-  double s_sigma_1_tmp;
-  double sigma_1;
-  double sigma_1_tmp;
-  double sigma_2;
-  double sigma_3;
-  double sigma_4;
-  double sigma_5;
-  double sigma_6;
-  double t_a;
-  double t_sigma_1_tmp;
-  double u_a;
-  double u_sigma_1_tmp;
-  double v_a;
-  double v_sigma_1_tmp;
-  double w_a;
-  double w_sigma_1_tmp;
-  double x_sigma_1_tmp;
-  double y_sigma_1_tmp;
-  sigma_1_tmp = cos(obj_objfun_workspace->flight_path_angle->contents - x[12] *
-                    obj_objfun_workspace->gain_theta->contents);
-  b_sigma_1_tmp = sin(obj_objfun_workspace->flight_path_angle->contents - x[12] *
-                      obj_objfun_workspace->gain_theta->contents);
-  c_sigma_1_tmp = cos(obj_objfun_workspace->Beta->contents);
-  d_sigma_1_tmp = cos(x[12] * obj_objfun_workspace->gain_theta->contents);
-  e_sigma_1_tmp = cos(x[13] * obj_objfun_workspace->gain_phi->contents);
-  f_sigma_1_tmp = sin(x[12] * obj_objfun_workspace->gain_theta->contents);
-  sigma_6 = cos(x[4] * obj_objfun_workspace->gain_el->contents);
-  g_sigma_1_tmp = cos(x[5] * obj_objfun_workspace->gain_el->contents);
-  h_sigma_1_tmp = cos(x[6] * obj_objfun_workspace->gain_el->contents);
-  i_sigma_1_tmp = cos(x[7] * obj_objfun_workspace->gain_el->contents);
-  j_sigma_1_tmp = sin(x[13] * obj_objfun_workspace->gain_phi->contents);
-  k_sigma_1_tmp = sin(obj_objfun_workspace->Beta->contents);
-  l_sigma_1_tmp = sin(x[4] * obj_objfun_workspace->gain_el->contents);
-  m_sigma_1_tmp = sin(x[5] * obj_objfun_workspace->gain_el->contents);
-  n_sigma_1_tmp = sin(x[6] * obj_objfun_workspace->gain_el->contents);
-  o_sigma_1_tmp = sin(x[7] * obj_objfun_workspace->gain_el->contents);
-  p_sigma_1_tmp = sin(x[8] * obj_objfun_workspace->gain_az->contents);
-  q_sigma_1_tmp = sin(x[9] * obj_objfun_workspace->gain_az->contents);
-  r_sigma_1_tmp = sin(x[10] * obj_objfun_workspace->gain_az->contents);
-  s_sigma_1_tmp = sin(x[11] * obj_objfun_workspace->gain_az->contents);
-  t_sigma_1_tmp = cos(x[8] * obj_objfun_workspace->gain_az->contents);
-  u_sigma_1_tmp = cos(x[9] * obj_objfun_workspace->gain_az->contents);
-  v_sigma_1_tmp = cos(x[10] * obj_objfun_workspace->gain_az->contents);
-  w_sigma_1_tmp = cos(x[11] * obj_objfun_workspace->gain_az->contents);
-  a = obj_objfun_workspace->V->contents;
-  b_a = obj_objfun_workspace->V->contents;
-  c_a = obj_objfun_workspace->Cl_alpha->contents;
-  d_a = obj_objfun_workspace->gain_theta->contents;
-  e_a = obj_objfun_workspace->Cl_alpha->contents;
-  f_a = obj_objfun_workspace->Cl_alpha->contents;
-  g_a = obj_objfun_workspace->flight_path_angle->contents;
-  h_a = obj_objfun_workspace->V->contents;
-  i_a = obj_objfun_workspace->V->contents;
-  j_a = obj_objfun_workspace->Cl_alpha->contents;
-  k_a = obj_objfun_workspace->gain_theta->contents;
-  l_a = obj_objfun_workspace->Cl_alpha->contents;
-  m_a = obj_objfun_workspace->Cl_alpha->contents;
-  n_a = obj_objfun_workspace->flight_path_angle->contents;
-  o_a = obj_objfun_workspace->gain_motor->contents;
-  p_a = obj_objfun_workspace->gain_motor->contents;
-  q_a = obj_objfun_workspace->gain_motor->contents;
-  r_a = obj_objfun_workspace->V->contents;
-  s_a = obj_objfun_workspace->Cl_alpha->contents;
-  t_a = obj_objfun_workspace->gain_theta->contents;
-  u_a = obj_objfun_workspace->Cl_alpha->contents;
-  v_a = obj_objfun_workspace->Cl_alpha->contents;
-  w_a = obj_objfun_workspace->flight_path_angle->contents;
-  x_sigma_1_tmp = x[12] * x[12];
-  y_sigma_1_tmp = x[0] * x[0];
-  sigma_5 = x[1] * x[1];
-  ab_sigma_1_tmp = x[2] * x[2];
-  bb_sigma_1_tmp = x[3] * x[3];
-  cb_sigma_1_tmp = ((l_sigma_1_tmp * y_sigma_1_tmp + m_sigma_1_tmp * sigma_5) +
-                    n_sigma_1_tmp * ab_sigma_1_tmp) + o_sigma_1_tmp *
-    bb_sigma_1_tmp;
-  sigma_1 = obj_objfun_workspace->dv_global->contents[0] - (((((d_sigma_1_tmp *
-    (obj_objfun_workspace->Cl_alpha->contents * obj_objfun_workspace->
-     S->contents * (a * a) * obj_objfun_workspace->rho->contents * b_sigma_1_tmp
-     * (obj_objfun_workspace->flight_path_angle->contents - x[12] *
-        obj_objfun_workspace->gain_theta->contents) / 2.0 -
-     obj_objfun_workspace->S->contents * (b_a * b_a) * obj_objfun_workspace->
-     rho->contents * sigma_1_tmp * c_sigma_1_tmp * (((obj_objfun_workspace->
-    K_Cd->contents * (c_a * c_a) * x_sigma_1_tmp * (d_a * d_a) - 2.0 *
-    obj_objfun_workspace->K_Cd->contents * (e_a * e_a) * x[12] *
-    obj_objfun_workspace->flight_path_angle->contents *
-    obj_objfun_workspace->gain_theta->contents) + obj_objfun_workspace->
-    K_Cd->contents * (f_a * f_a) * (g_a * g_a)) + obj_objfun_workspace->
-    Cd_zero->contents) / 2.0) + e_sigma_1_tmp * f_sigma_1_tmp *
-    (obj_objfun_workspace->Cl_alpha->contents * obj_objfun_workspace->
-     S->contents * (h_a * h_a) * obj_objfun_workspace->rho->contents *
-     sigma_1_tmp * (obj_objfun_workspace->flight_path_angle->contents - x[12] *
-                    obj_objfun_workspace->gain_theta->contents) / 2.0 +
-     obj_objfun_workspace->S->contents * (i_a * i_a) * obj_objfun_workspace->
-     rho->contents * b_sigma_1_tmp * c_sigma_1_tmp *
-     (((obj_objfun_workspace->K_Cd->contents * (j_a * j_a) * x_sigma_1_tmp *
-        (k_a * k_a) - 2.0 * obj_objfun_workspace->K_Cd->contents * (l_a * l_a) *
-        x[12] * obj_objfun_workspace->flight_path_angle->contents *
-        obj_objfun_workspace->gain_theta->contents) + obj_objfun_workspace->
-       K_Cd->contents * (m_a * m_a) * (n_a * n_a)) +
-      obj_objfun_workspace->Cd_zero->contents) / 2.0)) -
-    obj_objfun_workspace->K_p_T->contents * (o_a * o_a) * d_sigma_1_tmp *
-    cb_sigma_1_tmp) - obj_objfun_workspace->K_p_T->contents * (p_a * p_a) *
-    e_sigma_1_tmp * f_sigma_1_tmp * (((sigma_6 * t_sigma_1_tmp * y_sigma_1_tmp +
-    g_sigma_1_tmp * u_sigma_1_tmp * sigma_5) + h_sigma_1_tmp * v_sigma_1_tmp *
-    ab_sigma_1_tmp) + i_sigma_1_tmp * w_sigma_1_tmp * bb_sigma_1_tmp)) +
-    obj_objfun_workspace->K_p_T->contents * (q_a * q_a) * j_sigma_1_tmp *
-    f_sigma_1_tmp * (((sigma_6 * p_sigma_1_tmp * y_sigma_1_tmp + g_sigma_1_tmp *
-                       q_sigma_1_tmp * sigma_5) + h_sigma_1_tmp * r_sigma_1_tmp *
-                      ab_sigma_1_tmp) + i_sigma_1_tmp * s_sigma_1_tmp *
-                     bb_sigma_1_tmp)) - obj_objfun_workspace->S->contents * (r_a
-    * r_a) * obj_objfun_workspace->rho->contents * j_sigma_1_tmp * f_sigma_1_tmp
-    * k_sigma_1_tmp * (((obj_objfun_workspace->K_Cd->contents * (s_a * s_a) *
-    x_sigma_1_tmp * (t_a * t_a) - 2.0 * obj_objfun_workspace->K_Cd->contents *
-    (u_a * u_a) * x[12] * obj_objfun_workspace->flight_path_angle->contents *
-    obj_objfun_workspace->gain_theta->contents) + obj_objfun_workspace->
-                        K_Cd->contents * (v_a * v_a) * (w_a * w_a)) +
-                       obj_objfun_workspace->Cd_zero->contents) / 2.0) /
-    obj_objfun_workspace->m->contents;
-  a = obj_objfun_workspace->V->contents;
-  b_a = obj_objfun_workspace->V->contents;
-  c_a = obj_objfun_workspace->Cl_alpha->contents;
-  d_a = obj_objfun_workspace->gain_theta->contents;
-  e_a = obj_objfun_workspace->Cl_alpha->contents;
-  f_a = obj_objfun_workspace->Cl_alpha->contents;
-  g_a = obj_objfun_workspace->flight_path_angle->contents;
-  h_a = obj_objfun_workspace->gain_motor->contents;
-  i_a = obj_objfun_workspace->gain_motor->contents;
-  j_a = obj_objfun_workspace->V->contents;
-  k_a = obj_objfun_workspace->Cl_alpha->contents;
-  l_a = obj_objfun_workspace->gain_theta->contents;
-  m_a = obj_objfun_workspace->Cl_alpha->contents;
-  n_a = obj_objfun_workspace->Cl_alpha->contents;
-  o_a = obj_objfun_workspace->flight_path_angle->contents;
-  sigma_2 = obj_objfun_workspace->dv_global->contents[1] + (((j_sigma_1_tmp *
-    (obj_objfun_workspace->Cl_alpha->contents * obj_objfun_workspace->
-     S->contents * (a * a) * obj_objfun_workspace->rho->contents * sigma_1_tmp *
-     (obj_objfun_workspace->flight_path_angle->contents - x[12] *
-      obj_objfun_workspace->gain_theta->contents) / 2.0 +
-     obj_objfun_workspace->S->contents * (b_a * b_a) * obj_objfun_workspace->
-     rho->contents * b_sigma_1_tmp * c_sigma_1_tmp *
-     (((obj_objfun_workspace->K_Cd->contents * (c_a * c_a) * x_sigma_1_tmp *
-        (d_a * d_a) - 2.0 * obj_objfun_workspace->K_Cd->contents * (e_a * e_a) *
-        x[12] * obj_objfun_workspace->flight_path_angle->contents *
-        obj_objfun_workspace->gain_theta->contents) + obj_objfun_workspace->
-       K_Cd->contents * (f_a * f_a) * (g_a * g_a)) +
-      obj_objfun_workspace->Cd_zero->contents) / 2.0) -
-    obj_objfun_workspace->K_p_T->contents * (h_a * h_a) * j_sigma_1_tmp * (((cos
-    (x[4] * obj_objfun_workspace->gain_el->contents) * cos(x[8] *
-    obj_objfun_workspace->gain_az->contents) * (x[0] * x[0]) + cos(x[5] *
-    obj_objfun_workspace->gain_el->contents) * cos(x[9] *
-    obj_objfun_workspace->gain_az->contents) * (x[1] * x[1])) + cos(x[6] *
-    obj_objfun_workspace->gain_el->contents) * cos(x[10] *
-    obj_objfun_workspace->gain_az->contents) * (x[2] * x[2])) + cos(x[7] *
-    obj_objfun_workspace->gain_el->contents) * cos(x[11] *
-    obj_objfun_workspace->gain_az->contents) * (x[3] * x[3]))) -
-    obj_objfun_workspace->K_p_T->contents * (i_a * i_a) * e_sigma_1_tmp * (((cos
-    (x[4] * obj_objfun_workspace->gain_el->contents) * sin(x[8] *
-    obj_objfun_workspace->gain_az->contents) * (x[0] * x[0]) + cos(x[5] *
-    obj_objfun_workspace->gain_el->contents) * sin(x[9] *
-    obj_objfun_workspace->gain_az->contents) * (x[1] * x[1])) + cos(x[6] *
-    obj_objfun_workspace->gain_el->contents) * sin(x[10] *
-    obj_objfun_workspace->gain_az->contents) * (x[2] * x[2])) + cos(x[7] *
-    obj_objfun_workspace->gain_el->contents) * sin(x[11] *
-    obj_objfun_workspace->gain_az->contents) * (x[3] * x[3]))) +
-    obj_objfun_workspace->S->contents * (j_a * j_a) * obj_objfun_workspace->
-    rho->contents * e_sigma_1_tmp * k_sigma_1_tmp *
-    (((obj_objfun_workspace->K_Cd->contents * (k_a * k_a) * x_sigma_1_tmp * (l_a
-    * l_a) - 2.0 * obj_objfun_workspace->K_Cd->contents * (m_a * m_a) * x[12] *
-       obj_objfun_workspace->flight_path_angle->contents *
-       obj_objfun_workspace->gain_theta->contents) + obj_objfun_workspace->
-      K_Cd->contents * (n_a * n_a) * (o_a * o_a)) +
-     obj_objfun_workspace->Cd_zero->contents) / 2.0) / obj_objfun_workspace->
-    m->contents;
-  a = obj_objfun_workspace->gain_motor->contents;
-  b_a = obj_objfun_workspace->gain_motor->contents;
-  c_a = obj_objfun_workspace->gain_motor->contents;
-  d_a = obj_objfun_workspace->gain_motor->contents;
-  e_a = obj_objfun_workspace->gain_motor->contents;
-  f_a = obj_objfun_workspace->gain_motor->contents;
-  g_a = obj_objfun_workspace->gain_motor->contents;
-  h_a = obj_objfun_workspace->gain_motor->contents;
-  i_a = obj_objfun_workspace->V->contents;
-  j_a = obj_objfun_workspace->gain_motor->contents;
-  k_a = obj_objfun_workspace->gain_motor->contents;
-  l_a = obj_objfun_workspace->gain_motor->contents;
-  m_a = obj_objfun_workspace->gain_motor->contents;
-  n_a = obj_objfun_workspace->V->contents;
-  o_a = obj_objfun_workspace->V->contents;
-  sigma_3 = ((((((((((((((((2.0 * obj_objfun_workspace->I_zz->contents *
-    obj_objfun_workspace->p->contents * obj_objfun_workspace->r->contents - 2.0 *
-    obj_objfun_workspace->I_xx->contents * obj_objfun_workspace->p->contents *
-    obj_objfun_workspace->r->contents) - 2.0 * obj_objfun_workspace->
-    I_yy->contents * obj_objfun_workspace->dv_global->contents[4]) + 2.0 *
-    obj_objfun_workspace->K_p_T->contents * y_sigma_1_tmp * (a * a) *
-    obj_objfun_workspace->l_z->contents * l_sigma_1_tmp) + 2.0 *
-    obj_objfun_workspace->K_p_T->contents * sigma_5 * (b_a * b_a) *
-    obj_objfun_workspace->l_z->contents * m_sigma_1_tmp) + 2.0 *
-                        obj_objfun_workspace->K_p_T->contents * ab_sigma_1_tmp *
-                        (c_a * c_a) * obj_objfun_workspace->l_z->contents *
-                        n_sigma_1_tmp) + 2.0 * obj_objfun_workspace->
-                       K_p_T->contents * bb_sigma_1_tmp * (d_a * d_a) *
-                       obj_objfun_workspace->l_z->contents * o_sigma_1_tmp) -
-                      2.0 * obj_objfun_workspace->K_p_M->contents *
-                      y_sigma_1_tmp * (e_a * e_a) * sigma_6 * p_sigma_1_tmp) +
-                     2.0 * obj_objfun_workspace->K_p_M->contents * sigma_5 *
-                     (f_a * f_a) * g_sigma_1_tmp * q_sigma_1_tmp) - 2.0 *
-                    obj_objfun_workspace->K_p_M->contents * ab_sigma_1_tmp *
-                    (g_a * g_a) * h_sigma_1_tmp * r_sigma_1_tmp) + 2.0 *
-                   obj_objfun_workspace->K_p_M->contents * bb_sigma_1_tmp * (h_a
-    * h_a) * i_sigma_1_tmp * s_sigma_1_tmp) + obj_objfun_workspace->
-                  Cm_zero->contents * obj_objfun_workspace->S->contents * (i_a *
-    i_a) * obj_objfun_workspace->rho->contents *
-                  obj_objfun_workspace->wing_chord->contents) + 2.0 *
-                 obj_objfun_workspace->K_p_T->contents * (x[0] * x[0]) * (j_a *
-    j_a) * obj_objfun_workspace->l_4->contents * sigma_6 * t_sigma_1_tmp) + 2.0 *
-                obj_objfun_workspace->K_p_T->contents * (x[1] * x[1]) * (k_a *
-    k_a) * obj_objfun_workspace->l_4->contents * g_sigma_1_tmp * u_sigma_1_tmp)
-               - 2.0 * obj_objfun_workspace->K_p_T->contents * (x[2] * x[2]) *
-               (l_a * l_a) * obj_objfun_workspace->l_3->contents * h_sigma_1_tmp
-               * v_sigma_1_tmp) - 2.0 * obj_objfun_workspace->K_p_T->contents *
-              (x[3] * x[3]) * (m_a * m_a) * obj_objfun_workspace->l_3->contents *
-              i_sigma_1_tmp * w_sigma_1_tmp) - obj_objfun_workspace->
-             Cm_alpha->contents * obj_objfun_workspace->S->contents * (n_a * n_a)
-             * obj_objfun_workspace->flight_path_angle->contents *
-             obj_objfun_workspace->rho->contents *
-             obj_objfun_workspace->wing_chord->contents) +
-    obj_objfun_workspace->Cm_alpha->contents * obj_objfun_workspace->S->contents
-    * x[12] * (o_a * o_a) * obj_objfun_workspace->gain_theta->contents *
-    obj_objfun_workspace->rho->contents * obj_objfun_workspace->
-    wing_chord->contents;
-  a = obj_objfun_workspace->gain_motor->contents;
-  b_a = obj_objfun_workspace->gain_motor->contents;
-  c_a = obj_objfun_workspace->gain_motor->contents;
-  d_a = obj_objfun_workspace->gain_motor->contents;
-  e_a = obj_objfun_workspace->gain_motor->contents;
-  f_a = obj_objfun_workspace->gain_motor->contents;
-  g_a = obj_objfun_workspace->gain_motor->contents;
-  h_a = obj_objfun_workspace->gain_motor->contents;
-  i_a = obj_objfun_workspace->gain_motor->contents;
-  j_a = obj_objfun_workspace->gain_motor->contents;
-  k_a = obj_objfun_workspace->gain_motor->contents;
-  l_a = obj_objfun_workspace->gain_motor->contents;
-  m_a = obj_objfun_workspace->V->contents;
-  sigma_4 = ((((((((((((((2.0 * obj_objfun_workspace->I_yy->contents *
-    obj_objfun_workspace->q->contents * obj_objfun_workspace->r->contents - 2.0 *
-    obj_objfun_workspace->I_xx->contents * obj_objfun_workspace->
-    dv_global->contents[3]) - 2.0 * obj_objfun_workspace->I_zz->contents *
-    obj_objfun_workspace->q->contents * obj_objfun_workspace->r->contents) + 2.0
-                        * obj_objfun_workspace->K_p_M->contents * (x[0] * x[0]) *
-                        (a * a) * l_sigma_1_tmp) - 2.0 *
-                       obj_objfun_workspace->K_p_M->contents * (x[1] * x[1]) *
-                       (b_a * b_a) * m_sigma_1_tmp) + 2.0 *
-                      obj_objfun_workspace->K_p_M->contents * (x[2] * x[2]) *
-                      (c_a * c_a) * n_sigma_1_tmp) - 2.0 *
-                     obj_objfun_workspace->K_p_M->contents * (x[3] * x[3]) *
-                     (d_a * d_a) * o_sigma_1_tmp) + 2.0 *
-                    obj_objfun_workspace->K_p_T->contents * (x[0] * x[0]) * (e_a
-    * e_a) * obj_objfun_workspace->l_1->contents * sigma_6 * t_sigma_1_tmp) -
-                   2.0 * obj_objfun_workspace->K_p_T->contents * (x[1] * x[1]) *
-                   (f_a * f_a) * obj_objfun_workspace->l_1->contents *
-                   g_sigma_1_tmp * u_sigma_1_tmp) - 2.0 *
-                  obj_objfun_workspace->K_p_T->contents * (x[2] * x[2]) * (g_a *
-    g_a) * obj_objfun_workspace->l_2->contents * h_sigma_1_tmp * v_sigma_1_tmp)
-                 + 2.0 * obj_objfun_workspace->K_p_T->contents * (x[3] * x[3]) *
-                 (h_a * h_a) * obj_objfun_workspace->l_2->contents *
-                 i_sigma_1_tmp * w_sigma_1_tmp) + 2.0 *
-                obj_objfun_workspace->K_p_T->contents * (x[0] * x[0]) * (i_a *
-    i_a) * obj_objfun_workspace->l_z->contents * sigma_6 * p_sigma_1_tmp) + 2.0 *
-               obj_objfun_workspace->K_p_T->contents * (x[1] * x[1]) * (j_a *
-    j_a) * obj_objfun_workspace->l_z->contents * g_sigma_1_tmp * q_sigma_1_tmp)
-              + 2.0 * obj_objfun_workspace->K_p_T->contents * (x[2] * x[2]) *
-              (k_a * k_a) * obj_objfun_workspace->l_z->contents * h_sigma_1_tmp *
-              r_sigma_1_tmp) + 2.0 * obj_objfun_workspace->K_p_T->contents * (x
-              [3] * x[3]) * (l_a * l_a) * obj_objfun_workspace->l_z->contents *
-             i_sigma_1_tmp * s_sigma_1_tmp) + obj_objfun_workspace->
-    CL_aileron->contents * obj_objfun_workspace->S->contents * (m_a * m_a) * x
-    [14] * obj_objfun_workspace->gain_ailerons->contents *
-    obj_objfun_workspace->rho->contents;
-  a = obj_objfun_workspace->gain_motor->contents;
-  b_a = obj_objfun_workspace->gain_motor->contents;
-  c_a = obj_objfun_workspace->gain_motor->contents;
-  d_a = obj_objfun_workspace->gain_motor->contents;
-  e_a = obj_objfun_workspace->gain_motor->contents;
-  f_a = obj_objfun_workspace->gain_motor->contents;
-  g_a = obj_objfun_workspace->gain_motor->contents;
-  h_a = obj_objfun_workspace->gain_motor->contents;
-  i_a = obj_objfun_workspace->gain_motor->contents;
-  j_a = obj_objfun_workspace->gain_motor->contents;
-  k_a = obj_objfun_workspace->gain_motor->contents;
-  l_a = obj_objfun_workspace->gain_motor->contents;
-  sigma_5 = (((((((((((((obj_objfun_workspace->I_zz->contents *
-    obj_objfun_workspace->dv_global->contents[5] - obj_objfun_workspace->
-    I_xx->contents * obj_objfun_workspace->p->contents * obj_objfun_workspace->
-    q->contents) + obj_objfun_workspace->I_yy->contents *
-                        obj_objfun_workspace->p->contents *
-                        obj_objfun_workspace->q->contents) +
-                       obj_objfun_workspace->K_p_T->contents * y_sigma_1_tmp *
-                       (a * a) * obj_objfun_workspace->l_1->contents *
-                       l_sigma_1_tmp) - obj_objfun_workspace->K_p_T->contents *
-                      sigma_5 * (b_a * b_a) * obj_objfun_workspace->
-                      l_1->contents * m_sigma_1_tmp) -
-                     obj_objfun_workspace->K_p_T->contents * ab_sigma_1_tmp *
-                     (c_a * c_a) * obj_objfun_workspace->l_2->contents *
-                     n_sigma_1_tmp) + obj_objfun_workspace->K_p_T->contents *
-                    bb_sigma_1_tmp * (d_a * d_a) * obj_objfun_workspace->
-                    l_2->contents * o_sigma_1_tmp) - obj_objfun_workspace->
-                   K_p_M->contents * y_sigma_1_tmp * (e_a * e_a) * sigma_6 *
-                   t_sigma_1_tmp) + obj_objfun_workspace->K_p_M->contents *
-                  sigma_5 * (f_a * f_a) * g_sigma_1_tmp * u_sigma_1_tmp) -
-                 obj_objfun_workspace->K_p_M->contents * ab_sigma_1_tmp * (g_a *
-    g_a) * h_sigma_1_tmp * v_sigma_1_tmp) + obj_objfun_workspace->
-                K_p_M->contents * bb_sigma_1_tmp * (h_a * h_a) * i_sigma_1_tmp *
-                w_sigma_1_tmp) - obj_objfun_workspace->K_p_T->contents * (x[0] *
-    x[0]) * (i_a * i_a) * obj_objfun_workspace->l_4->contents * sigma_6 *
-               p_sigma_1_tmp) - obj_objfun_workspace->K_p_T->contents * (x[1] *
-    x[1]) * (j_a * j_a) * obj_objfun_workspace->l_4->contents * g_sigma_1_tmp *
-              q_sigma_1_tmp) + obj_objfun_workspace->K_p_T->contents * (x[2] *
-              x[2]) * (k_a * k_a) * obj_objfun_workspace->l_3->contents *
-             h_sigma_1_tmp * r_sigma_1_tmp) + obj_objfun_workspace->
-    K_p_T->contents * (x[3] * x[3]) * (l_a * l_a) * obj_objfun_workspace->
-    l_3->contents * i_sigma_1_tmp * s_sigma_1_tmp;
-  a = obj_objfun_workspace->Cl_alpha->contents;
-  b_a = obj_objfun_workspace->gain_theta->contents;
-  c_a = obj_objfun_workspace->Cl_alpha->contents;
-  d_a = obj_objfun_workspace->Cl_alpha->contents;
-  e_a = obj_objfun_workspace->flight_path_angle->contents;
-  sigma_6 = ((obj_objfun_workspace->K_Cd->contents * (a * a) * x_sigma_1_tmp *
-              (b_a * b_a) - 2.0 * obj_objfun_workspace->K_Cd->contents * (c_a *
-    c_a) * x[12] * obj_objfun_workspace->flight_path_angle->contents *
-              obj_objfun_workspace->gain_theta->contents) +
-             obj_objfun_workspace->K_Cd->contents * (d_a * d_a) * (e_a * e_a)) +
-    obj_objfun_workspace->Cd_zero->contents;
-  a = obj_objfun_workspace->V->contents;
-  b_a = obj_objfun_workspace->V->contents;
-  c_a = obj_objfun_workspace->V->contents;
-  d_a = obj_objfun_workspace->V->contents;
-  e_a = obj_objfun_workspace->gain_motor->contents;
-  f_a = obj_objfun_workspace->gain_motor->contents;
-  g_a = obj_objfun_workspace->gain_motor->contents;
-  h_a = obj_objfun_workspace->V->contents;
-  sigma_6 = (100.0 * (((((f_sigma_1_tmp * (obj_objfun_workspace->S->contents *
-    (a * a) * obj_objfun_workspace->rho->contents * sigma_6 * sigma_1_tmp *
-    c_sigma_1_tmp / 2.0 - obj_objfun_workspace->Cl_alpha->contents *
-    obj_objfun_workspace->S->contents * (b_a * b_a) * obj_objfun_workspace->
-    rho->contents * b_sigma_1_tmp * (obj_objfun_workspace->
-    flight_path_angle->contents - x[12] * obj_objfun_workspace->
-    gain_theta->contents) / 2.0) + e_sigma_1_tmp * d_sigma_1_tmp *
-    (obj_objfun_workspace->Cl_alpha->contents * obj_objfun_workspace->
-     S->contents * (c_a * c_a) * obj_objfun_workspace->rho->contents *
-     sigma_1_tmp * (obj_objfun_workspace->flight_path_angle->contents - x[12] *
-                    obj_objfun_workspace->gain_theta->contents) / 2.0 +
-     obj_objfun_workspace->S->contents * (d_a * d_a) * obj_objfun_workspace->
-     rho->contents * sigma_6 * b_sigma_1_tmp * c_sigma_1_tmp / 2.0)) +
-    obj_objfun_workspace->K_p_T->contents * (e_a * e_a) * f_sigma_1_tmp *
-    cb_sigma_1_tmp) - obj_objfun_workspace->K_p_T->contents * (f_a * f_a) *
-                        e_sigma_1_tmp * d_sigma_1_tmp * (((cos(x[4] *
-    obj_objfun_workspace->gain_el->contents) * cos(x[8] *
-    obj_objfun_workspace->gain_az->contents) * (x[0] * x[0]) + cos(x[5] *
-    obj_objfun_workspace->gain_el->contents) * cos(x[9] *
-    obj_objfun_workspace->gain_az->contents) * (x[1] * x[1])) + cos(x[6] *
-    obj_objfun_workspace->gain_el->contents) * cos(x[10] *
-    obj_objfun_workspace->gain_az->contents) * (x[2] * x[2])) + cos(x[7] *
-    obj_objfun_workspace->gain_el->contents) * cos(x[11] *
-    obj_objfun_workspace->gain_az->contents) * (x[3] * x[3]))) +
-                       obj_objfun_workspace->K_p_T->contents * (g_a * g_a) *
-                       d_sigma_1_tmp * j_sigma_1_tmp * (((cos(x[4] *
-    obj_objfun_workspace->gain_el->contents) * sin(x[8] *
-    obj_objfun_workspace->gain_az->contents) * (x[0] * x[0]) + cos(x[5] *
-    obj_objfun_workspace->gain_el->contents) * sin(x[9] *
-    obj_objfun_workspace->gain_az->contents) * (x[1] * x[1])) + cos(x[6] *
-    obj_objfun_workspace->gain_el->contents) * sin(x[10] *
-    obj_objfun_workspace->gain_az->contents) * (x[2] * x[2])) + cos(x[7] *
-    obj_objfun_workspace->gain_el->contents) * sin(x[11] *
-    obj_objfun_workspace->gain_az->contents) * (x[3] * x[3]))) -
-                      obj_objfun_workspace->S->contents * (h_a * h_a) *
-                      obj_objfun_workspace->rho->contents * sigma_6 *
-                      d_sigma_1_tmp * j_sigma_1_tmp * k_sigma_1_tmp / 2.0) /
-             obj_objfun_workspace->m->contents - 100.0 *
-             obj_objfun_workspace->dv_global->contents[2]) + 981.0;
-  a = obj_objfun_workspace->W_act_motor->contents;
-  b_a = x[0] - obj_objfun_workspace->desired_motor_value->contents /
-    obj_objfun_workspace->gain_motor->contents;
-  c_a = obj_objfun_workspace->W_act_motor->contents;
-  d_a = x[1] - obj_objfun_workspace->desired_motor_value->contents /
-    obj_objfun_workspace->gain_motor->contents;
-  e_a = obj_objfun_workspace->W_act_motor->contents;
-  f_a = x[2] - obj_objfun_workspace->desired_motor_value->contents /
-    obj_objfun_workspace->gain_motor->contents;
-  g_a = obj_objfun_workspace->W_act_motor->contents;
-  h_a = x[3] - obj_objfun_workspace->desired_motor_value->contents /
-    obj_objfun_workspace->gain_motor->contents;
-  i_a = obj_objfun_workspace->W_act_phi->contents;
-  j_a = x[13] - obj_objfun_workspace->desired_phi_value->contents /
-    obj_objfun_workspace->gain_phi->contents;
-  k_a = obj_objfun_workspace->W_act_theta->contents;
-  l_a = x[12] - obj_objfun_workspace->desired_theta_value->contents /
-    obj_objfun_workspace->gain_theta->contents;
-  m_a = obj_objfun_workspace->W_act_tilt_el->contents;
-  n_a = x[4] - obj_objfun_workspace->desired_el_value->contents /
-    obj_objfun_workspace->gain_el->contents;
-  o_a = obj_objfun_workspace->W_act_tilt_el->contents;
-  p_a = x[5] - obj_objfun_workspace->desired_el_value->contents /
-    obj_objfun_workspace->gain_el->contents;
-  q_a = obj_objfun_workspace->W_act_tilt_el->contents;
-  r_a = x[6] - obj_objfun_workspace->desired_el_value->contents /
-    obj_objfun_workspace->gain_el->contents;
-  s_a = obj_objfun_workspace->W_act_tilt_el->contents;
-  t_a = x[7] - obj_objfun_workspace->desired_el_value->contents /
-    obj_objfun_workspace->gain_el->contents;
-  u_a = obj_objfun_workspace->W_act_ailerons->contents;
-  v_a = x[14] - obj_objfun_workspace->desired_ailerons_value->contents /
-    obj_objfun_workspace->gain_ailerons->contents;
-  w_a = obj_objfun_workspace->W_act_tilt_az->contents;
-  g_sigma_1_tmp = x[8] - obj_objfun_workspace->desired_az_value->contents /
-    obj_objfun_workspace->gain_az->contents;
-  h_sigma_1_tmp = obj_objfun_workspace->W_act_tilt_az->contents;
-  i_sigma_1_tmp = x[9] - obj_objfun_workspace->desired_az_value->contents /
-    obj_objfun_workspace->gain_az->contents;
-  l_sigma_1_tmp = obj_objfun_workspace->W_act_tilt_az->contents;
-  m_sigma_1_tmp = x[10] - obj_objfun_workspace->desired_az_value->contents /
-    obj_objfun_workspace->gain_az->contents;
-  n_sigma_1_tmp = obj_objfun_workspace->W_act_tilt_az->contents;
-  o_sigma_1_tmp = x[11] - obj_objfun_workspace->desired_az_value->contents /
-    obj_objfun_workspace->gain_az->contents;
-  p_sigma_1_tmp = obj_objfun_workspace->W_dv_1->contents;
-  q_sigma_1_tmp = obj_objfun_workspace->W_dv_2->contents;
-  r_sigma_1_tmp = obj_objfun_workspace->W_dv_3->contents;
-  s_sigma_1_tmp = obj_objfun_workspace->W_dv_4->contents;
-  t_sigma_1_tmp = obj_objfun_workspace->I_xx->contents;
-  u_sigma_1_tmp = obj_objfun_workspace->W_dv_5->contents;
-  v_sigma_1_tmp = obj_objfun_workspace->I_yy->contents;
-  w_sigma_1_tmp = obj_objfun_workspace->W_dv_6->contents;
-  y_sigma_1_tmp = obj_objfun_workspace->I_zz->contents;
-  *fval = (((((obj_objfun_workspace->gamma_quadratic_du->contents *
-               ((((((((((((((a * a * (b_a * b_a) + c_a * c_a * (d_a * d_a)) +
-    e_a * e_a * (f_a * f_a)) + g_a * g_a * (h_a * h_a)) + i_a * i_a * (j_a * j_a))
-    + k_a * k_a * (l_a * l_a)) + m_a * m_a * (n_a * n_a)) + o_a * o_a * (p_a *
-    p_a)) + q_a * q_a * (r_a * r_a)) + s_a * s_a * (t_a * t_a)) + u_a * u_a *
-                    (v_a * v_a)) + w_a * w_a * (g_sigma_1_tmp * g_sigma_1_tmp))
-                  + h_sigma_1_tmp * h_sigma_1_tmp * (i_sigma_1_tmp *
-    i_sigma_1_tmp)) + l_sigma_1_tmp * l_sigma_1_tmp * (m_sigma_1_tmp *
-    m_sigma_1_tmp)) + n_sigma_1_tmp * n_sigma_1_tmp * (o_sigma_1_tmp *
-    o_sigma_1_tmp)) + p_sigma_1_tmp * p_sigma_1_tmp * (sigma_1 * sigma_1)) +
-              q_sigma_1_tmp * q_sigma_1_tmp * (sigma_2 * sigma_2)) +
-             r_sigma_1_tmp * r_sigma_1_tmp * (sigma_6 * sigma_6) / 10000.0) +
-            s_sigma_1_tmp * s_sigma_1_tmp * (sigma_4 * sigma_4) / (4.0 *
-             (t_sigma_1_tmp * t_sigma_1_tmp))) + u_sigma_1_tmp * u_sigma_1_tmp *
-           (sigma_3 * sigma_3) / (4.0 * (v_sigma_1_tmp * v_sigma_1_tmp))) +
-    w_sigma_1_tmp * w_sigma_1_tmp * (sigma_5 * sigma_5) / (y_sigma_1_tmp *
-    y_sigma_1_tmp);
+  *fval = b_compute_cost_and_gradient_fcn(obj_objfun_workspace->dv_global,
+    obj_objfun_workspace->gain_theta, obj_objfun_workspace->Cl_alpha,
+    obj_objfun_workspace->S, obj_objfun_workspace->V, obj_objfun_workspace->rho,
+    obj_objfun_workspace->flight_path_angle, obj_objfun_workspace->Beta,
+    obj_objfun_workspace->K_Cd, obj_objfun_workspace->Cd_zero,
+    obj_objfun_workspace->gain_phi, obj_objfun_workspace->K_p_T,
+    obj_objfun_workspace->gain_motor, obj_objfun_workspace->gain_el,
+    obj_objfun_workspace->gain_az, obj_objfun_workspace->m,
+    obj_objfun_workspace->I_zz, obj_objfun_workspace->p, obj_objfun_workspace->r,
+    obj_objfun_workspace->I_xx, obj_objfun_workspace->I_yy,
+    obj_objfun_workspace->l_z, obj_objfun_workspace->K_p_M,
+    obj_objfun_workspace->Cm_zero, obj_objfun_workspace->wing_chord,
+    obj_objfun_workspace->l_4, obj_objfun_workspace->l_3,
+    obj_objfun_workspace->Cm_alpha, obj_objfun_workspace->q,
+    obj_objfun_workspace->l_1, obj_objfun_workspace->l_2,
+    obj_objfun_workspace->CL_aileron, obj_objfun_workspace->gain_ailerons,
+    obj_objfun_workspace->W_dv_4, obj_objfun_workspace->W_act_motor1,
+    obj_objfun_workspace->gamma_quadratic_du2,
+    obj_objfun_workspace->previous_motor_value1, obj_objfun_workspace->W_dv_6,
+    obj_objfun_workspace->gamma_quadratic_du,
+    obj_objfun_workspace->desired_motor_value, obj_objfun_workspace->W_dv_5,
+    obj_objfun_workspace->W_dv_3, obj_objfun_workspace->W_dv_1,
+    obj_objfun_workspace->W_dv_2, obj_objfun_workspace->W_act_motor2,
+    obj_objfun_workspace->previous_motor_value2,
+    obj_objfun_workspace->previous_motor_value3,
+    obj_objfun_workspace->W_act_motor3, obj_objfun_workspace->W_act_motor4,
+    obj_objfun_workspace->previous_motor_value4,
+    obj_objfun_workspace->W_act_tilt_el1,
+    obj_objfun_workspace->previous_el_value1,
+    obj_objfun_workspace->desired_el_value, obj_objfun_workspace->W_act_tilt_el2,
+    obj_objfun_workspace->previous_el_value2,
+    obj_objfun_workspace->W_act_tilt_el3,
+    obj_objfun_workspace->previous_el_value3,
+    obj_objfun_workspace->W_act_tilt_el4,
+    obj_objfun_workspace->previous_el_value4,
+    obj_objfun_workspace->W_act_tilt_az1,
+    obj_objfun_workspace->previous_az_value1,
+    obj_objfun_workspace->desired_az_value, obj_objfun_workspace->W_act_tilt_az2,
+    obj_objfun_workspace->previous_az_value2,
+    obj_objfun_workspace->W_act_tilt_az3,
+    obj_objfun_workspace->previous_az_value3,
+    obj_objfun_workspace->W_act_tilt_az4,
+    obj_objfun_workspace->previous_az_value4, obj_objfun_workspace->W_act_theta,
+    obj_objfun_workspace->desired_theta_value,
+    obj_objfun_workspace->previous_theta_value, obj_objfun_workspace->W_act_phi,
+    obj_objfun_workspace->desired_phi_value,
+    obj_objfun_workspace->previous_phi_value,
+    obj_objfun_workspace->W_act_ailerons,
+    obj_objfun_workspace->desired_ailerons_value,
+    obj_objfun_workspace->previous_ailerons_value, x);
   *status = 1;
   if (rtIsInf(*fval) || rtIsNaN(*fval)) {
     if (rtIsNaN(*fval)) {
@@ -4812,17 +5096,40 @@ static void evalObjAndConstrAndDerivatives(const d_struct_T
     obj_objfun_workspace->Cm_alpha, obj_objfun_workspace->q,
     obj_objfun_workspace->l_1, obj_objfun_workspace->l_2,
     obj_objfun_workspace->CL_aileron, obj_objfun_workspace->gain_ailerons,
-    obj_objfun_workspace->W_dv_4, obj_objfun_workspace->W_dv_6,
-    obj_objfun_workspace->W_act_motor, obj_objfun_workspace->gamma_quadratic_du,
+    obj_objfun_workspace->W_dv_4, obj_objfun_workspace->W_act_motor1,
+    obj_objfun_workspace->gamma_quadratic_du2,
+    obj_objfun_workspace->previous_motor_value1, obj_objfun_workspace->W_dv_6,
+    obj_objfun_workspace->gamma_quadratic_du,
     obj_objfun_workspace->desired_motor_value, obj_objfun_workspace->W_dv_5,
     obj_objfun_workspace->W_dv_3, obj_objfun_workspace->W_dv_1,
-    obj_objfun_workspace->W_dv_2, obj_objfun_workspace->W_act_tilt_el,
-    obj_objfun_workspace->desired_el_value, obj_objfun_workspace->W_act_tilt_az,
-    obj_objfun_workspace->desired_az_value, obj_objfun_workspace->W_act_theta,
-    obj_objfun_workspace->desired_theta_value, obj_objfun_workspace->W_act_phi,
+    obj_objfun_workspace->W_dv_2, obj_objfun_workspace->W_act_motor2,
+    obj_objfun_workspace->previous_motor_value2,
+    obj_objfun_workspace->previous_motor_value3,
+    obj_objfun_workspace->W_act_motor3, obj_objfun_workspace->W_act_motor4,
+    obj_objfun_workspace->previous_motor_value4,
+    obj_objfun_workspace->W_act_tilt_el1,
+    obj_objfun_workspace->previous_el_value1,
+    obj_objfun_workspace->desired_el_value, obj_objfun_workspace->W_act_tilt_el2,
+    obj_objfun_workspace->previous_el_value2,
+    obj_objfun_workspace->W_act_tilt_el3,
+    obj_objfun_workspace->previous_el_value3,
+    obj_objfun_workspace->W_act_tilt_el4,
+    obj_objfun_workspace->previous_el_value4,
+    obj_objfun_workspace->W_act_tilt_az1,
+    obj_objfun_workspace->previous_az_value1,
+    obj_objfun_workspace->desired_az_value, obj_objfun_workspace->W_act_tilt_az2,
+    obj_objfun_workspace->previous_az_value2,
+    obj_objfun_workspace->W_act_tilt_az3,
+    obj_objfun_workspace->previous_az_value3,
+    obj_objfun_workspace->W_act_tilt_az4,
+    obj_objfun_workspace->previous_az_value4, obj_objfun_workspace->W_act_theta,
+    obj_objfun_workspace->desired_theta_value,
+    obj_objfun_workspace->previous_theta_value, obj_objfun_workspace->W_act_phi,
     obj_objfun_workspace->desired_phi_value,
+    obj_objfun_workspace->previous_phi_value,
     obj_objfun_workspace->W_act_ailerons,
-    obj_objfun_workspace->desired_ailerons_value, x, fval, varargout_2);
+    obj_objfun_workspace->desired_ailerons_value,
+    obj_objfun_workspace->previous_ailerons_value, x, fval, varargout_2);
   memcpy(&grad_workspace[0], &varargout_2[0], 15U * sizeof(double));
   *status = 1;
   if (rtIsInf(*fval) || rtIsNaN(*fval)) {
@@ -7625,6 +7932,7 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double g_4
  *                double delta_ailerons
  *                double W_act_motor_const
+ *                double W_MOTOR_FAILURE_WEIGHT
  *                double W_act_motor_speed
  *                double W_act_tilt_el_const
  *                double W_act_tilt_el_speed
@@ -7672,12 +7980,14 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double min_alpha
  *                double Beta
  *                double gamma_quadratic_du
+ *                double gamma_quadratic_du2
  *                double desired_motor_value
  *                double desired_el_value
  *                double desired_az_value
  *                double desired_theta_value
  *                double desired_phi_value
  *                double desired_ailerons_value
+ *                const double previous_controls[15]
  *                double k_alt_tilt_constraint
  *                double min_alt_tilt_constraint
  *                double lidar_alt_corrected
@@ -7692,38 +8002,48 @@ static double xzlarfg(int n, double *alpha1, double x[961], int ix0)
  *                double *exitflag
  * Return Type  : void
  */
-void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
-  K_p_M, double m, double I_xx, double I_yy, double I_zz, double l_1, double l_2,
-  double l_3, double l_4, double l_z, double Phi, double Theta, double Omega_1,
-  double Omega_2, double Omega_3, double Omega_4, double b_1, double b_2, double
-  b_3, double b_4, double g_1, double g_2, double g_3, double g_4, double
-  delta_ailerons, double W_act_motor_const, double W_act_motor_speed, double
-  W_act_tilt_el_const, double W_act_tilt_el_speed, double W_act_tilt_az_const,
-  double W_act_tilt_az_speed, double W_act_theta_const, double W_act_theta_speed,
-  double W_act_phi_const, double W_act_phi_speed, double W_act_ailerons_const,
-  double W_act_ailerons_speed, double W_dv_1, double W_dv_2, double W_dv_3,
-  double W_dv_4, double W_dv_5, double W_dv_6, double max_omega, double
-  min_omega, double max_b, double min_b, double max_g, double min_g, double
-  max_theta, double min_theta, double max_phi, double max_delta_ailerons, double
-  min_delta_ailerons, const double dv[6], double p, double q, double r, double
-  Cm_zero, double Cl_alpha, double Cd_zero, double K_Cd, double Cm_alpha, double
-  CL_aileron, double rho, double V, double S, double wing_chord, double
-  flight_path_angle, double max_alpha, double min_alpha, double Beta, double
-  gamma_quadratic_du, double desired_motor_value, double desired_el_value,
-  double desired_az_value, double desired_theta_value, double desired_phi_value,
-  double desired_ailerons_value, double k_alt_tilt_constraint, double
-  min_alt_tilt_constraint, double lidar_alt_corrected, double approach_mode,
-  double verbose, double aoa_protection_speed, double u_out[15], double
-  residuals[6], double *elapsed_time, double *N_iterations, double *N_evaluation,
-  double *exitflag)
+void AM_Nonlinear_CA_nico_test(double K_p_T, double K_p_M, double m, double I_xx,
+  double I_yy, double I_zz, double l_1, double l_2, double l_3, double l_4,
+  double l_z, double Phi, double Theta, double Omega_1, double Omega_2, double
+  Omega_3, double Omega_4, double b_1, double b_2, double b_3, double b_4,
+  double g_1, double g_2, double g_3, double g_4, double delta_ailerons, double
+  W_act_motor_const, double W_MOTOR_FAILURE_WEIGHT, double W_act_motor_speed,
+  double W_act_tilt_el_const, double W_act_tilt_el_speed, double
+  W_act_tilt_az_const, double W_act_tilt_az_speed, double W_act_theta_const,
+  double W_act_theta_speed, double W_act_phi_const, double W_act_phi_speed,
+  double W_act_ailerons_const, double W_act_ailerons_speed, double W_dv_1,
+  double W_dv_2, double W_dv_3, double W_dv_4, double W_dv_5, double W_dv_6,
+  double max_omega, double min_omega, double max_b, double min_b, double max_g,
+  double min_g, double max_theta, double min_theta, double max_phi, double
+  max_delta_ailerons, double min_delta_ailerons, const double dv[6], double p,
+  double q, double r, double Cm_zero, double Cl_alpha, double Cd_zero, double
+  K_Cd, double Cm_alpha, double CL_aileron, double rho, double V, double S,
+  double wing_chord, double flight_path_angle, double max_alpha, double
+  min_alpha, double Beta, double gamma_quadratic_du, double gamma_quadratic_du2,
+  double desired_motor_value, double desired_el_value, double desired_az_value,
+  double desired_theta_value, double desired_phi_value, double
+  desired_ailerons_value, const double previous_controls[15], double
+  k_alt_tilt_constraint, double min_alt_tilt_constraint, double
+  lidar_alt_corrected, double approach_mode, double verbose, double
+  aoa_protection_speed, double u_out[15], double residuals[6], double
+  *elapsed_time, double *N_iterations, double *N_evaluation, double *exitflag)
 {
   b_captured_var dv_global;
   captured_var W_act_ailerons;
-  captured_var W_act_motor;
+  captured_var W_act_motor1;
+  captured_var W_act_motor2;
+  captured_var W_act_motor3;
+  captured_var W_act_motor4;
   captured_var W_act_phi;
   captured_var W_act_theta;
-  captured_var W_act_tilt_az;
-  captured_var W_act_tilt_el;
+  captured_var W_act_tilt_az1;
+  captured_var W_act_tilt_az2;
+  captured_var W_act_tilt_az3;
+  captured_var W_act_tilt_az4;
+  captured_var W_act_tilt_el1;
+  captured_var W_act_tilt_el2;
+  captured_var W_act_tilt_el3;
+  captured_var W_act_tilt_el4;
   captured_var b_Beta;
   captured_var b_CL_aileron;
   captured_var b_Cd_zero;
@@ -7752,6 +8072,7 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   captured_var b_desired_theta_value;
   captured_var b_flight_path_angle;
   captured_var b_gamma_quadratic_du;
+  captured_var b_gamma_quadratic_du2;
   captured_var b_l_1;
   captured_var b_l_2;
   captured_var b_l_3;
@@ -7769,20 +8090,36 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   captured_var gain_motor;
   captured_var gain_phi;
   captured_var gain_theta;
+  captured_var previous_ailerons_value;
+  captured_var previous_az_value1;
+  captured_var previous_az_value2;
+  captured_var previous_az_value3;
+  captured_var previous_az_value4;
+  captured_var previous_el_value1;
+  captured_var previous_el_value2;
+  captured_var previous_el_value3;
+  captured_var previous_el_value4;
+  captured_var previous_motor_value1;
+  captured_var previous_motor_value2;
+  captured_var previous_motor_value3;
+  captured_var previous_motor_value4;
+  captured_var previous_phi_value;
+  captured_var previous_theta_value;
   d_struct_T expl_temp;
   double actual_u[15];
   double u_max[15];
   double u_max_scaled[15];
   double u_min[15];
-  double b_max_approach;
-  double b_max_tilt_value_approach;
-  double b_min_approach;
   double g_max_approach;
+  double g_min_approach;
+  double max_omega_fail;
   double max_theta_protection;
   double min_theta_protection;
+  double tilt_az_fail;
+  double tilt_el_fail;
   int i;
-  if (!isInitialized_Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains) {
-    Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains_initialize();
+  if (!isInitialized_AM_Nonlinear_CA_nico_test) {
+    AM_Nonlinear_CA_nico_test_initialize();
   }
 
   b_K_p_T.contents = K_p_T;
@@ -7818,6 +8155,7 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   b_flight_path_angle.contents = flight_path_angle;
   b_Beta.contents = Beta;
   b_gamma_quadratic_du.contents = gamma_quadratic_du;
+  b_gamma_quadratic_du2.contents = gamma_quadratic_du2;
   b_desired_motor_value.contents = desired_motor_value;
   b_desired_el_value.contents = desired_el_value;
   b_desired_az_value.contents = desired_az_value;
@@ -7826,13 +8164,29 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   b_desired_ailerons_value.contents = desired_ailerons_value;
 
   /*  Create variables necessary for the optimization */
+  /*   */
+  previous_motor_value1.contents = previous_controls[0];
+  previous_motor_value2.contents = previous_controls[1];
+  previous_motor_value3.contents = previous_controls[2];
+  previous_motor_value4.contents = previous_controls[3];
+  previous_el_value1.contents = previous_controls[4];
+  previous_el_value2.contents = previous_controls[5];
+  previous_el_value3.contents = previous_controls[6];
+  previous_el_value4.contents = previous_controls[7];
+  previous_az_value1.contents = previous_controls[8];
+  previous_az_value2.contents = previous_controls[9];
+  previous_az_value3.contents = previous_controls[10];
+  previous_az_value4.contents = previous_controls[11];
+  previous_theta_value.contents = previous_controls[12];
+  previous_phi_value.contents = previous_controls[13];
+  previous_ailerons_value.contents = previous_controls[14];
   if (b_V.contents > aoa_protection_speed) {
-    min_theta_protection = (max_alpha + b_flight_path_angle.contents) * 180.0 /
+    max_omega_fail = (max_alpha + b_flight_path_angle.contents) * 180.0 /
       3.1415926535897931;
-    max_theta_protection = fmin(max_theta, min_theta_protection);
-    min_theta_protection = (min_alpha + b_flight_path_angle.contents) * 180.0 /
+    max_theta_protection = fmin(max_theta, max_omega_fail);
+    max_omega_fail = (min_alpha + b_flight_path_angle.contents) * 180.0 /
       3.1415926535897931;
-    min_theta_protection = fmax(min_theta, min_theta_protection);
+    min_theta_protection = fmax(min_theta, max_omega_fail);
   } else {
     max_theta_protection = max_theta;
     min_theta_protection = min_theta;
@@ -7872,20 +8226,30 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   actual_u[14] = delta_ailerons;
 
   /* Build the max and minimum actuator array: */
+  if (W_MOTOR_FAILURE_WEIGHT > 0.0) {
+    max_omega_fail = 1.0;
+    tilt_el_fail = 1.0;
+    tilt_az_fail = 1.0;
+  } else {
+    max_omega_fail = max_omega;
+    tilt_el_fail = max_b;
+    tilt_az_fail = max_g;
+  }
+
   u_max[0] = max_omega;
   u_max[1] = max_omega;
-  u_max[2] = max_omega;
+  u_max[2] = max_omega_fail;
   u_max[3] = max_omega;
   u_max[4] = max_b;
   u_max[5] = max_b;
-  u_max[6] = max_b;
+  u_max[6] = tilt_el_fail;
   u_max[7] = max_b;
   u_max[8] = max_g;
   u_max[9] = max_g;
-  u_max[10] = max_g;
+  u_max[10] = tilt_az_fail;
   u_max[11] = max_g;
-  u_max[12] = max_theta_protection;
-  u_max[13] = max_phi;
+  u_max[12] = 57.295779513082323 * (Theta + 0.087266462599716474);
+  u_max[13] = 57.295779513082323 * (Phi + 0.087266462599716474);
   u_max[14] = max_delta_ailerons;
   u_min[0] = min_omega;
   u_min[1] = min_omega;
@@ -7899,62 +8263,61 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   u_min[9] = min_g;
   u_min[10] = min_g;
   u_min[11] = min_g;
-  u_min[12] = min_theta_protection;
-  u_min[13] = -max_phi;
+  u_min[12] = 57.295779513082323 * (Theta - 0.087266462599716474);
+  u_min[13] = 57.295779513082323 * (Phi - 0.087266462599716474);
   u_min[14] = min_delta_ailerons;
   if (approach_mode != 0.0) {
     double max_tilt_value_approach[2];
-    double g_min_approach;
     max_tilt_value_approach[0] = 0.0;
     max_tilt_value_approach[1] = k_alt_tilt_constraint * lidar_alt_corrected -
       min_alt_tilt_constraint * k_alt_tilt_constraint;
-    b_max_tilt_value_approach = maximum(max_tilt_value_approach);
+    max_omega_fail = maximum(max_tilt_value_approach);
 
     /* Elevation angle */
-    max_tilt_value_approach[0] = b_max_tilt_value_approach;
+    max_tilt_value_approach[0] = max_omega_fail;
     max_tilt_value_approach[1] = max_b;
-    b_max_approach = minimum(max_tilt_value_approach);
-    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
+    tilt_el_fail = minimum(max_tilt_value_approach);
+    max_tilt_value_approach[0] = -max_omega_fail;
     max_tilt_value_approach[1] = min_b;
-    b_min_approach = maximum(max_tilt_value_approach);
+    tilt_az_fail = maximum(max_tilt_value_approach);
 
     /* Azimuth angle */
-    max_tilt_value_approach[0] = b_max_tilt_value_approach;
+    max_tilt_value_approach[0] = max_omega_fail;
     max_tilt_value_approach[1] = max_g;
     g_max_approach = minimum(max_tilt_value_approach);
-    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
+    max_tilt_value_approach[0] = -max_omega_fail;
     max_tilt_value_approach[1] = min_g;
     g_min_approach = maximum(max_tilt_value_approach);
-    u_max[4] = b_max_approach;
-    u_min[4] = b_min_approach;
+    u_max[4] = tilt_el_fail;
+    u_min[4] = tilt_az_fail;
     u_max[8] = g_max_approach;
     u_min[8] = g_min_approach;
-    u_max[5] = b_max_approach;
-    u_min[5] = b_min_approach;
+    u_max[5] = tilt_el_fail;
+    u_min[5] = tilt_az_fail;
     u_max[9] = g_max_approach;
     u_min[9] = g_min_approach;
-    u_max[6] = b_max_approach;
-    u_min[6] = b_min_approach;
+    u_max[6] = tilt_el_fail;
+    u_min[6] = tilt_az_fail;
     u_max[10] = g_max_approach;
     u_min[10] = g_min_approach;
-    u_max[7] = b_max_approach;
-    u_min[7] = b_min_approach;
+    u_max[7] = tilt_el_fail;
+    u_min[7] = tilt_az_fail;
     u_max[11] = g_max_approach;
     u_min[11] = g_min_approach;
 
     /* Pitch angle  */
-    max_tilt_value_approach[0] = b_max_tilt_value_approach;
+    max_tilt_value_approach[0] = max_omega_fail;
     max_tilt_value_approach[1] = max_theta_protection;
     u_max[12] = minimum(max_tilt_value_approach);
-    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
+    max_tilt_value_approach[0] = -max_omega_fail;
     max_tilt_value_approach[1] = min_theta_protection;
     u_min[12] = maximum(max_tilt_value_approach);
 
     /* Roll angle  */
-    max_tilt_value_approach[0] = b_max_tilt_value_approach;
+    max_tilt_value_approach[0] = max_omega_fail;
     max_tilt_value_approach[1] = max_phi;
     u_max[13] = minimum(max_tilt_value_approach);
-    max_tilt_value_approach[0] = -b_max_tilt_value_approach;
+    max_tilt_value_approach[0] = -max_omega_fail;
     max_tilt_value_approach[1] = -max_phi;
     u_min[13] = maximum(max_tilt_value_approach);
   }
@@ -7969,46 +8332,46 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   u_max_scaled[1] = u_max[1] / gain_motor.contents;
   u_max_scaled[2] = u_max[2] / gain_motor.contents;
   u_max_scaled[3] = u_max[3] / gain_motor.contents;
-  min_theta_protection = u_min[0] / gain_motor.contents;
-  b_max_tilt_value_approach = u_min[1] / gain_motor.contents;
-  b_max_approach = u_min[2] / gain_motor.contents;
-  b_min_approach = u_min[3] / gain_motor.contents;
-  u_min[0] = min_theta_protection;
-  u_min[1] = b_max_tilt_value_approach;
-  u_min[2] = b_max_approach;
-  u_min[3] = b_min_approach;
-  min_theta_protection = u_max_scaled[4] / gain_el.contents;
-  b_max_tilt_value_approach = u_max_scaled[5] / gain_el.contents;
-  b_max_approach = u_max_scaled[6] / gain_el.contents;
-  b_min_approach = u_max_scaled[7] / gain_el.contents;
-  u_max_scaled[4] = min_theta_protection;
-  u_max_scaled[5] = b_max_tilt_value_approach;
-  u_max_scaled[6] = b_max_approach;
-  u_max_scaled[7] = b_min_approach;
-  min_theta_protection = u_min[4] / gain_el.contents;
-  b_max_tilt_value_approach = u_min[5] / gain_el.contents;
-  b_max_approach = u_min[6] / gain_el.contents;
-  b_min_approach = u_min[7] / gain_el.contents;
-  u_min[4] = min_theta_protection;
-  u_min[5] = b_max_tilt_value_approach;
-  u_min[6] = b_max_approach;
-  u_min[7] = b_min_approach;
-  min_theta_protection = u_max_scaled[8] / gain_az.contents;
-  b_max_tilt_value_approach = u_max_scaled[9] / gain_az.contents;
-  b_max_approach = u_max_scaled[10] / gain_az.contents;
-  b_min_approach = u_max_scaled[11] / gain_az.contents;
-  u_max_scaled[8] = min_theta_protection;
-  u_max_scaled[9] = b_max_tilt_value_approach;
-  u_max_scaled[10] = b_max_approach;
-  u_max_scaled[11] = b_min_approach;
-  min_theta_protection = u_min[8] / gain_az.contents;
-  b_max_tilt_value_approach = u_min[9] / gain_az.contents;
-  b_max_approach = u_min[10] / gain_az.contents;
-  b_min_approach = u_min[11] / gain_az.contents;
-  u_min[8] = min_theta_protection;
-  u_min[9] = b_max_tilt_value_approach;
-  u_min[10] = b_max_approach;
-  u_min[11] = b_min_approach;
+  max_omega_fail = u_min[0] / gain_motor.contents;
+  tilt_el_fail = u_min[1] / gain_motor.contents;
+  tilt_az_fail = u_min[2] / gain_motor.contents;
+  g_max_approach = u_min[3] / gain_motor.contents;
+  u_min[0] = max_omega_fail;
+  u_min[1] = tilt_el_fail;
+  u_min[2] = tilt_az_fail;
+  u_min[3] = g_max_approach;
+  max_omega_fail = u_max_scaled[4] / gain_el.contents;
+  tilt_el_fail = u_max_scaled[5] / gain_el.contents;
+  tilt_az_fail = u_max_scaled[6] / gain_el.contents;
+  g_max_approach = u_max_scaled[7] / gain_el.contents;
+  u_max_scaled[4] = max_omega_fail;
+  u_max_scaled[5] = tilt_el_fail;
+  u_max_scaled[6] = tilt_az_fail;
+  u_max_scaled[7] = g_max_approach;
+  max_omega_fail = u_min[4] / gain_el.contents;
+  tilt_el_fail = u_min[5] / gain_el.contents;
+  tilt_az_fail = u_min[6] / gain_el.contents;
+  g_max_approach = u_min[7] / gain_el.contents;
+  u_min[4] = max_omega_fail;
+  u_min[5] = tilt_el_fail;
+  u_min[6] = tilt_az_fail;
+  u_min[7] = g_max_approach;
+  max_omega_fail = u_max_scaled[8] / gain_az.contents;
+  tilt_el_fail = u_max_scaled[9] / gain_az.contents;
+  tilt_az_fail = u_max_scaled[10] / gain_az.contents;
+  g_max_approach = u_max_scaled[11] / gain_az.contents;
+  u_max_scaled[8] = max_omega_fail;
+  u_max_scaled[9] = tilt_el_fail;
+  u_max_scaled[10] = tilt_az_fail;
+  u_max_scaled[11] = g_max_approach;
+  max_omega_fail = u_min[8] / gain_az.contents;
+  tilt_el_fail = u_min[9] / gain_az.contents;
+  tilt_az_fail = u_min[10] / gain_az.contents;
+  g_max_approach = u_min[11] / gain_az.contents;
+  u_min[8] = max_omega_fail;
+  u_min[9] = tilt_el_fail;
+  u_min[10] = tilt_az_fail;
+  u_min[11] = g_max_approach;
   u_max_scaled[12] /= gain_theta.contents;
   u_min[12] /= gain_theta.contents;
   u_max_scaled[13] /= gain_phi.contents;
@@ -8020,22 +8383,22 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   u_max[1] = Omega_2 / gain_motor.contents;
   u_max[2] = Omega_3 / gain_motor.contents;
   u_max[3] = Omega_4 / gain_motor.contents;
-  min_theta_protection = u_max[4] / gain_el.contents;
-  b_max_tilt_value_approach = u_max[5] / gain_el.contents;
-  b_max_approach = u_max[6] / gain_el.contents;
-  b_min_approach = u_max[7] / gain_el.contents;
-  u_max[4] = min_theta_protection;
-  u_max[5] = b_max_tilt_value_approach;
-  u_max[6] = b_max_approach;
-  u_max[7] = b_min_approach;
-  min_theta_protection = u_max[8] / gain_az.contents;
-  b_max_tilt_value_approach = u_max[9] / gain_az.contents;
-  b_max_approach = u_max[10] / gain_az.contents;
-  b_min_approach = u_max[11] / gain_az.contents;
-  u_max[8] = min_theta_protection;
-  u_max[9] = b_max_tilt_value_approach;
-  u_max[10] = b_max_approach;
-  u_max[11] = b_min_approach;
+  max_omega_fail = u_max[4] / gain_el.contents;
+  tilt_el_fail = u_max[5] / gain_el.contents;
+  tilt_az_fail = u_max[6] / gain_el.contents;
+  g_max_approach = u_max[7] / gain_el.contents;
+  u_max[4] = max_omega_fail;
+  u_max[5] = tilt_el_fail;
+  u_max[6] = tilt_az_fail;
+  u_max[7] = g_max_approach;
+  max_omega_fail = u_max[8] / gain_az.contents;
+  tilt_el_fail = u_max[9] / gain_az.contents;
+  tilt_az_fail = u_max[10] / gain_az.contents;
+  g_max_approach = u_max[11] / gain_az.contents;
+  u_max[8] = max_omega_fail;
+  u_max[9] = tilt_el_fail;
+  u_max[10] = tilt_az_fail;
+  u_max[11] = g_max_approach;
   u_max[12] /= gain_theta.contents;
   u_max[13] /= gain_phi.contents;
   u_max[14] /= gain_ailerons.contents;
@@ -8056,42 +8419,130 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   char b_expl_temp[3];
 
   /* Compute weights for actuators and make sure they are always positive */
-  min_theta_protection = W_act_motor_const + W_act_motor_speed * b_V.contents;
-  W_act_motor.contents = fmax(0.0, min_theta_protection);
-  min_theta_protection = W_act_tilt_el_const + W_act_tilt_el_speed *
-    b_V.contents;
-  W_act_tilt_el.contents = fmax(0.0, min_theta_protection);
-  min_theta_protection = W_act_tilt_az_const + W_act_tilt_az_speed *
-    b_V.contents;
-  W_act_tilt_az.contents = fmax(0.0, min_theta_protection);
-  min_theta_protection = W_act_theta_const + W_act_theta_speed * b_V.contents;
-  W_act_theta.contents = fmax(0.0, min_theta_protection);
-  min_theta_protection = W_act_phi_const + W_act_phi_speed * b_V.contents;
-  W_act_phi.contents = fmax(0.0, min_theta_protection);
-  min_theta_protection = W_act_ailerons_const + W_act_ailerons_speed *
-    b_V.contents;
-  W_act_ailerons.contents = fmax(0.0, min_theta_protection);
+  /*  M4 Fail */
+  /*  W_act_motor1 = max(0, W_act_motor_const + W_act_motor_speed*V); */
+  /*  W_act_motor2 = max(0, W_act_motor_const + W_act_motor_speed*V); */
+  /*  W_act_motor3 = max(0, W_act_motor_const + W_act_motor_speed*V); */
+  /*  W_act_motor4 = max(W_MOTOR_FAILURE_WEIGHT, W_act_motor_const + W_act_motor_speed*V); */
+  /*  % W_act_motor4 = W_MOTOR_FAILURE_WEIGHT; */
+  /*   */
+  /*  W_act_tilt_el1 = max(0, W_act_tilt_el_const + W_act_tilt_el_speed*V); */
+  /*  W_act_tilt_az1 = max(0,W_act_tilt_az_const + W_act_tilt_az_speed*V); */
+  /*  W_act_tilt_el2 = max(0, W_act_tilt_el_const + W_act_tilt_el_speed*V); */
+  /*  W_act_tilt_az2 = max(0,W_act_tilt_az_const + W_act_tilt_az_speed*V); */
+  /*  W_act_tilt_el3 = max(0, W_act_tilt_el_const + W_act_tilt_el_speed*V); */
+  /*  W_act_tilt_az3 = max(0,W_act_tilt_az_const + W_act_tilt_az_speed*V); */
+  /*  W_act_tilt_el4 = max(W_MOTOR_FAILURE_WEIGHT, W_act_tilt_el_const + W_act_tilt_el_speed*V); */
+  /*  W_act_tilt_az4 = max(W_MOTOR_FAILURE_WEIGHT, W_act_tilt_az_const + W_act_tilt_az_speed*V); */
+  /*  W_act_theta = max(0,W_act_theta_const + W_act_theta_speed*V); */
+  /*  W_act_phi = max(0,W_act_phi_const + W_act_phi_speed*V); */
+  /*  W_act_ailerons = max(0,W_act_ailerons_const + W_act_ailerons_speed*V); */
+  max_omega_fail = W_act_motor_const + W_act_motor_speed * b_V.contents;
+  W_act_motor1.contents = fmax(0.0, max_omega_fail);
+  max_omega_fail = W_act_motor_const + W_act_motor_speed * b_V.contents;
+  W_act_motor2.contents = fmax(0.0, max_omega_fail);
+  max_omega_fail = W_act_motor_const + W_act_motor_speed * b_V.contents;
+  W_act_motor3.contents = fmax(W_MOTOR_FAILURE_WEIGHT, max_omega_fail);
+  max_omega_fail = W_act_motor_const + W_act_motor_speed * b_V.contents;
+  W_act_motor4.contents = fmax(0.0, max_omega_fail);
 
+  /*  W_act_motor4 = W_MOTOR_FAILURE_WEIGHT; */
+  /*  M3 Fail */
+  max_omega_fail = W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
+  W_act_tilt_el1.contents = fmax(0.0, max_omega_fail);
+  max_omega_fail = W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
+  W_act_tilt_az1.contents = fmax(0.0, max_omega_fail);
+  max_omega_fail = W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
+  W_act_tilt_el2.contents = fmax(0.0, max_omega_fail);
+  max_omega_fail = W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
+  W_act_tilt_az2.contents = fmax(0.0, max_omega_fail);
+  max_omega_fail = W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
+  W_act_tilt_el3.contents = fmax(0.0, max_omega_fail);
+  max_omega_fail = W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
+  W_act_tilt_az3.contents = fmax(0.0, max_omega_fail);
+  max_omega_fail = W_act_tilt_el_const + W_act_tilt_el_speed * b_V.contents;
+  W_act_tilt_el4.contents = fmax(0.0, max_omega_fail);
+  max_omega_fail = W_act_tilt_az_const + W_act_tilt_az_speed * b_V.contents;
+  W_act_tilt_az4.contents = fmax(0.0, max_omega_fail);
+  max_omega_fail = W_act_theta_const + W_act_theta_speed * b_V.contents;
+  W_act_theta.contents = fmax(0.0, max_omega_fail);
+  max_omega_fail = W_act_phi_const + W_act_phi_speed * b_V.contents;
+  W_act_phi.contents = fmax(0.0, max_omega_fail);
+  max_omega_fail = W_act_ailerons_const + W_act_ailerons_speed * b_V.contents;
+  W_act_ailerons.contents = fmax(0.0, max_omega_fail);
+
+  /*  %%M2 Fail */
+  /*  W_act_motor1 = max(0, W_act_motor_const + W_act_motor_speed*V); */
+  /*  W_act_motor2 = max(W_MOTOR_FAILURE_WEIGHT, W_act_motor_const + W_act_motor_speed*V); */
+  /*  W_act_motor3 = max(0, W_act_motor_const + W_act_motor_speed*V); */
+  /*  W_act_motor4 = max(0, W_act_motor_const + W_act_motor_speed*V); */
+  /*  % W_act_motor4 = W_MOTOR_FAILURE_WEIGHT; */
+  /*   */
+  /*  W_act_tilt_el1 = max(0, W_act_tilt_el_const + W_act_tilt_el_speed*V); */
+  /*  W_act_tilt_az1 = max(0, W_act_tilt_az_const + W_act_tilt_az_speed*V); */
+  /*  W_act_tilt_el2 = max(W_MOTOR_FAILURE_WEIGHT, W_act_tilt_el_const + W_act_tilt_el_speed*V); */
+  /*  W_act_tilt_az2 = max(W_MOTOR_FAILURE_WEIGHT, W_act_tilt_az_const + W_act_tilt_az_speed*V); */
+  /*  W_act_tilt_el3 = max(0, W_act_tilt_el_const + W_act_tilt_el_speed*V); */
+  /*  W_act_tilt_az3 = max(0, W_act_tilt_az_const + W_act_tilt_az_speed*V); */
+  /*  W_act_tilt_el4 = max(0, W_act_tilt_el_const + W_act_tilt_el_speed*V); */
+  /*  W_act_tilt_az4 = max(0, W_act_tilt_az_const + W_act_tilt_az_speed*V); */
+  /*  W_act_theta = max(0,W_act_theta_const + W_act_theta_speed*V); */
+  /*  W_act_phi = max(0,W_act_phi_const + W_act_phi_speed*V); */
+  /*  W_act_ailerons = max(0,W_act_ailerons_const + W_act_ailerons_speed*V); */
   /* Default values for the optimizer: */
+  /*  max_iterations =  60;  */
+  /*  max_evaluations = 90; */
+  /*  fds = 1e-5; */
+  /*  Limit percantage change in control per timestep, this should be different */
+  /*  for the different actuators possibly! The rate of change of the vehicle */
+  /*  angles past failure happens too slow! */
+  /*  max_percentage = 0.5; */
+  /*  lb = [u_min_scaled(1:4), max(u_min_scaled(5:12), (actual_u_scaled(5:12) - (u_max_scaled(5:12)-u_min_scaled(5:12))*max_percentage)), u_min_scaled(13:15)]; */
+  /*  ub = [u_max_scaled(1:4), min(u_max_scaled(5:12), (actual_u_scaled(5:12) + (u_max_scaled(5:12)-u_min_scaled(5:12))*max_percentage)), u_max_scaled(13:15)]; */
   tic();
+  expl_temp.previous_ailerons_value = &previous_ailerons_value;
   expl_temp.desired_ailerons_value = &b_desired_ailerons_value;
   expl_temp.W_act_ailerons = &W_act_ailerons;
+  expl_temp.previous_phi_value = &previous_phi_value;
   expl_temp.desired_phi_value = &b_desired_phi_value;
   expl_temp.W_act_phi = &W_act_phi;
+  expl_temp.previous_theta_value = &previous_theta_value;
   expl_temp.desired_theta_value = &b_desired_theta_value;
   expl_temp.W_act_theta = &W_act_theta;
+  expl_temp.previous_az_value4 = &previous_az_value4;
+  expl_temp.W_act_tilt_az4 = &W_act_tilt_az4;
+  expl_temp.previous_az_value3 = &previous_az_value3;
+  expl_temp.W_act_tilt_az3 = &W_act_tilt_az3;
+  expl_temp.previous_az_value2 = &previous_az_value2;
+  expl_temp.W_act_tilt_az2 = &W_act_tilt_az2;
   expl_temp.desired_az_value = &b_desired_az_value;
-  expl_temp.W_act_tilt_az = &W_act_tilt_az;
+  expl_temp.previous_az_value1 = &previous_az_value1;
+  expl_temp.W_act_tilt_az1 = &W_act_tilt_az1;
+  expl_temp.previous_el_value4 = &previous_el_value4;
+  expl_temp.W_act_tilt_el4 = &W_act_tilt_el4;
+  expl_temp.previous_el_value3 = &previous_el_value3;
+  expl_temp.W_act_tilt_el3 = &W_act_tilt_el3;
+  expl_temp.previous_el_value2 = &previous_el_value2;
+  expl_temp.W_act_tilt_el2 = &W_act_tilt_el2;
   expl_temp.desired_el_value = &b_desired_el_value;
-  expl_temp.W_act_tilt_el = &W_act_tilt_el;
+  expl_temp.previous_el_value1 = &previous_el_value1;
+  expl_temp.W_act_tilt_el1 = &W_act_tilt_el1;
+  expl_temp.previous_motor_value4 = &previous_motor_value4;
+  expl_temp.W_act_motor4 = &W_act_motor4;
+  expl_temp.W_act_motor3 = &W_act_motor3;
+  expl_temp.previous_motor_value3 = &previous_motor_value3;
+  expl_temp.previous_motor_value2 = &previous_motor_value2;
+  expl_temp.W_act_motor2 = &W_act_motor2;
   expl_temp.W_dv_2 = &b_W_dv_2;
   expl_temp.W_dv_1 = &b_W_dv_1;
   expl_temp.W_dv_3 = &b_W_dv_3;
   expl_temp.W_dv_5 = &b_W_dv_5;
   expl_temp.desired_motor_value = &b_desired_motor_value;
   expl_temp.gamma_quadratic_du = &b_gamma_quadratic_du;
-  expl_temp.W_act_motor = &W_act_motor;
   expl_temp.W_dv_6 = &b_W_dv_6;
+  expl_temp.previous_motor_value1 = &previous_motor_value1;
+  expl_temp.gamma_quadratic_du2 = &b_gamma_quadratic_du2;
+  expl_temp.W_act_motor1 = &W_act_motor1;
   expl_temp.W_dv_4 = &b_W_dv_4;
   expl_temp.gain_ailerons = &gain_ailerons;
   expl_temp.CL_aileron = &b_CL_aileron;
@@ -8126,26 +8577,25 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
   expl_temp.Cl_alpha = &b_Cl_alpha;
   expl_temp.gain_theta = &gain_theta;
   expl_temp.dv_global = &dv_global;
-  fmincon(&expl_temp, u_max, u_min, u_max_scaled, u_out, &min_theta_protection,
-          exitflag, N_iterations, N_evaluation, b_expl_temp,
-          &b_max_tilt_value_approach, &b_max_approach, &b_min_approach,
-          &g_max_approach);
+  fmincon(&expl_temp, u_max, u_min, u_max_scaled, u_out, &max_omega_fail,
+          exitflag, N_iterations, N_evaluation, b_expl_temp, &tilt_el_fail,
+          &tilt_az_fail, &g_max_approach, &g_min_approach);
   *elapsed_time = toc();
-  min_theta_protection = gain_motor.contents;
-  u_out[0] *= min_theta_protection;
-  u_out[1] *= min_theta_protection;
-  u_out[2] *= min_theta_protection;
-  u_out[3] *= min_theta_protection;
-  min_theta_protection = gain_el.contents;
-  u_out[4] *= min_theta_protection;
-  u_out[5] *= min_theta_protection;
-  u_out[6] *= min_theta_protection;
-  u_out[7] *= min_theta_protection;
-  min_theta_protection = gain_az.contents;
-  u_out[8] *= min_theta_protection;
-  u_out[9] *= min_theta_protection;
-  u_out[10] *= min_theta_protection;
-  u_out[11] *= min_theta_protection;
+  max_omega_fail = gain_motor.contents;
+  u_out[0] *= max_omega_fail;
+  u_out[1] *= max_omega_fail;
+  u_out[2] *= max_omega_fail;
+  u_out[3] *= max_omega_fail;
+  max_omega_fail = gain_el.contents;
+  u_out[4] *= max_omega_fail;
+  u_out[5] *= max_omega_fail;
+  u_out[6] *= max_omega_fail;
+  u_out[7] *= max_omega_fail;
+  max_omega_fail = gain_az.contents;
+  u_out[8] *= max_omega_fail;
+  u_out[9] *= max_omega_fail;
+  u_out[10] *= max_omega_fail;
+  u_out[11] *= max_omega_fail;
   u_out[12] *= gain_theta.contents;
   u_out[13] *= gain_phi.contents;
   u_out[14] *= gain_ailerons.contents;
@@ -8241,22 +8691,22 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
     u_max[1] = u_out[1] / gain_motor.contents;
     u_max[2] = u_out[2] / gain_motor.contents;
     u_max[3] = u_out[3] / gain_motor.contents;
-    min_theta_protection = u_max[4] / gain_el.contents;
-    b_max_tilt_value_approach = u_max[5] / gain_el.contents;
-    b_max_approach = u_max[6] / gain_el.contents;
-    b_min_approach = u_max[7] / gain_el.contents;
-    u_max[4] = min_theta_protection;
-    u_max[5] = b_max_tilt_value_approach;
-    u_max[6] = b_max_approach;
-    u_max[7] = b_min_approach;
-    min_theta_protection = u_max[8] / gain_az.contents;
-    b_max_tilt_value_approach = u_max[9] / gain_az.contents;
-    b_max_approach = u_max[10] / gain_az.contents;
-    b_min_approach = u_max[11] / gain_az.contents;
-    u_max[8] = min_theta_protection;
-    u_max[9] = b_max_tilt_value_approach;
-    u_max[10] = b_max_approach;
-    u_max[11] = b_min_approach;
+    max_omega_fail = u_max[4] / gain_el.contents;
+    tilt_el_fail = u_max[5] / gain_el.contents;
+    tilt_az_fail = u_max[6] / gain_el.contents;
+    g_max_approach = u_max[7] / gain_el.contents;
+    u_max[4] = max_omega_fail;
+    u_max[5] = tilt_el_fail;
+    u_max[6] = tilt_az_fail;
+    u_max[7] = g_max_approach;
+    max_omega_fail = u_max[8] / gain_az.contents;
+    tilt_el_fail = u_max[9] / gain_az.contents;
+    tilt_az_fail = u_max[10] / gain_az.contents;
+    g_max_approach = u_max[11] / gain_az.contents;
+    u_max[8] = max_omega_fail;
+    u_max[9] = tilt_el_fail;
+    u_max[10] = tilt_az_fail;
+    u_max[11] = g_max_approach;
     u_max[12] /= gain_theta.contents;
     u_max[13] /= gain_phi.contents;
     u_max[14] /= gain_ailerons.contents;
@@ -8271,24 +8721,24 @@ void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains(double K_p_T, double
  * Arguments    : void
  * Return Type  : void
  */
-void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains_initialize(void)
+void AM_Nonlinear_CA_nico_test_initialize(void)
 {
   savedTime_not_empty = false;
   freq_not_empty = false;
-  isInitialized_Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains = true;
+  isInitialized_AM_Nonlinear_CA_nico_test = true;
 }
 
 /*
  * Arguments    : void
  * Return Type  : void
  */
-void Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains_terminate(void)
+void AM_Nonlinear_CA_nico_test_terminate(void)
 {
-  isInitialized_Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains = false;
+  isInitialized_AM_Nonlinear_CA_nico_test = false;
 }
 
 /*
- * File trailer for Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains.c
+ * File trailer for AM_Nonlinear_CA_nico_test.c
  *
  * [EOF]
  */

@@ -2,33 +2,21 @@
  * Academic License - for use in teaching, academic research, and meeting
  * course requirements at degree granting institutions only.  Not for
  * government, commercial, or other organizational use.
- * File: rtGetInf.h
+ * File: AM_Nonlinear_CA_nico_test_types.h
  *
  * MATLAB Coder version            : 5.4
  * C/C++ source code generated on  : 26-Oct-2023 15:50:45
  */
 
-#ifndef RTGETINF_H
-#define RTGETINF_H
+#ifndef AM_NONLINEAR_CA_NICO_TEST_TYPES_H
+#define AM_NONLINEAR_CA_NICO_TEST_TYPES_H
 
 /* Include Files */
 #include "rtwtypes.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern real_T rtGetInf(void);
-extern real32_T rtGetInfF(void);
-extern real_T rtGetMinusInf(void);
-extern real32_T rtGetMinusInfF(void);
-
-#ifdef __cplusplus
-}
-#endif
 #endif
 /*
- * File trailer for rtGetInf.h
+ * File trailer for AM_Nonlinear_CA_nico_test_types.h
  *
  * [EOF]
  */
