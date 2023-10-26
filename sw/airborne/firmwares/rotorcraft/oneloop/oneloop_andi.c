@@ -152,6 +152,57 @@ printf("Did not specify if ac has a pusher\n");
 printf("Did not specify pusher index\n");
 #define ONELOOP_ANDI_PUSHER_IDX  4;
 #endif
+/* Declaration of Navigation Variables*/
+float v_nav_des = 1.2;
+float max_j_nav = 500.0; // Pusher Test shows erros above 2[Hz] ramp commands [0.6 SF]
+float max_a_nav = 4.0;   // (35[N]/6.5[Kg]) = 5.38[m/s2]  [0.8 SF]
+//float max_v_nav = 5.0;
+
+#ifdef ONELOOP_MAX_AIRSPEED
+float max_v_nav = ONELOOP_MAX_AIRSPEED; // Consider implications of difference Ground speed and airspeed
+#else
+float max_v_nav = 5.0;
+#endif
+// #define GUIDANCE_INDI_MAX_AIRSPEED max_v_nav; // hack until nav hybrid is modified to be used without guidance indi hybrid
+
+// Delete once nav hybrid is fixed
+#ifndef GUIDANCE_INDI_SPEED_GAIN
+#define GUIDANCE_INDI_SPEED_GAIN 1.8
+#define GUIDANCE_INDI_SPEED_GAINZ 1.8
+#endif
+
+#ifndef GUIDANCE_INDI_POS_GAIN
+#define GUIDANCE_INDI_POS_GAIN 0.5
+#define GUIDANCE_INDI_POS_GAINZ 0.5
+#endif
+
+#ifndef GUIDANCE_INDI_LIFTD_ASQ
+#define GUIDANCE_INDI_LIFTD_ASQ 0.20
+#endif
+
+/* If lift effectiveness at low airspeed not defined,
+ * just make one interpolation segment that connects to
+ * the quadratic part from 12 m/s onward
+ */
+#ifndef GUIDANCE_INDI_LIFTD_P50
+#define GUIDANCE_INDI_LIFTD_P80 (GUIDANCE_INDI_LIFTD_ASQ*12*12)
+#define GUIDANCE_INDI_LIFTD_P50 (GUIDANCE_INDI_LIFTD_P80/2)
+#endif
+
+struct guidance_indi_hybrid_params gih_params = {
+  .pos_gain = GUIDANCE_INDI_POS_GAIN,
+  .pos_gainz = GUIDANCE_INDI_POS_GAINZ,
+
+  .speed_gain = GUIDANCE_INDI_SPEED_GAIN,
+  .speed_gainz = GUIDANCE_INDI_SPEED_GAINZ,
+
+  .heading_bank_gain = 5.0,
+  .liftd_asq = GUIDANCE_INDI_LIFTD_ASQ, // coefficient of airspeed squared
+  .liftd_p80 = GUIDANCE_INDI_LIFTD_P80,
+  .liftd_p50 = GUIDANCE_INDI_LIFTD_P50,
+};
+bool force_forward = false;
+
 
 /*  Define Section of the functions used in this module*/
 void  calc_normalization(void);
@@ -162,34 +213,22 @@ void  init_filter(void);
 void  init_controller(void);
 void  float_rates_of_euler_dot_vec(float r[3], float e[3], float edot[3]);
 void  float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3]);
-void  err_3d(float err[3], float a[3], float b[3], float k[3]);
-void  integrate_3d(float dt, float a[3], float a_dot[3]);
-void  vect_bound_3d(float vect[3], float bound);
-void  rm_2rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm);
+void  err_nd(float err[], float a[], float b[], float k[], int n);
+void  integrate_nd(float dt, float a[], float a_dot[], int n);
+void  vect_bound_nd(float vect[], float bound, int n);
+void  rm_2nd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm);
 void  rm_3rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
 void  rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float* x_3d_ref, float x_des, float k1_rm, float k2_rm, float k3_rm);
 void  rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], bool ow_psi, float psi_overwrite[4], float k1_rm[3], float k2_rm[3], float k3_rm[3]);
-void  rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], float k1_rm[3], float k2_rm[3], float k3_rm[3], float x_d_bound, float x_2d_bound, float x_3d_bound);
+void  rm_3rd_pos(float dt, float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_des[], float k1_rm[], float k2_rm[], float k3_rm[], float x_d_bound, float x_2d_bound, float x_3d_bound, int n);
+void  rm_2nd_pos(float dt, float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_d_des[], float k2_rm[], float k3_rm[], float x_2d_bound, float x_3d_bound, int n);
+void  rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], float k3_rm[], float x_3d_bound, int n);
 void  ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x[3], float x_d[3], float x_2d[3], float k1_e[3], float k2_e[3], float k3_e[3]);
 void  calc_model(void);
-void  pusher_test_run(void);
-void  nav_speed_controller_enter(void);
 
 /* Define messages of the module*/
 #if PERIODIC_TELEMETRY
 #include "modules/datalink/telemetry.h"
-
-static void send_pusher_test(struct transport_tx *trans, struct link_device *dev)
-{
-  uint8_t pt = 0;
-  if(pusher_test_on){
-    pt = 1;
-  }
-  pprz_msg_send_PUSHER_TEST(trans, dev, AC_ID,
-                                        &pusher_max_f,
-                                        &pt,
-                                        &pusher_test_cmd); 
-}
 
 static void send_oneloop_g(struct transport_tx *trans, struct link_device *dev)
 {
@@ -404,31 +443,13 @@ float k_psi_rm    ;
 float k_psi_d_rm  ;  
 float k_psi_2d_rm ;
 
-/*NAV PVAJ Loop*/
-float p1_nav = 1.0;
-float p2_nav;
-float k_v_nav;
-float k_v_d_nav;
-
-/* Declaration of Navigation Variables*/
-
-float p_nav    ;
-float v_nav    ;
-float a_nav    ;
-float j_nav    ;
-float v_nav_des = 1.2;
-float max_j_nav = 500.0; // Pusher Test shows erros above 2[Hz] ramp commands [0.6 SF]
-float max_a_nav = 4.0;   // (35[N]/6.5[Kg]) = 5.38[m/s2]  [0.8 SF]
-float max_v_nav = 5.0;
-
-bool  ow_psi    = false;
 float psi_des_rad = 0.0;
 float psi_des_deg = 0.0;
 float psi_vec[4] = {0.0, 0.0, 0.0, 0.0};
 
 float use_increment = 0.0;
 float a_thrust = 0.0;
-//bool  oval_on = false;  //delete me
+
 
 /*Define Variables used in control*/
 float old_time = 0.0;
@@ -448,7 +469,7 @@ float g2_times_du_1l;
 float dt_1l = 1./PERIODIC_FREQUENCY;
 bool  rc_on = true;
 struct FloatEulers eulers_zxy_des;
-float pos_des[3];
+float nav_target[3]; // Can be a position, speed or acceleration depending on the guidance H mode
 float pos_init[3];
 float att_ref[3];
 float att_d_ref[3];
@@ -480,27 +501,8 @@ float w_scale = 1.0;
 float *bwls_1l[ANDI_OUTPUTS];
 
 bool check_1st_nav = true; 
-bool check_1st_oval= true;
 bool verbose_oneloop = true;
 bool heading_on = false;
-
-/*Oval function parameters*/
-float r_oval    = 2.0;
-float l_oval    = 0.1;
-float psi_oval  = 0.0;
-float p_oval[3] = {0.0,0.0,0.0};
-float v_oval[3] = {0.0,0.0,0.0};
-float a_oval[3] = {0.0,0.0,0.0};
-float j_oval[3] = {0.0,0.0,0.0};
-float lap_oval  = 0.0;
-bool  oval_on   = false;
-
-/* Pusher Stall Test*/
-bool pusher_test_on = false;
-float pusher_max_f = 1.0;
-int16_t pusher_counter = 0;
-float du_pusher_msg = 0.0;
-float pusher_test_cmd = 0.0;
 
 /** state eulers in zxy order */
 struct FloatEulers eulers_zxy;
@@ -570,10 +572,10 @@ void float_euler_dot_of_rates_vec(float r[3], float e[3], float edot[3])
 }
 
 /** @brief Calculate Scaled Error between two 3D arrays*/
-void err_3d(float err[3], float a[3], float b[3], float k[3])
+void err_nd(float err[], float a[], float b[], float k[], int n)
 {
   int8_t i;
-  for (i = 0; i < 3; i++) {
+  for (i = 0; i < n; i++) {
     err[i] = k[i] * (a[i] - b[i]);
   }
 }
@@ -714,6 +716,49 @@ void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], f
   integrate_3d(dt, x_ref, x_d_ref);
 }
 
+/** 
+ * @brief Reference Model Definition for 3rd order system specific to positioning with bounds
+ * @param dt              Delta time [s]
+ * @param x_d_ref         Reference signal 2nd order
+ * @param x_2d_ref        Reference signal 3rd order
+ * @param x_3d_ref        Reference signal 4th order
+ * @param x_d_des         Desired 2nd order signal
+ * @param k2_rm           Reference Model Gain 2nd order signal
+ * @param k3_rm           Reference Model Gain 3rd order signal
+ * @param x_2d_bound      Bound for the 3rd order reference signal
+ * @param x_3d_bound      Bound for the 4th order reference signal
+ * FIXME: 
+ */
+void rm_2nd_pos(float dt, float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_d_des[3], float k2_rm[3], float k3_rm[3], float x_2d_bound, float x_3d_bound){
+  float e_x_d[3];
+  float e_x_2d[3];
+  err_3d(e_x_d, x_d_des, x_d_ref, k2_rm);
+  vect_bound_3d(e_x_d,x_2d_bound);
+  err_3d(e_x_2d, e_x_d, x_2d_ref, k3_rm);
+  float_vect_copy(x_3d_ref,e_x_2d,3);
+  vect_bound_3d(x_3d_ref, x_3d_bound);
+  integrate_3d(dt, x_2d_ref, x_3d_ref);
+  integrate_3d(dt, x_d_ref, x_2d_ref);
+}
+
+/** 
+ * @brief Reference Model Definition for 3rd order system specific to positioning with bounds
+ * @param dt              Delta time [s]
+ * @param x_2d_ref        Reference signal 3rd order
+ * @param x_3d_ref        Reference signal 4th order
+ * @param x_2d_des        Desired 3rd order signal
+ * @param k3_rm           Reference Model Gain 3rd order signal
+ * @param x_3d_bound      Bound for the 4th order reference signal
+ * FIXME: 
+ */
+void rm_1st_pos(float dt, float x_2d_ref[3], float x_3d_ref[3], float x_2d_des[3], float k3_rm[3], float x_3d_bound){
+  float e_x_2d[3];
+  err_3d(e_x_2d, x_2d_des, x_2d_ref, k3_rm);
+  float_vect_copy(x_3d_ref,e_x_2d,3);
+  vect_bound_3d(x_3d_ref, x_3d_bound);
+  integrate_3d(dt, x_2d_ref, x_3d_ref);
+}
+
 
 /** 
  * @brief Reference Model Definition for 2nd order system
@@ -728,7 +773,7 @@ void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], f
  * @param k3_rm           Reference Model Gain 3rd order signal
  * FIXME: 
  */
-void rm_2rd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm){
+void rm_2nd(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float x_des, float k1_rm, float k2_rm){
   float e_x      = k1_rm * (x_des- *x_ref);
   float e_x_d    = k2_rm * (e_x- *x_d_ref);
   *x_2d_ref = e_x_d;
@@ -863,7 +908,8 @@ k_aN_route   = k_rm_3_3_f(route_k*rm_k_pos*p1_pos,1.0,route_k*rm_k_pos*p3_pos);
 k_E_route    = k_N_route;
 k_vE_route   = k_vN_route;
 k_aE_route   = k_aN_route;
-
+gih_params.pos_gain   = k_N_rm;  //delete once nav hybrid is fixed
+gih_params.speed_gain = k_vN_rm; //delete once nav hybrid is fixed
 /*Altitude Loop*/
 rm_k_alt      = 0.9;
 p2_alt        = 6.0;
@@ -874,6 +920,8 @@ k_aD_e        = k_e_3_3_f_v2(p1_alt/damp_alt,damp_alt,p2_alt);
 k_D_rm        = k_rm_1_3_f(rm_k_alt*p1_alt,1.0,rm_k_alt*p3_alt);
 k_vD_rm       = k_rm_2_3_f(rm_k_alt*p1_alt,1.0,rm_k_alt*p3_alt);
 k_aD_rm       = k_rm_3_3_f(rm_k_alt*p1_alt,1.0,rm_k_alt*p3_alt);
+gih_params.pos_gainz   = k_D_rm;
+gih_params.speed_gainz = k_vD_rm;
 
 /*Heading Loop Manual*/
 rm_k_head     = 0.9;
@@ -893,11 +941,6 @@ k_psi_2d_e    = k_e_3_3_f(p1_head,p2_head,p3_head);
 k_psi_rm      = k_rm_1_3_f(rm_k_head*p1_head,1.0,rm_k_head*p3_head);
 k_psi_d_rm    = k_rm_2_3_f(rm_k_head*p1_head,1.0,rm_k_head*p3_head);
 k_psi_2d_rm   = k_rm_3_3_f(rm_k_head*p1_head,1.0,rm_k_head*p3_head);
-
-/*Nav PVAJ Loop*/
-p2_nav        = p1_nav;
-k_v_nav       = k_rm_1_2_f(p1_nav,p2_nav);
-k_v_d_nav     = k_rm_2_2_f(p1_nav,p2_nav);
 
 /*Approximated Dynamics*/
 act_dynamics[ANDI_NUM_ACT]   = w_approx( p1_att,  p2_att,  p3_att,  1.0);//rm_k_attitude);
@@ -1016,19 +1059,17 @@ void oneloop_andi_init(void)
   float_vect_zero(nu, ANDI_OUTPUTS);
   float_vect_zero(ang_acc,3);
   float_vect_zero(lin_acc,3);
-  float_vect_zero(pos_des,3);
+  float_vect_zero(nav_target,3);
   eulers_zxy_des.phi   =  0.0;
   eulers_zxy_des.theta =  0.0;
   eulers_zxy_des.psi   =  0.0;
   float_vect_zero(model_pred,ANDI_OUTPUTS);
-  nav_speed_controller_enter(); //uncomment me
 
   // Start telemetry
   #if PERIODIC_TELEMETRY
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ONELOOP_ANDI, send_oneloop_andi);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ONELOOP_G, send_oneloop_g);
     register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ONELOOP_GUIDANCE, send_oneloop_guidance);
-    register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_ONELOOP_ANDI, send_pusher_test);
   #endif
 }
 
@@ -1052,12 +1093,11 @@ void oneloop_andi_enter(bool half_loop_sp)
   float_vect_zero(att_3d_ref,3);
   float_vect_zero(ang_acc,3);
   float_vect_zero(lin_acc,3);
-  float_vect_zero(pos_des,3);
+  float_vect_zero(nav_target,3);
   eulers_zxy_des.phi   =  0.0;
   eulers_zxy_des.theta =  0.0;
   eulers_zxy_des.psi   =  0.0;
   float_vect_zero(model_pred,ANDI_OUTPUTS);
-  nav_speed_controller_enter(); //uncomment me
   /*Guidance Reset*/
 }
 
@@ -1066,21 +1106,21 @@ void oneloop_andi_enter(bool half_loop_sp)
  * @param half_loop  In half-loop mode the controller is used for stabilization only
  * FIXME: 
  */
-void oneloop_andi_RM(bool half_loop)
+void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, int rm_order_v)
 {
-
   // Initialize some variables
   a_thrust = 0.0;
+  nav_target[0] = PSA_des.x;
+  nav_target[1] = PSA_des.y;
+  nav_target[2] = PSA_des.z;
   float thrust_cmd_1l = 0.0;
   float des_r = 0.0;
-  int8_t i;
   // Generate reference signals with reference model 
   if(half_loop){
     // Disregard X and Y jerk objectives
     Wv_wls[0] = 0.0;
     Wv_wls[1] = 0.0;
     // Overwrite references with actual signals (for consistent plotting)
-    float_vect_copy(pos_des,pos_1l,3);
     float_vect_copy(pos_ref,pos_1l,3);
     float_vect_copy(pos_d_ref,pos_d,3);
     float_vect_copy(pos_2d_ref,pos_2d,3);
@@ -1093,7 +1133,6 @@ void oneloop_andi_RM(bool half_loop)
     psi_des_rad          = eulers_zxy.psi;
     // Initialize some variables
     check_1st_nav  = true;
-    check_1st_oval = true;
     // Create commands adhoc to get actuators to the wanted level
     thrust_cmd_1l = (float) radio_control_get(RADIO_THROTTLE);
     Bound(thrust_cmd_1l,0.0,MAX_PPRZ); 
@@ -1107,29 +1146,13 @@ void oneloop_andi_RM(bool half_loop)
     des_r = (float) (radio_control_get(RADIO_YAW))/MAX_PPRZ*3.0; 
     BoundAbs(des_r,3.0);
     // Generate reference signals
-    rm_2rd(dt_1l, &att_d_ref[2], &att_2d_ref[2], &att_3d_ref[2], des_r, k_r_rm, k_r_d_rm);
+    rm_2nd(dt_1l, &att_d_ref[2], &att_2d_ref[2], &att_3d_ref[2], des_r, k_r_rm, k_r_d_rm);
     rm_3rd(dt_1l, &att_ref[0],   &att_d_ref[0],  &att_2d_ref[0], &att_3d_ref[0], eulers_zxy_des.phi, k_phi_rm, k_p_rm, k_pdot_rm);
     rm_3rd(dt_1l, &att_ref[1],   &att_d_ref[1],  &att_2d_ref[1], &att_3d_ref[1], eulers_zxy_des.theta, k_theta_rm, k_q_rm, k_qdot_rm);
   }else{
     // Make sure X and Y jerk objectives are active
     Wv_wls[0] = Wv[0];
     Wv_wls[1] = Wv[1];
-    // First time engaging NAV Mode or Navigation Functions (e.g. Oval) requires some initialization
-    if(check_1st_nav || (check_1st_oval && oval_on)){ 
-      check_1st_nav  = false;
-      check_1st_oval = false;
-      for (i = 0; i < 3; i++) {
-        pos_init[i] = pos_1l[i];
-      }
-      // Reset desired heading to current heading
-      psi_des_rad = eulers_zxy.psi; 
-      psi_oval = psi_des_rad; // Uncomment me
-    // Use the horizontal guidance position input to set the desired position 
-    } else { 
-      pos_init[0] = (float) (guidance_h.sp.pos.x * 0.0039063);
-      pos_init[1] = (float) (guidance_h.sp.pos.y * 0.0039063);
-      pos_init[2] = (float) (guidance_v.z_sp     * 0.0039063);
-    }
     // Group RM gains in arrays
     float k1_pos_rm[3] = {k_N_rm,  k_E_rm,  k_D_rm};
     float k2_pos_rm[3] = {k_vN_rm, k_vE_rm, k_vD_rm};
@@ -1137,33 +1160,31 @@ void oneloop_andi_RM(bool half_loop)
     float k1_att_rm[3] = {k_phi_rm, k_theta_rm, k_psi_rm};
     float k2_att_rm[3] = {k_p_rm, k_q_rm, k_psi_d_rm};
     float k3_att_rm[3] = {k_pdot_rm, k_qdot_rm, k_psi_2d_rm};
+    // First time engaging NAV Mode or Navigation Functions (e.g. Oval) requires some initialization
+    if(check_1st_nav){ 
+      // Mark that NAV Mode has been engaged
+      check_1st_nav  = false;
+      // Reset desired heading to current heading
+      psi_des_rad = eulers_zxy.psi; 
+    }
     // Register Arttitude Setpoints from previous loop
     float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, psi_des_rad};
-    // Navigation Functions (e.g. oval) provide directly reference signals
-    if(oval_on){
-      if(heading_on) {
-        ow_psi = true;
-      }else{
-        ow_psi = false;
-      }
-      float v_actual = sqrtf(pos_d[0] * pos_d[0]+pos_d[1] * pos_d[1]); //uncomment me
-      nav_speed_controller(dt_1l, &p_nav, &v_nav, &a_nav, &j_nav, v_nav_des, v_actual, max_a_nav, k_v_nav, k_v_d_nav);   //uncomment me   
-      straight_oval(p_nav, r_oval, l_oval, psi_oval, v_nav, a_nav, j_nav, pos_ref, pos_init,  pos_d_ref, pos_2d_ref, pos_3d_ref, psi_vec, &lap_oval);  //uncomment me     
-    }else{
-      // Perfrom initialization of some variables
-      check_1st_oval = true;
-      ow_psi         = false;
-      nav_speed_controller_enter(); //uncomment me
-      // Set desired postion 
-      pos_des[0] = pos_init[0];
-      pos_des[1] = pos_init[1];
-      pos_des[2] = pos_init[2];
-      // Generate Reference signals for positioning using RM
-      rm_3rd_pos(dt_1l, pos_ref, pos_d_ref, pos_2d_ref, pos_3d_ref, pos_des, k1_pos_rm, k2_pos_rm, k3_pos_rm, max_v_nav, max_a_nav, max_j_nav);
+    // Generate Reference signals for positioning using RM
+    if (rm_order_h == 3){
+      rm_3rd_pos(dt_1l, pos_ref, pos_d_ref, pos_2d_ref, pos_3d_ref, nav_target, k1_pos_rm, k2_pos_rm, k3_pos_rm, max_v_nav, max_a_nav, max_j_nav);    
+    } else if (rm_order_h == 2){
+      float_vect_copy(pos_ref, pos_1l,3);
+      rm_2nd_pos(dt_1l, pos_d_ref, pos_2d_ref, pos_3d_ref, nav_target, k2_pos_rm, k3_pos_rm, max_a_nav, max_j_nav);   
+    } else if (rm_order_h == 1){
+      float_vect_copy(pos_ref, pos_1l,3);
+      float_vect_copy(pos_d_ref, pos_d,3);
+      rm_1st_pos(dt_1l, pos_2d_ref, pos_3d_ref, nav_target, k3_pos_rm, max_j_nav);   
     }
     // Generate Reference signals for attitude using RM
+    // FIX ME ow not defined anymore without oval
+    bool ow_psi = false;
     rm_3rd_attitude(dt_1l, att_ref, att_d_ref, att_2d_ref, att_3d_ref, att_des, ow_psi, psi_vec, k1_att_rm, k2_att_rm, k3_att_rm);
-  }
+}
 }
 
 /**
@@ -1172,7 +1193,7 @@ void oneloop_andi_RM(bool half_loop)
  * @param in_flight  The drone is in flight
  * FIXME: 
  */
-void oneloop_andi_run(bool in_flight, bool half_loop)
+void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, int rm_order_v)
 {
   // For NPS print time and loop delimeters
   printf("############### NEW LOOP ##########################\n");
@@ -1233,7 +1254,7 @@ void oneloop_andi_run(bool in_flight, bool half_loop)
   }
 
   // Run the Reference Model (RM)
-  oneloop_andi_RM(half_loop);
+  oneloop_andi_RM(half_loop, PSA_des, rm_order_h, rm_order_v);
   // Generate pseudo control for stabilization vector (nu) based on error controller
   if(half_loop){
     nu[0] = 0.0;
@@ -1242,7 +1263,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop)
     nu[3] = ec_3rd(att_ref[0], att_d_ref[0], att_2d_ref[0], att_3d_ref[0], att_1l[0], att_d[0], att_2d[0], k_phi_e, k_p_e, k_pdot_e);
     nu[4] = ec_3rd(att_ref[1], att_d_ref[1], att_2d_ref[1], att_3d_ref[1], att_1l[1], att_d[1], att_2d[1], k_theta_e, k_q_e, k_qdot_e);
     nu[5] = ec_2rd(att_d_ref[2], att_2d_ref[2], att_3d_ref[2], att_d[2], att_2d[2], k_r_e, k_r_d_e);
-
   }else{
     float k1_att_e[3] = {k_phi_e,  k_theta_e, k_psi_e};
     float k2_att_e[3] = {k_p_e,    k_q_e,     k_psi_d_e};
@@ -1291,11 +1311,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop)
     andi_u[ANDI_NUM_ACT+1] = andi_du[ANDI_NUM_ACT+1];
   }
 
-  // Overwrite the pusher command if enabled and in ATT
-  if ((ONELOOP_ANDI_AC_HAS_PUSHER)&&(autopilot.mode==AP_MODE_ATTITUDE_DIRECT)){
-    pusher_test_run();
-  }
- 
   // TODO : USE THE PROVIDED MAX AND MIN and change limits for phi and theta
   // Bound the inputs to the actuators
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
@@ -1318,30 +1333,6 @@ void oneloop_andi_run(bool in_flight, bool half_loop)
   }
   psi_des_deg = psi_des_rad * 180.0 / M_PI;  
   printf("###################################################\n");
-}
-
-/** @brief  Function to test the spin-up and general dynamics of the pusher motor */
-void pusher_test_run(void){
-  if(pusher_test_on){
-  float pusher_target = MAX_PPRZ;
-  float max_du_pusher = pusher_target * pusher_max_f * dt_actual;
-  float du_pusher = pusher_target - pusher_test_cmd;
-  if (du_pusher > max_du_pusher) {
-     du_pusher = max_du_pusher;
-  }
-  pusher_test_cmd = pusher_test_cmd + du_pusher;
-  andi_u[ONELOOP_ANDI_PUSHER_IDX] = pusher_test_cmd;
-  if (andi_u[ONELOOP_ANDI_PUSHER_IDX]>(pusher_target-100.0)){
-    pusher_counter = pusher_counter +1;
-  }
-  if(pusher_counter>500){
-    pusher_test_on = false;
-    pusher_counter = 0;
-  }      
- }else{
-   pusher_test_cmd = 0.0;
-   andi_u[ONELOOP_ANDI_PUSHER_IDX] = radio_control_get(RADIO_AUX4);
- }
 }
 
 /** @brief  Function to reconstruct actuator state using first order dynamics */
@@ -1466,23 +1457,15 @@ float convert_angle(float psi) {
     // Compute the equivalent angle between -2pi and 2pi
     psi = fmodf(psi, 2 * M_PI);
 
-    if (psi < -M_PI)
+    if (psi < -M_PI){
         psi += 2 * M_PI;
-    else if (psi > M_PI)
+    }else if (psi > M_PI){
         psi -= 2 * M_PI;
-
+    }
     // Convert to angle between -pi and pi
-    if (psi <= M_PI)
+    if (psi <= M_PI){
         return psi;
-    else
+    }else{
         return psi - 2 * M_PI;
-}
-
-void nav_speed_controller_enter(){
-  p_nav     = 0.0;
-  v_nav     = 0.0;
-  a_nav     = 0.0;
-  j_nav     = 0.0;
-  max_a_nav = 4.0;
-  max_v_nav = 5.0;
+    }
 }

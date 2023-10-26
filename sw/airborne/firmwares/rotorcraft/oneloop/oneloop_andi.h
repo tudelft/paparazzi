@@ -71,25 +71,28 @@ extern float rm_k_attitude;
 
 extern float w_scale;
 
-extern bool  pusher_test_on;
-extern float pusher_max_f;
-extern float du_pusher_msg;
-extern float dt_actual;
-extern float pusher_test_cmd;
-
-extern bool  oval_on;
-extern float r_oval;
-extern float l_oval;
-extern float psi_oval;
-
 extern bool half_loop;
 
-//extern bool oval_on;
+
+// Delete once hybrid nav is fixed
+struct guidance_indi_hybrid_params {
+  float pos_gain;
+  float pos_gainz;
+  float speed_gain;
+  float speed_gainz;
+  float heading_bank_gain;
+  float liftd_asq;
+  float liftd_p80;
+  float liftd_p50;
+};
+extern struct guidance_indi_hybrid_params gih_params;
+extern bool force_forward; 
+
 extern void oneloop_andi_init(void);
 extern void oneloop_andi_enter(bool half_loop_sp);
 extern void oneloop_andi_set_failsafe_setpoint(void);
-extern void oneloop_andi_run(bool in_flight, bool half_loop);
-extern void oneloop_andi_RM(bool half_loop);
+extern void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des, int rm_order);
+extern void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order);
 extern void oneloop_andi_read_rc(bool in_flight, bool in_carefree, bool coordinated_turn);
 extern float convert_angle(float psi);
 //extern int32_t stabilization_cmd[COMMANDS_NB];

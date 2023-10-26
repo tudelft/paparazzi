@@ -29,4 +29,19 @@
 #define GUIDANCE_ONELOOP_H
 
 #include "firmwares/rotorcraft/oneloop/oneloop_andi.h"
+
+enum GuidanceOneloop_HMode {
+  GUIDANCE_ONELOOP_H_POS,
+  GUIDANCE_ONELOOP_H_SPEED,
+  GUIDANCE_ONELOOP_H_ACCEL
+};
+
+enum GuidanceOneloop_VMode {
+  GUIDANCE_ONELOOP_V_POS,
+  GUIDANCE_ONELOOP_V_SPEED,
+  GUIDANCE_ONELOOP_V_ACCEL
+};
+
+extern struct StabilizationSetpoint guidance_oneloop_run_mode(bool in_flight, struct HorizontalGuidance *gh, struct VerticalGuidance *gv, enum GuidanceOneloop_HMode h_mode, enum GuidanceOneloop_VMode v_mode);
+
 #endif /* GUIDANCE_INDI_H */

@@ -121,8 +121,11 @@
       <stay wp="STDBY"/>
     </block>
     <block name="safe">
-      <set var="oval_on" value="false"/>
       <stay wp="HOME"/>
+    </block>
+        <block name="Circle_CW">
+      <set value="false" var="force_forward"/>
+      <circle radius="100" wp="FOLLOW"/>
     </block>
     <block key="l" name="land here" strip_button="land here" strip_icon="land-right.png">
       <call_once fun="NavSetWaypointHere(WP_TD)"/>

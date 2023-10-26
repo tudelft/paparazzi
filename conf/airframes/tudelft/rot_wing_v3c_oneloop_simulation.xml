@@ -78,6 +78,7 @@
         </module>
 
         <module name="guidance" type="oneloop"/>
+        <module name="nav_hybrid"/>
 
         <module TYPE="ekf2" NAME="ins"/>
         <module name="oneloop" type="andi">
@@ -202,6 +203,7 @@
         <define VALUE="200"              NAME="STABILIZATION_ATTITUDE_DEADBAND_R"/>
         <define name="WLS_N_U" value="8"/>
         <define name="WLS_N_V" value="6"/>
+        <define name="GUIDANCE_INDI_MAX_AIRSPEED" value = "22.0f"/> <!--remove once hybrid nav is fixed-->
     </section>
 
     <section name="IMU" prefix="IMU_">
@@ -244,6 +246,7 @@
         <define name  = "WV"                        value = "{1.0f, 1.0f, 1.0f, 1000.0f, 1000.0f, 100.0f}"/>
         <define name  = "WU"                        value = "{3.0f, 3.0f, 3.0f, 3.0f, 1.0f, 2.0f, 2.0f}"/>
         <define name  = "U_PREF"                    value = "{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}"/>
+        <define name  = "MAX_AIRSPEED"              value = "22.0f"/>
     </section>
 
     <section NAME="AUTOPILOT">

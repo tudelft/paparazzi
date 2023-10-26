@@ -102,7 +102,6 @@
       <stay wp="p5"/>
     </block>
     <block name="safe">
-      <set var="oval_on" value="false"/>
       <stay wp="p5"/>
       <exception cond="NavBlockTime() @GT 5" deroute="go_p5"/>
     </block>

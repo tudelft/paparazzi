@@ -25,7 +25,9 @@
 
 #include "modules/nav/nav_rotorcraft_hybrid.h"
 #include "firmwares/rotorcraft/navigation.h"
-#include "firmwares/rotorcraft/guidance/guidance_indi_rot_wing.h" // strong dependency for now
+#include "firmwares/rotorcraft/guidance/guidance_h.h"
+//#include "firmwares/rotorcraft/guidance/guidance_indi_rot_wing.h" // strong dependency for now
+#include "firmwares/rotorcraft/oneloop/oneloop_andi.h"
 #include "math/pprz_isa.h"
 
 // Max ground speed that will be commanded
@@ -35,13 +37,12 @@
 #define NAV_MAX_SPEED (GUIDANCE_INDI_MAX_AIRSPEED + GUIDANCE_INDI_NAV_SPEED_MARGIN)
 float nav_max_speed = NAV_MAX_SPEED;
 float nav_max_acceleration_sp = 6.0;
-float nav_max_deceleration_sp = 0.5;
 
-#ifndef NAV_HYBRID_MAX_DECELERATION
-#define NAV_HYBRID_MAX_DECELERATION 1.0
-#endif
-
+#ifdef NAV_HYBRID_MAX_DECELERATION
 float nav_max_deceleration_sp = NAV_HYBRID_MAX_DECELERATION;
+#else
+float nav_max_deceleration_sp = 1.0;
+#endif
 
 #ifdef GUIDANCE_INDI_LINE_GAIN
 static float guidance_indi_line_gain = GUIDANCE_INDI_LINE_GAIN;
