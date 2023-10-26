@@ -581,22 +581,23 @@ void err_nd(float err[], float a[], float b[], float k[], int n)
 }
 
 /** @brief Integrate in time 3D array*/
-void integrate_3d(float dt, float a[3], float a_dot[3])
+void integrate_nd(float dt, float a[], float a_dot[], int n)
 {
   int8_t i;
-  for (i = 0; i < 3; i++) {
+  for (i = 0; i < n; i++) {
     a[i] = a[i] + dt * a_dot[i];
   }
 }
 
 /** @brief Scale a 3D array to within a 3D bound */
-void vect_bound_3d(float vect[3], float bound) {
-  float norm = float_vect_norm(vect,3);
+void vect_bound_nd(float vect[], float bound, int n) {
+  float norm = float_vect_norm(vect,n);
   if((norm-bound) > FLT_EPSILON) {
     float scale = bound/norm;
-    vect[0] *= scale;
-    vect[1] *= scale;
-    vect[2] *= scale;
+    int8_t i;
+    for(i = 0; i < n; i++) {
+      vect[i] *= scale;
+    }
   }
 }
 
@@ -621,19 +622,19 @@ void rm_3rd_attitude(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[
   float e_x_d[3];
   float e_x_2d[3];
   float x_d_eul_ref[3];
-  err_3d(e_x, x_des, x_ref, k1_rm);
+  err_nd(e_x, x_des, x_ref, k1_rm, 3);
   e_x[2] = k1_rm[2] * convert_angle((x_des[2] - x_ref[2])); // Correction for Heading error +-Pi
   float_rates_of_euler_dot_vec(e_x_rates, x_ref, e_x);
-  err_3d(e_x_d, e_x_rates, x_d_ref, k2_rm);
-  err_3d(e_x_2d, e_x_d, x_2d_ref, k3_rm);
+  err_nd(e_x_d, e_x_rates, x_d_ref, k2_rm, 3);
+  err_nd(e_x_2d, e_x_d, x_2d_ref, k3_rm, 3);
   float_vect_copy(x_3d_ref,e_x_2d,3);
   if(ow_psi){x_3d_ref[2] = psi_overwrite[3];}
-  integrate_3d(dt, x_2d_ref, x_3d_ref);
+  integrate_nd(dt, x_2d_ref, x_3d_ref, 3);
   if(ow_psi){x_2d_ref[2] = psi_overwrite[2];}
-  integrate_3d(dt, x_d_ref, x_2d_ref);
+  integrate_nd(dt, x_d_ref, x_2d_ref, 3);
   if(ow_psi){x_d_ref[2] = psi_overwrite[1];}
   float_euler_dot_of_rates_vec(x_d_ref, x_ref, x_d_eul_ref);
-  integrate_3d(dt, x_ref, x_d_eul_ref);
+  integrate_nd(dt, x_ref, x_d_eul_ref, 3);
   if(ow_psi){x_ref[2] = psi_overwrite[0];}
   x_ref[2] = convert_angle(x_ref[2]);
 }
@@ -698,22 +699,23 @@ void rm_3rd_head(float dt, float* x_ref, float* x_d_ref, float* x_2d_ref, float*
  * @param x_d_bound       Bound for the 2nd order reference signal
  * @param x_2d_bound      Bound for the 3rd order reference signal
  * @param x_3d_bound      Bound for the 4th order reference signal
+ * @param n               Number of dimensions
  * FIXME: 
  */
-void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_des[3], float k1_rm[3], float k2_rm[3], float k3_rm[3], float x_d_bound, float x_2d_bound, float x_3d_bound){
-  float e_x[3];
-  float e_x_d[3];
-  float e_x_2d[3];
-  err_3d(e_x, x_des, x_ref, k1_rm);
-  vect_bound_3d(e_x,x_d_bound);
-  err_3d(e_x_d, e_x, x_d_ref, k2_rm);
-  vect_bound_3d(e_x_d,x_2d_bound);
-  err_3d(e_x_2d, e_x_d, x_2d_ref, k3_rm);
-  float_vect_copy(x_3d_ref,e_x_2d,3);
-  vect_bound_3d(x_3d_ref, x_3d_bound);
-  integrate_3d(dt, x_2d_ref, x_3d_ref);
-  integrate_3d(dt, x_d_ref, x_2d_ref);
-  integrate_3d(dt, x_ref, x_d_ref);
+void rm_3rd_pos(float dt, float x_ref[], float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_des[], float k1_rm[], float k2_rm[], float k3_rm[], float x_d_bound, float x_2d_bound, float x_3d_bound, int n){
+  float e_x[n];
+  float e_x_d[n];
+  float e_x_2d[n];
+  err_nd(e_x, x_des, x_ref, k1_rm, n);
+  vect_bound_nd(e_x,x_d_bound, n);
+  err_nd(e_x_d, e_x, x_d_ref, k2_rm, n);
+  vect_bound_nd(e_x_d,x_2d_bound, n);
+  err_nd(e_x_2d, e_x_d, x_2d_ref, k3_rm, n);
+  float_vect_copy(x_3d_ref,e_x_2d,n);
+  vect_bound_nd(x_3d_ref, x_3d_bound, n);
+  integrate_nd(dt, x_2d_ref, x_3d_ref, n);
+  integrate_nd(dt, x_d_ref, x_2d_ref, n);
+  integrate_nd(dt, x_ref, x_d_ref, n);
 }
 
 /** 
@@ -727,18 +729,19 @@ void rm_3rd_pos(float dt, float x_ref[3], float x_d_ref[3], float x_2d_ref[3], f
  * @param k3_rm           Reference Model Gain 3rd order signal
  * @param x_2d_bound      Bound for the 3rd order reference signal
  * @param x_3d_bound      Bound for the 4th order reference signal
+ * @param n               Number of dimensions
  * FIXME: 
  */
-void rm_2nd_pos(float dt, float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3], float x_d_des[3], float k2_rm[3], float k3_rm[3], float x_2d_bound, float x_3d_bound){
-  float e_x_d[3];
-  float e_x_2d[3];
-  err_3d(e_x_d, x_d_des, x_d_ref, k2_rm);
-  vect_bound_3d(e_x_d,x_2d_bound);
-  err_3d(e_x_2d, e_x_d, x_2d_ref, k3_rm);
-  float_vect_copy(x_3d_ref,e_x_2d,3);
-  vect_bound_3d(x_3d_ref, x_3d_bound);
-  integrate_3d(dt, x_2d_ref, x_3d_ref);
-  integrate_3d(dt, x_d_ref, x_2d_ref);
+void rm_2nd_pos(float dt, float x_d_ref[], float x_2d_ref[], float x_3d_ref[], float x_d_des[], float k2_rm[], float k3_rm[], float x_2d_bound, float x_3d_bound, int n){
+  float e_x_d[n];
+  float e_x_2d[n];
+  err_nd(e_x_d, x_d_des, x_d_ref, k2_rm, n);
+  vect_bound_nd(e_x_d,x_2d_bound, n);
+  err_nd(e_x_2d, e_x_d, x_2d_ref, k3_rm, n);
+  float_vect_copy(x_3d_ref,e_x_2d,n);
+  vect_bound_nd(x_3d_ref, x_3d_bound, n);
+  integrate_nd(dt, x_2d_ref, x_3d_ref, n);
+  integrate_nd(dt, x_d_ref, x_2d_ref, n);
 }
 
 /** 
@@ -749,14 +752,15 @@ void rm_2nd_pos(float dt, float x_d_ref[3], float x_2d_ref[3], float x_3d_ref[3]
  * @param x_2d_des        Desired 3rd order signal
  * @param k3_rm           Reference Model Gain 3rd order signal
  * @param x_3d_bound      Bound for the 4th order reference signal
+ * @param n               Number of dimensions
  * FIXME: 
  */
-void rm_1st_pos(float dt, float x_2d_ref[3], float x_3d_ref[3], float x_2d_des[3], float k3_rm[3], float x_3d_bound){
-  float e_x_2d[3];
-  err_3d(e_x_2d, x_2d_des, x_2d_ref, k3_rm);
-  float_vect_copy(x_3d_ref,e_x_2d,3);
-  vect_bound_3d(x_3d_ref, x_3d_bound);
-  integrate_3d(dt, x_2d_ref, x_3d_ref);
+void rm_1st_pos(float dt, float x_2d_ref[], float x_3d_ref[], float x_2d_des[], float k3_rm[], float x_3d_bound, int n){
+  float e_x_2d[n];
+  err_nd(e_x_2d, x_2d_des, x_2d_ref, k3_rm, n);
+  float_vect_copy(x_3d_ref,e_x_2d,n);
+  vect_bound_nd(x_3d_ref, x_3d_bound, n);
+  integrate_nd(dt, x_2d_ref, x_3d_ref, n);
 }
 
 
@@ -822,10 +826,10 @@ void ec_3rd_att(float y_4d[3], float x_ref[3], float x_d_ref[3], float x_2d_ref[
   float y_4d_1[3];
   float y_4d_2[3];
   float y_4d_3[3];
-  err_3d(y_4d_1, x_ref, x, k1_e);
+  err_nd(y_4d_1, x_ref, x, k1_e, 3);
   y_4d_1[2] = k1_e[2] * convert_angle((x_ref[2] - x[2])); // Correction for Heading error +-Pi
-  err_3d(y_4d_2, x_d_ref, x_d, k2_e);
-  err_3d(y_4d_3, x_2d_ref, x_2d, k3_e);
+  err_nd(y_4d_2, x_d_ref, x_d, k2_e, 3);
+  err_nd(y_4d_3, x_2d_ref, x_2d, k3_e, 3);
   float_vect_copy(y_4d,x_3d_ref,3);
   float_vect_sum(y_4d, y_4d, y_4d_1, 3);
   float_vect_sum(y_4d, y_4d, y_4d_2, 3);
@@ -1171,15 +1175,45 @@ void oneloop_andi_RM(bool half_loop, struct FloatVect3 PSA_des, int rm_order_h, 
     float att_des[3] = {eulers_zxy_des.phi, eulers_zxy_des.theta, psi_des_rad};
     // Generate Reference signals for positioning using RM
     if (rm_order_h == 3){
-      rm_3rd_pos(dt_1l, pos_ref, pos_d_ref, pos_2d_ref, pos_3d_ref, nav_target, k1_pos_rm, k2_pos_rm, k3_pos_rm, max_v_nav, max_a_nav, max_j_nav);    
+      rm_3rd_pos(dt_1l, pos_ref, pos_d_ref, pos_2d_ref, pos_3d_ref, nav_target, k1_pos_rm, k2_pos_rm, k3_pos_rm, max_v_nav, max_a_nav, max_j_nav, 2);    
     } else if (rm_order_h == 2){
-      float_vect_copy(pos_ref, pos_1l,3);
-      rm_2nd_pos(dt_1l, pos_d_ref, pos_2d_ref, pos_3d_ref, nav_target, k2_pos_rm, k3_pos_rm, max_a_nav, max_j_nav);   
+      float_vect_copy(pos_ref, pos_1l,2);
+      rm_2nd_pos(dt_1l, pos_d_ref, pos_2d_ref, pos_3d_ref, nav_target, k2_pos_rm, k3_pos_rm, max_a_nav, max_j_nav, 2);   
     } else if (rm_order_h == 1){
-      float_vect_copy(pos_ref, pos_1l,3);
-      float_vect_copy(pos_d_ref, pos_d,3);
-      rm_1st_pos(dt_1l, pos_2d_ref, pos_3d_ref, nav_target, k3_pos_rm, max_j_nav);   
+      float_vect_copy(pos_ref, pos_1l,2);
+      float_vect_copy(pos_d_ref, pos_d,2);
+      rm_1st_pos(dt_1l, pos_2d_ref, pos_3d_ref, nav_target, k3_pos_rm, max_j_nav, 2);   
     }
+
+    // The RM functions want an array as input. Create a single entry array and write the vertical guidance entries. 
+    float single_value_ref[1]        = {pos_ref[2]};
+    float single_value_d_ref[1]      = {pos_d_ref[2]};
+    float single_value_2d_ref[1]     = {pos_2d_ref[2]};
+    float single_value_3d_ref[1]     = {pos_3d_ref[2]};
+    float single_value_nav_target[1] = {nav_target[2]};
+    float single_value_k1_rm[1]      = {k1_pos_rm[2]};
+    float single_value_k2_rm[1]      = {k2_pos_rm[2]};
+    float single_value_k3_rm[1]      = {k3_pos_rm[2]};
+
+    if (rm_order_v == 3){
+      rm_3rd_pos(dt_1l, single_value_ref, single_value_d_ref, single_value_2d_ref, single_value_3d_ref, single_value_nav_target, single_value_k1_rm, single_value_k2_rm, single_value_k3_rm, max_v_nav, max_a_nav, max_j_nav, 1);    
+      pos_ref[2]    = single_value_ref[0];
+      pos_d_ref[2]  = single_value_d_ref[0];
+      pos_2d_ref[2] = single_value_2d_ref[0];
+      pos_3d_ref[2] = single_value_3d_ref[0];
+    } else if (rm_order_v == 2){
+      rm_2nd_pos(dt_1l, single_value_d_ref, single_value_2d_ref, single_value_3d_ref, single_value_nav_target, single_value_k2_rm, single_value_k3_rm, max_a_nav, max_j_nav, 1);   
+      pos_ref[2]    = pos_1l[2];
+      pos_d_ref[2]  = single_value_d_ref[0];
+      pos_2d_ref[2] = single_value_2d_ref[0];
+      pos_3d_ref[2] = single_value_3d_ref[0];
+    } else if (rm_order_v == 1){
+      rm_1st_pos(dt_1l, single_value_2d_ref, single_value_3d_ref, single_value_nav_target, single_value_k3_rm, max_j_nav, 1); 
+      pos_ref[2]    = pos_1l[2];
+      pos_d_ref[2]  = pos_d[2];
+      pos_2d_ref[2] = single_value_2d_ref[0];
+      pos_3d_ref[2] = single_value_3d_ref[0];  
+    }    
     // Generate Reference signals for attitude using RM
     // FIX ME ow not defined anymore without oval
     bool ow_psi = false;
