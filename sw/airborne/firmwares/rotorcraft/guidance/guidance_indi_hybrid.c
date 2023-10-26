@@ -592,13 +592,7 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
     sp_accel_b.y *= gih_params.heading_bank_gain;
 
     // Control the airspeed
-    if(use_vibration_compensation) {
-      sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
-    // Subtract d_cg * q_dot from the x component of the body-frame acceleration
-      sp_accel_b.x -= d_cg * angular_acceleration[1];
-    } else {
-      sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
-    }
+    sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
 
     accel_sp.x = cpsi * sp_accel_b.x - spsi * sp_accel_b.y;
     accel_sp.y = spsi * sp_accel_b.x + cpsi * sp_accel_b.y;
@@ -623,6 +617,15 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
     accel_sp.x = (gi_speed_sp.x - stateGetSpeedNed_f()->x) * gih_params.speed_gain;
     accel_sp.y = (gi_speed_sp.y - stateGetSpeedNed_f()->y) * gih_params.speed_gain;
     accel_sp.z = (gi_speed_sp.z - stateGetSpeedNed_f()->z) * gih_params.speed_gainz;
+
+    if(use_vibration_compensation) {
+      // Subtract d_cg * q_dot from the x component of the body-frame acceleration
+      float sp_accel_bx_diff -= d_cg * angular_acceleration[1];
+
+      // Add it to the acceleration setpoint in NED frame
+      accel_sp.x += cpsi * sp_accel_bx_diff.x;
+      accel_sp.y += spsi * sp_accel_bx_diff.x;
+    }
   }
 
   // Bound the acceleration setpoint
