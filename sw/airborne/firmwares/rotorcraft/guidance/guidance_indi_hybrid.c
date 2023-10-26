@@ -620,11 +620,11 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
 
     if(use_vibration_compensation) {
       // Subtract d_cg * q_dot from the x component of the body-frame acceleration
-      float sp_accel_bx_diff -= d_cg * angular_acceleration[1];
+      float sp_accel_bx_diff = d_cg * angular_acceleration[1];
 
       // Add it to the acceleration setpoint in NED frame
-      accel_sp.x += cpsi * sp_accel_bx_diff.x;
-      accel_sp.y += spsi * sp_accel_bx_diff.x;
+      accel_sp.x += cpsi * sp_accel_bx_diff;
+      accel_sp.y += spsi * sp_accel_bx_diff;
     }
   }
 
