@@ -590,6 +590,7 @@ static struct FloatVect3 compute_accel_from_speed_sp(void)
     sp_accel_b.y *= gih_params.heading_bank_gain;
 
     // Control the airspeed
+    sp_accel_b.x = (speed_sp_b_x - airspeed) * gih_params.speed_gain;
 
     accel_sp.x = cpsi * sp_accel_b.x - spsi * sp_accel_b.y;
     accel_sp.y = spsi * sp_accel_b.x + cpsi * sp_accel_b.y;
