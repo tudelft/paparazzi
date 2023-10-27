@@ -139,19 +139,24 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 #endif
 
 #ifndef ONELOOP_ANDI_DEBUG_MODE
-printf("Debug Mode not defined\n");
+#error "Debug Mode not defined"
 #define ONELOOP_ANDI_DEBUG_MODE  FALSE;
 #endif
 
 #ifndef ONELOOP_ANDI_AC_HAS_PUSHER
-printf("Did not specify if ac has a pusher\n");
+#error "Did not specify if ac has a pusher"
 #define ONELOOP_ANDI_AC_HAS_PUSHER  FALSE;
 #endif
 
-#ifndef ONELOOP_ANDI_PUSHER_IDX
-printf("Did not specify pusher index\n");
-#define ONELOOP_ANDI_PUSHER_IDX  4;
+#if    !ONELOOP_ANDI_AC_HAS_PUSHER
+#define ONELOOP_ANDI_PUSHER_IDX  0
 #endif
+
+#ifndef ONELOOP_ANDI_PUSHER_IDX
+#error "Did not specify pusher index"
+#define ONELOOP_ANDI_PUSHER_IDX  4
+#endif
+
 /* Declaration of Navigation Variables*/
 float v_nav_des = 1.2;
 float max_j_nav = 500.0; // Pusher Test shows erros above 2[Hz] ramp commands [0.6 SF]
@@ -1397,7 +1402,10 @@ void sum_g1g2_1l(void) {
   float spsi   = sinf(eulers_zxy.psi);
   float cpsi   = cosf(eulers_zxy.psi);
   float T      = -9.81; //minus gravity is a guesstimate of the thrust force, thrust measurement would be better
-  float P      = actuator_state_1l[ONELOOP_ANDI_PUSHER_IDX] * g1_1l[2][ONELOOP_ANDI_PUSHER_IDX] / ANDI_G_SCALING;
+  float P      = 0.0;
+  if (ONELOOP_ANDI_AC_HAS_PUSHER){
+    P    = actuator_state_1l[ONELOOP_ANDI_PUSHER_IDX] * g1_1l[2][ONELOOP_ANDI_PUSHER_IDX] / ANDI_G_SCALING;
+  } 
   float scaler;
   int i = 0;
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++) {
