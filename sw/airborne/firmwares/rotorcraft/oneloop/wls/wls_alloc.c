@@ -36,7 +36,6 @@
  */
 
 #include "wls_alloc.h"
-#include <stdio.h>
 #include "std.h"
 
 #include <string.h>
@@ -45,22 +44,28 @@
 #include "math/qr_solve/qr_solve.h"
 #include "math/qr_solve/r8lib_min.h"
 
-void print_final_values(int n_u, int n_v, float* u, float** B, float* v, float* umin, float* umax);
-void print_in_and_outputs(int n_c, int n_free, float** A_free_ptr, float* d, float* p_free);
-
 // provide loop feedback
+#ifndef WLS_VERBOSE
 #define WLS_VERBOSE FALSE
-
-// Problem size needs to be predefined to avoid having to use VLAs
-#ifndef CA_N_V_ONELOOP
-#error CA_N_V_ONELOOP needs to be defined!
 #endif
 
-#ifndef CA_N_U_ONELOOP
-#error CA_N_U_ONELOOP needs to be defined!
+#if WLS_VERBOSE
+#include <stdio.h>
+static void print_final_values(int n_u, int n_v, float* u, float** B, float* v, float* umin, float* umax);
+static void print_in_and_outputs(int n_c, int n_free, float** A_free_ptr, float* d, float* p_free);
 #endif
 
-#define CA_N_C_ONELOOP  (CA_N_U_ONELOOP+CA_N_V_ONELOOP)
+#ifndef WLS_N_U
+#error "WLS_N_U not defined"
+#define WLS_N_U 6
+#endif
+
+#ifndef WLS_N_V
+#error "WLS_N_V not defined"
+#define WLS_N_V 4
+#endif
+
+#define WLS_N_C ((WLS_N_U)+(WLS_N_V))
 
 /**
  * @brief Wrapper for qr solve
@@ -71,17 +76,13 @@ void print_in_and_outputs(int n_c, int n_free, float** A_free_ptr, float* d, flo
  * @param m number of rows
  * @param n number of columns
  */
-void qr_solve_wrapper_oneloop(int m, int n, float** A, float* b, float* x) {
+static void qr_solve_wrapper_oneloop(int m, int n, float** A, float* b, float* x) {
   float in[m * n];
-  //printf("I am doing qr solve\n");
-  //printf("m = %i\n",m);
-  //printf("n = %i\n",n);
   // convert A to 1d array
   int k = 0;
   for (int j = 0; j < n; j++) {
     for (int i = 0; i < m; i++) {
       in[k++] = A[i][j];
-      //printf("in[%i]=%f\n",k-1,in[k-1]);
     }
   }
   // use solver
@@ -96,12 +97,10 @@ void qr_solve_wrapper_oneloop(int m, int n, float** A, float* b, float* x) {
  * weighting matrices Wv and Wu
  *
  * @param u The control output vector
- * @param v The control objective
+ * @param v The control objective vector
  * @param umin The minimum u vector
  * @param umax The maximum u vector
  * @param B The control effectiveness matrix
- * @param n_u Length of u
- * @param n_v Lenght of v
  * @param u_guess Initial value for u
  * @param W_init Initial working set, if known
  * @param Wv Weighting on different control objectives
@@ -110,67 +109,45 @@ void qr_solve_wrapper_oneloop(int m, int n, float** A, float* b, float* x) {
  * @param gamma_sq Preference of satisfying control objective over desired
  * control vector (sqare root of gamma)
  * @param imax Max number of iterations
+ * @param n_u Length of u (the number of actuators)
+ * @param n_v Lenght of v (the number of control objectives)
  *
- * @return Number of iterations, -1 upon failure
+ * @return Number of iterations which is (imax+1) if it ran out of iterations
  */
 int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
     float* u_guess, float* W_init, float* Wv, float* Wu, float* up,
-    float gamma_sq, int imax) {
+    float gamma_sq, int imax,  int n_u, int n_v) {
   // allocate variables, use defaults where parameters are set to 0
   if(!gamma_sq) gamma_sq = 100000;
   if(!imax) imax = 100;
 
-  int n_c = CA_N_C_ONELOOP;
-  int n_u = CA_N_U_ONELOOP;
-  //printf("n_u = %i\n",n_u);
-  int n_v = CA_N_V_ONELOOP;
+  int n_c = n_u + n_v; 
 
-  float A[CA_N_C_ONELOOP][CA_N_U_ONELOOP];
-  float A_free[CA_N_C_ONELOOP][CA_N_U_ONELOOP];
+  float A[WLS_N_C][WLS_N_U];
+  float A_free[WLS_N_C][WLS_N_U];
 
   // Create a pointer array to the rows of A_free
   // such that we can pass it to a function
-  float * A_free_ptr[CA_N_C_ONELOOP];
+  float * A_free_ptr[WLS_N_C];
   for(int i = 0; i < n_c; i++)
     A_free_ptr[i] = A_free[i];
 
-  float b[CA_N_C_ONELOOP];
-  float d[CA_N_C_ONELOOP];
+  float b[WLS_N_C];
+  float d[WLS_N_C];
 
-  int free_index[CA_N_U_ONELOOP];
-  int free_index_lookup[CA_N_U_ONELOOP];
+  int free_index[WLS_N_U];
+  int free_index_lookup[WLS_N_U];
   int n_free = 0;
   int free_chk = -1;
-
   
   int iter = 0;
-  float p_free[CA_N_U_ONELOOP];
-  float p[CA_N_U_ONELOOP];
-  float u_opt[CA_N_U_ONELOOP];
-  int infeasible_index[CA_N_U_ONELOOP] UNUSED;
+  float p_free[WLS_N_U];
+  float p[WLS_N_U];
+  float u_opt[WLS_N_U];
+  int infeasible_index[WLS_N_U] UNUSED;
   int n_infeasible = 0;
-  float lambda[CA_N_U_ONELOOP];
-  float W[CA_N_U_ONELOOP];
-  //printf("@@@@@@@@@ My inputs are: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
-  for (int i = 0; i < CA_N_U_ONELOOP; i++) {
-    //printf("andi_du[%i] = %f ",i,u[i]);
-    //printf("du_min[%i] = %f ",i,umin[i]);
-    //printf("du_max[%i] = %f ",i,umax[i]);
-    //printf("du_pref[%i] = %f ",i,up[i]);
-    //printf("Wu[%i] = %f ",i,Wu[i]);
-    //printf("\n");
-  }
-  for (int i = 0; i < CA_N_V_ONELOOP; i++) {
-    //printf("Wv[%i] = %f ",i,Wv[i]);
-  }
-  //printf("\n");
-  for (int i = 0; i < CA_N_V_ONELOOP; i++) {
-    //printf("nu[%i] = %f ",i,v[i]);
-  }
-  //printf("\n");
-  
-  //print_in_and_outputs(n_c, n_free, A_free_ptr, d, p_free);
-  //print_final_values(n_u, n_v, u, B, v, umin, umax);
+  float lambda[WLS_N_U];
+  float W[WLS_N_U];
   
   // Initialize u and the working set, if provided from input
   if (!u_guess) {
@@ -215,37 +192,26 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
 
   // -------------- Start loop ------------
   while (iter++ < imax) {
-    ////printf("###### Entering Iteration WLS ######################\n");
-    ////printf("n_free>0 , n_free = %i\n", n_free);
-
-   
     // clear p, copy u to u_opt
     memset(p, 0, n_u * sizeof(float));
     memcpy(u_opt, u, n_u * sizeof(float));
-    
-    // if(n_free < 0){
-    //   return -1;
-    // }
-    ////printf("free_chk is : %i\n",free_chk);
-    ////printf("n_free is : %i\n",n_free);
+
     // Construct a matrix with the free columns of A
     if (free_chk != n_free) {
       for (int i = 0; i < n_c; i++) {
         for (int j = 0; j < n_free; j++) {
           A_free[i][j] = A[i][free_index[j]];
-          ////printf("A_free[%i][%i]=%f\n",i,j,A_free[i][j]);
         }
       }
       free_chk = n_free;
     }
 
 
-    ////printf("NFREE: %d", n_free);
-    if (n_free>0) {
-      ////printf("I think n_free is bigger than 0\n");
-      ////printf("n_free>0 , n_free = %i\n", n_free);
+    // Count the infeasible free actuators
+    n_infeasible = 0;
 
-      // Still feree variables left, calculate corresponding solution
+    if (n_free > 0) {
+      // Still free variables left, calculate corresponding solution
 
       // use a solver to find the solution to A_free*p_free = d
       qr_solve_wrapper_oneloop(n_c, n_free, A_free_ptr, d, p_free);
@@ -255,33 +221,20 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
       print_in_and_outputs(n_c, n_free, A_free_ptr, d, p_free);
 #endif
 
-    }
-
     // Set the nonzero values of p and add to u_opt
     for (int i = 0; i < n_free; i++) {
       p[free_index[i]] = p_free[i];
       u_opt[free_index[i]] += p_free[i];
-      ////printf("u_opt of act %i is %f\n",i,u_opt[free_index[i]]);
-    }
 
     // check limits
-    n_infeasible = 0;
-    for (int i = 0; i < n_u; i++) {
-      ////printf("I am checking feasibility\n");
-      ////printf("u_opt[%i]=%f, with u_max %f and u_min %f \n",i,u_opt[i],umax[i],umin[i]);
-      if (u_opt[i] >= (umax[i] + 0.000001f) || u_opt[i] <= (umin[i] - 0.000001f)) {
-        infeasible_index[n_infeasible++] = i;
-        ////printf("current u_opt[%i] is infeasible, n_infeasible is %i\n",i,n_infeasible);
-        //n_infeasible = n_infeasible + 1;
+        if ( (u_opt[free_index[i]] > umax[free_index[i]] || u_opt[free_index[i]] < umin[free_index[i]])) {
+          infeasible_index[n_infeasible++] = free_index[i];
+        }
       }
-      // if ((fabs(u_opt[i]- umax[i]) < FLT_EPSILON) || ((u_opt[i] - umax[i]) > 0.0) || ((u_opt[i] - umin[i]) < 0.0) ){     
-      //   infeasible_index[n_infeasible++] = i;
-      // }
     }
-    ////printf("n_infeasible: %i\n",n_infeasible);
+
     // Check feasibility of the solution
     if (n_infeasible == 0 || n_free == 0) {
-      ////printf("I THINK ALL SOLUTIONS ARE FEASIBLE\n");
       // all variables are within limits
       memcpy(u, u_opt, n_u * sizeof(float));
       memset(lambda, 0, n_u * sizeof(float));
@@ -302,7 +255,6 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
         lambda[i] *= W[i];
         // if any lambdas are negative, keep looking for solution
         if (lambda[i] < -FLT_EPSILON) {
-          ////printf("I think I can find a better solution\n");
           break_flag = false;
           W[i] = 0;
           // add a free index
@@ -322,32 +274,31 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
         return iter;
       }
     } else {
-      ////printf("I THINK SOME SOLUTIONS ARE INFEASIBLE\n");
-      float alpha = INFINITY;
+      // scaling back actuator command (0-1)
+      float alpha = 1.0;
       float alpha_tmp;
-      int id_alpha = 0;
+      int id_alpha = free_index[0];
 
       // find the lowest distance from the limit among the free variables
       for (int i = 0; i < n_free; i++) {
         int id = free_index[i];
-        if(fabs(p[id]) > FLT_EPSILON) {
-          alpha_tmp = (p[id] < 0) ? (umin[id] - u[id]) / p[id]
-            : (umax[id] - u[id]) / p[id];
-        } else {
-          alpha_tmp = INFINITY;
+
+        alpha_tmp = (p[id] < 0) ? (umin[id] - u[id]) / p[id]
+          : (umax[id] - u[id]) / p[id];
+
+        if (isnan(alpha_tmp) || alpha_tmp < 0.f) {
+          alpha_tmp = 1.0f;
         }
         if (alpha_tmp < alpha) {
           alpha = alpha_tmp;
           id_alpha = id;
         }
       }
-      ////printf("Lowest distance is %f for variable %i\n",alpha,id_alpha);
+
       // update input u = u + alpha*p
       for (int i = 0; i < n_u; i++) {
-        ////printf("old u[%i] is %f\n",i,u[i]);
         u[i] += alpha * p[i];
-        ////printf("p[%i] is %f\n",i,p[i]);
-        ////printf("new u[%i] is %f\n",i,u[i]);
+        Bound(u[i],umin[i],umax[i]);
       }
       // update d = d-alpha*A*p_free
       for (int i = 0; i < n_c; i++) {
@@ -359,16 +310,16 @@ int wls_alloc_oneloop(float* u, float* v, float* umin, float* umax, float** B,
       W[id_alpha] = (p[id_alpha] > 0) ? 1.0 : -1.0;
 
       free_index[free_index_lookup[id_alpha]] = free_index[--n_free];
-      free_index_lookup[free_index[free_index_lookup[id_alpha]]] = free_index_lookup[id_alpha];
+      free_index_lookup[free_index[free_index_lookup[id_alpha]]] =
+      free_index_lookup[id_alpha];
       free_index_lookup[id_alpha] = -1;
     }
   }
-  // solution failed, return negative one to indicate failure
-  return -1;
+  return iter;
 }
 
 #if WLS_VERBOSE
-void print_in_and_outputs(int n_c, int n_free, float** A_free_ptr, float* d, float* p_free) {
+static void print_in_and_outputs(int n_c, int n_free, float** A_free_ptr, float* d, float* p_free) {
 
   printf("n_c = %d n_free = %d\n", n_c, n_free);
 
@@ -392,7 +343,7 @@ void print_in_and_outputs(int n_c, int n_free, float** A_free_ptr, float* d, flo
   printf("\n\n");
 }
 
-void print_final_values(int n_u, int n_v, float* u, float** B, float* v, float* umin, float* umax) {
+static void print_final_values(int n_u, int n_v, float* u, float** B, float* v, float* umin, float* umax) {
   printf("n_u = %d n_v = %d\n", n_u, n_v);
 
   printf("B =\n");

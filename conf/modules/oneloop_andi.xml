@@ -32,7 +32,7 @@
   <init fun="oneloop_andi_init()"/>
    <makefile target="ap|nps" firmware="rotorcraft">
     <file       name="oneloop_andi.c" dir="$(SRC_FIRMWARE)/oneloop"/>
-    <file       name="wls_alloc.c" dir="$(SRC_FIRMWARE)/oneloop/wls"/>
+    <!-- <file       name="wls_alloc.c" dir="$(SRC_FIRMWARE)/oneloop/wls"/> -->
     <file       name="qr_solve.c" dir="math/qr_solve"/>
     <file       name="r8lib_min.c" dir="math/qr_solve"/>
     <configure  name="ANDI_OUTPUTS" default="4"/>
@@ -43,8 +43,5 @@
     <define     name="ANDI_NUM_ACT" value="$(ANDI_NUM_ACT)"/>
     <define     name="ANDI_NUM_VIRTUAL_ACT" value="$(ANDI_NUM_VIRTUAL_ACT)"/>
     <define     name="ANDI_NUM_ACT_TOT" value="$(ANDI_NUM_ACT_TOT)"/>
-    <define     name="CA_N_V_ONELOOP" value="$(ANDI_OUTPUTS)"/>
-    <define     name="CA_N_U_ONELOOP" value="$(ANDI_NUM_ACT_TOT)"/>
-    <define     name="ONELOOP_ATTITUDE_ANDI_FULL" value="true"/>
   </makefile> 
 </module>

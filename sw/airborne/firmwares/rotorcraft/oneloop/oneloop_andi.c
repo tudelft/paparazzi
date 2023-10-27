@@ -36,7 +36,9 @@
 #endif
 #include "modules/core/abi.h"
 #include "filters/low_pass_filter.h"
-#include "wls/wls_alloc.h"
+// #include "wls/wls_alloc.h"
+#include "math/wls/wls_alloc.h"
+
 #include <stdio.h>
 
 
@@ -156,6 +158,16 @@ static float u_pref[ANDI_NUM_ACT_TOT] = {0.0};
 #error "Did not specify pusher index"
 #define ONELOOP_ANDI_PUSHER_IDX  4
 #endif
+
+#if ANDI_NUM_ACT_TOT != WLS_N_U
+#error Matrix-WLS_N_U is not equalto the number of actuators: define WLS_N_U == ANDI_NUM_ACT_TOT in airframe file
+#define WLS_N_U == ANDI_NUM_ACT_TOT
+#endif
+#if ANDI_OUTPUTS != WLS_N_V
+#error Matrix-WLS_N_V is not equalto the number of controlled axis: define WLS_N_V == ANDI_OUTPUTS in airframe file
+#define WLS_N_V == ANDI_OUTPUTS
+#endif
+
 
 /* Declaration of Navigation Variables*/
 float v_nav_des = 1.2;
@@ -1330,9 +1342,9 @@ void oneloop_andi_run(bool in_flight, bool half_loop, struct FloatVect3 PSA_des,
       // }
       du_pref_1l[i] = (u_pref[i]  - use_increment * att_1l[i-ANDI_NUM_ACT])/ratio_u_un[i];//
     }
-    }
+  }
     // WLS Control Allocator
-    number_iter = wls_alloc_oneloop(andi_du_n, nu, du_min_1l, du_max_1l, bwls_1l, 0, 0, Wv_wls, Wu, du_pref_1l, gamma_wls, 10);
+    number_iter = wls_alloc(andi_du_n, nu, du_min_1l, du_max_1l, bwls_1l, 0, 0, Wv_wls, Wu, du_pref_1l, gamma_wls, 10, ANDI_NUM_ACT_TOT, ANDI_OUTPUTS);
 
   for (i = 0; i < ANDI_NUM_ACT_TOT; i++){
     andi_du[i] = (float)(andi_du_n[i] * ratio_u_un[i]);

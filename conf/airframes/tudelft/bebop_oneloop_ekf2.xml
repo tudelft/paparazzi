@@ -43,6 +43,11 @@
     <module name="geo_mag"/>
     <module name="air_data"/>
 
+    <module name="wls">
+      <define name="WLS_N_U" value = "6"/>
+      <define name="WLS_N_V" value = "6"/>
+    </module>
+
     <module name="logger_file">
         <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000/"/>
     </module>
@@ -74,8 +79,6 @@
     <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST"      value = "300"/>
     <define name="THRESHOLD_GROUND_DETECT"             value = "40"/>
     <define name="AUTOPILOT_ARMING_DELAY"              value = "2"/>
-    <define name="WLS_N_U"                             value = "8"/>
-    <define name="WLS_N_V"                             value = "6"/>
     <define name="GUIDANCE_INDI_MAX_AIRSPEED"          value = "5.0f"/> <!--remove once hybrid nav is made not dependent on guidance indi hybrid-->
     <define name="GUIDANCE_INDI_NAV_SPEED_MARGIN"      value = "0.0"/>  <!--remove once hybrid nav is made not dependent on guidance indi hybrid-->
     <define NAME="STABILIZATION_ATTITUDE_SP_MAX_PHI"   value = "45." UNIT="deg"   /> 
