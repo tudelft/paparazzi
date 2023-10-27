@@ -73,7 +73,7 @@
             <define name="USE_GPS_UBX_RTCM" value="TRUE"/>
         </module>
 
-        <module TYPE="oneloop" NAME="stabilization">
+        <module name="stabilization" type="oneloop" >
             <configure name="INDI_NUM_ACT" value="8"/>
         </module>
 

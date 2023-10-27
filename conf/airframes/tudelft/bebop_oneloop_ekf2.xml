@@ -1,7 +1,7 @@
 <!DOCTYPE airframe SYSTEM "../airframe.dtd">
 
-<airframe name="bebop_oneloop">
-  <description>Indoor bebop, ANDI
+<airframe name="bebop_oneloop_ekf2">
+  <description> bebop with a oneloop ANDI controller and EKF2
   </description>
 
   <firmware name="rotorcraft">
@@ -19,15 +19,15 @@
     <module name="actuators"      type="bebop"/>
     <module name="imu"            type="bebop"/>
 
-    <!-- <module name="gps" type="furuno"/> -->
-    <module name="gps" type="datalink"/>
+    <module name="gps" type="furuno"/>
+    <!-- <module name="gps" type="datalink"/> -->
 
     <module name="stabilization" type="oneloop" >
       <configure name="INDI_NUM_ACT" value="4"/>
     </module>  
 
     <module name="ins" type="ekf2">
-      <define name="INS_EKF2_OPTITRACK" value="true"/>
+      <!-- <define name="INS_EKF2_OPTITRACK" value="true"/> -->
     </module>
 
     <module name="guidance" type="oneloop"/>
@@ -71,13 +71,17 @@
   </command_laws>
 
   <section name="MISC">
-    <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST" value=  "300"/>
-    <define name="THRESHOLD_GROUND_DETECT"        value=  "40"/>
-    <define name="AUTOPILOT_ARMING_DELAY"         value=  "2"/>
-    <define name="WLS_N_U"                        value=  "8"/>
-    <define name="WLS_N_V"                        value=  "6"/>
-    <define name="GUIDANCE_INDI_MAX_AIRSPEED"     value = "5.0f"/> <!--remove once hybrid nav is fixed-->
-    <define name="GUIDANCE_INDI_NAV_SPEED_MARGIN" value = "0.0"/>
+    <define name="AUTOPILOT_IN_FLIGHT_MIN_THRUST"      value = "300"/>
+    <define name="THRESHOLD_GROUND_DETECT"             value = "40"/>
+    <define name="AUTOPILOT_ARMING_DELAY"              value = "2"/>
+    <define name="WLS_N_U"                             value = "8"/>
+    <define name="WLS_N_V"                             value = "6"/>
+    <define name="GUIDANCE_INDI_MAX_AIRSPEED"          value = "5.0f"/> <!--remove once hybrid nav is made not dependent on guidance indi hybrid-->
+    <define name="GUIDANCE_INDI_NAV_SPEED_MARGIN"      value = "0.0"/>  <!--remove once hybrid nav is made not dependent on guidance indi hybrid-->
+    <define NAME="STABILIZATION_ATTITUDE_SP_MAX_PHI"   value = "45." UNIT="deg"   /> 
+    <define NAME="STABILIZATION_ATTITUDE_SP_MAX_THETA" value = "45." UNIT="deg"   />
+    <define NAME="STABILIZATION_ATTITUDE_SP_MAX_R"     value = "90." UNIT="deg/s" />
+    <define NAME="STABILIZATION_ATTITUDE_DEADBAND_R"   value = "200"              />
   </section>
 
   <section name="AIR_DATA" prefix="AIR_DATA_">
