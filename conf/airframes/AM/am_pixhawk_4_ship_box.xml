@@ -249,7 +249,7 @@
   </section>
 
   <section name="MISC">
-    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 18.32 * adc)"/><!-- TODO: verify/calibrate -->
+    <define name="VoltageOfAdc(adc)" value="((3.3f/4096.0f) * 6 * adc)"/><!-- TODO: verify/calibrate -->
     <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
     
     <!-- Basic navigation settings -->
