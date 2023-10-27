@@ -56,10 +56,12 @@ static void print_in_and_outputs(int n_c, int n_free, float** A_free_ptr, float*
 #endif
 
 #ifndef WLS_N_U
+#error "WLS_N_U not defined"
 #define WLS_N_U 6
 #endif
 
 #ifndef WLS_N_V
+#error "WLS_N_V not defined"
 #define WLS_N_V 4
 #endif
 
@@ -232,7 +234,7 @@ int wls_alloc(float* u, float* v, float* umin, float* umax, float** B,
     }
 
     // Check feasibility of the solution
-    if (n_infeasible == 0) {
+    if (n_infeasible == 0 || n_free == 0) {
       // all variables are within limits
       memcpy(u, u_opt, n_u * sizeof(float));
       memset(lambda, 0, n_u * sizeof(float));
