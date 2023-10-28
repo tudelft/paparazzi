@@ -108,4 +108,11 @@ struct  __attribute__((__packed__)) am7_data_in {
 	uint8_T checksum_in;
 };
 
+struct aruco_detection_t {
+    float timestamp_detection; 
+    float lat_aruco; 
+    float long_aruco;
+    float rel_alt_aruco;
+};
+
 #endif

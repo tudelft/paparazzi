@@ -3,6 +3,10 @@
 #include "MATLAB_generated_files/Nonlinear_CA_control_rf_w_ail_singular_tilt_constrains.h"
 #include "MATLAB_generated_files/rt_nonfinite.h"
 #include <string.h>
+#include <stdint.h>
+#include <glib.h>
+#include <Ivy/ivy.h>
+#include <Ivy/ivyglibloop.h>
 
 //Totest the controller with random variables:
 // #define TEST_CONTROLLER
@@ -24,17 +28,24 @@ uint16_T sent_msg_id = 0, received_msg_id = 0;
 int serial_port;
 int serial_port_tf_mini;
 float ca7_message_frequency_RX, ca7_message_frequency_TX;
-struct timeval current_time, last_time, last_sent_msg_time;
+struct timeval current_time, last_time, last_sent_msg_time, aruco_time, starting_time_program_execution;
+
 
 pthread_mutex_t mutex_am7;
 
-int verbose_connection = 1;
+pthread_mutex_t mutex_aruco;
+
+int verbose_connection = 0;
 int verbose_optimizer = 0;
 int verbose_runtime = 0; 
 int verbose_received_data = 0; 
+int verbose_ivy_bus = 0; 
+int verbose_aruco = 1; 
 
 int16_t lidar_dist_cm = -1; 
 int16_t lidar_signal_strength = -1; 
+
+struct aruco_detection_t aruco_detection; 
 
 void readLiDAR(){
   // Data Format for Benewake TFmini
@@ -111,7 +122,6 @@ void am7_init(){
 }
 
 void am7_parse_msg_in(){
-
   pthread_mutex_lock(&mutex_am7);
   memcpy(&myam7_data_in, &am7_msg_buf_in[1], sizeof(struct am7_data_in));
   received_msg_id = myam7_data_in.rolling_msg_in_id;
@@ -184,6 +194,51 @@ void reading_routine(){
     }
 } 
 
+void send_states_on_ivy(){
+    //Copy received message from UAV autopilot 
+    struct am7_data_in myam7_data_in_copy_for_ivy;
+    pthread_mutex_lock(&mutex_am7);   
+    memcpy(&myam7_data_in_copy_for_ivy, &myam7_data_in, sizeof(struct am7_data_in));
+    pthread_mutex_unlock(&mutex_am7);
+
+    //Send messages over ivy bus for the python thread: 
+    if(verbose_ivy_bus) printf("Sent received message from UAV on ivy bus\n");
+    IvySendMsg("1 ROTORCRAFT_FP  %d %d %d  %d %d %d  %d %d %d  %d %d %d  %d %d %d",
+
+            (int32_t) 50,
+            (int32_t) 50,
+            (int32_t) 50,
+
+            (int32_t) 50,
+            (int32_t) 50,
+            (int32_t) 50,
+
+            (int32_t) (30.0/0.0139882),
+            (int32_t) (30.0/0.0139882),
+            (int32_t) (30.0/0.0139882),
+
+            (int32_t) 50,
+            (int32_t) 50,
+            (int32_t) 50,
+
+            (int32_t) 50,
+            (int32_t) 50,
+            (uint16_t) 50);
+
+    IvySendMsg("1 INS_REF  %d %d %d  %d %d %d  %d %f",
+
+            (int32_t) 50,
+            (int32_t) 50,
+            (int32_t) 50,
+
+            (int32_t) (15.75/0.0000001),
+            (int32_t) (45.2/0.0000001),
+            (int32_t) 50,
+
+            (int32_t) (10),
+            0.04);
+}
+
 void print_statistics(){
   gettimeofday(&current_time, NULL); 
   if((current_time.tv_sec*1e6 + current_time.tv_usec) - (last_time.tv_sec*1e6 + last_time.tv_usec) > 2*1e6){
@@ -213,11 +268,8 @@ void send_receive_am7(){
   gettimeofday(&current_time, NULL); 
   if((current_time.tv_sec*1e6 + current_time.tv_usec) - (last_sent_msg_time.tv_sec*1e6 + last_sent_msg_time.tv_usec) > (1e6/MAX_FREQUENCY_MSG_OUT)){
     writing_routine();
+    send_states_on_ivy();
   }
-
-  // usleep(1e9/MAX_FREQUENCY_MSG_OUT);
-  // writing_routine();
-
 
   //Print some stats
   if(verbose_connection){
@@ -594,17 +646,68 @@ void* second_thread() //Run the optimization code
     extra_data_out_copy[0] = 1.453; 
     extra_data_out_copy[1] = 1.23423; 
     
+    struct aruco_detection_t aruco_detection_local; 
+  
+    pthread_mutex_lock(&mutex_aruco);
+    memcpy(&aruco_detection_local, &aruco_detection, sizeof(struct aruco_detection_t));
+    pthread_mutex_unlock(&mutex_aruco); 
+
+    
+    //Copy out structure
     pthread_mutex_lock(&mutex_am7);
     memcpy(&myam7_data_out_copy, &myam7_data_out_copy_internal, sizeof(struct am7_data_out));
     memcpy(&extra_data_out, &extra_data_out_copy, sizeof(struct am7_data_out));
-    pthread_mutex_unlock(&mutex_am7);    
+    pthread_mutex_unlock(&mutex_am7);   
+
   }
+}
+
+static void aruco_position_report(IvyClientPtr app, void *user_data, int argc, char *argv[])
+{
+  if (argc != 4)
+  {
+    fprintf(stderr,"ERROR: invalid message length MOVE_WAYPOINT\n");
+  }
+  struct aruco_detection_t aruco_detection_local; 
+
+  gettimeofday(&aruco_time, NULL); 
+  aruco_detection_local.timestamp_detection = (aruco_time.tv_sec*1e6 - starting_time_program_execution.tv_sec*1e6 + aruco_time.tv_usec - starting_time_program_execution.tv_usec)*1e-6;
+  aruco_detection_local.lat_aruco = atof(argv[1]); 
+  aruco_detection_local.long_aruco = atof(argv[2]);  
+  aruco_detection_local.rel_alt_aruco  = atof(argv[3]);  
+  
+  if(verbose_aruco){
+    printf("\n Aruco timestamp = %f \n", aruco_detection_local.timestamp_detection); 
+    printf("\n Aruco lat = %f \n",(float) aruco_detection_local.lat_aruco ); 
+    printf("\n Aruco long = %f \n",(float) aruco_detection_local.long_aruco ); 
+    printf("\n Aruco relative alt = %f \n",(float) aruco_detection_local.rel_alt_aruco ); 
+  }
+
+  pthread_mutex_lock(&mutex_aruco);
+  memcpy(&aruco_detection, &aruco_detection_local, sizeof(struct aruco_detection_t));
+  pthread_mutex_unlock(&mutex_aruco); 
+
 }
 
 void main() {
 
   //Initialize the serial 
   am7_init();
+  //Initialize timer: 
+  gettimeofday(&starting_time_program_execution, NULL); 
+  
+  //Init 
+  #ifdef __APPLE__
+    char* ivy_bus = "224.255.255.255";
+  #else
+    char *ivy_bus = "127.255.255.255";
+  #endif
+
+  GMainLoop *ml =  g_main_loop_new(NULL, FALSE);
+
+  IvyInit ("NonlinearCA", "NonlinearCA READY", NULL, NULL, NULL, NULL);
+  IvyStart(ivy_bus);
+  IvyBindMsg(aruco_position_report, NULL, "^ground MOVE_WAYPOINT %s (\\S*) (\\S*) (\\S*) (\\S*)", "1");
 
   pthread_t thread1, thread2;
 
@@ -612,9 +715,7 @@ void main() {
   pthread_create(&thread1, NULL, first_thread, NULL);
   pthread_create(&thread2, NULL, second_thread, NULL);
 
-  // wait for them to finish
-  pthread_join(thread1, NULL);
-  pthread_join(thread2, NULL); 
+  g_main_loop_run(ml);
 
   //Close the serial and clean the variables 
   fflush (stdout);
